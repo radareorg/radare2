@@ -1,6 +1,0 @@
-NAME=PE: corkami safeseh.exe - open
-FILE=../bins/pe/safeseh.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

@@ -1,8 +1,0 @@
-NAME=dbg.px0
-FILE=../bins/elf/analysis/elf-nx
-ARGS=-d
-CMDS=px0
-EXPECT=<<EOF
-89e083ec0c50e8850b
-EOF
-RUN

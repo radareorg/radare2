@@ -1,0 +1,6 @@
+NAME=COFF: hello object file
+FILE=bins/pe/hello.obj
+CMDS=q
+EXPECT=<<EOF
+EOF
+RUN

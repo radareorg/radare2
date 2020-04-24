@@ -1,0 +1,66 @@
+NAME=ELF: mips.elf
+FILE=bins/elf/analysis/mips.elf
+ARGS=-A
+CMDS=?v entry0
+EXPECT=<<EOF
+0x400ab0
+EOF
+RUN
+
+NAME=ELF: mipsbe-ubusd
+FILE=bins/elf/analysis/mipsbe-ubusd
+CMDS=<<EOF
+af
+e asm.var.sub=false
+pif
+EOF
+EXPECT=<<EOF
+lui gp, 0x42
+addiu gp, gp, -0x4770
+move ra, zero
+lui a0, 0x40
+addiu a0, a0, 0xec0
+lw a1, (sp)
+addiu a2, sp, 4
+addiu at, zero, -8
+and sp, sp, at
+addiu sp, sp, -0x20
+lui a3, 0x40
+addiu a3, a3, 0xb8c
+lui t0, 0x40
+addiu t0, t0, 0x3520
+sw t0, 0x10(sp)
+sw v0, 0x14(sp)
+jal sym.imp.__uClibc_main
+sw sp, 0x18(sp)
+EOF
+RUN
+
+NAME=ELF: mipsbe-busybox
+FILE=bins/elf/analysis/mipsbe-busybox
+CMDS=<<EOF
+af
+e asm.var.sub=false
+pif
+EOF
+EXPECT=<<EOF
+lui gp, 0x48
+addiu gp, gp, 0xb40
+move ra, zero
+lui a0, 0x40
+addiu a0, a0, 0x5474
+lw a1, (sp)
+addiu a2, sp, 4
+addiu at, zero, -8
+and sp, sp, at
+addiu sp, sp, -0x20
+lui a3, 0x40
+addiu a3, a3, 0x3974
+lui t0, 0x46
+addiu t0, t0, -0x489c
+sw t0, 0x10(sp)
+sw v0, 0x14(sp)
+jal sym.imp.__uClibc_main
+sw sp, 0x18(sp)
+EOF
+RUN

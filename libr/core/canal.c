@@ -9,6 +9,8 @@
 
 #include <string.h>
 
+HEAPTYPE (ut64);
+
 // used to speedup strcmp with rconfig.get in loops
 enum {
 	R2_ARCH_THUMB,
@@ -16,6 +18,8 @@ enum {
 	R2_ARCH_ARM64,
 	R2_ARCH_MIPS
 };
+// 128M
+#define MAX_SCAN_SIZE 0x7ffffff
 
 static void loganal(ut64 from, ut64 to, int depth) {
 	r_cons_clear_line (1);
@@ -823,7 +827,7 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
 			f = r_core_flag_get_by_spaces (core->flags, fcn->addr);
 			if (f && f->name && strncmp (f->name, "sect", 4)) { /* Check if it's already flagged */
-				const char *new_name = strdup (f->name);
+				char *new_name = strdup (f->name);
 				if (is_entry_flag (f)) {
 					RListIter *iter;
 					RBinSymbol *sym;
@@ -906,7 +910,7 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 	if (core->anal->cur && core->anal->cur->arch && !strcmp (core->anal->cur->arch, "x86")) {
 		r_anal_function_check_bp_use (fcn);
 		if (fcn && !fcn->bp_frame) {
-			r_anal_var_delete_all (core->anal, fcn->addr, 'b');
+			r_anal_function_delete_vars_by_kind (fcn, R_ANAL_VAR_KIND_BPV);
 		}
 	}
 	r_anal_hint_free (hint);
@@ -953,7 +957,7 @@ error:
 	if (fcn && core->anal->cur && core->anal->cur->arch && !strcmp (core->anal->cur->arch, "x86")) {
 		r_anal_function_check_bp_use (fcn);
 		if (!fcn->bp_frame) {
-			r_anal_var_delete_all (core->anal, fcn->addr, 'b');
+			r_anal_function_delete_vars_by_kind (fcn, R_ANAL_VAR_KIND_BPV);
 		}
 	}
 	r_anal_hint_free (hint);
@@ -4861,6 +4865,10 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	if (iend < 0) {
 		return;
 	}
+	if (iend > MAX_SCAN_SIZE) {
+		eprintf ("Warning: Not going to analyze 0x%08"PFMT64x" bytes.\n", (ut64)iend);
+		return;
+	}
 	buf = malloc (iend + 2);
 	if (!buf) {
 		perror ("malloc");
@@ -4924,6 +4932,9 @@ repeat:
 			break;
 		}
 		cur = addr + i;
+		if (!r_io_is_valid_offset (core->io, cur, 0)) {
+			break;
+		}
 		{
 			RList *list = r_meta_find_list_in (core->anal, cur, -1, 4);
 			RListIter *iter;
@@ -5254,6 +5265,9 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 	}
 	r_cons_break_push (NULL, NULL);
 
+	if (!r_io_is_valid_offset (core->io, from, 0)) {
+		return -1;
+	}
 	while (from < to) {
 		size = R_MIN (to - from, sizeof (buf));
 		memset (buf, 0xff, sizeof (buf)); // probably unnecessary
@@ -5598,14 +5612,22 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 		return;
 	}
 
-	// find known noreturn functions to propagate
-	RAnalFunction *f;
-	RListIter *iter;
+	RAnalFunction *request_fcn = NULL;
+	if (addr != UT64_MAX) {
+		request_fcn = r_anal_get_function_at (core->anal, addr);
+		if (!request_fcn) {
+			r_list_free (todo);
+			ht_uu_free (done);
+			return;
+		}
+	}
 
+	// find known noreturn functions to propagate
+	RListIter *iter;
+	RAnalFunction *f;
 	r_list_foreach (core->anal->fcns, iter, f) {
 		if (f->is_noreturn) {
-			ut64 *n = malloc (sizeof (ut64));
-			*n = f->addr;
+			ut64 *n = ut64_new (f->addr);
 			r_list_append (todo, n);
 		}
 	}
@@ -5625,46 +5647,63 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 				eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", xref->addr);
 				continue;
 			}
+			ut64 call_addr = xref->addr;
+			ut64 chop_addr = call_addr + xrefop->size;
 			r_anal_op_free (xrefop);
 			if (xref->type != R_ANAL_REF_TYPE_CALL) {
 				continue;
 			}
-			if (addr != UT64_MAX) {
-				f = r_anal_get_fcn_in (core->anal, xref->addr, 0);
-				if (f) {
-					if (f->addr != addr) {
-						continue;
-					}
-				} else {
-					continue;
+
+			// Find the block that has an instruction at exactly the xref addr
+			RList *blocks = r_anal_get_blocks_in (core->anal, call_addr);
+			if (!blocks) {
+				continue;
+			}
+			RAnalBlock *block = NULL;
+			RListIter *bit;
+			RAnalBlock *block_cur;
+			r_list_foreach (blocks, bit, block_cur) {
+				if (r_anal_block_op_starts_at (block_cur, call_addr)) {
+					block = block_cur;
+					break;
+				}
+			}
+			if (block) {
+				r_anal_block_ref (block);
+			}
+			r_list_free (blocks);
+			if (!block) {
+				continue;
+			}
+
+			RList *block_fcns = r_list_clone (block->fcns);
+			if (request_fcn) {
+				// specific function requested, check if it contains the bb
+				if (!r_list_contains (block->fcns, request_fcn)) {
+					goto kontinue;
 				}
 			} else {
-				f = r_anal_get_fcn_in (core->anal, xref->addr, 0);
-				if (!f || (f->type != R_ANAL_FCN_TYPE_FCN && f->type != R_ANAL_FCN_TYPE_SYM)) {
-					continue;
-				}
-				ut64 addr = f->addr;
-
-				r_anal_fcn_del_locs (core->anal, addr);
-				// big depth results on infinite loops :( but this is a different issue
-				r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, 3);
-
-				f = r_anal_get_function_at (core->anal, addr);
-				if (!f || (f->type != R_ANAL_FCN_TYPE_FCN && f->type != R_ANAL_FCN_TYPE_SYM)) {
-					continue;
-				}
+				// r_anal_block_chop_noreturn() might free the block!
+				block = r_anal_block_chop_noreturn (block, chop_addr);
 			}
 
-			bool found = false;
-			found = ht_uu_find (done, f->addr, &found);
-			if (f->addr && !found && analyze_noreturn_function (core, f)) {
-				f->is_noreturn = true;
-				r_anal_noreturn_add (core->anal, NULL, f->addr);
-				ut64 *n = malloc (sizeof (ut64));
-				*n = f->addr;
-				r_list_append (todo, n);
-				ht_uu_insert (done, *n, 1);
+			RListIter *fit;
+			r_list_foreach (block_fcns, fit, f) {
+				bool found = ht_uu_find (done, f->addr, NULL) != 0;
+				if (f->addr && !found && analyze_noreturn_function (core, f)) {
+					f->is_noreturn = true;
+					r_anal_noreturn_add (core->anal, NULL, f->addr);
+					ut64 *n = malloc (sizeof (ut64));
+					*n = f->addr;
+					r_list_append (todo, n);
+					ht_uu_insert (done, *n, 1);
+				}
 			}
+kontinue:
+			if (block) {
+				r_anal_block_unref (block);
+			}
+			r_list_free (block_fcns);
 		}
 		r_list_free (xrefs);
 	}

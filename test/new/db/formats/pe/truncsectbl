@@ -1,7 +1,0 @@
-NAME=PE: corkami truncsectbl.exe - open
-FILE=../bins/pe/truncsectbl.exe
-ARGS=-A
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

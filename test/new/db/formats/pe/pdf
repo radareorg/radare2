@@ -1,6 +1,0 @@
-NAME=PE: corkami pdf.exe - open
-FILE=../bins/pe/pdf.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

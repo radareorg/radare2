@@ -1,5 +1,8 @@
 /* radare - LGPL - Copyright 2015 nodepad */
 
+#ifndef MZ_H
+#define MZ_H
+
 #include <r_types.h>
 #include <r_list.h>
 #include <r_util.h>
@@ -41,3 +44,5 @@ void *r_bin_mz_free (struct r_bin_mz_obj_t *bin);
 struct r_bin_mz_obj_t *r_bin_mz_new (const char *file);
 struct r_bin_mz_obj_t *r_bin_mz_new_buf(RBuffer *buf);
 RBinAddr *r_bin_mz_get_main_vaddr (struct r_bin_mz_obj_t *bin);
+
+#endif

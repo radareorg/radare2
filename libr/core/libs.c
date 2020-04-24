@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include "r_core.h"
 #include "config.h"
@@ -136,8 +136,7 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 	RListIter *iter;
 	char *file;
 	r_list_foreach (files, iter, file) {
-		bool isScript = __isScriptFilename (file);
-		if (isScript) {
+		if (__isScriptFilename (file)) {
 			r_core_cmdf (core, ". %s/%s", homeplugindir, file);
 		}
 	}

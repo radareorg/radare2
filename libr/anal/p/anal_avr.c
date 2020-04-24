@@ -1917,7 +1917,7 @@ static int esil_avr_fini(RAnalEsil *esil) {
 	return true;
 }
 
-static int set_reg_profile(RAnal *anal) {
+static bool set_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC	pcl\n"
 		"=SP	sp\n"

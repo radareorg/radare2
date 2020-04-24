@@ -1,6 +1,0 @@
-NAME=PE: corkami dllnomain2-dynld.exe - open
-FILE=../bins/pe/dllnomain2-dynld.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

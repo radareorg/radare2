@@ -126,10 +126,47 @@ bool test_initial_underscore(void) {
 	mu_end;
 }
 
+/* references */
+typedef struct {
+	const char *name;
+	R_REF_TYPE;
+} TypeTest;
+
+static TypeTest *r_type_test_new(const char *name) {
+	TypeTest *tt = R_NEW0 (TypeTest);
+	if (tt) {
+		r_ref_init (tt);
+		tt->name = name;
+	}
+	return tt;
+}
+
+static void r_type_test_free(TypeTest *tt) {
+	tt->name = "";
+}
+
+R_REF_FUNCTIONS(TypeTest, r_type_test);
+
+bool test_references(void) {
+	TypeTest *tt = r_type_test_new ("foo");
+	mu_assert_eq (tt->refcount, 1, "reference count issue");
+	r_type_test_ref (tt);
+	mu_assert_eq (tt->refcount, 2, "reference count issue");
+	r_type_test_unref (tt);
+	mu_assert_streq (tt->name, "foo", "typetest name should be foo");
+	mu_assert_eq (tt->refcount, 1, "reference count issue");
+	r_type_test_unref (tt); // tt becomes invalid
+	mu_assert_eq (tt->refcount, 0, "reference count issue");
+	mu_assert_streq (tt->name, "", "typetest name should be foo");
+	free (tt);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test (test_ignore_prefixes);
 	mu_run_test (test_remove_r2_prefixes);
 	mu_run_test (test_dll_names);
+	mu_run_test (test_references);
 	mu_run_test (test_autonames);
 	mu_run_test (test_initial_underscore);
 	return tests_passed != tests_run;

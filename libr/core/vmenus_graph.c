@@ -323,7 +323,7 @@ R_API int r_core_visual_view_graph(RCore *core) {
 		case '\n':
 			{
 				RCoreVisualViewGraphItem *item = r_list_get_n (status.mainCol, status.cur);
-				r_core_seek (core, item->addr, 1);
+				r_core_seek (core, item->addr, true);
 			}
 			return true;
 			break;

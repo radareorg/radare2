@@ -198,7 +198,7 @@ RList *PE_(r_bin_mdmp_pe_get_sections) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) 
 		if ((ptr->perm & R_PERM_R) && !(ptr->perm & R_PERM_X) && ptr->size > 0) {
 			if (!strncmp (ptr->name, ".rsrc", 5) ||
 				!strncmp (ptr->name, ".data", 5) ||
-				!strncmp (ptr->name, ".rdata", 5)) {
+				!strncmp (ptr->name, ".rdata", 6)) {
 				ptr->is_data = true;
 			}
 		}

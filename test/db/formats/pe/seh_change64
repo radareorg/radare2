@@ -1,0 +1,6 @@
+NAME=PE: corkami seh_change64.exe - open
+FILE=bins/pe/seh_change64.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN

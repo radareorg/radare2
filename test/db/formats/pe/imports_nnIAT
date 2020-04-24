@@ -1,0 +1,6 @@
+NAME=PE: corkami imports_nnIAT.exe - open
+FILE=bins/pe/imports_nnIAT.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN

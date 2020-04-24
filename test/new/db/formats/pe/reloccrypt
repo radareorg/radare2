@@ -1,6 +1,0 @@
-NAME=PE: corkami reloccrypt.exe - open
-FILE=../bins/pe/reloccrypt.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

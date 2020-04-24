@@ -1,6 +1,0 @@
-NAME=PE: corkami secinsec.exe - open
-FILE=../bins/pe/secinsec.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

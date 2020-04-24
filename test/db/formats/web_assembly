@@ -1,0 +1,38 @@
+NAME=WASM: Wasm - open
+FILE=bins/wasm/basic.wasm
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=WASM: Wasm - detection
+FILE=bins/wasm/basic.wasm
+CMDS=iI~os
+EXPECT=<<EOF
+os       WebAssembly
+EOF
+RUN
+
+NAME=WASM: Wasm - entrypoint
+FILE=bins/wasm/start.wasm
+CMDS=ie~vaddr
+EXPECT=<<EOF
+vaddr=0x0000002d paddr=0x0000002d haddr=-1 type=program
+EOF
+RUN
+
+NAME=WASM: Wasm - sections
+FILE=bins/wasm/binary.wasm
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr        size vaddr       vsize perm name
+-------------------------------------------------
+0   0x0000000a   0x10 0x0000000a   0x10 ---- type
+1   0x0000001d   0x2c 0x0000001d   0x2c ---- function
+2   0x0000004d  0x1dc 0x0000004d  0x1dc ---- export
+3   0x0000022d  0x1f6 0x0000022d  0x1f6 ---- code
+
+EOF
+RUN

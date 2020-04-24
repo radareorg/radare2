@@ -2426,7 +2426,7 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		fcn = f;
 	}
 
-	r_core_seek (core, f->addr, 1);
+	r_core_seek (core, f->addr, true);
 
 	char *title = get_title (fcn->addr);
 	fcn_anode = r_agraph_add_node (g, title, "");
@@ -3938,11 +3938,11 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 		RANode *addr_node = r_agraph_get_node (g, title);
 		if (addr_node) {
 			r_agraph_set_curnode (g, addr_node);
-			r_core_seek (core, addr, 0);
+			r_core_seek (core, addr, false);
 			agraph_update_seek (g, addr_node, true);
 		} else {
 			r_io_sundo_push (core->io, core->offset, 0);
-			r_core_seek (core, addr, 0);
+			r_core_seek (core, addr, false);
 		}
 		free (title);
 	}
@@ -4319,10 +4319,10 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			ut64 old_off = core->offset;
 			ut64 off = r_anal_get_bbaddr (core->anal, core->offset);
-			r_core_seek (core, off, 0);
+			r_core_seek (core, off, false);
 			if ((key == 'x' && !r_core_visual_refs (core, true, true)) ||
 			    (key == 'X' && !r_core_visual_refs (core, false, true))) {
-				r_core_seek (core, old_off, 0);
+				r_core_seek (core, old_off, false);
 			}
 			break;
 		}
@@ -4439,7 +4439,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			RIOUndos *undo = r_io_sundo (core->io, core->offset);
 			if (undo) {
-				r_core_seek (core, undo->off, 0);
+				r_core_seek (core, undo->off, false);
 			} else {
 				eprintf ("Cannot undo\n");
 			}
@@ -4455,7 +4455,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			RIOUndos *undo = r_io_sundo_redo (core->io);
 			if (undo) {
-				r_core_seek (core, undo->off, 0);
+				r_core_seek (core, undo->off, false);
 			} else {
 				eprintf ("Cannot redo\n");
 			}
@@ -4666,7 +4666,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			  {
 				  RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 				  if (fcn) {
-					  r_core_seek (core, fcn->addr, 0);
+					  r_core_seek (core, fcn->addr, false);
 				  }
 			  }
 			  agraph_update_seek (g, get_anode (g->curnode), true);

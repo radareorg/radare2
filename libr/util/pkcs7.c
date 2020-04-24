@@ -672,6 +672,7 @@ R_API SpcIndirectDataContent *r_pkcs7_parse_spcinfo(RCMS *cms) {
 
 	RASN1Binary *content = cms->signedData.contentInfo.content;
 	if (!content) {
+		free (spcinfo);
 		return NULL;
 	}
 	RASN1Object *object = r_asn1_create_object (content->binary, content->length, content->binary);

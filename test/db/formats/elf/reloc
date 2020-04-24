@@ -1,0 +1,67 @@
+NAME=ELF: dynamic p_offset
+FILE=bins/elf/analysis/dynamic-poffset
+CMDS=ir
+EXPECT=<<EOF
+[Relocations]
+
+vaddr      paddr      type   name
+---------------------------------
+0x00600988 0x00000988 SET_64 __gmon_start__
+0x006009a8 0x000009a8 SET_64 write
+0x006009b0 0x000009b0 SET_64 close
+0x006009b8 0x000009b8 SET_64 __libc_start_main
+0x006009c0 0x000009c0 SET_64 open
+
+
+5 relocations
+EOF
+RUN
+
+NAME=ELF: Spurious relocations
+FILE=bins/elf/analysis/spurious-relocs
+CMDS=ir~vaddr=0x0000003a
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=ELF: .plt/.plt.sec sections
+FILE=bins/elf/ls-cet
+CMDS=pdi 10 @ main+0x28
+EXPECT=<<EOF
+0x00004e98                 31c0  xor eax, eax
+0x00004e9a           e8a1e60000  call 0x13540
+0x00004e9f       488d351e4a0100  lea rsi, [rip + 0x14a1e]
+0x00004ea6           bf06000000  mov edi, 6
+0x00004eab           e8b0fdffff  call sym.imp.setlocale
+0x00004eb0       488d35584b0100  lea rsi, [rip + 0x14b58]
+0x00004eb7       488d3d374b0100  lea rdi, [rip + 0x14b37]
+0x00004ebe           e81dfaffff  call sym.imp.bindtextdomain
+0x00004ec3       488d3d2b4b0100  lea rdi, [rip + 0x14b2b]
+0x00004eca           e8d1f9ffff  call sym.imp.textdomain
+EOF
+RUN
+
+NAME=ELF: use reloc table in dyn entry
+FILE=bins/elf/simple-hello-world-with-wrong-rela-section-name
+CMDS=<<EOF
+e asm.comments=false
+e asm.lines=false
+pd 15 @ entry0~call
+EOF
+EXPECT=<<EOF
+0x00001068      ff15722f0000   call qword [reloc.__libc_start_main]
+EOF
+RUN
+
+NAME=ELF: R_X86_64_PLT32 patch reloc
+FILE=bins/elf/radare2.c.obj
+ARGS=-e io.cache=true
+CMDS=<<EOF
+e asm.comments=false
+e asm.lines=false
+pd 1 @ 0x0800005e
+EOF
+EXPECT=<<EOF
+0x0800005e      e878840300     call r_spaces_set
+EOF
+RUN

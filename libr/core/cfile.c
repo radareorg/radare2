@@ -177,7 +177,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		}
 #endif
 	}
-	r_core_seek (core, origoff, 1);
+	r_core_seek (core, origoff, true);
 	if (isdebug) {
 		r_core_cmd0 (core, ".dm*");
 		r_core_cmd0 (core, ".dr*");
@@ -795,7 +795,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 					RRegItem *reg = r_reg_get (r->anal->reg, regname, -1);
 					if (reg) {
 						ut64 seek = r_reg_get_value (r->anal->reg, reg);
-						r_core_seek (r, seek, 1);
+						r_core_seek (r, seek, true);
 					}
 				}
 			}

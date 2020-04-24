@@ -1,6 +1,0 @@
-NAME=PE: corkami tinynet.exe - open
-FILE=../bins/pe/tinynet.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

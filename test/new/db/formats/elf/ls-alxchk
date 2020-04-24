@@ -1,7 +1,0 @@
-NAME=ELF: ls-alchk pie main
-FILE=../bins/elf/analysis/ls-alxchk
-CMDS=?v main
-EXPECT=<<EOF
-0x3bd0
-EOF
-RUN

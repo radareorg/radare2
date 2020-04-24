@@ -1,7 +1,0 @@
-NAME=PE: corkami tinyXP.exe - open
-FILE=../bins/pe/tinyXP.exe
-ARGS=-A
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

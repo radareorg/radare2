@@ -77,7 +77,7 @@ static ut64 dex_field_offset(RBinDexObj *bin, int fid) {
 }
 
 static char *getstr(RBinDexObj *dex, int idx) {
-	ut8 buf[6];
+	ut8 buf[LEB_MAX_SIZE];
 	ut64 len;
 	int uleblen;
 	if (!dex || idx < 0 || idx >= dex->header.strings_size || !dex->strings) {
@@ -876,8 +876,9 @@ static RList *strings(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o, NULL);
 	RBinString *ptr = NULL;
 	RList *ret = NULL;
-	int i, len;
-	ut8 buf[6];
+	int i;
+	ut64 len;
+	ut8 buf[LEB_MAX_SIZE];
 	ut64 off;
 	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *)bf->o->bin_obj;
 	if (!bin || !bin->strings) {
@@ -897,15 +898,15 @@ static RList *strings(RBinFile *bf) {
 		if (bin->strings[i] > bin->size || bin->strings[i] + 6 > bin->size) {
 			goto out_error;
 		}
-		r_buf_read_at (bin->b, bin->strings[i], (ut8*)&buf, 6);
-		len = dex_read_uleb128 (buf, sizeof (buf));
+		r_buf_read_at (bin->b, bin->strings[i], buf, sizeof (buf));
+		r_uleb128 (buf, sizeof (buf), &len);
 
 		if (len > 5 && len < R_BIN_SIZEOF_STRINGS) {
 			ptr->string = malloc (len + 1);
 			if (!ptr->string) {
 				goto out_error;
 			}
-			off = bin->strings[i] + dex_uleb128_len (buf, sizeof (buf));
+			off = bin->strings[i] + r_uleb128_len (buf, sizeof (buf));
 			if (off + len >= bin->size || off + len < len) {
 				free (ptr->string);
 				goto out_error;

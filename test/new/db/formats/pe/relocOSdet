@@ -1,6 +1,0 @@
-NAME=PE: corkami relocOSdet.exe - open
-FILE=../bins/pe/relocOSdet.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

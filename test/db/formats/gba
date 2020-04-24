@@ -1,0 +1,8 @@
+NAME=GBA: 3D - S
+FILE=bins/gba/3D.gba
+CMDS=om
+EXPECT=<<EOF
+ 2 fd: 3 +0x00000000 0x08000000 - 0x080105cb r-x fmap.ROM
+ 1 fd: 4 +0x00000000 0x080105cc - 0x09ffffff r-x mmap.ROM
+EOF
+RUN

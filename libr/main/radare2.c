@@ -1154,7 +1154,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		r_core_cmd0 (r, "=!"); // initalize io subsystem
 		iod = r->io ? r_io_desc_get (r->io, fh->fd) : NULL;
 		if (mapaddr) {
-			r_core_seek (r, mapaddr, 1);
+			r_core_seek (r, mapaddr, true);
 		}
 		r_list_foreach (evals, iter, cmdn) {
 			r_config_eval (r->config, cmdn, false);
@@ -1186,7 +1186,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		if (!debug && o && !o->regstate) {
 			RFlagItem *fi = r_flag_get (r->flags, "entry0");
 			if (fi) {
-				r_core_seek (r, fi->offset, 1);
+				r_core_seek (r, fi->offset, true);
 			} else {
 				if (o) {
 					RList *sections = r_bin_get_sections (r->bin);
@@ -1195,7 +1195,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					r_list_foreach (sections, iter, s) {
 						if (s->perm & R_PERM_X) {
 							ut64 addr = s->vaddr? s->vaddr: s->paddr;
-							r_core_seek (r, addr, 1);
+							r_core_seek (r, addr, true);
 							break;
 						}
 					}
@@ -1210,7 +1210,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		if (s_seek) {
 			seek = r_num_math (r->num, s_seek);
 			if (seek != UT64_MAX) {
-				r_core_seek (r, seek, 1);
+				r_core_seek (r, seek, true);
 			}
 		}
 
@@ -1218,7 +1218,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_core_block_size (r, r_io_desc_size (iod));
 		}
 
-		r_core_seek (r, r->offset, 1); // read current block
+		r_core_seek (r, r->offset, true); // read current block
 
 		/* check if file.path has changed */
 		if (iod && !strstr (iod->uri, "://")) {
@@ -1331,7 +1331,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		char *data = r_file_slurp (patchfile, NULL);
 		if (data) {
 			ret = r_core_patch (r, data);
-			r_core_seek (r, 0, 1);
+			r_core_seek (r, 0, true);
 			free (data);
 		} else {
 			eprintf ("[p] Cannot open '%s'\n", patchfile);
@@ -1342,7 +1342,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_cons_zero ();
 		}
 		if (seek != UT64_MAX) {
-			r_core_seek (r, seek, 1);
+			r_core_seek (r, seek, true);
 		}
 
 		// no flagspace selected by default the beginning

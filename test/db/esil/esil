@@ -1,0 +1,315 @@
+NAME=ar comma
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+ar rax=33
+ar rbx=44
+ar rax,rbx
+EOF
+EXPECT=<<EOF
+0x00000021
+0x0000002c
+EOF
+RUN
+
+NAME=add
+FILE=-
+CMDS=<<EOF
+ae 3,3,+
+ae 3,3,-
+EOF
+EXPECT=<<EOF
+0x6
+0x0
+EOF
+RUN
+
+NAME=inc/dec
+FILE=-
+CMDS=<<EOF
+ae 0xffffffffffffffff,++
+ae 3,++
+ae 3,--
+ae 0,--
+EOF
+EXPECT=<<EOF
+0x0
+0x4
+0x2
+0xffffffffffffffff
+EOF
+RUN
+
+NAME=sub
+FILE=-
+CMDS=ae 1,3,-
+EXPECT=<<EOF
+0x2
+EOF
+RUN
+
+NAME=subeq
+FILE=-
+CMDS=<<EOF
+e asm.bits=32
+e asm.arch=x86
+aei
+ae 3,eax,=,1,eax,-=,eax,0,+
+EOF
+EXPECT=<<EOF
+0x2
+EOF
+RUN
+
+NAME=shift-left
+FILE=-
+CMDS=<<EOF
+"ae 3,1,<<"
+"ae 1,3,<<"
+EOF
+EXPECT=<<EOF
+0x8
+0x6
+EOF
+RUN
+
+NAME=shift-right
+FILE=-
+CMDS=<<EOF
+"ae 1,8,>>"
+"ae 8,1,>>"
+EOF
+EXPECT=<<EOF
+0x4
+0x0
+EOF
+RUN
+
+NAME=sub
+FILE=-
+CMDS=ae 3,1,-
+EXPECT=<<EOF
+0xfffffffffffffffe
+EOF
+RUN
+
+NAME=neg
+FILE=-
+CMDS=<<EOF
+ae 3,3,+,!
+ae 3,3,-,!
+EOF
+EXPECT=<<EOF
+0x0
+0x1
+EOF
+RUN
+
+NAME=condition
+FILE=-
+CMDS=ae 3,?{,0x80,}
+EXPECT=<<EOF
+0x80
+EOF
+RUN
+
+NAME=memory write (MIPS little endian)
+FILE=-
+ARGS=-a mips
+CMDS=<<EOF
+e cfg.bigendian=false
+aeim
+e io.cache=true
+"ae 0x69686766,0x00100000,=[4]"
+psz @0x00100000
+EOF
+EXPECT=<<EOF
+fghi
+EOF
+RUN
+
+NAME=memory write (MIPS big endian)
+FILE=-
+ARGS=-a mips
+CMDS=<<EOF
+e cfg.bigendian=true
+aeim
+e io.cache=true
+"ae 0x69686766,0x00100000,=[4]"
+psz @0x00100000
+EOF
+EXPECT=<<EOF
+ihgf
+EOF
+RUN
+
+NAME=memory write (non-MIPS big endian)
+FILE=-
+BROKEN=1
+CMDS=<<EOF
+e cfg.bigendian=true
+aeim
+e io.cache=true
+"ae 0x69686766,0x00100000,=[4]"
+psz @0x00100000
+EOF
+EXPECT=<<EOF
+ihgf
+EOF
+RUN
+
+NAME=esil poke some (32-bits ARM big endian)
+FILE=
+ARGS=-a arm -b 32
+CMDS=<<EOF
+e cfg.bigendian=true
+aeim
+e io.cache=true
+ar r0=0x00100000
+ar r1=0x69686766
+"ae r1,1,r0,=[*]"
+p8 4@0x00100000
+EOF
+EXPECT=<<EOF
+69686766
+EOF
+RUN
+
+NAME=esil poke some (64-bits ARM big endian)
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e cfg.bigendian=true
+aeim
+e io.cache=true
+ar x0=0x00100000
+ar x1=0x69686766
+"ae x1,1,x0,=[*]"
+p8 8@0x00100000
+EOF
+EXPECT=<<EOF
+0000000069686766
+EOF
+RUN
+
+NAME=esil poke some (32-bits ARM little endian)
+FILE=-
+ARGS=-a arm -b 32
+CMDS=<<EOF
+e cfg.bigendian=false
+aeim
+e io.cache=true
+ar r0=0x00100000
+ar r1=0x69686766
+"ae r1,1,r0,=[*]"
+p8 4@0x00100000
+EOF
+EXPECT=<<EOF
+66676869
+EOF
+RUN
+
+NAME=esil poke some (64-bits ARM little endian)
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e cfg.bigendian=false
+aeim
+e io.cache=true
+ar x0=0x00100000
+ar x1=0x69686766
+"ae x1,1,x0,=[*]"
+p8 8@0x00100000
+EOF
+EXPECT=<<EOF
+6667686900000000
+EOF
+RUN
+
+NAME=esil poke some (count too long)
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e cfg.bigendian=false
+aeim
+e io.cache=true
+ar x0=0x00100000
+ar x1=0x69686766
+"ae x1,0xffffffff,x0,=[*]"
+p8 8@0x00100000
+EOF
+EXPECT=<<EOF
+6667686900000000
+EOF
+RUN
+
+NAME=rol
+FILE=-
+CMDS=<<EOF
+e asm.bits=32
+e asm.arch=x86
+aei
+ar eax=0x80000010
+"ae 0x1,eax,<<<,eax,="
+ar eax
+EOF
+EXPECT=<<EOF
+0x00000021
+EOF
+RUN
+
+NAME=ror
+FILE=-
+CMDS=<<EOF
+e asm.bits=32
+e asm.arch=x86
+aei
+ar eax=0x02000001
+"ae 0x1,eax,>>>,eax,="
+ar eax
+EOF
+EXPECT=<<EOF
+0x81000000
+EOF
+RUN
+
+NAME=or-mem-dst
+FILE=-
+CMDS=<<EOF
+e asm.bits=32
+e asm.arch=x86
+aei
+ar eax=0x0000000b
+"ae 0xf,eax,=[4]"
+"ae 0xf0,eax,|=[4]"
+"ae eax,[4]"
+EOF
+EXPECT=<<EOF
+0xff
+EOF
+RUN
+
+NAME=rep stosq
+FILE=bins/elf/analysis/x64-rep-stosq
+CMDS=<<EOF
+e io.cache=1
+aei
+aeip
+3aes
+ar rcx
+ar rdi
+ar rip
+aes
+ar rcx
+ar rdi
+ar rip
+EOF
+EXPECT=<<EOF
+0x00000001
+0x006000d0
+0x004000c0
+0x00000000
+0x006000d8
+0x004000c3
+EOF
+RUN

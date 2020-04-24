@@ -1,7 +1,0 @@
-NAME=BDC bad flag
-FILE=../bins/pe/bdc1.ex
-CMDS=e cfg.bigendian
-EXPECT=<<EOF
-false
-EOF
-RUN

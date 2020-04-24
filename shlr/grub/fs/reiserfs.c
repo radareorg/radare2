@@ -59,7 +59,7 @@
 
 static grub_dl_t my_mod;
 
-#define assert(boolean) real_assert (boolean, GRUB_FILE, __LINE__)
+#define assertx(boolean) real_assert (boolean, GRUB_FILE, __LINE__)
 static inline void
 real_assert (int boolean, const char *file, const int line)
 {
@@ -416,7 +416,7 @@ grub_reiserfs_set_key_type (struct grub_reiserfs_key *key,
       = ((key->u.v2.offset_type & grub_cpu_to_le64 (~0ULL >> 4))
          | grub_cpu_to_le64 ((grub_uint64_t) type << 60));
 
-  assert (grub_reiserfs_get_key_type (key) == grub_type);
+  assertx (grub_reiserfs_get_key_type (key) == grub_type);
 }
 
 /* -1 if key 1 if lower than key 2.
@@ -632,14 +632,14 @@ grub_reiserfs_get_item (struct grub_reiserfs_data *data,
 #endif
     }
 
-  assert (grub_errno == GRUB_ERR_NONE);
+  assertx (grub_errno == GRUB_ERR_NONE);
   grub_free (block_header);
   return GRUB_ERR_NONE;
 
  fail:
-  assert (grub_errno != GRUB_ERR_NONE);
+  assertx (grub_errno != GRUB_ERR_NONE);
   grub_free (block_header);
-  assert (grub_errno != GRUB_ERR_NONE);
+  assertx (grub_errno != GRUB_ERR_NONE);
   return grub_errno;
 }
 
@@ -976,11 +976,11 @@ grub_reiserfs_iterate_dir (grub_fshelp_node_t item,
   while (block_number);
 
  found:
-  assert (grub_errno == GRUB_ERR_NONE);
+  assertx (grub_errno == GRUB_ERR_NONE);
   grub_free (block_header);
   return ret;
  fail:
-  assert (grub_errno != GRUB_ERR_NONE);
+  assertx (grub_errno != GRUB_ERR_NONE);
   grub_free (block_header);
   return 0;
 }
@@ -1069,7 +1069,7 @@ grub_reiserfs_open (struct grub_file *file, const char *name)
   return GRUB_ERR_NONE;
 
  fail:
-  assert (grub_errno != GRUB_ERR_NONE);
+  assertx (grub_errno != GRUB_ERR_NONE);
   grub_free (found);
   grub_free (data);
   grub_dl_unref (my_mod);

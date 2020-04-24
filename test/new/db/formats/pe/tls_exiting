@@ -1,7 +1,0 @@
-NAME=PE: corkami tls_exiting.exe - open
-FILE=../bins/pe/tls_exiting.exe
-ARGS=-A
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

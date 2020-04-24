@@ -79,7 +79,7 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 	return op->size;
 }
 
-static int set_reg_profile(RAnal *anal) {
+static bool set_reg_profile(RAnal *anal) {
     const char *p =
 	"=PC	srr0\n"
 	"=SR	srr1\n" // status register

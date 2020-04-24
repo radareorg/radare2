@@ -1,0 +1,19 @@
+NAME=hexagon jumps
+FILE=bins/elf/analysis/hexagon-hello-loop
+CMDS=<<EOF
+s sym.main
+af
+afx
+pifc
+EOF
+EXPECT=<<EOF
+c 0x00005124 -> 0x00005128
+c 0x00005134 -> 0x00005138
+C 0x00005138 -> 0x000050e0
+C 0x0000513c -> 0x000050f8
+c 0x00005140 -> 0x00005144
+c 0x00005150 -> 0x00005128
+call sym.pHello
+call sym.pWorld
+EOF
+RUN

@@ -12,6 +12,7 @@
 #define JMPTBL_LEA_SEARCH_SZ 64
 #define JMPTBL_MAXFCNSIZE 4096
 #define BB_ALIGN 0x10
+#define MAX_SCAN_SIZE 0x7ffffff
 
 /* speedup analysis by removing some function overlapping checks */
 #define JAYRO_04 1
@@ -334,7 +335,7 @@ static RAnalBlock *bbget(RAnal *anal, ut64 addr, bool jumpmid) {
 		ut64 eaddr = bb->addr + bb->size;
 		if (((bb->addr >= eaddr && addr == bb->addr)
 		     || r_anal_block_contains (bb, addr))
-		    && (!jumpmid || r_anal_bb_op_starts_at (bb, addr))) {
+		    && (!jumpmid || r_anal_block_op_starts_at (bb, addr))) {
 			ret = bb;
 			break;
 		}
@@ -520,6 +521,12 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 			ret = 0;
 			gotoBeach (R_ANAL_RET_END);
 		}
+	}
+	if ((maxlen - (addrbytes * idx)) > MAX_SCAN_SIZE) {
+		if (anal->verbose) {
+			eprintf ("Warning: Skipping large memory region.\n");
+		}
+		maxlen = 0;
 	}
 
 	while (addrbytes * idx < maxlen) {
@@ -1669,7 +1676,7 @@ R_API RAnalBlock *r_anal_fcn_bbget_in(const RAnal *anal, RAnalFunction *fcn, ut6
 	RAnalBlock *bb;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (addr >= bb->addr && addr < (bb->addr + bb->size)
-			&& (!anal->opt.jmpmid || !is_x86 || r_anal_bb_op_starts_at (bb, addr))) {
+			&& (!anal->opt.jmpmid || !is_x86 || r_anal_block_op_starts_at (bb, addr))) {
 			return bb;
 		}
 	}

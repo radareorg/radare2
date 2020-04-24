@@ -348,7 +348,7 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 	switch (input[0]) {
 	case '-': // "tn-"
 		if (input[1] == '*') {
-			r_core_cmd0 (core, "tn-`tn`");
+			r_core_cmd0 (core, "tn- `tn`");
 		} else {
 			char *s = strdup (r_str_trim_head_ro (input + 1));
 			RListIter *iter;
@@ -941,7 +941,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 				dst_addr = r_reg_getv (esil->anal->reg, aop.dst->reg->name) + index;
 				dst_imm = aop.dst->delta;
 			}
-			RAnalVar *var = aop.var;
+			RAnalVar *var = r_anal_get_used_function_var (core->anal, aop.addr);
 			if (false) { // src_addr != UT64_MAX || dst_addr != UT64_MAX) {
 			//  if (src_addr == UT64_MAX && dst_addr == UT64_MAX) {
 				r_anal_op_fini (&aop);
@@ -961,10 +961,8 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 				// var int local_e0h --> var struct foo
 				if (strcmp (var->name , vlink) && !resolved) {
 					resolved = true;
-					r_anal_var_retype (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
-							-1, var->kind, varpfx, -1, var->isarg, var->name);
-					r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
-							var->kind, var->name, vlink, false);
+					r_anal_var_set_type (var, varpfx);
+					r_anal_var_rename (var, vlink, false);
 				}
 			} else if (slink) {
 				set_offset_hint (core, &aop, slink, src_addr, at - ret, src_imm);
@@ -990,7 +988,7 @@ beach:
 	if (stack_set) {
 		r_core_cmd0 (core, "aeim-");
 	}
-	r_core_seek (core, oldoff, 1);
+	r_core_seek (core, oldoff, true);
 	r_anal_esil_free (esil);
 	r_reg_arena_pop (core->anal->reg);
 	r_core_cmd0 (core, ".ar*");
@@ -1629,7 +1627,12 @@ static int cmd_type(void *data, const char *input) {
 					ut64 original_addr = addr;
 					if (!addr && arg) {
 						RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-						addr = r_anal_var_addr (core->anal, fcn, arg);
+						if (fcn) {
+							RAnalVar *var = r_anal_function_get_var_byname (fcn, arg);
+							if (var) {
+								addr = r_anal_var_addr (var);
+							}
+						}
 					}
 					if (addr != UT64_MAX) {
 						r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x, fmt, addr);

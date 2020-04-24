@@ -1,6 +1,0 @@
-NAME=PE: corkami memshared.dll - open
-FILE=../bins/pe/memshared.dll
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

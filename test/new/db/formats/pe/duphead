@@ -1,6 +1,0 @@
-NAME=PE: corkami duphead.exe - open
-FILE=../bins/pe/duphead.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

@@ -1,0 +1,22 @@
+NAME=ESIL single stepback
+FILE=bins/elf/analysis/calls_x64
+CMDS=<<EOF
+e asm.emu=true
+e asm.bits=64
+e asm.arch=x86
+e emu.write=true
+e io.cache=true
+aei
+aeim
+aeip
+aets+
+aeso
+aeso
+aesb
+dr rip
+dk 9
+EOF
+EXPECT=<<EOF
+0x00400412
+EOF
+RUN

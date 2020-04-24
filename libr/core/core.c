@@ -27,9 +27,9 @@ static int on_fcn_new(RAnal *_anal, void* _user, RAnalFunction *fcn) {
 	if (cmd && *cmd) {
 		ut64 oaddr = core->offset;
 		ut64 addr = fcn->addr;
-		r_core_seek (core, addr, 1);
+		r_core_seek (core, addr, true);
 		r_core_cmd0 (core, cmd);
-		r_core_seek (core, oaddr, 1);
+		r_core_seek (core, oaddr, true);
 	}
 	return 0;
 }
@@ -40,9 +40,9 @@ static int on_fcn_delete (RAnal *_anal, void* _user, RAnalFunction *fcn) {
 	if (cmd && *cmd) {
 		ut64 oaddr = core->offset;
 		ut64 addr = fcn->addr;
-		r_core_seek (core, addr, 1);
+		r_core_seek (core, addr, true);
 		r_core_cmd0 (core, cmd);
-		r_core_seek (core, oaddr, 1);
+		r_core_seek (core, oaddr, true);
 	}
 	return 0;
 }
@@ -54,9 +54,9 @@ static int on_fcn_rename(RAnal *_anal, void* _user, RAnalFunction *fcn, const ch
 		// XXX: wat do with old name here?
 		ut64 oaddr = core->offset;
 		ut64 addr = fcn->addr;
-		r_core_seek (core, addr, 1);
+		r_core_seek (core, addr, true);
 		r_core_cmd0 (core, cmd);
-		r_core_seek (core, oaddr, 1);
+		r_core_seek (core, oaddr, true);
 	}
 	return 0;
 }
@@ -1087,7 +1087,7 @@ static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const
 	}
 	list= r_fs_dir (core->fs, dirname);
 	n = strlen (basename);
-	bool chgdir = !strncmp (str, "cd  ", 3);
+	bool chgdir = !strncmp (str, "cd ", 3);
 	if (list) {
 		r_list_foreach (list, iter, file) {
 			if (!file) {
@@ -1836,7 +1836,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 		if (!strncmp (buf->data, "afvn ", 5)) {
 			vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_BPV);
 		} else {
-			vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_ARG);
+			vars = r_list_new (); // TODO wtf r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_ARG);
 		}
 		const char *f_ptr, *l_ptr;
 		RAnalVar *var;
@@ -2642,7 +2642,7 @@ R_API bool r_core_init(RCore *core) {
 	core->anal->cb_printf = (void *) r_cons_printf;
 	core->parser = r_parse_new ();
 	r_anal_bind (core->anal, &(core->parser->analb));
-	core->parser->varlist = r_anal_var_list;
+	core->parser->varlist = r_anal_function_get_var_fields;
 	/// XXX shouhld be using coreb
 	r_parse_set_user_ptr (core->parser, core);
 	core->bin = r_bin_new ();
@@ -3082,7 +3082,7 @@ R_API int r_core_seek_align(RCore *core, ut64 align, int times) {
 	if (diff < 0 && -diff > seek) {
 		seek = diff = 0;
 	}
-	return r_core_seek (core, seek + diff, 1);
+	return r_core_seek (core, seek + diff, true);
 }
 
 R_API char *r_core_op_str(RCore *core, ut64 addr) {
@@ -3324,7 +3324,7 @@ reaccept:
 					}
 				} else {
 					if (buf[0] == 0) {
-						r_core_seek (core, x, 1); //buf[0]);
+						r_core_seek (core, x, true); //buf[0]);
 					}
 					x = core->offset;
 				}
@@ -3439,8 +3439,11 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 		name = strdup (file);
 		fd = r_sandbox_open (file, O_RDWR, 0644);
 		if (fd == -1) {
-			fd = r_sandbox_open (file, O_RDONLY, 0644);
-			readonly = true;
+			fd = r_sandbox_open (file, O_RDWR | O_CREAT, 0644);
+			if (fd == -1) {
+				fd = r_sandbox_open (file, O_RDONLY, 0644);
+				readonly = true;
+			}
 		}
 	} else {
 		fd = r_file_mkstemp (file, &name);

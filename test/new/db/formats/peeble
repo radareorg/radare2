@@ -1,7 +1,0 @@
-NAME=Peeble: Open/iI
-FILE=../bins/pebble/pebble-app.bin
-CMDS=iI~?pebble
-EXPECT=<<EOF
-1
-EOF
-RUN

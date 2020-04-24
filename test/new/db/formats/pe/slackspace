@@ -1,6 +1,0 @@
-NAME=PE: corkami slackspace.exe - open
-FILE=../bins/pe/slackspace.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

@@ -41,9 +41,7 @@ R_API RCmd *r_cmd_free(RCmd *cmd) {
 	if (!cmd) {
 		return NULL;
 	}
-#if USE_TREESITTER
 	ht_up_free (cmd->ts_symbols_ht);
-#endif
 	r_cmd_alias_free (cmd);
 	r_cmd_macro_fini (&cmd->macro);
 	// dinitialize plugin commands

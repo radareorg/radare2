@@ -2847,6 +2847,7 @@ static int bin_pe_init_security(struct PE_(r_bin_pe_obj_t) * bin) {
 		cert->wCertificateType = r_buf_read_le16_at (bin->b, offset + 6);
 		if (cert->dwLength < 6) {
 			eprintf ("Cert.dwLength must be > 6\n");
+			R_FREE (cert);
 			return false;
 		}
 		if (!(cert->bCertificate = malloc (cert->dwLength - 6))) {

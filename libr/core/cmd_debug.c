@@ -18,6 +18,8 @@
 #include "linux_heap_jemalloc.c"
 #endif
 
+void cmd_anal_reg (RCore *core, const char *str);
+
 static const char *help_msg_d[] = {
 	"Usage:", "d", " # Debug commands",
 	"db", "[?]", "Breakpoints commands",
@@ -1472,6 +1474,7 @@ show_help:
 			}
 			break;
 		default:
+			pj_free (pj);
 			r_list_free (list);
 			goto show_help;
 			/* not reached */
@@ -1481,8 +1484,8 @@ beach:
 	if (mode == 'j') {
 		pj_end (pj);
 		r_cons_printf ("%s\n", pj_string (pj));
-		pj_free (pj);
 	}
+	pj_free (pj);
 	r_list_free (list);
 }
 
@@ -1925,14 +1928,6 @@ static int cmd_debug_map(RCore *core, const char *input) {
 #include "windows_heap.c"
 #endif
 
-// move into basic_types.h
-
-#define HEAPTYPE(x) \
-	static x* x##_new(x n) {\
-		x *m = malloc(sizeof (x));\
-		return m? *m = n, m: m; \
-	}
-
 HEAPTYPE(ut64);
 
 static int regcmp(const void *a, const void *b) {
@@ -2115,17 +2110,18 @@ static void show_drpi(RCore *core) {
 
 static void cmd_reg_profile (RCore *core, char from, const char *str) { // "arp" and "drp"
 	const char *ptr;
+	RReg *r = r_config_get_i (core->config, "cfg.debug")? core->dbg->reg: core->anal->reg;
 	switch (str[1]) {
 	case '\0': // "drp"
-		if (core->dbg->reg->reg_profile_str) {
-			r_cons_println (core->dbg->reg->reg_profile_str);
+		if (r->reg_profile_str) {
+			r_cons_println (r->reg_profile_str);
 		} else {
 			eprintf ("No register profile defined. Try 'dr.'\n");
 		}
 		break;
 	case 'c': // drpc
 		if (core->dbg->reg->reg_profile_cmt) {
-			r_cons_println (core->dbg->reg->reg_profile_cmt);
+			r_cons_println (r->reg_profile_cmt);
 		}
 		break;
 	case ' ': // "drp "
@@ -2137,11 +2133,11 @@ static void cmd_reg_profile (RCore *core, char from, const char *str) { // "arp"
 			r_reg_parse_gdb_profile (ptr + 4);
 			break;
 		}
-		r_reg_set_profile (core->dbg->reg, str + 2);
+		r_reg_set_profile (r, str + 2);
 		r_debug_plugin_set_reg_profile (core->dbg, str + 2);
 		break;
 	case '.': { // "drp."
-		RRegSet *rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
+		RRegSet *rs = r_reg_regset_get (r, R_REG_TYPE_GPR);
 		if (rs) {
 			eprintf ("size = %d\n", rs->arena->size);
 		}
@@ -3247,17 +3243,16 @@ static void static_debug_stop(void *u) {
 	r_debug_stop (dbg);
 }
 
-static void core_cmd_dbi (RCore *core, const char *input, ut64 idx) {
+static void core_cmd_dbi(RCore *core, const char *input, const ut64 idx) {
 	int i;
 	char *p;
 	RBreakpointItem *bpi;
 	switch (input[2]) {
 	case ' ': // "dbi."
 		{
-			ut64 addr = idx;
-			int idx = r_bp_get_index_at (core->dbg->bp, addr);
-			if (idx != -1) {
-				r_cons_printf ("%d\n", idx);
+			const int index = r_bp_get_index_at (core->dbg->bp, idx);
+			if (index != -1) {
+				r_cons_printf ("%d\n", index);
 			}
 		}
 		break;
@@ -3270,9 +3265,9 @@ static void core_cmd_dbi (RCore *core, const char *input, ut64 idx) {
 		break;
 	case '.': // "dbi."
 		{
-			int idx = r_bp_get_index_at (core->dbg->bp, core->offset);
-			if (idx != -1) {
-				r_cons_printf ("%d\n", idx);
+			const int index = r_bp_get_index_at (core->dbg->bp, core->offset);
+			if (index != -1) {
+				r_cons_printf ("%d\n", index);
 			}
 		}
 		break;
@@ -5138,7 +5133,6 @@ static int cmd_debug(void *data, const char *input) {
 		if (core->io->debug || input[1] == '?') {
 			cmd_debug_reg (core, input + 1);
 		} else {
-			void cmd_anal_reg (RCore *core, const char *str);
 			cmd_anal_reg (core, input + 1);
 		}
 		//r_core_cmd (core, "|reg", 0);

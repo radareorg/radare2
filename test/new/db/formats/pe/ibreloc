@@ -1,6 +1,0 @@
-NAME=PE: corkami ibreloc.exe - open
-FILE=../bins/pe/ibreloc.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

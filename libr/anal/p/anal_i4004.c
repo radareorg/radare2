@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016 - pancake */
+/* radare - LGPL - Copyright 2016-2020 - pancake */
 
 #include <string.h>
 #include <r_types.h>
@@ -9,7 +9,7 @@
 
 #define	AVR_SOFTCAST(x,y)	((x)+((y)*0x100))
 
-static int set_reg_profile(RAnal *anal) {
+static bool set_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC	PC\n"
 		/* syntax not yet supported */

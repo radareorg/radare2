@@ -1,8 +1,0 @@
-NAME=PE32+: dll64 - exports
-FILE=../bins/pe/kernel32.dll
-BROKEN=1
-CMDS=iE~?
-EXPECT=<<EOF
-1583
-EOF
-RUN

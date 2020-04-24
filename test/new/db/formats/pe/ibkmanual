@@ -1,6 +1,0 @@
-NAME=PE: corkami ibkmanual.exe - open
-FILE=../bins/pe/ibkmanual.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

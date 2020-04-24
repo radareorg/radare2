@@ -1,6 +1,0 @@
-NAME=PE: corkami hdrdata.exe - open
-FILE=../bins/pe/hdrdata.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

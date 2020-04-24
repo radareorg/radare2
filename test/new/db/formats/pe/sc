@@ -1,6 +1,0 @@
-NAME=PE: corkami sc.exe - open
-FILE=../bins/pe/sc.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

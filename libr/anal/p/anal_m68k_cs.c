@@ -705,7 +705,7 @@ fin:
 	return opsize;
 }
 
-static int set_reg_profile(RAnal *anal) {
+static bool set_reg_profile(RAnal *anal) {
 	const char *p = \
 		"=PC    pc\n"
 		"=SP    a7\n"

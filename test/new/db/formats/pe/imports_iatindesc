@@ -1,6 +1,0 @@
-NAME=PE: corkami imports_iatindesc.exe - open
-FILE=../bins/pe/imports_iatindesc.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

@@ -655,6 +655,7 @@ static bool cmd_wfs(RCore *core, const char *input) {
 	}
 	ut8 *buf = calloc (1, sz);
 	if (!buf) {
+		free (str);
 		return false;
 	}
 	r_io_read_at (core->io, addr, buf, sz);
@@ -973,7 +974,7 @@ static int cmd_write(void *data, const char *input) {
 					ut64 cur_off = core->offset;
 					cmd_suc = r_core_extend_at (core, addr, len);
 					if (cmd_suc) {
-						r_core_seek (core, cur_off, 1);
+						r_core_seek (core, cur_off, true);
 						core->offset = addr;
 						r_core_block_read (core);
 					} else {
@@ -1025,7 +1026,7 @@ static int cmd_write(void *data, const char *input) {
 				b_size = p && *p ? r_num_math (core->num, p) : 0;
 				if (dist != 0){
 					r_core_shift_block (core, addr, b_size, dist);
-					r_core_seek (core, addr, 1);
+					r_core_seek (core, addr, true);
 					cmd_suc = true;
 				}
 			}

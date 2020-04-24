@@ -1,6 +1,0 @@
-NAME=PE: corkami ownexports.exe - open
-FILE=../bins/pe/ownexports.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

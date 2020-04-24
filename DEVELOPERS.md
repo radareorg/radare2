@@ -331,6 +331,26 @@ You may use directory-local variables by putting
 
 into `.dir-locals.el`.
 
+## Packed structures
+
+Due to the various differences between platforms and compilers radare2
+has a special helper macro - `R_PACKED()`. Instead of non-portable
+`#pragma pack` or `__attribute__((packed))` it is advised to use this macro
+instead. To wrap the code inside of it you just need to write:
+```c
+R_PACKED (union mystruct {
+	int a;
+	char b;
+})
+```
+or in case of typedef:
+```c
+R_PACKED (typedef structmystruct {
+	int a;
+	char b;
+})
+```
+
 ## Modules
 
 The radare2 code base is modularized into different libraries that are
@@ -352,7 +372,7 @@ As mentioned in README.md, the API itself is maintained in a different
 repository. The API function definitions in C header files are derived
 from and documented in the radare2-bindings repository, found at:
 ```sh
-   git clone git://github.com/radare/radare2-bindings
+   git clone git://github.com/radareorg/radare2-bindings
 ```
 
 Currently the process of updating the header files from changed API
@@ -386,7 +406,7 @@ linux-arm and others, but the procedure is like this:
 
 The source of radare2 can be found in the following GitHub repository.
 ```sh
-   git clone git://github.com/radare/radare2
+   git clone git://github.com/radareorg/radare2
 ```
 Other packages radare2 depends on, such as Capstone, are pulled from
 their git repository as required.

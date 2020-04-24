@@ -1,6 +1,0 @@
-NAME=PE: corkami dllfakess-dynld.exe - open
-FILE=../bins/pe/dllfakess-dynld.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

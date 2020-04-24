@@ -882,10 +882,12 @@ R_API bool r_table_query(RTable *t, const char *q) {
 		}
 		int col = r_table_column_nth (t, columnName);
 		if (col == -1) {
-			if (*columnName == '[') {
-				col = atoi (columnName + 1);
-			} else if (columnName == NULL && strcmp (operation, "uniq")) {
+			if (columnName == NULL && strcmp (operation, "uniq")) {
 				eprintf ("Invalid column name (%s) for (%s)\n", columnName, query);
+			} else if (columnName) {
+				if (*columnName == '[') {
+					col = atoi (columnName + 1);
+				}
 			}
 		}
 		if (!operation) {

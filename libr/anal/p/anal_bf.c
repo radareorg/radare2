@@ -6,7 +6,7 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
-static int countChar (const ut8 *buf, int len, char ch) {
+static size_t countChar(const ut8 *buf, int len, char ch) {
 	int i;
 	for (i = 0; i < len; i++) {
 		if (buf[i] != ch) {

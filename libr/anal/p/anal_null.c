@@ -10,7 +10,7 @@ static int null_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	return op->size = 1;
 }
 
-static int null_set_reg_profile(RAnal* anal){
+static bool null_set_reg_profile(RAnal* anal){
 	return r_reg_set_profile_string(anal->reg, "");
 }
 

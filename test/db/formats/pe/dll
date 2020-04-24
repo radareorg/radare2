@@ -1,0 +1,25 @@
+NAME=PE: corkami dll.dll - open
+FILE=bins/pe/dll.dll
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=PE: corkami dll.dll - entrypoint
+FILE=bins/pe/dll.dll
+CMDS=s
+EXPECT=<<EOF
+0x1001000
+EOF
+RUN
+
+NAME=PE: corkami dll.dll - pi 1
+FILE=bins/pe/dll.dll
+CMDS=<<EOF
+e asm.filter=false
+pi 1
+EOF
+EXPECT=<<EOF
+cmp dword [esp + 8], 1
+EOF
+RUN

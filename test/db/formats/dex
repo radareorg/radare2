@@ -1,0 +1,1410 @@
+NAME=invalid codesize DEX file
+FILE=bins/dex/Call.dex
+CMDS=<<EOF
+om
+s
+EOF
+EXPECT=<<EOF
+ 1 fd: 3 +0x00000000 0x00000000 - 0x0000041b r-- fmap.file
+0x35d
+EOF
+RUN
+
+NAME=loading DEX file
+FILE=bins/dex/Hello.dex
+CMDS=iZ
+EXPECT=<<EOF
+1000
+EOF
+RUN
+
+NAME=Checking file size
+FILE=bins/dex/HelloSlack.dex
+CMDS=<<EOF
+?v $s
+iZ
+EOF
+EXPECT=<<EOF
+0x800
+1000
+EOF
+RUN
+
+NAME=DEX: entrypoint
+FILE=bins/dex/HelloSlack.dex
+CMDS=?v entry0
+EXPECT=<<EOF
+0x1c0
+EOF
+RUN
+
+NAME=DEX dex38.dex ie command
+FILE=bins/dex/dex38.dex
+CMDS=ie
+EXPECT=<<EOF
+[Entrypoints]
+vaddr=0x00001378 paddr=0x00001378 haddr=-1 type=program
+
+1 entrypoints
+EOF
+RUN
+
+NAME=DEX dex38.dex invoke-polymorphic
+FILE=bins/dex/dex38.dex
+CMDS=pi 2 @0x00125e; pi 3 @0x0012da
+EXPECT=<<EOF
+invoke-polymorphic {v1, v2, v3}, Ljava/lang/invoke/MethodHandle.invoke([Ljava/lang/Object;)Ljava/lang/Object;, (II)Ljava/lang/Object;
+move-result-object v1
+invoke-polymorphic {v0, v1, v2}, Ljava/lang/invoke/MethodHandle.invoke([Ljava/lang/Object;)Ljava/lang/Object;, (Ljava/lang/String;I)Ljava/lang/Object;
+move-result-object v0
+return-object v0
+EOF
+RUN
+
+NAME=DEX dex38.dex invoke-custom
+FILE=bins/dex/dex38.dex
+CMDS=pi 3 @0x00112c
+EXPECT=<<EOF
+invoke-custom {v0, v1}, call_site+0
+move-result-object v0
+return-object v0
+EOF
+RUN
+
+NAME=DEX Hello.dex classes (ic command)
+FILE=bins/dex/Hello.dex
+CMDS=ic
+EXPECT=<<EOF
+0x00000174 [0x000001a4 - 0x0000021e]    122 class 0 LHello :: Ljava/lang/Object;
+0x000001a4 method 0 pC   LHello.method.<init>(Ljava/lang/String;)V
+0x000001c0 method 1 sp   LHello.method.main([Ljava/lang/String;)V
+0x000001e8 method 2 p    LHello.method.say()V
+EOF
+RUN
+
+NAME=DEX Hello.dex single class (ic LHello)
+FILE=bins/dex/Hello.dex
+CMDS=ic LHello
+EXPECT=<<EOF
+class LHello
+0x000001a4 method LHello pC   LHello.method.<init>(Ljava/lang/String;)V
+0x000001c0 method LHello sp   LHello.method.main([Ljava/lang/String;)V
+0x000001e8 method LHello p    LHello.method.say()V
+EOF
+RUN
+
+NAME=DEX Hello.dex classes quiet (icq command)
+FILE=bins/dex/Hello.dex
+CMDS=icq
+EXPECT=<<EOF
+0x00000174 [0x000001a4 - 0x0000021e] LHello Ljava/lang/Object;
+EOF
+RUN
+
+NAME=DEX Hello.dex method flags (JSON) (icj)
+FILE=bins/dex/Hello.dex
+CMDS=<<EOF
+icj~{[0].methods[1].flags[0]}
+icj~{[0].methods[1].flags[1]}
+EOF
+EXPECT=<<EOF
+static
+public
+EOF
+RUN
+
+NAME=DEX Hello.dex method flags (r2 commands) (ic*)
+FILE=bins/dex/Hello.dex
+CMDS=ic*~main
+EXPECT=<<EOF
+"f method.static.public.LHello.LHello.method.main([Ljava/lang/String;)V = 0x1c0"
+EOF
+RUN
+
+NAME=DEX HelloWorld.dex symbols, fields and statics (isq command)
+FILE=bins/dex/HelloWorld.dex
+CMDS=isq
+EXPECT=<<EOF
+0x00000168 0 LHello.sfield_localVar2:I
+0x00000160 0 LHello.ifield_localVar:I
+0x00000238 20 LHello.method.<init>()V
+0x0000025c 34 LHello.method.main([Ljava/lang/String;)V
+0x00000290 84 LHello.method.foo(I)V
+0x00000170 0 LWorld.ifield_worldVar:I
+0x00000178 0 LWorld.ifield_worldVar2:I
+0x000002f4 20 LWorld.method.<init>()V
+0x00000318 68 LWorld.method.foo(I)V
+0x000001b0 0 imp.Ljava/io/PrintStream.method.println(Ljava/lang/String;)V
+0x000001b8 0 imp.Ljava/lang/Integer.method.<init>(I)V
+0x000001c0 0 imp.Ljava/lang/Integer.method.toString()Ljava/lang/String;
+0x000001c8 0 imp.Ljava/lang/Object.method.<init>()V
+0x000001d0 0 imp.Ljava/lang/StringBuilder.method.<init>()V
+0x000001d8 0 imp.Ljava/lang/StringBuilder.method.append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+0x000001e0 0 imp.Ljava/lang/StringBuilder.method.toString()Ljava/lang/String;
+EOF
+RUN
+
+NAME=DEX HelloWorld.dex flags (f command)
+FILE=bins/dex/HelloWorld.dex
+CMDS=f
+EXPECT=<<EOF
+0x00000000 112 section.header
+0x00000000 1460 section.file
+0x00000000 1460 segment.file
+0x00000070 440 section.constpool
+0x00000160 0 sym.LHello.ifield_localVar:I
+0x00000168 0 sym.LHello.sfield_localVar2:I
+0x00000170 0 sym.LWorld.ifield_worldVar:I
+0x00000178 0 sym.LWorld.ifield_worldVar2:I
+0x000001b0 0 sym.imp.Ljava_io_PrintStream.method.println_Ljava_lang_String__V
+0x000001b8 0 sym.imp.Ljava_lang_Integer.method._init__I_V
+0x000001c0 0 sym.imp.Ljava_lang_Integer.method.toString__Ljava_lang_String
+0x000001c8 0 sym.imp.Ljava_lang_Object.method._init___V
+0x000001d0 0 sym.imp.Ljava_lang_StringBuilder.method._init___V
+0x000001d8 0 sym.imp.Ljava_lang_StringBuilder.method.append_Ljava_lang_String__Ljava_lang_StringBuilder
+0x000001e0 0 sym.imp.Ljava_lang_StringBuilder.method.toString__Ljava_lang_String
+0x000001e8 1 class.LHello
+0x00000208 1 class.LWorld
+0x00000228 308 section.code
+0x00000228 308 segment.code
+0x00000238 20 sym.LHello.method._init___V
+0x00000238 1 method.public.constructor.LHello.LHello.method._init___V
+0x0000025c 1 entry0
+0x0000025c 34 sym.LHello.method.main__Ljava_lang_String__V
+0x0000025c 1 method.static.public.LHello.LHello.method.main__Ljava_lang_String__V
+0x00000290 84 sym.LHello.method.foo_I_V
+0x00000290 1 method.public.LHello.LHello.method.foo_I_V
+0x000002f4 20 sym.LWorld.method._init___V
+0x000002f4 1 method.public.constructor.LWorld.LWorld.method._init___V
+0x00000318 68 sym.LWorld.method.foo_I_V
+0x00000318 1 method.public.LWorld.LWorld.method.foo_I_V
+0x00000372 6 str.init
+0x0000037a 6 str.Findus
+0x00000382 10 str.Hello.java
+0x00000394 7 str.LHello
+0x000003a1 7 str.LWorld
+0x00000438 10 str.World.java
+0x00000459 6 str.append
+0x00000466 6 str.foo
+0x0000046e 8 str.localVar
+0x00000478 9 str.localVar2
+0x0000048e 7 str.println
+0x00000497 8 str.toString
+0x000004a1 8 str.world
+0x000004ab 8 str.worldVar
+0x000004b5 9 str.worldVar2
+0x000004bc 248 section.data
+EOF
+RUN
+
+NAME=DEX HelloWorld.dex imports (ii command)
+FILE=bins/dex/HelloWorld.dex
+CMDS=ii
+EXPECT=<<EOF
+[Imports]
+nth vaddr      bind type lib name
+---------------------------------
+0   0x000001b0 NONE FUNC     Ljava/io/PrintStream.method.println(Ljava/lang/String;)V
+1   0x000001b8 NONE FUNC     Ljava/lang/Integer.method.<init>(I)V
+2   0x000001c0 NONE FUNC     Ljava/lang/Integer.method.toString()Ljava/lang/String;
+3   0x000001c8 NONE FUNC     Ljava/lang/Object.method.<init>()V
+4   0x000001d0 NONE FUNC     Ljava/lang/StringBuilder.method.<init>()V
+5   0x000001d8 NONE FUNC     Ljava/lang/StringBuilder.method.append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+6   0x000001e0 NONE FUNC     Ljava/lang/StringBuilder.method.toString()Ljava/lang/String;
+
+EOF
+RUN
+
+NAME=DEX HelloWorld.dex exports (iE command)
+FILE=bins/dex/HelloWorld.dex
+CMDS=iE
+EXPECT=<<EOF
+[Exports]
+
+nth paddr       vaddr      bind   type size lib name
+----------------------------------------------------
+2    0x00000238 0x00000238 GLOBAL FUNC 20       LHello.method.<init>()V
+3    0x0000025c 0x0000025c GLOBAL FUNC 34       LHello.method.main([Ljava/lang/String;)V
+4    0x00000290 0x00000290 GLOBAL FUNC 84       LHello.method.foo(I)V
+7    0x000002f4 0x000002f4 GLOBAL FUNC 20       LWorld.method.<init>()V
+8    0x00000318 0x00000318 GLOBAL FUNC 68       LWorld.method.foo(I)V
+EOF
+RUN
+
+NAME=DEX HelloWorld.dex pi command
+FILE=bins/dex/HelloWorld.dex
+CMDS=pi 1 @0x240; pi 1 @0x246; pi 1 @0x25c; pi 1 @0x264; pi 1 @0x276; pi 1 @0x026a; pi 1 @0x0294; pi 1 @0x0298
+EXPECT=<<EOF
+iput v0, v1, LHello;->localVar I
+sput v0, LHello;->localVar2 I
+sget-object v0, Ljava/lang/System;->out Ljava/io/PrintStream;
+invoke-virtual {v0, v1}, Ljava/io/PrintStream.println(Ljava/lang/String;)V ; 0x5
+invoke-virtual {v0, v1}, LHello.foo(I)V ; 0x1
+new-instance v0, LHello;
+new-instance v1, Ljava/lang/StringBuilder;
+invoke-direct {v1}, Ljava/lang/StringBuilder.<init>()V ; 0x9
+EOF
+RUN
+
+NAME=DEX HelloWorld.dex debug info
+FILE=bins/dex/HelloWorld.dex
+CMDS=e io.va=0; pd 1 @0x00000290|grep Hello.java; pd 1 @0x000002f4|grep World.java; pd 1 @0x00000318|grep World.java;
+EXPECT=<<EOF
+            0x00000290      62000400       sget-object v0, Ljava/lang/System;->out Ljava/io/PrintStream; ; Hello.java:9 ; 0x180
+            0x000002f4      701008000100   invoke-direct {v1}, Ljava/lang/Object.<init>()V ; 0x8 ; World.java:5
+            0x00000318      62000400       sget-object v0, Ljava/lang/System;->out Ljava/io/PrintStream; ; World.java:11 ; 0x180
+EOF
+RUN
+
+NAME=DEX HelloWorld.dex debug info CL
+FILE=bins/dex/HelloWorld.dex
+CMDS=<<EOF
+CL 0x00000290;CL.@0x000002f4;CL.@0x00000318
+CL~?
+EOF
+EXPECT=<<EOF
+file: Hello.java
+line: 9
+file: World.java
+line: 5
+file: World.java
+line: 11
+34
+EOF
+RUN
+
+NAME=DEX HelloWorld.dex dexdump
+FILE=bins/dex/HelloWorld.dex
+CMDS=iHH
+EXPECT=<<EOF
+DEX file header:
+magic               : 'dex\n035\0'
+checksum            : 190ab819
+signature           : 86db...7869
+file_size           : 1460
+header_size         : 112
+link_size           : 0
+link_off            : 0 (0x000000)
+string_ids_size     : 31
+string_ids_off      : 112 (0x000070)
+type_ids_size       : 11
+type_ids_off        : 236 (0x0000ec)
+proto_ids_size      : 6
+proto_ids_off       : 280 (0x000118)
+field_ids_size      : 5
+field_ids_off       : 352 (0x000160)
+method_ids_size     : 12
+method_ids_off      : 392 (0x000188)
+class_defs_size     : 2
+class_defs_off      : 488 (0x0001e8)
+data_size           : 908
+data_off            : 552 (0x000228)
+
+Class #0            -
+  Class descriptor  : 'LHello;'
+  Access flags      : 0x0001 (PUBLIC)
+  Superclass        : 'Ljava/lang/Object;'
+  Interfaces        -
+  Static fields     -
+    #0              : (in LHello;)
+      name          : 'localVar2'
+      type          : 'I'
+      access        : 0x0008 (STATIC)
+  Instance fields   -
+    #0              : (in LHello;)
+      name          : 'localVar'
+      type          : 'I'
+      access        : 0x0000 ()
+  Direct methods    -
+    #0              : (in LHello;)
+      name          : '<init>'
+      type          : '()V'
+      access        : 0x10001 (PUBLIC CONSTRUCTOR)
+      code          -
+      registers     : 2
+      ins           : 1
+      outs          : 1
+      insns size    : 10 16-bit code units
+      catches       : (none)
+      positions     :
+        0x0000 line=4
+        0x0003 line=5
+        0x0006 line=6
+        0x0009 line=7
+      locals        :
+        0x0000 - 0x000a reg=1 this LHello;
+    #1              : (in LHello;)
+      name          : 'main'
+      type          : '([Ljava/lang/String;)V'
+      access        : 0x0009 (PUBLIC STATIC)
+      code          -
+      registers     : 3
+      ins           : 1
+      outs          : 2
+      insns size    : 17 16-bit code units
+      catches       : (none)
+      positions     :
+        0x0000 line=14
+        0x0007 line=15
+        0x000c line=16
+        0x0010 line=17
+      locals        :
+  Virtual methods   -
+    #0              : (in LHello;)
+      name          : 'foo'
+      type          : '(I)V'
+      access        : 0x0001 (PUBLIC)
+      code          -
+      registers     : 5
+      ins           : 2
+      outs          : 2
+      insns size    : 42 16-bit code units
+      catches       : (none)
+      positions     :
+        0x0000 line=9
+        0x0021 line=10
+        0x0029 line=11
+      locals        :
+        0x0000 - 0x002a reg=3 this LHello;
+  source_file_idx   : 2 (Hello.java)
+
+Class #1            -
+  Class descriptor  : 'LWorld;'
+  Access flags      : 0x0001 (PUBLIC)
+  Superclass        : 'Ljava/lang/Object;'
+  Interfaces        -
+  Static fields     -
+  Instance fields   -
+    #0              : (in LWorld;)
+      name          : 'worldVar'
+      type          : 'I'
+      access        : 0x0000 ()
+    #1              : (in LWorld;)
+      name          : 'worldVar2'
+      type          : 'I'
+      access        : 0x0000 ()
+  Direct methods    -
+    #0              : (in LWorld;)
+      name          : '<init>'
+      type          : '()V'
+      access        : 0x10001 (PUBLIC CONSTRUCTOR)
+      code          -
+      registers     : 2
+      ins           : 1
+      outs          : 1
+      insns size    : 10 16-bit code units
+      catches       : (none)
+      positions     :
+        0x0000 line=5
+        0x0003 line=6
+        0x0006 line=7
+        0x0009 line=8
+      locals        :
+        0x0000 - 0x000a reg=1 this LWorld;
+  Virtual methods   -
+    #0              : (in LWorld;)
+      name          : 'foo'
+      type          : '(I)V'
+      access        : 0x0001 (PUBLIC)
+      code          -
+      registers     : 5
+      ins           : 2
+      outs          : 2
+      insns size    : 34 16-bit code units
+      catches       : (none)
+      positions     :
+        0x0000 line=11
+        0x0021 line=12
+      locals        :
+        0x0000 - 0x0022 reg=3 this LWorld;
+  source_file_idx   : 17 (World.java)
+
+EOF
+RUN
+
+NAME=DEX radare2installer.dex classes (ic command)
+FILE=bins/dex/org.radare.radare2installer.dex
+CMDS=ic
+EXPECT=<<EOF
+0x00007890 [0x0000c6c0 - 0x0000cd2e]   1646 class 0 Lcom/ice/tar/FastTarStream :: Ljava/lang/Object;
+0x0000c6c0 method 0 pC   Lcom/ice/tar/FastTarStream.method.<init>(Ljava/io/InputStream;)V
+0x0000c6dc method 1 pC   Lcom/ice/tar/FastTarStream.method.<init>(Ljava/io/InputStream;I)V
+0x0000c720 method 2 sp   Lcom/ice/tar/FastTarStream.method.main([Ljava/lang/String;)V
+0x0000ca5c method 3 p    Lcom/ice/tar/FastTarStream.method.getNextEntry()Lcom/ice/tar/TarEntry;
+0x0000cd28 method 4 p    Lcom/ice/tar/FastTarStream.method.setDebug(Z)V
+0x000078b0 [0x0000cd40 - 0x0000cd60]     32 class 1 Lcom/ice/tar/InvalidHeaderException :: Ljava/io/IOException;
+0x0000cd40 method 0 pC   Lcom/ice/tar/InvalidHeaderException.method.<init>()V
+0x0000cd58 method 1 pC   Lcom/ice/tar/InvalidHeaderException.method.<init>(Ljava/lang/String;)V
+0x000078d0 [0x0000cd70 - 0x0000db74]   3588 class 2 Lcom/ice/tar/TarArchive :: Ljava/lang/Object;
+0x0000cd70 method 0 pC   Lcom/ice/tar/TarArchive.method.<init>(Ljava/io/InputStream;)V
+0x0000cd8c method 1 pC   Lcom/ice/tar/TarArchive.method.<init>(Ljava/io/InputStream;I)V
+0x0000cda8 method 2 pC   Lcom/ice/tar/TarArchive.method.<init>(Ljava/io/InputStream;II)V
+0x0000cdd4 method 3 pC   Lcom/ice/tar/TarArchive.method.<init>(Ljava/io/OutputStream;)V
+0x0000cdf0 method 4 pC   Lcom/ice/tar/TarArchive.method.<init>(Ljava/io/OutputStream;I)V
+0x0000ce0c method 5 pC   Lcom/ice/tar/TarArchive.method.<init>(Ljava/io/OutputStream;II)V
+0x0000ce38 method 6 P    Lcom/ice/tar/TarArchive.method.extractEntry(Ljava/io/File;Lcom/ice/tar/TarEntry;)V
+0x0000d388 method 7 P    Lcom/ice/tar/TarArchive.method.getTempFilePath(Ljava/io/File;)Ljava/lang/String;
+0x0000d460 method 8 P    Lcom/ice/tar/TarArchive.method.initialize(I)V
+0x0000d4c8 method 9 p    Lcom/ice/tar/TarArchive.method.closeArchive()V
+0x0000d500 method 10 p    Lcom/ice/tar/TarArchive.method.extractContents(Ljava/io/File;)V
+0x0000d540 method 11 p    Lcom/ice/tar/TarArchive.method.getGroupId()I
+0x0000d558 method 12 p    Lcom/ice/tar/TarArchive.method.getGroupName()Ljava/lang/String;
+0x0000d570 method 13 p    Lcom/ice/tar/TarArchive.method.getRecordSize()I
+0x0000d5b4 method 14 p    Lcom/ice/tar/TarArchive.method.getTempDirectory()Ljava/lang/String;
+0x0000d5cc method 15 p    Lcom/ice/tar/TarArchive.method.getUserId()I
+0x0000d5e4 method 16 p    Lcom/ice/tar/TarArchive.method.getUserName()Ljava/lang/String;
+0x0000d5fc method 17 p    Lcom/ice/tar/TarArchive.method.isVerbose()Z
+0x0000d614 method 18 p    Lcom/ice/tar/TarArchive.method.listContents()V
+0x0000d668 method 19 p    Lcom/ice/tar/TarArchive.method.setAsciiTranslation(Z)V
+0x0000d680 method 20 p    Lcom/ice/tar/TarArchive.method.setDebug(Z)V
+0x0000d6bc method 21 p    Lcom/ice/tar/TarArchive.method.setKeepOldFiles(Z)V
+0x0000d6d4 method 22 p    Lcom/ice/tar/TarArchive.method.setTarProgressDisplay(Lcom/ice/tar/TarProgressDisplay;)V
+0x0000d6ec method 23 p    Lcom/ice/tar/TarArchive.method.setTempDirectory(Ljava/lang/String;)V
+0x0000d704 method 24 p    Lcom/ice/tar/TarArchive.method.setTransFileTyper(Lcom/ice/tar/TarTransFileTyper;)V
+0x0000d71c method 25 p    Lcom/ice/tar/TarArchive.method.setUserInfo(ILjava/lang/String;ILjava/lang/String;)V
+0x0000d740 method 26 p    Lcom/ice/tar/TarArchive.method.setVerbose(Z)V
+0x0000d758 method 27 p    Lcom/ice/tar/TarArchive.method.writeEntry(Lcom/ice/tar/TarEntry;Z)V
+0x000078f0 [0x0000dba8 - 0x0000e3bc]   2068 class 3 Lcom/ice/tar/TarBuffer :: Ljava/lang/Object;
+0x0000dba8 method 0 pC   Lcom/ice/tar/TarBuffer.method.<init>(Ljava/io/InputStream;)V
+0x0000dbc4 method 1 pC   Lcom/ice/tar/TarBuffer.method.<init>(Ljava/io/InputStream;I)V
+0x0000dbe0 method 2 pC   Lcom/ice/tar/TarBuffer.method.<init>(Ljava/io/InputStream;II)V
+0x0000dc08 method 3 pC   Lcom/ice/tar/TarBuffer.method.<init>(Ljava/io/OutputStream;)V
+0x0000dc24 method 4 pC   Lcom/ice/tar/TarBuffer.method.<init>(Ljava/io/OutputStream;I)V
+0x0000dc40 method 5 pC   Lcom/ice/tar/TarBuffer.method.<init>(Ljava/io/OutputStream;II)V
+0x0000dc68 method 6 P    Lcom/ice/tar/TarBuffer.method.flushBlock()V
+0x0000dcdc method 7 P    Lcom/ice/tar/TarBuffer.method.initialize(II)V
+0x0000dd38 method 8 P    Lcom/ice/tar/TarBuffer.method.readBlock()Z
+0x0000de54 method 9 P    Lcom/ice/tar/TarBuffer.method.writeBlock()V
+0x0000dee8 method 10 p    Lcom/ice/tar/TarBuffer.method.close()V
+0x0000df6c method 11 p    Lcom/ice/tar/TarBuffer.method.getBlockSize()I
+0x0000df84 method 12 p    Lcom/ice/tar/TarBuffer.method.getCurrentBlockNum()I
+0x0000df9c method 13 p    Lcom/ice/tar/TarBuffer.method.getCurrentRecordNum()I
+0x0000dfb8 method 14 p    Lcom/ice/tar/TarBuffer.method.getRecordSize()I
+0x0000dfd0 method 15 p    Lcom/ice/tar/TarBuffer.method.isEOFRecord([B)Z
+0x0000e004 method 16 p    Lcom/ice/tar/TarBuffer.method.readRecord()[B
+0x0000e0cc method 17 p    Lcom/ice/tar/TarBuffer.method.setDebug(Z)V
+0x0000e0e4 method 18 p    Lcom/ice/tar/TarBuffer.method.skipRecord()V
+0x0000e188 method 19 p    Lcom/ice/tar/TarBuffer.method.writeRecord([B)V
+0x0000e2a0 method 20 p    Lcom/ice/tar/TarBuffer.method.writeRecord([BI)V
+0x00007910 [0x0000e3cc - 0x0000f29a]   3790 class 4 Lcom/ice/tar/TarEntry :: Ljava/lang/Object;
+0x0000e3cc method 0 rC   Lcom/ice/tar/TarEntry.method.<init>()V
+0x0000e3e4 method 1 pC   Lcom/ice/tar/TarEntry.method.<init>(Ljava/io/File;)V
+0x0000e40c method 2 pC   Lcom/ice/tar/TarEntry.method.<init>(Ljava/lang/String;)V
+0x0000e434 method 3 pC   Lcom/ice/tar/TarEntry.method.<init>([B)V
+0x0000e45c method 4 P    Lcom/ice/tar/TarEntry.method.initialize()V
+0x0000e494 method 5 p    Lcom/ice/tar/TarEntry.method.clone()Ljava/lang/Object;
+0x0000e514 method 6 p    Lcom/ice/tar/TarEntry.method.computeCheckSum([B)J
+0x0000e544 method 7 p    Lcom/ice/tar/TarEntry.method.equals(Lcom/ice/tar/TarEntry;)Z
+0x0000e580 method 8 p    Lcom/ice/tar/TarEntry.method.getDirectoryEntries()[Lcom/ice/tar/TarEntry;
+0x0000e5f0 method 9 p    Lcom/ice/tar/TarEntry.method.getFile()Ljava/io/File;
+0x0000e608 method 10 p    Lcom/ice/tar/TarEntry.method.getFileTarHeader(Lcom/ice/tar/TarHeader;Ljava/io/File;)V
+0x0000e77c method 11 p    Lcom/ice/tar/TarEntry.method.getGroupId()I
+0x0000e798 method 12 p    Lcom/ice/tar/TarEntry.method.getGroupName()Ljava/lang/String;
+0x0000e7bc method 13 p    Lcom/ice/tar/TarEntry.method.getHeader()Lcom/ice/tar/TarHeader;
+0x0000e7d4 method 14 p    Lcom/ice/tar/TarEntry.method.getModTime()Ljava/util/Date;
+0x0000e800 method 15 p    Lcom/ice/tar/TarEntry.method.getName()Ljava/lang/String;
+0x0000e824 method 16 p    Lcom/ice/tar/TarEntry.method.getSize()J
+0x0000e840 method 17 p    Lcom/ice/tar/TarEntry.method.getUserId()I
+0x0000e85c method 18 p    Lcom/ice/tar/TarEntry.method.getUserName()Ljava/lang/String;
+0x0000e880 method 19 p    Lcom/ice/tar/TarEntry.method.isDescendent(Lcom/ice/tar/TarEntry;)Z
+0x0000e8bc method 20 p    Lcom/ice/tar/TarEntry.method.isDirectory()Z
+0x0000e920 method 21 p    Lcom/ice/tar/TarEntry.method.isGNUTarFormat()Z
+0x0000e938 method 22 p    Lcom/ice/tar/TarEntry.method.isSymbolicLink()Z
+0x0000e968 method 23 p    Lcom/ice/tar/TarEntry.method.isUSTarFormat()Z
+0x0000e980 method 24 p    Lcom/ice/tar/TarEntry.method.isUnixTarFormat()Z
+0x0000e998 method 25 p    Lcom/ice/tar/TarEntry.method.nameTarHeader(Lcom/ice/tar/TarHeader;Ljava/lang/String;)V
+0x0000ea74 method 26 p    Lcom/ice/tar/TarEntry.method.parseTarHeader(Lcom/ice/tar/TarHeader;[B)V
+0x0000ee08 method 27 p    Lcom/ice/tar/TarEntry.method.setGNUTarFormat()V
+0x0000ee2c method 28 p    Lcom/ice/tar/TarEntry.method.setGroupId(I)V
+0x0000ee48 method 29 p    Lcom/ice/tar/TarEntry.method.setGroupName(Ljava/lang/String;)V
+0x0000ee6c method 30 p    Lcom/ice/tar/TarEntry.method.setIds(II)V
+0x0000ee8c method 31 p    Lcom/ice/tar/TarEntry.method.setModTime(J)V
+0x0000eeb0 method 32 p    Lcom/ice/tar/TarEntry.method.setModTime(Ljava/util/Date;)V
+0x0000eed8 method 33 p    Lcom/ice/tar/TarEntry.method.setName(Ljava/lang/String;)V
+0x0000eefc method 34 p    Lcom/ice/tar/TarEntry.method.setNames(Ljava/lang/String;Ljava/lang/String;)V
+0x0000ef1c method 35 p    Lcom/ice/tar/TarEntry.method.setSize(J)V
+0x0000ef38 method 36 p    Lcom/ice/tar/TarEntry.method.setUSTarFormat()V
+0x0000ef5c method 37 p    Lcom/ice/tar/TarEntry.method.setUnixTarFormat()V
+0x0000ef80 method 38 p    Lcom/ice/tar/TarEntry.method.setUserId(I)V
+0x0000ef9c method 39 p    Lcom/ice/tar/TarEntry.method.setUserName(Ljava/lang/String;)V
+0x0000efc0 method 40 p    Lcom/ice/tar/TarEntry.method.toString()Ljava/lang/String;
+0x0000f0b8 method 41 p    Lcom/ice/tar/TarEntry.method.writeEntryHeader([B)V
+0x00007930 [0x0000f2ac - 0x0000f394]    232 class 5 Lcom/ice/tar/TarEntryEnumerator :: Ljava/lang/Object;
+0x0000f2ac method 0 pC   Lcom/ice/tar/TarEntryEnumerator.method.<init>(Lcom/ice/tar/TarInputStream;)V
+0x0000f2dc method 1 P    Lcom/ice/tar/TarEntryEnumerator.method.getNext()Lcom/ice/tar/TarEntry;
+0x0000f320 method 2 p    Lcom/ice/tar/TarEntryEnumerator.method.hasMoreElements()Z
+0x0000f358 method 3 p    Lcom/ice/tar/TarEntryEnumerator.method.nextElement()Ljava/lang/Object;
+0x00007950 [0x0000f3a4 - 0x0000f90e]   1386 class 6 Lcom/ice/tar/TarHeader :: Ljava/lang/Object;
+0x0000f3a4 method 0 pC   Lcom/ice/tar/TarHeader.method.<init>()V
+0x0000f43c method 1 sp   Lcom/ice/tar/TarHeader.method.getCheckSumOctalBytes(J[BII)I
+0x0000f478 method 2 sp   Lcom/ice/tar/TarHeader.method.getFileNameBytes(Ljava/lang/String;[B)I
+0x0000f558 method 3 sp   Lcom/ice/tar/TarHeader.method.getLongOctalBytes(J[BII)I
+0x0000f588 method 4 sp   Lcom/ice/tar/TarHeader.method.getNameBytes(Ljava/lang/StringBuffer;[BII)I
+0x0000f5dc method 5 sp   Lcom/ice/tar/TarHeader.method.getOctalBytes(J[BII)I
+0x0000f680 method 6 sp   Lcom/ice/tar/TarHeader.method.parseFileName([B)Ljava/lang/StringBuffer;
+0x0000f700 method 7 sp   Lcom/ice/tar/TarHeader.method.parseName([BII)Ljava/lang/StringBuffer;
+0x0000f740 method 8 sp   Lcom/ice/tar/TarHeader.method.parseOctal([BII)J
+0x0000f7ac method 9 p    Lcom/ice/tar/TarHeader.method.clone()Ljava/lang/Object;
+0x0000f900 method 10 p    Lcom/ice/tar/TarHeader.method.getName()Ljava/lang/String;
+0x00007970 [0x0000a2ca - 0x0000a2d3]      9 class 7 Lcom/ice/tar/TarInputStream$EntryFactory :: Ljava/lang/Object;
+0x0000a2ca method 0 pa   Lcom/ice/tar/TarInputStream$EntryFactory.method.createEntry(Ljava/io/File;)Lcom/ice/tar/TarEntry;
+0x0000a2cf method 1 pa   Lcom/ice/tar/TarInputStream$EntryFactory.method.createEntry(Ljava/lang/String;)Lcom/ice/tar/TarEntry;
+0x0000a2d3 method 2 pa   Lcom/ice/tar/TarInputStream$EntryFactory.method.createEntry([B)Lcom/ice/tar/TarEntry;
+0x00007990 [0x0000f920 - 0x0000ff74]   1620 class 8 Lcom/ice/tar/TarInputStream :: Ljava/io/FilterInputStream;
+0x0000f920 method 0 pC   Lcom/ice/tar/TarInputStream.method.<init>(Ljava/io/InputStream;)V
+0x0000f940 method 1 pC   Lcom/ice/tar/TarInputStream.method.<init>(Ljava/io/InputStream;I)V
+0x0000f95c method 2 pC   Lcom/ice/tar/TarInputStream.method.<init>(Ljava/io/InputStream;II)V
+0x0000f9a0 method 3 p    Lcom/ice/tar/TarInputStream.method.available()I
+0x0000f9c0 method 4 p    Lcom/ice/tar/TarInputStream.method.close()V
+0x0000f9dc method 5 p    Lcom/ice/tar/TarInputStream.method.copyEntryContents(Ljava/io/OutputStream;)V
+0x0000fa14 method 6 p    Lcom/ice/tar/TarInputStream.method.getEntryPosition()J
+0x0000fa2c method 7 p    Lcom/ice/tar/TarInputStream.method.getNextEntry()Lcom/ice/tar/TarEntry;
+0x0000fcb8 method 8 p    Lcom/ice/tar/TarInputStream.method.getRecordSize()I
+0x0000fcd8 method 9 p    Lcom/ice/tar/TarInputStream.method.getStreamPosition()J
+0x0000fd14 method 10 p    Lcom/ice/tar/TarInputStream.method.mark(I)V
+0x0000fd28 method 11 p    Lcom/ice/tar/TarInputStream.method.markSupported()Z
+0x0000fd3c method 12 p    Lcom/ice/tar/TarInputStream.method.read()I
+0x0000fd70 method 13 p    Lcom/ice/tar/TarInputStream.method.read([B)I
+0x0000fd90 method 14 p    Lcom/ice/tar/TarInputStream.method.read([BII)I
+0x0000fed0 method 15 p    Lcom/ice/tar/TarInputStream.method.reset()V
+0x0000fee4 method 16 p    Lcom/ice/tar/TarInputStream.method.setBufferDebug(Z)V
+0x0000ff00 method 17 p    Lcom/ice/tar/TarInputStream.method.setDebug(Z)V
+0x0000ff18 method 18 p    Lcom/ice/tar/TarInputStream.method.setEntryFactory(Lcom/ice/tar/TarInputStream$EntryFactory;)V
+0x0000ff30 method 19 p    Lcom/ice/tar/TarInputStream.method.skip(J)J
+0x000079b0 [0x0000ff84 - 0x00010442]   1214 class 9 Lcom/ice/tar/TarOutputStream :: Ljava/io/FilterOutputStream;
+0x0000ff84 method 0 pC   Lcom/ice/tar/TarOutputStream.method.<init>(Ljava/io/OutputStream;)V
+0x0000ffa4 method 1 pC   Lcom/ice/tar/TarOutputStream.method.<init>(Ljava/io/OutputStream;I)V
+0x0000ffc0 method 2 pC   Lcom/ice/tar/TarOutputStream.method.<init>(Ljava/io/OutputStream;II)V
+0x0001000c method 3 P    Lcom/ice/tar/TarOutputStream.method.writeEOFRecord()V
+0x00010048 method 4 p    Lcom/ice/tar/TarOutputStream.method.close()V
+0x0001006c method 5 p    Lcom/ice/tar/TarOutputStream.method.closeEntry()V
+0x00010130 method 6 p    Lcom/ice/tar/TarOutputStream.method.finish()V
+0x00010148 method 7 p    Lcom/ice/tar/TarOutputStream.method.getRecordSize()I
+0x00010168 method 8 p    Lcom/ice/tar/TarOutputStream.method.putNextEntry(Lcom/ice/tar/TarEntry;)V
+0x0001027c method 9 p    Lcom/ice/tar/TarOutputStream.method.setBufferDebug(Z)V
+0x00010298 method 10 p    Lcom/ice/tar/TarOutputStream.method.setDebug(Z)V
+0x000102b0 method 11 p    Lcom/ice/tar/TarOutputStream.method.write(I)V
+0x000102dc method 12 p    Lcom/ice/tar/TarOutputStream.method.write([B)V
+0x000102f8 method 13 p    Lcom/ice/tar/TarOutputStream.method.write([BII)V
+0x000079d0 [0x0000a3bf - 0x0000a3bf]      0 class 10 Lcom/ice/tar/TarProgressDisplay :: Ljava/lang/Object;
+0x0000a3bf method 0 pa   Lcom/ice/tar/TarProgressDisplay.method.showTarProgressMessage(Ljava/lang/String;)V
+0x000079f0 [0x00010454 - 0x00010484]     48 class 11 Lcom/ice/tar/TarTransFileTyper :: Ljava/lang/Object;
+0x00010454 method 0 pC   Lcom/ice/tar/TarTransFileTyper.method.<init>()V
+0x0001046c method 1 p    Lcom/ice/tar/TarTransFileTyper.method.isAsciiFile(Ljava/io/File;)Z
+0x00010480 method 2 p    Lcom/ice/tar/TarTransFileTyper.method.isAsciiFile(Ljava/lang/String;)Z
+0x00007a10 [0x00010494 - 0x0001049c]      8 class 12 Lcom/stericson/RootTools/BuildConfig :: Ljava/lang/Object;
+0x00010494 method 0 pC   Lcom/stericson/RootTools/BuildConfig.method.<init>()V
+0x00007a30 [0x0000a41b - 0x000107c0]  25509 class 13 Lcom/stericson/RootTools/Command :: Ljava/lang/Object;
+0x000104ac method 0 pgC  Lcom/stericson/RootTools/Command.method.<init>(II[Ljava/lang/String;)V
+0x000104e4 method 1 pgC  Lcom/stericson/RootTools/Command.method.<init>(I[Ljava/lang/String;)V
+0x00010518 method 2 p    Lcom/stericson/RootTools/Command.method.commandFinished(I)V
+0x0001055c method 3 p    Lcom/stericson/RootTools/Command.method.exitCode()I
+0x00010590 method 4 p    Lcom/stericson/RootTools/Command.method.exitCode(I)I
+0x000105cc method 5 p    Lcom/stericson/RootTools/Command.method.getCommand()Ljava/lang/String;
+0x0000a41b method 6 pa   Lcom/stericson/RootTools/Command.method.output(ILjava/lang/String;)V
+0x00010648 method 7 p    Lcom/stericson/RootTools/Command.method.setExitCode(I)V
+0x0001068c method 8 p    Lcom/stericson/RootTools/Command.method.terminate(Ljava/lang/String;)V
+0x000106c8 method 9 p    Lcom/stericson/RootTools/Command.method.terminated(Ljava/lang/String;)V
+0x00010718 method 10 p    Lcom/stericson/RootTools/Command.method.waitForFinish()V
+0x0001074c method 11 p    Lcom/stericson/RootTools/Command.method.waitForFinish(I)V
+0x000107a8 method 12 p    Lcom/stericson/RootTools/Command.method.writeCommand(Ljava/io/OutputStream;)V
+0x00007a50 [0x000107d0 - 0x0001117c]   2476 class 14 Lcom/stericson/RootTools/Executer$Worker :: Ljava/lang/Thread;
+0x000107d0 method 0 PC   Lcom/stericson/RootTools/Executer$Worker.method.<init>(Lcom/stericson/RootTools/Executer;[Ljava/lang/String;ILcom/stericson/RootTools/RootTools$Result;Z)V
+0x00010808 method 1 hC   Lcom/stericson/RootTools/Executer$Worker.method.<init>(Lcom/stericson/RootTools/Executer;[Ljava/lang/String;ILcom/stericson/RootTools/RootTools$Result;ZLcom/stericson/RootTools/Executer$Worker;)V
+0x00010820 method 2 p    Lcom/stericson/RootTools/Executer$Worker.method.run()V
+0x00007a70 [0x0001128c - 0x000113ce]    322 class 15 Lcom/stericson/RootTools/Executer :: Ljava/lang/Object;
+0x0001128c method 0 C    Lcom/stericson/RootTools/Executer.method.<init>()V
+0x000112b0 method 1 p    Lcom/stericson/RootTools/Executer.method.closeShell()V
+0x000112fc method 2 Y    Lcom/stericson/RootTools/Executer.method.sendShell([Ljava/lang/String;ILcom/stericson/RootTools/RootTools$Result;ZI)Ljava/util/List;
+0x00007a90 [0x0000a485 - 0x0000a4aa]     37 class 16 Lcom/stericson/RootTools/IResult :: Ljava/lang/Object;
+0x0000a485 method 0 pa   Lcom/stericson/RootTools/IResult.method.getData()Ljava/io/Serializable;
+0x0000a48a method 1 pa   Lcom/stericson/RootTools/IResult.method.getError()I
+0x0000a48e method 2 pa   Lcom/stericson/RootTools/IResult.method.getProcess()Ljava/lang/Process;
+0x0000a492 method 3 pa   Lcom/stericson/RootTools/IResult.method.onComplete(I)V
+0x0000a496 method 4 pa   Lcom/stericson/RootTools/IResult.method.onFailure(Ljava/lang/Exception;)V
+0x0000a49a method 5 pa   Lcom/stericson/RootTools/IResult.method.process(Ljava/lang/String;)V
+0x0000a49e method 6 pa   Lcom/stericson/RootTools/IResult.method.processError(Ljava/lang/String;)V
+0x0000a4a2 method 7 pa   Lcom/stericson/RootTools/IResult.method.setData(Ljava/io/Serializable;)Lcom/stericson/RootTools/IResult;
+0x0000a4a6 method 8 pa   Lcom/stericson/RootTools/IResult.method.setError(I)Lcom/stericson/RootTools/IResult;
+0x0000a4aa method 9 pa   Lcom/stericson/RootTools/IResult.method.setProcess(Ljava/lang/Process;)Lcom/stericson/RootTools/IResult;
+0x00007ab0 [0x00011410 - 0x00011862]   1106 class 17 Lcom/stericson/RootTools/Installer :: Ljava/lang/Object;
+0x00011410 method 0 pC   Lcom/stericson/RootTools/Installer.method.<init>(Landroid/content/Context;)V
+0x00011440 method 1 r    Lcom/stericson/RootTools/Installer.method.installBinary(ILjava/lang/String;Ljava/lang/String;)Z
+0x00011814 method 2 r    Lcom/stericson/RootTools/Installer.method.isBinaryInstalled(Ljava/lang/String;)Z
+0x00007ad0 [0x00011874 - 0x0001399c]   8488 class 18 Lcom/stericson/RootTools/InternalMethods :: Ljava/lang/Object;
+0x00011874 method 0 C    Lcom/stericson/RootTools/InternalMethods.method.<init>()V
+0x0001188c method 1 s    Lcom/stericson/RootTools/InternalMethods.method.checkUtil(Ljava/lang/String;)Z
+0x000119c8 method 2 sp   Lcom/stericson/RootTools/InternalMethods.method.copyFile(Ljava/lang/String;Ljava/lang/String;ZZ)Z
+0x00011cf0 method 3 sp   Lcom/stericson/RootTools/InternalMethods.method.exists(Ljava/lang/String;)Z
+0x00011e5c method 4 s    Lcom/stericson/RootTools/InternalMethods.method.findBinary(Ljava/lang/String;)Z
+0x00012188 method 5 sp   Lcom/stericson/RootTools/InternalMethods.method.fixUtil(Ljava/lang/String;Ljava/lang/String;)V
+0x00012324 method 6 s    Lcom/stericson/RootTools/InternalMethods.method.fixUtils([Ljava/lang/String;)Z
+0x000123b0 method 7 s    Lcom/stericson/RootTools/InternalMethods.method.getBusyBoxApplets(Ljava/lang/String;)Ljava/util/List;
+0x0001245c method 8 s    Lcom/stericson/RootTools/InternalMethods.method.getBusyBoxVersion(Ljava/lang/String;)Ljava/lang/String;
+0x00012540 method 9 s    Lcom/stericson/RootTools/InternalMethods.method.getFilePermissionsSymlinks(Ljava/lang/String;)Lcom/stericson/RootTools/Permissions;
+0x00012690 method 10 s    Lcom/stericson/RootTools/InternalMethods.method.getInode(Ljava/lang/String;)Ljava/lang/String;
+0x0001270c method 11 s    Lcom/stericson/RootTools/InternalMethods.method.getMountedAs(Ljava/lang/String;)Ljava/lang/String;
+0x000127c4 method 12 sr   Lcom/stericson/RootTools/InternalMethods.method.getMounts()Ljava/util/ArrayList;
+0x00012874 method 13 s    Lcom/stericson/RootTools/InternalMethods.method.getPath()Ljava/util/Set;
+0x000128bc method 14 s    Lcom/stericson/RootTools/InternalMethods.method.getSpace(Ljava/lang/String;)J
+0x00012a3c method 15 s    Lcom/stericson/RootTools/InternalMethods.method.getSymlink(Ljava/lang/String;)Ljava/lang/String;
+0x00012bf0 method 16 s    Lcom/stericson/RootTools/InternalMethods.method.getSymlinks(Ljava/lang/String;)Ljava/util/ArrayList;
+0x00012ca0 method 17 s    Lcom/stericson/RootTools/InternalMethods.method.getWorkingToolbox()Ljava/lang/String;
+0x00012ce4 method 18 sp   Lcom/stericson/RootTools/InternalMethods.method.hasEnoughSpaceOnSdCard(J)Z
+0x00012d58 method 19 sp   Lcom/stericson/RootTools/InternalMethods.method.hasUtil(Ljava/lang/String;Ljava/lang/String;)Z
+0x00012ec0 method 20 s    Lcom/stericson/RootTools/InternalMethods.method.installBinary(Landroid/content/Context;ILjava/lang/String;Ljava/lang/String;)Z
+0x00012f08 method 21 s    Lcom/stericson/RootTools/InternalMethods.method.isAccessGiven()Z
+0x00012fa4 method 22 sp   Lcom/stericson/RootTools/InternalMethods.method.isAppletAvailable(Ljava/lang/String;Ljava/lang/String;)Z
+0x00013014 method 23 s    Lcom/stericson/RootTools/InternalMethods.method.isNativeToolsReady(ILandroid/content/Context;)Z
+0x00013094 method 24 s    Lcom/stericson/RootTools/InternalMethods.method.isProcessRunning(Ljava/lang/String;)Z
+0x0001312c method 25 s    Lcom/stericson/RootTools/InternalMethods.method.killProcess(Ljava/lang/String;)Z
+0x00013224 method 26 s    Lcom/stericson/RootTools/InternalMethods.method.offerBusyBox(Landroid/app/Activity;I)Landroid/content/Intent;
+0x00013260 method 27 s    Lcom/stericson/RootTools/InternalMethods.method.offerBusyBox(Landroid/app/Activity;)V
+0x0001329c method 28 s    Lcom/stericson/RootTools/InternalMethods.method.offerSuperUser(Landroid/app/Activity;I)Landroid/content/Intent;
+0x000132d8 method 29 s    Lcom/stericson/RootTools/InternalMethods.method.offerSuperUser(Landroid/app/Activity;)V
+0x00013314 method 30 r    Lcom/stericson/RootTools/InternalMethods.method.getConvertedSpace(Ljava/lang/String;)J
+0x000133dc method 31 r    Lcom/stericson/RootTools/InternalMethods.method.getPermissions(Ljava/lang/String;)Lcom/stericson/RootTools/Permissions;
+0x0001357c method 32 r    Lcom/stericson/RootTools/InternalMethods.method.getSymLinks()Ljava/util/ArrayList;
+0x0001360c method 33 r    Lcom/stericson/RootTools/InternalMethods.method.parsePermissions(Ljava/lang/String;)I
+0x00013760 method 34 r    Lcom/stericson/RootTools/InternalMethods.method.parseSpecialPermissions(Ljava/lang/String;)I
+0x000137d8 method 35 r    Lcom/stericson/RootTools/InternalMethods.method.returnPath()Z
+0x00007af0 [0x000139e0 - 0x00013a5c]    124 class 19 Lcom/stericson/RootTools/InternalVariables :: Ljava/lang/Object;
+0x000139e0 method 0 sC   Lcom/stericson/RootTools/InternalVariables.method.<clinit>()V
+0x00013a54 method 1 C    Lcom/stericson/RootTools/InternalVariables.method.<init>()V
+0x00007b10 [0x00013a6c - 0x00013b50]    228 class 20 Lcom/stericson/RootTools/Mount :: Ljava/lang/Object;
+0x00013a6c method 0 C    Lcom/stericson/RootTools/Mount.method.<init>(Ljava/io/File;Ljava/io/File;Ljava/lang/String;Ljava/lang/String;)V
+0x00013ab4 method 1 p    Lcom/stericson/RootTools/Mount.method.getDevice()Ljava/io/File;
+0x00013acc method 2 p    Lcom/stericson/RootTools/Mount.method.getFlags()Ljava/util/Set;
+0x00013ae4 method 3 p    Lcom/stericson/RootTools/Mount.method.getMountPoint()Ljava/io/File;
+0x00013afc method 4 p    Lcom/stericson/RootTools/Mount.method.getType()Ljava/lang/String;
+0x00013b14 method 5 p    Lcom/stericson/RootTools/Mount.method.toString()Ljava/lang/String;
+0x00007b30 [0x00013b60 - 0x00013c86]    294 class 21 Lcom/stericson/RootTools/Permissions :: Ljava/lang/Object;
+0x00013b60 method 0 pC   Lcom/stericson/RootTools/Permissions.method.<init>()V
+0x00013b78 method 1 p    Lcom/stericson/RootTools/Permissions.method.getGroupPermissions()Ljava/lang/String;
+0x00013b90 method 2 p    Lcom/stericson/RootTools/Permissions.method.getOtherPermissions()Ljava/lang/String;
+0x00013ba8 method 3 p    Lcom/stericson/RootTools/Permissions.method.getPermissions()I
+0x00013bc0 method 4 p    Lcom/stericson/RootTools/Permissions.method.getSymlink()Ljava/lang/String;
+0x00013bd8 method 5 p    Lcom/stericson/RootTools/Permissions.method.getType()Ljava/lang/String;
+0x00013bf0 method 6 p    Lcom/stericson/RootTools/Permissions.method.getUserPermissions()Ljava/lang/String;
+0x00013c08 method 7 p    Lcom/stericson/RootTools/Permissions.method.setGroupPermissions(Ljava/lang/String;)V
+0x00013c20 method 8 p    Lcom/stericson/RootTools/Permissions.method.setOtherPermissions(Ljava/lang/String;)V
+0x00013c38 method 9 p    Lcom/stericson/RootTools/Permissions.method.setPermissions(I)V
+0x00013c50 method 10 p    Lcom/stericson/RootTools/Permissions.method.setSymlink(Ljava/lang/String;)V
+0x00013c68 method 11 p    Lcom/stericson/RootTools/Permissions.method.setType(Ljava/lang/String;)V
+0x00013c80 method 12 p    Lcom/stericson/RootTools/Permissions.method.setUserPermissions(Ljava/lang/String;)V
+0x00007b50 [0x00013c98 - 0x00014130]   1176 class 22 Lcom/stericson/RootTools/Remounter :: Ljava/lang/Object;
+0x00013c98 method 0 C    Lcom/stericson/RootTools/Remounter.method.<init>()V
+0x00013cb0 method 1 P    Lcom/stericson/RootTools/Remounter.method.findMountPointRecursive(Ljava/lang/String;)Lcom/stericson/RootTools/Mount;
+0x00013d44 method 2 r    Lcom/stericson/RootTools/Remounter.method.remount(Ljava/lang/String;Ljava/lang/String;)Z
+0x00007b70 [0x00014170 - 0x0001481a]   1706 class 23 Lcom/stericson/RootTools/RootTools :: Ljava/lang/Object;
+0x00014170 method 0 sC   Lcom/stericson/RootTools/RootTools.method.<clinit>()V
+0x000141a8 method 1 pC   Lcom/stericson/RootTools/RootTools.method.<init>()V
+0x000141c0 method 2 sp   Lcom/stericson/RootTools/RootTools.method.checkUtil(Ljava/lang/String;)Z
+0x000141dc method 3 sp   Lcom/stericson/RootTools/RootTools.method.closeAllShells()V
+0x000141f4 method 4 sp   Lcom/stericson/RootTools/RootTools.method.closeCustomShell()V
+0x0001420c method 5 sp   Lcom/stericson/RootTools/RootTools.method.closeShell(Z)V
+0x00014230 method 6 sp   Lcom/stericson/RootTools/RootTools.method.copyFile(Ljava/lang/String;Ljava/lang/String;ZZ)Z
+0x0001424c method 7 sp   Lcom/stericson/RootTools/RootTools.method.exists(Ljava/lang/String;)Z
+0x00014268 method 8 sp   Lcom/stericson/RootTools/RootTools.method.findBinary(Ljava/lang/String;)Z
+0x00014284 method 9 sp   Lcom/stericson/RootTools/RootTools.method.fixUtil(Ljava/lang/String;Ljava/lang/String;)V
+0x0001429c method 10 sp   Lcom/stericson/RootTools/RootTools.method.fixUtils([Ljava/lang/String;)Z
+0x000142b8 method 11 sp   Lcom/stericson/RootTools/RootTools.method.getBusyBoxApplets()Ljava/util/List;
+0x000142d8 method 12 sp   Lcom/stericson/RootTools/RootTools.method.getBusyBoxApplets(Ljava/lang/String;)Ljava/util/List;
+0x000142f4 method 13 sp   Lcom/stericson/RootTools/RootTools.method.getBusyBoxVersion()Ljava/lang/String;
+0x00014314 method 14 sp   Lcom/stericson/RootTools/RootTools.method.getBusyBoxVersion(Ljava/lang/String;)Ljava/lang/String;
+0x00014330 method 15 sp   Lcom/stericson/RootTools/RootTools.method.getCustomShell(Ljava/lang/String;)Lcom/stericson/RootTools/Shell;
+0x0001434c method 16 sp   Lcom/stericson/RootTools/RootTools.method.getFilePermissionsSymlinks(Ljava/lang/String;)Lcom/stericson/RootTools/Permissions;
+0x00014368 method 17 sp   Lcom/stericson/RootTools/RootTools.method.getInode(Ljava/lang/String;)Ljava/lang/String;
+0x00014384 method 18 sp   Lcom/stericson/RootTools/RootTools.method.getMountedAs(Ljava/lang/String;)Ljava/lang/String;
+0x000143a0 method 19 sp   Lcom/stericson/RootTools/RootTools.method.getMounts()Ljava/util/ArrayList;
+0x000143bc method 20 sp   Lcom/stericson/RootTools/RootTools.method.getPath()Ljava/util/Set;
+0x000143d8 method 21 sp   Lcom/stericson/RootTools/RootTools.method.getShell(Z)Lcom/stericson/RootTools/Shell;
+0x00014400 method 22 sp   Lcom/stericson/RootTools/RootTools.method.getSpace(Ljava/lang/String;)J
+0x0001441c method 23 sp   Lcom/stericson/RootTools/RootTools.method.getSymlink(Ljava/lang/String;)Ljava/lang/String;
+0x00014438 method 24 sp   Lcom/stericson/RootTools/RootTools.method.getSymlinks(Ljava/lang/String;)Ljava/util/ArrayList;
+0x00014454 method 25 sp   Lcom/stericson/RootTools/RootTools.method.getWorkingToolbox()Ljava/lang/String;
+0x00014470 method 26 sp   Lcom/stericson/RootTools/RootTools.method.hasEnoughSpaceOnSdCard(J)Z
+0x0001448c method 27 sp   Lcom/stericson/RootTools/RootTools.method.hasUtil(Ljava/lang/String;Ljava/lang/String;)Z
+0x000144a8 method 28 sp   Lcom/stericson/RootTools/RootTools.method.installBinary(Landroid/content/Context;ILjava/lang/String;)Z
+0x000144c8 method 29 sp   Lcom/stericson/RootTools/RootTools.method.installBinary(Landroid/content/Context;ILjava/lang/String;Ljava/lang/String;)Z
+0x000144e4 method 30 sp   Lcom/stericson/RootTools/RootTools.method.isAccessGiven()Z
+0x00014500 method 31 sp   Lcom/stericson/RootTools/RootTools.method.isAppletAvailable(Ljava/lang/String;)Z
+0x00014520 method 32 sp   Lcom/stericson/RootTools/RootTools.method.isAppletAvailable(Ljava/lang/String;Ljava/lang/String;)Z
+0x0001453c method 33 sp   Lcom/stericson/RootTools/RootTools.method.isBusyboxAvailable()Z
+0x0001455c method 34 sp   Lcom/stericson/RootTools/RootTools.method.isNativeToolsReady(ILandroid/content/Context;)Z
+0x00014578 method 35 sp   Lcom/stericson/RootTools/RootTools.method.isProcessRunning(Ljava/lang/String;)Z
+0x00014594 method 36 sp   Lcom/stericson/RootTools/RootTools.method.isRootAvailable()Z
+0x000145b4 method 37 sp   Lcom/stericson/RootTools/RootTools.method.killProcess(Ljava/lang/String;)Z
+0x000145d0 method 38 sp   Lcom/stericson/RootTools/RootTools.method.log(Ljava/lang/String;)V
+0x000145ec method 39 sp   Lcom/stericson/RootTools/RootTools.method.log(Ljava/lang/String;ILjava/lang/Exception;)V
+0x00014608 method 40 sp   Lcom/stericson/RootTools/RootTools.method.log(Ljava/lang/String;Ljava/lang/String;)V
+0x00014624 method 41 sp   Lcom/stericson/RootTools/RootTools.method.log(Ljava/lang/String;Ljava/lang/String;ILjava/lang/Exception;)V
+0x0001468c method 42 sp   Lcom/stericson/RootTools/RootTools.method.offerBusyBox(Landroid/app/Activity;I)Landroid/content/Intent;
+0x000146a8 method 43 sp   Lcom/stericson/RootTools/RootTools.method.offerBusyBox(Landroid/app/Activity;)V
+0x000146c0 method 44 sp   Lcom/stericson/RootTools/RootTools.method.offerSuperUser(Landroid/app/Activity;I)Landroid/content/Intent;
+0x000146dc method 45 sp   Lcom/stericson/RootTools/RootTools.method.offerSuperUser(Landroid/app/Activity;)V
+0x000146f4 method 46 sp   Lcom/stericson/RootTools/RootTools.method.remount(Ljava/lang/String;Ljava/lang/String;)Z
+0x00014718 method 47 sp   Lcom/stericson/RootTools/RootTools.method.restartAndroid()V
+0x00014740 method 48 sp   Lcom/stericson/RootTools/RootTools.method.runBinary(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)V
+0x00014764 method 49 sp   Lcom/stericson/RootTools/RootTools.method.runShellCommand(Lcom/stericson/RootTools/Shell;Lcom/stericson/RootTools/Command;)V
+0x0001477c method 50 sp   Lcom/stericson/RootTools/RootTools.method.sendShell(Ljava/lang/String;I)Ljava/util/List;
+0x00014798 method 51 sp   Lcom/stericson/RootTools/RootTools.method.sendShell(Ljava/lang/String;Lcom/stericson/RootTools/RootTools$Result;I)Ljava/util/List;
+0x000147c0 method 52 sp   Lcom/stericson/RootTools/RootTools.method.sendShell([Ljava/lang/String;II)Ljava/util/List;
+0x000147dc method 53 sp   Lcom/stericson/RootTools/RootTools.method.sendShell([Ljava/lang/String;ILcom/stericson/RootTools/RootTools$Result;I)Ljava/util/List;
+0x000147fc method 54 sp   Lcom/stericson/RootTools/RootTools.method.sendShell([Ljava/lang/String;ILcom/stericson/RootTools/RootTools$Result;ZI)Ljava/util/List;
+0x00007b90 [0x0001482c - 0x00014834]      8 class 24 Lcom/stericson/RootTools/RootToolsException :: Ljava/lang/Exception;
+0x0001482c method 0 pC   Lcom/stericson/RootTools/RootToolsException.method.<init>(Ljava/lang/Throwable;)V
+0x00007bb0 [0x00014844 - 0x0001491e]    218 class 25 Lcom/stericson/RootTools/Runner :: Ljava/lang/Thread;
+0x00014844 method 0 pC   Lcom/stericson/RootTools/Runner.method.<init>(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)V
+0x00014868 method 1 p    Lcom/stericson/RootTools/Runner.method.run()V
+0x00007bd0 [0x0001494c - 0x00014980]     52 class 26 Lcom/stericson/RootTools/SanityCheckRootTools$1 :: Ljava/lang/Object;
+0x0001494c method 0 C    Lcom/stericson/RootTools/SanityCheckRootTools$1.method.<init>(Lcom/stericson/RootTools/SanityCheckRootTools;)V
+0x00014968 method 1 p    Lcom/stericson/RootTools/SanityCheckRootTools$1.method.run()V
+0x00007bf0 [0x00014990 - 0x000153d0]   2624 class 27 Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread :: Ljava/lang/Thread;
+0x00014990 method 0 pC   Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread.method.<init>(Lcom/stericson/RootTools/SanityCheckRootTools;Landroid/content/Context;Landroid/os/Handler;)V
+0x000149b0 method 1 sh   Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread.method.access$0(Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread;ILjava/lang/String;)V
+0x000149c8 method 2 P    Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread.method.visualUpdate(ILjava/lang/String;)V
+0x00014a14 method 3 p    Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread.method.run()V
+0x00007c10 [0x00015478 - 0x00015560]    232 class 28 Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler :: Landroid/os/Handler;
+0x00015478 method 0 PC   Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler.method.<init>(Lcom/stericson/RootTools/SanityCheckRootTools;)V
+0x00015494 method 1 hC   Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler.method.<init>(Lcom/stericson/RootTools/SanityCheckRootTools;Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler;)V
+0x000154ac method 2 p    Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler.method.handleMessage(Landroid/os/Message;)V
+0x00007c30 [0x00015570 - 0x00015740]    464 class 29 Lcom/stericson/RootTools/SanityCheckRootTools :: Landroid/app/Activity;
+0x00015570 method 0 pC   Lcom/stericson/RootTools/SanityCheckRootTools.method.<init>()V
+0x00015588 method 1 sh   Lcom/stericson/RootTools/SanityCheckRootTools.method.access$0(Lcom/stericson/RootTools/SanityCheckRootTools;)Landroid/app/ProgressDialog;
+0x000155a0 method 2 sh   Lcom/stericson/RootTools/SanityCheckRootTools.method.access$1(Lcom/stericson/RootTools/SanityCheckRootTools;)Landroid/widget/ScrollView;
+0x000155b8 method 3 p    Lcom/stericson/RootTools/SanityCheckRootTools.method.onCreate(Landroid/os/Bundle;)V
+0x00015720 method 4 r    Lcom/stericson/RootTools/SanityCheckRootTools.method.print(Ljava/lang/CharSequence;)V
+0x00007c50 [0x00015750 - 0x0001578c]     60 class 30 Lcom/stericson/RootTools/Shell$1 :: Ljava/lang/Object;
+0x00015750 method 0 C    Lcom/stericson/RootTools/Shell$1.method.<init>(Lcom/stericson/RootTools/Shell;)V
+0x0001576c method 1 p    Lcom/stericson/RootTools/Shell$1.method.run()V
+0x00007c70 [0x000157ac - 0x000157fa]     78 class 31 Lcom/stericson/RootTools/Shell$2 :: Ljava/lang/Object;
+0x000157ac method 0 C    Lcom/stericson/RootTools/Shell$2.method.<init>(Lcom/stericson/RootTools/Shell;)V
+0x000157c8 method 1 p    Lcom/stericson/RootTools/Shell$2.method.run()V
+0x00007c90 [0x0001581c - 0x000158fa]    222 class 32 Lcom/stericson/RootTools/Shell$Worker :: Ljava/lang/Thread;
+0x0001581c method 0 PC   Lcom/stericson/RootTools/Shell$Worker.method.<init>(Ljava/lang/Process;Ljava/io/DataInputStream;Ljava/io/DataOutputStream;)V
+0x00015848 method 1 hC   Lcom/stericson/RootTools/Shell$Worker.method.<init>(Ljava/lang/Process;Ljava/io/DataInputStream;Ljava/io/DataOutputStream;Lcom/stericson/RootTools/Shell$Worker;)V
+0x00015860 method 2 p    Lcom/stericson/RootTools/Shell$Worker.method.run()V
+0x00007cb0 [0x00015924 - 0x0001615a]   2102 class 33 Lcom/stericson/RootTools/Shell :: Ljava/lang/Object;
+0x00015924 method 0 sC   Lcom/stericson/RootTools/Shell.method.<clinit>()V
+0x0001594c method 1 PC   Lcom/stericson/RootTools/Shell.method.<init>(Ljava/lang/String;)V
+0x00015acc method 2 sh   Lcom/stericson/RootTools/Shell.method.access$0(Lcom/stericson/RootTools/Shell;)V
+0x00015ae4 method 3 sh   Lcom/stericson/RootTools/Shell.method.access$1(Lcom/stericson/RootTools/Shell;)V
+0x00015afc method 4 sh   Lcom/stericson/RootTools/Shell.method.access$2()Ljava/lang/String;
+0x00015b14 method 5 sh   Lcom/stericson/RootTools/Shell.method.access$3(Ljava/lang/String;)V
+0x00015b2c method 6 sp   Lcom/stericson/RootTools/Shell.method.closeAll()V
+0x00015b50 method 7 sp   Lcom/stericson/RootTools/Shell.method.closeCustomShell()V
+0x00015b78 method 8 sp   Lcom/stericson/RootTools/Shell.method.closeRootShell()V
+0x00015ba0 method 9 sp   Lcom/stericson/RootTools/Shell.method.closeShell()V
+0x00015bc8 method 10 sp   Lcom/stericson/RootTools/Shell.method.getOpenShell()Lcom/stericson/RootTools/Shell;
+0x00015bfc method 11 sp   Lcom/stericson/RootTools/Shell.method.isAnyShellOpen()Z
+0x00015c2c method 12 sp   Lcom/stericson/RootTools/Shell.method.isCustomShellOpen()Z
+0x00015c4c method 13 sp   Lcom/stericson/RootTools/Shell.method.isRootShellOpen()Z
+0x00015c6c method 14 sp   Lcom/stericson/RootTools/Shell.method.isShellOpen()Z
+0x00015c8c method 15 P    Lcom/stericson/RootTools/Shell.method.readOutput()V
+0x00015dc4 method 16 sp   Lcom/stericson/RootTools/Shell.method.runCommand(Lcom/stericson/RootTools/Command;)V
+0x00015de4 method 17 sp   Lcom/stericson/RootTools/Shell.method.runRootCommand(Lcom/stericson/RootTools/Command;)V
+0x00015e04 method 18 sp   Lcom/stericson/RootTools/Shell.method.startCustomShell(Ljava/lang/String;)Lcom/stericson/RootTools/Shell;
+0x00015e48 method 19 sp   Lcom/stericson/RootTools/Shell.method.startRootShell()Lcom/stericson/RootTools/Shell;
+0x00015ec8 method 20 sp   Lcom/stericson/RootTools/Shell.method.startShell()Lcom/stericson/RootTools/Shell;
+0x00015f10 method 21 P    Lcom/stericson/RootTools/Shell.method.writeCommands()V
+0x00016040 method 22 p    Lcom/stericson/RootTools/Shell.method.add(Lcom/stericson/RootTools/Command;)Lcom/stericson/RootTools/Command;
+0x00016098 method 23 p    Lcom/stericson/RootTools/Shell.method.close()V
+0x000160fc method 24 p    Lcom/stericson/RootTools/Shell.method.countCommands()I
+0x0001611c method 25 p    Lcom/stericson/RootTools/Shell.method.waitFor()V
+0x00007cd0 [0x0001616c - 0x000161aa]     62 class 34 Lcom/stericson/RootTools/Symlink :: Ljava/lang/Object;
+0x0001616c method 0 C    Lcom/stericson/RootTools/Symlink.method.<init>(Ljava/io/File;Ljava/io/File;)V
+0x0001618c method 1 p    Lcom/stericson/RootTools/Symlink.method.getFile()Ljava/io/File;
+0x000161a4 method 2 p    Lcom/stericson/RootTools/Symlink.method.getSymlinkPath()Ljava/io/File;
+0x00007cf0 [0x000161bc - 0x00016438]    636 class 35 Lcom/sun/activation/registries/LineTokenizer :: Ljava/lang/Object;
+0x000161bc method 0 pC   Lcom/sun/activation/registries/LineTokenizer.method.<init>(Ljava/lang/String;)V
+0x000161f8 method 1 P    Lcom/sun/activation/registries/LineTokenizer.method.skipWhiteSpace()V
+0x00016240 method 2 p    Lcom/sun/activation/registries/LineTokenizer.method.hasMoreTokens()Z
+0x0001627c method 3 p    Lcom/sun/activation/registries/LineTokenizer.method.nextToken()Ljava/lang/String;
+0x0001642c method 4 p    Lcom/sun/activation/registries/LineTokenizer.method.pushToken(Ljava/lang/String;)V
+0x00007d10 [0x00016448 - 0x000164f2]    170 class 36 Lcom/sun/activation/registries/MailcapEntry :: Ljava/lang/Object;
+0x00016448 method 0 pC   Lcom/sun/activation/registries/MailcapEntry.method.<init>(Ljava/lang/String;Ljava/lang/String;)V
+0x0001647c method 1 p    Lcom/sun/activation/registries/MailcapEntry.method.getExecutable()Ljava/lang/String;
+0x00016494 method 2 p    Lcom/sun/activation/registries/MailcapEntry.method.getMailcap()Ljava/lang/String;
+0x000164ac method 3 p    Lcom/sun/activation/registries/MailcapEntry.method.toString()Ljava/lang/String;
+0x00007d30 [0x00016504 - 0x00016f12]   2574 class 37 Lcom/sun/activation/registries/MailcapFile :: Ljava/lang/Object;
+0x00016504 method 0 sC   Lcom/sun/activation/registries/MailcapFile.method.<clinit>()V
+0x0001653c method 1 pC   Lcom/sun/activation/registries/MailcapFile.method.<init>()V
+0x00016578 method 2 pC   Lcom/sun/activation/registries/MailcapFile.method.<init>(Ljava/io/InputStream;)V
+0x000165c0 method 3 pC   Lcom/sun/activation/registries/MailcapFile.method.<init>(Ljava/lang/String;)V
+0x00016620 method 4 P    Lcom/sun/activation/registries/MailcapFile.method.createMailcapHash(Ljava/io/Reader;)Ljava/util/Hashtable;
+0x00016644 method 5 P    Lcom/sun/activation/registries/MailcapFile.method.mergeResults(Ljava/util/Hashtable;Ljava/util/Hashtable;)Ljava/util/Hashtable;
+0x000166e4 method 6 P    Lcom/sun/activation/registries/MailcapFile.method.parse(Ljava/io/Reader;Ljava/util/Hashtable;)V
+0x0001680c method 7 sr   Lcom/sun/activation/registries/MailcapFile.method.parseLine(Ljava/lang/String;Ljava/util/Hashtable;)V
+0x00016b9c method 8 sr   Lcom/sun/activation/registries/MailcapFile.method.reportParseError(IIIILjava/lang/String;)V
+0x00016d00 method 9 sr   Lcom/sun/activation/registries/MailcapFile.method.reportParseError(IIILjava/lang/String;)V
+0x00016d9c method 10 sr   Lcom/sun/activation/registries/MailcapFile.method.reportParseError(IILjava/lang/String;)V
+0x00016e1c method 11 p    Lcom/sun/activation/registries/MailcapFile.method.appendToMailcap(Ljava/lang/String;)V
+0x00016e88 method 12 p    Lcom/sun/activation/registries/MailcapFile.method.getMailcapEntry(Ljava/lang/String;)Lcom/sun/activation/registries/MailcapEntry;
+0x00016e9c method 13 p    Lcom/sun/activation/registries/MailcapFile.method.getMailcapList(Ljava/lang/String;)Ljava/util/Hashtable;
+0x00007d50 [0x00016f24 - 0x00016f44]     32 class 38 Lcom/sun/activation/registries/MailcapParseException :: Ljava/lang/Exception;
+0x00016f24 method 0 pC   Lcom/sun/activation/registries/MailcapParseException.method.<init>()V
+0x00016f3c method 1 pC   Lcom/sun/activation/registries/MailcapParseException.method.<init>(Ljava/lang/String;)V
+0x00007d70 [0x00016f54 - 0x0001774a]   2038 class 39 Lcom/sun/activation/registries/MailcapTokenizer :: Ljava/lang/Object;
+0x00016f54 method 0 pC   Lcom/sun/activation/registries/MailcapTokenizer.method.<init>(Ljava/lang/String;)V
+0x00016f9c method 1 sP   Lcom/sun/activation/registries/MailcapTokenizer.method.fixEscapeSequences(Ljava/lang/String;)Ljava/lang/String;
+0x00017018 method 2 sp   Lcom/sun/activation/registries/MailcapTokenizer.method.isAutoquoteSpecialChar(C)Z
+0x0001704c method 3 sp   Lcom/sun/activation/registries/MailcapTokenizer.method.isControlChar(C)Z
+0x00017068 method 4 sp   Lcom/sun/activation/registries/MailcapTokenizer.method.isSpecialChar(C)Z
+0x00017104 method 5 sp   Lcom/sun/activation/registries/MailcapTokenizer.method.isStringTokenChar(C)Z
+0x00017140 method 6 sp   Lcom/sun/activation/registries/MailcapTokenizer.method.isWhiteSpaceChar(C)Z
+0x0001715c method 7 sp   Lcom/sun/activation/registries/MailcapTokenizer.method.main([Ljava/lang/String;)V
+0x00017420 method 8 sp   Lcom/sun/activation/registries/MailcapTokenizer.method.nameForToken(I)Ljava/lang/String;
+0x000174a4 method 9 P    Lcom/sun/activation/registries/MailcapTokenizer.method.processAutoquoteToken()V
+0x00017518 method 10 P    Lcom/sun/activation/registries/MailcapTokenizer.method.processStringToken()V
+0x00017580 method 11 p    Lcom/sun/activation/registries/MailcapTokenizer.method.getCurrentToken()I
+0x00017598 method 12 p    Lcom/sun/activation/registries/MailcapTokenizer.method.getCurrentTokenValue()Ljava/lang/String;
+0x000175b0 method 13 p    Lcom/sun/activation/registries/MailcapTokenizer.method.nextToken()I
+0x0001772c method 14 p    Lcom/sun/activation/registries/MailcapTokenizer.method.setAutoquoteChar(C)V
+0x00017744 method 15 p    Lcom/sun/activation/registries/MailcapTokenizer.method.setIsAutoquoting(Z)V
+0x00007d90 [0x0001775c - 0x000177e8]    140 class 40 Lcom/sun/activation/registries/MimeTypeEntry :: Ljava/lang/Object;
+0x0001775c method 0 pC   Lcom/sun/activation/registries/MimeTypeEntry.method.<init>(Ljava/lang/String;Ljava/lang/String;)V
+0x0001777c method 1 p    Lcom/sun/activation/registries/MimeTypeEntry.method.getFileExtension()Ljava/lang/String;
+0x00017794 method 2 p    Lcom/sun/activation/registries/MimeTypeEntry.method.getMIMEType()Ljava/lang/String;
+0x000177ac method 3 p    Lcom/sun/activation/registries/MimeTypeEntry.method.toString()Ljava/lang/String;
+0x00007db0 [0x000177f8 - 0x00017c72]   1146 class 41 Lcom/sun/activation/registries/MimeTypeFile :: Ljava/lang/Object;
+0x000177f8 method 0 pC   Lcom/sun/activation/registries/MimeTypeFile.method.<init>()V
+0x00017820 method 1 pC   Lcom/sun/activation/registries/MimeTypeFile.method.<init>(Ljava/io/InputStream;)V
+0x00017864 method 2 pC   Lcom/sun/activation/registries/MimeTypeFile.method.<init>(Ljava/lang/String;)V
+0x000178f4 method 3 sp   Lcom/sun/activation/registries/MimeTypeFile.method.main([Ljava/lang/String;)V
+0x00017970 method 4 P    Lcom/sun/activation/registries/MimeTypeFile.method.parse(Ljava/io/BufferedReader;)V
+0x00017a08 method 5 P    Lcom/sun/activation/registries/MimeTypeFile.method.parseEntry(Ljava/lang/String;)V
+0x00017bf4 method 6 p    Lcom/sun/activation/registries/MimeTypeFile.method.appendToRegistry(Ljava/lang/String;)V
+0x00017c34 method 7 p    Lcom/sun/activation/registries/MimeTypeFile.method.getMIMETypeString(Ljava/lang/String;)Ljava/lang/String;
+0x00017c60 method 8 p    Lcom/sun/activation/registries/MimeTypeFile.method.getMimeTypeEntry(Ljava/lang/String;)Lcom/sun/activation/registries/MimeTypeEntry;
+0x00007dd0 [0x00017c84 - 0x00017d22]    158 class 42 Lcom/sun/activation/viewers/ImageViewerCanvas :: Ljava/awt/Canvas;
+0x00017c84 method 0 pC   Lcom/sun/activation/viewers/ImageViewerCanvas.method.<init>()V
+0x00017c9c method 1 p    Lcom/sun/activation/viewers/ImageViewerCanvas.method.getPreferredSize()Ljava/awt/Dimension;
+0x00017ce8 method 2 p    Lcom/sun/activation/viewers/ImageViewerCanvas.method.paint(Ljava/awt/Graphics;)V
+0x00017d10 method 3 p    Lcom/sun/activation/viewers/ImageViewerCanvas.method.setImage(Ljava/awt/Image;)V
+0x00007df0 [0x00017d34 - 0x00017f3a]    518 class 43 Ljavax/activation/ActivationDataFlavor :: Ljava/awt/datatransfer/DataFlavor;
+0x00017d34 method 0 pC   Ljavax/activation/ActivationDataFlavor.method.<init>(Ljava/lang/Class;Ljava/lang/String;)V
+0x00017d60 method 1 pC   Ljavax/activation/ActivationDataFlavor.method.<init>(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/String;)V
+0x00017d84 method 2 pC   Ljavax/activation/ActivationDataFlavor.method.<init>(Ljava/lang/String;Ljava/lang/String;)V
+0x00017dc8 method 3 s    Ljavax/activation/ActivationDataFlavor.method.class$(Ljava/lang/String;)Ljava/lang/Class;
+0x00017e08 method 4 p    Ljavax/activation/ActivationDataFlavor.method.equals(Ljava/awt/datatransfer/DataFlavor;)Z
+0x00017e3c method 5 p    Ljavax/activation/ActivationDataFlavor.method.getHumanPresentableName()Ljava/lang/String;
+0x00017e54 method 6 p    Ljavax/activation/ActivationDataFlavor.method.getMimeType()Ljava/lang/String;
+0x00017e6c method 7 p    Ljavax/activation/ActivationDataFlavor.method.getRepresentationClass()Ljava/lang/Class;
+0x00017e84 method 8 p    Ljavax/activation/ActivationDataFlavor.method.isMimeTypeEqual(Ljava/lang/String;)Z
+0x00017ee0 method 9 r    Ljavax/activation/ActivationDataFlavor.method.normalizeMimeType(Ljava/lang/String;)Ljava/lang/String;
+0x00017ef4 method 10 r    Ljavax/activation/ActivationDataFlavor.method.normalizeMimeTypeParameter(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+0x00017f34 method 11 p    Ljavax/activation/ActivationDataFlavor.method.setHumanPresentableName(Ljava/lang/String;)V
+0x00007e10 [0x00017f4c - 0x00017ff6]    170 class 44 Ljavax/activation/CommandInfo :: Ljava/lang/Object;
+0x00017f4c method 0 pC   Ljavax/activation/CommandInfo.method.<init>(Ljava/lang/String;Ljava/lang/String;)V
+0x00017f6c method 1 p    Ljavax/activation/CommandInfo.method.getCommandClass()Ljava/lang/String;
+0x00017f84 method 2 p    Ljavax/activation/CommandInfo.method.getCommandName()Ljava/lang/String;
+0x00017f9c method 3 p    Ljavax/activation/CommandInfo.method.getCommandObject(Ljavax/activation/DataHandler;Ljava/lang/ClassLoader;)Ljava/lang/Object;
+0x00007e30 [0x0000abab - 0x000180fa]  54607 class 45 Ljavax/activation/CommandMap :: Ljava/lang/Object;
+0x00018008 method 0 sC   Ljavax/activation/CommandMap.method.<clinit>()V
+0x00018020 method 1 pC   Ljavax/activation/CommandMap.method.<init>()V
+0x00018038 method 2 s    Ljavax/activation/CommandMap.method.class$(Ljava/lang/String;)Ljava/lang/Class;
+0x00018078 method 3 sp   Ljavax/activation/CommandMap.method.getDefaultCommandMap()Ljavax/activation/CommandMap;
+0x000180a4 method 4 sp   Ljavax/activation/CommandMap.method.setDefaultCommandMap(Ljavax/activation/CommandMap;)V
+0x0000abab method 5 pa   Ljavax/activation/CommandMap.method.createDataContentHandler(Ljava/lang/String;)Ljavax/activation/DataContentHandler;
+0x0000abb0 method 6 pa   Ljavax/activation/CommandMap.method.getAllCommands(Ljava/lang/String;)[Ljavax/activation/CommandInfo;
+0x0000abb4 method 7 pa   Ljavax/activation/CommandMap.method.getCommand(Ljava/lang/String;Ljava/lang/String;)Ljavax/activation/CommandInfo;
+0x0000abb8 method 8 pa   Ljavax/activation/CommandMap.method.getPreferredCommands(Ljava/lang/String;)[Ljavax/activation/CommandInfo;
+0x00007e50 [0x0000abc0 - 0x0000abc0]      0 class 46 Ljavax/activation/CommandObject :: Ljava/lang/Object;
+0x0000abc0 method 0 pa   Ljavax/activation/CommandObject.method.setCommandContext(Ljava/lang/String;Ljavax/activation/DataHandler;)V
+0x00007e70 [0x0000abc9 - 0x0000abd6]     13 class 47 Ljavax/activation/DataContentHandler :: Ljava/lang/Object;
+0x0000abc9 method 0 pa   Ljavax/activation/DataContentHandler.method.getContent(Ljavax/activation/DataSource;)Ljava/lang/Object;
+0x0000abce method 1 pa   Ljavax/activation/DataContentHandler.method.getTransferData(Ljava/awt/datatransfer/DataFlavor;Ljavax/activation/DataSource;)Ljava/lang/Object;
+0x0000abd2 method 2 pa   Ljavax/activation/DataContentHandler.method.getTransferDataFlavors()[Ljava/awt/datatransfer/DataFlavor;
+0x0000abd6 method 3 pa   Ljavax/activation/DataContentHandler.method.writeTo(Ljava/lang/Object;Ljava/lang/String;Ljava/io/OutputStream;)V
+0x00007e90 [0x0000abde - 0x0000abde]      0 class 48 Ljavax/activation/DataContentHandlerFactory :: Ljava/lang/Object;
+0x0000abde method 0 pa   Ljavax/activation/DataContentHandlerFactory.method.createDataContentHandler(Ljava/lang/String;)Ljavax/activation/DataContentHandler;
+0x00007eb0 [0x0001811c - 0x0001818c]    112 class 49 Ljavax/activation/DataHandler$1 :: Ljava/lang/Object;
+0x0001811c method 0 C    Ljavax/activation/DataHandler$1.method.<init>(Ljavax/activation/DataContentHandler;Ljava/io/PipedOutputStream;Ljavax/activation/DataHandler;)V
+0x00018140 method 1 p    Ljavax/activation/DataHandler$1.method.run()V
+0x00007ed0 [0x000181c4 - 0x0001895a]   1942 class 50 Ljavax/activation/DataHandler :: Ljava/lang/Object;
+0x000181c4 method 0 sC   Ljavax/activation/DataHandler.method.<clinit>()V
+0x000181e8 method 1 pC   Ljavax/activation/DataHandler.method.<init>(Ljava/lang/Object;Ljava/lang/String;)V
+0x00018218 method 2 pC   Ljavax/activation/DataHandler.method.<init>(Ljava/net/URL;)V
+0x00018250 method 3 pC   Ljavax/activation/DataHandler.method.<init>(Ljavax/activation/DataSource;)V
+0x0001827c method 4 s    Ljavax/activation/DataHandler.method.access$0(Ljavax/activation/DataHandler;)Ljava/lang/Object;
+0x00018294 method 5 s    Ljavax/activation/DataHandler.method.access$1(Ljavax/activation/DataHandler;)Ljava/lang/String;
+0x000182ac method 6 s    Ljavax/activation/DataHandler.method.class$(Ljava/lang/String;)Ljava/lang/Class;
+0x000182ec method 7 PY   Ljavax/activation/DataHandler.method.getBaseType()Ljava/lang/String;
+0x00018364 method 8 PY   Ljavax/activation/DataHandler.method.getCommandMap()Ljavax/activation/CommandMap;
+0x000183ac method 9 PY   Ljavax/activation/DataHandler.method.getDataContentHandler()Ljavax/activation/DataContentHandler;
+0x000184a4 method 10 spY  Ljavax/activation/DataHandler.method.setDataContentHandlerFactory(Ljavax/activation/DataContentHandlerFactory;)V
+0x00018560 method 11 p    Ljavax/activation/DataHandler.method.getAllCommands()[Ljavax/activation/CommandInfo;
+0x0001858c method 12 p    Ljavax/activation/DataHandler.method.getBean(Ljavax/activation/CommandInfo;)Ljava/lang/Object;
+0x000185d0 method 13 p    Ljavax/activation/DataHandler.method.getCommand(Ljava/lang/String;)Ljavax/activation/CommandInfo;
+0x000185fc method 14 p    Ljavax/activation/DataHandler.method.getContent()Ljava/lang/Object;
+0x00018628 method 15 p    Ljavax/activation/DataHandler.method.getContentType()Ljava/lang/String;
+0x00018654 method 16 p    Ljavax/activation/DataHandler.method.getDataSource()Ljavax/activation/DataSource;
+0x00018690 method 17 p    Ljavax/activation/DataHandler.method.getInputStream()Ljava/io/InputStream;
+0x00018774 method 18 p    Ljavax/activation/DataHandler.method.getName()Ljava/lang/String;
+0x000187a0 method 19 p    Ljavax/activation/DataHandler.method.getOutputStream()Ljava/io/OutputStream;
+0x000187cc method 20 p    Ljavax/activation/DataHandler.method.getPreferredCommands()[Ljavax/activation/CommandInfo;
+0x000187f8 method 21 p    Ljavax/activation/DataHandler.method.getTransferData(Ljava/awt/datatransfer/DataFlavor;)Ljava/lang/Object;
+0x00018820 method 22 pY   Ljavax/activation/DataHandler.method.getTransferDataFlavors()[Ljava/awt/datatransfer/DataFlavor;
+0x00018880 method 23 p    Ljavax/activation/DataHandler.method.isDataFlavorSupported(Ljava/awt/datatransfer/DataFlavor;)Z
+0x000188c0 method 24 pY   Ljavax/activation/DataHandler.method.setCommandMap(Ljavax/activation/CommandMap;)V
+0x00018908 method 25 p    Ljavax/activation/DataHandler.method.writeTo(Ljava/io/OutputStream;)V
+0x00007ef0 [0x0000acb8 - 0x0000acc5]     13 class 51 Ljavax/activation/DataSource :: Ljava/lang/Object;
+0x0000acb8 method 0 pa   Ljavax/activation/DataSource.method.getContentType()Ljava/lang/String;
+0x0000acbd method 1 pa   Ljavax/activation/DataSource.method.getInputStream()Ljava/io/InputStream;
+0x0000acc1 method 2 pa   Ljavax/activation/DataSource.method.getName()Ljava/lang/String;
+0x0000acc5 method 3 pa   Ljavax/activation/DataSource.method.getOutputStream()Ljava/io/OutputStream;
+0x00007f10 [0x0000acf0 - 0x00018a5e]  56686 class 52 Ljavax/activation/FileTypeMap :: Ljava/lang/Object;
+0x0001896c method 0 sC   Ljavax/activation/FileTypeMap.method.<clinit>()V
+0x00018984 method 1 pC   Ljavax/activation/FileTypeMap.method.<init>()V
+0x0001899c method 2 s    Ljavax/activation/FileTypeMap.method.class$(Ljava/lang/String;)Ljava/lang/Class;
+0x000189dc method 3 sp   Ljavax/activation/FileTypeMap.method.getDefaultFileTypeMap()Ljavax/activation/FileTypeMap;
+0x00018a08 method 4 sp   Ljavax/activation/FileTypeMap.method.setDefaultFileTypeMap(Ljavax/activation/FileTypeMap;)V
+0x0000acf0 method 5 pa   Ljavax/activation/FileTypeMap.method.getContentType(Ljava/io/File;)Ljava/lang/String;
+0x0000acf5 method 6 pa   Ljavax/activation/FileTypeMap.method.getContentType(Ljava/lang/String;)Ljava/lang/String;
+0x00007f30 [0x00018a80 - 0x00018fca]   1354 class 53 Ljavax/activation/MimeType :: Ljava/lang/Object;
+0x00018a80 method 0 pC   Ljavax/activation/MimeType.method.<init>()V
+0x00018ab8 method 1 pC   Ljavax/activation/MimeType.method.<init>(Ljava/lang/String;)V
+0x00018ad8 method 2 pC   Ljavax/activation/MimeType.method.<init>(Ljava/lang/String;Ljava/lang/String;)V
+0x00018b50 method 3 sP   Ljavax/activation/MimeType.method.isTokenChar(C)Z
+0x00018b88 method 4 P    Ljavax/activation/MimeType.method.isValidToken(Ljava/lang/String;)Z
+0x00018bcc method 5 P    Ljavax/activation/MimeType.method.parse(Ljava/lang/String;)V
+0x00018d24 method 6 p    Ljavax/activation/MimeType.method.getBaseType()Ljava/lang/String;
+0x00018d6c method 7 p    Ljavax/activation/MimeType.method.getParameter(Ljava/lang/String;)Ljava/lang/String;
+0x00018d8c method 8 p    Ljavax/activation/MimeType.method.getParameters()Ljavax/activation/MimeTypeParameterList;
+0x00018da4 method 9 p    Ljavax/activation/MimeType.method.getPrimaryType()Ljava/lang/String;
+0x00018dbc method 10 p    Ljavax/activation/MimeType.method.getSubType()Ljava/lang/String;
+0x00018dd4 method 11 p    Ljavax/activation/MimeType.method.match(Ljava/lang/String;)Z
+0x00018df8 method 12 p    Ljavax/activation/MimeType.method.match(Ljavax/activation/MimeType;)Z
+0x00018e6c method 13 p    Ljavax/activation/MimeType.method.readExternal(Ljava/io/ObjectInput;)V
+0x00018eb4 method 14 p    Ljavax/activation/MimeType.method.removeParameter(Ljava/lang/String;)V
+0x00018ed0 method 15 p    Ljavax/activation/MimeType.method.setParameter(Ljava/lang/String;Ljava/lang/String;)V
+0x00018eec method 16 p    Ljavax/activation/MimeType.method.setPrimaryType(Ljava/lang/String;)V
+0x00018f2c method 17 p    Ljavax/activation/MimeType.method.setSubType(Ljava/lang/String;)V
+0x00018f6c method 18 p    Ljavax/activation/MimeType.method.toString()Ljava/lang/String;
+0x00018fb4 method 19 p    Ljavax/activation/MimeType.method.writeExternal(Ljava/io/ObjectOutput;)V
+0x00007f50 [0x00018fdc - 0x00019528]   1356 class 54 Ljavax/activation/MimeTypeParameterList :: Ljava/lang/Object;
+0x00018fdc method 0 pC   Ljavax/activation/MimeTypeParameterList.method.<init>()V
+0x00019004 method 1 pC   Ljavax/activation/MimeTypeParameterList.method.<init>(Ljava/lang/String;)V
+0x00019030 method 2 sP   Ljavax/activation/MimeTypeParameterList.method.isTokenChar(C)Z
+0x00019068 method 3 sP   Ljavax/activation/MimeTypeParameterList.method.quote(Ljava/lang/String;)Ljava/lang/String;
+0x00019110 method 4 sP   Ljavax/activation/MimeTypeParameterList.method.skipWhiteSpace(Ljava/lang/String;I)I
+0x00019148 method 5 sP   Ljavax/activation/MimeTypeParameterList.method.unquote(Ljava/lang/String;)Ljava/lang/String;
+0x000191b8 method 6 p    Ljavax/activation/MimeTypeParameterList.method.get(Ljava/lang/String;)Ljava/lang/String;
+0x000191ec method 7 p    Ljavax/activation/MimeTypeParameterList.method.getNames()Ljava/util/Enumeration;
+0x0001920c method 8 p    Ljavax/activation/MimeTypeParameterList.method.isEmpty()Z
+0x0001922c method 9 r    Ljavax/activation/MimeTypeParameterList.method.parse(Ljava/lang/String;)V
+0x00019428 method 10 p    Ljavax/activation/MimeTypeParameterList.method.remove(Ljava/lang/String;)V
+0x00019454 method 11 p    Ljavax/activation/MimeTypeParameterList.method.set(Ljava/lang/String;Ljava/lang/String;)V
+0x00019480 method 12 p    Ljavax/activation/MimeTypeParameterList.method.size()I
+0x000194a0 method 13 p    Ljavax/activation/MimeTypeParameterList.method.toString()Ljava/lang/String;
+0x00007f70 [0x00019538 - 0x00019558]     32 class 55 Ljavax/activation/MimeTypeParseException :: Ljava/lang/Exception;
+0x00019538 method 0 pC   Ljavax/activation/MimeTypeParseException.method.<init>()V
+0x00019550 method 1 pC   Ljavax/activation/MimeTypeParseException.method.<init>(Ljava/lang/String;)V
+0x00007f90 [0x00019568 - 0x00019588]     32 class 56 Ljavax/activation/UnsupportedDataTypeException :: Ljava/io/IOException;
+0x00019568 method 0 pC   Ljavax/activation/UnsupportedDataTypeException.method.<init>()V
+0x00019580 method 1 pC   Ljavax/activation/UnsupportedDataTypeException.method.<init>(Ljava/lang/String;)V
+0x00007fb0 [0x00019598 - 0x0001987c]    740 class 57 Lorg/radare/r2pipe/R2Pipe :: Ljava/lang/Object;
+0x00019598 method 0 pC   Lorg/radare/r2pipe/R2Pipe.method.<init>(Ljava/lang/String;)V
+0x000195c0 method 1 pC   Lorg/radare/r2pipe/R2Pipe.method.<init>(Ljava/lang/String;Ljava/lang/String;Z)V
+0x000195f4 method 2 pC   Lorg/radare/r2pipe/R2Pipe.method.<init>(Ljava/lang/String;Z)V
+0x00019628 method 3 p    Lorg/radare/r2pipe/R2Pipe.method.cmd(Ljava/lang/String;)Ljava/lang/String;
+0x000196d0 method 4 r    Lorg/radare/r2pipe/R2Pipe.method.finalize()V
+0x000196e8 method 5 p    Lorg/radare/r2pipe/R2Pipe.method.httpCmd(Ljava/lang/String;)Ljava/lang/String;
+0x000197d0 method 6 p    Lorg/radare/r2pipe/R2Pipe.method.quit()V
+0x000197f4 method 7 p    Lorg/radare/r2pipe/R2Pipe.method.spawnProcess(Ljava/lang/String;)V
+0x00007fd0 [0x0001988c - 0x00019934]    168 class 58 Lorg/radare/radare2installer/BootReceiver :: Landroid/content/BroadcastReceiver;
+0x0001988c method 0 pC   Lorg/radare/radare2installer/BootReceiver.method.<init>()V
+0x000198a4 method 1 p    Lorg/radare/radare2installer/BootReceiver.method.onReceive(Landroid/content/Context;Landroid/content/Intent;)V
+0x00007ff0 [0x00019944 - 0x0001994c]      8 class 59 Lorg/radare/radare2installer/BuildConfig :: Ljava/lang/Object;
+0x00019944 method 0 pC   Lorg/radare/radare2installer/BuildConfig.method.<init>()V
+0x00008010 [0x0001995c - 0x00019a56]    250 class 60 Lorg/radare/radare2installer/ConsoleActivity$1 :: Ljava/lang/Object;
+0x0001995c method 0 C    Lorg/radare/radare2installer/ConsoleActivity$1.method.<init>(Lorg/radare/radare2installer/ConsoleActivity;)V
+0x00019978 method 1 p    Lorg/radare/radare2installer/ConsoleActivity$1.method.onClick(Landroid/view/View;)V
+0x00008030 [0x00019a78 - 0x00019b10]    152 class 61 Lorg/radare/radare2installer/ConsoleActivity$2 :: Ljava/lang/Object;
+0x00019a78 method 0 C    Lorg/radare/radare2installer/ConsoleActivity$2.method.<init>(Lorg/radare/radare2installer/ConsoleActivity;Ljava/lang/String;)V
+0x00019a98 method 1 p    Lorg/radare/radare2installer/ConsoleActivity$2.method.run()V
+0x00008050 [0x00019b20 - 0x00019b48]     40 class 62 Lorg/radare/radare2installer/ConsoleActivity$3 :: Ljava/lang/Object;
+0x00019b20 method 0 C    Lorg/radare/radare2installer/ConsoleActivity$3.method.<init>(Lorg/radare/radare2installer/ConsoleActivity;)V
+0x00019b3c method 1 p    Lorg/radare/radare2installer/ConsoleActivity$3.method.onClick(Landroid/view/View;)V
+0x00008070 [0x00019b58 - 0x00019e9e]    838 class 63 Lorg/radare/radare2installer/ConsoleActivity :: Landroid/app/Activity;
+0x00019b58 method 0 pC   Lorg/radare/radare2installer/ConsoleActivity.method.<init>()V
+0x00019b9c method 1 sh   Lorg/radare/radare2installer/ConsoleActivity.method.access$000(Lorg/radare/radare2installer/ConsoleActivity;)Landroid/widget/EditText;
+0x00019bb4 method 2 sh   Lorg/radare/radare2installer/ConsoleActivity.method.access$100(Lorg/radare/radare2installer/ConsoleActivity;)Lorg/radare/r2pipe/R2Pipe;
+0x00019bcc method 3 sh   Lorg/radare/radare2installer/ConsoleActivity.method.access$200(Lorg/radare/radare2installer/ConsoleActivity;Ljava/lang/String;)V
+0x00019be4 method 4 sh   Lorg/radare/radare2installer/ConsoleActivity.method.access$300(Lorg/radare/radare2installer/ConsoleActivity;)Landroid/widget/TextView;
+0x00019bfc method 5 sh   Lorg/radare/radare2installer/ConsoleActivity.method.access$400(Lorg/radare/radare2installer/ConsoleActivity;)Landroid/widget/ScrollView;
+0x00019c14 method 6 P    Lorg/radare/radare2installer/ConsoleActivity.method.output(Ljava/lang/String;)V
+0x00019c3c method 7 p    Lorg/radare/radare2installer/ConsoleActivity.method.onCreate(Landroid/os/Bundle;)V
+0x00019e50 method 8 p    Lorg/radare/radare2installer/ConsoleActivity.method.onDestroy()V
+0x00019e74 method 9 p    Lorg/radare/radare2installer/ConsoleActivity.method.onKeyDown(ILandroid/view/KeyEvent;)Z
+0x00008090 [0x00019ec0 - 0x00019eec]     44 class 64 Lorg/radare/radare2installer/LaunchActivity$1 :: Ljava/lang/Object;
+0x00019ec0 method 0 C    Lorg/radare/radare2installer/LaunchActivity$1.method.<init>(Lorg/radare/radare2installer/LaunchActivity;)V
+0x00019edc method 1 p    Lorg/radare/radare2installer/LaunchActivity$1.method.onClick(Landroid/view/View;)V
+0x000080b0 [0x00019efc - 0x00019f28]     44 class 65 Lorg/radare/radare2installer/LaunchActivity$2 :: Ljava/lang/Object;
+0x00019efc method 0 C    Lorg/radare/radare2installer/LaunchActivity$2.method.<init>(Lorg/radare/radare2installer/LaunchActivity;)V
+0x00019f18 method 1 p    Lorg/radare/radare2installer/LaunchActivity$2.method.onClick(Landroid/view/View;)V
+0x000080d0 [0x00019f38 - 0x0001a510]   1496 class 66 Lorg/radare/radare2installer/LaunchActivity :: Landroid/app/Activity;
+0x00019f38 method 0 pC   Lorg/radare/radare2installer/LaunchActivity.method.<init>()V
+0x00019f50 method 1 P    Lorg/radare/radare2installer/LaunchActivity.method.checkForRadare()Z
+0x00019f98 method 2 p    Lorg/radare/radare2installer/LaunchActivity.method.addListenerOnButton()V
+0x0001a014 method 3 p    Lorg/radare/radare2installer/LaunchActivity.method.onCreate(Landroid/os/Bundle;)V
+0x0001a20c method 4 p    Lorg/radare/radare2installer/LaunchActivity.method.onCreateOptionsMenu(Landroid/view/Menu;)Z
+0x0001a24c method 5 p    Lorg/radare/radare2installer/LaunchActivity.method.onDestroy()V
+0x0001a270 method 6 p    Lorg/radare/radare2installer/LaunchActivity.method.onOptionsItemSelected(Landroid/view/MenuItem;)Z
+0x0001a31c method 7 p    Lorg/radare/radare2installer/LaunchActivity.method.onResume()V
+0x0001a344 method 8 p    Lorg/radare/radare2installer/LaunchActivity.method.startStuff(Ljava/lang/String;)V
+0x000080f0 [0x0001a520 - 0x0001a7b6]    662 class 67 Lorg/radare/radare2installer/LauncherActivity :: Landroid/app/Activity;
+0x0001a520 method 0 pC   Lorg/radare/radare2installer/LauncherActivity.method.<init>()V
+0x0001a538 method 1 sP   Lorg/radare/radare2installer/LauncherActivity.method.filterSingleQuote(Ljava/lang/String;)Ljava/lang/String;
+0x0001a574 method 2 P    Lorg/radare/radare2installer/LauncherActivity.method.findTerminalApp()Ljava/lang/String;
+0x0001a5cc method 3 p    Lorg/radare/radare2installer/LauncherActivity.method.onCreate(Landroid/os/Bundle;)V
+0x0001a7a8 method 4 r    Lorg/radare/radare2installer/LauncherActivity.method.onPause()V
+0x00008110 [0x0001a7c8 - 0x0001a820]     88 class 68 Lorg/radare/radare2installer/MainActivity$1 :: Ljava/lang/Object;
+0x0001a7c8 method 0 C    Lorg/radare/radare2installer/MainActivity$1.method.<init>(Lorg/radare/radare2installer/MainActivity;Landroid/widget/CheckBox;Landroid/widget/CheckBox;)V
+0x0001a7ec method 1 p    Lorg/radare/radare2installer/MainActivity$1.method.onCheckedChanged(Landroid/widget/CompoundButton;Z)V
+0x00008130 [0x0001a830 - 0x0001aa4a]    538 class 69 Lorg/radare/radare2installer/MainActivity$2 :: Ljava/lang/Object;
+0x0001a830 method 0 C    Lorg/radare/radare2installer/MainActivity$2.method.<init>(Lorg/radare/radare2installer/MainActivity;Landroid/content/SharedPreferences;)V
+0x0001a850 method 1 p    Lorg/radare/radare2installer/MainActivity$2.method.run()V
+0x00008150 [0x0001aa5c - 0x0001aab0]     84 class 70 Lorg/radare/radare2installer/MainActivity$3 :: Ljava/lang/Object;
+0x0001aa5c method 0 C    Lorg/radare/radare2installer/MainActivity$3.method.<init>(Lorg/radare/radare2installer/MainActivity;)V
+0x0001aa78 method 1 p    Lorg/radare/radare2installer/MainActivity$3.method.onClick(Landroid/view/View;)V
+0x00008170 [0x0001aac0 - 0x0001ab1a]     90 class 71 Lorg/radare/radare2installer/MainActivity$4$1$1 :: Ljava/lang/Object;
+0x0001aac0 method 0 C    Lorg/radare/radare2installer/MainActivity$4$1$1.method.<init>(Lorg/radare/radare2installer/MainActivity$4$1;)V
+0x0001aadc method 1 p    Lorg/radare/radare2installer/MainActivity$4$1$1.method.run()V
+0x00008190 [0x0001ab2c - 0x0001c3ba]   6286 class 72 Lorg/radare/radare2installer/MainActivity$4$1 :: Ljava/lang/Object;
+0x0001ab2c method 0 C    Lorg/radare/radare2installer/MainActivity$4$1.method.<init>(Lorg/radare/radare2installer/MainActivity$4;Landroid/widget/CheckBox;Landroid/widget/CheckBox;Landroid/widget/CheckBox;Landroid/widget/CheckBox;)V
+0x0001ab58 method 1 P    Lorg/radare/radare2installer/MainActivity$4$1.method.resetButtons()V
+0x0001ab8c method 2 p    Lorg/radare/radare2installer/MainActivity$4$1.method.run()V
+0x000081b0 [0x0001c3e8 - 0x0001c562]    378 class 73 Lorg/radare/radare2installer/MainActivity$4 :: Ljava/lang/Object;
+0x0001c3e8 method 0 C    Lorg/radare/radare2installer/MainActivity$4.method.<init>(Lorg/radare/radare2installer/MainActivity;)V
+0x0001c404 method 1 p    Lorg/radare/radare2installer/MainActivity$4.method.onClick(Landroid/view/View;)V
+0x000081d0 [0x0001c590 - 0x0001c5fa]    106 class 74 Lorg/radare/radare2installer/MainActivity$5 :: Ljava/lang/Object;
+0x0001c590 method 0 C    Lorg/radare/radare2installer/MainActivity$5.method.<init>(Lorg/radare/radare2installer/MainActivity;Ljava/lang/String;)V
+0x0001c5b0 method 1 p    Lorg/radare/radare2installer/MainActivity$5.method.run()V
+0x000081f0 [0x0001c60c - 0x0001c65e]     82 class 75 Lorg/radare/radare2installer/MainActivity$6 :: Ljava/lang/Object;
+0x0001c60c method 0 C    Lorg/radare/radare2installer/MainActivity$6.method.<init>(Lorg/radare/radare2installer/MainActivity;)V
+0x0001c628 method 1 p    Lorg/radare/radare2installer/MainActivity$6.method.run()V
+0x00008210 [0x0001c670 - 0x0001cf9e]   2350 class 76 Lorg/radare/radare2installer/MainActivity :: Landroid/app/Activity;
+0x0001c670 method 0 pC   Lorg/radare/radare2installer/MainActivity.method.<init>()V
+0x0001c6c0 method 1 sh   Lorg/radare/radare2installer/MainActivity.method.access$000(Lorg/radare/radare2installer/MainActivity;)Lorg/radare/radare2installer/Utils;
+0x0001c6d8 method 2 sh   Lorg/radare/radare2installer/MainActivity.method.access$100(Lorg/radare/radare2installer/MainActivity;Ljava/lang/String;)V
+0x0001c6f0 method 3 sh   Lorg/radare/radare2installer/MainActivity.method.access$200(Lorg/radare/radare2installer/MainActivity;)Ljava/lang/String;
+0x0001c708 method 4 sh   Lorg/radare/radare2installer/MainActivity.method.access$300(Lorg/radare/radare2installer/MainActivity;)Z
+0x0001c724 method 5 sh   Lorg/radare/radare2installer/MainActivity.method.access$400(Lorg/radare/radare2installer/MainActivity;)Landroid/widget/Button;
+0x0001c73c method 6 sh   Lorg/radare/radare2installer/MainActivity.method.access$402(Lorg/radare/radare2installer/MainActivity;Landroid/widget/Button;)Landroid/widget/Button;
+0x0001c754 method 7 sh   Lorg/radare/radare2installer/MainActivity.method.access$500(Lorg/radare/radare2installer/MainActivity;)Landroid/widget/TextView;
+0x0001c76c method 8 sh   Lorg/radare/radare2installer/MainActivity.method.access$600(Lorg/radare/radare2installer/MainActivity;)Ljava/lang/Thread;
+0x0001c784 method 9 sh   Lorg/radare/radare2installer/MainActivity.method.access$602(Lorg/radare/radare2installer/MainActivity;Ljava/lang/Thread;)Ljava/lang/Thread;
+0x0001c79c method 10 sh   Lorg/radare/radare2installer/MainActivity.method.access$700(Lorg/radare/radare2installer/MainActivity;)Landroid/os/Handler;
+0x0001c7b4 method 11 sh   Lorg/radare/radare2installer/MainActivity.method.access$800(Lorg/radare/radare2installer/MainActivity;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z
+0x0001c7d0 method 12 P    Lorg/radare/radare2installer/MainActivity.method.checkForRadare()Z
+0x0001c858 method 13 P    Lorg/radare/radare2installer/MainActivity.method.download(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z
+0x0001cb4c method 14 P    Lorg/radare/radare2installer/MainActivity.method.output(Ljava/lang/String;)V
+0x0001cb74 method 15 P    Lorg/radare/radare2installer/MainActivity.method.resetButtons()V
+0x0001cb9c method 16 sp   Lorg/radare/radare2installer/MainActivity.method.unTarGz(Ljava/lang/String;Ljava/lang/String;)V
+0x0001cc7c method 17 p    Lorg/radare/radare2installer/MainActivity.method.onCreate(Landroid/os/Bundle;)V
+0x0001ce38 method 18 p    Lorg/radare/radare2installer/MainActivity.method.onCreateOptionsMenu(Landroid/view/Menu;)Z
+0x0001ce6c method 19 p    Lorg/radare/radare2installer/MainActivity.method.onOptionsItemSelected(Landroid/view/MenuItem;)Z
+0x0001cf08 method 20 p    Lorg/radare/radare2installer/MainActivity.method.onResume()V
+0x00008230 [0x0001cfb0 - 0x0001d006]     86 class 77 Lorg/radare/radare2installer/PathReceiver :: Landroid/content/BroadcastReceiver;
+0x0001cfb0 method 0 pC   Lorg/radare/radare2installer/PathReceiver.method.<init>()V
+0x0001cfc8 method 1 p    Lorg/radare/radare2installer/PathReceiver.method.onReceive(Landroid/content/Context;Landroid/content/Intent;)V
+0x00008250 [0x0001d018 - 0x0001d264]    588 class 78 Lorg/radare/radare2installer/PubKeyManager :: Ljava/lang/Object;
+0x0001d018 method 0 sC   Lorg/radare/radare2installer/PubKeyManager.method.<clinit>()V
+0x0001d04c method 1 pC   Lorg/radare/radare2installer/PubKeyManager.method.<init>()V
+0x0001d064 method 2 p    Lorg/radare/radare2installer/PubKeyManager.method.checkClientTrusted([Ljava/security/cert/X509Certificate;Ljava/lang/String;)V
+0x0001d078 method 3 p    Lorg/radare/radare2installer/PubKeyManager.method.checkServerTrusted([Ljava/security/cert/X509Certificate;Ljava/lang/String;)V
+0x0001d260 method 4 p    Lorg/radare/radare2installer/PubKeyManager.method.getAcceptedIssuers()[Ljava/security/cert/X509Certificate;
+0x00008270 [0x0001d274 - 0x0001d27c]      8 class 79 Lorg/radare/radare2installer/R$array :: Ljava/lang/Object;
+0x0001d274 method 0 pC   Lorg/radare/radare2installer/R$array.method.<init>()V
+0x00008290 [0x0001d28c - 0x0001d294]      8 class 80 Lorg/radare/radare2installer/R$attr :: Ljava/lang/Object;
+0x0001d28c method 0 pC   Lorg/radare/radare2installer/R$attr.method.<init>()V
+0x000082b0 [0x0001d2a4 - 0x0001d2ac]      8 class 81 Lorg/radare/radare2installer/R$drawable :: Ljava/lang/Object;
+0x0001d2a4 method 0 pC   Lorg/radare/radare2installer/R$drawable.method.<init>()V
+0x000082d0 [0x0001d2bc - 0x0001d2c4]      8 class 82 Lorg/radare/radare2installer/R$id :: Ljava/lang/Object;
+0x0001d2bc method 0 pC   Lorg/radare/radare2installer/R$id.method.<init>()V
+0x000082f0 [0x0001d2d4 - 0x0001d2dc]      8 class 83 Lorg/radare/radare2installer/R$layout :: Ljava/lang/Object;
+0x0001d2d4 method 0 pC   Lorg/radare/radare2installer/R$layout.method.<init>()V
+0x00008310 [0x0001d2ec - 0x0001d2f4]      8 class 84 Lorg/radare/radare2installer/R$string :: Ljava/lang/Object;
+0x0001d2ec method 0 pC   Lorg/radare/radare2installer/R$string.method.<init>()V
+0x00008330 [0x0001d304 - 0x0001d30c]      8 class 85 Lorg/radare/radare2installer/R$style :: Ljava/lang/Object;
+0x0001d304 method 0 pC   Lorg/radare/radare2installer/R$style.method.<init>()V
+0x00008350 [0x0001d31c - 0x0001d324]      8 class 86 Lorg/radare/radare2installer/R$xml :: Ljava/lang/Object;
+0x0001d31c method 0 pC   Lorg/radare/radare2installer/R$xml.method.<init>()V
+0x00008370 [0x0001d334 - 0x0001d33c]      8 class 87 Lorg/radare/radare2installer/R :: Ljava/lang/Object;
+0x0001d334 method 0 pC   Lorg/radare/radare2installer/R.method.<init>()V
+0x00008390 [0x0001d34c - 0x0001d376]     42 class 88 Lorg/radare/radare2installer/SettingsActivity :: Landroid/preference/PreferenceActivity;
+0x0001d34c method 0 pC   Lorg/radare/radare2installer/SettingsActivity.method.<init>()V
+0x0001d364 method 1 p    Lorg/radare/radare2installer/SettingsActivity.method.onCreate(Landroid/os/Bundle;)V
+0x000083b0 [0x000083b0 - 0x000083b0]      0 class 89 Lorg/radare/radare2installer/UpdateCheckerService$1 :: Ljava/lang/Object;
+0x000083d0 [0x0001d388 - 0x0001d588]    512 class 90 Lorg/radare/radare2installer/UpdateCheckerService$PollTask :: Landroid/os/AsyncTask;
+0x0001d388 method 0 PC   Lorg/radare/radare2installer/UpdateCheckerService$PollTask.method.<init>(Lorg/radare/radare2installer/UpdateCheckerService;)V
+0x0001d3a4 method 1 hC   Lorg/radare/radare2installer/UpdateCheckerService$PollTask.method.<init>(Lorg/radare/radare2installer/UpdateCheckerService;Lorg/radare/radare2installer/UpdateCheckerService$1;)V
+0x0001d3bc method 2 rbh  Lorg/radare/radare2installer/UpdateCheckerService$PollTask.method.doInBackground([Ljava/lang/Object;)Ljava/lang/Object;
+0x0001d3dc method 3 rg   Lorg/radare/radare2installer/UpdateCheckerService$PollTask.method.doInBackground([Ljava/lang/Void;)Ljava/lang/Void;
+0x0001d4d0 method 4 rbh  Lorg/radare/radare2installer/UpdateCheckerService$PollTask.method.onPostExecute(Ljava/lang/Object;)V
+0x0001d4ec method 5 r    Lorg/radare/radare2installer/UpdateCheckerService$PollTask.method.onPostExecute(Ljava/lang/Void;)V
+0x000083f0 [0x0001d598 - 0x0001d6ee]    342 class 91 Lorg/radare/radare2installer/UpdateCheckerService :: Landroid/app/Service;
+0x0001d598 method 0 pC   Lorg/radare/radare2installer/UpdateCheckerService.method.<init>()V
+0x0001d5b8 method 1 sh   Lorg/radare/radare2installer/UpdateCheckerService.method.access$100(Lorg/radare/radare2installer/UpdateCheckerService;)Lorg/radare/radare2installer/Utils;
+0x0001d5d0 method 2 sh   Lorg/radare/radare2installer/UpdateCheckerService.method.access$102(Lorg/radare/radare2installer/UpdateCheckerService;Lorg/radare/radare2installer/Utils;)Lorg/radare/radare2installer/Utils;
+0x0001d5e8 method 3 sh   Lorg/radare/radare2installer/UpdateCheckerService.method.access$200(Lorg/radare/radare2installer/UpdateCheckerService;)Z
+0x0001d600 method 4 sh   Lorg/radare/radare2installer/UpdateCheckerService.method.access$202(Lorg/radare/radare2installer/UpdateCheckerService;Z)Z
+0x0001d618 method 5 P    Lorg/radare/radare2installer/UpdateCheckerService.method.handleIntent(Landroid/content/Intent;)V
+0x0001d694 method 6 p    Lorg/radare/radare2installer/UpdateCheckerService.method.onBind(Landroid/content/Intent;)Landroid/os/IBinder;
+0x0001d6a8 method 7 p    Lorg/radare/radare2installer/UpdateCheckerService.method.onDestroy()V
+0x0001d6cc method 8 p    Lorg/radare/radare2installer/UpdateCheckerService.method.onStart(Landroid/content/Intent;I)V
+0x0001d6e4 method 9 p    Lorg/radare/radare2installer/UpdateCheckerService.method.onStartCommand(Landroid/content/Intent;II)I
+0x00008410 [0x0001d700 - 0x0001dea0]   1952 class 92 Lorg/radare/radare2installer/Utils :: Ljava/lang/Object;
+0x0001d700 method 0 pC   Lorg/radare/radare2installer/Utils.method.<init>(Landroid/content/Context;)V
+0x0001d734 method 1 P    Lorg/radare/radare2installer/Utils.method.updateCheckGithub()Z
+0x0001d7a4 method 2 P    Lorg/radare/radare2installer/Utils.method.updateCheckInsecure(Ljava/lang/String;)Z
+0x0001d83c method 3 p    Lorg/radare/radare2installer/Utils.method.GetArch()Ljava/lang/String;
+0x0001d8c4 method 4 p    Lorg/radare/radare2installer/Utils.method.GetPref(Ljava/lang/String;)Ljava/lang/String;
+0x0001d8f0 method 5 p    Lorg/radare/radare2installer/Utils.method.GetStoragePath()Ljava/lang/String;
+0x0001d984 method 6 p    Lorg/radare/radare2installer/Utils.method.SendNotification(Ljava/lang/String;Ljava/lang/String;)V
+0x0001da14 method 7 p    Lorg/radare/radare2installer/Utils.method.StorePref(Ljava/lang/String;Ljava/lang/String;)V
+0x0001da48 method 8 p    Lorg/radare/radare2installer/Utils.method.UpdateCheck(Ljava/lang/String;Z)Z
+0x0001da70 method 9 p    Lorg/radare/radare2installer/Utils.method.exec(Ljava/lang/String;)Ljava/lang/String;
+0x0001dae8 method 10 p    Lorg/radare/radare2installer/Utils.method.getFreeSpace(Ljava/lang/String;)J
+0x0001db3c method 11 p    Lorg/radare/radare2installer/Utils.method.getGithubConnection(Ljava/lang/String;)Ljavax/net/ssl/HttpsURLConnection;
+0x0001dc0c method 12 p    Lorg/radare/radare2installer/Utils.method.getGithubREADME()Ljava/lang/String;
+0x0001dcd8 method 13 p    Lorg/radare/radare2installer/Utils.method.isAppInstalled(Ljava/lang/String;)Z
+0x0001dd14 method 14 p    Lorg/radare/radare2installer/Utils.method.isInstalled()Z
+0x0001dd70 method 15 pf   Lorg/radare/radare2installer/Utils.method.isInternetAvailable()Z
+0x0001ddbc method 16 p    Lorg/radare/radare2installer/Utils.method.killradare()V
+0x0001ddf0 method 17 p    Lorg/radare/radare2installer/Utils.method.myToast(Ljava/lang/String;I)V
+0x0001de88 method 18 p    Lorg/radare/radare2installer/Utils.method.sleep(I)V
+0x00008430 [0x00008430 - 0x00008430]      0 class 93 Lorg/radare/radare2installer/WebActivity$1 :: Ljava/lang/Object;
+0x00008450 [0x0001dec0 - 0x0001df9a]    218 class 94 Lorg/radare/radare2installer/WebActivity$RadareWebViewClient :: Landroid/webkit/WebViewClient;
+0x0001dec0 method 0 PC   Lorg/radare/radare2installer/WebActivity$RadareWebViewClient.method.<init>(Lorg/radare/radare2installer/WebActivity;)V
+0x0001dedc method 1 hC   Lorg/radare/radare2installer/WebActivity$RadareWebViewClient.method.<init>(Lorg/radare/radare2installer/WebActivity;Lorg/radare/radare2installer/WebActivity$1;)V
+0x0001def4 method 2 p    Lorg/radare/radare2installer/WebActivity$RadareWebViewClient.method.onReceivedError(Landroid/webkit/WebView;ILjava/lang/String;Ljava/lang/String;)V
+0x0001df90 method 3 p    Lorg/radare/radare2installer/WebActivity$RadareWebViewClient.method.shouldOverrideUrlLoading(Landroid/webkit/WebView;Ljava/lang/String;)Z
+0x00008470 [0x0001dfac - 0x0001e5e8]   1596 class 95 Lorg/radare/radare2installer/WebActivity :: Landroid/app/Activity;
+0x0001dfac method 0 pC   Lorg/radare/radare2installer/WebActivity.method.<init>()V
+0x0001dfc4 method 1 sh   Lorg/radare/radare2installer/WebActivity.method.access$100(Lorg/radare/radare2installer/WebActivity;)Lorg/radare/radare2installer/Utils;
+0x0001dfdc method 2 p    Lorg/radare/radare2installer/WebActivity.method.getLocalIpAddress()Ljava/lang/String;
+0x0001e06c method 3 p    Lorg/radare/radare2installer/WebActivity.method.onCreate(Landroid/os/Bundle;)V
+0x0001e574 method 4 p    Lorg/radare/radare2installer/WebActivity.method.onDestroy()V
+0x0001e5a4 method 5 p    Lorg/radare/radare2installer/WebActivity.method.onKeyDown(ILandroid/view/KeyEvent;)Z
+0x00008490 [0x0001e608 - 0x0001e83c]    564 class 96 Lcom/ice/tar/TarGzOutputStream :: Lcom/ice/tar/TarOutputStream;
+0x0001e608 method 0 pC   Lcom/ice/tar/TarGzOutputStream.method.<init>(Ljava/io/OutputStream;)V
+0x0001e660 method 1 p    Lcom/ice/tar/TarGzOutputStream.method.close()V
+0x0001e688 method 2 p    Lcom/ice/tar/TarGzOutputStream.method.closeEntry()V
+0x0001e700 method 3 p    Lcom/ice/tar/TarGzOutputStream.method.finish()V
+0x0001e72c method 4 p    Lcom/ice/tar/TarGzOutputStream.method.getRecordSize()I
+0x0001e74c method 5 p    Lcom/ice/tar/TarGzOutputStream.method.putNextEntry(Lcom/ice/tar/TarEntry;)V
+0x0001e784 method 6 p    Lcom/ice/tar/TarGzOutputStream.method.setBufferDebug(Z)V
+0x0001e7a0 method 7 p    Lcom/ice/tar/TarGzOutputStream.method.setDebug(Z)V
+0x0001e7bc method 8 p    Lcom/ice/tar/TarGzOutputStream.method.write(I)V
+0x0001e7ec method 9 p    Lcom/ice/tar/TarGzOutputStream.method.write([B)V
+0x0001e81c method 10 p    Lcom/ice/tar/TarGzOutputStream.method.write([BII)V
+0x000084b0 [0x0001e84c - 0x0001e8ac]     96 class 97 Lcom/ice/tar/TarInputStream$EntryAdapter :: Ljava/lang/Object;
+0x0001e84c method 0 pC   Lcom/ice/tar/TarInputStream$EntryAdapter.method.<init>(Lcom/ice/tar/TarInputStream;)V
+0x0001e868 method 1 p    Lcom/ice/tar/TarInputStream$EntryAdapter.method.createEntry(Ljava/io/File;)Lcom/ice/tar/TarEntry;
+0x0001e884 method 2 p    Lcom/ice/tar/TarInputStream$EntryAdapter.method.createEntry(Ljava/lang/String;)Lcom/ice/tar/TarEntry;
+0x0001e8a0 method 3 p    Lcom/ice/tar/TarInputStream$EntryAdapter.method.createEntry([B)Lcom/ice/tar/TarEntry;
+0x000084d0 [0x0001e8bc - 0x0001f498]   3036 class 98 Lcom/ice/tar/tar :: Ljava/lang/Object;
+0x0001e8bc method 0 pC   Lcom/ice/tar/tar.method.<init>()V
+0x0001e930 method 1 sp   Lcom/ice/tar/tar.method.main([Ljava/lang/String;)V
+0x0001e954 method 2 P    Lcom/ice/tar/tar.method.processArguments([Ljava/lang/String;)I
+0x0001eecc method 3 P    Lcom/ice/tar/tar.method.usage()V
+0x0001f0c8 method 4 P    Lcom/ice/tar/tar.method.version()V
+0x0001f0e8 method 5 p    Lcom/ice/tar/tar.method.instanceMain([Ljava/lang/String;)V
+0x0001f48c method 6 p    Lcom/ice/tar/tar.method.showTarProgressMessage(Ljava/lang/String;)V
+0x000084f0 [0x0001f4a8 - 0x0001f542]    154 class 99 Lcom/stericson/RootTools/CommandCapture :: Lcom/stericson/RootTools/Command;
+0x0001f4a8 method 0 pgC  Lcom/stericson/RootTools/CommandCapture.method.<init>(I[Ljava/lang/String;)V
+0x0001f4d0 method 1 p    Lcom/stericson/RootTools/CommandCapture.method.output(ILjava/lang/String;)V
+0x0001f534 method 2 p    Lcom/stericson/RootTools/CommandCapture.method.toString()Ljava/lang/String;
+0x00008510 [0x0001f554 - 0x0001f582]     46 class 100 Lcom/stericson/RootTools/InternalMethods$1 :: Lcom/stericson/RootTools/Command;
+0x0001f554 method 0 gC   Lcom/stericson/RootTools/InternalMethods$1.method.<init>(I[Ljava/lang/String;Ljava/util/List;)V
+0x0001f570 method 1 p    Lcom/stericson/RootTools/InternalMethods$1.method.output(ILjava/lang/String;)V
+0x00008530 [0x0001f594 - 0x0001f5f4]     96 class 101 Lcom/stericson/RootTools/InternalMethods$2 :: Lcom/stericson/RootTools/Command;
+0x0001f594 method 0 gC   Lcom/stericson/RootTools/InternalMethods$2.method.<init>(I[Ljava/lang/String;Ljava/util/List;)V
+0x0001f5b0 method 1 p    Lcom/stericson/RootTools/InternalMethods$2.method.output(ILjava/lang/String;)V
+0x00008550 [0x0001f604 - 0x0001f64c]     72 class 102 Lcom/stericson/RootTools/InternalMethods$3 :: Lcom/stericson/RootTools/Command;
+0x0001f604 method 0 gC   Lcom/stericson/RootTools/InternalMethods$3.method.<init>(I[Ljava/lang/String;)V
+0x0001f61c method 1 p    Lcom/stericson/RootTools/InternalMethods$3.method.output(ILjava/lang/String;)V
+0x00008570 [0x0001f65c - 0x0001f6e6]    138 class 103 Lcom/stericson/RootTools/InternalMethods$4 :: Lcom/stericson/RootTools/Command;
+0x0001f65c method 0 gC   Lcom/stericson/RootTools/InternalMethods$4.method.<init>(I[Ljava/lang/String;)V
+0x0001f674 method 1 p    Lcom/stericson/RootTools/InternalMethods$4.method.output(ILjava/lang/String;)V
+0x00008590 [0x0001f6f8 - 0x0001f79a]    162 class 104 Lcom/stericson/RootTools/InternalMethods$5 :: Lcom/stericson/RootTools/Command;
+0x0001f6f8 method 0 gC   Lcom/stericson/RootTools/InternalMethods$5.method.<init>(I[Ljava/lang/String;)V
+0x0001f710 method 1 p    Lcom/stericson/RootTools/InternalMethods$5.method.output(ILjava/lang/String;)V
+0x000085b0 [0x0001f7ac - 0x0001f892]    230 class 105 Lcom/stericson/RootTools/InternalMethods$6 :: Lcom/stericson/RootTools/Command;
+0x0001f7ac method 0 gC   Lcom/stericson/RootTools/InternalMethods$6.method.<init>(I[Ljava/lang/String;)V
+0x0001f7c4 method 1 p    Lcom/stericson/RootTools/InternalMethods$6.method.output(ILjava/lang/String;)V
+0x000085d0 [0x0001f8c0 - 0x0001f92a]    106 class 106 Lcom/stericson/RootTools/InternalMethods$7 :: Lcom/stericson/RootTools/Command;
+0x0001f8c0 method 0 gC   Lcom/stericson/RootTools/InternalMethods$7.method.<init>(I[Ljava/lang/String;)V
+0x0001f8d8 method 1 p    Lcom/stericson/RootTools/InternalMethods$7.method.output(ILjava/lang/String;)V
+0x000085f0 [0x0001f93c - 0x0001f984]     72 class 107 Lcom/stericson/RootTools/InternalMethods$8 :: Lcom/stericson/RootTools/Command;
+0x0001f93c method 0 gC   Lcom/stericson/RootTools/InternalMethods$8.method.<init>(I[Ljava/lang/String;Ljava/util/List;)V
+0x0001f958 method 1 p    Lcom/stericson/RootTools/InternalMethods$8.method.output(ILjava/lang/String;)V
+0x00008610 [0x0001f994 - 0x0001fa14]    128 class 108 Lcom/stericson/RootTools/InternalMethods$9 :: Lcom/stericson/RootTools/Command;
+0x0001f994 method 0 gC   Lcom/stericson/RootTools/InternalMethods$9.method.<init>(I[Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+0x0001f9b4 method 1 p    Lcom/stericson/RootTools/InternalMethods$9.method.output(ILjava/lang/String;)V
+0x00008630 [0x0000b4c4 - 0x0001fb1e]  83546 class 109 Lcom/stericson/RootTools/RootTools$Result :: Ljava/lang/Object;
+0x0001fa24 method 0 pC   Lcom/stericson/RootTools/RootTools$Result.method.<init>()V
+0x0001fa4c method 1 p    Lcom/stericson/RootTools/RootTools$Result.method.getData()Ljava/io/Serializable;
+0x0001fa64 method 2 p    Lcom/stericson/RootTools/RootTools$Result.method.getError()I
+0x0001fa7c method 3 p    Lcom/stericson/RootTools/RootTools$Result.method.getProcess()Ljava/lang/Process;
+0x0000b4c4 method 4 pa   Lcom/stericson/RootTools/RootTools$Result.method.onComplete(I)V
+0x0000b4c8 method 5 pa   Lcom/stericson/RootTools/RootTools$Result.method.onFailure(Ljava/lang/Exception;)V
+0x0000b4cc method 6 pa   Lcom/stericson/RootTools/RootTools$Result.method.process(Ljava/lang/String;)V
+0x0000b4d0 method 7 pa   Lcom/stericson/RootTools/RootTools$Result.method.processError(Ljava/lang/String;)V
+0x0001fa94 method 8 pbh  Lcom/stericson/RootTools/RootTools$Result.method.setData(Ljava/io/Serializable;)Lcom/stericson/RootTools/IResult;
+0x0001fab0 method 9 p    Lcom/stericson/RootTools/RootTools$Result.method.setData(Ljava/io/Serializable;)Lcom/stericson/RootTools/RootTools$Result;
+0x0001fac8 method 10 pbh  Lcom/stericson/RootTools/RootTools$Result.method.setError(I)Lcom/stericson/RootTools/IResult;
+0x0001fae4 method 11 p    Lcom/stericson/RootTools/RootTools$Result.method.setError(I)Lcom/stericson/RootTools/RootTools$Result;
+0x0001fafc method 12 pbh  Lcom/stericson/RootTools/RootTools$Result.method.setProcess(Ljava/lang/Process;)Lcom/stericson/RootTools/IResult;
+0x0001fb18 method 13 p    Lcom/stericson/RootTools/RootTools$Result.method.setProcess(Ljava/lang/Process;)Lcom/stericson/RootTools/RootTools$Result;
+0x00008650 [0x0001fb30 - 0x0001fcd8]    424 class 110 Lcom/sun/activation/viewers/ImageViewer :: Ljava/awt/Panel;
+0x0001fb30 method 0 pC   Lcom/sun/activation/viewers/ImageViewer.method.<init>()V
+0x0001fb68 method 1 P    Lcom/sun/activation/viewers/ImageViewer.method.setInputStream(Ljava/io/InputStream;)V
+0x0001fc74 method 2 p    Lcom/sun/activation/viewers/ImageViewer.method.addNotify()V
+0x0001fca0 method 3 p    Lcom/sun/activation/viewers/ImageViewer.method.getPreferredSize()Ljava/awt/Dimension;
+0x0001fcc0 method 4 p    Lcom/sun/activation/viewers/ImageViewer.method.setCommandContext(Ljava/lang/String;Ljavax/activation/DataHandler;)V
+0x00008670 [0x0001fce8 - 0x0001ffae]    710 class 111 Lcom/sun/activation/viewers/TextEditor :: Ljava/awt/Panel;
+0x0001fce8 method 0 pC   Lcom/sun/activation/viewers/TextEditor.method.<init>()V
+0x0001fdc4 method 1 P    Lcom/sun/activation/viewers/TextEditor.method.addGridComponent(Ljava/awt/Container;Ljava/awt/Component;Ljava/awt/GridBagLayout;IIIIII)V
+0x0001fe18 method 2 P    Lcom/sun/activation/viewers/TextEditor.method.performSaveOperation()V
+0x0001fecc method 3 p    Lcom/sun/activation/viewers/TextEditor.method.actionPerformed(Ljava/awt/event/ActionEvent;)V
+0x0001fef4 method 4 p    Lcom/sun/activation/viewers/TextEditor.method.addNotify()V
+0x0001ff14 method 5 p    Lcom/sun/activation/viewers/TextEditor.method.getPreferredSize()Ljava/awt/Dimension;
+0x0001ff3c method 6 p    Lcom/sun/activation/viewers/TextEditor.method.setCommandContext(Ljava/lang/String;Ljavax/activation/DataHandler;)V
+0x0001ff64 method 7 p    Lcom/sun/activation/viewers/TextEditor.method.setInputStream(Ljava/io/InputStream;)V
+0x00008690 [0x0001ffc0 - 0x000200da]    282 class 112 Lcom/sun/activation/viewers/TextViewer :: Ljava/awt/Panel;
+0x0001ffc0 method 0 pC   Lcom/sun/activation/viewers/TextViewer.method.<init>()V
+0x00020020 method 1 p    Lcom/sun/activation/viewers/TextViewer.method.addNotify()V
+0x00020040 method 2 p    Lcom/sun/activation/viewers/TextViewer.method.getPreferredSize()Ljava/awt/Dimension;
+0x00020068 method 3 p    Lcom/sun/activation/viewers/TextViewer.method.setCommandContext(Ljava/lang/String;Ljavax/activation/DataHandler;)V
+0x00020090 method 4 p    Lcom/sun/activation/viewers/TextViewer.method.setInputStream(Ljava/io/InputStream;)V
+0x000086b0 [0x000200ec - 0x00020176]    138 class 113 Ljavax/activation/DataHandlerDataSource :: Ljava/lang/Object;
+0x000200ec method 0 pC   Ljavax/activation/DataHandlerDataSource.method.<init>(Ljavax/activation/DataHandler;)V
+0x00020108 method 1 p    Ljavax/activation/DataHandlerDataSource.method.getContentType()Ljava/lang/String;
+0x00020128 method 2 p    Ljavax/activation/DataHandlerDataSource.method.getInputStream()Ljava/io/InputStream;
+0x00020148 method 3 p    Ljavax/activation/DataHandlerDataSource.method.getName()Ljava/lang/String;
+0x00020168 method 4 p    Ljavax/activation/DataHandlerDataSource.method.getOutputStream()Ljava/io/OutputStream;
+0x000086d0 [0x00020188 - 0x000202e6]    350 class 114 Ljavax/activation/DataSourceDataContentHandler :: Ljava/lang/Object;
+0x00020188 method 0 pC   Ljavax/activation/DataSourceDataContentHandler.method.<init>(Ljavax/activation/DataContentHandler;Ljavax/activation/DataSource;)V
+0x000201a8 method 1 p    Ljavax/activation/DataSourceDataContentHandler.method.getContent(Ljavax/activation/DataSource;)Ljava/lang/Object;
+0x000201d8 method 2 p    Ljavax/activation/DataSourceDataContentHandler.method.getTransferData(Ljava/awt/datatransfer/DataFlavor;Ljavax/activation/DataSource;)Ljava/lang/Object;
+0x0002022c method 3 p    Ljavax/activation/DataSourceDataContentHandler.method.getTransferDataFlavors()[Ljava/awt/datatransfer/DataFlavor;
+0x0002029c method 4 p    Ljavax/activation/DataSourceDataContentHandler.method.writeTo(Ljava/lang/Object;Ljava/lang/String;Ljava/io/OutputStream;)V
+0x000086f0 [0x000202f8 - 0x000203f6]    254 class 115 Ljavax/activation/FileDataSource :: Ljava/lang/Object;
+0x000202f8 method 0 pC   Ljavax/activation/FileDataSource.method.<init>(Ljava/io/File;)V
+0x00020314 method 1 pC   Ljavax/activation/FileDataSource.method.<init>(Ljava/lang/String;)V
+0x00020338 method 2 p    Ljavax/activation/FileDataSource.method.getContentType()Ljava/lang/String;
+0x00020378 method 3 p    Ljavax/activation/FileDataSource.method.getFile()Ljava/io/File;
+0x00020390 method 4 p    Ljavax/activation/FileDataSource.method.getInputStream()Ljava/io/InputStream;
+0x000203b0 method 5 p    Ljavax/activation/FileDataSource.method.getName()Ljava/lang/String;
+0x000203d0 method 6 p    Ljavax/activation/FileDataSource.method.getOutputStream()Ljava/io/OutputStream;
+0x000203f0 method 7 p    Ljavax/activation/FileDataSource.method.setFileTypeMap(Ljavax/activation/FileTypeMap;)V
+0x00008710 [0x00020408 - 0x00020be0]   2008 class 116 Ljavax/activation/MailcapCommandMap :: Ljavax/activation/CommandMap;
+0x00020408 method 0 sC   Ljavax/activation/MailcapCommandMap.method.<clinit>()V
+0x00020444 method 1 pC   Ljavax/activation/MailcapCommandMap.method.<init>()V
+0x00020610 method 2 pC   Ljavax/activation/MailcapCommandMap.method.<init>(Ljava/io/InputStream;)V
+0x00020674 method 3 pC   Ljavax/activation/MailcapCommandMap.method.<init>(Ljava/lang/String;)V
+0x000206dc method 4 P    Ljavax/activation/MailcapCommandMap.method.appendCmdsToVector(Ljava/util/Hashtable;Ljava/util/Vector;)V
+0x00020750 method 5 P    Ljavax/activation/MailcapCommandMap.method.appendPrefCmdsToVector(Ljava/util/Hashtable;Ljava/util/Vector;)V
+0x000207b8 method 6 P    Ljavax/activation/MailcapCommandMap.method.checkForVerb(Ljava/util/Vector;Ljava/lang/String;)Z
+0x00020804 method 7 P    Ljavax/activation/MailcapCommandMap.method.loadFile(Ljava/lang/String;)Lcom/sun/activation/registries/MailcapFile;
+0x00020838 method 8 P    Ljavax/activation/MailcapCommandMap.method.loadResource(Ljava/lang/String;)Lcom/sun/activation/registries/MailcapFile;
+0x00020880 method 9 pY   Ljavax/activation/MailcapCommandMap.method.addMailcap(Ljava/lang/String;)V
+0x000208f0 method 10 pY   Ljavax/activation/MailcapCommandMap.method.createDataContentHandler(Ljava/lang/String;)Ljavax/activation/DataContentHandler;
+0x00020a64 method 11 pY   Ljavax/activation/MailcapCommandMap.method.getAllCommands(Ljava/lang/String;)[Ljavax/activation/CommandInfo;
+0x00020ae8 method 12 pY   Ljavax/activation/MailcapCommandMap.method.getCommand(Ljava/lang/String;Ljava/lang/String;)Ljavax/activation/CommandInfo;
+0x00020b80 method 13 pY   Ljavax/activation/MailcapCommandMap.method.getPreferredCommands(Ljava/lang/String;)[Ljavax/activation/CommandInfo;
+0x00008730 [0x00020c04 - 0x00020f7a]    886 class 117 Ljavax/activation/MimetypesFileTypeMap :: Ljavax/activation/FileTypeMap;
+0x00020c04 method 0 sC   Ljavax/activation/MimetypesFileTypeMap.method.<clinit>()V
+0x00020c24 method 1 pC   Ljavax/activation/MimetypesFileTypeMap.method.<init>()V
+0x00020d98 method 2 pC   Ljavax/activation/MimetypesFileTypeMap.method.<init>(Ljava/io/InputStream;)V
+0x00020dd8 method 3 pC   Ljavax/activation/MimetypesFileTypeMap.method.<init>(Ljava/lang/String;)V
+0x00020e04 method 4 P    Ljavax/activation/MimetypesFileTypeMap.method.loadFile(Ljava/lang/String;)Lcom/sun/activation/registries/MimeTypeFile;
+0x00020e38 method 5 P    Ljavax/activation/MimetypesFileTypeMap.method.loadResource(Ljava/lang/String;)Lcom/sun/activation/registries/MimeTypeFile;
+0x00020e80 method 6 pY   Ljavax/activation/MimetypesFileTypeMap.method.addMimeTypes(Ljava/lang/String;)V
+0x00020edc method 7 p    Ljavax/activation/MimetypesFileTypeMap.method.getContentType(Ljava/io/File;)Ljava/lang/String;
+0x00020f00 method 8 pY   Ljavax/activation/MimetypesFileTypeMap.method.getContentType(Ljava/lang/String;)Ljava/lang/String;
+0x00008750 [0x00020fa0 - 0x000210f2]    338 class 118 Ljavax/activation/ObjectDataContentHandler :: Ljava/lang/Object;
+0x00020fa0 method 0 pC   Ljavax/activation/ObjectDataContentHandler.method.<init>(Ljavax/activation/DataContentHandler;Ljava/lang/Object;Ljava/lang/String;)V
+0x00020fc4 method 1 p    Ljavax/activation/ObjectDataContentHandler.method.getContent(Ljavax/activation/DataSource;)Ljava/lang/Object;
+0x00020fdc method 2 p    Ljavax/activation/ObjectDataContentHandler.method.getDCH()Ljavax/activation/DataContentHandler;
+0x00020ff4 method 3 p    Ljavax/activation/ObjectDataContentHandler.method.getTransferData(Ljava/awt/datatransfer/DataFlavor;Ljavax/activation/DataSource;)Ljava/lang/Object;
+0x00021044 method 4 p    Ljavax/activation/ObjectDataContentHandler.method.getTransferDataFlavors()[Ljava/awt/datatransfer/DataFlavor;
+0x000210b0 method 5 p    Ljavax/activation/ObjectDataContentHandler.method.writeTo(Ljava/lang/Object;Ljava/lang/String;Ljava/io/OutputStream;)V
+0x00008770 [0x00021104 - 0x000211fe]    250 class 119 Ljavax/activation/URLDataSource :: Ljava/lang/Object;
+0x00021104 method 0 pC   Ljavax/activation/URLDataSource.method.<init>(Ljava/net/URL;)V
+0x00021120 method 1 p    Ljavax/activation/URLDataSource.method.getContentType()Ljava/lang/String;
+0x0002117c method 2 p    Ljavax/activation/URLDataSource.method.getInputStream()Ljava/io/InputStream;
+0x0002119c method 3 p    Ljavax/activation/URLDataSource.method.getName()Ljava/lang/String;
+0x000211bc method 4 p    Ljavax/activation/URLDataSource.method.getOutputStream()Ljava/io/OutputStream;
+0x000211f8 method 5 p    Ljavax/activation/URLDataSource.method.getURL()Ljava/net/URL;
+0x00008790 [0x00021210 - 0x00021262]     82 class 120 Lorg/radare/radare2installer/Utils$1 :: Lcom/stericson/RootTools/Command;
+0x00021210 method 0 gC   Lorg/radare/radare2installer/Utils$1.method.<init>(Lorg/radare/radare2installer/Utils;I[Ljava/lang/String;Ljava/lang/StringBuffer;)V
+0x00021230 method 1 p    Lorg/radare/radare2installer/Utils$1.method.output(ILjava/lang/String;)V
+0x000087b0 [0x00021274 - 0x000212f6]    130 class 121 Lcom/stericson/RootTools/InternalMethods$10 :: Lcom/stericson/RootTools/RootTools$Result;
+0x00021274 method 0 C    Lcom/stericson/RootTools/InternalMethods$10.method.<init>(Ljava/lang/String;)V
+0x00021290 method 1 p    Lcom/stericson/RootTools/InternalMethods$10.method.onComplete(I)V
+0x000212a4 method 2 p    Lcom/stericson/RootTools/InternalMethods$10.method.onFailure(Ljava/lang/Exception;)V
+0x000212c0 method 3 p    Lcom/stericson/RootTools/InternalMethods$10.method.process(Ljava/lang/String;)V
+0x000212f4 method 4 p    Lcom/stericson/RootTools/InternalMethods$10.method.processError(Ljava/lang/String;)V
+0x000087d0 [0x00021308 - 0x00021446]    318 class 122 Lcom/stericson/RootTools/InternalMethods$11 :: Lcom/stericson/RootTools/RootTools$Result;
+0x00021308 method 0 C    Lcom/stericson/RootTools/InternalMethods$11.method.<init>(Ljava/lang/String;)V
+0x00021324 method 1 p    Lcom/stericson/RootTools/InternalMethods$11.method.onComplete(I)V
+0x00021338 method 2 p    Lcom/stericson/RootTools/InternalMethods$11.method.onFailure(Ljava/lang/Exception;)V
+0x00021354 method 3 p    Lcom/stericson/RootTools/InternalMethods$11.method.process(Ljava/lang/String;)V
+0x00021444 method 4 p    Lcom/stericson/RootTools/InternalMethods$11.method.processError(Ljava/lang/String;)V
+0x000087f0 [0x00021458 - 0x00021554]    252 class 123 Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread$1 :: Lcom/stericson/RootTools/RootTools$Result;
+0x00021458 method 0 C    Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread$1.method.<init>(Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread;)V
+0x00021474 method 1 p    Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread$1.method.onComplete(I)V
+0x00021498 method 2 p    Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread$1.method.onFailure(Ljava/lang/Exception;)V
+0x000214dc method 3 p    Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread$1.method.process(Ljava/lang/String;)V
+0x00021520 method 4 p    Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread$1.method.processError(Ljava/lang/String;)V
+0x00008810 [0x00021564 - 0x00021660]    252 class 124 Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread$2 :: Lcom/stericson/RootTools/RootTools$Result;
+0x00021564 method 0 C    Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread$2.method.<init>(Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread;)V
+0x00021580 method 1 p    Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread$2.method.onComplete(I)V
+0x000215a4 method 2 p    Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread$2.method.onFailure(Ljava/lang/Exception;)V
+0x000215e8 method 3 p    Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread$2.method.process(Ljava/lang/String;)V
+0x0002162c method 4 p    Lcom/stericson/RootTools/SanityCheckRootTools$SanityCheckThread$2.method.processError(Ljava/lang/String;)V
+EOF
+RUN
+
+NAME=DEX radare2installer.dex classes (ic command with name)
+FILE=bins/dex/org.radare.radare2installer.dex
+CMDS=ic  Lcom/stericson/RootTools/Installer
+EXPECT=<<EOF
+class Lcom/stericson/RootTools/Installer
+0x00011410 method Lcom/stericson/RootTools/Installer pC   Lcom/stericson/RootTools/Installer.method.<init>(Landroid/content/Context;)V
+0x00011440 method Lcom/stericson/RootTools/Installer r    Lcom/stericson/RootTools/Installer.method.installBinary(ILjava/lang/String;Ljava/lang/String;)Z
+0x00011814 method Lcom/stericson/RootTools/Installer r    Lcom/stericson/RootTools/Installer.method.isBinaryInstalled(Ljava/lang/String;)Z
+EOF
+RUN
+
+NAME=DEX radare2installer.dex classes (ic command with index)
+FILE=bins/dex/org.radare.radare2installer.dex
+CMDS=ic 17
+EXPECT=<<EOF
+class Lcom/stericson/RootTools/Installer
+0x00011410 method Lcom/stericson/RootTools/Installer pC   Lcom/stericson/RootTools/Installer.method.<init>(Landroid/content/Context;)V
+0x00011440 method Lcom/stericson/RootTools/Installer r    Lcom/stericson/RootTools/Installer.method.installBinary(ILjava/lang/String;Ljava/lang/String;)Z
+0x00011814 method Lcom/stericson/RootTools/Installer r    Lcom/stericson/RootTools/Installer.method.isBinaryInstalled(Ljava/lang/String;)Z
+EOF
+RUN
+
+NAME=DEX test.dex val
+FILE=bins/dex/test.dex
+CMDS=ao~val[1]
+EXPECT=<<EOF
+0x00000021
+EOF
+RUN
+
+NAME=DEX test.dex
+FILE=bins/dex/test.dex
+CMDS=pd 1 @ 0x000001c4
+EXPECT=<<EOF
+            0x000001c4      1234           const/4 v4, 0x3
+EOF
+RUN

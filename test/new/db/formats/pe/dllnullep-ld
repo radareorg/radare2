@@ -1,6 +1,0 @@
-NAME=PE: corkami dllnullep-ld.exe - open
-FILE=../bins/pe/dllnullep-ld.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

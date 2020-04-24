@@ -1,0 +1,48 @@
+NAME=SuperH iI elf
+FILE=bins/sh/loop.elf
+CMDS=<<EOF
+iI~arch
+iI~endian
+iI~machine
+EOF
+EXPECT=<<EOF
+arch     sh
+endian   big
+machine  Hitachi SH
+EOF
+RUN
+
+NAME=SuperH s af pif
+FILE=bins/sh/loop.elf
+CMDS=<<EOF
+s sym._called_in_loop
+af
+pif
+EOF
+EXPECT=<<EOF
+mov.l r14, @-r15
+mov r15, r14
+mov.l @(0x14,pc), r1
+mov.l @r1, r1
+mov r1, r2
+add 0x01, r2
+mov.l @(0xc,pc), r1
+mov.l r2, @r1
+nop
+mov r14, r15
+mov.l @r15+, r14
+rts
+nop
+EOF
+RUN
+
+NAME=SuperH af
+FILE=--
+CMDS=<<EOF
+wx 01e005400a25862f962fa62fb62fc62f
+af@0
+af fuck@0x6
+EOF
+EXPECT=<<EOF
+EOF
+RUN

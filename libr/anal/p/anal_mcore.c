@@ -48,9 +48,9 @@ static int mcore_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	return op->size;
 }
 
-static int set_reg_profile(RAnal *anal) {
-	const char *p;
-	p = "=PC	pc\n"
+static bool set_reg_profile(RAnal *anal) {
+	const char *p = \
+		"=PC	pc\n"
 		"=SP	r1\n"
 		"=SR	sr\n"
 		"=A0	r3\n"

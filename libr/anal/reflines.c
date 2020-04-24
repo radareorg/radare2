@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2020 - pancake, nibble */
 
 #include <r_core.h>
 #include <r_util.h>
@@ -127,19 +127,20 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 				ptr += mi->size;
 				addr += mi->size;
 				r_meta_item_free (mi);
-				continue;
+				goto __next;
 			}
 		}
 		if (!anal->iob.is_valid_offset (anal->iob.io, addr, 1)) {
 			const int size = 4;
 			ptr += size;
 			addr += size;
-			continue;
+			goto __next;
 		}
 
 		// This can segfault if opcode length and buffer check fails
 		r_anal_op_fini (&op);
 		sz = r_anal_op (anal, &op, addr, ptr, (int)(end - ptr), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
+		sz = op.size;
 		if (sz <= 0) {
 			sz = 1;
 			goto __next;
@@ -160,6 +161,13 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 				r_anal_op_fini (&op);
 				goto sten_err;
 			}
+			// add false branch in case its set and its not a call, useful for bf, maybe others
+			if (!op.delay && op.fail != UT64_MAX && op.fail != addr + op.size) {
+				if (!(res = add_refline (list, sten, addr, op.fail, &count))) {
+					r_anal_op_fini (&op);
+					goto sten_err;
+				}
+			}
 			break;
 		case R_ANAL_OP_TYPE_SWITCH:
 		{
@@ -172,7 +180,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 			}
 			r_list_foreach (op.switch_op->cases, iter, caseop) {
 				if (!linesout && (op.jump > opc + len || op.jump < opc)) {
-					continue;
+					goto __next;
 				}
 				if (!(res = add_refline (list, sten, op.switch_op->addr, caseop->jump, &count))) {
 					r_anal_op_fini (&op);

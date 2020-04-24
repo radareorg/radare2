@@ -1,6 +1,0 @@
-NAME=PE: corkami quine.exe - open
-FILE=../bins/pe/quine.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

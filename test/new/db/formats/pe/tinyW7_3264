@@ -1,6 +1,0 @@
-NAME=PE: corkami tinyW7_3264.exe - open
-FILE=../bins/pe/tinyW7_3264.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

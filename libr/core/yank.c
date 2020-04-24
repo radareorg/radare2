@@ -145,12 +145,12 @@ R_API int r_core_yank(struct r_core_t *core, ut64 addr, int len) {
 		return false;
 	}
 	if (addr != core->offset) {
-		r_core_seek (core, addr, 1);
+		r_core_seek (core, addr, true);
 	}
 	r_io_read_at (core->io, addr, buf, len);
 	r_core_yank_set (core, addr, buf, len);
 	if (curseek != addr) {
-		r_core_seek (core, curseek, 1);
+		r_core_seek (core, curseek, true);
 	}
 	free (buf);
 	return true;
@@ -165,7 +165,7 @@ R_API int r_core_yank_string(RCore *core, ut64 addr, int maxlen) {
 		return false;
 	}
 	if (addr != core->offset) {
-		r_core_seek (core, addr, 1);
+		r_core_seek (core, addr, true);
 	}
 	/* Ensure space and safe termination for largest possible string allowed */
 	buf = calloc (1, core->blocksize + 1);
@@ -182,7 +182,7 @@ R_API int r_core_yank_string(RCore *core, ut64 addr, int maxlen) {
 	}
 	r_core_yank_set (core, addr, buf, maxlen);
 	if (curseek != addr) {
-		r_core_seek (core, curseek, 1);
+		r_core_seek (core, curseek, true);
 	}
 	free (buf);
 	return true;

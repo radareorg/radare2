@@ -1,6 +1,0 @@
-NAME=PE: corkami gui.exe - open
-FILE=../bins/pe/gui.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

@@ -988,7 +988,7 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 			if (!__is_inside_section (fcn->addr, old_section)) {
 				continue;
 			}
-			r_anal_var_rebase (core->anal, fcn, diff);
+				r_anal_function_rebase_vars (core->anal, fcn);
 			r_anal_function_relocate (fcn, fcn->addr + diff);
 			RAnalBlock *bb;
 			ut64 new_sec_addr = new_base + old_section->vaddr;

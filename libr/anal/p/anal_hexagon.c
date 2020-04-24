@@ -26,7 +26,7 @@ static int hexagon_v6_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, in
 	return hexagon_anal_instruction (&hi, op);
 }
 
-static int set_reg_profile(RAnal *anal) {
+static bool set_reg_profile(RAnal *anal) {
 	// TODO: Add missing registers
 	const char *p =
 		"=PC	pc\n"

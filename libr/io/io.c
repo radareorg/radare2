@@ -539,7 +539,7 @@ R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 }
 
 /* moves bytes up (+) or down (-) within the specified range */
-R_API int r_io_shift(RIO* io, ut64 start, ut64 end, st64 move) {
+R_API bool r_io_shift(RIO* io, ut64 start, ut64 end, st64 move) {
 	ut8* buf;
 	ut64 chunksize = 0x10000;
 	ut64 saved_off = io->off;

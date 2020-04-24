@@ -1,0 +1,77 @@
+NAME=/ search.in=io.maps without -m
+FILE=bins//wasm/inc.wast
+ARGS=-m 0x80000
+CMDS=<<EOF
+e search.in=io.maps
+e io.va=true
+/ get~[0]
+EOF
+EXPECT=<<EOF
+0x00080053
+0x00080067
+EOF
+RUN
+
+NAME=/ search.in=io.maps without -m
+FILE=bins//wasm/inc.wast
+CMDS=<<EOF
+e search.in=io.maps
+/ get~[0]
+EOF
+EXPECT=<<EOF
+0x00000053
+0x00000067
+EOF
+RUN
+
+NAME=/ search.in=(default)
+FILE=bins//wasm/inc.wast
+CMDS=/ get~[0]
+EXPECT=<<EOF
+0x00000053
+0x00000067
+EOF
+RUN
+
+NAME=/ search.in=file
+FILE=bins//wasm/inc.wast
+CMDS=<<EOF
+e search.in=file
+/ get~[0]
+EOF
+EXPECT=<<EOF
+0x00000053
+0x00000067
+EOF
+RUN
+
+NAME=/ search io.maps with map
+FILE=bins//wasm/inc.wast
+ARGS=-m 0x80000
+CMDS=<<EOF
+e search.in=io.maps
+e io.va=true
+/ get~[0]
+EOF
+EXPECT=<<EOF
+0x00080053
+0x00080067
+EOF
+RUN
+
+NAME=/ search io.maps 2
+FILE=bins//wasm/inc.wast
+ARGS=-m 0x80000
+CMDS=<<EOF
+om 3 0x400000
+e io.va=true
+e search.in=io.maps
+/ get~[0]
+EOF
+EXPECT=<<EOF
+0x00080053
+0x00080067
+0x00400053
+0x00400067
+EOF
+RUN

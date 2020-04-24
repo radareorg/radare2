@@ -1,7 +1,0 @@
-NAME=PE: corkami tls_obfuscation.exe - open
-FILE=../bins/pe/tls_obfuscation.exe
-ARGS=-A
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

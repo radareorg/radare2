@@ -1,0 +1,28 @@
+NAME=VSF: Rocky Horror Picture Show- open
+FILE=bins/vsf/c128-rhps-rom.vsf
+ARGS=-A
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=VSF: Rocky Horror Picture Show- detection
+FILE=bins/vsf/c128-rhps-rom.vsf
+CMDS=iI~os
+EXPECT=<<EOF
+os       C128
+EOF
+RUN
+
+NAME=VSF: Rocky Horror Picture Show- ROMs
+FILE=bins/vsf/c128-rhps-rom.vsf
+CMDS=om
+EXPECT=<<EOF
+ 6 fd: 3 +0x000420a1 0x00004000 - 0x0000afff r-x fmap.BASIC
+ 5 fd: 3 +0x000490a1 0x0000b000 - 0x0000bfff r-x fmap.MONITOR
+ 4 fd: 3 +0x0004a0a1 0x0000c000 - 0x0000cfff r-x fmap.EDITOR
+ 3 fd: 3 +0x000400a1 0x0000e000 - 0x0000ffff r-x fmap.KERNAL
+ 2 fd: 3 +0x0000008c 0x00000000 - 0x0000ffff r-x fmap.RAM_BANK_0
+ 1 fd: 3 +0x0001008c 0x00000000 - 0x0000ffff r-x fmap.RAM_BANK_1
+EOF
+RUN
