@@ -173,22 +173,6 @@ R_API int r_cmd_set_data(RCmd *cmd, void *data) {
 	return 1;
 }
 
-R_API int r_cmd_add_long(RCmd *cmd, const char *lcmd, const char *scmd, const char *desc) {
-	RCmdLongItem *item = R_NEW (RCmdLongItem);
-	if (!item) {
-		return false;
-	}
-	strncpy (item->cmd, lcmd, sizeof (item->cmd)-1);
-	strncpy (item->cmd_short, scmd, sizeof (item->cmd_short)-1);
-	item->cmd_len = strlen (lcmd);
-	strncpy (item->desc, desc, sizeof (item->desc)-1);
-	if (!r_list_append (cmd->lcmds, item)){
-		free (item);
-		return false;
-	}
-	return true;
-}
-
 R_API int r_cmd_add(RCmd *c, const char *cmd, const char *desc, r_cmd_callback(cb)) {
 	int idx = (ut8)cmd[0];
 	RCmdItem *item = c->cmds[idx];
@@ -252,29 +236,12 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 	return ret;
 }
 
-R_API int r_cmd_call_long(RCmd *cmd, const char *input) {
-	char *inp;
-	RListIter *iter;
-	RCmdLongItem *c;
-	int ret, inplen = strlen (input)+1;
-
-	r_list_foreach (cmd->lcmds, iter, c) {
-		if (inplen >= c->cmd_len && !r_str_cmp (input, c->cmd, c->cmd_len)) {
-			int lcmd = strlen (c->cmd_short);
-			int linp = strlen (input+c->cmd_len);
-			/// SLOW malloc on most situations. use stack
-			inp = malloc (lcmd+linp+2); // TODO: use static buffer with R_CMD_MAXLEN
-			if (!inp) {
-				return -1;
-			}
-			memcpy (inp, c->cmd_short, lcmd);
-			memcpy (inp + lcmd, input + c->cmd_len, linp + 1);
-			ret = r_cmd_call (cmd, inp);
-			free (inp);
-			return ret;
-		}
-	}
-	return -1;
+R_API int r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
+	char *exec_string = r_cmd_parsed_args_execstr (args);
+	R_LOG_DEBUG ("r_cmd_call_parsed_args exec_string = '%s'\n", exec_string);
+	int res = r_cmd_call (cmd, exec_string);
+	free (exec_string);
+	return res;
 }
 
 /** macro.c **/
@@ -739,4 +706,111 @@ R_API int r_cmd_macro_break(RCmdMacro *mac, const char *value) {
 		mac->brk_value = &mac->_brk_value;
 	}
 	return 0;
+}
+
+/* RCmdParsedArgs */
+
+R_API RCmdParsedArgs *r_cmd_parsed_args_new(const char *cmd, int n_args, char **args) {
+	r_return_val_if_fail (cmd && n_args >= 0, NULL);
+	RCmdParsedArgs *res = R_NEW0 (RCmdParsedArgs);
+	res->has_space_after_cmd = true;
+	res->argc = n_args + 1;
+	res->argv = R_NEWS0 (char *, res->argc);
+	res->argv[0] = strdup(cmd);
+	int i;
+	for (i = 1; i < res->argc; i++) {
+		res->argv[i] = strdup (args[i - 1]);
+	}
+	return res;
+}
+
+R_API RCmdParsedArgs *r_cmd_parsed_args_newcmd(const char *cmd) {
+	return r_cmd_parsed_args_new (cmd, 0, NULL);
+}
+
+R_API RCmdParsedArgs *r_cmd_parsed_args_newargs(int n_args, char **args) {
+	return r_cmd_parsed_args_new ("", n_args, args);
+}
+
+R_API void r_cmd_parsed_args_free(RCmdParsedArgs *a) {
+	if (!a) {
+		return;
+	}
+
+	int i;
+	for (i = 0; i < a->argc; i++) {
+		free (a->argv[i]);
+	}
+	free (a->argv);
+	free (a);
+}
+
+static void free_array(char **arr, int n) {
+	int i;
+	for (i = 0; i < n; i++) {
+		free (arr[i]);
+	}
+	free (arr);
+}
+
+R_API bool r_cmd_parsed_args_setargs(RCmdParsedArgs *a, int n_args, char **args) {
+	r_return_val_if_fail (a && a->argv && a->argv[0], false);
+	char **tmp = R_NEWS0 (char *, n_args + 1);
+	if (!tmp) {
+		return false;
+	}
+	tmp[0] = strdup (a->argv[0]);
+	int i;
+	for (i = 1; i < n_args + 1; i++) {
+		tmp[i] = strdup (args[i - 1]);
+		if (!tmp[i]) {
+			goto err;
+		}
+	}
+	free_array (a->argv, a->argc);
+	a->argv = tmp;
+	a->argc = n_args + 1;
+	return true;
+err:
+	free_array (tmp, n_args + 1);
+	free (tmp);
+	return false;
+}
+
+R_API bool r_cmd_parsed_args_setcmd(RCmdParsedArgs *a, const char *cmd) {
+	r_return_val_if_fail (a && a->argv && a->argv[0], false);
+	char *tmp = strdup (cmd);
+	if (!tmp) {
+		return false;
+	}
+	free (a->argv[0]);
+	a->argv[0] = tmp;
+	return true;
+}
+
+static void parsed_args_iterateargs(RCmdParsedArgs *a, RStrBuf *sb) {
+	int i;
+	for (i = 1; i < a->argc; i++) {
+		if (i > 1) {
+			r_strbuf_append (sb, " ");
+		}
+		r_strbuf_append (sb, a->argv[i]);
+	}
+}
+
+R_API char *r_cmd_parsed_args_argstr(RCmdParsedArgs *a) {
+	r_return_val_if_fail (a && a->argv && a->argv[0], NULL);
+	RStrBuf *sb = r_strbuf_new ("");
+	parsed_args_iterateargs (a, sb);
+	return r_strbuf_drain (sb);
+}
+
+R_API char *r_cmd_parsed_args_execstr(RCmdParsedArgs *a) {
+	r_return_val_if_fail (a && a->argv && a->argv[0], NULL);
+	RStrBuf *sb = r_strbuf_new (a->argv[0]);
+	if (a->argc > 1 && a->has_space_after_cmd) {
+		r_strbuf_append (sb, " ");
+	}
+	parsed_args_iterateargs (a, sb);
+	return r_strbuf_drain (sb);
 }
