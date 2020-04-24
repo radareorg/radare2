@@ -1371,7 +1371,7 @@ static bool arm32_hwbp_del (RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
 #endif // PTRACE_GETHWBPREGS
 #endif // __arm
 
-#if __arm64__ || __aarch64__
+#if (__arm64__ || __aarch64__) && defined(PTRACE_GETREGSET)
 // type = 2 = write
 //static volatile uint8_t var[96] __attribute__((__aligned__(32)));
 
