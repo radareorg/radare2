@@ -75,6 +75,11 @@ CHKFNC c explicit_bzero
 CHKFNC c explicit_memset
 CHKFNC c clock_nanosleep
 CHKFNC c sigaction
+CHKFNC c clock_gettime
+
+IFNOT HAVE_CLOCK_GETTIME {
+      LDFLAGS += '-lrt' ;
+}
 
 (( TODO must deprecate
 CHKLIB gmp
