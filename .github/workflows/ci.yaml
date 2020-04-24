@@ -4,6 +4,9 @@ on:
   push:
     branches:
     - master
+    - 'pre-release*'
+    - 'prerelease*'
+    - 'release*'
 
 jobs:
   build:
