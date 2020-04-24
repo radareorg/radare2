@@ -391,7 +391,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 				for (i = 0; ; i++) {
 					bits = (1ULL) << i;
 					const char *name = r_crypto_codec_name ((const RCryptoSelector)bits);
-					if R_STR_ISEMPTY (name) {
+					if (R_STR_ISEMPTY (name)) {
 						break;
 					}
 					printf ("  %s\n", name);
