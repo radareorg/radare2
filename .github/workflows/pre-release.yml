@@ -1,6 +1,9 @@
 name: Radare2 Pre-Release checks
 
 on:
+  pull_requests:
+    branches:
+    - master
   push:
     branches:
     - 'pre-release*'
