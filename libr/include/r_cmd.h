@@ -18,6 +18,12 @@ extern "C" {
 #define r_cmd_callback(x) int (*x)(void *data, const char *input)
 #define r_cmd_nullcallback(x) int (*x)(void *data)
 
+typedef struct r_cmd_parsed_args_t {
+	int argc;
+	char **argv;
+	bool has_space_after_cmd;
+} RCmdParsedArgs;
+
 typedef struct r_cmd_macro_label_t {
 	char name[80];
 	char *ptr;
@@ -112,11 +118,21 @@ R_API RCmd *r_cmd_new(void);
 R_API RCmd *r_cmd_free(RCmd *cmd);
 R_API int r_cmd_set_data(RCmd *cmd, void *data);
 R_API int r_cmd_add(RCmd *cmd, const char *command, const char *desc, r_cmd_callback(callback));
-R_API int r_cmd_add_long(RCmd *cmd, const char *longcmd, const char *shortcmd, const char *desc);
 R_API int r_core_del(RCmd *cmd, const char *command);
 R_API int r_cmd_call(RCmd *cmd, const char *command);
-R_API int r_cmd_call_long(RCmd *cmd, const char *input);
-R_API char **r_cmd_args(RCmd *cmd, int *argc);
+R_API int r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args);
+
+/* RCmdParsedArgs */
+R_API RCmdParsedArgs *r_cmd_parsed_args_new(const char *cmd, int n_args, char **args);
+R_API RCmdParsedArgs *r_cmd_parsed_args_newcmd(const char *cmd);
+R_API RCmdParsedArgs *r_cmd_parsed_args_newargs(int n_args, char **args);
+R_API void r_cmd_parsed_args_free(RCmdParsedArgs *args);
+R_API bool r_cmd_parsed_args_setargs(RCmdParsedArgs *arg, int n_args, char **args);
+R_API bool r_cmd_parsed_args_setcmd(RCmdParsedArgs *arg, const char *cmd);
+R_API char *r_cmd_parsed_args_argstr(RCmdParsedArgs *arg);
+R_API char *r_cmd_parsed_args_execstr(RCmdParsedArgs *arg);
+
+#define r_cmd_parsed_args_foreach_arg(args, i, arg) for ((i) = 1; (i) < (args->argc) && ((arg) = (args)->argv[i]); (i)++)
 
 /* r_cmd_macro */
 R_API RCmdMacroItem *r_cmd_macro_item_new(void);
@@ -129,11 +145,11 @@ R_API void r_cmd_macro_meta(RCmdMacro *mac);
 R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name);
 R_API int r_cmd_macro_break(RCmdMacro *mac, const char *value);
 
-R_API bool r_cmd_alias_del (RCmd *cmd, const char *k);
+R_API bool r_cmd_alias_del(RCmd *cmd, const char *k);
 R_API char **r_cmd_alias_keys(RCmd *cmd, int *sz);
-R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v, int remote);
-R_API char *r_cmd_alias_get (RCmd *cmd, const char *k, int remote);
-R_API void r_cmd_alias_free (RCmd *cmd);
+R_API int r_cmd_alias_set(RCmd *cmd, const char *k, const char *v, int remote);
+R_API char *r_cmd_alias_get(RCmd *cmd, const char *k, int remote);
+R_API void r_cmd_alias_free(RCmd *cmd);
 R_API void r_cmd_macro_fini(RCmdMacro *mac);
 
 #ifdef __cplusplus

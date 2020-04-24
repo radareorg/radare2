@@ -34,6 +34,9 @@ static RAsmState *__as_new() {
 	if (as) {
 		as->l = r_lib_new (NULL, NULL);
 		as->a = r_asm_new ();
+		if (as->a) {
+			as->a->num = r_num_new (NULL, NULL, NULL);
+		}
 		as->anal = r_anal_new ();
 		__load_plugins (as);
 		__as_set_archbits (as);
@@ -42,6 +45,9 @@ static RAsmState *__as_new() {
 }
 
 static void __as_free(RAsmState *as) {
+	if (as->a) {
+		r_num_free (as->a->num);
+	}
 	r_asm_free (as->a);
 	r_anal_free (as->anal);
 	r_lib_free (as->l);

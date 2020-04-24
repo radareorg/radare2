@@ -65,3 +65,16 @@ EXPECT=<<EOF
 0x10
 EOF
 RUN
+
+NAME=visual noninteractive
+FILE=-
+CMDS=<<EOF
+e scr.interactive=false
+V
+v
+EOF
+EXPECT_ERR=<<EOF
+Visual mode requires scr.interactive=true.
+Panel mode requires scr.interactive=true.
+EOF
+RUN

@@ -22,7 +22,6 @@
 #include <grub/misc.h>
 #include <grub/mm.h>
 #include <grub/partition.h>
-#include <grub/dl.h>
 #include <grub/msdos_partition.h>
 #include <grub/gpt_partition.h>
 

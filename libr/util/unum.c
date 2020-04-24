@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #endif
 
+#include <errno.h>
 #include <math.h>  /* for ceill */
 #include <r_util.h>
 #define R_NUM_USE_CALC 1
@@ -73,7 +74,7 @@ R_API RNum *r_num_new(RNumCallback cb, RNumCallback2 cb2, void *ptr) {
 }
 
 R_API void r_num_free(RNum *num) {
-	R_FREE (num);
+	free (num);
 }
 
 #define KB (1ULL << 10)
@@ -233,12 +234,17 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 			char *s = strdup (str + 2);
 			if (s) {
 				r_str_replace_char (s, '_', 0);
+				errno = 0;
 				ret = strtoull (s, NULL, 16);
 				free (s);
 			}
 		} else {
+			errno = 0;
 			ret = strtoull (str + 2, NULL, 16);
 			// sscanf (str+2, "%"PFMT64x, &ret);
+		}
+		if (errno == ERANGE) {
+			error (num, "number won't fit into 64 bits");
 		}
 	} else {
 		char *endptr;
@@ -365,7 +371,11 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 			ret = _strtoui64 (str, &endptr, 10);
 #endif
 #endif
+			errno = 0;
 			ret = strtoull (str, &endptr, 10);
+			if (errno == ERANGE) {
+				error (num, "number won't fit into 64 bits");
+			}
 			if (!IS_DIGIT (*str) || (*endptr && *endptr != lch)) {
 				error (num, "unknown symbol");
 			}
