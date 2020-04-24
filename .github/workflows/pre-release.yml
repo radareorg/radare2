@@ -1,12 +1,11 @@
-name: Radare2 CI
+name: Radare2 Pre-Release checks
 
 on:
   push:
     branches:
-    - master
     - 'pre-release*'
     - 'prerelease*'
-    - 'release*'
+    - 'release-*'
 
 jobs:
   build:
@@ -15,32 +14,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        name: [linux-acr-gcc-tests, linux-acr-clang-tests, linux-meson-gcc-tests, linux-meson-gcc-newshell-tests, macos-clang-tests]
+        name: [centos-6-build]
         include:
-          - name: linux-acr-gcc-tests
+          - name: centos-6-build
             os: ubuntu-latest
             build_system: acr
             compiler: gcc
-          - name: linux-acr-clang-tests
-            os: ubuntu-latest
-            build_system: acr
-            compiler: clang
-          - name: linux-meson-gcc-tests
-            os: ubuntu-latest
-            build_system: meson
-            compiler: gcc
-            meson_options: -Db_coverage=true
-            coverage: 1
-          - name: linux-meson-gcc-newshell-tests
-            os: ubuntu-latest
-            build_system: meson
-            compiler: gcc
-            run_tests: true
-            newshell: true
-          - name: macos-clang-tests
-            os: macos-latest
-            build_system: acr
-            compiler: clang
+            container: centos:6
+            capstone_release: 1
 
     steps:
     - uses: actions/checkout@v2
@@ -53,14 +34,12 @@ jobs:
     - name: Install clang
       if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest'
       run: sudo apt-get --assume-yes install clang
-    - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v2
-      with:
-          repository: radareorg/radare2-testbins
-          path: test/bins
+    - name: Install tools
+      if: matrix.container == 'centos:6'
+      run: sudo yum install -y patch unzip git gcc make
     - name: Configure with ACR and build
       if: matrix.build_system == 'acr'
-      run: ./configure --prefix=${HOME} && make
+      run: ./configure --prefix=${HOME} && make CS_RELEASE=${{ matrix.capstone_release }}
       env:
         CC: ${{ matrix.compiler }}
     - name: Build with Meson
@@ -100,6 +79,3 @@ jobs:
         make
       env:
         NEWSHELL: ${{ matrix.newshell }}
-    - name: Upload coverage info
-      uses: codecov/codecov-action@v1
-      if: matrix.coverage == '1'
