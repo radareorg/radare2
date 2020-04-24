@@ -73,8 +73,6 @@ R_API bool r_strbuf_reserve(RStrBuf *sb, size_t len) {
 
 R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, size_t l) {
 	r_return_val_if_fail (sb && s, false);
-	sb->len = l;
-	sb->ptrlen = l;
 	if (l >= sizeof (sb->buf)) {
 		char *ptr = sb->ptr;
 		if (!ptr || l + 1 > sb->ptrlen) {
@@ -94,7 +92,6 @@ R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, size_t l) {
 		sb->buf[l] = 0;
 	}
 	sb->len = l;
-	sb->ptrlen = l;
 	sb->weakref = false;
 	return true;
 }
@@ -142,7 +139,7 @@ R_API bool r_strbuf_set(RStrBuf *sb, const char *s) {
 		return true;
 	}
 	size_t len = strlen (s);
-	if (!r_strbuf_setbin (sb, (const ut8*)s, len + 1)) {
+	if (!r_strbuf_setbin (sb, (const ut8*)s, len)) {
 		return false;
 	}
 	sb->len = len;

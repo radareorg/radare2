@@ -60,7 +60,6 @@ bool test_r_strbuf_strong_binary(void) {
 	mu_assert ("setbin success", res);
 	mu_assert_memeq ((const ut8 *)r_strbuf_get (sa), (const ut8 *)"food", 4, "small binary data");
 	mu_assert_eq (sa->len, 4, "len of binary data");
-	mu_assert_eq (sa->ptrlen, 4, "ptrlen of binary data");
 	r_strbuf_free (sa);
 
 	sa = r_strbuf_new ("");
@@ -74,7 +73,7 @@ bool test_r_strbuf_strong_binary(void) {
 	mu_assert ("setbin success", res);
 	mu_assert_memeq ((const ut8 *)r_strbuf_get (sa), (const ut8 *)"VERYLONGTEXTTHATDOESNTFITINSIDETHESTRUCTBUFFER", 46, "big binary data");
 	mu_assert_eq (sa->len, 46, "len of binary data");
-	mu_assert_eq (sa->ptrlen, 46, "ptrlen of binary data");
+	mu_assert_eq (sa->ptrlen, 47, "ptrlen of binary data");
 	r_strbuf_free (sa);
 
 	sa = r_strbuf_new ("");
@@ -156,6 +155,35 @@ bool test_r_strbuf_weak_binary(void) {
 	mu_end;
 }
 
+bool test_r_strbuf_setbin(void) {
+	RStrBuf *sa = r_strbuf_new ("");
+	r_strbuf_setbin (sa, (const ut8 *)"inbuffffffff", 5);
+	mu_assert_streq (r_strbuf_get (sa), "inbuf", "setbin str with size");
+	mu_assert_eq (r_strbuf_length (sa), 5, "len from api");
+
+	ut8 *buf = malloc(46); // alloc this on the heap to help valgrind and asan detect overflows
+	memcpy (buf, "VERYLONGTEXTTHATDOESNTFITINSIDETHESTRUCTBUFFER", 46);
+	r_strbuf_setbin (sa, buf, 46);
+	mu_assert_memeq ((const ut8 *)r_strbuf_get (sa), buf, 46, "long binary");
+	free (buf);
+	mu_assert_eq (r_strbuf_get (sa)[46], 0, "still null terminated");
+	mu_assert_eq (r_strbuf_length (sa), 46, "len from api");
+	mu_assert_eq (sa->ptrlen, 46 + 1, "ptrlen");
+
+	// reallocation
+	buf = malloc (46 * 2);
+	memcpy (buf, "VERYLONGTEXTTHATDOESNTFITINSIDETHESTRUCTBUFFERVERYLONGTEXTTHATDOESNTFITINSIDETHESTRUCTBUFFER", 46 * 2);
+	r_strbuf_setbin (sa, buf, 46 * 2);
+	mu_assert_memeq ((const ut8 *)r_strbuf_get (sa), buf, 46 * 2, "long binary");
+	free (buf);
+	mu_assert_eq (r_strbuf_get (sa)[46 * 2], 0, "still null terminated");
+	mu_assert_eq (r_strbuf_length (sa), 46 * 2, "len from api");
+	mu_assert_eq (sa->ptrlen, 46 * 2 + 1, "ptrlen");
+
+	r_strbuf_free (sa);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test (test_r_strbuf_append);
 	mu_run_test (test_r_strbuf_strong_string);
@@ -163,6 +191,7 @@ bool all_tests() {
 	mu_run_test (test_r_strbuf_weak_string);
 	mu_run_test (test_r_strbuf_weak_binary);
 	mu_run_test (test_r_strbuf_slice);
+	mu_run_test (test_r_strbuf_setbin);
 	return tests_passed != tests_run;
 }
 
