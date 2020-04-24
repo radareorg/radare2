@@ -697,7 +697,6 @@ static RList* relocs(RBinFile *bf) {
 			}
 			r_list_append (ret, ptr);
 		}
-		free (relocs);
 	}
 	return ret;
 }
@@ -908,13 +907,11 @@ static RList* patch_relocs(RBin *b) {
 		return NULL;
 	}
 	if (!(ret = r_list_newf ((RListFree)free))) {
-		free (relcs);
 		return NULL;
 	}
 	HtUUOptions opt = { 0 };
 	if (!(relocs_by_sym = ht_uu_new_opt (&opt))) {
 		r_list_free (ret);
-		free (relcs);
 		return NULL;
 	}
 	vaddr = n_vaddr;
@@ -944,7 +941,6 @@ static RList* patch_relocs(RBin *b) {
 		r_list_append (ret, ptr);
 	}
 	ht_uu_free (relocs_by_sym);
-	free (relcs);
 	return ret;
 }
 
