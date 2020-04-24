@@ -870,7 +870,9 @@ R_API RList *r_bin_file_compute_hashes(RBin *bin, ut64 limit) {
 	buf_len = r_io_desc_size (iod);
 	// By SLURP_LIMIT normally cannot compute ...
 	if (buf_len > limit) {
-		eprintf ("Warning: r_bin_file_hash: file exceeds bin.hashlimit\n");
+		if (bin->verbose) {
+			eprintf ("Warning: r_bin_file_hash: file exceeds bin.hashlimit\n");
+		}
 		return NULL;
 	}
 	const size_t blocksize = 64000;
