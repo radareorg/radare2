@@ -616,7 +616,6 @@ grub_files = [
   'grub/grubfs.c',
   'grub/kern/device.c',
   'grub/kern/disk.c',
-  #'grub/kern/dl.c',
   'grub/kern/env.c',
   'grub/kern/err.c',
   'grub/kern/file.c',

@@ -63,7 +63,6 @@
 #include <grub/err.h>
 #include <grub/types.h>
 #include <grub/disk.h>
-#include <grub/dl.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -365,7 +364,6 @@ grub_memalign (grub_size_t align, grub_size_t size)
 
     case 1:
       /* Unload unneeded modules.  */
-      //grub_dl_unload_unneeded ();
       count++;
       goto again;
 
