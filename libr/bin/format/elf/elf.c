@@ -2708,8 +2708,12 @@ static RBinElfReloc *populate_relocs_record(ELFOBJ *bin) {
 }
 
 RBinElfReloc* Elf_(r_bin_elf_get_relocs) (ELFOBJ *bin) {
-	if (!bin || !bin->g_sections) {
+	if (!bin) {
 		return NULL;
+	}
+
+	if (bin->relocs) {
+		return bin->relocs;
 	}
 
 	return populate_relocs_record (bin);

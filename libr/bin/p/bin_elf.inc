@@ -688,7 +688,7 @@ static RList* relocs(RBinFile *bf) {
 		}
 	}
 	if (bf->o) {
-		if (!(relocs = bin->relocs)) {
+		if (!(relocs = Elf_(r_bin_elf_get_relocs) (bin))) {
 			return ret;
 		}
 		for (i = 0; !relocs[i].last; i++) {
@@ -903,7 +903,7 @@ static RList* patch_relocs(RBin *b) {
 	}
 	gotr2map->name = strdup (".got.r2");
 
-	if (!(relcs = bin->relocs)) {
+	if (!(relcs = Elf_(r_bin_elf_get_relocs) (bin))) {
 		return NULL;
 	}
 	if (!(ret = r_list_newf ((RListFree)free))) {
