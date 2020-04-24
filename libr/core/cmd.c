@@ -5200,13 +5200,16 @@ DEFINE_HANDLE_TS_FCN(help_command) {
 }
 
 DEFINE_HANDLE_TS_FCN(tmp_seek_command) {
-	// TODO: handle offsets like "+30", "-13", etc.
 	TSNode command = ts_node_named_child (node, 0);
 	TSNode offset = ts_node_named_child (node, 1);
 	char *offset_string = ts_node_handle_arg (state, node, offset, 1);
+	ut64 offset_val = r_num_math (state->core->num, offset_string);
 	ut64 orig_offset = state->core->offset;
-	R_LOG_DEBUG ("tmp_seek_command, changing offset to %s\n", offset_string);
-	r_core_seek (state->core, r_num_math(state->core->num, offset_string), true);
+	if (offset_string[0] == '-' || offset_string[0] == '+') {
+		offset_val += state->core->offset;
+	}
+	R_LOG_DEBUG ("tmp_seek_command, changing offset to %" PFMT64x "\n", offset_val);
+	r_core_seek (state->core, offset_val, true);
 	RCoreCmdStatus res = handle_ts_command_tmpseek (state, command);
 	r_core_seek (state->core, orig_offset, true);
 	free (offset_string);
