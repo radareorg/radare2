@@ -111,6 +111,8 @@ aB "mov sil, 0" 40b600
 aB "mov dil, -5" 40b7fb
 aB "mov spl, bpl" 4088ec
 a "pop rax" 58
+ad "pop r8" 4158
+ad "pop r15" 415f
 aB "prefetcht1 [eax]" 670f1810
 aB "prefetcht1 [rax]" 0f1810
 aB "prefetcht1 byte [eax]" 670f1810
