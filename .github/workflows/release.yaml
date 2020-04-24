@@ -23,7 +23,8 @@ jobs:
             os: ubuntu-latest
             build_system: acr
             compiler: gcc
-            container: 'centos:6'
+            container:
+              image: 'centos:6'
             capstone_release: 1
 
     steps:
