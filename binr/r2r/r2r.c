@@ -151,6 +151,19 @@ int main(int argc, char **argv) {
 	ut64 timeout_sec = TIMEOUT_DEFAULT;
 	int ret = 0;
 
+#if __WINDOWS__
+	{
+		HANDLE streams[] = { GetStdHandle (STD_OUTPUT_HANDLE), GetStdHandle (STD_ERROR_HANDLE) };
+		DWORD mode;
+		int i;
+		for (i = 0; i < R_ARRAY_SIZE (streams); i++) {
+			GetConsoleMode (streams[i], &mode);
+			SetConsoleMode (streams[i],
+			                mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+		}
+	}
+#endif
+
 	RGetopt opt;
 	r_getopt_init (&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:i");
 
@@ -633,6 +646,9 @@ static void print_state_counts(R2RState *state) {
 }
 
 static void print_state(R2RState *state, ut64 prev_completed) {
+#if __WINDOWS__
+	setvbuf (stdout, NULL, _IOFBF, 8192);
+#endif
 	printf (R_CONS_CLEAR_LINE);
 
 	print_new_results (state, prev_completed);
@@ -646,6 +662,9 @@ static void print_state(R2RState *state, ut64 prev_completed) {
 	printf (" ");
 	print_state_counts (state);
 	fflush (stdout);
+#if __WINDOWS__
+	setvbuf (stdout, NULL, _IONBF, 0);
+#endif
 }
 
 static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_completed) {
