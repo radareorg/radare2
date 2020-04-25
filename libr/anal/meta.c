@@ -309,7 +309,7 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size) {
 
 
 R_API int r_meta_var_comment_del(RAnal *a, int type, ut64 idx, ut64 addr) {
-	char *key = r_str_newf ("meta.%c.0x%"PFMT64x"0x%"PFMT64x, type, addr, idx);
+	char *key = r_str_newf ("meta.%c.0x%"PFMT64x".0x%"PFMT64x, type, addr, idx);
 	sdb_unset (DB, key, 0);
 	return 0;
 }

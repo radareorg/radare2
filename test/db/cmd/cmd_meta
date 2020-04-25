@@ -1,3 +1,80 @@
+
+NAME=vars commenting
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+
+s 0x10
+af
+
+afvb 8 arg_8h int
+afvb -8 var_8h uint32_t
+afvs 8 var_sp_8h uint32_t
+afvr rax var_rax uint64_t
+
+Cvb 0x8 comment for arg_8h
+Cvb -8 comment for var_8h
+Cvr var_rax comment for var_rax
+Cvs var_sp_8h comment for var_sp_8h
+
+pd1~comment
+?e --
+Cvb
+Cvb*
+?e --
+Cvr
+Cvr*
+?e --
+Cvs
+Cvs*
+?e --
+
+Cvb- arg_8h
+pd1~comment
+?e --
+Cvb- -8
+pd1~comment
+?e --
+Cvs- 8
+pd1~comment
+?e --
+Cvr- var_rax
+pd1~comment
+?e --
+
+EOF
+EXPECT=<<EOF
+|           ; var uint32_t var_8h @ rbp-0x8    ; comment for var_8h
+|           ; arg int arg_8h @ rbp+0x8    ; comment for arg_8h
+|           ; arg uint32_t var_sp_8h @ rsp+0x8    ; comment for var_sp_8h
+|           ; arg uint64_t var_rax @ rax    ; comment for var_rax
+--
+arg_8h : comment for arg_8h
+var_8h : comment for var_8h
+"Cvb arg_8h base64:Y29tbWVudCBmb3IgYXJnXzho @ 0x00000010"
+"Cvb var_8h base64:Y29tbWVudCBmb3IgdmFyXzho @ 0x00000010"
+--
+var_rax : comment for var_rax
+"Cvr var_rax base64:Y29tbWVudCBmb3IgdmFyX3JheA== @ 0x00000010"
+--
+var_sp_8h : comment for var_sp_8h
+"Cvs var_sp_8h base64:Y29tbWVudCBmb3IgdmFyX3NwXzho @ 0x00000010"
+--
+|           ; var uint32_t var_8h @ rbp-0x8    ; comment for var_8h
+|           ; arg uint32_t var_sp_8h @ rsp+0x8    ; comment for var_sp_8h
+|           ; arg uint64_t var_rax @ rax    ; comment for var_rax
+--
+|           ; arg uint32_t var_sp_8h @ rsp+0x8    ; comment for var_sp_8h
+|           ; arg uint64_t var_rax @ rax    ; comment for var_rax
+--
+|           ; arg uint64_t var_rax @ rax    ; comment for var_rax
+--
+--
+EOF
+RUN
+
+
 NAME=Cvb variable null pointer deref
 FILE=bins/elf/analysis/x64-simple
 CMDS=<<EOF

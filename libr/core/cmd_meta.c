@@ -982,20 +982,14 @@ void r_comment_vars(RCore *core, const char *input) {
 			}
 		}
 		var = r_anal_function_get_var_byname (fcn, name);
-		if (var) {
-			idx = var->delta;
-		} else if (!strncmp (name, "0x", 2))  {
-			idx = (int) r_num_get (NULL, name);
-		} else if (!strncmp (name, "-0x", 3)) {
-			idx = -(int) r_num_get (NULL, name+1);
-		} else {
-			eprintf ("can't find variable named `%s`\n",name);
-			free (heap_comment);
-			break;
+		if (!var) {
+			idx = (int)strtol (name, NULL, 0);
+			var = r_anal_function_get_var (fcn, input[0], idx);
 		}
-		if (!r_anal_function_get_var (fcn, input[0], idx)) {
+		if (!var) {
 			eprintf ("can't find variable at given offset\n");
 		} else {
+			idx = var->delta;
 			oldcomment = r_meta_get_var_comment (core->anal, input[0], idx, fcn->addr);
 			if (oldcomment) {
 				if (comment && *comment) {
@@ -1013,21 +1007,16 @@ void r_comment_vars(RCore *core, const char *input) {
 		}
 		break;
 	case '-': // "Cv-"
-		var = r_anal_function_get_var_byname(fcn, name);
-		if (var) {
-			idx = var->delta;
-		} else if (!strncmp (name, "0x", 2)) {
-			idx = (int) r_num_get (NULL, name);
-		} else if (!strncmp (name, "-0x", 3)) {
-			idx = -(int) r_num_get (NULL, name+1);
-		 }else {
-			eprintf ("can't find variable named `%s`\n",name);
-			break;
+		var = r_anal_function_get_var_byname (fcn, name);
+		if (!var) {
+			idx = (int)strtol (name, NULL, 0);
+			var = r_anal_function_get_var (fcn, input[0], idx);
 		}
-		if (!r_anal_function_get_var (fcn, input[0], idx)) {
+		if (!var) {
 			eprintf ("can't find variable at given offset\n");
 			break;
 		}
+		idx = var->delta;
 		r_meta_var_comment_del (core->anal, input[0], idx, fcn->addr);
 		break;
 	case '!': { // "Cv!"
