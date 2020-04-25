@@ -191,6 +191,7 @@ static void var_free(RAnalVar *var) {
 	free (var->name);
 	free (var->regname);
 	free (var->type);
+	free (var->comment);
 	free (var);
 }
 
