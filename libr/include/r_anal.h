@@ -745,14 +745,13 @@ typedef struct r_anal_var_t {
 	char *name; // name of the variable
 	char *type; // cparse type of the variable
 	RAnalVarKind kind;
-	int size;
 	bool isarg;
 	int delta;   /* delta offset inside stack frame */
+	char *regname; // name of the register
 	RVector/*<RAnalVarAccess>*/ accesses; // ordered by offset, touch this only through API or expect uaf
 
 	// below members are just for caching, TODO: remove them and do it better
 	int argnum;
-	char *regname; // name of the register
 } RAnalVar;
 
 // Refers to a variable or a struct field inside a variable, only for varsub
