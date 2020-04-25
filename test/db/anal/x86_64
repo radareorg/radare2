@@ -1847,21 +1847,6 @@ var int64_t newname @ rbp-0x30
 EOF
 RUN
 
-NAME=vars commenting
-FILE=malloc://1024
-CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=64
-af
-afvb 8 var_8h int
-Cvb 0x8 comment
-pd1~comment
-EOF
-EXPECT=<<EOF
-|           ; arg int var_8h @ rbp+0x8    ; comment
-EOF
-RUN
-
 NAME=vars display in debugger
 FILE=bins/elf/analysis/fast
 CMDS=<<EOF
