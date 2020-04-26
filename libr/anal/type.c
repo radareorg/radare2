@@ -137,15 +137,16 @@ R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn) {
 	r_list_free (type_used);
 	return uniq;
 }
+
 static void enum_type_fini(void *e, void *user) {
 	(void)user;
 	RAnalEnumCase *cas = e;
-	free((char *)cas->name);
+	free ((char *)cas->name);
 }
 
-static void get_enum_type (RAnal *anal, RAnalBaseType *base_type, const char *sanitized_name) {
-	assert(base_type != NULL);
-	assert(sanitized_name != NULL);
+static void get_enum_type(RAnal *anal, RAnalBaseType *base_type, const char *sanitized_name) {
+	assert (base_type != NULL);
+	assert (sanitized_name != NULL);
 
 	const char *type = "enum";
 	base_type->kind = R_ANAL_BASE_TYPE_KIND_ENUM;
@@ -160,11 +161,11 @@ static void get_enum_type (RAnal *anal, RAnalBaseType *base_type, const char *sa
 
 	char *cur;
 	sdb_aforeach (cur, members) {
-		const char *value = sdb_get(anal->sdb_types, sdb_fmt ("%s.%s.%s", type, sanitized_name, cur), NULL);
-		RAnalEnumCase cas = {.name = strdup(cur), .val = strtol(value, NULL, 16)};
+		const char *value = sdb_get (anal->sdb_types, sdb_fmt ("%s.%s.%s", type, sanitized_name, cur), NULL);
+		RAnalEnumCase cas = {.name = strdup (cur), .val = strtol (value, NULL, 16)};
 		
 		r_vector_push (cases, &cas); // returns null if no space available
-		free(value);
+		free (value);
 		
 		sdb_aforeach_next (cur);
 	}
@@ -174,7 +175,7 @@ static void get_enum_type (RAnal *anal, RAnalBaseType *base_type, const char *sa
 	base_type->inum = base_enum;
 }
 // returns NULL if name is not found or 
-R_API RAnalBaseType *r_anal_get_base_type (RAnal *anal, const char *name) {
+R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
 	char *name_sanitized = r_str_sanitize_sdb_key (name);
 	// find name=*type* where type is type
 	char *type = sdb_get (anal->sdb_types, name_sanitized, NULL); // returns NULL if not found
@@ -188,7 +189,7 @@ R_API RAnalBaseType *r_anal_get_base_type (RAnal *anal, const char *name) {
 	}
 	// Taking advantage that all 3 types start with distinct letter
 	// because the strcmp condition guarantees that only those will get to this flow
-	RAnalBaseType *base_type = malloc(sizeof(RAnalBaseType));
+	RAnalBaseType *base_type = malloc (sizeof(RAnalBaseType));
 	
 	r_cons_printf ("Type: %s\n", type);
 
