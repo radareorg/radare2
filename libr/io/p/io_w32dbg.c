@@ -13,7 +13,7 @@
 #include <tlhelp32.h>
 #include <w32dbg_wrap.h>
 
-#define RIOW32DBG_PID(x) (((RIOW32Dbg*)x->data)->pi.dwProcessId)
+#define W32DbgWInst_PID(x) (((W32DbgWInst*)x->data)->pi.dwProcessId)
 
 #undef R_IO_NFDS
 #define R_IO_NFDS 2
@@ -29,7 +29,7 @@ static ut64 __find_next_valid_addr(HANDLE h, ut64 from, ut64 to) {
 	return from < to ? from : UT64_MAX;
 }
 
-static int debug_os_read_at(RIOW32Dbg *dbg, ut8 *buf, int len, ut64 addr) {
+static int debug_os_read_at(W32DbgWInst *dbg, ut8 *buf, int len, ut64 addr) {
 	SIZE_T ret = 0;
 	const int page_size = 0x1000;
 	if (!ReadProcessMemory (dbg->pi.hProcess, (void*)(size_t)addr, buf, len, &ret)
@@ -80,7 +80,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 	return debug_os_read_at (fd->data, buf, len, io->off);
 }
 
-static int w32dbg_write_at(RIOW32Dbg *dbg, const ut8 *buf, int len, ut64 addr) {
+static int w32dbg_write_at(W32DbgWInst *dbg, const ut8 *buf, int len, ut64 addr) {
 	SIZE_T ret;
 	return 0 != WriteProcessMemory (dbg->pi.hProcess, (void *)(size_t)addr, buf, len, &ret)? len: 0;
 }
@@ -137,10 +137,10 @@ err_first_th:
 	return pid;
 }
 
-static int __open_proc(RIO *io, RIOW32Dbg *dbg, bool attach) {
+static int __open_proc(RIO *io, int pid, bool attach) {
 	DEBUG_EVENT de;
 	int ret = -1;
-	HANDLE h_proc = OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pi.dwProcessId);
+	HANDLE h_proc = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
 
 	if (!h_proc) {
 		r_sys_perror ("__open_proc/OpenProcess");
@@ -149,24 +149,24 @@ static int __open_proc(RIO *io, RIOW32Dbg *dbg, bool attach) {
 	if (!io->w32dbg_wrap) {
 		io->w32dbg_wrap = w32dbg_wrap_new ();
 	}
+	W32DbgWInst *wrap = io->w32dbg_wrap;
+	wrap->pi.dwProcessId = pid;
 	if (attach) {
-		/* Attach to the process */
-		w32dbg_wrap_instance *inst = io->w32dbg_wrap;
-		inst->params->type = W32_ATTACH;
-		inst->params->pid = dbg->pi.dwProcessId;
-		w32dbg_wrap_wait_ret (inst);
-		if (!w32dbgw_ret (inst)) {
-			w32dbgw_err (inst);
+		/* Attach to the process */	
+		wrap->params.type = W32_ATTACH;
+		w32dbg_wrap_wait_ret (wrap);
+		if (!w32dbgw_ret (wrap)) {
+			w32dbgw_err (wrap);
 			r_sys_perror ("__open_proc/DebugActiveProcess");
 			goto att_exit;
 		}
 		/* catch create process event */
-		inst->params->type = W32_WAIT;
-		inst->params->wait.wait_time = 10000;
-		inst->params->wait.de = &de;
-		w32dbg_wrap_wait_ret (inst);
-		if (!w32dbgw_ret (inst)) {
-			w32dbgw_err (inst);
+		wrap->params.type = W32_WAIT;
+		wrap->params.wait.wait_time = 10000;
+		wrap->params.wait.de = &de;
+		w32dbg_wrap_wait_ret (wrap);
+		if (!w32dbgw_ret (wrap)) {
+			w32dbgw_err (wrap);
 			r_sys_perror ("__open_proc/WaitForDebugEvent");
 			goto att_exit;
 		}
@@ -174,12 +174,12 @@ static int __open_proc(RIO *io, RIOW32Dbg *dbg, bool attach) {
 			eprintf ("exception code 0x%04x\n", (ut32)de.dwDebugEventCode);
 			goto att_exit;
 		}
-		dbg->winbase = (ut64)de.u.CreateProcessInfo.lpBaseOfImage;
+		wrap->winbase = (ut64)de.u.CreateProcessInfo.lpBaseOfImage;
+		wrap->pi.dwThreadId = de.dwThreadId;
+		wrap->pi.hThread = de.u.CreateProcessInfo.hThread;
 	}
-	dbg->inst = io->w32dbg_wrap;
-	dbg->pi.hProcess = h_proc;
-	dbg->pi.dwProcessId = dbg->pi.dwProcessId;
-	ret = dbg->pi.dwProcessId;
+	wrap->pi.hProcess = h_proc;
+	ret = wrap->pi.dwProcessId;
 att_exit:
 	if (ret == -1 && h_proc) {
 		CloseHandle (h_proc);
@@ -190,17 +190,16 @@ att_exit:
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (__plugin_open (io, file, 0)) {
 		RIODesc *ret;
-		RIOW32Dbg *dbg = R_NEW0 (RIOW32Dbg);
-		if (!dbg) {
+		if (__open_proc (io, atoi (file + 9), !strncmp (file, "attach://", 9)) == -1) {
 			return NULL;
 		}
-		dbg->pi.dwProcessId = atoi (file + 9);
-		if (__open_proc (io, dbg, !strncmp (file, "attach://", 9)) == -1) {
-			free (dbg);
-			return NULL;
+		W32DbgWInst *dbg = io->w32dbg_wrap;
+		if (!dbg->pi.dwThreadId) {
+			dbg->pi.dwThreadId = __w32_first_thread (dbg->pi.dwProcessId);
 		}
-		dbg->pi.dwThreadId = __w32_first_thread (dbg->pi.dwProcessId);
-		dbg->pi.hThread = OpenThread (THREAD_ALL_ACCESS, FALSE, dbg->pi.dwThreadId);
+		if (!dbg->pi.hThread) {
+			dbg->pi.hThread = OpenThread (THREAD_ALL_ACCESS, FALSE, dbg->pi.dwThreadId);
+		}
 		ret = r_io_desc_new (io, &r_io_plugin_w32dbg,
 				file, rw | R_PERM_X, mode, dbg);
 		ret->name = r_sys_pid_to_path (dbg->pi.dwProcessId);
@@ -225,14 +224,14 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static int __close(RIODesc *fd) {
-	RIOW32Dbg *iop = fd->data;
-	iop->inst->params->type = W32_DETTACH;
-	w32dbg_wrap_wait_ret (iop->inst);
+	W32DbgWInst *wrap = fd->data;
+	wrap->params.type = W32_DETTACH;
+	w32dbg_wrap_wait_ret (wrap);
 	return false;
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
-	RIOW32Dbg *iop = fd->data;
+	W32DbgWInst *wrap = fd->data;
 	//printf("w32dbg io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
 	if (!strcmp (cmd, "")) {
@@ -240,16 +239,14 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	} else if (!strncmp (cmd, "pid", 3)) {
 		if (cmd[3] == ' ') {
 			int pid = atoi (cmd + 3);
-			if (pid > 0 && pid != iop->pi.dwThreadId && pid != iop->pi.dwProcessId) {
-				iop->pi.hThread = OpenThread (PROCESS_ALL_ACCESS, FALSE, pid);
-				if (iop->pi.hThread) {
-					iop->pi.dwThreadId = pid;
-				} else {
+			if (pid > 0 && pid != wrap->pi.dwThreadId && pid != wrap->pi.dwProcessId) {
+				wrap->pi.hThread = OpenThread (PROCESS_ALL_ACCESS, FALSE, pid);
+				if (!wrap->pi.hThread) {
 					eprintf ("Cannot attach to %d\n", pid);
 				}
 			}
 		}
-		return r_str_newf ("%d", iop->pi.dwProcessId);
+		return r_str_newf ("%d", wrap->pi.dwProcessId);
 	} else {
 		eprintf ("Try: '=!pid'\n");
 	}
@@ -257,22 +254,22 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 }
 
 static int __getpid(RIODesc *fd) {
-	RIOW32Dbg *iow = (RIOW32Dbg *)(fd ? fd->data : NULL);
-	if (!iow) {
+	W32DbgWInst *wrap = (W32DbgWInst *)(fd ? fd->data : NULL);
+	if (!wrap) {
 		return -1;
 	}
-	return iow->pi.dwProcessId;
+	return wrap->pi.dwProcessId;
 }
 
 static int __gettid(RIODesc *fd) {
-	RIOW32Dbg *iow = (RIOW32Dbg *)(fd ? fd->data : NULL);
-	return iow? iow->pi.dwThreadId: -1;
+	W32DbgWInst *wrap = (W32DbgWInst *)(fd ? fd->data : NULL);
+	return wrap? wrap->pi.dwThreadId: -1;
 }
 
 static bool __getbase(RIODesc *fd, ut64 *base) {
-	RIOW32Dbg *iow = (RIOW32Dbg *)(fd ? fd->data : NULL);
-	if (base && iow) {
-		*base = iow->winbase;
+	W32DbgWInst *wrap = (W32DbgWInst *)(fd ? fd->data : NULL);
+	if (base && wrap) {
+		*base = wrap->winbase;
 		return true;
 	}
 	return false;
