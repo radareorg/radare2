@@ -2724,20 +2724,72 @@ static int opxchg(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 		}
 	} else {
+		if (!((op->operands[0].type & ALL_SIZE) &
+			  (op->operands[1].type & ALL_SIZE))) { // unmatched operand sizes
+			return -1;
+		}
 		if (op->operands[0].reg == X86R_EAX &&
+			!op->operands[0].extended &&
+			!(op->operands[0].type & OT_BYTE) &&
 			op->operands[1].type & OT_GPREG) {
+			if (op->operands[0].type & OT_WORD) {
+				data[l++] = 0x66;
+			} else if (op->operands[0].type & OT_DWORD &&
+					   op->operands[1].extended) {
+				data[l++] = 0x41;
+			} else if (op->operands[0].type & OT_QWORD) {
+				if (op->operands[1].extended) {
+					data[l++] = 0x49;
+				} else {
+					data[l++] = 0x48;
+				}
+			}
 			data[l++] = 0x90 + op->operands[1].reg;
 			return l;
 		} else if (op->operands[1].reg == X86R_EAX &&
+				   !op->operands[1].extended &&
+				   !(op->operands[1].type & OT_BYTE) &&
 				   op->operands[0].type & OT_GPREG) {
+			if (op->operands[1].type & OT_WORD) {
+				data[l++] = 0x66;
+			} else if (op->operands[1].type & OT_DWORD &&
+					   op->operands[0].extended) {
+				data[l++] = 0x41;
+			} else if (op->operands[1].type & OT_QWORD) {
+				if (op->operands[0].extended) {
+					data[l++] = 0x49;
+				} else {
+					data[l++] = 0x48;
+				}
+			}
 			data[l++] = 0x90 + op->operands[0].reg;
 			return l;
 		} else if (op->operands[0].type & OT_GPREG &&
 				   op->operands[1].type & OT_GPREG) {
+			if (op->operands[0].type & OT_WORD) {
+				data[l++] = 0x66;
+			}
+			int rex = 0x40;
+			if (op->operands[0].extended) {
+				rex |= 1 << 2;
+			}
+			if (op->operands[1].extended) {
+				rex |= 1;
+			}
+			if (op->operands[0].type & OT_QWORD) {
+				rex |= 1 << 3;
+			}
+			if (rex != 0x40) {
+				data[l++] = rex;
+			}
+			if (op->operands[0].type & OT_BYTE) {
+				data[l++] = 0x86;
+			} else {
+				data[l++] = 0x87;
+			}
 			mod_byte = 3;
-			data[l++] = 0x87;
-			reg = op->operands[1].reg;
-			rm = op->operands[0].reg;
+			reg = op->operands[0].reg;
+			rm = op->operands[1].reg;
 		}
 	}
 	data[l++] = mod_byte << 6 | reg << 3 | rm;
