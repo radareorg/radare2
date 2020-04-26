@@ -407,7 +407,23 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 			return;
 		}
 	}
-	string_scan_range (list, bf, min, from, to, -1, raw, section);
+	int type;
+	const char *enc = bf->rbin->strenc;
+	if (!enc) {
+		type = R_STRING_TYPE_DETECT;
+	} else if (!strcmp (enc, "latin1")) {
+		type = R_STRING_TYPE_ASCII;
+	} else if (!strcmp (enc, "utf8")) {
+		type = R_STRING_TYPE_UTF8;
+	} else if (!strcmp (enc, "utf16le")) {
+		type = R_STRING_TYPE_WIDE;
+	} else if (!strcmp (enc, "utf32le")) {
+		type = R_STRING_TYPE_WIDE32;
+	} else { // TODO utf16be, utf32be
+		eprintf ("ERROR: encoding %s not supported\n", enc);
+		return;
+	}
+	string_scan_range (list, bf, min, from, to, type, raw, section);
 }
 
 R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr) {
