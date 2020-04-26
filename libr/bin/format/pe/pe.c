@@ -3128,11 +3128,11 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 						return exports;
 					}
 				} else { // No name export, get the ordinal
-					snprintf (function_name, PE_NAME_LENGTH, "Ordinal_%i", i + 1);
+					function_ordinal = i;
+					snprintf (function_name, PE_NAME_LENGTH, "Ordinal_%i", i + bin->export_directory->Base);
 				}
-			}else { // if dont export by name exist, get the ordinal taking in mind the Base value.
-				function_ordinal = i + bin->export_directory->Base;
-				snprintf (function_name, PE_NAME_LENGTH, "Ordinal_%i", function_ordinal);
+			} else { // if export by name dont exist, get the ordinal taking in mind the Base value.
+				snprintf (function_name, PE_NAME_LENGTH, "Ordinal_%i", i + bin->export_directory->Base);
 			}
 			// check if VA are into export directory, this mean a forwarder export
 			if (function_rva >= export_dir_rva && function_rva < (export_dir_rva + export_dir_size)) {
@@ -3148,7 +3148,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 			function_name[PE_NAME_LENGTH] = '\0';
 			exports[i].vaddr = bin_pe_rva_to_va (bin, function_rva);
 			exports[i].paddr = bin_pe_rva_to_paddr (bin, function_rva);
-			exports[i].ordinal = function_ordinal;
+			exports[i].ordinal = function_ordinal + bin->export_directory->Base;
 			memcpy (exports[i].forwarder, forwarder_name, PE_NAME_LENGTH);
 			exports[i].forwarder[PE_NAME_LENGTH] = '\0';
 			memcpy (exports[i].name, function_name, PE_NAME_LENGTH);
