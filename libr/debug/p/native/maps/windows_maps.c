@@ -71,7 +71,7 @@ static inline RDebugMap *add_map_reg(RList *list, const char *name, MEMORY_BASIC
 }
 
 R_API RList *r_w32_dbg_modules(RDebug *dbg) {
-	if (dbg->main_pid == -1) {
+	if (dbg->pid == -1) {
 		return NULL;
 	}
 	MODULEENTRY32 me;
@@ -246,7 +246,7 @@ R_API RList *r_w32_dbg_maps(RDebug *dbg) {
 	MEMORY_BASIC_INFORMATION mbi;
 	RWinModInfo mod_inf = {0};
 	RList *map_list = r_list_new (), *mod_list = NULL;
-	RIOW32Dbg *rio = dbg->user;
+	W32DbgWInst *wrap = dbg->user;
 
 	GetSystemInfo (&si);
 	cur_addr = si.lpMinimumApplicationAddress;
@@ -254,14 +254,14 @@ R_API RList *r_w32_dbg_maps(RDebug *dbg) {
 	mod_list = r_w32_dbg_modules (dbg);
 	/* process memory map */
 	while (cur_addr < si.lpMaximumApplicationAddress &&
-		VirtualQueryEx (rio->pi.hProcess, cur_addr, &mbi, sizeof (mbi)) != 0) {
+		VirtualQueryEx (wrap->pi.hProcess, cur_addr, &mbi, sizeof (mbi)) != 0) {
 		if (mbi.State != MEM_FREE) {
 			switch (mbi.Type) {
 			case MEM_IMAGE:
-				proc_mem_img (rio->pi.hProcess, map_list, mod_list, &mod_inf, &si, &mbi);
+				proc_mem_img (wrap->pi.hProcess, map_list, mod_list, &mod_inf, &si, &mbi);
 				break;
 			case MEM_MAPPED:
-				proc_mem_map (rio->pi.hProcess, map_list, &mbi);
+				proc_mem_map (wrap->pi.hProcess, map_list, &mbi);
 				break;
 			default:
 				add_map_reg (map_list, "", &mbi);
