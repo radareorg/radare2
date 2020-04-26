@@ -191,8 +191,6 @@ R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
 	// because the strcmp condition guarantees that only those will get to this flow
 	RAnalBaseType *base_type = malloc (sizeof(RAnalBaseType));
 	
-	r_cons_printf ("Type: %s\n", type);
-
 	switch (type[0]) {
 		case 's': // struct
 			break;
