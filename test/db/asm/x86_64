@@ -960,6 +960,20 @@ a "bswap rax" 480fc8
 a "bswap r15" 490fcf
 a "bswap eax" 0fc8
 a "bswap r15d" 410fcf
+a "xchg eax, r8d" 4190
+a "xchg r8d, eax" 4190
+a "xchg rax, rdx" 4892
+a "xchg rdx, rax" 4892
+a "xchg rax, r8" 4990
+a "xchg r8, rax" 4990
+a "xchg rdx, rbx" 4887d3
+a "xchg rbx, rdx" 4887da
+a "xchg r8, r15" 4d87c7
+a "xchg r15, r8" 4d87f8
+a "xchg r8d, r15d" 4587c7
+a "xchg r15d, r8d" 4587f8
+a "xchg rdx, r8" 4987d0
+a "xchg r15, rdx" 4c87fa
 d "call qword [rip + 0x3a8f3e]" 48ff153e8f3a00
 d "call qword [rip + 0x1d638f]" 48ff158f631d00
 a "fmul st2, st0" dcca
