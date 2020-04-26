@@ -742,10 +742,17 @@ static int opbswap(RAsm *a, ut8 *data, const Opcode *op) {
 		}
 
 		if (op->operands[0].type & OT_QWORD) {
-			data[l++] = 0x48;
+			if (op->operands[0].extended) {
+				data[l++] = 0x49;
+			} else {
+				data[l++] = 0x48;
+			}
 			data[l++] = 0x0f;
 			data[l++] = 0xc8 + op->operands[0].reg;
 		} else if (op->operands[0].type & OT_DWORD) {
+			if (op->operands[0].extended) {
+				data[l++] = 0x41;
+			}
 			data[l++] = 0x0f;
 			data[l++] = 0xc8 + op->operands[0].reg;
 		} else {
