@@ -47,7 +47,7 @@ static void __save_parsed_type_size(RAnal *anal, const char *parsed) {
 		char *ptr = NULL;
 		int offset = 0;
 		while ((ptr = strstr (str + offset, "=struct\n")) ||
-				(ptr = strstr (str + offset, "=union\n"))) {
+			(ptr = strstr (str + offset, "=union\n"))) {
 			*ptr = 0;
 			if (str + offset == ptr) {
 				break;
@@ -122,18 +122,91 @@ R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed) {
 static int typecmp(const void *a, const void *b) {
 	char *type1 = (char *) a;
 	char *type2 = (char *) b;
-	return strcmp (type1 , type2);
+	return strcmp (type1, type2);
 }
 
 R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalVar *var;
 	RList *list = r_anal_var_all_list (anal, fcn);
-        RList *type_used = r_list_new ();
-        r_list_foreach (list, iter, var) {
-		r_list_append (type_used , var->type);
-        }
-	RList *uniq = r_list_uniq (type_used , typecmp);
+	RList *type_used = r_list_new ();
+	r_list_foreach (list, iter, var) {
+		r_list_append (type_used, var->type);
+	}
+	RList *uniq = r_list_uniq (type_used, typecmp);
 	r_list_free (type_used);
 	return uniq;
+}
+static void enum_type_fini(void *e, void *user) {
+	(void)user;
+	RAnalEnumCase *cas = e;
+	free((char *)cas->name);
+}
+
+static void get_enum_type (RAnal *anal, RAnalBaseType *base_type, const char *sanitized_name) {
+	assert(base_type != NULL);
+	assert(sanitized_name != NULL);
+
+	const char *type = "enum";
+	base_type->kind = R_ANAL_BASE_TYPE_KIND_ENUM;
+	
+	RAnalBaseTypeEnum base_enum;
+	
+	char *key = sdb_fmt ("%s.%s", type, sanitized_name);
+	char *members = sdb_get (anal->sdb_types, key, NULL);
+
+	RVector *cases = r_vector_new (sizeof(RAnalEnumCase), enum_type_fini, NULL);
+	r_vector_reserve (cases, (size_t) sdb_alen (members));
+
+	char *cur;
+	sdb_aforeach (cur, members) {
+		const char *value = sdb_get(anal->sdb_types, sdb_fmt ("%s.%s.%s", type, sanitized_name, cur), NULL);
+		RAnalEnumCase cas = {.name = strdup(cur), .val = strtol(value, NULL, 16)};
+		
+		r_vector_push (cases, &cas); // returns null if no space available
+		free(value);
+		
+		sdb_aforeach_next (cur);
+	}
+	free (members);
+
+	base_enum.cases = cases;
+	base_type->inum = base_enum;
+}
+// returns NULL if name is not found or 
+R_API RAnalBaseType *r_anal_get_base_type (RAnal *anal, const char *name) {
+	char *name_sanitized = r_str_sanitize_sdb_key (name);
+	// find name=*type* where type is type
+	char *type = sdb_get (anal->sdb_types, name_sanitized, NULL); // returns NULL if not found
+
+	// Right now just types: struct, enum are supported
+	if (!type || !(strcmp (type, "enum") || strcmp (type, "struct") || strcmp (type, "union"))) {
+		if (type) {
+			free (type);
+		}
+		return NULL;
+	}
+	// Taking advantage that all 3 types start with distinct letter
+	// because the strcmp condition guarantees that only those will get to this flow
+	RAnalBaseType *base_type = malloc(sizeof(RAnalBaseType));
+	
+	r_cons_printf ("Type: %s\n", type);
+
+	switch (type[0]) {
+		case 's': // struct
+			break;
+		case 'e': // enum
+			get_enum_type (anal, base_type, name_sanitized);
+			// DEBUG print
+			r_cons_printf ("BaseType: %d\n", base_type->kind);
+			RAnalEnumCase *it;
+			r_vector_foreach (base_type->inum.cases, it) {
+				r_cons_printf ("Case --- name: %s value: %d\n", it->name, it->val);
+			}
+			break;
+		case 'u': // union
+			break;
+	}
+
+	return base_type;
 }

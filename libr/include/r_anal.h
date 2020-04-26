@@ -215,6 +215,33 @@ enum {
 	R_ANAL_DIFF_TYPE_UNMATCH = 'u'
 };
 
+typedef struct enum_case {
+	const char *name;
+	const int val;
+} RAnalEnumCase;
+
+typedef enum {
+	R_ANAL_BASE_TYPE_KIND_STRUCT,
+	R_ANAL_BASE_TYPE_KIND_UNION,
+	R_ANAL_BASE_TYPE_KIND_ENUM,
+} RAnalBaseTypeKind;
+
+typedef struct r_anal_base_type_struct {
+	RVector *members; // describe the struct in some way
+} RAnalBaseTypeStruct;
+
+typedef struct r_anal_base_type_enum {
+	RVector *cases; // list of all the enum cases
+} RAnalBaseTypeEnum;
+
+typedef struct r_anal_base_type {
+	RAnalBaseTypeKind kind;
+	union {
+		RAnalBaseTypeStruct ztruct;
+		RAnalBaseTypeEnum inum;
+	};
+} RAnalBaseType;
+
 typedef struct r_anal_diff_t {
 	int type;
 	ut64 addr;
@@ -1971,9 +1998,10 @@ R_API RAnalEsilDFGNode *r_anal_esil_dfg_node_new (RAnalEsilDFG *edf, const char 
 R_API RAnalEsilDFG *r_anal_esil_dfg_new(RReg *regs);
 R_API void r_anal_esil_dfg_free(RAnalEsilDFG *dfg);
 R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *dfg, const char *expr);
-R_API RStrBuf *r_anal_esil_dfg_filter (RAnalEsilDFG *dfg, const char *reg);
+R_API RStrBuf *r_anal_esil_dfg_filter(RAnalEsilDFG *dfg, const char *reg);
 R_API RStrBuf *r_anal_esil_dfg_filter_expr(RAnal *anal, const char *expr, const char *reg);
 R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn);
+R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
