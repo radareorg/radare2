@@ -3527,6 +3527,26 @@ nth paddr      vaddr      len size section type  string
 EOF
 RUN
 
+NAME=izz and bin.str.enc
+FILE=-
+CMDS=<<EOF
+wz k\0i\0abcdefgh
+(izzenc enc; e bin.str.enc=$0; izz~:3..)
+.(izzenc guess)
+?e
+.(izzenc ascii)
+?e
+.(izzenc utf16le)
+EOF
+EXPECT=<<EOF
+0   0x00000000 0x00000000 6   14           utf16le ki扡摣晥桧 blocks=Basic Latin,CJK Unified Ideographs
+
+0   0x00000004 0x00000004 8   9            ascii abcdefgh
+
+0   0x00000000 0x00000000 6   14           utf16le ki扡摣晥桧 blocks=Basic Latin,CJK Unified Ideographs
+EOF
+RUN
+
 NAME=ik-relro
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=ik info/elf.relro

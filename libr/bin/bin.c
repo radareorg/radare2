@@ -465,6 +465,7 @@ R_API void r_bin_free(RBin *bin) {
 		bin->file = NULL;
 		free (bin->force);
 		free (bin->srcdir);
+		free (bin->strenc);
 		//r_bin_free_bin_files (bin);
 		r_list_free (bin->binfiles);
 		r_list_free (bin->binxtrs);
@@ -848,6 +849,7 @@ R_API RBin *r_bin_new() {
 	bin->plugins = r_list_newf ((RListFree)r_bin_plugin_free);
 	bin->minstrlen = 0;
 	bin->strpurge = NULL;
+	bin->strenc = NULL;
 	bin->want_dbginfo = true;
 	bin->cur = NULL;
 	bin->ids = r_id_storage_new (0, ST32_MAX);
