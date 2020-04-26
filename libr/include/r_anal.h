@@ -231,7 +231,7 @@ typedef struct r_anal_base_type_struct {
 } RAnalBaseTypeStruct;
 
 typedef struct r_anal_base_type_enum {
-	RVector *cases; // list of all the enum cases
+	RVector/*<RAnalEnumCase*/ *cases; // list of all the enum cases
 } RAnalBaseTypeEnum;
 
 typedef struct r_anal_base_type {
