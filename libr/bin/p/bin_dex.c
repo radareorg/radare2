@@ -76,22 +76,36 @@ static ut64 dex_field_offset(RBinDexObj *bin, int fid) {
 	return bin->header.fields_offset + (fid * 8); // (sizeof (DexField) * fid);
 }
 
-#define USE_PVECTOR 1
+#define USE_PVECTOR 0
 #define USE_HTUP 0
+#define USE_CALLOC 1
 
-static char *getstr(RBinDexObj *dex, int idx) {
+static const char *getstr(RBinDexObj *dex, int idx) {
 	ut8 buf[LEB_MAX_SIZE];
 	if (idx < 0 || idx >= dex->header.strings_size || !dex->strings) {
 		return NULL;
 	}
+#if USE_CALLOC
+	if (dex->cal_strings) {
+		if (idx >= 0 ||  idx < dex->header.strings_size) {
+			const char *p = dex->cal_strings[idx];
+			if (p && *p) {
+				return p;
+			}
+		}
+	} else {
+		dex->cal_strings = calloc (dex->header.strings_size, sizeof (void*));
+	}
+#endif
 #if USE_PVECTOR
 	if (dex->vec_strings.v.capacity > 0) {
 		void **res = r_pvector_index_ptr (&dex->vec_strings, idx);
-		if (res && (char*)*res) {
-			return (char *)*res;
+		if (res && (const char*)*res) {
+			return (const char *)*res;
 		}
 	} else {
 		r_pvector_reserve (&dex->vec_strings, dex->header.strings_size);
+		memset (dex->vec_strings.v.a, 0, dex->vec_strings.v.capacity * sizeof(void*));
 	}
 #endif
 #if USE_HTUP
@@ -119,8 +133,13 @@ static char *getstr(RBinDexObj *dex, int idx) {
 	if (ptr) {
 		r_buf_read_at (dex->b, string_index + uleblen, ptr, len);
 		ptr[len] = 0;
+#if USE_CALLOC
+		dex->cal_strings[idx] = ptr;
+#endif
 #if USE_PVECTOR
-		r_pvector_insert (&dex->vec_strings, idx, ptr);
+		// eprintf ("ins %p\n", &dex->vec_strings);
+printf ("%d %s\n", idx, ptr);
+//		r_pvector_insert (&dex->vec_strings, idx, ptr);
 #endif
 #if USE_HTUP
 		ht_up_insert (dex->htup_strings, idx, ptr);
