@@ -383,14 +383,6 @@ static void dex_parse_debug_item(RBinFile *bf,
 	if (debug_info_off >= r_buf_size (bf->buf)) {
 		return;
 	}
-	int buf_size = r_buf_size (bf->buf) - debug_info_off;
-	ut8 *buf = malloc (buf_size);
-	if (!buf) {
-		return;
-	}
-	r_buf_read_at (bf->buf, debug_info_off, buf, buf_size);
-	const ut8 *p4 = buf;
-	const ut8 *p4_end = buf + buf_size;
 	ut64 line_start;
 	ut64 parameters_size;
 	ut64 param_type_idx;
@@ -399,22 +391,24 @@ static void dex_parse_debug_item(RBinFile *bf,
 	RList *params, *debug_positions, *emitted_debug_locals = NULL;
 	bool keep = true;
 	if (argReg > regsz) {
-		free (buf);
 		return; // this return breaks tests
 	}
-	p4 = r_uleb128 (p4, p4_end - p4, &line_start);
-	p4 = r_uleb128 (p4, p4_end - p4, &parameters_size);
+	r_buf_seek (bf->buf, debug_info_off, R_BUF_SET);
+	ut64 res;
+	r_buf_uleb128 (bf->buf, &res);
+	line_start = res;
+	r_buf_uleb128 (bf->buf, &res);
+	parameters_size = res;
+
 	// TODO: check when we should use source_file
 	// The state machine consists of five registers
 	ut32 address = 0;
 	ut32 line = line_start;
 	if (!(debug_positions = r_list_newf ((RListFree)free))) {
-		free (buf);
 		return;
 	}
 	if (!(emitted_debug_locals = r_list_newf ((RListFree)free))) {
 		free (debug_positions);
-		free (buf);
 		return;
 	}
 
@@ -431,12 +425,11 @@ static void dex_parse_debug_item(RBinFile *bf,
 		free (debug_positions);
 		free (emitted_debug_locals);
 		free (debug_locals);
-		free (buf);
 		return;
 	}
 
 	RListIter *iter;
-	char *name;
+	const char *name;
 	char *type;
 	int reg;
 
@@ -446,11 +439,11 @@ static void dex_parse_debug_item(RBinFile *bf,
 			free (params);
 			free (debug_locals);
 			free (emitted_debug_locals);
-			free (buf);
 			return;
 		}
-		p4 = r_uleb128 (p4, p4_end - p4, &param_type_idx); // read uleb128p1
-		param_type_idx -= 1;
+		// p4 = r_uleb128 (p4, p4_end - p4, &param_type_idx); // read uleb128p1
+		(void)r_buf_uleb128 (bf->buf, &res);
+		param_type_idx = res - 1;
 		name = getstr (dex, param_type_idx);
 		reg = argReg;
 		switch (type[0]) {
@@ -471,17 +464,12 @@ static void dex_parse_debug_item(RBinFile *bf,
 		}
 		parameters_size--;
 	}
-
-	if (!p4 || p4 >= p4_end) {
-		free (debug_positions);
-		free (params);
-		free (debug_locals);
-		free (emitted_debug_locals);
-		free (buf);
+	ut8 opcode = 0; // = *(p4++) & 0xff;
+	if (r_buf_read (bf->buf, &opcode, 1) != 1) {
+		// error
 		return;
 	}
-	ut8 opcode = *(p4++) & 0xff;
-	while (keep && p4 + 1 < p4_end) {
+	while (keep) {//  && p4 + 1 < p4_end) {
 		switch (opcode) {
 		case 0x0: // DBG_END_SEQUENCE
 			keep = false;
@@ -489,26 +477,27 @@ static void dex_parse_debug_item(RBinFile *bf,
 		case 0x1: // DBG_ADVANCE_PC
 			{
 			ut64 addr_diff;
-			p4 = r_uleb128 (p4, p4_end - p4, &addr_diff);
+			// p4 = r_uleb128 (p4, p4_end - p4, &addr_diff);
+			r_buf_uleb128 (bf->buf, &addr_diff);
 			address += addr_diff;
 			}
 			break;
 		case 0x2: // DBG_ADVANCE_LINE
 			{
-			st64 line_diff = r_sleb128 (&p4, p4_end);
+			//  st64 line_diff = r_sleb128 (&p4, p4_end);
+			st64 line_diff;
+			r_buf_sleb128 (bf->buf, &line_diff);
 			line += line_diff;
 			}
 			break;
 		case 0x3: // DBG_START_LOCAL
 			{
-			ut64 register_num;
-			ut64 name_idx;
-			ut64 type_idx;
-			p4 = r_uleb128 (p4, p4_end - p4, &register_num);
-			p4 = r_uleb128 (p4, p4_end - p4, &name_idx);
-			name_idx -= 1;
-			p4 = r_uleb128 (p4, p4_end - p4, &type_idx);
-			type_idx -= 1;
+			ut64 register_num, name_idx, type_idx;
+			r_buf_uleb128 (bf->buf, &register_num);
+			r_buf_uleb128 (bf->buf, &name_idx);
+			r_buf_uleb128 (bf->buf, &type_idx);
+			name_idx--;
+			type_idx--;
 			if (register_num >= regsz) {
 				r_list_free (debug_positions);
 				free (params);
@@ -545,13 +534,13 @@ static void dex_parse_debug_item(RBinFile *bf,
 		case 0x4: //DBG_START_LOCAL_EXTENDED
 			{
 			ut64 register_num, name_idx, type_idx, sig_idx;
-			p4 = r_uleb128 (p4, p4_end - p4, &register_num);
-			p4 = r_uleb128 (p4, p4_end - p4, &name_idx);
-			name_idx -= 1;
-			p4 = r_uleb128 (p4, p4_end - p4, &type_idx);
-			type_idx -= 1;
-			p4 = r_uleb128 (p4, p4_end - p4, &sig_idx);
-			sig_idx -= 1;
+			r_buf_uleb128 (bf->buf, &register_num);
+			r_buf_uleb128 (bf->buf, &name_idx);
+			r_buf_uleb128 (bf->buf, &type_idx);
+			r_buf_uleb128 (bf->buf, &sig_idx);
+			sig_idx--;
+			type_idx--;
+			name_idx--;
 			if (register_num >= regsz) {
 				r_list_free (debug_positions);
 				free (params);
@@ -587,7 +576,7 @@ static void dex_parse_debug_item(RBinFile *bf,
 		case 0x5: // DBG_END_LOCAL
 			{
 			ut64 register_num;
-			p4 = r_uleb128 (p4, p4_end - p4, &register_num);
+			r_buf_uleb128 (bf->buf, &register_num);
 			// emitLocalCbIfLive
 			if (register_num >= regsz) {
 				r_list_free (debug_positions);
@@ -617,10 +606,9 @@ static void dex_parse_debug_item(RBinFile *bf,
 		case 0x6: // DBG_RESTART_LOCAL
 			{
 			ut64 register_num;
-			p4 = r_uleb128 (p4, p4_end - p4, &register_num);
+			r_buf_uleb128 (bf->buf, &register_num);
 			if (register_num >= regsz) {
 				r_list_free (debug_positions);
-				free (buf);
 				free (params);
 				free (debug_locals);
 				return;
@@ -637,8 +625,10 @@ static void dex_parse_debug_item(RBinFile *bf,
 			break;
 		case 0x9:
 			{
-			p4 = r_uleb128 (p4, p4_end - p4, &source_file_idx);
-			source_file_idx--;
+		//	p4 = r_uleb128 (p4, p4_end - p4, &source_file_idx);
+			ut64 res;
+			r_buf_uleb128 (bf->buf, &res);
+			source_file_idx = res - 1;
 			}
 			break;
 		default:
@@ -659,10 +649,9 @@ static void dex_parse_debug_item(RBinFile *bf,
 			}
 			break;
 		}
-		if (p4 + 1 >= p4_end) {
+		if (r_buf_read (bf->buf, &opcode, 1) != 1) {
 			break;
 		}
-		opcode = *(p4++) & 0xff;
 	}
 
 	if (!bf->sdb_addrinfo) {
@@ -706,7 +695,6 @@ static void dex_parse_debug_item(RBinFile *bf,
 		free (emitted_debug_locals);
 		free (debug_locals);
 		free (params);
-		free (buf);
 		return;
 	}
 
@@ -765,7 +753,6 @@ static void dex_parse_debug_item(RBinFile *bf,
 	free (debug_locals);
 	free (emitted_debug_locals);
 	free (params);
-	free (buf);
 }
 
 static Sdb *get_sdb(RBinFile *bf) {
@@ -1479,8 +1466,10 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			if (MC > 0 && debug_info_off > 0 && dex->header.data_offset < debug_info_off &&
 				debug_info_off < dex->header.data_offset + dex->header.data_size) {
 				if (bin_dbginfo) {
+					ut64 addr = r_buf_tell (bf->buf);
 					dex_parse_debug_item (bf, c, MI, MA, sym->paddr, ins_size,
 							insns_size, cls->name, regsz, debug_info_off);
+					r_buf_seek (bf->buf, addr, R_BUF_SET);
 				}
 			} else if (MC > 0) {
 				if (dexdump) {
