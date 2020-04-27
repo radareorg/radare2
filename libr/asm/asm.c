@@ -37,7 +37,6 @@ static bool lazy_update_arch_plugin(RAsm *a, RArchLazySession *ls) {
 	if (!a || !ls) {
 		return false;
 	}
-eprintf ("UPDATED SESSION\n");
 	ls->session = r_arch_lazysession_get_session (ls);
 	return true;
 }
