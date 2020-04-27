@@ -841,6 +841,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 					WPARAM mask = 1;
 					// Walk through the busy bitmap
 					int j;
+					size_t offset;
 					for (j = 0, offset = 0; j < userdata.BusyBitmap.SizeOfBitMap; j++) {
 						if (!mask) {
 							mask = 1;
