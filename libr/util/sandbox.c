@@ -294,7 +294,7 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 	char *epath = expand_home (path);
 	int ret = -1;
 #if __WINDOWS__
-	mode |= O_BINARY;
+	perm |= O_BINARY;
 	if (!strcmp (path, "/dev/null")) {
 		path = "NUL";
 	}
