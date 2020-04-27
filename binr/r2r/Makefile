@@ -4,4 +4,5 @@ OBJ=load.o run.o
 
 include ../rules.mk
 
+LDFLAGS+=$(CLOCK_LDFLAGS)
 LDFLAGS+=$(LINK)
