@@ -347,7 +347,8 @@ bool test_r_list_set_get(void) {
 
 	RList *list = r_list_new ();
 
-	for (int i = 0; i < R_ARRAY_SIZE (test); ++i) {
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (test); ++i) {
 		r_list_append (list, test[i]);
 	}
 
@@ -376,14 +377,14 @@ bool test_r_list_reverse(void) {
 
 	RList *list = r_list_new ();
 
-	for (int i = 0; i < R_ARRAY_SIZE (test); ++i) {
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (test); ++i) {
 		r_list_prepend (list, test[i]);
 	}
 
 	r_list_reverse (list);
 
 	char buf[BUF_LENGTH];
-	int i;
 	//Check that the sequence is correct
 	RListIter *iter = list->head;
 	for (i = 0; i < R_ARRAY_SIZE (test); ++i) {
@@ -403,14 +404,14 @@ bool test_r_list_clone(void) {
 	RList *list1 = r_list_new ();
 	RList *list2 = r_list_new ();
 
-	for (int i = 0; i < R_ARRAY_SIZE (test); ++i) {
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (test); ++i) {
 		r_list_prepend (list1, test[i]);
 	}
 
 	list2 = r_list_clone (list1);
 
 	char buf[BUF_LENGTH];
-	int i;
 	RListIter *iter1 = list1->head;
 	RListIter *iter2 = list2->head;
 	for (i = 0; i < R_ARRAY_SIZE (test); ++i) {

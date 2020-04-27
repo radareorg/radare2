@@ -5057,7 +5057,8 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(repeat_command) {
 	}
 
 	RCoreCmdStatus res = R_CORE_CMD_STATUS_OK;
-	for (int i = 0; i < rep; i++) {
+	size_t i;
+	for (i = 0; i < rep; i++) {
 		RCoreCmdStatus cmd_res = handle_ts_command (state, command);
 		UPDATE_CMD_STATUS_RES (res, cmd_res, err);
 	}
