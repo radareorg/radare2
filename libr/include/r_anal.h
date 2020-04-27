@@ -684,7 +684,7 @@ typedef struct r_anal_t {
 	SetU *visited;
 	RStrConstPool constpool;
 	RList *leaddrs;
-	RArchSession *as;
+	RArchLazySession *lsa;
 } RAnal;
 
 typedef enum r_anal_addr_hint_type_t {

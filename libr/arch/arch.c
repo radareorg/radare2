@@ -66,15 +66,3 @@ R_API RArchPlugin *r_arch_get_plugin(RArch *a, const char *name) {
 	return NULL;
 }
 
-// arch_info.c
-R_API RArchInfo *r_arch_info_new(void) {
-	RArchInfo *ai = R_NEW0 (RArchInfo);
-	return ai;
-}
-
-R_API void r_arch_info_free(RArchInfo *info) {
-	free (info->regprofile);
-	free (info);
-}
-
-

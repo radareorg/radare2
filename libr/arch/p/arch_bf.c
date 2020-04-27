@@ -24,7 +24,7 @@ static int getid(const char ch) {
 	return cidx? cidx - keys + 1: 0;
 }
 
-static bool decode(RArchSession *a, RArchInstruction *ins, RArchOptions opt) {
+static bool decode(RArchSession *a, RArchInstruction *ins, RArchDecodeOptions opt) {
 	r_return_val_if_fail (a && ins, false);
 	int len;
 	const ut8 *buf = r_strbuf_getbin (&ins->data, &len);
@@ -288,7 +288,7 @@ static bool assemble(RArchSession *a, RArchInstruction *ins) {
 	return true;
 }
 
-static bool encode(RArchSession *a, RArchInstruction *ins, RArchOptions opt) {
+static bool encode(RArchSession *a, RArchInstruction *ins, RArchEncodeOptions opt) {
 	bool ret = false;
 	// encode the disasm into bytes?
 	if (opt & R_ARCH_OPTION_CODE) {

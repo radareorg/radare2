@@ -112,11 +112,11 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 
 	int ret = R_MIN (2, len);
 	RAnal *a = anal;
-	if (a->as && r_arch_session_can_decode (a->as)) {
+	if (r_arch_lazysession_can_decode (a->lsa)) {
 		RArchInstruction ins = {0};
 		r_arch_instruction_init_data (&ins, addr, data, len);
 		int flags = mask_anal_to_arch (mask);
-		if (!r_arch_session_decode (a->as, &ins, flags)) {
+		if (!r_arch_session_decode (a->lsa->session, &ins, flags)) {
 			ret = -1;
 			op->type = R_ANAL_OP_TYPE_ILL;
 			op->size = 1; // minopsize

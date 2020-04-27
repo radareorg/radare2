@@ -8,8 +8,9 @@
 static bool r_arch_session_set_cpu(RArchSession *ai, const char *cpu) {
 	r_return_val_if_fail (ai && cpu, false);
 	if (ai && *cpu) {
+		RArchPlugin *ap = ai->setup.plugin;
 		// TODO: improve the check with r_str_split_list()
-		if (R_STR_ISEMPTY (ai->cur->cpus) || strstr (ai->cur->cpus, cpu)) {
+		if (R_STR_ISEMPTY (ap->cpus) || strstr (ap->cpus, cpu)) {
 			free (ai->setup.cpu);
 			ai->setup.cpu = cpu? strdup (cpu): NULL;
 		}
@@ -20,13 +21,14 @@ static bool r_arch_session_set_cpu(RArchSession *ai, const char *cpu) {
 
 static bool r_arch_session_set_syntax(RArchSession *ai, RArchSyntax syntax) {
 	r_return_val_if_fail (ai, false);
+	RArchPlugin *ap = ai->setup.plugin;
 	switch (syntax) {
 	case R_ASM_SYNTAX_REGNUM:
 	case R_ASM_SYNTAX_INTEL:
 	case R_ASM_SYNTAX_MASM:
 	case R_ASM_SYNTAX_ATT:
 	case R_ASM_SYNTAX_JZ:
-		if (ai->cur->syntax & syntax) {
+		if (ap->syntax & syntax) {
 			ai->setup.syntax = syntax;
 			return true;
 		}
@@ -38,13 +40,13 @@ static bool r_arch_session_set_syntax(RArchSession *ai, RArchSyntax syntax) {
 }
 
 static bool r_arch_session_set_endian(RArchSession *ai, RArchEndian endian) {
-	r_return_val_if_fail (ai && ai->cur, false);
+	r_return_val_if_fail (ai && ai->setup.plugin, false);
 	switch (endian) {
 	case R_SYS_ENDIAN_LITTLE:
 	case R_SYS_ENDIAN_BIG:
 	case R_SYS_ENDIAN_NONE:
 	case R_SYS_ENDIAN_BI:
-		if (ai->cur->endian & endian) {
+		if (ai->setup.plugin->endian & endian) {
 			ai->setup.endian = endian;
 			return true;
 		}
@@ -53,41 +55,71 @@ static bool r_arch_session_set_endian(RArchSession *ai, RArchEndian endian) {
 	return false;
 }
 
-static bool has_bits(RArchPlugin *h, RArchBits bits) {
+R_API bool r_arch_plugin_has_bits(RArchPlugin *h, RArchBits bits) {
         return (h && h->bits && (bits & h->bits));
 }
 
-R_API bool r_arch_session_set_bits(RArchSession *ai, RArchBits bits) {
-	r_return_val_if_fail (ai && ai->cur, false);
-	if (has_bits (ai->cur, bits)) {
+static bool r_arch_session_set_bits(RArchSession *ai, RArchBits bits) {
+	r_return_val_if_fail (ai && ai->setup.plugin, false);
+	if (r_arch_plugin_has_bits (ai->setup.plugin, bits)) {
 		ai->setup.bits = bits;
 		return true;
 	}
 	return false;
 }
 
-R_API bool r_arch_session_can_decode(RArchSession *ai) {
-	r_return_val_if_fail (ai && ai->cur, false);
-	return ai->cur->decode;
+//  this should be a method for RArchPlugin imho
+
+R_API bool r_arch_plugin_setup(RArchPlugin *ap, RArchSetup *setup) {
+	return false;
 }
 
-R_API bool r_arch_session_can_encode(RArchSession *ai) {
-	r_return_val_if_fail (ai && ai->cur, false);
-	return ai->cur->encode;
-}
-
-R_API bool r_arch_session_encode(RArchSession *ai, RArchInstruction *ins, RArchOptions opt) {
-	r_return_val_if_fail (ai && ai->cur, false);
-	if (ai->cur->encode) {
-		return ai->cur->encode (ai, ins, opt);
+// this function must replace the can_decode/encode ones
+R_API bool r_arch_plugin_can(RArchPlugin *ap, RArchCan action) {
+	r_return_val_if_fail (ap, false);
+	// check if plugin have the requested capabilities
+	switch (action) {
+	case R_ARCH_CAN_ANALYZE:
+		return ap->decode;
+	case R_ARCH_CAN_ASSEMBLE:
+		return ap->encode;
+	case R_ARCH_CAN_DISASM:
+		return ap->decode;
+	case R_ARCH_CAN_ESIL:
+		break;
+	case R_ARCH_CAN_ALL:
+		break;
 	}
 	return false;
 }
 
-R_API bool r_arch_session_decode(RArchSession *ai, RArchInstruction *ins, RArchOptions opt) {
-	r_return_val_if_fail (ai && ai->cur, false);
-	if (ai->cur->decode) {
-		return ai->cur->decode (ai, ins, opt);
+R_API bool r_arch_session_can(RArchSession *ai, RArchCan caps) {
+	r_return_val_if_fail (ai, false);
+	return r_arch_plugin_can (ai->setup.plugin, caps);
+}
+
+R_API bool r_arch_session_can_decode(RArchSession *ai) {
+	r_return_val_if_fail (ai && ai->setup.plugin, false);
+	return ai->setup.plugin->decode;
+}
+
+R_API bool r_arch_session_can_encode(RArchSession *ai) {
+	r_return_val_if_fail (ai && ai->setup.plugin, false);
+	return ai->setup.plugin->encode;
+}
+
+R_API bool r_arch_session_encode(RArchSession *ai, RArchInstruction *ins, RArchEncodeOptions opt) {
+	r_return_val_if_fail (ai && ai->setup.plugin, false);
+	if (ai->setup.plugin->encode) {
+		return ai->setup.plugin->encode (ai, ins, opt);
+	}
+	return false;
+}
+
+R_API bool r_arch_session_decode(RArchSession *ai, RArchInstruction *ins, RArchDecodeOptions opt) {
+	r_return_val_if_fail (ai && ai->setup.plugin, false);
+	if (ai->setup.plugin->decode) {
+		return ai->setup.plugin->decode (ai, ins, opt);
 	}
 	return false;
 }
@@ -97,30 +129,44 @@ R_API void r_arch_session_free(RArchSession *as) {
 	free (as);
 }
 
-R_API RArchSession *r_arch_session_new(RArch *a, RArchPlugin *ap, RArchSetup *setup) {
-	r_return_val_if_fail (a && ap, NULL);
-	RArchSession *ai = R_NEW0 (RArchSession);
-	if (ai) {
-		ai->cur = ap;
+R_API RArchSession *r_arch_session_new(RArch *a, RArchSetup *setup) {
+	r_return_val_if_fail (a && setup, NULL);
+	if (!setup->plugin) {
+		return NULL;
+	}
+	RArchSession *as = R_NEW0 (RArchSession);
+	if (as) {
+		RArchPlugin *ap = setup->plugin;
+		as->setup.plugin = ap;
 		if (!setup) {
 			RArchSetup _setup = {
 				.endian = R_SYS_ENDIAN,
 				.bits = R_SYS_BITS
 			};
-			memcpy (&ai->setup, &_setup, sizeof (RArchSetup));
-			setup = &ai->setup;
+			memcpy (&as->setup, &_setup, sizeof (RArchSetup));
+			setup = &as->setup;
 		} else {
-			memcpy (&ai->setup, setup, sizeof (RArchSetup));
+			memcpy (&as->setup, setup, sizeof (RArchSetup));
 		}
 		if (ap && ap->init_session) {
-			ap->init_session (ai);
+			ap->init_session (as);
 		}
-		ai->cbs = &a->cbs; // use ref maybe
-		r_arch_session_set_syntax (ai, setup->syntax);
-		r_arch_session_set_bits (ai, setup->bits);
-		r_arch_session_set_endian (ai, setup->endian);
-		r_arch_session_set_cpu (ai, setup->cpu);
-		return ai;
+		as->cbs = &a->cbs; // use ref maybe
+		// call RArchPlugin.setup() to know if the setup is valid.
+		// it is very easy to get into an invalid setup
+		bool ok = r_arch_session_set_syntax (as, setup->syntax);
+		ok &= r_arch_session_set_bits (as, setup->bits);
+		ok &= r_arch_session_set_endian (as, setup->endian);
+		if (setup->cpu) {
+			ok &= r_arch_session_set_cpu (as, setup->cpu);
+		}
+		if (ok) {
+			return as;
+		}
+		// return session even if configuration is not ok
+		// otherwise its too picky to setup 8bit archs and such
+		return as;
+		r_arch_session_free (as);
 	}
 	return NULL;
 }

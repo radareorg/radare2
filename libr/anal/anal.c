@@ -238,9 +238,9 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 
 R_API char *r_anal_get_reg_profile(RAnal *anal) {
 	r_return_val_if_fail (anal, NULL);
-	if (anal->as) {
+	if (r_arch_lazysession_can_decode (anal->lsa)) {
 		// XXX unnecessary strdup here
-		return strdup (anal->as->info.regprofile);
+		return strdup (anal->lsa->session->info.regprofile);
 	}
 	return (anal->cur && anal->cur->get_reg_profile)
 		? anal->cur->get_reg_profile (anal) : NULL;
@@ -248,8 +248,8 @@ R_API char *r_anal_get_reg_profile(RAnal *anal) {
 
 // deprecate.. or at least reuse get_reg_profile...
 R_API bool r_anal_set_reg_profile(RAnal *anal) {
-	if (anal->as) {
-		char *r = anal->as->info.regprofile;
+	if (r_arch_lazysession_can_decode (anal->lsa)) {
+		const char *r = anal->lsa->session->info.regprofile;
 		r_reg_set_profile_string (anal->reg, r);
 	}
 	bool ret = false;

@@ -2873,11 +2873,19 @@ R_API bool r_core_init(RCore *core) {
 		// .get_offset
 		// .get_name
 	}
-	core->rasm = r_asm_new ();
+	core->arch_pool = r_arch_sessionpool_new (core->arch);
+
 	core->rasm->num = core->num;
 	r_asm_set_user_ptr (core->rasm, core);
-		
+
+	core->rasm = r_asm_new ();
+	core->rasm->num = core->num;
+	core->rasm->lsd = r_arch_lazysession_new (core->arch_pool);
+	core->rasm->lsa = r_arch_lazysession_new (core->arch_pool);
+	r_asm_set_user_ptr (core->rasm, core);
+
 	core->anal = r_anal_new ();
+	core->anal->lsa = r_arch_lazysession_new (core->arch_pool);
 	core->gadgets = r_list_newf ((RListFree)r_core_gadget_free);
 	core->anal->ev = core->ev;
 	core->anal->log = r_core_anal_log;
@@ -3069,6 +3077,7 @@ R_API void r_core_fini(RCore *c) {
 	free (c->theme);
 	r_search_free (c->search);
 	r_flag_free (c->flags);
+	r_arch_free (c->arch);
 	r_fs_free (c->fs);
 	r_egg_free (c->egg);
 	r_lib_free (c->lib);

@@ -27,7 +27,10 @@ STATIC_OBJS=$(subst ..,p/..,$(subst arch_,p/arch_,$(STATIC_OBJ)))
 
 OBJS=${STATIC_OBJS}
 OBJS+=arch.o
+OBJS+=arch_info.o
 OBJS+=arch_instruction.o
+OBJS+=arch_lazysession.o
 OBJS+=arch_session.o
+OBJS+=arch_session_pool.o
 
 include $(TOP)/libr/rules.mk
