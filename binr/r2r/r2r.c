@@ -97,10 +97,13 @@ static bool r2r_chdir(const char *argv0) {
 }
 
 static void r2r_test_run_unit(void) {
-	system ("make -C ../unit all run");
+	system ("make -C unit all run");
 }
 
 static bool r2r_chdir_fromtest(const char *test_path) {
+	if (*test_path == '@') {
+		test_path = "";
+	}
 	char *abs_test_path = r_file_abspath (test_path);
 	if (!r_file_is_directory (abs_test_path)) {
 		char *last_slash = (char *)r_str_lchr (abs_test_path, R_SYS_DIR[0]);
@@ -118,6 +121,15 @@ static bool r2r_chdir_fromtest(const char *test_path) {
 		cwd = r_sys_getdir ();
 		if (old_cwd && !strcmp (old_cwd, cwd)) {
 			break;
+		}
+		if (r_file_is_directory ("test")) {
+			r_sys_chdir ("test");
+			if (r_file_is_directory ("db")) {
+				found = true;
+				eprintf ("Running from %s\n", cwd);
+				break;
+			}
+			r_sys_chdir ("..");
 		}
 		if (r_file_is_directory ("db")) {
 			found = true;
