@@ -76,8 +76,8 @@ static ut64 dex_field_offset(RBinDexObj *bin, int fid) {
 	return bin->header.fields_offset + (fid * 8); // (sizeof (DexField) * fid);
 }
 
-#define USE_PVECTOR 0
-#define USE_HTUP 1
+#define USE_PVECTOR 1
+#define USE_HTUP 0
 
 static char *getstr(RBinDexObj *dex, int idx) {
 	ut8 buf[LEB_MAX_SIZE];
