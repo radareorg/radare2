@@ -773,7 +773,6 @@ R_API bool r_cmd_parsed_args_setargs(RCmdParsedArgs *a, int n_args, char **args)
 	return true;
 err:
 	free_array (tmp, n_args + 1);
-	free (tmp);
 	return false;
 }
 

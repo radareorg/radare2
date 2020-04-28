@@ -112,8 +112,6 @@ struct Elf_(r_bin_elf_obj_t) {
 	Elf_(Dyn) *dyn_buf;
 	int dyn_entries;
 	RBinElfDynamicInfo dyn_info;
-	RBinElfReloc *relocs;
-	ut32 reloc_num;
 
 	ut64 version_info[DT_VERSIONTAGNUM];
 
@@ -138,6 +136,8 @@ struct Elf_(r_bin_elf_obj_t) {
 	RBinElfSection *g_sections;
 	RBinElfSymbol *g_symbols;
 	RBinElfSymbol *g_imports;
+	RBinElfReloc *g_relocs;
+	ut32 g_reloc_num;
 	RBinElfSymbol *phdr_symbols;
 	RBinElfSymbol *phdr_imports;
 	HtUP *rel_cache;

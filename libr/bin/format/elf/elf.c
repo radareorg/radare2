@@ -1306,8 +1306,8 @@ static bool elf_init(ELFOBJ *bin) {
 	bin->symbols_by_ord = NULL;
 	bin->g_sections = Elf_(r_bin_elf_get_sections) (bin);
 	bin->boffset = Elf_(r_bin_elf_get_boffset) (bin);
-	bin->relocs = Elf_(r_bin_elf_get_relocs) (bin);
-	bin->rel_cache = rel_cache_new (bin->relocs, bin->reloc_num);
+	bin->g_relocs = Elf_(r_bin_elf_get_relocs) (bin);
+	bin->rel_cache = rel_cache_new (bin->g_relocs, bin->g_reloc_num);
 	sdb_ns_set (bin->kv, "versioninfo", store_versioninfo (bin));
 	return true;
 }
@@ -2702,7 +2702,7 @@ static RBinElfReloc *populate_relocs_record(ELFOBJ *bin) {
 	i = populate_relocs_record_from_section (bin, relocs, i);
 	relocs[i].last = 1;
 
-	bin->reloc_num = i;
+	bin->g_reloc_num = i;
 
 	return relocs;
 }
@@ -2712,11 +2712,10 @@ RBinElfReloc* Elf_(r_bin_elf_get_relocs) (ELFOBJ *bin) {
 		return NULL;
 	}
 
-	if (bin->relocs) {
-		return bin->relocs;
+	if (!bin->g_relocs) {
+		bin->g_relocs = populate_relocs_record (bin);
 	}
-
-	return populate_relocs_record (bin);
+	return bin->g_relocs;
 }
 
 RBinElfLib* Elf_(r_bin_elf_get_libs)(ELFOBJ *bin) {
@@ -3697,7 +3696,7 @@ void Elf_(r_bin_elf_free)(ELFOBJ* bin) {
 	R_FREE (bin->g_sections);
 	R_FREE (bin->g_symbols);
 	R_FREE (bin->g_imports);
-	R_FREE (bin->relocs);
+	R_FREE (bin->g_relocs);
 	ht_up_free (bin->rel_cache);
 	bin->rel_cache = NULL;
 	free (bin);
