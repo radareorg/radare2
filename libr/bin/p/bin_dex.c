@@ -83,7 +83,7 @@ static const char *getstr(RBinDexObj *dex, int idx) {
 	}
 	if (dex->cal_strings) {
 		const char *p = dex->cal_strings[idx];
-		if (R_STR_ISEMPTY (p)) {
+		if (!R_STR_ISEMPTY (p)) {
 			return p;
 		}
 	} else {

@@ -77,7 +77,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	if (dexhdr->strings_size > bin->size) {
 		goto fail;
 	}
-	bin->strings = R_NEWS0 (ut32, dexhdr->strings_size);
+	bin->strings = R_NEWS0 (ut32, dexhdr->strings_size + 1);
 	if (!bin->strings) {
 		goto fail;
 	}
