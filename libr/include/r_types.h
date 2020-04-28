@@ -1,6 +1,9 @@
 #ifndef R2_TYPES_H
 #define R2_TYPES_H
 
+#undef _FILE_OFFSET_BITS
+#define _FILE_OFFSET_BITS 64
+
 // defines like IS_DIGIT, etc'
 #include "r_util/r_str_util.h"
 #include <r_userconf.h>
