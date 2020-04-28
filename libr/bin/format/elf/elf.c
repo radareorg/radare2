@@ -51,11 +51,15 @@
 #define WORD_MAX UT64_MAX
 #define READWORD(x, i) READ64 (x, i)
 #define BREADWORD(x, i) BREAD64 (x, i)
+#define ELF_ADDR_MAX UT64_MAX
+#define ELF_XWORD_MAX UT64_MAX
 #else
 #define WORDSIZE 0x4
 #define WORD_MAX UT32_MAX
 #define READWORD(x, i) READ32 (x, i)
 #define BREADWORD(x, i) BREAD32 (x, i)
+#define ELF_ADDR_MAX UT32_MAX
+#define ELF_XWORD_MAX UT64_MAX
 #endif
 
 #define NUMENTRIES_ROUNDUP(sectionsize, entrysize) (((sectionsize) + (entrysize)-1) / (entrysize))
@@ -524,7 +528,22 @@ static int compute_dyn_entries(ELFOBJ *bin, Elf_(Phdr) *dyn_phdr, ut64 dyn_size)
 }
 
 static void set_default_value_dynamic_info(ELFOBJ *bin) {
-	memset(&bin->dyn_info, UCHAR_MAX, sizeof(RBinElfDynamicInfo));
+	bin->dyn_info.dt_pltrelsz = 0;
+	bin->dyn_info.dt_pltgot = ELF_ADDR_MAX;
+	bin->dyn_info.dt_hash = ELF_ADDR_MAX;
+	bin->dyn_info.dt_strtab = ELF_ADDR_MAX;
+	bin->dyn_info.dt_symtab = ELF_ADDR_MAX;
+	bin->dyn_info.dt_rela = ELF_ADDR_MAX;
+	bin->dyn_info.dt_relasz = 0;
+	bin->dyn_info.dt_relaent = 0;
+	bin->dyn_info.dt_strsz = 0;
+	bin->dyn_info.dt_syment = 0;
+	bin->dyn_info.dt_rel = ELF_ADDR_MAX;
+	bin->dyn_info.dt_relsz = 0;
+	bin->dyn_info.dt_relent = 0;
+	bin->dyn_info.dt_pltrel = ELF_XWORD_MAX;
+	bin->dyn_info.dt_jmprel = ELF_ADDR_MAX;
+	bin->dyn_info.dt_pltgot = ELF_ADDR_MAX;
 }
 
 static int init_dynamic_section(ELFOBJ *bin) {
@@ -1353,7 +1372,7 @@ static bool is_thumb_symbol(ut64 plt_addr) {
 
 static ut64 get_import_addr_arm(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 got_addr = bin->dyn_info.dt_pltgot;
-	if (got_addr == WORD_MAX) {
+	if (got_addr == ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
 
@@ -1385,7 +1404,7 @@ static ut64 get_import_addr_mips(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 jmprel_addr = bin->dyn_info.dt_jmprel;
 	ut64 got_addr = bin->dyn_info.dt_mips_pltgot;
 
-	if (jmprel_addr == WORD_MAX || got_addr == WORD_MAX) {
+	if (jmprel_addr == ELF_ADDR_MAX || got_addr == ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
 
@@ -1416,7 +1435,7 @@ static size_t get_size_rel_mode(Elf_(Xword) rel_mode) {
 }
 
 static size_t get_num_relocs_dynamic_plt(ELFOBJ *bin) {
-	if (bin->dyn_info.dt_pltrelsz != WORD_MAX) {
+	if (bin->dyn_info.dt_pltrelsz != ELF_ADDR_MAX) {
 		return bin->dyn_info.dt_pltrelsz / get_size_rel_mode (bin->dyn_info.dt_pltrel);
 	}
 	return 0;
@@ -1424,7 +1443,7 @@ static size_t get_num_relocs_dynamic_plt(ELFOBJ *bin) {
 
 static ut64 get_import_addr_riscv(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 got_addr = bin->dyn_info.dt_pltgot;
-	if (got_addr == WORD_MAX) {
+	if (got_addr == ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
 
@@ -1449,7 +1468,7 @@ static ut64 get_import_addr_sparc(ELFOBJ *bin, RBinElfReloc *rel) {
 
 static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 plt_addr = bin->dyn_info.dt_pltgot;
-	if (plt_addr == WORD_MAX) {
+	if (plt_addr == ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
 	ut64 p_plt_addr = Elf_(r_bin_elf_v2p_new) (bin, plt_addr);
@@ -1478,7 +1497,7 @@ static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
 
 static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 got_addr = bin->dyn_info.dt_pltgot;
-	if (got_addr == WORD_MAX) {
+	if (got_addr == ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
 
@@ -2567,11 +2586,11 @@ static bool read_reloc(ELFOBJ *bin, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 
 static size_t get_num_relocs_dynamic(ELFOBJ *bin) {
 	size_t res = 0;
 
-	if (bin->dyn_info.dt_relaent != WORD_MAX) {
+	if (bin->dyn_info.dt_relaent) {
 		res += bin->dyn_info.dt_relasz / bin->dyn_info.dt_relaent;
 	}
 
-	if (bin->dyn_info.dt_relent != WORD_MAX) {
+	if (bin->dyn_info.dt_relent) {
 		res += bin->dyn_info.dt_relsz / bin->dyn_info.dt_relent;
 	}
 
@@ -2626,32 +2645,26 @@ static size_t get_num_relocs_approx(ELFOBJ *bin) {
 static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin, RBinElfReloc *relocs, size_t pos) {
 	size_t offset;
 	size_t i = 0;
+	size_t size = get_size_rel_mode (bin->dyn_info.dt_pltrel);
 
-	if (bin->dyn_info.dt_pltrelsz != WORD_MAX) {
-		size_t size = get_size_rel_mode (bin->dyn_info.dt_pltrel);
-		for (offset = 0; offset < bin->dyn_info.dt_pltrelsz; offset += size) {
-			read_reloc (bin, relocs + pos, bin->dyn_info.dt_pltrel,
+	for (offset = 0; offset < bin->dyn_info.dt_pltrelsz; offset += size) {
+		read_reloc (bin, relocs + pos, bin->dyn_info.dt_pltrel,
 				bin->dyn_info.dt_jmprel + offset - bin->baddr);
-			fix_rva_and_offset_exec_file (bin, relocs + pos);
-			pos++;
-			++i;
-		}
+		fix_rva_and_offset_exec_file (bin, relocs + pos);
+		pos++;
+		++i;
 	}
 
-	if (bin->dyn_info.dt_relasz != WORD_MAX) {
-		for (offset = 0; offset < bin->dyn_info.dt_relasz; offset += bin->dyn_info.dt_relaent) {
-			read_reloc (bin, relocs + pos, DT_RELA, bin->dyn_info.dt_rela + offset - bin->baddr);
-			fix_rva_and_offset_exec_file (bin, relocs + pos);
-			pos++;
-		}
+	for (offset = 0; offset < bin->dyn_info.dt_relasz; offset += bin->dyn_info.dt_relaent) {
+		read_reloc (bin, relocs + pos, DT_RELA, bin->dyn_info.dt_rela + offset - bin->baddr);
+		fix_rva_and_offset_exec_file (bin, relocs + pos);
+		pos++;
 	}
 
-	if (bin->dyn_info.dt_relsz != WORD_MAX) {
-		for (offset = 0; offset < bin->dyn_info.dt_relsz; offset += bin->dyn_info.dt_relent) {
-			read_reloc (bin, relocs + pos, DT_REL, bin->dyn_info.dt_rel + offset - bin->baddr);
-			fix_rva_and_offset_exec_file (bin, relocs + pos);
-			pos++;
-		}
+	for (offset = 0; offset < bin->dyn_info.dt_relsz; offset += bin->dyn_info.dt_relent) {
+		read_reloc (bin, relocs + pos, DT_REL, bin->dyn_info.dt_rel + offset - bin->baddr);
+		fix_rva_and_offset_exec_file (bin, relocs + pos);
+		pos++;
 	}
 
 	return pos;
@@ -2661,17 +2674,17 @@ static size_t get_next_not_analysed_offset(ELFOBJ *bin, size_t section_offset, s
 
 	size_t g_offset = section_offset + offset;
 
-	if (bin->dyn_info.dt_rela != WORD_MAX && bin->dyn_info.dt_rela - base_addr <= g_offset
+	if (bin->dyn_info.dt_rela != ELF_ADDR_MAX && bin->dyn_info.dt_rela - base_addr <= g_offset
 		&& g_offset < bin->dyn_info.dt_rela + bin->dyn_info.dt_relasz - base_addr) {
 		return bin->dyn_info.dt_rela + bin->dyn_info.dt_relasz - g_offset - base_addr;
 	}
 
-	if (bin->dyn_info.dt_rel != WORD_MAX && bin->dyn_info.dt_rel - base_addr <= g_offset
+	if (bin->dyn_info.dt_rel != ELF_ADDR_MAX && bin->dyn_info.dt_rel - base_addr <= g_offset
 		&& g_offset < bin->dyn_info.dt_rel + bin->dyn_info.dt_relsz - base_addr) {
 		return bin->dyn_info.dt_rel + bin->dyn_info.dt_relsz - g_offset - base_addr;
 	}
 
-	if (bin->dyn_info.dt_jmprel != WORD_MAX && bin->dyn_info.dt_jmprel - base_addr <= g_offset
+	if (bin->dyn_info.dt_jmprel != ELF_ADDR_MAX && bin->dyn_info.dt_jmprel - base_addr <= g_offset
 		&& g_offset < bin->dyn_info.dt_jmprel + bin->dyn_info.dt_pltrelsz - base_addr) {
 		return bin->dyn_info.dt_jmprel + bin->dyn_info.dt_pltrelsz - g_offset - base_addr;
 	}
