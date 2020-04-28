@@ -523,6 +523,10 @@ static int compute_dyn_entries(ELFOBJ *bin, Elf_(Phdr) *dyn_phdr, ut64 dyn_size)
 	return res;
 }
 
+static void set_default_value_dynamic_info(ELFOBJ *bin) {
+	memset(&bin->dyn_info, UCHAR_MAX, sizeof(RBinElfDynamicInfo));
+}
+
 static int init_dynamic_section(ELFOBJ *bin) {
 	Elf_(Dyn) *dyn = NULL;
 	ut64 strtabaddr = 0;
@@ -563,6 +567,8 @@ static int init_dynamic_section(ELFOBJ *bin) {
 	if (!dyn_size || loaded_offset + dyn_size > bin->size) {
 		goto beach;
 	}
+
+	set_default_value_dynamic_info(bin);
 	for (i = 0; i < entries; i++) {
 		int j = 0;
 		len = r_buf_read_at (bin->b, loaded_offset + i * sizeof (Elf_(Dyn)), sdyn, sizeof (Elf_(Dyn)));
