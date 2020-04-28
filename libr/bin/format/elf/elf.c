@@ -535,6 +535,7 @@ static int init_dynamic_section(ELFOBJ *bin) {
 	int i, len, r;
 	ut8 sdyn[sizeof (Elf_(Dyn))] = { 0 };
 	ut64 dyn_size = 0, loaded_offset;
+	set_default_value_dynamic_info(bin);
 
 	r_return_val_if_fail (bin, false);
 	if (!bin->phdr || !bin->ehdr.e_phnum) {
@@ -568,7 +569,6 @@ static int init_dynamic_section(ELFOBJ *bin) {
 		goto beach;
 	}
 
-	set_default_value_dynamic_info(bin);
 	for (i = 0; i < entries; i++) {
 		int j = 0;
 		len = r_buf_read_at (bin->b, loaded_offset + i * sizeof (Elf_(Dyn)), sdyn, sizeof (Elf_(Dyn)));
