@@ -2769,16 +2769,10 @@ static int opxchg(RAsm *a, ut8 *data, const Opcode *op) {
 			if (op->operands[0].type & OT_WORD) {
 				data[l++] = 0x66;
 			}
-			int rex = 0x40;
-			if (op->operands[0].extended) {
-				rex |= 1 << 2;
-			}
-			if (op->operands[1].extended) {
-				rex |= 1;
-			}
-			if (op->operands[0].type & OT_QWORD) {
-				rex |= 1 << 3;
-			}
+			ut8 rex = 0x40
+				| op->operands[0].extended
+				| op->operands[1].extended << 2
+				| !!(op->operands[0].type & OT_QWORD) << 3;
 			if (rex != 0x40) {
 				data[l++] = rex;
 			}
@@ -2788,8 +2782,8 @@ static int opxchg(RAsm *a, ut8 *data, const Opcode *op) {
 				data[l++] = 0x87;
 			}
 			mod_byte = 3;
-			reg = op->operands[0].reg;
-			rm = op->operands[1].reg;
+			reg = op->operands[1].reg;
+			rm = op->operands[0].reg;
 		}
 	}
 	data[l++] = mod_byte << 6 | reg << 3 | rm;
