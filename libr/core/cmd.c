@@ -5203,6 +5203,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_command) {
 		}
 		res = r_cmd_call_parsed_args (state->core->rcmd, pr_args);
 	err_else:
+		r_cmd_parsed_args_free (pr_args);
 		free (command_str);
 		return int2cmdstatus (res);
 	}
