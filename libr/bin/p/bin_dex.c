@@ -373,10 +373,7 @@ out_error:
 // XXX. this is using binfile->buf directly :(
 // https://github.com/android/platform_dalvik/blob/0641c2b4836fae3ee8daf6c0af45c316c84d5aeb/libdex/DexDebugInfo.cpp#L312
 // https://github.com/android/platform_dalvik/blob/0641c2b4836fae3ee8daf6c0af45c316c84d5aeb/libdex/DexDebugInfo.cpp#L141
-static void dex_parse_debug_item(RBinFile *bf,
-				  RBinDexClass *c, int MI, int MA, int paddr, int ins_size,
-				  int insns_size, char *class_name, int regsz,
-				  int debug_info_off) {
+static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, int paddr, int ins_size, int insns_size, char *class_name, int regsz, int debug_info_off) {
 	RBin *rbin = bf->rbin;
 	RBinDexObj *dex = bf->o->bin_obj; //  bin .. unnecessary arg
 	// runtime error: pointer index expression with base 0x000000004402 overflowed to 0xffffffffff0043fc
@@ -441,7 +438,6 @@ static void dex_parse_debug_item(RBinFile *bf,
 			free (emitted_debug_locals);
 			return;
 		}
-		// p4 = r_uleb128 (p4, p4_end - p4, &param_type_idx); // read uleb128p1
 		(void)r_buf_uleb128 (bf->buf, &res);
 		param_type_idx = res - 1;
 		name = getstr (dex, param_type_idx);
@@ -464,12 +460,12 @@ static void dex_parse_debug_item(RBinFile *bf,
 		}
 		parameters_size--;
 	}
-	ut8 opcode = 0; // = *(p4++) & 0xff;
+	ut8 opcode = 0;
 	if (r_buf_read (bf->buf, &opcode, 1) != 1) {
 		// error
 		return;
 	}
-	while (keep) {//  && p4 + 1 < p4_end) {
+	while (keep) {
 		switch (opcode) {
 		case 0x0: // DBG_END_SEQUENCE
 			keep = false;
@@ -477,14 +473,12 @@ static void dex_parse_debug_item(RBinFile *bf,
 		case 0x1: // DBG_ADVANCE_PC
 			{
 			ut64 addr_diff;
-			// p4 = r_uleb128 (p4, p4_end - p4, &addr_diff);
 			r_buf_uleb128 (bf->buf, &addr_diff);
 			address += addr_diff;
 			}
 			break;
 		case 0x2: // DBG_ADVANCE_LINE
 			{
-			//  st64 line_diff = r_sleb128 (&p4, p4_end);
 			st64 line_diff;
 			r_buf_sleb128 (bf->buf, &line_diff);
 			line += line_diff;
@@ -625,7 +619,6 @@ static void dex_parse_debug_item(RBinFile *bf,
 			break;
 		case 0x9:
 			{
-		//	p4 = r_uleb128 (p4, p4_end - p4, &source_file_idx);
 			ut64 res;
 			r_buf_uleb128 (bf->buf, &res);
 			source_file_idx = res - 1;
