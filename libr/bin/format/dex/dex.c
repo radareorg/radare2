@@ -16,7 +16,12 @@ char* r_bin_dex_get_version(RBinDexObj *bin) {
 
 // XXX this is never called
 void r_bin_dex_free(RBinDexObj *dex) {
-	r_pvector_fini (&dex->vec_strings);
+	size_t i;
+	struct dex_header_t *dexhdr = &dex->header;
+	for (i = 0; i < dexhdr->strings_size; i++) {
+		free (dex->cal_strings[i]);
+	}
+	free (dex->cal_strings);
 	free (dex);
 }
 
@@ -31,8 +36,6 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	bin->size = r_buf_size (buf);
 	bin->b = r_buf_ref (buf);
 	/* header */
-	r_pvector_init (&bin->vec_strings, free);
-	bin->htup_strings = ht_up_new0 ();
 	if (bin->size < sizeof (struct dex_header_t)) {
 		goto fail;
 	}

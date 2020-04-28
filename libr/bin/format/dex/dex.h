@@ -121,8 +121,6 @@ typedef struct r_bin_dex_obj_t {
 	char *version;
 	Sdb *kv;
 	char **cal_strings;
-	RPVector vec_strings;
-	HtUP *htup_strings;
 } RBinDexObj;
 
 struct r_bin_dex_str_t {
