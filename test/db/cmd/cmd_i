@@ -3536,12 +3536,16 @@ wz k\0i\0abcdefgh
 ?e
 .(izzenc ascii)
 ?e
+.(izzenc utf8)
+?e
 .(izzenc utf16le)
 EOF
 EXPECT=<<EOF
 0   0x00000000 0x00000000 6   14           utf16le ki扡摣晥桧 blocks=Basic Latin,CJK Unified Ideographs
 
 0   0x00000004 0x00000004 8   9            ascii abcdefgh
+
+0   0x00000004 0x00000004 8   9            utf8 abcdefgh
 
 0   0x00000000 0x00000000 6   14           utf16le ki扡摣晥桧 blocks=Basic Latin,CJK Unified Ideographs
 EOF
