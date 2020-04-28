@@ -132,6 +132,12 @@ void sprint_mem(char *out, const ut8 *buf, size_t len) {
 		mu_assert(_meqstr, strcmp((exp__), (act__)) == 0); \
 } while(0)
 
+#define mu_assert_streq_free(actual, expected, message) do { \
+		char *act2__ = (actual); \
+		mu_assert_streq (act2__, (expected), (message)); \
+		free (act2__); \
+} while (0)
+
 #define mu_assert_nullable_streq(actual, expected, message) do { \
 		char _meqstr[2048]; \
 		const char *act__ = (actual); \

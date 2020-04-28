@@ -21,7 +21,6 @@
 #include <grub/mm.h>
 #include <grub/misc.h>
 #include <grub/disk.h>
-#include <grub/dl.h>
 #include <r_types.h>
 
 #ifndef MODE_USTAR
@@ -77,8 +76,6 @@ struct grub_cpio_data
   grub_uint32_t dofs;
   grub_uint32_t size;
 };
-
-static grub_dl_t my_mod;
 
 #ifndef MODE_USTAR
 
@@ -216,8 +213,6 @@ grub_cpio_dir (grub_device_t device, const char *path,
   const char *np;
   int len;
 
-  grub_dl_ref (my_mod);
-
   data = grub_cpio_mount (device->disk);
   if (!data)
     goto fail;
@@ -277,8 +272,6 @@ fail:
 
   grub_free (data);
 
-  grub_dl_unref (my_mod);
-
   return grub_errno;
 }
 
@@ -289,8 +282,6 @@ grub_cpio_open (grub_file_t file, const char *name)
   grub_uint32_t ofs = 0;
   char *fn = NULL;
   int i, j;
-
-  grub_dl_ref (my_mod);
 
   data = grub_cpio_mount (file->device->disk);
   if (!data)
@@ -350,8 +341,6 @@ fail:
   if (data)
     grub_free (data);
 
-  grub_dl_unref (my_mod);
-
   return grub_errno;
 }
 
@@ -369,8 +358,6 @@ static grub_err_t
 grub_cpio_close (grub_file_t file)
 {
   grub_free (file->data);
-
-  grub_dl_unref (my_mod);
 
   return grub_errno;
 }

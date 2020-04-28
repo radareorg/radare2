@@ -2,13 +2,14 @@
 #include <w32dbg_wrap.h>
 
 static DWORD WINAPI __w32dbg_thread(LPVOID param) {
-	w32dbg_wrap_instance *inst = param;
-	w32dbg_wrap_params *params = inst->params;
+	W32DbgWInst *inst = param;
+	W32DbgWParams *params = &inst->params;
+	PROCESS_INFORMATION *pi = &inst->pi;
 	while (1) {
 		WaitForSingleObject (inst->request_sem, INFINITE);
 		switch (params->type) {
 		case W32_CONTINUE:
-			params->ret = ContinueDebugEvent (params->pid, params->tid, params->continue_status);
+			params->ret = ContinueDebugEvent (pi->dwProcessId, pi->dwThreadId, params->continue_status);
 			break;
 		case W32_WAIT:
 			params->ret = WaitForDebugEvent (params->wait.de, params->wait.wait_time);
@@ -17,11 +18,11 @@ static DWORD WINAPI __w32dbg_thread(LPVOID param) {
 			params->ret = params->func.func (params->func.user);
 			break;
 		case W32_ATTACH:
-			params->ret = DebugActiveProcess (params->pid);
+			params->ret = DebugActiveProcess (pi->dwProcessId);
 			break;
 		case W32_DETTACH:
 		case W32_STOP:
-			params->ret = DebugActiveProcessStop (params->pid);
+			params->ret = DebugActiveProcessStop (pi->dwProcessId);
 			break;
 		default:
 			break;
@@ -37,14 +38,9 @@ static DWORD WINAPI __w32dbg_thread(LPVOID param) {
 	return 0;
 }
 
-w32dbg_wrap_instance *w32dbg_wrap_new(void) {
-	w32dbg_wrap_instance *inst = calloc (1, sizeof (w32dbg_wrap_instance));
+W32DbgWInst *w32dbg_wrap_new(void) {
+	W32DbgWInst *inst = calloc (1, sizeof (W32DbgWInst));
 	if (inst) {
-		inst->params = calloc (1, sizeof (w32dbg_wrap_params));
-		if (!inst->params) {
-			free(inst);
-			return NULL;
-		}
 		inst->request_sem = CreateSemaphore (NULL, 0, 1, NULL);
 		inst->result_sem = CreateSemaphore (NULL, 0, 1, NULL);
 		inst->debugThread = CreateThread (NULL, 0, __w32dbg_thread, inst, 0, NULL);
@@ -52,16 +48,15 @@ w32dbg_wrap_instance *w32dbg_wrap_new(void) {
 	return inst;
 }
 
-void w32dbg_wrap_fini(w32dbg_wrap_instance *inst) {
-	inst->params->type = W32_STOP;
+void w32dbg_wrap_fini(W32DbgWInst *inst) {
+	inst->params.type = W32_STOP;
 	ReleaseSemaphore (inst->request_sem, 1, NULL);
 	CloseHandle (inst->request_sem);
 	CloseHandle (inst->result_sem);
-	free (inst->params);
 	free (inst);
 }
 
-int w32dbg_wrap_wait_ret(w32dbg_wrap_instance *inst) {
+int w32dbg_wrap_wait_ret(W32DbgWInst *inst) {
 	ReleaseSemaphore (inst->request_sem, 1, NULL);
 	WaitForSingleObject (inst->result_sem, INFINITE);
 	return w32dbgw_ret(inst);

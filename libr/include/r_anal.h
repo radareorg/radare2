@@ -745,14 +745,14 @@ typedef struct r_anal_var_t {
 	char *name; // name of the variable
 	char *type; // cparse type of the variable
 	RAnalVarKind kind;
-	int size;
 	bool isarg;
 	int delta;   /* delta offset inside stack frame */
+	char *regname; // name of the register
 	RVector/*<RAnalVarAccess>*/ accesses; // ordered by offset, touch this only through API or expect uaf
+	char *comment;
 
 	// below members are just for caching, TODO: remove them and do it better
 	int argnum;
-	char *regname; // name of the register
 } RAnalVar;
 
 // Refers to a variable or a struct field inside a variable, only for varsub
@@ -1734,12 +1734,9 @@ R_API int r_meta_space_count_for(RAnal *a, const RSpace *space_name);
 R_API RList *r_meta_enumerate(RAnal *a, int type);
 R_API int r_meta_count(RAnal *m, int type, ut64 from, ut64 to);
 R_API char *r_meta_get_string(RAnal *m, int type, ut64 addr);
-R_API char *r_meta_get_var_comment (RAnal *a, int type, ut64 idx, ut64 addr);
 R_API bool r_meta_set_string(RAnal *m, int type, ut64 addr, const char *s);
-R_API bool r_meta_set_var_comment (RAnal *a, int type, ut64 idx, ut64 addr, const char *s);
 R_API int r_meta_get_size(RAnal *a, int type);
 R_API int r_meta_del(RAnal *m, int type, ut64 from, ut64 size);
-R_API int r_meta_var_comment_del(RAnal *a, int type, ut64 idx, ut64 addr);
 R_API int r_meta_add(RAnal *m, int type, ut64 from, ut64 to, const char *str);
 R_API int r_meta_add_with_subtype(RAnal *m, int type, int subtype, ut64 from, ut64 to, const char *str);
 R_API RAnalMetaItem *r_meta_find(RAnal *m, ut64 off, int type, int where);

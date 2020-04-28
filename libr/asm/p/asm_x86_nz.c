@@ -1793,7 +1793,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		if (!op->operands[1].is_good_flag) {
 			return -1;
 		}
-		if (op->operands[1].immediate == -1) {
+		if (op->operands[1].immediate == -1 && a->num && a->num->nc.errors > 0) {
 			return -1;
 		}
 		immediate = op->operands[1].immediate * op->operands[1].sign;
@@ -2360,6 +2360,9 @@ static int oppop(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 			data[l++] = base + (8 * op->operands[0].reg);
 		} else {
+			if (op->operands[0].extended && a->bits == 64) {
+				data[l++] = 0x41;
+			}
 			ut8 base = 0x58;
 			data[l++] = base + op->operands[0].reg;
 		}

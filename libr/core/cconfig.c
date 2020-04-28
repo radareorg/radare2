@@ -894,6 +894,7 @@ typedef struct {
 } namealiases_pair;
 
 static bool cb_binstrenc (void *user, void *data) {
+	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->value[0] == '?') {
 		print_node_options (node);
@@ -904,7 +905,7 @@ static bool cb_binstrenc (void *user, void *data) {
 	}
 	const namealiases_pair names[] = {
 		{ "guess", NULL },
-		{ "latin1", NULL },
+		{ "latin1", "ascii" },
 		{ "utf8", "utf-8" },
 		{ "utf16le", "utf-16le,utf16-le" },
 		{ "utf32le", "utf-32le,utf32-le" },
@@ -922,6 +923,8 @@ static bool cb_binstrenc (void *user, void *data) {
 			free (node->value);
 			node->value = strdup (pair->name);
 			free (enc);
+			free (core->bin->strenc);
+			core->bin->strenc = !strcmp (node->value, "guess") ? NULL : strdup (node->value);
 			return true;
 		}
 	}
@@ -3154,7 +3157,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("bin.maxstrbuf", 1024*1024*10, & cb_binmaxstrbuf, "Maximum size of range to load strings from");
 	n = NODECB ("bin.str.enc", "guess", &cb_binstrenc);
 	SETDESC (n, "Default string encoding of binary");
-	SETOPTIONS (n, "latin1", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "guess", NULL);
+	SETOPTIONS (n, "ascii", "latin1", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "guess", NULL);
 	SETCB ("bin.prefix", "", &cb_binprefix, "Prefix all symbols/sections/relocs with a specific string");
 	SETCB ("bin.rawstr", "false", &cb_rawstr, "Load strings from raw binaries");
 	SETCB ("bin.strings", "true", &cb_binstrings, "Load strings from rbin on startup");

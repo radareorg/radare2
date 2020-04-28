@@ -197,7 +197,7 @@ R_API ut64 r_file_size(const char *str) {
 	return (ut64)buf.st_size;
 }
 
-R_API int r_file_is_abspath(const char *file) {
+R_API bool r_file_is_abspath(const char *file) {
 	return ((*file && file[1]==':') || *file == '/');
 }
 

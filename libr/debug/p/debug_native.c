@@ -315,7 +315,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	// require switching to the event's thread that shouldn't bother the user
 	int orig_tid = dbg->tid;
 	bool restore_thread = false;
-	RIOW32Dbg *rio = dbg->user;
+	W32DbgWInst *wrap = dbg->user;
 
 	if (pid == -1) {
 		eprintf ("ERROR: r_debug_native_wait called with pid -1\n");
@@ -411,10 +411,10 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 		}
 		// DebugProcessBreak creates a new thread that will trigger a breakpoint. We record the
 		// tid here to ignore it once the breakpoint is hit.
-		rio->break_tid = dbg->tid;
+		wrap->break_tid = dbg->tid;
 		restore_thread = true;
-	} else if (reason == R_DEBUG_REASON_BREAKPOINT && dbg->tid == rio->break_tid) {
-		rio->break_tid = -2;
+	} else if (reason == R_DEBUG_REASON_BREAKPOINT && dbg->tid == wrap->break_tid) {
+		wrap->break_tid = -2;
 		reason = R_DEBUG_REASON_NONE;
 		restore_thread = true;
 	}

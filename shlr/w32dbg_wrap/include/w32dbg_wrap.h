@@ -13,8 +13,6 @@ typedef enum {
 
 typedef struct {
 	w32dbg_wrap_req type;
-	DWORD pid;
-	DWORD tid;
 	union {
 		DWORD continue_status;
 		struct {
@@ -28,28 +26,24 @@ typedef struct {
 	};
 	int ret;
 	DWORD err;
-} w32dbg_wrap_params;
-
-typedef struct w32dbg_wrap_instance_t {
-	HANDLE debugThread;
-	w32dbg_wrap_params *params;
-	HANDLE request_sem;
-	HANDLE result_sem;
-} w32dbg_wrap_instance;
+} W32DbgWParams;
 
 typedef struct {
+	HANDLE debugThread;
+	W32DbgWParams params;
+	HANDLE request_sem;
+	HANDLE result_sem;
 	ULONG_PTR winbase;
 	PROCESS_INFORMATION pi;
-	w32dbg_wrap_instance *inst;
 	// Stores the TID of the thread DebugBreakProcess creates to ignore it's breakpoint
 	DWORD break_tid;
-} RIOW32Dbg;
+} W32DbgWInst;
 
-#define w32dbgw_ret(inst) inst->params->ret
-#define w32dbgw_err(inst) (SetLastError (inst->params->err), inst->params->err)
+#define w32dbgw_ret(inst) inst->params.ret
+#define w32dbgw_err(inst) (SetLastError (inst->params.err), inst->params.err)
 
-w32dbg_wrap_instance *w32dbg_wrap_new(void);
-int w32dbg_wrap_wait_ret(w32dbg_wrap_instance *inst);
-void w32dbg_wrap_fini(w32dbg_wrap_instance *inst);
+W32DbgWInst *w32dbg_wrap_new(void);
+int w32dbg_wrap_wait_ret(W32DbgWInst *inst);
+void w32dbg_wrap_fini(W32DbgWInst *inst);
 
 #endif
