@@ -89,6 +89,8 @@ GIT_TAP:=$(shell (git describe --tags 2>/dev/null || echo ${VERSION} ))
 
 CLOCK_LDFLAGS+=@CLOCK_LDFLAGS@
 
+NEWSHELL_CFLAGS=@NEWSHELL_CFLAGS@
+
 # cache compiler flags at configure time #
 CFLAGS+=@CFLAGS@
 LDFLAGS+=@LDFLAGS@
