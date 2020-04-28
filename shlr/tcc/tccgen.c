@@ -756,15 +756,16 @@ add_tstr:
 	case VT_STRUCT:
 	case VT_UNION:
 		if (bt == VT_STRUCT) {
-			tstr = "struct ";
+			tstr = "struct";
 		} else if (bt == VT_UNION) {
-			tstr = "union ";
+			tstr = "union";
 		} else {
-			tstr = "enum ";
+			tstr = "enum";
 		}
 		pstrcat (buf, buf_size, tstr);
 		v = type->ref->v & ~SYM_STRUCT;
 		if (v < SYM_FIRST_ANOM) {
+			pstrcat (buf, buf_size, " ");
 			pstrcat (buf, buf_size, get_tok_str (v, NULL));
 		}
 		break;
