@@ -38,6 +38,7 @@
 #include <grub/types.h>
 #include <grub/fshelp.h>
 #include <r_types.h>
+#include <r_util/r_assert.h>
 
 #ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -55,14 +56,6 @@
 
 #undef S_IFLNK
 #define S_IFLNK 0xA000
-
-#define assertx(boolean) real_assert (boolean, GRUB_FILE, __LINE__)
-static inline void
-real_assert (int boolean, const char *file, const int line)
-{
-  if (! boolean)
-    grub_printf ("Assertion failed at %s:%d\n", file, line);
-}
 
 enum grub_reiserfs_item_type
   {
@@ -413,7 +406,7 @@ grub_reiserfs_set_key_type (struct grub_reiserfs_key *key,
       = ((key->u.v2.offset_type & grub_cpu_to_le64 (~0ULL >> 4))
          | grub_cpu_to_le64 ((grub_uint64_t) type << 60));
 
-  assertx (grub_reiserfs_get_key_type (key) == grub_type);
+  r_warn_if_fail (grub_reiserfs_get_key_type (key) == grub_type);
 }
 
 /* -1 if key 1 if lower than key 2.
@@ -629,14 +622,14 @@ grub_reiserfs_get_item (struct grub_reiserfs_data *data,
 #endif
     }
 
-  assertx (grub_errno == GRUB_ERR_NONE);
+  r_warn_if_fail (grub_errno == GRUB_ERR_NONE);
   grub_free (block_header);
   return GRUB_ERR_NONE;
 
  fail:
-  assertx (grub_errno != GRUB_ERR_NONE);
+  r_warn_if_fail (grub_errno != GRUB_ERR_NONE);
   grub_free (block_header);
-  assertx (grub_errno != GRUB_ERR_NONE);
+  r_warn_if_fail (grub_errno != GRUB_ERR_NONE);
   return grub_errno;
 }
 
@@ -973,11 +966,11 @@ grub_reiserfs_iterate_dir (grub_fshelp_node_t item,
   while (block_number);
 
  found:
-  assertx (grub_errno == GRUB_ERR_NONE);
+  r_warn_if_fail (grub_errno == GRUB_ERR_NONE);
   grub_free (block_header);
   return ret;
  fail:
-  assertx (grub_errno != GRUB_ERR_NONE);
+  r_warn_if_fail (grub_errno != GRUB_ERR_NONE);
   grub_free (block_header);
   return 0;
 }
@@ -1065,7 +1058,7 @@ grub_reiserfs_open (struct grub_file *file, const char *name)
   return GRUB_ERR_NONE;
 
  fail:
-  assertx (grub_errno != GRUB_ERR_NONE);
+  r_warn_if_fail (grub_errno != GRUB_ERR_NONE);
   grub_free (found);
   grub_free (data);
   return grub_errno;
