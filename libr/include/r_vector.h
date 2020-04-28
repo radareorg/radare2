@@ -158,6 +158,7 @@ R_API void *r_vector_shrink(RVector *vec);
 // RPVector
 
 R_API void r_pvector_init(RPVector *vec, RPVectorFree free);
+R_API void r_pvector_fini(RPVector *vec);
 
 R_API RPVector *r_pvector_new(RPVectorFree free);
 
