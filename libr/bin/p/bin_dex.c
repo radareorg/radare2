@@ -83,11 +83,11 @@ static const char *getstr(RBinDexObj *dex, int idx) {
 	}
 	if (dex->cal_strings) {
 		const char *p = dex->cal_strings[idx];
-		if (p && *p) {
+		if (R_STR_ISEMPTY (p)) {
 			return p;
 		}
 	} else {
-		dex->cal_strings = calloc (dex->header.strings_size, sizeof (void*));
+		dex->cal_strings = R_NEWS0 (void*, dex->header.strings_size);
 	}
 	const ut32 string_index = dex->strings[idx];
 	if (string_index >= dex->size) {
@@ -109,7 +109,7 @@ static const char *getstr(RBinDexObj *dex, int idx) {
 		r_buf_read_at (dex->b, string_index + uleblen, ptr, len);
 		ptr[len] = 0;
 		dex->cal_strings[idx] = ptr;
-		return (char *)ptr;
+		return (const char *)ptr;
 	}
 	return NULL;
 }
