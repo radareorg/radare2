@@ -82,11 +82,9 @@ static const char *getstr(RBinDexObj *dex, int idx) {
 		return NULL;
 	}
 	if (dex->cal_strings) {
-		if (idx >= 0 ||  idx < dex->header.strings_size) {
-			const char *p = dex->cal_strings[idx];
-			if (p && *p) {
-				return p;
-			}
+		const char *p = dex->cal_strings[idx];
+		if (p && *p) {
+			return p;
 		}
 	} else {
 		dex->cal_strings = calloc (dex->header.strings_size, sizeof (void*));
