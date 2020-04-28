@@ -3709,22 +3709,25 @@ void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_
 			}
 			//look for other segment with x that is already mapped and hold entrypoint
 			for (j = 0; !sections[j].last; j++) {
-				if (sections[j].perm & PE_IMAGE_SCN_MEM_EXECUTE) {
-					addr_beg = sections[j].paddr;
-					addr_end = addr_beg + sections[j].size;
-					if (addr_beg <= entry->paddr && entry->paddr < addr_end) {
-						if (!sections[j].vsize) {
-							sections[j].vsize = sections[j].size;
+				addr_beg = sections[j].paddr;
+				addr_end = addr_beg + sections[j].size;
+				if (addr_beg <= entry->paddr && entry->paddr < addr_end) {
+					if (!sections[j].vsize) {
+						sections[j].vsize = sections[j].size;
+					}
+					addr_beg = sections[j].vaddr + base_addr;
+					addr_end = addr_beg + sections[j].vsize;
+					if (addr_beg <= entry->vaddr || entry->vaddr < addr_end) {
+						if (!(sections[j].perm & PE_IMAGE_SCN_MEM_EXECUTE)) {
+							if (bin->verbose) {
+								eprintf ("Warning: Found entrypoint in non-executable section.\n");
+							}
+							sections[j].perm |= PE_IMAGE_SCN_MEM_EXECUTE;
 						}
-						addr_beg = sections[j].vaddr + base_addr;
-						addr_end = addr_beg + sections[j].vsize;
-						if (addr_beg <= entry->vaddr || entry->vaddr < addr_end) {
-							fix = false;
-							break;
-						}
+						fix = false;
+						break;
 					}
 				}
-
 			}
 			//if either vaddr or paddr fail we should update this section
 			if (fix) {
