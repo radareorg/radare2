@@ -177,7 +177,6 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sanitized_name) {
 		}
 		RAnalEnumCase cas = {.name = strdup (cur), .val = strtol (value, NULL, 16)};
 
-		free (value);
 		free (val_key);
 		
 		void *element = r_vector_push (&cases, &cas); // returns null if no space available
@@ -188,7 +187,6 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sanitized_name) {
 		}
 		sdb_aforeach_next (cur);
 	}
-	free (members);
 
 	base_enum.cases = cases;
 	base_type->enum_data = base_enum;
@@ -202,11 +200,11 @@ R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
 
 	char *name_sanitized = r_str_sanitize_sdb_key (name);
 
-	char *type = sdb_get (anal->sdb_types, name_sanitized, NULL);
+	char *type = sdb_const_get (anal->sdb_types, name_sanitized, NULL);
 
 	// Right now just types: struct, enum, union are supported
 	if (!type || !(strcmp (type, "enum") || strcmp (type, "struct") || strcmp (type, "union"))) {
-		free (type);
+		free(name_sanitized);
 		return NULL;
 	}
 	// Taking advantage that all 3 types start with distinct letter
@@ -229,6 +227,6 @@ R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
 		break;
 	}
 
-	free (type);
+	free(name_sanitized);
 	return base_type;
 }
