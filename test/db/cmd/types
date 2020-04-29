@@ -915,7 +915,6 @@ EOF
 EXPECT=<<EOF
 pf dF num num2
 pf c ch
-pf 
 ----
 struct.A=num
 struct.A.num=float,0,0

@@ -376,7 +376,7 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 	// assumes var list is sorted by offset.. should do more checks here
 	char *p = NULL, *vars = NULL, var2[132], *fmt = NULL;
 	int n;
-	char *fields = r_str_newf("%s.fields", var);
+	char *fields = r_str_newf ("%s.fields", var);
 	char *nfields = (is_typedef) ? fields : var;
 	for (n = 0; (p = sdb_array_get (TDB, nfields, n, NULL)); n++) {
 		char *struct_name;
@@ -475,7 +475,7 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 		snprintf (var2, sizeof (var2), "typedef.%s", t);
 		const char *type = sdb_const_get (TDB, var2, NULL);
 		// only supports struct atm
-		if (type && r_str_startswith (type, "struct ")) {
+		if (type && !strcmp (type, "struct")) {
 			return fmt_struct_union (TDB, var, true);
 		}
 	}

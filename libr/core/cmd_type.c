@@ -406,13 +406,13 @@ static Sdb *TDB_ = NULL; // HACK
 
 static int stdifstruct(void *user, const char *k, const char *v) {
 	r_return_val_if_fail (TDB_, false);
-	if (!strcmp (v, "struct")) {
+	if (!strcmp (v, "struct") && !r_str_startswith (k, "typedef")) {
 		return true;
 	}
 	if (!strcmp (v, "typedef")) {
 		const char *typedef_key = sdb_fmt ("typedef.%s", k);
 		const char *type = sdb_const_get (TDB_, typedef_key, NULL);
-		if (type && r_str_startswith (type, "struct ")) {
+		if (type && r_str_startswith (type, "struct")) {
 			return true;
 		}
 	}

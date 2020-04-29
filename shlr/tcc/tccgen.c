@@ -1184,9 +1184,9 @@ do_decl:
 							int type_bt = type1.t & VT_BTYPE;
 							//eprintf("2: %s.%s = %s\n", ctype, name, varstr);
 							if (is_typedef && autonamed) {
-								tcc_typedef_appendf ("[+]typedef.%%1$s.fields=%s\n", varstr);
-								tcc_typedef_appendf ("typedef.%%1$s.%s.meta=%d\n", varstr, type_bt);
-								tcc_typedef_appendf ("typedef.%%1$s.%s=%s,%d,%d\n", varstr, b, offset, arraysize);
+								tcc_typedef_appendf ("[+]typedef.%%s.fields=%s\n", varstr);
+								tcc_typedef_appendf ("typedef.%%s.%s.meta=%d\n", varstr, type_bt);
+								tcc_typedef_appendf ("typedef.%%s.%s=%s,%d,%d\n", varstr, b, offset, arraysize);
 							} else {
 								tcc_appendf ("[+]%s.%s=%s\n",
 									ctype, name, varstr);
