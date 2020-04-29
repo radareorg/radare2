@@ -964,7 +964,6 @@ R_API int r_meta_get_size(RAnal *a, int type) {
 	int meta_size;
 	ls_foreach (ls, lsi, kv) {
 		if ((strlen (sdbkv_key (kv)) > 5 && sdbkv_key (kv)[5] == type)) {
-
 			meta_size = get_meta_size ((void *)&ui, sdbkv_key (kv), sdbkv_value (kv));
 			tot_size += meta_size > -1 ? meta_size : 0;
 		}

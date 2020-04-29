@@ -2147,19 +2147,25 @@ aB "xadd byte [eax], al" 0fc000
 aB "xadd dword [eax], eax" 0fc100
 aB "xchg byte [eax], al" 8600
 a "xchg dword [eax], eax" 8700
+ad "xchg al, dl" 86d0
+ad "xchg dl, al" 86c2
+ad "xchg ax, dx" 6692
+a "xchg dx, ax" 6692
+ad "xchg ah, dh" 86f4
+ad "xchg dh, ah" 86e6
 a "xchg eax, eax" 90
-a "xchg eax, ebp" 95
-a "xchg eax, ebx" 93
-a "xchg eax, ebx" 93
-a "xchg eax, ecx" 91
-a "xchg eax, edi" 97
-a "xchg eax, edx" 92
-a "xchg eax, esi" 96
-a "xchg eax, esp" 94
-a "xchg ebx, ecx" 87cb
-a "xchg ecx, ebp" 87e9
-a "xchg ecx, ebx" 87d9
-a "xchg ecx, ecx" 87c9
+ad "xchg eax, ebp" 95
+ad "xchg eax, ebx" 93
+ad "xchg eax, ebx" 93
+ad "xchg eax, ecx" 91
+ad "xchg eax, edi" 97
+ad "xchg eax, edx" 92
+ad "xchg eax, esi" 96
+ad "xchg eax, esp" 94
+ad "xchg ebx, ecx" 87cb
+ad "xchg ecx, ebp" 87e9
+ad "xchg ecx, ebx" 87d9
+ad "xchg ecx, ecx" 87c9
 a "xgetbv" 0f01d0
 a "xlatb" d7
 a "xor al, 0" 3400

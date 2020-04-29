@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2019 - pancake */
+/* radare - LGPL - Copyright 2008-2020 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
@@ -15,7 +15,7 @@ typedef struct r_io_mmo_t {
 	ut8 modified;
 	RBuffer *buf;
 	RIO * io_backref;
-	int rawio;
+	bool rawio;
 } RIOMMapFileObj;
 
 static int __io_posix_open(const char *file, int perm, int mode) {
@@ -38,7 +38,7 @@ static int __io_posix_open(const char *file, int perm, int mode) {
 		fd = r_sandbox_open (file, O_RDONLY | O_BINARY, 0);
 	}
 #else
-	const int posixFlags = (perm & R_PERM_W) ? (perm & R_PERM_CREAT)
+	const size_t posixFlags = (perm & R_PERM_W) ? (perm & R_PERM_CREAT)
 			? (O_RDWR | O_CREAT) : O_RDWR : O_RDONLY;
 	fd = r_sandbox_open (file, posixFlags, mode);
 #endif
@@ -73,7 +73,7 @@ static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 	st64 sz = r_file_size (mmo->filename);
 	if (sz > ST32_MAX) {
 		// Do not use mmap if the file is huge
-		mmo->rawio = 1;
+		mmo->rawio = true;
 	}
 	if (mmo->rawio) {
 		mmo->fd = __io_posix_open (mmo->filename, mmo->perm, mmo->mode);
@@ -82,21 +82,21 @@ static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 			fcntl (mmo->fd, F_NOCACHE, 1);
 #endif
 		}
-		return (mmo->fd != -1);
+		return mmo->fd != -1;
 	}
 	mmo->buf = r_buf_new_mmap (mmo->filename, mmo->perm);
 	if (mmo->buf) {
 		r_io_def_mmap_seek (io, mmo, cur, SEEK_SET);
 		return true;
 	} else {
-		mmo->rawio = 1;
+		mmo->rawio = true;
 		mmo->fd = __io_posix_open (mmo->filename, mmo->perm, mmo->mode);
 		if (mmo->nocache) {
 #ifdef F_NOCACHE
 			fcntl (mmo->fd, F_NOCACHE, 1);
 #endif
 		}
-		return (mmo->fd != -1);
+		return mmo->fd != -1;
 	}
 	return false;
 }
@@ -121,7 +121,7 @@ RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, in
 	}
 	mmo->nocache = r_str_startswith (filename, "nocache://");
 	if (mmo->nocache) {
-		filename += strlen ("nocache://");;
+		filename += strlen ("nocache://");
 	}
 	mmo->filename = strdup (filename);
 	mmo->perm = perm;
@@ -140,7 +140,7 @@ RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, in
 		return NULL;
 	}
 	if (!r_io_def_mmap_refresh_def_mmap_buf (mmo)) {
-		mmo->rawio = 1;
+		mmo->rawio = true;
 		if (!r_io_def_mmap_refresh_def_mmap_buf (mmo)) {
 			r_io_def_mmap_free (mmo);
 			mmo = NULL;
