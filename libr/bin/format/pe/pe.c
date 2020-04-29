@@ -1191,10 +1191,6 @@ static int bin_pe_init_imports(struct PE_(r_bin_pe_obj_t)* bin) {
 		bin->import_directory_offset = import_dir_offset;
 		count = 0;
 		do {
-			indx++;
-			if (((2 + indx) * dir_size) > import_dir_size) {
-				break; //goto fail;
-			}
 			new_import_dir = (PE_(image_import_directory)*)realloc (import_dir, ((1 + indx) * dir_size));
 			if (!new_import_dir) {
 				r_sys_perror ("malloc (import directory)");
@@ -1204,12 +1200,16 @@ static int bin_pe_init_imports(struct PE_(r_bin_pe_obj_t)* bin) {
 			}
 			import_dir = new_import_dir;
 			new_import_dir = NULL;
-			curr_import_dir = import_dir + (indx - 1);
-			if (r_buf_read_at (bin->b, import_dir_offset + (indx - 1) * dir_size, (ut8*) (curr_import_dir), dir_size) <= 0) {
+			curr_import_dir = import_dir + indx;
+			if (r_buf_read_at (bin->b, import_dir_offset + indx * dir_size, (ut8*) (curr_import_dir), dir_size) <= 0) {
 				bprintf ("Warning: read (import directory)\n");
 				R_FREE (import_dir);
 				break; //return false;
 			}
+			if (((2 + indx) * dir_size) > import_dir_size) {
+				break; //goto fail;
+			}
+			indx++;
 			count++;
 		} while (curr_import_dir->FirstThunk != 0 || curr_import_dir->Name != 0 ||
 		curr_import_dir->TimeDateStamp != 0 || curr_import_dir->Characteristics != 0 ||
@@ -3325,7 +3325,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* 
 	if (bin->import_directory_offset >= bin->size) {
 		return NULL;
 	}
-	if (bin->import_directory_offset + 32 >= bin->size) {
+	if (bin->import_directory_offset + 20 > bin->size) {
 		return NULL;
 	}
 
