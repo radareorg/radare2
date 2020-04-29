@@ -199,7 +199,10 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sanitized_name) {
 }
 // returns NULL if name is not found or 
 R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
-	char *name_sanitized = r_str_sanitize_sdb_key (name);
+	r_return_val_if_fail(name != NULL, NULL);
+	r_return_val_if_fail(anal != NULL, NULL);
+	
+	char *name_sanitized = r_str_sanitize_sdb_constkey (name);
 
 	char *type = sdb_get (anal->sdb_types, name_sanitized, NULL);
 
