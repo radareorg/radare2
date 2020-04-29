@@ -175,6 +175,8 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 			} else {
 				str_type = R_STRING_TYPE_ASCII;
 			}
+		} else if (type == R_STRING_TYPE_UTF8) {
+			str_type = R_STRING_TYPE_ASCII; // initial assumption
 		} else {
 			str_type = type;
 		}
