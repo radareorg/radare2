@@ -146,18 +146,17 @@ static void enum_type_fini(void *e, void *user) {
 
 static RAnalBaseType *get_enum_type(RAnal *anal, const char *sanitized_name) {
 	r_return_val_if_fail(sanitized_name != NULL, NULL);
-	assert (sanitized_name != NULL);
 
-	RAnalBaseType *base_type = malloc (sizeof(RAnalBaseType));
+	RAnalBaseType *base_type = malloc (sizeof (RAnalBaseType));
 	if (!base_type) {
 		return NULL;
 	}
 	base_type->kind = R_ANAL_BASE_TYPE_KIND_ENUM;
 	
 	RAnalBaseTypeEnum base_enum;
-	
-	char *key = sdb_fmt ("%s.%s", "enum", sanitized_name);
+	char *key = r_str_newf ("%s.%s", "enum", sanitized_name);
 	char *members = sdb_get (anal->sdb_types, key, NULL);
+	free(key);
 
 	RVector cases;
 	r_vector_init(&cases, sizeof(RAnalEnumCase), enum_type_fini, NULL);
@@ -171,9 +170,16 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sanitized_name) {
 	char *cur;
 	void *element;
 	sdb_aforeach (cur, members) {
-		const char *value = sdb_get (anal->sdb_types, sdb_fmt ("%s.%s.%s", "enum", sanitized_name, cur), NULL);
-		RAnalEnumCase cas = {.name = strdup (cur), .val = strtol (value, NULL, 16)};
+		char *val_key = r_str_newf ("%s.%s.%s", "enum", sanitized_name, cur);
+		char *value = sdb_get (anal->sdb_types, val_key, NULL);
+		if (!value) {
+			// Merge these checks into single goto label
+			return NULL;
+		}
+		RAnalEnumCase cas = {.name = strdup (cur), .val = strtol (value, NULL, 16)}
+		;
 		free (value);
+		free(val_key);
 		
 		element = r_vector_push (&cases, &cas); // returns null if no space available
 		if (!element){
@@ -182,7 +188,6 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sanitized_name) {
 			r_vector_free (&cases);
 			return NULL;
 		}
-		
 		sdb_aforeach_next (cur);
 	}
 	free (members);
