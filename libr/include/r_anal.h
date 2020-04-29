@@ -227,18 +227,18 @@ typedef enum {
 } RAnalBaseTypeKind;
 
 typedef struct r_anal_base_type_struct {
-	RVector *members; // describe the struct in some way
+	RVector members; // describe the struct in some way
 } RAnalBaseTypeStruct;
 
 typedef struct r_anal_base_type_enum {
-	RVector/*<RAnalEnumCase*/ *cases; // list of all the enum cases
+	RVector/*<RAnalEnumCase*/ cases; // list of all the enum cases
 } RAnalBaseTypeEnum;
 
 typedef struct r_anal_base_type {
 	RAnalBaseTypeKind kind;
 	union {
-		RAnalBaseTypeStruct ztruct;
-		RAnalBaseTypeEnum inum;
+		RAnalBaseTypeStruct struct_data;
+		RAnalBaseTypeEnum enum_data;
 	};
 } RAnalBaseType;
 

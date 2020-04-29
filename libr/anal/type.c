@@ -145,6 +145,7 @@ static void enum_type_fini(void *e, void *user) {
 }
 
 static RAnalBaseType *get_enum_type(RAnal *anal, const char *sanitized_name) {
+	r_return_val_if_fail(sanitized_name != NULL, NULL);
 	assert (sanitized_name != NULL);
 
 	RAnalBaseType *base_type = malloc (sizeof(RAnalBaseType));
@@ -157,16 +158,13 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sanitized_name) {
 	
 	char *key = sdb_fmt ("%s.%s", "enum", sanitized_name);
 	char *members = sdb_get (anal->sdb_types, key, NULL);
-	RVector *cases = r_vector_new (sizeof(RAnalEnumCase), enum_type_fini, NULL);
-	if (!cases) {
-		free (base_type);
-		return NULL;
-	}
-	base_enum.cases = cases;
 
-	if (!r_vector_reserve (cases, (size_t) sdb_alen (members))) {
+	RVector cases;
+	r_vector_init(&cases, sizeof(RAnalEnumCase), enum_type_fini, NULL);
+
+	if (!r_vector_reserve (&cases, (size_t) sdb_alen (members))) {
 		free (base_type);
-		r_vector_free (cases);
+		r_vector_free (&cases);
 		return NULL;
 	}
 
@@ -177,11 +175,11 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sanitized_name) {
 		RAnalEnumCase cas = {.name = strdup (cur), .val = strtol (value, NULL, 16)};
 		free (value);
 		
-		element = r_vector_push (cases, &cas); // returns null if no space available
+		element = r_vector_push (&cases, &cas); // returns null if no space available
 		if (!element){
 			eprintf ("Allocation failed\n");
 			free (base_type);
-			r_vector_free (cases);
+			r_vector_free (&cases);
 			return NULL;
 		}
 		
@@ -189,7 +187,8 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sanitized_name) {
 	}
 	free (members);
 
-	base_type->inum = base_enum;
+	base_enum.cases = cases;
+	base_type->enum_data = base_enum;
 
 	return base_type;
 }
@@ -216,7 +215,7 @@ R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
 			// DEBUG print, TODO not forget to remove
 				r_cons_printf ("BaseType: %d\n", base_type->kind);
 				RAnalEnumCase *it;
-				r_vector_foreach (base_type->inum.cases, it) {
+				r_vector_foreach (&base_type->enum_data.cases, it) {
 					r_cons_printf ("Case --- name: %s value: %d\n", it->name, it->val);
 				}
 			break;
