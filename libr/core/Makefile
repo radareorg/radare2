@@ -16,6 +16,7 @@ CFLAGS+=-I../../shlr/heap/include
 CFLAGS+=-I../../shlr/tree-sitter/lib/include -I../../shlr/radare2-shell-parser/src/tree_parser
 CFLAGS+=-DR2_PLUGIN_INCORE -I../../shlr
 LDFLAGS+=${DL_LIBS}
+LDFLAGS+=${CLOCK_LDFLAGS}
 
 ifeq ($(shell uname),OpenBSD)
 LDFLAGS+=-lpthread

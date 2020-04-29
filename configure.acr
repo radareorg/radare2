@@ -70,11 +70,19 @@ IFAND HAVE_LIB_XXHASH USE_XXHASH {
 ARG_WITHOUT WITH_GPL gpl do not build GPL code (grub, cxx, ... ) ;
 
 CHKDECL sys/personality.h ADDR_NO_RANDOMIZE
+CHKDECL features.h __GLIBC__
 CHKFNC c arc4random_uniform
 CHKFNC c explicit_bzero
 CHKFNC c explicit_memset
 CHKFNC c clock_nanosleep
 CHKFNC c sigaction
+CHKFNC c clock_gettime
+
+IFNOT HAVE_CLOCK_GETTIME {
+	IF HAVE_DECL___GLIBC__ {
+		CLOCK_LDFLAGS += '-lrt' ;
+	}
+}
 
 (( TODO must deprecate
 CHKLIB gmp
