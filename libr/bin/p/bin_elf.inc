@@ -591,7 +591,7 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 	r->paddr = rel->offset;
 
 	#define SET(T) r->type = R_BIN_RELOC_ ## T; r->additive = 0; return r
-	#define ADD(T, A) r->type = R_BIN_RELOC_ ## T; r->addend += A; r->additive = !rel->is_rela; return r
+	#define ADD(T, A) r->type = R_BIN_RELOC_ ## T; r->addend += A; r->additive = rel->rel_mode == DT_RELA; return r
 
 	switch (bin->ehdr.e_machine) {
 	case EM_386: switch (rel->type) {
@@ -697,7 +697,6 @@ static RList* relocs(RBinFile *bf) {
 			}
 			r_list_append (ret, ptr);
 		}
-		free (relocs);
 	}
 	return ret;
 }
@@ -890,7 +889,7 @@ static RList* patch_relocs(RBin *b) {
 	}
 	n_vaddr = g->itv.addr + g->itv.size;
 	//reserve at least that space
-	size = bin->reloc_num * 4;
+	size = bin->g_reloc_num * 4;
 	char *muri = r_str_newf ("malloc://%" PFMT64u, size);
 	RIODesc *gotr2desc = b->iob.open_at (io, muri, R_PERM_R, 0664, n_vaddr);
 	free (muri);
@@ -908,13 +907,11 @@ static RList* patch_relocs(RBin *b) {
 		return NULL;
 	}
 	if (!(ret = r_list_newf ((RListFree)free))) {
-		free (relcs);
 		return NULL;
 	}
 	HtUUOptions opt = { 0 };
 	if (!(relocs_by_sym = ht_uu_new_opt (&opt))) {
 		r_list_free (ret);
-		free (relcs);
 		return NULL;
 	}
 	vaddr = n_vaddr;
@@ -944,7 +941,6 @@ static RList* patch_relocs(RBin *b) {
 		r_list_append (ret, ptr);
 	}
 	ht_uu_free (relocs_by_sym);
-	free (relcs);
 	return ret;
 }
 

@@ -330,6 +330,7 @@ typedef struct r_bin_t {
 	char *strpurge; // purge false positive strings
 	char *srcdir; // dir.source
 	char *prefix; // bin.prefix
+	char *strenc;
 	ut64 filter_rules;
 	bool demanglercmd;
 	bool verbose;

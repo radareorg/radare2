@@ -1191,10 +1191,6 @@ static int bin_pe_init_imports(struct PE_(r_bin_pe_obj_t)* bin) {
 		bin->import_directory_offset = import_dir_offset;
 		count = 0;
 		do {
-			indx++;
-			if (((2 + indx) * dir_size) > import_dir_size) {
-				break; //goto fail;
-			}
 			new_import_dir = (PE_(image_import_directory)*)realloc (import_dir, ((1 + indx) * dir_size));
 			if (!new_import_dir) {
 				r_sys_perror ("malloc (import directory)");
@@ -1204,12 +1200,16 @@ static int bin_pe_init_imports(struct PE_(r_bin_pe_obj_t)* bin) {
 			}
 			import_dir = new_import_dir;
 			new_import_dir = NULL;
-			curr_import_dir = import_dir + (indx - 1);
-			if (r_buf_read_at (bin->b, import_dir_offset + (indx - 1) * dir_size, (ut8*) (curr_import_dir), dir_size) <= 0) {
+			curr_import_dir = import_dir + indx;
+			if (r_buf_read_at (bin->b, import_dir_offset + indx * dir_size, (ut8*) (curr_import_dir), dir_size) <= 0) {
 				bprintf ("Warning: read (import directory)\n");
 				R_FREE (import_dir);
 				break; //return false;
 			}
+			if (((2 + indx) * dir_size) > import_dir_size) {
+				break; //goto fail;
+			}
+			indx++;
 			count++;
 		} while (curr_import_dir->FirstThunk != 0 || curr_import_dir->Name != 0 ||
 		curr_import_dir->TimeDateStamp != 0 || curr_import_dir->Characteristics != 0 ||
@@ -3128,11 +3128,11 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 						return exports;
 					}
 				} else { // No name export, get the ordinal
-					snprintf (function_name, PE_NAME_LENGTH, "Ordinal_%i", i + 1);
+					function_ordinal = i;
+					snprintf (function_name, PE_NAME_LENGTH, "Ordinal_%i", i + bin->export_directory->Base);
 				}
-			}else { // if dont export by name exist, get the ordinal taking in mind the Base value.
-				function_ordinal = i + bin->export_directory->Base;
-				snprintf (function_name, PE_NAME_LENGTH, "Ordinal_%i", function_ordinal);
+			} else { // if export by name dont exist, get the ordinal taking in mind the Base value.
+				snprintf (function_name, PE_NAME_LENGTH, "Ordinal_%i", i + bin->export_directory->Base);
 			}
 			// check if VA are into export directory, this mean a forwarder export
 			if (function_rva >= export_dir_rva && function_rva < (export_dir_rva + export_dir_size)) {
@@ -3148,7 +3148,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 			function_name[PE_NAME_LENGTH] = '\0';
 			exports[i].vaddr = bin_pe_rva_to_va (bin, function_rva);
 			exports[i].paddr = bin_pe_rva_to_paddr (bin, function_rva);
-			exports[i].ordinal = function_ordinal;
+			exports[i].ordinal = function_ordinal + bin->export_directory->Base;
 			memcpy (exports[i].forwarder, forwarder_name, PE_NAME_LENGTH);
 			exports[i].forwarder[PE_NAME_LENGTH] = '\0';
 			memcpy (exports[i].name, function_name, PE_NAME_LENGTH);
@@ -3325,7 +3325,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* 
 	if (bin->import_directory_offset >= bin->size) {
 		return NULL;
 	}
-	if (bin->import_directory_offset + 32 >= bin->size) {
+	if (bin->import_directory_offset + 20 > bin->size) {
 		return NULL;
 	}
 
@@ -3709,22 +3709,25 @@ void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_
 			}
 			//look for other segment with x that is already mapped and hold entrypoint
 			for (j = 0; !sections[j].last; j++) {
-				if (sections[j].perm & PE_IMAGE_SCN_MEM_EXECUTE) {
-					addr_beg = sections[j].paddr;
-					addr_end = addr_beg + sections[j].size;
-					if (addr_beg <= entry->paddr && entry->paddr < addr_end) {
-						if (!sections[j].vsize) {
-							sections[j].vsize = sections[j].size;
+				addr_beg = sections[j].paddr;
+				addr_end = addr_beg + sections[j].size;
+				if (addr_beg <= entry->paddr && entry->paddr < addr_end) {
+					if (!sections[j].vsize) {
+						sections[j].vsize = sections[j].size;
+					}
+					addr_beg = sections[j].vaddr + base_addr;
+					addr_end = addr_beg + sections[j].vsize;
+					if (addr_beg <= entry->vaddr || entry->vaddr < addr_end) {
+						if (!(sections[j].perm & PE_IMAGE_SCN_MEM_EXECUTE)) {
+							if (bin->verbose) {
+								eprintf ("Warning: Found entrypoint in non-executable section.\n");
+							}
+							sections[j].perm |= PE_IMAGE_SCN_MEM_EXECUTE;
 						}
-						addr_beg = sections[j].vaddr + base_addr;
-						addr_end = addr_beg + sections[j].vsize;
-						if (addr_beg <= entry->vaddr || entry->vaddr < addr_end) {
-							fix = false;
-							break;
-						}
+						fix = false;
+						break;
 					}
 				}
-
 			}
 			//if either vaddr or paddr fail we should update this section
 			if (fix) {

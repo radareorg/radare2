@@ -21,7 +21,6 @@
 #include <grub/disk.h>
 #include <grub/mm.h>
 #include <grub/misc.h>
-#include <grub/dl.h>
 #include <grub/symbol.h>
 #include <grub/types.h>
 #include <grub/err.h>

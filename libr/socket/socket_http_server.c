@@ -140,7 +140,7 @@ R_API ut8 *r_socket_http_handle_upload(const ut8 *str, int len, int *retlen) {
 	if (retlen) {
 		*retlen = 0;
 	}
-	if (!strncmp ((const char *)str, "------------------------------", 10)) {
+	if (!strncmp ((const char *)str, "----------", 10)) {
 		int datalen;
 		char *ret;
 		const char *data, *token = (const char *)str+10;

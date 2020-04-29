@@ -167,7 +167,6 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 	var->regname = reg ? strdup (reg->name) : NULL; // TODO: no strdup here? pool? or not keep regname at all?
 	var->type = strdup (type);
 	var->kind = kind;
-	var->size = size;
 	var->isarg = isarg;
 	var->delta = delta;
 	shadow_var_struct_members (var);
@@ -192,6 +191,7 @@ static void var_free(RAnalVar *var) {
 	free (var->name);
 	free (var->regname);
 	free (var->type);
+	free (var->comment);
 	free (var);
 }
 

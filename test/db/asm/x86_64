@@ -54,9 +54,12 @@ a "mov rax, 0x100000000" 48b80000000001000000
 ad "movabs rax, 0x100000000" 48b80000000001000000
 ad "mov rax, 0" 48c7c000000000
 a "mov rax, -1" 48c7c0ffffffff
-adB "mov rax, 0xffffffffffffffff" 48c7c0ffffffff
+a "mov rax, -0x1" 48c7c0ffffffff
+ad "mov rax, 0xffffffffffffffff" 48c7c0ffffffff
+a "mov rax, 0xFfFFffFFFFffffff" 48c7c0ffffffff
+a "mov rax, -1U" 48c7c0ffffffff
+a "mov rax, 0xffffffffffffffffU" 48c7c0ffffffff
 a "mov rax, -2" 48c7c0feffffff
-a "mov rax, -0x2" 48c7c0feffffff
 ad "mov rax, 0xfffffffffffffffe" 48c7c0feffffff
 a "mov rax, -0x80000000" 48c7c000000080
 ad "mov rax, 0xffffffff80000000" 48c7c000000080
@@ -108,6 +111,8 @@ aB "mov sil, 0" 40b600
 aB "mov dil, -5" 40b7fb
 aB "mov spl, bpl" 4088ec
 a "pop rax" 58
+ad "pop r8" 4158
+ad "pop r15" 415f
 aB "prefetcht1 [eax]" 670f1810
 aB "prefetcht1 [rax]" 0f1810
 aB "prefetcht1 byte [eax]" 670f1810
@@ -951,6 +956,24 @@ a "dec rdi" 48ffcf
 a "dec rdx" 48ffca
 a "dec rsi" 48ffce
 a "dec WORD PTR [rdi+0x88]" 66ff8f88000000
+a "bswap rax" 480fc8
+a "bswap r15" 490fcf
+a "bswap eax" 0fc8
+a "bswap r15d" 410fcf
+ad "xchg eax, r8d" 4190
+a "xchg r8d, eax" 4190
+ad "xchg rax, rdx" 4892
+a "xchg rdx, rax" 4892
+ad "xchg rax, r8" 4990
+a "xchg r8, rax" 4990
+ad "xchg rdx, rbx" 4887da
+ad "xchg rbx, rdx" 4887d3
+ad "xchg r8, r15" 4d87f8
+ad "xchg r15, r8" 4d87c7
+ad "xchg r8d, r15d" 4587f8
+ad "xchg r15d, r8d" 4587c7
+ad "xchg rdx, r8" 4c87c2
+ad "xchg r15, rdx" 4987d7
 d "call qword [rip + 0x3a8f3e]" 48ff153e8f3a00
 d "call qword [rip + 0x1d638f]" 48ff158f631d00
 a "fmul st2, st0" dcca

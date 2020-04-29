@@ -742,10 +742,17 @@ static int opbswap(RAsm *a, ut8 *data, const Opcode *op) {
 		}
 
 		if (op->operands[0].type & OT_QWORD) {
-			data[l++] = 0x48;
+			if (op->operands[0].extended) {
+				data[l++] = 0x49;
+			} else {
+				data[l++] = 0x48;
+			}
 			data[l++] = 0x0f;
 			data[l++] = 0xc8 + op->operands[0].reg;
 		} else if (op->operands[0].type & OT_DWORD) {
+			if (op->operands[0].extended) {
+				data[l++] = 0x41;
+			}
 			data[l++] = 0x0f;
 			data[l++] = 0xc8 + op->operands[0].reg;
 		} else {
@@ -1793,7 +1800,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		if (!op->operands[1].is_good_flag) {
 			return -1;
 		}
-		if (op->operands[1].immediate == -1) {
+		if (op->operands[1].immediate == -1 && a->num && a->num->nc.errors > 0) {
 			return -1;
 		}
 		immediate = op->operands[1].immediate * op->operands[1].sign;
@@ -2360,6 +2367,9 @@ static int oppop(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 			data[l++] = base + (8 * op->operands[0].reg);
 		} else {
+			if (op->operands[0].extended && a->bits == 64) {
+				data[l++] = 0x41;
+			}
 			ut8 base = 0x58;
 			data[l++] = base + op->operands[0].reg;
 		}
@@ -2714,18 +2724,64 @@ static int opxchg(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 		}
 	} else {
+		if (!((op->operands[0].type & ALL_SIZE) &
+			  (op->operands[1].type & ALL_SIZE))) { // unmatched operand sizes
+			return -1;
+		}
 		if (op->operands[0].reg == X86R_EAX &&
+			!op->operands[0].extended &&
+			!(op->operands[0].type & OT_BYTE) &&
 			op->operands[1].type & OT_GPREG) {
+			if (op->operands[0].type & OT_WORD) {
+				data[l++] = 0x66;
+			} else if (op->operands[0].type & OT_DWORD &&
+					   op->operands[1].extended) {
+				data[l++] = 0x41;
+			} else if (op->operands[0].type & OT_QWORD) {
+				if (op->operands[1].extended) {
+					data[l++] = 0x49;
+				} else {
+					data[l++] = 0x48;
+				}
+			}
 			data[l++] = 0x90 + op->operands[1].reg;
 			return l;
 		} else if (op->operands[1].reg == X86R_EAX &&
+				   !op->operands[1].extended &&
+				   !(op->operands[1].type & OT_BYTE) &&
 				   op->operands[0].type & OT_GPREG) {
+			if (op->operands[1].type & OT_WORD) {
+				data[l++] = 0x66;
+			} else if (op->operands[1].type & OT_DWORD &&
+					   op->operands[0].extended) {
+				data[l++] = 0x41;
+			} else if (op->operands[1].type & OT_QWORD) {
+				if (op->operands[0].extended) {
+					data[l++] = 0x49;
+				} else {
+					data[l++] = 0x48;
+				}
+			}
 			data[l++] = 0x90 + op->operands[0].reg;
 			return l;
 		} else if (op->operands[0].type & OT_GPREG &&
 				   op->operands[1].type & OT_GPREG) {
+			if (op->operands[0].type & OT_WORD) {
+				data[l++] = 0x66;
+			}
+			ut8 rex = 0x40
+				| op->operands[0].extended
+				| op->operands[1].extended << 2
+				| !!(op->operands[0].type & OT_QWORD) << 3;
+			if (rex != 0x40) {
+				data[l++] = rex;
+			}
+			if (op->operands[0].type & OT_BYTE) {
+				data[l++] = 0x86;
+			} else {
+				data[l++] = 0x87;
+			}
 			mod_byte = 3;
-			data[l++] = 0x87;
 			reg = op->operands[1].reg;
 			rm = op->operands[0].reg;
 		}

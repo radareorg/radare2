@@ -894,6 +894,7 @@ typedef struct {
 } namealiases_pair;
 
 static bool cb_binstrenc (void *user, void *data) {
+	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->value[0] == '?') {
 		print_node_options (node);
@@ -904,7 +905,7 @@ static bool cb_binstrenc (void *user, void *data) {
 	}
 	const namealiases_pair names[] = {
 		{ "guess", NULL },
-		{ "latin1", NULL },
+		{ "latin1", "ascii" },
 		{ "utf8", "utf-8" },
 		{ "utf16le", "utf-16le,utf16-le" },
 		{ "utf32le", "utf-32le,utf32-le" },
@@ -922,6 +923,8 @@ static bool cb_binstrenc (void *user, void *data) {
 			free (node->value);
 			node->value = strdup (pair->name);
 			free (enc);
+			free (core->bin->strenc);
+			core->bin->strenc = !strcmp (node->value, "guess") ? NULL : strdup (node->value);
 			return true;
 		}
 	}
@@ -2973,6 +2976,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.instr", "true", "Display the disassembled instruction");
 	SETBPREF ("asm.meta", "true", "Display the code/data/format conversions in disasm");
 	SETBPREF ("asm.bytes", "true", "Display the bytes of each instruction");
+	SETBPREF ("asm.bytes.right", "false", "Display the bytes at the right of the disassembly");
 	SETI ("asm.types", 1, "Display the fcn types in calls (0=no,1=quiet,2=verbose)");
 	SETBPREF ("asm.midcursor", "false", "Cursor in visual disasm mode breaks the instruction");
 	SETBPREF ("asm.cmt.flgrefs", "true", "Show comment flags associated to branch reference");
@@ -3110,7 +3114,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETDESC (n, "Select assembly syntax");
 	SETOPTIONS (n, "att", "intel", "masm", "jz", "regnum", NULL);
 	SETI ("asm.nbytes", 6, "Number of bytes for each opcode at disassembly");
-	SETBPREF ("asm.bytespace", "false", "Separate hexadecimal bytes with a whitespace");
+	SETBPREF ("asm.bytes.space", "false", "Separate hexadecimal bytes with a whitespace");
 #if R_SYS_BITS == R_SYS_BITS_64
 	SETICB ("asm.bits", 64, &cb_asmbits, "Word size in bits at assembler");
 #else
@@ -3153,7 +3157,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("bin.maxstrbuf", 1024*1024*10, & cb_binmaxstrbuf, "Maximum size of range to load strings from");
 	n = NODECB ("bin.str.enc", "guess", &cb_binstrenc);
 	SETDESC (n, "Default string encoding of binary");
-	SETOPTIONS (n, "latin1", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "guess", NULL);
+	SETOPTIONS (n, "ascii", "latin1", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "guess", NULL);
 	SETCB ("bin.prefix", "", &cb_binprefix, "Prefix all symbols/sections/relocs with a specific string");
 	SETCB ("bin.rawstr", "false", &cb_rawstr, "Load strings from raw binaries");
 	SETCB ("bin.strings", "true", &cb_binstrings, "Load strings from rbin on startup");

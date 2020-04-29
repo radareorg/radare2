@@ -140,13 +140,13 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	LPTSTR cmdline_ = r_sys_conv_utf8_to_win (cmdline);
 	free (cmdline);
 	struct __createprocess_params p = {appname_, cmdline_, &pi};
-	w32dbg_wrap_instance *inst = io->w32dbg_wrap;
-	inst->params->type = W32_CALL_FUNC;
-	inst->params->func.func = __createprocess_wrap;
-	inst->params->func.user = &p;
-	w32dbg_wrap_wait_ret (inst);
-	if (!w32dbgw_ret (inst)) {
-		w32dbgw_err (inst);
+	W32DbgWInst *wrap = io->w32dbg_wrap;
+	wrap->params.type = W32_CALL_FUNC;
+	wrap->params.func.func = __createprocess_wrap;
+	wrap->params.func.user = &p;
+	w32dbg_wrap_wait_ret (wrap);
+	if (!w32dbgw_ret (wrap)) {
+		w32dbgw_err (wrap);
 		r_sys_perror ("fork_and_ptraceme/CreateProcess");
 		free (appname_);
 		free (cmdline_);
@@ -161,11 +161,11 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	tid = pi.dwThreadId;
 
 	/* catch create process event */
-	inst->params->type = W32_WAIT;
-	inst->params->wait.wait_time = 10000;
-	inst->params->wait.de = &de;
-	w32dbg_wrap_wait_ret (inst);
-	if (!w32dbgw_ret (inst)) goto err_fork;
+	wrap->params.type = W32_WAIT;
+	wrap->params.wait.wait_time = 10000;
+	wrap->params.wait.de = &de;
+	w32dbg_wrap_wait_ret (wrap);
+	if (!w32dbgw_ret (wrap)) goto err_fork;
 
 	/* check if is a create process debug event */
 	if (de.dwDebugEventCode != CREATE_PROCESS_DEBUG_EVENT) {
@@ -590,10 +590,10 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			}
 			if ((ret = _plugin->open (io, uri, rw, mode))) {
 				RCore *c = io->corebind.core;
-				RIOW32Dbg *w32 = (RIOW32Dbg *)ret->data;
-				w32->winbase = winbase;
-				w32->pi.dwThreadId = wintid;
-				*(RIOW32Dbg *)(c->dbg->user) = *w32;
+				W32DbgWInst *wrap = (W32DbgWInst *)ret->data;
+				wrap->winbase = winbase;
+				wrap->pi.dwThreadId = wintid;
+				c->dbg->user = wrap;
 			}
 #elif __APPLE__
 			sprintf (uri, "smach://%d", pid);		//s is for spawn
@@ -621,8 +621,8 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 #if __WINDOWS__
 			if (ret) {
 				RCore *c = io->corebind.core;
-				RIOW32Dbg *w32 = (RIOW32Dbg *)ret->data;
-				*(RIOW32Dbg *)(c->dbg->user) = *w32;
+				W32DbgWInst *wrap = (W32DbgWInst *)ret->data;
+				c->dbg->user = wrap;
 			}
 #endif
 		}

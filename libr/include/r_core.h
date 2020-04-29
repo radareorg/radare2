@@ -36,7 +36,10 @@ extern "C" {
 #endif
 R_LIB_VERSION_HEADER(r_core);
 
+#define R_CORE_CMD_OK 0
+#define R_CORE_CMD_INVALID -1
 #define R_CORE_CMD_EXIT -2
+
 #define R_CORE_BLOCKSIZE 0x100
 #define R_CORE_BLOCKSIZE_MAX 0x3200000 /* 32MB */
 
@@ -80,6 +83,12 @@ R_LIB_VERSION_HEADER(r_core);
 #define RTR_PROTOCOL_UNIX 4
 
 #define RTR_MAX_HOSTS 255
+
+typedef enum {
+	R_CORE_CMD_STATUS_OK = R_CORE_CMD_OK,
+	R_CORE_CMD_STATUS_INVALID = R_CORE_CMD_INVALID,
+	R_CORE_CMD_STATUS_EXIT = R_CORE_CMD_EXIT
+} RCoreCmdStatus;
 
 /* visual mode */
 typedef enum {
@@ -396,7 +405,7 @@ R_API void r_core_prompt_loop(RCore *core);
 R_API ut64 r_core_pava(RCore *core, ut64 addr);
 R_API int r_core_cmd(RCore *core, const char *cmd, int log);
 R_API int r_core_cmd_task_sync(RCore *core, const char *cmd, bool log);
-R_API char *r_core_editor (const RCore *core, const char *file, const char *str);
+R_API char *r_core_editor(const RCore *core, const char *file, const char *str);
 R_API int r_core_fgets(char *buf, int len);
 R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, ut64 off);
 R_API int r_core_cmdf(RCore *core, const char *fmt, ...);

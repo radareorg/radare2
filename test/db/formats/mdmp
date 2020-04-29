@@ -190,7 +190,7 @@ NAME=: 32bit - exports resolving
 FILE=bins/mdmp/hello.dmp
 CMDS=iE~Ordinal_1
 EXPECT=<<EOF
-1992  0x0041f1f2 0x77802620 GLOBAL FUNC 0    ntdll.dll      Ordinal_1
+1     0x0041f1f2 0x77802620 GLOBAL FUNC 0    ntdll.dll      Ordinal_1
 EOF
 RUN
 
@@ -291,7 +291,7 @@ NAME=: 64bit - symbols resolving 2
 FILE=bins/mdmp/hello64.dmp
 CMDS=is~A_SHAFinal
 EXPECT=<<EOF
-8     0x001eb87f 0x77728bf0    GLOBAL FUNC 0    ntdll.dll                                     A_SHAFinal
+9     0x001eb87f 0x77728bf0    GLOBAL FUNC 0    ntdll.dll                                     A_SHAFinal
 EOF
 RUN
 
@@ -323,7 +323,7 @@ NAME=: 64bit - exports resolving
 FILE=bins/mdmp/hello64.dmp
 CMDS=iE~CsrVerifyRegion
 EXPECT=<<EOF
-38    0x0029513f 0x777d24b0    GLOBAL FUNC 0    ntdll.dll      CsrVerifyRegion
+39    0x0029513f 0x777d24b0    GLOBAL FUNC 0    ntdll.dll      CsrVerifyRegion
 EOF
 RUN
 
