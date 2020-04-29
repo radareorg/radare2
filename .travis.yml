@@ -50,7 +50,7 @@ jobs:
     - if: (branch = master AND type = push) OR head_branch =~ ^debian-*
       os: linux
       name: Debian
-      dist: xenial
+      dist: stretch
       env: COMPILER_NAME=gcc DEBPKG=1 CC=gcc CFLAGS="-O2 -DR2_ASSERT_STDOUT=1"
     # Run Fuzzing Sanity Test on every push
     # XXX its broken it complains about invalid key
