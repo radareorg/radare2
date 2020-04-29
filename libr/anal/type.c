@@ -176,8 +176,8 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sanitized_name) {
 			// Merge these checks into single goto label
 			return NULL;
 		}
-		RAnalEnumCase cas = {.name = strdup (cur), .val = strtol (value, NULL, 16)}
-		;
+		RAnalEnumCase cas = {.name = strdup (cur), .val = strtol (value, NULL, 16)};
+
 		free (value);
 		free(val_key);
 		
@@ -201,8 +201,8 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sanitized_name) {
 R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
 	r_return_val_if_fail(name != NULL, NULL);
 	r_return_val_if_fail(anal != NULL, NULL);
-	
-	char *name_sanitized = r_str_sanitize_sdb_constkey (name);
+
+	char *name_sanitized = r_str_sanitize_sdb_key(name);
 
 	char *type = sdb_get (anal->sdb_types, name_sanitized, NULL);
 
