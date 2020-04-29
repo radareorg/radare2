@@ -259,7 +259,7 @@ static int r_line_readchar_utf8(ut8 *s, int slen) {
 
 #if __WINDOWS__
 static int r_line_readchar_win(ut8 *s, int slen) { // this function handle the input in console mode
-	INPUT_RECORD irInBuf;
+	INPUT_RECORD irInBuf = { { 0 } };
 	BOOL ret, bCtrl = FALSE;
 	DWORD mode, out;
 	char buf[5] = {0};
@@ -275,13 +275,17 @@ static int r_line_readchar_win(ut8 *s, int slen) { // this function handle the i
 		}
 		return 1;
 	}
-
 	h = GetStdHandle (STD_INPUT_HANDLE);
+	DWORD new_mode = I.vtmode == 2 ? ENABLE_VIRTUAL_TERMINAL_INPUT : 0;
 	GetConsoleMode (h, &mode);
-	SetConsoleMode (h, 0);	// RAW
+	SetConsoleMode (h, new_mode);
 do_it_again:
 	bed = r_cons_sleep_begin ();
-	ret = ReadConsoleInput (h, &irInBuf, 1, &out);
+	if (r_cons_singleton()->term_xterm) {
+		ret = ReadFile (h, buf, 1, &out, NULL);
+	} else {
+		ret = ReadConsoleInput (h, &irInBuf, 1, &out);
+	}
 	r_cons_sleep_end (bed);
 	if (ret < 1) {
 		return 0;
@@ -1530,12 +1534,16 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			break;
 		case 27: // esc-5b-41-00-00 alt/meta key
 #if __WINDOWS__
-			memmove (buf, buf + 1, strlen (buf));
-			if (!buf[0]) {
-				buf[0] = -1;
+			if (I.vtmode != 2) {
+				memmove (buf, buf + 1, strlen (buf));
+				if (!buf[0]) {
+					buf[0] = -1;
+				}
+			} else {
+#endif
+				buf[0] = r_cons_readchar_timeout (50);
+#if __WINDOWS__
 			}
-#else
-			buf[0] = r_cons_readchar_timeout (50);
 #endif
 			switch (buf[0]) {
 			case 127: // alt+bkspace
@@ -1590,29 +1598,29 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				}
 				break;
 			default:
-#if !__WINDOWS__
-				buf[1] = r_cons_readchar_timeout (50);
-				if (buf[1] == -1) {
-					r_cons_break_pop ();
-					return NULL;
+				if (I.vtmode == 2) {
+					buf[1] = r_cons_readchar_timeout (50);
+					if (buf[1] == -1) {
+						r_cons_break_pop ();
+						return NULL;
+					}
 				}
-#endif
 				if (buf[0] == 0x5b) {	// [
 					switch (buf[1]) {
-					case '3':	// supr
+					case '3': // supr
 						__delete_next_char ();
-#if !__WINDOWS__
-						buf[1] = r_cons_readchar ();
-						if (buf[1] == -1) {
-							r_cons_break_pop ();
-							return NULL;
+						if (I.vtmode == 2) {
+							buf[1] = r_cons_readchar ();
+							if (buf[1] == -1) {
+								r_cons_break_pop ();
+								return NULL;
+							}
 						}
-#endif
 						break;
 					case '5': // pag up
-#if !__WINDOWS__
-						buf[1] = r_cons_readchar ();
-#endif
+						if (I.vtmode == 2) {
+							buf[1] = r_cons_readchar ();
+						}
 						if (I.hud) {
 							I.hud->top_entry_n -= (rows - 1);
 							if (I.hud->top_entry_n < 0) {
@@ -1625,9 +1633,9 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						}
 						break;
 					case '6': // pag down
-#if !__WINDOWS__
-						buf[1] = r_cons_readchar ();
-#endif
+						if (I.vtmode == 2) {
+							buf[1] = r_cons_readchar ();
+						}
 						if (I.hud) {
 							I.hud->top_entry_n += (rows - 1);
 							if (I.hud->top_entry_n >= I.hud->current_entry_n) {
@@ -1693,18 +1701,21 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						__move_cursor_left ();
 						break;
 					case 0x31:	// control + arrow
-#if __WINDOWS__
-						ch = buf[2];
-#else
-						ch = r_cons_readchar ();
-						if (ch == 0x7e) {	// HOME in screen/tmux
-							// corresponding END is 0x34 below (the 0x7e is ignored there)
-							I.buffer.index = 0;
-							break;
+						if (I.vtmode == 2) {
+							ch = r_cons_readchar ();
+							if (ch == 0x7e) { // HOME in screen/tmux
+								// corresponding END is 0x34 below (the 0x7e is ignored there)
+								I.buffer.index = 0;
+								break;
+							}
+							r_cons_readchar ();
 						}
-						r_cons_readchar ();
-						int fkey = ch - '0';
+#if __WINDOWS__
+						else {
+							ch = buf[2];
+						}
 #endif
+						int fkey = ch - '0';
 						switch (ch) {
 						case 0x41:
 							// first
@@ -1739,15 +1750,11 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							}
 							break;
 						default:
-#if __WINDOWS__
-							// ...
-#else
-							{
+							if (I.vtmode == 2) {
 								if (I.cb_fkey) {
 									I.cb_fkey (I.user, fkey);
 								}
 							}
-#endif
 							break;
 						}
 						r_cons_set_raw (1);
