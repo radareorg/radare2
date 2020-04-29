@@ -216,7 +216,7 @@ enum {
 };
 
 typedef struct enum_case {
-	const char *name;
+	char *name;
 	const int val;
 } RAnalEnumCase;
 
