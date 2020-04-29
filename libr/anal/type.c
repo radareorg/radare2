@@ -155,8 +155,12 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sanitized_name) {
 	
 	RAnalBaseTypeEnum base_enum;
 	char *key = r_str_newf ("enum.%s", sanitized_name);
+	if (!key) {
+		free (base_type);
+		return NULL;
+	}
 	char *members = sdb_const_get (anal->sdb_types, key, NULL);
-	free(key);
+	free (key);
 
 	RVector cases;
 	r_vector_init (&cases, sizeof (RAnalEnumCase), enum_type_fini, NULL);
@@ -171,8 +175,9 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sanitized_name) {
 	sdb_aforeach (cur, members) {
 		char *val_key = r_str_newf ("enum.%s.%s", sanitized_name, cur);
 		char *value = sdb_const_get (anal->sdb_types, val_key, NULL);
-		if (!value) {
-			// Merge these checks into single goto label
+		if (!val_key) {
+			free (base_type);
+			r_vector_fini (&cases);
 			return NULL;
 		}
 		RAnalEnumCase cas = {.name = strdup (cur), .val = strtol (value, NULL, 16)};
@@ -182,9 +187,10 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sanitized_name) {
 		void *element = r_vector_push (&cases, &cas); // returns null if no space available
 		if (!element) {
 			free (base_type);
-			r_vector_free (&cases);
+			r_vector_fini (&cases);
 			return NULL;
 		}
+
 		sdb_aforeach_next (cur);
 	}
 
@@ -193,7 +199,8 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sanitized_name) {
 
 	return base_type;
 }
-// returns NULL if name is not found or 
+
+// returns NULL if name is not found or any failure happened
 R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
 	r_return_val_if_fail (name != NULL, NULL);
 	r_return_val_if_fail (anal != NULL, NULL);
@@ -219,8 +226,9 @@ R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
 		// DEBUG print, TODO not forget to remove
 		r_cons_printf ("BaseType: %d\n", base_type->kind);
 		RAnalEnumCase *it;
+		r_cons_printf("Cases:\n");
 		r_vector_foreach (&base_type->enum_data.cases, it) {
-			r_cons_printf ("Case --- name: %s value: %d\n", it->name, it->val);
+			r_cons_printf ("\tname: %s, value: %d\n", it->name, it->val);
 		}
 		break;
 	case 'u': // union
