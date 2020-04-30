@@ -5,20 +5,34 @@
 #include <r_flag.h>
 #include <r_cons.h>
 
-#define VMI_CLASS_TYPE_INFO_NAME "obj.vtable_for___cxxabiv1::__vmi_class_type_info"
-#define CLASS_TYPE_INFO_NAME "obj.vtable_for___cxxabiv1::__class_type_info"
-#define SI_CLASS_TYPE_INFO_NAME "obj.vtable_for___cxxabiv1::__si_class_type_info"
-#define NAME_BUF_SIZE 64
+#define VMI_CLASS_TYPE_INFO_NAME "__vmi_class_type_info"
+#define SI_CLASS_TYPE_INFO_NAME "__si_class_type_info"
+#define CLASS_TYPE_INFO_NAME "__class_type_info"
+#define NAME_BUF_SIZE 256
+
+#define VT_WORD_SIZE(ctx)\
+	(ctx->word_size)
+
+typedef enum {
+	R_TYPEINFO_TYPE_UNKNOWN,
+	R_TYPEINFO_TYPE_CLASS,
+	R_TYPEINFO_TYPE_SI_CLASS,
+	R_TYPEINFO_TYPE_VMI_CLASS
+} RTypeInfoType;
 
 typedef struct class_type_info_t {
-	ut32 vtable_addr;
-	ut32 name_addr;
+	RTypeInfoType type;
+	ut64 class_vtable_addr;
+	ut64 typeinfo_addr;
+	ut64 vtable_addr;
+	ut64 name_addr;
 	char *name;
+	bool name_unique;
 } class_type_info;
 
 typedef struct base_class_type_info_t {
-	ut32 base_class_addr;
-	ut32 flags;
+	ut64 base_class_addr;
+	ut64 flags;
 	enum flags_masks_e {
 		base_is_virtual = 0x1,
 		base_is_public = 0x2
@@ -26,16 +40,24 @@ typedef struct base_class_type_info_t {
 } base_class_type_info;
 
 typedef struct si_class_type_info_t {
-	ut32 vtable_addr;
-	ut32 name_addr;
+	RTypeInfoType type;
+	ut64 class_vtable_addr;
+	ut64 typeinfo_addr;
+	ut64 vtable_addr;
+	ut64 name_addr;
 	char *name;
-	ut32 base_class_addr;
+	bool name_unique;
+	ut64 base_class_addr;
 } si_class_type_info;
 
 typedef struct vmi_class_type_info_t {
-	ut32 vtable_addr;
-	ut32 name_addr;
+	RTypeInfoType type;
+	ut64 class_vtable_addr;
+	ut64 typeinfo_addr;
+	ut64 vtable_addr;
+	ut64 name_addr;
 	char *name;
+	bool name_unique;
 	int vmi_flags;
 	int vmi_base_count;
 	base_class_type_info *vmi_bases;
@@ -47,13 +69,44 @@ typedef struct vmi_class_type_info_t {
 	} vmi_flags_masks;
 } vmi_class_type_info;
 
-static void rtti_itanium_class_type_info_fini (class_type_info *cti) {
+static bool rtti_itanium_read_type_name(RVTableContext *context, ut64 addr, class_type_info *cti) {
+	ut64 at;
+	if (!context->read_addr (context->anal, addr, &at)) {
+		return false;
+	}
+	ut64 unique_mask = 1ULL << (VT_WORD_SIZE (context) * 8 - 1);
+	cti->name_unique = (at & unique_mask) == 0;
+	at &= ~unique_mask;
+	cti->name_addr = at;
+	ut8 buf[NAME_BUF_SIZE];
+	if (!context->anal->iob.read_at (context->anal->iob.io, at, buf, sizeof (buf))) {
+		return false;
+	}
+	buf[NAME_BUF_SIZE - 1] = 0;
+	cti->name = r_anal_rtti_itanium_demangle_class_name (context, (char *)buf);
+	if (!cti->name) {
+		return false;
+	}
+	return true;
+}
+
+static void rtti_itanium_class_type_info_fini(class_type_info *cti) {
 	if (cti) {
 		free (cti->name);
 	}
 }
 
-static bool rtti_itanium_read_class_type_info (RVTableContext *context, ut64 addr, class_type_info *cti) {
+static void rtti_itanium_class_type_info_free(class_type_info *cti) {
+	if (cti == NULL) {
+		return;
+	}
+
+	rtti_itanium_class_type_info_fini (cti);
+	free (cti);
+}
+
+static bool rtti_itanium_class_type_info_init(RVTableContext *context, ut64 addr, class_type_info *cti) {
+	cti->type = R_TYPEINFO_TYPE_CLASS;
 	ut64 at;
 	if (addr == UT64_MAX) {
 		return false;
@@ -62,31 +115,44 @@ static bool rtti_itanium_read_class_type_info (RVTableContext *context, ut64 add
 		return false;
 	}
 	cti->vtable_addr = at;
-	if (!context->read_addr (context->anal, addr + context->word_size, &at)) {
-		return false;
-	}
-	cti->name_addr = at;
-	ut8 buf[NAME_BUF_SIZE];
-	if (!context->anal->iob.read_at (context->anal->iob.io, at, buf, sizeof(buf))) {
-		return false;
-	}
-	size_t name_len = r_str_len_utf8 ((const char *)buf) + 1;
-	cti->name = malloc (name_len);
-	if (!cti->name) {
-		return false;
-	}
-	memcpy (cti->name, buf, name_len);
-	return true;
+	return rtti_itanium_read_type_name (context, addr + VT_WORD_SIZE (context), cti);
 }
 
-static void rtti_itanium_vmi_class_type_info_fini (vmi_class_type_info *vmi_cti) {
+static class_type_info *rtti_itanium_class_type_info_new(RVTableContext *context, ut64 addr, ut64 source_vtable) {
+	class_type_info *result = R_NEW0 (class_type_info);
+	if (!result) {
+		return NULL;
+	}
+
+	if (!rtti_itanium_class_type_info_init (context, addr, result)) {
+		rtti_itanium_class_type_info_free (result);
+		return NULL;
+	}
+
+	result->class_vtable_addr = source_vtable;
+	result->typeinfo_addr = addr;
+
+	return result;
+}
+
+static void rtti_itanium_vmi_class_type_info_fini(vmi_class_type_info *vmi_cti) {
 	if (vmi_cti) {
 		free (vmi_cti->vmi_bases);
 		free (vmi_cti->name);
 	}
 }
 
-static bool rtti_itanium_read_vmi_class_type_info (RVTableContext *context, ut64 addr, vmi_class_type_info *vmi_cti) {
+static void rtti_itanium_vmi_class_type_info_free(vmi_class_type_info *cti) {
+	if (cti == NULL) {
+		return;
+	}
+
+	rtti_itanium_vmi_class_type_info_fini (cti);
+	free (cti);
+}
+
+static bool rtti_itanium_vmi_class_type_info_init(RVTableContext *context, ut64 addr, vmi_class_type_info *vmi_cti) {
+	vmi_cti->type = R_TYPEINFO_TYPE_VMI_CLASS;
 	ut64 at;
 	if (addr == UT64_MAX) {
 		return false;
@@ -95,30 +161,20 @@ static bool rtti_itanium_read_vmi_class_type_info (RVTableContext *context, ut64
 		return false;
 	}
 	vmi_cti->vtable_addr = at;
-	addr += context->word_size;
+	addr += VT_WORD_SIZE (context);
+	if (!rtti_itanium_read_type_name (context, addr, (class_type_info *)vmi_cti)) {
+		return false;
+	}
+	addr += VT_WORD_SIZE (context);
 	if (!context->read_addr (context->anal, addr, &at)) {
 		return false;
 	}
-	vmi_cti->name_addr = at;
-	ut8 buf[NAME_BUF_SIZE];
-	if (!context->anal->iob.read_at (context->anal->iob.io, at, buf, sizeof(buf))) {
-		return false;
-	}
-	size_t name_len = r_str_len_utf8 ((const char *)buf) + 1;
-	vmi_cti->name = malloc (name_len);
-	if (!vmi_cti->name) {
-		return false;
-	}
-	memcpy (vmi_cti->name, buf, name_len);
-	addr += context->word_size;
-	if (!context->read_addr (context->anal, addr, &at)) {
-		return false;
-	}
-	vmi_cti->vmi_flags = at;
+	vmi_cti->vmi_flags = at & 0xffffffff;
 	addr += 0x4;
 	if (!context->read_addr (context->anal, addr, &at)) {
 		return false;
 	}
+	at = at & 0xffffffff;
 	if (at < 1 || at > 0xfffff) {
 		eprintf ("Error reading vmi_base_count\n");
 		return false;
@@ -136,23 +192,50 @@ static bool rtti_itanium_read_vmi_class_type_info (RVTableContext *context, ut64
 			return false;
 		}
 		vmi_cti->vmi_bases[i].base_class_addr = at;
-		tmp_addr += context->word_size;
+		tmp_addr += VT_WORD_SIZE (context);
 		if (!context->read_addr (context->anal, tmp_addr, &at)) {
 			return false;
 		}
 		vmi_cti->vmi_bases[i].flags = at;
-		tmp_addr += context->word_size;
+		tmp_addr += VT_WORD_SIZE (context);
 	}
 	return true;
 }
 
-static void rtti_itanium_si_class_type_info_fini (si_class_type_info *si_cti) {
+static vmi_class_type_info *rtti_itanium_vmi_class_type_info_new(RVTableContext *context, ut64 addr, ut64 source_vtable) {
+	vmi_class_type_info *result = R_NEW0 (vmi_class_type_info);
+	if (!result) {
+		return NULL;
+	}
+
+	if (!rtti_itanium_vmi_class_type_info_init (context, addr, result)) {
+		rtti_itanium_vmi_class_type_info_free (result);
+		return NULL;
+	}
+
+	result->class_vtable_addr = source_vtable;
+	result->typeinfo_addr = addr;
+
+	return result;
+}
+
+static void rtti_itanium_si_class_type_info_fini(si_class_type_info *si_cti) {
 	if (si_cti) {
 		free (si_cti->name);
 	}
 }
 
-static bool rtti_itanium_read_si_class_type_info (RVTableContext *context, ut64 addr, si_class_type_info *si_cti) {
+static void rtti_itanium_si_class_type_info_free(si_class_type_info *cti) {
+	if (cti == NULL) {
+		return;
+	}
+
+	rtti_itanium_si_class_type_info_fini (cti);
+	free (cti);
+}
+
+static bool rtti_itanium_si_class_type_info_init(RVTableContext *context, ut64 addr, si_class_type_info *si_cti) {
+	si_cti->type = R_TYPEINFO_TYPE_SI_CLASS;
 	ut64 at;
 	if (addr == UT64_MAX) {
 		return false;
@@ -161,229 +244,356 @@ static bool rtti_itanium_read_si_class_type_info (RVTableContext *context, ut64 
 		return false;
 	}
 	si_cti->vtable_addr = at;
-	if (!context->read_addr (context->anal, addr + context->word_size, &at)) {
+	if (!rtti_itanium_read_type_name (context, addr + VT_WORD_SIZE (context), (class_type_info *)si_cti)) {
 		return false;
 	}
-	si_cti->name_addr = at;
-	ut8 buf[NAME_BUF_SIZE];
-	if (!context->anal->iob.read_at (context->anal->iob.io, at, buf, sizeof(buf))) {
-		return false;
-	}
-	size_t name_len = r_str_len_utf8 ((const char *)buf) + 1;
-	si_cti->name = malloc (name_len);
-	if (!si_cti->name) {
-		return false;
-	}
-	memcpy (si_cti->name, buf, name_len);
-	if (!context->read_addr (context->anal, addr + 2 * context->word_size, &at)) {
+	if (!context->read_addr (context->anal, addr + 2 * VT_WORD_SIZE (context), &at)) {
 		return false;
 	}
 	si_cti->base_class_addr = at;
 	return true;
 }
 
-static void rtti_itanium_print_class_type_info (class_type_info *cti, ut64 addr, const char *prefix) {
-	r_cons_printf ("%sType Info at 0x%08"PFMT64x ":\n"
-			"%s  Reference to RTTI's type class: 0x%08"PFMT32x "\n"
-			"%s  Reference to type's name: 0x%08"PFMT32x "\n"
-			"%s  Type Name: %s\n",
-			prefix, addr,
+static si_class_type_info *rtti_itanium_si_class_type_info_new(RVTableContext *context, ut64 addr, ut64 source_vtable) {
+	si_class_type_info *result = R_NEW0 (si_class_type_info);
+	if (!result) {
+		return NULL;
+	}
+
+	if (!rtti_itanium_si_class_type_info_init (context, addr, result)) {
+		rtti_itanium_si_class_type_info_free (result);
+		return NULL;
+	}
+
+	result->class_vtable_addr = source_vtable;
+	result->typeinfo_addr = addr;
+
+	return result;
+}
+
+static const char *type_to_string(RTypeInfoType type) {
+	switch (type) {
+	case R_TYPEINFO_TYPE_CLASS:
+		return CLASS_TYPE_INFO_NAME;
+	case R_TYPEINFO_TYPE_SI_CLASS:
+		return SI_CLASS_TYPE_INFO_NAME;
+	case R_TYPEINFO_TYPE_VMI_CLASS:
+		return VMI_CLASS_TYPE_INFO_NAME;
+	default:
+		r_return_val_if_reached (CLASS_TYPE_INFO_NAME);
+	}
+}
+static void rtti_itanium_print_class_type_info(class_type_info *cti, const char *prefix) {
+	r_cons_printf ("%sType Info at 0x%08" PFMT64x ":\n"
+			"%s  Type Info type: %s\n"
+			"%s  Belongs to class vtable: 0x%08" PFMT64x "\n"
+			"%s  Reference to RTTI's type class: 0x%08" PFMT64x "\n"
+			"%s  Reference to type's name: 0x%08" PFMT64x "\n"
+			"%s  Type Name: %s\n"
+			"%s  Name unique: %s\n",
+			prefix, cti->typeinfo_addr,
+			prefix, type_to_string (cti->type),
+			prefix, cti->class_vtable_addr,
 			prefix, cti->vtable_addr,
 			prefix, cti->name_addr,
-			prefix, cti->name + 1);
+			prefix, cti->name,
+			prefix, cti->name_unique ? "true" : "false");
 }
 
-static void rtti_itanium_print_class_type_info_json (class_type_info *cti, ut64 addr) {
-	r_cons_printf ("{\"type_info\": {\"found_at\":%"PFMT32u",\"ref_to_type_class\":%"PFMT32u","
-			"\"ref_to_type_name\": %"PFMT32u"}}",
-			addr, cti->vtable_addr, cti->name_addr);
+static void rtti_itanium_print_class_type_info_json(class_type_info *cti) {
+	PJ *pj = pj_new ();
+	if (!pj) {
+		return;
+	}
+
+	pj_o (pj);
+	pj_ks (pj, "type", type_to_string (cti->type));
+	pj_kn (pj, "found_at", cti->typeinfo_addr);
+	pj_kn (pj, "class_vtable", cti->class_vtable_addr);
+	pj_kn (pj, "ref_to_type_class", cti->vtable_addr);
+	pj_kn (pj, "ref_to_type_name", cti->name_addr);
+	pj_ks (pj, "name", cti->name);
+	pj_kb (pj, "name_unique", cti->name_unique);
+	pj_end (pj);
+
+	r_cons_printf (pj_string (pj));
+	pj_free (pj);
 }
 
-static void rtti_itanium_print_vmi_class_type_info (vmi_class_type_info *vmi_cti, ut64 addr, const char *prefix) {
-	r_cons_printf ("%sVMI Type Info at 0x%08"PFMT64x ":\n"
-			"%s  Reference to RTTI's type class: 0x%08"PFMT32x "\n"
-			"%s  Reference to type's name: 0x%08"PFMT32x "\n"
+static void rtti_itanium_print_vmi_class_type_info(vmi_class_type_info *vmi_cti, const char *prefix) {
+	r_cons_printf ("%sType Info at 0x%08" PFMT64x ":\n"
+			"%s  Type Info type: %s\n"
+			"%s  Belongs to class vtable: 0x%08" PFMT64x "\n"
+			"%s  Reference to RTTI's type class: 0x%08" PFMT32x "\n"
+			"%s  Reference to type's name: 0x%08" PFMT32x "\n"
 			"%s  Type Name: %s\n"
-			"%s  Flags: 0x%x" "\n"
-			"%s  Count of base classes: 0x%x" "\n",
-			prefix, addr,
+			"%s  Name unique: %s\n"
+			"%s  Flags: 0x%x"
+			"\n"
+			"%s  Count of base classes: 0x%x"
+			"\n",
+			prefix, vmi_cti->typeinfo_addr,
+			prefix, type_to_string (vmi_cti->type),
+			prefix, vmi_cti->class_vtable_addr,
 			prefix, vmi_cti->vtable_addr,
 			prefix, vmi_cti->name_addr,
-			prefix, vmi_cti->name + 1,
+			prefix, vmi_cti->name,
+			prefix, vmi_cti->name_unique ? "true" : "false",
 			prefix, vmi_cti->vmi_flags,
 			prefix, vmi_cti->vmi_base_count);
 
 	int i;
 	for (i = 0; i < vmi_cti->vmi_base_count; i++) {
-		r_cons_printf("%s      Base class type descriptor address: 0x%08"PFMT32x "\n"
-				"%s      Base class flags: 0x%x" "\n",
-				prefix, vmi_cti->vmi_bases[i].base_class_addr,
-				prefix, vmi_cti->vmi_bases[i].flags);
+		r_cons_printf ("%s    Base class type descriptor address: 0x%08" PFMT32x "\n"
+			       "%s    Base class flags: 0x%x"
+			       "\n",
+			prefix, vmi_cti->vmi_bases[i].base_class_addr,
+			prefix, vmi_cti->vmi_bases[i].flags);
 	}
 }
 
-static void rtti_itanium_print_vmi_class_type_info_json (vmi_class_type_info *vmi_cti, ut64 addr) {
-	r_cons_printf ("{\"vmi_type_info\": {\"found_at\":%"PFMT32u",\"ref_to_type_class\":%"PFMT32u","
-			"\"ref_to_type_name\":%"PFMT32u",\"flags\":%"PFMT32d","
-			"\"count_of_base_classes\":%"PFMT32d",",
-			addr, vmi_cti->vtable_addr, vmi_cti->name_addr, vmi_cti->vmi_flags,
-			vmi_cti->vmi_base_count);
-	r_cons_printf ("\"base_classes\":[");
+static void rtti_itanium_print_vmi_class_type_info_json(vmi_class_type_info *vmi_cti) {
+	PJ *pj = pj_new ();
+	if (!pj) {
+		return;
+	}
+
+	pj_o (pj);
+	pj_ks (pj, "type", type_to_string (vmi_cti->type));
+	pj_kn (pj, "found_at", vmi_cti->typeinfo_addr);
+	pj_kn (pj, "class_vtable", vmi_cti->class_vtable_addr);
+	pj_kn (pj, "ref_to_type_class", vmi_cti->vtable_addr);
+	pj_kn (pj, "ref_to_type_name", vmi_cti->name_addr);
+	pj_ks (pj, "name", vmi_cti->name);
+	pj_kb (pj, "name_unique", vmi_cti->name_unique);
+	pj_kn (pj, "flags", vmi_cti->vmi_flags);
+	pj_k (pj, "base_classes");
+	pj_a (pj);
 	int i;
 	for (i = 0; i < vmi_cti->vmi_base_count; i++) {
-		r_cons_printf("{\"type_desc_addr\":%"PFMT32u",\"flags\":%"PFMT32d"}",
-				vmi_cti->vmi_bases[i].base_class_addr,
-				vmi_cti->vmi_bases[i].flags);
-		if (i < vmi_cti->vmi_base_count - 1) {
-			r_cons_printf(",");
-		}
+		pj_o (pj);
+		pj_kn (pj, "type_desc_addr", vmi_cti->vmi_bases[i].base_class_addr);
+		pj_kN (pj, "flags", vmi_cti->vmi_bases[i].flags);
+		pj_end (pj);
 	}
-	r_cons_printf ("]}}");
+	pj_end (pj);
+	pj_end (pj);
+
+	r_cons_printf (pj_string (pj));
+	pj_free (pj);
 }
 
-static void rtti_itanium_print_si_class_type_info (si_class_type_info *si_cti, ut64 addr, const char *prefix) {
-	r_cons_printf ("%sSI Type Info at 0x%08"PFMT64x ":\n"
-			"%s  Reference to RTTI's type class: 0x%08"PFMT32x "\n"
-			"%s  Reference to type's name: 0x%08"PFMT32x "\n"
+static void rtti_itanium_print_si_class_type_info(si_class_type_info *si_cti, const char *prefix) {
+	r_cons_printf ("%sType Info at 0x%08" PFMT64x ":\n"
+			"%s  Type Info type: %s\n"
+			"%s  Belongs to class vtable: 0x%08" PFMT64x "\n"
+			"%s  Reference to RTTI's type class: 0x%08" PFMT64x "\n"
+			"%s  Reference to type's name: 0x%08" PFMT64x "\n"
 			"%s  Type Name: %s\n"
-			"%s  Reference to parent's type name: 0x%08"PFMT32x "\n",
-			prefix, addr,
+			"%s  Name unique: %s\n"
+			"%s  Reference to parent's type info: 0x%08" PFMT64x "\n",
+			prefix, si_cti->typeinfo_addr,
+			prefix, type_to_string (si_cti->type),
+			prefix, si_cti->class_vtable_addr,
 			prefix, si_cti->vtable_addr,
 			prefix, si_cti->name_addr,
-			prefix, si_cti->name + 1,
+			prefix, si_cti->name,
+			prefix, si_cti->name_unique ? "true" : "false",
 			prefix, si_cti->base_class_addr);
 }
 
-static void rtti_itanium_print_si_class_type_info_json (si_class_type_info *si_cti, ut64 addr) {
-	r_cons_printf ("{\"si_type_info\": {\"found_at\":%"PFMT32u",\"ref_to_type_class\":%"PFMT32u","
-			"\"ref_to_type_name\": %"PFMT32u",\"ref_to_parent_type_name\":%"PFMT32u"}}",
-			addr, si_cti->vtable_addr, si_cti->name_addr, si_cti->base_class_addr);
-}
-
-R_API void r_anal_rtti_itanium_print_class_type_info(RVTableContext *context, ut64 addr, int mode) {
-	class_type_info cti;
-	if (!rtti_itanium_read_class_type_info (context, addr, &cti)) {
-		eprintf ("Failed to parse Type Info at 0x%08"PFMT64x"\n", addr);
+static void rtti_itanium_print_si_class_type_info_json(si_class_type_info *si_cti) {
+	PJ *pj = pj_new ();
+	if (!pj) {
 		return;
 	}
-	if (mode == 'j') {
-		rtti_itanium_print_class_type_info_json (&cti, addr);
-	} else {
-		rtti_itanium_print_class_type_info (&cti, addr, "");
-	}
 
-	rtti_itanium_class_type_info_fini (&cti);
+	pj_o (pj);
+	pj_ks (pj, "type", type_to_string (si_cti->type));
+	pj_kn (pj, "found_at", si_cti->typeinfo_addr);
+	pj_kn (pj, "class_vtable", si_cti->class_vtable_addr);
+	pj_kn (pj, "ref_to_type_class", si_cti->vtable_addr);
+	pj_kn (pj, "ref_to_type_name", si_cti->name_addr);
+	pj_ks (pj, "name", si_cti->name);
+	pj_kb (pj, "name_unique", si_cti->name_unique);
+	pj_kn (pj, "ref_to_parent_type", si_cti->base_class_addr);
+	pj_end (pj);
+
+	r_cons_printf (pj_string (pj));
+	pj_free (pj);
 }
 
-R_API void r_anal_rtti_itanium_print_si_class_type_info(RVTableContext *context, ut64 addr, int mode) {
-	si_class_type_info si_cti = {0};
-	if (!rtti_itanium_read_si_class_type_info (context, addr, &si_cti)) {
-		eprintf ("Failed to parse Type Info at 0x%08"PFMT64x"\n", addr);
-		goto beach;
-	}
-	if (mode == 'j') {
-		rtti_itanium_print_si_class_type_info_json (&si_cti, addr);
-	} else {
-		rtti_itanium_print_si_class_type_info (&si_cti, addr, "");
+static RTypeInfoType rtti_itanium_type_info_type_from_flag(RVTableContext *context, ut64 atAddress) {
+	RCore *core = context->anal->coreb.core;
+	r_return_val_if_fail (core, R_TYPEINFO_TYPE_CLASS);
+
+	const RList *flags = context->anal->flb.get_list (core->flags, atAddress);
+	if (!flags) {
+		return R_TYPEINFO_TYPE_UNKNOWN;
 	}
 
-beach:
-	rtti_itanium_si_class_type_info_fini (&si_cti);
+	RListIter *iter;
+	RFlagItem *flag;
+	r_list_foreach (flags, iter, flag) {
+		if (strstr (flag->name, VMI_CLASS_TYPE_INFO_NAME)) {
+			return R_TYPEINFO_TYPE_VMI_CLASS;
+		} else if (strstr (flag->name, SI_CLASS_TYPE_INFO_NAME)) {
+			return R_TYPEINFO_TYPE_SI_CLASS;
+		}
+	}
+
+	return R_TYPEINFO_TYPE_UNKNOWN;
 }
 
-R_API void r_anal_rtti_itanium_print_vmi_class_type_info(RVTableContext *context, ut64 addr, int mode) {
-	vmi_class_type_info vmi_cti = {0};
-	if (!rtti_itanium_read_vmi_class_type_info (context, addr, &vmi_cti)) {
-		eprintf ("Failed to parse Type Info at 0x%08"PFMT64x"\n", addr);
-		goto beach;
-	}
-	if (mode == 'j') {
-		rtti_itanium_print_vmi_class_type_info_json (&vmi_cti, addr);
-	} else {
-		rtti_itanium_print_vmi_class_type_info (&vmi_cti, addr, "");
-	}
-
-beach:
-	rtti_itanium_vmi_class_type_info_fini (&vmi_cti);
-}
-
-static bool rtti_itanium_print_class_type_info_recurse(RVTableContext *context, ut64 atAddress, int mode) {
-	bool use_json = mode == 'j';
-	ut64 colRefAddr = atAddress - context->word_size; //Vtable: Type Info
+static class_type_info *rtti_itanium_type_info_new(RVTableContext *context, ut64 atAddress) {
+	ut64 colRefAddr = atAddress - VT_WORD_SIZE (context); //Vtable: Type Info
 	ut64 colAddr; //Type Info
-	ut64 class_type_offset;
 
 	if (!context->read_addr (context->anal, colRefAddr, &colAddr)) {
-		return false;
+		return NULL;
 	}
 
-	if (!context->read_addr (context->anal, colAddr, &class_type_offset)) {
-		return false;
-	}
-
-	RCore *core = context->anal->coreb.core;
-
-	if (!core) {
-		return false;
-	}
-
-	class_type_offset -= 2 * context->word_size;
-	RFlagItem *flag;
-
-	flag = context->anal->flag_get (core->flags, class_type_offset);
-	if (!flag) {
-		eprintf ("No RTTI found\n");
-		return false;
-	}
-	if (!r_str_cmp (flag->name, VMI_CLASS_TYPE_INFO_NAME, r_str_len_utf8 (flag->name))) {
-		vmi_class_type_info vmi_cti = {0};
-		if (!rtti_itanium_read_vmi_class_type_info (context, colAddr, &vmi_cti)) {
-			eprintf ("Failed to parse Type Info at 0x%08"PFMT64x" (referenced from 0x%08"PFMT64x")\n", colAddr, colRefAddr);
-			rtti_itanium_vmi_class_type_info_fini (&vmi_cti);
-			return false;
+	RTypeInfoType type = rtti_itanium_type_info_type_from_flag (context, colAddr);
+	if (type == R_TYPEINFO_TYPE_UNKNOWN) {
+		ut64 follow;
+		if (!context->read_addr (context->anal, colAddr, &follow)) {
+			return NULL;
 		}
-		if (use_json) {
-			rtti_itanium_print_vmi_class_type_info_json (&vmi_cti, colAddr);
-		} else {
-			rtti_itanium_print_vmi_class_type_info (&vmi_cti, colAddr, "");
-		}
-
-		rtti_itanium_vmi_class_type_info_fini (&vmi_cti);
+		follow -= 2 * context->word_size;
+		type = rtti_itanium_type_info_type_from_flag (context, follow);
 	}
 
-	if (!r_str_cmp (flag->name, SI_CLASS_TYPE_INFO_NAME, r_str_len_utf8 (flag->name))) {
-		si_class_type_info si_cti = {0};
-		if (!rtti_itanium_read_si_class_type_info (context, colAddr, &si_cti)) {
-			eprintf ("Failed to parse Type Info at 0x%08"PFMT64x" (referenced from 0x%08"PFMT64x")\n", colAddr, colRefAddr);
-			rtti_itanium_si_class_type_info_fini (&si_cti);
-			return false;
-		}
-		if (use_json) {
-			rtti_itanium_print_si_class_type_info_json (&si_cti, colAddr);
-		} else {
-			rtti_itanium_print_si_class_type_info (&si_cti, colAddr, "");
-		}
-
-		rtti_itanium_si_class_type_info_fini (&si_cti);
+	if (type == R_TYPEINFO_TYPE_UNKNOWN) {
+		type = R_TYPEINFO_TYPE_CLASS;
 	}
 
-	if (!r_str_cmp (flag->name, CLASS_TYPE_INFO_NAME, r_str_len_utf8 (flag->name))) {
-		class_type_info cti;
-		if (!rtti_itanium_read_class_type_info (context, colAddr, &cti)) {
-			eprintf ("Failed to parse Type Info at 0x%08"PFMT64x" (referenced from 0x%08"PFMT64x")\n", colAddr, colRefAddr);
-			return false;
-		}
-		if (use_json) {
-			rtti_itanium_print_class_type_info_json (&cti, colAddr);
-		} else {
-			rtti_itanium_print_class_type_info (&cti, colAddr, "");
-		}
-
-		rtti_itanium_class_type_info_fini (&cti);
+	switch (type) {
+	case R_TYPEINFO_TYPE_VMI_CLASS:
+		return (class_type_info *)rtti_itanium_vmi_class_type_info_new (context, colAddr, atAddress);
+	case R_TYPEINFO_TYPE_SI_CLASS:
+		return (class_type_info *)rtti_itanium_si_class_type_info_new (context, colAddr, atAddress);
+	case R_TYPEINFO_TYPE_CLASS:
+		return rtti_itanium_class_type_info_new (context, colAddr, atAddress);
+	default:
+		r_return_val_if_reached (NULL);
 	}
-	return true;
 }
 
-R_API void r_anal_rtti_itanium_print_at_vtable (RVTableContext *context, ut64 addr, int mode) {
-	rtti_itanium_print_class_type_info_recurse (context, addr, mode);
+static void rtti_itanium_type_info_free(class_type_info *cti) {
+	if (!cti) {
+		return;
+	}
+
+	switch (cti->type) {
+	case R_TYPEINFO_TYPE_VMI_CLASS:
+		rtti_itanium_vmi_class_type_info_free ((vmi_class_type_info *)cti);
+		return;
+	case R_TYPEINFO_TYPE_SI_CLASS:
+		rtti_itanium_si_class_type_info_free ((si_class_type_info *)cti);
+		return;
+	case R_TYPEINFO_TYPE_CLASS:
+		rtti_itanium_class_type_info_free (cti);
+		return;
+	default:
+		r_return_if_reached ();
+	}
+}
+
+R_API bool r_anal_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 addr, int mode) {
+	bool use_json = mode == 'j';
+	class_type_info *cti = rtti_itanium_type_info_new (context, addr);
+	if (!cti) {
+		return false;
+	}
+
+	switch (cti->type) {
+	case R_TYPEINFO_TYPE_VMI_CLASS: {
+		vmi_class_type_info *vmi_cti = (vmi_class_type_info *)cti;
+		if (use_json) {
+			rtti_itanium_print_vmi_class_type_info_json (vmi_cti);
+		} else {
+			rtti_itanium_print_vmi_class_type_info (vmi_cti, "");
+		}
+		rtti_itanium_vmi_class_type_info_free (vmi_cti);
+	}
+		return true;
+	case R_TYPEINFO_TYPE_SI_CLASS: {
+		si_class_type_info *si_cti = (si_class_type_info *)cti;
+		if (use_json) {
+			rtti_itanium_print_si_class_type_info_json (si_cti);
+		} else {
+			rtti_itanium_print_si_class_type_info (si_cti, "");
+		}
+		rtti_itanium_si_class_type_info_free (si_cti);
+	}
+		return true;
+	case R_TYPEINFO_TYPE_CLASS: {
+		if (use_json) {
+			rtti_itanium_print_class_type_info_json (cti);
+		} else {
+			rtti_itanium_print_class_type_info (cti, "");
+		}
+		rtti_itanium_class_type_info_free (cti);
+	}
+		return true;
+	default:
+		r_return_val_if_reached (false);
+	}
+}
+
+R_API char *r_anal_rtti_itanium_demangle_class_name(RVTableContext *context, const char *name) {
+	if (!name || !*name) {
+		return NULL;
+	}
+
+	char *result = NULL;
+
+	if (name[0] != '_') {
+		char *to_demangle = r_str_newf ("_Z%s", name);
+		result = context->anal->binb.demangle (NULL, "cxx", to_demangle, 0, false);
+		free (to_demangle);
+	} else {
+		result = context->anal->binb.demangle (NULL, "cxx", name, 0, false);
+	}
+
+	return result;
+}
+
+static void recovery_apply_vtable(RVTableContext *context, const char *class_name, RVTableInfo *vtable_info) {
+	if (!vtable_info) {
+		return;
+	}
+
+	RAnalVTable vtable;
+	vtable.id = NULL;
+	vtable.offset = 0;
+	vtable.addr = vtable_info->saddr;
+	r_anal_class_vtable_set (context->anal, class_name, &vtable);
+	r_anal_class_vtable_fini (&vtable);
+
+	RVTableMethodInfo *vmeth;
+	r_vector_foreach (&vtable_info->methods, vmeth) {
+		RAnalMethod meth;
+		meth.addr = vmeth->addr;
+		meth.vtable_offset = vmeth->vtable_offset;
+		meth.name = r_str_newf ("virtual_%d", meth.vtable_offset);
+		r_anal_class_method_set (context->anal, class_name, &meth);
+		r_anal_class_method_fini (&meth);
+	}
+}
+
+R_API void r_anal_rtti_itanium_recover_all(RVTableContext *context, RList *vtables) {
+	RListIter *vtableIter;
+	RVTableInfo *vtable;
+	r_list_foreach (vtables, vtableIter, vtable) {
+		class_type_info *cti = rtti_itanium_type_info_new (context, vtable->saddr);
+		if (!cti) {
+			continue;
+		}
+
+		r_anal_class_create (context->anal, cti->name);
+		recovery_apply_vtable (context, cti->name, vtable);
+
+		rtti_itanium_type_info_free (cti);
+	}
 }
