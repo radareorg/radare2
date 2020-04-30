@@ -815,10 +815,13 @@ R_API RAnalClassErr r_anal_class_vtable_get(RAnal *anal, const char *class_name,
 
 	vtable->offset = r_num_math (NULL, cur);
 
-	cur = next;
-	sdb_anext (cur, NULL);
-
-	vtable->size = r_num_math (NULL, cur);
+	if (next) {
+		cur = next;
+		sdb_anext (cur, NULL);
+		vtable->size = r_num_get (NULL, cur);
+	} else {
+		vtable->size = 0;
+	}
 
 	free (content);
 
