@@ -905,6 +905,7 @@ R_API void r_flag_bind(RFlag *f, RFlagBind *fb) {
 	fb->exist_at = r_flag_exist_at;
 	fb->get = r_flag_get;
 	fb->get_at = r_flag_get_at;
+	fb->get_list = r_flag_get_list;
 	fb->set = r_flag_set;
 	fb->unset = r_flag_unset;
 	fb->unset_name = r_flag_unset_name;
