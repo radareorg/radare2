@@ -543,49 +543,67 @@ aaa
 avra
 EOF
 EXPECT=<<EOF
-VMI Type Info at 0x08048f4c:
+Type Info at 0x08048f4c:
+  Type Info type: __vmi_class_type_info
+  Belongs to class vtable: 0x08048edc
   Reference to RTTI's type class: 0x0804b140
   Reference to type's name: 0x08048f6c
   Type Name: Bat
+  Name unique: true
   Flags: 0x0
   Count of base classes: 0x2
-      Base class type descriptor address: 0x08048f74
-      Base class flags: 0x2
-      Base class type descriptor address: 0x08048fac
-      Base class flags: 0x402
+    Base class type descriptor address: 0x08048f74
+    Base class flags: 0x2
+    Base class type descriptor address: 0x08048fac
+    Base class flags: 0x402
 
-VMI Type Info at 0x08048f4c:
+Type Info at 0x08048f4c:
+  Type Info type: __vmi_class_type_info
+  Belongs to class vtable: 0x08048ef0
   Reference to RTTI's type class: 0x0804b140
   Reference to type's name: 0x08048f6c
   Type Name: Bat
+  Name unique: true
   Flags: 0x0
   Count of base classes: 0x2
-      Base class type descriptor address: 0x08048f74
-      Base class flags: 0x2
-      Base class type descriptor address: 0x08048fac
-      Base class flags: 0x402
+    Base class type descriptor address: 0x08048f74
+    Base class flags: 0x2
+    Base class type descriptor address: 0x08048fac
+    Base class flags: 0x402
 
 Type Info at 0x08048f74:
+  Type Info type: __class_type_info
+  Belongs to class vtable: 0x08048f04
   Reference to RTTI's type class: 0x0804b048
   Reference to type's name: 0x08048f7c
   Type Name: Bird
+  Name unique: true
 
-SI Type Info at 0x08048f84:
+Type Info at 0x08048f84:
+  Type Info type: __si_class_type_info
+  Belongs to class vtable: 0x08048f18
   Reference to RTTI's type class: 0x0804b114
   Reference to type's name: 0x08048f90
   Type Name: Dog
-  Reference to parent's type name: 0x08048fac
+  Name unique: true
+  Reference to parent's type info: 0x08048fac
 
-SI Type Info at 0x08048f98:
+Type Info at 0x08048f98:
+  Type Info type: __si_class_type_info
+  Belongs to class vtable: 0x08048f2c
   Reference to RTTI's type class: 0x0804b114
   Reference to type's name: 0x08048fa4
   Type Name: Cat
-  Reference to parent's type name: 0x08048fac
+  Name unique: true
+  Reference to parent's type info: 0x08048fac
 
 Type Info at 0x08048fac:
+  Type Info type: __class_type_info
+  Belongs to class vtable: 0x08048f40
   Reference to RTTI's type class: 0x0804b048
   Reference to type's name: 0x08048fb4
   Type Name: Mammal
+  Name unique: true
 
 EOF
 RUN
