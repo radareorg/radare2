@@ -245,6 +245,7 @@ R_API int r_cmd_add(RCmd *c, const char *cmd, RCmdCb cb) {
 	}
 	strncpy (item->cmd, cmd, sizeof (item->cmd)-1);
 	item->callback = cb;
+	r_cmd_desc_oldinput_new (c, c->root_cmd_desc, cmd, cb);
 	return true;
 }
 
@@ -311,22 +312,40 @@ static int cmdstatus2int(RCmdStatus s) {
 }
 
 R_API int r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
+	int res = -1;
+
+	// As old RCorePlugin do not register new commands in RCmd, we have no
+	// way of knowing if one of those is able to handle the input, so we
+	// have to pass the input to all of them before looking into the
+	// RCmdDesc tree
+	RListIter *iter;
+	RCorePlugin *cp;
+	char *exec_string = r_cmd_parsed_args_execstr (args);
+	r_list_foreach (cmd->plist, iter, cp) {
+		res = cp->call (cmd->data, exec_string);
+		if (res) {
+			break;
+		}
+	}
+	free (exec_string);
+	if (res) {
+		return 1;
+	}
+
 	RCmdDesc *cd = r_cmd_get_desc (cmd, r_cmd_parsed_args_cmd (args));
 	if (!cd) {
 		return -1;
 	}
 
-	int res = -1;
 	switch (cd->type) {
 	case R_CMD_DESC_TYPE_ARGV:
 		res = cmdstatus2int (cd->d.argv_data.cb (cmd->data, args->argc, (const char **)args->argv));
 		break;
-	case R_CMD_DESC_TYPE_OLDINPUT: {
-		char *exec_string = r_cmd_parsed_args_execstr (args);
+	case R_CMD_DESC_TYPE_OLDINPUT:
+		exec_string = r_cmd_parsed_args_execstr (args);
 		res = cd->d.oldinput_data.cb (cmd->data, exec_string + strlen (cd->name));
 		free (exec_string);
 		break;
-	}
 	default:
 		R_LOG_ERROR ("RCmdDesc type not handled\n");
 		break;
