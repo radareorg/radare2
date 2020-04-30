@@ -2830,11 +2830,19 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 	return symbols;
 }
 
+static size_t get_word_size(struct MACH0_(obj_t) *bin) {
+	size_t word_size = MACH0_(get_bits)(bin) / 8;
+	if (word_size < 4) {
+		return 4;
+	}
+	return word_size;
+}
+
 static int parse_import_ptr(struct MACH0_(obj_t) *bin, struct reloc_t *reloc, int idx) {
 	int i, j, sym;
 	size_t wordsize;
 	ut32 stype;
-	wordsize = MACH0_(get_bits)(bin) / 8;
+	wordsize = get_word_size (bin);
 	if (idx < 0 || idx >= bin->nsymtab) {
 		return 0;
 	}
@@ -2981,7 +2989,7 @@ static void parse_relocation_info(struct MACH0_(obj_t) *bin, RSkipList * relocs,
 RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 	RSkipList *relocs = NULL;
 	ulebr ur = {NULL};
-	int wordsize = MACH0_(get_bits)(bin) / 8;
+	size_t wordsize = get_word_size (bin);
 	if (bin->dyld_info) {
 		ut8 *opcodes,*end, type = 0, rel_type = 0;
 		int lib_ord, seg_idx = -1, sym_ord = -1;
