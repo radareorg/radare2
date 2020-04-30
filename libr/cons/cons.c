@@ -1288,12 +1288,15 @@ R_API bool r_cons_isatty() {
 #if __WINDOWS__
 static int __xterm_get_cur_pos(int *xpos) {
 	int ypos = 0;
-	(void)write (I.fdout, R_CONS_GET_CURSOR_POSITION, sizeof (R_CONS_GET_CURSOR_POSITION));
+	const char *get_pos = R_CONS_GET_CURSOR_POSITION;
+	if (write (I.fdout, get_pos, sizeof (get_pos)) < 1) {
+		return 0;
+	}
 	int ch = r_cons_readchar ();
 	if (ch == 0x1b) {
 		(void)r_cons_readchar ();
 		char pos[16] = { 0 };
-		int i;
+		size_t i;
 		for (i = 0; i < sizeof (pos); i++) {
 			if ((ch = r_cons_readchar ()) == ';') {
 				break;
@@ -1314,7 +1317,9 @@ static int __xterm_get_cur_pos(int *xpos) {
 }
 
 static bool __xterm_get_size(void) {
-	(void)write (I.fdout, R_CONS_CURSOR_SAVE, sizeof (R_CONS_CURSOR_SAVE));
+	if (write (I.fdout, R_CONS_CURSOR_SAVE, sizeof (R_CONS_CURSOR_SAVE)) < 1) {
+		return false;
+	}
 	(void)write (I.fdout, "\x1b[999;999H", sizeof ("\x1b[999;999H"));
 	I.rows = __xterm_get_cur_pos (&I.columns);
 	(void)write (I.fdout, R_CONS_CURSOR_RESTORE, sizeof (R_CONS_CURSOR_RESTORE));
@@ -1512,13 +1517,13 @@ R_API void r_cons_set_raw(bool is_raw) {
 #elif __WINDOWS__
 	if (is_raw) {
 		if (I.term_xterm) {
-			system ("stty raw -echo");
+			r_sandbox_system ("stty raw -echo", 1);
 		} else {
 			SetConsoleMode (h, I.term_raw);
 		}
 	} else {
 		if (I.term_xterm) {
-			system ("stty -raw -echo");
+			r_sandbox_system ("stty -raw -echo", 1);
 		} else {
 			SetConsoleMode (h, I.term_buf);
 		}
