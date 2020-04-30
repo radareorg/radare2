@@ -1293,26 +1293,35 @@ static int __xterm_get_cur_pos(int *xpos) {
 		return 0;
 	}
 	int ch = r_cons_readchar ();
-	if (ch == 0x1b) {
-		(void)r_cons_readchar ();
-		char pos[16] = { 0 };
-		size_t i;
-		for (i = 0; i < sizeof (pos); i++) {
-			if ((ch = r_cons_readchar ()) == ';') {
+	if (ch != 0x1b) {
+		while (ch = r_cons_readchar_timeout (25)) {
+			if (ch < 1) {
+				return 0;
+			}
+			if (ch == 0x1b) {
 				break;
 			}
-			pos[i] = ch;
 		}
-		ypos = atoi (pos);
-		pos[0] = '\0';
-		for (i = 0; i < sizeof (pos); i++) {
-			if ((ch = r_cons_readchar ()) == 'R') {
-				break;
-			}
-			pos[i] = ch;
-		}
-		*xpos = atoi (pos);
 	}
+	(void)r_cons_readchar ();
+	char pos[16] = { 0 };
+	size_t i;
+	for (i = 0; i < sizeof (pos); i++) {
+		if ((ch = r_cons_readchar ()) == ';') {
+			break;
+		}
+		pos[i] = ch;
+	}
+	ypos = atoi (pos);
+	pos[0] = '\0';
+	for (i = 0; i < sizeof (pos); i++) {
+		if ((ch = r_cons_readchar ()) == 'R') {
+			break;
+		}
+		pos[i] = ch;
+	}
+	*xpos = atoi (pos);
+
 	return ypos;
 }
 
@@ -1427,7 +1436,7 @@ R_API int r_cons_is_vtcompat(void) {
 	}
 	char *term = r_sys_getenv ("TERM");
 	if (term) {
-		if (!strcmp (term, "xterm")) {
+		if (strstr (term, "xterm")) {
 			I.term_xterm = 1;
 			free (term);
 			return 2;
