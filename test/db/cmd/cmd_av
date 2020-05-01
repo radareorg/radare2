@@ -22,3 +22,63 @@ Vtable Found at 0x00400d28
 
 EOF
 RUN
+
+NAME=vtable search msvc x86 with rtti
+FILE=bins/pe/cpp-msvc-x86.exe
+CMDS=<<EOF
+aar
+av
+EOF
+EXPECT=<<EOF
+
+Vtable Found at 0x0041210c
+0x0041210c : No Name found
+
+
+Vtable Found at 0x00412164
+0x00412164 : No Name found
+0x00412168 : No Name found
+
+
+Vtable Found at 0x004121a4
+0x004121a4 : No Name found
+0x004121a8 : No Name found
+
+
+Vtable Found at 0x004121fc
+0x004121fc : No Name found
+
+
+Vtable Found at 0x00412208
+0x00412208 : No Name found
+
+EOF
+RUN
+
+NAME=vtable search msvc x86 without rtti
+FILE=bins/pe/cpp-msvc-nortti-x86.exe
+CMDS=<<EOF
+aar
+av
+EOF
+EXPECT=<<EOF
+
+Vtable Found at 0x0041210c
+0x0041210c : No Name found
+
+
+Vtable Found at 0x00412160
+0x00412160 : No Name found
+0x00412164 : No Name found
+
+
+Vtable Found at 0x0041219c
+0x0041219c : No Name found
+0x004121a0 : No Name found
+
+
+Vtable Found at 0x004121f8
+0x004121f8 : No Name found
+
+EOF
+RUN
