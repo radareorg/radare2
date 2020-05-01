@@ -160,5 +160,4 @@ type_info
   (vtable at 0x4121fc)
   virtual_0 @ 0x401136 (vtable + 0x0)
 EOF
-EXPECT=
 RUN
