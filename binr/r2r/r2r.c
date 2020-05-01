@@ -794,17 +794,12 @@ static char *replace_lines(char *src, ut64 from, ut64 to, char *news) {
 		end++;
 		line++;
 	}
-	if (end && to != from) {
-		end = strchr (end, '\n');
-	}
 
 	RStrBuf buf;
 	r_strbuf_init (&buf);
 	r_strbuf_append_n (&buf, src, begin - src);
 	r_strbuf_append (&buf, news);
-	if (to == from) {
-		r_strbuf_append (&buf, "\n");
-	}
+	r_strbuf_append (&buf, "\n");
 	if (end) {
 		r_strbuf_append (&buf, end);
 	}
