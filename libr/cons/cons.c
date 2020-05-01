@@ -1532,7 +1532,7 @@ R_API void r_cons_set_raw(bool is_raw) {
 		}
 	} else {
 		if (I.term_xterm) {
-			r_sandbox_system ("stty -raw -echo", 1);
+			r_sandbox_system ("stty -raw echo", 1);
 		} else {
 			SetConsoleMode (h, I.term_buf);
 		}
