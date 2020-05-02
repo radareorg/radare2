@@ -3533,17 +3533,29 @@ CMDS=<<EOF
 wz k\0i\0abcdefgh
 (izzenc enc; e bin.str.enc=$0; izz~:3..)
 .(izzenc guess)
-?e
 .(izzenc ascii)
+.(izzenc utf8)
+.(izzenc utf16le)
 ?e
+wx 00250025002500250000
+.(izzenc guess)
+.(izzenc utf16le)
+?e
+wx 26252625262526250000
+.(izzenc guess)
 .(izzenc utf16le)
 EOF
 EXPECT=<<EOF
 0   0x00000000 0x00000000 6   14           utf16le ki扡摣晥桧 blocks=Basic Latin,CJK Unified Ideographs
-
 0   0x00000004 0x00000004 8   9            ascii abcdefgh
-
+0   0x00000004 0x00000004 8   9            ascii abcdefgh
 0   0x00000000 0x00000000 6   14           utf16le ki扡摣晥桧 blocks=Basic Latin,CJK Unified Ideographs
+
+0   0x00000001 0x00000001 4   9            utf16le %%%%
+0   0x00000000 0x00000000 4   10           utf16le ──── blocks=Box Drawing
+
+0   0x00000000 0x00000000 8   9            ascii &%&%&%&%
+0   0x00000000 0x00000000 4   10           utf16le ┦┦┦┦ blocks=Box Drawing
 EOF
 RUN
 
