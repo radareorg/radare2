@@ -283,7 +283,7 @@ R_API void r_cons_break_clear() {
 }
 
 R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void *user, bool sig) {
-	if (!context->break_stack) {
+	if (!context || !context->break_stack) {
 		return;
 	}
 
@@ -310,7 +310,7 @@ R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void 
 }
 
 R_API void r_cons_context_break_pop(RConsContext *context, bool sig) {
-	if (!context->break_stack) {
+	if (!context || !context->break_stack) {
 		return;
 	}
 	//restore old state
@@ -358,7 +358,7 @@ R_API bool r_cons_is_breaked() {
 			I.timeout = 0;
 		}
 	}
-	return I.context->breaked;
+	return I.context && I.context->breaked;
 }
 
 R_API int r_cons_get_cur_line() {
