@@ -375,7 +375,7 @@ static void filter_type(char *t) {
 static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 	// assumes var list is sorted by offset.. should do more checks here
 	char *p = NULL, *vars = NULL, var2[132], *fmt = NULL;
-	int n;
+	size_t n;
 	char *fields = r_str_newf ("%s.fields", var);
 	char *nfields = (is_typedef) ? fields : var;
 	for (n = 0; (p = sdb_array_get (TDB, nfields, n, NULL)); n++) {
@@ -385,16 +385,15 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 		bool isEnum = false;
 		bool isfp = false;
 		snprintf (var2, sizeof (var2), "%s.%s", var, p);
-		int alen = sdb_array_size (TDB, var2);
+		size_t alen = sdb_array_size (TDB, var2);
 		int elements = sdb_array_get_num (TDB, var2, alen - 1, NULL);
 		char *type = sdb_array_get (TDB, var2, 0, NULL);
 		if (type) {
 			char var3[128] = {0};
 			// Handle general pointers except for char *
-			if ((strstr (type, "*(") || strstr (type, " *")) &&
-			  strncmp (type, "char *", 7)) {
+			if ((strstr (type, "*(") || strstr (type, " *")) && strncmp (type, "char *", 7)) {
 				isfp = true;
-			} else if (!strncmp (type, "struct ", 7)) {
+			} else if (r_str_startswith (type, "struct ")) {
 				struct_name = type + 7;
 				// TODO: iterate over all the struct fields, and format the format and vars
 				snprintf (var3, sizeof (var3), "struct.%s", struct_name);
@@ -402,13 +401,13 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 				isStruct = true;
 			} else {
 				// special case for char[]. Use char* format type without *
-				if (!strncmp (type, "char", 5) && elements > 0) {
+				if (!strcmp (type, "char") && elements > 0) {
 					tfmt = sdb_const_get (TDB, "type.char *", NULL);
 					if (tfmt && *tfmt == '*') {
 						tfmt++;
 					}
 				} else {
-					if (!strncmp (type, "enum ", 5)) {
+					if (r_str_startswith (type, "enum ")) {
 						snprintf (var3, sizeof (var3), "%s", type + 5);
 						isEnum = true;
 					} else {
@@ -444,7 +443,7 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 			} else {
 				eprintf ("Cannot resolve type '%s'\n", var3);
 			}
-		free (type);
+			free (type);
 		}
 		free (p);
 	}

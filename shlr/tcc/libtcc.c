@@ -22,6 +22,7 @@
 
 /********************************************************/
 /* global variables */
+ST_DATA RPVector *tcc_typedefs;
 
 /* use GNU C extensions */
 ST_DATA int gnu_ext = 1;
@@ -803,21 +804,25 @@ PUB_FUNC void tcc_appendf(const char *fmt, ...) {
 }
 
 PUB_FUNC void tcc_typedef_appendf(const char *fmt, ...) {
-	char **typedefs_start;
 	if (!tcc_typedefs) {
-		tcc_typedefs = (char **)calloc (50, 1024);
-		typedefs_start = tcc_typedefs;
-	} else {
-		typedefs_start = tcc_typedefs;
-		while (*tcc_typedefs) {
-			tcc_typedefs++;
-		}
+		tcc_typedefs = r_pvector_new ((RPVectorFree) free);
 	}
 	char typedefs_tail[1024];
 	va_list ap;
 	va_start (ap, fmt);
-	vsnprintf (typedefs_tail, sizeof (typedefs_tail), fmt, ap);
-	*tcc_typedefs = strdup (typedefs_tail);
-	tcc_typedefs = typedefs_start;
+	if (vsnprintf (typedefs_tail, sizeof (typedefs_tail), fmt, ap) > 0) {
+		r_pvector_push (tcc_typedefs, strdup (typedefs_tail));
+	} // XXX else? how this should behave if sizeof (typedefs_tail) is not enough?
 	va_end (ap);
+}
+
+PUB_FUNC void tcc_typedef_alias_fields(const char *alias) {
+	if (tcc_typedefs) {
+		void **it;
+		r_pvector_foreach (tcc_typedefs, it) {
+			tcc_appendf (*it, alias);
+		}
+		r_pvector_free (tcc_typedefs);
+		tcc_typedefs = NULL;
+	}
 }

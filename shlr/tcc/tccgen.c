@@ -26,7 +26,6 @@
 } while (0)
 /* callback pointer */
 ST_DATA char **tcc_cb_ptr;
-ST_DATA char **tcc_typedefs;
 
 /********************************************************/
 /* global variables */
@@ -40,6 +39,7 @@ ST_DATA int rsym, anon_sym = SYM_FIRST_ANOM, ind, loc;
 ST_DATA Sym *sym_free_first;
 ST_DATA void **sym_pools;
 ST_DATA int nb_sym_pools;
+
 static int arraysize = 0;
 
 static const char *global_symname = NULL;
@@ -3195,13 +3195,7 @@ func_error1:
 					type_to_str(buf, sizeof(buf), &sym->type, NULL);
 					tcc_appendf ("%s=typedef\n", alias);
 					tcc_appendf ("typedef.%s=%s\n", alias, buf);
-					if (tcc_typedefs) {
-						while (*tcc_typedefs) { // XXX it should not enter here
-							tcc_appendf (*tcc_typedefs, alias);
-							free (*tcc_typedefs);
-							tcc_typedefs++;
-						}
-					}
+					tcc_typedef_alias_fields (alias);
 				} else {
 					r = 0;
 					if ((type.t & VT_BTYPE) == VT_FUNC) {
