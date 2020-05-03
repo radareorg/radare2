@@ -836,7 +836,11 @@ static void visual_breakpoint(RCore *core) {
 }
 
 static void visual_continue(RCore *core) {
-	r_core_cmd (core, "dc", 0);
+	if (r_config_get_i (core->config, "cfg.debug")) {
+		r_core_cmd (core, "dc", 0);
+	} else {
+		r_core_cmd (core, "aec;.ar*", 0);
+	}
 }
 
 static int visual_nkey(RCore *core, int ch) {
