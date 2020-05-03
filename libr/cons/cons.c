@@ -576,6 +576,9 @@ R_API RCons *r_cons_new() {
 }
 
 R_API RCons *r_cons_free() {
+#if __WINDOWS__
+	r_cons_enable_mouse (false);
+#endif
 	I.refcnt--;
 	if (I.refcnt != 0) {
 		return NULL;
@@ -1433,6 +1436,11 @@ R_API int r_cons_is_vtcompat(void) {
 	if (wt_session) {
 		free (wt_session);
 		return 2;
+	}
+	char *alacritty = r_sys_getenv ("ALACRITTY_LOG");
+	if (alacritty) {
+		free (alacritty);
+		return 1;
 	}
 	char *term = r_sys_getenv ("TERM");
 	if (term) {
