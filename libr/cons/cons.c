@@ -134,7 +134,7 @@ static void __break_signal(int sig) {
 
 static inline void __cons_write_ll(const char *buf, int len) {
 #if __WINDOWS__
-	if (I.ansicon) {
+	if (I.vtmode) {
 		(void) write (I.fdout, buf, len);
 	} else {
 		if (I.fdout == 1) {
@@ -471,17 +471,21 @@ R_API void r_cons_enable_highlight(const bool enable) {
 }
 
 R_API bool r_cons_enable_mouse(const bool enable) {
-#if __UNIX__
-	const char *click = enable
-		? "\x1b[?1000;1006;1015h"
-		: "\x1b[?1001r" "\x1b[?1000l";
+#if __WINDOWS__
+	if (I.vtmode == 2) {
+#endif
+		const char *click = enable
+			? "\x1b[?1000;1006;1015h"
+			: "\x1b[?1001r"
+			  "\x1b[?1000l";
 		// : "\x1b[?1000;1006;1015l";
-	// const char *old = enable ? "\x1b[?1001s" "\x1b[?1000h" : "\x1b[?1001r" "\x1b[?1000l";
-	bool enabled = I.mouse;
-	I.mouse = enable;
-	write (2, click, strlen (click));
-	return enabled;
-#elif __WINDOWS__
+		// const char *old = enable ? "\x1b[?1001s" "\x1b[?1000h" : "\x1b[?1001r" "\x1b[?1000l";
+		bool enabled = I.mouse;
+		I.mouse = enable;
+		write (2, click, strlen (click));
+		return enabled;
+#if __WINDOWS__
+	}
 	DWORD mode, mouse;
 	HANDLE h;
 	bool enabled = I.mouse;
@@ -537,7 +541,9 @@ R_API RCons *r_cons_new() {
 	I.num = NULL;
 	I.null = 0;
 #if __WINDOWS__
-	I.ansicon = r_cons_is_ansicon ();
+	I.vtmode = r_cons_is_vtcompat ();
+#else
+	I.vtmode = 2;
 #endif
 #if EMSCRIPTEN
 	/* do nothing here :? */
@@ -659,7 +665,7 @@ R_API void r_cons_fill_line() {
 
 R_API void r_cons_clear_line(int std_err) {
 #if __WINDOWS__
-	if (I.ansicon) {
+	if (I.vtmode) {
 		fprintf (std_err? stderr: stdout,"%s", R_CONS_CLEAR_LINE);
 	} else {
 		char white[1024];
@@ -962,7 +968,7 @@ R_API void r_cons_visual_flush() {
 	if (!I.null) {
 /* TODO: this ifdef must go in the function body */
 #if __WINDOWS__
-		if (I.ansicon) {
+		if (I.vtmode) {
 			r_cons_visual_write (I.context->buffer);
 		} else {
 			r_cons_w32_print (I.context->buffer, I.context->buffer_len, true);
@@ -997,7 +1003,7 @@ R_API void r_cons_print_fps (int col) {
 		col = 12;
 	}
 #ifdef __WINDOWS__
-	if (I.ansicon) {
+	if (I.vtmode) {
 		eprintf ("\x1b[0;%dH[%d FPS] \n", w - col, fps);
 	} else {
 		r_cons_w32_gotoxy (2, w - col, 0);
@@ -1279,17 +1285,75 @@ R_API bool r_cons_isatty() {
 	return false;
 }
 
+#if __WINDOWS__
+static int __xterm_get_cur_pos(int *xpos) {
+	int ypos = 0;
+	const char *get_pos = R_CONS_GET_CURSOR_POSITION;
+	if (write (I.fdout, get_pos, sizeof (get_pos)) < 1) {
+		return 0;
+	}
+	int ch = r_cons_readchar ();
+	if (ch != 0x1b) {
+		while (ch = r_cons_readchar_timeout (25)) {
+			if (ch < 1) {
+				return 0;
+			}
+			if (ch == 0x1b) {
+				break;
+			}
+		}
+	}
+	(void)r_cons_readchar ();
+	char pos[16] = { 0 };
+	size_t i;
+	for (i = 0; i < sizeof (pos); i++) {
+		if ((ch = r_cons_readchar ()) == ';') {
+			break;
+		}
+		pos[i] = ch;
+	}
+	ypos = atoi (pos);
+	pos[0] = '\0';
+	for (i = 0; i < sizeof (pos); i++) {
+		if ((ch = r_cons_readchar ()) == 'R') {
+			break;
+		}
+		pos[i] = ch;
+	}
+	*xpos = atoi (pos);
+
+	return ypos;
+}
+
+static bool __xterm_get_size(void) {
+	if (write (I.fdout, R_CONS_CURSOR_SAVE, sizeof (R_CONS_CURSOR_SAVE)) < 1) {
+		return false;
+	}
+	(void)write (I.fdout, "\x1b[999;999H", sizeof ("\x1b[999;999H"));
+	I.rows = __xterm_get_cur_pos (&I.columns);
+	(void)write (I.fdout, R_CONS_CURSOR_RESTORE, sizeof (R_CONS_CURSOR_RESTORE));
+	return true;
+}
+
+#endif
+
 // XXX: if this function returns <0 in rows or cols expect MAYHEM
 R_API int r_cons_get_size(int *rows) {
 #if __WINDOWS__
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	bool ret = GetConsoleScreenBufferInfo (GetStdHandle (STD_OUTPUT_HANDLE), &csbi);
-	I.columns = csbi.srWindow.Right - csbi.srWindow.Left + 1;
-	I.rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
- 	if (!ret || (I.columns == -1 && I.rows == 0)) {
-		// Stdout is probably redirected so we set default values
-		I.columns = 80;
-		I.rows = 23;
+	if (ret) {
+		I.columns = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+		I.rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+	} else {
+		if (I.term_xterm) {
+			ret = __xterm_get_size ();
+		}
+		if (!ret || (I.columns == -1 && I.rows == 0)) {
+			// Stdout is probably redirected so we set default values
+			I.columns = 80;
+			I.rows = 23;
+		}
 	}
 #elif EMSCRIPTEN
 	I.columns = 80;
@@ -1361,11 +1425,31 @@ R_API int r_cons_get_size(int *rows) {
 }
 
 #if __WINDOWS__
-R_API bool r_cons_is_ansicon(void) {
+R_API int r_cons_is_vtcompat(void) {
 	DWORD major;
 	DWORD minor;
 	DWORD release = 0;
-	bool win_support = false;
+	char *wt_session = r_sys_getenv ("WT_SESSION");
+	if (wt_session) {
+		free (wt_session);
+		return 2;
+	}
+	char *term = r_sys_getenv ("TERM");
+	if (term) {
+		if (strstr (term, "xterm")) {
+			I.term_xterm = 1;
+			free (term);
+			return 2;
+		}
+		I.term_xterm = 0;
+		free (term);
+	}
+	char *ansicon = r_sys_getenv ("ANSICON");
+	if (ansicon) {
+		free (ansicon);
+		return 1;
+	}
+	bool win_support = 0;
 	RSysInfo *info = r_sys_info ();
 	if (info && info->version) {
 		char *dot = strtok (info->version, ".");
@@ -1378,22 +1462,17 @@ R_API bool r_cons_is_ansicon(void) {
 		if (major > 10
 			|| (major == 10 && minor > 0)
 			|| (major == 10 && minor == 0 && release >= 1703)) {
-			win_support = true;
+			win_support = 1;
 		}
 	}
 	r_sys_info_free (info);
-	char *ansicon = r_sys_getenv ("ANSICON");
-	if (ansicon) {
-		free (ansicon);
-		win_support = true;
-	}
 	return win_support;
 }
 #endif
 
 R_API void r_cons_show_cursor(int cursor) {
 #if __WINDOWS__
-	if (I.ansicon) {
+	if (I.vtmode) {
 #endif
 		write (1, cursor ? "\x1b[?25h" : "\x1b[?25l", 6);
 #if __WINDOWS__
@@ -1446,9 +1525,17 @@ R_API void r_cons_set_raw(bool is_raw) {
 	}
 #elif __WINDOWS__
 	if (is_raw) {
-		SetConsoleMode (h, I.term_raw);
+		if (I.term_xterm) {
+			r_sandbox_system ("stty raw -echo", 1);
+		} else {
+			SetConsoleMode (h, I.term_raw);
+		}
 	} else {
-		SetConsoleMode (h, I.term_buf);
+		if (I.term_xterm) {
+			r_sandbox_system ("stty -raw echo", 1);
+		} else {
+			SetConsoleMode (h, I.term_buf);
+		}
 	}
 #else
 #warning No raw console supported for this platform
@@ -1503,7 +1590,7 @@ R_API void r_cons_set_cup(int enable) {
 	write (2, code, strlen (code));
 	fflush (stdout);
 #elif __WINDOWS__
-	if (I.ansicon) {
+	if (I.vtmode) {
 		if (enable) {
 			const char *code =
 				"\x1b[?1049h" // xterm
@@ -1793,7 +1880,7 @@ R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 }
 
 R_API void r_cons_clear_buffer(void) {
-#if __UNIX__
-	write (1, "\x1b" "c\x1b[3J",  6);
-#endif
+	if (I.vtmode) {
+		write (1, "\x1b" "c\x1b[3J", 6);
+	}
 }
