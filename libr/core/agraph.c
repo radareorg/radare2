@@ -100,6 +100,11 @@ struct agraph_refresh_data {
 	int fs;
 };
 
+struct r_agraph_location {
+	int x;
+	int y;
+};
+
 #define G(x, y) r_cons_canvas_gotoxy (g->can, x, y)
 #define W(x) r_cons_canvas_write (g->can, x)
 #define F(x, y, x2, y2, c) r_cons_canvas_fill (g->can, x, y, x2, y2, c)
@@ -3570,6 +3575,7 @@ static void agraph_init(RAGraph *g) {
 	g->hints = 1;
 	g->movspeed = DEFAULT_SPEED;
 	g->db = sdb_new0 ();
+	r_vector_init (&g->ghits.word_list, sizeof (struct r_agraph_location), NULL, NULL);
 }
 
 static void free_anode(RANode *n) {
@@ -4038,39 +4044,12 @@ static bool toggle_bb(RCore *core, ut64 addr) {
 	return false;
 }
 
-typedef struct r_canvas_location {
-	int x;
-	int y;
-} RPosition;
-
-static const char *strstr_xy(const char *p, const char *s, int *x, int *y) {
-	const char *d = strstr (p, s);
-	if (!d) {
-		return NULL;
-	}
-	const char *q;
-	int nl = 0;
-	int nc = *x;
-	for (q = p; q < d; q++) {
-		if (*q == '\n') {
-			nl++;
-			*x = 0;
-			nc = 0;
-		} else {
-			nc++;
-		}
-	}
-	*x += nc;
-	*y += nl;
-	return d;
-}
-
-static char *get_graph_string(RCore *core) {
+static char *get_graph_string(RCore *core, RAGraph *g) {
 	int c = r_config_get_i (core->config, "scr.color");
 	int u = r_config_get_i (core->config, "scr.utf8");
 	r_config_set_i (core->config, "scr.color", 0);
 	r_config_set_i (core->config, "scr.utf8", 0);
-	r_core_visual_graph (core, NULL, NULL, false);
+	r_core_visual_graph (core, g, NULL, false);
 	char *s = strdup (r_cons_get_buffer ());
 	r_cons_reset ();
 	r_config_set_i (core->config, "scr.color", c);
@@ -4078,72 +4057,53 @@ static char *get_graph_string(RCore *core) {
 	return s;
 }
 
-static void nextword(RCore *core, RConsCanvas *can, const char *word) {
-	r_return_if_fail (core && core->graph && can && word);
+static void nextword(RCore *core, RAGraph *g, const char *word) {
+	r_return_if_fail (core && core->graph && g && g->can && word);
 	if (R_STR_ISEMPTY (word)) {
 		return;
 	}
-	RAGraphHits *gh = &core->graph->ghits;
-	if (gh->word_list.v.len && gh->old_word && !strcmp (word, gh->old_word)) {
-		RPosition *pos = r_pvector_at (&gh->word_list, gh->word_nth);
-		if (pos) {
-			gh->word_nth++;
-		} else {
+	RAGraphHits *gh = &g->ghits;
+	RConsCanvas *can = g->can;
+	if (gh->word_list.len && gh->old_word && !strcmp (word, gh->old_word)) {
+		if (gh->word_nth >= gh->word_list.len) {
 			gh->word_nth = 0;
-			pos = r_pvector_at (&gh->word_list, gh->word_nth);
 		}
+
+		struct r_agraph_location *pos = r_vector_index_ptr (&gh->word_list, gh->word_nth);
+		gh->word_nth++;
 		if (pos) {
-			can->sx = pos->x;
-			can->sy = pos->y;
+			can->sx = -pos->x + can->w / 2;
+			can->sy = -pos->y + can->h / 2;
 		}
 		return;
 	} else {
-		r_pvector_fini (&gh->word_list);
-		r_pvector_init (&gh->word_list, free);
+		r_vector_clear (&gh->word_list);
 	}
-	char *s = get_graph_string (core);
-	const char *p = s;
+	char *s = get_graph_string (core, g);
 	r_cons_clear00 ();
 	r_cons_flush ();
-	int ox = 0;
-	int oy = 0;
-	size_t count = 0;
 	const size_t MAX_COUNT = 4096;
-	int x = 0;
-	int y = 0;
-	bool first_x = true;
+	const char *a = NULL;
+	size_t count = 0;
+	int x = 0, y = 0;
 	for (count = 0; count < MAX_COUNT; count++) {
-		x = 0;
-		const char *a = strstr_xy (p, word, &x, &y);
+		a = r_str_str_xy (s, word, a, &x, &y);
 		if (!a) {
 			break;
 		}
-		RPosition *pos = R_NEW0 (RPosition);
-		if (!pos) {
-			break;
+		struct r_agraph_location *pos = r_vector_push (&gh->word_list, NULL);
+		if (pos) {
+			pos->x = x + g->x;
+			pos->y = y + g->y;
 		}
-		if (first_x) {
-			gh->x_origin = x;
-			first_x = false;
-		}
-		const size_t yhalf = can->h / 6;
-		pos->y = -y + yhalf;
-		if (oy == pos->y) {
-			const size_t xhalf = can->w / 2;
-			pos->x = - (x - (ox * 2) - xhalf);
-		} else {
-			const size_t nhalf = can->w / 3;
-			pos->x = gh->x_origin - x + nhalf;
-		}
-		oy = pos->y;
-		ox = pos->x;
-		r_pvector_push (&gh->word_list, pos);
-		p = a + 1;
 	}
 	free (gh->old_word);
 	gh->old_word = strdup (word);
 	free (s);
-	return nextword (core, can, word);
+	if (!a && count == 0) {
+		return;
+	}
+	nextword (core, g, word);
 }
 
 R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive) {
@@ -4343,7 +4303,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			break;
 		case '\\':
-			nextword (core, can, r_config_get (core->config, "scr.highlight"));
+			nextword (core, g, r_config_get (core->config, "scr.highlight"));
 			break;
 		case 'b':
 			r_core_visual_browse (core, "");
@@ -4942,8 +4902,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		}
 	}
-        RAGraphHits *gh = &core->graph->ghits;
-	r_pvector_fini (&gh->word_list);
+	r_vector_fini (&g->ghits.word_list);
 	r_cons_break_pop ();
 	r_config_set (core->config, "asm.comments", r_str_bool (asm_comments));
 	core->cons->event_resize = NULL;
