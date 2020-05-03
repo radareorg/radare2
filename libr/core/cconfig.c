@@ -2089,26 +2089,37 @@ static bool cb_scrhighlight(void *user, void *data) {
 }
 
 #if __WINDOWS__
-static bool scr_ansicon(void *user, void *data) {
+static bool scr_vtmode(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	if (!strcmp (node->value, "true")) {
+	if (r_str_is_true (node->value)) {
 		node->i_value = 1;
 	}
-	r_line_singleton ()->ansicon = r_cons_singleton ()->ansicon = node->i_value;
-	HANDLE streams[] = { GetStdHandle (STD_OUTPUT_HANDLE), GetStdHandle (STD_ERROR_HANDLE) };
+	node->i_value = node->i_value > 2 ? 2 : node->i_value;
+	r_line_singleton ()->vtmode = r_cons_singleton ()->vtmode = node->i_value;
+	
 	DWORD mode;
+	HANDLE input = GetStdHandle (STD_INPUT_HANDLE);
+	GetConsoleMode (input, &mode);
+	if (node->i_value == 2) {
+		SetConsoleMode (input, mode & ENABLE_VIRTUAL_TERMINAL_INPUT);
+		r_cons_singleton ()->term_raw = ENABLE_VIRTUAL_TERMINAL_INPUT;
+	} else {
+		SetConsoleMode (input, mode & ~ENABLE_VIRTUAL_TERMINAL_INPUT);
+		r_cons_singleton ()->term_raw = 0;
+	}
+	HANDLE streams[] = { GetStdHandle (STD_OUTPUT_HANDLE), GetStdHandle (STD_ERROR_HANDLE) };
 	int i;
-	if (node->i_value == 1) {  // scr.ansicon=2 to show esc seqs (for debugging) if using non-ConEmu-hosted cmd.exe
+	if (node->i_value > 0) {
 		for (i = 0; i < R_ARRAY_SIZE (streams); i++) {
 			GetConsoleMode (streams[i], &mode);
 			SetConsoleMode (streams[i],
-			                mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+				mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 		}
 	} else {
 		for (i = 0; i < R_ARRAY_SIZE (streams); i++) {
 			GetConsoleMode (streams[i], &mode);
 			SetConsoleMode (streams[i],
-			                mode & ~ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+				mode & ~ENABLE_VIRTUAL_TERMINAL_PROCESSING & ~ENABLE_WRAP_AT_EOL_OUTPUT);
 		}
 	}
 	return true;
@@ -3518,8 +3529,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("scr.slow", "true", "Do slow stuff on visual mode like RFlag.get_at(true)");
 	SETCB ("scr.prompt.popup", "false", &cb_scr_prompt_popup, "Show widget dropdown for autocomplete");
 #if __WINDOWS__
-	SETICB ("scr.ansicon", r_cons_singleton ()->ansicon,
-		&scr_ansicon, "Use ANSICON mode or not on Windows");
+	SETICB ("scr.vtmode", r_cons_singleton ()->vtmode,
+		&scr_vtmode, "Use VT sequences on Windows (0: Disable, 1: Output, 2: Input & Output)");
 #endif
 #if __ANDROID__
 	SETBPREF ("scr.responsive", "true", "Auto-adjust Visual depending on screen (e.g. unset asm.bytes)");

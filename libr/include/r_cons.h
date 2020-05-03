@@ -40,6 +40,9 @@ extern "C" {
 # ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
 # define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
 # endif
+# ifndef ENABLE_VIRTUAL_TERMINAL_INPUT
+# define ENABLE_VIRTUAL_TERMINAL_INPUT 0x0200
+# endif
 #else
 #include <unistd.h>
 #endif
@@ -494,7 +497,7 @@ typedef struct r_cons_t {
 #if __UNIX__
 	struct termios term_raw, term_buf;
 #elif __WINDOWS__
-	DWORD term_raw, term_buf;
+	DWORD term_raw, term_buf, term_xterm;
 #endif
 	RNum *num;
 	/* Pager (like more or less) to use if the output doesn't fit on the
@@ -510,9 +513,7 @@ typedef struct r_cons_t {
 	const char **vline;
 	int refcnt;
 	R_DEPRECATE bool newline;
-#if __WINDOWS__
-	int ansicon;
-#endif
+	int vtmode;
 	bool flush;
 	bool use_utf8; // use utf8 features
 	bool use_utf8_curvy; // use utf8 curved corners
@@ -827,7 +828,7 @@ R_API int r_cons_pipe_open(const char *file, int fdn, int append);
 R_API void r_cons_pipe_close(int fd);
 
 #if __WINDOWS__
-R_API bool r_cons_is_ansicon(void);
+R_API int r_cons_is_vtcompat(void);
 R_API void r_cons_w32_clear(void);
 R_API void r_cons_w32_gotoxy(int fd, int x, int y);
 R_API int r_cons_w32_print(const char *ptr, int len, bool vmode);
@@ -1070,9 +1071,7 @@ struct r_line_t {
 	RLineHud *hud;
 	RList *sdbshell_hist;
 	RListIter *sdbshell_hist_iter;
-#if __WINDOWS__
-	int ansicon;
-#endif
+	int vtmode;
 }; /* RLine */
 
 #ifdef R_API
