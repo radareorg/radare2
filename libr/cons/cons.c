@@ -1437,6 +1437,11 @@ R_API int r_cons_is_vtcompat(void) {
 		free (wt_session);
 		return 2;
 	}
+	char *alacritty = r_sys_getenv ("ALACRITTY_LOG");
+	if (alacritty) {
+		free (alacritty);
+		return 1;
+	}
 	char *term = r_sys_getenv ("TERM");
 	if (term) {
 		if (strstr (term, "xterm")) {
