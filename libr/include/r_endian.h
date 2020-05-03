@@ -322,6 +322,18 @@ static inline ut64 r_read_ble64(const void *src, bool big_endian) {
 	return big_endian? r_read_be64 (src): r_read_le64 (src);
 }
 
+static inline ut16 r_read_at_ble16(const void *src, size_t offset, bool big_endian) {
+	return big_endian ? r_read_at_be16 (src, offset) : r_read_at_le16 (src, offset);
+}
+
+static inline ut32 r_read_at_ble32(const void *src, size_t offset, bool big_endian) {
+	return big_endian ? r_read_at_be32 (src, offset) : r_read_at_le32 (src, offset);
+}
+
+static inline ut64 r_read_at_ble64(const void *src, size_t offset, bool big_endian) {
+	return big_endian ? r_read_at_be64 (src, offset) : r_read_at_le64 (src, offset);
+}
+
 static inline ut64 r_read_ble(const void *src, bool big_endian, int size) {
 	switch (size) {
 	case 8:
