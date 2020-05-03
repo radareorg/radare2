@@ -28,9 +28,8 @@ typedef struct r_ascii_node_t {
 
 typedef struct r_core_graph_hits_t {
 	char *old_word ;
-	RPVector word_list;
+	RVector word_list;
 	int word_nth;
-	int x_origin;
 } RAGraphHits;
 
 
