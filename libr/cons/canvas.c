@@ -218,49 +218,6 @@ R_API bool r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
 	return ret;
 }
 
-static char *canvas_string(RConsCanvas *c, size_t pos) {
-	int x, y;
-	char *s = calloc (c->w, c->h);
-	if (!s) {
-		return NULL;
-	}
-	char *p = s;
-	int ox = c->x;
-	int oy = c->y;
-	for (y = oy; y < c->h; y ++) {
-		for (x = (y == oy)? ox: 0; x < c->w; x ++) {
-			char ch = c->b[y][x];
-			const char *rune = r_cons_get_rune ((const ut8)ch);
-			if (rune) {
-				size_t rune_len = strlen (rune);
-				memcpy (p, rune, rune_len + 1);
-				p += rune_len;
-			} else {
-				*p = c->b[y][x];
-			}
-		}
-	}
-	return s;
-}
-
-static int count_newlines(char *s, size_t len, size_t *col) {
-	size_t nl = 0;
-	size_t nc = 0;
-	size_t i;
-	for (i = 0; i < len; i++) {
-		if (s[i] == '\n') {
-			nl++;
-			nc = 0;
-		} else {
-			nc ++;
-		}
-	}
-	if (col) {
-		*col = nc;
-	}
-	return nl;
-}
-
 R_API RConsCanvas *r_cons_canvas_new(int w, int h) {
 	if (w < 1 || h < 1) {
 		return NULL;
