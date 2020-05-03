@@ -72,7 +72,7 @@ typedef struct r_bin_elf_string_t {
 	int last;
 } RBinElfString;
 
-typedef struct r_bin_elf_dynamic_info {
+typedef struct Elf_(r_bin_elf_dynamic_info) {
 	Elf_(Xword) dt_pltrelsz;
 	Elf_(Addr) dt_pltgot;
 	Elf_(Addr) dt_hash;

@@ -51,11 +51,15 @@
 #define WORD_MAX UT64_MAX
 #define READWORD(x, i) READ64 (x, i)
 #define BREADWORD(x, i) BREAD64 (x, i)
+#define ELF_ADDR_MAX UT64_MAX
+#define ELF_XWORD_MAX UT64_MAX
 #else
 #define WORDSIZE 0x4
 #define WORD_MAX UT32_MAX
 #define READWORD(x, i) READ32 (x, i)
 #define BREADWORD(x, i) BREAD32 (x, i)
+#define ELF_ADDR_MAX UT32_MAX
+#define ELF_XWORD_MAX UT64_MAX
 #endif
 
 #define NUMENTRIES_ROUNDUP(sectionsize, entrysize) (((sectionsize) + (entrysize)-1) / (entrysize))
@@ -523,6 +527,25 @@ static int compute_dyn_entries(ELFOBJ *bin, Elf_(Phdr) *dyn_phdr, ut64 dyn_size)
 	return res;
 }
 
+static void set_default_value_dynamic_info(ELFOBJ *bin) {
+	bin->dyn_info.dt_pltrelsz = 0;
+	bin->dyn_info.dt_pltgot = ELF_ADDR_MAX;
+	bin->dyn_info.dt_hash = ELF_ADDR_MAX;
+	bin->dyn_info.dt_strtab = ELF_ADDR_MAX;
+	bin->dyn_info.dt_symtab = ELF_ADDR_MAX;
+	bin->dyn_info.dt_rela = ELF_ADDR_MAX;
+	bin->dyn_info.dt_relasz = 0;
+	bin->dyn_info.dt_relaent = 0;
+	bin->dyn_info.dt_strsz = 0;
+	bin->dyn_info.dt_syment = 0;
+	bin->dyn_info.dt_rel = ELF_ADDR_MAX;
+	bin->dyn_info.dt_relsz = 0;
+	bin->dyn_info.dt_relent = 0;
+	bin->dyn_info.dt_pltrel = ELF_XWORD_MAX;
+	bin->dyn_info.dt_jmprel = ELF_ADDR_MAX;
+	bin->dyn_info.dt_pltgot = ELF_ADDR_MAX;
+}
+
 static int init_dynamic_section(ELFOBJ *bin) {
 	Elf_(Dyn) *dyn = NULL;
 	ut64 strtabaddr = 0;
@@ -531,6 +554,7 @@ static int init_dynamic_section(ELFOBJ *bin) {
 	int i, len, r;
 	ut8 sdyn[sizeof (Elf_(Dyn))] = { 0 };
 	ut64 dyn_size = 0, loaded_offset;
+	set_default_value_dynamic_info(bin);
 
 	r_return_val_if_fail (bin, false);
 	if (!bin->phdr || !bin->ehdr.e_phnum) {
@@ -563,6 +587,7 @@ static int init_dynamic_section(ELFOBJ *bin) {
 	if (!dyn_size || loaded_offset + dyn_size > bin->size) {
 		goto beach;
 	}
+
 	for (i = 0; i < entries; i++) {
 		int j = 0;
 		len = r_buf_read_at (bin->b, loaded_offset + i * sizeof (Elf_(Dyn)), sdyn, sizeof (Elf_(Dyn)));
@@ -1347,7 +1372,7 @@ static bool is_thumb_symbol(ut64 plt_addr) {
 
 static ut64 get_import_addr_arm(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 got_addr = bin->dyn_info.dt_pltgot;
-	if (!got_addr) {
+	if (got_addr == ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
 
@@ -1379,7 +1404,7 @@ static ut64 get_import_addr_mips(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 jmprel_addr = bin->dyn_info.dt_jmprel;
 	ut64 got_addr = bin->dyn_info.dt_mips_pltgot;
 
-	if (!jmprel_addr || !got_addr) {
+	if (jmprel_addr == ELF_ADDR_MAX || got_addr == ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
 
@@ -1410,7 +1435,7 @@ static size_t get_size_rel_mode(Elf_(Xword) rel_mode) {
 }
 
 static size_t get_num_relocs_dynamic_plt(ELFOBJ *bin) {
-	if (bin->dyn_info.dt_pltrelsz) {
+	if (bin->dyn_info.dt_pltrelsz != ELF_ADDR_MAX) {
 		return bin->dyn_info.dt_pltrelsz / get_size_rel_mode (bin->dyn_info.dt_pltrel);
 	}
 	return 0;
@@ -1418,7 +1443,7 @@ static size_t get_num_relocs_dynamic_plt(ELFOBJ *bin) {
 
 static ut64 get_import_addr_riscv(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 got_addr = bin->dyn_info.dt_pltgot;
-	if (!got_addr) {
+	if (got_addr == ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
 
@@ -1443,6 +1468,9 @@ static ut64 get_import_addr_sparc(ELFOBJ *bin, RBinElfReloc *rel) {
 
 static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 plt_addr = bin->dyn_info.dt_pltgot;
+	if (plt_addr == ELF_ADDR_MAX) {
+		return UT64_MAX;
+	}
 	ut64 p_plt_addr = Elf_(r_bin_elf_v2p_new) (bin, plt_addr);
 	if (p_plt_addr == UT64_MAX) {
 		return UT64_MAX;
@@ -1469,7 +1497,7 @@ static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
 
 static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 got_addr = bin->dyn_info.dt_pltgot;
-	if (!got_addr) {
+	if (got_addr == ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
 
@@ -2620,7 +2648,8 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin, RBinElfReloc *rel
 	size_t size = get_size_rel_mode (bin->dyn_info.dt_pltrel);
 
 	for (offset = 0; offset < bin->dyn_info.dt_pltrelsz; offset += size) {
-		read_reloc (bin, relocs + pos, bin->dyn_info.dt_pltrel, bin->dyn_info.dt_jmprel + offset - bin->baddr);
+		read_reloc (bin, relocs + pos, bin->dyn_info.dt_pltrel,
+				bin->dyn_info.dt_jmprel + offset - bin->baddr);
 		fix_rva_and_offset_exec_file (bin, relocs + pos);
 		pos++;
 		++i;
@@ -2645,15 +2674,18 @@ static size_t get_next_not_analysed_offset(ELFOBJ *bin, size_t section_offset, s
 
 	size_t g_offset = section_offset + offset;
 
-	if (bin->dyn_info.dt_rela - base_addr <= g_offset && g_offset < bin->dyn_info.dt_rela + bin->dyn_info.dt_relasz - base_addr) {
+	if (bin->dyn_info.dt_rela != ELF_ADDR_MAX && bin->dyn_info.dt_rela - base_addr <= g_offset
+		&& g_offset < bin->dyn_info.dt_rela + bin->dyn_info.dt_relasz - base_addr) {
 		return bin->dyn_info.dt_rela + bin->dyn_info.dt_relasz - g_offset - base_addr;
 	}
 
-	if (bin->dyn_info.dt_rel - base_addr <= g_offset && g_offset < bin->dyn_info.dt_rel + bin->dyn_info.dt_relsz - base_addr) {
+	if (bin->dyn_info.dt_rel != ELF_ADDR_MAX && bin->dyn_info.dt_rel - base_addr <= g_offset
+		&& g_offset < bin->dyn_info.dt_rel + bin->dyn_info.dt_relsz - base_addr) {
 		return bin->dyn_info.dt_rel + bin->dyn_info.dt_relsz - g_offset - base_addr;
 	}
 
-	if (bin->dyn_info.dt_jmprel - base_addr <= g_offset && g_offset < bin->dyn_info.dt_jmprel + bin->dyn_info.dt_pltrelsz - base_addr) {
+	if (bin->dyn_info.dt_jmprel != ELF_ADDR_MAX && bin->dyn_info.dt_jmprel - base_addr <= g_offset
+		&& g_offset < bin->dyn_info.dt_jmprel + bin->dyn_info.dt_pltrelsz - base_addr) {
 		return bin->dyn_info.dt_jmprel + bin->dyn_info.dt_pltrelsz - g_offset - base_addr;
 	}
 
