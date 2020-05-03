@@ -576,6 +576,9 @@ R_API RCons *r_cons_new() {
 }
 
 R_API RCons *r_cons_free() {
+#if __WINDOWS__
+	r_cons_enable_mouse (false);
+#endif
 	I.refcnt--;
 	if (I.refcnt != 0) {
 		return NULL;
