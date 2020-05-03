@@ -838,10 +838,8 @@ static void visual_breakpoint(RCore *core) {
 static void visual_continue(RCore *core) {
 	if (r_config_get_i (core->config, "cfg.debug")) {
 		r_core_cmd (core, "dc", 0);
-	}
-	else {
-		r_core_cmd (core, "aec", 0);
-		r_core_cmd (core, ".ar*", 0);
+	} else {
+		r_core_cmd (core, "aec;.ar*", 0);
 	}
 }
 
