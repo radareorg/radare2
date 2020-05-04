@@ -105,7 +105,7 @@ R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap, unsigned int addrsiz
 }
 
 R_API bool r_anal_esil_set_op(RAnalEsil *esil, const char *op, RAnalEsilOpCb code, ut32 push, ut32 pop, ut32 type) {
-	r_return_val_if_fail(code && R_STR_ISNOTEMPTY (op) && esil && esil->ops, false);
+	r_return_val_if_fail (code && R_STR_ISNOTEMPTY (op) && esil && esil->ops, false);
 	RAnalEsilOp *eop = ht_pp_find (esil->ops, op, NULL);
 	if (!eop) {
 		eop = R_NEW (RAnalEsilOp);
