@@ -20,6 +20,13 @@ static bool cmd_desc_set_parent(RCmdDesc *cd, RCmdDesc *parent) {
 	return true;
 }
 
+static bool cmd_desc_remove_parent(RCmdDesc *cd) {
+	r_return_val_if_fail (cd && cd->parent, false);
+	r_pvector_remove_data (&cd->parent->children, cd);
+	cd->parent = NULL;
+	return NULL;
+}
+
 static RCmdDesc *create_cmd_desc(RCmdDesc *parent, RCmdDescType type, const char *name) {
 	RCmdDesc *res = R_NEW0 (RCmdDesc);
 	if (!res) {
@@ -81,6 +88,7 @@ R_API RCmd *r_cmd_free(RCmd *cmd) {
 	ht_up_free (cmd->ts_symbols_ht);
 	r_cmd_alias_free (cmd);
 	r_cmd_macro_fini (&cmd->macro);
+	ht_pp_free (cmd->ht_cmds);
 	// dinitialize plugin commands
 	r_core_plugin_fini (cmd);
 	r_list_free (cmd->plist);
@@ -99,23 +107,21 @@ R_API RCmdDesc *r_cmd_get_root(RCmd *cmd) {
 	return cmd->root_cmd_desc;
 }
 
-static bool is_valid_desc(RCmdDesc *cd, const char *name) {
-	return cd->type == R_CMD_DESC_TYPE_OLDINPUT ||
-		(cd->type == R_CMD_DESC_TYPE_ARGV && !strcmp (cd->name, name));
-}
-
 R_API RCmdDesc *r_cmd_get_desc(RCmd *cmd, const char *cmd_identifier) {
 	r_return_val_if_fail (cmd && cmd_identifier, NULL);
 	char *cmdid = strdup (cmd_identifier);
 	char *end_cmdid = cmdid + strlen (cmdid);
 	RCmdDesc *res = NULL;
+	bool is_exact_match = true;
 	// match longer commands first
 	while (*cmdid) {
 		res = ht_pp_find (cmd->ht_cmds, cmdid, NULL);
 		r_warn_if_fail (!res || res->type == R_CMD_DESC_TYPE_OLDINPUT || res->type == R_CMD_DESC_TYPE_ARGV);
-		if (res && is_valid_desc (res, cmd_identifier)) {
+		if (res && (res->type == R_CMD_DESC_TYPE_OLDINPUT ||
+			(res->type == R_CMD_DESC_TYPE_ARGV && is_exact_match))) {
 			goto out;
 		}
+		is_exact_match = false;
 		*(--end_cmdid) = '\0';
 	}
 out:
@@ -332,7 +338,7 @@ R_API int r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
 			}
 		}
 	}
-	free (exec_string);
+	R_FREE (exec_string);
 	if (res) {
 		return 1;
 	}
@@ -349,7 +355,7 @@ R_API int r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
 	case R_CMD_DESC_TYPE_OLDINPUT:
 		exec_string = r_cmd_parsed_args_execstr (args);
 		res = cd->d.oldinput_data.cb (cmd->data, exec_string + strlen (cd->name));
-		free (exec_string);
+		R_FREE (exec_string);
 		break;
 	default:
 		res = -1;
@@ -946,6 +952,7 @@ R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *nam
 
 	res->d.argv_data.cb = cb;
 	if (!ht_pp_insert (cmd->ht_cmds, name, res)) {
+		cmd_desc_remove_parent (res);
 		r_cmd_desc_free (res);
 		return NULL;
 	}
@@ -967,6 +974,7 @@ R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char 
 	}
 	res->d.oldinput_data.cb = cb;
 	if (!ht_pp_insert (cmd->ht_cmds, name, res)) {
+		cmd_desc_remove_parent (res);
 		r_cmd_desc_free (res);
 		return NULL;
 	}
