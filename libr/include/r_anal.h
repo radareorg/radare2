@@ -220,6 +220,16 @@ typedef struct enum_case {
 	const int val;
 } RAnalEnumCase;
 
+typedef struct struct_member {
+	char *name;
+	char *type;
+} RAnalStructMember;
+
+typedef struct union_member {
+	char *name;
+	char *type;
+} RAnalUnionMember;
+
 typedef enum {
 	R_ANAL_BASE_TYPE_KIND_STRUCT,
 	R_ANAL_BASE_TYPE_KIND_UNION,
@@ -227,11 +237,15 @@ typedef enum {
 } RAnalBaseTypeKind;
 
 typedef struct r_anal_base_type_struct {
-	RVector members; // describe the struct in some way
+	RVector/*<RAnalStructMember>*/ members;
 } RAnalBaseTypeStruct;
 
+typedef struct r_anal_base_type_union {
+	RVector/*<RAnalUnionMember>*/ members;
+} RAnalBaseTypeUnion;
+
 typedef struct r_anal_base_type_enum {
-	RVector/*<RAnalEnumCase*/ cases; // list of all the enum cases
+	RVector/*<RAnalEnumCase*/ cases; // list of all the enum casessssss
 } RAnalBaseTypeEnum;
 
 typedef struct r_anal_base_type {
@@ -239,6 +253,7 @@ typedef struct r_anal_base_type {
 	union {
 		RAnalBaseTypeStruct struct_data;
 		RAnalBaseTypeEnum enum_data;
+		RAnalBaseTypeUnion union_data;
 	};
 } RAnalBaseType;
 
