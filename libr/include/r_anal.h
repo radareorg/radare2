@@ -1102,7 +1102,7 @@ typedef struct r_anal_esil_t {
 	ut64 cur;	//used for carry-flagging and borrow-flagging
 	ut8 lastsz;	//in bits //used for signature-flag
 	/* native ops and custom ops */
-	Sdb *ops;
+	HtPP *ops;
 	char *current_opstr;
 	RIDStorage *sources;
 	SdbMini *interrupts;
