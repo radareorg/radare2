@@ -84,25 +84,12 @@ IFNOT HAVE_CLOCK_GETTIME {
 	}
 }
 
-SUPPORT_GNU99 = 0 ;
-SUPPORT_C99 = 0 ;
-
-CHECK SUPPORT_GNU99 <<EOF
-echo "int main(int argc, char **argv) { return 0; }" > temp.c
-${CC} -std=gnu99 temp.c -o temp.c.bin
-SUPPORT_GNU99=$?
-rm -f temp.c temp.c.bin
-<<EOF
+CHKFLG SUPPORT_GNU99 -std=gnu99 ;
 
 IF SUPPORT_GNU99 {
 	NEWSHELL_CFLAGS += '-std=gnu99' ;
 }{
-	CHECK SUPPORT_C99 <<EOF
-	echo "int main(int argc, char **argv) { return 0; }" > temp.c
-	${CC} -std=c99 temp.c -o temp.c.bin
-	SUPPORT_C99=$?
-	rm -f temp.c temp.c.bin
-	<<EOF
+	CHKFLG SUPPORT_C99 -std=c99 ;
 	IF SUPPORT_C99 {
 		NEWSHELL_CFLAGS += '-std=c99' ;
 	}
