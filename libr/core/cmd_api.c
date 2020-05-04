@@ -325,9 +325,11 @@ R_API int r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
 	RCorePlugin *cp;
 	char *exec_string = r_cmd_parsed_args_execstr (args);
 	r_list_foreach (cmd->plist, iter, cp) {
-		res = cp->call (cmd->data, exec_string);
-		if (res) {
-			break;
+		if (cp->call) {
+			res = cp->call (cmd->data, exec_string);
+			if (res) {
+				break;
+			}
 		}
 	}
 	free (exec_string);
