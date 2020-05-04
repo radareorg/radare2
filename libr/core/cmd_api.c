@@ -315,7 +315,7 @@ static int cmdstatus2int(RCmdStatus s) {
 }
 
 R_API int r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
-	int res = -1;
+	int res = 0;
 
 	// As old RCorePlugin do not register new commands in RCmd, we have no
 	// way of knowing if one of those is able to handle the input, so we
@@ -352,6 +352,7 @@ R_API int r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
 		free (exec_string);
 		break;
 	default:
+		res = -1;
 		R_LOG_ERROR ("RCmdDesc type not handled\n");
 		break;
 	}
