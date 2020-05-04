@@ -228,7 +228,7 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 
 	hdr->unit_length.part1 = READ32 (buf);
 	if (hdr->unit_length.part1 == DWARF_INIT_LEN_64) {
-		hdr->unit_length.part2 = READ32 (buf); // XX should be 64?
+		hdr->unit_length.part2 = READ64 (buf);
 	}
 
 	s = sdb_new (NULL, NULL, 0);
@@ -246,7 +246,9 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 		return NULL;
 	}
 	hdr->min_inst_len = READ8 (buf);
-	//hdr->max_ops_per_inst = READ (buf, ut8);
+	if (hdr->version >= 4) {
+		hdr->max_ops_per_inst = READ (buf, ut8);
+	}
 	hdr->file_names = NULL;
 	hdr->default_is_stmt = READ8 (buf);
 	hdr->line_base = READ (buf, char);
@@ -259,6 +261,7 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 		fprintf (f, "  version: %d\n", hdr->version);
 		fprintf (f, "  header_length: : %"PFMT64d"\n", hdr->header_length);
 		fprintf (f, "  mininstlen: %d\n", hdr->min_inst_len);
+		fprintf (f, "  max_ops_per_inst: %d\n", hdr->max_ops_per_inst);
 		fprintf (f, "  is_stmt: %d\n", hdr->default_is_stmt);
 		fprintf (f, "  line_base: %d\n", hdr->line_base);
 		fprintf (f, "  line_range: %d\n", hdr->line_range);
@@ -288,11 +291,6 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 		char *str = r_str_ndup ((const char *)buf, len);
 		if (len<1 || len >= 0xfff) {
 			buf += 1;
-			free (str);
-			break;
-		}
-		if (*str != '/' && *str != '.') {
-			// no more paths in here
 			free (str);
 			break;
 		}
@@ -450,8 +448,12 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 		return NULL;
 	}
 
-	buf = r_leb128 (buf, &op_len);
-	buf_end = buf+len;
+	buf_end = buf + len;
+	buf = r_leb128 (buf, len, &op_len);
+	if (buf >= buf_end) {
+		return NULL;
+	}
+
 	opcode = *buf++;
 
 	if (f) {
@@ -495,12 +497,19 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 
 		buf += (strlen (filename) + 1);
 		ut64 dir_idx;
+		ut64 ignore;
 		if (buf + 1 < buf_end) {
-			buf = r_uleb128 (buf, ST32_MAX, &dir_idx);
+			buf = r_uleb128 (buf, buf_end - buf, &dir_idx);
+		}
+		if (buf + 1 < buf_end) {
+			buf = r_uleb128 (buf, buf_end - buf, &ignore);
+		}
+		if (buf + 1 < buf_end) {
+			buf = r_uleb128 (buf, buf_end - buf, &ignore);
 		}
 		break;
 	case DW_LNE_set_discriminator:
-		buf = r_uleb128 (buf, ST32_MAX, &addr);
+		buf = r_uleb128 (buf, buf_end - buf, &addr);
 		if (f) {
 			fprintf (f, "set Discriminator to %"PFMT64d"\n", addr);
 		}
@@ -508,7 +517,8 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 		break;
 	default:
 		if (f) {
-			fprintf (f, "Unexpeced opcode %d\n", opcode);
+			fprintf (f, "Unexpected ext opcode %d\n", opcode);
+			buf = NULL;
 		}
 		break;
 	}
@@ -594,7 +604,7 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 		regs->basic_block = DWARF_FALSE;
 		break;
 	case DW_LNS_advance_pc:
-		buf = r_uleb128 (buf, ST32_MAX, &addr);
+		buf = r_uleb128 (buf, buf_end - buf, &addr);
 		regs->address += addr * hdr->min_inst_len;
 		if (f) {
 			fprintf (f, "Advance PC by %"PFMT64d" to 0x%"PFMT64x"\n",
@@ -602,21 +612,21 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 		}
 		break;
 	case DW_LNS_advance_line:
-		buf = r_leb128(buf, &sbuf);
+		buf = r_leb128(buf, buf_end - buf, &sbuf);
 		regs->line += sbuf;
 		if (f) {
 			fprintf (f, "Advance line by %"PFMT64d", to %"PFMT64d"\n", sbuf, regs->line);
 		}
 		break;
 	case DW_LNS_set_file:
-		buf = r_uleb128 (buf, ST32_MAX, &addr);
+		buf = r_uleb128 (buf, buf_end - buf, &addr);
 		if (f) {
 			fprintf (f, "Set file to %"PFMT64d"\n", addr);
 		}
 		regs->file = addr;
 		break;
 	case DW_LNS_set_column:
-		buf = r_uleb128 (buf, ST32_MAX, &addr);
+		buf = r_uleb128 (buf, buf_end - buf, &addr);
 		if (f) {
 			fprintf (f, "Set column to %"PFMT64d"\n", addr);
 		}
@@ -667,7 +677,7 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 		}
 		break;
 	case DW_LNS_set_isa:
-		buf = r_uleb128 (buf, ST32_MAX, &addr);
+		buf = r_uleb128 (buf, buf_end - buf, &addr);
 		regs->isa = addr;
 		if (f) {
 			fprintf (f, "set_isa\n");
@@ -675,7 +685,7 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 		break;
 	default:
 		if (f) {
-			fprintf (f, "Unexpected opcode\n");
+			fprintf (f, "Unexpected std opcode %d\n", opcode);
 		}
 		break;
 	}
@@ -700,7 +710,7 @@ static const ut8* r_bin_dwarf_parse_opcodes(const RBin *a, const ut8 *obuf,
 		if (!opcode) {
 			ext_opcode = *buf;
 			buf = r_bin_dwarf_parse_ext_opcode (a, buf, len, hdr, regs, f, mode);
-			if (ext_opcode == DW_LNE_end_sequence) {
+			if (!buf || ext_opcode == DW_LNE_end_sequence) {
 				break;
 			}
 		} else if (opcode >= hdr->opcode_base) {
@@ -728,7 +738,7 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 	RBinDwarfLNPHeader hdr = {{0}};
 	const ut8 *buf = NULL, *buf_tmp = NULL, *buf_end = NULL;
 	RBinDwarfSMRegisters regs;
-	int tmplen;
+	size_t tmplen;
 	FILE *f = NULL;
 	RBinFile *binfile = a ? a->cur : NULL;
 
@@ -742,13 +752,19 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 	buf_end = obuf + len;
 	while (buf + 1 < buf_end) {
 		buf_tmp = buf;
+		tmplen = buf_end - buf;
 		buf = r_bin_dwarf_parse_lnp_header (a->cur, buf, buf_end, &hdr, f, mode);
 		if (!buf) {
 			return false;
 		}
 		r_bin_dwarf_set_regs_default (&hdr, &regs);
-		tmplen = (int)(buf_end - buf);
-		tmplen = R_MIN (tmplen, 4 + hdr.unit_length.part1);
+		ut64 unit_length;
+		if (hdr.unit_length.part1 == DWARF_INIT_LEN_64) {
+			unit_length = hdr.unit_length.part2 + 4;
+		} else {
+			unit_length = hdr.unit_length.part1 + 4;
+		}
+		tmplen = R_MIN (tmplen, unit_length);
 		if (tmplen < 1) {
 			r_bin_dwarf_header_fini (&hdr);
 			break;
@@ -1269,8 +1285,6 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 			value->encoding.block.data = data;
 		}
 		break;
-#if 0
-// This causes segfaults to happen
 	case DW_FORM_data2:
 		value->encoding.data = READ16 (buf);
 		break;
@@ -1280,14 +1294,13 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 	case DW_FORM_data8:
 		value->encoding.data = READ64 (buf);
 		break;
-#endif
 	case DW_FORM_string:
 		value->encoding.str_struct.string = *buf? strdup ((const char*)buf) : NULL;
 		buf += (strlen ((const char*)buf) + 1);
 		break;
 	case DW_FORM_block:
 		buf = r_uleb128 (buf, buf_end - buf, &value->encoding.block.length);
-		if (!buf) {
+		if (!buf || buf >= buf_end) {
 			return NULL;
 		}
 		value->encoding.block.data = calloc (sizeof (ut8), value->encoding.block.length);
@@ -1310,7 +1323,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->encoding.flag = READ (buf, ut8);
 		break;
 	case DW_FORM_sdata:
-		buf = r_leb128 (buf, &value->encoding.sdata);
+		buf = r_leb128 (buf, buf_end - buf, &value->encoding.sdata);
 		break;
 	case DW_FORM_strp:
 		value->encoding.str_struct.offset = READ32 (buf);
@@ -1363,7 +1376,7 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 	const ut8 *buf = obuf, *buf_end = obuf + (cu->hdr.length - 7);
 	ut64 abbr_code;
 	size_t i;
-	
+
 	if (cu->hdr.length > debug_str_len) {
 		//avoid oob read
 		return NULL;
@@ -1373,7 +1386,7 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 			r_bin_dwarf_expand_cu (cu);
 		}
 		buf = r_uleb128 (buf, buf_end - buf, &abbr_code);
-		if (abbr_code > da->length || !buf) {
+		if (abbr_code > da->length || !buf || buf >= buf_end) {
 			return NULL;
 		}
 
@@ -1525,7 +1538,7 @@ static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf, size_
 	while (buf && buf+1 < buf_end) {
 		offset = buf - obuf;
 		buf = r_uleb128 (buf, (size_t)(buf_end-buf), &tmp);
-		if (!buf || !tmp) {
+		if (!buf || !tmp || buf >= buf_end) {
 			continue;
 		}
 		if (da->length == da->capacity) {
@@ -1549,6 +1562,9 @@ static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf, size_
 				r_bin_dwarf_expand_abbrev_decl (tmpdecl);
 			}
 			buf = r_uleb128 (buf, (size_t)(buf_end - buf), &spec1);
+			if (buf >= buf_end) {
+				break;
+			}
 			buf = r_uleb128 (buf, (size_t)(buf_end - buf), &spec2);
 			tmpdecl->specs[tmpdecl->length].attr_name = spec1;
 			tmpdecl->specs[tmpdecl->length].attr_form = spec2;
