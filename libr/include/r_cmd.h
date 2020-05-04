@@ -83,7 +83,6 @@ typedef enum {
 typedef struct r_cmd_desc_t {
 	RCmdDescType type;
 	char *name;
-	char *help;
 	struct r_cmd_desc_t *parent;
 	int n_children;
 	RPVector children;
@@ -150,8 +149,8 @@ R_API RCmdDesc *r_cmd_get_root(RCmd *cmd);
 R_API RCmdDesc *r_cmd_get_desc(RCmd *cmd, const char *cmd_identifier);
 
 /* RCmdDescriptor */
-R_API RCmdDesc *r_cmd_desc_inner_new(RCmd *cmd, RCmdDesc *parent, const char *name, const char *help);
-R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *name, const char *help, RCmdArgvCb cb);
+R_API RCmdDesc *r_cmd_desc_inner_new(RCmd *cmd, RCmdDesc *parent, const char *name);
+R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb);
 R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdCb cb);
 R_API void r_cmd_desc_free(RCmdDesc *cd);
 R_API RCmdDesc *r_cmd_desc_parent(RCmdDesc *cd);

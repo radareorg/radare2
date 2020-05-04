@@ -84,14 +84,13 @@ static RCmdStatus afl_argv_handler(void *user, int argc, const char **argv) {
 bool test_cmd_descriptor_argv(void) {
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
-	RCmdDesc *cd = r_cmd_desc_argv_new (cmd, root, "afl", "list functions", afl_argv_handler);
+	RCmdDesc *cd = r_cmd_desc_argv_new (cmd, root, "afl", afl_argv_handler);
 	mu_assert_notnull (cd, "cmddesc created");
 	mu_assert_streq (cd->name, "afl", "command descriptor name is afl");
 	mu_assert_eq (cd->type, R_CMD_DESC_TYPE_ARGV, "type of command descriptor is argv");
 	mu_assert_ptreq (r_cmd_desc_parent (cd), root, "root parent descriptor");
 	mu_assert_eq (root->n_children, 1, "root has 1 child");
 	mu_assert_eq (cd->n_children, 0, "no children");
-	mu_assert_streq (cd->help, "list functions", "help was set");
 	r_cmd_free (cmd);
 	mu_end;
 }
@@ -99,9 +98,9 @@ bool test_cmd_descriptor_argv(void) {
 bool test_cmd_descriptor_argv_nested(void) {
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
-	RCmdDesc *af_cd = r_cmd_desc_inner_new (cmd, root, "af", "analyze functions");
-	r_cmd_desc_inner_new (cmd, root, "af2", "analyze functions2");
-	RCmdDesc *cd = r_cmd_desc_argv_new (cmd, af_cd, "afl", "list functions", afl_argv_handler);
+	RCmdDesc *af_cd = r_cmd_desc_inner_new (cmd, root, "af");
+	r_cmd_desc_inner_new (cmd, root, "af2");
+	RCmdDesc *cd = r_cmd_desc_argv_new (cmd, af_cd, "afl", afl_argv_handler);
 	mu_assert_ptreq (r_cmd_desc_parent (cd), af_cd, "parent of afl is af");
 	mu_assert_true (r_pvector_contains (&af_cd->children, cd), "afl is child of af");
 	r_cmd_free (cmd);
@@ -140,8 +139,8 @@ static int w_handler(void *user, const char *input) {
 bool test_cmd_descriptor_tree(void) {
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
-	RCmdDesc *a_cd = r_cmd_desc_inner_new (cmd, root, "a", "analysis commands");
-	r_cmd_desc_argv_new (cmd, a_cd, "ap", "find prelude", ap_handler);
+	RCmdDesc *a_cd = r_cmd_desc_inner_new (cmd, root, "a");
+	r_cmd_desc_argv_new (cmd, a_cd, "ap", ap_handler);
 	r_cmd_desc_oldinput_new (cmd, root, "w", w_handler);
 
 	void **it_cd;
@@ -157,8 +156,8 @@ bool test_cmd_descriptor_tree(void) {
 bool test_cmd_get_desc(void) {
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
-	RCmdDesc *a_cd = r_cmd_desc_inner_new (cmd, root, "a", "analysis commands");
-	RCmdDesc *ap_cd = r_cmd_desc_argv_new (cmd, a_cd, "ap", "find prelude", ap_handler);
+	RCmdDesc *a_cd = r_cmd_desc_inner_new (cmd, root, "a");
+	RCmdDesc *ap_cd = r_cmd_desc_argv_new (cmd, a_cd, "ap", ap_handler);
 	RCmdDesc *ae_cd = r_cmd_desc_oldinput_new (cmd, a_cd, "ae", ae_handler);
 	RCmdDesc *w_cd = r_cmd_desc_oldinput_new (cmd, root, "w", w_handler);
 
@@ -194,8 +193,8 @@ static int wv_handler(void *user, const char *input) {
 bool test_cmd_call_desc(void) {
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
-	RCmdDesc *p_cd = r_cmd_desc_inner_new (cmd, root, "p", "p commands");
-	r_cmd_desc_argv_new (cmd, p_cd, "pd", "print disasm", pd_handler);
+	RCmdDesc *p_cd = r_cmd_desc_inner_new (cmd, root, "p");
+	r_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler);
 	r_cmd_desc_oldinput_new (cmd, p_cd, "p", p_handler);
 	r_cmd_desc_oldinput_new (cmd, root, "wv", wv_handler);
 
