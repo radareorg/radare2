@@ -13,3 +13,14 @@ EXPECT=<<EOF
 |           0x0040052d      55             push rbp                    ; /tmp/r2-regressions/.//dwarftest.c:4
 EOF
 RUN
+
+NAME="Mach-O dSYM lines (armv7)"
+FILE=bins/mach0/TestRTTI-armv7-dSYM
+CMDS=<<EOF
+CL 0x0000a24e
+EOF
+EXPECT=<<EOF
+file: TestRTTI/TestRTTI.cpp
+line: 18
+EOF
+RUN
