@@ -544,6 +544,9 @@ static void set_default_value_dynamic_info(ELFOBJ *bin) {
 	bin->dyn_info.dt_pltrel = ELF_XWORD_MAX;
 	bin->dyn_info.dt_jmprel = ELF_ADDR_MAX;
 	bin->dyn_info.dt_pltgot = ELF_ADDR_MAX;
+	bin->dyn_info.dt_bind_now = false;
+	bin->dyn_info.dt_flags = ELF_XWORD_MAX;
+	bin->dyn_info.dt_flags_1 = ELF_XWORD_MAX;
 }
 
 static int init_dynamic_section(ELFOBJ *bin) {
@@ -648,6 +651,15 @@ static int init_dynamic_section(ELFOBJ *bin) {
 			break;
 		case DT_MIPS_PLTGOT:
 			bin->dyn_info.dt_mips_pltgot = dyn[i].d_un.d_ptr;
+			break;
+		case DT_BIND_NOW:
+			bin->dyn_info.dt_bind_now = true;
+			break;
+		case DT_FLAGS:
+			bin->dyn_info.dt_flags = dyn[i].d_un.d_ptr;
+			break;
+		case DT_FLAGS_1:
+			bin->dyn_info.dt_flags_1 = dyn[i].d_un.d_ptr;
 			break;
 		default:
 			if ((dyn[i].d_tag >= DT_VERSYM) && (dyn[i].d_tag <= DT_VERNEEDNUM)) {
@@ -1626,30 +1638,13 @@ int Elf_(r_bin_elf_has_relro)(ELFOBJ *bin) {
 	int i;
 	bool haveBindNow = false;
 	bool haveGnuRelro = false;
-	if (bin && bin->dyn_buf) {
-		for (i = 0; i < bin->dyn_entries; i++) {
-			switch (bin->dyn_buf[i].d_tag) {
-			case DT_BIND_NOW:
-				haveBindNow = true;
-				break;
-			case DT_FLAGS:
-				for (i++; i < bin->dyn_entries ; i++) {
-					ut32 dTag = bin->dyn_buf[i].d_tag;
-					if (!dTag) {
-						break;
-					}
-					switch (dTag) {
-					case DT_FLAGS_1:
-						if (bin->dyn_buf[i].d_un.d_val & DF_1_NOW) {
-							haveBindNow = true;
-							break;
-						}
-					}
-				}
-				break;
-			}
-		}
+
+	if (bin->dyn_info.dt_bind_now) {
+		haveBindNow = true;
+	} else if (bin->dyn_info.dt_flags != ELF_XWORD_MAX && bin->dyn_info.dt_flags != ELF_XWORD_MAX) {
+		haveBindNow = bin->dyn_info.dt_flags_1 & DF_1_NOW;
 	}
+
 	if (bin && bin->phdr) {
 		for (i = 0; i < bin->ehdr.e_phnum; i++) {
 			if (bin->phdr[i].p_type == PT_GNU_RELRO) {
