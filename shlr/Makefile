@@ -331,7 +331,7 @@ tree-sitter/libtree-sitter.$(EXT_AR): tree-sitter/lib/src/lib.o
 	$(RANLIB) $@
 
 tree-sitter/lib/src/lib.o:
-	$(CC) -std=c99 -c tree-sitter/lib/src/lib.c -o $@ -Itree-sitter/lib/include -Itree-sitter/lib/src $(CFLAGS)
+	$(CC) $(NEWSHELL_CFLAGS) -c tree-sitter/lib/src/lib.c -o $@ -Itree-sitter/lib/include -Itree-sitter/lib/src $(CFLAGS)
 
 tree-sitter-sync:
 	rm -rf tree-sitter tree-sitter.vc
@@ -348,7 +348,7 @@ radare2-shell-parser/libshell-parser.$(EXT_AR): radare2-shell-parser/src/parser.
 	$(RANLIB) $@
 
 radare2-shell-parser/src/parser.o: radare2-shell-parser/src/parser.c
-	$(CC) -c radare2-shell-parser/src/parser.c -o $@ -Iradare2-shell-parser/src/tree_sitter -Itree-sitter/lib/include $(CFLAGS)
+	$(CC) $(NEWSHELL_CFLAGS) -c radare2-shell-parser/src/parser.c -o $@ -Iradare2-shell-parser/src/tree_sitter -Itree-sitter/lib/include $(CFLAGS)
 
 radare2-shell-parser/src/scanner.o: radare2-shell-parser/src/scanner.c
 	$(CC) -c radare2-shell-parser/src/scanner.c -o $@ -Iradare2-shell-parser/src/tree_sitter -Itree-sitter/lib/include $(CFLAGS)
