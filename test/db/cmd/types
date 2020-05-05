@@ -1,3 +1,20 @@
+NAME=td anonymous struct in typedef
+FILE=--
+CMDS=<<EOF
+"td typedef struct {int a;} Foo;"
+"td typedef struct { char *hello; int world[]; } Bar;"
+ts~Foo,Bar
+ts Foo
+ts Bar
+EOF
+EXPECT=<<EOF
+Bar
+Foo
+pf d a
+pf zd hello world
+EOF
+RUN
+
 NAME=typelinks
 FILE=-
 CMDS=<<EOF
@@ -887,49 +904,28 @@ NAME=typedef struct
 FILE=-
 CMDS=<<EOF
 to bins/headers/12272.h
-ts 0
-ts 1
-?e ----
 ts A
 ts B
 ts O  # Broken but shouldn't hang
 ?e ----
-tk~^0,1
-tk~typedef.A=,typedef.B=,typedef.O=,struct.0,struct.1,struct.A,struct.B,struct.O
+tk~typedef.A=,typedef.B=,typedef.O=,struct.A,struct.B,struct.O
 ?e
-ts~0,1,A,B,O
+ts~A,B,O
 EOF
 EXPECT=<<EOF
 pf dF num num2
 pf c ch
 ----
-pf dF num num2
-pf c ch
-----
-0=struct
-1=struct
-struct.0=num,num2
-struct.0.!size=96
-struct.0.num=int32_t,0,0
-struct.0.num.meta=0
-struct.0.num2=double,8,0
-struct.0.num2.meta=10
-struct.1=ch
-struct.1.!size=8
-struct.1.ch=char,0,0
-struct.1.ch.meta=2
 struct.A=num
 struct.A.num=float,0,0
 struct.A.num.meta=9
 struct.O=ptr
 struct.O.ptr=char *,0,0
 struct.O.ptr.meta=4
-typedef.A=struct 0
-typedef.B=struct 1
+typedef.A=struct
+typedef.B=struct
 typedef.O=struct O
 
-0
-1
 A
 B
 O
@@ -954,27 +950,7 @@ EXPECT=<<EOF
 pf f num
 pf c ch
 
-struct.0=num
-struct.0.!size=32
-struct.0.num=float,0,0
-struct.0.num.meta=9
-struct.1=ch
-struct.1.!size=8
-struct.1.ch=char,0,0
-struct.1.ch.meta=2
-struct.2=num
-struct.2.!size=32
-struct.2.num=float,0,0
-struct.2.num.meta=9
-struct.3=ch
-struct.3.!size=8
-struct.3.ch=char,0,0
-struct.3.ch.meta=2
 
-0
-1
-2
-3
 A
 B
 EOF

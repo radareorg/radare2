@@ -406,13 +406,13 @@ static Sdb *TDB_ = NULL; // HACK
 
 static int stdifstruct(void *user, const char *k, const char *v) {
 	r_return_val_if_fail (TDB_, false);
-	if (!strcmp (v, "struct")) {
+	if (!strcmp (v, "struct") && !r_str_startswith (k, "typedef")) {
 		return true;
 	}
 	if (!strcmp (v, "typedef")) {
 		const char *typedef_key = sdb_fmt ("typedef.%s", k);
 		const char *type = sdb_const_get (TDB_, typedef_key, NULL);
-		if (type && r_str_startswith (type, "struct ")) {
+		if (type && r_str_startswith (type, "struct")) {
 			return true;
 		}
 	}
@@ -440,7 +440,6 @@ static int print_struct_union_list_json(Sdb *TDB, SdbForeachCallback filter) {
 		if (!k || !*k) {
 			continue;
 		}
-
 		pj_o (pj); // {
 		char *sizecmd = r_str_newf ("%s.%s.!size", sdbkv_value (kv), k);
 		if (!sizecmd) {
@@ -1129,10 +1128,10 @@ static int cmd_type(void *data, const char *input) {
 		case 0:
 			print_keys (TDB, core, stdifstruct, printkey_cb, false);
 			break;
-		case 'c':
+		case 'c': // "tsc"
 			print_struct_union_in_c_format (TDB, stdifstruct, r_str_trim_head_ro (input + 2), true);
 			break;
-		case 'd':
+		case 'd': // "tsd"
 			print_struct_union_in_c_format (TDB, stdifstruct, r_str_trim_head_ro (input + 2), false);
 			break;
 		case 'j': // "tsj"
