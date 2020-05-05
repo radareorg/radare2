@@ -372,11 +372,90 @@ static void filter_type(char *t) {
 	}
 }
 
+static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
+	// assumes var list is sorted by offset.. should do more checks here
+	char *p = NULL, *vars = NULL, var2[132], *fmt = NULL;
+	size_t n;
+	char *fields = r_str_newf ("%s.fields", var);
+	char *nfields = (is_typedef) ? fields : var;
+	for (n = 0; (p = sdb_array_get (TDB, nfields, n, NULL)); n++) {
+		char *struct_name;
+		const char *tfmt = NULL;
+		bool isStruct = false;
+		bool isEnum = false;
+		bool isfp = false;
+		snprintf (var2, sizeof (var2), "%s.%s", var, p);
+		size_t alen = sdb_array_size (TDB, var2);
+		int elements = sdb_array_get_num (TDB, var2, alen - 1, NULL);
+		char *type = sdb_array_get (TDB, var2, 0, NULL);
+		if (type) {
+			char var3[128] = {0};
+			// Handle general pointers except for char *
+			if ((strstr (type, "*(") || strstr (type, " *")) && strncmp (type, "char *", 7)) {
+				isfp = true;
+			} else if (r_str_startswith (type, "struct ")) {
+				struct_name = type + 7;
+				// TODO: iterate over all the struct fields, and format the format and vars
+				snprintf (var3, sizeof (var3), "struct.%s", struct_name);
+				tfmt = sdb_const_get (TDB, var3, NULL);
+				isStruct = true;
+			} else {
+				// special case for char[]. Use char* format type without *
+				if (!strcmp (type, "char") && elements > 0) {
+					tfmt = sdb_const_get (TDB, "type.char *", NULL);
+					if (tfmt && *tfmt == '*') {
+						tfmt++;
+					}
+				} else {
+					if (r_str_startswith (type, "enum ")) {
+						snprintf (var3, sizeof (var3), "%s", type + 5);
+						isEnum = true;
+					} else {
+						snprintf (var3, sizeof (var3), "type.%s", type);
+					}
+					tfmt = sdb_const_get (TDB, var3, NULL);
+				}
+
+			}
+			if (isfp) {
+				// consider function pointer as void * for printing
+				fmt = r_str_append (fmt, "p");
+				vars = r_str_append (vars, p);
+				vars = r_str_append (vars, " ");
+			} else if (tfmt) {
+				filter_type (type);
+				if (elements > 0) {
+					fmt = r_str_appendf (fmt, "[%d]", elements);
+				}
+				if (isStruct) {
+					fmt = r_str_append (fmt, "?");
+					vars = r_str_appendf (vars, "(%s)%s", struct_name, p);
+					vars = r_str_append (vars, " ");
+				} else if (isEnum) {
+					fmt = r_str_append (fmt, "E");
+					vars = r_str_appendf (vars, "(%s)%s", type + 5, p);
+					vars = r_str_append (vars, " ");
+				} else {
+					fmt = r_str_append (fmt, tfmt);
+					vars = r_str_append (vars, p);
+					vars = r_str_append (vars, " ");
+				}
+			} else {
+				eprintf ("Cannot resolve type '%s'\n", var3);
+			}
+			free (type);
+		}
+		free (p);
+	}
+	free (fields);
+	fmt = r_str_append (fmt, " ");
+	fmt = r_str_append (fmt, vars);
+	free (vars);
+	return fmt;
+}
+
 R_API char *r_type_format(Sdb *TDB, const char *t) {
-	int n;
-	char *p, var[130], var2[132];
-	char *fmt = NULL;
-	char *vars = NULL;
+	char var[130], var2[132];
 	const char *kind = sdb_const_get (TDB, t, NULL);
 	if (!kind) {
 		return NULL;
@@ -389,89 +468,14 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 			return strdup (fmt);
 		}
 	} else if (!strcmp (kind, "struct") || !strcmp (kind, "union")) {
-		// assumes var list is sorted by offset.. should do more checks here
-		for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
-			char *type;
-			char *struct_name;
-			const char *tfmt = NULL;
-			bool isStruct = false;
-			bool isEnum = false;
-			bool isfp = false;
-			snprintf (var2, sizeof (var2), "%s.%s", var, p);
-			type = sdb_array_get (TDB, var2, 0, NULL);
-			int alen = sdb_array_size (TDB, var2);
-			int elements = sdb_array_get_num (TDB, var2, alen - 1, NULL);
-			if (type) {
-				char var3[128] = {0};
-				// Handle general pointers except for char *
-				if ((strstr (type, "*(") || strstr (type, " *")) &&
-						strncmp (type, "char *", 7)) {
-					isfp = true;
-				} else if (!strncmp (type, "struct ", 7)) {
-					struct_name = type + 7;
-					// TODO: iterate over all the struct fields, and format the format and vars
-					snprintf (var3, sizeof (var3), "struct.%s", struct_name);
-					tfmt = sdb_const_get (TDB, var3, NULL);
-					isStruct = true;
-				} else {
-					// special case for char[]. Use char* format type without *
-					if (!strncmp (type, "char", 5) && elements > 0) {
-						tfmt = sdb_const_get (TDB, "type.char *", NULL);
-						if (tfmt && *tfmt == '*') {
-							tfmt++;
-						}
-					} else {
-						if (!strncmp (type, "enum ", 5)) {
-							snprintf (var3, sizeof (var3), "%s", type + 5);
-							isEnum = true;
-						} else {
-							snprintf (var3, sizeof (var3), "type.%s", type);
-						}
-						tfmt = sdb_const_get (TDB, var3, NULL);
-					}
-
-				}
-				if (isfp) {
-					// consider function pointer as void * for printing
-					fmt = r_str_append (fmt, "p");
-					vars = r_str_append (vars, p);
-					vars = r_str_append (vars, " ");
-				} else if (tfmt) {
-					filter_type (type);
-					if (elements > 0) {
-						fmt = r_str_appendf (fmt, "[%d]", elements);
-					}
-					if (isStruct) {
-						fmt = r_str_append (fmt, "?");
-						vars = r_str_appendf (vars, "(%s)%s", struct_name, p);
-						vars = r_str_append (vars, " ");
-					} else if (isEnum) {
-						fmt = r_str_append (fmt, "E");
-						vars = r_str_appendf (vars, "(%s)%s", type + 5, p);
-						vars = r_str_append (vars, " ");
-					} else {
-						fmt = r_str_append (fmt, tfmt);
-						vars = r_str_append (vars, p);
-						vars = r_str_append (vars, " ");
-					}
-				} else {
-					eprintf ("Cannot resolve type '%s'\n", var3);
-				}
-			}
-			free (type);
-			free (p);
-		}
-		fmt = r_str_append (fmt, " ");
-		fmt = r_str_append (fmt, vars);
-		free (vars);
-		return fmt;
+		return fmt_struct_union(TDB, var, false);
 	}
 	if (!strcmp (kind, "typedef")) {
 		snprintf (var2, sizeof (var2), "typedef.%s", t);
 		const char *type = sdb_const_get (TDB, var2, NULL);
 		// only supports struct atm
-		if (type && r_str_startswith (type, "struct ") && strcmp (type + 7, t)) {
-			return r_type_format (TDB, type + 7);
+		if (type && !strcmp (type, "struct")) {
+			return fmt_struct_union (TDB, var, true);
 		}
 	}
 	return NULL;
