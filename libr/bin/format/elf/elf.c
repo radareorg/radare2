@@ -2507,16 +2507,17 @@ int Elf_(r_bin_elf_is_big_endian)(ELFOBJ *bin) {
 
 /* XXX Init dt_strtab? */
 char *Elf_(r_bin_elf_get_rpath)(ELFOBJ *bin) {
+	r_return_val_if_fail(bin, NULL);
 	char *ret;
 	Elf_(Xword) val;
 
-	if (!bin || !bin->phdr || !bin->strtab) {
+	if (!bin->phdr || !bin->strtab) {
 		return NULL;
 	}
 
 	if (bin->dyn_info.dt_rpath != ELF_XWORD_MAX)  {
 		val = bin->dyn_info.dt_rpath;
-	} else if (bin->dyn_info.dt_runpath != ELF_XWORD_MAX){
+	} else if (bin->dyn_info.dt_runpath != ELF_XWORD_MAX) {
 		val = bin->dyn_info.dt_runpath;
 	} else {
 		return NULL;
@@ -2527,11 +2528,10 @@ char *Elf_(r_bin_elf_get_rpath)(ELFOBJ *bin) {
 	}
 
 	if (!(ret = calloc (1, ELF_STRING_LENGTH))) {
-		perror ("malloc (rpath)");
 		return NULL;
 	}
 
-	r_str_ncpy(ret, bin->strtab + val, ELF_STRING_LENGTH);
+	r_str_ncpy (ret, bin->strtab + val, ELF_STRING_LENGTH);
 
 	return ret;
 }
@@ -2824,11 +2824,11 @@ static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 
 	if (bin->dyn_info.dt_rel != ELF_ADDR_MAX) {
 		reldyn = bin->dyn_info.dt_rel;
-		++num_sections;
+		num_sections++;
 	}
 	if (bin->dyn_info.dt_rela != ELF_ADDR_MAX) {
 		relva = bin->dyn_info.dt_rela;
-		++num_sections;
+		num_sections++;
 	}
 	if (bin->dyn_info.dt_relsz) {
 		reldynsz = bin->dyn_info.dt_relsz;
@@ -2838,14 +2838,14 @@ static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 	}
 	if (bin->dyn_info.dt_pltgot != ELF_ADDR_MAX) {
 		pltgotva = bin->dyn_info.dt_pltgot;
-		++num_sections;
+		num_sections++;
 	}
 	if (bin->dyn_info.dt_pltrelsz) {
 		pltgotsz = bin->dyn_info.dt_pltrelsz;
 	}
 	if (bin->dyn_info.dt_jmprel != ELF_ADDR_MAX) {
 		relava = bin->dyn_info.dt_jmprel;
-		++num_sections;
+		num_sections++;
 	}
 
 	ret = calloc (num_sections + 1, sizeof(RBinElfSection));
