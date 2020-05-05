@@ -84,6 +84,17 @@ IFNOT HAVE_CLOCK_GETTIME {
 	}
 }
 
+CHKFLG SUPPORT_GNU99 -std=gnu99 ;
+
+IF SUPPORT_GNU99 {
+	NEWSHELL_CFLAGS += '-std=gnu99' ;
+}{
+	CHKFLG SUPPORT_C99 -std=c99 ;
+	IF SUPPORT_C99 {
+		NEWSHELL_CFLAGS += '-std=c99' ;
+	}
+}
+
 (( TODO must deprecate
 CHKLIB gmp
 ARG_WITHOUT HAVE_GMP gmp disable GMP dependency ;
