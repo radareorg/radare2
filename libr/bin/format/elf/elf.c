@@ -547,6 +547,8 @@ static void set_default_value_dynamic_info(ELFOBJ *bin) {
 	bin->dyn_info.dt_bind_now = false;
 	bin->dyn_info.dt_flags = ELF_XWORD_MAX;
 	bin->dyn_info.dt_flags_1 = ELF_XWORD_MAX;
+	bin->dyn_info.dt_rpath = ELF_XWORD_MAX;
+	bin->dyn_info.dt_runpath = ELF_XWORD_MAX;
 }
 
 static int init_dynamic_section(ELFOBJ *bin) {
@@ -656,10 +658,16 @@ static int init_dynamic_section(ELFOBJ *bin) {
 			bin->dyn_info.dt_bind_now = true;
 			break;
 		case DT_FLAGS:
-			bin->dyn_info.dt_flags = dyn[i].d_un.d_ptr;
+			bin->dyn_info.dt_flags = dyn[i].d_un.d_val;
 			break;
 		case DT_FLAGS_1:
-			bin->dyn_info.dt_flags_1 = dyn[i].d_un.d_ptr;
+			bin->dyn_info.dt_flags_1 = dyn[i].d_un.d_val;
+			break;
+		case DT_RPATH:
+			bin->dyn_info.dt_rpath = dyn[i].d_un.d_val;
+			break;
+		case DT_RUNPATH:
+			bin->dyn_info.dt_runpath = dyn[i].d_un.d_val;
 			break;
 		default:
 			if ((dyn[i].d_tag >= DT_VERSYM) && (dyn[i].d_tag <= DT_VERNEEDNUM)) {
@@ -2499,27 +2507,33 @@ int Elf_(r_bin_elf_is_big_endian)(ELFOBJ *bin) {
 
 /* XXX Init dt_strtab? */
 char *Elf_(r_bin_elf_get_rpath)(ELFOBJ *bin) {
-	char *ret = NULL;
+	char *ret;
+	Elf_(Xword) val;
 	int j;
 
-	if (!bin || !bin->phdr || !bin->dyn_buf || !bin->strtab) {
+	if (!bin || !bin->phdr || !bin->strtab) {
 		return NULL;
 	}
-	for (j = 0; j< bin->dyn_entries; j++) {
-		if (bin->dyn_buf[j].d_tag == DT_RPATH || bin->dyn_buf[j].d_tag == DT_RUNPATH) {
-			if (!(ret = calloc (1, ELF_STRING_LENGTH))) {
-				perror ("malloc (rpath)");
-				return NULL;
-			}
-			if (bin->dyn_buf[j].d_un.d_val > bin->strtab_size) {
-				free (ret);
-				return NULL;
-			}
-			strncpy (ret, bin->strtab + bin->dyn_buf[j].d_un.d_val, ELF_STRING_LENGTH);
-			ret[ELF_STRING_LENGTH - 1] = '\0';
-			break;
-		}
+
+	if (bin->dyn_info.dt_rpath != ELF_XWORD_MAX)  {
+		val = bin->dyn_info.dt_rpath;
+	} else if (bin->dyn_info.dt_runpath != ELF_XWORD_MAX){
+		val = bin->dyn_info.dt_runpath;
+	} else {
+		return NULL;
 	}
+
+	if (val > bin->strtab_size) {
+		return NULL;
+	}
+
+	if (!(ret = calloc (1, ELF_STRING_LENGTH))) {
+		perror ("malloc (rpath)");
+		return NULL;
+	}
+
+	r_str_ncpy(ret, bin->strtab + val, ELF_STRING_LENGTH);
+
 	return ret;
 }
 

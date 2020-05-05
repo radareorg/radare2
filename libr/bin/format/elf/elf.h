@@ -92,6 +92,8 @@ typedef struct Elf_(r_bin_elf_dynamic_info) {
 	bool dt_bind_now;
 	Elf_(Xword) dt_flags;
 	Elf_(Xword) dt_flags_1;
+	Elf_(Xword) dt_rpath;
+	Elf_(Xword) dt_runpath;
 } RBinElfDynamicInfo;
 
 typedef struct r_bin_elf_lib_t {
