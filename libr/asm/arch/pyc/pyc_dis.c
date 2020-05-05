@@ -11,7 +11,7 @@ int r_pyc_disasm (RAsmOp *opstruct, const ut8 *code, RList *cobjs, RList *intern
 	RListIter *iter = NULL;
 
 	char *name = NULL;
-	char *arg = NULL;
+	const char *arg = NULL;
 	RList *varnames;
 	RList *consts;
 	RList *names;
@@ -72,9 +72,9 @@ int r_pyc_disasm (RAsmOp *opstruct, const ut8 *code, RList *cobjs, RList *intern
 	return 0;
 }
 
-char *parse_arg (pyc_opcode_object *op, ut32 oparg, RList *names, RList *consts, RList *varnames, RList *interned_table, RList *freevars, RList *cellvars, RList *opcode_arg_fmt) {
+const char *parse_arg (pyc_opcode_object *op, ut32 oparg, RList *names, RList *consts, RList *varnames, RList *interned_table, RList *freevars, RList *cellvars, RList *opcode_arg_fmt) {
 	pyc_object *t = NULL;
-	char *arg = NULL;
+	const char *arg = NULL;
 	pyc_code_object *tmp_cobj;
 	pyc_arg_fmt *fmt;
 	RListIter *i = NULL;

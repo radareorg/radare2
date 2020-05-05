@@ -100,7 +100,7 @@ pyc_opcodes *new_pyc_opcodes ();
 void free_opcode (pyc_opcodes *opcodes);
 bool pyc_opcodes_equal (pyc_opcodes *op, const char *version);
 
-void add_arg_fmt (pyc_opcodes *ret, const char *op_name, const char *(*formatter) (ut32 oparg));
+void add_arg_fmt (pyc_opcodes *ret, char *op_name, const char *(*formatter) (ut32 oparg));
 
 const char *format_MAKE_FUNCTION_arg_3x (ut32 oparg);
 const char *format_extended_arg (ut32 oparg);

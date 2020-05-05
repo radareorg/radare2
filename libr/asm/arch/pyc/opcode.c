@@ -125,7 +125,7 @@ static version_opcode version_op[] = {
 bool pyc_opcodes_equal (pyc_opcodes *op, const char *version) {
 	for (ut32 i = 0; i < sizeof (version_op) / sizeof (version_opcode); i++) {
 		if (!strcmp (version_op[i].version, version)) {
-			if (version_op[i].opcode_func == op->version_sig)
+			if (version_op[i].opcode_func == (pyc_opcodes *(*)())(op->version_sig))
 				return true;
 		}
 	}
@@ -181,7 +181,7 @@ void free_opcode (pyc_opcodes *opcodes) {
 	R_FREE (opcodes);
 }
 
-void add_arg_fmt (pyc_opcodes *ret, const char *op_name, const char *(*formatter) (ut32 oparg)) {
+void add_arg_fmt (pyc_opcodes *ret, char *op_name, const char *(*formatter) (ut32 oparg)) {
 	pyc_arg_fmt *fmt = R_NEW0 (pyc_arg_fmt);
 	fmt->op_name = op_name;
 	fmt->formatter = formatter;
