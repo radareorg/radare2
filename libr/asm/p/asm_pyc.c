@@ -36,11 +36,12 @@ static int disassemble (RAsm *a, RAsmOp *opstruct, const ut8 *buf, int len) {
 	return r;
 }
 
-void finish () {
+static bool finish (void *user) {
 	if (opcodes_cache) {
 		free_opcode (opcodes_cache);
 		opcodes_cache = NULL;
 	}
+    return true;
 }
 
 /*

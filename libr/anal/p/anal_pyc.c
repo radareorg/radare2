@@ -142,6 +142,7 @@ static int finish (void *user) {
 		free_opcode (ops);
 		ops = NULL;
 	}
+    return 0;
 }
 
 RAnalPlugin r_anal_plugin_pyc = {
