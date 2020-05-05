@@ -2509,7 +2509,6 @@ int Elf_(r_bin_elf_is_big_endian)(ELFOBJ *bin) {
 char *Elf_(r_bin_elf_get_rpath)(ELFOBJ *bin) {
 	char *ret;
 	Elf_(Xword) val;
-	int j;
 
 	if (!bin || !bin->phdr || !bin->strtab) {
 		return NULL;
@@ -2818,50 +2817,49 @@ static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 	ut64 reldyn = 0, relava = 0, pltgotva = 0, relva = 0;
 	ut64 reldynsz = 0, relasz = 0, pltgotsz = 0;
 	r_return_val_if_fail (bin && bin->phdr, NULL);
-	if (!bin->ehdr.e_phnum || !bin->dyn_buf) {
+
+	if (!bin->ehdr.e_phnum) {
 		return NULL;
 	}
 
-	for (i = 0; i < bin->dyn_entries; i++) {
-		switch (bin->dyn_buf[i].d_tag) {
-		case DT_REL:
-			reldyn = bin->dyn_buf[i].d_un.d_ptr;
-			num_sections++;
-			break;
-		case DT_RELA:
-			relva = bin->dyn_buf[i].d_un.d_ptr;
-			num_sections++;
-			break;
-		case DT_RELSZ:
-			reldynsz = bin->dyn_buf[i].d_un.d_val;
-			break;
-		case DT_RELASZ:
-			relasz = bin->dyn_buf[i].d_un.d_val;
-			break;
-		case DT_PLTGOT:
-			pltgotva = bin->dyn_buf[i].d_un.d_ptr;
-			num_sections++;
-			break;
-		case DT_PLTRELSZ:
-			pltgotsz = bin->dyn_buf[i].d_un.d_val;
-			break;
-		case DT_JMPREL:
-			relava = bin->dyn_buf[i].d_un.d_ptr;
-			num_sections++;
-			break;
-		default: break;
-		}
+	if (bin->dyn_info.dt_rel != ELF_ADDR_MAX) {
+		reldyn = bin->dyn_info.dt_rel;
+		++num_sections;
 	}
+	if (bin->dyn_info.dt_rela != ELF_ADDR_MAX) {
+		relva = bin->dyn_info.dt_rela;
+		++num_sections;
+	}
+	if (bin->dyn_info.dt_relsz != ELF_XWORD_MAX) {
+		reldynsz = bin->dyn_info.dt_relsz;
+	}
+	if (bin->dyn_info.dt_relasz != ELF_ADDR_MAX) {
+		relasz = bin->dyn_info.dt_relasz;
+	}
+	if (bin->dyn_info.dt_pltgot != ELF_XWORD_MAX) {
+		pltgotva = bin->dyn_info.dt_pltgot;
+		++num_sections;
+	}
+	if (bin->dyn_info.dt_pltrelsz != ELF_ADDR_MAX) {
+		pltgotsz = bin->dyn_info.dt_pltrelsz;
+	}
+	if (bin->dyn_info.dt_jmprel != ELF_XWORD_MAX) {
+		relava = bin->dyn_info.dt_jmprel;
+		++num_sections;
+	}
+
 	ret = calloc (num_sections + 1, sizeof(RBinElfSection));
 	if (!ret) {
 		return NULL;
 	}
+
 	i = 0;
 	create_section_from_phdr (bin, ret, &i, ".rel.dyn", reldyn, reldynsz);
 	create_section_from_phdr (bin, ret, &i, ".rela.plt", relava, pltgotsz);
 	create_section_from_phdr (bin, ret, &i, ".rel.plt", relva, relasz);
 	create_section_from_phdr (bin, ret, &i, ".got.plt", pltgotva, pltgotsz);
 	ret[i].last = 1;
+
 	return ret;
 }
 
