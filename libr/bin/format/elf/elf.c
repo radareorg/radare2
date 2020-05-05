@@ -1455,7 +1455,7 @@ static size_t get_size_rel_mode(Elf_(Xword) rel_mode) {
 }
 
 static size_t get_num_relocs_dynamic_plt(ELFOBJ *bin) {
-	if (bin->dyn_info.dt_pltrelsz != ELF_ADDR_MAX) {
+	if (bin->dyn_info.dt_pltrelsz) {
 		return bin->dyn_info.dt_pltrelsz / get_size_rel_mode (bin->dyn_info.dt_pltrel);
 	}
 	return 0;
@@ -2830,17 +2830,17 @@ static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 		relva = bin->dyn_info.dt_rela;
 		++num_sections;
 	}
-	if (bin->dyn_info.dt_relsz != ELF_XWORD_MAX) {
+	if (bin->dyn_info.dt_relsz) {
 		reldynsz = bin->dyn_info.dt_relsz;
 	}
-	if (bin->dyn_info.dt_relasz != ELF_XWORD_MAX) {
+	if (bin->dyn_info.dt_relasz) {
 		relasz = bin->dyn_info.dt_relasz;
 	}
 	if (bin->dyn_info.dt_pltgot != ELF_ADDR_MAX) {
 		pltgotva = bin->dyn_info.dt_pltgot;
 		++num_sections;
 	}
-	if (bin->dyn_info.dt_pltrelsz != ELF_XWORD_MAX) {
+	if (bin->dyn_info.dt_pltrelsz) {
 		pltgotsz = bin->dyn_info.dt_pltrelsz;
 	}
 	if (bin->dyn_info.dt_jmprel != ELF_ADDR_MAX) {
