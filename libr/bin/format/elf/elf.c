@@ -2990,31 +2990,21 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 	Elf_(Addr) addr_sym_table = 0;
 	ut8 s[sizeof (Elf_(Sym))] = {0};
 	RBinElfSymbol *ret = NULL;
-	int i, j, r, tsize, nsym, ret_ctr;
+	int i, r, tsize, nsym, ret_ctr;
 	ut64 toffset = 0, tmp_offset;
 	ut32 size, sym_size = 0;
 
 	if (!bin || !bin->phdr || !bin->ehdr.e_phnum) {
 		return NULL;
 	}
-	for (j = 0; j < bin->dyn_entries; j++) {
-		switch (bin->dyn_buf[j].d_tag) {
-		case (DT_SYMTAB):
-			addr_sym_table = Elf_(r_bin_elf_v2p) (bin, bin->dyn_buf[j].d_un.d_ptr);
-			break;
-		case (DT_SYMENT):
-			sym_size = bin->dyn_buf[j].d_un.d_val;
-			break;
-		default:
-			break;
-		}
-	}
-	if (!addr_sym_table) {
+
+	if (bin->dyn_info.dt_symtab == ELF_ADDR_MAX || !bin->dyn_info.dt_syment) {
 		return NULL;
 	}
-	if (!sym_size) {
-		return NULL;
-	}
+
+	addr_sym_table = Elf_(r_bin_elf_v2p) (bin, bin->dyn_info.dt_symtab);
+	sym_size = bin->dyn_info.dt_syment;
+
 	//since ELF doesn't specify the symbol table size we may read until the end of the buffer
 	nsym = (bin->size - addr_sym_table) / sym_size;
 	if (!UT32_MUL (&size, nsym, sizeof (Elf_ (Sym)))) {
