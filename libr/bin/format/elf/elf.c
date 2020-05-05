@@ -2833,17 +2833,17 @@ static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 	if (bin->dyn_info.dt_relsz != ELF_XWORD_MAX) {
 		reldynsz = bin->dyn_info.dt_relsz;
 	}
-	if (bin->dyn_info.dt_relasz != ELF_ADDR_MAX) {
+	if (bin->dyn_info.dt_relasz != ELF_XWORD_MAX) {
 		relasz = bin->dyn_info.dt_relasz;
 	}
-	if (bin->dyn_info.dt_pltgot != ELF_XWORD_MAX) {
+	if (bin->dyn_info.dt_pltgot != ELF_ADDR_MAX) {
 		pltgotva = bin->dyn_info.dt_pltgot;
 		++num_sections;
 	}
-	if (bin->dyn_info.dt_pltrelsz != ELF_ADDR_MAX) {
+	if (bin->dyn_info.dt_pltrelsz != ELF_XWORD_MAX) {
 		pltgotsz = bin->dyn_info.dt_pltrelsz;
 	}
-	if (bin->dyn_info.dt_jmprel != ELF_XWORD_MAX) {
+	if (bin->dyn_info.dt_jmprel != ELF_ADDR_MAX) {
 		relava = bin->dyn_info.dt_jmprel;
 		++num_sections;
 	}
