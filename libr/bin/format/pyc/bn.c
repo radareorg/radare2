@@ -34,7 +34,7 @@ void bignum_init (struct bn *n) {
 	require (n, "n is null");
 
 	int i;
-	for (i = 0; i < BN_ARRAY_SIZE; ++i) {
+	for (i = 0; i < BN_ARRAY_SIZE; i++) {
 		n->array[i] = 0;
 	}
 }
@@ -131,7 +131,7 @@ void bignum_to_string (struct bn *n, char *str, int nbytes) {
 	}
 
 	/* Move string j places ahead, effectively skipping leading zeros */
-	for (i = 0; i < (nbytes - j); ++i) {
+	for (i = 0; i < (nbytes - j); i++) {
 		str[i] = str[i + j];
 	}
 
@@ -146,7 +146,7 @@ void bignum_dec (struct bn *n) {
 	DTYPE res;
 
 	int i;
-	for (i = 0; i < BN_ARRAY_SIZE; ++i) {
+	for (i = 0; i < BN_ARRAY_SIZE; i++) {
 		tmp = n->array[i];
 		res = tmp - 1;
 		n->array[i] = res;
@@ -164,7 +164,7 @@ void bignum_inc (struct bn *n) {
 	DTYPE_TMP tmp; /* copy of n */
 
 	int i;
-	for (i = 0; i < BN_ARRAY_SIZE; ++i) {
+	for (i = 0; i < BN_ARRAY_SIZE; i++) {
 		tmp = n->array[i];
 		res = tmp + 1;
 		n->array[i] = res;
@@ -183,7 +183,7 @@ void bignum_add (struct bn *a, struct bn *b, struct bn *c) {
 	DTYPE_TMP tmp;
 	int carry = 0;
 	int i;
-	for (i = 0; i < BN_ARRAY_SIZE; ++i) {
+	for (i = 0; i < BN_ARRAY_SIZE; i++) {
 		tmp = (DTYPE_TMP)a->array[i] + b->array[i] + carry;
 		carry = (tmp > MAX_VAL);
 		c->array[i] = (tmp & MAX_VAL);
@@ -200,7 +200,7 @@ void bignum_sub (struct bn *a, struct bn *b, struct bn *c) {
 	DTYPE_TMP tmp2;
 	int borrow = 0;
 	int i;
-	for (i = 0; i < BN_ARRAY_SIZE; ++i) {
+	for (i = 0; i < BN_ARRAY_SIZE; i++) {
 		tmp1 = (DTYPE_TMP)a->array[i] + (MAX_VAL + 1); /* + number_base */
 		tmp2 = (DTYPE_TMP)b->array[i] + borrow;
 		;
@@ -221,10 +221,10 @@ void bignum_mul (struct bn *a, struct bn *b, struct bn *c) {
 
 	bignum_init (c);
 
-	for (i = 0; i < BN_ARRAY_SIZE; ++i) {
+	for (i = 0; i < BN_ARRAY_SIZE; i++) {
 		bignum_init (&row);
 
-		for (j = 0; j < BN_ARRAY_SIZE; ++j) {
+		for (j = 0; j < BN_ARRAY_SIZE; j++) {
 			if (i + j < BN_ARRAY_SIZE) {
 				bignum_init (&tmp);
 				DTYPE_TMP intermediate = ((DTYPE_TMP)a->array[i] * (DTYPE_TMP)b->array[j]);
@@ -295,7 +295,7 @@ void bignum_lshift (struct bn *a, struct bn *b, int nbits) {
 
 	if (nbits != 0) {
 		int i;
-		for (i = (BN_ARRAY_SIZE - 1); i > 0; --i) {
+		for (i = (BN_ARRAY_SIZE - 1); i > 0; i--) {
 			b->array[i] = (b->array[i] << nbits) | (b->array[i - 1] >> ((8 * WORD_SIZE) - nbits));
 		}
 		b->array[i] <<= nbits;
@@ -318,7 +318,7 @@ void bignum_rshift (struct bn *a, struct bn *b, int nbits) {
 
 	if (nbits != 0) {
 		int i;
-		for (i = 0; i < (BN_ARRAY_SIZE - 1); ++i) {
+		for (i = 0; i < (BN_ARRAY_SIZE - 1); i++) {
 			b->array[i] = (b->array[i] >> nbits) | (b->array[i + 1] << ((8 * WORD_SIZE) - nbits));
 		}
 		b->array[i] >>= nbits;
@@ -370,7 +370,7 @@ void bignum_and (struct bn *a, struct bn *b, struct bn *c) {
 	require (c, "c is null");
 
 	int i;
-	for (i = 0; i < BN_ARRAY_SIZE; ++i) {
+	for (i = 0; i < BN_ARRAY_SIZE; i++) {
 		c->array[i] = (a->array[i] & b->array[i]);
 	}
 }
@@ -381,7 +381,7 @@ void bignum_or (struct bn *a, struct bn *b, struct bn *c) {
 	require (c, "c is null");
 
 	int i;
-	for (i = 0; i < BN_ARRAY_SIZE; ++i) {
+	for (i = 0; i < BN_ARRAY_SIZE; i++) {
 		c->array[i] = (a->array[i] | b->array[i]);
 	}
 }
@@ -392,7 +392,7 @@ void bignum_xor (struct bn *a, struct bn *b, struct bn *c) {
 	require (c, "c is null");
 
 	int i;
-	for (i = 0; i < BN_ARRAY_SIZE; ++i) {
+	for (i = 0; i < BN_ARRAY_SIZE; i++) {
 		c->array[i] = (a->array[i] ^ b->array[i]);
 	}
 }
@@ -418,7 +418,7 @@ int bignum_is_zero (struct bn *n) {
 	require (n, "n is null");
 
 	int i;
-	for (i = 0; i < BN_ARRAY_SIZE; ++i) {
+	for (i = 0; i < BN_ARRAY_SIZE; i++) {
 		if (n->array[i]) {
 			return 0;
 		}
@@ -496,7 +496,7 @@ void bignum_assign (struct bn *dst, struct bn *src) {
 	require (src, "src is null");
 
 	int i;
-	for (i = 0; i < BN_ARRAY_SIZE; ++i) {
+	for (i = 0; i < BN_ARRAY_SIZE; i++) {
 		dst->array[i] = src->array[i];
 	}
 }
@@ -509,16 +509,16 @@ static void _rshift_word (struct bn *a, int nwords) {
 
 	int i;
 	if (nwords >= BN_ARRAY_SIZE) {
-		for (i = 0; i < BN_ARRAY_SIZE; ++i) {
+		for (i = 0; i < BN_ARRAY_SIZE; i++) {
 			a->array[i] = 0;
 		}
 		return;
 	}
 
-	for (i = 0; i < BN_ARRAY_SIZE - nwords; ++i) {
+	for (i = 0; i < BN_ARRAY_SIZE - nwords; i++) {
 		a->array[i] = a->array[i + nwords];
 	}
-	for (; i < BN_ARRAY_SIZE; ++i) {
+	for (; i < BN_ARRAY_SIZE; i++) {
 		a->array[i] = 0;
 	}
 }
@@ -529,11 +529,11 @@ static void _lshift_word (struct bn *a, int nwords) {
 
 	int i;
 	/* Shift whole words */
-	for (i = (BN_ARRAY_SIZE - 1); i >= nwords; --i) {
+	for (i = (BN_ARRAY_SIZE - 1); i >= nwords; i--) {
 		a->array[i] = a->array[i - nwords];
 	}
 	/* Zero pad shifted words. */
-	for (; i >= 0; --i) {
+	for (; i >= 0; i--) {
 		a->array[i] = 0;
 	}
 }
@@ -542,7 +542,7 @@ static void _lshift_one_bit (struct bn *a) {
 	require (a, "a is null");
 
 	int i;
-	for (i = (BN_ARRAY_SIZE - 1); i > 0; --i) {
+	for (i = (BN_ARRAY_SIZE - 1); i > 0; i--) {
 		a->array[i] = (a->array[i] << 1) | (a->array[i - 1] >> ((8 * WORD_SIZE) - 1));
 	}
 	a->array[0] <<= 1;
@@ -552,7 +552,7 @@ static void _rshift_one_bit (struct bn *a) {
 	require (a, "a is null");
 
 	int i;
-	for (i = 0; i < (BN_ARRAY_SIZE - 1); ++i) {
+	for (i = 0; i < (BN_ARRAY_SIZE - 1); i++) {
 		a->array[i] = (a->array[i] >> 1) | (a->array[i + 1] << ((8 * WORD_SIZE) - 1));
 	}
 	a->array[BN_ARRAY_SIZE - 1] >>= 1;

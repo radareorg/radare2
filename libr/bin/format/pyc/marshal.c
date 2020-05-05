@@ -203,7 +203,7 @@ static pyc_object *get_long_object (RBuffer *buffer) {
 		bignum_init (&tmp);
 		bignum_init (&operand);
 		bignum_from_int (&long_val, 0);
-		for (i = 0; i < ndigits; ++i) {
+		for (i = 0; i < ndigits; i++) {
 			n = get_ut16 (buffer, &error);
 			if (error) {
 				R_FREE (ret);
