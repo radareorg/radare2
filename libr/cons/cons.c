@@ -1332,8 +1332,13 @@ static bool __xterm_get_size(void) {
 	if (write (I.fdout, R_CONS_CURSOR_SAVE, sizeof (R_CONS_CURSOR_SAVE)) < 1) {
 		return false;
 	}
+	int rows, columns;
 	(void)write (I.fdout, "\x1b[999;999H", sizeof ("\x1b[999;999H"));
-	I.rows = __xterm_get_cur_pos (&I.columns);
+	rows = __xterm_get_cur_pos (&columns);
+	if (rows) {
+		I.rows = rows;
+		I.columns = columns;
+	} // otherwise reuse previous values
 	(void)write (I.fdout, R_CONS_CURSOR_RESTORE, sizeof (R_CONS_CURSOR_RESTORE));
 	return true;
 }
