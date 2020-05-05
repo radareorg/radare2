@@ -544,6 +544,11 @@ static void set_default_value_dynamic_info(ELFOBJ *bin) {
 	bin->dyn_info.dt_pltrel = ELF_XWORD_MAX;
 	bin->dyn_info.dt_jmprel = ELF_ADDR_MAX;
 	bin->dyn_info.dt_pltgot = ELF_ADDR_MAX;
+	bin->dyn_info.dt_bind_now = false;
+	bin->dyn_info.dt_flags = ELF_XWORD_MAX;
+	bin->dyn_info.dt_flags_1 = ELF_XWORD_MAX;
+	bin->dyn_info.dt_rpath = ELF_XWORD_MAX;
+	bin->dyn_info.dt_runpath = ELF_XWORD_MAX;
 }
 
 static int init_dynamic_section(ELFOBJ *bin) {
@@ -648,6 +653,21 @@ static int init_dynamic_section(ELFOBJ *bin) {
 			break;
 		case DT_MIPS_PLTGOT:
 			bin->dyn_info.dt_mips_pltgot = dyn[i].d_un.d_ptr;
+			break;
+		case DT_BIND_NOW:
+			bin->dyn_info.dt_bind_now = true;
+			break;
+		case DT_FLAGS:
+			bin->dyn_info.dt_flags = dyn[i].d_un.d_val;
+			break;
+		case DT_FLAGS_1:
+			bin->dyn_info.dt_flags_1 = dyn[i].d_un.d_val;
+			break;
+		case DT_RPATH:
+			bin->dyn_info.dt_rpath = dyn[i].d_un.d_val;
+			break;
+		case DT_RUNPATH:
+			bin->dyn_info.dt_runpath = dyn[i].d_un.d_val;
 			break;
 		default:
 			if ((dyn[i].d_tag >= DT_VERSYM) && (dyn[i].d_tag <= DT_VERNEEDNUM)) {
@@ -1435,7 +1455,7 @@ static size_t get_size_rel_mode(Elf_(Xword) rel_mode) {
 }
 
 static size_t get_num_relocs_dynamic_plt(ELFOBJ *bin) {
-	if (bin->dyn_info.dt_pltrelsz != ELF_ADDR_MAX) {
+	if (bin->dyn_info.dt_pltrelsz) {
 		return bin->dyn_info.dt_pltrelsz / get_size_rel_mode (bin->dyn_info.dt_pltrel);
 	}
 	return 0;
@@ -1626,30 +1646,13 @@ int Elf_(r_bin_elf_has_relro)(ELFOBJ *bin) {
 	int i;
 	bool haveBindNow = false;
 	bool haveGnuRelro = false;
-	if (bin && bin->dyn_buf) {
-		for (i = 0; i < bin->dyn_entries; i++) {
-			switch (bin->dyn_buf[i].d_tag) {
-			case DT_BIND_NOW:
-				haveBindNow = true;
-				break;
-			case DT_FLAGS:
-				for (i++; i < bin->dyn_entries ; i++) {
-					ut32 dTag = bin->dyn_buf[i].d_tag;
-					if (!dTag) {
-						break;
-					}
-					switch (dTag) {
-					case DT_FLAGS_1:
-						if (bin->dyn_buf[i].d_un.d_val & DF_1_NOW) {
-							haveBindNow = true;
-							break;
-						}
-					}
-				}
-				break;
-			}
-		}
+
+	if (bin->dyn_info.dt_bind_now) {
+		haveBindNow = true;
+	} else if (bin->dyn_info.dt_flags != ELF_XWORD_MAX && bin->dyn_info.dt_flags != ELF_XWORD_MAX) {
+		haveBindNow = bin->dyn_info.dt_flags_1 & DF_1_NOW;
 	}
+
 	if (bin && bin->phdr) {
 		for (i = 0; i < bin->ehdr.e_phnum; i++) {
 			if (bin->phdr[i].p_type == PT_GNU_RELRO) {
@@ -2504,27 +2507,32 @@ int Elf_(r_bin_elf_is_big_endian)(ELFOBJ *bin) {
 
 /* XXX Init dt_strtab? */
 char *Elf_(r_bin_elf_get_rpath)(ELFOBJ *bin) {
-	char *ret = NULL;
-	int j;
+	r_return_val_if_fail (bin, NULL);
+	char *ret;
+	Elf_(Xword) val;
 
-	if (!bin || !bin->phdr || !bin->dyn_buf || !bin->strtab) {
+	if (!bin->phdr || !bin->strtab) {
 		return NULL;
 	}
-	for (j = 0; j< bin->dyn_entries; j++) {
-		if (bin->dyn_buf[j].d_tag == DT_RPATH || bin->dyn_buf[j].d_tag == DT_RUNPATH) {
-			if (!(ret = calloc (1, ELF_STRING_LENGTH))) {
-				perror ("malloc (rpath)");
-				return NULL;
-			}
-			if (bin->dyn_buf[j].d_un.d_val > bin->strtab_size) {
-				free (ret);
-				return NULL;
-			}
-			strncpy (ret, bin->strtab + bin->dyn_buf[j].d_un.d_val, ELF_STRING_LENGTH);
-			ret[ELF_STRING_LENGTH - 1] = '\0';
-			break;
-		}
+
+	if (bin->dyn_info.dt_rpath != ELF_XWORD_MAX)  {
+		val = bin->dyn_info.dt_rpath;
+	} else if (bin->dyn_info.dt_runpath != ELF_XWORD_MAX) {
+		val = bin->dyn_info.dt_runpath;
+	} else {
+		return NULL;
 	}
+
+	if (val > bin->strtab_size) {
+		return NULL;
+	}
+
+	if (!(ret = calloc (1, ELF_STRING_LENGTH))) {
+		return NULL;
+	}
+
+	r_str_ncpy (ret, bin->strtab + val, ELF_STRING_LENGTH);
+
 	return ret;
 }
 
@@ -2809,50 +2817,49 @@ static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 	ut64 reldyn = 0, relava = 0, pltgotva = 0, relva = 0;
 	ut64 reldynsz = 0, relasz = 0, pltgotsz = 0;
 	r_return_val_if_fail (bin && bin->phdr, NULL);
-	if (!bin->ehdr.e_phnum || !bin->dyn_buf) {
+
+	if (!bin->ehdr.e_phnum) {
 		return NULL;
 	}
 
-	for (i = 0; i < bin->dyn_entries; i++) {
-		switch (bin->dyn_buf[i].d_tag) {
-		case DT_REL:
-			reldyn = bin->dyn_buf[i].d_un.d_ptr;
-			num_sections++;
-			break;
-		case DT_RELA:
-			relva = bin->dyn_buf[i].d_un.d_ptr;
-			num_sections++;
-			break;
-		case DT_RELSZ:
-			reldynsz = bin->dyn_buf[i].d_un.d_val;
-			break;
-		case DT_RELASZ:
-			relasz = bin->dyn_buf[i].d_un.d_val;
-			break;
-		case DT_PLTGOT:
-			pltgotva = bin->dyn_buf[i].d_un.d_ptr;
-			num_sections++;
-			break;
-		case DT_PLTRELSZ:
-			pltgotsz = bin->dyn_buf[i].d_un.d_val;
-			break;
-		case DT_JMPREL:
-			relava = bin->dyn_buf[i].d_un.d_ptr;
-			num_sections++;
-			break;
-		default: break;
-		}
+	if (bin->dyn_info.dt_rel != ELF_ADDR_MAX) {
+		reldyn = bin->dyn_info.dt_rel;
+		num_sections++;
 	}
+	if (bin->dyn_info.dt_rela != ELF_ADDR_MAX) {
+		relva = bin->dyn_info.dt_rela;
+		num_sections++;
+	}
+	if (bin->dyn_info.dt_relsz) {
+		reldynsz = bin->dyn_info.dt_relsz;
+	}
+	if (bin->dyn_info.dt_relasz) {
+		relasz = bin->dyn_info.dt_relasz;
+	}
+	if (bin->dyn_info.dt_pltgot != ELF_ADDR_MAX) {
+		pltgotva = bin->dyn_info.dt_pltgot;
+		num_sections++;
+	}
+	if (bin->dyn_info.dt_pltrelsz) {
+		pltgotsz = bin->dyn_info.dt_pltrelsz;
+	}
+	if (bin->dyn_info.dt_jmprel != ELF_ADDR_MAX) {
+		relava = bin->dyn_info.dt_jmprel;
+		num_sections++;
+	}
+
 	ret = calloc (num_sections + 1, sizeof(RBinElfSection));
 	if (!ret) {
 		return NULL;
 	}
+
 	i = 0;
 	create_section_from_phdr (bin, ret, &i, ".rel.dyn", reldyn, reldynsz);
 	create_section_from_phdr (bin, ret, &i, ".rela.plt", relava, pltgotsz);
 	create_section_from_phdr (bin, ret, &i, ".rel.plt", relva, relasz);
 	create_section_from_phdr (bin, ret, &i, ".got.plt", pltgotva, pltgotsz);
 	ret[i].last = 1;
+
 	return ret;
 }
 
@@ -2983,31 +2990,21 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 	Elf_(Addr) addr_sym_table = 0;
 	ut8 s[sizeof (Elf_(Sym))] = {0};
 	RBinElfSymbol *ret = NULL;
-	int i, j, r, tsize, nsym, ret_ctr;
+	int i, r, tsize, nsym, ret_ctr;
 	ut64 toffset = 0, tmp_offset;
 	ut32 size, sym_size = 0;
 
 	if (!bin || !bin->phdr || !bin->ehdr.e_phnum) {
 		return NULL;
 	}
-	for (j = 0; j < bin->dyn_entries; j++) {
-		switch (bin->dyn_buf[j].d_tag) {
-		case (DT_SYMTAB):
-			addr_sym_table = Elf_(r_bin_elf_v2p) (bin, bin->dyn_buf[j].d_un.d_ptr);
-			break;
-		case (DT_SYMENT):
-			sym_size = bin->dyn_buf[j].d_un.d_val;
-			break;
-		default:
-			break;
-		}
-	}
-	if (!addr_sym_table) {
+
+	if (bin->dyn_info.dt_symtab == ELF_ADDR_MAX || !bin->dyn_info.dt_syment) {
 		return NULL;
 	}
-	if (!sym_size) {
-		return NULL;
-	}
+
+	addr_sym_table = Elf_(r_bin_elf_v2p) (bin, bin->dyn_info.dt_symtab);
+	sym_size = bin->dyn_info.dt_syment;
+
 	//since ELF doesn't specify the symbol table size we may read until the end of the buffer
 	nsym = (bin->size - addr_sym_table) / sym_size;
 	if (!UT32_MUL (&size, nsym, sizeof (Elf_ (Sym)))) {
