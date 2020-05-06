@@ -1552,6 +1552,7 @@ EXPECT=<<EOF
   "minopsz": 1,
   "nx": true,
   "os": "linux",
+  "cc": "",
   "pcalign": 0,
   "pic": false,
   "relocs": true,

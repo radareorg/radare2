@@ -450,6 +450,7 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->arch = PE_(r_bin_pe_get_arch) (bf->o->bin_obj);
 	ret->machine = PE_(r_bin_pe_get_machine) (bf->o->bin_obj);
 	ret->subsystem = PE_(r_bin_pe_get_subsystem) (bf->o->bin_obj);
+	ret->default_cc = PE_(r_bin_pe_get_cc) (bf->o->bin_obj);
 	if (is_dot_net (bf)) {
 		ret->lang = "cil";
 	}
