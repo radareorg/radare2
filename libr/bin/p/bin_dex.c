@@ -87,7 +87,7 @@ static const char *getstr(RBinDexObj *dex, int idx) {
 			return p;
 		}
 	} else {
-		dex->cal_strings = R_NEWS0 (void*, dex->header.strings_size);
+		dex->cal_strings = R_NEWS0 (char *, dex->header.strings_size);
 	}
 	const ut32 string_index = dex->strings[idx];
 	if (string_index >= dex->size) {
@@ -108,7 +108,7 @@ static const char *getstr(RBinDexObj *dex, int idx) {
 	if (ptr) {
 		r_buf_read_at (dex->b, string_index + uleblen, ptr, len);
 		ptr[len] = 0;
-		dex->cal_strings[idx] = ptr;
+		dex->cal_strings[idx] = (char *)ptr;
 		return (const char *)ptr;
 	}
 	return NULL;
@@ -245,7 +245,7 @@ static const char *dex_type_descriptor(RBinDexObj *bin, int type_idx) {
 
 static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 	ut32 params_off, type_id, list_size;
-	char *r = NULL, *return_type = NULL, *signature = NULL, *buff = NULL;
+	char *r = NULL, *signature = NULL;
 	ut16 type_idx;
 	int pos = 0, i, size = 1;
 
@@ -260,7 +260,7 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 	if (type_id >= bin->header.types_size ) {
 		return NULL;
 	}
-	return_type = getstr (bin, bin->types[type_id].descriptor_id);
+	const char *return_type = getstr (bin, bin->types[type_id].descriptor_id);
 	if (!return_type) {
 		return NULL;
 	}
@@ -291,7 +291,7 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 		if (type_idx >= bin->header.types_size || type_idx >= bin->size) {
 			break;
 		}
-		buff = getstr (bin, bin->types[type_idx].descriptor_id);
+		const char *buff = getstr (bin, bin->types[type_idx].descriptor_id);
 		if (!buff) {
 			break;
 		}
@@ -338,7 +338,7 @@ static RList *dex_method_signature2(RBinDexObj *bin, int method_idx) {
 	ut16 type_idx;
 	int i;
 
-	RList *params = r_list_newf (free);
+	RList *params = r_list_new ();
 	if (!params) {
 		return NULL;
 	}
@@ -366,11 +366,11 @@ static RList *dex_method_signature2(RBinDexObj *bin, int method_idx) {
 		if (type_idx >= bin->header.types_size || type_idx > bin->size) {
 			break;
 		}
-		char *buff = getstr (bin, bin->types[type_idx].descriptor_id);
+		const char *buff = getstr (bin, bin->types[type_idx].descriptor_id);
 		if (!buff) {
 			break;
 		}
-		r_list_append (params, buff);
+		r_list_append (params, (void *)buff);
 	}
 	return params;
 out_error:
@@ -924,7 +924,7 @@ out_error:
 	return NULL;
 }
 
-static char *dex_method_name(RBinDexObj *bin, int idx) {
+static const char *dex_method_name(RBinDexObj *bin, int idx) {
 	if (idx < 0 || idx >= bin->header.method_size) {
 		return NULL;
 	}
@@ -1131,7 +1131,7 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		field.class_id = r_read_le16 (ff);
 		field.type_id = r_read_le16 (ff + 2);
 		field.name_id = r_read_le32 (ff + 4);
-		char *fieldName = getstr (dex, field.name_id);
+		const char *fieldName = getstr (dex, field.name_id);
 		if (field.type_id >= dex->header.types_size) {
 			break;
 		}
@@ -1222,14 +1222,13 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				methods[MI] = 1;
 			}
 		}
-		char *method_name = dex_method_name (dex, MI);
+		const char *method_name = dex_method_name (dex, MI);
 		char *signature = dex_method_signature (dex, MI);
 		if (!method_name) {
 			method_name = strdup ("unknown");
 		}
 		char *flag_name = r_str_newf ("%s.method.%s%s", cls->name, method_name, signature);
 		if (!flag_name || !*flag_name) {
-			//R_FREE (method_name);
 			R_FREE (flag_name);
 			R_FREE (signature);
 			continue;
@@ -1242,13 +1241,11 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			// TODO: parse debug info
 			// XXX why bf->buf->base???
 			if (MC + 16 >= dex->size || MC + 16 < MC) {
-				//R_FREE (method_name);
 				R_FREE (flag_name);
 				R_FREE (signature);
 				continue;
 			}
 			if (bufsz < MC || bufsz < MC + 16) {
-				//R_FREE (method_name);
 				R_FREE (flag_name);
 				R_FREE (signature);
 				continue;
@@ -1316,7 +1313,6 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 					ut64 try_from = (start_addr * 2) + method_offset;
 					ut64 try_to = (start_addr * 2) + (insn_count * 2) + method_offset + 2;
 					ut64 try_catch = try_to + handler_off - 1;
-					char* s = NULL;
 					if (dexdump) {
 						cb_printf ("        0x%04x - 0x%04x\n", start_addr, (start_addr + insn_count));
 					}
@@ -1354,7 +1350,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 							break;
 						}
 						if (handler_type > 0 && handler_type < dex->header.types_size) {
-							s = getstr (dex, dex->types[handler_type].descriptor_id);
+							const char *s = getstr (dex, dex->types[handler_type].descriptor_id);
 							if (dexdump) {
 								cb_printf (
 									"          %s "
@@ -1362,7 +1358,6 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 									s,
 									handler_addr);
 							}
-							s = NULL;
 						} else {
 							if (dexdump) {
 								cb_printf ("          (error) -> 0x%04"PFMT64x"\n", handler_addr);
@@ -1484,7 +1479,6 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			R_FREE (flag_name);
 		}
 		R_FREE (signature);
-		//R_FREE (method_name);
 	}
 }
 
@@ -1736,9 +1730,9 @@ static bool dex_loadcode(RBinFile *bf) {
 				continue;
 			}
 			r_str_replace_char (class_name, ';', 0);
-			char *method_name = dex_method_name (bin, i);
+			const char *method_name = dex_method_name (bin, i);
 			char *signature = dex_method_signature (bin, i);
-			if (method_name && *method_name) {
+			if (!R_STR_ISEMPTY (method_name)) {
 				RBinImport *imp = R_NEW0 (RBinImport);
 				if (!imp) {
 					free (methods);
@@ -2187,10 +2181,16 @@ static RList* libs(RBinFile *bf) {
 	return ret;
 }
 
+static void destroy(RBinFile *bf) {
+	RBinDexObj *obj = bf->o->bin_obj;
+	r_bin_dex_free (obj);
+}
+
 RBinPlugin r_bin_plugin_dex = {
 	.name = "dex",
 	.desc = "dex format bin plugin",
 	.license = "LGPL3",
+	.destroy = &destroy,
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
 	.check_buffer = check_buffer,
