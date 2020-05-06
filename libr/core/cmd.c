@@ -7063,7 +7063,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	struct {
 		const char *cmd;
 		const char *description;
-		r_cmd_callback (cb);
+		RCmdCb cb;
 		void (*descriptor_init)(RCore *core);
 	} cmds[] = {
 		{"!",        "run system command", cmd_system},
@@ -7081,40 +7081,40 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"?",        "help message", cmd_help, cmd_help_init},
 		{"\\",       "alias for =!", cmd_rap_run},
 		{"'",        "alias for =!", cmd_rap_run},
-		{"0x",       "alias for s 0x", cmd_ox},
-		{"analysis", "analysis", cmd_anal, cmd_anal_init},
-		{"bsize",    "change block size", cmd_bsize},
-		{"cmp",      "compare memory", cmd_cmp, cmd_cmp_init},
-		{"Code",     "code metadata", cmd_meta, cmd_meta_init},
-		{"debug",    "debugger operations", cmd_debug, cmd_debug_init},
-		{"eval",     "evaluate configuration variable", cmd_eval, cmd_eval_init},
-		{"flag",     "get/set flags", cmd_flag, cmd_flag_init},
+		{"0",       "alias for s 0x", cmd_ox},
+		{"a", "analysis", cmd_anal, cmd_anal_init},
+		{"b",    "change block size", cmd_bsize},
+		{"c",      "compare memory", cmd_cmp, cmd_cmp_init},
+		{"C",     "code metadata", cmd_meta, cmd_meta_init},
+		{"d",    "debugger operations", cmd_debug, cmd_debug_init},
+		{"e",     "evaluate configuration variable", cmd_eval, cmd_eval_init},
+		{"f",     "get/set flags", cmd_flag, cmd_flag_init},
 		{"g",        "egg manipulation", cmd_egg, cmd_egg_init},
-		{"info",     "get file info", cmd_info, cmd_info_init},
-		{"kuery",    "perform sdb query", cmd_kuery},
+		{"i",     "get file info", cmd_info, cmd_info_init},
+		{"k",    "perform sdb query", cmd_kuery},
 		{"l",       "list files and directories", cmd_ls},
-		{"join",    "join the contents of the two files", cmd_join},
-		{"head",    "show the top n number of line in file", cmd_head},
+		{"j",    "join the contents of the two files", cmd_join},
+		{"h",    "show the top n number of line in file", cmd_head},
 		{"L",        "manage dynamically loaded plugins", cmd_plugins},
-		{"mount",    "mount filesystem", cmd_mount, cmd_mount_init},
-		{"open",     "open or map file", cmd_open, cmd_open_init},
-		{"print",    "print current block", cmd_print, cmd_print_init},
-		{"Project",  "project", cmd_project, cmd_project_init},
-		{"quit",     "exit program session", cmd_quit, cmd_quit_init},
+		{"m",    "mount filesystem", cmd_mount, cmd_mount_init},
+		{"o",     "open or map file", cmd_open, cmd_open_init},
+		{"p",    "print current block", cmd_print, cmd_print_init},
+		{"P",  "project", cmd_project, cmd_project_init},
+		{"q",     "exit program session", cmd_quit, cmd_quit_init},
 		{"Q",        "alias for q!", cmd_Quit},
 		{":",        "long commands starting with :", cmd_colon},
-		{"resize",   "change file size", cmd_resize},
-		{"seek",     "seek to an offset", cmd_seek, cmd_seek_init},
+		{"r",   "change file size", cmd_resize},
+		{"s",     "seek to an offset", cmd_seek, cmd_seek_init},
 		{"t",        "type information (cparse)", cmd_type, cmd_type_init},
-		{"Text",     "Text log utility", cmd_log, cmd_log_init},
+		{"T",     "Text log utility", cmd_log, cmd_log_init},
 		{"u",        "uname/undo", cmd_undo},
 		{"<",        "pipe into RCons.readChar", cmd_pipein},
-		{"Visual",   "enter visual mode", cmd_visual},
-		{"visualPanels",   "enter visual mode", cmd_panels},
-		{"write",    "write bytes", cmd_write, cmd_write_init},
+		{"V",   "enter visual mode", cmd_visual},
+		{"v",   "enter visual mode", cmd_panels},
+		{"w",    "write bytes", cmd_write, cmd_write_init},
 		{"x",        "alias for px", cmd_hexdump},
-		{"yank",     "yank bytes", cmd_yank},
-		{"zign",     "zignatures", cmd_zign, cmd_zign_init},
+		{"y",     "yank bytes", cmd_yank},
+		{"z",     "zignatures", cmd_zign, cmd_zign_init},
 	};
 
 	core->rcmd = r_cmd_new ();
@@ -7127,7 +7127,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	core->cmd_descriptors = r_list_newf (free);
 	int i;
 	for (i = 0; i < R_ARRAY_SIZE (cmds); i++) {
-		r_cmd_add (core->rcmd, cmds[i].cmd, cmds[i].description, cmds[i].cb);
+		r_cmd_add (core->rcmd, cmds[i].cmd, cmds[i].cb);
 		if (cmds[i].descriptor_init) {
 			cmds[i].descriptor_init (core);
 		}

@@ -66,6 +66,25 @@ void sprint_mem(char *out, const ut8 *buf, size_t len) {
 
 #define mu_sysfail(message) do { perror(message); mu_fail(message); } while(0)
 
+#define mu_assert_true(actual, message) do { \
+		__typeof__ (actual) act__ = (actual); \
+		if (!(act__)) { \
+			char _meqstr[2048]; \
+			sprintf (_meqstr, "%s: expected true, got false", (message)); \
+			mu_assert (_meqstr, false); \
+		} \
+	} while (0)
+
+#define mu_assert_false(actual, message) \
+	do { \
+		__typeof__ (actual) act__ = (actual); \
+		if ((act__)) { \
+			char _meqstr[2048]; \
+			sprintf (_meqstr, "%s: expected false, got true", (message)); \
+			mu_assert (_meqstr, false); \
+		} \
+	} while (0)
+
 #define mu_assert_eq(actual, expected, message) do { \
 		__typeof__(actual) act__ = (actual); \
 		__typeof__(expected) exp__ = (expected); \

@@ -12,6 +12,39 @@ static int value = 0;
 #define NCMDS (sizeof (cmd->cmds)/sizeof(*cmd->cmds))
 R_LIB_VERSION (r_cmd);
 
+static bool cmd_desc_set_parent(RCmdDesc *cd, RCmdDesc *parent) {
+	r_return_val_if_fail (cd && parent && !cd->parent, false);
+	cd->parent = parent;
+	r_pvector_push (&parent->children, cd);
+	parent->n_children++;
+	return true;
+}
+
+static bool cmd_desc_remove_parent(RCmdDesc *cd) {
+	r_return_val_if_fail (cd && cd->parent, false);
+	r_pvector_remove_data (&cd->parent->children, cd);
+	cd->parent = NULL;
+	return NULL;
+}
+
+static RCmdDesc *create_cmd_desc(RCmdDesc *parent, RCmdDescType type, const char *name) {
+	RCmdDesc *res = R_NEW0 (RCmdDesc);
+	if (!res) {
+		return NULL;
+	}
+	res->type = type;
+	res->name = strdup (name);
+	if (!res->name) {
+		goto err;
+	}
+	res->n_children = 0;
+	r_pvector_init (&res->children, (RPVectorFree)r_cmd_desc_free);
+	cmd_desc_set_parent (res, parent);
+	return res;
+err:
+	r_cmd_desc_free (res);
+	return NULL;
+}
 
 R_API void r_cmd_alias_init(RCmd *cmd) {
 	cmd->aliases.count = 0;
@@ -30,10 +63,21 @@ R_API RCmd *r_cmd_new () {
 		cmd->cmds[i] = NULL;
 	}
 	cmd->nullcallback = cmd->data = NULL;
+	cmd->root_cmd_desc = create_cmd_desc (NULL, R_CMD_DESC_TYPE_INNER, "");
+	cmd->ht_cmds = ht_pp_new0 ();
 	r_core_plugin_init (cmd);
 	r_cmd_macro_init (&cmd->macro);
 	r_cmd_alias_init (cmd);
 	return cmd;
+}
+
+static void free_cmd_desc_tree(RCmdDesc *cd) {
+	void **it;
+	r_cmd_desc_children_foreach (cd, it) {
+		RCmdDesc *in_cd = *(RCmdDesc **)it;
+		free_cmd_desc_tree (in_cd);
+	}
+	r_cmd_desc_free (cd);
 }
 
 R_API RCmd *r_cmd_free(RCmd *cmd) {
@@ -44,6 +88,7 @@ R_API RCmd *r_cmd_free(RCmd *cmd) {
 	ht_up_free (cmd->ts_symbols_ht);
 	r_cmd_alias_free (cmd);
 	r_cmd_macro_fini (&cmd->macro);
+	ht_pp_free (cmd->ht_cmds);
 	// dinitialize plugin commands
 	r_core_plugin_fini (cmd);
 	r_list_free (cmd->plist);
@@ -53,8 +98,35 @@ R_API RCmd *r_cmd_free(RCmd *cmd) {
 			R_FREE (cmd->cmds[i]);
 		}
 	}
+	free_cmd_desc_tree (cmd->root_cmd_desc);
 	free (cmd);
 	return NULL;
+}
+
+R_API RCmdDesc *r_cmd_get_root(RCmd *cmd) {
+	return cmd->root_cmd_desc;
+}
+
+R_API RCmdDesc *r_cmd_get_desc(RCmd *cmd, const char *cmd_identifier) {
+	r_return_val_if_fail (cmd && cmd_identifier, NULL);
+	char *cmdid = strdup (cmd_identifier);
+	char *end_cmdid = cmdid + strlen (cmdid);
+	RCmdDesc *res = NULL;
+	bool is_exact_match = true;
+	// match longer commands first
+	while (*cmdid) {
+		res = ht_pp_find (cmd->ht_cmds, cmdid, NULL);
+		r_warn_if_fail (!res || res->type == R_CMD_DESC_TYPE_OLDINPUT || res->type == R_CMD_DESC_TYPE_ARGV);
+		if (res && (res->type == R_CMD_DESC_TYPE_OLDINPUT ||
+			(res->type == R_CMD_DESC_TYPE_ARGV && is_exact_match))) {
+			goto out;
+		}
+		is_exact_match = false;
+		*(--end_cmdid) = '\0';
+	}
+out:
+	free (cmdid);
+	return res;
 }
 
 R_API char **r_cmd_alias_keys(RCmd *cmd, int *sz) {
@@ -173,7 +245,7 @@ R_API int r_cmd_set_data(RCmd *cmd, void *data) {
 	return 1;
 }
 
-R_API int r_cmd_add(RCmd *c, const char *cmd, const char *desc, r_cmd_callback(cb)) {
+R_API int r_cmd_add(RCmd *c, const char *cmd, RCmdCb cb) {
 	int idx = (ut8)cmd[0];
 	RCmdItem *item = c->cmds[idx];
 	if (!item) {
@@ -181,8 +253,8 @@ R_API int r_cmd_add(RCmd *c, const char *cmd, const char *desc, r_cmd_callback(c
 		c->cmds[idx] = item;
 	}
 	strncpy (item->cmd, cmd, sizeof (item->cmd)-1);
-	strncpy (item->desc, desc, sizeof (item->desc)-1);
 	item->callback = cb;
+	r_cmd_desc_oldinput_new (c, c->root_cmd_desc, cmd, cb);
 	return true;
 }
 
@@ -236,11 +308,60 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 	return ret;
 }
 
+static int cmdstatus2int(RCmdStatus s) {
+	switch (s) {
+	case R_CMD_STATUS_OK:
+		return 0;
+	case R_CMD_STATUS_INVALID:
+		return -1;
+	case R_CMD_STATUS_EXIT:
+	default:
+		return -2;
+	}
+}
+
 R_API int r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
+	int res = 0;
+
+	// As old RCorePlugin do not register new commands in RCmd, we have no
+	// way of knowing if one of those is able to handle the input, so we
+	// have to pass the input to all of them before looking into the
+	// RCmdDesc tree
+	RListIter *iter;
+	RCorePlugin *cp;
 	char *exec_string = r_cmd_parsed_args_execstr (args);
-	R_LOG_DEBUG ("r_cmd_call_parsed_args exec_string = '%s'\n", exec_string);
-	int res = r_cmd_call (cmd, exec_string);
-	free (exec_string);
+	r_list_foreach (cmd->plist, iter, cp) {
+		if (cp->call) {
+			res = cp->call (cmd->data, exec_string);
+			if (res) {
+				break;
+			}
+		}
+	}
+	R_FREE (exec_string);
+	if (res) {
+		return 1;
+	}
+
+	RCmdDesc *cd = r_cmd_get_desc (cmd, r_cmd_parsed_args_cmd (args));
+	if (!cd) {
+		return -1;
+	}
+
+	switch (cd->type) {
+	case R_CMD_DESC_TYPE_ARGV:
+		res = cmdstatus2int (cd->d.argv_data.cb (cmd->data, args->argc, (const char **)args->argv));
+		break;
+	case R_CMD_DESC_TYPE_OLDINPUT:
+		exec_string = r_cmd_parsed_args_execstr (args);
+		res = cd->d.oldinput_data.cb (cmd->data, exec_string + strlen (cd->name));
+		R_FREE (exec_string);
+		break;
+	default:
+		res = -1;
+		R_LOG_ERROR ("RCmdDesc type not handled\n");
+		break;
+	}
 	return res;
 }
 
@@ -812,4 +933,63 @@ R_API char *r_cmd_parsed_args_execstr(RCmdParsedArgs *a) {
 	}
 	parsed_args_iterateargs (a, sb);
 	return r_strbuf_drain (sb);
+}
+
+R_API const char *r_cmd_parsed_args_cmd(RCmdParsedArgs *a) {
+	r_return_val_if_fail (a && a->argv && a->argv[0], NULL);
+	return a->argv[0];
+}
+
+/* RCmdDescriptor */
+
+R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb) {
+	r_return_val_if_fail (cmd && parent && name && cb, NULL);
+	r_return_val_if_fail (parent->type == R_CMD_DESC_TYPE_INNER, NULL);
+	RCmdDesc *res = create_cmd_desc (parent, R_CMD_DESC_TYPE_ARGV, name);
+	if (!res) {
+		return NULL;
+	}
+
+	res->d.argv_data.cb = cb;
+	if (!ht_pp_insert (cmd->ht_cmds, name, res)) {
+		cmd_desc_remove_parent (res);
+		r_cmd_desc_free (res);
+		return NULL;
+	}
+	return res;
+}
+
+R_API RCmdDesc *r_cmd_desc_inner_new(RCmd *cmd, RCmdDesc *parent, const char *name) {
+	r_return_val_if_fail (cmd && parent && name, NULL);
+	r_return_val_if_fail (parent->type == R_CMD_DESC_TYPE_INNER, NULL);
+	return create_cmd_desc (parent, R_CMD_DESC_TYPE_INNER, name);
+}
+
+R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdCb cb) {
+	r_return_val_if_fail (cmd && parent && name && cb, NULL);
+	r_return_val_if_fail (parent->type == R_CMD_DESC_TYPE_INNER, NULL);
+	RCmdDesc *res = create_cmd_desc (parent, R_CMD_DESC_TYPE_OLDINPUT, name);
+	if (!res) {
+		return NULL;
+	}
+	res->d.oldinput_data.cb = cb;
+	if (!ht_pp_insert (cmd->ht_cmds, name, res)) {
+		cmd_desc_remove_parent (res);
+		r_cmd_desc_free (res);
+		return NULL;
+	}
+	return res;
+}
+
+R_API void r_cmd_desc_free(RCmdDesc *cd) {
+	if (!cd) {
+		return;
+	}
+	free (cd->name);
+	free (cd);
+}
+
+R_API RCmdDesc *r_cmd_desc_parent(RCmdDesc *cd) {
+	r_return_val_if_fail (cd, NULL);
+	return cd->parent;
 }
