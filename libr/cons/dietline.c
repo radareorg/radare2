@@ -266,19 +266,21 @@ static int r_line_readchar_win(ut8 *s, int slen) { // this function handle the i
 	HANDLE h;
 	void *bed;
 
-	if (I.zerosep) {
-		bed = r_cons_sleep_begin ();
-		int rsz = read (0, s, 1);
-		r_cons_sleep_end (bed);
-		if (rsz != 1) {
-			return 0;
-		}
-		return 1;
-	}
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	DWORD new_mode = I.vtmode == 2 ? ENABLE_VIRTUAL_TERMINAL_INPUT : 0;
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, new_mode);
+	if (I.zerosep) {
+		bed = r_cons_sleep_begin ();
+		DWORD rsz = 0;
+		BOOL ret = ReadFile (h, s, 1, &rsz, NULL);
+		r_cons_sleep_end (bed);
+		SetConsoleMode (h, mode);
+		if (!ret || rsz != 1) {
+			return 0;
+		}
+		return 1;
+	}
 do_it_again:
 	bed = r_cons_sleep_begin ();
 	if (r_cons_singleton()->term_xterm) {
