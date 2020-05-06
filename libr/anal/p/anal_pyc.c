@@ -10,7 +10,7 @@
 
 static pyc_opcodes *ops = NULL;
 
-static int archinfo (RAnal *anal, int query) {
+static int archinfo(RAnal *anal, int query) {
 	if (!strcmp (anal->cpu, "x86"))
 		return -1;
 
@@ -24,7 +24,7 @@ static int archinfo (RAnal *anal, int query) {
 	}
 }
 
-static char *get_reg_profile (RAnal *anal) {
+static char *get_reg_profile(RAnal *anal) {
 	return strdup (
 		"=PC    pc\n"
 		"=BP    bp\n"
@@ -35,14 +35,14 @@ static char *get_reg_profile (RAnal *anal) {
 	);
 }
 
-static RList *get_pyc_code_obj (RAnal *anal) {
+static RList *get_pyc_code_obj(RAnal *anal) {
 	RBin *b = anal->binb.bin;
 	RBinPlugin *plugin = b->cur && b->cur->o ? b->cur->o->plugin : NULL;
 	ut8 is_pyc = (plugin && strcmp (plugin->name, "pyc") == 0) ? 1 : 0;
 	return is_pyc ? b->cur->o->bin_obj : NULL;
 }
 
-static int pyc_op (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static int pyc_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	RList *cobjs = r_list_get_n (get_pyc_code_obj (a), 0);
 	RListIter *iter = NULL;
 	pyc_code_object *func = NULL, *t = NULL;
