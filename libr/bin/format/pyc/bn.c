@@ -406,7 +406,8 @@ int bignum_cmp (struct bn *a, struct bn *b) {
 		i -= 1; /* Decrement first, to start with last array element */
 		if (a->array[i] > b->array[i]) {
 			return LARGER;
-		} else if (a->array[i] < b->array[i]) {
+		}
+        if (a->array[i] < b->array[i]) {
 			return SMALLER;
 		}
 	} while (i != 0);
