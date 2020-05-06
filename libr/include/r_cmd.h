@@ -127,7 +127,7 @@ typedef struct r_core_plugin_t {
 	const char *license;
 	const char *author;
 	const char *version;
-	RCmdCb call;
+	RCmdCb call; // returns true if command was handled, false otherwise.
 	RCmdCb init;
 	RCmdCb fini;
 } RCorePlugin;

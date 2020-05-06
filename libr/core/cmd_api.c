@@ -330,15 +330,14 @@ R_API RCmdStatus r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
 	char *exec_string = r_cmd_parsed_args_execstr (args);
 	r_list_foreach (cmd->plist, iter, cp) {
 		if (cp->call) {
-			int ires = cp->call (cmd->data, exec_string);
-			if (ires) {
-				res = int2cmdstatus (ires);
+			if (cp->call (cmd->data, exec_string)) {
+				res = R_CMD_STATUS_OK;
 				break;
 			}
 		}
 	}
 	R_FREE (exec_string);
-	if (res != R_CMD_STATUS_INVALID) {
+	if (res == R_CMD_STATUS_OK) {
 		return res;
 	}
 
