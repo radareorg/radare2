@@ -84,12 +84,6 @@ R_LIB_VERSION_HEADER(r_core);
 
 #define RTR_MAX_HOSTS 255
 
-typedef enum {
-	R_CORE_CMD_STATUS_OK = R_CORE_CMD_OK,
-	R_CORE_CMD_STATUS_INVALID = R_CORE_CMD_INVALID,
-	R_CORE_CMD_STATUS_EXIT = R_CORE_CMD_EXIT
-} RCoreCmdStatus;
-
 /* visual mode */
 typedef enum {
 	R_CORE_VISUAL_MODE_PX = 0,
