@@ -122,7 +122,7 @@ static version_opcode version_op[] = {
 	{ "v3.9.0a3", opcode_39 },
 };
 
-static bool pyc_opcodes_equal (pyc_opcodes *op, const char *version) {
+bool pyc_opcodes_equal (pyc_opcodes *op, const char *version) {
     size_t i;
 	for (i = 0; i < sizeof (version_op) / sizeof (version_opcode); i++) {
 		if (!strcmp (version_op[i].version, version)) {
