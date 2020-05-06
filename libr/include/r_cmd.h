@@ -15,8 +15,15 @@ extern "C" {
 #define MACRO_LABELS 20
 #define R_CMD_MAXLEN 4096
 
-#define r_cmd_callback(x) int (*x)(void *data, const char *input)
-#define r_cmd_nullcallback(x) int (*x)(void *data)
+typedef enum r_cmd_status_t {
+	R_CMD_STATUS_OK = 0,
+	R_CMD_STATUS_INVALID,
+	R_CMD_STATUS_EXIT
+} RCmdStatus;
+
+typedef int (*RCmdCb) (void *user, const char *input);
+typedef RCmdStatus (*RCmdArgvCb) (void *user, int argc, const char **argv);
+typedef int (*RCmdNullCb) (void *user);
 
 typedef struct r_cmd_parsed_args_t {
 	int argc;
@@ -52,20 +59,10 @@ typedef struct r_cmd_macro_t {
 	RList *macros;
 } RCmdMacro;
 
-typedef int (*RCmdCallback)(void *user, const char *cmd);
-
 typedef struct r_cmd_item_t {
 	char cmd[64];
-	char desc[128];
-	r_cmd_callback (callback);
+	RCmdCb callback;
 } RCmdItem;
-
-typedef struct r_cmd_long_item_t {
-	char cmd[64]; /* long command */
-	int cmd_len;
-	char cmd_short[32]; /* short command */
-	char desc[128];
-} RCmdLongItem;
 
 typedef struct r_cmd_alias_t {
 	int count;
@@ -74,9 +71,35 @@ typedef struct r_cmd_alias_t {
 	int *remote;
 } RCmdAlias;
 
+typedef enum {
+	// for old handlers that parse their own input and accept a single string
+	R_CMD_DESC_TYPE_OLDINPUT,
+	// for handlers that accept argc/argv
+	R_CMD_DESC_TYPE_ARGV,
+	// for middle nodes in the tree
+	R_CMD_DESC_TYPE_INNER,
+} RCmdDescType;
+
+typedef struct r_cmd_desc_t {
+	RCmdDescType type;
+	char *name;
+	struct r_cmd_desc_t *parent;
+	int n_children;
+	RPVector children;
+
+	union {
+		struct {
+			RCmdCb cb;
+		} oldinput_data;
+		struct {
+			RCmdArgvCb cb;
+		} argv_data;
+	} d;
+} RCmdDesc;
+
 typedef struct r_cmd_t {
 	void *data;
-	r_cmd_nullcallback (nullcallback);
+	RCmdNullCb nullcallback;
 	RCmdItem *cmds[UT8_MAX];
 	RCmdMacro macro;
 	RList *lcmds;
@@ -84,9 +107,11 @@ typedef struct r_cmd_t {
 	RCmdAlias aliases;
 	void *language; // used to store TSLanguage *
 	HtUP *ts_symbols_ht;
+	RCmdDesc *root_cmd_desc;
+	HtPP *ht_cmds;
 } RCmd;
 
-// TODO WIP
+// TODO: remove this once transitioned to RCmdDesc
 typedef struct r_cmd_descriptor_t {
 	const char *cmd;
 	const char **help_msg;
@@ -102,9 +127,9 @@ typedef struct r_core_plugin_t {
 	const char *license;
 	const char *author;
 	const char *version;
-	RCmdCallback call;
-	RCmdCallback init;
-	RCmdCallback fini;
+	RCmdCb call;
+	RCmdCb init;
+	RCmdCb fini;
 } RCorePlugin;
 
 #ifdef R_API
@@ -113,14 +138,24 @@ R_API int r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin);
 R_API int r_core_plugin_check(RCmd *cmd, const char *a0);
 R_API int r_core_plugin_fini(RCmd *cmd);
 
-/* review api */
 R_API RCmd *r_cmd_new(void);
 R_API RCmd *r_cmd_free(RCmd *cmd);
 R_API int r_cmd_set_data(RCmd *cmd, void *data);
-R_API int r_cmd_add(RCmd *cmd, const char *command, const char *desc, r_cmd_callback(callback));
+R_API int r_cmd_add(RCmd *cmd, const char *command, RCmdCb callback);
 R_API int r_core_del(RCmd *cmd, const char *command);
 R_API int r_cmd_call(RCmd *cmd, const char *command);
 R_API int r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args);
+R_API RCmdDesc *r_cmd_get_root(RCmd *cmd);
+R_API RCmdDesc *r_cmd_get_desc(RCmd *cmd, const char *cmd_identifier);
+
+/* RCmdDescriptor */
+R_API RCmdDesc *r_cmd_desc_inner_new(RCmd *cmd, RCmdDesc *parent, const char *name);
+R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb);
+R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdCb cb);
+R_API void r_cmd_desc_free(RCmdDesc *cd);
+R_API RCmdDesc *r_cmd_desc_parent(RCmdDesc *cd);
+
+#define r_cmd_desc_children_foreach(root, it_cd) r_pvector_foreach (&root->children, it_cd)
 
 /* RCmdParsedArgs */
 R_API RCmdParsedArgs *r_cmd_parsed_args_new(const char *cmd, int n_args, char **args);
@@ -131,6 +166,7 @@ R_API bool r_cmd_parsed_args_setargs(RCmdParsedArgs *arg, int n_args, char **arg
 R_API bool r_cmd_parsed_args_setcmd(RCmdParsedArgs *arg, const char *cmd);
 R_API char *r_cmd_parsed_args_argstr(RCmdParsedArgs *arg);
 R_API char *r_cmd_parsed_args_execstr(RCmdParsedArgs *arg);
+R_API const char *r_cmd_parsed_args_cmd(RCmdParsedArgs *arg);
 
 #define r_cmd_parsed_args_foreach_arg(args, i, arg) for ((i) = 1; (i) < (args->argc) && ((arg) = (args)->argv[i]); (i)++)
 
