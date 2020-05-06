@@ -14,3 +14,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pe64 cc
+FILE=bins/pe/tls64.exe
+CMDS=afc=
+EXPECT=<<EOF
+ms
+EOF
+RUN
