@@ -308,20 +308,18 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 	return ret;
 }
 
-static int cmdstatus2int(RCmdStatus s) {
-	switch (s) {
-	case R_CMD_STATUS_OK:
-		return 0;
-	case R_CMD_STATUS_INVALID:
-		return -1;
-	case R_CMD_STATUS_EXIT:
-	default:
-		return -2;
+static RCmdStatus int2cmdstatus(int v) {
+	if (v == -2) {
+		return R_CMD_STATUS_EXIT;
+	} else if (v < 0) {
+		return R_CMD_STATUS_INVALID;
+	} else {
+		return R_CMD_STATUS_OK;
 	}
 }
 
-R_API int r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
-	int res = 0;
+R_API RCmdStatus r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
+	RCmdStatus res = R_CMD_STATUS_INVALID;
 
 	// As old RCorePlugin do not register new commands in RCmd, we have no
 	// way of knowing if one of those is able to handle the input, so we
@@ -332,33 +330,33 @@ R_API int r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
 	char *exec_string = r_cmd_parsed_args_execstr (args);
 	r_list_foreach (cmd->plist, iter, cp) {
 		if (cp->call) {
-			res = cp->call (cmd->data, exec_string);
-			if (res) {
+			if (cp->call (cmd->data, exec_string)) {
+				res = R_CMD_STATUS_OK;
 				break;
 			}
 		}
 	}
 	R_FREE (exec_string);
-	if (res) {
-		return 1;
+	if (res == R_CMD_STATUS_OK) {
+		return res;
 	}
 
 	RCmdDesc *cd = r_cmd_get_desc (cmd, r_cmd_parsed_args_cmd (args));
 	if (!cd) {
-		return -1;
+		return R_CMD_STATUS_INVALID;
 	}
 
 	switch (cd->type) {
 	case R_CMD_DESC_TYPE_ARGV:
-		res = cmdstatus2int (cd->d.argv_data.cb (cmd->data, args->argc, (const char **)args->argv));
+		res = cd->d.argv_data.cb (cmd->data, args->argc, (const char **)args->argv);
 		break;
 	case R_CMD_DESC_TYPE_OLDINPUT:
 		exec_string = r_cmd_parsed_args_execstr (args);
-		res = cd->d.oldinput_data.cb (cmd->data, exec_string + strlen (cd->name));
+		res = int2cmdstatus (cd->d.oldinput_data.cb (cmd->data, exec_string + strlen (cd->name)));
 		R_FREE (exec_string);
 		break;
 	default:
-		res = -1;
+		res = R_CMD_STATUS_INVALID;
 		R_LOG_ERROR ("RCmdDesc type not handled\n");
 		break;
 	}

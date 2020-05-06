@@ -127,7 +127,7 @@ typedef struct r_core_plugin_t {
 	const char *license;
 	const char *author;
 	const char *version;
-	RCmdCb call;
+	RCmdCb call; // returns true if command was handled, false otherwise.
 	RCmdCb init;
 	RCmdCb fini;
 } RCorePlugin;
@@ -144,7 +144,7 @@ R_API int r_cmd_set_data(RCmd *cmd, void *data);
 R_API int r_cmd_add(RCmd *cmd, const char *command, RCmdCb callback);
 R_API int r_core_del(RCmd *cmd, const char *command);
 R_API int r_cmd_call(RCmd *cmd, const char *command);
-R_API int r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args);
+R_API RCmdStatus r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args);
 R_API RCmdDesc *r_cmd_get_root(RCmd *cmd);
 R_API RCmdDesc *r_cmd_get_desc(RCmd *cmd, const char *cmd_identifier);
 

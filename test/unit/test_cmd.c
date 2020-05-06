@@ -190,6 +190,10 @@ static int wv_handler(void *user, const char *input) {
 	return 1;
 }
 
+static int q_handler(void *user, const char *input) {
+	return -2;
+}
+
 bool test_cmd_call_desc(void) {
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
@@ -197,21 +201,26 @@ bool test_cmd_call_desc(void) {
 	r_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler);
 	r_cmd_desc_oldinput_new (cmd, p_cd, "p", p_handler);
 	r_cmd_desc_oldinput_new (cmd, root, "wv", wv_handler);
+	r_cmd_desc_oldinput_new (cmd, root, "q", q_handler);
 
 	char *pd_args[] = {"10"};
 	char *px_args[] = {"10"};
 	char *wv8_args[] = {"0xdeadbeef"};
 
 	RCmdParsedArgs *a = r_cmd_parsed_args_new ("pd", 1, pd_args);
-	mu_assert_eq(r_cmd_call_parsed_args (cmd, a), 0, "pd was called correctly");
+	mu_assert_eq(r_cmd_call_parsed_args (cmd, a), R_CMD_STATUS_OK, "pd was called correctly");
 	r_cmd_parsed_args_free (a);
 
 	a = r_cmd_parsed_args_new ("px", 1, px_args);
-	mu_assert_eq(r_cmd_call_parsed_args (cmd, a), -1, "p was called correctly");
+	mu_assert_eq(r_cmd_call_parsed_args (cmd, a), R_CMD_STATUS_INVALID, "p was called correctly");
 	r_cmd_parsed_args_free (a);
 
 	a = r_cmd_parsed_args_new ("wv8", 1, wv8_args);
-	mu_assert_eq(r_cmd_call_parsed_args (cmd, a), 1, "wv was called correctly");
+	mu_assert_eq(r_cmd_call_parsed_args (cmd, a), R_CMD_STATUS_OK, "wv was called correctly");
+	r_cmd_parsed_args_free (a);
+
+	a = r_cmd_parsed_args_new ("quit", 0, NULL);
+	mu_assert_eq (r_cmd_call_parsed_args (cmd, a), R_CMD_STATUS_EXIT, "quit is going to exit");
 	r_cmd_parsed_args_free (a);
 
 	r_cmd_free (cmd);
