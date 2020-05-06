@@ -669,6 +669,9 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 		}
 		r_core_anal_type_init (r);
 		r_core_anal_cc_init (r);
+		if (info->default_cc && r_anal_cc_exist (r->anal, info->default_cc)) {
+			r_core_cmdf (r, "k anal/cc/default.cc=%s", info->default_cc);
+		}
 	} else if (IS_MODE_SIMPLE (mode)) {
 		r_cons_printf ("arch %s\n", info->arch);
 		if (info->cpu && *info->cpu) {
@@ -715,6 +718,9 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 			}
 			if (info->cpu && *info->cpu) {
 				r_cons_printf ("e asm.cpu=%s\n", info->cpu);
+			}
+			if (info->default_cc) {
+				r_cons_printf ("k anal/cc/default.cc=%s", info->default_cc);
 			}
 			v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_ALIGN);
 			if (v != -1) {
@@ -781,6 +787,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 		if (info->rclass && !strcmp (info->rclass, "pe")) {
 			pair_bool ("overlay", info->pe_overlay, mode, false);
 		}
+		pair_str ("cc", info->default_cc, mode, false);
 		v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_ALIGN);
 		if (v != -1) {
 			pair_int ("pcalign", v, mode, false);

@@ -3683,6 +3683,26 @@ int PE_(r_bin_pe_get_bits)(struct PE_(r_bin_pe_obj_t)* bin) {
 	return bits;
 }
 
+char *PE_(r_bin_pe_get_cc)(struct PE_(r_bin_pe_obj_t)* bin) {
+	if (bin && bin->nt_headers) {
+		if (is_arm (bin)) {
+			if (is_thumb (bin)) {
+				return strdup ("arm16");
+			}
+			switch (bin->nt_headers->optional_header.Magic) {
+			case PE_IMAGE_FILE_TYPE_PE32: return strdup ("arm32");
+			case PE_IMAGE_FILE_TYPE_PE32PLUS: return strdup ("arm64");
+			}
+		} else {
+			switch (bin->nt_headers->optional_header.Magic) {
+			case PE_IMAGE_FILE_TYPE_PE32: return strdup ("cdecl");
+			case PE_IMAGE_FILE_TYPE_PE32PLUS: return strdup ("ms");
+			}
+		}
+	}
+	return NULL;
+}
+
 //This function try to detect anomalies within section
 //we check if there is a section mapped at entrypoint, otherwise add it up
 void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_section_t* * sects) {
