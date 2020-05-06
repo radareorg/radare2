@@ -211,6 +211,7 @@ typedef struct r_bin_info_t {
 	char *guid;
 	char *debug_file_name;
 	const char *lang;
+	char *default_cc;
 	RList/*<RBinFileHash>*/ *file_hashes;
 	int bits;
 	int has_va;

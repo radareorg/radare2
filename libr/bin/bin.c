@@ -142,6 +142,7 @@ R_API void r_bin_info_free(RBinInfo *rb) {
 	free (rb->machine);
 	free (rb->os);
 	free (rb->subsystem);
+	free (rb->default_cc);
 	free (rb->rpath);
 	free (rb->guid);
 	free (rb->debug_file_name);
