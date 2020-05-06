@@ -11,17 +11,16 @@
 static pyc_opcodes *ops = NULL;
 
 static int archinfo (RAnal *anal, int query) {
-	if (!strcmp (anal->cpu, "x86")) {
+	if (!strcmp (anal->cpu, "x86"))
 		return -1;
-	} else {
-		switch (query) {
-		case R_ANAL_ARCHINFO_MIN_OP_SIZE:
-			return (anal->bits == 16) ? 1 : 2;
-		case R_ANAL_ARCHINFO_MAX_OP_SIZE:
-			return (anal->bits == 16) ? 3 : 2;
-		default:
-			return -1;
-		}
+
+	switch (query) {
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return (anal->bits == 16) ? 1 : 2;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return (anal->bits == 16) ? 3 : 2;
+	default:
+		return -1;
 	}
 }
 

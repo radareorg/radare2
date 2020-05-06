@@ -28,8 +28,9 @@ const char *format_CALL_FUNCTION_EX_36 (ut32 oparg) {
 static const char *MAKE_FUNCTION_FLAGS[] = { "default", "keyword-only", "annotation", "closure" };
 
 const char *format_MAKE_FUNCTION_arg_36 (ut32 oparg) {
+    size_t i;
 	char *ret = r_str_new (" ");
-	for (unsigned i = 0; i < sizeof (MAKE_FUNCTION_FLAGS) / sizeof (char *); ++i) {
+	for (i = 0; i < sizeof (MAKE_FUNCTION_FLAGS) / sizeof (char *); ++i) {
 		if (oparg & 0x1)
 			r_str_appendf (ret, ", %s", MAKE_FUNCTION_FLAGS[i]);
 		else {

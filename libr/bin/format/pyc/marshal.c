@@ -151,8 +151,10 @@ static pyc_object *get_int_object (RBuffer *buffer) {
 static pyc_object *get_int64_object (RBuffer *buffer) {
 	pyc_object *ret = NULL;
 	bool error = false;
+	st64 i;
 
-	st64 i = get_st64 (buffer, &error);
+    i = get_st64 (buffer, &error);
+
 	if (error) {
 		return NULL;
 	}

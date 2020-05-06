@@ -897,7 +897,8 @@ static op_anal_func op_anal[] = {
 };
 
 void anal_pyc_op (RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	for (ut32 i = 0; i < (sizeof (op_anal) / sizeof (op_anal_func)); i++) {
+    size_t i;
+	for (i = 0; i < (sizeof (op_anal) / sizeof (op_anal_func)); i++) {
 		if (!strcmp (op_anal[i].op_name, op_obj->op_name)) {
 			op_anal[i].func (op, op_obj, oparg);
 			break;

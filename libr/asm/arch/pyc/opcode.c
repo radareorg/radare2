@@ -122,8 +122,9 @@ static version_opcode version_op[] = {
 	{ "v3.9.0a3", opcode_39 },
 };
 
-bool pyc_opcodes_equal (pyc_opcodes *op, const char *version) {
-	for (ut32 i = 0; i < sizeof (version_op) / sizeof (version_opcode); i++) {
+static bool pyc_opcodes_equal (pyc_opcodes *op, const char *version) {
+    size_t i;
+	for (i = 0; i < sizeof (version_op) / sizeof (version_opcode); i++) {
 		if (!strcmp (version_op[i].version, version)) {
 			if (version_op[i].opcode_func == (pyc_opcodes *(*)())(op->version_sig))
 				return true;
@@ -133,7 +134,8 @@ bool pyc_opcodes_equal (pyc_opcodes *op, const char *version) {
 }
 
 pyc_opcodes *get_opcode_by_version (char *version) {
-	for (ut32 i = 0; i < sizeof (version_op) / sizeof (version_opcode); i++) {
+    size_t i;
+	for (i = 0; i < sizeof (version_op) / sizeof (version_opcode); i++) {
 		if (!strcmp (version_op[i].version, version)) {
 			return version_op[i].opcode_func ();
 		}
@@ -142,6 +144,7 @@ pyc_opcodes *get_opcode_by_version (char *version) {
 }
 
 pyc_opcodes *new_pyc_opcodes () {
+	size_t i, j;
 	pyc_opcodes *ret = R_NEW0 (pyc_opcodes);
 	if (!ret) {
 		return NULL;
@@ -152,11 +155,10 @@ pyc_opcodes *new_pyc_opcodes () {
 		R_FREE (ret);
 		return NULL;
 	}
-	ut16 i = 0;
 	for (i = 0; i < 256; i++) {
 		ret->opcodes[i].op_name = r_str_newf ("<%u>", i);
 		if (!ret->opcodes[i].op_name) {
-			for (ut8 j = 0; j < i; j++) {
+			for (j = 0; j < i; j++) {
 				free (ret->opcodes[j].op_name);
 			}
 			free (ret->opcodes);
@@ -174,7 +176,8 @@ pyc_opcodes *new_pyc_opcodes () {
 }
 
 void free_opcode (pyc_opcodes *opcodes) {
-	for (ut16 i = 0; i < 256; i++)
+    size_t i;
+	for (i = 0; i < 256; i++)
 		free (opcodes->opcodes[i].op_name);
 	free (opcodes->opcodes);
 	r_list_free (opcodes->opcode_arg_fmt);
