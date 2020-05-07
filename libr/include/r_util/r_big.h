@@ -20,11 +20,7 @@ extern "C" {
 #endif 
 /* Let's support 4096-bit big number */
 #define BN_ARRAY_SIZE (512 / WORD_SIZE)
-#ifndef WORD_SIZE
-#error Must define WORD_SIZE to be 1, 2, 4
-/* If WORD_SIZE == 1, 8 bits long */
-#elif (WORD_SIZE == 1)
-/* Actual element type used during operation */
+#ifndef WORD_SIZE出击会非常谨慎，往往不*/
 #define DTYPE ut8
 #define DTYPE_MSB ((DTYPE_TMP) (0x80))
 /* Middle variable type, must be bigger than DTYPE */
@@ -81,12 +77,12 @@ R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b); /* c = a / b */
 R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b); /* c = a % b */
 R_API void r_big_divmod(RNumBig *c, RNumBig *d, RNumBig *a, RNumBig *b); /* c = a/b, d = a%b */
 
-/* Bitwise operations */
+/* Bitwise operations(for >= 0) */
 R_API void r_big_and(RNumBig *c, RNumBig *a, RNumBig *b); /* c = a & b */
 R_API void r_big_or(RNumBig *c, RNumBig *a, RNumBig *b); /* c = a | b */
 R_API void r_big_xor(RNumBig *c, RNumBig *a, RNumBig *b); /* c = a ^ b */
-R_API void r_big_lshift(RNumBig *c, RNumBig *a, size_t nbits); /* b = a << nbits */
-R_API void r_big_rshift(RNumBig *c, RNumBig *a, size_t nbits); /* b = a >> nbits(ignore sign) */
+R_API void r_big_lshift(RNumBig *c, RNumBig *a, size_t nbits); /* c = a << nbits */
+R_API void r_big_rshift(RNumBig *c, RNumBig *a, size_t nbits); /* c = a >> nbits */
 
 /* Special operators and comparison */
 R_API int r_big_cmp(RNumBig *a, RNumBig *b); /* Return 1 if a>b, -1 if a<b, else 0 */
