@@ -255,6 +255,7 @@ R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b) {
     r_return_if_fail (a);
     r_return_if_fail (b);
     r_return_if_fail (c);
+    r_return_if_fail (r_big_is_zero (b));
 
     RNumBig *current = r_big_new();
     RNumBig *denom = r_big_new();;
@@ -305,6 +306,7 @@ R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b) {
     r_return_if_fail (a);
     r_return_if_fail (b);
     r_return_if_fail (c);
+    r_return_if_fail (r_big_is_zero (b));
     
     RNumBig *tmp = r_big_new();
     
@@ -326,6 +328,7 @@ R_API void r_big_divmod(RNumBig *c, RNumBig *d, RNumBig *a, RNumBig *b) {
     r_return_if_fail (a);
     r_return_if_fail (b);
     r_return_if_fail (c);
+    r_return_if_fail (r_big_is_zero (b));
     
     RNumBig *tmp = r_big_new();
         
