@@ -1,4 +1,5 @@
 #include <r_cmd.h>
+#include <r_cons.h>
 #include <stdlib.h>
 #include "minunit.h"
 
@@ -185,6 +186,13 @@ static int p_handler(void *user, const char *input) {
 	return -1;
 }
 
+static int px_handler(void *user, const char *input) {
+	if (*input == '?') {
+		r_cons_printf ("Free format px help\n");
+	}
+	return 0;
+}
+
 static int wv_handler(void *user, const char *input) {
 	mu_assert_streq (input, "8 0xdeadbeef", "input is +2");
 	return 1;
@@ -227,6 +235,111 @@ bool test_cmd_call_desc(void) {
 	mu_end;
 }
 
+bool test_cmd_help(void) {
+	RCmd *cmd = r_cmd_new ();
+	RCmdDesc *root = r_cmd_get_root (cmd);
+	RCmdDesc *p_cd = r_cmd_desc_inner_new (cmd, root, "p");
+	RCmdDesc *pd_cd = r_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler);
+	RCmdDesc *px_cd = r_cmd_desc_oldinput_new (cmd, p_cd, "px", px_handler);
+
+	RCmdDescHelp p_help = { 0 };
+	p_help.summary = "p summary",
+	r_cmd_desc_set_help (p_cd, &p_help);
+
+	const char *pd_examples[] = { "pd 10", "print 10 disassembled instructions", NULL };
+	RCmdDescHelp pd_help = {
+		.summary = "pd summary",
+		.args_str = "<num>",
+		.description = "pd long description",
+		.examples = pd_examples,
+	};
+	r_cmd_desc_set_help (pd_cd, &pd_help);
+	RCmdDescHelp px_help = {
+		.summary = "px summary",
+		.args_str = "<verylongarg_str_num>",
+		.description = "px long description",
+		.examples = NULL,
+	};
+	r_cmd_desc_set_help (px_cd, &px_help);
+
+	const char *p_help_exp = "p summary\n"
+		"| pd <num>                 # pd summary\n"
+		"| px <verylongarg_str_num> # px summary\n";
+	RCmdParsedArgs *a = r_cmd_parsed_args_newcmd ("p?");
+	char *h = r_cmd_get_help (cmd, a);
+	mu_assert_notnull (h, "help is not null");
+	mu_assert_streq (h, p_help_exp, "wrong help for p?");
+	free (h);
+	r_cmd_parsed_args_free (a);
+
+	const char *pd_help_exp = "pd <num> # pd summary\n";
+	a = r_cmd_parsed_args_newcmd ("pd?");
+	h = r_cmd_get_help (cmd, a);
+	mu_assert_notnull (h, "help is not null");
+	mu_assert_streq (h, pd_help_exp, "wrong help for pd?");
+	free (h);
+	r_cmd_parsed_args_free (a);
+
+	const char *pd_long_help_exp = "pd <num> # pd summary\n"
+		"\n"
+		"pd long description\n"
+		"\n"
+		"Examples:\n"
+		"| pd 10 # print 10 disassembled instructions\n";
+	a = r_cmd_parsed_args_newcmd ("pd??");
+	h = r_cmd_get_help (cmd, a);
+	mu_assert_notnull (h, "help is not null");
+	mu_assert_streq (h, pd_long_help_exp, "wrong help for pd??");
+	free (h);
+	r_cmd_parsed_args_free (a);
+
+	r_cmd_free (cmd);
+	mu_end;
+}
+
+bool test_cmd_oldinput_help(void) {
+	r_cons_new ();
+
+	RCmd *cmd = r_cmd_new ();
+	RCmdDesc *root = r_cmd_get_root (cmd);
+	RCmdDesc *p_cd = r_cmd_desc_inner_new (cmd, root, "p");
+	RCmdDesc *pd_cd = r_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler);
+	RCmdDesc *px_cd = r_cmd_desc_oldinput_new (cmd, p_cd, "px", px_handler);
+
+	RCmdDescHelp p_help = { 0 };
+	p_help.summary = "p summary",
+	r_cmd_desc_set_help (p_cd, &p_help);
+
+	const char *pd_examples[] = { "pd 10", "print 10 disassembled instructions", NULL };
+	RCmdDescHelp pd_help = {
+		.summary = "pd summary",
+		.args_str = "<num>",
+		.description = "pd long description",
+		.examples = pd_examples,
+	};
+	r_cmd_desc_set_help (pd_cd, &pd_help);
+	RCmdDescHelp px_help = {
+		.summary = "px summary",
+		.args_str = "<verylongarg_str_num>",
+		.description = "px long description",
+		.examples = NULL,
+	};
+	r_cmd_desc_set_help (px_cd, &px_help);
+
+	const char *px_help_exp = "Free format px help\n";
+
+	RCmdParsedArgs *a = r_cmd_parsed_args_newcmd ("px?");
+	char *h = r_cmd_get_help (cmd, a);
+	mu_assert_notnull (h, "help is not null");
+	mu_assert_streq (h, px_help_exp, "wrong help for px?");
+	free (h);
+	r_cmd_parsed_args_free (a);
+
+	r_cmd_free (cmd);
+	r_cons_free ();
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test (test_parsed_args_noargs);
 	mu_run_test (test_parsed_args_onearg);
@@ -240,6 +353,8 @@ int all_tests() {
 	mu_run_test (test_cmd_descriptor_tree);
 	mu_run_test (test_cmd_get_desc);
 	mu_run_test (test_cmd_call_desc);
+	mu_run_test (test_cmd_help);
+	mu_run_test (test_cmd_oldinput_help);
 	return tests_passed != tests_run;
 }
 

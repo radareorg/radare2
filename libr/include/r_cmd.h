@@ -71,6 +71,13 @@ typedef struct r_cmd_alias_t {
 	int *remote;
 } RCmdAlias;
 
+typedef struct r_cmd_desc_help_t {
+	const char *summary;
+	const char *args_str;
+	const char *description;
+	const char **examples;
+} RCmdDescHelp;
+
 typedef enum {
 	// for old handlers that parse their own input and accept a single string
 	R_CMD_DESC_TYPE_OLDINPUT,
@@ -86,6 +93,7 @@ typedef struct r_cmd_desc_t {
 	struct r_cmd_desc_t *parent;
 	int n_children;
 	RPVector children;
+	RCmdDescHelp help;
 
 	union {
 		struct {
@@ -147,6 +155,8 @@ R_API int r_cmd_call(RCmd *cmd, const char *command);
 R_API RCmdStatus r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args);
 R_API RCmdDesc *r_cmd_get_root(RCmd *cmd);
 R_API RCmdDesc *r_cmd_get_desc(RCmd *cmd, const char *cmd_identifier);
+R_API char *r_cmd_get_help(RCmd *cmd, RCmdParsedArgs *args);
+R_API char *r_cmd_get_recursive_help(RCmd *cmd);
 
 /* RCmdDescriptor */
 R_API RCmdDesc *r_cmd_desc_inner_new(RCmd *cmd, RCmdDesc *parent, const char *name);
@@ -154,6 +164,7 @@ R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *nam
 R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdCb cb);
 R_API void r_cmd_desc_free(RCmdDesc *cd);
 R_API RCmdDesc *r_cmd_desc_parent(RCmdDesc *cd);
+R_API void r_cmd_desc_set_help(RCmdDesc *cd, RCmdDescHelp *help);
 
 #define r_cmd_desc_children_foreach(root, it_cd) r_pvector_foreach (&root->children, it_cd)
 
