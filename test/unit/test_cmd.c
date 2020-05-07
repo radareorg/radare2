@@ -303,32 +303,11 @@ bool test_cmd_oldinput_help(void) {
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
 	RCmdDesc *p_cd = r_cmd_desc_inner_new (cmd, root, "p");
-	RCmdDesc *pd_cd = r_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler);
-	RCmdDesc *px_cd = r_cmd_desc_oldinput_new (cmd, p_cd, "px", px_handler);
-
-	RCmdDescHelp p_help = { 0 };
-	p_help.summary = "p summary",
-	r_cmd_desc_set_help (p_cd, &p_help);
-
-	const char *pd_examples[] = { "pd 10", "print 10 disassembled instructions", NULL };
-	RCmdDescHelp pd_help = {
-		.summary = "pd summary",
-		.args_str = "<num>",
-		.description = "pd long description",
-		.examples = pd_examples,
-	};
-	r_cmd_desc_set_help (pd_cd, &pd_help);
-	RCmdDescHelp px_help = {
-		.summary = "px summary",
-		.args_str = "<verylongarg_str_num>",
-		.description = "px long description",
-		.examples = NULL,
-	};
-	r_cmd_desc_set_help (px_cd, &px_help);
-
-	const char *px_help_exp = "Free format px help\n";
+	r_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler);
+	r_cmd_desc_oldinput_new (cmd, p_cd, "px", px_handler);
 
 	RCmdParsedArgs *a = r_cmd_parsed_args_newcmd ("px?");
+	const char *px_help_exp = "Free format px help\n";
 	char *h = r_cmd_get_help (cmd, a);
 	mu_assert_notnull (h, "help is not null");
 	mu_assert_streq (h, px_help_exp, "wrong help for px?");
