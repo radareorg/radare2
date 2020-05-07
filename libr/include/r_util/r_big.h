@@ -20,7 +20,11 @@ extern "C" {
 #endif 
 /* Let's support 4096-bit big number */
 #define BN_ARRAY_SIZE (512 / WORD_SIZE)
-#ifndef WORD_SIZE出击会非常谨慎，往往不*/
+#ifndef WORD_SIZE
+#error Must define WORD_SIZE to be 1, 2, 4
+/* If WORD_SIZE == 1, 8 bits long */
+#elif (WORD_SIZE == 1)
+/* Actual element type used during operation */
 #define DTYPE ut8
 #define DTYPE_MSB ((DTYPE_TMP) (0x80))
 /* Middle variable type, must be bigger than DTYPE */
