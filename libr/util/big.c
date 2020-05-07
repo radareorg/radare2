@@ -31,16 +31,16 @@ R_API void r_big_from_int(RNumBig *b, DTYPE_VAR n) {
     DTYPE_TMP v = n * b->sign;
 
     /* Endianness issue if machine is not little-endian? */
-#ifdef WORD_SIZE
-#if (WORD_SIZE == 1)
+#ifdef WORD_SIZ
+#if (WORD_SIZ == 1)
     b->array[0] = (v & 0x000000ff);
     b->array[1] = (v & 0x0000ff00) >> 8;
     b->array[2] = (v & 0x00ff0000) >> 16;
     b->array[3] = (v & 0xff000000) >> 24;
-#elif (WORD_SIZE == 2)
+#elif (WORD_SIZ == 2)
     b->array[0] = (v & 0x0000ffff);
     b->array[1] = (v & 0xffff0000) >> 16;
-#elif (WORD_SIZE == 4)
+#elif (WORD_SIZ == 4)
     b->array[0] = v;
     DTYPE_TMP num_32 = 32;
     DTYPE_TMP tmp = v >> num_32; 
@@ -55,15 +55,15 @@ R_API DTYPE_VAR r_big_to_int(RNumBig *b) {
     DTYPE_TMP ret = 0;
 
     /* Endianness issue if machine is not little-endian? */
-#if (WORD_SIZE == 1)
+#if (WORD_SIZ == 1)
     ret += b->array[0];
     ret += b->array[1] << 8;
     ret += b->array[2] << 16;
     ret += b->array[3] << 24;
-#elif (WORD_SIZE == 2)
+#elif (WORD_SIZ == 2)
     ret += b->array[0];
     ret += b->array[1] << 16;
-#elif (WORD_SIZE == 4)
+#elif (WORD_SIZ == 4)
     ret += b->array[1];
     ret <<= 32;
     ret += b->array[0];
@@ -94,7 +94,7 @@ R_API void r_big_from_hexstr(RNumBig *n, const char *str, int nbytes) {
     r_return_if_fail (nbytes > 0);
 
     DTYPE tmp; 
-    int i = nbytes - (2 * WORD_SIZE); /* index into string */
+    int i = nbytes - (2 * WORD_SIZ); /* index into string */
     if (i < 0) {
         i = 0;
     }
@@ -104,10 +104,10 @@ R_API void r_big_from_hexstr(RNumBig *n, const char *str, int nbytes) {
         tmp = 0;
         sscanf (&str[i], SSCANF_FORMAT_STR, &tmp);
         n->array[j] = tmp;
-        if (0 < i && i < (2 * WORD_SIZE)) {
+        if (0 < i && i < (2 * WORD_SIZ)) {
             i = 0;
         } else {
-            i -= (2 * WORD_SIZE); /* step WORD_SIZE hex-byte(s) back in the string. */
+            i -= (2 * WORD_SIZ); /* step WORD_SIZ hex-byte(s) back in the string. */
         }
         j += 1; /* step one element forward in the array. */
     }
@@ -126,7 +126,7 @@ R_API char *r_big_to_hexstr(RNumBig *b, size_t *size) {
         return "0x0";
     }
 
-    *size = 3 + 2 * WORD_SIZE * (j + 1) + (b->sign > 0) ? 0 : 1;
+    *size = 3 + 2 * WORD_SIZ * (j + 1) + (b->sign > 0) ? 0 : 1;
     char *ret_str = malloc (sizeof (char) * (*size));
     if (b->sign < 0) {
         ret_str[i++] = '-';
@@ -135,7 +135,7 @@ R_API char *r_big_to_hexstr(RNumBig *b, size_t *size) {
 
     for (; j >= 0; --j) {
         sprintf(&ret_str[i], SPRINTF_FORMAT_STR, b->array[j]);
-        i += 2 * WORD_SIZE;
+        i += 2 * WORD_SIZ;
     }
 
     return ret_str;
@@ -396,7 +396,7 @@ R_API void r_big_lshift(RNumBig *b, RNumBig *a, size_t nbits) {
 
     r_big_assign (b, a);
     /* Handle shift in multiples of word-size */
-    const int nbits_pr_word = (WORD_SIZE * 8);
+    const int nbits_pr_word = (WORD_SIZ * 8);
     int nwords = nbits / nbits_pr_word;
     if (nwords != 0) {
         _lshift_word (b, nwords);
@@ -406,7 +406,7 @@ R_API void r_big_lshift(RNumBig *b, RNumBig *a, size_t nbits) {
     if (nbits != 0) {
         int i;
         for (i = (BN_ARRAY_SIZE - 1); i > 0; i--) {
-            b->array[i] = (b->array[i] << nbits) | (b->array[i - 1] >> ((8 * WORD_SIZE) - nbits));
+            b->array[i] = (b->array[i] << nbits) | (b->array[i - 1] >> ((8 * WORD_SIZ) - nbits));
         }
         b->array[i] <<= nbits;
     }
@@ -421,7 +421,7 @@ R_API void r_big_rshift(RNumBig *b, RNumBig *a, size_t nbits) {
 
     r_big_assign (b, a);
     /* Handle shift in multiples of word-size */                                                     
-    const int nbits_pr_word = (WORD_SIZE * 8);
+    const int nbits_pr_word = (WORD_SIZ * 8);
     int nwords = nbits / nbits_pr_word;
     if (nwords != 0) {
         _rshift_word (b, nwords);
@@ -431,7 +431,7 @@ R_API void r_big_rshift(RNumBig *b, RNumBig *a, size_t nbits) {
     if (nbits != 0) {
         int i; 
         for (i = 0; i < (BN_ARRAY_SIZE - 1); i++) {
-            b->array[i] = (b->array[i] >> nbits) | (b->array[i + 1] << ((8 * WORD_SIZE) - nbits));
+            b->array[i] = (b->array[i] >> nbits) | (b->array[i + 1] << ((8 * WORD_SIZ) - nbits));
         }
         b->array[i] >>= nbits;
     }
@@ -605,7 +605,7 @@ static void _lshift_one_bit (RNumBig *a) {
     
     int i;
     for (i = (BN_ARRAY_SIZE - 1); i > 0; i--) {
-        a->array[i] = (a->array[i] << 1) | (a->array[i - 1] >> ((8 * WORD_SIZE) - 1));
+        a->array[i] = (a->array[i] << 1) | (a->array[i - 1] >> ((8 * WORD_SIZ) - 1));
     }   
     a->array[0] <<= 1;
 }   
@@ -615,7 +615,7 @@ static void _rshift_one_bit (RNumBig *a) {
     
     int i; 
     for (i = 0; i < (BN_ARRAY_SIZE - 1); i++) {
-        a->array[i] = (a->array[i] >> 1) | (a->array[i + 1] << ((8 * WORD_SIZE) - 1));
+        a->array[i] = (a->array[i] >> 1) | (a->array[i + 1] << ((8 * WORD_SIZ) - 1));
     }
     a->array[BN_ARRAY_SIZE - 1] >>= 1;
 }

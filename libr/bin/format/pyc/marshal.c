@@ -2,7 +2,6 @@
 
 #include <r_io.h>
 #include <r_bin.h>
-#include <r_big.h>
 #include "marshal.h"
 #include "pyc_magic.h"
 
@@ -213,6 +212,9 @@ static pyc_object *get_long_object (RBuffer *buffer) {
 			r_big_lshift (tmp, operand, i * 15); // tmp = operand << (i * 15)
 			r_big_add (operand, tmp, long_val); // operand = tmp + long_val
 			r_big_assign (long_val, operand); // long_val = operand
+		}
+		if (neg) {
+			long_val->sign = -1;
 		}
 		ret->data = r_big_to_hexstr (long_val, &size);
 

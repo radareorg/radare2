@@ -15,15 +15,15 @@ extern "C" {
 #define RNumBig BIGNUM
 #else
 /* Use default impl */
-#ifndef WORD_SIZE
-#define WORD_SIZE 4
+#ifndef WORD_SIZ
+#define WORD_SIZ 4
 #endif 
 /* Let's support 4096-bit big number */
-#define BN_ARRAY_SIZE (512 / WORD_SIZE)
-#ifndef WORD_SIZE
-#error Must define WORD_SIZE to be 1, 2, 4
-/* If WORD_SIZE == 1, 8 bits long */
-#elif (WORD_SIZE == 1)
+#define BN_ARRAY_SIZE (512 / WORD_SIZ)
+#ifndef WORD_SIZ
+#error Must define WORD_SIZ to be 1, 2, 4
+/* If WORD_SIZ == 1, 8 bits long */
+#elif (WORD_SIZ == 1)
 /* Actual element type used during operation */
 #define DTYPE ut8
 #define DTYPE_MSB ((DTYPE_TMP) (0x80))
@@ -34,8 +34,8 @@ extern "C" {
 #define SPRINTF_FORMAT_STR "%.02x"
 #define SSCANF_FORMAT_STR "%2hhx"
 #define MAX_VAL ((DTYPE_TMP)0xFF)
-/* If WORD_SIZE == 2, 16 bits long */
-#elif (WORD_SIZE == 2)
+/* If WORD_SIZ == 2, 16 bits long */
+#elif (WORD_SIZ == 2)
 #define DTYPE ut16
 #define DTYPE_TMP ut32
 #define DTYPE_VAR st32
@@ -43,8 +43,8 @@ extern "C" {
 #define SPRINTF_FORMAT_STR "%.04x"
 #define SSCANF_FORMAT_STR "%4hx"
 #define MAX_VAL ((DTYPE_TMP)0xFFFF)
-/* If WORD_SIZE == 4, 32 bits long */
-#elif (WORD_SIZE == 4)
+/* If WORD_SIZ == 4, 32 bits long */
+#elif (WORD_SIZ == 4)
 #define DTYPE ut32
 #define DTYPE_TMP ut64
 #define DTYPE_VAR st64
