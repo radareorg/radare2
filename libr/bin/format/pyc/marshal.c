@@ -2,8 +2,8 @@
 
 #include <r_io.h>
 #include <r_bin.h>
+#include <r_big.h>
 #include "marshal.h"
-#include "bn.h"
 #include "pyc_magic.h"
 
 #define SIZE32_MAX 0x7FFFFFFF
@@ -177,7 +177,7 @@ static pyc_object *get_long_object (RBuffer *buffer) {
 	bool neg = false;
 	ut32 i;
 	ut16 n;
-	ut64 size = 0;
+	size_t size = 0;
 
 	st32 ndigits = get_st32 (buffer, &error);
 	if (ndigits < -SIZE32_MAX || ndigits > SIZE32_MAX) {
@@ -200,30 +200,25 @@ static pyc_object *get_long_object (RBuffer *buffer) {
 		ret->data = strdup ("0");
 		return ret;
 	} else {
-		struct bn long_val, tmp, operand;
-		bignum_init (&long_val);
-		bignum_init (&tmp);
-		bignum_init (&operand);
-		bignum_from_int (&long_val, 0);
+		RNumBig *long_val = r_big_new ();
+		RNumBig *tmp = r_big_new ();
+		RNumBig *operand = r_big_new ();
+		r_big_from_int (long_val, 0);
 		for (i = 0; i < ndigits; i++) {
 			n = get_ut16 (buffer, &error);
 			if (error) {
 				R_FREE (ret);
 			} // long_val |= n << (i * 15)
-			bignum_from_int (&operand, n); // operand = n
-			bignum_lshift (&operand, &tmp, i * 15); // tmp = operand << (i * 15)
-			bignum_add (&long_val, &tmp, &operand); // operand = tmp + long_val
-			bignum_assign (&long_val, &operand); // long_val = operand
+			r_big_from_int (operand, n); // operand = n
+			r_big_lshift (tmp, operand, i * 15); // tmp = operand << (i * 15)
+			r_big_add (operand, tmp, long_val); // operand = tmp + long_val
+			r_big_assign (long_val, operand); // long_val = operand
 		}
-		size = 4 * ndigits + 4;
-		char *buf = malloc (size); // max length is log_16{2^{15*ndigits}} = 3.75 * ndigits
-		bignum_to_string (&long_val, buf, size);
-		if (neg) {
-			ret->data = r_str_newf ("-0x%s", buf);
-		} else {
-			ret->data = r_str_newf ("0x%s", buf);
-		}
-		free (buf);
+		ret->data = r_big_to_hexstr (long_val, &size);
+
+		r_big_free (long_val);
+		r_big_free (tmp);
+		r_big_free (operand);
 		return ret;
 	}
 }

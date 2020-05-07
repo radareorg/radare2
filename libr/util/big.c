@@ -50,7 +50,7 @@ R_API void r_big_from_int(RNumBig *b, DTYPE_VAR n) {
 }
 
 R_API DTYPE_VAR r_big_to_int(RNumBig *b) {
-    r_return_if_fail (b);
+    r_return_val_if_fail (b, 0);
 
     DTYPE_TMP ret = 0;
 
@@ -64,8 +64,9 @@ R_API DTYPE_VAR r_big_to_int(RNumBig *b) {
     ret += b->array[0];
     ret += b->array[1] << 16;
 #elif (WORD_SIZE == 4)
+    ret += b->array[1];
+    ret <<= 32;
     ret += b->array[0];
-    ret += b->array[1] << 32;
 #endif
 
     if (b->sign < 0) {
@@ -93,7 +94,10 @@ R_API void r_big_from_hexstr(RNumBig *n, const char *str, int nbytes) {
     r_return_if_fail (nbytes > 0);
 
     DTYPE tmp; 
-    int i = max (nbytes - (2 * WORD_SIZE), 0); /* index into string */
+    int i = nbytes - (2 * WORD_SIZE); /* index into string */
+    if (i < 0) {
+        i = 0;
+    }
     int j = 0; /* index into array */
 
     while (i >= 0) {
@@ -111,8 +115,8 @@ R_API void r_big_from_hexstr(RNumBig *n, const char *str, int nbytes) {
 }
 
 R_API char *r_big_to_hexstr(RNumBig *b, size_t *size) {
-    r_return_if_fail (b);
-    r_return_if_fail (size);
+    r_return_val_if_fail (b, NULL);
+    r_return_val_if_fail (size, NULL);
 
     int j = BN_ARRAY_SIZE - 1; /* index into array - reading "MSB" first -> big-endian */
     int i = 0; /* index into string representation. */
@@ -310,7 +314,7 @@ R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b) {
     
     RNumBig *tmp = r_big_new();
     
-    bignum_divmod (tmp, c, a, b);
+    r_big_divmod (tmp, c, a, b);
 
     r_big_free (tmp);
 }
@@ -333,13 +337,13 @@ R_API void r_big_divmod(RNumBig *c, RNumBig *d, RNumBig *a, RNumBig *b) {
     RNumBig *tmp = r_big_new();
         
     /* c = (a / b) */                                                                                
-    bignum_div (c, a, b);
+    r_big_div (c, a, b);
 
     /* tmp = (c * b) */
-    bignum_mul (tmp, c, b);
+    r_big_mul (tmp, c, b);
     
     /* d = a - tmp */
-    bignum_sub (d, a, tmp);
+    r_big_sub (d, a, tmp);
 
     r_big_free (tmp);
 }
@@ -434,8 +438,8 @@ R_API void r_big_rshift(RNumBig *b, RNumBig *a, size_t nbits) {
 }
 
 R_API int r_big_cmp(RNumBig *a, RNumBig *b) {
-    r_return_if_fail (a);
-    r_return_if_fail (b);
+    r_return_val_if_fail (a, 0);
+    r_return_val_if_fail (b, 0);
 
     int i = BN_ARRAY_SIZE;
     do {
@@ -452,7 +456,7 @@ R_API int r_big_cmp(RNumBig *a, RNumBig *b) {
 }
     
 R_API int r_big_is_zero(RNumBig *a) {
-    r_return_if_fail (a);
+    r_return_val_if_fail (a, -1);
     
     int i;
     for (i = 0; i < BN_ARRAY_SIZE; i++) {
