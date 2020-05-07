@@ -95,14 +95,20 @@ void SHA1_Init(R_SHA_CTX *ctx) {
 	}
 }
 
-void SHA1_Update(R_SHA_CTX *ctx, const void *_dataIn, int len) {
+void SHA1_Update(R_SHA_CTX *ctx, const void *_dataIn, size_t len) {
 	const ut8 *dataIn = _dataIn;
-	int i;
-
+	size_t i;
+	if (ctx->lenW < 0) {
+		return;
+	}
 	// Read the data into W and process blocks as they get full
 	for (i = 0; i < len; i++) {
-		ctx->W[ctx->lenW / 4] <<= 8;
-		ctx->W[ctx->lenW / 4] |= (unsigned int) dataIn[i];
+		const size_t w4 = ctx->lenW / 4;
+		if (w4 >= sizeof (ctx->W)) {
+			break;
+		}
+		ctx->W[w4] <<= 8;
+		ctx->W[w4] |= (unsigned int) dataIn[i];
 		if ((++ctx->lenW) % 64 == 0) {
 			shaHashBlock (ctx);
 			ctx->lenW = 0;

@@ -31,7 +31,7 @@ typedef struct {
 typedef struct {
 	ut32 H[5];
 	ut32 W[80];
-	int lenW;
+	size_t lenW;
 	ut32 sizeHi, sizeLo;
 } R_SHA_CTX;
 
