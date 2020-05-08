@@ -1295,34 +1295,48 @@ static int __xterm_get_cur_pos(int *xpos) {
 	if (write (I.fdout, get_pos, sizeof (get_pos)) < 1) {
 		return 0;
 	}
-	int ch = r_cons_readchar ();
-	if (ch != 0x1b) {
-		while (ch = r_cons_readchar_timeout (25)) {
-			if (ch < 1) {
-				return 0;
+	int ch;
+	char pos[16];
+	size_t i;
+	bool is_reply;
+	do {
+		is_reply = true;
+		ch = r_cons_readchar ();
+		if (ch != 0x1b) {
+			while (ch = r_cons_readchar_timeout (25)) {
+				if (ch < 1) {
+					return 0;
+				}
+				if (ch == 0x1b) {
+					break;
+				}
 			}
-			if (ch == 0x1b) {
+		}
+		(void)r_cons_readchar ();
+		for (i = 0; i < R_ARRAY_SIZE (pos) - 1; i++) {
+			ch = r_cons_readchar ();
+			if ((!i && !IS_DIGIT (ch)) || // dumps arrow keys etc.
+			    (i == 1 && ch == '~')) {  // dumps PgUp, PgDn etc.
+				is_reply = false;
 				break;
 			}
+			if (ch == ';') {
+				pos[i] = 0;
+				break;
+			}
+			pos[i] = ch;
 		}
-	}
-	(void)r_cons_readchar ();
-	char pos[16] = { 0 };
-	size_t i;
-	for (i = 0; i < sizeof (pos); i++) {
-		if ((ch = r_cons_readchar ()) == ';') {
-			break;
-		}
-		pos[i] = ch;
-	}
+	} while (!is_reply);
+	pos[R_ARRAY_SIZE (pos) - 1] = 0;
 	ypos = atoi (pos);
-	pos[0] = '\0';
-	for (i = 0; i < sizeof (pos); i++) {
+	for (i = 0; i < R_ARRAY_SIZE (pos) - 1; i++) {
 		if ((ch = r_cons_readchar ()) == 'R') {
+			pos[i] = 0;
 			break;
 		}
 		pos[i] = ch;
 	}
+	pos[R_ARRAY_SIZE (pos) - 1] = 0;
 	*xpos = atoi (pos);
 
 	return ypos;
