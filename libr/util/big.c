@@ -441,6 +441,9 @@ R_API int r_big_cmp(RNumBig *a, RNumBig *b) {
     r_return_val_if_fail (a, 0);
     r_return_val_if_fail (b, 0);
 
+    if (a->sign != b->sign)
+        return a->sign > 0 ? 1 : -1;
+
     int i = BN_ARRAY_SIZE;
     do {
         i -= 1; /* Decrement first, to start with last array element */
