@@ -448,10 +448,10 @@ R_API int r_big_cmp(RNumBig *a, RNumBig *b) {
     do {
         i -= 1; /* Decrement first, to start with last array element */
         if (a->array[i] > b->array[i]) {
-            return 1;
+            return 1 * a->sign;
         }
         if (a->array[i] < b->array[i]) {
-            return -1;
+            return -1 * a->sign;
         }
     } while (i != 0);
         
