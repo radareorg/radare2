@@ -28,8 +28,8 @@ bool test_r_big_from_to_hexstr(void) {
     mu_assert ("Failed r_big_to_hexstr", strlen (str) <= size);
     mu_assert_streq_free (str, "0xffff", "Failed r_big_to_hexstr");
 
-    r_big_from_hexstr (a, "-0x7fff", 6);
-    mu_assert_eq (-0x7ffff, r_big_to_int (a), "Failed r_big_from_hexstr");
+    r_big_from_hexstr (a, "-0x7fff", 7);
+    mu_assert_eq (-0x7fff, r_big_to_int (a), "Failed r_big_from_hexstr");
 
     str = r_big_to_hexstr (a, &size);
     mu_assert ("Failed r_big_to_hexstr", strlen (str) <= size);
@@ -121,7 +121,7 @@ bool test_r_big_add(void) {
     r_big_from_hexstr (b, "-0xfffffffffffffffe", 19);
     mu_assert_eq (0, r_big_cmp (c, b), "Failed r_big_add");
 
-    r_big_from_hexstr (a, "0xffffffffffffffff", 19);
+    r_big_from_hexstr (a, "0xffffffffffffffff", 18);
     r_big_assign (b, a);
     r_big_add (c, a, b);
     r_big_from_hexstr (b, "0x1fffffffffffffffe", 19);
@@ -353,7 +353,7 @@ bool test_r_big_or(void) {
 
     r_big_from_hexstr (a, "0x73204217f728a2fb7dc798618f23c5796675eee1ccd60a3a7be9cddf7d0eb30e9b004b0246051fcbc26ce99b67e23f07d3f2a493b1194af2777ffdfd5d66c61ba4fa2cd14536010ee00e695863039829c315c594c84170559822fcceb20afdc56a81ab7105e17efb0afd8f090bce2e5330e1c78e2e3ab26a1f49610b49b0fafa75b342b5c1a79322be4a92fac102958ed43aee787c221ea5c23e9485321c6b901cdb5c584bebcbea644a8f2c40bfbaf2dee40102e660e37d41b1f2ccee933a57693ee8ee2473bec98911ccd4b853704c7ed73b86da962845efe5399561fb3b0c37f5f0e730ddebcea7144351064f1ee04c1348125807a760186ac33316633d09", 514);
     r_big_from_hexstr (b, "0x8a1712798b2575df7ae8419ad4b43e0df66c4d2af6a327fc78ffe78b9a15dc2b9630167bfc6ca4f7958ba5073a31c0e06da3d7d0db3fac9a33546f3a62a3a2d20992da45141ed267e91e86308ab14ec027580eaa29719592b9e3a354f2135d87cebf6bfe9acf3b85deb9bb098804ce681a979b68a84594b08dd699afc7511f6790e61365f7de17df954b9a865ec840eca9cabf849b5df4d14adb31eabfb27b8f6144f18907026d41a61b59f72a5f689f8aeca79d0e5272cd2f7ba12620826fa36e3eb8d0b2c90dd76a7dda85dfd3ccad1193f50354e6e74fdbc62c1a765fe6515b2142ad1e16d9b0c914d7e345b2b40ef91f7f10b60806a850c1bccafdd080ac", 514);
-    r_big_and (c, a, b);
+    r_big_or (c, a, b);
     r_big_from_hexstr (b, "0xfb37527fff2df7ff7fefd9fbdfb7ff7df67defebfef72ffe7bffefdfff1fff2f9f305f7bfe6dbfffd7efed9f7ff3ffe7fff3f7d3fb3feefa777fffff7fe7e6dbadfafed5553ed36fe91eef78ebb3dee9e75dcfbee971f5d7b9e3ffdef21bfdc7eebfebff9fef7fffdefdbf098bceee7b3af7dfeeae7fb6fa9fdff9afcff1fffff5f753f5f7ff97ffbf4b9afedfcad5eefdfafffcff7ffef5caffb5efbfbe7b9f7ddffdd94febefebe65bdfff6afffaffdeeca79fee72f3fd6ffbf3eeee937ff76f3ef8feb6fbbfdfeb7dded5ffd3fced7fd7ff87def6ef4fffe73d9f77ffff5d7ff5f2ef3edffbfeef14d7f347ffbeeefd1f7f12fe0fa7e858ebfffbfff3bdad", 514);
     mu_assert_eq (0, r_big_cmp (b, c), "Failed r_big_or");
 
@@ -370,7 +370,7 @@ bool test_r_big_xor(void) {
 
     r_big_from_hexstr (a, "0x73204217f728a2fb7dc798618f23c5796675eee1ccd60a3a7be9cddf7d0eb30e9b004b0246051fcbc26ce99b67e23f07d3f2a493b1194af2777ffdfd5d66c61ba4fa2cd14536010ee00e695863039829c315c594c84170559822fcceb20afdc56a81ab7105e17efb0afd8f090bce2e5330e1c78e2e3ab26a1f49610b49b0fafa75b342b5c1a79322be4a92fac102958ed43aee787c221ea5c23e9485321c6b901cdb5c584bebcbea644a8f2c40bfbaf2dee40102e660e37d41b1f2ccee933a57693ee8ee2473bec98911ccd4b853704c7ed73b86da962845efe5399561fb3b0c37f5f0e730ddebcea7144351064f1ee04c1348125807a760186ac33316633d09", 514);
     r_big_from_hexstr (b, "0x8a1712798b2575df7ae8419ad4b43e0df66c4d2af6a327fc78ffe78b9a15dc2b9630167bfc6ca4f7958ba5073a31c0e06da3d7d0db3fac9a33546f3a62a3a2d20992da45141ed267e91e86308ab14ec027580eaa29719592b9e3a354f2135d87cebf6bfe9acf3b85deb9bb098804ce681a979b68a84594b08dd699afc7511f6790e61365f7de17df954b9a865ec840eca9cabf849b5df4d14adb31eabfb27b8f6144f18907026d41a61b59f72a5f689f8aeca79d0e5272cd2f7ba12620826fa36e3eb8d0b2c90dd76a7dda85dfd3ccad1193f50354e6e74fdbc62c1a765fe6515b2142ad1e16d9b0c914d7e345b2b40ef91f7f10b60806a850c1bccafdd080ac", 514);
-    r_big_and (c, a, b);
+    r_big_xor (c, a, b);
     r_big_from_hexstr (b, "0xf937506e7c0dd724072fd9fb5b97fb749019a3cb3a752dc603162a54e71b6f250d305d79ba69bb3c57e74c9c5dd3ffe7be5173436a26e668442b92c73fc564c9ad68f6945128d3690910ef68e9b2d6e9e44dcb3ee130e5c721c15f9a4019a042a43ec08f9f2e457ed444340083cae03b2a765ce6867f26da929ff8a48ee1e59de55551d0367984fd2b01087c9fcad5627df051fce77fea7488e5a56f8dae101f7d9fadd14ce9a6abc251d6db6ae0d26d5408a69fe83291b06eca53eace1155f40700503e96bab31ee36c16516780bce16f44ce858e70cf0a3423158f17a4dd5d6cd4b24a2ecb327e6e0094b243fdaaeeb50c3702ee0fa1c848ab7ff9ebb3bda5", 514);
     mu_assert_eq (0, r_big_cmp (b, c), "Failed r_big_xor");
 

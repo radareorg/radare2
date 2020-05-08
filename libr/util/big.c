@@ -95,23 +95,27 @@ R_API void r_big_from_hexstr(RNumBig *n, const char *str, int nbytes) {
 
     DTYPE tmp; 
     int i = nbytes - (2 * WORD_SIZ); /* index into string */
-    if (i < 0) {
-        i = 0;
-    }
     int j = 0; /* index into array */
 
     while (i >= 0) {
         tmp = 0;
         sscanf (&str[i], SSCANF_FORMAT_STR, &tmp);
         n->array[j] = tmp;
-        if (0 < i && i < (2 * WORD_SIZ)) {
-            i = 0;
-        } else {
-            i -= (2 * WORD_SIZ); /* step WORD_SIZ hex-byte(s) back in the string. */
-        }
+        i -= (2 * WORD_SIZ); /* step WORD_SIZ hex-byte(s) back in the string. */
         j += 1; /* step one element forward in the array. */
     }
 
+    if (-2 * WORD_SIZ < i && i < 0) {
+        char buffer[2 * WORD_SIZ];
+        memset (buffer, 0, sizeof (buffer));
+        i += 2 * WORD_SIZ - 1;
+        for (; i >= 0; i--) {
+            buffer[i] = str[i];
+        }
+        tmp = 0;
+        sscanf (buffer, SSCANF_FORMAT_STR, &tmp);
+        n->array[j] = tmp;
+    }
 }
 
 R_API char *r_big_to_hexstr(RNumBig *b, size_t *size) {
@@ -120,18 +124,30 @@ R_API char *r_big_to_hexstr(RNumBig *b, size_t *size) {
 
     int j = BN_ARRAY_SIZE - 1; /* index into array - reading "MSB" first -> big-endian */
     int i = 0; /* index into string representation. */
+    int k = 0; /* Leading zero's amount */
+    int z;
 
     for (; b->array[j] == 0 && j >= 0; --j) {}
-    if (j == 0) {
+    if (j == -1) {
         return "0x0";
     }
 
-    *size = 3 + 2 * WORD_SIZ * (j + 1) + (b->sign > 0) ? 0 : 1;
+    *size = 3 + 2 * WORD_SIZ * (j + 1) + ((b->sign > 0) ? 0 : 1);
     char *ret_str = malloc (sizeof (char) * (*size));
+    memset (ret_str, 0, sizeof (char) * (*size));
+
     if (b->sign < 0) {
         ret_str[i++] = '-';
     }
     ret_str[i++] = '0'; ret_str[i++] = 'x';
+
+    sprintf(&ret_str[i], SPRINTF_FORMAT_STR, b->array[j--]);
+    for (; ret_str[i + k] == '0' && k < 2*WORD_SIZ; k++) { }
+    for (z = k; ret_str[i + z]; z++) {
+        ret_str[i + z - k] = ret_str[i + z];
+    }
+    i += z - k;
+    ret_str[i] = '\x00';
 
     for (; j >= 0; --j) {
         sprintf(&ret_str[i], SPRINTF_FORMAT_STR, b->array[j]);
