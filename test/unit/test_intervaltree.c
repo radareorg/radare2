@@ -86,12 +86,13 @@ static void random_entries(TestEntry entries[N]) {
 	}
 }
 
-static void probe_cb(RIntervalNode *node, void *user) {
+static bool probe_cb(RIntervalNode *node, void *user) {
 	TestEntry *entry = node->data;
 	entry->counter++;
 	if (entry->start != node->start || entry->end != node->end) {
 		entry->counter = -99999; // something went terribly wrong
 	}
+	return true;
 }
 
 static void free_cb(void *data) {
