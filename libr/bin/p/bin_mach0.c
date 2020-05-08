@@ -4,6 +4,7 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
+#include <r_core.h>
 #include "../i/private.h"
 #include "mach0/mach0.h"
 #include "objc/mach0_classes.h"
@@ -14,6 +15,13 @@
 extern RBinWrite r_bin_write_mach0;
 
 static RBinInfo *info(RBinFile *bf);
+
+static void swizzle_io_read(struct MACH0_(obj_t) *obj, RIO *io);
+static int rebasing_and_stripping_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count);
+static void rebase_buffer(struct MACH0_(obj_t) *obj, ut64 off, RIODesc *fd, ut8 *buf, int count);
+
+#define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)
+#define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
 
 static Sdb *get_sdb (RBinFile *bf) {
 	RBinObject *o = bf->o;
@@ -30,13 +38,16 @@ static char *entitlements(RBinFile *bf, bool json) {
 	return r_str_dup (NULL, (const char*)bin->signature);
 }
 
-
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb){
 	r_return_val_if_fail (bf && bin_obj && buf, false);
 	struct MACH0_(opts_t) opts;
 	MACH0_(opts_set_default) (&opts, bf);
 	struct MACH0_(obj_t) *res = MACH0_(new_buf) (buf, &opts);
 	if (res) {
+		if (res->chained_starts) {
+			RIO *io = bf->rbin->iob.io;
+			swizzle_io_read (res, io);
+		}
 		sdb_ns_set (sdb, "info", res->kv);
 		*bin_obj = res;
 		return true;
@@ -420,14 +431,14 @@ static RList *relocs(RBinFile *bf) {
 		}
 		ptr->type = reloc->type;
 		ptr->additive = 0;
-		if (reloc->ord >= 0 && bin->imports_by_ord && reloc->ord < bin->imports_by_ord_size) {
-			ptr->import = bin->imports_by_ord[reloc->ord];
-		} else if (reloc->name[0]) {
+		if (reloc->name[0]) {
 			RBinImport *imp;
 			if (!(imp = import_from_name (bf->rbin, (char*) reloc->name, bin->imports_by_name))) {
 				break;
 			}
 			ptr->import = imp;
+		} else if (reloc->ord >= 0 && bin->imports_by_ord && reloc->ord < bin->imports_by_ord_size) {
+			ptr->import = bin->imports_by_ord[reloc->ord];
 		} else {
 			ptr->import = NULL;
 		}
@@ -676,6 +687,138 @@ beach:
 	r_list_free (ret);
 	ht_uu_free (relocs_by_sym);
 	return NULL;
+}
+
+static void swizzle_io_read(struct MACH0_(obj_t) *obj, RIO *io) {
+	r_return_if_fail (io && io->desc && io->desc->plugin);
+	RIOPlugin *plugin = io->desc->plugin;
+	obj->original_io_read = plugin->read;
+	plugin->read = &rebasing_and_stripping_io_read;
+}
+
+static int rebasing_and_stripping_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
+	r_return_val_if_fail (io, -1);
+	RCore *core = (RCore*) io->corebind.core;
+	if (!core || !core->bin || !core->bin->binfiles) {
+		return -1;
+	}
+	struct MACH0_(obj_t) *obj = NULL;
+	RListIter *iter;
+	RBinFile *bf;
+	r_list_foreach (core->bin->binfiles, iter, bf) {
+		if (bf->fd == fd->fd ) {
+			/* The first field of MACH0_(obj_t) is
+			 * the mach_header, whose first field is
+			 * the MH magic.
+			 * This code assumes that bin objects are
+			 * at least 4 bytes long.
+			 */
+			ut32 *magic = bf->o->bin_obj;
+			if (magic && (*magic == MH_MAGIC ||
+					*magic == MH_CIGAM ||
+					*magic == MH_MAGIC_64 ||
+					*magic == MH_CIGAM_64)) {
+				obj = bf->o->bin_obj;
+			}
+			break;
+		}
+	}
+	if (!obj || !obj->original_io_read) {
+		if (fd->plugin->read == &rebasing_and_stripping_io_read) {
+			return -1;
+		}
+		return fd->plugin->read (io, fd, buf, count);
+	}
+	if (obj->rebasing_buffer) {
+		return obj->original_io_read (io, fd, buf, count);
+	}
+	static ut8 *internal_buffer = NULL;
+	static int internal_buf_size = 0;
+	if (count > internal_buf_size) {
+		if (internal_buffer) {
+			R_FREE (internal_buffer);
+			internal_buffer = NULL;
+		}
+		internal_buf_size = R_MAX (count, 8);
+		internal_buffer = (ut8 *) malloc (internal_buf_size);
+	}
+	ut64 io_off = io->off;
+	int result = obj->original_io_read (io, fd, internal_buffer, count);
+	if (result == count) {
+		rebase_buffer (obj, io_off, fd, internal_buffer, count);
+		memcpy (buf, internal_buffer, result);
+	}
+	return result;
+}
+
+static void rebase_buffer(struct MACH0_(obj_t) *obj, ut64 off, RIODesc *fd, ut8 *buf, int count) {
+	if (obj->rebasing_buffer) {
+		return;
+	}
+	obj->rebasing_buffer = true;
+	ut64 eob = off + count;
+	int i = 0;
+	for (; i < obj->nsegs; i++) {
+		if (!obj->chained_starts[i]) {
+			continue;
+		}
+		ut64 page_size = obj->chained_starts[i]->page_size;
+		ut64 start = obj->segs[i].fileoff;
+		ut64 end = start + obj->segs[i].filesize;
+		if (end >= off && start <= eob) {
+			ut64 page_idx = (R_MAX (start, off) - start) / page_size;
+			ut64 page_end_idx = (R_MIN (eob, end) - start) / page_size;
+			for (; page_idx <= page_end_idx; page_idx++) {
+				if (page_idx >= obj->chained_starts[i]->page_count) {
+					break;
+				}
+				ut16 page_start = obj->chained_starts[i]->page_start[page_idx];
+				if (page_start == DYLD_CHAINED_PTR_START_NONE) {
+					continue;
+				}
+				ut64 cursor = start + page_idx * page_size + page_start;
+				while (cursor < eob && cursor < end) {
+					ut8 tmp[8];
+					if (r_buf_read_at (obj->b, cursor, tmp, 8) != 8) {
+						break;
+					}
+					ut64 raw_ptr = r_read_le64 (tmp);
+					bool is_auth = IS_PTR_AUTH (raw_ptr);
+					bool is_bind = IS_PTR_BIND (raw_ptr);
+					ut64 ptr_value = raw_ptr;
+					ut64 delta;
+					if (is_auth && is_bind) {
+						struct dyld_chained_ptr_arm64e_auth_bind *p =
+								(struct dyld_chained_ptr_arm64e_auth_bind *) &raw_ptr;
+						delta = p->next;
+					} else if (!is_auth && is_bind) {
+						struct dyld_chained_ptr_arm64e_bind *p =
+								(struct dyld_chained_ptr_arm64e_bind *) &raw_ptr;
+						delta = p->next;
+					} else if (is_auth && !is_bind) {
+						struct dyld_chained_ptr_arm64e_auth_rebase *p =
+								(struct dyld_chained_ptr_arm64e_auth_rebase *) &raw_ptr;
+						delta = p->next;
+						ptr_value = p->target + obj->baddr;
+					} else {
+						struct dyld_chained_ptr_arm64e_rebase *p =
+								(struct dyld_chained_ptr_arm64e_rebase *) &raw_ptr;
+						delta = p->next;
+						ptr_value = ((ut64)p->high8 << 56) | p->target;
+					}
+					ut64 in_buf = cursor - off;
+					if (cursor >= off && cursor <= eob - 8) {
+						r_write_le64 (&buf[in_buf], ptr_value);
+					}
+					cursor += delta * 8;
+					if (!delta) {
+						break;
+					}
+				}
+			}
+		}
+	}
+	obj->rebasing_buffer = false;
 }
 
 #if !R_BIN_MACH064
