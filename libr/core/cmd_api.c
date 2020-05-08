@@ -71,15 +71,6 @@ R_API RCmd *r_cmd_new () {
 	return cmd;
 }
 
-static void free_cmd_desc_tree(RCmdDesc *cd) {
-	void **it;
-	r_cmd_desc_children_foreach (cd, it) {
-		RCmdDesc *in_cd = *(RCmdDesc **)it;
-		free_cmd_desc_tree (in_cd);
-	}
-	r_cmd_desc_free (cd);
-}
-
 R_API RCmd *r_cmd_free(RCmd *cmd) {
 	int i;
 	if (!cmd) {
@@ -98,7 +89,7 @@ R_API RCmd *r_cmd_free(RCmd *cmd) {
 			R_FREE (cmd->cmds[i]);
 		}
 	}
-	free_cmd_desc_tree (cmd->root_cmd_desc);
+	r_cmd_desc_free (cmd->root_cmd_desc);
 	free (cmd);
 	return NULL;
 }
@@ -983,6 +974,8 @@ R_API void r_cmd_desc_free(RCmdDesc *cd) {
 	if (!cd) {
 		return;
 	}
+
+	r_pvector_clear (&cd->children);
 	free (cd->name);
 	free (cd);
 }
