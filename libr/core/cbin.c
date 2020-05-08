@@ -292,7 +292,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			r_meta_add (r->anal, R_META_TYPE_STRING, vaddr, vaddr + string->size, string->string);
+			r_meta_set (r->anal, R_META_TYPE_STRING, vaddr, string->size, string->string);
 			f_name = strdup (string->string);
 			r_name_filter (f_name, -1);
 			if (r->bin->prefix) {
@@ -1236,8 +1236,8 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 			}
 			r_flag_set (r->flags, str, at, 1);
 			if (is_initfini (entry) && hvaddr != UT64_MAX) {
-				r_meta_add (r->anal, R_META_TYPE_DATA, hvaddr,
-				            hvaddr + entry->bits / 8, NULL);
+				r_meta_set (r->anal, R_META_TYPE_DATA, hvaddr,
+							entry->bits / 8, NULL);
 			}
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%08"PFMT64x"\n", at);
@@ -1427,7 +1427,7 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 			}
 		}
 		r_anal_hint_set_size (r->anal, reloc->vaddr, 4);
-		r_meta_add (r->anal, R_META_TYPE_DATA, reloc->vaddr, reloc->vaddr+4, NULL);
+		r_meta_set (r->anal, R_META_TYPE_DATA, reloc->vaddr, 4, NULL);
 	}
 
 	char flagname[R_FLAG_NAME_SIZE];
@@ -1479,7 +1479,7 @@ static void add_metadata(RCore *r, RBinReloc *reloc, ut64 addr, int mode) {
 		return;
 	}
 	if (IS_MODE_SET (mode)) {
-		r_meta_add (r->anal, R_META_TYPE_DATA, reloc->vaddr, reloc->vaddr + cdsz, NULL);
+		r_meta_set (r->anal, R_META_TYPE_DATA, reloc->vaddr, cdsz, NULL);
 	} else if (IS_MODE_RAD (mode)) {
 		r_cons_printf ("Cd %d @ 0x%08" PFMT64x "\n", cdsz, addr);
 	}
@@ -1836,7 +1836,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			// TODO(eddyb) symbols that are imports.
 			// Add a dword/qword for PE imports
 			if (libname && strstr (libname, ".dll") && cdsz) {
-				r_meta_add (r->anal, R_META_TYPE_DATA, addr, addr + cdsz, NULL);
+				r_meta_set (r->anal, R_META_TYPE_DATA, addr, cdsz, NULL);
 			}
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("%s%s%s\n",
@@ -2205,8 +2205,8 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 				free (fnp);
 			}
 			if (sn.demname) {
-				r_meta_add (r->anal, R_META_TYPE_COMMENT,
-					addr, symbol->size, sn.demname);
+				r_meta_set (r->anal, R_META_TYPE_COMMENT,
+							addr, symbol->size, sn.demname);
 			}
 			r_flag_space_pop (r->flags);
 		} else if (IS_MODE_JSON (mode)) {
@@ -2759,7 +2759,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				str = r_str_newf ("[%02d] %s %s size %" PFMT64d" named %s%s%s",
 				                  i, perms, type, size,
 				                  pfx? pfx: "", pfx? ".": "", section->name);
-				r_meta_add (r->anal, R_META_TYPE_COMMENT, addr, addr, str);
+				r_meta_set (r->anal, R_META_TYPE_COMMENT, addr, 1, str);
 				R_FREE (str);
 			}
 			if (section->add) {

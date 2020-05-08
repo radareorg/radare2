@@ -876,12 +876,12 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 					if (i == nexti) {
 						ut64 at = r_anal_function_max_addr (fcn);
 						while (true) {
-							RAnalMetaItem *mi = r_meta_find (core->anal, at, R_META_TYPE_ANY, 0);
+							ut64 size;
+							RAnalMetaItem *mi = r_meta_get_at (core->anal, at, R_META_TYPE_ANY, &size);
 							if (!mi) {
 								break;
 							}
-							at += mi->size;
-							r_meta_item_free (mi);
+							at += size;
 						}
 						// TODO: ensure next address is function after padding (nop or trap or wat)
 						// XXX noisy for test cases because we want to clear the stderr
@@ -3868,8 +3868,8 @@ static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, in
 				r_flag_space_pop (core->flags);
 				free (str_flagname);
 				if (len > 0) {
-					r_meta_add (core->anal, R_META_TYPE_STRING, xref_to,
-							xref_to + len, (const char *)str_string);
+					r_meta_set (core->anal, R_META_TYPE_STRING, xref_to,
+								len, (const char *) str_string);
 				}
 				free (str_string);
 			}
@@ -4275,25 +4275,29 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 		piece = (S->vaddr - from) / step;
 		as->block[piece].symbols++;
 	}
-	RList *metas = r_meta_enumerate (core->anal, -1);
-	RAnalMetaItem *M;
-	r_list_foreach (metas, iter, M) {
-		if (M->from < from || M->to > to) {
-			continue;
+	RPVector *metas = to >= from ? r_meta_get_all_intersect (core->anal, from, to - from, R_META_TYPE_ANY) : NULL;
+	if (metas) {
+		void **it;
+		r_pvector_foreach (metas, it) {
+			RIntervalNode *node = *it;
+			RAnalMetaItem *mi = node->data;
+			if (node->start < from || node->end > to) {
+				continue;
+			}
+			piece = (node->start - from) / step;
+			switch (mi->type) {
+			case R_META_TYPE_STRING:
+				as->block[piece].strings++;
+				break;
+			case R_META_TYPE_COMMENT:
+				as->block[piece].comments++;
+				break;
+			default:
+				break;
+			}
 		}
-		piece = (M->from - from) / step;
-		switch (M->type) {
-		case R_META_TYPE_STRING:
-			as->block[piece].strings++;
-			break;
-		case R_META_TYPE_COMMENT:
-			as->block[piece].comments++;
-			break;
-		}
+		r_pvector_free (metas);
 	}
-	r_list_free (metas);
-	// iter all comments
-	// iter all strings
 	return as;
 }
 
@@ -4574,7 +4578,7 @@ static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
 		r_flag_space_push (core->flags, R_FLAGS_FS_STRINGS);
 		r_flag_set (core->flags, flagname, xref_to, len);
 		r_flag_space_pop (core->flags);
-		r_meta_add (core->anal, 's', xref_to, xref_to + len, str_flagname);
+		r_meta_set (core->anal, 's', xref_to, len, str_flagname);
 		free (str_flagname);
 	}
 }
@@ -4936,22 +4940,23 @@ repeat:
 			break;
 		}
 		{
-			RList *list = r_meta_find_list_in (core->anal, cur, -1, 4);
-			RListIter *iter;
-			RAnalMetaItem *meta;
-			r_list_foreach (list, iter, meta) {
+			RPVector *list = r_meta_get_all_in (core->anal, cur, R_META_TYPE_ANY);
+			void **it;
+			r_pvector_foreach (list, it) {
+				RIntervalNode *node = *it;
+				RAnalMetaItem *meta = node->data;
 				switch (meta->type) {
 				case R_META_TYPE_DATA:
 				case R_META_TYPE_STRING:
 				case R_META_TYPE_FORMAT:
 					i += 4;
-					r_list_free (list);
+					r_pvector_free (list);
 					goto repeat;
+				default:
+					break;
 				}
 			}
-			if (list) {
-				r_list_free (list);
-			}
+			r_pvector_free (list);
 		}
 
 		/* realign address if needed */

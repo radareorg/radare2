@@ -1661,7 +1661,8 @@ static void visual_comma(RCore *core) {
 	bool mouse_state = __holdMouseState (core);
 	ut64 addr = core->offset + (core->print->cur_enabled? core->print->cur: 0);
 	char *comment, *cwd, *cmtfile;
-	comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+	const char *prev_cmt = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+	comment = prev_cmt ? strdup (prev_cmt) : NULL;
 	cmtfile = r_str_between (comment, ",(", ")");
 	cwd = getcommapath (core);
 	if (!cmtfile) {
@@ -2935,17 +2936,17 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				} else {
 					int times = R_MAX (1, wheelspeed);
 					// Check if we have a data annotation.
-					RAnalMetaItem *ami = r_meta_find (core->anal,
-							core->offset, R_META_TYPE_DATA,
-							R_META_WHERE_HERE);
+					ut64 amisize;
+					RAnalMetaItem *ami = r_meta_get_at (core->anal,
+														core->offset, R_META_TYPE_DATA,
+														&amisize);
 					if (!ami) {
-						ami = r_meta_find (core->anal,
-								core->offset, R_META_TYPE_STRING,
-								R_META_WHERE_HERE);
+						ami = r_meta_get_at (core->anal,
+											 core->offset, R_META_TYPE_STRING,
+											 &amisize);
 					}
 					if (ami) {
-						r_core_seek_delta (core, ami->size);
-						r_meta_item_free (ami);
+						r_core_seek_delta (core, amisize);
 					} else {
 						int distance = numbuf_pull ();
 						if (distance > 1) {

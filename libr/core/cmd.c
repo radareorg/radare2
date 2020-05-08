@@ -3803,21 +3803,6 @@ fail:
 	goto beach;
 }
 
-static int foreach_comment(void *user, const char *k, const char *v) {
-	RAnalMetaUserItem *ui = user;
-	RCore *core = ui->anal->user;
-	const char *cmd = ui->user;
-	if (!strncmp (k, "meta.C.", 7)) {
-		char *cmt = (char *)sdb_decode (v, 0);
-		if (cmt) {
-			r_core_cmdf (core, "s %s", k + 7);
-			r_core_cmd0 (core, cmd);
-			free (cmt);
-		}
-	}
-	return 1;
-}
-
 struct exec_command_t {
 	RCore *core;
 	const char *cmd;
@@ -3881,9 +3866,22 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			eprintf ("Usage: @@@c:command   # same as @@@=`command`\n");
 		}
 		break;
-	case 'C':
-		r_meta_list_cb (core->anal, R_META_TYPE_COMMENT, 0, foreach_comment, (void*)cmd, UT64_MAX);
+	case 'C': {
+		char *glob = filter ? r_str_trim_dup (filter): NULL;
+		RIntervalTreeIter it;
+		RAnalMetaItem *meta;
+		r_interval_tree_foreach (&core->anal->meta, it, meta) {
+			if (meta->type != R_META_TYPE_COMMENT) {
+				continue;
+			}
+			if (!glob || (meta->str && r_str_glob (meta->str, glob))) {
+				r_core_seek (core, r_interval_tree_iter_get (&it)->start, true);
+				r_core_cmd0 (core, cmd);
+			}
+		}
+		free (glob);
 		break;
+	}
 	case 'm':
 		{
 			int fd = r_io_fd_get_current (core->io);
@@ -4668,37 +4666,6 @@ static int cmdstatus2int(RCmdStatus s) {
 	default:
 		return R_CORE_CMD_EXIT;
 	}
-}
-
-struct foreach_comment_newshell_t {
-	TSNode *command;
-	struct tsr2cmd_state *state;
-};
-
-static int foreach_comment_newshell(void *user, const char *k, const char *v) {
-	RAnalMetaUserItem *ui = user;
-	RCore *core = ui->anal->user;
-	struct foreach_comment_newshell_t *cmt_t = ui->user;
-	TSNode *cmd = cmt_t->command;
-	struct tsr2cmd_state *state = cmt_t->state;
-	if (!strncmp (k, "meta.C.", 7)) {
-		char *ptr = strchr (v, ',');
-		if (R_STR_ISEMPTY (ptr)) {
-			return 1;
-		}
-		ptr = strchr (ptr + 1, ',');
-		if (R_STR_ISEMPTY (ptr)) {
-			return 1;
-		}
-		char *cmt = (char *)sdb_decode (ptr + 1, 0);
-		if (cmt) {
-			ut64 k_addr = r_num_math (state->core->num, k + 7);
-			r_core_seek (core, k_addr, false);
-			handle_ts_command_tmpseek (state, *cmd);
-			free (cmt);
-		}
-	}
-	return 1;
 }
 
 static struct tsr2cmd_edit *create_cmd_edit(struct tsr2cmd_state *state, TSNode arg, char *new_text) {
@@ -6100,13 +6067,31 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_cmd_command) {
 }
 
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_comment_command) {
+	RCore *core = state->core;
 	TSNode command = ts_node_named_child (node, 0);
-	struct foreach_comment_newshell_t cmt_t = {
-		.command = &command,
-		.state = state,
-	};
-	r_meta_list_cb (state->core->anal, R_META_TYPE_COMMENT, 0, foreach_comment_newshell, (void *)&cmt_t, UT64_MAX);
-	return R_CMD_STATUS_OK;
+	TSNode filter_node = ts_node_named_child (node, 1);
+	char *glob = NULL;
+	if (!ts_node_is_null (filter_node)) {
+		glob = ts_node_sub_string (filter_node, state->input);
+	}
+	ut64 off = core->offset;
+	RCmdStatus res = R_CMD_STATUS_OK;
+	RIntervalTreeIter it;
+	RAnalMetaItem *meta;
+	r_interval_tree_foreach (&core->anal->meta, it, meta) {
+		if (meta->type != R_META_TYPE_COMMENT) {
+			continue;
+		}
+		if (!glob || (meta->str && r_str_glob (meta->str, glob))) {
+			r_core_seek (core, r_interval_tree_iter_get (&it)->start, true);
+			RCmdStatus cmd_res = handle_ts_command_tmpseek (state, command);
+			UPDATE_CMD_STATUS_RES (res, cmd_res, err);
+		}
+	}
+err:
+	r_core_seek (core, off, false);
+	free (glob);
+	return res;
 }
 
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_import_command) {
