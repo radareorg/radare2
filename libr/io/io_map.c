@@ -483,14 +483,16 @@ R_API void r_io_map_cleanup(RIO* io) {
 	size_t i;
 	for (i = 0; i < r_pvector_len (&io->maps);) {
 		RIOMap *map = r_pvector_at (&io->maps, i);
-		//remove iter if the map is a null-ptr, this may fix some segfaults
 		if (!map) {
+			// remove iter if the map is a null-ptr, this may fix some segfaults. This should never happen.
+			r_warn_if_reached ();
 			r_pvector_remove_at (&io->maps, i);
 			del = true;
 		} else if (!r_io_desc_get (io, map->fd)) {
 			//delete map and iter if no desc exists for map->fd in io->files
 			r_id_pool_kick_id (io->map_ids, map->id);
-			r_pvector_remove_at (&io->maps, i);
+			map = r_pvector_remove_at (&io->maps, i);
+			_map_free (map);
 			del = true;
 		} else {
 			i++;

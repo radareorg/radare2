@@ -402,7 +402,7 @@ bool test_r_list_clone(void) {
 	char *test[] = { "aa", "bb", "cc", "dd", "ee", "ff" };
 
 	RList *list1 = r_list_new ();
-	RList *list2 = r_list_new ();
+	RList *list2;
 
 	int i;
 	for (i = 0; i < R_ARRAY_SIZE (test); ++i) {
