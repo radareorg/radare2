@@ -244,7 +244,7 @@ bool test_r_interval_tree_delete() {
 		mu_assert ("delete success", s);
 		mu_assert_eq (entry->freed, 1, "entry not freed after delete");
 
-		RBIter it;
+		RIntervalTreeIter it;
 		r_interval_tree_foreach (&tree, it, entry) {
 			entry->counter++;
 		}
