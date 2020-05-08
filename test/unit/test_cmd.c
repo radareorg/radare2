@@ -128,6 +128,10 @@ static RCmdStatus ap_handler(void *user, int argc, const char **argv) {
 	return R_CMD_STATUS_OK;
 }
 
+static RCmdStatus aeir_handler(void *user, int argc, const char **argv) {
+	return R_CMD_STATUS_OK;
+}
+
 static int ae_handler(void *user, const char *input) {
 	return 0;
 }
@@ -160,6 +164,7 @@ bool test_cmd_get_desc(void) {
 	RCmdDesc *ap_cd = r_cmd_desc_argv_new (cmd, a_cd, "ap", ap_handler);
 	RCmdDesc *apd_cd = r_cmd_desc_argv_new (cmd, ap_cd, "apd", ap_handler);
 	RCmdDesc *ae_cd = r_cmd_desc_oldinput_new (cmd, a_cd, "ae", ae_handler);
+	RCmdDesc *aeir_cd = r_cmd_desc_argv_new (cmd, a_cd, "aeir", aeir_handler);
 	RCmdDesc *w_cd = r_cmd_desc_oldinput_new (cmd, root, "w", w_handler);
 
 	mu_assert_null (r_cmd_get_desc (cmd, "afl"), "afl does not have any handler");
@@ -170,6 +175,8 @@ bool test_cmd_get_desc(void) {
 	mu_assert_ptreq (r_cmd_get_desc (cmd, "apd"), apd_cd, "apd will be handled by apd");
 	mu_assert_ptreq (r_cmd_get_desc (cmd, "ae"), ae_cd, "ae will be handled by ae");
 	mu_assert_ptreq (r_cmd_get_desc (cmd, "aeim"), ae_cd, "aeim will be handled by ae");
+	mu_assert_ptreq (r_cmd_get_desc (cmd, "aeir"), aeir_cd, "aeir will be handled by aeir");
+	mu_assert_ptreq (r_cmd_get_desc (cmd, "aei"), ae_cd, "aei will be handled by ae");
 
 	r_cmd_free (cmd);
 	mu_end;
