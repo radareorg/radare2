@@ -68,18 +68,18 @@ static inline void *r_interval_tree_at(RIntervalTree *tree, ut64 start) {
 	return node ? node->data : NULL;
 }
 
-typedef void (*RIntervalIterCb)(RIntervalNode *node, void *user);
+typedef bool (*RIntervalIterCb)(RIntervalNode *node, void *user);
 
 // Call cb for all entries starting at exactly start
-R_API void r_interval_tree_all_at(RIntervalTree *tree, ut64 start, RIntervalIterCb cb, void *user);
+R_API bool r_interval_tree_all_at(RIntervalTree *tree, ut64 start, RIntervalIterCb cb, void *user);
 
 // Call cb for all entries whose intervals contain value
 // end_inclusive if true, all start/end values are considered inclusive/inclusive, else inclusive/exclusive
-R_API void r_interval_tree_all_in(RIntervalTree *tree, ut64 value, bool end_inclusive, RIntervalIterCb cb, void *user);
+R_API bool r_interval_tree_all_in(RIntervalTree *tree, ut64 value, bool end_inclusive, RIntervalIterCb cb, void *user);
 
 // Call cb for all entries whose intervals intersect the given interval (might not contain it completely)
 // end_inclusive if true, all start/end values are considered inclusive/inclusive, else inclusive/exclusive
-R_API void r_interval_tree_all_intersect(RIntervalTree *tree, ut64 start, ut64 end, bool end_inclusive, RIntervalIterCb cb, void *user);
+R_API bool r_interval_tree_all_intersect(RIntervalTree *tree, ut64 start, ut64 end, bool end_inclusive, RIntervalIterCb cb, void *user);
 
 #define r_interval_tree_foreach(tree, it, dat) \
 	for ((it) = r_rbtree_first (&(tree)->root->node); r_rbtree_iter_has(&it) && (dat = r_rbtree_iter_get (&it, RIntervalNode, node)->data); r_rbtree_iter_next (&(it)))
