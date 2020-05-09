@@ -1019,14 +1019,7 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 	r_flag_foreach (core->flags, __rebase_flags, &reb);
 
 	// META
-	RList *meta_list = r_meta_enumerate (core->anal, R_META_TYPE_ANY);
-	RAnalMetaItem *item;
-	r_list_foreach (meta_list, it, item) {
-		r_meta_del (core->anal, item->type, item->from, item->size);
-		item->from += diff;
-		r_meta_add_with_subtype (core->anal, item->type, item->subtype, item->from, item->from + item->size, item->str);
-	}
-	r_list_free (meta_list);
+	r_meta_rebase (core->anal, diff);
 
 	// REFS
 	HtUP *old_refs = core->anal->dict_refs;
