@@ -313,7 +313,7 @@ R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b) {
     r_return_if_fail (a);
     r_return_if_fail (b);
     r_return_if_fail (c);
-    r_return_if_fail (r_big_is_zero (b));
+    r_return_if_fail (!r_big_is_zero (b));
 
     RNumBig *current = r_big_new();
     RNumBig *denom = r_big_new();;
@@ -321,23 +321,21 @@ R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b) {
 
     r_big_from_int (current, 1); // int current = 1;
     r_big_assign (denom, b); // denom = b
-    r_big_assign (tmp, a); // tmp = a
+    denom->sign = 1;
+    r_big_assign (tmp, denom); // tmp = denom = b
+    _lshift_one_bit (tmp); // tmp <= 1
 
-    const DTYPE_TMP half_max = 1 + (DTYPE_TMP) (MAX_VAL / 2);
-    bool overflow = false;
-    while (r_big_cmp (denom, a) == -1) // while (denom < a) {
-    {
-        if (denom->array[BN_ARRAY_SIZE - 1] >= half_max) {
-            overflow = true;
-            break;
+    while (r_big_cmp (tmp, a) != 1) { // while (tmp <= a)
+        if ((denom->array[BN_ARRAY_SIZE - 1] >> (WORD_SIZ * 8 - 1)) == 1) {
+            break; // Reach the max value
         }
-        _lshift_one_bit (current); //   current <<= 1;
-        _lshift_one_bit (denom); //   denom <<= 1;
+        _lshift_one_bit (tmp); // tmp <= 1
+        _lshift_one_bit (denom); // denom <= 1
+        _lshift_one_bit (current); // current <= 1
     }
-    if (!overflow) {
-        _rshift_one_bit (denom); // denom >>= 1;
-        _rshift_one_bit (current); // current >>= 1;
-    }
+
+    r_big_assign (tmp, a); // tmp = a
+    tmp->sign = 1;
     _r_big_zero_out (c); // int answer = 0;
 
     while (!r_big_is_zero (current)) // while (current != 0)
@@ -352,6 +350,9 @@ R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b) {
     } // return answer;
 
     c->sign = a->sign * b->sign;
+    if (r_big_is_zero (c)) {
+        c->sign = 1; // For -1 * 0 case
+    }
     r_big_free (current);
     r_big_free (denom);
     r_big_free (tmp);
@@ -364,7 +365,7 @@ R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b) {
     r_return_if_fail (a);
     r_return_if_fail (b);
     r_return_if_fail (c);
-    r_return_if_fail (r_big_is_zero (b));
+    r_return_if_fail (!r_big_is_zero (b));
     
     RNumBig *tmp = r_big_new();
     
@@ -386,7 +387,7 @@ R_API void r_big_divmod(RNumBig *c, RNumBig *d, RNumBig *a, RNumBig *b) {
     r_return_if_fail (a);
     r_return_if_fail (b);
     r_return_if_fail (c);
-    r_return_if_fail (r_big_is_zero (b));
+    r_return_if_fail (!r_big_is_zero (b));
     
     RNumBig *tmp = r_big_new();
         

@@ -268,14 +268,14 @@ bool test_r_big_div(void) {
     r_big_div (c, a, b);
     mu_assert_eq (2, r_big_to_int (c), "Failed r_big_div");
     r_big_div (c, b, a);
-    mu_assert_eq (2, r_big_to_int (c), "Failed r_big_div");
+    mu_assert_eq (0, r_big_to_int (c), "Failed r_big_div");
 
     r_big_from_int (a, -3);
     r_big_from_int (b, -2);
     r_big_div (c, a, b);
     mu_assert_eq (1, r_big_to_int (c), "Failed r_big_div");
     r_big_div (c, b, a);
-    mu_assert_eq (1, r_big_to_int (c), "Failed r_big_div");
+    mu_assert_eq (0, r_big_to_int (c), "Failed r_big_div");
 
     r_big_from_hexstr (a, "0x7fffffffffffffff", 18);
     r_big_from_int (b, 5);
