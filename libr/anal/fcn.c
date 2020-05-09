@@ -817,7 +817,7 @@ repeat:
 		case R_ANAL_OP_TYPE_LOAD:
 			if (anal->opt.loads) {
 				if (anal->iob.is_valid_offset (anal->iob.io, op.ptr, 0)) {
-					r_meta_add (anal, R_META_TYPE_DATA, op.ptr, op.ptr + 4, "");
+					r_meta_set (anal, R_META_TYPE_DATA, op.ptr, 4, "");
 				}
 			}
 			break;
@@ -1249,20 +1249,21 @@ R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 
 /* Does NOT invalidate read-ahead cache. */
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int reftype) {
-	RListIter *iter;
-	RAnalMetaItem *meta;
-
-	RList *list = r_meta_find_list_in (anal, addr, -1, 4);
-	r_list_foreach (list, iter, meta) {
+	RPVector *metas = r_meta_get_all_in(anal, addr, R_META_TYPE_ANY);
+	void **it;
+	r_pvector_foreach (metas, it) {
+		RAnalMetaItem *meta = ((RIntervalNode *)*it)->data;
 		switch (meta->type) {
 		case R_META_TYPE_DATA:
 		case R_META_TYPE_STRING:
 		case R_META_TYPE_FORMAT:
-			r_list_free (list);
+			r_pvector_free (metas);
 			return 0;
+		default:
+			break;
 		}
 	}
-	r_list_free (list);
+	r_pvector_free (metas);
 	if (anal->opt.norevisit) {
 		if (!anal->visited) {
 			anal->visited = set_u_new ();

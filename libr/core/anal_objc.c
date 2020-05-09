@@ -228,7 +228,7 @@ static bool objc_find_refs(RCore *core) {
 	total = 0;
 	ut64 a;
 	for (a = from; a < to; a += objc.word_size) {
-		r_meta_add (core->anal, R_META_TYPE_DATA, a, a + 8, NULL);
+		r_meta_set (core->anal, R_META_TYPE_DATA, a, 8, NULL);
 		total ++;
 	}
 	oldstr = r_print_rowlog (core->print, sdb_fmt ("Set %d dwords at 0x%08"PFMT64x, total, from));
