@@ -169,9 +169,11 @@ bool test_r_big_sub(void) {
     r_big_from_hexstr (a, "0x7fffffffffffffff", 18);
     r_big_from_hexstr (b, "-0x7fffffffffffffff", 19);
     r_big_sub (c, a, b);
-    mu_assert_eq (0, r_big_to_int (c), "Failed r_big_sub");
+    r_big_from_hexstr (b, "0xfffffffffffffffe", 18);
+    mu_assert_eq (0, r_big_cmp (c, b), "Failed r_big_sub");
+    r_big_from_hexstr (b, "-0x7fffffffffffffff", 19);
     r_big_sub (c, b, a);
-    r_big_from_hexstr (b, "-0xffffffffffffffff", 19);
+    r_big_from_hexstr (b, "-0xfffffffffffffffe", 19);
     mu_assert_eq (0, r_big_cmp (c, b), "Failed r_big_sub");
 
     r_big_from_hexstr (a, "-0x7fffffffffffffff", 19);
@@ -498,7 +500,7 @@ bool test_r_big_isqrt(void) {
     str = r_big_to_hexstr (c, &size);
     //r_big_from_hexstr (a, );
     //mu_assert_eq (0, r_big_cmp (c, a), "Failed r_big_isqrt");
-    mu_assert_streq_free (str, "-0x7fff", "Failed r_big_to_hexstr");
+    mu_assert_streq_free (str, "0xabacc3be640aee406684e32261e8d2ea2cd09a9441904e3213a1d93732f4774876b8136dab7f5e579338ac82cc96b7651f823e13ef8e909624c224053ca57b518b6ef01f9947b74a97877fcad0004cebd4a34704678309f2143864f97b8477929aa1abb1ba777cbdada7408697ffa4ea94ce37a8dd50f37fec92fdbf173c8681", "Failed r_big_to_hexstr");
 
     r_big_free (a);
     r_big_free (c);

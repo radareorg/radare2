@@ -49,6 +49,32 @@ R_API void r_big_from_int(RNumBig *b, DTYPE_VAR n) {
 #endif
 }
 
+static void r_big_from_unsigned(RNumBig *b, DTYPE_TMP n) {
+    r_return_if_fail (b);
+
+    _r_big_zero_out (b);
+    b->sign = (n < 0) ? -1 : 1;
+    DTYPE_TMP v = n * b->sign;
+
+    /* Endianness issue if machine is not little-endian? */
+#ifdef WORD_SIZ
+#if (WORD_SIZ == 1)
+    b->array[0] = (v & 0x000000ff);
+    b->array[1] = (v & 0x0000ff00) >> 8;
+    b->array[2] = (v & 0x00ff0000) >> 16;
+    b->array[3] = (v & 0xff000000) >> 24;
+#elif (WORD_SIZ == 2)
+    b->array[0] = (v & 0x0000ffff);
+    b->array[1] = (v & 0xffff0000) >> 16;
+#elif (WORD_SIZ == 4)
+    b->array[0] = v;
+    DTYPE_TMP num_32 = 32;
+    DTYPE_TMP tmp = v >> num_32; 
+    b->array[1] = tmp;
+#endif
+#endif
+}
+
 R_API DTYPE_VAR r_big_to_int(RNumBig *b) {
     r_return_val_if_fail (b, 0);
 
@@ -181,8 +207,9 @@ static void r_big_sub_inner(RNumBig *c, RNumBig *a, RNumBig *b) {
     DTYPE_TMP tmp1; 
     DTYPE_TMP tmp2;
     int borrow = 0;
-    c->sign = r_big_cmp (a, b) >= 0 ? 1 : -1;
-    if (c->sign < 0) {
+    int sign = r_big_cmp (a, b);
+    c->sign = sign;
+    if (sign < 0) {
         tmp = a;
         a = b;
         b = tmp;
@@ -206,16 +233,20 @@ R_API void r_big_add(RNumBig *c, RNumBig *a, RNumBig *b) {
     if (a->sign >= 0 && b->sign >= 0) {
         r_big_add_inner (c, a, b);
         c->sign = 1;
+        return;
     }
     if (a->sign >= 0 && b->sign < 0) {
         r_big_sub_inner (c, a, b);
+        return;
     }
     if (a->sign < 0 && b->sign >= 0) {
         r_big_sub_inner (c, b, a);
+        return;
     }
     if (a->sign < 0 && b->sign < 0) {
         r_big_add_inner (c, a, b);
         c->sign = -1;
+        return;
     }
 }
 
@@ -226,17 +257,21 @@ R_API void r_big_sub(RNumBig *c, RNumBig *a, RNumBig *b) {
 
     if (a->sign >= 0 && b->sign >= 0) {
         r_big_sub_inner (c, a, b);
+        return;
     }
     if (a->sign >= 0 && b->sign < 0) {
         r_big_add_inner (c, a, b);
         c->sign = 1;
+        return;
     }
     if (a->sign < 0 && b->sign >= 0) {
         r_big_add_inner (c, a, b);
         c->sign = -1;
+        return;
     }
     if (a->sign < 0 && b->sign < 0) {
         r_big_sub_inner (c, b, a);
+        return;
     }
 }
 
@@ -258,7 +293,7 @@ R_API void r_big_mul(RNumBig *c, RNumBig *a, RNumBig *b) {
             if (i + j < BN_ARRAY_SIZE) {
                 _r_big_zero_out (tmp);
                 DTYPE_TMP intermediate = ((DTYPE_TMP)a->array[i] * (DTYPE_TMP)b->array[j]);
-                r_big_from_int (tmp, intermediate);
+                r_big_from_unsigned (tmp, intermediate);
                 _lshift_word (tmp, i + j);
                 r_big_add (row, row, tmp);
             }
