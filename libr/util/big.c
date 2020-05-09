@@ -162,7 +162,7 @@ R_API char *r_big_to_hexstr (RNumBig *b) {
 	int k = 0; /* Leading zero's amount */
 	int z;
 
-	for (; b->array[j] == 0 && j >= 0; --j) {
+	for (; b->array[j] == 0 && j >= 0; j--) {
 	}
 	if (j == -1) {
 		return "0x0";
@@ -187,7 +187,7 @@ R_API char *r_big_to_hexstr (RNumBig *b) {
 	i += z - k;
 	ret_str[i] = '\x00';
 
-	for (; j >= 0; --j) {
+	for (; j >= 0; j--) {
 		sprintf (&ret_str[i], SPRINTF_FORMAT_STR, b->array[j]);
 		i += 2 * WORD_SIZ;
 	}
