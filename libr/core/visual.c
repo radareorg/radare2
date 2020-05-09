@@ -2937,13 +2937,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					int times = R_MAX (1, wheelspeed);
 					// Check if we have a data annotation.
 					ut64 amisize;
-					RAnalMetaItem *ami = r_meta_get_at (core->anal,
-														core->offset, R_META_TYPE_DATA,
-														&amisize);
+					RAnalMetaItem *ami = r_meta_get_at (core->anal, core->offset, R_META_TYPE_DATA, &amisize);
 					if (!ami) {
-						ami = r_meta_get_at (core->anal,
-											 core->offset, R_META_TYPE_STRING,
-											 &amisize);
+						ami = r_meta_get_at (core->anal, core->offset, R_META_TYPE_STRING, &amisize);
 					}
 					if (ami) {
 						r_core_seek_delta (core, amisize);

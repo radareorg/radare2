@@ -6070,10 +6070,9 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_comment_command) {
 	RCore *core = state->core;
 	TSNode command = ts_node_named_child (node, 0);
 	TSNode filter_node = ts_node_named_child (node, 1);
-	char *glob = NULL;
-	if (!ts_node_is_null (filter_node)) {
-		glob = ts_node_sub_string (filter_node, state->input);
-	}
+	char *glob = !ts_node_is_null (filter_node)
+			? ts_node_sub_string (filter_node, state->input)
+			: NULL;
 	ut64 off = core->offset;
 	RCmdStatus res = R_CMD_STATUS_OK;
 	RIntervalTreeIter it;

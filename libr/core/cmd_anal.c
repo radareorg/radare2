@@ -7270,15 +7270,9 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					char *buf_asm = get_buf_asm (core, addr, ref->addr, fcn, true);
 					const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
 					char *print_comment = NULL;
-					if (comment && strchr (comment, '\n')) { // display only until the first newline
-						print_comment = strdup (comment);
-						if (print_comment) {
-							comment = print_comment;
-							char *nl = strchr (print_comment, '\n');
-							if (nl) {
-								*nl = '\0';
-							}
-						}
+					const char *nl = comment ? strchr (comment, '\n') : NULL;
+					if (nl) { // display only until the first newline
+						comment = print_comment = r_str_ndup (comment, nl - comment);
 					}
 					char *buf_fcn = comment
 						? r_str_newf ("%s; %s", fcn ?  fcn->name : "(nofunc)", comment)

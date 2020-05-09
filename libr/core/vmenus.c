@@ -902,7 +902,7 @@ R_API bool r_core_visual_hudstuff(RCore *core) {
 	RAnalMetaItem *mi;
 	r_interval_tree_foreach (&core->anal->meta, it, mi) {
 		if (mi->type == R_META_TYPE_COMMENT) {
-			char *s = r_str_newf ("0x%"PFMT64x" %s", r_interval_tree_iter_get (&it)->start, mi->str);
+			char *s = r_str_newf ("0x%08"PFMT64x" %s", r_interval_tree_iter_get (&it)->start, mi->str);
 			if (s) {
 				r_list_push (list, s);
 			}
