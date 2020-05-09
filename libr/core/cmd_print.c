@@ -284,6 +284,7 @@ static const char *help_msg_pc[] = {
 	"pc*", "", "print 'wx' r2 commands",
 	"pcA", "", ".bytes with instructions in comments",
 	"pca", "", "GAS .byte blob",
+	"pci", "", "C array of bytes with instructions",
 	"pcd", "", "C dwords (8 byte)",
 	"pch", "", "C half-words (2 byte)",
 	"pcJ", "", "javascript",
@@ -4352,13 +4353,52 @@ static const char* bits_to_c_code_fmtstr(int bits) {
 	}
 }
 
-static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, int w) {
-	const char *fmtstr;
-	int i, bits;
+static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws) {
+	size_t i;
 
 	ws = R_MAX (1, R_MIN (ws, 8));
-	bits = ws * 8;
-	fmtstr = bits_to_c_code_fmtstr (bits);
+	int bits = ws * 8;
+	const char *fmtstr = bits_to_c_code_fmtstr (bits);
+	len /= ws;
+
+	p->cb_printf ("#define _BUFFER_SIZE %d\n", len);
+	p->cb_printf ("const uint%d_t buffer[_BUFFER_SIZE] = {\n  ", bits);
+	p->interrupt = false;
+
+	RAsmOp op = {0};
+	int left = 0;
+	const int orig_align = 46;
+	int align = 0;
+	for (i = 0; !p->interrupt && i < len; i++) {
+		r_asm_op_fini (&op);
+		r_print_cursor (p, i, 1, 1);
+		p->cb_printf (fmtstr, r_read_ble (buf, p->big_endian, bits));
+		if ((i + 1) < len) {
+			p->cb_printf (", ");
+		}
+		r_print_cursor (p, i, 1, 0);
+		if (left == 0) {
+			while (align-- > 0) {
+				p->cb_printf (" ");
+			}
+			p->cb_printf (" // ");
+			left = p->disasm (p->user, addr + i);
+			align = orig_align - (left * 6);
+			p->cb_printf ("  ");
+		} else {
+			left --;
+		}
+		buf += ws;
+	}
+	p->cb_printf ("\n};\n");
+}
+
+static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, int w) {
+	size_t i;
+
+	ws = R_MAX (1, R_MIN (ws, 8));
+	int bits = ws * 8;
+	const char *fmtstr = bits_to_c_code_fmtstr (bits);
 	len /= ws;
 
 	p->cb_printf ("#define _BUFFER_SIZE %d\n", len);
@@ -4550,6 +4590,9 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		break;
 	case 'w': // "pcw"
 		print_c_code (p, addr, buf, len, 4, p->cols / 3); // 6);
+		break;
+	case 'i': // "pci"
+		print_c_instructions (p, addr, buf, len, 1); //3);
 		break;
 	case 'd': // "pcd"
 		print_c_code (p, addr, buf, len, 8, p->cols / 5); //3);
