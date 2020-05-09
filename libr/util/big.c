@@ -23,6 +23,14 @@ R_API void r_big_free(RNumBig *b) {
     free (b);
 }
 
+R_API void r_big_init(RNumBig *b) {
+    _r_big_zero_out (b);
+}
+
+R_API void r_big_fini(RNumBig *b) {
+    _r_big_zero_out (b);
+}
+
 R_API void r_big_from_int(RNumBig *b, DTYPE_VAR n) {
     r_return_if_fail (b);
 
@@ -101,9 +109,10 @@ R_API DTYPE_VAR r_big_to_int(RNumBig *b) {
     return ret;
 }
 
-R_API void r_big_from_hexstr(RNumBig *n, const char *str, int nbytes) {
+R_API void r_big_from_hexstr(RNumBig *n, const char *str) {
     r_return_if_fail (n);
     r_return_if_fail (str);
+    int nbytes = strlen (str);
 
     _r_big_zero_out (n);
 
@@ -144,9 +153,9 @@ R_API void r_big_from_hexstr(RNumBig *n, const char *str, int nbytes) {
     }
 }
 
-R_API char *r_big_to_hexstr(RNumBig *b, size_t *size) {
+R_API char *r_big_to_hexstr(RNumBig *b) {
     r_return_val_if_fail (b, NULL);
-    r_return_val_if_fail (size, NULL);
+    size_t size;
 
     int j = BN_ARRAY_SIZE - 1; /* index into array - reading "MSB" first -> big-endian */
     int i = 0; /* index into string representation. */
@@ -158,9 +167,9 @@ R_API char *r_big_to_hexstr(RNumBig *b, size_t *size) {
         return "0x0";
     }
 
-    *size = 3 + 2 * WORD_SIZ * (j + 1) + ((b->sign > 0) ? 0 : 1);
-    char *ret_str = malloc (sizeof (char) * (*size));
-    memset (ret_str, 0, sizeof (char) * (*size));
+    size = 3 + 2 * WORD_SIZ * (j + 1) + ((b->sign > 0) ? 0 : 1);
+    char *ret_str = malloc (sizeof (char) * (size));
+    memset (ret_str, 0, sizeof (char) * (size));
 
     if (b->sign < 0) {
         ret_str[i++] = '-';

@@ -65,12 +65,14 @@ typedef struct r_num_big_t {
 
 R_API RNumBig *r_big_new();
 R_API void r_big_free(RNumBig *b);
+R_API void r_big_init(RNumBig *b);
+R_API void r_big_fini(RNumBig *b);
 
 /* Assignment operations */
 R_API void r_big_from_int(RNumBig *b, DTYPE_VAR v); 
 R_API DTYPE_VAR r_big_to_int(RNumBig *b);
-R_API void r_big_from_hexstr(RNumBig *b, const char *str, int nbytes);
-R_API char *r_big_to_hexstr(RNumBig *b, size_t *size);
+R_API void r_big_from_hexstr(RNumBig *b, const char *str);
+R_API char *r_big_to_hexstr(RNumBig *b);
 R_API void r_big_assign(RNumBig *dst, RNumBig *src);
 
 /* Basic arithmetic operations */

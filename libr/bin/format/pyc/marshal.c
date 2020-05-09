@@ -176,7 +176,6 @@ static pyc_object *get_long_object (RBuffer *buffer) {
 	bool neg = false;
 	ut32 i;
 	ut16 n;
-	size_t size = 0;
 
 	st32 ndigits = get_st32 (buffer, &error);
 	if (ndigits < -SIZE32_MAX || ndigits > SIZE32_MAX) {
@@ -216,7 +215,7 @@ static pyc_object *get_long_object (RBuffer *buffer) {
 		if (neg) {
 			long_val->sign = -1;
 		}
-		ret->data = r_big_to_hexstr (long_val, &size);
+		ret->data = r_big_to_hexstr (long_val);
 
 		r_big_free (long_val);
 		r_big_free (tmp);
