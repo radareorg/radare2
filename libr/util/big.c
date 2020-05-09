@@ -208,7 +208,7 @@ static void r_big_sub_inner(RNumBig *c, RNumBig *a, RNumBig *b) {
     DTYPE_TMP tmp2;
     int borrow = 0;
     int sign = r_big_cmp (a, b);
-    c->sign = sign;
+    c->sign = (sign >= 0 ? 1 : -1);
     if (sign < 0) {
         tmp = a;
         a = b;
@@ -302,6 +302,9 @@ R_API void r_big_mul(RNumBig *c, RNumBig *a, RNumBig *b) {
     }
     
     c->sign = a->sign * b->sign;
+    if (r_big_is_zero (c)) {
+        c->sign = 1; // For -1 * 0 case
+    }
     r_big_free(row);
     r_big_free(tmp);
 }
@@ -322,7 +325,7 @@ R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b) {
 
     const DTYPE_TMP half_max = 1 + (DTYPE_TMP) (MAX_VAL / 2);
     bool overflow = false;
-    while (r_big_cmp (denom, a) != 1) // while (denom <= a) {
+    while (r_big_cmp (denom, a) == -1) // while (denom < a) {
     {
         if (denom->array[BN_ARRAY_SIZE - 1] >= half_max) {
             overflow = true;
