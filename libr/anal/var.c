@@ -162,6 +162,10 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 		r_pvector_push (&fcn->vars, var);
 		var->fcn = fcn;
 		r_vector_init (&var->accesses, sizeof (RAnalVarAccess), NULL, NULL);
+	} else {
+		free (var->name);
+		free (var->regname);
+		free (var->type);
 	}
 	var->name = strdup (name);
 	var->regname = reg ? strdup (reg->name) : NULL; // TODO: no strdup here? pool? or not keep regname at all?

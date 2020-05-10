@@ -102,7 +102,7 @@ R_API void r_anal_function_free(void *_fcn) {
 
 	ht_up_free (fcn->inst_vars);
 	fcn->inst_vars = NULL;
-	r_pvector_clear (&fcn->vars);
+	r_anal_function_delete_all_vars (fcn);
 
 	free (fcn->name);
 	fcn->bbs = NULL;
