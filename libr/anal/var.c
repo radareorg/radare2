@@ -607,20 +607,20 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		char *varname = NULL, *vartype = NULL;
 		if (isarg) {
 			const char *place = r_anal_cc_arg (anal, fcn->cc, ST32_MAX);
-			bool stack_rev = place ? !strncmp ("stack_rev", place, sizeof ("stack_rev")) : false;
+			bool stack_rev = place ? !strcmp (place, "stack_rev") : false;
 			char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
-			int sum_sz = 0;
 			if (fname) {
+				ut64 sum_sz = 0;
 				size_t from, to, i;
 				if (stack_rev) {
-					const int cnt = r_type_func_args_count (anal->sdb_types, fname) - 1;
-					from = R_MAX (cnt, 0);
+					const size_t cnt = r_type_func_args_count (anal->sdb_types, fname);
+					from = cnt ? cnt - 1 : cnt;
 					to = r_anal_cc_max_arg (anal, fcn->cc);
 				} else {
 					from = r_anal_cc_max_arg (anal, fcn->cc);
 					to = r_type_func_args_count (anal->sdb_types, fname);
 				}
-				const int bits = fcn->bits ? fcn->bits / 8 : anal->bits / 8;
+				const int bytes = (fcn->bits ? fcn->bits : anal->bits) / 8;
 				for (i = from; stack_rev ? i >= to : i < to; stack_rev ? i-- : i++) {
 					char *tp = r_type_func_args_type (anal->sdb_types, fname, i);
 					if (!tp) {
@@ -631,9 +631,9 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 						varname = strdup (r_type_func_args_name (anal->sdb_types, fname, i));
 						break;
 					}
-					int sz = r_type_get_bitsize (anal->sdb_types, tp);
-					sum_sz += sz ? sz / 8 : bits;
-					sum_sz = R_ROUND (sum_sz, bits);
+					ut64 bit_sz = r_type_get_bitsize (anal->sdb_types, tp);
+					sum_sz += bit_sz ? bit_sz / 8 : bytes;
+					sum_sz = R_ROUND (sum_sz, bytes);
 					free (tp);
 				}
 				free (fname);
