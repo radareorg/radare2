@@ -118,7 +118,7 @@ R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
 	return ret;
 }
 
-R_API int r_type_get_bitsize(Sdb *TDB, const char *type) {
+R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 	char *query;
 	/* Filter out the structure keyword if type looks like "struct mystruc" */
 	const char *tmptype;
@@ -143,7 +143,7 @@ R_API int r_type_get_bitsize(Sdb *TDB, const char *type) {
 	}
 	if (!strcmp (t, "type")){
 		query = r_str_newf ("type.%s.size", tmptype);
-		int r = (int)sdb_num_get (TDB, query, 0); // returns size in bits
+		ut64 r = sdb_num_get (TDB, query, 0); // returns size in bits
 		free (query);
 		return r;
 	}
@@ -151,7 +151,7 @@ R_API int r_type_get_bitsize(Sdb *TDB, const char *type) {
 		query = r_str_newf ("%s.%s", t, tmptype);
 		char *members = sdb_get (TDB, query, 0);
 		char *next, *ptr = members;
-		int ret = 0;
+		ut64 ret = 0;
 		if (members) {
 			do {
 				char *name = sdb_anext (ptr, &next);
@@ -179,7 +179,7 @@ R_API int r_type_get_bitsize(Sdb *TDB, const char *type) {
 					if (!strcmp (t, "struct")) {
 						ret += r_type_get_bitsize (TDB, subtype) * elements;
 					} else {
-						int sz = r_type_get_bitsize (TDB, subtype) * elements;
+						ut64 sz = r_type_get_bitsize (TDB, subtype) * elements;
 						ret = sz > ret ? sz : ret;
 					}
 				}
