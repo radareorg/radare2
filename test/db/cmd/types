@@ -1028,7 +1028,7 @@ aaft
 afv
 EOF
 EXPECT=<<EOF
-arg int32_t arg_4h @ esp+0x44
+arg char ** argv @ esp+0x44
 var char * src @ ebp-0x1c
 var char * s2 @ ebp-0x18
 var size_t var_14h @ ebp-0x14
