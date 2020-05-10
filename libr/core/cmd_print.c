@@ -4362,30 +4362,41 @@ static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len, 
 	len /= ws;
 
 	p->cb_printf ("#define _BUFFER_SIZE %d\n", len);
-	p->cb_printf ("const uint%d_t buffer[_BUFFER_SIZE] = {\n  ", bits);
+	p->cb_printf ("const uint%d_t buffer[_BUFFER_SIZE] = {\n", bits);
 	p->interrupt = false;
 
-	int left = 0;
+	int oleft, left = 0;
 	const int orig_align = p->coreb.cfggeti (p->coreb.core, "asm.cmt.col") - 40;
 	int align = orig_align;
+	int li = 0;
 	char *instr = NULL;
-	for (i = 0; !p->interrupt && i < len; i++) {
+	for (i = 0; !p->interrupt && i <= len; i++) {
 		if (left == 0) {
+			int pleft = oleft;
 			ut64 at = addr + i;
 			char *is = p->coreb.cmdstrf (p->coreb.core, "ao @ 0x%08"PFMT64x"~^size[1]", at);
-			left = atoi (is);
+			oleft = left = atoi (is);
+			li = i;
 			free (is);
 			if (instr) {
+				align = orig_align - ((pleft - 1) * 6);
 				while (align-- > 0) {
 					p->cb_printf (" ");
 				}
 				p->cb_printf (" /* %s */\n", instr);
 				free (instr);
-				p->cb_printf ("  ");
+				if (i == len) {
+					break; // return;
+				}
 			}
 			instr = p->coreb.cmdstrf (p->coreb.core, "pi 1 @ 0x%08"PFMT64x, at);
 			r_str_trim (instr);
-			align = orig_align - (left * 6);
+		}
+		if (i == len) {
+			break;
+		}
+		if (left == oleft) {
+			p->cb_printf (" ");
 		}
 		r_print_cursor (p, i, 1, 1);
 		p->cb_printf (fmtstr, r_read_ble (buf, p->big_endian, bits));
@@ -4394,7 +4405,17 @@ static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len, 
 		buf += ws;
 		left --;
 	}
-	p->cb_printf ("\n};\n");
+	if (left > 0 && left != oleft) {
+		align = orig_align - ((oleft - left - 1) * 6);
+		while (align-- > 0) {
+			p->cb_printf (" ");
+		}
+		p->cb_printf (" /* invalid */");
+	}
+	if (left != oleft) {
+		p->cb_printf ("\n");
+	}
+	p->cb_printf ("};\n");
 }
 
 static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, int w) {

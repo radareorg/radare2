@@ -259,3 +259,42 @@ const uint8_t buffer[_BUFFER_SIZE] = {
 };
 EOF
 RUN
+
+NAME=pci
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=pci 29
+EXPECT=<<EOF
+#define _BUFFER_SIZE 29
+const uint8_t buffer[_BUFFER_SIZE] = {
+ 0x31, 0xed,                           /* xor ebp, ebp */
+ 0x49, 0x89, 0xd1,                     /* mov r9, rdx */
+ 0x5e,                                 /* pop rsi */
+ 0x48, 0x89, 0xe2,                     /* mov rdx, rsp */
+ 0x48, 0x83, 0xe4, 0xf0,               /* and rsp, 0xfffffffffffffff0 */
+ 0x50,                                 /* push rax */
+ 0x54,                                 /* push rsp */
+ 0x49, 0xc7, 0xc0, 0xb0, 0x05, 0x40, 0x00,  /* mov r8, 0x4005b0 */
+ 0x48, 0xc7, 0xc1, 0x20, 0x05, 0x40, 0x00,  /* mov rcx, 0x400520 */
+};
+EOF
+RUN
+
+NAME=pci invalid
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=pci 32
+EXPECT=<<EOF
+#define _BUFFER_SIZE 32
+const uint8_t buffer[_BUFFER_SIZE] = {
+ 0x31, 0xed,                           /* xor ebp, ebp */
+ 0x49, 0x89, 0xd1,                     /* mov r9, rdx */
+ 0x5e,                                 /* pop rsi */
+ 0x48, 0x89, 0xe2,                     /* mov rdx, rsp */
+ 0x48, 0x83, 0xe4, 0xf0,               /* and rsp, 0xfffffffffffffff0 */
+ 0x50,                                 /* push rax */
+ 0x54,                                 /* push rsp */
+ 0x49, 0xc7, 0xc0, 0xb0, 0x05, 0x40, 0x00,  /* mov r8, 0x4005b0 */
+ 0x48, 0xc7, 0xc1, 0x20, 0x05, 0x40, 0x00,  /* mov rcx, 0x400520 */
+ 0x48, 0xc7, 0xc7,                     /* invalid */
+};
+EOF
+RUN
