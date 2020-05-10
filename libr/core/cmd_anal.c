@@ -989,45 +989,31 @@ static void var_accesses_list(RAnalFunction *fcn, RAnalVar *var, int access_type
 	r_cons_newline ();
 }
 
-static void list_vars2(RCore *core, RAnalFunction *fcn, int type) {
-	RAnalVar *var;
-	RListIter *iter;
-
-	if (type == '*') {
-		RList *list = r_anal_var_all_list (core->anal, fcn);
-		const char *bp = r_reg_get_name (core->anal->reg, R_REG_NAME_BP);
-		r_cons_printf ("f-fcnvar*\n");
-		r_list_foreach (list, iter, var) {
-			r_cons_printf ("f fcnvar.%s @ %s%s%d\n", var->name, bp,
-				var->delta>=0? "+":"", var->delta);
-		}
-		return;
-	}
-	RList *list = r_anal_var_all_list (core->anal, fcn);
-	r_list_foreach (list, iter, var) {
-		r_cons_printf ("* %s\n", var->name);
-		RAnalVarAccess *acc;
-		r_vector_foreach (&var->accesses, acc) {
-			if (!(acc->type & R_ANAL_VAR_ACCESS_TYPE_READ)) {
-				continue;
-			}
-			r_cons_printf ("R 0x%"PFMT64x"  ", (ut64)((st64)fcn->addr + acc->offset));
-			r_core_cmdf (core, "pi 1 @ 0x%08"PFMT64x, fcn->addr + acc->offset);
-		}
-		r_vector_foreach (&var->accesses, acc) {
-			if (!(acc->type & R_ANAL_VAR_ACCESS_TYPE_WRITE)) {
-				continue;
-			}
-			r_cons_printf ("W 0x%"PFMT64x"  ", (ut64)((st64)fcn->addr + acc->offset));
-			r_core_cmdf (core, "pi 1 @ 0x%08"PFMT64x, fcn->addr + acc->offset);
-		}
-	}
-}
-
 static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *name) {
 	RAnalVar *var;
 	RListIter *iter;
 	RList *list = r_anal_var_all_list (core->anal, fcn);
+	if (type == '=') {
+		r_list_foreach (list, iter, var) {
+			r_cons_printf ("* %s\n", var->name);
+			RAnalVarAccess *acc;
+			r_vector_foreach (&var->accesses, acc) {
+				if (!(acc->type & R_ANAL_VAR_ACCESS_TYPE_READ)) {
+					continue;
+				}
+				r_cons_printf ("R 0x%"PFMT64x"  ", fcn->addr + acc->offset);
+				r_core_cmdf (core, "pi 1 @ 0x%08"PFMT64x, fcn->addr + acc->offset);
+			}
+			r_vector_foreach (&var->accesses, acc) {
+				if (!(acc->type & R_ANAL_VAR_ACCESS_TYPE_WRITE)) {
+					continue;
+				}
+				r_cons_printf ("W 0x%"PFMT64x"  ", fcn->addr + acc->offset);
+				r_core_cmdf (core, "pi 1 @ 0x%08"PFMT64x, fcn->addr + acc->offset);
+			}
+		}
+		return;
+	}
 	if (type == '*') {
 		const char *bp = r_reg_get_name (core->anal->reg, R_REG_NAME_BP);
 		r_cons_printf ("f-fcnvar*\n");
@@ -1253,7 +1239,7 @@ static int var_cmd(RCore *core, const char *str) {
 			return false;
 		}
 	case '=': // "afv="
-		list_vars2 (core, fcn, 0);
+		list_vars (core, fcn, '=', NULL);
 		break;
 	case 'a': // "afva"
 		if (fcn) {
