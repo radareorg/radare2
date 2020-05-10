@@ -808,11 +808,14 @@ int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!buf) {
 		return 0;
 	}
-	r_buf_read_at (bin->b, 0, (ut8 *)buf, buf_sz);
+	if (r_buf_read_at (bin->b, 0, (ut8 *)buf, buf_sz) < 0) {
+		free (buf);
+		return 0;
+	}
 	checksum_offset = bin->nt_header_offset + 4 + sizeof(PE_(image_file_header)) + 0x40;
 	for (i = 0, j = 0; i < bin->size / 4; i++) {
-		cur = r_read_at_ble32 (buf, sizeof (ut32) * j++, bin->endian);
-
+		cur = r_read_at_ble32 (buf, j * 4, bin->endian);
+		j++;
 		// skip the checksum bytes
 		if (i * 4 == checksum_offset) {
 			continue;
@@ -823,7 +826,9 @@ int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t)* bin) {
 			computed_cs = (computed_cs & 0xFFFFFFFF) + (computed_cs >> 32);
 		}
 		if (j == buf_sz / 4) {
-			r_buf_read_at (bin->b, (i + 1) * 4, (ut8 *)buf, buf_sz);
+			if (r_buf_read_at (bin->b, (i + 1) * 4, (ut8 *)buf, buf_sz) < 0) {
+				break;
+			}
 			j = 0;
 		}
 	}
