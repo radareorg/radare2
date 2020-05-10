@@ -4365,30 +4365,34 @@ static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len, 
 	p->cb_printf ("const uint%d_t buffer[_BUFFER_SIZE] = {\n  ", bits);
 	p->interrupt = false;
 
-	RAsmOp op = {0};
 	int left = 0;
-	const int orig_align = 46;
-	int align = 0;
+	const int orig_align = p->coreb.cfggeti (p->coreb.core, "asm.cmt.col") - 40;
+	int align = orig_align;
+	char *instr = NULL;
 	for (i = 0; !p->interrupt && i < len; i++) {
-		r_asm_op_fini (&op);
+		if (left == 0) {
+			ut64 at = addr + i;
+			char *is = p->coreb.cmdstrf (p->coreb.core, "ao @ 0x%08"PFMT64x"~^size[1]", at);
+			left = atoi (is);
+			free (is);
+			if (instr) {
+				while (align-- > 0) {
+					p->cb_printf (" ");
+				}
+				p->cb_printf (" /* %s */\n", instr);
+				free (instr);
+				p->cb_printf ("  ");
+			}
+			instr = p->coreb.cmdstrf (p->coreb.core, "pi 1 @ 0x%08"PFMT64x, at);
+			r_str_trim (instr);
+			align = orig_align - (left * 6);
+		}
 		r_print_cursor (p, i, 1, 1);
 		p->cb_printf (fmtstr, r_read_ble (buf, p->big_endian, bits));
-		if ((i + 1) < len) {
-			p->cb_printf (", ");
-		}
 		r_print_cursor (p, i, 1, 0);
-		if (left == 0) {
-			while (align-- > 0) {
-				p->cb_printf (" ");
-			}
-			p->cb_printf (" // ");
-			left = p->disasm (p->user, addr + i);
-			align = orig_align - (left * 6);
-			p->cb_printf ("  ");
-		} else {
-			left --;
-		}
+		p->cb_printf (", ");
 		buf += ws;
+		left --;
 	}
 	p->cb_printf ("\n};\n");
 }
@@ -4592,7 +4596,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		print_c_code (p, addr, buf, len, 4, p->cols / 3); // 6);
 		break;
 	case 'i': // "pci"
-		print_c_instructions (p, addr, buf, len, 1); //3);
+		print_c_instructions (p, addr, buf, len, 1);
 		break;
 	case 'd': // "pcd"
 		print_c_code (p, addr, buf, len, 8, p->cols / 5); //3);
