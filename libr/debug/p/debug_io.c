@@ -123,7 +123,13 @@ static int __reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 
 // "dc" continue execution
 static int __io_continue(RDebug *dbg, int pid, int tid, int sig) {
-	dbg->iob.system (dbg->iob.io, "dc");
+	const char *cmd;
+	if (sig != 0) {
+		cmd = sdb_fmt ("dck %d %d", sig, pid);
+	} else {
+		cmd = "dc";
+	}
+	dbg->iob.system (dbg->iob.io, cmd);
 	r_cons_flush ();
 	return true;
 }

@@ -214,11 +214,17 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	}
 	if (cmd[0] == '?' || !strcmp (cmd, "help")) {
 		eprintf ("Usage: =!cmd args\n"
+			 " =!dm              - list memory maps of target process\n"
+			 " =!dr8             - display hexdump of gpr arena\n"
+			 " =!drp             - get register profles\n"
+			 " =!ds              - step one instruction\n"
+			 " =!dsb             - step backwards\n"
+			 " =!dc              - continue execution\n"
+			 " =!dcb             - continue backwards\n"
+			 " =!dck <sig>       - continue execution with sig signal\n"
 			 " =!pid             - show targeted pid\n"
 			 " =!pkt s           - send packet 's'\n"
 			 " =!rd              - show reverse debugging availability\n"
-			 " =!dsb             - step backwards\n"
-			 " =!dcb             - continue backwards\n"
 			 " =!monitor cmd     - hex-encode monitor command and pass"
 			                     " to target interpreter\n"
 			 " =!detach [pid]    - detach from remote/detach specific pid\n"
@@ -228,6 +234,157 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			 " =!exec_file [pid] - get file which was executed for"
 			                     " current/specified pid\n");
 		return NULL;
+	}
+	if (cmd[0] == 'd') {
+		switch (cmd[1]) {
+		case 'c':
+			switch (cmd[2]) {
+			case '\0': // "dc"
+				gdbr_continue (desc, desc->pid, -1, 0);
+				if (desc->stop_reason.is_valid && desc->stop_reason.thread.present) {
+					desc->tid = desc->stop_reason.thread.tid;
+				}
+				return NULL;
+			case 'b': // "dcb"
+				if (!desc->stub_features.ReverseContinue) {
+					eprintf ("Continue backwards is not supported in this gdbserver implementation\n");
+					return NULL;
+				}
+				gdbr_lock_enter (desc);
+				if (send_msg (desc, "bc") >= 0) {
+					(void)read_packet (desc);
+					desc->data[desc->data_len] = '\0';
+					if (!desc->no_ack) {
+						eprintf ("[waiting for ack]\n");
+					} else {
+						handle_stop_reason (desc);
+						if (desc->stop_reason.is_valid == false) {
+							eprintf ("Thread (%d) stopped for an invalid reason: %d\n",
+								desc->stop_reason.thread.tid, desc->stop_reason.reason);
+						}
+					}
+					gdbr_invalidate_reg_cache ();
+				}
+				gdbr_lock_leave (desc);
+				return NULL;
+			case 'k': // "dck"
+				if (cmd[3] != '\0') {
+					int sig = r_num_math (NULL, cmd + 3);
+					gdbr_continue (desc, desc->pid, -1, sig);
+					if (desc->stop_reason.is_valid && desc->stop_reason.thread.present) {
+						desc->tid = desc->stop_reason.thread.tid;
+					}
+				}
+				return NULL;
+			default:
+				break;
+			}
+			break;
+		case 'm': // "dm"
+		{
+			char path[128];
+			ut8 *buf;
+			int ret;
+			// TODO refer debug_gdb.c:r_debug_gdb_map_get
+			ut64 buflen = 16384;
+			snprintf (path, sizeof (path) - 1, "/proc/%d/maps", desc->pid);
+
+#ifdef _MSC_VER
+#define GDB_FILE_OPEN_MODE (_S_IREAD | _S_IWRITE)
+#else
+#define GDB_FILE_OPEN_MODE (S_IRUSR | S_IWUSR | S_IXUSR)
+#endif
+
+			if (gdbr_open_file (desc, path, O_RDONLY, GDB_FILE_OPEN_MODE) < 0) {
+				return NULL;
+			}
+			if (!(buf = malloc (buflen))) {
+				gdbr_close_file (desc);
+				return NULL;
+			}
+			if ((ret = gdbr_read_file (desc, buf, buflen - 1)) <= 0) {
+				gdbr_close_file (desc);
+				free (buf);
+				return NULL;
+			}
+			buf[ret] = '\0';
+
+			char *ptr = (char *)buf;
+			RStrBuf *obuf = r_strbuf_new (NULL);
+			ut64 map_start, map_end;
+			char perm[32];
+			char name[512];
+			for (;;) {
+				char *nl = strchr (ptr, '\n');
+				if (nl) {
+					*nl = 0;
+					*name = 0;
+					*perm = 0;
+					sscanf (ptr, "%"PFMT64x"-%"PFMT64x" %s %*s %*s %*s %[^\n]",
+						&map_start, &map_end, perm, name);
+					r_strbuf_appendf (obuf,"0x%"PFMT64x" - 0x%"PFMT64x" %s %s\n",
+							  map_start, map_end, perm, name);
+					ptr = nl + 1;
+				} else {
+					break;
+				}
+			}
+			gdbr_close_file (desc);
+			free (buf);
+			return r_strbuf_drain (obuf);
+		}
+		case 's':
+			switch (cmd[2]) {
+			case '\0': // "ds"
+				gdbr_step (desc, desc->tid);
+				return NULL;
+			case 'b': // "dsb"
+				if (!desc->stub_features.ReverseStep) {
+					eprintf ("Stepping backwards is not supported in this gdbserver implementation\n");
+					return NULL;
+				}
+				gdbr_lock_enter (desc);
+				if (send_msg (desc, "bs") >= 0) {
+					(void)read_packet (desc);
+					desc->data[desc->data_len] = '\0';
+					if (!desc->no_ack) {
+						eprintf ("[waiting for ack]\n");
+					} else {
+						handle_stop_reason (desc);
+						if (desc->stop_reason.is_valid == false) {
+							eprintf ("Thread (%d) stopped for an invalid reason: %d\n",
+								desc->stop_reason.thread.tid, desc->stop_reason.reason);
+						}
+					}
+					gdbr_invalidate_reg_cache ();
+				}
+				gdbr_lock_leave (desc);
+				return NULL;
+				// TODO "dso"
+			default:
+				break;
+			}
+			break;
+		case 'r':
+			switch (cmd[2]) {
+			case 'p': // "drp"
+				if (!desc->target.valid || !desc->target.regprofile) {
+					return NULL;
+				}
+				return strdup (desc->target.regprofile);
+				break;
+			case '8': // "dr8"
+				gdbr_read_registers (desc);
+				if (!desc->data) {
+					return NULL;
+				}
+				char *dr8_str = r_hex_bin2strdup ((const ut8*)desc->data, desc->data_len);
+				return dr8_str;
+			}
+			break;
+		default:
+			break;
+		}
 	}
 	if (r_str_startswith (cmd, "pktsz")) {
 		const char *ptr = r_str_trim_head_ro (cmd + 5);
@@ -283,54 +440,8 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		pj_free (pj);
 		return NULL;
 	}
-	if (r_str_startswith (cmd, "dsb")) {
-		if (!desc->stub_features.ReverseStep) {
-			eprintf ("Stepping backwards is not supported in this gdbserver implementation\n");
-			return NULL;
-		}
-		gdbr_lock_enter (desc);
-		if (send_msg (desc, "bs") >= 0) {
-			(void)read_packet (desc);
-			desc->data[desc->data_len] = '\0';
-			if (!desc->no_ack) {
-				eprintf ("[waiting for ack]\n");
-			} else {
-				handle_stop_reason (desc);
-				if (desc->stop_reason.is_valid == false) {
-					eprintf("Thread (%d) stopped for an invalid reason: %d\n",
-						desc->stop_reason.thread.tid, desc->stop_reason.reason);
-				}
-			}
-			gdbr_invalidate_reg_cache ();
-		}
-		gdbr_lock_leave (desc);
-		return NULL;
-	}
-	if (r_str_startswith (cmd, "dcb")) {
-		if (!desc->stub_features.ReverseContinue) {
-			eprintf ("Continue backwards is not supported in this gdbserver implementation\n");
-			return NULL;
-		}
-		gdbr_lock_enter (desc);
-		if (send_msg (desc, "bc") >= 0) {
-			(void)read_packet (desc);
-			desc->data[desc->data_len] = '\0';
-			if (!desc->no_ack) {
-				eprintf ("[waiting for ack]\n");
-			} else {
-				handle_stop_reason (desc);
-				if (desc->stop_reason.is_valid == false) {
-					eprintf("Thread (%d) stopped for an invalid reason: %d\n",
-						desc->stop_reason.thread.tid, desc->stop_reason.reason);
-				}
-			}
-			gdbr_invalidate_reg_cache ();
-		}
-		gdbr_lock_leave (desc);
-		return NULL;
-	}
 	if (r_str_startswith (cmd, "pid")) {
-		int pid = desc ? desc->pid : -1;
+		int pid = desc ? desc->pid: -1;
 		if (!cmd[3]) {
 			io->cb_printf ("%d\n", pid);
 		}
