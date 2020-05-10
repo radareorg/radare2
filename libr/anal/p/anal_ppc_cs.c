@@ -545,11 +545,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	int mode = (a->bits == 64) ? CS_MODE_64 : (a->bits == 32) ? CS_MODE_32 : 0;
 	mode |= a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 
-	op->delay = 0;
-	op->type = R_ANAL_OP_TYPE_NULL;
-	op->jump = UT64_MAX;
-	op->fail = UT64_MAX;
-	op->ptr = op->val = UT64_MAX;
 	if (a->cpu && strncmp (a->cpu, "vle", 3) == 0) {
 		// vle is big-endian only
 		if (!a->big_endian) {
@@ -575,9 +570,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
 	op->size = 4;
-
-	r_strbuf_init (&op->esil);
-	r_strbuf_set (&op->esil, "");
 
 	// capstone-next
 	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);

@@ -54,9 +54,6 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	struct v810_cmd cmd;
 
 	memset (&cmd, 0, sizeof(cmd));
-	memset (op, 0, sizeof(RAnalOp));
-	r_strbuf_init (&op->esil);
-	r_strbuf_set (&op->esil, "");
 
 	ret = op->size = v810_decode_command (buf, len, &cmd);
 	if (ret <= 0) {
@@ -70,8 +67,6 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	}
 
 	op->addr = addr;
-	op->jump = op->fail = -1;
-	op->ptr = op->val = -1;
 
 	opcode = OPCODE(word1);
 	if (opcode >> 3 == 0x4) {

@@ -1094,11 +1094,8 @@ static int sh_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, 
 	if (!data || len < 2) {
 		return 0;
 	}
-	memset (op, '\0', sizeof (RAnalOp));
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
-	op->jump = op->fail = -1;
-	op->ptr = op->val = -1;
 
 	op->size = 2;
 
