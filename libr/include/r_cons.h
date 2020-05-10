@@ -568,6 +568,10 @@ typedef struct r_cons_t {
 #define R_CONS_CURSOR_SAVE "\x1b[s"
 #define R_CONS_CURSOR_RESTORE "\x1b[u"
 #define R_CONS_GET_CURSOR_POSITION "\x1b[6n"
+#define R_CONS_CURSOR_UP "\x1b[A"
+#define R_CONS_CURSOR_DOWN "\x1b[B"
+#define R_CONS_CURSOR_RIGHT "\x1b[C"
+#define R_CONS_CURSOR_LEFT "\x1b[D"
 
 #define Color_BLINK        "\x1b[5m"
 #define Color_INVERT       "\x1b[7m"
