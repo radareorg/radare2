@@ -1358,6 +1358,37 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Mixed reg/stack callee arguments type matching
+FILE=bins/pe/testapp-msvc64.exe
+CMDS=<<EOF
+s 0x14000b54c
+aei
+aeim
+af
+aft
+pdf
+EOF
+EXPECT=<<EOF
+            ;-- rip:
+/ 59: fcn.14000b54c ();
+|           ; var DWORD dwCreationDisposition @ rsp+0x20
+|           ; var DWORD dwFlagsAndAttributes @ rsp+0x28
+|           ; var HANDLE hTemplateFile @ rsp+0x30
+|           0x14000b54c      4883ec48       sub rsp, 0x48
+|           0x14000b550      488364243000   and qword [hTemplateFile], 0 ; HANDLE hTemplateFile
+|           0x14000b556      488d0da37300.  lea rcx, str.CONOUT        ; 0x140012900 ; u"CONOUT$" ; LPCWSTR lpFileName
+|           0x14000b55d      8364242800     and dword [dwFlagsAndAttributes], 0 ; DWORD dwFlagsAndAttributes
+|           0x14000b562      41b803000000   mov r8d, 3                 ; DWORD dwShareMode
+|           0x14000b568      4533c9         xor r9d, r9d               ; LPSECURITY_ATTRIBUTES lpSecurityAttributes
+|           0x14000b56b      4489442420     mov dword [dwCreationDisposition], r8d ; DWORD dwCreationDisposition
+|           0x14000b570      ba00000040     mov edx, 0x40000000        ; DWORD dwDesiredAccess
+|           0x14000b575      ff158d1c0000   call qword [sym.imp.KERNEL32.dll_CreateFileW] ; [0x14000d208:8]=0x1579e reloc.KERNEL32.dll_CreateFileW ; HANDLE CreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
+|           0x14000b57b      4889057eb400.  mov qword [0x140016a00], rax ; [0x140016a00:8]=-2
+|           0x14000b582      4883c448       add rsp, 0x48
+\           0x14000b586      c3             ret
+EOF
+RUN
+
 NAME=call not function
 FILE=bins/pe/crackme0x00.exe
 CMDS=<<EOF
