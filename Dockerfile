@@ -37,18 +37,14 @@ LABEL r2docker latest
 # Radare version
 ARG R2_VERSION=master
 # R2pipe python version
-ARG R2_PIPE_PY_VERSION=0.8.9
-# R2pipe node version
-ARG R2_PIPE_NPM_VERSION=2.3.2
+ARG R2_PIPE_PY_VERSION=1.4.2
 
 ENV R2_VERSION ${R2_VERSION}
 ENV R2_PIPE_PY_VERSION ${R2_PIPE_PY_VERSION}
-ENV R2_PIPE_NPM_VERSION ${R2_PIPE_NPM_VERSION}
 
 RUN echo -e "Building versions:\n\
   R2_VERSION=$R2_VERSION\n\
-  R2_PIPE_PY_VERSION=${R2_PIPE_PY_VERSION}\n\
-  R2_PIPE_NPM_VERSION=${R2_PIPE_NPM_VERSION}"
+  R2_PIPE_PY_VERSION=${R2_PIPE_PY_VERSION}"
 
 # Build radare2 in a volume to minimize space used by build
 VOLUME ["/mnt"]
@@ -78,7 +74,9 @@ RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
   cd /mnt && \
   git clone -b "$R2_VERSION" -q --depth 1 https://github.com/radareorg/radare2.git && \
   cd radare2 && \
-  ./sys/install.sh && \
+  ./configure && \
+  make && \
+  sudo make install && \
   apt-get install -y xz-utils && \
   apt-get remove --purge -y \
   bison \
