@@ -60,14 +60,14 @@ typedef struct r_num_big_t {
 } RNumBig;
 #endif
 
-R_API RNumBig *r_big_new ();
-R_API void r_big_free (RNumBig *b);
-R_API void r_big_init (RNumBig *b);
-R_API void r_big_fini (RNumBig *b);
+R_API RNumBig *r_big_new();
+R_API void r_big_free(RNumBig *b);
+R_API void r_big_init(RNumBig *b);
+R_API void r_big_fini(RNumBig *b);
 
 /* Assignment operations */
-R_API void r_big_from_int (RNumBig *b, signed long int v);
-R_API signed long int r_big_to_int (RNumBig *b);
+R_API void r_big_from_int(RNumBig *b, signed long int v);
+R_API signed long int r_big_to_int(RNumBig *b);
 R_API void r_big_from_hexstr (RNumBig *b, const char *str);
 R_API char *r_big_to_hexstr (RNumBig *b);
 R_API void r_big_assign (RNumBig *dst, RNumBig *src);
