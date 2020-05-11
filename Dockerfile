@@ -28,8 +28,8 @@
 # $ r2 -d /bin/true
 #
 
-# Using debian 9 as base image.
-FROM debian:9
+# Using debian 10 as base image.
+FROM debian:10
 
 # Label base
 LABEL r2docker latest
@@ -62,6 +62,7 @@ RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
   apt-get update && \
   apt-get install -y \
   curl \
+  wget \
   gcc \
   git \
   bison \
@@ -72,16 +73,12 @@ RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
   libncurses5:i386 \
   libstdc++6:i386 \
   gnupg2 \
-  sudo && \
-  curl -sL https://deb.nodesource.com/setup_8.x | bash - && \
-  apt-get install -y nodejs python-pip && \
+  python-pip && \
   pip install r2pipe=="$R2_PIPE_PY_VERSION" && \
-  npm install --unsafe-perm -g "r2pipe@$R2_PIPE_NPM_VERSION" && \
   cd /mnt && \
   git clone -b "$R2_VERSION" -q --depth 1 https://github.com/radareorg/radare2.git && \
   cd radare2 && \
   ./sys/install.sh && \
-  make install && \
   apt-get install -y xz-utils && \
   apt-get remove --purge -y \
   bison \
