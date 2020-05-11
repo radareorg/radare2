@@ -1,8 +1,10 @@
 #include <r_util.h>
 
-R_API RNumBig *r_big_new() {
+R_API RNumBig *r_big_new(void) {
 	RNumBig *n = R_NEW (RNumBig);
-	mpz_init (*n);
+	if (n) {
+		mpz_init (*n);
+	}
 	return n;
 }
 

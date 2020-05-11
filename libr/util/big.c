@@ -11,7 +11,7 @@ static void _lshift_word(RNumBig *a, int nwords);
 static void _rshift_word(RNumBig *a, int nwords);
 static void _r_big_zero_out(RNumBig *n);
 
-R_API RNumBig *r_big_new() {
+R_API RNumBig *r_big_new(void) {
 	RNumBig *n = R_NEW (RNumBig);
 	if (n) {
 		_r_big_zero_out (n);

@@ -10,6 +10,8 @@ extern "C" {
 #if HAVE_LIB_GMP
 /* Use GMP's data struct */
 #define RNumBig mpz_t
+#elif HAVE_LIB_SSL
+#define RNumBig BIGNUM
 #else
 /* Use default impl */
 #ifndef WORD_SIZ
@@ -60,7 +62,7 @@ typedef struct r_num_big_t {
 } RNumBig;
 #endif
 
-R_API RNumBig *r_big_new();
+R_API RNumBig *r_big_new(void);
 R_API void r_big_free(RNumBig *b);
 R_API void r_big_init(RNumBig *b);
 R_API void r_big_fini(RNumBig *b);

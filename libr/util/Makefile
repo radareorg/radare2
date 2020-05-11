@@ -27,7 +27,11 @@ OBJS+=ascii_table.o protobuf.o
 ifeq (${HAVE_LIB_GMP},1)
   OBJS+=big-gmp.o
 else
-  OBJS+=big.o
+  ifeq (${HAVE_LIB_SSL},1)
+    OBJS+=big-ssl.o
+  else
+    OBJS+=big.o
+  endif
 endif
 
 include deps.mk
