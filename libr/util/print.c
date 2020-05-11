@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2007-2020 - pancake */
 
+// WTF :D
 #include <r_core.h>
 
 #define DFLT_ROWS 16

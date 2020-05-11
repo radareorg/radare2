@@ -6,6 +6,7 @@ r_util_sources = [
   'donut.c',
   'table.c',
   'getopt.c',
+  'print_code.c',
   'base85.c',
   'base91.c',
   'bdiff.c',
