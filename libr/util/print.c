@@ -139,7 +139,7 @@ R_API int r_util_lines_getline(ut64 *lines_cache, int lines_cache_sz, ut64 off) 
 	return imin;
 }
 
-R_API bool r_print_is_interrupted() {
+R_API bool r_print_is_interrupted(void) {
 	if (is_interrupted_cb) {
 		return is_interrupted_cb ();
 	}
@@ -311,7 +311,6 @@ R_API RPrint* r_print_new() {
 	p->bits = 32;
 	p->stride = 0;
 	p->bytespace = 0;
-	p->interrupt = 0;
 	p->big_endian = false;
 	p->datezone = 0;
 	p->col = 0;
@@ -649,10 +648,9 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 	bool wrap = (options & R_PRINT_STRING_WRAP);
 	bool urlencode = (options & R_PRINT_STRING_URLENCODE);
 	bool esc_nl = (options & R_PRINT_STRING_ESC_NL);
-	p->interrupt = 0;
 	int col = 0;
 	i = 0;
-	for (; !p->interrupt && i < len; i++) {
+	for (; !r_print_is_interrupted () && i < len; i++) {
 		if (wide32) {
 			int j = i;
 			while (buf[j] == '\0' && j < (i + 3)) {
@@ -1011,9 +1009,6 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		}
 	}
 
-	if (p) {
-		p->interrupt = 0;
-	}
 	// is this necessary?
 	r_print_set_screenbounds (p, addr);
 	int rows = 0;
@@ -1526,8 +1521,7 @@ R_API void r_print_c(RPrint *p, const ut8 *str, int len) {
 	p->cb_printf ("#define _BUFFER_SIZE %d\n"
 	"unsigned char buffer[_BUFFER_SIZE] = {\n",
 	len);
-	p->interrupt = 0;
-	for (i = 0; !p->interrupt && i < len;) {
+	for (i = 0; !r_print_is_interrupted () && i < len;) {
 		r_print_byte (p, "0x%02x", i, str[i]);
 		if (++i < len) {
 			p->cb_printf (", ");
