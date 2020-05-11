@@ -2,8 +2,9 @@
 
 pyc_opcodes *opcode_12 () {
 	pyc_opcodes *ret = opcode_13 ();
-	if (!ret)
+	if (!ret) {
 		return NULL;
+	}
 
 	ret->version_sig = (void *(*)())opcode_12;
 

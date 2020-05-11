@@ -126,8 +126,9 @@ bool pyc_opcodes_equal (pyc_opcodes *op, const char *version) {
     size_t i;
 	for (i = 0; i < sizeof (version_op) / sizeof (version_opcode); i++) {
 		if (!strcmp (version_op[i].version, version)) {
-			if (version_op[i].opcode_func == (pyc_opcodes *(*)())(op->version_sig))
+			if (version_op[i].opcode_func == (pyc_opcodes *(*)())(op->version_sig)) {
 				return true;
+			}
 		}
 	}
 	return false;
@@ -152,7 +153,7 @@ pyc_opcodes *new_pyc_opcodes () {
 	ret->have_argument = 90;
 	ret->opcodes = malloc (sizeof (pyc_opcode_object) * 256);
 	if (!ret->opcodes) {
-		R_FREE (ret);
+		free (ret);
 		return NULL;
 	}
 	for (i = 0; i < 256; i++) {
@@ -176,9 +177,10 @@ pyc_opcodes *new_pyc_opcodes () {
 }
 
 void free_opcode (pyc_opcodes *opcodes) {
-    size_t i;
-	for (i = 0; i < 256; i++)
+	size_t i;
+	for (i = 0; i < 256; i++) {
 		free (opcodes->opcodes[i].op_name);
+	}
 	free (opcodes->opcodes);
 	r_list_free (opcodes->opcode_arg_fmt);
 	R_FREE (opcodes);

@@ -31,9 +31,9 @@ const char *format_MAKE_FUNCTION_arg_36 (ut32 oparg) {
     size_t i;
 	char *ret = r_str_new (" ");
 	for (i = 0; i < sizeof (MAKE_FUNCTION_FLAGS) / sizeof (char *); ++i) {
-		if (oparg & 0x1)
+		if (oparg & 0x1) {
 			r_str_appendf (ret, ", %s", MAKE_FUNCTION_FLAGS[i]);
-		else {
+		} else {
 			free (ret);
 			ret = r_str_new (MAKE_FUNCTION_FLAGS[i]);
 		}
@@ -58,10 +58,11 @@ const char *format_value_flags_36 (ut32 oparg) {
 		ret = "!a";
 		break;
 	}
-	if ((oparg & 0x4) == 0x4)
+	if ((oparg & 0x4) == 0x4) {
 		// pop fmt_spec from the stack and use it, else use an
 		// empty fmt_spec.
 		return "";
+	}
 	return ret;
 }
 

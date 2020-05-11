@@ -178,7 +178,7 @@ static pyc_object *get_long_object (RBuffer *buffer) {
 	ut16 n;
 
 	st32 ndigits = get_st32 (buffer, &error);
-	if (ndigits < -SIZE32_MAX || ndigits > SIZE32_MAX) {
+	if (ndigits < -SIZE32_MAX) {
 		eprintf ("bad marshal data (long size out of range)");
 		return NULL;
 	}
@@ -397,7 +397,7 @@ static pyc_object *get_string_object (RBuffer *buffer) {
 	ut32 n = 0;
 
 	n = get_ut32 (buffer, &error);
-	if (n < 0 || n > SIZE32_MAX) {
+	if (n > SIZE32_MAX) {
 		eprintf ("bad marshal data (string size out of range)");
 		return NULL;
 	}
@@ -423,7 +423,7 @@ static pyc_object *get_unicode_object (RBuffer *buffer) {
 	ut32 n = 0;
 
 	n = get_ut32 (buffer, &error);
-	if (n < 0 || n > SIZE32_MAX) {
+	if (n > SIZE32_MAX) {
 		eprintf ("bad marshal data (unicode size out of range)");
 		return NULL;
 	}
@@ -446,7 +446,7 @@ static pyc_object *get_interned_object (RBuffer *buffer) {
 	ut32 n = 0;
 
 	n = get_ut32 (buffer, &error);
-	if (n < 0 || n > SIZE32_MAX) {
+	if (n > SIZE32_MAX) {
 		eprintf ("bad marshal data (string size out of range)");
 		return NULL;
 	}

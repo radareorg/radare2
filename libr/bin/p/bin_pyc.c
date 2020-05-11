@@ -36,9 +36,8 @@ static ut64 get_entrypoint (RBuffer *buf) {
 			r_buf_seek (buf, addr + 1, R_BUF_SET);
 			if ((result = get_code_object_addr (buf, version.magic)) == 0) {
 				return addr;
-			} else {
-				return result;
 			}
+			return result;
 		}
 	}
 	return 0;
@@ -46,8 +45,9 @@ static ut64 get_entrypoint (RBuffer *buf) {
 
 static RBinInfo *info (RBinFile *arch) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret)
+	if (!ret) {
 		return NULL;
+	}
 	ret->file = strdup (arch->file);
 	ret->type = r_str_newf ("Python %s byte-compiled file", version.version);
 	ret->bclass = strdup ("Python byte-compiled file");

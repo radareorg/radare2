@@ -28,7 +28,7 @@ int r_pyc_disasm (RAsmOp *opstruct, const ut8 *code, RList *cobjs, RList *intern
 		}
 	}
 
-	if (cobj != NULL) {
+	if (!cobj) {
 		/* TODO: adding line number and offset */
 		varnames = cobj->varnames->data;
 		consts = cobj->consts->data;
@@ -37,10 +37,10 @@ int r_pyc_disasm (RAsmOp *opstruct, const ut8 *code, RList *cobjs, RList *intern
 		cellvars = cobj->cellvars->data;
 
 		op = code[i];
-		i += 1;
+		i++;
 		name = ops->opcodes[op].op_name;
 		r_strbuf_set (&opstruct->buf_asm, name);
-		if (name == NULL) {
+		if (!name) {
 			return 0;
 		}
 		if (op >= ops->have_argument) {
@@ -123,7 +123,7 @@ const char *parse_arg (pyc_opcode_object *op, ut32 oparg, RList *names, RList *c
 	}
 	if (op->type & HASLOCAL) {
 		t = (pyc_object *)r_list_get_n (varnames, oparg);
-		if (t == NULL)
+		if (!t)
 			return NULL;
 		arg = t->data;
 	}
@@ -139,8 +139,9 @@ const char *parse_arg (pyc_opcode_object *op, ut32 oparg, RList *names, RList *c
 			t = (pyc_object *)r_list_get_n (cellvars, oparg);
 		} else if ((oparg - r_list_length (cellvars)) < r_list_length (freevars)) {
 			t = (pyc_object *)r_list_get_n (freevars, oparg);
-		} else
+		} else {
 			arg = r_str_newf ("%u", oparg);
+		}
 		if (t == NULL) {
 			return NULL;
 		}

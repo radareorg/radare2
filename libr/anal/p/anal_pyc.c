@@ -11,8 +11,9 @@
 static pyc_opcodes *ops = NULL;
 
 static int archinfo(RAnal *anal, int query) {
-	if (!strcmp (anal->cpu, "x86"))
+	if (!strcmp (anal->cpu, "x86")) {
 		return -1;
+	}
 
 	switch (query) {
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
@@ -38,7 +39,7 @@ static char *get_reg_profile(RAnal *anal) {
 static RList *get_pyc_code_obj(RAnal *anal) {
 	RBin *b = anal->binb.bin;
 	RBinPlugin *plugin = b->cur && b->cur->o ? b->cur->o->plugin : NULL;
-	ut8 is_pyc = (plugin && strcmp (plugin->name, "pyc") == 0) ? 1 : 0;
+	bool is_pyc = (plugin && strcmp (plugin->name, "pyc") == 0);
 	return is_pyc ? b->cur->o->bin_obj : NULL;
 }
 
@@ -47,12 +48,12 @@ static int pyc_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RA
 	RListIter *iter = NULL;
 	pyc_code_object *func = NULL, *t = NULL;
 	r_list_foreach (cobjs, iter, t) {
-		if (t->start_offset <= addr && addr < t->end_offset) { // addr in [start_offset, end_offset)
+		if (R_BETWEEN (t->start_offset, addr, t->end_offset - 1)) {// addr in [start_offset, end_offset)
 			func = t;
 			break;
 		}
 	}
-	if (func == NULL) {
+	if (!func) {
 		return -1;
 	}
 
@@ -80,11 +81,7 @@ static int pyc_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RA
 		goto anal_end;
 	}
 
-	if (is_python36) {
-		op->size = 2;
-	} else {
-		op->size = (op_code >= ops->have_argument) ? 3 : 1;
-	}
+	op->size = is_python36 ? 2 : ((op_code >= ops->have_argument) ? 3 : 1);
 
 	if (op_code >= ops->have_argument) {
 		if (!is_python36) {
@@ -94,11 +91,7 @@ static int pyc_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RA
 		}
 		extended_arg = 0;
 		if (op_code == ops->extended_arg) {
-			if (!is_python36) {
-				extended_arg = oparg * 65536;
-			} else {
-				extended_arg = oparg << 8;
-			}
+			extended_arg = is_python36 ? (oparg << 8) : (oparg * 65536);
 		}
 	}
 
