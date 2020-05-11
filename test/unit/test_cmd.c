@@ -98,8 +98,8 @@ bool test_cmd_descriptor_argv(void) {
 bool test_cmd_descriptor_argv_nested(void) {
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
-	RCmdDesc *af_cd = r_cmd_desc_inner_new (cmd, root, "af");
-	r_cmd_desc_inner_new (cmd, root, "af2");
+	RCmdDesc *af_cd = r_cmd_desc_argv_new (cmd, root, "af", NULL);
+	r_cmd_desc_argv_new (cmd, root, "af2", NULL);
 	RCmdDesc *cd = r_cmd_desc_argv_new (cmd, af_cd, "afl", afl_argv_handler);
 	mu_assert_ptreq (r_cmd_desc_parent (cd), af_cd, "parent of afl is af");
 	mu_assert_true (r_pvector_contains (&af_cd->children, cd), "afl is child of af");
@@ -128,6 +128,10 @@ static RCmdStatus ap_handler(void *user, int argc, const char **argv) {
 	return R_CMD_STATUS_OK;
 }
 
+static RCmdStatus aeir_handler(void *user, int argc, const char **argv) {
+	return R_CMD_STATUS_OK;
+}
+
 static int ae_handler(void *user, const char *input) {
 	return 0;
 }
@@ -139,7 +143,7 @@ static int w_handler(void *user, const char *input) {
 bool test_cmd_descriptor_tree(void) {
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
-	RCmdDesc *a_cd = r_cmd_desc_inner_new (cmd, root, "a");
+	RCmdDesc *a_cd = r_cmd_desc_argv_new (cmd, root, "a", NULL);
 	r_cmd_desc_argv_new (cmd, a_cd, "ap", ap_handler);
 	r_cmd_desc_oldinput_new (cmd, root, "w", w_handler);
 
@@ -156,9 +160,11 @@ bool test_cmd_descriptor_tree(void) {
 bool test_cmd_get_desc(void) {
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
-	RCmdDesc *a_cd = r_cmd_desc_inner_new (cmd, root, "a");
+	RCmdDesc *a_cd = r_cmd_desc_argv_new (cmd, root, "a", NULL);
 	RCmdDesc *ap_cd = r_cmd_desc_argv_new (cmd, a_cd, "ap", ap_handler);
+	RCmdDesc *apd_cd = r_cmd_desc_argv_new (cmd, ap_cd, "apd", ap_handler);
 	RCmdDesc *ae_cd = r_cmd_desc_oldinput_new (cmd, a_cd, "ae", ae_handler);
+	RCmdDesc *aeir_cd = r_cmd_desc_argv_new (cmd, a_cd, "aeir", aeir_handler);
 	RCmdDesc *w_cd = r_cmd_desc_oldinput_new (cmd, root, "w", w_handler);
 
 	mu_assert_null (r_cmd_get_desc (cmd, "afl"), "afl does not have any handler");
@@ -166,8 +172,11 @@ bool test_cmd_get_desc(void) {
 	mu_assert_ptreq (r_cmd_get_desc (cmd, "wx"), w_cd, "wx will be handled by w");
 	mu_assert_ptreq (r_cmd_get_desc (cmd, "wao"), w_cd, "wao will be handled by w");
 	mu_assert_null (r_cmd_get_desc (cmd, "apx"), "apx does not have any handler");
+	mu_assert_ptreq (r_cmd_get_desc (cmd, "apd"), apd_cd, "apd will be handled by apd");
 	mu_assert_ptreq (r_cmd_get_desc (cmd, "ae"), ae_cd, "ae will be handled by ae");
 	mu_assert_ptreq (r_cmd_get_desc (cmd, "aeim"), ae_cd, "aeim will be handled by ae");
+	mu_assert_ptreq (r_cmd_get_desc (cmd, "aeir"), aeir_cd, "aeir will be handled by aeir");
+	mu_assert_ptreq (r_cmd_get_desc (cmd, "aei"), ae_cd, "aei will be handled by ae");
 
 	r_cmd_free (cmd);
 	mu_end;
@@ -197,7 +206,7 @@ static int q_handler(void *user, const char *input) {
 bool test_cmd_call_desc(void) {
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
-	RCmdDesc *p_cd = r_cmd_desc_inner_new (cmd, root, "p");
+	RCmdDesc *p_cd = r_cmd_desc_argv_new (cmd, root, "p", NULL);
 	r_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler);
 	r_cmd_desc_oldinput_new (cmd, p_cd, "p", p_handler);
 	r_cmd_desc_oldinput_new (cmd, root, "wv", wv_handler);

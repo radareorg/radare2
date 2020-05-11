@@ -20,14 +20,7 @@ static bool cmd_desc_set_parent(RCmdDesc *cd, RCmdDesc *parent) {
 	return true;
 }
 
-static bool cmd_desc_remove_parent(RCmdDesc *cd) {
-	r_return_val_if_fail (cd && cd->parent, false);
-	r_pvector_remove_data (&cd->parent->children, cd);
-	cd->parent = NULL;
-	return NULL;
-}
-
-static RCmdDesc *create_cmd_desc(RCmdDesc *parent, RCmdDescType type, const char *name) {
+static RCmdDesc *create_cmd_desc(RCmd *cmd, RCmdDesc *parent, RCmdDescType type, const char *name) {
 	RCmdDesc *res = R_NEW0 (RCmdDesc);
 	if (!res) {
 		return NULL;
@@ -39,6 +32,9 @@ static RCmdDesc *create_cmd_desc(RCmdDesc *parent, RCmdDescType type, const char
 	}
 	res->n_children = 0;
 	r_pvector_init (&res->children, (RPVectorFree)r_cmd_desc_free);
+	if (!ht_pp_insert (cmd->ht_cmds, name, res)) {
+		goto err;
+	}
 	cmd_desc_set_parent (res, parent);
 	return res;
 err:
@@ -63,8 +59,8 @@ R_API RCmd *r_cmd_new () {
 		cmd->cmds[i] = NULL;
 	}
 	cmd->nullcallback = cmd->data = NULL;
-	cmd->root_cmd_desc = create_cmd_desc (NULL, R_CMD_DESC_TYPE_INNER, "");
 	cmd->ht_cmds = ht_pp_new0 ();
+	cmd->root_cmd_desc = create_cmd_desc (cmd, NULL, R_CMD_DESC_TYPE_ARGV, "");
 	r_core_plugin_init (cmd);
 	r_cmd_macro_init (&cmd->macro);
 	r_cmd_alias_init (cmd);
@@ -106,10 +102,10 @@ R_API RCmdDesc *r_cmd_get_desc(RCmd *cmd, const char *cmd_identifier) {
 	bool is_exact_match = true;
 	// match longer commands first
 	while (*cmdid) {
-		res = ht_pp_find (cmd->ht_cmds, cmdid, NULL);
-		r_warn_if_fail (!res || res->type == R_CMD_DESC_TYPE_OLDINPUT || res->type == R_CMD_DESC_TYPE_ARGV);
-		if (res && (res->type == R_CMD_DESC_TYPE_OLDINPUT ||
-			(res->type == R_CMD_DESC_TYPE_ARGV && is_exact_match))) {
+		RCmdDesc *cd = ht_pp_find (cmd->ht_cmds, cmdid, NULL);
+		if (cd && (cd->type == R_CMD_DESC_TYPE_OLDINPUT ||
+			(cd->type == R_CMD_DESC_TYPE_ARGV && is_exact_match))) {
+			res = cd;
 			goto out;
 		}
 		is_exact_match = false;
@@ -337,9 +333,12 @@ R_API RCmdStatus r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
 		return R_CMD_STATUS_INVALID;
 	}
 
+	res = R_CMD_STATUS_INVALID;
 	switch (cd->type) {
 	case R_CMD_DESC_TYPE_ARGV:
-		res = cd->d.argv_data.cb (cmd->data, args->argc, (const char **)args->argv);
+		if (cd->d.argv_data.cb) {
+			res = cd->d.argv_data.cb (cmd->data, args->argc, (const char **)args->argv);
+		}
 		break;
 	case R_CMD_DESC_TYPE_OLDINPUT:
 		exec_string = r_cmd_parsed_args_execstr (args);
@@ -932,41 +931,23 @@ R_API const char *r_cmd_parsed_args_cmd(RCmdParsedArgs *a) {
 /* RCmdDescriptor */
 
 R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb) {
-	r_return_val_if_fail (cmd && parent && name && cb, NULL);
-	r_return_val_if_fail (parent->type == R_CMD_DESC_TYPE_INNER, NULL);
-	RCmdDesc *res = create_cmd_desc (parent, R_CMD_DESC_TYPE_ARGV, name);
+	r_return_val_if_fail (cmd && parent && name, NULL);
+	RCmdDesc *res = create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_ARGV, name);
 	if (!res) {
 		return NULL;
 	}
 
 	res->d.argv_data.cb = cb;
-	if (!ht_pp_insert (cmd->ht_cmds, name, res)) {
-		cmd_desc_remove_parent (res);
-		r_cmd_desc_free (res);
-		return NULL;
-	}
 	return res;
-}
-
-R_API RCmdDesc *r_cmd_desc_inner_new(RCmd *cmd, RCmdDesc *parent, const char *name) {
-	r_return_val_if_fail (cmd && parent && name, NULL);
-	r_return_val_if_fail (parent->type == R_CMD_DESC_TYPE_INNER, NULL);
-	return create_cmd_desc (parent, R_CMD_DESC_TYPE_INNER, name);
 }
 
 R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdCb cb) {
 	r_return_val_if_fail (cmd && parent && name && cb, NULL);
-	r_return_val_if_fail (parent->type == R_CMD_DESC_TYPE_INNER, NULL);
-	RCmdDesc *res = create_cmd_desc (parent, R_CMD_DESC_TYPE_OLDINPUT, name);
+	RCmdDesc *res = create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_OLDINPUT, name);
 	if (!res) {
 		return NULL;
 	}
 	res->d.oldinput_data.cb = cb;
-	if (!ht_pp_insert (cmd->ht_cmds, name, res)) {
-		cmd_desc_remove_parent (res);
-		r_cmd_desc_free (res);
-		return NULL;
-	}
 	return res;
 }
 
