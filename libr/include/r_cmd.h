@@ -76,8 +76,6 @@ typedef enum {
 	R_CMD_DESC_TYPE_OLDINPUT,
 	// for handlers that accept argc/argv
 	R_CMD_DESC_TYPE_ARGV,
-	// for middle nodes in the tree
-	R_CMD_DESC_TYPE_INNER,
 } RCmdDescType;
 
 typedef struct r_cmd_desc_t {
@@ -149,7 +147,6 @@ R_API RCmdDesc *r_cmd_get_root(RCmd *cmd);
 R_API RCmdDesc *r_cmd_get_desc(RCmd *cmd, const char *cmd_identifier);
 
 /* RCmdDescriptor */
-R_API RCmdDesc *r_cmd_desc_inner_new(RCmd *cmd, RCmdDesc *parent, const char *name);
 R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb);
 R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdCb cb);
 R_API void r_cmd_desc_free(RCmdDesc *cd);
