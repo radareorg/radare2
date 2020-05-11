@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <r_util.h>
 #include <gmp.h>
 

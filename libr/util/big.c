@@ -294,9 +294,8 @@ R_API void r_big_mul (RNumBig *c, RNumBig *a, RNumBig *b) {
 
 	RNumBig *row = r_big_new ();
 	RNumBig *tmp = r_big_new ();
+	RNumBig *res = r_big_new ();
 	int i, j;
-
-	_r_big_zero_out (c);
 
 	for (i = 0; i < BN_ARRAY_SIZE; i++) {
 		_r_big_zero_out (row);
@@ -310,15 +309,18 @@ R_API void r_big_mul (RNumBig *c, RNumBig *a, RNumBig *b) {
 				r_big_add (row, row, tmp);
 			}
 		}
-		r_big_add (c, row, c);
+		r_big_add (res, row, res);
 	}
 
-	c->sign = a->sign * b->sign;
-	if (r_big_is_zero (c)) {
-		c->sign = 1; // For -1 * 0 case
+	res->sign = a->sign * b->sign;
+	if (r_big_is_zero (res)) {
+		res->sign = 1; // For -1 * 0 case
 	}
+	r_big_assign (c,res);
+
 	r_big_free (row);
 	r_big_free (tmp);
+	r_big_free (res);
 }
 
 R_API void r_big_div (RNumBig *c, RNumBig *a, RNumBig *b) {
@@ -331,6 +333,7 @@ R_API void r_big_div (RNumBig *c, RNumBig *a, RNumBig *b) {
 	RNumBig *denom = r_big_new ();
 	;
 	RNumBig *tmp = r_big_new ();
+	int sign = a->sign * b->sign;
 
 	r_big_from_int (current, 1); // int current = 1;
 	r_big_assign (denom, b); // denom = b
@@ -362,7 +365,7 @@ R_API void r_big_div (RNumBig *c, RNumBig *a, RNumBig *b) {
 		_rshift_one_bit (denom); //   denom >>= 1;
 	} // return answer;
 
-	c->sign = a->sign * b->sign;
+	c->sign = sign;
 	if (r_big_is_zero (c)) {
 		c->sign = 1; // For -1 * 0 case
 	}
@@ -563,41 +566,24 @@ R_API void r_big_pow (RNumBig *c, RNumBig *a, RNumBig *b) {
 	r_return_if_fail (a);
 	r_return_if_fail (b);
 	r_return_if_fail (c);
-	//  FIXME: Use quick pow
 
-	RNumBig *tmp = r_big_new ();
+	RNumBig *bcopy = r_big_new ();
+	RNumBig *acopy = r_big_new ();
 
-	_r_big_zero_out (c);
-
-	if (r_big_cmp (b, c) == 0) {
-		/* Return 1 when exponent is 0 -- n^0 = 1 */
-		r_big_inc (c);
-	} else {
-		RNumBig *bcopy = r_big_new ();
-		r_big_assign (bcopy, b);
-
-		/* Copy a -> tmp */
-		r_big_assign (tmp, a);
-
-		r_big_dec (bcopy);
-
-		/* Begin summing products: */
-		while (!r_big_is_zero (bcopy)) {
-
-			/* c = tmp * tmp */
-			r_big_mul (c, a, tmp);
-			/* Decrement b by one */
-			r_big_dec (bcopy);
-
-			r_big_assign (tmp, c);
+	r_big_assign (bcopy, b);
+	r_big_assign (acopy, a);
+	r_big_from_int (c, 1);
+	
+	while (!r_big_is_zero (bcopy)) {
+		if (r_big_to_int (bcopy) % 2 == 1) {
+			r_big_mul (c, c, acopy);
 		}
-
-		/* c = tmp */
-		r_big_assign (c, tmp);
-		r_big_free (bcopy);
+		_rshift_one_bit (bcopy);
+		r_big_mul (acopy, acopy ,acopy);
 	}
 
-	r_big_free (tmp);
+	r_big_free (bcopy);
+	r_big_free (acopy);
 }
 
 R_API void r_big_isqrt (RNumBig *b, RNumBig *a) {
