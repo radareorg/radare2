@@ -29,13 +29,9 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 		return 4;
 	}
 
-	memset (op, 0, sizeof (RAnalOp));
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = 4;
-	op->jump = UT64_MAX;
-	op->fail = UT64_MAX;
 	op->addr = addr;
-	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "TODO");
 
 	iw = r_read_ble32 (b, anal->big_endian);

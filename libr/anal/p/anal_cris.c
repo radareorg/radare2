@@ -5,7 +5,7 @@
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	int opsize = -1;
-        op->type = -1;
+	op->type = -1;
 	opsize = 2;
 	switch (buf[0]) {
 	case 0x3f:

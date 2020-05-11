@@ -27,7 +27,6 @@ static ut64 ws_find_label(int l, const RIOBind *iob) {
 }
 
 static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
-	memset (op, '\0', sizeof (RAnalOp));
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	RAsmOp *aop = R_NEW0 (RAsmOp);
