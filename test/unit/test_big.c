@@ -492,13 +492,13 @@ bool test_r_big_isqrt (void) {
 	r_big_isqrt (c, a);
 	mu_assert_eq (3, r_big_to_int (c), "Failed r_big_isqrt");
 
-	r_big_from_hexstr (a, "0x73204217f728a2fb7dc798618f23c5796675eee1ccd60a3a7be9cddf7d0eb30e9b004b0246051fcbc26ce99b67e23f07d3f2a493b1194af2777ffdfd5d66c61ba4fa2cd14536010ee00e695863039829c315c594c84170559822fcceb20afdc56a81ab7105e17efb0afd8f090bce2e5330e1c78e2e3ab26a1f49610b49b0fafa75b342b5c1a79322be4a92fac102958ed43aee787c221ea5c23e9485321c6b901cdb5c584bebcbea644a8f2c40bfbaf2dee40102e660e37d41b1f2ccee933a57693ee8ee2473bec98911ccd4b853704c7ed73b86da962845efe5399561fb3b0c37f5f0e730ddebcea7144351064f1ee04c1348125807a760186ac33316633d09");
+	r_big_from_hexstr (a, "0x73204217f728a2fb7dc798618f23c5796675eee1ccd60a3a7be9cddf7d0eb30e9b004b0246051fcbc26ce99b67e23f07d3f2a493b1194af2777ffdfd5d66c61ba4fa2cd14536010ee00e695863039829c315c594c84170559822fcceb20afdc56a81ab");
 	r_big_isqrt (c, a);
 	char *str;
 	str = r_big_to_hexstr (c);
 	//r_big_from_hexstr (a, );
 	//mu_assert_eq (0, r_big_cmp (c, a), "Failed r_big_isqrt");
-	mu_assert_streq_free (str, "0xabacc3be640aee406684e32261e8d2ea2cd09a9441904e3213a1d93732f4774876b8136dab7f5e579338ac82cc96b7651f823e13ef8e909624c224053ca57b518b6ef01f9947b74a97877fcad0004cebd4a34704678309f2143864f97b8477929aa1abb1ba777cbdada7408697ffa4ea94ce37a8dd50f37fec92fdbf173c8681", "Failed r_big_to_hexstr");
+	mu_assert_streq_free (str, "0xabacc3be640aee406684e32261e8d2ea2cd09a9441904e3213a1d93732f4774876b8136dab7f5e579338ac82cc96b7651f8", "Failed r_big_to_hexstr");
 
 	r_big_free (a);
 	r_big_free (c);
