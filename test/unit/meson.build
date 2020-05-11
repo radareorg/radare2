@@ -26,6 +26,7 @@ if get_option('enable_tests')
     'io',
     'list',
     'parse_ctype',
+    'pj',
     'queue',
     'range',
     'rbtree',
