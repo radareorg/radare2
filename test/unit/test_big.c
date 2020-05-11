@@ -446,7 +446,7 @@ bool test_r_big_rshift (void) {
 	mu_end;
 }
 
-bool test_r_big_pow (void) {
+bool test_r_big_powm (void) {
 	RNumBig *a = r_big_new ();
 	RNumBig *b = r_big_new ();
 	RNumBig *c = r_big_new ();
@@ -524,7 +524,7 @@ int all_tests () {
 	mu_run_test (test_r_big_is_zero);
 	mu_run_test (test_r_big_lshift);
 	mu_run_test (test_r_big_rshift);
-	mu_run_test (test_r_big_pow);
+	mu_run_test (test_r_big_powm);
 	mu_run_test (test_r_big_isqrt);
 	return tests_passed != tests_run;
 }
