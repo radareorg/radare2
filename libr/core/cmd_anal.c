@@ -330,7 +330,7 @@ static const char *help_msg_af[] = {
 	"afsr", " [function_name] [new_type]", "change type for given function",
 	"aft", "[?]", "type matching, type propagation",
 	"afu", " addr", "resize and analyze function from current address until addr",
-	"afv[bsra]", "?", "manipulate args, registers and variables in function",
+	"afv[absrx]", "?", "manipulate args, registers and variables in function",
 	"afx", "", "list function references",
 	NULL
 };
@@ -794,6 +794,7 @@ static int listOpDescriptions(void *_core, const char *k, const char *v) {
 }
 
 static void cmd_afvx(RCore *core, RAnalFunction *fcn) {
+	r_return_if_fail (core);
 	if (!fcn) {
 		fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 	}
@@ -987,20 +988,24 @@ static void var_help(RCore *core, char ch) {
 	}
 }
 
-static void var_accesses_list(RAnalFunction *fcn, RAnalVar *var, int access_type) {
+static void var_accesses_list(RAnalFunction *fcn, RAnalVar *var, int access_type, const char *name) {
 	RAnalVarAccess *acc;
 	bool first = true;
 	r_vector_foreach (&var->accesses, acc) {
 		if (!(acc->type & access_type)) {
 			continue;
 		}
-		if (!first) {
+		if (first) {
+			r_cons_printf ("%10s  ", name);
+		} else {
 			r_cons_print (",");
 		}
 		first = false;
 		r_cons_printf ("0x%"PFMT64x, (ut64)((st64)fcn->addr + acc->offset));
 	}
-	r_cons_newline ();
+	if (!first) {
+		r_cons_newline ();
+	}
 }
 
 static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *name) {
@@ -1047,13 +1052,11 @@ static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *nam
 	if (name && *name) {
 		var = r_anal_function_get_var_byname (fcn, name);
 		if (var) {
-			r_cons_printf ("%10s  ", var->name);
-			var_accesses_list (fcn, var, access_type);
+			var_accesses_list (fcn, var, access_type, var->name);
 		}
 	} else {
 		r_list_foreach (list, iter, var) {
-			r_cons_printf ("%10s  ", var->name);
-			var_accesses_list (fcn, var, access_type);
+			var_accesses_list (fcn, var, access_type, var->name);
 		}
 	}
 	r_core_seek (core, oaddr, 0);
@@ -1238,6 +1241,7 @@ static int var_cmd(RCore *core, const char *str) {
 	case 'R': // "afvR"
 	case 'W': // "afvW"
 	case '*': // "afv*"
+	case '=': // "afv*"
 		if (fcn) {
 			const char *name = strchr (ostr, ' ');
 			if (name) {
@@ -1249,9 +1253,6 @@ static int var_cmd(RCore *core, const char *str) {
 			eprintf ("afv: Cannot find function in 0x%08"PFMT64x"\n", core->offset);
 			return false;
 		}
-	case '=': // "afv="
-		list_vars (core, fcn, '=', NULL);
-		break;
 	case 'a': // "afva"
 		if (fcn) {
 			r_anal_function_delete_all_vars (fcn);
