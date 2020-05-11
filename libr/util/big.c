@@ -140,7 +140,7 @@ R_API void r_big_from_hexstr(RNumBig *n, const char *str) {
 		j += 1; /* step one element forward in the array. */
 	}
 
-	if (-2 * WORD_SIZ < i && i < 0) {
+	if (-2 * WORD_SIZ < i) {
 		char buffer[2 * WORD_SIZ];
 		memset (buffer, 0, sizeof (buffer));
 		i += 2 * WORD_SIZ - 1;
@@ -461,7 +461,6 @@ R_API void r_big_xor(RNumBig *c, RNumBig *a, RNumBig *b) {
 R_API void r_big_lshift(RNumBig *b, RNumBig *a, size_t nbits) {
 	r_return_if_fail (a);
 	r_return_if_fail (b);
-	r_return_if_fail (nbits >= 0);
 	r_return_if_fail (a->sign > 0);
 	r_return_if_fail (b->sign > 0);
 
@@ -486,7 +485,6 @@ R_API void r_big_lshift(RNumBig *b, RNumBig *a, size_t nbits) {
 R_API void r_big_rshift(RNumBig *b, RNumBig *a, size_t nbits) {
 	r_return_if_fail (a);
 	r_return_if_fail (b);
-	r_return_if_fail (nbits >= 0);
 	r_return_if_fail (a->sign > 0);
 	r_return_if_fail (b->sign > 0);
 
