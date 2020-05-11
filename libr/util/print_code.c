@@ -19,7 +19,7 @@ static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len) 
 	const char *fmtstr = bits_to_c_code_fmtstr (8);
 
 	p->cb_printf ("#define _BUFFER_SIZE %d\n", len);
-	p->cb_printf ("const uint8_t buffer[_BUFFER_SIZE] = {\n");
+	p->cb_printf ("const unsigned char buffer[_BUFFER_SIZE] = {\n");
 
 	int oleft, left = 0;
 	const int orig_align = p->coreb.cfggeti (p->coreb.core, "asm.cmt.col") - 40;
