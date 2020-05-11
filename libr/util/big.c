@@ -31,7 +31,7 @@ R_API void r_big_fini (RNumBig *b) {
 	_r_big_zero_out (b);
 }
 
-R_API void r_big_from_int (RNumBig *b, DTYPE_VAR n) {
+R_API void r_big_from_int (RNumBig *b, signed long int n) {
 	r_return_if_fail (b);
 
 	_r_big_zero_out (b);
@@ -83,7 +83,7 @@ static void r_big_from_unsigned (RNumBig *b, DTYPE_TMP n) {
 #endif
 }
 
-R_API DTYPE_VAR r_big_to_int (RNumBig *b) {
+R_API signed long int r_big_to_int (RNumBig *b) {
 	r_return_val_if_fail (b, 0);
 
 	DTYPE_TMP ret = 0;
@@ -562,24 +562,28 @@ R_API void r_big_dec (RNumBig *a) {
 	r_big_free (tmp);
 }
 
-R_API void r_big_pow (RNumBig *c, RNumBig *a, RNumBig *b) {
+R_API void r_big_powm (RNumBig *c, RNumBig *a, RNumBig *b, RNumBig *m) {
 	r_return_if_fail (a);
 	r_return_if_fail (b);
 	r_return_if_fail (c);
+	r_return_if_fail (m);
 
 	RNumBig *bcopy = r_big_new ();
 	RNumBig *acopy = r_big_new ();
 
 	r_big_assign (bcopy, b);
 	r_big_assign (acopy, a);
+	r_big_mod (acopy, acopy, m);
 	r_big_from_int (c, 1);
 	
 	while (!r_big_is_zero (bcopy)) {
 		if (r_big_to_int (bcopy) % 2 == 1) {
 			r_big_mul (c, c, acopy);
+			r_big_mod (c, c, m);
 		}
 		_rshift_one_bit (bcopy);
 		r_big_mul (acopy, acopy ,acopy);
+		r_big_mod (acopy, acopy, m);
 	}
 
 	r_big_free (bcopy);

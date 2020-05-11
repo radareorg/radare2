@@ -10,9 +10,6 @@ extern "C" {
 #if HAVE_LIB_GMP
 /* Use GMP's data struct */
 #define RNumBig mpz_t
-#elif HAVE_LIB_SSL
-/* Use SSL's data struct */
-#define RNumBig BIGNUM
 #else
 /* Use default impl */
 #ifndef WORD_SIZ
@@ -28,9 +25,9 @@ extern "C" {
 #define DTYPE ut8
 #define DTYPE_MSB ((DTYPE_TMP) (0x80))
 /* Middle variable type, must be bigger than DTYPE */
-#define DTYPE_TMP ut32
+#define DTYPE_TMP ut16
 /* Type to be passed as variable */
-#define DTYPE_VAR st32
+#define DTYPE_VAR st16
 #define SPRINTF_FORMAT_STR "%.02x"
 #define SSCANF_FORMAT_STR "%2hhx"
 #define MAX_VAL ((DTYPE_TMP)0xFF)
@@ -69,8 +66,8 @@ R_API void r_big_init (RNumBig *b);
 R_API void r_big_fini (RNumBig *b);
 
 /* Assignment operations */
-R_API void r_big_from_int (RNumBig *b, DTYPE_VAR v);
-R_API DTYPE_VAR r_big_to_int (RNumBig *b);
+R_API void r_big_from_int (RNumBig *b, signed long int v);
+R_API signed long int r_big_to_int (RNumBig *b);
 R_API void r_big_from_hexstr (RNumBig *b, const char *str);
 R_API char *r_big_to_hexstr (RNumBig *b);
 R_API void r_big_assign (RNumBig *dst, RNumBig *src);
@@ -95,7 +92,7 @@ R_API int r_big_cmp (RNumBig *a, RNumBig *b); /* Return 1 if a>b, -1 if a<b, els
 R_API int r_big_is_zero (RNumBig *a); /* For comparison with zero */
 R_API void r_big_inc (RNumBig *a); /* Increment: add one to n */
 R_API void r_big_dec (RNumBig *a); /* Decrement: subtract one from n */
-R_API void r_big_pow (RNumBig *c, RNumBig *a, RNumBig *b); /* Calculate a^b -- e.g. 2^10 => 1024 */
+R_API void r_big_powm (RNumBig *c, RNumBig *a, RNumBig *b, RNumBig *m); /* Calculate a^b -- e.g. 2^10 => 1024 */
 R_API void r_big_isqrt (RNumBig *c, RNumBig *a); /* Integer square root -- e.g. isqrt(5) => 2*/
 
 #ifdef __cplusplus
