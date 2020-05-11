@@ -455,7 +455,7 @@ bool test_r_big_powm (void) {
 	r_big_from_int (a, 2);
 	r_big_from_int (b, 10);
 	r_big_from_int (m, 1);
-	r_big_pow (c, a, b, m);
+	r_big_powm (c, a, b, m);
 	mu_assert_eq (1024, r_big_to_int (c), "Failed r_big_pow");
 
 	r_big_free (a);
