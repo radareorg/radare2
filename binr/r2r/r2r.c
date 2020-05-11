@@ -626,6 +626,7 @@ static void print_new_results(R2RState *state, ut64 prev_completed) {
 		if (!name) {
 			continue;
 		}
+		printf ("\n"R_CONS_CURSOR_UP R_CONS_CLEAR_LINE);
 		switch (result->result) {
 		case R2R_TEST_RESULT_OK:
 			printf (Color_GREEN"[OK]"Color_RESET);
@@ -649,7 +650,6 @@ static void print_new_results(R2RState *state, ut64 prev_completed) {
 		}
 		free (name);
 	}
-
 }
 
 static void print_state_counts(R2RState *state) {
@@ -661,11 +661,10 @@ static void print_state(R2RState *state, ut64 prev_completed) {
 #if __WINDOWS__
 	setvbuf (stdout, NULL, _IOFBF, 8192);
 #endif
-	printf (R_CONS_CLEAR_LINE);
-
 	print_new_results (state, prev_completed);
 
 	// [x/x] OK  42 BR  0 ...
+	printf (R_CONS_CLEAR_LINE);
 	int w = printf ("[%"PFMT64u"/%"PFMT64u"]", (ut64)r_pvector_len (&state->results), (ut64)r_pvector_len (&state->db->tests));
 	while (w >= 0 && w < 20) {
 		printf (" ");

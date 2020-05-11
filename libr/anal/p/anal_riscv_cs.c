@@ -330,8 +330,6 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		obits = anal->bits;
 	}
 // XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
-	op->delay = 0;
-	op->type = R_ANAL_OP_TYPE_ILL;
 	op->addr = addr;
 	if (len < 4) {
 		return -1;
@@ -348,10 +346,6 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	if (n < 1 || insn->size < 1) {
 		goto beach;
 	}
-	op->type = R_ANAL_OP_TYPE_NULL;
-	op->delay = 0;
-	op->jump = UT64_MAX;
-	op->fail = UT64_MAX;
 	op->id = insn->id;
 	opsize = op->size = insn->size;
 	switch (insn->id) {

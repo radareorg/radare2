@@ -1245,8 +1245,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 	default:
 		// Print gadgets with new instruction on a new line.
 		r_list_foreach (hitlist, iter, hit) {
-			char *comment = rop_comments? r_meta_get_string (core->anal,
-				R_META_TYPE_COMMENT, hit->addr): NULL;
+			const char *comment = rop_comments? r_meta_get_string (core->anal, R_META_TYPE_COMMENT, hit->addr): NULL;
 			if (hit->len < 0) {
 				eprintf ("Invalid hit length here\n");
 				continue;
@@ -1907,7 +1906,6 @@ beach:
 static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct search_parameters *param) {
 	const int size = 12;
 	char str[512];
-	char *comment;
 	RAnalFunction *fcn;
 	RAnalRef *ref;
 	RListIter *iter;
@@ -1924,10 +1922,16 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 			r_parse_filter (core->parser, ref->addr, core->flags, hint, r_strbuf_get (&asmop.buf_asm),
 				str, sizeof (str), core->print->big_endian);
 			r_anal_hint_free (hint);
-			comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
+			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
+			char *print_comment = NULL;
+			const char *nl = comment ? strchr (comment, '\n') : NULL;
+			if (nl) { // display only until the first newline
+				comment = print_comment = r_str_ndup (comment, nl - comment);
+			}
 			char *buf_fcn = comment
-				? r_str_newf ("%s; %s", fcn ?  fcn->name : "(nofunc)", strtok (comment, "\n"))
+				? r_str_newf ("%s; %s", fcn ?  fcn->name : "(nofunc)", comment)
 				: r_str_newf ("%s", fcn ? fcn->name : "(nofunc)");
+			free (print_comment);
 			if (from <= ref->addr && to >= ref->addr) {
 				r_cons_printf ("%s 0x%" PFMT64x " [%s] %s\n",
 						buf_fcn, ref->addr, r_anal_xrefs_type_tostring (ref->type), str);

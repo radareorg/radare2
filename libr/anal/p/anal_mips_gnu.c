@@ -30,12 +30,9 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		return oplen;
 	}
 
-	memset (op, 0, sizeof (RAnalOp));
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = oplen;
-	op->delay = 0;
 	op->addr = addr;
-	r_strbuf_init (&op->esil);
 
 	// Be endian aware
 	opcode = r_read_ble32 (b, anal->big_endian);

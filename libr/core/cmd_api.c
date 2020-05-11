@@ -60,20 +60,11 @@ R_API RCmd *r_cmd_new () {
 	}
 	cmd->nullcallback = cmd->data = NULL;
 	cmd->ht_cmds = ht_pp_new0 ();
-	cmd->root_cmd_desc = create_cmd_desc (cmd, NULL, R_CMD_DESC_TYPE_INNER, "");
+	cmd->root_cmd_desc = create_cmd_desc (cmd, NULL, R_CMD_DESC_TYPE_ARGV, "");
 	r_core_plugin_init (cmd);
 	r_cmd_macro_init (&cmd->macro);
 	r_cmd_alias_init (cmd);
 	return cmd;
-}
-
-static void free_cmd_desc_tree(RCmdDesc *cd) {
-	void **it;
-	r_cmd_desc_children_foreach (cd, it) {
-		RCmdDesc *in_cd = *(RCmdDesc **)it;
-		free_cmd_desc_tree (in_cd);
-	}
-	r_cmd_desc_free (cd);
 }
 
 R_API RCmd *r_cmd_free(RCmd *cmd) {
@@ -94,7 +85,7 @@ R_API RCmd *r_cmd_free(RCmd *cmd) {
 			R_FREE (cmd->cmds[i]);
 		}
 	}
-	free_cmd_desc_tree (cmd->root_cmd_desc);
+	r_cmd_desc_free (cmd->root_cmd_desc);
 	free (cmd);
 	return NULL;
 }
@@ -112,22 +103,10 @@ R_API RCmdDesc *r_cmd_get_desc(RCmd *cmd, const char *cmd_identifier) {
 	// match longer commands first
 	while (*cmdid) {
 		RCmdDesc *cd = ht_pp_find (cmd->ht_cmds, cmdid, NULL);
-		if (cd) {
-			switch (cd->type) {
-			case R_CMD_DESC_TYPE_OLDINPUT:
-				res = cd;
-				goto out;
-			case R_CMD_DESC_TYPE_ARGV:
-			case R_CMD_DESC_TYPE_INNER:
-				if (is_exact_match) {
-					res = cd;
-					goto out;
-				}
-				break;
-			default:
-				r_warn_if_reached ();
-				break;
-			}
+		if (cd && (cd->type == R_CMD_DESC_TYPE_OLDINPUT ||
+			(cd->type == R_CMD_DESC_TYPE_ARGV && is_exact_match))) {
+			res = cd;
+			goto out;
 		}
 		is_exact_match = false;
 		*(--end_cmdid) = '\0';
@@ -354,9 +333,12 @@ R_API RCmdStatus r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
 		return R_CMD_STATUS_INVALID;
 	}
 
+	res = R_CMD_STATUS_INVALID;
 	switch (cd->type) {
 	case R_CMD_DESC_TYPE_ARGV:
-		res = cd->d.argv_data.cb (cmd->data, args->argc, (const char **)args->argv);
+		if (cd->d.argv_data.cb) {
+			res = cd->d.argv_data.cb (cmd->data, args->argc, (const char **)args->argv);
+		}
 		break;
 	case R_CMD_DESC_TYPE_OLDINPUT:
 		exec_string = r_cmd_parsed_args_execstr (args);
@@ -1048,8 +1030,7 @@ R_API const char *r_cmd_parsed_args_cmd(RCmdParsedArgs *a) {
 /* RCmdDescriptor */
 
 R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb) {
-	r_return_val_if_fail (cmd && parent && name && cb, NULL);
-	r_return_val_if_fail (parent->type == R_CMD_DESC_TYPE_INNER, NULL);
+	r_return_val_if_fail (cmd && parent && name, NULL);
 	RCmdDesc *res = create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_ARGV, name);
 	if (!res) {
 		return NULL;
@@ -1059,15 +1040,8 @@ R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *nam
 	return res;
 }
 
-R_API RCmdDesc *r_cmd_desc_inner_new(RCmd *cmd, RCmdDesc *parent, const char *name) {
-	r_return_val_if_fail (cmd && parent && name, NULL);
-	r_return_val_if_fail (parent->type == R_CMD_DESC_TYPE_INNER, NULL);
-	return create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_INNER, name);
-}
-
 R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdCb cb) {
 	r_return_val_if_fail (cmd && parent && name && cb, NULL);
-	r_return_val_if_fail (parent->type == R_CMD_DESC_TYPE_INNER, NULL);
 	RCmdDesc *res = create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_OLDINPUT, name);
 	if (!res) {
 		return NULL;
@@ -1080,6 +1054,8 @@ R_API void r_cmd_desc_free(RCmdDesc *cd) {
 	if (!cd) {
 		return;
 	}
+
+	r_pvector_clear (&cd->children);
 	free (cd->name);
 	free (cd);
 }

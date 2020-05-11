@@ -3109,15 +3109,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		omode = mode;
 		obits = a->bits;
 	}
-	op->type = R_ANAL_OP_TYPE_NULL; // SHOULD BE ILL but this makes some stuff to fail
 	op->size = (a->bits==16)? 2: 4;
-	op->stackop = R_ANAL_STACK_NULL;
-	op->delay = 0;
-	op->jump = op->fail = -1;
 	op->addr = addr;
-	op->ptr = op->val = -1;
-	op->refptr = 0;
-	r_strbuf_init (&op->esil);
 	if (handle == 0) {
 		ret = (a->bits == 64)?
 			cs_open (CS_ARCH_ARM64, mode, &handle):

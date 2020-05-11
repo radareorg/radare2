@@ -100,19 +100,39 @@ RUN
 
 NAME=anal classes arm64e
 FILE=bins/mach0/TestRTTI-arm64e
-BROKEN=1
 CMDS=<<EOF
 avrr
 acl
+acll~\@
 avra~0x100008370:0
 avra~vmi:0
+?e `avraj~{[0]}`~{:
 EOF
 EXPECT=<<EOF
 A
 B
 C
 D
+  virtual_0 @ 0x100005f50 (vtable + 0x0)
+  virtual_8 @ 0x100005f7c (vtable + 0x8)
+  virtual_16 @ 0x100005fa8 (vtable + 0x10)
+  virtual_0 @ 0x100006000 (vtable + 0x0)
+  virtual_8 @ 0x100005f7c (vtable + 0x8)
+  virtual_16 @ 0x100006050 (vtable + 0x10)
+  virtual_0 @ 0x100005f50 (vtable + 0x0)
+  virtual_8 @ 0x1000060a0 (vtable + 0x8)
+  virtual_16 @ 0x1000060f0 (vtable + 0x10)
+  virtual_0 @ 0x100006000 (vtable + 0x0)
+  virtual_8 @ 0x1000060a0 (vtable + 0x8)
+  virtual_16 @ 0x10000615c (vtable + 0x10)
 Type Info at 0x100008370:
   Type Info type: __vmi_class_type_info
+type: __class_type_info
+found_at: 4295000200
+class_vtable: 4295000176
+ref_to_type_class: 13838435755002691596
+ref_to_type_name: 4294999928
+name: A
+name_unique: true
 EOF
 RUN

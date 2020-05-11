@@ -971,7 +971,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				esilprintf (op, "0,%s,%s,&,==,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,0,cf,:=,0,of,:=",
 					src, dst, bitsize - 1);
 			} else {
-				esilprintf (op, 
+				esilprintf (op,
 					"%s,%s,==,$z,zf,:=,%d,$b,cf,:=,$p,pf,:=,%d,$s,sf,:=,%d,$o,of,:=",
 					src, dst, bitsize, bitsize - 1, bitsize - 1);
 			}
@@ -1925,7 +1925,7 @@ static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x) {
 	default:
 		break;
 	}
-	val->reg = &base_regs[x];	
+	val->reg = &base_regs[x];
 }
 
 static void op_fillval(RAnal *a, RAnalOp *op, csh *handle, cs_insn *insn) {
@@ -3026,18 +3026,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			return 0;
 		}
 	}
-	memset (op, '\0', sizeof (RAnalOp));
 	op->cycles = 1; // aprox
-	op->type = R_ANAL_OP_TYPE_NULL;
-	op->jump = UT64_MAX;
-	op->fail = UT64_MAX;
-	op->ptr = op->val = UT64_MAX;
-	op->src[0] = NULL;
-	op->src[1] = NULL;
-	op->dst = NULL;
-	op->size = 0;
-	op->delay = 0;
-	r_strbuf_init (&op->esil);
 	cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	// capstone-next
 #if USE_ITER_API

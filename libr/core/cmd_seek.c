@@ -380,66 +380,23 @@ static int cmd_seek(void *data, const char *input) {
 		if (input[1] == '*') { // "sC*"
 			r_core_cmd0 (core, "C*~^\"CC");
 		} else if (input[1] == ' ') {
-			typedef struct {
-				ut64 addr;
-				char *str;
-			} MetaCallback;
-			int count = 0;
-			MetaCallback cb = {
-				0, NULL
-			};
-			ut64 addr;
-			char key[128];
-			const char *val, *comma;
-			char *list = sdb_get (core->anal->sdb_meta, "meta.C", 0);
-			char *str, *next, *cur = list;
-			if (list) {
-				for (;;) {
-					cur = sdb_anext (cur, &next);
-					addr = sdb_atoi (cur);
-					snprintf (key, sizeof (key) - 1, "meta.C.0x%"PFMT64x, addr);
-					val = sdb_const_get (core->anal->sdb_meta, key, 0);
-					if (val) {
-						comma = strchr (val, ',');
-						if (comma) {
-							str = (char *) sdb_decode (comma + 1, 0);
-							if (strstr (str, input + 2)) {
-								r_cons_printf ("0x%08"PFMT64x "  %s\n", addr, str);
-								count++;
-								cb.addr = addr;
-								free (cb.str);
-								cb.str = str;
-							} else {
-								free (str);
-							}
-						}
-					} else {
-						eprintf ("sdb_const_get key not found '%s'\n", key);
+			RIntervalTreeIter it;
+			RAnalMetaItem *meta;
+			bool seeked = false;
+			r_interval_tree_foreach (&core->anal->meta, it, meta) {
+				if (meta->type == R_META_TYPE_COMMENT && !strcmp (meta->str, input + 2)) {
+					if (!silent) {
+						r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 					}
-					if (!next) {
-						break;
-					}
-					cur = next;
+					r_core_seek (core, off, true);
+					r_core_block_read (core);
+					seeked = true;
+					break;
 				}
 			}
-
-			switch (count) {
-			case 0:
-				eprintf ("No matching comments\n");
-				break;
-			case 1:
-				off = cb.addr;
-				if (!silent) {
-					r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
-				}
-				r_core_seek (core, off, true);
-				r_core_block_read (core);
-				break;
-			default:
-				eprintf ("Too many results\n");
-				break;
+			if (!seeked) {
+				eprintf ("No matching comment.\n");
 			}
-			free (cb.str);
 		} else {
 			r_core_cmd_help (core, help_msg_sC);
 		}

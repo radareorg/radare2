@@ -3,7 +3,7 @@
 CODEOWNERS @radare @XVilka @kazarmy @thestr4ng3r @ret2libc
 libr/anal/ @thestr4ng3r
 libr/anal/esil* @radare @condret
-libr/anal/xrefs.c ret2libc
+libr/anal/xrefs.c @ret2libc
 libr/arch/gb/ @condret
 libr/asm/ @wargio @radare
 libr/asm/p/x86_* @ret2libc
@@ -33,3 +33,4 @@ shlr/radare2-shell-parser/ @ret2libc
 shlr/tcc/ @XVilka @radare
 shlr/w32dbg_wrap/ @yossizap
 shlr/windbg/ @yossizap
+doc/fortunes.nsfw @thestr4ng3r

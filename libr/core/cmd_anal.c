@@ -7265,14 +7265,19 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						ref->addr, ref->type, addr, iter->n? ",": "");
 			} else { // axt
 				RAnalFunction *fcn;
-				char *comment;
 				r_list_foreach (list, iter, ref) {
 					fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 					char *buf_asm = get_buf_asm (core, addr, ref->addr, fcn, true);
-					comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
+					const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
+					char *print_comment = NULL;
+					const char *nl = comment ? strchr (comment, '\n') : NULL;
+					if (nl) { // display only until the first newline
+						comment = print_comment = r_str_ndup (comment, nl - comment);
+					}
 					char *buf_fcn = comment
-						? r_str_newf ("%s; %s", fcn ?  fcn->name : "(nofunc)", strtok (comment, "\n"))
+						? r_str_newf ("%s; %s", fcn ?  fcn->name : "(nofunc)", comment)
 						: r_str_newf ("%s", fcn ? fcn->name : "(nofunc)");
+					free (print_comment);
 					r_cons_printf ("%s 0x%" PFMT64x " [%s] %s\n",
 						buf_fcn, ref->addr, r_anal_xrefs_type_tostring (ref->type), buf_asm);
 					free (buf_asm);
@@ -8711,7 +8716,7 @@ static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, int count,
 		r_cons_printf ("f+ aav.0x%08"PFMT64x "= 0x%08"PFMT64x, to, to);
 	} else {
 		r_anal_xrefs_set (core->anal, from, to, R_ANAL_REF_TYPE_NULL);
-		// r_meta_add (core->anal, 'd', from, from + vsize, NULL);
+		// r_meta_set (core->anal, 'd', from, from + vsize, NULL);
 		r_core_cmdf (core, "Cd %d @ 0x%"PFMT64x "\n", vsize, from);
 		if (!r_flag_get_at (core->flags, to, false)) {
 			char *name = r_str_newf ("aav.0x%08"PFMT64x, to);

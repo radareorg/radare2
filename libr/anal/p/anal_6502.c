@@ -312,7 +312,6 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		return -1;
 	}
 
-	memset (op, '\0', sizeof (RAnalOp));
 	op->size = snes_op_get_size (1, 1, &snes_op[data[0]]);	//snes-arch is similar to nes/6502
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;

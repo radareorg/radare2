@@ -11,22 +11,25 @@ R_API RCoreItem *r_core_item_at (RCore *core, ut64 addr) {
 		// TODO: honor section perms too?
 		if (map->perm & R_PERM_X) {
 			// if theres a meta consider it data
-			RAnalMetaItem *item = r_meta_find (core->anal, addr, R_META_TYPE_ANY, 0);
+			ut64 size;
+			RAnalMetaItem *item = r_meta_get_at (core->anal, addr, R_META_TYPE_ANY, &size);
 			if (item) {
 				switch (item->type) {
 				case R_META_TYPE_DATA:
 					ci->type = "data";
-					ci->size = item->size;
+					ci->size = size;
 					ci->data = r_core_cmd_strf (core, "pdi 1 @e:asm.flags=0@e:asm.lines=0@e:scr.color=0@0x%08"PFMT64x, addr);
 					r_str_trim (ci->data);
 					break;
 				case R_META_TYPE_FORMAT:
 					ci->type = "format"; // struct :?
-					ci->size = item->size;
+					ci->size = size;
 					break;
 				case R_META_TYPE_STRING:
 					ci->type = "string";
-					ci->size = item->size;
+					ci->size = size;
+					break;
+				default:
 					break;
 				}
 				if (item->str) {
@@ -34,7 +37,6 @@ R_API RCoreItem *r_core_item_at (RCore *core, ut64 addr) {
 						ci->data = strdup (item->str);
 					}
 				}
-				r_meta_item_free (item);
 			}
 		}
 	}

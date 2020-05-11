@@ -49,21 +49,24 @@ static int __isdata(RCore *core, ut64 addr) {
 		return 1;
 	}
 
-	RList *list = r_meta_find_list_in (core->anal, addr, -1, 4);
-	RListIter *iter;
-	RAnalMetaItem *meta;
+	RPVector *list = r_meta_get_all_in (core->anal, addr, R_META_TYPE_ANY);
+	void **it;
 	int result = 0;
-	r_list_foreach (list, iter, meta) {
+	r_pvector_foreach (list, it) {
+		RIntervalNode *node = *it;
+		RAnalMetaItem *meta = node->data;
 		switch (meta->type) {
 		case R_META_TYPE_DATA:
 		case R_META_TYPE_STRING:
 		case R_META_TYPE_FORMAT:
-			result = meta->size - (addr - meta->from);
+			result = node->end - addr + 1;
 			goto exit;
+		default:
+			break;
 		}
 	}
 exit:
-	r_list_free (list);
+	r_pvector_free (list);
 	return result;
 }
 

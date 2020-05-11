@@ -955,7 +955,7 @@ static void lookup_symbols(RBinFile *bf, RBinInfo *ret) {
 				break;
 			}
 			if (!strcmp (symbol->name, "_NSConcreteGlobalBlock")) {
-				ret->lang = !strcmp (ret->lang, "c++") ? "c++ blocks ext." : "c blocks ext.";
+				ret->lang = (ret->lang && !strcmp (ret->lang, "c++"))? "c++ blocks ext.": "c blocks ext.";
 			}
 			if (strstr (symbol->name, "__stack_chk_fail") || strstr (symbol->name, "__stack_smash_handler")) {
 				ret->has_canary = true;

@@ -176,7 +176,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		obits = a->bits;
 	}
 // XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
-	op->delay = 0;
 	// replace this with the asm.features?
 	if (a->cpu && strstr (a->cpu, "68000")) {
 		mode |= CS_MODE_M68K_000;
@@ -219,8 +218,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	}
 	detail = insn->detail;
 	m68k = &detail->m68k;
-	op->type = R_ANAL_OP_TYPE_NULL;
-	op->delay = 0;
 	op->id = insn->id;
 	opsize = op->size = insn->size;
 	if (mask & R_ANAL_OP_MASK_OPEX) {
@@ -746,7 +743,7 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr	usp	.32	116	0\n" //user stack point this is an shadow register of A7 user mode, SR bit 0xD is 0
 		"gpr	vbr	.32	120	0\n" //vector base register, this is a Address pointer
 		"gpr	cacr	.32	124	0\n" //cache control register, implementation specific
-		"gpr	caar	.32	128	0\n" //cache address register, 68020, 68EC020, 68030 and 68EC030 only.  
+		"gpr	caar	.32	128	0\n" //cache address register, 68020, 68EC020, 68030 and 68EC030 only.
 		"gpr	msp	.32	132	0\n" //master stack pointer, this is an shadow register of A7 supervisor mode, SR bits 0xD && 0xC are set
 		"gpr	isp	.32	136	0\n" //interrupt stack pointer, this is an shadow register of A7  supervisor mode, SR bit 0xD is set, 0xC is not.
 		"gpr	tc	.32	140	0\n"

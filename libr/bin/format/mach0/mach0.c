@@ -1521,6 +1521,150 @@ static const char *build_version_tool_to_string(ut32 tool) {
 	}
 }
 
+static size_t get_word_size(struct MACH0_(obj_t) *bin) {
+	const size_t word_size = MACH0_(get_bits)(bin) / 8;
+	return R_MAX (word_size, 4);
+}
+
+static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
+	if (!bin->dyld_info) {
+		return false;
+	}
+	if (!bin->nsegs) {
+		return false;
+	}
+	bin->chained_starts = R_NEWS0 (struct r_dyld_chained_starts_in_segment *, bin->nsegs);
+	if (!bin->chained_starts) {
+		return false;
+	}
+	size_t wordsize = get_word_size (bin);
+	ulebr ur = {NULL};
+	size_t j, count, skip, bind_size;
+	int seg_idx = -1;
+	ut64 seg_off = 0;
+	bind_size = bin->dyld_info->bind_size;
+	if (!bind_size || bind_size < 1) {
+		return false;
+	}
+	if (bin->dyld_info->bind_off > bin->size) {
+		return false;
+	}
+	if (bin->dyld_info->bind_off + bind_size > bin->size) {
+		return false;
+	}
+	ut8 *opcodes = calloc (1, bind_size + 1);
+	if (!opcodes) {
+		return false;
+	}
+	if (r_buf_read_at (bin->b, bin->dyld_info->bind_off, opcodes, bind_size) != bind_size) {
+		bprintf ("Error: read (dyld_info bind) at 0x%08"PFMT64x"\n", (ut64)(size_t)bin->dyld_info->bind_off);
+		R_FREE (opcodes);
+		return false;
+	}
+	struct r_dyld_chained_starts_in_segment *cur_seg = NULL;
+	size_t cur_seg_idx = 0;
+	ut8 *end;
+	for (ur.p = opcodes, end = opcodes + bind_size; ur.p < end; ) {
+		ut8 imm = *ur.p & BIND_IMMEDIATE_MASK, op = *ur.p & BIND_OPCODE_MASK;
+		ur.p++;
+		if (ur.p >= end) {
+			break;
+		}
+		switch (op) {
+		case BIND_OPCODE_DONE:
+			break;
+		case BIND_OPCODE_THREADED: {
+			switch (imm) {
+			case BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB: {
+				read_uleb128 (&ur, end);
+				break;
+			}
+			case BIND_SUBOPCODE_THREADED_APPLY: {
+				if ((!cur_seg || cur_seg_idx != seg_idx) && seg_idx >= 0) {
+					cur_seg_idx = seg_idx;
+					cur_seg = bin->chained_starts[seg_idx];
+					if (!cur_seg) {
+						cur_seg = R_NEW0 (struct r_dyld_chained_starts_in_segment);
+						if (!cur_seg) {
+							break;
+						}
+						bin->chained_starts[seg_idx] = cur_seg;
+						cur_seg->pointer_format = DYLD_CHAINED_PTR_ARM64E;
+						cur_seg->page_size = 0x1000;
+						cur_seg->page_count = (bin->segs[seg_idx].vmsize + (0x1000 - 1)) & ~(0x1000 - 1);
+						if (cur_seg->page_count > 0) {
+							cur_seg->page_start = malloc (sizeof (ut16) * cur_seg->page_count);
+							if (!cur_seg->page_start) {
+								break;
+							}
+							memset (cur_seg->page_start, 0xff, sizeof (ut16) * cur_seg->page_count);
+						}
+					}
+				}
+				ut32 page_index = (ut32)(seg_off / 0x1000);
+				cur_seg->page_start[page_index] = seg_off & 0xfff;
+				break;
+			}
+			default:
+				bprintf ("Error: Unexpected BIND_OPCODE_THREADED sub-opcode: 0x%x\n", imm);
+			}
+			break;
+		}
+		case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
+		case BIND_OPCODE_SET_DYLIB_SPECIAL_IMM:
+		case BIND_OPCODE_SET_TYPE_IMM:
+			break;
+		case BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB:
+			read_uleb128 (&ur, end);
+			break;
+		case BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM:
+			while (*ur.p++ && ur.p < end) {
+				/* empty loop */
+			}
+			break;
+		case BIND_OPCODE_SET_ADDEND_SLEB:
+			read_sleb128 (&ur, end);
+			break;
+		case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
+			seg_idx = imm;
+			if (seg_idx >= bin->nsegs) {
+				bprintf ("Error: BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB"
+					" has unexistent segment %d\n", seg_idx);
+				R_FREE (opcodes);
+				return false;
+			} else {
+				seg_off = read_uleb128 (&ur, end);
+			}
+			break;
+		case BIND_OPCODE_ADD_ADDR_ULEB:
+			seg_off += read_uleb128 (&ur, end);
+			break;
+		case BIND_OPCODE_DO_BIND:
+			break;
+		case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
+			seg_off += read_uleb128 (&ur, end) + wordsize;
+			break;
+		case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
+			seg_off += (ut64)imm * (ut64)wordsize + wordsize;
+			break;
+		case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
+			count = read_uleb128 (&ur, end);
+			skip = read_uleb128 (&ur, end);
+			for (j = 0; j < count; j++) {
+				seg_off += skip + wordsize;
+			}
+			break;
+		default:
+			bprintf ("Error: unknown bind opcode 0x%02x in dyld_info\n", *ur.p);
+			R_FREE (opcodes);
+			return false;
+		}
+	}
+	R_FREE (opcodes);
+
+	return true;
+}
+
 static int init_items(struct MACH0_(obj_t) *bin) {
 	struct load_command lc = {0, 0};
 	ut8 loadc[sizeof (struct load_command)] = {0};
@@ -1861,7 +2005,31 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 				}
 			}
 			break;
+		case LC_DYLD_EXPORTS_TRIE:
+			if (bin->verbose) {
+				ut8 buf[8];
+				r_buf_read_at (bin->b, off + 8, buf, sizeof (buf));
+				ut32 dataoff = r_read_ble32 (buf, bin->big_endian);
+				ut32 datasize= r_read_ble32 (buf + 4, bin->big_endian);
+				eprintf ("exports trie at 0x%x size %d\n", dataoff, datasize);
+			}
+			break;
+		case LC_DYLD_CHAINED_FIXUPS:
+			// TODO: parse fixups
+			if (bin->verbose) {
+				ut8 buf[8];
+				r_buf_read_at (bin->b, off + 8, buf, sizeof (buf));
+				ut32 dataoff = r_read_ble32 (buf, bin->big_endian);
+				ut32 datasize= r_read_ble32 (buf + 4, bin->big_endian);
+				eprintf ("chained fixups at 0x%x size %d\n", dataoff, datasize);
+			}
+			break;
 		}
+	}
+
+	if (bin->hdr.cputype == CPU_TYPE_ARM64 &&
+		bin->hdr.cpusubtype == CPU_SUBTYPE_ARM64E) {
+		reconstruct_chained_fixup (bin);
 	}
 	return true;
 }
@@ -1900,6 +2068,16 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	free (mo->signature);
 	free (mo->intrp);
 	free (mo->compiler);
+	if (mo->chained_starts) {
+		size_t i;
+		for (i = 0; i < mo->nsegs; i++) {
+			if (mo->chained_starts[i]) {
+				free (mo->chained_starts[i]->page_start);
+				free (mo->chained_starts[i]);
+			}
+		}
+		free (mo->chained_starts);
+	}
 	r_buf_free (mo->b);
 	free (mo);
 	return NULL;
@@ -2830,14 +3008,6 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 	return symbols;
 }
 
-static size_t get_word_size(struct MACH0_(obj_t) *bin) {
-	size_t word_size = MACH0_(get_bits)(bin) / 8;
-	if (word_size < 4) {
-		return 4;
-	}
-	return word_size;
-}
-
 static int parse_import_ptr(struct MACH0_(obj_t) *bin, struct reloc_t *reloc, int idx) {
 	int i, j, sym;
 	size_t wordsize;
@@ -2988,6 +3158,7 @@ static void parse_relocation_info(struct MACH0_(obj_t) *bin, RSkipList * relocs,
 
 RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 	RSkipList *relocs = NULL;
+	RPVector *threaded_binds = NULL;
 	ulebr ur = {NULL};
 	size_t wordsize = get_word_size (bin);
 	if (bin->dyld_info) {
@@ -3012,7 +3183,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 		lazy_size = bin->dyld_info->lazy_bind_size;
 		weak_size = bin->dyld_info->weak_bind_size;
 
-		if (!bind_size || !lazy_size) {
+		if (!bind_size && !lazy_size) {
 			return NULL;
 		}
 
@@ -3067,6 +3238,101 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 #define SLEB() read_sleb128 (&ur,end)
 			case BIND_OPCODE_DONE:
 				break;
+			case BIND_OPCODE_THREADED: {
+				switch (imm) {
+				case BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB: {
+					ut64 table_size = ULEB();
+					if (table_size == 0 || table_size > 65535) {
+						bprintf ("Error: BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB size is wrong\n");
+						break;
+					}
+					if (threaded_binds) {
+						r_pvector_free (threaded_binds);
+					}
+					threaded_binds = r_pvector_new ((RPVectorFree) &free);
+					if (threaded_binds) {
+						r_pvector_reserve (threaded_binds, table_size);
+						threaded_binds->v.len = table_size;
+						sym_ord = 0;
+					}
+					break;
+				}
+				case BIND_SUBOPCODE_THREADED_APPLY:
+					if (threaded_binds) {
+						if (addr && seg_idx >= 0) {
+							ut64 cursor = addr;
+							int n_threaded_binds = (int) r_pvector_len (threaded_binds);
+							while (cursor < segmentAddress) {
+								ut8 tmp[8];
+								ut64 paddr = cursor - bin->segs[seg_idx].vmaddr + bin->segs[seg_idx].fileoff;
+								bin->rebasing_buffer = true;
+								if (r_buf_read_at (bin->b, paddr, tmp, 8) != 8) {
+									break;
+								}
+								bin->rebasing_buffer = false;
+								ut64 raw_ptr = r_read_le64 (tmp);
+								bool is_auth = (raw_ptr & (1ULL << 63)) != 0;
+								bool is_bind = (raw_ptr & (1ULL << 62)) != 0;
+								int ordinal = -1;
+								int addend = -1;
+								ut64 delta;
+								if (is_auth && is_bind) {
+									struct dyld_chained_ptr_arm64e_auth_bind *p =
+											(struct dyld_chained_ptr_arm64e_auth_bind *) &raw_ptr;
+									delta = p->next;
+									ordinal = p->ordinal;
+								} else if (!is_auth && is_bind) {
+									struct dyld_chained_ptr_arm64e_bind *p =
+											(struct dyld_chained_ptr_arm64e_bind *) &raw_ptr;
+									delta = p->next;
+									ordinal = p->ordinal;
+									addend = p->addend;
+								} else if (is_auth && !is_bind) {
+									struct dyld_chained_ptr_arm64e_auth_rebase *p =
+											(struct dyld_chained_ptr_arm64e_auth_rebase *) &raw_ptr;
+									delta = p->next;
+								} else {
+									struct dyld_chained_ptr_arm64e_rebase *p =
+											(struct dyld_chained_ptr_arm64e_rebase *) &raw_ptr;
+									delta = p->next;
+								}
+								if (ordinal >= n_threaded_binds) {
+									bprintf ("Error: Malformed bind chain\n");
+									break;
+								}
+								if (ordinal != -1) {
+									struct reloc_t *ref = r_pvector_at (threaded_binds, ordinal);
+									if (!ref) {
+										bprintf ("Error: Inconsistent bind opcodes\n");
+										break;
+									}
+									struct reloc_t *reloc = R_NEW0 (struct reloc_t);
+									if (!reloc) {
+										break;
+									}
+									*reloc = *ref;
+									reloc->addr = cursor;
+									reloc->offset = paddr;
+									if (addend != -1) {
+										reloc->addend = addend;
+									}
+									r_skiplist_insert (relocs, reloc);
+								}
+								cursor += delta * wordsize;
+								if (!delta) {
+									break;
+								}
+							}
+						} else {
+							bprintf ("Error: BIND_SUBOPCODE_THREADED_APPLY with no current segment\n");
+						}
+					}
+					break;
+				default:
+					bprintf ("Error: Unexpected BIND_OPCODE_THREADED sub-opcode: 0x%x\n", imm);
+				}
+				break;
+			}
 			case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
 				lib_ord = imm;
 				break;
@@ -3080,6 +3346,9 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 				sym_name = (char*)ur.p;
 				while (*ur.p++ && ur.p<end) {
 					/* empty loop */
+				}
+				if (threaded_binds) {
+					break;
 				}
 				sym_ord = -1;
 				if (bin->symtab && bin->dysymtab.nundefsym < 0xffff) {
@@ -3117,6 +3386,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 						" has unexistent segment %d\n", seg_idx);
 					R_FREE (opcodes);
 					r_skiplist_free (relocs);
+					r_pvector_free (threaded_binds);
 					return NULL; // early exit to avoid future mayhem
 				} else {
 					addr = bin->segs[seg_idx].vmaddr + ULEB();
@@ -3128,30 +3398,44 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 				addr += ULEB();
 				break;
 #define DO_BIND() do {\
-	if ((sym_ord < 0 && !sym_name) || seg_idx < 0 ) break;\
-	if (!addr) break;\
+	if (sym_ord < 0 && !sym_name) break;\
+	if (!threaded_binds) {\
+		if (seg_idx < 0 ) break;\
+		if (!addr) break;\
+	}\
 	struct reloc_t *reloc = R_NEW0 (struct reloc_t);\
 	reloc->addr = addr;\
-	reloc->offset = addr - bin->segs[seg_idx].vmaddr + bin->segs[seg_idx].fileoff;\
-	if (type == BIND_TYPE_TEXT_PCREL32)\
-		reloc->addend = addend - (bin->baddr + addr);\
-	else\
+	if (seg_idx >= 0) {\
+		reloc->offset = addr - bin->segs[seg_idx].vmaddr + bin->segs[seg_idx].fileoff;\
+		if (type == BIND_TYPE_TEXT_PCREL32)\
+			reloc->addend = addend - (bin->baddr + addr);\
+		else\
+			reloc->addend = addend;\
+	} else {\
 		reloc->addend = addend;\
+	}\
 	/* library ordinal ??? */ \
 	reloc->ord = lib_ord;\
 	reloc->ord = sym_ord;\
 	reloc->type = rel_type;\
 	if (sym_name)\
 		r_str_ncpy (reloc->name, sym_name, 256);\
-	r_skiplist_insert (relocs, reloc);\
+	if (threaded_binds)\
+		r_pvector_set (threaded_binds, sym_ord, reloc);\
+	else\
+		r_skiplist_insert (relocs, reloc);\
 } while (0)
 			case BIND_OPCODE_DO_BIND:
-				if (addr >= segmentAddress) {
-					bprintf ("Error: Malformed DO bind opcode\n");
+				if (!threaded_binds && addr >= segmentAddress) {
+					bprintf ("Error: Malformed DO bind opcode 0x%"PFMT64x"\n", addr);
 					goto beach;
 				}
 				DO_BIND ();
-				addr += wordsize;
+				if (!threaded_binds) {
+					addr += wordsize;
+				} else {
+					sym_ord++;
+				}
 				break;
 			case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
 				if (addr >= segmentAddress) {
@@ -3187,10 +3471,13 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 			default:
 				bprintf ("Error: unknown bind opcode 0x%02x in dyld_info\n", *ur.p);
 				R_FREE (opcodes);
+				r_pvector_free (threaded_binds);
 				return relocs;
 			}
 		}
 		R_FREE (opcodes);
+		r_pvector_free (threaded_binds);
+		threaded_binds = NULL;
 	}
 
 	if (bin->symtab && bin->symstr && bin->sects && bin->indirectsyms) {
@@ -3229,6 +3516,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 		parse_relocation_info (bin, relocs, bin->dysymtab.extreloff, bin->dysymtab.nextrel);
 	}
 beach:
+	r_pvector_free (threaded_binds);
 	return relocs;
 }
 

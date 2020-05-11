@@ -75,11 +75,7 @@ static bool advance_till_scope_end(RAnal* anal, RAnalOp *op, ut64 address, ut32 
 static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	WasmOp wop = {{0}};
 	RAnalHint *hint = NULL;
-	memset (op, '\0', sizeof (RAnalOp));
 	int ret = wasm_dis (&wop, data, len);
-	op->jump = UT64_MAX;
-	op->fail = UT64_MAX;
-	op->ptr = op->val = UT64_MAX;
 	op->size = ret;
 	op->addr = addr;
 	op->sign = true;
