@@ -76,7 +76,7 @@ RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
   cd radare2 && \
   ./configure && \
   make && \
-  sudo make install && \
+  make install && \
   apt-get install -y xz-utils && \
   apt-get remove --purge -y \
   bison \
