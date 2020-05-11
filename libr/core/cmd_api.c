@@ -329,7 +329,7 @@ R_API RCmdStatus r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
 	}
 
 	RCmdDesc *cd = r_cmd_get_desc (cmd, r_cmd_parsed_args_cmd (args));
-	if (!cd || cd->type == R_CMD_DESC_TYPE_INNER) {
+	if (!cd) {
 		return R_CMD_STATUS_INVALID;
 	}
 
@@ -433,12 +433,13 @@ R_API char *r_cmd_get_help(RCmd *cmd, RCmdParsedArgs *args) {
 	}
 
 	switch (cd->type) {
-	case R_CMD_DESC_TYPE_INNER:
-		if (detail > 1 || args->argc > 1) {
-			return NULL;
-		}
-		return inner_get_help (cmd, cd);
 	case R_CMD_DESC_TYPE_ARGV:
+		if (!r_pvector_empty (&cd->children)) {
+			if (detail > 1 || args->argc > 1) {
+				return NULL;
+			}
+			return inner_get_help (cmd, cd);
+		}
 		return argv_get_help (cmd, cd, args, detail);
 	case R_CMD_DESC_TYPE_OLDINPUT:
 		return oldinput_get_help (cmd, cd, args);
@@ -448,7 +449,7 @@ R_API char *r_cmd_get_help(RCmd *cmd, RCmdParsedArgs *args) {
 	}
 }
 
-R_API char *r_cmd_get_recursive_help (RCmd *cmd) {
+R_API char *r_cmd_get_recursive_help(RCmd *cmd) {
 	return "";
 }
 

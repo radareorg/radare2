@@ -247,7 +247,7 @@ bool test_cmd_call_desc(void) {
 bool test_cmd_help(void) {
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
-	RCmdDesc *p_cd = r_cmd_desc_inner_new (cmd, root, "p");
+	RCmdDesc *p_cd = r_cmd_desc_argv_new (cmd, root, "p", NULL);
 	RCmdDesc *pd_cd = r_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler);
 	RCmdDesc *px_cd = r_cmd_desc_oldinput_new (cmd, p_cd, "px", px_handler);
 
@@ -311,7 +311,7 @@ bool test_cmd_oldinput_help(void) {
 
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
-	RCmdDesc *p_cd = r_cmd_desc_inner_new (cmd, root, "p");
+	RCmdDesc *p_cd = r_cmd_desc_argv_new (cmd, root, "p", NULL);
 	r_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler);
 	r_cmd_desc_oldinput_new (cmd, p_cd, "px", px_handler);
 
