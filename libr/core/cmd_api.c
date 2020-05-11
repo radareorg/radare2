@@ -370,13 +370,13 @@ static char *inner_get_help(RCmd *cmd, RCmdDesc *cd) {
 	r_cmd_desc_children_foreach (cd, it_cd) {
 		RCmdDesc *child = *(RCmdDesc **)it_cd;
 		size_t str_len = strlen (child->name) + strlen (child->help.args_str);
-		size_t padding = str_len < max_len ? max_len - str_len : 0;
+		size_t padding = str_len < max_len? max_len - str_len: 0;
 		r_strbuf_appendf (sb, "| %s %s %*s# %s\n", child->name, child->help.args_str, padding, "", child->help.summary);
 	}
 	return r_strbuf_drain (sb);
 }
 
-static char *argv_get_help(RCmd *cmd, RCmdDesc *cd, RCmdParsedArgs *a, int detail) {
+static char *argv_get_help(RCmd *cmd, RCmdDesc *cd, RCmdParsedArgs *a, size_t detail) {
 	RStrBuf *sb = r_strbuf_new (NULL);
 	const char **e;
 
@@ -414,15 +414,16 @@ static char *oldinput_get_help(RCmd *cmd, RCmdDesc *cd, RCmdParsedArgs *a) {
 R_API char *r_cmd_get_help(RCmd *cmd, RCmdParsedArgs *args) {
 	char *cmdid = strdup (r_cmd_parsed_args_cmd (args));
 	char *cmdid_p = cmdid + strlen (cmdid) - 1;
-	int detail = 0;
+	size_t detail = 0;
 	while (cmdid_p >= cmdid && *cmdid_p == '?') {
 		*cmdid_p = '\0';
 		cmdid_p--;
 		detail++;
 	}
 
-	if (detail <= 0) {
+	if (detail == 0) {
 		// there should be at least one `?`
+		free (cmdid);
 		return NULL;
 	}
 
@@ -450,7 +451,8 @@ R_API char *r_cmd_get_help(RCmd *cmd, RCmdParsedArgs *args) {
 }
 
 R_API char *r_cmd_get_recursive_help(RCmd *cmd) {
-	return "";
+	// TODO: implement me
+	return strdup ("");
 }
 
 /** macro.c **/
