@@ -132,6 +132,7 @@ bool pyc_opcodes_equal(pyc_opcodes *op, const char *version) {
 				return true;
 			}
 		}
+		vop++;
 	}
 
 	return false;
@@ -142,8 +143,9 @@ pyc_opcodes *get_opcode_by_version(char *version) {
 
 	while (vop->version) {
 		if (!strcmp (vop->version, version)) {
-			vop->opcode_func ();
+			return vop->opcode_func ();
 		}
+		vop++;
 	}
 
 	return NULL; // No match version
