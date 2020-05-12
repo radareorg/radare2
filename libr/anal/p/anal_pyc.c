@@ -17,9 +17,9 @@ static int archinfo(RAnal *anal, int query) {
 
 	switch (query) {
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
-		return (anal->bits == 16) ? 1 : 2;
+		return (anal->bits == 16)? 1: 2;
 	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
-		return (anal->bits == 16) ? 3 : 2;
+		return (anal->bits == 16)? 3: 2;
 	default:
 		return -1;
 	}
@@ -38,9 +38,9 @@ static char *get_reg_profile(RAnal *anal) {
 
 static RList *get_pyc_code_obj(RAnal *anal) {
 	RBin *b = anal->binb.bin;
-	RBinPlugin *plugin = b->cur && b->cur->o ? b->cur->o->plugin : NULL;
+	RBinPlugin *plugin = b->cur && b->cur->o? b->cur->o->plugin: NULL;
 	bool is_pyc = (plugin && strcmp (plugin->name, "pyc") == 0);
-	return is_pyc ? b->cur->o->bin_obj : NULL;
+	return is_pyc? b->cur->o->bin_obj: NULL;
 }
 
 static int pyc_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
@@ -48,7 +48,7 @@ static int pyc_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RA
 	RListIter *iter = NULL;
 	pyc_code_object *func = NULL, *t = NULL;
 	r_list_foreach (cobjs, iter, t) {
-		if (R_BETWEEN (t->start_offset, addr, t->end_offset - 1)) {// addr in [start_offset, end_offset)
+		if (R_BETWEEN (t->start_offset, addr, t->end_offset - 1)) { // addr in [start_offset, end_offset)
 			func = t;
 			break;
 		}
@@ -81,7 +81,7 @@ static int pyc_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RA
 		goto anal_end;
 	}
 
-	op->size = is_python36 ? 2 : ((op_code >= ops->have_argument) ? 3 : 1);
+	op->size = is_python36? 2: ((op_code >= ops->have_argument)? 3: 1);
 
 	if (op_code >= ops->have_argument) {
 		if (!is_python36) {
@@ -91,7 +91,7 @@ static int pyc_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RA
 		}
 		extended_arg = 0;
 		if (op_code == ops->extended_arg) {
-			extended_arg = is_python36 ? (oparg << 8) : (oparg * 65536);
+			extended_arg = is_python36? (oparg << 8): (oparg * 65536);
 		}
 	}
 
@@ -101,18 +101,18 @@ static int pyc_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RA
 
 		if (op_obj->type & HASCONDITION) {
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->fail = addr + ((is_python36) ? 2 : 3);
+			op->fail = addr + ((is_python36)? 2: 3);
 		}
 		goto anal_end;
 	}
 	if (op_obj->type & HASJREL) {
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = addr + oparg + ((is_python36) ? 2 : 3);
-		op->fail = addr + ((is_python36) ? 2 : 3);
+		op->jump = addr + oparg + ((is_python36)? 2: 3);
+		op->fail = addr + ((is_python36)? 2: 3);
 
 		if (op_obj->type & HASCONDITION) {
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			//op->fail = addr + ((is_python36) ? 2 : 3);
+			//op->fail = addr + ((is_python36)? 2: 3);
 		}
 		//goto anal_end;
 	}
@@ -129,7 +129,7 @@ anal_end:
 	return op->size;
 }
 
-static int finish (void *user) {
+static int finish(void *user) {
 	if (ops) {
 		free_opcode (ops);
 		ops = NULL;

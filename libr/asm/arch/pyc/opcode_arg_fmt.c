@@ -22,13 +22,13 @@ const char *format_CALL_FUNCTION_KW_36 (ut32 oparg) {
 }
 
 const char *format_CALL_FUNCTION_EX_36 (ut32 oparg) {
-	return (oparg & 0x01) ? "keyword args" : "";
+	return (oparg & 0x01)? "keyword args": "";
 }
 
 static const char *MAKE_FUNCTION_FLAGS[] = { "default", "keyword-only", "annotation", "closure" };
 
 const char *format_MAKE_FUNCTION_arg_36 (ut32 oparg) {
-    size_t i;
+	size_t i;
 	char *ret = r_str_new (" ");
 	for (i = 0; i < sizeof (MAKE_FUNCTION_FLAGS) / sizeof (char *); ++i) {
 		if (oparg & 0x1) {

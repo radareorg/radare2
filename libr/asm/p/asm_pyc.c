@@ -10,7 +10,7 @@
 
 static pyc_opcodes *opcodes_cache = NULL;
 
-static int disassemble (RAsm *a, RAsmOp *opstruct, const ut8 *buf, int len) {
+static int disassemble(RAsm *a, RAsmOp *opstruct, const ut8 *buf, int len) {
 	RList *interned_table = NULL;
 	RList *shared = NULL;
 	RList *cobjs = NULL;
@@ -18,7 +18,7 @@ static int disassemble (RAsm *a, RAsmOp *opstruct, const ut8 *buf, int len) {
 	RBin *bin = a->binb.bin;
 	ut64 pc = a->pc;
 
-	RBinPlugin *plugin = bin && bin->cur && bin->cur->o ? bin->cur->o->plugin : NULL;
+	RBinPlugin *plugin = bin && bin->cur && bin->cur->o? bin->cur->o->plugin: NULL;
 
 	if (plugin) {
 		if (!strcmp (plugin->name, "pyc")) {
@@ -36,12 +36,12 @@ static int disassemble (RAsm *a, RAsmOp *opstruct, const ut8 *buf, int len) {
 	return r;
 }
 
-static bool finish (void *user) {
+static bool finish(void *user) {
 	if (opcodes_cache) {
 		free_opcode (opcodes_cache);
 		opcodes_cache = NULL;
 	}
-    return true;
+	return true;
 }
 
 RAsmPlugin r_asm_plugin_pyc = {
