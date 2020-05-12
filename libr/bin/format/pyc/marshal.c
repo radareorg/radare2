@@ -174,7 +174,7 @@ static pyc_object *get_long_object (RBuffer *buffer) {
 	pyc_object *ret = NULL;
 	bool error = false;
 	bool neg = false;
-	ut32 tmp;
+	ut32 tmp = 0;
 	size_t size; 
 	size_t i, j = 0, left = 0;
 	ut16 n;
@@ -205,6 +205,7 @@ static pyc_object *get_long_object (RBuffer *buffer) {
 		size = (size - 1) / 4 + 1;
 		size += 3 + (neg ? 1 : 0);
 		hexstr = malloc (size);
+		memset (hexstr, 0, size);
 		j = size - 1;
 
 		for (i = 0; i < ndigits; i++) {
