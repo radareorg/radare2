@@ -167,6 +167,7 @@ bin_plugins = [
   'smd',
   'sms',
   'spc700',
+  'symbols',
   'te',
   'vsf',
   'wasm',
