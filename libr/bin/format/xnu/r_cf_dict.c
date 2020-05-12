@@ -3,7 +3,7 @@
 #include <r_util.h>
 #include <r_list.h>
 
-#include "../../../shlr/yxml/yxml.h"
+#include "yxml.h"
 #include "r_cf_dict.h"
 
 #define XMLBUFSIZE 4096

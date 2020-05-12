@@ -130,7 +130,7 @@ r_bin_sources = [
   'pdb/tpi.c'
 ]
 
-r_bin_inc = [platform_inc, include_directories('mangling', 'format')]
+r_bin_inc = [platform_inc, yxml_inc, include_directories('mangling', 'format')]
 
 r_bin = library('r_bin', r_bin_sources,
   include_directories: r_bin_inc,
