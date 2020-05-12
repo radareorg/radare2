@@ -4,6 +4,8 @@
 
 static const char *cmp_op[] = { "<", "<=", "==", "!=", ">", ">=", "in", "not in", "is", "is not", "exception match", "BAD" };
 
+static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *consts, RList *varnames, RList *interned_table, RList *freevars, RList *cellvars, RList *opcode_arg_fmt);
+
 int r_pyc_disasm(RAsmOp *opstruct, const ut8 *code, RList *cobjs, RList *interned_table, ut64 pc, pyc_opcodes *ops) {
 	pyc_code_object *cobj = NULL, *t = NULL;
 	ut32 extended_arg = 0, i = 0, oparg;
@@ -53,6 +55,7 @@ int r_pyc_disasm(RAsmOp *opstruct, const ut8 *code, RList *cobjs, RList *interne
 			const char *arg = parse_arg (&ops->opcodes[op], oparg, names, consts, varnames, interned_table, freevars, cellvars, ops->opcode_arg_fmt);
 			if (arg != NULL) {
 				r_strbuf_appendf (&opstruct->buf_asm, "%20s", arg);
+				free ((char *)arg);
 			}
 		} else if (ops->bits == 8) {
 			i += 1;
@@ -99,7 +102,7 @@ static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RL
 		case TYPE_STRINGREF:
 			arg = r_str_newf ("'%s'", t->data);
 		default:
-			arg = t->data;
+			arg = r_str_new (t->data);
 		}
 	}
 	if (op->type & HASNAME) {
@@ -107,7 +110,7 @@ static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RL
 		if (t == NULL) {
 			return NULL;
 		}
-		arg = t->data;
+		arg = r_str_new (t->data);
 	}
 	if ((op->type & HASJREL) || (op->type & HASJABS)) {
 		arg = r_str_newf ("%u", oparg);
@@ -116,10 +119,10 @@ static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RL
 		t = (pyc_object *)r_list_get_n (varnames, oparg);
 		if (!t)
 			return NULL;
-		arg = t->data;
+		arg = r_str_new (t->data);
 	}
 	if (op->type & HASCOMPARE) {
-		arg = cmp_op[oparg];
+		arg = r_str_new (cmp_op[oparg]);
 	}
 	if (op->type & HASFREE) {
 		if (!cellvars || !freevars) {
@@ -139,7 +142,7 @@ static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RL
 			return NULL;
 		}
 
-		arg = t->data;
+		arg = r_str_new (t->data);
 	}
 	if (op->type & HASNARGS) {
 		arg = r_str_newf ("%u", oparg);
@@ -168,29 +171,21 @@ void dump(RList *l) {
 char *generic_array_obj_to_string(RList *l) {
 	RListIter *iter = NULL;
 	pyc_object *e = NULL;
-	ut32 size = 256, used = 0;
-	char *r = NULL, *buf = NULL;
 
-	// add good enough space
-	buf = (char *)calloc (size + 10, 1);
+	RStrBuf *rbuf = r_strbuf_new (NULL);
+
 	r_list_foreach (l, iter, e) {
-		while (!(strlen (e->data) < size)) {
-			size *= 2;
-			buf = realloc (buf, used + size);
-			if (!buf) {
-				eprintf ("generic_array_obj_to_string cannot request more memory");
-				return NULL;
-			}
-		}
-		strcat (buf, e->data);
-		strcat (buf, ",");
-		size -= strlen (e->data) + 1;
-		used += strlen (e->data) + 1;
+		r_strbuf_append (rbuf, e->data);
+		r_strbuf_append (rbuf, ",");
 	}
+
+	char *buf = r_strbuf_get (rbuf);
+
 	/* remove last , */
 	buf[strlen (buf) - 1] = '\0';
-	r = r_str_newf ("(%s)", buf);
-	free (buf);
+	char *r = r_str_newf ("(%s)", buf);
+
+	r_strbuf_free (rbuf);
 	return r;
 }
 

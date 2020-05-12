@@ -120,27 +120,32 @@ static version_opcode version_op[] = {
 	{ "v3.9.0a1", opcode_39 },
 	{ "v3.9.0a2", opcode_39 },
 	{ "v3.9.0a3", opcode_39 },
+	{ NULL, NULL },
 };
 
 bool pyc_opcodes_equal(pyc_opcodes *op, const char *version) {
-	size_t i;
-	for (i = 0; i < sizeof (version_op) / sizeof (version_opcode); i++) {
-		if (!strcmp (version_op[i].version, version)) {
-			if (version_op[i].opcode_func == (pyc_opcodes * (*)()) (op->version_sig)) {
+	version_opcode *vop = version_op;
+
+	while (vop->version) {
+		if (!strcmp (vop->version, version)) {
+			if (vop->opcode_func == (pyc_opcodes * (*)()) (op->version_sig)) {
 				return true;
 			}
 		}
 	}
+
 	return false;
 }
 
 pyc_opcodes *get_opcode_by_version(char *version) {
-	size_t i;
-	for (i = 0; i < sizeof (version_op) / sizeof (version_opcode); i++) {
-		if (!strcmp (version_op[i].version, version)) {
-			return version_op[i].opcode_func ();
+	version_opcode *vop = version_op;
+
+	while (vop->version) {
+		if (!strcmp (vop->version, version)) {
+			vop->opcode_func ();
 		}
 	}
+
 	return NULL; // No match version
 }
 
@@ -183,11 +188,14 @@ void free_opcode(pyc_opcodes *opcodes) {
 	}
 	free (opcodes->opcodes);
 	r_list_free (opcodes->opcode_arg_fmt);
-	R_FREE (opcodes);
+	free (opcodes);
 }
 
 void add_arg_fmt(pyc_opcodes *ret, char *op_name, const char *(*formatter) (ut32 oparg)) {
 	pyc_arg_fmt *fmt = R_NEW0 (pyc_arg_fmt);
+	if (!fmt) {
+		return;
+	}
 	fmt->op_name = op_name;
 	fmt->formatter = formatter;
 	r_list_append (ret->opcode_arg_fmt, fmt);
@@ -280,8 +288,7 @@ void (rm_op)(struct op_parameter par) {
 	pyc_opcode_object *op_obj = &par.op_obj[par.op_code];
 	if (op_obj->op_code == par.op_code && !strcmp (op_obj->op_name, par.op_name)) {
 		free (op_obj->op_name);
-		op_obj->op_name = malloc (sizeof (char) * 6);
-		snprintf (op_obj->op_name, 6, "<%u>", par.op_code);
+		op_obj->op_name = r_str_newf ("<%u>", par.op_code);
 		op_obj->type = op_obj->op_pop = op_obj->op_push = 0;
 	} else {
 		eprintf ("Error in rm_op() while constructing opcodes for .pyc file: \n .op_code = %u, .op_name = %s", par.op_code, par.op_name);

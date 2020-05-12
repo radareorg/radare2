@@ -1,6 +1,6 @@
 #include "opcode.h"
 
-pyc_opcodes *opcode_23() {
+pyc_opcodes *opcode_23(void) {
 	pyc_opcodes *ret = opcode_2x ();
 	if (!ret) {
 		return NULL;

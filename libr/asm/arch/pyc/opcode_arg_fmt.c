@@ -22,7 +22,7 @@ const char *format_CALL_FUNCTION_KW_36(ut32 oparg) {
 }
 
 const char *format_CALL_FUNCTION_EX_36(ut32 oparg) {
-	return (oparg & 0x01)? "keyword args": "";
+	return r_str_new ((oparg & 0x01)? "keyword args": "");
 }
 
 static const char *MAKE_FUNCTION_FLAGS[] = { "default", "keyword-only", "annotation", "closure" };
@@ -40,6 +40,7 @@ const char *format_MAKE_FUNCTION_arg_36(ut32 oparg) {
 		oparg >>= 1;
 	}
 	return ret;
+	return r_str_new (ret);
 }
 
 const char *format_value_flags_36(ut32 oparg) {
@@ -60,7 +61,7 @@ const char *format_value_flags_36(ut32 oparg) {
 		// empty fmt_spec.
 		return "";
 	}
-	return ret;
+	return r_str_new (ret);
 }
 
 const char *format_extended_arg_36(ut32 oparg) {

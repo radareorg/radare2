@@ -93,10 +93,13 @@ static RList *symbols(RBinFile *arch) {
 	}
 	RList *cobjs = r_list_new ();
 	if (!cobjs) {
+		r_list_free (shared);
 		return NULL;
 	}
 	interned_table = r_list_new ();
 	if (!interned_table) {
+		r_list_free (shared);
+		r_list_free (cobjs);
 		return NULL;
 	}
 	r_list_append (shared, cobjs);

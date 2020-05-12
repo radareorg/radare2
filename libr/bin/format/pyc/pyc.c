@@ -8,11 +8,7 @@ bool pyc_get_sections_symbols(RList *sections, RList *symbols, RList *cobjs, RBu
 }
 
 bool pyc_is_object(ut8 b, pyc_marshal_type type) {
-	bool ret = false;
-	if (b == type) {
-		ret = true;
-	}
-	return ret;
+	return b == type;
 }
 
 bool pyc_is_code(ut8 b, ut32 magic) {
