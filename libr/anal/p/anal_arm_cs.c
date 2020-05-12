@@ -3520,6 +3520,9 @@ static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 			break;
 		}
 		if (op->ptr != UT64_MAX || op->jump != UT64_MAX) {
+			if ((oplen * 8) > size - idx) {
+				break;
+			}
 			ut32 opcode = r_read_ble (data + idx, anal->big_endian, oplen * 8);
 			switch (oplen) {
 			case 2:
