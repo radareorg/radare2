@@ -268,14 +268,14 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 				gdbr_lock_leave (desc);
 				return NULL;
 			case 'k': // "dck"
-				if (cmd[3] != '\0') {
-					int sig = r_num_math (NULL, cmd + 3);
-					gdbr_continue (desc, desc->pid, -1, sig);
-					if (desc->stop_reason.is_valid && desc->stop_reason.thread.present) {
-						desc->tid = desc->stop_reason.thread.tid;
-					}
+			{
+				int sig = r_num_math (NULL, cmd + 3);
+				gdbr_continue (desc, desc->pid, -1, sig);
+				if (desc->stop_reason.is_valid && desc->stop_reason.thread.present) {
+					desc->tid = desc->stop_reason.thread.tid;
 				}
 				return NULL;
+			}
 			default:
 				break;
 			}
@@ -289,13 +289,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			ut64 buflen = 16384;
 			snprintf (path, sizeof (path) - 1, "/proc/%d/maps", desc->pid);
 
-#ifdef _MSC_VER
-#define GDB_FILE_OPEN_MODE (_S_IREAD | _S_IWRITE)
-#else
-#define GDB_FILE_OPEN_MODE (S_IRUSR | S_IWUSR | S_IXUSR)
-#endif
-
-			if (gdbr_open_file (desc, path, O_RDONLY, GDB_FILE_OPEN_MODE) < 0) {
+			if (gdbr_open_file (desc, path, O_RDONLY, 0) < 0) {
 				return NULL;
 			}
 			if (!(buf = malloc (buflen))) {
@@ -316,18 +310,15 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			char name[512];
 			for (;;) {
 				char *nl = strchr (ptr, '\n');
-				if (nl) {
-					*nl = 0;
-					*name = 0;
-					*perm = 0;
-					sscanf (ptr, "%"PFMT64x"-%"PFMT64x" %s %*s %*s %*s %[^\n]",
-						&map_start, &map_end, perm, name);
-					r_strbuf_appendf (obuf,"0x%"PFMT64x" - 0x%"PFMT64x" %s %s\n",
-							  map_start, map_end, perm, name);
-					ptr = nl + 1;
-				} else {
+				if (!nl) {
 					break;
 				}
+				*nl = 0;
+				*name = 0;
+				*perm = 0;
+				sscanf (ptr, "%"PFMT64x"-%"PFMT64x" %31s %*s %*s %*s %[^\n]", &map_start, &map_end, perm, name);
+				r_strbuf_appendf (obuf,"0x%"PFMT64x" - 0x%"PFMT64x" %s %s\n", map_start, map_end, perm, name);
+				ptr = nl + 1;
 			}
 			gdbr_close_file (desc);
 			free (buf);
@@ -360,7 +351,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 				}
 				gdbr_lock_leave (desc);
 				return NULL;
-				// TODO "dso"
+			// TODO "dso"
 			default:
 				break;
 			}
@@ -372,14 +363,14 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 					return NULL;
 				}
 				return strdup (desc->target.regprofile);
-				break;
 			case '8': // "dr8"
 				gdbr_read_registers (desc);
 				if (!desc->data) {
 					return NULL;
 				}
-				char *dr8_str = r_hex_bin2strdup ((const ut8*)desc->data, desc->data_len);
-				return dr8_str;
+				return r_hex_bin2strdup ((const ut8*)desc->data, desc->data_len);
+			default:
+				break;
 			}
 			break;
 		default:
