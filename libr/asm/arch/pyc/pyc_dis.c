@@ -28,7 +28,7 @@ int r_pyc_disasm (RAsmOp *opstruct, const ut8 *code, RList *cobjs, RList *intern
 		}
 	}
 
-	if (!cobj) {
+	if (cobj) {
 		/* TODO: adding line number and offset */
 		varnames = cobj->varnames->data;
 		consts = cobj->consts->data;
@@ -133,6 +133,7 @@ const char *parse_arg (pyc_opcode_object *op, ut32 oparg, RList *names, RList *c
 	if (op->type & HASFREE) {
 		if (!cellvars || !freevars) {
 			arg = r_str_newf ("%u", oparg);
+			return arg;
 		}
 
 		if (oparg < r_list_length (cellvars)) {
@@ -141,8 +142,9 @@ const char *parse_arg (pyc_opcode_object *op, ut32 oparg, RList *names, RList *c
 			t = (pyc_object *)r_list_get_n (freevars, oparg);
 		} else {
 			arg = r_str_newf ("%u", oparg);
+			return arg;
 		}
-		if (t == NULL) {
+		if (!t) {
 			return NULL;
 		}
 

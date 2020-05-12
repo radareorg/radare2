@@ -174,8 +174,12 @@ static pyc_object *get_long_object (RBuffer *buffer) {
 	pyc_object *ret = NULL;
 	bool error = false;
 	bool neg = false;
-	ut32 i;
+	ut32 tmp;
+	size_t size; 
+	size_t i, j = 0, left = 0;
 	ut16 n;
+	char *hexstr;
+	char digist2hex[] = "0123456789abcdef";
 
 	st32 ndigits = get_st32 (buffer, &error);
 	if (ndigits < -SIZE32_MAX) {
@@ -195,33 +199,39 @@ static pyc_object *get_long_object (RBuffer *buffer) {
 		neg = true;
 	}
 	if (ndigits == 0) {
-		ret->data = strdup ("0");
-		return ret;
+		ret->data = strdup ("0x0");
 	} else {
-		RNumBig *long_val = r_big_new ();
-		RNumBig *tmp = r_big_new ();
-		RNumBig *operand = r_big_new ();
-		r_big_from_int (long_val, 0);
+		size = ndigits * 15;
+		size = (size - 1) / 4 + 1;
+		size += 3 + (neg ? 1 : 0);
+		hexstr = malloc (size);
+		j = size - 1;
+
 		for (i = 0; i < ndigits; i++) {
 			n = get_ut16 (buffer, &error);
-			if (error) {
-				R_FREE (ret);
-			} // long_val |= n << (i * 15)
-			r_big_from_int (operand, n); // operand = n
-			r_big_lshift (tmp, operand, i * 15); // tmp = operand << (i * 15)
-			r_big_add (operand, tmp, long_val); // operand = tmp + long_val
-			r_big_assign (long_val, operand); // long_val = operand
-		}
-		if (neg) {
-			long_val->sign = -1;
-		}
-		ret->data = r_big_to_hexstr (long_val);
+			tmp |= n << left;
+			left += 15;
 
-		r_big_free (long_val);
-		r_big_free (tmp);
-		r_big_free (operand);
-		return ret;
+			while (left >= 4) {
+				hexstr[--j] = digist2hex[tmp & 0xf];
+				tmp >>= 4;
+				left -= 4;
+			}
+		}
+
+		if (tmp) {
+			hexstr[--j] = digist2hex[tmp & 0xf];
+		}
+
+		hexstr[--j] = 'x';
+		hexstr[--j] = '0';
+		if (neg) {
+			hexstr[--j] = '-';
+		}
+
+		ret->data = &hexstr[j];
 	}
+	return ret;
 }
 
 static pyc_object *get_stringref_object (RBuffer *buffer) {
