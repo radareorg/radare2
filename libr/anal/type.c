@@ -145,7 +145,7 @@ static void enum_type_fini(void *e, void *user) {
 }
 
 static RAnalBaseType *get_enum_type(RAnal *anal, const char *sanitized_name) {
-	r_return_val_if_fail (sanitized_name, NULL);
+	r_return_val_if_fail (sanitized_name && anal, NULL);
 
 	RAnalBaseType *base_type = R_NEW0 (RAnalBaseType);
 	if (!base_type) {
@@ -201,7 +201,7 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sanitized_name) {
 }
 
 static RAnalBaseType *get_struct_type(RAnal *anal, const char *sanitized_name) {
-	r_return_val_if_fail (sanitized_name, NULL);
+	r_return_val_if_fail (sanitized_name && anal, NULL);
 
 	RAnalBaseType *base_type = R_NEW0 (RAnalBaseType);
 	if (!base_type) {
@@ -264,7 +264,7 @@ static RAnalBaseType *get_struct_type(RAnal *anal, const char *sanitized_name) {
 }
 
 static RAnalBaseType *get_union_type(RAnal *anal, const char *sanitized_name) {
-	r_return_val_if_fail (sanitized_name, NULL);
+	r_return_val_if_fail (sanitized_name && anal, NULL);
 
 	RAnalBaseType *base_type = R_NEW0 (RAnalBaseType);
 	if (!base_type) {
@@ -308,7 +308,7 @@ static RAnalBaseType *get_union_type(RAnal *anal, const char *sanitized_name) {
 		}
 		char *value = sdb_anext (values, NULL);
 		RAnalUnionMember cas = {.name = strdup (cur), .type = strdup (value)};
-		free(value);
+		free (value);
 		
 		void *element = r_vector_push (&members, &cas); // returns null if no space available
 		if (!element) {
@@ -328,8 +328,7 @@ static RAnalBaseType *get_union_type(RAnal *anal, const char *sanitized_name) {
 
 // returns NULL if name is not found or any failure happened
 R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
-	r_return_val_if_fail (name, NULL);
-	r_return_val_if_fail (anal, NULL);
+	r_return_val_if_fail (name && anal, NULL);
 
 	char *name_sanitized = r_str_sanitize_sdb_key (name);
 	char *type = sdb_const_get (anal->sdb_types, name_sanitized, NULL);
@@ -341,44 +340,17 @@ R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
 	}
 	// Taking advantage that all 3 types start with distinct letter
 	// because the strcmp condition guarantees that only those will get to this flow
-	RAnalBaseType *base_type;
+	RAnalBaseType *base_type = NULL;
 	
 	switch (type[0]) {
 	case 's': // struct
-	{
 		base_type = get_struct_type (anal, name_sanitized);
-		// DEBUG print, TODO not forget to remove
-		r_cons_printf ("BaseType: %d\n", base_type->kind);
-		RAnalStructMember *it;
-		r_cons_printf ("Members:\n");
-		r_vector_foreach (&base_type->struct_data.members, it) {
-			r_cons_printf ("\t%s %s;\n", it->type, it->name);
-		}
-	}
 		break;
 	case 'e': // enum
-	{
 		base_type = get_enum_type (anal, name_sanitized);
-		// DEBUG print, TODO not forget to remove
-		r_cons_printf ("BaseType: %d\n", base_type->kind);
-		RAnalEnumCase *it;
-		r_cons_printf ("Cases:\n");
-		r_vector_foreach (&base_type->enum_data.cases, it) {
-			r_cons_printf ("\tname: %s, value: %d\n", it->name, it->val);
-		}
-	}
 		break;
 	case 'u': // union
-	{
 		base_type = get_union_type (anal, name_sanitized);
-		// DEBUG print, TODO not forget to remove
-		r_cons_printf ("BaseType: %d\n", base_type->kind);
-		RAnalUnionMember *it;
-		r_cons_printf ("Cases:\n");
-		r_vector_foreach (&base_type->union_data.members, it) {
-			r_cons_printf ("\t%s %s;\n", it->type, it->name);
-		}
-	}
 		break;
 	}
 
