@@ -1922,8 +1922,6 @@ EOF
 EXPECT=<<EOF
 
    var_78h  0x8048577,0x804858a
-   var_88h  
-   var_78h  
    var_88h  0x804857a
 EOF
 RUN
