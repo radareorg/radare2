@@ -4,8 +4,6 @@
 
 #define MAX_SCAN_SIZE 0x7ffffff
 
-static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *name);
-
 static const char *help_msg_a[] = {
 	"Usage:", "a", "[abdefFghoprxstc] [...]",
 	"a", "", "alias for aai - analysis information",
@@ -793,19 +791,6 @@ static int listOpDescriptions(void *_core, const char *k, const char *v) {
         return 1;
 }
 
-static void cmd_afvx(RCore *core, RAnalFunction *fcn) {
-	r_return_if_fail (core);
-	if (!fcn) {
-		fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-	}
-	if (fcn) {
-		r_cons_printf ("afvR\n");
-		list_vars (core, fcn, 'R', NULL);
-		r_cons_printf ("afvW\n");
-		list_vars (core, fcn, 'W', NULL);
-	}
-}
-
 /* better aac for windows-x86-32 */
 #define JAYRO_03 0
 
@@ -1012,8 +997,8 @@ static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *nam
 	RAnalVar *var;
 	RListIter *iter;
 	RList *list = r_anal_var_all_list (core->anal, fcn);
-	ut64 oaddr = core->offset;
 	if (type == '=') {
+		ut64 oaddr = core->offset;
 		r_list_foreach (list, iter, var) {
 			r_cons_printf ("* %s\n", var->name);
 			RAnalVarAccess *acc;
@@ -1034,6 +1019,7 @@ static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *nam
 				r_core_print_disasm_instructions (core, 1, 0);
 			}
 		}
+		r_core_seek (core, oaddr, 0);
 		return;
 	}
 	if (type == '*') {
@@ -1059,7 +1045,19 @@ static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *nam
 			var_accesses_list (fcn, var, access_type, var->name);
 		}
 	}
-	r_core_seek (core, oaddr, 0);
+}
+
+static void cmd_afvx(RCore *core, RAnalFunction *fcn) {
+	r_return_if_fail (core);
+	if (!fcn) {
+		fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_ANY);
+	}
+	if (fcn) {
+		r_cons_printf ("afvR\n");
+		list_vars (core, fcn, 'R', NULL);
+		r_cons_printf ("afvW\n");
+		list_vars (core, fcn, 'W', NULL);
+	}
 }
 
 static int cmd_an(RCore *core, bool use_json, const char *name) {
@@ -1241,7 +1239,7 @@ static int var_cmd(RCore *core, const char *str) {
 	case 'R': // "afvR"
 	case 'W': // "afvW"
 	case '*': // "afv*"
-	case '=': // "afv*"
+	case '=': // "afv="
 		if (fcn) {
 			const char *name = strchr (ostr, ' ');
 			if (name) {
@@ -3810,6 +3808,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				ut64 addr = input[2]==' '? r_num_math (core->num, input + 2): core->offset;
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 				if (fcn) {
+					ut64 oaddr = core->offset;
 					RAnalRef *ref;
 					RListIter *iter;
 					RList *refs = r_anal_function_get_refs (fcn);
@@ -3826,13 +3825,14 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 							case R_ANAL_REF_TYPE_NULL:
 								r_cons_printf ("0x%08" PFMT64x " ", ref->addr);
 								break;
-							case 'c':
-							case 'C':
-							case 'd':
+							case R_ANAL_REF_TYPE_CODE:
+							case R_ANAL_REF_TYPE_CALL:
+							case R_ANAL_REF_TYPE_DATA:
 								r_cons_printf ("0x%08" PFMT64x " ", ref->addr);
-								r_core_cmdf (core, "pi 1 @ 0x%08"PFMT64x, ref->at);
+								r_core_seek (core, ref->at, 1);
+								r_core_print_disasm_instructions (core, 1, 0);
 								break;
-							case 's':
+							case R_ANAL_REF_TYPE_STRING:
 								{
 									char *s = r_core_cmd_strf (core, "pxr 8 @ 0x%08"PFMT64x, ref->addr);
 									char *nl = strchr (s, '\n');
@@ -3847,6 +3847,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 						}
 					}
 					r_list_free (refs);
+					r_core_seek (core, oaddr, 1);
 				} else {
 					eprintf ("afx: Cannot find function at 0x%08"PFMT64x"\n", addr);
 				}
