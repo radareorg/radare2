@@ -1065,8 +1065,8 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 		if (!opst) {
 			R_LOG_WARN ("Anal plugin %s did not return disassembly\n", core->anal->cur->name);
 			RAsmOp asmop;
-			r_asm_set_pc (core->assembler, addr);
-			if (!r_asm_disassemble (core->assembler, &asmop, buf + idx, buflen - idx)) {
+			r_asm_set_pc (core->rasm, addr);
+			if (!r_asm_disassemble (core->rasm, &asmop, buf + idx, buflen - idx)) {
 				valid = false;
 				goto ret;
 			}
@@ -1182,8 +1182,8 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 		r_list_foreach (hitlist, iter, hit) {
 			ut8 *buf = malloc (hit->len);
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
-			r_asm_set_pc (core->assembler, hit->addr);
-			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
+			r_asm_set_pc (core->rasm, hit->addr);
+			r_asm_disassemble (core->rasm, &asmop, buf, hit->len);
 			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ANAL_OP_MASK_ESIL);
 			size += hit->len;
 			if (analop.type != R_ANAL_OP_TYPE_RET) {
@@ -1215,8 +1215,8 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 		r_list_foreach (hitlist, iter, hit) {
 			ut8 *buf = malloc (hit->len);
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
-			r_asm_set_pc (core->assembler, hit->addr);
-			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
+			r_asm_set_pc (core->rasm, hit->addr);
+			r_asm_disassemble (core->rasm, &asmop, buf, hit->len);
 			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ANAL_OP_MASK_BASIC);
 			size += hit->len;
 			const char *opstr = R_STRBUF_SAFEGET (&analop.esil);
@@ -1256,8 +1256,8 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 			}
 			buf[hit->len] = 0;
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
-			r_asm_set_pc (core->assembler, hit->addr);
-			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
+			r_asm_set_pc (core->rasm, hit->addr);
+			r_asm_disassemble (core->rasm, &asmop, buf, hit->len);
 			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ANAL_OP_MASK_ESIL);
 			size += hit->len;
 			if (analop.type != R_ANAL_OP_TYPE_RET) {
@@ -1503,9 +1503,9 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 						R_MIN ((delta - i), 4096));
 					end = i + 2048;
 				}
-				ret = r_asm_disassemble (core->assembler, &asmop, buf + i, delta - i);
+				ret = r_asm_disassemble (core->rasm, &asmop, buf + i, delta - i);
 				if (ret) {
-					r_asm_set_pc (core->assembler, from + i);
+					r_asm_set_pc (core->rasm, from + i);
 					RList *hitlist = construct_rop_gadget (core,
 						from + i, buf, delta, i, grep, regexp,
 						rx_list, end_gadget, badstart);
@@ -1915,8 +1915,8 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 	if (list) {
 		r_list_foreach (list, iter, ref) {
 			r_io_read_at (core->io, ref->addr, buf, size);
-			r_asm_set_pc (core->assembler, ref->addr);
-			r_asm_disassemble (core->assembler, &asmop, buf, size);
+			r_asm_set_pc (core->rasm, ref->addr);
+			r_asm_disassemble (core->rasm, &asmop, buf, size);
 			fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 			RAnalHint *hint = r_anal_hint_get (core->anal, ref->addr);
 			r_parse_filter (core->parser, ref->addr, core->flags, hint, r_strbuf_get (&asmop.buf_asm),
@@ -2572,7 +2572,7 @@ static void search_similar_pattern(RCore *core, int count, struct search_paramet
 }
 
 static bool isArm(RCore *core) {
-	RAsm *as = core ? core->assembler : NULL;
+	RAsm *as = core ? core->rasm : NULL;
 	if (as && as->cur && as->cur->arch) {
 		if (r_str_startswith (as->cur->arch, "arm")) {
 			if (as->cur->bits < 64) {
@@ -2877,7 +2877,7 @@ static void __core_cmd_search_asm_byteswap (RCore *core, int nth) {
 	}
 	for (i = 0; i <= 0xff; i++) {
 		buf[nth] = i;
-		if (r_asm_disassemble (core->assembler, &asmop, buf, sizeof (buf)) > 0) {
+		if (r_asm_disassemble (core->rasm, &asmop, buf, sizeof (buf)) > 0) {
 			const char *asmstr = r_strbuf_get (&asmop.buf_asm);
 			if (!strstr (asmstr, "invalid") && !strstr (asmstr, "unaligned")) {
 				r_cons_printf ("%02x  %s\n", i, asmstr);
@@ -3822,7 +3822,7 @@ reread:
 			int ochunksize;
 			int i, len, chunksize = r_config_get_i (core->config, "search.chunk");
 			if (chunksize < 1) {
-				chunksize = core->assembler->bits / 8;
+				chunksize = core->rasm->bits / 8;
 			}
 			len = r_str_unescape (str);
 			ochunksize = chunksize = R_MIN (len, chunksize);

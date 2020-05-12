@@ -147,7 +147,7 @@ R_API bool r_core_visual_esil(RCore *core) {
 	for (;;) {
 		r_cons_clear00 ();
 		// bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-		(void) r_asm_disassemble (core->assembler, &asmop, buf, sizeof (ut64));
+		(void) r_asm_disassemble (core->rasm, &asmop, buf, sizeof (ut64));
 		analop.type = -1;
 		(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), R_ANAL_OP_MASK_ESIL);
 		analopType = analop.type & R_ANAL_OP_TYPE_MASK;
@@ -293,7 +293,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 	for (;;) {
 		r_cons_clear00 ();
 		bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-		(void) r_asm_disassemble (core->assembler, &asmop, buf, sizeof (ut64));
+		(void) r_asm_disassemble (core->rasm, &asmop, buf, sizeof (ut64));
 		analop.type = -1;
 		(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), R_ANAL_OP_MASK_ESIL);
 		analopType = analop.type & R_ANAL_OP_TYPE_MASK;
@@ -1618,7 +1618,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 		RStrBuf *sb = r_strbuf_new ("");
 		char *msg;
 		r_list_foreach (core->ropchain, iter, msg) {
-			if (core->assembler->bits == 64) {
+			if (core->rasm->bits == 64) {
 				ut64 n = r_num_get (NULL, msg);
 				n = r_read_be64 (&n);
 				r_strbuf_appendf (sb, "%016"PFMT64x, n);

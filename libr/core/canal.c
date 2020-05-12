@@ -1006,9 +1006,9 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 		if (core->anal->verbose) {
 			eprintf ("WARNING: Implement RAnalOp.MASK_DISASM for current anal.arch. Using the sluggish RAsmOp fallback for now.\n");
 		}
-		r_asm_set_pc (core->assembler, addr);
+		r_asm_set_pc (core->rasm, addr);
 		r_asm_op_init (&asmop);
-		if (r_asm_disassemble (core->assembler, &asmop, ptr, len) > 0) {
+		if (r_asm_disassemble (core->rasm, &asmop, ptr, len) > 0) {
 			op->mnemonic = strdup (r_strbuf_get (&asmop.buf_asm));
 		}
 		r_asm_op_fini (&asmop);
@@ -3692,9 +3692,9 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	ut64 at;
 	char bckwrds, do_bckwrd_srch;
 	int arch = -1;
-	if (core->assembler->bits == 64) {
+	if (core->rasm->bits == 64) {
 		// speedup search
-		if (!strncmp (core->assembler->cur->name, "arm", 3)) {
+		if (!strncmp (core->rasm->cur->name, "arm", 3)) {
 			arch = R2_ARCH_ARM64;
 		}
 	}
@@ -4139,7 +4139,7 @@ R_API int r_core_anal_data(RCore *core, ut64 addr, int count, int depth, int wor
 	ut64 dstaddr = 0LL;
 	ut8 *buf = core->block;
 	int len = core->blocksize;
-	int word = wordsize ? wordsize: core->assembler->bits / 8;
+	int word = wordsize ? wordsize: core->rasm->bits / 8;
 	char *str;
 	int i, j;
 
@@ -4693,7 +4693,7 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 			}
 		}
 	}
-	if (core->assembler->bits == 32 && strstr (core->assembler->cur->name, "arm")) {
+	if (core->rasm->bits == 32 && strstr (core->rasm->cur->name, "arm")) {
 		if ((!(at & 1)) && r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
 			add_string_ref (anal->coreb.core, esil->address, at);
 		}
@@ -4747,7 +4747,7 @@ static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 		goto err_anal_op;
 	}
 
-	r_asm_set_pc (core->assembler, cur);
+	r_asm_set_pc (core->rasm, cur);
 	esilstr = R_STRBUF_SAFEGET (&op.esil);
 	if (!esilstr) {
 		goto err_anal_op;
@@ -4785,7 +4785,7 @@ static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 			(op.type != R_ANAL_OP_TYPE_RET && op.type != R_ANAL_OP_TYPE_CRET)) {
 		goto err_anal_op;
 	}
-	r_asm_set_pc (core->assembler, cur);
+	r_asm_set_pc (core->rasm, cur);
 
 	esilstr = R_STRBUF_SAFEGET (&op.esil);
 	r_anal_esil_set_pc (&esil_cpy, cur);
@@ -4967,7 +4967,7 @@ repeat:
 		}
 
 		r_anal_op_fini (&op);
-		r_asm_set_pc (core->assembler, cur);
+		r_asm_set_pc (core->rasm, cur);
 		if (!r_anal_op (core->anal, &op, cur, buf + i, iend - i, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT)) {
 			i += minopsize - 1; //   XXX dupe in op.size below
 		}

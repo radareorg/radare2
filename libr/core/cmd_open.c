@@ -1051,7 +1051,7 @@ R_API void r_core_file_reopen_remote_debug(RCore *core, char *uri, ut64 addr) {
 
 	RList *old_sections = __save_old_sections (core);
 	ut64 old_base = core->bin->cur->o->baddr_shift;
-	int bits = core->assembler->bits;
+	int bits = core->rasm->bits;
 	r_config_set_i (core->config, "asm.bits", bits);
 	r_config_set_i (core->config, "cfg.debug", true);
 	// Set referer as the original uri so we could return to it with `oo`
@@ -1117,7 +1117,7 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 
 	RList *old_sections = __save_old_sections (core);
 	ut64 old_base = core->bin->cur->o->baddr_shift;
-	int bits = core->assembler->bits;
+	int bits = core->rasm->bits;
 	char *bin_abspath = r_file_abspath (binpath);
 	char *escaped_path = r_str_arg_escape (bin_abspath);
 	char *newfile = r_str_newf ("dbg://%s %s", escaped_path, args);

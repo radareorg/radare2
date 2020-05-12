@@ -30,8 +30,8 @@ static int readline_callback(void *_a, const char *str) {
 			"  this assembler supports various directives like .hex ...\n");
 	} else {
 		r_asm_code_free (a->acode);
-		r_asm_set_pc (a->core->assembler, a->off);
-		a->acode = r_asm_massemble (a->core->assembler, str);
+		r_asm_set_pc (a->core->rasm, a->off);
+		a->acode = r_asm_massemble (a->core->rasm, str);
 		if (a->acode) {
 			char* hex = r_asm_code_get_hex (a->acode);
 			r_cons_printf ("[VA:%d]> %s\n", a->acode? a->acode->len: 0, str);
