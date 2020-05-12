@@ -223,6 +223,7 @@ typedef struct enum_case {
 typedef struct struct_member {
 	char *name;
 	char *type;
+	const int offset;
 } RAnalStructMember;
 
 typedef struct union_member {
