@@ -66,7 +66,7 @@ HOST_CC?=gcc
 SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
-MODS=sdb zip java tcc mpc
+MODS=sdb zip java tcc mpc yxml
 MODS+=gdb qnx ar
 # lz4
 ifneq ($(CC),cccl)
