@@ -415,7 +415,7 @@ static void ds_print_ref_lines(char *line, char *line_col, RDisasmState *ds) {
 }
 
 static void get_bits_comment(RCore *core, RAnalFunction *f, char *cmt, int cmt_size) {
-	if (core && f && cmt && cmt_size > 0 && f->bits && f->bits != core->assembler->bits) {
+	if (core && f && cmt && cmt_size > 0 && f->bits && f->bits != core->rasm->bits) {
 		const char *asm_arch = r_config_get (core->config, "asm.arch");
 		if (asm_arch && *asm_arch && strstr (asm_arch, "arm")) {
 			switch (f->bits) {
@@ -1072,7 +1072,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		if (core->parser->relsub && ds->analop.refptr) {
 			if (core->parser->relsub_addr == 0) {
 				ut64 killme = UT64_MAX;
-				const int be = core->assembler->big_endian;
+				const int be = core->rasm->big_endian;
 				r_io_read_i (core->io, ds->analop.ptr, &killme, ds->analop.refptr, be);
 				core->parser->relsub_addr = killme;
 			}
@@ -2061,7 +2061,7 @@ static void ds_show_comments_describe(RDisasmState *ds) {
 			*op = 0;
 		}
 		r_str_case (locase, 0);
-		desc = r_asm_describe (ds->core->assembler, locase);
+		desc = r_asm_describe (ds->core->rasm, locase);
 		free (locase);
 	}
 	if (desc && *desc) {
@@ -2438,7 +2438,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		ds->opstr = strdup (ds->hint->opcode);
 	}
 	r_asm_op_fini (&ds->asmop);
-	ret = r_asm_disassemble (core->assembler, &ds->asmop, buf, len);
+	ret = r_asm_disassemble (core->rasm, &ds->asmop, buf, len);
 	if (ds->asmop.size < 1) {
 		ds->asmop.size = 1;
 	}
@@ -2518,7 +2518,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		ret = -1;
 #if HASRETRY
 		if (!ds->cbytes && ds->tries > 0) {
-			ds->addr = core->assembler->pc;
+			ds->addr = core->rasm->pc;
 			ds->tries--;
 			ds->idx = 0;
 			ds->retry = true;
@@ -3484,7 +3484,7 @@ static bool ds_print_core_vmode_jump_hit(RDisasmState *ds, int pos) {
 static void getPtr(RDisasmState *ds, ut64 addr, int pos) {
 	ut8 buf[sizeof (ut64)] = {0};
 	r_io_read_at (ds->core->io, addr, buf, sizeof (buf));
-	if (ds->core->assembler->bits == 64) {
+	if (ds->core->rasm->bits == 64) {
 		ut64 n64 = r_read_ble64 (buf, 0);
 		ds_print_shortcut (ds, n64, pos);
 	} else {
@@ -3520,10 +3520,10 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 		ut64 size;
 		RAnalMetaItem *mi = r_meta_get_at (ds->core->anal, ds->at, R_META_TYPE_ANY, &size);
 		if (mi) {
-			int obits = ds->core->assembler->bits;
-			ds->core->assembler->bits = size * 8;
+			int obits = ds->core->rasm->bits;
+			ds->core->rasm->bits = size * 8;
 			getPtr (ds, ds->at, pos);
-			ds->core->assembler->bits = obits;
+			ds->core->rasm->bits = obits;
 			gotShortcut = true;
 		}
 	}
@@ -3712,7 +3712,7 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 	if (ds->asmop.payload != 0) {
 		r_cons_printf ("\n; .. payload of %d byte(s)", ds->asmop.payload);
 		if (ds->showpayloads) {
-			int mod = ds->asmop.payload % ds->core->assembler->dataalign;
+			int mod = ds->asmop.payload % ds->core->rasm->dataalign;
 			int x;
 			for (x = 0; x < ds->asmop.payload; x++) {
 				r_cons_printf ("\n        0x%02x", buf[ds->oplen + x]);
@@ -3809,7 +3809,7 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refadd
 	}
 	// do not resolve strings on arm64 pointed with ADRP
 	if (ds->analop.type == R_ANAL_OP_TYPE_LEA) {
-		if (ds->core->assembler->bits == 64 && r_str_startswith (r_config_get (ds->core->config, "asm.arch"), "arm")) {
+		if (ds->core->rasm->bits == 64 && r_str_startswith (r_config_get (ds->core->config, "asm.arch"), "arm")) {
 			return;
 		}
 	}
@@ -4332,7 +4332,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				ignored = true;
 				break;
 			case R_ANAL_OP_TYPE_LEA:
-				if (ds->core->assembler->bits == 64 && r_str_startswith (r_config_get (ds->core->config, "asm.arch"), "arm")) {
+				if (ds->core->rasm->bits == 64 && r_str_startswith (r_config_get (ds->core->config, "asm.arch"), "arm")) {
 					ignored = true;
 				}
 				break;
@@ -4878,7 +4878,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 			*op = 0;
 		}
 		r_str_case (locase, 0);
-		desc = r_asm_describe (core->assembler, locase);
+		desc = r_asm_describe (core->rasm, locase);
 		free (locase);
 	}
 	if (ds->show_usercomments || ds->show_comments) {
@@ -5171,7 +5171,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	}
 toro:
 	// uhm... is this necessary? imho can be removed
-	r_asm_set_pc (core->assembler, r_core_pava (core, ds->addr + idx));
+	r_asm_set_pc (core->rasm, r_core_pava (core, ds->addr + idx));
 	core->cons->vline = r_config_get_i (core->config, "scr.utf8") ? (r_config_get_i (core->config, "scr.utf8.curvy") ? r_vline_uc : r_vline_u) : r_vline_a;
 
 	if (core->print->cur_enabled) {
@@ -5249,13 +5249,13 @@ toro:
 		ds->printed_flag_addr = UT64_MAX;
 		// XXX. this must be done in ds_update_pc()
 		// ds_update_pc (ds, ds->at);
-		r_asm_set_pc (core->assembler, ds->at);
+		r_asm_set_pc (core->rasm, ds->at);
 		ds_update_ref_lines (ds);
 		r_anal_op_fini (&ds->analop);
 		r_anal_op (core->anal, &ds->analop, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx), R_ANAL_OP_MASK_ALL);
 		if (ds_must_strip (ds)) {
 			inc = ds->analop.size;
-			// inc = ds->asmop.payload + (ds->asmop.payload % ds->core->assembler->dataalign);
+			// inc = ds->asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign);
 			r_anal_op_fini (&ds->analop);
 			continue;
 		}
@@ -5471,13 +5471,13 @@ toro:
 			ret = ds_print_middle (ds, ret);
 
 			ds_print_asmop_payload (ds, buf + addrbytes * idx);
-			if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
+			if (core->rasm->syntax != R_ASM_SYNTAX_INTEL) {
 				RAsmOp ao; /* disassemble for the vm .. */
-				int os = core->assembler->syntax;
-				r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
-				r_asm_disassemble (core->assembler, &ao, buf + addrbytes * idx,
+				int os = core->rasm->syntax;
+				r_asm_set_syntax (core->rasm, R_ASM_SYNTAX_INTEL);
+				r_asm_disassemble (core->rasm, &ao, buf + addrbytes * idx,
 					len - addrbytes * idx + 5);
-				r_asm_set_syntax (core->assembler, os);
+				r_asm_set_syntax (core->rasm, os);
 			}
 			if (mi_type == R_META_TYPE_FORMAT) {
 				if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
@@ -5511,13 +5511,13 @@ toro:
 			ret = ds_print_middle (ds, ret);
 
 			ds_print_asmop_payload (ds, buf + addrbytes * idx);
-			if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
+			if (core->rasm->syntax != R_ASM_SYNTAX_INTEL) {
 				RAsmOp ao; /* disassemble for the vm .. */
-				int os = core->assembler->syntax;
-				r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
-				r_asm_disassemble (core->assembler, &ao, buf + addrbytes * idx,
+				int os = core->rasm->syntax;
+				r_asm_set_syntax (core->rasm, R_ASM_SYNTAX_INTEL);
+				r_asm_disassemble (core->rasm, &ao, buf + addrbytes * idx,
 					len - addrbytes * idx + 5);
-				r_asm_set_syntax (core->assembler, os);
+				r_asm_set_syntax (core->rasm, os);
 			}
 			if (ds->show_bytes_right && ds->show_bytes) {
 				ds_comment (ds, true, "");
@@ -5580,7 +5580,7 @@ toro:
 		if (inc < 1) {
 			inc = 1;
 		}
-		inc += ds->asmop.payload + (ds->asmop.payload % ds->core->assembler->dataalign);
+		inc += ds->asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign);
 	}
 	r_anal_op_fini (&ds->analop);
 
@@ -5732,10 +5732,10 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 		}
 		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
 		ds->has_description = false;
-		r_asm_set_pc (core->assembler, ds->at);
+		r_asm_set_pc (core->rasm, ds->at);
 		// XXX copypasta from main disassembler function
 		// r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
-		ret = r_asm_disassemble (core->assembler, &ds->asmop,
+		ret = r_asm_disassemble (core->rasm, &ds->asmop,
 			core->block + addrbytes * i, core->blocksize - addrbytes * i);
 		ds->oplen = ret;
 		if (ds->midflags) {
@@ -5944,7 +5944,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 
 		at = addr + k;
 		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
-		r_asm_set_pc (core->assembler, at);
+		r_asm_set_pc (core->rasm, at);
 		// 32 is the biggest opcode length in intel
 		// Make sure we have room for it
 		if (dis_opcodes == 1 && i >= nb_bytes - 32) {
@@ -5961,7 +5961,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			break;
 		}
 		memset (&asmop, 0, sizeof (RAsmOp));
-		ret = r_asm_disassemble (core->assembler, &asmop, buf + i, nb_bytes - i);
+		ret = r_asm_disassemble (core->rasm, &asmop, buf + i, nb_bytes - i);
 		if (ret < 1) {
 			pj_o (pj);
 			pj_kn (pj, "offset", at);
@@ -6150,8 +6150,8 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 
 		pj_end (pj);
-		i += ds->oplen + asmop.payload + (ds->asmop.payload % ds->core->assembler->dataalign); // bytes
-		k += ds->oplen + asmop.payload + (ds->asmop.payload % ds->core->assembler->dataalign); // delta from addr
+		i += ds->oplen + asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign); // bytes
+		k += ds->oplen + asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign); // delta from addr
 		j++; // instructions
 		line++;
 
@@ -6195,11 +6195,11 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 	for (i = 0; i < l; i++) {
 		ds->at = addr + i;
 		ds->vat = r_core_pava (core, ds->at);
-		r_asm_set_pc (core->assembler, ds->vat);
+		r_asm_set_pc (core->rasm, ds->vat);
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		ret = r_asm_disassemble (core->assembler, &asmop, buf + i, l - i);
+		ret = r_asm_disassemble (core->rasm, &asmop, buf + i, l - i);
 		if (ret < 1) {
 			switch (mode) {
 			case 'j':
@@ -6448,8 +6448,8 @@ toro:
 				break;
 			}
 		}
-		r_asm_set_pc (core->assembler, core->offset + i);
-		ret = r_asm_disassemble (core->assembler, &asmop, core->block + addrbytes * i,
+		r_asm_set_pc (core->rasm, core->offset + i);
+		ret = r_asm_disassemble (core->rasm, &asmop, core->block + addrbytes * i,
 			core->blocksize - addrbytes * i);
 		if (midflags || midbb) {
 			RDisasmState ds = {

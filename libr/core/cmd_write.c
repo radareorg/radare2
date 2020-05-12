@@ -1169,9 +1169,9 @@ static int cmd_write(void *data, const char *input) {
 		switch (input[1]) {
 		case ' ':
 			if (input[2] && input[3]==' ') {
-				r_asm_set_pc (core->assembler, core->offset);
+				r_asm_set_pc (core->rasm, core->offset);
 				eprintf ("modify (%c)=%s\n", input[2], input+4);
-				len = r_asm_modify (core->assembler, core->block, input[2],
+				len = r_asm_modify (core->rasm, core->block, input[2],
 					r_num_math (core->num, input+4));
 				eprintf ("len=%d\n", len);
 				if (len>0) {
@@ -1574,8 +1574,8 @@ static int cmd_write(void *data, const char *input) {
 		case '*': {
 			const char *file = r_str_trim_head_ro (input + 2);
 			RAsmCode *acode;
-			r_asm_set_pc (core->assembler, core->offset);
-			acode = r_asm_massemble (core->assembler, file);
+			r_asm_set_pc (core->rasm, core->offset);
+			acode = r_asm_massemble (core->rasm, file);
 			if (acode) {
 				if (input[1] == 'i') { // "wai"
 					RAnalOp analop;
@@ -1618,7 +1618,7 @@ static int cmd_write(void *data, const char *input) {
 		case 'f': // "waf"
 			if ((input[2] == ' ' || input[2] == '*')) {
 				const char *file = input + ((input[2] == '*')? 4: 3);
-				r_asm_set_pc (core->assembler, core->offset);
+				r_asm_set_pc (core->rasm, core->offset);
 
 				char *src = r_file_slurp (file, NULL);
 				if (src) {
@@ -1639,7 +1639,7 @@ static int cmd_write(void *data, const char *input) {
 							}
 						}
 						if (*b) {
-							RAsmCode *ac = r_asm_massemble (core->assembler, b);
+							RAsmCode *ac = r_asm_massemble (core->rasm, b);
 							if (ac) {
 								r_io_write_at (core->io, addr, ac->bytes, ac->len);
 								r_asm_code_free (ac);
@@ -1659,10 +1659,10 @@ static int cmd_write(void *data, const char *input) {
 		case 'F': // "waF"
 			if ((input[2] == ' ' || input[2] == '*')) {
 				const char *file = input + ((input[2] == '*')? 4: 3);
-				r_asm_set_pc (core->assembler, core->offset);
+				r_asm_set_pc (core->rasm, core->offset);
 				char *f = r_file_slurp (file, NULL);
 				if (f) {
-					RAsmCode *acode = r_asm_massemble (core->assembler, f);
+					RAsmCode *acode = r_asm_massemble (core->rasm, f);
 					if (acode) {
 						char* hex = r_asm_code_get_hex (acode);
 						if (input[2] == '*') {

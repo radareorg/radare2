@@ -237,20 +237,19 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			printf ("\n");
 			if (core) {
 				int len = R_MAX (4, op->a_len);
-				RAsmCode *ac = r_asm_mdisassemble (core->assembler, op->a_buf, len);
+				RAsmCode *ac = r_asm_mdisassemble (core->rasm, op->a_buf, len);
 				char *acbufasm = strdup (ac->assembly);
 				if (quiet) {
 					char *bufasm = r_str_prefix_all (acbufasm, "- ");
 					printf ("%s\n", bufasm);
 					free (bufasm);
-					free (acbufasm);
 				} else {
 					char *bufasm = r_str_prefix_all (acbufasm, Color_RED"- ");
 					printf ("%s"Color_RESET, bufasm);
 					free (bufasm);
-					free (acbufasm);
 				}
-				// r_asm_code_free (ac);
+				free (acbufasm);
+				r_asm_code_free (ac);
 			}
 		} else {
 			printf ("0x%08"PFMT64x " ", op->a_off);
@@ -270,7 +269,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			printf ("\n");
 			if (core) {
 				int len = R_MAX (4, op->b_len);
-				RAsmCode *ac = r_asm_mdisassemble (core->assembler, op->b_buf, len);
+				RAsmCode *ac = r_asm_mdisassemble (core->rasm, op->b_buf, len);
 				char *acbufasm = strdup (ac->assembly);
 				if (quiet) {
 					char *bufasm = r_str_prefix_all (acbufasm, "+ ");

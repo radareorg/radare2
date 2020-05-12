@@ -78,7 +78,7 @@ R_API bool r_core_hack_arm64(RCore *core, const char *op, const RAnalOp *analop)
 	return true;
 }
 R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
-	const int bits = core->assembler->bits;
+	const int bits = core->rasm->bits;
 	const ut8 *b = core->block;
 
 	if (!strcmp (op, "nop")) {
@@ -266,7 +266,7 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 R_API int r_core_hack(RCore *core, const char *op) {
 	bool (*hack)(RCore *core, const char *op, const RAnalOp *analop) = NULL;
 	const char *asmarch = r_config_get (core->config, "asm.arch");
-	const int asmbits = core->assembler->bits;
+	const int asmbits = core->rasm->bits;
 
 	if (!asmarch) {
 		return false;
