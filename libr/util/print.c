@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2007-2020 - pancake */
 
-// WTF :D
-#include <r_core.h>
+#include <r_util/r_print.h>
+#include <r_anal.h>
 
 #define DFLT_ROWS 16
 
@@ -66,7 +66,8 @@ R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions) {
 }
 
 R_API void r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
-	int i, j, cols = 78;
+	size_t i, j;
+	int cols = 78; // TODO: do not hardcode this value, columns should be defined by the user
 	int rows = height > 0 ? height : 10;
 	// int realrows = rows * 2;
 	bool colors = p->flags & R_PRINT_FLAGS_COLOR;
@@ -81,11 +82,11 @@ R_API void r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 	kol[4] = pal->nop;
 	if (colors) {
 		for (i = 0; i < rows; i++) {
-			int threshold = i * (0xff / rows);
+			size_t threshold = i * (0xff / rows);
+			size_t koli = i * 5 / rows;
 			for (j = 0; j < cols; j++) {
 				int realJ = j * len / cols;
 	 			if (255 - buf[realJ] < threshold || (i + 1 == rows)) {
-					int koli = i * 5 / rows;
 					if (p->histblock) {
 						p->cb_printf ("%s%s%s", kol[koli], block, Color_RESET);
 					} else {
@@ -101,9 +102,9 @@ R_API void r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 	}
 
 	for (i = 0; i < rows; i++) {
-		int threshold = i * (0xff / rows);
+		size_t threshold = i * (0xff / rows);
 		for (j = 0; j < cols; j++) {
-			int realJ = j * len / cols;
+			size_t realJ = j * len / cols;
 			if (255 - buf[realJ] < threshold) {
 				if (p->histblock) {
 					p->cb_printf ("%s%s%s", Color_BGGRAY, block, Color_RESET);
@@ -1836,6 +1837,7 @@ R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, ut32 tiles) {
 	}
 }
 
+// probably move somewhere else. RPrint doesnt needs to know about the R_ANAL_ enums
 R_API const char* r_print_color_op_type(RPrint *p, ut32 anal_type) {
 	RConsPrintablePalette *pal = &p->cons->context->pal;
 	switch (anal_type & R_ANAL_OP_TYPE_MASK) {
