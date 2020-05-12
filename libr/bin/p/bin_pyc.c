@@ -2,7 +2,6 @@
 
 #include <r_bin.h>
 #include "../format/pyc/pyc.h"
-#include "../format/pyc/marshal.h"
 
 // XXX: to not use globals
 

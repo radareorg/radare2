@@ -66,6 +66,8 @@ int r_pyc_disasm(RAsmOp *opstruct, const ut8 *code, RList *cobjs, RList *interne
 	return 0;
 }
 
+static char *generic_array_obj_to_string(RList *l);
+
 static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *consts, RList *varnames, RList *interned_table, RList *freevars, RList *cellvars, RList *opcode_arg_fmt) {
 	pyc_object *t = NULL;
 	const char *arg = NULL;
@@ -155,7 +157,7 @@ static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RL
 }
 
 /* for debugging purpose */
-void dump(RList *l) {
+static void dump(RList *l) {
 	RListIter *it;
 	pyc_object *e = NULL;
 
@@ -168,7 +170,7 @@ void dump(RList *l) {
 	}
 }
 
-char *generic_array_obj_to_string(RList *l) {
+static char *generic_array_obj_to_string(RList *l) {
 	RListIter *iter = NULL;
 	pyc_object *e = NULL;
 
@@ -189,7 +191,7 @@ char *generic_array_obj_to_string(RList *l) {
 	return r;
 }
 
-void dump_cobj(pyc_code_object *c) {
+static void dump_cobj(pyc_code_object *c) {
 	eprintf ("[DUMP]\n");
 	eprintf ("name: %s\n", (char *)c->name->data);
 	eprintf ("const_start\n");

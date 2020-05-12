@@ -75,8 +75,5 @@ typedef struct {
 } pyc_code_object;
 
 int r_pyc_disasm(RAsmOp *op, const ut8 *buf, RList *cobjs, RList *interned_table, ut64 pc, pyc_opcodes *opcodes);
-char *generic_array_obj_to_string(RList *l);
-void dump_cobj(pyc_code_object *c);
-void dump(RList *l);
 
 #endif

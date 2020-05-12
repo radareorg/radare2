@@ -5,7 +5,6 @@
 #include <r_util.h>
 #include <r_asm.h>
 
-#include "../../asm/arch/pyc/opcode.h"
 #include "../../asm/arch/pyc/pyc_dis.h"
 
 static pyc_opcodes *ops = NULL;

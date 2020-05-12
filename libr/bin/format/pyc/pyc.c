@@ -7,7 +7,7 @@ bool pyc_get_sections_symbols(RList *sections, RList *symbols, RList *cobjs, RBu
 	return get_sections_symbols_from_code_objects (buf, sections, symbols, cobjs, magic);
 }
 
-bool pyc_is_object(ut8 b, pyc_marshal_type type) {
+static bool pyc_is_object(ut8 b, pyc_marshal_type type) {
 	return b == type;
 }
 

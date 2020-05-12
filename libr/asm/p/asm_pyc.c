@@ -6,7 +6,6 @@
 #include <r_asm.h>
 
 #include "../arch/pyc/pyc_dis.h"
-#include "../arch/pyc/opcode.h"
 
 static pyc_opcodes *opcodes_cache = NULL;
 
