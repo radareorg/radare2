@@ -106,7 +106,6 @@ r_bin_sources = [
   'format/pe/pe64_write.c',
   'format/pe/pe_write.c',
   'format/pe/pemixed.c',
-  'format/pyc/bn.c',
   'format/pyc/marshal.c',
   'format/pyc/pyc.c',
   'format/pyc/pyc_magic.c',

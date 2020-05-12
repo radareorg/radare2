@@ -41,8 +41,7 @@ if get_option('enable_tests')
     'uleb128',
     'unum',
     'util',
-    'vector',
-    'big'
+    'vector'
   ]
 
   foreach test : tests

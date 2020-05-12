@@ -25,7 +25,6 @@ OBJS+=rbtree.o intervaltree.o qrcode.o vector.o str_constpool.o str_trim.o
 OBJS+=ascii_table.o protobuf.o
 
 # DO NOT BUILD r_big api (not yet used and its buggy)
-OBJS+=big.o
 ifeq (1,0)
 ifeq (${HAVE_LIB_GMP},1)
   OBJS+=big-gmp.o
