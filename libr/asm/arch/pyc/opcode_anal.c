@@ -896,7 +896,7 @@ static op_anal_func op_anal[] = {
 	{ "SETUP_ASYNC_WITH", anal_SETUP_ASYNC_WITH },
 };
 
-void anal_pyc_op (RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+void anal_pyc_op(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
 	size_t i;
 	for (i = 0; i < (sizeof (op_anal) / sizeof (op_anal_func)); i++) {
 		if (!strcmp (op_anal[i].op_name, op_obj->op_name)) {

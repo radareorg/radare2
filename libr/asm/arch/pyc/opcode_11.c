@@ -1,6 +1,6 @@
 #include "opcode.h"
 
-pyc_opcodes *opcode_11 () {
+pyc_opcodes *opcode_11() {
 	pyc_opcodes *ret = opcode_13 ();
 	if (!ret) {
 		return NULL;

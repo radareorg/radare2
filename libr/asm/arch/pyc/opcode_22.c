@@ -1,9 +1,10 @@
 #include "opcode.h"
 
-pyc_opcodes *opcode_22 () {
+pyc_opcodes *opcode_22() {
 	pyc_opcodes *ret = opcode_2x ();
-	if (!ret)
+	if (!ret) {
 		return NULL;
+	}
 
 	ret->version_sig = (void *(*)())opcode_22;
 

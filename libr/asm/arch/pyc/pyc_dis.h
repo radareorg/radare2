@@ -74,10 +74,10 @@ typedef struct {
 	st64 end_offset;
 } pyc_code_object;
 
-const char *parse_arg (pyc_opcode_object *op, ut32 oparg, RList *names, RList *consts, RList *varnames, RList *interned_table, RList *freevars, RList *cellvars, RList *opcode_arg_fmt);
-int r_pyc_disasm (RAsmOp *op, const ut8 *buf, RList *cobjs, RList *interned_table, ut64 pc, pyc_opcodes *opcodes);
-char *generic_array_obj_to_string (RList *l);
-void dump_cobj (pyc_code_object *c);
-void dump (RList *l);
+static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *consts, RList *varnames, RList *interned_table, RList *freevars, RList *cellvars, RList *opcode_arg_fmt);
+int r_pyc_disasm(RAsmOp *op, const ut8 *buf, RList *cobjs, RList *interned_table, ut64 pc, pyc_opcodes *opcodes);
+char *generic_array_obj_to_string(RList *l);
+void dump_cobj(pyc_code_object *c);
+void dump(RList *l);
 
 #endif

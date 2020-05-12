@@ -11,9 +11,7 @@
 static pyc_opcodes *opcodes_cache = NULL;
 
 static int disassemble(RAsm *a, RAsmOp *opstruct, const ut8 *buf, int len) {
-	RList *interned_table = NULL;
 	RList *shared = NULL;
-	RList *cobjs = NULL;
 
 	RBin *bin = a->binb.bin;
 	ut64 pc = a->pc;
@@ -25,8 +23,8 @@ static int disassemble(RAsm *a, RAsmOp *opstruct, const ut8 *buf, int len) {
 			shared = bin->cur->o->bin_obj;
 		}
 	}
-	cobjs = r_list_get_n (shared, 0);
-	interned_table = r_list_get_n (shared, 1);
+	RList *cobjs = r_list_get_n (shared, 0);
+	RList *interned_table = r_list_get_n (shared, 1);
 	if (!opcodes_cache || !pyc_opcodes_equal (opcodes_cache, a->cpu)) {
 		opcodes_cache = get_opcode_by_version (a->cpu);
 		opcodes_cache->bits = a->bits;

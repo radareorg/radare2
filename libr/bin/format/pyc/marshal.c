@@ -709,7 +709,7 @@ static pyc_object *get_ref_object(RBuffer *buffer) {
 	return ret;
 }
 
-void free_object (pyc_object *object) {
+static void free_object(pyc_object *object) {
 	if (!object) {
 		return;
 	}
@@ -772,7 +772,7 @@ void free_object (pyc_object *object) {
 	free (object);
 }
 
-pyc_object *copy_object (pyc_object *object) {
+static pyc_object *copy_object(pyc_object *object) {
 	pyc_object *copy = R_NEW0 (pyc_object);
 	if (!copy || !object) {
 		free (copy);
@@ -978,7 +978,7 @@ static pyc_object *get_code_object(RBuffer *buffer) {
 	return ret;
 }
 
-ut64 get_code_object_addr (RBuffer *buffer, ut32 magic) {
+ut64 get_code_object_addr(RBuffer *buffer, ut32 magic) {
 	magic_int = magic;
 	pyc_object *co = get_code_object (buffer);
 	ut64 result = 0;
@@ -1193,7 +1193,7 @@ fail:
 	return false;
 }
 
-bool get_sections_symbols_from_code_objects (RBuffer *buffer, RList *sections, RList *symbols, RList *cobjs, ut32 magic) {
+bool get_sections_symbols_from_code_objects(RBuffer *buffer, RList *sections, RList *symbols, RList *cobjs, ut32 magic) {
 	bool ret;
 	magic_int = magic;
 	refs = r_list_new ();

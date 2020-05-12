@@ -4,20 +4,11 @@
 
 static const char *cmp_op[] = { "<", "<=", "==", "!=", ">", ">=", "in", "not in", "is", "is not", "exception match", "BAD" };
 
-int r_pyc_disasm (RAsmOp *opstruct, const ut8 *code, RList *cobjs, RList *interned_table, ut64 pc, pyc_opcodes *ops) {
+int r_pyc_disasm(RAsmOp *opstruct, const ut8 *code, RList *cobjs, RList *interned_table, ut64 pc, pyc_opcodes *ops) {
 	pyc_code_object *cobj = NULL, *t = NULL;
 	ut32 extended_arg = 0, i = 0, oparg;
 	st64 start_offset, end_offset;
 	RListIter *iter = NULL;
-
-	char *name = NULL;
-	const char *arg = NULL;
-	RList *varnames;
-	RList *consts;
-	RList *names;
-	RList *freevars;
-	RList *cellvars;
-	ut8 op;
 
 	r_list_foreach (cobjs, iter, t) {
 		start_offset = t->start_offset;
@@ -30,15 +21,15 @@ int r_pyc_disasm (RAsmOp *opstruct, const ut8 *code, RList *cobjs, RList *intern
 
 	if (cobj) {
 		/* TODO: adding line number and offset */
-		varnames = cobj->varnames->data;
-		consts = cobj->consts->data;
-		names = cobj->names->data;
-		freevars = cobj->freevars->data;
-		cellvars = cobj->cellvars->data;
+		RList *varnames = cobj->varnames->data;
+		RList *consts = cobj->consts->data;
+		RList *names = cobj->names->data;
+		RList *freevars = cobj->freevars->data;
+		RList *cellvars = cobj->cellvars->data;
 
-		op = code[i];
+		ut8 op = code[i];
 		i++;
-		name = ops->opcodes[op].op_name;
+		char *name = ops->opcodes[op].op_name;
 		r_strbuf_set (&opstruct->buf_asm, name);
 		if (!name) {
 			return 0;
@@ -59,7 +50,7 @@ int r_pyc_disasm (RAsmOp *opstruct, const ut8 *code, RList *cobjs, RList *intern
 					extended_arg = oparg << 8;
 				}
 			}
-			arg = parse_arg (&ops->opcodes[op], oparg, names, consts, varnames, interned_table, freevars, cellvars, ops->opcode_arg_fmt);
+			const char *arg = parse_arg (&ops->opcodes[op], oparg, names, consts, varnames, interned_table, freevars, cellvars, ops->opcode_arg_fmt);
 			if (arg != NULL) {
 				r_strbuf_appendf (&opstruct->buf_asm, "%20s", arg);
 			}
@@ -72,7 +63,7 @@ int r_pyc_disasm (RAsmOp *opstruct, const ut8 *code, RList *cobjs, RList *intern
 	return 0;
 }
 
-const char *parse_arg (pyc_opcode_object *op, ut32 oparg, RList *names, RList *consts, RList *varnames, RList *interned_table, RList *freevars, RList *cellvars, RList *opcode_arg_fmt) {
+static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *consts, RList *varnames, RList *interned_table, RList *freevars, RList *cellvars, RList *opcode_arg_fmt) {
 	pyc_object *t = NULL;
 	const char *arg = NULL;
 	pyc_code_object *tmp_cobj;
@@ -161,7 +152,7 @@ const char *parse_arg (pyc_opcode_object *op, ut32 oparg, RList *names, RList *c
 }
 
 /* for debugging purpose */
-void dump (RList *l) {
+void dump(RList *l) {
 	RListIter *it;
 	pyc_object *e = NULL;
 
@@ -174,7 +165,7 @@ void dump (RList *l) {
 	}
 }
 
-char *generic_array_obj_to_string (RList *l) {
+char *generic_array_obj_to_string(RList *l) {
 	RListIter *iter = NULL;
 	pyc_object *e = NULL;
 	ut32 size = 256, used = 0;
@@ -203,7 +194,7 @@ char *generic_array_obj_to_string (RList *l) {
 	return r;
 }
 
-void dump_cobj (pyc_code_object *c) {
+void dump_cobj(pyc_code_object *c) {
 	eprintf ("[DUMP]\n");
 	eprintf ("name: %s\n", (char *)c->name->data);
 	eprintf ("const_start\n");
