@@ -164,6 +164,7 @@ int main(int argc, char **argv) {
 	int ret = 0;
 
 #if __WINDOWS__
+	UINT old_cp = GetConsoleOutputCP ();
 	{
 		HANDLE streams[] = { GetStdHandle (STD_OUTPUT_HANDLE), GetStdHandle (STD_ERROR_HANDLE) };
 		DWORD mode;
@@ -462,6 +463,15 @@ beach:
 	free (rasm2_cmd);
 	free (json_test_file);
 	free (fuzz_dir);
+#if __WINDOWS__
+	(void)SetConsoleOutputCP (old_cp);
+	// chcp doesn't pick up the code page switch for some reason
+	char *chcp = r_str_newf ("chcp %u > NUL", old_cp);
+	if (chcp) {
+		system (chcp);
+		free (chcp);
+	}
+#endif
 	return ret;
 }
 
@@ -702,6 +712,9 @@ static void interact(R2RState *state) {
 		goto beach;
 	}
 
+#if __WINDOWS__
+	(void)SetConsoleOutputCP (65001); // UTF-8
+#endif
 	printf ("\n");
 	printf ("#####################\n");
 	printf (" %"PFMT64u" failed test(s) \xf0\x9f\x9a\xa8\n", (ut64)r_pvector_len (&failed_results));
