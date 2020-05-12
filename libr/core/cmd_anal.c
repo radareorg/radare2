@@ -1520,7 +1520,7 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 		// XXX this is a hack to make syscall args work on x86-32 and x86-64
 		// we need to shift sn first.. which is bad, but needs to be redesigned
 		int regidx = i;
-		if (core->assembler->bits == 32 && !strcmp (core->assembler->cpu, "x86")) {
+		if (core->rasm->bits == 32 && !strcmp (core->rasm->cpu, "x86")) {
 			regidx++;
 		}
 		ut64 arg = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_FASTCALL, regidx);
@@ -1619,11 +1619,11 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	}
 	for (i = idx = ret = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
 		addr = core->offset + idx;
-		r_asm_set_pc (core->assembler, addr);
+		r_asm_set_pc (core->rasm, addr);
 		hint = r_anal_hint_get (core->anal, addr);
 		ret = r_anal_op (core->anal, &op, addr, buf + idx, len - idx,
 			R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_OPEX | R_ANAL_OP_MASK_HINT);
-		(void)r_asm_disassemble (core->assembler, &asmop, buf + idx, len - idx);
+		(void)r_asm_disassemble (core->rasm, &asmop, buf + idx, len - idx);
 		esilstr = R_STRBUF_SAFEGET (&op.esil);
 		opexstr = R_STRBUF_SAFEGET (&op.opex);
 		char *mnem = strdup (r_asm_op_get_asm (&asmop));
@@ -1654,7 +1654,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			char *opname = strdup (r_asm_op_get_asm (&asmop));
 			if (opname) {
 				r_str_split (opname, ' ');
-				char *d = r_asm_describe (core->assembler, opname);
+				char *d = r_asm_describe (core->rasm, opname);
 				if (d && *d) {
 					r_cons_printf ("%s: %s\n", opname, d);
 					free (d);
@@ -1719,7 +1719,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				if (sp) {
 					*sp = 0;
 				}
-				char *d = r_asm_describe (core->assembler, opname);
+				char *d = r_asm_describe (core->rasm, opname);
 				if (d && *d) {
 					pj_ks (pj, "description", d);
 				}
@@ -1872,7 +1872,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				if (sp) {
 					*sp = 0;
 				}
-				char *d = r_asm_describe (core->assembler, opname);
+				char *d = r_asm_describe (core->rasm, opname);
 				if (d && *d) {
 					printline ("description", "%s\n", d);
 				}
@@ -4492,7 +4492,7 @@ repeat:
 			return_tail (1);
 		}
 	}
-	r_asm_set_pc (core->assembler, addr);
+	r_asm_set_pc (core->rasm, addr);
 	// run esil pin command here
 	const char *pincmd = r_anal_pin_call (core->anal, addr);
 	if (pincmd) {
@@ -5616,7 +5616,7 @@ static void __anal_esil_function(RCore *core, ut64 addr) {
 			bool opskip;
 			while (pc < end) {
 				left = R_MIN (end - pc, 32);
-				// r_asm_set_pc (core->assembler, pc);
+				// r_asm_set_pc (core->rasm, pc);
 				ret = r_anal_op (core->anal, &op, pc, buf + pc - bb->addr, left, R_ANAL_OP_MASK_HINT | R_ANAL_OP_MASK_ESIL); // read overflow
 				opskip = false;
 				switch (op.type) {
@@ -6272,13 +6272,13 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		} else if (input[1] == 'd') {
 			const int id = (input[2]==' ')
 				?(int)r_num_math (core->num, input + 2): -1;
-			char *ops = r_asm_mnemonics (core->assembler, id, false);
+			char *ops = r_asm_mnemonics (core->rasm, id, false);
 			if (ops) {
 				char *ptr = ops;
 				char *nl = strchr (ptr, '\n');
 				while (nl) {
 					*nl = 0;
-					char *desc = r_asm_describe (core->assembler, ptr);
+					char *desc = r_asm_describe (core->rasm, ptr);
 					if (desc) {
 						const char *pad = r_str_pad (' ', 16 - strlen (ptr));
 						r_cons_printf ("%s%s%s\n", ptr, pad, desc);
@@ -6293,11 +6293,11 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			}
 		} else if (input[1] == 'l' || input[1] == '=' || input[1] == ' ' || input[1] == 'j') {
 			if (input[1] == ' ' && !IS_DIGIT (input[2])) {
-				r_cons_printf ("%d\n", r_asm_mnemonics_byname (core->assembler, input + 2));
+				r_cons_printf ("%d\n", r_asm_mnemonics_byname (core->rasm, input + 2));
 			} else {
 				const int id = (input[1] == ' ')
 					?(int)r_num_math (core->num, input + 2): -1;
-				char *ops = r_asm_mnemonics (core->assembler, id, input[1] == 'j');
+				char *ops = r_asm_mnemonics (core->rasm, id, input[1] == 'j');
 				if (ops) {
 					r_cons_println (ops);
 					free (ops);
@@ -6343,13 +6343,13 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 	case 'd': // "aod"
 		if (input[1] == 'a') { // "aoda"
 			// list sdb database
-			sdb_foreach (core->assembler->pair, listOpDescriptions, core);
+			sdb_foreach (core->rasm->pair, listOpDescriptions, core);
 		} else if (input[1] == 0) {
 			int cur = R_MAX (core->print->cur, 0);
 			// XXX: we need cmd_xxx.h (cmd_anal.h)
 			core_anal_bytes (core, core->block + cur, core->blocksize, 1, 'd');
 		} else if (input[1] == ' ') {
-			char *d = r_asm_describe (core->assembler, input + 2);
+			char *d = r_asm_describe (core->rasm, input + 2);
 			if (d && *d) {
 				r_cons_println (d);
 				free (d);
@@ -6570,7 +6570,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 			setBits = hint->bits;
 		}
 		r_anal_hint_free (hint);
-		if (setBits != core->assembler->bits) {
+		if (setBits != core->rasm->bits) {
 			r_config_set_i (core->config, "asm.bits", setBits);
 		}
 		if (r_anal_op (core->anal, &op, addr, buf + bufi, bsz - bufi, 0) > 0) {
@@ -7005,8 +7005,8 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 		core->parser->relsub_addr = from;
 	}
 	r_io_read_at (core->io, addr, buf, size);
-	r_asm_set_pc (core->assembler, addr);
-	r_asm_disassemble (core->assembler, &asmop, buf, size);
+	r_asm_set_pc (core->rasm, addr);
+	r_asm_disassemble (core->rasm, &asmop, buf, size);
 	int ba_len = r_strbuf_length (&asmop.buf_asm) + 128;
 	char *ba = malloc (ba_len);
 	strcpy (ba, r_strbuf_get (&asmop.buf_asm));
@@ -7372,8 +7372,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						// TODO: Use r_core_anal_op(DISASM) instead of all those 4 lines
 						ut8 buf[16];
 						r_io_read_at (core->io, ref->addr, buf, sizeof (buf));
-						r_asm_set_pc (core->assembler, ref->addr);
-						r_asm_disassemble (core->assembler, &asmop, buf, sizeof (buf));
+						r_asm_set_pc (core->rasm, ref->addr);
+						r_asm_disassemble (core->rasm, &asmop, buf, sizeof (buf));
 						pj_o (pj);
 						pj_kn (pj, "from", ref->at);
 						pj_kn (pj, "to", ref->addr);
@@ -7402,8 +7402,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							desc = flag->name;
 						} else {
 							r_io_read_at (core->io, ref->addr, buf, sizeof (buf));
-							r_asm_set_pc (core->assembler, ref->addr);
-							r_asm_disassemble (core->assembler, &asmop, buf, sizeof(buf));
+							r_asm_set_pc (core->rasm, ref->addr);
+							r_asm_disassemble (core->rasm, &asmop, buf, sizeof(buf));
 							RAnalHint *hint = r_anal_hint_get (core->anal, ref->addr);
 							r_parse_filter (core->parser, ref->addr, core->flags, hint, r_asm_op_get_asm (&asmop),
 									str, sizeof (str), core->print->big_endian);
@@ -7742,8 +7742,8 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			RAnalOp op = { 0 };
 			ut8 code[128] = { 0 };
 			(void)r_io_read_at (core->io, core->offset, code, sizeof (code));
-			r_asm_set_pc (core->assembler, addr);
-			(void)r_asm_disassemble (core->assembler, &asmop, code, core->blocksize);
+			r_asm_set_pc (core->rasm, addr);
+			(void)r_asm_disassemble (core->rasm, &asmop, code, core->blocksize);
 			int ret = r_anal_op (core->anal, &op, core->offset, code, core->blocksize, R_ANAL_OP_MASK_VAL);
 			if (ret >= 0) {
 				// HACK: Just convert only the first imm seen
@@ -8675,7 +8675,7 @@ static void cmd_anal_aad(RCore *core, const char *input) {
 }
 
 static bool archIsThumbable(RCore *core) {
-	RAsm *as = core ? core->assembler : NULL;
+	RAsm *as = core ? core->rasm : NULL;
 	if (as && as->cur && as->bits <= 32 && as->cur->name) {
 		return strstr (as->cur->name, "arm");
 	}
@@ -8742,7 +8742,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	r_print_rowlog_done (core->print, oldstr);
 
 	int vsize = 4; // 32bit dword
-	if (core->assembler->bits == 64) {
+	if (core->rasm->bits == 64) {
 		vsize = 8;
 	}
 
@@ -9332,7 +9332,7 @@ static bool anal_fcn_data_gaps (RCore *core, const char *input) {
 	ut64 end = UT64_MAX;
 	RAnalFunction *fcn;
 	RListIter *iter;
-	int i, wordsize = (core->assembler->bits == 64)? 8: 4;
+	int i, wordsize = (core->rasm->bits == 64)? 8: 4;
 	r_list_sort (core->anal->fcns, cmpaddr);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		if (end != UT64_MAX) {

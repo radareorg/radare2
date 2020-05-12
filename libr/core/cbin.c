@@ -204,7 +204,7 @@ R_API int r_core_bin_set_env(RCore *r, RBinFile *binfile) {
 		} else {
 			r_config_set (r->config, "anal.cpu", arch);
 		}
-		r_asm_use (r->assembler, arch);
+		r_asm_use (r->rasm, arch);
 		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_MODE_SET, va, NULL, NULL);
 		r_core_bin_set_cur (r, binfile);
 		return true;
@@ -547,7 +547,7 @@ static void sdb_concat_by_path(Sdb *s, const char *path) {
 R_API void r_core_anal_type_init(RCore *core) {
 	r_return_if_fail (core && core->anal);
 	const char *dir_prefix = r_config_get (core->config, "dir.prefix");
-	int bits = core->assembler->bits;
+	int bits = core->rasm->bits;
 	Sdb *types = core->anal->sdb_types;
 	// make sure they are empty this is initializing
 	sdb_reset (types);
@@ -4170,7 +4170,7 @@ R_API int r_core_bin_set_arch_bits(RCore *r, const char *name, const char * arch
 		name = desc->name;
 	}
 	/* Check if the arch name is a valid name */
-	if (!r_asm_is_valid (r->assembler, arch)) {
+	if (!r_asm_is_valid (r->rasm, arch)) {
 		return false;
 	}
 	/* Find a file with the requested name/arch/bits */
@@ -4197,10 +4197,10 @@ R_API int r_core_bin_update_arch_bits(RCore *r) {
 	if (!r) {
 		return 0;
 	}
-	if (r->assembler) {
-		bits = r->assembler->bits;
-	   	if (r->assembler->cur) {
-			arch = r->assembler->cur->arch;
+	if (r->rasm) {
+		bits = r->rasm->bits;
+		if (r->rasm->cur) {
+			arch = r->rasm->cur->arch;
 		}
 	}
 	binfile = r_bin_cur (r->bin);
