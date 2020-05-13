@@ -886,7 +886,6 @@ static bool cmd_anal_aaft(RCore *core) {
 		}
 		__add_vars_sdb (core, fcn);
 	}
-	r_core_cmd0 (core, "aeim-;aei-");
 	r_core_seek (core, seek, true);
 	r_reg_arena_pop (core->anal->reg);
 	r_config_set_i (core->config, io_cache_key, io_cache);
