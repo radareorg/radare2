@@ -977,12 +977,12 @@ static void var_help(RCore *core, char ch) {
 static void var_accesses_list(RAnalFunction *fcn, RAnalVar *var, int access_type, const char *name) {
 	RAnalVarAccess *acc;
 	bool first = true;
-	r_cons_printf ("%10s  ", name);
+	r_cons_printf ("%10s", name);
 	r_vector_foreach (&var->accesses, acc) {
 		if (!(acc->type & access_type)) {
 			continue;
 		}
-		r_cons_printf ("%s0x%"PFMT64x, first? "": ",", (ut64)((st64)fcn->addr + acc->offset));
+		r_cons_printf ("%s0x%"PFMT64x, first? "  ": ",", (ut64)((st64)fcn->addr + acc->offset));
 		first = false;
 	}
 	r_cons_newline ();
