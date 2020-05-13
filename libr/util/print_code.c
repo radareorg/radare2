@@ -15,61 +15,54 @@ static const char* bits_to_c_code_fmtstr(int bits) {
 	return "0x%02x";
 }
 
+static int get_instruction_size(RPrint *p, ut64 at) {
+	char *is = p->coreb.cmdstrf (p->coreb.core, "ao @ 0x%08" PFMT64x "~^size[1]", at);
+	int res = atoi (is);
+	free (is);
+	return res;
+}
+
 static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len) {
 	const char *fmtstr = bits_to_c_code_fmtstr (8);
 
 	p->cb_printf ("#define _BUFFER_SIZE %d\n", len);
 	p->cb_printf ("const uint8_t buffer[_BUFFER_SIZE] = {\n");
 
-	int oleft, left = 0;
 	const int orig_align = p->coreb.cfggeti (p->coreb.core, "asm.cmt.col") - 40;
-	int align = orig_align;
-	char *instr = NULL;
-	size_t i;
+	size_t i = 0;
 
-	for (i = 0; !r_print_is_interrupted () && i <= len; i++) {
-		if (left == 0) {
-			int pleft = oleft;
-			ut64 at = addr + i;
-			char *is = p->coreb.cmdstrf (p->coreb.core, "ao @ 0x%08"PFMT64x"~^size[1]", at);
-			oleft = left = atoi (is);
-			free (is);
-			if (instr) {
-				align = orig_align - ((pleft - 1) * 6);
-				while (align-- > 0) {
-					p->cb_printf (" ");
-				}
-				p->cb_printf (" /* %s */\n", instr);
-				free (instr);
-				if (i == len) {
-					break; // return;
-				}
-			}
-			instr = p->coreb.cmdstrf (p->coreb.core, "pi 1 @ 0x%08"PFMT64x, at);
+	while (!r_print_is_interrupted () && i < len) {
+		ut64 at = addr + i;
+		int inst_size = get_instruction_size (p, at);
+		if (inst_size <= 0) {
+			// some times the instruction size is reported as zero,
+			// just skip the current instruction and go ahead
+			inst_size = 1;
+		}
+
+		p->cb_printf (" ");
+
+		size_t j;
+		for (j = 0; j < inst_size && i + j < len; ++j) {
+			r_print_cursor (p, i + j, 1, 1);
+			p->cb_printf (fmtstr, r_read_ble (buf++, p->big_endian, 8));
+			r_print_cursor (p, i + j, 1, 0);
+			p->cb_printf (", ");
+		}
+
+		int align = orig_align - ((j - 1) * 6);
+		p->cb_printf ("%*s", align, "");
+
+		if (j == inst_size) {
+			char *instr = p->coreb.cmdstrf (p->coreb.core, "pi 1 @ 0x%08" PFMT64x, at);
 			r_str_trim (instr);
+			p->cb_printf (" /* %s */\n", instr);
+			free (instr);
+		} else {
+			p->cb_printf (" /* invalid */\n");
 		}
-		if (i == len) {
-			break;
-		}
-		if (left == oleft) {
-			p->cb_printf (" ");
-		}
-		r_print_cursor (p, i, 1, 1);
-		p->cb_printf (fmtstr, r_read_ble (buf, p->big_endian, 8));
-		r_print_cursor (p, i, 1, 0);
-		p->cb_printf (", ");
-		buf ++;
-		left --;
-	}
-	if (left > 0 && left != oleft) {
-		align = orig_align - ((oleft - left - 1) * 6);
-		while (align-- > 0) {
-			p->cb_printf (" ");
-		}
-		p->cb_printf (" /* invalid */");
-	}
-	if (left != oleft) {
-		p->cb_printf ("\n");
+
+		i += j;
 	}
 	p->cb_printf ("};\n");
 }
