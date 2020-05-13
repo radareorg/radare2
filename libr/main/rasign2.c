@@ -108,7 +108,7 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 
 	// write sigs to file
 	if (ofile) {
-		r_core_cmdf (core, "zos %s", ofile);
+		r_core_cmdf (core, "\"zos %s\"", ofile);
 	}
 
 	if (rad) {
