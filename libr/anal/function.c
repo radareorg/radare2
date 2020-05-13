@@ -54,6 +54,10 @@ static bool __fcn_exists(RAnal *anal, const char *name, ut64 addr) {
 
 R_IPI void r_anal_var_free(RAnalVar *av);
 
+static void inst_vars_kv_free(HtUPKv *kv) {
+	r_pvector_free (kv->value);
+}
+
 R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	RAnalFunction *fcn = R_NEW0 (RAnalFunction);
 	if (!fcn) {
@@ -70,7 +74,7 @@ R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	fcn->is_noreturn = false;
 	fcn->meta._min = UT64_MAX;
 	r_pvector_init (&fcn->vars, NULL);
-	fcn->inst_vars = ht_up_new0 ();
+	fcn->inst_vars = ht_up_new (NULL, inst_vars_kv_free, NULL);
 	return fcn;
 }
 
@@ -98,7 +102,7 @@ R_API void r_anal_function_free(void *_fcn) {
 
 	ht_up_free (fcn->inst_vars);
 	fcn->inst_vars = NULL;
-	r_pvector_clear (&fcn->vars);
+	r_anal_function_delete_all_vars (fcn);
 
 	free (fcn->name);
 	fcn->bbs = NULL;
@@ -202,11 +206,13 @@ R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr) {
 		}
 	}
 	InstVarsRelocateCtx ctx = {
-		.inst_vars_new  = ht_up_new0 (),
+		.inst_vars_new = ht_up_new (NULL, inst_vars_kv_free, NULL),
 		.delta = delta
 	};
 	if (ctx.inst_vars_new) {
 		ht_up_foreach (fcn->inst_vars, inst_vars_relocate_cb, &ctx);
+		// Do not free the elements of the Ht, because they were moved to ctx.inst_vars_new
+		fcn->inst_vars->opt.freefn = NULL;
 		ht_up_free (fcn->inst_vars);
 		fcn->inst_vars = ctx.inst_vars_new;
 	}

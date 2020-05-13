@@ -17,7 +17,6 @@ static int cr16_op(RAnal *anal, RAnalOp *op, ut64 addr,
 	struct cr16_cmd cmd;
 
 	memset(&cmd, 0, sizeof (cmd));
-	memset(op, 0, sizeof (RAnalOp));
 
 	ret = op->size = cr16_decode_command(buf, &cmd);
 
@@ -25,10 +24,7 @@ static int cr16_op(RAnal *anal, RAnalOp *op, ut64 addr,
 		return ret;
 	}
 
-
 	op->addr = addr;
-	op->jump = op->fail = -1;
-	op->ptr = op->val = -1;
 
 	switch (cmd.type) {
 	case CR16_TYPE_MOV:

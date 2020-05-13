@@ -74,6 +74,11 @@ static bool popRN(RAnalEsil *esil, ut64 *n) {
 
 /* R_ANAL_ESIL API */
 
+static void esil_ops_free(HtPPKv *kv) {
+	free (kv->key);
+	free (kv->value);
+}
+
 R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
 	RAnalEsil *esil = R_NEW0 (RAnalEsil);
 	if (!esil) {
@@ -90,7 +95,7 @@ R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap, unsigned int addrsiz
 	esil->verbose = false;
 	esil->stacksize = stacksize;
 	esil->parse_goto_count = R_ANAL_ESIL_GOTO_LIMIT;
-	esil->ops = sdb_new0 ();
+	esil->ops = ht_pp_new (NULL, esil_ops_free, NULL);
 	esil->iotrap = iotrap;
 	r_anal_esil_sources_init (esil);
 	r_anal_esil_interrupts_init (esil);
@@ -100,18 +105,15 @@ R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap, unsigned int addrsiz
 }
 
 R_API bool r_anal_esil_set_op(RAnalEsil *esil, const char *op, RAnalEsilOpCb code, ut32 push, ut32 pop, ut32 type) {
-	r_return_val_if_fail(code && op && strlen (op) && esil && esil->ops, false);
-	char t[128];
-	char *h = sdb_itoa (sdb_hash (op), t, 16);
-	RAnalEsilOp *eop = (RAnalEsilOp *)(size_t)sdb_num_get (esil->ops, h, 0);
+	r_return_val_if_fail (code && R_STR_ISNOTEMPTY (op) && esil && esil->ops, false);
+	RAnalEsilOp *eop = ht_pp_find (esil->ops, op, NULL);
 	if (!eop) {
 		eop = R_NEW (RAnalEsilOp);
 		if (!eop) {
 			eprintf ("Cannot allocate esil-operation %s\n", op);
 			return false;
 		}
-		sdb_num_set (esil->ops, h, (ut64)(size_t)eop, 0);
-		if (!sdb_num_exists (esil->ops, h)) {
+		if (!ht_pp_insert (esil->ops, op, eop)) {
 			eprintf ("Cannot set esil-operation %s\n", op);
 			free (eop);
 			return false;
@@ -155,12 +157,6 @@ R_API bool r_anal_esil_set_pc(RAnalEsil *esil, ut64 addr) {
 	return false;
 }
 
-static int esil_ops_free_cb(void *user, const char *k, const char *v) {
-	RAnalEsilOp *op = (RAnalEsilOp *)(size_t)sdb_atoi (v);
-	free (op);
-	return true;
-}
-
 R_API void r_anal_esil_free(RAnalEsil *esil) {
 	if (!esil) {
 		return;
@@ -168,8 +164,7 @@ R_API void r_anal_esil_free(RAnalEsil *esil) {
 	if (esil->anal && esil == esil->anal->esil) {
 		esil->anal->esil = NULL;
 	}
-	sdb_foreach (esil->ops, esil_ops_free_cb, NULL);
-	sdb_free (esil->ops);
+	ht_pp_free (esil->ops);
 	esil->ops = NULL;
 	r_anal_esil_interrupts_fini (esil);
 	r_anal_esil_sources_fini (esil);
@@ -2801,10 +2796,9 @@ static bool esil_set_delay_slot(RAnalEsil *esil) {
 }
 
 static bool iscommand(RAnalEsil *esil, const char *word, RAnalEsilOp **op) {
-	char t[128];
-	char *h = sdb_itoa (sdb_hash (word), t, 16);
-	if (sdb_num_exists (esil->ops, h)) {
-		*op = (RAnalEsilOp *)(size_t)sdb_num_get (esil->ops, h, 0);
+	RAnalEsilOp *eop = ht_pp_find (esil->ops, word, NULL);
+	if (eop) {
+		*op = eop;
 		return true;
 	}
 	return false;

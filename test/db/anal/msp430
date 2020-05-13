@@ -33,7 +33,7 @@ size: 62
 is-pure: true
 realsz: 62
 stackframe: 0
-cyclomatic-cost : 0
+cyclomatic-cost: 0
 cyclomatic-complexity: 1
 bits: 32
 type: fcn [NEW]
@@ -91,7 +91,7 @@ is-pure: true
 realsz: 62
 stackframe: 0
 call-convention: (null)
-cyclomatic-cost : 0
+cyclomatic-cost: 0
 cyclomatic-complexity: 1
 bits: 32
 type: fcn [NEW]

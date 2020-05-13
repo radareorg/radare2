@@ -1031,7 +1031,7 @@ static void print_types(R_PDB *pdb, int mode) {
 				sym = (lt == eLF_ENUM)? ',': ' ';
 				for (i = 0; i < members_amount; i++) {
 					char *eq = (lt == eLF_ENUM) ? strchr (members_name_field[i], '=') : NULL;
-					r_name_filter (members_name_field[i], -1);
+					r_name_filter2 (members_name_field[i]);
 					if (eq) {
 						*eq = '=';
 					}

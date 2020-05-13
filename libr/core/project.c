@@ -602,7 +602,7 @@ static bool simpleProjectSaveScript(RCore *core, const char *file, int opts) {
 	}
 	if (opts & R_CORE_PRJ_META) {
 		r_str_write (fd, "# meta\n");
-		r_meta_list (core->anal, R_META_TYPE_ANY, 1);
+		r_meta_print_list_all (core->anal, R_META_TYPE_ANY, 1);
 		r_cons_flush ();
 		r_core_cmd (core, "fV*", 0);
 		r_cons_flush ();
@@ -688,7 +688,7 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 	}
 	if (opts & R_CORE_PRJ_META) {
 		r_str_write (fd, "# meta\n");
-		r_meta_list (core->anal, R_META_TYPE_ANY, 1);
+		r_meta_print_list_all (core->anal, R_META_TYPE_ANY, 1);
 		r_cons_flush ();
 		r_core_cmd (core, "fV*", 0);
 		r_cons_flush ();

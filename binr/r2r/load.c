@@ -162,7 +162,7 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 			} \
 			test->field.line_begin = linenum; \
 			test->field.value = read_string_val (&nextline, val, &linenum); \
-			test->field.line_end = linenum; \
+			test->field.line_end = linenum + 1; \
 			if (!test->field.value) { \
 				eprintf (LINEFMT "Error: Failed to read value for key \"%s\"\n", file, linenum, key); \
 				goto fail; \

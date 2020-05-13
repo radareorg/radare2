@@ -122,12 +122,32 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 		}
 		addr += sz;
 		{
-			RAnalMetaItem *mi = r_meta_find_any_except (anal, addr, R_META_TYPE_COMMENT, 0);
-			if (mi) {
-				ptr += mi->size;
-				addr += mi->size;
-				r_meta_item_free (mi);
-				goto __next;
+			RPVector *metas = r_meta_get_all_at (anal, addr);
+			if (metas) {
+				void **it;
+				ut64 skip = 0;
+				r_pvector_foreach (metas, it) {
+					RIntervalNode *node = *it;
+					RAnalMetaItem *meta = node->data;
+					switch (meta->type) {
+					case R_META_TYPE_DATA:
+					case R_META_TYPE_STRING:
+					case R_META_TYPE_HIDE:
+					case R_META_TYPE_FORMAT:
+					case R_META_TYPE_MAGIC:
+						skip = r_meta_node_size (node);
+						goto do_skip;
+					default:
+						break;
+					}
+				}
+do_skip:
+				r_pvector_free (metas);
+				if (skip) {
+					ptr += skip;
+					addr += skip;
+					goto __next;
+				}
 			}
 		}
 		if (!anal->iob.is_valid_offset (anal->iob.io, addr, 1)) {

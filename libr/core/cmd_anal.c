@@ -328,7 +328,7 @@ static const char *help_msg_af[] = {
 	"afsr", " [function_name] [new_type]", "change type for given function",
 	"aft", "[?]", "type matching, type propagation",
 	"afu", " addr", "resize and analyze function from current address until addr",
-	"afv[bsra]", "?", "manipulate args, registers and variables in function",
+	"afv[absrx]", "?", "manipulate args, registers and variables in function",
 	"afx", "", "list function references",
 	NULL
 };
@@ -456,18 +456,20 @@ static const char *help_msg_aft[] = {
 
 static const char *help_msg_afv[] = {
 	"Usage:", "afv","[rbs]",
-	"afvr", "[?]", "manipulate register based arguments",
-	"afvb", "[?]", "manipulate bp based arguments/locals",
-	"afvs", "[?]", "manipulate sp based arguments/locals",
 	"afv*", "", "output r2 command to add args/locals to flagspace",
-	"afvR", " [varname]", "list addresses where vars are accessed (READ)",
-	"afvW", " [varname]", "list addresses where vars are accessed (WRITE)",
-	"afva", "", "analyze function arguments/locals",
-	"afvd", " name", "output r2 command for displaying the value of args/locals in the debugger",
-	"afvn", " [new_name] ([old_name])", "rename argument/local",
-	"afvt", " [name] [new_type]", "change type for given argument/local",
-	"afvf", "", "show BP relative stackframe variables",
 	"afv-", "([name])", "remove all or given var",
+	"afv=", "", "list function variables and arguments with disasm refs",
+	"afva", "", "analyze function arguments/locals",
+	"afvb", "[?]", "manipulate bp based arguments/locals",
+	"afvd", " name", "output r2 command for displaying the value of args/locals in the debugger",
+	"afvf", "", "show BP relative stackframe variables",
+	"afvn", " [new_name] ([old_name])", "rename argument/local",
+	"afvr", "[?]", "manipulate register based arguments",
+	"afvR", " [varname]", "list addresses where vars are accessed (READ)",
+	"afvs", "[?]", "manipulate sp based arguments/locals",
+	"afvt", " [name] [new_type]", "change type for given argument/local",
+	"afvW", " [varname]", "list addresses where vars are accessed (WRITE)",
+	"afvx", "", "show function variable xrefs (same as afvR+afvW)",
 	NULL
 };
 
@@ -718,6 +720,7 @@ static const char *help_msg_ax[] = {
 	"axm", " addr [at]", "copy data/code references pointing to addr to also point to curseek (or at)",
 	"axt", " [addr]", "find data/code references to this address",
 	"axf", " [addr]", "find data/code references from this address",
+	"axv", " [addr]", "list local variables read-write-exec references",
 	"ax.", " [addr]", "find data/code references from and to this address",
 	"axff[j]", " [addr]", "find data/code references from this function",
 	"axs", " addr [at]", "add string ref",
@@ -971,26 +974,49 @@ static void var_help(RCore *core, char ch) {
 	}
 }
 
-static void var_accesses_list(RAnalFunction *fcn, RAnalVar *var, int access_type) {
+static void var_accesses_list(RAnalFunction *fcn, RAnalVar *var, int access_type, const char *name) {
 	RAnalVarAccess *acc;
 	bool first = true;
+	r_cons_printf ("%10s", name);
 	r_vector_foreach (&var->accesses, acc) {
 		if (!(acc->type & access_type)) {
 			continue;
 		}
-		if (!first) {
-			r_cons_print (",");
-		}
+		r_cons_printf ("%s0x%"PFMT64x, first? "  ": ",", (ut64)((st64)fcn->addr + acc->offset));
 		first = false;
-		r_cons_printf ("0x%"PFMT64x, (ut64)((st64)fcn->addr + acc->offset));
 	}
 	r_cons_newline ();
 }
 
 static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *name) {
-	RAnalVar *var;
+	RAnalVar *var = NULL;
 	RListIter *iter;
 	RList *list = r_anal_var_all_list (core->anal, fcn);
+	if (type == '=') {
+		ut64 oaddr = core->offset;
+		r_list_foreach (list, iter, var) {
+			r_cons_printf ("* %s\n", var->name);
+			RAnalVarAccess *acc;
+			r_vector_foreach (&var->accesses, acc) {
+				if (!(acc->type & R_ANAL_VAR_ACCESS_TYPE_READ)) {
+					continue;
+				}
+				r_cons_printf ("R 0x%"PFMT64x"  ", fcn->addr + acc->offset);
+				r_core_seek (core, fcn->addr + acc->offset, 1);
+				r_core_print_disasm_instructions (core, 1, 0);
+			}
+			r_vector_foreach (&var->accesses, acc) {
+				if (!(acc->type & R_ANAL_VAR_ACCESS_TYPE_WRITE)) {
+					continue;
+				}
+				r_cons_printf ("W 0x%"PFMT64x"  ", fcn->addr + acc->offset);
+				r_core_seek (core, fcn->addr + acc->offset, 1);
+				r_core_print_disasm_instructions (core, 1, 0);
+			}
+		}
+		r_core_seek (core, oaddr, 0);
+		return;
+	}
 	if (type == '*') {
 		const char *bp = r_reg_get_name (core->anal->reg, R_REG_NAME_BP);
 		r_cons_printf ("f-fcnvar*\n");
@@ -1007,14 +1033,25 @@ static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *nam
 	if (name && *name) {
 		var = r_anal_function_get_var_byname (fcn, name);
 		if (var) {
-			r_cons_printf ("%10s  ", var->name);
-			var_accesses_list (fcn, var, access_type);
+			var_accesses_list (fcn, var, access_type, var->name);
 		}
 	} else {
 		r_list_foreach (list, iter, var) {
-			r_cons_printf ("%10s  ", var->name);
-			var_accesses_list (fcn, var, access_type);
+			var_accesses_list (fcn, var, access_type, var->name);
 		}
+	}
+}
+
+static void cmd_afvx(RCore *core, RAnalFunction *fcn) {
+	r_return_if_fail (core);
+	if (!fcn) {
+		fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_ANY);
+	}
+	if (fcn) {
+		r_cons_printf ("afvR\n");
+		list_vars (core, fcn, 'R', NULL);
+		r_cons_printf ("afvW\n");
+		list_vars (core, fcn, 'W', NULL);
 	}
 }
 
@@ -1182,15 +1219,22 @@ static int var_cmd(RCore *core, const char *str) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 	/* Variable access CFvs = set fun var */
 	switch (str[0]) {
-	case '-':
-		// "afv"
+	case '-': // "afv-"
 		r_core_cmdf (core, "afvs-%s", str + 1);
 		r_core_cmdf (core, "afvb-%s", str + 1);
 		r_core_cmdf (core, "afvr-%s", str + 1);
 		return true;
+	case 'x': // "afvx"
+		if (fcn) {
+			cmd_afvx (core, fcn);
+		} else {
+			eprintf ("Cannot find function in 0x%08"PFMT64x"\n", core->offset);
+		}
+		return true;
 	case 'R': // "afvR"
 	case 'W': // "afvW"
 	case '*': // "afv*"
+	case '=': // "afv="
 		if (fcn) {
 			const char *name = strchr (ostr, ' ');
 			if (name) {
@@ -1520,7 +1564,7 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 		// XXX this is a hack to make syscall args work on x86-32 and x86-64
 		// we need to shift sn first.. which is bad, but needs to be redesigned
 		int regidx = i;
-		if (core->assembler->bits == 32) {
+		if (core->rasm->bits == 32 && !strcmp (core->rasm->cpu, "x86")) {
 			regidx++;
 		}
 		ut64 arg = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_FASTCALL, regidx);
@@ -1619,11 +1663,11 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	}
 	for (i = idx = ret = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
 		addr = core->offset + idx;
-		r_asm_set_pc (core->assembler, addr);
+		r_asm_set_pc (core->rasm, addr);
 		hint = r_anal_hint_get (core->anal, addr);
 		ret = r_anal_op (core->anal, &op, addr, buf + idx, len - idx,
 			R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_OPEX | R_ANAL_OP_MASK_HINT);
-		(void)r_asm_disassemble (core->assembler, &asmop, buf + idx, len - idx);
+		(void)r_asm_disassemble (core->rasm, &asmop, buf + idx, len - idx);
 		esilstr = R_STRBUF_SAFEGET (&op.esil);
 		opexstr = R_STRBUF_SAFEGET (&op.opex);
 		char *mnem = strdup (r_asm_op_get_asm (&asmop));
@@ -1654,7 +1698,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			char *opname = strdup (r_asm_op_get_asm (&asmop));
 			if (opname) {
 				r_str_split (opname, ' ');
-				char *d = r_asm_describe (core->assembler, opname);
+				char *d = r_asm_describe (core->rasm, opname);
 				if (d && *d) {
 					r_cons_printf ("%s: %s\n", opname, d);
 					free (d);
@@ -1719,7 +1763,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				if (sp) {
 					*sp = 0;
 				}
-				char *d = r_asm_describe (core->assembler, opname);
+				char *d = r_asm_describe (core->rasm, opname);
 				if (d && *d) {
 					pj_ks (pj, "description", d);
 				}
@@ -1872,7 +1916,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				if (sp) {
 					*sp = 0;
 				}
-				char *d = r_asm_describe (core->assembler, opname);
+				char *d = r_asm_describe (core->rasm, opname);
 				if (d && *d) {
 					printline ("description", "%s\n", d);
 				}
@@ -3759,6 +3803,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				ut64 addr = input[2]==' '? r_num_math (core->num, input + 2): core->offset;
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 				if (fcn) {
+					ut64 oaddr = core->offset;
 					RAnalRef *ref;
 					RListIter *iter;
 					RList *refs = r_anal_function_get_refs (fcn);
@@ -3770,11 +3815,34 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 							pj_kn (pj, "to", ref->addr);
 							pj_end (pj);
 						} else {
-							r_cons_printf ("%c 0x%08" PFMT64x " -> 0x%08" PFMT64x "\n",
-									ref->type, ref->at, ref->addr);
+							r_cons_printf ("%c 0x%08" PFMT64x " -> ", ref->type, ref->at);
+							switch (ref->type) {
+							case R_ANAL_REF_TYPE_NULL:
+								r_cons_printf ("0x%08" PFMT64x " ", ref->addr);
+								break;
+							case R_ANAL_REF_TYPE_CODE:
+							case R_ANAL_REF_TYPE_CALL:
+							case R_ANAL_REF_TYPE_DATA:
+								r_cons_printf ("0x%08" PFMT64x " ", ref->addr);
+								r_core_seek (core, ref->at, 1);
+								r_core_print_disasm_instructions (core, 1, 0);
+								break;
+							case R_ANAL_REF_TYPE_STRING:
+								{
+									char *s = r_core_cmd_strf (core, "pxr 8 @ 0x%08"PFMT64x, ref->addr);
+									char *nl = strchr (s, '\n');
+									if (nl) {
+										*nl = 0;
+									}
+									r_cons_printf ("%s\n", s);
+									free (s);
+								}
+								break;
+							}
 						}
 					}
 					r_list_free (refs);
+					r_core_seek (core, oaddr, 1);
 				} else {
 					eprintf ("afx: Cannot find function at 0x%08"PFMT64x"\n", addr);
 				}
@@ -4492,7 +4560,7 @@ repeat:
 			return_tail (1);
 		}
 	}
-	r_asm_set_pc (core->assembler, addr);
+	r_asm_set_pc (core->rasm, addr);
 	// run esil pin command here
 	const char *pincmd = r_anal_pin_call (core->anal, addr);
 	if (pincmd) {
@@ -5616,7 +5684,7 @@ static void __anal_esil_function(RCore *core, ut64 addr) {
 			bool opskip;
 			while (pc < end) {
 				left = R_MIN (end - pc, 32);
-				// r_asm_set_pc (core->assembler, pc);
+				// r_asm_set_pc (core->rasm, pc);
 				ret = r_anal_op (core->anal, &op, pc, buf + pc - bb->addr, left, R_ANAL_OP_MASK_HINT | R_ANAL_OP_MASK_ESIL); // read overflow
 				opskip = false;
 				switch (op.type) {
@@ -6272,13 +6340,13 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		} else if (input[1] == 'd') {
 			const int id = (input[2]==' ')
 				?(int)r_num_math (core->num, input + 2): -1;
-			char *ops = r_asm_mnemonics (core->assembler, id, false);
+			char *ops = r_asm_mnemonics (core->rasm, id, false);
 			if (ops) {
 				char *ptr = ops;
 				char *nl = strchr (ptr, '\n');
 				while (nl) {
 					*nl = 0;
-					char *desc = r_asm_describe (core->assembler, ptr);
+					char *desc = r_asm_describe (core->rasm, ptr);
 					if (desc) {
 						const char *pad = r_str_pad (' ', 16 - strlen (ptr));
 						r_cons_printf ("%s%s%s\n", ptr, pad, desc);
@@ -6293,11 +6361,11 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			}
 		} else if (input[1] == 'l' || input[1] == '=' || input[1] == ' ' || input[1] == 'j') {
 			if (input[1] == ' ' && !IS_DIGIT (input[2])) {
-				r_cons_printf ("%d\n", r_asm_mnemonics_byname (core->assembler, input + 2));
+				r_cons_printf ("%d\n", r_asm_mnemonics_byname (core->rasm, input + 2));
 			} else {
 				const int id = (input[1] == ' ')
 					?(int)r_num_math (core->num, input + 2): -1;
-				char *ops = r_asm_mnemonics (core->assembler, id, input[1] == 'j');
+				char *ops = r_asm_mnemonics (core->rasm, id, input[1] == 'j');
 				if (ops) {
 					r_cons_println (ops);
 					free (ops);
@@ -6343,13 +6411,13 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 	case 'd': // "aod"
 		if (input[1] == 'a') { // "aoda"
 			// list sdb database
-			sdb_foreach (core->assembler->pair, listOpDescriptions, core);
+			sdb_foreach (core->rasm->pair, listOpDescriptions, core);
 		} else if (input[1] == 0) {
 			int cur = R_MAX (core->print->cur, 0);
 			// XXX: we need cmd_xxx.h (cmd_anal.h)
 			core_anal_bytes (core, core->block + cur, core->blocksize, 1, 'd');
 		} else if (input[1] == ' ') {
-			char *d = r_asm_describe (core->assembler, input + 2);
+			char *d = r_asm_describe (core->rasm, input + 2);
 			if (d && *d) {
 				r_cons_println (d);
 				free (d);
@@ -6570,7 +6638,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 			setBits = hint->bits;
 		}
 		r_anal_hint_free (hint);
-		if (setBits != core->assembler->bits) {
+		if (setBits != core->rasm->bits) {
 			r_config_set_i (core->config, "asm.bits", setBits);
 		}
 		if (r_anal_op (core->anal, &op, addr, buf + bufi, bsz - bufi, 0) > 0) {
@@ -7005,8 +7073,8 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 		core->parser->relsub_addr = from;
 	}
 	r_io_read_at (core->io, addr, buf, size);
-	r_asm_set_pc (core->assembler, addr);
-	r_asm_disassemble (core->assembler, &asmop, buf, size);
+	r_asm_set_pc (core->rasm, addr);
+	r_asm_disassemble (core->rasm, &asmop, buf, size);
 	int ba_len = r_strbuf_length (&asmop.buf_asm) + 128;
 	char *ba = malloc (ba_len);
 	strcpy (ba, r_strbuf_get (&asmop.buf_asm));
@@ -7135,6 +7203,9 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		r_list_free (list);
 		free (ptr);
 	} break;
+	case 'v': // "axv"
+		cmd_afvx (core, NULL);
+		break;
 	case 't': { // "axt"
 		RList *list = NULL;
 		RAnalFunction *fcn;
@@ -7265,14 +7336,19 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						ref->addr, ref->type, addr, iter->n? ",": "");
 			} else { // axt
 				RAnalFunction *fcn;
-				char *comment;
 				r_list_foreach (list, iter, ref) {
 					fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 					char *buf_asm = get_buf_asm (core, addr, ref->addr, fcn, true);
-					comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
+					const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
+					char *print_comment = NULL;
+					const char *nl = comment ? strchr (comment, '\n') : NULL;
+					if (nl) { // display only until the first newline
+						comment = print_comment = r_str_ndup (comment, nl - comment);
+					}
 					char *buf_fcn = comment
-						? r_str_newf ("%s; %s", fcn ?  fcn->name : "(nofunc)", strtok (comment, "\n"))
+						? r_str_newf ("%s; %s", fcn ?  fcn->name : "(nofunc)", comment)
 						: r_str_newf ("%s", fcn ? fcn->name : "(nofunc)");
+					free (print_comment);
 					r_cons_printf ("%s 0x%" PFMT64x " [%s] %s\n",
 						buf_fcn, ref->addr, r_anal_xrefs_type_tostring (ref->type), buf_asm);
 					free (buf_asm);
@@ -7367,8 +7443,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						// TODO: Use r_core_anal_op(DISASM) instead of all those 4 lines
 						ut8 buf[16];
 						r_io_read_at (core->io, ref->addr, buf, sizeof (buf));
-						r_asm_set_pc (core->assembler, ref->addr);
-						r_asm_disassemble (core->assembler, &asmop, buf, sizeof (buf));
+						r_asm_set_pc (core->rasm, ref->addr);
+						r_asm_disassemble (core->rasm, &asmop, buf, sizeof (buf));
 						pj_o (pj);
 						pj_kn (pj, "from", ref->at);
 						pj_kn (pj, "to", ref->addr);
@@ -7397,8 +7473,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							desc = flag->name;
 						} else {
 							r_io_read_at (core->io, ref->addr, buf, sizeof (buf));
-							r_asm_set_pc (core->assembler, ref->addr);
-							r_asm_disassemble (core->assembler, &asmop, buf, sizeof(buf));
+							r_asm_set_pc (core->rasm, ref->addr);
+							r_asm_disassemble (core->rasm, &asmop, buf, sizeof(buf));
 							RAnalHint *hint = r_anal_hint_get (core->anal, ref->addr);
 							r_parse_filter (core->parser, ref->addr, core->flags, hint, r_asm_op_get_asm (&asmop),
 									str, sizeof (str), core->print->big_endian);
@@ -7737,8 +7813,8 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			RAnalOp op = { 0 };
 			ut8 code[128] = { 0 };
 			(void)r_io_read_at (core->io, core->offset, code, sizeof (code));
-			r_asm_set_pc (core->assembler, addr);
-			(void)r_asm_disassemble (core->assembler, &asmop, code, core->blocksize);
+			r_asm_set_pc (core->rasm, addr);
+			(void)r_asm_disassemble (core->rasm, &asmop, code, core->blocksize);
 			int ret = r_anal_op (core->anal, &op, core->offset, code, core->blocksize, R_ANAL_OP_MASK_VAL);
 			if (ret >= 0) {
 				// HACK: Just convert only the first imm seen
@@ -8670,7 +8746,7 @@ static void cmd_anal_aad(RCore *core, const char *input) {
 }
 
 static bool archIsThumbable(RCore *core) {
-	RAsm *as = core ? core->assembler : NULL;
+	RAsm *as = core ? core->rasm : NULL;
 	if (as && as->cur && as->bits <= 32 && as->cur->name) {
 		return strstr (as->cur->name, "arm");
 	}
@@ -8711,7 +8787,7 @@ static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, int count,
 		r_cons_printf ("f+ aav.0x%08"PFMT64x "= 0x%08"PFMT64x, to, to);
 	} else {
 		r_anal_xrefs_set (core->anal, from, to, R_ANAL_REF_TYPE_NULL);
-		// r_meta_add (core->anal, 'd', from, from + vsize, NULL);
+		// r_meta_set (core->anal, 'd', from, from + vsize, NULL);
 		r_core_cmdf (core, "Cd %d @ 0x%"PFMT64x "\n", vsize, from);
 		if (!r_flag_get_at (core->flags, to, false)) {
 			char *name = r_str_newf ("aav.0x%08"PFMT64x, to);
@@ -8737,7 +8813,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	r_print_rowlog_done (core->print, oldstr);
 
 	int vsize = 4; // 32bit dword
-	if (core->assembler->bits == 64) {
+	if (core->rasm->bits == 64) {
 		vsize = 8;
 	}
 
@@ -9327,7 +9403,7 @@ static bool anal_fcn_data_gaps (RCore *core, const char *input) {
 	ut64 end = UT64_MAX;
 	RAnalFunction *fcn;
 	RListIter *iter;
-	int i, wordsize = (core->assembler->bits == 64)? 8: 4;
+	int i, wordsize = (core->rasm->bits == 64)? 8: 4;
 	r_list_sort (core->anal->fcns, cmpaddr);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		if (end != UT64_MAX) {

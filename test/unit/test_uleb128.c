@@ -77,11 +77,21 @@ bool test_sleb128_big(void) {
 	mu_end;
 }
 
+bool test_leb128_correctness(void) {
+	st64 val;
+	const ut8 *data = (ut8 *)"\xc5\x00";
+	const ut8 *buf = r_leb128 (data, 2, &val);
+	mu_assert_eq (val, 69, "leb128 decoded");
+	mu_assert_eq (buf, data + 2, "leb128 decoded");
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test (test_uleb128_small);
 	mu_run_test (test_sleb128_small);
 	mu_run_test (test_uleb128_big);
 	mu_run_test (test_sleb128_big);
+	mu_run_test (test_leb128_correctness);
 	return tests_passed != tests_run;
 }
 

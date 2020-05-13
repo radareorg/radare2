@@ -17,7 +17,6 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 	//if (baddr>0x7fff)
 	//      baddr = -baddr;
 
-	memset (op, '\0', sizeof (RAnalOp));
 	op->addr = addr;
 	op->type = 0;
 	op->size = 4;

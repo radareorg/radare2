@@ -164,6 +164,7 @@ int main(int argc, char **argv) {
 	int ret = 0;
 
 #if __WINDOWS__
+	UINT old_cp = GetConsoleOutputCP ();
 	{
 		HANDLE streams[] = { GetStdHandle (STD_OUTPUT_HANDLE), GetStdHandle (STD_ERROR_HANDLE) };
 		DWORD mode;
@@ -462,6 +463,15 @@ beach:
 	free (rasm2_cmd);
 	free (json_test_file);
 	free (fuzz_dir);
+#if __WINDOWS__
+	(void)SetConsoleOutputCP (old_cp);
+	// chcp doesn't pick up the code page switch for some reason
+	char *chcp = r_str_newf ("chcp %u > NUL", old_cp);
+	if (chcp) {
+		system (chcp);
+		free (chcp);
+	}
+#endif
 	return ret;
 }
 
@@ -626,6 +636,7 @@ static void print_new_results(R2RState *state, ut64 prev_completed) {
 		if (!name) {
 			continue;
 		}
+		printf ("\n"R_CONS_CURSOR_UP R_CONS_CLEAR_LINE);
 		switch (result->result) {
 		case R2R_TEST_RESULT_OK:
 			printf (Color_GREEN"[OK]"Color_RESET);
@@ -649,7 +660,6 @@ static void print_new_results(R2RState *state, ut64 prev_completed) {
 		}
 		free (name);
 	}
-
 }
 
 static void print_state_counts(R2RState *state) {
@@ -661,11 +671,10 @@ static void print_state(R2RState *state, ut64 prev_completed) {
 #if __WINDOWS__
 	setvbuf (stdout, NULL, _IOFBF, 8192);
 #endif
-	printf (R_CONS_CLEAR_LINE);
-
 	print_new_results (state, prev_completed);
 
 	// [x/x] OK  42 BR  0 ...
+	printf (R_CONS_CLEAR_LINE);
 	int w = printf ("[%"PFMT64u"/%"PFMT64u"]", (ut64)r_pvector_len (&state->results), (ut64)r_pvector_len (&state->db->tests));
 	while (w >= 0 && w < 20) {
 		printf (" ");
@@ -703,6 +712,9 @@ static void interact(R2RState *state) {
 		goto beach;
 	}
 
+#if __WINDOWS__
+	(void)SetConsoleOutputCP (65001); // UTF-8
+#endif
 	printf ("\n");
 	printf ("#####################\n");
 	printf (" %"PFMT64u" failed test(s) \xf0\x9f\x9a\xa8\n", (ut64)r_pvector_len (&failed_results));
@@ -794,17 +806,12 @@ static char *replace_lines(char *src, ut64 from, ut64 to, char *news) {
 		end++;
 		line++;
 	}
-	if (end && to != from) {
-		end = strchr (end, '\n');
-	}
 
 	RStrBuf buf;
 	r_strbuf_init (&buf);
 	r_strbuf_append_n (&buf, src, begin - src);
 	r_strbuf_append (&buf, news);
-	if (to == from) {
-		r_strbuf_append (&buf, "\n");
-	}
+	r_strbuf_append (&buf, "\n");
 	if (end) {
 		r_strbuf_append (&buf, end);
 	}

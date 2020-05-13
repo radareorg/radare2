@@ -118,7 +118,7 @@ static const char *has_esil(RCore *core, const char *name) {
 static void rasm2_list(RCore *core, const char *arch, int fmt) {
 	int i;
 	const char *feat2, *feat;
-	RAsm *a = core->assembler;
+	RAsm *a = core->rasm;
 	char bits[32];
 	RAsmPlugin *h;
 	RListIter *iter;
@@ -450,7 +450,7 @@ static bool cb_scrrainbow(void *user, void *data) {
 static bool cb_asmpseudo (void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->assembler->pseudo = node->i_value;
+	core->rasm->pseudo = node->i_value;
 	return true;
 }
 
@@ -469,12 +469,12 @@ static bool cb_asmsecsub(void *user, void *data) {
 static bool cb_asmassembler(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	r_asm_use_assembler (core->assembler, node->value);
+	r_asm_use_assembler (core->rasm, node->value);
 	return true;
 }
 
 static void update_cmdpdc_options(RCore *core, RConfigNode *node) {
-	r_return_if_fail (core && core->assembler && node);
+	r_return_if_fail (core && core->rasm && node);
 	RListIter *iter;
 	r_list_purge (node->options);
 	char *opts = r_core_cmd_str (core, "e cmd.pdc=?");
@@ -491,13 +491,13 @@ static void update_cmdpdc_options(RCore *core, RConfigNode *node) {
 static void update_asmcpu_options(RCore *core, RConfigNode *node) {
 	RAsmPlugin *h;
 	RListIter *iter;
-	r_return_if_fail (core && core->assembler);
+	r_return_if_fail (core && core->rasm);
 	const char *arch = r_config_get (core->config, "asm.arch");
 	if (!arch || !*arch) {
 		return;
 	}
 	r_list_purge (node->options);
-	r_list_foreach (core->assembler->plugins, iter, h) {
+	r_list_foreach (core->rasm->plugins, iter, h) {
 		if (h->cpus && !strcmp (arch, h->name)) {
 			char *c = strdup (h->cpus);
 			int i, n = r_str_split (c, ',');
@@ -521,7 +521,7 @@ static bool cb_asmcpu(void *user, void *data) {
 		rasm2_list (core, r_config_get (core->config, "asm.arch"), node->value[1]);
 		return 0;
 	}
-	r_asm_set_cpu (core->assembler, node->value);
+	r_asm_set_cpu (core->rasm, node->value);
 	r_config_set (core->config, "anal.cpu", node->value);
 	return true;
 }
@@ -529,9 +529,9 @@ static bool cb_asmcpu(void *user, void *data) {
 static void update_asmarch_options(RCore *core, RConfigNode *node) {
 	RAsmPlugin *h;
 	RListIter *iter;
-	if (core && node && core->assembler) {
+	if (core && node && core->rasm) {
 		r_list_purge (node->options);
-		r_list_foreach (core->assembler->plugins, iter, h) {
+		r_list_foreach (core->rasm->plugins, iter, h) {
 			SETOPTIONS (node, h->name, NULL);
 		}
 	}
@@ -543,7 +543,7 @@ static bool cb_asmarch(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	const char *asmos = NULL;
 	int bits = R_SYS_BITS;
-	if (!*node->value || !core || !core->assembler) {
+	if (!*node->value || !core || !core->rasm) {
 		return false;
 	}
 	asmos = r_config_get (core->config, "asm.os");
@@ -563,15 +563,15 @@ static bool cb_asmarch(void *user, void *data) {
 	}
 	r_egg_setup (core->egg, node->value, bits, 0, R_SYS_OS);
 
-	if (!r_asm_use (core->assembler, node->value)) {
+	if (!r_asm_use (core->rasm, node->value)) {
 		eprintf ("asm.arch: cannot find (%s)\n", node->value);
 		return false;
 	}
 	//we should strdup here otherwise will crash if any r_config_set
 	//free the old value
 	char *asm_cpu = strdup (r_config_get (core->config, "asm.cpu"));
-	if (core->assembler->cur) {
-		const char *newAsmCPU = core->assembler->cur->cpus;
+	if (core->rasm->cur) {
+		const char *newAsmCPU = core->rasm->cur->cpus;
 		if (newAsmCPU) {
 			if (*newAsmCPU) {
 				char *nac = strdup (newAsmCPU);
@@ -587,7 +587,7 @@ static bool cb_asmarch(void *user, void *data) {
 				r_config_set (core->config, "asm.cpu", "");
 			}
 		}
-		bits = core->assembler->cur->bits;
+		bits = core->rasm->cur->bits;
 		if (8 & bits) {
 			bits = 8;
 		} else if (16 & bits) {
@@ -600,8 +600,8 @@ static bool cb_asmarch(void *user, void *data) {
 	}
 	snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
 	r_config_set (core->config, "asm.parser", asmparser);
-	if (core->assembler->cur && core->anal &&
-	    !(core->assembler->cur->bits & core->anal->bits)) {
+	if (core->rasm->cur && core->anal &&
+	    !(core->rasm->cur->bits & core->anal->bits)) {
 		r_config_set_i (core->config, "asm.bits", bits);
 	}
 
@@ -631,7 +631,7 @@ static bool cb_asmarch(void *user, void *data) {
 	}
 	//if (!strcmp (node->value, "bf"))
 	//	r_config_set (core->config, "dbg.backend", "bf");
-	__setsegoff (core->config, node->value, core->assembler->bits);
+	__setsegoff (core->config, node->value, core->rasm->bits);
 
 	// set a default endianness
 	int bigbin = r_bin_is_big_endian (core->bin);
@@ -640,11 +640,11 @@ static bool cb_asmarch(void *user, void *data) {
 	}
 
 	// try to set endian of RAsm to match binary
-	r_asm_set_big_endian (core->assembler, bigbin);
+	r_asm_set_big_endian (core->rasm, bigbin);
 	// set endian of display to match binary
 	core->print->big_endian = bigbin;
 
-	r_asm_set_cpu (core->assembler, asm_cpu);
+	r_asm_set_cpu (core->rasm, asm_cpu);
 	free (asm_cpu);
 	RConfigNode *asmcpu = r_config_node_get (core->config, "asm.cpu");
 	if (asmcpu) {
@@ -696,15 +696,15 @@ static bool cb_asmbits(void *user, void *data) {
 	int bits = node->i_value;
 #if 0
 // TODO: pretty good optimization, but breaks many tests when arch is different i think
-	if (bits == core->assembler->bits && bits == core->anal->bits && bits == core->dbg->bits) {
+	if (bits == core->rasm->bits && bits == core->anal->bits && bits == core->dbg->bits) {
 		// early optimization
 		return true;
 	}
 #endif
 	if (bits > 0) {
-		ret = r_asm_set_bits (core->assembler, bits);
+		ret = r_asm_set_bits (core->rasm, bits);
 		if (!ret) {
-			RAsmPlugin *h = core->assembler->cur;
+			RAsmPlugin *h = core->rasm->cur;
 			if (!h) {
 				eprintf ("e asm.bits: Cannot set value, no plugins defined yet\n");
 				ret = true;
@@ -762,9 +762,9 @@ static bool cb_asmbits(void *user, void *data) {
 static void update_asmfeatures_options(RCore *core, RConfigNode *node) {
 	int i, argc;
 
-	if (core && core->assembler && core->assembler->cur) {
-		if (core->assembler->cur->features) {
-			char *features = strdup (core->assembler->cur->features);
+	if (core && core->rasm && core->rasm->cur) {
+		if (core->rasm->cur->features) {
+			char *features = strdup (core->rasm->cur->features);
 			argc = r_str_split (features, ',');
 			for (i = 0; i < argc; i++) {
 				node->options->free = free;
@@ -793,9 +793,9 @@ static bool cb_asmfeatures(void *user, void *data) {
 		print_node_options (node);
 		return 0;
 	}
-	R_FREE (core->assembler->features);
+	R_FREE (core->rasm->features);
 	if (node->value[0]) {
-		core->assembler->features = strdup (node->value);
+		core->rasm->features = strdup (node->value);
 	}
 	return 1;
 }
@@ -835,14 +835,14 @@ static bool cb_emuskip(void *user, void *data) {
 static bool cb_asm_armimm(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->assembler->immdisp = node->i_value ? true : false;
+	core->rasm->immdisp = node->i_value ? true : false;
 	return true;
 }
 
 static bool cb_asm_invhex(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->assembler->invhex = node->i_value;
+	core->rasm->invhex = node->i_value;
 	return true;
 }
 
@@ -853,7 +853,7 @@ static bool cb_asm_pcalign(void *user, void *data) {
 	if (align < 0) {
 		align = 0;
 	}
-	core->assembler->pcalign = align;
+	core->rasm->pcalign = align;
 	core->anal->pcalign = align;
 	return true;
 }
@@ -1056,7 +1056,7 @@ static bool cb_asmsyntax(void *user, void *data) {
 		if (syntax == -1) {
 			return false;
 		}
-		r_asm_set_syntax (core->assembler, syntax);
+		r_asm_set_syntax (core->rasm, syntax);
 	}
 	return true;
 }
@@ -1073,7 +1073,7 @@ static bool cb_bigendian(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	// Try to set endian based on preference, restrict by RAsmPlugin
-	bool isbig = r_asm_set_big_endian (core->assembler, node->i_value);
+	bool isbig = r_asm_set_big_endian (core->rasm, node->i_value);
 	// Set anal endianness the same as asm
 	r_anal_set_big_endian (core->anal, isbig);
 	// the big endian should also be assigned to dbg->bp->endian
@@ -2089,26 +2089,37 @@ static bool cb_scrhighlight(void *user, void *data) {
 }
 
 #if __WINDOWS__
-static bool scr_ansicon(void *user, void *data) {
+static bool scr_vtmode(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	if (!strcmp (node->value, "true")) {
+	if (r_str_is_true (node->value)) {
 		node->i_value = 1;
 	}
-	r_line_singleton ()->ansicon = r_cons_singleton ()->ansicon = node->i_value;
-	HANDLE streams[] = { GetStdHandle (STD_OUTPUT_HANDLE), GetStdHandle (STD_ERROR_HANDLE) };
+	node->i_value = node->i_value > 2 ? 2 : node->i_value;
+	r_line_singleton ()->vtmode = r_cons_singleton ()->vtmode = node->i_value;
+	
 	DWORD mode;
+	HANDLE input = GetStdHandle (STD_INPUT_HANDLE);
+	GetConsoleMode (input, &mode);
+	if (node->i_value == 2) {
+		SetConsoleMode (input, mode & ENABLE_VIRTUAL_TERMINAL_INPUT);
+		r_cons_singleton ()->term_raw = ENABLE_VIRTUAL_TERMINAL_INPUT;
+	} else {
+		SetConsoleMode (input, mode & ~ENABLE_VIRTUAL_TERMINAL_INPUT);
+		r_cons_singleton ()->term_raw = 0;
+	}
+	HANDLE streams[] = { GetStdHandle (STD_OUTPUT_HANDLE), GetStdHandle (STD_ERROR_HANDLE) };
 	int i;
-	if (node->i_value == 1) {  // scr.ansicon=2 to show esc seqs (for debugging) if using non-ConEmu-hosted cmd.exe
+	if (node->i_value > 0) {
 		for (i = 0; i < R_ARRAY_SIZE (streams); i++) {
 			GetConsoleMode (streams[i], &mode);
 			SetConsoleMode (streams[i],
-			                mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+				mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 		}
 	} else {
 		for (i = 0; i < R_ARRAY_SIZE (streams); i++) {
 			GetConsoleMode (streams[i], &mode);
 			SetConsoleMode (streams[i],
-			                mode & ~ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+				mode & ~ENABLE_VIRTUAL_TERMINAL_PROCESSING & ~ENABLE_WRAP_AT_EOL_OUTPUT);
 		}
 	}
 	return true;
@@ -2272,7 +2283,7 @@ static bool cb_segoff(void *user, void *data) {
 static bool cb_seggrn(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->assembler->seggrn = node->i_value;
+	core->rasm->seggrn = node->i_value;
 	core->anal->seggrn = node->i_value;
 	core->print->seggrn = node->i_value;
 	return true;
@@ -3518,8 +3529,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("scr.slow", "true", "Do slow stuff on visual mode like RFlag.get_at(true)");
 	SETCB ("scr.prompt.popup", "false", &cb_scr_prompt_popup, "Show widget dropdown for autocomplete");
 #if __WINDOWS__
-	SETICB ("scr.ansicon", r_cons_singleton ()->ansicon,
-		&scr_ansicon, "Use ANSICON mode or not on Windows");
+	SETICB ("scr.vtmode", r_cons_singleton ()->vtmode,
+		&scr_vtmode, "Use VT sequences on Windows (0: Disable, 1: Output, 2: Input & Output)");
 #endif
 #if __ANDROID__
 	SETBPREF ("scr.responsive", "true", "Auto-adjust Visual depending on screen (e.g. unset asm.bytes)");

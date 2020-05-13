@@ -373,12 +373,12 @@ EXPECT=<<EOF
 ----
 0x00000380 magic 8 wwww
 ----
+0x00000000 ascii[12] "hello world"
 0x00000000 CCu "Hello!"
 0x00000100 data Cd 3
-0x00000300 format 4 x
 0x00000200 hidden Ch 2
+0x00000300 format 4 x
 0x00000380 magic 8 wwww
-0x00000000 ascii[12] "hello world"
 ----
 Cs 12 @ 0x00000000 # hello world
 ----
@@ -392,12 +392,12 @@ CCu base64:SGVsbG8h @ 0x00000000
 ----
 Cm 8 wwww @ 0x00000380
 ----
+Cs 12 @ 0x00000000 # hello world
 CCu base64:SGVsbG8h @ 0x00000000
 Cd 3 @ 0x00000100
-Cf 4 x @ 0x00000300
 Ch 2 @ 0x00000200
+Cf 4 x @ 0x00000300
 Cm 8 wwww @ 0x00000380
-Cs 12 @ 0x00000000 # hello world
 ----
 [{"offset":0,"type":"Cs","name":"aGVsbG8gd29ybGQ=","enc":"latin1","ascii":true}]
 ----
@@ -411,7 +411,7 @@ Cs 12 @ 0x00000000 # hello world
 ----
 [{"offset":896,"type":"Cm","name":"wwww"}]
 ----
-[{"offset":0,"type":"CCu","name":"Hello!"},{"offset":256,"type":"Cd","name":"3","size":3},{"offset":768,"type":"Cf","name":"x"},{"offset":512,"type":"Ch","name":"2"},{"offset":896,"type":"Cm","name":"wwww"},{"offset":0,"type":"Cs","name":"aGVsbG8gd29ybGQ=","enc":"latin1","ascii":true}]
+[{"offset":0,"type":"Cs","name":"aGVsbG8gd29ybGQ=","enc":"latin1","ascii":true},{"offset":0,"type":"CCu","name":"Hello!"},{"offset":256,"type":"Cd","name":"3","size":3},{"offset":512,"type":"Ch","name":"2"},{"offset":768,"type":"Cf","name":"x"},{"offset":896,"type":"Cm","name":"wwww"}]
 EOF
 RUN
 
@@ -615,8 +615,8 @@ Cf-
 C
 EOF
 EXPECT=<<EOF
-0x00000100 format 8 xx
 0x00000100 ascii[4] "abcd"
+0x00000100 format 8 xx
 ----
 0x00000100 format 8 xx
 ----
@@ -637,9 +637,9 @@ C-
 C
 EOF
 EXPECT=<<EOF
-0x00000100 CCu "a string"
-0x00000100 format 8 xx
 0x00000100 ascii[4] "abcd"
+0x00000100 format 8 xx
+0x00000100 CCu "a string"
 ----
 EOF
 RUN
@@ -700,7 +700,7 @@ C.
 EOF
 EXPECT=<<EOF
 0x0007a23c ascii[13] "match_symbol"
-0x00083fc4 CCu "[14] -rw- section size 4 named .init_array"
 0x00083fc4 data Cd 4
+0x00083fc4 CCu "[14] -rw- section size 4 named .init_array"
 EOF
 RUN

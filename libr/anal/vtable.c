@@ -6,13 +6,13 @@
 #define VTABLE_BUFF_SIZE 10
 
 #define VTABLE_READ_ADDR_FUNC(fname, read_fname, sz) \
-	static bool fname(RAnal *anal, ut64 addr, ut64 *buf) { \
-		ut8 tmp[sz]; \
-		if(!anal->iob.read_at(anal->iob.io, addr, tmp, sz)) { \
-			return false; \
-		} \
-		*buf = read_fname(tmp); \
-		return true; \
+	static bool fname(RAnal *anal, ut64 addr, ut64 *buf) {\
+		ut8 tmp[sz];\
+		if (!anal->iob.read_at (anal->iob.io, addr, tmp, sz)) {\
+			return false;\
+		}\
+		*buf = read_fname (tmp);\
+		return true;\
 	}
 VTABLE_READ_ADDR_FUNC (vtable_read_addr_le8, r_read_le8, 1)
 VTABLE_READ_ADDR_FUNC (vtable_read_addr_le16, r_read_le16, 2)
@@ -35,35 +35,38 @@ R_API ut64 r_anal_vtable_info_get_size(RVTableContext *context, RVTableInfo *vta
 	return (ut64)vtable->methods.len * context->word_size;
 }
 
-
 R_API bool r_anal_vtable_begin(RAnal *anal, RVTableContext *context) {
 	context->anal = anal;
 	context->abi = anal->cpp_abi;
-	context->word_size = (ut8)(anal->bits / 8);
-	switch (anal->bits) {
-		case 8:
-			context->read_addr = anal->big_endian ? vtable_read_addr_be8 : vtable_read_addr_le8;
-			break;
-		case 16:
-			context->read_addr = anal->big_endian ? vtable_read_addr_be16 : vtable_read_addr_le16;
-			break;
-		case 32:
-			context->read_addr = anal->big_endian ? vtable_read_addr_be32 : vtable_read_addr_le32;
-			break;
-		case 64:
-			context->read_addr = anal->big_endian ? vtable_read_addr_be64 : vtable_read_addr_le64;
-			break;
-		default:
-			return false;
+	context->word_size = (ut8) (anal->bits / 8);
+	const bool is_arm = anal->cur->arch && r_str_startswith (anal->cur->arch, "arm");
+	if (is_arm && context->word_size < 4) {
+		context->word_size = 4;
+	}
+	switch (context->word_size) {
+	case 1:
+		context->read_addr = anal->big_endian ? vtable_read_addr_be8 : vtable_read_addr_le8;
+		break;
+	case 2:
+		context->read_addr = anal->big_endian ? vtable_read_addr_be16 : vtable_read_addr_le16;
+		break;
+	case 4:
+		context->read_addr = anal->big_endian ? vtable_read_addr_be32 : vtable_read_addr_le32;
+		break;
+	case 8:
+		context->read_addr = anal->big_endian ? vtable_read_addr_be64 : vtable_read_addr_le64;
+		break;
+	default:
+		return false;
 	}
 	return true;
 }
 
 static bool vtable_addr_in_text_section(RVTableContext *context, ut64 curAddress) {
 	//section of the curAddress
-	RBinSection* value = context->anal->binb.get_vsect_at (context->anal->binb.bin, curAddress);
+	RBinSection *value = context->anal->binb.get_vsect_at (context->anal->binb.bin, curAddress);
 	//If the pointed value lies in .text section
-	return value && !strcmp (value->name, ".text");
+	return value && strstr (value->name, "text") && (value->perm & 1) != 0;
 }
 
 static bool vtable_is_value_in_text_section(RVTableContext *context, ut64 curAddress, ut64 *value) {
@@ -90,8 +93,30 @@ static bool vtable_section_can_contain_vtables(RVTableContext *context, RBinSect
 		r_str_endswith (section->name, "__const");
 }
 
+static bool vtable_is_addr_vtable_start_itanium(RVTableContext *context, ut64 curAddress, ut64 data_section_start, ut64 data_section_end) {
+	ut64 value;
+	if (!curAddress || curAddress == UT64_MAX) {
+		return false;
+	}
+	if (curAddress && !vtable_is_value_in_text_section (context, curAddress, NULL)) {
+		return false;
+	}
+	if (!context->read_addr (context->anal, curAddress - context->word_size, &value)) {
+		return false;
+	}
+	if (value && (value < data_section_start || value >= data_section_end)) {
+		return false;
+	}
+	if (!context->read_addr (context->anal, curAddress - 2 * context->word_size, &value)) {
+		return false;
+	}
+	if ((st32)value > 0) {
+		return false;
+	}
+	return true;
+}
 
-static int vtable_is_addr_vtable_start(RVTableContext *context, ut64 curAddress) {
+static bool vtable_is_addr_vtable_start_msvc(RVTableContext *context, ut64 curAddress) {
 	RAnalRef *xref;
 	RListIter *xrefIter;
 
@@ -111,14 +136,13 @@ static int vtable_is_addr_vtable_start(RVTableContext *context, ut64 curAddress)
 		// section in which currenct xref lies
 		if (vtable_addr_in_text_section (context, xref->addr)) {
 			ut8 buf[VTABLE_BUFF_SIZE];
-			if (!context->anal->iob.read_at (context->anal->iob.io, xref->addr, buf, sizeof (buf))) {
-				continue;
-			}
+			context->anal->iob.read_at (context->anal->iob.io, xref->addr, buf, sizeof(buf));
 
 			RAnalOp analop = { 0 };
 			r_anal_op (context->anal, &analop, xref->addr, buf, sizeof(buf), R_ANAL_OP_MASK_BASIC);
 
-			if (analop.type == R_ANAL_OP_TYPE_MOV || analop.type == R_ANAL_OP_TYPE_LEA) {
+			if (analop.type == R_ANAL_OP_TYPE_MOV
+				|| analop.type == R_ANAL_OP_TYPE_LEA) {
 				r_list_free (xrefs);
 				r_anal_op_fini (&analop);
 				return true;
@@ -131,12 +155,29 @@ static int vtable_is_addr_vtable_start(RVTableContext *context, ut64 curAddress)
 	return false;
 }
 
+static bool vtable_is_addr_vtable_start(RVTableContext *context, ut64 curAddress, ut64 data_section_start, ut64 data_section_end) {
+	if (context->abi == R_ANAL_CPP_ABI_MSVC) {
+		return vtable_is_addr_vtable_start_msvc (context, curAddress);
+	}
+	if (context->abi == R_ANAL_CPP_ABI_ITANIUM) {
+		return vtable_is_addr_vtable_start_itanium (context, curAddress, data_section_start, data_section_end);
+	}
+	r_return_val_if_reached (false);
+}
+
 R_API RVTableInfo *r_anal_vtable_parse_at(RVTableContext *context, ut64 addr) {
-	RVTableInfo *vtable = calloc (1, sizeof(RVTableInfo));
+	ut64 offset_to_top;
+	if (!context->read_addr (context->anal, addr - 2 * context->word_size, &offset_to_top)) {
+		return NULL;
+	}
+
+	RVTableInfo *vtable = calloc (1, sizeof (RVTableInfo));
 	if (!vtable) {
 		return NULL;
 	}
+
 	vtable->saddr = addr;
+
 	r_vector_init (&vtable->methods, sizeof (RVTableMethodInfo), NULL, NULL);
 
 	RVTableMethodInfo meth;
@@ -193,7 +234,6 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 		ut64 endAddress = startAddress + (section->vsize) - context->word_size;
 		ut64 ss = endAddress - startAddress;
 		if (ss > ST32_MAX) {
-			eprintf ("Warning: Skipping %" PFMT64d " section\n", ss);
 			break;
 		}
 		while (startAddress <= endAddress) {
@@ -201,11 +241,10 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 				break;
 			}
 			if (!anal->iob.is_valid_offset (anal->iob.io, startAddress, 0)) {
-				eprintf ("Invalid address 0x%08"PFMT64x"\n", startAddress);
 				break;
 			}
 
-			if (vtable_is_addr_vtable_start (context, startAddress)) {
+			if (vtable_is_addr_vtable_start (context, startAddress, section->vaddr, endAddress)) {
 				RVTableInfo *vtable = r_anal_vtable_parse_at (context, startAddress);
 				if (vtable) {
 					r_list_append (vtables, vtable);
@@ -216,8 +255,7 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 					}
 				}
 			}
-			// XXX should be 4 or 8, always using aligned addresses
-			startAddress ++;
+			startAddress += context->word_size;
 		}
 	}
 
@@ -237,10 +275,10 @@ R_API void r_anal_list_vtables(RAnal *anal, int rad) {
 
 	const char *noMethodName = "No Name found";
 	RVTableMethodInfo *curMethod;
-	RListIter* vtableIter;
-	RVTableInfo* table;
+	RListIter *vtableIter;
+	RVTableInfo *table;
 
-	RList* vtables = r_anal_vtable_search (&context);
+	RList *vtables = r_anal_vtable_search (&context);
 
 	if (rad == 'j') {
 		bool isFirstElement = true;
@@ -256,7 +294,7 @@ R_API void r_anal_list_vtables(RAnal *anal, int rad) {
 					r_cons_print (",");
 				}
 				RAnalFunction *fcn = r_anal_get_fcn_in (anal, curMethod->addr, 0);
-				const char* const name = fcn ? fcn->name : NULL;
+				const char *const name = fcn ? fcn->name : NULL;
 				r_cons_printf ("{\"offset\":%"PFMT64d",\"name\":\"%s\"}",
 						curMethod->addr, name ? name : noMethodName);
 				isFirstMethod = false;
@@ -288,7 +326,7 @@ R_API void r_anal_list_vtables(RAnal *anal, int rad) {
 			r_cons_printf ("\nVtable Found at 0x%08"PFMT64x"\n", vtableStartAddress);
 			r_vector_foreach (&table->methods, curMethod) {
 				RAnalFunction *fcn = r_anal_get_fcn_in (anal, curMethod->addr, 0);
-				const char* const name = fcn ? fcn->name : NULL;
+				const char *const name = fcn ? fcn->name : NULL;
 				r_cons_printf ("0x%08"PFMT64x" : %s\n", vtableStartAddress, name ? name : noMethodName);
 				vtableStartAddress += context.word_size;
 			}
@@ -297,5 +335,3 @@ R_API void r_anal_list_vtables(RAnal *anal, int rad) {
 	}
 	r_list_free (vtables);
 }
-
-

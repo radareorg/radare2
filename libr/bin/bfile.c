@@ -175,6 +175,8 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 			} else {
 				str_type = R_STRING_TYPE_ASCII;
 			}
+		} else if (type == R_STRING_TYPE_UTF8) {
+			str_type = R_STRING_TYPE_ASCII; // initial assumption
 		} else {
 			str_type = type;
 		}
@@ -516,11 +518,12 @@ R_IPI RBinFile *r_bin_file_new_from_buffer(RBin *bin, const char *file, RBuffer 
 
 	RBinFile *bf = r_bin_file_new (bin, file, r_buf_size (buf), rawstr, fd, pluginname, NULL, false);
 	if (bf) {
+		RListIter *item = r_list_append (bin->binfiles, bf);
 		bf->buf = r_buf_ref (buf);
 		RBinPlugin *plugin = get_plugin_from_buffer (bin, pluginname, bf->buf);
 		RBinObject *o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, 0, r_buf_size (bf->buf));
 		if (!o) {
-			r_bin_file_free (bf);
+			r_list_delete (bin->binfiles, item);
 			return NULL;
 		}
 		// size is set here because the reported size of the object depends on
@@ -528,7 +531,6 @@ R_IPI RBinFile *r_bin_file_new_from_buffer(RBin *bin, const char *file, RBuffer 
 		if (!o->size) {
 			o->size = r_buf_size (buf);
 		}
-		r_list_append (bin->binfiles, bf);
 	}
 	return bf;
 }

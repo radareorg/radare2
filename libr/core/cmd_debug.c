@@ -850,10 +850,10 @@ static int step_until_inst(RCore *core, const char *instr, bool regex) {
 		pc = r_debug_reg_get (core->dbg, "PC");
 		r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false);
 		/* TODO: disassemble instruction and strstr */
-		r_asm_set_pc (core->assembler, pc);
+		r_asm_set_pc (core->rasm, pc);
 		// TODO: speedup if instructions are in the same block as the previous
 		r_io_read_at (core->io, pc, buf, sizeof (buf));
-		ret = r_asm_disassemble (core->assembler, &asmop, buf, sizeof (buf));
+		ret = r_asm_disassemble (core->rasm, &asmop, buf, sizeof (buf));
 		eprintf ("0x%08"PFMT64x" %d %s\n", pc, ret, r_asm_op_get_asm (&asmop)); // asmop.buf_asm);
 		if (ret > 0) {
 			const char *buf_asm = r_asm_op_get_asm (&asmop);
@@ -1357,7 +1357,7 @@ static int grab_bits(RCore *core, const char *arg, int *pcbits2) {
 			const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 			RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
 			if (reg) {
-				if (core->assembler->bits != reg->size)
+				if (core->rasm->bits != reg->size)
 					pcbits = reg->size;
 			}
 		}
@@ -1544,7 +1544,7 @@ static int r_debug_heap(RCore *core, const char *input) {
 	const char *m = r_config_get (core->config, "dbg.malloc");
 	if (m && !strcmp ("glibc", m)) {
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
-		if (core->assembler->bits == 64) {
+		if (core->rasm->bits == 64) {
 			cmd_dbg_map_heap_glibc_64 (core, input + 1);
 		} else {
 			cmd_dbg_map_heap_glibc_32 (core, input + 1);
@@ -1554,7 +1554,7 @@ static int r_debug_heap(RCore *core, const char *input) {
 #endif
 #if HAVE_JEMALLOC
 	} else if (m && !strcmp ("jemalloc", m)) {
-		if (core->assembler->bits == 64) {
+		if (core->rasm->bits == 64) {
 			cmd_dbg_map_jemalloc_64 (core, input + 1);
 		} else {
 			cmd_dbg_map_jemalloc_32 (core, input + 1);
@@ -1956,7 +1956,7 @@ R_API void r_core_debug_ri(RCore *core, RReg *reg, int mode) {
 	HtUP *db = ht_up_new0 ();
 
 	r_list_foreach (list, iter, r) {
-		if (r->size != core->assembler->bits) {
+		if (r->size != core->rasm->bits) {
 			continue;
 		}
 		ut64 value = r_reg_get_value (reg, r);
@@ -2007,7 +2007,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	bool use_colors = had_colors != 0;
 	int delta = 0;
 	ut64 diff, value;
-	int bits = core->assembler->bits;
+	int bits = core->rasm->bits;
 	//XXX: support other RRegisterType
 	RList *list = r_reg_get_list (reg, R_REG_TYPE_GPR);
 	RListIter *iter;
@@ -2512,7 +2512,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					r_print_hexdump (core->print, 0ll, buf, len, 64, 8, 1);
 					break;
 				default:
-					if (core->assembler->bits == 64) {
+					if (core->rasm->bits == 64) {
 						r_print_hexdump (core->print, 0ll, buf, len, 64, 8, 1);
 					} else {
 						r_print_hexdump (core->print, 0ll, buf, len, 32, 4, 1);
@@ -2997,7 +2997,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 			RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
 			if (reg) {
-				if (core->assembler->bits != reg->size) {
+				if (core->rasm->bits != reg->size) {
 					pcbits = reg->size;
 				}
 			}
@@ -5417,8 +5417,8 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		case 'a': { // "dxa"
 			RAsmCode *acode;
-			r_asm_set_pc (core->assembler, core->offset);
-			acode = r_asm_massemble (core->assembler, input + 2);
+			r_asm_set_pc (core->rasm, core->offset);
+			acode = r_asm_massemble (core->rasm, input + 2);
 			if (acode) {
 				r_reg_arena_push (core->dbg->reg);
 				r_debug_execute (core->dbg, acode->bytes, acode->len, 0);
@@ -5438,7 +5438,7 @@ static int cmd_debug(void *data, const char *input) {
 			r_egg_load (egg, input + 1, 0);
 			r_egg_compile (egg);
 			b = r_egg_get_bin (egg);
-			r_asm_set_pc (core->assembler, core->offset);
+			r_asm_set_pc (core->rasm, core->offset);
 			r_reg_arena_push (core->dbg->reg);
 			ut64 tmpsz;
 			const ut8 *tmp = r_buf_data (b, &tmpsz);

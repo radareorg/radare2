@@ -431,7 +431,7 @@ pd 1
 EOF
 EXPECT=<<EOF
            .blah:
-               31ed           xor ebp, ebp
+               31ed           xor ebp, ebp           ; /builddir/glibc-2.19/csu/../sysdeps/x86_64//start.S:67
 EOF
 RUN
 

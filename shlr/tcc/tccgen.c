@@ -39,6 +39,7 @@ ST_DATA int rsym, anon_sym = SYM_FIRST_ANOM, ind, loc;
 ST_DATA Sym *sym_free_first;
 ST_DATA void **sym_pools;
 ST_DATA int nb_sym_pools;
+
 static int arraysize = 0;
 
 static const char *global_symname = NULL;
@@ -755,17 +756,16 @@ add_tstr:
 	case VT_STRUCT:
 	case VT_UNION:
 		if (bt == VT_STRUCT) {
-			tstr = "struct ";
+			tstr = "struct";
 		} else if (bt == VT_UNION) {
-			tstr = "union ";
+			tstr = "union";
 		} else {
-			tstr = "enum ";
+			tstr = "enum";
 		}
 		pstrcat (buf, buf_size, tstr);
 		v = type->ref->v & ~SYM_STRUCT;
-		if (v >= SYM_FIRST_ANOM) {
-			strcat_printf (buf, buf_size, "%u", v - SYM_FIRST_ANOM);
-		} else {
+		if (v < SYM_FIRST_ANOM) {
+			pstrcat (buf, buf_size, " ");
 			pstrcat (buf, buf_size, get_tok_str (v, NULL));
 		}
 		break;
@@ -955,7 +955,7 @@ static void parse_attribute(AttributeDef *ad) {
 }
 
 /* enum/struct/union declaration. u is either VT_ENUM, VT_STRUCT or VT_UNION */
-static void struct_decl(CType *type, int u) {
+static void struct_decl(CType *type, int u, bool is_typedef) {
 	int a, v, size, align, maxalign, offset;
 	long long c = 0;
 	int bit_size, bit_pos, bsize, bt, lbit_pos, prevbt;
@@ -963,6 +963,7 @@ static void struct_decl(CType *type, int u) {
 	Sym *s, *ss, *ass, **ps;
 	AttributeDef ad;
 	const char *name = NULL;
+	bool autonamed = false;
 	STACK_NEW0 (CType, type1);
 	STACK_NEW0 (CType, btype);
 
@@ -987,6 +988,7 @@ static void struct_decl(CType *type, int u) {
 		v = anon_sym++;
 		snprintf (buf, sizeof(buf), "%u", v - SYM_FIRST_ANOM);
 		name = buf;
+		autonamed = true;
 	}
 	type1.t = a;
 	/* we put an undefined size for struct/union/enum */
@@ -1024,6 +1026,7 @@ do_decl:
 					next ();
 					c = expr_const ();
 				}
+				// TODO: use is_typedef here
 				if (strcmp (name, "{")) {
 					char *varstr = get_tok_str (v, NULL);
 					tcc_appendf ("%s=enum\n", name);
@@ -1058,7 +1061,9 @@ do_decl:
 			offset = 0;
 
 			const char *ctype = (a == TOK_UNION)? "union": "struct";
-			tcc_appendf ("%s=%s\n", name, ctype);
+			if (!is_typedef || !autonamed) {
+				tcc_appendf ("%s=%s\n", name, ctype);
+			}
 
 			while (tok != '}') {
 				if (!parse_btype (&btype, &ad)) {
@@ -1178,13 +1183,19 @@ do_decl:
 						{
 							int type_bt = type1.t & VT_BTYPE;
 							//eprintf("2: %s.%s = %s\n", ctype, name, varstr);
-							tcc_appendf ("[+]%s.%s=%s\n",
-								ctype, name, varstr);
-							tcc_appendf ("%s.%s.%s.meta=%d\n",
-								ctype, name, varstr, type_bt);
-							/* compact form */
-							tcc_appendf ("%s.%s.%s=%s,%d,%d\n",
-								ctype, name, varstr, b, offset, arraysize);
+							if (is_typedef && autonamed) {
+								tcc_typedef_appendf ("[+]typedef.%%s.fields=%s\n", varstr);
+								tcc_typedef_appendf ("typedef.%%s.%s.meta=%d\n", varstr, type_bt);
+								tcc_typedef_appendf ("typedef.%%s.%s=%s,%d,%d\n", varstr, b, offset, arraysize);
+							} else {
+								tcc_appendf ("[+]%s.%s=%s\n",
+									ctype, name, varstr);
+								tcc_appendf ("%s.%s.%s.meta=%d\n",
+									ctype, name, varstr, type_bt);
+								/* compact form */
+								tcc_appendf ("%s.%s.%s=%s,%d,%d\n",
+									ctype, name, varstr, b, offset, arraysize);
+							}
 #if 0
 							eprintf ("%s.%s.%s.type=%s\n", ctype, name, varstr, b);
 							eprintf ("%s.%s.%s.offset=%d\n", ctype, name, varstr, offset);
@@ -1202,7 +1213,7 @@ do_decl:
 						}
 #endif
 					}
-					if (v == 0 && is_structured(&type1)) {
+					if (v == 0 && is_structured (&type1)) {
 						ass = type1.ref;
 						while ((ass = ass->next) != NULL) {
 							ss = sym_push (ass->v, &ass->type, 0, offset + ass->c);
@@ -1350,16 +1361,16 @@ basic_type1:
 			}
 			break;
 		case TOK_ENUM:
-			struct_decl (&type1, VT_ENUM);
+			struct_decl (&type1, VT_ENUM, (bool)(t & VT_ENUM));
 basic_type2:
 			u = type1.t;
 			type->ref = type1.ref;
 			goto basic_type1;
 		case TOK_STRUCT:
-			struct_decl (&type1, VT_STRUCT);
+			struct_decl (&type1, VT_STRUCT, (bool)(t & VT_TYPEDEF));
 			goto basic_type2;
 		case TOK_UNION:
-			struct_decl (&type1, VT_UNION);
+			struct_decl (&type1, VT_UNION, (bool)(t & VT_UNION));
 			goto basic_type2;
 
 		/* type modifiers */
@@ -3182,8 +3193,9 @@ func_error1:
 					char buf[500];
 					alias = get_tok_str(v, NULL);
 					type_to_str(buf, sizeof(buf), &sym->type, NULL);
-					tcc_appendf("%s=typedef\n",alias);
-					tcc_appendf("typedef.%s=%s\n",alias, buf);
+					tcc_appendf ("%s=typedef\n", alias);
+					tcc_appendf ("typedef.%s=%s\n", alias, buf);
+					tcc_typedef_alias_fields (alias);
 				} else {
 					r = 0;
 					if ((type.t & VT_BTYPE) == VT_FUNC) {

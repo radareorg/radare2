@@ -278,7 +278,7 @@ size: 26
 realsz: 26
 stackframe: 8
 call-convention: amd64
-cyclomatic-cost : 11
+cyclomatic-cost: 11
 cyclomatic-complexity: 1
 bits: 64
 type: sym [NEW]
@@ -316,7 +316,7 @@ size: 26
 realsz: 26
 stackframe: 8
 call-convention: amd64
-cyclomatic-cost : 11
+cyclomatic-cost: 11
 cyclomatic-complexity: 1
 bits: 64
 type: sym [NEW]

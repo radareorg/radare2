@@ -26,6 +26,13 @@ typedef struct r_ascii_node_t {
 	bool is_mini;
 } RANode;
 
+typedef struct r_core_graph_hits_t {
+	char *old_word ;
+	RVector word_list;
+	int word_nth;
+} RAGraphHits;
+
+
 #define R_AGRAPH_MODE_NORMAL 0
 #define R_AGRAPH_MODE_OFFSET 1
 #define R_AGRAPH_MODE_MINI 2
@@ -81,6 +88,7 @@ typedef struct r_ascii_graph_t {
 	int n_layers;
 	RList *dists; /* RList<struct dist_t> */
 	RList *edges; /* RList<AEdge> */
+	RAGraphHits ghits;
 } RAGraph;
 
 #ifdef R_API

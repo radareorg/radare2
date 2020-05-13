@@ -211,6 +211,7 @@ typedef struct r_bin_info_t {
 	char *guid;
 	char *debug_file_name;
 	const char *lang;
+	char *default_cc;
 	RList/*<RBinFileHash>*/ *file_hashes;
 	int bits;
 	int has_va;
@@ -876,6 +877,7 @@ extern RBinPlugin r_bin_plugin_sfc;
 extern RBinPlugin r_bin_plugin_z64;
 extern RBinPlugin r_bin_plugin_prg;
 extern RBinPlugin r_bin_plugin_dmp64;
+extern RBinPlugin r_bin_plugin_pyc;
 
 #ifdef __cplusplus
 }

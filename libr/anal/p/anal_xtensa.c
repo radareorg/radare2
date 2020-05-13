@@ -1912,8 +1912,6 @@ static int xtensa_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf_origin
 	if (!op) {
 		return 1;
 	}
-	memset (op, 0, sizeof (RAnalOp));
-	r_strbuf_init (&op->esil);
 
 	op->size = xtensa_length (buf_original);
 	if (op->size > len_original) {
@@ -1938,9 +1936,6 @@ static int xtensa_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf_origin
 
 	static xtensa_insnbuf insn_buffer = NULL;
 	static xtensa_insnbuf slot_buffer = NULL;
-
-	r_strbuf_init (&op->esil);
-	r_strbuf_set (&op->esil, "");
 
 	if (!insn_buffer) {
 		insn_buffer = xtensa_insnbuf_alloc (isa);

@@ -228,7 +228,6 @@ static void pvector_free_elem(void *e, void *user) {
 	elem_free (p);
 }
 
-
 R_API void r_pvector_init(RPVector *vec, RPVectorFree free) {
 	r_vector_init (&vec->v, sizeof (void *), free ? pvector_free_elem : NULL, free);
 }

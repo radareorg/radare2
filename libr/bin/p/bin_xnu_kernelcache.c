@@ -132,7 +132,7 @@ static void swizzle_io_read(RKernelCacheObj *obj, RIO *io);
 static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count);
 static bool r_parse_pointer(RParsedPointer *ptr, ut64 decorated_addr, RKernelCacheObj *obj);
 static bool on_rebase_pointer (ut64 offset, ut64 decorated_addr, RRebaseCtx *ctx);
-static void rebase_buffer(RKernelCacheObj *obj, RIO *io, RIODesc *fd, ut8 *buf, int count);
+static void rebase_buffer(RKernelCacheObj *obj, ut64 off, RIODesc *fd, ut8 *buf, int count);
 
 static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) *mach0);
 static RList *filter_kexts(RKernelCacheObj *obj);
@@ -1916,23 +1916,23 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		internal_buf_size = count;
 	}
 
+	ut64 io_off = io->off;
 	int result = cache->original_io_read (io, fd, internal_buffer, count);
 
 	if (result == count) {
-		rebase_buffer (cache, io, fd, internal_buffer, count);
+		rebase_buffer (cache, io_off, fd, internal_buffer, count);
 		memcpy (buf, internal_buffer, result);
 	}
 
 	return result;
 }
 
-static void rebase_buffer(RKernelCacheObj *obj, RIO *io, RIODesc *fd, ut8 *buf, int count) {
+static void rebase_buffer(RKernelCacheObj *obj, ut64 off, RIODesc *fd, ut8 *buf, int count) {
 	if (obj->rebasing_buffer) {
 		return;
 	}
 	obj->rebasing_buffer = true;
 
-	ut64 off = io->off;
 	ut64 eob = off + count;
 	int i = 0;
 	RRebaseCtx ctx;

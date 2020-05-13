@@ -135,6 +135,7 @@ R_API wchar_t *r_str_mb_to_wc(const char *buf);
 R_API char *r_str_wc_to_mb(const wchar_t *buf);
 R_API wchar_t *r_str_mb_to_wc_l(const char *buf, int len);
 R_API char *r_str_wc_to_mb_l(const wchar_t *buf, int len);
+R_API const char *r_str_str_xy(const char *s, const char *word, const char *prev, int *x, int *y);
 
 typedef void(*str_operation)(char *c);
 
