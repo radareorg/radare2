@@ -67,14 +67,13 @@ static void __save_parsed_type_size(RAnal *anal, const char *parsed) {
 	}
 }
 
-static char *get_type_data(Sdb *sdb_types, char *type, char *sname) {
+static char *get_type_data(Sdb *sdb_types, const char *type, const char *sname) {
 	char *key = r_str_newf ("%s.%s", type, sname);
 	if (!key) {
 		return NULL;
 	}
 	char *members = sdb_get (sdb_types, key, NULL);
 	free (key);
-
 	return members;
 }
 
