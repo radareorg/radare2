@@ -30,11 +30,26 @@ R_API st64 r_big_to_int(RNumBig *b) {
 }
 
 R_API void r_big_from_hexstr(RNumBig *b, const char *str) {
-	mpz_set_str (*b, str, 16);
+	if (r_str_startswith (str, "0x")) {
+		str += 2;
+		mpz_set_str (*b, str, 16);
+	} else if (r_str_startswith (str, "-0x")) {
+		str += 3;
+		mpz_set_str (*b, str, 16);
+		mpz_mul_si (*b, *b, -1);
+	}
 }
 
 R_API char *r_big_to_hexstr(RNumBig *b) {
-	return mpz_get_str (NULL, 16, *b);
+	char *tmp = mpz_get_str (NULL, 16, *b);
+	char *res;
+	if (tmp[0] == '-') {
+		res = r_str_newf ("-0x%s", &tmp[1]);
+	} else {
+		res = r_str_newf ("0x%s", tmp);
+	}
+	free (tmp);
+	return res;
 }
 
 R_API void r_big_assign(RNumBig *dst, RNumBig *src) {
@@ -86,7 +101,14 @@ R_API void r_big_rshift(RNumBig *c, RNumBig *a, size_t nbits) {
 }
 
 R_API int r_big_cmp(RNumBig *a, RNumBig *b) {
-	return mpz_cmp (*a, *b);
+	int res = mpz_cmp (*a, *b);
+	if (res > 0) {
+		return 1;
+	} else if (res < 0) {
+		return -1;
+	} else {
+		return 0;
+	}
 }
 
 R_API int r_big_is_zero(RNumBig *a) {
