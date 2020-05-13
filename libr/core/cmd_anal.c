@@ -977,25 +977,19 @@ static void var_help(RCore *core, char ch) {
 static void var_accesses_list(RAnalFunction *fcn, RAnalVar *var, int access_type, const char *name) {
 	RAnalVarAccess *acc;
 	bool first = true;
+	r_cons_printf ("%10s  ", name);
 	r_vector_foreach (&var->accesses, acc) {
 		if (!(acc->type & access_type)) {
 			continue;
 		}
-		if (first) {
-			r_cons_printf ("%10s  ", name);
-		} else {
-			r_cons_print (",");
-		}
+		r_cons_printf ("%s0x%"PFMT64x, first? "": ",", (ut64)((st64)fcn->addr + acc->offset));
 		first = false;
-		r_cons_printf ("0x%"PFMT64x, (ut64)((st64)fcn->addr + acc->offset));
 	}
-	if (!first) {
-		r_cons_newline ();
-	}
+	r_cons_newline ();
 }
 
 static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *name) {
-	RAnalVar *var;
+	RAnalVar *var = NULL;
 	RListIter *iter;
 	RList *list = r_anal_var_all_list (core->anal, fcn);
 	if (type == '=') {
