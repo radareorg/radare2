@@ -321,5 +321,4 @@ const uint8_t buffer[_BUFFER_SIZE] = {
  0x48, 0xc7, 0xc7,                     /* invalid */
 };
 EOF
-EOF
 RUN

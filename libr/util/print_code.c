@@ -29,7 +29,7 @@ static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len) 
 	p->cb_printf ("const uint8_t buffer[_BUFFER_SIZE] = {\n");
 
 	const int orig_align = p->coreb.cfggeti (p->coreb.core, "asm.cmt.col") - 40;
-	size_t i = 0;
+	size_t k, i = 0;
 
 	while (!r_print_is_interrupted () && i < len) {
 		ut64 at = addr + i;
@@ -39,17 +39,15 @@ static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len) 
 			// just skip the current instruction and go ahead
 			inst_size = 1;
 		}
-
 		p->cb_printf (" ");
-
-		size_t j;
-		for (j = 0; j < inst_size && i + j < len; ++j) {
-			r_print_cursor (p, i + j, 1, 1);
+		size_t limit = R_MIN (i + inst_size, len);
+		for (k = i; k < limit; k++) {
+			r_print_cursor (p, k, 1, true);
 			p->cb_printf (fmtstr, r_read_ble (buf++, p->big_endian, 8));
-			r_print_cursor (p, i + j, 1, 0);
+			r_print_cursor (p, k, 1, false);
 			p->cb_printf (", ");
 		}
-
+		size_t j = k - i;
 		int pad = orig_align - ((j - 1) * 6);
 		p->cb_printf ("%*s", R_MAX (pad, 0), "");
 
@@ -61,7 +59,6 @@ static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len) 
 		} else {
 			p->cb_printf (" /* invalid */\n");
 		}
-
 		i += j;
 	}
 	p->cb_printf ("};\n");
