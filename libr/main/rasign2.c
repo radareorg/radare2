@@ -53,7 +53,6 @@ static int find_functions(int count, RCore *core) {
 		rasign_show_help ();
 		return -1;
 	}
-	r_cons_flush ();
 	r_core_cmd0 (core, cmd);
 	return 0;
 }
