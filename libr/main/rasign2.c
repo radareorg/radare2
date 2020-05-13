@@ -1,3 +1,4 @@
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 #include <stdio.h>
 #include <string.h>
 #include <r_getopt.h>
