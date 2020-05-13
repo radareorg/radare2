@@ -456,19 +456,20 @@ static const char *help_msg_aft[] = {
 
 static const char *help_msg_afv[] = {
 	"Usage:", "afv","[rbs]",
-	"afvr", "[?]", "manipulate register based arguments",
-	"afvb", "[?]", "manipulate bp based arguments/locals",
-	"afvs", "[?]", "manipulate sp based arguments/locals",
 	"afv*", "", "output r2 command to add args/locals to flagspace",
-	"afvR", " [varname]", "list addresses where vars are accessed (READ)",
-	"afvW", " [varname]", "list addresses where vars are accessed (WRITE)",
-	"afva", "", "analyze function arguments/locals",
-	"afvd", " name", "output r2 command for displaying the value of args/locals in the debugger",
-	"afvn", " [new_name] ([old_name])", "rename argument/local",
-	"afvt", " [name] [new_type]", "change type for given argument/local",
-	"afvf", "", "show BP relative stackframe variables",
-	"afvx", "", "show function variable xrefs (same as afvR+afvW)",
 	"afv-", "([name])", "remove all or given var",
+	"afv=", "", "list function variables and arguments with disasm refs",
+	"afva", "", "analyze function arguments/locals",
+	"afvb", "[?]", "manipulate bp based arguments/locals",
+	"afvd", " name", "output r2 command for displaying the value of args/locals in the debugger",
+	"afvf", "", "show BP relative stackframe variables",
+	"afvn", " [new_name] ([old_name])", "rename argument/local",
+	"afvr", "[?]", "manipulate register based arguments",
+	"afvR", " [varname]", "list addresses where vars are accessed (READ)",
+	"afvs", "[?]", "manipulate sp based arguments/locals",
+	"afvt", " [name] [new_type]", "change type for given argument/local",
+	"afvW", " [varname]", "list addresses where vars are accessed (WRITE)",
+	"afvx", "", "show function variable xrefs (same as afvR+afvW)",
 	NULL
 };
 
