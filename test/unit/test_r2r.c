@@ -180,8 +180,8 @@ bool test_r2r_fix(void) {
 }
 
 int all_tests() {
-	mu_run_test(test_r2r_database_load_cmd);
-	mu_run_test(test_r2r_fix);
+	mu_run_test (test_r2r_database_load_cmd);
+	mu_run_test (test_r2r_fix);
 	return tests_passed != tests_run;
 }
 

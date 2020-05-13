@@ -879,7 +879,7 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 		eprintf ("Failed to read file \"%s\"\n", path);
 		return;
 	}
-	char *newc = replace_cmd_kv(path, content, line_begin, line_end, key, value, fixup_results);
+	char *newc = replace_cmd_kv (path, content, line_begin, line_end, key, value, fixup_results);
 	free (content);
 	if (!newc) {
 		return;
