@@ -19,7 +19,6 @@ static int rasign_show_help() {
 }
 
 static RCore *opencore(const char *fname) {
-	const ut64 baddr = UT64_MAX;
 	RCore *c = r_core_new ();
 	if (!c) {
 		eprintf ("Count not get core\n");
@@ -36,7 +35,7 @@ static RCore *opencore(const char *fname) {
 			eprintf ("Could not open file %s\n", fname);
 			return NULL;
 		}
-		(void)r_core_bin_load (c, NULL, baddr);
+		(void)r_core_bin_load (c, NULL, UT64_MAX);
 		(void)r_core_bin_update_arch_bits (c);
 		r_cons_flush ();
 	}
