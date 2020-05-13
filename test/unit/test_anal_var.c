@@ -216,6 +216,9 @@ bool test_r_anal_var() {
 	mu_assert_eq (r_pvector_len (used_vars), 1, "used vars count");
 	mu_assert ("used vars", r_pvector_contains (used_vars, b));
 
+	r_anal_var_delete (b);
+	r_anal_var_delete (c);
+
 	r_anal_free (anal);
 	mu_end;
 }

@@ -676,7 +676,7 @@ INST_HANDLER (fmul) {	// FMUL Rd, Rr
 	ESIL_A ("0xffff,1,r%d,r%d,*,<<,&,r1_r0,=,", r, d);	// 0: r1_r0 = (rd * rr) << 1
 	ESIL_A ("r1_r0,0x8000,&,!,!,cf,:=,");			// C = R/15
 	ESIL_A ("$z,zf,:=");					// Z = !R
-	
+
 }
 
 INST_HANDLER (fmuls) {	// FMULS Rd, Rr
@@ -1604,13 +1604,6 @@ static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut
 	int fail;
 	char *t;
 
-	// initialize op struct
-	memset (op, 0, sizeof (RAnalOp));
-	op->ptr = UT64_MAX;
-	op->val = UT64_MAX;
-	op->jump = UT64_MAX;
-	r_strbuf_init (&op->esil);
-
 	// process opcode
 	for (opcode_desc = opcodes; opcode_desc->handler; opcode_desc++) {
 		if ((ins & opcode_desc->mask) == opcode_desc->selector) {
@@ -1663,10 +1656,6 @@ INVALID_OP:
 	op->family = R_ANAL_OP_FAMILY_UNKNOWN;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->addr = addr;
-	op->fail = UT64_MAX;
-	op->jump = UT64_MAX;
-	op->ptr = UT64_MAX;
-	op->val = UT64_MAX;
 	op->nopcode = 1;
 	op->cycles = 1;
 	op->size = 2;

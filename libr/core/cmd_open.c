@@ -1019,14 +1019,7 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 	r_flag_foreach (core->flags, __rebase_flags, &reb);
 
 	// META
-	RList *meta_list = r_meta_enumerate (core->anal, R_META_TYPE_ANY);
-	RAnalMetaItem *item;
-	r_list_foreach (meta_list, it, item) {
-		r_meta_del (core->anal, item->type, item->from, item->size);
-		item->from += diff;
-		r_meta_add_with_subtype (core->anal, item->type, item->subtype, item->from, item->from + item->size, item->str);
-	}
-	r_list_free (meta_list);
+	r_meta_rebase (core->anal, diff);
 
 	// REFS
 	HtUP *old_refs = core->anal->dict_refs;
@@ -1058,7 +1051,7 @@ R_API void r_core_file_reopen_remote_debug(RCore *core, char *uri, ut64 addr) {
 
 	RList *old_sections = __save_old_sections (core);
 	ut64 old_base = core->bin->cur->o->baddr_shift;
-	int bits = core->assembler->bits;
+	int bits = core->rasm->bits;
 	r_config_set_i (core->config, "asm.bits", bits);
 	r_config_set_i (core->config, "cfg.debug", true);
 	// Set referer as the original uri so we could return to it with `oo`
@@ -1124,7 +1117,7 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 
 	RList *old_sections = __save_old_sections (core);
 	ut64 old_base = core->bin->cur->o->baddr_shift;
-	int bits = core->assembler->bits;
+	int bits = core->rasm->bits;
 	char *bin_abspath = r_file_abspath (binpath);
 	char *escaped_path = r_str_arg_escape (bin_abspath);
 	char *newfile = r_str_newf ("dbg://%s %s", escaped_path, args);

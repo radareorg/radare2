@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #ifndef R2_CORE_H
 #define R2_CORE_H
@@ -83,12 +83,6 @@ R_LIB_VERSION_HEADER(r_core);
 #define RTR_PROTOCOL_UNIX 4
 
 #define RTR_MAX_HOSTS 255
-
-typedef enum {
-	R_CORE_CMD_STATUS_OK = R_CORE_CMD_OK,
-	R_CORE_CMD_STATUS_INVALID = R_CORE_CMD_INVALID,
-	R_CORE_CMD_STATUS_EXIT = R_CORE_CMD_EXIT
-} RCoreCmdStatus;
 
 /* visual mode */
 typedef enum {
@@ -268,7 +262,7 @@ typedef struct r_core_t {
 	RCmdDescriptor root_cmd_descriptor;
 	RList/*<RCmdDescriptor>*/ *cmd_descriptors;
 	RAnal *anal;
-	RAsm *assembler;
+	RAsm *rasm;
 	/* ^^ */
 	RCoreTimes *times;
 	RParse *parser;

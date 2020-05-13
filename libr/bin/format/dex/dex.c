@@ -14,7 +14,6 @@ char* r_bin_dex_get_version(RBinDexObj *bin) {
 	return NULL;
 }
 
-// XXX this is never called
 void r_bin_dex_free(RBinDexObj *dex) {
 	size_t i;
 	struct dex_header_t *dexhdr = &dex->header;

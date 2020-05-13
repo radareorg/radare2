@@ -204,7 +204,7 @@ R_API int r_core_bin_set_env(RCore *r, RBinFile *binfile) {
 		} else {
 			r_config_set (r->config, "anal.cpu", arch);
 		}
-		r_asm_use (r->assembler, arch);
+		r_asm_use (r->rasm, arch);
 		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_MODE_SET, va, NULL, NULL);
 		r_core_bin_set_cur (r, binfile);
 		return true;
@@ -292,7 +292,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			r_meta_add (r->anal, R_META_TYPE_STRING, vaddr, vaddr + string->size, string->string);
+			r_meta_set (r->anal, R_META_TYPE_STRING, vaddr, string->size, string->string);
 			f_name = strdup (string->string);
 			r_name_filter (f_name, -1);
 			if (r->bin->prefix) {
@@ -547,7 +547,7 @@ static void sdb_concat_by_path(Sdb *s, const char *path) {
 R_API void r_core_anal_type_init(RCore *core) {
 	r_return_if_fail (core && core->anal);
 	const char *dir_prefix = r_config_get (core->config, "dir.prefix");
-	int bits = core->assembler->bits;
+	int bits = core->rasm->bits;
 	Sdb *types = core->anal->sdb_types;
 	// make sure they are empty this is initializing
 	sdb_reset (types);
@@ -669,6 +669,9 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 		}
 		r_core_anal_type_init (r);
 		r_core_anal_cc_init (r);
+		if (info->default_cc && r_anal_cc_exist (r->anal, info->default_cc)) {
+			r_core_cmdf (r, "k anal/cc/default.cc=%s", info->default_cc);
+		}
 	} else if (IS_MODE_SIMPLE (mode)) {
 		r_cons_printf ("arch %s\n", info->arch);
 		if (info->cpu && *info->cpu) {
@@ -715,6 +718,9 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 			}
 			if (info->cpu && *info->cpu) {
 				r_cons_printf ("e asm.cpu=%s\n", info->cpu);
+			}
+			if (info->default_cc) {
+				r_cons_printf ("k anal/cc/default.cc=%s", info->default_cc);
 			}
 			v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_ALIGN);
 			if (v != -1) {
@@ -781,6 +787,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 		if (info->rclass && !strcmp (info->rclass, "pe")) {
 			pair_bool ("overlay", info->pe_overlay, mode, false);
 		}
+		pair_str ("cc", info->default_cc, mode, false);
 		v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_ALIGN);
 		if (v != -1) {
 			pair_int ("pcalign", v, mode, false);
@@ -1229,8 +1236,7 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 			}
 			r_flag_set (r->flags, str, at, 1);
 			if (is_initfini (entry) && hvaddr != UT64_MAX) {
-				r_meta_add (r->anal, R_META_TYPE_DATA, hvaddr,
-				            hvaddr + entry->bits / 8, NULL);
+				r_meta_set (r->anal, R_META_TYPE_DATA, hvaddr, entry->bits / 8, NULL);
 			}
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%08"PFMT64x"\n", at);
@@ -1420,7 +1426,7 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 			}
 		}
 		r_anal_hint_set_size (r->anal, reloc->vaddr, 4);
-		r_meta_add (r->anal, R_META_TYPE_DATA, reloc->vaddr, reloc->vaddr+4, NULL);
+		r_meta_set (r->anal, R_META_TYPE_DATA, reloc->vaddr, 4, NULL);
 	}
 
 	char flagname[R_FLAG_NAME_SIZE];
@@ -1472,7 +1478,7 @@ static void add_metadata(RCore *r, RBinReloc *reloc, ut64 addr, int mode) {
 		return;
 	}
 	if (IS_MODE_SET (mode)) {
-		r_meta_add (r->anal, R_META_TYPE_DATA, reloc->vaddr, reloc->vaddr + cdsz, NULL);
+		r_meta_set (r->anal, R_META_TYPE_DATA, reloc->vaddr, cdsz, NULL);
 	} else if (IS_MODE_RAD (mode)) {
 		r_cons_printf ("Cd %d @ 0x%08" PFMT64x "\n", cdsz, addr);
 	}
@@ -1829,7 +1835,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			// TODO(eddyb) symbols that are imports.
 			// Add a dword/qword for PE imports
 			if (libname && strstr (libname, ".dll") && cdsz) {
-				r_meta_add (r->anal, R_META_TYPE_DATA, addr, addr + cdsz, NULL);
+				r_meta_set (r->anal, R_META_TYPE_DATA, addr, cdsz, NULL);
 			}
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("%s%s%s\n",
@@ -2198,8 +2204,8 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 				free (fnp);
 			}
 			if (sn.demname) {
-				r_meta_add (r->anal, R_META_TYPE_COMMENT,
-					addr, symbol->size, sn.demname);
+				r_meta_set (r->anal, R_META_TYPE_COMMENT,
+							addr, symbol->size, sn.demname);
 			}
 			r_flag_space_pop (r->flags);
 		} else if (IS_MODE_JSON (mode)) {
@@ -2752,7 +2758,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				str = r_str_newf ("[%02d] %s %s size %" PFMT64d" named %s%s%s",
 				                  i, perms, type, size,
 				                  pfx? pfx: "", pfx? ".": "", section->name);
-				r_meta_add (r->anal, R_META_TYPE_COMMENT, addr, addr, str);
+				r_meta_set (r->anal, R_META_TYPE_COMMENT, addr, 1, str);
 				R_FREE (str);
 			}
 			if (section->add) {
@@ -4164,7 +4170,7 @@ R_API int r_core_bin_set_arch_bits(RCore *r, const char *name, const char * arch
 		name = desc->name;
 	}
 	/* Check if the arch name is a valid name */
-	if (!r_asm_is_valid (r->assembler, arch)) {
+	if (!r_asm_is_valid (r->rasm, arch)) {
 		return false;
 	}
 	/* Find a file with the requested name/arch/bits */
@@ -4191,10 +4197,10 @@ R_API int r_core_bin_update_arch_bits(RCore *r) {
 	if (!r) {
 		return 0;
 	}
-	if (r->assembler) {
-		bits = r->assembler->bits;
-	   	if (r->assembler->cur) {
-			arch = r->assembler->cur->arch;
+	if (r->rasm) {
+		bits = r->rasm->bits;
+		if (r->rasm->cur) {
+			arch = r->rasm->cur->arch;
 		}
 	}
 	binfile = r_bin_cur (r->bin);

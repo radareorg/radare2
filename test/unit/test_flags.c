@@ -124,6 +124,7 @@ bool test_r_flag_get_at() {
 	fi = r_flag_get_at (flag, 2048, true);
 	mu_assert_ptreq (fi, foo, "non-interference of spaces");
 
+	r_flag_free (flag);
 	mu_end;
 }
 

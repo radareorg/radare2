@@ -72,26 +72,26 @@ EXPECT=<<EOF
 0x08048300 CCu "[13] -r-x section size 404 named .text"
 0x08048494 CCu "[14] -r-x section size 20 named .fini"
 0x080484a8 CCu "[15] -r-- section size 21 named .rodata"
+0x080484b0 ascii[13] "Hello world!"
 0x080484c0 CCu "[16] -r-- section size 44 named .eh_frame_hdr"
 0x080484ec CCu "[17] -r-- section size 176 named .eh_frame"
+0x0804959c data Cd 4
 0x0804959c CCu "[18] -rw- section size 4 named .init_array"
+0x080495a0 data Cd 4
 0x080495a0 CCu "[19] -rw- section size 4 named .fini_array"
 0x080495a4 CCu "[20] -rw- section size 4 named .jcr"
 0x080495a8 CCu "[21] -rw- section size 232 named .dynamic"
-0x08049690 CCu "[22] -rw- section size 4 named .got"
-0x08049694 CCu "[23] -rw- section size 24 named .got.plt"
-0x080496ac CCu "[24] -rw- section size 8 named .data"
-0x080496b4 CCu "[25] -rw- section size 4 named .bss"
-0x0804959c data Cd 4
-0x080495a0 data Cd 4
 0x08049690 data Cd 4
+0x08049690 CCu "[22] -rw- section size 4 named .got"
 0x08049694 data Cd 4
+0x08049694 CCu "[23] -rw- section size 24 named .got.plt"
 0x08049698 data Cd 4
 0x0804969c data Cd 4
 0x080496a0 data Cd 4
 0x080496a4 data Cd 4
 0x080496a8 data Cd 4
-0x080484b0 ascii[13] "Hello world!"
+0x080496ac CCu "[24] -rw- section size 8 named .data"
+0x080496b4 CCu "[25] -rw- section size 4 named .bss"
 EOF
 RUN
 
@@ -115,26 +115,26 @@ CCu base64:WzEyXSAtci14IHNlY3Rpb24gc2l6ZSA2NCBuYW1lZCAucGx0 @ 0x080482c0
 CCu base64:WzEzXSAtci14IHNlY3Rpb24gc2l6ZSA0MDQgbmFtZWQgLnRleHQ= @ 0x08048300
 CCu base64:WzE0XSAtci14IHNlY3Rpb24gc2l6ZSAyMCBuYW1lZCAuZmluaQ== @ 0x08048494
 CCu base64:WzE1XSAtci0tIHNlY3Rpb24gc2l6ZSAyMSBuYW1lZCAucm9kYXRh @ 0x080484a8
+Cs 13 @ 0x080484b0 # Hello world!
 CCu base64:WzE2XSAtci0tIHNlY3Rpb24gc2l6ZSA0NCBuYW1lZCAuZWhfZnJhbWVfaGRy @ 0x080484c0
 CCu base64:WzE3XSAtci0tIHNlY3Rpb24gc2l6ZSAxNzYgbmFtZWQgLmVoX2ZyYW1l @ 0x080484ec
+Cd 4 @ 0x0804959c
 CCu base64:WzE4XSAtcnctIHNlY3Rpb24gc2l6ZSA0IG5hbWVkIC5pbml0X2FycmF5 @ 0x0804959c
+Cd 4 @ 0x080495a0
 CCu base64:WzE5XSAtcnctIHNlY3Rpb24gc2l6ZSA0IG5hbWVkIC5maW5pX2FycmF5 @ 0x080495a0
 CCu base64:WzIwXSAtcnctIHNlY3Rpb24gc2l6ZSA0IG5hbWVkIC5qY3I= @ 0x080495a4
 CCu base64:WzIxXSAtcnctIHNlY3Rpb24gc2l6ZSAyMzIgbmFtZWQgLmR5bmFtaWM= @ 0x080495a8
-CCu base64:WzIyXSAtcnctIHNlY3Rpb24gc2l6ZSA0IG5hbWVkIC5nb3Q= @ 0x08049690
-CCu base64:WzIzXSAtcnctIHNlY3Rpb24gc2l6ZSAyNCBuYW1lZCAuZ290LnBsdA== @ 0x08049694
-CCu base64:WzI0XSAtcnctIHNlY3Rpb24gc2l6ZSA4IG5hbWVkIC5kYXRh @ 0x080496ac
-CCu base64:WzI1XSAtcnctIHNlY3Rpb24gc2l6ZSA0IG5hbWVkIC5ic3M= @ 0x080496b4
-Cd 4 @ 0x0804959c
-Cd 4 @ 0x080495a0
 Cd 4 @ 0x08049690
+CCu base64:WzIyXSAtcnctIHNlY3Rpb24gc2l6ZSA0IG5hbWVkIC5nb3Q= @ 0x08049690
 Cd 4 @ 0x08049694
+CCu base64:WzIzXSAtcnctIHNlY3Rpb24gc2l6ZSAyNCBuYW1lZCAuZ290LnBsdA== @ 0x08049694
 Cd 4 @ 0x08049698
 Cd 4 @ 0x0804969c
 Cd 4 @ 0x080496a0
 Cd 4 @ 0x080496a4
 Cd 4 @ 0x080496a8
-Cs 13 @ 0x080484b0 # Hello world!
+CCu base64:WzI0XSAtcnctIHNlY3Rpb24gc2l6ZSA4IG5hbWVkIC5kYXRh @ 0x080496ac
+CCu base64:WzI1XSAtcnctIHNlY3Rpb24gc2l6ZSA0IG5hbWVkIC5ic3M= @ 0x080496b4
 EOF
 RUN
 

@@ -1773,3 +1773,17 @@ EXPECT=<<EOF
 0x415424
 EOF
 RUN
+
+NAME=mips linux syscall
+FILE=bins/elf/syscall_mips
+CMDS=<<EOF
+s entry0
+aei
+aeip
+6aes
+as
+EOF
+EXPECT=<<EOF
+0xfa4 = write (1, "Hello, world!.", 15)
+EOF
+RUN

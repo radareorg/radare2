@@ -46,9 +46,6 @@ char *linux_reg_profile (RDebug *dbg) {
 #endif
 	} else {
 #		include "reg/linux-x64.h"
-#if HAVE_YMM
-#		include <bits/sigcontext.h>
-#endif
 	}
 #elif __powerpc__
 	if (dbg->bits & R_SYS_BITS_32) {
@@ -1075,7 +1072,7 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			R_DEBUG_REG_T regs;
 			memset (&regs, 0, sizeof (regs));
 			memset (buf, 0, size);
-#if __arm64__ || __aarch64__ || __s390x__
+#if (__arm64__ || __aarch64__ || __s390x__) && defined(PTRACE_GETREGSET)
 			struct iovec io = {
 				.iov_base = &regs,
 				.iov_len = sizeof (regs)
@@ -1106,7 +1103,7 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		break;
 	case R_REG_TYPE_YMM:
 		{
-#if HAVE_YMM && __x86_64__
+#if HAVE_YMM && __x86_64__ && defined(PTRACE_GETREGSET)
 		ut32 ymm_space[128];	// full ymm registers
 		struct _xstate xstate;
 		struct iovec iov;

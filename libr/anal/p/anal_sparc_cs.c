@@ -120,14 +120,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		}
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
-	op->type = R_ANAL_OP_TYPE_NULL;
-	op->size = 0;
-	op->delay = 0;
-	op->jump = UT64_MAX;
-	op->fail = UT64_MAX;
-	op->val = UT64_MAX;
-	op->ptr = UT64_MAX;
-	r_strbuf_init (&op->esil);
 	// capstone-next
 	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {

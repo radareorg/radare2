@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2019 - pancake */
+/* radare - LGPL - Copyright 2013-2020 - pancake */
 
 #include <r_cons.h>
 #include <r_util/r_assert.h>
@@ -265,7 +265,7 @@ R_API RConsCanvas *r_cons_canvas_new(int w, int h) {
 	c->attr = Color_RESET;
 	r_cons_canvas_clear (c);
 	return c;
-beach: {
+beach:
 	r_str_constpool_fini (&c->constpool);
 	int j;
 	for (j = 0; j < i; j++) {
@@ -276,7 +276,6 @@ beach: {
 	free (c->b);
 	free (c);
 	return NULL;
-       }
 }
 
 R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
@@ -323,13 +322,13 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 
 		attr_len = slen <= 0 && s_part != s? 1: utf8_len;
 		if (attr_len > 0 && attr_x < c->blen[c->y]) {
-			__stampAttribute (c, c->y*c->w + attr_x, attr_len);
+			__stampAttribute (c, c->y * c->w + attr_x, attr_len);
 		}
 
 		s = s_part;
 		if (ch == '\n') {
 			c->attr = Color_RESET;
-			__stampAttribute (c, c->y*c->w + attr_x, 0);
+			__stampAttribute (c, c->y * c->w + attr_x, 0);
 			c->y++;
 			s++;
 			if (*s == '\0' || c->y  >= c->h) {
@@ -351,7 +350,7 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 	r_return_val_if_fail (c, NULL);
 
 	int x, y, olen = 0, attr_x = 0;
-	int is_first = true;
+	bool is_first = true;
 
 	for (y = 0; y < c->h; y++) {
 		olen += c->blen[y] + 1;
@@ -376,7 +375,7 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 			if ((c->b[y][x] & 0xc0) != 0x80) {
 				const char *atr = __attributeAt (c, y * c->w + attr_x);
 				if (atr) {
-					int len = strlen (atr);
+					size_t len = strlen (atr);
 					memcpy (o + olen, atr, len);
 					olen += len;
 				}
@@ -391,8 +390,9 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 			}
 			const char *rune = r_cons_get_rune ((const ut8)c->b[y][x]);
 			if (rune) {
-				strcpy (o + olen, rune);
-				olen += strlen (rune);
+				size_t rune_len = strlen (rune);
+				memcpy (o + olen, rune, rune_len + 1);
+				olen += rune_len;
 			} else {
 				o[olen++] = c->b[y][x];
 			}
@@ -452,12 +452,12 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 		if (i < c->h) {
 			newline = realloc (c->b[i], sizeof *c->b[i] * (w + 1));
 		} else {
-			newline = malloc ((w + 1));
+			newline = malloc (w + 1);
 		}
 		c->blen[i] = w;
 		c->bsize[i] = w + 1;
 		if (!newline) {
-			int j;
+			size_t j;
 			for (j = 0; j <= i; j++) {
 				free (c->b[i]);
 			}

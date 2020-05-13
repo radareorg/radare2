@@ -2468,7 +2468,7 @@ R_API int r_str_len_utf8_ansi(const char *str) {
 }
 
 // XXX must find across the ansi tags, as well as support utf8
-R_API const char *r_strstr_ansi (const char *a, const char *b) {
+R_API const char *r_strstr_ansi(const char *a, const char *b) {
 	const char *ch, *p = a;
 	do {
 		ch = strchr (p, '\x1b');
@@ -3644,6 +3644,27 @@ R_API char *r_str_scale(const char *s, int w, int h) {
 	}
 	free (str);
 	return r_str_list_join (out, "\n");
+}
+
+R_API const char *r_str_str_xy(const char *s, const char *word, const char *prev, int *x, int *y) {
+	r_return_val_if_fail (s && word && x && y, NULL);
+	r_return_val_if_fail (word[0] != '\0' && word[0] != '\n', NULL);
+	const char *src = prev ? prev + 1 : s;
+	const char *d = strstr (src, word);
+	if (!d) {
+		return NULL;
+	}
+	const char *q;
+	for (q = prev ? prev : s; q < d; q++) {
+		if (*q == '\n') {
+			(*y)++;
+			*x = 0;
+
+		} else {
+			(*x)++;
+		}
+	}
+	return d;
 }
 
 // version.c

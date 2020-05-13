@@ -1630,7 +1630,7 @@ void __fix_cursor_down(RCore *core) {
 		//XXX: ugly hack
 		for (i = 0; i < 2; i++) {
 			RAsmOp op;
-			int sz = r_asm_disassemble (core->assembler,
+			int sz = r_asm_disassemble (core->rasm,
 					&op, core->block, 32);
 			if (sz < 1) {
 				sz = 1;

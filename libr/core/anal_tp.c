@@ -310,13 +310,14 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 		return;
 	}
 	int i, j, pos = 0, size = 0, max = r_type_func_args_count (TDB, fcn_name);
-	const char *place = r_anal_cc_arg (anal, cc, 0);
+	const char *place = r_anal_cc_arg (anal, cc, ST32_MAX);
 	r_cons_break_push (NULL, NULL);
 
 	if (place && !strcmp (place, "stack_rev")) {
 		stack_rev = true;
 	}
-	if (place && !strncmp (place, "stack", 5)) {
+	place = r_anal_cc_arg (anal, cc, 0);
+	if (place && r_str_startswith ("stack", place)) {
 		in_stack = true;
 	}
 	if (verbose && !strncmp (fcn_name, "sym.imp.", 8)) {
@@ -348,6 +349,9 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 		if (!in_stack) {
 			//XXX: param arg_num must be fixed to support floating point register
 			place = r_anal_cc_arg (anal, cc, arg_num);
+			if (place && r_str_startswith ("stack", place)) {
+				in_stack = true;
+			}
 		}
 		char regname[REGNAME_SIZE] = {0};
 		ut64 xaddr = UT64_MAX;
@@ -793,7 +797,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 		if (anal->verbose) {
 			eprintf ("[-] place: %s\n", place);
 		}
-		if (place && !strncmp (place, "stack", 5)) {
+		if (place && r_str_startswith ("stack", place)) {
 			RList *list2 = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_BPV);
 			r_list_foreach (list2, iter2, bp_var) {
 				if (bp_var->isarg) {

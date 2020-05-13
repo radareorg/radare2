@@ -364,9 +364,6 @@ R_API void r_anal_block_unref(RAnalBlock *bb) {
 	}
 }
 
-typedef bool (*RAnalBlockCb)(RAnalBlock *block, void *user);
-typedef bool (*RAnalAddrCb)(ut64 addr, void *user);
-
 R_API bool r_anal_block_successor_addrs_foreach(RAnalBlock *block, RAnalAddrCb cb, void *user) {
 #define CB_ADDR(addr) do { \
 		if (addr == UT64_MAX) { \

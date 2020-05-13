@@ -350,7 +350,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			eprintf ("Usage: CC, [file]\n");
 		} else if (input[2] == ' ') {
 			const char *fn = input+2;
-			char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 			while (*fn== ' ')fn++;
 			if (comment && *comment) {
 				// append filename in current comment
@@ -358,12 +358,12 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, nc);
 				free (nc);
 			} else {
-				char *comment = r_str_newf (",(%s)", fn);
-				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, comment);
-				free (comment);
+				char *newcomment = r_str_newf (",(%s)", fn);
+				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, newcomment);
+				free (newcomment);
 			}
 		} else {
-			char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 			if (comment && *comment) {
 				char *cmtfile = r_str_between (comment, ",(", ")");
 				if (cmtfile && *cmtfile) {
@@ -373,22 +373,19 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 				}
 				free (cmtfile);
 			}
-			free (comment);
 		}
 		break;
 	case '.':
 		  {
 			  ut64 at = input[2]? r_num_math (core->num, input + 2): addr;
-			  char *comment = r_meta_get_string (
-					  core->anal, R_META_TYPE_COMMENT, at);
+			  const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, at);
 			  if (comment) {
 				  r_cons_println (comment);
-				  free (comment);
 			  }
 		  }
 		break;
 	case 0: // "CC"
-		r_meta_list (core->anal, R_META_TYPE_COMMENT, 0);
+		r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, 0);
 		break;
 	case 'f': // "CCf"
 		switch (input[2]) {
@@ -413,50 +410,49 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			}
 			break;
 		case 'j': // "CCfj"
-			r_meta_list_at (core->anal, R_META_TYPE_COMMENT, 'j', core->offset);
+			r_meta_print_list_in_function (core->anal, R_META_TYPE_COMMENT, 'j', core->offset);
 			break;
 		case '*': // "CCf*"
-			r_meta_list_at (core->anal, R_META_TYPE_COMMENT, 1, core->offset);
+			r_meta_print_list_in_function (core->anal, R_META_TYPE_COMMENT, 1, core->offset);
 			break;
 		default:
-			r_meta_list_at (core->anal, R_META_TYPE_COMMENT, 0, core->offset);
+			r_meta_print_list_in_function (core->anal, R_META_TYPE_COMMENT, 0, core->offset);
 			break;
 		}
 		break;
 	case 'j': // "CCj"
-		r_meta_list (core->anal, R_META_TYPE_COMMENT, 'j');
+		r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, 'j');
 		break;
 	case '!':
 		{
-			char *out, *comment = r_meta_get_string (
-					core->anal, R_META_TYPE_COMMENT, addr);
+			char *out;
+			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 			out = r_core_editor (core, NULL, comment);
 			if (out) {
-				//r_meta_add (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
+				//r_meta_set (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
 				r_core_cmdf (core, "CC-@0x%08"PFMT64x, addr);
 				//r_meta_del (core->anal->meta, input[0], addr, addr+1);
 				r_meta_set_string (core->anal,
 						R_META_TYPE_COMMENT, addr, out);
 				free (out);
 			}
-			free (comment);
 		}
 		break;
 	case '+':
 	case ' ':
 		{
-		const char* newcomment = r_str_trim_head_ro (input + 2);
-		char *text, *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+		const char *newcomment = r_str_trim_head_ro (input + 2);
+		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+		char *text;
 		char *nc = strdup (newcomment);
 		r_str_unescape (nc);
 		if (comment) {
-			text = malloc (strlen (comment)+ strlen (newcomment)+2);
+			text = malloc (strlen (comment) + strlen (newcomment) + 2);
 			if (text) {
 				strcpy (text, comment);
 				strcat (text, " ");
 				strcat (text, nc);
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, text);
-				free (comment);
 				free (text);
 			} else {
 				r_sys_perror ("malloc");
@@ -468,7 +464,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		}
 		break;
 	case '*': // "CC*"
-		r_meta_list (core->anal, R_META_TYPE_COMMENT, 1);
+		r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, 1);
 		break;
 	case '-': // "CC-"
 		if (input[2] == '*') { // "CC-*"
@@ -497,13 +493,10 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			newcomment = strdup (arg);
 		}
 		if (newcomment) {
-			char *comment = r_meta_get_string (
-					core->anal, R_META_TYPE_COMMENT, addr);
+			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 			if (!comment || (comment && !strstr (comment, newcomment))) {
-				r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
-						addr, newcomment);
+				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, newcomment);
 			}
-			free (comment);
 			free (newcomment);
 		}
 		}
@@ -537,24 +530,16 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		// Comment at
 		if (p) {
 			if (input[2]=='+') {
-				char *comment = r_meta_get_string (
-						core->anal, R_META_TYPE_COMMENT,
-						addr);
+				const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 				if (comment) {
-					char* text = r_str_newf ("%s\n%s", comment, p);
-					r_meta_add (core->anal,
-							R_META_TYPE_COMMENT,
-							addr, addr+1, text);
+					char *text = r_str_newf ("%s\n%s", comment, p);
+					r_meta_set (core->anal, R_META_TYPE_COMMENT, addr, 1, text);
 					free (text);
 				} else {
-					r_meta_add (core->anal,
-							R_META_TYPE_COMMENT,
-							addr, addr+1, p);
+					r_meta_set (core->anal, R_META_TYPE_COMMENT, addr, 1, p);
 				}
 			} else {
-				r_meta_add (core->anal,
-						R_META_TYPE_COMMENT,
-						addr, addr + 1, p);
+				r_meta_set (core->anal, R_META_TYPE_COMMENT, addr, 1, p);
 			}
 		} else {
 			eprintf ("Usage: CCa [address] [comment]\n");
@@ -573,22 +558,18 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_Ct);
 		break;
 	case 0: // "Ct"
-		r_meta_list (core->anal, R_META_TYPE_VARTYPE, 0);
+		r_meta_print_list_all (core->anal, R_META_TYPE_VARTYPE, 0);
 		break;
 	case ' ': // "Ct <vartype comment> @ addr"
 		{
 		const char* newcomment = r_str_trim_head_ro (input + 2);
-		char *text, *comment = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, addr);
+		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, addr);
 		char *nc = strdup (newcomment);
 		r_str_unescape (nc);
 		if (comment) {
-			text = malloc (strlen (comment)+ strlen (newcomment)+2);
+			char *text = r_str_newf ("%s %s", comment, nc);
 			if (text) {
-				strcpy (text, comment);
-				strcat (text, " ");
-				strcat (text, nc);
 				r_meta_set_string (core->anal, R_META_TYPE_VARTYPE, addr, text);
-				free (comment);
 				free (text);
 			} else {
 				r_sys_perror ("malloc");
@@ -602,11 +583,9 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 	case '.': // "Ct. @ addr"
 		{
 		ut64 at = input[2]? r_num_math (core->num, input + 2): addr;
-		char *comment = r_meta_get_string (
-				core->anal, R_META_TYPE_VARTYPE, at);
+		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, at);
 		if (comment) {
 			r_cons_println (comment);
-			free (comment);
 		}
 		}
 		break;
@@ -625,7 +604,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	int n, type = input[0], subtype;
 	char *t = 0, *p, *p2, name[256];
 	int repeat = 1;
-	ut64 addr_end = 0LL, addr = core->offset;
+	ut64 addr = core->offset;
 
 	switch (input[1]) {
 	case '?':
@@ -651,8 +630,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	case '-': // "Cf-", "Cd-", ...
 		switch (input[2]) {
 		case '*': // "Cf-*", "Cd-*", ...
-			core->num->value = r_meta_del (core->anal,
-					input[0], 0, UT64_MAX);
+			r_meta_del (core->anal, input[0], 0, UT64_MAX);
 			break;
 		case ' ':
 			p2 = strchr (input + 3, ' ');
@@ -665,7 +643,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 					break;
 				}
 				for (i = 0; i < rep && UT64_MAX - cur_addr > size; i++, cur_addr += size) {
-					core->num->value = r_meta_del (core->anal, input[0], cur_addr, size);
+					r_meta_del (core->anal, input[0], cur_addr, size);
 				}
 				break;
 			} else {
@@ -673,75 +651,60 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				/* fallthrough */
 			}
 		default:
-			core->num->value = r_meta_del (core->anal,
-					input[0], addr, 1);
+			r_meta_del (core->anal, input[0], addr, 1);
 			break;
 		}
 		break;
 	case '*': // "Cf*", "Cd*", ...
-		r_meta_list (core->anal, input[0], 1);
+		r_meta_print_list_all (core->anal, input[0], 1);
 		break;
 	case 'j': // "Cfj", "Cdj", ...
-		r_meta_list (core->anal, input[0], 'j');
+		r_meta_print_list_all (core->anal, input[0], 'j');
 		break;
 	case '!': // "Cf!", "Cd!", ...
 		{
-			char *out, *comment = r_meta_get_string (
-					core->anal, R_META_TYPE_COMMENT, addr);
+			char *out;
+			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 			out = r_core_editor (core, NULL, comment);
 			if (out) {
-				//r_meta_add (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
+				//r_meta_set (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
 				r_core_cmdf (core, "CC-@0x%08"PFMT64x, addr);
 				//r_meta_del (core->anal->meta, input[0], addr, addr+1);
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, out);
 				free (out);
 			}
-			free (comment);
 		}
 		break;
 	case '.': // "Cf.", "Cd.", ...
 		if (input[2] == '.') { // "Cs.."
-			RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, R_META_WHERE_HERE);
+			ut64 size;
+			RAnalMetaItem *mi = r_meta_get_at (core->anal, addr, type, &size);
 			if (mi) {
-				r_meta_print (core->anal, mi, input[3], NULL, false);
-				r_meta_item_free (mi);
+				r_meta_print (core->anal, mi, addr, size, input[3], NULL, false);
 			}
 			break;
 		} else if (input[2] == 'j') { // "Cs.j"
-			RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, R_META_WHERE_HERE);
+			ut64 size;
+			RAnalMetaItem *mi = r_meta_get_at (core->anal, addr, type, &size);
 			if (mi) {
-				r_meta_print (core->anal, mi, input[2], NULL, false);
+				r_meta_print (core->anal, mi, addr, size, input[2], NULL, false);
 				r_cons_newline ();
-				r_meta_item_free (mi);
 			}
 			break;
 		}
-		char key[100];
-		const char *val;
-		RAnalMetaItem mi;
-		Sdb *s = core->anal->sdb_meta;
-		bool esc_bslash = core->print->esc_bslash;
-		snprintf (key, sizeof (key), "meta.%c.0x%" PFMT64x, type, addr);
-		val = sdb_const_get (s, key, 0);
-		if (!val) {
-			break;
-		}
-		if (!r_meta_deserialize_val (core->anal, &mi, type, addr, val)) {
-			break;
-		}
-		if (!mi.str) {
-			break;
-		}
+		ut64 size;
+		RAnalMetaItem *mi = r_meta_get_at (core->anal, addr, type, &size);
 		if (type == 's') {
 			char *esc_str;
-			switch (mi.subtype) {
+			bool esc_bslash = core->print->esc_bslash;
+			switch (mi->subtype) {
 			case R_STRING_ENC_UTF8:
-				esc_str = r_str_escape_utf8 (mi.str, false, esc_bslash);
+				esc_str = r_str_escape_utf8 (mi->str, false, esc_bslash);
 				break;
 			case 0:  /* temporary legacy workaround */
 				esc_bslash = false;
 			default:
-				esc_str = r_str_escape_latin1 (mi.str, false, esc_bslash, false);
+				esc_str = r_str_escape_latin1 (mi->str, false, esc_bslash, false);
 			}
 			if (esc_str) {
 				r_cons_printf ("\"%s\"\n", esc_str);
@@ -750,11 +713,10 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				r_cons_println ("<oom>");
 			}
 		} else if (type == 'd') {
-			r_cons_printf ("%"PFMT64u"\n", mi.size);
+			r_cons_printf ("%"PFMT64u"\n", size);
 		} else {
-			r_cons_println (mi.str);
+			r_cons_println (mi->str);
 		}
-		free (mi.str);
 		break;
 	case ' ': // "Cf", "Cd", ...
 	case '\0':
@@ -762,7 +724,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	case 'a':
 	case '8':
 		if (type != 'z' && !input[1] && !core->tmpseek) {
-			r_meta_list (core->anal, type, 0);
+			r_meta_print_list_all (core->anal, type, 0);
 			break;
 		}
 		if (type == 'z') {
@@ -884,7 +846,6 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			if (!n) {
 				n++;
 			}
-			addr_end = addr + n;
 			if (type == 's') {
 				switch (input[1]) {
 				case 'a':
@@ -894,13 +855,13 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				default:
 					subtype = R_STRING_ENC_GUESS;
 				}
-				r_meta_add_with_subtype (core->anal, type, subtype, addr, addr_end, name);
+				r_meta_set_with_subtype (core->anal, type, subtype, addr, n, name);
 			} else {
-				r_meta_add (core->anal, type, addr, addr_end, name);
+				r_meta_set (core->anal, type, addr, n, name);
 			}
 			free (t);
 			repcnt ++;
-			addr = addr_end;
+			addr += n;
 		}
 		//r_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
 		break;
@@ -1045,19 +1006,19 @@ static int cmd_meta(void *data, const char *input) {
 		r_comment_vars (core, input + 1);
 		break;
 	case '\0': // "C"
-		r_meta_list (core->anal, R_META_TYPE_ANY, 0);
+		r_meta_print_list_all (core->anal, R_META_TYPE_ANY, 0);
 		break;
 	case 'j': // "Cj"
 	case '*': { // "C*"
 		if (!input[0] || input[1] == '.') {
-			r_meta_list_offset (core->anal, core->offset, *input);
+			r_meta_print_list_at (core->anal, core->offset, *input);
 		} else {
-			r_meta_list (core->anal, R_META_TYPE_ANY, *input);
+			r_meta_print_list_all (core->anal, R_META_TYPE_ANY, *input);
 		}
 		break;
 	}
 	case '.': { // "C."
-		r_meta_list_offset (core->anal, core->offset, 0);
+		r_meta_print_list_at (core->anal, core->offset, 0);
 		break;
 	}
 	case 'L': // "CL"
@@ -1082,7 +1043,9 @@ static int cmd_meta(void *data, const char *input) {
 		if (input[1] != '*') {
 			i = input[1] ? r_num_math (core->num, input + (input[1] == ' ' ? 2 : 1)) : 1;
 			r_meta_del (core->anal, R_META_TYPE_ANY, core->offset, i);
-		} else r_meta_cleanup (core->anal, 0LL, UT64_MAX);
+		} else {
+			r_meta_del (core->anal, R_META_TYPE_ANY, 0, UT64_MAX);
+		}
 		break;
 	case '?': // "C?"
 		r_core_cmd_help (core, help_msg_C);

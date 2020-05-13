@@ -1,0 +1,106 @@
+NAME=afvx
+FILE=bins/elf/ls.odd
+CMDS=<<EOF
+af
+afvx
+afv=
+EOF
+EXPECT=<<EOF
+afvR
+      arg3  0x5312
+afvW
+      arg3
+* arg3
+R 0x5312  mov r9, rdx
+EOF
+RUN
+
+NAME=afvx2
+FILE=bins/mach0/mac-ls
+CMDS=<<EOF
+af
+afvx
+afv=
+EOF
+EXPECT=<<EOF
+afvR
+      argv  0x10000106c
+      argc  0x10000106f
+  var_640h  0x100001072
+  var_648h  0x100001617,0x100001691
+  var_654h  0x100001784
+  var_650h  0x10000173c,0x100001807,0x10000181c
+  var_64ch  0x100001736,0x1000017dd,0x1000017f2
+  var_658h  0x1000017d4
+  var_660h  0x1000018f1
+  var_664h  0x10000190b
+  var_670h  0x100001911
+   var_34h  0x10000179e
+  var_440h  0x1000015f8
+   var_30h  0x1000010d6
+   var_2eh  0x1000010f0
+afvW
+      argv
+      argc
+  var_640h
+  var_648h  0x100001079
+  var_654h  0x100001137,0x100001315
+  var_650h  0x10000114c,0x1000014f2
+  var_64ch  0x100001156,0x1000012d8
+  var_658h  0x100001160,0x1000014ce
+  var_660h  0x100001597
+  var_664h  0x1000015a3
+  var_670h  0x1000015ad
+   var_34h
+  var_440h
+   var_30h
+   var_2eh
+* argv
+R 0x10000106c  mov rbx, rsi
+* argc
+R 0x10000106f  mov r14d, edi
+* var_640h
+R 0x100001072  lea rax, [var_640h]
+* var_648h
+R 0x100001617  lea rbx, [var_648h]
+R 0x100001691  lea rsi, [var_648h]
+W 0x100001079  mov qword [var_648h], rax
+* var_654h
+R 0x100001784  cmp dword [var_654h], 0
+W 0x100001137  mov dword [var_654h], 0
+W 0x100001315  mov dword [var_654h], 1
+* var_650h
+R 0x10000173c  or ebx, dword [var_650h]
+R 0x100001807  cmp dword [var_650h], 0
+R 0x10000181c  cmp dword [var_650h], 0
+W 0x10000114c  mov dword [var_650h], 0
+W 0x1000014f2  mov dword [var_650h], 1
+* var_64ch
+R 0x100001736  mov ebx, dword [var_64ch]
+R 0x1000017dd  cmp dword [var_64ch], 0
+R 0x1000017f2  cmp dword [var_64ch], 0
+W 0x100001156  mov dword [var_64ch], 0
+W 0x1000012d8  mov dword [var_64ch], 1
+* var_658h
+R 0x1000017d4  cmp dword [var_658h], 0
+W 0x100001160  mov dword [var_658h], 0
+W 0x1000014ce  mov dword [var_658h], 1
+* var_660h
+R 0x1000018f1  mov rax, qword [var_660h]
+W 0x100001597  mov qword [var_660h], rcx
+* var_664h
+R 0x10000190b  mov edi, dword [var_664h]
+W 0x1000015a3  mov dword [var_664h], eax
+* var_670h
+R 0x100001911  mov rsi, qword [var_670h]
+W 0x1000015ad  mov qword [var_670h], rax
+* var_34h
+R 0x10000179e  lea rdi, [var_34h]
+* var_440h
+R 0x1000015f8  lea rdi, [var_440h]
+* var_30h
+R 0x1000010d6  lea rdx, [var_30h]
+* var_2eh
+R 0x1000010f0  movzx eax, word [var_2eh]
+EOF
+RUN

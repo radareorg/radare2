@@ -795,7 +795,7 @@ int PE_(bin_pe_get_claimed_checksum)(struct PE_(r_bin_pe_obj_t)* bin) {
 }
 
 int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t)* bin) {
-	int i, j, checksum_offset = 0;
+	size_t i, j, checksum_offset = 0;
 	ut64 computed_cs = 0;
 	int remaining_bytes;
 	int shift;
@@ -803,10 +803,19 @@ int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!bin || !bin->nt_header_offset) {
 		return 0;
 	}
+	const size_t buf_sz = 0x1000;
+	ut32 *buf = malloc (buf_sz);
+	if (!buf) {
+		return 0;
+	}
+	if (r_buf_read_at (bin->b, 0, (ut8 *)buf, buf_sz) < 0) {
+		free (buf);
+		return 0;
+	}
 	checksum_offset = bin->nt_header_offset + 4 + sizeof(PE_(image_file_header)) + 0x40;
-	for (i = 0; i < bin->size / 4; i++) {
-		cur = r_buf_read_le32_at (bin->b, i * 4);
-
+	for (i = 0, j = 0; i < bin->size / 4; i++) {
+		cur = r_read_at_ble32 (buf, j * 4, bin->endian);
+		j++;
 		// skip the checksum bytes
 		if (i * 4 == checksum_offset) {
 			continue;
@@ -815,6 +824,12 @@ int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t)* bin) {
 		computed_cs = (computed_cs & 0xFFFFFFFF) + cur + (computed_cs >> 32);
 		if (computed_cs >> 32) {
 			computed_cs = (computed_cs & 0xFFFFFFFF) + (computed_cs >> 32);
+		}
+		if (j == buf_sz / 4) {
+			if (r_buf_read_at (bin->b, (i + 1) * 4, (ut8 *)buf, buf_sz) < 0) {
+				break;
+			}
+			j = 0;
 		}
 	}
 
@@ -840,6 +855,7 @@ int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t)* bin) {
 
 	// add filesize
 	computed_cs += bin->size;
+	free (buf);
 	return computed_cs;
 }
 
@@ -3096,21 +3112,28 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 		functions_paddr = bin_pe_rva_to_paddr (bin, bin->export_directory->AddressOfFunctions);
 		names_paddr = bin_pe_rva_to_paddr (bin, bin->export_directory->AddressOfNames);
 		ordinals_paddr = bin_pe_rva_to_paddr (bin, bin->export_directory->AddressOfOrdinals);
+
+		const size_t names_sz = bin->export_directory->NumberOfNames * sizeof (PE_Word);
+		const size_t funcs_sz = bin->export_directory->NumberOfFunctions * sizeof (PE_VWord);
+		PE_Word *ordinals = malloc (names_sz);
+		PE_VWord *func_rvas = malloc (funcs_sz);
+		if (!ordinals || !func_rvas) {
+			free (exports);
+			free (ordinals);
+			free (func_rvas);
+			return NULL;
+		}
+		r_buf_read_at (bin->b, ordinals_paddr, (ut8 *)ordinals, names_sz);
+		r_buf_read_at (bin->b, functions_paddr, (ut8 *)func_rvas, funcs_sz);
 		for (i = 0; i < bin->export_directory->NumberOfFunctions; i++) {
 			// get vaddr from AddressOfFunctions array
-			int ret = r_buf_read_at (bin->b, functions_paddr + i * sizeof(PE_VWord), (ut8*) &function_rva, sizeof(PE_VWord));
-			if (ret < 1) {
-				break;
-			}
+			function_rva = r_read_at_ble32 ((ut8 *)func_rvas, i * sizeof (PE_VWord), bin->endian);
 			// have exports by name?
 			if (bin->export_directory->NumberOfNames != 0) {
 				// search for value of i into AddressOfOrdinals
 				name_vaddr = 0;
 				for (n = 0; n < bin->export_directory->NumberOfNames; n++) {
-					ret = r_buf_read_at (bin->b, ordinals_paddr + n * sizeof(PE_Word), (ut8*) &function_ordinal, sizeof (PE_Word));
-					if (ret < 1) {
-						break;
-					}
+					function_ordinal = r_read_at_ble16 ((ut8 *)ordinals, n * sizeof (PE_Word), bin->endian);
 					// if exist this index into AddressOfOrdinals
 					if (i == function_ordinal) {
 						// get the VA of export name  from AddressOfNames
@@ -3158,6 +3181,8 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 			exports[i].last = 0;
 		}
 		exports[i].last = 1;
+		free (ordinals);
+		free (func_rvas);
 	}
 	exp = parse_symbol_table (bin, exports, exports_sz - sizeof (struct r_bin_pe_export_t));
 	if (exp) {
@@ -3672,6 +3697,26 @@ int PE_(r_bin_pe_get_bits)(struct PE_(r_bin_pe_obj_t)* bin) {
 		}
 	}
 	return bits;
+}
+
+char *PE_(r_bin_pe_get_cc)(struct PE_(r_bin_pe_obj_t)* bin) {
+	if (bin && bin->nt_headers) {
+		if (is_arm (bin)) {
+			if (is_thumb (bin)) {
+				return strdup ("arm16");
+			}
+			switch (bin->nt_headers->optional_header.Magic) {
+			case PE_IMAGE_FILE_TYPE_PE32: return strdup ("arm32");
+			case PE_IMAGE_FILE_TYPE_PE32PLUS: return strdup ("arm64");
+			}
+		} else {
+			switch (bin->nt_headers->optional_header.Magic) {
+			case PE_IMAGE_FILE_TYPE_PE32: return strdup ("cdecl");
+			case PE_IMAGE_FILE_TYPE_PE32PLUS: return strdup ("ms");
+			}
+		}
+	}
+	return NULL;
 }
 
 //This function try to detect anomalies within section

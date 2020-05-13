@@ -363,7 +363,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 		}
 		prev_offset = field->offset;
 	}
-	if (field->offset > 0) {
+	if (first_offset > 0) {
 		RBinField *field = R_NEW0 (RBinField);
 		field->name = strdup ("_padding");
 		field->size = first_offset;

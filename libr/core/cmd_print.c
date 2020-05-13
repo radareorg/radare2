@@ -611,9 +611,9 @@ static void __cmd_pad(RCore *core, const char *arg) {
 		eprintf ("Usage: pad [hexpairs] # disassembly given bytes\n");
 		return;
 	}
-	r_asm_set_pc (core->assembler, core->offset);
+	r_asm_set_pc (core->rasm, core->offset);
 	bool is_pseudo = r_config_get_i (core->config, "asm.pseudo");
-	RAsmCode *acode = r_asm_mdisassemble_hexstr (core->assembler, is_pseudo ? core->parser : NULL, arg);
+	RAsmCode *acode = r_asm_mdisassemble_hexstr (core->rasm, is_pseudo ? core->parser : NULL, arg);
 	if (acode) {
 		r_cons_print (acode->assembly);
 		r_asm_code_free (acode);
@@ -1628,7 +1628,6 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	char *bytes, *chars;
 	char *ebytes, *echars; // They'll walk over the vars above
 	ut64 fend = UT64_MAX;
-	char *comment;
 	int i, j, low, max, here, rows;
 	bool marks = false, setcolor = true, hascolor = false;
 	ut8 ch = 0;
@@ -1737,25 +1736,23 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			R_FREE (note[j]);
 
 			// TODO: in pava mode we should read addr or ea? // imho ea. but wat about hdrs and such
-			RAnalMetaItem *meta = r_meta_find_in (core->anal, ea + j,
-					R_META_TYPE_FORMAT, R_META_WHERE_HERE);
-			if (meta && meta->type == R_META_TYPE_FORMAT && meta->from == addr + j) {
+			RIntervalNode *meta_node = r_meta_get_in (core->anal, ea + j, R_META_TYPE_FORMAT);
+			RAnalMetaItem *meta = meta_node ? meta_node->data : NULL;
+			if (meta && meta->type == R_META_TYPE_FORMAT && meta_node->start == addr + j) {
 				r_cons_printf (".format %s ; size=", meta->str);
 				r_core_cmdf (core, "pfs %s", meta->str);
-				r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x, meta->str, meta->from);
+				r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x, meta->str, meta_node->start);
 				append (ebytes, Color_INVERT);
 				append (echars, Color_INVERT);
 				hadflag = true;
 			}
 			if (meta) {
-				r_meta_item_free (meta);
 				meta = NULL;
 			}
 			// collect comments
-			comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr + j);
+			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr + j);
 			if (comment) {
-				comment = r_str_prepend (comment, ";");
-				note[j] = comment;
+				note[j] = r_str_newf (";", comment);
 				marks = true;
 			}
 
@@ -1767,6 +1764,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				} else {
 					fend = addr + j + flag->size;
 				}
+				free (note[j]);
 				note[j] = r_str_prepend (strdup (flag->name), "/");
 				marks = true;
 				color_idx++;
@@ -2489,13 +2487,13 @@ static void printraw(RCore *core, int len, int mode) {
 
 
 static void _handle_call(RCore *core, char *line, char **str) {
-	if (!core || !core->assembler || !core->assembler->cur) {
+	if (!core || !core->rasm || !core->rasm->cur) {
 		*str = NULL;
 		return;
 	}
-	if (strstr (core->assembler->cur->arch, "x86")) {
+	if (strstr (core->rasm->cur->arch, "x86")) {
 		*str = strstr (line, "call ");
-	} else if (strstr (core->assembler->cur->arch, "arm")) {
+	} else if (strstr (core->rasm->cur->arch, "arm")) {
 		*str = strstr (line, " b ");
 		if (*str && strstr (*str, " 0x")) {
 			/*
@@ -2916,7 +2914,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 	ut8 *block = core->block;
 	int blocksize = core->blocksize;
 	ut8 *block_end = core->block + blocksize;
-	int i, n = core->assembler->bits / 8;
+	int i, n = core->rasm->bits / 8;
 	int type = 'v';
 	bool fixed_size = true;
 	switch (input[0]) {
@@ -3093,14 +3091,14 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 					  break;
 				  default:
 					  v = r_read_ble64 (block, core->print->big_endian);
-					  switch (core->assembler->bits / 8) {
+					  switch (core->rasm->bits / 8) {
 						  case 1: r_cons_printf ("0x%02" PFMT64x "\n", v & UT8_MAX); break;
 						  case 2: r_cons_printf ("0x%04" PFMT64x "\n", v & UT16_MAX); break;
 						  case 4: r_cons_printf ("0x%08" PFMT64x "\n", v & UT32_MAX); break;
 						  case 8: r_cons_printf ("0x%016" PFMT64x "\n", v & UT64_MAX); break;
 						  default: break;
 					  }
-					  block += core->assembler->bits / 8;
+					  block += core->rasm->bits / 8;
 					  break;
 			  }
 		  } while (repeat > 0);
@@ -4199,14 +4197,14 @@ static void disasm_ropchain(RCore *core, ut64 addr, char type_print) {
 	(void)r_io_read_at (core->io, addr, buf, core->blocksize);
 	while (p + 4 < core->blocksize) {
 		const bool be = core->print->big_endian;
-		if (core->assembler->bits == 64) {
+		if (core->rasm->bits == 64) {
 			n = r_read_ble64 (buf + p, be);
 		} else {
 			n = r_read_ble32 (buf + p, be);
 		}
 		r_cons_printf ("[0x%08"PFMT64x"] 0x%08"PFMT64x"\n", addr + p, n);
 		disasm_until_ret (core, n, type_print, NULL);
-		if (core->assembler->bits == 64) {
+		if (core->rasm->bits == 64) {
 			p += 8;
 		} else {
 			p += 4;
@@ -4652,7 +4650,7 @@ static void r_core_disasm_table(RCore * core, int l, const char *input) {
 			ea += minopsz;
 			continue;
 		}
-		char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ea);
+		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ea);
 		// TODO parse/filter op->mnemonic for better disasm
 		ut8 *bytes = malloc (op->size);
 		if (!bytes) {
@@ -4666,7 +4664,6 @@ static void r_core_disasm_table(RCore * core, int l, const char *input) {
 		char *refs = __op_refs (core, op, 0);
 		char *xrefs = __op_refs (core, op, 1);
 		r_table_add_rowf (t, "sXssssss", fn, ea, sbytes, op->mnemonic, comment? comment: "", esil, refs, xrefs);
-		free (comment);
 		free (sbytes);
 		free (bytes);
 		free (xrefs);
@@ -4871,8 +4868,8 @@ static int cmd_print(void *data, const char *input) {
 				int printed = 0;
 				int bufsz;
 				RAnalOp aop = {0};
-				r_asm_set_pc (core->assembler, core->offset);
-				RAsmCode *acode = r_asm_massemble (core->assembler, input + 2);
+				r_asm_set_pc (core->rasm, core->offset);
+				RAsmCode *acode = r_asm_massemble (core->rasm, input + 2);
 				if (acode) {
 					bufsz = acode->len;
 					while (printed < bufsz) {
@@ -4948,8 +4945,8 @@ static int cmd_print(void *data, const char *input) {
 		} else {
 			int i;
 			int bytes;
-			r_asm_set_pc (core->assembler, core->offset);
-			RAsmCode *acode = r_asm_massemble (core->assembler, input + 1);
+			r_asm_set_pc (core->rasm, core->offset);
+			RAsmCode *acode = r_asm_massemble (core->rasm, input + 1);
 			if (acode) {
 				bytes = acode->len;
 				for (i = 0; i < bytes; i++) {
@@ -5510,7 +5507,7 @@ static int cmd_print(void *data, const char *input) {
 				}
 				r_cons_break_push (NULL, NULL);
 				for (i = j = 0; i < core->blocksize && j < l; i += ret, j++) {
-					ret = r_asm_disassemble (core->assembler, &asmop, block + i, len - i);
+					ret = r_asm_disassemble (core->rasm, &asmop, block + i, len - i);
 					if (r_cons_is_breaked ()) {
 						break;
 					}
@@ -5920,7 +5917,7 @@ l = use_blocksize;
 					RAsmOp asmop = {
 						0
 					};
-					(void) r_asm_disassemble (core->assembler, &asmop, buf + i, len - i);
+					(void) r_asm_disassemble (core->rasm, &asmop, buf + i, len - i);
 					int sz = asmop.size;
 					if (sz < 1) {
 						sz = 1;
@@ -6382,7 +6379,7 @@ l = use_blocksize;
 					pj_free (pj);
 				} else {
 					const int ocols = core->print->cols;
-					int bitsize = core->assembler->bits;
+					int bitsize = core->rasm->bits;
 					/* Thumb is 16bit arm but handles 32bit data */
 					if (bitsize == 16) {
 						bitsize = 32;
