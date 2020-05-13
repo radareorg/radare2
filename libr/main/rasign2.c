@@ -64,7 +64,7 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 	const char *ifile = NULL;
 	int c;
 	int a_cnt = 0;
-	int rad = 0;
+	bool rad = false;
 	RGetopt opt;
 
 	r_getopt_init (&opt, argc, argv, "ao:rvh");
@@ -77,7 +77,7 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 			ofile = opt.arg;
 			break;
 		case 'r':
-			rad = 1;
+			rad = true;
 			break;
 		case 'v':
 			return r_main_version_print ("rasign2");
