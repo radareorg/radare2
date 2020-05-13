@@ -213,7 +213,7 @@ static bool objc_find_refs(RCore *core) {
 			RListIter *iter;
 			RAnalRef *ref;
 			r_list_foreach (list, iter, ref) {
-				r_anal_xrefs_set (core->anal, ref->addr, funcVA, R_META_TYPE_CODE);
+				r_anal_xrefs_set (core->anal, ref->addr, funcVA, R_ANAL_REF_TYPE_CODE);
 				total++;
 			}
 		}

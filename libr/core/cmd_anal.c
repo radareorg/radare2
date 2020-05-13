@@ -328,7 +328,7 @@ static const char *help_msg_af[] = {
 	"afsr", " [function_name] [new_type]", "change type for given function",
 	"aft", "[?]", "type matching, type propagation",
 	"afu", " addr", "resize and analyze function from current address until addr",
-	"afv[bsra]", "?", "manipulate args, registers and variables in function",
+	"afv[absrx]", "?", "manipulate args, registers and variables in function",
 	"afx", "", "list function references",
 	NULL
 };
@@ -456,18 +456,20 @@ static const char *help_msg_aft[] = {
 
 static const char *help_msg_afv[] = {
 	"Usage:", "afv","[rbs]",
-	"afvr", "[?]", "manipulate register based arguments",
-	"afvb", "[?]", "manipulate bp based arguments/locals",
-	"afvs", "[?]", "manipulate sp based arguments/locals",
 	"afv*", "", "output r2 command to add args/locals to flagspace",
-	"afvR", " [varname]", "list addresses where vars are accessed (READ)",
-	"afvW", " [varname]", "list addresses where vars are accessed (WRITE)",
-	"afva", "", "analyze function arguments/locals",
-	"afvd", " name", "output r2 command for displaying the value of args/locals in the debugger",
-	"afvn", " [new_name] ([old_name])", "rename argument/local",
-	"afvt", " [name] [new_type]", "change type for given argument/local",
-	"afvf", "", "show BP relative stackframe variables",
 	"afv-", "([name])", "remove all or given var",
+	"afv=", "", "list function variables and arguments with disasm refs",
+	"afva", "", "analyze function arguments/locals",
+	"afvb", "[?]", "manipulate bp based arguments/locals",
+	"afvd", " name", "output r2 command for displaying the value of args/locals in the debugger",
+	"afvf", "", "show BP relative stackframe variables",
+	"afvn", " [new_name] ([old_name])", "rename argument/local",
+	"afvr", "[?]", "manipulate register based arguments",
+	"afvR", " [varname]", "list addresses where vars are accessed (READ)",
+	"afvs", "[?]", "manipulate sp based arguments/locals",
+	"afvt", " [name] [new_type]", "change type for given argument/local",
+	"afvW", " [varname]", "list addresses where vars are accessed (WRITE)",
+	"afvx", "", "show function variable xrefs (same as afvR+afvW)",
 	NULL
 };
 
@@ -718,6 +720,7 @@ static const char *help_msg_ax[] = {
 	"axm", " addr [at]", "copy data/code references pointing to addr to also point to curseek (or at)",
 	"axt", " [addr]", "find data/code references to this address",
 	"axf", " [addr]", "find data/code references from this address",
+	"axv", " [addr]", "list local variables read-write-exec references",
 	"ax.", " [addr]", "find data/code references from and to this address",
 	"axff[j]", " [addr]", "find data/code references from this function",
 	"axs", " addr [at]", "add string ref",
@@ -971,26 +974,49 @@ static void var_help(RCore *core, char ch) {
 	}
 }
 
-static void var_accesses_list(RAnalFunction *fcn, RAnalVar *var, int access_type) {
+static void var_accesses_list(RAnalFunction *fcn, RAnalVar *var, int access_type, const char *name) {
 	RAnalVarAccess *acc;
 	bool first = true;
+	r_cons_printf ("%10s", name);
 	r_vector_foreach (&var->accesses, acc) {
 		if (!(acc->type & access_type)) {
 			continue;
 		}
-		if (!first) {
-			r_cons_print (",");
-		}
+		r_cons_printf ("%s0x%"PFMT64x, first? "  ": ",", (ut64)((st64)fcn->addr + acc->offset));
 		first = false;
-		r_cons_printf ("0x%"PFMT64x, (ut64)((st64)fcn->addr + acc->offset));
 	}
 	r_cons_newline ();
 }
 
 static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *name) {
-	RAnalVar *var;
+	RAnalVar *var = NULL;
 	RListIter *iter;
 	RList *list = r_anal_var_all_list (core->anal, fcn);
+	if (type == '=') {
+		ut64 oaddr = core->offset;
+		r_list_foreach (list, iter, var) {
+			r_cons_printf ("* %s\n", var->name);
+			RAnalVarAccess *acc;
+			r_vector_foreach (&var->accesses, acc) {
+				if (!(acc->type & R_ANAL_VAR_ACCESS_TYPE_READ)) {
+					continue;
+				}
+				r_cons_printf ("R 0x%"PFMT64x"  ", fcn->addr + acc->offset);
+				r_core_seek (core, fcn->addr + acc->offset, 1);
+				r_core_print_disasm_instructions (core, 1, 0);
+			}
+			r_vector_foreach (&var->accesses, acc) {
+				if (!(acc->type & R_ANAL_VAR_ACCESS_TYPE_WRITE)) {
+					continue;
+				}
+				r_cons_printf ("W 0x%"PFMT64x"  ", fcn->addr + acc->offset);
+				r_core_seek (core, fcn->addr + acc->offset, 1);
+				r_core_print_disasm_instructions (core, 1, 0);
+			}
+		}
+		r_core_seek (core, oaddr, 0);
+		return;
+	}
 	if (type == '*') {
 		const char *bp = r_reg_get_name (core->anal->reg, R_REG_NAME_BP);
 		r_cons_printf ("f-fcnvar*\n");
@@ -1007,14 +1033,25 @@ static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *nam
 	if (name && *name) {
 		var = r_anal_function_get_var_byname (fcn, name);
 		if (var) {
-			r_cons_printf ("%10s  ", var->name);
-			var_accesses_list (fcn, var, access_type);
+			var_accesses_list (fcn, var, access_type, var->name);
 		}
 	} else {
 		r_list_foreach (list, iter, var) {
-			r_cons_printf ("%10s  ", var->name);
-			var_accesses_list (fcn, var, access_type);
+			var_accesses_list (fcn, var, access_type, var->name);
 		}
+	}
+}
+
+static void cmd_afvx(RCore *core, RAnalFunction *fcn) {
+	r_return_if_fail (core);
+	if (!fcn) {
+		fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_ANY);
+	}
+	if (fcn) {
+		r_cons_printf ("afvR\n");
+		list_vars (core, fcn, 'R', NULL);
+		r_cons_printf ("afvW\n");
+		list_vars (core, fcn, 'W', NULL);
 	}
 }
 
@@ -1182,15 +1219,22 @@ static int var_cmd(RCore *core, const char *str) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 	/* Variable access CFvs = set fun var */
 	switch (str[0]) {
-	case '-':
-		// "afv"
+	case '-': // "afv-"
 		r_core_cmdf (core, "afvs-%s", str + 1);
 		r_core_cmdf (core, "afvb-%s", str + 1);
 		r_core_cmdf (core, "afvr-%s", str + 1);
 		return true;
+	case 'x': // "afvx"
+		if (fcn) {
+			cmd_afvx (core, fcn);
+		} else {
+			eprintf ("Cannot find function in 0x%08"PFMT64x"\n", core->offset);
+		}
+		return true;
 	case 'R': // "afvR"
 	case 'W': // "afvW"
 	case '*': // "afv*"
+	case '=': // "afv="
 		if (fcn) {
 			const char *name = strchr (ostr, ' ');
 			if (name) {
@@ -3759,6 +3803,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				ut64 addr = input[2]==' '? r_num_math (core->num, input + 2): core->offset;
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 				if (fcn) {
+					ut64 oaddr = core->offset;
 					RAnalRef *ref;
 					RListIter *iter;
 					RList *refs = r_anal_function_get_refs (fcn);
@@ -3770,11 +3815,34 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 							pj_kn (pj, "to", ref->addr);
 							pj_end (pj);
 						} else {
-							r_cons_printf ("%c 0x%08" PFMT64x " -> 0x%08" PFMT64x "\n",
-									ref->type, ref->at, ref->addr);
+							r_cons_printf ("%c 0x%08" PFMT64x " -> ", ref->type, ref->at);
+							switch (ref->type) {
+							case R_ANAL_REF_TYPE_NULL:
+								r_cons_printf ("0x%08" PFMT64x " ", ref->addr);
+								break;
+							case R_ANAL_REF_TYPE_CODE:
+							case R_ANAL_REF_TYPE_CALL:
+							case R_ANAL_REF_TYPE_DATA:
+								r_cons_printf ("0x%08" PFMT64x " ", ref->addr);
+								r_core_seek (core, ref->at, 1);
+								r_core_print_disasm_instructions (core, 1, 0);
+								break;
+							case R_ANAL_REF_TYPE_STRING:
+								{
+									char *s = r_core_cmd_strf (core, "pxr 8 @ 0x%08"PFMT64x, ref->addr);
+									char *nl = strchr (s, '\n');
+									if (nl) {
+										*nl = 0;
+									}
+									r_cons_printf ("%s\n", s);
+									free (s);
+								}
+								break;
+							}
 						}
 					}
 					r_list_free (refs);
+					r_core_seek (core, oaddr, 1);
 				} else {
 					eprintf ("afx: Cannot find function at 0x%08"PFMT64x"\n", addr);
 				}
@@ -7135,6 +7203,9 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		r_list_free (list);
 		free (ptr);
 	} break;
+	case 'v': // "axv"
+		cmd_afvx (core, NULL);
+		break;
 	case 't': { // "axt"
 		RList *list = NULL;
 		RAnalFunction *fcn;
