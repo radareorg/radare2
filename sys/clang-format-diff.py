@@ -107,7 +107,7 @@ def main():
       i = 0
       while True:
         # stop iterating when finding the next diff
-        if lineidx + i >= len(input) or input[lineidx + i].startswith('diff'):
+        if lineidx + i >= len(input):
           break
 
         debug('lineidx : ' + input[lineidx + i])
@@ -124,7 +124,8 @@ def main():
             debug('set range_end: ' + str(start_line + range_line))
             lines_by_file.setdefault(filename, []).append([range_start, range_end - 1])
             range_start, range_end = None, None
-
+        if input[lineidx + i].startswith('diff'):
+            break
         i += 1
 
   # Reformat files containing changes in place.
