@@ -26,18 +26,44 @@ R_API void r_big_from_int(RNumBig *b, st64 v) {
 }
 
 R_API st64 r_big_to_int(RNumBig *b) {
-	signed long int res;
-	res = BN_get_word (b);
+	BN_ULONG maxx = 0;
+	maxx = ~maxx;
+	BN_ULONG res = BN_get_word (b);
+	if (res == maxx) {
+		RNumBig *B = r_big_new ();
+		r_big_assign (B, b);
+		BN_mask_bits (B, BN_BYTES * 8 - 1);
+		res = BN_get_word (B);
+		r_big_free (B);
+	}
 	res *= (BN_is_negative (b)? -1: 1);
 	return res;
 }
 
 R_API void r_big_from_hexstr(RNumBig *b, const char *str) {
-	BN_hex2bn (&b, str);
+	if (r_str_startswith (str, "0x")) {
+		str += 2;
+		BN_hex2bn (&b, str);
+	} else if (r_str_startswith (str, "-0x")) {
+		str += 3;
+		BN_hex2bn (&b, str);
+		BN_set_negative (b, -1);
+	}
 }
 
 R_API char *r_big_to_hexstr(RNumBig *b) {
-	return BN_bn2hex (b);
+	char *tmp = BN_bn2hex (b);
+	char *res;
+	if (tmp[0] == '-') {
+		res = r_str_newf ("-0x%s", &tmp[1]);
+	} else {
+		res = r_str_newf ("0x%s", tmp);
+	}
+	OPENSSL_free (tmp);
+	for (size_t i = 0; res[i]; i++) {
+		res[i] = tolower (res[i]);
+	}
+	return res;
 }
 
 R_API void r_big_assign(RNumBig *dst, RNumBig *src) {
@@ -77,12 +103,96 @@ R_API void r_big_divmod(RNumBig *c, RNumBig *d, RNumBig *a, RNumBig *b) {
 }
 
 R_API void r_big_and(RNumBig *c, RNumBig *a, RNumBig *b) {
+	RNumBig *A = r_big_new ();
+	RNumBig *B = r_big_new ();
+	RNumBig *C = r_big_new ();
+	RNumBig *addition = r_big_new ();
+
+	size_t step = 4 * 8, move = 0;
+	ut32 tmp = 0;
+	r_big_assign (A, a);
+	r_big_assign (B, b);
+
+	while (!r_big_is_zero (A) || !r_big_is_zero (B)) {
+		tmp = r_big_to_int (A);
+		tmp &= r_big_to_int (B);
+		r_big_rshift (A, A, step);
+		r_big_rshift (B, B, step);
+		r_big_from_int (addition, tmp);
+		r_big_lshift (addition, addition, move);
+		r_big_add (C, C, addition);
+
+		move += step;
+	}
+
+	r_big_assign (c, C);
+
+	r_big_free (A);
+	r_big_free (B);
+	r_big_free (C);
+	r_big_free (addition);
 }
 
 R_API void r_big_or(RNumBig *c, RNumBig *a, RNumBig *b) {
+	RNumBig *A = r_big_new ();
+	RNumBig *B = r_big_new ();
+	RNumBig *C = r_big_new ();
+	RNumBig *addition = r_big_new ();
+
+	size_t step = 4 * 8, move = 0;
+	ut32 tmp = 0;
+	r_big_assign (A, a);
+	r_big_assign (B, b);
+
+	while (!r_big_is_zero (A) || !r_big_is_zero (B)) {
+		tmp = r_big_to_int (A);
+		tmp |= r_big_to_int (B);
+		r_big_rshift (A, A, step);
+		r_big_rshift (B, B, step);
+		r_big_from_int (addition, tmp);
+		r_big_lshift (addition, addition, move);
+		r_big_add (C, C, addition);
+
+		move += step;
+	}
+
+	r_big_assign (c, C);
+
+	r_big_free (A);
+	r_big_free (B);
+	r_big_free (C);
+	r_big_free (addition);
 }
 
 R_API void r_big_xor(RNumBig *c, RNumBig *a, RNumBig *b) {
+	RNumBig *A = r_big_new ();
+	RNumBig *B = r_big_new ();
+	RNumBig *C = r_big_new ();
+	RNumBig *addition = r_big_new ();
+
+	size_t step = 4 * 8, move = 0;
+	ut32 tmp = 0;
+	r_big_assign (A, a);
+	r_big_assign (B, b);
+
+	while (!r_big_is_zero (A) || !r_big_is_zero (B)) {
+		tmp = r_big_to_int (A);
+		tmp ^= r_big_to_int (B);
+		r_big_rshift (A, A, step);
+		r_big_rshift (B, B, step);
+		r_big_from_int (addition, tmp);
+		r_big_lshift (addition, addition, move);
+		r_big_add (C, C, addition);
+
+		move += step;
+	}
+
+	r_big_assign (c, C);
+
+	r_big_free (A);
+	r_big_free (B);
+	r_big_free (C);
+	r_big_free (addition);
 }
 
 R_API void r_big_lshift(RNumBig *c, RNumBig *a, size_t nbits) {
@@ -115,5 +225,33 @@ R_API void r_big_powm(RNumBig *c, RNumBig *a, RNumBig *b, RNumBig *m) {
 	BN_CTX_free (bn_ctx);
 }
 
-R_API void r_big_isqrt(RNumBig *c, RNumBig *a) {
+R_API void r_big_isqrt(RNumBig *b, RNumBig *a) {
+	RNumBig *tmp = r_big_new ();
+	RNumBig *low = r_big_new ();
+	RNumBig *high = r_big_new ();
+	RNumBig *mid = r_big_new ();
+
+	r_big_assign (high, a);
+	r_big_rshift (mid, high, 1);
+	r_big_inc (mid);
+
+	while (r_big_cmp (high, low) > 0) {
+		r_big_mul (tmp, mid, mid);
+		if (r_big_cmp (tmp, a) > 0) {
+			r_big_assign (high, mid);
+			r_big_dec (high);
+		} else {
+			r_big_assign (low, mid);
+		}
+		r_big_sub (mid, high, low);
+		r_big_rshift (mid, mid, 1);
+		r_big_add (mid, mid, low);
+		r_big_inc (mid);
+	}
+	r_big_assign (b, low);
+
+	r_big_free (tmp);
+	r_big_free (low);
+	r_big_free (high);
+	r_big_free (mid);
 }

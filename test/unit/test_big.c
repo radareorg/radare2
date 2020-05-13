@@ -494,11 +494,8 @@ static bool test_r_big_isqrt(void) {
 
 	r_big_from_hexstr (a, "0x73204217f728a2fb7dc798618f23c5796675eee1ccd60a3a7be9cddf7d0eb30e9b004b0246051fcbc26ce99b67e23f07d3f2a493b1194af2777ffdfd5d66c61ba4fa2cd14536010ee00e695863039829c315c594c84170559822fcceb20afdc56a81ab");
 	r_big_isqrt (c, a);
-	char *str;
-	str = r_big_to_hexstr (c);
-	//r_big_from_hexstr (a, );
-	//mu_assert_eq (0, r_big_cmp (c, a), "Failed r_big_isqrt");
-	mu_assert_streq_free (str, "0xabacc3be640aee406684e32261e8d2ea2cd09a9441904e3213a1d93732f4774876b8136dab7f5e579338ac82cc96b7651f8", "Failed r_big_to_hexstr");
+	r_big_from_hexstr (a, "0xabacc3be640aee406684e32261e8d2ea2cd09a9441904e3213a1d93732f4774876b8136dab7f5e579338ac82cc96b7651f8");
+	mu_assert_eq (0, r_big_cmp (c, a), "Failed r_big_isqrt");
 
 	r_big_free (a);
 	r_big_free (c);
