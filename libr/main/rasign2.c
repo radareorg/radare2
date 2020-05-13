@@ -31,8 +31,8 @@ static RCore *opencore(const char *fname) {
 		fname = r_acp_to_utf8 (fname);
 #endif
 		if (!r_core_file_open (c, fname, 0, 0)) {
-			r_core_free (c);
 			eprintf ("Could not open file %s\n", fname);
+			r_core_free (c);
 			return NULL;
 		}
 		(void)r_core_bin_load (c, NULL, UT64_MAX);
