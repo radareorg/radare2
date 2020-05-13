@@ -549,6 +549,7 @@ R_API void r_debug_tracenodes_reset(RDebug *dbg);
 
 R_API void r_debug_trace_reset(RDebug *dbg);
 R_API int r_debug_trace_pc(RDebug *dbg, ut64 pc);
+R_API void r_debug_trace_op(RDebug *dbg, RAnalOp *op);
 R_API void r_debug_trace_at(RDebug *dbg, const char *str);
 R_API RDebugTracepoint *r_debug_trace_get(RDebug *dbg, ut64 addr);
 R_API void r_debug_trace_list(RDebug *dbg, int mode, ut64 offset);

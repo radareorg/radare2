@@ -4640,7 +4640,7 @@ repeat:
 		if (core->dbg->trace->enabled) {
 			RReg *reg = core->dbg->reg;
 			core->dbg->reg = core->anal->reg;
-			r_debug_trace_pc (core->dbg, addr);
+			r_debug_trace_op (core->dbg, &op);
 			core->dbg->reg = reg;
 		} else if (R_STR_ISNOTEMPTY (e)) {
 			r_anal_esil_parse (esil, e);
