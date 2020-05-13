@@ -215,18 +215,18 @@ enum {
 	R_ANAL_DIFF_TYPE_UNMATCH = 'u'
 };
 
-typedef struct r_anal_enum_case {
+typedef struct r_anal_enum_case_t {
 	char *name;
 	const int val;
 } RAnalEnumCase;
 
-typedef struct r_anal_struct_member {
+typedef struct r_anal_struct_member_t {
 	char *name;
 	char *type;
 	const int offset;
 } RAnalStructMember;
 
-typedef struct r_anal_union_member {
+typedef struct r_anal_union_member_t {
 	char *name;
 	char *type;
 } RAnalUnionMember;
@@ -237,19 +237,19 @@ typedef enum {
 	R_ANAL_BASE_TYPE_KIND_ENUM,
 } RAnalBaseTypeKind;
 
-typedef struct r_anal_base_type_struct {
+typedef struct r_anal_base_type_struct_t {
 	RVector/*<RAnalStructMember>*/ members;
 } RAnalBaseTypeStruct;
 
-typedef struct r_anal_base_type_union {
+typedef struct r_anal_base_type_union_t {
 	RVector/*<RAnalUnionMember>*/ members;
 } RAnalBaseTypeUnion;
 
-typedef struct r_anal_base_type_enum {
+typedef struct r_anal_base_type_enum_t {
 	RVector/*<RAnalEnumCase*/ cases; // list of all the enum casessssss
 } RAnalBaseTypeEnum;
 
-typedef struct r_anal_base_type {
+typedef struct r_anal_base_type_t {
 	RAnalBaseTypeKind kind;
 	union {
 		RAnalBaseTypeStruct struct_data;
