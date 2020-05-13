@@ -21,11 +21,11 @@ R_API void r_big_fini(RNumBig *b) {
 	mpz_clear (*b);
 }
 
-R_API void r_big_from_int(RNumBig *b, signed long int v) {
+R_API void r_big_from_int(RNumBig *b, st64 v) {
 	mpz_set_si (*b, v);
 }
 
-R_API signed long int r_big_to_int(RNumBig *b) {
+R_API st64 r_big_to_int(RNumBig *b) {
 	return mpz_get_si (*b);
 }
 

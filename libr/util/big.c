@@ -31,73 +31,73 @@ R_API void r_big_fini(RNumBig *b) {
 	_r_big_zero_out (b);
 }
 
-R_API void r_big_from_int(RNumBig *b, signed long int n) {
+R_API void r_big_from_int(RNumBig *b, st64 n) {
 	r_return_if_fail (b);
 
 	_r_big_zero_out (b);
 	b->sign = (n < 0)? -1: 1;
-	DTYPE_TMP v = n * b->sign;
+	R_BIG_DTYPE_TMP v = n * b->sign;
 
 	/* Endianness issue if machine is not little-endian? */
-#ifdef WORD_SIZ
-#if (WORD_SIZ == 1)
+#ifdef R_BIG_WORD_SIZE
+#if (R_BIG_WORD_SIZE == 1)
 	b->array[0] = (v & 0x000000ff);
 	b->array[1] = (v & 0x0000ff00) >> 8;
 	b->array[2] = (v & 0x00ff0000) >> 16;
 	b->array[3] = (v & 0xff000000) >> 24;
-#elif (WORD_SIZ == 2)
+#elif (R_BIG_WORD_SIZE == 2)
 	b->array[0] = (v & 0x0000ffff);
 	b->array[1] = (v & 0xffff0000) >> 16;
-#elif (WORD_SIZ == 4)
+#elif (R_BIG_WORD_SIZE == 4)
 	b->array[0] = v;
-	DTYPE_TMP num_32 = 32;
-	DTYPE_TMP tmp = v >> num_32;
+	R_BIG_DTYPE_TMP num_32 = 32;
+	R_BIG_DTYPE_TMP tmp = v >> num_32;
 	b->array[1] = tmp;
 #endif
 #endif
 }
 
-static void r_big_from_unsigned(RNumBig *b, DTYPE_TMP n) {
+static void r_big_from_unsigned(RNumBig *b, ut64 n) {
 	r_return_if_fail (b);
 
 	_r_big_zero_out (b);
 	b->sign = (n < 0)? -1: 1;
-	DTYPE_TMP v = n * b->sign;
+	R_BIG_DTYPE_TMP v = n * b->sign;
 
 	/* Endianness issue if machine is not little-endian? */
-#ifdef WORD_SIZ
-#if (WORD_SIZ == 1)
+#ifdef R_BIG_WORD_SIZE
+#if (R_BIG_WORD_SIZE == 1)
 	b->array[0] = (v & 0x000000ff);
 	b->array[1] = (v & 0x0000ff00) >> 8;
 	b->array[2] = (v & 0x00ff0000) >> 16;
 	b->array[3] = (v & 0xff000000) >> 24;
-#elif (WORD_SIZ == 2)
+#elif (R_BIG_WORD_SIZE == 2)
 	b->array[0] = (v & 0x0000ffff);
 	b->array[1] = (v & 0xffff0000) >> 16;
-#elif (WORD_SIZ == 4)
+#elif (R_BIG_WORD_SIZE == 4)
 	b->array[0] = v;
-	DTYPE_TMP num_32 = 32;
-	DTYPE_TMP tmp = v >> num_32;
+	R_BIG_DTYPE_TMP num_32 = 32;
+	R_BIG_DTYPE_TMP tmp = v >> num_32;
 	b->array[1] = tmp;
 #endif
 #endif
 }
 
-R_API signed long int r_big_to_int(RNumBig *b) {
+R_API st64 r_big_to_int(RNumBig *b) {
 	r_return_val_if_fail (b, 0);
 
-	DTYPE_TMP ret = 0;
+	R_BIG_DTYPE_TMP ret = 0;
 
 	/* Endianness issue if machine is not little-endian? */
-#if (WORD_SIZ == 1)
+#if (R_BIG_WORD_SIZE == 1)
 	ret += b->array[0];
 	ret += b->array[1] << 8;
 	ret += b->array[2] << 16;
 	ret += b->array[3] << 24;
-#elif (WORD_SIZ == 2)
+#elif (R_BIG_WORD_SIZE == 2)
 	ret += b->array[0];
 	ret += b->array[1] << 16;
-#elif (WORD_SIZ == 4)
+#elif (R_BIG_WORD_SIZE == 4)
 	ret += b->array[1];
 	ret <<= 32;
 	ret += b->array[0];
@@ -128,27 +128,27 @@ R_API void r_big_from_hexstr(RNumBig *n, const char *str) {
 	}
 	r_return_if_fail (nbytes > 0);
 
-	DTYPE tmp;
-	int i = nbytes - (2 * WORD_SIZ); /* index into string */
+	R_BIG_DTYPE tmp;
+	int i = nbytes - (2 * R_BIG_WORD_SIZE); /* index into string */
 	int j = 0; /* index into array */
 
 	while (i >= 0) {
 		tmp = 0;
-		sscanf (&str[i], SSCANF_FORMAT_STR, &tmp);
+		sscanf (&str[i], R_BIG_SSCANF_FORMAT_STR, &tmp);
 		n->array[j] = tmp;
-		i -= (2 * WORD_SIZ); /* step WORD_SIZ hex-byte(s) back in the string. */
+		i -= (2 * R_BIG_WORD_SIZE); /* step R_BIG_WORD_SIZE hex-byte(s) back in the string. */
 		j += 1; /* step one element forward in the array. */
 	}
 
-	if (-2 * WORD_SIZ < i) {
-		char buffer[2 * WORD_SIZ];
+	if (-2 * R_BIG_WORD_SIZE < i) {
+		char buffer[2 * R_BIG_WORD_SIZE];
 		memset (buffer, 0, sizeof (buffer));
-		i += 2 * WORD_SIZ - 1;
+		i += 2 * R_BIG_WORD_SIZE - 1;
 		for (; i >= 0; i--) {
 			buffer[i] = str[i];
 		}
 		tmp = 0;
-		sscanf (buffer, SSCANF_FORMAT_STR, &tmp);
+		sscanf (buffer, R_BIG_SSCANF_FORMAT_STR, &tmp);
 		n->array[j] = tmp;
 	}
 }
@@ -157,7 +157,7 @@ R_API char *r_big_to_hexstr(RNumBig *b) {
 	r_return_val_if_fail (b, NULL);
 	size_t size;
 
-	int j = BN_ARRAY_SIZE - 1; /* index into array - reading "MSB" first -> big-endian */
+	int j = R_BIG_ARRAY_SIZE - 1; /* index into array - reading "MSB" first -> big-endian */
 	int i = 0; /* index into string representation. */
 	int k = 0; /* Leading zero's amount */
 	int z;
@@ -168,7 +168,7 @@ R_API char *r_big_to_hexstr(RNumBig *b) {
 		return "0x0";
 	}
 
-	size = 3 + 2 * WORD_SIZ * (j + 1) + ((b->sign > 0)? 0: 1);
+	size = 3 + 2 * R_BIG_WORD_SIZE * (j + 1) + ((b->sign > 0)? 0: 1);
 	char *ret_str = calloc (size, sizeof (char));
 
 	if (b->sign < 0) {
@@ -177,8 +177,8 @@ R_API char *r_big_to_hexstr(RNumBig *b) {
 	ret_str[i++] = '0';
 	ret_str[i++] = 'x';
 
-	sprintf (&ret_str[i], SPRINTF_FORMAT_STR, b->array[j--]);
-	for (; ret_str[i + k] == '0' && k < 2 * WORD_SIZ; k++) {
+	sprintf (&ret_str[i], R_BIG_SPRINTF_FORMAT_STR, b->array[j--]);
+	for (; ret_str[i + k] == '0' && k < 2 * R_BIG_WORD_SIZE; k++) {
 	}
 	for (z = k; ret_str[i + z]; z++) {
 		ret_str[i + z - k] = ret_str[i + z];
@@ -187,8 +187,8 @@ R_API char *r_big_to_hexstr(RNumBig *b) {
 	ret_str[i] = '\x00';
 
 	for (; j >= 0; j--) {
-		sprintf (&ret_str[i], SPRINTF_FORMAT_STR, b->array[j]);
-		i += 2 * WORD_SIZ;
+		sprintf (&ret_str[i], R_BIG_SPRINTF_FORMAT_STR, b->array[j]);
+		i += 2 * R_BIG_WORD_SIZE;
 	}
 
 	return ret_str;
@@ -202,21 +202,21 @@ R_API void r_big_assign(RNumBig *dst, RNumBig *src) {
 }
 
 static void r_big_add_inner(RNumBig *c, RNumBig *a, RNumBig *b) {
-	DTYPE_TMP tmp;
+	R_BIG_DTYPE_TMP tmp;
 	int carry = 0;
 	int i;
-	for (i = 0; i < BN_ARRAY_SIZE; i++) {
-		tmp = (DTYPE_TMP)a->array[i] + b->array[i] + carry;
-		carry = (tmp > MAX_VAL);
-		c->array[i] = (tmp & MAX_VAL);
+	for (i = 0; i < R_BIG_ARRAY_SIZE; i++) {
+		tmp = (R_BIG_DTYPE_TMP)a->array[i] + b->array[i] + carry;
+		carry = (tmp > R_BIG_MAX_VAL);
+		c->array[i] = (tmp & R_BIG_MAX_VAL);
 	}
 }
 
 static void r_big_sub_inner(RNumBig *c, RNumBig *a, RNumBig *b) {
-	DTYPE_TMP res;
+	R_BIG_DTYPE_TMP res;
 	RNumBig *tmp;
-	DTYPE_TMP tmp1;
-	DTYPE_TMP tmp2;
+	R_BIG_DTYPE_TMP tmp1;
+	R_BIG_DTYPE_TMP tmp2;
 	int borrow = 0;
 	int sign = r_big_cmp (a, b);
 	c->sign = (sign >= 0? 1: -1);
@@ -226,13 +226,13 @@ static void r_big_sub_inner(RNumBig *c, RNumBig *a, RNumBig *b) {
 		b = tmp;
 	}
 	int i;
-	for (i = 0; i < BN_ARRAY_SIZE; i++) {
-		tmp1 = (DTYPE_TMP)a->array[i] + (MAX_VAL + 1); /* + number_base */
-		tmp2 = (DTYPE_TMP)b->array[i] + borrow;
+	for (i = 0; i < R_BIG_ARRAY_SIZE; i++) {
+		tmp1 = (R_BIG_DTYPE_TMP)a->array[i] + (R_BIG_MAX_VAL + 1); /* + number_base */
+		tmp2 = (R_BIG_DTYPE_TMP)b->array[i] + borrow;
 
 		res = (tmp1 - tmp2);
-		c->array[i] = (DTYPE) (res & MAX_VAL); /* "modulo number_base" == "% (number_base - 1)" if nu    mber_base is 2^N */
-		borrow = (res <= MAX_VAL);
+		c->array[i] = (R_BIG_DTYPE) (res & R_BIG_MAX_VAL); /* "modulo number_base" == "% (number_base - 1)" if nu    mber_base is 2^N */
+		borrow = (res <= R_BIG_MAX_VAL);
 	}
 }
 
@@ -296,13 +296,13 @@ R_API void r_big_mul(RNumBig *c, RNumBig *a, RNumBig *b) {
 	RNumBig *res = r_big_new ();
 	int i, j;
 
-	for (i = 0; i < BN_ARRAY_SIZE; i++) {
+	for (i = 0; i < R_BIG_ARRAY_SIZE; i++) {
 		_r_big_zero_out (row);
 
-		for (j = 0; j < BN_ARRAY_SIZE; j++) {
-			if (i + j < BN_ARRAY_SIZE) {
+		for (j = 0; j < R_BIG_ARRAY_SIZE; j++) {
+			if (i + j < R_BIG_ARRAY_SIZE) {
 				_r_big_zero_out (tmp);
-				DTYPE_TMP intermediate = ((DTYPE_TMP)a->array[i] * (DTYPE_TMP)b->array[j]);
+				R_BIG_DTYPE_TMP intermediate = ((R_BIG_DTYPE_TMP)a->array[i] * (R_BIG_DTYPE_TMP)b->array[j]);
 				r_big_from_unsigned (tmp, intermediate);
 				_lshift_word (tmp, i + j);
 				r_big_add (row, row, tmp);
@@ -341,7 +341,7 @@ R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b) {
 	_lshift_one_bit (tmp); // tmp <= 1
 
 	while (r_big_cmp (tmp, a) != 1) { // while (tmp <= a)
-		if ((denom->array[BN_ARRAY_SIZE - 1] >> (WORD_SIZ * 8 - 1)) == 1) {
+		if ((denom->array[R_BIG_ARRAY_SIZE - 1] >> (R_BIG_WORD_SIZE * 8 - 1)) == 1) {
 			break; // Reach the max value
 		}
 		_lshift_one_bit (tmp); // tmp <= 1
@@ -426,7 +426,7 @@ R_API void r_big_and(RNumBig *c, RNumBig *a, RNumBig *b) {
 	r_return_if_fail (b->sign > 0);
 
 	int i;
-	for (i = 0; i < BN_ARRAY_SIZE; i++) {
+	for (i = 0; i < R_BIG_ARRAY_SIZE; i++) {
 		c->array[i] = (a->array[i] & b->array[i]);
 	}
 }
@@ -439,7 +439,7 @@ R_API void r_big_or(RNumBig *c, RNumBig *a, RNumBig *b) {
 	r_return_if_fail (b->sign > 0);
 
 	int i;
-	for (i = 0; i < BN_ARRAY_SIZE; i++) {
+	for (i = 0; i < R_BIG_ARRAY_SIZE; i++) {
 		c->array[i] = (a->array[i] | b->array[i]);
 	}
 }
@@ -452,7 +452,7 @@ R_API void r_big_xor(RNumBig *c, RNumBig *a, RNumBig *b) {
 	r_return_if_fail (b->sign > 0);
 
 	int i;
-	for (i = 0; i < BN_ARRAY_SIZE; i++) {
+	for (i = 0; i < R_BIG_ARRAY_SIZE; i++) {
 		c->array[i] = (a->array[i] ^ b->array[i]);
 	}
 }
@@ -465,7 +465,7 @@ R_API void r_big_lshift(RNumBig *b, RNumBig *a, size_t nbits) {
 
 	r_big_assign (b, a);
 	/* Handle shift in multiples of word-size */
-	const int nbits_pr_word = (WORD_SIZ * 8);
+	const int nbits_pr_word = (R_BIG_WORD_SIZE * 8);
 	int nwords = nbits / nbits_pr_word;
 	if (nwords != 0) {
 		_lshift_word (b, nwords);
@@ -474,8 +474,8 @@ R_API void r_big_lshift(RNumBig *b, RNumBig *a, size_t nbits) {
 
 	if (nbits != 0) {
 		int i;
-		for (i = (BN_ARRAY_SIZE - 1); i > 0; i--) {
-			b->array[i] = (b->array[i] << nbits) | (b->array[i - 1] >> ((8 * WORD_SIZ) - nbits));
+		for (i = (R_BIG_ARRAY_SIZE - 1); i > 0; i--) {
+			b->array[i] = (b->array[i] << nbits) | (b->array[i - 1] >> ((8 * R_BIG_WORD_SIZE) - nbits));
 		}
 		b->array[i] <<= nbits;
 	}
@@ -489,7 +489,7 @@ R_API void r_big_rshift(RNumBig *b, RNumBig *a, size_t nbits) {
 
 	r_big_assign (b, a);
 	/* Handle shift in multiples of word-size */
-	const int nbits_pr_word = (WORD_SIZ * 8);
+	const int nbits_pr_word = (R_BIG_WORD_SIZE * 8);
 	int nwords = nbits / nbits_pr_word;
 	if (nwords != 0) {
 		_rshift_word (b, nwords);
@@ -498,8 +498,8 @@ R_API void r_big_rshift(RNumBig *b, RNumBig *a, size_t nbits) {
 
 	if (nbits != 0) {
 		int i;
-		for (i = 0; i < (BN_ARRAY_SIZE - 1); i++) {
-			b->array[i] = (b->array[i] >> nbits) | (b->array[i + 1] << ((8 * WORD_SIZ) - nbits));
+		for (i = 0; i < (R_BIG_ARRAY_SIZE - 1); i++) {
+			b->array[i] = (b->array[i] >> nbits) | (b->array[i + 1] << ((8 * R_BIG_WORD_SIZE) - nbits));
 		}
 		b->array[i] >>= nbits;
 	}
@@ -512,7 +512,7 @@ R_API int r_big_cmp(RNumBig *a, RNumBig *b) {
 	if (a->sign != b->sign)
 		return a->sign > 0? 1: -1;
 
-	int i = BN_ARRAY_SIZE;
+	int i = R_BIG_ARRAY_SIZE;
 	do {
 		i -= 1; /* Decrement first, to start with last array element */
 		if (a->array[i] > b->array[i]) {
@@ -530,7 +530,7 @@ R_API int r_big_is_zero(RNumBig *a) {
 	r_return_val_if_fail (a, -1);
 
 	int i;
-	for (i = 0; i < BN_ARRAY_SIZE; i++) {
+	for (i = 0; i < R_BIG_ARRAY_SIZE; i++) {
 		if (a->array[i]) {
 			return 0;
 		}
@@ -628,17 +628,17 @@ static void _rshift_word(RNumBig *a, int nwords) {
 	r_return_if_fail (nwords >= 0);
 
 	size_t i;
-	if (nwords >= BN_ARRAY_SIZE) {
-		for (i = 0; i < BN_ARRAY_SIZE; i++) {
+	if (nwords >= R_BIG_ARRAY_SIZE) {
+		for (i = 0; i < R_BIG_ARRAY_SIZE; i++) {
 			a->array[i] = 0;
 		}
 		return;
 	}
 
-	for (i = 0; i < BN_ARRAY_SIZE - nwords; i++) {
+	for (i = 0; i < R_BIG_ARRAY_SIZE - nwords; i++) {
 		a->array[i] = a->array[i + nwords];
 	}
-	for (; i < BN_ARRAY_SIZE; i++) {
+	for (; i < R_BIG_ARRAY_SIZE; i++) {
 		a->array[i] = 0;
 	}
 }
@@ -649,7 +649,7 @@ static void _lshift_word(RNumBig *a, int nwords) {
 
 	int i;
 	/* Shift whole words */
-	for (i = (BN_ARRAY_SIZE - 1); i >= nwords; i--) {
+	for (i = (R_BIG_ARRAY_SIZE - 1); i >= nwords; i--) {
 		a->array[i] = a->array[i - nwords];
 	}
 	/* Zero pad shifted words. */
@@ -662,8 +662,8 @@ static void _lshift_one_bit(RNumBig *a) {
 	r_return_if_fail (a);
 
 	int i;
-	for (i = (BN_ARRAY_SIZE - 1); i > 0; i--) {
-		a->array[i] = (a->array[i] << 1) | (a->array[i - 1] >> ((8 * WORD_SIZ) - 1));
+	for (i = (R_BIG_ARRAY_SIZE - 1); i > 0; i--) {
+		a->array[i] = (a->array[i] << 1) | (a->array[i - 1] >> ((8 * R_BIG_WORD_SIZE) - 1));
 	}
 	a->array[0] <<= 1;
 }
@@ -672,17 +672,17 @@ static void _rshift_one_bit(RNumBig *a) {
 	r_return_if_fail (a);
 
 	int i;
-	for (i = 0; i < (BN_ARRAY_SIZE - 1); i++) {
-		a->array[i] = (a->array[i] >> 1) | (a->array[i + 1] << ((8 * WORD_SIZ) - 1));
+	for (i = 0; i < (R_BIG_ARRAY_SIZE - 1); i++) {
+		a->array[i] = (a->array[i] >> 1) | (a->array[i + 1] << ((8 * R_BIG_WORD_SIZE) - 1));
 	}
-	a->array[BN_ARRAY_SIZE - 1] >>= 1;
+	a->array[R_BIG_ARRAY_SIZE - 1] >>= 1;
 }
 
 static void _r_big_zero_out(RNumBig *a) {
 	r_return_if_fail (a);
 
 	size_t i;
-	for (i = 0; i < BN_ARRAY_SIZE; i++) {
+	for (i = 0; i < R_BIG_ARRAY_SIZE; i++) {
 		a->array[i] = 0;
 	}
 	a->sign = 1; /* hack to avoid -0 */

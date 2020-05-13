@@ -14,50 +14,18 @@ extern "C" {
 #define RNumBig BIGNUM
 #else
 /* Use default impl */
-#ifndef WORD_SIZ
-#define WORD_SIZ 4
-#endif
+#define R_BIG_WORD_SIZE 4
 /* Let's support 4096-bit big number */
-#define BN_ARRAY_SIZE (512 / WORD_SIZ)
-#ifndef WORD_SIZ
-#error Must define WORD_SIZ to be 1, 2, 4
-/* If WORD_SIZ == 1, 8 bits long */
-#elif (WORD_SIZ == 1)
-/* Actual element type used during operation */
-#define DTYPE ut8
-#define DTYPE_MSB ((DTYPE_TMP) (0x80))
-/* Middle variable type, must be bigger than DTYPE */
-#define DTYPE_TMP ut16
-/* Type to be passed as variable */
-#define DTYPE_VAR st16
-#define SPRINTF_FORMAT_STR "%.02x"
-#define SSCANF_FORMAT_STR "%2hhx"
-#define MAX_VAL ((DTYPE_TMP)0xFF)
-/* If WORD_SIZ == 2, 16 bits long */
-#elif (WORD_SIZ == 2)
-#define DTYPE ut16
-#define DTYPE_TMP ut32
-#define DTYPE_VAR st32
-#define DTYPE_MSB ((DTYPE_TMP) (0x8000))
-#define SPRINTF_FORMAT_STR "%.04x"
-#define SSCANF_FORMAT_STR "%4hx"
-#define MAX_VAL ((DTYPE_TMP)0xFFFF)
-/* If WORD_SIZ == 4, 32 bits long */
-#elif (WORD_SIZ == 4)
-#define DTYPE ut32
-#define DTYPE_TMP ut64
-#define DTYPE_VAR st64
-#define DTYPE_MSB ((DTYPE_TMP) (0x80000000))
-#define SPRINTF_FORMAT_STR "%.08x"
-#define SSCANF_FORMAT_STR "%8x"
-#define MAX_VAL ((DTYPE_TMP)0xFFFFFFFF)
-#endif
-#ifndef DTYPE
-#error DTYPE must be defined to ut8, ut16 ut32 or whatever
-#endif
+#define R_BIG_ARRAY_SIZE (512 / R_BIG_WORD_SIZE)
+/* R_BIG_WORD_SIZE == 4, 32 bits long */
+#define R_BIG_DTYPE ut32
+#define R_BIG_DTYPE_TMP ut64
+#define R_BIG_SPRINTF_FORMAT_STR "%.08x"
+#define R_BIG_SSCANF_FORMAT_STR "%8x"
+#define R_BIG_MAX_VAL (R_BIG_DTYPE_TMP) UT32_MAX
 
 typedef struct r_num_big_t {
-	DTYPE array[BN_ARRAY_SIZE];
+	R_BIG_DTYPE array[R_BIG_ARRAY_SIZE];
 	int sign;
 } RNumBig;
 #endif
@@ -68,8 +36,8 @@ R_API void r_big_init(RNumBig *b);
 R_API void r_big_fini(RNumBig *b);
 
 /* Assignment operations */
-R_API void r_big_from_int(RNumBig *b, signed long int v);
-R_API signed long int r_big_to_int(RNumBig *b);
+R_API void r_big_from_int(RNumBig *b, st64 v);
+R_API st64 r_big_to_int(RNumBig *b);
 R_API void r_big_from_hexstr(RNumBig *b, const char *str);
 R_API char *r_big_to_hexstr(RNumBig *b);
 R_API void r_big_assign(RNumBig *dst, RNumBig *src);

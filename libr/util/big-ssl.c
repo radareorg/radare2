@@ -16,7 +16,7 @@ R_API void r_big_fini(RNumBig *b) {
 	BN_clear (b);
 }
 
-R_API void r_big_from_int(RNumBig *b, signed long int v) {
+R_API void r_big_from_int(RNumBig *b, st64 v) {
 	if (v < 0) {
 		BN_set_word (b, -v);
 		BN_set_negative (b, v);
@@ -25,7 +25,7 @@ R_API void r_big_from_int(RNumBig *b, signed long int v) {
 	}
 }
 
-R_API signed long int r_big_to_int(RNumBig *b) {
+R_API st64 r_big_to_int(RNumBig *b) {
 	signed long int res;
 	res = BN_get_word (b);
 	res *= (BN_is_negative (b)? -1: 1);
