@@ -70,32 +70,32 @@ R_API void r_big_fini(RNumBig *b);
 /* Assignment operations */
 R_API void r_big_from_int(RNumBig *b, signed long int v);
 R_API signed long int r_big_to_int(RNumBig *b);
-R_API void r_big_from_hexstr (RNumBig *b, const char *str);
-R_API char *r_big_to_hexstr (RNumBig *b);
-R_API void r_big_assign (RNumBig *dst, RNumBig *src);
+R_API void r_big_from_hexstr(RNumBig *b, const char *str);
+R_API char *r_big_to_hexstr(RNumBig *b);
+R_API void r_big_assign(RNumBig *dst, RNumBig *src);
 
 /* Basic arithmetic operations */
-R_API void r_big_add (RNumBig *c, RNumBig *a, RNumBig *b); /* c = a + b */
-R_API void r_big_sub (RNumBig *c, RNumBig *a, RNumBig *b); /* c = a - b */
-R_API void r_big_mul (RNumBig *c, RNumBig *a, RNumBig *b); /* c = a * b */
-R_API void r_big_div (RNumBig *c, RNumBig *a, RNumBig *b); /* c = a / b */
-R_API void r_big_mod (RNumBig *c, RNumBig *a, RNumBig *b); /* c = a % b */
-R_API void r_big_divmod (RNumBig *c, RNumBig *d, RNumBig *a, RNumBig *b); /* c = a/b, d = a%b */
+R_API void r_big_add(RNumBig *c, RNumBig *a, RNumBig *b); /* c = a + b */
+R_API void r_big_sub(RNumBig *c, RNumBig *a, RNumBig *b); /* c = a - b */
+R_API void r_big_mul(RNumBig *c, RNumBig *a, RNumBig *b); /* c = a * b */
+R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b); /* c = a / b */
+R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b); /* c = a % b */
+R_API void r_big_divmod(RNumBig *c, RNumBig *d, RNumBig *a, RNumBig *b); /* c = a/b, d = a%b */
 
 /* Bitwise operations(for >= 0) */
-R_API void r_big_and (RNumBig *c, RNumBig *a, RNumBig *b); /* c = a & b */
-R_API void r_big_or (RNumBig *c, RNumBig *a, RNumBig *b); /* c = a | b */
-R_API void r_big_xor (RNumBig *c, RNumBig *a, RNumBig *b); /* c = a ^ b */
-R_API void r_big_lshift (RNumBig *c, RNumBig *a, size_t nbits); /* c = a << nbits */
-R_API void r_big_rshift (RNumBig *c, RNumBig *a, size_t nbits); /* c = a >> nbits */
+R_API void r_big_and(RNumBig *c, RNumBig *a, RNumBig *b); /* c = a & b */
+R_API void r_big_or(RNumBig *c, RNumBig *a, RNumBig *b); /* c = a | b */
+R_API void r_big_xor(RNumBig *c, RNumBig *a, RNumBig *b); /* c = a ^ b */
+R_API void r_big_lshift(RNumBig *c, RNumBig *a, size_t nbits); /* c = a << nbits */
+R_API void r_big_rshift(RNumBig *c, RNumBig *a, size_t nbits); /* c = a >> nbits */
 
 /* Special operators and comparison */
-R_API int r_big_cmp (RNumBig *a, RNumBig *b); /* Return 1 if a>b, -1 if a<b, else 0 */
-R_API int r_big_is_zero (RNumBig *a); /* For comparison with zero */
-R_API void r_big_inc (RNumBig *a); /* Increment: add one to n */
-R_API void r_big_dec (RNumBig *a); /* Decrement: subtract one from n */
-R_API void r_big_powm (RNumBig *c, RNumBig *a, RNumBig *b, RNumBig *m); /* Calculate a^b -- e.g. 2^10 => 1024 */
-R_API void r_big_isqrt (RNumBig *c, RNumBig *a); /* Integer square root -- e.g. isqrt(5) => 2*/
+R_API int r_big_cmp(RNumBig *a, RNumBig *b); /* Return 1 if a>b, -1 if a<b, else 0 */
+R_API int r_big_is_zero(RNumBig *a); /* For comparison with zero */
+R_API void r_big_inc(RNumBig *a); /* Increment: add one to n */
+R_API void r_big_dec(RNumBig *a); /* Decrement: subtract one from n */
+R_API void r_big_powm(RNumBig *c, RNumBig *a, RNumBig *b, RNumBig *m); /* Calculate a^b -- e.g. 2^10 => 1024 */
+R_API void r_big_isqrt(RNumBig *c, RNumBig *a); /* Integer square root -- e.g. isqrt(5) => 2*/
 
 #ifdef __cplusplus
 }

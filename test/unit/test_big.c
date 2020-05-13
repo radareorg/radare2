@@ -1,7 +1,7 @@
 #include <r_util.h>
 #include "minunit.h"
 
-bool test_r_big_from_to_int (void) {
+static bool test_r_big_from_to_int(void) {
 	RNumBig *a = r_big_new ();
 
 	mu_assert_eq (0, r_big_to_int (a), "Failed r_big_to_int");
@@ -16,7 +16,7 @@ bool test_r_big_from_to_int (void) {
 	mu_end;
 }
 
-bool test_r_big_from_to_hexstr (void) {
+static bool test_r_big_from_to_hexstr(void) {
 	RNumBig *a = r_big_new ();
 	char *str;
 
@@ -36,7 +36,7 @@ bool test_r_big_from_to_hexstr (void) {
 	mu_end;
 }
 
-bool test_r_big_assign (void) {
+static bool test_r_big_assign(void) {
 	RNumBig *a = r_big_new ();
 	RNumBig *b = r_big_new ();
 
@@ -53,7 +53,7 @@ bool test_r_big_assign (void) {
 	mu_end;
 }
 
-bool test_r_big_cmp (void) {
+static bool test_r_big_cmp(void) {
 	RNumBig *a = r_big_new ();
 	RNumBig *b = r_big_new ();
 
@@ -93,7 +93,7 @@ bool test_r_big_cmp (void) {
 	mu_end;
 }
 
-bool test_r_big_add (void) {
+static bool test_r_big_add(void) {
 	RNumBig *a = r_big_new ();
 	RNumBig *b = r_big_new ();
 	RNumBig *c = r_big_new ();
@@ -130,7 +130,7 @@ bool test_r_big_add (void) {
 	mu_end;
 }
 
-bool test_r_big_sub (void) {
+static bool test_r_big_sub(void) {
 	RNumBig *a = r_big_new ();
 	RNumBig *b = r_big_new ();
 	RNumBig *c = r_big_new ();
@@ -186,7 +186,7 @@ bool test_r_big_sub (void) {
 	mu_end;
 }
 
-bool test_r_big_mul (void) {
+static bool test_r_big_mul(void) {
 	RNumBig *a = r_big_new ();
 	RNumBig *b = r_big_new ();
 	RNumBig *c = r_big_new ();
@@ -248,7 +248,7 @@ bool test_r_big_mul (void) {
 	mu_end;
 }
 
-bool test_r_big_div (void) {
+static bool test_r_big_div(void) {
 	RNumBig *a = r_big_new ();
 	RNumBig *b = r_big_new ();
 	RNumBig *c = r_big_new ();
@@ -292,7 +292,7 @@ bool test_r_big_div (void) {
 	mu_end;
 }
 
-bool test_r_big_divmod (void) {
+static bool test_r_big_divmod(void) {
 	RNumBig *a = r_big_new ();
 	RNumBig *b = r_big_new ();
 	RNumBig *c = r_big_new ();
@@ -312,7 +312,7 @@ bool test_r_big_divmod (void) {
 	mu_end;
 }
 
-bool test_r_big_mod (void) {
+static bool test_r_big_mod(void) {
 	RNumBig *a = r_big_new ();
 	RNumBig *b = r_big_new ();
 	RNumBig *c = r_big_new ();
@@ -328,7 +328,7 @@ bool test_r_big_mod (void) {
 	mu_end;
 }
 
-bool test_r_big_and (void) {
+static bool test_r_big_and(void) {
 	RNumBig *a = r_big_new ();
 	RNumBig *b = r_big_new ();
 	RNumBig *c = r_big_new ();
@@ -345,7 +345,7 @@ bool test_r_big_and (void) {
 	mu_end;
 }
 
-bool test_r_big_or (void) {
+static bool test_r_big_or(void) {
 	RNumBig *a = r_big_new ();
 	RNumBig *b = r_big_new ();
 	RNumBig *c = r_big_new ();
@@ -362,7 +362,7 @@ bool test_r_big_or (void) {
 	mu_end;
 }
 
-bool test_r_big_xor (void) {
+static bool test_r_big_xor(void) {
 	RNumBig *a = r_big_new ();
 	RNumBig *b = r_big_new ();
 	RNumBig *c = r_big_new ();
@@ -379,7 +379,7 @@ bool test_r_big_xor (void) {
 	mu_end;
 }
 
-bool test_r_big_inc (void) {
+static bool test_r_big_inc(void) {
 	RNumBig *a = r_big_new ();
 
 	r_big_from_int (a, -1);
@@ -392,7 +392,7 @@ bool test_r_big_inc (void) {
 	mu_end;
 }
 
-bool test_r_big_dec (void) {
+static bool test_r_big_dec(void) {
 	RNumBig *a = r_big_new ();
 
 	r_big_from_int (a, 1);
@@ -405,7 +405,7 @@ bool test_r_big_dec (void) {
 	mu_end;
 }
 
-bool test_r_big_is_zero (void) {
+static bool test_r_big_is_zero(void) {
 	RNumBig *a = r_big_new ();
 
 	r_big_from_int (a, 1);
@@ -418,7 +418,7 @@ bool test_r_big_is_zero (void) {
 	mu_end;
 }
 
-bool test_r_big_lshift (void) {
+static bool test_r_big_lshift(void) {
 	RNumBig *a = r_big_new ();
 	RNumBig *c = r_big_new ();
 
@@ -432,7 +432,7 @@ bool test_r_big_lshift (void) {
 	mu_end;
 }
 
-bool test_r_big_rshift (void) {
+static bool test_r_big_rshift(void) {
 	RNumBig *a = r_big_new ();
 	RNumBig *c = r_big_new ();
 
@@ -446,7 +446,7 @@ bool test_r_big_rshift (void) {
 	mu_end;
 }
 
-bool test_r_big_powm (void) {
+static bool test_r_big_powm(void) {
 	RNumBig *a = r_big_new ();
 	RNumBig *b = r_big_new ();
 	RNumBig *c = r_big_new ();
@@ -464,7 +464,7 @@ bool test_r_big_powm (void) {
 	mu_end;
 }
 
-bool test_r_big_isqrt (void) {
+static bool test_r_big_isqrt(void) {
 	RNumBig *a = r_big_new ();
 	RNumBig *c = r_big_new ();
 
@@ -505,7 +505,7 @@ bool test_r_big_isqrt (void) {
 	mu_end;
 }
 
-int all_tests () {
+static int all_tests(void) {
 	mu_run_test (test_r_big_from_to_int);
 	mu_run_test (test_r_big_from_to_hexstr);
 	mu_run_test (test_r_big_assign);

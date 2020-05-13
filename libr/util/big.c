@@ -169,8 +169,7 @@ R_API char *r_big_to_hexstr(RNumBig *b) {
 	}
 
 	size = 3 + 2 * WORD_SIZ * (j + 1) + ((b->sign > 0)? 0: 1);
-	char *ret_str = malloc (sizeof (char) * (size));
-	memset (ret_str, 0, sizeof (char) * (size));
+	char *ret_str = calloc (size, sizeof (char));
 
 	if (b->sign < 0) {
 		ret_str[i++] = '-';
@@ -679,7 +678,7 @@ static void _rshift_one_bit(RNumBig *a) {
 	a->array[BN_ARRAY_SIZE - 1] >>= 1;
 }
 
-static void _r_big_zero_out (RNumBig *a) {
+static void _r_big_zero_out(RNumBig *a) {
 	r_return_if_fail (a);
 
 	size_t i;

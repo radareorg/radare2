@@ -110,5 +110,5 @@ R_API void r_big_powm(RNumBig *c, RNumBig *a, RNumBig *b, RNumBig *m) {
 }
 
 R_API void r_big_isqrt(RNumBig *c, RNumBig *a) {
-    mpz_sqrt (*c, *a);
+	mpz_sqrt (*c, *a);
 }
