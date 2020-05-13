@@ -262,7 +262,7 @@ typedef struct r_core_t {
 	RCmdDescriptor root_cmd_descriptor;
 	RList/*<RCmdDescriptor>*/ *cmd_descriptors;
 	RAnal *anal;
-	RAsm *assembler;
+	RAsm *rasm;
 	/* ^^ */
 	RCoreTimes *times;
 	RParse *parser;

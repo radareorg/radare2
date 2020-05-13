@@ -200,7 +200,7 @@ static const char *stackPrintCommand(RCore *core) {
 		if (r_config_get_i (core->config, "stack.bytes")) {
 			return "px";
 		}
-		switch (core->assembler->bits) {
+		switch (core->rasm->bits) {
 		case 64: return "pxq"; break;
 		case 32: return "pxw"; break;
 		}
@@ -399,7 +399,7 @@ static void rotateAsmBits(RCore *core) {
 			bits == 32 ? 64:
 			bits == 16 ? 32:
 			bits == 8 ? 16: bits;
-		if ((core->assembler->cur->bits & nb) == nb) {
+		if ((core->rasm->cur->bits & nb) == nb) {
 			r_core_cmdf (core, "ahb %d", nb);
 			break;
 		}
@@ -1145,7 +1145,7 @@ static void setprintmode(RCore *core, int n) {
 	case R_CORE_VISUAL_MODE_PD:
 	case R_CORE_VISUAL_MODE_DB:
 		r_asm_op_init (&op);
-		r_asm_disassemble (core->assembler, &op, core->block, R_MIN (32, core->blocksize));
+		r_asm_disassemble (core->rasm, &op, core->block, R_MIN (32, core->blocksize));
 		r_asm_op_fini (&op);
 		break;
 	default:
@@ -1803,7 +1803,7 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 			return;
 		}
 		if (next_roff + 32 < core->blocksize) {
-			sz = r_asm_disassemble (core->assembler, &op,
+			sz = r_asm_disassemble (core->rasm, &op,
 				core->block + next_roff, 32);
 			if (sz < 1) {
 				sz = 1;
@@ -1891,7 +1891,7 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 				RAsmOp op;
 				prev_roff = 0;
 				r_core_seek (core, prev_addr, true);
-				prev_sz = r_asm_disassemble (core->assembler, &op,
+				prev_sz = r_asm_disassemble (core->rasm, &op,
 					core->block, 32);
 			}
 		} else {
@@ -1953,7 +1953,7 @@ static bool fix_cursor(RCore *core) {
 			reset_print_cur (p);
 		} else if ((!cur_is_visible && is_close) || !off_is_visible) {
 			RAsmOp op;
-			int sz = r_asm_disassemble (core->assembler,
+			int sz = r_asm_disassemble (core->rasm,
 				&op, core->block, 32);
 			if (sz < 1) {
 				sz = 1;
@@ -2973,7 +2973,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					if (isDisasmPrint (core->printidx)) {
 						if (core->print->screen_bounds == core->offset) {
 							ut64 addr = core->print->screen_bounds;
-							addr += r_asm_disassemble (core->assembler, &op, core->block, 32);
+							addr += r_asm_disassemble (core->rasm, &op, core->block, 32);
 						}
 						if (addr == core->offset || addr == UT64_MAX) {
 							addr = core->offset + 48;
@@ -3271,7 +3271,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					if (core->seltab) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
-							int delta = core->assembler->bits / 8;
+							int delta = core->rasm->bits / 8;
 							r_core_cmdf (core, "dr %s = %s-%d\n", creg, creg, delta);
 						}
 					} else {
@@ -3314,7 +3314,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					if (core->seltab) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
-							int delta = core->assembler->bits / 8;
+							int delta = core->rasm->bits / 8;
 							r_core_cmdf (core, "dr %s = %s+%d\n", creg, creg, delta);
 						}
 					} else {
@@ -4117,8 +4117,8 @@ R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols) {
 	if (f && f->folded) {
 		*cols = core->offset - r_anal_function_max_addr (f);
 	} else {
-		r_asm_set_pc (core->assembler, core->offset);
-		*cols = r_asm_disassemble (core->assembler,
+		r_asm_set_pc (core->rasm, core->offset);
+		*cols = r_asm_disassemble (core->rasm,
 				op, core->block, 32);
 		if (midflags || midbb) {
 			int skip_bytes_flag = 0, skip_bytes_bb = 0;

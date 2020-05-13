@@ -11,7 +11,7 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include "rsp_idec.h"
+#include "../../asm/arch/rsp/rsp_idec.h"
 
 static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
 	int i;
