@@ -42,19 +42,14 @@ static RCore *opencore(const char *fname) {
 	return c;
 }
 
-static int find_functions(RCore *core, size_t count) {
+static void find_functions(RCore *core, size_t count) {
 	const char *cmd = NULL;
 	switch (count) {
 	case 0: cmd = "aa"; break;
 	case 1: cmd = "aaa"; break;
 	case 2: cmd = "aaaa"; break;
-	default:
-		eprintf ("Invalid analysis (too many -a's?)\n");
-		rasign_show_help ();
-		return -1;
 	}
 	r_core_cmd0 (core, cmd);
-	return 0;
 }
 
 R_API int r_main_rasign2(int argc, const char **argv) {
@@ -83,10 +78,17 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 		}
 	}
 
+	if (a_cnt > 2) {
+		eprintf ("Invalid analysis (too many -a's?)\n");
+		rasign_show_help ();
+		return -1;
+	}
+
 	const char *ifile = NULL;
 	if ( opt.ind >= argc ) {
 		eprintf("must provide a file\n");
-		return rasign_show_help ();
+		rasign_show_help ();
+		return -1;
 	}
 	ifile = argv[opt.ind];
 
@@ -97,10 +99,7 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 	}
 
 	// run analysis to find functions
-	if (find_functions (core, a_cnt)) {
-		r_core_free (core);
-		return -1;
-	}
+	find_functions (core, a_cnt);
 
 	// create zignatures
 	r_core_cmd0 (core, "zg");
