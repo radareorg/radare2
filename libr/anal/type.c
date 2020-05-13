@@ -142,6 +142,20 @@ static void enum_type_fini(void *e, void *user) {
 	free ((char *)cas->name);
 }
 
+static void struct_type_fini(void *e, void *user) {
+	(void)user;
+	RAnalStructMember *member = e;
+	free ((char *)member->name);
+	free ((char *)member->type);
+}
+
+static void union_type_fini(void *e, void *user) {
+	(void)user;
+	RAnalUnionMember *member = e;
+	free ((char *)member->name);
+	free ((char *)member->type);
+}
+
 static RAnalBaseType *get_enum_type(RAnal *anal, const char *sanitized_name) {
 	r_return_val_if_fail (anal && sanitized_name, NULL);
 
@@ -216,7 +230,7 @@ static RAnalBaseType *get_struct_type(RAnal *anal, const char *sanitized_name) {
 	free (key);
 
 	RVector members;
-	r_vector_init (&members, sizeof (RAnalStructMember), enum_type_fini, NULL);
+	r_vector_init (&members, sizeof (RAnalStructMember), struct_type_fini, NULL);
 
 	if (!r_vector_reserve (&members, (size_t)sdb_alen (sdb_members))) {
 		goto error;
@@ -286,7 +300,7 @@ static RAnalBaseType *get_union_type(RAnal *anal, const char *sanitized_name) {
 	free (key);
 
 	RVector members;
-	r_vector_init (&members, sizeof (RAnalUnionMember), enum_type_fini, NULL);
+	r_vector_init (&members, sizeof (RAnalUnionMember), union_type_fini, NULL);
 
 	if (!r_vector_reserve (&members, (size_t)sdb_alen (sdb_members))) {
 		goto error;
