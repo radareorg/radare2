@@ -171,7 +171,7 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sanitized_name) {
 		free (base_type);
 		return NULL;
 	}
-	const char *members = sdb_const_get (anal->sdb_types, key, NULL);
+	char *members = sdb_get (anal->sdb_types, key, NULL);
 	free (key);
 
 	RVector cases;
@@ -199,7 +199,7 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sanitized_name) {
 
 		sdb_aforeach_next (cur);
 	}
-
+	free (members);
 	base_enum.cases = cases;
 	base_type->enum_data = base_enum;
 
@@ -207,6 +207,7 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sanitized_name) {
 
 error:
 	free (base_type);
+	free (members);
 	r_vector_fini (&cases);
 	return NULL;
 }
@@ -226,7 +227,7 @@ static RAnalBaseType *get_struct_type(RAnal *anal, const char *sanitized_name) {
 		free (base_type);
 		return NULL;
 	}
-	const char *sdb_members = sdb_const_get (anal->sdb_types, key, NULL);
+	char *sdb_members = sdb_get (anal->sdb_types, key, NULL);
 	free (key);
 
 	RVector members;
@@ -269,7 +270,7 @@ static RAnalBaseType *get_struct_type(RAnal *anal, const char *sanitized_name) {
 
 		sdb_aforeach_next (cur);
 	}
-
+	free (sdb_members);
 	base_struct.members = members;
 	base_type->struct_data = base_struct;
 
@@ -277,6 +278,7 @@ static RAnalBaseType *get_struct_type(RAnal *anal, const char *sanitized_name) {
 
 error:
 	free (base_type);
+	free (sdb_members);
 	r_vector_fini (&members);
 	return NULL;
 }
@@ -296,7 +298,7 @@ static RAnalBaseType *get_union_type(RAnal *anal, const char *sanitized_name) {
 		free (base_type);
 		return NULL;
 	}
-	const char *sdb_members = sdb_const_get (anal->sdb_types, key, NULL);
+	char *sdb_members = sdb_get (anal->sdb_types, key, NULL);
 	free (key);
 
 	RVector members;
@@ -329,7 +331,7 @@ static RAnalBaseType *get_union_type(RAnal *anal, const char *sanitized_name) {
 
 		sdb_aforeach_next (cur);
 	}
-
+	free (sdb_members);
 	base_union.members = members;
 	base_type->union_data = base_union;
 
@@ -337,6 +339,7 @@ static RAnalBaseType *get_union_type(RAnal *anal, const char *sanitized_name) {
 
 error:
 	free (base_type);
+	free (sdb_members);
 	r_vector_fini (&members);
 	return NULL;
 }
