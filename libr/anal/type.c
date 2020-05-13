@@ -1,8 +1,8 @@
 /* radare - LGPL - Copyright 2019 - pancake, oddcoder, Anton Kochkov */
 
-#include "sdb/sdb.h"
 #include <r_anal.h>
 #include <string.h>
+#include "sdb/sdb.h"
 
 static char *is_type(char *type) {
 	char *name = NULL;
