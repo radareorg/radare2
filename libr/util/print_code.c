@@ -50,8 +50,8 @@ static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len) 
 			p->cb_printf (", ");
 		}
 
-		int align = orig_align - ((j - 1) * 6);
-		p->cb_printf ("%*s", align, "");
+		int pad = orig_align - ((j - 1) * 6);
+		p->cb_printf ("%*s", R_MAX (pad, 0), "");
 
 		if (j == inst_size) {
 			char *instr = p->coreb.cmdstrf (p->coreb.core, "pi 1 @ 0x%08" PFMT64x, at);
