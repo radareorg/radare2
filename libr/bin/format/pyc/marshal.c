@@ -204,8 +204,11 @@ static pyc_object *get_long_object(RBuffer *buffer) {
 		size = ndigits * 15;
 		size = (size - 1) / 4 + 1;
 		size += 3 + (neg? 1: 0);
-		hexstr = malloc (size);
-		memset (hexstr, 0, size);
+		hexstr = calloc (size, sizeof (char));
+		if (!hexstr) {
+			free (ret);
+			return NULL;
+		}
 		j = size - 1;
 
 		for (i = 0; i < ndigits; i++) {
@@ -982,8 +985,9 @@ ut64 get_code_object_addr(RBuffer *buffer, ut32 magic) {
 	magic_int = magic;
 	pyc_object *co = get_code_object (buffer);
 	ut64 result = 0;
-	if (!co)
+	if (!co) {
 		return 0;
+	}
 
 	pyc_code_object *cobj = co->data;
 	result = cobj->start_offset;
