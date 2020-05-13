@@ -84,7 +84,7 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 	}
 
 	const char *ifile = NULL;
-	if ( opt.ind < argc ) {
+	if ( opt.ind >= argc ) {
 		eprintf("must provide a file\n");
 		return rasign_show_help ();
 	}
