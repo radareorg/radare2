@@ -215,18 +215,18 @@ enum {
 	R_ANAL_DIFF_TYPE_UNMATCH = 'u'
 };
 
-typedef struct enum_case {
+typedef struct r_anal_enum_case {
 	char *name;
 	const int val;
 } RAnalEnumCase;
 
-typedef struct struct_member {
+typedef struct r_anal_struct_member {
 	char *name;
 	char *type;
 	const int offset;
 } RAnalStructMember;
 
-typedef struct union_member {
+typedef struct r_anal_union_member {
 	char *name;
 	char *type;
 } RAnalUnionMember;

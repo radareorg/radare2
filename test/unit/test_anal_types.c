@@ -4,7 +4,7 @@
 
 
 static void setup_sdb_for_struct(Sdb *res) {
-	// "td struct kappa {int bar;int cow;}
+	// "td struct kappa {int bar;int cow;};"
 	sdb_set (res, "kappa", "struct", 0);
 	sdb_set (res, "struct.kappa", "bar,cow", 0);
 	sdb_set (res, "struct.kappa.bar", "int32_t,0,0", 0);
@@ -27,7 +27,22 @@ static void setup_sdb_for_enum(Sdb *res) {
 	sdb_set (res, "enum.foo.secondCase", "0x2", 0);
 }
 
-bool test_anal_get_base_type_struct() {
+static void setup_sdb_for_not_found(Sdb *res) {
+	// malformed type states
+	sdb_set (res, "foo", "enum", 0);
+	sdb_set (res, "bar", "struct", 0);
+	sdb_set (res, "quax", "union", 0);
+	sdb_set (res, "enum.foo", "aa,bb", 0);
+	sdb_set (res, "struct.bar", "cc,dd", 0);
+	sdb_set (res, "union.quax", "ee,ff", 0);
+
+	sdb_set (res, "omega", "struct", 0);
+	sdb_set (res, "struct.omega", "ee,ff,gg", 0);
+	sdb_set (res, "struct.omega.ee", "0,1", 0);
+	sdb_set (res, "struct.omega.ff", "", 0);
+}
+
+static bool test_anal_get_base_type_struct() {
 	RAnal *anal = r_anal_new ();
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
@@ -57,7 +72,7 @@ bool test_anal_get_base_type_struct() {
 	mu_end;
 }
 
-bool test_anal_get_base_type_union() {
+static bool test_anal_get_base_type_union() {
 	RAnal *anal = r_anal_new ();
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
@@ -85,7 +100,7 @@ bool test_anal_get_base_type_union() {
 	mu_end;
 }
 
-bool test_anal_get_base_type_enum() {
+static bool test_anal_get_base_type_enum() {
 	RAnal *anal = r_anal_new ();
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
@@ -113,12 +128,22 @@ bool test_anal_get_base_type_enum() {
 	mu_end;
 }
 
-bool test_anal_get_base_type_not_found() {
+static bool test_anal_get_base_type_not_found() {
 	RAnal *anal = r_anal_new ();
+	setup_sdb_for_not_found(anal->sdb_types);
+
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
 
 	RAnalBaseType *base = r_anal_get_base_type (anal, "non_existant23321312___");
+	mu_assert_null (base, "Should find nothing");
+	base = r_anal_get_base_type (anal, "foo");
+	mu_assert_null (base, "Should find nothing");
+	base = r_anal_get_base_type (anal, "bar");
+	mu_assert_null (base, "Should find nothing");
+	base = r_anal_get_base_type (anal, "quax");
+	mu_assert_null (base, "Should find nothing");
+	base = r_anal_get_base_type (anal, "omega");
 	mu_assert_null (base, "Should find nothing");
 
 	r_anal_free (anal);
