@@ -42,7 +42,7 @@ static RCore *opencore(const char *fname) {
 	return c;
 }
 
-static int find_functions(int count, RCore *core) {
+static int find_functions(RCore *core, size_t count) {
 	const char *cmd = NULL;
 	switch (count) {
 	case 0: cmd = "aa"; break;
@@ -60,7 +60,7 @@ static int find_functions(int count, RCore *core) {
 R_API int r_main_rasign2(int argc, const char **argv) {
 	const char *ofile = NULL;
 	int c;
-	int a_cnt = 0;
+	size_t a_cnt = 0;
 	bool rad = false;
 	RGetopt opt;
 
@@ -97,7 +97,7 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 	}
 
 	// run analysis to find functions
-	if (find_functions (a_cnt, core)) {
+	if (find_functions (core, a_cnt)) {
 		r_core_free (core);
 		return -1;
 	}
