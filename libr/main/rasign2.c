@@ -60,7 +60,6 @@ static int find_functions(int count, RCore *core) {
 
 R_API int r_main_rasign2(int argc, const char **argv) {
 	const char *ofile = NULL;
-	const char *ifile = NULL;
 	int c;
 	int a_cnt = 0;
 	bool rad = false;
@@ -85,10 +84,12 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 		}
 	}
 
-	ifile = (opt.ind < argc)? argv[opt.ind]: NULL;
-	if (ifile == NULL) {
+	const char *ifile = NULL;
+	if ( opt.ind < argc ) {
+		eprintf("must provide a file\n");
 		return rasign_show_help ();
 	}
+	ifile = argv[opt.ind];
 
 	// get the core
 	RCore *core = opencore (ifile);
