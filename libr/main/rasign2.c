@@ -65,7 +65,6 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 	int c;
 	int a_cnt = 0;
 	int rad = 0;
-	RCore *core;
 	RGetopt opt;
 
 	r_getopt_init (&opt, argc, argv, "ao:rvh");
@@ -93,8 +92,9 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 	}
 
 	// get the core
-	if ((core = opencore (ifile)) == NULL) {
-		return -1;
+	RCore *core = opencore (ifile);
+	if (!core) {
+	  return -1;
 	}
 
 	// run analysis to find functions
