@@ -421,6 +421,9 @@ typedef struct r_cons_canvas_t {
 #define UTF_CIRCLE "\u25EF"
 #define UTF_BLOCK "\u2588"
 
+// Variation Selectors
+#define UTF8_VS16 "\xef\xb8\x8f"
+
 typedef char *(*RConsEditorCallback)(void *core, const char *file, const char *str);
 typedef int (*RConsClickCallback)(void *core, int x, int y);
 typedef void (*RConsBreakCallback)(void *core);

@@ -717,7 +717,7 @@ static void interact(R2RState *state) {
 #endif
 	printf ("\n");
 	printf ("#####################\n");
-	printf (" %"PFMT64u" failed test(s) \xf0\x9f\x9a\xa8\n", (ut64)r_pvector_len (&failed_results));
+	printf (" %"PFMT64u" failed test(s) 🚨\n", (ut64)r_pvector_len (&failed_results));
 
 	r_pvector_foreach (&failed_results, it) {
 		R2RTestResultInfo *result = *it;
@@ -730,11 +730,11 @@ static void interact(R2RState *state) {
 		print_result_diff (&state->run_config, result);
 inval:
 		printf ("Wat do?    "
-				"(f)ix \xe2\x9c\x85\xef\xb8\x8f\xef\xb8\x8f\xef\xb8\x8f    "
-				"(i)gnore \xf0\x9f\x99\x88    "
-				"(b)roken \xe2\x98\xa0\xef\xb8\x8f\xef\xb8\x8f\xef\xb8\x8f    "
-				"(c)ommands \xe2\x8c\xa8\xef\xb8\x8f    "
-				"(q)uit \xf0\x9f\x9a\xaa\n");
+				"(f)ix ✅"UTF8_VS16 UTF8_VS16 UTF8_VS16"    "
+				"(i)gnore 🙈    "
+				"(b)roken ☠"UTF8_VS16 UTF8_VS16 UTF8_VS16"    "
+				"(c)ommands ⌨"UTF8_VS16"    "
+				"(q)uit 🚪\n");
 		printf ("> ");
 		char buf[0x30];
 		if (!fgets (buf, sizeof (buf), stdin)) {
