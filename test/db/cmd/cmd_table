@@ -1,0 +1,50 @@
+NAME=comma table
+FILE=bins/mach0/mac-ls
+CMDS=<<EOF
+afr
+e scr.utf8=true
+aflt > .tt
+cat .tt~?
+, .tt
+rm .tt
+,~?
+EOF
+EXPECT=<<EOF
+37
+37
+EOF
+RUN
+
+NAME=comma table
+FILE=bins/mach0/mac-ls
+CMDS=<<EOF
+afr
+e scr.utf8=false
+aflt > .tt2
+cat .tt2~?
+, .tt2
+rm .tt2
+,~?
+EOF
+EXPECT=<<EOF
+37
+37
+EOF
+RUN
+
+NAME=comma table
+FILE=bins/mach0/mac-ls
+CMDS=<<EOF
+afr
+aflt > $a
+cat $a~?
+, $a
+,
+rm $a
+,~?
+EOF
+EXPECT=<<EOF
+37
+37
+EOF
+RUN
