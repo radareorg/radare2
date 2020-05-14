@@ -872,18 +872,18 @@ static bool cmd_anal_aaft(RCore *core) {
 	}
 	seek = core->offset;
 	r_reg_arena_push (core->anal->reg);
+	r_reg_arena_zero (core->anal->reg);
+	r_core_cmd0 (core, "aei;aeim");
+	ut8 *saved_arena = r_reg_arena_peek (core->anal->reg);
 	// Iterating Reverse so that we get function in top-bottom call order
 	r_list_foreach_prev (core->anal->fcns, it, fcn) {
-		r_core_cmd0 (core, "aei");
-		r_core_cmd0 (core, "aeim");
 		int ret = r_core_seek (core, fcn->addr, true);
 		if (!ret) {
 			continue;
 		}
+		r_reg_arena_poke (core->anal->reg, saved_arena);
 		r_anal_esil_set_pc (core->anal->esil, fcn->addr);
 		r_core_anal_type_match (core, fcn);
-		r_core_cmd0 (core, "aeim-");
-		r_core_cmd0 (core, "aei-");
 		if (r_cons_is_breaked ()) {
 			break;
 		}
@@ -892,6 +892,7 @@ static bool cmd_anal_aaft(RCore *core) {
 	r_core_seek (core, seek, true);
 	r_reg_arena_pop (core->anal->reg);
 	r_config_set_i (core->config, io_cache_key, io_cache);
+	free (saved_arena);
 	return true;
 }
 
