@@ -29,6 +29,7 @@ if get_option('enable_tests')
     'parse_ctype',
     'pj',
     'queue',
+    'r2r',
     'range',
     'rbtree',
     'skiplist',

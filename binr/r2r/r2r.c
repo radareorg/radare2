@@ -782,9 +782,9 @@ static char *format_cmd_kv(const char *key, const char *val) {
 	return r_strbuf_drain_nofree (&buf);
 }
 
-static char *replace_lines(char *src, ut64 from, ut64 to, char *news) {
-	char *begin = src;
-	ut64 line = 1;
+static char *replace_lines(const char *src, size_t from, size_t to, const char *news) {
+	const char *begin = src;
+	size_t line = 1;
 	while (line < from) {
 		begin = strchr (begin, '\n');
 		if (!begin) {
@@ -797,7 +797,7 @@ static char *replace_lines(char *src, ut64 from, ut64 to, char *news) {
 		return NULL;
 	}
 
-	char *end = begin;
+	const char *end = begin;
 	while (line < to) {
 		end = strchr (end, '\n');
 		if (!end) {
@@ -853,20 +853,33 @@ static void fixup_tests(RPVector *results, const char *edited_file, ut64 start_l
 	}
 }
 
-static void replace_cmd_kv(const char *path, ut64 line_begin, ut64 line_end, const char *key, const char *value, RPVector *fixup_results) {
+static char *replace_cmd_kv(const char *path, const char *content, size_t line_begin, size_t line_end, const char *key, const char *value, RPVector *fixup_results) {
+	char *kv = format_cmd_kv (key, value);
+	if (!kv) {
+		return NULL;
+	}
+	size_t kv_lines = r_str_char_count (kv, '\n') + 1;
+	char *newc = replace_lines (content, line_begin, line_end, kv);
+	free (kv);
+	if (!newc) {
+		return NULL;
+	}
+	size_t lines_before = line_end - line_begin;
+	st64 delta = (st64)kv_lines - (st64)lines_before;
+	if (line_end == line_begin) {
+		delta++;
+	}
+	fixup_tests (fixup_results, path, line_end, delta);
+	return newc;
+}
+
+static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end, const char *key, const char *value, RPVector *fixup_results) {
 	char *content = r_file_slurp (path, NULL);
 	if (!content) {
 		eprintf ("Failed to read file \"%s\"\n", path);
 		return;
 	}
-	char *kv = format_cmd_kv (key, value);
-	if (!kv) {
-		free (content);
-		return;
-	}
-	ut64 kv_lines = r_str_char_count (kv, '\n');
-	char *newc = replace_lines (content, line_begin, line_end, kv);
-	free (kv);
+	char *newc = replace_cmd_kv (path, content, line_begin, line_end, key, value, fixup_results);
 	free (content);
 	if (!newc) {
 		return;
@@ -875,16 +888,9 @@ static void replace_cmd_kv(const char *path, ut64 line_begin, ut64 line_end, con
 #if __UNIX__
 		sync ();
 #endif
-		ut64 lines_before = line_end - line_begin;
-		st64 delta = (st64)kv_lines - lines_before;
-		if (line_end == line_begin) {
-			delta++;
-		}
-		fixup_tests (fixup_results, path, line_end, delta);
 	} else {
 		eprintf ("Failed to write file \"%s\"\n", path);
 	}
-	free (newc);
 }
 
 static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results) {
@@ -892,10 +898,10 @@ static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results) {
 	R2RCmdTest *test = result->test->cmd_test;
 	R2RProcessOutput *out = result->proc_out;
 	if (test->expect.value && out->out) {
-		replace_cmd_kv (result->test->path, test->expect.line_begin, test->expect.line_end, "EXPECT", out->out, fixup_results);
+		replace_cmd_kv_file (result->test->path, test->expect.line_begin, test->expect.line_end, "EXPECT", out->out, fixup_results);
 	}
 	if (test->expect_err.value && out->err) {
-		replace_cmd_kv (result->test->path, test->expect_err.line_begin, test->expect_err.line_end, "EXPECT_ERR", out->err, fixup_results);
+		replace_cmd_kv_file (result->test->path, test->expect_err.line_begin, test->expect_err.line_end, "EXPECT_ERR", out->err, fixup_results);
 	}
 }
 
@@ -910,7 +916,7 @@ static void interact_break(R2RTestResultInfo *result, RPVector *fixup_results) {
 	} else {
 		line_begin = line_end = test->run_line;
 	}
-	replace_cmd_kv (result->test->path, line_begin, line_end, "BROKEN", "1", fixup_results);
+	replace_cmd_kv_file (result->test->path, line_begin, line_end, "BROKEN", "1", fixup_results);
 }
 
 static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results) {
@@ -966,7 +972,7 @@ static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results
 		}
 	}
 
-	replace_cmd_kv (result->test->path, test->cmds.line_begin, test->cmds.line_end, "CMDS", newcmds, fixup_results);
+	replace_cmd_kv_file (result->test->path, test->cmds.line_begin, test->cmds.line_end, "CMDS", newcmds, fixup_results);
 	free (name);
 	free (newcmds);
 }
