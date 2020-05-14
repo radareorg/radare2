@@ -694,6 +694,9 @@ static int cmd_meta_others(RCore *core, const char *input) {
 		}
 		ut64 size;
 		RAnalMetaItem *mi = r_meta_get_at (core->anal, addr, type, &size);
+		if (!mi) {
+			break;
+		}
 		if (type == 's') {
 			char *esc_str;
 			bool esc_bslash = core->print->esc_bslash;
