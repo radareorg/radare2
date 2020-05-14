@@ -826,6 +826,26 @@ R_API void r_table_filter_columns(RTable *t, RList *list) {
 	}
 }
 
+R_API const char *r_table_help(void) {
+	return \
+	"RTableQuery> comma separated\n" \
+	" colname/sort/inc     sort rows by given colname\n"
+	" name/sortlen/inc     sort rows by strlen()\n"
+	" col0/cols/col1/col2  select cols\n"
+	" col0/gt/0x800        grep rows matching col0 > 0x800\n"
+	" col0/lt/0x800        grep rows matching col0 < 0x800\n"
+	" col0/eq/0x800        grep rows matching col0 == 0x800\n"
+	" col0/uniq            get the first row of each that col0 is unique\n"
+	" /uniq                same as | uniq (match all columns)\n"
+	" name/str/warn        grep rows matching col(name).str(warn)\n"
+	" name/strlen/3        grep rows matching strlen(col) == X\n"
+	" name/minlen/3        grep rows matching strlen(col) > X\n"
+	" name/maxlen/3        grep rows matching strlen(col) < X\n"
+	" size/sum             sum all the values of given column\n"
+	" :json                .tostring() == .tojson()\n"
+	" :quiet               do not print column names header\n";
+}
+
 static bool __table_special(RTable *t, const char *columnName) {
 	if (!strcmp (columnName, ":quiet")) {
 		t->showHeader = true;
@@ -849,22 +869,8 @@ R_API bool r_table_query(RTable *t, const char *q) {
 		return true;
 	}
 	if (*q == '?') {
-		eprintf ("RTableQuery> comma separated \n");
-		eprintf (" colname/sort/inc     sort rows by given colname\n");
-		eprintf (" name/sortlen/inc     sort rows by strlen()\n");
-		eprintf (" col0/cols/col1/col2  select cols\n");
-		eprintf (" col0/gt/0x800        grep rows matching col0 > 0x800\n");
-		eprintf (" col0/lt/0x800        grep rows matching col0 < 0x800\n");
-		eprintf (" col0/eq/0x800        grep rows matching col0 == 0x800\n");
-		eprintf (" col0/uniq            get the first row of each that col0 is unique\n");
-		eprintf (" /uniq                same as | uniq (match all columns)\n");
-		eprintf (" name/str/warn        grep rows matching col(name).str(warn)\n");
-		eprintf (" name/strlen/3        grep rows matching strlen(col) == X\n");
-		eprintf (" name/minlen/3        grep rows matching strlen(col) > X\n");
-		eprintf (" name/maxlen/3        grep rows matching strlen(col) < X\n");
-		eprintf (" size/sum             sum all the values of given column\n");
-		eprintf (" :json                .tostring() == .tojson()\n");
-		eprintf (" :quiet               do not print column names header\n");
+		const char *th = r_table_help ();
+		eprintf ("%s\n", th);
 		return false;
 	}
 
