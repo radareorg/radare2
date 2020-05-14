@@ -2537,7 +2537,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	r_config_set_i (core->config, "scr.html", 0);
 	r_config_set_i (core->config, "asm.cmt.right", true);
 
-	r_cons_push();
+	r_cons_push ();
 	line = NULL;
 	s = NULL;
 	if (!strncmp (input, "dsb", 3)) {
@@ -2560,7 +2560,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	} else {
 		line = s = r_core_cmd_str (core, "pd");
 	}
-	r_cons_pop();
+	r_cons_pop ();
 
 	r_config_set_i (core->config, "scr.html", scr_html);
 	r_config_set_i (core->config, "scr.color", use_color);
