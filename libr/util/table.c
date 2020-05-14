@@ -174,7 +174,7 @@ R_API void r_table_add_rowf(RTable *t, const char *fmt, ...) {
 		case 's':
 		case 'z':
 			arg = va_arg (ap, const char *);
-			r_list_append (list, strdup (arg?arg:""));
+			r_list_append (list, strdup (arg? arg: ""));
 			break;
 		case 'i':
 		case 'd':
@@ -206,7 +206,7 @@ R_API void r_table_add_rowf(RTable *t, const char *fmt, ...) {
 			break;
 		}
 	}
-	va_end(ap);
+	va_end (ap);
 	r_table_add_row_list (t, list);
 }
 

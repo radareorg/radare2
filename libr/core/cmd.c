@@ -148,6 +148,20 @@ static const char *help_msg_star[] = {
 	NULL
 };
 
+static const char *help_msg_comma[] = {
+	"Usage:", ",[/] [file]", "# load table data",
+	",", "", "display table",
+	".", "$foo", "aflt > $foo (files starting with '$' are saved in memory)",
+	".", " file.csv", "load the csv file into a table",
+	",-", "", "reset table",
+	",/", "?", "query",
+	",j", "", "print table in json format",
+	",h", "xxd foo bar cow", "define header column names and types",
+	",r", "xxd 1 2 foo", "adds a row using the given format string",
+	",,", "", "print table in csv format",
+	NULL
+};
+
 static const char *help_msg_dot[] = {
 	"Usage:", ".[r2cmd] | [file] | [!command] | [(macro)]", "# define macro or interpret r2, r_lang,\n"
 	"    cparse, d, es6, exe, go, js, lsp, pl, py, rb, sh, vala or zig file",
@@ -1258,6 +1272,163 @@ static int cmd_stdin(void *data, const char *input) {
 		return false;
 	}
 	return r_core_run_script (core, "-");
+}
+
+static void load_table(RTable *t, const char *file) {
+	char *data = r_file_slurp (file, NULL);
+	if (!data) {
+		eprintf ("Error: Cannot slurp '%s'\n", file);
+		return;
+	}
+	RListIter *iter;
+	char *line;
+	RList *lines = r_str_split_list (data, "\n", 0);
+	bool expect_header = false;
+	bool expect_rows = false;
+	const char *separator = "|";
+	int ncols = 0;
+	r_list_foreach (lines, iter, line) {
+		if (r_str_startswith (line, ".-")) {
+			expect_header = true;
+			continue;
+		}
+		if (r_str_startswith (line, "┌")) {
+			expect_header = true;
+			separator = "│";
+			continue;
+		}
+		if (r_str_startswith (line, ")─")) {
+			expect_rows = true;
+			continue;
+		}
+		if (r_str_startswith (line, "│─")) {
+			expect_rows = true;
+			separator = "│";
+			continue;
+		}
+
+		RTableColumnType *typeString = r_table_type ("string");
+		RTableColumnType *typeNumber = r_table_type ("number");
+		if (expect_header) {
+			char *arg;
+			RList *args = r_str_split_list (line, separator, 0);
+			RListIter *iter2;
+			ncols = 0;
+			if (r_list_length (t->cols) > 0) {
+				eprintf ("Warning: Not re-adding headers. Use ,- to reset the table.\n");
+				continue;
+			}
+			r_list_foreach (args, iter2, arg) {
+				char *s = strchr (arg, ' ');
+				if (s) {
+					r_table_add_column (t, typeString, s + 1, 0);
+					ncols ++;
+				}
+			}
+			expect_header = false;
+		} else if (expect_rows) {
+			char *arg;
+			RList *args = r_str_split_list (line, separator, 0);
+			RList *items = r_list_newf (free);
+			RListIter *iter2;
+			if (r_list_length (args) < ncols) {
+				// dowarn?
+				continue;
+			}
+			r_list_foreach (args, iter2, arg) {
+				char *s = strchr (arg, ' ');
+				if (s) {
+					if (isdigit (s[1])) {
+						int col = r_list_length (items);
+						RTableColumn *c = r_list_get_n (t->cols, col);
+						if (c) {
+							c->type = typeNumber;
+						}
+					}
+					r_list_append (items, strdup (s + 1));
+				}
+			}
+			RTableRow *row = r_table_row_new (items);
+			r_list_append (t->rows, row);
+		}
+	}
+	r_list_free (lines);
+	free (data);
+}
+
+static int cmd_table(void *data, const char *input) {
+	RCore *core = (RCore*)data;
+	static RTable *t = NULL;
+
+	if (!t) {
+		t = r_table_new ();
+	}
+
+	switch (*input) {
+	case 'h': // table header
+		// r_table_set_columnsf (t, "xdxx", "addr", "size", "jump", "fail");
+		break;
+	case 'r': // add row
+		// r_table_add_rowf (t, "xdxx", b->addr, b->size, b->jump, b->fail);
+		{
+			char *args = r_str_trim_dup (input + 1);
+			RList *list = r_str_split_list (args, " ", 0);
+			if (list) {
+				r_table_add_row_list (t, list);
+			}
+			free (args);
+		}
+		break;
+	case '-':
+		r_table_free (t);
+		t = r_table_new ();
+		break;
+	case '/':
+		// query here
+		if (r_table_query (t, input + 1)) {
+			char *ts = r_table_tofancystring (t);
+			r_cons_printf ("%s", ts);
+			free (ts);
+		}
+		break;
+	case ' ':
+		{
+			// load from file (can be a $file too)
+			const char *fn = r_str_trim_head_ro (input + 1);
+			load_table (t, fn);
+		}
+		break;
+	case 0:
+		// print table
+		{
+			char *ts = r_table_tofancystring (t);
+			// char *ts = r_table_tostring (t);
+			if (ts) {
+				r_cons_printf ("%s\n", ts);
+				free (ts);
+			}
+		}
+		break;
+	case 'j':
+		// print table
+		if (input[1] == ' ') {
+			const char *q = r_str_trim_head_ro (input + 2);
+			if (r_table_query (t, q)) {
+				char *ts = r_table_tojson (t);
+				r_cons_printf ("%s\n", ts);
+				free (ts);
+			}
+		} else {
+			char *ts = r_table_tojson (t);
+			r_cons_printf ("%s\n", ts);
+			free (ts);
+		}
+		break;
+	default:
+		r_core_cmd_help (core, help_msg_comma);
+		break;
+	}
+	return 0;
 }
 
 static int cmd_interpret(void *data, const char *input) {
@@ -7060,6 +7231,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"*",        "pointer read/write", cmd_pointer},
 		{"-",        "open cfg.editor and run script", cmd_stdin},
 		{".",        "interpret", cmd_interpret},
+		{",",        "table", cmd_table},
 		{"/",        "search kw, pattern aes", cmd_search, cmd_search_init},
 		{"=",        "io pipe", cmd_rap},
 		{"?",        "help message", cmd_help, cmd_help_init},
