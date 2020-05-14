@@ -1,12 +1,6 @@
 /* radare - LGPL - Copyright 2009-2020 - pancake */
-#include <stdio.h>
-#include <string.h>
-#include <r_getopt.h>
 #include <r_main.h>
-#include <r_sign.h>
 #include <r_core.h>
-
-#include "r_userconf.h"
 
 static int rasign_show_help() {
 	printf ("Usage: rasign2 [options] [file]\n"
