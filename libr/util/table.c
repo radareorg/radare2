@@ -220,7 +220,7 @@ R_API void r_table_add_rowf(RTable *t, const char *fmt, ...) {
 			break;
 		}
 	}
-	va_end(ap);
+	va_end (ap);
 	r_table_add_row_list (t, list);
 }
 
