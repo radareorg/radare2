@@ -170,6 +170,9 @@ R_API char *r_big_to_hexstr(RNumBig *b) {
 
 	size = 3 + 2 * R_BIG_WORD_SIZE * (j + 1) + ((b->sign > 0)? 0: 1);
 	char *ret_str = calloc (size, sizeof (char));
+	if (!ret_str) {
+		return NULL;
+	}
 
 	if (b->sign < 0) {
 		ret_str[i++] = '-';
@@ -180,11 +183,11 @@ R_API char *r_big_to_hexstr(RNumBig *b) {
 	sprintf (&ret_str[i], R_BIG_SPRINTF_FORMAT_STR, b->array[j--]);
 	for (; ret_str[i + k] == '0' && k < 2 * R_BIG_WORD_SIZE; k++) {
 	}
-	for (z = k; ret_str[i + z]; z++) {
+	for (z = k; ret_str[i + z] && z < 2 * R_BIG_WORD_SIZE; z++) {
 		ret_str[i + z - k] = ret_str[i + z];
 	}
 	i += z - k;
-	ret_str[i] = '\x00';
+	ret_str[i] = '\x00'; // Truncate string for case(j < 0)
 
 	for (; j >= 0; j--) {
 		sprintf (&ret_str[i], R_BIG_SPRINTF_FORMAT_STR, b->array[j]);
