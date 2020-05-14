@@ -1373,6 +1373,17 @@ static int cmd_table(void *data, const char *input) {
 	switch (*input) {
 	case 'h': // table header
 		// r_table_set_columnsf (t, "xdxx", "addr", "size", "jump", "fail");
+		{
+			RTableColumnType *typeString = r_table_type ("string");
+			char *s = r_str_trim_dup (input + 1);
+			RList *list = r_str_split_list (s, " ", 0);
+			RListIter *iter;
+			r_list_foreach (list, iter, s) {
+				r_table_add_column (t, typeString, s, 0);
+			}
+			r_list_free (list);
+	//		free (s);
+		}
 		break;
 	case 'r': // add row
 		// r_table_add_rowf (t, "xdxx", b->addr, b->size, b->jump, b->fail);
