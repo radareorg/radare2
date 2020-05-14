@@ -39,7 +39,6 @@ afr
 aflt > $a
 cat $a~?
 , $a
-,
 rm $a
 ,~?
 EOF

@@ -1274,8 +1274,17 @@ static int cmd_stdin(void *data, const char *input) {
 	return r_core_run_script (core, "-");
 }
 
-static void load_table(RTable *t, const char *file) {
-	char *data = r_file_slurp (file, NULL);
+static void load_table(RCore *core, RTable *t, const char *file) {
+	char *data = NULL;
+
+	if (*file == '$') {
+		const char *cdata = r_cmd_alias_get (core->rcmd, file, 1);
+		if (cdata) {
+			data = strdup (cdata + 1);
+		}
+	} else {
+		data = r_file_slurp (file, NULL);
+	}
 	if (!data) {
 		eprintf ("Error: Cannot slurp '%s'\n", file);
 		return;
@@ -1409,8 +1418,11 @@ static int cmd_table(void *data, const char *input) {
 			free (ts);
 		}
 		break;
+	case '$':
+		load_table (core, t, input);
+		break;
 	case ' ':
-		load_table (t, r_str_trim_head_ro (input + 1));
+		load_table (core, t, r_str_trim_head_ro (input + 1));
 		break;
 	case 0:
 		// print table
