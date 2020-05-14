@@ -24,8 +24,6 @@ OBJS+=punycode.o pkcs7.o x509.o asn1.o astr.o json_indent.o skiplist.o pj.o
 OBJS+=rbtree.o intervaltree.o qrcode.o vector.o str_constpool.o str_trim.o
 OBJS+=ascii_table.o protobuf.o
 
-# DO NOT BUILD r_big api (not yet used and its buggy)
-ifeq (1,0)
 ifeq (${HAVE_LIB_GMP},1)
   OBJS+=big-gmp.o
 else
@@ -34,7 +32,6 @@ else
   else
     OBJS+=big.o
   endif
-endif
 endif
 
 include deps.mk
