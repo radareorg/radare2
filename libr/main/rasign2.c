@@ -2,7 +2,7 @@
 #include <r_main.h>
 #include <r_core.h>
 
-static int rasign_show_help() {
+static void rasign_show_help() {
 	printf ("Usage: rasign2 [options] [file]\n"
 		" -a [-a]          add extra 'a' to analysis command\n"
 		" -o sigs.sdb      add signatures to file, create if it does not exist\n"
@@ -13,7 +13,6 @@ static int rasign_show_help() {
 		" -h               help menu\n"
 		"Examples:\n"
 		"  rasign2 -o libc.sdb libc.so.6\n");
-	return 0;
 }
 
 static RCore *opencore(const char *fname) {
@@ -79,8 +78,12 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 			break;
 		case 'v':
 			return r_main_version_print ("rasign2");
+		case 'h':
+			rasign_show_help ();
+			return 0;
 		default:
-			return rasign_show_help ();
+			rasign_show_help ();
+			return -1;
 		}
 	}
 
