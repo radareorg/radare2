@@ -16,6 +16,7 @@ static void rasign_show_help() {
 }
 
 static RCore *opencore(const char *fname) {
+	RCoreFile * rfile = NULL;
 	RCore *c = r_core_new ();
 	if (!c) {
 		eprintf ("Count not get core\n");
@@ -25,9 +26,14 @@ static RCore *opencore(const char *fname) {
 	r_config_set_i (c->config, "scr.interactive", false);
 	if (fname) {
 #if __WINDOWS__
-		fname = r_acp_to_utf8 (fname);
+		char *winf = r_acp_to_utf8 (fname);
+		rfile = r_core_file_open (c, winf, 0, 0);
+		free (winf);
+#else
+		rfile = r_core_file_open (c, fname, 0, 0);
 #endif
-		if (!r_core_file_open (c, fname, 0, 0)) {
+
+		if (!rfile) {
 			eprintf ("Could not open file %s\n", fname);
 			r_core_free (c);
 			return NULL;
