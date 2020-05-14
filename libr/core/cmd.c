@@ -1294,30 +1294,34 @@ static void load_table(RTable *t, const char *file) {
 	const char *separator = "|";
 	int ncols = 0;
 	r_list_foreach (lines, iter, line) {
-		if (r_str_startswith (line, ".-")) {
-			expect_header = true;
-			continue;
-		}
-		if (r_str_startswith (line, "┌")) {
-			expect_header = true;
-			separator = "│";
-			continue;
-		}
-		if (r_str_startswith (line, ")─")) {
-			expect_rows = true;
-			continue;
-		}
-		if (r_str_startswith (line, "│─")) {
-			expect_rows = true;
-			separator = "│";
-			continue;
+		if (!expect_rows) {
+			if (r_str_startswith (line, ".--")) {
+				expect_header = true;
+				separator = "|";
+				continue;
+			}
+			if (r_str_startswith (line, "┌")) {
+				expect_header = true;
+				separator = "│";
+				continue;
+			}
+			if (r_str_startswith (line, ")-")) {
+				expect_rows = true;
+				separator = "|";
+				continue;
+			}
+			if (r_str_startswith (line, "│─")) {
+				expect_rows = true;
+				separator = "│";
+				continue;
+			}
 		}
 
 		RTableColumnType *typeString = r_table_type ("string");
 		RTableColumnType *typeNumber = r_table_type ("number");
 		if (expect_header) {
 			char *arg;
-			RList *args = r_str_split_list (line, separator, 0);
+			RList *args = r_str_split_list (line + strlen (separator), separator, 0);
 			RListIter *iter2;
 			ncols = 0;
 			if (r_list_length (t->cols) > 0) {
@@ -1326,15 +1330,18 @@ static void load_table(RTable *t, const char *file) {
 			}
 			r_list_foreach (args, iter2, arg) {
 				char *s = strchr (arg, ' ');
-				if (s) {
-					r_table_add_column (t, typeString, s + 1, 0);
-					ncols ++;
+				char *ss = r_str_trim_dup (s? s + 1: arg);
+				if (!*ss) {
+					free (ss);
+					continue;
 				}
+				r_table_add_column (t, typeString, ss, 0);
+				ncols ++;
 			}
 			expect_header = false;
 		} else if (expect_rows) {
 			char *arg;
-			RList *args = r_str_split_list (line, separator, 0);
+			RList *args = r_str_split_list (line + strlen (separator), separator, 0);
 			RList *items = r_list_newf (free);
 			RListIter *iter2;
 			if (r_list_length (args) < ncols) {
@@ -1342,17 +1349,19 @@ static void load_table(RTable *t, const char *file) {
 				continue;
 			}
 			r_list_foreach (args, iter2, arg) {
-				char *s = strchr (arg, ' ');
-				if (s) {
-					if (isdigit (s[1])) {
-						int col = r_list_length (items);
-						RTableColumn *c = r_list_get_n (t->cols, col);
-						if (c) {
-							c->type = typeNumber;
-						}
-					}
-					r_list_append (items, strdup (s + 1));
+				char *ss = r_str_trim_dup (arg);
+				if (!*ss) {
+					free (ss);
+					continue;
 				}
+				if (isdigit (*ss)) {
+					int col = r_list_length (items);
+					RTableColumn *c = r_list_get_n (t->cols, col);
+					if (c) {
+						c->type = typeNumber;
+					}
+				}
+				r_list_append (items, ss);
 			}
 			RTableRow *row = r_table_row_new (items);
 			r_list_append (t->rows, row);
@@ -1372,7 +1381,6 @@ static int cmd_table(void *data, const char *input) {
 
 	switch (*input) {
 	case 'h': // table header
-		// r_table_set_columnsf (t, "xdxx", "addr", "size", "jump", "fail");
 		{
 			RTableColumnType *typeString = r_table_type ("string");
 			char *s = r_str_trim_dup (input + 1);
@@ -1386,7 +1394,6 @@ static int cmd_table(void *data, const char *input) {
 		}
 		break;
 	case 'r': // add row
-		// r_table_add_rowf (t, "xdxx", b->addr, b->size, b->jump, b->fail);
 		{
 			char *args = r_str_trim_dup (input + 1);
 			RList *list = r_str_split_list (args, " ", 0);
@@ -1409,11 +1416,7 @@ static int cmd_table(void *data, const char *input) {
 		}
 		break;
 	case ' ':
-		{
-			// load from file (can be a $file too)
-			const char *fn = r_str_trim_head_ro (input + 1);
-			load_table (t, fn);
-		}
+		load_table (t, r_str_trim_head_ro (input + 1));
 		break;
 	case 0:
 		// print table
