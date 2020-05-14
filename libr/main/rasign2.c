@@ -85,8 +85,8 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 	}
 
 	const char *ifile = NULL;
-	if ( opt.ind >= argc ) {
-		eprintf("must provide a file\n");
+	if (opt.ind >= argc) {
+		eprintf ("must provide a file\n");
 		rasign_show_help ();
 		return -1;
 	}
@@ -95,7 +95,7 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 	// get the core
 	RCore *core = opencore (ifile);
 	if (!core) {
-	  return -1;
+		return -1;
 	}
 
 	// run analysis to find functions
