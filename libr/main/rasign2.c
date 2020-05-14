@@ -13,6 +13,10 @@ static int rasign_show_help() {
 		" -a [-a]          add extra 'a' to analysis command\n"
 		" -o sigs.sdb      add signatures to file, create if it does not exist\n"
 		" -r               show output in radare commands\n"
+		" -j               show signatures in json\n"
+		" -q               quiet mode\n"
+		" -v               show version information\n"
+		" -h               help menu\n"
 		"Examples:\n"
 		"  rasign2 -o libc.sdb libc.so.6\n");
 	return 0;
@@ -57,9 +61,11 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 	int c;
 	size_t a_cnt = 0;
 	bool rad = false;
+	bool quiet = false;
+	bool json = false;
 	RGetopt opt;
 
-	r_getopt_init (&opt, argc, argv, "ao:rvh");
+	r_getopt_init (&opt, argc, argv, "ao:rjqvh");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -70,6 +76,12 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 			break;
 		case 'r':
 			rad = true;
+			break;
+		case 'j':
+			json = true;
+			break;
+		case 'q':
+			quiet = true;
 			break;
 		case 'v':
 			return r_main_version_print ("rasign2");
@@ -98,6 +110,13 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 		return -1;
 	}
 
+	// quiet mode
+	if (quiet) {
+		r_config_set (core->config, "scr.interactive", "false");
+		r_config_set (core->config, "scr.prompt", "false");
+		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
+	}
+
 	// run analysis to find functions
 	find_functions (core, a_cnt);
 
@@ -111,6 +130,10 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 
 	if (rad) {
 		r_core_flush (core, "z*");
+	}
+
+	if (json) {
+		r_core_flush (core, "zj");
 	}
 
 	r_core_free (core);
