@@ -3,6 +3,7 @@
 #include <r_anal.h>
 #include <r_util.h>
 #include <r_cons.h>
+#include <r_core.h>
 #include <r_list.h>
 
 #define ACCESS_CMP(x, y) ((x) - ((RAnalVarAccess *)y)->offset)
@@ -726,6 +727,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	r_return_if_fail (anal && op && fcn);
 	const char *opsreg = op->src[0] ? get_regname (anal, op->src[0]) : NULL;
 	const char *opdreg = op->dst ? get_regname (anal, op->dst) : NULL;
+	const int size = (fcn->bits ? fcn->bits : anal->bits) / 8;
 	if (!fcn->cc) {
 		R_LOG_DEBUG ("No calling convention for function '%s' to extract register arguments\n", fcn->name);
 		return;
@@ -734,28 +736,114 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	Sdb *TDB = anal->sdb_types;
 	int max_count = r_anal_cc_max_arg (anal, fcn->cc);
 	if (!max_count || (*count >= max_count)) {
+		free (fname);
 		return;
 	}
 	if (fname) {
-		char *tmp = strchr (fname, '.');
-		if (tmp) {
-			fname = tmp + 1;
-		}
 		argc = r_type_func_args_count (TDB, fname);
 	}
+
+	bool is_call = (op->type & 0xf) == R_ANAL_OP_TYPE_CALL || (op->type & 0xf) == R_ANAL_OP_TYPE_UCALL;
+	if (is_call && *count < max_count) {
+		RList *callee_rargs_l = NULL;
+		int callee_rargs = 0;
+		char *callee = NULL;
+		ut64 offset = op->jump == UT64_MAX ? op->ptr : op->jump;
+		RAnalFunction *f = r_anal_get_function_at (anal, offset);
+		if (!f) {
+			RCore *core = (RCore *)anal->coreb.core;
+			RFlagItem *flag = r_flag_get_by_spaces (core->flags, offset, R_FLAGS_FS_IMPORTS, NULL);
+			if (flag) {
+				callee = r_type_func_guess (TDB, flag->name);
+				if (callee) {
+					const char *cc = r_anal_cc_func (anal, callee);
+					if (cc && !strcmp (fcn->cc, cc)) {
+						callee_rargs = R_MIN (max_count, r_type_func_args_count (TDB, callee));
+					}
+				}
+			}
+		} else if (!strcmp (fcn->cc, f->cc)) {
+			callee = r_type_func_guess (TDB, f->name);
+			if (callee) {
+				callee_rargs = R_MIN (max_count, r_type_func_args_count (TDB, callee));
+			}
+			callee_rargs = callee_rargs 
+				? callee_rargs
+				: r_anal_var_count (anal, f, R_ANAL_VAR_KIND_REG, 1);
+			callee_rargs_l = r_anal_var_list (anal, f, R_ANAL_VAR_KIND_REG);
+		}
+		size_t i;
+		for (i = 0; i < callee_rargs; i++) {
+			if (reg_set[i]) {
+				continue;
+			}
+			const char *vname = NULL;
+			char *type = NULL;
+			char *name = NULL;
+			int delta = 0;
+			const char *regname = r_anal_cc_arg (anal, fcn->cc, i);
+			RRegItem *ri = r_reg_get (anal->reg, regname, -1);
+			if (ri) {
+				delta = ri->index;
+			}
+			if (fname) {
+				type = r_type_func_args_type (TDB, fname, i);
+				vname = r_type_func_args_name (TDB, fname, i);
+			}
+			if (!vname && callee) {
+				type = r_type_func_args_type (TDB, callee, i);
+				vname = r_type_func_args_name (TDB, callee, i);
+			}
+			if (vname) {
+				reg_set[i] = 1;
+			} else {
+				RListIter *it;
+				RAnalVar *arg, *found_arg = NULL;
+				r_list_foreach (callee_rargs_l, it, arg) {
+					if (r_anal_var_get_argnum (arg) == i) {
+						found_arg = arg;
+						break;
+					}
+				}
+				if (found_arg) {
+					type = strdup (found_arg->type);
+					vname = name = strdup (found_arg->name);
+				}
+			}
+			if (!vname) {
+				name = r_str_newf ("arg%d", i + 1);
+				vname = name;
+			}
+			r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, type, size, true, vname);
+			(*count)++;
+			free (name);
+			free (type);
+		}
+		free (callee);
+		r_list_free (callee_rargs_l);
+		free (fname);
+		return;
+	}
+
 	for (i = 0; i < max_count; i++) {
 		const char *regname = r_anal_cc_arg (anal, fcn->cc, i);
 		if (regname) {
+			int delta = 0;
+			RRegItem *ri = NULL;
+			RAnalVar *var = NULL;
 			bool is_used_like_an_arg = is_used_like_arg (regname, opsreg, opdreg, op, anal);
 			if (reg_set[i] != 2 && is_used_like_an_arg) {
-				const char *vname = NULL;
-				char *type = NULL;
-				char *name = NULL;
-				int delta = 0;
-				RRegItem *ri = r_reg_get (anal->reg, regname, -1);
+				ri = r_reg_get (anal->reg, regname, -1);
 				if (ri) {
 					delta = ri->index;
 				}
+			}
+			if (reg_set[i] == 1 && is_used_like_an_arg) {
+				var = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, delta);
+			} else if (reg_set[i] != 2 && is_used_like_an_arg) {
+				const char *vname = NULL;
+				char *type = NULL;
+				char *name = NULL;
 				if ((i < argc) && fname) {
 					type = r_type_func_args_type (TDB, fname, i);
 					vname = r_type_func_args_name (TDB, fname, i);
@@ -764,11 +852,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 					name = r_str_newf ("arg%d", i + 1);
 					vname = name;
 				}
-				RAnalVar *newvar = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, type, anal->bits / 8, 1, vname);
-				if (newvar) {
-					r_anal_var_set_access (newvar, op->addr, R_ANAL_VAR_ACCESS_TYPE_READ, 0);
-				}
-				r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, vname);
+				var = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, type, size, true, vname);
 				free (name);
 				free (type);
 				(*count)++;
@@ -780,6 +864,10 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			}
 			if (is_reg_in_src (regname, anal, op) || STR_EQUAL (regname, opdreg)) {
 				reg_set[i] = 1;
+			}
+			if (var) {
+				r_anal_var_set_access (var, op->addr, R_ANAL_VAR_ACCESS_TYPE_READ, 0);
+				r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, var->name);
 			}
 		}
 	}
@@ -794,7 +882,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			if (ri) {
 				delta = ri->index;
 			}
-			RAnalVar *newvar = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, anal->bits / 8, 1, vname);
+			RAnalVar *newvar = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, size, true, vname);
 			if (newvar) {
 				r_anal_var_set_access (newvar, op->addr, R_ANAL_VAR_ACCESS_TYPE_READ, 0);
 			}
@@ -818,7 +906,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			if (ri) {
 				delta = ri->index;
 			}
-			RAnalVar *newvar = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, anal->bits / 8, 1, vname);
+			RAnalVar *newvar = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, size, true, vname);
 			if (newvar) {
 				r_anal_var_set_access (newvar, op->addr, R_ANAL_VAR_ACCESS_TYPE_READ, 0);
 			}
