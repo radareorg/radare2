@@ -1441,6 +1441,10 @@ static int cmd_table(void *data, const char *input) {
 			free (ts);
 		}
 		break;
+	case '?':
+		r_core_cmd_help (core, help_msg_comma);
+		r_cons_printf ("%s\n", r_table_help ());
+		break;
 	default:
 		r_core_cmd_help (core, help_msg_comma);
 		break;

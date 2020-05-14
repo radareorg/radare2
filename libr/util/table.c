@@ -901,6 +901,31 @@ R_API void r_table_filter_columns(RTable *t, RList *list) {
 	}
 }
 
+R_API const char *r_table_help(void) {
+	return \
+		"RTableQuery> comma separated. 'c' stands for column name.\n"
+		" c/sort/inc        sort rows by given colname\n"
+		" c/sortlen/inc     sort rows by strlen()\n"
+		" c/cols/c1/c2      only show selected columns\n"
+		" c/gt/0x800        grep rows matching col0 > 0x800\n"
+		" c/lt/0x800        grep rows matching col0 < 0x800\n"
+		" c/eq/0x800        grep rows matching col0 == 0x800\n"
+		" c/ne/0x800        grep rows matching col0 != 0x800\n"
+		" */uniq            get the first row of each that col0 is unique\n"
+		" */head/10         same as | head -n 10\n"
+		" */tail/10         same as | tail -n 10\n"
+		" */page/1/10       show the first 10 rows (/page/2/10 will show the 2nd)\n"
+		" c/str/warn        grep rows matching col(name).str(warn)\n"
+		" c/strlen/3        grep rows matching strlen(col) == X\n"
+		" c/minlen/3        grep rows matching strlen(col) > X\n"
+		" c/maxlen/3        grep rows matching strlen(col) < X\n"
+		" c/sum             sum all the values of given column\n"
+		" :csv              .tostring() == .tocsv()\n"
+		" :json             .tostring() == .tojson()\n"
+		" :simple           simple table output without lines\n"
+		" :quiet            do not print column names header\n";
+}
+
 static bool __table_special(RTable *t, const char *columnName) {
 	if (*columnName != ':') {
 		return false;
@@ -932,27 +957,8 @@ R_API bool r_table_query(RTable *t, const char *q) {
 		return true;
 	}
 	if (*q == '?') {
-		eprintf ("RTableQuery> comma separated. 'c' stands for column name.\n");
-		eprintf (" c/sort/inc        sort rows by given colname\n");
-		eprintf (" c/sortlen/inc     sort rows by strlen()\n");
-		eprintf (" c/cols/c1/c2      only show selected columns\n");
-		eprintf (" c/gt/0x800        grep rows matching col0 > 0x800\n");
-		eprintf (" c/lt/0x800        grep rows matching col0 < 0x800\n");
-		eprintf (" c/eq/0x800        grep rows matching col0 == 0x800\n");
-		eprintf (" c/ne/0x800        grep rows matching col0 != 0x800\n");
-		eprintf (" */uniq            get the first row of each that col0 is unique\n");
-		eprintf (" */head/10         same as | head -n 10\n");
-		eprintf (" */tail/10         same as | tail -n 10\n");
-		eprintf (" */page/1/10       show the first 10 rows (/page/2/10 will show the 2nd)\n");
-		eprintf (" c/str/warn        grep rows matching col(name).str(warn)\n");
-		eprintf (" c/strlen/3        grep rows matching strlen(col) == X\n");
-		eprintf (" c/minlen/3        grep rows matching strlen(col) > X\n");
-		eprintf (" c/maxlen/3        grep rows matching strlen(col) < X\n");
-		eprintf (" c/sum             sum all the values of given column\n");
-		eprintf (" :csv              .tostring() == .tocsv()\n");
-		eprintf (" :json             .tostring() == .tojson()\n");
-		eprintf (" :simple           simple table output without lines\n");
-		eprintf (" :quiet            do not print column names header\n");
+		const char *th = r_table_help ();
+		eprintf ("%s\n", th);
 		return false;
 	}
 
