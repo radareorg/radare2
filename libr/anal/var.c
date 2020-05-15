@@ -782,7 +782,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 					}
 				}
 			}
-		} else if (!strcmp (fcn->cc, f->cc)) {
+		} else if (!f->is_variadic && !strcmp (fcn->cc, f->cc)) {
 			callee = r_type_func_guess (TDB, f->name);
 			if (callee) {
 				callee_rargs = R_MIN (max_count, r_type_func_args_count (TDB, callee));

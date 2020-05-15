@@ -1222,7 +1222,7 @@ var char * src @ rbp-0x1490
 var char * v2 @ rbp-0x1488
 var char * var_1480h @ rbp-0x1480
 var void * var_1478h @ rbp-0x1478
-var char * var_1470h @ rbp-0x1470
+var char * dest @ rbp-0x1470
 var void * var_1420h @ rbp-0x1420
 var char * s1 @ rbp-0x1020
 var int64_t var_18h @ rbp-0x18
