@@ -57,12 +57,10 @@ R_API void r_big_from_int(RNumBig *b, st64 n) {
 #endif
 }
 
-static void r_big_from_unsigned(RNumBig *b, ut64 n) {
+static void r_big_from_unsigned(RNumBig *b, ut64 v) {
 	r_return_if_fail (b);
 
 	_r_big_zero_out (b);
-	b->sign = (n < 0)? -1: 1;
-	R_BIG_DTYPE_TMP v = n * b->sign;
 
 	/* Endianness issue if machine is not little-endian? */
 #ifdef R_BIG_WORD_SIZE
