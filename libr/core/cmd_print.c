@@ -1743,8 +1743,10 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				r_cons_printf (".format %s ; size=", meta->str);
 				r_core_cmdf (core, "pfs %s", meta->str);
 				r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x, meta->str, meta_node->start);
-				append (ebytes, Color_INVERT);
-				append (echars, Color_INVERT);
+				if (usecolor) {
+					append (ebytes, Color_INVERT);
+					append (echars, Color_INVERT);
+				}
 				hadflag = true;
 			}
 			if (meta) {
@@ -1775,8 +1777,10 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 					r_cons_printf ("%20s ", "");
 				}
 				if (flag->offset == addr + j) {
-					append (ebytes, Color_INVERT);
-					append (echars, Color_INVERT);
+					if (usecolor) {
+						append (ebytes, Color_INVERT);
+						append (echars, Color_INVERT);
+					}
 					hadflag = true;
 				}
 			} else {
@@ -1790,17 +1794,16 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 					setcolor = false;
 				}
 			}
-			if (usecolor && !setcolor) {
-				const char *bytecolor = r_print_byte_color (core->print, ch);
-				if (bytecolor) {
-					append (ebytes, bytecolor);
-					append (echars, bytecolor);
+			if (usecolor) {
+				if (!setcolor) {
+					const char *bytecolor = r_print_byte_color (core->print, ch);
+					if (bytecolor) {
+						append (ebytes, bytecolor);
+						append (echars, bytecolor);
+						hascolor = true;
+					}
+				} else if (!hascolor) {
 					hascolor = true;
-				}
-			}
-			if (setcolor && !hascolor) {
-				hascolor = true;
-				if (usecolor) {
 					if (current_flag && current_flag->color) {
 						char *ansicolor = r_cons_pal_parse (current_flag->color, NULL);
 						if (ansicolor) {
@@ -1811,12 +1814,6 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 					} else { // Use "random" colours
 						append (ebytes, colors[color_idx]);
 						append (echars, colors[color_idx]);
-					}
-				} else {
-					if (html) {
-						append (ebytes, "[");
-					} else {
-						append (ebytes, Color_INVERT);
 					}
 				}
 			}
@@ -1831,7 +1828,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			if (core->print->cur_enabled) {
 				if (low == max) {
 					if (low == here) {
-						if (html) {
+						if (html || !usecolor) {
 							append (ebytes, "[");
 							append (echars, "[");
 						} else {
@@ -1841,12 +1838,14 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 					}
 				} else {
 					if (here >= low && here < max) {
-						if (html) {
+						if (html || !usecolor) {
 							append (ebytes, "[");
 							append (echars, "[");
 						} else {
-							append (ebytes, Color_INVERT);
-							append (echars, Color_INVERT);
+							if (usecolor) {
+								append (ebytes, Color_INVERT);
+								append (echars, Color_INVERT);
+							}
 						}
 					}
 				}
@@ -1855,14 +1854,16 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			// r_print_byte (core->print, "%02x ", j, ch);
 			ebytes += strlen (ebytes);
 			if (hadflag) {
-				append (ebytes, Color_INVERT_RESET);
-				append (echars, Color_INVERT_RESET);
+				if (usecolor) {
+					append (ebytes, Color_INVERT_RESET);
+					append (echars, Color_INVERT_RESET);
+				}
 				hadflag = false;
 			}
 			sprintf (echars, "%c", IS_PRINTABLE (ch)? ch: '.');
 			echars++;
 			if (core->print->cur_enabled && max == here) {
-				if (!html) {
+				if (!html && usecolor) {
 					append (ebytes, Color_RESET);
 					append (echars, Color_RESET);
 				}
@@ -1874,7 +1875,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			}
 
 			if (fend != UT64_MAX && fend == addr + j + 1) {
-				if (!html) {
+				if (!html && usecolor) {
 					append (ebytes, Color_RESET);
 					append (echars, Color_RESET);
 				}
@@ -1882,7 +1883,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				hascolor = false;
 			}
 		}
-		if (!html) {
+		if (!html && usecolor) {
 			append (ebytes, Color_RESET);
 			append (echars, Color_RESET);
 		}
@@ -2486,12 +2487,8 @@ static void printraw(RCore *core, int len, int mode) {
 	core->cons->newline = core->cmd_in_backticks ? false : true;
 }
 
-
 static void _handle_call(RCore *core, char *line, char **str) {
-	if (!core || !core->rasm || !core->rasm->cur) {
-		*str = NULL;
-		return;
-	}
+	r_return_if_fail (core && line && str && core->rasm && core->rasm->cur);
 	if (strstr (core->rasm->cur->arch, "x86")) {
 		*str = strstr (line, "call ");
 	} else if (strstr (core->rasm->cur->arch, "arm")) {
@@ -2524,6 +2521,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	bool show_comments = r_config_get_i (core->config, "asm.comments");
 	bool show_offset = r_config_get_i (core->config, "asm.offset");
 	bool asm_tabs = r_config_get_i (core->config, "asm.tabs");
+	bool scr_html = r_config_get_i (core->config, "scr.html");
 	bool asm_dwarf = r_config_get_i (core->config, "asm.dwarf");
 	bool asm_flags = r_config_get_i (core->config, "asm.flags");
 	bool asm_cmt_right = r_config_get_i (core->config, "asm.cmt.right");
@@ -2536,8 +2534,10 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	r_config_set_i (core->config, "asm.dwarf", true);
 	r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 	r_config_set_i (core->config, "asm.tabs", 0);
+	r_config_set_i (core->config, "scr.html", 0);
 	r_config_set_i (core->config, "asm.cmt.right", true);
-	r_cons_push();
+
+	r_cons_push ();
 	line = NULL;
 	s = NULL;
 	if (!strncmp (input, "dsb", 3)) {
@@ -2560,7 +2560,9 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	} else {
 		line = s = r_core_cmd_str (core, "pd");
 	}
-r_cons_pop();
+	r_cons_pop ();
+
+	r_config_set_i (core->config, "scr.html", scr_html);
 	r_config_set_i (core->config, "scr.color", use_color);
 	r_config_set_i (core->config, "asm.cmt.right", asm_cmt_right);
 	count = r_str_split (s, '\n');
@@ -2835,6 +2837,7 @@ restore_conf:
 	r_config_set_i (core->config, "asm.offset", show_offset);
 	r_config_set_i (core->config, "asm.dwarf", asm_dwarf);
 	r_config_set_i (core->config, "asm.tabs", asm_tabs);
+	r_config_set_i (core->config, "scr.html", scr_html);
 	r_config_set_i (core->config, "asm.emu", asm_emu);
 	r_config_set_i (core->config, "emu.str", emu_str);
 }
