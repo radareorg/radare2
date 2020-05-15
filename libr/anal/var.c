@@ -544,61 +544,80 @@ static const char *get_regname(RAnal *anal, RAnalValue *value) {
 }
 
 static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
-	st64 ptr;
-	char *addr;
+	st64 ptr = 0;
+	char *addr, *esil_buf = NULL;
 
 	r_return_if_fail (anal && fcn && op);
 
-	const char *op_esil = r_strbuf_get (&op->esil);
-	if (!op_esil) {
-		return;
-	}
-	char *esil_buf = strdup (op_esil);
-	if (!esil_buf) {
-		return;
-	}
-	char *ptr_end = strstr (esil_buf, sdb_fmt (",%s,%s", reg, sign));
-	if (!ptr_end) {
-		free (esil_buf);
-		return;
-	}
-	*ptr_end = 0;
-	addr = ptr_end;
-	while ((addr[0] != '0' || addr[1] != 'x') && addr >= esil_buf + 1 && *addr != ',') {
-		addr--;
-	}
-	if (strncmp (addr, "0x", 2)) {
-		//XXX: This is a workaround for inconsistent esil
-		if (!op->stackop && op->dst) {
-			const char *sp = r_reg_get_name (anal->reg, R_REG_NAME_SP);
-			const char *bp = r_reg_get_name (anal->reg, R_REG_NAME_BP);
-			const char *rn = op->dst[0].reg ? op->dst[0].reg->name : NULL;
-			if (rn && ((bp && !strcmp (bp, rn)) || (sp && !strcmp (sp, rn)))) {
-				if (anal->verbose) {
-					eprintf ("Warning: Analysis didn't fill op->stackop for instruction that alters stack at 0x%"PFMT64x".\n", op->addr);
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (op->src); i++) {
+		if (op->src[i] && op->src[i]->reg && op->src[i]->reg->name) {
+			if (!strcmp (reg, op->src[i]->reg->name)) {
+				st64 delta = op->src[i]->delta;
+				if ((delta > 0 && *sign == '+') || (delta < 0 && *sign == '-')) {
+					ptr = R_ABS (op->src[i]->delta);
+					break;
 				}
-				goto beach;
 			}
 		}
-		if (*addr == ',') {
-			addr++;
+	}
+
+	if (!ptr) {
+		const char *op_esil = r_strbuf_get (&op->esil);
+		if (!op_esil) {
+			return;
 		}
-		if (!op->stackop && op->type != R_ANAL_OP_TYPE_PUSH && op->type != R_ANAL_OP_TYPE_POP
-			&& op->type != R_ANAL_OP_TYPE_RET && r_str_isnumber (addr)) {
-			ptr = (st64)r_num_get (NULL, addr);
-			if (ptr && op->src[0] && ptr == op->src[0]->imm) {
+		esil_buf = strdup (op_esil);
+		if (!esil_buf) {
+			return;
+		}
+		char *ptr_end = strstr (esil_buf, sdb_fmt (",%s,%s,", reg, sign));
+		if (!ptr_end) {
+			free (esil_buf);
+			return;
+		}
+		*ptr_end = 0;
+		addr = ptr_end;
+		while ((addr[0] != '0' || addr[1] != 'x') && addr >= esil_buf + 1 && *addr != ',') {
+			addr--;
+		}
+		if (strncmp (addr, "0x", 2)) {
+			//XXX: This is a workaround for inconsistent esil
+			if (!op->stackop && op->dst) {
+				const char *sp = r_reg_get_name (anal->reg, R_REG_NAME_SP);
+				const char *bp = r_reg_get_name (anal->reg, R_REG_NAME_BP);
+				const char *rn = op->dst->reg ? op->dst->reg->name : NULL;
+				if (rn && ((bp && !strcmp (bp, rn)) || (sp && !strcmp (sp, rn)))) {
+					if (anal->verbose) {
+						eprintf ("Warning: Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x ".\n", op->addr);
+					}
+					goto beach;
+				}
+			}
+			if (*addr == ',') {
+				addr++;
+			}
+			if (!op->stackop && op->type != R_ANAL_OP_TYPE_PUSH && op->type != R_ANAL_OP_TYPE_POP
+				&& op->type != R_ANAL_OP_TYPE_RET && r_str_isnumber (addr)) {
+				ptr = (st64)r_num_get (NULL, addr);
+				if (ptr && op->src[0] && ptr == op->src[0]->imm) {
+					goto beach;
+				}
+			} else if ((op->stackop == R_ANAL_STACK_SET) || (op->stackop == R_ANAL_STACK_GET)) {
+				if (op->ptr % 4) {
+					goto beach;
+				}
+				ptr = R_ABS (op->ptr);
+			} else {
 				goto beach;
 			}
-		} else if ((op->stackop == R_ANAL_STACK_SET) || (op->stackop == R_ANAL_STACK_GET)) {
-			if (op->ptr % 4) {
-				goto beach;
-			}
-			ptr = R_ABS (op->ptr);
 		} else {
-			goto beach;
+			ptr = (st64)r_num_get (NULL, addr);
 		}
-	} else {
-		ptr = (st64)r_num_get (NULL, addr);
+	}
+
+	if (anal->verbose && (!op->src[0] || !op->dst)) {
+		eprintf ("Warning: Analysis didn't fill op->src/dst at 0x%" PFMT64x ".\n", op->addr);
 	}
 
 	int rw = (op->direction == R_ANAL_OP_DIR_WRITE) ? R_ANAL_VAR_ACCESS_TYPE_WRITE : R_ANAL_VAR_ACCESS_TYPE_READ;
