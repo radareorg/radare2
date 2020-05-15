@@ -338,7 +338,7 @@ R_API int r_core_bin_set_env(RCore *r, RBinFile *binfile) {
 			} else {
 				r_config_set (r->config, "anal.cpu", arch);
 			}
-			r_asm_use (r->assembler, arch);
+			r_asm_use (r->rasm, arch);
 		}
 		r_asm_use (r->rasm, arch);
 		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, NULL, R_MODE_SET, va, NULL, NULL);
