@@ -492,7 +492,7 @@ static pyc_object *get_array_object_generic(RBuffer *buffer, ut32 size) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->data = r_list_new ();
+	ret->data = r_list_newf (free_object);
 	if (!ret->data) {
 		free (ret);
 		return NULL;
@@ -505,7 +505,7 @@ static pyc_object *get_array_object_generic(RBuffer *buffer, ut32 size) {
 			return NULL;
 		}
 		if (!r_list_append (ret->data, tmp)) {
-			free (tmp);
+			free_object (tmp);
 			r_list_free (ret->data);
 			free (ret);
 			return NULL;
@@ -568,8 +568,11 @@ static pyc_object *get_list_object(RBuffer *buffer) {
 		return NULL;
 	}
 	ret = get_array_object_generic (buffer, n);
-	ret->type = TYPE_LIST;
-	return ret;
+	if (ret) {
+		ret->type = TYPE_LIST;
+		return ret;
+	}
+	return NULL;
 }
 
 static pyc_object *get_dict_object(RBuffer *buffer) {
@@ -581,7 +584,7 @@ static pyc_object *get_dict_object(RBuffer *buffer) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->data = r_list_new ();
+	ret->data = r_list_newf (free_object);
 	if (!ret->data) {
 		R_FREE (ret);
 		return NULL;
@@ -594,7 +597,7 @@ static pyc_object *get_dict_object(RBuffer *buffer) {
 		if (!r_list_append (ret->data, key)) {
 			r_list_free (ret->data);
 			R_FREE (ret);
-			R_FREE (key);
+			free_object (key);
 			return NULL;
 		}
 		val = get_object (buffer);
@@ -604,7 +607,7 @@ static pyc_object *get_dict_object(RBuffer *buffer) {
 		if (!r_list_append (ret->data, val)) {
 			r_list_free (ret->data);
 			R_FREE (ret);
-			R_FREE (val);
+			free_object (val);
 			return NULL;
 		}
 	}
@@ -710,9 +713,6 @@ static pyc_object *get_ref_object(RBuffer *buffer) {
 		return NULL;
 	}
 	ret = copy_object (obj);
-	if (!ret) {
-		free (obj);
-	}
 	return ret;
 }
 
@@ -771,10 +771,10 @@ static void free_object(pyc_object *object) {
 	case TYPE_UNICODE:
 	case TYPE_UNKNOWN:
 		eprintf ("Free not implemented for type %x\n", object->type);
-		return;
+		break;
 	default:
 		eprintf ("Undefined type in free_object (%x)\n", object->type);
-		return;
+		break;
 	}
 	free (object);
 }
@@ -995,8 +995,7 @@ ut64 get_code_object_addr(RBuffer *buffer, ut32 magic) {
 
 	pyc_code_object *cobj = co->data;
 	result = cobj->start_offset;
-	free (co->data);
-	free (co);
+	free_object (co);
 
 	return result;
 }
@@ -1020,7 +1019,7 @@ static pyc_object *get_object(RBuffer *buffer) {
 		}
 		ref_idx = r_list_append (refs, ret);
 		if (!ref_idx) {
-			free (ret);
+			free_object (ret);
 			return NULL;
 		}
 	}

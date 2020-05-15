@@ -65,7 +65,7 @@ static RList *sections(RBinFile *arch) {
 }
 
 static RList *entries(RBinFile *arch) {
-	RList *entries = r_list_new ();
+	RList *entries = r_list_newf (free);
 	if (!entries) {
 		return NULL;
 	}
@@ -91,12 +91,12 @@ static RList *symbols(RBinFile *arch) {
 	if (!shared) {
 		return NULL;
 	}
-	RList *cobjs = r_list_new ();
+	RList *cobjs = r_list_newf (free);
 	if (!cobjs) {
 		r_list_free (shared);
 		return NULL;
 	}
-	interned_table = r_list_new ();
+	interned_table = r_list_newf (free);
 	if (!interned_table) {
 		r_list_free (shared);
 		r_list_free (cobjs);
@@ -105,13 +105,13 @@ static RList *symbols(RBinFile *arch) {
 	r_list_append (shared, cobjs);
 	r_list_append (shared, interned_table);
 	arch->o->bin_obj = shared;
-	RList *sections = r_list_new ();
+	RList *sections = r_list_newf (free);
 	if (!sections) {
 		r_list_free (shared);
 		arch->o->bin_obj = NULL;
 		return NULL;
 	}
-	RList *symbols = r_list_new ();
+	RList *symbols = r_list_newf (free);
 	if (!symbols) {
 		r_list_free (shared);
 		arch->o->bin_obj = NULL;
