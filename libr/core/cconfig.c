@@ -616,11 +616,9 @@ static bool cb_asmarch(void *user, void *data) {
 	}
 	r_egg_setup (core->egg, node->value, bits, 0, R_SYS_OS);
 
-	if (!set_arch (core, node->value)) {
-		if (!r_asm_use (core->rasm, node->value)) {
-			eprintf ("asm.arch: cannot find (%s)\n", node->value);
-			return false;
-		}
+	if (!r_asm_use (core->rasm, node->value)) {
+		eprintf ("asm.arch: cannot find (%s)\n", node->value);
+		return false;
 	}
 	r_arch_lazysession_set_plugin (core->anal->lsa, node->value);
 	//we should strdup here otherwise will crash if any r_config_set
@@ -838,8 +836,8 @@ static bool cb_asmbits(void *user, void *data) {
 			r_config_set_i (core->config, "dbg.bpsize", r_bp_size (core->dbg->bp));
 		}
 		/* set pcalign */
-		int v = (core->assembler->lsd && core->assembler->lsd->session)
-			? core->assembler->lsd->session->info.align
+		int v = (core->rasm->lsd && core->rasm->lsd->session)
+			? core->rasm->lsd->session->info.align
 			: r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 		r_config_set_i (core->config, "asm.pcalign", v);
 	}
