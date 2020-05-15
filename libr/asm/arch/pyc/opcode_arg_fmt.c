@@ -1,7 +1,7 @@
 #include "opcode.h"
 
 const char *format_extended_arg(ut32 oparg) {
-	return r_str_newf ("%llu", oparg * (1 << 16));
+	return r_str_newf ("%lu", oparg * (1 << 16));
 }
 
 const char *format_CALL_FUNCTION_pos_name_encoded(ut32 oparg) {
@@ -40,7 +40,6 @@ const char *format_MAKE_FUNCTION_arg_36(ut32 oparg) {
 		oparg >>= 1;
 	}
 	return ret;
-	return r_str_new (ret);
 }
 
 const char *format_value_flags_36(ut32 oparg) {
@@ -59,11 +58,11 @@ const char *format_value_flags_36(ut32 oparg) {
 	if ((oparg & 0x4) == 0x4) {
 		// pop fmt_spec from the stack and use it, else use an
 		// empty fmt_spec.
-		return "";
+		ret = "";
 	}
 	return r_str_new (ret);
 }
 
 const char *format_extended_arg_36(ut32 oparg) {
-	return r_str_newf ("%llu", oparg * (1 << 8));
+	return r_str_newf ("%lu", oparg * (1 << 8));
 }

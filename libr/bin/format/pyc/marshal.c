@@ -279,6 +279,7 @@ static pyc_object *get_float_object(RBuffer *buffer) {
 	}
 	ut8 *s = malloc (n + 1);
 	if (!s) {
+		free (ret);
 		return NULL;
 	}
 	/* object contain string representation of the number */
@@ -334,6 +335,7 @@ static pyc_object *get_complex_object(RBuffer *buffer) {
 		n1 = get_st32 (buffer, &error);
 	}
 	if (error) {
+		free (ret);
 		return NULL;
 	}
 	ut8 *s1 = malloc (n1 + 1);
@@ -501,13 +503,12 @@ static pyc_object *get_array_object_generic(RBuffer *buffer, ut32 size) {
 			r_list_free (ret->data);
 			R_FREE (ret);
 			return NULL;
-			break;
 		}
 		if (!r_list_append (ret->data, tmp)) {
 			free (tmp);
 			r_list_free (ret->data);
+			free (ret);
 			return NULL;
-			break;
 		}
 	}
 	return ret;
@@ -587,7 +588,7 @@ static pyc_object *get_dict_object(RBuffer *buffer) {
 	}
 	for (;;) {
 		key = get_object (buffer);
-		if (key == NULL) {
+		if (!key) {
 			break;
 		}
 		if (!r_list_append (ret->data, key)) {
@@ -597,11 +598,14 @@ static pyc_object *get_dict_object(RBuffer *buffer) {
 			return NULL;
 		}
 		val = get_object (buffer);
-		if (!r_list_append (ret->data, val)) {
-			return NULL;
-		}
-		if (val == NULL) {
+		if (!val) {
 			break;
+		}
+		if (!r_list_append (ret->data, val)) {
+			r_list_free (ret->data);
+			R_FREE (ret);
+			R_FREE (val);
+			return NULL;
 		}
 	}
 	ret->type = TYPE_DICT;
@@ -839,10 +843,10 @@ static pyc_object *copy_object(pyc_object *object) {
 	case TYPE_UNICODE:
 	case TYPE_UNKNOWN:
 		eprintf ("Copy not implemented for type %x\n", object->type);
-		return NULL;
+		break;
 	default:
 		eprintf ("Undefined type in copy_object (%x)\n", object->type);
-		return NULL;
+		break;
 	}
 	if (!copy->data) {
 		R_FREE (copy);
@@ -1183,7 +1187,7 @@ static bool extract_sections_symbols(pyc_object *obj, RList *sections, RList *sy
 		goto fail;
 	}
 	if (cobj->consts->type != TYPE_TUPLE && cobj->consts->type != TYPE_SMALL_TUPLE) {
-		return false;
+		goto fail;
 	}
 	r_list_foreach (((RList *)(cobj->consts->data)), i, obj)
 		extract_sections_symbols (obj, sections, symbols, cobjs, prefix);
@@ -1200,8 +1204,10 @@ fail:
 bool get_sections_symbols_from_code_objects(RBuffer *buffer, RList *sections, RList *symbols, RList *cobjs, ut32 magic) {
 	bool ret;
 	magic_int = magic;
-	refs = r_list_new ();
-	refs->free = (RListFree)free_object;
+	refs = r_list_newf (free_object);
+	if (!refs) {
+		return false;
+	}
 	ret = extract_sections_symbols (get_object (buffer), sections, symbols, cobjs, NULL);
 	r_list_free (refs);
 	return ret;

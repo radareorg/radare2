@@ -71,6 +71,7 @@ static RList *entries(RBinFile *arch) {
 	}
 	RBinAddr *addr = R_NEW0 (RBinAddr);
 	if (!addr) {
+		r_list_free (entries);
 		return NULL;
 	}
 	ut64 entrypoint = get_entrypoint (arch->buf);
@@ -86,7 +87,7 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 static RList *symbols(RBinFile *arch) {
-	RList *shared = r_list_new ();
+	RList *shared = r_list_newf (r_list_free);
 	if (!shared) {
 		return NULL;
 	}
@@ -106,10 +107,14 @@ static RList *symbols(RBinFile *arch) {
 	arch->o->bin_obj = shared;
 	RList *sections = r_list_new ();
 	if (!sections) {
+		r_list_free (shared);
+		arch->o->bin_obj = NULL;
 		return NULL;
 	}
 	RList *symbols = r_list_new ();
 	if (!symbols) {
+		r_list_free (shared);
+		arch->o->bin_obj = NULL;
 		r_list_free (sections);
 		return NULL;
 	}

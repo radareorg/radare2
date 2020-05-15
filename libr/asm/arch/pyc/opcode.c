@@ -164,7 +164,7 @@ pyc_opcodes *new_pyc_opcodes() {
 		return NULL;
 	}
 	for (i = 0; i < 256; i++) {
-		ret->opcodes[i].op_name = r_str_newf ("<%u>", i);
+		ret->opcodes[i].op_name = r_str_newf ("<%lu>", i);
 		if (!ret->opcodes[i].op_name) {
 			for (j = 0; j < i; j++) {
 				free (ret->opcodes[j].op_name);
@@ -179,7 +179,7 @@ pyc_opcodes *new_pyc_opcodes() {
 		ret->opcodes[i].op_pop = 0;
 	}
 
-	ret->opcode_arg_fmt = r_list_new ();
+	ret->opcode_arg_fmt = r_list_newf (free);
 	return ret;
 }
 
