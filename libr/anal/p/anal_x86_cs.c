@@ -54,8 +54,8 @@ call = 4
 #define ARG1_AR      1
 #define ARG2_AR      2
 
-static RRegItem base_regs[4];
-static RRegItem regdelta_regs[4];
+static RRegItem *base_regs[4];
+static RRegItem *regdelta_regs[4];
 
 struct Getarg {
 	csh handle;
@@ -1871,20 +1871,20 @@ static bool is_valid(x86_reg reg) {
 	return reg != X86_REG_INVALID;
 }
 
-static int parse_reg_name(RRegItem *reg_base, RRegItem *reg_delta, csh *handle, cs_insn *insn, int reg_num) {
+static int parse_reg_name(RReg *reg, RRegItem **reg_base, RRegItem **reg_delta, csh *handle, cs_insn *insn, int reg_num) {
 	cs_x86_op x86op = INSOP (reg_num);
 	switch (x86op.type) {
 	case X86_OP_REG:
-		reg_base->name = (char *)cs_reg_name (*handle, x86op.reg);
+		*reg_base = r_reg_get (reg, (char *)cs_reg_name (*handle, x86op.reg), -1);
 		break;
 	case X86_OP_MEM:
 		if (is_valid (x86op.mem.base) && is_valid (x86op.mem.index)) {
-			reg_base->name = (char *)cs_reg_name (*handle, x86op.mem.base);
-			reg_delta->name = (char *)cs_reg_name (*handle, x86op.mem.index);
+			*reg_base = r_reg_get (reg, (char *)cs_reg_name (*handle, x86op.mem.base), -1);
+			*reg_delta = r_reg_get (reg, (char *)cs_reg_name (*handle, x86op.mem.index), -1);
 		} else if (is_valid (x86op.mem.base)) {
-			reg_base->name = (char *)cs_reg_name (*handle, x86op.mem.base);
+			*reg_base = r_reg_get (reg, (char *)cs_reg_name (*handle, x86op.mem.base), -1);
 		} else if (is_valid (x86op.mem.index)) {
-			reg_base->name = (char *)cs_reg_name (*handle, x86op.mem.index);
+			*reg_base = r_reg_get (reg, (char *)cs_reg_name (*handle, x86op.mem.index), -1);
 		}
 		break;
 	default:
@@ -1907,15 +1907,15 @@ static int parse_reg_name(RRegItem *reg_base, RRegItem *reg_delta, csh *handle, 
 	ZERO_FILL (regdelta_regs[2]);\
 	ZERO_FILL (regdelta_regs[3]);
 
-static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x) {
-	parse_reg_name (&base_regs[x], &regdelta_regs[x], handle, insn, x);
+static void set_src_dst(RReg *reg, RAnalValue *val, csh *handle, cs_insn *insn, int x) {
+	parse_reg_name (reg, &base_regs[x], &regdelta_regs[x], handle, insn, x);
 	switch (INSOP (x).type) {
 	case X86_OP_MEM:
 		val->mul = INSOP (x).mem.scale;
 		val->delta = INSOP (x).mem.disp;
 		val->sel = INSOP (x).mem.segment;
 		val->memref = INSOP (x).size;
-		val->regdelta = &regdelta_regs[x];
+		val->regdelta = regdelta_regs[x];
 		break;
 	case X86_OP_REG:
 		break;
@@ -1925,7 +1925,7 @@ static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x) {
 	default:
 		break;
 	}
-	val->reg = &base_regs[x];
+	val->reg = base_regs[x];
 }
 
 static void op_fillval(RAnal *a, RAnalOp *op, csh *handle, cs_insn *insn) {
@@ -1950,15 +1950,15 @@ static void op_fillval(RAnal *a, RAnalOp *op, csh *handle, cs_insn *insn) {
 	case R_ANAL_OP_TYPE_NOT:
 	case R_ANAL_OP_TYPE_ACMP:
 		CREATE_SRC_DST (op);
-		set_src_dst (op->dst, handle, insn, 0);
-		set_src_dst (op->src[0], handle, insn, 1);
-		set_src_dst (op->src[1], handle, insn, 2);
-		set_src_dst (op->src[2], handle, insn, 3);
+		set_src_dst (a->reg, op->dst, handle, insn, 0);
+		set_src_dst (a->reg, op->src[0], handle, insn, 1);
+		set_src_dst (a->reg, op->src[1], handle, insn, 2);
+		set_src_dst (a->reg, op->src[2], handle, insn, 3);
 		break;
 	case R_ANAL_OP_TYPE_UPUSH:
 		if ((op->type & R_ANAL_OP_TYPE_REG)) {
 			CREATE_SRC_DST (op);
-			set_src_dst (op->src[0], handle, insn, 0);
+			set_src_dst (a->reg, op->src[0], handle, insn, 0);
 		}
 		break;
 	default:
