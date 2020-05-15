@@ -21,6 +21,7 @@ extern "C" {
 #define R_BIG_DTYPE ut32
 #define R_BIG_DTYPE_TMP ut64
 #define R_BIG_SPRINTF_FORMAT_STR "%.08x"
+#define R_BIG_FORMAT_STR_LEN 9
 #define R_BIG_SSCANF_FORMAT_STR "%8x"
 #define R_BIG_MAX_VAL (R_BIG_DTYPE_TMP) UT32_MAX
 
