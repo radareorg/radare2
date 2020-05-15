@@ -703,13 +703,13 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 		}
 		//fallthrough
 	default:
-		if ((op->type == R_ANAL_OP_TYPE_ADD || op->type == R_ANAL_OP_TYPE_SUB) &&
+		if ((op->type == R_ANAL_OP_TYPE_ADD || op->type == R_ANAL_OP_TYPE_SUB
+			|| op->type == R_ANAL_OP_TYPE_MUL || op->type == R_ANAL_OP_TYPE_DIV) &&
 			(STR_EQUAL (anal->cur->arch, "arm") || STR_EQUAL (anal->cur->arch, "riscv"))) {
-			if (STR_EQUAL (opdreg, regname)) {
-				return false;
-			}
 			if (is_reg_in_src (regname, anal, op)) {
 				return true;
+			} else if (STR_EQUAL (opdreg, regname)) {
+				return false;
 			}
 		}
 		return ((STR_EQUAL (opdreg, regname)) || (is_reg_in_src (regname, anal, op)));
