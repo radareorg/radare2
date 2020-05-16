@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2019 - pancake */
+/* radare - LGPL - Copyright 2007-2020 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -1135,7 +1135,7 @@ R_API char *r_file_tmpdir() {
 	free (tmpdir);
 	// Windows 7, stat() function fail if tmpdir ends with '\\'
 	if (path) {
-		int path_len = strlen (path);
+		size_t path_len = strlen (path);
 		if (path_len > 0 && path[path_len - 1] == '\\') {
 			path[path_len - 1] = '\0';
 		}
