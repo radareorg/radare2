@@ -1,4 +1,4 @@
-executable('rasign', 'rasign.c',
+executable('rasign2', 'rasign2.c',
   include_directories: [platform_inc],
   dependencies: [
     r_util_dep,
