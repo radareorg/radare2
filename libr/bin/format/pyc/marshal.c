@@ -279,6 +279,7 @@ static pyc_object *get_float_object(RBuffer *buffer) {
 	}
 	ut8 *s = malloc (n + 1);
 	if (!s) {
+		free (ret);
 		return NULL;
 	}
 	/* object contain string representation of the number */
@@ -334,6 +335,7 @@ static pyc_object *get_complex_object(RBuffer *buffer) {
 		n1 = get_st32 (buffer, &error);
 	}
 	if (error) {
+		free (ret);
 		return NULL;
 	}
 	ut8 *s1 = malloc (n1 + 1);
@@ -490,7 +492,7 @@ static pyc_object *get_array_object_generic(RBuffer *buffer, ut32 size) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->data = r_list_new ();
+	ret->data = r_list_newf (free_object);
 	if (!ret->data) {
 		free (ret);
 		return NULL;
@@ -501,13 +503,12 @@ static pyc_object *get_array_object_generic(RBuffer *buffer, ut32 size) {
 			r_list_free (ret->data);
 			R_FREE (ret);
 			return NULL;
-			break;
 		}
 		if (!r_list_append (ret->data, tmp)) {
-			free (tmp);
+			free_object (tmp);
 			r_list_free (ret->data);
+			free (ret);
 			return NULL;
-			break;
 		}
 	}
 	return ret;
@@ -567,8 +568,11 @@ static pyc_object *get_list_object(RBuffer *buffer) {
 		return NULL;
 	}
 	ret = get_array_object_generic (buffer, n);
-	ret->type = TYPE_LIST;
-	return ret;
+	if (ret) {
+		ret->type = TYPE_LIST;
+		return ret;
+	}
+	return NULL;
 }
 
 static pyc_object *get_dict_object(RBuffer *buffer) {
@@ -580,28 +584,31 @@ static pyc_object *get_dict_object(RBuffer *buffer) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->data = r_list_new ();
+	ret->data = r_list_newf (free_object);
 	if (!ret->data) {
 		R_FREE (ret);
 		return NULL;
 	}
 	for (;;) {
 		key = get_object (buffer);
-		if (key == NULL) {
+		if (!key) {
 			break;
 		}
 		if (!r_list_append (ret->data, key)) {
 			r_list_free (ret->data);
 			R_FREE (ret);
-			R_FREE (key);
+			free_object (key);
 			return NULL;
 		}
 		val = get_object (buffer);
-		if (!r_list_append (ret->data, val)) {
-			return NULL;
-		}
-		if (val == NULL) {
+		if (!val) {
 			break;
+		}
+		if (!r_list_append (ret->data, val)) {
+			r_list_free (ret->data);
+			R_FREE (ret);
+			free_object (val);
+			return NULL;
 		}
 	}
 	ret->type = TYPE_DICT;
@@ -706,9 +713,6 @@ static pyc_object *get_ref_object(RBuffer *buffer) {
 		return NULL;
 	}
 	ret = copy_object (obj);
-	if (!ret) {
-		free (obj);
-	}
 	return ret;
 }
 
@@ -767,10 +771,10 @@ static void free_object(pyc_object *object) {
 	case TYPE_UNICODE:
 	case TYPE_UNKNOWN:
 		eprintf ("Free not implemented for type %x\n", object->type);
-		return;
+		break;
 	default:
 		eprintf ("Undefined type in free_object (%x)\n", object->type);
-		return;
+		break;
 	}
 	free (object);
 }
@@ -839,10 +843,10 @@ static pyc_object *copy_object(pyc_object *object) {
 	case TYPE_UNICODE:
 	case TYPE_UNKNOWN:
 		eprintf ("Copy not implemented for type %x\n", object->type);
-		return NULL;
+		break;
 	default:
 		eprintf ("Undefined type in copy_object (%x)\n", object->type);
-		return NULL;
+		break;
 	}
 	if (!copy->data) {
 		R_FREE (copy);
@@ -991,8 +995,7 @@ ut64 get_code_object_addr(RBuffer *buffer, ut32 magic) {
 
 	pyc_code_object *cobj = co->data;
 	result = cobj->start_offset;
-	free (co->data);
-	free (co);
+	free_object (co);
 
 	return result;
 }
@@ -1016,7 +1019,7 @@ static pyc_object *get_object(RBuffer *buffer) {
 		}
 		ref_idx = r_list_append (refs, ret);
 		if (!ref_idx) {
-			free (ret);
+			free_object (ret);
 			return NULL;
 		}
 	}
@@ -1183,7 +1186,7 @@ static bool extract_sections_symbols(pyc_object *obj, RList *sections, RList *sy
 		goto fail;
 	}
 	if (cobj->consts->type != TYPE_TUPLE && cobj->consts->type != TYPE_SMALL_TUPLE) {
-		return false;
+		goto fail;
 	}
 	r_list_foreach (((RList *)(cobj->consts->data)), i, obj)
 		extract_sections_symbols (obj, sections, symbols, cobjs, prefix);
@@ -1200,8 +1203,10 @@ fail:
 bool get_sections_symbols_from_code_objects(RBuffer *buffer, RList *sections, RList *symbols, RList *cobjs, ut32 magic) {
 	bool ret;
 	magic_int = magic;
-	refs = r_list_new ();
-	refs->free = (RListFree)free_object;
+	refs = r_list_newf (free_object);
+	if (!refs) {
+		return false;
+	}
 	ret = extract_sections_symbols (get_object (buffer), sections, symbols, cobjs, NULL);
 	r_list_free (refs);
 	return ret;

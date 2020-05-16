@@ -103,6 +103,7 @@ static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RL
 		case TYPE_INTERNED:
 		case TYPE_STRINGREF:
 			arg = r_str_newf ("'%s'", t->data);
+			break;
 		default:
 			arg = r_str_new (t->data);
 		}
@@ -163,7 +164,9 @@ static void dump(RList *l) {
 
 	r_list_foreach (l, it, e) {
 		if (e->type == TYPE_TUPLE) {
-			eprintf ("[TYPE_TUPLE] %s\n", generic_array_obj_to_string (e->data));
+			char *res = generic_array_obj_to_string (e->data);
+			eprintf ("[TYPE_TUPLE] %s\n", res);
+			free (res);
 			return;
 		}
 		eprintf ("[DATA] %s\n", (char *)e->data);
