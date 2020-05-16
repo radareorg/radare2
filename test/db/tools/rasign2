@@ -1,0 +1,8 @@
+NAME=rasign2 version
+FILE=-
+CMDS=!!rasign2 -v~?
+EXPECT=<<EOF
+2
+EOF
+RUN
+
