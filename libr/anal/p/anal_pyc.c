@@ -57,7 +57,7 @@ static int pyc_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RA
 	}
 
 	ut64 func_base = func->start_offset;
-	ut32 extended_arg = 0, oparg;
+	ut32 extended_arg = 0, oparg = 0;
 	ut8 op_code = data[0];
 	op->jump = UT64_MAX;
 	op->fail = UT64_MAX;
