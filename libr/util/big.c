@@ -57,12 +57,10 @@ R_API void r_big_from_int(RNumBig *b, st64 n) {
 #endif
 }
 
-static void r_big_from_unsigned(RNumBig *b, ut64 n) {
+static void r_big_from_unsigned(RNumBig *b, ut64 v) {
 	r_return_if_fail (b);
 
 	_r_big_zero_out (b);
-	b->sign = (n < 0)? -1: 1;
-	R_BIG_DTYPE_TMP v = n * b->sign;
 
 	/* Endianness issue if machine is not little-endian? */
 #ifdef R_BIG_WORD_SIZE
@@ -155,12 +153,11 @@ R_API void r_big_from_hexstr(RNumBig *n, const char *str) {
 
 R_API char *r_big_to_hexstr(RNumBig *b) {
 	r_return_val_if_fail (b, NULL);
-	size_t size;
 
 	int j = R_BIG_ARRAY_SIZE - 1; /* index into array - reading "MSB" first -> big-endian */
-	int i = 0; /* index into string representation. */
-	int k = 0; /* Leading zero's amount */
-	int z;
+	size_t i = 0; /* index into string representation. */
+	size_t k = 0; /* Leading zero's amount */
+	size_t z, last_z = 2 * R_BIG_WORD_SIZE;
 
 	for (; b->array[j] == 0 && j >= 0; j--) {
 	}
@@ -168,8 +165,11 @@ R_API char *r_big_to_hexstr(RNumBig *b) {
 		return "0x0";
 	}
 
-	size = 3 + 2 * R_BIG_WORD_SIZE * (j + 1) + ((b->sign > 0)? 0: 1);
+	size_t size = 3 + 2 * R_BIG_WORD_SIZE * (j + 1) + ((b->sign > 0)? 0: 1);
 	char *ret_str = calloc (size, sizeof (char));
+	if (!ret_str) {
+		return NULL;
+	}
 
 	if (b->sign < 0) {
 		ret_str[i++] = '-';
@@ -177,17 +177,17 @@ R_API char *r_big_to_hexstr(RNumBig *b) {
 	ret_str[i++] = '0';
 	ret_str[i++] = 'x';
 
-	sprintf (&ret_str[i], R_BIG_SPRINTF_FORMAT_STR, b->array[j--]);
+	r_snprintf (ret_str + i, R_BIG_FORMAT_STR_LEN, R_BIG_SPRINTF_FORMAT_STR, b->array[j--]);
 	for (; ret_str[i + k] == '0' && k < 2 * R_BIG_WORD_SIZE; k++) {
 	}
-	for (z = k; ret_str[i + z]; z++) {
+	for (z = k; ret_str[i + z] && z < last_z; z++) {
 		ret_str[i + z - k] = ret_str[i + z];
 	}
 	i += z - k;
-	ret_str[i] = '\x00';
+	ret_str[i] = '\x00'; // Truncate string for case(j < 0)
 
 	for (; j >= 0; j--) {
-		sprintf (&ret_str[i], R_BIG_SPRINTF_FORMAT_STR, b->array[j]);
+		r_snprintf (ret_str + i, R_BIG_FORMAT_STR_LEN, R_BIG_SPRINTF_FORMAT_STR, b->array[j]);
 		i += 2 * R_BIG_WORD_SIZE;
 	}
 
