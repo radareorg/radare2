@@ -357,3 +357,16 @@ Invalid function name 'func' at 0x00001337
 Cannot add function (duplicated)
 EOF
 RUN
+
+NAME=af skips symbols
+FILE=bins/elf/ls.odd
+CMDS=<<EOF
+af @ sym._obstack_begin_1
+af @ sym._obstack_begin
+afl
+EOF
+EXPECT=<<EOF
+0x00014f10    1 21           sym._obstack_begin_1
+0x00014ef0    7 161  -> 158  sym._obstack_begin
+EOF
+RUN
