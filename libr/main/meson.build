@@ -8,6 +8,7 @@ r_main_sources = [
   'ragg2.c',
   'rahash2.c',
   'rarun2.c',
+  'rasign2.c',
   'rasm2.c',
   'rax2.c'
 ]
