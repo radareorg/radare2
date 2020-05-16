@@ -1,5 +1,5 @@
 BIN=rasign2
-BINDEPS=r_anal r_util r_search
+BINDEPS=r_anal r_util r_core r_search r_main
 
 include ../../libr/main/deps.mk
 include ../rules.mk
