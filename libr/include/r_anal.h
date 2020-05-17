@@ -287,6 +287,7 @@ typedef struct r_anal_function_t {
 	int ninstr;
 	bool folded;
 	bool is_pure;
+	bool is_variadic;
 	bool has_changed; // true if function may have changed since last anaysis TODO: set this attribute where necessary
 	bool bp_frame;
 	bool is_noreturn; // true if function does not return

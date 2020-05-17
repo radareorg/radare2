@@ -104,3 +104,52 @@ R 0x1000010d6  lea rdx, [var_30h]
 R 0x1000010f0  movzx eax, word [var_2eh]
 EOF
 RUN
+
+NAME=Detect register args used only by callee
+FILE=-
+CMDS=<<EOF
+afc=ms
+wx 40534883ec20418bd8e80a00000003c34883c4205bc3cccc2bca8bc1c3
+aa
+pd 13
+EOF
+EXPECT=<<EOF
+/ 22: fcn.00000000 (int64_t arg1, int64_t arg2, int64_t arg3);
+|           ; arg int64_t arg1 @ rcx
+|           ; arg int64_t arg2 @ rdx
+|           ; arg int64_t arg3 @ r8
+|           0x00000000      4053           push rbx
+|           0x00000002      4883ec20       sub rsp, 0x20
+|           0x00000006      418bd8         mov ebx, r8d                ; arg3
+|           0x00000009      e80a000000     call fcn.00000018
+|           0x0000000e      03c3           add eax, ebx
+|           0x00000010      4883c420       add rsp, 0x20
+|           0x00000014      5b             pop rbx
+\           0x00000015      c3             ret
+            0x00000016      cc             int3
+            0x00000017      cc             int3
+            ; CALL XREF from fcn.00000000 @ 0x9
+/ 5: fcn.00000018 (int64_t arg1, int64_t arg2);
+|           ; arg int64_t arg1 @ rcx
+|           ; arg int64_t arg2 @ rdx
+|           0x00000018      2bca           sub ecx, edx                ; arg2
+|           0x0000001a      8bc1           mov eax, ecx                ; arg1
+\           0x0000001c      c3             ret
+EOF
+RUN
+
+NAME=Detect register args type used only by callees
+FILE=bins/pe/rarg_detection.dll
+CMDS=<<EOF
+s sym.rarg_detection.dll_funcB
+af
+s sym.rarg_detection.dll_funcC
+af
+afv
+EOF
+EXPECT=<<EOF
+arg int64_t arg3 @ r8
+arg int64_t arg2 @ rdx
+arg const char * s @ rcx
+EOF
+RUN

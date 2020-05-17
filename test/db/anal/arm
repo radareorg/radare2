@@ -288,7 +288,9 @@ pd 4
 EOF
 EXPECT=<<EOF
 / (fcn) fcn.00000000 16
-|           0x00000000      021081e0       add r1, r1, r2
+// void fcn.00000000 (int32_t arg2);
+|           ; arg int32_t arg2 @ r1
+|           0x00000000      021081e0       add r1, r1, r2              ; arg2
 |           0x00000004      1eff2f01       bxeq lr
 |           0x00000008      0020a0e3       mov r2, 0
 \           0x0000000c      1eff2fe1       bx lr
@@ -771,7 +773,7 @@ af
 pd 1~var?
 EOF
 EXPECT=<<EOF
-16
+17
 EOF
 RUN
 
