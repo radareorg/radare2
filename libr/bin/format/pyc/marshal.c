@@ -492,7 +492,7 @@ static pyc_object *get_array_object_generic(RBuffer *buffer, ut32 size) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->data = r_list_newf (free_object);
+	ret->data = r_list_newf ((RListFree)free_object);
 	if (!ret->data) {
 		free (ret);
 		return NULL;
@@ -584,7 +584,7 @@ static pyc_object *get_dict_object(RBuffer *buffer) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->data = r_list_newf (free_object);
+	ret->data = r_list_newf ((RListFree)free_object);
 	if (!ret->data) {
 		R_FREE (ret);
 		return NULL;
@@ -1203,7 +1203,7 @@ fail:
 bool get_sections_symbols_from_code_objects(RBuffer *buffer, RList *sections, RList *symbols, RList *cobjs, ut32 magic) {
 	bool ret;
 	magic_int = magic;
-	refs = r_list_newf (free_object);
+	refs = r_list_newf ((RListFree)free_object);
 	if (!refs) {
 		return false;
 	}
