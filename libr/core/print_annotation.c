@@ -5,7 +5,7 @@
 #include <r_types.h>
 #include <r_vector.h>
 
-R_API void r_annotated_code_print_json(RAnnotatedCode *code) {
+R_API void r_annotated_code_print_jso(RAnnotatedCode *code) {
 	PJ *pj = pj_new ();
 	if (!pj) {
 		return;

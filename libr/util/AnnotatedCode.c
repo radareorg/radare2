@@ -53,7 +53,6 @@ R_API RPVector *r_annotated_code_annotations_range(RAnnotatedCode *code, size_t 
 		r_pvector_push (r, annotation);
 	}
 	return r;
-	// Dfjslfkjs;
 }
 
 R_API RVector *r_annotated_code_line_offsets(RAnnotatedCode *code) {
