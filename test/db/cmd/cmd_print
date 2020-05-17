@@ -745,7 +745,7 @@ NAME=prc text color
 FILE=-
 CMDS=<<EOF
 . scripts/palette.r2
-.. scripts/prc_256.py
+.. scripts/0-to-0xff.py
 e scr.color=3
 prc 256
 EOF
