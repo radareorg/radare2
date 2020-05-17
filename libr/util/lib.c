@@ -152,13 +152,7 @@ err:
 R_API RLib *r_lib_new(const char *symname, const char *symnamefunc) {
 	RLib *lib = R_NEW (RLib);
 	if (lib) {
-		char *e = r_sys_getenv ("R_DEBUG");
-		if (e) {
-			__has_debug = *e;
-			free (e);
-		} else {
-			__has_debug = false;
-		}
+		__has_debug = r_sys_getenv_asbool ("R2_DEBUG");
 		lib->handlers = r_list_newf (free);
 		lib->plugins = r_list_newf (free);
 		lib->symname = strdup (symname? symname: R_LIB_SYMNAME);
