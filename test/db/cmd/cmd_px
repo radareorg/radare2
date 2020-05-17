@@ -124,7 +124,7 @@ RUN
 NAME=pxe
 FILE=-
 CMDS=<<EOF
-.. scripts/0-to-0xff.py
+.. scripts/prc_256.py
 pxe 256
 EOF
 EXPECT=<<EOF
