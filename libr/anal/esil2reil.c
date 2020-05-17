@@ -1176,6 +1176,7 @@ R_API int r_anal_esil_to_reil_setup(RAnalEsil *esil, RAnal *anal, int romem,
 #define	OT_MEMR	R_ANAL_ESIL_OP_TYPE_MEM_READ
 
 	r_anal_esil_set_op(esil, "=", reil_eq, 0, 2, OT_REGW);
+	r_anal_esil_set_op(esil, ":=", reil_eq, 0, 2, OT_REGW);
 	r_anal_esil_set_op(esil, "+", reil_add, 1, 2, OT_MATH);
 	r_anal_esil_set_op(esil, "+=", reil_addeq, 0, 2, OT_MATH | OT_REGW);
 	r_anal_esil_set_op(esil, "-", reil_sub, 1, 2, OT_MATH);
