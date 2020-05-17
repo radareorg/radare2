@@ -138,7 +138,7 @@ static const char *help_msg_star[] = {
 	NULL
 };
 
-static const char *help_msg_comma[] = {
+static const char *help_msg_table[] = {
 	"Usage:", ",[/] [file]", "# load table data",
 	",", "", "display table",
 	".", "$foo", "aflt > $foo (files starting with '$' are saved in memory)",
@@ -1457,11 +1457,11 @@ static int cmd_table(void *data, const char *input) {
 		}
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_comma);
+		r_core_cmd_help (core, help_msg_table);
 		r_cons_printf ("%s\n", r_table_help ());
 		break;
 	default:
-		r_core_cmd_help (core, help_msg_comma);
+		r_core_cmd_help (core, help_msg_table);
 		break;
 	}
 	return 0;
