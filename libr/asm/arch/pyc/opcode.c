@@ -179,7 +179,7 @@ pyc_opcodes *new_pyc_opcodes() {
 		ret->opcodes[i].op_pop = 0;
 	}
 
-	ret->opcode_arg_fmt = r_list_newf (free);
+	ret->opcode_arg_fmt = r_list_newf ((RListFree)free);
 	return ret;
 }
 
