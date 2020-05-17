@@ -112,8 +112,10 @@ static bool r2r_chdir_fromtest(const char *test_path) {
 		}
 	}
 	if (chdir (abs_test_path) == -1) {
+		free (abs_test_path);
 		return false;
 	}
+	free (abs_test_path);
 	bool found = false;
 	char *cwd = NULL;
 	char *old_cwd = NULL;
