@@ -113,6 +113,7 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RB
 		ptr->type = r_str_constpool_get (&rbin->constpool, sdb_fmt ("%i", s->n_sclass));
 		break;
 	}
+	ptr->vaddr = ptr->paddr;
 	ptr->size = 4;
 	ptr->ordinal = 0;
 	return true;
@@ -255,8 +256,7 @@ static RList *libs(RBinFile *bf) {
 	return NULL;
 }
 
-static RList *relocs(RBinFile *bf) {
-	struct r_bin_coff_obj *bin = (struct r_bin_coff_obj*)bf->o->bin_obj;
+static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin) {
 	RBinReloc *reloc;
 	struct coff_reloc *rel;
 	int j, i = 0;
@@ -267,49 +267,110 @@ static RList *relocs(RBinFile *bf) {
 		return NULL;
 	}
 	for (i = 0; i < bin->hdr.f_nscns; i++) {
-		if (bin->scn_hdrs[i].s_nreloc) {
-			int len = 0, size = bin->scn_hdrs[i].s_nreloc * sizeof (struct coff_reloc);
-			if (size < 0) {
-				return list_rel;
-			}
-			rel = calloc (1, size + sizeof (struct coff_reloc));
-			if (!rel) {
-				return list_rel;
-			}
-			if (bin->scn_hdrs[i].s_relptr > bin->size ||
-				bin->scn_hdrs[i].s_relptr + size > bin->size) {
-				free (rel);
-				return list_rel;
-			}
-			len = r_buf_read_at (bin->b, bin->scn_hdrs[i].s_relptr, (ut8*)rel, size);
-			if (len != size) {
-				free (rel);
-				return list_rel;
-			}
-			for (j = 0; j < bin->scn_hdrs[i].s_nreloc; j++) {
-				RBinSymbol *symbol = R_NEW0 (RBinSymbol);
-				if (!symbol) {
-					continue;
-				}
-				if (!_fill_bin_symbol (bf->rbin, bin, rel[j].r_symndx, &symbol)) {
-					free (symbol);
-					continue;
-				}
-				reloc = R_NEW0 (RBinReloc);
-				if (!reloc) {
-					free (symbol);
-					continue;
-				}
-				reloc->type = rel[j].r_type; //XXX the type if different from what r2 expects
-				reloc->symbol = symbol;
-				reloc->paddr = bin->scn_hdrs[i].s_scnptr + rel[j].r_vaddr;
-				reloc->vaddr = reloc->paddr;
-				r_list_append (list_rel, reloc);
-			}
-			free (rel);
+		if (!bin->scn_hdrs[i].s_nreloc) {
+			continue;
 		}
+		int len = 0, size = bin->scn_hdrs[i].s_nreloc * sizeof (struct coff_reloc);
+		if (size < 0) {
+			return list_rel;
+		}
+		rel = calloc (1, size + sizeof (struct coff_reloc));
+		if (!rel) {
+			return list_rel;
+		}
+		if (bin->scn_hdrs[i].s_relptr > bin->size ||
+			bin->scn_hdrs[i].s_relptr + size > bin->size) {
+			free (rel);
+			return list_rel;
+		}
+		len = r_buf_read_at (bin->b, bin->scn_hdrs[i].s_relptr, (ut8*)rel, size);
+		if (len != size) {
+			free (rel);
+			return list_rel;
+		}
+		for (j = 0; j < bin->scn_hdrs[i].s_nreloc; j++) {
+			RBinSymbol *symbol = R_NEW0 (RBinSymbol);
+			if (!symbol) {
+				continue;
+			}
+			if (!_fill_bin_symbol (rbin, bin, rel[j].r_symndx, &symbol)) {
+				free (symbol);
+				continue;
+			}
+			reloc = R_NEW0 (RBinReloc);
+			if (!reloc) {
+				free (symbol);
+				continue;
+			}
+			//reloc->type = rel[j].r_type;
+			//eprintf ("Reloc type %d\n", rel[j].r_type);
+
+			reloc->symbol = symbol;
+			reloc->paddr = bin->scn_hdrs[i].s_scnptr + rel[j].r_vaddr;
+			reloc->vaddr = reloc->paddr;
+			reloc->type = 0;
+			if (symbol->is_imported) {
+				reloc->import = _fill_bin_import (bin, rel[j].r_symndx);
+			} else {
+				switch (bin->hdr.f_magic) {
+				case COFF_FILE_MACHINE_AMD64:
+					switch (rel[j].r_type) {
+					case COFF_REL_AMD64_ADDR64:
+						//reloc->type = R_BIN_RELOC_64;
+						break;
+					case COFF_REL_AMD64_ADDR32:
+						//reloc->type = R_BIN_RELOC_32;
+						break;
+					case COFF_REL_AMD64_REL32:
+						reloc->type = R_BIN_RELOC_32;
+						reloc->addend = symbol->paddr - reloc->paddr - 4;
+						reloc->additive = 1;
+						break;
+					}
+					break;
+				}
+			}
+			r_list_append (list_rel, reloc);
+		}
+		free (rel);
 	}
 	return list_rel;
+}
+
+static RList *relocs(RBinFile *bf) {
+	struct r_bin_coff_obj *bin = (struct r_bin_coff_obj*)bf->o->bin_obj;
+	return _relocs_list (bf->rbin, bin);
+}
+
+static RList *patch_relocs(RBin *b) {
+	r_return_val_if_fail (b && b->iob.io && b->iob.io->desc, NULL);
+	if (!(b->iob.io->cached & R_PERM_W)) {
+		eprintf (
+			"Warning: please run r2 with -e io.cache=true to patch "
+			"relocations\n");
+		return NULL;
+	}
+	RBinObject *bo = r_bin_cur_object (b);
+	if (!bo || !bo->bin_obj) {
+		return NULL;
+	}
+	struct r_bin_coff_obj *bin = (struct r_bin_coff_obj*)bo->bin_obj;
+	RList *relocs = _relocs_list (b, bin);
+	RListIter *it;
+	RBinReloc *rel;
+	r_list_foreach (relocs, it, rel) {
+		ut8 buf[8];
+		if (!rel->type || rel->import) {
+			continue;
+		}
+		switch (rel->type) {
+		case R_BIN_RELOC_32:
+			r_write_le32 (buf, (st32)rel->addend);
+			b->iob.write_at (b->iob.io, rel->paddr, buf, 4);
+			break;
+		}
+	}
+	return relocs;
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -436,6 +497,7 @@ RBinPlugin r_bin_plugin_coff = {
 	.size = &size,
 	.libs = &libs,
 	.relocs = &relocs,
+	.patch_relocs = &patch_relocs
 };
 
 #ifndef R2_PLUGIN_INCORE
