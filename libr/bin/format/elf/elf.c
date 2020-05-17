@@ -2617,10 +2617,10 @@ static bool sectionIsValid(ELFOBJ *bin, RBinElfSection *sect) {
 static Elf_(Xword) get_section_mode(ELFOBJ *bin, size_t pos) {
 	if (r_str_startswith (bin->g_sections[pos].name, ".rela.")) {
 		return DT_RELA;
-	} else if (r_str_startswith (bin->g_sections[pos].name, ".rel.")) {
+	}
+	if (r_str_startswith (bin->g_sections[pos].name, ".rel.")) {
 		return DT_REL;
 	}
-
 	return 0;
 }
 
@@ -2658,7 +2658,7 @@ static size_t get_num_relocs_approx(ELFOBJ *bin) {
 static void populate_relocs_record_from_dynamic(ELFOBJ *bin, RBinElfReloc *relocs, size_t num_relocs, size_t *pos) {
 	size_t offset;
 	size_t size = get_size_rel_mode (bin->dyn_info.dt_pltrel);
-	size_t p = *pos;
+	size_t p = 0;
 
 	for (offset = 0; offset < bin->dyn_info.dt_pltrelsz && p < num_relocs; offset += size) {
 		if (!read_reloc (bin, relocs + pos, bin->dyn_info.dt_pltrel, bin->dyn_info.dt_jmprel + offset)) {
@@ -2684,7 +2684,7 @@ static void populate_relocs_record_from_dynamic(ELFOBJ *bin, RBinElfReloc *reloc
 		fix_rva_and_offset_exec_file (bin, relocs + p);
 		p++;
 	}
-	*pos = p;
+	*pos += p;
 }
 
 static size_t get_next_not_analysed_offset(ELFOBJ *bin, size_t section_vaddr, size_t offset) {
@@ -2709,7 +2709,7 @@ static size_t get_next_not_analysed_offset(ELFOBJ *bin, size_t section_vaddr, si
 }
 
 static void populate_relocs_record_from_section(ELFOBJ *bin, RBinElfReloc *relocs, size_t num_relocs, size_t *pos) {
-	size_t size, i, j, p = *pos;
+	size_t size, i, j, p = 0;
 	Elf_(Xword) rel_mode;
 
 	if (!bin->g_sections) {
@@ -2728,16 +2728,21 @@ static void populate_relocs_record_from_section(ELFOBJ *bin, RBinElfReloc *reloc
 		for (j = get_next_not_analysed_offset (bin, bin->g_sections[i].offset, 0, bin->baddr);
 			j < bin->g_sections[i].size && p < num_relocs;
 			j = get_next_not_analysed_offset (bin, bin->g_sections[i].offset, j + size, bin->baddr)) {
+			if (!j) {
+				break;
+			}
 
 			if (!read_reloc (bin, relocs + p, rel_mode, bin->g_sections[i].offset + j)) {
 				break;
 			}
-
+			if (p >= num_relocs) {
+				break;
+			}
 			fix_rva_and_offset (bin, relocs + p, i);
 			p++;
 		}
 	}
-	*pos = p;
+	*pos += p;
 }
 
 static RBinElfReloc *populate_relocs_record(ELFOBJ *bin) {
