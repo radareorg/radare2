@@ -4121,7 +4121,7 @@ R_API int r_core_anal_all(RCore *core) {
 	r_core_task_yield (&core->tasks);
 	if (anal_vars) {
 		/* Set fcn type to R_ANAL_FCN_TYPE_SYM for symbols */
-		r_list_foreach (core->anal->fcns, iter, fcni) {
+		r_list_foreach_prev (core->anal->fcns, iter, fcni) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}

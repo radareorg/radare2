@@ -85,7 +85,10 @@ EXPECT=<<EOF
 0x000a0dec 0x000a0e04 00:0000 24 j 0x000a0d98 f 0x000a0e04
 0x000a0e04 0x000a0e0c 00:0000 8
 
-/ 140: sym.zwrite ();
+/ 140: sym.zwrite (int fd, const char *ptr, size_t nbytes);
+|           ; arg int fd @ i0
+|           ; arg const char *ptr @ i1
+|           ; arg size_t nbytes @ i2
 |           0x000a0d80      9de3bfa0       save sp, -0x60, sp
 |           0x000a0d84      a0100018       mov i0, l0
 |           0x000a0d88      a210001a       mov i2, l1
