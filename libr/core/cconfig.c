@@ -3701,7 +3701,7 @@ R_API void r_core_parse_radare2rc(RCore *r) {
 	bool has_debug = r_sys_getenv_asbool ("R2_DEBUG");
 	char *rcfile = r_sys_getenv ("R2_RCFILE");
 	char *homerc = NULL;
-	if (rcfile && *rcfile) {
+	if (!R_STR_ISEMPTY (rcfile)) {
 		homerc = rcfile;
 	} else {
 		free (rcfile);
