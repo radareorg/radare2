@@ -99,10 +99,11 @@ R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
 	bool isFirst = true;
 	ret = r_str_appendf (ret, "0x%08"PFMT64x" : ", val);
 	for (i = 0; i < 32; i++) {
-		if (!(val & (1 << i))) {
+		ut32 n = 1ULL << i;
+		if (!(val & n)) {
 			continue;
 		}
-		q = sdb_fmt ("enum.%s.0x%x", name, (1<<i));
+		q = sdb_fmt ("enum.%s.0x%x", name, n);
 		res = sdb_const_get (TDB, q, 0);
 		if (isFirst) {
 			isFirst = false;
@@ -112,7 +113,7 @@ R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
 		if (res) {
 			ret = r_str_append (ret, res);
 		} else {
-			ret = r_str_appendf (ret, "0x%x", (1<<i));
+			ret = r_str_appendf (ret, "0x%x", n);
 		}
 	}
 	return ret;
@@ -129,8 +130,7 @@ R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 	} else {
 		tmptype = type;
 	}
-	if ((strstr (type, "*(") || strstr (type, " *")) &&
-			strncmp (type, "char *", 7)) {
+	if ((strstr (type, "*(") || strstr (type, " *")) && strncmp (type, "char *", 7)) {
 		return 32;
 	}
 	const char *t = sdb_const_get (TDB, tmptype, 0);
@@ -363,15 +363,6 @@ R_API int r_type_unlink(Sdb *TDB, ut64 addr) {
 	return true;
 }
 
-static void filter_type(char *t) {
-	for (;*t; t++) {
-		if (*t == ' ') {
-			*t = '_';
-		}
-		// memmove (t, t+1, strlen (t));
-	}
-}
-
 static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 	// assumes var list is sorted by offset.. should do more checks here
 	char *p = NULL, *vars = NULL, var2[132], *fmt = NULL;
@@ -423,7 +414,7 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 				vars = r_str_append (vars, p);
 				vars = r_str_append (vars, " ");
 			} else if (tfmt) {
-				filter_type (type);
+				(void) r_str_replace_ch (type, ' ', '_', true);
 				if (elements > 0) {
 					fmt = r_str_appendf (fmt, "[%d]", elements);
 				}
