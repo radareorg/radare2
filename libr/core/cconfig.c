@@ -3698,8 +3698,15 @@ R_API int r_core_config_init(RCore *core) {
 }
 
 R_API void r_core_parse_radare2rc(RCore *r) {
-	bool has_debug = r_sys_getenv_asbool ("R_DEBUG");
-	char *homerc = r_str_home (".radare2rc");
+	bool has_debug = r_sys_getenv_asbool ("R2_DEBUG");
+	char *rcfile = r_sys_getenv ("R2_RCFILE");
+	char *homerc = NULL;
+	if (!R_STR_ISEMPTY (rcfile)) {
+		homerc = rcfile;
+	} else {
+		free (rcfile);
+		homerc = r_str_home (".radare2rc");
+	}
 	if (homerc && r_file_is_regular (homerc)) {
 		if (has_debug) {
 			eprintf ("USER CONFIG loaded from %s\n", homerc);
