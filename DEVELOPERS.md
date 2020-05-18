@@ -193,7 +193,7 @@ r_core_wrap.cxx:32103:61: error: assigning to 'RDebugReasonType' from incompatib
 
 * Do not use assert.h, use r_util/r_assert.h instead.
 
-* You can use `export R_DEBUG_ASSERT=1` to set a breakpoint when hitting an assert.
+* You can use `export R2_DEBUG_ASSERT=1` to set a breakpoint when hitting an assert.
 
 * Do not use C99 variable declaration
     - This way we reduce the number of local variables per function
