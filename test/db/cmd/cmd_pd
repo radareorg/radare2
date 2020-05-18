@@ -1796,7 +1796,7 @@ RUN
 NAME=two-operand line highlight; asm.highlight ecHw fix; ec wordhl/linehl
 FILE=bins/elf/redpill
 CMDS=<<EOF
-. bins/other/palette.r2
+. scripts/palette.r2
 e scr.color=3
 e emu.str=true
 e emu.pre=true
