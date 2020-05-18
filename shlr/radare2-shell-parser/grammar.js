@@ -310,7 +310,7 @@ module.exports = grammar({
 	task_command: $ => prec.left(1, choice(
 	    seq(
 		field('command', alias(choice('&', '&t'), $.cmd_identifier)),
-		field('args', $._simple_command),
+		field('args', optional($._simple_command)),
 	    ),
 	    seq(
 		field('command', alias(/&[A-Za-z=\-+*&0-9]*/, $.cmd_identifier)),
