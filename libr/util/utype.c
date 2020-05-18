@@ -103,7 +103,7 @@ R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
 		if (!(val & n)) {
 			continue;
 		}
-		q = sdb_fmt ("enum.%s.0x%x", name, n)
+		q = sdb_fmt ("enum.%s.0x%x", name, n);
 		res = sdb_const_get (TDB, q, 0);
 		if (isFirst) {
 			isFirst = false;
