@@ -10,6 +10,7 @@ jobs:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         name: [linux-acr-gcc-tests, linux-acr-clang-build, linux-meson-gcc-build, linux-meson-gcc-newshell-tests, macos-clang-tests]
         include:
