@@ -213,6 +213,7 @@ Tasks command
 & ?e Hello
 && 1
 &=
+&
 
 ---
 
@@ -225,6 +226,7 @@ Tasks command
       (args (arg (arg_identifier)))))
   (task_command (cmd_identifier)
     (args (arg (arg_identifier))))
+  (task_command (cmd_identifier))
   (task_command (cmd_identifier)))
 
 
