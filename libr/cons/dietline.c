@@ -862,7 +862,7 @@ static inline void __delete_next_char() {
 static inline void __delete_prev_char() {
 	if (I.buffer.index < I.buffer.length) {
 		if (I.buffer.index > 0) {
-			int len = r_str_utf8_charsize_prev (I.buffer.data + I.buffer.index, I.buffer.index);
+			size_t len = r_str_utf8_charsize_prev (I.buffer.data + I.buffer.index, I.buffer.index);
 			I.buffer.index -= len;
 			memmove (I.buffer.data + I.buffer.index,
 				I.buffer.data + I.buffer.index + len,
