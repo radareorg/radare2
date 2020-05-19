@@ -49,7 +49,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
 
     message('Patching capstone with radare\'s patches')
     foreach file : patches_files
-      patch_path = join_paths(meson.current_source_dir(), 'capstone-patches', file)
+      patch_path = join_paths('capstone-patches', file)
       patch_cmd_str = '-C @0@ apply -p1 @1@'.format(capstone_path, patch_path)
       patch_cmd = run_command(git_exe, patch_cmd_str.split())
       if patch_cmd.returncode() != 0
@@ -236,8 +236,8 @@ sdb_gen_cmd = [
 tree_sitter_dep = dependency('tree-sitter', required: false)
 if not tree_sitter_dep.found() or not get_option('use_sys_tree_sitter')
   message('Use bundled tree-sitter')
-  tree_sitter_path = join_paths(meson.current_source_dir(), 'tree-sitter')
-  tree_sitter_vc_path = join_paths(meson.current_source_dir(), 'tree-sitter.vc')
+  tree_sitter_path = 'tree-sitter'
+  tree_sitter_vc_path = 'tree-sitter.vc'
   if get_option('tree-sitter-sync')
     if not git_exe.found()
       error('Cannot sync tree-sitter library. Either provide tree-sitter in ./shlr/tree-sitter or install git, so it can be downloaded')
