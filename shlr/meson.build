@@ -6,7 +6,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
   if get_option('capstone_in_builddir')
     capstone_path = join_paths(meson.current_build_dir(), 'capstone')
   else
-    capstone_path = join_paths(meson.current_source_dir(), 'capstone')
+    capstone_path = 'capstone'
   endif
 
   res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("@0@"))'.format(capstone_path))
@@ -121,16 +121,16 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     cs_files += [join_paths(capstone_path, 'arch/X86/X86InstPrinterCommon.c')]
   endif
 
-  if host_machine.system() == 'windows'
-    win_cs_files = []
-    foreach cs_file : cs_files
-      win_cs_files += ['\\'.join(cs_file.split('/'))]
-    endforeach
-  endif
+  # if host_machine.system() == 'windows'
+  #   win_cs_files = []
+  #   foreach cs_file : cs_files
+  #     win_cs_files += ['\\'.join(cs_file.split('/'))]
+  #   endforeach
+  # endif
 
   capstone_includes = [platform_inc, include_directories('capstone/include')]
 
-  libr2capstone = static_library('r2capstone', host_machine.system() == 'windows' ? win_cs_files : cs_files,
+  libr2capstone = static_library('r2capstone', cs_files # host_machine.system() == 'windows' ? win_cs_files : cs_files,
     c_args: [
       '-DCAPSTONE_X86_ATT_DISABLE_NO',
       '-DCAPSTONE_X86_REDUCE_NO',
