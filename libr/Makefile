@@ -110,6 +110,7 @@ libr.${EXT_AR}: .libr2
 ifeq (1,$(WITH_GPL))
 E+=../shlr/grub/libgrubfs.${EXT_AR}
 endif
+E+=../shlr/yxml/libyxml.${EXT_AR}
 E+=../shlr/ar/libr_ar.${EXT_AR}
 E+=../shlr/windbg/libr_windbg.${EXT_AR}
 E+=../shlr/qnx/lib/libqnxr.${EXT_AR}
