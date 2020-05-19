@@ -396,8 +396,7 @@ SHLRS+=grub/libgrubfs.a
 SHLRS+=java/libr_java.a
 SHLRS+=lz4/liblz4.a
 SHLRS+=qnx/lib/libqnxr.a
-#SHLRS+=sdb/src/libsdb.a
-#SHLRS+=tcc/libr_tcc.a
+SHLRS+=yxml/libyxml.a
 SHLRS+=windbg/libr_windbg.a
 SHLRS+=zip/librz.a
 
