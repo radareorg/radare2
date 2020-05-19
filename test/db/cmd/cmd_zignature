@@ -430,7 +430,7 @@ zigs:main:
   addr: 0x0040055b
   realname: main
   refs: sym.print
-  vars: b-4, b-16, r110, r114
+  vars: b-12, b-24, r110, r114
   types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
@@ -453,7 +453,7 @@ zigs:main:
   addr: 0x0040055b
   realname: main
   refs: sym.print
-  vars: b-4, b-16, r110, r114
+  vars: b-12, b-24, r110, r114
   types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
@@ -474,7 +474,7 @@ main:
   graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
   addr: 0x0040055b
   refs: sym.print
-  vars: b-4, b-16, r110, r114
+  vars: b-12, b-24, r110, r114
   types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
@@ -497,7 +497,7 @@ foobar:
   addr: 0x0040055b
   realname: main
   refs: sym.print
-  vars: b-4, b-16, r110, r114
+  vars: b-12, b-24, r110, r114
   types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
@@ -519,7 +519,7 @@ foobar:
   addr: 0x0040055b
   realname: main
   refs: sym.print
-  vars: b-4, b-16, r110, r114
+  vars: b-12, b-24, r110, r114
   types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
