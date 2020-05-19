@@ -5171,7 +5171,17 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_command) {
 				goto err_else;
 			}
 		}
-		res = r_cmd_call_parsed_args (state->core->rcmd, pr_args);
+
+		// let's try first with the new auto-generated help, if
+		// something fails fallback to old behaviour
+		char *help_msg = r_cmd_get_help (state->core->rcmd, pr_args);
+		if (help_msg) {
+			r_cons_printf ("%s", help_msg);
+			free (help_msg);
+			res = R_CMD_STATUS_OK;
+		} else {
+			res = r_cmd_call_parsed_args (state->core->rcmd, pr_args);
+		}
 	err_else:
 		r_cmd_parsed_args_free (pr_args);
 		free (command_str);
@@ -7051,7 +7061,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		const char *cmd;
 		const char *description;
 		RCmdCb cb;
-		void (*descriptor_init)(RCore *core);
+		void (*descriptor_init)(RCore *core, RCmdDesc *parent);
 	} cmds[] = {
 		{"!",        "run system command", cmd_system},
 		{"_",        "print last output", cmd_last},
@@ -7112,11 +7122,12 @@ R_API void r_core_cmd_init(RCore *core) {
 	core->rcmd->macro.cb_printf = (PrintfCallback)r_cons_printf;
 	r_cmd_set_data (core->rcmd, core);
 	core->cmd_descriptors = r_list_newf (free);
+	RCmdDesc *root = r_cmd_get_root (core->rcmd);
 	int i;
 	for (i = 0; i < R_ARRAY_SIZE (cmds); i++) {
 		r_cmd_add (core->rcmd, cmds[i].cmd, cmds[i].cb);
 		if (cmds[i].descriptor_init) {
-			cmds[i].descriptor_init (core);
+			cmds[i].descriptor_init (core, root);
 		}
 	}
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, $, dollar);

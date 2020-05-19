@@ -72,6 +72,7 @@ typedef struct r_cmd_alias_t {
 } RCmdAlias;
 
 typedef struct r_cmd_desc_help_t {
+	const char *usage;
 	const char *summary;
 	const char *args_str;
 	const char *description;

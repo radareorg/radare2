@@ -355,44 +355,62 @@ R_API RCmdStatus r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
 	return res;
 }
 
+static size_t strlen0(const char *s) {
+	return s? strlen (s): 0;
+}
+
 static char *inner_get_help(RCmd *cmd, RCmdDesc *cd) {
-	RStrBuf *sb = r_strbuf_new (cd->help.summary);
-	r_strbuf_append (sb, "\n");
+	if (!cd->help.args_str || !cd->help.summary || !cd->help.usage) {
+		return NULL;
+	}
+
+	RStrBuf *sb = r_strbuf_new (NULL);
+	r_strbuf_appendf (sb, "Usage: %s   # %s\n", cd->help.usage, cd->help.summary);
 
 	void **it_cd;
 	size_t max_len = 0;
 	r_cmd_desc_children_foreach (cd, it_cd) {
 		RCmdDesc *child = *(RCmdDesc **)it_cd;
 		size_t name_len = strlen (child->name);
-		size_t args_len = strlen (child->help.args_str);
+		size_t args_len = strlen0 (child->help.args_str);
 		if (name_len + args_len > max_len) {
 			max_len = name_len + args_len;
 		}
 	}
 	r_cmd_desc_children_foreach (cd, it_cd) {
 		RCmdDesc *child = *(RCmdDesc **)it_cd;
-		size_t str_len = strlen (child->name) + strlen (child->help.args_str);
+		size_t str_len = strlen (child->name) + strlen0 (child->help.args_str);
 		size_t padding = str_len < max_len? max_len - str_len: 0;
-		r_strbuf_appendf (sb, "| %s %s %*s# %s\n", child->name, child->help.args_str, padding, "", child->help.summary);
+		const char *child_args_str = child->help.args_str? child->help.args_str: "";
+		const char *child_summary = child->help.summary? child->help.summary: "";
+		r_strbuf_appendf (sb, "| %s %s %*s# %s\n", child->name, child_args_str, padding, "", child_summary);
 	}
 	return r_strbuf_drain (sb);
 }
 
 static char *argv_get_help(RCmd *cmd, RCmdDesc *cd, RCmdParsedArgs *a, size_t detail) {
+	if (!cd->help.args_str || !cd->help.summary || !cd->help.usage) {
+		return NULL;
+	}
+
 	RStrBuf *sb = r_strbuf_new (NULL);
 	const char **e;
 
 	switch (detail) {
 	case 1:
-		r_strbuf_appendf (sb, "%s %s # %s\n", cd->name, cd->help.args_str, cd->help.summary);
+		r_strbuf_appendf (sb, "Usage: %s   # %s\n", cd->help.usage, cd->help.summary);
 		return r_strbuf_drain (sb);
 	case 2:
-		r_strbuf_appendf (sb, "%s %s # %s\n\n", cd->name, cd->help.args_str, cd->help.summary);
-		r_strbuf_appendf (sb, "%s\n\n", cd->help.description);
-		r_strbuf_appendf (sb, "Examples:\n", cd->help.description);
-		for (e = cd->help.examples; *e; e += 2) {
-			r_return_val_if_fail (*(e + 1), NULL);
-			r_strbuf_appendf (sb, "| %s # %s\n", *e, *(e + 1));
+		r_strbuf_appendf (sb, "Usage: %s   # %s\n", cd->help.usage, cd->help.summary);
+		if (cd->help.description) {
+			r_strbuf_appendf (sb, "\n%s\n", cd->help.description);
+		}
+		if (cd->help.examples) {
+			r_strbuf_appendf (sb, "\nExamples:\n", cd->help.description);
+			for (e = cd->help.examples; *e; e += 2) {
+				r_return_val_if_fail (*(e + 1), NULL);
+				r_strbuf_appendf (sb, "| %s # %s\n", *e, *(e + 1));
+			}
 		}
 		return r_strbuf_drain (sb);
 	default:
@@ -1072,5 +1090,6 @@ R_API RCmdDesc *r_cmd_desc_parent(RCmdDesc *cd) {
 
 R_API void r_cmd_desc_set_help(RCmdDesc *cd, RCmdDescHelp *help) {
 	r_return_if_fail (cd && help);
+	r_return_if_fail (help->usage && help->summary && help->args_str);
 	cd->help = *help;
 }
