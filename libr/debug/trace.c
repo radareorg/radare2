@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2008-2019 - pancake */
 
 #include <r_debug.h>
-#define R_DEBUG_HT_TRACES 1
 
 // DO IT WITH SDB
 
@@ -89,20 +88,8 @@ R_API void r_debug_trace_at(RDebug *dbg, const char *str) {
 
 R_API RDebugTracepoint *r_debug_trace_get (RDebug *dbg, ut64 addr) {
 	int tag = dbg->trace->tag;
-	RDebugTracepoint *trace;
-#if R_DEBUG_HT_TRACES
 	return ht_pp_find (dbg->trace->ht,
 		sdb_fmt ("trace.%d.%"PFMT64x, tag, addr), NULL);
-#else
-	RListIter *iter;
-	r_list_foreach (dbg->trace->traces, iter, trace) {
-		if (tag != 0 && !(dbg->trace->tag & (1<<tag)))
-			continue;
-		if (trace->addr == addr)
-			return trace;
-	}
-#endif
-	return NULL;
 }
 
 static int cmpaddr (const void *_a, const void *_b) {
@@ -195,19 +182,16 @@ R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size) {
 	tp->count = ++dbg->trace->count;
 	tp->times = 1;
 	r_list_append (dbg->trace->traces, tp);
-#if R_DEBUG_HT_TRACES
-	ht_pp_update (dbg->trace->ht, sdb_fmt ("trace.%d.%"PFMT64x, tag, addr), tp);
-#endif
+	ht_pp_update (dbg->trace->ht,
+		sdb_fmt ("trace.%d.%"PFMT64x, tag, addr), tp);
 	return tp;
 }
 
 R_API void r_debug_trace_reset (RDebug *dbg) {
 	RDebugTrace *t = dbg->trace;
 	r_list_purge (t->traces);
-#if R_DEBUG_HT_TRACES
 	ht_pp_free (t->ht);
 	t->ht = ht_pp_new0 ();
-#endif
 	t->traces = r_list_new ();
 	t->traces->free = free;
 }
