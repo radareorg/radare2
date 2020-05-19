@@ -28,7 +28,8 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 static ut64 get_entrypoint(RBuffer *buf) {
 	ut8 b;
 	ut64 result;
-	for (int addr = 0x8; addr <= 0x10; addr += 0x4) {
+	int addr;
+	for (addr = 0x8; addr <= 0x10; addr += 0x4) {
 		r_buf_read_at (buf, addr, &b, sizeof (b));
 		if (pyc_is_code (b, version.magic)) {
 			code_start_offset = addr;
