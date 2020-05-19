@@ -130,7 +130,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
 
   capstone_includes = [platform_inc, include_directories('capstone/include')]
 
-  libr2capstone = static_library('r2capstone', cs_files # host_machine.system() == 'windows' ? win_cs_files : cs_files,
+  libr2capstone = static_library('r2capstone', cs_files, # host_machine.system() == 'windows' ? win_cs_files : cs_files,
     c_args: [
       '-DCAPSTONE_X86_ATT_DISABLE_NO',
       '-DCAPSTONE_X86_REDUCE_NO',
