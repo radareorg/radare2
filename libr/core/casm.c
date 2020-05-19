@@ -54,7 +54,7 @@ R_API void r_core_asm_hit_free(void *_hit) {
 R_API char* r_core_asm_search(RCore *core, const char *input) {
 	RAsmCode *acode;
 	char *ret;
-	if (!(acode = r_asm_massemble (core->assembler, input))) {
+	if (!(acode = r_asm_massemble (core->rasm, input))) {
 		return NULL;
 	}
 	ret = r_asm_code_get_hex (acode);
@@ -135,7 +135,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 			if (addr >= to) {
 				break;
 			}
-			r_asm_set_pc (core->assembler, addr);
+			r_asm_set_pc (core->rasm, addr);
 			if (mode == 'i') {
 				RAnalOp analop = {0};
 				ut64 len = R_MIN (15, core->blocksize - idx);
@@ -165,7 +165,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 						r_core_asm_hit_free (hit);
 						goto beach;
 					}
-					r_asm_disassemble (core->assembler, &op, buf + addrbytes * idx,
+					r_asm_disassemble (core->rasm, &op, buf + addrbytes * idx,
 					      core->blocksize - addrbytes * idx);
 					hit->code = r_str_newf (r_strbuf_get (&op.buf_asm));
 					idx = (matchcount)? tidx + 1: idx + 1;
@@ -187,7 +187,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				r_anal_op_fini (&analop);
 			} else {
 				if (!(len = r_asm_disassemble (
-					      core->assembler, &op,
+					      core->rasm, &op,
 					      buf + addrbytes * idx,
 					      core->blocksize - addrbytes * idx))) {
 					idx = (matchcount)? tidx + 1: idx + 1;
@@ -267,7 +267,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		}
 	}
 	r_cons_break_pop ();
-	r_asm_set_pc (core->assembler, toff);
+	r_asm_set_pc (core->rasm, toff);
 beach:
 	free (buf);
 	free (ptr);
@@ -363,11 +363,11 @@ static int handle_forward_disassemble(RCore* core, RList *hits, ut8* buf, ut64 l
 		return end_addr;
 	}
 
-	r_asm_set_pc (core->assembler, current_instr_addr);
+	r_asm_set_pc (core->rasm, current_instr_addr);
 	while (tmp_current_buf_pos < len && temp_instr_addr < end_addr) {
 		temp_instr_len = len - tmp_current_buf_pos;
 		IFDBG eprintf("Current position: %"PFMT64d" instr_addr: 0x%"PFMT64x"\n", tmp_current_buf_pos, temp_instr_addr);
-		temp_instr_len = r_asm_disassemble (core->assembler, &op, buf+tmp_current_buf_pos, temp_instr_len);
+		temp_instr_len = r_asm_disassemble (core->rasm, &op, buf+tmp_current_buf_pos, temp_instr_len);
 
 		if (temp_instr_len == 0){
 			is_valid = false;
@@ -512,7 +512,7 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		c = r_asm_mdisassemble (core->assembler, buf + len - idx, idx);
+		c = r_asm_mdisassemble (core->rasm, buf + len - idx, idx);
 		if (strstr (c->assembly, "invalid") || strstr (c->assembly, ".byte")) {
 			r_asm_code_free(c);
 			continue;
@@ -530,9 +530,9 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 		}
 	}
 	at = addr - idx / addrbytes;
-	r_asm_set_pc (core->assembler, at);
+	r_asm_set_pc (core->rasm, at);
 	for (hit_count = 0; hit_count < n; hit_count++) {
-		int instrlen = r_asm_disassemble (core->assembler, &op,
+		int instrlen = r_asm_disassemble (core->rasm, &op,
 			buf + len - addrbytes * (addr - at), addrbytes * (addr - at));
 		add_hit_to_hits (hits, at, instrlen, true);
 		at += instrlen;
@@ -579,10 +579,10 @@ static RList * r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len,
 			break;
 		}
 		// reset assembler
-		r_asm_set_pc (core->assembler, current_instr_addr);
+		r_asm_set_pc (core->rasm, current_instr_addr);
 		current_instr_len = len - current_buf_pos + extra_padding;
 		IFDBG eprintf("current_buf_pos: 0x%"PFMT64x", current_instr_len: %d\n", current_buf_pos, current_instr_len);
-		current_instr_len = r_asm_disassemble (core->assembler, &op, buf+current_buf_pos, current_instr_len);
+		current_instr_len = r_asm_disassemble (core->rasm, &op, buf+current_buf_pos, current_instr_len);
 		hit = r_core_asm_hit_new ();
 		hit->addr = current_instr_addr;
 		hit->len = current_instr_len;
@@ -659,9 +659,9 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 			break;
 		}
 		// reset assembler
-		r_asm_set_pc (core->assembler, current_instr_addr);
+		r_asm_set_pc (core->rasm, current_instr_addr);
 		current_instr_len = next_buf_pos - current_buf_pos;
-		current_instr_len = r_asm_disassemble (core->assembler, &op, buf+current_buf_pos, current_instr_len);
+		current_instr_len = r_asm_disassemble (core->rasm, &op, buf+current_buf_pos, current_instr_len);
 		IFDBG {
 			ut32 byte_cnt =  current_instr_len ? current_instr_len : 1;
 			eprintf("current_instr_addr: 0x%"PFMT64x", current_buf_pos: 0x%"PFMT64x", current_instr_len: %d \n", current_instr_addr, current_buf_pos, current_instr_len);
@@ -741,7 +741,7 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 		}
 	} while (((int) current_buf_pos >= 0) && (int)(len - current_buf_pos) >= 0);
 
-	r_asm_set_pc (core->assembler, addr);
+	r_asm_set_pc (core->rasm, addr);
 	free (buf);
 	return hits;
 }

@@ -139,7 +139,7 @@ static bool objc_find_refs(RCore *core) {
 	const int objc2ClassMethImpOffs = 0x10;
 
 	objc.core = core;
-	objc.word_size = (core->assembler->bits == 64)? 8: 4;
+	objc.word_size = (core->rasm->bits == 64)? 8: 4;
 
 	RList *sections = r_bin_get_sections (core->bin);
 	if (!sections) {
@@ -213,7 +213,7 @@ static bool objc_find_refs(RCore *core) {
 			RListIter *iter;
 			RAnalRef *ref;
 			r_list_foreach (list, iter, ref) {
-				r_anal_xrefs_set (core->anal, ref->addr, funcVA, R_META_TYPE_CODE);
+				r_anal_xrefs_set (core->anal, ref->addr, funcVA, R_ANAL_REF_TYPE_CODE);
 				total++;
 			}
 		}

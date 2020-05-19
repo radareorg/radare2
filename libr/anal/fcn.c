@@ -422,8 +422,14 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	};
 	bool is_arm = anal->cur->arch && !strncmp (anal->cur->arch, "arm", 3);
 	char tmp_buf[MAX_FLG_NAME_SIZE + 5] = "skip";
-	bool is_x86 = is_arm? false: anal->cur->arch && !strncmp (anal->cur->arch, "x86", 3);
+	bool is_x86 = is_arm ? false: anal->cur->arch && !strncmp (anal->cur->arch, "x86", 3);
+	bool is_amd64 = is_x86 ? fcn->cc && !strcmp (fcn->cc, "amd64") : false;
 	bool is_dalvik = is_x86? false: anal->cur->arch && !strncmp (anal->cur->arch, "dalvik", 6);
+	RRegItem *variadic_reg = NULL;
+	if (is_amd64) {
+		variadic_reg = r_reg_get (anal->reg, "rax", R_REG_TYPE_GPR);
+	}
+	bool has_variadic_reg = !!variadic_reg;
 
 	if (r_cons_is_breaked ()) {
 		return R_ANAL_RET_END;
@@ -1163,6 +1169,17 @@ analopfinish:
 		}
 		if (is_arm && op.type != R_ANAL_OP_TYPE_MOV) {
 			last_is_mov_lr_pc = false;
+		}
+		if (has_variadic_reg && !fcn->is_variadic) {
+			bool dst_is_variadic = op.dst && op.dst->reg && op.dst->reg->offset == variadic_reg->offset;
+			bool op_is_cmp = (op.type == R_ANAL_OP_TYPE_CMP) || op.type == R_ANAL_OP_TYPE_ACMP;
+			if (dst_is_variadic && !op_is_cmp) {
+				has_variadic_reg = false;
+			} else if (op_is_cmp) {
+				if (op.src[0] && op.src[0]->reg && (op.dst->reg == op.src[0]->reg) && dst_is_variadic) {
+					fcn->is_variadic = true;
+				}
+			}
 		}
 	}
 beach:

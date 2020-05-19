@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2007-2020 - pancake */
 
-#include <r_core.h>
+#include <r_util/r_print.h>
+#include <r_anal.h>
 
 #define DFLT_ROWS 16
 
@@ -65,7 +66,8 @@ R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions) {
 }
 
 R_API void r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
-	int i, j, cols = 78;
+	size_t i, j;
+	int cols = 78; // TODO: do not hardcode this value, columns should be defined by the user
 	int rows = height > 0 ? height : 10;
 	// int realrows = rows * 2;
 	bool colors = p->flags & R_PRINT_FLAGS_COLOR;
@@ -80,11 +82,11 @@ R_API void r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 	kol[4] = pal->nop;
 	if (colors) {
 		for (i = 0; i < rows; i++) {
-			int threshold = i * (0xff / rows);
+			size_t threshold = i * (0xff / rows);
+			size_t koli = i * 5 / rows;
 			for (j = 0; j < cols; j++) {
 				int realJ = j * len / cols;
 	 			if (255 - buf[realJ] < threshold || (i + 1 == rows)) {
-					int koli = i * 5 / rows;
 					if (p->histblock) {
 						p->cb_printf ("%s%s%s", kol[koli], block, Color_RESET);
 					} else {
@@ -100,9 +102,9 @@ R_API void r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 	}
 
 	for (i = 0; i < rows; i++) {
-		int threshold = i * (0xff / rows);
+		size_t threshold = i * (0xff / rows);
 		for (j = 0; j < cols; j++) {
-			int realJ = j * len / cols;
+			size_t realJ = j * len / cols;
 			if (255 - buf[realJ] < threshold) {
 				if (p->histblock) {
 					p->cb_printf ("%s%s%s", Color_BGGRAY, block, Color_RESET);
@@ -138,7 +140,7 @@ R_API int r_util_lines_getline(ut64 *lines_cache, int lines_cache_sz, ut64 off) 
 	return imin;
 }
 
-R_API bool r_print_is_interrupted() {
+R_API bool r_print_is_interrupted(void) {
 	if (is_interrupted_cb) {
 		return is_interrupted_cb ();
 	}
@@ -310,7 +312,6 @@ R_API RPrint* r_print_new() {
 	p->bits = 32;
 	p->stride = 0;
 	p->bytespace = 0;
-	p->interrupt = 0;
 	p->big_endian = false;
 	p->datezone = 0;
 	p->col = 0;
@@ -648,10 +649,9 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 	bool wrap = (options & R_PRINT_STRING_WRAP);
 	bool urlencode = (options & R_PRINT_STRING_URLENCODE);
 	bool esc_nl = (options & R_PRINT_STRING_ESC_NL);
-	p->interrupt = 0;
 	int col = 0;
 	i = 0;
-	for (; !p->interrupt && i < len; i++) {
+	for (; !r_print_is_interrupted () && i < len; i++) {
 		if (wide32) {
 			int j = i;
 			while (buf[j] == '\0' && j < (i + 3)) {
@@ -1010,9 +1010,6 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		}
 	}
 
-	if (p) {
-		p->interrupt = 0;
-	}
 	// is this necessary?
 	r_print_set_screenbounds (p, addr);
 	int rows = 0;
@@ -1525,8 +1522,7 @@ R_API void r_print_c(RPrint *p, const ut8 *str, int len) {
 	p->cb_printf ("#define _BUFFER_SIZE %d\n"
 	"unsigned char buffer[_BUFFER_SIZE] = {\n",
 	len);
-	p->interrupt = 0;
-	for (i = 0; !p->interrupt && i < len;) {
+	for (i = 0; !r_print_is_interrupted () && i < len;) {
 		r_print_byte (p, "0x%02x", i, str[i]);
 		if (++i < len) {
 			p->cb_printf (", ");
@@ -1841,6 +1837,7 @@ R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, ut32 tiles) {
 	}
 }
 
+// probably move somewhere else. RPrint doesnt needs to know about the R_ANAL_ enums
 R_API const char* r_print_color_op_type(RPrint *p, ut32 anal_type) {
 	RConsPrintablePalette *pal = &p->cons->context->pal;
 	switch (anal_type & R_ANAL_OP_TYPE_MASK) {

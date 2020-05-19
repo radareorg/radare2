@@ -259,3 +259,66 @@ const uint8_t buffer[_BUFFER_SIZE] = {
 };
 EOF
 RUN
+
+NAME=pci1
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wa nop
+pci 1
+EOF
+EXPECT=<<EOF
+#define _BUFFER_SIZE 1
+const uint8_t buffer[_BUFFER_SIZE] = {
+ 0x90,                                 /* nop */
+};
+EOF
+RUN
+
+NAME=pci
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=<<EOF
+pci 29
+pci -10
+EOF
+EXPECT=<<EOF
+#define _BUFFER_SIZE 29
+const uint8_t buffer[_BUFFER_SIZE] = {
+ 0x31, 0xed,                           /* xor ebp, ebp */
+ 0x49, 0x89, 0xd1,                     /* mov r9, rdx */
+ 0x5e,                                 /* pop rsi */
+ 0x48, 0x89, 0xe2,                     /* mov rdx, rsp */
+ 0x48, 0x83, 0xe4, 0xf0,               /* and rsp, 0xfffffffffffffff0 */
+ 0x50,                                 /* push rax */
+ 0x54,                                 /* push rsp */
+ 0x49, 0xc7, 0xc0, 0xb0, 0x05, 0x40, 0x00,  /* mov r8, sym.__libc_csu_fini */
+ 0x48, 0xc7, 0xc1, 0x20, 0x05, 0x40, 0x00,  /* mov rcx, sym.__libc_csu_init */
+};
+#define _BUFFER_SIZE 10
+const uint8_t buffer[_BUFFER_SIZE] = {
+ 0x68, 0x02, 0x00, 0x00, 0x00,         /* push 2 */
+ 0xe9, 0xc0, 0xff, 0xff, 0xff,         /* jmp sym..plt */
+};
+EOF
+RUN
+
+NAME=pci invalid
+CMDS=pci 32
+FILE=bins/elf/analysis/hello-linux-x86_64
+EXPECT=<<EOF
+#define _BUFFER_SIZE 32
+const uint8_t buffer[_BUFFER_SIZE] = {
+ 0x31, 0xed,                           /* xor ebp, ebp */
+ 0x49, 0x89, 0xd1,                     /* mov r9, rdx */
+ 0x5e,                                 /* pop rsi */
+ 0x48, 0x89, 0xe2,                     /* mov rdx, rsp */
+ 0x48, 0x83, 0xe4, 0xf0,               /* and rsp, 0xfffffffffffffff0 */
+ 0x50,                                 /* push rax */
+ 0x54,                                 /* push rsp */
+ 0x49, 0xc7, 0xc0, 0xb0, 0x05, 0x40, 0x00,  /* mov r8, sym.__libc_csu_fini */
+ 0x48, 0xc7, 0xc1, 0x20, 0x05, 0x40, 0x00,  /* mov rcx, sym.__libc_csu_init */
+ 0x48, 0xc7, 0xc7,                     /* invalid */
+};
+EOF
+RUN

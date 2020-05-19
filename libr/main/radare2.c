@@ -153,13 +153,13 @@ static int main_help(int line) {
 		" R2_LIBR_PLUGINS " R_JOIN_2_PATHS ("%s", R2_PLUGINS) "\n"
 		" R2_USER_ZIGNS " R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS) "\n"
 		"Environment:\n"
-		" R2_RDATAHOME %s\n" // TODO: rename to RHOME R2HOME?
-		" RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
+		" R2_CFG_NEWSHELL sets cfg.newshell=true\n"
+		" R2_DEBUG      if defined, show error messages and crash signal\n"
+		" R2_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
 		" R2_MAGICPATH " R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC) "\n"
-		" R_DEBUG      if defined, show error messages and crash signal\n"
-		" R_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
-		" VAPIDIR      path to extra vapi directory\n"
 		" R2_NOPLUGINS do not load r2 shared plugins\n"
+		" R2_RCFILE    ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
+		" R2_RDATAHOME %s\n" // TODO: rename to RHOME R2HOME?
 		"Paths:\n"
 		" R2_PREFIX    "R2_PREFIX"\n"
 		" R2_INCDIR    "R2_INCDIR"\n"
@@ -388,9 +388,18 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		r_sys_set_environ (envp);
 	}
 
-	if ((tmp = r_sys_getenv ("R_DEBUG"))) {
-		r_sys_crash_handler ("gdb --pid %d");
-		free (tmp);
+	if (r_sys_getenv_asbool ("R2_DEBUG")) {
+		char *sysdbg = r_sys_getenv ("R2_DEBUG_TOOL");
+		char *fmt = (sysdbg && *sysdbg)
+			? r_str_newf ("%s %%d", sysdbg)
+#if __APPLE__
+			: r_str_newf ("lldb -p %%d");
+#else
+			: r_str_newf ("gdb --pid %%d");
+#endif
+		r_sys_crash_handler (fmt);
+		free (fmt);
+		free (sysdbg);
 	}
 	if (argc < 2) {
 		LISTS_FREE ();

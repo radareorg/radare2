@@ -13,7 +13,7 @@ endif
 
 OBJS=binheap.o mem.o unum.o str.o hex.o file.o range.o tinyrange.o
 OBJS+=prof.o cache.o sys.o buf.o w32-sys.o ubase64.o base85.o base91.o
-OBJS+=list.o flist.o chmod.o graph.o event.o alloc.o donut.o
+OBJS+=list.o flist.o chmod.o graph.o event.o alloc.o donut.o print_code.o
 OBJS+=regex/regcomp.o regex/regerror.o regex/regexec.o uleb128.o
 OBJS+=sandbox.o calc.o thread.o thread_sem.o thread_lock.o thread_cond.o
 OBJS+=strpool.o bitmap.o date.o format.o pie.o print.o utype.o
@@ -24,8 +24,6 @@ OBJS+=punycode.o pkcs7.o x509.o asn1.o astr.o json_indent.o skiplist.o pj.o
 OBJS+=rbtree.o intervaltree.o qrcode.o vector.o str_constpool.o str_trim.o
 OBJS+=ascii_table.o protobuf.o
 
-# DO NOT BUILD r_big api (not yet used and its buggy)
-ifeq (1,0)
 ifeq (${HAVE_LIB_GMP},1)
   OBJS+=big-gmp.o
 else
@@ -34,7 +32,6 @@ else
   else
     OBJS+=big.o
   endif
-endif
 endif
 
 include deps.mk

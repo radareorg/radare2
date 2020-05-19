@@ -13,10 +13,12 @@ static int value = 0;
 R_LIB_VERSION (r_cmd);
 
 static bool cmd_desc_set_parent(RCmdDesc *cd, RCmdDesc *parent) {
-	r_return_val_if_fail (cd && parent && !cd->parent, false);
-	cd->parent = parent;
-	r_pvector_push (&parent->children, cd);
-	parent->n_children++;
+	r_return_val_if_fail (cd && !cd->parent, false);
+	if (parent) {
+		cd->parent = parent;
+		r_pvector_push (&parent->children, cd);
+		parent->n_children++;
+	}
 	return true;
 }
 

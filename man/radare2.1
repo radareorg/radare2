@@ -1,4 +1,4 @@
-.Dd Jul 2, 2019
+.Dd May 17, 2020
 .Dt RADARE2 1
 .Sh NAME
 .Nm radare2
@@ -125,11 +125,13 @@ To enter visual mode use the 'V' command. Then press '?' for help
 .Sh DEBUGGER
 In r2 the debugger commands are implemented under the 'd' command. Type 'd?' for help
 .Sh ENVIRONMENT
- RHOMEDIR     ~/.config/radare2
- RCFILE       ~/.radare2rc (user preferences, batch script)
- R2_MAGICPATH /usr/lib/radare2/0.10.0-git/magic
- R_DEBUG      if defined, show error messages and crash signal
- VAPIDIR      path to extra vapi directory
+ R2_CFG_NEWSHELL sets cfg.newshell=true
+ R2_DEBUG      if defined, show error messages and crash signal
+ R2_DEBUG_ASSERT=1 set a breakpoint when hitting an assert
+ R2_MAGICPATH /Users/pancake/.local/share/radare2/share/radare2/4.5.0-git/magic
+ R2_NOPLUGINS do not load r2 shared plugins
+ R2_RCFILE    ~/.radare2rc (user preferences, batch script)
+ R2_RDATAHOME /usr/local
 .Ar FILE
 path to the current working file.
 .Sh SEE ALSO

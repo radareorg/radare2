@@ -1922,8 +1922,8 @@ EOF
 EXPECT=<<EOF
 
    var_78h  0x8048577,0x804858a
-   var_88h  
-   var_78h  
+   var_88h
+   var_78h
    var_88h  0x804857a
 EOF
 RUN
@@ -2450,7 +2450,7 @@ is-pure: true
 realsz: 7
 stackframe: 0
 call-convention: amd64
-cyclomatic-cost : 4
+cyclomatic-cost: 4
 cyclomatic-complexity: 0
 bits: 64
 type: fcn [NEW]
@@ -2509,7 +2509,7 @@ is-pure: false
 realsz: 16
 stackframe: 0
 call-convention: amd64
-cyclomatic-cost : 6
+cyclomatic-cost: 6
 cyclomatic-complexity: 1
 bits: 64
 type: fcn [NEW]
@@ -2584,7 +2584,7 @@ is-pure: false
 realsz: 17
 stackframe: 0
 call-convention: amd64
-cyclomatic-cost : 7
+cyclomatic-cost: 7
 cyclomatic-complexity: 0
 bits: 64
 type: fcn [NEW]
@@ -2667,7 +2667,7 @@ is-pure: false
 realsz: 17
 stackframe: 0
 call-convention: amd64
-cyclomatic-cost : 7
+cyclomatic-cost: 7
 cyclomatic-complexity: 0
 bits: 64
 type: fcn [NEW]
@@ -2759,7 +2759,7 @@ is-pure: false
 realsz: 24
 stackframe: 0
 call-convention: amd64
-cyclomatic-cost : 9
+cyclomatic-cost: 9
 cyclomatic-complexity: 0
 bits: 64
 type: fcn [NEW]

@@ -204,6 +204,49 @@ enum {
 	R_ANAL_DIFF_TYPE_UNMATCH = 'u'
 };
 
+typedef struct r_anal_enum_case_t {
+	char *name;
+	const int val;
+} RAnalEnumCase;
+
+typedef struct r_anal_struct_member_t {
+	char *name;
+	char *type;
+	const int offset;
+} RAnalStructMember;
+
+typedef struct r_anal_union_member_t {
+	char *name;
+	char *type;
+} RAnalUnionMember;
+
+typedef enum {
+	R_ANAL_BASE_TYPE_KIND_STRUCT,
+	R_ANAL_BASE_TYPE_KIND_UNION,
+	R_ANAL_BASE_TYPE_KIND_ENUM,
+} RAnalBaseTypeKind;
+
+typedef struct r_anal_base_type_struct_t {
+	RVector/*<RAnalStructMember>*/ members;
+} RAnalBaseTypeStruct;
+
+typedef struct r_anal_base_type_union_t {
+	RVector/*<RAnalUnionMember>*/ members;
+} RAnalBaseTypeUnion;
+
+typedef struct r_anal_base_type_enum_t {
+	RVector/*<RAnalEnumCase*/ cases; // list of all the enum casessssss
+} RAnalBaseTypeEnum;
+
+typedef struct r_anal_base_type_t {
+	RAnalBaseTypeKind kind;
+	union {
+		RAnalBaseTypeStruct struct_data;
+		RAnalBaseTypeEnum enum_data;
+		RAnalBaseTypeUnion union_data;
+	};
+} RAnalBaseType;
+
 typedef struct r_anal_diff_t {
 	int type;
 	ut64 addr;
@@ -244,6 +287,7 @@ typedef struct r_anal_function_t {
 	int ninstr;
 	bool folded;
 	bool is_pure;
+	bool is_variadic;
 	bool has_changed; // true if function may have changed since last anaysis TODO: set this attribute where necessary
 	bool bp_frame;
 	bool is_noreturn; // true if function does not return
@@ -2004,9 +2048,10 @@ R_API RAnalEsilDFGNode *r_anal_esil_dfg_node_new (RAnalEsilDFG *edf, const char 
 R_API RAnalEsilDFG *r_anal_esil_dfg_new(RReg *regs);
 R_API void r_anal_esil_dfg_free(RAnalEsilDFG *dfg);
 R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *dfg, const char *expr);
-R_API RStrBuf *r_anal_esil_dfg_filter (RAnalEsilDFG *dfg, const char *reg);
+R_API RStrBuf *r_anal_esil_dfg_filter(RAnalEsilDFG *dfg, const char *reg);
 R_API RStrBuf *r_anal_esil_dfg_filter_expr(RAnal *anal, const char *expr, const char *reg);
 R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn);
+R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
@@ -2068,6 +2113,7 @@ extern RAnalPlugin r_anal_plugin_xap;
 extern RAnalPlugin r_anal_plugin_xcore_cs;
 extern RAnalPlugin r_anal_plugin_xtensa;
 extern RAnalPlugin r_anal_plugin_z80;
+extern RAnalPlugin r_anal_plugin_pyc;
 #ifdef __cplusplus
 }
 #endif

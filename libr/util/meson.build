@@ -6,10 +6,10 @@ r_util_sources = [
   'donut.c',
   'table.c',
   'getopt.c',
+  'print_code.c',
   'base85.c',
   'base91.c',
   'bdiff.c',
-  #'big.c',
   'binheap.c',
   'bitmap.c',
   'buf.c',
@@ -88,6 +88,13 @@ r_util_deps = [ldl, mth, pth, utl, sdb_dep, zlib_dep, platform_deps]
 if host_machine.system().startswith('freebsd') or host_machine.system().startswith('netbsd')
   # backtrace_symbols_fd requires -lexecinfo
   r_util_deps += [cc.find_library('execinfo')]
+endif
+
+if use_sys_openssl
+  r_util_deps += [sys_openssl]
+  r_util_sources += ['big-ssl.c']
+else
+  r_util_sources += ['big.c']
 endif
 
 r_util = library('r_util', r_util_sources,

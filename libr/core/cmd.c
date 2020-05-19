@@ -42,22 +42,27 @@ static const char *SPECIAL_CHARS_SINGLE_QUOTED = "'";
 R_API void r_save_panels_layout(RCore *core, const char *_name);
 R_API bool r_load_panels_layout(RCore *core, const char *_name);
 
+static RCmdDescriptor *cmd_descriptor(const char *cmd, const char *help[]) {
+	RCmdDescriptor *d = R_NEW0 (RCmdDescriptor);
+	if (d) {
+		d->cmd = cmd;
+		d->help_msg = help;
+	}
+	return d;
+}
+
 #define DEFINE_CMD_DESCRIPTOR(core, cmd_) \
 	{ \
-		RCmdDescriptor *d = R_NEW0 (RCmdDescriptor); \
+		RCmdDescriptor *d = cmd_descriptor (#cmd_, help_msg_##cmd_); \
 		if (d) { \
-			d->cmd = #cmd_; \
-			d->help_msg = help_msg_##cmd_; \
 			r_list_append ((core)->cmd_descriptors, d); \
 		} \
 	}
 
 #define DEFINE_CMD_DESCRIPTOR_WITH_DETAIL(core, cmd_) \
 	{ \
-		RCmdDescriptor *d = R_NEW0 (RCmdDescriptor); \
+		RCmdDescriptor *d = cmd_descriptor (#cmd_, help_msg##cmd_); \
 		if (d) { \
-			d->cmd = #cmd_; \
-			d->help_msg = help_msg_##cmd_; \
 			d->help_detail = help_detail_##cmd_; \
 			r_list_append ((core)->cmd_descriptors, d); \
 		} \
@@ -65,10 +70,8 @@ R_API bool r_load_panels_layout(RCore *core, const char *_name);
 
 #define DEFINE_CMD_DESCRIPTOR_WITH_DETAIL2(core, cmd_) \
 	{ \
-		RCmdDescriptor *d = R_NEW0 (RCmdDescriptor); \
+		RCmdDescriptor *d = cmd_descriptor (#cmd_, help_msg_##cmd_); \
 		if (d) { \
-			d->cmd = #cmd_; \
-			d->help_msg = help_msg_##cmd_; \
 			d->help_detail = help_detail_##cmd_; \
 			d->help_detail2 = help_detail2_##cmd_; \
 			r_list_append ((core)->cmd_descriptors, d); \
@@ -7121,6 +7124,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, *, star);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ., dot);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, =, equal);
+
 	DEFINE_CMD_DESCRIPTOR (core, b);
 	DEFINE_CMD_DESCRIPTOR (core, k);
 	DEFINE_CMD_DESCRIPTOR (core, r);

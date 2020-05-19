@@ -15,6 +15,7 @@ libr/bin/format/objc/ @radare
 libr/bin/format/wasm/ @wargio
 libr/config/ @radare @ret2libc
 libr/cons/ @thestr4ng3r @radare
+libr/core/cmd.c @ret2libc @radare 
 libr/debug/ @yossizap @radare
 libr/egg/ @radare
 libr/flag/ @ret2libc @radare
