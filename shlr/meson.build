@@ -292,7 +292,7 @@ endif
 
 
 # new radare2 shell parser
-shell_parser_path = join_paths(meson.current_source_dir(), 'radare2-shell-parser')
+shell_parser_path = 'radare2-shell-parser'
 shell_parser_files = [
   join_paths(shell_parser_path, 'src/parser.c'),
   join_paths(shell_parser_path, 'src/scanner.c'),
