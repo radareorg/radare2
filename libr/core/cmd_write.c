@@ -1860,9 +1860,10 @@ static void cmd_write_init(RCore *core, RCmdDesc *parent) {
 	RCmdDesc *wv_cd = r_cmd_desc_argv_new (core->rcmd, parent, "wv", wv_handler);
 	RCmdDescHelp wv_help = {
 		.usage = "wv[size] [value]",
-		.summary = "Write value of given size",
+		.summary = "Write value as 4-bytes/8-bytes based on value",
 		.args_str = "[value]",
-		.description = "Write the number passed as argument at the current offset, respecting the cfg.bigendian variable",
+		.description = "Write the number passed as argument at the current offset as a 4-bytes value or 8-bytes value if the input is bigger than UT32_MAX, respecting the cfg.bigendian variable",
+		.group_summary = "Write value of given size",
 	};
 	r_cmd_desc_set_help (wv_cd, &wv_help);
 

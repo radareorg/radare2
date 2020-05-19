@@ -74,6 +74,7 @@ typedef struct r_cmd_alias_t {
 typedef struct r_cmd_desc_help_t {
 	const char *usage;
 	const char *summary;
+	const char *group_summary;
 	const char *args_str;
 	const char *description;
 	const char **examples;

@@ -190,6 +190,10 @@ static RCmdStatus pd_handler(void *user, int argc, const char **argv) {
 	return R_CMD_STATUS_OK;
 }
 
+static RCmdStatus p_handler_argv(void *user, int argc, const char **argv) {
+	return R_CMD_STATUS_OK;
+}
+
 static int p_handler(void *user, const char *input) {
 	mu_assert_streq (input, "x 10", "input is +1");
 	return -1;
@@ -259,7 +263,7 @@ bool test_cmd_help(void) {
 
 	const char *pd_examples[] = { "pd 10", "print 10 disassembled instructions", NULL };
 	RCmdDescHelp pd_help = {
-		.usage = "pd-usage",
+		.usage = NULL,
 		.summary = "pd summary",
 		.args_str = "<num>",
 		.description = "pd long description",
@@ -285,7 +289,7 @@ bool test_cmd_help(void) {
 	free (h);
 	r_cmd_parsed_args_free (a);
 
-	const char *pd_help_exp = "Usage: pd-usage   # pd summary\n";
+	const char *pd_help_exp = "Usage: pd <num>   # pd summary\n";
 	a = r_cmd_parsed_args_newcmd ("pd?");
 	h = r_cmd_get_help (cmd, a);
 	mu_assert_notnull (h, "help is not null");
@@ -293,7 +297,7 @@ bool test_cmd_help(void) {
 	free (h);
 	r_cmd_parsed_args_free (a);
 
-	const char *pd_long_help_exp = "Usage: pd-usage   # pd summary\n"
+	const char *pd_long_help_exp = "Usage: pd <num>   # pd summary\n"
 		"\n"
 		"pd long description\n"
 		"\n"
@@ -303,6 +307,39 @@ bool test_cmd_help(void) {
 	h = r_cmd_get_help (cmd, a);
 	mu_assert_notnull (h, "help is not null");
 	mu_assert_streq (h, pd_long_help_exp, "wrong help for pd??");
+	free (h);
+	r_cmd_parsed_args_free (a);
+
+	r_cmd_free (cmd);
+	mu_end;
+}
+
+bool test_cmd_group_help(void) {
+	RCmd *cmd = r_cmd_new ();
+	RCmdDesc *root = r_cmd_get_root (cmd);
+	RCmdDesc *p_cd = r_cmd_desc_argv_new (cmd, root, "p", p_handler_argv);
+	RCmdDesc *pd_cd = r_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler);
+
+	RCmdDescHelp p_help = { 0 };
+	p_help.group_summary = "p group-summary",
+	p_help.summary = "p summary",
+	p_help.usage = "p-usage",
+	p_help.args_str = "",
+	r_cmd_desc_set_help (p_cd, &p_help);
+
+	RCmdDescHelp pd_help = { 0 };
+	pd_help.summary = "pd summary",
+	pd_help.args_str = "<num>",
+	pd_help.description = "pd long description",
+	r_cmd_desc_set_help (pd_cd, &pd_help);
+
+	const char *p_help_exp = "Usage: p-usage   # p group-summary\n"
+		"| p        # p summary\n"
+		"| pd <num> # pd summary\n";
+	RCmdParsedArgs *a = r_cmd_parsed_args_newcmd ("p?");
+	char *h = r_cmd_get_help (cmd, a);
+	mu_assert_notnull (h, "help is not null");
+	mu_assert_streq (h, p_help_exp, "wrong help for p?");
 	free (h);
 	r_cmd_parsed_args_free (a);
 
@@ -346,6 +383,7 @@ int all_tests() {
 	mu_run_test (test_cmd_get_desc);
 	mu_run_test (test_cmd_call_desc);
 	mu_run_test (test_cmd_help);
+	mu_run_test (test_cmd_group_help);
 	mu_run_test (test_cmd_oldinput_help);
 	return tests_passed != tests_run;
 }
