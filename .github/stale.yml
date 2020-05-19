@@ -40,7 +40,9 @@ markComment: >
 
 # Comment to post when closing a stale Issue or Pull Request.
 closeComment: >
-  This issue has been automatically closed because stale and no activity occurred.
+  This issue has been automatically closed because stale and no activity
+  occurred. If the issue is still relevant, feel free to re-open it or open a
+  new one.
 
 # Limit the number of actions per hour, from 1-30. Default is 30
 limitPerRun: 30
