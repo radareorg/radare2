@@ -121,16 +121,9 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     cs_files += [join_paths(capstone_path, 'arch/X86/X86InstPrinterCommon.c')]
   endif
 
-  # if host_machine.system() == 'windows'
-  #   win_cs_files = []
-  #   foreach cs_file : cs_files
-  #     win_cs_files += ['\\'.join(cs_file.split('/'))]
-  #   endforeach
-  # endif
-
   capstone_includes = [platform_inc, include_directories('capstone/include')]
 
-  libr2capstone = static_library('r2capstone', cs_files, # host_machine.system() == 'windows' ? win_cs_files : cs_files,
+  libr2capstone = static_library('r2capstone', cs_files,
     c_args: [
       '-DCAPSTONE_X86_ATT_DISABLE_NO',
       '-DCAPSTONE_X86_REDUCE_NO',
