@@ -437,7 +437,7 @@ static char *argv_get_help(RCmd *cmd, RCmdDesc *cd, RCmdParsedArgs *a, size_t de
 			r_strbuf_appendf (sb, "\n%s\n", cd->help.description);
 		}
 		if (cd->help.examples) {
-			r_strbuf_appendf (sb, "\nExamples:\n", cd->help.description);
+			r_strbuf_append (sb, "\nExamples:\n");
 			for (e = cd->help.examples; *e; e += 2) {
 				r_return_val_if_fail (*(e + 1), NULL);
 				r_strbuf_appendf (sb, "| %s # %s\n", *e, *(e + 1));
