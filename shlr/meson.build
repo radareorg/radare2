@@ -6,7 +6,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
   if get_option('capstone_in_builddir')
     capstone_path = join_paths(meson.current_build_dir(), 'capstone')
   else
-    capstone_path = join_paths(meson.current_source_dir(), 'capstone')
+    capstone_path = 'capstone'
   endif
 
   res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("@0@"))'.format(capstone_path))
@@ -236,8 +236,8 @@ sdb_gen_cmd = [
 tree_sitter_dep = dependency('tree-sitter', required: false)
 if not tree_sitter_dep.found() or not get_option('use_sys_tree_sitter')
   message('Use bundled tree-sitter')
-  tree_sitter_path = join_paths(meson.current_source_dir(), 'tree-sitter')
-  tree_sitter_vc_path = join_paths(meson.current_source_dir(), 'tree-sitter.vc')
+  tree_sitter_path = 'tree-sitter'
+  tree_sitter_vc_path = 'tree-sitter.vc'
   if get_option('tree-sitter-sync')
     if not git_exe.found()
       error('Cannot sync tree-sitter library. Either provide tree-sitter in ./shlr/tree-sitter or install git, so it can be downloaded')
@@ -292,7 +292,7 @@ endif
 
 
 # new radare2 shell parser
-shell_parser_path = join_paths(meson.current_source_dir(), 'radare2-shell-parser')
+shell_parser_path = 'radare2-shell-parser'
 shell_parser_files = [
   join_paths(shell_parser_path, 'src/parser.c'),
   join_paths(shell_parser_path, 'src/scanner.c'),
