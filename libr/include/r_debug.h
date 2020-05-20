@@ -232,7 +232,7 @@ typedef struct r_debug_trace_t {
 	int dup;
 	char *addresses;
 	// TODO: add range here
-	Sdb *db;
+	HtPP *ht;
 } RDebugTrace;
 
 typedef struct r_debug_tracepoint_t {
