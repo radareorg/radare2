@@ -153,9 +153,6 @@ static int or1k_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, R
 	insn_t *insn_descr;
 	insn_extra_t *extra_descr;
 
-	op->size = -1;
-	r_strbuf_init (&op->esil);
-
 	/* read instruction and basic opcode value */
 	insn = r_read_be32(data);
 	op->size = 4;

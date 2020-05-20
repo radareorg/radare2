@@ -1,0 +1,38 @@
+NAME=aes help changing seek
+FILE=-
+CMDS=<<EOF
+wx 55
+e asm.arch=x86
+e asm.bits=32
+aes
+sr PC
+s
+EOF
+EXPECT=<<EOF
+0x1
+EOF
+RUN
+
+NAME=cmd.esil.intr unset
+FILE=-
+CMDS=<<EOF
+wx b8010000000f34b801000000cd80ebfe
+10aes
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=aes without initialize
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx bb10000000 # mov ebx, 10
+aes
+ar~ebx
+EOF
+EXPECT=<<EOF
+ebx = 0x00000010
+EOF
+RUN

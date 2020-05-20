@@ -4,10 +4,7 @@
 
 // TODO: use r_list instead of list.h
 // TODO: redesign this api.. why? :)
-
-#if 0
 // TODO: add tags to ranges
-#endif
 
 //void (*ranges_new_callback)(struct range_t *r) = NULL;
 

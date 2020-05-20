@@ -175,6 +175,8 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 			} else {
 				str_type = R_STRING_TYPE_ASCII;
 			}
+		} else if (type == R_STRING_TYPE_UTF8) {
+			str_type = R_STRING_TYPE_ASCII; // initial assumption
 		} else {
 			str_type = type;
 		}
@@ -355,7 +357,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 		pj_end (pj);
 		RIO *io = bin->iob.io;
 		if (io) {
-			io->cb_printf ("%s", pj_string (pj));
+			io->cb_printf ("%s\n", pj_string (pj));
 		}
 		pj_free (pj);
 	}
@@ -407,7 +409,23 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 			return;
 		}
 	}
-	string_scan_range (list, bf, min, from, to, -1, raw, section);
+	int type;
+	const char *enc = bf->rbin->strenc;
+	if (!enc) {
+		type = R_STRING_TYPE_DETECT;
+	} else if (!strcmp (enc, "latin1")) {
+		type = R_STRING_TYPE_ASCII;
+	} else if (!strcmp (enc, "utf8")) {
+		type = R_STRING_TYPE_UTF8;
+	} else if (!strcmp (enc, "utf16le")) {
+		type = R_STRING_TYPE_WIDE;
+	} else if (!strcmp (enc, "utf32le")) {
+		type = R_STRING_TYPE_WIDE32;
+	} else { // TODO utf16be, utf32be
+		eprintf ("ERROR: encoding %s not supported\n", enc);
+		return;
+	}
+	string_scan_range (list, bf, min, from, to, type, raw, section);
 }
 
 R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr) {
@@ -500,11 +518,12 @@ R_IPI RBinFile *r_bin_file_new_from_buffer(RBin *bin, const char *file, RBuffer 
 
 	RBinFile *bf = r_bin_file_new (bin, file, r_buf_size (buf), rawstr, fd, pluginname, NULL, false);
 	if (bf) {
+		RListIter *item = r_list_append (bin->binfiles, bf);
 		bf->buf = r_buf_ref (buf);
 		RBinPlugin *plugin = get_plugin_from_buffer (bin, pluginname, bf->buf);
 		RBinObject *o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, 0, r_buf_size (bf->buf));
 		if (!o) {
-			r_bin_file_free (bf);
+			r_list_delete (bin->binfiles, item);
 			return NULL;
 		}
 		// size is set here because the reported size of the object depends on
@@ -512,7 +531,6 @@ R_IPI RBinFile *r_bin_file_new_from_buffer(RBin *bin, const char *file, RBuffer 
 		if (!o->size) {
 			o->size = r_buf_size (buf);
 		}
-		r_list_append (bin->binfiles, bf);
 	}
 	return bf;
 }
@@ -870,7 +888,9 @@ R_API RList *r_bin_file_compute_hashes(RBin *bin, ut64 limit) {
 	buf_len = r_io_desc_size (iod);
 	// By SLURP_LIMIT normally cannot compute ...
 	if (buf_len > limit) {
-		eprintf ("Warning: r_bin_file_hash: file exceeds bin.hashlimit\n");
+		if (bin->verbose) {
+			eprintf ("Warning: r_bin_file_hash: file exceeds bin.hashlimit\n");
+		}
 		return NULL;
 	}
 	const size_t blocksize = 64000;
@@ -969,7 +989,7 @@ R_IPI RBinClass *r_bin_class_new(const char *name, const char *super, int view) 
 }
 
 R_IPI void r_bin_class_free(RBinClass *k) {
-	if (k) {
+	if (k && k->name) {
 		free (k->name);
 		free (k->super);
 		r_list_free (k->methods);

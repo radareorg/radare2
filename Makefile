@@ -8,7 +8,7 @@ L=$(DESTDIR)$(LIBDIR)
 MESON?=meson
 PYTHON?=python
 R2R=test
-R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm r2-indent)
+R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm r2-indent r2r)
 ifdef SOURCE_DATE_EPOCH
 BUILDSEC=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u "+__%H:%M:%S")
 else
@@ -215,7 +215,7 @@ install-doc-symlink:
 	for FILE in $(shell cd doc ; ls) ; do \
 		ln -fs "$(PWD)/doc/$$FILE" "${DESTDIR}${DOCDIR}" ; done
 
-install love: install-doc install-man install-www
+install love: install-doc install-man install-www install-pkgconfig
 	cd libr && ${MAKE} install
 	cd binr && ${MAKE} install
 	cd shlr && ${MAKE} install
@@ -247,7 +247,12 @@ symstall-www:
 	for FILE in $(shell cd shlr/www ; ls) ; do \
 		ln -fs "$(PWD)/shlr/www/$$FILE" "$(DESTDIR)$(WWWROOT)" ; done
 
-install-pkgconfig-symlink:
+install-pkgconfig pkgconfig-install:
+	@${INSTALL_DIR} "${DESTDIR}${LIBDIR}/pkgconfig"
+	for FILE in $(shell cd pkgcfg ; ls *.pc) ; do \
+		cp -f "$(PWD)/pkgcfg/$$FILE" "${DESTDIR}${LIBDIR}/pkgconfig/$$FILE" ; done
+
+install-pkgconfig-symlink pkgconfig-symstall symstall-pkgconfig:
 	@${INSTALL_DIR} "${DESTDIR}${LIBDIR}/pkgconfig"
 	for FILE in $(shell cd pkgcfg ; ls *.pc) ; do \
 		ln -fs "$(PWD)/pkgcfg/$$FILE" "${DESTDIR}${LIBDIR}/pkgconfig/$$FILE" ; done

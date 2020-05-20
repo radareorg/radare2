@@ -707,7 +707,7 @@ R_API void r_core_rtr_list(RCore *core) {
 		case RTR_PROTOCOL_HTTP: proto = "http"; break;
 		case RTR_PROTOCOL_TCP: proto = "tcp"; break;
 		case RTR_PROTOCOL_UDP: proto = "udp"; break;
-		case RTR_PROTOCOL_RAP: proto = "r2p"; break;
+		case RTR_PROTOCOL_RAP: proto = "rap"; break;
 		case RTR_PROTOCOL_UNIX: proto = "unix"; break;
 		}
 		r_cons_printf ("%d fd:%i %s://%s:%i/%s\n",
@@ -717,7 +717,7 @@ R_API void r_core_rtr_list(RCore *core) {
 }
 
 R_API void r_core_rtr_add(RCore *core, const char *_input) {
-	char *port, input[1024], *file = NULL, *ptr = NULL, buf[1024];
+	char *port, input[1024], *file = NULL, *ptr = NULL;
 	int i, timeout, ret;
 	RSocket *fd;
 
@@ -807,25 +807,10 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
 			r_socket_free (fd);
 			return;
+		} else {
+			int n = r_socket_rap_client_open (fd, file, 0);
+			eprintf ("opened as fd = %d\n", n);
 		}
-		eprintf ("Connected to %s at port %s\n", host, port);
-		/* send */
-		buf[0] = RTR_RAP_OPEN;
-		buf[1] = 0;
-		buf[2] = (ut8)(strlen (file) + 1);
-		memcpy (buf + 3, file, buf[2]);
-		r_socket_write (fd, buf, 3 + buf[2]);
-		/* read */
-		eprintf ("waiting... ");
-		fflush (stdout);
-		r_socket_read (fd, (ut8*)buf, 5);
-		i = r_read_at_be32 (buf, 1);
-		if (buf[0] != (char)(RTR_RAP_OPEN | RTR_RAP_REPLY) || i <= 0) {
-			eprintf ("Error: Wrong reply\n");
-			r_socket_free (fd);
-			return;
-		}
-		eprintf ("ok\n");
 		break;
 	case RTR_PROTOCOL_UNIX:
 		if (!r_socket_connect_unix (fd, host)) {
@@ -937,22 +922,6 @@ R_API void r_core_rtr_session(RCore *core, const char *input) {
 	}
 }
 
-static ut8 *r_rap_packet(ut8 type, ut32 len) {
-	ut8 *buf = malloc (len + 5);
-	if (buf) {
-		buf[0] = type;
-		r_write_be32 (buf + 1, len);
-	}
-	return buf;
-}
-
-static void r_rap_packet_fill(ut8 *buf, const ut8* src, int len) {
-	if (buf && src && len > 0) {
-		ut32 curlen = r_read_be32 (buf + 1);
-		memcpy (buf + 5, src, R_MIN (curlen, len));
-	}
-}
-
 static bool r_core_rtr_rap_run(RCore *core, const char *input) {
 	char *file = r_str_newf ("rap://%s", input);
 	int flags = R_PERM_RW;
@@ -985,10 +954,8 @@ static RThreadFunctionRet r_core_rtr_rap_thread (RThread *th) {
 }
 
 R_API void r_core_rtr_cmd(RCore *core, const char *input) {
-	char bufw[1024], bufr[8], *cmd_output = NULL;
-	//const char *cmd = NULL;
 	unsigned int cmd_len = 0;
-	int i, fd = atoi (input);
+	int fd = atoi (input);
 	if (!fd && *input != '0') {
 		fd = -1;
 	}
@@ -1059,7 +1026,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		r_socket_write (s, (ut8*)cmd, cmd_len);
 		r_socket_write (s, "\n", 2);
 		int maxlen = 4096; // r_read_le32 (blen);
-		cmd_output = calloc (1, maxlen + 1);
+		char *cmd_output = calloc (1, maxlen + 1);
 		if (!cmd_output) {
 			eprintf ("Error: Allocating cmd output\n");
 			return;
@@ -1093,66 +1060,21 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		return;
 	}
 
-	if (rtr_host[rtr_n].proto != RTR_PROTOCOL_RAP) {
-		eprintf ("Error: Not a rap:// host\n");
-		return;
-	}
-
-	core->num->value = 0; // that's fine
-	cmd = r_str_trim_head_ro (cmd);
-	RSocket *fh = rtr_host[rtr_n].fd;
-	if (!strlen (cmd)) {
-		// just check if we can connect
-		r_socket_close (fh);
-		return;
-	}
-	/* send request */
-	bufw[0] = RAP_RMT_CMD;
-	i = strlen (cmd) + 1;
-	r_write_be32 (bufw + 1, i);
-	memcpy (bufw + 5, cmd, i);
-	r_socket_write (fh, bufw, 5 + i);
-	/* read response */
-	r_socket_read (fh, (ut8*)bufr, 5);
-	if (bufr[0] == (char)(RAP_RMT_CMD)) {
-		cmd_len = r_read_at_be32 (bufr, 1);
-		char *rcmd = calloc (1, cmd_len + 1);
-		if (rcmd) {
-			r_socket_read (fh, (ut8*)rcmd, cmd_len);
-			char *res = r_core_cmd_str (core, rcmd);
-			if (res) {
-				int res_len = strlen (res) + 1;
-				ut8 *pkt = r_rap_packet ((RAP_RMT_CMD | RAP_RMT_REPLY), res_len);
-				r_rap_packet_fill (pkt, (const ut8*)res, res_len);
-				r_socket_write (fh, pkt, 5 + res_len);
-				free (res);
-				free (pkt);
-			}
-			free (rcmd);
+	if (rtr_host[rtr_n].proto == RTR_PROTOCOL_RAP) {
+		core->num->value = 0; // that's fine
+		cmd = r_str_trim_head_ro (cmd);
+		RSocket *fh = rtr_host[rtr_n].fd;
+		if (!strlen (cmd)) {
+			// just check if we can connect
+			r_socket_close (fh);
+			return;
 		}
-		/* read response */
-		r_socket_read (fh, (ut8*)bufr, 5);
-	}
-
-	if (bufr[0] != (char)(RAP_RMT_CMD | RTR_RAP_REPLY)) {
-		eprintf ("Error: Wrong reply\n");
+		char *cmd_output = r_socket_rap_client_command (fh, cmd, &core->anal->coreb);
+		r_cons_println (cmd_output);
+		free (cmd_output);
 		return;
 	}
-	cmd_len = r_read_at_be32 (bufr, 1);
-	if (cmd_len < 1 || cmd_len > 16384) {
-		eprintf ("Error: cmd_len is wrong\n");
-		return;
-	}
-	cmd_output = calloc (1, cmd_len + 1);
-	if (!cmd_output) {
-		eprintf ("Error: Allocating cmd output\n");
-		return;
-	}
-	r_socket_read_block (fh, (ut8*)cmd_output, cmd_len);
-	//ensure the termination
-	cmd_output[cmd_len] = 0;
-	r_cons_println (cmd_output);
-	free ((void *)cmd_output);
+	eprintf ("Error: Unknown protocol\n");
 }
 
 // TODO: support len for binary data?

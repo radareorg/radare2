@@ -1,7 +1,0 @@
-NAME=ELF: dynimports
-FILE=../bins/elf/analysis/dynimports
-EXPECT=<<EOF
-8
-EOF
-CMDS=ii~?
-RUN

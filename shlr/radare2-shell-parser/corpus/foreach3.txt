@@ -1,0 +1,221 @@
+=================
+Foreach addr+size
+=================
+
+pd @@@=0xdeadbeef 10
+pd @@@=0xdeadbeef 10 $$ 20
+
+---
+
+(commands
+  (foreach_addrsize_command
+    (arged_command (cmd_identifier))
+    (arg (arg_identifier))
+    (arg (arg_identifier)))
+  (foreach_addrsize_command
+    (arged_command (cmd_identifier))
+    (arg (arg_identifier))
+    (arg (arg_identifier))
+    (arg (arg_identifier))
+    (arg (arg_identifier))))
+
+
+===================
+Foreach basic block
+===================
+
+pd @@@b
+
+---
+
+(commands
+  (foreach_bb_command
+    (arged_command (cmd_identifier))))
+
+
+===============
+Foreach command
+===============
+
+pd @@@c:?e hello
+
+---
+
+(commands
+  (foreach_cmd_command
+    (arged_command (cmd_identifier))
+    (arged_command (cmd_identifier)
+      (args (arg (arg_identifier))))))
+
+
+===============
+Foreach comment
+===============
+
+pd @@@C:comment
+
+---
+
+(commands
+  (foreach_comment_command
+    (arged_command (cmd_identifier))
+    (arg (arg_identifier))))
+
+
+==============
+Foreach import
+==============
+
+pd @@@i
+
+---
+
+(commands
+  (foreach_import_command
+    (arged_command (cmd_identifier))))
+
+
+================
+Foreach register
+================
+
+pd @@@r
+
+---
+
+(commands
+  (foreach_register_command
+    (arged_command (cmd_identifier))))
+
+
+==============
+Foreach symbol
+==============
+
+pd @@@s
+
+---
+
+(commands
+  (foreach_symbol_command
+    (arged_command (cmd_identifier))))
+
+
+==============
+Foreach string
+==============
+
+pd @@@st
+
+---
+
+(commands
+  (foreach_string_command
+    (arged_command (cmd_identifier))))
+
+
+===============
+Foreach section
+===============
+
+pd @@@S
+
+---
+
+(commands
+  (foreach_section_command
+    (arged_command (cmd_identifier))))
+
+
+===============
+Foreach io.maps
+===============
+
+pd @@@m
+
+---
+
+(commands
+  (foreach_iomap_command
+    (arged_command (cmd_identifier))))
+
+
+===============
+Foreach dbg.map
+===============
+
+pd @@@M
+
+---
+
+(commands
+  (foreach_dbgmap_command
+    (arged_command (cmd_identifier))))
+
+
+============
+Foreach flag
+============
+
+pd @@@f
+
+---
+
+(commands
+  (foreach_flag_command
+    (arged_command (cmd_identifier))))
+
+
+==================
+Foreach flag match
+==================
+
+pd @@@f:hit*
+
+---
+
+(commands
+  (foreach_flag_command
+    (arged_command (cmd_identifier))
+    (arg (arg_identifier))))
+
+
+================
+Foreach function
+================
+
+pd @@@F
+
+---
+
+(commands
+  (foreach_function_command
+    (arged_command (cmd_identifier))))
+
+
+================
+Foreach function match
+================
+
+pd @@@F:hit*
+
+---
+
+
+(commands
+  (foreach_function_command
+    (arged_command (cmd_identifier))
+    (arg (arg_identifier))))
+
+
+==============
+Foreach thread
+==============
+
+pd @@@t
+
+---
+
+(commands
+  (foreach_thread_command
+    (arged_command (cmd_identifier))))

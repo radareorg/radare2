@@ -1082,9 +1082,9 @@ static int archinfo(RAnal *anal, int query) {
 	}
 }
 
-static int set_reg_profile(RAnal *anal) {
+static bool set_reg_profile(RAnal *anal) {
 	if (anal->bits != 16) {
-		return -1;
+		return false;
 	}
 	const char *p16 =
 		"=PC	pcl\n"

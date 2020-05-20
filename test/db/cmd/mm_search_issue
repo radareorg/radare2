@@ -1,0 +1,10 @@
+NAME=t/mm_search_issue
+FILE=bins/elf/analysis/test_hex_search_issues
+CMDS=<<EOF
+e search.in=bin.sections
+/x 0100000000000000000000ff
+EOF
+EXPECT=<<EOF
+0x000f862c hit0_0 0100000000000000000000ff
+EOF
+RUN

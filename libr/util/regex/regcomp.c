@@ -158,9 +158,8 @@ R_API int r_regex_match (const char *pattern, const char *flags, const char *tex
 #endif
 }
 
-R_API RRegex *r_regex_new (const char *pattern, const char *flags) {
-	RRegex rx, *r;
-	memset(&rx, 0, sizeof(RRegex));
+R_API RRegex *r_regex_new(const char *pattern, const char *flags) {
+	RRegex *r, rx = {0};
 	if (r_regex_comp (&rx, pattern, r_regex_flags (flags))) {
 		return NULL;
 	}

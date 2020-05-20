@@ -1,0 +1,6 @@
+NAME=PE: corkami memshared-ld.exe - open
+FILE=bins/pe/memshared-ld.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN

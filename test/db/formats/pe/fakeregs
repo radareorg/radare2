@@ -1,0 +1,6 @@
+NAME=PE: corkami fakeregs.exe - open
+FILE=bins/pe/fakeregs.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN

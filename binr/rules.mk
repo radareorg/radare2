@@ -8,7 +8,7 @@ endif
 CFLAGS+=-I$(LTOP)/include
 
 ifeq (${COMPILER},emscripten)
-LINK+=$(SHLR)/libr/libr.a
+LINK+=$(SHLR)/libr_shlr.a
 LINK+=$(SHLR)/sdb/src/libsdb.a
 include $(SHLR)/capstone.mk
 CFLAGS+= -s SIDE_MODULE=1
@@ -63,7 +63,11 @@ ${BINS}: ${OBJS}
 	${CC} ${CFLAGS} $@.c ${OBJS} ../../libr/libr.a -o $@ $(LDFLAGS)
 
 ${BEXE}: ${OBJ} ${SHARED_OBJ}
+ifeq ($(CC),emcc)
+	emcc $(BIN).c ../../shlr/libr_shlr.a ../../shlr/capstone/libcapstone.a ../../libr/libr.a ../../shlr/gdb/lib/libgdbr.a ../../shlr/zip/librz.a -I ../../libr/include -o $(BIN).js
+else
 	${CC} ${CFLAGS} $+ -L.. -o $@ ../../libr/libr.a $(LDFLAGS)
+endif
 else
 
 ${BINS}: ${OBJS}

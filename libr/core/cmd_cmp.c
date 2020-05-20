@@ -389,13 +389,13 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 	case 'c': // columns
 		for (i = j = 0; i < core->blocksize && j < core->blocksize;) {
 			// dis A
-			r_asm_set_pc (core->assembler, core->offset + i);
-			(void) r_asm_disassemble (core->assembler, &op,
+			r_asm_set_pc (core->rasm, core->offset + i);
+			(void) r_asm_disassemble (core->rasm, &op,
 				core->block + i, core->blocksize - i);
 
 			// dis B
-			r_asm_set_pc (core->assembler, off + i);
-			(void) r_asm_disassemble (core->assembler, &op2,
+			r_asm_set_pc (core->rasm, off + i);
+			(void) r_asm_disassemble (core->rasm, &op2,
 				buf + j, core->blocksize - j);
 
 			// show output
@@ -429,13 +429,13 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 	case 'u': // unified
 		for (i = j = 0; i < core->blocksize && j < core->blocksize;) {
 			// dis A
-			r_asm_set_pc (core->assembler, core->offset + i);
-			(void) r_asm_disassemble (core->assembler, &op,
+			r_asm_set_pc (core->rasm, core->offset + i);
+			(void) r_asm_disassemble (core->rasm, &op,
 				core->block + i, core->blocksize - i);
 
 			// dis B
-			r_asm_set_pc (core->assembler, off + i);
-			(void) r_asm_disassemble (core->assembler, &op2,
+			r_asm_set_pc (core->rasm, off + i);
+			(void) r_asm_disassemble (core->rasm, &op2,
 				buf + j, core->blocksize - j);
 
 			// show output

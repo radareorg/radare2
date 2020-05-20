@@ -1,7 +1,7 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_main.h>
 
-int main(int argc, char **argv) {
+int main(int argc, const char **argv) {
 	return r_main_rabin2 (argc, argv);
 }

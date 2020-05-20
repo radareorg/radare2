@@ -1,0 +1,53 @@
+NAME=test pDj missing newline issue
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 4883c768
+pDj 4~{}
+EOF
+EXPECT=<<EOF
+[
+  {
+    "offset": 0,
+    "ptr": 104,
+    "val": 104,
+    "esil": "104,rdi,+=,63,$o,of,:=,63,$s,sf,:=,$z,zf,:=,63,$c,cf,:=,$p,pf,:=",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "add rdi, 0x68",
+    "disasm": "add rdi, 0x68",
+    "bytes": "4883c768",
+    "family": "cpu",
+    "type": "add",
+    "reloc": false,
+    "type_num": 17,
+    "type2_num": 0
+  }
+]
+EOF
+RUN
+
+NAME=/j with backslash
+FILE=bins/pe/ConsoleApplication1.exe
+CMDS=/j ConsoleApplication1.pdb~{}
+EXPECT=<<EOF
+[
+  {
+    "offset": 4203952,
+    "type": "string",
+    "data": "cation1\\Release\\ConsoleApplication1.pdb  "
+  }
+]
+EOF
+RUN
+
+NAME=empty irj should print empty array
+FILE=-
+CMDS=irj
+EXPECT=<<EOF
+[]
+EOF
+RUN

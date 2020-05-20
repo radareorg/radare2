@@ -946,7 +946,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			if (r_file_dump (file, tmp, tmpsz, 0)) {
 				eprintf ("Dumped %" PFMT64d " bytes in '%s'\n",
 					tmpsz, file);
-				r_file_chmod (file, "+x", 0);
+				(void)r_file_chmod (file, "+x", 0);
 			} else {
 				eprintf ("Error dumping into a.out\n");
 			}

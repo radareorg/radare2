@@ -1,0 +1,25 @@
+NAME=PE: corkami dll-dynunicld.exe - open
+FILE=bins/pe/dll-dynunicld.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=PE: corkami dll-dynunicld.exe - entrypoint
+FILE=bins/pe/dll-dynunicld.exe
+CMDS=s
+EXPECT=<<EOF
+0x401000
+EOF
+RUN
+
+NAME=PE: corkami dll-dynunicld.exe - pi 1
+FILE=bins/pe/dll-dynunicld.exe
+CMDS=<<EOF
+e asm.filter=false
+pi 1
+EOF
+EXPECT=<<EOF
+push 0x40102c
+EOF
+RUN

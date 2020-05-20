@@ -22,7 +22,6 @@ DEBUGGER=1
 USE_MAGIC=0
 CSNEXT=0
 LOADLIBS=1
-USE_TREESITTER=0
 HAVE_FORK=1
 WANT_PTRACE_WRAP=1
 WITH_LIBR=0
@@ -123,12 +122,12 @@ done
 : ${INSTALL_PROGRAM_STRIP:=${INSTALL} -m 755 -s}
 : ${INSTALL_MAN:=${INSTALL} -m 444}
 : ${INSTALL_LIB:=${INSTALL} -m 755 -c}
- PKGNAME='radare2' ; VERSION='4.4.0-git' ; VERSION_MAJOR=4; VERSION_MINOR=4; VERSION_PATCH=0; VERSION_NUMBER=40400; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
+ PKGNAME='radare2' ; VERSION='4.5.0-git' ; VERSION_MAJOR=4; VERSION_MINOR=5; VERSION_PATCH=0; VERSION_NUMBER=40500; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
 }
 
 show_usage() {
 cat <<EOF2
-'configure' configures radare2-4.4.0-git to adapt to many kinds of systems.
+'configure' configures radare2-4.5.0-git to adapt to many kinds of systems.
 
 Usage: ./configure [OPTION]... [VAR=VALUE]...
 
@@ -168,13 +167,11 @@ System types:
   --target=TARGET        configure for building compilers for TARGET [HOST]
 EOF2
 
-printf "
-Optional Features:
+printf "\nOptional Features:
   --disable-debugger     disable native debugger features
   --with-sysmagic        force to use system's magic
   --with-capstone5       build next branch of the capstone repository
   --disable-loadlibs     disable loading plugins
-  --with-shell-parser    Compile with radare2-shell-parser experimental support
   --without-fork         disable fork
   --without-ptrace-wrap  disable ptrace-wrap build
   --with-libr            build libr.a and libr.dylib
@@ -189,10 +186,8 @@ Optional Features:
   --with-ostype          Choose OS type ( gnulinux windows darwin haiku ) (USEROSTYPE=auto)
   --with-libversion      specify different libversion (LIBVERSION=xxx)
   --without-jemalloc     build without jemalloc
-  --with-checks-level    value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) (R_CHECKS_LEVEL=2)
-"
-printf "
-Some influential environment variables:
+  --with-checks-level    value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) (R_CHECKS_LEVEL=2)\n"
+printf "\nSome influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
   CPPFLAGS    C preprocessor flags
@@ -200,10 +195,8 @@ Some influential environment variables:
               nonstandard directory <lib dir>
   CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
               headers in a nonstandard directory <include dir>
-  CPP         C preprocessor
-"
-printf "
-Report bugs to: pancake <pancake@nopcode.org>"
+  CPP         C preprocessor\n"
+printf "\nReport bugs to: pancake <pancake@nopcode.org>"
 echo ""
 exit 0
 }
@@ -216,7 +209,7 @@ take_environ() {
 }
 
 show_version() {
-echo "radare2-4.4.0-git configuration script done with acr v1.8.1.
+echo "radare2-4.5.0-git configuration script done with acr v1.8.1.
 The 'Free Software Foundation' message is only for autodetection.
 Originally written by pancake <nopcode.org>."
 exit 0
@@ -240,12 +233,12 @@ case $flag in
 	show_version ; ;;
 -r|--r|--report)
 echo "PKGNAME:   radare2"
-echo "VERSION:   4.4.0-git"
+echo "VERSION:   4.5.0-git"
 echo "LANGS:     c"
 echo "REQUIRED:  libdl"
 echo "OPTIONAL:  libmagic libz libzip libxxhash libssl liblibuv>=1.0.0"
 echo "PKG-CONFIG:  capstone openssl libuv"
-echo "FLAGS:     --disable-debugger --with-sysmagic --with-capstone5 --disable-loadlibs --with-shell-parser --without-fork --without-ptrace-wrap --with-libr --with-syscapstone --with-syszip --with-sysxxhash --without-gpl --with-openssl --without-libuv --with-rpath --with-compiler=gcc --with-ostype=auto --with-libversion=xxx --without-jemalloc --with-checks-level=2"
+echo "FLAGS:     --disable-debugger --with-sysmagic --with-capstone5 --disable-loadlibs --without-fork --without-ptrace-wrap --with-libr --with-syscapstone --with-syszip --with-sysxxhash --without-gpl --with-openssl --without-libuv --with-rpath --with-compiler=gcc --with-ostype=auto --with-libversion=xxx --without-jemalloc --with-checks-level=2"
 	exit 0
 	;;
 --cache-file)
@@ -295,7 +288,6 @@ echo "FLAGS:     --disable-debugger --with-sysmagic --with-capstone5 --disable-l
 "--with-sysmagic") USE_MAGIC="1"; ;;
 "--with-capstone5") CSNEXT="1"; ;;
 "--disable-loadlibs") LOADLIBS="0"; ;;
-"--with-shell-parser") USE_TREESITTER="1"; ;;
 "--without-fork") HAVE_FORK="0"; ;;
 "--without-ptrace-wrap") WANT_PTRACE_WRAP="0"; ;;
 "--with-libr") WITH_LIBR="1"; ;;
@@ -328,7 +320,7 @@ parse_options "$1"
 shift
 done
 
-ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR DOCDIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_PROGRAM_STRIP INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU VERSION VERSION_MAJOR VERSION_MINOR VERSION_PATCH VERSION_NUMBER PKGNAME VPATH CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS CPPFLAGS LDFLAGS HAVE_LANG_C DEBUGGER HAVE_LIB_DL DL_LIBS HAVE_PATCH PATCH HAVE_GIT GIT HAVE_LIB_MAGIC USE_MAGIC USE_LIB_MAGIC LIBMAGIC CSNEXT LOADLIBS USE_TREESITTER HAVE_FORK WANT_PTRACE_WRAP WITH_LIBR WITH_CAPSTONE CAPSTONE_CFLAGS CAPSTONE_LDFLAGS HAVE_PKGCFG_CAPSTONE USE_CAPSTONE HAVE_LIB_Z HAVE_LIB_ZIP USE_ZIP USE_LIB_ZIP LIBZIP HAVE_LIB_XXHASH USE_XXHASH USE_LIB_XXHASH LIBXXHASH WITH_GPL HAVE_DECL_ADDR_NO_RANDOMIZE HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET HAVE_CLOCK_NANOSLEEP HAVE_SIGACTION HAVE_LIB_GMP HAVE_LIB_SSL SSL_CFLAGS SSL_LDFLAGS HAVE_PKGCFG_OPENSSL HAVE_OPENSSL WANT_OPENSSL HAVE_LIBUV_VERSION_1_0_0 LIBUV_CFLAGS LIBUV_LDFLAGS HAVE_PKGCFG_LIBUV HAVE_LIBUV WANT_LIBUV USE_RPATH USERCC USEROSTYPE LIBVERSION HAVE_JEMALLOC HAVE_PTRACE USE_PTRACE_WRAP R_CHECKS_LEVEL"
+ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR DOCDIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_PROGRAM_STRIP INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU VERSION VERSION_MAJOR VERSION_MINOR VERSION_PATCH VERSION_NUMBER PKGNAME VPATH CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS CPPFLAGS LDFLAGS HAVE_LANG_C DEBUGGER HAVE_LIB_DL DL_LIBS HAVE_PATCH PATCH HAVE_GIT GIT HAVE_LIB_MAGIC USE_MAGIC USE_LIB_MAGIC LIBMAGIC CSNEXT LOADLIBS HAVE_FORK WANT_PTRACE_WRAP WITH_LIBR WITH_CAPSTONE CAPSTONE_CFLAGS CAPSTONE_LDFLAGS HAVE_PKGCFG_CAPSTONE USE_CAPSTONE HAVE_LIB_Z HAVE_LIB_ZIP USE_ZIP USE_LIB_ZIP LIBZIP HAVE_LIB_XXHASH USE_XXHASH USE_LIB_XXHASH LIBXXHASH WITH_GPL HAVE_DECL_ADDR_NO_RANDOMIZE HAVE_DECL___GLIBC__ HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET HAVE_CLOCK_NANOSLEEP HAVE_SIGACTION HAVE_CLOCK_GETTIME CLOCK_LDFLAGS SUPPORT_GNU99 NEWSHELL_CFLAGS SUPPORT_C99 HAVE_LIB_GMP HAVE_LIB_SSL SSL_CFLAGS SSL_LDFLAGS HAVE_PKGCFG_OPENSSL HAVE_OPENSSL WANT_OPENSSL HAVE_LIBUV_VERSION_1_0_0 LIBUV_CFLAGS LIBUV_LDFLAGS HAVE_PKGCFG_LIBUV HAVE_LIBUV WANT_LIBUV USE_RPATH USERCC USEROSTYPE LIBVERSION HAVE_JEMALLOC HAVE_PTRACE USE_PTRACE_WRAP R_CHECKS_LEVEL"
 
 create_environ
 
@@ -498,6 +490,14 @@ if [ $? = 0 ]; then
 	echo yes ; HAVE_DECL_ADDR_NO_RANDOMIZE=1
 else
 	HAVE_DECL_ADDR_NO_RANDOMIZE=0 ; echo no ; fi
+printf "checking declaration of __GLIBC__ in features.h... "
+echo "#include <features.h>" > test.c
+echo "int main(int ac, char **av){ void *a = __GLIBC__; return 0; }" >> test.c
+${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} test.c >/dev/null 2>&1
+if [ $? = 0 ]; then
+	echo yes ; HAVE_DECL___GLIBC__=1
+else
+	HAVE_DECL___GLIBC__=0 ; echo no ; fi
 printf "checking function arc4random_uniform() in c... "
 echo "int main(int ac, char **av){ arc4random_uniform(0); return 0; }" > test.c
 ${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -lc test.c >/dev/null 2>&1
@@ -533,6 +533,35 @@ if [ $? = 0 ]; then
 	echo yes ; HAVE_SIGACTION=1
 else
 	HAVE_SIGACTION=0 ; echo no ; fi
+printf "checking function clock_gettime() in c... "
+echo "int main(int ac, char **av){ clock_gettime(0); return 0; }" > test.c
+${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -lc test.c >/dev/null 2>&1
+if [ $? = 0 ]; then
+	echo yes ; HAVE_CLOCK_GETTIME=1
+else
+	HAVE_CLOCK_GETTIME=0 ; echo no ; fi
+if [ "$HAVE_CLOCK_GETTIME" = "0" ]; then
+if [ "$HAVE_DECL___GLIBC__" = "1" ]; then
+CLOCK_LDFLAGS="${CLOCK_LDFLAGS} '-lrt'"; fi; fi
+printf "checking cflags  -std=gnu99... "
+echo "int main(int ac, char **av){ return 0; }" > .test.c
+${CC}  -std=gnu99 ${CFLAGS} ${CPPFLAGS} ${LDFLAGS}  -std=gnu99 .test.c >/dev/null 2>&1
+if [ $? = 0 ]; then
+	echo yes ; SUPPORT_GNU99=1
+else
+	SUPPORT_GNU99=0 ; echo no ; fi
+if [ "$SUPPORT_GNU99" = "1" ]; then
+NEWSHELL_CFLAGS="${NEWSHELL_CFLAGS} '-std=gnu99'"
+else
+printf "checking cflags  -std=c99... "
+echo "int main(int ac, char **av){ return 0; }" > .test.c
+${CC}  -std=c99 ${CFLAGS} ${CPPFLAGS} ${LDFLAGS}  -std=c99 .test.c >/dev/null 2>&1
+if [ $? = 0 ]; then
+	echo yes ; SUPPORT_C99=1
+else
+	SUPPORT_C99=0 ; echo no ; fi
+if [ "$SUPPORT_C99" = "1" ]; then
+NEWSHELL_CFLAGS="${NEWSHELL_CFLAGS} '-std=c99'"; fi; fi
 HAVE_LIB_GMP="0"
 check_library HAVE_LIB_SSL ssl 0
 [ -z "${PKGCONFIG}" ] && PKGCONFIG=pkg-config
@@ -696,7 +725,7 @@ done
 do_remove
 echo
 echo "Final report:"
-for A in  R_CHECKS_LEVEL PREFIX HAVE_LIB_GMP HAVE_OPENSSL HAVE_LIBUV USE_CAPSTONE HAVE_PTRACE USE_PTRACE_WRAP HAVE_FORK USE_TREESITTER VERSION USE_LIB_ZIP USE_LIB_MAGIC USE_LIB_XXHASH DEBUGGER CC USERCC HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET USEROSTYPE LIBVERSION BUILD HOST TARGET ; do # REPORT
+for A in  R_CHECKS_LEVEL PREFIX HAVE_LIB_GMP HAVE_OPENSSL HAVE_LIBUV USE_CAPSTONE HAVE_PTRACE USE_PTRACE_WRAP HAVE_FORK VERSION USE_LIB_ZIP USE_LIB_MAGIC USE_LIB_XXHASH DEBUGGER CC USERCC HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET USEROSTYPE LIBVERSION BUILD HOST TARGET ; do # REPORT
 eval VAL="\$${A}"
 [ -z "${VAL}" ] && VAL="(null)"
 echo " - ${A} = ${VAL}"

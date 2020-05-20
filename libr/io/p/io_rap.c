@@ -1,4 +1,4 @@
-/* radare - MIT - Copyright 2011-2019 - pancake */
+/* radare - MIT - Copyright 2011-2020 - pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -6,44 +6,13 @@
 #include <r_socket.h>
 #include <sys/types.h>
 
-// TODO: implement the rap API in r_socket ?
 #define RIORAP_FD(x) (((x)->data)?(((RIORap*)((x)->data))->client):NULL)
 #define RIORAP_IS_LISTEN(x) (((RIORap*)((x)->data))->listener)
 #define RIORAP_IS_VALID(x) ((x) && ((x)->data) && ((x)->plugin == &r_io_plugin_rap))
 
 static int __rap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	RSocket *s = RIORAP_FD (fd);
-	ut8 *tmp;
-	int ret;
-
-	if (count < 1) {
-		return count;
-	}
-	// TOOD: if count > RMT_MAX iterate !
-	if (count > RMT_MAX) {
-		count = RMT_MAX;
-	}
-	if (!(tmp = (ut8 *)malloc (count + 5))) {
-		eprintf ("__rap_write: malloc failed\n");
-		return -1;
-	}
-	tmp[0] = RMT_WRITE;
-	r_write_be32 (tmp + 1, count);
-	memcpy (tmp + 5, buf, count);
-
-	(void)r_socket_write (s, tmp, count + 5);
-	r_socket_flush (s);
-	if (r_socket_read (s, tmp, 5) != 5) { // TODO read_block?
-		eprintf ("__rap_write: error\n");
-		ret = -1;
-	} else {
-		ret = r_read_be32 (tmp + 1);
-		if (!ret) {
-			ret = -1;
-		}
-	}
-	free (tmp);
-	return ret;
+	return r_socket_rap_client_write (s, buf, count);
 }
 
 static bool __rap_accept(RIO *io, RIODesc *desc, int fd) {
@@ -57,33 +26,7 @@ static bool __rap_accept(RIO *io, RIODesc *desc, int fd) {
 
 static int __rap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	RSocket *s = RIORAP_FD (fd);
-	int ret, i = (int)count;
-	ut8 tmp[5];
-
-	// XXX. if count is > RMT_MAX, just perform multiple queries
-	if (count > RMT_MAX) {
-		count = RMT_MAX;
-	}
-	// send
-	tmp[0] = RMT_READ;
-	r_write_be32 (tmp + 1, count);
-	(void)r_socket_write (s, tmp, 5);
-	r_socket_flush (s);
-	// recv
-	ret = r_socket_read_block (s, tmp, 5);
-	if (ret != 5 || tmp[0] != (RMT_READ | RMT_REPLY)) {
-		eprintf ("__rap_read: Unexpected rap read reply "
-			"(%d=0x%02x) expected (%d=0x%02x)\n",
-			ret, tmp[0], 2, (RMT_READ | RMT_REPLY));
-		return -1;
-	}
-	i = r_read_at_be32 (tmp, 1);
-	if (i > count) {
-		eprintf ("__rap_read: Unexpected data size %d vs %d\n", i, count);
-		return -1;
-	}
-	r_socket_read_block (s, buf, i);
-	return count;
+	return r_socket_rap_client_read (s, buf, count);
 }
 
 static int __rap_close(RIODesc *fd) {
@@ -109,24 +52,7 @@ static int __rap_close(RIODesc *fd) {
 
 static ut64 __rap_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	RSocket *s = RIORAP_FD (fd);
-	ut8 tmp[10];
-	tmp[0] = RMT_SEEK;
-	tmp[1] = (ut8)whence;
-	r_write_be64 (tmp + 2, offset);
-	(void)r_socket_write (s, &tmp, 10);
-	r_socket_flush (s);
-	int ret = r_socket_read_block (s, (ut8*)&tmp, 9);
-	if (ret != 9) {
-		eprintf ("Truncated socket read\n");
-		return -1;
-	}
-	if (tmp[0] != (RMT_SEEK | RMT_REPLY)) {
-		// eprintf ("%d %d  - %02x %02x %02x %02x %02x %02x %02x\n",
-		// ret, whence, tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5], tmp[6]);
-		eprintf ("Unexpected lseek reply (%02x -> %02x)\n", tmp[0], (RMT_SEEK | RMT_REPLY));
-		return -1;
-	}
-	return r_read_at_be64 (tmp, 1);
+	return r_socket_rap_client_seek (s, offset, whence);
 }
 
 static bool __rap_plugin_open(RIO *io, const char *pathname, bool many) {
@@ -136,21 +62,17 @@ static bool __rap_plugin_open(RIO *io, const char *pathname, bool many) {
 static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
 	int i, p, listenmode;
 	char *file, *port;
-	const char *ptr;
-	RSocket *rap_fd;
-	char buf[1024];
-	RIORap *rior;
 
 	if (!__rap_plugin_open (io, pathname, 0)) {
 		return NULL;
 	}
 	bool is_ssl = (!strncmp (pathname, "raps://", 7));
-	ptr = pathname + (is_ssl? 7: 6);
-	if (!(port = strchr (ptr, ':'))) {
+	const char *host = pathname + (is_ssl? 7: 6);
+	if (!(port = strchr (host, ':'))) {
 		eprintf ("rap: wrong uri\n");
 		return NULL;
 	}
-	listenmode = (*ptr == ':');
+	listenmode = (*host == ':');
 	*port++ = 0;
 	if (!*port) {
 		return NULL;
@@ -171,7 +93,7 @@ static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
 		}
 		//TODO: Handle ^C signal (SIGINT, exit); // ???
 		eprintf ("rap: listening at port %s ssl %s\n", port, (is_ssl)?"on":"off");
-		rior = R_NEW0 (RIORap);
+		RIORap *rior = R_NEW0 (RIORap);
 		rior->listener = true;
 		rior->client = rior->fd = r_socket_new (is_ssl);
 		if (!rior->fd) {
@@ -199,70 +121,40 @@ static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
 		return r_io_desc_new (io, &r_io_plugin_rap,
 			pathname, rw, mode, rior);
 	}
-	if (!(rap_fd = r_socket_new (is_ssl))) {
+	RSocket *s = r_socket_new (is_ssl);
+	if (!s) {
 		eprintf ("Cannot create new socket\n");
 		return NULL;
 	}
-	if (r_socket_connect_tcp (rap_fd, ptr, port, 30) == false) {
-		eprintf ("Cannot connect to '%s' (%d)\n", ptr, p);
-		r_socket_free (rap_fd);
+	eprintf ("Connecting to %s, port %s\n", host, port);
+	if (!r_socket_connect (s, host, port, R_SOCKET_PROTO_TCP, 0)) {
+		eprintf ("Cannot connect to '%s' (%d)\n", host, p);
+		r_socket_free (s);
 		return NULL;
 	}
-	eprintf ("Connected to: %s at port %s\n", ptr, port);
-	rior = R_NEW0 (RIORap);
+	eprintf ("Connected to: %s at port %s\n", host, port);
+	RIORap *rior = R_NEW0 (RIORap);
 	if (!rior) {
-		r_socket_free (rap_fd);
+		r_socket_free (s);
 		return NULL;
 	}
 	rior->listener = false;
-	rior->client = rior->fd = rap_fd;
+	rior->client = rior->fd = s;
 	if (file && *file) {
-		// send
-		buf[0] = RMT_OPEN;
-		buf[1] = rw;
-		buf[2] = (ut8)strlen (file);
-		memcpy (buf + 3, file, buf[2]);
-		(void)r_socket_write (rap_fd, buf, buf[2] + 3);
-		r_socket_flush (rap_fd);
-		// read
-		eprintf ("waiting... ");
-		buf[0] = 0;
-		r_socket_read_block (rap_fd, (ut8*)buf, 5);
-		if (buf[0] != (char)(RMT_OPEN | RMT_REPLY)) {
-			eprintf ("rap: Expecting OPEN|REPLY packet. got %02x\n", buf[0]);
-			r_socket_free (rap_fd);
+		i = r_socket_rap_client_open (s, file, rw);
+		if (i == -1) {
 			free (rior);
+			r_socket_free (s);
 			return NULL;
 		}
-		i = r_read_at_be32 (buf, 1);
 		if (i > 0) {
-			eprintf ("ok\n");
+			eprintf ("rap connection was successful. open %d\n", i);
+			// io->corebind.cmd (io->corebind.core, "e io.va=0");
+			io->corebind.cmd (io->corebind.core, ".=!i*");
+			io->corebind.cmd (io->corebind.core, ".=!f*");
+			io->corebind.cmd (io->corebind.core, ".=!om*");
 		}
-		// io->cb_core_cmd (io->user, "e io.va=0");
-		io->cb_core_cmd (io->user, ".=!i*");
-		io->cb_core_cmd (io->user, ".=!f*");
-		io->cb_core_cmd (io->user, ".=!om*");
-#if 0
-		/* Read meta info */
-		r_socket_read (rap_fd, (ut8 *)&buf, 4);
-		r_mem_copyendian ((ut8 *)&i, (ut8*)buf, 4, ENDIAN);
-		while (i>0) {
-			int n = r_socket_read (rap_fd, (ut8 *)&buf, i);
-			if (n<1) break;
-			buf[i] = 0;
-			io->core_cmd_cb (io->user, buf);
-			n = r_socket_read (rap_fd, (ut8 *)&buf, 4);
-			if (n<1) break;
-			r_mem_copyendian ((ut8 *)&i, (ut8*)buf, 4, ENDIAN);
-			i -= n;
-		}
-#endif
-	} else {
-	//	r_socket_free (rap_fd);
-	//	free (rior);
-		//return NULL;
 	}
-	//r_socket_free (rap_fd);
 	return r_io_desc_new (io, &r_io_plugin_rap,
 		pathname, rw, mode, rior);
 }
@@ -272,8 +164,11 @@ static int __rap_listener(RIODesc *fd) {
 }
 
 static char *__rap_system(RIO *io, RIODesc *fd, const char *command) {
-	int ret, reslen = 0, cmdlen = 0;
 	RSocket *s = RIORAP_FD (fd);
+	// TODO: bind core into RSocket instead of pass the one from io?
+	return r_socket_rap_client_command (s, command, &io->corebind);
+#if 0
+	int ret, reslen = 0, cmdlen = 0;
 	unsigned int i;
 	char *ptr, *res, *str;
 	ut8 buf[RMT_MAX];
@@ -373,6 +268,8 @@ static char *__rap_system(RIO *io, RIODesc *fd, const char *command) {
 		ret -= r_socket_read (s, (ut8*)buf, RMT_MAX);
 	}
 #endif
+#endif
+	
 	return NULL;
 }
 

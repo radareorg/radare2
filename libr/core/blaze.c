@@ -49,21 +49,24 @@ static int __isdata(RCore *core, ut64 addr) {
 		return 1;
 	}
 
-	RList *list = r_meta_find_list_in (core->anal, addr, -1, 4);
-	RListIter *iter;
-	RAnalMetaItem *meta;
+	RPVector *list = r_meta_get_all_in (core->anal, addr, R_META_TYPE_ANY);
+	void **it;
 	int result = 0;
-	r_list_foreach (list, iter, meta) {
+	r_pvector_foreach (list, it) {
+		RIntervalNode *node = *it;
+		RAnalMetaItem *meta = node->data;
 		switch (meta->type) {
 		case R_META_TYPE_DATA:
 		case R_META_TYPE_STRING:
 		case R_META_TYPE_FORMAT:
-			result = meta->size - (addr - meta->from);
+			result = node->end - addr + 1;
 			goto exit;
+		default:
+			break;
 		}
 	}
 exit:
-	r_list_free (list);
+	r_pvector_free (list);
 	return result;
 }
 
@@ -250,11 +253,9 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 	}
 
 	Sdb *sdb = NULL;
-	ut64 cur = 0;
-	ut64 start = core->offset;
+	const ut64 start = core->offset;
 	ut64 size = input[0] ? r_num_math (core->num, input + 1) : core->blocksize;
 	ut64 b_start = start;
-	RAnalOp *op;
 	RListIter *iter;
 	int block_score = 0;
 	RList *block_list;
@@ -272,7 +273,7 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		eprintf ("Analyzing [0x%08"PFMT64x"-0x%08"PFMT64x"]\n", start, start + size);
 		eprintf ("Creating basic blocks\b");
 	}
-	ut64 base = cur;
+	ut64 cur = 0, base = 0;
 	while (cur >= base && cur < size) {
 		if (r_cons_is_breaked ()) {
 			break;
@@ -281,17 +282,18 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		if (block_score < invalid_instruction_barrier) {
 			break;
 		}
-		ut64 dst = start + cur;
+		const ut64 dst = start + cur;
 		if (dst < start) {
 			// fix underflow issue
 			break;
 		}
+		base = cur;
 		int dsize = __isdata (core, dst);
 		if (dsize > 0) {
 			cur += dsize;
 			continue;
 		}
-		op = r_core_anal_op (core, dst, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
+		RAnalOp *const op = r_core_anal_op (core, dst, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
 
 		if (!op || !op->mnemonic) {
 			block_score -= 10;
@@ -300,48 +302,48 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		}
 
 		if (op->mnemonic[0] == '?') {
-			eprintf ("? Bad op at: 0x%08"PFMT64x"\n", cur + start);
-			eprintf ("Cannot analyze opcode at 0x%"PFMT64x"\n", start + cur);
+			eprintf ("? Bad op at: 0x%08"PFMT64x"\n", dst);
+			eprintf ("Cannot analyze opcode at 0x%"PFMT64x"\n", dst);
 			block_score -= 10;
 			cur++;
 			continue;
 		}
 		switch (op->type) {
 		case R_ANAL_OP_TYPE_NOP:
-				if (nopskip && b_start == start + cur) {
-					b_start = start + cur + op->size;
-				}
+			if (nopskip && b_start == dst) {
+				b_start = dst + op->size;
+			}
 			break;
 		case R_ANAL_OP_TYPE_CALL:
 			if (r_anal_noreturn_at (core->anal, op->jump)) {
-				addBB (block_list, b_start, start + cur + op->size, UT64_MAX, UT64_MAX, END, block_score);
-				b_start = start + cur + op->size;
+				addBB (block_list, b_start, dst + op->size, UT64_MAX, UT64_MAX, END, block_score);
+				b_start = dst + op->size;
 				block_score = 0;
 			} else {
 				addBB (block_list, op->jump, UT64_MAX, UT64_MAX, UT64_MAX, CALL, block_score);
 			}
 			break;
 		case R_ANAL_OP_TYPE_JMP:
-			addBB (block_list, b_start, start + cur + op->size, op->jump, UT64_MAX, END, block_score);
-			b_start = start + cur + op->size;
+			addBB (block_list, b_start, dst + op->size, op->jump, UT64_MAX, END, block_score);
+			b_start = dst + op->size;
 			block_score = 0;
 			break;
 		case R_ANAL_OP_TYPE_TRAP:
 			// we don't want to add trap stuff
-			if (b_start < start + cur) {
-				addBB (block_list, b_start, start + cur, UT64_MAX, UT64_MAX, NORMAL, block_score);
+			if (b_start < dst) {
+				addBB (block_list, b_start, dst, UT64_MAX, UT64_MAX, NORMAL, block_score);
 			}
-			b_start = start + cur + op->size;
+			b_start = dst + op->size;
 			block_score = 0;
 			break;
 		case R_ANAL_OP_TYPE_RET:
-			addBB (block_list, b_start, start + cur + op->size, UT64_MAX, UT64_MAX, END, block_score);
-			b_start = start + cur + op->size;
+			addBB (block_list, b_start, dst + op->size, UT64_MAX, UT64_MAX, END, block_score);
+			b_start = dst + op->size;
 			block_score = 0;
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
-			addBB (block_list, b_start, start + cur + op->size, op->jump, start + cur + op->size, NORMAL, block_score);
-			b_start = start + cur + op->size;
+			addBB (block_list, b_start, dst + op->size, op->jump, dst + op->size, NORMAL, block_score);
+			b_start = dst + op->size;
 			block_score = 0;
 			break;
 		case R_ANAL_OP_TYPE_UNK:
@@ -353,7 +355,6 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		}
 		cur += op->size;
 		r_anal_op_free (op);
-		op = NULL;
 	}
 
 	if (debug) {

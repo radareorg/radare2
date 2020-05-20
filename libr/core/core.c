@@ -27,9 +27,9 @@ static int on_fcn_new(RAnal *_anal, void* _user, RAnalFunction *fcn) {
 	if (cmd && *cmd) {
 		ut64 oaddr = core->offset;
 		ut64 addr = fcn->addr;
-		r_core_seek (core, addr, 1);
+		r_core_seek (core, addr, true);
 		r_core_cmd0 (core, cmd);
-		r_core_seek (core, oaddr, 1);
+		r_core_seek (core, oaddr, true);
 	}
 	return 0;
 }
@@ -40,9 +40,9 @@ static int on_fcn_delete (RAnal *_anal, void* _user, RAnalFunction *fcn) {
 	if (cmd && *cmd) {
 		ut64 oaddr = core->offset;
 		ut64 addr = fcn->addr;
-		r_core_seek (core, addr, 1);
+		r_core_seek (core, addr, true);
 		r_core_cmd0 (core, cmd);
-		r_core_seek (core, oaddr, 1);
+		r_core_seek (core, oaddr, true);
 	}
 	return 0;
 }
@@ -54,9 +54,9 @@ static int on_fcn_rename(RAnal *_anal, void* _user, RAnalFunction *fcn, const ch
 		// XXX: wat do with old name here?
 		ut64 oaddr = core->offset;
 		ut64 addr = fcn->addr;
-		r_core_seek (core, addr, 1);
+		r_core_seek (core, addr, true);
 		r_core_cmd0 (core, cmd);
-		r_core_seek (core, oaddr, 1);
+		r_core_seek (core, oaddr, true);
 	}
 	return 0;
 }
@@ -101,7 +101,6 @@ static int getreloc_tree(const void *user, const RBNode *n, void *user2) {
         if ((r->vaddr >= gr->vaddr) && (r->vaddr < (gr->vaddr + gr->size))) {
                 return 0;
         }
-
         if (gr->vaddr > r->vaddr) {
                 return 1;
         }
@@ -341,48 +340,6 @@ R_API RCore *r_core_cast(void *p) {
 	return (RCore*)p;
 }
 
-static void core_post_write_callback(void *user, ut64 maddr, ut8 *bytes, int cnt) {
-	RCore *core = (RCore *)user;
-	RBinSection *sec;
-	ut64 vaddr;
-
-	if (!r_config_get_i (core->config, "asm.cmt.patch")) {
-		return;
-	}
-
-	char *hex_pairs = r_hex_bin2strdup (bytes, cnt);
-	if (!hex_pairs) {
-		eprintf ("core_post_write_callback: Cannot obtain hex pairs\n");
-		return;
-	}
-
-	char *comment = r_str_newf ("patch: %d byte(s) (%s)", cnt, hex_pairs);
-	free (hex_pairs);
-	if (!comment) {
-		eprintf ("core_post_write_callback: Cannot create comment\n");
-		return;
-	}
-
-	if ((sec = r_bin_get_section_at (r_bin_cur_object (core->bin), maddr, false))) {
-		vaddr = maddr + sec->vaddr - sec->paddr;
-	} else {
-		vaddr = maddr;
-	}
-
-	r_meta_add (core->anal, R_META_TYPE_COMMENT, vaddr, vaddr, comment);
-	free (comment);
-}
-
-static int core_cmd_callback (void *user, const char *cmd) {
-    RCore *core = (RCore *)user;
-    return r_core_cmd0 (core, cmd);
-}
-
-static char *core_cmdstr_callback (void *user, const char *cmd) {
-	RCore *core = (RCore *)user;
-	return r_core_cmd_str (core, cmd);
-}
-
 static ut64 getref (RCore *core, int n, char t, int type) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 	RListIter *iter;
@@ -392,7 +349,6 @@ static ut64 getref (RCore *core, int n, char t, int type) {
 	if (!fcn) {
 		return UT64_MAX;
 	}
-#if FCN_OLD
 	if (t == 'r') {
 		list = r_anal_function_get_refs (fcn);
 	} else {
@@ -409,9 +365,7 @@ static ut64 getref (RCore *core, int n, char t, int type) {
 		}
 	}
 	r_list_free (list);
-#else
-#warning implement getref() using sdb
-#endif
+
 	return UT64_MAX;
 }
 
@@ -533,7 +487,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	case '[':
 {
 		ut64 n = 0LL;
-		int refsz = core->assembler->bits / 8;
+		int refsz = core->rasm->bits / 8;
 		const char *p = NULL;
 		if (strlen (str) > 5) {
 			p = strchr (str + 5, ':');
@@ -590,6 +544,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		// TODO: group analop-dependant vars after a char, so i can filter
 		r_anal_op (core->anal, &op, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC);
 		r_anal_op_fini (&op); // we don't need strings or pointers, just values, which are not nullified in fini
+		// XXX the above line is assuming op after fini keeps jump, fail, ptr, val, size and r_anal_op_is_eob()
 		switch (str[1]) {
 		case '.': // can use pc, sp, a0, a1, ...
 			return r_debug_reg_get (core->dbg, str + 2);
@@ -1133,7 +1088,7 @@ static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const
 	}
 	list= r_fs_dir (core->fs, dirname);
 	n = strlen (basename);
-	bool chgdir = !strncmp (str, "cd  ", 3);
+	bool chgdir = !strncmp (str, "cd ", 3);
 	if (list) {
 		r_list_foreach (list, iter, file) {
 			if (!file) {
@@ -1882,7 +1837,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 		if (!strncmp (buf->data, "afvn ", 5)) {
 			vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_BPV);
 		} else {
-			vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_ARG);
+			vars = r_list_new (); // TODO wtf r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_ARG);
 		}
 		const char *f_ptr, *l_ptr;
 		RAnalVar *var;
@@ -2052,9 +2007,9 @@ static void update_sdb(RCore *core) {
 	//sdb_ns_set (core->sdb, "flags", core->flags->sdb);
 	//sdb_ns_set (core->sdb, "bin", core->bin->sdb);
 	//SDB// syscall/
-	if (core->assembler && core->assembler->syscall && core->assembler->syscall->db) {
-		core->assembler->syscall->db->refs++;
-		sdb_ns_set (DB, "syscall", core->assembler->syscall->db);
+	if (core->rasm && core->rasm->syscall && core->rasm->syscall->db) {
+		core->rasm->syscall->db->refs++;
+		sdb_ns_set (DB, "syscall", core->rasm->syscall->db);
 	}
 	d = sdb_ns (DB, "debug", 1);
 	if (core->dbg->sgnls) {
@@ -2123,7 +2078,7 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 		r_strbuf_appendf (s, " (%s)", mapname);
 		R_FREE (mapname);
 	}
-	int bits = core->assembler->bits;
+	int bits = core->rasm->bits;
 	switch (bits) {
 	case 16: // umf, not in sync with pxr
 		{
@@ -2205,8 +2160,8 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 			r_strbuf_appendf (s, " %sX%s", c, cend);
 			/* instruction disassembly */
 			r_io_read_at (core->io, value, buf, sizeof (buf));
-			r_asm_set_pc (core->assembler, value);
-			r_asm_disassemble (core->assembler, &op, buf, sizeof (buf));
+			r_asm_set_pc (core->rasm, value);
+			r_asm_disassemble (core->rasm, &op, buf, sizeof (buf));
 			r_strbuf_appendf (s, " '%s'", r_asm_op_get_asm (&op));
 			/* get library name */
 			{ // NOTE: dup for mapname?
@@ -2227,7 +2182,7 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 			ut32 *n32 = (ut32 *)buf;
 			ut64 *n64 = (ut64*)buf;
 			r_io_read_at (core->io, value, buf, sizeof (buf));
-			ut64 n = (core->assembler->bits == 64)? *n64: *n32;
+			ut64 n = (core->rasm->bits == 64)? *n64: *n32;
 			r_strbuf_appendf (s, " 0x%"PFMT64x, n);
 		}
 	}
@@ -2261,7 +2216,7 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 		ut32 *n32 = (ut32 *)buf;
 		ut64 *n64 = (ut64*)buf;
 		r_io_read_at (core->io, value, buf, sizeof (buf));
-		ut64 n = (core->assembler->bits == 64)? *n64: *n32;
+		ut64 n = (core->rasm->bits == 64)? *n64: *n32;
 		if(n != value) {
 			char* rrstr = r_core_anal_hasrefs_to_depth (core, n, depth-1);
 			if (rrstr) {
@@ -2278,17 +2233,14 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 
 R_API char *r_core_anal_get_comments(RCore *core, ut64 addr) {
 	if (core) {
-		char *type = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, addr);
-		char *cmt = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+		const char *type = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, addr);
+		const char *cmt = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 		if (type && cmt) {
-			char *ret = r_str_newf ("%s %s", type, cmt);
-			free (type);
-			free (cmt);
-			return ret;
+			return r_str_newf ("%s %s", type, cmt);
 		} else if (type) {
-			return type;
+			return strdup (type);
 		} else if (cmt) {
-			return cmt;
+			return strdup (cmt);
 		}
 	}
 	return NULL;
@@ -2670,9 +2622,9 @@ R_API bool r_core_init(RCore *core) {
 	core->lang->cb_printf = r_cons_printf;
 	r_lang_define (core->lang, "RCore", "core", core);
 	r_lang_set_user_ptr (core->lang, core);
-	core->assembler = r_asm_new ();
-	core->assembler->num = core->num;
-	r_asm_set_user_ptr (core->assembler, core);
+	core->rasm = r_asm_new ();
+	core->rasm->num = core->num;
+	r_asm_set_user_ptr (core->rasm, core);
 	core->anal = r_anal_new ();
 	core->gadgets = r_list_newf ((RListFree)r_core_gadget_free);
 	core->anal->ev = core->ev;
@@ -2683,12 +2635,12 @@ R_API bool r_core_init(RCore *core) {
 	core->anal->cb.on_fcn_delete = on_fcn_delete;
 	core->anal->cb.on_fcn_rename = on_fcn_rename;
 	core->print->sdb_types = core->anal->sdb_types;
-	core->assembler->syscall = r_syscall_ref (core->anal->syscall); // BIND syscall anal/asm
+	core->rasm->syscall = r_syscall_ref (core->anal->syscall); // BIND syscall anal/asm
 	r_anal_set_user_ptr (core->anal, core);
 	core->anal->cb_printf = (void *) r_cons_printf;
 	core->parser = r_parse_new ();
 	r_anal_bind (core->anal, &(core->parser->analb));
-	core->parser->varlist = r_anal_var_list;
+	core->parser->varlist = r_anal_function_get_var_fields;
 	/// XXX shouhld be using coreb
 	r_parse_set_user_ptr (core->parser, core);
 	core->bin = r_bin_new ();
@@ -2698,10 +2650,6 @@ R_API bool r_core_init(RCore *core) {
 	r_bin_set_user_ptr (core->bin, core);
 	core->io = r_io_new ();
 	core->io->ff = 1;
-	core->io->user = (void *)core;
-	core->io->cb_core_cmd = core_cmd_callback;
-	core->io->cb_core_cmdstr = core_cmdstr_callback;
-	core->io->cb_core_post_write = core_post_write_callback;
 	core->search = r_search_new (R_SEARCH_KEYWORD);
 	r_io_undo_enable (core->io, 1, 0); // TODO: configurable via eval
 	core->fs = r_fs_new ();
@@ -2717,7 +2665,7 @@ R_API bool r_core_init(RCore *core) {
 		core->asmqjmps = R_NEWS (ut64, core->asmqjmps_size);
 	}
 
-	r_bin_bind (core->bin, &(core->assembler->binb));
+	r_bin_bind (core->bin, &(core->rasm->binb));
 	r_bin_bind (core->bin, &(core->anal->binb));
 	r_bin_bind (core->bin, &(core->anal->binb));
 
@@ -2749,6 +2697,7 @@ R_API bool r_core_init(RCore *core) {
 	r_io_bind (core->io, &(core->dbg->bp->iob));
 	r_core_bind (core, &core->dbg->corebind);
 	r_core_bind (core, &core->dbg->bp->corebind);
+	r_core_bind (core, &core->io->corebind);
 	core->dbg->anal = core->anal; // XXX: dupped instance.. can cause lost pointerz
 	//r_debug_use (core->dbg, "native");
 // XXX pushing uninitialized regstate results in trashed reg values
@@ -2765,7 +2714,7 @@ R_API bool r_core_init(RCore *core) {
 	//r_core_loadlibs (core);
 
 	// TODO: get arch from r_bin or from native arch
-	r_asm_use (core->assembler, R_SYS_ARCH);
+	r_asm_use (core->rasm, R_SYS_ARCH);
 	r_anal_use (core->anal, R_SYS_ARCH);
 	if (R_SYS_BITS & R_SYS_BITS_64) {
 		r_config_set_i (core->config, "asm.bits", 64);
@@ -2850,8 +2799,8 @@ R_API void r_core_fini(RCore *c) {
 	c->rcmd = r_cmd_free (c->rcmd);
 	r_list_free (c->cmd_descriptors);
 	c->anal = r_anal_free (c->anal);
-	r_asm_free (c->assembler);
-	c->assembler = NULL;
+	r_asm_free (c->rasm);
+	c->rasm = NULL;
 	c->print = r_print_free (c->print);
 	c->bin = (r_bin_free (c->bin), NULL);
 	c->lang = (r_lang_free (c->lang), NULL);
@@ -3131,15 +3080,15 @@ R_API int r_core_seek_align(RCore *core, ut64 align, int times) {
 	if (diff < 0 && -diff > seek) {
 		seek = diff = 0;
 	}
-	return r_core_seek (core, seek + diff, 1);
+	return r_core_seek (core, seek + diff, true);
 }
 
 R_API char *r_core_op_str(RCore *core, ut64 addr) {
 	RAsmOp op = {0};
 	ut8 buf[64];
-	r_asm_set_pc (core->assembler, addr);
+	r_asm_set_pc (core->rasm, addr);
 	r_io_read_at (core->io, addr, buf, sizeof (buf));
-	int ret = r_asm_disassemble (core->assembler, &op, buf, sizeof (buf));
+	int ret = r_asm_disassemble (core->rasm, &op, buf, sizeof (buf));
 	char *str = (ret > 0)? strdup (r_strbuf_get (&op.buf_asm)): NULL;
 	r_asm_op_fini (&op);
 	return str;
@@ -3164,6 +3113,7 @@ static void rap_break (void *u) {
 // TODO: PLEASE move into core/io/rap? */
 // TODO: use static buffer instead of mallocs all the time. it's network!
 R_API bool r_core_serve(RCore *core, RIODesc *file) {
+	// TODO: use r_socket_rap_server API instead of duplicating the logic
 	ut8 cmd, flg, *ptr = NULL, buf[1024];
 	int i, pipefd = -1;
 	ut64 x;
@@ -3193,7 +3143,7 @@ reaccept:
 		}
 		eprintf ("rap: client connected\n");
 		for (;!r_cons_is_breaked ();) {
-			if (!r_socket_read (c, &cmd, 1)) {
+			if (!r_socket_read_block (c, &cmd, 1)) {
 				eprintf ("rap: connection closed\n");
 				if (r_config_get_i (core->config, "rap.loop")) {
 					eprintf ("rap: waiting for new connection\n");
@@ -3203,13 +3153,13 @@ reaccept:
 				goto out_of_function;
 			}
 			switch ((ut8)cmd) {
-			case RMT_OPEN:
+			case RAP_PACKET_OPEN:
 				r_socket_read_block (c, &flg, 1); // flags
 				eprintf ("open (%d): ", cmd);
 				r_socket_read_block (c, &cmd, 1); // len
 				pipefd = -1;
 				ptr = malloc (cmd + 1);
-				//XXX cmd is ut8..so <256 if (cmd<RMT_MAX)
+				//XXX cmd is ut8..so <256 if (cmd<RAP_PACKET_MAX)
 				if (!ptr) {
 					eprintf ("Cannot malloc in rmt-open len = %d\n", cmd);
 				} else {
@@ -3243,21 +3193,21 @@ reaccept:
 						goto out_of_function; //XXX: Close connection and goto accept
 					}
 				}
-				buf[0] = RMT_OPEN | RMT_REPLY;
+				buf[0] = RAP_PACKET_OPEN | RAP_PACKET_REPLY;
 				r_write_be32 (buf + 1, pipefd);
 				r_socket_write (c, buf, 5);
 				r_socket_flush (c);
 				R_FREE (ptr);
 				break;
-			case RMT_READ:
+			case RAP_PACKET_READ:
 				r_socket_read_block (c, (ut8*)&buf, 4);
 				i = r_read_be32 (buf);
 				ptr = (ut8 *)malloc (i + core->blocksize + 5);
 				if (ptr) {
 					r_core_block_read (core);
-					ptr[0] = RMT_READ | RMT_REPLY;
-					if (i > RMT_MAX) {
-						i = RMT_MAX;
+					ptr[0] = RAP_PACKET_READ | RAP_PACKET_REPLY;
+					if (i > RAP_PACKET_MAX) {
+						i = RAP_PACKET_MAX;
 					}
 					if (i > core->blocksize) {
 						r_core_block_size (core, i);
@@ -3277,7 +3227,7 @@ reaccept:
 					goto out_of_function;
 				}
 				break;
-			case RMT_CMD:
+			case RAP_PACKET_CMD:
 				{
 				char *cmd = NULL, *cmd_output = NULL;
 				char bufr[8], *bufw = NULL;
@@ -3287,7 +3237,7 @@ reaccept:
 				/* read */
 				r_socket_read_block (c, (ut8*)&bufr, 4);
 				i = r_read_be32 (bufr);
-				if (i > 0 && i < RMT_MAX) {
+				if (i > 0 && i < RAP_PACKET_MAX) {
 					if ((cmd = malloc (i + 1))) {
 						r_socket_read_block (c, (ut8*)cmd, i);
 						cmd[i] = '\0';
@@ -3316,20 +3266,20 @@ reaccept:
 					const char *cmd = "pd 4";
 					int cmd_len = strlen (cmd) + 1;
 					ut8 *b = malloc (cmd_len + 5);
-					b[0] = RMT_CMD;
+					b[0] = RAP_PACKET_CMD;
 					r_write_be32 (b + 1, cmd_len);
 					strcpy ((char *)b+ 5, cmd);
 					r_socket_write (c, b, 5 + cmd_len);
 					r_socket_flush (c);
 
 					/* read response */
-					r_socket_read (c, b, 5);
-					if (b[0] == (RMT_CMD | RMT_REPLY)) {
+					r_socket_read_block (c, b, 5);
+					if (b[0] == (RAP_PACKET_CMD | RAP_PACKET_REPLY)) {
 						ut32 n = r_read_be32 (b + 1);
 						eprintf ("REPLY %d\n", n);
 						if (n > 0) {
 							ut8 *res = calloc (1, n);
-							r_socket_read (c, res, n);
+							r_socket_read_block (c, res, n);
 							eprintf ("RESPONSE(%s)\n", (const char *)res);
 							free (res);
 						}
@@ -3340,7 +3290,7 @@ reaccept:
 				}
 #endif
 				bufw = malloc (cmd_len + 5);
-				bufw[0] = (ut8) (RMT_CMD | RMT_REPLY);
+				bufw[0] = (ut8) (RAP_PACKET_CMD | RAP_PACKET_REPLY);
 				r_write_be32 (bufw + 1, cmd_len);
 				memcpy (bufw + 5, cmd_output, cmd_len);
 				r_socket_write (c, bufw, cmd_len+5);
@@ -3349,19 +3299,19 @@ reaccept:
 				free (cmd_output);
 				break;
 				}
-			case RMT_WRITE:
-				r_socket_read (c, buf, 4);
+			case RAP_PACKET_WRITE:
+				r_socket_read_block (c, buf, 4);
 				x = r_read_at_be32 (buf, 0);
 				ptr = malloc (x);
-				r_socket_read (c, ptr, x);
+				r_socket_read_block (c, ptr, x);
 				int ret = r_core_write_at (core, core->offset, ptr, x);
-				buf[0] = RMT_WRITE | RMT_REPLY;
+				buf[0] = RAP_PACKET_WRITE | RAP_PACKET_REPLY;
 				r_write_be32 (buf + 1, ret);
 				r_socket_write (c, buf, 5);
 				r_socket_flush (c);
 				R_FREE (ptr);
 				break;
-			case RMT_SEEK:
+			case RAP_PACKET_SEEK:
 				r_socket_read_block (c, buf, 9);
 				x = r_read_at_be64 (buf, 1);
 				if (buf[0] == 2) {
@@ -3372,16 +3322,16 @@ reaccept:
 					}
 				} else {
 					if (buf[0] == 0) {
-						r_core_seek (core, x, 1); //buf[0]);
+						r_core_seek (core, x, true); //buf[0]);
 					}
 					x = core->offset;
 				}
-				buf[0] = RMT_SEEK | RMT_REPLY;
+				buf[0] = RAP_PACKET_SEEK | RAP_PACKET_REPLY;
 				r_write_be64 (buf + 1, x);
 				r_socket_write (c, buf, 9);
 				r_socket_flush (c);
 				break;
-			case RMT_CLOSE:
+			case RAP_PACKET_CLOSE:
 				// XXX : proper shutdown
 				r_socket_read_block (c, buf, 4);
 				i = r_read_be32 (buf);
@@ -3389,7 +3339,7 @@ reaccept:
 				//FIXME: Use r_socket_close
 				int ret = close (i);
 				r_write_be32 (buf + 1, ret);
-				buf[0] = RMT_CLOSE | RMT_REPLY;
+				buf[0] = RAP_PACKET_CLOSE | RAP_PACKET_REPLY;
 				r_socket_write (c, buf, 5);
 				r_socket_flush (c);
 				}
@@ -3399,7 +3349,7 @@ reaccept:
 					// silly http emulation over rap://
 					char line[256] = {0};
 					char *cmd = line;
-					r_socket_read (c, (ut8*)line, sizeof (line));
+					r_socket_read_block (c, (ut8*)line, sizeof (line));
 					if (!strncmp (line, "ET /cmd/", 8)) {
 						cmd = line + 8;
 						char *http = strstr (cmd, "HTTP");
@@ -3423,7 +3373,7 @@ reaccept:
 						r_socket_close (c);
 					}
 				} else {
-					eprintf ("[r2p] unknown command 0x%02x\n", cmd);
+					eprintf ("[rap] unknown command 0x%02x\n", cmd);
 					r_socket_close (c);
 					R_FREE (ptr);
 				}
@@ -3445,31 +3395,31 @@ out_of_function:
 
 R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback cb) {
 	int ret, len = core->blocksize;
-	ut8 *buf;
-	if ((buf = malloc (len))) {
-		while (from < to) {
-			ut64 delta = to-from;
-			if (delta < len) {
-				len = (int)delta;
-			}
-			if (!r_io_read_at (core->io, from, buf, len)) {
-				eprintf ("Cannot read at 0x%"PFMT64x"\n", from);
-				break;
-			}
-			for (ret = 0; ret < len;) {
-				int done = cb (core, from, buf+ret, len-ret);
-				if (done < 1) { /* interrupted */
-					free (buf);
-					return false;
-				}
-				ret += done;
-			}
-			from += len;
-		}
-		free (buf);
-	} else {
+	ut8 *buf = malloc (len);
+	if (!buf) {
 		eprintf ("Cannot allocate blocksize\n");
+		return false;
 	}
+	while (from < to) {
+		ut64 delta = to-from;
+		if (delta < len) {
+			len = (int)delta;
+		}
+		if (!r_io_read_at (core->io, from, buf, len)) {
+			eprintf ("Cannot read at 0x%"PFMT64x"\n", from);
+			break;
+		}
+		for (ret = 0; ret < len;) {
+			int done = cb (core, from, buf+ret, len-ret);
+			if (done < 1) { /* interrupted */
+				free (buf);
+				return false;
+			}
+			ret += done;
+		}
+		from += len;
+	}
+	free (buf);
 	return true;
 }
 
@@ -3487,8 +3437,11 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 		name = strdup (file);
 		fd = r_sandbox_open (file, O_RDWR, 0644);
 		if (fd == -1) {
-			fd = r_sandbox_open (file, O_RDONLY, 0644);
-			readonly = true;
+			fd = r_sandbox_open (file, O_RDWR | O_CREAT, 0644);
+			if (fd == -1) {
+				fd = r_sandbox_open (file, O_RDONLY, 0644);
+				readonly = true;
+			}
 		}
 	} else {
 		fd = r_file_mkstemp (file, &name);
@@ -3571,7 +3524,7 @@ R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args) 
 	num = r_syscall_get_num (core->anal->syscall, name);
 
 	//bits check
-	switch (core->assembler->bits) {
+	switch (core->rasm->bits) {
 	case 32:
 		if (strcmp (name, "setup") && !num ) {
 			eprintf ("syscall not found!\n");

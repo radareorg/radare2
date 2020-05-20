@@ -83,7 +83,7 @@ def main():
     match = re.search('^\+\+\+\ (.*?/){%s}(\S*)' % args.p, line)
     if match:
       filename = match.group(2)
-    if filename == None:
+    if filename is None:
       continue
 
     if args.regex is not None:
@@ -101,15 +101,13 @@ def main():
         line_count = int(match.group(3))
       if line_count == 0:
         continue
-      end_line = start_line + line_count - 1
-      ranges = []
       range_start, range_end = None, None
       range_line = -1
       debug(line_count)
       i = 0
       while True:
         # stop iterating when finding the next diff
-        if lineidx + i >= len(input) or input[lineidx + i].startswith('diff'):
+        if lineidx + i >= len(input):
           break
 
         debug('lineidx : ' + input[lineidx + i])
@@ -126,7 +124,8 @@ def main():
             debug('set range_end: ' + str(start_line + range_line))
             lines_by_file.setdefault(filename, []).append([range_start, range_end - 1])
             range_start, range_end = None, None
-
+        if input[lineidx + i].startswith('diff'):
+            break
         i += 1
 
   # Reformat files containing changes in place.

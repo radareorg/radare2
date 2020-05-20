@@ -12,6 +12,7 @@
 #define JMPTBL_LEA_SEARCH_SZ 64
 #define JMPTBL_MAXFCNSIZE 4096
 #define BB_ALIGN 0x10
+#define MAX_SCAN_SIZE 0x7ffffff
 
 /* speedup analysis by removing some function overlapping checks */
 #define JAYRO_04 1
@@ -334,7 +335,7 @@ static RAnalBlock *bbget(RAnal *anal, ut64 addr, bool jumpmid) {
 		ut64 eaddr = bb->addr + bb->size;
 		if (((bb->addr >= eaddr && addr == bb->addr)
 		     || r_anal_block_contains (bb, addr))
-		    && (!jumpmid || r_anal_bb_op_starts_at (bb, addr))) {
+		    && (!jumpmid || r_anal_block_op_starts_at (bb, addr))) {
 			ret = bb;
 			break;
 		}
@@ -358,6 +359,43 @@ static bool fcn_takeover_block_recursive_cb(RAnalBlock *block, void *user) {
 // Remove block and all of its recursive successors from all its functions and add them only to fcn
 static void fcn_takeover_block_recursive(RAnalFunction *fcn, RAnalBlock *start_block) {
 	r_anal_block_recurse (start_block, fcn_takeover_block_recursive_cb, fcn);
+}
+
+static const char *retpoline_reg(RAnal *anal, ut64 addr) {
+	RFlagItem *flag = anal->flag_get (anal->flb.f, addr);
+	if (flag) {
+		const char *token = "x86_indirect_thunk_";
+		const char *thunk = strstr (flag->name, token);
+		if (thunk) {
+			return thunk + strlen (token);
+		}
+	}
+#if 0
+// TODO: implement following code analysis check for stripped binaries:
+// 1) op(addr).type == CALL
+// 2) call_dest = op(addr).addr
+// 3) op(call_dest).type == STORE
+// 4) op(call_dest + op(call_dest).size).type == RET
+[0x00000a65]> pid 6
+0x00000a65  sym.__x86_indirect_thunk_rax:
+0x00000a65  .------- e807000000  call 0xa71
+0x00000a6a  |              f390  pause
+0x00000a6c  |            0faee8  lfence
+0x00000a6f  |              ebf9  jmp 0xa6a
+0x00000a71  `---->     48890424  mov qword [rsp], rax
+0x00000a75                   c3  ret
+#endif
+	return NULL;
+}
+
+static void analyze_retpoline(RAnal *anal, RAnalOp *op) {
+	if (anal->opt.retpoline) {
+		const char *rr = retpoline_reg (anal, op->jump);
+		if (rr) {
+			op->type = R_ANAL_OP_TYPE_RJMP;
+			op->reg = rr;
+		}
+	}
 }
 
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
@@ -384,8 +422,14 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	};
 	bool is_arm = anal->cur->arch && !strncmp (anal->cur->arch, "arm", 3);
 	char tmp_buf[MAX_FLG_NAME_SIZE + 5] = "skip";
-	bool is_x86 = is_arm? false: anal->cur->arch && !strncmp (anal->cur->arch, "x86", 3);
+	bool is_x86 = is_arm ? false: anal->cur->arch && !strncmp (anal->cur->arch, "x86", 3);
+	bool is_amd64 = is_x86 ? fcn->cc && !strcmp (fcn->cc, "amd64") : false;
 	bool is_dalvik = is_x86? false: anal->cur->arch && !strncmp (anal->cur->arch, "dalvik", 6);
+	RRegItem *variadic_reg = NULL;
+	if (is_amd64) {
+		variadic_reg = r_reg_get (anal->reg, "rax", R_REG_TYPE_GPR);
+	}
+	bool has_variadic_reg = !!variadic_reg;
 
 	if (r_cons_is_breaked ()) {
 		return R_ANAL_RET_END;
@@ -483,6 +527,12 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 			ret = 0;
 			gotoBeach (R_ANAL_RET_END);
 		}
+	}
+	if ((maxlen - (addrbytes * idx)) > MAX_SCAN_SIZE) {
+		if (anal->verbose) {
+			eprintf ("Warning: Skipping large memory region.\n");
+		}
+		maxlen = 0;
 	}
 
 	while (addrbytes * idx < maxlen) {
@@ -677,6 +727,7 @@ repeat:
 			// swapped parameters wtf
 			r_anal_xrefs_set (anal, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA);
 		}
+		analyze_retpoline (anal, &op);
 		switch (op.type & R_ANAL_OP_TYPE_MASK) {
 		case R_ANAL_OP_TYPE_CMOV:
 		case R_ANAL_OP_TYPE_MOV:
@@ -772,7 +823,7 @@ repeat:
 		case R_ANAL_OP_TYPE_LOAD:
 			if (anal->opt.loads) {
 				if (anal->iob.is_valid_offset (anal->iob.io, op.ptr, 0)) {
-					r_meta_add (anal, R_META_TYPE_DATA, op.ptr, op.ptr + 4, "");
+					r_meta_set (anal, R_META_TYPE_DATA, op.ptr, 4, "");
 				}
 			}
 			break;
@@ -1022,16 +1073,16 @@ repeat:
 				} else if (is_arm) {
 					if (op.ptrsize == 1) { // TBB
 						ut64 pred_cmpval = try_get_cmpval_from_parents(anal, fcn, bb, op.ireg);
-						int tablesize = 0;
+						ut64 table_size = 0;
 						if (pred_cmpval != UT64_MAX) {
-							tablesize += pred_cmpval;
+							table_size += pred_cmpval;
 						} else {
-							tablesize += cmpval;
+							table_size += cmpval;
 						}
 						ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op.addr, op.addr + op.size,
-							op.addr + 4, 1, tablesize, UT64_MAX, ret);
+							op.addr + 4, 1, table_size, UT64_MAX, ret);
 						// skip inlined jumptable
-						idx += (tablesize);
+						idx += table_size;
 					}
 					if (op.ptrsize == 2) { // LDRH on thumb/arm
 						ut64 pred_cmpval = try_get_cmpval_from_parents(anal, fcn, bb, op.ireg);
@@ -1119,6 +1170,17 @@ analopfinish:
 		if (is_arm && op.type != R_ANAL_OP_TYPE_MOV) {
 			last_is_mov_lr_pc = false;
 		}
+		if (has_variadic_reg && !fcn->is_variadic) {
+			bool dst_is_variadic = op.dst && op.dst->reg && op.dst->reg->offset == variadic_reg->offset;
+			bool op_is_cmp = (op.type == R_ANAL_OP_TYPE_CMP) || op.type == R_ANAL_OP_TYPE_ACMP;
+			if (dst_is_variadic && !op_is_cmp) {
+				has_variadic_reg = false;
+			} else if (op_is_cmp) {
+				if (op.src[0] && op.src[0]->reg && (op.dst->reg == op.src[0]->reg) && dst_is_variadic) {
+					fcn->is_variadic = true;
+				}
+			}
+		}
 	}
 beach:
 	r_anal_op_fini (&op);
@@ -1204,20 +1266,21 @@ R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 
 /* Does NOT invalidate read-ahead cache. */
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int reftype) {
-	RListIter *iter;
-	RAnalMetaItem *meta;
-
-	RList *list = r_meta_find_list_in (anal, addr, -1, 4);
-	r_list_foreach (list, iter, meta) {
+	RPVector *metas = r_meta_get_all_in(anal, addr, R_META_TYPE_ANY);
+	void **it;
+	r_pvector_foreach (metas, it) {
+		RAnalMetaItem *meta = ((RIntervalNode *)*it)->data;
 		switch (meta->type) {
 		case R_META_TYPE_DATA:
 		case R_META_TYPE_STRING:
 		case R_META_TYPE_FORMAT:
-			r_list_free (list);
+			r_pvector_free (metas);
 			return 0;
+		default:
+			break;
 		}
 	}
-	r_list_free (list);
+	r_pvector_free (metas);
 	if (anal->opt.norevisit) {
 		if (!anal->visited) {
 			anal->visited = set_u_new ();
@@ -1631,7 +1694,7 @@ R_API RAnalBlock *r_anal_fcn_bbget_in(const RAnal *anal, RAnalFunction *fcn, ut6
 	RAnalBlock *bb;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (addr >= bb->addr && addr < (bb->addr + bb->size)
-			&& (!anal->opt.jmpmid || !is_x86 || r_anal_bb_op_starts_at (bb, addr))) {
+			&& (!anal->opt.jmpmid || !is_x86 || r_anal_block_op_starts_at (bb, addr))) {
 			return bb;
 		}
 	}

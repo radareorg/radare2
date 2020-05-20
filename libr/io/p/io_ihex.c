@@ -65,6 +65,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		fclose (out);
 		return -1;
 	}
+	r_buf_seek (rih->rbuf, count, R_BUF_CUR);
 
 	/* disk write : process each sparse chunk */
 	//TODO : sort addresses + check overlap?
@@ -189,7 +190,11 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	}
 	Rihex *rih = fd->data;
 	memset (buf, io->Oxff, count);
-	return r_buf_read_at (rih->rbuf, io->off, buf, count);
+	int r = r_buf_read_at (rih->rbuf, io->off, buf, count);
+	if (r >= 0) {
+		r_buf_seek (rih->rbuf, r, R_BUF_CUR);
+	}
+	return r;
 }
 
 static int __close(RIODesc *fd) {

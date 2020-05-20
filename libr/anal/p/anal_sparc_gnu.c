@@ -373,12 +373,9 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	int sz = 4;
 	ut32 insn;
 
-	memset (op, 0, sizeof (RAnalOp));
 	op->family = R_ANAL_OP_FAMILY_CPU;
 	op->addr = addr;
 	op->size = sz;
-	op->jump = op->fail = -1;
-	op->ptr = op->val = -1;
 
 	if(!anal->big_endian) {
 		((char*)&insn)[0] = data[3];
@@ -467,7 +464,7 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	return sz;
 }
 
-static int set_reg_profile(RAnal *anal) {
+static bool set_reg_profile(RAnal *anal) {
 	/* As far as I can see, sparc v9 register and instruction set
 	   don't depened  on bits of the running application.
 	   But: They depend on the bits of the consuming application,

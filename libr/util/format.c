@@ -1696,7 +1696,7 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 				free (o);
 				return 0;
 			}
-			if (format && newsize > 0) {
+			if (format) {
 				size += tabsize * newsize;
 			}
 			free (structname);

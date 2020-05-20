@@ -1333,12 +1333,12 @@ static EDemanglerErr parse_microsoft_mangled_name(char *sym, char **demangled_na
 		err = eDemanglerErrUnsupportedMangling;
 		break;
 
-#define SET_ACCESS_MODIFIER(letter, flag_set, modifier_str) { \
-	case letter: \
+#define SET_ACCESS_MODIFIER(letter, flag_set, modifier_str) \
+	case letter: { \
 		access_modifier = modifier_str; \
 		(flag_set) = 1; \
 		break; \
-}
+	}
 	/* Functions */
 	SET_ACCESS_MODIFIER ('E', is_implicit_this_pointer, "private virtual");
 	SET_ACCESS_MODIFIER ('F', is_implicit_this_pointer, "private virtual");

@@ -58,7 +58,7 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach
 
 R_API int r_core_seek_base (RCore *core, const char *hex) {
 	ut64 addr = r_num_tail (core->num, core->offset, hex);
-	return r_core_seek (core, addr, 1);
+	return r_core_seek (core, addr, true);
 }
 
 R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int append) {
@@ -243,9 +243,6 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 	} else if (op == '2' || op == '4' || op == '8') { // "wo2" "wo4" "wo8"
 		int inc = op - '0';
 		ut8 tmp;
-		if (inc < 1 || inc > 8) {
-			goto beach;
-		}
 		for (i = 0; (i + inc) <= core->blocksize; i += inc) {
 			if (inc == 2) {
 				tmp = buf[i];
@@ -408,7 +405,7 @@ R_API int r_core_seek_delta(RCore *core, st64 addr) {
 		}
 	}
 	core->offset = addr;
-	return r_core_seek (core, addr, 1);
+	return r_core_seek (core, addr, true);
 }
 
 // TODO: kill this wrapper
@@ -424,19 +421,24 @@ R_API bool r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 	return ret;
 }
 
-R_API int r_core_extend_at(RCore *core, ut64 addr, int size) {
-	int ret;
+R_API bool r_core_extend_at(RCore *core, ut64 addr, int size) {
 	if (!core->io || !core->file || size < 1) {
 		return false;
 	}
-	ret = r_io_use_fd (core->io, core->file->fd);
-	if (ret != -1) {
-		ret = r_io_extend_at (core->io, addr, size);
-		if (addr >= core->offset && addr <= core->offset+core->blocksize) {
-			r_core_block_read (core);
+	int io_va = r_config_get_i (core->config, "io.va");
+	if (io_va) {
+		RIOMap *map = r_io_map_get (core->io, core->offset);
+		if (map) {
+			addr = addr - map->itv.addr + map->delta;
 		}
+		r_config_set_i (core->config, "io.va", false);
 	}
-	return ret != -1;
+	int ret = r_io_extend_at (core->io, addr, size);
+	if (addr >= core->offset && addr <= core->offset+core->blocksize) {
+		r_core_block_read (core);
+	}
+	r_config_set_i (core->config, "io.va", io_va);
+	return ret;
 }
 
 R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
@@ -499,7 +501,7 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 		r_io_write_at (core->io, addr + dist, shift_buf, b_size);
 		res = true;
 	}
-	r_core_seek (core, addr, 1);
+	r_core_seek (core, addr, true);
 	free (shift_buf);
 	return res;
 }

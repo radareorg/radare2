@@ -1,0 +1,12 @@
+NAME=t/va
+FILE=bins/elf/analysis/x86-simple
+CMDS=<<EOF
+e search.in=io.section
+/x 5b
+pi 1 @ hit0_0
+EOF
+EXPECT=<<EOF
+0x08048065 hit0_0 5b
+pop ebx
+EOF
+RUN

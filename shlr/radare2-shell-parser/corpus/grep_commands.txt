@@ -1,0 +1,60 @@
+================
+Very simple grep
+================
+
+pd 10 ~ mov
+pd 10~mov
+afl~$
+
+---
+
+(commands
+  (grep_command
+    command: (arged_command
+    	       command: (cmd_identifier)
+	       args: (args (arg (arg_identifier))))
+    specifier: (grep_specifier (grep_specifier_identifier)))
+  (grep_command
+    command: (arged_command
+    	       command: (cmd_identifier)
+	       args: (args (arg (arg_identifier))))
+    specifier: (grep_specifier (grep_specifier_identifier)))
+  (grep_command
+    command: (arged_command command: (cmd_identifier))
+    specifier: (grep_specifier (grep_specifier_identifier))))
+
+
+=======================================
+Grep with cmd substitution as specifier
+=======================================
+
+pd 10~`?e mov`
+pd 10~mo`?e v`
+pd 10~mo$(?e v)
+
+---
+
+(commands
+  (grep_command
+    (arged_command (cmd_identifier)
+      (args (arg (arg_identifier))))
+    (grep_specifier
+      (cmd_substitution_arg
+        (arged_command (cmd_identifier)
+	  (args (arg (arg_identifier)))))))
+  (grep_command
+    (arged_command (cmd_identifier)
+      (args (arg (arg_identifier))))
+    (grep_specifier
+      (grep_specifier_identifier)
+      (cmd_substitution_arg
+        (arged_command (cmd_identifier)
+	  (args (arg (arg_identifier)))))))
+  (grep_command
+    (arged_command (cmd_identifier)
+      (args (arg (arg_identifier))))
+    (grep_specifier
+      (grep_specifier_identifier)
+      (cmd_substitution_arg
+        (arged_command (cmd_identifier)
+	  (args (arg (arg_identifier))))))))

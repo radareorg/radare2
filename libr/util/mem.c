@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2007-2016 - pancake */
+/* radare - LGPL - Copyright 2007-2020 - pancake */
 
 #include <r_util.h>
-#include <stdlib.h>
 #if __UNIX__
 #include <sys/mman.h>
 #endif
@@ -38,22 +37,21 @@ R_API void r_mem_copyloop(ut8 *dest, const ut8 *orig, int dsize, int osize) {
 }
 
 R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len) {
-	int i, ret = -1;
-	ut8 *mdest, *morig;
-	mdest = malloc (len);
+	ut8 *mdest = malloc (len);
 	if (!mdest) {
-		return ret;
+		return -1;
 	}
-	morig = malloc (len);
+	ut8 *morig = malloc (len);
 	if (!morig) {
 		free (mdest);
-		return ret;
+		return -1;
 	}
+	int i;
 	for (i = 0; i < len; i++) {
 		mdest[i] = dest[i] & mask[i];
 		morig[i] = orig[i] & mask[i];
 	}
-	ret = memcmp (mdest, morig, len);
+	int ret = memcmp (mdest, morig, len);
 	free (mdest);
 	free (morig);
 	return ret;
@@ -79,18 +77,18 @@ R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits) {
 	}
 }
 
-static char readbit(const ut8 *src, int bitoffset) {
+static inline char readbit(const ut8 *src, int bitoffset) {
 	const int wholeBytes = bitoffset / 8;
 	const int remainingBits = bitoffset % 8;
 	// return (src[wholeBytes] >> remainingBits) & 1;
 	return (src[wholeBytes] & 1<< remainingBits);
 }
 
-static void writebit (ut8 *dst, int i, bool c) {
-	int byte = i / 8;
-	int bit = (i % 8);
-// eprintf ("Write %d %d = %d\n", byte, bit, c);
-dst += byte;
+static inline void writebit (ut8 *dst, int i, bool c) {
+	const int byte = i / 8;
+	const int bit = (i % 8);
+	// eprintf ("Write %d %d = %d\n", byte, bit, c);
+	dst += byte;
 	if (c) {
 		//dst[byte] |= (1 << bit);
 		R_BIT_SET (dst , bit);
@@ -100,7 +98,6 @@ dst += byte;
 	}
 }
 
-// TODO: this method is ugly as shit.
 R_API void r_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, int bits) {
 	int i;
 	if (doff < 0 || soff < 0 || !dst || !src) {
@@ -108,7 +105,6 @@ R_API void r_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, in
 	}
 	for (i = 0; i < bits; i++) {
 		bool c = readbit (src, i + soff);
-// eprintf ("%d %d\n", i, c);
 		writebit (dst, i + doff, c);
 	}
 }
@@ -282,10 +278,9 @@ R_API int r_mem_protect(void *ptr, int size, const char *prot) {
 
 R_API void *r_mem_dup(const void *s, int l) {
 	void *d = malloc (l);
-	if (!d) {
-		return NULL;
+	if (d) {
+		memcpy (d, s, l);
 	}
-	memcpy (d, s, l);
 	return d;
 }
 
@@ -361,7 +356,6 @@ R_API void *r_mem_mmap_resize(RMmap *m, ut64 newsize) {
 	if (!r_sys_truncate (m->filename, newsize)) {
 		return NULL;
 	}
-
 	m->len = newsize;
 	r_file_mmap_arch (m, m->filename, m->fd);
 	return m->buf;

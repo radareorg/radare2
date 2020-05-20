@@ -14,11 +14,6 @@ static int mcore_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		return -1;
 	}
 
-	op->delay = 0;
-	op->type = R_ANAL_OP_TYPE_NULL;
-	op->jump = UT64_MAX;
-	op->fail = UT64_MAX;
-	op->ptr = op->val = UT64_MAX;
 	op->size = 2;
 	if ((instr = mcore_next (&handle))) {
 		op->type = instr->type;
@@ -48,9 +43,9 @@ static int mcore_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	return op->size;
 }
 
-static int set_reg_profile(RAnal *anal) {
-	const char *p;
-	p = "=PC	pc\n"
+static bool set_reg_profile(RAnal *anal) {
+	const char *p = \
+		"=PC	pc\n"
 		"=SP	r1\n"
 		"=SR	sr\n"
 		"=A0	r3\n"

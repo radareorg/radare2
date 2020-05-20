@@ -1226,7 +1226,8 @@ static void print_header(idasig_v5_t *header) {
 #endif
 
 static int parse_header(RBuffer *buf, idasig_v5_t *header) {
-	if (r_buf_read_at (buf, 0, header->magic, sizeof(header->magic)) != sizeof(header->magic)) {
+	r_buf_seek (buf, 0, R_BUF_SET);
+	if (r_buf_read (buf, header->magic, sizeof(header->magic)) != sizeof(header->magic)) {
 		return false;
 	}
 	if (r_buf_read (buf, &header->version, sizeof(header->version)) != sizeof(header->version)) {

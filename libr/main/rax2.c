@@ -270,10 +270,10 @@ dotherax:
 		printf ("\n");
 		return true;
 	} else if (flags & (1 << 3)) { // -b
-		int i, len;
+		int i;
 		ut8 buf[4096];
-		len = r_str_binstr2bin (str, buf, sizeof (buf));
-		for (i = 0; i < len; i++) {
+		const int n = r_str_binstr2bin (str, buf, sizeof (buf));
+		for (i = 0; i < n; i++) {
 			printf ("%c", buf[i]);
 		}
 		return true;
@@ -411,30 +411,30 @@ dotherax:
 		r_list_free (split);
 		return true;
 	} else if (flags & (1 << 12)) { // -E
-		const int len = strlen (str);
+		const int n = strlen (str);
 		/* http://stackoverflow.com/questions/4715415/base64-what-is-the-worst-possible-increase-in-space-usage */
-		char *out = calloc (sizeof (char), (len + 2) / 3 * 4 + 1); // ceil(len/3)*4 plus 1 for NUL
+		char *out = calloc (1, (n + 2) / 3 * 4 + 1); // ceil(n/3)*4 plus 1 for NUL
 		if (out) {
-			r_base64_encode (out, (const ut8 *) str, len);
+			r_base64_encode (out, (const ut8 *) str, n);
 			printf ("%s%s", out, nl);
 			fflush (stdout);
 			free (out);
 		}
 		return true;
 	} else if (flags & (1 << 13)) { // -D
-		const int len = strlen (str);
-		ut8 *out = calloc (sizeof (ut8), len / 4 * 3 + 1);
+		const int n = strlen (str);
+		ut8 *out = calloc (1, n / 4 * 3 + 1);
 		if (out) {
-			r_base64_decode (out, str, len);
+			r_base64_decode (out, str, n);
 			printf ("%s%s", out, nl);
 			fflush (stdout);
 			free (out);
 		}
 		return true;
 	} else if (flags & 1 << 14) { // -F
-		char *str = r_stdin_slurp (NULL);
-		if (str) {
-			char *res = r_hex_from_code (str);
+		char *s = r_stdin_slurp (NULL);
+		if (s) {
+			char *res = r_hex_from_code (s);
 			if (res) {
 				printf ("%s\n", res);
 				fflush (stdout);
@@ -442,7 +442,7 @@ dotherax:
 			} else {
 				eprintf ("Invalid input.\n");
 			}
-			free (str);
+			free (s);
 		}
 		return false;
 	} else if (flags & (1 << 18)) { // -r

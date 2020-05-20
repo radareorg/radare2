@@ -1,0 +1,25 @@
+NAME=PE: corkami dllbound2.dll - open
+FILE=bins/pe/dllbound2.dll
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=PE: corkami dllbound2.dll - entrypoint
+FILE=bins/pe/dllbound2.dll
+CMDS=s
+EXPECT=<<EOF
+0x1001010
+EOF
+RUN
+
+NAME=PE: corkami dllbound2.dll - pi 1
+FILE=bins/pe/dllbound2.dll
+CMDS=<<EOF
+e asm.filter=false
+pi 1
+EOF
+EXPECT=<<EOF
+push 1
+EOF
+RUN

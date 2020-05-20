@@ -42,6 +42,16 @@ R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v) {
 	return data;
 }
 
+R_API int r_uleb128_len (const ut8 *data, int size) {
+	int i = 1;
+	ut8 c = *(data++);
+	while (c > 0x7f && i < size) {
+		c = *(data++);
+		i++;
+	}
+	return i;
+}
+
 /* data is the char array containing the uleb number
  * datalen will point (if not NULL) to the length of the uleb number
  * v (if not NULL) will point to the data's value (if fitting the size of an ut64)
@@ -92,11 +102,16 @@ R_API ut8 *r_uleb128_encode(const ut64 s, int *len) {
 	return otarget;
 }
 
-R_API const ut8 *r_leb128(const ut8 *data, st64 *v) {
+R_API const ut8 *r_leb128(const ut8 *data, int datalen, st64 *v) {
 	ut8 c = 0;
 	st64 s = 0, sum = 0;
-	if (data) {
-		for (s = 0; *data;) {
+	const ut8 *data_end = data + datalen;
+	if (data && datalen > 0) {
+		if (!*data) {
+			data++;
+			goto beach;
+		}
+		while (data < data_end) {
 			c = *(data++) & 0x0ff;
 			sum |= ((st64) (c & 0x7f) << s);
 			s += 7;
@@ -108,6 +123,7 @@ R_API const ut8 *r_leb128(const ut8 *data, st64 *v) {
 	if ((s < (8 * sizeof (sum))) && (c & 0x40)) {
 		sum |= -((st64)1 << s);
 	}
+beach:
 	if (v) {
 		*v = sum;
 	}

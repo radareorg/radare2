@@ -122,11 +122,13 @@ R_API int r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType t
 	if (!anal || from == to) {
 		return false;
 	}
-	if (!anal->iob.is_valid_offset (anal->iob.io, from, 0)) {
-		return false;
-	}
-	if (!anal->iob.is_valid_offset (anal->iob.io, to, 0)) {
-		return false;
+	if (anal->iob.is_valid_offset) {
+		if (!anal->iob.is_valid_offset (anal->iob.io, from, 0)) {
+			return false;
+		}
+		if (!anal->iob.is_valid_offset (anal->iob.io, to, 0)) {
+			return false;
+		}
 	}
 	setxref (anal->dict_xrefs, to, from, type);
 	setxref (anal->dict_refs, from, to, type);
@@ -328,8 +330,15 @@ R_API bool r_anal_xrefs_init(RAnal *anal) {
 	return true;
 }
 
-R_API int r_anal_xrefs_count(RAnal *anal) {
-	return anal->dict_xrefs->count;
+static bool count_cb(void *user, const ut64 k, const void *v) {
+	(*(ut64 *)user) += ((HtUP *)v)->count;
+	return true;
+}
+
+R_API ut64 r_anal_xrefs_count(RAnal *anal) {
+	ut64 ret = 0;
+	ht_up_foreach (anal->dict_xrefs, count_cb, &ret);
+	return ret;
 }
 
 static RList *fcn_get_refs(RAnalFunction *fcn, HtUP *ht) {

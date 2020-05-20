@@ -15,7 +15,7 @@ static const char *help_msg_t[] = {
 	"t-", " <name>", "Delete types by its name",
 	"t-*", "", "Remove all types",
 	"tail", " [filename]", "Output the last part of files",
-	"tc", "[type.name]", "List all/given types in C output format",
+	"tc", " [type.name]", "List all/given types in C output format",
 	"te", "[?]", "List all loaded enums",
 	"td", "[?] <string>", "Load types from string",
 	"tf", "", "List all loaded functions signatures",
@@ -24,7 +24,7 @@ static const char *help_msg_t[] = {
 	"tn", "[?] [-][addr]", "manage noreturn function attributes and marks",
 	"to", " -", "Open cfg.editor to load types",
 	"to", " <path>", "Load types from C header file",
-	"toe", "[type.name]", "Open cfg.editor to edit types",
+	"toe", " [type.name]", "Open cfg.editor to edit types",
 	"tos", " <path>", "Load types from parsed Sdb database",
 	"tp", "  <type> [addr|varname]", "cast data at <address> to <type> and print it (XXX: type can contain spaces)",
 	"tpv", " <type> @ [value]", "Show offset formatted for given type",
@@ -72,9 +72,17 @@ static const char *help_msg_to[] = {
 	NULL
 };
 
+static const char *help_msg_tp[] = {
+	"Usage: tp[...]", "", "",
+	"tp", "  <type> [addr|varname]", "cast data at <address> to <type> and print it (XXX: type can contain spaces)",
+	"tpv", " <type> @ [value]", "Show offset formatted for given type",
+	"tpx", " <type> <hexpairs>", "Show value for type with specified byte sequence (XXX: type can contain spaces)",
+	NULL
+};
+
 static const char *help_msg_tc[] = {
 	"Usage: tc[...]", " [cctype]", "",
-	"tc", "[type.name]", "List all/given loaded types in C output format with newlines",
+	"tc", " [type.name]", "List all/given loaded types in C output format with newlines",
 	"tcd", "", "List all loaded types in C output format without newlines",
 	"tcc", "?", "Manage calling conventions types",
 	"tc?", "", "show this help",
@@ -145,7 +153,7 @@ static const char *help_msg_ts[] = {
 	"ts*", "", "Show pf.<name> format string for all loaded structs",
 	"ts*", " [type]", "Show pf.<name> format string for given struct",
 	"tsc", "<name>", "List all/given loaded structs in C output format with newlines",
-	"tsd", "", "List all loaded structs in C output format without newlines", 
+	"tsd", "", "List all loaded structs in C output format without newlines",
 	"tss", " [type]", "Display size of struct",
 	"ts?", "", "show this help",
 	NULL
@@ -340,7 +348,7 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 	switch (input[0]) {
 	case '-': // "tn-"
 		if (input[1] == '*') {
-			r_core_cmd0 (core, "tn-`tn`");
+			r_core_cmd0 (core, "tn- `tn`");
 		} else {
 			char *s = strdup (r_str_trim_head_ro (input + 1));
 			RListIter *iter;
@@ -398,13 +406,13 @@ static Sdb *TDB_ = NULL; // HACK
 
 static int stdifstruct(void *user, const char *k, const char *v) {
 	r_return_val_if_fail (TDB_, false);
-	if (!strcmp (v, "struct")) {
+	if (!strcmp (v, "struct") && !r_str_startswith (k, "typedef")) {
 		return true;
 	}
 	if (!strcmp (v, "typedef")) {
 		const char *typedef_key = sdb_fmt ("typedef.%s", k);
 		const char *type = sdb_const_get (TDB_, typedef_key, NULL);
-		if (type && r_str_startswith (type, "struct ")) {
+		if (type && r_str_startswith (type, "struct")) {
 			return true;
 		}
 	}
@@ -432,7 +440,6 @@ static int print_struct_union_list_json(Sdb *TDB, SdbForeachCallback filter) {
 		if (!k || !*k) {
 			continue;
 		}
-
 		pj_o (pj); // {
 		char *sizecmd = r_str_newf ("%s.%s.!size", sdbkv_value (kv), k);
 		if (!sizecmd) {
@@ -781,7 +788,7 @@ static void set_offset_hint(RCore *core, RAnalOp *op, const char *type, ut64 lad
 	}
 }
 
-R_API int r_core_get_stacksz (RCore *core, ut64 from, ut64 to) {
+R_API int r_core_get_stacksz(RCore *core, ut64 from, ut64 to) {
 	int stack = 0, maxstack = 0;
 	ut64 at = from;
 
@@ -808,7 +815,7 @@ R_API int r_core_get_stacksz (RCore *core, ut64 from, ut64 to) {
 	return maxstack;
 }
 
-static void set_retval (RCore *core, ut64 at) {
+static void set_retval(RCore *core, ut64 at) {
 	RAnal *anal = core->anal;
 	RAnalHint *hint = r_anal_hint_get (anal, at);
 	RAnalFunction *fcn = r_anal_get_fcn_in (anal, at, 0);
@@ -933,7 +940,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 				dst_addr = r_reg_getv (esil->anal->reg, aop.dst->reg->name) + index;
 				dst_imm = aop.dst->delta;
 			}
-			RAnalVar *var = aop.var;
+			RAnalVar *var = r_anal_get_used_function_var (core->anal, aop.addr);
 			if (false) { // src_addr != UT64_MAX || dst_addr != UT64_MAX) {
 			//  if (src_addr == UT64_MAX && dst_addr == UT64_MAX) {
 				r_anal_op_fini (&aop);
@@ -953,10 +960,8 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 				// var int local_e0h --> var struct foo
 				if (strcmp (var->name , vlink) && !resolved) {
 					resolved = true;
-					r_anal_var_retype (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
-							-1, var->kind, varpfx, -1, var->isarg, var->name);
-					r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
-							var->kind, var->name, vlink, false);
+					r_anal_var_set_type (var, varpfx);
+					r_anal_var_rename (var, vlink, false);
 				}
 			} else if (slink) {
 				set_offset_hint (core, &aop, slink, src_addr, at - ret, src_imm);
@@ -982,7 +987,7 @@ beach:
 	if (stack_set) {
 		r_core_cmd0 (core, "aeim-");
 	}
-	r_core_seek (core, oldoff, 1);
+	r_core_seek (core, oldoff, true);
 	r_anal_esil_free (esil);
 	r_reg_arena_pop (core->anal->reg);
 	r_core_cmd0 (core, ".ar*");
@@ -1032,7 +1037,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 'd':
 			print_struct_union_in_c_format (TDB, stdifunion, r_str_trim_head_ro (input + 2), false);
-			break;	
+			break;
 		case ' ':
 			showFormat (core, r_str_trim_head_ro (input + 1), 0);
 			break;
@@ -1060,8 +1065,9 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case ' ': {
 			const char *type = r_str_trim_head_ro (input + 1);
-			const char *name = type ? strchr (type, '.') + 1: NULL;
+			const char *name = type ? strchr (type, '.') : NULL;
 			if (name && type) {
+				name++; // skip the '.'
 				if (r_str_startswith (type, "struct")) {
 					r_core_cmdf (core, "tsc %s", name);
 				} else if (r_str_startswith (type, "union")) {
@@ -1076,6 +1082,9 @@ static int cmd_type(void *data, const char *input) {
 			}
 			break;
 		}
+		case '*':
+			r_core_cmd0 (core, "ts*");
+			break;
 		case 0:
 			r_core_cmd0 (core, "tfc;tuc;tsc;ttc;tec");
 			break;
@@ -1119,10 +1128,10 @@ static int cmd_type(void *data, const char *input) {
 		case 0:
 			print_keys (TDB, core, stdifstruct, printkey_cb, false);
 			break;
-		case 'c':
+		case 'c': // "tsc"
 			print_struct_union_in_c_format (TDB, stdifstruct, r_str_trim_head_ro (input + 2), true);
 			break;
-		case 'd':
+		case 'd': // "tsd"
 			print_struct_union_in_c_format (TDB, stdifstruct, r_str_trim_head_ro (input + 2), false);
 			break;
 		case 'j': // "tsj"
@@ -1380,11 +1389,16 @@ static int cmd_type(void *data, const char *input) {
 	case 'x': {
 		  char *type, *type2;
 		RListIter *iter, *iter2;
-		  RAnalFunction *fcn;
+		RAnalFunction *fcn;
 		switch (input[1]) {
-		case '.': // "tx." type xrefs 
-		case 'f': // "txf" type xrefs 
-			fcn  = r_anal_get_function_at (core->anal, core->offset);
+		case '.': // "tx." type xrefs
+		case 'f': // "txf" type xrefs
+			{
+			ut64 addr = core->offset;
+			if (input[2] == ' ') {
+				addr = r_num_math (core->num, input + 2);
+			}
+			fcn = r_anal_get_function_at (core->anal, addr);
 			if (fcn) {
 				RList *uniq = r_anal_types_from_fcn (core->anal, fcn);
 				r_list_foreach (uniq , iter , type) {
@@ -1392,7 +1406,8 @@ static int cmd_type(void *data, const char *input) {
 				}
 				r_list_free (uniq);
 			} else {
-				eprintf ("cannot find function at 0x%08"PFMT64x"\n", core->offset);
+				eprintf ("cannot find function at 0x%08"PFMT64x"\n", addr);
+			}
 			}
 			break;
 		case 0: // "tx"
@@ -1441,6 +1456,7 @@ static int cmd_type(void *data, const char *input) {
 				r_list_free (uniqList);
 			}
 			break;
+		case 't':
 		case ' ': // "tx " -- show which function use given type
 			type = (char *)r_str_trim_head_ro (input + 2);
 			r_list_foreach (core->anal->fcns, iter, fcn) {
@@ -1456,9 +1472,11 @@ static int cmd_type(void *data, const char *input) {
 		default:
 			eprintf ("Usage: tx[flg] [...]\n");
 			eprintf (" txf | tx.      list all types used in this function\n");
+			eprintf (" txf 0xaddr     list all types used in function at 0xaddr\n");
 			eprintf (" txl            list all types used by any function\n");
-			eprintf (" txg            render the type xrefs graph\n");
-			eprintf (" tx  int32_t    list functions names using this type\n");
+			eprintf (" txg            render the type xrefs graph (usage .txg;aggv)\n");
+			eprintf (" tx int32_t     list functions names using this type\n");
+			eprintf (" txt int32_t    same as 'tx type'\n");
 			eprintf (" tx             list functions and the types they use\n");
 			break;
 		}
@@ -1567,7 +1585,7 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case 'p':  // "tp"
 		if (input[1] == '?') { // "tp?"
-			r_core_cmd0 (core, "t?~tp\n");
+			r_core_cmd_help (core, help_msg_tp);
 		} else if (input[1] == 'v') { // "tpv"
 			const char *type_name = r_str_trim_head_ro (input + 2);
 			char *fmt = r_type_format (TDB, type_name);
@@ -1579,18 +1597,25 @@ static int cmd_type(void *data, const char *input) {
 			}
 		} else if (input[1] == ' ' || input[1] == 'x' || !input[1]) {
 			char *tmp = strdup (input);
-			char *ptr = strchr (tmp, ' ');
-			if (!ptr) {
-				break;
-			}
-			r_str_trim (ptr);
-			int nargs = r_str_word_set0 (ptr);
-			if (nargs > 0) {
-				const char *type = r_str_word_get0 (ptr, 0);
-				const char *arg = (nargs > 1)? r_str_word_get0 (ptr, 1): NULL;
+			char *type_begin = strchr (tmp, ' ');
+			if (type_begin) {
+				r_str_trim (type_begin);
+				const char *type_end = r_str_rchr (type_begin, NULL, ' ');
+				int type_len = (type_end)
+					? (int)(type_end - type_begin)
+					: strlen (type_begin);
+				char *type = strdup (type_begin);
+				if (!type) {
+					free (tmp);
+					break;
+				}
+				snprintf (type, type_len + 1, "%s", type_begin);
+				const char *arg = (type_end) ? type_end + 1 : NULL;
 				char *fmt = r_type_format (TDB, type);
 				if (!fmt) {
 					eprintf ("Cannot find '%s' type\n", type);
+					free (tmp);
+					free (type);
 					break;
 				}
 				if (input[1] == 'x' && arg) { // "tpx"
@@ -1598,18 +1623,26 @@ static int cmd_type(void *data, const char *input) {
 					// eprintf ("pf %s @x:%s", fmt, arg);
 				} else {
 					ut64 addr = arg ? r_num_math (core->num, arg): core->offset;
+					ut64 original_addr = addr;
 					if (!addr && arg) {
 						RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-						addr = r_anal_var_addr (core->anal, fcn, arg);
+						if (fcn) {
+							RAnalVar *var = r_anal_function_get_var_byname (fcn, arg);
+							if (var) {
+								addr = r_anal_var_addr (var);
+							}
+						}
 					}
 					if (addr != UT64_MAX) {
-						r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x "\n", fmt, addr);
+						r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x, fmt, addr);
+					} else if (original_addr == 0) {
+						r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x, fmt, original_addr);
 					}
 				}
 				free (fmt);
+				free (type);
 			} else {
-				eprintf ("see t?\n");
-				break;
+				eprintf ("Usage: tp?\n");
 			}
 			free (tmp);
 		} else { // "tp"
@@ -1623,8 +1656,7 @@ static int cmd_type(void *data, const char *input) {
 			sdb_reset (TDB);
 			r_parse_c_reset (core->parser);
 		} else {
-			const char *name = input + 1;
-			while (IS_WHITESPACE (*name)) name++;
+			const char *name = r_str_trim_head_ro (input + 1);
 			if (*name) {
 				r_anal_remove_parsed_type (core->anal, name);
 			} else {
@@ -1639,7 +1671,9 @@ static int cmd_type(void *data, const char *input) {
 			print_keys (TDB, core, stdiffunc, printkey_cb, false);
 			break;
 		case 'c': // "tfc"
-			printFunctionTypeC (core, input + 2);
+			if (input[2] == ' ') {
+				printFunctionTypeC (core, input + 3);
+			}
 			break;
 		case 'j': // "tfj"
 			if (input[2] == ' ') {
@@ -1743,8 +1777,9 @@ static int cmd_type(void *data, const char *input) {
 		if (istypedef && !strncmp (istypedef, "typedef", 7)) {
 			const char *q = sdb_fmt ("typedef.%s", s);
 			const char *res = sdb_const_get (TDB, q, 0);
-			if (res)
+			if (res) {
 				r_cons_println (res);
+			}
 		} else {
 			eprintf ("This is not an typedef\n");
 		}

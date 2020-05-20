@@ -1,0 +1,153 @@
+NAME=(msg x;?e $0)
+FILE=-
+CMDS=<<EOF
+"(msg x;?e $0)"
+.(msg HelloWorld)
+EOF
+EXPECT=<<EOF
+HelloWorld
+EOF
+RUN
+
+NAME=(msg x;?e $0)
+
+FILE=-
+CMDS=<<EOF
+"(msg x;?e $0)"
+.(msg HelloWorld)
+EOF
+EXPECT=<<EOF
+HelloWorld
+EOF
+RUN
+
+NAME=(msg x;?e $0)
+
+FILE=-
+CMDS=<<EOF
+"(msg x;?e $0)"
+.(msg HelloWorld)
+?e hiz
+EOF
+EXPECT=<<EOF
+HelloWorld
+hiz
+EOF
+RUN
+
+NAME=.(msg x y;?e $0 $1)
+FILE=-
+CMDS=<<EOF
+"(msg x y;?e $0 $1)"
+.(msg Hello World)
+EOF
+EXPECT=<<EOF
+Hello World
+EOF
+RUN
+
+NAME=.(msg "foo bar")
+FILE=-
+CMDS=<<EOF
+"(msg x;?e $0)"
+.(msg "Hello World")
+EOF
+EXPECT=<<EOF
+Hello World
+EOF
+RUN
+
+NAME=.(msg foo\ bar)
+FILE=-
+CMDS=<<EOF
+"(msg x;?e $0)"
+.(msg Hello\ World)
+EOF
+EXPECT=<<EOF
+Hello World
+EOF
+RUN
+
+NAME=(*~?
+FILE=-
+CMDS=<<EOF
+(foo;bar)
+(bar;cow)
+(*~?
+EOF
+EXPECT=<<EOF
+2
+EOF
+RUN
+
+NAME=3(foo;p8 4;s+$0)(1)
+FILE=-
+CMDS=<<EOF
+wx 010203040506070809
+3(foo;p8 4;s+$0)(1)
+EOF
+EXPECT=<<EOF
+01020304
+02030405
+03040506
+EOF
+RUN
+
+NAME=3(foo;?e a;?e b)()
+FILE=-
+CMDS=2(foo;?e a;?e b)()
+EXPECT=<<EOF
+a
+b
+a
+b
+EOF
+RUN
+
+NAME=?v $$ @@ foo*
+FILE=-
+CMDS=<<EOF
+f foo.one = 1
+f foo.bar = 2
+f foo.cow = 3
+?v $$ @@ foo*
+EOF
+EXPECT=<<EOF
+0x1
+0x2
+0x3
+EOF
+RUN
+
+NAME=?v
+FILE=-
+CMDS=<<EOF
+f foo.one = 1
+f foo.bar = 2
+f foo.cow = 3
+(_;?v $$)() @@ foo*
+EOF
+EXPECT=<<EOF
+0x1
+0x2
+0x3
+EOF
+RUN
+
+NAME=multiple commands
+FILE=-
+CMDS=<<EOF
+(foo x y; p8 $0 @ $1; ?e Hello $0)(2 0)
+(bar x y; p8 $0 @ $1; ?e Hello $0; ?e World $1)(1 0)
+(zas x y; .(foo $1 $0))(3 1)
+EOF
+EXPECT=<<EOF
+0000
+Hello 2
+00
+Hello 1
+World 0
+00
+Hello 1
+EOF
+RUN

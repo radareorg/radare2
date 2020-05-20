@@ -661,20 +661,21 @@ static bool r_pkcs7_parse_spcmessagedigest(SpcDigestInfo *messageDigest, RASN1Ob
 }
 
 R_API SpcIndirectDataContent *r_pkcs7_parse_spcinfo(RCMS *cms) {
-	RASN1Object *object;
-	RASN1Binary *content;
-	SpcIndirectDataContent *spcinfo;
 	if (!cms) {
 		return NULL;
 	}
 
-	spcinfo = R_NEW0 (SpcIndirectDataContent);
+	SpcIndirectDataContent *spcinfo = R_NEW0 (SpcIndirectDataContent);
 	if (!spcinfo) {
 		return NULL;
 	}
 
-	content = cms->signedData.contentInfo.content;
-	object = r_asn1_create_object (content->binary, content->length, content->binary);
+	RASN1Binary *content = cms->signedData.contentInfo.content;
+	if (!content) {
+		free (spcinfo);
+		return NULL;
+	}
+	RASN1Object *object = r_asn1_create_object (content->binary, content->length, content->binary);
 	if (!object || object->list.length < 2 || !object->list.objects ||
 		!object->list.objects[0] || !object->list.objects[1]) {
 		r_asn1_free_object (object);

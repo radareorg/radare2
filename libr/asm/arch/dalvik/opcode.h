@@ -1,5 +1,8 @@
 /* radare - LGPL - Copyright 2009-2012 - earada */
 
+#ifndef DALVIK_OPCODE_H
+#define DALVIK_OPCODE_H
+
 enum fmt_inst {
 	fmt00 = 0,			// None
 	fmtop,				// op
@@ -304,3 +307,5 @@ static const struct dalvik_opcodes_t dalvik_opcodes[256] = {
 	{"+sput-object-volatile", 4, fmtopvAAtBBBB},
 	{"invalid", 2, fmtop}
 };
+
+#endif

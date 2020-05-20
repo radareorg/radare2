@@ -49,7 +49,7 @@ r_core_sources = [
   'corelog.c',
   'panels.c',
   'patch.c',
-  'plugin.c',
+  'cplugin.c',
   'project.c',
   'pseudo.c',
   'rtr.c',

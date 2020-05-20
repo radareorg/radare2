@@ -47,7 +47,7 @@ typedef struct LE_entry_bundle_header_s {
 #define ENTRY_EXPORTED         0x01
 #define ENTRY_PARAM_COUNT_MASK 0xF8
 
-typedef R_PACKED (union LE_entry_bundle_entry_u {
+R_PACKED (typedef union LE_entry_bundle_entry_u {
 	R_PACKED (struct {
 		ut8 flags;   // First bit set if exported, mask with 0xF8 to get parameters count
 		ut16 offset; // This is the offset in the object for the entry point defined at this ordinal number.

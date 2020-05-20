@@ -272,7 +272,8 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 	char *ntdllopen = dbg->corebind.cmdstrf (dbg->corebind.core, "ob~%s", ntdll);
 	if (*ntdllopen) {
 		char *saddr = strtok (ntdllopen, " ");
-		for (int i = 0; i < 3; i++) {
+		size_t i;
+		for (i = 0; i < 3; i++) {
 			saddr = strtok (NULL, " ");
 		}
 		if (doopen) {
@@ -542,7 +543,8 @@ static bool __lfh_segment_loop(HANDLE h_proc, PHeapBlockBasicInfo *blocks, SIZE_
 		ReadProcessMemory (h_proc, (void *)next, &subsegment, sizeof (HEAP_LFH_SUBSEGMENT), NULL);
 		subsegment.BlockOffsets.EncodedData ^= (DWORD)lfhKey ^ ((DWORD)next >> 0xC);
 		WPARAM mask = 1, offset = 0;
-		for (int l = 0; l < subsegment.BlockCount; l++) {
+		int l;
+		for (l = 0; l < subsegment.BlockCount; l++) {
 			if (!mask) {
 				mask = 1;
 				offset++;
@@ -590,7 +592,8 @@ static bool GetSegmentHeapBlocks(RDebug *dbg, HANDLE h_proc, PVOID heapBase, PHe
 
 	// LFH
 	byte numBuckets = _countof (segheapHeader.LfhContext.Buckets);
-	for (int j = 0; j < numBuckets; j++) {
+	int j;
+	for (j = 0; j < numBuckets; j++) {
 		if ((WPARAM)segheapHeader.LfhContext.Buckets[j] & 1) {
 			continue;
 		}
@@ -647,7 +650,8 @@ static bool GetSegmentHeapBlocks(RDebug *dbg, HANDLE h_proc, PVOID heapBase, PHe
 	WPARAM RtlpHpHeapGlobal;
 	ReadProcessMemory (h_proc, (PVOID)RtlpHpHeapGlobalsOffset, &RtlpHpHeapGlobal, sizeof (WPARAM), &bytesRead);
 	// Backend Blocks (And VS)
-	for (int i = 0; i < 2; i++) {
+	int i;
+	for (i = 0; i < 2; i++) {
 		HEAP_SEG_CONTEXT ctx = segheapHeader.SegContexts[i];
 		WPARAM ctxFirstEntry = (WPARAM)heapBase + offsetof (SEGMENT_HEAP, SegContexts) + sizeof (HEAP_SEG_CONTEXT) * i + offsetof (HEAP_SEG_CONTEXT, SegmentListHead);
 		HEAP_PAGE_SEGMENT pageSegment;
@@ -836,7 +840,9 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 					ReadProcessMemory (h_proc, userdata.BusyBitmap.Buffer, bitmap, bitmapsz, &bytesRead);
 					WPARAM mask = 1;
 					// Walk through the busy bitmap
-					for (int j = 0, offset = 0; j < userdata.BusyBitmap.SizeOfBitMap; j++) {
+					int j;
+					size_t offset;
+					for (j = 0, offset = 0; j < userdata.BusyBitmap.SizeOfBitMap; j++) {
 						if (!mask) {
 							mask = 1;
 							offset++;
@@ -930,7 +936,8 @@ err:
 		CloseHandle (h_proc);
 	}
 	if (db) {
-		for (int i = 0; i < heapInfo->count; i++) {
+		int i;
+		for (i = 0; i < heapInfo->count; i++) {
 			PDEBUG_HEAP_INFORMATION heap = &heapInfo->heaps[i];
 			free_extra_info (heap);
 			R_FREE (heap->Blocks);
@@ -1071,7 +1078,8 @@ static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
 	WPARAM NtLFHKey;
 	GetLFHKey (dbg, h_proc, false, &NtLFHKey);
 	PHeapInformation heapInfo = db->HeapInformation;
-	for (int i = 0; i < heapInfo->count; i++) {
+	int i;
+	for (i = 0; i < heapInfo->count; i++) {
 		DEBUG_HEAP_INFORMATION heap = heapInfo->heaps[i];
 		if (is_segment_heap (h_proc, heap.Base)) {
 			free (hb);

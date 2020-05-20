@@ -12,6 +12,8 @@
 #define NETWORK_DISABLED 0
 #endif
 
+#define D if(0)
+
 R_LIB_VERSION(r_socket);
 
 
@@ -727,6 +729,7 @@ R_API char *r_socket_to_string(RSocket *s) {
 
 /* Read/Write functions */
 R_API int r_socket_write(RSocket *s, void *buf, int len) {
+	D { eprintf ("WRITE "); int i; ut8 *b = buf; for (i = 0; i<len; i++) { eprintf ("%02x ", b[i]); } eprintf ("\n"); }
 	int ret, delta = 0;
 #if __UNIX__
 	r_sys_signal (SIGPIPE, SIG_IGN);
@@ -798,14 +801,20 @@ rep:
 	return ret;
 	}
 #else
-	return read (s->fd, buf, len);
+	// int r = read (s->fd, buf, len);
+	int r = recv (s->fd, buf, len, 0);
+	D { eprintf ("READ "); int i; for (i = 0; i<len; i++) { eprintf ("%02x ", buf[i]); } eprintf ("\n"); }
+	return r;
 #endif
 }
 
-R_API int r_socket_read_block(RSocket *s, unsigned char *buf, int len) {
-	int r, ret = 0;
+R_API int r_socket_read_block(RSocket *s, ut8 *buf, int len) {
+	int ret = 0;
 	for (ret = 0; ret < len; ) {
-		r = r_socket_read (s, buf+ret, len-ret);
+		int r = r_socket_read (s, buf + ret, len - ret);
+		if (r == -1) {
+			return -1;
+		}
 		if (r < 1) {
 			break;
 		}
@@ -839,11 +848,11 @@ R_API int r_socket_gets(RSocket *s, char *buf,	int size) {
 		}
 		i += ret;
 	}
-	buf[i]='\0';
+	buf[i] = '\0';
 	return i;
 }
 
-R_API RSocket *r_socket_new_from_fd (int fd) {
+R_API RSocket *r_socket_new_from_fd(int fd) {
 	RSocket *s = R_NEW0 (RSocket);
 	if (s) {
 		s->fd = fd;
@@ -854,6 +863,9 @@ R_API RSocket *r_socket_new_from_fd (int fd) {
 R_API ut8* r_socket_slurp(RSocket *s, int *len) {
 	int blockSize = 4096;
 	ut8 *ptr, *buf = malloc (blockSize);
+	if (!buf) {
+		return NULL;
+	}
 	int copied = 0;
 	if (len) {
 		*len = 0;

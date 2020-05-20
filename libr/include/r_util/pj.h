@@ -4,8 +4,12 @@
 
 #include <r_util/r_strbuf.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct pj_t {
-	RStrBuf *sb;
+	RStrBuf sb;
 	bool is_first;
 	bool is_key;
 	char braces[R_PRINT_JSON_DEPTH_LIMIT];
@@ -15,6 +19,7 @@ typedef struct pj_t {
 /* lifecycle */
 R_API PJ *pj_new(void);
 R_API void pj_free(PJ *j);
+R_API void pj_reset(PJ *j); // clear the pj contents, but keep the buffer allocated to re-use it
 R_API char *pj_drain(PJ *j);
 R_API const char *pj_string(PJ *pj);
 // R_API void pj_print(PJ *j, PrintfCallback cb);
@@ -49,5 +54,10 @@ R_API PJ *pj_d(PJ *j, double d);
 R_API PJ *pj_f(PJ *j, float d);
 R_API PJ *pj_i(PJ *j, int d);
 R_API PJ *pj_j(PJ *j, const char *k);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
 

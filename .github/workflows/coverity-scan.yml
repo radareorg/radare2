@@ -1,4 +1,4 @@
-name: coverity-scan
+name: Coverity Scan
 on:
   schedule:
     - cron: '0 18 * * 1,4' # Bi-weekly at 18:00 UTC on Monday and Thursday

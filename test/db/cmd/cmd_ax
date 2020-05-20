@@ -1,0 +1,40 @@
+NAME=axtj nofunc noflag (#11667)
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+aaa
+s 0x804969c
+ax~0x804969c
+axtj~{}
+EOF
+EXPECT=<<EOF
+                          section..plt+6 0x80482c6 ->      CODE -> 0x804969c section..got.plt+8
+[
+  {
+    "from": 134513350,
+    "type": "CODE",
+    "opcode": "jmp dword [0x804969c]",
+    "name": "section..plt+6",
+    "refname": "section..got.plt+8"
+  }
+]
+EOF
+RUN
+
+NAME=axf
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+s 0
+ax 0x42
+ax 0x43
+axC 0x44
+f someflag @ 0x43
+axf
+EOF
+EXPECT=<<EOF
+  0x42 add byte [rax], al
+  0x43 someflag
+C 0x44 add byte [rax], al
+EOF
+RUN

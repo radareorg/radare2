@@ -20,7 +20,9 @@ R_API RLine *r_line_new(void) {
 	I.kill_ring = r_list_newf (NULL);
 	I.kill_ring_ptr = -1;
 #if __WINDOWS__
-	I.ansicon = r_cons_is_ansicon ();
+	I.vtmode = r_cons_is_vtcompat ();
+#else
+	I.vtmode = 2;
 #endif
 	if (!r_line_dietline_init ()) {
 		eprintf ("error: r_line_dietline_init\n");

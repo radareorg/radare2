@@ -41,9 +41,12 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 	return NULL;
 }
 
+#define DTYPE_IS_FUNCTION(type)	(COFF_SYM_GET_DTYPE (type) == COFF_SYM_DTYPE_FUNCTION)
+
 static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RBinSymbol **sym) {
 	RBinSymbol *ptr = *sym;
 	struct coff_symbol *s = NULL;
+	struct coff_scn_hdr *sc_hdr = NULL;
 	if (idx < 0 || idx > bin->hdr.f_nsyms) {
 		return false;
 	}
@@ -55,38 +58,60 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RB
 	if (!coffname) {
 		return false;
 	}
-	ptr->name = strdup (coffname);
-	free (coffname);
+	ptr->name = coffname;
 	ptr->forwarder = "NONE";
+	ptr->bind = R_BIN_BIND_LOCAL_STR;
+	ptr->is_imported = false;
+	if (s->n_scnum < bin->hdr.f_nscns + 1 && s->n_scnum > 0) {
+		//first index is 0 that is why -1
+		sc_hdr = &bin->scn_hdrs[s->n_scnum - 1];
+		ptr->paddr = sc_hdr->s_scnptr + s->n_value;
+	}
 
 	switch (s->n_sclass) {
 	case COFF_SYM_CLASS_FUNCTION:
 		ptr->type = R_BIN_TYPE_FUNC_STR;
 		break;
 	case COFF_SYM_CLASS_FILE:
-		ptr->type = "FILE";
+		ptr->type = R_BIN_TYPE_FILE_STR;
 		break;
 	case COFF_SYM_CLASS_SECTION:
 		ptr->type = R_BIN_TYPE_SECTION_STR;
 		break;
-	case COFF_SYM_CLASS_EXTERNAL: // should be prefixed with sym.imp
-		if (bin->symbols[idx].n_scnum) {
-			ptr->type = R_BIN_TYPE_FUNC_STR;
-		} else {
-			ptr->type = "EXTERNAL";
+	case COFF_SYM_CLASS_EXTERNAL:
+		if (s->n_scnum == COFF_SYM_SCNUM_UNDEF) {
+			ptr->is_imported = true;
+			ptr->paddr = UT64_MAX;
+			ptr->bind = "NONE";
 		}
+		else {
+			ptr->bind = R_BIN_BIND_GLOBAL_STR;
+		}
+		ptr->type = (DTYPE_IS_FUNCTION (s->n_type) || !strcmp (coffname, "main"))
+			? R_BIN_TYPE_FUNC_STR
+			: R_BIN_TYPE_UNKNOWN_STR;
 		break;
 	case COFF_SYM_CLASS_STATIC:
-		ptr->type = "STATIC";
+		if (s->n_scnum == COFF_SYM_SCNUM_ABS) {
+			ptr->type = "ABS";
+			ptr->paddr = UT64_MAX;
+			ptr->name = r_str_newf ("%s-0x%08x", coffname, s->n_value);
+			if (ptr->name) {
+				R_FREE (coffname);
+			} else {
+				ptr->name = coffname;
+			}
+		} else if (sc_hdr && !memcmp (sc_hdr->s_name, s->n_name, 8)) {
+			ptr->type = R_BIN_TYPE_SECTION_STR;
+		} else {
+			ptr->type = DTYPE_IS_FUNCTION (s->n_type)
+				? R_BIN_TYPE_FUNC_STR
+				: R_BIN_TYPE_UNKNOWN_STR;
+		}
 		break;
 	default:
 		ptr->type = r_str_constpool_get (&rbin->constpool, sdb_fmt ("%i", s->n_sclass));
 		break;
-	}
-	if (bin->symbols[idx].n_scnum < bin->hdr.f_nscns + 1 &&
-	    bin->symbols[idx].n_scnum > 0) {
-		//first index is 0 that is why -1
-		ptr->paddr = bin->scn_hdrs[s->n_scnum - 1].s_scnptr + s->n_value;
 	}
 	ptr->size = 4;
 	ptr->ordinal = 0;
@@ -96,22 +121,24 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RB
 static RBinImport *_fill_bin_import(struct r_bin_coff_obj *bin, int idx) {
 	RBinImport *ptr = R_NEW0 (RBinImport);
 	if (!ptr || idx < 0 || idx > bin->hdr.f_nsyms) {
-		R_FREE (ptr);
+		free (ptr);
 		return NULL;
 	}
 	struct coff_symbol *s = &bin->symbols[idx];
-	if (s->n_sclass != COFF_SYM_CLASS_EXTERNAL) {
-		R_FREE (ptr);
+	if (s->n_scnum != COFF_SYM_SCNUM_UNDEF || s->n_sclass != COFF_SYM_CLASS_EXTERNAL) {
+		free (ptr);
 		return NULL;
 	}
 	char *coffname = r_coff_symbol_name (bin, s);
 	if (!coffname) {
-		R_FREE (ptr);
+		free (ptr);
 		return NULL;
 	}
-	ptr->name = strdup (coffname);
+	ptr->name = coffname;
 	ptr->bind = "NONE";
-	ptr->type = "FUNC";
+	ptr->type = DTYPE_IS_FUNCTION (s->n_type)
+		? R_BIN_TYPE_FUNC_STR
+		: R_BIN_TYPE_UNKNOWN_STR;
 	return ptr;
 }
 
@@ -336,7 +363,7 @@ static RBinInfo *info(RBinFile *bf) {
 		ret->machine = strdup ("amd29k");
 		ret->arch = strdup ("amd29k");
 		ret->bits = 32;
-		break;	
+		break;
 	case COFF_FILE_TI_COFF:
 		switch (obj->target_id) {
 		case COFF_FILE_MACHINE_TMS320C54:

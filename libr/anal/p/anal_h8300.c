@@ -548,11 +548,7 @@ static int h8300_op(RAnal *anal, RAnalOp *op, ut64 addr,
 		return 2;
 	}
 
-	memset(op, 0, sizeof (RAnalOp));
-
 	op->addr = addr;
-	op->jump = op->fail = -1;
-	op->ptr = op->val = -1;
 	ret = op->size = h8300_decode_command(buf, &cmd);
 
 	if (ret < 0) {
@@ -684,7 +680,7 @@ static int h8300_op(RAnal *anal, RAnalOp *op, ut64 addr,
 	return ret;
 }
 
-static int set_reg_profile(RAnal *anal) {
+static bool set_reg_profile(RAnal *anal) {
 	char *p =
 		"=PC	pc\n"
 		"=SP	r7\n"

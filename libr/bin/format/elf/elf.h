@@ -49,7 +49,7 @@ typedef struct r_bin_elf_symbol_t {
 typedef struct r_bin_elf_reloc_t {
 	int sym;
 	int type;
-	int is_rela;
+	Elf_(Xword) rel_mode;
 	st64 addend;
 	ut64 offset;
 	ut64 rva;
@@ -72,6 +72,30 @@ typedef struct r_bin_elf_string_t {
 	int last;
 } RBinElfString;
 
+typedef struct Elf_(r_bin_elf_dynamic_info) {
+	Elf_(Xword) dt_pltrelsz;
+	Elf_(Addr) dt_pltgot;
+	Elf_(Addr) dt_hash;
+	Elf_(Addr) dt_strtab;
+	Elf_(Addr) dt_symtab;
+	Elf_(Addr) dt_rela;
+	Elf_(Xword) dt_relasz;
+	Elf_(Xword) dt_relaent;
+	Elf_(Xword) dt_strsz;
+	Elf_(Xword) dt_syment;
+	Elf_(Addr) dt_rel;
+	Elf_(Xword) dt_relsz;
+	Elf_(Xword) dt_relent;
+	Elf_(Xword) dt_pltrel;
+	Elf_(Addr) dt_jmprel;
+	Elf_(Addr) dt_mips_pltgot;
+	bool dt_bind_now;
+	Elf_(Xword) dt_flags;
+	Elf_(Xword) dt_flags_1;
+	Elf_(Xword) dt_rpath;
+	Elf_(Xword) dt_runpath;
+} RBinElfDynamicInfo;
+
 typedef struct r_bin_elf_lib_t {
 	char name[ELF_STRING_LENGTH];
 	int last;
@@ -79,21 +103,20 @@ typedef struct r_bin_elf_lib_t {
 
 struct Elf_(r_bin_elf_obj_t) {
 	Elf_(Ehdr) ehdr;
-	Elf_(Phdr)* phdr;
-	Elf_(Shdr)* shdr;
+	Elf_(Phdr) *phdr;
+	Elf_(Shdr) *shdr;
 
 	Elf_(Shdr) *strtab_section;
 	ut64 strtab_size;
-	char* strtab;
+	char *strtab;
 
 	Elf_(Shdr) *shstrtab_section;
 	ut64 shstrtab_size;
-	char* shstrtab;
+	char *shstrtab;
 
 	Elf_(Dyn) *dyn_buf;
 	int dyn_entries;
-	int is_rela;
-	ut32 reloc_num;
+	RBinElfDynamicInfo dyn_info;
 
 	ut64 version_info[DT_VERSIONTAGNUM];
 
@@ -118,6 +141,8 @@ struct Elf_(r_bin_elf_obj_t) {
 	RBinElfSection *g_sections;
 	RBinElfSymbol *g_symbols;
 	RBinElfSymbol *g_imports;
+	RBinElfReloc *g_relocs;
+	ut32 g_reloc_num;
 	RBinElfSymbol *phdr_symbols;
 	RBinElfSymbol *phdr_imports;
 	HtUP *rel_cache;

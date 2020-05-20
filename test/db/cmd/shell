@@ -1,0 +1,8 @@
+NAME=stdin eof
+FILE=-
+CMDS=<<EOF
+
+EOF
+EXPECT=<<EOF
+EOF
+RUN

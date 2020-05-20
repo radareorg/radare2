@@ -1,0 +1,6 @@
+NAME=PE: corkami signature.exe - open
+FILE=bins/pe/signature.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN

@@ -172,6 +172,11 @@ def win_dist(args):
     with open(r2_bat_fname, 'w') as r2_bat:
         r2_bat.write('@"%~dp0\\radare2" %*\n')
 
+    r2_sh_fname = args.install + r'\bin\r2'
+    log.debug('create "%s"', r2_sh_fname)
+    with open(r2_sh_fname, 'w') as r2_sh:
+        r2_sh.write('#!/bin/sh\n$(dirname "$0")/radare2 "$@"\n')
+
     copy(r'{BUILDDIR}\libr\*\*.dll', r'{DIST}\bin')
     makedirs(r'{DIST}\{R2_LIBDIR}')
     if args.shared:
@@ -233,7 +238,7 @@ def build(args):
             xp_compat(r2_builddir)
         if not args.project:
             project = os.path.join(r2_builddir, 'radare2.sln')
-            params = ['/m']
+            params = ['/m', '/clp:Summary;Verbosity=minimal']
             if args.backend == 'vs2017' and args.xp:
                 params.append('/p:XPDeprecationWarning=false')
             msbuild(project, *params)

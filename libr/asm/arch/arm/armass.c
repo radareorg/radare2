@@ -202,11 +202,10 @@ static char *parse_hints(char *input) {
 
 static st8 iflag(char *input) {
 	st8 res = 0;
-	ut8 i;
 	r_str_case (input, false);
 	
-	for (i = 0; i < strlen(input); i++) {
-		switch (input[i]) {
+	for (; *input; input++) {
+		switch (*input) {
 		case 'a':
 			res |= 0x4;
 			break;

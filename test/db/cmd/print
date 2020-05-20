@@ -1,0 +1,228 @@
+NAME=endian tests: pv4
+FILE=-
+CMDS=<<EOF
+e cfg.bigendian=false
+e asm.bits=32
+wx 01020304
+pv4
+e cfg.bigendian=true
+pv4
+EOF
+EXPECT=<<EOF
+0x04030201
+0x01020304
+EOF
+RUN
+
+NAME=endian tests: pv2
+FILE=-
+CMDS=<<EOF
+e cfg.bigendian=false
+e asm.bits=32
+wx 01020304
+pv2
+e cfg.bigendian=true
+pv2
+EOF
+EXPECT=<<EOF
+0x0201
+0x0102
+EOF
+RUN
+
+NAME=endian tests: pv8
+FILE=-
+CMDS=<<EOF
+e cfg.bigendian=false
+e asm.bits=32
+wx 0102030405060708
+pv8
+e cfg.bigendian=true
+pv8
+EOF
+EXPECT=<<EOF
+0x0807060504030201
+0x0102030405060708
+EOF
+RUN
+
+NAME=endian tests: ?v
+FILE=-
+CMDS=<<EOF
+e cfg.bigendian=false
+e asm.bits=32
+wx 01020304
+?v [$$]
+e cfg.bigendian=true
+?v [$$]
+EOF
+EXPECT=<<EOF
+0x4030201
+0x1020304
+EOF
+RUN
+
+NAME=pfq
+CMDS=<<EOF
+wv4 32
+pfq i
+EOF
+EXPECT=<<EOF
+32
+EOF
+RUN
+
+NAME=mac ls pdsf
+FILE=bins/mach0/mac-ls
+CMDS=<<EOF
+af
+pdsf @ entry0
+EOF
+EXPECT=<<EOF
+;-- entry0:
+;-- func.100001058:
+0x10000106c argv
+0x10000106f argc
+0x100001085 call sym.func.100004401
+0x100001093 call sym.imp.setlocale
+0x1000010a3 call sym.imp.isatty
+0x1000054e0 [10] -rw- section size 40 named 10.__DATA.__data
+0x1000010b6 str.COLUMNS
+0x1000010bd call sym.imp.getenv
+0x1000010cf call sym.imp.atoi
+0x1000010e6 call sym.imp.ioctl
+0x10000110d str.COLUMNS
+0x100001114 call sym.imp.getenv
+0x100001121 call sym.imp.atoi
+0x10000112c call sym.imp.getuid
+0x1000011b5 switch table (72 cases) at 0x10000192c
+;-- default:                                                         ; from 0x1000011b5
+0x10000116e call sym.func.100004401
+0x100001179 str.1_ABCFGHLOPRSTUWabcdefghiklmnopqrstuvwx
+0x100001186 call sym.imp.getopt
+;-- switch
+0x100001233 str.CLICOLOR
+0x100001246 call sym.imp.setenv
+0x100001253 str.bin_ls
+0x10000125a str.Unix2003
+0x100001261 call sym.imp.compat_mode
+0x10000128c str.bin_ls
+0x100001293 str.Unix2003
+0x10000129a call sym.imp.compat_mode
+0x1000013a2 str.bin_ls
+0x1000013a9 str.Unix2003
+0x1000013b0 call sym.imp.compat_mode
+0x1000013d3 str.bin_ls
+0x1000013da str.Unix2003
+0x1000013e1 call sym.imp.compat_mode
+0x10000143a str.bin_ls
+0x100001441 str.Unix2003
+0x100001448 call sym.imp.compat_mode
+0x10000145a str.bin_ls
+0x100001461 str.Unix2003
+0x100001468 call sym.imp.compat_mode
+0x1000015b4 str.CLICOLOR
+0x1000015bb call sym.imp.getenv
+0x1000015ce call sym.imp.isatty
+0x1000015d7 str.CLICOLOR_FORCE
+0x1000015de call sym.imp.getenv
+0x1000015ec str.TERM
+0x1000015f3 call sym.imp.getenv
+0x100001602 call sym.imp.tgetent
+0x100001621 call sym.imp.tgetstr
+0x100001637 call sym.imp.tgetstr
+0x10000164d call sym.imp.tgetstr
+0x100001663 call sym.imp.tgetstr
+0x100001679 call sym.imp.tgetstr
+0x100001698 call sym.imp.tgetstr
+0x1000016e1 sym.func.100003b48
+0x1000016ed sym.func.100003b48
+0x1000016f0 call sym.imp.signal
+0x1000016fa sym.func.100003b48
+0x1000016fd call sym.imp.signal
+0x100001702 str.LSCOLORS
+0x100001709 call sym.imp.getenv
+0x100001711 call sym.func.1000039b6
+0x1000017a2 call sym.imp.getbsize
+0x1000017e6 sym.func.100000f58
+0x1000017fb sym.func.100000f8a
+0x100001810 sym.func.100000d78
+0x100001825 sym.func.100000d8a
+0x100001849 sym.func.100000d9f
+0x10000186d sym.func.100000de4
+0x100001876 sym.func.100000e32
+0x10000187f sym.func.100000e77
+0x100001888 sym.func.100000ec5
+0x100001891 sym.func.100000f0a
+0x10000189a sym.func.100000fc5
+0x1000018a3 sym.func.10000100a
+0x1000018c8 sym.func.1000036a2
+0x1000018d1 sym.func.100002800
+0x1000018da sym.func.1000029f1
+0x1000018e3 sym.func.1000035d0
+0x10000191a call sym.func.100001a4c
+0x100001926 call sym.imp.exit
+EOF
+RUN
+
+NAME=mac ls pfc
+FILE=bins/mach0/mac-ls
+CMDS=pfc zdq foo bar cow
+EXPECT=<<EOF
+struct {
+    char* foo; // "UH..AWAVAUATSH..H."
+    int32_t bar; // 4085860352
+    uint64_t cow; // -450213120875525823
+}
+EOF
+RUN
+
+NAME=mac ls pfc.fmt
+FILE=bins/mach0/mac-ls
+CMDS=<<EOF
+pf.fmt bcFiuf foo bar baz cow one two
+pfc.fmt
+EOF
+EXPECT=<<EOF
+struct fmt {
+    uint8_t foo; // 85
+    int8_t bar; // "H"
+    double baz; // 4.8537884927073429e+102
+    int32_t cow; // 0x48535441
+    uleb128_t one; // "1193473"
+    float two; // 131072.094
+}
+EOF
+RUN
+
+NAME=elf 64bit ls pfc.elf_header
+FILE=bins/elf/ls
+CMDS=<<EOF
+s 0
+pfo elf64
+pfc elf_header
+EOF
+EXPECT=<<EOF
+struct elf_header {
+    struct ident {
+        char* magic; // ".ELF"
+        enum class; // ELFCLASS64
+        enum data; // ELFDATA2LSB
+        enum version; // EV_CURRENT
+    }
+    enum type; // ET_DYN
+    enum machine; // EM_X86_64
+    enum version; // EV_CURRENT
+    uint64_t entry; // 23264
+    uint64_t phoff; // 64
+    uint64_t shoff; // 136040
+    int32_t flags; // 0x00000000
+    uint16_t ehsize; // 0x0040
+    uint16_t phentsize; // 0x0038
+    uint16_t phnum; // 0x000b
+    uint16_t shentsize; // 0x0040
+    uint16_t shnum; // 0x0019
+    uint16_t shstrndx; // 0x0018
+}
+EOF
+RUN

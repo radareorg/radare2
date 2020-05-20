@@ -2,12 +2,10 @@ r_search_sources = [
   'aes-find.c',
   'bytepat.c',
   'keyword.c',
-  # 'old_xrefs.c',
   'regexp.c',
   'privkey-find.c',
   'search.c',
-  'strings.c',
-  'xrefs.c',
+  'strings.c'
 ]
 
 r_search = library('r_search', r_search_sources,

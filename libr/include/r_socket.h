@@ -170,21 +170,21 @@ typedef char *(*rap_server_cmd)(void *user, const char *command);
 typedef int (*rap_server_close)(void *user, int fd);
 
 enum {
-	RAP_RMT_OPEN = 1,
-	RAP_RMT_READ = 2,
-	RAP_RMT_WRITE = 3,
-	RAP_RMT_SEEK = 4,
-	RAP_RMT_CLOSE = 5,
+	RAP_PACKET_OPEN = 1,
+	RAP_PACKET_READ = 2,
+	RAP_PACKET_WRITE = 3,
+	RAP_PACKET_SEEK = 4,
+	RAP_PACKET_CLOSE = 5,
 	// system was deprecated in slot 6,
-	RAP_RMT_CMD = 7,
-	RAP_RMT_REPLY = 0x80,
-	RAP_RMT_MAX = 4096
+	RAP_PACKET_CMD = 7,
+	RAP_PACKET_REPLY = 0x80,
+	RAP_PACKET_MAX = 4096
 };
 
 typedef struct r_socket_rap_server_t {
 	RSocket *fd;
 	char *port;
-	ut8 buf[RAP_RMT_MAX + 32];	// This should be used as a static buffer for everything done by the server
+	ut8 buf[RAP_PACKET_MAX + 32];	// This should be used as a static buffer for everything done by the server
 	rap_server_open open;
 	rap_server_seek seek;
 	rap_server_read read;
@@ -195,12 +195,19 @@ typedef struct r_socket_rap_server_t {
 	void *user;	// Always first arg for callbacks
 } RSocketRapServer;
 
-R_API RSocketRapServer *r_socket_rap_server_new(int is_ssl, const char *port);
+R_API RSocketRapServer *r_socket_rap_server_new(bool is_ssl, const char *port);
 R_API RSocketRapServer *r_socket_rap_server_create(const char *pathname);
 R_API void r_socket_rap_server_free(RSocketRapServer *rap_s);
-R_API int r_socket_rap_server_listen(RSocketRapServer *rap_s, const char *certfile);
+R_API bool r_socket_rap_server_listen(RSocketRapServer *rap_s, const char *certfile);
 R_API RSocket *r_socket_rap_server_accept(RSocketRapServer *rap_s);
 R_API bool r_socket_rap_server_continue(RSocketRapServer *rap_s);
+
+/* rap client */
+R_API int r_socket_rap_client_open(RSocket *s, const char *file, int rw);
+R_API char *r_socket_rap_client_command(RSocket *s, const char *cmd, RCoreBind *c);
+R_API int r_socket_rap_client_write(RSocket *s, const ut8 *buf, int count);
+R_API int r_socket_rap_client_read(RSocket *s, ut8 *buf, int count);
+R_API int r_socket_rap_client_seek(RSocket *s, ut64 offset, int whence);
 
 /* run.c */
 #define R_RUN_PROFILE_NARGS 512

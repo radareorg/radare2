@@ -1,0 +1,7 @@
+NAME=PE: corkami tls_aoiOSDET.exe - open
+FILE=bins/pe/tls_aoiOSDET.exe
+ARGS=-A
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN

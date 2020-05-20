@@ -1,11 +1,11 @@
-/* radare2 - LGPL - Copyright 2013-2019 - pancake */
+/* radare2 - LGPL - Copyright 2013-2020 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
 #include "../../asm/arch/amd29k/amd29k.h"
 
 
-static int set_reg_profile(RAnal *anal) {
+static bool set_reg_profile(RAnal *anal) {
 	const char *p =
 			"=PC	pc\n"
 			"=SP	gp1\n"
@@ -283,10 +283,6 @@ static int archinfo(RAnal *a, int q) {
 }
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	op->delay = 0;
-	op->type = R_ANAL_OP_TYPE_NULL;
-	op->jump = op->fail = UT64_MAX;
-	op->ptr = op->val = UT64_MAX;
 	op->size = 4;
 	op->eob = false;
 

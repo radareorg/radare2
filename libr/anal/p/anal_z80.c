@@ -59,7 +59,6 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 	int ilen = 0;
 	z80_op_size (data, len, &ilen, &op->nopcode);
 
-	memset (op, '\0', sizeof (RAnalOp));
 	op->addr = addr;
 	op->size = ilen;
 	op->type = R_ANAL_OP_TYPE_UNK;
@@ -369,7 +368,7 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 	return ilen;
 }
 
-static int set_reg_profile(RAnal *anal) {
+static bool set_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC	mpc\n"
 		"=SP	sp\n"

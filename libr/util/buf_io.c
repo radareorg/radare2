@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2009-2020 - ret2libc */
+
 #include <r_util.h>
 #include <r_io.h>
 

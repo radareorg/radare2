@@ -152,13 +152,7 @@ err:
 R_API RLib *r_lib_new(const char *symname, const char *symnamefunc) {
 	RLib *lib = R_NEW (RLib);
 	if (lib) {
-		char *e = r_sys_getenv ("R_DEBUG");
-		if (e) {
-			__has_debug = *e;
-			free (e);
-		} else {
-			__has_debug = false;
-		}
+		__has_debug = r_sys_getenv_asbool ("R2_DEBUG");
 		lib->handlers = r_list_newf (free);
 		lib->plugins = r_list_newf (free);
 		lib->symname = strdup (symname? symname: R_LIB_SYMNAME);
@@ -297,10 +291,27 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 	return res;
 }
 
+static char *major_minor(const char *s) {
+	char *a = strdup (s);
+	char *p = strchr (a, '.');
+	if (p) {
+		p = strchr (p + 1, '.');
+		if (p) {
+			*p = 0;
+		}
+	}
+	return a;
+}
+
 R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct *stru) {
 	r_return_val_if_fail (lib && file && stru, -1);
 	if (stru->version) {
-		if (strcmp (stru->version, R2_VERSION)) {
+		char *mm0 = major_minor (stru->version);
+		char *mm1 = major_minor (R2_VERSION);
+		bool mismatch = strcmp (mm0, mm1);
+		free (mm0);
+		free (mm1);
+		if (mismatch) {
 			eprintf ("Module version mismatch %s (%s) vs (%s)\n",
 				file, stru->version, R2_VERSION);
 			if (stru->pkgname) {

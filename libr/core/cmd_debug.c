@@ -18,6 +18,8 @@
 #include "linux_heap_jemalloc.c"
 #endif
 
+void cmd_anal_reg (RCore *core, const char *str);
+
 static const char *help_msg_d[] = {
 	"Usage:", "d", " # Debug commands",
 	"db", "[?]", "Breakpoints commands",
@@ -848,10 +850,10 @@ static int step_until_inst(RCore *core, const char *instr, bool regex) {
 		pc = r_debug_reg_get (core->dbg, "PC");
 		r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false);
 		/* TODO: disassemble instruction and strstr */
-		r_asm_set_pc (core->assembler, pc);
+		r_asm_set_pc (core->rasm, pc);
 		// TODO: speedup if instructions are in the same block as the previous
 		r_io_read_at (core->io, pc, buf, sizeof (buf));
-		ret = r_asm_disassemble (core->assembler, &asmop, buf, sizeof (buf));
+		ret = r_asm_disassemble (core->rasm, &asmop, buf, sizeof (buf));
 		eprintf ("0x%08"PFMT64x" %d %s\n", pc, ret, r_asm_op_get_asm (&asmop)); // asmop.buf_asm);
 		if (ret > 0) {
 			const char *buf_asm = r_asm_op_get_asm (&asmop);
@@ -1355,7 +1357,7 @@ static int grab_bits(RCore *core, const char *arg, int *pcbits2) {
 			const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 			RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
 			if (reg) {
-				if (core->assembler->bits != reg->size)
+				if (core->rasm->bits != reg->size)
 					pcbits = reg->size;
 			}
 		}
@@ -1472,6 +1474,7 @@ show_help:
 			}
 			break;
 		default:
+			pj_free (pj);
 			r_list_free (list);
 			goto show_help;
 			/* not reached */
@@ -1481,8 +1484,8 @@ beach:
 	if (mode == 'j') {
 		pj_end (pj);
 		r_cons_printf ("%s\n", pj_string (pj));
-		pj_free (pj);
 	}
+	pj_free (pj);
 	r_list_free (list);
 }
 
@@ -1541,7 +1544,7 @@ static int r_debug_heap(RCore *core, const char *input) {
 	const char *m = r_config_get (core->config, "dbg.malloc");
 	if (m && !strcmp ("glibc", m)) {
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
-		if (core->assembler->bits == 64) {
+		if (core->rasm->bits == 64) {
 			cmd_dbg_map_heap_glibc_64 (core, input + 1);
 		} else {
 			cmd_dbg_map_heap_glibc_32 (core, input + 1);
@@ -1551,7 +1554,7 @@ static int r_debug_heap(RCore *core, const char *input) {
 #endif
 #if HAVE_JEMALLOC
 	} else if (m && !strcmp ("jemalloc", m)) {
-		if (core->assembler->bits == 64) {
+		if (core->rasm->bits == 64) {
 			cmd_dbg_map_jemalloc_64 (core, input + 1);
 		} else {
 			cmd_dbg_map_jemalloc_32 (core, input + 1);
@@ -1925,14 +1928,6 @@ static int cmd_debug_map(RCore *core, const char *input) {
 #include "windows_heap.c"
 #endif
 
-// move into basic_types.h
-
-#define HEAPTYPE(x) \
-	static x* x##_new(x n) {\
-		x *m = malloc(sizeof (x));\
-		return m? *m = n, m: m; \
-	}
-
 HEAPTYPE(ut64);
 
 static int regcmp(const void *a, const void *b) {
@@ -1961,7 +1956,7 @@ R_API void r_core_debug_ri(RCore *core, RReg *reg, int mode) {
 	HtUP *db = ht_up_new0 ();
 
 	r_list_foreach (list, iter, r) {
-		if (r->size != core->assembler->bits) {
+		if (r->size != core->rasm->bits) {
 			continue;
 		}
 		ut64 value = r_reg_get_value (reg, r);
@@ -2008,23 +2003,27 @@ R_API void r_core_debug_ri(RCore *core, RReg *reg, int mode) {
 R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	char *color = "";
 	char *colorend = "";
-	int use_colors = r_config_get_i (core->config, "scr.color");
+	int had_colors = r_config_get_i (core->config, "scr.color");
+	bool use_colors = had_colors != 0;
 	int delta = 0;
 	ut64 diff, value;
-	int bits = core->assembler->bits;
+	int bits = core->rasm->bits;
 	//XXX: support other RRegisterType
 	RList *list = r_reg_get_list (reg, R_REG_TYPE_GPR);
 	RListIter *iter;
 	RRegItem *r;
 	RTable *t = r_core_table (core);
+
+	if (mode == 'j') {
+		r_config_set_i (core->config, "scr.color", false);
+		use_colors = 0;
+	}
+
 	if (use_colors) {
 #undef ConsP
 #define ConsP(x) (core->cons && core->cons->context->pal.x) ? core->cons->context->pal.x
 		color = ConsP(creg): Color_BWHITE;
-	}
-
-	if (mode == 'j') {
-		r_config_set_i (core->config, "scr.color", false);
+		colorend = Color_RESET;
 	}
 
 	r_table_set_columnsf (t, "ssss", "role", "reg", "value", "ref");
@@ -2043,8 +2042,6 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 			r_reg_arena_swap (core->dbg->reg, false);
 			delta = value-diff;
 		}
-		color = (delta && use_colors)? color: "";
-		colorend = (delta && use_colors)? Color_RESET: "";
 
 		const char *role = "";
 		int i;
@@ -2055,13 +2052,19 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 			}
 		}
 
-		char *namestr = r_str_newf ("%s%s%s", color, r->name, colorend);
-		char *valuestr = r_str_newf ("%s%"PFMT64x"%s", color, value, colorend);
+		char *namestr = NULL;
+		char *valuestr = NULL;
+		if (delta && use_colors) {
+			namestr = r_str_newf ("%s%s%s", color, r->name, colorend);
+			valuestr = r_str_newf ("%s%"PFMT64x"%s", color, value, colorend);
+		} else {
+			namestr = r_str_new (r->name);
+			valuestr = r_str_newf ("%"PFMT64x, value);
+		}
 
-		char *rrstr = strdup ("");
-		char *refs = r_core_anal_hasrefs (core, value, true);
-		if (refs) {
-			rrstr = refs;
+		char *rrstr = r_core_anal_hasrefs (core, value, true);
+		if (!rrstr) {
+			rrstr = strdup ("");
 		}
 
 		r_table_add_rowf (t, "ssss", role, namestr, valuestr, rrstr);
@@ -2075,8 +2078,8 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	free (s);
 	r_table_free (t);
 
-	if (use_colors) {
-		r_config_set_i (core->config, "scr.color", use_colors);
+	if (had_colors) {
+		r_config_set_i (core->config, "scr.color", had_colors);
 	}
 }
 
@@ -2107,17 +2110,18 @@ static void show_drpi(RCore *core) {
 
 static void cmd_reg_profile (RCore *core, char from, const char *str) { // "arp" and "drp"
 	const char *ptr;
+	RReg *r = r_config_get_i (core->config, "cfg.debug")? core->dbg->reg: core->anal->reg;
 	switch (str[1]) {
 	case '\0': // "drp"
-		if (core->dbg->reg->reg_profile_str) {
-			r_cons_println (core->dbg->reg->reg_profile_str);
+		if (r->reg_profile_str) {
+			r_cons_println (r->reg_profile_str);
 		} else {
 			eprintf ("No register profile defined. Try 'dr.'\n");
 		}
 		break;
 	case 'c': // drpc
 		if (core->dbg->reg->reg_profile_cmt) {
-			r_cons_println (core->dbg->reg->reg_profile_cmt);
+			r_cons_println (r->reg_profile_cmt);
 		}
 		break;
 	case ' ': // "drp "
@@ -2129,11 +2133,11 @@ static void cmd_reg_profile (RCore *core, char from, const char *str) { // "arp"
 			r_reg_parse_gdb_profile (ptr + 4);
 			break;
 		}
-		r_reg_set_profile (core->dbg->reg, str + 2);
+		r_reg_set_profile (r, str + 2);
 		r_debug_plugin_set_reg_profile (core->dbg, str + 2);
 		break;
 	case '.': { // "drp."
-		RRegSet *rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
+		RRegSet *rs = r_reg_regset_get (r, R_REG_TYPE_GPR);
 		if (rs) {
 			eprintf ("size = %d\n", rs->arena->size);
 		}
@@ -2377,7 +2381,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case 'C': // "drC"
 		{
 			const bool json_out = str[1] == 'j';
-			name = json_out ? str + 3 : str + 2;
+			name = r_str_trim_head_ro (json_out ? str + 3 : str + 2);
 			if (name) {
 				r = r_reg_get (core->dbg->reg, name , -1);
 				if (r) {
@@ -2508,7 +2512,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					r_print_hexdump (core->print, 0ll, buf, len, 64, 8, 1);
 					break;
 				default:
-					if (core->assembler->bits == 64) {
+					if (core->rasm->bits == 64) {
 						r_print_hexdump (core->print, 0ll, buf, len, 64, 8, 1);
 					} else {
 						r_print_hexdump (core->print, 0ll, buf, len, 32, 4, 1);
@@ -2993,7 +2997,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 			RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
 			if (reg) {
-				if (core->assembler->bits != reg->size) {
+				if (core->rasm->bits != reg->size) {
 					pcbits = reg->size;
 				}
 			}
@@ -3239,17 +3243,16 @@ static void static_debug_stop(void *u) {
 	r_debug_stop (dbg);
 }
 
-static void core_cmd_dbi (RCore *core, const char *input, ut64 idx) {
+static void core_cmd_dbi(RCore *core, const char *input, const ut64 idx) {
 	int i;
 	char *p;
 	RBreakpointItem *bpi;
 	switch (input[2]) {
 	case ' ': // "dbi."
 		{
-			ut64 addr = idx;
-			int idx = r_bp_get_index_at (core->dbg->bp, addr);
-			if (idx != -1) {
-				r_cons_printf ("%d\n", idx);
+			const int index = r_bp_get_index_at (core->dbg->bp, idx);
+			if (index != -1) {
+				r_cons_printf ("%d\n", index);
 			}
 		}
 		break;
@@ -3262,9 +3265,9 @@ static void core_cmd_dbi (RCore *core, const char *input, ut64 idx) {
 		break;
 	case '.': // "dbi."
 		{
-			int idx = r_bp_get_index_at (core->dbg->bp, core->offset);
-			if (idx != -1) {
-				r_cons_printf ("%d\n", idx);
+			const int index = r_bp_get_index_at (core->dbg->bp, core->offset);
+			if (index != -1) {
+				r_cons_printf ("%d\n", index);
 			}
 		}
 		break;
@@ -5130,7 +5133,6 @@ static int cmd_debug(void *data, const char *input) {
 		if (core->io->debug || input[1] == '?') {
 			cmd_debug_reg (core, input + 1);
 		} else {
-			void cmd_anal_reg (RCore *core, const char *str);
 			cmd_anal_reg (core, input + 1);
 		}
 		//r_core_cmd (core, "|reg", 0);
@@ -5415,8 +5417,8 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		case 'a': { // "dxa"
 			RAsmCode *acode;
-			r_asm_set_pc (core->assembler, core->offset);
-			acode = r_asm_massemble (core->assembler, input + 2);
+			r_asm_set_pc (core->rasm, core->offset);
+			acode = r_asm_massemble (core->rasm, input + 2);
 			if (acode) {
 				r_reg_arena_push (core->dbg->reg);
 				r_debug_execute (core->dbg, acode->bytes, acode->len, 0);
@@ -5436,7 +5438,7 @@ static int cmd_debug(void *data, const char *input) {
 			r_egg_load (egg, input + 1, 0);
 			r_egg_compile (egg);
 			b = r_egg_get_bin (egg);
-			r_asm_set_pc (core->assembler, core->offset);
+			r_asm_set_pc (core->rasm, core->offset);
 			r_reg_arena_push (core->dbg->reg);
 			ut64 tmpsz;
 			const ut8 *tmp = r_buf_data (b, &tmpsz);

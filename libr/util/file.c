@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2019 - pancake */
+/* radare - LGPL - Copyright 2007-2020 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -197,19 +197,18 @@ R_API ut64 r_file_size(const char *str) {
 	return (ut64)buf.st_size;
 }
 
-R_API int r_file_is_abspath(const char *file) {
+R_API bool r_file_is_abspath(const char *file) {
 	return ((*file && file[1]==':') || *file == '/');
 }
 
-R_API char *r_file_abspath(const char *file) {
-	char *cwd, *ret = NULL;
+R_API char *r_file_abspath_rel(const char *cwd, const char *file) {
+	char *ret = NULL;
 	if (!file || !strcmp (file, ".") || !strcmp (file, "./")) {
 		return r_sys_getdir ();
 	}
 	if (strstr (file, "://")) {
 		return strdup (file);
 	}
-	cwd = r_sys_getdir ();
 	if (!strncmp (file, "~/", 2) || !strncmp (file, "~\\", 2)) {
 		ret = r_str_home (file + 2);
 	} else {
@@ -240,7 +239,6 @@ R_API char *r_file_abspath(const char *file) {
 		}
 #endif
 	}
-	free (cwd);
 	if (!ret) {
 		ret = strdup (file);
 	}
@@ -251,6 +249,13 @@ R_API char *r_file_abspath(const char *file) {
 		ret = abspath;
 	}
 #endif
+	return ret;
+}
+
+R_API char *r_file_abspath(const char *file) {
+	char *cwd = r_sys_getdir ();
+	char *ret = r_file_abspath_rel (cwd, file);
+	free (cwd);
 	return ret;
 }
 
@@ -690,7 +695,7 @@ R_API bool r_file_hexdump(const char *file, const ut8 *buf, int len, int append)
 }
 
 R_API bool r_file_touch(const char *file) {
-	return r_file_dump(file, NULL, 0, true);
+	return r_file_dump (file, NULL, 0, true);
 }
 
 R_API bool r_file_dump(const char *file, const ut8 *buf, int len, bool append) {
@@ -816,6 +821,7 @@ err_r_file_mmap_write:
 		return -1;
 	}
 	memcpy (mmap_buf+rest, buf, len);
+	msync (mmap_buf+rest, len, MS_INVALIDATE);
 	munmap (mmap_buf, mmlen*2);
 	close (fd);
 	return len;
@@ -1129,7 +1135,7 @@ R_API char *r_file_tmpdir() {
 	free (tmpdir);
 	// Windows 7, stat() function fail if tmpdir ends with '\\'
 	if (path) {
-		int path_len = strlen (path);
+		size_t path_len = strlen (path);
 		if (path_len > 0 && path[path_len - 1] == '\\') {
 			path[path_len - 1] = '\0';
 		}

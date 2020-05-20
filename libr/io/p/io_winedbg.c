@@ -29,7 +29,7 @@ R_PACKED (struct winedbg_x86_32 {
 });
 
 // TODO: make it vargarg...
-static char *runcmd (const char *cmd) {
+static char *runcmd(const char *cmd) {
 	char buf[4096] = {0};
 	if (cmd) {
 		r_socket_printf (gs, "%s\n", cmd);
@@ -39,7 +39,10 @@ static char *runcmd (const char *cmd) {
 	r_socket_block_time (gs, 1, timeout, 0);
 	while (true) {
 		memset (buf, 0, sizeof (buf));
-		r_socket_read (gs, (ut8*)buf, sizeof (buf) - 1); // NULL-terminate the string always
+		int rc = r_socket_read (gs, (ut8*)buf, sizeof (buf) - 1); // NULL-terminate the string always
+		if (rc == -1) {
+			break;
+		}
 		char *promptFound = strstr (buf, "Wine-dbg>");
 		if (promptFound) {
 			*promptFound = 0;
@@ -291,7 +294,7 @@ const char *msg =
 "flg	rf	.1	.202	0\n"\
 "flg	vm	.1	.203	0\n";
 		return strdup (msg);
-	} else if (!strncmp (cmd, "dr*", 2)) {
+	} else if (!strncmp (cmd, "dr*", 3)) {
 		struct winedbg_x86_32 r = regState ();
 		io->cb_printf ("f eip = 0x%08x\n", r.eip);
 		io->cb_printf ("f esp = 0x%08x\n", r.esp);

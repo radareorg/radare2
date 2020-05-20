@@ -1,3 +1,6 @@
+#ifndef P9BIN_H
+#define P9BIN_H
+
 #include <r_util.h>
 
 /*
@@ -49,3 +52,5 @@ struct plan9_exec {
 
 /* Reads four bytes from b. */
 int r_bin_p9_get_arch(RBuffer *b, int *bits, int *big_endian);
+
+#endif

@@ -326,11 +326,13 @@ R_API char* r_print_json_indent(const char* s, bool color, const char* tab, cons
 		case ':':
 			*o++ = *s;
 			*o++ = ' ';
-			if (!strncmp (s + 1, "true", 4)) {
+			s = r_str_trim_head_ro (s + 1);
+			if (!strncmp (s, "true", 4)) {
 				EMIT_ESC (o, colors[JC_TRUE]);
-			} else if (!strncmp (s + 1, "false", 5)) {
+			} else if (!strncmp (s, "false", 5)) {
 				EMIT_ESC (o, colors[JC_FALSE]);
 			}
+			s--;
 			isValue = true;
 			break;
 		case ',':

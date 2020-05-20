@@ -1,5 +1,5 @@
-include ../global.mk
 include ../config-user.mk
+include ../global.mk
 # for EXT_EXE
 include ../libr/config.mk
 include ../mk/platform.mk
@@ -31,11 +31,6 @@ TS_URL=https://github.com/tree-sitter/tree-sitter.git
 TS_BRA=master
 TS_TIP=f049ba350f3f6019ce9a1cbb0975ebd154ef7ad3
 
-# NOTE: when you update SHELLPARSER_TIP or SHELLPARSER_BRA, also update them in shlr/meson.build
-SHELLPARSER_URL=https://github.com/ret2libc/radare2-shell-parser.git
-SHELLPARSER_BRA=master
-SHELLPARSER_TIP=36130421da6a698cc65b7f4dd939a803310bbe24
-
 ifeq ($(CS_RELEASE),1)
 CS_VER=4.0.1
 CS_TAR=https://codeload.github.com/aquynh/capstone/tar.gz/$(CS_VER)
@@ -65,13 +60,13 @@ CS_REV=
 CS_PATCHES=1
 endif
 
-.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwindbg bochs tree-sitter-sync radare2-shell-parser-sync
+.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwindbg bochs tree-sitter-sync
 
 HOST_CC?=gcc
 SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
-MODS=sdb zip java tcc mpc
+MODS=sdb zip java tcc mpc yxml
 MODS+=gdb qnx ar
 # lz4
 ifneq ($(CC),cccl)
@@ -320,7 +315,7 @@ ifneq (${EXT_AR},a)
 endif
 endif
 ../../radare2-webui:
-	cd ../.. ; git clone --depth 1 https://github.com/radare/radare2-webui
+	cd ../.. ; git clone --depth 1 https://github.com/radareorg/radare2-webui
 
 ../../radare2-webui/dist/m: ../../radare2-webui
 ifeq ($(WITHOUT_PULL),1)
@@ -329,37 +324,37 @@ else
 	cd ../../radare2-webui/www/m && git pull ; npm i ; $(MAKE) release
 endif
 
-ifeq ($(USE_TREESITTER),1)
 tree-sitter-build: tree-sitter/libtree-sitter.$(EXT_AR)
 
 tree-sitter/libtree-sitter.$(EXT_AR): tree-sitter/lib/src/lib.o
 	$(AR) rvs $@ $<
 	$(RANLIB) $@
 
-tree-sitter/lib/src/lib.o: tree-sitter-sync
-	$(CC) -std=c99 -c tree-sitter/lib/src/lib.c -o $@ -Itree-sitter/lib/include -Itree-sitter/lib/src $(CFLAGS)
+tree-sitter/lib/src/lib.o:
+	$(CC) $(NEWSHELL_CFLAGS) -c tree-sitter/lib/src/lib.c -o $@ -Itree-sitter/lib/include -Itree-sitter/lib/src $(CFLAGS)
 
 tree-sitter-sync:
-	"$(SHELL)" clone_3rd_repo.sh tree-sitter "${TS_URL}" "${TS_BRA}" "${TS_TIP}"
+	rm -rf tree-sitter tree-sitter.vc
+	"$(SHELL)" clone_3rd_repo.sh tree-sitter.vc "${TS_URL}" "${TS_BRA}" "${TS_TIP}"
+	mkdir -p tree-sitter/lib
+	cp -rf ./tree-sitter.vc/lib/src ./tree-sitter/lib
+	cp -rf ./tree-sitter.vc/lib/include ./tree-sitter/lib
+	rm -rf tree-sitter.vc
 
 radare2-shell-parser-build: radare2-shell-parser/libshell-parser.$(EXT_AR)
 
-radare2-shell-parser/libshell-parser.$(EXT_AR): radare2-shell-parser/src/parser.o
-	$(AR) rvs $@ $<
+radare2-shell-parser/libshell-parser.$(EXT_AR): radare2-shell-parser/src/parser.o radare2-shell-parser/src/scanner.o
+	$(AR) rvs $@ radare2-shell-parser/src/parser.o radare2-shell-parser/src/scanner.o
 	$(RANLIB) $@
 
-radare2-shell-parser/src/parser.o: radare2-shell-parser-sync
-	$(CC) -c radare2-shell-parser/src/parser.c -o $@ -Iradare2-shell-parser/src/tree_sitter -Itree-sitter/lib/include $(CFLAGS)
+radare2-shell-parser/src/parser.o: radare2-shell-parser/src/parser.c
+	$(CC) $(NEWSHELL_CFLAGS) -c radare2-shell-parser/src/parser.c -o $@ -Iradare2-shell-parser/src/tree_sitter -Itree-sitter/lib/include $(CFLAGS)
 
-radare2-shell-parser-sync: tree-sitter-sync
-	"$(SHELL)" clone_3rd_repo.sh radare2-shell-parser "${SHELLPARSER_URL}" "${SHELLPARSER_BRA}" "${SHELLPARSER_TIP}"
+radare2-shell-parser/src/scanner.o: radare2-shell-parser/src/scanner.c
+	$(CC) -c radare2-shell-parser/src/scanner.c -o $@ -Iradare2-shell-parser/src/tree_sitter -Itree-sitter/lib/include $(CFLAGS)
 
 SHLRS+=tree-sitter/libtree-sitter.a
 SHLRS+=radare2-shell-parser/libshell-parser.a
-else
-tree-sitter-build:
-radare2-shell-parser-build:
-endif
 
 www-sync-m sync-www-m: ../../radare2-webui/dist/m
 	cp -rf ../../radare2-webui/dist/m www/m.tmp
@@ -401,18 +396,26 @@ SHLRS+=grub/libgrubfs.a
 SHLRS+=java/libr_java.a
 SHLRS+=lz4/liblz4.a
 SHLRS+=qnx/lib/libqnxr.a
-#SHLRS+=sdb/src/libsdb.a
-#SHLRS+=tcc/libr_tcc.a
+SHLRS+=yxml/libyxml.a
 SHLRS+=windbg/libr_windbg.a
 SHLRS+=zip/librz.a
 
 libr_shlr.${EXT_AR}:
 	rm -rf .libr
 	mkdir .libr
+ifeq ($(CC),emcc)
+	for LIB in ${SHLRS} ; do \
+		if [ -f "$${LIB}" ]; then emcc -emit-llvm -nostdlib -Wl,--whole-archive -o .libr/$$(basename $${LIB}.a).o $${LIB} ; fi ; \
+	done
+	${AR} crs $@ .libr/*.o
+	$(RANLIB) $@
+else
 	for LIB in ${SHLRS} ; do \
 		if [ -f "$${LIB}" ]; then ${PARTIALLD} -o .libr/$$(basename $${LIB}.a).o $${LIB} ; fi ; \
 	done
 	${AR} crs $@ .libr/*.o
+	$(RANLIB) $@
+endif
 
 .PHONY: spp
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #ifndef R2_CORE_H
 #define R2_CORE_H
@@ -36,7 +36,10 @@ extern "C" {
 #endif
 R_LIB_VERSION_HEADER(r_core);
 
+#define R_CORE_CMD_OK 0
+#define R_CORE_CMD_INVALID -1
 #define R_CORE_CMD_EXIT -2
+
 #define R_CORE_BLOCKSIZE 0x100
 #define R_CORE_BLOCKSIZE_MAX 0x3200000 /* 32MB */
 
@@ -78,10 +81,6 @@ R_LIB_VERSION_HEADER(r_core);
 #define RTR_PROTOCOL_UDP 2
 #define RTR_PROTOCOL_HTTP 3
 #define RTR_PROTOCOL_UNIX 4
-
-#define RTR_RAP_OPEN   0x01
-#define RTR_RAP_CMD    0x07
-#define RTR_RAP_REPLY  0x80
 
 #define RTR_MAX_HOSTS 255
 
@@ -263,7 +262,7 @@ typedef struct r_core_t {
 	RCmdDescriptor root_cmd_descriptor;
 	RList/*<RCmdDescriptor>*/ *cmd_descriptors;
 	RAnal *anal;
-	RAsm *assembler;
+	RAsm *rasm;
 	/* ^^ */
 	RCoreTimes *times;
 	RParse *parser;
@@ -400,7 +399,7 @@ R_API void r_core_prompt_loop(RCore *core);
 R_API ut64 r_core_pava(RCore *core, ut64 addr);
 R_API int r_core_cmd(RCore *core, const char *cmd, int log);
 R_API int r_core_cmd_task_sync(RCore *core, const char *cmd, bool log);
-R_API char *r_core_editor (const RCore *core, const char *file, const char *str);
+R_API char *r_core_editor(const RCore *core, const char *file, const char *str);
 R_API int r_core_fgets(char *buf, int len);
 R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, ut64 off);
 R_API int r_core_cmdf(RCore *core, const char *fmt, ...);
@@ -441,6 +440,7 @@ R_API bool r_core_prevop_addr(RCore* core, ut64 start_addr, int numinstrs, ut64*
 R_API ut64 r_core_prevop_addr_force(RCore *core, ut64 start_addr, int numinstrs);
 R_API bool r_core_visual_hudstuff(RCore *core);
 R_API int r_core_visual_classes(RCore *core);
+R_API int r_core_visual_anal_classes(RCore *core);
 R_API int r_core_visual_types(RCore *core);
 R_API int r_core_visual(RCore *core, const char *input);
 R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive);
@@ -506,7 +506,7 @@ R_API int r_core_file_list(RCore *core, int mode);
 R_API int r_core_file_binlist(RCore *core);
 R_API bool r_core_file_bin_raise(RCore *core, ut32 num);
 R_API int r_core_seek_delta(RCore *core, st64 addr);
-R_API int r_core_extend_at(RCore *core, ut64 addr, int size);
+R_API bool r_core_extend_at(RCore *core, ut64 addr, int size);
 R_API bool r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size);
 R_API int r_core_write_op(RCore *core, const char *arg, char op);
 R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op);
@@ -613,7 +613,7 @@ R_API RList *r_core_anal_fcn_get_calls (RCore *core, RAnalFunction *fcn); // get
 
 /*tp.c*/
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn);
-R_API RStrBuf *var_get_constraint (RAnal *a, RAnalVar *var);
+R_API RStrBuf *var_get_constraint(RAnal *a, RAnalFunction *fcn, RAnalVar *var);
 
 /* asm.c */
 #define R_MIDFLAGS_SHOW 1

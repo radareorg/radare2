@@ -1,0 +1,8 @@
+NAME=./helloworld-phdr-elf
+FILE=bins/elf/analysis/x86-helloworld-phdr
+CMDS=om
+EXPECT=<<EOF
+ 2 fd: 3 +0x00000000 0x08048000 - 0x080480ff r-x fmap.LOAD0
+ 1 fd: 3 +0x00000130 0x08049130 - 0x0804922f r-x fmap.LOAD1
+EOF
+RUN

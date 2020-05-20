@@ -5,7 +5,6 @@
 #include <r_syscall.h>
 #include <stdio.h>
 #include <string.h>
-#include "fastcall.h"
 
 R_LIB_VERSION (r_syscall);
 
@@ -22,7 +21,6 @@ R_API RSyscall* r_syscall_new() {
 	RSyscall *rs = R_NEW0 (RSyscall);
 	if (rs) {
 		rs->sysport = sysport_x86;
-		rs->regs = fastcall_x86_32;
 		rs->srdb = sdb_new0 (); // sysregs database
 		rs->db = sdb_new0 ();
 	}
@@ -42,14 +40,6 @@ R_API void r_syscall_free(RSyscall *s) {
 		free (s->arch);
 		free (s);
 	}
-}
-
-/* return fastcall register argument 'idx' for a syscall with 'num' args */
-R_API const char *r_syscall_reg(RSyscall *s, int idx, int num) {
-	if (num < 0 || num >= R_SYSCALL_ARGS || idx < 0 || idx >= R_SYSCALL_ARGS) {
-		return NULL;
-	}
-	return s->regs[num].arg[idx];
 }
 
 static Sdb *openDatabase(Sdb *db, const char *name) {
@@ -117,38 +107,12 @@ R_API bool r_syscall_setup(RSyscall *s, const char *arch, int bits, const char *
 	if (!strcmp (os, "any")) { // ignored
 		return true;
 	}
-	if (!strcmp (arch, "mips")) {
-		s->regs = fastcall_mips;
-	} else if (!strcmp (arch, "avr")) {
+	if (!strcmp (arch, "avr")) {
 		s->sysport = sysport_avr;
 	} else if (!strcmp (os, "darwin") || !strcmp (os, "osx") || !strcmp (os, "macos")) {
 		os = "darwin";
-		s->regs = fastcall_x86_64;
-	} else if (!strcmp (arch,"sh")) {
-		s->regs = fastcall_sh;
-	} else if (!strcmp (arch, "arm")) {
-		switch (bits) {
-		case 16:
-		case 32:
-			s->regs = fastcall_arm;
-			break;
-		case 64:
-			s->regs = fastcall_arm64;
-			break;
-		}
 	} else if (!strcmp (arch, "x86")) {
 		s->sysport = sysport_x86;
-		switch (bits) {
-		case 8:
-			s->regs = fastcall_x86_8;
-			break;
-		case 32:
-			s->regs = fastcall_x86_32;
-			break;
-		case 64:
-			s->regs = fastcall_x86_64;
-			break;
-		}
 	}
 
 	if (syscall_changed) {

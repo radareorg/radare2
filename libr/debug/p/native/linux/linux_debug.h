@@ -6,6 +6,9 @@
      _\_):,_
 */
 
+#ifndef LINUX_DEBUG_H
+#define LINUX_DEBUG_H
+
 #include <limits.h>
 #include <sys/ptrace.h>
 
@@ -124,3 +127,5 @@ int linux_handle_signals(RDebug *dbg, int tid);
 int linux_dbg_wait(RDebug *dbg, int pid);
 char *linux_reg_profile(RDebug *dbg);
 int match_pid(const void *pid_o, const void *th_o);
+
+#endif

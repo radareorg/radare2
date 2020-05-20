@@ -1,4 +1,4 @@
-/* Copyright radare2 - 2014-2019 - pancake, ret2libc */
+/* Copyright radare2 - 2014-2020 - pancake, ret2libc */
 
 #include <r_core.h>
 #include <r_cons.h>
@@ -98,6 +98,11 @@ struct agraph_refresh_data {
 	RAnalFunction **fcn;
 	bool follow_offset;
 	int fs;
+};
+
+struct r_agraph_location {
+	int x;
+	int y;
 };
 
 #define G(x, y) r_cons_canvas_gotoxy (g->can, x, y)
@@ -2058,13 +2063,11 @@ static void set_layout(RAGraph *g) {
 
 	backedge_info (g);
 
-	//restore_original_edges (g);
-	//remove_dummy_nodes (g);
-
 	/* free all temporary structures used during layout */
 	for (i = 0; i < g->n_layers; i++) {
 		free (g->layers[i].nodes);
 	}
+
 	free (g->layers);
 	r_list_free (g->long_edges);
 	r_list_free (g->back_edges);
@@ -2413,8 +2416,7 @@ cleanup:
 
 /* build the RGraph inside the RAGraph g, starting from the Call Graph
  * information */
-static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
-#if FCN_OLD
+static bool get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 	RANode *node, *fcn_anode;
 	RListIter *iter;
@@ -2427,7 +2429,7 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		fcn = f;
 	}
 
-	r_core_seek (core, f->addr, 1);
+	r_core_seek (core, f->addr, true);
 
 	char *title = get_title (fcn->addr);
 	fcn_anode = r_agraph_add_node (g, title, "");
@@ -2471,31 +2473,25 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		r_agraph_add_edge (g, fcn_anode, node);
 	}
 	r_list_free (refs);
-#else
-	eprintf ("Must be sdbized\n");
-#endif
+
 	return true;
 }
 
-static int reload_nodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
-	int is_c = g->is_callgraph;
+static bool reload_nodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
+	const bool is_c = g->is_callgraph;
 	return is_c? get_cgnodes (g, core, fcn): get_bbnodes (g, core, fcn);
 }
 
 static void update_seek(RConsCanvas *can, RANode *n, int force) {
-	int x, y, w, h;
-	int doscroll = false;
-
 	if (!n) {
 		return;
 	}
-	x = n->x + can->sx;
-	y = n->y + can->sy;
-	w = can->w;
-	h = can->h;
+	int x = n->x + can->sx;
+	int y = n->y + can->sy;
+	int w = can->w;
+	int h = can->h;
 
-	doscroll = force || y < 0 || y + 5 > h || x + 5 > w || x + n->w + 5 < 0;
-
+	const bool doscroll = force || y < 0 || y + 5 > h || x + 5 > w || x + n->w + 5 < 0;
 	if (doscroll) {
 		if (n->w > w) { //too big for centering
 			can->sx = -n->x;
@@ -2532,8 +2528,8 @@ static const RGraphNode *find_near_of(const RAGraph *g, const RGraphNode *cur, i
 	const RGraphNode *gn, *resgn = NULL;
 	const RANode *n, *acur = cur? get_anode (cur): NULL;
 	const int default_v = is_next? INT_MIN: INT_MAX;
-	const int start_y = acur? acur->y: default_v;
 	const int start_x = acur? acur->x: default_v;
+	const int start_y = acur? acur->y: default_v;
 
 	graph_foreach_anode (nodes, it, gn, n) {
 		// tab in horizontal layout is not correct, lets force vertical nextnode for now (g->layout == 0)
@@ -3155,9 +3151,8 @@ static void agraph_set_zoom(RAGraph *g, int v) {
 /* reload all the info in the nodes, depending on the type of the graph
  * (callgraph, CFG, etc.), set the default layout for these nodes and center
  * the screen on the selected one */
-static int agraph_reload_nodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
+static bool agraph_reload_nodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	r_agraph_reset (g);
-
 	return reload_nodes (g, core, fcn);
 }
 
@@ -3181,7 +3176,6 @@ static void move_current_node(RAGraph *g, int xdiff, int ydiff) {
 			xdiff = NORMALIZE_MOV (xdiff);
 			ydiff = NORMALIZE_MOV (ydiff);
 		}
-
 		n->x += xdiff;
 		n->y += ydiff;
 	}
@@ -3237,7 +3231,7 @@ static void agraph_toggle_mini(RAGraph *g) {
 	agraph_set_layout ((RAGraph *) g);
 }
 
-static void agraph_follow_innodes (RAGraph *g, bool in) {
+static void agraph_follow_innodes(RAGraph *g, bool in) {
 	int count = 0;
 	RListIter *iter;
 	RANode *an = get_anode (g->curnode);
@@ -3581,6 +3575,7 @@ static void agraph_init(RAGraph *g) {
 	g->hints = 1;
 	g->movspeed = DEFAULT_SPEED;
 	g->db = sdb_new0 ();
+	r_vector_init (&g->ghits.word_list, sizeof (struct r_agraph_location), NULL, NULL);
 }
 
 static void free_anode(RANode *n) {
@@ -3941,11 +3936,11 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 		RANode *addr_node = r_agraph_get_node (g, title);
 		if (addr_node) {
 			r_agraph_set_curnode (g, addr_node);
-			r_core_seek (core, addr, 0);
+			r_core_seek (core, addr, false);
 			agraph_update_seek (g, addr_node, true);
 		} else {
 			r_io_sundo_push (core->io, core->offset, 0);
-			r_core_seek (core, addr, 0);
+			r_core_seek (core, addr, false);
 		}
 		free (title);
 	}
@@ -4047,6 +4042,68 @@ static bool toggle_bb(RCore *core, ut64 addr) {
 		return true;
 	}
 	return false;
+}
+
+static char *get_graph_string(RCore *core, RAGraph *g) {
+	int c = r_config_get_i (core->config, "scr.color");
+	int u = r_config_get_i (core->config, "scr.utf8");
+	r_config_set_i (core->config, "scr.color", 0);
+	r_config_set_i (core->config, "scr.utf8", 0);
+	r_core_visual_graph (core, g, NULL, false);
+	char *s = strdup (r_cons_get_buffer ());
+	r_cons_reset ();
+	r_config_set_i (core->config, "scr.color", c);
+	r_config_set_i (core->config, "scr.utf8", u);
+	return s;
+}
+
+static void nextword(RCore *core, RAGraph *g, const char *word) {
+	r_return_if_fail (core && core->graph && g && g->can && word);
+	if (R_STR_ISEMPTY (word)) {
+		return;
+	}
+	RAGraphHits *gh = &g->ghits;
+	RConsCanvas *can = g->can;
+	if (gh->word_list.len && gh->old_word && !strcmp (word, gh->old_word)) {
+		if (gh->word_nth >= gh->word_list.len) {
+			gh->word_nth = 0;
+		}
+
+		struct r_agraph_location *pos = r_vector_index_ptr (&gh->word_list, gh->word_nth);
+		gh->word_nth++;
+		if (pos) {
+			can->sx = -pos->x + can->w / 2;
+			can->sy = -pos->y + can->h / 2;
+		}
+		return;
+	} else {
+		r_vector_clear (&gh->word_list);
+	}
+	char *s = get_graph_string (core, g);
+	r_cons_clear00 ();
+	r_cons_flush ();
+	const size_t MAX_COUNT = 4096;
+	const char *a = NULL;
+	size_t count = 0;
+	int x = 0, y = 0;
+	for (count = 0; count < MAX_COUNT; count++) {
+		a = r_str_str_xy (s, word, a, &x, &y);
+		if (!a) {
+			break;
+		}
+		struct r_agraph_location *pos = r_vector_push (&gh->word_list, NULL);
+		if (pos) {
+			pos->x = x + g->x;
+			pos->y = y + g->y;
+		}
+	}
+	free (gh->old_word);
+	gh->old_word = strdup (word);
+	free (s);
+	if (!a && count == 0) {
+		return;
+	}
+	nextword (core, g, word);
 }
 
 R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive) {
@@ -4245,6 +4302,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				get_bbupdate (g, core, fcn);
 			}
 			break;
+		case '\\':
+			nextword (core, g, r_config_get (core->config, "scr.highlight"));
+			break;
 		case 'b':
 			r_core_visual_browse (core, "");
 			break;
@@ -4322,10 +4382,10 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			ut64 old_off = core->offset;
 			ut64 off = r_anal_get_bbaddr (core->anal, core->offset);
-			r_core_seek (core, off, 0);
+			r_core_seek (core, off, false);
 			if ((key == 'x' && !r_core_visual_refs (core, true, true)) ||
 			    (key == 'X' && !r_core_visual_refs (core, false, true))) {
-				r_core_seek (core, old_off, 0);
+				r_core_seek (core, old_off, false);
 			}
 			break;
 		}
@@ -4348,6 +4408,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" \"            - toggle graph.refs\n"
 				" #            - toggle graph.hints\n"
 				" /            - highlight text\n"
+				" \\            - scroll the graph canvas to the next highlight location\n"
 				" |            - set cmd.gprompt\n"
 				" _            - enter hud selector\n"
 				" >            - show function callgraph (see graph.refs)\n"
@@ -4442,7 +4503,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			RIOUndos *undo = r_io_sundo (core->io, core->offset);
 			if (undo) {
-				r_core_seek (core, undo->off, 0);
+				r_core_seek (core, undo->off, false);
 			} else {
 				eprintf ("Cannot undo\n");
 			}
@@ -4458,7 +4519,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			RIOUndos *undo = r_io_sundo_redo (core->io);
 			if (undo) {
-				r_core_seek (core, undo->off, 0);
+				r_core_seek (core, undo->off, false);
 			} else {
 				eprintf ("Cannot redo\n");
 			}
@@ -4669,7 +4730,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			  {
 				  RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 				  if (fcn) {
-					  r_core_seek (core, fcn->addr, 0);
+					  r_core_seek (core, fcn->addr, false);
 				  }
 			  }
 			  agraph_update_seek (g, get_anode (g->curnode), true);
@@ -4841,6 +4902,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		}
 	}
+	r_vector_fini (&g->ghits.word_list);
 	r_cons_break_pop ();
 	r_config_set (core->config, "asm.comments", r_str_bool (asm_comments));
 	core->cons->event_resize = NULL;

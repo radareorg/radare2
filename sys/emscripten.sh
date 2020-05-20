@@ -13,7 +13,8 @@ export CC="emcc --ignore-dynamic-linking -Oz"
 export AR="emar"
 
 CFGFLAGS="--prefix=/usr --with-compiler=emscripten"
-CFGFLAGS="${CFGFLAGS} --disable-debugger --with-libr"
+CFGFLAGS="${CFGFLAGS} --host x86_64-unknown-linux"
+CFGFLAGS="${CFGFLAGS} --disable-debugger --with-libr --without-gpl"
 CFGFLAGS="${CFGFLAGS} --without-libuv --without-jemalloc"
 CFGFLAGS="${CFGFLAGS} --without-fork" # no process support in Emscripten
 
@@ -23,3 +24,6 @@ cp -f plugins.emscripten.cfg plugins.cfg
 
 ./configure ${CFGFLAGS} --host=emscripten && \
 	make -s -j ${MAKE_JOBS} DEBUG=0
+
+rm -f r2js.zip
+zip r2js.zip binr/*/*.js binr/*/*/*.wasm

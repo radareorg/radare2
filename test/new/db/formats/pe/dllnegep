@@ -1,6 +1,0 @@
-NAME=PE: corkami dllnegep.dll - open
-FILE=../bins/pe/dllnegep.dll
-EXPECT=<<EOF
-EOF
-CMDS=q!
-RUN

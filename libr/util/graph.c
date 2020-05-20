@@ -103,7 +103,7 @@ static void dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis, int color[],
 	r_stack_free (s);
 }
 
-R_API RGraph *r_graph_new () {
+R_API RGraph *r_graph_new() {
 	RGraph *t = R_NEW0 (RGraph);
 	if (!t) {
 		return NULL;
@@ -119,12 +119,12 @@ R_API RGraph *r_graph_new () {
 	return t;
 }
 
-R_API void r_graph_free (RGraph* t) {
+R_API void r_graph_free(RGraph* t) {
 	r_list_free (t->nodes);
 	free (t);
 }
 
-R_API RGraphNode *r_graph_get_node (const RGraph *t, unsigned int idx) {
+R_API RGraphNode *r_graph_get_node(const RGraph *t, unsigned int idx) {
 	RListIter *it = r_list_find (t->nodes, (void *)(size_t)idx, (RListComparator)node_cmp);
 	if (!it) {
 		return NULL;
@@ -132,7 +132,7 @@ R_API RGraphNode *r_graph_get_node (const RGraph *t, unsigned int idx) {
 	return (RGraphNode *)it->data;
 }
 
-R_API RListIter *r_graph_node_iter (const RGraph *t, unsigned int idx) {
+R_API RListIter *r_graph_node_iter(const RGraph *t, unsigned int idx) {
 	return r_list_find (t->nodes, (void *)(size_t)idx, (RListComparator)node_cmp);
 }
 
@@ -148,7 +148,7 @@ R_API void r_graph_reset (RGraph *t) {
 	t->last_index = 0;
 }
 
-R_API RGraphNode *r_graph_add_node (RGraph *t, void *data) {
+R_API RGraphNode *r_graph_add_node(RGraph *t, void *data) {
 	if (!t) {
 		return NULL;
 	}
@@ -186,7 +186,7 @@ R_API void r_graph_del_node(RGraph *t, RGraphNode *n) {
 	t->n_nodes--;
 }
 
-R_API void r_graph_add_edge (RGraph *t, RGraphNode *from, RGraphNode *to) {
+R_API void r_graph_add_edge(RGraph *t, RGraphNode *from, RGraphNode *to) {
 	r_graph_add_edge_at (t, from, to, -1);
 }
 
@@ -201,7 +201,7 @@ R_API void r_graph_add_edge_at (RGraph *t, RGraphNode *from, RGraphNode *to, int
 }
 
 // splits the "split_me", so that new node has it's outnodes
-R_API RGraphNode *r_graph_node_split_forward (RGraph *g, RGraphNode *split_me, void *data) {
+R_API RGraphNode *r_graph_node_split_forward(RGraph *g, RGraphNode *split_me, void *data) {
 	RGraphNode *front = r_graph_add_node(g, data);
 	RList *tmp = front->out_nodes;
 	front->out_nodes = split_me->out_nodes;
@@ -220,7 +220,7 @@ R_API RGraphNode *r_graph_node_split_forward (RGraph *g, RGraphNode *split_me, v
 }
 
 
-R_API void r_graph_del_edge (RGraph *t, RGraphNode *from, RGraphNode *to) {
+R_API void r_graph_del_edge(RGraph *t, RGraphNode *from, RGraphNode *to) {
 	if (!from || !to || !r_graph_adjacent (t, from, to)) {
 		return;
 	}
@@ -233,39 +233,39 @@ R_API void r_graph_del_edge (RGraph *t, RGraphNode *from, RGraphNode *to) {
 
 // XXX remove comments and static inline all this crap
 /* returns the list of nodes reachable from `n` */
-R_API const RList *r_graph_get_neighbours (const RGraph *g, const RGraphNode *n) {
+R_API const RList *r_graph_get_neighbours(const RGraph *g, const RGraphNode *n) {
 	return n? n->out_nodes: NULL;
 }
 
 /* returns the n-th nodes reachable from the give node `n`.
  * This, of course, depends on the order of the nodes. */
-R_API RGraphNode *r_graph_nth_neighbour (const RGraph *g, const RGraphNode *n, int nth) {
+R_API RGraphNode *r_graph_nth_neighbour(const RGraph *g, const RGraphNode *n, int nth) {
 	return n? (RGraphNode *)r_list_get_n (n->out_nodes, nth): NULL;
 }
 
 /* returns the list of nodes that can reach `n` */
-R_API const RList *r_graph_innodes (const RGraph *g, const RGraphNode *n) {
+R_API const RList *r_graph_innodes(const RGraph *g, const RGraphNode *n) {
 	return n? n->in_nodes: NULL;
 }
 
 /* returns the list of nodes reachable from `n` and that can reach `n`. */
-R_API const RList *r_graph_all_neighbours (const RGraph *g, const RGraphNode *n) {
+R_API const RList *r_graph_all_neighbours(const RGraph *g, const RGraphNode *n) {
 	return n? n->all_neighbours: NULL;
 }
 
-R_API const RList *r_graph_get_nodes (const RGraph *g) {
+R_API const RList *r_graph_get_nodes(const RGraph *g) {
 	return g? g->nodes: NULL;
 }
 
 /* true if there is an edge from the node `from` to the node `to` */
-R_API int r_graph_adjacent (const RGraph *g, const RGraphNode *from, const RGraphNode *to) {
+R_API bool r_graph_adjacent(const RGraph *g, const RGraphNode *from, const RGraphNode *to) {
 	if (!g || !from) {
 		return false;
 	}
-	return r_list_contains (from->out_nodes, to) ? true : false;
+	return r_list_contains (from->out_nodes, to);
 }
 
-R_API void r_graph_dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis) {
+R_API void r_graph_dfs_node(RGraph *g, RGraphNode *n, RGraphVisitor *vis) {
 	if (!g || !n || !vis) {
 		return;
 	}
@@ -276,7 +276,7 @@ R_API void r_graph_dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis) {
 	}
 }
 
-R_API void r_graph_dfs_node_reverse (RGraph *g, RGraphNode *n, RGraphVisitor *vis) {
+R_API void r_graph_dfs_node_reverse(RGraph *g, RGraphNode *n, RGraphVisitor *vis) {
 	if (!g || !n || !vis) {
 		return;
 	}
@@ -287,7 +287,7 @@ R_API void r_graph_dfs_node_reverse (RGraph *g, RGraphNode *n, RGraphVisitor *vi
 	}
 }
 
-R_API void r_graph_dfs (RGraph *g, RGraphVisitor *vis) {
+R_API void r_graph_dfs(RGraph *g, RGraphVisitor *vis) {
 	r_return_if_fail (g && vis);
 	RGraphNode *n;
 	RListIter *it;

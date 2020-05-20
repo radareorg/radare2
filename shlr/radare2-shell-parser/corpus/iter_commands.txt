@@ -1,0 +1,205 @@
+============
+Iter flags
+============
+
+p8 4 @@ sym.*
+
+---
+
+(commands
+  (iter_flags_command
+    (arged_command (cmd_identifier)
+      (args (arg (arg_identifier))))
+    (arg (arg_identifier))))
+
+========
+Iter dbt
+========
+
+p8 4 @@dbt
+p8 4 @@dbta
+p8 4 @@dbtb
+p8 4 @@dbts
+
+---
+
+(commands
+  (iter_dbta_command
+    (arged_command (cmd_identifier)
+      (args (arg (arg_identifier)))))
+  (iter_dbta_command
+    (arged_command (cmd_identifier)
+      (args (arg (arg_identifier)))))
+  (iter_dbtb_command
+    (arged_command (cmd_identifier)
+      (args (arg (arg_identifier)))))
+  (iter_dbts_command
+    (arged_command (cmd_identifier)
+      (args (arg (arg_identifier))))))
+
+===============
+Iter file lines
+===============
+
+p8 @@.file
+
+---
+
+(commands
+  (iter_file_lines_command
+    (arged_command (cmd_identifier))
+    (arg (arg_identifier))))
+
+===============
+Iter offsets
+===============
+
+p8 @@=off1 off2
+
+---
+
+(commands
+  (iter_offsets_command
+    (arged_command (cmd_identifier))
+    (args (arg (arg_identifier)) (arg (arg_identifier)))))
+
+
+===============
+Iter sdbquery
+===============
+
+p8 @@k sdbquery
+
+---
+
+(commands
+  (iter_sdbquery_command
+    (arged_command (cmd_identifier))
+    (arg (arg_identifier))))
+
+
+===============
+Iter threads
+===============
+
+p8 @@t
+
+---
+
+(commands
+  (iter_threads_command
+    (arged_command (cmd_identifier))))
+
+
+===============
+Iter basic blocks
+===============
+
+p8 @@b
+
+---
+
+(commands
+  (iter_bbs_command
+    (arged_command (cmd_identifier))))
+
+
+===============
+Iter instructions
+===============
+
+p8 @@i
+
+---
+
+(commands
+  (iter_instrs_command
+    (arged_command (cmd_identifier))))
+
+
+===============
+Iter sections
+===============
+
+p8 @@iS
+
+---
+
+(commands
+  (iter_sections_command
+    (arged_command (cmd_identifier))))
+
+
+===============
+Iter functions
+===============
+
+p8 @@f
+
+---
+
+(commands
+  (iter_functions_command
+    (arged_command (cmd_identifier))))
+
+
+===============
+Iter function matching
+===============
+
+p8 @@f:write
+
+---
+
+(commands
+  (iter_functions_command
+    (arged_command (cmd_identifier))
+    (arg (arg_identifier))))
+
+
+===============
+Iter by step
+===============
+
+p8 @@s:0xd000 0xe000 0x100
+
+---
+
+(commands
+  (iter_step_command
+    (arged_command (cmd_identifier))
+    (arg (arg_identifier))
+    (arg (arg_identifier))
+    (arg (arg_identifier))))
+
+
+===============
+Iter command
+===============
+
+p8 @@c:/x 9090
+
+---
+
+(commands
+  (iter_interpret_command
+    (arged_command (cmd_identifier))
+    (arged_command (cmd_identifier)
+      (args (arg (arg_identifier))))))
+
+
+================
+Iter search hits
+================
+
+pd 2 @@/x 9090
+
+---
+
+(commands
+  (iter_hit_command
+    (arged_command (cmd_identifier)
+      (args (arg (arg_identifier))))
+    (arged_command (cmd_identifier)
+      (args (arg (arg_identifier))))))
+

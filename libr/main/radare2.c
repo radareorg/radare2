@@ -118,6 +118,7 @@ static int main_help(int line) {
 		" -M           do not demangle symbol names\n"
 		" -n, -nn      do not load RBin info (-nn only load bin structures)\n"
 		" -N           do not load user settings and scripts\n"
+		" -NN          do not load any script or plugin\n"
 		" -q           quiet mode (no prompt) and quit after -i\n"
 		" -qq          quit after running all -c and -i\n"
 		" -Q           quiet mode (no prompt) and quit faster (quickLeak=true)\n"
@@ -152,13 +153,13 @@ static int main_help(int line) {
 		" R2_LIBR_PLUGINS " R_JOIN_2_PATHS ("%s", R2_PLUGINS) "\n"
 		" R2_USER_ZIGNS " R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS) "\n"
 		"Environment:\n"
-		" R2_RDATAHOME %s\n" // TODO: rename to RHOME R2HOME?
-		" RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
+		" R2_CFG_NEWSHELL sets cfg.newshell=true\n"
+		" R2_DEBUG      if defined, show error messages and crash signal\n"
+		" R2_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
 		" R2_MAGICPATH " R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC) "\n"
-		" R_DEBUG      if defined, show error messages and crash signal\n"
-		" R_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
-		" VAPIDIR      path to extra vapi directory\n"
 		" R2_NOPLUGINS do not load r2 shared plugins\n"
+		" R2_RCFILE    ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
+		" R2_RDATAHOME %s\n" // TODO: rename to RHOME R2HOME?
 		"Paths:\n"
 		" R2_PREFIX    "R2_PREFIX"\n"
 		" R2_INCDIR    "R2_INCDIR"\n"
@@ -387,9 +388,18 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		r_sys_set_environ (envp);
 	}
 
-	if ((tmp = r_sys_getenv ("R_DEBUG"))) {
-		r_sys_crash_handler ("gdb --pid %d");
-		free (tmp);
+	if (r_sys_getenv_asbool ("R2_DEBUG")) {
+		char *sysdbg = r_sys_getenv ("R2_DEBUG_TOOL");
+		char *fmt = (sysdbg && *sysdbg)
+			? r_str_newf ("%s %%d", sysdbg)
+#if __APPLE__
+			: r_str_newf ("lldb -p %%d");
+#else
+			: r_str_newf ("gdb --pid %%d");
+#endif
+		r_sys_crash_handler (fmt);
+		free (fmt);
+		free (sysdbg);
 	}
 	if (argc < 2) {
 		LISTS_FREE ();
@@ -427,6 +437,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	}
 
 	set_color_default (r);
+	bool load_l = true;
 
 	RGetopt opt;
 	r_getopt_init (&opt, argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSTzuXt");
@@ -542,7 +553,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_config_set (r->config, "file.info", "false");
 			break;
 		case 'N':
-			run_rc = false;
+			if (run_rc) {
+				run_rc = false;
+			} else {
+				load_l = false;
+			}
 			break;
 		case 'p':
 			if (!strcmp (opt.arg, "?")) {
@@ -733,7 +748,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 	}
 
-	if ((tmp = r_sys_getenv ("R2_NOPLUGINS"))) {
+	tmp = NULL;
+	if (!load_l || (tmp = r_sys_getenv ("R2_NOPLUGINS"))) {
 		r_config_set_i (r->config, "cfg.plugins", 0);
 		free (tmp);
 	}
@@ -1147,7 +1163,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		r_core_cmd0 (r, "=!"); // initalize io subsystem
 		iod = r->io ? r_io_desc_get (r->io, fh->fd) : NULL;
 		if (mapaddr) {
-			r_core_seek (r, mapaddr, 1);
+			r_core_seek (r, mapaddr, true);
 		}
 		r_list_foreach (evals, iter, cmdn) {
 			r_config_eval (r->config, cmdn, false);
@@ -1179,7 +1195,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		if (!debug && o && !o->regstate) {
 			RFlagItem *fi = r_flag_get (r->flags, "entry0");
 			if (fi) {
-				r_core_seek (r, fi->offset, 1);
+				r_core_seek (r, fi->offset, true);
 			} else {
 				if (o) {
 					RList *sections = r_bin_get_sections (r->bin);
@@ -1188,7 +1204,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					r_list_foreach (sections, iter, s) {
 						if (s->perm & R_PERM_X) {
 							ut64 addr = s->vaddr? s->vaddr: s->paddr;
-							r_core_seek (r, addr, 1);
+							r_core_seek (r, addr, true);
 							break;
 						}
 					}
@@ -1203,7 +1219,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		if (s_seek) {
 			seek = r_num_math (r->num, s_seek);
 			if (seek != UT64_MAX) {
-				r_core_seek (r, seek, 1);
+				r_core_seek (r, seek, true);
 			}
 		}
 
@@ -1211,7 +1227,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_core_block_size (r, r_io_desc_size (iod));
 		}
 
-		r_core_seek (r, r->offset, 1); // read current block
+		r_core_seek (r, r->offset, true); // read current block
 
 		/* check if file.path has changed */
 		if (iod && !strstr (iod->uri, "://")) {
@@ -1324,7 +1340,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		char *data = r_file_slurp (patchfile, NULL);
 		if (data) {
 			ret = r_core_patch (r, data);
-			r_core_seek (r, 0, 1);
+			r_core_seek (r, 0, true);
 			free (data);
 		} else {
 			eprintf ("[p] Cannot open '%s'\n", patchfile);
@@ -1335,7 +1351,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_cons_zero ();
 		}
 		if (seek != UT64_MAX) {
-			r_core_seek (r, seek, 1);
+			r_core_seek (r, seek, true);
 		}
 
 		// no flagspace selected by default the beginning

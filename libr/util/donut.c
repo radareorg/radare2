@@ -47,8 +47,7 @@ R_API char *r_str_donut(int osize) {
 	if (osize == 0) {
 		size = 100;
 	} else {
-		A=0;
-		B=0;
+		A = B = 0;
 	}
 	double Zero = (((double)(100 - size) / 100) * 6);
 	double Width = 30;
@@ -57,27 +56,27 @@ R_API char *r_str_donut(int osize) {
 	if (osize != 0) {
 		Align = 40;
 	}
-	for (j=Zero; 6.28>j; j+=0.07) {
-		for (i=Zero;6.28 >i;i+=0.02){
-			float c=sin(i);
-			float d=cos(j);
-			float e = sin(A);
-			float f=sin(j);
-			float g=cos(A);
-			float h=d+2;
-			float D=1/(c* h*e+f*g+5),l=cos(i),m=cos(B),n=sin(B),t=c*h*g-f*e;
-			int x=Align+Width*D*(l*h*m-t*n);
-			int y=12+Height*D*(l*h*n +t*m);
-			int o=x+80*y;
-			int N=8*((f*e-c*d*g)*m-c*d*e-f*g-l*d*n);
+	for (j = Zero; 6.28 > j; j += 0.07) {
+		for (i = Zero; 6.28 > i; i+= 0.02) {
+			float c = sin (i);
+			float d = cos (j);
+			float e = sin (A);
+			float f = sin (j);
+			float g = cos (A);
+			float h = d + 2;
+			float D = 1 / (c* h*e+f*g+5),l=cos(i),m=cos(B),n=sin(B),t=c*h*g-f*e;
+			int x = Align+Width*D*(l*h*m-t*n);
+			int y = 12 + Height*D*(l*h*n +t*m);
+			int o = x + 80 * y;
+			int N = 8*((f*e-c*d*g)*m-c*d*e-f*g-l*d*n);
 			if (22 >y && y > 0 && x>0&&80>x&&D>z[o]) {
 				z[o] = D;
 				b[o] = " .,-:!/|S$@&"[N > 0? N: 0];
 			}
 		}
 	}
-	for (k=0;k<1760;k++) {
-		o[k] = k%80?b[k]:10;
+	for (k = 0; k < 1760; k++) {
+		o[k] = (k % 80)? b[k]: 10;
 	}
 	o[sizeof (o) - 1] = 0;
 	if (osize == 0)  {

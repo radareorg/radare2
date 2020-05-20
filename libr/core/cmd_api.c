@@ -12,6 +12,37 @@ static int value = 0;
 #define NCMDS (sizeof (cmd->cmds)/sizeof(*cmd->cmds))
 R_LIB_VERSION (r_cmd);
 
+static bool cmd_desc_set_parent(RCmdDesc *cd, RCmdDesc *parent) {
+	r_return_val_if_fail (cd && !cd->parent, false);
+	if (parent) {
+		cd->parent = parent;
+		r_pvector_push (&parent->children, cd);
+		parent->n_children++;
+	}
+	return true;
+}
+
+static RCmdDesc *create_cmd_desc(RCmd *cmd, RCmdDesc *parent, RCmdDescType type, const char *name) {
+	RCmdDesc *res = R_NEW0 (RCmdDesc);
+	if (!res) {
+		return NULL;
+	}
+	res->type = type;
+	res->name = strdup (name);
+	if (!res->name) {
+		goto err;
+	}
+	res->n_children = 0;
+	r_pvector_init (&res->children, (RPVectorFree)r_cmd_desc_free);
+	if (!ht_pp_insert (cmd->ht_cmds, name, res)) {
+		goto err;
+	}
+	cmd_desc_set_parent (res, parent);
+	return res;
+err:
+	r_cmd_desc_free (res);
+	return NULL;
+}
 
 R_API void r_cmd_alias_init(RCmd *cmd) {
 	cmd->aliases.count = 0;
@@ -30,6 +61,8 @@ R_API RCmd *r_cmd_new () {
 		cmd->cmds[i] = NULL;
 	}
 	cmd->nullcallback = cmd->data = NULL;
+	cmd->ht_cmds = ht_pp_new0 ();
+	cmd->root_cmd_desc = create_cmd_desc (cmd, NULL, R_CMD_DESC_TYPE_ARGV, "");
 	r_core_plugin_init (cmd);
 	r_cmd_macro_init (&cmd->macro);
 	r_cmd_alias_init (cmd);
@@ -41,11 +74,10 @@ R_API RCmd *r_cmd_free(RCmd *cmd) {
 	if (!cmd) {
 		return NULL;
 	}
-#if USE_TREESITTER
 	ht_up_free (cmd->ts_symbols_ht);
-#endif
 	r_cmd_alias_free (cmd);
 	r_cmd_macro_fini (&cmd->macro);
+	ht_pp_free (cmd->ht_cmds);
 	// dinitialize plugin commands
 	r_core_plugin_fini (cmd);
 	r_list_free (cmd->plist);
@@ -55,8 +87,35 @@ R_API RCmd *r_cmd_free(RCmd *cmd) {
 			R_FREE (cmd->cmds[i]);
 		}
 	}
+	r_cmd_desc_free (cmd->root_cmd_desc);
 	free (cmd);
 	return NULL;
+}
+
+R_API RCmdDesc *r_cmd_get_root(RCmd *cmd) {
+	return cmd->root_cmd_desc;
+}
+
+R_API RCmdDesc *r_cmd_get_desc(RCmd *cmd, const char *cmd_identifier) {
+	r_return_val_if_fail (cmd && cmd_identifier, NULL);
+	char *cmdid = strdup (cmd_identifier);
+	char *end_cmdid = cmdid + strlen (cmdid);
+	RCmdDesc *res = NULL;
+	bool is_exact_match = true;
+	// match longer commands first
+	while (*cmdid) {
+		RCmdDesc *cd = ht_pp_find (cmd->ht_cmds, cmdid, NULL);
+		if (cd && (cd->type == R_CMD_DESC_TYPE_OLDINPUT ||
+			(cd->type == R_CMD_DESC_TYPE_ARGV && is_exact_match))) {
+			res = cd;
+			goto out;
+		}
+		is_exact_match = false;
+		*(--end_cmdid) = '\0';
+	}
+out:
+	free (cmdid);
+	return res;
 }
 
 R_API char **r_cmd_alias_keys(RCmd *cmd, int *sz) {
@@ -175,23 +234,7 @@ R_API int r_cmd_set_data(RCmd *cmd, void *data) {
 	return 1;
 }
 
-R_API int r_cmd_add_long(RCmd *cmd, const char *lcmd, const char *scmd, const char *desc) {
-	RCmdLongItem *item = R_NEW (RCmdLongItem);
-	if (!item) {
-		return false;
-	}
-	strncpy (item->cmd, lcmd, sizeof (item->cmd)-1);
-	strncpy (item->cmd_short, scmd, sizeof (item->cmd_short)-1);
-	item->cmd_len = strlen (lcmd);
-	strncpy (item->desc, desc, sizeof (item->desc)-1);
-	if (!r_list_append (cmd->lcmds, item)){
-		free (item);
-		return false;
-	}
-	return true;
-}
-
-R_API int r_cmd_add(RCmd *c, const char *cmd, const char *desc, r_cmd_callback(cb)) {
+R_API int r_cmd_add(RCmd *c, const char *cmd, RCmdCb cb) {
 	int idx = (ut8)cmd[0];
 	RCmdItem *item = c->cmds[idx];
 	if (!item) {
@@ -199,8 +242,8 @@ R_API int r_cmd_add(RCmd *c, const char *cmd, const char *desc, r_cmd_callback(c
 		c->cmds[idx] = item;
 	}
 	strncpy (item->cmd, cmd, sizeof (item->cmd)-1);
-	strncpy (item->desc, desc, sizeof (item->desc)-1);
 	item->callback = cb;
+	r_cmd_desc_oldinput_new (c, c->root_cmd_desc, cmd, cb);
 	return true;
 }
 
@@ -254,29 +297,62 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 	return ret;
 }
 
-R_API int r_cmd_call_long(RCmd *cmd, const char *input) {
-	char *inp;
-	RListIter *iter;
-	RCmdLongItem *c;
-	int ret, inplen = strlen (input)+1;
+static RCmdStatus int2cmdstatus(int v) {
+	if (v == -2) {
+		return R_CMD_STATUS_EXIT;
+	} else if (v < 0) {
+		return R_CMD_STATUS_INVALID;
+	} else {
+		return R_CMD_STATUS_OK;
+	}
+}
 
-	r_list_foreach (cmd->lcmds, iter, c) {
-		if (inplen >= c->cmd_len && !r_str_cmp (input, c->cmd, c->cmd_len)) {
-			int lcmd = strlen (c->cmd_short);
-			int linp = strlen (input+c->cmd_len);
-			/// SLOW malloc on most situations. use stack
-			inp = malloc (lcmd+linp+2); // TODO: use static buffer with R_CMD_MAXLEN
-			if (!inp) {
-				return -1;
+R_API RCmdStatus r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
+	RCmdStatus res = R_CMD_STATUS_INVALID;
+
+	// As old RCorePlugin do not register new commands in RCmd, we have no
+	// way of knowing if one of those is able to handle the input, so we
+	// have to pass the input to all of them before looking into the
+	// RCmdDesc tree
+	RListIter *iter;
+	RCorePlugin *cp;
+	char *exec_string = r_cmd_parsed_args_execstr (args);
+	r_list_foreach (cmd->plist, iter, cp) {
+		if (cp->call) {
+			if (cp->call (cmd->data, exec_string)) {
+				res = R_CMD_STATUS_OK;
+				break;
 			}
-			memcpy (inp, c->cmd_short, lcmd);
-			memcpy (inp + lcmd, input + c->cmd_len, linp + 1);
-			ret = r_cmd_call (cmd, inp);
-			free (inp);
-			return ret;
 		}
 	}
-	return -1;
+	R_FREE (exec_string);
+	if (res == R_CMD_STATUS_OK) {
+		return res;
+	}
+
+	RCmdDesc *cd = r_cmd_get_desc (cmd, r_cmd_parsed_args_cmd (args));
+	if (!cd) {
+		return R_CMD_STATUS_INVALID;
+	}
+
+	res = R_CMD_STATUS_INVALID;
+	switch (cd->type) {
+	case R_CMD_DESC_TYPE_ARGV:
+		if (cd->d.argv_data.cb) {
+			res = cd->d.argv_data.cb (cmd->data, args->argc, (const char **)args->argv);
+		}
+		break;
+	case R_CMD_DESC_TYPE_OLDINPUT:
+		exec_string = r_cmd_parsed_args_execstr (args);
+		res = int2cmdstatus (cd->d.oldinput_data.cb (cmd->data, exec_string + strlen (cd->name)));
+		R_FREE (exec_string);
+		break;
+	default:
+		res = R_CMD_STATUS_INVALID;
+		R_LOG_ERROR ("RCmdDesc type not handled\n");
+		break;
+	}
+	return res;
 }
 
 /** macro.c **/
@@ -741,4 +817,153 @@ R_API int r_cmd_macro_break(RCmdMacro *mac, const char *value) {
 		mac->brk_value = &mac->_brk_value;
 	}
 	return 0;
+}
+
+/* RCmdParsedArgs */
+
+R_API RCmdParsedArgs *r_cmd_parsed_args_new(const char *cmd, int n_args, char **args) {
+	r_return_val_if_fail (cmd && n_args >= 0, NULL);
+	RCmdParsedArgs *res = R_NEW0 (RCmdParsedArgs);
+	res->has_space_after_cmd = true;
+	res->argc = n_args + 1;
+	res->argv = R_NEWS0 (char *, res->argc);
+	res->argv[0] = strdup(cmd);
+	int i;
+	for (i = 1; i < res->argc; i++) {
+		res->argv[i] = strdup (args[i - 1]);
+	}
+	return res;
+}
+
+R_API RCmdParsedArgs *r_cmd_parsed_args_newcmd(const char *cmd) {
+	return r_cmd_parsed_args_new (cmd, 0, NULL);
+}
+
+R_API RCmdParsedArgs *r_cmd_parsed_args_newargs(int n_args, char **args) {
+	return r_cmd_parsed_args_new ("", n_args, args);
+}
+
+R_API void r_cmd_parsed_args_free(RCmdParsedArgs *a) {
+	if (!a) {
+		return;
+	}
+
+	int i;
+	for (i = 0; i < a->argc; i++) {
+		free (a->argv[i]);
+	}
+	free (a->argv);
+	free (a);
+}
+
+static void free_array(char **arr, int n) {
+	int i;
+	for (i = 0; i < n; i++) {
+		free (arr[i]);
+	}
+	free (arr);
+}
+
+R_API bool r_cmd_parsed_args_setargs(RCmdParsedArgs *a, int n_args, char **args) {
+	r_return_val_if_fail (a && a->argv && a->argv[0], false);
+	char **tmp = R_NEWS0 (char *, n_args + 1);
+	if (!tmp) {
+		return false;
+	}
+	tmp[0] = strdup (a->argv[0]);
+	int i;
+	for (i = 1; i < n_args + 1; i++) {
+		tmp[i] = strdup (args[i - 1]);
+		if (!tmp[i]) {
+			goto err;
+		}
+	}
+	free_array (a->argv, a->argc);
+	a->argv = tmp;
+	a->argc = n_args + 1;
+	return true;
+err:
+	free_array (tmp, n_args + 1);
+	return false;
+}
+
+R_API bool r_cmd_parsed_args_setcmd(RCmdParsedArgs *a, const char *cmd) {
+	r_return_val_if_fail (a && a->argv && a->argv[0], false);
+	char *tmp = strdup (cmd);
+	if (!tmp) {
+		return false;
+	}
+	free (a->argv[0]);
+	a->argv[0] = tmp;
+	return true;
+}
+
+static void parsed_args_iterateargs(RCmdParsedArgs *a, RStrBuf *sb) {
+	int i;
+	for (i = 1; i < a->argc; i++) {
+		if (i > 1) {
+			r_strbuf_append (sb, " ");
+		}
+		r_strbuf_append (sb, a->argv[i]);
+	}
+}
+
+R_API char *r_cmd_parsed_args_argstr(RCmdParsedArgs *a) {
+	r_return_val_if_fail (a && a->argv && a->argv[0], NULL);
+	RStrBuf *sb = r_strbuf_new ("");
+	parsed_args_iterateargs (a, sb);
+	return r_strbuf_drain (sb);
+}
+
+R_API char *r_cmd_parsed_args_execstr(RCmdParsedArgs *a) {
+	r_return_val_if_fail (a && a->argv && a->argv[0], NULL);
+	RStrBuf *sb = r_strbuf_new (a->argv[0]);
+	if (a->argc > 1 && a->has_space_after_cmd) {
+		r_strbuf_append (sb, " ");
+	}
+	parsed_args_iterateargs (a, sb);
+	return r_strbuf_drain (sb);
+}
+
+R_API const char *r_cmd_parsed_args_cmd(RCmdParsedArgs *a) {
+	r_return_val_if_fail (a && a->argv && a->argv[0], NULL);
+	return a->argv[0];
+}
+
+/* RCmdDescriptor */
+
+R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb) {
+	r_return_val_if_fail (cmd && parent && name, NULL);
+	RCmdDesc *res = create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_ARGV, name);
+	if (!res) {
+		return NULL;
+	}
+
+	res->d.argv_data.cb = cb;
+	return res;
+}
+
+R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdCb cb) {
+	r_return_val_if_fail (cmd && parent && name && cb, NULL);
+	RCmdDesc *res = create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_OLDINPUT, name);
+	if (!res) {
+		return NULL;
+	}
+	res->d.oldinput_data.cb = cb;
+	return res;
+}
+
+R_API void r_cmd_desc_free(RCmdDesc *cd) {
+	if (!cd) {
+		return;
+	}
+
+	r_pvector_clear (&cd->children);
+	free (cd->name);
+	free (cd);
+}
+
+R_API RCmdDesc *r_cmd_desc_parent(RCmdDesc *cd) {
+	r_return_val_if_fail (cd, NULL);
+	return cd->parent;
 }

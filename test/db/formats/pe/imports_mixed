@@ -1,0 +1,6 @@
+NAME=PE: corkami imports_mixed.exe - open
+FILE=bins/pe/imports_mixed.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN

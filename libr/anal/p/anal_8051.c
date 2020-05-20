@@ -811,7 +811,7 @@ static int esil_i8051_fini (RAnalEsil *esil) {
 	return true;
 }
 
-static int set_reg_profile(RAnal *anal) {
+static bool set_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
@@ -886,13 +886,9 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		i++;
 	}
 
-	op->jump = op->fail = -1;
-	op->ptr = op->val = -1;
-
 	ut8 arg1 = _8051_ops[i].arg1;
 	ut8 arg2 = _8051_ops[i].arg2;
 
-	op->delay = 0;
 	op->cycles = _8051_ops[i].cycles;
 	op->failcycles = _8051_ops[i].cycles;
 	op->nopcode = 1;

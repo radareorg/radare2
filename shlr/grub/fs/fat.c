@@ -26,7 +26,6 @@
 #include <grub/misc.h>
 #include <grub/mm.h>
 #include <grub/err.h>
-#include <grub/dl.h>
 #include <grub/charset.h>
 
 #define GRUB_FAT_DIR_ENTRY_SIZE	32
@@ -155,8 +154,6 @@ struct grub_fat_data
 
   grub_uint32_t uuid;
 };
-
-static grub_dl_t my_mod;
 
 static int
 fat_log2 (unsigned x)
@@ -725,8 +722,6 @@ grub_fat_dir (grub_device_t device, const char *path,
   char *dirname = 0;
   char *p;
 
-  grub_dl_ref (my_mod);
-
   data = grub_fat_mount (disk);
   if (! data)
     goto fail;
@@ -754,8 +749,6 @@ grub_fat_dir (grub_device_t device, const char *path,
   grub_free (dirname);
   grub_free (data);
 
-  grub_dl_unref (my_mod);
-
   return grub_errno;
 }
 
@@ -764,8 +757,6 @@ grub_fat_open (grub_file_t file, const char *name)
 {
   struct grub_fat_data *data = 0;
   char *p = (char *) name;
-
-  grub_dl_ref (my_mod);
 
   data = grub_fat_mount (file->device->disk);
   if (! data)
@@ -794,8 +785,6 @@ grub_fat_open (grub_file_t file, const char *name)
 
   grub_free (data);
 
-  grub_dl_unref (my_mod);
-
   return grub_errno;
 }
 
@@ -811,8 +800,6 @@ static grub_err_t
 grub_fat_close (grub_file_t file)
 {
   grub_free (file->data);
-
-  grub_dl_unref (my_mod);
 
   return grub_errno;
 }
@@ -837,8 +824,6 @@ grub_fat_label (grub_device_t device, char **label)
   struct grub_fat_data *data;
   grub_disk_t disk = device->disk;
 
-  grub_dl_ref (my_mod);
-
   data = grub_fat_mount (disk);
   if (! data)
     goto fail;
@@ -855,8 +840,6 @@ grub_fat_label (grub_device_t device, char **label)
 
  fail:
 
-  grub_dl_unref (my_mod);
-
   grub_free (data);
 
   return grub_errno;
@@ -868,8 +851,6 @@ grub_fat_uuid (grub_device_t device, char **uuid)
   struct grub_fat_data *data;
   grub_disk_t disk = device->disk;
 
-  grub_dl_ref (my_mod);
-
   data = grub_fat_mount (disk);
   if (data)
     {
@@ -879,8 +860,6 @@ grub_fat_uuid (grub_device_t device, char **uuid)
     }
   else
     *uuid = NULL;
-
-  grub_dl_unref (my_mod);
 
   grub_free (data);
 

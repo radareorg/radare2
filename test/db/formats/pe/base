@@ -1,0 +1,37 @@
+NAME=PE: corkami base.exe - open
+FILE=bins/pe/base.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Relocs
+FILE=bins/pe/base.exe
+CMDS=<<EOF
+e asm.functions = false
+e asm.comments = false
+e asm.bytes = false
+e asm.offset = false
+e asm.calls = false
+pd 1 @ 0x0040128d
+EOF
+EXPECT=<<EOF
+               call dword [sym.imp.msvcrt.dll___set_app_type]
+EOF
+RUN
+
+NAME=PE: corkami base.exe - entrypoint
+FILE=bins/pe/base.exe
+CMDS=s
+EXPECT=<<EOF
+0x401280
+EOF
+RUN
+
+NAME=PE: corkami base.exe - pi 1
+FILE=bins/pe/base.exe
+CMDS=pi 1
+EXPECT=<<EOF
+push ebp
+EOF
+RUN

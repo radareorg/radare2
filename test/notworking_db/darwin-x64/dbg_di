@@ -1,0 +1,10 @@
+NAME=dbg.di
+FILE=/bin/ls
+ARGS=-d
+BROKEN=1
+CMDS=di~baddr
+EXPECT=<<EOF
+baddr=0x100000000
+EOF
+RUN
+

@@ -1,5 +1,5 @@
 r_fs_sources = [
-  'file.c',
+  'fs_file.c',
   'fs.c',
   'shell.c',
   'p/fs_cpio.c',

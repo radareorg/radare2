@@ -1,0 +1,9 @@
+NAME=.- (edit, source tmp file)
+FILE=-
+CMDS=<<EOF
+e cfg.editor=/bin/true
+.-
+EOF
+EXPECT=<<EOF
+EOF
+RUN

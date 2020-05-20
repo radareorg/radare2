@@ -8,7 +8,7 @@ extern "C" {
 #include <r_util/r_mem.h>
 
 /* is */
-R_API int r_file_is_abspath(const char *file);
+R_API bool r_file_is_abspath(const char *file);
 R_API bool r_file_is_c(const char *file);
 R_API bool r_file_is_directory(const char *str);
 R_API bool r_file_is_regular(const char *str);
@@ -20,11 +20,12 @@ R_API RMmap *r_file_mmap(const char *file, bool rw, ut64 base);
 R_API int r_file_mmap_read(const char *file, ut64 addr, ut8 *buf, int len);
 R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len);
 R_API void r_file_mmap_free(RMmap *m);
-R_API int r_file_chmod(const char *file, const char *mod, int recursive);
+R_API bool r_file_chmod(const char *file, const char *mod, int recursive);
 R_API char *r_file_temp(const char *prefix);
 R_API char *r_file_path(const char *bin);
 R_API const char *r_file_basename(const char *path);
 R_API char *r_file_dirname(const char *path);
+R_API char *r_file_abspath_rel(const char *cwd, const char *file);
 R_API char *r_file_abspath(const char *file);
 R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen);
 R_API ut8 *r_file_gzslurp(const char *str, int *outlen, int origonfail);

@@ -7,30 +7,51 @@ R_LIB_VERSION (r_crypto);
 
 static const struct {
 	const char *name;
-	ut64 bit;
+	RCryptoSelector bit;
 } crypto_name_bytes[] = {
-	{"all", UT64_MAX},
-	{"rc2", R_CRYPTO_RC2},
-	{"rc4", R_CRYPTO_RC4},
-	{"rc6", R_CRYPTO_RC6},
-	{"aes-ecb", R_CRYPTO_AES_ECB},
-	{"aes-cbc", R_CRYPTO_AES_CBC},
-	{"ror", R_CRYPTO_ROR},
-	{"rol", R_CRYPTO_ROL},
-	{"rot", R_CRYPTO_ROT},
-	{"blowfish", R_CRYPTO_BLOWFISH},
-	{"cps2", R_CRYPTO_CPS2},
-	{"des-ecb", R_CRYPTO_DES_ECB},
-	{"xor", R_CRYPTO_XOR},
-	{"serpent-ecb", R_CRYPTO_SERPENT},
-	{NULL, 0}
+	{ "all", UT64_MAX },
+	{ "rc2", R_CRYPTO_RC2 },
+	{ "rc4", R_CRYPTO_RC4 },
+	{ "rc6", R_CRYPTO_RC6 },
+	{ "aes-ecb", R_CRYPTO_AES_ECB },
+	{ "aes-cbc", R_CRYPTO_AES_CBC },
+	{ "ror", R_CRYPTO_ROR },
+	{ "rol", R_CRYPTO_ROL },
+	{ "rot", R_CRYPTO_ROT },
+	{ "blowfish", R_CRYPTO_BLOWFISH },
+	{ "cps2", R_CRYPTO_CPS2 },
+	{ "des-ecb", R_CRYPTO_DES_ECB },
+	{ "xor", R_CRYPTO_XOR },
+	{ "serpent-ecb", R_CRYPTO_SERPENT },
+	{ NULL, 0 }
 };
 
-R_API const char *r_crypto_name(ut64 bit) {
-	int i;
+static const struct {
+	const char *name;
+	RCryptoSelector bit;
+} codec_name_bytes[] = {
+	{ "all", UT64_MAX },
+	{ "base64", R_CODEC_B64 },
+	{ "base91", R_CODEC_B91 },
+	{ "punycode", R_CODEC_PUNYCODE },
+	{ NULL, 0 }
+};
+
+R_API const char *r_crypto_name(const RCryptoSelector bit) {
+	size_t i;
 	for (i = 1; crypto_name_bytes[i].bit; i++) {
 		if (bit & crypto_name_bytes[i].bit) {
 			return crypto_name_bytes[i].name;
+		}
+	}
+	return "";
+}
+
+R_API const char *r_crypto_codec_name(const RCryptoSelector bit) {
+	size_t i;
+	for (i = 1; codec_name_bytes[i].bit; i++) {
+		if (bit & codec_name_bytes[i].bit) {
+			return codec_name_bytes[i].name;
 		}
 	}
 	return "";

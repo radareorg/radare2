@@ -66,6 +66,25 @@ void sprint_mem(char *out, const ut8 *buf, size_t len) {
 
 #define mu_sysfail(message) do { perror(message); mu_fail(message); } while(0)
 
+#define mu_assert_true(actual, message) do { \
+		__typeof__ (actual) act__ = (actual); \
+		if (!(act__)) { \
+			char _meqstr[2048]; \
+			sprintf (_meqstr, "%s: expected true, got false", (message)); \
+			mu_assert (_meqstr, false); \
+		} \
+	} while (0)
+
+#define mu_assert_false(actual, message) \
+	do { \
+		__typeof__ (actual) act__ = (actual); \
+		if ((act__)) { \
+			char _meqstr[2048]; \
+			sprintf (_meqstr, "%s: expected false, got true", (message)); \
+			mu_assert (_meqstr, false); \
+		} \
+	} while (0)
+
 #define mu_assert_eq(actual, expected, message) do { \
 		__typeof__(actual) act__ = (actual); \
 		__typeof__(expected) exp__ = (expected); \
@@ -131,6 +150,12 @@ void sprint_mem(char *out, const ut8 *buf, size_t len) {
 		sprintf(_meqstr, "%s: expected %s, got %s.", (message), (exp__), (act__)); \
 		mu_assert(_meqstr, strcmp((exp__), (act__)) == 0); \
 } while(0)
+
+#define mu_assert_streq_free(actual, expected, message) do { \
+		char *act2__ = (actual); \
+		mu_assert_streq (act2__, (expected), (message)); \
+		free (act2__); \
+} while (0)
 
 #define mu_assert_nullable_streq(actual, expected, message) do { \
 		char _meqstr[2048]; \

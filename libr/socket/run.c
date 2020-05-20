@@ -58,6 +58,24 @@
 
 #define HAVE_PTY __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK && !__sun
 
+#if HAVE_PTY
+static int (*dyn_openpty)(int *amaster, int *aslave, char *name, struct termios *termp, struct winsize *winp) = NULL;
+static int (*dyn_login_tty)(int fd) = NULL;
+static id_t (*dyn_forkpty)(int *amaster, char *name, struct termios *termp, struct winsize *winp) = NULL;
+static void dyn_init(void) {
+	if (!dyn_openpty) {
+		dyn_openpty = r_lib_dl_sym (NULL, "openpty");
+	}
+	if (!dyn_login_tty) {
+		dyn_openpty = r_lib_dl_sym (NULL, "login_tty");
+	}
+	if (!dyn_forkpty) {
+		dyn_openpty = r_lib_dl_sym (NULL, "forkpty");
+	}
+}
+
+#endif
+
 #if EMSCRIPTEN
 #undef HAVE_PTY
 #define HAVE_PTY 0
@@ -162,15 +180,16 @@ static char *getstr(const char *src) {
 		{
 			char *pat = strchr (src + 1, '@');
 			if (pat) {
-				int i, len, rep;
+				size_t len;
+				long i, rep;
 				*pat++ = 0;
-				rep = atoi (src + 1);
+				rep = strtol (src + 1, NULL, 10);
 				len = strlen (pat);
 				if (rep > 0) {
 					char *buf = malloc (rep);
 					if (buf) {
 						for (i = 0; i < rep; i++) {
-							buf[i] = pat[i%len];
+							buf[i] = pat[i % len];
 						}
 					}
 					return buf;
@@ -277,6 +296,10 @@ static void restore_saved_fd(int saved, bool restore, int fd) {
 
 static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err) {
 #if HAVE_PTY
+	if (!dyn_forkpty) {
+		// No forkpty api found, maybe we should fallback to just fork without any pty allocated
+		return -1;
+	}
 	// use PTY to redirect I/O because pipes can be problematic in
 	// case of interactive programs.
 	int saved_stdin = dup (STDIN_FILENO);
@@ -284,11 +307,12 @@ static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err)
 		return -1;
 	}
 	int saved_stdout = dup (STDOUT_FILENO);
-	if (saved_stdout== -1) {
+	if (saved_stdout == -1) {
 		close (saved_stdin);
 		return -1;
 	}
-	int fdm, pid = forkpty (&fdm, NULL, NULL, NULL);
+	
+	int fdm, pid = dyn_forkpty (&fdm, NULL, NULL, NULL);
 	if (pid == -1) {
 		close (saved_stdin);
 		close (saved_stdout);
@@ -356,7 +380,7 @@ static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err)
 }
 
 static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
-	if (!cmd || cmd[0] == '\0') {
+	if (!cmd || !*cmd) {
 		return 0;
 	}
 
@@ -685,7 +709,7 @@ static int redirect_socket_to_pty(RSocket *sock) {
 	// in case of interactive applications
 	int fdm, fds;
 
-	if (openpty (&fdm, &fds, NULL, NULL, NULL) == -1) {
+	if (dyn_openpty && dyn_openpty (&fdm, &fds, NULL, NULL, NULL) == -1) {
 		perror ("opening pty");
 		return -1;
 	}
@@ -739,7 +763,9 @@ static int redirect_socket_to_pty(RSocket *sock) {
 
 	// parent
 	r_socket_close_fd (sock);
-	login_tty (fds);
+	if (dyn_login_tty) {
+		dyn_login_tty (fds);
+	}
 	close (fdm);
 
 	// disable the echo on slave stdin
@@ -757,6 +783,10 @@ static int redirect_socket_to_pty(RSocket *sock) {
 
 R_API int r_run_config_env(RRunProfile *p) {
 	int ret;
+
+#if HAVE_PTY
+	dyn_init ();
+#endif
 
 	if (!p->_program && !p->_system && !p->_runlib) {
 		printf ("No program, system or runlib rule defined\n");

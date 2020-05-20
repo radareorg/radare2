@@ -18,7 +18,7 @@ r_cons_sources = [
   'pal.c',
   'pipe.c',
   'rgb.c',
-  'utf8.c'
+  'cutf8.c'
 ]
 
 r_cons = library('r_cons', r_cons_sources,

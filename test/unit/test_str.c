@@ -95,6 +95,20 @@ bool test_r_str_rwx_i(void) {
 	mu_end;
 }
 
+bool test_r_str_trim(void) {
+	//  1
+	const char* one = r_str_trim_head_ro ("  hello  ");
+	mu_assert_streq (one, "hello  ", "one");
+	//  2
+	char* two = strdup ("  hello  ");
+	r_str_trim_head (two);
+	mu_assert_streq (two, "hello  ", "two");
+	r_str_trim (two);
+	//  2
+	mu_assert_streq (two, "hello", "three");
+	free (two);
+	mu_end;
+}
 //TODO find a way to test r_str_home.
 
 bool test_r_str_bool(void) {
@@ -371,32 +385,102 @@ bool test_r_str_constpool(void) {
 	mu_end;
 }
 
-bool all_tests() {
-	mu_run_test(test_r_str_newf);
-	mu_run_test(test_r_str_replace_char_once);
-	mu_run_test(test_r_str_replace_char);
-	mu_run_test(test_r_str_replace);
-	mu_run_test(test_r_str_bits64);
-	mu_run_test(test_r_str_rwx);
-	mu_run_test(test_r_str_rwx_i);
-	mu_run_test(test_r_str_bool);
-	mu_run_test(test_r_str_case);
-	mu_run_test(test_r_str_split);
-	mu_run_test(test_r_str_tokenize);
-	mu_run_test(test_r_str_char_count);
-	mu_run_test(test_r_str_word_count);
-	mu_run_test(test_r_str_ichr);
-	mu_run_test(test_r_str_lchr);
-	mu_run_test(test_r_sub_str_lchr);
-	mu_run_test(test_r_sub_str_rchr);
-	mu_run_test(test_r_str_rchr);
-	mu_run_test(test_r_str_ansi_len);
-	mu_run_test(test_r_str_len_utf8_ansi);
-	mu_run_test(test_r_str_utf8_charsize);
-	mu_run_test(test_r_str_utf8_charsize_prev);
-	mu_run_test(test_r_str_sanitize_sdb_key);
-	mu_run_test(test_r_str_unescape);
-	mu_run_test(test_r_str_constpool);
+bool test_r_str_format_msvc_argv() {
+	// Examples from http://daviddeley.com/autohotkey/parameters/parameters.htm#WINCRULES
+	const char *a = "CallMePancake";
+	char *str = r_str_format_msvc_argv (1, &a);
+	mu_assert_streq (str, "CallMePancake", "no escaping");
+	free (str);
+
+	a = "Call Me Pancake";
+	str = r_str_format_msvc_argv (1, &a);
+	mu_assert_streq (str, "\"Call Me Pancake\"", "just quoting");
+	free (str);
+
+	a = "CallMe\"Pancake";
+	str = r_str_format_msvc_argv (1, &a);
+	mu_assert_streq (str, "CallMe\\\"Pancake", "just escaping");
+	free (str);
+
+	a = "CallMePancake\\";
+	str = r_str_format_msvc_argv (1, &a);
+	mu_assert_streq (str, "CallMePancake\\", "no escaping of backslashes");
+	free (str);
+
+	a = "Call Me Pancake\\";
+	str = r_str_format_msvc_argv (1, &a);
+	mu_assert_streq (str, "\"Call Me Pancake\\\\\"", "escaping of backslashes before closing quote");
+	free (str);
+
+	a = "CallMe\\\"Pancake";
+	str = r_str_format_msvc_argv (1, &a);
+	mu_assert_streq (str, "CallMe\\\\\\\"Pancake", "escaping of backslashes before literal quote");
+	free (str);
+
+	a = "Call Me\\\"Pancake";
+	str = r_str_format_msvc_argv (1, &a);
+	mu_assert_streq (str, "\"Call Me\\\\\\\"Pancake\"", "escaping of backslashes before literal quote in quote");
+	free (str);
+
+	const char *args[] = { "rm", "-rf", "\\"};
+	str = r_str_format_msvc_argv (3, args);
+	mu_assert_streq (str, "rm -rf \\", "multiple args");
+	free (str);
+
+	mu_end;
+}
+
+bool test_r_str_str_xy(void) {
+	char *canvas = "Hello World\n"
+		"This World is World\n"
+		"World is Hello\n";
+	int x = 0, y = 0;
+	const char *next = r_str_str_xy (canvas, "World", NULL, &x, &y);
+	mu_assert_eq (x, 6, "x of first occurrence");
+	mu_assert_eq (y, 0, "y of first occurrence");
+	next = r_str_str_xy (canvas, "World", next, &x, &y);
+	mu_assert_eq (x, 5, "x of second occurrence");
+	mu_assert_eq (y, 1, "y of second occurrence");
+	next = r_str_str_xy (canvas, "World", next, &x, &y);
+	mu_assert_eq (x, 14, "x of third occurrence");
+	mu_assert_eq (y, 1, "y of third occurrence");
+	next = r_str_str_xy (canvas, "World", next, &x, &y);
+	mu_assert_eq (x, 0, "x of fourth occurrence");
+	mu_assert_eq (y, 2, "y of fourth occurrence");
+	next = r_str_str_xy (canvas, "World", next, &x, &y);
+	mu_assert_null (next, "no more occurences");
+	mu_end;
+}
+
+bool all_tests () {
+	mu_run_test (test_r_str_newf);
+	mu_run_test (test_r_str_replace_char_once);
+	mu_run_test (test_r_str_replace_char);
+	mu_run_test (test_r_str_replace);
+	mu_run_test (test_r_str_bits64);
+	mu_run_test (test_r_str_rwx);
+	mu_run_test (test_r_str_rwx_i);
+	mu_run_test (test_r_str_bool);
+	mu_run_test (test_r_str_trim);
+	mu_run_test (test_r_str_case);
+	mu_run_test (test_r_str_split);
+	mu_run_test (test_r_str_tokenize);
+	mu_run_test (test_r_str_char_count);
+	mu_run_test (test_r_str_word_count);
+	mu_run_test (test_r_str_ichr);
+	mu_run_test (test_r_str_lchr);
+	mu_run_test (test_r_sub_str_lchr);
+	mu_run_test (test_r_sub_str_rchr);
+	mu_run_test (test_r_str_rchr);
+	mu_run_test (test_r_str_ansi_len);
+	mu_run_test (test_r_str_len_utf8_ansi);
+	mu_run_test (test_r_str_utf8_charsize);
+	mu_run_test (test_r_str_utf8_charsize_prev);
+	mu_run_test (test_r_str_sanitize_sdb_key);
+	mu_run_test (test_r_str_unescape);
+	mu_run_test (test_r_str_constpool);
+	mu_run_test (test_r_str_format_msvc_argv);
+	mu_run_test (test_r_str_str_xy);
 	return tests_passed != tests_run;
 }
 

@@ -126,6 +126,7 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_co
 	bool block_end = false;
 	RStack *stack = r_stack_newf (10, free);
 	addTarget (core, stack, db, addr);
+	const ut64 maxfcnsize = 4096;
 
 	while (!r_stack_is_empty (stack)) {
 		block_end = false;
@@ -138,7 +139,7 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_co
 		addr = *value;
 		free (value);
 		cur = 0;
-		while (!block_end) {
+		while (!block_end && cur < maxfcnsize) {
 			op = r_core_anal_op (core, addr + cur, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
 			if (!op || !op->mnemonic) {
 				eprintf ("a2f: Cannot analyze opcode at 0x%"PFMT64x"\n", addr+cur);
@@ -151,7 +152,7 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_co
 				break;
 			}
 
-			bbAddOpcode (addr+cur);
+			bbAddOpcode (addr + cur);
 			switch (op->type) {
 			case R_ANAL_OP_TYPE_NOP:
 				// skip nops

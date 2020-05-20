@@ -40,13 +40,12 @@ static int debug_gdb_write_at(const ut8 *buf, int sz, ut64 addr) {
 	size_max = desc->read_max;
 	packets = sz / size_max;
 	last = sz % size_max;
-	for (x = 0; x < packets; x++) {
-		gdbr_write_memory (desc, addr + x * size_max,
-			(const uint8_t*)(buf + x * size_max), size_max);
+	ut64 offset = 0;
+	for (x = 0; x < packets; x++, offset += size_max) {
+		gdbr_write_memory (desc, addr + offset, buf + offset, size_max);
 	}
 	if (last) {
-		gdbr_write_memory (desc, addr + x * size_max,
-			(buf + x * size_max), last);
+		gdbr_write_memory (desc, addr + offset, buf + offset, last);
 	}
 	return sz;
 }

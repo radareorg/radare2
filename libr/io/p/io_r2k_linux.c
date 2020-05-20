@@ -223,7 +223,7 @@ static size_t getvalue (const char *buf, int pos) {
 	return ret;
 }
 
-static void print_help (RIO *io, char *cmd, int p_usage) {
+static void print_help(RIO *io, char *cmd, int p_usage) {
 	int i = 0;
 	int cmd_len = cmd ? strlen (cmd) : 0;
 	const char* usage = "Usage:   \\[MprRw][lpP] [args...]";
@@ -264,7 +264,7 @@ static void print_help (RIO *io, char *cmd, int p_usage) {
 	}
 }
 
-int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t address, ut8 *buf, int len) {
+int ReadMemory(RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t address, ut8 *buf, int len) {
 	int ret = -1;
 	int pagesize, newlen;
 	ut64 pageaddr, offset;
@@ -343,7 +343,7 @@ int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t addres
 	return ret;
 }
 
-int WriteMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, ut64 address, const ut8 *buf, int len) {
+int WriteMemory(RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, ut64 address, const ut8 *buf, int len) {
 	int ret = -1;
 
 	if (iodesc && iodesc->data > 0 && buf) {
@@ -428,10 +428,10 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			cmd = (char *) malloc (27);
 			if (!cmd) {
 				io->cb_printf ("io_r2k_linux : Malloc failed. Seeking to 0x0\n");
-				io->cb_core_cmd (io->user, "s 0");
+				io->corebind.cmd (io->corebind.core, "s 0");
 			} else {
 				sprintf (cmd, "s 0x%"PFMT64x, io->off);
-				io->cb_core_cmd (io->user, cmd);
+				io->corebind.cmd (io->corebind.core, cmd);
 				free (cmd);
 			}
 		}

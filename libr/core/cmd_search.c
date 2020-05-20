@@ -647,9 +647,9 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 			RIOMap *m = r_io_map_get (core->io, from);
 			int rwx = m? m->perm: part->map->perm;
 #else
-		RIOMap *map;
-		SdbListIter *iter;
-		ls_foreach  (core->io->maps, iter, map) {
+		void **it;
+		r_pvector_foreach (&core->io->maps, it) {
+			RIOMap *map = *it;
 			ut64 from = r_itv_begin (map->itv);
 			ut64 to = r_itv_end (map->itv);
 			int rwx = map->perm;
@@ -679,9 +679,9 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 		int mask = (mode[len - 1] == '.')? r_str_rwx (mode + len): 0;
 		// bool only = (bool)(size_t)strstr (mode, ".only");
 
-		SdbListIter *iter;
-		RIOMap *map;
-		ls_foreach  (core->io->maps, iter, map) {
+		void **it;
+		r_pvector_foreach (&core->io->maps, it) {
+			RIOMap *map = *it;
 			ut64 from = r_itv_begin (map->itv);
 			//ut64 to = r_itv_end (map->itv);
 			int rwx = map->perm;
@@ -766,10 +766,10 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 				to = R_MAX (to, addr + size);
 			}
 			if (from == UT64_MAX) {
-				SdbListIter *iter;
-				RIOMap *map;
 				int mask = 1;
-				ls_foreach  (core->io->maps, iter, map) {
+				void **it;
+				r_pvector_foreach (&core->io->maps, it) {
+					RIOMap *map = *it;
 					ut64 from = r_itv_begin (map->itv);
 					ut64 size = r_itv_size (map->itv);
 					int rwx = map->perm;
@@ -1065,8 +1065,8 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 		if (!opst) {
 			R_LOG_WARN ("Anal plugin %s did not return disassembly\n", core->anal->cur->name);
 			RAsmOp asmop;
-			r_asm_set_pc (core->assembler, addr);
-			if (!r_asm_disassemble (core->assembler, &asmop, buf + idx, buflen - idx)) {
+			r_asm_set_pc (core->rasm, addr);
+			if (!r_asm_disassemble (core->rasm, &asmop, buf + idx, buflen - idx)) {
 				valid = false;
 				goto ret;
 			}
@@ -1182,8 +1182,8 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 		r_list_foreach (hitlist, iter, hit) {
 			ut8 *buf = malloc (hit->len);
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
-			r_asm_set_pc (core->assembler, hit->addr);
-			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
+			r_asm_set_pc (core->rasm, hit->addr);
+			r_asm_disassemble (core->rasm, &asmop, buf, hit->len);
 			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ANAL_OP_MASK_ESIL);
 			size += hit->len;
 			if (analop.type != R_ANAL_OP_TYPE_RET) {
@@ -1215,8 +1215,8 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 		r_list_foreach (hitlist, iter, hit) {
 			ut8 *buf = malloc (hit->len);
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
-			r_asm_set_pc (core->assembler, hit->addr);
-			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
+			r_asm_set_pc (core->rasm, hit->addr);
+			r_asm_disassemble (core->rasm, &asmop, buf, hit->len);
 			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ANAL_OP_MASK_BASIC);
 			size += hit->len;
 			const char *opstr = R_STRBUF_SAFEGET (&analop.esil);
@@ -1245,8 +1245,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 	default:
 		// Print gadgets with new instruction on a new line.
 		r_list_foreach (hitlist, iter, hit) {
-			char *comment = rop_comments? r_meta_get_string (core->anal,
-				R_META_TYPE_COMMENT, hit->addr): NULL;
+			const char *comment = rop_comments? r_meta_get_string (core->anal, R_META_TYPE_COMMENT, hit->addr): NULL;
 			if (hit->len < 0) {
 				eprintf ("Invalid hit length here\n");
 				continue;
@@ -1257,8 +1256,8 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 			}
 			buf[hit->len] = 0;
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
-			r_asm_set_pc (core->assembler, hit->addr);
-			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
+			r_asm_set_pc (core->rasm, hit->addr);
+			r_asm_disassemble (core->rasm, &asmop, buf, hit->len);
 			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ANAL_OP_MASK_ESIL);
 			size += hit->len;
 			if (analop.type != R_ANAL_OP_TYPE_RET) {
@@ -1504,9 +1503,9 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 						R_MIN ((delta - i), 4096));
 					end = i + 2048;
 				}
-				ret = r_asm_disassemble (core->assembler, &asmop, buf + i, delta - i);
+				ret = r_asm_disassemble (core->rasm, &asmop, buf + i, delta - i);
 				if (ret) {
-					r_asm_set_pc (core->assembler, from + i);
+					r_asm_set_pc (core->rasm, from + i);
 					RList *hitlist = construct_rop_gadget (core,
 						from + i, buf, delta, i, grep, regexp,
 						rx_list, end_gadget, badstart);
@@ -1895,7 +1894,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 		}
 	}
 beach:
-	r_core_seek (core, oldoff, 1);
+	r_core_seek (core, oldoff, true);
 	r_anal_esil_free (esil);
 	r_cons_break_pop ();
 	free (buf);
@@ -1907,7 +1906,6 @@ beach:
 static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct search_parameters *param) {
 	const int size = 12;
 	char str[512];
-	char *comment;
 	RAnalFunction *fcn;
 	RAnalRef *ref;
 	RListIter *iter;
@@ -1917,17 +1915,23 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 	if (list) {
 		r_list_foreach (list, iter, ref) {
 			r_io_read_at (core->io, ref->addr, buf, size);
-			r_asm_set_pc (core->assembler, ref->addr);
-			r_asm_disassemble (core->assembler, &asmop, buf, size);
+			r_asm_set_pc (core->rasm, ref->addr);
+			r_asm_disassemble (core->rasm, &asmop, buf, size);
 			fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 			RAnalHint *hint = r_anal_hint_get (core->anal, ref->addr);
 			r_parse_filter (core->parser, ref->addr, core->flags, hint, r_strbuf_get (&asmop.buf_asm),
 				str, sizeof (str), core->print->big_endian);
 			r_anal_hint_free (hint);
-			comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
+			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
+			char *print_comment = NULL;
+			const char *nl = comment ? strchr (comment, '\n') : NULL;
+			if (nl) { // display only until the first newline
+				comment = print_comment = r_str_ndup (comment, nl - comment);
+			}
 			char *buf_fcn = comment
-				? r_str_newf ("%s; %s", fcn ?  fcn->name : "(nofunc)", strtok (comment, "\n"))
+				? r_str_newf ("%s; %s", fcn ?  fcn->name : "(nofunc)", comment)
 				: r_str_newf ("%s", fcn ? fcn->name : "(nofunc)");
+			free (print_comment);
 			if (from <= ref->addr && to >= ref->addr) {
 				r_cons_printf ("%s 0x%" PFMT64x " [%s] %s\n",
 						buf_fcn, ref->addr, r_anal_xrefs_type_tostring (ref->type), str);
@@ -2568,7 +2572,7 @@ static void search_similar_pattern(RCore *core, int count, struct search_paramet
 }
 
 static bool isArm(RCore *core) {
-	RAsm *as = core ? core->assembler : NULL;
+	RAsm *as = core ? core->rasm : NULL;
 	if (as && as->cur && as->cur->arch) {
 		if (r_str_startswith (as->cur->arch, "arm")) {
 			if (as->cur->bits < 64) {
@@ -2604,9 +2608,9 @@ void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, int count, vo
 	const char *cmdHit = r_config_get (core->config, "cmd.hit");
 	if (cmdHit && *cmdHit) {
 		ut64 addr = core->offset;
-		r_core_seek (core, from, 1);
+		r_core_seek (core, from, true);
 		r_core_cmd (core, cmdHit, 0);
-		r_core_seek (core, addr, 1);
+		r_core_seek (core, addr, true);
 	}
 }
 
@@ -2873,7 +2877,7 @@ static void __core_cmd_search_asm_byteswap (RCore *core, int nth) {
 	}
 	for (i = 0; i <= 0xff; i++) {
 		buf[nth] = i;
-		if (r_asm_disassemble (core->assembler, &asmop, buf, sizeof (buf)) > 0) {
+		if (r_asm_disassemble (core->rasm, &asmop, buf, sizeof (buf)) > 0) {
 			const char *asmstr = r_strbuf_get (&asmop.buf_asm);
 			if (!strstr (asmstr, "invalid") && !strstr (asmstr, "unaligned")) {
 				r_cons_printf ("%02x  %s\n", i, asmstr);
@@ -2934,6 +2938,11 @@ static int cmd_search(void *data, const char *input) {
 	// {.addr = UT64_MAX, .size = 0} means search range is unspecified
 	RInterval search_itv = {search_from, search_to - search_from};
 	bool empty_search_itv = search_from == search_to && search_from != UT64_MAX;
+	if (empty_search_itv) {
+		eprintf ("WARNING from == to?\n");
+		ret = false;
+		goto beach;
+	}
 	// TODO full address cannot be represented, shrink 1 byte to [0, UT64_MAX)
 	if (search_from == UT64_MAX && search_to == UT64_MAX) {
 		search_itv.addr = 0;
@@ -2963,21 +2972,8 @@ static int cmd_search(void *data, const char *input) {
 	core->search->maxhits = r_config_get_i (core->config, "search.maxhits");
 	searchprefix = r_config_get (core->config, "search.prefix");
 	core->search->overlap = r_config_get_i (core->config, "search.overlap");
-	if (!core->io->va) {
-		RInterval itv = {0, r_io_size (core->io)};
-		if (!r_itv_overlap (search_itv, itv)) {
-			empty_search_itv = true;
-		} else {
-			search_itv = r_itv_intersect (search_itv, itv);
-		}
-	}
 	core->search->bckwrds = false;
 
-	if (empty_search_itv) {
-		eprintf ("WARNING from == to?\n");
-		ret = false;
-		goto beach;
-	}
 	/* Quick & dirty check for json output */
 	if (input[0] && (input[1] == 'j') && (input[0] != ' ')) {
 		param.outmode = R_MODE_JSON;
@@ -3131,13 +3127,13 @@ reread:
 					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
 					ut64 refptr = r_num_math (core->num, input + 2);
 					ut64 curseek = core->offset;
-					r_core_seek (core, map->itv.addr, 1);
+					r_core_seek (core, map->itv.addr, true);
 					char *arg = r_str_newf (" %"PFMT64d, r_itv_end (map->itv) - map->itv.addr);
 					char *trg = refptr? r_str_newf (" %"PFMT64d, refptr): strdup ("");
 					r_core_anal_esil (core, arg, trg);
 					free (arg);
 					free (trg);
-					r_core_seek (core, curseek, 1);
+					r_core_seek (core, curseek, true);
 				}
 			}
 			break;
@@ -3286,11 +3282,9 @@ reread:
 						eprintf ("Cannot allocate memory.\n");
 					}
 					ret = true;
-					goto beach;
 				} else {
 					eprintf ("Usage: /cc [hashname] [hexpairhashvalue]\n");
 					eprintf ("Usage: /CC to search ascii collisions\n");
-					goto beach;
 				}
 				free (s);
 				goto beach;
@@ -3828,7 +3822,7 @@ reread:
 			int ochunksize;
 			int i, len, chunksize = r_config_get_i (core->config, "search.chunk");
 			if (chunksize < 1) {
-				chunksize = core->assembler->bits / 8;
+				chunksize = core->rasm->bits / 8;
 			}
 			len = r_str_unescape (str);
 			ochunksize = chunksize = R_MIN (len, chunksize);

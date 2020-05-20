@@ -1,3 +1,6 @@
+#ifndef DEX_H
+#define DEX_H
+
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
@@ -5,6 +8,7 @@
 
 #define R_BIN_DEX_MAXSTR 256
 #define DEX_CLASS_SIZE (32)
+#define LEB_MAX_SIZE 6
 
 /* method flags */
 #define R_DEX_METH_PUBLIC 0x0001
@@ -116,6 +120,7 @@ typedef struct r_bin_dex_obj_t {
 	ut64 code_to;
 	char *version;
 	Sdb *kv;
+	char **cal_strings;
 } RBinDexObj;
 
 struct r_bin_dex_str_t {
@@ -154,9 +159,8 @@ struct dex_debug_local_t {
 };
 
 char* r_bin_dex_get_version(struct r_bin_dex_obj_t* bin);
+void r_bin_dex_free(struct r_bin_dex_obj_t *bin);
 struct r_bin_dex_obj_t *r_bin_dex_new_buf(RBuffer *buf);
-struct r_bin_dex_str_t *r_bin_dex_get_strings (struct r_bin_dex_obj_t *bin);
+struct r_bin_dex_str_t *r_bin_dex_get_strings(struct r_bin_dex_obj_t *bin);
 
-int dex_read_uleb128 (const ut8 *ptr, int size);
-int dex_read_sleb128 (const char *ptr, int size);
-int dex_uleb128_len (const ut8 *ptr, int size);
+#endif

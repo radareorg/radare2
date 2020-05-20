@@ -81,6 +81,10 @@
 #define COFF_SCN_MEM_READ		0x40000000
 #define COFF_SCN_MEM_WRITE		0x80000000
 
+#define COFF_SYM_SCNUM_UNDEF 		0
+#define COFF_SYM_SCNUM_ABS		((unsigned short)-1)
+#define COFF_SYM_SCNUM_DEBUG		((unsigned short)-2)
+
 #define COFF_SYM_TYPE_NULL		0
 #define COFF_SYM_TYPE_VOID		1
 #define COFF_SYM_TYPE_CHAR		2
@@ -133,7 +137,7 @@
 
 R_PACKED(
 struct coff_hdr {
-	ut16 f_magic;	/* Magic number */	
+	ut16 f_magic;	/* Magic number */
 	ut16 f_nscns;	/* Number of Sections */
 	ut32 f_timdat;	/* Time & date stamp */
 	ut32 f_symptr;	/* File pointer to Symbol Table */
@@ -184,4 +188,6 @@ struct coff_reloc {
 	ut32 r_symndx;	/* Symbol index */
 	ut16 r_type;	/* Type of relocation */
 });
+
+#define COFF_SYM_GET_DTYPE(type)	(((type) >> 4) & 3)
 #endif /* COFF_SPECS_H */

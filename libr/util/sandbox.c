@@ -294,7 +294,7 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 	char *epath = expand_home (path);
 	int ret = -1;
 #if __WINDOWS__
-	mode |= O_BINARY;
+	perm |= O_BINARY;
 	if (!strcmp (path, "/dev/null")) {
 		path = "NUL";
 	}
@@ -343,7 +343,7 @@ R_API FILE *r_sandbox_fopen (const char *path, const char *mode) {
 	if (!epath) {
 		epath = expand_home (path);
 	}
-	if ((strchr (mode, 'w') || r_file_is_regular (epath))) {
+	if ((strchr (mode, 'w') || strchr (mode, 'a') || r_file_is_regular (epath))) {
 #if __WINDOWS__
 		wchar_t *wepath = r_utf8_to_utf16 (epath);
 		if (!wepath) {

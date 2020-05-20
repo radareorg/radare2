@@ -37,9 +37,6 @@ rax2:
 RAnal:
   - libr/anal/**/*
 
-#RAsm:
-#  - libr/asm/**/*
-
 RAsm-Assembler:
   - libr/asm/**/*ass*
   - libr/asm/asm_x86_nz.c
@@ -124,6 +121,7 @@ ESIL:
 
 gdb:
   - shlr/gdb/**/*
+  - libr/io/p/io_gdb.c
 
 infrastructure:
   - .appveyor.yml
@@ -133,6 +131,7 @@ infrastructure:
   - .github/workflows/*
 
 r2r:
+  - binr/r2r/*
   - test/**/*
 
 java:
@@ -140,6 +139,7 @@ java:
 
 WinDbg:
   - shlr/windbg/**/*
+  - libr/io/p/io_windbg.c
 
 webui:
   - shlr/www/**/*

@@ -1,6 +1,6 @@
 r_hash_sources = [
   'adler32.c',
-  'calc.c',
+  'hcalc.c',
   'crca.c',
   'entropy.c',
   'fletcher.c',

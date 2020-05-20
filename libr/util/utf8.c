@@ -490,7 +490,7 @@ R_API int r_utf8_decode(const ut8 *ptr, int ptrlen, RRune *ch) {
 	if (ptrlen < 1) {
 		return 0;
 	}
-	if (ptrlen > 0 && ptr[0] < 0x80) {
+	if (ptr[0] < 0x80) {
 		if (ch) {
 			*ch = (ut32)ptr[0];
 		}

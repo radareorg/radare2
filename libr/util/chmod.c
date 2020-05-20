@@ -7,15 +7,15 @@
 #include <sys/stat.h>
 
 #if __UNIX__
-static int chmodr(const char *, int recursive);
-static int parsemode(const char *);
-static void recurse(const char *path, int rec, int (*fn)(const char *,int));
+static bool chmodr(const char *, int recursive);
+static bool parsemode(const char *);
+static void recurse(const char *path, int rec, bool (*fn)(const char *,int));
 
 static char oper = '=';
 static mode_t mode = 0;
 #endif
 
-R_API int r_file_chmod (const char *file, const char *mod, int recursive) {
+R_API bool r_file_chmod (const char *file, const char *mod, int recursive) {
 #if __UNIX__
 	oper = '=';
 	mode = 0;
@@ -24,17 +24,17 @@ R_API int r_file_chmod (const char *file, const char *mod, int recursive) {
 	}
 	return chmodr (file, recursive);
 #else
-	return -1;
+	return false;
 #endif
 }
 
 #if __UNIX__
 /* copied from sbase/chmod.c (suckless.org) */
-int chmodr(const char *path, int rflag) {
+static bool chmodr(const char *path, int rflag) {
 	struct stat st;
 
 	if (stat (path, &st) == -1) {
-		return 0;
+		return false;
 	}
 
 	switch (oper) {
@@ -58,7 +58,7 @@ int chmodr(const char *path, int rflag) {
 	return true;
 }
 
-int parsemode(const char *str) {
+static bool parsemode(const char *str) {
 	char *end;
 	const char *p;
 	int octal;
@@ -147,7 +147,7 @@ int parsemode(const char *str) {
 	return true;
 }
 
-char * agetcwd(void) {
+static char *agetcwd(void) {
         char *buf = malloc (4096);
 	if (!buf) {
 		return NULL;
@@ -158,7 +158,7 @@ char * agetcwd(void) {
 	return buf;
 }
 
-static void recurse(const char *path, int rec, int (*fn)(const char *,int)) {
+static void recurse(const char *path, int rec, bool (*fn)(const char *,int)) {
         char *cwd;
         struct dirent *d;
         struct stat st;

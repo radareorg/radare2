@@ -1,0 +1,13 @@
+NAME=dbg.aaa
+FILE=bins/elf/true
+ARGS=-dA
+CMDS=<<EOF
+dcu main
+fd
+afi main~?name: main
+EOF
+EXPECT=<<EOF
+main
+1
+EOF
+RUN

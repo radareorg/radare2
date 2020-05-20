@@ -1,0 +1,6 @@
+NAME=PE: corkami resource2.exe - open
+FILE=bins/pe/resource2.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN
