@@ -687,8 +687,22 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 				if (show_flags) {
 					RFlagItem *fi = r_flag_get_i (core->flags, core->offset + j);
 					if (fi) {
-						ch = fi->name[0];
-						ch2 = fi->name[1];
+						size_t fst = 0, snd = 1;
+						if (r_str_startswith (fi->name, "num.")) {
+							fst = 4;
+							snd = 5;
+						}
+						if (fi->name[fst]) {
+							if (fi->name[snd]) {
+								ch = fi->name[fst];
+								ch2 = fi->name[snd];
+							} else {
+								ch = ' ';
+								ch2 = fi->name[fst];
+							}
+						} else {
+							ch2 = ch;
+						}
 					} else {
 						ch2 = ch;
 					}
