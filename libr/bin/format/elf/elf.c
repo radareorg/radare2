@@ -2540,8 +2540,9 @@ static bool has_valid_section_header(ELFOBJ *bin, size_t pos) {
 
 static void fix_rva_and_offset_relocable_file(ELFOBJ *bin, RBinElfReloc *r, size_t pos) {
 	if (has_valid_section_header (bin, pos)) {
-		r->rva = bin->shdr[bin->g_sections[pos].info].sh_offset + r->offset;
-		r->rva = Elf_(r_bin_elf_p2v) (bin, r->rva);
+		ut64 pa = bin->shdr[bin->g_sections[pos].info].sh_offset + r->offset;
+		r->rva = Elf_(r_bin_elf_p2v_new) (bin, pa);
+		r->offset = pa;
 	} else {
 		r->rva = r->offset;
 	}
