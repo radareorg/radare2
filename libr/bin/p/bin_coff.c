@@ -113,7 +113,6 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RB
 		ptr->type = r_str_constpool_get (&rbin->constpool, sdb_fmt ("%i", s->n_sclass));
 		break;
 	}
-	ptr->vaddr = ptr->paddr;
 	ptr->size = 4;
 	ptr->ordinal = 0;
 	return true;
@@ -302,25 +301,31 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin) {
 				free (symbol);
 				continue;
 			}
-			//reloc->type = rel[j].r_type;
-			//eprintf ("Reloc type %d\n", rel[j].r_type);
 
 			reloc->symbol = symbol;
 			reloc->paddr = bin->scn_hdrs[i].s_scnptr + rel[j].r_vaddr;
 			reloc->vaddr = reloc->paddr;
 			reloc->type = 0;
+			reloc->type = rel[j].r_type;
 			if (symbol->is_imported) {
 				reloc->import = _fill_bin_import (bin, rel[j].r_symndx);
 			} else {
 				switch (bin->hdr.f_magic) {
+				case COFF_FILE_MACHINE_I386:
+					switch (rel[j].r_type) {
+					case COFF_REL_I386_DIR32:
+						reloc->type = R_BIN_RELOC_32;
+						reloc->addend = symbol->paddr;
+						break;
+					case COFF_REL_I386_REL32:
+						reloc->type = R_BIN_RELOC_32;
+						reloc->addend = symbol->paddr - reloc->paddr - 4;
+						reloc->additive = 1;
+						break;
+					}
+					break;
 				case COFF_FILE_MACHINE_AMD64:
 					switch (rel[j].r_type) {
-					case COFF_REL_AMD64_ADDR64:
-						//reloc->type = R_BIN_RELOC_64;
-						break;
-					case COFF_REL_AMD64_ADDR32:
-						//reloc->type = R_BIN_RELOC_32;
-						break;
 					case COFF_REL_AMD64_REL32:
 						reloc->type = R_BIN_RELOC_32;
 						reloc->addend = symbol->paddr - reloc->paddr - 4;
