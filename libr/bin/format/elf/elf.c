@@ -2833,10 +2833,9 @@ RBinElfLib* Elf_(r_bin_elf_get_libs)(ELFOBJ *bin) {
 }
 
 static void create_section_from_phdr(ELFOBJ *bin, RBinElfSection *ret, int *i, const char *name, ut64 addr, ut64 sz) {
-	if (!addr) {
+	if (addr == UT64_MAX) {
 		return;
 	}
-
 	ret[*i].offset = Elf_(r_bin_elf_v2p_new) (bin, addr);
 	ret[*i].rva = addr;
 	ret[*i].size = sz;
