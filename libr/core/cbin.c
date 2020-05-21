@@ -1313,10 +1313,10 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 static const char *bin_reloc_type_name(RBinReloc *reloc) {
 #define CASE(T) case R_BIN_RELOC_ ## T: return reloc->additive ? "ADD_" #T : "SET_" #T
 	switch (reloc->type) {
-		CASE(8);
-		CASE(16);
-		CASE(32);
-		CASE(64);
+	CASE(8);
+	CASE(16);
+	CASE(32);
+	CASE(64);
 	}
 	return "UNKNOWN";
 #undef CASE
@@ -1325,10 +1325,10 @@ static const char *bin_reloc_type_name(RBinReloc *reloc) {
 static ut8 bin_reloc_size(RBinReloc *reloc) {
 #define CASE(T) case R_BIN_RELOC_ ## T: return (T) / 8
 	switch (reloc->type) {
-		CASE(8);
-		CASE(16);
-		CASE(32);
-		CASE(64);
+	CASE(8);
+	CASE(16);
+	CASE(32);
+	CASE(64);
 	}
 	return 0;
 #undef CASE
