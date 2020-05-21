@@ -641,6 +641,9 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 				case R_BIN_WASM_VALUETYPE_f64:
 					r_strbuf_setf (sb, "%s (result f64)", opdef->txt);
 					break;
+				case R_BIN_WASM_VALUETYPE_v128:
+					r_strbuf_setf (sb, "%s (result v128)", opdef->txt);
+					break;
 				default:
 					r_strbuf_setf (sb, "%s (result ?)", opdef->txt);
 					break;
