@@ -198,6 +198,7 @@ typedef struct
 #define EM_RH32		38		/* TRW RH-32 */
 #define EM_RCE		39		/* Motorola RCE */
 #define EM_ARM		40		/* ARM */
+#define EM_ARM64        183             /* AArch64 */
 #define EM_FAKE_ALPHA	41		/* Digital Alpha */
 #define EM_SH		42		/* Hitachi SH */
 #define EM_SPARCV9	43		/* SPARC v9 64-bit */
@@ -2510,6 +2511,7 @@ enum
 #define R_AARCH64_P32_TLS_TPREL		186	/* TP-relative offset, 32 bit.  */
 #define R_AARCH64_P32_TLSDESC		187	/* TLS Descriptor.  */
 #define R_AARCH64_P32_IRELATIVE		188	/* STT_GNU_IFUNC relocation. */
+#define R_AARCH64_COPY                  1024
 
 /* LP64 AArch64 relocs.  */
 #define R_AARCH64_ABS64         257	/* Direct 64 bit. */
@@ -2633,6 +2635,8 @@ enum
 #define R_AARCH64_TLS_DTPREL   1029	/* Module-relative offset, 64 bit.  */
 #define R_AARCH64_TLS_TPREL    1030	/* TP-relative offset, 64 bit.  */
 #define R_AARCH64_TLSDESC      1031	/* TLS Descriptor.  */
+// #define R_AARCH64_TLS_TPREL64           1030
+// #define R_AARCH64_TLS_DTPREL32          1031
 #define R_AARCH64_IRELATIVE	1032	/* STT_GNU_IFUNC relocation.  */
 
 /* ARM relocs.  */
@@ -2914,6 +2918,133 @@ enum
 #define R_IA64_DTPREL64MSB	0xb6	/* @dtprel(sym + add), data8 MSB */
 #define R_IA64_DTPREL64LSB	0xb7	/* @dtprel(sym + add), data8 LSB */
 #define R_IA64_LTOFF_DTPREL22	0xba	/* @ltoff(@dtprel(s+a)), imm22 */
+
+/*
+ * RISC-V relocation types.
+ */
+
+/* Relocation types used by the dynamic linker. */
+#define	R_RISCV_NONE		0
+#define	R_RISCV_32		1
+#define	R_RISCV_64		2
+#define	R_RISCV_RELATIVE	3
+#define	R_RISCV_COPY		4
+#define	R_RISCV_JUMP_SLOT	5
+#define	R_RISCV_TLS_DTPMOD32	6
+#define	R_RISCV_TLS_DTPMOD64	7
+#define	R_RISCV_TLS_DTPREL32	8
+#define	R_RISCV_TLS_DTPREL64	9
+#define	R_RISCV_TLS_TPREL32	10
+#define	R_RISCV_TLS_TPREL64	11
+
+/* Relocation types not used by the dynamic linker. */
+#define	R_RISCV_BRANCH		16
+#define	R_RISCV_JAL		17
+#define	R_RISCV_CALL		18
+#define	R_RISCV_CALL_PLT	19
+#define	R_RISCV_GOT_HI20	20
+#define	R_RISCV_TLS_GOT_HI20	21
+#define	R_RISCV_TLS_GD_HI20	22
+#define	R_RISCV_PCREL_HI20	23
+#define	R_RISCV_PCREL_LO12_I	24
+#define	R_RISCV_PCREL_LO12_S	25
+#define	R_RISCV_HI20		26
+#define	R_RISCV_LO12_I		27
+#define	R_RISCV_LO12_S		28
+#define	R_RISCV_TPREL_HI20	29
+#define	R_RISCV_TPREL_LO12_I	30
+#define	R_RISCV_TPREL_LO12_S	31
+#define	R_RISCV_TPREL_ADD	32
+#define	R_RISCV_ADD8		33
+#define	R_RISCV_ADD16		34
+#define	R_RISCV_ADD32		35
+#define	R_RISCV_ADD64		36
+#define	R_RISCV_SUB8		37
+#define	R_RISCV_SUB16		38
+#define	R_RISCV_SUB32		39
+#define	R_RISCV_SUB64		40
+#define	R_RISCV_GNU_VTINHERIT	41
+#define	R_RISCV_GNU_VTENTRY	42
+#define	R_RISCV_ALIGN		43
+#define	R_RISCV_RVC_BRANCH	44
+#define	R_RISCV_RVC_JUMP	45
+#define	R_RISCV_RVC_LUI		46
+#define	R_RISCV_GPREL_I		47
+#define	R_RISCV_GPREL_S		48
+#define	R_RISCV_TPREL_I		49
+#define	R_RISCV_TPREL_S		50
+#define	R_RISCV_RELAX		51
+#define	R_RISCV_SUB6		52
+#define	R_RISCV_SET6		53
+#define	R_RISCV_SET8		54
+#define	R_RISCV_SET16		55
+#define	R_RISCV_SET32		56
+#define	R_RISCV_32_PCREL	57
+#define	R_RISCV_IRELATIVE	58
+
+/* csky */
+#define R_CKCORE_NONE               0	/* no reloc */
+#define R_CKCORE_ADDR32             1	/* direct 32 bit (S + A) */
+#define R_CKCORE_PCRELIMM8BY4       2	/* disp ((S + A - P) >> 2) & 0xff   */
+#define R_CKCORE_PCRELIMM11BY2      3	/* disp ((S + A - P) >> 1) & 0x7ff  */
+#define R_CKCORE_PCREL32            5	/* 32-bit rel (S + A - P)           */
+#define R_CKCORE_PCRELJSR_IMM11BY2  6	/* disp ((S + A - P) >>1) & 0x7ff   */
+#define R_CKCORE_RELATIVE           9	/* 32 bit adjust program base(B + A)*/
+#define R_CKCORE_COPY               10	/* 32 bit adjust by program base    */
+#define R_CKCORE_GLOB_DAT           11	/* off between got and sym (S)      */
+#define R_CKCORE_JUMP_SLOT          12	/* PLT entry (S) */
+#define R_CKCORE_GOTOFF             13	/* offset to GOT (S + A - GOT)      */
+#define R_CKCORE_GOTPC              14	/* PC offset to GOT (GOT + A - P)   */
+#define R_CKCORE_GOT32              15	/* 32 bit GOT entry (G) */
+#define R_CKCORE_PLT32              16	/* 32 bit PLT entry (G) */
+#define R_CKCORE_ADDRGOT            17	/* GOT entry in GLOB_DAT (GOT + G)  */
+#define R_CKCORE_ADDRPLT            18	/* PLT entry in GLOB_DAT (GOT + G)  */
+#define R_CKCORE_PCREL_IMM26BY2     19	/* ((S + A - P) >> 1) & 0x3ffffff   */
+#define R_CKCORE_PCREL_IMM16BY2     20	/* disp ((S + A - P) >> 1) & 0xffff */
+#define R_CKCORE_PCREL_IMM16BY4     21	/* disp ((S + A - P) >> 2) & 0xffff */
+#define R_CKCORE_PCREL_IMM10BY2     22	/* disp ((S + A - P) >> 1) & 0x3ff  */
+#define R_CKCORE_PCREL_IMM10BY4     23	/* disp ((S + A - P) >> 2) & 0x3ff  */
+#define R_CKCORE_ADDR_HI16          24	/* high & low 16 bit ADDR */
+                                        /* ((S + A) >> 16) & 0xffff */
+#define R_CKCORE_ADDR_LO16          25	/* (S + A) & 0xffff */
+#define R_CKCORE_GOTPC_HI16         26	/* high & low 16 bit GOTPC */
+                                        /* ((GOT + A - P) >> 16) & 0xffff */
+#define R_CKCORE_GOTPC_LO16         27	/* (GOT + A - P) & 0xffff */
+#define R_CKCORE_GOTOFF_HI16        28	/* high & low 16 bit GOTOFF */
+                                        /* ((S + A - GOT) >> 16) & 0xffff */
+#define R_CKCORE_GOTOFF_LO16        29	/* (S + A - GOT) & 0xffff */
+#define R_CKCORE_GOT12              30	/* 12 bit disp GOT entry (G) */
+#define R_CKCORE_GOT_HI16           31	/* high & low 16 bit GOT */
+                                        /* (G >> 16) & 0xffff */
+#define R_CKCORE_GOT_LO16           32	/* (G & 0xffff) */
+#define R_CKCORE_PLT12              33	/* 12 bit disp PLT entry (G) */
+#define R_CKCORE_PLT_HI16           34	/* high & low 16 bit PLT */
+                                        /* (G >> 16) & 0xffff */
+#define R_CKCORE_PLT_LO16           35	/* G & 0xffff */
+#define R_CKCORE_ADDRGOT_HI16       36	/* high & low 16 bit ADDRGOT */
+                                        /* (GOT + G * 4) & 0xffff */
+#define R_CKCORE_ADDRGOT_LO16       37	/* (GOT + G * 4) & 0xffff */
+#define R_CKCORE_ADDRPLT_HI16       38	/* high & low 16 bit ADDRPLT */
+                                        /* ((GOT + G * 4) >> 16) & 0xFFFF */
+#define R_CKCORE_ADDRPLT_LO16       39	/* (GOT+G*4) & 0xffff */
+#define R_CKCORE_PCREL_JSR_IMM26BY2 40	/* disp ((S+A-P) >>1) & x3ffffff */
+#define R_CKCORE_TOFFSET_LO16       41	/* (S+A-BTEXT) & 0xffff */
+#define R_CKCORE_DOFFSET_LO16       42	/* (S+A-BTEXT) & 0xffff */
+#define R_CKCORE_PCREL_IMM18BY2     43	/* disp ((S+A-P) >>1) & 0x3ffff */
+#define R_CKCORE_DOFFSET_IMM18      44	/* disp (S+A-BDATA) & 0x3ffff */
+#define R_CKCORE_DOFFSET_IMM18BY2   45	/* disp ((S+A-BDATA)>>1) & 0x3ffff */
+#define R_CKCORE_DOFFSET_IMM18BY4   46	/* disp ((S+A-BDATA)>>2) & 0x3ffff */
+#define R_CKCORE_GOT_IMM18BY4       48	/* disp (G >> 2) */
+#define R_CKCORE_PLT_IMM18BY4       49	/* disp (G >> 2) */
+#define R_CKCORE_PCREL_IMM7BY4      50	/* disp ((S+A-P) >>2) & 0x7f */
+#define R_CKCORE_TLS_LE32           51  /* 32 bit offset to TLS block */
+#define R_CKCORE_TLS_IE32           52
+#define R_CKCORE_TLS_GD32           53
+#define R_CKCORE_TLS_LDM32          54
+#define R_CKCORE_TLS_LDO32          55
+#define R_CKCORE_TLS_DTPMOD32       56
+#define R_CKCORE_TLS_DTPOFF32       57
+#define R_CKCORE_TLS_TPOFF32        58
 
 /* SH specific declarations */
 
