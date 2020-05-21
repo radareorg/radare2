@@ -2650,13 +2650,15 @@ static size_t get_num_relocs_sections(ELFOBJ *bin) {
 }
 
 static size_t get_num_relocs_approx(ELFOBJ *bin) {
-	return get_num_relocs_dynamic (bin) + get_num_relocs_sections (bin);
+	size_t rd = get_num_relocs_dynamic (bin);
+	size_t rs = get_num_relocs_sections (bin);
+	return rd + rs;
 }
 
 static void populate_relocs_record_from_dynamic(ELFOBJ *bin, RBinElfReloc *relocs, size_t num_relocs, size_t *pos) {
 	size_t offset;
 	size_t size = get_size_rel_mode (bin->dyn_info.dt_pltrel);
-	size_t p = 0;
+	size_t p = *pos;
 
 	for (offset = 0; offset < bin->dyn_info.dt_pltrelsz && p < num_relocs; offset += size) {
 		if (!read_reloc (bin, relocs + pos, bin->dyn_info.dt_pltrel, bin->dyn_info.dt_jmprel + offset)) {
@@ -2682,7 +2684,7 @@ static void populate_relocs_record_from_dynamic(ELFOBJ *bin, RBinElfReloc *reloc
 		fix_rva_and_offset_exec_file (bin, relocs + p);
 		p++;
 	}
-	*pos += p;
+	*pos = p;
 }
 
 static size_t get_next_not_analysed_offset(ELFOBJ *bin, size_t section_vaddr, size_t offset) {

@@ -868,32 +868,29 @@ static void _patch_reloc(ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S
 }
 
 static RList* patch_relocs(RBin *b) {
+	r_return_val_if_fail (b, NULL);
 	RList *ret = NULL;
 	RBinReloc *ptr = NULL;
-	RIO *io = NULL;
-	RBinObject *obj = NULL;
-	struct Elf_(r_bin_elf_obj_t) *bin = NULL;
 	RIOMap *g = NULL;
 	HtUU *relocs_by_sym;
 	RBinElfReloc *relcs = NULL;
 	RBinInfo *info;
-	int cdsz;
-	int i;
-	ut64 n_vaddr, vaddr, size, offset = 0;
+	ut64 size, offset = 0;
 
-	if (!b) {
-		return NULL;
-	}
-	io = b->iob.io;
+	RIO *io = b->iob.io;
 	if (!io || !io->desc) {
 		return NULL;
 	}
-	obj = r_bin_cur_object (b);
+	RBinObject *obj = r_bin_cur_object (b);
 	if (!obj) {
 	   	return NULL;
 	}
-	bin = obj->bin_obj;
+	struct Elf_(r_bin_elf_obj_t) *bin = obj->bin_obj;
 	if (bin->ehdr.e_type != ET_REL) {
+		return NULL;
+	}
+	size = bin->g_reloc_num * 4;
+	if (size == 0) {
 		return NULL;
 	}
 	if (!io->cached) {
@@ -902,7 +899,7 @@ static RList* patch_relocs(RBin *b) {
 	}
 
 	info = obj ? obj->info: NULL;
-	cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
+	size_t cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
 
 	void **it;
 	r_pvector_foreach (&io->maps, it) {
@@ -985,10 +982,12 @@ static void lookup_symbols(RBinFile *bf, RBinInfo *ret) {
 			if (!strcmp (symbol->name, "_NSConcreteGlobalBlock")) {
 				ret->lang = (ret->lang && !strcmp (ret->lang, "c++"))? "c++ blocks ext.": "c blocks ext.";
 			}
-			if (strstr (symbol->name, "__stack_chk_fail") || strstr (symbol->name, "__stack_smash_handler")) {
-				ret->has_canary = true;
+			if (!ret->has_canary) {
+				if (strstr (symbol->name, "__stack_chk_fail") || strstr (symbol->name, "__stack_smash_handler")) {
+					ret->has_canary = true;
+				}
 			}
-			if (!strcmp (symbol->name, "__rust_oom")) {
+			if (!is_rust && !strcmp (symbol->name, "__rust_oom")) {
 				is_rust = true;
 				ret->lang = "rust";
 			}
