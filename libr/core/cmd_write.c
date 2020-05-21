@@ -263,8 +263,8 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 			int result_size = 0;
 			ut8 *result = r_crypto_get_output (cry, &result_size);
 			if (result) {
-				if (!r_io_write_at (core->io, core->offset, result, result_size)) {
-					eprintf ("r_io_write_at failed at 0x%08"PFMT64x"\n", core->offset);
+				if (!r_core_write_at (core, core->offset, result, result_size)) {
+					eprintf ("r_core_write_at failed at 0x%08"PFMT64x"\n", core->offset);
 				}
 				eprintf ("Written %d byte(s)\n", result_size);
 				free (result);
