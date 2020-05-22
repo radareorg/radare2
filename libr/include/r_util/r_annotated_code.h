@@ -50,14 +50,42 @@ typedef struct r_annotated_code_t {
 	RVector/*<RCodeAnnotation>*/ annotations;
 } RAnnotatedCode;
 
+/*
+	Creates a new instance of RAnnotatedCode and returns it.
+*/
 R_API RAnnotatedCode *r_annotated_code_new(char *code);
+/*
+	Deallocate the memory for code
+*/
 R_API void r_annotated_code_free(RAnnotatedCode *code);
+/*
+	Adds annotation to the set of RCodeAnnotations in code
+*/
 R_API void r_annotated_code_add_annotation(RAnnotatedCode *code, RCodeAnnotation *annotation);
+/*
+	Makes an RPVector and inserts the pointers to all annotations that in which annotation->start <= offset < annotation->end
+	This RPVector can have annotations for syntax highlight and for offset.
+*/
 R_API RPVector *r_annotated_code_annotations_in(RAnnotatedCode *code, size_t offset);
+/*
+	Makes an RPVector and inserts pointers to all annotations whose range overlap with range [start, end-1],  and returns it.
+*/
 R_API RPVector *r_annotated_code_annotations_range(RAnnotatedCode *code, size_t start, size_t end);
+/*
+	Takes RAnnotatedCode structure and prints it in JSON format.
+*/
 R_API void r_annotated_code_print_json(RAnnotatedCode *code);
+/*
+	Output for pdg and pdgo is taken from here.
+*/
 R_API void r_annotated_code_print(RAnnotatedCode *code, RVector *line_offsets);
+/*
+	Creates an RVector and inserts corresponding offsets for each line(if exists), and returns it.
+*/
 R_API RVector *r_annotated_code_line_offsets(RAnnotatedCode *code);
+/*
+	This is the output of 'pdg*'.
+*/
 R_API void r_annotated_code_print_comment_cmds(RAnnotatedCode *code);
 
 #ifdef __cplusplus
