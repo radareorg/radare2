@@ -131,7 +131,7 @@ static bool test_r_annotated_code_free(){
 	mu_end;
 }	
 
-static void test_equal(RCodeAnnotation *first, RCodeAnnotation *second){ // First - Got, Second - Expected
+static bool test_equal(RCodeAnnotation *first, RCodeAnnotation *second){ // First - Got, Second - Expected
 	mu_assert_eq(first->start, second->start, "start of annotations doesn't match");
 	mu_assert_eq(first->end, second->end, "end of annotations doesn't match");
 	mu_assert_eq(first->type, second->type, "type of annotation doesn't match");
