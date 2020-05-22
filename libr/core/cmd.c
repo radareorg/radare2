@@ -5898,7 +5898,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_step_command) {
 	free (step_str);
 
 	ut64 cur;
-	for (cur = from; cur < to; cur += step) {
+	for (cur = from; cur <= to; cur += step) {
 		r_core_seek (core, cur, true);
 		r_core_block_size (core, step);
 		RCmdStatus cmd_res = handle_ts_command_tmpseek (state, command);
