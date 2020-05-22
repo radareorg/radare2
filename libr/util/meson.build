@@ -82,7 +82,7 @@ r_util_sources = [
   'regex/regcomp.c',
   'regex/regexec.c',
   'regex/regerror.c',
-  'AnnotatedCode.c'
+  'annotated_code.c'
 ]
 
 r_util_deps = [ldl, mth, pth, utl, sdb_dep, zlib_dep, platform_deps]

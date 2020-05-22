@@ -432,7 +432,7 @@ r_util_files = [
   'include/r_util/r_utf32.h',
   'include/r_util/r_utf8.h',
   'include/r_util/r_x509.h',
-  'include/r_util/AnnotatedCode.h'
+  'include/r_util/r_annotated_code.h'
 ]
 install_headers(r_util_files, subdir: 'libr/r_util')
 
