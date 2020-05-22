@@ -9,6 +9,7 @@ static void rasign_show_help() {
 		" -r               show output in radare commands\n"
 		" -j               show signatures in json\n"
 		" -q               quiet mode\n"
+		" -f               interpret the file as a FLIRT .sig file and dump signatures\n"
 		" -v               show version information\n"
 		" -h               help menu\n"
 		"Examples:\n"
@@ -62,9 +63,10 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 	bool rad = false;
 	bool quiet = false;
 	bool json = false;
+	bool flirt = false;
 	RGetopt opt;
 
-	r_getopt_init (&opt, argc, argv, "ao:rjqvh");
+	r_getopt_init (&opt, argc, argv, "ao:rjqfvh");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -81,6 +83,9 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 			break;
 		case 'q':
 			quiet = true;
+			break;
+		case 'f':
+			flirt = true;
 			break;
 		case 'v':
 			return r_main_version_print ("rasign2");
@@ -107,9 +112,23 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 	}
 	ifile = argv[opt.ind];
 
-	// get the core
-	RCore *core = opencore (ifile);
+	RCore *core = NULL;
+	if (flirt) {
+		if (rad || ofile || json) {
+			eprintf ("Only FLIRT output is supported for FLIRT files\n");
+			return -1;
+		}
+		core = opencore (NULL);
+		r_sign_flirt_dump (core->anal, ifile);
+		r_cons_flush ();
+		r_core_free (core);
+		return 0;
+	} else {
+		core = opencore (ifile);
+	}
+
 	if (!core) {
+		eprintf ("Could not get core\n");
 		return -1;
 	}
 
@@ -118,6 +137,11 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 		r_config_set (core->config, "scr.interactive", "false");
 		r_config_set (core->config, "scr.prompt", "false");
 		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
+	}
+
+	// dump flirt
+	if (flirt) {
+		r_core_cmdf (core, "\"zfd %s\"", ifile);
 	}
 
 	// run analysis to find functions
