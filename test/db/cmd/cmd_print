@@ -747,7 +747,7 @@ CMDS=<<EOF
 . scripts/palette.r2
 woe 0 0xff 1
 (test_flag; f `p8 1`)
-.(test_flag) @@s:0 0x100 1
+.(test_flag) @@s:0 0xff 1
 e scr.color=3
 prc 256
 EOF

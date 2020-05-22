@@ -4254,7 +4254,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				ut64 from = r_num_math (core->num, r_str_word_get0 (str, 0));
 				ut64 to = r_num_math (core->num, r_str_word_get0 (str, 1));
 				ut64 step = r_num_math (core->num, r_str_word_get0 (str, 2));
-				for (cur = from; cur < to; cur += step) {
+				for (cur = from; cur <= to; cur += step) {
 					(void) r_core_seek (core, cur, true);
 					r_core_cmd (core, cmd, 0);
 					if (r_cons_is_breaked ()) {
@@ -5898,7 +5898,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_step_command) {
 	free (step_str);
 
 	ut64 cur;
-	for (cur = from; cur < to; cur += step) {
+	for (cur = from; cur <= to; cur += step) {
 		r_core_seek (core, cur, true);
 		r_core_block_size (core, step);
 		RCmdStatus cmd_res = handle_ts_command_tmpseek (state, command);
