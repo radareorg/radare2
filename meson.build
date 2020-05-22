@@ -140,7 +140,7 @@ library_cflags = ['-DR2_PLUGIN_INCORE=1']
 if host_machine.system() == 'windows'
   r2_prefix = '.'
   r2_libdir = 'lib'
-  r2_incdir = 'include'
+  r2_incdir = join_paths('include', 'libr')
   r2_datdir = 'share'
 
   opts1 = [
