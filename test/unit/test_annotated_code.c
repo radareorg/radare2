@@ -211,17 +211,17 @@ static bool test_r_annotated_code_line_offsets() {
 	mu_assert_eq (offsets->len, 6, "Number of offsets not expected");
 
 	ut64 *off = r_vector_index_ptr (offsets, 0);
-	mu_assert_eq_fmt (*off, UT64_MAX, "Unexpected offset", "%lu");
+	mu_assert_eq_fmt (*off, UT64_MAX, "Unexpected offset", "%llu");
 	off = r_vector_index_ptr (offsets, 1);
-	mu_assert_eq_fmt (*off, UT64_MAX, "Unexpected offset", "%lu");
+	mu_assert_eq_fmt (*off, UT64_MAX, "Unexpected offset", "%llu");
 	off = r_vector_index_ptr (offsets, 2);
-	mu_assert_eq_fmt (*off, UT64_MAX, "Unexpected offset", "%lu");
+	mu_assert_eq_fmt (*off, UT64_MAX, "Unexpected offset", "%llu");
 	off = r_vector_index_ptr (offsets, 3);
-	mu_assert_eq_fmt (*off, 4440, "Unexpected offset", "%lu");
+	mu_assert_eq_fmt (*off, (ut64) 4440, "Unexpected offset", "%llu");
 	off = r_vector_index_ptr (offsets, 4);
-	mu_assert_eq_fmt (*off, 4447, "Unexpected offset", "%lu");
+	mu_assert_eq_fmt (*off, (ut64) 4447, "Unexpected offset", "%llu");
 	off = r_vector_index_ptr (offsets, 5);
-	mu_assert_eq_fmt (*off, UT64_MAX, "Unexpected offset", "%lu");
+	mu_assert_eq_fmt (*off, UT64_MAX, "Unexpected offset", "%llu");
 
 	mu_end;
 }
