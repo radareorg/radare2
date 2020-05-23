@@ -31,30 +31,30 @@ R_API void r_annotated_code_print_json(RAnnotatedCode *code) {
 		case R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT:
 			pj_ks (pj, "type", "syntax_highlight");
 			switch (annotation->syntax_highlight.type) {
-				case R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD:
-					type_str = "keyword";
-					break;
-				case R_SYNTAX_HIGHLIGHT_TYPE_COMMENT:
-					type_str = "comment";
-					break;
-				case R_SYNTAX_HIGHLIGHT_TYPE_DATATYPE:
-					type_str = "datatype";
-					break;
-				case R_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME:
-					type_str = "function_name";
-					break;
-				case R_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_PARAMETER:
-					type_str = "function_parameter";
-					break;
-				case R_SYNTAX_HIGHLIGHT_TYPE_LOCAL_VARIABLE:
-					type_str = "local_variable";
-					break;
-				case R_SYNTAX_HIGHLIGHT_TYPE_CONSTANT_VARIABLE:
-					type_str = "constant_variable";
-					break;
-				case R_SYNTAX_HIGHLIGHT_TYPE_GLOBAL_VARIABLE:
-					type_str = "global_variable";
-					break;
+			case R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD:
+				type_str = "keyword";
+				break;
+			case R_SYNTAX_HIGHLIGHT_TYPE_COMMENT:
+				type_str = "comment";
+				break;
+			case R_SYNTAX_HIGHLIGHT_TYPE_DATATYPE:
+				type_str = "datatype";
+				break;
+			case R_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME:
+				type_str = "function_name";
+				break;
+			case R_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_PARAMETER:
+				type_str = "function_parameter";
+				break;
+			case R_SYNTAX_HIGHLIGHT_TYPE_LOCAL_VARIABLE:
+				type_str = "local_variable";
+				break;
+			case R_SYNTAX_HIGHLIGHT_TYPE_CONSTANT_VARIABLE:
+				type_str = "constant_variable";
+				break;
+			case R_SYNTAX_HIGHLIGHT_TYPE_GLOBAL_VARIABLE:
+				type_str = "global_variable";
+				break;
 			}
 			pj_ks (pj, "syntax_highlight", type_str);
 			break;
@@ -68,25 +68,28 @@ R_API void r_annotated_code_print_json(RAnnotatedCode *code) {
 	pj_free (pj);
 }
 
-
-
-#define PALETTE(x) (cons && cons->context->pal.x)? cons->context->pal.x 
-#define PRINT_COLOR(x) do { if (cons->context->color_mode) { r_cons_printf("%s", (x)); } } while (0)
+#define PALETTE(x) (cons && cons->context->pal.x) ? cons->context->pal.x
+#define PRINT_COLOR(x)                             \
+	do {                                       \
+		if (cons->context->color_mode) {   \
+			r_cons_printf ("%s", (x)); \
+		}                                  \
+	} while (0)
 
 /**
  * @param width maximum nibbles per address
  */
 static void print_offset_in_binary_line_bar(RAnnotatedCode *code, ut64 offset, size_t width) {
 	static const char *fmt[9] = {
-		"0x%08"PFMT64x,
-		"0x%09"PFMT64x,
-		"0x%010"PFMT64x,
-		"0x%011"PFMT64x,
-		"0x%012"PFMT64x,
-		"0x%013"PFMT64x,
-		"0x%014"PFMT64x,
-		"0x%015"PFMT64x,
-		"0x%016"PFMT64x
+		"0x%08" PFMT64x,
+		"0x%09" PFMT64x,
+		"0x%010" PFMT64x,
+		"0x%011" PFMT64x,
+		"0x%012" PFMT64x,
+		"0x%013" PFMT64x,
+		"0x%014" PFMT64x,
+		"0x%015" PFMT64x,
+		"0x%016" PFMT64x
 	};
 	if (width < 8) {
 		width = 8;
@@ -96,8 +99,8 @@ static void print_offset_in_binary_line_bar(RAnnotatedCode *code, ut64 offset, s
 	}
 	width -= 8;
 
-	RCons *cons = r_cons_singleton();
-	r_cons_printf("    ");
+	RCons *cons = r_cons_singleton ();
+	r_cons_printf ("    ");
 	if (offset == UT64_MAX) {
 		r_cons_print ("          ");
 		while (width > 0) {
@@ -105,22 +108,23 @@ static void print_offset_in_binary_line_bar(RAnnotatedCode *code, ut64 offset, s
 			width--;
 		}
 	} else {
-		PRINT_COLOR (PALETTE(offset): Color_GREEN);
+		PRINT_COLOR (PALETTE (offset)
+			     : Color_GREEN);
 		r_cons_printf (fmt[width], offset);
 		PRINT_COLOR (Color_RESET);
 	}
-	r_cons_printf("    |");
+	r_cons_printf ("    |");
 }
 
 R_API void r_annotated_code_print(RAnnotatedCode *code, RVector *line_offsets) {
 	if (code->annotations.len == 0) {
-		r_cons_printf("%s\n", code->code);
+		r_cons_printf ("%s\n", code->code);
 		return;
 	}
 
 	size_t cur = 0;
 	size_t line_idx = 0;
-	size_t len = strlen(code->code);
+	size_t len = strlen (code->code);
 
 	size_t offset_width = 0;
 	if (line_offsets) {
@@ -140,7 +144,7 @@ R_API void r_annotated_code_print(RAnnotatedCode *code, RVector *line_offsets) {
 		}
 	}
 
-	RCons *cons = r_cons_singleton();
+	RCons *cons = r_cons_singleton ();
 	RCodeAnnotation *annotation;
 	r_vector_foreach (&code->annotations, annotation) {
 		if (annotation->type != R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT) {
@@ -150,22 +154,27 @@ R_API void r_annotated_code_print(RAnnotatedCode *code, RVector *line_offsets) {
 		// (1/3)
 		// now we have a syntax highlighting annotation.
 		// pick a suitable color for it.
-		const char* color = Color_RESET;
+		const char *color = Color_RESET;
 		switch (annotation->syntax_highlight.type) {
 		case R_SYNTAX_HIGHLIGHT_TYPE_COMMENT:
-			color = PALETTE(comment): Color_WHITE;
+			color = PALETTE (comment)
+			    : Color_WHITE;
 			break;
 		case R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD:
-			color = PALETTE(pop): Color_MAGENTA;
+			color = PALETTE (pop)
+			    : Color_MAGENTA;
 			break;
 		case R_SYNTAX_HIGHLIGHT_TYPE_DATATYPE:
-			color = PALETTE(func_var_type): Color_BLUE;
+			color = PALETTE (func_var_type)
+			    : Color_BLUE;
 			break;
 		case R_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME:
-			color = PALETTE(fname): Color_RED;
+			color = PALETTE (fname)
+			    : Color_RED;
 			break;
 		case R_SYNTAX_HIGHLIGHT_TYPE_CONSTANT_VARIABLE:
-			color = PALETTE(num): Color_YELLOW;
+			color = PALETTE (num)
+			    : Color_YELLOW;
 		default:
 			break;
 		}
@@ -178,12 +187,12 @@ R_API void r_annotated_code_print(RAnnotatedCode *code, RVector *line_offsets) {
 			if (line_offsets && (cur == 0 || code->code[cur - 1] == '\n')) {
 				ut64 offset = 0;
 				if (line_idx < line_offsets->len) {
-					offset = *(ut64 *)r_vector_index_ptr(line_offsets, line_idx);
+					offset = *(ut64 *)r_vector_index_ptr (line_offsets, line_idx);
 				}
-				print_offset_in_binary_line_bar(code, offset, offset_width);
+				print_offset_in_binary_line_bar (code, offset, offset_width);
 				line_idx++;
 			}
-			r_cons_printf("%c", code->code[cur]);
+			r_cons_printf ("%c", code->code[cur]);
 		}
 
 		// (3/3)
@@ -195,14 +204,14 @@ R_API void r_annotated_code_print(RAnnotatedCode *code, RVector *line_offsets) {
 			if (line_offsets && (cur == 0 || code->code[cur - 1] == '\n')) {
 				ut64 offset = 0;
 				if (line_idx < line_offsets->len) {
-					offset = *(ut64 *)r_vector_index_ptr(line_offsets, line_idx);
+					offset = *(ut64 *)r_vector_index_ptr (line_offsets, line_idx);
 				}
 				PRINT_COLOR (Color_RESET);
-				print_offset_in_binary_line_bar(code, offset, offset_width);
+				print_offset_in_binary_line_bar (code, offset, offset_width);
 				PRINT_COLOR (color);
 				line_idx++;
 			}
-			r_cons_printf("%c", code->code[cur]);
+			r_cons_printf "%c", code->code[cur]);
 		}
 		PRINT_COLOR (Color_RESET);
 	}
@@ -214,22 +223,20 @@ R_API void r_annotated_code_print(RAnnotatedCode *code, RVector *line_offsets) {
 		if (line_offsets && (cur == 0 || code->code[cur - 1] == '\n')) {
 			ut64 offset = 0;
 			if (line_idx < line_offsets->len) {
-				offset = *(ut64 *)r_vector_index_ptr(line_offsets, line_idx);
+				offset = *(ut64 *)r_vector_index_ptr (line_offsets, line_idx);
 			}
-			print_offset_in_binary_line_bar(code, offset, offset_width);
+			print_offset_in_binary_line_bar (code, offset, offset_width);
 			line_idx++;
 		}
-		r_cons_printf("%c", code->code[cur]);
+		r_cons_printf ("%c", code->code[cur]);
 	}
 }
-
-
 
 static bool foreach_offset_annotation(void *user, const ut64 offset, const void *val) {
 	RAnnotatedCode *code = user;
 	const RCodeAnnotation *annotation = val;
-	char *b64statement = r_base64_encode_dyn(code->code + annotation->start, annotation->end - annotation->start);
-	r_cons_printf ("CCu base64:%s @ 0x%"PFMT64x"\n", b64statement, annotation->offset.offset);
+	char *b64statement = r_base64_encode_dyn (code->code + annotation->start, annotation->end - annotation->start);
+	r_cons_printf ("CCu base64:%s @ 0x%" PFMT64x "\n", b64statement, annotation->offset.offset);
 	free (b64statement);
 	return true;
 }

@@ -31,8 +31,7 @@ typedef struct r_code_annotation_t {
 	size_t start;
 	size_t end;
 	RCodeAnnotationType type;
-	union
-	{
+	union {
 		struct
 		{
 			ut64 offset;
@@ -47,7 +46,7 @@ typedef struct r_code_annotation_t {
 
 typedef struct r_annotated_code_t {
 	char *code; // owned
-	RVector/*<RCodeAnnotation>*/ annotations;
+	RVector /*<RCodeAnnotation>*/ annotations;
 } RAnnotatedCode;
 
 /*
@@ -63,8 +62,8 @@ R_API void r_annotated_code_free(RAnnotatedCode *code);
 */
 R_API void r_annotated_code_add_annotation(RAnnotatedCode *code, RCodeAnnotation *annotation);
 /*
-	Makes an RPVector and inserts the pointers to all annotations that in which annotation->start <= offset < annotation->end
-	This RPVector can have annotations for syntax highlight and for offset.
+	Makes an RPVector and inserts the pointers to all annotations in which annotation->start <= offset < annotation->end
+	This RPVector can have annotations for RCodeAnnotation type R_CODE_ANNOTATION_TYPE_OFFSET and for R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT.
 */
 R_API RPVector *r_annotated_code_annotations_in(RAnnotatedCode *code, size_t offset);
 /*
