@@ -211,7 +211,7 @@ R_API void r_annotated_code_print(RAnnotatedCode *code, RVector *line_offsets) {
 				PRINT_COLOR (color);
 				line_idx++;
 			}
-			r_cons_printf "%c", code->code[cur]);
+			r_cons_printf ("%c", code->code[cur]);
 		}
 		PRINT_COLOR (Color_RESET);
 	}
