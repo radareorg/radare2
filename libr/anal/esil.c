@@ -544,6 +544,47 @@ R_API int r_anal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, 
 	return ret;
 }
 
+static bool esil_signext(RAnalEsil *esil) {
+	ut64 src_bit, dst;
+
+	char *p_src_bit = r_anal_esil_pop (esil);
+
+	if (!p_src_bit) {
+		return false;
+	}
+
+	if (r_anal_esil_get_parm_type (esil, p_src_bit) != R_ANAL_ESIL_PARM_NUM) {
+		free (p_src_bit);
+		return false;
+	}
+
+	if (!r_anal_esil_get_parm (esil, p_src_bit, &src_bit)) {
+		ERR ("esil_of: empty stack");
+		free (p_src_bit);
+		return false;
+	}
+	free (p_src_bit);
+
+	char *p_dst = r_anal_esil_pop (esil);
+
+	if (!p_dst) {
+		return false;
+	}
+
+	if (!r_anal_esil_get_parm (esil, p_dst, &dst)) {
+		ERR ("esil_of: empty stack");
+		free (p_dst);
+		return false;
+	}
+	free (p_dst);
+
+	ut64 m = 1U << (src_bit - 1);
+	// dst = (dst & ((1U << src_bit) - 1)); // clear upper bits
+	dst = ((dst ^ m) - m); // sign-extended
+
+	return r_anal_esil_pushnum (esil, dst);
+}
+
 static bool esil_zf(RAnalEsil *esil) {
 	return r_anal_esil_pushnum (esil, !(esil->cur & genmask (esil->lastsz - 1)));
 }
@@ -3162,6 +3203,7 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("$js", esil_js, 1, 0, OT_UNK);
 	OP ("$r", esil_rs, 1, 0, OT_UNK);
 	OP ("$$", esil_address, 1, 0, OT_UNK);
+	OP ("~", esil_signext, 1, 2, OT_MATH);
 	OP ("==", esil_cmp, 0, 2, OT_MATH);
 	OP ("<", esil_smaller, 1, 2, OT_MATH);
 	OP (">", esil_bigger, 1, 2, OT_MATH);
