@@ -1,6 +1,6 @@
 
 #include <r_util/r_annotated_code.h>
-
+#include <r_core.h>
 #include <r_util.h>
 
 R_API RAnnotatedCode *r_annotated_code_new(char *code) {

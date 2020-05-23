@@ -1,11 +1,11 @@
-#include<r_util/r_annotated_code.h>
+#include <r_util/r_annotated_code.h>
 
 #include <r_util.h>
 #include <r_core.h>
 #include <r_types.h>
 #include <r_vector.h>
 
-R_API void r_annotated_code_print_json(RAnnotatedCode *code) {
+R_API void r_core_annotated_code_print_json(RAnnotatedCode *code) {
 	PJ *pj = pj_new ();
 	if (!pj) {
 		return;
@@ -116,7 +116,7 @@ static void print_offset_in_binary_line_bar(RAnnotatedCode *code, ut64 offset, s
 	r_cons_printf ("    |");
 }
 
-R_API void r_annotated_code_print(RAnnotatedCode *code, RVector *line_offsets) {
+R_API void r_core_annotated_code_print(RAnnotatedCode *code, RVector *line_offsets) {
 	if (code->annotations.len == 0) {
 		r_cons_printf ("%s\n", code->code);
 		return;
@@ -241,7 +241,7 @@ static bool foreach_offset_annotation(void *user, const ut64 offset, const void 
 	return true;
 }
 
-R_API void r_annotated_code_print_comment_cmds(RAnnotatedCode *code) {
+R_API void r_core_annotated_code_print_comment_cmds(RAnnotatedCode *code) {
 	RCodeAnnotation *annotation;
 	HtUP *ht = ht_up_new0 ();
 	r_vector_foreach (&code->annotations, annotation) {
