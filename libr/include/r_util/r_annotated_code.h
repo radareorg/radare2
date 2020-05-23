@@ -98,8 +98,6 @@ R_API void r_annotated_code_add_annotation(RAnnotatedCode *code, RCodeAnnotation
  *
  * Creates an RPVector and inserts the pointers to all annotations in which 
  * annotation->start <= offset < annotation->end.
- * This RPVector can have annotations of the type R_CODE_ANNOTATION_TYPE_OFFSET and 
- * R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT.
  * 
  * Return: Pointer to the RPVecrtor created.
  */
