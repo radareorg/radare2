@@ -1,7 +1,7 @@
 ifeq (${_INCLUDE_MK_CLANG_},)
 _INCLUDE_MK_CLANG_=1
 CC?=clang
-RANLIB=ranlib
+RANLIB?=ranlib
 ONELIB=0
 CC_AR=ar q ${LIBAR}
 CFLAGS+=-MD

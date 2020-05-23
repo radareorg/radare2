@@ -2,7 +2,7 @@ ifeq (${_INCLUDE_MK_GCC_},)
 _INCLUDE_MK_GCC_=1
 CC?=gcc
 OBJCOPY=objcopy
-RANLIB=ranlib
+RANLIB?=ranlib
 ONELIB=0
 CC_AR=ar q ${LIBAR}
 CFLAGS+=-MD
