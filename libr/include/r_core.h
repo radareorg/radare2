@@ -44,13 +44,13 @@ R_LIB_VERSION_HEADER(r_core);
 #define R_CORE_BLOCKSIZE 0x100
 #define R_CORE_BLOCKSIZE_MAX 0x3200000 /* 32MB */
 
-#define R_CORE_ANAL_GRAPHLINES          1
-#define R_CORE_ANAL_GRAPHBODY           2
-#define R_CORE_ANAL_GRAPHDIFF           4
-#define R_CORE_ANAL_JSON                8
-#define R_CORE_ANAL_KEYVALUE            16
-#define R_CORE_ANAL_JSON_FORMAT_DISASM  32
-#define R_CORE_ANAL_STAR                64
+#define R_CORE_ANAL_GRAPHLINES 1
+#define R_CORE_ANAL_GRAPHBODY 2
+#define R_CORE_ANAL_GRAPHDIFF 4
+#define R_CORE_ANAL_JSON 8
+#define R_CORE_ANAL_KEYVALUE 16
+#define R_CORE_ANAL_JSON_FORMAT_DISASM 32
+#define R_CORE_ANAL_STAR 64
 
 #define R_FLAGS_FS_CLASSES "classes"
 #define R_FLAGS_FS_FUNCTIONS "functions"
@@ -65,12 +65,12 @@ R_LIB_VERSION_HEADER(r_core);
 #define R_FLAGS_FS_SYMBOLS_SECTIONS "symbols.sections"
 #define R_FLAGS_FS_SYSCALLS "syscalls"
 
-#define R_GRAPH_FORMAT_NO           0
-#define R_GRAPH_FORMAT_GMLFCN       1
-#define R_GRAPH_FORMAT_JSON         2
-#define R_GRAPH_FORMAT_GML          3
-#define R_GRAPH_FORMAT_DOT          4
-#define R_GRAPH_FORMAT_CMD          5
+#define R_GRAPH_FORMAT_NO 0
+#define R_GRAPH_FORMAT_GMLFCN 1
+#define R_GRAPH_FORMAT_JSON 2
+#define R_GRAPH_FORMAT_GML 3
+#define R_GRAPH_FORMAT_DOT 4
+#define R_GRAPH_FORMAT_CMD 5
 
 ///
 #define R_CONS_COLOR_DEF(x, def) ((core->cons && core->cons->context->pal.x)? core->cons->context->pal.x: def)
