@@ -37,6 +37,13 @@ endif
 
 include deps.mk
 
+SDBCHARSETPATH=$(DESTDIR)$(DATADIR)/radare2/$(VERSION)/util
+CWD=$(shell pwd)
+
+all:
+	mkdir -p "${SDBCHARSETPATH}/d"
+	${MAKE} -C "${CWD}/d"
+
 LDFLAGS+=${BN_LIBS}
 LDFLAGS+=${TH_LIBS}
 LDFLAGS+=${DL_LIBS}
@@ -69,6 +76,8 @@ EXTRA_PRE+=spp_config
 include ../rules.mk
 include sdb.mk
 include spp.mk
+
+
 
 sync-regex regex-sync:
 	-rm -rf src/
