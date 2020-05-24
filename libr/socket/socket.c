@@ -370,8 +370,11 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 				struct timeval tv;
 				tv.tv_sec = timeout;
 				tv.tv_usec = 0;
+				fd_set wfds;
+				FD_ZERO(&wfds);
+				FD_SET(s->fd, &wfds);
 
-				if ((ret = select (s->fd + 1, NULL, NULL, NULL, &tv)) != -1) {
+				if ((ret = select (s->fd + 1, NULL, &wfds, NULL, &tv)) != -1) {
 					if (r_socket_is_connected (s)) {
 						freeaddrinfo (res);
 						return true;
