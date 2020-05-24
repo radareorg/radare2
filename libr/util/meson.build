@@ -1,3 +1,4 @@
+subdir('d')
 
 r_util_sources = [
   'ascii_table.c',
