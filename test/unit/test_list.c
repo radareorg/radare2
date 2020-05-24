@@ -220,6 +220,44 @@ bool test_r_list_sort5(void) {
 	mu_end;
 }
 
+// 3-valued comparator -> {LT,EQ,GT}.
+static int pintcmp(int* a, int* b) {
+	return (int)(*a > *b) - (int)(*b > *a);
+}
+
+bool test_r_list_mergesort_pint() {
+	// 47 items
+	int data[] = {-440, -468, -444, -80, -568, -564, -396, -404, -436, -420,
+		-428, -388, -356, -324, -292, -464, -260, -252, -204, -196, -212, -76,
+		-160, -540, -216, -536, -532, -148, -116, -560, -556, -244, -460, -448,
+		-236, -156, -228, -456, -552, -548, -544, -220, -180, -188, -84, -172,
+		-164};
+	int expected[] = {-568, -564, -560, -556, -552, -548, -544, -540, -536,
+		-532, -468, -464, -460, -456, -448, -444, -440, -436, -428, -420, -404,
+		-396, -388, -356, -324, -292, -260, -252, -244, -236, -228, -220, -216,
+		-212, -204, -196, -188, -180, -172, -164, -160, -156, -148, -116, -84,
+		-80, -76};
+
+	RList* list = r_list_new();
+	for (size_t i = 0; i < R_ARRAY_SIZE(data); ++i) {
+		r_list_append (list, (void*)&data[i]);
+	}
+
+	// invoke sorting
+	r_list_sort (list, (RListComparator)pintcmp);
+
+	// assert the list is sorted as expected
+	size_t i = 0;
+	RListIter* iter = list->head;
+	do {
+		mu_assert_eq(*(int*)iter->data, expected[i], "array content mismatch");
+		iter = iter->n;
+	} while (++i < R_ARRAY_SIZE(expected));
+
+	r_list_free(list);
+	mu_end;
+}
+
 
 bool test_r_list_sort4(void) {
 	RList* list = r_list_new ();
@@ -437,6 +475,7 @@ int all_tests() {
 	mu_run_test(test_r_list_sort3);
 	mu_run_test(test_r_list_sort4);
 	mu_run_test(test_r_list_sort5);
+	mu_run_test(test_r_list_mergesort_pint);
 	mu_run_test(test_r_list_length);
 	mu_run_test(test_r_list_append_prepend);
 	mu_run_test(test_r_list_set_get);
