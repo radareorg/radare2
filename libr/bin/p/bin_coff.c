@@ -255,7 +255,7 @@ static RList *libs(RBinFile *bf) {
 	return NULL;
 }
 
-static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin) {
+static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch) {
 	RBinReloc *reloc;
 	struct coff_reloc *rel;
 	int j, i = 0;
@@ -287,6 +287,7 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin) {
 			free (rel);
 			return list_rel;
 		}
+		ut8 patch_buf[8];
 		for (j = 0; j < bin->scn_hdrs[i].s_nreloc; j++) {
 			RBinSymbol *symbol = R_NEW0 (RBinSymbol);
 			if (!symbol) {
@@ -310,17 +311,21 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin) {
 			if (symbol->is_imported) {
 				reloc->import = _fill_bin_import (bin, rel[j].r_symndx);
 			} else {
+				int plen = 0;
 				switch (bin->hdr.f_magic) {
 				case COFF_FILE_MACHINE_I386:
 					switch (rel[j].r_type) {
 					case COFF_REL_I386_DIR32:
 						reloc->type = R_BIN_RELOC_32;
-						reloc->addend = symbol->paddr;
+						r_write_le32 (patch_buf, (ut32)symbol->paddr);
+						plen = 4;
 						break;
 					case COFF_REL_I386_REL32:
 						reloc->type = R_BIN_RELOC_32;
-						reloc->addend = symbol->paddr - reloc->paddr - 4;
 						reloc->additive = 1;
+						ut64 data = symbol->paddr - reloc->paddr - 4;
+						r_write_le32 (patch_buf, (st32)data);
+						plen = 4;
 						break;
 					}
 					break;
@@ -328,11 +333,16 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin) {
 					switch (rel[j].r_type) {
 					case COFF_REL_AMD64_REL32:
 						reloc->type = R_BIN_RELOC_32;
-						reloc->addend = symbol->paddr - reloc->paddr - 4;
 						reloc->additive = 1;
+						ut64 data = symbol->paddr - reloc->paddr - 4;
+						r_write_le32 (patch_buf, (st32)data);
+						plen = 4;
 						break;
 					}
 					break;
+				}
+				if (patch && plen) {
+					rbin->iob.write_at (rbin->iob.io, reloc->paddr, patch_buf, plen);
 				}
 			}
 			r_list_append (list_rel, reloc);
@@ -344,7 +354,7 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin) {
 
 static RList *relocs(RBinFile *bf) {
 	struct r_bin_coff_obj *bin = (struct r_bin_coff_obj*)bf->o->bin_obj;
-	return _relocs_list (bf->rbin, bin);
+	return _relocs_list (bf->rbin, bin, false);
 }
 
 static RList *patch_relocs(RBin *b) {
@@ -360,22 +370,7 @@ static RList *patch_relocs(RBin *b) {
 		return NULL;
 	}
 	struct r_bin_coff_obj *bin = (struct r_bin_coff_obj*)bo->bin_obj;
-	RList *relocs = _relocs_list (b, bin);
-	RListIter *it;
-	RBinReloc *rel;
-	r_list_foreach (relocs, it, rel) {
-		ut8 buf[8];
-		if (!rel->type || rel->import) {
-			continue;
-		}
-		switch (rel->type) {
-		case R_BIN_RELOC_32:
-			r_write_le32 (buf, (st32)rel->addend);
-			b->iob.write_at (b->iob.io, rel->paddr, buf, 4);
-			break;
-		}
-	}
-	return relocs;
+	return _relocs_list (b, bin, true);
 }
 
 static RBinInfo *info(RBinFile *bf) {
