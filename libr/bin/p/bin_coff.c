@@ -359,17 +359,20 @@ static RList *relocs(RBinFile *bf) {
 
 static RList *patch_relocs(RBin *b) {
 	r_return_val_if_fail (b && b->iob.io && b->iob.io->desc, NULL);
+	RBinObject *bo = r_bin_cur_object (b);
+	if (!bo || !bo->bin_obj) {
+		return NULL;
+	}
+	struct r_bin_coff_obj *bin = (struct r_bin_coff_obj*)bo->bin_obj;
+	if (bin->hdr.f_flags & COFF_FLAGS_TI_F_EXEC) {
+		return NULL;
+	}
 	if (!(b->iob.io->cached & R_PERM_W)) {
 		eprintf (
 			"Warning: please run r2 with -e io.cache=true to patch "
 			"relocations\n");
 		return NULL;
 	}
-	RBinObject *bo = r_bin_cur_object (b);
-	if (!bo || !bo->bin_obj) {
-		return NULL;
-	}
-	struct r_bin_coff_obj *bin = (struct r_bin_coff_obj*)bo->bin_obj;
 	return _relocs_list (b, bin, true);
 }
 
