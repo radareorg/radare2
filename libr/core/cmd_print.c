@@ -3349,6 +3349,59 @@ cleanup:
 	return result;
 }
 
+static void list_avaible_plugins(char *path) {
+	RList *files;
+	RListIter *iter;
+	const char *fn;
+	if (path) {
+		files = r_sys_dir (path);
+		r_list_foreach (files, iter, fn) {
+			if (*fn && *fn != '.') {
+				r_cons_println (fn);
+			}
+		}
+		r_list_free (files);
+		free (path);
+	}
+}
+
+static void load_charset_plugin(RCore *core, char *charset_plugin_path) {
+	if (!sdb_query_file (core->anal->charset_db, charset_plugin_path)) {
+		eprintf ("Path: %s not found\n", charset_plugin_path);
+	}
+
+	SdbListIter *iter;
+	SdbKv *kv;
+	SdbList *sdbls = sdb_foreach_list (core->anal->charset_db, true);
+	size_t i = 0;
+
+	core->custom = r_charset_new ();
+	ls_foreach (sdbls, iter, kv) {
+		ut8 *buff_hex = (ut8 *) sdbkv_key (kv);
+		ut8 *buff_char = (ut8 *) sdbkv_value (kv);
+
+		ut64 mylonglong = r_num_get (NULL, (const char *)buff_hex);
+		ut8 *hex = (ut8 *) ut64_new (mylonglong);
+
+		core->custom->custom_charset = add_rune (core->custom->custom_charset, buff_char, hex);
+		i++;
+	}
+	ls_free (sdbls);
+}
+
+static bool cmd_pse(RCore *core, const char *input) {
+	char *path = r_str_r2_prefix (R_JOIN_2_PATHS (R2_SDB, "util"));
+	char *plugin_folder = r_str_newf (R_JOIN_2_PATHS ("%s", "d"), path);
+	const char *plugin_file = r_str_trim_head_ro (input + 3);
+	char *plugin_file_path = r_str_newf (R_JOIN_2_PATHS ("%s", "%s"), plugin_folder, plugin_file);
+
+	if (input[2] == ' ') {
+		load_charset_plugin (core, plugin_file_path);
+	} else {
+		list_avaible_plugins (plugin_folder);
+	}
+	return true;
+}
 
 static bool checkAnalType(RAnalOp *op, int t) {
 	if (t == 'c') {
@@ -5832,6 +5885,23 @@ l = use_blocksize;
 					                len, R_PRINT_STRING_ZEROEND);
 				}
 			}
+			break;
+		case 't': // "pst"
+			if (len > 0) {
+				ut8 *var = malloc (len);
+
+				if (!var) {
+					eprintf ("Error: failed to malloc memory");
+					break;
+				}
+
+				r_charset_encode_str (var, core->block, len, core->custom);
+				r_print_string (core->print, core->offset, var, len, R_PRINT_STRING_ZEROEND);
+				free (var);
+			}
+			break;
+		case 'e': // "pse"
+			cmd_pse (core, input);
 			break;
 		default:
 			if (l > 0) {

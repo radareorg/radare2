@@ -2692,7 +2692,8 @@ EXPECT=<<EOF
       "stdcall=cc",
       "watcom=cc",
       "zigns",
-      "classes"
+      "classes",
+      "charset"
     ]
   }
 }
