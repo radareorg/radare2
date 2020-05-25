@@ -94,6 +94,8 @@ static RAnnotatedCode *get_hello_world() {
 	r_vector_foreach (test_annotations, annotation) {
 		r_annotated_code_add_annotation (code, annotation);
 	}
+
+	r_vector_free (test_annotations);
 	return code;
 }
 
