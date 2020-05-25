@@ -78,6 +78,7 @@ R_API RVector *r_annotated_code_line_offsets(RAnnotatedCode *code) {
 		}
 		r_vector_push (r, &offset);
 		cur = next_i;
+		r_pvector_free(annotations);
 	} while (cur < len);
 	return r;
 }

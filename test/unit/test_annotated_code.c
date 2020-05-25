@@ -83,8 +83,6 @@ static RVector *get_annotations_for_hello_world() {
 }
 
 static RAnnotatedCode *get_hello_world() {
-	// char *test_string = malloc (71 * sizeof (char));
-	// strcpy (test_string, "\nvoid main(void)\n{\n    sym.imp.puts(\"Hello, World!\");\n    return;\n}\n");
 	char *test_string = strdup ("\nvoid main(void)\n{\n    sym.imp.puts(\"Hello, World!\");\n    return;\n}\n");
 	RAnnotatedCode *code = r_annotated_code_new (test_string);
 
@@ -101,8 +99,6 @@ static RAnnotatedCode *get_hello_world() {
 
 static bool test_r_annotated_code_new() {
 	//Testing RAnnoatedCode->code
-	// char *test_string = malloc (14 * sizeof (char));
-	// strcpy (test_string, "How are you?");
 	char *test_string = strdup ("How are you?");
 	RAnnotatedCode *code = r_annotated_code_new (test_string);
 	mu_assert_streq (code->code, test_string, "Code in RAnnotatedCode is not set as expected");
@@ -115,8 +111,6 @@ static bool test_r_annotated_code_new() {
 }
 
 static bool test_r_annotated_code_free() {
-	// char *test_string = malloc (14 * sizeof (char));
-	// strcpy (test_string, "How are you?");
 	char *test_string = strdup ("How are you?");
 	RAnnotatedCode *code = r_annotated_code_new (test_string);
 
@@ -148,8 +142,6 @@ static bool test_equal(RCodeAnnotation *first, RCodeAnnotation *second) { // Fir
 }
 
 static bool test_r_annotated_code_add_annotation() {
-	// char *test_string = malloc (54 * sizeof (char));
-	// strcpy (test_string, "abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	char *test_string = strdup ("abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	RAnnotatedCode *code = r_annotated_code_new (test_string);
 	RVector /*<RCodeAnnotation>*/ *test_annotations;
@@ -169,8 +161,6 @@ static bool test_r_annotated_code_add_annotation() {
 }
 
 static bool test_r_annotated_code_annotations_in() {
-	// char *test_string = malloc (54 * sizeof (char));
-	// strcpy (test_string, "abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	char *test_string = strdup ("abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	RAnnotatedCode *code = r_annotated_code_new (test_string);
 	RVector /*<RCodeAnnotation>*/ *test_annotations;
@@ -196,8 +186,6 @@ static bool test_r_annotated_code_annotations_in() {
 }
 
 static bool test_r_annotated_code_annotations_range() {
-	// char *test_string = malloc (54 * sizeof (char));
-	// strcpy (test_string, "abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	char *test_string = strdup ("abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	RAnnotatedCode *code = r_annotated_code_new (test_string);
 	RVector /*<RCodeAnnotation>*/ *test_annotations;
@@ -248,13 +236,11 @@ static bool test_r_annotated_code_line_offsets() {
 
 static bool test_r_core_annotated_code_print_json() {
 	RAnnotatedCode *code = get_hello_world ();
-	// char *actual = malloc (900 * sizeof (char));
 	char *actual;
 	char *expected = "{\"code\":\"\\nvoid main(void)\\n{\\n    sym.imp.puts(\\\"Hello, World!\\\");\\n    return;\\n}\\n\",\"annotations\":[{\"start\":1,\"end\":5,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"datatype\"},{\"start\":6,\"end\":10,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"function_name\"},{\"start\":11,\"end\":15,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"keyword\"},{\"start\":23,\"end\":35,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"function_name\"},{\"start\":36,\"end\":51,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"constant_variable\"},{\"start\":23,\"end\":52,\"type\":\"offset\",\"offset\":4440},{\"start\":58,\"end\":64,\"type\":\"offset\",\"offset\":4447},{\"start\":58,\"end\":64,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"keyword\"},{\"start\":58,\"end\":64,\"type\":\"offset\",\"offset\":4447}]}\n";
 	r_cons_new ();
 	r_cons_push ();
 	r_core_annotated_code_print_json (code);
-	// strcpy (actual, r_cons_get_buffer ());
 	actual = strdup (r_cons_get_buffer ());
 	r_cons_pop ();
 	mu_assert_streq (actual, expected, "pdgj OUTPUT DOES NOT MATCH");
@@ -267,7 +253,6 @@ static bool test_r_core_annotated_code_print_json() {
 
 static bool test_r_core_annotated_code_print() {
 	RAnnotatedCode *code = get_hello_world ();
-	// char *actual = malloc (900 * sizeof (char));
 	char *actual;
 	//Checking without line offset
 	char *expected_first = "\n"
@@ -279,7 +264,6 @@ static bool test_r_core_annotated_code_print() {
 	r_cons_new ();
 	r_cons_push ();
 	r_core_annotated_code_print (code, NULL);
-	// strcpy (actual, r_cons_get_buffer ());
 	actual = strdup (r_cons_get_buffer ());
 	r_cons_pop ();
 	mu_assert_streq (actual, expected_first, "pdg OUTPUT DOES NOT MATCH");
@@ -294,7 +278,6 @@ static bool test_r_core_annotated_code_print() {
 				"    0x0000115f    |    return;\n"
 				"                  |}\n";
 	r_core_annotated_code_print (code, offsets);
-	// strcpy (actual, r_cons_get_buffer ());
 	free(actual);
 	actual = strdup (r_cons_get_buffer ());
 	r_cons_pop ();
@@ -310,14 +293,12 @@ static bool test_r_core_annotated_code_print() {
 
 static bool test_r_core_annotated_code_print_comment_cmds() {
 	RAnnotatedCode *code = get_hello_world ();
-	// char *actual = malloc (900 * sizeof (char));
 	char *actual;
 	char *expected = "CCu base64:c3ltLmltcC5wdXRzKCJIZWxsbywgV29ybGQhIik= @ 0x1158\n"
 			 "CCu base64:cmV0dXJu @ 0x115f\n";
 	r_cons_new ();
 	r_cons_push ();
 	r_core_annotated_code_print_comment_cmds (code);
-	// strcpy (actual, r_cons_get_buffer ());
 	actual = strdup (r_cons_get_buffer ());
 	r_cons_pop ();
 	mu_assert_streq (actual, expected, "pdg* OUTPUT DOES NOT MATCH");
