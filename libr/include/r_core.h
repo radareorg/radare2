@@ -941,10 +941,10 @@ R_API void r_core_annotated_code_print_json(RAnnotatedCode *code);
 * @code: Pointer to a RAnnotatedCode
 * @line_offsets: Pointer to a RVector that containes offsets for the decompiled code
 *
-* This function is used for the output of commands pdg and pdgo.
-* It can print the decompiled with offset and without offset. If line_offsets is a null pointer,
-* this function will print the output without offsets(pdg), otherwise the output will be
-* with offsets.
+* This function is used for printing the output of commands pdg and pdgo.
+* It can print the decompiled code with or without offsets. If line_offsets is a null pointer,
+* the output will be printed without offsets (pdg), otherwise, the output will be
+* printed with offsets.
 * This function will print the output in console using the function r_cons_printf();
 * 
 * Return: Nothing

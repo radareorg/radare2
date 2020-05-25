@@ -59,7 +59,7 @@ typedef struct r_annotated_code_t {
 } RAnnotatedCode;
 
 /**
- * r_annotated_code_new() - Creates a new RAnnotatedCode structure and returns it's pointer.
+ * r_annotated_code_new() - Creates a new RAnnotatedCode structure and returns its pointer.
  * @code: Literal code for which the RAnnotatedCode structure will be created .
  *
  * This functions creates a new RAnnotatedCode structure.
@@ -120,7 +120,7 @@ R_API RPVector *r_annotated_code_annotations_range(RAnnotatedCode *code, size_t 
  *
  * Creates an RVector and inserts the offsets for every seperate line of decompiled code in
  * code->code (code->code is a character array).
- * If a line of decompiled code doesn't have a unique offset, UT64_MAX is inserted as it's offset.
+ * If a line of decompiled code doesn't have a unique offset, UT64_MAX is inserted as its offset.
  * 	
  * Return: Pointer to the RVector created.
  */
