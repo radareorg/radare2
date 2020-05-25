@@ -586,17 +586,17 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		} else {
 			op->dst->reg = r_reg_get (anal->reg, args.arg[0], -1);
 		}
-		for (i = 0; j < args.num - 1; i++, j++) {
+		for (i = 0; j < args.num; i++, j++) {
 			op->src[i] = R_NEW0 (RAnalValue);
 			comma = strtok (NULL, ",");
 			if (comma && strchr (comma, '(')) {
 				op->src[i]->delta = (st64)r_num_get (NULL, args.arg[j]);
 				op->src[i]->reg = r_reg_get (anal->reg, args.arg[j + 1], -1);
 				j++;
-			} else if (isdigit (args.arg[j][0])) {
-				op->src[i]->imm = r_num_get (NULL, args.arg[j]);
-			} else {
+			} else if (isalpha (args.arg[j][0])) {
 				op->src[i]->reg = r_reg_get (anal->reg, args.arg[j], -1);
+			} else {
+				op->src[i]->imm = r_num_get (NULL, args.arg[j]);
 			}
 		}
 		free (argf);

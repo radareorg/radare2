@@ -440,13 +440,18 @@ RUN
 
 NAME=ELF: riscv64: main analysis
 FILE=bins/elf/analysis/guess-number-riscv64
-CMDS=e asm.calls=false;s sym.main;af;pdf
+CMDS=<<EOF
+e anal.vars.stackname=true
+e asm.calls=false
+s sym.main
+af
+pdf
+EOF
 EXPECT=<<EOF
 / (fcn) main 140
-// int main (int64_t arg_18h);
+// int main (int argc, char **argv, char **envp);
 |           ; var int64_t var_18h @ s0-0x18
 |           ; var int64_t var_14h @ s0-0x14
-|           ; arg int64_t arg_18h @ s0+0x18
 |           ; var int64_t var_10h @ sp+0x10
 |           ; var int64_t var_8h @ sp+0x18
 |           0x00010150      130101fe       addi sp, sp, -32
@@ -490,16 +495,19 @@ RUN
 NAME=ELF: riscv64: full analysis
 FILE=bins/elf/analysis/guess-number-riscv64
 ARGS=-A
-CMDS=e asm.calls=false;s sym.main;pdf
+CMDS=<<EOF
+e asm.calls=false
+s sym.main
+pdf
+EOF
 EXPECT=<<EOF
             ; CALL XREF from entry0 @ 0x10040
 / (fcn) main 140
-// int main (int64_t arg_18h);
-|           ; var int64_t var_18h @ s0-0x18
+// int main (int argc, char **argv, char **envp);
+|           ; var int64_t var_bp_18h @ s0-0x18
 |           ; var int64_t var_14h @ s0-0x14
-|           ; arg int64_t arg_18h @ s0+0x18
 |           ; var int64_t var_10h @ sp+0x10
-|           ; var int64_t var_8h @ sp+0x18
+|           ; var int64_t var_18h @ sp+0x18
 |           0x00010150      130101fe       addi sp, sp, -32
 |           0x00010154      233c1100       sd ra, 24(sp)
 |           0x00010158      23388100       sd s0, 16(sp)

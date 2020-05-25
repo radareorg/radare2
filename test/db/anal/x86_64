@@ -1913,6 +1913,7 @@ RUN
 NAME=afvR and afvW test
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
+e anal.vars.stackname=true
 aa
 s main
 ?e
@@ -1921,9 +1922,9 @@ afvW
 EOF
 EXPECT=<<EOF
 
-   var_78h  0x8048577,0x804858a
+   var_7ch  0x8048577,0x804858a
    var_88h
-   var_78h
+   var_7ch
    var_88h  0x804857a
 EOF
 RUN
@@ -3384,6 +3385,7 @@ NAME=Microsoft x64 CC Args/Vars
 FILE=bins/pe/testx64.exe
 CMDS=<<EOF
 e asm.comments=0
+e anal.vars.stackname=true
 s 0x140001080
 afc=ms
 af

@@ -71,7 +71,7 @@ EOF
 EXPECT=<<EOF
 {"ret":"rax","args":["rdi","rsi","rdx","rcx","r8","r9","xmm0","xmm1","xmm2","xmm3","xmm4"],"self":"r13","error":"r12"}
 {"sp":[]
-,"bp":[{"name":"var_28h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":18446744073709551576}},{"name":"var_20h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":18446744073709551584}},{"name":"var_18h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":18446744073709551592}},{"name":"var_10h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":18446744073709551600}}]
+,"bp":[{"name":"var_28h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-40}},{"name":"var_20h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-32}},{"name":"var_18h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-24}},{"name":"var_10h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-16}}]
 ,"reg":[{"name":"self","kind":"reg","type":"int64_t","ref":"r13"},{"name":"error","kind":"reg","type":"int64_t","ref":"r12"}]
 }
 EOF

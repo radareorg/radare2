@@ -153,3 +153,18 @@ arg int64_t arg2 @ rdx
 arg const char * s @ rcx
 EOF
 RUN
+
+NAME=Variables in register save stack area
+FILE=bins/pe/testx64.exe
+CMDS=<<EOF
+s 0x14000184c
+af
+afv
+EOF
+EXPECT=<<EOF
+var int64_t var_20h @ rsp+0x48
+var int64_t var_10h @ rbp+0x10
+var int64_t var_18h @ rbp+0x18
+var int64_t var_bp_20h @ rbp+0x20
+EOF
+RUN

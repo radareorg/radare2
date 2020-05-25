@@ -417,21 +417,28 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 		// assuming delta always positive?
 		int delta = sparg->delta;
 		if (p->get_ptr_at) {
-			delta = p->get_ptr_at (p->user, f, sparg->delta, addr);
+			delta = p->get_ptr_at (f, sparg->delta, addr);
 		}
-		mk_reg_str (anal->reg->name[R_REG_NAME_SP], delta, true, att, ireg, oldstr, sizeof (oldstr));
+		const char *reg = NULL;
+		if (p->get_reg_at) {
+			reg = p->get_reg_at (f, sparg->delta, addr);
+		}
+		if (!reg) {
+			reg = anal->reg->name[R_REG_NAME_SP];
+		}
+		mk_reg_str (reg, delta, true, att, ireg, oldstr, sizeof (oldstr));
 
 		if (ucase) {
 			r_str_case (oldstr, true);
 		}
-		parse_localvar (p, newstr, sizeof (newstr), sparg->name, anal->reg->name[R_REG_NAME_SP], '+', ireg, att);
-		char *ptr = strstr(tstr, oldstr);
+		parse_localvar (p, newstr, sizeof (newstr), sparg->name, reg, '+', ireg, att);
+		char *ptr = strstr (tstr, oldstr);
 		if (ptr && (!att || *(ptr - 1) == ' ')) {
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);
 			break;
 		} else {
 			r_str_case (oldstr, false);
-			ptr = strstr(tstr, oldstr);
+			ptr = strstr (tstr, oldstr);
 			if (ptr && (!att || *(ptr - 1) == ' ')) {
 				tstr = r_str_replace (tstr, oldstr, newstr, 1);
 				break;
@@ -441,16 +448,23 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 	/* iterate over base pointer args/vars */
 	r_list_foreach (bpargs, bpargiter, bparg) {
 		char sign = '+';
-		int delta = bparg->delta;
+		int delta = bparg->delta + f->bp_off;
 		if (delta < 0) {
 			sign = '-';
 			delta = -delta;
 		}
-		mk_reg_str (anal->reg->name[R_REG_NAME_BP], delta, sign=='+', att, ireg, oldstr, sizeof (oldstr));
+		const char *reg = NULL;
+		if (p->get_reg_at) {
+			reg = p->get_reg_at (f, bparg->delta, addr);
+		}
+		if (!reg) {
+			reg = anal->reg->name[R_REG_NAME_BP];
+		}
+		mk_reg_str (reg, delta, sign=='+', att, ireg, oldstr, sizeof (oldstr));
 		if (ucase) {
 			r_str_case (oldstr, true);
 		}
-		parse_localvar (p, newstr, sizeof (newstr), bparg->name, anal->reg->name[R_REG_NAME_BP], sign, ireg, att);
+		parse_localvar (p, newstr, sizeof (newstr), bparg->name, reg, sign, ireg, att);
 		char *ptr = strstr (tstr, oldstr);
 		if (ptr && (!att || *(ptr - 1) == ' ')) {
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);
@@ -464,7 +478,7 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 			}
 		}
 		// Try with no spaces
-		snprintf (oldstr, sizeof (oldstr)-1, "[%s%c0x%x]", anal->reg->name[R_REG_NAME_BP], sign, delta);
+		snprintf (oldstr, sizeof (oldstr) - 1, "[%s%c0x%x]", reg, sign, delta);
 		if (strstr (tstr, oldstr) != NULL) {
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);
 			break;

@@ -1320,7 +1320,7 @@ static int var_cmd(RCore *core, const char *str) {
 				free (ostr);
 				return false;
 			}
-			r_anal_var_display (core->anal, v1->delta, v1->kind, v1->type);
+			r_anal_var_display (core->anal, v1);
 			free (ostr);
 		} else {
 			RListIter *iter;
@@ -1438,7 +1438,10 @@ static int var_cmd(RCore *core, const char *str) {
 			}
 			int rw = (str[1] == 'g') ? R_ANAL_VAR_ACCESS_TYPE_READ : R_ANAL_VAR_ACCESS_TYPE_WRITE;
 			int ptr = *var->type == 's' ? idx - fcn->maxstack : idx;
-			r_anal_var_set_access (var, addr, rw, ptr);
+			RAnalOp *op = r_core_anal_op (core, addr, 0);
+			const char *ireg = op ? op->ireg : NULL;
+			r_anal_var_set_access (var, ireg, addr, rw, ptr);
+			r_anal_op_free (op);
 		} else {
 			eprintf ("Missing argument\n");
 		}
@@ -1476,6 +1479,9 @@ static int var_cmd(RCore *core, const char *str) {
 			vartype = "int";
 		} else {
 			*vartype++ = 0;
+		}
+		if (type == 'b') {
+			delta -= fcn->bp_off;
 		}
 		if ((type == 'b') && delta > 0) {
 			isarg = true;
