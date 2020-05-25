@@ -686,7 +686,7 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 			if (square) {
 				if (show_flags) {
 					RFlagItem *fi = r_flag_get_i (core->flags, core->offset + j);
-					if (fi && fi->name && fi->name[0]) {
+					if (fi) {
 						if (fi->name[1]) {
 							ch = fi->name[0];
 							ch2 = fi->name[1];
@@ -799,7 +799,7 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 			if (square) {
 				if (show_flags) {
 					RFlagItem *fi = r_flag_get_i (core->flags, core->offset + j);
-					if (fi && fi->name && fi->name[0]) {
+					if (fi) {
 						if (fi->name[1]) {
 							ch = fi->name[0];
 							ch2 = fi->name[1];
