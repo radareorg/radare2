@@ -65,7 +65,7 @@ typedef struct r_annotated_code_t {
  * This functions creates a new RAnnotatedCode structure.
  * RAnnotatedCode.code will be initialized as the character array passed.
  * Here, code must be a string that can deallocated.
- * This will initialize RVector /*<RCodeAnnotation>*\/ annotations as well.
+ * This will initialize RVector<RCodeAnnotation> annotations as well.
  * 
  * Return: Pointer to the new RAnnotatedCode structure created.
  */
@@ -86,7 +86,7 @@ R_API void r_annotated_code_free(RAnnotatedCode *code);
  *
  * This functions inserts the annotation represented by the pointer 'annotation' to the vector
  * of annotations in the RAnnotatedCode represented by 'code'. To be more precise,
- * annotation will be added to code->annotations, which is a RVector /*<RCodeAnnotation>*\/ annotations.
+ * annotation will be added to code->annotations, which is a RVector<RCodeAnnotation> annotations.
  * 
  * Return: Nothing.
  */
