@@ -679,35 +679,6 @@ static bool esil_of(RAnalEsil *esil) {
 	return res;
 }
 
-// check overflow for subtraction operations
-// which need an extra check. this is unfortunate
-static bool esil_sof(RAnalEsil *esil) {
-	char *p_bit = r_anal_esil_pop (esil);
-
-	if (!p_bit) {
-		return false;
-	}
-
-	if (r_anal_esil_get_parm_type (esil, p_bit) != R_ANAL_ESIL_PARM_NUM) {
-		free (p_bit);
-		return false;
-	}
-	ut64 bit;
-
-	if (!r_anal_esil_get_parm (esil, p_bit, &bit)) {
-		ERR ("esil_of: empty stack");
-		free (p_bit);
-		return false;
-	}
-	free (p_bit);
-
-	const ut64 m[2] = {genmask (bit & 0x3f), genmask ((bit + 0x3f) & 0x3f)};
-	const ut64 c_0 = ((esil->old-esil->cur) & m[0]) == (1<<bit); // extra check
-	const ut64 result = c_0 ^ ((esil->cur & m[0]) < (esil->old & m[0])) ^ ((esil->cur & m[1]) < (esil->old & m[1]));
-	ut64 res = r_anal_esil_pushnum (esil, result);
-	return res;
-}
-
 //checks sign bit at x (x,$s)
 static bool esil_sf(RAnalEsil *esil) {
 	r_return_val_if_fail (esil, false);
@@ -3197,7 +3168,6 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("$p", esil_pf, 1, 0, OT_UNK);
 	OP ("$s", esil_sf, 1, 1, OT_UNK);
 	OP ("$o", esil_of, 1, 1, OT_UNK);
-	OP ("$so", esil_sof, 1, 1, OT_UNK); // overflow for subtractions ops
 	OP ("$ds", esil_ds, 1, 0, OT_UNK);
 	OP ("$jt", esil_jt, 1, 0, OT_UNK);
 	OP ("$js", esil_js, 1, 0, OT_UNK);
