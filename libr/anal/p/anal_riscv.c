@@ -538,8 +538,10 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_JMP;
 	} else if (is_any ("j", "jump")) {
 		op->type = R_ANAL_OP_TYPE_JMP;
-	} else if (is_any ("jalr", "ret")) { // ?
-		op->type = R_ANAL_OP_TYPE_UCALL;
+	} else if (is_any ("jalr")) {
+		// decide whether it's ret or call
+		int rd = (word >> OP_SH_RD) & OP_MASK_RD;
+		op->type = (rd == 0) ? R_ANAL_OP_TYPE_RET: R_ANAL_OP_TYPE_UCALL;
 	} else if (is_any ("ret")) {
 		op->type = R_ANAL_OP_TYPE_RET;
 	} else if (is_any ("beqz", "beq", "blez", "bgez", "ble",
