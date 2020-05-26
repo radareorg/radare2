@@ -1545,6 +1545,8 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				// http://www.tptp.cc/mirrors/siyobik.info/instruction/IDIV.html
 				// Divides (signed) the value in the AX, DX:AX, or EDX:EAX registers (dividend) by the source operand (divisor) and stores the result in the AX (AH:AL), DX:AX, or EDX:EAX registers. The source operand can be a general-purpose register or a memory location. The action of this instruction depends on the operand size (dividend/divisor), as shown in the following table:
 				// IDIV RBX    ==   RDX:RAX /= RBX
+
+				// 
 				if (arg0) {
 					int width = INSOP(0).size;
 					const char *r_quot = (width==1)?"al": (width==2)?"ax": (width==4)?"eax":"rax";
@@ -1576,7 +1578,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			const char *r_quot = (width==1)?"al": (width==2)?"ax": (width==4)?"eax":"rax";
 			const char *r_rema = (width==1)?"ah": (width==2)?"dx": (width==4)?"edx":"rdx";
 			const char *r_nume = (width==1)?"ax": r_quot;
-			// DIV does not cahnge flags and is unsigned
+			// DIV does not change flags and is unsigned
 			if ( width == 1 ) {
 				esilprintf(op, "0xffffff00,eflags,&=,%s,%s,%%,eflags,|=,%s,%s,/,%s,=,0xff,eflags,&,%s,=,0xffffff00,eflags,&=,2,eflags,|=",
 					   dst, r_nume, dst, r_nume, r_quot, r_rema);
