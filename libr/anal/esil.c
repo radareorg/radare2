@@ -544,6 +544,8 @@ R_API int r_anal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, 
 	return ret;
 }
 
+// sign extension operator for use in idiv, imul, movsx* 
+// and other instructions involving signed values
 static bool esil_signext(RAnalEsil *esil) {
 	ut64 src_bit, dst;
 
@@ -553,7 +555,8 @@ static bool esil_signext(RAnalEsil *esil) {
 		return false;
 	}
 
-	if (r_anal_esil_get_parm_type (esil, p_src_bit) != R_ANAL_ESIL_PARM_NUM) {
+	if (r_anal_esil_get_parm_type (
+		esil, p_src_bit) != R_ANAL_ESIL_PARM_NUM) {
 		free (p_src_bit);
 		return false;
 	}

@@ -1600,11 +1600,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				esilprintf (op, "%s,%d,~,%s,%d,~,*,DUP,%s,=,%s,-,?{,1,1,}{,0,0,},cf,:=,of,:=", arg2, width*8, arg1, width*8, arg0, arg0);
 			} else {
 				if (arg1) {
-					//esilprintf (op, "%s,%s,*=", arg1, arg0);
 					esilprintf (op, "%s,%d,~,%s,%d,~,*,DUP,%s,=,%s,-,?{,1,1,}{,0,0,},cf,:=,of,:=", arg0, width*8, arg1, width*8, arg0, arg0);
 				} else {
 					if (arg0) {
-						//int width = INSOP(0).size;
 						const char *r_quot = (width==1)?"al": (width==2)?"ax": (width==4)?"eax":"rax";
 						const char *r_rema = (width==1)?"ah": (width==2)?"dx": (width==4)?"edx":"rdx";
 						const char *r_nume = (width==1)?"ax": r_quot;
