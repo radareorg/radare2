@@ -926,7 +926,7 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		ut32 simdop;
 		op->type = WASM_TYPE_OP_SIMD;
 		size_t simdop_size = read_u32_leb128 (buf + 1, buf + buf_len, &simdop);
-		if ((0 > simdop_size) || (simdop_size > buf_len)) {
+		if (simdop_size > buf_len) {
 			goto err;
 		}
 		op->len = 1 + simdop_size;
@@ -1121,7 +1121,8 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 				}
 				op->len += 16;
 				unsigned char bytes[16] = { 0 };
-				for (int i = 0; i < 16; ++i) {
+				int i;
+				for (i = 0; i < 16; ++i) {
 					bytes[i] = buf[i + 1 + simdop_size];
 				}
 				r_strbuf_setf (sb, "%s %02x %02x %02x %02x %02x %02x %02x " \
