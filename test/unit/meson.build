@@ -9,6 +9,7 @@ if get_option('enable_tests')
     'anal_meta',
     'anal_var',
     'anal_xrefs',
+    'annotated_code',
     'base64',
     'bin',
     'bitmap',
