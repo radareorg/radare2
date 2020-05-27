@@ -2204,8 +2204,9 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 				free (fnp);
 			}
 			if (sn.demname) {
+				ut64 size = symbol->size? symbol->size: 1;
 				r_meta_set (r->anal, R_META_TYPE_COMMENT,
-							addr, symbol->size, sn.demname);
+							addr, size, sn.demname);
 			}
 			r_flag_space_pop (r->flags);
 		} else if (IS_MODE_JSON (mode)) {
