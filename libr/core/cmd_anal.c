@@ -580,7 +580,7 @@ static const char *help_msg_ah[] = {
 	"ahf", " 0x804840", "override fallback address for call",
 	"ahF", " 0x10", "set stackframe size at current offset",
 	"ahh", " 0x804840", "highlight this address offset in disasm",
-	"ahi", "[?] 10", "define numeric base for immediates (1, 8, 10, 16, s)",
+	"ahi", "[?] 10", "define numeric base for immediates (2, 8, 10, 16, i, p, S, s)",
 	"ahj", "", "list hints in JSON",
 	"aho", " call", "change opcode type (see aho?) (deprecated, moved to \"ahd\")",
 	"ahp", " addr", "set pointer hint",
@@ -593,14 +593,14 @@ static const char *help_msg_ah[] = {
 };
 
 static const char *help_msg_ahi[] = {
-	"Usage:", "ahi [sbodh] [@ offset]", " Define numeric base",
-	"ahi", " [base]", "set numeric base (1, 2, 8, 10, 16)",
+	"Usage:", "ahi [2|8|10|16|bodhipSs] [@ offset]", " Define numeric base",
+	"ahi", " <base>", "set numeric base (2, 8, 10, 16)",
 	"ahi", " b", "set base to binary (2)",
+	"ahi", " o", "set base to octal (8)",
 	"ahi", " d", "set base to decimal (10)",
 	"ahi", " h", "set base to hexadecimal (16)",
-	"ahi", " o", "set base to octal (8)",
-	"ahi", " p", "set base to htons(port) (3)",
 	"ahi", " i", "set base to IP address (32)",
+	"ahi", " p", "set base to htons(port) (3)",
 	"ahi", " S", "set base to syscall (80)",
 	"ahi", " s", "set base to string (1)",
 	NULL
