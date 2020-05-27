@@ -480,7 +480,7 @@ static void serialize(RAnal *a, RSignItem *it, char *k, char *v) {
 	}
 }
 
-static RList * deserialize_sign_space(RAnal *a, RSpace *space){
+static RList *deserialize_sign_space(RAnal *a, RSpace *space){
 	char k[R_SIGN_KEY_MAXSZ];
 	r_return_val_if_fail (a && space, NULL);
 
