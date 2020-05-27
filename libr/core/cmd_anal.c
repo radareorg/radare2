@@ -7627,7 +7627,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				(int) r_num_math (core->num, input + 1);
 			r_anal_hint_set_immbase (core->anal, core->offset, base);
 		} else if (input[1] != '?' && input[1] != '-') {
-			eprintf ("|ERROR| Usage: ahi [base]\n");
+			eprintf ("|ERROR| Usage: ahi <base>\n");
 		}
 		break;
 	case 'h': // "ahh"
