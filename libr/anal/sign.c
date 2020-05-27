@@ -489,7 +489,7 @@ static RList *deserialize_sign_space(RAnal *a, RSpace *space){
 
 	SdbListIter *iter;
 	SdbKv *kv;
-	RList *ret = r_list_new ();
+	RList *ret = r_list_newf ((RListFree)r_sign_item_free);
 	if (!ret) {
 		goto beach;
 	}
