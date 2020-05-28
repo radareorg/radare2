@@ -1285,7 +1285,8 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		__print_prompt ();
 	}
 	r_cons_break_push (NULL, NULL);
-	r_cons_enable_mouse (I.hud);
+	// r_cons_enable_mouse (I.hud);
+	r_cons_enable_mouse (false);
 	for (;;) {
 		yank_flag = 0;
 		if (r_cons_is_breaked ()) {
