@@ -11,6 +11,7 @@ static const char *help_msg_z[] = {
 	"Usage:", "z[*j-aof/cs] [args] ", "# Manage zignatures",
 	"z", "", "show zignatures",
 	"z.", "", "find matching zignatures in current offset",
+	"zb", "", "find closest matching graph zignature at current offset",
 	"z*", "", "show zignatures in radare format",
 	"zq", "", "show zignatures in quiet mode",
 	"zj", "", "show zignatures in json format",
@@ -1047,6 +1048,26 @@ TODO: add useXRefs, useName
 	return retval;
 }
 
+static int bestmatch(void *data, const char *input) {
+	RCore *core = (RCore *)data;
+	RListIter *iter;
+	RAnalFunction *fcni = NULL;
+	bool ret;
+
+	r_cons_break_push (NULL, NULL);
+	r_list_foreach (core->anal->fcns, iter, fcni) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+		if (fcni->addr == core->offset) {
+			ret = r_sign_find_closest_sig (core->anal, fcni);
+			break;
+		}
+	}
+	r_cons_break_pop ();
+	return ret;
+}
+
 static int cmdCompare(void *data, const char *input) {
 	int result = true;
 	RCore *core = (RCore *) data;
@@ -1249,6 +1270,8 @@ static int cmd_zign(void *data, const char *input) {
 		break;
 	case '.': // "z."
 		return cmdCheck (data, arg);
+	case 'b': // "zb"
+		return bestmatch (data, arg);
 	case 'o': // "zo"
 		return cmdOpen (data, arg);
 	case 'g': // "zg"

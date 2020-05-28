@@ -777,10 +777,8 @@ R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *byt
 }
 
 R_API bool r_sign_add_graph(RAnal *a, const char *name, RSignGraph graph) {
+	r_return_val_if_fail (a && name, false);
 	bool retval = true;
-	if (!a || !name) {
-		return false;
-	}
 	RSignItem *it = r_sign_item_new ();
 	if (!it) {
 		return false;
@@ -1043,6 +1041,80 @@ static double matchGraph(RSignItem *a, RSignItem *b) {
 	total += SIMILARITY (a->graph->bbsum, b->graph->bbsum);
 
 	return total / 5.0;
+}
+
+static RSignItem *create_graph_sign_from_fcn(RAnal *a, RAnalFunction *fcn) {
+	r_return_val_if_fail (a && fcn, false);
+
+	RSignGraph *graph = R_NEW0 (RSignGraph);
+	if (!graph) {
+		return NULL;
+	}
+	graph->cc = r_anal_function_complexity (fcn),
+	graph->nbbs = r_list_length (fcn->bbs);
+	graph->edges = r_anal_function_count_edges (fcn, &graph->ebbs);
+	graph->bbsum = r_anal_function_realsize (fcn);
+
+	char *name = r_str_new (fcn->name);
+	if (!name) {
+		free (graph);
+		return NULL;
+	}
+
+	RSignItem *item = r_sign_item_new ();
+	if (!item) {
+		free (name);
+		free (graph);
+		return NULL;
+	}
+
+	item->space = r_spaces_current (&a->zign_spaces);
+	item->name = name;
+	item->graph = graph;
+
+	return item;
+}
+
+R_API bool r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn) {
+	r_return_val_if_fail (a && fcn, false);
+	RSpace *space = r_spaces_current (&a->zign_spaces);
+	if (!space) {
+		return false;
+	}
+
+	RList *testlist = deserialize_sign_space (a, space);
+	if (!testlist) {
+		return false;
+	}
+
+	RSignItem *test = create_graph_sign_from_fcn (a, fcn);
+	if (!test) {
+		r_list_free (testlist);
+		return false;
+	}
+
+	RSignItem *si;
+	RListIter *itr;
+	double highscore = -1;
+	RSignItem *bestsig = NULL;
+
+	r_list_foreach (testlist, itr, si) {
+		double score = matchGraph (si, test);
+		if (score > highscore) {
+			highscore = score;
+			bestsig = si;
+		}
+	}
+
+	bool ret = false;
+	if (bestsig) {
+		a->cb_printf ("%02.5lf G %s\n", bestsig->name, highscore);
+		ret = true;
+	}
+
+	r_list_free (testlist);
+	r_sign_item_free (test);
+	return ret;
 }
 
 R_API bool r_sign_diff(RAnal *a, RSignOptions *options, const char *other_space_name) {
