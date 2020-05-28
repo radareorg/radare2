@@ -1092,12 +1092,12 @@ R_API RList *r_anal_function_get_var_fields(RAnalFunction *fcn, int kind) {
 
 static int var_comparator(const RAnalVar *a, const RAnalVar *b){
 	// avoid NULL dereference
-	return (a && b)? a->delta > b->delta: false;
+	return (a && b)? (a->delta > b->delta) - (a->delta < b->delta) : 0;
 }
 
 static int regvar_comparator(const RAnalVar *a, const RAnalVar *b){
 	// avoid NULL dereference
-	return (a && b)? a->argnum > b->argnum: false;
+	return (a && b)? (a->argnum > b->argnum) - (a->argnum < b->argnum): 0;
 }
 
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode, PJ *pj) {
