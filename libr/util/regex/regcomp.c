@@ -255,8 +255,13 @@ R_API int r_regex_comp(RRegex *preg, const char *pattern, int cflags) {
 	} else {
 		len = strlen ((char *)pattern);
 	}
+
 	/* do the mallocs early so failure handling is easy */
+	if (preg->re_g != NULL) { /* Check if already inited */
+		r_regex_fini(preg);
+	} 
 	g = (struct re_guts *)calloc (sizeof (struct re_guts) + (NC - 1), sizeof (cat_t));
+	
 	if (!g) {
 		return R_REGEX_ESPACE;
 	}
