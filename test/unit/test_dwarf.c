@@ -6,6 +6,13 @@
 
 #define MODE 2
 
+// RListComparator should return -1, 0, 1 to indicate "a<b", "a==b", "a>b".
+int row_comparator(const void *a, const void *b){
+	const RBinDwarfRow *left = a;
+	const RBinDwarfRow *right = b;
+	return (left->address > right->address) ? 1 : 0;
+}
+
 bool test_c_dwarf3(void) {
 	RCore *core = r_core_new ();
 	RBin *bin = r_bin_new ();
@@ -90,6 +97,42 @@ bool test_c_dwarf3(void) {
 	{
 		mu_assert_eq (da->decls[6].has_children, 0, "Incorret children flag");
 		mu_assert_eq (da->decls[6].length, 6, "Incorret number of attributes");
+	}
+
+	// r_bin_dwarf_parse_info (da, core->bin, mode); Information not stored anywhere, not testable now?
+
+	// r_bin_dwarf_parse_aranges (core->bin, MODE); Information not stored anywhere, not testable now?
+
+	RList *line_list = NULL;
+
+	line_list = r_bin_dwarf_parse_line (core->bin, MODE);
+	mu_assert_eq(line_list->length, 8, "Amount of line information parse doesn't match");
+
+
+	RBinDwarfRow *row;
+	RListIter *iter;
+	// printf("\n");
+	// sort it so it can be more consistently tested?
+	// we could also sort it in the `id` output like readelf does
+	r_list_sort(line_list, row_comparator);
+
+	const int test_addresses[] = {
+		0x1129,
+		0x1131,
+		0x1134,
+		0x1140,
+		0x114a,
+		0x1151,
+		0x1154,
+		0x1156
+	};
+	int i = 0;
+	r_list_foreach (line_list, iter, row) {
+		// printf("%s\t", row->file);
+		// printf("0x%llx\t", row->address);
+		// printf("%u\t", row->line); // use proper formatters
+		// printf("%u\n", row->column);
+		mu_assert_eq (row->address, test_addresses[i++], "Line number statement address doesn't match");
 	}
 
 	r_io_free (io);
