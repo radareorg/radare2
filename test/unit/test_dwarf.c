@@ -106,15 +106,14 @@ bool test_c_dwarf3(void) {
 	RList *line_list = NULL;
 
 	line_list = r_bin_dwarf_parse_line (core->bin, MODE);
-	mu_assert_eq(line_list->length, 8, "Amount of line information parse doesn't match");
-
+	mu_assert_eq (line_list->length, 8, "Amount of line information parse doesn't match");
 
 	RBinDwarfRow *row;
 	RListIter *iter;
 	// printf("\n");
 	// sort it so it can be more consistently tested?
 	// we could also sort it in the `id` output like readelf does
-	r_list_sort(line_list, row_comparator);
+	r_list_sort (line_list, row_comparator);
 
 	const int test_addresses[] = {
 		0x1129,
