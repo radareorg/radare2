@@ -480,6 +480,40 @@ static void serialize(RAnal *a, RSignItem *it, char *k, char *v) {
 	}
 }
 
+static RList *deserialize_sign_space(RAnal *a, RSpace *space){
+	char k[R_SIGN_KEY_MAXSZ];
+	r_return_val_if_fail (a && space, NULL);
+
+	serializeKey (a, space, "", k);
+	SdbList *zigns = sdb_foreach_match (a->sdb_zigns, k, false);
+
+	SdbListIter *iter;
+	SdbKv *kv;
+	RList *ret = r_list_newf ((RListFree)r_sign_item_free);
+	if (!ret) {
+		goto beach;
+	}
+	ls_foreach (zigns, iter, kv) {
+		RSignItem *it = r_sign_item_new ();
+		if (!it) {
+			goto beach;
+		}
+		if (r_sign_deserialize (a, it, kv->base.key, kv->base.value)) {
+			r_list_append (ret, it);
+		} else {
+			r_sign_item_free (it);
+		}
+	}
+
+	ls_free (zigns);
+	return ret;
+
+beach:
+	ls_free (zigns);
+	r_list_free (ret);
+	return NULL;
+}
+
 static void mergeItem(RSignItem *dst, RSignItem *src) {
 	RListIter *iter = NULL;
 	char *ref, *var, *type;
@@ -1012,8 +1046,6 @@ static double matchGraph(RSignItem *a, RSignItem *b) {
 }
 
 R_API bool r_sign_diff(RAnal *a, RSignOptions *options, const char *other_space_name) {
-	char k[R_SIGN_KEY_MAXSZ];
-
 	r_return_val_if_fail (a && other_space_name, false);
 
 	RSpace *current_space = r_spaces_current (&a->zign_spaces);
@@ -1025,50 +1057,16 @@ R_API bool r_sign_diff(RAnal *a, RSignOptions *options, const char *other_space_
 		return false;
 	}
 
-	serializeKey (a, current_space, "", k);
-	SdbList *current_zigns = sdb_foreach_match (a->sdb_zigns, k, false);
-
-	serializeKey (a, other_space, "", k);
-	SdbList *other_zigns = sdb_foreach_match (a->sdb_zigns, k, false);
-
-	eprintf ("Diff %d %d\n", (int)ls_length (current_zigns), (int)ls_length (other_zigns));
-
-	SdbListIter *iter;
-	SdbKv *kv;
-	RList *lb = NULL;
-	RList *la = r_list_new ();
+	RList *la = deserialize_sign_space (a, current_space);
 	if (!la) {
-		goto beach;
+		return false;
 	}
-	ls_foreach (current_zigns, iter, kv) {
-		RSignItem *it = r_sign_item_new ();
-		if (!it) {
-			goto beach;
-		}
-		if (r_sign_deserialize (a, it, kv->base.key, kv->base.value)) {
-			r_list_append (la, it);
-		} else {
-			r_sign_item_free (it);
-		}
-	}
-	lb = r_list_new ();
+	RList *lb = deserialize_sign_space (a, other_space);
 	if (!lb) {
-		goto beach;
-	}
-	ls_foreach (other_zigns, iter, kv) {
-		RSignItem *it = r_sign_item_new ();
-		if (!it) {
-			goto beach;
-		}
-		if (r_sign_deserialize (a, it, kv->base.key, kv->base.value)) {
-			r_list_append (lb, it);
-		} else {
-			r_sign_item_free (it);
-		}
+		return false;
 	}
 
-	ls_free (current_zigns);
-	ls_free (other_zigns);
+	eprintf ("Diff %d %d\n", (int)ls_length (la), (int)ls_length (lb));
 
 	RListIter *itr;
 	RListIter *itr2;
@@ -1090,31 +1088,21 @@ R_API bool r_sign_diff(RAnal *a, RSignOptions *options, const char *other_space_
 			bool graphMatch = graphScore >= (options ? options->graph_diff_threshold : SIGN_DIFF_MATCH_GRAPH_THRESHOLD);
 
 			if (bytesMatch) {
-				a->cb_printf ("0x%08"PFMT64x" 0x%08"PFMT64x " %02.5lf B %s\n", si->addr, si2->addr, bytesScore, si->name);
+				a->cb_printf ("0x%08" PFMT64x " 0x%08"PFMT64x " %02.5lf B %s\n", si->addr, si2->addr, bytesScore, si->name);
 			}
 
 			if (graphMatch) {
-				a->cb_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %02.5lf G %s\n", si->addr, si2->addr, graphScore, si->name);
+				a->cb_printf ("0x%08" PFMT64x " 0x%08"PFMT64x" %02.5lf G %s\n", si->addr, si2->addr, graphScore, si->name);
 			}
 		}
 	}
 
 	r_list_free (la);
 	r_list_free (lb);
-
 	return true;
-beach:
-	ls_free (current_zigns);
-	ls_free (other_zigns);
-	r_list_free (la);
-	r_list_free (lb);
-
-	return false;
 }
 
-R_API bool r_sign_diff_by_name(RAnal *a, RSignOptions * options, const char *other_space_name, bool not_matching) {
-	char k[R_SIGN_KEY_MAXSZ];
-
+R_API bool r_sign_diff_by_name(RAnal *a, RSignOptions *options, const char *other_space_name, bool not_matching) {
 	r_return_val_if_fail (a && other_space_name, false);
 
 	RSpace *current_space = r_spaces_current (&a->zign_spaces);
@@ -1126,50 +1114,16 @@ R_API bool r_sign_diff_by_name(RAnal *a, RSignOptions * options, const char *oth
 		return false;
 	}
 
-	serializeKey (a, current_space, "", k);
-	SdbList *current_zigns = sdb_foreach_match (a->sdb_zigns, k, false);
-
-	serializeKey (a, other_space, "", k);
-	SdbList *other_zigns = sdb_foreach_match (a->sdb_zigns, k, false);
-
-	eprintf ("Diff by name %d %d (%s)\n", (int)ls_length (current_zigns), (int)ls_length (other_zigns), not_matching ? "not matching" : "matching");
-
-	SdbListIter *iter;
-	SdbKv *kv;
-	RList *lb = NULL;
-	RList *la = r_list_new ();
+	RList *la = deserialize_sign_space (a, current_space);
 	if (!la) {
-		goto beach;
+		return false;
 	}
-	ls_foreach (current_zigns, iter, kv) {
-		RSignItem *it = r_sign_item_new ();
-		if (!it) {
-			goto beach;
-		}
-		if (r_sign_deserialize (a, it, kv->base.key, kv->base.value)) {
-			r_list_append (la, it);
-		} else {
-			r_sign_item_free (it);
-		}
-	}
-	lb = r_list_new ();
-	if (!la) {
-		goto beach;
-	}
-	ls_foreach (other_zigns, iter, kv) {
-		RSignItem *it = r_sign_item_new ();
-		if (!it) {
-			goto beach;
-		}
-		if (r_sign_deserialize (a, it, kv->base.key, kv->base.value)) {
-			r_list_append (lb, it);
-		} else {
-			r_sign_item_free (it);
-		}
+	RList *lb = deserialize_sign_space (a, other_space);
+	if (!lb) {
+		return false;
 	}
 
-	ls_free (current_zigns);
-	ls_free (other_zigns);
+	eprintf ("Diff by name %d %d (%s)\n", (int)ls_length (la), (int)ls_length (lb), not_matching? "not matching" : "matching");
 
 	RListIter *itr;
 	RListIter *itr2;
@@ -1204,13 +1158,6 @@ R_API bool r_sign_diff_by_name(RAnal *a, RSignOptions * options, const char *oth
 	r_list_free (lb);
 
 	return true;
-beach:
-	ls_free (current_zigns);
-	ls_free (other_zigns);
-	r_list_free (la);
-	r_list_free (lb);
-
-	return false;
 }
 
 struct ctxListCB {
