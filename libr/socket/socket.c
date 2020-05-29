@@ -270,7 +270,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 	}
 #endif
 	int ret;
-	struct addrinfo hints = {0};
+	struct addrinfo hints = { 0 };
 	struct addrinfo *res, *rp;
 	if (!proto) {
 		proto = R_SOCKET_PROTO_TCP;
@@ -321,13 +321,13 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 				tv.tv_sec = timeout;
 				tv.tv_usec = 0;
 				fd_set wfds;
-				FD_ZERO(&wfds);
-				FD_SET(s->fd, &wfds);
+				FD_ZERO (&wfds);
+				FD_SET (s->fd, &wfds);
 
 				if ((ret = select (s->fd + 1, NULL, &wfds, NULL, &tv)) != -1) {
 					if (r_socket_is_connected (s)) {
 						freeaddrinfo (res);
-						return true;
+						goto success;
 					}
 				} else {
 					perror ("connect");
@@ -341,17 +341,44 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 			return false;
 		}
 	}
+success:
 #if HAVE_LIB_SSL
 	if (s->is_ssl) {
 		s->ctx = SSL_CTX_new (SSLv23_client_method ());
 		if (!s->ctx) {
-			r_socket_free (s);
+			r_socket_close (s);
 			return false;
 		}
 		s->sfd = SSL_new (s->ctx);
 		SSL_set_fd (s->sfd, s->fd);
-		if (SSL_connect (s->sfd) != 1) {
-			r_socket_free (s);
+		int ret = SSL_connect (s->sfd);
+		if (ret != 1) {
+			int error = SSL_get_error (s->sfd, ret);
+			int tries = 10;
+			while (tries && ret && (error == 2 || error == 3)) {
+				struct timeval tv;
+				tv.tv_sec = 1;
+				tv.tv_usec = 0;
+				fd_set rfds, wfds;
+				FD_ZERO (&rfds);
+				FD_ZERO (&wfds);
+				if (error == 2) {
+					FD_SET (s->fd, &rfds);
+				} else {
+					FD_SET (s->fd, &wfds);
+				}
+				if ((ret = select (s->fd + 1, &rfds, &wfds, NULL, &tv)) < 1) {
+					r_socket_close (s);
+					return false;
+				}
+				ret = SSL_connect (s->sfd);
+				if (ret == 1) {
+					return true;
+				}
+				error = SSL_get_error (s->sfd, ret);
+				tries--;
+			}
+			r_socket_close (s);
 			return false;
 		}
 	}
@@ -627,19 +654,10 @@ R_API int r_socket_flush(RSocket *s) {
 	return true;
 }
 
-// XXX: rewrite it to use select //
 /* waits secs until new data is received.	  */
 /* returns -1 on error, 0 is false, 1 is true */
 R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
-#if __UNIX__
-	//int msecs = (1000 * secs) + (usecs / 1000);
-	int msecs = (usecs / 1000);
-	struct pollfd fds[1];
-	fds[0].fd = s->fd;
-	fds[0].events = POLLIN | POLLPRI;
-	fds[0].revents = POLLNVAL | POLLHUP | POLLERR;
-	return poll ((struct pollfd *)&fds, 1, msecs);
-#elif __WINDOWS__
+#if __UNIX__ || __WINDOWS__
 	fd_set rfds;
 	struct timeval tv;
 	if (s->fd == R_INVALID_SOCKET) {
@@ -754,6 +772,13 @@ R_API int r_socket_read_block(RSocket *s, ut8 *buf, int len) {
 	for (ret = 0; ret < len; ) {
 		int r = r_socket_read (s, buf + ret, len - ret);
 		if (r == -1) {
+#if HAVE_LIB_SSL
+			if (SSL_get_error (s->sfd, r) == 2) {
+				if (r_socket_ready (s, 1, 0) == 1) {
+					continue;
+				}
+			}
+#endif
 			return -1;
 		}
 		if (r < 1) {
