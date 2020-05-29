@@ -74,8 +74,8 @@ nth paddr       vaddr      bind   type size lib name
 
 vaddr      paddr      type    name
 ----------------------------------
-0x0000006d 0x0000006d UNKNOWN .data
-0x00000074 0x00000074 UNKNOWN .data
+0x0000006d 0x0000006d ADD_32  .data
+0x00000074 0x00000074 ADD_32  .data
 0x00000080 0x00000080 UNKNOWN MessageBoxA
 0x00000087 0x00000087 UNKNOWN ExitProcess
 
