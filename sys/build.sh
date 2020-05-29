@@ -66,9 +66,6 @@ if [ "`uname`" = Darwin ]; then
 		[ "$(id -u)" = 0 ] || SUDO=sudo
 		[ -n "${NOSUDO}" ] && SUDO=
 	fi
-else
-	[ -n "${PREFIX}" -a "${PREFIX}" != /usr ] && \
-		CFGARG="${CFGARG} --with-rpath"
 fi
 
 [ -z "${PREFIX}" ] && PREFIX="${DEFAULT_PREFIX}"
@@ -94,6 +91,10 @@ done
 
 if [ "${USE_CS5}" = 1 ]; then
 	CFGARG="${CFGARG} --with-capstone5"
+fi
+
+if [ "`uname`" != Darwin -a -n "${PREFIX}" -a "${PREFIX}" != /usr ]; then
+	CFGARG="${CFGARG} --with-rpath"
 fi
 
 ccache --help > /dev/null 2>&1
