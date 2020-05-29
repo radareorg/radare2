@@ -112,3 +112,18 @@ EXPECT=<<EOF
             0x00000ec3      8bec           mov ebp, esp
 EOF
 RUN
+
+NAME=patched reloc x86
+ARGS=-e io.cache=1
+FILE=bins/coff/tif_dir.obj
+CMDS=<<EOF
+af @ sym._TIFFGetField
+pd 1 @ reloc._TIFFVGetField - 1
+axt @ sym._TIFFVGetField
+EOF
+EXPECT=<<EOF
+(reloc._TIFFVGetField)
+|           0x0000b469      e80e000000     call sym._TIFFVGetField     ; RELOC 32 _TIFFVGetField @ 0x00000000 + 0x0
+sym._TIFFGetField 0xb469 [CALL] call sym._TIFFVGetField
+EOF
+RUN
