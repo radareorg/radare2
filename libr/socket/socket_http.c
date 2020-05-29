@@ -3,35 +3,38 @@
 #include <r_socket.h>
 #include <r_util.h>
 
-static int __socket_slurp (RSocket *s, ut8 *buf, int bufsz) {
-	int i;
-	int chsz = 1;
-	// r_socket_block_time (s, 1, 1, 0);
-	if (r_socket_read_block (s, (ut8 *) buf, 1) != 1) {
+static size_t __socket_slurp(RSocket *s, RBuffer *buf) {
+	size_t i;
+	if (r_socket_ready (s, 1, 0) != 1) {
 		return 0;
 	}
-	for (i = 1; i < bufsz; i += chsz) {
-		buf[i] =0;
-		r_socket_block_time (s, 1, 0, 1000);
-		int olen = r_socket_read_block (s, (ut8 *) buf + i , chsz);
-		if (olen != chsz) {
-			buf[i] = 0;
+	r_socket_block_time (s, 1, 0, 1000);
+	for (i = 0; i < 0x2000; i += 1) {
+		ut8 c;
+		int olen = r_socket_read_block (s, &c, 1);
+		if (olen != 1) {
+			r_buf_append_bytes (buf, (ut8 *)"", 1);
 			break;
 		}
+		r_buf_append_bytes (buf, &c, 1);
 	}
 	return i;
 }
 
-static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
+static char *r_socket_http_answer(RSocket *s, int *code, int *rlen) {
 	r_return_val_if_fail (s, NULL);
 	const char *p;
-	int ret, len = 0, bufsz = 32768, delta = 0;
-	char *dn, *buf = calloc (1, bufsz + 32); // XXX: use r_buffer here
-	if (!buf) {
+	int ret, len = 0, delta = 0;
+	char *dn;
+	RBuffer *b = r_buf_new ();
+	if (!b) {
 		return NULL;
 	}
 	char *res = NULL;
-	int olen = __socket_slurp (s, (ut8*)buf, bufsz);
+	size_t olen = __socket_slurp (s, b);
+	char *buf = malloc (olen + 1);
+	r_buf_read_at (b, 0, (ut8 *)buf, olen);
+	buf[olen] = 0;
 	if ((dn = (char*)r_str_casestr (buf, "\n\n"))) {
 		delta += 2;
 	} else if ((dn = (char*)r_str_casestr (buf, "\r\n\r\n"))) {
@@ -73,7 +76,7 @@ static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
 	}
 fail:
 	free (buf);
-// is 's' free'd? isn't this going to cause a double free?
+	r_buf_free (b);
 	r_socket_close (s);
 	if (rlen) {
 		*rlen = len;
@@ -157,7 +160,7 @@ R_API char *r_socket_http_get(const char *url, int *code, int *rlen) {
 	return response;
 }
 
-R_API char *r_socket_http_post (const char *url, const char *data, int *code, int *rlen) {
+R_API char *r_socket_http_post(const char *url, const char *data, int *code, int *rlen) {
 	RSocket *s;
 	bool ssl = r_str_startswith (url, "https://");
 	char *uri = strdup (url);
