@@ -52,6 +52,11 @@ CFLAGS+=-DHAVE_LIB_GMP=1
 BN_LIBS=-lgmp
 endif
 
+# open-ssl
+ifeq (${HAVE_LIB_SSL},1)
+BN_LIBS=${SSL_LDFLAGS}
+endif
+
 #both of these need ssl includes
 ifneq (,$(filter r_socket r_util,$(BINDEPS)))
 ifeq (${HAVE_LIB_SSL},1)
