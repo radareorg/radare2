@@ -287,7 +287,6 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch) {
 			free (rel);
 			return list_rel;
 		}
-		ut8 patch_buf[8];
 		for (j = 0; j < bin->scn_hdrs[i].s_nreloc; j++) {
 			RBinSymbol *symbol = R_NEW0 (RBinSymbol);
 			if (!symbol) {
@@ -306,12 +305,12 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch) {
 			reloc->symbol = symbol;
 			reloc->paddr = bin->scn_hdrs[i].s_scnptr + rel[j].r_vaddr;
 			reloc->vaddr = reloc->paddr;
-			reloc->type = 0;
 			reloc->type = rel[j].r_type;
 			if (symbol->is_imported) {
 				reloc->import = _fill_bin_import (bin, rel[j].r_symndx);
 			} else {
 				int plen = 0;
+				ut8 patch_buf[8];
 				switch (bin->hdr.f_magic) {
 				case COFF_FILE_MACHINE_I386:
 					switch (rel[j].r_type) {
