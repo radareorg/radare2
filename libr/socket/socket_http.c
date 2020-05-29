@@ -3,6 +3,10 @@
 #include <r_socket.h>
 #include <r_util.h>
 
+#if __WINDOWS__
+#include <WinInet.h>
+#endif
+
 static size_t __socket_slurp(RSocket *s, RBuffer *buf) {
 	size_t i;
 	if (r_socket_ready (s, 1, 0) != 1) {
@@ -111,6 +115,62 @@ exit:
 	return res;
 }
 
+#if __WINDOWS__
+static char *__http_get_w32(const char *url, int *code, int *rlen) {
+	HINTERNET hInternet = InternetOpenA ("radare2 "R2_VERSION, INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
+	if (!hInternet) {
+		r_sys_perror ("InternetOpenA");
+		return NULL;
+	}
+	HINTERNET hOpenUrl = InternetOpenUrlA (hInternet, url, NULL, 0, 0, 0);
+	if (!hOpenUrl) {
+		r_sys_perror ("InternetOpenUrlA");
+		InternetCloseHandle (hInternet);
+		return NULL;
+	}
+
+	char *ret = NULL;
+	size_t read_sz = 0x100000;
+	DWORD read = 0, written = 0;
+	bool res = true;
+	do {
+		written += read;
+		if (!res && GetLastError () == ERROR_INSUFFICIENT_BUFFER) {
+			read_sz *= 2;
+		}
+		char *tmp = realloc (ret, read_sz + written);
+		if (!tmp) {
+			R_FREE (ret);
+			goto exit;
+		}
+		ret = tmp;
+	} while (!(res = InternetReadFile (hOpenUrl, ret + written, read_sz, &read)) || read);
+
+	if (written) {
+		char *tmp = realloc (ret, (size_t)written + 1);
+		if (tmp) {
+			ret = tmp;
+			ret[written] = 0;
+		} else {
+			R_FREE (ret);
+		}
+	} else {
+		R_FREE (ret);
+	}
+
+exit:
+	if (rlen) {
+		*rlen = written;
+	}
+	if (code && written) {
+		*code = 200;
+	}
+	InternetCloseHandle (hInternet);
+	InternetCloseHandle (hOpenUrl);
+	return ret;
+}
+#endif
+
 R_API char *r_socket_http_get(const char *url, int *code, int *rlen) {
 	if (code) {
 		*code = 0;
@@ -141,6 +201,9 @@ R_API char *r_socket_http_get(const char *url, int *code, int *rlen) {
 		return res;
 	}
 	free (curl_env);
+#if __WINDOWS__
+	return __http_get_w32 (url, code, rlen);
+#else
 	RSocket *s;
 	int ssl = r_str_startswith (url, "https://");
 #if !HAVE_LIB_SSL
@@ -196,6 +259,7 @@ R_API char *r_socket_http_get(const char *url, int *code, int *rlen) {
 	free (uri);
 	r_socket_free (s);
 	return response;
+#endif
 }
 
 R_API char *r_socket_http_post(const char *url, const char *data, int *code, int *rlen) {
