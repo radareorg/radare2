@@ -260,80 +260,30 @@ R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int proto, unsigned int timeout) {
 	r_return_val_if_fail (s, false);
 #if __WINDOWS__
+#define gai_strerror gai_strerrorA
 	struct sockaddr_in sa;
-	struct hostent *he;
 	WSADATA wsadata;
-	TIMEVAL Timeout;
-	Timeout.tv_sec = timeout;
-	Timeout.tv_usec = 0;
 
 	if (WSAStartup (MAKEWORD (1, 1), &wsadata) == SOCKET_ERROR) {
 		eprintf ("Error creating socket.");
 		return false;
 	}
-	s->fd = socket (AF_INET, SOCK_STREAM, 0);
-	if (s->fd == R_INVALID_SOCKET) {
-		return false;
-	}
-
-	unsigned long iMode = 1;
-	int iResult = ioctlsocket (s->fd, FIONBIO, &iMode);
-	if (iResult != NO_ERROR) {
-		eprintf ("ioctlsocket error: %d\n", iResult);
-	}
-	memset (&sa, 0, sizeof (sa));
-	sa.sin_family = AF_INET;
-	he = (struct hostent *)gethostbyname (host);
-	if (he == (struct hostent*)0) {
-#ifdef _MSC_VER
-		closesocket (s->fd);
-#else
-		close (s->fd);
 #endif
-		return false;
-	}
-	sa.sin_addr = *((struct in_addr *)he->h_addr);
-	s->port = r_socket_port_by_name (port);
-	s->proto = proto;
-	sa.sin_port = htons (s->port);
-	if (!connect (s->fd, (const struct sockaddr*)&sa, sizeof (struct sockaddr))) {
-#ifdef _MSC_VER
-		closesocket (s->fd);
-#else
-		close (s->fd);
-#endif
-		return false;
-	}
-	iMode = 0;
-	iResult = ioctlsocket (s->fd, FIONBIO, &iMode);
-	if (iResult != NO_ERROR) {
-		eprintf ("ioctlsocket error: %d\n", iResult);
-	}
-	if (timeout > 0) {
-		r_socket_block_time (s, 1, timeout, 0);
-	}
-	fd_set Write, Err;
-	FD_ZERO (&Write);
-	FD_ZERO (&Err);
-	FD_SET (s->fd, &Write);
-	FD_SET (s->fd, &Err);
-	select (0, NULL, &Write, &Err, &Timeout);
-	if (FD_ISSET (s->fd, &Write)) {
-		return true;
-	}
-	return false;
-#elif __UNIX__
 	int ret;
 	struct addrinfo hints = {0};
 	struct addrinfo *res, *rp;
 	if (!proto) {
 		proto = R_SOCKET_PROTO_TCP;
 	}
+#if __UNIX__
 	r_sys_signal (SIGPIPE, SIG_IGN);
+#endif
 	if (proto == R_SOCKET_PROTO_UNIX) {
+#if __UNIX__
 		if (!__connect_unix (s, host)) {
 			return false;
 		}
+#endif
 	} else {
 		hints.ai_family = AF_UNSPEC; /* Allow IPv4 or IPv6 */
 		hints.ai_protocol = proto;
@@ -391,7 +341,6 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 			return false;
 		}
 	}
-#endif
 #if HAVE_LIB_SSL
 	if (s->is_ssl) {
 		s->ctx = SSL_CTX_new (SSLv23_client_method ());
@@ -794,21 +743,10 @@ R_API int r_socket_read(RSocket *s, unsigned char *buf, int len) {
 		return SSL_read (s->sfd, buf, len);
 	}
 #endif
-#if __WINDOWS__
-rep:
-	{
-	int ret = recv (s->fd, (void *)buf, len, 0);
-	if (ret == -1) {
-		goto rep;
-	}
-	return ret;
-	}
-#else
 	// int r = read (s->fd, buf, len);
 	int r = recv (s->fd, buf, len, 0);
 	D { eprintf ("READ "); int i; for (i = 0; i<len; i++) { eprintf ("%02x ", buf[i]); } eprintf ("\n"); }
 	return r;
-#endif
 }
 
 R_API int r_socket_read_block(RSocket *s, ut8 *buf, int len) {
