@@ -481,11 +481,16 @@ static void serialize(RAnal *a, RSignItem *it, char *k, char *v) {
 }
 
 static RList *deserialize_sign_space(RAnal *a, RSpace *space){
-	char k[R_SIGN_KEY_MAXSZ];
-	r_return_val_if_fail (a && space, NULL);
+	r_return_val_if_fail (a, NULL);
 
-	serializeKey (a, space, "", k);
-	SdbList *zigns = sdb_foreach_match (a->sdb_zigns, k, false);
+	SdbList *zigns = NULL;
+	if (space) {
+		char k[R_SIGN_KEY_MAXSZ];
+		serializeKey (a, space, "", k);
+		zigns = sdb_foreach_match (a->sdb_zigns, k, false);
+	} else {
+		zigns = sdb_foreach_list(a->sdb_zigns, false);
+	}
 
 	SdbListIter *iter;
 	SdbKv *kv;
@@ -1078,10 +1083,6 @@ static RSignItem *create_graph_sign_from_fcn(RAnal *a, RAnalFunction *fcn) {
 R_API bool r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn) {
 	r_return_val_if_fail (a && fcn, false);
 	RSpace *space = r_spaces_current (&a->zign_spaces);
-	if (!space) {
-		return false;
-	}
-
 	RList *testlist = deserialize_sign_space (a, space);
 	if (!testlist) {
 		return false;
