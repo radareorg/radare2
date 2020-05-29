@@ -112,6 +112,12 @@ exit:
 }
 
 R_API char *r_socket_http_get(const char *url, int *code, int *rlen) {
+	if (code) {
+		*code = 0;
+	}
+	if (rlen) {
+		*rlen = 0;
+	}
 	char *curl_env = r_sys_getenv ("R2_CURL");
 	if (curl_env && atoi (curl_env)) {
 		int len;
@@ -137,17 +143,16 @@ R_API char *r_socket_http_get(const char *url, int *code, int *rlen) {
 	free (curl_env);
 	RSocket *s;
 	int ssl = r_str_startswith (url, "https://");
+#if !HAVE_LIB_SSL
+	if (ssl) {
+		eprintf ("Tried to get '%s', but SSL support is disabled, set R2_CURL=1 to use curl\n", url);
+		return NULL;
+	}
+#endif
 	char *response, *host, *path, *port = "80";
 	char *uri = strdup (url);
 	if (!uri) {
 		return NULL;
-	}
-
-	if (code) {
-		*code = 0;
-	}
-	if (rlen) {
-		*rlen = 0;
 	}
 	host = strstr (uri, "://");
 	if (!host) {
