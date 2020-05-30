@@ -2497,7 +2497,7 @@ beach:
 void __move_panel_to_dir(RCore *core, RPanel *panel, int src) {
 	RPanels *panels = core->panels;
 	__dismantle_panel (panels, panel);
-	int key = __show_status (core, "Move the current panel to direction (h/l): ");
+	int key = __show_status (core, "Move the current panel to direction (h/j/k/l): ");
 	key = r_cons_arrow_to_hjkl (key);
 	__set_refresh_all (core, false, true);
 	switch (key) {
@@ -2585,7 +2585,7 @@ void __move_panel_to_down(RCore *core, RPanel *panel, int src) {
 	int h, w = r_cons_get_size (&h);
 	int p_h = h / 2;
 	int new_h = h - p_h;
-	__set_geometry (&panel->view->pos, 0, p_h - 1, w, p_h - 1);
+	__set_geometry (&panel->view->pos, 0, new_h, w, p_h);
 	int i = 0;
 	for (; i < panels->n_panels - 1; i++) {
 		RPanel *tmp = __get_panel (panels, i);
