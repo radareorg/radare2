@@ -1080,8 +1080,38 @@ static RSignItem *create_graph_sign_from_fcn(RAnal *a, RAnalFunction *fcn) {
 	return item;
 }
 
-R_API bool r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn) {
-	r_return_val_if_fail (a && fcn, false);
+struct bestrow {
+	char *name;
+	double score;
+};
+
+static int score_cmpr(const void *a, const void *b) {
+	double sa = ((struct bestrow *)a)->score;
+	double sb = ((struct bestrow *)b)->score;
+
+	if (sa < sb) {
+		return 1;
+	} else if (sa > sb) {
+		return -1;
+	} else {
+		return 0;
+	}
+}
+
+static bool add_bestrow(RList *list, char *name, double score) {
+	struct bestrow *row = calloc (1, sizeof (struct bestrow));
+	if (!row) {
+		return false;
+	}
+	row->name = name;
+	row->score = score;
+	r_list_append (list, row);
+	r_list_sort (list, &score_cmpr);
+	return true;
+}
+
+R_API bool r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count) {
+	r_return_val_if_fail (a && fcn && count > 0, false);
 	RSpace *space = r_spaces_current (&a->zign_spaces);
 	RList *testlist = deserialize_sign_space (a, space);
 	if (!testlist) {
@@ -1094,25 +1124,50 @@ R_API bool r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn) {
 		return false;
 	}
 
+	bool ret = false;
 	RSignItem *si;
 	RListIter *itr;
-	double highscore = -1;
-	RSignItem *bestsig = NULL;
+	double highscore = 1;
+	RList *output = r_list_newf ((RListFree)free);
+	int index = 0;
+	struct bestrow *row;
 
 	r_list_foreach (testlist, itr, si) {
 		double score = matchGraph (si, test);
-		if (score > highscore) {
-			highscore = score;
-			bestsig = si;
+		if (index < count) {
+			if (!add_bestrow (output, si->name, score)) {
+				goto beach;
+			}
+			// get worst score of first count entries
+			if (score < highscore) {
+				highscore = score;
+			}
+		} else {
+			if (score > highscore) {
+				// remove last entry
+				row = r_list_pop (output);
+				free (row);
+
+				// add new entry
+				if (!add_bestrow (output, si->name, score)) {
+					goto beach;
+				}
+
+				// new high score is lowest high score in list
+				row = r_list_get_top (output);
+				highscore = row->score;
+			}
 		}
+		index++;
 	}
 
-	bool ret = false;
-	if (bestsig) {
-		a->cb_printf ("%02.5lf G %s\n", bestsig->name, highscore);
-		ret = true;
+	ret = true;
+	r_list_foreach (output, itr, row) {
+		a->cb_printf ("%02.5lf G %s\n", row->score, row->name);
 	}
 
+beach:
+	r_list_free (output);
 	r_list_free (testlist);
 	r_sign_item_free (test);
 	return ret;

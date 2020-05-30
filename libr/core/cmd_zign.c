@@ -11,7 +11,7 @@ static const char *help_msg_z[] = {
 	"Usage:", "z[*j-aof/cs] [args] ", "# Manage zignatures",
 	"z", "", "show zignatures",
 	"z.", "", "find matching zignatures in current offset",
-	"zb", "", "find closest matching graph zignature at current offset",
+	"zb", "[n]", "find n closest matching graph zignature at current offset",
 	"z*", "", "show zignatures in radare format",
 	"zq", "", "show zignatures in quiet mode",
 	"zj", "", "show zignatures in json format",
@@ -1052,7 +1052,16 @@ static int bestmatch(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	RListIter *iter;
 	RAnalFunction *fcni = NULL;
-	bool ret;
+	int ret = 0;
+	int count = 5;
+
+	if (input[0] != '\x00') {
+		count = atoi (input);
+		if (count == 0) {
+			eprintf ("[!!] invalid number %s\n", input);
+			return ret;
+		}
+	}
 
 	r_cons_break_push (NULL, NULL);
 	r_list_foreach (core->anal->fcns, iter, fcni) {
@@ -1060,7 +1069,9 @@ static int bestmatch(void *data, const char *input) {
 			break;
 		}
 		if (fcni->addr == core->offset) {
-			ret = r_sign_find_closest_sig (core->anal, fcni);
+			if (r_sign_find_closest_sig (core->anal, fcni, count)) {
+				ret = 1;
+			}
 			break;
 		}
 	}
