@@ -755,11 +755,16 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 	}
 	buf = obuf;
 	buf_end = obuf + len;
+	bool isLastHeader = true;
 	buf = r_bin_dwarf_parse_lnp_header (a->cur, buf, buf_end, &hdr, f, mode);
-	while (buf + 1 < buf_end) {
+	while (buf + 1 < buf_end || !isLastHeader) {
 		buf_size = buf_end - buf; // ?? isn't this basically len
 		if (!buf) {
 			return false;
+		}
+		if (!isLastHeader) {
+			r_bin_dwarf_header_fini (&hdr);
+			buf = r_bin_dwarf_parse_lnp_header (a->cur, buf, buf_end, &hdr, f, mode);
 		}
 		r_bin_dwarf_set_regs_default (&hdr, &regs);
 		ut64 unit_length;
@@ -768,7 +773,14 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 		} else {
 			unit_length = hdr.unit_length.part1 + 4;
 		}
-		buf_size = R_MIN (buf_size, unit_length);
+		if (buf_size > unit_length) {
+			buf_size = unit_length;
+			isLastHeader = false;
+		}
+		else {
+			isLastHeader = true;
+		}
+
 		if (buf_size < 1) {
 			break;
 		}
