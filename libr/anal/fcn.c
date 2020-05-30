@@ -368,6 +368,13 @@ static const char *retpoline_reg(RAnal *anal, ut64 addr) {
 		const char *thunk = strstr (flag->name, token);
 		if (thunk) {
 			return thunk + strlen (token);
+		} else {
+			token = "llvm_retpoline_";
+			thunk = strstr (flag->name, token);
+			if (thunk) {
+				// 3 for the register which applies
+				return thunk + strlen (token) + 3;
+			}
 		}
 	}
 #if 0

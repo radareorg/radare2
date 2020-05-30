@@ -1044,3 +1044,220 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=rabin2 -g
+FILE=bins/elf/analysis/x86-helloworld-clang
+CMDS=!rabin2 -g ${R2_FILE}
+EXPECT=<<EOF
+
+[Sections]
+
+nth paddr        size vaddr       vsize perm name
+―――――――――――――――――――――――――――――――――――――――――――――――――
+0   0x00000000    0x0 0x00000000    0x0 ---- 
+1   0x000002a8   0x1c 0x004002a8   0x1c -r-- .interp
+2   0x000002c4   0x24 0x004002c4   0x24 -r-- .note.gnu.build_id
+3   0x000002e8   0x20 0x004002e8   0x20 -r-- .note.ABI_tag
+4   0x00000308   0x1c 0x00400308   0x1c -r-- .gnu.hash
+5   0x00000328   0x48 0x00400328   0x48 -r-- .dynsym
+6   0x00000370   0x38 0x00400370   0x38 -r-- .dynstr
+7   0x000003a8    0x6 0x004003a8    0x6 -r-- .gnu.version
+8   0x000003b0   0x20 0x004003b0   0x20 -r-- .gnu.version_r
+9   0x000003d0   0x30 0x004003d0   0x30 -r-- .rela.dyn
+10  0x00001000   0x1b 0x00401000   0x1b -r-x .init
+11  0x00001020  0x195 0x00401020  0x195 -r-x .text
+12  0x000011b8    0xd 0x004011b8    0xd -r-x .fini
+13  0x00002000    0x4 0x00402000    0x4 -r-- .rodata
+14  0x00002004   0x34 0x00402004   0x34 -r-- .eh_frame_hdr
+15  0x00002038   0xc0 0x00402038   0xc0 -r-- .eh_frame
+16  0x00002e50    0x8 0x00403e50    0x8 -rw- .init_array
+17  0x00002e58    0x8 0x00403e58    0x8 -rw- .fini_array
+18  0x00002e60  0x190 0x00403e60  0x190 -rw- .dynamic
+19  0x00002ff0   0x10 0x00403ff0   0x10 -rw- .got
+20  0x00003000   0x18 0x00404000   0x18 -rw- .got.plt
+21  0x00003018   0x10 0x00404018   0x10 -rw- .data
+22  0x00003028    0x0 0x00404028    0x8 -rw- .bss
+23  0x00003028   0x43 0x00000000   0x43 ---- .comment
+24  0x00003070  0x588 0x00000000  0x588 ---- .symtab
+25  0x000035f8  0x1c8 0x00000000  0x1c8 ---- .strtab
+26  0x000037c0   0xf9 0x00000000   0xf9 ---- .shstrtab
+
+[Segments]
+
+nth paddr        size vaddr       vsize perm name
+―――――――――――――――――――――――――――――――――――――――――――――――――
+0   0x00000040  0x268 0x00400040  0x268 -r-- PHDR
+1   0x000002a8   0x1c 0x004002a8   0x1c -r-- INTERP
+2   0x00000000  0x400 0x00400000  0x400 -r-- LOAD0
+3   0x00001000  0x1c5 0x00401000  0x1c5 -r-x LOAD1
+4   0x00002000   0xf8 0x00402000   0xf8 -r-- LOAD2
+5   0x00002e50  0x1d8 0x00403e50  0x1e0 -rw- LOAD3
+6   0x00002e60  0x190 0x00403e60  0x190 -rw- DYNAMIC
+7   0x000002c4   0x44 0x004002c4   0x44 -r-- NOTE
+8   0x00002004   0x34 0x00402004   0x34 -r-- GNU_EH_FRAME
+9   0x00000000    0x0 0x00000000    0x0 -rw- GNU_STACK
+10  0x00002e50  0x1b0 0x00403e50  0x1b0 -r-- GNU_RELRO
+11  0x00000000   0x40 0x00400000   0x40 -rw- ehdr
+
+[Entrypoints]
+vaddr=0x00401020 paddr=0x00001020 haddr=0x00000018 hvaddr=0x00400018 type=program
+
+1 entrypoints
+[Constructors]
+vaddr=0x00401100 paddr=0x00001100 hvaddr=0x00403e50 hpaddr=0x00002e50 type=init
+vaddr=0x004010d0 paddr=0x000010d0 hvaddr=0x00403e58 hpaddr=0x00002e58 type=fini
+
+2 entrypoints
+[Main]
+vaddr=0x00401110 paddr=0x00401110
+[Imports]
+nth vaddr      bind   type   lib name
+―――――――――――――――――――――――――――――――――――――
+1   0x00000000 GLOBAL FUNC       __libc_start_main
+2   0x00000000 WEAK   NOTYPE     __gmon_start__
+
+[Symbols]
+
+nth paddr       vaddr      bind   type   size lib name
+――――――――――――――――――――――――――――――――――――――――――――――――――――――
+1    0x000002a8 0x004002a8 LOCAL  SECT   0        .interp
+2    0x000002c4 0x004002c4 LOCAL  SECT   0        .note.gnu.build-id
+3    0x000002e8 0x004002e8 LOCAL  SECT   0        .note.ABI-tag
+4    0x00000308 0x00400308 LOCAL  SECT   0        .gnu.hash
+5    0x00000328 0x00400328 LOCAL  SECT   0        .dynsym
+6    0x00000370 0x00400370 LOCAL  SECT   0        .dynstr
+7    0x000003a8 0x004003a8 LOCAL  SECT   0        .gnu.version
+8    0x000003b0 0x004003b0 LOCAL  SECT   0        .gnu.version_r
+9    0x000003d0 0x004003d0 LOCAL  SECT   0        .rela.dyn
+10   0x00001000 0x00401000 LOCAL  SECT   0        .init
+11   0x00001020 0x00401020 LOCAL  SECT   0        .text
+12   0x000011b8 0x004011b8 LOCAL  SECT   0        .fini
+13   0x00002000 0x00402000 LOCAL  SECT   0        .rodata
+14   0x00002004 0x00402004 LOCAL  SECT   0        .eh_frame_hdr
+15   0x00002038 0x00402038 LOCAL  SECT   0        .eh_frame
+16   0x00002e50 0x00403e50 LOCAL  SECT   0        .init_array
+17   0x00002e58 0x00403e58 LOCAL  SECT   0        .fini_array
+18   0x00002e60 0x00403e60 LOCAL  SECT   0        .dynamic
+19   0x00002ff0 0x00403ff0 LOCAL  SECT   0        .got
+20   0x00003000 0x00404000 LOCAL  SECT   0        .got.plt
+21   0x00003018 0x00404018 LOCAL  SECT   0        .data
+22   ---------- 0x00404028 LOCAL  SECT   0        .bss
+23   ---------- 0x00000000 LOCAL  SECT   0        .comment
+24   ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
+25   0x00001060 0x00401060 LOCAL  FUNC   0        deregister_tm_clones
+26   0x00001090 0x00401090 LOCAL  FUNC   0        register_tm_clones
+27   0x000010d0 0x004010d0 LOCAL  FUNC   0        __do_global_dtors_aux
+28   ---------- 0x00404028 LOCAL  OBJ    1        completed.8059
+29   0x00002e58 0x00403e58 LOCAL  OBJ    0        __do_global_dtors_aux_fini_array_entry
+30   0x00001100 0x00401100 LOCAL  FUNC   0        frame_dummy
+31   0x00002e50 0x00403e50 LOCAL  OBJ    0        __frame_dummy_init_array_entry
+32   ---------- 0x00000000 LOCAL  FILE   0        a.c
+33   ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
+34   0x000020f4 0x004020f4 LOCAL  OBJ    0        __FRAME_END__
+35   ---------- 0x00000000 LOCAL  FILE   0        
+36   0x00002e58 0x00403e58 LOCAL  NOTYPE 0        __init_array_end
+37   0x00002e60 0x00403e60 LOCAL  OBJ    0        _DYNAMIC
+38   0x00002e50 0x00403e50 LOCAL  NOTYPE 0        __init_array_start
+39   0x00002004 0x00402004 LOCAL  NOTYPE 0        __GNU_EH_FRAME_HDR
+40   0x00003000 0x00404000 LOCAL  OBJ    0        _GLOBAL_OFFSET_TABLE_
+41   0x000011b0 0x004011b0 GLOBAL FUNC   5        __libc_csu_fini
+42   0x00003018 0x00404018 WEAK   NOTYPE 0        data_start
+43   ---------- 0x00404028 GLOBAL NOTYPE 0        _edata
+44   0x00001120 0x00401120 WEAK   FUNC   21       __llvm_retpoline_r11
+45   0x000011b8 0x004011b8 GLOBAL FUNC   0        _fini
+47   0x00003018 0x00404018 GLOBAL NOTYPE 0        __data_start
+49   0x00003020 0x00404020 GLOBAL OBJ    0        __dso_handle
+50   0x00002000 0x00402000 GLOBAL OBJ    4        _IO_stdin_used
+51   0x00001140 0x00401140 GLOBAL FUNC   101      __libc_csu_init
+52   ---------- 0x00404030 GLOBAL NOTYPE 0        _end
+53   0x00001050 0x00401050 GLOBAL FUNC   5        _dl_relocate_static_pie
+54   0x00001020 0x00401020 GLOBAL FUNC   47       _start
+55   ---------- 0x00404028 GLOBAL NOTYPE 0        __bss_start
+56   0x00001110 0x00401110 GLOBAL FUNC   15       main
+57   ---------- 0x00404028 GLOBAL OBJ    0        __TMC_END__
+58   0x00001000 0x00401000 GLOBAL FUNC   0        _init
+1    ---------- 0x00000000 GLOBAL FUNC   16       imp.__libc_start_main
+2    ---------- 0x00000000 WEAK   NOTYPE 16       imp.__gmon_start__
+[Strings]
+nth paddr vaddr len size section type string
+――――――――――――――――――――――――――――――――――――――――――――
+arch     x86
+baddr    0x400000
+binsz    14521
+bintype  elf
+bits     64
+canary   false
+class    ELF64
+compiler GCC: (Ubuntu 9.3.0-10ubuntu2) 9.3.0 clang version 10.0.0-4ubuntu1
+crypto   false
+endian   little
+havecode true
+intrp    /lib64/ld-linux-x86-64.so.2
+laddr    0x0
+lang     c
+linenum  true
+lsyms    true
+machine  AMD x86-64 architecture
+maxopsz  16
+minopsz  1
+nx       true
+os       linux
+pcalign  0
+pic      false
+relocs   true
+relro    partial
+rpath    NONE
+sanitiz  false
+static   false
+stripped false
+subsys   linux
+va       true
+0x00000000  ELF64       0x464c457f
+0x00000010  Type        0x0002
+0x00000012  Machine     0x003e
+0x00000014  Version     0x00000001
+0x00000018  Entrypoint  0x00401020
+0x00000020  PhOff       0x00000040
+0x00000028  ShOff       0x000038c0
+[Linked libraries]
+libc.so.6
+
+1 library
+[Relocations]
+
+vaddr      paddr      type   name
+―――――――――――――――――――――――――――――――――
+0x00403ff0 0x00002ff0 SET_64 __libc_start_main
+0x00403ff8 0x00002ff8 SET_64 __gmon_start__
+
+
+2 relocations
+14521
+Version symbols section '.gnu.version' contains 3 entries:
+ Addr: 0x004003a8  Offset: 0x000003a8  Link: 5 (.dynsym)
+  0x00000000: 0 (*local*)
+  0x00000001: 2 (GLIBC_2.2.5)
+  0x00000002: 0 (*local*)
+
+
+Version need section '.gnu.version_r' contains 1 entries:
+ Addr: 0x004003b0  Offset: 0x000003b0  Link to section: 6 (.dynstr)
+  0x00000000: Version: 1  File: libc.so.6  Cnt: 1
+  0x00000010:   Name: GLIBC_2.2.5  Flags: none Version: 2
+Section to Segment mapping:
+Segment      Section
+--------------------
+PHDR         
+INTERP       .interp 
+LOAD0        .interp .note.gnu.build_id .note.ABI_tag .gnu.hash .dynsym .dynstr .gnu.version .gnu.version_r .rela.dyn 
+LOAD1        .init .text .fini 
+LOAD2        .rodata .eh_frame_hdr .eh_frame 
+LOAD3        .init_array .fini_array .dynamic .got .got.plt .data .bss 
+DYNAMIC      .dynamic 
+NOTE         .note.gnu.build_id .note.ABI_tag 
+GNU_EH_FRAME .eh_frame_hdr 
+GNU_STACK    
+GNU_RELRO    .init_array .fini_array .dynamic .got 
+ehdr
+
+EOF
