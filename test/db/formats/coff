@@ -118,7 +118,7 @@ ARGS=-e io.cache=1
 FILE=bins/coff/tif_dir.obj
 CMDS=<<EOF
 af @ sym._TIFFGetField
-pd 1 @ reloc._TIFFVGetField - 1
+pd 1 @ reloc._TIFFVGetField-1
 axt @ sym._TIFFVGetField
 EOF
 EXPECT=<<EOF
