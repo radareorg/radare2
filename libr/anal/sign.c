@@ -489,7 +489,7 @@ static RList *deserialize_sign_space(RAnal *a, RSpace *space){
 		serializeKey (a, space, "", k);
 		zigns = sdb_foreach_match (a->sdb_zigns, k, false);
 	} else {
-		zigns = sdb_foreach_list(a->sdb_zigns, false);
+		zigns = sdb_foreach_list (a->sdb_zigns, false);
 	}
 
 	SdbListIter *iter;
