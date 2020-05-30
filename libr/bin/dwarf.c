@@ -692,14 +692,27 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 	return buf;
 }
 
-static const ut8* r_bin_dwarf_parse_opcodes(const RBin *a, const ut8 *obuf,
+static void r_bin_dwarf_set_regs_default(const RBinDwarfLNPHeader *hdr, RBinDwarfSMRegisters *regs) {
+	regs->address = 0;
+	regs->file = 1;
+	regs->line = 1;
+	regs->column = 0;
+	regs->is_stmt = hdr->default_is_stmt;
+	regs->basic_block = DWARF_FALSE;
+	regs->end_sequence = DWARF_FALSE;
+	regs->prologue_end = DWARF_FALSE;
+	regs->epilogue_begin = DWARF_FALSE;
+	regs->isa = 0;
+}
+
+static size_t r_bin_dwarf_parse_opcodes(const RBin *a, const ut8 *obuf,
 		size_t len, const RBinDwarfLNPHeader *hdr,
 		RBinDwarfSMRegisters *regs, FILE *f, int mode) {
 	const ut8 *buf, *buf_end;
 	ut8 opcode, ext_opcode;
 
 	if (!a || !obuf || len < 8) {
-		return NULL;
+		return 0;
 	}
 	buf = obuf;
 	buf_end = obuf + len;
@@ -711,6 +724,7 @@ static const ut8* r_bin_dwarf_parse_opcodes(const RBin *a, const ut8 *obuf,
 			ext_opcode = *buf;
 			buf = r_bin_dwarf_parse_ext_opcode (a, buf, len, hdr, regs, f, mode);
 			if (!buf || ext_opcode == DW_LNE_end_sequence) {
+				r_bin_dwarf_set_regs_default (hdr, regs);
 				break;
 			}
 		} else if (opcode >= hdr->opcode_base) {
@@ -720,25 +734,16 @@ static const ut8* r_bin_dwarf_parse_opcodes(const RBin *a, const ut8 *obuf,
 		}
 		len = (int)(buf_end - buf);
 	}
-	return buf;
+	return (size_t)(buf_end - buf);
 }
 
-static void r_bin_dwarf_set_regs_default(const RBinDwarfLNPHeader *hdr, RBinDwarfSMRegisters *regs) {
-	regs->address = 0;
-	regs->file = 1;
-	regs->line = 1;
-	regs->column = 0;
-	regs->is_stmt = hdr->default_is_stmt;
-	regs->basic_block = DWARF_FALSE;
-	regs->end_sequence = DWARF_FALSE;
-}
 
 R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 				       size_t len, int mode) {
 	RBinDwarfLNPHeader hdr = {{0}};
-	const ut8 *buf = NULL, *buf_tmp = NULL, *buf_end = NULL;
+	const ut8 *buf = NULL, *buf_end = NULL;
 	RBinDwarfSMRegisters regs;
-	size_t tmplen;
+	size_t buf_size;
 	FILE *f = NULL;
 	RBinFile *binfile = a ? a->cur : NULL;
 
@@ -750,10 +755,9 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 	}
 	buf = obuf;
 	buf_end = obuf + len;
+	buf = r_bin_dwarf_parse_lnp_header (a->cur, buf, buf_end, &hdr, f, mode);
 	while (buf + 1 < buf_end) {
-		buf_tmp = buf;
-		tmplen = buf_end - buf;
-		buf = r_bin_dwarf_parse_lnp_header (a->cur, buf, buf_end, &hdr, f, mode);
+		buf_size = buf_end - buf; // ?? isn't this basically len
 		if (!buf) {
 			return false;
 		}
@@ -764,19 +768,18 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 		} else {
 			unit_length = hdr.unit_length.part1 + 4;
 		}
-		tmplen = R_MIN (tmplen, unit_length);
-		if (tmplen < 1) {
-			r_bin_dwarf_header_fini (&hdr);
+		buf_size = R_MIN (buf_size, unit_length);
+		if (buf_size < 1) {
 			break;
 		}
-		if (!r_bin_dwarf_parse_opcodes (a, buf, tmplen, &hdr, &regs, f, mode)) {
-			r_bin_dwarf_header_fini (&hdr);
+		size_t bytes_left = r_bin_dwarf_parse_opcodes (a, buf, buf_size, &hdr, &regs, f, mode);
+		if (!bytes_left) {
 			break;
 		}
 
-		r_bin_dwarf_header_fini (&hdr);
-		buf = buf_tmp + tmplen;
+		buf += buf_size - bytes_left;
 	}
+	r_bin_dwarf_header_fini (&hdr);
 	return true;
 }
 
