@@ -82,7 +82,7 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 	return true;
 }
 
-R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char *use_color) {
+R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char *use_color) {
 	int delta, cols, n = 0;
 	const char *fmt, *fmt2, *kwhites;
 	RPrint *pr = NULL;
@@ -128,7 +128,11 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 
 	int itmidx = -1;
 	dbg->creg = NULL;
-	head = r_reg_get_list (dbg->reg, type);
+	if (type == R_REG_TYPE_ALL) {
+		head = dbg->reg->allregs;
+	} else {
+		head = r_reg_get_list (dbg->reg, type);
+	}
 	if (!head) {
 		return false;
 	}
@@ -283,7 +287,7 @@ beach:
 	} else if (n > 0 && (rad == 2 || rad == '=') && ((n%cols))) {
 		dbg->cb_printf ("\n");
 	}
-	return n;
+	return n != 0;
 }
 
 R_API int r_debug_reg_set(struct r_debug_t *dbg, const char *name, ut64 num) {
