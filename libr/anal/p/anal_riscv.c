@@ -469,9 +469,17 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		}
 		// jumps
 		else if (!strcmp (name, "jalr")) {
-			esilprintf (op, "%d,pc,+,%s,=,%s,%s,+,pc,=", op->size, ARG (0), ARG (2), ARG (1));
+			if (ARG (0) != "0") {
+				esilprintf (op, "%d,$$,+,%s,=,%s,%s,+,pc,=", op->size, ARG (0), ARG (2), ARG (1));
+			} else {
+				esilprintf (op, "%s,%s,+,pc,=", ARG (2), ARG (1));
+			}
 		} else if (!strcmp (name, "jal")) {
-			esilprintf (op, "%d,pc,+,%s,=,%s,pc,+,pc,=", op->size, ARG (0), ARG (1));
+			if (ARG (0) != "0") {
+				esilprintf (op, "%d,$$,+,%s,=,%s,pc,=", op->size, ARG (0), ARG (1));
+			} else {
+				esilprintf (op, "%s,pc,=", ARG (1));
+			}
 		} else if (!strcmp (name, "jr") || !strcmp (name, "j")) {
 			esilprintf (op, "%s,pc,=", ARG (0));
 		} else if (!strcmp (name, "ecall") || !strcmp (name, "ebreak")) {

@@ -479,7 +479,26 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 				snprintf (num, sizeof (num), "0%o", (int)off);
 				break;
 			case 10:
-				snprintf (num, sizeof (num), "%" PFMT64d, (st64)off);
+				{
+					RList *regs = r_reg_get_list (p->analb.anal->reg, R_REG_TYPE_GPR);
+					RRegItem *reg;
+					RListIter *iter;
+					bool imm32 = false;
+					r_list_foreach (regs, iter, reg) {
+						if (reg->size == 32 && r_str_casestr (data, reg->name)) {
+							imm32 = true;
+							break;
+						}
+					}
+					if (imm32) {
+						snprintf (num, sizeof (num), "%"PFMT32d, (st32)off);
+						break;
+					}
+					snprintf (num, sizeof (num), "%"PFMT64d, (st64)off);
+				}
+				break;
+			case 11:
+				snprintf (num, sizeof (num), "%"PFMT64u, off);
 				break;
 			case 32:
 				{

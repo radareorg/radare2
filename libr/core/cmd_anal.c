@@ -580,7 +580,7 @@ static const char *help_msg_ah[] = {
 	"ahf", " 0x804840", "override fallback address for call",
 	"ahF", " 0x10", "set stackframe size at current offset",
 	"ahh", " 0x804840", "highlight this address offset in disasm",
-	"ahi", "[?] 10", "define numeric base for immediates (2, 8, 10, 16, i, p, S, s)",
+	"ahi", "[?] 10", "define numeric base for immediates (2, 8, 10, 10u, 16, i, p, S, s)",
 	"ahj", "", "list hints in JSON",
 	"aho", " call", "change opcode type (see aho?) (deprecated, moved to \"ahd\")",
 	"ahp", " addr", "set pointer hint",
@@ -593,11 +593,12 @@ static const char *help_msg_ah[] = {
 };
 
 static const char *help_msg_ahi[] = {
-	"Usage:", "ahi [2|8|10|16|bodhipSs] [@ offset]", " Define numeric base",
+	"Usage:", "ahi [2|8|10|10u|16|bodhipSs] [@ offset]", " Define numeric base",
 	"ahi", " <base>", "set numeric base (2, 8, 10, 16)",
+	"ahi", " 10|d", "set base to signed decimal (10), sign bit should depend on receiver size",
+	"ahi", " 10u|du", "set base to unsigned decimal (11)",
 	"ahi", " b", "set base to binary (2)",
 	"ahi", " o", "set base to octal (8)",
-	"ahi", " d", "set base to decimal (10)",
 	"ahi", " h", "set base to hexadecimal (16)",
 	"ahi", " i", "set base to IP address (32)",
 	"ahi", " p", "set base to htons(port) (3)",
@@ -7615,16 +7616,20 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		}
 		if (input[1] == ' ') {
 			// You can either specify immbase with letters, or numbers
-			const int base =
-				(input[2] == 's') ? 1 :
-				(input[2] == 'b') ? 2 :
-				(input[2] == 'p') ? 3 :
-				(input[2] == 'o') ? 8 :
-				(input[2] == 'd') ? 10 :
-				(input[2] == 'h') ? 16 :
-				(input[2] == 'i') ? 32 : // ip address
-				(input[2] == 'S') ? 80 : // syscall
-				(int) r_num_math (core->num, input + 1);
+			int base;
+			if (r_str_startswith (input + 2, "10u") || r_str_startswith (input + 2, "du")) {
+				base = 11;
+			} else {
+				base = (input[2] == 's') ? 1 :
+				       (input[2] == 'b') ? 2 :
+				       (input[2] == 'p') ? 3 :
+				       (input[2] == 'o') ? 8 :
+				       (input[2] == 'd') ? 10 :
+				       (input[2] == 'h') ? 16 :
+				       (input[2] == 'i') ? 32 : // ip address
+				       (input[2] == 'S') ? 80 : // syscall
+				       (int) r_num_math (core->num, input + 1);
+			}
 			r_anal_hint_set_immbase (core->anal, core->offset, base);
 		} else if (input[1] != '?' && input[1] != '-') {
 			eprintf ("|ERROR| Usage: ahi <base>\n");

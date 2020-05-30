@@ -357,3 +357,53 @@ EXPECT=<<EOF
 0x00000000 mov dword [rbp - 0x78], 16762435
 EOF
 RUN
+
+NAME=ahi 10 and 10u imm (x86_32)
+ARGS=-a x86 -b 32
+FILE=-
+CMDS=<<EOF
+e asm.bytes=false
+"wa cmp eax, -1"
+pd 1
+ahi 10
+pd 1
+ahi 10u
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      cmp eax, 0xffffffff
+            0x00000000      cmp eax, -1
+            0x00000000      cmp eax, 4294967295
+EOF
+RUN
+
+NAME=ahi 10 and 10u imm (x86_64)
+ARGS=-a x86 -b 64
+FILE=-
+CMDS=<<EOF
+e asm.bytes=false
+"wa cmp eax, -1"
+pd 1
+ahi 10
+pd 1
+ahi 10u
+pd 1
+?e
+ah-
+"wa cmp rax, -1"
+pd 1
+ahi 10
+pd 1
+ahi 10u
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      cmp eax, 0xffffffff
+            0x00000000      cmp eax, -1
+            0x00000000      cmp eax, 4294967295
+
+            0x00000000      cmp rax, 0xffffffffffffffff
+            0x00000000      cmp rax, -1
+            0x00000000      cmp rax, 18446744073709551615
+EOF
+RUN
