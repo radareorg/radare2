@@ -829,7 +829,7 @@ R_API bool r_sys_mkdirp(const char *dir) {
 	{
 		char *p = strstr (ptr, ":\\");
 		if (p) {
-			ptr = p + 2;
+			ptr = p + 3;
 		}
 	}
 #endif
