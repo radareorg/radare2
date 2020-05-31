@@ -756,7 +756,7 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 	size_t buf_size;
 
 	// each iteration we read one header AKA comp. unit
-	while (buf + 1 < buf_end) {
+	while (buf <= buf_end) {
 		// How much did we read from the compilation unit
 		size_t bytes_read = 0;
 		// calculate how much we've read by parsing header
