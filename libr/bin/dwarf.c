@@ -737,28 +737,27 @@ static size_t r_bin_dwarf_parse_opcodes(const RBin *a, const ut8 *obuf,
 	return (size_t)(buf_end - buf);
 }
 
-
+// Is it problem to rename to raw? I don't know why its raw2
 R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 				       size_t len, int mode) {
-	RBinDwarfLNPHeader hdr = {{0}};
-	const ut8 *buf = NULL, *buf_end = NULL;
-	RBinDwarfSMRegisters regs;
-	size_t buf_size;
-	FILE *f = NULL;
 	RBinFile *binfile = a ? a->cur : NULL;
-
 	if (!binfile || !obuf) {
 		return false;
 	}
+	FILE *f = NULL;
 	if (mode == R_MODE_PRINT) {
 		f = stdout;
 	}
-	buf = obuf;
-	buf_end = obuf + len;
-	bool isLastHeader = true;
-	buf = r_bin_dwarf_parse_lnp_header (a->cur, buf, buf_end, &hdr, f, mode);
+	const ut8 *buf = obuf;
+	const ut8 *buf_end = obuf + len;
+
+	RBinDwarfLNPHeader hdr = {{0}};
+	size_t buf_size; // buffer of the sequence to read
+	bool isLastHeader = false; // Header = compilation unit
+
+	// Every loop there is 1 sequence read
 	while (buf + 1 < buf_end || !isLastHeader) {
-		buf_size = buf_end - buf; // ?? isn't this basically len
+		buf_size = buf_end - buf;
 		if (!buf) {
 			return false;
 		}
@@ -766,26 +765,26 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 			r_bin_dwarf_header_fini (&hdr);
 			buf = r_bin_dwarf_parse_lnp_header (a->cur, buf, buf_end, &hdr, f, mode);
 		}
+		RBinDwarfSMRegisters regs;
 		r_bin_dwarf_set_regs_default (&hdr, &regs);
-		ut64 unit_length;
-		if (hdr.unit_length.part1 == DWARF_INIT_LEN_64) {
-			unit_length = hdr.unit_length.part2 + 4;
-		} else {
-			unit_length = hdr.unit_length.part1 + 4;
-		}
+
+		ut64 unit_length = (hdr.unit_length.part1 == DWARF_INIT_LEN_64) ? hdr.unit_length.part2 + 4 : hdr.unit_length.part1 + 4;
+
+		// If there is more bytes in the buffer than size of the header
+		// It means that there has to be another header
 		if (buf_size > unit_length) {
 			buf_size = unit_length;
 			isLastHeader = false;
-		}
-		else {
+		} else {
 			isLastHeader = true;
 		}
 
-		if (buf_size < 1) {
+		if (buf_size <= 0) {
 			break;
 		}
+		
 		size_t bytes_left = r_bin_dwarf_parse_opcodes (a, buf, buf_size, &hdr, &regs, f, mode);
-		if (!bytes_left) {
+		if (bytes_left <= 0) {
 			break;
 		}
 
@@ -1698,11 +1697,13 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 			free (buf);
 			return NULL;
 		}
+		// Actually parse the section
 		r_bin_dwarf_parse_line_raw2 (a, buf, len, mode);
 		// k bin/cur/addrinfo/*
 		SdbListIter *iter;
 		SdbKv *kv;
 		SdbList *ls = sdb_foreach_list (binfile->sdb_addrinfo, false);
+		// Use the parsed information from _raw and transform it to more useful format
 		ls_foreach (ls, iter, kv) {
 			if (!strncmp (sdbkv_key (kv), "0x", 2)) {
 				ut64 addr;
