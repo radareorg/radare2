@@ -751,6 +751,7 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 	const ut8 *buf = obuf;
 	const ut8 *buf_end = obuf + len;
 	const ut8 *tmpbuf = NULL;
+	
 	RBinDwarfLNPHeader hdr = { { 0 } };
 	size_t buf_size;
 
