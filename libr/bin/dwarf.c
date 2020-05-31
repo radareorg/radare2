@@ -724,7 +724,7 @@ static size_t r_bin_dwarf_parse_opcodes(const RBin *a, const ut8 *obuf,
 			ext_opcode = *buf;
 			buf = r_bin_dwarf_parse_ext_opcode (a, buf, len, hdr, regs, f, mode);
 			if (!buf || ext_opcode == DW_LNE_end_sequence) {
-				r_bin_dwarf_set_regs_default (hdr, regs);
+				r_bin_dwarf_set_regs_default (hdr, regs); // end_sequence should reset regs to default
 				break;
 			}
 		} else if (opcode >= hdr->opcode_base) {
@@ -734,7 +734,7 @@ static size_t r_bin_dwarf_parse_opcodes(const RBin *a, const ut8 *obuf,
 		}
 		len = (int)(buf_end - buf);
 	}
-	return (size_t)(buf_end - buf);
+	return (size_t) (buf - obuf); // number of bytes we've moved by
 }
 
 // Is it problem to rename to raw? I don't know why its raw2
@@ -750,47 +750,46 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 	}
 	const ut8 *buf = obuf;
 	const ut8 *buf_end = obuf + len;
+	const ut8 *tmpbuf = NULL;
+	RBinDwarfLNPHeader hdr = { { 0 } };
+	size_t buf_size;
 
-	RBinDwarfLNPHeader hdr = {{0}};
-	size_t buf_size; // buffer of the sequence to read
-	bool isLastHeader = false; // Header = compilation unit
+	// each iteration we read one header AKA comp. unit
+	while (buf + 1 < buf_end) {
+		// How much did we read from the compilation unit
+		size_t bytes_read = 0;
+		// calculate how much we've read by parsing header
+		// because header unit_length includes itself
+		tmpbuf = buf;
+		buf = r_bin_dwarf_parse_lnp_header (a->cur, buf, buf_end, &hdr, f, mode);
+		bytes_read = buf - tmpbuf;
 
-	// Every loop there is 1 sequence read
-	while (buf + 1 < buf_end || !isLastHeader) {
 		buf_size = buf_end - buf;
 		if (!buf) {
 			return false;
 		}
-		if (!isLastHeader) {
-			r_bin_dwarf_header_fini (&hdr);
-			buf = r_bin_dwarf_parse_lnp_header (a->cur, buf, buf_end, &hdr, f, mode);
-		}
+
 		RBinDwarfSMRegisters regs;
 		r_bin_dwarf_set_regs_default (&hdr, &regs);
 
 		ut64 unit_length = (hdr.unit_length.part1 == DWARF_INIT_LEN_64) ? hdr.unit_length.part2 + 4 : hdr.unit_length.part1 + 4;
 
 		// If there is more bytes in the buffer than size of the header
-		// It means that there has to be another header
+		// It means that there has to be another header/comp.unit
 		if (buf_size > unit_length) {
 			buf_size = unit_length;
-			isLastHeader = false;
-		} else {
-			isLastHeader = true;
 		}
 
-		if (buf_size <= 0) {
-			break;
-		}
-		
-		size_t bytes_left = r_bin_dwarf_parse_opcodes (a, buf, buf_size, &hdr, &regs, f, mode);
-		if (bytes_left <= 0) {
-			break;
-		}
+		// we read the whole compilation unit (that might be composed of more sequences)
+		do {
+			// reads one whole sequence
+			size_t tmp_read = r_bin_dwarf_parse_opcodes (a, buf, buf_size, &hdr, &regs, f, mode);
+			bytes_read += tmp_read;
+			buf += tmp_read; // Move in the buffer forward
+		} while (bytes_read < buf_size);
 
-		buf += buf_size - bytes_left;
+		r_bin_dwarf_header_fini (&hdr);
 	}
-	r_bin_dwarf_header_fini (&hdr);
 	return true;
 }
 
