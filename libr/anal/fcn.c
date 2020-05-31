@@ -364,16 +364,21 @@ static void fcn_takeover_block_recursive(RAnalFunction *fcn, RAnalBlock *start_b
 static const char *retpoline_reg(RAnal *anal, ut64 addr) {
 	RFlagItem *flag = anal->flag_get (anal->flb.f, addr);
 	if (flag) {
-		const char *token = "x86_indirect_thunk_";
-		const char *thunk = strstr (flag->name, token);
-		if (thunk) {
-			return thunk + strlen (token);
-		} else {
-			token = "llvm_retpoline_";
-			thunk = strstr (flag->name, token);
+		const char *tokens[] = {
+			"x86_indirect_thunk",
+			"llvm_retpoline_r11",
+			"llvm_retpoline_eax",
+			"llvm_retpoline_ecx",
+			"llvm_retpoline_edx",
+			"llvm_retpoline_push",
+		};
+		const size_t tlen = R_ARRAY_SIZE (tokens);
+		size_t i;
+
+		for (i = 0; i < tlen; i++) {
+			const char *thunk = strstr (flag->name, tokens[i]);
 			if (thunk) {
-				// 3 for the register which applies
-				return thunk + strlen (token) + 3;
+				return thunk + strlen (tokens[i]);
 			}
 		}
 	}
