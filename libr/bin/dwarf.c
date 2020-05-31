@@ -781,6 +781,10 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 			buf_size = unit_length;
 		}
 
+		// this deals with a case that there is compilation unit with any line information
+		if (buf_size == bytes_read) { 
+			break;
+		}
 		// we read the whole compilation unit (that might be composed of more sequences)
 		do {
 			// reads one whole sequence
