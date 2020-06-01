@@ -33,7 +33,7 @@ jobs:
       run: cd test/unit && make
       working-directory: radare2
       env:
-        # make install installs, for some unknown reason, pkgconfig files in
-        # /usr/lib and not in /usr/lib64, does pkg-config cannot find the right
+        # `make install` installs, for some unknown reasons, pkgconfig files in
+        # /usr/lib and not in /usr/lib64, thus pkg-config cannot find the right
         # .pc files if the right path is not specified
         PKG_CONFIG_PATH: /usr/lib/pkgconfig
