@@ -783,6 +783,9 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 
 		// this deals with a case that there is compilation unit with any line information
 		if (buf_size == bytes_read) { 
+			if (mode == R_MODE_PRINT) {
+				fprintf(f, "Line table is present, but no lines present\n");
+			}
 			r_bin_dwarf_header_fini (&hdr);
 			continue;
 		}
