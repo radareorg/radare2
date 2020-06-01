@@ -455,8 +455,8 @@ pf?elf_header
 pf? elf_header
 EOF
 EXPECT=<<EOF
-?[2]E[2]E[4]Exxxxwwwwww (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
-?[2]E[2]E[4]Exxxxwwwwww (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
+?[2]E[2]E[4]ExxxxN2N2N2N2N2N2 (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
+?[2]E[2]E[4]ExxxxN2N2N2N2N2N2 (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
 EOF
 RUN
 
@@ -489,13 +489,12 @@ EXPECT=<<EOF
      phoff : 0x0000001c = 0x00000034
      shoff : 0x00000020 = 0x00000000
      flags : 0x00000024 = 0x00000000
-    ehsize : 0x00000028 = 0x0034
- phentsize : 0x0000002a = 0x0020
-     phnum : 0x0000002c = 0x0001
- shentsize : 0x0000002e = 0x0000
-     shnum : 0x00000030 = 0x0000
-  shstrndx : 0x00000032 = 0x0000
+    ehsize : 0x00000028 = 52
+ phentsize : 0x0000002a = 32
+     phnum : 0x0000002c = 1
+ shentsize : 0x0000002e = 0
+     shnum : 0x00000030 = 0
+  shstrndx : 0x00000032 = 0
 EOF
-EXPECT_ERR=<<EOF
-EOF
+EXPECT_ERR=
 RUN
