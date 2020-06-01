@@ -9,6 +9,7 @@ typedef struct {
 	bool swift;
 	bool cxx;
 	bool msvc;
+	bool go;
 } Langs;
 
 static inline bool check_rust(RBinSymbol *sym) {
@@ -35,6 +36,13 @@ static bool check_dlang(RBinSymbol *sym) {
 
 static bool check_swift(RBinSymbol *sym) {
 	if (sym->name && strstr (sym->name, "swift_once")) {
+		return true;
+	}
+	return false;
+}
+
+static bool check_golang(RBinSymbol *sym) {
+	if (sym->name && strstr (sym->name, "go.buildid")) {
 		return true;
 	}
 	return false;
@@ -104,6 +112,12 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 			if (check_rust (sym)) {
 				info->lang = "rust";
 				return R_BIN_NM_RUST;
+			}
+		}
+		if (!cantbe.go) {
+			if (check_golang (sym)) {
+				info->lang = "go";
+				return R_BIN_NM_GO;
 			}
 		}
 		if (!cantbe.swift) {
@@ -213,6 +227,8 @@ R_API const char *r_bin_lang_tostring(int lang) {
 	switch (lang & 0xffff) {
 	case R_BIN_NM_SWIFT:
 		return "swift";
+	case R_BIN_NM_GO:
+		return "go";
 	case R_BIN_NM_JAVA:
 		return "java";
 	case R_BIN_NM_KOTLIN:
