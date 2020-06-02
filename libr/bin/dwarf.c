@@ -256,29 +256,36 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 	hdr->opcode_base = READ8 (buf);
 
 	if (f) {
-		fprintf (f, "DWARF LINE HEADER\n");
-		fprintf (f, "  total_length: %d\n", hdr->unit_length.part1);
-		fprintf (f, "  version: %d\n", hdr->version);
-		fprintf (f, "  header_length: : %"PFMT64d"\n", hdr->header_length);
-		fprintf (f, "  mininstlen: %d\n", hdr->min_inst_len);
-		fprintf (f, "  max_ops_per_inst: %d\n", hdr->max_ops_per_inst);
-		fprintf (f, "  is_stmt: %d\n", hdr->default_is_stmt);
-		fprintf (f, "  line_base: %d\n", hdr->line_base);
-		fprintf (f, "  line_range: %d\n", hdr->line_range);
-		fprintf (f, "  opcode_base: %d\n", hdr->opcode_base);
+		fprintf (f, " Header information:\n");
+		fprintf (f, "  Length:                             %d\n", hdr->unit_length.part1);
+		fprintf (f, "  DWARF Version:                      %d\n", hdr->version);
+		fprintf (f, "  Header Length:                      %"PFMT64d"\n", hdr->header_length);
+		fprintf (f, "  Minimum Instruction Length:         %d\n", hdr->min_inst_len);
+		fprintf (f, "  Maximum Operations per Instruction: %d\n", hdr->max_ops_per_inst);
+		fprintf (f, "  Initial value of 'is_stmt':         %d\n", hdr->default_is_stmt);
+		fprintf (f, "  Line Base:                          %d\n", hdr->line_base);
+		fprintf (f, "  Line Range:                         %d\n", hdr->line_range);
+		fprintf (f, "  Opcode Base:                        %d\n", hdr->opcode_base);
+		fprintf (f, "\n");
 	}
 
 	if (hdr->opcode_base>0) {
 		hdr->std_opcode_lengths = calloc(sizeof(ut8), hdr->opcode_base);
 
+		if (f) {
+			fprintf (f, " Opcodes:\n");
+		}
 		for (i = 1; i <= hdr->opcode_base - 1; i++) {
 			if (buf + 2 > buf_end) {
 				break;
 			}
 			hdr->std_opcode_lengths[i] = READ (buf, ut8);
 			if (f) {
-				fprintf (f, " op %d %d\n", i, hdr->std_opcode_lengths[i]);
+				fprintf (f, "  Opcode %d has %d arg\n", i, hdr->std_opcode_lengths[i]);
 			}
+		}
+		if (f) {
+			fprintf (f, "\n");
 		}
 	} else {
 		hdr->std_opcode_lengths = NULL;
@@ -305,6 +312,12 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 
 	tmp_buf = buf;
 	count = 0;
+	if (f) {
+		fprintf (f, " The File Name Table:\n");
+		fprintf (f, "  Entry Dir     Time      Size       Name\n");
+	}
+	int entry_index = 1; // used for printing information
+
 	for (i = 0; i < 2; i++) {
 		while (buf+1<buf_end) {
 			const char *filename = (const char *)buf;
@@ -364,10 +377,7 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 			}
 			count++;
 			if (f && i) {
-				fprintf (f, "FILE (%s)\n", filename);
-				fprintf (f, "| dir idx %"PFMT64d"\n", id_idx);
-				fprintf (f, "| lastmod %"PFMT64d"\n", mod_time);
-				fprintf (f, "| filelen %"PFMT64d"\n", file_len);
+				fprintf (f, "  %d     %"PFMT64d"       %"PFMT64d"         %"PFMT64d"          %s\n", entry_index++, id_idx, mod_time, file_len, filename);
 			}
 		}
 		if (i == 0) {
@@ -380,6 +390,9 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 			buf = tmp_buf;
 			count = 0;
 		}
+	}
+	if (f) {
+		fprintf (f, "\n");
 	}
 
 beach:
@@ -456,8 +469,9 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 
 	opcode = *buf++;
 
+	// Maybe add offset to the print later?
 	if (f) {
-		fprintf (f, "Extended opcode %d: ", opcode);
+		fprintf (f, "  Extended opcode %d: ", opcode);
 	}
 
 	switch (opcode) {
@@ -550,7 +564,7 @@ static const ut8* r_bin_dwarf_parse_spec_opcode(
 	regs->address += advance_adr;
 	regs->line += hdr->line_base + (adj_opcode % hdr->line_range);
 	if (f) {
-		fprintf (f, "Special opcode %d: ", adj_opcode);
+		fprintf (f, "  Special opcode %d: ", adj_opcode);
 		fprintf (f, "advance Address by %"PFMT64d" to %"PFMT64x" and Line by %d to %"PFMT64d"\n",
 			advance_adr, regs->address, hdr->line_base +
 			(adj_opcode % hdr->line_range), regs->line);
@@ -586,6 +600,10 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 
 	if (!binfile || !hdr || !regs || !obuf) {
 		return NULL;
+	}
+
+	if (f) {
+		fprintf (f, "  "); // formatting
 	}
 	switch (opcode) {
 	case DW_LNS_copy:
@@ -734,6 +752,9 @@ static size_t r_bin_dwarf_parse_opcodes(const RBin *a, const ut8 *obuf,
 		}
 		len = (int)(buf_end - buf);
 	}
+	if (f) {
+		fprintf (f, "\n"); // formatting of the output
+	}
 	return (size_t) (buf - obuf); // number of bytes we've moved by
 }
 
@@ -747,6 +768,7 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 	FILE *f = NULL;
 	if (mode == R_MODE_PRINT) {
 		f = stdout;
+		fprintf (f, "Raw dump of debug contents of section .debug_line:\n\n");
 	}
 	const ut8 *buf = obuf;
 	const ut8 *buf_end = obuf + len;
@@ -763,6 +785,9 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 		// because header unit_length includes itself
 		tmpbuf = buf;
 		buf = r_bin_dwarf_parse_lnp_header (a->cur, buf, buf_end, &hdr, f, mode);
+		if (f) {
+			fprintf (f, " Line Number Statements:\n");
+		}
 		bytes_read = buf - tmpbuf;
 
 		buf_size = buf_end - buf;
@@ -783,8 +808,8 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 
 		// this deals with a case that there is compilation unit with any line information
 		if (buf_size == bytes_read) { 
-			if (mode == R_MODE_PRINT) {
-				fprintf(f, "Line table is present, but no lines present\n");
+			if (f) {
+				fprintf(f, " Line table is present, but no lines present\n");
 			}
 			r_bin_dwarf_header_fini (&hdr);
 			continue;
