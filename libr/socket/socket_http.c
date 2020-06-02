@@ -113,19 +113,25 @@ exit:
 
 R_API char *r_socket_http_get(const char *url, int *code, int *rlen) {
 	char *curl_env = r_sys_getenv ("R2_CURL");
-	if (curl_env && *curl_env) {
-		char *encoded_url = r_str_escape (url);
-		char *res = r_sys_cmd_strf ("curl '%s'", encoded_url);
-		free (encoded_url);
+	if (curl_env && atoi (curl_env)) {
+		int len;
+		char *escaped_url = r_str_escape_sh (url);
+		char *command = r_str_newf ("curl -sfL -o - \"%s\"", escaped_url);
+		char *res = r_sys_cmd_str (command, NULL, &len);
+		free (escaped_url);
+		free (command);
+		free (curl_env);
+		if (!res) {
+			return NULL;
+		}
 		if (res) {
 			if (code) {
 				*code = 200;
 			}
 			if (rlen) {
-				*rlen = strlen (res);
+				*rlen = len;
 			}
 		}
-		free (curl_env);
 		return res;
 	}
 	free (curl_env);
