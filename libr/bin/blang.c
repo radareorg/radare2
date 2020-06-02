@@ -42,7 +42,7 @@ static bool check_swift(RBinSymbol *sym) {
 }
 
 static bool check_golang(RBinSymbol *sym) {
-	if (sym->name && strstr (sym->name, "go.buildid")) {
+	if (!strncmp (sym->name, "go.", 3)) {
 		return true;
 	}
 	return false;
