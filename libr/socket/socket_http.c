@@ -55,6 +55,7 @@ static char *r_socket_http_answer(RSocket *s, int *code, int *rlen) {
 	if (len > 0) {
 		if (len > olen) {
 			res = malloc (len + 2);
+			olen -= dn - buf;
 			memcpy (res, dn + delta, olen);
 			do {
 				ret = r_socket_read_block (s, (ut8*) res + olen, len - olen);
