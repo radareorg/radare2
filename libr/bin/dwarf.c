@@ -565,7 +565,7 @@ static const ut8* r_bin_dwarf_parse_spec_opcode(
 	regs->line += hdr->line_base + (adj_opcode % hdr->line_range);
 	if (f) {
 		fprintf (f, "  Special opcode %d: ", adj_opcode);
-		fprintf (f, "advance Address by %"PFMT64d" to %"PFMT64x" and Line by %d to %"PFMT64d"\n",
+		fprintf (f, "advance Address by %"PFMT64d" to 0x%"PFMT64x" and Line by %d to %"PFMT64d"\n",
 			advance_adr, regs->address, hdr->line_base +
 			(adj_opcode % hdr->line_range), regs->line);
 	}
