@@ -8,6 +8,7 @@ static int lang_v_file(RLang *lang, const char *file);
 
 static const char *r2v = \
 	"module main\n"
+	"import r2.pipe\n"
 	"\n"
 	"#flag `pkg-config --cflags --libs r_core`\n"
 	"\n"
@@ -31,12 +32,12 @@ static const char *r2v = \
 	"        return i64(core).str()\n"
 	"}\n"
 	"\n"
-	"pub fn main() {}\n"
+	"fn main() {}\n"
 	"pub fn (core &R2)free() {\n"
 	"        unsafe {C.r_core_free (core)}\n"
 	"}\n"
 	"\n"
-	"pub fn new() &R2 {\n"
+	"fn new() &R2 {\n"
 	"        return C.r_core_new ()\n"
 	"}\n";
 static const char *vsk = \
@@ -88,19 +89,20 @@ static int lang_v_file(RLang *lang, const char *file) {
 		libname = name;
 	}
 	r_sys_setenv ("PKG_CONFIG_PATH", R2_LIBDIR"/pkgconfig");
-	char *shl = r_str_newf ("%s/lib%s."R_LIB_EXT, libpath, libname);
-	char *buf = r_str_newf ("v -cflags '-shared -fPIC' -o %s build %s", shl, file);
+	char *shl = r_str_newf ("%s/lib%s", libpath, libname);
+	char *she = r_str_newf ("%s/lib%s."R_LIB_EXT, libpath, libname);
+	char *buf = r_str_newf ("v -shared -o %s %s", shl, file);
+	eprintf("v -shared -o %s %s", shl, file);
 	free (name);
 	if (r_sandbox_system (buf, 1) != 0) {
 		free (shl);
 		free (buf);
 		return false;
 	}
-	void *lib = r_lib_dl_open (shl);
-	free (shl);
+	void *lib = r_lib_dl_open (she);
 	if (lib) {
 		void (*fcn)(RCore *, int argc, const char **argv);
-		fcn = r_lib_dl_sym (lib, "main__entry");
+		fcn = r_lib_dl_sym (lib, "entry");
 		if (fcn) {
 			fcn (lang->user, ac, av);
 			ac = 0;
@@ -112,7 +114,9 @@ static int lang_v_file(RLang *lang, const char *file) {
 	} else {
 		eprintf ("Cannot open library\n");
 	}
-	r_file_rm (buf); // remove lib
+	r_file_rm (she);
+	free (she);
+	free (shl);
 	free (buf);
 	return 0;
 }
