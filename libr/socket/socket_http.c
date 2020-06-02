@@ -21,6 +21,18 @@ static size_t __socket_slurp(RSocket *s, RBuffer *buf) {
 	return i;
 }
 
+static char *__recurse_redirect(const char *url, int *code, int *rlen) {
+	static size_t depth = 0;
+	if (depth >= 5) {
+		eprintf ("Too many redirects\n");
+		return NULL;
+	}
+	depth++;
+	char *ret = r_socket_http_get (url, code, rlen);
+	depth--;
+	return ret;
+}
+
 static char *r_socket_http_answer(RSocket *s, int *code, int *rlen) {
 	r_return_val_if_fail (s, NULL);
 	const char *p;
@@ -40,11 +52,25 @@ static char *r_socket_http_answer(RSocket *s, int *code, int *rlen) {
 	} else if ((dn = (char*)r_str_casestr (buf, "\r\n\r\n"))) {
 		delta += 4;
 	} else {
-		goto fail;
+		goto exit;
 	}
 
 	olen -= delta;
 	*dn = 0; // chop headers
+
+	/* Follow redirects */
+	p = r_str_casestr (buf, "Location:");
+	if (p) {
+		p += strlen ("Location:");
+		int url_len = strchr (p, '\n') - p;
+		char *url = r_str_ndup (p, url_len);
+		r_str_trim (url);
+		res = __recurse_redirect (url, code, rlen);
+		free (url);
+		len = *rlen;
+		goto exit;
+	}
+
 	/* Parse Len */
 	p = r_str_casestr (buf, "Content-Length: ");
 	if (p) {
@@ -75,7 +101,7 @@ static char *r_socket_http_answer(RSocket *s, int *code, int *rlen) {
 	} else {
 		res = NULL;
 	}
-fail:
+exit:
 	free (buf);
 	r_buf_free (b);
 	r_socket_close (s);
