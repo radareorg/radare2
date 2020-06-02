@@ -795,14 +795,76 @@ bool test_dwarf4_cpp_many_comp_units(void) {
 	mu_end;
 }
 
+bool test_dwarf5_cpp_many_comp_units(void) {
+	RBin *bin = r_bin_new ();
+	RIO *io = r_io_new ();
+	r_io_bind (io, &bin->iob);
+
+	RBinOptions opt = { 0 };
+	bool res = r_bin_open (bin, "/home/hound/r2test/dwarf/cpp/dump/dwarf5", &opt);
+	mu_assert ("couldn't open dwarf3", res);
+
+	RBinDwarfDebugAbbrev *da = NULL;
+	// mode = 0, calls
+	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RBinDwarfDebugAbbrev *da)
+	// which prints out all the abbreviation
+	da = r_bin_dwarf_parse_abbrev (bin, MODE);
+	mu_assert_eq (da->length, 58, "Incorrect number of abbreviation");
+
+	mu_assert_eq (da->decls[17].tag, DW_TAG_unspecified_parameters, "Wrong abbrev TAG");
+	mu_assert_eq (da->decls[17].length, 1, "Wrong abbrev length");
+	mu_assert_eq (da->decls[17].has_children, false, "Wrong abbrev children");
+	mu_assert_eq (da->decls[17].code, 18, "Wrong abbrev code");
+	
+	mu_assert_eq (da->decls[41].tag, DW_TAG_member, "Wrong abbrev TAG");
+	mu_assert_eq (da->decls[41].length, 5, "Wrong abbrev length");
+	mu_assert_eq (da->decls[41].has_children, false, "Wrong abbrev children");
+	mu_assert_eq (da->decls[41].code, 18, "Wrong abbrev code");
+
+	r_io_free (io);
+	mu_end;
+}
+
+bool test_dwarf2_cpp_many_comp_units(void) {
+	RBin *bin = r_bin_new ();
+	RIO *io = r_io_new ();
+	r_io_bind (io, &bin->iob);
+
+	RBinOptions opt = { 0 };
+	bool res = r_bin_open (bin, "/home/hound/r2test/dwarf/cpp/dump/dwarf2", &opt);
+	mu_assert ("couldn't open dwarf3", res);
+
+	RBinDwarfDebugAbbrev *da = NULL;
+	// mode = 0, calls
+	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RBinDwarfDebugAbbrev *da)
+	// which prints out all the abbreviation
+	da = r_bin_dwarf_parse_abbrev (bin, MODE);
+	mu_assert_eq (da->length, 58, "Incorrect number of abbreviation");
+
+	mu_assert_eq (da->decls[18].tag, DW_TAG_formal_parameter, "Wrong abbrev TAG");
+	mu_assert_eq (da->decls[18].length, 5, "Wrong abbrev length");
+	mu_assert_eq (da->decls[18].has_children, false, "Wrong abbrev children");
+	mu_assert_eq (da->decls[18].code, 19, "Wrong abbrev code");
+
+	
+	mu_assert_eq (da->decls[41].tag, DW_TAG_inheritance, "Wrong abbrev TAG");
+	mu_assert_eq (da->decls[41].length, 4, "Wrong abbrev length");
+	mu_assert_eq (da->decls[41].has_children, false, "Wrong abbrev children");
+	mu_assert_eq (da->decls[41].code, 18, "Wrong abbrev code");
+
+	r_io_free (io);
+	mu_end;
+}
+
 
 bool all_tests() {
-	// mu_run_test (test_dwarf2_cpp_many_comp_units);
+	mu_run_test (test_dwarf2_cpp_many_comp_units);
+	// Line info doesn't change from dwarf3, so the 3+ tests only abbreviations
 	mu_run_test (test_dwarf3_c_basic);
 	mu_run_test (test_dwarf3_cpp_basic);
 	mu_run_test (test_dwarf3_cpp_many_comp_units);
 	mu_run_test (test_dwarf4_cpp_many_comp_units);
-	// mu_run_test (test_dwarf5_cpp_many_comp_units);
+	mu_run_test (test_dwarf5_cpp_many_comp_units);
 	mu_run_test (test_dwarf_cpp_empty_line_info);
 	return tests_passed != tests_run;
 }
