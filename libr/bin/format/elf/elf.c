@@ -3095,9 +3095,6 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 			tmp_offset = toffset;
 			is_vaddr = true;
 		}
-		if (tmp_offset > bin->size) {
-			goto done;
-		}
 		if (sym[i].st_name + 2 > bin->strtab_size) {
 			// Since we are reading beyond the symbol table what's happening
 			// is that some entry is trying to dereference the strtab beyond its capacity
