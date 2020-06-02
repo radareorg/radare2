@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2016 - pancake */
+/* radare - LGPL - Copyright 2015-2020 - pancake */
 /*
 Usage Example:
 
@@ -167,8 +167,9 @@ static int w32_createPipe(R2Pipe *r2pipe, const char *cmd) {
 }
 #endif
 
-static R2Pipe* r2pipe_open_spawn(R2Pipe* r2pipe) {
-#if __UNIX__
+static R2Pipe* r2p_open_spawn(R2Pipe* r2p, const char *cmd) {
+	r_return_val_if_fail (r2p, NULL);
+#if __UNIX__ || defined(__CYGWIN__)
 	char *out = r_sys_getenv ("R2PIPE_IN");
 	char *in = r_sys_getenv ("R2PIPE_OUT");
 	int done = false;
@@ -237,9 +238,10 @@ R_API R2Pipe *r2pipe_open(const char *cmd) {
 	if (!r2pipe) {
 		return NULL;
 	}
-	if (!cmd) {
-		r2pipe->child = -1;
-		return r2pipe_open_spawn (r2pipe);
+	r2p->magic = R2P_MAGIC;
+	if (R_STR_ISEMPTY (cmd)) {
+		r2p->child = -1;
+		return r2p_open_spawn (r2p, cmd);
 	}
 #if __WINDOWS__
 	w32_createPipe (r2pipe, cmd);
@@ -308,12 +310,10 @@ R_API R2Pipe *r2pipe_open(const char *cmd) {
 	return r2pipe;
 }
 
-R_API char *r2pipe_cmd(R2Pipe *r2pipe, const char *str) {
-	if (r2pipe->coreb.core) {
-		return r2pipe->coreb.cmdstr (r2pipe->coreb.core, str);
-	}
-	if (!r2pipe_write (r2pipe, str)) {
-		perror ("r2pipe_write");
+R_API char *r2p_cmd(R2Pipe *r2p, const char *str) {
+	r_return_val_if_fail (r2p && str, NULL);
+	if (!*str || !r2p_write (r2p, str)) {
+		perror ("r2p_write");
 		return NULL;
 	}
 	return r2pipe_read (r2pipe);
