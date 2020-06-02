@@ -509,6 +509,7 @@ typedef struct r_cons_t {
 	struct termios term_raw, term_buf;
 #elif __WINDOWS__
 	DWORD term_raw, term_buf, term_xterm;
+	UINT old_cp;
 #endif
 	RNum *num;
 	/* Pager (like more or less) to use if the output doesn't fit on the
