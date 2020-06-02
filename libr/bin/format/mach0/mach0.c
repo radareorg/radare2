@@ -1540,7 +1540,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
 	size_t wordsize = get_word_size (bin);
 	ulebr ur = {NULL};
 	size_t j, count, skip, bind_size;
-	int seg_idx = -1;
+	int seg_idx = 0;
 	ut64 seg_off = 0;
 	bind_size = bin->dyld_info->bind_size;
 	if (!bind_size || bind_size < 1) {
@@ -1564,14 +1564,13 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
 	struct r_dyld_chained_starts_in_segment *cur_seg = NULL;
 	size_t cur_seg_idx = 0;
 	ut8 *end;
-	for (ur.p = opcodes, end = opcodes + bind_size; ur.p < end; ) {
+	bool done = false;
+	for (ur.p = opcodes, end = opcodes + bind_size; !done && ur.p < end;) {
 		ut8 imm = *ur.p & BIND_IMMEDIATE_MASK, op = *ur.p & BIND_OPCODE_MASK;
 		ur.p++;
-		if (ur.p >= end) {
-			break;
-		}
 		switch (op) {
 		case BIND_OPCODE_DONE:
+			done = true;
 			break;
 		case BIND_OPCODE_THREADED: {
 			switch (imm) {
@@ -1580,7 +1579,8 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
 				break;
 			}
 			case BIND_SUBOPCODE_THREADED_APPLY: {
-				if ((!cur_seg || cur_seg_idx != seg_idx) && seg_idx >= 0) {
+				const size_t ps = 0x1000;
+				if (!cur_seg || cur_seg_idx != seg_idx) {
 					cur_seg_idx = seg_idx;
 					cur_seg = bin->chained_starts[seg_idx];
 					if (!cur_seg) {
@@ -1590,8 +1590,8 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
 						}
 						bin->chained_starts[seg_idx] = cur_seg;
 						cur_seg->pointer_format = DYLD_CHAINED_PTR_ARM64E;
-						cur_seg->page_size = 0x1000;
-						cur_seg->page_count = (bin->segs[seg_idx].vmsize + (0x1000 - 1)) & ~(0x1000 - 1);
+						cur_seg->page_size = ps;
+						cur_seg->page_count = ((bin->segs[seg_idx].vmsize + (ps - 1)) & ~(ps - 1)) / ps;
 						if (cur_seg->page_count > 0) {
 							cur_seg->page_start = malloc (sizeof (ut16) * cur_seg->page_count);
 							if (!cur_seg->page_start) {
@@ -1601,7 +1601,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
 						}
 					}
 				}
-				ut32 page_index = (ut32)(seg_off / 0x1000);
+				ut32 page_index = (ut32)(seg_off / ps);
 				cur_seg->page_start[page_index] = seg_off & 0xfff;
 				break;
 			}
@@ -2488,16 +2488,16 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 	do {
 		RTrieState * state = r_list_get_top (states);
 		ur.p = state->node;
-		ut64 len = ULEB();
+		ut64 len = ULEB ();
 		if (len == UT64_MAX) {
 			break;
 		}
 		if (len) {
-			ut64 flags = ULEB();
+			ut64 flags = ULEB ();
 		if (flags == UT64_MAX) {
 			break;
 		}
-			ut64 offset = ULEB();
+			ut64 offset = ULEB ();
 		if (offset == UT64_MAX) {
 			break;
 		}
@@ -2505,7 +2505,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 			bool isReexport = flags & EXPORT_SYMBOL_FLAGS_REEXPORT;
 			bool hasResolver = flags & EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER;
 			if (hasResolver) {
-				ut64 res = ULEB();
+				ut64 res = ULEB ();
 				if (res == UT64_MAX) {
 					break;
 				}
@@ -2548,7 +2548,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 				count++;
 			}
 		}
-		ut64 child_count = ULEB();
+		ut64 child_count = ULEB ();
 		if (child_count == UT64_MAX) {
 			goto beach;
 		}
@@ -2572,7 +2572,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 			R_FREE (next);
 			goto beach;
 		}
-		ut64 tr = ULEB();
+		ut64 tr = ULEB ();
 		if (tr == UT64_MAX) {
 			goto beach;
 		}
@@ -3156,19 +3156,17 @@ static void parse_relocation_info(struct MACH0_(obj_t) *bin, RSkipList * relocs,
 	}
 }
 
+static bool is_valid_ordinal_table_size(ut64 size) {
+	return size > 0 && size <= UT16_MAX;
+}
+
 RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 	RSkipList *relocs = NULL;
 	RPVector *threaded_binds = NULL;
-	ulebr ur = {NULL};
 	size_t wordsize = get_word_size (bin);
 	if (bin->dyld_info) {
-		ut8 *opcodes,*end, type = 0, rel_type = 0;
-		int lib_ord, seg_idx = -1, sym_ord = -1;
-		char *sym_name = NULL;
-		size_t j, count, skip, bind_size, lazy_size, weak_size;
-		st64 addend = 0;
-		ut64 segmentAddress = 0LL;
-		ut64 addr = 0LL;
+		ut8 *opcodes, rel_type = 0;
+		size_t bind_size, lazy_size, weak_size;
 
 #define CASE(T) case ((T) / 8): rel_type = R_BIN_RELOC_ ## T; break
 		switch (wordsize) {
@@ -3227,44 +3225,63 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 			return NULL;
 		}
 
-		for (ur.p = opcodes, end = opcodes + amount ; ur.p < end; ) {
-			ut8 imm = *ur.p & BIND_IMMEDIATE_MASK, op = *ur.p & BIND_OPCODE_MASK;
-			++ur.p;
-			if (ur.p >= end) {
-				break;
-			}
-			switch (op) {
-#define ULEB() read_uleb128 (&ur,end)
-#define SLEB() read_sleb128 (&ur,end)
-			case BIND_OPCODE_DONE:
-				break;
-			case BIND_OPCODE_THREADED: {
-				switch (imm) {
-				case BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB: {
-					ut64 table_size = ULEB();
-					if (table_size == 0 || table_size > 65535) {
-						bprintf ("Error: BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB size is wrong\n");
-						break;
-					}
-					if (threaded_binds) {
-						r_pvector_free (threaded_binds);
-					}
-					threaded_binds = r_pvector_new ((RPVectorFree) &free);
-					if (threaded_binds) {
-						r_pvector_reserve (threaded_binds, table_size);
-						threaded_binds->v.len = table_size;
-						sym_ord = 0;
+		size_t partition_sizes[] = {bind_size, lazy_size, weak_size};
+		size_t pidx;
+		int opcodes_offset = 0;
+		for (pidx = 0; pidx < R_ARRAY_SIZE (partition_sizes); pidx++) {
+			size_t partition_size = partition_sizes[pidx];
+
+			ut8 type = 0;
+			int lib_ord = 0, seg_idx = -1, sym_ord = -1;
+			char *sym_name = NULL;
+			size_t j, count, skip;
+			st64 addend = 0;
+			ut64 addr = bin->segs[0].vmaddr;
+			ut64 segment_end_addr = addr + bin->segs[0].vmsize;
+
+			ulebr ur = {opcodes + opcodes_offset};
+			ut8 *end = ur.p + partition_size;
+			bool done = false;
+			while (!done && ur.p < end) {
+				ut8 imm = *ur.p & BIND_IMMEDIATE_MASK;
+				ut8 op = *ur.p & BIND_OPCODE_MASK;
+				ur.p++;
+				switch (op) {
+#define ULEB() read_uleb128 (&ur, end)
+#define SLEB() read_sleb128 (&ur, end)
+				case BIND_OPCODE_DONE: {
+					bool in_lazy_binds = pidx == 1;
+					if (!in_lazy_binds) {
+						done = true;
 					}
 					break;
 				}
-				case BIND_SUBOPCODE_THREADED_APPLY:
-					if (threaded_binds) {
-						if (addr && seg_idx >= 0) {
-							ut64 cursor = addr;
-							int n_threaded_binds = (int) r_pvector_len (threaded_binds);
-							while (cursor < segmentAddress) {
+				case BIND_OPCODE_THREADED: {
+					switch (imm) {
+					case BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB: {
+						ut64 table_size = ULEB ();
+						if (!is_valid_ordinal_table_size (table_size)) {
+							bprintf ("Error: BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB size is wrong\n");
+							break;
+						}
+						if (threaded_binds) {
+							r_pvector_free (threaded_binds);
+						}
+						threaded_binds = r_pvector_new ((RPVectorFree) &free);
+						if (threaded_binds) {
+							r_pvector_reserve (threaded_binds, table_size);
+							threaded_binds->v.len = table_size;
+							sym_ord = 0;
+						}
+						break;
+					}
+					case BIND_SUBOPCODE_THREADED_APPLY:
+						if (threaded_binds) {
+							int cur_seg_idx = (seg_idx != -1)? seg_idx: 0;
+							size_t n_threaded_binds = r_pvector_len (threaded_binds);
+							while (addr < segment_end_addr) {
 								ut8 tmp[8];
-								ut64 paddr = cursor - bin->segs[seg_idx].vmaddr + bin->segs[seg_idx].fileoff;
+								ut64 paddr = addr - bin->segs[cur_seg_idx].vmaddr + bin->segs[cur_seg_idx].fileoff;
 								bin->rebasing_buffer = true;
 								if (r_buf_read_at (bin->b, paddr, tmp, 8) != 8) {
 									break;
@@ -3296,11 +3313,11 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 											(struct dyld_chained_ptr_arm64e_rebase *) &raw_ptr;
 									delta = p->next;
 								}
-								if (ordinal >= n_threaded_binds) {
-									bprintf ("Error: Malformed bind chain\n");
-									break;
-								}
 								if (ordinal != -1) {
+									if (ordinal >= n_threaded_binds) {
+										bprintf ("Error: Malformed bind chain\n");
+										break;
+									}
 									struct reloc_t *ref = r_pvector_at (threaded_binds, ordinal);
 									if (!ref) {
 										bprintf ("Error: Inconsistent bind opcodes\n");
@@ -3311,92 +3328,90 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 										break;
 									}
 									*reloc = *ref;
-									reloc->addr = cursor;
+									reloc->addr = addr;
 									reloc->offset = paddr;
 									if (addend != -1) {
 										reloc->addend = addend;
 									}
 									r_skiplist_insert (relocs, reloc);
 								}
-								cursor += delta * wordsize;
+								addr += delta * wordsize;
 								if (!delta) {
 									break;
 								}
 							}
-						} else {
-							bprintf ("Error: BIND_SUBOPCODE_THREADED_APPLY with no current segment\n");
+						}
+						break;
+					default:
+						bprintf ("Error: Unexpected BIND_OPCODE_THREADED sub-opcode: 0x%x\n", imm);
+					}
+					break;
+				}
+				case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
+					lib_ord = imm;
+					break;
+				case BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB:
+					lib_ord = ULEB ();
+					break;
+				case BIND_OPCODE_SET_DYLIB_SPECIAL_IMM:
+					lib_ord = imm? (st8)(BIND_OPCODE_MASK | imm) : 0;
+					break;
+				case BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM: {
+					sym_name = (char*)ur.p;
+					while (*ur.p++ && ur.p < end) {
+						/* empty loop */
+					}
+					if (threaded_binds) {
+						break;
+					}
+					sym_ord = -1;
+					if (bin->symtab && bin->dysymtab.nundefsym < UT16_MAX) {
+						for (j = 0; j < bin->dysymtab.nundefsym; j++) {
+							size_t stridx = 0;
+							bool found = false;
+							int iundefsym = bin->dysymtab.iundefsym;
+							if (iundefsym >= 0 && iundefsym < bin->nsymtab) {
+								int sidx = iundefsym + j;
+								if (sidx < 0 || sidx >= bin->nsymtab) {
+									continue;
+								}
+								stridx = bin->symtab[sidx].n_strx;
+								if (stridx >= bin->symstrlen) {
+									continue;
+								}
+								found = true;
+							}
+							if (found && !strcmp ((const char *)bin->symstr + stridx, sym_name)) {
+								sym_ord = j;
+								break;
+							}
 						}
 					}
 					break;
-				default:
-					bprintf ("Error: Unexpected BIND_OPCODE_THREADED sub-opcode: 0x%x\n", imm);
 				}
-				break;
-			}
-			case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
-				lib_ord = imm;
-				break;
-			case BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB:
-				lib_ord = ULEB();
-				break;
-			case BIND_OPCODE_SET_DYLIB_SPECIAL_IMM:
-				lib_ord = imm? (st8)(BIND_OPCODE_MASK | imm) : 0;
-				break;
-			case BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM: {
-				sym_name = (char*)ur.p;
-				while (*ur.p++ && ur.p<end) {
-					/* empty loop */
-				}
-				if (threaded_binds) {
+				case BIND_OPCODE_SET_TYPE_IMM:
+					type = imm;
 					break;
-				}
-				sym_ord = -1;
-				if (bin->symtab && bin->dysymtab.nundefsym < 0xffff) {
-					for (j = 0; j < bin->dysymtab.nundefsym; j++) {
-						int stridx = 0;
-						int iundefsym = bin->dysymtab.iundefsym;
-						if (iundefsym >= 0 && iundefsym < bin->nsymtab) {
-							int sidx = iundefsym + j;
-							if (sidx < 0 || sidx >= bin->nsymtab) {
-								continue;
-							}
-							stridx = bin->symtab[sidx].n_strx;
-							if (stridx < 0 || stridx >= bin->symstrlen) {
-								continue;
-							}
-						}
-						if (!strcmp ((char *)bin->symstr + stridx, sym_name)) {
-							sym_ord = j;
-							break;
-						}
+				case BIND_OPCODE_SET_ADDEND_SLEB:
+					addend = SLEB ();
+					break;
+				case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
+					seg_idx = imm;
+					if (seg_idx >= bin->nsegs) {
+						bprintf ("Error: BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB"
+							" has unexistent segment %d\n", seg_idx);
+						free (opcodes);
+						r_skiplist_free (relocs);
+						r_pvector_free (threaded_binds);
+						return NULL; // early exit to avoid future mayhem
 					}
-				}
-				break;
-			}
-			case BIND_OPCODE_SET_TYPE_IMM:
-				type = imm;
-				break;
-			case BIND_OPCODE_SET_ADDEND_SLEB:
-				addend = SLEB();
-				break;
-			case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
-				seg_idx = imm;
-				if (seg_idx < 0 || seg_idx >= bin->nsegs) {
-					bprintf ("Error: BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB"
-						" has unexistent segment %d\n", seg_idx);
-					R_FREE (opcodes);
-					r_skiplist_free (relocs);
-					r_pvector_free (threaded_binds);
-					return NULL; // early exit to avoid future mayhem
-				} else {
-					addr = bin->segs[seg_idx].vmaddr + ULEB();
-					segmentAddress = bin->segs[seg_idx].vmaddr \
+					addr = bin->segs[seg_idx].vmaddr + ULEB ();
+					segment_end_addr = bin->segs[seg_idx].vmaddr \
 							+ bin->segs[seg_idx].vmsize;
-				}
-				break;
-			case BIND_OPCODE_ADD_ADDR_ULEB:
-				addr += ULEB();
-				break;
+					break;
+				case BIND_OPCODE_ADD_ADDR_ULEB:
+					addr += ULEB ();
+					break;
 #define DO_BIND() do {\
 	if (sym_ord < 0 && !sym_name) break;\
 	if (!threaded_binds) {\
@@ -3425,56 +3440,60 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 	else\
 		r_skiplist_insert (relocs, reloc);\
 } while (0)
-			case BIND_OPCODE_DO_BIND:
-				if (!threaded_binds && addr >= segmentAddress) {
-					bprintf ("Error: Malformed DO bind opcode 0x%"PFMT64x"\n", addr);
-					goto beach;
-				}
-				DO_BIND ();
-				if (!threaded_binds) {
-					addr += wordsize;
-				} else {
-					sym_ord++;
-				}
-				break;
-			case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
-				if (addr >= segmentAddress) {
-					bprintf ("Error: Malformed ADDR ULEB bind opcode\n");
-					goto beach;
-				}
-				DO_BIND ();
-				addr += ULEB () + wordsize;
-				break;
-			case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
-				if (addr >= segmentAddress) {
-					bprintf ("Error: Malformed IMM SCALED bind opcode\n");
-					goto beach;
-				}
-				DO_BIND();
-				addr += (ut64)imm * (ut64)wordsize + wordsize;
-				break;
-			case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
-				count = ULEB();
-				skip = ULEB();
-				for (j = 0; j < count; j++) {
-					if (addr >= segmentAddress) {
-						bprintf ("Error: Malformed ULEB TIMES bind opcode\n");
+				case BIND_OPCODE_DO_BIND:
+					if (!threaded_binds && addr >= segment_end_addr) {
+						bprintf ("Error: Malformed DO bind opcode 0x%"PFMT64x"\n", addr);
 						goto beach;
 					}
 					DO_BIND ();
-					addr += skip + wordsize;
-				}
-				break;
+					if (!threaded_binds) {
+						addr += wordsize;
+					} else {
+						sym_ord++;
+					}
+					break;
+				case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
+					if (addr >= segment_end_addr) {
+						bprintf ("Error: Malformed ADDR ULEB bind opcode\n");
+						goto beach;
+					}
+					DO_BIND ();
+					addr += ULEB () + wordsize;
+					break;
+				case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
+					if (addr >= segment_end_addr) {
+						bprintf ("Error: Malformed IMM SCALED bind opcode\n");
+						goto beach;
+					}
+					DO_BIND ();
+					addr += (ut64)imm * (ut64)wordsize + wordsize;
+					break;
+				case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
+					count = ULEB ();
+					skip = ULEB ();
+					for (j = 0; j < count; j++) {
+						if (addr >= segment_end_addr) {
+							bprintf ("Error: Malformed ULEB TIMES bind opcode\n");
+							goto beach;
+						}
+						DO_BIND ();
+						addr += skip + wordsize;
+					}
+					break;
 #undef DO_BIND
 #undef ULEB
 #undef SLEB
-			default:
-				bprintf ("Error: unknown bind opcode 0x%02x in dyld_info\n", *ur.p);
-				R_FREE (opcodes);
-				r_pvector_free (threaded_binds);
-				return relocs;
+				default:
+					bprintf ("Error: unknown bind opcode 0x%02x in dyld_info\n", *ur.p);
+					R_FREE (opcodes);
+					r_pvector_free (threaded_binds);
+					return relocs;
+				}
 			}
+
+			opcodes_offset += partition_size;
 		}
+
 		R_FREE (opcodes);
 		r_pvector_free (threaded_binds);
 		threaded_binds = NULL;
