@@ -747,7 +747,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 }
 #endif
 
-R_API int r_sys_cmdf (const char *fmt, ...) {
+R_API int r_sys_cmdf(const char *fmt, ...) {
 	int ret;
 	char cmd[4096];
 	va_list ap;
