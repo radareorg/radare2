@@ -3540,7 +3540,7 @@ EXPECT=<<EOF
 |           0x00000004      b402           ah = 2
 |           0x00000006      66b83333       ax = 0x3333
 |           0x0000000a      b855554444     eax = 0x44445555
-|           0x0000000f      48b8bebafeca.  movabs rax,0xdeadbeefcafebabe
+|           0x0000000f      48b8bebafeca.  rax = 0xdeadbeefcafebabe
 |           0x00000019      4889d8         rax = rbx
 |           0x0000001c      488d03         rax = rbx
 |           0x0000001f      488b4308       rax = qword [rbx + 8]

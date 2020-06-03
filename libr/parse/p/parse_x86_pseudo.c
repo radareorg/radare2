@@ -65,6 +65,7 @@ static int replace (int argc, char *argv[], char *newstr) {
 		{ "jne", "if (var) goto #", {1}},
 		{ "lea",  "# = #", {1, 2}},
 		{ "mov",  "# = #", {1, 2}},
+		{ "movabs", "# = #", {1, 2}},
 		{ "movq",  "# = #", {1, 2}},
 		{ "movaps",  "# = #", {1, 2}},
 		{ "movups",  "# = #", {1, 2}},
