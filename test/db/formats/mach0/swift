@@ -12,9 +12,9 @@ RUN
 NAME=mach0 swift-x86-64 aav
 FILE=bins/mach0/swift-main
 CMDS=<<EOF
-C*~Cd?
+C*~^Cd?
 aav
-C*~Cd?
+C*~^Cd?
 Cd~?
 EOF
 EXPECT=<<EOF

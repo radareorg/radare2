@@ -1239,7 +1239,7 @@ static void __vi_mode() {
 }
 
 R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
-	int rows, columns = r_cons_get_size (&rows) - 2;
+	int rows;
 	const char *gcomp_line = "";
 	static int gcomp_idx = 0;
 	static bool yank_flag = 0;
@@ -1328,18 +1328,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		if (I.echo) {
 			r_cons_clear_line (0);
 		}
-		if (columns < 1) {
-			columns = 40;
-		}
-#if __WINDOWS__
-		if (I.echo) {
-			printf ("\r%*c\r", columns, ' ');
-		}
-#else
-		if (I.echo) {
-			printf ("\r\x1b[2K\r");	// %*c\r", columns, ' ');
-		}
-#endif
+		(void)r_cons_get_size (&rows);
 		switch (*buf) {
 		case 0:	// control-space
 			/* ignore atm */

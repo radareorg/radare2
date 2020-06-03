@@ -183,7 +183,7 @@ static bool init_ehdr(ELFOBJ *bin) {
 	sdb_set (bin->kv, "elf_ident.format", "[4]z[1]E[1]E[1]E.::"
 	         " magic (elf_class)class (elf_data)data (elf_hdr_version)version", 0);
 #if R_BIN_ELF64
-	sdb_set (bin->kv, "elf_header.format", "?[2]E[2]E[4]Eqqqxwwwwww"
+	sdb_set (bin->kv, "elf_header.format", "?[2]E[2]E[4]EqqqxN2N2N2N2N2N2"
 		" (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version"
 		" entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx", 0);
 #else
