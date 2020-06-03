@@ -1048,11 +1048,10 @@ TODO: add useXRefs, useName
 	return retval;
 }
 
-static int bestmatch(void *data, const char *input) {
+static bool bestmatch(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	RListIter *iter;
-	RAnalFunction *fcni = NULL;
-	int ret = 0;
+	RAnalFunction *fcn = NULL;
+	bool ret = false;
 	int count = 5;
 
 	if (input[0] != '\x00') {
@@ -1064,16 +1063,9 @@ static int bestmatch(void *data, const char *input) {
 	}
 
 	r_cons_break_push (NULL, NULL);
-	r_list_foreach (core->anal->fcns, iter, fcni) {
-		if (r_cons_is_breaked ()) {
-			break;
-		}
-		if (fcni->addr == core->offset) {
-			if (r_sign_find_closest_sig (core->anal, fcni, count)) {
-				ret = 1;
-			}
-			break;
-		}
+	fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+	if (fcn) {
+		ret = r_sign_find_closest_sig (core->anal, fcn, count, 0);
 	}
 	r_cons_break_pop ();
 	return ret;

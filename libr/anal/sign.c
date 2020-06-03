@@ -480,17 +480,12 @@ static void serialize(RAnal *a, RSignItem *it, char *k, char *v) {
 	}
 }
 
-static RList *deserialize_sign_space(RAnal *a, RSpace *space){
-	r_return_val_if_fail (a, NULL);
+static RList *deserialize_sign_space(RAnal *a, RSpace *space) {
+	r_return_val_if_fail (a && space, NULL);
 
-	SdbList *zigns = NULL;
-	if (space) {
-		char k[R_SIGN_KEY_MAXSZ];
-		serializeKey (a, space, "", k);
-		zigns = sdb_foreach_match (a->sdb_zigns, k, false);
-	} else {
-		zigns = sdb_foreach_list (a->sdb_zigns, false);
-	}
+	char k[R_SIGN_KEY_MAXSZ];
+	serializeKey (a, space, "", k);
+	SdbList *zigns = sdb_foreach_match (a->sdb_zigns, k, false);
 
 	SdbListIter *iter;
 	SdbKv *kv;
@@ -574,7 +569,7 @@ static void mergeItem(RSignItem *dst, RSignItem *src) {
 	if (src->refs) {
 		r_list_free (dst->refs);
 
-		dst->refs = r_list_newf ((RListFree) free);
+		dst->refs = r_list_newf ((RListFree)free);
 		r_list_foreach (src->refs, iter, ref) {
 			r_list_append (dst->refs, r_str_new (ref));
 		}
@@ -583,7 +578,7 @@ static void mergeItem(RSignItem *dst, RSignItem *src) {
 	if (src->vars) {
 		r_list_free (dst->vars);
 
-		dst->vars = r_list_newf ((RListFree) free);
+		dst->vars = r_list_newf ((RListFree)free);
 		r_list_foreach (src->vars, iter, var) {
 			r_list_append (dst->vars, r_str_new (var));
 		}
@@ -592,7 +587,7 @@ static void mergeItem(RSignItem *dst, RSignItem *src) {
 	if (src->types) {
 		r_list_free (dst->types);
 
-		dst->types = r_list_newf ((RListFree) free);
+		dst->types = r_list_newf ((RListFree)free);
 		r_list_foreach (src->types, iter, type) {
 			r_list_append (dst->types, r_str_new (type));
 		}
@@ -1080,14 +1075,14 @@ static RSignItem *create_graph_sign_from_fcn(RAnal *a, RAnalFunction *fcn) {
 	return item;
 }
 
-struct bestrow {
+typedef struct {
 	char *name;
 	double score;
-};
+} _close_matches;
 
 static int score_cmpr(const void *a, const void *b) {
-	double sa = ((struct bestrow *)a)->score;
-	double sb = ((struct bestrow *)b)->score;
+	double sa = ((_close_matches *)a)->score;
+	double sb = ((_close_matches *)b)->score;
 
 	if (sa < sb) {
 		return 1;
@@ -1099,77 +1094,134 @@ static int score_cmpr(const void *a, const void *b) {
 }
 
 static bool add_bestrow(RList *list, char *name, double score) {
-	struct bestrow *row = calloc (1, sizeof (struct bestrow));
+	_close_matches *row = calloc (1, sizeof (_close_matches));
 	if (!row) {
 		return false;
 	}
-	row->name = name;
+	row->name = strdup (name);
+	if (!row->name) {
+		free (row);
+		return false;
+	}
 	row->score = score;
 	r_list_append (list, row);
 	r_list_sort (list, &score_cmpr);
 	return true;
 }
 
-R_API bool r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count) {
-	r_return_val_if_fail (a && fcn && count > 0, false);
-	RSpace *space = r_spaces_current (&a->zign_spaces);
-	RList *testlist = deserialize_sign_space (a, space);
-	if (!testlist) {
+typedef struct {
+	RSignItem *test;
+	RList *output;
+	int count, index;
+	double min;
+
+	// greatest lower bound. Thanks lattice theory for helping name variables
+	double infimum;
+} _closest_match_data;
+
+static int closest_match_callback(void *a, const char *name, const char *value) {
+	_closest_match_data *data = (_closest_match_data *)a;
+
+	// get signature in usable format
+	RSignItem *it = r_sign_item_new ();
+	if (!it) {
+		return false;
+	}
+	if (!r_sign_deserialize (a, it, name, value)) {
+		r_sign_item_free (it);
 		return false;
 	}
 
+	double score = matchGraph (it, data->test);
+
+	// score is too low, don't bother doing any more work
+	if (score < data->min) {
+		r_sign_item_free (it);
+		return true;
+	}
+
+	RList *output = data->output;
+
+	if (r_list_length (output) < data->count) {
+		// add to the list b/c it is not full
+		if (!add_bestrow (output, it->name, score)) {
+			r_sign_item_free (it);
+			return false;
+		}
+		if (score < data->infimum) {
+			data->infimum = score;
+		}
+	} else {
+		// list is full, so do we replace?
+		if (score > data->infimum) {
+			_close_matches *row;
+			// remove last entry
+			row = r_list_pop (output);
+			free (row);
+
+			// add new entry
+			if (!add_bestrow (output, it->name, score)) {
+				r_sign_item_free (it);
+				return false;
+			}
+
+			// find new infimum
+			row = r_list_get_top (output);
+			data->infimum = row->score;
+		}
+	}
+	r_sign_item_free (it);
+	return true;
+}
+
+static void closest_output_free(void *ptr) {
+	_close_matches *row = ptr;
+	free (row->name);
+	free (ptr);
+}
+
+R_API bool r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count, double min) {
+	r_return_val_if_fail (a && fcn && count > 0 && min < 1 && min >= 0, false);
+
+	_closest_match_data data;
+	data.count = count;
+	data.index = 0;
+	data.min = min;
+
+	// infimum MUST start < 0 to ensure it gets updated by first entry to make
+	// it in the output list
+	data.infimum = -1337;
+
+	// create a graph for the current function to be compared against
 	RSignItem *test = create_graph_sign_from_fcn (a, fcn);
 	if (!test) {
-		r_list_free (testlist);
 		return false;
 	}
+	data.test = test;
 
-	bool ret = false;
-	RSignItem *si;
-	RListIter *itr;
-	double highscore = 1;
-	RList *output = r_list_newf ((RListFree)free);
-	int index = 0;
-	struct bestrow *row;
+	// TODO? should this be a red/black tree?
+	// sorted list will contian the closest matches
+	RList *output = r_list_newf ((RListFree)closest_output_free);
+	if (!output) {
+		free (test);
+		return false;
+	}
+	data.output = output;
 
-	r_list_foreach (testlist, itr, si) {
-		double score = matchGraph (si, test);
-		if (index < count) {
-			if (!add_bestrow (output, si->name, score)) {
-				goto beach;
-			}
-			// get worst score of first count entries
-			if (score < highscore) {
-				highscore = score;
-			}
-		} else {
-			if (score > highscore) {
-				// remove last entry
-				row = r_list_pop (output);
-				free (row);
+	// TODO: handle sign spaces
+	bool ret = sdb_foreach (a->sdb_zigns, &closest_match_callback, (void *)&data);
 
-				// add new entry
-				if (!add_bestrow (output, si->name, score)) {
-					goto beach;
-				}
-
-				// new high score is lowest high score in list
-				row = r_list_get_top (output);
-				highscore = row->score;
-			}
+	// TODO? Should this return the list of best matches instead of printing?
+	if (ret && data.infimum >= min) {
+		RListIter *itr;
+		_close_matches *row;
+		r_list_foreach (output, itr, row) {
+			a->cb_printf ("%02.5lf %s\n", row->score, row->name);
 		}
-		index++;
 	}
 
-	ret = true;
-	r_list_foreach (output, itr, row) {
-		a->cb_printf ("%02.5lf G %s\n", row->score, row->name);
-	}
-
-beach:
+	free (test);
 	r_list_free (output);
-	r_list_free (testlist);
-	r_sign_item_free (test);
 	return ret;
 }
 
