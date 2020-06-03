@@ -33,8 +33,8 @@ void ts_language_table_entry(
     assert(symbol < self->token_count);
     uint32_t action_index = ts_language_lookup(self, state, symbol);
     const TSParseActionEntry *entry = &self->parse_actions[action_index];
-    result->action_count = entry->count;
-    result->is_reusable = entry->reusable;
+    result->action_count = entry->entry.count;
+    result->is_reusable = entry->entry.reusable;
     result->actions = (const TSParseAction *)(entry + 1);
   }
 }
@@ -72,8 +72,10 @@ const char *ts_language_symbol_name(
     return "ERROR";
   } else if (symbol == ts_builtin_sym_error_repeat) {
     return "_ERROR";
-  } else {
+  } else if (symbol < ts_language_symbol_count(self)) {
     return self->symbol_names[symbol];
+  } else {
+    return NULL;
   }
 }
 
@@ -119,7 +121,7 @@ const char *ts_language_field_name_for_id(
   TSFieldId id
 ) {
   uint32_t count = ts_language_field_count(self);
-  if (count) {
+  if (count && id <= count) {
     return self->field_names[id];
   } else {
     return NULL;

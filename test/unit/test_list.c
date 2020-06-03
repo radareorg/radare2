@@ -239,20 +239,19 @@ bool test_r_list_mergesort_pint() {
 		-80, -76};
 
 	RList* list = r_list_new();
-	for (size_t i = 0; i < R_ARRAY_SIZE(data); ++i) {
-		r_list_append (list, (void*)&data[i]);
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (data); i++) {
+		r_list_append (list, (void *)&data[i]);
 	}
 
 	// invoke sorting
 	r_list_sort (list, (RListComparator)pintcmp);
 
 	// assert the list is sorted as expected
-	size_t i = 0;
-	RListIter* iter = list->head;
-	do {
-		mu_assert_eq(*(int*)iter->data, expected[i], "array content mismatch");
-		iter = iter->n;
-	} while (++i < R_ARRAY_SIZE(expected));
+	RListIter* iter;
+	for (i = 0, iter = list->head; i < R_ARRAY_SIZE (expected); i++, iter = iter->n) {
+		mu_assert_eq (*(int *)iter->data, expected[i], "array content mismatch");
+	}
 
 	r_list_free(list);
 	mu_end;

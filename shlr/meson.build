@@ -244,7 +244,7 @@ if not tree_sitter_dep.found() or not get_option('use_sys_tree_sitter')
     endif
 
     # NOTE: when you update TS_TIP or TS_BRA, also update them in shlr/Makefile
-    TS_TIP = 'f049ba350f3f6019ce9a1cbb0975ebd154ef7ad3'
+    TS_TIP = '9a82dcc666d06617cbab3061467075019fae0b0d'
     TS_BRA = 'master'
 
     message('Deleting existing directories @0@ and @1@'.format(tree_sitter_vc_path, tree_sitter_path))
