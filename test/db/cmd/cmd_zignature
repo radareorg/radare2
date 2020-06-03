@@ -979,3 +979,120 @@ EXPECT=<<EOF
 0x00490bb0 218 flirt.free_slotinfo
 EOF
 RUN
+
+NAME=zb bad count
+FILE=bins/elf/static-glibc-2.27
+CMDS=<<EOF
+s 0x00410210
+af
+za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
+zb NOTANUMBER
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=zb negative count
+FILE=bins/elf/static-glibc-2.27
+CMDS=<<EOF
+s 0x00410210
+af
+za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
+zb -1
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=zb single exact match
+FILE=bins/elf/static-glibc-2.27
+CMDS=<<EOF
+s 0x00410210
+af
+za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
+zb
+EOF
+EXPECT=<<EOF
+1.00000 sym.exact
+EOF
+RUN
+
+NAME=zb match 5 by default
+FILE=bins/elf/static-glibc-2.27
+CMDS=<<EOF
+s 0x00410210
+af
+za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.second g cc=16 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.third g cc=16 nbbs=28 edges=44 ebbs=1 bbsum=407
+za sym.fourth g cc=16 nbbs=28 edges=43 ebbs=1 bbsum=407
+za sym.fith g cc=16 nbbs=28 edges=43 ebbs=1 bbsum=401
+za sym.not_shown g cc=15 nbbs=28 edges=43 ebbs=1 bbsum=395
+zb
+EOF
+EXPECT=<<EOF
+1.00000 sym.exact
+0.98824 sym.second
+0.98134 sym.third
+0.97679 sym.fourth
+0.97384 sym.fith
+EOF
+RUN
+
+NAME=zb match 6 of 6 with 100 count
+FILE=bins/elf/static-glibc-2.27
+CMDS=<<EOF
+s 0x00410210
+af
+za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.second g cc=16 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.third g cc=16 nbbs=28 edges=44 ebbs=1 bbsum=407
+za sym.fourth g cc=16 nbbs=28 edges=43 ebbs=1 bbsum=407
+za sym.fith g cc=16 nbbs=28 edges=43 ebbs=1 bbsum=401
+za sym.sixth g cc=15 nbbs=28 edges=43 ebbs=1 bbsum=395
+zb 100
+EOF
+EXPECT=<<EOF
+1.00000 sym.exact
+0.98824 sym.second
+0.98134 sym.third
+0.97679 sym.fourth
+0.97384 sym.fith
+0.95913 sym.sixth
+EOF
+RUN
+
+NAME=zb count 1
+FILE=bins/elf/static-glibc-2.27
+CMDS=<<EOF
+s 0x00410210
+af
+za sym.right g cc=16 nbbs=28 edges=44 ebbs=1 bbsum=407
+za sym.wrong g cc=16 nbbs=28 edges=43 ebbs=1 bbsum=407
+za sym.nope g cc=16 nbbs=28 edges=43 ebbs=1 bbsum=401
+za sym.bad g cc=15 nbbs=28 edges=43 ebbs=1 bbsum=395
+zb 1
+EOF
+EXPECT=<<EOF
+0.98134 sym.right
+EOF
+RUN
+
+NAME=zb duplicate zigs match
+FILE=bins/elf/static-glibc-2.27
+CMDS=<<EOF
+s 0x00410210
+af
+za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.duplicate1 g cc=16 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.duplicate2 g cc=16 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.duplicate3 g cc=16 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.duplicate4 g cc=16 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.duplicate5 g cc=16 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.duplicate6 g cc=16 nbbs=29 edges=44 ebbs=1 bbsum=407
+zb~dup?
+EOF
+EXPECT=<<EOF
+4
+EOF
+RUN
