@@ -466,12 +466,10 @@ beach:
 	free (json_test_file);
 	free (fuzz_dir);
 #if __WINDOWS__
-	(void)SetConsoleOutputCP (old_cp);
-	// chcp doesn't pick up the code page switch for some reason
-	char *chcp = r_str_newf ("chcp %u > NUL", old_cp);
-	if (chcp) {
-		system (chcp);
-		free (chcp);
+	if (old_cp) {
+		(void)SetConsoleOutputCP (old_cp);
+		// chcp doesn't pick up the code page switch for some reason
+		(void)r_sys_cmdf ("chcp %u > NUL", old_cp);
 	}
 #endif
 	return ret;
