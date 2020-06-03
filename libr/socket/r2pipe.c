@@ -169,7 +169,6 @@ static int w32_createPipe(R2Pipe *r2pipe, const char *cmd) {
 
 static R2Pipe* r2p_open_spawn(R2Pipe* r2p, const char *cmd) {
 	r_return_val_if_fail (r2p, NULL);
-#if __UNIX__ || defined(__CYGWIN__)
 	char *out = r_sys_getenv ("R2PIPE_IN");
 	char *in = r_sys_getenv ("R2PIPE_OUT");
 	int done = false;
