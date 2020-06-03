@@ -1062,7 +1062,7 @@ static bool test_pvector_lower_bound() {
 	s.v.len = 5;
 
 	size_t l;
-#define CMP(x, y) x - y
+#define CMP(x, y) (x) - (y)
 	r_pvector_lower_bound (&s, (void *)4, l, CMP);
 	mu_assert_eq (r_pvector_at (&s, l), (void *)4, "lower_bound");
 	r_pvector_lower_bound (&s, (void *)5, l, CMP);

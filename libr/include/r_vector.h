@@ -271,7 +271,7 @@ static inline void **r_pvector_shrink(RPVector *vec) {
 		size_t h = (vec)->v.len, m; \
 		for (i = 0; i < h; ) { \
 			m = i + ((h - i) >> 1); \
-			if ((cmp (x, ((void **)(vec)->v.a)[m])) > 0) { \
+			if ((cmp ((x), ((void **)(vec)->v.a)[m])) > 0) { \
 				i = m + 1; \
 			} else { \
 				h = m; \
