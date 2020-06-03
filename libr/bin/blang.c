@@ -42,10 +42,7 @@ static bool check_swift(RBinSymbol *sym) {
 }
 
 static bool check_golang(RBinSymbol *sym) {
-	if (!strncmp (sym->name, "go.", 3)) {
-		return true;
-	}
-	return false;
+	return !strncmp (sym->name, "go.", 3);
 }
 
 static inline bool is_cxx_symbol (const char *name) {
@@ -114,11 +111,9 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 				return R_BIN_NM_RUST;
 			}
 		}
-		if (!cantbe.go) {
-			if (check_golang (sym)) {
-				info->lang = "go";
-				return R_BIN_NM_GO;
-			}
+		if (check_golang (sym)) {
+			info->lang = "go";
+			return R_BIN_NM_GO;
 		}
 		if (!cantbe.swift) {
 			bool hasswift = false;
