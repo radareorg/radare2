@@ -469,7 +469,7 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 
 	opcode = *buf++;
 
-	// Maybe add offset to the print later?
+	// TODO - Maybe add offset to the print later?
 	if (f) {
 		fprintf (f, "  Extended opcode %d: ", opcode);
 	}
@@ -798,7 +798,8 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 		RBinDwarfSMRegisters regs;
 		r_bin_dwarf_set_regs_default (&hdr, &regs);
 
-		ut64 unit_length = (hdr.unit_length.part1 == DWARF_INIT_LEN_64) ? hdr.unit_length.part2 + 4 : hdr.unit_length.part1 + 4;
+		ut64 unit_length = (hdr.unit_length.part1 == DWARF_INIT_LEN_64) ? 
+					hdr.unit_length.part2 + 4 : hdr.unit_length.part1 + 4;
 
 		// If there is more bytes in the buffer than size of the header
 		// It means that there has to be another header/comp.unit
