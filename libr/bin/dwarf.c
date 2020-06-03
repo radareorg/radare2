@@ -759,7 +759,7 @@ static size_t r_bin_dwarf_parse_opcodes(const RBin *a, const ut8 *obuf,
 }
 
 // Is it problem to rename to raw? I don't know why its raw2
-R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
+R_API int r_bin_dwarf_parse_line_raw(const RBin *a, const ut8 *obuf,
 				       size_t len, int mode) {
 	RBinFile *binfile = a ? a->cur : NULL;
 	if (!binfile || !obuf) {
@@ -1732,7 +1732,7 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 			return NULL;
 		}
 		// Actually parse the section
-		r_bin_dwarf_parse_line_raw2 (a, buf, len, mode);
+		r_bin_dwarf_parse_line_raw (a, buf, len, mode);
 		// k bin/cur/addrinfo/*
 		SdbListIter *iter;
 		SdbKv *kv;
