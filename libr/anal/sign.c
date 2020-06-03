@@ -1148,6 +1148,8 @@ static int closest_match_callback(void *a, const char *name, const char *value) 
 			r_sign_item_free (it);
 			return false;
 		}
+
+		// find smallest score of the intial list
 		if (score < data->infimum) {
 			data->infimum = score;
 		}
@@ -1188,9 +1190,9 @@ R_API bool r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count, doub
 	data.index = 0;
 	data.min = min;
 
-	// infimum MUST start < 0 to ensure it gets updated by first entry to make
-	// it in the output list
-	data.infimum = -1337;
+	// infimum must be initialized to something larger then the max value so
+	// the first entry to make output list changes it
+	data.infimum = 1337.0;
 
 	// create a graph for the current function to be compared against
 	RSignItem *test = create_graph_sign_from_fcn (a, fcn);
@@ -1212,7 +1214,7 @@ R_API bool r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count, doub
 	bool ret = sdb_foreach (a->sdb_zigns, &closest_match_callback, (void *)&data);
 
 	// TODO? Should this return the list of best matches instead of printing?
-	if (ret && data.infimum >= min) {
+	if (ret && data.infimum <= 1.0) {
 		RListIter *itr;
 		_close_matches *row;
 		r_list_foreach (output, itr, row) {
