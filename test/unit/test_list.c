@@ -248,11 +248,10 @@ bool test_r_list_mergesort_pint() {
 	r_list_sort (list, (RListComparator)pintcmp);
 
 	// assert the list is sorted as expected
-	RListIter* iter = list->head;
-	do {
-		mu_assert_eq(*(int*)iter->data, expected[i], "array content mismatch");
-		iter = iter->n;
-	} while (++i < R_ARRAY_SIZE(expected));
+	RListIter* iter;
+	for (i = 0, iter = list->head; i < R_ARRAY_SIZE (expected); i++, iter = iter->n) {
+		mu_assert_eq (*(int *)iter->data, expected[i], "array content mismatch");
+	}
 
 	r_list_free(list);
 	mu_end;
