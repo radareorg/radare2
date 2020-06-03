@@ -2659,19 +2659,25 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin, RBinElfReloc *rel
 	size_t offset;
 	size_t size = get_size_rel_mode (bin->dyn_info.dt_pltrel);
 
-	for (offset = 0; offset < bin->dyn_info.dt_pltrelsz && pos < num_relocs; offset += size, pos++) {
-		read_reloc (bin, relocs + pos, bin->dyn_info.dt_pltrel, bin->dyn_info.dt_jmprel + offset);
-		fix_rva_and_offset_exec_file (bin, relocs + pos);
+	for (offset = 0; offset < bin->dyn_info.dt_pltrelsz && pos < num_relocs; offset += size) {
+		if (read_reloc (bin, relocs + pos, bin->dyn_info.dt_pltrel, bin->dyn_info.dt_jmprel + offset)) {
+			fix_rva_and_offset_exec_file (bin, relocs + pos);
+			pos++;
+		}
 	}
 
-	for (offset = 0; offset < bin->dyn_info.dt_relasz && pos < num_relocs; offset += bin->dyn_info.dt_relaent, pos++) {
-		read_reloc (bin, relocs + pos, DT_RELA, bin->dyn_info.dt_rela + offset);
-		fix_rva_and_offset_exec_file (bin, relocs + pos);
+	for (offset = 0; offset < bin->dyn_info.dt_relasz && pos < num_relocs; offset += bin->dyn_info.dt_relaent) {
+		if (read_reloc (bin, relocs + pos, DT_RELA, bin->dyn_info.dt_rela + offset)) {
+			fix_rva_and_offset_exec_file (bin, relocs + pos);
+			pos++;
+		}
 	}
 
-	for (offset = 0; offset < bin->dyn_info.dt_relsz && pos < num_relocs; offset += bin->dyn_info.dt_relent, pos++) {
-		read_reloc (bin, relocs + pos, DT_REL, bin->dyn_info.dt_rel + offset);
-		fix_rva_and_offset_exec_file (bin, relocs + pos);
+	for (offset = 0; offset < bin->dyn_info.dt_relsz && pos < num_relocs; offset += bin->dyn_info.dt_relent) {
+		if (read_reloc (bin, relocs + pos, DT_REL, bin->dyn_info.dt_rel + offset)) {
+			fix_rva_and_offset_exec_file (bin, relocs + pos);
+			pos++;
+		}
 	}
 
 	return pos;
