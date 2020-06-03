@@ -9,7 +9,6 @@ typedef struct {
 	bool swift;
 	bool cxx;
 	bool msvc;
-	bool go;
 } Langs;
 
 static inline bool check_rust(RBinSymbol *sym) {
