@@ -97,7 +97,7 @@ static const char *dwarf_attr_encodings[] = {
 	[DW_AT_common_reference] = "DW_AT_common_reference",
 	[DW_AT_comp_dir] = "DW_AT_comp_dir",
 	[DW_AT_const_value] = "DW_AT_const_value",
-	[DW_AT_containing_type] = "DW_AT_containig_type",
+	[DW_AT_containing_type] = "DW_AT_containing_type",
 	[DW_AT_default_value] = "DW_AT_default_value",
 	[DW_AT_inline] = "DW_AT_inline",
 	[DW_AT_is_optional] = "DW_AT_is_optional",
@@ -136,7 +136,43 @@ static const char *dwarf_attr_encodings[] = {
 	[DW_AT_use_location] = "DW_AT_use_location",
 	[DW_AT_variable_parameter] = "DW_AT_variable_parameter",
 	[DW_AT_virtuality] = "DW_AT_virtuality",
-	[DW_AT_vtable_elem_location] = "DW_AT_vtable_elem_location"
+	[DW_AT_vtable_elem_location] = "DW_AT_vtable_elem_location",
+	[DW_AT_allocated] = "DW_AT_allocated",
+	[DW_AT_associated] = "DW_AT_associated",
+	[DW_AT_data_location] = "DW_AT_data_location",
+	[DW_AT_byte_stride] = "DW_AT_byte_stride",
+	[DW_AT_entry_pc] = "DW_AT_entry_pc",
+	[DW_AT_use_UTF8] = "DW_AT_use_UTF8",
+	[DW_AT_extension] = "DW_AT_extension",
+	[DW_AT_ranges] = "DW_AT_ranges",
+	[DW_AT_trampoline] = "DW_AT_trampoline",
+	[DW_AT_call_column] = "DW_AT_call_column",
+	[DW_AT_call_file] = "DW_AT_call_file",
+	[DW_AT_call_line] = "DW_AT_call_line",
+	[DW_AT_description] = "DW_AT_description",
+	[DW_AT_binary_scale] = "DW_AT_binary_scale",
+	[DW_AT_decimal_scale] = "DW_AT_decimal_scale",
+	[DW_AT_small] = "DW_AT_small",
+	[DW_AT_decimal_sign] = "DW_AT_decimal_sign",
+	[DW_AT_digit_count] = "DW_AT_digit_count",
+	[DW_AT_picture_string] = "DW_AT_picture_string",
+	[DW_AT_mutable] = "DW_AT_mutable",
+	[DW_AT_threads_scaled] = "DW_AT_threads_scaled",
+	[DW_AT_explicit] = "DW_AT_explicit",
+	[DW_AT_object_pointer] = "DW_AT_object_pointer",
+	[DW_AT_endianity] = "DW_AT_endianity",
+	[DW_AT_elemental] = "DW_AT_elemental",
+	[DW_AT_pure] = "DW_AT_pure",
+	[DW_AT_recursive] = "DW_AT_recursive",
+	[DW_AT_signature] = "DW_AT_signature",
+	[DW_AT_main_subprogram] = "DW_AT_main_subprogram",
+	[DW_AT_data_big_offset] = "DW_AT_data_big_offset",
+	[DW_AT_const_expr] = "DW_AT_const_expr",
+	[DW_AT_enum_class] = "DW_AT_enum_class",
+	[DW_AT_linkage_name] = "DW_AT_linkage_name",
+	[DW_AT_lo_user] = "DW_AT_lo_user",
+	[DW_AT_GNU_all_tail_call_sites] = "DW_AT_GNU_all_tail_call_sites",
+	[DW_AT_hi_user] = "DW_AT_hi_user",
 };
 
 static const char *dwarf_attr_form_encodings[] = {
@@ -1039,7 +1075,7 @@ static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RBinDwarfDebugAbbrev *da) {
 				attr_name = da->decls[i].specs[j].attr_name;
 				attr_form = da->decls[i].specs[j].attr_form;
 				if (attr_name && attr_form &&
-					attr_name <= DW_AT_vtable_elem_location &&
+					attr_name <= DW_AT_linkage_name &&
 					attr_form <= DW_FORM_indirect) {
 					fprintf (f, "    %s %s\n",
 							dwarf_attr_encodings[attr_name],
@@ -1226,6 +1262,18 @@ static void r_bin_dwarf_dump_debug_info(FILE *f, const RBinDwarfDebugInfo *inf) 
 	}
 }
 
+static void print_attr_name(ut64 attr_code) {
+	if (attr_code <= DW_AT_linkage_name && attr_code >= DW_AT_sibling || 
+			attr_code == DW_AT_lo_user 					||
+			attr_code == DW_AT_hi_user 					||
+			attr_code == DW_AT_GNU_all_tail_call_sites	
+			)  {
+		printf("  %s:     ", dwarf_attr_encodings[attr_code]);
+	} else {
+		printf("  DW_AT UNKWN: 0x%"PFMT64x":    ", attr_code);
+	}
+}
+
 static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		RBinDwarfAttrSpec *spec, RBinDwarfAttrValue *value,
 		const RBinDwarfCompUnitHdr *hdr,
@@ -1243,6 +1291,8 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 	value->encoding.block.data = NULL;
 	value->encoding.str_struct.string = NULL;
 	value->encoding.str_struct.offset = 0;
+	
+	print_attr_name(spec->attr_name);
 
 	switch (spec->attr_form) {
 	case DW_FORM_addr:
@@ -1263,64 +1313,84 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 			eprintf ("DWARF: Unexpected pointer size: %u\n", (unsigned)hdr->pointer_size);
 			return NULL;
 		}
+		printf("0x%"PFMT64x"\n", value->encoding.address);
 		break;
 	case DW_FORM_block2:
 		value->encoding.block.length = READ16 (buf);
+		printf("%"PFMT64u" byte block:", value->encoding.block.length);
 		if (value->encoding.block.length > 0) {
+			// FIXME null check
 			value->encoding.block.data = calloc (sizeof(ut8), value->encoding.block.length);
 			for (j = 0; j < value->encoding.block.length; j++) {
 				value->encoding.block.data[j] = READ (buf, ut8);
+				printf(" 0x%hhx", value->encoding.block.data[j]);
 			}
+			printf("\n");
 		}
 		break;
 	case DW_FORM_block4:
 		value->encoding.block.length = READ32 (buf);
+		printf("%"PFMT64u" byte block:", value->encoding.block.length);
 		if (value->encoding.block.length > 0) {
 			ut8 *data = calloc (sizeof (ut8), value->encoding.block.length);
 			if (data) {
 				for (j = 0; j < value->encoding.block.length; j++) {
 					data[j] = READ (buf, ut8);
+					printf(" 0x%hhx", data[j]);
 				}
 			}
 			value->encoding.block.data = data;
+			printf("\n");
 		}
 		break;
 	case DW_FORM_data2:
 		value->encoding.data = READ16 (buf);
+		printf("0x%"PFMT64x"\n", value->encoding.data);
 		break;
 	case DW_FORM_data4:
 		value->encoding.data = READ32 (buf);
+		printf("0x%"PFMT64x"\n", value->encoding.data);
 		break;
 	case DW_FORM_data8:
 		value->encoding.data = READ64 (buf);
+		printf("0x%"PFMT64x"\n", value->encoding.data);
 		break;
 	case DW_FORM_string:
 		value->encoding.str_struct.string = *buf? strdup ((const char*)buf) : NULL;
 		buf += (strlen ((const char*)buf) + 1);
+		printf("%s\n", value->encoding.str_struct.string);
 		break;
 	case DW_FORM_block:
 		buf = r_uleb128 (buf, buf_end - buf, &value->encoding.block.length);
 		if (!buf || buf >= buf_end) {
 			return NULL;
 		}
+		printf("%"PFMT64u" byte block:", value->encoding.block.length);
 		value->encoding.block.data = calloc (sizeof (ut8), value->encoding.block.length);
 		if (value->encoding.block.data) {
 			for (j = 0; j < value->encoding.block.length; j++) {
 				value->encoding.block.data[j] = READ (buf, ut8);
+				printf(" 0x%hhx", value->encoding.block.data[j]);
 			}
 		}
+		printf("\n");
 		break;
 	case DW_FORM_block1:
 		value->encoding.block.length = READ (buf, ut8);
+		// FIXME null check
 		value->encoding.block.data = calloc (sizeof (ut8), value->encoding.block.length + 1);
+		printf("%"PFMT64u" byte block:", value->encoding.block.length);
 		if (value->encoding.block.data) {
 			for (j = 0; j < value->encoding.block.length; j++) {
 				value->encoding.block.data[j] = READ (buf, ut8);
+				printf(" 0x%hhx", value->encoding.block.data[j]);
 			}
 		}
+		printf("\n");
 		break;
 	case DW_FORM_flag:
 		value->encoding.flag = READ (buf, ut8);
+		printf("%hhu\n", value->encoding.flag);
 		break;
 	case DW_FORM_sdata:
 		buf = r_leb128 (buf, buf_end - buf, &value->encoding.sdata);
@@ -1331,8 +1401,10 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 			value->encoding.str_struct.string = strdup (
 				(const char *)(debug_str +
 					value->encoding.str_struct.offset));
+			printf("%s\n", value->encoding.str_struct.string);
 		} else {
 			value->encoding.str_struct.string = NULL;
+			printf("NULL\n");
 		}
 		break;
 	case DW_FORM_udata:
@@ -1346,21 +1418,27 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		break;
 	case DW_FORM_ref_addr:
 		value->encoding.reference = READ64 (buf); // addr size of machine
+		printf("0x%"PFMT64x"\n", value->encoding.reference);
 		break;
 	case DW_FORM_ref1:
 		value->encoding.reference = READ8 (buf);
+		printf("0x%"PFMT64x"\n", value->encoding.reference);
 		break;
 	case DW_FORM_ref2:
 		value->encoding.reference = READ16 (buf);
+		printf("0x%"PFMT64x"\n", value->encoding.reference);
 		break;
 	case DW_FORM_ref4:
 		value->encoding.reference = READ32 (buf);
+		printf("0x%"PFMT64x"\n", value->encoding.reference);
 		break;
 	case DW_FORM_ref8:
 		value->encoding.reference = READ64 (buf);
+		printf("0x%"PFMT64x"\n", value->encoding.reference);
 		break;
 	case DW_FORM_data1:
 		value->encoding.data = READ8 (buf);
+		printf("%"PFMT64x"\n", value->encoding.data);
 		break;
 	default:
 		eprintf ("Unknown DW_FORM 0x%02"PFMT64x"\n", spec->attr_form);
@@ -1369,7 +1447,18 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 	}
 	return buf;
 }
-
+/**
+ * @brief 
+ * 
+ * @param s 
+ * @param obuf 
+ * @param cu 
+ * @param da 
+ * @param offset Offset to the start of the abbreviations for current comp unit
+ * @param debug_str 
+ * @param debug_str_len 
+ * @return const ut8* 
+ */
 static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 		RBinDwarfCompUnit *cu, const RBinDwarfDebugAbbrev *da,
 		size_t offset, const ut8 *debug_str, size_t debug_str_len) {
@@ -1377,24 +1466,26 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 	ut64 abbr_code;
 	size_t i;
 
-	if (cu->hdr.length > debug_str_len) {
-		//avoid oob read
-		return NULL;
-	}
+	// this doesn't make sense? How are these related TODO
+	// if (cu->hdr.length > debug_str_len) {
+	// 	//avoid oob read
+	// 	return NULL;
+	// }
 	while (buf && buf < buf_end && buf >= obuf) {
-		if (cu->length && cu->capacity == cu->length) {
+		if (cu->length && cu->capacity == cu->length) { 
 			r_bin_dwarf_expand_cu (cu);
 		}
 		buf = r_uleb128 (buf, buf_end - buf, &abbr_code);
-		if (abbr_code > da->length || !buf || buf >= buf_end) {
-			return NULL;
-		}
+		printf(" Abbrev number: %lld\n", abbr_code);
 
+		if (abbr_code > da->length || !buf || buf >= buf_end) { 
+			return buf; // we finished, return the buffer to parse next compilation units
+		}
 		r_bin_dwarf_init_die (&cu->dies[cu->length]);
 		if (!abbr_code) {
 			cu->dies[cu->length].abbrev_code = 0;
 			cu->length++;
-			buf++;
+			// buf++; // ???? I feel like uleb already moves with the buffer, this looks like another off by one
 			continue;
 		}
 
@@ -1405,8 +1496,8 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 		if (da->capacity < abbr_code) {
 			return NULL;
 		}
-
-		for (i = 0; i < da->decls[abbr_code - 1].length; i++) {
+		// might be cu->dies[cu->length].capacity
+		for (i = 0; i < da->decls[abbr_code - 1].length - 1; i++) {
 			if (cu->dies[cu->length].length == cu->dies[cu->length].capacity) {
 				r_bin_dwarf_expand_die (&cu->dies[cu->length]);
 			}
@@ -1415,6 +1506,7 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 				break;
 			}
 			memset (&cu->dies[cu->length].attr_values[i], 0, sizeof (cu->dies[cu->length].attr_values[i]));
+			
 			buf = r_bin_dwarf_parse_attr_value (buf, buf_end - buf,
 					&da->decls[abbr_code - 1].specs[i],
 					&cu->dies[cu->length].attr_values[i],
@@ -1432,6 +1524,14 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 		cu->length++;
 	}
 	return buf;
+}
+
+static void print_comp_unit_header(const RBinDwarfCompUnitHdr *hdr, FILE *file) {
+	printf(" Compilation Unit @ offset TODO:\n");
+	printf("  Length: %"PFMT32x"\n", hdr->length);
+	printf("  Version: %hu\n", hdr->version);
+	printf("  Abbrev Offset: %"PFMT32x"\n", hdr->abbrev_offset);
+	printf("  Pointer Size: %hhx\n", hdr->pointer_size);
 }
 
 R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
@@ -1469,12 +1569,12 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 		inf->comp_units[curr_unit].hdr.length = READ32 (buf);
 		inf->comp_units[curr_unit].hdr.version = READ16 (buf);
 
-		if (inf->comp_units[curr_unit].hdr.version != 2) {
-//			eprintf ("DWARF: version %d is not yet supported.\n",
-//					inf->comp_units[curr_unit].hdr.version);
-			ret = false;
-			goto out_debug_info;
-		}
+// 		if (inf->comp_units[curr_unit].hdr.version != 2) {
+// //			eprintf ("DWARF: version %d is not yet supported.\n",
+// //					inf->comp_units[curr_unit].hdr.version);
+// 			ret = false;
+// 			goto out_debug_info;
+// 		}
 		if (inf->comp_units[curr_unit].hdr.length > len) {
 			ret = false;
 			goto out_debug_info;
@@ -1484,14 +1584,17 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 		inf->comp_units[curr_unit].hdr.pointer_size = READ (buf, ut8);
 		inf->length++;
 
-		/* Linear search FIXME */
+		print_comp_unit_header(&inf->comp_units[curr_unit].hdr, stdout);
+
 		if (da->decls->length >= da->capacity) {
 			eprintf ("WARNING: malformed dwarf have not enough buckets for decls.\n");
 		}
-		const int k_max = R_MIN (da->capacity, da->decls->length);
+
+		const int k_max = R_MIN (da->capacity, da->length);
+
+		// linear search for current abbreviation index FIXME because this shouldn't be necessary
 		for (k = 0; k < k_max; k++) {
-			if (da->decls[k].offset ==
-				inf->comp_units[curr_unit].hdr.abbrev_offset) {
+			if (da->decls[k].offset == inf->comp_units[curr_unit].hdr.abbrev_offset) {
 				offset = k;
 				break;
 			}
@@ -1509,7 +1612,7 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 	}
 
 	if (mode == R_MODE_PRINT) {
-		r_bin_dwarf_dump_debug_info (NULL, inf);
+		r_bin_dwarf_dump_debug_info (stdout, inf);
 	}
 
 out_debug_info:
@@ -1595,6 +1698,7 @@ RBinSection *getsection(RBin *a, const char *sn) {
 	}
 	return NULL;
 }
+
 
 R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode) {
 	ut8 *buf, *debug_str_buf = 0;
