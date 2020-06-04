@@ -3474,3 +3474,85 @@ EOF
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=lea pseudo improvements (pseudo disabled)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.comments=false
+e asm.pseudo=false
+wx 544889e5b40266b83333b85555444448b8bebafecaefbeadde4889d8488d03488b4308488d4308488d041b488d441b0a488d430a488d44240c488d450b488d45f5488d442404488d4508488d45f8
+aa
+pd 19
+EOF
+EXPECT=<<EOF
+/ 512: fcn.00000000 (int64_t arg_8h, int64_t arg_bh, int64_t arg_ch);
+|           ; var int64_t var_bh @ rbp-0xb
+|           ; var int64_t var_8h @ rbp-0x8
+|           ; arg int64_t arg_8h @ rbp+0x8
+|           ; arg int64_t arg_bh @ rbp+0xb
+|           ; var int64_t var_4h @ rsp+0x4
+|           ; arg int64_t arg_ch @ rsp+0xc
+|           0x00000000      54             push rsp
+|           0x00000001      4889e5         mov rbp, rsp
+|           0x00000004      b402           mov ah, 2
+|           0x00000006      66b83333       mov ax, 0x3333
+|           0x0000000a      b855554444     mov eax, 0x44445555
+|           0x0000000f      48b8bebafeca.  movabs rax, 0xdeadbeefcafebabe
+|           0x00000019      4889d8         mov rax, rbx
+|           0x0000001c      488d03         lea rax, [rbx]
+|           0x0000001f      488b4308       mov rax, qword [rbx + 8]
+|           0x00000023      488d4308       lea rax, [rbx + 8]
+|           0x00000027      488d041b       lea rax, [rbx + rbx]
+|           0x0000002b      488d441b0a     lea rax, [rbx + rbx + 0xa]
+|           0x00000030      488d430a       lea rax, [rbx + 0xa]
+|           0x00000034      488d44240c     lea rax, [arg_ch]
+|           0x00000039      488d450b       lea rax, [arg_bh]
+|           0x0000003d      488d45f5       lea rax, [var_bh]
+|           0x00000041      488d442404     lea rax, [var_4h]
+|           0x00000046      488d4508       lea rax, [arg_8h]
+|           0x0000004a      488d45f8       lea rax, [var_8h]
+EOF
+RUN
+
+NAME=lea pseudo improvements (pseudo enabled)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.comments=false
+e asm.pseudo=true
+wx 544889e5b40266b83333b85555444448b8bebafecaefbeadde4889d8488d03488b4308488d4308488d041b488d441b0a488d430a488d44240c488d450b488d45f5488d442404488d4508488d45f8
+aa
+pd 19
+EOF
+EXPECT=<<EOF
+/ 512: fcn.00000000 (int64_t arg_8h, int64_t arg_bh, int64_t arg_ch);
+|           ; var int64_t var_bh @ rbp-0xb
+|           ; var int64_t var_8h @ rbp-0x8
+|           ; arg int64_t arg_8h @ rbp+0x8
+|           ; arg int64_t arg_bh @ rbp+0xb
+|           ; var int64_t var_4h @ rsp+0x4
+|           ; arg int64_t arg_ch @ rsp+0xc
+|           0x00000000      54             push rsp
+|           0x00000001      4889e5         rbp = rsp
+|           0x00000004      b402           ah = 2
+|           0x00000006      66b83333       ax = 0x3333
+|           0x0000000a      b855554444     eax = 0x44445555
+|           0x0000000f      48b8bebafeca.  rax = 0xdeadbeefcafebabe
+|           0x00000019      4889d8         rax = rbx
+|           0x0000001c      488d03         rax = rbx
+|           0x0000001f      488b4308       rax = qword [rbx + 8]
+|           0x00000023      488d4308       rax = rbx + 8
+|           0x00000027      488d041b       rax = rbx + rbx
+|           0x0000002b      488d441b0a     rax = rbx + rbx + 0xa
+|           0x00000030      488d430a       rax = rbx + 0xa
+|           0x00000034      488d44240c     rax = arg_ch
+|           0x00000039      488d450b       rax = arg_bh
+|           0x0000003d      488d45f5       rax = var_bh
+|           0x00000041      488d442404     rax = var_4h
+|           0x00000046      488d4508       rax = arg_8h
+|           0x0000004a      488d45f8       rax = var_8h
+EOF
+RUN
