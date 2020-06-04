@@ -8,7 +8,7 @@
 
 static RCodeAnnotation make_code_annotation(int st, int en, RCodeAnnotationType typec,
 	ut64 offset, RSyntaxHighlightType types) {
-	RCodeAnnotation annotation = {};
+	RCodeAnnotation annotation = { 0 };
 	annotation.start = st;
 	annotation.end = en;
 	annotation.type = typec;

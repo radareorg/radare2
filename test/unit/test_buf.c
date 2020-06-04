@@ -102,12 +102,12 @@ bool test_buf(RBuffer *b) {
 
 bool test_r_buf_file(void) {
 	RBuffer *b;
-	char filename[] = "r2-XXXXXX";
+	char *filename = "r2-XXXXXX";
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
 
 	// Prepare file
-	int fd = mkstemp (filename);
+	int fd = r_file_mkstemp ("", &filename);
 	mu_assert_neq ((ut64)fd, (ut64)-1, "mkstemp failed...");
 	write (fd, content, length);
 	close (fd);
@@ -144,12 +144,12 @@ bool test_r_buf_bytes(void) {
 
 bool test_r_buf_mmap(void) {
 	RBuffer *b;
-	char filename[] = "r2-XXXXXX";
+	char *filename = "r2-XXXXXX";
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
 
 	// Prepare file
-	int fd = mkstemp (filename);
+	int fd = r_file_mkstemp ("", &filename);
 	mu_assert_neq ((long long)fd, -1LL, "mkstemp failed...");
 	write (fd, content, length);
 	close (fd);

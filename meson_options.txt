@@ -32,7 +32,7 @@ option('debugger', type: 'boolean', value: true)
 
 option('use_webui', type: 'boolean', value: false, description: 'install different WebUIs for radare2')
 
-option('enable_tests', type: 'boolean', value: false, description: 'Build unit tests in test/unit')
+option('enable_tests', type: 'boolean', value: true, description: 'Build unit tests in test/unit')
 option('enable_r2r', type: 'boolean', value: true, description: 'Build r2r executable for regression testing')
 
 option('tree-sitter-sync', type: 'boolean', value: false, description: 'Force a sync of shlr/tree-sitter before building')
