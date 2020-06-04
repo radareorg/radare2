@@ -148,6 +148,19 @@ void deinit_pdb_downloader(SPDBDownloader *pd) {
 	pd->download = 0;
 }
 
+static bool is_valid_guid(const char *guid) {
+	if (!guid) {
+		return false;
+	}
+	size_t i;
+	for (i = 0; guid[i] && i <= 33 ; i++) {
+		if (!isxdigit (guid[i])) {
+			return false;
+		}
+	}
+	return i == 33;
+}
+
 int r_bin_pdb_download(RCore *core, int isradjson, int *actions_done, SPDBOptions *options) {
 	int ret;
 	SPDBDownloaderOpt opt;
@@ -156,6 +169,11 @@ int r_bin_pdb_download(RCore *core, int isradjson, int *actions_done, SPDBOption
 
 	if (!info || !info->debug_file_name) {
 		eprintf ("Can't find debug filename\n");
+		return 1;
+	}
+
+	if (!is_valid_guid (info->guid)) {
+		eprintf ("Invalid GUID for file\n");
 		return 1;
 	}
 
