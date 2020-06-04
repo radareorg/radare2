@@ -1221,11 +1221,13 @@ static void r_bin_dwarf_dump_debug_info(FILE *f, const RBinDwarfDebugInfo *inf) 
 	}
 
 	for (i = 0; i < inf->length; i++) {
+		fprintf (f, "\n");
 		fprintf (f, "  Compilation Unit @ offset 0x%"PFMT64x":\n", inf->comp_units [i].offset);
 		fprintf (f, "   Length:        0x%x\n", inf->comp_units [i].hdr.length);
 		fprintf (f, "   Version:       %d\n", inf->comp_units [i].hdr.version);
 		fprintf (f, "   Abbrev Offset: 0x%x\n", inf->comp_units [i].hdr.abbrev_offset);
 		fprintf (f, "   Pointer Size:  %d\n", inf->comp_units [i].hdr.pointer_size);
+		fprintf (f, "\n");
 
 		dies = inf->comp_units[i].dies;
 
@@ -1253,7 +1255,7 @@ static void r_bin_dwarf_dump_debug_info(FILE *f, const RBinDwarfDebugInfo *inf) 
 						dwarf_attr_encodings[values[k].name]) {
 					fprintf (f, "     %-18s : ", dwarf_attr_encodings[values[k].name]);
 				} else {
-					fprintf (f, "     TODO\t");
+					fprintf (f, "     UNKWN [0x%"PFMT64x"]\t : ", values[k].name);
 				}
 				r_bin_dwarf_dump_attr_value (&values[k], f);
 				fprintf (f, "\n");
@@ -1450,19 +1452,19 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 /**
  * @brief 
  * 
- * @param s 
- * @param obuf 
- * @param cu 
- * @param da 
- * @param offset Offset to the start of the abbreviations for current comp unit
- * @param debug_str 
- * @param debug_str_len 
+ * @param s  Sdb
+ * @param obuf Start of the buffer
+ * @param curr_unit 
+ * @param abbrevs
+ * @param offset Offset index to the start of the abbreviations for current comp unit
+ * @param debug_str Start of the debug_string table
+ * @param debug_str_len  Length of the debug_string table
  * @return const ut8* 
  */
-static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
-		RBinDwarfCompUnit *cu, const RBinDwarfDebugAbbrev *da,
+static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *sdb, const ut8 *obuf,
+		RBinDwarfCompUnit *curr_unit, const RBinDwarfDebugAbbrev *abbrevs,
 		size_t offset, const ut8 *debug_str, size_t debug_str_len) {
-	const ut8 *buf = obuf, *buf_end = obuf + (cu->hdr.length - 7);
+	const ut8 *buf = obuf, *buf_end = obuf + (curr_unit->hdr.length - 7);
 	ut64 abbr_code;
 	size_t i;
 
@@ -1471,57 +1473,67 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 	// 	//avoid oob read
 	// 	return NULL;
 	// }
+
+
 	while (buf && buf < buf_end && buf >= obuf) {
-		if (cu->length && cu->capacity == cu->length) { 
-			r_bin_dwarf_expand_cu (cu);
+		if (curr_unit->length && curr_unit->capacity == curr_unit->length) { 
+			r_bin_dwarf_expand_cu (curr_unit);
 		}
+		// DIE starts with ULEB128 with the abbreviation code
 		buf = r_uleb128 (buf, buf_end - buf, &abbr_code);
 		printf(" Abbrev number: %lld\n", abbr_code);
 
-		if (abbr_code > da->length || !buf || buf >= buf_end) { 
+		if (abbr_code > abbrevs->length || !buf || buf >= buf_end) { 
 			return buf; // we finished, return the buffer to parse next compilation units
 		}
-		r_bin_dwarf_init_die (&cu->dies[cu->length]);
+		RBinDwarfDIE *curr_die = &curr_unit->dies[curr_unit->length];
+		r_bin_dwarf_init_die (curr_die);
+
+		// there can be "null" entries for alignment padding purposes
+		// such entries have abbr_code == 0
 		if (!abbr_code) {
-			cu->dies[cu->length].abbrev_code = 0;
-			cu->length++;
-			// buf++; // ???? I feel like uleb already moves with the buffer, this looks like another off by one
+			curr_die->abbrev_code = 0;
+			curr_unit->length++;
 			continue;
 		}
-
-		cu->dies[cu->length].abbrev_code = abbr_code;
-		cu->dies[cu->length].tag = da->decls[abbr_code - 1].tag;
 		abbr_code += offset;
 
-		if (da->capacity < abbr_code) {
+		RBinDwarfAbbrevDecl *curr_abbr = &abbrevs->decls[abbr_code - 1];
+		curr_die->abbrev_code = abbr_code;
+		curr_die->tag = curr_abbr->tag;
+
+
+		if (abbrevs->capacity < abbr_code) {
 			return NULL;
 		}
-		// might be cu->dies[cu->length].capacity
-		for (i = 0; i < da->decls[abbr_code - 1].length - 1; i++) {
-			if (cu->dies[cu->length].length == cu->dies[cu->length].capacity) {
-				r_bin_dwarf_expand_die (&cu->dies[cu->length]);
+
+		// reads all attribute valeus based on abbreviation
+		for (i = 0; i < curr_abbr->length - 1; i++) {
+			if (curr_die->length == curr_die->capacity) {
+				r_bin_dwarf_expand_die (curr_die);
 			}
-			if (i >= cu->dies[cu->length].capacity || i >= da->decls[abbr_code - 1].capacity) {
+			if (i >= curr_die->capacity || i >= curr_abbr->capacity) {
 				eprintf ("Warning: malformed dwarf attribute capacity doesn't match length\n");
 				break;
 			}
-			memset (&cu->dies[cu->length].attr_values[i], 0, sizeof (cu->dies[cu->length].attr_values[i]));
+			memset (&curr_die->attr_values[i], 0, sizeof (curr_die->attr_values[i]));
 			
 			buf = r_bin_dwarf_parse_attr_value (buf, buf_end - buf,
-					&da->decls[abbr_code - 1].specs[i],
-					&cu->dies[cu->length].attr_values[i],
-					&cu->hdr, debug_str, debug_str_len);
-			if (cu->dies[cu->length].attr_values[i].name == DW_AT_comp_dir) {
-				const char *name = cu->dies[cu->length].attr_values[i].encoding.str_struct.string;
+					&curr_abbr->specs[i],
+					&curr_die->attr_values[i],
+					&curr_unit->hdr, debug_str, debug_str_len);
+			
+			if (curr_die->attr_values[i].name == DW_AT_comp_dir) {
+				const char *name = curr_die->attr_values[i].encoding.str_struct.string;
 				if ((size_t)name > 1024) { // solve some null derefs
-					sdb_set (s, "DW_AT_comp_dir", name, 0);
+					sdb_set (sdb, "DW_AT_comp_dir", name, 0);
 				} else {
 					eprintf ("Invalid string pointer at %p\n", name);
 				}
 			}
-			cu->dies[cu->length].length++;
+			curr_die->length++;
 		}
-		cu->length++;
+		curr_unit->length++;
 	}
 	return buf;
 }
@@ -1533,58 +1545,69 @@ static void print_comp_unit_header(const RBinDwarfCompUnitHdr *hdr, FILE *file) 
 	printf("  Abbrev Offset: %"PFMT32x"\n", hdr->abbrev_offset);
 	printf("  Pointer Size: %hhx\n", hdr->pointer_size);
 }
+/**
+ * @brief Reads all information about compilation unit header
+ * 
+ * @param buf Start of the buffer
+ * @param buf_end Upper bound of the buffer
+ * @param unit Unit to read information into
+ * @return ut8* Advanced position in a buffer
+ */
+static ut8 *info_comp_unit_read(ut8 *buf, const ut8 *buf_end, RBinDwarfCompUnit *unit) {
+	unit->hdr.length = READ32 (buf);
+	unit->hdr.version = READ16 (buf);
+	unit->hdr.abbrev_offset = READ32 (buf);
+	unit->hdr.pointer_size = READ8 (buf);
+	return buf;
+}
 
 R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 		const ut8 *obuf, size_t len,
 		const ut8 *debug_str, size_t debug_str_len, int mode) {
-	const ut8 *buf = obuf, *buf_end = obuf + len;
-	size_t k, offset = 0;
-	int curr_unit = 0;
-	RBinDwarfDebugInfo di = {0};
-	RBinDwarfDebugInfo *inf = &di;
-	bool ret = true;
 
 	if (!da || !s || !obuf) {
 		return false;
 	}
+	
+	const ut8 *buf = obuf, *buf_end = obuf + len;
 
-	if (r_bin_dwarf_init_debug_info (inf) < 0) {
+	RBinDwarfDebugInfo di = {0};
+	RBinDwarfDebugInfo *info = &di;
+
+	bool ret = true;
+	if (r_bin_dwarf_init_debug_info (info) < 0) {
 		ret = false;
 		goto out;
 	}
+	size_t k, offset = 0;
+	int curr_unit_idx = 0;
+
 	while (buf < buf_end) {
-		if (inf->length >= inf->capacity) {
+		if (info->length >= info->capacity) {
 			break;
 		}
 
-		if (r_bin_dwarf_init_comp_unit (&inf->comp_units[curr_unit]) < 0) {
+		RBinDwarfCompUnit *curr_unit = &info->comp_units[curr_unit_idx];
+		if (r_bin_dwarf_init_comp_unit (curr_unit) < 0) {
 			ret = false;
-			curr_unit--;
+			curr_unit_idx--;
 			goto out_debug_info;
 		}
+		//
 
-		inf->comp_units[curr_unit].offset = buf - obuf;
-		inf->comp_units[curr_unit].hdr.pointer_size = 0;
-		inf->comp_units[curr_unit].hdr.abbrev_offset = 0;
-		inf->comp_units[curr_unit].hdr.length = READ32 (buf);
-		inf->comp_units[curr_unit].hdr.version = READ16 (buf);
+		curr_unit->offset = buf - obuf;
+		buf = info_comp_unit_read (buf, buf_end, curr_unit);
 
-// 		if (inf->comp_units[curr_unit].hdr.version != 2) {
-// //			eprintf ("DWARF: version %d is not yet supported.\n",
-// //					inf->comp_units[curr_unit].hdr.version);
-// 			ret = false;
-// 			goto out_debug_info;
-// 		}
-		if (inf->comp_units[curr_unit].hdr.length > len) {
+		if (curr_unit->hdr.length > len) {
 			ret = false;
 			goto out_debug_info;
 		}
+		info->length++;
 
-		inf->comp_units[curr_unit].hdr.abbrev_offset = READ32 (buf);
-		inf->comp_units[curr_unit].hdr.pointer_size = READ (buf, ut8);
-		inf->length++;
-
-		print_comp_unit_header(&inf->comp_units[curr_unit].hdr, stdout);
+		// TODO remove any printing after I am done developing
+		// prints during the parsing and not just after helps
+		// me to find errors easier
+		print_comp_unit_header(&curr_unit->hdr, stdout);
 
 		if (da->decls->length >= da->capacity) {
 			eprintf ("WARNING: malformed dwarf have not enough buckets for decls.\n");
@@ -1594,32 +1617,31 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 
 		// linear search for current abbreviation index FIXME because this shouldn't be necessary
 		for (k = 0; k < k_max; k++) {
-			if (da->decls[k].offset == inf->comp_units[curr_unit].hdr.abbrev_offset) {
+			if (da->decls[k].offset == curr_unit->hdr.abbrev_offset) {
 				offset = k;
 				break;
 			}
 		}
 
-		buf = r_bin_dwarf_parse_comp_unit (s, buf, &inf->comp_units[curr_unit],
-			da, offset, debug_str, debug_str_len);
+		buf = r_bin_dwarf_parse_comp_unit (s, buf, curr_unit, da, offset, debug_str, debug_str_len);
 
 		if (!buf) {
 			ret = false;
 			goto out_debug_info;
 		}
 
-		curr_unit++;
+		curr_unit_idx++;
 	}
 
 	if (mode == R_MODE_PRINT) {
-		r_bin_dwarf_dump_debug_info (stdout, inf);
+		r_bin_dwarf_dump_debug_info (stdout, info);
 	}
 
 out_debug_info:
-	for (; curr_unit >= 0; curr_unit--) {
-		r_bin_dwarf_free_comp_unit (&inf->comp_units[curr_unit]);
+	for (; curr_unit_idx >= 0; curr_unit_idx--) {
+		r_bin_dwarf_free_comp_unit (&info->comp_units[curr_unit_idx]);
 	}
-	r_bin_dwarf_free_debug_info (inf);
+	r_bin_dwarf_free_debug_info (info);
 out:
 	return ret;
 }
