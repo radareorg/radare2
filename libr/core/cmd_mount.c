@@ -406,8 +406,8 @@ static int cmd_mount(void *data, const char *_input) {
 				r_fs_write (core->fs, f, 0, (const ut8 *)data, strlen (data));
 				r_fs_close (core->fs, f);
 				r_fs_file_free (f);
-				free (args);
 			}
+			free (args);
 		} else {
 			eprintf ("Usage: mw [file] ([data])\n");
 		}
