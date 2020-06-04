@@ -4265,34 +4265,34 @@ dodo:
 #ifdef __WINDOWS__
 			if (I->vtmode == 2 && !I->term_xterm) {
 #endif
-			if (IS_PRINTABLE (ch) || ch == '\t' || ch == '\n') {
+				if (IS_PRINTABLE (ch) || ch == '\t' || ch == '\n') {
 #ifdef __WINDOWS__
-				while (r_cons_readchar_timeout (1) != -1) ;
+					while (r_cons_readchar_timeout (1) != -1) ;
 #else
-				tcflush (STDIN_FILENO, TCIFLUSH);
+					tcflush (STDIN_FILENO, TCIFLUSH);
 #endif
-			} else if (ch == 0x1b) {
-				char chrs[2];
-				int chrs_read = 1;
-				chrs[0] = r_cons_readchar ();
-				if (chrs[0] == '[') {
-					chrs[1] = r_cons_readchar ();
-					chrs_read++;
-					if (chrs[1] >= 'A' && chrs[1] <= 'D') { // arrow keys
+				} else if (ch == 0x1b) {
+					char chrs[2];
+					int chrs_read = 1;
+					chrs[0] = r_cons_readchar ();
+					if (chrs[0] == '[') {
+						chrs[1] = r_cons_readchar ();
+						chrs_read++;
+						if (chrs[1] >= 'A' && chrs[1] <= 'D') { // arrow keys
 #ifdef __WINDOWS__
-						while (r_cons_readchar_timeout (1) != -1) ;
+							while (r_cons_readchar_timeout (1) != -1) ;
 #else
-						tcflush (STDIN_FILENO, TCIFLUSH);
-						// Following seems to fix an issue where scrolling slows
-						// down to a crawl after some time mashing the up and down
-						// arrow keys
-						r_cons_set_raw (false);
-						r_cons_set_raw (true);
+							tcflush (STDIN_FILENO, TCIFLUSH);
+							// Following seems to fix an issue where scrolling slows
+							// down to a crawl after some time mashing the up and down
+							// arrow keys
+							r_cons_set_raw (false);
+							r_cons_set_raw (true);
 #endif
+						}
 					}
+					(void)r_cons_readpush (chrs, chrs_read);
 				}
-				(void)r_cons_readpush (chrs, chrs_read);
-			}
 #ifdef __WINDOWS__
 			}
 #endif
