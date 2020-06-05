@@ -261,7 +261,8 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 	if (!hdr || !bf || !buf) {
 		return NULL;
 	}
-
+	// This should be possible to do better TODO
+	// This deals with http://www.dwarfstd.org/doc/Dwarf3.pdf section 7.4
 	hdr->unit_length.part1 = READ32 (buf);
 	if (hdr->unit_length.part1 == DWARF_INIT_LEN_64) {
 		hdr->unit_length.part2 = READ64 (buf);
@@ -1398,7 +1399,12 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		buf = r_leb128 (buf, buf_end - buf, &value->encoding.sdata);
 		break;
 	case DW_FORM_strp:
-		value->encoding.str_struct.offset = READ32 (buf);
+		// this offset can be 64bit, based on dwarf format
+		if (hdr->is_64bit) {
+			value->encoding.str_struct.offset = READ64 (buf);
+		} else {
+			value->encoding.str_struct.offset = READ32 (buf);
+		}
 		if (debug_str && value->encoding.str_struct.offset < debug_str_len) {
 			value->encoding.str_struct.string = strdup (
 				(const char *)(debug_str +
@@ -1419,7 +1425,11 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		}
 		break;
 	case DW_FORM_ref_addr:
-		value->encoding.reference = READ64 (buf); // addr size of machine
+		if (hdr->is_64bit) {
+			value->encoding.reference = READ64 (buf); // addr size of machine
+		} else {
+			value->encoding.reference = READ32 (buf); // addr size of machine
+		}
 		printf("0x%"PFMT64x"\n", value->encoding.reference);
 		break;
 	case DW_FORM_ref1:
@@ -1473,7 +1483,6 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *sdb, const ut8 *obuf,
 	// 	//avoid oob read
 	// 	return NULL;
 	// }
-
 
 	while (buf && buf < buf_end && buf >= obuf) {
 		if (curr_unit->length && curr_unit->capacity == curr_unit->length) { 
@@ -1554,9 +1563,22 @@ static void print_comp_unit_header(const RBinDwarfCompUnitHdr *hdr, FILE *file) 
  * @return ut8* Advanced position in a buffer
  */
 static ut8 *info_comp_unit_read(ut8 *buf, const ut8 *buf_end, RBinDwarfCompUnit *unit) {
+	// 32-bit vs 64-bit dwarf formats
+	// http://www.dwarfstd.org/doc/Dwarf3.pdf section 7.4
+	unit->hdr.is_64bit = false;
+	// hdr.length is supposed to be smaller than 0xffffff00, should we check that?
 	unit->hdr.length = READ32 (buf);
+	if (unit->hdr.length == (ut32) DWARF_INIT_LEN_64) { // then its 64bit
+		unit->hdr.length = READ64 (buf);
+		unit->hdr.is_64bit = true;
+	}
 	unit->hdr.version = READ16 (buf);
-	unit->hdr.abbrev_offset = READ32 (buf);
+
+	if (unit->hdr.is_64bit) {
+		unit->hdr.abbrev_offset = READ64 (buf);
+	} else {
+		unit->hdr.abbrev_offset = READ32 (buf);
+	}
 	unit->hdr.pointer_size = READ8 (buf);
 	return buf;
 }
