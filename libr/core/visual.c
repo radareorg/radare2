@@ -4141,6 +4141,28 @@ R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols) {
 	}
 }
 
+#ifdef __WINDOWS__
+
+static bool is_mintty(RCons *cons) {
+	return cons->term_xterm;
+}
+
+static void flush_stdin(void) {
+	while (r_cons_readchar_timeout (1) != -1) ;
+}
+
+#else
+
+static bool is_mintty(RCons *cons) {
+	return false;
+}
+
+static void flush_stdin(void) {
+	tcflush (STDIN_FILENO, TCIFLUSH);
+}
+
+#endif
+
 R_API int r_core_visual(RCore *core, const char *input) {
 	const char *teefile;
 	ut64 scrseek;
@@ -4262,28 +4284,31 @@ dodo:
 			} else {
 				ch = r_cons_readchar ();
 			}
+			if (I->vtmode == 2 && !is_mintty (core->cons)) {
+				// Prevent runaway scrolling
+				if (IS_PRINTABLE (ch) || ch == '\t' || ch == '\n') {
+					flush_stdin ();
+				} else if (ch == 0x1b) {
+					char chrs[2];
+					int chrs_read = 1;
+					chrs[0] = r_cons_readchar ();
+					if (chrs[0] == '[') {
+						chrs[1] = r_cons_readchar ();
+						chrs_read++;
+						if (chrs[1] >= 'A' && chrs[1] <= 'D') { // arrow keys
+							flush_stdin ();
 #ifndef __WINDOWS__
-			if (IS_PRINTABLE (ch) || ch == '\t' || ch == '\n') {
-				tcflush (STDIN_FILENO, TCIFLUSH);
-			} else if (ch == 0x1b) {
-				char chrs[2];
-				int chrs_read = 1;
-				chrs[0] = r_cons_readchar ();
-				if (chrs[0] == '[') {
-					chrs[1] = r_cons_readchar ();
-					chrs_read++;
-					if (chrs[1] >= 'A' && chrs[1] <= 'D') { // arrow keys
-						tcflush (STDIN_FILENO, TCIFLUSH);
-						// Following seems to fix an issue where scrolling slows
-						// down to a crawl after some time mashing the up and down
-						// arrow keys
-						r_cons_set_raw (false);
-						r_cons_set_raw (true);
-					}
-				}
-				(void)r_cons_readpush (chrs, chrs_read);
-			}
+							// Following seems to fix an issue where scrolling slows
+							// down to a crawl for some terminals after some time
+							// mashing the up and down arrow keys
+							r_cons_set_raw (false);
+							r_cons_set_raw (true);
 #endif
+						}
+					}
+					(void)r_cons_readpush (chrs, chrs_read);
+				}
+			}
 			if (r_cons_is_breaked()) {
 				break;
 			}
