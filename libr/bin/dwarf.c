@@ -75,7 +75,22 @@ static const char *dwarf_tag_name_encodings[] = {
 	[DW_TAG_try_block] = "DW_TAG_try_block",
 	[DW_TAG_variant_part] = "DW_TAG_variant_part",
 	[DW_TAG_variable] = "DW_TAG_variable",
-	[DW_TAG_volatile_type] = "DW_TAG_volatile_type"
+	[DW_TAG_volatile_type] = "DW_TAG_volatile_type",
+	[DW_TAG_dwarf_procedure] = "DW_TAG_dwarf_procedure",
+	[DW_TAG_restrict_type] = "DW_TAG_restrict_type",
+	[DW_TAG_interface_type] = "DW_TAG_interface_type",
+	[DW_TAG_namespace] = "DW_TAG_namespace",
+	[DW_TAG_imported_module] = "DW_TAG_imported_module",
+	[DW_TAG_unspecified_type] = "DW_TAG_unspecified_type",
+	[DW_TAG_partial_unit] = "DW_TAG_partial_unit",
+	[DW_TAG_imported_unit] = "DW_TAG_imported_unit",
+	[DW_TAG_mutable_type] = "DW_TAG_mutable_type",
+	[DW_TAG_condition] = "DW_TAG_condition",
+	[DW_TAG_shared_type] = "DW_TAG_shared_type",
+	[DW_TAG_type_unit] = "DW_TAG_type_unit",
+	[DW_TAG_rvalue_reference_type] = "DW_TAG_rvalue_reference_type",
+	[DW_TAG_template_alias] = "DW_TAG_template_alias",
+	[DW_TAG_LAST] = "DW_TAG_LAST", 
 };
 
 static const char *dwarf_attr_encodings[] = {
@@ -196,7 +211,11 @@ static const char *dwarf_attr_form_encodings[] = {
 	[DW_FORM_ref4] = "DW_FORM_ref4",
 	[DW_FORM_ref8] = "DW_FORM_ref8",
 	[DW_FORM_ref_udata] = "DW_FORM_ref_udata",
-	[DW_FORM_indirect] = "DW_FORM_indirect"
+	[DW_FORM_indirect] = "DW_FORM_indirect",
+	[DW_FORM_sec_offset] = "DW_FORM_sec_offset",
+	[DW_FORM_exprloc] = "DW_FORM_exprloc",
+	[DW_FORM_flag_present] = "DW_FORM_flag_present",
+	[DW_FORM_ref_sig8] = "DW_FORM_ref_sig8",
 };
 
 static const char *dwarf_langs[] = {
