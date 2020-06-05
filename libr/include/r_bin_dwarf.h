@@ -28,8 +28,8 @@ extern "C" {
 #define DW_LNE_set_address              0x02
 #define DW_LNE_define_file              0x03
 #define DW_LNE_set_discriminator        0x04  /* DWARF4 */
-#define DW_LNE_lo_user			0x80
-#define DW_LNE_hi_user			0xff
+#define DW_LNE_lo_user					0x80
+#define DW_LNE_hi_user					0xff
 
 /* HP extensions. */
 #define DW_LNE_HP_negate_is_UV_update       0x11 /* 17 HP */
@@ -110,7 +110,7 @@ extern "C" {
 #define DW_TAG_partial_unit             0x3c  /* DWARF3 */
 #define DW_TAG_imported_unit            0x3d  /* DWARF3 */
         /*  Do not use DW_TAG_mutable_type */
-#define DW_TAG_mutable_type 0x3e /* Withdrawn from DWARF3 by DWARF3f. */
+#define DW_TAG_mutable_type 			0x3e /* Withdrawn from DWARF3 by DWARF3f. */
 #define DW_TAG_condition                0x3f  /* DWARF3f */
 #define DW_TAG_shared_type              0x40  /* DWARF3f */
 #define DW_TAG_type_unit                0x41  /* DWARF4 */
@@ -118,15 +118,16 @@ extern "C" {
 #define DW_TAG_template_alias           0x43  /* DWARF4 */
 
 #define DW_TAG_LAST                     0x44  // correct ?
-#define DW_TAG_lo_user			0x4080
-#define DW_TAG_hi_user			0xffff
+/* <_lo_user ; _hi_user> Interval is reserved for vendor extensions */
+#define DW_TAG_lo_user					0x4080
+#define DW_TAG_hi_user					0xffff
 
 #define DW_CHILDREN_no			0x00
 #define DW_CHILDREN_yes			0x01
 
 #define DW_AT_sibling			0x01
 #define DW_AT_location			0x02
-#define DW_AT_name			0x03
+#define DW_AT_name				0x03
 #define DW_AT_ordering			0x09
 #define DW_AT_byte_size			0x0b
 #define DW_AT_bit_offset		0x0c
@@ -135,15 +136,15 @@ extern "C" {
 #define DW_AT_low_pc			0x11
 #define DW_AT_high_pc			0x12
 #define DW_AT_language			0x13
-#define DW_AT_discr			0x15
+#define DW_AT_discr				0x15
 #define DW_AT_discr_value		0x16
 #define DW_AT_visibility		0x17
 #define DW_AT_import			0x18
 #define DW_AT_string_length		0x19
-#define DW_AT_common_reference		0x1a
+#define DW_AT_common_reference	0x1a
 #define DW_AT_comp_dir			0x1b
 #define DW_AT_const_value		0x1c
-#define DW_AT_containing_type		0x1d
+#define DW_AT_containing_type	0x1d
 #define DW_AT_default_value		0x1e
 #define DW_AT_inline			0x20
 #define DW_AT_is_optional		0x21
@@ -154,13 +155,13 @@ extern "C" {
 #define DW_AT_start_scope		0x2c
 #define DW_AT_stride_size		0x2e
 #define DW_AT_upper_bound		0x2f
-#define DW_AT_abstract_origin		0x31
+#define DW_AT_abstract_origin	0x31
 #define DW_AT_accessibility		0x32
 #define DW_AT_address_class		0x33
 #define DW_AT_artificial		0x34
 #define DW_AT_base_types		0x35
 #define DW_AT_calling_convention	0x36
-#define DW_AT_count			0x37
+#define DW_AT_count				0x37
 #define DW_AT_data_member_location	0x38
 #define DW_AT_decl_column		0x39
 #define DW_AT_decl_file			0x3a
@@ -171,19 +172,19 @@ extern "C" {
 #define DW_AT_external			0x3f
 #define DW_AT_frame_base		0x40
 #define DW_AT_friend			0x41
-#define DW_AT_identifier_case		0x42
+#define DW_AT_identifier_case	0x42
 #define DW_AT_macro_info		0x43
 #define DW_AT_namelist_item		0x44
 #define DW_AT_priority			0x45
 #define DW_AT_segment			0x46
 #define DW_AT_specification		0x47
 #define DW_AT_static_link		0x48
-#define DW_AT_type			0x49
+#define DW_AT_type				0x49
 #define DW_AT_use_location		0x4a
 #define DW_AT_variable_parameter	0x4b
 #define DW_AT_virtuality		0x4c
 #define DW_AT_vtable_elem_location	0x4d
-#define DW_AT_allocated			0x4e
+#define DW_AT_allocated			0x4e // DWARF 3 additions start
 #define DW_AT_associated		0x4f
 #define DW_AT_data_location		0x50
 #define DW_AT_byte_stride		0x51
@@ -198,26 +199,30 @@ extern "C" {
 #define DW_AT_description		0x5a
 #define DW_AT_binary_scale		0x5b
 #define DW_AT_decimal_scale		0x5c
-#define DW_AT_small			0x5d
+#define DW_AT_small				0x5d
 #define DW_AT_decimal_sign		0x5e
 #define DW_AT_digit_count		0x5f
-#define DW_AT_picture_string		0x60
+#define DW_AT_picture_string	0x60
 #define DW_AT_mutable			0x61
-#define DW_AT_threads_scaled		0x62
+#define DW_AT_threads_scaled	0x62
 #define DW_AT_explicit			0x63
-#define DW_AT_object_pointer		0x64
+#define DW_AT_object_pointer	0x64
 #define DW_AT_endianity			0x65
 #define DW_AT_elemental			0x66
-#define DW_AT_pure			0x67
-#define DW_AT_recursive			0x68
+#define DW_AT_pure				0x67
+#define DW_AT_recursive			0x68 // DWARF 3 additions end
 #define DW_AT_signature			0x69
-#define DW_AT_main_subprogram		0x6a
-#define DW_AT_data_big_offset		0x6b
+#define DW_AT_main_subprogram	0x6a
+#define DW_AT_data_big_offset	0x6b
 #define DW_AT_const_expr		0x6c
 #define DW_AT_enum_class		0x6d
 #define DW_AT_linkage_name		0x6e
+
+/* <_lo_user ; _hi_user> Interval is reserved for vendor extensions */
 #define DW_AT_lo_user			0x2000
+// extensions:
 #define DW_AT_GNU_all_tail_call_sites 0x2116
+
 #define DW_AT_hi_user			0x3fff
 
 #define DW_FORM_addr			0x01
@@ -400,6 +405,8 @@ extern "C" {
 #define DW_OP_bit_piece			0x9d
 #define DW_OP_implicit_value		0x9e
 #define DW_OP_stack_value		0x9f
+
+/* <_lo_user ; _hi_user> Interval is reserved for vendor extensions */
 #define DW_OP_lo_user			0xe0
 #define DW_OP_hi_user			0xff
 
@@ -420,6 +427,8 @@ extern "C" {
 #define DW_ATE_unsigned_fixed		0x0e
 #define DW_ATE_decimal_float		0x0f
 #define DW_ATE_UTF			0x10
+
+/* <_lo_user ; _hi_user> Interval is reserved for vendor extensions */
 #define DW_ATE_lo_user			0x80
 #define DW_ATE_hi_user			0xff
 
@@ -432,6 +441,8 @@ extern "C" {
 #define DW_END_default			0x00
 #define DW_END_big			0x01
 #define DW_END_little			0x02
+
+/* <_lo_user ; _hi_user> Interval is reserved for vendor extensions */
 #define DW_END_lo_user			0x40
 #define DW_END_hi_user			0xff
 
