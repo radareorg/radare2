@@ -1304,6 +1304,7 @@ static int var_cmd(RCore *core, const char *str) {
 			r_list_foreach (list, iter, v) {
 				r_cons_printf ("%s\n", v->name);
 			}
+			r_list_free (list);
 		}
 		return true;
 	case 'd': // "afvd"
@@ -1403,6 +1404,7 @@ static int var_cmd(RCore *core, const char *str) {
 				char *name = r_str_trim_dup (str + 2);
 				if (name) {
 					var = r_anal_function_get_var_byname (fcn, name);
+					r_free (name);
 				}
 			}
 			if (var) {
@@ -7393,7 +7395,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				r_list_foreach (refs, iter, refi) {
 					RFlagItem *f = r_flag_get_at (core->flags, refi->addr, true);
 					const char *name = f ? f->name: "";
-					if (input[2] == 'j') {
+					if (pj) {
 						pj_o (pj);
 						pj_ks (pj, "type", r_anal_xrefs_type_tostring(refi->type));
 						pj_kn (pj, "at", refi->at);
@@ -7405,16 +7407,14 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							r_anal_xrefs_type_tostring(refi->type), refi->at, refi->addr, name);
 					}
 				}
-				if (input[2] ==  'j') {
-					pj_end (pj);
-				}
 				if (pj) {
+					pj_end (pj);
 					r_cons_println (pj_string (pj));
-					pj_free (pj);
 				}
 			} else {
 				eprintf ("Cannot find any function\n");
 			}
+			pj_free (pj);
 		} else { // "axf"
 			RAsmOp asmop;
 			RList *list, *list_ = NULL;
