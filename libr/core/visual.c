@@ -4141,6 +4141,16 @@ R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols) {
 	}
 }
 
+#ifdef __WINDOWS__
+static bool is_mintty(RCons *cons) {
+	return cons->term_xterm;
+}
+#else
+static bool is_mintty(RCons *cons) {
+	return false;
+}
+#endif
+
 R_API int r_core_visual(RCore *core, const char *input) {
 	const char *teefile;
 	ut64 scrseek;
@@ -4262,9 +4272,7 @@ dodo:
 			} else {
 				ch = r_cons_readchar ();
 			}
-#ifdef __WINDOWS__
-			if (I->vtmode == 2 && !I->term_xterm) {
-#endif
+			if (I->vtmode == 2 && !is_mintty (core->cons)) {
 				if (IS_PRINTABLE (ch) || ch == '\t' || ch == '\n') {
 #ifdef __WINDOWS__
 					while (r_cons_readchar_timeout (1) != -1) ;
@@ -4293,9 +4301,7 @@ dodo:
 					}
 					(void)r_cons_readpush (chrs, chrs_read);
 				}
-#ifdef __WINDOWS__
 			}
-#endif
 			if (r_cons_is_breaked()) {
 				break;
 			}
