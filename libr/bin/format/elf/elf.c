@@ -671,6 +671,10 @@ static bool allocate_dt_needed_entries(ELFOBJ *bin, Elf_(Phdr) *dyn_phdr, ut64 d
 		return false;
 	}
 
+	if (!number_of_dt_needed) {
+		return true;
+	}
+
 	Elf_(Xword) *dt_needed = R_NEWS0 (Elf_(Xword), number_of_dt_needed);
 	if (!dt_needed) {
 		return false;
