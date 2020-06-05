@@ -116,8 +116,6 @@ struct Elf_(r_bin_elf_obj_t) {
 	ut64 shstrtab_size;
 	char *shstrtab;
 
-	Elf_(Dyn) *dyn_buf;
-	int dyn_entries;
 	RBinElfDynamicInfo dyn_info;
 
 	ut64 version_info[DT_VERSIONTAGNUM];
