@@ -4285,6 +4285,7 @@ dodo:
 				ch = r_cons_readchar ();
 			}
 			if (I->vtmode == 2 && !is_mintty (core->cons)) {
+				// Prevent runaway scrolling
 				if (IS_PRINTABLE (ch) || ch == '\t' || ch == '\n') {
 					flush_stdin ();
 				} else if (ch == 0x1b) {
