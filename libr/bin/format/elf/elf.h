@@ -94,6 +94,8 @@ typedef struct Elf_(r_bin_elf_dynamic_info) {
 	Elf_(Xword) dt_flags_1;
 	Elf_(Xword) dt_rpath;
 	Elf_(Xword) dt_runpath;
+	Elf_(Xword) *dt_needed;
+	size_t number_of_dt_needed;
 } RBinElfDynamicInfo;
 
 typedef struct r_bin_elf_lib_t {

@@ -549,6 +549,8 @@ static void set_default_value_dynamic_info(ELFOBJ *bin) {
 	bin->dyn_info.dt_flags_1 = ELF_XWORD_MAX;
 	bin->dyn_info.dt_rpath = ELF_XWORD_MAX;
 	bin->dyn_info.dt_runpath = ELF_XWORD_MAX;
+	bin->dyn_info.dt_needed = NULL;
+	bin->dyn_info.number_of_dt_needed = 0;
 }
 
 static int init_dynamic_section(ELFOBJ *bin) {
