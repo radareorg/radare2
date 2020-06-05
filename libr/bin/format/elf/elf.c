@@ -2786,8 +2786,12 @@ static RBinElfReloc *populate_relocs_record(ELFOBJ *bin) {
 	size_t num_relocs = get_num_relocs_approx (bin);
 	RBinElfReloc *relocs = calloc (num_relocs + 1, sizeof (RBinElfReloc));
 
-	i = populate_relocs_record_from_dynamic (bin, relocs, i);
-	i = populate_relocs_record_from_section (bin, relocs, i);
+	// FIXME Ugly fix until https://github.com/radareorg/radare2/pull/17004
+	if (num_relocs > 0) {
+		i = populate_relocs_record_from_dynamic (bin, relocs, i);
+		i = populate_relocs_record_from_section (bin, relocs, i);
+	}
+
 	relocs[i].last = 1;
 
 	bin->g_reloc_num = i;
