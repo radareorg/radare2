@@ -1050,11 +1050,10 @@ TODO: add useXRefs, useName
 
 static bool bestmatch(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	RAnalFunction *fcn = NULL;
 	bool ret = false;
 	int count = 5;
 
-	if (input[0] != '\x00') {
+	if (!R_STR_ISEMPTY (input)) {
 		count = atoi (input);
 		if (count == 0) {
 			eprintf ("[!!] invalid number %s\n", input);
@@ -1063,7 +1062,7 @@ static bool bestmatch(void *data, const char *input) {
 	}
 
 	r_cons_break_push (NULL, NULL);
-	fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 	if (fcn) {
 		ret = r_sign_find_closest_sig (core->anal, fcn, count, 0);
 	}

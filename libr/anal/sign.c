@@ -1086,15 +1086,17 @@ static int score_cmpr(const void *a, const void *b) {
 
 	if (sa < sb) {
 		return 1;
-	} else if (sa > sb) {
+	}
+	if (sa > sb) {
 		return -1;
-	} else {
+	}
+	if {
 		return 0;
 	}
 }
 
 static bool add_bestrow(RList *list, char *name, double score) {
-	_close_matches *row = calloc (1, sizeof (_close_matches));
+	_close_matches *row = R_NEW (_close_matches);
 	if (!row) {
 		return false;
 	}
