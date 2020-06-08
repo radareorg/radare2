@@ -31,7 +31,7 @@ static GHT GH(get_va_symbol)(const char *path, const char *symname) {
 	r_io_bind (io, &bin->iob);
 
 	if (!bin) {
-		return -1;
+		return 0;
 	}
 
 	RBinOptions opt;
@@ -39,7 +39,7 @@ static GHT GH(get_va_symbol)(const char *path, const char *symname) {
 	r_bin_open (bin, path, &opt);
 	syms = r_bin_get_symbols (bin);
 	if (!syms) {
-		return -1;
+		return 0;
 	}
 	r_list_foreach (syms, iter, s) {
 		if (!strcmp (s->name, symname)) {
@@ -360,7 +360,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 				char *path = r_str_newf ("%s", libc_path);
 				if (r_file_exists (path)) {
 					GHT vaddr = GH (get_va_symbol) (path, main_arena_str);
-					if (libc_addr != GHT_MAX && vaddr != -1) {
+					if (libc_addr != GHT_MAX && vaddr != 0) {
 						main_arena_sym = libc_addr + vaddr;
 						free (path);
 					}
