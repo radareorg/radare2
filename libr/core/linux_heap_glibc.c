@@ -3,6 +3,7 @@
 #ifndef INCLUDE_HEAP_GLIBC_C
 #define INCLUDE_HEAP_GLIBC_C
 #define HEAP32 1
+bool main_arena_resolved = 0;
 #include "linux_heap_glibc.c"
 #undef HEAP32
 #endif
@@ -21,26 +22,28 @@
 #define GHT_MAX UT64_MAX
 #endif
 
+
 static GHT GH(get_va_symbol)(const char *path, const char *symname) {
+	GHT vaddr = GHT_MAX;
 	RListIter *iter;
 	RBinSymbol *s;
 	RBin *bin = r_bin_new ();
 	RIO *io = r_io_new ();
-	RList *syms = NULL;
-	GHT vaddr = 0LL;
 	r_io_bind (io, &bin->iob);
 
 	if (!bin) {
-		return 0;
+		return vaddr;
 	}
 
 	RBinOptions opt;
 	r_bin_options_init (&opt, -1, 0, 0, false);
 	r_bin_open (bin, path, &opt);
-	syms = r_bin_get_symbols (bin);
+	RList *syms = r_bin_get_symbols (bin);
+
 	if (!syms) {
-		return 0;
+		return vaddr;
 	}
+
 	r_list_foreach (syms, iter, s) {
 		if (!strcmp (s->name, symname)) {
 			vaddr = s->vaddr;
@@ -334,8 +337,13 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 }
 
 static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
+
 	if (!core || !core->dbg || !core->dbg->maps) {
 		return false;
+	}
+
+	if (main_arena_resolved) {
+		return true;
 	}
 
 	const char *main_arena_str = "main_arena";
@@ -343,8 +351,8 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	GHT libc_addr_sta = GHT_MAX, libc_addr_end = 0;
 	GHT addr_srch = GHT_MAX, heap_sz = GHT_MAX;
 	const char *libc_path = NULL;
-	GHT main_arena_sym = 0;
 	GHT libc_addr = GHT_MAX;
+	GHT main_arena_sym = 0;
 
 	if (r_config_get_i (core->config, "cfg.debug")) {
 		RListIter *iter;
@@ -357,10 +365,10 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 				if (!libc_path) {
 					break;
 				}
-				char *path = r_str_newf ("%s", libc_path);
+				char *path = strdup(libc_path);
 				if (r_file_exists (path)) {
 					GHT vaddr = GH (get_va_symbol) (path, main_arena_str);
-					if (libc_addr != GHT_MAX && vaddr != 0) {
+					if (libc_addr != GHT_MAX && vaddr != GHT_MAX) {
 						main_arena_sym = libc_addr + vaddr;
 						free (path);
 					}
@@ -410,6 +418,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 		GH (update_main_arena)
 		(core, main_arena_sym, ta);
 		*m_arena = main_arena_sym;
+		main_arena_resolved = 1;
 		free (ta);
 		return true;
 	}
@@ -421,6 +430,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 
 			*m_arena = addr_srch;
 			free (ta);
+			main_arena_resolved = 1;
 			return true;
 		}
 		addr_srch += sizeof (GHT);
