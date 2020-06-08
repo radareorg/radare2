@@ -532,8 +532,7 @@ static void set_default_value_dynamic_info(ELFOBJ *bin) {
 	bin->dyn_info.dt_flags_1 = ELF_XWORD_MAX;
 	bin->dyn_info.dt_rpath = ELF_XWORD_MAX;
 	bin->dyn_info.dt_runpath = ELF_XWORD_MAX;
-	bin->dyn_info.dt_needed = NULL;
-	bin->dyn_info.number_of_dt_needed = 0;
+	bin->dyn_info.dt_needed = r_vector_new(sizeof(Elf_(Off)), NULL, NULL);
 }
 
 static size_t get_maximum_number_of_dynamic_entries(ut64 dyn_size) {
@@ -554,31 +553,9 @@ static bool fill_the_dynamic_entrie(ELFOBJ *bin, Elf_(Phdr) *dyn_phdr, ut64 dyn_
 	return true;
 }
 
-static ssize_t get_number_of_dt_needed_entries(ELFOBJ *bin, Elf_(Phdr) *dyn_phdr, ut64 dyn_size) {
-	Elf_(Dyn) d = { 0 };
-	ssize_t res = 0;
-	size_t number_of_entries = get_maximum_number_of_dynamic_entries(dyn_size);
-	size_t i;
-
-	for (i = 0; i < number_of_entries; i++) {
-		if (!fill_the_dynamic_entrie(bin, dyn_phdr, dyn_size, i, &d)) {
-			return -1;
-		}
-
-		if (d.d_tag == DT_NULL) {
-			break;
-		} else if (d.d_tag == DT_NEEDED) {
-			res++;
-		}
-	}
-
-	return res;
-}
-
 static void fill_dynamic_entries(ELFOBJ *bin, Elf_(Phdr) *dyn_phdr, ut64 dyn_size) {
 	Elf_(Dyn) d = { 0 };
 	size_t i;
-	size_t j = 0;
 	size_t number_of_entries = get_maximum_number_of_dynamic_entries(dyn_size);
 
 	for (i = 0; i < number_of_entries; i++) {
@@ -651,8 +628,7 @@ static void fill_dynamic_entries(ELFOBJ *bin, Elf_(Phdr) *dyn_phdr, ut64 dyn_siz
 			bin->dyn_info.dt_runpath = d.d_un.d_val;
 			break;
 		case DT_NEEDED:
-			bin->dyn_info.dt_needed[j] = d.d_un.d_val;
-			j++;
+			r_vector_push(bin->dyn_info.dt_needed, &d.d_un.d_val);
 			break;
 		default:
 			if ((d.d_tag >= DT_VERSYM) && (d.d_tag <= DT_VERNEEDNUM)) {
@@ -667,28 +643,6 @@ static void fill_dynamic_entries(ELFOBJ *bin, Elf_(Phdr) *dyn_phdr, ut64 dyn_siz
 			break;
 		}
 	}
-}
-
-static bool allocate_dt_needed_entries(ELFOBJ *bin, Elf_(Phdr) *dyn_phdr, ut64 dyn_size) {
-	ssize_t number_of_dt_needed = get_number_of_dt_needed_entries (bin, dyn_phdr, dyn_size);
-
-	if (number_of_dt_needed < 0) {
-		return false;
-	}
-
-	if (!number_of_dt_needed) {
-		return true;
-	}
-
-	Elf_(Xword) *dt_needed = R_NEWS0 (Elf_(Xword), number_of_dt_needed);
-	if (!dt_needed) {
-		return false;
-	}
-
-	bin->dyn_info.dt_needed = dt_needed;
-	bin->dyn_info.number_of_dt_needed = number_of_dt_needed;
-
-	return true;
 }
 
 static int init_dynamic_section(ELFOBJ *bin) {
@@ -716,10 +670,6 @@ static int init_dynamic_section(ELFOBJ *bin) {
 	}
 
 	if (!dyn_size || loaded_offset + dyn_size > bin->size) {
-		return false;
-	}
-
-	if (!allocate_dt_needed_entries(bin, dyn_phdr, dyn_size)) {
 		return false;
 	}
 
@@ -2817,13 +2767,15 @@ RBinElfReloc* Elf_(r_bin_elf_get_relocs) (ELFOBJ *bin) {
 
 RBinElfLib* Elf_(r_bin_elf_get_libs)(ELFOBJ *bin) {
 	RBinElfLib *ret = NULL;
-	int j, k;
+	Elf_(Off) *it = NULL;
+	size_t k = 0;
 
 	if (!bin || !bin->phdr || !bin->strtab || *(bin->strtab+1) == '0') {
 		return NULL;
 	}
-	for (j = 0, k = 0; j < bin->dyn_info.number_of_dt_needed; j++) {
-		Elf_(Xword) val = bin->dyn_info.dt_needed[j];
+
+	r_vector_foreach(bin->dyn_info.dt_needed, it) {
+		Elf_(Off) val = *it;
 
 		RBinElfLib *r = realloc (ret, (k + 1) * sizeof (RBinElfLib));
 		if (!r) {
@@ -2843,6 +2795,7 @@ RBinElfLib* Elf_(r_bin_elf_get_libs)(ELFOBJ *bin) {
 			k++;
 		}
 	}
+
 	RBinElfLib *r = realloc (ret, (k + 1) * sizeof (RBinElfLib));
 	if (!r) {
 		perror ("realloc (libs)");
@@ -3756,7 +3709,7 @@ void Elf_(r_bin_elf_free)(ELFOBJ* bin) {
 	free (bin->phdr);
 	free (bin->shdr);
 	free (bin->strtab);
-	free(bin->dyn_info.dt_needed);
+	r_vector_free(bin->dyn_info.dt_needed);
 
 	free (bin->shstrtab);
 	free (bin->dynstr);
