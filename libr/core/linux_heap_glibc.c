@@ -430,7 +430,6 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 
 			*m_arena = addr_srch;
 			free (ta);
-			main_arena_resolved = 1;
 			return true;
 		}
 		addr_srch += sizeof (GHT);
