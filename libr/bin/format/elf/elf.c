@@ -2562,7 +2562,12 @@ static void fix_rva_and_offset(ELFOBJ *bin, RBinElfReloc *r, size_t pos) {
 	}
 }
 
-static bool read_reloc(ELFOBJ *bin, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 offset) {
+static bool read_reloc(ELFOBJ *bin, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 vaddr) {
+	ut64 offset = Elf_(r_bin_elf_v2p_new) (bin, vaddr);
+	if (offset == UT64_MAX) {
+		return false;
+	}
+
 	size_t size_struct = get_size_rel_mode (rel_mode);
 
 	ut8 buf[sizeof (Elf_(Rela))] = { 0 };
@@ -2650,57 +2655,56 @@ static size_t get_num_relocs_approx(ELFOBJ *bin) {
 	return get_num_relocs_dynamic (bin) + get_num_relocs_sections (bin);
 }
 
-static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin, RBinElfReloc *relocs, size_t pos) {
+static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin, RBinElfReloc *relocs, size_t pos, size_t num_relocs) {
 	size_t offset;
-	size_t i = 0;
 	size_t size = get_size_rel_mode (bin->dyn_info.dt_pltrel);
 
-	for (offset = 0; offset < bin->dyn_info.dt_pltrelsz; offset += size) {
-		read_reloc (bin, relocs + pos, bin->dyn_info.dt_pltrel,
-				bin->dyn_info.dt_jmprel + offset - bin->baddr);
+	for (offset = 0; offset < bin->dyn_info.dt_pltrelsz && pos < num_relocs; offset += size, pos++) {
+		if (!read_reloc (bin, relocs + pos, bin->dyn_info.dt_pltrel, bin->dyn_info.dt_jmprel + offset)) {
+			break;
+		}
 		fix_rva_and_offset_exec_file (bin, relocs + pos);
-		pos++;
-		++i;
 	}
 
-	for (offset = 0; offset < bin->dyn_info.dt_relasz; offset += bin->dyn_info.dt_relaent) {
-		read_reloc (bin, relocs + pos, DT_RELA, bin->dyn_info.dt_rela + offset - bin->baddr);
+	for (offset = 0; offset < bin->dyn_info.dt_relasz && pos < num_relocs; offset += bin->dyn_info.dt_relaent, pos++) {
+		if (!read_reloc (bin, relocs + pos, DT_RELA, bin->dyn_info.dt_rela + offset)) {
+			break;
+		}
 		fix_rva_and_offset_exec_file (bin, relocs + pos);
-		pos++;
 	}
 
-	for (offset = 0; offset < bin->dyn_info.dt_relsz; offset += bin->dyn_info.dt_relent) {
-		read_reloc (bin, relocs + pos, DT_REL, bin->dyn_info.dt_rel + offset - bin->baddr);
+	for (offset = 0; offset < bin->dyn_info.dt_relsz && pos < num_relocs; offset += bin->dyn_info.dt_relent, pos++) {
+		if (!read_reloc (bin, relocs + pos, DT_REL, bin->dyn_info.dt_rel + offset)) {
+			break;
+		}
 		fix_rva_and_offset_exec_file (bin, relocs + pos);
-		pos++;
 	}
 
 	return pos;
 }
 
-static size_t get_next_not_analysed_offset(ELFOBJ *bin, size_t section_offset, size_t offset, size_t base_addr) {
+static size_t get_next_not_analysed_offset(ELFOBJ *bin, size_t section_vaddr, size_t offset) {
+	size_t gvaddr = section_vaddr + offset;
 
-	size_t g_offset = section_offset + offset;
-
-	if (bin->dyn_info.dt_rela != ELF_ADDR_MAX && bin->dyn_info.dt_rela - base_addr <= g_offset
-		&& g_offset < bin->dyn_info.dt_rela + bin->dyn_info.dt_relasz - base_addr) {
-		return bin->dyn_info.dt_rela + bin->dyn_info.dt_relasz - g_offset - base_addr;
+	if (bin->dyn_info.dt_rela != ELF_ADDR_MAX && bin->dyn_info.dt_rela <= gvaddr
+		&& gvaddr < bin->dyn_info.dt_rela + bin->dyn_info.dt_relasz) {
+		return bin->dyn_info.dt_rela + bin->dyn_info.dt_relasz - section_vaddr;
 	}
 
-	if (bin->dyn_info.dt_rel != ELF_ADDR_MAX && bin->dyn_info.dt_rel - base_addr <= g_offset
-		&& g_offset < bin->dyn_info.dt_rel + bin->dyn_info.dt_relsz - base_addr) {
-		return bin->dyn_info.dt_rel + bin->dyn_info.dt_relsz - g_offset - base_addr;
+	if (bin->dyn_info.dt_rel != ELF_ADDR_MAX && bin->dyn_info.dt_rel <= gvaddr
+		&& gvaddr < bin->dyn_info.dt_rel + bin->dyn_info.dt_relsz) {
+		return bin->dyn_info.dt_rel + bin->dyn_info.dt_relsz - section_vaddr;
 	}
 
-	if (bin->dyn_info.dt_jmprel != ELF_ADDR_MAX && bin->dyn_info.dt_jmprel - base_addr <= g_offset
-		&& g_offset < bin->dyn_info.dt_jmprel + bin->dyn_info.dt_pltrelsz - base_addr) {
-		return bin->dyn_info.dt_jmprel + bin->dyn_info.dt_pltrelsz - g_offset - base_addr;
+	if (bin->dyn_info.dt_jmprel != ELF_ADDR_MAX && bin->dyn_info.dt_jmprel <= gvaddr
+		&& gvaddr < bin->dyn_info.dt_jmprel + bin->dyn_info.dt_pltrelsz) {
+		return bin->dyn_info.dt_jmprel + bin->dyn_info.dt_pltrelsz - section_vaddr;
 	}
 
 	return offset;
 }
 
-static size_t populate_relocs_record_from_section(ELFOBJ *bin, RBinElfReloc *relocs, size_t pos) {
+static size_t populate_relocs_record_from_section(ELFOBJ *bin, RBinElfReloc *relocs, size_t pos, size_t num_relocs) {
 	size_t size, i, j;
 	Elf_(Xword) rel_mode;
 
@@ -2717,11 +2721,11 @@ static size_t populate_relocs_record_from_section(ELFOBJ *bin, RBinElfReloc *rel
 
 		size = get_size_rel_mode (rel_mode);
 
-		for (j = get_next_not_analysed_offset (bin, bin->g_sections[i].offset, 0, bin->baddr);
-			j < bin->g_sections[i].size;
-			j = get_next_not_analysed_offset (bin, bin->g_sections[i].offset, j + size, bin->baddr)) {
+		for (j = get_next_not_analysed_offset (bin, bin->g_sections[i].rva, 0);
+			j < bin->g_sections[i].size && pos < num_relocs;
+			j = get_next_not_analysed_offset (bin, bin->g_sections[i].rva, j + size)) {
 
-			if (!read_reloc (bin, relocs + pos, rel_mode, bin->g_sections[i].offset + j)) {
+			if (!read_reloc (bin, relocs + pos, rel_mode, bin->g_sections[i].rva + j)) {
 				break;
 			}
 
@@ -2736,14 +2740,23 @@ static size_t populate_relocs_record_from_section(ELFOBJ *bin, RBinElfReloc *rel
 static RBinElfReloc *populate_relocs_record(ELFOBJ *bin) {
 	size_t i = 0;
 	size_t num_relocs = get_num_relocs_approx (bin);
-	RBinElfReloc *relocs = calloc (num_relocs + 1, sizeof (RBinElfReloc));
+	RBinElfReloc *relocs = R_NEWS0 (RBinElfReloc, num_relocs + 1);
+	if (!relocs) {
+		// In case we can't allocate enough memory for all the claimed
+		// relocation entries, try to parse only the ones specified in
+		// the dynamic segment.
+		num_relocs = get_num_relocs_dynamic (bin);
+		relocs = R_NEWS0 (RBinElfReloc, num_relocs + 1);
+		if (!relocs) {
+			return NULL;
+		}
+	}
 
-	i = populate_relocs_record_from_dynamic (bin, relocs, i);
-	i = populate_relocs_record_from_section (bin, relocs, i);
+	i = populate_relocs_record_from_dynamic (bin, relocs, i, num_relocs);
+	i = populate_relocs_record_from_section (bin, relocs, i, num_relocs);
 	relocs[i].last = 1;
 
 	bin->g_reloc_num = i;
-
 	return relocs;
 }
 
