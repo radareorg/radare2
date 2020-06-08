@@ -1869,19 +1869,20 @@ static char *get_format_type(const char fmt, const char arg) {
 	case 'Z':
 		type = strdup ("char*");
 		break;
+	case 'n':
 	case 'N':
 		switch (arg) {
 		case '1':
-			type = strdup ("uint8_t");
+			type = strdup (fmt == 'n' ? "int8_t" : "uint8_t");
 			break;
 		case '2':
-			type = strdup ("uint16_t");
+			type = strdup (fmt == 'n' ? "int16_t" : "uint16_t");
 			break;
 		case '4':
-			type = strdup ("uint32_t");
+			type = strdup (fmt == 'n' ? "int32_t" : "uint32_t");
 			break;
 		case '8':
-			type = strdup ("uint64_t");
+			type = strdup (fmt == 'n' ? "int64_t" : "uint64_t");
 			break;
 		}
 		break;
@@ -2326,7 +2327,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 
 			/* c struct */
 			if (MUSTSEESTRUCT) {
-				char *type = get_format_type (tmp, tmp == 'N' ? arg[1] : 0); // TODO tmp == 'n'
+				char *type = get_format_type (tmp, (tmp == 'n' || tmp == 'N') ? arg[1] : 0);
 				if (type) {
 					p->cb_printf ("%*c%s %s; // ", ident, ' ', type, fieldname);
 				} else {

@@ -498,3 +498,32 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=pfc N# and n#
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+(wneg num size; wv$1 -$0; s+ $1)
+.(wneg 1 1)
+.(wneg 2 2)
+.(wneg 3 4)
+.(wneg 4 8)
+s 0
+pfc N1N2N4N8 byte word dword qword
+pfc n1n2n4n8 byte word dword qword
+EOF
+EXPECT=<<EOF
+struct {
+    uint8_t byte; // 255
+    uint16_t word; // 65534
+    uint32_t dword; // 4294967293
+    uint64_t qword; // 18446744073709551612
+}
+struct {
+    int8_t byte; // -1
+    int16_t word; // -2
+    int32_t dword; // -3
+    int64_t qword; // -4
+}
+EOF
+RUN
