@@ -1090,9 +1090,7 @@ static int score_cmpr(const void *a, const void *b) {
 	if (sa > sb) {
 		return -1;
 	}
-	if {
-		return 0;
-	}
+	return 0;
 }
 
 static bool add_bestrow(RList *list, char *name, double score) {
