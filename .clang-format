@@ -6,6 +6,7 @@ SpacesInContainerLiterals: true
 BasedOnStyle: LLVM
 ContinuationIndentWidth: 8
 IndentCaseLabels: false
+IndentGotoLabels: false
 IndentFunctionDeclarationAfterType: false
 IndentWidth: 8
 UseTab: Always

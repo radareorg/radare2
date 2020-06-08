@@ -1,0 +1,17 @@
+build/*
+doc/*
+man/*
+mk/*
+pkgcfg/*
+sys/*
+shlr/capstone/*
+shlr/capstone-patches/*
+shlr/grub/*
+shlr/mpc/*
+shlr/radare2-shell-parser/*
+shlr/sdb/*
+shlr/spp/*
+shlr/tree-sitter/*
+shlr/www/*
+shlr/zip/*
+
