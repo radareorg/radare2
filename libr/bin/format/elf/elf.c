@@ -3751,10 +3751,7 @@ void Elf_(r_bin_elf_free)(ELFOBJ* bin) {
 	free (bin->phdr);
 	free (bin->shdr);
 	free (bin->strtab);
-
-	if (bin->dyn_info.dt_needed) {
-		free(bin->dyn_info.dt_needed);
-	}
+	free(bin->dyn_info.dt_needed);
 
 	free (bin->shstrtab);
 	free (bin->dynstr);
