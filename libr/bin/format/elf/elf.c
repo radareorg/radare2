@@ -53,6 +53,7 @@
 #define BREADWORD(x, i) BREAD64 (x, i)
 #define ELF_ADDR_MAX UT64_MAX
 #define ELF_XWORD_MAX UT64_MAX
+#define ELF_WORD_FORMAT "%ld"
 #else
 #define WORDSIZE 0x4
 #define WORD_MAX UT32_MAX
@@ -60,6 +61,7 @@
 #define BREADWORD(x, i) BREAD32 (x, i)
 #define ELF_ADDR_MAX UT32_MAX
 #define ELF_XWORD_MAX UT64_MAX
+#define ELF_WORD_FORMAT "%d"
 #endif
 
 #define NUMENTRIES_ROUNDUP(sectionsize, entrysize) (((sectionsize) + (entrysize)-1) / (entrysize))
@@ -655,6 +657,9 @@ static void fill_dynamic_entries(ELFOBJ *bin, Elf_(Phdr) *dyn_phdr, ut64 dyn_siz
 		default:
 			if ((d.d_tag >= DT_VERSYM) && (d.d_tag <= DT_VERNEEDNUM)) {
 				bin->version_info[DT_VERSIONTAGIDX (d.d_tag)] = d.d_un.d_val;
+			} else {
+
+				eprintf("Dynamic tag " ELF_WORD_FORMAT " not handled\n", d.d_tag);
 			}
 			break;
 		}
