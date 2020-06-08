@@ -21,6 +21,37 @@
 #define GHT_MAX UT64_MAX
 #endif
 
+static GHT GH(get_va_symbol)(const char *path, const char *symname) {
+	RListIter *iter;
+	RBinSymbol *s;
+	RBin *bin = r_bin_new ();
+	RIO *io = r_io_new ();
+	RList *syms = NULL;
+	GHT vaddr = 0LL;
+	r_io_bind (io, &bin->iob);
+
+	if (!bin) {
+		return -1;
+	}
+
+	RBinOptions opt;
+	r_bin_options_init (&opt, -1, 0, 0, false);
+	r_bin_open (bin, path, &opt);
+	syms = r_bin_get_symbols (bin);
+	if (!syms) {
+		return -1;
+	}
+	r_list_foreach (syms, iter, s) {
+		if (!strcmp (s->name, symname)) {
+			vaddr = s->vaddr;
+			break;
+		}
+	}
+	r_bin_free (bin);
+	r_io_free (io);
+	return vaddr;
+}
+
 static bool GH(is_tcache)(RCore *core) {
 	char *fp = NULL;
 	double v = 0;
@@ -48,16 +79,16 @@ static bool GH(is_tcache)(RCore *core) {
 static GHT GH(tcache_chunk_size)(RCore *core, GHT brk_start) {
 	GHT sz = 0;
 
-	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
+	GH (RHeapChunk) *cnk = R_NEW0 (GH (RHeapChunk));
 	if (!cnk) {
 		return sz;
 	}
-	r_io_read_at (core->io, brk_start, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
+	r_io_read_at (core->io, brk_start, (ut8 *)cnk, sizeof (GH (RHeapChunk)));
 	sz = (cnk->size >> 3) << 3; //clear chunk flag
 	return sz;
 }
 
-static void GH(update_arena_with_tc)(GH(RHeap_MallocState_tcache) *cmain_arena, MallocState *main_arena) {
+static void GH(update_arena_with_tc)(GH(RHeap_MallocState_tcache) * cmain_arena, MallocState *main_arena) {
 	int i = 0;
 	main_arena->mutex = cmain_arena->mutex;
 	main_arena->flags = cmain_arena->flags;
@@ -67,12 +98,12 @@ static void GH(update_arena_with_tc)(GH(RHeap_MallocState_tcache) *cmain_arena, 
 	main_arena->have_fast_chunks = cmain_arena->have_fast_chunks;
 	main_arena->attached_threads = cmain_arena->attached_threads;
 	for (i = 0; i < NFASTBINS; i++) {
-		main_arena->GH(fastbinsY)[i] = cmain_arena->fastbinsY[i];
+		main_arena->GH (fastbinsY)[i] = cmain_arena->fastbinsY[i];
 	}
-	main_arena->GH(top) = cmain_arena->top;
-	main_arena->GH(last_remainder) = cmain_arena->last_remainder;
+	main_arena->GH (top) = cmain_arena->top;
+	main_arena->GH (last_remainder) = cmain_arena->last_remainder;
 	for (i = 0; i < NBINS * 2 - 2; i++) {
-		main_arena->GH(bins)[i] = cmain_arena->bins[i];
+		main_arena->GH (bins)[i] = cmain_arena->bins[i];
 	}
 	main_arena->GH(next) = cmain_arena->next;
 	main_arena->GH(next_free) = cmain_arena->next_free;
@@ -307,15 +338,34 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 		return false;
 	}
 
+	const char *main_arena_str = "main_arena";
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX;
 	GHT libc_addr_sta = GHT_MAX, libc_addr_end = 0;
 	GHT addr_srch = GHT_MAX, heap_sz = GHT_MAX;
+	const char *libc_path = NULL;
+	GHT main_arena_sym = 0;
+	GHT libc_addr = GHT_MAX;
 
 	if (r_config_get_i (core->config, "cfg.debug")) {
 		RListIter *iter;
 		RDebugMap *map;
 		r_debug_map_sync (core->dbg);
 		r_list_foreach (core->dbg->maps, iter, map) {
+			if (strstr (map->name, "/libc-") && map->perm == 4 && !main_arena_sym) {
+				libc_path = map->name;
+				libc_addr = map->addr;
+				if (!libc_path) {
+					break;
+				}
+				char *path = r_str_newf ("%s", libc_path);
+				if (r_file_exists (path)) {
+					GHT vaddr = GH (get_va_symbol) (path, main_arena_str);
+					if (libc_addr != GHT_MAX && vaddr != -1) {
+						main_arena_sym = libc_addr + vaddr;
+						free (path);
+					}
+				}
+			}
 			if (strstr (map->name, "/libc-") && map->perm == 6) {
 				libc_addr_sta = map->addr;
 				libc_addr_end = map->addr_end;
@@ -355,6 +405,15 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	if (!ta) {
 		return false;
 	}
+
+	if (main_arena_sym) {
+		GH (update_main_arena)
+		(core, main_arena_sym, ta);
+		*m_arena = main_arena_sym;
+		free (ta);
+		return true;
+	}
+
 	while (addr_srch < libc_addr_end) {
 		GH (update_main_arena) (core, addr_srch, ta);
 		if ( ta->GH(top) > brk_start && ta->GH(top) < brk_end &&
