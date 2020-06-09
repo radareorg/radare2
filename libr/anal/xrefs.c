@@ -161,7 +161,7 @@ R_API int r_anal_xrefs_from(RAnal *anal, RList *list, const char *kind, const RA
 }
 
 R_API RList *r_anal_xrefs_get(RAnal *anal, ut64 to) {
-	RList *list = r_anal_ref_list_new (void);
+	RList *list = r_anal_ref_list_new ();
 	if (!list) {
 		return NULL;
 	}
