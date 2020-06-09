@@ -45,7 +45,6 @@ R_API char *r_cons_hud_string(const char *s) {
 			os = o + i + 1;
 		}
 	}
-
 	ret = r_cons_hud (fl, NULL);
 
 	free (o);
