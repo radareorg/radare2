@@ -1078,11 +1078,11 @@ static RSignItem *create_graph_sign_from_fcn(RAnal *a, RAnalFunction *fcn) {
 typedef struct {
 	char *name;
 	double score;
-} _close_matches;
+} CloseMatches;
 
 static int score_cmpr(const void *a, const void *b) {
-	double sa = ((_close_matches *)a)->score;
-	double sb = ((_close_matches *)b)->score;
+	double sa = ((CloseMatches *)a)->score;
+	double sb = ((CloseMatches *)b)->score;
 
 	if (sa < sb) {
 		return 1;
@@ -1094,7 +1094,7 @@ static int score_cmpr(const void *a, const void *b) {
 }
 
 static bool add_bestrow(RList *list, char *name, double score) {
-	_close_matches *row = R_NEW (_close_matches);
+	CloseMatches *row = R_NEW (CloseMatches);
 	if (!row) {
 		return false;
 	}
@@ -1113,14 +1113,14 @@ typedef struct {
 	RSignItem *test;
 	RList *output;
 	int count, index;
-	double min;
+	double score_threshold;
 
 	// greatest lower bound. Thanks lattice theory for helping name variables
 	double infimum;
-} _closest_match_data;
+} ClosestMatchData;
 
 static int closest_match_callback(void *a, const char *name, const char *value) {
-	_closest_match_data *data = (_closest_match_data *)a;
+	ClosestMatchData *data = (ClosestMatchData *)a;
 
 	// get signature in usable format
 	RSignItem *it = r_sign_item_new ();
@@ -1135,7 +1135,7 @@ static int closest_match_callback(void *a, const char *name, const char *value) 
 	double score = matchGraph (it, data->test);
 
 	// score is too low, don't bother doing any more work
-	if (score < data->min) {
+	if (score < data->score_threshold) {
 		r_sign_item_free (it);
 		return true;
 	}
@@ -1156,7 +1156,7 @@ static int closest_match_callback(void *a, const char *name, const char *value) 
 	} else {
 		// list is full, so do we replace?
 		if (score > data->infimum) {
-			_close_matches *row;
+			CloseMatches *row;
 			// remove last entry
 			row = r_list_pop (output);
 			free (row);
@@ -1177,18 +1177,18 @@ static int closest_match_callback(void *a, const char *name, const char *value) 
 }
 
 static void closest_output_free(void *ptr) {
-	_close_matches *row = ptr;
+	CloseMatches *row = ptr;
 	free (row->name);
 	free (ptr);
 }
 
-R_API bool r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count, double min) {
-	r_return_val_if_fail (a && fcn && count > 0 && min < 1 && min >= 0, false);
+R_API bool r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count, double score_threshold) {
+	r_return_val_if_fail (a && fcn && count > 0 && score_threshold < 1 && score_threshold >= 0, false);
 
-	_closest_match_data data;
+	ClosestMatchData data;
 	data.count = count;
 	data.index = 0;
-	data.min = min;
+	data.score_threshold = score_threshold;
 
 	// infimum must be initialized to something larger then the max value so
 	// the first entry to make output list changes it
@@ -1216,7 +1216,7 @@ R_API bool r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count, doub
 	// TODO? Should this return the list of best matches instead of printing?
 	if (ret && data.infimum <= 1.0) {
 		RListIter *itr;
-		_close_matches *row;
+		CloseMatches *row;
 		r_list_foreach (output, itr, row) {
 			a->cb_printf ("%02.5lf %s\n", row->score, row->name);
 		}
