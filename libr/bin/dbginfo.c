@@ -83,7 +83,7 @@ R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 		if (origin > 1) {
 			file_nopath = NULL;
 		} else {
-			file_nopath = r_str_rchr (file, '/');
+			file_nopath = strrchr (file, '/');
 		}
 		if (origin) {
 			snprintf (out2, strlen (file) + 63 + strlen (out), "%s:%d%s%s",
@@ -101,7 +101,7 @@ R_API char *r_bin_addr2fileline(RBin *bin, ut64 addr) {
 	int line = 0;
 
 	if (r_bin_addr2line (bin, addr, file, sizeof (file) - 1, &line)) {
-		char *file_nopath = r_str_rchr (file, '/');
+		char *file_nopath = strrchr (file, '/');
 		return r_str_newf ("%s:%d", file_nopath? file_nopath + 1: file, line);
 	}
 	return NULL;
