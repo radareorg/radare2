@@ -251,7 +251,7 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 	}
 	hdr->file_names = NULL;
 	hdr->default_is_stmt = READ8 (buf);
-	hdr->line_base = READ (buf, char);
+	hdr->line_base = READ (buf, signed char);
 	hdr->line_range = READ8 (buf);
 	hdr->opcode_base = READ8 (buf);
 
@@ -562,12 +562,12 @@ static const ut8* r_bin_dwarf_parse_spec_opcode(
 	}
 	advance_adr = adj_opcode / hdr->line_range;
 	regs->address += advance_adr;
-	regs->line += hdr->line_base + (adj_opcode % hdr->line_range);
+	int line_increment =  hdr->line_base + (adj_opcode % hdr->line_range);
+	regs->line += line_increment;
 	if (f) {
 		fprintf (f, "  Special opcode %d: ", adj_opcode);
 		fprintf (f, "advance Address by %"PFMT64d" to 0x%"PFMT64x" and Line by %d to %"PFMT64d"\n",
-			advance_adr, regs->address, hdr->line_base +
-			(adj_opcode % hdr->line_range), regs->line);
+			advance_adr, regs->address, line_increment, regs->line);
 	}
 	if (binfile && binfile->sdb_addrinfo && hdr->file_names) {
 		int idx = regs->file -1;
