@@ -5,19 +5,6 @@
 extern "C" {
 #endif
 
-typedef struct r_range_tiny_t {
-	int pairs;
-	int count;
-	ut64 *ranges;
-} RRangeTiny;
-
-R_API RRangeTiny *r_tinyrange_new(void);
-R_API void r_tinyrange_init(RRangeTiny *bbr);
-R_API void r_tinyrange_fini(RRangeTiny *bbr);
-R_API bool r_tinyrange_in(RRangeTiny *bbr, ut64 at);
-R_API bool r_tinyrange_add(RRangeTiny *bbr, ut64 from, ut64 to);
-R_API void r_tinyrange_free(RRangeTiny *bbr);
-
 /* range.c */
 
 typedef struct r_range_item_t {
