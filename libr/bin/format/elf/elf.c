@@ -537,7 +537,7 @@ static size_t get_maximum_number_of_dynamic_entries(ut64 dyn_size) {
 	return dyn_size / sizeof (Elf_(Dyn));
 }
 
-static bool fill_the_dynamic_entrie(ELFOBJ *bin, Elf_(Phdr) *dyn_phdr, ut64 dyn_size, size_t pos, Elf_(Dyn) *d) {
+static bool fill_dynamic_entry(ELFOBJ *bin, Elf_(Phdr) *dyn_phdr, ut64 dyn_size, size_t pos, Elf_(Dyn) *d) {
 	ut8 sdyn[sizeof (Elf_(Dyn))] = { 0 };
 	int j = 0;
 	int len = r_buf_read_at (bin->b, dyn_phdr->p_offset + pos * sizeof (Elf_(Dyn)), sdyn, sizeof (Elf_(Dyn)));
@@ -557,7 +557,9 @@ static void fill_dynamic_entries(ELFOBJ *bin, Elf_(Phdr) *dyn_phdr, ut64 dyn_siz
 	size_t number_of_entries = get_maximum_number_of_dynamic_entries(dyn_size);
 
 	for (i = 0; i < number_of_entries; i++) {
-		fill_the_dynamic_entrie(bin, dyn_phdr, dyn_size, i, &d);
+		if (!fill_dynamic_entry(bin, dyn_phdr, dyn_size, i, &d)) {
+			break;
+		}
 
 		switch (d.d_tag) {
 		case DT_NULL:
