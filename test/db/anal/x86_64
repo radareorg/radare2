@@ -1,4 +1,15 @@
 NAME=got switch cases
+FILE=bins/elf/fedora_32_bin_ls
+CMDS=<<EOF
+aap
+aflc
+EOF
+EXPECT=<<EOF
+439
+EOF
+RUN
+
+NAME=got switch cases
 FILE=bins/elf/game_of_thrones
 CMDS=<<EOF
 s main
