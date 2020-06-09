@@ -1,0 +1,65 @@
+name: Radare2 Windows2019 CI PR
+
+on:
+  pull_request:
+    branches:
+    - master
+
+jobs:
+  build:
+    name: windows-2019
+    runs-on: windows-2019
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [windows-2019]
+        include:
+          - name: windows-2019
+            os: windows-2019
+            build_system: meson
+            compiler: msvc
+            run_tests: true
+            newshell: true
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install meson and ninja
+      if: matrix.build_system == 'meson'
+      run: sudo apt-get --assume-yes install python3-wheel python3-setuptools && pip3 install --user meson ninja
+    - name: Checkout our Testsuite Binaries
+      uses: actions/checkout@v2
+      with:
+          repository: radareorg/radare2-testbins
+          path: test/bins
+    - name: Build with Meson
+      if: matrix.build_system == 'meson'
+      run: |
+        export PATH=${HOME}/.local/bin:${PATH}
+        meson --prefix=${HOME} build && ninja -C build
+      env:
+        CC: ${{ matrix.compiler }}
+    - name: Install with meson
+      if: matrix.build_system == 'meson'
+      run: |
+        # Install the radare2
+        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+        ninja -C build install
+    - name: Run tests
+      if: matrix.run_tests
+      run: |
+        # Running the test suite
+        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+        if [ "$NEWSHELL" == "true" ]; then
+          export R2_CFG_NEWSHELL=1
+        fi
+        cd test
+        radare2 -N -Qc 'e cfg.newshell' -
+        make
+      env:
+        NEWSHELL: ${{ matrix.newshell }}
+
