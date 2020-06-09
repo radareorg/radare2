@@ -1636,6 +1636,7 @@ R_API bool r_cons_set_cup(bool enable) {
 			const char *code = enable // xterm + xterm-color
 			? "\x1b[?1049h\x1b" "7\x1b[?47h"
 			: "\x1b[?1049l\x1b[?47l""\x1b""8";
+			const size_t code_len = strlen (code);
 			if (write (2, code, code_len) != code_len) {
 				return false;
 			}
