@@ -519,9 +519,10 @@ static RThreadFunctionRet worker_th(RThread *th) {
 }
 
 static void print_diff(const char *actual, const char *expected) {
-#define DO_DIFF !__WINDOWS__
-#if DO_DIFF
 	RDiff *d = r_diff_new ();
+#ifdef __WINDOWS__
+	d->diff_cmd = "git diff --no-index";
+#endif
 	char *uni = r_diff_buffers_to_string (d, (const ut8 *)expected, (int)strlen (expected), (const ut8 *)actual, (int)strlen (actual));
 	r_diff_free (d);
 
@@ -548,20 +549,6 @@ static void print_diff(const char *actual, const char *expected) {
 	r_list_free (lines);
 	free (uni);
 	printf ("\n");
-#else
-	RList *lines = r_str_split_duplist (expected, "\n");
-	RListIter *it;
-	char *line;
-	r_list_foreach (lines, it, line) {
-		printf (Color_RED"- %s"Color_RESET"\n", line);
-	}
-	r_list_free (lines);
-	lines = r_str_split_duplist (actual, "\n");
-	r_list_foreach (lines, it, line) {
-		printf (Color_GREEN"+ %s"Color_RESET"\n", line);
-	}
-	r_list_free (lines);
-#endif
 }
 
 static R2RProcessOutput *print_runner(const char *file, const char *args[], size_t args_size,
