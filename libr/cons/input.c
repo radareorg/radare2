@@ -661,10 +661,15 @@ R_API bool r_cons_yesno(int def, const char *fmt, ...) {
 	va_end (ap);
 	fflush (stderr);
 	r_cons_set_raw (true);
-	(void)read (0, &key, 1);
-	write (2, " ", 1);
-	write (2, &key, 1);
-	write (2, "\n", 1);
+	char buf[] = " ?\n";
+	if (read (0, buf + 1, 1) != 1) {
+		va_end (ap);
+		return false;
+	}
+	if (write (2, buf, 3) != 3) {
+		va_end (ap);
+		return false;
+	}
 	if (key == 'Y') {
 		key = 'y';
 	}

@@ -1248,7 +1248,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #if USE_UTF8
 	int utflen;
 #endif
-	int ch, key, i = 0;	/* grep completion */
+	int ch = 0, key, i = 0;	/* grep completion */
 	char *tmp_ed_cmd, prev = 0;
 	int prev_buflen = -1;
 	RCons *cons = r_cons_singleton ();

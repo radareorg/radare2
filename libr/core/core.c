@@ -1501,6 +1501,7 @@ static void autocomplete_macro(RCore *core, RLineCompletion *completion, const c
 	r_list_foreach (core->rcmd->macro.macros, iter, item) {
 		char *p = item->name;
 		if (!*str || !strncmp (str, p, n)) {
+			// XXX truncation may happen
 			snprintf (buf, sizeof (buf), "%s%s)", str, p);
 			r_line_completion_push (completion, buf);
 		}
@@ -3454,7 +3455,11 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 		eprintf ("Opening in read-only\n");
 	} else {
 		if (str) {
-			write (fd, str, strlen (str));
+			const size_t str_len = strlen (str);
+			if (write (fd, str, str_len) != str_len) {
+				close (fd);
+				return NULL;
+			}
 		}
 	}
 	close (fd);
