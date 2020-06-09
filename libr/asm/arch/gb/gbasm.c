@@ -127,14 +127,15 @@ static bool gb_parse_ld1 (ut8 *buf, const int minlen, char *buf_asm) {
 		buf[0] = (ut8)(0x40 + (i * 8));
 		i = gb_reg_idx (buf_asm[5]);
 		if (i == -1) {
-			if (strncmp(buf_asm + 5, "[hl]", 4)) {
+			if (strncmp (buf_asm + 5, "[hl]", 4)) {
 				return false;
 			}
 			i = 6;
 		}
 		buf[0] |= (ut8)i;
 		return true;
-	} else if (!strncmp (buf_asm + 3, "[hl],", 5)) {
+	}
+	if (!strncmp (buf_asm + 3, "[hl],", 5)) {
 		if ((i = gb_reg_idx (buf_asm[8])) == (-1)) {
 			//'ld [hl], [hl]' does not exist
 			return false;
