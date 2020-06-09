@@ -530,7 +530,7 @@ static void set_default_value_dynamic_info(ELFOBJ *bin) {
 	bin->dyn_info.dt_flags_1 = ELF_XWORD_MAX;
 	bin->dyn_info.dt_rpath = ELF_XWORD_MAX;
 	bin->dyn_info.dt_runpath = ELF_XWORD_MAX;
-	bin->dyn_info.dt_needed = r_vector_new(sizeof(Elf_(Off)), NULL, NULL);
+	r_vector_init(&bin->dyn_info.dt_needed, sizeof(Elf_(Off)), NULL, NULL);
 }
 
 static size_t get_maximum_number_of_dynamic_entries(ut64 dyn_size) {
@@ -626,7 +626,7 @@ static void fill_dynamic_entries(ELFOBJ *bin, Elf_(Phdr) *dyn_phdr, ut64 dyn_siz
 			bin->dyn_info.dt_runpath = d.d_un.d_val;
 			break;
 		case DT_NEEDED:
-			r_vector_push(bin->dyn_info.dt_needed, &d.d_un.d_val);
+			r_vector_push(&bin->dyn_info.dt_needed, &d.d_un.d_val);
 			break;
 		default:
 			if ((d.d_tag >= DT_VERSYM) && (d.d_tag <= DT_VERNEEDNUM)) {
@@ -2780,7 +2780,7 @@ RBinElfLib* Elf_(r_bin_elf_get_libs)(ELFOBJ *bin) {
 		return NULL;
 	}
 
-	r_vector_foreach(bin->dyn_info.dt_needed, it) {
+	r_vector_foreach(&bin->dyn_info.dt_needed, it) {
 		Elf_(Off) val = *it;
 
 		RBinElfLib *r = realloc (ret, (k + 1) * sizeof (RBinElfLib));
@@ -3712,7 +3712,7 @@ void Elf_(r_bin_elf_free)(ELFOBJ* bin) {
 	free (bin->phdr);
 	free (bin->shdr);
 	free (bin->strtab);
-	r_vector_free(bin->dyn_info.dt_needed);
+	r_vector_fini(&bin->dyn_info.dt_needed);
 
 	free (bin->shstrtab);
 	free (bin->dynstr);
