@@ -8,14 +8,6 @@
 #include <r_util.h>
 #include "elf.h"
 
-#ifdef IFDBG
-#undef IFDBG
-#endif
-
-#define DO_THE_DBG 0
-#define IFDBG if (DO_THE_DBG)
-#define IFINT if (0)
-
 #define MIPS_PLT_OFFSET 0x20
 #define RISCV_PLT_OFFSET 0x20
 
@@ -2850,7 +2842,7 @@ static void create_section_from_phdr(ELFOBJ *bin, RBinElfSection *ret, int *i, c
 
 static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 	RBinElfSection *ret;
-	int i, num_sections = 0;
+	int num_sections = 0;
 	ut64 reldyn = 0, relava = 0, pltgotva = 0, relva = 0;
 	ut64 reldynsz = 0, relasz = 0, pltgotsz = 0;
 	r_return_val_if_fail (bin && bin->phdr, NULL);
@@ -2885,16 +2877,24 @@ static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 		num_sections++;
 	}
 
-	ret = calloc (num_sections + 1, sizeof(RBinElfSection));
+	ret = calloc (num_sections + 1, sizeof (RBinElfSection));
 	if (!ret) {
 		return NULL;
 	}
 
-	i = 0;
-	create_section_from_phdr (bin, ret, &i, ".rel.dyn", reldyn, reldynsz);
-	create_section_from_phdr (bin, ret, &i, ".rela.plt", relava, pltgotsz);
-	create_section_from_phdr (bin, ret, &i, ".rel.plt", relva, relasz);
-	create_section_from_phdr (bin, ret, &i, ".got.plt", pltgotva, pltgotsz);
+	size_t i = 0;
+	if (i < num_sections) {
+		create_section_from_phdr (bin, ret, &i, ".rel.dyn", reldyn, reldynsz);
+	}
+	if (i < num_sections) {
+		create_section_from_phdr (bin, ret, &i, ".rela.plt", relava, pltgotsz);
+	}
+	if (i < num_sections) {
+		create_section_from_phdr (bin, ret, &i, ".rel.plt", relva, relasz);
+	}
+	if (i < num_sections) {
+		create_section_from_phdr (bin, ret, &i, ".got.plt", pltgotva, pltgotsz);
+	}
 	ret[i].last = 1;
 
 	return ret;
