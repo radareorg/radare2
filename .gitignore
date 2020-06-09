@@ -18,6 +18,7 @@ supported.*
 config.mk
 plugins.cfg
 langs.cfg
+.test.c
 .*.swp
 .*.swo
 *.un~
