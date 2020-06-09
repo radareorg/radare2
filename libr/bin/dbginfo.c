@@ -38,8 +38,7 @@ R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 			out = r_file_slurp_line (file_line, line, 0);
 			*token ++ = ':';
 		} else {
-			out = strdup (file_line);
-			return out;
+			return file_line;
 		}
 	}
 	free (key);
@@ -60,11 +59,12 @@ R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 					line, file_nopath? " ": "",
 					out? out: "");
 			free (out);
-			return res;
+			out = res;
 		}
+		free (file_line);
 		return out;
 	}
-	free (file_line);
+	R_FREE (file_line);
 	
 	file[0] = 0;
 	if (r_bin_addr2line (bin, addr, file, sizeof (file), &line)) {
