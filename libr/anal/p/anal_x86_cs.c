@@ -3596,6 +3596,7 @@ static RList *anal_preludes(RAnal *anal) {
 	case 64:
 		KW ("\x55\x48\x89\xe5", 4, NULL, 0);
 		KW ("\x55\x48\x8b\xec", 4, NULL, 0);
+		KW ("\xf3\x0f\x1e\xfa", 4, NULL, 0); // endbr64
 		break;
 	default:
 		r_list_free (l);
