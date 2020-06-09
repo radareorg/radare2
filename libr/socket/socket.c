@@ -317,9 +317,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 				return true;
 			}
 			if (errno == EINPROGRESS) {
-				struct timeval tv;
-				tv.tv_sec = timeout;
-				tv.tv_usec = 0;
+				struct timeval tv = {timeout, 0};
 				fd_set wfds;
 				FD_ZERO (&wfds);
 				FD_SET (s->fd, &wfds);
@@ -355,14 +353,12 @@ success:
 		if (ret != 1) {
 			int error = SSL_get_error (s->sfd, ret);
 			int tries = 10;
-			while (tries && ret && (error == 2 || error == 3)) {
-				struct timeval tv;
-				tv.tv_sec = 1;
-				tv.tv_usec = 0;
+			while (tries && ret && (error == SSL_ERROR_WANT_READ || error == SSL_ERROR_WANT_WRITE)) {
+				struct timeval tv = {1, 0};
 				fd_set rfds, wfds;
 				FD_ZERO (&rfds);
 				FD_ZERO (&wfds);
-				if (error == 2) {
+				if (error == SSL_ERROR_WANT_READ) {
 					FD_SET (s->fd, &rfds);
 				} else {
 					FD_SET (s->fd, &wfds);
@@ -598,9 +594,7 @@ R_API RSocket *r_socket_accept_timeout(RSocket *s, unsigned int timeout) {
 	FD_ZERO (&except_fds);
 	FD_SET (s->fd, &except_fds);
 
-	struct timeval t;
-	t.tv_sec = timeout;
-	t.tv_usec = 0;
+	struct timeval t = {timeout, 0};
 
 	int r = select (s->fd + 1, &read_fds, NULL, &except_fds, &t);
 	if(r < 0) {
@@ -635,9 +629,7 @@ R_API int r_socket_block_time(RSocket *s, int block, int sec, int usec) {
 	ioctlsocket (s->fd, FIONBIO, (u_long FAR*)&block);
 #endif
 	if (sec > 0 || usec > 0) {
-		struct timeval tv = {0};
-		tv.tv_sec = sec;
-		tv.tv_usec = usec;
+		struct timeval tv = {sec, usec};
 		if (setsockopt (s->fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof (tv)) < 0) {
 			return false;
 		}
@@ -657,20 +649,14 @@ R_API int r_socket_flush(RSocket *s) {
 /* waits secs until new data is received.	  */
 /* returns -1 on error, 0 is false, 1 is true */
 R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
-#if __UNIX__ || __WINDOWS__
 	fd_set rfds;
-	struct timeval tv;
+	struct timeval tv = {secs, usecs};
 	if (s->fd == R_INVALID_SOCKET) {
 		return -1;
 	}
 	FD_ZERO (&rfds);
 	FD_SET (s->fd, &rfds);
-	tv.tv_sec = secs;
-	tv.tv_usec = usecs;
 	return select (s->fd + 1, &rfds, NULL, NULL, &tv);
-#else
-	return true; /* always ready if unknown */
-#endif
 }
 
 R_API char *r_socket_to_string(RSocket *s) {
@@ -773,7 +759,7 @@ R_API int r_socket_read_block(RSocket *s, ut8 *buf, int len) {
 		int r = r_socket_read (s, buf + ret, len - ret);
 		if (r == -1) {
 #if HAVE_LIB_SSL
-			if (SSL_get_error (s->sfd, r) == 2) {
+			if (SSL_get_error (s->sfd, r) == SSL_ERROR_WANT_READ) {
 				if (r_socket_ready (s, 1, 0) == 1) {
 					continue;
 				}

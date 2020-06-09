@@ -7,13 +7,16 @@
 #include <WinInet.h>
 #endif
 
+#define SOCKET_HTTP_MAX_HEADER_LENGTH 0x2000
+#define SOCKET_HTTP_MAX_REDIRECTS 5
+
 static size_t socket_slurp(RSocket *s, RBuffer *buf) {
 	size_t i;
 	if (r_socket_ready (s, 1, 0) != 1) {
 		return 0;
 	}
 	r_socket_block_time (s, 1, 0, 1000);
-	for (i = 0; i < 0x2000; i += 1) {
+	for (i = 0; i < SOCKET_HTTP_MAX_HEADER_LENGTH; i += 1) {
 		ut8 c;
 		int olen = r_socket_read_block (s, &c, 1);
 		if (olen != 1) {
@@ -39,6 +42,9 @@ static char *socket_http_answer(RSocket *s, int *code, int *rlen, ut32 redirecti
 	char *res = NULL;
 	size_t olen = socket_slurp (s, b);
 	char *buf = malloc (olen + 1);
+	if (!buf) {
+		goto exit;
+	}
 	r_buf_read_at (b, 0, (ut8 *)buf, olen);
 	buf[olen] = 0;
 	if ((dn = (char*)r_str_casestr (buf, "\n\n"))) {
@@ -60,12 +66,15 @@ static char *socket_http_answer(RSocket *s, int *code, int *rlen, ut32 redirecti
 			goto exit;
 		}
 		p += strlen ("Location:");
-		int url_len = strchr (p, '\n') - p;
-		char *url = r_str_ndup (p, url_len);
-		r_str_trim (url);
-		res = socket_http_get_recursive (url, code, rlen, --redirections);
-		free (url);
-		len = *rlen;
+		char *end_url = strchr (p, '\n');
+		if (end_url) {
+			int url_len = end_url - p;
+			char *url = r_str_ndup (p, url_len);
+			r_str_trim (url);
+			res = socket_http_get_recursive (url, code, rlen, --redirections);
+			free (url);
+			len = *rlen;
+		}
 		goto exit;
 	}
 
@@ -79,6 +88,9 @@ static char *socket_http_answer(RSocket *s, int *code, int *rlen, ut32 redirecti
 	if (len > 0) {
 		if (len > olen) {
 			res = malloc (len + 2);
+			if (!res) {
+				goto exit;
+			}
 			olen -= dn - buf;
 			memcpy (res, dn + delta, olen);
 			do {
@@ -125,26 +137,26 @@ static char *http_get_w32(const char *url, int *code, int *rlen) {
 
 	char *ret = NULL;
 	size_t read_sz = 0x100000;
-	DWORD read = 0, written = 0;
+	DWORD r = 0, w = 0;
 	bool res = true;
 	do {
-		written += read;
+		w += r;
 		if (!res && GetLastError () == ERROR_INSUFFICIENT_BUFFER) {
 			read_sz *= 2;
 		}
-		char *tmp = realloc (ret, read_sz + written);
+		char *tmp = realloc (ret, read_sz + w);
 		if (!tmp) {
 			R_FREE (ret);
 			goto exit;
 		}
 		ret = tmp;
-	} while (!(res = InternetReadFile (hOpenUrl, ret + written, read_sz, &read)) || read);
+	} while (!(res = InternetReadFile (hOpenUrl, ret + w, read_sz, &r)) || r);
 
-	if (written) {
-		char *tmp = realloc (ret, (size_t)written + 1);
+	if (w) {
+		char *tmp = realloc (ret, (size_t)w + 1);
 		if (tmp) {
 			ret = tmp;
-			ret[written] = 0;
+			ret[w] = 0;
 		} else {
 			R_FREE (ret);
 		}
@@ -154,9 +166,9 @@ static char *http_get_w32(const char *url, int *code, int *rlen) {
 
 exit:
 	if (rlen) {
-		*rlen = written;
+		*rlen = w;
 	}
-	if (code && written) {
+	if (code && w) {
 		*code = 200;
 	}
 	InternetCloseHandle (hInternet);
@@ -173,7 +185,7 @@ static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut
 		*rlen = 0;
 	}
 	char *curl_env = r_sys_getenv ("R2_CURL");
-	if (curl_env && atoi (curl_env)) {
+	if (!R_STR_ISEMPTY (curl_env) && atoi (curl_env)) {
 		int len;
 		char *escaped_url = r_str_escape_sh (url);
 		char *command = r_str_newf ("curl -sfL -o - \"%s\"", escaped_url);
@@ -220,7 +232,7 @@ static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut
 	host += 3;
 	port = strchr (host, ':');
 	if (!port) {
-		port = ssl ? "443" : "80";
+		port = ssl? "443": "80";
 		path = host;
 	} else {
 		*port++ = 0;
@@ -257,7 +269,7 @@ static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut
 }
 
 R_API char *r_socket_http_get(const char *url, int *code, int *rlen) {
-	return socket_http_get_recursive (url, code, rlen, 5);
+	return socket_http_get_recursive (url, code, rlen, SOCKET_HTTP_MAX_REDIRECTS);
 }
 
 R_API char *r_socket_http_post(const char *url, const char *data, int *code, int *rlen) {
