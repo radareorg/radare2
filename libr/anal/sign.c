@@ -1093,26 +1093,10 @@ static int score_cmpr(const void *a, const void *b) {
 	return 0;
 }
 
-static bool add_bestrow(RList *list, char *name, double score) {
-	CloseMatches *row = R_NEW (CloseMatches);
-	if (!row) {
-		return false;
-	}
-	row->name = strdup (name);
-	if (!row->name) {
-		free (row);
-		return false;
-	}
-	row->score = score;
-	r_list_append (list, row);
-	r_list_sort (list, &score_cmpr);
-	return true;
-}
-
 typedef struct {
 	RSignItem *test;
 	RList *output;
-	int count, index;
+	int count;
 	double score_threshold;
 
 	// greatest lower bound. Thanks lattice theory for helping name variables
@@ -1142,36 +1126,37 @@ static int closest_match_callback(void *a, const char *name, const char *value) 
 
 	RList *output = data->output;
 
-	if (r_list_length (output) < data->count) {
-		// add to the list b/c it is not full
-		if (!add_bestrow (output, it->name, score)) {
-			r_sign_item_free (it);
-			return false;
-		}
-
-		// find smallest score of the intial list
-		if (score < data->infimum) {
-			data->infimum = score;
-		}
-	} else {
-		// list is full, so do we replace?
-		if (score > data->infimum) {
-			CloseMatches *row;
-			// remove last entry
-			row = r_list_pop (output);
-			free (row);
-
-			// add new entry
-			if (!add_bestrow (output, it->name, score)) {
-				r_sign_item_free (it);
-				return false;
-			}
-
-			// find new infimum
-			row = r_list_get_top (output);
-			data->infimum = row->score;
-		}
+	// return early if the list does not need to be changed
+	if (score < data->infimum && r_list_length (output) >= data->count) {
+		r_sign_item_free (it);
+		return true;
 	}
+
+	// remove an element if list is full
+	if (r_list_length (output) >= data->count) {
+		CloseMatches *row = r_list_pop (output);
+		free (row);
+	}
+
+	// add new element
+	CloseMatches *row = R_NEW (CloseMatches);
+	if (!row) {
+		r_sign_item_free (it);
+		return false;
+	}
+	row->name = strdup (it->name);
+	if (!row->name) {
+		r_sign_item_free (it);
+		free (row);
+		return false;
+	}
+	row->score = score;
+	r_list_add_sorted (output, (void *)row, &score_cmpr);
+
+	// get new infimum
+	row = r_list_get_top (output);
+	data->infimum = row->score;
+
 	r_sign_item_free (it);
 	return true;
 }
@@ -1187,7 +1172,6 @@ R_API bool r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count, doub
 
 	ClosestMatchData data;
 	data.count = count;
-	data.index = 0;
 	data.score_threshold = score_threshold;
 
 	// infimum must be initialized to something larger then the max value so
