@@ -73,7 +73,7 @@ R_API void r_bin_java_fmtype_free(void /*RBinJavaField*/ *fm_type);
 R_API RBinJavaAttrInfo *r_bin_java_read_next_attr(RBinJavaObj *bin, const ut64 offset, const ut8 *buf, const ut64 len);
 R_API RBinJavaCPTypeObj *r_bin_java_read_next_constant_pool_item(RBinJavaObj *bin, const ut64 offset, const ut8 *buf, ut64 len);
 R_API RBinJavaAttrMetas *r_bin_java_get_attr_type_by_name(const char *name);
-R_API RBinJavaCPTypeObj *r_bin_java_get_java_null_cp();
+R_API RBinJavaCPTypeObj *r_bin_java_get_java_null_cp(void);
 R_API ut64 r_bin_java_read_class_file2(RBinJavaObj *bin, const ut64 offset, const ut8 *buf, ut64 len);
 R_API RBinJavaAttrInfo *r_bin_java_get_attr_from_field(RBinJavaField *field, R_BIN_JAVA_ATTR_TYPE attr_type, ut32 pos);
 R_API RBinJavaField *r_bin_java_read_next_field(RBinJavaObj *bin, const ut64 offset, const ut8 *buffer, const ut64 len);
@@ -249,7 +249,7 @@ R_API ut64 r_bin_java_do_nothing_calc_size(RBinJavaCPTypeObj *obj);
 R_API ut64 r_bin_java_methodhandle_cp_calc_size(RBinJavaCPTypeObj *obj);
 R_API ut64 r_bin_java_methodtype_cp_calc_size(RBinJavaCPTypeObj *obj);
 R_API ut64 r_bin_java_invokedynamic_cp_calc_size(RBinJavaCPTypeObj *obj);
-R_API RBinJavaStackMapFrame *r_bin_java_default_stack_frame();
+R_API RBinJavaStackMapFrame *r_bin_java_default_stack_frame(void);
 
 R_API RList *r_bin_java_find_cp_const_by_val_float(RBinJavaObj *bin_obj, const ut8 *bytes, ut32 len);
 R_API RList *r_bin_java_find_cp_const_by_val_double(RBinJavaObj *bin_obj, const ut8 *bytes, ut32 len);

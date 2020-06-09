@@ -14,7 +14,7 @@ NAME=use void on functions without parameters
 # Bad: static void foo() {
 # Good: static void foo(void) {
 FILE=-
-CMDS="!git grep -e ^R_API -e ^static .. | grep -e '() {' -e '();'"
+CMDS="!git grep -e ^R_API -e ^static .. | grep -e '() {' -e '();' | grep -v test/"
 EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF

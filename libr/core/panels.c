@@ -469,7 +469,7 @@ static void __delete_almighty(RCore *core, RModal *modal, Sdb *menu_db);
 static void __create_almighty(RCore *core, RPanel *panel, Sdb *menu_db);
 static void __update_modal(RCore *core, Sdb *menu_db, RModal *modal);
 static bool __draw_modal(RCore *core, RModal *modal, int range_end, int start, const char *name);
-static RModal *__init_modal();
+static RModal *__init_modal(void);
 static void __free_modal(RModal **modal);
 
 /* menu callback */
@@ -575,7 +575,7 @@ static int cmpstr(const void *_a, const void *_b);
 static RList *__sorted_list(RCore *core, char *menu[], int count);
 
 /* config */
-static char *__get_panels_config_dir_path();
+static char *__get_panels_config_dir_path(void);
 static char *__create_panels_config_path(const char *file);
 static void __load_config_menu(RCore *core);
 static char *__parse_panels_config(const char *cfg, int len);

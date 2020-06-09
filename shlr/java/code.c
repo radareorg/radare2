@@ -22,11 +22,11 @@
 #define R_API
 #endif
 
-static void init_switch_op ();
-static int enter_switch_op (ut64 addr, const ut8 * bytes, int len);
-static int update_switch_op (ut64 addr, const ut8 * bytes);
-static int update_bytes_consumed (int sz);
-static int handle_switch_op (ut64 addr, const ut8 * bytes, char *output, int outlen);
+static void init_switch_op(void);
+static int enter_switch_op(ut64 addr, const ut8 * bytes, int len);
+static int update_switch_op(ut64 addr, const ut8 * bytes);
+static int update_bytes_consumed(int sz);
+static int handle_switch_op(ut64 addr, const ut8 * bytes, char *output, int outlen);
 
 static ut8 IN_SWITCH_OP = 0;
 typedef struct current_table_switch_t {
