@@ -88,6 +88,11 @@ typedef struct r_sign_options_t {
 	double graph_diff_threshold;
 } RSignOptions;
 
+typedef struct {
+	char *name;
+	double score;
+} RSignCloseMatch;
+
 #ifdef R_API
 R_API bool r_sign_add_bytes(RAnal *a, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask);
 R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *bytes, ut64 at);
@@ -138,7 +143,7 @@ R_API int r_sign_is_flirt(RBuffer *buf);
 R_API void r_sign_flirt_dump(const RAnal *anal, const char *flirt_file);
 R_API void r_sign_flirt_scan(RAnal *anal, const char *flirt_file);
 
-R_API bool r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count, double min);
+R_API RList *r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count, double score_threshold);
 R_API bool r_sign_diff(RAnal *a, RSignOptions *options, const char *other_space_name);
 R_API bool r_sign_diff_by_name(RAnal *a, RSignOptions *options, const char *other_space_name, bool not_matching);
 

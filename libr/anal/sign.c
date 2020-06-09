@@ -1076,14 +1076,9 @@ static RSignItem *create_graph_sign_from_fcn(RAnal *a, RAnalFunction *fcn) {
 	return item;
 }
 
-typedef struct {
-	char *name;
-	double score;
-} CloseMatches;
-
 static int score_cmpr(const void *a, const void *b) {
-	double sa = ((CloseMatches *)a)->score;
-	double sb = ((CloseMatches *)b)->score;
+	double sa = ((RSignCloseMatch *)a)->score;
+	double sb = ((RSignCloseMatch *)b)->score;
 
 	if (sa < sb) {
 		return 1;
@@ -1135,12 +1130,12 @@ static int closest_match_callback(void *a, const char *name, const char *value) 
 
 	// remove an element if list is full
 	if (r_list_length (output) >= data->count) {
-		CloseMatches *row = r_list_pop (output);
+		RSignCloseMatch *row = r_list_pop (output);
 		free (row);
 	}
 
 	// add new element
-	CloseMatches *row = R_NEW (CloseMatches);
+	RSignCloseMatch *row = R_NEW (RSignCloseMatch);
 	if (!row) {
 		r_sign_item_free (it);
 		return false;
@@ -1163,12 +1158,12 @@ static int closest_match_callback(void *a, const char *name, const char *value) 
 }
 
 static void closest_output_free(void *ptr) {
-	CloseMatches *row = ptr;
+	RSignCloseMatch *row = ptr;
 	free (row->name);
 	free (ptr);
 }
 
-R_API bool r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count, double score_threshold) {
+R_API RList *r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count, double score_threshold) {
 	r_return_val_if_fail (a && fcn && count > 0 && score_threshold < 1 && score_threshold >= 0, false);
 
 	ClosestMatchData data;
@@ -1182,7 +1177,7 @@ R_API bool r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count, doub
 	// create a graph for the current function to be compared against
 	RSignItem *test = create_graph_sign_from_fcn (a, fcn);
 	if (!test) {
-		return false;
+		return NULL;
 	}
 	data.test = test;
 
@@ -1190,25 +1185,18 @@ R_API bool r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count, doub
 	RList *output = r_list_newf ((RListFree)closest_output_free);
 	if (!output) {
 		r_sign_item_free (test);
-		return false;
+		return NULL;
 	}
 	data.output = output;
 
 	// TODO: handle sign spaces
-	bool ret = sdb_foreach (a->sdb_zigns, &closest_match_callback, (void *)&data);
-
-	// TODO? Should this return the list of best matches instead of printing?
-	if (ret && data.infimum <= 1.0) {
-		RListIter *itr;
-		CloseMatches *row;
-		r_list_foreach (output, itr, row) {
-			a->cb_printf ("%02.5lf %s\n", row->score, row->name);
-		}
+	if(!sdb_foreach (a->sdb_zigns, &closest_match_callback, (void *)&data)) {
+		r_list_free (output);
+		output = NULL;
 	}
 
 	r_sign_item_free (test);
-	r_list_free (output);
-	return ret;
+	return output;
 }
 
 R_API bool r_sign_diff(RAnal *a, RSignOptions *options, const char *other_space_name) {

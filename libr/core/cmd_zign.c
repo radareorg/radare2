@@ -1064,8 +1064,20 @@ static bool bestmatch(void *data, const char *input) {
 	r_cons_break_push (NULL, NULL);
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 	if (fcn) {
-		ret = r_sign_find_closest_sig (core->anal, fcn, count, 0);
+		// get closest matches
+		RList *list = r_sign_find_closest_sig (core->anal, fcn, count, 0);
+
+		if (list) {
+			ret = true;
+			RListIter *itr;
+			RSignCloseMatch *row;
+			r_list_foreach (list, itr, row) {
+				core->anal->cb_printf ("%02.5lf %s\n", row->score, row->name);
+			}
+			r_list_free (list);
+		}
 	}
+
 	r_cons_break_pop ();
 	return ret;
 }
