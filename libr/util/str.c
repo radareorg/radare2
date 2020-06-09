@@ -2773,25 +2773,27 @@ R_API char *r_str_utf16_encode(const char *s, int len) {
 // TODO: merge print inside rutil
 /* hack from print */
 R_API int r_print_format_length(const char *fmt) {
-	int nargs, i, j, idx, times, endian;
-	char *args, *bracket, tmp, last = 0;
+	size_t i;
+	int endian = 0;
+	char *args, tmp, last = 0;
 	const char *arg = fmt;
 	const char *argend = arg+strlen (fmt);
-	char namefmt[8];
+	char namefmt[16];
 	int viewflags = 0;
-	endian = i = j = 0;
 
 	while (*arg && IS_WHITECHAR (*arg)) {
 		arg++;
 	}
 	/* get times */
-	times = atoi (arg);
+	int times = atoi (arg);
 	if (times > 0) {
 		while ((*arg >= '0' && *arg <= '9')) {
 			arg++;
 		}
+	} else if (times < 0) {
+		times = 0;
 	}
-	bracket = strchr (arg,'{');
+	char *bracket = strchr (arg,'{');
 	if (bracket) {
 		char *end = strchr (arg,'}');
 		if (!end) {
@@ -2799,7 +2801,7 @@ R_API int r_print_format_length(const char *fmt) {
 			return 0;
 		}
 		*end='\0';
-		times = r_num_math (NULL, bracket+1);
+		times = r_num_math (NULL, bracket + 1);
 		arg = end + 1;
 	}
 
@@ -2811,17 +2813,15 @@ R_API int r_print_format_length(const char *fmt) {
 	if (args) {
 		int l = 0, maxl = 0;
 		argend = args;
-		args = strdup (args+1);
-		nargs = r_str_word_set0 (args+1);
-		if (!nargs) {
-			R_FREE (args);
-		}
-		for (i = 0; i<nargs; i++) {
-			int len = strlen (r_str_word_get0 (args + 1, i));
+		args = strdup (args + 1);
+		size_t nargs = r_str_word_set0 (args + 1);
+		for (i = 0; i < nargs; i++) {
+			size_t len = strlen (r_str_word_get0 (args + 1, i));
 			if (len > maxl) {
 				maxl = len;
 			}
 		}
+		R_FREE (args);
 		l++;
 		snprintf (namefmt, sizeof (namefmt), "%%%ds : ", maxl);
 	}
@@ -2832,8 +2832,9 @@ R_API int r_print_format_length(const char *fmt) {
 		times = 1;
 	}
 	for (; times; times--) { // repeat N times
-		const char * orig = arg;
+		const char *orig = arg;
 		arg = orig;
+		size_t idx;
 		for (idx = 0; arg < argend && *arg; idx++, arg++) {
 			tmp = *arg;
 		feed_me_again:
@@ -2894,9 +2895,7 @@ R_API int r_print_format_length(const char *fmt) {
 		}
 		arg = orig;
 	}
-	if (args) {
-		free (args);
-	}
+	free (args);
 	return i;
 }
 
