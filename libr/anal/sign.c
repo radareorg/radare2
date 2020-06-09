@@ -9,6 +9,7 @@
 
 R_LIB_VERSION (r_sign);
 
+#define SIGN_CLOSE_INFIMUM_MAX 1337.0
 #define SIGN_DIFF_MATCH_BYTES_THRESHOLD 1.0
 #define SIGN_DIFF_MATCH_GRAPH_THRESHOLD 1.0
 
@@ -1176,7 +1177,7 @@ R_API bool r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count, doub
 
 	// infimum must be initialized to something larger then the max value so
 	// the first entry to make output list changes it
-	data.infimum = 1337.0;
+	data.infimum = SIGN_CLOSE_INFIMUM_MAX;
 
 	// create a graph for the current function to be compared against
 	RSignItem *test = create_graph_sign_from_fcn (a, fcn);
@@ -1185,11 +1186,10 @@ R_API bool r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count, doub
 	}
 	data.test = test;
 
-	// TODO? should this be a red/black tree?
 	// sorted list will contian the closest matches
 	RList *output = r_list_newf ((RListFree)closest_output_free);
 	if (!output) {
-		free (test);
+		r_sign_item_free (test);
 		return false;
 	}
 	data.output = output;
@@ -1206,7 +1206,7 @@ R_API bool r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count, doub
 		}
 	}
 
-	free (test);
+	r_sign_item_free (test);
 	r_list_free (output);
 	return ret;
 }
