@@ -236,7 +236,7 @@ error:
 	goto beach;
 }
 
-static ut64 now_us() {
+static ut64 now_us(void) {
 	LARGE_INTEGER f;
 	if (!QueryPerformanceFrequency (&f)) {
 		return 0;

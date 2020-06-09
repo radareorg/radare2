@@ -349,7 +349,7 @@ R_API void r_debug_map_free(RDebugMap *map) {
 	free (map);
 }
 
-R_API RList *r_debug_map_list_new() {
+R_API RList *r_debug_map_list_new(void) {
 	RList *list = r_list_new ();
 	if (!list) {
 		return NULL;

@@ -48,7 +48,7 @@ R_API int r_cons_controlz(int ch) {
 // 97 - wheel down
 // 95 - mouse up
 // 92 - mouse down
-static int __parseMouseEvent() {
+static int __parseMouseEvent(void) {
 	char xpos[32];
 	char ypos[32];
 	(void)r_cons_readchar (); // skip first char
@@ -585,7 +585,7 @@ R_API bool r_cons_readpush(const char *str, int len) {
 	return false;
 }
 
-R_API void r_cons_readflush() {
+R_API void r_cons_readflush(void) {
 	R_FREE (readbuffer);
 	readbuffer_length = 0;
 }
@@ -598,7 +598,7 @@ R_API void r_cons_switchbuf(bool active) {
 extern volatile sig_atomic_t sigwinchFlag;
 #endif
 
-R_API int r_cons_readchar() {
+R_API int r_cons_readchar(void) {
 	char buf[2];
 	buf[0] = -1;
 	if (readbuffer_length > 0) {

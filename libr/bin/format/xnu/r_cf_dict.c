@@ -31,11 +31,11 @@ static void r_cf_parse_state_free(RCFParseState *state);
 static RCFKeyValue *r_cf_key_value_new(char *key, RCFValue *value);
 static void r_cf_key_value_free(RCFKeyValue *key_value);
 
-static RCFValueDict *r_cf_value_dict_new();
+static RCFValueDict *r_cf_value_dict_new(void);
 static void r_cf_value_dict_add(RCFValueDict *dict, RCFKeyValue *key_value);
 static void r_cf_value_dict_print(RCFValueDict *dict);
 
-static RCFValueArray *r_cf_value_array_new();
+static RCFValueArray *r_cf_value_array_new(void);
 static void r_cf_value_array_free(RCFValueArray *array);
 static void r_cf_value_array_add(RCFValueArray *array, RCFValue *value);
 static void r_cf_value_array_print(RCFValueArray *dict);
@@ -52,7 +52,7 @@ static RCFValueData *r_cf_value_data_new(char *string);
 static void r_cf_value_data_free(RCFValueData *data);
 static void r_cf_value_data_print(RCFValueData *data);
 
-static RCFValueNULL *r_cf_value_null_new();
+static RCFValueNULL *r_cf_value_null_new(void);
 static void r_cf_value_null_free(RCFValueNULL *null);
 static void r_cf_value_null_print(RCFValueNULL *null);
 
@@ -334,7 +334,7 @@ static void r_cf_key_value_free(RCFKeyValue *key_value) {
 	R_FREE (key_value);
 }
 
-static RCFValueDict *r_cf_value_dict_new() {
+static RCFValueDict *r_cf_value_dict_new(void) {
 	RCFValueDict *dict = R_NEW0 (RCFValueDict);
 	if (!dict) {
 		return NULL;
@@ -381,7 +381,7 @@ static void r_cf_value_dict_print(RCFValueDict *dict) {
 	printf ("}");
 }
 
-static RCFValueArray *r_cf_value_array_new() {
+static RCFValueArray *r_cf_value_array_new(void) {
 	RCFValueArray *array = R_NEW0 (RCFValueArray);
 	if (!array) {
 		return NULL;
@@ -526,7 +526,7 @@ static void r_cf_value_data_print(RCFValueData *data) {
 	printf ("\"...\"");
 }
 
-static RCFValueNULL *r_cf_value_null_new() {
+static RCFValueNULL *r_cf_value_null_new(void) {
 	RCFValueNULL *null = R_NEW0 (RCFValueNULL);
 	if (!null) {
 		return NULL;

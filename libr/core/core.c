@@ -823,7 +823,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	return ret;
 }
 
-R_API RCore *r_core_new() {
+R_API RCore *r_core_new(void) {
 	RCore *c = R_NEW0 (RCore);
 	if (c) {
 		r_core_init (c);

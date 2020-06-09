@@ -852,7 +852,7 @@ ST_DATA int tcc_ext;
 /* XXX: get rid of this ASAP */
 ST_DATA struct TCCState *tcc_state;
 
-static inline int tcc_nerr() {
+static inline int tcc_nerr(void) {
 	return tcc_state->nb_errors;
 }
 

@@ -199,7 +199,7 @@ static int check_features(RAsm *a, cs_insn *insn) {
 }
 
 #ifndef R2_PLUGIN_INCORE
-R_API RLibStruct *radare_plugin_function() {
+R_API RLibStruct *radare_plugin_function(void) {
 	RLibStruct *rp = R_NEW0 (RLibStruct);
 	if (rp) {
 		rp->type = R_LIB_TYPE_ASM;

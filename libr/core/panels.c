@@ -4884,7 +4884,7 @@ bool __init_panels(RCore *core, RPanels *panels) {
 	return true;
 }
 
-RModal *__init_modal() {
+RModal *__init_modal(void) {
 	RModal *modal = R_NEW0 (RModal);
 	if (!modal) {
 		return NULL;
@@ -5611,7 +5611,7 @@ void __restore_panel_pos(RPanel* panel) {
 			panel->view->prevPos.w, panel->view->prevPos.h);
 }
 
-char *__get_panels_config_dir_path() {
+char *__get_panels_config_dir_path(void) {
 	return r_str_home (R_JOIN_2_PATHS (R2_HOME_DATADIR, ".r2panels"));
 }
 

@@ -219,8 +219,10 @@ R_API int r_sandbox_system(const char *x, int n) {
 		eprintf ("Error parsing command arguments\n");
 		return -1;
 	}
-	int child = fork();
-	if (child == -1) return -1;
+	int child = fork ();
+	if (child == -1) {
+		return -1;
+	}
 	if (child) {
 		return waitpid (child, NULL, 0);
 	}
@@ -423,7 +425,7 @@ R_API DIR* r_sandbox_opendir (const char *path) {
 	return opendir (path);
 }
 #endif
-R_API bool r_sys_stop () {
+R_API bool r_sys_stop (void) {
 	if (enabled) {
 		return false;
 	}

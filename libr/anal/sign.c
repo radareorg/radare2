@@ -777,10 +777,8 @@ R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *byt
 }
 
 R_API bool r_sign_add_graph(RAnal *a, const char *name, RSignGraph graph) {
+	r_return_val_if_fail (a && name, false);
 	bool retval = true;
-	if (!a || !name) {
-		return false;
-	}
 	RSignItem *it = r_sign_item_new ();
 	if (!it) {
 		return false;
@@ -1848,7 +1846,7 @@ R_API bool r_sign_foreach(RAnal *a, RSignForeachCallback cb, void *user) {
 	return sdb_foreach (a->sdb_zigns, foreachCB, &ctx);
 }
 
-R_API RSignSearch *r_sign_search_new() {
+R_API RSignSearch *r_sign_search_new(void) {
 	RSignSearch *ret = R_NEW0 (RSignSearch);
 	if (ret) {
 		ret->search = r_search_new (R_SEARCH_KEYWORD);
@@ -2184,7 +2182,7 @@ R_API bool r_sign_match_types(RAnal *a, RAnalFunction *fcn, RSignVarsMatchCallba
 	return r_sign_foreach (a, typesMatchCB, &ctx);
 }
 
-R_API RSignItem *r_sign_item_new() {
+R_API RSignItem *r_sign_item_new(void) {
 	RSignItem *ret = R_NEW0 (RSignItem);
 	if (ret) {
 		ret->addr = UT64_MAX;

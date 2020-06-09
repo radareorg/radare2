@@ -1,4 +1,4 @@
-/* radare - Copyright 2008-2018 - LGPL -- pancake */
+/* radare - Copyright 2008-2020 - LGPL -- pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -17,7 +17,7 @@ R_API RSyscall* r_syscall_ref(RSyscall *sc) {
 	return sc;
 }
 
-R_API RSyscall* r_syscall_new() {
+R_API RSyscall* r_syscall_new(void) {
 	RSyscall *rs = R_NEW0 (RSyscall);
 	if (rs) {
 		rs->sysport = sysport_x86;

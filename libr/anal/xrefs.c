@@ -38,7 +38,7 @@ static void r_anal_ref_free(void *ref) {
 	free (ref);
 }
 
-R_API RList *r_anal_ref_list_new() {
+R_API RList *r_anal_ref_list_new(void) {
 	return r_list_newf (r_anal_ref_free);
 }
 
@@ -161,7 +161,7 @@ R_API int r_anal_xrefs_from(RAnal *anal, RList *list, const char *kind, const RA
 }
 
 R_API RList *r_anal_xrefs_get(RAnal *anal, ut64 to) {
-	RList *list = r_anal_ref_list_new ();
+	RList *list = r_anal_ref_list_new (void);
 	if (!list) {
 		return NULL;
 	}

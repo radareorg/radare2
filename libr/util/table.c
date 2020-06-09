@@ -74,7 +74,7 @@ R_API RTableColumn *r_table_column_clone(RTableColumn *col) {
 	return c;
 }
 
-R_API RTable *r_table_new() {
+R_API RTable *r_table_new(void) {
 	RTable *t = R_NEW0 (RTable);
 	if (t) {
 		t->showHeader = true;

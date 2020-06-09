@@ -832,7 +832,7 @@ R_API int r_bin_is_static(RBin *bin) {
 	return true;
 }
 
-R_API RBin *r_bin_new() {
+R_API RBin *r_bin_new(void) {
 	int i;
 	RBinXtrPlugin *static_xtr_plugin;
 	RBinLdrPlugin *static_ldr_plugin;
