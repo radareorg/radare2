@@ -40,8 +40,8 @@ static bool download_and_write(SPDBDownloaderOpt *opt, const char *file) {
 	FILE *f = fopen (path, "wb");
 	if (f) {
 		fwrite (file_buf, sizeof (char), (size_t)len, f);
+		fclose (f);
 	}
-	fclose (f);
 	free (dir);
 	free (path);
 	free (file_buf);
@@ -153,12 +153,12 @@ static bool is_valid_guid(const char *guid) {
 		return false;
 	}
 	size_t i;
-	for (i = 0; guid[i] && i <= 33 ; i++) {
+	for (i = 0; guid[i]; i++) {
 		if (!isxdigit (guid[i])) {
 			return false;
 		}
 	}
-	return i == 33;
+	return i >= 33; // len of GUID and age
 }
 
 int r_bin_pdb_download(RCore *core, int isradjson, int *actions_done, SPDBOptions *options) {
