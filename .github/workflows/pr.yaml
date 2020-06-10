@@ -74,10 +74,16 @@ jobs:
       env:
         CC: ${{ matrix.compiler }}
     - name: Build with Meson
-      if: matrix.build_system == 'meson'
+      if: matrix.build_system == 'meson' && matrix.os != 'windows-2019'
       run: |
         export PATH=${HOME}/.local/bin:${PATH}
         meson --prefix=${HOME} build && ninja -C build
+      env:
+        CC: ${{ matrix.compiler }}
+    - name: Windows Build with Meson
+      if: matrix.build_system == 'meson' && matrix.os == 'windows-2019'
+      run: |
+        meson --prefix=/usr build && ninja -C build
       env:
         CC: ${{ matrix.compiler }}
     - name: Install with make
