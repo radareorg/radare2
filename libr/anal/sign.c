@@ -9,7 +9,6 @@
 
 R_LIB_VERSION (r_sign);
 
-#define SIGN_CLOSE_INFIMUM_MAX 1337.0
 #define SIGN_DIFF_MATCH_BYTES_THRESHOLD 1.0
 #define SIGN_DIFF_MATCH_GRAPH_THRESHOLD 1.0
 
@@ -778,7 +777,7 @@ R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *byt
 }
 
 R_API bool r_sign_add_graph(RAnal *a, const char *name, RSignGraph graph) {
-	r_return_val_if_fail (a && name, false);
+	r_return_val_if_fail (a && !R_STR_ISEMPTY (name), false);
 	bool retval = true;
 	RSignItem *it = r_sign_item_new ();
 	if (!it) {
@@ -1092,7 +1091,7 @@ static int score_cmpr(const void *a, const void *b) {
 typedef struct {
 	RSignItem *test;
 	RList *output;
-	int count;
+	size_t count;
 	double score_threshold;
 
 	// greatest lower bound. Thanks lattice theory for helping name variables
@@ -1169,10 +1168,7 @@ R_API RList *r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count, do
 	ClosestMatchData data;
 	data.count = count;
 	data.score_threshold = score_threshold;
-
-	// infimum must be initialized to something larger then the max value so
-	// the first entry to make output list changes it
-	data.infimum = SIGN_CLOSE_INFIMUM_MAX;
+	data.infimum = 0.0;
 
 	// create a graph for the current function to be compared against
 	RSignItem *test = create_graph_sign_from_fcn (a, fcn);
@@ -1190,7 +1186,7 @@ R_API RList *r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count, do
 	data.output = output;
 
 	// TODO: handle sign spaces
-	if(!sdb_foreach (a->sdb_zigns, &closest_match_callback, (void *)&data)) {
+	if (!sdb_foreach (a->sdb_zigns, &closest_match_callback, (void *)&data)) {
 		r_list_free (output);
 		output = NULL;
 	}
