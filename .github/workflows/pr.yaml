@@ -13,8 +13,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        name: [linux-acr-gcc-tests, linux-acr-clang-build, linux-meson-gcc-build, linux-meson-gcc-newshell-tests, macos-clang-tests]
+        name: [windows-2019-meson-msvc, linux-acr-gcc-tests, linux-acr-clang-build, linux-meson-gcc-build, linux-meson-gcc-newshell-tests, macos-clang-tests]
         include:
+          - name: windows-2019-meson-msvc
+            os: windows-2019
+            build_system: meson
+            compiler: msvc
+            run_tests: true
+            newshell: true
           - name: linux-acr-gcc-tests
             os: ubuntu-latest
             build_system: acr
