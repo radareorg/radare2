@@ -541,7 +541,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 }
 
 // belongs to r_core_visual_types
-static int sdbforcb (void *p, const char *k, const char *v) {
+static bool sdbforcb (void *p, const char *k, const char *v) {
 	const char *pre = " ";
 	RCoreVisualTypes *vt = (RCoreVisualTypes*)p;
 	bool use_color = vt->core->print->flags & R_PRINT_FLAGS_COLOR;
@@ -602,7 +602,7 @@ static int sdbforcb (void *p, const char *k, const char *v) {
 				vt->curfmt = strdup (fmt);
 				pre = ">";
 			}
-			if (use_color && *pre=='>') {
+			if (use_color && *pre == '>') {
 				r_cons_printf ("%s %s pf %3s   %s\n"Color_RESET,
 					color_sel, pre, fmt, k);
 			} else {
@@ -630,7 +630,7 @@ static int sdbforcb (void *p, const char *k, const char *v) {
 		}
 		vt->t_ctr ++;
 	}
-        return 1;
+        return true;
 }
 
 R_API int r_core_visual_types(RCore *core) {
