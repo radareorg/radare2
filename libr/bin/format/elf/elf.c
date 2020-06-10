@@ -537,10 +537,10 @@ static size_t get_maximum_number_of_dynamic_entries(ut64 dyn_size) {
 	return dyn_size / sizeof (Elf_(Dyn));
 }
 
-static bool fill_dynamic_entry(ELFOBJ *bin, Elf_(Phdr) *dyn_phdr, ut64 dyn_size, size_t pos, Elf_(Dyn) *d) {
+static bool fill_dynamic_entry(ELFOBJ *bin, ut64 entry_offset, Elf_(Dyn) *d) {
 	ut8 sdyn[sizeof (Elf_(Dyn))] = { 0 };
 	int j = 0;
-	int len = r_buf_read_at (bin->b, dyn_phdr->p_offset + pos * sizeof (Elf_(Dyn)), sdyn, sizeof (Elf_(Dyn)));
+	int len = r_buf_read_at (bin->b, entry_offset, sdyn, sizeof (Elf_(Dyn)));
 	if (len < 1) {
 		return false;
 	}
@@ -551,13 +551,14 @@ static bool fill_dynamic_entry(ELFOBJ *bin, Elf_(Phdr) *dyn_phdr, ut64 dyn_size,
 	return true;
 }
 
-static void fill_dynamic_entries(ELFOBJ *bin, Elf_(Phdr) *dyn_phdr, ut64 dyn_size) {
+static void fill_dynamic_entries(ELFOBJ *bin, ut64 loaded_offset, ut64 dyn_size) {
 	Elf_(Dyn) d = { 0 };
 	size_t i;
 	size_t number_of_entries = get_maximum_number_of_dynamic_entries(dyn_size);
 
 	for (i = 0; i < number_of_entries; i++) {
-		if (!fill_dynamic_entry(bin, dyn_phdr, dyn_size, i, &d)) {
+		ut64 entry_offset = loaded_offset + i * sizeof(Elf_(Dyn));
+		if (!fill_dynamic_entry(bin, entry_offset, &d)) {
 			break;
 		}
 
@@ -672,7 +673,7 @@ static int init_dynamic_section(ELFOBJ *bin) {
 		return false;
 	}
 
-	fill_dynamic_entries (bin, dyn_phdr, dyn_size);
+	fill_dynamic_entries (bin, loaded_offset, dyn_size);
 
 	if (bin->dyn_info.dt_strtab != ELF_ADDR_MAX) {
 		strtabaddr = Elf_(r_bin_elf_v2p_new) (bin, bin->dyn_info.dt_strtab);
