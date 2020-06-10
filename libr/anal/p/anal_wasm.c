@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2019 - xvilka, deroad */
+/* radare2 - LGPL - Copyright 2017-2020 - xvilka, deroad */
 
 #include <string.h>
 #include <r_types.h>
@@ -81,12 +81,15 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	op->sign = true;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	switch (wop.type) {
-		case WASM_TYPE_OP_CORE:
-			op->id = wop.op.core;
-			break;
-		case WASM_TYPE_OP_ATOMIC:
-			op->id = (0xfe << 8) | wop.op.atomic;
-			break;
+	case WASM_TYPE_OP_CORE:
+		op->id = wop.op.core;
+		break;
+	case WASM_TYPE_OP_ATOMIC:
+		op->id = (0xfe << 8) | wop.op.atomic;
+		break;
+	case WASM_TYPE_OP_SIMD:
+		op->id = 0xfd;
+		break;
 	}
 
 	if (!wop.txt || !strncmp (wop.txt, "invalid", 7)) {
