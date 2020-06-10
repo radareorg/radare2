@@ -83,11 +83,12 @@ jobs:
     - name: Windows Build with Meson
       if: matrix.build_system == 'meson' && matrix.os == 'windows-2019'
       run: |
-        set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%"
+        set "PATH=C:\radare2;%PATH%"
         python sys\meson.py --release --shared --install="%DIST_FOLDER%" --webui
-        meson --prefix=/usr build && ninja -C build
+        meson --prefix="C:\radare2" build && ninja -C build
       env:
         CC: ${{ matrix.compiler }}
+        PATH: 'C:\radare2;%PATH%'
     - name: Install with make
       if: matrix.build_system == 'acr'
       run: |
@@ -97,13 +98,21 @@ jobs:
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         make install
     - name: Install with meson
-      if: matrix.build_system == 'meson'
+      if: matrix.build_system == 'meson' && matrix.os != 'windows-2019'
       run: |
         # Install the radare2
         export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         ninja -C build install
+    - name: Windows Install with meson
+      if: matrix.build_system == 'meson' && matrix.os == 'windows-2019'
+      run: |
+        ninja -C build install
+    - name: Windows Run Tests
+      if: matrix.build_system == 'meson' && matrix.os == 'windows-2019'
+      run: |
+        r2r
     - name: Run tests
       if: matrix.run_tests
       run: |
