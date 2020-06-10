@@ -80,8 +80,8 @@ jobs:
     - name: Windows Build with Meson
       if: matrix.build_system == 'meson' && matrix.os == 'windows-2019'
       run: |
-        REM set "PATH=C:\radare2;%PATH%"
-        REM python sys\meson.py --release --shared --install="%DIST_FOLDER%" --webui
+        # set "PATH=C:\radare2;%PATH%"
+        # python sys\meson.py --release --shared --install="%DIST_FOLDER%" --webui
         python sys\meson.py --shared --install="C:\radare2" --webui
         meson --prefix="C:\radare2" build && ninja -C build
       env:
