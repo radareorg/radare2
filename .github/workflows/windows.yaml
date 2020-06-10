@@ -27,6 +27,7 @@ jobs:
     - name: Install meson and ninja
       with:
           python-version: 3.6
+      if: matrix.build_system == 'meson'
       run: pip3 install --user meson ninja
     - name: Checkout our Testsuite Binaries
       uses: actions/checkout@v2
