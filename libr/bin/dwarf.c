@@ -249,6 +249,16 @@ static const char *dwarf_langs[] = {
 	[DW_LANG_Fortran08] = "Fortran08"
 };
 
+static bool is_printable_attr(ut64 attr_code) {
+	return (attr_code <= DW_AT_linkage_name && attr_code >= DW_AT_sibling || 
+			attr_code == DW_AT_GNU_all_tail_call_sites);
+}
+
+static bool is_printable_form(ut64 form_code) {
+	return (form_code <= DW_FORM_ref_sig8 && form_code >= DW_FORM_addr);
+}
+
+
 static int add_sdb_include_dir(Sdb *s, const char *incl, int idx) {
 	if (!s || !incl) {
 		return false;
@@ -1094,10 +1104,8 @@ static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RBinDwarfDebugAbbrev *da) {
 			for (j = 0; j < da->decls[i].length; j++) {
 				attr_name = da->decls[i].specs[j].attr_name;
 				attr_form = da->decls[i].specs[j].attr_form;
-				if (attr_name && attr_form &&
-					attr_name <= DW_AT_linkage_name &&
-					attr_form <= DW_FORM_indirect) {
-					fprintf (f, "    %s %s\n",
+				if (is_printable_attr(attr_name) && is_printable_form(attr_form)) {
+					fprintf (f, "    %-30s %-30s\n",
 							dwarf_attr_encodings[attr_name],
 							dwarf_attr_form_encodings[attr_form]);
 				}
@@ -1286,8 +1294,6 @@ static void r_bin_dwarf_dump_debug_info(FILE *f, const RBinDwarfDebugInfo *inf) 
 
 static void print_attr_name(ut64 attr_code) {
 	if (attr_code <= DW_AT_linkage_name && attr_code >= DW_AT_sibling || 
-			attr_code == DW_AT_lo_user 					||
-			attr_code == DW_AT_hi_user 					||
 			attr_code == DW_AT_GNU_all_tail_call_sites	
 			)  {
 		printf("  %s:     ", dwarf_attr_encodings[attr_code]);
@@ -1357,13 +1363,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		buf = r_leb128 (buf, buf_end - buf, &value->encoding.sdata);
 		break;
 	case DW_FORM_udata:
-		{
-			ut64 ndata = 0;
-			const ut8 *data = (const ut8*)&ndata;
-			buf = r_uleb128 (buf, R_MIN (sizeof (data), (size_t)(buf_end - buf)), &ndata);
-			memcpy (&value->encoding.data, data, sizeof (value->encoding.data));
-			value->encoding.str_struct.string = NULL;
-		}
+		buf = r_uleb128 (buf, buf_end - buf, &value->encoding.data);
 		break;
 	case DW_FORM_string:
 		value->encoding.str_struct.string = *buf? strdup ((const char*)buf) : NULL;
@@ -1430,7 +1430,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->encoding.flag = READ (buf, ut8);
 		printf("%hhu\n", value->encoding.flag);
 		break;
-	case DW_FORM_strp:
+	case DW_FORM_strp: // offset in .debug_str 
 		// this offset can be 64bit, based on dwarf format
 		if (hdr->is_64bit) {
 			value->encoding.str_struct.offset = READ64 (buf);
@@ -1447,7 +1447,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 			printf("NULL\n");
 		}
 		break;
-	case DW_FORM_ref_addr:
+	case DW_FORM_ref_addr: // offset in .debug_info
 	// This is 4 or 8 bytes depending where it refers to
 	// http://www.dwarfstd.org/doc/Dwarf3.pdf page 128
 	/*
@@ -1456,11 +1456,11 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 	performed by the consumer. In the 32-bit DWARF format, this offset is a 4-byte unsigned
 	value; in the 64-bit DWARF format, it is an 8-byte unsigned value
 	*/
-		// if (hdr->is_64bit) {
-		// 	value->encoding.reference = READ64 (buf); // addr size of machine
-		// } else {
-			value->encoding.reference = READ32 (buf); // addr size of machine
-		// }
+		if (hdr->is_64bit) {
+			value->encoding.reference = READ64 (buf);
+		} else {
+			value->encoding.reference = READ32 (buf);
+		}
 		printf("0x%"PFMT64x"\n", value->encoding.reference);
 		break;
 	case DW_FORM_ref1:
@@ -1485,6 +1485,36 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		buf = r_uleb128 (buf, buf_end - buf, &value->encoding.reference);
 		printf("0x%"PFMT64x"\n", value->encoding.reference);
 		break;
+	case DW_FORM_sec_offset: // offset in a section other than .debug_info or .debug_str
+		if (hdr->is_64bit) {
+			value->encoding.reference = READ64 (buf);
+		} else {
+			value->encoding.reference = READ32 (buf);
+		}
+		printf("0x%"PFMT64x"\n", value->encoding.reference);
+		break;
+	case DW_FORM_exprloc:
+		buf = r_uleb128 (buf, buf_end - buf, &value->encoding.block.length);
+		if (!buf || buf >= buf_end) {
+			return NULL;
+		}
+		printf("%"PFMT64u" byte block:", value->encoding.block.length);
+		value->encoding.block.data = calloc (sizeof (ut8), value->encoding.block.length);
+		if (value->encoding.block.data) {
+			for (j = 0; j < value->encoding.block.length; j++) {
+				value->encoding.block.data[j] = READ (buf, ut8);
+				printf(" 0x%hhx", value->encoding.block.data[j]);
+			}
+		}
+		printf("\n");
+		break;
+	case DW_FORM_flag_present: // this means that the flag is present, nothing is read
+		printf("true\n");
+		break;
+	case DW_FORM_ref_sig8:
+		value->encoding.reference = READ64 (buf);
+		printf("0x%"PFMT64x"\n", value->encoding.reference);
+		break;
 	default:
 		eprintf ("Unknown DW_FORM 0x%02"PFMT64x"\n", spec->attr_form);
 		value->encoding.data = 0;
@@ -1502,7 +1532,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
  * @param offset Offset index to the start of the abbreviations for current comp unit
  * @param debug_str Start of the debug_string table
  * @param debug_str_len  Length of the debug_string table
- * @return const ut8* 
+ * @return const ut8* Shifted obuf
  */
 static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *sdb, const ut8 *obuf,
 		RBinDwarfCompUnit *curr_unit, const RBinDwarfDebugAbbrev *abbrevs,

@@ -246,7 +246,7 @@ extern "C" {
 #define DW_FORM_ref8			0x14
 #define DW_FORM_ref_udata		0x15
 #define DW_FORM_indirect		0x16
-#define DW_FORM_sec_offset		0x17
+#define DW_FORM_sec_offset		0x17 // DWARF 4 new attribute for section offset
 #define DW_FORM_exprloc			0x18
 #define DW_FORM_flag_present		0x19
 #define DW_FORM_ref_sig8		0x20
