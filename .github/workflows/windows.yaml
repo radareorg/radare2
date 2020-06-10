@@ -25,6 +25,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install meson and ninja
+      uses: actions/checkout@v2
       with:
           python-version: 3.6
       if: matrix.build_system == 'meson'
