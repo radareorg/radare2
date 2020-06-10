@@ -82,6 +82,7 @@ jobs:
       run: |
         # set "PATH=C:\radare2;%PATH%"
         # python sys\meson.py --release --shared --install="%DIST_FOLDER%" --webui
+        set "PATH=C:\radare2;C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%"
         python sys\meson.py --shared --install="C:\radare2" --webui
         meson --prefix="C:\radare2" build && ninja -C build
       env:
