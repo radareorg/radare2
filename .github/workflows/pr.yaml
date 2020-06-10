@@ -54,8 +54,11 @@ jobs:
     - name: Install pkg-config with Homebrew
       if: matrix.os == 'macos-latest'
       run: brew install pkg-config
+    - name: Install meson and ninja on WIndows
+      if: matrix.build_system == 'meson' && matrix.os != 'windows'
+      run: pip3 install meson ninja
     - name: Install meson and ninja
-      if: matrix.build_system == 'meson'
+      if: matrix.build_system == 'meson' && matrix.os != 'windows'
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools && pip3 install --user meson ninja
     - name: Install clang
       if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest'
