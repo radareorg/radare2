@@ -1164,7 +1164,7 @@ static void closest_output_free(void *ptr) {
 }
 
 R_API RList *r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count, double score_threshold) {
-	r_return_val_if_fail (a && fcn && count > 0 && score_threshold < 1 && score_threshold >= 0, false);
+	r_return_val_if_fail (a && fcn && count > 0 && score_threshold <= 1 && score_threshold >= 0, false);
 
 	ClosestMatchData data;
 	data.count = count;

@@ -1072,7 +1072,7 @@ static bool bestmatch(void *data, const char *input) {
 			RListIter *itr;
 			RSignCloseMatch *row;
 			r_list_foreach (list, itr, row) {
-				core->anal->cb_printf ("%02.5lf %s\n", row->score, row->name);
+				r_cons_printf ("%02.5lf %s\n", row->score, row->name);
 			}
 			r_list_free (list);
 		}
