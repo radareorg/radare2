@@ -1055,21 +1055,15 @@ static RSignItem *create_graph_sign_from_fcn(RAnal *a, RAnalFunction *fcn) {
 	graph->edges = r_anal_function_count_edges (fcn, &graph->ebbs);
 	graph->bbsum = r_anal_function_realsize (fcn);
 
-	char *name = r_str_new (fcn->name);
-	if (!name) {
-		free (graph);
-		return NULL;
-	}
 
 	RSignItem *item = r_sign_item_new ();
 	if (!item) {
-		free (name);
-		free (graph);
+		r_sign_graph_free (graph);
 		return NULL;
 	}
 
+	item->name = r_str_new (fcn->name);
 	item->space = r_spaces_current (&a->zign_spaces);
-	item->name = name;
 	item->graph = graph;
 
 	return item;
@@ -1129,8 +1123,7 @@ static int closest_match_callback(void *a, const char *name, const char *value) 
 
 	// remove an element if list is full
 	if (r_list_length (output) >= data->count) {
-		RSignCloseMatch *row = r_list_pop (output);
-		free (row);
+		r_sign_close_match_free (r_list_pop (output));
 	}
 
 	// add new element
@@ -1156,10 +1149,9 @@ static int closest_match_callback(void *a, const char *name, const char *value) 
 	return true;
 }
 
-static void closest_output_free(void *ptr) {
-	RSignCloseMatch *row = ptr;
-	free (row->name);
-	free (ptr);
+R_API void r_sign_close_match_free(RSignCloseMatch *match) {
+	free (match->name);
+	free (match);
 }
 
 R_API RList *r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count, double score_threshold) {
@@ -1178,7 +1170,7 @@ R_API RList *r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count, do
 	data.test = test;
 
 	// sorted list will contian the closest matches
-	RList *output = r_list_newf ((RListFree)closest_output_free);
+	RList *output = r_list_newf ((RListFree)r_sign_close_match_free);
 	if (!output) {
 		r_sign_item_free (test);
 		return NULL;
@@ -2423,12 +2415,16 @@ R_API void r_sign_item_free(RSignItem *item) {
 		free (item->hash->bbhash);
 		free (item->hash);
 	}
-	free (item->graph);
+	r_sign_graph_free (item->graph);
 	free (item->comment);
 	free (item->realname);
 	r_list_free (item->refs);
 	r_list_free (item->vars);
 	free (item);
+}
+
+R_API void r_sign_graph_free(RSignGraph *graph) {
+	free (graph);
 }
 
 static int loadCB(void *user, const char *k, const char *v) {
