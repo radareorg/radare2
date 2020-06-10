@@ -590,8 +590,8 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 	r->vaddr = rel->rva;
 	r->paddr = rel->offset;
 
-	#define SET(T) r->type = R_BIN_RELOC_ ## T; r->additive = 0; return r
-	#define ADD(T, A) r->type = R_BIN_RELOC_ ## T; r->addend += A; r->additive = rel->rel_mode == DT_RELA; return r
+#	define SET(T) r->type = R_BIN_RELOC_ ## T; r->additive = 0; return r
+#	define ADD(T, A) r->type = R_BIN_RELOC_ ## T; r->addend += A; r->additive = rel->rel_mode == DT_RELA; return r
 
 	switch (bin->ehdr.e_machine) {
 	case EM_386: switch (rel->type) {
@@ -654,17 +654,6 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		case R_RISCV_JUMP_SLOT: ADD(64, 0);
 		case R_RISCV_RELATIVE: ADD(64, B);
 		default: ADD(64, GOT); break; // reg relocations
-		}
-		break;
-	case EM_ARM64:
-		switch (rel->type) {
-		case R_AARCH64_NONE: break;
-		case R_AARCH64_ABS32: ADD(32, 0);
-		case R_AARCH64_ABS16: ADD(16, 0);
-		case R_AARCH64_GLOB_DAT: SET(64);
-		case R_AARCH64_JUMP_SLOT: SET(64);
-		case R_AARCH64_RELATIVE: ADD(64, B);
-		default: break; // reg relocations
 		}
 		break;
 	case EM_AARCH64: switch (rel->type) {
