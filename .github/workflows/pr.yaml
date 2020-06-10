@@ -47,17 +47,18 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - uses: ilammy/msvc-dev-cmd@v1
     - name: Hello World
-      if: matrix.os == 'windows'
+      if: matrix.os == 'windows-2019'
       run: echo "HELLO WORLD"
     - name: Install pkg-config with Homebrew
       if: matrix.os == 'macos-latest'
       run: brew install pkg-config
     - name: Install meson and ninja on Windows
-      if: matrix.build_system == 'meson' && matrix.os == 'windows'
+      if: matrix.build_system == 'meson' && matrix.os == 'windows-2019'
       run: pip3 install meson ninja
     - name: Install meson and ninja
-      if: matrix.build_system == 'meson' && matrix.os != 'windows'
+      if: matrix.build_system == 'meson' && matrix.os != 'windows-2019'
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools && pip3 install --user meson ninja
     - name: Install clang
       if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest'
@@ -73,14 +74,14 @@ jobs:
       env:
         CC: ${{ matrix.compiler }}
     - name: Build with Meson
-      if: matrix.build_system == 'meson' && matrix.os != 'windows'
+      if: matrix.build_system == 'meson' && matrix.os != 'windows-2019'
       run: |
         export PATH=${HOME}/.local/bin:${PATH}
         meson --prefix=${HOME} build && ninja -C build
       env:
         CC: ${{ matrix.compiler }}
     - name: Windows Build with Meson
-      if: matrix.build_system == 'meson' && matrix.os == 'windows'
+      if: matrix.build_system == 'meson' && matrix.os == 'windows-2019'
       run: |
         set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%"
         python sys\meson.py --release --shared --install="%DIST_FOLDER%" --webui
