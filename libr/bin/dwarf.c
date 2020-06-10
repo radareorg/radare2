@@ -251,7 +251,7 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 	}
 	hdr->file_names = NULL;
 	hdr->default_is_stmt = READ8 (buf);
-	hdr->line_base = READ (buf, signed char);
+	hdr->line_base = READ (buf, st8);
 	hdr->line_range = READ8 (buf);
 	hdr->opcode_base = READ8 (buf);
 
