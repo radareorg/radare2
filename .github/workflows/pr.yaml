@@ -55,7 +55,7 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: brew install pkg-config
     - name: Install meson and ninja on Windows
-      if: matrix.build_system == 'meson' && matrix.os != 'windows-2019'
+      if: matrix.build_system == 'meson' && matrix.os == 'windows-2019'
       run: pip3 install meson ninja
     - name: Install meson and ninja
       if: matrix.build_system == 'meson' && matrix.os != 'windows-2019'
