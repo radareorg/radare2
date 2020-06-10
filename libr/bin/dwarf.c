@@ -247,11 +247,11 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 	}
 	hdr->min_inst_len = READ8 (buf);
 	if (hdr->version >= 4) {
-		hdr->max_ops_per_inst = READ (buf, ut8);
+		hdr->max_ops_per_inst = READ8 (buf);
 	}
 	hdr->file_names = NULL;
 	hdr->default_is_stmt = READ8 (buf);
-	hdr->line_base = READ (buf, st8);
+	hdr->line_base = READ (buf, signed char);
 	hdr->line_range = READ8 (buf);
 	hdr->opcode_base = READ8 (buf);
 
