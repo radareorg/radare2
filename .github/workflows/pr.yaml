@@ -48,6 +48,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Hello World
+      if: matrix.os == 'windows-2019'
+      run: echo "HELLO WORLD"
     - name: Install pkg-config with Homebrew
       if: matrix.os == 'macos-latest'
       run: brew install pkg-config
