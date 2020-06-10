@@ -1,3 +1,68 @@
+NAME=ELF: arm64 relocs crashing
+FILE=-
+CMDS=!!rabin2 -qzz bins/elf/librsjni_androix.so~?
+EXPECT=<<EOF
+549
+EOF
+RUN
+
+NAME=ELF: arm64 relocs crashing
+FILE=bins/elf/librsjni_androix.so
+CMDS=ir
+EXPECT=<<EOF
+[Relocations]
+
+vaddr      paddr      type   name
+---------------------------------
+0x0000e210 0x0000e210 SET_64 __cxa_finalize
+0x0000e218 0x0000e218 SET_64 __stack_chk_fail
+0x0000e220 0x0000e220 SET_64 dlopen
+0x0000e228 0x0000e228 SET_64 loadSymbols(void*, dispatchTable&, int)
+0x0000e230 0x0000e230 SET_64 dlerror
+0x0000e238 0x0000e238 SET_64 __android_log_print
+0x0000e240 0x0000e240 SET_64 dlclose
+0x0000e248 0x0000e248 SET_64 loadIOSuppSyms(void*, ioSuppDT&)
+0x0000e250 0x0000e250 SET_64 malloc
+0x0000e258 0x0000e258 SET_64 calloc
+0x0000e260 0x0000e260 SET_64 free
+0x0000e268 0x0000e268 SET_64 AndroidBitmap_lockPixels
+0x0000e270 0x0000e270 SET_64 AndroidBitmap_getInfo
+0x0000e278 0x0000e278 SET_64 AndroidBitmap_unlockPixels
+0x0000e280 0x0000e280 SET_64 memcpy
+0x0000e288 0x0000e288 SET_64 memset
+0x0000e290 0x0000e290 SET_64 dlsym
+
+
+17 relocations
+EOF
+RUN
+
+NAME=ELF: arm64 imports crashing
+FILE=bins/elf/librsjni_androix.so
+CMDS=ii
+EXPECT=<<EOF
+[Imports]
+nth vaddr      bind   type lib name
+-----------------------------------
+1   0x0000b7c0 GLOBAL FUNC     __cxa_finalize
+2   0x0000b880 GLOBAL FUNC     AndroidBitmap_getInfo
+3   0x0000b870 GLOBAL FUNC     AndroidBitmap_lockPixels
+4   0x0000b890 GLOBAL FUNC     AndroidBitmap_unlockPixels
+5   0x0000b810 GLOBAL FUNC     __android_log_print
+6   0x0000b7d0 GLOBAL FUNC     __stack_chk_fail
+7   0x0000b850 GLOBAL FUNC     calloc
+8   0x0000b820 GLOBAL FUNC     dlclose
+9   0x0000b800 GLOBAL FUNC     dlerror
+10  0x0000b7e0 GLOBAL FUNC     dlopen
+11  0x0000b8c0 GLOBAL FUNC     dlsym
+12  0x0000b860 GLOBAL FUNC     free
+13  0x0000b840 GLOBAL FUNC     malloc
+14  0x0000b8a0 GLOBAL FUNC     memcpy
+15  0x0000b8b0 GLOBAL FUNC     memset
+
+EOF
+RUN
+
 NAME=ELF: corkami elf-relro - sections
 FILE=bins/elf/analysis/elf-relro
 CMDS=iS~rel

@@ -1,11 +1,6 @@
 #ifndef R2_SOCKET_H
 #define R2_SOCKET_H
 
-/* Must be included before windows.h (r_types) */
-#if defined(__WINDOWS__)
-#include <ws2tcpip.h>
-#endif
-
 #include "r_types.h"
 #include "r_bind.h"
 #include "r_list.h"

@@ -64,7 +64,7 @@ static inline int r_sys_mkdirp(char *dir) {
 #if __SDB_WINDOWS__
 	char *p = strstr (ptr, ":\\");
 	if (p) {
-		ptr = p + 2;
+		ptr = p + 3;
 	}
 #endif
 	while ((ptr = strchr (ptr, slash))) {

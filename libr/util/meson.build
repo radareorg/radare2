@@ -66,7 +66,6 @@ r_util_sources = [
   'thread_lock.c',
   'thread_cond.c',
   'thread_pipe.c',
-  'tinyrange.c',
   'tree.c',
   'pj.c',
   'ubase64.c',

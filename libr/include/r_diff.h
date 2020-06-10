@@ -31,6 +31,7 @@ typedef struct r_diff_t {
 	void *user;
 	bool verbose;
 	int type;
+	const char *diff_cmd;
 	int (*callback)(struct r_diff_t *diff, void *user, RDiffOp *op);
 } RDiff;
 

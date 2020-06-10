@@ -31,7 +31,6 @@ if get_option('enable_tests')
     'pj',
     'queue',
     'r2r',
-    'range',
     'rbtree',
     'skiplist',
     'spaces',

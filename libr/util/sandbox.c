@@ -166,7 +166,7 @@ R_API bool r_sandbox_enable (bool e) {
 	return enabled;
 }
 
-R_API int r_sandbox_system (const char *x, int n) {
+R_API int r_sandbox_system(const char *x, int n) {
 	if (enabled) {
 		eprintf ("sandbox: system call disabled\n");
 		return -1;

@@ -154,7 +154,7 @@ bool test_r_interval_tree_in(bool end_inclusive, bool intervals) {
 	return true;
 }
 
-#define TEST_IN(name, args...) bool name() { if(!test_r_interval_tree_in (args)) return false; mu_end; }
+#define TEST_IN(name, end_inclusive, intervals) bool name() { if(!test_r_interval_tree_in (end_inclusive, intervals)) return false; mu_end; }
 TEST_IN (test_r_interval_tree_in_end_exclusive_point, false, false)
 TEST_IN (test_r_interval_tree_in_end_inclusive_point, true, false)
 TEST_IN (test_r_interval_tree_in_end_exclusive_interval, false, true)

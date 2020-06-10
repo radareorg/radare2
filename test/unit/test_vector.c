@@ -1062,14 +1062,14 @@ static bool test_pvector_lower_bound() {
 	s.v.len = 5;
 
 	size_t l;
-#define CMP(x, y) x - y
-	r_pvector_lower_bound (&s, (void *)4, l, CMP);
-	mu_assert_eq (r_pvector_at (&s, l), (void *)4, "lower_bound");
-	r_pvector_lower_bound (&s, (void *)5, l, CMP);
-	mu_assert_eq (r_pvector_at (&s, l), (void *)6, "lower_bound 2");
-	r_pvector_lower_bound (&s, (void *)6, l, CMP);
-	mu_assert_eq (r_pvector_at (&s, l), (void *)6, "lower_bound 3");
-	r_pvector_lower_bound (&s, (void *)9, l, CMP);
+#define CMP(x, y) ((char *)(x) - (char *)(y))
+	r_pvector_lower_bound (&s, 4, l, CMP);
+	mu_assert_ptreq (r_pvector_at (&s, l), (void *)4, "lower_bound");
+	r_pvector_lower_bound (&s, 5, l, CMP);
+	mu_assert_ptreq (r_pvector_at (&s, l), (void *)6, "lower_bound 2");
+	r_pvector_lower_bound (&s, 6, l, CMP);
+	mu_assert_ptreq (r_pvector_at (&s, l), (void *)6, "lower_bound 3");
+	r_pvector_lower_bound (&s, 9, l, CMP);
 	mu_assert_eq (l, s.v.len, "lower_bound 3");
 #undef CMP
 
