@@ -529,20 +529,33 @@ static void print_diff(const char *actual, const char *expected) {
 	RList *lines = r_str_split_duplist (uni, "\n");
 	RListIter *it;
 	char *line;
+	bool header_found = false;
 	r_list_foreach (lines, it, line) {
-		char c = *line;
-		switch (c) {
-		case '+':
-			printf ("%s", Color_GREEN);
-			break;
-		case '-':
-			printf ("%s", Color_RED);
-			break;
-		default:
-			break;
+		if (!header_found) {
+			if (r_str_startswith (line, "+++ ")) {
+				header_found = true;
+			}
+			continue;
+		}
+		bool color = true;
+		if (r_str_startswith (line, "@@ ") && r_str_endswith (line, " @@")) {
+			printf ("%s", Color_CYAN);
+		} else {
+			char c = *line;
+			switch (c) {
+			case '+':
+				printf ("%s", Color_GREEN);
+				break;
+			case '-':
+				printf ("%s", Color_RED);
+				break;
+			default:
+				color = false;
+				break;
+			}
 		}
 		printf ("%s\n", line);
-		if (c == '+' || c == '-') {
+		if (color) {
 			printf ("%s", Color_RESET);
 		}
 	}
