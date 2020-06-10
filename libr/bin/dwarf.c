@@ -185,6 +185,36 @@ static const char *dwarf_attr_encodings[] = {
 	[DW_AT_const_expr] = "DW_AT_const_expr",
 	[DW_AT_enum_class] = "DW_AT_enum_class",
 	[DW_AT_linkage_name] = "DW_AT_linkage_name",
+	[DW_AT_string_length_bit_size] = "DW_AT_string_length_bit_size",
+	[DW_AT_string_length_byte_size] = "DW_AT_string_length_byte_size",
+	[DW_AT_rank] = "DW_AT_rank",
+	[DW_AT_str_offsets_base] = "DW_AT_str_offsets_base",
+	[DW_AT_addr_base] = "DW_AT_addr_base",
+	[DW_AT_rnglists_base] = "DW_AT_rnglists_base",
+	[DW_AT_dwo_name] = "DW_AT_dwo_name",
+	[DW_AT_reference] = "DW_AT_reference",
+	[DW_AT_rvalue_reference] = "DW_AT_rvalue_reference",
+	[DW_AT_macros] = "DW_AT_macros",
+	[DW_AT_call_all_calls] = "DW_AT_call_all_calls",
+	[DW_AT_call_all_source_calls] = "DW_AT_call_all_source_calls",
+	[DW_AT_call_all_tail_calls] = "DW_AT_call_all_tail_calls",
+	[DW_AT_call_return_pc] = "DW_AT_call_return_pc",
+	[DW_AT_call_value] = "DW_AT_call_value",
+	[DW_AT_call_origin] = "DW_AT_call_origin",
+	[DW_AT_call_parameter] = "DW_AT_call_parameter",
+	[DW_AT_call_pc] = "DW_AT_call_pc",
+	[DW_AT_call_tail_call] = "DW_AT_call_tail_call",
+	[DW_AT_call_target] = "DW_AT_call_target",
+	[DW_AT_call_target_clobbered] = "DW_AT_call_target_clobbered",
+	[DW_AT_call_data_location] = "DW_AT_call_data_location",
+	[DW_AT_call_data_value] = "DW_AT_call_data_value",
+	[DW_AT_noreturn] = "DW_AT_noreturn",
+	[DW_AT_alignment] = "DW_AT_alignment",
+	[DW_AT_export_symbols] = "DW_AT_export_symbols",
+	[DW_AT_deleted] = "DW_AT_deleted",
+	[DW_AT_defaulted] = "DW_AT_defaulted",
+	[DW_AT_loclists_base] = "DW_AT_loclists_base",
+
 	[DW_AT_lo_user] = "DW_AT_lo_user",
 	[DW_AT_GNU_all_tail_call_sites] = "DW_AT_GNU_all_tail_call_sites",
 	[DW_AT_hi_user] = "DW_AT_hi_user",
@@ -215,7 +245,25 @@ static const char *dwarf_attr_form_encodings[] = {
 	[DW_FORM_sec_offset] = "DW_FORM_sec_offset",
 	[DW_FORM_exprloc] = "DW_FORM_exprloc",
 	[DW_FORM_flag_present] = "DW_FORM_flag_present",
+	[DW_FORM_strx] = "DW_FORM_strx",
+	[DW_FORM_addrx] = "DW_FORM_addrx",
+	[DW_FORM_ref_sup4] = "DW_FORM_ref_sup4",
+	[DW_FORM_strp_sup] = "DW_FORM_strp_sup",
+	[DW_FORM_data16] = "DW_FORM_data16",
+	[DW_FORM_line_ptr] = "DW_FORM_line_ptr",
 	[DW_FORM_ref_sig8] = "DW_FORM_ref_sig8",
+	[DW_FORM_implicit_const] = "DW_FORM_implicit_const",
+	[DW_FORM_loclistx] = "DW_FORM_loclistx",
+	[DW_FORM_rnglistx] = "DW_FORM_rnglistx",
+	[DW_FORM_ref_sup8] = "DW_FORM_ref_sup8",
+	[DW_FORM_strx1] = "DW_FORM_strx1",
+	[DW_FORM_strx2] = "DW_FORM_strx2",
+	[DW_FORM_strx3] = "DW_FORM_strx3",
+	[DW_FORM_strx4] = "DW_FORM_strx4",
+	[DW_FORM_addrx1] = "DW_FORM_addrx1",
+	[DW_FORM_addrx2] = "DW_FORM_addrx2",
+	[DW_FORM_addrx3] = "DW_FORM_addrx3",
+	[DW_FORM_addrx4] = "DW_FORM_addrx4",
 };
 
 static const char *dwarf_langs[] = {
@@ -249,13 +297,24 @@ static const char *dwarf_langs[] = {
 	[DW_LANG_Fortran08] = "Fortran08"
 };
 
+static const char *dwarf_unit_types[] = {
+	[DW_UT_compile] = "DW_UT_compile",
+	[DW_UT_type] = "DW_UT_type",
+	[DW_UT_partial] = "DW_UT_partial",
+	[DW_UT_skeleton] = "DW_UT_skeleton",
+	[DW_UT_split_compile] = "DW_UT_split_compile",
+	[DW_UT_split_type] = "DW_UT_split_type",
+	[DW_UT_lo_user] = "DW_UT_lo_user",
+	[DW_UT_hi_user] = "DW_UT_hi_user",
+};
+
 static bool is_printable_attr(ut64 attr_code) {
-	return (attr_code <= DW_AT_linkage_name && attr_code >= DW_AT_sibling || 
+	return (attr_code <= DW_AT_loclists_base && attr_code >= DW_AT_sibling || 
 			attr_code == DW_AT_GNU_all_tail_call_sites);
 }
 
 static bool is_printable_form(ut64 form_code) {
-	return (form_code <= DW_FORM_ref_sig8 && form_code >= DW_FORM_addr);
+	return (form_code <= DW_FORM_addrx4 && form_code >= DW_FORM_addr);
 }
 
 
@@ -1302,7 +1361,7 @@ static void r_bin_dwarf_dump_debug_info(FILE *f, const RBinDwarfDebugInfo *inf) 
 		fprintf (f, "   Length:        0x%x\n", inf->comp_units [i].hdr.length);
 		fprintf (f, "   Version:       %d\n", inf->comp_units [i].hdr.version);
 		fprintf (f, "   Abbrev Offset: 0x%x\n", inf->comp_units [i].hdr.abbrev_offset);
-		fprintf (f, "   Pointer Size:  %d\n", inf->comp_units [i].hdr.pointer_size);
+		fprintf (f, "   Pointer Size:  %d\n", inf->comp_units [i].hdr.address_size);
 		fprintf (f, "\n");
 
 		dies = inf->comp_units[i].dies;
@@ -1372,7 +1431,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 
 	switch (spec->attr_form) {
 	case DW_FORM_addr:
-		switch (hdr->pointer_size) {
+		switch (hdr->address_size) {
 		case 1:
 			value->encoding.address = READ8 (buf);
 			break;
@@ -1386,7 +1445,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 			value->encoding.address = READ64 (buf);
 			break;
 		default:
-			eprintf ("DWARF: Unexpected pointer size: %u\n", (unsigned)hdr->pointer_size);
+			eprintf ("DWARF: Unexpected pointer size: %u\n", (unsigned)hdr->address_size);
 			return NULL;
 		}
 		printf("0x%"PFMT64x"\n", value->encoding.address);
@@ -1560,9 +1619,25 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		printf("true\n");
 		break;
 	case DW_FORM_ref_sig8:
-		value->encoding.reference = READ64 (buf);
+		value->encoding.reference = r_uleb128 (buf, buf_end - buf, &value->encoding.reference);
 		printf("0x%"PFMT64x"\n", value->encoding.reference);
 		break;
+		
+	case DW_FORM_strx: // offset into .debug_line_str section, can't parse the section now, so we just skip
+		if (hdr->is_64bit) {
+			value->encoding.str_struct.offset = READ64 (buf);
+		} else {
+			value->encoding.str_struct.offset = READ32 (buf);
+		}
+		value->encoding.str_struct.offset = READ64 (buf);
+		printf("Skipped string from .debug_line_str Offset: 0x%"PFMT64x"\n", 
+				value->encoding.str_struct.offset);
+		break;
+		
+	case DW_FORM_implicit_const: 
+		printf("%"PFMT64d"\n", spec->special);
+		break;
+		
 	default:
 		eprintf ("Unknown DW_FORM 0x%02"PFMT64x"\n", spec->attr_form);
 		value->encoding.data = 0;
@@ -1663,7 +1738,8 @@ static void print_comp_unit_header(const RBinDwarfCompUnitHdr *hdr, FILE *file) 
 	printf("  Length: %"PFMT32x"\n", hdr->length);
 	printf("  Version: %hu\n", hdr->version);
 	printf("  Abbrev Offset: %"PFMT32x"\n", hdr->abbrev_offset);
-	printf("  Pointer Size: %hhx\n", hdr->pointer_size);
+	printf("  Pointer Size: %hhx\n", hdr->address_size);
+	printf("  Unit type: %hhx\n", hdr->unit_type);
 }
 /**
  * @brief Reads all information about compilation unit header
@@ -1673,24 +1749,47 @@ static void print_comp_unit_header(const RBinDwarfCompUnitHdr *hdr, FILE *file) 
  * @param unit Unit to read information into
  * @return ut8* Advanced position in a buffer
  */
-static ut8 *info_comp_unit_read(ut8 *buf, const ut8 *buf_end, RBinDwarfCompUnit *unit) {
+static ut8 *info_comp_unit_read_hdr(ut8 *buf, const ut8 *buf_end, RBinDwarfCompUnitHdr *hdr) {
 	// 32-bit vs 64-bit dwarf formats
 	// http://www.dwarfstd.org/doc/Dwarf3.pdf section 7.4
-	unit->hdr.is_64bit = false;
-	// hdr.length is supposed to be smaller than 0xffffff00, should we check that?
-	unit->hdr.length = READ32 (buf);
-	if (unit->hdr.length == (ut32) DWARF_INIT_LEN_64) { // then its 64bit
-		unit->hdr.length = READ64 (buf);
-		unit->hdr.is_64bit = true;
-	}
-	unit->hdr.version = READ16 (buf);
 
-	if (unit->hdr.is_64bit) {
-		unit->hdr.abbrev_offset = READ64 (buf);
-	} else {
-		unit->hdr.abbrev_offset = READ32 (buf);
+	// hdr.length is supposed to be smaller than 0xffffff00, should we check that?
+	hdr->length = READ32 (buf);
+	if (hdr->length == (ut32)DWARF_INIT_LEN_64) { // then its 64bit
+		hdr->length = READ64 (buf);
+		hdr->is_64bit = true;
 	}
-	unit->hdr.pointer_size = READ8 (buf);
+	hdr->version = READ16 (buf);
+	if (hdr->version == 5) {
+		hdr->unit_type = READ8 (buf);
+
+		hdr->address_size = READ8 (buf);
+
+		if (hdr->is_64bit) {
+			hdr->abbrev_offset = READ64 (buf);
+		} else {
+			hdr->abbrev_offset = READ32 (buf);
+		}
+
+		if (hdr->unit_type == DW_UT_skeleton || hdr->unit_type == DW_UT_split_compile) {
+			hdr->dwo_id = READ8 (buf);
+		} else if (hdr->unit_type == DW_UT_type || hdr->unit_type == DW_UT_split_type) {
+			hdr->type_sig = READ64 (buf);
+			 
+			if (hdr->is_64bit) {
+				hdr->type_offset = READ64 (buf);
+			} else {
+				hdr->type_offset = READ32 (buf);
+			}
+		}
+	} else {
+		if (hdr->is_64bit) {
+			hdr->abbrev_offset = READ64 (buf);
+		} else {
+			hdr->abbrev_offset = READ32 (buf);
+		}
+		hdr->address_size = READ8 (buf);
+	}
 
 	// TODO we should also parse first Compilation Unit
 	// entry and store information about it here
@@ -1733,7 +1832,7 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 		//
 
 		curr_unit->offset = buf - obuf;
-		buf = info_comp_unit_read (buf, buf_end, curr_unit);
+		buf = info_comp_unit_read_hdr (buf, buf_end, curr_unit);
 
 		if (curr_unit->hdr.length > len) {
 			ret = false;
@@ -1785,7 +1884,7 @@ out:
 
 static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf, size_t len, int mode) {
 	const ut8 *buf = obuf, *buf_end = obuf + len;
-	ut64 tmp, spec1, spec2, offset;
+	ut64 tmp, attr_code, attr_form, special, offset;
 	ut8 has_children;
 	RBinDwarfAbbrevDecl *tmpdecl;
 
@@ -1823,15 +1922,19 @@ static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf, size_
 			if (tmpdecl->length == tmpdecl->capacity) {
 				r_bin_dwarf_expand_abbrev_decl (tmpdecl);
 			}
-			buf = r_uleb128 (buf, (size_t)(buf_end - buf), &spec1);
+			buf = r_uleb128 (buf, (size_t)(buf_end - buf), &attr_code);
 			if (buf >= buf_end) {
 				break;
 			}
-			buf = r_uleb128 (buf, (size_t)(buf_end - buf), &spec2);
-			tmpdecl->specs[tmpdecl->length].attr_name = spec1;
-			tmpdecl->specs[tmpdecl->length].attr_form = spec2;
+			buf = r_uleb128 (buf, (size_t)(buf_end - buf), &attr_form);
+			if (attr_form == DW_FORM_implicit_const) {
+				buf = r_leb128 (buf, (size_t)(buf_end - buf), &special);
+				tmpdecl->specs[tmpdecl->length].special = special;
+			}
+			tmpdecl->specs[tmpdecl->length].attr_name = attr_code;
+			tmpdecl->specs[tmpdecl->length].attr_form = attr_form;
 			tmpdecl->length++;
-		} while (spec1 && spec2);
+		} while (attr_code && attr_form);
 
 		da->length++;
 	}

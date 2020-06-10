@@ -218,6 +218,37 @@ extern "C" {
 #define DW_AT_enum_class		0x6d
 #define DW_AT_linkage_name		0x6e
 
+#define DW_AT_string_length_bit_size	0x6f
+#define DW_AT_string_length_byte_size	0x70
+#define DW_AT_rank						0x71
+#define DW_AT_str_offsets_base			0x72
+#define DW_AT_addr_base					0x73
+#define DW_AT_rnglists_base				0x74
+// #define Reserved 0x75 Unused
+#define DW_AT_dwo_name					0x76
+#define DW_AT_reference					0x77
+#define DW_AT_rvalue_reference 			0x78
+#define DW_AT_macros					0x79
+#define DW_AT_call_all_calls 			0x7a
+#define DW_AT_call_all_source_calls 	0x7b
+#define DW_AT_call_all_tail_calls		0x7c
+#define DW_AT_call_return_pc			0x7d
+#define DW_AT_call_value				0x7e
+#define DW_AT_call_origin				0x7f
+#define DW_AT_call_parameter			0x80
+#define DW_AT_call_pc  					0x81 
+#define DW_AT_call_tail_call 			0x82 
+#define DW_AT_call_target  				0x83 
+#define DW_AT_call_target_clobbered  	0x84 
+#define DW_AT_call_data_location 		0x85 
+#define DW_AT_call_data_value 			0x86 
+#define DW_AT_noreturn  				0x87 
+#define DW_AT_alignment  				0x88 
+#define DW_AT_export_symbols  			0x89 
+#define DW_AT_deleted  					0x8a 
+#define DW_AT_defaulted  				0x8b 
+#define DW_AT_loclists_base				0x8c 
+
 /* <_lo_user ; _hi_user> Interval is reserved for vendor extensions */
 #define DW_AT_lo_user			0x2000
 // extensions:
@@ -248,8 +279,26 @@ extern "C" {
 #define DW_FORM_indirect		0x16
 #define DW_FORM_sec_offset		0x17 // DWARF 4 new attribute for section offset
 #define DW_FORM_exprloc			0x18
-#define DW_FORM_flag_present		0x19
+#define DW_FORM_flag_present	0x19
+#define DW_FORM_strx			0x1a
+#define DW_FORM_addrx			0x1b
+#define DW_FORM_ref_sup4		0x1c
+#define DW_FORM_strp_sup		0x1d
+#define DW_FORM_data16			0x1e
+#define DW_FORM_line_ptr		0x1f
 #define DW_FORM_ref_sig8		0x20
+#define DW_FORM_implicit_const	0x21
+#define DW_FORM_loclistx		0x22
+#define DW_FORM_rnglistx		0x23
+#define DW_FORM_ref_sup8		0x24
+#define DW_FORM_strx1			0x25
+#define DW_FORM_strx2			0x26
+#define DW_FORM_strx3			0x27
+#define DW_FORM_strx4			0x28
+#define DW_FORM_addrx1			0x29
+#define DW_FORM_addrx2			0x2a
+#define DW_FORM_addrx3			0x2b
+#define DW_FORM_addrx4			0x2c
 
 #define DW_OP_addr			0x03
 #define DW_OP_deref			0x06
@@ -548,6 +597,15 @@ extern "C" {
 #define DW_CFA_lo_user			0x1c
 #define DW_CFA_hi_user			0x3f
 
+#define DW_UT_compile			0x01
+#define DW_UT_type				0x02
+#define DW_UT_partial			0x03
+#define DW_UT_skeleton			0x04
+#define DW_UT_split_compile		0x05
+#define DW_UT_split_type		0x06
+#define DW_UT_lo_user			0x80
+#define DW_UT_hi_user			0xff
+
 typedef struct {
 	ut32 total_length;
 	ut16 version;
@@ -597,13 +655,6 @@ typedef struct {
 	ut16 version;
 	section_offset debug_abbrev_offset;
 	ut8 address_size;
-} RBinDwarfCompilationUnitHeader;
-
-typedef struct {
-	initial_length unit_length;
-	ut16 version;
-	section_offset debug_abbrev_offset;
-	ut8 address_size;
 	ut64 type_signature;
 	section_offset type_offset;
 } RBinDwarfTypeUnitHeader;
@@ -619,6 +670,7 @@ typedef struct {
 typedef struct {
 	ut64	attr_name;
 	ut64	attr_form;
+	st64	special; // Used for values coded directly into abbrev
 } RBinDwarfAttrSpec;
 
 typedef struct {
@@ -657,7 +709,11 @@ typedef struct {
 	// compilation unit with a particular set of debugging information entry abbreviations
 	ut32	abbrev_offset;
 	// A 1 - byte unsigned integer representing the size in bytes of an address on the target architecture.If the system uses segmented addressing, this value represents the size of the offset portion of an address.
-	ut8		pointer_size;
+	ut8		address_size;
+	ut8 	unit_type; // DWARF 5 addition
+	ut8 	dwo_id; // DWARF 5 addition
+	ut64 	type_sig; // DWARF 5 addition
+	ut64 	type_offset; // DWARF 5 addition
 	bool	is_64bit;
 } RBinDwarfCompUnitHdr;
 
