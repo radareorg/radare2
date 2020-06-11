@@ -682,10 +682,11 @@ typedef union {
 	ut64	address;
 	RBinDwarfBlock block;
 	ut64	constant;
-	ut8	flag;
+	ut8		flag;
 	ut64	data;
 	st64	sdata;
 	ut64	reference;
+	// ut64	offset; // I'll use it for all the new offset forms in DWARF 5
 	struct {
 		char	*string;
 		ut64	offset;

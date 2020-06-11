@@ -1423,8 +1423,8 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 	value->encoding.block.data = NULL;
 	value->encoding.str_struct.string = NULL;
 	value->encoding.str_struct.offset = 0;
-	
-	print_attr_name(spec->attr_name);
+
+	print_attr_name (spec->attr_name);
 
 	switch (spec->attr_form) {
 	case DW_FORM_addr:
@@ -1445,23 +1445,28 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 			eprintf ("DWARF: Unexpected pointer size: %u\n", (unsigned)hdr->address_size);
 			return NULL;
 		}
-		printf("0x%"PFMT64x"\n", value->encoding.address);
+		printf ("0x%" PFMT64x "\n", value->encoding.address);
 		break;
 	case DW_FORM_data1:
 		value->encoding.data = READ8 (buf);
-		printf("%"PFMT64x"\n", value->encoding.data);
+		printf ("%" PFMT64x "\n", value->encoding.data);
 		break;
 	case DW_FORM_data2:
 		value->encoding.data = READ16 (buf);
-		printf("0x%"PFMT64x"\n", value->encoding.data);
+		printf ("0x%" PFMT64x "\n", value->encoding.data);
 		break;
 	case DW_FORM_data4:
 		value->encoding.data = READ32 (buf);
-		printf("0x%"PFMT64x"\n", value->encoding.data);
+		printf ("0x%" PFMT64x "\n", value->encoding.data);
 		break;
 	case DW_FORM_data8:
 		value->encoding.data = READ64 (buf);
-		printf("0x%"PFMT64x"\n", value->encoding.data);
+		printf ("0x%" PFMT64x "\n", value->encoding.data);
+		break;
+	case DW_FORM_data16: // Fix this, right now I just read the data, but I need to make storage for it
+		value->encoding.data = READ64 (buf);
+		value->encoding.data = READ64 (buf);
+		printf ("0x%" PFMT64x "\n", value->encoding.data);
 		break;
 	case DW_FORM_sdata:
 		buf = r_leb128 (buf, buf_end - buf, &value->encoding.sdata);
@@ -1470,9 +1475,9 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		buf = r_uleb128 (buf, buf_end - buf, &value->encoding.data);
 		break;
 	case DW_FORM_string:
-		value->encoding.str_struct.string = *buf? strdup ((const char*)buf) : NULL;
-		buf += (strlen ((const char*)buf) + 1);
-		printf("%s\n", value->encoding.str_struct.string);
+		value->encoding.str_struct.string = *buf ? strdup ((const char *)buf) : NULL;
+		buf += (strlen ((const char *)buf) + 1);
+		printf ("%s\n", value->encoding.str_struct.string);
 		break;
 	case DW_FORM_block1:
 		value->encoding.block.length = READ8 (buf);
@@ -1480,33 +1485,33 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		if (!value->encoding.block.data) {
 			return NULL;
 		}
-		printf("%"PFMT64u" byte block:", value->encoding.block.length);
+		printf ("%" PFMT64u " byte block:", value->encoding.block.length);
 		if (value->encoding.block.data) {
 			for (j = 0; j < value->encoding.block.length; j++) {
 				value->encoding.block.data[j] = READ (buf, ut8);
-				printf(" 0x%hhx", value->encoding.block.data[j]);
+				printf (" 0x%hhx", value->encoding.block.data[j]);
 			}
 		}
-		printf("\n");
+		printf ("\n");
 		break;
 	case DW_FORM_block2:
 		value->encoding.block.length = READ16 (buf);
-		printf("%"PFMT64u" byte block:", value->encoding.block.length);
+		printf ("%" PFMT64u " byte block:", value->encoding.block.length);
 		if (value->encoding.block.length > 0) {
-			value->encoding.block.data = calloc (sizeof(ut8), value->encoding.block.length);
+			value->encoding.block.data = calloc (sizeof (ut8), value->encoding.block.length);
 			if (!value->encoding.block.data) {
 				return NULL;
 			}
 			for (j = 0; j < value->encoding.block.length; j++) {
 				value->encoding.block.data[j] = READ (buf, ut8);
-				printf(" 0x%hhx", value->encoding.block.data[j]);
+				printf (" 0x%hhx", value->encoding.block.data[j]);
 			}
-			printf("\n");
+			printf ("\n");
 		}
 		break;
 	case DW_FORM_block4:
 		value->encoding.block.length = READ32 (buf);
-		printf("%"PFMT64u" byte block:", value->encoding.block.length);
+		printf ("%" PFMT64u " byte block:", value->encoding.block.length);
 		if (value->encoding.block.length > 0) {
 			ut8 *data = calloc (sizeof (ut8), value->encoding.block.length);
 			if (!data) {
@@ -1514,10 +1519,10 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 			}
 			for (j = 0; j < value->encoding.block.length; j++) {
 				data[j] = READ (buf, ut8);
-				printf(" 0x%hhx", data[j]);
+				printf (" 0x%hhx", data[j]);
 			}
 			value->encoding.block.data = data;
-			printf("\n");
+			printf ("\n");
 		}
 		break;
 	case DW_FORM_block: // variable length ULEB128
@@ -1525,21 +1530,21 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		if (!buf || buf >= buf_end) {
 			return NULL;
 		}
-		printf("%"PFMT64u" byte block:", value->encoding.block.length);
+		printf ("%" PFMT64u " byte block:", value->encoding.block.length);
 		value->encoding.block.data = calloc (sizeof (ut8), value->encoding.block.length);
 		if (value->encoding.block.data) {
 			for (j = 0; j < value->encoding.block.length; j++) {
 				value->encoding.block.data[j] = READ (buf, ut8);
-				printf(" 0x%hhx", value->encoding.block.data[j]);
+				printf (" 0x%hhx", value->encoding.block.data[j]);
 			}
 		}
-		printf("\n");
+		printf ("\n");
 		break;
 	case DW_FORM_flag:
 		value->encoding.flag = READ (buf, ut8);
-		printf("%hhu\n", value->encoding.flag);
+		printf ("%hhu\n", value->encoding.flag);
 		break;
-	case DW_FORM_strp: // offset in .debug_str 
+	case DW_FORM_strp: // offset in .debug_str
 		// this offset can be 64bit, based on dwarf format
 		if (hdr->is_64bit) {
 			value->encoding.str_struct.offset = READ64 (buf);
@@ -1550,16 +1555,16 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 			value->encoding.str_struct.string = strdup (
 				(const char *)(debug_str +
 					value->encoding.str_struct.offset));
-			printf("%s\n", value->encoding.str_struct.string);
+			printf ("%s\n", value->encoding.str_struct.string);
 		} else {
 			value->encoding.str_struct.string = NULL;
-			printf("NULL\n");
+			printf ("NULL\n");
 		}
 		break;
 	case DW_FORM_ref_addr: // offset in .debug_info
-	// This is 4 or 8 bytes depending where it refers to
-	// http://www.dwarfstd.org/doc/Dwarf3.pdf page 128
-	/*
+		// This is 4 or 8 bytes depending where it refers to
+		// http://www.dwarfstd.org/doc/Dwarf3.pdf page 128
+		/*
 	 For references from one shared object or
 	static executable file to another, the relocation and identification of the target object must be
 	performed by the consumer. In the 32-bit DWARF format, this offset is a 4-byte unsigned
@@ -1570,29 +1575,29 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		} else {
 			value->encoding.reference = READ32 (buf);
 		}
-		printf("0x%"PFMT64x"\n", value->encoding.reference);
+		printf ("0x%" PFMT64x "\n", value->encoding.reference);
 		break;
 	case DW_FORM_ref1:
 		value->encoding.reference = READ8 (buf);
-		printf("0x%"PFMT64x"\n", value->encoding.reference);
+		printf ("0x%" PFMT64x "\n", value->encoding.reference);
 		break;
 	case DW_FORM_ref2:
 		value->encoding.reference = READ16 (buf);
-		printf("0x%"PFMT64x"\n", value->encoding.reference);
+		printf ("0x%" PFMT64x "\n", value->encoding.reference);
 		break;
 	case DW_FORM_ref4:
 		value->encoding.reference = READ32 (buf);
-		printf("0x%"PFMT64x"\n", value->encoding.reference);
+		printf ("0x%" PFMT64x "\n", value->encoding.reference);
 		break;
 	case DW_FORM_ref8:
 		value->encoding.reference = READ64 (buf);
-		printf("0x%"PFMT64x"\n", value->encoding.reference);
+		printf ("0x%" PFMT64x "\n", value->encoding.reference);
 		break;
 	case DW_FORM_ref_udata:
 		value->encoding.reference = READ64 (buf);
 		// uleb128 is enough to fit into ut64?
 		buf = r_uleb128 (buf, buf_end - buf, &value->encoding.reference);
-		printf("0x%"PFMT64x"\n", value->encoding.reference);
+		printf ("0x%" PFMT64x "\n", value->encoding.reference);
 		break;
 	case DW_FORM_sec_offset: // offset in a section other than .debug_info or .debug_str
 		if (hdr->is_64bit) {
@@ -1600,48 +1605,121 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		} else {
 			value->encoding.reference = READ32 (buf);
 		}
-		printf("0x%"PFMT64x"\n", value->encoding.reference);
+		printf ("0x%" PFMT64x "\n", value->encoding.reference);
 		break;
 	case DW_FORM_exprloc:
 		buf = r_uleb128 (buf, buf_end - buf, &value->encoding.block.length);
 		if (!buf || buf >= buf_end) {
 			return NULL;
 		}
-		printf("%"PFMT64u" byte block:", value->encoding.block.length);
+		printf ("%" PFMT64u " byte block:", value->encoding.block.length);
 		value->encoding.block.data = calloc (sizeof (ut8), value->encoding.block.length);
 		if (value->encoding.block.data) {
 			for (j = 0; j < value->encoding.block.length; j++) {
 				value->encoding.block.data[j] = READ (buf, ut8);
-				printf(" 0x%hhx", value->encoding.block.data[j]);
+				printf (" 0x%hhx", value->encoding.block.data[j]);
 			}
 		}
-		printf("\n");
+		printf ("\n");
 		break;
 	case DW_FORM_flag_present: // this means that the flag is present, nothing is read
-		printf("true\n");
+		printf ("true\n");
 		break;
 	case DW_FORM_ref_sig8:
 		buf = r_uleb128 (buf, buf_end - buf, &value->encoding.reference);
-		printf("0x%"PFMT64x"\n", value->encoding.reference);
+		printf ("0x%" PFMT64x "\n", value->encoding.reference);
 		break;
-		
+
 	case DW_FORM_strx: // offset into .debug_line_str section, can't parse the section now, so we just skip
+		buf = r_uleb128 (buf, buf_end - buf, &value->encoding.str_struct.offset);
+		printf ("Skipped string from .debug_line_str Offset: 0x%" PFMT64x "\n",
+			value->encoding.str_struct.offset);
+		break;
+	case DW_FORM_strx1:
+		value->encoding.str_struct.offset = READ8 (buf);
+		printf ("Skipped string from .debug_line_str Offset: 0x%" PFMT64x "\n",
+			value->encoding.str_struct.offset);
+		break;
+	case DW_FORM_strx2:
+		value->encoding.str_struct.offset = READ16 (buf);
+		printf ("Skipped string from .debug_line_str Offset: 0x%" PFMT64x "\n",
+			value->encoding.str_struct.offset);
+		break;
+	case DW_FORM_strx3: // Add 3 byte int read
+		READ8 (buf);
+		READ8 (buf);
+		READ8 (buf);
+		printf ("Skipped string from .debug_line_str Offset: 0x%" PFMT64x "\n",
+			value->encoding.str_struct.offset);
+		break;
+	case DW_FORM_strx4:
+		value->encoding.str_struct.offset = READ32 (buf);
+		printf ("Skipped string from .debug_line_str Offset: 0x%" PFMT64x "\n",
+			value->encoding.str_struct.offset);
+		break;
+	case DW_FORM_implicit_const:
+		printf ("%" PFMT64d "\n", spec->special);
+		break;
+	/*  This refers to addrx* forms
+		The index is relative to the value of the
+		DW_AT_addr_base attribute of the associated compilation unit.
+	*/
+	case DW_FORM_addrx: // index into an array of addresses in the .debug_addr section.
+		buf = r_uleb128 (buf, buf_end - buf, &value->encoding.address);
+		printf ("0x%"PFMT64x"\n", value->encoding.address);
+		break;
+	case DW_FORM_addrx1:
+		value->encoding.address = READ8 (buf);
+		printf ("0x%"PFMT64x"\n", value->encoding.address);
+		break;
+	case DW_FORM_addrx2:
+		value->encoding.address = READ16 (buf);
+		printf ("0x%"PFMT64x"\n", value->encoding.address);
+		break;
+	case DW_FORM_addrx3: // I need to add 3byte endianess free read here
+		READ8 (buf);
+		READ8 (buf);
+		READ8 (buf);
+		printf ("0x%"PFMT64x"\n", value->encoding.address);
+		break;
+	case DW_FORM_addrx4:
+		value->encoding.address = READ32 (buf);
+		printf ("0x%"PFMT64x"\n", value->encoding.address);
+		break;
+	case DW_FORM_line_ptr: // offset in a section .debug_line_str
+		if (hdr->is_64bit) {
+			value->encoding.reference = READ64 (buf);
+		} else {
+			value->encoding.reference = READ32 (buf);
+		}
+		printf ("0x%" PFMT64x "\n", value->encoding.str_struct.offset);
+		break;
+	case DW_FORM_strp_sup: // offset in a section .debug_line_str
 		if (hdr->is_64bit) {
 			value->encoding.str_struct.offset = READ64 (buf);
 		} else {
 			value->encoding.str_struct.offset = READ32 (buf);
 		}
-		value->encoding.str_struct.offset = READ64 (buf);
-		printf("Skipped string from .debug_line_str Offset: 0x%"PFMT64x"\n", 
-				value->encoding.str_struct.offset);
+		printf ("0x%" PFMT64x "\n", value->encoding.str_struct.offset);
 		break;
-		
-	case DW_FORM_implicit_const: 
-		printf("%"PFMT64d"\n", spec->special);
+	case DW_FORM_ref_sup4: // offset in the supplementary object file
+		value->encoding.reference = READ32 (buf);
+		printf ("0x%" PFMT64x "\n", value->encoding.reference);
 		break;
-		
+	case DW_FORM_ref_sup8: // offset in the supplementary object file
+		value->encoding.reference = READ64(buf);
+		printf ("0x%" PFMT64x "\n", value->encoding.reference);
+		break;
+	case DW_FORM_loclistx: // An index into the .debug_loclists
+		buf = r_uleb128 (buf, buf_end - buf, &value->encoding.address);
+		printf ("0x%" PFMT64x "\n", value->encoding.address);
+		break;
+	case DW_FORM_rnglistx: // An index into the .debug_rnglists
+		buf = r_uleb128 (buf, buf_end - buf, &value->encoding.address);
+		printf ("0x%" PFMT64x "\n", value->encoding.address);
+		break;
 	default:
-		eprintf ("Unknown DW_FORM 0x%02"PFMT64x"\n", spec->attr_form);
+		eprintf ("Unknown DW_FORM 0x%02" PFMT64x "\n", spec->attr_form);
 		value->encoding.data = 0;
 		return NULL;
 	}
