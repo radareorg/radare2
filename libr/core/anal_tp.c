@@ -394,8 +394,8 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 							sdb_fmt ("%s%s%s", type, r_str_endswith (type, "*") ? "" : " ", name));
 					cmt_set = true;
 					if ((op->ptr && op->ptr != UT64_MAX) && !strcmp (name, "format")) {
-						RFlagItem *f = r_flag_get_i (core->flags, op->ptr);
-						if (f && f->space && !strcmp (f->space->name, R_FLAGS_FS_STRINGS)) {
+						RFlagItem *f = r_flag_get_by_spaces (core->flags, op->ptr, R_FLAGS_FS_STRINGS, NULL);
+						if (f) {
 							char formatstr[0x200];
 							int read = r_io_nread_at (core->io, f->offset, (ut8 *)formatstr, R_MIN (sizeof (formatstr) - 1, f->size));
 							if (read > 0) {
@@ -571,8 +571,8 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 						callee_addr = fcn_call->addr;
 					}
 				} else if (aop.ptr != UT64_MAX) {
-					RFlagItem *flag = r_flag_get_i (core->flags, aop.ptr);
-					if (flag && flag->space && flag->space->name && !strcmp (flag->space->name, R_FLAGS_FS_IMPORTS) && flag->realname) {
+					RFlagItem *flag = r_flag_get_by_spaces (core->flags, aop.ptr, R_FLAGS_FS_IMPORTS, NULL);
+					if (flag && flag->realname) {
 						full_name = flag->realname;
 						callee_addr = aop.ptr;
 					}
@@ -727,8 +727,8 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 						r_io_read_at (core->io, aop.ptr, buf, sizeof (buf) - 1);
 						ut64 ptr = r_read_ble (buf, core->print->big_endian, aop.refptr * 8);
 						if (ptr && ptr != UT64_MAX) {
-							RFlagItem *f = r_flag_get_i (core->flags, ptr);
-							if (f && !strncmp (f->name, "str", 3)) {
+							RFlagItem *f = r_flag_get_by_spaces (core->flags, ptr, R_FLAGS_FS_STRINGS, NULL);
+							if (f) {
 								str_flag = true;
 							}
 						}

@@ -240,12 +240,12 @@ R_API const char *r_syscall_get_i(RSyscall *s, int num, int swi) {
 	return sdb_const_get (s->db, foo, 0);
 }
 
-static int callback_list(void *u, const char *k, const char *v) {
+static bool callback_list(void *u, const char *k, const char *v) {
 	RList *list = (RList*)u;
 	if (!strchr (k, '.')) {
 		RSyscallItem *si = r_syscall_item_new_from_string (k, v);
 		if (!si) {
-			return 1;
+			return true;
 		}
 		if (!strchr (si->name, '.')) {
 			r_list_append (list, si);
@@ -253,7 +253,7 @@ static int callback_list(void *u, const char *k, const char *v) {
 			r_syscall_item_free (si);
 		}
 	}
-	return 1; // continue loop
+	return true; // continue loop
 }
 
 R_API RList *r_syscall_list(RSyscall *s) {

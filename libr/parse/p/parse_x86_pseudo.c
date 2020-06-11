@@ -65,6 +65,7 @@ static int replace (int argc, char *argv[], char *newstr) {
 		{ "jne", "if (var) goto #", {1}},
 		{ "lea",  "# = #", {1, 2}},
 		{ "mov",  "# = #", {1, 2}},
+		{ "movabs", "# = #", {1, 2}},
 		{ "movq",  "# = #", {1, 2}},
 		{ "movaps",  "# = #", {1, 2}},
 		{ "movups",  "# = #", {1, 2}},
@@ -261,6 +262,10 @@ static int parse(RParse *p, const char *data, char *str) {
 
 		replace (nw, wa, str);
 
+	} else if (strstr (w0, "lea")) {
+		r_str_replace_char (w2, '[', 0);
+		r_str_replace_char (w2, ']', 0);
+		replace (nw, wa, str);
 	} else if ((strstr (w1, "ax") || strstr (w1, "ah") || strstr (w1, "al")) && !p->retleave_asm) {
 		if (!(p->retleave_asm = (char *) malloc (sz))) {
 			return false;
@@ -303,9 +308,9 @@ static void parse_localvar (RParse *p, char *newstr, size_t newstr_len, const ch
 			r_strbuf_setf (sb, " + %s", ireg);
 		}
 		if (p->localvar_only) {
-			snprintf (newstr, newstr_len - 1, "[%s%s]", var, r_strbuf_get (sb));
+			snprintf (newstr, newstr_len - 1, "%s%s", var, r_strbuf_get (sb));
 		} else {
-			snprintf (newstr, newstr_len - 1, "[%s%s %c %s]", reg, r_strbuf_get (sb), sign, var);
+			snprintf (newstr, newstr_len - 1, "%s%s %c %s", reg, r_strbuf_get (sb), sign, var);
 		}
 	}
 	r_strbuf_free (sb);
@@ -327,9 +332,9 @@ static inline void mk_reg_str(const char *regname, int delta, bool sign, bool at
 			r_strbuf_setf (sb, " + %s", ireg);
 		}
 		if (delta < 10) {
-			snprintf (dest, len - 1, "[%s%s %c %d]", regname, r_strbuf_get (sb), sign ? '+':'-', delta);
+			snprintf (dest, len - 1, "%s%s %c %d", regname, r_strbuf_get (sb), sign ? '+':'-', delta);
 		} else {
-			snprintf (dest, len - 1, "[%s%s %c 0x%x]", regname, r_strbuf_get (sb), sign ? '+':'-', delta);
+			snprintf (dest, len - 1, "%s%s %c 0x%x", regname, r_strbuf_get (sb), sign ? '+':'-', delta);
 		}
 	}
 	r_strbuf_free (sb);

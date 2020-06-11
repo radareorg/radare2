@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2016 - pancake */
+/* radare - LGPL - Copyright 2014-2020 - pancake */
 
 #include <r_debug.h>
 
@@ -60,7 +60,7 @@ R_API void r_debug_signal_init(RDebug *dbg) {
 	}
 }
 
-static int siglistcb (void *p, const char *k, const char *v) {
+static bool siglistcb (void *p, const char *k, const char *v) {
 	static char key[32] = "cfg.";
 	RDebug *dbg = (RDebug *)p;
 	int opt, mode = dbg->_mode;
@@ -82,10 +82,10 @@ static int siglistcb (void *p, const char *k, const char *v) {
 			}
 		}
 	}
-	return 1;
+	return true;
 }
 
-static int siglistjsoncb (void *p, const char *k, const char *v) {
+static bool siglistjsoncb (void *p, const char *k, const char *v) {
 	static char key[32] = "cfg.";
 	RDebug *dbg = (RDebug *)p;
 	int opt;

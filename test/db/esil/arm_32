@@ -377,7 +377,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=subs triggers zf
+NAME=subs triggers zf and cf
 FILE=-
 CMDS=<<EOF
 e esil.debug=true
@@ -390,11 +390,11 @@ aes
 aer?cpsr
 EOF
 EXPECT=<<EOF
-0x40000000
+0x60000000
 EOF
 RUN
 
-NAME=subs triggers zf off
+NAME=subs triggers cf and zf off
 FILE=-
 CMDS=<<EOF
 e esil.debug=true
@@ -407,7 +407,7 @@ aes
 aer?cpsr
 EOF
 EXPECT=<<EOF
-0x00000000
+0x20000000
 EOF
 RUN
 

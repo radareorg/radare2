@@ -129,7 +129,7 @@ SDB_API void sdb_copy(Sdb *src, Sdb *dst);
 SDB_API bool sdb_stats(Sdb *s, ut32 *disk, ut32 *mem);
 SDB_API bool sdb_dump_hasnext (Sdb* s);
 
-typedef int (*SdbForeachCallback)(void *user, const char *k, const char *v);
+typedef bool (*SdbForeachCallback)(void *user, const char *k, const char *v);
 SDB_API bool sdb_foreach(Sdb* s, SdbForeachCallback cb, void *user);
 SDB_API SdbList *sdb_foreach_list(Sdb* s, bool sorted);
 SDB_API SdbList *sdb_foreach_list_filter(Sdb* s, SdbForeachCallback filter, bool sorted);
@@ -202,7 +202,7 @@ SDB_API void* sdb_ptr_get(Sdb *db, const char *key, ut32 *cas);
 
 /* create db */
 SDB_API bool sdb_disk_create(Sdb* s);
-SDB_API int sdb_disk_insert(Sdb* s, const char *key, const char *val);
+SDB_API bool sdb_disk_insert(Sdb* s, const char *key, const char *val);
 SDB_API bool sdb_disk_finish(Sdb* s);
 SDB_API bool sdb_disk_unlink(Sdb* s);
 
@@ -228,7 +228,7 @@ SDB_API const char *sdb_itoca(ut64 n);
 SDB_API bool sdb_lock(const char *s);
 SDB_API const char *sdb_lock_file(const char *f);
 SDB_API void sdb_unlock(const char *s);
-SDB_API int sdb_unlink(Sdb* s);
+SDB_API bool sdb_unlink(Sdb* s);
 SDB_API int sdb_lock_wait(const char *s UNUSED);
 
 /* expiration */

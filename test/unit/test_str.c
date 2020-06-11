@@ -336,6 +336,24 @@ bool test_r_str_sanitize_sdb_key(void) {
 	mu_end;
 }
 
+bool test_r_str_escape_sh(void) {
+	char *escaped = r_str_escape_sh ("Hello, \"World\"");
+	mu_assert_streq (escaped, "Hello, \\\"World\\\"", "escaped \"double quotes\"");
+	free (escaped);
+	escaped = r_str_escape_sh ("Hello, \\World\\");
+	mu_assert_streq (escaped, "Hello, \\\\World\\\\", "escaped backspace");
+	free (escaped);
+#if __UNIX__
+	escaped = r_str_escape_sh ("Hello, $(World)");
+	mu_assert_streq (escaped, "Hello, \\$(World)", "escaped $(command)");
+	free (escaped);
+	escaped = r_str_escape_sh ("Hello, `World`");
+	mu_assert_streq (escaped, "Hello, \\`World\\`", "escaped `command`");
+	free (escaped);
+#endif
+	mu_end;
+}
+
 bool test_r_str_unescape(void) {
 	char buf[] = "Hello\\x31World\\n";
 	r_str_unescape (buf);
@@ -477,6 +495,7 @@ bool all_tests () {
 	mu_run_test (test_r_str_utf8_charsize);
 	mu_run_test (test_r_str_utf8_charsize_prev);
 	mu_run_test (test_r_str_sanitize_sdb_key);
+	mu_run_test (test_r_str_escape_sh);
 	mu_run_test (test_r_str_unescape);
 	mu_run_test (test_r_str_constpool);
 	mu_run_test (test_r_str_format_msvc_argv);
