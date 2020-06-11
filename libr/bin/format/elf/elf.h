@@ -94,6 +94,7 @@ typedef struct Elf_(r_bin_elf_dynamic_info) {
 	Elf_(Xword) dt_flags_1;
 	Elf_(Xword) dt_rpath;
 	Elf_(Xword) dt_runpath;
+	RVector dt_needed;
 } RBinElfDynamicInfo;
 
 typedef struct r_bin_elf_lib_t {
@@ -114,8 +115,6 @@ struct Elf_(r_bin_elf_obj_t) {
 	ut64 shstrtab_size;
 	char *shstrtab;
 
-	Elf_(Dyn) *dyn_buf;
-	int dyn_entries;
 	RBinElfDynamicInfo dyn_info;
 
 	ut64 version_info[DT_VERSIONTAGNUM];
