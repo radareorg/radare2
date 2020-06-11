@@ -321,6 +321,7 @@ typedef struct r_debug_t {
 	RNum *num;
 	REgg *egg;
 	bool verbose;
+	bool main_arena_resolved; /* is the main_arena resolved already? */
 } RDebug;
 
 typedef struct r_debug_desc_plugin_t {

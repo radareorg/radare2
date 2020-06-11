@@ -3,7 +3,6 @@
 #ifndef INCLUDE_HEAP_GLIBC_C
 #define INCLUDE_HEAP_GLIBC_C
 #define HEAP32 1
-bool main_arena_resolved = 0;
 #include "linux_heap_glibc.c"
 #undef HEAP32
 #endif
@@ -23,13 +22,11 @@ bool main_arena_resolved = 0;
 #endif
 
 
-static GHT GH(get_va_symbol)(const char *path, const char *symname) {
+static GHT GH(get_va_symbol)(RCore *core, const char *path, const char *symname) {
 	GHT vaddr = GHT_MAX;
 	RListIter *iter;
 	RBinSymbol *s;
-	RBin *bin = r_bin_new ();
-	RIO *io = r_io_new ();
-	r_io_bind (io, &bin->iob);
+	RBin *bin = core->bin;
 
 	if (!bin) {
 		return vaddr;
@@ -40,18 +37,14 @@ static GHT GH(get_va_symbol)(const char *path, const char *symname) {
 	r_bin_open (bin, path, &opt);
 	RList *syms = r_bin_get_symbols (bin);
 
-	if (!syms) {
-		return vaddr;
-	}
-
-	r_list_foreach (syms, iter, s) {
-		if (!strcmp (s->name, symname)) {
-			vaddr = s->vaddr;
-			break;
+	if (syms) {
+		r_list_foreach (syms, iter, s) {
+			if (!strcmp (s->name, symname)) {
+				vaddr = s->vaddr;
+				break;
+			}
 		}
 	}
-	r_bin_free (bin);
-	r_io_free (io);
 	return vaddr;
 }
 
@@ -338,11 +331,9 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 
 static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 
-	if (!core || !core->dbg || !core->dbg->maps) {
-		return false;
-	}
+	r_return_val_if_fail (core && core->dbg && core->dbg->maps, false);
 
-	if (main_arena_resolved) {
+	if (core->dbg->main_arena_resolved) {
 		return true;
 	}
 
@@ -352,26 +343,28 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	GHT addr_srch = GHT_MAX, heap_sz = GHT_MAX;
 	const char *libc_path = NULL;
 	GHT libc_addr = GHT_MAX;
-	GHT main_arena_sym = 0;
+	GHT main_arena_sym = GHT_MAX;
 
 	if (r_config_get_i (core->config, "cfg.debug")) {
 		RListIter *iter;
 		RDebugMap *map;
 		r_debug_map_sync (core->dbg);
 		r_list_foreach (core->dbg->maps, iter, map) {
-			if (strstr (map->name, "/libc-") && map->perm == 4 && !main_arena_sym) {
+			if (strstr (map->name, "/libc-") && map->perm == 4 && main_arena_sym == GHT_MAX) {
 				libc_path = map->name;
 				libc_addr = map->addr;
 				if (!libc_path) {
 					break;
 				}
-				char *path = strdup(libc_path);
+				char *path = strdup (libc_path);
 				if (r_file_exists (path)) {
-					GHT vaddr = GH (get_va_symbol) (path, main_arena_str);
+					GHT vaddr = GH (get_va_symbol) (core, path, main_arena_str);
 					if (libc_addr != GHT_MAX && vaddr != GHT_MAX) {
 						main_arena_sym = libc_addr + vaddr;
-						free (path);
 					}
+				}
+				if (path) {
+					free (path);
 				}
 			}
 			if (strstr (map->name, "/libc-") && map->perm == 6) {
@@ -415,10 +408,9 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	}
 
 	if (main_arena_sym) {
-		GH (update_main_arena)
-		(core, main_arena_sym, ta);
+		GH (update_main_arena) (core, main_arena_sym, ta);
 		*m_arena = main_arena_sym;
-		main_arena_resolved = 1;
+		core->dbg->main_arena_resolved = true;
 		free (ta);
 		return true;
 	}
@@ -430,6 +422,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 
 			*m_arena = addr_srch;
 			free (ta);
+			// core->dbg->main_arena_resolved = true;
 			return true;
 		}
 		addr_srch += sizeof (GHT);
