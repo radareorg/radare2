@@ -136,10 +136,8 @@ RUN
 
 NAME=mach0 headers2
 FILE=bins/mach0/ired
-CMDS=<<EOF
-oa arm 32 bins/mach0/ired
-iH
-EOF
+ARGS=-aarm -b32
+CMDS=iH
 EXPECT=<<EOF
 pf.mach0_header @ 0x00004000
 0x00004000  Magic       0xfeedface
