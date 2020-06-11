@@ -279,7 +279,7 @@ static void __computeTotal(RTable *t) {
 
 R_API char *r_table_tofancystring(RTable *t) {
 	if (r_list_length (t->cols) == 0) {
-		return NULL;
+		return strdup ("");
 	}
 	RStrBuf *sb = r_strbuf_new ("");
 	RTableRow *row;
