@@ -437,6 +437,35 @@ beach:
 	return !breaked;
 }
 
+R_API bool r_anal_block_recurse_followthrough(RAnalBlock *block, RAnalBlockCb cb, void *user) {
+	bool breaked = false;
+	RAnalBlockRecurseContext ctx;
+	ctx.anal = block->anal;
+	r_pvector_init (&ctx.to_visit, NULL);
+	ctx.visited = ht_up_new0 ();
+	if (!ctx.visited) {
+		goto beach;
+	}
+
+	ht_up_insert (ctx.visited, block->addr, NULL);
+	r_pvector_push (&ctx.to_visit, block);
+
+	while (!r_pvector_empty (&ctx.to_visit)) {
+		RAnalBlock *cur = r_pvector_pop (&ctx.to_visit);
+		bool b = !cb (cur, user);
+		if (b) {
+			breaked = true;
+		} else {
+			r_anal_block_successor_addrs_foreach (cur, block_recurse_successor_cb, &ctx);
+		}
+	}
+
+beach:
+	ht_up_free (ctx.visited);
+	r_pvector_clear (&ctx.to_visit);
+	return !breaked;
+}
+
 static bool recurse_list_cb(RAnalBlock *block, void *user) {
 	RList *list = user;
 	r_anal_block_ref (block);
