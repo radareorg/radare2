@@ -193,19 +193,3 @@ static char *generic_array_obj_to_string(RList *l) {
 	r_strbuf_free (rbuf);
 	return r;
 }
-
-static void dump_cobj(pyc_code_object *c) {
-	eprintf ("[DUMP]\n");
-	eprintf ("name: %s\n", (char *)c->name->data);
-	eprintf ("const_start\n");
-	dump (c->consts->data);
-	eprintf ("consts_end\n");
-
-	eprintf ("names_start\n");
-	dump (c->names->data);
-	eprintf ("names_end\n");
-
-	eprintf ("varnames_start\n");
-	dump (c->varnames->data);
-	eprintf ("varnames_end\n");
-}
