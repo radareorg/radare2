@@ -609,7 +609,7 @@ typedef struct r_bin_map_t {
 } RBinMap;
 
 typedef struct r_bin_dbginfo_t {
-	int (*get_line)(RBinFile *arch, ut64 addr, char *file, int len, int *line);
+	bool (*get_line)(RBinFile *arch, ut64 addr, char *file, int len, int *line);
 } RBinDbgInfo;
 
 typedef struct r_bin_write_t {

@@ -34,10 +34,10 @@ R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 	if (file_line) {
 		char *token = strchr (file_line, '|');
 		if (token) {
-			*token ++ = 0;
+			*token++ = 0;
 			line = atoi (token);
 			out = r_file_slurp_line (file_line, line, 0);
-			*token ++ = ':';
+			*token++ = ':';
 		} else {
 			return file_line;
 		}
@@ -49,7 +49,7 @@ R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 		} else {
 			file_nopath = strrchr (file_line, '/');
 			if (file_nopath) {
-				file_nopath ++;
+				file_nopath++;
 			} else {
 				file_nopath = file_line;
 			}
