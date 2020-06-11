@@ -309,7 +309,7 @@ static const char *dwarf_unit_types[] = {
 };
 
 static bool is_printable_attr(ut64 attr_code) {
-	return (attr_code <= DW_AT_loclists_base && attr_code >= DW_AT_sibling || 
+	return ((attr_code <= DW_AT_loclists_base && attr_code >= DW_AT_sibling) || 
 			attr_code == DW_AT_GNU_all_tail_call_sites);
 }
 
@@ -349,7 +349,7 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 	if (!hdr || !bf || !buf) {
 		return NULL;
 	}
-	// This should be possible to do better TODO
+	// This shouldn't need part1 and part2... is_64bit seems better and more readable
 	// This deals with http://www.dwarfstd.org/doc/Dwarf3.pdf section 7.4
 	hdr->unit_length.part1 = READ32 (buf);
 	if (hdr->unit_length.part1 == DWARF_INIT_LEN_64) {
@@ -594,7 +594,6 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 
 	opcode = *buf++;
 
-	// TODO - Maybe add offset to the print later?
 	if (f) {
 		fprintf (f, "  Extended opcode %d: ", opcode);
 	}
@@ -1190,7 +1189,7 @@ static int r_bin_dwarf_expand_debug_abbrev(RBinDwarfDebugAbbrev *da) {
 	return 0;
 }
 
-static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RBinDwarfDebugAbbrev *da) {
+static void print_abbrev_section(FILE *f, RBinDwarfDebugAbbrev *da) {
 	size_t i, j;
 	ut64 attr_name, attr_form;
 
@@ -1199,13 +1198,13 @@ static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RBinDwarfDebugAbbrev *da) {
 	}
 	for (i = 0; i < da->length; i++) {
 		int declstag = da->decls[i].tag;
-		fprintf (f, "Abbreviation Code %"PFMT64d" ", da->decls[i].code);
+		fprintf (f, "   %-4"PFMT64d" ", da->decls[i].code);
 		if (declstag>=0 && declstag < DW_TAG_LAST) {
-			fprintf (f, "Tag %s ", dwarf_tag_name_encodings[declstag]);
+			fprintf (f, "  %-25s ", dwarf_tag_name_encodings[declstag]);
 		}
-		fprintf (f, "[%s]\n", da->decls[i].has_children ?
+		fprintf (f, "[%s]", da->decls[i].has_children ?
 				"has children" : "no children");
-		fprintf (f, "Offset 0x%"PFMT64x"\n", da->decls[i].offset);
+		fprintf (f, " (0x%"PFMT64x")\n", da->decls[i].offset);
 
 		if (da->decls[i].specs) {
 			for (j = 0; j < da->decls[i].length; j++) {
@@ -1358,9 +1357,9 @@ static void r_bin_dwarf_dump_debug_info(FILE *f, const RBinDwarfDebugInfo *inf) 
 	for (i = 0; i < inf->length; i++) {
 		fprintf (f, "\n");
 		fprintf (f, "  Compilation Unit @ offset 0x%"PFMT64x":\n", inf->comp_units [i].offset);
-		fprintf (f, "   Length:        0x%x\n", inf->comp_units [i].hdr.length);
+		fprintf (f, "   Length:        0x%"PFMT64x"\n", inf->comp_units [i].hdr.length);
 		fprintf (f, "   Version:       %d\n", inf->comp_units [i].hdr.version);
-		fprintf (f, "   Abbrev Offset: 0x%x\n", inf->comp_units [i].hdr.abbrev_offset);
+		fprintf (f, "   Abbrev Offset: 0x%"PFMT64x"\n", inf->comp_units [i].hdr.abbrev_offset);
 		fprintf (f, "   Pointer Size:  %d\n", inf->comp_units [i].hdr.address_size);
 		fprintf (f, "\n");
 
@@ -1400,9 +1399,7 @@ static void r_bin_dwarf_dump_debug_info(FILE *f, const RBinDwarfDebugInfo *inf) 
 }
 
 static void print_attr_name(ut64 attr_code) {
-	if (attr_code <= DW_AT_linkage_name && attr_code >= DW_AT_sibling || 
-			attr_code == DW_AT_GNU_all_tail_call_sites	
-			)  {
+	if (is_printable_attr(attr_code))  {
 		printf("  %s:     ", dwarf_attr_encodings[attr_code]);
 	} else {
 		printf("  DW_AT UNKWN: 0x%"PFMT64x":    ", attr_code);
@@ -1478,9 +1475,11 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		printf("%s\n", value->encoding.str_struct.string);
 		break;
 	case DW_FORM_block1:
-		value->encoding.block.length = READ (buf, ut8);
-		// FIXME null check
+		value->encoding.block.length = READ8 (buf);
 		value->encoding.block.data = calloc (sizeof (ut8), value->encoding.block.length + 1);
+		if (!value->encoding.block.data) {
+			return NULL;
+		}
 		printf("%"PFMT64u" byte block:", value->encoding.block.length);
 		if (value->encoding.block.data) {
 			for (j = 0; j < value->encoding.block.length; j++) {
@@ -1494,8 +1493,10 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->encoding.block.length = READ16 (buf);
 		printf("%"PFMT64u" byte block:", value->encoding.block.length);
 		if (value->encoding.block.length > 0) {
-			// FIXME null check
 			value->encoding.block.data = calloc (sizeof(ut8), value->encoding.block.length);
+			if (!value->encoding.block.data) {
+				return NULL;
+			}
 			for (j = 0; j < value->encoding.block.length; j++) {
 				value->encoding.block.data[j] = READ (buf, ut8);
 				printf(" 0x%hhx", value->encoding.block.data[j]);
@@ -1508,11 +1509,12 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		printf("%"PFMT64u" byte block:", value->encoding.block.length);
 		if (value->encoding.block.length > 0) {
 			ut8 *data = calloc (sizeof (ut8), value->encoding.block.length);
-			if (data) {
-				for (j = 0; j < value->encoding.block.length; j++) {
-					data[j] = READ (buf, ut8);
-					printf(" 0x%hhx", data[j]);
-				}
+			if (!data) {
+				return NULL;
+			}
+			for (j = 0; j < value->encoding.block.length; j++) {
+				data[j] = READ (buf, ut8);
+				printf(" 0x%hhx", data[j]);
 			}
 			value->encoding.block.data = data;
 			printf("\n");
@@ -1619,7 +1621,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		printf("true\n");
 		break;
 	case DW_FORM_ref_sig8:
-		value->encoding.reference = r_uleb128 (buf, buf_end - buf, &value->encoding.reference);
+		buf = r_uleb128 (buf, buf_end - buf, &value->encoding.reference);
 		printf("0x%"PFMT64x"\n", value->encoding.reference);
 		break;
 		
@@ -1663,12 +1665,6 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *sdb, const ut8 *obuf,
 	const ut8 *buf = obuf, *buf_end = obuf + (curr_unit->hdr.length - 7);
 	ut64 abbr_code;
 	size_t i;
-
-	// this doesn't make sense? How are these related TODO
-	// if (cu->hdr.length > debug_str_len) {
-	// 	//avoid oob read
-	// 	return NULL;
-	// }
 
 	while (buf && buf < buf_end && buf >= obuf) {
 		if (curr_unit->length && curr_unit->capacity == curr_unit->length) { 
@@ -1735,11 +1731,11 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *sdb, const ut8 *obuf,
 
 static void print_comp_unit_header(const RBinDwarfCompUnitHdr *hdr, FILE *file) {
 	printf(" Compilation Unit @ offset TODO:\n");
-	printf("  Length: %"PFMT32x"\n", hdr->length);
+	printf("  Length: 0x%"PFMT64x"\n", hdr->length);
 	printf("  Version: %hu\n", hdr->version);
-	printf("  Abbrev Offset: %"PFMT32x"\n", hdr->abbrev_offset);
-	printf("  Pointer Size: %hhx\n", hdr->address_size);
-	printf("  Unit type: %hhx\n", hdr->unit_type);
+	printf("  Abbrev Offset: 0x%"PFMT64x"\n", hdr->abbrev_offset);
+	printf("  Pointer Size: 0x%hhx\n", hdr->address_size);
+	printf("  Unit type: 0x%hhx\n", hdr->unit_type);
 }
 /**
  * @brief Reads all information about compilation unit header
@@ -1749,7 +1745,7 @@ static void print_comp_unit_header(const RBinDwarfCompUnitHdr *hdr, FILE *file) 
  * @param unit Unit to read information into
  * @return ut8* Advanced position in a buffer
  */
-static ut8 *info_comp_unit_read_hdr(ut8 *buf, const ut8 *buf_end, RBinDwarfCompUnitHdr *hdr) {
+static const ut8 *info_comp_unit_read_hdr(const ut8 *buf, const ut8 *buf_end, RBinDwarfCompUnitHdr *hdr) {
 	// 32-bit vs 64-bit dwarf formats
 	// http://www.dwarfstd.org/doc/Dwarf3.pdf section 7.4
 
@@ -1832,7 +1828,7 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 		//
 
 		curr_unit->offset = buf - obuf;
-		buf = info_comp_unit_read_hdr (buf, buf_end, curr_unit);
+		buf = info_comp_unit_read_hdr (buf, buf_end, &curr_unit->hdr);
 
 		if (curr_unit->hdr.length > len) {
 			ret = false;
@@ -1851,7 +1847,7 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 
 		const int k_max = R_MIN (da->capacity, da->length);
 
-		// linear search for current abbreviation index FIXME because this shouldn't be necessary
+		// linear search for current abbreviation index, fix this because this shouldn't be necessary
 		for (k = 0; k < k_max; k++) {
 			if (da->decls[k].offset == curr_unit->hdr.abbrev_offset) {
 				offset = k;
@@ -1884,7 +1880,8 @@ out:
 
 static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf, size_t len, int mode) {
 	const ut8 *buf = obuf, *buf_end = obuf + len;
-	ut64 tmp, attr_code, attr_form, special, offset;
+	ut64 tmp, attr_code, attr_form, offset;
+	st64 special;
 	ut8 has_children;
 	RBinDwarfAbbrevDecl *tmpdecl;
 
@@ -1940,7 +1937,7 @@ static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf, size_
 	}
 
 	if (mode == R_MODE_PRINT) {
-		dump_r_bin_dwarf_debug_abbrev (stdout, da);
+		print_abbrev_section (stdout, da);
 	}
 	return da;
 }

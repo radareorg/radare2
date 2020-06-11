@@ -707,7 +707,7 @@ typedef struct {
 	ut16	version;
 	// A 4-byte unsigned offset into the .debug_abbrev section. This offset associates the
 	// compilation unit with a particular set of debugging information entry abbreviations
-	ut32	abbrev_offset;
+	ut64	abbrev_offset;
 	// A 1 - byte unsigned integer representing the size in bytes of an address on the target architecture.If the system uses segmented addressing, this value represents the size of the offset portion of an address.
 	ut8		address_size;
 	ut8 	unit_type; // DWARF 5 addition
