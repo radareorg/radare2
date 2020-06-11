@@ -847,8 +847,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 #if __UNIX__
 		// TODO: keep flags :?
 		(void)freopen ("/dev/tty", "rb", stdin);
-		(void)freopen ("/dev/tty", "w",stdout);
-		(void)freopen ("/dev/tty", "w",stderr);
+		(void)freopen ("/dev/tty", "w", stdout);
+		(void)freopen ("/dev/tty", "w", stderr);
 #else
 		eprintf ("Cannot reopen stdin without UNIX\n");
 		free (buf);

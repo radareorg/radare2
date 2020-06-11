@@ -662,22 +662,21 @@ R_API bool r_cons_yesno(int def, const char *fmt, ...) {
 	fflush (stderr);
 	r_cons_set_raw (true);
 	char buf[] = " ?\n";
-	if (read (0, buf + 1, 1) != 1) {
-		va_end (ap);
-		return false;
+	if (read (0, buf + 1, 1) == 1) {
+		if (write (2, buf, 3) == 3) {
+			if (key == 'Y') {
+				key = 'y';
+			}
+			r_cons_set_raw (false);
+			if (key == '\n' || key == '\r') {
+				key = def;
+			}
+			va_end (ap);
+			return key == 'y';
+		}
 	}
-	if (write (2, buf, 3) != 3) {
-		va_end (ap);
-		return false;
-	}
-	if (key == 'Y') {
-		key = 'y';
-	}
-	r_cons_set_raw (false);
-	if (key == '\n' || key == '\r') {
-		key = def;
-	}
-	return key == 'y';
+	va_end (ap);
+	return false;
 }
 
 R_API char *r_cons_password(const char *msg) {
