@@ -958,12 +958,12 @@ struct ctxDeleteCB {
 	char buf[R_SIGN_KEY_MAXSZ];
 };
 
-static int deleteBySpaceCB(void *user, const char *k, const char *v) {
+static bool deleteBySpaceCB(void *user, const char *k, const char *v) {
 	struct ctxDeleteCB *ctx = (struct ctxDeleteCB *) user;
 	if (!strncmp (k, ctx->buf, strlen (ctx->buf))) {
 		sdb_remove (ctx->anal->sdb_zigns, k, 0);
 	}
-	return 1;
+	return true;
 }
 
 R_API bool r_sign_delete(RAnal *a, const char *name) {
@@ -1532,7 +1532,7 @@ static void listHash(RAnal *a, RSignItem *it, PJ *pj, int format) {
 	}
 }
 
-static int listCB(void *user, const char *k, const char *v) {
+static bool listCB(void *user, const char *k, const char *v) {
 	struct ctxListCB *ctx = (struct ctxListCB *)user;
 	RSignItem *it = r_sign_item_new ();
 	RAnal *a = ctx->anal;
@@ -1651,7 +1651,7 @@ static int listCB(void *user, const char *k, const char *v) {
 out:
 	r_sign_item_free (it);
 
-	return 1;
+	return true;
 }
 
 R_API void r_sign_list(RAnal *a, int format) {
@@ -1673,7 +1673,7 @@ R_API void r_sign_list(RAnal *a, int format) {
 	}
 }
 
-static int listGetCB(void *user, const char *key, const char *val) {
+static bool listGetCB(void *user, const char *key, const char *val) {
 	struct ctxGetListCB *ctx = user;
 	RSignItem *item = r_sign_item_new ();
 	if (!item) {
@@ -1684,8 +1684,7 @@ static int listGetCB(void *user, const char *key, const char *val) {
 		return false;
 	}
 	r_list_append (ctx->list, item);
-
-	return 1;
+	return true;
 }
 
 R_API RList *r_sign_get_list(RAnal *a) {
@@ -1737,7 +1736,7 @@ struct ctxCountForCB {
 	int count;
 };
 
-static int countForCB(void *user, const char *k, const char *v) {
+static bool countForCB(void *user, const char *k, const char *v) {
 	struct ctxCountForCB *ctx = (struct ctxCountForCB *) user;
 	RSignItem *it = r_sign_item_new ();
 
@@ -1750,7 +1749,7 @@ static int countForCB(void *user, const char *k, const char *v) {
 	}
 	r_sign_item_free (it);
 
-	return 1;
+	return true;
 }
 
 R_API int r_sign_space_count_for(RAnal *a, const RSpace *space) {
@@ -1765,12 +1764,11 @@ struct ctxUnsetForCB {
 	const RSpace *space;
 };
 
-static int unsetForCB(void *user, const char *k, const char *v) {
+static bool unsetForCB(void *user, const char *k, const char *v) {
 	struct ctxUnsetForCB *ctx = (struct ctxUnsetForCB *) user;
 	char nk[R_SIGN_KEY_MAXSZ], nv[R_SIGN_VAL_MAXSZ];
 	RSignItem *it = r_sign_item_new ();
 	Sdb *db = ctx->anal->sdb_zigns;
-
 	if (r_sign_deserialize (ctx->anal, it, k, v)) {
 		if (it->space && it->space == ctx->space) {
 			it->space = NULL;
@@ -1782,8 +1780,7 @@ static int unsetForCB(void *user, const char *k, const char *v) {
 		eprintf ("error: cannot deserialize zign\n");
 	}
 	r_sign_item_free (it);
-
-	return 1;
+	return true;
 }
 
 R_API void r_sign_space_unset_for(RAnal *a, const RSpace *space) {
@@ -1798,7 +1795,7 @@ struct ctxRenameForCB {
 	char nprefix[R_SIGN_KEY_MAXSZ];
 };
 
-static int renameForCB(void *user, const char *k, const char *v) {
+static bool renameForCB(void *user, const char *k, const char *v) {
 	struct ctxRenameForCB *ctx = (struct ctxRenameForCB *) user;
 	char nk[R_SIGN_KEY_MAXSZ], nv[R_SIGN_VAL_MAXSZ];
 	const char *zigname = NULL;
@@ -1811,8 +1808,7 @@ static int renameForCB(void *user, const char *k, const char *v) {
 		sdb_remove (db, k, 0);
 		sdb_set (db, nk, nv, 0);
 	}
-
-	return 1;
+	return true;
 }
 
 R_API void r_sign_space_rename_for(RAnal *a, const RSpace *space, const char *oname, const char *nname) {
@@ -1829,11 +1825,10 @@ struct ctxForeachCB {
 	void *user;
 };
 
-static int foreachCB(void *user, const char *k, const char *v) {
+static bool foreachCB(void *user, const char *k, const char *v) {
 	struct ctxForeachCB *ctx = (struct ctxForeachCB *) user;
 	RSignItem *it = r_sign_item_new ();
 	RAnal *a = ctx->anal;
-	int retval = 1;
 
 	if (r_sign_deserialize (a, it, k, v)) {
 		RSpace *cur = r_spaces_current (&a->zign_spaces);
@@ -1844,7 +1839,7 @@ static int foreachCB(void *user, const char *k, const char *v) {
 		eprintf ("error: cannot deserialize zign\n");
 	}
 	r_sign_item_free (it);
-	return retval;
+	return true;
 }
 
 R_API bool r_sign_foreach(RAnal *a, RSignForeachCallback cb, void *user) {
@@ -2281,7 +2276,7 @@ R_API void r_sign_item_free(RSignItem *item) {
 	free (item);
 }
 
-static int loadCB(void *user, const char *k, const char *v) {
+static bool loadCB(void *user, const char *k, const char *v) {
 	RAnal *a = (RAnal *) user;
 	char nk[R_SIGN_KEY_MAXSZ], nv[R_SIGN_VAL_MAXSZ];
 	RSignItem *it = r_sign_item_new ();
@@ -2292,7 +2287,7 @@ static int loadCB(void *user, const char *k, const char *v) {
 		eprintf ("error: cannot deserialize zign\n");
 	}
 	r_sign_item_free (it);
-	return 1;
+	return true;
 }
 
 R_API char *r_sign_path(RAnal *a, const char *file) {

@@ -1080,10 +1080,10 @@ typedef struct {
 	PJ *j;
 } ListJsonCtx;
 
-static int r_anal_class_list_json_cb(void *user, const char *k, const char *v) {
+static bool r_anal_class_list_json_cb(void *user, const char *k, const char *v) {
 	ListJsonCtx *ctx = user;
 	r_anal_class_json (ctx->anal, ctx->j, k);
-	return 1;
+	return true;
 }
 
 static void r_anal_class_list_json(RAnal *anal) {

@@ -701,14 +701,13 @@ R_API void r_config_serialize(R_NONNULL RConfig *config, R_NONNULL Sdb *db) {
 	}
 }
 
-static int load_config_cb(void *user, const char *k, const char *v) {
+static bool load_config_cb(void *user, const char *k, const char *v) {
 	RConfig *config = user;
 	RConfigNode *node = r_config_node_get (config, k);
-	if (!node) {
-		return 1;
+	if (node) {
+		r_config_set (config, k, v);
 	}
-	r_config_set (config, k, v);
-	return 1;
+	return true;
 }
 
 R_API bool r_config_unserialize(R_NONNULL RConfig *config, R_NONNULL Sdb *db, R_NULLABLE char **err) {

@@ -1403,9 +1403,9 @@ static int cmd_interpret(void *data, const char *input) {
 	return 0;
 }
 
-static int callback_foreach_kv(void *user, const char *k, const char *v) {
+static bool callback_foreach_kv(void *user, const char *k, const char *v) {
 	r_cons_printf ("%s=%s\n", k, v);
-	return 1;
+	return true;
 }
 
 R_API int r_line_hist_sdb_up(RLine *line) {

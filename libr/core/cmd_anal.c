@@ -788,9 +788,9 @@ static int cmpaddr (const void *_a, const void *_b) {
 	return (a->addr > b->addr)? 1: (a->addr <b->addr)? -1: 0;
 }
 
-static int listOpDescriptions(void *_core, const char *k, const char *v) {
+static bool listOpDescriptions(void *_core, const char *k, const char *v) {
         r_cons_printf ("%s=%s\n", k, v);
-        return 1;
+        return true;
 }
 
 /* better aac for windows-x86-32 */
@@ -919,11 +919,11 @@ static void type_cmd(RCore *core, const char *input) {
 	r_cons_break_pop ();
 }
 
-static int cc_print(void *p, const char *k, const char *v) {
+static bool cc_print(void *p, const char *k, const char *v) {
 	if (!strcmp (v, "cc")) {
 		r_cons_println (k);
 	}
-	return 1;
+	return true;
 }
 
 static void find_refs(RCore *core, const char *glob) {
