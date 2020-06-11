@@ -65,6 +65,7 @@ r_core_sources = [
   'yank.c',
   'p/core_a2f.c',
   'p/core_java.c',
+  'cannotated_code.c'
 ]
 
 r_core_inc = []

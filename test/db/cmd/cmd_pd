@@ -577,6 +577,7 @@ RUN
 NAME=pd asm.var.subonly
 FILE=malloc://1024
 CMDS=<<EOF
+e anal.vars.stackname=true
 e asm.arch=x86
 e asm.bits=64
 e asm.var.sub=true

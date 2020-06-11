@@ -66,7 +66,6 @@ r_util_sources = [
   'thread_lock.c',
   'thread_cond.c',
   'thread_pipe.c',
-  'tinyrange.c',
   'tree.c',
   'pj.c',
   'ubase64.c',
@@ -81,7 +80,8 @@ r_util_sources = [
   'protobuf.c',
   'regex/regcomp.c',
   'regex/regexec.c',
-  'regex/regerror.c'
+  'regex/regerror.c',
+  'annotated_code.c'
 ]
 
 r_util_deps = [ldl, mth, pth, utl, sdb_dep, zlib_dep, platform_deps]

@@ -1,6 +1,9 @@
 NAME=PDB downloader check
 FILE=bins/pdb/user32.dll
-CMDS=!!rabin2 -PP ${R2_FILE} ~PDB
+CMDS=<<EOF
+%R2_CURL=1
+!!rabin2 -PP ${R2_FILE} ~PDB
+EOF
 EXPECT=<<EOF
 PDB "user32.pdb" download success
 EOF

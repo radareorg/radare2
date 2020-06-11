@@ -404,7 +404,7 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 
 static Sdb *TDB_ = NULL; // HACK
 
-static int stdifstruct(void *user, const char *k, const char *v) {
+static bool stdifstruct(void *user, const char *k, const char *v) {
 	r_return_val_if_fail (TDB_, false);
 	if (!strcmp (v, "struct") && !r_str_startswith (k, "typedef")) {
 		return true;
@@ -563,9 +563,9 @@ static void print_enum_in_c_format(Sdb *TDB, const char *arg, bool multiline) {
 	ls_free (l);
 }
 
-static int printkey_cb(void *user, const char *k, const char *v) {
+static bool printkey_cb(void *user, const char *k, const char *v) {
 	r_cons_println (k);
-	return 1;
+	return true;
 }
 
 // maybe dupe?. should return char *instead of print for reusability
@@ -636,47 +636,47 @@ static void printFunctionType(RCore *core, const char *input) {
 	free (res);
 }
 
-static int printfunc_json_cb(void *user, const char *k, const char *v) {
+static bool printfunc_json_cb(void *user, const char *k, const char *v) {
 	printFunctionType ((RCore *)user, k);
-	return 1;
+	return true;
 }
 
-static int stdiffunc(void *p, const char *k, const char *v) {
+static bool stdiffunc(void *p, const char *k, const char *v) {
 	return !strncmp (v, "func", strlen ("func") + 1);
 }
 
-static int stdifunion(void *p, const char *k, const char *v) {
+static bool stdifunion(void *p, const char *k, const char *v) {
 	return !strncmp (v, "union", strlen ("union") + 1);
 }
 
-static int sdbdeletelink(void *p, const char *k, const char *v) {
+static bool sdbdeletelink(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
 	if (!strncmp (k, "link.", strlen ("link."))) {
 		r_type_del (core->anal->sdb_types, k);
 	}
-	return 1;
+	return true;
 }
 
-static int stdiflink(void *p, const char *k, const char *v) {
+static bool stdiflink(void *p, const char *k, const char *v) {
 	return !strncmp (k, "link.", strlen ("link."));
 }
 
-static int print_link_cb(void *p, const char *k, const char *v) {
+static bool print_link_cb(void *p, const char *k, const char *v) {
 	r_cons_printf ("0x%s = %s\n", k + strlen ("link."), v);
-	return 1;
+	return true;
 }
 
-static int print_link_json_cb(void *p, const char *k, const char *v) {
+static bool print_link_json_cb(void *p, const char *k, const char *v) {
 	r_cons_printf ("{\"0x%s\":\"%s\"}", k + strlen ("link."), v);
-	return 1;
+	return true;
 }
 
-static int print_link_r_cb(void *p, const char *k, const char *v) {
+static bool print_link_r_cb(void *p, const char *k, const char *v) {
 	r_cons_printf ("tl %s = 0x%s\n", v, k + strlen ("link."));
-	return 1;
+	return true;
 }
 
-static int print_link_readable_cb(void *p, const char *k, const char *v) {
+static bool print_link_readable_cb(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
 	char *fmt = r_type_format (core->anal->sdb_types, v);
 	if (!fmt) {
@@ -685,32 +685,32 @@ static int print_link_readable_cb(void *p, const char *k, const char *v) {
 	}
 	r_cons_printf ("(%s)\n", v);
 	r_core_cmdf (core, "pf %s @ 0x%s\n", fmt, k + strlen ("link."));
-	return 1;
+	return true;
 }
 
-static int print_link_readable_json_cb(void *p, const char *k, const char *v) {
+static bool print_link_readable_json_cb(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
 	char *fmt = r_type_format (core->anal->sdb_types, v);
 	if (!fmt) {
 		eprintf ("Can't fint type %s", v);
-		return 1;
+		return true;
 	}
 	r_cons_printf ("{\"%s\":", v);
 	r_core_cmdf (core, "pfj %s @ 0x%s\n", fmt, k + strlen ("link."));
 	r_cons_printf ("}");
-	return 1;
+	return true;
 }
 
-static int stdiftype(void *p, const char *k, const char *v) {
+static bool stdiftype(void *p, const char *k, const char *v) {
 	return !strncmp (v, "type", strlen ("type") + 1);
 }
 
-static int print_typelist_r_cb(void *p, const char *k, const char *v) {
+static bool print_typelist_r_cb(void *p, const char *k, const char *v) {
 	r_cons_printf ("tk %s=%s\n", k, v);
-	return 1;
+	return true;
 }
 
-static int print_typelist_json_cb(void *p, const char *k, const char *v) {
+static bool print_typelist_json_cb(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
 	PJ *pj = pj_new ();
 	pj_o (pj);
@@ -730,7 +730,7 @@ static int print_typelist_json_cb(void *p, const char *k, const char *v) {
 	free (format_s);
 	free (sizecmd);
 	free (formatcmd);
-	return 1;
+	return true;
 }
 
 static void print_keys(Sdb *TDB, RCore *core, SdbForeachCallback filter, SdbForeachCallback printfn_cb, bool json) {
@@ -784,7 +784,7 @@ static void set_offset_hint(RCore *core, RAnalOp *op, const char *type, ut64 lad
 			r_anal_hint_set_offset (core->anal, at, res);
 		}
 	} else if (cmt && r_anal_op_ismemref (op->type)) {
-			r_meta_set_string (core->anal, R_META_TYPE_VARTYPE, at, cmt);
+		r_meta_set_string (core->anal, R_META_TYPE_VARTYPE, at, cmt);
 	}
 }
 

@@ -1,6 +1,7 @@
 NAME=asm.bb.middle disasm
 FILE=bins/pe/cmd_adf_sample0.exe
 CMDS=<<EOF
+e anal.vars.stackname=true
 e asm.bytes=false
 e asm.comments=false
 e asm.var=false

@@ -256,29 +256,36 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 	hdr->opcode_base = READ8 (buf);
 
 	if (f) {
-		fprintf (f, "DWARF LINE HEADER\n");
-		fprintf (f, "  total_length: %d\n", hdr->unit_length.part1);
-		fprintf (f, "  version: %d\n", hdr->version);
-		fprintf (f, "  header_length: : %"PFMT64d"\n", hdr->header_length);
-		fprintf (f, "  mininstlen: %d\n", hdr->min_inst_len);
-		fprintf (f, "  max_ops_per_inst: %d\n", hdr->max_ops_per_inst);
-		fprintf (f, "  is_stmt: %d\n", hdr->default_is_stmt);
-		fprintf (f, "  line_base: %d\n", hdr->line_base);
-		fprintf (f, "  line_range: %d\n", hdr->line_range);
-		fprintf (f, "  opcode_base: %d\n", hdr->opcode_base);
+		fprintf (f, " Header information:\n");
+		fprintf (f, "  Length:                             %d\n", hdr->unit_length.part1);
+		fprintf (f, "  DWARF Version:                      %d\n", hdr->version);
+		fprintf (f, "  Header Length:                      %"PFMT64d"\n", hdr->header_length);
+		fprintf (f, "  Minimum Instruction Length:         %d\n", hdr->min_inst_len);
+		fprintf (f, "  Maximum Operations per Instruction: %d\n", hdr->max_ops_per_inst);
+		fprintf (f, "  Initial value of 'is_stmt':         %d\n", hdr->default_is_stmt);
+		fprintf (f, "  Line Base:                          %d\n", hdr->line_base);
+		fprintf (f, "  Line Range:                         %d\n", hdr->line_range);
+		fprintf (f, "  Opcode Base:                        %d\n", hdr->opcode_base);
+		fprintf (f, "\n");
 	}
 
 	if (hdr->opcode_base>0) {
 		hdr->std_opcode_lengths = calloc(sizeof(ut8), hdr->opcode_base);
 
+		if (f) {
+			fprintf (f, " Opcodes:\n");
+		}
 		for (i = 1; i <= hdr->opcode_base - 1; i++) {
 			if (buf + 2 > buf_end) {
 				break;
 			}
 			hdr->std_opcode_lengths[i] = READ (buf, ut8);
 			if (f) {
-				fprintf (f, " op %d %d\n", i, hdr->std_opcode_lengths[i]);
+				fprintf (f, "  Opcode %d has %d arg\n", i, hdr->std_opcode_lengths[i]);
 			}
+		}
+		if (f) {
+			fprintf (f, "\n");
 		}
 	} else {
 		hdr->std_opcode_lengths = NULL;
@@ -305,6 +312,12 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 
 	tmp_buf = buf;
 	count = 0;
+	if (f) {
+		fprintf (f, " The File Name Table:\n");
+		fprintf (f, "  Entry Dir     Time      Size       Name\n");
+	}
+	int entry_index = 1; // used for printing information
+
 	for (i = 0; i < 2; i++) {
 		while (buf+1<buf_end) {
 			const char *filename = (const char *)buf;
@@ -364,10 +377,7 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 			}
 			count++;
 			if (f && i) {
-				fprintf (f, "FILE (%s)\n", filename);
-				fprintf (f, "| dir idx %"PFMT64d"\n", id_idx);
-				fprintf (f, "| lastmod %"PFMT64d"\n", mod_time);
-				fprintf (f, "| filelen %"PFMT64d"\n", file_len);
+				fprintf (f, "  %d     %"PFMT64d"       %"PFMT64d"         %"PFMT64d"          %s\n", entry_index++, id_idx, mod_time, file_len, filename);
 			}
 		}
 		if (i == 0) {
@@ -380,6 +390,9 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 			buf = tmp_buf;
 			count = 0;
 		}
+	}
+	if (f) {
+		fprintf (f, "\n");
 	}
 
 beach:
@@ -456,8 +469,9 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 
 	opcode = *buf++;
 
+	// TODO - Maybe add offset to the print later?
 	if (f) {
-		fprintf (f, "Extended opcode %d: ", opcode);
+		fprintf (f, "  Extended opcode %d: ", opcode);
 	}
 
 	switch (opcode) {
@@ -550,8 +564,8 @@ static const ut8* r_bin_dwarf_parse_spec_opcode(
 	regs->address += advance_adr;
 	regs->line += hdr->line_base + (adj_opcode % hdr->line_range);
 	if (f) {
-		fprintf (f, "Special opcode %d: ", adj_opcode);
-		fprintf (f, "advance Address by %"PFMT64d" to %"PFMT64x" and Line by %d to %"PFMT64d"\n",
+		fprintf (f, "  Special opcode %d: ", adj_opcode);
+		fprintf (f, "advance Address by %"PFMT64d" to 0x%"PFMT64x" and Line by %d to %"PFMT64d"\n",
 			advance_adr, regs->address, hdr->line_base +
 			(adj_opcode % hdr->line_range), regs->line);
 	}
@@ -586,6 +600,10 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 
 	if (!binfile || !hdr || !regs || !obuf) {
 		return NULL;
+	}
+
+	if (f) {
+		fprintf (f, "  "); // formatting
 	}
 	switch (opcode) {
 	case DW_LNS_copy:
@@ -692,14 +710,27 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 	return buf;
 }
 
-static const ut8* r_bin_dwarf_parse_opcodes(const RBin *a, const ut8 *obuf,
+static void r_bin_dwarf_set_regs_default(const RBinDwarfLNPHeader *hdr, RBinDwarfSMRegisters *regs) {
+	regs->address = 0;
+	regs->file = 1;
+	regs->line = 1;
+	regs->column = 0;
+	regs->is_stmt = hdr->default_is_stmt;
+	regs->basic_block = DWARF_FALSE;
+	regs->end_sequence = DWARF_FALSE;
+	regs->prologue_end = DWARF_FALSE;
+	regs->epilogue_begin = DWARF_FALSE;
+	regs->isa = 0;
+}
+
+static size_t r_bin_dwarf_parse_opcodes(const RBin *a, const ut8 *obuf,
 		size_t len, const RBinDwarfLNPHeader *hdr,
 		RBinDwarfSMRegisters *regs, FILE *f, int mode) {
 	const ut8 *buf, *buf_end;
 	ut8 opcode, ext_opcode;
 
 	if (!a || !obuf || len < 8) {
-		return NULL;
+		return 0;
 	}
 	buf = obuf;
 	buf_end = obuf + len;
@@ -711,6 +742,7 @@ static const ut8* r_bin_dwarf_parse_opcodes(const RBin *a, const ut8 *obuf,
 			ext_opcode = *buf;
 			buf = r_bin_dwarf_parse_ext_opcode (a, buf, len, hdr, regs, f, mode);
 			if (!buf || ext_opcode == DW_LNE_end_sequence) {
+				r_bin_dwarf_set_regs_default (hdr, regs); // end_sequence should reset regs to default
 				break;
 			}
 		} else if (opcode >= hdr->opcode_base) {
@@ -720,62 +752,78 @@ static const ut8* r_bin_dwarf_parse_opcodes(const RBin *a, const ut8 *obuf,
 		}
 		len = (int)(buf_end - buf);
 	}
-	return buf;
+	if (f) {
+		fprintf (f, "\n"); // formatting of the output
+	}
+	return (size_t) (buf - obuf); // number of bytes we've moved by
 }
 
-static void r_bin_dwarf_set_regs_default(const RBinDwarfLNPHeader *hdr, RBinDwarfSMRegisters *regs) {
-	regs->address = 0;
-	regs->file = 1;
-	regs->line = 1;
-	regs->column = 0;
-	regs->is_stmt = hdr->default_is_stmt;
-	regs->basic_block = DWARF_FALSE;
-	regs->end_sequence = DWARF_FALSE;
-}
-
-R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
+// Is it problem to rename to raw? I don't know why its raw2
+R_API int r_bin_dwarf_parse_line_raw(const RBin *a, const ut8 *obuf,
 				       size_t len, int mode) {
-	RBinDwarfLNPHeader hdr = {{0}};
-	const ut8 *buf = NULL, *buf_tmp = NULL, *buf_end = NULL;
-	RBinDwarfSMRegisters regs;
-	size_t tmplen;
-	FILE *f = NULL;
 	RBinFile *binfile = a ? a->cur : NULL;
-
 	if (!binfile || !obuf) {
 		return false;
 	}
+	FILE *f = NULL;
 	if (mode == R_MODE_PRINT) {
 		f = stdout;
+		fprintf (f, "Raw dump of debug contents of section .debug_line:\n\n");
 	}
-	buf = obuf;
-	buf_end = obuf + len;
-	while (buf + 1 < buf_end) {
-		buf_tmp = buf;
-		tmplen = buf_end - buf;
+	const ut8 *buf = obuf;
+	const ut8 *buf_end = obuf + len;
+	const ut8 *tmpbuf = NULL;
+	
+	RBinDwarfLNPHeader hdr = { { 0 } };
+	size_t buf_size;
+
+	// each iteration we read one header AKA comp. unit
+	while (buf <= buf_end) {
+		// How much did we read from the compilation unit
+		size_t bytes_read = 0;
+		// calculate how much we've read by parsing header
+		// because header unit_length includes itself
+		tmpbuf = buf;
 		buf = r_bin_dwarf_parse_lnp_header (a->cur, buf, buf_end, &hdr, f, mode);
+		if (f) {
+			fprintf (f, " Line Number Statements:\n");
+		}
+		bytes_read = buf - tmpbuf;
+
+		buf_size = buf_end - buf;
 		if (!buf) {
 			return false;
 		}
+
+		RBinDwarfSMRegisters regs;
 		r_bin_dwarf_set_regs_default (&hdr, &regs);
-		ut64 unit_length;
-		if (hdr.unit_length.part1 == DWARF_INIT_LEN_64) {
-			unit_length = hdr.unit_length.part2 + 4;
-		} else {
-			unit_length = hdr.unit_length.part1 + 4;
-		}
-		tmplen = R_MIN (tmplen, unit_length);
-		if (tmplen < 1) {
-			r_bin_dwarf_header_fini (&hdr);
-			break;
-		}
-		if (!r_bin_dwarf_parse_opcodes (a, buf, tmplen, &hdr, &regs, f, mode)) {
-			r_bin_dwarf_header_fini (&hdr);
-			break;
+
+		ut64 unit_length = (hdr.unit_length.part1 == DWARF_INIT_LEN_64) ? 
+					hdr.unit_length.part2 + 4 : hdr.unit_length.part1 + 4;
+
+		// If there is more bytes in the buffer than size of the header
+		// It means that there has to be another header/comp.unit
+		if (buf_size > unit_length) {
+			buf_size = unit_length;
 		}
 
+		// this deals with a case that there is compilation unit with any line information
+		if (buf_size == bytes_read) { 
+			if (f) {
+				fprintf(f, " Line table is present, but no lines present\n");
+			}
+			r_bin_dwarf_header_fini (&hdr);
+			continue;
+		}
+		// we read the whole compilation unit (that might be composed of more sequences)
+		do {
+			// reads one whole sequence
+			size_t tmp_read = r_bin_dwarf_parse_opcodes (a, buf, buf_size, &hdr, &regs, f, mode);
+			bytes_read += tmp_read;
+			buf += tmp_read; // Move in the buffer forward
+		} while (bytes_read < buf_size);
+
 		r_bin_dwarf_header_fini (&hdr);
-		buf = buf_tmp + tmplen;
 	}
 	return true;
 }
@@ -1683,11 +1731,13 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 			free (buf);
 			return NULL;
 		}
-		r_bin_dwarf_parse_line_raw2 (a, buf, len, mode);
+		// Actually parse the section
+		r_bin_dwarf_parse_line_raw (a, buf, len, mode);
 		// k bin/cur/addrinfo/*
 		SdbListIter *iter;
 		SdbKv *kv;
 		SdbList *ls = sdb_foreach_list (binfile->sdb_addrinfo, false);
+		// Use the parsed information from _raw and transform it to more useful format
 		ls_foreach (ls, iter, kv) {
 			if (!strncmp (sdbkv_key (kv), "0x", 2)) {
 				ut64 addr;

@@ -58,8 +58,8 @@ NAME=woE woD rc4
 FILE=-
 CMDS=<<EOF
 w helloworld
-woE rc4 key
-woD rc4 key
+woE rc4 s:key
+woD rc4 s:key
 ps
 EOF
 EXPECT=<<EOF
@@ -71,8 +71,8 @@ NAME=woE woD xor
 FILE=-
 CMDS=<<EOF
 w helloworld
-woE xor key
-woD xor key
+woE xor s:key
+woD xor s:key
 ps
 EOF
 EXPECT=<<EOF
@@ -80,12 +80,24 @@ helloworld
 EOF
 RUN
 
+NAME=woE woD xor fix value
+FILE=-
+CMDS=<<EOF
+b 20
+woE xor s:helloworld
+ps
+EOF
+EXPECT=<<EOF
+helloworldhelloworld
+EOF
+RUN
+
 NAME=woE woD blowfish
 FILE=-
 CMDS=<<EOF
 w helloworld
-woE blowfish key
-woD blowfish key
+woE blowfish s:key
+woD blowfish s:key
 ps
 EOF
 EXPECT=<<EOF
@@ -97,8 +109,8 @@ NAME=woE woD aes-ecb
 FILE=-
 CMDS=<<EOF
 w helloworld
-woE aes-ecb key
-woD aes-ecb key
+woE aes-ecb s:0123456789abcdef
+woD aes-ecb s:0123456789abcdef
 ps
 EOF
 EXPECT=<<EOF

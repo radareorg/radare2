@@ -1450,7 +1450,7 @@ static void r_print_format_num(const RPrint *p, int endian, int mode, const char
 	if (MUSTSET) {
 		p->cb_printf ("wv%d %s @ 0x%08"PFMT64x"\n", bytes, setval, seeki+((elem>=0)?elem*(bytes):0));
 	} else if ((mode & R_PRINT_DOT) || MUSTSEESTRUCT) {
-		p->cb_printf ("%"PFMT64u, addr);
+		r_print_format_num_specifier (p, addr, bytes, sign);
 	} else if (MUSTSEE) {
 		if (!SEEVALUE && !ISQUIET) {
 			p->cb_printf ("0x%08"PFMT64x" = ", seeki + ((elem >= 0)? elem * bytes: 0));
@@ -1824,7 +1824,7 @@ static char *get_args_offset(const char *arg) {
 	return args;
 }
 
-static char *get_format_type(const char fmt) {
+static char *get_format_type(const char fmt, const char arg) {
 	char *type = NULL;
 	switch (fmt) {
 	case 'b':
@@ -1868,6 +1868,24 @@ static char *get_format_type(const char fmt) {
 	case 'z':
 	case 'Z':
 		type = strdup ("char*");
+		break;
+	case 'n':
+	case 'N':
+		switch (arg) {
+		case '1':
+			type = strdup (fmt == 'n' ? "int8_t" : "uint8_t");
+			break;
+		case '2':
+			type = strdup (fmt == 'n' ? "int16_t" : "uint16_t");
+			break;
+		case '4':
+			type = strdup (fmt == 'n' ? "int32_t" : "uint32_t");
+			break;
+		case '8':
+			type = strdup (fmt == 'n' ? "int64_t" : "uint64_t");
+			break;
+		}
+		break;
 	}
 	return type;
 }
@@ -2309,7 +2327,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 
 			/* c struct */
 			if (MUSTSEESTRUCT) {
-				char *type = get_format_type (tmp);
+				char *type = get_format_type (tmp, (tmp == 'n' || tmp == 'N') ? arg[1] : 0);
 				if (type) {
 					p->cb_printf ("%*c%s %s; // ", ident, ' ', type, fieldname);
 				} else {

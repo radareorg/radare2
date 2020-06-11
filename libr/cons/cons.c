@@ -541,6 +541,7 @@ R_API RCons *r_cons_new() {
 	I.num = NULL;
 	I.null = 0;
 #if __WINDOWS__
+	I.old_cp = GetConsoleOutputCP ();
 	I.vtmode = r_cons_is_vtcompat ();
 #else
 	I.vtmode = 2;
@@ -578,6 +579,11 @@ R_API RCons *r_cons_new() {
 R_API RCons *r_cons_free() {
 #if __WINDOWS__
 	r_cons_enable_mouse (false);
+	if (I.old_cp) {
+		(void)SetConsoleOutputCP (I.old_cp);
+		// chcp doesn't pick up the code page switch for some reason
+		(void)r_sys_cmdf ("chcp %u > NUL", I.old_cp);
+	}
 #endif
 	I.refcnt--;
 	if (I.refcnt != 0) {

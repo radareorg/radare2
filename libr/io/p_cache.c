@@ -192,7 +192,7 @@ static void __riocache_free(void *user) {
 	free (cache);
 }
 
-static int __desc_cache_list_cb(void *user, const char *k, const char *v) {
+static bool __desc_cache_list_cb(void *user, const char *k, const char *v) {
 	RList *writes = (RList *)user;
 	RIODescCache *dcache;
 	RIOCache *cache = NULL;
@@ -275,7 +275,7 @@ R_API RList *r_io_desc_cache_list(RIODesc *desc) {
 	return writes;
 }
 
-static int __desc_cache_commit_cb(void *user, const char *k, const char *v) {
+static bool __desc_cache_commit_cb(void *user, const char *k, const char *v) {
 	RIODesc *desc = (RIODesc *)user;
 	ut64 blockaddr;
 	int byteaddr, i;
@@ -323,7 +323,7 @@ R_API bool r_io_desc_cache_commit(RIODesc *desc) {
 	return true;
 }
 
-static int __desc_cache_cleanup_cb(void *user, const char *k, const char *v) {
+static bool __desc_cache_cleanup_cb(void *user, const char *k, const char *v) {
 	RIODesc *desc = (RIODesc *)user;
 	RIODescCache *cache;
 	ut64 size, blockaddr;
@@ -353,7 +353,7 @@ R_API void r_io_desc_cache_cleanup(RIODesc *desc) {
 	}
 }
 
-static int __desc_cache_free_cb(void *user, const char* k, const char *v) {
+static bool __desc_cache_free_cb(void *user, const char* k, const char *v) {
 	RIODescCache *cache = (RIODescCache *)(size_t)sdb_atoi (v);
 	free (cache);
 	return true;

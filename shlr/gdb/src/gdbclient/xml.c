@@ -226,14 +226,16 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 			_write_flag_bits (flag_bits, tmpflag);
 		}
 		packed_size = 0;
-		if (tmpreg->size >= 8 && (strstr (tmpreg->type, "fpu") ||
-			  strstr (tmpreg->type, "mmx") || strstr (tmpreg->type, "xmm") ||
-			  strstr (tmpreg->type, "ymm"))) {
-			packed_size = tmpreg->size;
+		if (tmpreg->size >= 64 &&
+			(strstr (tmpreg->type, "fpu") ||
+				strstr (tmpreg->type, "mmx") ||
+				strstr (tmpreg->type, "xmm") ||
+				strstr (tmpreg->type, "ymm"))) {
+			packed_size = tmpreg->size / 8;
 		}
 		profile_len += snprintf (profile + profile_len, 128,
-			"%s\t%s\t.%u\t%" PFMT64d "\t%d\t%s\n", tmpreg->type,
-			tmpreg->name, tmpreg->size * 8, regoff,
+			"%s\t%s\t.%u\t.%" PFMT64d "\t%d\t%s\n", tmpreg->type,
+			tmpreg->name, tmpreg->size, regoff,
 			packed_size,
 			flag_bits);
 		// TODO write flag subregisters
@@ -249,7 +251,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 				}
 				profile_len += snprintf (profile + profile_len, 128, "gpr\t%s\t"
 							".%u\t.%"PFMT64d"\t0\n", tmpflag->fields[i].name,
-							tmpflag->fields[i].sz, tmpflag->fields[i].bit_num + (regoff * 8));
+							tmpflag->fields[i].sz, tmpflag->fields[i].bit_num + regoff);
 			}
 		}
 		regnum++;
@@ -560,7 +562,7 @@ static int _resolve_arch(libgdbr_t *g, char *xml_data) {
 			g->target.arch = R_SYS_ARCH_X86;
 			g->target.bits = 64;
 		} else {
-			eprintf ("Unknown architecture parsing XML (%s)\n", xml_data);
+			eprintf ("Warning: Unknown architecture parsing XML (%s)\n", xml_data);
 		}
 	}
 	return 0;
@@ -821,7 +823,8 @@ static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias) {
 				regtype = "seg";
 			}
 			// We need type information in r2 register profiles
-		} else if ((tmp1 = strstr (regstr, "type="))) {
+		}
+		if ((tmp1 = strstr (regstr, "type="))) {
 			tmp1 += 6;
 			if (r_str_startswith (tmp1, "vec")
 			    || r_str_startswith (tmp1, "i387_ext")
@@ -869,7 +872,7 @@ static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias) {
 		regname[regname_len] = '"';
 		strncpy (tmpreg->type, regtype, sizeof (tmpreg->type) - 1);
 		tmpreg->type[sizeof (tmpreg->type) - 1] = '\0';
-		tmpreg->size = regsize / 8;
+		tmpreg->size = regsize;
 		tmpreg->flagnum = flagnum;
 		if (regnum == UINT32_MAX) {
 			r_list_push (regs, tmpreg);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2018 - condret, pancake */
+/* radare - LGPL - Copyright 2012-2020 - condret, pancake */
 
 #include <r_util.h>
 #include <r_types.h>
@@ -12,28 +12,30 @@ static void str_op(char *c) {
 }
 
 static int gb_reg_idx (char r) {
-	const char *rstr = "bcdehla";
+	const char *rstr = "bcdehl a";
 	const char *ptr = strchr (rstr, r);
-	return ptr?(int)(size_t)(ptr-rstr):-1;
+	return ptr ? (int)(size_t)(ptr - rstr) : -1;
 }
 
 static bool gb_parse_cb1 (ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
+// minlen varries between 4 and 6
 	int i;
+	size_t j;
 	if (strlen (buf_asm) < minlen || minlen < 1) {
 		return false;
 	}
 	buf[0] = base;
 	char *ptr_asm = buf_asm + minlen - 1;
-	i = strlen (ptr_asm);
-	r_str_replace_in (ptr_asm, (ut32)i, "[ ", "[", true);
-	r_str_replace_in (ptr_asm, (ut32)i, " ]", "]", true);
+	j = strlen (ptr_asm);
+	r_str_replace_in (ptr_asm, (ut32)j, "[ ", "[", true);
+	r_str_replace_in (ptr_asm, (ut32)j, " ]", "]", true);
 	r_str_do_until_token (str_op, buf_asm, ' ');
 	i = gb_reg_idx (buf_asm[minlen - 1]);
 	if (i != (-1)) {
 		buf[0] |= (ut8)i;
 		return true;
 	}
-	if (!strncmp (buf_asm, "[hl]", 4)) {
+	if (!strncmp (&buf_asm[minlen - 1], "[hl]", 4)) {
 		buf[0] |= 6;
 		return true;
 	}
@@ -123,17 +125,25 @@ static bool gb_parse_ld1 (ut8 *buf, const int minlen, char *buf_asm) {
 			return false;
 		}
 		buf[0] = (ut8)(0x40 + (i * 8));
-		if ((i = gb_reg_idx (buf_asm[5])) == (-1)) {
-			return false;
+		i = gb_reg_idx (buf_asm[5]);
+		if (i == -1) {
+			if (strncmp (buf_asm + 5, "[hl]", 4)) {
+				return false;
+			}
+			i = 6;
 		}
 		buf[0] |= (ut8)i;
-	} else if (!strncmp (buf_asm + 3, "[hl],", 5)) {
+		return true;
+	}
+	if (!strncmp (buf_asm + 3, "[hl],", 5)) {
 		if ((i = gb_reg_idx (buf_asm[8])) == (-1)) {
+			//'ld [hl], [hl]' does not exist
 			return false;
 		}
 		buf[0] = 0x70 | (ut8)i;
+		return true;
 	}
-	return true;
+	return false;
 }
 
 static bool gb_parse_ld2 (ut8 *buf, char *buf_asm) {
@@ -159,10 +169,43 @@ static bool gb_parse_ld2 (ut8 *buf, char *buf_asm) {
 	return false;
 }
 
+static bool gb_parse_ld3 (ut8 *buf, char *buf_asm) {
+	if (strlen (buf_asm) < 7) {
+		return false;
+	}
+	if (buf_asm[5] != ',') {
+		return false;
+	}
+
+	const ut16 reg = (buf_asm[3] << 8) | buf_asm[4];
+	switch (reg) {
+	case 0x6263:	//bc
+		buf[0] = 0x01;
+		break;
+	case 0x6465:	//de
+		buf[0] = 0x11;
+		break;
+	case 0x686c:	//hl
+		buf[0] = 0x21;
+		break;
+	case 0x7370:	//sp
+		buf[0] = 0x31;
+		break;
+	default:
+		return false;
+	}
+
+	const ut64 num = r_num_get (NULL, buf_asm + 6);
+	buf[1] = num & 0xff;
+	buf[2] = (num & 0xff00) >> 8;
+	return true;
+}
+
 static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
-	int mn_len, i, len = 1;
+	int mn_len, j, len = 1;
 	ut32 mn = 0;
 	ut64 num;
+	size_t i;
 	if (!a || !op || !buf) {
 		return 0;
 	}
@@ -178,8 +221,8 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 	if (mn_len < 2 || mn_len > 4) {
 		return 0;
 	}
-	for (i = 0; i < mn_len; i++) {
-		mn = (mn << 8) | buf_asm[i];
+	for (j = 0; j < mn_len; j++) {
+		mn = (mn << 8) | buf_asm[j];
 	}
 	switch (mn) {
 	case 0x6e6f70: //nop
@@ -367,10 +410,16 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 		opbuf[0] = 0xfb;
 		break;
 	case 0x6c64: //ld
+		i = strlen (buf_asm);
+		r_str_replace_in (buf_asm, (ut32)i, "[ ", "[", true);
+		r_str_replace_in (buf_asm, (ut32)i, " ]", "]", true);
 		if (!gb_parse_ld1 (opbuf, 6, buf_asm)) {
 			len++;
 			if (!gb_parse_ld2 (opbuf, buf_asm)) {
-				len = 0;
+				len++;
+				if (!gb_parse_ld3 (opbuf, buf_asm)) {
+					len = 0;
+				}
 			}
 		}
 		break;
@@ -515,7 +564,7 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 		{
 			char *p = strchr (buf_asm, (int)',');
 			if (!p) {
-				num = r_num_get (NULL, &buf_asm[3]);
+				num = r_num_get (NULL, buf_asm + 4);
 				len = 3;
 				opbuf[0] = 0xcd;
 				opbuf[1] = (ut8)(num & 0xff);
@@ -524,17 +573,21 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 				str_op (p-2);
 				str_op (p-1);
 				if (*(p-2) == 'n') {
-					if (*(p-1) == 'z')
+					if (*(p - 1) == 'z') {
 						opbuf[0] = 0xc4;
-					else if (*(p-1) == 'c')
+					} else if (*(p - 1) == 'c') {
 						opbuf[0] = 0xd4;
-					else	return op->size = 0;
-				} else if (*(p-2) == ' ') {
-					if (*(p-1) == 'z')
+					} else {
+						return op->size = 0;
+					}
+				} else if (*(p - 2) == ' ') {
+					if (*(p - 1) == 'z') {
 						opbuf[0] = 0xcc;
-					else if (*(p-1) == 'c')
+					} else if (*(p-1) == 'c') {
 						opbuf[0] = 0xdc;
-					else	return op->size = 0;
+					} else {
+						return op->size = 0;
+					}
 				} else {
 					return op->size = 0;
 				}

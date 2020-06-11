@@ -282,7 +282,8 @@ typedef struct r_anal_function_t {
 	ut64 addr;
 	RPVector vars;
 	HtUP/*<st64, RPVector<RAnalVar *>>*/ *inst_vars; // offset of instructions => the variables they access
-	int stack; //stack frame size
+	st64 bp_off; // offset of bp inside owned stack frame
+	st64 stack;  // stack frame size
 	int maxstack;
 	int ninstr;
 	bool folded;
@@ -557,6 +558,7 @@ typedef struct r_anal_options_t {
 	int depth;
 	int graph_depth;
 	bool vars; //analyze local var and arguments
+	bool varname_stack; // name vars based on their offset in the stack
 	int cjmpref;
 	int jmpref;
 	int jmpabove;
@@ -768,8 +770,9 @@ typedef enum {
 } RAnalVarAccessType;
 
 typedef struct r_anal_var_access_t {
+	const char *reg; // register used for access
 	st64 offset; // relative to the function's entrypoint
-	st64 stackptr;
+	st64 stackptr; // delta added to register to get the var, e.g. [rbp - 0x10]
 	ut8 type; // RAnalVarAccessType bits
 } RAnalVarAccess;
 
@@ -1588,7 +1591,7 @@ R_API int r_anal_fcn_var_del_byindex (RAnal *a, ut64 fna, const char kind, int s
 R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type);
 
 /* vars // globals. not here  */
-R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *type);
+R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var);
 
 R_API int r_anal_function_complexity(RAnalFunction *fcn);
 R_API int r_anal_function_loops(RAnalFunction *fcn);
@@ -1635,6 +1638,7 @@ R_API void r_anal_function_delete_vars_by_kind(RAnalFunction *fcn, RAnalVarKind 
 R_API void r_anal_function_delete_all_vars(RAnalFunction *fcn);
 R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn);
 R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, st64 delta, ut64 addr);
+R_API const char *r_anal_function_get_var_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr);
 R_API R_BORROW RPVector *r_anal_function_get_vars_used_at(RAnalFunction *fcn, ut64 op_addr);
 
 // There could be multiple vars used in multiple functions. Use r_anal_get_functions_in()+r_anal_function_get_vars_used_at() instead.
@@ -1644,7 +1648,7 @@ R_API bool r_anal_var_rename(RAnalVar *var, const char *new_name, bool verbose);
 R_API void r_anal_var_set_type(RAnalVar *var, const char *type);
 R_API void r_anal_var_delete(RAnalVar *var);
 R_API ut64 r_anal_var_addr(RAnalVar *var);
-R_API void r_anal_var_set_access(RAnalVar *var, ut64 access_addr, int access_type, st64 stackptr);
+R_API void r_anal_var_set_access(RAnalVar *var, const char *reg, ut64 access_addr, int access_type, st64 stackptr);
 R_API void r_anal_var_clear_accesses(RAnalVar *var);
 
 // Get the access to var at exactly addr if there is one

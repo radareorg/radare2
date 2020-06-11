@@ -580,7 +580,7 @@ static const char *help_msg_ah[] = {
 	"ahf", " 0x804840", "override fallback address for call",
 	"ahF", " 0x10", "set stackframe size at current offset",
 	"ahh", " 0x804840", "highlight this address offset in disasm",
-	"ahi", "[?] 10", "define numeric base for immediates (1, 8, 10, 16, s)",
+	"ahi", "[?] 10", "define numeric base for immediates (2, 8, 10, 10u, 16, i, p, S, s)",
 	"ahj", "", "list hints in JSON",
 	"aho", " call", "change opcode type (see aho?) (deprecated, moved to \"ahd\")",
 	"ahp", " addr", "set pointer hint",
@@ -593,14 +593,15 @@ static const char *help_msg_ah[] = {
 };
 
 static const char *help_msg_ahi[] = {
-	"Usage:", "ahi [sbodh] [@ offset]", " Define numeric base",
-	"ahi", " [base]", "set numeric base (1, 2, 8, 10, 16)",
+	"Usage:", "ahi [2|8|10|10u|16|bodhipSs] [@ offset]", " Define numeric base",
+	"ahi", " <base>", "set numeric base (2, 8, 10, 16)",
+	"ahi", " 10|d", "set base to signed decimal (10), sign bit should depend on receiver size",
+	"ahi", " 10u|du", "set base to unsigned decimal (11)",
 	"ahi", " b", "set base to binary (2)",
-	"ahi", " d", "set base to decimal (10)",
-	"ahi", " h", "set base to hexadecimal (16)",
 	"ahi", " o", "set base to octal (8)",
-	"ahi", " p", "set base to htons(port) (3)",
+	"ahi", " h", "set base to hexadecimal (16)",
 	"ahi", " i", "set base to IP address (32)",
+	"ahi", " p", "set base to htons(port) (3)",
 	"ahi", " S", "set base to syscall (80)",
 	"ahi", " s", "set base to string (1)",
 	NULL
@@ -787,9 +788,9 @@ static int cmpaddr (const void *_a, const void *_b) {
 	return (a->addr > b->addr)? 1: (a->addr <b->addr)? -1: 0;
 }
 
-static int listOpDescriptions(void *_core, const char *k, const char *v) {
+static bool listOpDescriptions(void *_core, const char *k, const char *v) {
         r_cons_printf ("%s=%s\n", k, v);
-        return 1;
+        return true;
 }
 
 /* better aac for windows-x86-32 */
@@ -918,11 +919,11 @@ static void type_cmd(RCore *core, const char *input) {
 	r_cons_break_pop ();
 }
 
-static int cc_print(void *p, const char *k, const char *v) {
+static bool cc_print(void *p, const char *k, const char *v) {
 	if (!strcmp (v, "cc")) {
 		r_cons_println (k);
 	}
-	return 1;
+	return true;
 }
 
 static void find_refs(RCore *core, const char *glob) {
@@ -1303,6 +1304,7 @@ static int var_cmd(RCore *core, const char *str) {
 			r_list_foreach (list, iter, v) {
 				r_cons_printf ("%s\n", v->name);
 			}
+			r_list_free (list);
 		}
 		return true;
 	case 'd': // "afvd"
@@ -1320,7 +1322,7 @@ static int var_cmd(RCore *core, const char *str) {
 				free (ostr);
 				return false;
 			}
-			r_anal_var_display (core->anal, v1->delta, v1->kind, v1->type);
+			r_anal_var_display (core->anal, v1);
 			free (ostr);
 		} else {
 			RListIter *iter;
@@ -1402,6 +1404,7 @@ static int var_cmd(RCore *core, const char *str) {
 				char *name = r_str_trim_dup (str + 2);
 				if (name) {
 					var = r_anal_function_get_var_byname (fcn, name);
+					r_free (name);
 				}
 			}
 			if (var) {
@@ -1438,7 +1441,10 @@ static int var_cmd(RCore *core, const char *str) {
 			}
 			int rw = (str[1] == 'g') ? R_ANAL_VAR_ACCESS_TYPE_READ : R_ANAL_VAR_ACCESS_TYPE_WRITE;
 			int ptr = *var->type == 's' ? idx - fcn->maxstack : idx;
-			r_anal_var_set_access (var, addr, rw, ptr);
+			RAnalOp *op = r_core_anal_op (core, addr, 0);
+			const char *ireg = op ? op->ireg : NULL;
+			r_anal_var_set_access (var, ireg, addr, rw, ptr);
+			r_anal_op_free (op);
 		} else {
 			eprintf ("Missing argument\n");
 		}
@@ -1476,6 +1482,9 @@ static int var_cmd(RCore *core, const char *str) {
 			vartype = "int";
 		} else {
 			*vartype++ = 0;
+		}
+		if (type == 'b') {
+			delta -= fcn->bp_off;
 		}
 		if ((type == 'b') && delta > 0) {
 			isarg = true;
@@ -7386,7 +7395,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				r_list_foreach (refs, iter, refi) {
 					RFlagItem *f = r_flag_get_at (core->flags, refi->addr, true);
 					const char *name = f ? f->name: "";
-					if (input[2] == 'j') {
+					if (pj) {
 						pj_o (pj);
 						pj_ks (pj, "type", r_anal_xrefs_type_tostring(refi->type));
 						pj_kn (pj, "at", refi->at);
@@ -7398,16 +7407,14 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							r_anal_xrefs_type_tostring(refi->type), refi->at, refi->addr, name);
 					}
 				}
-				if (input[2] ==  'j') {
-					pj_end (pj);
-				}
 				if (pj) {
+					pj_end (pj);
 					r_cons_println (pj_string (pj));
-					pj_free (pj);
 				}
 			} else {
 				eprintf ("Cannot find any function\n");
 			}
+			pj_free (pj);
 		} else { // "axf"
 			RAsmOp asmop;
 			RList *list, *list_ = NULL;
@@ -7609,19 +7616,23 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		}
 		if (input[1] == ' ') {
 			// You can either specify immbase with letters, or numbers
-			const int base =
-				(input[2] == 's') ? 1 :
-				(input[2] == 'b') ? 2 :
-				(input[2] == 'p') ? 3 :
-				(input[2] == 'o') ? 8 :
-				(input[2] == 'd') ? 10 :
-				(input[2] == 'h') ? 16 :
-				(input[2] == 'i') ? 32 : // ip address
-				(input[2] == 'S') ? 80 : // syscall
-				(int) r_num_math (core->num, input + 1);
+			int base;
+			if (r_str_startswith (input + 2, "10u") || r_str_startswith (input + 2, "du")) {
+				base = 11;
+			} else {
+				base = (input[2] == 's') ? 1 :
+				       (input[2] == 'b') ? 2 :
+				       (input[2] == 'p') ? 3 :
+				       (input[2] == 'o') ? 8 :
+				       (input[2] == 'd') ? 10 :
+				       (input[2] == 'h') ? 16 :
+				       (input[2] == 'i') ? 32 : // ip address
+				       (input[2] == 'S') ? 80 : // syscall
+				       (int) r_num_math (core->num, input + 1);
+			}
 			r_anal_hint_set_immbase (core->anal, core->offset, base);
 		} else if (input[1] != '?' && input[1] != '-') {
-			eprintf ("|ERROR| Usage: ahi [base]\n");
+			eprintf ("|ERROR| Usage: ahi <base>\n");
 		}
 		break;
 	case 'h': // "ahh"

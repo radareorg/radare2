@@ -3,45 +3,81 @@
 #include <r_socket.h>
 #include <r_util.h>
 
-static int __socket_slurp (RSocket *s, ut8 *buf, int bufsz) {
-	int i;
-	int chsz = 1;
-	// r_socket_block_time (s, 1, 1, 0);
-	if (r_socket_read_block (s, (ut8 *) buf, 1) != 1) {
+#if __WINDOWS__
+#include <WinInet.h>
+#endif
+
+#define SOCKET_HTTP_MAX_HEADER_LENGTH 0x2000
+#define SOCKET_HTTP_MAX_REDIRECTS 5
+
+static size_t socket_slurp(RSocket *s, RBuffer *buf) {
+	size_t i;
+	if (r_socket_ready (s, 1, 0) != 1) {
 		return 0;
 	}
-	for (i = 1; i < bufsz; i += chsz) {
-		buf[i] =0;
-		r_socket_block_time (s, 1, 0, 1000);
-		int olen = r_socket_read_block (s, (ut8 *) buf + i , chsz);
-		if (olen != chsz) {
-			buf[i] = 0;
+	r_socket_block_time (s, 1, 0, 1000);
+	for (i = 0; i < SOCKET_HTTP_MAX_HEADER_LENGTH; i += 1) {
+		ut8 c;
+		int olen = r_socket_read_block (s, &c, 1);
+		if (olen != 1) {
+			r_buf_append_bytes (buf, (ut8 *)"", 1);
 			break;
 		}
+		r_buf_append_bytes (buf, &c, 1);
 	}
 	return i;
 }
 
-static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
+static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut32 redirections);
+
+static char *socket_http_answer(RSocket *s, int *code, int *rlen, ut32 redirections) {
 	r_return_val_if_fail (s, NULL);
 	const char *p;
-	int ret, len = 0, bufsz = 32768, delta = 0;
-	char *dn, *buf = calloc (1, bufsz + 32); // XXX: use r_buffer here
-	if (!buf) {
+	int ret, len = 0, delta = 0;
+	char *dn;
+	RBuffer *b = r_buf_new ();
+	if (!b) {
 		return NULL;
 	}
 	char *res = NULL;
-	int olen = __socket_slurp (s, (ut8*)buf, bufsz);
+	size_t olen = socket_slurp (s, b);
+	char *buf = malloc (olen + 1);
+	if (!buf) {
+		goto exit;
+	}
+	r_buf_read_at (b, 0, (ut8 *)buf, olen);
+	buf[olen] = 0;
 	if ((dn = (char*)r_str_casestr (buf, "\n\n"))) {
 		delta += 2;
 	} else if ((dn = (char*)r_str_casestr (buf, "\r\n\r\n"))) {
 		delta += 4;
 	} else {
-		goto fail;
+		goto exit;
 	}
 
 	olen -= delta;
 	*dn = 0; // chop headers
+
+	/* Follow redirects */
+	p = r_str_casestr (buf, "Location:");
+	if (p) {
+		if (!redirections) {
+			eprintf ("Too many redirects\n");
+			goto exit;
+		}
+		p += strlen ("Location:");
+		char *end_url = strchr (p, '\n');
+		if (end_url) {
+			int url_len = end_url - p;
+			char *url = r_str_ndup (p, url_len);
+			r_str_trim (url);
+			res = socket_http_get_recursive (url, code, rlen, --redirections);
+			free (url);
+			len = *rlen;
+		}
+		goto exit;
+	}
+
 	/* Parse Len */
 	p = r_str_casestr (buf, "Content-Length: ");
 	if (p) {
@@ -52,6 +88,10 @@ static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
 	if (len > 0) {
 		if (len > olen) {
 			res = malloc (len + 2);
+			if (!res) {
+				goto exit;
+			}
+			olen -= dn - buf;
 			memcpy (res, dn + delta, olen);
 			do {
 				ret = r_socket_read_block (s, (ut8*) res + olen, len - olen);
@@ -71,9 +111,9 @@ static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
 	} else {
 		res = NULL;
 	}
-fail:
+exit:
 	free (buf);
-// is 's' free'd? isn't this going to cause a double free?
+	r_buf_free (b);
 	r_socket_close (s);
 	if (rlen) {
 		*rlen = len;
@@ -81,37 +121,107 @@ fail:
 	return res;
 }
 
-R_API char *r_socket_http_get(const char *url, int *code, int *rlen) {
-	char *curl_env = r_sys_getenv ("R2_CURL");
-	if (curl_env && *curl_env) {
-		char *encoded_url = r_str_escape (url);
-		char *res = r_sys_cmd_strf ("curl '%s'", encoded_url);
-		free (encoded_url);
-		if (res) {
-			if (code) {
-				*code = 200;
-			}
-			if (rlen) {
-				*rlen = strlen (res);
-			}
-		}
-		free (curl_env);
-		return res;
+#if __WINDOWS__
+static char *http_get_w32(const char *url, int *code, int *rlen) {
+	HINTERNET hInternet = InternetOpenA ("radare2 "R2_VERSION, INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
+	if (!hInternet) {
+		r_sys_perror ("InternetOpenA");
+		return NULL;
 	}
-	free (curl_env);
-	RSocket *s;
-	int ssl = r_str_startswith (url, "https://");
-	char *response, *host, *path, *port = "80";
-	char *uri = strdup (url);
-	if (!uri) {
+	HINTERNET hOpenUrl = InternetOpenUrlA (hInternet, url, NULL, 0, 0, 0);
+	if (!hOpenUrl) {
+		r_sys_perror ("InternetOpenUrlA");
+		InternetCloseHandle (hInternet);
 		return NULL;
 	}
 
+	char *ret = NULL;
+	size_t read_sz = 0x100000;
+	DWORD r = 0, w = 0;
+	bool res = true;
+	do {
+		w += r;
+		if (!res && GetLastError () == ERROR_INSUFFICIENT_BUFFER) {
+			read_sz *= 2;
+		}
+		char *tmp = realloc (ret, read_sz + w);
+		if (!tmp) {
+			R_FREE (ret);
+			goto exit;
+		}
+		ret = tmp;
+	} while (!(res = InternetReadFile (hOpenUrl, ret + w, read_sz, &r)) || r);
+
+	if (w) {
+		char *tmp = realloc (ret, (size_t)w + 1);
+		if (tmp) {
+			ret = tmp;
+			ret[w] = 0;
+		} else {
+			R_FREE (ret);
+		}
+	} else {
+		R_FREE (ret);
+	}
+
+exit:
+	if (rlen) {
+		*rlen = w;
+	}
+	if (code && w) {
+		*code = 200;
+	}
+	InternetCloseHandle (hInternet);
+	InternetCloseHandle (hOpenUrl);
+	return ret;
+}
+#endif
+
+static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut32 redirections) {
 	if (code) {
 		*code = 0;
 	}
 	if (rlen) {
 		*rlen = 0;
+	}
+	char *curl_env = r_sys_getenv ("R2_CURL");
+	if (!R_STR_ISEMPTY (curl_env) && atoi (curl_env)) {
+		int len;
+		char *escaped_url = r_str_escape_sh (url);
+		char *command = r_str_newf ("curl -sfL -o - \"%s\"", escaped_url);
+		char *res = r_sys_cmd_str (command, NULL, &len);
+		free (escaped_url);
+		free (command);
+		free (curl_env);
+		if (!res) {
+			return NULL;
+		}
+		if (res) {
+			if (code) {
+				*code = 200;
+			}
+			if (rlen) {
+				*rlen = len;
+			}
+		}
+		return res;
+	}
+	free (curl_env);
+#if __WINDOWS__
+	return http_get_w32 (url, code, rlen);
+#else
+	RSocket *s;
+	int ssl = r_str_startswith (url, "https://");
+#if !HAVE_LIB_SSL
+	if (ssl) {
+		eprintf ("Tried to get '%s', but SSL support is disabled, set R2_CURL=1 to use curl\n", url);
+		return NULL;
+	}
+#endif
+	char *response, *host, *path, *port = "80";
+	char *uri = strdup (url);
+	if (!uri) {
+		return NULL;
 	}
 	host = strstr (uri, "://");
 	if (!host) {
@@ -147,7 +257,7 @@ R_API char *r_socket_http_get(const char *url, int *code, int *rlen) {
 				"Accept: */*\r\n"
 				"Host: %s:%s\r\n"
 				"\r\n", path, host, port);
-		response = r_socket_http_answer (s, code, rlen);
+		response = socket_http_answer (s, code, rlen, redirections);
 	} else {
 		eprintf ("Cannot connect to %s:%s\n", host, port);
 		response = NULL;
@@ -155,9 +265,14 @@ R_API char *r_socket_http_get(const char *url, int *code, int *rlen) {
 	free (uri);
 	r_socket_free (s);
 	return response;
+#endif
 }
 
-R_API char *r_socket_http_post (const char *url, const char *data, int *code, int *rlen) {
+R_API char *r_socket_http_get(const char *url, int *code, int *rlen) {
+	return socket_http_get_recursive (url, code, rlen, SOCKET_HTTP_MAX_REDIRECTS);
+}
+
+R_API char *r_socket_http_post(const char *url, const char *data, int *code, int *rlen) {
 	RSocket *s;
 	bool ssl = r_str_startswith (url, "https://");
 	char *uri = strdup (url);
@@ -206,7 +321,7 @@ R_API char *r_socket_http_post (const char *url, const char *data, int *code, in
 			"\r\n", path, host, (int)strlen (data));
 	free (uri);
 	r_socket_write (s, (void *)data, strlen (data));
-	return r_socket_http_answer (s, code, rlen);
+	return socket_http_answer (s, code, rlen, 0);
 }
 
 #if TEST

@@ -69,7 +69,7 @@ install:
   - ps: $env:DIST_FOLDER = "radare2-$env:builder-$env:R2_VERSION"
   - ps: $env:ARTIFACT_ZIP = "$env:DIST_FOLDER.zip"
   # Download required packages
-  - cmd: if defined BUILD_DIR ( %PYTHON%\python.exe -m pip install meson==0.54.0 )
+  - cmd: if defined BUILD_DIR ( %PYTHON%\python.exe -m pip install meson )
   - cmd: if defined NINJA_URL ( powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; wget %NINJA_URL% -OutFile ninja.zip" && unzip ninja.zip )
 
 # Build scripts

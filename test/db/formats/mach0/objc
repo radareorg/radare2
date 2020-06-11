@@ -53,3 +53,12 @@ EXPECT=<<EOF
 4
 EOF
 RUN
+
+NAME=objc categories (swift)
+FILE=bins/mach0/TestSwiftObjc
+CMDS=ic~ class
+EXPECT=<<EOF
+0x100003078 [0x100001ad0 - 0x100001ad0]      0 class 0 TestSwiftObjc.ThisIsASwiftClass(TEST)
+0x1000031e8 [0x100001d80 - 0x100001d80]      0 class 0 TestSwiftObjc.ThisIsASwiftClass :: NSObject
+EOF
+RUN

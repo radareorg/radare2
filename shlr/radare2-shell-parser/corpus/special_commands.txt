@@ -31,11 +31,21 @@ Environment variable command
 %
 %SHELL
 %TMPDIR=/tmp
+%SHELL;
+%TMPDIR=/tmp;
 
 ---
 
 (commands
   (arged_command (cmd_identifier))
+  (arged_command (cmd_identifier)
+    (args
+      (args (arg (arg_identifier)))))
+  (arged_command (cmd_identifier)
+    (args
+      (args (arg (arg_identifier)))
+      (arg_identifier)
+      (args (arg (arg_identifier)))))
   (arged_command (cmd_identifier)
     (args
       (args (arg (arg_identifier)))))

@@ -11,7 +11,7 @@ LINK=-lm
 endif
 endif
 
-OBJS=binheap.o mem.o unum.o str.o hex.o file.o range.o tinyrange.o
+OBJS=binheap.o mem.o unum.o str.o hex.o file.o range.o
 OBJS+=prof.o cache.o sys.o buf.o w32-sys.o ubase64.o base85.o base91.o
 OBJS+=list.o flist.o chmod.o graph.o event.o alloc.o donut.o print_code.o
 OBJS+=regex/regcomp.o regex/regerror.o regex/regexec.o uleb128.o
@@ -23,6 +23,7 @@ OBJS+=udiff.o bdiff.o stack.o queue.o tree.o idpool.o assert.o
 OBJS+=punycode.o pkcs7.o x509.o asn1.o astr.o json_indent.o skiplist.o pj.o
 OBJS+=rbtree.o intervaltree.o qrcode.o vector.o str_constpool.o str_trim.o
 OBJS+=ascii_table.o protobuf.o
+OBJS+=annotated_code.o
 
 ifeq (${HAVE_LIB_GMP},1)
   OBJS+=big-gmp.o

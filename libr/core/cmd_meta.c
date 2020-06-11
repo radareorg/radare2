@@ -200,7 +200,7 @@ static ut64 filter_offset = UT64_MAX;
 static int filter_format = 0;
 static size_t filter_count = 0;
 
-static int print_addrinfo (void *user, const char *k, const char *v) {
+static bool print_addrinfo (void *user, const char *k, const char *v) {
 	ut64 offset = sdb_atoi (k);
 	if (!offset || offset == UT64_MAX) {
 		return true;

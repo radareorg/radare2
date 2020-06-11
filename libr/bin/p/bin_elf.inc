@@ -648,6 +648,16 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		 ////eprintf("TODO(eddyb): uninmplemented ELF/ARM reloc type %i\n", rel->type);
 		}
 		break;
+	case EM_AARCH64: switch (rel->type) {
+		case R_AARCH64_NONE: break;
+		case R_AARCH64_ABS32: ADD (32, 0);
+		case R_AARCH64_ABS16: ADD (16, 0);
+		case R_AARCH64_GLOB_DAT: SET (64);
+		case R_AARCH64_JUMP_SLOT: SET (64);
+		case R_AARCH64_RELATIVE: ADD (64, B);
+		default: break; // reg relocations
+		}
+		break;
 	default: break;
 	}
 

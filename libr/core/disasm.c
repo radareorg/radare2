@@ -975,8 +975,12 @@ static char *get_op_ireg (void *user, ut64 addr) {
 	return res;
 }
 
-static st64 get_ptr_at(void *user, RAnalFunction *fcn, st64 delta, ut64 addr) {
+static st64 get_ptr_at(RAnalFunction *fcn, st64 delta, ut64 addr) {
 	return r_anal_function_get_var_stackptr_at (fcn, delta, addr);
+}
+
+static const char *get_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr) {
+	return r_anal_function_get_var_reg_at (fcn, delta, addr);
 }
 
 static void ds_build_op_str(RDisasmState *ds, bool print_color) {
@@ -1013,6 +1017,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		RAnalFunction *f = fcnIn (ds, at, R_ANAL_FCN_TYPE_NULL);
 		core->parser->get_op_ireg = get_op_ireg;
 		core->parser->get_ptr_at = get_ptr_at;
+		core->parser->get_reg_at = get_reg_at;
 		r_parse_varsub (core->parser, f, at, ds->analop.size,
 			ds->opstr, ds->strsub, sizeof (ds->strsub));
 		if (*ds->strsub) {
@@ -1628,7 +1633,7 @@ static ut32 tmp_get_realsize (RAnalFunction *f) {
 }
 
 static void ds_show_functions_argvar(RDisasmState *ds, RAnalFunction *fcn, RAnalVar *var, const char *base, bool is_var, char sign) {
-	int delta = sign == '+' ? var->delta : -var->delta;
+	int delta = var->kind == 'b' ? R_ABS (var->delta + fcn->bp_off) : R_ABS (var->delta);
 	const char *pfx = is_var ? "var" : "arg", *constr = NULL;
 	RStrBuf *constr_buf = NULL;
 	bool cond = false;
@@ -1912,7 +1917,7 @@ static void ds_show_functions(RDisasmState *ds) {
 				r_cons_printf ("%s; ", COLOR_ARG (ds, color_func_var));
 				switch (var->kind) {
 				case R_ANAL_VAR_KIND_BPV: {
-					char sign = var->delta > 0 ? '+' : '-';
+					char sign = var->isarg || (-var->delta <= f->bp_off) ? '+' : '-';
 					bool is_var = !var->isarg;
 					ds_show_functions_argvar (ds, f, var,
 						anal->reg->name[R_REG_NAME_BP], is_var, sign);

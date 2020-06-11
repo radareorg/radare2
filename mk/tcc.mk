@@ -1,7 +1,7 @@
 CC=tcc
-RANLIB=ranlib
+RANLIB?=ranlib
 ONELIB=0
-AR=ar
+AR?=ar
 CC_AR=${AR} -r ${LIBAR}
 CC_LIB=${CC} -shared -o ${LIBSO}
 CFLAGS_INCLUDE=-I
