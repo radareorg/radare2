@@ -157,22 +157,6 @@ static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RL
 	return arg;
 }
 
-/* for debugging purpose */
-static void dump(RList *l) {
-	RListIter *it;
-	pyc_object *e = NULL;
-
-	r_list_foreach (l, it, e) {
-		if (e->type == TYPE_TUPLE) {
-			char *res = generic_array_obj_to_string (e->data);
-			eprintf ("[TYPE_TUPLE] %s\n", res);
-			free (res);
-			return;
-		}
-		eprintf ("[DATA] %s\n", (char *)e->data);
-	}
-}
-
 static char *generic_array_obj_to_string(RList *l) {
 	RListIter *iter = NULL;
 	pyc_object *e = NULL;
