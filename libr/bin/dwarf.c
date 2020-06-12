@@ -1729,24 +1729,26 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
  * @brief 
  * 
  * @param s  Sdb
- * @param obuf Start of the buffer
- * @param curr_unit 
+ * @param buf_start
+ * @param buf_end // buffer end for the comp unit
+ * @param unit 
  * @param abbrevs
  * @param offset Offset index to the start of the abbreviations for current comp unit
  * @param debug_str Start of the debug_string table
  * @param debug_str_len  Length of the debug_string table
  * @return const ut8* Shifted obuf
  */
-static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *sdb, const ut8 *obuf,
-		RBinDwarfCompUnit *curr_unit, const RBinDwarfDebugAbbrev *abbrevs,
+static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *sdb, const ut8 *buf_start,
+		RBinDwarfCompUnit *unit, const RBinDwarfDebugAbbrev *abbrevs,
 		size_t offset, const ut8 *debug_str, size_t debug_str_len) {
-	const ut8 *buf = obuf, *buf_end = obuf + (curr_unit->hdr.length - 7);
+	const ut8 *buf = buf_start;
+	const ut8* buf_end = buf_start + unit->hdr.length - unit->hdr.header_size;
 	ut64 abbr_code;
 	size_t i;
 
-	while (buf && buf < buf_end && buf >= obuf) {
-		if (curr_unit->length && curr_unit->capacity == curr_unit->length) { 
-			r_bin_dwarf_expand_cu (curr_unit);
+	while (buf && buf < buf_end && buf >= buf_start) {
+		if (unit->length && unit->capacity == unit->length) { 
+			r_bin_dwarf_expand_cu (unit);
 		}
 		// DIE starts with ULEB128 with the abbreviation code
 		buf = r_uleb128 (buf, buf_end - buf, &abbr_code);
@@ -1755,14 +1757,14 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *sdb, const ut8 *obuf,
 		if (abbr_code > abbrevs->length || !buf || buf >= buf_end) { 
 			return buf; // we finished, return the buffer to parse next compilation units
 		}
-		RBinDwarfDIE *curr_die = &curr_unit->dies[curr_unit->length];
+		RBinDwarfDIE *curr_die = &unit->dies[unit->length];
 		r_bin_dwarf_init_die (curr_die);
 
 		// there can be "null" entries for alignment padding purposes
 		// such entries have abbr_code == 0
 		if (!abbr_code) {
 			curr_die->abbrev_code = 0;
-			curr_unit->length++;
+			unit->length++;
 			continue;
 		}
 		abbr_code += offset;
@@ -1790,7 +1792,7 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *sdb, const ut8 *obuf,
 			buf = r_bin_dwarf_parse_attr_value (buf, buf_end - buf,
 					&curr_abbr->specs[i],
 					&curr_die->attr_values[i],
-					&curr_unit->hdr, debug_str, debug_str_len);
+					&unit->hdr, debug_str, debug_str_len);
 			
 			if (curr_die->attr_values[i].name == DW_AT_comp_dir) {
 				const char *name = curr_die->attr_values[i].encoding.str_struct.string;
@@ -1802,7 +1804,7 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *sdb, const ut8 *obuf,
 			}
 			curr_die->length++;
 		}
-		curr_unit->length++;
+		unit->length++;
 	}
 	return buf;
 }
@@ -1833,6 +1835,7 @@ static const ut8 *info_comp_unit_read_hdr(const ut8 *buf, const ut8 *buf_end, RB
 		hdr->length = READ64 (buf);
 		hdr->is_64bit = true;
 	}
+	const ut8 *tmp = buf; // to calculate header size
 	hdr->version = READ16 (buf);
 	if (hdr->version == 5) {
 		hdr->unit_type = READ8 (buf);
@@ -1864,22 +1867,21 @@ static const ut8 *info_comp_unit_read_hdr(const ut8 *buf, const ut8 *buf_end, RB
 		}
 		hdr->address_size = READ8 (buf);
 	}
-
-	// TODO we should also parse first Compilation Unit
-	// entry and store information about it here
-	// like  DW_AT_use_UTF8 etc.
+	hdr->header_size = buf - tmp; // header size excluding length field
 	return buf;
 }
 
-R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
+R_API int r_bin_dwarf_parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
 		const ut8 *obuf, size_t len,
 		const ut8 *debug_str, size_t debug_str_len, int mode) {
 
-	if (!da || !s || !obuf) {
+	if (!da || !sdb || !obuf) {
 		return false;
 	}
 	
-	const ut8 *buf = obuf, *buf_end = obuf + len;
+	const ut8 *buf = obuf;
+	const ut8 *buf_end = obuf + len;
+	const ut8 *buf_tmp = NULL;
 
 	RBinDwarfDebugInfo di = {0};
 	RBinDwarfDebugInfo *info = &di;
@@ -1906,6 +1908,7 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 		//
 
 		curr_unit->offset = buf - obuf;
+		buf_tmp = buf;
 		buf = info_comp_unit_read_hdr (buf, buf_end, &curr_unit->hdr);
 
 		if (curr_unit->hdr.length > len) {
@@ -1933,7 +1936,7 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 			}
 		}
 
-		buf = r_bin_dwarf_parse_comp_unit (s, buf, curr_unit, da, offset, debug_str, debug_str_len);
+		buf = r_bin_dwarf_parse_comp_unit (sdb, buf, curr_unit, da, offset, debug_str, debug_str_len);
 
 		if (!buf) {
 			ret = false;
@@ -2074,7 +2077,7 @@ R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode) {
 		}
 		ret = r_bin_dwarf_parse_info_raw (binfile->sdb_addrinfo, da, buf, len,
 				debug_str_buf, debug_str_len, mode);
-		R_FREE (debug_str_buf);
+		free (debug_str_buf);
 		free (buf);
 		return ret;
 	}

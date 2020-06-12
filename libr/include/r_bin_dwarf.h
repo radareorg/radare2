@@ -700,22 +700,23 @@ typedef struct {
 } RBinDwarfAttrValue;
 
 typedef struct {
-	// A 4-byte (or 8 byte for 64bit dwarf) unsigned integer representing the length of the .debug_info contribution 
+	// A 4-byte (or 8 byte for 64bit dwarf) unsigned integer representing the length of the .debug_info contribution
 	// for that compilation unit, not including the length field itself.
-	ut64	length;
+	ut64 length;
 	// A 2-byte unsigned integer representing the version of the DWARF information for that
 	// compilation unit. For DWARF Version 2, the value in this field is 2.
-	ut16	version;
+	ut16 version;
 	// A 4-byte unsigned offset into the .debug_abbrev section. This offset associates the
 	// compilation unit with a particular set of debugging information entry abbreviations
-	ut64	abbrev_offset;
+	ut64 abbrev_offset;
 	// A 1 - byte unsigned integer representing the size in bytes of an address on the target architecture.If the system uses segmented addressing, this value represents the size of the offset portion of an address.
-	ut8		address_size;
-	ut8 	unit_type; // DWARF 5 addition
-	ut8 	dwo_id; // DWARF 5 addition
-	ut64 	type_sig; // DWARF 5 addition
-	ut64 	type_offset; // DWARF 5 addition
-	bool	is_64bit;
+	ut8 address_size;
+	ut8 unit_type; // DWARF 5 addition
+	ut8 dwo_id; // DWARF 5 addition
+	ut64 type_sig; // DWARF 5 addition
+	ut64 type_offset; // DWARF 5 addition
+	ut64 header_size; // excluding length field
+	bool is_64bit;
 } RBinDwarfCompUnitHdr;
 
 typedef struct {
