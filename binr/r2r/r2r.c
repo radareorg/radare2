@@ -526,7 +526,7 @@ static void print_diff(const char *actual, const char *expected) {
 	char *uni = r_diff_buffers_to_string (d, (const ut8 *)expected, (int)strlen (expected), (const ut8 *)actual, (int)strlen (actual));
 	r_diff_free (d);
 
-	RList *lines = r_str_split_duplist (uni, "\n");
+	RList *lines = r_str_split_duplist (uni, "\n", false);
 	RListIter *it;
 	char *line;
 	bool header_found = false;

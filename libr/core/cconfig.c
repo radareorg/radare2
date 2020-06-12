@@ -2554,7 +2554,7 @@ static bool cb_dirpfx(RCore *core, RConfigNode *node) {
 static bool cb_anal_roregs(RCore *core, RConfigNode *node) {
 	if (core && core->anal && core->anal->reg) {
 		r_list_free (core->anal->reg->roregs);
-		core->anal->reg->roregs = r_str_split_duplist (node->value, ",");
+		core->anal->reg->roregs = r_str_split_duplist (node->value, ",", true);
 	}
 	return true;
 }
