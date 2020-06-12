@@ -1,11 +1,9 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2020 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_sign.h>
 #include <r_search.h>
-#include <r_util.h>
 #include <r_core.h>
-#include <r_hash.h>
 
 R_LIB_VERSION (r_sign);
 
@@ -1092,7 +1090,7 @@ typedef struct {
 	double infimum;
 } ClosestMatchData;
 
-static int closest_match_callback(void *a, const char *name, const char *value) {
+static bool closest_match_callback(void *a, const char *name, const char *value) {
 	ClosestMatchData *data = (ClosestMatchData *)a;
 
 	// get signature in usable format
@@ -1205,6 +1203,7 @@ R_API bool r_sign_diff(RAnal *a, RSignOptions *options, const char *other_space_
 	}
 	RList *lb = deserialize_sign_space (a, other_space);
 	if (!lb) {
+		r_list_free (la);
 		return false;
 	}
 

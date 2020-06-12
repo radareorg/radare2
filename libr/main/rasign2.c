@@ -139,11 +139,6 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 	}
 
-	// dump flirt
-	if (flirt) {
-		r_core_cmdf (core, "\"zfd %s\"", ifile);
-	}
-
 	// run analysis to find functions
 	find_functions (core, a_cnt);
 
