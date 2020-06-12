@@ -2667,6 +2667,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 	}
 	j = 0; // symbol_idx
 	bin->main_addr = 0;
+	int bits = MACH0_(get_bits_from_hdr) (&bin->hdr);
 	for (s = 0; s < 2; s++) {
 		switch (s) {
 		case 0:
@@ -2701,6 +2702,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			sym->vaddr = bin->symtab[i].n_value;
 			sym->paddr = addr_to_offset (bin, sym->vaddr);
 			symbols[j].size = 0; /* TODO: Is it anywhere? */
+			sym->bits = bin->symtab[i].n_desc & N_ARM_THUMB_DEF ? 16 : bits;
 
 			if (bin->symtab[i].n_type & N_EXT) {
 				sym->type = "EXT";
@@ -2835,6 +2837,7 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 	symbols_count = n_exports;
 	j = 0; // symbol_idx
 
+	int bits = MACH0_(get_bits_from_hdr) (&bin->hdr);
 	if (bin->symtab && bin->symstr) {
 		/* parse dynamic symbol table */
 		symbols_count = (bin->dysymtab.nextdefsym + \
@@ -2890,6 +2893,7 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 				symbols[j].offset = addr_to_offset (bin, bin->symtab[i].n_value);
 				symbols[j].addr = bin->symtab[i].n_value;
 				symbols[j].size = 0; /* TODO: Is it anywhere? */
+				symbols[j].bits = bin->symtab[i].n_desc & N_ARM_THUMB_DEF ? 16 : bits;
 				symbols[j].is_imported = false;
 				if (bin->symtab[i].n_type & N_EXT) {
 					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
