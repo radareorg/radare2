@@ -413,7 +413,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		} else if (!strcmp (name, "li")) {
 			esilprintf (op, "%s,%s,=", ARG (1), ARG (0));
 		} else if (!strcmp (name, "lui")) {
-			esilprintf (op, "%s0000,%s,=", ARG (1), ARG (0));
+			esilprintf (op, "%s000,%s,=", ARG (1), ARG (0));
 		}
 		// csr instrs
 		// <csr op> rd, rs1, CSR
@@ -469,9 +469,17 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		}
 		// jumps
 		else if (!strcmp (name, "jalr")) {
-			esilprintf (op, "%d,pc,+,%s,=,%s,%s,+,pc,=", op->size, ARG (0), ARG (2), ARG (1));
+			if (strcmp (ARG (0), "0")) {
+				esilprintf (op, "%d,$$,+,%s,=,%s,%s,+,pc,=", op->size, ARG (0), ARG (2), ARG (1));
+			} else {
+				esilprintf (op, "%s,%s,+,pc,=", ARG (2), ARG (1));
+			}
 		} else if (!strcmp (name, "jal")) {
-			esilprintf (op, "%d,pc,+,%s,=,%s,pc,+,pc,=", op->size, ARG (0), ARG (1));
+			if (strcmp (ARG (0), "0")) {
+				esilprintf (op, "%d,$$,+,%s,=,%s,pc,=", op->size, ARG (0), ARG (1));
+			} else {
+				esilprintf (op, "%s,pc,=", ARG (1));
+			}
 		} else if (!strcmp (name, "jr") || !strcmp (name, "j")) {
 			esilprintf (op, "%s,pc,=", ARG (0));
 		} else if (!strcmp (name, "ecall") || !strcmp (name, "ebreak")) {
@@ -479,9 +487,9 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		}
 		// Branches & cmps
 		else if (!strcmp (name, "beq")) {
-			esilprintf (op, "%s,%s,==,?{,%s,pc,=,},", ARG (1), ARG (0), ARG (2));
+			esilprintf (op, "%s,%s,==,$z,?{,%s,pc,=,},", ARG (1), ARG (0), ARG (2));
 		} else if (!strcmp (name, "bne")) {
-			esilprintf (op, "%s,%s,!=,?{,%s,pc,=,},", ARG (1), ARG (0), ARG (2));
+			esilprintf (op, "%s,%s,==,$z,!,?{,%s,pc,=,},", ARG (1), ARG (0), ARG (2));
 		} else if (!strcmp (name, "ble") || !strcmp (name, "bleu")) {
 			esilprintf (op, "%s,%s,<=,?{,%s,pc,=,},", ARG (1), ARG (0), ARG (2));
 		} else if (!strcmp (name, "blt") || !strcmp (name, "bltu")) {
@@ -491,9 +499,9 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		} else if (!strcmp (name, "bgt") || !strcmp (name, "bgtu")) {
 			esilprintf (op, "%s,%s,>,?{,%s,pc,=,},", ARG (1), ARG (0), ARG (2));
 		} else if (!strcmp (name, "beqz")) {
-			esilprintf (op, "%s,0,==,?{,%s,pc,=,},", ARG (0), ARG (1));
+			esilprintf (op, "%s,0,==,$z,?{,%s,pc,=,},", ARG (0), ARG (1));
 		} else if (!strcmp (name, "bnez")) {
-			esilprintf (op, "%s,0,!=,?{,%s,pc,=,},", ARG (0), ARG (1));
+			esilprintf (op, "%s,0,==,$z,!,?{,%s,pc,=,},", ARG (0), ARG (1));
 		} else if (!strcmp (name, "blez")) {
 			esilprintf (op, "%s,0,<=,?{,%s,pc,=,},", ARG (0), ARG (1));
 		} else if (!strcmp (name, "bltz")) {

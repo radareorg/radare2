@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2011-2019 - pancake */
+/* sdb - MIT - Copyright 2011-2020 - pancake */
 
 #include <signal.h>
 #include <stdio.h>
@@ -27,7 +27,7 @@ static void terminate(int sig UNUSED) {
 	exit (sig<2?sig:0);
 }
 
-static void write_null() {
+static void write_null(void) {
 	(void)write (1, "", 1);
 }
 
@@ -299,7 +299,7 @@ static int showversion(void) {
 	return 0;
 }
 
-static int jsonIndent() {
+static int jsonIndent(void) {
 	int len;
 	char *out;
 	char *in = stdin_slurp (&len);
@@ -317,7 +317,7 @@ static int jsonIndent() {
 	return 0;
 }
 
-static int base64encode() {
+static int base64encode(void) {
 	char *out;
 	int len = 0;
 	ut8 *in = (ut8 *) stdin_slurp (&len);
@@ -335,7 +335,7 @@ static int base64encode() {
 	return 0;
 }
 
-static int base64decode() {
+static int base64decode(void) {
 	ut8 *out;
 	int len, ret = 1;
 	char *in = (char *) stdin_slurp (&len);

@@ -6,6 +6,14 @@
 #define RO_META (1 << 0)
 #define MAX_CLASS_NAME_LEN 256
 
+#ifdef R_BIN_MACH064
+#define FAST_DATA_MASK 0x00007ffffffffff8UL
+#else
+#define FAST_DATA_MASK 0xfffffffcUL
+#endif
+
+#define RO_DATA_PTR(x) ((x) & FAST_DATA_MASK)
+
 struct MACH0_(SMethodList) {
 	ut32 entsize;
 	ut32 count;
@@ -1163,7 +1171,7 @@ void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, 
 			}
 		}
 	}
-	get_class_ro_t (c.data & ~0x3, bf, &is_meta_class, klass);
+	get_class_ro_t (RO_DATA_PTR (c.data), bf, &is_meta_class, klass);
 
 #if SWIFT_SUPPORT
 	if (q (c.data + n_value) & 7) {
@@ -1486,8 +1494,7 @@ void MACH0_(get_category_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, RSkipLis
 			R_FREE (category_name);
 			return;
 		}
-
-		mach0_ut name_field = ro_data + 3 * 4 + ptr_size;
+		mach0_ut name_field = RO_DATA_PTR (ro_data) + 3 * 4 + ptr_size;
 #ifdef R_BIN_MACH064
 		name_field += 4;
 #endif

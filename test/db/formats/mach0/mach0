@@ -136,6 +136,7 @@ RUN
 
 NAME=mach0 headers2
 FILE=bins/mach0/ired
+ARGS=-aarm -b32
 CMDS=iH
 EXPECT=<<EOF
 pf.mach0_header @ 0x00004000

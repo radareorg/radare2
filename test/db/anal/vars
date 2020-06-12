@@ -108,6 +108,8 @@ RUN
 NAME=Detect register args used only by callee
 FILE=-
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 afc=ms
 wx 40534883ec20418bd8e80a00000003c34883c4205bc3cccc2bca8bc1c3
 aa

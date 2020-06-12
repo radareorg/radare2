@@ -715,7 +715,7 @@ typedef struct {
 	ut8 min_inst_len;
 	ut8 max_ops_per_inst;
 	ut8 default_is_stmt;
-	char line_base;
+	st32 line_base;
 	ut8 line_range;
 	ut8 opcode_base;
 	ut8 *std_opcode_lengths;

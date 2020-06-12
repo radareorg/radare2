@@ -134,6 +134,7 @@ d "div byte [eax]" f630
 d "divsd xmm0, qword [eax]" f20f5e00
 d "divss xmm0, dword [eax]" f30f5e00
 d "emms" 0f77
+ad "endbr32" f30f1efb
 d "femms" 0f0e
 d "fxrstor [eax]" 0fae08
 d "fxsave [eax]" 0fae00

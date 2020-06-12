@@ -1,4 +1,15 @@
 NAME=got switch cases
+FILE=bins/elf/fedora_32_bin_ls
+CMDS=<<EOF
+aap
+aflc
+EOF
+EXPECT=<<EOF
+439
+EOF
+RUN
+
+NAME=got switch cases
 FILE=bins/elf/game_of_thrones
 CMDS=<<EOF
 s main
@@ -484,6 +495,49 @@ pd 1 @ 0x140001970
 EOF
 EXPECT=<<EOF
 |           0x140001970      e8d1040000     call sub.KERNEL32.dll_IsProcessorFeaturePresent ; BOOL IsProcessorFeaturePresent(DWORD ProcessorFeature)
+EOF
+RUN
+
+NAME=block takeover
+FILE=bins/elf/static-glibc-2.27
+CMDS=<<EOF
+e asm.comments=false
+e asm.var=false
+aac
+pdr @ 0x00487350
+EOF
+EXPECT=<<EOF
+/ 114: fcn.00487350 ();
+| 0x00487350      8b8710030000   mov eax, dword [rdi + 0x310]
+| 0x00487356      48b900000000.  movabs rcx, 0x200000000
+| 0x00487360      8d50ff         lea edx, [rax - 1]
+| 0x00487363      48b8ffffffff.  movabs rax, 0x3ffffffff
+| 0x0048736d      899710030000   mov dword [rdi + 0x310], edx
+| 0x00487373      482387100300.  and rax, qword [rdi + 0x310]
+| 0x0048737a      4839c8         cmp rax, rcx
+| 0x0048737d      7411           je 0x487390
+| ----------- true: 0x00487390  false: 0x0048737f
+| 0x0048737f      f605d2542300.  test byte [0x006bc858], 0x40
+| 0x00487386      7525           jne 0x4873ad
+| ----------- true: 0x004873ad  false: 0x00487388
+| 0x00487388      f3c3           ret
+
+| 0x00487390      8b05ea4d2300   mov eax, dword [0x006bc180]
+| 0x00487396      85c0           test eax, eax
+| 0x00487398      7426           je 0x4873c0
+| ----------- true: 0x004873c0  false: 0x0048739a
+| 0x0048739a      f605b7542300.  test byte [0x006bc858], 0x40
+| 0x004873a1      c705d54d2300.  mov dword [0x006bc180], 2
+| 0x004873ab      74db           je 0x487388
+| ----------- true: 0x00487388  false: 0x004873ad
+| 0x004873ad      488b7708       mov rsi, qword [rdi + 8]
+| 0x004873b1      488d3dd03502.  lea rdi, str.closing_file__s__direct_opencount__u
+| 0x004873b8      31c0           xor eax, eax
+| 0x004873ba      e9b16cffff     jmp fcn.0047e070
+| ----------- true: 0x0047e070
+| 0x004873c0      400fb6f6       movzx esi, sil
+\ 0x004873c4      e937f1ffff     jmp fcn.00486500
+| ----------- true: 0x00486500
 EOF
 RUN
 
@@ -3472,5 +3526,87 @@ af
 pdr~- case[2]
 EOF
 EXPECT=<<EOF
+EOF
+RUN
+
+NAME=lea pseudo improvements (pseudo disabled)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.comments=false
+e asm.pseudo=false
+wx 544889e5b40266b83333b85555444448b8bebafecaefbeadde4889d8488d03488b4308488d4308488d041b488d441b0a488d430a488d44240c488d450b488d45f5488d442404488d4508488d45f8
+aa
+pd 19
+EOF
+EXPECT=<<EOF
+/ 512: fcn.00000000 (int64_t arg_8h, int64_t arg_bh, int64_t arg_ch);
+|           ; var int64_t var_bh @ rbp-0xb
+|           ; var int64_t var_8h @ rbp-0x8
+|           ; arg int64_t arg_8h @ rbp+0x8
+|           ; arg int64_t arg_bh @ rbp+0xb
+|           ; var int64_t var_4h @ rsp+0x4
+|           ; arg int64_t arg_ch @ rsp+0xc
+|           0x00000000      54             push rsp
+|           0x00000001      4889e5         mov rbp, rsp
+|           0x00000004      b402           mov ah, 2
+|           0x00000006      66b83333       mov ax, 0x3333
+|           0x0000000a      b855554444     mov eax, 0x44445555
+|           0x0000000f      48b8bebafeca.  movabs rax, 0xdeadbeefcafebabe
+|           0x00000019      4889d8         mov rax, rbx
+|           0x0000001c      488d03         lea rax, [rbx]
+|           0x0000001f      488b4308       mov rax, qword [rbx + 8]
+|           0x00000023      488d4308       lea rax, [rbx + 8]
+|           0x00000027      488d041b       lea rax, [rbx + rbx]
+|           0x0000002b      488d441b0a     lea rax, [rbx + rbx + 0xa]
+|           0x00000030      488d430a       lea rax, [rbx + 0xa]
+|           0x00000034      488d44240c     lea rax, [arg_ch]
+|           0x00000039      488d450b       lea rax, [arg_bh]
+|           0x0000003d      488d45f5       lea rax, [var_bh]
+|           0x00000041      488d442404     lea rax, [var_4h]
+|           0x00000046      488d4508       lea rax, [arg_8h]
+|           0x0000004a      488d45f8       lea rax, [var_8h]
+EOF
+RUN
+
+NAME=lea pseudo improvements (pseudo enabled)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.comments=false
+e asm.pseudo=true
+wx 544889e5b40266b83333b85555444448b8bebafecaefbeadde4889d8488d03488b4308488d4308488d041b488d441b0a488d430a488d44240c488d450b488d45f5488d442404488d4508488d45f8
+aa
+pd 19
+EOF
+EXPECT=<<EOF
+/ 512: fcn.00000000 (int64_t arg_8h, int64_t arg_bh, int64_t arg_ch);
+|           ; var int64_t var_bh @ rbp-0xb
+|           ; var int64_t var_8h @ rbp-0x8
+|           ; arg int64_t arg_8h @ rbp+0x8
+|           ; arg int64_t arg_bh @ rbp+0xb
+|           ; var int64_t var_4h @ rsp+0x4
+|           ; arg int64_t arg_ch @ rsp+0xc
+|           0x00000000      54             push rsp
+|           0x00000001      4889e5         rbp = rsp
+|           0x00000004      b402           ah = 2
+|           0x00000006      66b83333       ax = 0x3333
+|           0x0000000a      b855554444     eax = 0x44445555
+|           0x0000000f      48b8bebafeca.  rax = 0xdeadbeefcafebabe
+|           0x00000019      4889d8         rax = rbx
+|           0x0000001c      488d03         rax = rbx
+|           0x0000001f      488b4308       rax = qword [rbx + 8]
+|           0x00000023      488d4308       rax = rbx + 8
+|           0x00000027      488d041b       rax = rbx + rbx
+|           0x0000002b      488d441b0a     rax = rbx + rbx + 0xa
+|           0x00000030      488d430a       rax = rbx + 0xa
+|           0x00000034      488d44240c     rax = arg_ch
+|           0x00000039      488d450b       rax = arg_bh
+|           0x0000003d      488d45f5       rax = var_bh
+|           0x00000041      488d442404     rax = var_4h
+|           0x00000046      488d4508       rax = arg_8h
+|           0x0000004a      488d45f8       rax = var_8h
 EOF
 RUN

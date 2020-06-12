@@ -30,7 +30,7 @@ void tree_sitter_r2cmd_external_scanner_deserialize(void *payload, const char *b
 }
 
 static bool is_pf_cmd(const char *s) {
-	return !strncmp (s, "pf", 2) || !strcmp (s, "Cf");
+	return (strcmp (s, "pfo") && !strncmp (s, "pf", 2)) || !strcmp (s, "Cf");
 }
 
 static bool is_env_cmd(const char *s) {
@@ -76,6 +76,10 @@ static bool is_concat_pf_dot(const int32_t ch) {
 	return is_concat(ch) && ch != '=';
 }
 
+static bool is_concat_eq_sep(const int32_t ch) {
+	return is_concat(ch) && ch != '=';
+}
+
 static bool is_recursive_help(int id_len, const int32_t before_last_ch, const int32_t last_ch) {
 	return id_len >= 2 && before_last_ch == '?' && last_ch == '*';
 }
@@ -112,10 +116,6 @@ static bool scan_number(TSLexer *lexer, const bool *valid_symbols) {
 
 bool tree_sitter_r2cmd_external_scanner_scan(void *payload, TSLexer *lexer, const bool *valid_symbols) {
 	// FIXME: /* in the shell should become a multiline comment
-	if (valid_symbols[EQ_SEP_CONCAT] && !isspace(lexer->lookahead) && lexer->lookahead != '=' && lexer->lookahead != '\0') {
-		lexer->result_symbol = EQ_SEP_CONCAT;
-		return true;
-	}
 	if (valid_symbols[CONCAT] && is_concat (lexer->lookahead)) {
 		lexer->result_symbol = CONCAT;
 		return true;
@@ -125,8 +125,11 @@ bool tree_sitter_r2cmd_external_scanner_scan(void *payload, TSLexer *lexer, cons
 	} else if (valid_symbols[CONCAT_PF_DOT] && is_concat_pf_dot (lexer->lookahead)) {
 		lexer->result_symbol = CONCAT_PF_DOT;
 		return true;
+	} else if (valid_symbols[EQ_SEP_CONCAT] && is_concat_eq_sep (lexer->lookahead)) {
+		lexer->result_symbol = EQ_SEP_CONCAT;
+		return true;
 	}
-        if (valid_symbols[CMD_IDENTIFIER] || valid_symbols[HELP_COMMAND]) {
+	if (valid_symbols[CMD_IDENTIFIER] || valid_symbols[HELP_COMMAND]) {
 		char res[CMD_IDENTIFIER_MAX_LENGTH + 1];
 		int i_res = 0;
 

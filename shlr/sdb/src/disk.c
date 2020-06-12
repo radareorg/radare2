@@ -64,7 +64,7 @@ static inline int r_sys_mkdirp(char *dir) {
 #if __SDB_WINDOWS__
 	char *p = strstr (ptr, ":\\");
 	if (p) {
-		ptr = p + 2;
+		ptr = p + 3;
 	}
 #endif
 	while ((ptr = strchr (ptr, slash))) {
@@ -124,10 +124,10 @@ SDB_API bool sdb_disk_create(Sdb* s) {
 	return true;
 }
 
-SDB_API int sdb_disk_insert(Sdb* s, const char *key, const char *val) {
+SDB_API bool sdb_disk_insert(Sdb* s, const char *key, const char *val) {
 	struct cdb_make *c = &s->m;
 	if (!key || !val) {
-		return 0;
+		return false;
 	}
 	//if (!*val) return 0; //undefine variable if no value
 	return cdb_make_add (c, key, strlen (key), val, strlen (val));

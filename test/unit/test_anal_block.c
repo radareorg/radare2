@@ -1,4 +1,5 @@
 #include <r_anal.h>
+#include <r_core.h>
 #include "minunit.h"
 
 #include "test_anal_block_invars.inl"
@@ -644,7 +645,33 @@ bool test_r_anal_block_automerge() {
 	mu_end;
 }
 
+bool test_r_anal_block_chop_noreturn(void) {
+	RAnal *anal = r_anal_new ();
+	assert_invariants (anal);
+
+	RAnalBlock *a = r_anal_create_block (anal, 0x100, 0x10);
+	RAnalBlock *b = r_anal_create_block (anal, 0x110, 0x10);
+	RAnalBlock *c = r_anal_create_block (anal, 0x120, 0x10);
+	a->jump = c->addr;
+	b->jump = c->addr;
+
+	RAnalFunction *fa = r_anal_create_function (anal, "fcn", 0x100, R_ANAL_FCN_TYPE_FCN, NULL);
+	r_anal_function_add_block (fa, a);
+	r_anal_function_add_block (fa, b);
+	r_anal_function_add_block (fa, c);
+
+	RAnalFunction *fb = r_anal_create_function (anal, "fcn2", 0x130, R_ANAL_FCN_TYPE_FCN, NULL);
+	fb->is_noreturn = true;
+
+	r_anal_block_chop_noreturn (b, 0x111);
+
+	assert_invariants (anal);
+
+	mu_end;
+}
+
 int all_tests() {
+	mu_run_test (test_r_anal_block_chop_noreturn);
 	mu_run_test (test_r_anal_block_create);
 	mu_run_test (test_r_anal_block_contains);
 	mu_run_test (test_r_anal_block_split);

@@ -469,7 +469,7 @@ R_API int r_anal_archinfo(RAnal *anal, int query) {
 	return -1;
 }
 
-static int __nonreturn_print_commands(void *p, const char *k, const char *v) {
+static bool __nonreturn_print_commands(void *p, const char *k, const char *v) {
 	RAnal *anal = (RAnal *)p;
 	if (!strncmp (v, "func", strlen ("func") + 1)) {
 		char *query = sdb_fmt ("func.%s.noreturn", k);
@@ -480,10 +480,10 @@ static int __nonreturn_print_commands(void *p, const char *k, const char *v) {
 	if (!strncmp (k, "addr.", 5)) {
 		anal->cb_printf ("tna 0x%s %s\n", k + 5, v);
 	}
-	return 1;
+	return true;
 }
 
-static int __nonreturn_print(void *p, const char *k, const char *v) {
+static bool __nonreturn_print(void *p, const char *k, const char *v) {
 	RAnal *anal = (RAnal *)p;
 	if (!strncmp (k, "func.", 5) && strstr (k, ".noreturn")) {
 		char *s = strdup (k + 5);
@@ -506,7 +506,7 @@ static int __nonreturn_print(void *p, const char *k, const char *v) {
 		}
 		free (off);
 	}
-	return 1;
+	return true;
 }
 
 R_API void r_anal_noreturn_list(RAnal *anal, int mode) {

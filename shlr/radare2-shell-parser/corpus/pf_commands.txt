@@ -179,12 +179,14 @@ Pf load from file
 =================
 
 pfo /tmp/myfile
+pfo
 
 ---
 
 (commands
   (arged_command (cmd_identifier)
-    (args (arg (arg_identifier)))))
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)))
 
 
 ==========================

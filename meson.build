@@ -112,7 +112,7 @@ endif
 platform_deps = []
 platform_inc = ['.', 'libr/include']
 if host_machine.system() == 'windows'
-  platform_deps = [cc.find_library('ws2_32'), cc.find_library('psapi')]
+  platform_deps = [cc.find_library('ws2_32'), cc.find_library('wininet'), cc.find_library('psapi')]
 endif
 platform_inc = include_directories(platform_inc)
 
@@ -140,7 +140,7 @@ library_cflags = ['-DR2_PLUGIN_INCORE=1']
 if host_machine.system() == 'windows'
   r2_prefix = '.'
   r2_libdir = 'lib'
-  r2_incdir = 'include'
+  r2_incdir = join_paths('include', 'libr')
   r2_datdir = 'share'
 
   opts1 = [

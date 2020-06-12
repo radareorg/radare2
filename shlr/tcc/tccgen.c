@@ -308,7 +308,6 @@ ST_FUNC Sym *sym_push(int v, CType *type, int r, long long c) {
 	if (!(v & SYM_FIELD) && (v & ~SYM_STRUCT) < SYM_FIRST_ANOM) {
 		int i = (v & ~SYM_STRUCT);
 		if (i < TOK_IDENT) {
-			eprintf ("Not found\n");
 			return NULL;
 		}
 		// ts = table_ident[i - TOK_IDENT];

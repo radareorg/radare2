@@ -448,6 +448,40 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=adds with carry and zero
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wa adds r1, 1
+aer r1=0xffffffff
+aes
+ar r1
+ar cpsr
+EOF
+EXPECT=<<EOF
+0x00000000
+0x60000000
+EOF
+RUN
+
+NAME=subs with carry and zero
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wa subs r1, 1
+aer r1=1
+aes
+ar r1
+ar cpsr
+EOF
+EXPECT=<<EOF
+0x00000000
+0x60000000
+EOF
+RUN
+
 NAME=smmla
 FILE=malloc://0x200
 CMDS=<<EOF
