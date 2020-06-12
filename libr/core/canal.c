@@ -1930,7 +1930,7 @@ static int find_sym_flag(RAnalFunction *fcn, RFlagItem *f) {
 	return f->space && !strcmp (f->space->name, R_FLAGS_FS_SYMBOLS)? 0: 1;
 }
 
-static bool is_invalid_addr(RCore *core, ut64 addr) {
+static bool is_skippable_addr(RCore *core, ut64 addr) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 	if (!fcn) {
 		return false;
@@ -1947,7 +1947,7 @@ static bool is_invalid_addr(RCore *core, ut64 addr) {
  * If the function has been already analyzed, it adds a
  * reference to that fcn */
 R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
-	if (from == UT64_MAX && is_invalid_addr (core, at)) {
+	if (from == UT64_MAX && is_skippable_addr (core, at)) {
 		if (core->anal->verbose) {
 			eprintf ("Message: Invalid address for function 0x%08"PFMT64x"\n", at);
 		}
