@@ -634,13 +634,16 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 	// Now, for each fcn, check which of our successors are still reachable in the function remove and the ones that are not.
 	RListIter *it;
 	RAnalFunction *fcn;
-	r_list_foreach (block->fcns, it, fcn) {
+	// We need to clone the list because block->fcns will get modified in the loop
+	RList *fcns_cpy = r_list_clone (block->fcns);
+	r_list_foreach (fcns_cpy, it, fcn) {
 		RAnalBlock *entry = r_anal_get_block_at (block->anal, fcn->addr);
 		if (entry && r_list_contains (entry->fcns, fcn)) {
 			r_anal_block_recurse (entry, noreturn_successors_reachable_cb, succs);
 		}
 		ht_up_foreach (succs, noreturn_remove_unreachable_cb, fcn);
 	}
+	r_list_free (fcns_cpy);
 
 	// This last step isn't really critical, but nice to have.
 	// Prepare to merge blocks with their predecessors if possible
