@@ -344,11 +344,14 @@ static RAnalBlock *bbget(RAnal *anal, ut64 addr, bool jumpmid) {
 	return ret;
 }
 
-static bool fcn_takeover_block_recursive_cb(RAnalBlock *block, void *user) {
+static bool fcn_takeover_block_recursive_followthrough_cb(RAnalBlock *block, void *user) {
 	RAnalFunction *our_fcn = user;
 	r_anal_block_ref (block);
 	while (!r_list_empty (block->fcns)) {
 		RAnalFunction *other_fcn = r_list_first (block->fcns);
+		if (other_fcn->addr == block->addr) {
+			return false;
+		}
 		r_anal_function_remove_block (other_fcn, block);
 	}
 	r_anal_function_add_block (our_fcn, block);
@@ -358,7 +361,7 @@ static bool fcn_takeover_block_recursive_cb(RAnalBlock *block, void *user) {
 
 // Remove block and all of its recursive successors from all its functions and add them only to fcn
 static void fcn_takeover_block_recursive(RAnalFunction *fcn, RAnalBlock *start_block) {
-	r_anal_block_recurse (start_block, fcn_takeover_block_recursive_cb, fcn);
+	r_anal_block_recurse_followthrough (start_block, fcn_takeover_block_recursive_followthrough_cb, fcn);
 }
 
 static const char *retpoline_reg(RAnal *anal, ut64 addr) {
