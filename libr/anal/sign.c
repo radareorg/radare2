@@ -480,10 +480,10 @@ static void serialize(RAnal *a, RSignItem *it, char *k, char *v) {
 	}
 }
 
-static RList *deserialize_sign_space(RAnal *a, RSpace *space){
-	char k[R_SIGN_KEY_MAXSZ];
+static RList *deserialize_sign_space(RAnal *a, RSpace *space) {
 	r_return_val_if_fail (a && space, NULL);
 
+	char k[R_SIGN_KEY_MAXSZ];
 	serializeKey (a, space, "", k);
 	SdbList *zigns = sdb_foreach_match (a->sdb_zigns, k, false);
 
@@ -569,7 +569,7 @@ static void mergeItem(RSignItem *dst, RSignItem *src) {
 	if (src->refs) {
 		r_list_free (dst->refs);
 
-		dst->refs = r_list_newf ((RListFree) free);
+		dst->refs = r_list_newf ((RListFree)free);
 		r_list_foreach (src->refs, iter, ref) {
 			r_list_append (dst->refs, r_str_new (ref));
 		}
@@ -578,7 +578,7 @@ static void mergeItem(RSignItem *dst, RSignItem *src) {
 	if (src->vars) {
 		r_list_free (dst->vars);
 
-		dst->vars = r_list_newf ((RListFree) free);
+		dst->vars = r_list_newf ((RListFree)free);
 		r_list_foreach (src->vars, iter, var) {
 			r_list_append (dst->vars, r_str_new (var));
 		}
@@ -587,7 +587,7 @@ static void mergeItem(RSignItem *dst, RSignItem *src) {
 	if (src->types) {
 		r_list_free (dst->types);
 
-		dst->types = r_list_newf ((RListFree) free);
+		dst->types = r_list_newf ((RListFree)free);
 		r_list_foreach (src->types, iter, type) {
 			r_list_append (dst->types, r_str_new (type));
 		}
@@ -777,10 +777,8 @@ R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *byt
 }
 
 R_API bool r_sign_add_graph(RAnal *a, const char *name, RSignGraph graph) {
+	r_return_val_if_fail (a && !R_STR_ISEMPTY (name), false);
 	bool retval = true;
-	if (!a || !name) {
-		return false;
-	}
 	RSignItem *it = r_sign_item_new ();
 	if (!it) {
 		return false;
@@ -1043,6 +1041,150 @@ static double matchGraph(RSignItem *a, RSignItem *b) {
 	total += SIMILARITY (a->graph->bbsum, b->graph->bbsum);
 
 	return total / 5.0;
+}
+
+static RSignItem *create_graph_sign_from_fcn(RAnal *a, RAnalFunction *fcn) {
+	r_return_val_if_fail (a && fcn, false);
+
+	RSignGraph *graph = R_NEW0 (RSignGraph);
+	if (!graph) {
+		return NULL;
+	}
+	graph->cc = r_anal_function_complexity (fcn),
+	graph->nbbs = r_list_length (fcn->bbs);
+	graph->edges = r_anal_function_count_edges (fcn, &graph->ebbs);
+	graph->bbsum = r_anal_function_realsize (fcn);
+
+
+	RSignItem *item = r_sign_item_new ();
+	if (!item) {
+		r_sign_graph_free (graph);
+		return NULL;
+	}
+
+	item->name = r_str_new (fcn->name);
+	item->space = r_spaces_current (&a->zign_spaces);
+	item->graph = graph;
+
+	return item;
+}
+
+static int score_cmpr(const void *a, const void *b) {
+	double sa = ((RSignCloseMatch *)a)->score;
+	double sb = ((RSignCloseMatch *)b)->score;
+
+	if (sa < sb) {
+		return 1;
+	}
+	if (sa > sb) {
+		return -1;
+	}
+	return 0;
+}
+
+typedef struct {
+	RSignItem *test;
+	RList *output;
+	size_t count;
+	double score_threshold;
+
+	// greatest lower bound. Thanks lattice theory for helping name variables
+	double infimum;
+} ClosestMatchData;
+
+static int closest_match_callback(void *a, const char *name, const char *value) {
+	ClosestMatchData *data = (ClosestMatchData *)a;
+
+	// get signature in usable format
+	RSignItem *it = r_sign_item_new ();
+	if (!it) {
+		return false;
+	}
+	if (!r_sign_deserialize (a, it, name, value)) {
+		r_sign_item_free (it);
+		return false;
+	}
+
+	double score = matchGraph (it, data->test);
+
+	// score is too low, don't bother doing any more work
+	if (score < data->score_threshold) {
+		r_sign_item_free (it);
+		return true;
+	}
+
+	RList *output = data->output;
+
+	// return early if the list does not need to be changed
+	if (score < data->infimum && r_list_length (output) >= data->count) {
+		r_sign_item_free (it);
+		return true;
+	}
+
+	// remove an element if list is full
+	if (r_list_length (output) >= data->count) {
+		r_sign_close_match_free (r_list_pop (output));
+	}
+
+	// add new element
+	RSignCloseMatch *row = R_NEW (RSignCloseMatch);
+	if (!row) {
+		r_sign_item_free (it);
+		return false;
+	}
+	row->name = strdup (it->name);
+	if (!row->name) {
+		r_sign_item_free (it);
+		free (row);
+		return false;
+	}
+	row->score = score;
+	r_list_add_sorted (output, (void *)row, &score_cmpr);
+
+	// get new infimum
+	row = r_list_get_top (output);
+	data->infimum = row->score;
+
+	r_sign_item_free (it);
+	return true;
+}
+
+R_API void r_sign_close_match_free(RSignCloseMatch *match) {
+	free (match->name);
+	free (match);
+}
+
+R_API RList *r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count, double score_threshold) {
+	r_return_val_if_fail (a && fcn && count > 0 && score_threshold <= 1 && score_threshold >= 0, false);
+
+	ClosestMatchData data;
+	data.count = count;
+	data.score_threshold = score_threshold;
+	data.infimum = 0.0;
+
+	// create a graph for the current function to be compared against
+	RSignItem *test = create_graph_sign_from_fcn (a, fcn);
+	if (!test) {
+		return NULL;
+	}
+	data.test = test;
+
+	// sorted list will contian the closest matches
+	RList *output = r_list_newf ((RListFree)r_sign_close_match_free);
+	if (!output) {
+		r_sign_item_free (test);
+		return NULL;
+	}
+	data.output = output;
+
+	// TODO: handle sign spaces
+	if (!sdb_foreach (a->sdb_zigns, &closest_match_callback, (void *)&data)) {
+		r_list_free (output);
+		output = NULL;
+	}
+
+	r_sign_item_free (test);
+	return output;
 }
 
 R_API bool r_sign_diff(RAnal *a, RSignOptions *options, const char *other_space_name) {
@@ -2268,12 +2410,16 @@ R_API void r_sign_item_free(RSignItem *item) {
 		free (item->hash->bbhash);
 		free (item->hash);
 	}
-	free (item->graph);
+	r_sign_graph_free (item->graph);
 	free (item->comment);
 	free (item->realname);
 	r_list_free (item->refs);
 	r_list_free (item->vars);
 	free (item);
+}
+
+R_API void r_sign_graph_free(RSignGraph *graph) {
+	free (graph);
 }
 
 static bool loadCB(void *user, const char *k, const char *v) {
