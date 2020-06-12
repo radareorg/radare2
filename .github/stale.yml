@@ -33,10 +33,10 @@ staleLabel: wontfix
 markComment: >
   This issue has been automatically marked as stale because it has not had
   recent activity. Considering a lot has changed since its creation, we kindly
-  ask you to check again if the bug you reported is still relevant in the
+  ask you to check again if the issue you reported is still relevant in the
   current version of radare2. If it is, update this issue with a comment,
-  otherwise the issue will be automatically closed if no further activity
-  occurs. Thank you for your contributions.
+  otherwise it will be automatically closed if no further activity occurs.
+  Thank you for your contributions.
 
 # Comment to post when removing the stale label.
 # unmarkComment: >
