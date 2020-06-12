@@ -757,7 +757,7 @@ const char* arm_prefix_cond(RAnalOp *op, int cond_type) {
 		break;
 	case ARM_CC_LS:
 		close_type = 1;
-		r_strbuf_setf (&op->esil, "cf,!,zf,!,|,?{,");
+		r_strbuf_setf (&op->esil, "cf,!,zf,|,?{,");
 		break;
 	case ARM_CC_GE:
 		close_type = 1;
@@ -1545,8 +1545,14 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case ARM_INS_ADDW:
 	case ARM_INS_ADD:
-	case ARM_INS_ADC:
 		MATH32("+");
+		break;
+	case ARM_INS_ADC:
+		if (OPCOUNT() == 2) {
+			r_strbuf_appendf (&op->esil, "cf,%s,+,%s,+=",ARG(1),ARG(0));
+		} else {
+			r_strbuf_appendf (&op->esil, "cf,%s,+,%s,+=,%s,+=",ARG(2),ARG(1),ARG(0));
+		}
 		break;
 	case ARM_INS_SSUB16:
 	case ARM_INS_SSUB8:
@@ -1572,9 +1578,23 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		MATH32_NEG("|");
 		break;
 	case ARM_INS_LSR:
+	        if (insn->detail->arm.update_flags) {
+			if (OPCOUNT() == 2) {
+				r_strbuf_appendf (&op->esil, "%s,!,!,?{,%s,1,%s,-,0x1,<<,&,!,!,cf,:=,},",ARG(1),ARG(0),ARG(1));
+			} else {
+				r_strbuf_appendf (&op->esil, "%s,!,!,?{,%s,1,%s,-,0x1,<<,&,!,!,cf,:=,},",ARG(2),ARG(1),ARG(2));
+			}
+		}
 		MATH32(">>");
 		break;
 	case ARM_INS_LSL:
+                if (insn->detail->arm.update_flags) {
+                        if (OPCOUNT() == 2) {
+				r_strbuf_appendf (&op->esil, "%s,!,!,?,{,%s,32,-,%s,>>,cf,:=,},",ARG(1),ARG(1),ARG(0));
+                        } else {
+				r_strbuf_appendf (&op->esil, "%s,!,!,?,{,%s,32,-,%s,>>,cf,:=,},",ARG(2),ARG(2),ARG(1));
+                        }
+                }
 		MATH32("<<");
 		break;
 	case ARM_INS_SVC:
@@ -2087,8 +2107,9 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		case ARM_INS_SUB:
 			r_strbuf_appendf (&op->esil, ",$z,zf,:=,31,$s,nf,:=,32,$b,!,cf,=,31,$o,vf,=");
 			break;
+		case ARM_INS_ADC:
 		case ARM_INS_ADD:
-			r_strbuf_appendf (&op->esil, ",$z,zf,:=,1,$c,cf,=,31,$o,vf,=");
+			r_strbuf_appendf (&op->esil, ",$z,zf,:=,31,$c,cf,=,31,$o,vf,=");
 			break;
 		default:
 			r_strbuf_appendf (&op->esil, ",$z,zf,:=,31,$s,nf,:=");
