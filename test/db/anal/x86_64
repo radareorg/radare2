@@ -498,6 +498,49 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=block takeover
+FILE=bins/elf/static-glibc-2.27
+CMDS=<<EOF
+e asm.comments=false
+e asm.var=false
+aac
+pdr @ 0x00487350
+EOF
+EXPECT=<<EOF
+/ 114: fcn.00487350 ();
+| 0x00487350      8b8710030000   mov eax, dword [rdi + 0x310]
+| 0x00487356      48b900000000.  movabs rcx, 0x200000000
+| 0x00487360      8d50ff         lea edx, [rax - 1]
+| 0x00487363      48b8ffffffff.  movabs rax, 0x3ffffffff
+| 0x0048736d      899710030000   mov dword [rdi + 0x310], edx
+| 0x00487373      482387100300.  and rax, qword [rdi + 0x310]
+| 0x0048737a      4839c8         cmp rax, rcx
+| 0x0048737d      7411           je 0x487390
+| ----------- true: 0x00487390  false: 0x0048737f
+| 0x0048737f      f605d2542300.  test byte [0x006bc858], 0x40
+| 0x00487386      7525           jne 0x4873ad
+| ----------- true: 0x004873ad  false: 0x00487388
+| 0x00487388      f3c3           ret
+
+| 0x00487390      8b05ea4d2300   mov eax, dword [0x006bc180]
+| 0x00487396      85c0           test eax, eax
+| 0x00487398      7426           je 0x4873c0
+| ----------- true: 0x004873c0  false: 0x0048739a
+| 0x0048739a      f605b7542300.  test byte [0x006bc858], 0x40
+| 0x004873a1      c705d54d2300.  mov dword [0x006bc180], 2
+| 0x004873ab      74db           je 0x487388
+| ----------- true: 0x00487388  false: 0x004873ad
+| 0x004873ad      488b7708       mov rsi, qword [rdi + 8]
+| 0x004873b1      488d3dd03502.  lea rdi, str.closing_file__s__direct_opencount__u
+| 0x004873b8      31c0           xor eax, eax
+| 0x004873ba      e9b16cffff     jmp fcn.0047e070
+| ----------- true: 0x0047e070
+| 0x004873c0      400fb6f6       movzx esi, sil
+\ 0x004873c4      e937f1ffff     jmp fcn.00486500
+| ----------- true: 0x00486500
+EOF
+RUN
+
 NAME=a2f jmp after ret
 FILE=malloc://512
 CMDS=<<EOF
