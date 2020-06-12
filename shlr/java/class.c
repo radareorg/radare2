@@ -1241,7 +1241,7 @@ R_API char *r_bin_java_build_obj_key(RBinJavaObj *bin) {
 	return jvcname;
 }
 
-R_API int sdb_iterate_build_list(void *user, const char *k, const char *v) {
+R_API bool sdb_iterate_build_list(void *user, const char *k, const char *v) {
 	RList *bin_objs_list = (RList *) user;
 	size_t value = (size_t) sdb_atoi (v);
 	RBinJavaObj *bin_obj = NULL;

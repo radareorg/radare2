@@ -607,9 +607,9 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		case R_386_PC16:     ADD(16,-P);
 		case R_386_8:        ADD(8,  0);
 		case R_386_PC8:      ADD(8, -P);
-		case R_386_COPY:     ADD(64, 0); // XXX: copy symbol at runtime
+		case R_386_COPY:     ADD(32, 0); // XXX: copy symbol at runtime
 		case R_386_IRELATIVE: r->is_ifunc = true; SET(32);
-		default: break; //eprintf("TODO(eddyb): uninmplemented ELF/x86 reloc type %i\n", rel->type);
+		default: break;
 		}
 		break;
 	case EM_X86_64: switch (rel->type) {
@@ -630,11 +630,12 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		case R_X86_64_GOTPCREL:	ADD(64, GOT-P);
 		case R_X86_64_COPY:	ADD(64, 0); // XXX: copy symbol at runtime
 		case R_X86_64_IRELATIVE: r->is_ifunc = true; SET(64);
-		default: break; ////eprintf("TODO(eddyb): uninmplemented ELF/x64 reloc type %i\n", rel->type);
+		default: break;
 		}
 		break;
-	case EM_ARM: switch (rel->type) {
-		case R_ARM_NONE:	break; // malloc then free. meh. then again, there's no real world use for _NONE.
+	case EM_ARM:
+		switch (rel->type) {
+		case R_ARM_NONE:	break;
 		case R_ARM_ABS32:	ADD(32, 0);
 		case R_ARM_REL32:	ADD(32,-P);
 		case R_ARM_ABS16:	ADD(16, 0);
@@ -645,7 +646,14 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		case R_ARM_RELATIVE:	ADD(32, B);
 		case R_ARM_GOTOFF:	ADD(32,-GOT);
 		default: ADD(32,GOT); break; // reg relocations
-		 ////eprintf("TODO(eddyb): uninmplemented ELF/ARM reloc type %i\n", rel->type);
+		}
+		break;
+	case EM_RISCV:
+		switch (rel->type) {
+		case R_RISCV_NONE: break;
+		case R_RISCV_JUMP_SLOT: ADD(64, 0);
+		case R_RISCV_RELATIVE: ADD(64, B);
+		default: ADD(64, GOT); break; // reg relocations
 		}
 		break;
 	case EM_AARCH64: switch (rel->type) {

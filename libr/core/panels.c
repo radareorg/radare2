@@ -1331,7 +1331,7 @@ void __layout_equal_hor(RPanels *panels) {
 	int i, cw = 0;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = __get_panel (panels, i);
-		__set_geometry(&p->view->pos, cw, 1, pw, h - 2);
+		__set_geometry(&p->view->pos, cw, 1, pw, h - 1);
 		cw += pw - 1;
 		if (i == panels->n_panels - 2) {
 			pw = w - cw;
