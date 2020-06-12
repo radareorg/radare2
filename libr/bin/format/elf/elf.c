@@ -512,6 +512,7 @@ static void set_default_value_dynamic_info(ELFOBJ *bin) {
 	bin->dyn_info.dt_pltrelsz = 0;
 	bin->dyn_info.dt_pltgot = ELF_ADDR_MAX;
 	bin->dyn_info.dt_hash = ELF_ADDR_MAX;
+	bin->dyn_info.dt_gnu_hash = ELF_ADDR_MAX;
 	bin->dyn_info.dt_strtab = ELF_ADDR_MAX;
 	bin->dyn_info.dt_symtab = ELF_ADDR_MAX;
 	bin->dyn_info.dt_rela = ELF_ADDR_MAX;
@@ -519,11 +520,17 @@ static void set_default_value_dynamic_info(ELFOBJ *bin) {
 	bin->dyn_info.dt_relaent = 0;
 	bin->dyn_info.dt_strsz = 0;
 	bin->dyn_info.dt_syment = 0;
+	bin->dyn_info.dt_init = ELF_ADDR_MAX;
+	bin->dyn_info.dt_fini = ELF_ADDR_MAX;
 	bin->dyn_info.dt_rel = ELF_ADDR_MAX;
 	bin->dyn_info.dt_relsz = 0;
 	bin->dyn_info.dt_relent = 0;
 	bin->dyn_info.dt_pltrel = ELF_XWORD_MAX;
 	bin->dyn_info.dt_jmprel = ELF_ADDR_MAX;
+	bin->dyn_info.dt_init_array = ELF_ADDR_MAX;
+	bin->dyn_info.dt_fini_array = ELF_ADDR_MAX;
+	bin->dyn_info.dt_init_arraysz = ELF_ADDR_MAX;
+	bin->dyn_info.dt_fini_arraysz = ELF_ADDR_MAX;
 	bin->dyn_info.dt_pltgot = ELF_ADDR_MAX;
 	bin->dyn_info.dt_bind_now = false;
 	bin->dyn_info.dt_flags = ELF_XWORD_MAX;
@@ -595,6 +602,12 @@ static void fill_dynamic_entries(ELFOBJ *bin, ut64 loaded_offset, ut64 dyn_size)
 		case DT_SYMENT:
 			bin->dyn_info.dt_syment = d.d_un.d_val;
 			break;
+		case DT_INIT:
+			bin->dyn_info.dt_init = d.d_un.d_ptr;
+			break;
+		case DT_FINI:
+			bin->dyn_info.dt_fini = d.d_un.d_ptr;
+			break;
 		case DT_REL:
 			bin->dyn_info.dt_rel = d.d_un.d_ptr;
 			break;
@@ -607,6 +620,9 @@ static void fill_dynamic_entries(ELFOBJ *bin, ut64 loaded_offset, ut64 dyn_size)
 		case DT_PLTREL:
 			bin->dyn_info.dt_pltrel = d.d_un.d_val;
 			break;
+		case DT_DEBUG:
+			bin->dyn_info.dt_debug = d.d_un.d_ptr;
+			break;
 		case DT_JMPREL:
 			bin->dyn_info.dt_jmprel = d.d_un.d_ptr;
 			break;
@@ -615,6 +631,18 @@ static void fill_dynamic_entries(ELFOBJ *bin, ut64 loaded_offset, ut64 dyn_size)
 			break;
 		case DT_BIND_NOW:
 			bin->dyn_info.dt_bind_now = true;
+			break;
+		case DT_INIT_ARRAY:
+			bin->dyn_info.dt_init_array = d.d_un.d_ptr;
+			break;
+		case DT_FINI_ARRAY:
+			bin->dyn_info.dt_fini_array = d.d_un.d_ptr;
+			break;
+		case DT_INIT_ARRAYSZ:
+			bin->dyn_info.dt_init_arraysz = d.d_un.d_ptr;
+			break;
+		case DT_FINI_ARRAYSZ:
+			bin->dyn_info.dt_fini_arraysz = d.d_un.d_ptr;
 			break;
 		case DT_FLAGS:
 			bin->dyn_info.dt_flags = d.d_un.d_val;
@@ -630,6 +658,9 @@ static void fill_dynamic_entries(ELFOBJ *bin, ut64 loaded_offset, ut64 dyn_size)
 			break;
 		case DT_NEEDED:
 			r_vector_push(&bin->dyn_info.dt_needed, &d.d_un.d_val);
+			break;
+		case DT_GNU_HASH:
+			bin->dyn_info.dt_gnu_hash = d.d_un.d_ptr;
 			break;
 		default:
 			if ((d.d_tag >= DT_VERSYM) && (d.d_tag <= DT_VERNEEDNUM)) {

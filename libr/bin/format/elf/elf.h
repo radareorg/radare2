@@ -76,6 +76,7 @@ typedef struct Elf_(r_bin_elf_dynamic_info) {
 	Elf_(Xword) dt_pltrelsz;
 	Elf_(Addr) dt_pltgot;
 	Elf_(Addr) dt_hash;
+	Elf_(Addr) dt_gnu_hash;
 	Elf_(Addr) dt_strtab;
 	Elf_(Addr) dt_symtab;
 	Elf_(Addr) dt_rela;
@@ -83,11 +84,18 @@ typedef struct Elf_(r_bin_elf_dynamic_info) {
 	Elf_(Xword) dt_relaent;
 	Elf_(Xword) dt_strsz;
 	Elf_(Xword) dt_syment;
+	Elf_(Addr) dt_init;
+	Elf_(Addr) dt_fini;
 	Elf_(Addr) dt_rel;
 	Elf_(Xword) dt_relsz;
 	Elf_(Xword) dt_relent;
 	Elf_(Xword) dt_pltrel;
+	Elf_(Addr) dt_debug;
 	Elf_(Addr) dt_jmprel;
+	Elf_(Addr) dt_init_array;
+	Elf_(Addr) dt_fini_array;
+	Elf_(Addr) dt_init_arraysz;
+	Elf_(Addr) dt_fini_arraysz;
 	Elf_(Addr) dt_mips_pltgot;
 	bool dt_bind_now;
 	Elf_(Xword) dt_flags;
