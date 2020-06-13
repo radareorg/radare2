@@ -2049,6 +2049,8 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 	case EM_ARC_A5:
 		return strdup ("arc");
 	case EM_AVR: return strdup ("avr");
+	case EM_BA2_NON_STANDARD: 
+	case EM_BA2: return strdup ("ba2");
 	case EM_CRIS: return strdup ("cris");
 	case EM_68K: return strdup ("m68k");
 	case EM_MIPS:
@@ -2240,6 +2242,7 @@ char* Elf_(r_bin_elf_get_machine_name)(ELFOBJ *bin) {
 	case EM_78KOR:         return strdup ("Renesas 78KOR family");
 	// case EM_56800EX:       return strdup ("Freescale 56800EX Digital Signal Controller (DSC)");  // Nonstandard
 	case EM_BA1:           return strdup ("Beyond BA1 CPU architecture");
+	case EM_BA2_NON_STANDARD:
 	case EM_BA2:           return strdup ("Beyond BA2 CPU architecture");
 	case EM_XCORE:         return strdup ("XMOS xCORE processor family");
 	case EM_MCHP_PIC:      return strdup ("Microchip 8-bit PIC(r) family");
