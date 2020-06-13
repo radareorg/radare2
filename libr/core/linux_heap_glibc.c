@@ -26,10 +26,7 @@ static GHT GH(get_va_symbol)(RCore *core, const char *path, const char *symname)
 	GHT vaddr = GHT_MAX;
 	RListIter *iter;
 	RBinSymbol *s;
-	// RBin *bin = core->bin;
-	RBin *bin = r_bin_new();
- 	RIO *io = r_io_new ();
-	r_io_bind (io, &bin->iob);
+	RBin *bin = core->bin;
 	
 	if (!bin) {
 		return vaddr;
@@ -48,9 +45,7 @@ static GHT GH(get_va_symbol)(RCore *core, const char *path, const char *symname)
 			}
 		}
 	}
-	
-	r_bin_free (bin);
-	r_io_free (io);
+
 	return vaddr;
 }
 
@@ -339,13 +334,10 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 
 	r_return_val_if_fail (core && core->dbg && core->dbg->maps, false);
 
-	/*
 	if (core->dbg->main_arena_resolved) {
 		return true;
 	}
-	*/
 
-	const char *main_arena_str = "main_arena";
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX;
 	GHT libc_addr_sta = GHT_MAX, libc_addr_end = 0;
 	GHT addr_srch = GHT_MAX, heap_sz = GHT_MAX;
@@ -365,15 +357,13 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 					break;
 				}
 				char *path = strdup (libc_path);
-				if (r_file_exists (path)) {
-					GHT vaddr = GH (get_va_symbol) (core, path, main_arena_str);
+				if (path && r_file_exists (path)) {
+					GHT vaddr = GH (get_va_symbol) (core, path, "main_arena");
 					if (libc_addr != GHT_MAX && vaddr != GHT_MAX) {
 						main_arena_sym = libc_addr + vaddr;
 					}
 				}
-				if (path) {
-					free (path);
-				}
+				free (path);
 			}
 			if (strstr (map->name, "/libc-") && map->perm == 6) {
 				libc_addr_sta = map->addr;
@@ -418,11 +408,10 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	if (main_arena_sym) {
 		GH (update_main_arena) (core, main_arena_sym, ta);
 		*m_arena = main_arena_sym;
-		// core->dbg->main_arena_resolved = true;
+		core->dbg->main_arena_resolved = true;
 		free (ta);
 		return true;
 	}
-
 	while (addr_srch < libc_addr_end) {
 		GH (update_main_arena) (core, addr_srch, ta);
 		if ( ta->GH(top) > brk_start && ta->GH(top) < brk_end &&
@@ -430,7 +419,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 
 			*m_arena = addr_srch;
 			free (ta);
-			// core->dbg->main_arena_resolved = true;
+			core->dbg->main_arena_resolved = true;
 			return true;
 		}
 		addr_srch += sizeof (GHT);
