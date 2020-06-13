@@ -713,11 +713,14 @@ typedef struct {
 	st32 line_base;
 	ut8 line_range;
 	ut8 opcode_base;
+	ut8 address_size;
+	ut8 segment_selector_size;
+	bool is_64bit;
+
 	ut8 *std_opcode_lengths;
 	char **include_directories;
 	file_entry *file_names;
 	size_t file_names_count;
-	bool is_64bit;
 } RBinDwarfLineHeader;
 
 #define r_bin_dwarf_line_new(o,a,f,l) o->address=a, o->file = strdup (f?f:""), o->line = l, o->column =0,o
