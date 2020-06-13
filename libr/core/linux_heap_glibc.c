@@ -333,9 +333,11 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 
 	r_return_val_if_fail (core && core->dbg && core->dbg->maps, false);
 
+	/*
 	if (core->dbg->main_arena_resolved) {
 		return true;
 	}
+	*/
 
 	const char *main_arena_str = "main_arena";
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX;
@@ -410,7 +412,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	if (main_arena_sym) {
 		GH (update_main_arena) (core, main_arena_sym, ta);
 		*m_arena = main_arena_sym;
-		core->dbg->main_arena_resolved = true;
+		// core->dbg->main_arena_resolved = true;
 		free (ta);
 		return true;
 	}
