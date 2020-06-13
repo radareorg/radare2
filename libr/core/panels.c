@@ -2589,13 +2589,8 @@ void __move_panel_to_down(RCore *core, RPanel *panel, int src) {
 	int i = 0;
 	for (; i < panels->n_panels - 1; i++) {
 		RPanel *tmp = __get_panel (panels, i);
-		int t_y = ((double)tmp->view->pos.y / (double)h) * (double)new_h + 1;
-		int t_h;
-		if (tmp->view->edge & (1 << PANEL_EDGE_BOTTOM)) {
-			t_h = new_h - t_y;
-		} else {
-			t_h = ((double)tmp->view->pos.h / (double)h) * (double)new_h;
-		}
+		const size_t t_y = ((double)tmp->view->pos.y / (double)h) * (double)new_h + 1;
+		const size_t t_h = (tmp->view->edge & (1 << PANEL_EDGE_BOTTOM)) ?  new_h - t_y : ((double)tmp->view->pos.h / (double)h) * (double)new_h;
 		__set_geometry (&tmp->view->pos, tmp->view->pos.x, t_y, tmp->view->pos.w, t_h);
 	}
 	__fix_layout (core);
