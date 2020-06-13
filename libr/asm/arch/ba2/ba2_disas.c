@@ -1,3 +1,10 @@
+#define BA2_INSTR_MAXLEN	20
+
+struct op_cmd {
+	char	instr[BA2_INSTR_MAXLEN];
+	char	operands[BA2_INSTR_MAXLEN];
+};
+
 static unsigned int revbits(unsigned int bits, unsigned int nbits)
 {
 	unsigned int r = 0;
