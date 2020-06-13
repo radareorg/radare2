@@ -963,6 +963,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 	if (m_arena == m_state) {
 		GH(get_brks) (core, &brk_start, &brk_end);
 		if (tcache) {
+			tcache_initial_brk = ((brk_start >> 12) << 12) + GH(HDR_SZ);
 			GHT fc_offset = GH(tcache_chunk_size) (core, brk_start);
 			initial_brk = ((brk_start >> 12) << 12) + fc_offset;
 		} else {
@@ -1592,3 +1593,4 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 	free (main_arena);
 	return true;
 }
+
