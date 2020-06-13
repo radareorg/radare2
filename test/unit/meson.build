@@ -19,6 +19,7 @@ if get_option('enable_tests')
     'contrbtree',
     'debruijn',
     'diff',
+    'dwarf',
     'esil_dfg_filter',
     'event',
     'flags',
