@@ -731,7 +731,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			goto beach;
 		}
 		char *varname anal->opt.varname_stack
-			? r_str_newf ("%s_%xh", VARPREFIX, R_ABS (frame_off)
+			? r_str_newf ("%s_%xh", VARPREFIX, R_ABS (frame_off))
 			: get_varname (fcn, type, VARPREFIX, -ptr);
 		if (varname) {
 			RAnalVar *var = r_anal_function_set_var (fcn, frame_off, type, NULL, anal->bits / 8, false, varname);
