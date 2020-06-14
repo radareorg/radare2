@@ -671,11 +671,9 @@ R_API bool r_cons_yesno(int def, const char *fmt, ...) {
 			if (key == '\n' || key == '\r') {
 				key = def;
 			}
-			va_end (ap);
 			return key == 'y';
 		}
 	}
-	va_end (ap);
 	return false;
 }
 
