@@ -39,6 +39,7 @@ static void interact(R2RState *state);
 static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results);
 static void interact_break(R2RTestResultInfo *result, RPVector *fixup_results);
 static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results);
+static void interact_diffchar(R2RTestResultInfo *result);
 
 static int help(bool verbose) {
 	printf ("Usage: r2r [-qvVnL] [-j threads] [test file/dir | @test-type]\n");
@@ -526,11 +527,14 @@ static RThreadFunctionRet worker_th(RThread *th) {
 	return R_TH_STOP;
 }
 
-static void print_diff(const char *actual, const char *expected) {
+static void print_diff(const char *actual, const char *expected, bool diffchar) {
 	RDiff *d = r_diff_new ();
 #ifdef __WINDOWS__
 	d->diff_cmd = "git diff --no-index";
 #endif
+	if (diffchar) {
+		d->diff_cmd = "git diff --no-index --word-diff-regex=.";
+	}
 	char *uni = r_diff_buffers_to_string (d, (const ut8 *)expected, (int)strlen (expected), (const ut8 *)actual, (int)strlen (actual));
 	r_diff_free (d);
 
@@ -548,6 +552,38 @@ static void print_diff(const char *actual, const char *expected) {
 		bool color = true;
 		if (r_str_startswith (line, "@@ ") && r_str_endswith (line, " @@")) {
 			printf ("%s", Color_CYAN);
+		} else if (diffchar) {
+			char *p = line;
+			char *block_end;
+			do {
+				char *add_end = strstr (p, "+}");
+				char *rm_end = strstr (p, "-]");
+				block_end = NULL;
+				if (add_end) {
+					if (rm_end) {
+						block_end = (add_end < rm_end) ? add_end : rm_end;
+					} else {
+						block_end = add_end;
+					}
+				} else if (rm_end) {
+					block_end = rm_end;
+				}
+				if (block_end) {
+					*block_end = 0;
+					char *block_start = r_str_rstr (p, (block_end == add_end) ? "{+" : "[-");
+					if (block_start) {
+						*block_start = 0;
+						printf ("%s%s"Color_BLACK"%s%s", p,
+						        (block_end == add_end) ? Color_BBGGREEN : Color_BBGRED,
+						        block_start + 2, Color_RESET);
+						p = block_end + 2;
+						*block_start = (block_end == add_end) ? '{' : '[';
+					}
+					*block_end = (block_end == add_end) ? '+' : '-';
+				}
+			} while (block_end);
+			printf ("%s\n", p);
+			continue;
 		} else {
 			char c = *line;
 			switch (c) {
@@ -602,13 +638,13 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 		const char *expect = result->test->cmd_test->expect.value;
 		if (expect && strcmp (result->proc_out->out, expect)) {
 			printf ("-- stdout\n");
-			print_diff (result->proc_out->out, expect);
+			print_diff (result->proc_out->out, expect, false);
 		}
 		expect = result->test->cmd_test->expect_err.value;
 		const char *err = result->proc_out->err;
 		if (expect && strcmp (err, expect)) {
 			printf ("-- stderr\n");
-			print_diff (err, expect);
+			print_diff (err, expect, false);
 		} else if (*err) {
 			printf ("-- stderr\n%s\n", err);
 		}
@@ -737,12 +773,13 @@ static void interact(R2RState *state) {
 
 		printf ("#####################\n\n");
 		print_result_diff (&state->run_config, result);
-inval:
+menu:
 		printf ("Wat do?    "
 				"(f)ix "UTF8_WHITE_HEAVY_CHECK_MARK UTF8_VS16 UTF8_VS16 UTF8_VS16"    "
 				"(i)gnore "UTF8_SEE_NO_EVIL_MONKEY"    "
 				"(b)roken "UTF8_SKULL_AND_CROSSBONES UTF8_VS16 UTF8_VS16 UTF8_VS16"    "
 				"(c)ommands "UTF8_KEYBOARD UTF8_VS16"    "
+				"(d)iffchar "UTF8_LEFT_POINTING_MAGNIFYING_GLASS"    "
 				"(q)uit "UTF8_DOOR"\n");
 		printf ("> ");
 		char buf[0x30];
@@ -750,13 +787,13 @@ inval:
 			break;
 		}
 		if (strlen (buf) != 2) {
-			goto inval;
+			goto menu;
 		}
 		switch (buf[0]) {
 		case 'f':
 			if (result->run_failed || result->proc_out->ret != 0) {
 				printf ("This test has failed too hard to be fixed.\n");
-				goto inval;
+				goto menu;
 			}
 			interact_fix (result, &failed_results);
 			break;
@@ -768,10 +805,13 @@ inval:
 		case 'c':
 			interact_commands (result, &failed_results);
 			break;
+		case 'd':
+			interact_diffchar (result);
+			goto menu;
 		case 'q':
 			goto beach;
 		default:
-			goto inval;
+			goto menu;
 		}
 	}
 
@@ -985,4 +1025,11 @@ static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results
 	replace_cmd_kv_file (result->test->path, test->cmds.line_begin, test->cmds.line_end, "CMDS", newcmds, fixup_results);
 	free (name);
 	free (newcmds);
+}
+
+static void interact_diffchar(R2RTestResultInfo *result) {
+	const char *actual = result->proc_out->out;
+	const char *expected = result->test->cmd_test->expect.value;
+	printf ("-- stdout\n");
+	print_diff (actual, expected, true);
 }

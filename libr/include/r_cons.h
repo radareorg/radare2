@@ -427,6 +427,7 @@ typedef struct r_cons_canvas_t {
 #define UTF8_SEE_NO_EVIL_MONKEY "🙈"
 #define UTF8_SKULL_AND_CROSSBONES "☠"
 #define UTF8_KEYBOARD "⌨"
+#define UTF8_LEFT_POINTING_MAGNIFYING_GLASS "🔍"
 #define UTF8_DOOR "🚪"
 
 // Variation Selectors
