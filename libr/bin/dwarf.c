@@ -227,7 +227,7 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 		size_t maxlen = R_MIN ((size_t) (buf_end - buf) - 1, 0xfff);
 		size_t len = r_str_nlen ((const char *)buf, maxlen);
 		char *str = r_str_ndup ((const char *)buf, len);
-		if (len < 1 || len >= 0xfff) {
+		if (len < 1 || len >= 0xfff || !str) {
 			buf += 1;
 			free (str);
 			break;
