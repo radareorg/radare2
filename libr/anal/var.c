@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2019 - pancake, oddcoder */
+/* radare - LGPL - Copyright 2010-2020 - pancake, oddcoder */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -730,7 +730,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			r_anal_var_set_access (var, reg, op->addr, rw, -ptr);
 			goto beach;
 		}
-		char *varname anal->opt.varname_stack
+		char *varname = anal->opt.varname_stack
 			? r_str_newf ("%s_%xh", VARPREFIX, R_ABS (frame_off))
 			: get_varname (fcn, type, VARPREFIX, -ptr);
 		if (varname) {
