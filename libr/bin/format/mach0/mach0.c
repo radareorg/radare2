@@ -2051,11 +2051,9 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 		return NULL;
 	}
 
-		if (mo->symbols[i].name) {
-			free (mo->symbols[i].name);
-		}
 	size_t i;
 	for (i = 0; !mo->symbols[i].last; i++) {
+		free (mo->symbols[i].name);
 	}
 	free (mo->symbols);
 	free (mo->segs);
