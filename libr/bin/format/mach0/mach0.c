@@ -2356,7 +2356,7 @@ static bool parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol
 	}
 	symbol->offset = 0LL;
 	symbol->addr = 0LL;
-	symbol->name = 0;
+	symbol->name = NULL;
 	symbol->is_imported = true;
 
 	if (!bin || !bin->sects) {
@@ -2920,7 +2920,7 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 				}
 				if (inSymtab (hash, symbols[j].name, symbols[j].addr)) {
 					free (symbols[j].name);
-					symbols[j].name = 0;
+					symbols[j].name = NULL;
 					j--;
 				}
 			}
@@ -2964,7 +2964,7 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 				symbols[j].last = 0;
 				if (inSymtab (hash, symbols[j].name, symbols[j].addr)) {
 					free (symbols[j].name);
-					symbols[j].name = 0;
+					symbols[j].name = NULL;
 				} else {
 					j++;
 				}
