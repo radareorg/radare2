@@ -405,7 +405,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 		return false;
 	}
 
-	if (main_arena_sym) {
+	if (main_arena_sym != GHT_MAX) {
 		GH (update_main_arena) (core, main_arena_sym, ta);
 		*m_arena = main_arena_sym;
 		core->dbg->main_arena_resolved = true;
@@ -419,7 +419,8 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 
 			*m_arena = addr_srch;
 			free (ta);
-			core->dbg->main_arena_resolved = true;
+			// error in test with e dbg.glibc.tcache=1
+			// core->dbg->main_arena_resolved = true;
 			return true;
 		}
 		addr_srch += sizeof (GHT);
