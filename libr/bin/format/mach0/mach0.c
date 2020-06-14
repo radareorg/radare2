@@ -2958,7 +2958,7 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 				if (sym_name) {
 					symbols[j].name = sym_name;
 				} else {
-					symbols[j].name = r_str_new ("entry%d\n");
+					symbols[j].name = r_str_newf ("entry%d\n", i);
 					//symbols[j].name[0] = 0;
 				}
 				symbols[j].last = 0;
