@@ -1100,14 +1100,14 @@ static int r_bin_dwarf_expand_cu(RBinDwarfCompUnit *cu) {
 		return -EINVAL;
 	}
 
-	tmp = (RBinDwarfDIE*)realloc(cu->dies,
-			cu->capacity * 2 * sizeof(RBinDwarfDIE));
+	tmp = (RBinDwarfDIE *)realloc (cu->dies,
+		cu->capacity * 2 * sizeof (RBinDwarfDIE));
 	if (!tmp) {
 		return -ENOMEM;
 	}
 
-	memset ((ut8*)tmp + cu->capacity * sizeof (RBinDwarfDIE),
-			0, cu->capacity * sizeof (RBinDwarfDIE));
+	memset ((ut8 *)tmp + cu->capacity * sizeof (RBinDwarfDIE),
+		0, cu->capacity * sizeof (RBinDwarfDIE));
 	cu->dies = tmp;
 	cu->capacity *= 2;
 
@@ -1118,7 +1118,7 @@ static int r_bin_dwarf_init_abbrev_decl(RBinDwarfAbbrevDecl *ad) {
 	if (!ad) {
 		return -EINVAL;
 	}
-	ad->defs = calloc (sizeof( RBinDwarfAttrDef), ABBREV_DECL_CAP);
+	ad->defs = calloc (sizeof (RBinDwarfAttrDef), ABBREV_DECL_CAP);
 
 	if (!ad->defs) {
 		return -ENOMEM;
@@ -1137,16 +1137,16 @@ static int r_bin_dwarf_expand_abbrev_decl(RBinDwarfAbbrevDecl *ad) {
 		return -EINVAL;
 	}
 
-	tmp = (RBinDwarfAttrDef*)realloc (ad->defs,
-			ad->capacity * 2 * sizeof (RBinDwarfAttrDef));
+	tmp = (RBinDwarfAttrDef *)realloc (ad->defs,
+		ad->capacity * 2 * sizeof (RBinDwarfAttrDef));
 
 	if (!tmp) {
 		return -ENOMEM;
 	}
 
 	// Set the area in the buffer past the length to 0
-	memset ((ut8*)tmp + ad->capacity * sizeof (RBinDwarfAttrDef),
-			0, ad->capacity * sizeof (RBinDwarfAttrDef));
+	memset ((ut8 *)tmp + ad->capacity * sizeof (RBinDwarfAttrDef),
+		0, ad->capacity * sizeof (RBinDwarfAttrDef));
 	ad->defs = tmp;
 	ad->capacity *= 2;
 
@@ -1174,14 +1174,14 @@ static int r_bin_dwarf_expand_debug_abbrev(RBinDwarfDebugAbbrev *da) {
 		return -EINVAL;
 	}
 
-	tmp = (RBinDwarfAbbrevDecl*)realloc (da->decls,
-			da->capacity * 2 * sizeof (RBinDwarfAbbrevDecl));
+	tmp = (RBinDwarfAbbrevDecl *)realloc (da->decls,
+		da->capacity * 2 * sizeof (RBinDwarfAbbrevDecl));
 
 	if (!tmp) {
 		return -ENOMEM;
 	}
-	memset ((ut8*)tmp + da->capacity * sizeof (RBinDwarfAbbrevDecl),
-			0, da->capacity * sizeof (RBinDwarfAbbrevDecl));
+	memset ((ut8 *)tmp + da->capacity * sizeof (RBinDwarfAbbrevDecl),
+		0, da->capacity * sizeof (RBinDwarfAbbrevDecl));
 
 	da->decls = tmp;
 	da->capacity *= 2;
@@ -1667,25 +1667,25 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 	*/
 	case DW_FORM_addrx: // index into an array of addresses in the .debug_addr section.
 		buf = r_uleb128 (buf, buf_end - buf, &value->address);
-		printf ("0x%"PFMT64x"\n", value->address);
+		printf ("0x%" PFMT64x "\n", value->address);
 		break;
 	case DW_FORM_addrx1:
 		value->address = READ8 (buf);
-		printf ("0x%"PFMT64x"\n", value->address);
+		printf ("0x%" PFMT64x "\n", value->address);
 		break;
 	case DW_FORM_addrx2:
 		value->address = READ16 (buf);
-		printf ("0x%"PFMT64x"\n", value->address);
+		printf ("0x%" PFMT64x "\n", value->address);
 		break;
 	case DW_FORM_addrx3: // I need to add 3byte endianess free read here
 		READ8 (buf);
 		READ8 (buf);
 		READ8 (buf);
-		printf ("0x%"PFMT64x"\n", value->address);
+		printf ("0x%" PFMT64x "\n", value->address);
 		break;
 	case DW_FORM_addrx4:
 		value->address = READ32 (buf);
-		printf ("0x%"PFMT64x"\n", value->address);
+		printf ("0x%" PFMT64x "\n", value->address);
 		break;
 	case DW_FORM_line_ptr: // offset in a section .debug_line_str
 		if (hdr->is_64bit) {
@@ -1708,7 +1708,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		printf ("0x%" PFMT64x "\n", value->reference);
 		break;
 	case DW_FORM_ref_sup8: // offset in the supplementary object file
-		value->reference = READ64(buf);
+		value->reference = READ64 (buf);
 		printf ("0x%" PFMT64x "\n", value->reference);
 		break;
 	case DW_FORM_loclistx: // An index into the .debug_loclists
@@ -1852,7 +1852,7 @@ static const ut8 *info_comp_unit_read_hdr(const ut8 *buf, const ut8 *buf_end, RB
 			hdr->dwo_id = READ8 (buf);
 		} else if (hdr->unit_type == DW_UT_type || hdr->unit_type == DW_UT_split_type) {
 			hdr->type_sig = READ64 (buf);
-			 
+
 			if (hdr->is_64bit) {
 				hdr->type_offset = READ64 (buf);
 			} else {
@@ -1879,8 +1879,8 @@ static int expand_info(RBinDwarfDebugInfo *info) {
 	if (!tmp) {
 		return -ENOMEM;
 	}
-	memset ((ut8*)tmp + info->capacity * sizeof (RBinDwarfCompUnit),
-			0, info->capacity * sizeof (RBinDwarfCompUnit));
+	memset ((ut8 *)tmp + info->capacity * sizeof (RBinDwarfCompUnit),
+		0, info->capacity * sizeof (RBinDwarfCompUnit));
 
 	info->comp_units = tmp;
 	info->capacity *= 2;
@@ -1892,19 +1892,16 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
 		const ut8 *obuf, size_t len,
 		const ut8 *debug_str, size_t debug_str_len, int mode) {
 
-	if (!da || !sdb || !obuf) {
-		return false;
-	}
+	r_return_val_if_fail(da && sdb && obuf, false);
 	
 	const ut8 *buf = obuf;
 	const ut8 *buf_end = obuf + len;
 	const ut8 *buf_tmp = NULL;
 
-	RBinDwarfDebugInfo di = {0};
-	RBinDwarfDebugInfo *info = &di;
+	RBinDwarfDebugInfo info = { 0 };
 
 	bool ret = true;
-	if (r_bin_dwarf_init_debug_info (info) < 0) {
+	if (r_bin_dwarf_init_debug_info (&info) < 0) {
 		ret = false;
 		goto out;
 	}
@@ -1912,19 +1909,19 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
 	int curr_unit_idx = 0;
 
 	while (buf < buf_end) {
-		if (info->length >= info->capacity) {
-			if (expand_info(info)) {
+		if (info.length >= info.capacity) {
+			if (expand_info (&info)) {
 				break;
 			}
 		}
 
-		RBinDwarfCompUnit *curr_unit = &info->comp_units[curr_unit_idx];
+		RBinDwarfCompUnit *curr_unit = &info.comp_units[curr_unit_idx];
 		if (r_bin_dwarf_init_comp_unit (curr_unit) < 0) {
 			ret = false;
 			curr_unit_idx--;
 			goto out_debug_info;
 		}
-		//
+		info.length++;
 
 		curr_unit->offset = buf - obuf;
 		buf_tmp = buf;
@@ -1934,12 +1931,11 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
 			ret = false;
 			goto out_debug_info;
 		}
-		info->length++;
 
 		// TODO remove any printing after I am done developing
 		// prints during the parsing and not just after helps
 		// me to find errors easier
-		print_comp_unit_header(&curr_unit->hdr, stdout);
+		print_comp_unit_header (&curr_unit->hdr, stdout);
 
 		if (da->decls->length >= da->capacity) {
 			eprintf ("WARNING: malformed dwarf have not enough buckets for decls.\n");
@@ -1966,14 +1962,11 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
 	}
 
 	if (mode == R_MODE_PRINT) {
-		r_bin_dwarf_dump_debug_info (stdout, info);
+		r_bin_dwarf_dump_debug_info (stdout, &info);
 	}
 
 out_debug_info:
-	for (; curr_unit_idx >= 0; curr_unit_idx--) {
-		r_bin_dwarf_free_comp_unit (&info->comp_units[curr_unit_idx]);
-	}
-	r_bin_dwarf_free_debug_info (info);
+	r_bin_dwarf_free_debug_info (&info);
 out:
 	return ret;
 }
