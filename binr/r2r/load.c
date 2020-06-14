@@ -231,7 +231,7 @@ R_API void r2r_asm_test_free(R2RAsmTest *test) {
 }
 
 static bool parse_asm_path(const char *path, RStrConstPool *strpool, const char **arch_out, const char **cpuout, int *bitsout) {
-	RList *file_tokens = r_str_split_duplist (path, R_SYS_DIR);
+	RList *file_tokens = r_str_split_duplist (path, R_SYS_DIR, true);
 	if (!file_tokens || r_list_empty (file_tokens)) {
 		r_list_free (file_tokens);
 		return false;
