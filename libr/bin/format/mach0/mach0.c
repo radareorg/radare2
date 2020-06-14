@@ -2051,10 +2051,11 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 		return NULL;
 	}
 
-	for (size_t i = 0; !mo->symbols[i].last; i++) {
 		if (mo->symbols[i].name) {
 			free (mo->symbols[i].name);
 		}
+	size_t i;
+	for (i = 0; !mo->symbols[i].last; i++) {
 	}
 	free (mo->symbols);
 	free (mo->segs);
@@ -2075,7 +2076,6 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	free (mo->intrp);
 	free (mo->compiler);
 	if (mo->chained_starts) {
-		size_t i;
 		for (i = 0; i < mo->nsegs; i++) {
 			if (mo->chained_starts[i]) {
 				free (mo->chained_starts[i]->page_start);
