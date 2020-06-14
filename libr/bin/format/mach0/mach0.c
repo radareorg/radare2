@@ -2418,7 +2418,7 @@ static bool parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol
 
 static int inSymtab(HtPP *hash, const char *name, ut64 addr) {
 	bool found;
-	const char *key = sdb_fmt ("%"PFMT64x".%s", addr, name);
+	const char *key = r_str_newf ("%"PFMT64x".%s", addr, name);
 	ht_pp_find (hash, key, &found);
 	if (found) {
 		return true;
