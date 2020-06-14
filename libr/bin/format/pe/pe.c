@@ -3087,6 +3087,8 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 	data_dir_export = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
 	export_dir_rva = data_dir_export->VirtualAddress;
 	export_dir_size = data_dir_export->Size;
+	PE_VWord *func_rvas = NULL;
+	PE_Word *ordinals = NULL;
 	if (bin->export_directory) {
 		if (bin->export_directory->NumberOfFunctions + 1 <
 		bin->export_directory->NumberOfFunctions) {
@@ -3113,8 +3115,8 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 
 		const size_t names_sz = bin->export_directory->NumberOfNames * sizeof (PE_Word);
 		const size_t funcs_sz = bin->export_directory->NumberOfFunctions * sizeof (PE_VWord);
-		PE_Word *ordinals = malloc (names_sz);
-		PE_VWord *func_rvas = malloc (funcs_sz);
+		ordinals = malloc (names_sz);
+		func_rvas = malloc (funcs_sz);
 		if (!ordinals || !func_rvas) {
 			goto beach;
 		}
