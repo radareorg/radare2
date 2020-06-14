@@ -52,6 +52,8 @@ bool test_dwarf3_c(void) {
 	mu_assert_eq (cu.dies[9].abbrev_code, 0, "Wrong attribute information");
 	mu_assert_eq (cu.dies[10].abbrev_code, 0, "Wrong attribute information");
 
+	r_bin_dwarf_free_debug_info(info);
+	r_bin_dwarf_free_debug_abbrev(da);
 	r_bin_free (bin);
 	r_io_free (io);
 	mu_end;

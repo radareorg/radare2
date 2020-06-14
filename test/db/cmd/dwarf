@@ -20,7 +20,7 @@ CMDS=<<EOF
 CL 0x0000a24e
 EOF
 EXPECT=<<EOF
-file: TestRTTI/TestRTTI.cpp
+file: /Users/ftamagni/src/TestRTTI/TestRTTI//TestRTTI.cpp
 line: 18
 EOF
 RUN
