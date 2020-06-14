@@ -3116,24 +3116,15 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 		PE_Word *ordinals = malloc (names_sz);
 		PE_VWord *func_rvas = malloc (funcs_sz);
 		if (!ordinals || !func_rvas) {
-			free (exports);
-			free (ordinals);
-			free (func_rvas);
-			return NULL;
+			goto beach;
 		}
 		int r = r_buf_read_at (bin->b, ordinals_paddr, (ut8 *)ordinals, names_sz);
 		if (r != names_sz) {
-			free (exports);
-			free (ordinals);
-			free (func_rvas);
-			return NULL;
+			goto beach;
 		}
-		int s = r_buf_read_at (bin->b, functions_paddr, (ut8 *)func_rvas, funcs_sz);
-		if (s != names_sz) {
-			free (exports);
-			free (ordinals);
-			free (func_rvas);
-			return NULL;
+		r = r_buf_read_at (bin->b, functions_paddr, (ut8 *)func_rvas, funcs_sz);
+		if (r != names_sz) {
+			goto beach;
 		}
 		for (i = 0; i < bin->export_directory->NumberOfFunctions; i++) {
 			// get vaddr from AddressOfFunctions array
@@ -3200,6 +3191,11 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 		exports = exp;
 	}
 	return exports;
+beach:
+	free (exports);
+	free (ordinals);
+	free (func_rvas);
+	return NULL;
 }
 
 static void free_rsdr_hdr(SCV_RSDS_HEADER* rsds_hdr) {
