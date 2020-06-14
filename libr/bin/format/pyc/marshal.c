@@ -1,4 +1,4 @@
-/* radare - LGPL3 - Copyright 2016 - Matthieu (c0riolis) Tardy - l0stb1t*/
+/* radare - LGPL3 - Copyright 2016-2020 - Matthieu (c0riolis) Tardy - l0stb1t*/
 
 #include <r_io.h>
 #include <r_bin.h>
@@ -1159,7 +1159,7 @@ static bool extract_sections_symbols(pyc_object *obj, RList *sections, RList *sy
 	section = R_NEW0 (RBinSection);
 	symbol = R_NEW0 (RBinSymbol);
 	prefix = r_str_newf ("%s%s%s", prefix? prefix: "",
-		prefix? ".": "", cobj->name->data);
+		prefix? ".": "", (const char *)cobj->name->data);
 	if (!prefix || !section || !symbol) {
 		goto fail;
 	}

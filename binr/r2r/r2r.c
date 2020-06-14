@@ -892,6 +892,7 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 	} else {
 		eprintf ("Failed to write file \"%s\"\n", path);
 	}
+	free (newc);
 }
 
 static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results) {

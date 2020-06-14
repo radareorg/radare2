@@ -112,6 +112,7 @@ static int download(struct SPDBDownloader *pd) {
 		}
 		free (archive_name);
 		free (abspath_to_archive);
+		free (extractor_cmd);
 	}
 	if (res == 0) {
 		eprintf ("Falling back to uncompressed pdb\n");

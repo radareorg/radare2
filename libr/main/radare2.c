@@ -405,8 +405,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		LISTS_FREE ();
 		return main_help (1);
 	}
-	// r_core_init (r); // TODO: use r_core_new() for simplicity
 	r = r_core_new ();
+	if (!r) {
+		eprintf ("Cannot initialize RCore\n");
+		return 1;
+	}
 	r->r_main_radare2 = r_main_radare2;
 	r->r_main_radiff2 = r_main_radiff2;
 	r->r_main_rafind2 = r_main_rafind2;

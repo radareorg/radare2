@@ -801,7 +801,8 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			RList *list2 = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_BPV);
 			r_list_foreach (list2, iter2, bp_var) {
 				if (bp_var->isarg) {
-					const char *query = sdb_fmt ("fcn.0x%08" PFMT64x ".arg.%d", fcn->addr, (bp_var->delta + fcn->bp_off - 8));
+					const char *query = sdb_fmt ("fcn.0x%08" PFMT64x ".arg.%d",
+						fcn->addr, (int)(bp_var->delta + fcn->bp_off - 8));
 					char *type = (char *)sdb_const_get (anal->sdb_fcns, query, NULL);
 					if (type) {
 						__var_retype (anal, bp_var, NULL, type, false, false);

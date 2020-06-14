@@ -1634,6 +1634,7 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 }
 
 int Elf_(r_bin_elf_has_nx)(ELFOBJ *bin) {
+	r_return_val_if_fail (bin, 0);
 	int i;
 	if (bin && bin->phdr) {
 		for (i = 0; i < bin->ehdr.e_phnum; i++) {
@@ -1646,6 +1647,7 @@ int Elf_(r_bin_elf_has_nx)(ELFOBJ *bin) {
 }
 
 int Elf_(r_bin_elf_has_relro)(ELFOBJ *bin) {
+	r_return_val_if_fail (bin, R_ELF_NO_RELRO);
 	int i;
 	bool haveBindNow = false;
 	bool haveGnuRelro = false;
@@ -1656,7 +1658,7 @@ int Elf_(r_bin_elf_has_relro)(ELFOBJ *bin) {
 		haveBindNow = bin->dyn_info.dt_flags_1 & DF_1_NOW;
 	}
 
-	if (bin && bin->phdr) {
+	if (bin->phdr) {
 		for (i = 0; i < bin->ehdr.e_phnum; i++) {
 			if (bin->phdr[i].p_type == PT_GNU_RELRO) {
 				haveGnuRelro = true;
