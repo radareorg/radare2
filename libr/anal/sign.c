@@ -1092,7 +1092,7 @@ typedef struct {
 	double infimum;
 } ClosestMatchData;
 
-static int closest_match_callback(void *a, const char *name, const char *value) {
+static bool closest_match_callback(void *a, const char *name, const char *value) {
 	ClosestMatchData *data = (ClosestMatchData *)a;
 
 	// get signature in usable format

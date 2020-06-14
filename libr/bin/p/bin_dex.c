@@ -428,10 +428,7 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 		argReg++;
 	}
 	if (!(params = dex_method_signature2 (dex, MI))) {
-		free (debug_positions);
-		free (emitted_debug_locals);
-		free (debug_locals);
-		return;
+		goto beach;
 	}
 
 	RListIter *iter;
@@ -441,11 +438,7 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 
 	r_list_foreach (params, iter, type) {
 		if ((argReg >= regsz) || !type || parameters_size <= 0) {
-			free (debug_positions);
-			free (params);
-			free (debug_locals);
-			free (emitted_debug_locals);
-			return;
+			goto beach;
 		}
 		(void)r_buf_uleb128 (bf->buf, &res);
 		param_type_idx = res - 1;
@@ -471,8 +464,7 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 	}
 	ut8 opcode = 0;
 	if (r_buf_read (bf->buf, &opcode, 1) != 1) {
-		// error
-		return;
+		goto beach;
 	}
 	while (keep) {
 		switch (opcode) {
@@ -502,11 +494,7 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 			name_idx--;
 			type_idx--;
 			if (register_num >= regsz) {
-				r_list_free (debug_positions);
-				free (params);
-				free (debug_locals);
-				free (emitted_debug_locals);
-				return;
+				goto beach;
 			}
 			// Emit what was previously there, if anything
 			// emitLocalCbIfLive
@@ -545,10 +533,7 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 			type_idx--;
 			name_idx--;
 			if (register_num >= regsz) {
-				r_list_free (debug_positions);
-				free (params);
-				free (debug_locals);
-				return;
+				goto beach;
 			}
 
 			// Emit what was previously there, if anything
@@ -582,10 +567,7 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 			r_buf_uleb128 (bf->buf, &register_num);
 			// emitLocalCbIfLive
 			if (register_num >= regsz) {
-				r_list_free (debug_positions);
-				free (params);
-				free (debug_locals);
-				return;
+				goto beach;
 			}
 			if (debug_locals[register_num].live) {
 				struct dex_debug_local_t *local = malloc (
@@ -611,10 +593,7 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 			ut64 register_num;
 			r_buf_uleb128 (bf->buf, &register_num);
 			if (register_num >= regsz) {
-				r_list_free (debug_positions);
-				free (params);
-				free (debug_locals);
-				return;
+				goto beach;
 			}
 			if (!debug_locals[register_num].live) {
 				debug_locals[register_num].startAddress = address;
@@ -694,11 +673,7 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 	}
 #endif
 	if (!dexdump) {
-		free (debug_positions);
-		free (emitted_debug_locals);
-		free (debug_locals);
-		free (params);
-		return;
+		goto beach;
 	}
 
 	RListIter *iter2;
@@ -752,7 +727,9 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 			}
 		}
 	}
-	free (debug_positions);
+beach:
+	r_list_free (debug_positions);
+	// free (debug_positions);
 	free (debug_locals);
 	free (emitted_debug_locals);
 	free (params);
@@ -1030,10 +1007,9 @@ static char *dex_method_fullname(RBinDexObj *bin, int method_idx) {
 	if (!name) {
 		return NULL;
 	}
-	const char *className = dex_class_name_byid (bin, cid);
+	const char *class_name = dex_class_name_byid (bin, cid);
 	char *flagname = NULL;
-	if (className) {
-		char *class_name = strdup (className);
+	if (class_name) {
 		r_str_replace_char (class_name, ';', 0);
 		char *signature = dex_method_signature (bin, method_idx);
 		if (signature) {
