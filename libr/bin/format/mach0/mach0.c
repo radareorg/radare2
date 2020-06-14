@@ -2904,7 +2904,7 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 				stridx = bin->symtab[i].n_strx;
 				symbols[j].name = get_name (bin, stridx, false);
 				// symbols[j].name[R_BIN_MACH0_STRING_LENGTH - 2] = 0;
-				symbols[j].last = 0;
+				symbols[j].last = false;
 
 				const char *name = symbols[j].name;
 				if (bin->main_addr == 0 && name) {
@@ -2932,7 +2932,7 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 				break;
 			}
 			if (parse_import_stub (bin, &symbols[j], i)) {
-				symbols[j++].last = 0;
+				symbols[j++].last = false;
 			}
 		}
 
@@ -3005,7 +3005,7 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 		j = sym_ctx.j;
 	}
 	ht_pp_free (hash);
-	symbols[j].last = 1;
+	symbols[j].last = true;
 	bin->symbols = symbols;
 	return symbols;
 }

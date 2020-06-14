@@ -55,7 +55,7 @@ struct symbol_t {
 	int type;
 	bool is_imported;
 	char *name;
-	int last;
+	bool last;
 };
 
 struct import_t {
