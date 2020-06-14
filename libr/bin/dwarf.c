@@ -1276,7 +1276,7 @@ static void r_bin_dwarf_free_comp_unit(RBinDwarfCompUnit *cu) {
 	R_FREE (cu->dies);
 }
 
-static void r_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf) {
+R_API void r_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf) {
 	size_t i;
 	if (!inf) {
 		return;
@@ -1285,6 +1285,7 @@ static void r_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf) {
 		r_bin_dwarf_free_comp_unit (&inf->comp_units[i]);
 	}
 	R_FREE (inf->comp_units);
+	free(inf);
 }
 
 static void r_bin_dwarf_dump_attr_value(const RBinDwarfAttrValue *val, FILE *f) {
@@ -1647,9 +1648,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 			value->string.offset);
 		break;
 	case DW_FORM_strx3: // Add 3 byte int read
-		READ8 (buf);
-		READ8 (buf);
-		READ8 (buf);
+		buf += 3;
 		printf ("Skipped string from .debug_line_str Offset: 0x%" PFMT64x "\n",
 			value->string.offset);
 		break;
@@ -1677,10 +1676,8 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->address = READ16 (buf);
 		printf ("0x%" PFMT64x "\n", value->address);
 		break;
-	case DW_FORM_addrx3: // I need to add 3byte endianess free read here
-		READ8 (buf);
-		READ8 (buf);
-		READ8 (buf);
+	case DW_FORM_addrx3: // I need to add 3byte endianess free read here TODO
+		buf += 3;
 		printf ("0x%" PFMT64x "\n", value->address);
 		break;
 	case DW_FORM_addrx4:
@@ -1873,7 +1870,7 @@ static const ut8 *info_comp_unit_read_hdr(const ut8 *buf, const ut8 *buf_end, RB
 static int expand_info(RBinDwarfDebugInfo *info) {
 	r_return_val_if_fail (info && info->capacity == info->length, EXIT_FAILURE);
 
-	RBinDwarfDebugInfo *tmp;
+	RBinDwarfCompUnit *tmp;
 	tmp = realloc (info->comp_units, info->capacity * 2 * sizeof (RBinDwarfCompUnit));
 
 	if (!tmp) {
@@ -1888,48 +1885,46 @@ static int expand_info(RBinDwarfDebugInfo *info) {
 	return 0;
 }
 
-R_API int r_bin_dwarf_parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
+R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
 		const ut8 *obuf, size_t len,
 		const ut8 *debug_str, size_t debug_str_len, int mode) {
 
 	r_return_val_if_fail(da && sdb && obuf, false);
-	
+
 	const ut8 *buf = obuf;
 	const ut8 *buf_end = obuf + len;
 	const ut8 *buf_tmp = NULL;
 
-	RBinDwarfDebugInfo info = { 0 };
-
-	bool ret = true;
-	if (r_bin_dwarf_init_debug_info (&info) < 0) {
-		ret = false;
-		goto out;
+	RBinDwarfDebugInfo *info = calloc(1, sizeof (RBinDwarfDebugInfo));
+	if (!info) {
+		return NULL;
+	}
+	if (r_bin_dwarf_init_debug_info (info) < 0) {
+		goto cleanup;
 	}
 	size_t k, offset = 0;
 	int curr_unit_idx = 0;
 
 	while (buf < buf_end) {
-		if (info.length >= info.capacity) {
-			if (expand_info (&info)) {
+		if (info->length >= info->capacity) {
+			if (expand_info (info)) {
 				break;
 			}
 		}
 
-		RBinDwarfCompUnit *curr_unit = &info.comp_units[curr_unit_idx];
+		RBinDwarfCompUnit *curr_unit = &info->comp_units[curr_unit_idx];
 		if (r_bin_dwarf_init_comp_unit (curr_unit) < 0) {
-			ret = false;
 			curr_unit_idx--;
-			goto out_debug_info;
+			goto cleanup;
 		}
-		info.length++;
+		info->length++;
 
 		curr_unit->offset = buf - obuf;
 		buf_tmp = buf;
 		buf = info_comp_unit_read_hdr (buf, buf_end, &curr_unit->hdr);
 
 		if (curr_unit->hdr.length > len) {
-			ret = false;
-			goto out_debug_info;
+			goto cleanup;
 		}
 
 		// TODO remove any printing after I am done developing
@@ -1954,21 +1949,21 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
 		buf = r_bin_dwarf_parse_comp_unit (sdb, buf, curr_unit, da, offset, debug_str, debug_str_len);
 
 		if (!buf) {
-			ret = false;
-			goto out_debug_info;
+			goto cleanup;
 		}
 
 		curr_unit_idx++;
 	}
 
 	if (mode == R_MODE_PRINT) {
-		r_bin_dwarf_dump_debug_info (stdout, &info);
+		r_bin_dwarf_dump_debug_info (stdout, info);
 	}
 
-out_debug_info:
-	r_bin_dwarf_free_debug_info (&info);
-out:
-	return ret;
+	return info;
+
+cleanup:
+	r_bin_dwarf_free_debug_info (info);
+	return NULL;
 }
 
 static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf, size_t len, int mode) {
@@ -2001,7 +1996,7 @@ static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf, size_
 		tmpdecl->code = tmp;
 		buf = r_uleb128 (buf, (size_t)(buf_end-buf), &tmp);
 		tmpdecl->tag = tmp;
-
+ 
 		tmpdecl->offset = offset;
 		if (buf >= buf_end) {
 			break;
@@ -2052,9 +2047,10 @@ RBinSection *getsection(RBin *a, const char *sn) {
 }
 
 
-R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode) {
+R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode) {
 	ut8 *buf, *debug_str_buf = 0;
-	int len, debug_str_len = 0, ret;
+	int len, ret, debug_str_len = 0;
+	RBinDwarfDebugInfo *result = NULL;
 	RBinSection *debug_str;
 	RBinSection *section = getsection (a, "debug_info");
 	RBinFile *binfile = a ? a->cur: NULL;
@@ -2068,32 +2064,32 @@ R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode) {
 					     debug_str_buf, debug_str_len);
 			if (!ret) {
 				free (debug_str_buf);
-				return false;
+				return NULL;
 			}
 		}
 
 		len = section->size;
 		if (len > (UT32_MAX >> 1) || len < 1) {
 			free (debug_str_buf);
-			return false;
+			return NULL;
 		}
 		buf = calloc (1, len);
 		if (!buf) {
 			free (debug_str_buf);
-			return false;
+			return NULL;
 		}
 		if (!r_buf_read_at (binfile->buf, section->paddr, buf, len)) {
 			free (debug_str_buf);
 			free (buf);
-			return false;
+			return NULL;
 		}
-		ret = r_bin_dwarf_parse_info_raw (binfile->sdb_addrinfo, da, buf, len,
+		result = r_bin_dwarf_parse_info_raw (binfile->sdb_addrinfo, da, buf, len,
 				debug_str_buf, debug_str_len, mode);
 		free (debug_str_buf);
 		free (buf);
-		return ret;
+		return result;
 	}
-	return false;
+	return NULL;
 }
 
 static RBinDwarfRow *r_bin_dwarf_row_new(ut64 addr, const char *file, int line, int col) {
