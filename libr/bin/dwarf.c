@@ -224,8 +224,8 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 		fprintf (f, " The Directory Table:\n");
 	}
 	while (buf + 1 < buf_end) {
-		int maxlen = R_MIN ((size_t) (buf_end - buf) - 1, 0xfff);
-		int len = r_str_nlen ((const char *)buf, maxlen);
+		size_t maxlen = R_MIN ((size_t) (buf_end - buf) - 1, 0xfff);
+		size_t len = r_str_nlen ((const char *)buf, maxlen);
 		char *str = r_str_ndup ((const char *)buf, len);
 		if (len < 1 || len >= 0xfff) {
 			buf += 1;
@@ -253,7 +253,7 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 	for (i = 0; i < 2; i++) {
 		while (buf + 1 < buf_end) {
 			const char *filename = (const char *)buf;
-			int maxlen = R_MIN ((size_t) (buf_end - buf - 1), 0xfff);
+			size_t maxlen = R_MIN ((size_t) (buf_end - buf - 1), 0xfff);
 			ut64 id_idx, mod_time, file_len;
 			size_t namelen, len = r_str_nlen (filename, maxlen);
 
@@ -284,16 +284,12 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 
 			if (i) {
 				char *include_dir = NULL, *comp_dir = NULL, *pinclude_dir = NULL;
-				char *allocated_id = NULL;
 				if (id_idx > 0) {
 					include_dir = pinclude_dir = sdb_array_get (sdb, "includedirs", id_idx - 1, 0);
 					if (include_dir && include_dir[0] != '/') {
 						comp_dir = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
 						if (comp_dir) {
-							allocated_id = calloc (1, strlen (comp_dir) + strlen (include_dir) + 8);
-							snprintf (allocated_id, strlen (comp_dir) + strlen (include_dir) + 8,
-								"%s/%s/", comp_dir, include_dir);
-							include_dir = allocated_id;
+							include_dir = r_str_newf("%s/%s/", comp_dir, include_dir);
 						}
 					}
 				} else {
@@ -306,11 +302,7 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 				namelen = len + (include_dir ? strlen (include_dir) : 0) + 8;
 
 				if (hdr->file_names) {
-					hdr->file_names[count].name = calloc (sizeof (char), namelen);
-					snprintf (hdr->file_names[count].name, namelen - 1,
-						"%s/%s", include_dir ? include_dir : "", filename);
-					hdr->file_names[count].name[namelen - 1] = '\0';
-					free (allocated_id);
+					hdr->file_names[count].name = r_str_newf("%s/%s", include_dir ? include_dir : "", filename);
 					hdr->file_names[count].id_idx = id_idx;
 					hdr->file_names[count].mod_time = mod_time;
 					hdr->file_names[count].file_len = file_len;
@@ -373,10 +365,9 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 static const ut8 *parse_line_header (
 	RBinFile *bf, const ut8 *buf, const ut8 *buf_end,
 	RBinDwarfLineHeader *hdr, FILE *f, int mode) {
+	
+	r_return_val_if_fail(hdr && bf && buf, NULL);
 
-	if (!hdr || !bf || !buf) {
-		return NULL;
-	}
 	hdr->is_64bit = false;
 	hdr->unit_length = READ32 (buf);
 
