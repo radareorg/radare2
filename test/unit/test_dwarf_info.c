@@ -11,7 +11,7 @@ bool test_dwarf3_c(void) {
 	r_io_bind (io, &bin->iob);
 
 	RBinOptions opt = {0};
-	bool res = r_bin_open (bin, "../bins/elf/dwarf3_c.elf", &opt);
+	bool res = r_bin_open (bin, "bins/elf/dwarf3_c.elf", &opt);
 	mu_assert ("dwarf3_c.elf binary could not be opened", res);
 
 	RBinDwarfDebugAbbrev *da = r_bin_dwarf_parse_abbrev (bin, MODE);
