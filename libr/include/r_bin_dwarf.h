@@ -47,6 +47,7 @@ extern "C" {
 #define DW_LNE_hi_user                  0xff /* DWARF3 */
 
 /* debug_info tags */
+#define DW_TAG_null_entry               0x00
 #define DW_TAG_array_type               0x01
 #define DW_TAG_class_type               0x02
 #define DW_TAG_entry_point              0x03
