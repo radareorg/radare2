@@ -23,7 +23,7 @@ static int rcoreasm_address_comparator(RCoreAsmHit *a, RCoreAsmHit *b){
 	return 1; /* a->addr > b->addr */
 }
 
-R_API RCoreAsmHit *r_core_asm_hit_new() {
+R_API RCoreAsmHit *r_core_asm_hit_new(void) {
 	RCoreAsmHit *hit = R_NEW0 (RCoreAsmHit);
 	if (!hit) {
 		return NULL;
@@ -33,7 +33,7 @@ R_API RCoreAsmHit *r_core_asm_hit_new() {
 	return hit;
 }
 
-R_API RList *r_core_asm_hit_list_new() {
+R_API RList *r_core_asm_hit_list_new(void) {
 	RList *list = r_list_new ();
 	if (list) {
 		list->free = &r_core_asm_hit_free;

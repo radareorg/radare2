@@ -42,7 +42,7 @@ static void setup_sdb_for_not_found(Sdb *res) {
 	sdb_set (res, "struct.omega.ff", "", 0);
 }
 
-static bool test_anal_get_base_type_struct() {
+static bool test_anal_get_base_type_struct(void) {
 	RAnal *anal = r_anal_new ();
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
@@ -72,7 +72,7 @@ static bool test_anal_get_base_type_struct() {
 	mu_end;
 }
 
-static bool test_anal_get_base_type_union() {
+static bool test_anal_get_base_type_union(void) {
 	RAnal *anal = r_anal_new ();
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
@@ -100,7 +100,7 @@ static bool test_anal_get_base_type_union() {
 	mu_end;
 }
 
-static bool test_anal_get_base_type_enum() {
+static bool test_anal_get_base_type_enum(void) {
 	RAnal *anal = r_anal_new ();
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
@@ -128,7 +128,7 @@ static bool test_anal_get_base_type_enum() {
 	mu_end;
 }
 
-static bool test_anal_get_base_type_not_found() {
+static bool test_anal_get_base_type_not_found(void) {
 	RAnal *anal = r_anal_new ();
 	setup_sdb_for_not_found(anal->sdb_types);
 
@@ -151,7 +151,7 @@ static bool test_anal_get_base_type_not_found() {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test (test_anal_get_base_type_struct);
 	mu_run_test (test_anal_get_base_type_union);
 	mu_run_test (test_anal_get_base_type_enum);

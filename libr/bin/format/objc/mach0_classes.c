@@ -1102,7 +1102,7 @@ static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinCl
 	}
 }
 
-static mach0_ut get_isa_value() {
+static mach0_ut get_isa_value(void) {
 	// TODO: according to otool sources this is taken from relocs
 	return 0;
 }

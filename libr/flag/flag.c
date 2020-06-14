@@ -215,7 +215,7 @@ static void new_spaces(RFlag *f) {
 	r_event_hook (f->spaces.event, R_SPACE_EVENT_UNSET, unset_flagspace, NULL);
 }
 
-R_API RFlag *r_flag_new() {
+R_API RFlag *r_flag_new(void) {
 	RFlag *f = R_NEW0 (RFlag);
 	if (!f) {
 		return NULL;

@@ -86,7 +86,7 @@ static int read_ahead(RAnal *anal, ut64 addr, ut8 *buf, int len) {
 }
 #endif
 
-R_API void r_anal_fcn_invalidate_read_ahead_cache() {
+R_API void r_anal_fcn_invalidate_read_ahead_cache(void) {
 #if READ_AHEAD
 	cache_addr = UT64_MAX;
 #endif

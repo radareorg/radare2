@@ -274,11 +274,11 @@ R_API void r_cons_strcat_at(const char *_str, int x, char y, int w, int h) {
 	free (str);
 }
 
-R_API RCons *r_cons_singleton() {
+R_API RCons *r_cons_singleton(void) {
 	return &I;
 }
 
-R_API void r_cons_break_clear() {
+R_API void r_cons_break_clear(void) {
 	I.context->breaked = false;
 }
 
@@ -335,11 +335,11 @@ R_API void r_cons_break_push(RConsBreak cb, void *user) {
 	r_cons_context_break_push (I.context, cb, user, true);
 }
 
-R_API void r_cons_break_pop() {
+R_API void r_cons_break_pop(void) {
 	r_cons_context_break_pop (I.context, true);
 }
 
-R_API bool r_cons_is_interactive() {
+R_API bool r_cons_is_interactive(void) {
 	return I.context->is_interactive;
 }
 
@@ -347,7 +347,7 @@ R_API bool r_cons_default_context_is_interactive(void) {
 	return r_cons_context_default.is_interactive;
 }
 
-R_API bool r_cons_is_breaked() {
+R_API bool r_cons_is_breaked(void) {
 	if (I.cb_break) {
 		I.cb_break (I.user);
 	}
@@ -361,7 +361,7 @@ R_API bool r_cons_is_breaked() {
 	return I.context->breaked;
 }
 
-R_API int r_cons_get_cur_line() {
+R_API int r_cons_get_cur_line(void) {
 	int curline = 0;
 #if __WINDOWS__
 	POINT point;
@@ -396,7 +396,7 @@ R_API void r_cons_break_timeout(int timeout) {
 		? r_sys_now () + ((ut64) timeout << 20) : 0;
 }
 
-R_API void r_cons_break_end() {
+R_API void r_cons_break_end(void) {
 	I.context->breaked = false;
 	I.timeout = 0;
 #if __UNIX__
@@ -507,7 +507,7 @@ R_API bool r_cons_enable_mouse(const bool enable) {
 
 // Stub function that cb_main_output gets pointed to in util/log.c by r_cons_new
 // This allows Cutter to set per-task logging redirection
-R_API RCons *r_cons_new() {
+R_API RCons *r_cons_new(void) {
 	I.refcnt++;
 	if (I.refcnt != 1) {
 		return &I;
@@ -576,7 +576,7 @@ R_API RCons *r_cons_new() {
 	return &I;
 }
 
-R_API RCons *r_cons_free() {
+R_API RCons *r_cons_free(void) {
 #if __WINDOWS__
 	r_cons_enable_mouse (false);
 	if (I.old_cp) {
@@ -638,7 +638,7 @@ static bool palloc(int moar) {
 	return true;
 }
 
-R_API int r_cons_eof() {
+R_API int r_cons_eof(void) {
 	return feof (I.fdin);
 }
 
@@ -650,11 +650,11 @@ R_API void r_cons_gotoxy(int x, int y) {
 #endif
 }
 
-R_API void r_cons_print_clear() {
+R_API void r_cons_print_clear(void) {
 	r_cons_strcat ("\x1b[0;0H\x1b[0m");
 }
 
-R_API void r_cons_fill_line() {
+R_API void r_cons_fill_line(void) {
 	char *p, white[1024];
 	int cols = I.columns - 1;
 	if (cols < 1) {
@@ -694,16 +694,16 @@ R_API void r_cons_clear_line(int std_err) {
 	fflush (std_err? stderr: stdout);
 }
 
-R_API void r_cons_clear00() {
+R_API void r_cons_clear00(void) {
 	r_cons_clear ();
 	r_cons_gotoxy (0, 0);
 }
 
-R_API void r_cons_reset_colors() {
+R_API void r_cons_reset_colors(void) {
 	r_cons_strcat (Color_RESET_BG Color_RESET);
 }
 
-R_API void r_cons_clear() {
+R_API void r_cons_clear(void) {
 	I.lines = 0;
 #if __WINDOWS__
 	r_cons_w32_clear ();
@@ -720,7 +720,7 @@ static void cons_grep_reset(RConsGrep *grep) {
 	grep->sort_invert = false;
 }
 
-R_API void r_cons_reset() {
+R_API void r_cons_reset(void) {
 	if (I.context->buffer) {
 		I.context->buffer[0] = '\0';
 	}
@@ -731,16 +731,16 @@ R_API void r_cons_reset() {
 	CTX (pageable) = true;
 }
 
-R_API const char *r_cons_get_buffer() {
+R_API const char *r_cons_get_buffer(void) {
 	//check len otherwise it will return trash
 	return I.context->buffer_len? I.context->buffer : NULL;
 }
 
-R_API int r_cons_get_buffer_len() {
+R_API int r_cons_get_buffer_len(void) {
 	return I.context->buffer_len;
 }
 
-R_API void r_cons_filter() {
+R_API void r_cons_filter(void) {
 	/* grep */
 	if (I.filter || I.context->grep.nstrings > 0 || I.context->grep.tokens_used || I.context->grep.less || I.context->grep.json) {
 		(void)r_cons_grepbuf ();
@@ -760,7 +760,7 @@ R_API void r_cons_filter() {
 	/* TODO */
 }
 
-R_API void r_cons_push() {
+R_API void r_cons_push(void) {
 	if (!I.context->cons_stack) {
 		return;
 	}
@@ -775,7 +775,7 @@ R_API void r_cons_push() {
 	}
 }
 
-R_API void r_cons_pop() {
+R_API void r_cons_pop(void) {
 	if (!I.context->cons_stack) {
 		return;
 	}
@@ -808,11 +808,11 @@ R_API void r_cons_context_load(RConsContext *context) {
 	I.context = context;
 }
 
-R_API void r_cons_context_reset() {
+R_API void r_cons_context_reset(void) {
 	I.context = &r_cons_context_default;
 }
 
-R_API bool r_cons_context_is_main() {
+R_API bool r_cons_context_is_main(void) {
 	return I.context == &r_cons_context_default;
 }
 
@@ -834,7 +834,7 @@ R_API void r_cons_last(void) {
 	r_cons_memcat (CTX (lastOutput), CTX (lastLength));
 }
 
-static bool lastMatters() {
+static bool lastMatters(void) {
 	return (I.context->buffer_len > 0) \
 		&& (CTX (lastEnabled) && !I.filter && I.context->grep.nstrings < 1 && \
 		!I.context->grep.tokens_used && !I.context->grep.less && \
@@ -969,7 +969,7 @@ R_API void r_cons_flush(void) {
 	}
 }
 
-R_API void r_cons_visual_flush() {
+R_API void r_cons_visual_flush(void) {
 	if (I.noflush) {
 		return;
 	}
@@ -1152,7 +1152,7 @@ R_API int r_cons_printf(const char *format, ...) {
 	return 0;
 }
 
-R_API int r_cons_get_column() {
+R_API int r_cons_get_column(void) {
 	char *line = strrchr (I.context->buffer, '\n');
 	if (!line) {
 		line = I.context->buffer;
@@ -1212,7 +1212,7 @@ R_API void r_cons_strcat(const char *str) {
 	}
 }
 
-R_API void r_cons_newline() {
+R_API void r_cons_newline(void) {
 	if (!I.null) {
 		r_cons_strcat ("\n");
 	}
@@ -1266,7 +1266,7 @@ R_API int r_cons_get_cursor(int *rows) {
 	return col;
 }
 
-R_API bool r_cons_isatty() {
+R_API bool r_cons_isatty(void) {
 #if __UNIX__
 	struct winsize win = { 0 };
 	const char *tty;
@@ -1663,7 +1663,7 @@ R_API void r_cons_set_interactive(bool x) {
 	r_cons_singleton ()->context->is_interactive = x;
 }
 
-R_API void r_cons_set_last_interactive() {
+R_API void r_cons_set_last_interactive(void) {
 	r_cons_singleton ()->context->is_interactive = lasti;
 }
 
@@ -1671,7 +1671,7 @@ R_API void r_cons_set_title(const char *str) {
 	r_cons_printf ("\x1b]0;%s\007", str);
 }
 
-R_API void r_cons_zero() {
+R_API void r_cons_zero(void) {
 	if (I.line) {
 		I.line->zerosep = true;
 	}
@@ -1821,7 +1821,7 @@ R_API bool r_cons_drop(int n) {
 	return true;
 }
 
-R_API void r_cons_chop() {
+R_API void r_cons_chop(void) {
 	while (I.context->buffer_len > 0) {
 		char ch = I.context->buffer[I.context->buffer_len - 1];
 		if (ch != '\n' && !IS_WHITESPACE (ch)) {

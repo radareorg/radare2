@@ -1303,7 +1303,7 @@ beach:
 #define K_MIG_ROUTINE_SIZE (5 * 8)
 #define K_MIG_MAX_ROUTINES 100
 
-static HtPP *mig_hash_new() {
+static HtPP *mig_hash_new(void) {
 	HtPP *hash = sdb_ht_new ();
 	if (!hash) {
 		return NULL;

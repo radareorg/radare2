@@ -1,21 +1,16 @@
-/* radare - LGPL - Copyright 2014-2017 - inisider */
+/* radare - LGPL - Copyright 2014-2020 - inisider */
 
 #include <string.h>
 #include <r_util.h>
 #include <r_core.h>
 #include "pdb_downloader.h"
 
-static bool checkExtract() {
+static bool checkExtract(void) {
 #if __WINDOWS__
-	if (r_sys_cmd ("expand -? >nul") != 0) {
-		return false;
-	}
+	return r_sys_cmd ("expand -? >nul") == 0;
 #else
-	if (r_sys_cmd ("cabextract -v > /dev/null") != 0) {
-		return false;
-	}
+	return r_sys_cmd ("cabextract -v > /dev/null") == 0;
 #endif
-	return true;
 }
 
 static bool download_and_write(SPDBDownloaderOpt *opt, const char *file) {

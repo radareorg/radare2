@@ -295,7 +295,7 @@ static int do_help(int line) {
 	return 0;
 }
 
-static void algolist() {
+static void algolist(void) {
 	ut64 bits;
 	ut64 i;
 	for (i = 0; i < R_HASH_NBITS; i++) {

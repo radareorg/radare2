@@ -2,7 +2,7 @@
 #include <r_main.h>
 #include <r_core.h>
 
-static void rasign_show_help() {
+static void rasign_show_help(void) {
 	printf ("Usage: rasign2 [options] [file]\n"
 		" -a [-a]          add extra 'a' to analysis command\n"
 		" -o sigs.sdb      add signatures to file, create if it does not exist\n"

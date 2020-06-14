@@ -7921,7 +7921,7 @@ static void agraph_print_node(RANode *n, void *user) {
 	free (encbody);
 }
 
-static char *getViewerPath() {
+static char *getViewerPath(void) {
 	int i;
 	const char *viewers[] = {
 #if __WINDOWS__

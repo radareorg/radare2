@@ -36,14 +36,14 @@ static RBinJavaObj * get_java_bin_obj(RAnal *anal) {
 	return is_java ? b->cur->o->bin_obj : NULL;
 }
 
-static ut64 java_get_method_start () {
+static ut64 java_get_method_start(void) {
 	return METHOD_START;
 }
 
 static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	ut8 op_byte = data[0];
 	ut64 offset = addr - java_get_method_start ();
-	ut8 pos = (offset+1)%4 ? 1 + 4 - (offset+1)%4 : 1;
+	ut8 pos = (offset + 1)%4 ? 1 + 4 - (offset+1)%4 : 1;
 
 	if (op_byte == 0xaa) {
 		// handle a table switch condition

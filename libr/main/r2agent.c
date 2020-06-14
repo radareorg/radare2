@@ -26,7 +26,7 @@ static int usage (int v) {
 	return !v;
 }
 
-static int showversion() {
+static int showversion(void) {
 	return r_main_version_print ("r2agent");
 }
 

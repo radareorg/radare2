@@ -1989,7 +1989,7 @@ R_API bool r_sign_foreach(RAnal *a, RSignForeachCallback cb, void *user) {
 	return sdb_foreach (a->sdb_zigns, foreachCB, &ctx);
 }
 
-R_API RSignSearch *r_sign_search_new() {
+R_API RSignSearch *r_sign_search_new(void) {
 	RSignSearch *ret = R_NEW0 (RSignSearch);
 	if (ret) {
 		ret->search = r_search_new (R_SEARCH_KEYWORD);
@@ -2325,7 +2325,7 @@ R_API bool r_sign_match_types(RAnal *a, RAnalFunction *fcn, RSignVarsMatchCallba
 	return r_sign_foreach (a, typesMatchCB, &ctx);
 }
 
-R_API RSignItem *r_sign_item_new() {
+R_API RSignItem *r_sign_item_new(void) {
 	RSignItem *ret = R_NEW0 (RSignItem);
 	if (ret) {
 		ret->addr = UT64_MAX;

@@ -297,7 +297,7 @@ R_API void r_print_stereogram_print(RPrint *p, const char *ret) {
 	}
 }
 
-R_API RPrint* r_print_new() {
+R_API RPrint* r_print_new(void) {
 	RPrint *p = R_NEW0 (RPrint);
 	if (!p) {
 		return NULL;
