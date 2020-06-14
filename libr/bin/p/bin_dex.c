@@ -729,7 +729,6 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 	}
 beach:
 	r_list_free (debug_positions);
-	// free (debug_positions);
 	free (debug_locals);
 	free (emitted_debug_locals);
 	free (params);
