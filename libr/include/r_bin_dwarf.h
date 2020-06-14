@@ -671,32 +671,30 @@ typedef struct {
 	ut64	attr_name;
 	ut64	attr_form;
 	st64	special; // Used for values coded directly into abbrev
-} RBinDwarfAttrSpec;
+} RBinDwarfAttrDef;
 
 typedef struct {
 	ut64	length;
 	ut8	*data;
 } RBinDwarfBlock;
 
-typedef union {
-	ut64	address;
-	RBinDwarfBlock block;
-	ut64	constant;
-	ut8		flag;
-	ut64	data;
-	st64	sdata;
-	ut64	reference;
-	// ut64	offset; // I'll use it for all the new offset forms in DWARF 5
-	struct {
-		char	*string;
-		ut64	offset;
-	} str_struct;
-} RBinDwarfAttrEnc;
-
 typedef struct {
-	ut64 name;
-	ut64 form;
-	RBinDwarfAttrEnc encoding;
+	ut64 attr_name;
+	ut64 attr_form;
+	union {
+		ut64 address;
+		RBinDwarfBlock block;
+		ut64 constant;
+		ut8 flag;
+		ut64 data;
+		st64 sdata;
+		ut64 reference;
+		// ut64	offset; // I'll use it for all the new offset forms in DWARF 5
+		struct {
+			const char *content;
+			ut64 offset;
+		} string;
+	};
 } RBinDwarfAttrValue;
 
 typedef struct {
@@ -752,7 +750,7 @@ typedef struct {
 	ut8 has_children;
 	size_t length;
 	size_t capacity;
-	RBinDwarfAttrSpec *specs;
+	RBinDwarfAttrDef *defs;
 } RBinDwarfAbbrevDecl;
 
 #define DEBUG_ABBREV_CAP	32
