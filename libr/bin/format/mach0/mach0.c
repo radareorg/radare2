@@ -3236,6 +3236,9 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 		size_t partition_sizes[] = {bind_size, lazy_size, weak_size};
 		size_t pidx;
 		int opcodes_offset = 0;
+		if (!bin->segs) {
+			return NULL;
+		}
 		for (pidx = 0; pidx < R_ARRAY_SIZE (partition_sizes); pidx++) {
 			size_t partition_size = partition_sizes[pidx];
 
