@@ -350,7 +350,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 		RDebugMap *map;
 		r_debug_map_sync (core->dbg);
 		r_list_foreach (core->dbg->maps, iter, map) {
-			if (strstr (map->name, "/libc-") && map->perm == 4 && main_arena_sym == GHT_MAX) {
+			if (strstr (map->name, "/libc-") && map->perm == R_PERM_R && main_arena_sym == GHT_MAX) {
 				libc_path = map->name;
 				libc_addr = map->addr;
 				if (!libc_path) {
@@ -365,7 +365,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 				}
 				free (path);
 			}
-			if (strstr (map->name, "/libc-") && map->perm == 6) {
+			if (strstr (map->name, "/libc-") && map->perm == R_PERM_RW) {
 				libc_addr_sta = map->addr;
 				libc_addr_end = map->addr_end;
 				break;
@@ -961,7 +961,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 	if (m_arena == m_state) {
 		GH(get_brks) (core, &brk_start, &brk_end);
 		if (tcache) {
-			tcache_initial_brk = ((brk_start >> 12) << 12) + GH(HDR_SZ);
+			// tcache_initial_brk = ((brk_start >> 12) << 12) + GH(HDR_SZ);
 			GHT fc_offset = GH(tcache_chunk_size) (core, brk_start);
 			initial_brk = ((brk_start >> 12) << 12) + fc_offset;
 		} else {
