@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2019 pancake */
+/* radare - LGPL - Copyright 2015-2020 pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -50,9 +50,13 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 			".ascii \"ENDMARK\"\n",
 			bitconfig, buf); // a->pc ??
 	if (asm_buf) {
-		(void)write (ifd, asm_buf, strlen (asm_buf));
+		const size_t asm_buf_len = strlen (asm_buf);
+		const bool success = write (ifd, asm_buf, asm_buf_len) != asm_buf_len;
 		(void)close (ifd);
 		free (asm_buf);
+		if (!success) {
+			return -1;
+		}
 	}
 
 	int len = 0;

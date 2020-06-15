@@ -460,7 +460,9 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 		}
 		/* Restore diff entries */
 		for (i = 0; i < header.difflist_len; i++) {
-			(void) fread (&diffentry, sizeof (RDiffEntry), 1, fd);
+			if (fread (&diffentry, sizeof (RDiffEntry), 1, fd) != 1) {
+				break;
+			}
 			// eprintf ("diffentry base=%d pages=%d\n", diffentry.base_idx, diffentry.pages_len);
 			snapdiff = R_NEW0 (RDebugSnapDiff);
 			if (!snapdiff) {
@@ -482,10 +484,19 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 			ut32 clust_page = R_MIN (SNAP_PAGE_SIZE, base->size);
 			for (p = 0; p < diffentry.pages_len; p++) {
 				page = R_NEW0 (RPageData);
+				if (!page) {
+					break;
+				}
 				page->data = calloc (1, clust_page);
-				(void) fread (&page->page_off, sizeof (ut32), 1, fd);
-				(void) fread (page->data, SNAP_PAGE_SIZE, 1, fd);
-				(void) fread (page->hash, 128, 1, fd);
+				if (!page->data) {
+					free (page);
+					break;
+				}
+				if (1 != fread (&page->page_off, sizeof (ut32), 1, fd)
+				 || 1 != fread (page->data, SNAP_PAGE_SIZE, 1, fd)
+				 || 1 != fread (page->hash, 128, 1, fd)) {
+					break;
+				}
 				snapdiff->last_changes[page->page_off] = page;
 				r_list_append (snapdiff->pages, page);
 			}

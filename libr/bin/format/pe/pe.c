@@ -56,13 +56,10 @@ static inline int is_arm(struct PE_(r_bin_pe_obj_t)* bin) {
 }
 
 struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin) {
-	struct r_bin_pe_addr_t* entry;
+	r_return_val_if_fail (bin && bin->b, NULL);
 	ut8 b[512];
 	int n = 0;
-	if (!bin || !bin->b) {
-		return 0LL;
-	}
-	entry = PE_(r_bin_pe_get_entrypoint) (bin);
+	struct r_bin_pe_addr_t* entry = PE_(r_bin_pe_get_entrypoint) (bin);
 	ZERO_FILL (b);
 	if (r_buf_read_at (bin->b, entry->paddr, b, sizeof (b)) < 0) {
 		bprintf ("Warning: Cannot read entry at 0x%08"PFMT64x "\n", entry->paddr);
@@ -3073,6 +3070,7 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 }
 
 struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* bin) {
+	r_return_val_if_fail (bin, NULL);
 	struct r_bin_pe_export_t* exp, * exports = NULL;
 	PE_Word function_ordinal;
 	PE_VWord functions_paddr, names_paddr, ordinals_paddr, function_rva, name_vaddr, name_paddr;
@@ -3083,12 +3081,14 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 	int n,i, export_dir_size;
 	st64 exports_sz = 0;
 
-	if (!bin || !bin->data_directory) {
+	if (!bin->data_directory) {
 		return NULL;
 	}
 	data_dir_export = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
 	export_dir_rva = data_dir_export->VirtualAddress;
 	export_dir_size = data_dir_export->Size;
+	PE_VWord *func_rvas = NULL;
+	PE_Word *ordinals = NULL;
 	if (bin->export_directory) {
 		if (bin->export_directory->NumberOfFunctions + 1 <
 		bin->export_directory->NumberOfFunctions) {
@@ -3115,27 +3115,31 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 
 		const size_t names_sz = bin->export_directory->NumberOfNames * sizeof (PE_Word);
 		const size_t funcs_sz = bin->export_directory->NumberOfFunctions * sizeof (PE_VWord);
-		PE_Word *ordinals = malloc (names_sz);
-		PE_VWord *func_rvas = malloc (funcs_sz);
+		ordinals = malloc (names_sz);
+		func_rvas = malloc (funcs_sz);
 		if (!ordinals || !func_rvas) {
-			free (exports);
-			free (ordinals);
-			free (func_rvas);
-			return NULL;
+			goto beach;
 		}
-		r_buf_read_at (bin->b, ordinals_paddr, (ut8 *)ordinals, names_sz);
-		r_buf_read_at (bin->b, functions_paddr, (ut8 *)func_rvas, funcs_sz);
+		int r = r_buf_read_at (bin->b, ordinals_paddr, (ut8 *)ordinals, names_sz);
+		if (r != names_sz) {
+			goto beach;
+		}
+		r = r_buf_read_at (bin->b, functions_paddr, (ut8 *)func_rvas, funcs_sz);
+		if (r != funcs_sz) {
+			goto beach;
+		}
 		for (i = 0; i < bin->export_directory->NumberOfFunctions; i++) {
 			// get vaddr from AddressOfFunctions array
 			function_rva = r_read_at_ble32 ((ut8 *)func_rvas, i * sizeof (PE_VWord), bin->endian);
 			// have exports by name?
-			if (bin->export_directory->NumberOfNames != 0) {
+			if (bin->export_directory->NumberOfNames > 0) {
 				// search for value of i into AddressOfOrdinals
 				name_vaddr = 0;
 				for (n = 0; n < bin->export_directory->NumberOfNames; n++) {
-					function_ordinal = r_read_at_ble16 ((ut8 *)ordinals, n * sizeof (PE_Word), bin->endian);
+					PE_Word fo = r_read_at_ble16 ((ut8 *)ordinals, n * sizeof (PE_Word), bin->endian);
 					// if exist this index into AddressOfOrdinals
-					if (i == function_ordinal) {
+					if (i == fo) {
+						function_ordinal = fo;
 						// get the VA of export name  from AddressOfNames
 						r_buf_read_at (bin->b, names_paddr + n * sizeof (PE_VWord), (ut8*) &name_vaddr, sizeof (PE_VWord));
 						break;
@@ -3189,6 +3193,11 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 		exports = exp;
 	}
 	return exports;
+beach:
+	free (exports);
+	free (ordinals);
+	free (func_rvas);
+	return NULL;
 }
 
 static void free_rsdr_hdr(SCV_RSDS_HEADER* rsds_hdr) {
