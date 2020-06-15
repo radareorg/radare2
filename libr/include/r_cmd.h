@@ -16,9 +16,11 @@ extern "C" {
 #define R_CMD_MAXLEN 4096
 
 typedef enum r_cmd_status_t {
-	R_CMD_STATUS_OK = 0,
-	R_CMD_STATUS_INVALID,
-	R_CMD_STATUS_EXIT
+	R_CMD_STATUS_OK = 0, // command handler exited in the right way
+	R_CMD_STATUS_WRONG_ARGS, // command handler could not handle the arguments passed to it
+	R_CMD_STATUS_ERROR, // command handler had issues while running (e.g. allocation error, etc.)
+	R_CMD_STATUS_INVALID, // command could not be found (e.g. it does not exist)
+	R_CMD_STATUS_EXIT, // command handler asks to exit the prompt loop
 } RCmdStatus;
 
 typedef int (*RCmdCb) (void *user, const char *input);

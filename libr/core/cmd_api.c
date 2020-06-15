@@ -301,7 +301,7 @@ static RCmdStatus int2cmdstatus(int v) {
 	if (v == -2) {
 		return R_CMD_STATUS_EXIT;
 	} else if (v < 0) {
-		return R_CMD_STATUS_INVALID;
+		return R_CMD_STATUS_ERROR;
 	} else {
 		return R_CMD_STATUS_OK;
 	}
@@ -318,11 +318,9 @@ R_API RCmdStatus r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
 	RCorePlugin *cp;
 	char *exec_string = r_cmd_parsed_args_execstr (args);
 	r_list_foreach (cmd->plist, iter, cp) {
-		if (cp->call) {
-			if (cp->call (cmd->data, exec_string)) {
-				res = R_CMD_STATUS_OK;
-				break;
-			}
+		if (cp->call && cp->call (cmd->data, exec_string)) {
+			res = R_CMD_STATUS_OK;
+			break;
 		}
 	}
 	R_FREE (exec_string);

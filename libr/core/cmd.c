@@ -4621,8 +4621,8 @@ static char *ts_node_sub_parent_string(TSNode parent, TSNode node, const char *c
 	DEFINE_HANDLE_TS_FCN (name)
 
 #define UPDATE_CMD_STATUS_RES(res, cmd_res, label) \
-	if ((cmd_res) == R_CMD_STATUS_EXIT || (cmd_res) == R_CMD_STATUS_INVALID) { \
-		res = cmd_res; \
+	if ((cmd_res) != R_CMD_STATUS_OK) { \
+		res = (cmd_res); \
 		goto label; \
 	}
 
@@ -4653,7 +4653,7 @@ static RCmdStatus int2cmdstatus(int v) {
 	if (v == R_CORE_CMD_EXIT) {
 		return R_CMD_STATUS_EXIT;
 	} else if (v < 0) {
-		return R_CMD_STATUS_INVALID;
+		return R_CMD_STATUS_ERROR;
 	} else {
 		return R_CMD_STATUS_OK;
 	}
@@ -4663,6 +4663,8 @@ static int cmdstatus2int(RCmdStatus s) {
 	switch (s) {
 	case R_CMD_STATUS_OK:
 		return 0;
+	case R_CMD_STATUS_ERROR:
+	case R_CMD_STATUS_WRONG_ARGS:
 	case R_CMD_STATUS_INVALID:
 		return -1;
 	case R_CMD_STATUS_EXIT:
@@ -4998,6 +5000,13 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_command) {
 
 	pr_args->has_space_after_cmd = !ts_node_is_null (args) && ts_node_end_byte (command) < ts_node_start_byte (args);
 	res = r_cmd_call_parsed_args (state->core->rcmd, pr_args);
+	if (res == R_CMD_STATUS_WRONG_ARGS) {
+		const char *cmdname = r_cmd_parsed_args_cmd (pr_args);
+		eprintf ("Wrong number of arguments passed to `%s`, see its help with `%s?`\n", cmdname, cmdname);
+	} else if (res == R_CMD_STATUS_ERROR) {
+		const char *cmdname = r_cmd_parsed_args_cmd (pr_args);
+		eprintf ("Something wrong during the execution of `%s` command.\n", cmdname);
+	}
 
 err:
 	r_cmd_parsed_args_free (pr_args);

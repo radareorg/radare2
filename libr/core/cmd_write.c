@@ -528,7 +528,7 @@ static RCmdStatus common_wv_handler(RCore *core, int argc, const char **argv, in
 
 	core->num->value = 0;
 	if (argc != 2) {
-		return R_CMD_STATUS_INVALID;
+		return R_CMD_STATUS_WRONG_ARGS;
 	}
 
 	off = r_num_math (core->num, argv[1]);
@@ -538,7 +538,7 @@ static RCmdStatus common_wv_handler(RCore *core, int argc, const char **argv, in
 
 	ut64 res = r_io_seek (core->io, core->offset, R_IO_SEEK_SET);
 	if (res == UT64_MAX) {
-		return R_CMD_STATUS_INVALID;
+		return R_CMD_STATUS_ERROR;
 	}
 	if (type == 0) {
 		type = off & UT64_32U? 8: 4;
