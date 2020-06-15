@@ -97,8 +97,7 @@ jobs:
         fi
         cd test
         radare2 -N -Qc 'e cfg.newshell' -
-        make
-        make fuzz-tests
+        make && make fuzz-tests
       env:
         NEWSHELL: ${{ matrix.newshell }}
     - name: Upload coverage info
