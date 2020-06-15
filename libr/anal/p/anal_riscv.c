@@ -342,7 +342,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	if (o->args) {
 		const char *name = o->name;
 		// Test for compressed instruction
-		if (o->name[0] == 'c' && o->name[1] == '.') {
+		if (!strncmp ("c.",o->name,2)) {
 			name += 2;
 			op->size = 2;
 		}
