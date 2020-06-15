@@ -1492,6 +1492,10 @@ static void print_function_args_json(RAnal *a, PJ *pj, char *arg_type) {
 }
 
 static void print_type_json(RAnal *a, char *type, PJ *pj, size_t pos) {
+	if (pos == 0) {
+		return;
+	}
+
 	char *str_type = strchr (type, '=');
 
 	if (str_type == NULL) {
@@ -1501,28 +1505,17 @@ static void print_type_json(RAnal *a, char *type, PJ *pj, size_t pos) {
 	*str_type = '\0';
 	++str_type;
 
-	if (pos == 0) { // ret value
-		pj_o (pj);
-		pj_ks (pj, "name", type);
-		pj_ks (pj, "type", str_type);
-		pj_end (pj);
-	} else if (pos >= 2) {
-		print_function_args_json (a, pj, str_type);
-	}
+	print_function_args_json (a, pj, str_type);
 }
 
 static void print_list_separator(RAnal *a, RSignItem *it, PJ *pj, int format, int pos) {
-	if (pos > 0) {
-		if (format == '*') {
-			a->cb_printf (" ");
-		} else if (format == 'j') {
-			if (pos == 2) {
-				pj_o (pj);
-				pj_ka (pj, "args");
-			}
-		} else {
-			a->cb_printf (", ");
-		}
+	if (pos == 0 || format == 'j') {
+		return;
+	}
+	if (format == '*') {
+		a->cb_printf (" ");
+	} else {
+		a->cb_printf (", ");
 	}
 }
 
@@ -1542,11 +1535,6 @@ static void print_list_type_body(RAnal *a, RSignItem *it, PJ *pj, int format) {
 			a->cb_printf ("%s", type);
 		}
 		i++;
-	}
-
-	if (format == 'j') {
-		pj_end (pj);
-		pj_end (pj);
 	}
 }
 

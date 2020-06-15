@@ -1106,3 +1106,15 @@ EXPECT=<<EOF
 4
 EOF
 RUN
+
+NAME=zj producing valid types
+FILE=bins/elf/static-glibc-2.27
+CMDS=<<EOF
+aaa
+zaf fcn.00484d40 fcn.00484d40
+zj
+EOF
+EXPECT=<<EOF
+[{"name":"fcn.00484d40","bytes":"55534883ec08488b1f4885db741b4889fd4889dfe857b7f7ff4801d8803800751748c74500000000004883c4084889d85b5dc30f1f440000c600004883c001488945004883c40848","mask":"55534883ec08488b1f4885db741b4889fd4889dfe857b7f7ff4801d8803800751748c74500000000004883c4084889d85b5dc30f1f440000c600004883c001488945004883c40848","graph":{"cc":4,"nbbs":5,"edges":5,"ebbs":2,"bbsum":72},"addr":4738368,"refs":[],"xrefs":[],"vars":["r110"],"types":[{"name":"arg1","type":"int64_t"}],"hash":{"bbhash":"8ff8a5c7f84179483b764fbb18dc4c44f39da6527a0a16485c7ae519f00e687f"}}]
+EOF
+RUN
