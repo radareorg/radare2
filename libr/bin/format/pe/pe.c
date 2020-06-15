@@ -3125,7 +3125,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 			goto beach;
 		}
 		r = r_buf_read_at (bin->b, functions_paddr, (ut8 *)func_rvas, funcs_sz);
-		if (r != names_sz) {
+		if (r != funcs_sz) {
 			goto beach;
 		}
 		for (i = 0; i < bin->export_directory->NumberOfFunctions; i++) {
