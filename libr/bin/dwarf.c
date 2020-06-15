@@ -1814,7 +1814,7 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *sdb, const ut8 *buf_start,
 					&curr_die->attr_values[i],
 					&unit->hdr, debug_str, debug_str_len);
 			
-			if (curr_die->attr_values[i].attr_name == DW_AT_comp_dir) {
+			if (curr_die->attr_values[i].attr_name == DW_AT_comp_dir  && curr_die->attr_values[i].attr_form == DW_FORM_strp && curr_die->attr_values[i].string.content) {
 				const char *name = curr_die->attr_values[i].string.content;
 				if ((size_t)name > 1024) { // solve some null derefs
 					sdb_set (sdb, "DW_AT_comp_dir", name, 0);
