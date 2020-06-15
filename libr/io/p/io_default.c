@@ -245,13 +245,15 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 			a_count = count + (aligned - (count % aligned));
 			a_buf = malloc (a_count + aligned);
 			if (a_buf) {
-				int i;
+				size_t i;
 				memset (a_buf, 0xff, a_count+aligned);
 				for (i = 0; i < a_count; i += aligned) {
 					(void)lseek (mmo->fd, a_off + i, SEEK_SET);
-					(void)read (mmo->fd, a_buf + i, aligned);
+					if (read (mmo->fd, a_buf + i, aligned) != aligned) {
+						break;
+					}
 				}
-				memcpy (a_buf+a_delta, buf, count);
+				memcpy (a_buf + a_delta, buf, count);
 				for (i = 0; i < a_count; i += aligned) {
 					(void)lseek (mmo->fd, a_off + i, SEEK_SET);
 					len = write (mmo->fd, a_buf + i, aligned);

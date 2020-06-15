@@ -161,7 +161,7 @@ static bool init_ehdr(ELFOBJ *bin) {
 			" EM_SE_C17=139, EM_TI_C6000=140, EM_TI_C2000=141, EM_TI_C5500=142,"
 			" EM_TI_ARP32=143, EM_TI_PRU=144,"
 			" EM_MMDSP_PLUS=160, EM_CYPRESS_M8C=161, EM_R32C=162, EM_TRIMEDIA=163,"
-			" EM_HEXAGON=164, EM_8051=165, EM_STXP7X=166, EM_NDS32=167,"
+			" EM_QDSP6=164, EM_8051=165, EM_STXP7X=166, EM_NDS32=167,"
 			" EM_ECOG1X=168, EM_MAXQ30=169, EM_XIMO16=170, EM_MANIK=171, EM_CRAYNV2=172,"
 			" EM_RX=173, EM_METAG=174, EM_MCST_ELBRUS=175, EM_ECOG16=176, EM_CR16=177,"
 			" EM_ETPU=178, EM_SLE9X=179, EM_L10M=180, EM_K10M=181, EM_AARCH64=183,"
@@ -1634,6 +1634,7 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 }
 
 int Elf_(r_bin_elf_has_nx)(ELFOBJ *bin) {
+	r_return_val_if_fail (bin, 0);
 	int i;
 	if (bin && bin->phdr) {
 		for (i = 0; i < bin->ehdr.e_phnum; i++) {
@@ -1646,6 +1647,7 @@ int Elf_(r_bin_elf_has_nx)(ELFOBJ *bin) {
 }
 
 int Elf_(r_bin_elf_has_relro)(ELFOBJ *bin) {
+	r_return_val_if_fail (bin, R_ELF_NO_RELRO);
 	int i;
 	bool haveBindNow = false;
 	bool haveGnuRelro = false;
@@ -1656,7 +1658,7 @@ int Elf_(r_bin_elf_has_relro)(ELFOBJ *bin) {
 		haveBindNow = bin->dyn_info.dt_flags_1 & DF_1_NOW;
 	}
 
-	if (bin && bin->phdr) {
+	if (bin->phdr) {
 		for (i = 0; i < bin->ehdr.e_phnum; i++) {
 			if (bin->phdr[i].p_type == PT_GNU_RELRO) {
 				haveGnuRelro = true;
@@ -2064,7 +2066,7 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 	case EM_ARM:
 	case EM_AARCH64:
 		return strdup ("arm");
-	case EM_HEXAGON:
+	case EM_QDSP6: // EM_HEXAGON
 		return strdup ("hexagon");
 	case EM_BLACKFIN:
 		return strdup ("blackfin");

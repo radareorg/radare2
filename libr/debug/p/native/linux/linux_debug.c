@@ -1218,9 +1218,11 @@ RList *linux_desc_list (int pid) {
 		}
 		memcpy (file, path, len);
 		memcpy (file + len, de->d_name, len2 + 1);
-		memset (buf, 0, sizeof(buf));
-		(void)readlink (file, buf, sizeof (buf) - 1);
-		buf[sizeof (buf)-1] = 0;
+		buf[0] = 0;
+		if (readlink (file, buf, sizeof (buf) - 1) == -1) {
+			return NULL;
+		}
+		buf[sizeof (buf) - 1] = 0;
 		type = perm = 0;
 		if (stat (file, &st) != -1) {
 			type  = st.st_mode & S_IFIFO  ? 'P':

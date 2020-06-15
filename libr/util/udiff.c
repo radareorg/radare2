@@ -18,7 +18,7 @@ R_API RDiff *r_diff_new_from(ut64 off_a, ut64 off_b) {
 	return d;
 }
 
-R_API RDiff *r_diff_new() {
+R_API RDiff *r_diff_new(void) {
 	return r_diff_new_from (0, 0);
 }
 
@@ -96,7 +96,7 @@ R_API char *r_diff_buffers_to_string(RDiff *d, const ut8 *a, int la, const ut8 *
 }
 #endif
 
-#define diffHit() {\
+#define diffHit(void) {\
 	const size_t i_hit = i - hit;\
 	int ra = la - i_hit;\
 	int rb = lb - i_hit;\

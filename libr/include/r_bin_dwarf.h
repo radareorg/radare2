@@ -569,11 +569,6 @@ typedef struct {
 	unsigned int column;
 } RBinDwarfRow;
 
-typedef struct {
-	ut32 part1;
-	ut64 part2;
-} initial_length;
-
 #define DWARF_INIT_LEN_64	0xffffffff
 typedef union {
 	ut32 offset32;
@@ -581,14 +576,14 @@ typedef union {
 } section_offset;
 
 typedef struct {
-	initial_length unit_length;
+	ut64 unit_length;
 	ut16 version;
 	section_offset debug_abbrev_offset;
 	ut8 address_size;
 } RBinDwarfCompilationUnitHeader;
 
 typedef struct {
-	initial_length unit_length;
+	ut64 unit_length;
 	ut16 version;
 	section_offset debug_abbrev_offset;
 	ut8 address_size;
@@ -597,7 +592,7 @@ typedef struct {
 } RBinDwarfTypeUnitHeader;
 
 typedef struct {
-	initial_length unit_length;
+	ut64 unit_length;
 	ut16 version;
 	section_offset debug_info_offset;
 	ut8 address_size;
@@ -709,7 +704,7 @@ typedef struct {
 } file_entry;
 
 typedef struct {
-	initial_length unit_length;
+	ut64 unit_length;
 	ut16 version;
 	ut64 header_length;
 	ut8 min_inst_len;
@@ -718,19 +713,26 @@ typedef struct {
 	st32 line_base;
 	ut8 line_range;
 	ut8 opcode_base;
+	ut8 address_size;
+	ut8 segment_selector_size;
+	bool is_64bit;
+
 	ut8 *std_opcode_lengths;
 	char **include_directories;
 	file_entry *file_names;
 	size_t file_names_count;
-} RBinDwarfLNPHeader;
+} RBinDwarfLineHeader;
 
 #define r_bin_dwarf_line_new(o,a,f,l) o->address=a, o->file = strdup (f?f:""), o->line = l, o->column =0,o
 
-R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
-		const ut8 *obuf, size_t len,
-		const ut8 *debug_str, size_t debug_str_len, int mode);
+typedef struct r_bin_t RBin; // forward declaration so I can keep the functions in this interface
 
 R_API void r_bin_dwarf_free_debug_abbrev(RBinDwarfDebugAbbrev *da);
+R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode);
+R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode);
+R_API RList *r_bin_dwarf_parse_aranges(RBin *a, int mode);
+R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *a, int mode);
+
 #ifdef __cplusplus
 }
 #endif

@@ -165,12 +165,12 @@ a = (b << 3) * 5;
 The structure of the C files in r2 must be like this:
 
 ```c
-/* Copyright ... */        ## copyright
-#include <r_core.h>        ## includes
-static int globals         ## const, define, global variables
-static void helper() {}    ## static functions
-R_IPI void internal() {}   ## internal apis (used only inside the library)
-R_API void public() {}     ## public apis starting with constructor/destructor
+/* Copyright ... */           ## copyright
+#include <r_core.h>           ## includes
+static int globals            ## const, define, global variables
+static void helper(void) {}   ## static functions
+R_IPI void internal(void) {}  ## internal apis (used only inside the library)
+R_API void public(void) {}    ## public apis starting with constructor/destructor
 
 ```
 

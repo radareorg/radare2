@@ -1,11 +1,9 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2020 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_sign.h>
 #include <r_search.h>
-#include <r_util.h>
 #include <r_core.h>
-#include <r_hash.h>
 
 R_LIB_VERSION (r_sign);
 
@@ -1092,7 +1090,7 @@ typedef struct {
 	double infimum;
 } ClosestMatchData;
 
-static int closest_match_callback(void *a, const char *name, const char *value) {
+static bool closest_match_callback(void *a, const char *name, const char *value) {
 	ClosestMatchData *data = (ClosestMatchData *)a;
 
 	// get signature in usable format
@@ -1205,6 +1203,7 @@ R_API bool r_sign_diff(RAnal *a, RSignOptions *options, const char *other_space_
 	}
 	RList *lb = deserialize_sign_space (a, other_space);
 	if (!lb) {
+		r_list_free (la);
 		return false;
 	}
 
@@ -1493,6 +1492,10 @@ static void print_function_args_json(RAnal *a, PJ *pj, char *arg_type) {
 }
 
 static void print_type_json(RAnal *a, char *type, PJ *pj, size_t pos) {
+	if (pos == 0) {
+		return;
+	}
+
 	char *str_type = strchr (type, '=');
 
 	if (str_type == NULL) {
@@ -1502,28 +1505,17 @@ static void print_type_json(RAnal *a, char *type, PJ *pj, size_t pos) {
 	*str_type = '\0';
 	++str_type;
 
-	if (pos == 0) { // ret value
-		pj_o (pj);
-		pj_ks (pj, "name", type);
-		pj_ks (pj, "type", str_type);
-		pj_end (pj);
-	} else if (pos >= 2) {
-		print_function_args_json (a, pj, str_type);
-	}
+	print_function_args_json (a, pj, str_type);
 }
 
 static void print_list_separator(RAnal *a, RSignItem *it, PJ *pj, int format, int pos) {
-	if (pos > 0) {
-		if (format == '*') {
-			a->cb_printf (" ");
-		} else if (format == 'j') {
-			if (pos == 2) {
-				pj_o (pj);
-				pj_ka (pj, "args");
-			}
-		} else {
-			a->cb_printf (", ");
-		}
+	if (pos == 0 || format == 'j') {
+		return;
+	}
+	if (format == '*') {
+		a->cb_printf (" ");
+	} else {
+		a->cb_printf (", ");
 	}
 }
 
@@ -1543,11 +1535,6 @@ static void print_list_type_body(RAnal *a, RSignItem *it, PJ *pj, int format) {
 			a->cb_printf ("%s", type);
 		}
 		i++;
-	}
-
-	if (format == 'j') {
-		pj_end (pj);
-		pj_end (pj);
 	}
 }
 
@@ -1990,7 +1977,7 @@ R_API bool r_sign_foreach(RAnal *a, RSignForeachCallback cb, void *user) {
 	return sdb_foreach (a->sdb_zigns, foreachCB, &ctx);
 }
 
-R_API RSignSearch *r_sign_search_new() {
+R_API RSignSearch *r_sign_search_new(void) {
 	RSignSearch *ret = R_NEW0 (RSignSearch);
 	if (ret) {
 		ret->search = r_search_new (R_SEARCH_KEYWORD);
@@ -2326,7 +2313,7 @@ R_API bool r_sign_match_types(RAnal *a, RAnalFunction *fcn, RSignVarsMatchCallba
 	return r_sign_foreach (a, typesMatchCB, &ctx);
 }
 
-R_API RSignItem *r_sign_item_new() {
+R_API RSignItem *r_sign_item_new(void) {
 	RSignItem *ret = R_NEW0 (RSignItem);
 	if (ret) {
 		ret->addr = UT64_MAX;

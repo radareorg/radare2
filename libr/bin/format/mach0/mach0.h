@@ -55,8 +55,8 @@ struct symbol_t {
 	int bits;
 	int type;
 	bool is_imported;
-	char name[R_BIN_MACH0_STRING_LENGTH];
-	int last;
+	char *name;
+	bool last;
 };
 
 struct import_t {

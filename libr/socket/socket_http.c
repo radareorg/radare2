@@ -211,7 +211,7 @@ static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut
 	return http_get_w32 (url, code, rlen);
 #else
 	RSocket *s;
-	int ssl = r_str_startswith (url, "https://");
+	bool ssl = r_str_startswith (url, "https://");
 #if !HAVE_LIB_SSL
 	if (ssl) {
 		eprintf ("Tried to get '%s', but SSL support is disabled, set R2_CURL=1 to use curl\n", url);
@@ -232,7 +232,11 @@ static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut
 	host += 3;
 	port = strchr (host, ':');
 	if (!port) {
+#if HAVE_LIB_SSL
 		port = ssl? "443": "80";
+#else
+		port = "80";
+#endif
 		path = host;
 	} else {
 		*port++ = 0;

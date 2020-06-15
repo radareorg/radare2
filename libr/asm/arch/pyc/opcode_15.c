@@ -8,7 +8,7 @@ pyc_opcodes *opcode_15(void) {
 
 	ret->version_sig = (void *(*)())opcode_15;
 
-	def_op (.op_obj = ret->opcodes, .op_name = "STOP_CODE", .op_code = 0, .pop = 0, .push = 0, .fallthrough = false);
+	def_opN ((struct op_parameter) {.op_obj = ret->opcodes, .op_name = "STOP_CODE", .op_code = 0, .pop = 0, .push = 0, .fallthrough = false});
 	def_op (.op_obj = ret->opcodes, .op_name = "POP_TOP", .op_code = 1);
 	def_op (.op_obj = ret->opcodes, .op_name = "ROT_TWO", .op_code = 2);
 	def_op (.op_obj = ret->opcodes, .op_name = "ROT_THREE", .op_code = 3);
@@ -60,7 +60,7 @@ pyc_opcodes *opcode_15(void) {
 	def_op (.op_obj = ret->opcodes, .op_name = "BREAK_LOOP", .op_code = 80, .pop = 0, .push = 0);
 
 	def_op (.op_obj = ret->opcodes, .op_name = "LOAD_LOCALS", .op_code = 82, .pop = 0, .push = 1);
-	def_op (.op_obj = ret->opcodes, .op_name = "RETURN_VALUE", .op_code = 83, .pop = 1, .push = 0, .fallthrough = false);
+	def_op00 (.op_obj = ret->opcodes, .op_name = "RETURN_VALUE", .op_code = 83, .pop = 1, .push = 0, .fallthrough = false);
 
 	def_op (.op_obj = ret->opcodes, .op_name = "EXEC_STMT", .op_code = 85, .pop = 3, .push = 0);
 
@@ -70,16 +70,16 @@ pyc_opcodes *opcode_15(void) {
 
 	ret->have_argument = 90; // Opcodes from here have an argument:
 
-	store_op (.op_obj = ret->opcodes, .op_name = "STORE_NAME", .op_code = 90, .pop = 1, .push = 0, .func = NAME_OP); // Operand is in name list
+	store_op00 (.op_obj = ret->opcodes, .op_name = "STORE_NAME", .op_code = 90, .pop = 1, .push = 0, .func = NAME_OP); // Operand is in name list
 	name_op (.op_obj = ret->opcodes, .op_name = "DELETE_NAME", .op_code = 91, .pop = 0, .push = 0); // ""
 	varargs_op (.op_obj = ret->opcodes, .op_name = "UNPACK_TUPLE", .op_code = 92); // Number of tuple items
 	def_op (.op_obj = ret->opcodes, .op_name = "UNPACK_LIST", .op_code = 93); // Number of list items
-	store_op (.op_obj = ret->opcodes, .op_name = "STORE_ATTR", .op_code = 95, .pop = 2, .push = 0, .func = NAME_OP); // Operand is in name list
+	store_op00 (.op_obj = ret->opcodes, .op_name = "STORE_ATTR", .op_code = 95, .pop = 2, .push = 0, .func = NAME_OP); // Operand is in name list
 	name_op (.op_obj = ret->opcodes, .op_name = "DELETE_ATTR", .op_code = 96, .pop = 1, .push = 0); // ""
-	store_op (.op_obj = ret->opcodes, .op_name = "STORE_GLOBAL", .op_code = 97, .pop = 1, .push = 0, .func = NAME_OP); // ""
+	store_op00 (.op_obj = ret->opcodes, .op_name = "STORE_GLOBAL", .op_code = 97, .pop = 1, .push = 0, .func = NAME_OP); // ""
 	name_op (.op_obj = ret->opcodes, .op_name = "DELETE_GLOBAL", .op_code = 98, .pop = 0, .push = 0); // ""
 
-	const_op (.op_obj = ret->opcodes, .op_name = "LOAD_CONST", .op_code = 100, .pop = 0, .push = 1); // Operand is in const list
+	const_op00 (.op_obj = ret->opcodes, .op_name = "LOAD_CONST", .op_code = 100, .pop = 0, .push = 1); // Operand is in const list
 	name_op (.op_obj = ret->opcodes, .op_name = "LOAD_NAME", .op_code = 101, .pop = 0, .push = 1); // Operand is in name list
 	varargs_op (.op_obj = ret->opcodes, .op_name = "BUILD_TUPLE", .op_code = 102, .pop = -1, .push = 1); // Number of tuple items
 	varargs_op (.op_obj = ret->opcodes, .op_name = "BUILD_LIST", .op_code = 103, .pop = -1, .push = 1); // Number of list items
@@ -103,12 +103,12 @@ pyc_opcodes *opcode_15(void) {
 	jrel_op (.op_obj = ret->opcodes, .op_name = "SETUP_FINALLY", .op_code = 122, .pop = 0, .push = 0, .conditional = true); // ""
 
 	local_op (.op_obj = ret->opcodes, .op_name = "LOAD_FAST", .op_code = 124, .pop = 0, .push = 1); // Local variable number
-	store_op (.op_obj = ret->opcodes, .op_name = "STORE_FAST", .op_code = 125, .pop = 1, .push = 0, .func = LOCAL_OP); // Local variable number
-	local_op (.op_obj = ret->opcodes, .op_name = "DELETE_FAST", .op_code = 126); // Local variable number
+	store_op00 (.op_obj = ret->opcodes, .op_name = "STORE_FAST", .op_code = 125, .pop = 1, .push = 0, .func = LOCAL_OP); // Local variable number
+	local_op0 (.op_obj = ret->opcodes, .op_name = "DELETE_FAST", .op_code = 126); // Local variable number
 
 	def_op (.op_obj = ret->opcodes, .op_name = "SET_LINENO", .op_code = 127); // Current line number
 
-	def_op (.op_obj = ret->opcodes, .op_name = "RAISE_VARARGS", .op_code = 130, .pop = -1, .push = 0, .fallthrough = false);
+	def_op00 (.op_obj = ret->opcodes, .op_name = "RAISE_VARARGS", .op_code = 130, .pop = -1, .push = 0, .fallthrough = false);
 	// Number of raise arguments (1, 2, or 3)
 	nargs_op (.op_obj = ret->opcodes, .op_name = "CALL_FUNCTION", .op_code = 131, .pop = -1, .push = 1); // //args + (//kwargs << 8)
 

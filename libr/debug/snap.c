@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2015-2017 - pancake, rkx1209 */
+/* radare - LGPL - Copyright 2015-2020 - pancake, rkx1209 */
 
 #include <r_debug.h>
 
-R_API RDebugSnap *r_debug_snap_new() {
+R_API RDebugSnap *r_debug_snap_new(void) {
 	RDebugSnap *snap = R_NEW0 (RDebugSnap);
 	ut64 algobit = r_hash_name_to_bits ("sha256");
 	if (!snap) {

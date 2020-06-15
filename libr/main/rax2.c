@@ -99,11 +99,11 @@ static int format_output(RNum *num, char mode, const char *s, int force_mode, ut
 	return true;
 }
 
-static void print_ascii_table() {
-	printf("%s", ret_ascii_table());
+static void print_ascii_table(void) {
+	printf ("%s", ret_ascii_table());
 }
 
-static int help() {
+static int help(void) {
 	printf (
 		"  =[base]                      ;  rax2 =10 0x46 -> output in base 10\n"
 		"  int     ->  hex              ;  rax2 10\n"

@@ -13,7 +13,7 @@ typedef struct _fnditem {
 	void* next;
 } fnditem;
 
-static fnditem* init_fi() {
+static fnditem* init_fi(void) {
 	fnditem* n;
 	n = (fnditem*) malloc (sizeof (fnditem));
 	if (!n) {

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2018-2019 - pancake */
+/* radare2 - LGPL - Copyright 2018-2020 - pancake */
 
 #include <r_fs.h>
 
@@ -229,7 +229,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 					cb_printf ("%s\n", s);
 					free (s);
 				}
-				write (1, "\n", 1);
+				cb_printf ("\n");
 				r_fs_close (fs, file);
 			} else {
 				eprintf ("Cannot open file\n");

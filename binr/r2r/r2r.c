@@ -83,9 +83,12 @@ static bool r2r_chdir(const char *argv0) {
 			*p = 0;
 			strcat (src_path, R_SYS_DIR"test"R_SYS_DIR);
 			if (r_file_is_directory (src_path)) {
-				(void)chdir (src_path);
-				eprintf ("Running from %s\n", src_path);
-				found = true;
+				if (chdir (src_path) != -1) {
+					eprintf ("Running from %s\n", src_path);
+					found = true;
+				} else {
+					eprintf ("Cannot find '%s' directory\n", src_path);
+				}
 			}
 		}
 	}
@@ -96,8 +99,8 @@ static bool r2r_chdir(const char *argv0) {
 #endif
 }
 
-static void r2r_test_run_unit(void) {
-	system ("make -C unit all run");
+static bool r2r_test_run_unit(void) {
+	return system ("make -C unit all run") == 0;
 }
 
 static bool r2r_chdir_fromtest(const char *test_path) {
@@ -253,7 +256,10 @@ int main(int argc, char **argv) {
 
 	char *cwd = r_sys_getdir ();
 	if (r2r_dir) {
-		chdir (r2r_dir);
+		if (chdir (r2r_dir) == -1) {
+			eprintf ("Cannot find %s directory.\n", r2r_dir);
+			return -1;
+		}
 	} else {
 		bool dir_found = (opt.ind < argc && argv[opt.ind][0] != '.')
 			? r2r_chdir_fromtest (argv[opt.ind])
@@ -308,7 +314,9 @@ int main(int argc, char **argv) {
 				arg++;
 				eprintf ("Category: %s\n", arg);
 				if (!strcmp (arg, "unit")) {
-					r2r_test_run_unit ();
+					if (!r2r_test_run_unit ()) {
+						return -1;
+					}
 					continue;
 				} else if (!strcmp (arg, "fuzz")) {
 					if (!fuzz_dir) {
@@ -526,7 +534,7 @@ static void print_diff(const char *actual, const char *expected) {
 	char *uni = r_diff_buffers_to_string (d, (const ut8 *)expected, (int)strlen (expected), (const ut8 *)actual, (int)strlen (actual));
 	r_diff_free (d);
 
-	RList *lines = r_str_split_duplist (uni, "\n");
+	RList *lines = r_str_split_duplist (uni, "\n", false);
 	RListIter *it;
 	char *line;
 	bool header_found = false;
@@ -892,6 +900,7 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 	} else {
 		eprintf ("Failed to write file \"%s\"\n", path);
 	}
+	free (newc);
 }
 
 static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results) {

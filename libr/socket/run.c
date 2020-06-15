@@ -612,7 +612,7 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 	return true;
 }
 
-R_API const char *r_run_help() {
+R_API const char *r_run_help(void) {
 	return
 	"program=/bin/ls\n"
 	"arg1=/bin\n"

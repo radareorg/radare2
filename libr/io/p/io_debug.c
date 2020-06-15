@@ -68,7 +68,7 @@ typedef struct {
 static ut64 winbase;	//HACK
 static int wintid;
 
-static int setup_tokens() {
+static int setup_tokens(void) {
 	HANDLE tok = NULL;
 	TOKEN_PRIVILEGES tp;
 	DWORD err = -1;

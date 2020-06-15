@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2009-2018 - thestr4ng3r */
+/* radare - LGPL - Copyright 2009-2020 - thestr4ng3r */
 
 #include <r_th.h>
 
-R_API RThreadCond *r_th_cond_new() {
+R_API RThreadCond *r_th_cond_new(void) {
 	RThreadCond *cond = R_NEW0 (RThreadCond);
 	if (!cond) {
 		return NULL;

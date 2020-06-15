@@ -131,7 +131,7 @@ static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
     {NULL, 0}
 };
 
-R_API int r_sys_fork() {
+R_API int r_sys_fork(void) {
 #if HAVE_FORK
 #if __WINDOWS__
 	return -1;
@@ -1189,7 +1189,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 }
 
 // TODO: rename to r_sys_env_init()
-R_API char **r_sys_get_environ () {
+R_API char **r_sys_get_environ (void) {
 #if __APPLE__ && !HAVE_ENVIRON
 	env = *_NSGetEnviron();
 #else
@@ -1217,7 +1217,7 @@ R_API char *r_sys_whoami (char *buf) {
 	return hasbuf? buf: strdup (buf);
 }
 
-R_API int r_sys_getpid() {
+R_API int r_sys_getpid(void) {
 #if __UNIX__
 	return getpid ();
 #elif __WINDOWS__

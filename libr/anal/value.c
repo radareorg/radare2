@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2010-2011 - pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2010-2020 - pancake */
 
 #include <r_anal.h>
 
-R_API RAnalValue *r_anal_value_new() {			//macro for this ?
+R_API RAnalValue *r_anal_value_new(void) { //macro for this ?
 	return R_NEW0 (RAnalValue);
 }
 

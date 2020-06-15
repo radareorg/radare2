@@ -1373,10 +1373,10 @@ static int var_cmd(RCore *core, const char *str) {
 	}
 	switch (str[1]) { // afv[bsr]
 	case '\0':
-	case '*':
+	case '*': // "afv[bsr]*"
 		r_anal_var_list_show (core->anal, fcn, type, str[1], NULL);
 		break;
-	case 'j': {
+	case 'j': { // "afv[bsr]j"
 		PJ *pj = pj_new ();
 		if (!pj) {
 			return -1;
@@ -1386,7 +1386,7 @@ static int var_cmd(RCore *core, const char *str) {
 		pj_free (pj);
 	}
 		break;
-	case '.':
+	case '.': // "afv[bsr]."
 		r_anal_var_list_show (core->anal, fcn, core->offset, 0, NULL);
 		break;
 	case '-': // "afv[bsr]-"
@@ -1412,18 +1412,18 @@ static int var_cmd(RCore *core, const char *str) {
 			}
 		}
 		break;
-	case 'd':
+	case 'd': // "afv[bsr]d"
 		eprintf ("This command is deprecated, use afvd instead\n");
 		break;
-	case 't':
+	case 't': // "afv[bsr]t"
 		eprintf ("This command is deprecated use afvt instead\n");
 		break;
-	case 's':
-	case 'g':
+	case 's': // "afv[bsr]s"
+	case 'g': // "afv[bsr]g"
 		if (str[2] != '\0') {
 			int idx = r_num_math (core->num, str + 2);
 			char *vaddr;
-			char *p = strchr (ostr, ' ');
+			p = strchr (ostr, ' ');
 			if (!p) {
 				var_help (core, type);
 				break;
@@ -1449,20 +1449,30 @@ static int var_cmd(RCore *core, const char *str) {
 			eprintf ("Missing argument\n");
 		}
 		break;
-	case ' ': {
-		const char *name;
-		char *vartype;
+	case ' ': { // "afv[bsr]"
 		bool isarg = false;
-		int size = 4;
-		for (str++; *str == ' ';) str++;
-		p = strchr (str, ' ');
+		const int size = 4;
+		p = strchr (ostr, ' ');
 		if (!p) {
 			var_help (core, type);
 			break;
 		}
+		if (!fcn) {
+			eprintf ("Missing function at 0x%08" PFMT64x "\n", core->offset);
+			break;
+		}
 		*p++ = 0;
+		r_str_trim_head (p);
+		char *name = strchr (p, ' ');
+		if (!name) {
+			eprintf ("Missing name\n");
+			break;
+		}
+		*name++ = 0;
+		r_str_trim_head (name);
+
 		if (type == 'r') { //registers
-			RRegItem *i = r_reg_get (core->anal->reg, str, -1);
+			RRegItem *i = r_reg_get (core->anal->reg, p, -1);
 			if (!i) {
 				eprintf ("Register not found");
 				break;
@@ -1470,32 +1480,25 @@ static int var_cmd(RCore *core, const char *str) {
 			delta = i->index;
 			isarg = true;
 		} else {
-			delta = r_num_math (core->num, str);
+			delta = r_num_math (core->num, p);
 		}
-		name = p;
-		if (!name) {
-			eprintf ("Missing name\n");
-			break;
-		}
-		vartype = strchr (name, ' ');
+
+		char *vartype = strchr (name, ' ');
 		if (!vartype) {
 			vartype = "int";
 		} else {
 			*vartype++ = 0;
+			r_str_trim (vartype);
 		}
 		if (type == 'b') {
 			delta -= fcn->bp_off;
 		}
 		if ((type == 'b') && delta > 0) {
 			isarg = true;
-		} else if (type == 's' && fcn && delta > fcn->maxstack) {
+		} else if (type == 's' && delta > fcn->maxstack) {
 			isarg = true;
 		}
-		if (fcn) {
-			r_anal_function_set_var (fcn, delta, type, vartype, size, isarg, name);
-		} else {
-			eprintf ("Missing function at 0x%08"PFMT64x"\n", core->offset);
-		}
+		r_anal_function_set_var (fcn, delta, type, vartype, size, isarg, name);
  		}
 		break;
 	}
@@ -7921,7 +7924,7 @@ static void agraph_print_node(RANode *n, void *user) {
 	free (encbody);
 }
 
-static char *getViewerPath() {
+static char *getViewerPath(void) {
 	int i;
 	const char *viewers[] = {
 #if __WINDOWS__
