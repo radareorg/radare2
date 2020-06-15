@@ -255,7 +255,7 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 			const char *filename = (const char *)buf;
 			size_t maxlen = R_MIN ((size_t) (buf_end - buf - 1), 0xfff);
 			ut64 id_idx, mod_time, file_len;
-			size_t namelen, len = r_str_nlen (filename, maxlen);
+			size_t len = r_str_nlen (filename, maxlen);
 
 			if (!len) {
 				buf++;
@@ -298,8 +298,6 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 						include_dir = "./";
 					}
 				}
-
-				namelen = len + (include_dir ? strlen (include_dir) : 0) + 8;
 
 				if (hdr->file_names) {
 					hdr->file_names[count].name = r_str_newf("%s/%s", include_dir ? include_dir : "", filename);
@@ -388,7 +386,7 @@ static const ut8 *parse_line_header (
 	} else {
 		hdr->header_length = READ32 (buf);
 	}
-	ut8 *tmp_buf = buf; // So I can skip parsing DWARF 5 headres for now
+	const ut8 *tmp_buf = buf; // So I can skip parsing DWARF 5 headres for now
 
 	if (buf_end - buf < 8) {
 		return NULL;
