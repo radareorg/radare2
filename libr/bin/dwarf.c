@@ -201,7 +201,7 @@ static int add_sdb_include_dir(Sdb *s, const char *incl, int idx) {
 	return sdb_array_set (s, "includedirs", idx, incl, 0);
 }
 
-static void r_bin_dwarf_header_fini(RBinDwarfLNPHeader *hdr) {
+static void r_bin_dwarf_header_fini(RBinDwarfLineHeader *hdr) {
 	if (hdr) {
 		size_t i;
 
@@ -213,53 +213,202 @@ static void r_bin_dwarf_header_fini(RBinDwarfLNPHeader *hdr) {
 		free (hdr->file_names);
 	}
 }
-
-static const ut8 *r_bin_dwarf_parse_lnp_header(
-	RBinFile *bf, const ut8 *buf, const ut8 *buf_end,
-	RBinDwarfLNPHeader *hdr, FILE *f, int mode) {
-	int i;
-	Sdb *s;
+// Parses source file header of DWARF version <= 4
+static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const ut8 *buf_end,
+	RBinDwarfLineHeader *hdr, FILE *f, Sdb *sdb, int mode) {
+	int i = 0;
 	size_t count;
 	const ut8 *tmp_buf = NULL;
 
-	if (!hdr || !bf || !buf) {
-		return NULL;
+	if (f) {
+		fprintf (f, " The Directory Table:\n");
+	}
+	while (buf + 1 < buf_end) {
+		size_t maxlen = R_MIN ((size_t) (buf_end - buf) - 1, 0xfff);
+		size_t len = r_str_nlen ((const char *)buf, maxlen);
+		char *str = r_str_ndup ((const char *)buf, len);
+		if (len < 1 || len >= 0xfff || !str) {
+			buf += 1;
+			free (str);
+			break;
+		}
+		if (f) {
+			fprintf (f, "  %d     %s\n", i + 1, str);
+		}
+		add_sdb_include_dir (sdb, str, i);
+		free (str);
+		i++;
+		buf += len + 1;
 	}
 
-	hdr->unit_length.part1 = READ32 (buf);
-	if (hdr->unit_length.part1 == DWARF_INIT_LEN_64) {
-		hdr->unit_length.part2 = READ64 (buf);
+	tmp_buf = buf;
+	count = 0;
+	if (f) {
+		fprintf (f, "\n");
+		fprintf (f, " The File Name Table:\n");
+		fprintf (f, "  Entry Dir     Time      Size       Name\n");
+	}
+	int entry_index = 1; // used for printing information
+
+	for (i = 0; i < 2; i++) {
+		while (buf + 1 < buf_end) {
+			const char *filename = (const char *)buf;
+			size_t maxlen = R_MIN ((size_t) (buf_end - buf - 1), 0xfff);
+			ut64 id_idx, mod_time, file_len;
+			size_t namelen, len = r_str_nlen (filename, maxlen);
+
+			if (!len) {
+				buf++;
+				break;
+			}
+			buf += len + 1;
+			if (buf >= buf_end) {
+				buf = NULL;
+				goto beach;
+			}
+			buf = r_uleb128 (buf, buf_end - buf, &id_idx);
+			if (buf >= buf_end) {
+				buf = NULL;
+				goto beach;
+			}
+			buf = r_uleb128 (buf, buf_end - buf, &mod_time);
+			if (buf >= buf_end) {
+				buf = NULL;
+				goto beach;
+			}
+			buf = r_uleb128 (buf, buf_end - buf, &file_len);
+			if (buf >= buf_end) {
+				buf = NULL;
+				goto beach;
+			}
+
+			if (i) {
+				char *include_dir = NULL, *comp_dir = NULL, *pinclude_dir = NULL;
+				if (id_idx > 0) {
+					include_dir = pinclude_dir = sdb_array_get (sdb, "includedirs", id_idx - 1, 0);
+					if (include_dir && include_dir[0] != '/') {
+						comp_dir = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
+						if (comp_dir) {
+							include_dir = r_str_newf("%s/%s/", comp_dir, include_dir);
+						}
+					}
+				} else {
+					include_dir = pinclude_dir = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
+					if (!include_dir) {
+						include_dir = "./";
+					}
+				}
+
+				namelen = len + (include_dir ? strlen (include_dir) : 0) + 8;
+
+				if (hdr->file_names) {
+					hdr->file_names[count].name = r_str_newf("%s/%s", include_dir ? include_dir : "", filename);
+					hdr->file_names[count].id_idx = id_idx;
+					hdr->file_names[count].mod_time = mod_time;
+					hdr->file_names[count].file_len = file_len;
+				}
+				free (comp_dir);
+				free (pinclude_dir);
+			}
+			count++;
+			if (f && i) {
+				fprintf (f, "  %d     %" PFMT64d "       %" PFMT64d "         %" PFMT64d "          %s\n", entry_index++, id_idx, mod_time, file_len, filename);
+			}
+		}
+		if (i == 0) {
+			if (count > 0) {
+				hdr->file_names = calloc (sizeof (file_entry), count);
+			} else {
+				hdr->file_names = NULL;
+			}
+			hdr->file_names_count = count;
+			buf = tmp_buf;
+			count = 0;
+		}
+	}
+	if (f) {
+		fprintf (f, "\n");
 	}
 
-	s = sdb_new (NULL, NULL, 0);
+beach:
+	sdb_free (sdb);
+
+	return buf;
+}
+// TODO DWARF 5 line header parsing, very different from ver. 4
+// Because this function needs ability to parse a lot of FORMS just like debug info
+// I'll complete this function after completing debug_info parsing and merging
+// for the meanwhile I am skipping the space.
+static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, const ut8 *buf_end,
+	RBinDwarfLineHeader *hdr, FILE *f, Sdb *sdb, int mode) {
+// 	int i = 0;
+// 	size_t count;
+// 	const ut8 *tmp_buf = NULL;
+
+// 	ut8 dir_entry_count = READ8 (buf);
+// 	// uleb128 pairs
+// 	ut8 dir_count = READ8 (buf);
+	
+// 	// dirs
+
+// 	ut8 file_entry_count = READ8 (buf);
+// 	// uleb128 pairs
+// 	ut8 file_count = READ8 (buf);
+// 	// file names
+
+// beach:
+// 	sdb_free (sdb);
+
+	return NULL;
+}
+
+static const ut8 *parse_line_header (
+	RBinFile *bf, const ut8 *buf, const ut8 *buf_end,
+	RBinDwarfLineHeader *hdr, FILE *f, int mode) {
+	
+	r_return_val_if_fail(hdr && bf && buf, NULL);
+
+	hdr->is_64bit = false;
+	hdr->unit_length = READ32 (buf);
+
+	if (hdr->unit_length == DWARF_INIT_LEN_64) {
+		hdr->unit_length = READ64 (buf);
+		hdr->is_64bit = true;
+	}
 
 	hdr->version = READ16 (buf);
 
-	if (hdr->unit_length.part1 == DWARF_INIT_LEN_64) {
+	if (hdr->version == 5) {
+		hdr->address_size = READ8 (buf);
+		hdr->segment_selector_size = READ8 (buf);
+	}
+
+	if (hdr->is_64bit) {
 		hdr->header_length = READ64 (buf);
 	} else {
 		hdr->header_length = READ32 (buf);
 	}
+	ut8 *tmp_buf = buf; // So I can skip parsing DWARF 5 headres for now
 
-	if (buf_end-buf < 8) {
-		sdb_free (s);
+	if (buf_end - buf < 8) {
 		return NULL;
 	}
 	hdr->min_inst_len = READ8 (buf);
 	if (hdr->version >= 4) {
 		hdr->max_ops_per_inst = READ8 (buf);
 	}
-	hdr->file_names = NULL;
 	hdr->default_is_stmt = READ8 (buf);
-	hdr->line_base = READ (buf, int8_t);
+	hdr->line_base = READ (buf, int8_t); // signed
 	hdr->line_range = READ8 (buf);
 	hdr->opcode_base = READ8 (buf);
 
+	hdr->file_names = NULL;
+
 	if (f) {
 		fprintf (f, " Header information:\n");
-		fprintf (f, "  Length:                             %d\n", hdr->unit_length.part1);
+		fprintf (f, "  Length:                             %" PFMT64u "\n", hdr->unit_length);
 		fprintf (f, "  DWARF Version:                      %d\n", hdr->version);
-		fprintf (f, "  Header Length:                      %"PFMT64d"\n", hdr->header_length);
+		fprintf (f, "  Header Length:                      %" PFMT64d "\n", hdr->header_length);
 		fprintf (f, "  Minimum Instruction Length:         %d\n", hdr->min_inst_len);
 		fprintf (f, "  Maximum Operations per Instruction: %d\n", hdr->max_ops_per_inst);
 		fprintf (f, "  Initial value of 'is_stmt':         %d\n", hdr->default_is_stmt);
@@ -269,13 +418,13 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 		fprintf (f, "\n");
 	}
 
-	if (hdr->opcode_base>0) {
-		hdr->std_opcode_lengths = calloc(sizeof(ut8), hdr->opcode_base);
+	if (hdr->opcode_base > 0) {
+		hdr->std_opcode_lengths = calloc (sizeof (ut8), hdr->opcode_base);
 
 		if (f) {
 			fprintf (f, " Opcodes:\n");
 		}
-		for (i = 1; i <= hdr->opcode_base - 1; i++) {
+		for (int i = 1; i <= hdr->opcode_base - 1; i++) {
 			if (buf + 2 > buf_end) {
 				break;
 			}
@@ -290,113 +439,23 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 	} else {
 		hdr->std_opcode_lengths = NULL;
 	}
-
-	i = 0;
-	while (buf+1 < buf_end) {
-		int maxlen = R_MIN ((size_t)(buf_end-buf)-1, 0xfff);
-		int len = r_str_nlen ((const char*)buf, maxlen);
-		char *str = r_str_ndup ((const char *)buf, len);
-		if (len<1 || len >= 0xfff) {
-			buf += 1;
-			free (str);
-			break;
-		}
-		if (f) {
-			fprintf (f, "INCLUDEDIR (%s)\n", str);
-		}
-		add_sdb_include_dir (s, str, i);
-		free (str);
-		i++;
-		buf += len + 1;
+	// TODO finish parsing of source files out of DWARF 5 header
+	// for now we skip
+	if (hdr->version == 5) {
+		tmp_buf += hdr->header_length;
+		return tmp_buf;
 	}
 
-	tmp_buf = buf;
-	count = 0;
-	if (f) {
-		fprintf (f, " The File Name Table:\n");
-		fprintf (f, "  Entry Dir     Time      Size       Name\n");
-	}
-	int entry_index = 1; // used for printing information
-
-	for (i = 0; i < 2; i++) {
-		while (buf+1<buf_end) {
-			const char *filename = (const char *)buf;
-			int maxlen = R_MIN ((size_t)(buf_end-buf-1), 0xfff);
-			ut64 id_idx, mod_time, file_len;
-			size_t namelen, len = r_str_nlen (filename, maxlen);
-
-			if (!len) {
-				buf++;
-				break;
-			}
-			buf += len + 1;
-			if (buf>=buf_end) { buf = NULL; goto beach; }
-			buf = r_uleb128 (buf, buf_end-buf, &id_idx);
-			if (buf>=buf_end) { buf = NULL; goto beach; }
-			buf = r_uleb128 (buf, buf_end-buf, &mod_time);
-			if (buf>=buf_end) { buf = NULL; goto beach; }
-			buf = r_uleb128 (buf, buf_end-buf, &file_len);
-			if (buf>=buf_end) { buf = NULL; goto beach; }
-
-			if (i) {
-				char *include_dir = NULL, *comp_dir = NULL, *pinclude_dir = NULL;
-				char *allocated_id = NULL;
-				if (id_idx > 0) {
-					include_dir = pinclude_dir = sdb_array_get (s, "includedirs", id_idx - 1, 0);
-					if (include_dir && include_dir[0] != '/') {
-						comp_dir = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
-						if (comp_dir) {
-							allocated_id = calloc (1, strlen (comp_dir) +
-									strlen (include_dir) + 8);
-							snprintf (allocated_id, strlen (comp_dir) + strlen (include_dir) + 8,
-									"%s/%s/", comp_dir, include_dir);
-							include_dir = allocated_id;
-						}
-					}
-				} else {
-					include_dir = pinclude_dir = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
-					if (!include_dir) {
-						include_dir = "./";
-					}
-				}
-
-				namelen = len + (include_dir?strlen (include_dir):0) + 8;
-
-				if (hdr->file_names) {
-					hdr->file_names[count].name = calloc (sizeof(char), namelen);
-					snprintf (hdr->file_names[count].name, namelen - 1,
-						"%s/%s", include_dir? include_dir : "", filename);
-					hdr->file_names[count].name[namelen - 1] = '\0';
-					free (allocated_id);
-					hdr->file_names[count].id_idx = id_idx;
-					hdr->file_names[count].mod_time = mod_time;
-					hdr->file_names[count].file_len = file_len;
-				}
-				free (comp_dir);
-				free (pinclude_dir);
-			}
-			count++;
-			if (f && i) {
-				fprintf (f, "  %d     %"PFMT64d"       %"PFMT64d"         %"PFMT64d"          %s\n", entry_index++, id_idx, mod_time, file_len, filename);
-			}
-		}
-		if (i == 0) {
-			if (count>0) {
-				hdr->file_names = calloc(sizeof(file_entry), count);
-			} else {
-				hdr->file_names = NULL;
-			}
-			hdr->file_names_count = count;
-			buf = tmp_buf;
-			count = 0;
-		}
-	}
-	if (f) {
-		fprintf (f, "\n");
+	Sdb *sdb = sdb_new (NULL, NULL, 0);
+	if (!sdb) {
+		return NULL;
 	}
 
-beach:
-	sdb_free (s);
+	if (hdr->version <= 4) {
+		buf = parse_line_header_source (bf, buf, buf_end, hdr, f, sdb, mode);
+	} else { // because Version 5 source files are very different
+		buf = parse_line_header_source_dwarf5 (bf, buf, buf_end, hdr, f, sdb, mode);
+	}
 
 	return buf;
 }
@@ -443,7 +502,7 @@ static inline void add_sdb_addrline(Sdb *s, ut64 addr, const char *file, ut64 li
 }
 
 static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
-		size_t len, const RBinDwarfLNPHeader *hdr,
+		size_t len, const RBinDwarfLineHeader *hdr,
 		RBinDwarfSMRegisters *regs, FILE *f, int mode) {
 	// XXX - list is an unused parameter.
 	const ut8 *buf;
@@ -542,7 +601,7 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 
 static const ut8* r_bin_dwarf_parse_spec_opcode(
 		const RBin *a, const ut8 *obuf, size_t len,
-		const RBinDwarfLNPHeader *hdr,
+		const RBinDwarfLineHeader *hdr,
 		RBinDwarfSMRegisters *regs,
 		ut8 opcode, FILE *f, int mode) {
 	// XXX - list is not used
@@ -587,7 +646,7 @@ static const ut8* r_bin_dwarf_parse_spec_opcode(
 
 static const ut8* r_bin_dwarf_parse_std_opcode(
 		const RBin *a, const ut8 *obuf, size_t len,
-		const RBinDwarfLNPHeader *hdr, RBinDwarfSMRegisters *regs,
+		const RBinDwarfLineHeader *hdr, RBinDwarfSMRegisters *regs,
 		ut8 opcode, FILE *f, int mode) {
 	const ut8* buf = obuf;
 	const ut8* buf_end = obuf + len;
@@ -710,7 +769,7 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 	return buf;
 }
 
-static void r_bin_dwarf_set_regs_default(const RBinDwarfLNPHeader *hdr, RBinDwarfSMRegisters *regs) {
+static void r_bin_dwarf_set_regs_default(const RBinDwarfLineHeader *hdr, RBinDwarfSMRegisters *regs) {
 	regs->address = 0;
 	regs->file = 1;
 	regs->line = 1;
@@ -724,7 +783,7 @@ static void r_bin_dwarf_set_regs_default(const RBinDwarfLNPHeader *hdr, RBinDwar
 }
 
 static size_t r_bin_dwarf_parse_opcodes(const RBin *a, const ut8 *obuf,
-		size_t len, const RBinDwarfLNPHeader *hdr,
+		size_t len, const RBinDwarfLineHeader *hdr,
 		RBinDwarfSMRegisters *regs, FILE *f, int mode) {
 	const ut8 *buf, *buf_end;
 	ut8 opcode, ext_opcode;
@@ -758,9 +817,8 @@ static size_t r_bin_dwarf_parse_opcodes(const RBin *a, const ut8 *obuf,
 	return (size_t) (buf - obuf); // number of bytes we've moved by
 }
 
-// Is it problem to rename to raw? I don't know why its raw2
-R_API int r_bin_dwarf_parse_line_raw(const RBin *a, const ut8 *obuf,
-				       size_t len, int mode) {
+static int parse_line_raw(const RBin *a, const ut8 *obuf,
+				       ut64 len, int mode) {
 	RBinFile *binfile = a ? a->cur : NULL;
 	if (!binfile || !obuf) {
 		return false;
@@ -773,9 +831,9 @@ R_API int r_bin_dwarf_parse_line_raw(const RBin *a, const ut8 *obuf,
 	const ut8 *buf = obuf;
 	const ut8 *buf_end = obuf + len;
 	const ut8 *tmpbuf = NULL;
-	
-	RBinDwarfLNPHeader hdr = { { 0 } };
-	size_t buf_size;
+
+	RBinDwarfLineHeader hdr = { 0 };
+	ut64 buf_size;
 
 	// each iteration we read one header AKA comp. unit
 	while (buf <= buf_end) {
@@ -783,37 +841,39 @@ R_API int r_bin_dwarf_parse_line_raw(const RBin *a, const ut8 *obuf,
 		size_t bytes_read = 0;
 		// calculate how much we've read by parsing header
 		// because header unit_length includes itself
+		buf_size = buf_end - buf;
+
 		tmpbuf = buf;
-		buf = r_bin_dwarf_parse_lnp_header (a->cur, buf, buf_end, &hdr, f, mode);
+		buf = parse_line_header (a->cur, buf, buf_end, &hdr, f, mode);
+		if (!buf) {
+			return false;
+		}
+
 		if (f) {
 			fprintf (f, " Line Number Statements:\n");
 		}
 		bytes_read = buf - tmpbuf;
 
-		buf_size = buf_end - buf;
-		if (!buf) {
-			return false;
-		}
-
 		RBinDwarfSMRegisters regs;
 		r_bin_dwarf_set_regs_default (&hdr, &regs);
 
-		ut64 unit_length = (hdr.unit_length.part1 == DWARF_INIT_LEN_64) ? 
-					hdr.unit_length.part2 + 4 : hdr.unit_length.part1 + 4;
-
 		// If there is more bytes in the buffer than size of the header
 		// It means that there has to be another header/comp.unit
-		if (buf_size > unit_length) {
-			buf_size = unit_length;
+		if (buf_size > hdr.unit_length) {
+			buf_size = hdr.unit_length + (hdr.is_64bit * 8 + 4); // we dif against bytes_read, but
+				// unit_length doesn't account unit_length field
 		}
-
 		// this deals with a case that there is compilation unit with any line information
-		if (buf_size == bytes_read) { 
+		if (buf_size == bytes_read) {
 			if (f) {
-				fprintf(f, " Line table is present, but no lines present\n");
+				fprintf (f, " Line table is present, but no lines present\n");
 			}
 			r_bin_dwarf_header_fini (&hdr);
 			continue;
+		}
+		if (buf_size > (buf_end - buf) + bytes_read || buf > buf_end) {
+			r_bin_dwarf_header_fini (&hdr);
+			return false;
 		}
 		// we read the whole compilation unit (that might be composed of more sequences)
 		do {
@@ -1110,6 +1170,7 @@ R_API void r_bin_dwarf_free_debug_abbrev(RBinDwarfDebugAbbrev *da) {
 }
 
 static void r_bin_dwarf_free_attr_value(RBinDwarfAttrValue *val) {
+	// TODO adjust to new forms, now we're leaking
 	if (!val) {
 		return;
 	}
@@ -1732,7 +1793,7 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 			return NULL;
 		}
 		// Actually parse the section
-		r_bin_dwarf_parse_line_raw (a, buf, len, mode);
+		parse_line_raw (a, buf, len, mode);
 		// k bin/cur/addrinfo/*
 		SdbListIter *iter;
 		SdbKv *kv;

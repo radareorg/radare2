@@ -1601,8 +1601,13 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
 						}
 					}
 				}
-				ut32 page_index = (ut32)(seg_off / ps);
-				cur_seg->page_start[page_index] = seg_off & 0xfff;
+				if (cur_seg) {
+					ut32 page_index = (ut32)(seg_off / ps);
+					size_t maxsize = cur_seg->page_count * sizeof (ut16);
+					if (page_index < maxsize) {
+						cur_seg->page_start[page_index] = seg_off & 0xfff;
+					}
+				}
 				break;
 			}
 			default:
@@ -2050,6 +2055,11 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	if (!mo) {
 		return NULL;
 	}
+
+	size_t i;
+	for (i = 0; !mo->symbols[i].last; i++) {
+		free (mo->symbols[i].name);
+	}
 	free (mo->symbols);
 	free (mo->segs);
 	free (mo->sects);
@@ -2069,7 +2079,6 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	free (mo->intrp);
 	free (mo->compiler);
 	if (mo->chained_starts) {
-		size_t i;
 		for (i = 0; i < mo->nsegs; i++) {
 			if (mo->chained_starts[i]) {
 				free (mo->chained_starts[i]->page_start);
@@ -2352,7 +2361,7 @@ static bool parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol
 	}
 	symbol->offset = 0LL;
 	symbol->addr = 0LL;
-	symbol->name[0] = '\0';
+	symbol->name = NULL;
 	symbol->is_imported = true;
 
 	if (!bin || !bin->sects) {
@@ -2404,7 +2413,7 @@ static bool parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol
 				if (*symstr == '_') {
 					symstr++;
 				}
-				snprintf (symbol->name, R_BIN_MACH0_STRING_LENGTH, "%s", symstr);
+				symbol->name = strdup (symstr);
 				return true;
 			}
 		}
@@ -2414,7 +2423,7 @@ static bool parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol
 
 static int inSymtab(HtPP *hash, const char *name, ut64 addr) {
 	bool found;
-	const char *key = sdb_fmt ("%s.%"PFMT64x, name, addr);
+	const char *key = r_str_newf ("%"PFMT64x".%s", addr, name);
 	ht_pp_find (hash, key, &found);
 	if (found) {
 		return true;
@@ -2743,7 +2752,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
 			sym->vaddr = symbol.addr;
 			sym->paddr = symbol.offset;
-			sym->name = strdup (symbol.name);
+			sym->name = symbol.name;
 			if (!sym->name) {
 				sym->name = r_str_newf ("unk%d", i);
 			}
@@ -2810,7 +2819,7 @@ static void assign_export_symbol_t(struct MACH0_(obj_t) *bin, const char *name, 
 		}
 		sym_ctx->symbols[j].size = 0;
 		sym_ctx->symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
-		r_str_ncpy (sym_ctx->symbols[j].name, name, R_BIN_MACH0_STRING_LENGTH);
+		sym_ctx->symbols[j].name = strdup (name);
 		sym_ctx->j++;
 	}
 }
@@ -2898,15 +2907,11 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 				}
 
 				stridx = bin->symtab[i].n_strx;
-				char *sym_name = get_name (bin, stridx, false);
-				if (sym_name) {
-					r_str_ncpy (symbols[j].name, sym_name, R_BIN_MACH0_STRING_LENGTH);
-					free (sym_name);
-				}
-				symbols[j].name[R_BIN_MACH0_STRING_LENGTH - 2] = 0;
-				symbols[j].last = 0;
-				if (bin->main_addr == 0) {
-					const char *name = symbols[j].name;
+				symbols[j].name = get_name (bin, stridx, false);
+				symbols[j].last = false;
+
+				const char *name = symbols[j].name;
+				if (bin->main_addr == 0 && name) {
 					if (!strcmp (name, "__Dmain")) {
 						bin->main_addr = symbols[j].addr;
 					} else if (strstr (name, "4main") && !strstr (name, "STATIC")) {
@@ -2918,7 +2923,8 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 					}
 				}
 				if (inSymtab (hash, symbols[j].name, symbols[j].addr)) {
-					symbols[j].name[0] = 0;
+					free (symbols[j].name);
+					symbols[j].name = NULL;
 					j--;
 				}
 			}
@@ -2930,7 +2936,7 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 				break;
 			}
 			if (parse_import_stub (bin, &symbols[j], i)) {
-				symbols[j++].last = 0;
+				symbols[j++].last = false;
 			}
 		}
 
@@ -2954,26 +2960,26 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 				}
 				char *sym_name = get_name (bin, stridx, false);
 				if (sym_name) {
-					r_str_ncpy (symbols[j].name, sym_name, R_BIN_MACH0_STRING_LENGTH);
-					free (sym_name);
+					symbols[j].name = sym_name;
 				} else {
-					sprintf (symbols[j].name, "entry%d\n", i);
+					symbols[j].name = r_str_newf ("entry%d\n", i);
 					//symbols[j].name[0] = 0;
 				}
-				symbols[j].name[R_BIN_MACH0_STRING_LENGTH - 1] = 0;
 				symbols[j].last = 0;
 				if (inSymtab (hash, symbols[j].name, symbols[j].addr)) {
-					symbols[j].name[0] = 0;
+					free (symbols[j].name);
+					symbols[j].name = NULL;
 				} else {
 					j++;
 				}
-				if (bin->main_addr == 0) {
-					const char *name = symbols[j-1].name;
-					if (!strcmp (name, "__Dmain")) {
+
+				const char *name = symbols[i].name;
+				if (bin->main_addr == 0 && name) {
+					if (name && !strcmp (name, "__Dmain")) {
 						bin->main_addr = symbols[i].addr;
-					} else if (strstr (name, "4main") && !strstr (name, "STATIC")) {
+					} else if (name && strstr (name, "4main") && !strstr (name, "STATIC")) {
 						bin->main_addr = symbols[i].addr;
-					} else if (!strcmp (symbols[i].name, "_main")) {
+					} else if (symbols[i].name && !strcmp (symbols[i].name, "_main")) {
 						bin->main_addr = symbols[i].addr;
 					}
 				}
@@ -3003,7 +3009,7 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 		j = sym_ctx.j;
 	}
 	ht_pp_free (hash);
-	symbols[j].last = 1;
+	symbols[j].last = true;
 	bin->symbols = symbols;
 	return symbols;
 }

@@ -54,6 +54,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=infinite aao
+FILE=bins/mach0/r2_hang_test
+CMDS=aao
+EXPECT=
+RUN
+
 NAME=objc categories (swift)
 FILE=bins/mach0/TestSwiftObjc
 CMDS=ic~ class

@@ -194,7 +194,7 @@ static R2Pipe* r2pipe_open_spawn(R2Pipe* r2pipe) {
 #endif
 }
 
-static R2Pipe *r2pipe_new() {
+static R2Pipe *r2pipe_new(void) {
 	R2Pipe *r2pipe = R_NEW0 (R2Pipe);
 	if (r2pipe) {
 #if __UNIX__

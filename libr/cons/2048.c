@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2008-2016 - pancake */
+/* radare2 - LGPL - Copyright 2008-2020 - pancake */
 
 #include <r_cons.h>
 
@@ -6,7 +6,7 @@ static ut8 twok_buf[4][4];
 static int score = 0;
 static int moves = 0;
 
-static void twok_init() {
+static void twok_init(void) {
 	int i, j;
 	score = 0;
 	for (i = 0; i < 4; i++) {
@@ -16,7 +16,7 @@ static void twok_init() {
 	}
 }
 
-static void twok_add() {
+static void twok_add(void) {
 	int i, j;
 	while (true) {
 		i = r_num_rand (4);
@@ -28,7 +28,7 @@ static void twok_add() {
 	}
 }
 
-static bool twok_fin() {
+static bool twok_fin(void) {
 	int i, j;
 	for (i = 0; i < 4; i++) {
 		for (j = 0; j < 4; j++) {

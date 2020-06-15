@@ -1108,7 +1108,7 @@ err_r_file_mkstemp:
 	return h;
 }
 
-R_API char *r_file_tmpdir() {
+R_API char *r_file_tmpdir(void) {
 #if __WINDOWS__
 	LPTSTR tmpdir;
 	char *path = NULL;

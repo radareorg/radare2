@@ -2,7 +2,7 @@
 #include <r_main.h>
 #include <r_core.h>
 
-static void rasign_show_help() {
+static void rasign_show_help(void) {
 	printf ("Usage: rasign2 [options] [file]\n"
 		" -a [-a]          add extra 'a' to analysis command\n"
 		" -o sigs.sdb      add signatures to file, create if it does not exist\n"
@@ -137,11 +137,6 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 		r_config_set (core->config, "scr.interactive", "false");
 		r_config_set (core->config, "scr.prompt", "false");
 		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
-	}
-
-	// dump flirt
-	if (flirt) {
-		r_core_cmdf (core, "\"zfd %s\"", ifile);
 	}
 
 	// run analysis to find functions

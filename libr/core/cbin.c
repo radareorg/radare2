@@ -2352,7 +2352,7 @@ next:
 
 static char *build_hash_string(int mode, const char *chksum, ut8 *data, ut32 datalen) {
 	char *chkstr = NULL, *aux, *ret = NULL;
-	RList *hashlist = r_str_split_duplist (chksum, ",");
+	RList *hashlist = r_str_split_duplist (chksum, ",", true);
 	RListIter *iter;
 	char *hashname;
 	r_list_foreach (hashlist, iter, hashname) {
@@ -2382,7 +2382,7 @@ static char *filter_hash_string(const char *chksum) {
 
 	char *aux, *ret = NULL;
 	bool isFirst = true;
-	RList *hashlist = r_str_split_duplist (chksum, ",");
+	RList *hashlist = r_str_split_duplist (chksum, ",", true);
 	RListIter *iter;
 	char *hashname;
 	r_list_foreach (hashlist, iter, hashname) {

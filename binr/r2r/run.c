@@ -236,7 +236,7 @@ error:
 	goto beach;
 }
 
-static ut64 now_us() {
+static ut64 now_us(void) {
 	LARGE_INTEGER f;
 	if (!QueryPerformanceFrequency (&f)) {
 		return 0;
@@ -919,8 +919,8 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, const char *cmds, RLi
 }
 
 R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test, R2RCmdRunner runner, void *user) {
-	RList *extra_args = test->args.value ? r_str_split_duplist (test->args.value, " ") : NULL;
-	RList *files = r_str_split_duplist (test->file.value, "\n");
+	RList *extra_args = test->args.value ? r_str_split_duplist (test->args.value, " ", true) : NULL;
+	RList *files = r_str_split_duplist (test->file.value, "\n", true);
 	RListIter *it;
 	RListIter *tmpit;
 	char *token;

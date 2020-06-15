@@ -191,7 +191,7 @@ static void plugin_free(RAsmPlugin *p) {
 	}
 }
 
-R_API RAsm *r_asm_new() {
+R_API RAsm *r_asm_new(void) {
 	int i;
 	RAsm *a = R_NEW0 (RAsm);
 	if (!a) {
@@ -556,7 +556,7 @@ static char *replace_directives(char *str) {
 	return o;
 }
 
-R_API void r_asm_list_directives() {
+R_API void r_asm_list_directives(void) {
 	int i = 0;
 	char *dir = directives[i++];
 	while (dir) {

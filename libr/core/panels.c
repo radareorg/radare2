@@ -469,7 +469,7 @@ static void __delete_almighty(RCore *core, RModal *modal, Sdb *menu_db);
 static void __create_almighty(RCore *core, RPanel *panel, Sdb *menu_db);
 static void __update_modal(RCore *core, Sdb *menu_db, RModal *modal);
 static bool __draw_modal(RCore *core, RModal *modal, int range_end, int start, const char *name);
-static RModal *__init_modal();
+static RModal *__init_modal(void);
 static void __free_modal(RModal **modal);
 
 /* menu callback */
@@ -575,7 +575,7 @@ static int cmpstr(const void *_a, const void *_b);
 static RList *__sorted_list(RCore *core, char *menu[], int count);
 
 /* config */
-static char *__get_panels_config_dir_path();
+static char *__get_panels_config_dir_path(void);
 static char *__create_panels_config_path(const char *file);
 static void __load_config_menu(RCore *core);
 static char *__parse_panels_config(const char *cfg, int len);
@@ -2586,11 +2586,11 @@ void __move_panel_to_down(RCore *core, RPanel *panel, int src) {
 	int p_h = h / 2;
 	int new_h = h - p_h;
 	__set_geometry (&panel->view->pos, 0, new_h, w, p_h);
-	int i = 0;
+	size_t i = 0;
 	for (; i < panels->n_panels - 1; i++) {
 		RPanel *tmp = __get_panel (panels, i);
-		int t_y = ((double)tmp->view->pos.y / (double)h) * (double)new_h + 1;
-		int t_h = ((double)tmp->view->pos.h / (double)h) * (double)new_h + 1;
+		const size_t t_y = (tmp->view->pos.y * new_h / h)  + 1;
+		const size_t t_h = (tmp->view->edge & (1 << PANEL_EDGE_BOTTOM)) ?  new_h - t_y : (tmp->view->pos.h * new_h / h) ;
 		__set_geometry (&tmp->view->pos, tmp->view->pos.x, t_y, tmp->view->pos.w, t_h);
 	}
 	__fix_layout (core);
@@ -4884,7 +4884,7 @@ bool __init_panels(RCore *core, RPanels *panels) {
 	return true;
 }
 
-RModal *__init_modal() {
+RModal *__init_modal(void) {
 	RModal *modal = R_NEW0 (RModal);
 	if (!modal) {
 		return NULL;
@@ -5611,7 +5611,7 @@ void __restore_panel_pos(RPanel* panel) {
 			panel->view->prevPos.w, panel->view->prevPos.h);
 }
 
-char *__get_panels_config_dir_path() {
+char *__get_panels_config_dir_path(void) {
 	return r_str_home (R_JOIN_2_PATHS (R2_HOME_DATADIR, ".r2panels"));
 }
 

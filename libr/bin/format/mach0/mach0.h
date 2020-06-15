@@ -54,8 +54,8 @@ struct symbol_t {
 	ut64 size;
 	int type;
 	bool is_imported;
-	char name[R_BIN_MACH0_STRING_LENGTH];
-	int last;
+	char *name;
+	bool last;
 };
 
 struct import_t {

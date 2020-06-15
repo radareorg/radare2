@@ -16,7 +16,7 @@ r_cons_sources = [
   'output.c',
   'pager.c',
   'pal.c',
-  'pipe.c',
+  'cpipe.c',
   'rgb.c',
   'cutf8.c'
 ]

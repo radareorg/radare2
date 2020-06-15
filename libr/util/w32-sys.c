@@ -12,7 +12,7 @@ void r_sys_perror_str(const char *fun);
 #define ErrorExit(x) { r_sys_perror(x); return false; }
 char *ReadFromPipe(HANDLE fh, int *outlen);
 
-R_API char *r_sys_get_src_dir_w32() {
+R_API char *r_sys_get_src_dir_w32(void) {
 	TCHAR fullpath[MAX_PATH + 1];
 	TCHAR shortpath[MAX_PATH + 1];
 

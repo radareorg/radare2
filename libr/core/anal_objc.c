@@ -36,15 +36,15 @@ static bool inBetween(RBinSection *s, ut64 addr) {
 	return R_BETWEEN (from, addr, to);
 }
 
-static ut32 readDword (RCoreObjc *objc, ut64 addr) {
+static ut32 readDword (RCoreObjc *objc, ut64 addr, bool *success) {
 	ut8 buf[4];
-	(void)r_io_read_at (objc->core->io, addr, buf, sizeof (buf));
+	*success = r_io_read_at (objc->core->io, addr, buf, sizeof (buf));
 	return r_read_le32 (buf);
 }
 
-static ut64 readQword (RCoreObjc *objc, ut64 addr) {
+static ut64 readQword (RCoreObjc *objc, ut64 addr, bool *success) {
 	ut8 buf[8];
-	(void)r_io_read_at (objc->core->io, addr, buf, sizeof (buf));
+	*success = r_io_read_at (objc->core->io, addr, buf, sizeof (buf));
 	return r_read_le64 (buf);
 }
 
@@ -62,12 +62,18 @@ static void objc_analyze(RCore *core) {
 }
 
 static ut64 getRefPtr(RCoreObjc *objc, ut64 classMethodsVA, bool *res) {
-	ut64 namePtr = readQword (objc, classMethodsVA);
+	*res = false;
+
+	bool readSuccess;
+	ut64 namePtr = readQword (objc, classMethodsVA, &readSuccess);
+	if (!readSuccess) {
+		return UT64_MAX;
+	}
+
 	int i, cnt = 0;
 	ut64 res_at = 0LL;
 	const char *k = addr_key (namePtr);
 
-	*res = false;
 	for (i = 0; ; i++) {
 		ut64 at = sdb_array_get_num (objc->db, k, i, NULL);
 		if (!at) {
@@ -94,7 +100,7 @@ static bool objc_build_refs(RCoreObjc *objc) {
 	if (!objc->_const || !objc->_selrefs) {
 		return false;
 	}
-	
+
 	ut8 *buf = calloc (1, objc->_const->vsize);
 	if (!buf) {
 		return false;
@@ -145,7 +151,7 @@ static bool objc_find_refs(RCore *core) {
 	if (!sections) {
 		return false;
 	}
-	
+
 	RBinSection *s;
 	RListIter *iter;
 	r_list_foreach (sections, iter, s) {
@@ -182,23 +188,36 @@ static bool objc_find_refs(RCore *core) {
 
 	int total = 0;
 	ut64 off;
-	for (off = 0; off < objc._data->vsize ; off += objc2ClassSize) {
+	bool readSuccess = true;
+	for (off = 0; off < objc._data->vsize && readSuccess; off += objc2ClassSize) {
+		if (!readSuccess || r_cons_is_breaked ()) {
+			break;
+		}
+
 		ut64 va = objc._data->vaddr + off;
-		ut64 classRoVA = readQword (&objc, va + objc2ClassInfoOffs);
-		if (isInvalid (classRoVA)) {
+		ut64 classRoVA = readQword (&objc, va + objc2ClassInfoOffs, &readSuccess);
+		if (!readSuccess || isInvalid (classRoVA)) {
 			continue;
 		}
-		ut64 classMethodsVA = readQword (&objc, classRoVA + objc2ClassBaseMethsOffs);
-		if (isInvalid (classMethodsVA)) {
+		ut64 classMethodsVA = readQword (&objc, classRoVA + objc2ClassBaseMethsOffs, &readSuccess);
+		if (!readSuccess || isInvalid (classMethodsVA)) {
 			continue;
 		}
 
-		int count = readDword (&objc, classMethodsVA + 4);
+		int count = readDword (&objc, classMethodsVA + 4, &readSuccess);
+		if (!readSuccess || ((ut32)count == UT32_MAX)) {
+			continue;
+		}
+
 		classMethodsVA += 8; // advance to start of class methods array
 		ut64 from = classMethodsVA;
 		ut64 to = from + (objc2ClassMethSize * count);
 		ut64 va2;
 		for (va2 = from; va2 < to; va2 += objc2ClassMethSize) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
+
 			bool isMsgRef = false;
 			ut64 selRefVA = getRefPtr (&objc, va2, &isMsgRef);
 			if (!selRefVA) {
@@ -208,7 +227,11 @@ static bool objc_find_refs(RCore *core) {
 			if (isMsgRef) {
 				selRefVA -= 8;
 			}
-			ut64 funcVA = readQword (&objc, va2 + objc2ClassMethImpOffs);
+			ut64 funcVA = readQword (&objc, va2 + objc2ClassMethImpOffs, &readSuccess);
+			if (!readSuccess) {
+				break;
+			}
+
 			RList *list = r_anal_xrefs_get (core->anal, selRefVA);
 			RListIter *iter;
 			RAnalRef *ref;
@@ -217,7 +240,6 @@ static bool objc_find_refs(RCore *core) {
 				total++;
 			}
 		}
-
 	}
 	sdb_free (objc.db);
 	oldstr = r_print_rowlog (core->print, sdb_fmt ("A total of %d xref were found", total));

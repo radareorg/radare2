@@ -10,6 +10,17 @@ EXPECT_ERR=<<EOF
 EOF
 RUN
 
+NAME=use void on functions without parameters
+# Bad: static void foo() {
+# Good: static void foo(void) {
+FILE=-
+CMDS="!git grep -e ^R_API -e ^static ../libr | grep -e '[a-z]() {' -e '[a-z]();'"
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
 NAME=r2 -
 FILE=-
 CMDS=e file.path

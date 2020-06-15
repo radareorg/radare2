@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017-2019 - pancake, cgvwzq */
+/* radare - LGPL - Copyright 2017-2020 - pancake, cgvwzq */
 
 // http://webassembly.org/docs/binary-encoding/#module-structure
 

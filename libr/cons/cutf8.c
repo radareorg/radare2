@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2019 - pancake */
+/* radare - LGPL - Copyright 2015-2020 - pancake */
 
 // Copypasta from http://www.linuxquestions.org/questions/programming-9/get-cursor-position-in-c-947833/
 #include <r_cons.h>
@@ -191,7 +191,7 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 }
 #endif
 
-R_API bool r_cons_is_utf8() {
+R_API bool r_cons_is_utf8(void) {
 	bool ret = false;
 #if UTF8_DETECT_ENV
 	const char *keys[] = { "LC_ALL", "LC_CTYPE", "LANG", NULL };
@@ -217,7 +217,7 @@ R_API bool r_cons_is_utf8() {
 #if UTF8_DETECT_CURSOR
 	int row = 0, col = 0;
 	int row2 = 0, col2 = 0;
-	int fd = current_tty();
+	int fd = current_tty ();
 	if (fd == -1)
 		return false;
 	if (cursor_position(fd, &row, &col)) {
@@ -236,7 +236,7 @@ R_API bool r_cons_is_utf8() {
 	return ret;
 }
 #else
-R_API bool r_cons_is_utf8() {
+R_API bool r_cons_is_utf8(void) {
 #if __WINDOWS__
 	return GetConsoleOutputCP () == CP_UTF8;
 #else

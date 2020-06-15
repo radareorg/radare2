@@ -295,7 +295,7 @@ static int do_help(int line) {
 	return 0;
 }
 
-static void algolist() {
+static void algolist(void) {
 	ut64 bits;
 	ut64 i;
 	for (i = 0; i < R_HASH_NBITS; i++) {
@@ -353,7 +353,9 @@ static int encrypt_or_decrypt(const char *algo, int direction, const char *hashs
 				int result_size = 0;
 				ut8 *result = r_crypto_get_output (cry, &result_size);
 				if (result) {
-					write (1, result, result_size);
+					if (write (1, result, result_size) != result_size) {
+						eprintf ("Warning: cannot write result\n");
+					}
 					free (result);
 				}
 			} else {
@@ -402,7 +404,7 @@ static int encrypt_or_decrypt_file(const char *algo, int direction, const char *
 				int result_size = 0;
 				ut8 *result = r_crypto_get_output (cry, &result_size);
 				if (result) {
-					write (1, result, result_size);
+					(void)write (1, result, result_size);
 					free (result);
 				}
 				free (buf);
