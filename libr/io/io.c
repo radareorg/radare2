@@ -98,7 +98,7 @@ static st64 on_map_skyline(RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg
 	return prefix_mode ? addr - vaddr : ret;
 }
 
-R_API RIO* r_io_new() {
+R_API RIO* r_io_new(void) {
 	return r_io_init (R_NEW0 (RIO));
 }
 

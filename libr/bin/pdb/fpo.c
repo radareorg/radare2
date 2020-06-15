@@ -23,8 +23,8 @@ static int parse_fpo_data_v2(char *data, int data_size, int *read_bytes, SFPO_DA
 {
 	int curr_read_bytes = *read_bytes;
 
-	memcpy(fpo_data, data, sizeof(SFPO_DATA_V2));
-	*read_bytes += sizeof(SFPO_DATA_V2);
+	memcpy (fpo_data, data, sizeof(SFPO_DATA_V2));
+	*read_bytes += sizeof (SFPO_DATA_V2);
 
 	return (*read_bytes - curr_read_bytes);
 }

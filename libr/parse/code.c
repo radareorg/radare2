@@ -23,9 +23,9 @@ static void __appendString(const char *msg, char **s) {
 	}
 }
 
-static int __typeLoad(void *p, const char *k, const char *v) {
+static bool __typeLoad(void *p, const char *k, const char *v) {
 	if (!p) {
-		return -1;
+		return false;
 	}
 	int btype = 0;
 	RAnal *anal = (RAnal*)p;
@@ -71,7 +71,7 @@ static int __typeLoad(void *p, const char *k, const char *v) {
 		}
 		tcc_sym_push ((char *)typename, typesize, btype);
 	}
-	return 0;
+	return true;
 }
 
 static void __errorFunc(void *opaque, const char *msg) {

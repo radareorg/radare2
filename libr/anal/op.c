@@ -1,16 +1,16 @@
-/* radare - LGPL - Copyright 2010-2019 - pancake, nibble */
+/* radare - LGPL - Copyright 2010-2020 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
 #include <r_list.h>
 
-R_API RAnalOp *r_anal_op_new() {
+R_API RAnalOp *r_anal_op_new(void) {
 	RAnalOp *op = R_NEW (RAnalOp);
 	r_anal_op_init (op);
 	return op;
 }
 
-R_API RList *r_anal_op_list_new() {
+R_API RList *r_anal_op_list_new(void) {
 	RList *list = r_list_new ();
 	if (list) {
 		list->free = &r_anal_op_free;

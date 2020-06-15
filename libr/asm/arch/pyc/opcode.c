@@ -203,7 +203,7 @@ void add_arg_fmt(pyc_opcodes *ret, char *op_name, const char *(*formatter) (ut32
 	r_list_append (ret->opcode_arg_fmt, fmt);
 }
 
-void (def_op)(struct op_parameter par) {
+void (def_opN)(struct op_parameter par) {
 	free (par.op_obj[par.op_code].op_name);
 	par.op_obj[par.op_code].op_name = strdup (par.op_name);
 	par.op_obj[par.op_code].op_code = par.op_code;
@@ -214,22 +214,22 @@ void (def_op)(struct op_parameter par) {
 	}
 }
 
-void (name_op)(struct op_parameter par) {
+void (name_opN)(struct op_parameter par) {
 	def_op (.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
 	par.op_obj[par.op_code].type |= HASNAME;
 }
 
-void (local_op)(struct op_parameter par) {
+void (local_opN)(struct op_parameter par) {
 	def_op (.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
 	par.op_obj[par.op_code].type |= HASLOCAL;
 }
 
-void (free_op)(struct op_parameter par) {
+void (free_opN)(struct op_parameter par) {
 	def_op (.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
 	par.op_obj[par.op_code].type |= HASFREE;
 }
 
-void (store_op)(struct op_parameter par) {
+void (store_opN)(struct op_parameter par) {
 	switch (par.func) {
 	case NAME_OP:
 		name_op (.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
@@ -255,7 +255,7 @@ void (varargs_op)(struct op_parameter par) {
 	par.op_obj[par.op_code].type |= HASVARGS;
 }
 
-void (const_op)(struct op_parameter par) {
+void (const_opN)(struct op_parameter par) {
 	def_op (.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
 	par.op_obj[par.op_code].type |= HASCONST;
 }
@@ -265,16 +265,16 @@ void (compare_op)(struct op_parameter par) {
 	par.op_obj[par.op_code].type |= HASCOMPARE;
 }
 
-void (jabs_op)(struct op_parameter par) {
-	def_op (.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push, .fallthrough = par.fallthrough);
+void (jabs_opN)(struct op_parameter par) {
+	def_op00 (.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push, .fallthrough = par.fallthrough);
 	par.op_obj[par.op_code].type |= HASJABS;
 	if (par.conditional) {
 		par.op_obj[par.op_code].type |= HASCONDITION;
 	}
 }
 
-void (jrel_op)(struct op_parameter par) {
-	def_op (.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push, .fallthrough = par.fallthrough);
+void (jrel_opN)(struct op_parameter par) {
+	def_op00 (.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push, .fallthrough = par.fallthrough);
 	par.op_obj[par.op_code].type |= HASJREL;
 	if (par.conditional) {
 		par.op_obj[par.op_code].type |= HASCONDITION;

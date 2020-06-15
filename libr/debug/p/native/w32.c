@@ -1,6 +1,6 @@
 #include "w32.h"
 
-static bool w32dbg_SeDebugPrivilege() {
+static bool w32dbg_SeDebugPrivilege(void) {
 	/////////////////////////////////////////////////////////
 	//   Note: Enabling SeDebugPrivilege adapted from sample
 	//     MSDN @ http://msdn.microsoft.com/en-us/library/aa446619%28VS.85%29.aspx
@@ -36,7 +36,7 @@ static bool w32dbg_SeDebugPrivilege() {
 	return ret;
 }
 
-int w32_dbg_init() {
+int w32_dbg_init(void) {
 	HANDLE lib;
 
 	// escalate privs (required for win7/vista)
@@ -297,11 +297,11 @@ err_get_file_name_from_handle:
 LPVOID lstLib = 0;
 PLIB_ITEM lstLibPtr = 0;
 /*
-static char * r_debug_get_dll() {
+static char * r_debug_get_dll(void) {
 	return lstLibPtr->Path;
 }
 */
-static  PLIB_ITEM  r_debug_get_lib_item() {
+static  PLIB_ITEM  r_debug_get_lib_item(void) {
 	return lstLibPtr;
 }
 #define PLIB_MAX 512
@@ -344,7 +344,7 @@ static void * r_debug_findlib (void * BaseOfDll) {
 
 LPVOID lstThread = 0;
 PTHREAD_ITEM lstThreadPtr = 0;
-static  PTHREAD_ITEM  r_debug_get_thread_item () {
+static  PTHREAD_ITEM  r_debug_get_thread_item (void) {
 	return lstThreadPtr;
 }
 #define PTHREAD_MAX 1024

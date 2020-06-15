@@ -733,7 +733,7 @@ static void rcc_fun(REgg *egg, const char *str) {
 }
 
 #if 0
-static void shownested() {
+static void shownested(void) {
 	int i;
 	eprintf ("[[[NESTED %d]]] ", context);
 	for (i = 0; egg->lang.nested[i]; i++) {
@@ -818,7 +818,6 @@ static void rcc_context(REgg *egg, int delta) {
 // eprintf ("END BLOCK %d, (%s)\n", context, egg->lang.nested[context-1]);
 // eprintf ("CN = (%s) %d (%s) delta=%d\n", cn, context, egg->lang.nested[context-1], delta);
 		if (egg->lang.callname) {
-			// if (callname) { // handle 'foo() {'
 			/* TODO: this must be an array */
 			char *b, *g, *e, *n;
 			emit->comment (egg, "cond frame %s (%s)", egg->lang.callname, elm);

@@ -169,7 +169,7 @@ static void list_themes_in_path(RList *list, const char *path) {
 	r_list_free (files);
 }
 
-R_API char *r_core_get_theme () {
+R_API char *r_core_get_theme (void) {
 	return curtheme;
 }
 

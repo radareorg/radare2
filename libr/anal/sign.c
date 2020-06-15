@@ -1,11 +1,9 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2020 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_sign.h>
 #include <r_search.h>
-#include <r_util.h>
 #include <r_core.h>
-#include <r_hash.h>
 
 R_LIB_VERSION (r_sign);
 
@@ -480,10 +478,10 @@ static void serialize(RAnal *a, RSignItem *it, char *k, char *v) {
 	}
 }
 
-static RList *deserialize_sign_space(RAnal *a, RSpace *space){
-	char k[R_SIGN_KEY_MAXSZ];
+static RList *deserialize_sign_space(RAnal *a, RSpace *space) {
 	r_return_val_if_fail (a && space, NULL);
 
+	char k[R_SIGN_KEY_MAXSZ];
 	serializeKey (a, space, "", k);
 	SdbList *zigns = sdb_foreach_match (a->sdb_zigns, k, false);
 
@@ -569,7 +567,7 @@ static void mergeItem(RSignItem *dst, RSignItem *src) {
 	if (src->refs) {
 		r_list_free (dst->refs);
 
-		dst->refs = r_list_newf ((RListFree) free);
+		dst->refs = r_list_newf ((RListFree)free);
 		r_list_foreach (src->refs, iter, ref) {
 			r_list_append (dst->refs, r_str_new (ref));
 		}
@@ -578,7 +576,7 @@ static void mergeItem(RSignItem *dst, RSignItem *src) {
 	if (src->vars) {
 		r_list_free (dst->vars);
 
-		dst->vars = r_list_newf ((RListFree) free);
+		dst->vars = r_list_newf ((RListFree)free);
 		r_list_foreach (src->vars, iter, var) {
 			r_list_append (dst->vars, r_str_new (var));
 		}
@@ -587,7 +585,7 @@ static void mergeItem(RSignItem *dst, RSignItem *src) {
 	if (src->types) {
 		r_list_free (dst->types);
 
-		dst->types = r_list_newf ((RListFree) free);
+		dst->types = r_list_newf ((RListFree)free);
 		r_list_foreach (src->types, iter, type) {
 			r_list_append (dst->types, r_str_new (type));
 		}
@@ -777,10 +775,8 @@ R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *byt
 }
 
 R_API bool r_sign_add_graph(RAnal *a, const char *name, RSignGraph graph) {
+	r_return_val_if_fail (a && !R_STR_ISEMPTY (name), false);
 	bool retval = true;
-	if (!a || !name) {
-		return false;
-	}
 	RSignItem *it = r_sign_item_new ();
 	if (!it) {
 		return false;
@@ -958,12 +954,12 @@ struct ctxDeleteCB {
 	char buf[R_SIGN_KEY_MAXSZ];
 };
 
-static int deleteBySpaceCB(void *user, const char *k, const char *v) {
+static bool deleteBySpaceCB(void *user, const char *k, const char *v) {
 	struct ctxDeleteCB *ctx = (struct ctxDeleteCB *) user;
 	if (!strncmp (k, ctx->buf, strlen (ctx->buf))) {
 		sdb_remove (ctx->anal->sdb_zigns, k, 0);
 	}
-	return 1;
+	return true;
 }
 
 R_API bool r_sign_delete(RAnal *a, const char *name) {
@@ -1045,6 +1041,150 @@ static double matchGraph(RSignItem *a, RSignItem *b) {
 	return total / 5.0;
 }
 
+static RSignItem *create_graph_sign_from_fcn(RAnal *a, RAnalFunction *fcn) {
+	r_return_val_if_fail (a && fcn, false);
+
+	RSignGraph *graph = R_NEW0 (RSignGraph);
+	if (!graph) {
+		return NULL;
+	}
+	graph->cc = r_anal_function_complexity (fcn),
+	graph->nbbs = r_list_length (fcn->bbs);
+	graph->edges = r_anal_function_count_edges (fcn, &graph->ebbs);
+	graph->bbsum = r_anal_function_realsize (fcn);
+
+
+	RSignItem *item = r_sign_item_new ();
+	if (!item) {
+		r_sign_graph_free (graph);
+		return NULL;
+	}
+
+	item->name = r_str_new (fcn->name);
+	item->space = r_spaces_current (&a->zign_spaces);
+	item->graph = graph;
+
+	return item;
+}
+
+static int score_cmpr(const void *a, const void *b) {
+	double sa = ((RSignCloseMatch *)a)->score;
+	double sb = ((RSignCloseMatch *)b)->score;
+
+	if (sa < sb) {
+		return 1;
+	}
+	if (sa > sb) {
+		return -1;
+	}
+	return 0;
+}
+
+typedef struct {
+	RSignItem *test;
+	RList *output;
+	size_t count;
+	double score_threshold;
+
+	// greatest lower bound. Thanks lattice theory for helping name variables
+	double infimum;
+} ClosestMatchData;
+
+static bool closest_match_callback(void *a, const char *name, const char *value) {
+	ClosestMatchData *data = (ClosestMatchData *)a;
+
+	// get signature in usable format
+	RSignItem *it = r_sign_item_new ();
+	if (!it) {
+		return false;
+	}
+	if (!r_sign_deserialize (a, it, name, value)) {
+		r_sign_item_free (it);
+		return false;
+	}
+
+	double score = matchGraph (it, data->test);
+
+	// score is too low, don't bother doing any more work
+	if (score < data->score_threshold) {
+		r_sign_item_free (it);
+		return true;
+	}
+
+	RList *output = data->output;
+
+	// return early if the list does not need to be changed
+	if (score < data->infimum && r_list_length (output) >= data->count) {
+		r_sign_item_free (it);
+		return true;
+	}
+
+	// remove an element if list is full
+	if (r_list_length (output) >= data->count) {
+		r_sign_close_match_free (r_list_pop (output));
+	}
+
+	// add new element
+	RSignCloseMatch *row = R_NEW (RSignCloseMatch);
+	if (!row) {
+		r_sign_item_free (it);
+		return false;
+	}
+	row->name = strdup (it->name);
+	if (!row->name) {
+		r_sign_item_free (it);
+		free (row);
+		return false;
+	}
+	row->score = score;
+	r_list_add_sorted (output, (void *)row, &score_cmpr);
+
+	// get new infimum
+	row = r_list_get_top (output);
+	data->infimum = row->score;
+
+	r_sign_item_free (it);
+	return true;
+}
+
+R_API void r_sign_close_match_free(RSignCloseMatch *match) {
+	free (match->name);
+	free (match);
+}
+
+R_API RList *r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count, double score_threshold) {
+	r_return_val_if_fail (a && fcn && count > 0 && score_threshold <= 1 && score_threshold >= 0, false);
+
+	ClosestMatchData data;
+	data.count = count;
+	data.score_threshold = score_threshold;
+	data.infimum = 0.0;
+
+	// create a graph for the current function to be compared against
+	RSignItem *test = create_graph_sign_from_fcn (a, fcn);
+	if (!test) {
+		return NULL;
+	}
+	data.test = test;
+
+	// sorted list will contian the closest matches
+	RList *output = r_list_newf ((RListFree)r_sign_close_match_free);
+	if (!output) {
+		r_sign_item_free (test);
+		return NULL;
+	}
+	data.output = output;
+
+	// TODO: handle sign spaces
+	if (!sdb_foreach (a->sdb_zigns, &closest_match_callback, (void *)&data)) {
+		r_list_free (output);
+		output = NULL;
+	}
+
+	r_sign_item_free (test);
+	return output;
+}
+
 R_API bool r_sign_diff(RAnal *a, RSignOptions *options, const char *other_space_name) {
 	r_return_val_if_fail (a && other_space_name, false);
 
@@ -1063,6 +1203,7 @@ R_API bool r_sign_diff(RAnal *a, RSignOptions *options, const char *other_space_
 	}
 	RList *lb = deserialize_sign_space (a, other_space);
 	if (!lb) {
+		r_list_free (la);
 		return false;
 	}
 
@@ -1351,6 +1492,10 @@ static void print_function_args_json(RAnal *a, PJ *pj, char *arg_type) {
 }
 
 static void print_type_json(RAnal *a, char *type, PJ *pj, size_t pos) {
+	if (pos == 0) {
+		return;
+	}
+
 	char *str_type = strchr (type, '=');
 
 	if (str_type == NULL) {
@@ -1360,28 +1505,17 @@ static void print_type_json(RAnal *a, char *type, PJ *pj, size_t pos) {
 	*str_type = '\0';
 	++str_type;
 
-	if (pos == 0) { // ret value
-		pj_o (pj);
-		pj_ks (pj, "name", type);
-		pj_ks (pj, "type", str_type);
-		pj_end (pj);
-	} else if (pos >= 2) {
-		print_function_args_json (a, pj, str_type);
-	}
+	print_function_args_json (a, pj, str_type);
 }
 
 static void print_list_separator(RAnal *a, RSignItem *it, PJ *pj, int format, int pos) {
-	if (pos > 0) {
-		if (format == '*') {
-			a->cb_printf (" ");
-		} else if (format == 'j') {
-			if (pos == 2) {
-				pj_o (pj);
-				pj_ka (pj, "args");
-			}
-		} else {
-			a->cb_printf (", ");
-		}
+	if (pos == 0 || format == 'j') {
+		return;
+	}
+	if (format == '*') {
+		a->cb_printf (" ");
+	} else {
+		a->cb_printf (", ");
 	}
 }
 
@@ -1401,11 +1535,6 @@ static void print_list_type_body(RAnal *a, RSignItem *it, PJ *pj, int format) {
 			a->cb_printf ("%s", type);
 		}
 		i++;
-	}
-
-	if (format == 'j') {
-		pj_end (pj);
-		pj_end (pj);
 	}
 }
 
@@ -1532,7 +1661,7 @@ static void listHash(RAnal *a, RSignItem *it, PJ *pj, int format) {
 	}
 }
 
-static int listCB(void *user, const char *k, const char *v) {
+static bool listCB(void *user, const char *k, const char *v) {
 	struct ctxListCB *ctx = (struct ctxListCB *)user;
 	RSignItem *it = r_sign_item_new ();
 	RAnal *a = ctx->anal;
@@ -1651,7 +1780,7 @@ static int listCB(void *user, const char *k, const char *v) {
 out:
 	r_sign_item_free (it);
 
-	return 1;
+	return true;
 }
 
 R_API void r_sign_list(RAnal *a, int format) {
@@ -1673,7 +1802,7 @@ R_API void r_sign_list(RAnal *a, int format) {
 	}
 }
 
-static int listGetCB(void *user, const char *key, const char *val) {
+static bool listGetCB(void *user, const char *key, const char *val) {
 	struct ctxGetListCB *ctx = user;
 	RSignItem *item = r_sign_item_new ();
 	if (!item) {
@@ -1684,8 +1813,7 @@ static int listGetCB(void *user, const char *key, const char *val) {
 		return false;
 	}
 	r_list_append (ctx->list, item);
-
-	return 1;
+	return true;
 }
 
 R_API RList *r_sign_get_list(RAnal *a) {
@@ -1737,7 +1865,7 @@ struct ctxCountForCB {
 	int count;
 };
 
-static int countForCB(void *user, const char *k, const char *v) {
+static bool countForCB(void *user, const char *k, const char *v) {
 	struct ctxCountForCB *ctx = (struct ctxCountForCB *) user;
 	RSignItem *it = r_sign_item_new ();
 
@@ -1750,7 +1878,7 @@ static int countForCB(void *user, const char *k, const char *v) {
 	}
 	r_sign_item_free (it);
 
-	return 1;
+	return true;
 }
 
 R_API int r_sign_space_count_for(RAnal *a, const RSpace *space) {
@@ -1765,12 +1893,11 @@ struct ctxUnsetForCB {
 	const RSpace *space;
 };
 
-static int unsetForCB(void *user, const char *k, const char *v) {
+static bool unsetForCB(void *user, const char *k, const char *v) {
 	struct ctxUnsetForCB *ctx = (struct ctxUnsetForCB *) user;
 	char nk[R_SIGN_KEY_MAXSZ], nv[R_SIGN_VAL_MAXSZ];
 	RSignItem *it = r_sign_item_new ();
 	Sdb *db = ctx->anal->sdb_zigns;
-
 	if (r_sign_deserialize (ctx->anal, it, k, v)) {
 		if (it->space && it->space == ctx->space) {
 			it->space = NULL;
@@ -1782,8 +1909,7 @@ static int unsetForCB(void *user, const char *k, const char *v) {
 		eprintf ("error: cannot deserialize zign\n");
 	}
 	r_sign_item_free (it);
-
-	return 1;
+	return true;
 }
 
 R_API void r_sign_space_unset_for(RAnal *a, const RSpace *space) {
@@ -1798,7 +1924,7 @@ struct ctxRenameForCB {
 	char nprefix[R_SIGN_KEY_MAXSZ];
 };
 
-static int renameForCB(void *user, const char *k, const char *v) {
+static bool renameForCB(void *user, const char *k, const char *v) {
 	struct ctxRenameForCB *ctx = (struct ctxRenameForCB *) user;
 	char nk[R_SIGN_KEY_MAXSZ], nv[R_SIGN_VAL_MAXSZ];
 	const char *zigname = NULL;
@@ -1811,8 +1937,7 @@ static int renameForCB(void *user, const char *k, const char *v) {
 		sdb_remove (db, k, 0);
 		sdb_set (db, nk, nv, 0);
 	}
-
-	return 1;
+	return true;
 }
 
 R_API void r_sign_space_rename_for(RAnal *a, const RSpace *space, const char *oname, const char *nname) {
@@ -1829,11 +1954,10 @@ struct ctxForeachCB {
 	void *user;
 };
 
-static int foreachCB(void *user, const char *k, const char *v) {
+static bool foreachCB(void *user, const char *k, const char *v) {
 	struct ctxForeachCB *ctx = (struct ctxForeachCB *) user;
 	RSignItem *it = r_sign_item_new ();
 	RAnal *a = ctx->anal;
-	int retval = 1;
 
 	if (r_sign_deserialize (a, it, k, v)) {
 		RSpace *cur = r_spaces_current (&a->zign_spaces);
@@ -1844,7 +1968,7 @@ static int foreachCB(void *user, const char *k, const char *v) {
 		eprintf ("error: cannot deserialize zign\n");
 	}
 	r_sign_item_free (it);
-	return retval;
+	return true;
 }
 
 R_API bool r_sign_foreach(RAnal *a, RSignForeachCallback cb, void *user) {
@@ -1853,7 +1977,7 @@ R_API bool r_sign_foreach(RAnal *a, RSignForeachCallback cb, void *user) {
 	return sdb_foreach (a->sdb_zigns, foreachCB, &ctx);
 }
 
-R_API RSignSearch *r_sign_search_new() {
+R_API RSignSearch *r_sign_search_new(void) {
 	RSignSearch *ret = R_NEW0 (RSignSearch);
 	if (ret) {
 		ret->search = r_search_new (R_SEARCH_KEYWORD);
@@ -2189,7 +2313,7 @@ R_API bool r_sign_match_types(RAnal *a, RAnalFunction *fcn, RSignVarsMatchCallba
 	return r_sign_foreach (a, typesMatchCB, &ctx);
 }
 
-R_API RSignItem *r_sign_item_new() {
+R_API RSignItem *r_sign_item_new(void) {
 	RSignItem *ret = R_NEW0 (RSignItem);
 	if (ret) {
 		ret->addr = UT64_MAX;
@@ -2273,7 +2397,7 @@ R_API void r_sign_item_free(RSignItem *item) {
 		free (item->hash->bbhash);
 		free (item->hash);
 	}
-	free (item->graph);
+	r_sign_graph_free (item->graph);
 	free (item->comment);
 	free (item->realname);
 	r_list_free (item->refs);
@@ -2281,7 +2405,11 @@ R_API void r_sign_item_free(RSignItem *item) {
 	free (item);
 }
 
-static int loadCB(void *user, const char *k, const char *v) {
+R_API void r_sign_graph_free(RSignGraph *graph) {
+	free (graph);
+}
+
+static bool loadCB(void *user, const char *k, const char *v) {
 	RAnal *a = (RAnal *) user;
 	char nk[R_SIGN_KEY_MAXSZ], nv[R_SIGN_VAL_MAXSZ];
 	RSignItem *it = r_sign_item_new ();
@@ -2292,7 +2420,7 @@ static int loadCB(void *user, const char *k, const char *v) {
 		eprintf ("error: cannot deserialize zign\n");
 	}
 	r_sign_item_free (it);
-	return 1;
+	return true;
 }
 
 R_API char *r_sign_path(RAnal *a, const char *file) {

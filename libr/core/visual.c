@@ -2273,7 +2273,7 @@ static void numbuf_append(int ch) {
 	numbuf[numbuf_i] = 0;
 }
 
-static int numbuf_pull() {
+static int numbuf_pull(void) {
 	int distance = 1;
 	if (numbuf_i) {
 		numbuf[numbuf_i] = 0;

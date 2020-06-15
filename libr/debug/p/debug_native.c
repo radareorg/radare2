@@ -1472,7 +1472,7 @@ static int r_debug_native_bp(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 
 #if __APPLE__
 
-static int getMaxFiles() {
+static int getMaxFiles(void) {
 	struct rlimit limit;
 	if (getrlimit (RLIMIT_NOFILE, &limit) != 0) {
 		return 1024;

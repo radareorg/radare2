@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2019 - pancake, ret2libc */
+/* radare - LGPL - Copyright 2007-2020 - pancake, ret2libc */
 
 #include <r_util.h>
 
@@ -103,7 +103,7 @@ static void dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis, int color[],
 	r_stack_free (s);
 }
 
-R_API RGraph *r_graph_new() {
+R_API RGraph *r_graph_new(void) {
 	RGraph *t = R_NEW0 (RGraph);
 	if (!t) {
 		return NULL;

@@ -74,7 +74,7 @@ static size_t RtlpLFHKeyOffset = 0;
 	}\
 	hb->dwFlags |= ((flags) >> SHIFT) << SHIFT;
 
-static bool __is_windows_ten() {
+static bool __is_windows_ten(void) {
 	int major = 0;
 	RSysInfo *info = r_sys_info ();
 	if (info && info->version) {
@@ -120,7 +120,7 @@ static char *get_type(WPARAM flags) {
 	return r_str_newf ("%s %s%s", state, heaptype, type);
 }
 
-static bool init_func() {
+static bool init_func(void) {
 	HANDLE ntdll = LoadLibrary (TEXT ("ntdll.dll"));
 	if (!ntdll) {
 		return false;
@@ -1166,7 +1166,7 @@ err:
 	return NULL;
 }
 
-static RTable *__new_heapblock_tbl() {
+static RTable *__new_heapblock_tbl(void) {
 	RTable *tbl = r_table_new ();
 	r_table_add_column (tbl, r_table_type ("number"), "HeaderAddress", -1);
 	r_table_add_column (tbl, r_table_type ("number"), "UserAddress", -1);

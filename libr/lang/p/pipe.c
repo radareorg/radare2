@@ -155,7 +155,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	} else if (!child) {
 		/* children */
 		r_sandbox_system (code, 1);
-		write (input[1], "", 1);
+		(void) write (input[1], "", 1);
 		close (input[0]);
 		close (input[1]);
 		close (output[0]);
@@ -189,11 +189,11 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 			res = lang->cmd_str ((RCore*)lang->user, buf);
 			//eprintf ("%d %s\n", ret, buf);
 			if (res) {
-				write (input[1], res, strlen (res) + 1);
+				(void) write (input[1], res, strlen (res) + 1);
 				free (res);
 			} else {
 				eprintf ("r_lang_pipe: NULL reply for (%s)\n", buf);
-				write (input[1], "", 1); // NULL byte
+				(void) write (input[1], "", 1); // NULL byte
 			}
 		}
 		r_cons_break_pop ();

@@ -36,11 +36,11 @@
 ~:$ cat example.c  
 #include <stdio.h>
 
-void func() {
+void func(void) {
         printf("Hello ");
 }
 
-int main() {
+int main(void) {
         func(); func(); func();
 }
 

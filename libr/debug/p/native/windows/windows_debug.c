@@ -869,12 +869,12 @@ static int __debug_exception_event(DEBUG_EVENT *de) {
 }
 
 #if 0
-static char *__r_debug_get_dll() {
+static char *__r_debug_get_dll(void) {
 	return lstLibPtr->Path;
 }
 #endif
 
-static PLIB_ITEM __r_debug_get_lib_item() {
+static PLIB_ITEM __r_debug_get_lib_item(void) {
 	return lstLibPtr;
 }
 

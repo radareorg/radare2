@@ -17,7 +17,7 @@ BuildJobsThrottler(){
 
 	# Get number of CPUs on this target
 	# getconf does not exit on Darwin. Use sysctl on Darwin machines.
-	CPU_N=$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu) 
+	CPU_N=$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu)
 	printf "Number of CPUs is %s and "  "$CPU_N"
 
 	# Get remaining RAM that could be used for this build
@@ -25,10 +25,10 @@ BuildJobsThrottler(){
 
 	DEFAULT_MAX_MEM_PER_JOB=200000
 	[ -z "${MAX_MEM_PER_JOB}" ] && MAX_MEM_PER_JOB="$DEFAULT_MAX_MEM_PER_JOB" # Defensive, prevent devision by 0
-	
+
 	# Assuming we may have many 300MB compilation jobs running in parallel
 	MEM_ALLOWED_JOBS=$((FREE_RAM / MAX_MEM_PER_JOB))
-	echo "current free RAM allows us to run $MEM_ALLOWED_JOBS jobs in parallel." 
+	echo "current free RAM allows us to run $MEM_ALLOWED_JOBS jobs in parallel."
 
 	# Set number of build jobs to be run in parallel as the minimum between $MEM_ALLOWED_JOBS and $CPU_N
 	MAKE_JOBS=$((MEM_ALLOWED_JOBS<CPU_N?MEM_ALLOWED_JOBS:CPU_N))
@@ -38,7 +38,9 @@ BuildJobsThrottler(){
 	echo "So, the build will run on $MAKE_JOBS job(s)."
 }
 
-if [ "`uname`" = Linux ]; then
+OSNAME=$(uname)
+
+if [ "${OSNAME}" = Linux ]; then
 	# Identify current platform
 	GetPlatform
 	# Define number of parallel jobs depending on ncpus and memory
@@ -59,7 +61,7 @@ A=$(dirname "$PWD/$0")
 cd "$A" && cd .. || exit 1
 
 DEFAULT_PREFIX=/usr/local
-if [ "`uname`" = Darwin ]; then
+if [ "${OSNAME}" = Darwin ]; then
 	# purge previous installations on other common paths
 	if [ -f /usr/bin/r2 ]; then
 		type sudo || NOSUDO=1
@@ -93,11 +95,11 @@ if [ "${USE_CS5}" = 1 ]; then
 	CFGARG="${CFGARG} --with-capstone5"
 fi
 
-if [ "`uname`" != Darwin -a -n "${PREFIX}" -a "${PREFIX}" != /usr ]; then
+if [ "${OSNAME}" != Darwin ] && [ -n "${PREFIX}" ] && [ "${PREFIX}" != /usr ]; then
 	CFGARG="${CFGARG} --with-rpath"
 fi
 
-ccache --help > /dev/null 2>&1
+ccache --help > /dev/null
 if [ $? = 0 ]; then
 	[ -z "${CC}" ] && CC=gcc
 	CC="ccache ${CC}"
@@ -105,16 +107,16 @@ if [ $? = 0 ]; then
 fi
 
 # Required to build on FreeBSD
-if [ ! -x /usr/bin/gcc -a -x /usr/bin/cc ]; then
+if [ ! -x /usr/bin/gcc ] && [ -x /usr/bin/cc ]; then
 	export CC=cc
 	export HOST_CC=cc
 fi
 
 # purge first
 if [ "${PREFIX}" != "/usr" ]; then
-	A=`readlink /usr/bin/radare2 2>/dev/null`
+	A=$(readlink /usr/bin/radare2 2>/dev/null)
 	B="${PWD}/binr/radare2/radare2"
-	if [ -n "$A" -a ! -f "$A" ]; then
+	if [ -n "$A" ] && [ ! -f "$A" ]; then
 		A="$B"
 	fi
 	if [ "$A" = "$B" ]; then
@@ -129,14 +131,14 @@ fi
 
 # build
 ${MAKE} mrproper > /dev/null 2>&1
-[ "`uname`" = Linux ] && export LDFLAGS="-Wl,--as-needed ${LDFLAGS}"
+[ "${OSNAME}" = Linux ] && export LDFLAGS="-Wl,--as-needed ${LDFLAGS}"
 [ -z "${KEEP_PLUGINS_CFG}" ] && rm -f plugins.cfg
-unset DEPS
+unset R2DEPS
 pwd
 
 ./configure ${CFGARG} --prefix="${PREFIX}" || exit 1
 ${MAKE} -s -j${MAKE_JOBS} MAKE_JOBS=${MAKE_JOBS} || exit 1
-if [ "`uname`" = Darwin ]; then
+if [ "${OSNAME}" = Darwin ]; then
 	./sys/macos-cert.sh
 	${MAKE} macos-sign macos-sign-libs CERTID="${CERTID}" || (
 		echo "CERTID not defined. If you want the bins signed to debug without root"
