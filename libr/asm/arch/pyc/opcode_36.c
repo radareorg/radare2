@@ -14,7 +14,7 @@ pyc_opcodes *opcode_36(void) {
 	rm_op (.op_obj = ret->opcodes, .op_name = "CALL_FUNCTION_VAR_KW", .op_code = 142);
 
 	// These are new since Python 3.6
-	store_op (.op_obj = ret->opcodes, .op_name = "STORE_ANNOTATION", .op_code = 127, .func = NAME_OP); // Index in name list
+	store_op00 (.op_obj = ret->opcodes, .op_name = "STORE_ANNOTATION", .op_code = 127, .func = NAME_OP); // Index in name list
 	jrel_op (.op_obj = ret->opcodes, .op_name = "SETUP_ASYNC_WITH", .op_code = 154);
 	def_op (.op_obj = ret->opcodes, .op_name = "FORMAT_VALUE", .op_code = 155);
 	varargs_op (.op_obj = ret->opcodes, .op_name = "BUILD_CONST_KEY_MAP", .op_code = 156, .pop = -1, .push = 1); // TOS is count of kwargs
