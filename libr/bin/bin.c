@@ -999,7 +999,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 
 	int i = 0;
 	char unk[128];
-	char archline[128];
+	char archline[256];
 	RBinFile *binfile = r_bin_cur (bin);
 	RTable *table = r_table_new ();
 	const char *name = binfile? binfile->file: NULL;

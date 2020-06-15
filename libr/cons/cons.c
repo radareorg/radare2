@@ -365,28 +365,30 @@ R_API int r_cons_get_cur_line(void) {
 	int curline = 0;
 #if __WINDOWS__
 	POINT point;
-		if (GetCursorPos (&point)) {
-			curline = point.y;
-		}
+	if (GetCursorPos (&point)) {
+		curline = point.y;
+	}
 #endif
 #if __UNIX__
-		char buf[8];
-		struct termios save,raw;
-		// flush the Arrow keys escape keys which was messing up the output
-		fflush (stdout);
-		(void) tcgetattr (0, &save);
-		cfmakeraw (&raw);
-		(void) tcsetattr (0, TCSANOW, &raw);
-		if (isatty (fileno (stdin))){
-			write (1, R_CONS_GET_CURSOR_POSITION, sizeof (R_CONS_GET_CURSOR_POSITION));
-			read (0, buf, sizeof (buf));
-			if (isdigit (buf[2])) {
-				curline = (buf[2] - '0');
-			} if (isdigit (buf[3])) {
-				curline = curline * 10 + (buf[3] - '0');
+	char buf[8];
+	struct termios save,raw;
+	// flush the Arrow keys escape keys which was messing up the output
+	fflush (stdout);
+	(void) tcgetattr (0, &save);
+	cfmakeraw (&raw);
+	(void) tcsetattr (0, TCSANOW, &raw);
+	if (isatty (fileno (stdin))) {
+		if (write (1, R_CONS_GET_CURSOR_POSITION, sizeof (R_CONS_GET_CURSOR_POSITION)) != -1) {
+			if (read (0, buf, sizeof (buf)) != sizeof (buf)) {
+				if (isdigit (buf[2])) {
+					curline = (buf[2] - '0');
+				} if (isdigit (buf[3])) {
+					curline = curline * 10 + (buf[3] - '0');
+				}
 			}
 		}
-		(void) tcsetattr (0, TCSANOW, &save);
+	}
+	(void) tcsetattr (0, TCSANOW, &save);
 #endif
 	return curline;
 }
@@ -481,8 +483,11 @@ R_API bool r_cons_enable_mouse(const bool enable) {
 		// : "\x1b[?1000;1006;1015l";
 		// const char *old = enable ? "\x1b[?1001s" "\x1b[?1000h" : "\x1b[?1001r" "\x1b[?1000l";
 		bool enabled = I.mouse;
+		const size_t click_len = strlen (click);
+		if (write (2, click, click_len) != click_len) {
+			return false;
+		}
 		I.mouse = enable;
-		write (2, click, strlen (click));
 		return enabled;
 #if __WINDOWS__
 	}
@@ -1507,7 +1512,7 @@ R_API void r_cons_show_cursor(int cursor) {
 #if __WINDOWS__
 	if (I.vtmode) {
 #endif
-		write (1, cursor ? "\x1b[?25h" : "\x1b[?25l", 6);
+		(void) write (1, cursor ? "\x1b[?25h" : "\x1b[?25l", 6);
 #if __WINDOWS__
 	} else {
 		static HANDLE hStdout = NULL;
@@ -1615,30 +1620,31 @@ R_API void r_cons_invert(int set, int color) {
   smcup: disable terminal scrolling (fullscreen mode)
   rmcup: enable terminal scrolling (normal mode)
 */
-R_API void r_cons_set_cup(int enable) {
+R_API bool r_cons_set_cup(bool enable) {
 #if __UNIX__
 	const char *code = enable
 		? "\x1b[?1049h" "\x1b" "7\x1b[?47h"
 		: "\x1b[?1049l" "\x1b[?47l" "\x1b" "8";
-	write (2, code, strlen (code));
+	const size_t code_len = strlen (code);
+	if (write (2, code, code_len) != code_len) {
+		return false;
+	}
 	fflush (stdout);
 #elif __WINDOWS__
 	if (I.vtmode) {
 		if (enable) {
-			const char *code =
-				"\x1b[?1049h" // xterm
-				"\x1b" "7\x1b[?47h"; // xterm-color
-			write (2, code, strlen (code));
-		} else {
-			const char *code =
-				"\x1b[?1049l" // xterm
-				"\x1b[?47l""\x1b""8"; // xterm-color
-			write (2, code, strlen (code));
+			const char *code = enable // xterm + xterm-color
+			? "\x1b[?1049h\x1b" "7\x1b[?47h"
+			: "\x1b[?1049l\x1b[?47l""\x1b""8";
+			const size_t code_len = strlen (code);
+			if (write (2, code, code_len) != code_len) {
+				return false;
+			}
 		}
 		fflush (stdout);
 	}
 #endif
-	/* not supported ? */
+	return true;
 }
 
 R_API void r_cons_column(int c) {
@@ -1675,7 +1681,7 @@ R_API void r_cons_zero(void) {
 	if (I.line) {
 		I.line->zerosep = true;
 	}
-	write (1, "", 1);
+	(void)write (1, "", 1);
 }
 
 R_API void r_cons_highlight(const char *word) {
@@ -1914,6 +1920,6 @@ R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 
 R_API void r_cons_clear_buffer(void) {
 	if (I.vtmode) {
-		write (1, "\x1b" "c\x1b[3J", 6);
+		(void)write (1, "\x1b" "c\x1b[3J", 6);
 	}
 }
