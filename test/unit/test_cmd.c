@@ -165,7 +165,7 @@ bool test_cmd_get_desc(void) {
 	RCmdDesc *ap_cd = r_cmd_desc_argv_new (cmd, a_cd, "ap", ap_handler);
 	RCmdDesc *apd_cd = r_cmd_desc_argv_new (cmd, ap_cd, "apd", ap_handler);
 	RCmdDesc *ae_cd = r_cmd_desc_oldinput_new (cmd, a_cd, "ae", ae_handler);
-	RCmdDesc *aeir_cd = r_cmd_desc_argv_new (cmd, a_cd, "aeir", aeir_handler);
+	RCmdDesc *aeir_cd = r_cmd_desc_argv_new (cmd, ae_cd, "aeir", aeir_handler);
 	RCmdDesc *w_cd = r_cmd_desc_oldinput_new (cmd, root, "w", w_handler);
 
 	mu_assert_null (r_cmd_get_desc (cmd, "afl"), "afl does not have any handler");

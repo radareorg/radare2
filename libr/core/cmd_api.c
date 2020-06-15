@@ -434,7 +434,7 @@ static char *argv_get_help(RCmd *cmd, RCmdDesc *cd, RCmdParsedArgs *a, size_t de
 	}
 
 	RCons *cons = r_cons_singleton ();
-	const char *pal_help_color = use_color? cons->context->pal.comment: "",
+	const char *pal_help_color = use_color? cons->context->pal.help: "",
 		   *pal_input_color = use_color? cons->context->pal.input: "",
 		   *pal_label_color = use_color? cons->context->pal.label: "",
 		   *pal_reset = use_color? cons->context->pal.reset: "";
