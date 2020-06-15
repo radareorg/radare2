@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_core.h>
 
@@ -46,7 +46,7 @@ R_API int r_core_log_list(RCore *core, int n, int nth, char fmt) {
 	return count;
 }
 
-R_API RCoreLog *r_core_log_new() {
+R_API RCoreLog *r_core_log_new(void) {
 	RCoreLog *log = R_NEW0 (RCoreLog);
 	if (!log) {
 		return NULL;

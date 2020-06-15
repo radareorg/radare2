@@ -191,7 +191,7 @@ static void printcmd (RIO *io, const char *cmd) {
 	free (res);
 }
 
-static struct winedbg_x86_32 regState() {
+static struct winedbg_x86_32 regState(void) {
 	struct winedbg_x86_32 r = {0};
 	char *res = runcmd ("info reg");
 	if (res) {

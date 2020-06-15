@@ -375,8 +375,7 @@ include_files =[
   'include/r_vector.h',
   'include/sdb.h'
 ]
-install_headers(include_files,
-  subdir: 'libr')
+install_headers(include_files, install_dir: r2_incdir)
 
 r_util_files = [
   'include/r_util/pj.h',
@@ -434,12 +433,12 @@ r_util_files = [
   'include/r_util/r_x509.h',
   'include/r_util/r_annotated_code.h'
 ]
-install_headers(r_util_files, subdir: 'libr/r_util')
+install_headers(r_util_files, install_dir: join_paths(r2_incdir, 'r_util'))
 
 r_crypto_files = [
   'include/r_crypto/r_des.h'
 ]
-install_headers(r_crypto_files, subdir: 'libr/r_crypto')
+install_headers(r_crypto_files, install_dir: join_paths(r2_incdir, 'r_crypto'))
 
 sdb_files = [
   'include/sdb/buffer.h',
@@ -458,7 +457,7 @@ sdb_files = [
   'include/sdb/sdb_version.h',
   'include/sdb/types.h'
 ]
-install_headers(sdb_files, subdir: 'libr/sdb')
+install_headers(sdb_files, install_dir: join_paths(r2_incdir, 'sdb'))
 
 sflib_common_files = [
   'include/sflib/common/sftypes.h',
@@ -481,10 +480,10 @@ sflib_arch_files = [
   'sfsysnr.h'
 ]
 
-install_headers(sflib_common_files, subdir: 'libr/sflib/common')
+install_headers(sflib_common_files, install_dir: join_paths(r2_incdir, 'sflib/common'))
 foreach arch : sflib_arch
   foreach file : sflib_arch_files
-    install_headers(join_paths('include/sflib', arch, file), subdir: join_paths('libr/sflib', arch))
+    install_headers(join_paths('include/sflib', arch, file), install_dir: join_paths(r2_incdir, 'sflib', arch))
   endforeach
 endforeach
 

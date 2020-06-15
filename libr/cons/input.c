@@ -48,7 +48,7 @@ R_API int r_cons_controlz(int ch) {
 // 97 - wheel down
 // 95 - mouse up
 // 92 - mouse down
-static int __parseMouseEvent() {
+static int __parseMouseEvent(void) {
 	char xpos[32];
 	char ypos[32];
 	(void)r_cons_readchar (); // skip first char
@@ -585,7 +585,7 @@ R_API bool r_cons_readpush(const char *str, int len) {
 	return false;
 }
 
-R_API void r_cons_readflush() {
+R_API void r_cons_readflush(void) {
 	R_FREE (readbuffer);
 	readbuffer_length = 0;
 }
@@ -598,7 +598,7 @@ R_API void r_cons_switchbuf(bool active) {
 extern volatile sig_atomic_t sigwinchFlag;
 #endif
 
-R_API int r_cons_readchar() {
+R_API int r_cons_readchar(void) {
 	char buf[2];
 	buf[0] = -1;
 	if (readbuffer_length > 0) {
@@ -661,18 +661,20 @@ R_API bool r_cons_yesno(int def, const char *fmt, ...) {
 	va_end (ap);
 	fflush (stderr);
 	r_cons_set_raw (true);
-	(void)read (0, &key, 1);
-	write (2, " ", 1);
-	write (2, &key, 1);
-	write (2, "\n", 1);
-	if (key == 'Y') {
-		key = 'y';
+	char buf[] = " ?\n";
+	if (read (0, buf + 1, 1) == 1) {
+		if (write (2, buf, 3) == 3) {
+			if (key == 'Y') {
+				key = 'y';
+			}
+			r_cons_set_raw (false);
+			if (key == '\n' || key == '\r') {
+				key = def;
+			}
+			return key == 'y';
+		}
 	}
-	r_cons_set_raw (false);
-	if (key == '\n' || key == '\r') {
-		key = def;
-	}
-	return key == 'y';
+	return false;
 }
 
 R_API char *r_cons_password(const char *msg) {

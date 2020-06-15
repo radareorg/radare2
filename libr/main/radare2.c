@@ -405,8 +405,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		LISTS_FREE ();
 		return main_help (1);
 	}
-	// r_core_init (r); // TODO: use r_core_new() for simplicity
 	r = r_core_new ();
+	if (!r) {
+		eprintf ("Cannot initialize RCore\n");
+		return 1;
+	}
 	r->r_main_radare2 = r_main_radare2;
 	r->r_main_radiff2 = r_main_radiff2;
 	r->r_main_rafind2 = r_main_rafind2;
@@ -841,16 +844,17 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	} else if (argv[opt.ind] && !strcmp (argv[opt.ind], "=")) {
 		int sz;
 		/* stdin/batch mode */
-		ut8 *buf = (ut8 *)r_stdin_slurp (&sz);
+		char *buf = r_stdin_slurp (&sz);
 		eprintf ("^D\n");
 		r_cons_set_raw (false);
 #if __UNIX__
 		// TODO: keep flags :?
 		(void)freopen ("/dev/tty", "rb", stdin);
-		(void)freopen ("/dev/tty","w",stdout);
-		(void)freopen ("/dev/tty","w",stderr);
+		(void)freopen ("/dev/tty", "w", stdout);
+		(void)freopen ("/dev/tty", "w", stderr);
 #else
 		eprintf ("Cannot reopen stdin without UNIX\n");
+		free (buf);
 		return 1;
 #endif
 		if (buf && sz > 0) {

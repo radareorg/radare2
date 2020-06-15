@@ -1601,8 +1601,13 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
 						}
 					}
 				}
-				ut32 page_index = (ut32)(seg_off / ps);
-				cur_seg->page_start[page_index] = seg_off & 0xfff;
+				if (cur_seg) {
+					ut32 page_index = (ut32)(seg_off / ps);
+					size_t maxsize = cur_seg->page_count * sizeof (ut16);
+					if (page_index < maxsize) {
+						cur_seg->page_start[page_index] = seg_off & 0xfff;
+					}
+				}
 				break;
 			}
 			default:

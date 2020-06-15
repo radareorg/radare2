@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2010-2017 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2020 - nibble, pancake */
 
 #include <r_anal.h>
 #include <r_util.h>
 #include <r_diff.h>
 
-R_API RAnalDiff *r_anal_diff_new() {
+R_API RAnalDiff *r_anal_diff_new(void) {
 	RAnalDiff *diff = R_NEW0 (RAnalDiff);
 	if (diff) {
 		diff->type = R_ANAL_DIFF_TYPE_NULL;

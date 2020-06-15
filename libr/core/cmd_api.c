@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_cmd.h>
 #include <r_util.h>
@@ -50,7 +50,7 @@ R_API void r_cmd_alias_init(RCmd *cmd) {
 	cmd->aliases.values = NULL;
 }
 
-R_API RCmd *r_cmd_new () {
+R_API RCmd *r_cmd_new(void) {
 	int i;
 	RCmd *cmd = R_NEW0 (RCmd);
 	if (!cmd) {
@@ -508,7 +508,7 @@ R_API char *r_cmd_get_recursive_help(RCmd *cmd) {
 
 /** macro.c **/
 
-R_API RCmdMacroItem *r_cmd_macro_item_new() {
+R_API RCmdMacroItem *r_cmd_macro_item_new(void) {
 	return R_NEW0 (RCmdMacroItem);
 }
 

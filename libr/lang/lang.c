@@ -24,7 +24,7 @@ R_API void r_lang_plugin_free (RLangPlugin *p) {
 	}
 }
 
-R_API RLang *r_lang_new() {
+R_API RLang *r_lang_new(void) {
 	RLang *lang = R_NEW0 (RLang);
 	if (!lang) {
 		return NULL;

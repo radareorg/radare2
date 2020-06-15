@@ -5129,6 +5129,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_command) {
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_command) {
 	// TODO: traverse command tree to print help
 	// FIXME: once we have a command tree, this special handling should be removed
+	size_t node_str_len = strlen (node_string);
 	if (!strcmp (node_string, "@?")) {
 		r_core_cmd_help (state->core, help_msg_at);
 	} else if (!strcmp (node_string, "@@?")) {
@@ -5141,16 +5142,15 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_command) {
 		r_cons_grep_help ();
 	} else if (!strcmp (node_string, ">?")) {
 		r_core_cmd_help (state->core, help_msg_greater_sign);
-	} else if (!strcmp (node_string + strlen (node_string) - 2, "?*")) {
-		size_t node_len = strlen (node_string);
+	} else if (node_str_len >= 2 && !strcmp (node_string + node_str_len - 2, "?*")) {
 		int detail = 0;
-		if (node_len > 3 && node_string[node_len - 3] == '?') {
+		if (node_str_len > 3 && node_string[node_str_len - 3] == '?') {
 			detail++;
-			if (node_len > 4 && node_string[node_len - 4] == '?') {
+			if (node_str_len > 4 && node_string[node_str_len - 4] == '?') {
 				detail++;
 			}
 		}
-		node_string[node_len - 2 - detail] = '\0';
+		node_string[node_str_len - 2 - detail] = '\0';
 		recursive_help (state->core, detail, node_string);
 		return R_CMD_STATUS_OK;
 	} else {

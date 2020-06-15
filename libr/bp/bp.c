@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2018 - pancake */
+/* radare2 - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_bp.h>
 #include <config.h>
@@ -18,7 +18,7 @@ static void r_bp_item_free (RBreakpointItem *b) {
 	free (b);
 }
 
-R_API RBreakpoint *r_bp_new() {
+R_API RBreakpoint *r_bp_new(void) {
 	int i;
 	RBreakpointPlugin *static_plugin;
 	RBreakpoint *bp = R_NEW0 (RBreakpoint);

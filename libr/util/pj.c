@@ -21,7 +21,7 @@ static void pj_comma(PJ *j) {
 	j->is_key = false;
 }
 
-R_API PJ *pj_new() {
+R_API PJ *pj_new(void) {
 	PJ *j = R_NEW0 (PJ);
 	if (j) {
 		r_strbuf_init (&j->sb);

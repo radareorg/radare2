@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2009-2015 - nibble, montekki, pancake */
+/* radare - LGPL - Copyright 2009-2020 - nibble, montekki, pancake */
 
 #include <r_types.h>
 #include <r_bin.h>
 
 // TODO: use proper dwarf api here.. or deprecate
-static int get_line(RBinFile *bf, ut64 addr, char *file, int len, int *line) {
+static bool get_line(RBinFile *bf, ut64 addr, char *file, int len, int *line) {
 	if (bf->sdb_addrinfo) {
 		char offset[64];
 		char *offset_ptr = sdb_itoa (addr, offset, 16);
@@ -22,8 +22,12 @@ static int get_line(RBinFile *bf, ut64 addr, char *file, int len, int *line) {
 	return false;
 }
 
-#if !R_BIN_ELF64
-struct r_bin_dbginfo_t r_bin_dbginfo_elf = {
+#if R_BIN_ELF64
+RBinDbgInfo r_bin_dbginfo_elf64 = {
+	.get_line = &get_line,
+};
+#else
+RBinDbgInfo r_bin_dbginfo_elf = {
 	.get_line = &get_line,
 };
 #endif

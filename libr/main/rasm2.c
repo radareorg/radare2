@@ -29,7 +29,7 @@ static void __as_set_archbits(RAsmState *as) {
 	r_anal_set_bits (as->anal, sysbits);
 }
 
-static RAsmState *__as_new() {
+static RAsmState *__as_new(void) {
 	RAsmState *as = R_NEW0 (RAsmState);
 	if (as) {
 		as->l = r_lib_new (NULL, NULL);

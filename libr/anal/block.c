@@ -437,6 +437,35 @@ beach:
 	return !breaked;
 }
 
+R_API bool r_anal_block_recurse_followthrough(RAnalBlock *block, RAnalBlockCb cb, void *user) {
+	bool breaked = false;
+	RAnalBlockRecurseContext ctx;
+	ctx.anal = block->anal;
+	r_pvector_init (&ctx.to_visit, NULL);
+	ctx.visited = ht_up_new0 ();
+	if (!ctx.visited) {
+		goto beach;
+	}
+
+	ht_up_insert (ctx.visited, block->addr, NULL);
+	r_pvector_push (&ctx.to_visit, block);
+
+	while (!r_pvector_empty (&ctx.to_visit)) {
+		RAnalBlock *cur = r_pvector_pop (&ctx.to_visit);
+		bool b = !cb (cur, user);
+		if (b) {
+			breaked = true;
+		} else {
+			r_anal_block_successor_addrs_foreach (cur, block_recurse_successor_cb, &ctx);
+		}
+	}
+
+beach:
+	ht_up_free (ctx.visited);
+	r_pvector_clear (&ctx.to_visit);
+	return !breaked;
+}
+
 static bool recurse_list_cb(RAnalBlock *block, void *user) {
 	RList *list = user;
 	r_anal_block_ref (block);
@@ -634,13 +663,16 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 	// Now, for each fcn, check which of our successors are still reachable in the function remove and the ones that are not.
 	RListIter *it;
 	RAnalFunction *fcn;
-	r_list_foreach (block->fcns, it, fcn) {
+	// We need to clone the list because block->fcns will get modified in the loop
+	RList *fcns_cpy = r_list_clone (block->fcns);
+	r_list_foreach (fcns_cpy, it, fcn) {
 		RAnalBlock *entry = r_anal_get_block_at (block->anal, fcn->addr);
 		if (entry && r_list_contains (entry->fcns, fcn)) {
 			r_anal_block_recurse (entry, noreturn_successors_reachable_cb, succs);
 		}
 		ht_up_foreach (succs, noreturn_remove_unreachable_cb, fcn);
 	}
+	r_list_free (fcns_cpy);
 
 	// This last step isn't really critical, but nice to have.
 	// Prepare to merge blocks with their predecessors if possible

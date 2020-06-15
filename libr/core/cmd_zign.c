@@ -11,6 +11,7 @@ static const char *help_msg_z[] = {
 	"Usage:", "z[*j-aof/cs] [args] ", "# Manage zignatures",
 	"z", "", "show zignatures",
 	"z.", "", "find matching zignatures in current offset",
+	"zb", "[n=5]", "find n closest matching graph zignature at current offset",
 	"z*", "", "show zignatures in radare format",
 	"zq", "", "show zignatures in quiet mode",
 	"zj", "", "show zignatures in json format",
@@ -1047,6 +1048,38 @@ TODO: add useXRefs, useName
 	return retval;
 }
 
+static bool bestmatch(void *data, const char *input) {
+	RCore *core = (RCore *)data;
+	bool found = false;
+	int count = 5;
+
+	if (!R_STR_ISEMPTY (input)) {
+		count = atoi (input);
+		if (count <= 0) {
+			eprintf ("[!!] invalid number %s\n", input);
+			return found;
+		}
+	}
+
+	r_cons_break_push (NULL, NULL);
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+	if (fcn) {
+		RList *list = r_sign_find_closest_sig (core->anal, fcn, count, 0);
+		if (list) {
+			found = true;
+			RListIter *itr;
+			RSignCloseMatch *row;
+			r_list_foreach (list, itr, row) {
+				r_cons_printf ("%02.5lf %s\n", row->score, row->name);
+			}
+			r_list_free (list);
+		}
+	}
+
+	r_cons_break_pop ();
+	return found;
+}
+
 static int cmdCompare(void *data, const char *input) {
 	int result = true;
 	RCore *core = (RCore *) data;
@@ -1249,6 +1282,8 @@ static int cmd_zign(void *data, const char *input) {
 		break;
 	case '.': // "z."
 		return cmdCheck (data, arg);
+	case 'b': // "zb"
+		return bestmatch (data, arg);
 	case 'o': // "zo"
 		return cmdOpen (data, arg);
 	case 'g': // "zg"

@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2009-2020 - pancake, nibble */
 
 #include <r_cons.h>
-#include <r_util.h>
 #include <r_util/r_print.h>
 #include <sdb.h>
 
@@ -458,7 +457,7 @@ static int cmp(const void *a, const void *b) {
 	return strcmp (a, b);
 }
 
-R_API void r_cons_grepbuf() {
+R_API void r_cons_grepbuf(void) {
 	RCons *cons = r_cons_singleton ();
 	const char *buf = cons->context->buffer;
 	const int len = cons->context->buffer_len;
