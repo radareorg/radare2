@@ -718,6 +718,8 @@ typedef struct {
 	ut64	abbrev_code;
 	size_t	length;
 	size_t	capacity;
+	ut64	offset; // important for parsing types
+	ut64	has_children; // important for parsing types
 	RBinDwarfAttrValue *attr_values;
 } RBinDwarfDIE;
 
@@ -804,7 +806,8 @@ typedef struct {
 
 typedef struct r_bin_t RBin; // forward declaration so I can keep the functions in this interface
 
-R_API void r_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf);
+R_API void r_bin_dwarf_parse_types(RBinDwarfDebugInfo *info);
+R_API void r_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *info);
 R_API void r_bin_dwarf_free_debug_abbrev(RBinDwarfDebugAbbrev *da);
 R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode);
 R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode);

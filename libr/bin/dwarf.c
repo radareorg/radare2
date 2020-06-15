@@ -318,10 +318,155 @@ static inline bool is_printable_form(ut64 form_code) {
 	return (form_code <= DW_FORM_addrx4 && form_code >= DW_FORM_addr);
 }
 
-static inline bool is_printable_tag(ut64 attr_code) {
-	return (attr_code <= DW_TAG_LAST);
+static inline bool is_printable_tag(ut64 tag_code) {
+	return (tag_code <= DW_TAG_LAST);
 }
 
+static inline bool is_type_tag(ut64 tag_code) {
+	return (tag_code == DW_TAG_structure_type);
+}
+
+static void struct_type_fini(void *e, void *user) {
+	(void)user;
+	RAnalStructMember *member = e;
+	free ((char *)member->name);
+	free ((char *)member->type);
+}
+
+static RAnalStructMember *parse_struct_member(RBinDwarfDIE *die) {
+	r_return_val_if_fail(die, NULL);
+	char *name = NULL;
+	char *type = NULL;
+	ut64 offset = 0;
+	ut64 type_ref = 0;
+	for (size_t i = 0; i < die->length; i++) {
+		RBinDwarfAttrValue *value = &die->attr_values[i];
+		switch(die->attr_values[i].attr_name) {
+			// TODO, just assume its a string now
+			case DW_AT_name:
+				name = strdup(value->string.content);
+				break;
+			// solve by looking at the offset
+			case DW_AT_type:
+				type_ref = value->reference;
+				type = strdup("Type");
+				break;
+			// Sadly it seems it can be a dwarf expression, this can get quite complex...
+			case DW_AT_data_member_location:
+				offset = value->data;
+				break;
+			default:
+				break;
+		}
+	}
+	RAnalStructMember member = {
+		.name = name,
+		.type = type,
+		.offset = (int)offset
+	};
+
+	RAnalStructMember *ret = R_NEW(RAnalStructMember);
+	if (!ret) {
+		// TODO clean up leaks after prototyping
+		return NULL;
+	}
+	memcpy(ret, &member, sizeof(RAnalStructMember));
+	return ret;
+}
+static void print_struct_member(RAnalBaseType *base_type) {
+	r_return_if_fail(base_type && base_type->kind == R_ANAL_BASE_TYPE_KIND_STRUCT);
+
+	RListIter *iter;
+	RAnalStructMember *member;
+	printf(" Members:\n");
+	r_vector_foreach(&base_type->struct_data.members, member) {
+		printf("  %s : %s\n", member->type, member->name);
+	}
+}
+
+R_API void r_bin_dwarf_parse_types(RBinDwarfDebugInfo *info) {
+	// naive solution, travel through all entries
+	// working just for basic C structures
+	for (size_t i = 0; i < info->length; i++) {
+		for (size_t j = 0; j < info->comp_units[i].length; j++) {
+
+			RBinDwarfDIE *curr_die = &info->comp_units[i].dies[j];
+			if (is_type_tag (curr_die->tag)) {
+				// now we control the flow, lets construct the structure
+				RAnalBaseType *base_type = R_NEW(RAnalBaseType);
+				RVector members;
+				// TODO add free function
+				r_vector_init (&members, sizeof (RAnalStructMember), struct_type_fini, NULL);
+
+				if (curr_die->tag == DW_TAG_structure_type) {
+					/*
+					Structure usually has these attrs - example:
+						name: "human"
+						byte_size: 16
+							Members:
+								DW_TAG_member:
+									name: "height"
+									type: <0x41> (offset to entry)
+								DW_TAG_member
+									name: "weight"
+									type: <0x41> (offset to entry)
+								etc.
+					*/
+					/* DWARF4
+					DW_TAG_structure_type DECL
+											DW_AT_abstract_origin
+											DW_AT_accessibility
+											DW_AT_allocated
+											DW_AT_associated
+											DW_AT_bit_size
+											DW_AT_byte_size
+											DW_AT_data_location
+											DW_AT_declaration
+											DW_AT_description
+											DW_AT_name
+											DW_AT_sibling
+											DW_AT_signature
+											DW_AT_specification
+											DW_AT_start_scop
+											DW_AT_visibility
+				An incomplete structure, union or class type is represented
+				by a structure, union or class entry that does not have a
+				byte size attribute and that has a DW_AT_declaration attribute. 
+
+
+					*/
+				
+					base_type->kind = R_ANAL_BASE_TYPE_KIND_STRUCT;
+					printf("Struct, name: %s\n", curr_die->attr_values[0].string.content);
+					RVector members;
+					r_vector_init (&members, sizeof (RAnalStructMember), struct_type_fini, NULL);
+					// for now lets ignore possibility of any futher nesting
+					if (curr_die->has_children) {
+						// sibling list is terminated by null entry
+						j++;
+						RBinDwarfDIE *child_die = &info->comp_units[i].dies[j];
+						for ( ; child_die->abbrev_code != 0 && j < info->comp_units[i].length; j++) {
+							child_die = &info->comp_units[i].dies[j];
+							if (child_die->tag == DW_TAG_member) {
+								RAnalStructMember *member = parse_struct_member(child_die);
+								void *element = r_vector_push (&members, member);
+								if (!element) {
+									goto cleanup;
+								}
+							}
+						}
+					}
+					base_type->struct_data.members = members;
+					print_struct_member(base_type);
+					r_vector_fini (&base_type->struct_data.members);
+					// TODO I think RAnalBaseType should include a name to properly store them?
+				}
+			}
+		}
+	}
+cleanup:
+	return;
+}
 
 static int add_sdb_include_dir(Sdb *s, const char *incl, int idx) {
 	if (!s || !incl) {
@@ -1773,18 +1918,22 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *sdb, const ut8 *buf_start,
 			r_bin_dwarf_expand_cu (unit);
 		}
 		// DIE starts with ULEB128 with the abbreviation code
+		RBinDwarfDIE *curr_die = &unit->dies[unit->length];
+		r_bin_dwarf_init_die (curr_die);
+		// TODO offset isn't calculated correctly
+		curr_die->offset = (ut64)(buf - buf_start);
+
 		buf = r_uleb128 (buf, buf_end - buf, &abbr_code);
 
 		if (abbr_code > abbrevs->length || !buf || buf >= buf_end) { 
 			return buf; // we finished, return the buffer to parse next compilation units
 		}
-		RBinDwarfDIE *curr_die = &unit->dies[unit->length];
-		r_bin_dwarf_init_die (curr_die);
 
 		// there can be "null" entries for alignment padding purposes
 		// such entries have abbr_code == 0
 		if (!abbr_code) {
 			curr_die->abbrev_code = 0;
+			curr_die->tag = DW_TAG_null_entry;
 			unit->length++;
 			continue;
 		}
@@ -1793,7 +1942,7 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *sdb, const ut8 *buf_start,
 		RBinDwarfAbbrevDecl *curr_abbr = &abbrevs->decls[abbr_code - 1];
 		curr_die->abbrev_code = abbr_code;
 		curr_die->tag = curr_abbr->tag;
-
+		curr_die->has_children = curr_abbr->has_children;
 
 		if (abbrevs->capacity < abbr_code) {
 			return NULL;
