@@ -300,6 +300,7 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 		char *newsig = realloc (signature, size);
 		if (!newsig) {
 			eprintf ("Cannot realloc to %d\n", size);
+			free (signatures);
 			break;
 		}
 		signature = newsig;
@@ -336,7 +337,7 @@ static ut16 read16(RBuffer* b, ut64 addr) {
 static RList *dex_method_signature2(RBinDexObj *bin, int method_idx) {
 	ut32 proto_id, params_off, list_size;
 	ut16 type_idx;
-	int i;
+	size_t i;
 
 	RList *params = r_list_new ();
 	if (!params) {
@@ -643,10 +644,8 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 	struct dex_debug_position_t *pos;
 // Loading the debug info takes too much time and nobody uses this afaik
 // 0.5s of 5s is spent in this loop
-#if 1
 	r_list_foreach (debug_positions, iter1, pos) {
 		const char *line = getstr (dex, pos->source_file_idx);
-#if 1
 		char offset[64] = {0};
 		if (!line || !*line) {
 			continue;
@@ -656,7 +655,7 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 		sdb_set (bf->sdb_addrinfo, offset_ptr, fileline, 0);
 		sdb_set (bf->sdb_addrinfo, fileline, offset_ptr, 0);
 		free (fileline);
-#endif
+
 		RBinDwarfRow *rbindwardrow = R_NEW0 (RBinDwarfRow);
 		if (!rbindwardrow) {
 			dexdump = false;
@@ -671,7 +670,6 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 			free (rbindwardrow);
 		}
 	}
-#endif
 	if (!dexdump) {
 		goto beach;
 	}
@@ -711,16 +709,14 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 		if (debug_locals[reg].live) {
 			if (debug_locals[reg].signature) {
 				rbin->cb_printf (
-					"        0x%04x - 0x%04x reg=%d %s %s "
-					"%s\n",
+					"        0x%04x - 0x%04x reg=%d %s %s %s\n",
 					debug_locals[reg].startAddress,
 					insns_size, reg, debug_locals[reg].name,
 					debug_locals[reg].descriptor,
 					debug_locals[reg].signature);
 			} else {
 				rbin->cb_printf (
-					"        0x%04x - 0x%04x reg=%d %s %s"
-					"\n",
+					"        0x%04x - 0x%04x reg=%d %s %s\n",
 					debug_locals[reg].startAddress,
 					insns_size, reg, debug_locals[reg].name,
 					debug_locals[reg].descriptor);
@@ -729,16 +725,15 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 	}
 beach:
 	r_list_free (debug_positions);
+	r_list_free (emitted_debug_locals);
+	r_list_free (params);
 	free (debug_locals);
-	free (emitted_debug_locals);
-	free (params);
 }
 
 static Sdb *get_sdb(RBinFile *bf) {
+	r_return_val_if_fail (bf && bf->o, NULL);
 	RBinObject *o = bf->o;
-	if (!o || !o->bin_obj) {
-		return NULL;
-	}
+	r_return_val_if_fail (o && o->bin_obj, NULL);
 	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) o->bin_obj;
 	return bin->kv;
 }
