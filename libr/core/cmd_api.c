@@ -469,6 +469,7 @@ static char *oldinput_get_help(RCmd *cmd, RCmdDesc *cd, RCmdParsedArgs *a) {
 	r_cons_push ();
 	RCmdStatus status = r_cmd_call_parsed_args (cmd, a);
 	if (status == R_CMD_STATUS_OK) {
+		r_cons_filter ();
 		s = r_cons_get_buffer ();
 	}
 	char *res = strdup (s? s: "");
