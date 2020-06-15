@@ -4269,7 +4269,7 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 			ut32 nsects = r_buf_read_le32_at (buf, addr + (is64 ? 64 : 48));
 			ut64 off = is64 ? 72 : 56;
 			int j = 0;
-			while (off < lcSize && nsects--) {
+			while (off < lcSize && (addr + off) < length && nsects-- > 0) {
 				if (is64) {
 					r_list_append (ret, r_bin_field_new (addr + off, addr + off, 1, sdb_fmt ("section_%d", j++), "mach0_section64", "mach0_section64", true));
 					off += 80;
