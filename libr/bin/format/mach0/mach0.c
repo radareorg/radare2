@@ -2903,7 +2903,6 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 
 				stridx = bin->symtab[i].n_strx;
 				symbols[j].name = get_name (bin, stridx, false);
-				// symbols[j].name[R_BIN_MACH0_STRING_LENGTH - 2] = 0;
 				symbols[j].last = false;
 
 				const char *name = symbols[j].name;
