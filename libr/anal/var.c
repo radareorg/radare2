@@ -585,7 +585,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	st64 ptr = 0;
 	char *addr, *esil_buf = NULL;
 
-	r_return_if_fail (anal && fcn && op);
+	r_return_if_fail (anal && fcn && op && reg);
 
 	size_t i;
 	for (i = 0; i < R_ARRAY_SIZE (op->src); i++) {
