@@ -73,13 +73,18 @@ typedef struct r_cmd_alias_t {
 	int *remote;
 } RCmdAlias;
 
+typedef struct r_cmd_desc_example_t {
+	const char *example;
+	const char *comment;
+} RCmdDescExample;
+
 typedef struct r_cmd_desc_help_t {
 	const char *usage;
 	const char *summary;
 	const char *group_summary;
 	const char *args_str;
 	const char *description;
-	const char **examples;
+	RVector/*<RCmdDescExample>*/ examples;
 } RCmdDescHelp;
 
 typedef enum {
@@ -157,7 +162,7 @@ R_API int r_cmd_call(RCmd *cmd, const char *command);
 R_API RCmdStatus r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args);
 R_API RCmdDesc *r_cmd_get_root(RCmd *cmd);
 R_API RCmdDesc *r_cmd_get_desc(RCmd *cmd, const char *cmd_identifier);
-R_API char *r_cmd_get_help(RCmd *cmd, RCmdParsedArgs *args);
+R_API char *r_cmd_get_help(RCmd *cmd, RCmdParsedArgs *args, bool use_color);
 R_API char *r_cmd_get_recursive_help(RCmd *cmd);
 
 /* RCmdDescriptor */
@@ -165,6 +170,7 @@ R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *nam
 R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdCb cb);
 R_API void r_cmd_desc_free(RCmdDesc *cd);
 R_API RCmdDesc *r_cmd_desc_parent(RCmdDesc *cd);
+R_API void r_cmd_desc_help_init(RCmdDescHelp *help);
 R_API void r_cmd_desc_set_help(RCmdDesc *cd, RCmdDescHelp *help);
 
 #define r_cmd_desc_children_foreach(root, it_cd) r_pvector_foreach (&root->children, it_cd)

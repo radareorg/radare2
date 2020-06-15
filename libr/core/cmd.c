@@ -5183,7 +5183,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_command) {
 
 		// let's try first with the new auto-generated help, if
 		// something fails fallback to old behaviour
-		char *help_msg = r_cmd_get_help (state->core->rcmd, pr_args);
+		char *help_msg = r_cmd_get_help (state->core->rcmd, pr_args, state->core->print->flags & R_PRINT_FLAGS_COLOR);
 		if (help_msg) {
 			r_cons_printf ("%s", help_msg);
 			free (help_msg);

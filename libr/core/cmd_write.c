@@ -1858,41 +1858,44 @@ static void cmd_write_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, wx);
 
 	RCmdDesc *wv_cd = r_cmd_desc_argv_new (core->rcmd, parent, "wv", wv_handler);
-	RCmdDescHelp wv_help = { 0 };
+	RCmdDescHelp wv_help;
+	r_cmd_desc_help_init (&wv_help);
 	wv_help.usage = "wv[size] [value]";
 	wv_help.summary = "Write value as 4-bytes/8-bytes based on value";
 	wv_help.args_str = "[value]";
 	wv_help.description = "Write the number passed as argument at the current offset as a 4-bytes value or 8-bytes value if the input is bigger than UT32_MAX, respecting the cfg.bigendian variable";
 	wv_help.group_summary = "Write value of given size";
+	RCmdDescHelp wv_ex1 = { "wv 0xdeadbeef", "Write the value 0xdeadbeef at current offset" };
+	r_vector_push (&wv_help.examples, &wv_ex1);
 	r_cmd_desc_set_help (wv_cd, &wv_help);
 
 	RCmdDesc *wv1_cd = r_cmd_desc_argv_new (core->rcmd, wv_cd, "wv1", wv1_handler);
-	RCmdDescHelp wv1_help = { 0 };
-	wv1_help.usage = "wv1 [value]";
+	RCmdDescHelp wv1_help;
+	r_cmd_desc_help_init (&wv1_help);
 	wv1_help.summary = "Write value of 1 byte";
 	wv1_help.args_str = "[value]";
 	wv1_help.description = "Write the number passed as argument at the current offset as 1-byte, respecting the cfg.bigendian variable";
 	r_cmd_desc_set_help (wv1_cd, &wv1_help);
 
 	RCmdDesc *wv2_cd = r_cmd_desc_argv_new (core->rcmd, wv_cd, "wv2", wv2_handler);
-	RCmdDescHelp wv2_help = { 0 };
-	wv2_help.usage = "wv2 [value]";
+	RCmdDescHelp wv2_help;
+	r_cmd_desc_help_init (&wv2_help);
 	wv2_help.summary = "Write value of 2 bytes";
 	wv2_help.args_str = "[value]";
 	wv2_help.description = "Write the number passed as argument at the current offset as 2-bytes, respecting the cfg.bigendian variable";
 	r_cmd_desc_set_help (wv2_cd, &wv2_help);
 
 	RCmdDesc *wv4_cd = r_cmd_desc_argv_new (core->rcmd, wv_cd, "wv4", wv4_handler);
-	RCmdDescHelp wv4_help = { 0 };
-	wv4_help.usage = "wv4 [value]";
+	RCmdDescHelp wv4_help;
+	r_cmd_desc_help_init (&wv4_help);
 	wv4_help.summary = "Write value of 4 bytes";
 	wv4_help.args_str = "[value]";
 	wv4_help.description = "Write the number passed as argument at the current offset as 4-bytes, respecting the cfg.bigendian variable";
 	r_cmd_desc_set_help (wv4_cd, &wv4_help);
 
 	RCmdDesc *wv8_cd = r_cmd_desc_argv_new (core->rcmd, wv_cd, "wv8", wv8_handler);
-	RCmdDescHelp wv8_help = { 0 };
-	wv8_help.usage = "wv8 [value]";
+	RCmdDescHelp wv8_help;
+	r_cmd_desc_help_init (&wv8_help);
 	wv8_help.summary = "Write value of 8 bytes";
 	wv8_help.args_str = "[value]";
 	wv8_help.description = "Write the number passed as argument at the current offset as 8-bytes, respecting the cfg.bigendian variable";

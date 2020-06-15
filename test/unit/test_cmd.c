@@ -255,35 +255,36 @@ bool test_cmd_help(void) {
 	RCmdDesc *pd_cd = r_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler);
 	RCmdDesc *px_cd = r_cmd_desc_oldinput_new (cmd, p_cd, "px", px_handler);
 
-	RCmdDescHelp p_help = { 0 };
+	RCmdDescHelp p_help;
+	r_cmd_desc_help_init (&p_help);
 	p_help.summary = "p summary",
 	p_help.usage = "p-usage",
 	p_help.args_str = "",
 	r_cmd_desc_set_help (p_cd, &p_help);
 
-	const char *pd_examples[] = { "pd 10", "print 10 disassembled instructions", NULL };
-	RCmdDescHelp pd_help = {
-		.usage = NULL,
-		.summary = "pd summary",
-		.args_str = "<num>",
-		.description = "pd long description",
-		.examples = pd_examples,
-	};
+	RCmdDescHelp pd_help;
+	r_cmd_desc_help_init (&pd_help);
+	pd_help.usage = NULL;
+	pd_help.summary = "pd summary";
+	pd_help.args_str = "<num>";
+	pd_help.description = "pd long description";
+	RCmdDescExample pd_ex1 = { "pd 10", "print 10 disassembled instructions" };
+	r_vector_push (&pd_help.examples, &pd_ex1);
 	r_cmd_desc_set_help (pd_cd, &pd_help);
-	RCmdDescHelp px_help = {
-		.usage = "px-usage",
-		.summary = "px summary",
-		.args_str = "<verylongarg_str_num>",
-		.description = "px long description",
-		.examples = NULL,
-	};
+
+	RCmdDescHelp px_help;
+	r_cmd_desc_help_init (&px_help);
+	px_help.usage = "px-usage";
+	px_help.summary = "px summary";
+	px_help.args_str = "<verylongarg_str_num>";
+	px_help.description = "px long description";
 	r_cmd_desc_set_help (px_cd, &px_help);
 
 	const char *p_help_exp = "Usage: p-usage   # p summary\n"
 		"| pd <num>                 # pd summary\n"
 		"| px <verylongarg_str_num> # px summary\n";
 	RCmdParsedArgs *a = r_cmd_parsed_args_newcmd ("p?");
-	char *h = r_cmd_get_help (cmd, a);
+	char *h = r_cmd_get_help (cmd, a, false);
 	mu_assert_notnull (h, "help is not null");
 	mu_assert_streq (h, p_help_exp, "wrong help for p?");
 	free (h);
@@ -294,7 +295,7 @@ bool test_cmd_help(void) {
 		"\nExamples:\n"
 		"| pd 10 # print 10 disassembled instructions\n";
 	a = r_cmd_parsed_args_newcmd ("pd?");
-	h = r_cmd_get_help (cmd, a);
+	h = r_cmd_get_help (cmd, a, false);
 	mu_assert_notnull (h, "help is not null");
 	mu_assert_streq (h, pd_help_exp, "wrong help for pd?");
 	free (h);
@@ -307,7 +308,7 @@ bool test_cmd_help(void) {
 		"Examples:\n"
 		"| pd 10 # print 10 disassembled instructions\n";
 	a = r_cmd_parsed_args_newcmd ("pd??");
-	h = r_cmd_get_help (cmd, a);
+	h = r_cmd_get_help (cmd, a, false);
 	mu_assert_notnull (h, "help is not null");
 	mu_assert_streq (h, pd_long_help_exp, "wrong help for pd??");
 	free (h);
@@ -323,14 +324,16 @@ bool test_cmd_group_help(void) {
 	RCmdDesc *p_cd = r_cmd_desc_argv_new (cmd, root, "p", p_handler_argv);
 	RCmdDesc *pd_cd = r_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler);
 
-	RCmdDescHelp p_help = { 0 };
+	RCmdDescHelp p_help;
+	r_cmd_desc_help_init (&p_help);
 	p_help.group_summary = "p group-summary",
 	p_help.summary = "p summary",
 	p_help.usage = "p-usage",
 	p_help.args_str = "",
 	r_cmd_desc_set_help (p_cd, &p_help);
 
-	RCmdDescHelp pd_help = { 0 };
+	RCmdDescHelp pd_help;
+	r_cmd_desc_help_init (&pd_help);
 	pd_help.summary = "pd summary",
 	pd_help.args_str = "<num>",
 	pd_help.description = "pd long description",
@@ -340,7 +343,7 @@ bool test_cmd_group_help(void) {
 		"| p        # p summary\n"
 		"| pd <num> # pd summary\n";
 	RCmdParsedArgs *a = r_cmd_parsed_args_newcmd ("p?");
-	char *h = r_cmd_get_help (cmd, a);
+	char *h = r_cmd_get_help (cmd, a, false);
 	mu_assert_notnull (h, "help is not null");
 	mu_assert_streq (h, p_help_exp, "wrong help for p?");
 	free (h);
@@ -361,7 +364,7 @@ bool test_cmd_oldinput_help(void) {
 
 	RCmdParsedArgs *a = r_cmd_parsed_args_newcmd ("px?");
 	const char *px_help_exp = "Free format px help\n";
-	char *h = r_cmd_get_help (cmd, a);
+	char *h = r_cmd_get_help (cmd, a, false);
 	mu_assert_notnull (h, "help is not null");
 	mu_assert_streq (h, px_help_exp, "wrong help for px?");
 	free (h);
