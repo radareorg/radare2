@@ -189,7 +189,7 @@ static bool objc_find_refs(RCore *core) {
 	int total = 0;
 	ut64 off;
 	bool readSuccess = true;
-	for (off = 0; off < objc._data->vsize ; off += objc2ClassSize) {
+	for (off = 0; off < objc._data->vsize && readSuccess; off += objc2ClassSize) {
 		if (!readSuccess || r_cons_is_breaked ()) {
 			break;
 		}
