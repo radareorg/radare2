@@ -803,10 +803,6 @@ R_API bool r_bin_wr_scn_perms(RBin *bin, const char *name, int perms);
 R_API bool r_bin_wr_rpath_del(RBin *bin);
 R_API bool r_bin_wr_entry(RBin *bin, ut64 addr);
 R_API bool r_bin_wr_output(RBin *bin, const char *filename);
-R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode);
-R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode);
-R_API RList *r_bin_dwarf_parse_aranges(RBin *a, int mode);
-R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *a, int mode);
 
 R_API RList *r_bin_get_mem(RBin *bin);
 
