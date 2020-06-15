@@ -27,7 +27,7 @@ typedef int (*RStrRangeCallback) (void *, int);
 #define r_str_array(x,y) ((y>=0 && y<(sizeof(x)/sizeof(*x)))?x[y]:"")
 R_API char *r_str_repeat(const char *ch, int sz);
 R_API const char *r_str_pad(const char ch, int len);
-R_API char *r_str_rstr(const char *base, const char *p);
+R_API const char *r_str_rstr(const char *base, const char *p);
 R_API const char *r_strstr_ansi (const char *a, const char *b);
 R_API const char *r_str_rchr(const char *base, const char *p, int ch);
 R_API const char *r_str_closer_chr(const char *b, const char *s);

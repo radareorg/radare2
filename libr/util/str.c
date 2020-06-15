@@ -631,7 +631,7 @@ R_API const char *r_str_rsep(const char *base, const char *p, const char *sep) {
 	return NULL;
 }
 
-R_API char *r_str_rstr(const char *base, const char *p) {
+R_API const char *r_str_rstr(const char *base, const char *p) {
 	char *s = strdup (base);
 	char *k = strdup (p);
 	r_str_reverse (s);

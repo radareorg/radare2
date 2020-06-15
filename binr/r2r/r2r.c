@@ -570,7 +570,8 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 				}
 				if (block_end) {
 					*block_end = 0;
-					char *block_start = r_str_rstr (p, (block_end == add_end) ? "{+" : "[-");
+					char *block_start = (char *)r_str_rstr (
+					    p, (block_end == add_end) ? "{+" : "[-");
 					if (block_start) {
 						*block_start = 0;
 						printf ("%s%s"Color_BLACK"%s%s", p,
