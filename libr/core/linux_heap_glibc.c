@@ -961,7 +961,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 	if (m_arena == m_state) {
 		GH(get_brks) (core, &brk_start, &brk_end);
 		if (tcache) {
-			// tcache_initial_brk = ((brk_start >> 12) << 12) + GH(HDR_SZ);
+			//tcache_initial_brk = ((brk_start >> 12) << 12) + GH(HDR_SZ);
 			GHT fc_offset = GH(tcache_chunk_size) (core, brk_start);
 			initial_brk = ((brk_start >> 12) << 12) + fc_offset;
 		} else {
@@ -1049,6 +1049,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 	}
 
 	const char *comma = "";
+	bool first_time = true;
 	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->GH(top)) {
 		if (size_tmp < min_size || next_chunk + size_tmp > main_arena->GH(top)) {
 			const char *status = "corrupted";
@@ -1131,6 +1132,10 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 		}
 
 		if (tcache) {
+			if (!first_time) {
+				tcache_initial_brk = ((brk_start >> 12) << 12) + GH(HDR_SZ);
+			}
+			first_time = false;
 			GH(RHeapTcache) *tcache_heap = R_NEW0 (GH(RHeapTcache));
 			if (!tcache_heap) {
 				r_cons_canvas_free (can);
