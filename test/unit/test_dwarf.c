@@ -46,64 +46,64 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	// I nest scopes to make it more readable, (hopefully)
 	mu_assert_eq (da->decls[0].tag, DW_TAG_compile_unit, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[0].has_children, 1, "Incorret children flag");
+		mu_assert_eq (da->decls[0].has_children, 1, "Incorrect children flag");
 		// specs length is 8, because we don't parse
 		// DW_AT value: 0     DW_FORM value: 0
 		// so we have just 7 attrs below
-		mu_assert_eq (da->decls[0].length, 8, "Incorret number of attributes");
+		mu_assert_eq (da->decls[0].length, 8, "Incorrect number of attributes");
 		{
 			int i = 0;
-			mu_assert_eq (da->decls[0].specs[i].attr_name, DW_AT_producer, "Incorret children flag");
-			mu_assert_eq (da->decls[0].specs[i].attr_form, DW_FORM_strp, "Incorret children flag");
+			mu_assert_eq (da->decls[0].specs[i].attr_name, DW_AT_producer, "Incorrect children flag");
+			mu_assert_eq (da->decls[0].specs[i].attr_form, DW_FORM_strp, "Incorrect children flag");
 			i++;
-			mu_assert_eq (da->decls[0].specs[i].attr_name, DW_AT_language, "Incorret children flag");
-			mu_assert_eq (da->decls[0].specs[i].attr_form, DW_FORM_data1, "Incorret children flag");
+			mu_assert_eq (da->decls[0].specs[i].attr_name, DW_AT_language, "Incorrect children flag");
+			mu_assert_eq (da->decls[0].specs[i].attr_form, DW_FORM_data1, "Incorrect children flag");
 			i++;
-			mu_assert_eq (da->decls[0].specs[i].attr_name, DW_AT_name, "Incorret children flag");
-			mu_assert_eq (da->decls[0].specs[i].attr_form, DW_FORM_strp, "Incorret children flag");
+			mu_assert_eq (da->decls[0].specs[i].attr_name, DW_AT_name, "Incorrect children flag");
+			mu_assert_eq (da->decls[0].specs[i].attr_form, DW_FORM_strp, "Incorrect children flag");
 			i++;
-			mu_assert_eq (da->decls[0].specs[i].attr_name, DW_AT_comp_dir, "Incorret children flag");
-			mu_assert_eq (da->decls[0].specs[i].attr_form, DW_FORM_strp, "Incorret children flag");
+			mu_assert_eq (da->decls[0].specs[i].attr_name, DW_AT_comp_dir, "Incorrect children flag");
+			mu_assert_eq (da->decls[0].specs[i].attr_form, DW_FORM_strp, "Incorrect children flag");
 			i++;
-			mu_assert_eq (da->decls[0].specs[i].attr_name, DW_AT_low_pc, "Incorret children flag");
-			mu_assert_eq (da->decls[0].specs[i].attr_form, DW_FORM_addr, "Incorret children flag");
+			mu_assert_eq (da->decls[0].specs[i].attr_name, DW_AT_low_pc, "Incorrect children flag");
+			mu_assert_eq (da->decls[0].specs[i].attr_form, DW_FORM_addr, "Incorrect children flag");
 			i++;
-			mu_assert_eq (da->decls[0].specs[i].attr_name, DW_AT_high_pc, "Incorret children flag");
-			mu_assert_eq (da->decls[0].specs[i].attr_form, DW_FORM_addr, "Incorret children flag");
+			mu_assert_eq (da->decls[0].specs[i].attr_name, DW_AT_high_pc, "Incorrect children flag");
+			mu_assert_eq (da->decls[0].specs[i].attr_form, DW_FORM_addr, "Incorrect children flag");
 			i++;
-			mu_assert_eq (da->decls[0].specs[i].attr_name, DW_AT_stmt_list, "Incorret children flag");
-			mu_assert_eq (da->decls[0].specs[i].attr_form, DW_FORM_data4, "Incorret children flag");
+			mu_assert_eq (da->decls[0].specs[i].attr_name, DW_AT_stmt_list, "Incorrect children flag");
+			mu_assert_eq (da->decls[0].specs[i].attr_form, DW_FORM_data4, "Incorrect children flag");
 		}
 	}
 	mu_assert_eq (da->decls[1].tag, DW_TAG_variable, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[1].has_children, 0, "Incorret children flag");
-		mu_assert_eq (da->decls[1].length, 8, "Incorret number of attributes");
+		mu_assert_eq (da->decls[1].has_children, 0, "Incorrect children flag");
+		mu_assert_eq (da->decls[1].length, 8, "Incorrect number of attributes");
 	}
 	mu_assert_eq (da->decls[2].tag, DW_TAG_base_type, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[2].has_children, 0, "Incorret children flag");
-		mu_assert_eq (da->decls[2].length, 4, "Incorret number of attributes");
+		mu_assert_eq (da->decls[2].has_children, 0, "Incorrect children flag");
+		mu_assert_eq (da->decls[2].length, 4, "Incorrect number of attributes");
 	}
 	mu_assert_eq (da->decls[3].tag, DW_TAG_subprogram, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[3].has_children, 1, "Incorret children flag");
-		mu_assert_eq (da->decls[3].length, 12, "Incorret number of attributes");
+		mu_assert_eq (da->decls[3].has_children, 1, "Incorrect children flag");
+		mu_assert_eq (da->decls[3].length, 12, "Incorrect number of attributes");
 	}
 	mu_assert_eq (da->decls[4].tag, DW_TAG_variable, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[4].has_children, 0, "Incorret children flag");
-		mu_assert_eq (da->decls[4].length, 7, "Incorret number of attributes");
+		mu_assert_eq (da->decls[4].has_children, 0, "Incorrect children flag");
+		mu_assert_eq (da->decls[4].length, 7, "Incorrect number of attributes");
 	}
 	mu_assert_eq (da->decls[5].tag, DW_TAG_subprogram, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[5].has_children, 1, "Incorret children flag");
-		mu_assert_eq (da->decls[5].length, 10, "Incorret number of attributes");
+		mu_assert_eq (da->decls[5].has_children, 1, "Incorrect children flag");
+		mu_assert_eq (da->decls[5].length, 10, "Incorrect number of attributes");
 	}
 	mu_assert_eq (da->decls[6].tag, DW_TAG_variable, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[6].has_children, 0, "Incorret children flag");
-		mu_assert_eq (da->decls[6].length, 6, "Incorret number of attributes");
+		mu_assert_eq (da->decls[6].has_children, 0, "Incorrect children flag");
+		mu_assert_eq (da->decls[6].length, 6, "Incorrect number of attributes");
 	}
 
 	// r_bin_dwarf_parse_info (da, core->bin, mode); Information not stored anywhere, not testable now?
@@ -174,307 +174,307 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	int i = 0;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_compile_unit, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, true, "Incorret children flag");
+		mu_assert_eq (da->decls[i].has_children, true, "Incorrect children flag");
 
 		// specs length is 9, but we don't parse it all, unparsed stuff is commented out
-		mu_assert_eq (da->decls[i].length, 9, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].length, 9, "Incorrect number of attributes");
 		{
 			/**
 			 *  Everything commented out is something that is missing from being printed by `id` Radare
 			 */
 			int j = 0;
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_producer, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_strp, "Incorret children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_producer, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_strp, "Incorrect children flag");
 			j++;
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_language, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_data1, "Incorret children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_language, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_data1, "Incorrect children flag");
 			j++;
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_name, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_strp, "Incorret children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_name, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_strp, "Incorrect children flag");
 			j++;
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_comp_dir, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_strp, "Incorret children flag");
-			j++;
-			/// [xxx] `id` is not printing this
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_ranges, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_data4, "Incorret children flag");
-			j++;
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_low_pc, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_addr, "Incorret children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_comp_dir, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_strp, "Incorrect children flag");
 			j++;
 			/// [xxx] `id` is not printing this
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_entry_pc, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_addr, "Incorret children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_ranges, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_data4, "Incorrect children flag");
 			j++;
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_stmt_list, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_data4, "Incorret children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_low_pc, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_addr, "Incorrect children flag");
+			j++;
+			/// [xxx] `id` is not printing this
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_entry_pc, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_addr, "Incorrect children flag");
+			j++;
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_stmt_list, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_data4, "Incorrect children flag");
 
-			// mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT value: 0, "Incorret children flag");
-			// mu_assert_eq (da->decls[i].specs[j].attr_form, DW_AT value: 0, "Incorret children flag");
+			// mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT value: 0, "Incorrect children flag");
+			// mu_assert_eq (da->decls[i].specs[j].attr_form, DW_AT value: 0, "Incorrect children flag");
 		}
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_structure_type, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, true, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 8, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, true, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 8, "Incorrect number of attributes");
 		{
 			/**
 			 *  Everything commented out is something that is missing from being printed by `id` Radare
 			 */
 			int j = 0;
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_name, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_strp, "Incorret children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_name, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_strp, "Incorrect children flag");
 			j++;
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_byte_size, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_data1, "Incorret children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_byte_size, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_data1, "Incorrect children flag");
 			j++;
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_decl_file, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_data1, "Incorret children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_decl_file, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_data1, "Incorrect children flag");
 			j++;
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_decl_line, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_data1, "Incorret children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_decl_line, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_data1, "Incorrect children flag");
 			j++;
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_decl_column, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_data1, "Incorret children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_decl_column, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_data1, "Incorrect children flag");
 			j++;
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_containing_type, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_ref4, "Incorret children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_containing_type, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_ref4, "Incorrect children flag");
 			j++;
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_sibling, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_ref4, "Incorret children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_sibling, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_ref4, "Incorrect children flag");
 
-			// mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT value: 0, "Incorret children flag");
-			// mu_assert_eq (da->decls[i].specs[j].attr_form, DW_AT value: 0, "Incorret children flag");
+			// mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT value: 0, "Incorrect children flag");
+			// mu_assert_eq (da->decls[i].specs[j].attr_form, DW_AT value: 0, "Incorrect children flag");
 		}
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_subprogram, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, true, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 8, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, true, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 8, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_formal_parameter, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, false, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 3, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, false, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 3, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_formal_parameter, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, false, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 2, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, false, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 2, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_member, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, false, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 5, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, false, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 5, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_subprogram, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, true, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 10, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, true, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 10, "Incorrect number of attributes");
 	}
 	i++;
 
 	// 8
 	mu_assert_eq (da->decls[i].tag, DW_TAG_subprogram, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, true, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 12, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, true, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 12, "Incorrect number of attributes");
 		{
 			/**
 			 *  Everything commented out is something that is missing from being parsed by Radare
 			 */
 			int j = 0;
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_external, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_flag, "Incorret children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_external, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_flag, "Incorrect children flag");
 			j++;
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_name, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_strp, "Incorret children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_name, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_strp, "Incorrect children flag");
 			j++;
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_decl_file, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_data1, "Incorret children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_decl_file, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_data1, "Incorrect children flag");
 			j++;
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_decl_line, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_data1, "Incorret children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_decl_line, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_data1, "Incorrect children flag");
 			j++;
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_decl_column, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_data1, "Incorret children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_decl_column, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_data1, "Incorrect children flag");
 			j++;
 			/** 
 				 * "DW_AT_MIPS_linkage_name which is used by gcc and g++ to record the external linker symbol for a subprogram.
 				 * This is a vendor extension that's been in use for a very long time and shared by multiple vendors."
 				 * - not standardized, was purposed but didn't pass
 				 */
-			// mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_MIPS_linkage_name, "Incorret children flag");
-			// mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_strp, "Incorret children flag");
+			// mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_MIPS_linkage_name, "Incorrect children flag");
+			// mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_strp, "Incorrect children flag");
 			j++;
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_virtuality, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_data1, "Incorret children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_virtuality, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_data1, "Incorrect children flag");
 			j++;
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_containing_type, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_ref4, "Incorret children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_containing_type, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_ref4, "Incorrect children flag");
 			j++;
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_declaration, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_flag, "Incorret children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_declaration, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_flag, "Incorrect children flag");
 			j++;
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_object_pointer, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_ref4, "Incorret children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_object_pointer, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_ref4, "Incorrect children flag");
 			j++;
-			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_sibling, "Incorret children flag");
-			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_ref4, "Incorret children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT_sibling, "Incorrect children flag");
+			mu_assert_eq (da->decls[i].specs[j].attr_form, DW_FORM_ref4, "Incorrect children flag");
 
-			// mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT value: 0, "Incorret children flag");
-			// mu_assert_eq (da->decls[i].specs[j].attr_form, DW_AT value: 0, "Incorret children flag");
+			// mu_assert_eq (da->decls[i].specs[j].attr_name, DW_AT value: 0, "Incorrect children flag");
+			// mu_assert_eq (da->decls[i].specs[j].attr_form, DW_AT value: 0, "Incorrect children flag");
 		}
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_subprogram, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, true, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 13, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, true, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 13, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_const_type, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, false, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 2, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, false, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 2, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_pointer_type, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, false, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 3, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, false, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 3, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_reference_type, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, false, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 3, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, false, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 3, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_subroutine_type, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, true, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 3, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, true, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 3, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_unspecified_parameters, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, false, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 1, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, false, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 1, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_base_type, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, false, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 4, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, false, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 4, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_pointer_type, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, false, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 4, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, false, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 4, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_structure_type, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, true, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 8, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, true, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 8, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_inheritance, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, false, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 3, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, false, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 3, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_subprogram, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, true, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 8, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, true, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 8, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_subprogram, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, true, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 10, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, true, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 10, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_subprogram, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, true, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 13, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, true, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 13, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_subprogram, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, true, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 12, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, true, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 12, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_variable, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, false, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 7, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, false, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 7, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_variable, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, false, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 7, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, false, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 7, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_subprogram, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, true, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 8, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, true, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 8, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_formal_parameter, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, false, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 5, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, false, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 5, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_subprogram, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, true, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 5, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, true, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 5, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_formal_parameter, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, false, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 4, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, false, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 4, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_subprogram, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, true, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 9, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, true, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 9, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_formal_parameter, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, false, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 3, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, false, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 3, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_subprogram, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, true, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 9, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, true, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 9, "Incorrect number of attributes");
 	}
 	i++;
 	mu_assert_eq (da->decls[i].tag, DW_TAG_subprogram, "Incorrect abbreviation");
 	{
-		mu_assert_eq (da->decls[i].has_children, true, "Incorret children flag");
-		mu_assert_eq (da->decls[i].length, 8, "Incorret number of attributes");
+		mu_assert_eq (da->decls[i].has_children, true, "Incorrect children flag");
+		mu_assert_eq (da->decls[i].length, 8, "Incorrect number of attributes");
 	}
 
 	// r_bin_dwarf_parse_info (da, core->bin, mode); Information not stored anywhere, not testable now?
