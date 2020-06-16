@@ -23,19 +23,15 @@
 
 
 static GHT GH(get_va_symbol)(RCore *core, const char *path, const char *symname) {
+	RBin *bin = core->bin;
 	GHT vaddr = GHT_MAX;
 	RListIter *iter;
 	RBinSymbol *s;
-	const char *bin_file = core->bin->file;
+	const char *bin_file = bin->file;
 	ut64 baddr = r_config_get_i (core->config, "bin.baddr");
 	ut64 laddr = r_config_get_i (core->config, "bin.laddr");
 	int fd = r_io_fd_get_current (core->io);
-	int rawstr = core->bin->rawstr;
-	RBin *bin = core->bin;
-	
-	if (!bin) {
-		return vaddr;
-	}
+	int rawstr = bin->rawstr;
 
 	RBinOptions opt;
 	r_bin_options_init (&opt, -1, 0, 0, false);
