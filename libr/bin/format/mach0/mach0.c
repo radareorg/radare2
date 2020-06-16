@@ -3213,6 +3213,9 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 		if (amount == 0 || amount > UT32_MAX) {
 			return NULL;
 		}
+		if (!bin->segs) {
+			return NULL;
+		}
 		relocs = r_skiplist_new ((RListFree) &free, (RListComparator) &reloc_comparator);
 		if (!relocs) {
 			return NULL;
@@ -3236,9 +3239,6 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 		size_t partition_sizes[] = {bind_size, lazy_size, weak_size};
 		size_t pidx;
 		int opcodes_offset = 0;
-		if (!bin->segs) {
-			return NULL;
-		}
 		for (pidx = 0; pidx < R_ARRAY_SIZE (partition_sizes); pidx++) {
 			size_t partition_size = partition_sizes[pidx];
 
@@ -4271,15 +4271,13 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 		case LC_SEGMENT_64: {
 			ut32 nsects = r_buf_read_le32_at (buf, addr + (is64 ? 64 : 48));
 			ut64 off = is64 ? 72 : 56;
-			int j = 0;
-			while (off < lcSize && (addr + off) < length && nsects-- > 0) {
-				if (is64) {
-					r_list_append (ret, r_bin_field_new (addr + off, addr + off, 1, sdb_fmt ("section_%d", j++), "mach0_section64", "mach0_section64", true));
-					off += 80;
-				} else {
-					r_list_append (ret, r_bin_field_new (addr + off, addr + off, 1, sdb_fmt ("section_%d", j++), "mach0_section", "mach0_section", true));
-					off += 68;
-				}
+			size_t i, j = 0;
+			for (i = 0; i < nsects && (addr + off) < length && off < lcSize; i++) {
+				const char *sname = is64? "mach0_section64": "mach0_section";
+				RBinField *f = r_bin_field_new (addr + off, addr + off, 1,
+					sdb_fmt ("section_%d", j++), sname, sname, true);
+				r_list_append (ret, f);
+				off += is64? 80: 68;
 			}
 			break;
 		default:
