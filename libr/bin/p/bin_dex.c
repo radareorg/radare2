@@ -300,7 +300,7 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 		char *newsig = realloc (signature, size);
 		if (!newsig) {
 			eprintf ("Cannot realloc to %d\n", size);
-			free (signatures);
+			free (signature);
 			break;
 		}
 		signature = newsig;
@@ -1001,28 +1001,21 @@ static char *dex_method_fullname(RBinDexObj *bin, int method_idx) {
 	if (!name) {
 		return NULL;
 	}
-	const char *class_name = dex_class_name_byid (bin, cid);
 	char *flagname = NULL;
-	if (class_name) {
-		r_str_replace_char (class_name, ';', 0);
-		char *signature = dex_method_signature (bin, method_idx);
-		if (signature) {
-			flagname = r_str_newf ("%s.%s%s", class_name, name, signature);
-			free (signature);
-		} else {
-			flagname = r_str_newf ("%s.%s%s", class_name, name, "???");
-		}
-		free (class_name);
-	} else {
-		char *signature = dex_method_signature (bin, method_idx);
-		if (signature) {
-			flagname = r_str_newf ("%s.%s%s", "???", name, signature);
-			free (signature);
-		} else {
-			flagname = r_str_newf ("%s.%s%s", "???", name, "???");
-			free (signature);
-		}
+
+	char *class_name = dex_class_name_byid (bin, cid);
+	if (!class_name) {
+		class_name = strdup ("???");
 	}
+	r_str_replace_char (class_name, ';', 0);
+	char *signature = dex_method_signature (bin, method_idx);
+	if (signature) {
+		flagname = r_str_newf ("%s.%s%s", class_name, name, signature);
+		free (signature);
+	} else {
+		flagname = r_str_newf ("%s.%s%s", class_name, name, "???");
+	}
+	free (class_name);
 	if (flagname && simplifiedDemangling) {
 		char *p = strchr (flagname, '(');
 		if (p) {
