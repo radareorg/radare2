@@ -26,10 +26,10 @@ static GHT GH(get_va_symbol)(RCore *core, const char *path, const char *symname)
 	GHT vaddr = GHT_MAX;
 	RListIter *iter;
 	RBinSymbol *s;
-	// RBin *bin = r_bin_new ();
-	// RIO *io = r_io_new ();
-	// r_io_bind (io, &bin->iob);
-	RBin *bin = core->bin;
+	RBin *bin = r_bin_new ();
+	RIO *io = r_io_new ();
+	r_io_bind (io, &bin->iob);
+	// RBin *bin = core->bin;
 	
 	if (!bin) {
 		return vaddr;
@@ -49,8 +49,8 @@ static GHT GH(get_va_symbol)(RCore *core, const char *path, const char *symname)
 		}
 	}
 
-	// r_bin_free (bin);
-	// r_io_free (io);
+	r_bin_free (bin);
+	r_io_free (io);
 	return vaddr;
 }
 
