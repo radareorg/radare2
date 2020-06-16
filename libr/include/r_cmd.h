@@ -163,7 +163,6 @@ R_API RCmdStatus r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args);
 R_API RCmdDesc *r_cmd_get_root(RCmd *cmd);
 R_API RCmdDesc *r_cmd_get_desc(RCmd *cmd, const char *cmd_identifier);
 R_API char *r_cmd_get_help(RCmd *cmd, RCmdParsedArgs *args, bool use_color);
-R_API char *r_cmd_get_recursive_help(RCmd *cmd);
 
 /* RCmdDescriptor */
 R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb);

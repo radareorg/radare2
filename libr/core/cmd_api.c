@@ -521,11 +521,6 @@ R_API char *r_cmd_get_help(RCmd *cmd, RCmdParsedArgs *args, bool use_color) {
 	}
 }
 
-R_API char *r_cmd_get_recursive_help(RCmd *cmd) {
-	// TODO: implement me
-	return strdup ("");
-}
-
 /** macro.c **/
 
 R_API RCmdMacroItem *r_cmd_macro_item_new(void) {
