@@ -208,8 +208,10 @@ CMDS=<<EOF
 ?e hello world~hello~!boing
 ?e hello world~hello~world
 ?e hello world~!boing~world
+?e hello world~!boing~!pongo
 EOF
 EXPECT=<<EOF
+hello world
 hello world
 hello world
 hello world
