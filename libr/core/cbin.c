@@ -898,7 +898,7 @@ static int bin_dwarf(RCore *core, int mode) {
 		da = r_bin_dwarf_parse_abbrev (core->bin, mode);
 		RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (da, core->bin, mode);
 		// dig types out of into and then free
-		r_bin_dwarf_free_debug_info(info);
+		r_bin_dwarf_free_debug_info (info);
 		
 		r_bin_dwarf_parse_aranges (core->bin, mode);
 		list = ownlist = r_bin_dwarf_parse_line (core->bin, mode);
