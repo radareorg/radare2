@@ -533,7 +533,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 	d->diff_cmd = "git diff --no-index";
 #endif
 	if (diffchar) {
-		d->diff_cmd = "git diff --no-index --word-diff-regex=.";
+		d->diff_cmd = "git diff --no-index --word-diff=porcelain --word-diff-regex=.";
 	}
 	char *uni = r_diff_buffers_to_string (d, (const ut8 *)expected, (int)strlen (expected), (const ut8 *)actual, (int)strlen (actual));
 	r_diff_free (d);
@@ -549,57 +549,31 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 			}
 			continue;
 		}
-		bool color = true;
 		if (r_str_startswith (line, "@@ ") && r_str_endswith (line, " @@")) {
-			printf ("%s", Color_CYAN);
-		} else if (diffchar) {
-			char *p = line;
-			char *block_end;
-			do {
-				char *add_end = strstr (p, "+}");
-				char *rm_end = strstr (p, "-]");
-				block_end = NULL;
-				if (add_end) {
-					if (rm_end) {
-						block_end = (add_end < rm_end) ? add_end : rm_end;
-					} else {
-						block_end = add_end;
-					}
-				} else if (rm_end) {
-					block_end = rm_end;
-				}
-				if (block_end) {
-					*block_end = 0;
-					char *block_start = (char *)r_str_rstr (
-					    p, (block_end == add_end) ? "{+" : "[-");
-					if (block_start) {
-						*block_start = 0;
-						printf ("%s%s"Color_BLACK"%s%s", p,
-						        (block_end == add_end) ? Color_BBGGREEN : Color_BBGRED,
-						        block_start + 2, Color_RESET);
-						p = block_end + 2;
-						*block_start = (block_end == add_end) ? '{' : '[';
-					}
-					*block_end = (block_end == add_end) ? '+' : '-';
-				}
-			} while (block_end);
-			printf ("%s\n", p);
+			printf ("%s%s%s\n", Color_CYAN, line, Color_RESET);
 			continue;
-		} else {
-			char c = *line;
-			switch (c) {
-			case '+':
-				printf ("%s", Color_GREEN);
-				break;
-			case '-':
-				printf ("%s", Color_RED);
-				break;
-			default:
-				color = false;
-				break;
-			}
 		}
-		printf ("%s\n", line);
+		bool color = true;
+		char c = *line;
+		switch (c) {
+		case '+':
+			printf ("%s", diffchar ? Color_BBGGREEN Color_BLACK : Color_GREEN);
+			break;
+		case '-':
+			printf ("%s", diffchar ? Color_BBGRED Color_BLACK : Color_RED);
+			break;
+		case '~': // can't happen if !diffchar
+			printf ("\n");
+			continue;
+		default:
+			color = false;
+			break;
+		}
+		if (diffchar) {
+			printf ("%s", *line ? line + 1 : "");
+		} else {
+			printf ("%s\n", line);
+		}
 		if (color) {
 			printf ("%s", Color_RESET);
 		}
