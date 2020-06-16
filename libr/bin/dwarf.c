@@ -1637,21 +1637,24 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 			value->reference = READ32 (buf);
 		}
 		break;
+	// This type of reference is an offset from the first byte of the compilation
+	// header for the compilation unit containing the reference
 	case DW_FORM_ref1:
-		value->reference = READ8 (buf);
+		value->reference = hdr->unit_offset + READ8 (buf);
 		break;
 	case DW_FORM_ref2:
-		value->reference = READ16 (buf);
+		value->reference = hdr->unit_offset + READ16 (buf);
 		break;
 	case DW_FORM_ref4:
-		value->reference = READ32 (buf);
+		value->reference = hdr->unit_offset + READ32 (buf);
 		break;
 	case DW_FORM_ref8:
-		value->reference = READ64 (buf);
+		value->reference = hdr->unit_offset + READ64 (buf);
 		break;
 	case DW_FORM_ref_udata:
 		// uleb128 is enough to fit into ut64?
 		buf = r_uleb128 (buf, buf_end - buf, &value->reference);
+		value->reference += hdr->unit_offset;
 		break;
 	case DW_FORM_sec_offset: // offset in a section other than .debug_info or .debug_str
 		if (hdr->is_64bit) {
@@ -1673,6 +1676,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		}
 		break;
 	case DW_FORM_flag_present: // this means that the flag is present, nothing is read
+		value->flag = true;
 		break;
 	case DW_FORM_ref_sig8:
 		value->reference = READ64 (buf);
@@ -1775,23 +1779,24 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *sdb, const ut8 *buf_start,
 		// DIE starts with ULEB128 with the abbreviation code
 		buf = r_uleb128 (buf, buf_end - buf, &abbr_code);
 
-		if (abbr_code > abbrevs->length || !buf || buf >= buf_end) { 
-			return buf; // we finished, return the buffer to parse next compilation units
-		}
 		RBinDwarfDIE *curr_die = &unit->dies[unit->length];
 		r_bin_dwarf_init_die (curr_die);
+		curr_die->abbrev_code = abbr_code;
+
+		if (abbr_code > abbrevs->length || !buf || buf >= buf_end) { 
+			unit->length++;
+			return buf; // we finished, return the buffer to parse next compilation units
+		}
 
 		// there can be "null" entries for alignment padding purposes
 		// such entries have abbr_code == 0
 		if (!abbr_code) {
-			curr_die->abbrev_code = 0;
 			unit->length++;
 			continue;
 		}
 		abbr_code += offset;
 
 		RBinDwarfAbbrevDecl *curr_abbr = &abbrevs->decls[abbr_code - 1];
-		curr_die->abbrev_code = abbr_code;
 		curr_die->tag = curr_abbr->tag;
 
 
@@ -1942,6 +1947,7 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info_raw(Sdb *sdb, RBinDwarfDebugAbb
 		info->length++;
 
 		curr_unit->offset = buf - obuf;
+		curr_unit->hdr.unit_offset = buf - obuf;
 		buf_tmp = buf;
 		buf = info_comp_unit_read_hdr (buf, buf_end, &curr_unit->hdr);
 

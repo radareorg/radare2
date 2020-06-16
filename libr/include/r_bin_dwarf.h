@@ -710,6 +710,7 @@ typedef struct {
 	ut64 type_sig; // DWARF 5 addition
 	ut64 type_offset; // DWARF 5 addition
 	ut64 header_size; // excluding length field
+	ut64 unit_offset;
 	bool is_64bit;
 } RBinDwarfCompUnitHdr;
 
