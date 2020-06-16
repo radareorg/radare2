@@ -349,6 +349,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	const char *libc_path = NULL;
 	GHT libc_addr = GHT_MAX;
 	GHT main_arena_sym = GHT_MAX;
+	bool is_debugged = true;
 
 	if (r_config_get_i (core->config, "cfg.debug")) {
 		RListIter *iter;
@@ -383,6 +384,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 			if (map->name && strstr (map->name, "arena")) {
 				libc_addr_sta = map->itv.addr;
 				libc_addr_end = map->itv.addr + map->itv.size;
+				is_debugged = false;
 				break;
 			}
 		}
@@ -424,8 +426,9 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 
 			*m_arena = addr_srch;
 			free (ta);
-			// error in test with e dbg.glibc.tcache=1
-			// core->dbg->main_arena_resolved = true;
+			if (is_debugged) {
+				core->dbg->main_arena_resolved = true;
+			}
 			return true;
 		}
 		addr_srch += sizeof (GHT);
@@ -962,6 +965,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
 	const int offset = r_config_get_i (core->config, "dbg.glibc.fc_offset");
 	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
+	bool is_main_arena = true;
 
 	if (m_arena == m_state) {
 		GH(get_brks) (core, &brk_start, &brk_end);
@@ -973,6 +977,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 			initial_brk = (brk_start >> 12) << 12;
 		}
 	} else {
+		is_main_arena = false;
 		brk_start = ((m_state >> 16) << 16) ;
 		brk_end = brk_start + main_arena->GH(system_mem);
 		if (tcache) {
@@ -1171,7 +1176,9 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 					}
 				}
 			}
-			tcache_initial_brk = ((brk_start >> 12) << 12) + GH(HDR_SZ);
+			if (is_main_arena) {
+				tcache_initial_brk = ((brk_start >> 12) << 12) + GH(HDR_SZ);
+			}
 			free (tcache_heap);
 		}
 
