@@ -425,7 +425,7 @@ static const ut8 *parse_line_header (
 			fprintf (f, " Opcodes:\n");
 		}
 		int i;
-		for (i = 1; i <= hdr->opcode_base - 1; i++) {
+		for (i = 1; i < hdr->opcode_base; i++) {
 			if (buf + 2 > buf_end) {
 				break;
 			}
