@@ -2624,8 +2624,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		goto beach;
 	}
 	cmt = *icmd ? (char *)r_str_firstbut (icmd, '#', "\""): NULL;
-	if (cmt && (cmt[1] == ' ' || cmt[1] == '\t')) {
+	if (cmt && cmt != icmd) {
 		*cmt = 0;
+		r_str_trim_tail (icmd);
 	}
 	if (*cmd != '"') {
 		if (!strchr (cmd, '\'')) { // allow | awk '{foo;bar}' // ignore ; if there's a single quote
