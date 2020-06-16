@@ -1001,8 +1001,10 @@ R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
 
 	const char *BP = anal->reg->name[R_REG_NAME_BP];
 	const char *SP = anal->reg->name[R_REG_NAME_SP];
-	extract_arg (anal, fcn, op, BP, "+", R_ANAL_VAR_KIND_BPV);
-	extract_arg (anal, fcn, op, BP, "-", R_ANAL_VAR_KIND_BPV);
+	if (BP) {
+		extract_arg (anal, fcn, op, BP, "+", R_ANAL_VAR_KIND_BPV);
+		extract_arg (anal, fcn, op, BP, "-", R_ANAL_VAR_KIND_BPV);
+	}
 	extract_arg (anal, fcn, op, SP, "+", R_ANAL_VAR_KIND_SPV);
 }
 
