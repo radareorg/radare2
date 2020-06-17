@@ -21,8 +21,18 @@
 #define GHT_MAX UT64_MAX
 #endif
 
-
-static GHT GH(get_va_symbol)(RCore *core, const char *path, const char *symname) {
+/**
+ * \brief Find the address of a given symbol
+ * \param core RCore Pointer to the r2's core
+ * \param path Pointer to the binary path in which to look for the symbol
+ * \param sym_name Pointer to the symbol's name to search for
+ * \return address
+ *
+ * Used to find the address of a given symbol inside a binary
+ *
+ * TODO: Stop using deprecated functions like r_bin_cur
+ */
+static GHT GH(get_va_symbol)(RCore *core, const char *path, const char *sym_name) {
 	GHT vaddr = GHT_MAX;
 	RBin *bin = core->bin;
 	RBinFile *current_bf = r_bin_cur (bin);
@@ -31,11 +41,14 @@ static GHT GH(get_va_symbol)(RCore *core, const char *path, const char *symname)
 
 	RBinOptions opt;
 	r_bin_options_init (&opt, -1, 0, 0, false);
-	r_bin_open (bin, path, &opt);
-	RList *syms = r_bin_get_symbols (bin);
+	bool res = r_bin_open (bin, path, &opt);
+	if (!res) {
+		return vaddr;
+	}
 
+	RList *syms = r_bin_get_symbols (bin);
 	r_list_foreach (syms, iter, s) {
-		if (!strcmp (s->name, symname)) {
+		if (!strcmp (s->name, sym_name)) {
 			vaddr = s->vaddr;
 			break;
 		}
@@ -348,6 +361,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 		RDebugMap *map;
 		r_debug_map_sync (core->dbg);
 		r_list_foreach (core->dbg->maps, iter, map) {
+			/* Try to find the main arena address using the glibc's symbols. */
 			if (strstr (map->name, "/libc-") && map->perm == R_PERM_R && main_arena_sym == GHT_MAX) {
 				libc_path = map->name;
 				libc_addr = map->addr;
