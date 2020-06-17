@@ -406,7 +406,8 @@ static void print_child_help(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use
 	const char *pal_args_color = use_color? cons->context->pal.args: "",
 		   *pal_help_color = use_color? cons->context->pal.help: "",
 		   *pal_reset = use_color? cons->context->pal.reset: "";
-	r_strbuf_appendf (sb, "| %s %s%s %*s%s# %s%s\n", cd->name, pal_args_color, cd_args_str, padding, "", pal_help_color, cd_summary, pal_reset);
+	r_strbuf_appendf (sb, "| %s %s%s %*s%s# %s%s\n", cd->name, pal_args_color,
+		cd_args_str, padding, "", pal_help_color, cd_summary, pal_reset);
 }
 
 static char *inner_get_help(RCmd *cmd, RCmdDesc *cd, bool use_color) {
@@ -464,7 +465,8 @@ static char *argv_get_help(RCmd *cmd, RCmdDesc *cd, RCmdParsedArgs *a, size_t de
 			r_strbuf_appendf (sb, "\n%sExamples:%s\n", pal_label_color, pal_reset);
 			RCmdDescExample *it;
 			r_vector_foreach (&cd->help.examples, it) {
-				r_strbuf_appendf (sb, "| %s%s%s %s# %s%s\n", pal_input_color, it->example, pal_reset, pal_help_color, it->comment, pal_reset);
+				r_strbuf_appendf (sb, "| %s%s%s %s# %s%s\n", pal_input_color,
+					it->example, pal_reset, pal_help_color, it->comment, pal_reset);
 			}
 		}
 		return r_strbuf_drain (sb);
