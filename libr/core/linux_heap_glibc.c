@@ -23,32 +23,33 @@
 
 
 static GHT GH(get_va_symbol)(RCore *core, const char *path, const char *symname) {
-	RBin *bin = core->bin;
 	GHT vaddr = GHT_MAX;
+	RBin *bin = core->bin;
 	RListIter *iter;
 	RBinSymbol *s;
-	const char *bin_file = bin->file;
 	ut64 baddr = r_config_get_i (core->config, "bin.baddr");
-	ut64 laddr = r_config_get_i (core->config, "bin.laddr");
-	int fd = r_io_fd_get_current (core->io);
-	int rawstr = bin->rawstr;
 
 	RBinOptions opt;
 	r_bin_options_init (&opt, -1, 0, 0, false);
 	r_bin_open (bin, path, &opt);
 	RList *syms = r_bin_get_symbols (bin);
 
-	if (syms) {
-		r_list_foreach (syms, iter, s) {
-			if (!strcmp (s->name, symname)) {
-				vaddr = s->vaddr;
-				break;
-			}
+	r_list_foreach (syms, iter, s) {
+		if (!strcmp (s->name, symname)) {
+			vaddr = s->vaddr;
+			break;
 		}
 	}
 
-	r_bin_options_init (&opt, fd, baddr, laddr, rawstr);
-	r_bin_open (core->bin, bin_file, &opt);
+	RBinFile *libc_bf = r_bin_cur (bin);
+	RCoreFile *cf = r_core_file_cur (core);
+	if (cf) {
+		RBinFile *bf = r_bin_file_find_by_fd (core->bin, cf->fd);
+		if (bf) {
+			r_bin_reload (core->bin, bf->id, baddr);
+		}
+	}
+	r_bin_file_delete (bin, libc_bf->id);
 	return vaddr;
 }
 
@@ -88,7 +89,7 @@ static GHT GH(tcache_chunk_size)(RCore *core, GHT brk_start) {
 	return sz;
 }
 
-static void GH(update_arena_with_tc)(GH(RHeap_MallocState_tcache) * cmain_arena, MallocState *main_arena) {
+static void GH(update_arena_with_tc)(GH(RHeap_MallocState_tcache) *cmain_arena, MallocState *main_arena) {
 	int i = 0;
 	main_arena->mutex = cmain_arena->mutex;
 	main_arena->flags = cmain_arena->flags;
@@ -334,7 +335,6 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 }
 
 static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
-
 	r_return_val_if_fail (core && core->dbg && core->dbg->maps, false);
 
 	if (core->dbg->main_arena_resolved) {
@@ -347,9 +347,9 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	const char *libc_path = NULL;
 	GHT libc_addr = GHT_MAX;
 	GHT main_arena_sym = GHT_MAX;
-	bool is_debugged = true;
+	bool is_debugged = r_config_get_i (core->config, "cfg.debug");
 
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (is_debugged) {
 		RListIter *iter;
 		RDebugMap *map;
 		r_debug_map_sync (core->dbg);
@@ -357,14 +357,13 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 			if (strstr (map->name, "/libc-") && map->perm == R_PERM_R && main_arena_sym == GHT_MAX) {
 				libc_path = map->name;
 				libc_addr = map->addr;
-				if (!libc_path) {
-					break;
-				}
 				char *path = strdup (libc_path);
-				if (path && r_file_exists (path)) {
-					GHT vaddr = GH (get_va_symbol) (core, path, "main_arena");
-					if (libc_addr != GHT_MAX && vaddr != GHT_MAX) {
-						main_arena_sym = libc_addr + vaddr;
+				if (libc_addr != GHT_MAX) {
+					if (path && r_file_exists (path)) {
+						GHT vaddr = GH (get_va_symbol) (core, path, "main_arena");
+						if (vaddr != GHT_MAX) {
+							main_arena_sym = libc_addr + vaddr;
+						}
 					}
 				}
 				free (path);
@@ -382,7 +381,6 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 			if (map->name && strstr (map->name, "arena")) {
 				libc_addr_sta = map->itv.addr;
 				libc_addr_end = map->itv.addr + map->itv.size;
-				is_debugged = false;
 				break;
 			}
 		}
