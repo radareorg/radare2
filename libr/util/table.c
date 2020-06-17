@@ -278,6 +278,9 @@ static void __computeTotal(RTable *t) {
 }
 
 R_API char *r_table_tofancystring(RTable *t) {
+	if (r_list_length (t->cols) == 0) {
+		return strdup ("");
+	}
 	RStrBuf *sb = r_strbuf_new ("");
 	RTableRow *row;
 	RTableColumn *col;
@@ -285,10 +288,10 @@ R_API char *r_table_tofancystring(RTable *t) {
 	RListIter *iter, *iter2;
 	bool useUtf8 = (cons && cons->use_utf8);
 	bool useUtf8Curvy = (cons && cons->use_utf8_curvy);
-	const char *v_line = useUtf8 ||  useUtf8Curvy ? RUNE_LINE_VERT : "|";
+	const char *v_line = useUtf8 || useUtf8Curvy ? RUNE_LINE_VERT : "|";
 	const char *h_line = useUtf8 || useUtf8Curvy ? RUNE_LINE_HORIZ : "-";
-	const char *l_intersect = useUtf8 ||  useUtf8Curvy ? RUNE_LINE_VERT : ")";
-	const char *r_intersect = useUtf8 ||  useUtf8Curvy ? RUNE_LINE_VERT : "(";
+	const char *l_intersect = useUtf8 || useUtf8Curvy ? RUNE_LINE_VERT : ")";
+	const char *r_intersect = useUtf8 || useUtf8Curvy ? RUNE_LINE_VERT : "(";
 	const char *tl_corner = useUtf8 ? (useUtf8Curvy ? RUNE_CURVE_CORNER_TL : RUNE_CORNER_TL) : ".";
 	const char *tr_corner = useUtf8 ? (useUtf8Curvy ? RUNE_CURVE_CORNER_TR : RUNE_CORNER_TR) : ".";
 	const char *bl_corner = useUtf8 ? (useUtf8Curvy ? RUNE_CURVE_CORNER_BL : RUNE_CORNER_BL) : "`";
