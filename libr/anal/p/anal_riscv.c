@@ -297,7 +297,6 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	riscv_args_t args = {0};
 	ut64 word = 0;
 	int xlen = anal->bits;
-
 	op->size = 4;
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
@@ -341,9 +340,11 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	}
 
 	if (o->args) {
-		const char* name = o->name;
-		if (o->name[0] == 'c' && o->name[1] == '.') {
+		const char *name = o->name;
+		// Test for compressed instruction
+		if (!strncmp ("c.", o->name, 2)) {
 			name += 2;
+			op->size = 2;
 		}
 #define ARG(x) (arg_n (&args, (x)))
 		get_insn_args (&args, o->args, word, addr);
@@ -476,7 +477,11 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			}
 		} else if (!strcmp (name, "jal")) {
 			if (strcmp (ARG (0), "0")) {
-				esilprintf (op, "%d,$$,+,%s,=,%s,pc,=", op->size, ARG (0), ARG (1));
+				if (args.num == 1) {
+					esilprintf (op, "%d,$$,+,ra,=,%s,pc,=", op->size, ARG (0));
+				} else {
+					esilprintf (op, "%d,$$,+,%s,=,%s,pc,=", op->size, ARG (0), ARG (1));
+				}
 			} else {
 				esilprintf (op, "%s,pc,=", ARG (1));
 			}
@@ -537,49 +542,60 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 
 // branch/jumps/calls/rets
 	if (is_any ("jal")) {
-		// decide whether it's ret or call
+		// decide whether it's jump or call
 		int rd = (word >> OP_SH_RD) & OP_MASK_RD;
-		op->type = (rd == 0) ? R_ANAL_OP_TYPE_RET: R_ANAL_OP_TYPE_CALL;
+		op->type = (rd == 0) ? R_ANAL_OP_TYPE_JMP: R_ANAL_OP_TYPE_CALL;
 		op->jump = EXTRACT_UJTYPE_IMM (word) + addr;
-		op->fail = addr + 4;
+		op->fail = addr + op->size;
+	} else if (is_any ("c.jal")) {
+		op->type = R_ANAL_OP_TYPE_CALL;
+		op->jump = EXTRACT_RVC_IMM (word) + addr;
+		op->fail = addr + op->size;
 	} else if (is_any ("jr")) {
 		op->type = R_ANAL_OP_TYPE_JMP;
-	} else if (is_any ("j", "jump")) {
+	} else if (is_any ("c.j", "jump")) {
 		op->type = R_ANAL_OP_TYPE_JMP;
+		op->jump = EXTRACT_RVC_J_IMM (word) + addr;
 	} else if (is_any ("jalr")) {
 		// decide whether it's ret or call
 		int rd = (word >> OP_SH_RD) & OP_MASK_RD;
 		op->type = (rd == 0) ? R_ANAL_OP_TYPE_RET: R_ANAL_OP_TYPE_UCALL;
-	} else if (is_any ("ret")) {
+	} else if (is_any ("c.jr")) {
 		op->type = R_ANAL_OP_TYPE_RET;
 	} else if (is_any ("beqz", "beq", "blez", "bgez", "ble",
-			"bleu", "bge", "bgeu", "bltz", "bgtz", "blt", "bltu",
-			"bgt", "bgtu", "bnez", "bne")) {
+			   "bleu", "bge", "bgeu", "bltz", "bgtz", "blt", "bltu",
+			   "bgt", "bgtu", "bnez", "bne")) {
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = EXTRACT_SBTYPE_IMM (word) + addr;
 		op->fail = addr + 4;
 // math
-	} else if (is_any ("addi", "addw", "addiw", "add", "auipc")) {
+	} else if (is_any ("addi", "addw", "addiw", "add", "auipc", "c.addi",
+			   "c.addw", "c.add")) {
 		op->type = R_ANAL_OP_TYPE_ADD;
-	} else if (is_any ("subi", "subw", "sub")) {
+	} else if (is_any ("c.mv")) {
+		op->type = R_ANAL_OP_TYPE_MOV;
+	} else if (is_any ("subi", "subw", "sub", "c.sub")) {
 		op->type = R_ANAL_OP_TYPE_SUB;
-	} else if (is_any ("xori", "xor")) {
+	} else if (is_any ("xori", "xor", "c.xor")) {
 		op->type = R_ANAL_OP_TYPE_XOR;
-	} else if (is_any ("andi", "and")) {
+	} else if (is_any ("andi", "and", "c.andi")) {
 		op->type = R_ANAL_OP_TYPE_AND;
-	} else if (is_any ("ori", "or")) {
+	} else if (is_any ("ori", "or", "c.or")) {
 		op->type = R_ANAL_OP_TYPE_OR;
 	} else if (is_any ("not")) {
 		op->type = R_ANAL_OP_TYPE_NOT;
+	} else if (is_any ("c.nop")) {
+		op->type = R_ANAL_OP_TYPE_NOP;
 	} else if (is_any ("mul", "mulh", "mulhu", "mulhsu", "mulw")) {
 		op->type = R_ANAL_OP_TYPE_MUL;
 	} else if (is_any ("div", "divu", "divw", "divuw")) {
 		op->type = R_ANAL_OP_TYPE_DIV;
 // memory
-	} else if (is_any ("sd", "sb", "sh", "sw")) {
+	} else if (is_any ("sd", "sb", "sh", "sw", "c.sd", "c.sw")) {
 		op->type = R_ANAL_OP_TYPE_STORE;
 	} else if (is_any ("ld", "lw", "lwu", "lui", "li",
-			"lb", "lbu", "lh", "lhu", "la", "lla")) {
+			   "lb", "lbu", "lh", "lhu", "la", "lla", "c.ld",
+			   "c.lw", "c.li")) {
 		op->type = R_ANAL_OP_TYPE_LOAD;
 	}
 	if (mask & R_ANAL_OP_MASK_VAL && args.num) {
