@@ -25,9 +25,9 @@
 static GHT GH(get_va_symbol)(RCore *core, const char *path, const char *symname) {
 	GHT vaddr = GHT_MAX;
 	RBin *bin = core->bin;
+	RBinFile *current_bf = r_bin_cur (bin);
 	RListIter *iter;
 	RBinSymbol *s;
-	ut64 baddr = r_config_get_i (core->config, "bin.baddr");
 
 	RBinOptions opt;
 	r_bin_options_init (&opt, -1, 0, 0, false);
@@ -42,14 +42,8 @@ static GHT GH(get_va_symbol)(RCore *core, const char *path, const char *symname)
 	}
 
 	RBinFile *libc_bf = r_bin_cur (bin);
-	RCoreFile *cf = r_core_file_cur (core);
-	if (cf) {
-		RBinFile *bf = r_bin_file_find_by_fd (core->bin, cf->fd);
-		if (bf) {
-			r_bin_reload (core->bin, bf->id, baddr);
-		}
-	}
 	r_bin_file_delete (bin, libc_bf->id);
+	r_bin_file_set_cur_binfile (bin, current_bf);
 	return vaddr;
 }
 
