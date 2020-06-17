@@ -1568,7 +1568,7 @@ ar r5
 ar r6
 EOF
 EXPECT=<<EOF
-efbeadde
+ccddeeff
 0xdeadbeef
 0x00000001
 EOF
@@ -1590,7 +1590,7 @@ ar r5
 ar r6
 EOF
 EXPECT=<<EOF
-ccddeeff
+efbeadde
 0xdeadbeef
 0x00000001
 EOF

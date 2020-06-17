@@ -334,19 +334,51 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=lsrs r4, r4, 2
+NAME=lsls r1, r2
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
 ar > /dev/null
-ar r4=-8
-wx a408
+ar r1=0x80000001
+ar r2=0x1
+"wa lsls r1, r2;lsls r1, r2"
 aes
-ar r4
+ar r1
+ar cpsr
+aes
+ar r1
+ar cpsr
+EOF
+EXPECT=<<EOF
+0x00000002
+0x20000000
+0x00000004
+0x00000000
+EOF
+RUN
+
+NAME=lsrs r1, r2
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+ar > /dev/null
+ar r1=-8
+ar r2=2
+"wa lsrs r1, r2;lsrs r1, r2"
+aes
+ar r1
+ar cpsr
+aes
+ar r1
+ar cpsr
 EOF
 EXPECT=<<EOF
 0x3ffffffe
+0x00000000
+0x0fffffff
+0x20000000
 EOF
 RUN
 
@@ -445,6 +477,30 @@ ar r1
 EOF
 EXPECT=<<EOF
 0x00000002
+EOF
+RUN
+
+NAME=adcs wrapping around
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+"wa adcs r1, r3;adcs r1, r3"
+aer r1=0x90000000
+aer r3=0x80000000
+aer cpsr=0x00000000
+aes
+ar r1
+ar cpsr
+aes
+ar r1
+ar cpsr
+EOF
+EXPECT=<<EOF
+0x10000000
+0x20000000
+0x90000001
+0x00000000
 EOF
 RUN
 
