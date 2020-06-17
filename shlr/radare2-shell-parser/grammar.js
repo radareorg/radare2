@@ -643,7 +643,7 @@ module.exports = grammar({
 	double_quoted_arg: $ => seq(
 	    '"',
 	    repeat(choice(
-		/[^\\"\n$`]+/,
+		token.immediate(prec(1, /[^\\"\n$`]+/)),
 		/\$[^("]?/,
 		/\\[\\"\n$`]?/,
 		$.cmd_substitution_arg,
@@ -653,7 +653,7 @@ module.exports = grammar({
 	single_quoted_arg: $ => seq(
 	    '\'',
 	    repeat(choice(
-		/[^\\'\n]+/,
+		token.immediate(prec(1, /[^\\'\n]+/)),
 		/\\[\\'\n]?/,
 	    )),
 	    '\'',
