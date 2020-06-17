@@ -153,7 +153,8 @@ bool tree_sitter_r2cmd_external_scanner_scan(void *payload, TSLexer *lexer, cons
 		if (is_comment (res)) {
 			return false;
 		}
-		if (res[i_res - 1] == '?' || (i_res >= 2 && is_recursive_help(i_res, res[i_res - 2], res[i_res - 1]))) {
+		// ?? is not considered an help command, just a regular one
+		if ((res[i_res - 1] == '?' && strcmp (res, "??")) || (i_res >= 2 && is_recursive_help (i_res, res[i_res - 2], res[i_res - 1]))) {
 			if (i_res == 1) {
 				return false;
 			}
