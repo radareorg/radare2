@@ -6573,13 +6573,13 @@ DEFINE_HANDLE_TS_FCN(commands) {
 			r_core_task_yield (&core->tasks);
 		}
 		core->cons->context->cmd_depth++;
-		if (cmd_res == R_CMD_STATUS_INVALID) {
+		if (cmd_res == R_CMD_STATUS_EXIT) {
+			res = cmd_res;
+			goto err;
+		} else if (cmd_res != R_CMD_STATUS_OK) {
 			char *command_str = ts_node_sub_string (command, state->input);
 			eprintf ("Error while executing command: %s\n", command_str);
 			free (command_str);
-			res = cmd_res;
-			goto err;
-		} else if (cmd_res == R_CMD_STATUS_EXIT) {
 			res = cmd_res;
 			goto err;
 		}
