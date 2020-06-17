@@ -173,7 +173,7 @@ static const char *help_msg_tu[] = {
 	NULL
 };
 
-static void cmd_type_init(RCore *core) {
+static void cmd_type_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, t);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, t-, t_minus);
 	DEFINE_CMD_DESCRIPTOR (core, tc);

@@ -4621,8 +4621,8 @@ static char *ts_node_sub_parent_string(TSNode parent, TSNode node, const char *c
 	DEFINE_HANDLE_TS_FCN (name)
 
 #define UPDATE_CMD_STATUS_RES(res, cmd_res, label) \
-	if ((cmd_res) == R_CMD_STATUS_EXIT || (cmd_res) == R_CMD_STATUS_INVALID) { \
-		res = cmd_res; \
+	if ((cmd_res) != R_CMD_STATUS_OK) { \
+		res = (cmd_res); \
 		goto label; \
 	}
 
@@ -4653,7 +4653,7 @@ static RCmdStatus int2cmdstatus(int v) {
 	if (v == R_CORE_CMD_EXIT) {
 		return R_CMD_STATUS_EXIT;
 	} else if (v < 0) {
-		return R_CMD_STATUS_INVALID;
+		return R_CMD_STATUS_ERROR;
 	} else {
 		return R_CMD_STATUS_OK;
 	}
@@ -4663,6 +4663,8 @@ static int cmdstatus2int(RCmdStatus s) {
 	switch (s) {
 	case R_CMD_STATUS_OK:
 		return 0;
+	case R_CMD_STATUS_ERROR:
+	case R_CMD_STATUS_WRONG_ARGS:
 	case R_CMD_STATUS_INVALID:
 		return -1;
 	case R_CMD_STATUS_EXIT:
@@ -4998,6 +5000,13 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_command) {
 
 	pr_args->has_space_after_cmd = !ts_node_is_null (args) && ts_node_end_byte (command) < ts_node_start_byte (args);
 	res = r_cmd_call_parsed_args (state->core->rcmd, pr_args);
+	if (res == R_CMD_STATUS_WRONG_ARGS) {
+		const char *cmdname = r_cmd_parsed_args_cmd (pr_args);
+		eprintf ("Wrong number of arguments passed to `%s`, see its help with `%s?`\n", cmdname, cmdname);
+	} else if (res == R_CMD_STATUS_ERROR) {
+		const char *cmdname = r_cmd_parsed_args_cmd (pr_args);
+		R_LOG_DEBUG ("Something wrong during the execution of `%s` command.\n", cmdname);
+	}
 
 err:
 	r_cmd_parsed_args_free (pr_args);
@@ -5171,7 +5180,17 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_command) {
 				goto err_else;
 			}
 		}
-		res = r_cmd_call_parsed_args (state->core->rcmd, pr_args);
+
+		// let's try first with the new auto-generated help, if
+		// something fails fallback to old behaviour
+		char *help_msg = r_cmd_get_help (state->core->rcmd, pr_args, state->core->print->flags & R_PRINT_FLAGS_COLOR);
+		if (help_msg) {
+			r_cons_printf ("%s", help_msg);
+			free (help_msg);
+			res = R_CMD_STATUS_OK;
+		} else {
+			res = r_cmd_call_parsed_args (state->core->rcmd, pr_args);
+		}
 	err_else:
 		r_cmd_parsed_args_free (pr_args);
 		free (command_str);
@@ -6560,7 +6579,7 @@ DEFINE_HANDLE_TS_FCN(commands) {
 			free (command_str);
 			res = cmd_res;
 			goto err;
-		} else if (cmd_res == R_CMD_STATUS_EXIT) {
+		} else if (cmd_res != R_CMD_STATUS_OK) {
 			res = cmd_res;
 			goto err;
 		}
@@ -7051,7 +7070,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		const char *cmd;
 		const char *description;
 		RCmdCb cb;
-		void (*descriptor_init)(RCore *core);
+		void (*descriptor_init)(RCore *core, RCmdDesc *parent);
 	} cmds[] = {
 		{"!",        "run system command", cmd_system},
 		{"_",        "print last output", cmd_last},
@@ -7116,7 +7135,8 @@ R_API void r_core_cmd_init(RCore *core) {
 	for (i = 0; i < R_ARRAY_SIZE (cmds); i++) {
 		r_cmd_add (core->rcmd, cmds[i].cmd, cmds[i].cb);
 		if (cmds[i].descriptor_init) {
-			cmds[i].descriptor_init (core);
+			RCmdDesc *cd = r_cmd_get_desc (core->rcmd, cmds[i].cmd);
+			cmds[i].descriptor_init (core, cd);
 		}
 	}
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, $, dollar);

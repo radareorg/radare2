@@ -35,7 +35,7 @@ static const char *help_msg_Pn[] = {
 	NULL
 };
 
-static void cmd_project_init(RCore *core) {
+static void cmd_project_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, P);
 	DEFINE_CMD_DESCRIPTOR (core, Pn);
 }

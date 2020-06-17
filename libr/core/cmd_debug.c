@@ -526,7 +526,7 @@ struct trace_node {
 	int refs;
 };
 
-static void cmd_debug_init(RCore *core) {
+static void cmd_debug_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, d);
 	DEFINE_CMD_DESCRIPTOR (core, db);
 	DEFINE_CMD_DESCRIPTOR (core, dbt);
