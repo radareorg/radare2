@@ -2623,10 +2623,10 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (!icmd || (cmd[0] == '#' && cmd[1] != '!' && cmd[1] != '?')) {
 		goto beach;
 	}
-	{
+	if (*icmd) {
 		char *hash = icmd;
 		cmt = NULL;
-		for (hash = icmd; *hash; hash++) {
+		for (hash = icmd + 1; *hash; hash++) {
 			if (*hash == '\\') {
 				hash++;
 				if (*hash == '#') {
