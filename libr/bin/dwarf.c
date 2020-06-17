@@ -1575,7 +1575,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 	case DW_FORM_data8:
 		value->data = READ64 (buf);
 		break;
-	case DW_FORM_data16: // Fix this, right now I just read the data, but I need to make storage for it
+	case DW_FORM_data16: // TODO Fix this, right now I just read the data, but I need to make storage for it
 		value->data = READ64 (buf);
 		value->data = READ64 (buf);
 		break;
@@ -1780,6 +1780,54 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 	}
 	return buf;
 }
+
+/**
+ * @brief
+ * 
+ * @param buf Start of the DIE data
+ * @param buf_end
+ * @param abbrev Abbreviation of the DIE
+ * @param hdr Unit header
+ * @param die DIE to store the parsed info into
+ * @param debug_str Ptr to string section start
+ * @param debug_str_len Length of the string section
+ * @param sdb 
+ * @return const ut8* Updated buffer
+ */
+static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevDecl *abbrev, 
+		RBinDwarfCompUnitHdr *hdr, RBinDwarfDie *die, const ut8 *debug_str, size_t debug_str_len, Sdb *sdb) {
+
+	for (size_t i = 0; i < abbrev->length - 1; i++) {
+		if (die->length == die->capacity) {
+			expand_die (die);
+		}
+		if (i >= die->capacity || i >= abbrev->capacity) {
+			eprintf ("Warning: malformed dwarf attribute capacity doesn't match length\n");
+			break;
+		}
+		memset (&die->attr_values[i], 0, sizeof (die->attr_values[i]));
+
+		buf = parse_attr_value (buf, buf_end - buf, &abbrev->defs[i],
+			&die->attr_values[i], hdr, debug_str, debug_str_len);
+
+		RBinDwarfAttrValue *attribute = &die->attr_values[i];
+
+		bool is_valid_string_form = (attribute->attr_form == DW_FORM_strp ||
+						    attribute->attr_form == DW_FORM_string) &&
+			attribute->string.content;
+		// TODO  does this have a purpose anymore?
+		// Or atleast it needs to rework becase there will be
+		// more comp units -> more comp dirs and only the last one will be kept
+		if (attribute->attr_name == DW_AT_comp_dir && is_valid_string_form) {
+			const char *name = attribute->string.content;
+			sdb_set (sdb, "DW_AT_comp_dir", name, 0);
+		}
+		die->length++;
+	}
+
+	return buf;
+}
+
 /**
  * @brief Reads throught comp_unit buffer and parses all its DIEntries
  * 
@@ -1805,11 +1853,11 @@ static const ut8 *parse_comp_unit(Sdb *sdb, const ut8 *buf_start,
 		if (unit->length && unit->capacity == unit->length) {
 			expand_cu (unit);
 		}
+		RBinDwarfDie *die = &unit->dies[unit->length];
 		// DIE starts with ULEB128 with the abbreviation code
 		ut64 abbr_code;
 		buf = r_uleb128 (buf, buf_end - buf, &abbr_code);
 
-		RBinDwarfDie *die = &unit->dies[unit->length];
 		init_die (die, abbr_code);
 
 		if (abbr_code > abbrevs->length || !buf || buf >= buf_end) {
@@ -1821,44 +1869,20 @@ static const ut8 *parse_comp_unit(Sdb *sdb, const ut8 *buf_start,
 			unit->length++;
 			continue;
 		}
-		ut64 abbrev_offset = abbr_offset + abbr_code;
+		ut64 abbr_idx = abbr_code + abbr_offset;
 
-		if (abbrevs->capacity < abbrev_offset) {
+		if (abbrevs->length < abbr_idx) {
 			return NULL;
 		}
-		
-		RBinDwarfAbbrevDecl *abbrev = &abbrevs->decls[abbrev_offset - 1];
+
+		RBinDwarfAbbrevDecl *abbrev = &abbrevs->decls[abbr_idx - 1];
 		die->tag = abbrev->tag;
 
-		// reads all attribute valeus based on abbreviation
-		for (i = 0; i < abbrev->length - 1; i++) {
-			if (die->length == die->capacity) {
-				expand_die (die);
-			}
-			if (i >= die->capacity || i >= abbrev->capacity) {
-				eprintf ("Warning: malformed dwarf attribute capacity doesn't match length\n");
-				break;
-			}
-			memset (&die->attr_values[i], 0, sizeof (die->attr_values[i]));
-
-			buf = parse_attr_value (buf, buf_end - buf,
-				&abbrev->defs[i],
-				&die->attr_values[i],
-				&unit->hdr, debug_str, debug_str_len);
-
-			RBinDwarfAttrValue *attribute = &die->attr_values[i];
-
-			bool is_valid_string_form = (attribute->attr_form == DW_FORM_strp ||
-				attribute->attr_form == DW_FORM_string) &&  attribute->string.content;
-			// TODO  does this have a purpose anymore?
-			// Or atleast it needs to rework becase there will be
-			// more comp units -> more comp dirs and only the last one will be kept
-			if (attribute->attr_name == DW_AT_comp_dir && is_valid_string_form) {
-				const char *name = attribute->string.content;
-				sdb_set (sdb, "DW_AT_comp_dir", name, 0);
-			}
-			die->length++;
+		buf = parse_die (buf, buf_end, abbrev, &unit->hdr, die, debug_str, debug_str_len, sdb);
+		if (!buf) {
+			return NULL;
 		}
+
 		unit->length++;
 	}
 	return buf;
@@ -2107,7 +2131,6 @@ RBinSection *getsection(RBin *a, const char *sn) {
  * @return RBinDwarfDebugInfo* Parsed information
  */
 R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode) {
-	int len, ret;
 	RBinDwarfDebugInfo *info = NULL;
 	RBinSection *debug_str;
 	RBinSection *section = getsection (a, "debug_info");
@@ -2124,14 +2147,15 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin 
 			if (!debug_str_buf) {
 				goto cleanup;
 			}
-			ret = r_buf_read_at (binfile->buf, debug_str->paddr,
+			st64 ret = r_buf_read_at (binfile->buf, debug_str->paddr,
 				debug_str_buf, debug_str_len);
 			if (!ret) {
 				goto cleanup;
 			}
 		}
 
-		len = section->size;
+		ut64 len = section->size;
+		// what is this checking for?
 		if (len > (UT32_MAX >> 1) || len < 1) {
 			goto cleanup;
 		}
