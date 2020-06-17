@@ -717,14 +717,14 @@ typedef struct {
 	size_t	length;
 	size_t	capacity;
 	RBinDwarfAttrValue *attr_values;
-} RBinDwarfDIE;
+} RBinDwarfDie;
 
 typedef struct {
 	RBinDwarfCompUnitHdr hdr;
 	ut64	offset;
 	size_t	length;
 	size_t	capacity;
-	RBinDwarfDIE *dies;
+	RBinDwarfDie *dies;
 } RBinDwarfCompUnit;
 
 #define COMP_UNIT_CAPACITY	8
