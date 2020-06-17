@@ -148,7 +148,6 @@ r_bin = library('r_bin', r_bin_sources,
     r_magic_dep,
     r_socket_dep,
     r_syscall_dep,
-	r_cons_dep,
     java_dep,
     lz4_dep,
     yxml_dep
