@@ -16,6 +16,7 @@
 #include <r_bin.h>
 #include <r_bin_dwarf.h>
 #include <r_core.h>
+#include <r_cons.h>
 
 #define STANDARD_OPERAND_COUNT_DWARF2 9
 #define STANDARD_OPERAND_COUNT_DWARF3 12
