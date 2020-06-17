@@ -2623,10 +2623,25 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (!icmd || (cmd[0] == '#' && cmd[1] != '!' && cmd[1] != '?')) {
 		goto beach;
 	}
-	cmt = *icmd ? (char *)r_str_firstbut (icmd, '#', "\""): NULL;
-	if (cmt && cmt != icmd) {
-		*cmt = 0;
-		r_str_trim_tail (icmd);
+	{
+		char *hash = icmd;
+		cmt = NULL;
+		for (hash = icmd; *hash; hash++) {
+			if (*hash == '\\') {
+				hash++;
+				if (*hash == '#') {
+					hash++;
+				}
+			}
+			if (*hash == '#') {
+				break;
+			}
+		}
+		if (hash && *hash) {
+			*hash = 0;
+			r_str_trim_tail (icmd);
+			cmt = hash + 1;
+		}
 	}
 	if (*cmd != '"') {
 		if (!strchr (cmd, '\'')) { // allow | awk '{foo;bar}' // ignore ; if there's a single quote
