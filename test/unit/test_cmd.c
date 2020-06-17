@@ -255,30 +255,27 @@ bool test_cmd_help(void) {
 	RCmdDesc *pd_cd = r_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler);
 	RCmdDesc *px_cd = r_cmd_desc_oldinput_new (cmd, p_cd, "px", px_handler);
 
-	RCmdDescHelp p_help;
-	r_cmd_desc_help_init (&p_help);
-	p_help.summary = "p summary",
-	p_help.usage = "p-usage",
-	p_help.args_str = "",
-	r_cmd_desc_set_help (p_cd, &p_help);
+	#define p_cd_summary "p summary"
+	#define p_cd_usage "p-usage"
+	#define p_cd_args_str ""
+	#define p_cd_description NULL
 
-	RCmdDescHelp pd_help;
-	r_cmd_desc_help_init (&pd_help);
-	pd_help.usage = NULL;
-	pd_help.summary = "pd summary";
-	pd_help.args_str = "<num>";
-	pd_help.description = "pd long description";
-	RCmdDescExample pd_ex1 = { "pd 10", "print 10 disassembled instructions" };
-	r_vector_push (&pd_help.examples, &pd_ex1);
-	r_cmd_desc_set_help (pd_cd, &pd_help);
+	#define pd_cd_summary "pd summary"
+	#define pd_cd_usage NULL
+	#define pd_cd_args_str "<num>"
+	#define pd_cd_description "pd long description"
+	#define pd_cd_ex1_example "pd 10"
+	#define pd_cd_ex1_comment "print 10 disassembled instructions"
 
-	RCmdDescHelp px_help;
-	r_cmd_desc_help_init (&px_help);
-	px_help.usage = "px-usage";
-	px_help.summary = "px summary";
-	px_help.args_str = "<verylongarg_str_num>";
-	px_help.description = "px long description";
-	r_cmd_desc_set_help (px_cd, &px_help);
+	#define px_cd_summary "px summary"
+	#define px_cd_usage "px-usage"
+	#define px_cd_args_str "<verylongarg_str_num>"
+	#define px_cd_description "px long description"
+
+	r_cmd_desc_help_setup (p_cd, p_cd);
+	r_cmd_desc_help_setup (pd_cd, pd_cd);
+	r_cmd_desc_help_example_add (pd_cd, pd_cd_ex1);
+	r_cmd_desc_help_setup (px_cd, px_cd);
 
 	const char *p_help_exp = "Usage: p-usage   # p summary\n"
 		"| pd <num>                 # pd summary\n"
@@ -316,6 +313,23 @@ bool test_cmd_help(void) {
 
 	r_cmd_free (cmd);
 	mu_end;
+
+	#undef p_cd_summary
+	#undef p_cd_usage
+	#undef p_cd_args_str
+	#undef p_cd_description
+
+	#undef pd_cd_summary
+	#undef pd_cd_usage
+	#undef pd_cd_args_str
+	#undef pd_cd_description
+	#undef pd_cd_ex1_example
+	#undef pd_cd_ex1_comment
+
+	#undef px_cd_summary
+	#undef px_cd_usage
+	#undef px_cd_args_str
+	#undef px_cd_description
 }
 
 bool test_cmd_group_help(void) {
@@ -324,20 +338,19 @@ bool test_cmd_group_help(void) {
 	RCmdDesc *p_cd = r_cmd_desc_argv_new (cmd, root, "p", p_handler_argv);
 	RCmdDesc *pd_cd = r_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler);
 
-	RCmdDescHelp p_help;
-	r_cmd_desc_help_init (&p_help);
-	p_help.group_summary = "p group-summary",
-	p_help.summary = "p summary",
-	p_help.usage = "p-usage",
-	p_help.args_str = "",
-	r_cmd_desc_set_help (p_cd, &p_help);
+	#define p_cd_usage "p-usage"
+	#define p_cd_summary "p summary"
+	#define p_cd_args_str ""
+	#define p_cd_description NULL
+	#define p_cd_group_summary "p group-summary"
 
-	RCmdDescHelp pd_help;
-	r_cmd_desc_help_init (&pd_help);
-	pd_help.summary = "pd summary",
-	pd_help.args_str = "<num>",
-	pd_help.description = "pd long description",
-	r_cmd_desc_set_help (pd_cd, &pd_help);
+	#define pd_cd_usage NULL
+	#define pd_cd_summary "pd summary"
+	#define pd_cd_args_str "<num>"
+	#define pd_cd_description "pd long description"
+
+	r_cmd_desc_help_setup_group (p_cd, p_cd);
+	r_cmd_desc_help_setup (pd_cd, pd_cd);
 
 	const char *p_help_exp = "Usage: p-usage   # p group-summary\n"
 		"| p        # p summary\n"

@@ -5005,7 +5005,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_command) {
 		eprintf ("Wrong number of arguments passed to `%s`, see its help with `%s?`\n", cmdname, cmdname);
 	} else if (res == R_CMD_STATUS_ERROR) {
 		const char *cmdname = r_cmd_parsed_args_cmd (pr_args);
-		eprintf ("Something wrong during the execution of `%s` command.\n", cmdname);
+		R_LOG_DEBUG ("Something wrong during the execution of `%s` command.\n", cmdname);
 	}
 
 err:

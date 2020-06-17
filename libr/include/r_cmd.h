@@ -19,7 +19,7 @@ typedef enum r_cmd_status_t {
 	R_CMD_STATUS_OK = 0, // command handler exited in the right way
 	R_CMD_STATUS_WRONG_ARGS, // command handler could not handle the arguments passed to it
 	R_CMD_STATUS_ERROR, // command handler had issues while running (e.g. allocation error, etc.)
-	R_CMD_STATUS_INVALID, // command could not be found (e.g. it does not exist)
+	R_CMD_STATUS_INVALID, // command could not be executed (e.g. shell level error, not existing command, bad expression, etc.)
 	R_CMD_STATUS_EXIT, // command handler asks to exit the prompt loop
 } RCmdStatus;
 
@@ -169,10 +169,34 @@ R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *nam
 R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdCb cb);
 R_API void r_cmd_desc_free(RCmdDesc *cd);
 R_API RCmdDesc *r_cmd_desc_parent(RCmdDesc *cd);
-R_API void r_cmd_desc_help_init(RCmdDescHelp *help);
-R_API void r_cmd_desc_set_help(RCmdDesc *cd, RCmdDescHelp *help);
+static inline RCmdDescHelp *r_cmd_get_desc_help(RCmdDesc *cd) {
+	return &cd->help;
+}
 
 #define r_cmd_desc_children_foreach(root, it_cd) r_pvector_foreach (&root->children, it_cd)
+
+#define r_cmd_desc_help_setup_group(cd, basename) do { \
+		RCmdDescHelp *_help = r_cmd_get_desc_help (cd); \
+		_help->usage = basename ## _usage; \
+		_help->summary = basename ## _summary; \
+		_help->args_str = basename ## _args_str; \
+		_help->description = basename ## _description; \
+		_help->group_summary = basename ## _group_summary; \
+	} while (0)
+
+#define r_cmd_desc_help_setup(cd, basename) do { \
+		RCmdDescHelp *_help = r_cmd_get_desc_help (cd); \
+		_help->usage = basename ## _usage; \
+		_help->summary = basename ## _summary; \
+		_help->args_str = basename ## _args_str; \
+		_help->description = basename ## _description; \
+	} while (0)
+
+#define r_cmd_desc_help_example_add(cd, example) do { \
+		RCmdDescHelp *_help = r_cmd_get_desc_help (cd); \
+		RCmdDescExample _help_example = {example ## _example, example ## _comment}; \
+		r_vector_push (&_help->examples, &_help_example); \
+	} while (0)
 
 /* RCmdParsedArgs */
 R_API RCmdParsedArgs *r_cmd_parsed_args_new(const char *cmd, int n_args, char **args);

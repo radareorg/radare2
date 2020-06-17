@@ -22,6 +22,15 @@ static bool cmd_desc_set_parent(RCmdDesc *cd, RCmdDesc *parent) {
 	return true;
 }
 
+static void cmd_desc_help_init(RCmdDescHelp *help) {
+	help->usage = NULL;
+	help->summary = NULL;
+	help->group_summary = NULL;
+	help->args_str = NULL;
+	help->description = NULL;
+	r_vector_init (&help->examples, sizeof (RCmdDescExample), NULL, NULL);
+}
+
 static RCmdDesc *create_cmd_desc(RCmd *cmd, RCmdDesc *parent, RCmdDescType type, const char *name) {
 	RCmdDesc *res = R_NEW0 (RCmdDesc);
 	if (!res) {
@@ -33,6 +42,7 @@ static RCmdDesc *create_cmd_desc(RCmd *cmd, RCmdDesc *parent, RCmdDescType type,
 		goto err;
 	}
 	res->n_children = 0;
+	cmd_desc_help_init (&res->help);
 	r_pvector_init (&res->children, (RPVectorFree)r_cmd_desc_free);
 	if (!ht_pp_insert (cmd->ht_cmds, name, res)) {
 		goto err;
@@ -1137,15 +1147,6 @@ R_API void r_cmd_desc_free(RCmdDesc *cd) {
 R_API RCmdDesc *r_cmd_desc_parent(RCmdDesc *cd) {
 	r_return_val_if_fail (cd, NULL);
 	return cd->parent;
-}
-
-R_API void r_cmd_desc_help_init(RCmdDescHelp *help) {
-	help->usage = NULL;
-	help->summary = NULL;
-	help->group_summary = NULL;
-	help->args_str = NULL;
-	help->description = NULL;
-	r_vector_init (&help->examples, sizeof (RCmdDescExample), NULL, NULL);
 }
 
 R_API void r_cmd_desc_set_help(RCmdDesc *cd, RCmdDescHelp *help) {
