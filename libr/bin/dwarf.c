@@ -1785,7 +1785,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
  * 
  * @param sdb
  * @param buf_start Start of the compilation unit data
- * @param unit Compilation unit information
+ * @param unit Unit to store the newly parsed information
  * @param abbrevs Parsed abbrev section info of *all* abbreviations
  * @param abbr_offset index offset into Abbrev array to current comp unit abbrevs
  * @param debug_str Ptr to string section start
@@ -1848,8 +1848,8 @@ static const ut8 *parse_comp_unit(Sdb *sdb, const ut8 *buf_start,
 
 			RBinDwarfAttrValue *attribute = &die->attr_values[i];
 
-			bool is_valid_string_form = attribute->attr_form == DW_FORM_strp ||
-				attribute->attr_form == DW_FORM_string &&  attribute->string.content;
+			bool is_valid_string_form = (attribute->attr_form == DW_FORM_strp ||
+				attribute->attr_form == DW_FORM_string) &&  attribute->string.content;
 			// TODO  does this have a purpose anymore?
 			// Or atleast it needs to rework becase there will be
 			// more comp units -> more comp dirs and only the last one will be kept
@@ -1915,10 +1915,10 @@ static const ut8 *info_comp_unit_read_hdr(const ut8 *buf, const ut8 *buf_end, RB
 	return buf;
 }
 static int expand_info(RBinDwarfDebugInfo *info) {
-	r_return_val_if_fail (info && info->capacity == info->length, EXIT_FAILURE);
+	r_return_val_if_fail (info && info->capacity == info->length, -1);
 
-	RBinDwarfCompUnit *tmp;
-	tmp = realloc (info->comp_units, info->capacity * 2 * sizeof (RBinDwarfCompUnit));
+	RBinDwarfCompUnit *tmp = realloc (info->comp_units,
+		info->capacity * 2 * sizeof (RBinDwarfCompUnit));
 	if (!tmp) {
 		return -1;
 	}
@@ -1960,7 +1960,7 @@ static RBinDwarfDebugInfo *parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
 	if (init_debug_info (info) < 0) {
 		goto cleanup;
 	}
-	int curr_unit_idx = 0;
+	int unit_idx = 0;
 
 	while (buf < buf_end) {
 		if (info->length >= info->capacity) {
@@ -1969,20 +1969,20 @@ static RBinDwarfDebugInfo *parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
 			}
 		}
 
-		RBinDwarfCompUnit *curr_unit = &info->comp_units[curr_unit_idx];
-		if (init_comp_unit (curr_unit) < 0) {
-			curr_unit_idx--;
+		RBinDwarfCompUnit *unit = &info->comp_units[unit_idx];
+		if (init_comp_unit (unit) < 0) {
+			unit_idx--;
 			goto cleanup;
 		}
 		info->length++;
 
-		curr_unit->offset = buf - obuf;
+		unit->offset = buf - obuf;
 		// small redundancy, because it was easiest solution at a time
-		curr_unit->hdr.unit_offset = buf - obuf;
+		unit->hdr.unit_offset = buf - obuf;
 
-		buf = info_comp_unit_read_hdr (buf, buf_end, &curr_unit->hdr);
+		buf = info_comp_unit_read_hdr (buf, buf_end, &unit->hdr);
 
-		if (curr_unit->hdr.length > len) {
+		if (unit->hdr.length > len) {
 			goto cleanup;
 		}
 
@@ -1994,7 +1994,7 @@ static RBinDwarfDebugInfo *parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
 
 		// found abbrev start for current comp unit
 		// we could also do naive, ((char *)da->decls) + abbrev_offset?
-		RBinDwarfAbbrevDecl key = { .offset = curr_unit->hdr.abbrev_offset };
+		RBinDwarfAbbrevDecl key = { .offset = unit->hdr.abbrev_offset };
 		RBinDwarfAbbrevDecl *abbrev_start = bsearch (&key, da->decls, k_max, sizeof (key), abbrev_cmp);
 		if (!abbrev_start) {
 			goto cleanup;
@@ -2002,13 +2002,13 @@ static RBinDwarfDebugInfo *parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
 		// They point to the same array object, so should be def. behaviour
 		size_t abbrev_offset = abbrev_start - da->decls;
 
-		buf = parse_comp_unit (sdb, buf, curr_unit, da, abbrev_offset, debug_str, debug_str_len);
+		buf = parse_comp_unit (sdb, buf, unit, da, abbrev_offset, debug_str, debug_str_len);
 
 		if (!buf) {
 			goto cleanup;
 		}
 
-		curr_unit_idx++;
+		unit_idx++;
 	}
 
 	return info;
