@@ -8,3 +8,20 @@ EXPECT=<<EOF
 0x00010330    1 68           sym._printf_r
 EOF
 RUN
+
+NAME=jump with compress instruction
+FILE=-
+CMDS=<<EOF
+e asm.arch=riscv
+e asm.bits=32
+wx 21a001009d06aa858146
+pd 5
+EOF
+EXPECT=<<EOF
+        ,=< 0x00000000      21a0           j 0x8
+        |   0x00000002      0100           nop
+        |   0x00000004      9d06           addi a3, a3, 7
+        |   0x00000006      aa85           mv a1, a0
+        `-> 0x00000008      8146           li a3, 0
+EOF
+RUN

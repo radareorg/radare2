@@ -213,7 +213,7 @@ static RList *symbols(RBinFile *bf) {
 	Sdb *symcache = sdb_new0 ();
 	bin = (struct MACH0_(obj_t) *) obj->bin_obj;
 	for (i = 0; !syms[i].last; i++) {
-		if (!syms[i].name[0] || syms[i].addr < 100) {
+		if (syms[i].name == NULL || syms[i].name[0] == '\0' || syms[i].addr < 100) {
 			continue;
 		}
 		if (!(ptr = R_NEW0 (RBinSymbol))) {
