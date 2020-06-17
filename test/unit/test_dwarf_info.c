@@ -5,6 +5,52 @@
 
 #define MODE 2
 
+
+#define check_attr_string(attr_idx, expect_string) \
+	mu_assert_streq (cu.dies[i].attr_values[attr_idx].string.content, expect_string, "Wrong string attribute information")
+
+#define check_attr_name(attr_idx, expect_name) \
+	mu_assert_eq (cu.dies[i].attr_values[attr_idx].attr_name, expect_name, "Wrong attribute name")
+
+#define check_attr_address(attr_idx, expect_addr) \
+	mu_assert_eq (cu.dies[i].attr_values[attr_idx].address, expect_addr, "Wrong attribute name")
+
+#define check_attr_form(attr_idx, expect_form) \
+	mu_assert_eq (cu.dies[i].attr_values[attr_idx].attr_form, expect_form, "Wrong attribute name")
+	
+#define check_attr_data(attr_idx, expect_data) \
+	mu_assert_eq (cu.dies[i].attr_values[attr_idx].data, expect_data, "Wrong attribute data")
+
+#define check_attr_block_length(attr_idx, expect_len) \
+	mu_assert_eq (cu.dies[i].attr_values[attr_idx].block.length, expect_len, "Wrong attribute block length")
+
+#define check_attr_block_data(attr_idx, data_idx, expect_data) \
+	mu_assert_eq (cu.dies[i].attr_values[attr_idx].block.data[data_idx], expect_data, "Wrong attribute block data")
+
+#define check_attr_reference(attr_idx, expect_ref) \
+	mu_assert_eq (cu.dies[i].attr_values[attr_idx].reference, expect_ref, "Wrong attribute reference")
+
+#define check_attr_flag(attr_idx, expect_flag) \
+	mu_assert_eq (cu.dies[i].attr_values[attr_idx].flag, expect_flag, "Wrong attribute flag")
+
+#define check_die_abbr_code(expect_code) \
+	mu_assert_eq (cu.dies[i].abbrev_code, expect_code, "Wrong abbrev code")
+
+#define check_die_length(len) \
+	mu_assert_eq (cu.dies[i].length, len, "Wrong DIE length information")
+
+#define check_die_tag(tg) \
+	mu_assert_eq (cu.dies[i].tag, tg, "Wrong DIE tag")
+
+#define check_basic_unit_header(vers, len, is64bit, addr_size, abbr_offset)                              \
+	do {                                                                                             \
+		mu_assert_eq (hdr.version, vers, "Wrong header version information");                    \
+		mu_assert_eq (hdr.length, len, "Wrong header length information");                       \
+		mu_assert_eq (hdr.is_64bit, is64bit, "Wrong header is_64bit information");               \
+		mu_assert_eq (hdr.address_size, addr_size, "Wrong header address_size information");     \
+		mu_assert_eq (hdr.abbrev_offset, abbr_offset, "Wrong header abbrev_offset information"); \
+	} while (0)
+
 bool test_dwarf3_c(void) {
 	RBin *bin = r_bin_new ();
 	RIO *io = r_io_new ();
@@ -23,43 +69,44 @@ bool test_dwarf3_c(void) {
 	// check header
 	RBinDwarfCompUnit cu = info->comp_units[0];
 	RBinDwarfCompUnitHdr hdr = cu.hdr;
-	mu_assert_eq (hdr.version, 3, "Wrong header information");
-	mu_assert_eq (hdr.length, 0xa9, "Wrong header information");
-	mu_assert_eq (hdr.is_64bit, false, "Wrong header information");
-	mu_assert_eq (hdr.address_size, 8, "Wrong header information");
-	mu_assert_eq (hdr.abbrev_offset, 0x0, "Wrong header information");
 
-	// check some of the attributes
+	check_basic_unit_header (3, 0xa9, false, 8, 0x0);
+
 	mu_assert_eq (cu.length, 11, "Wrong attribute information");
 	mu_assert_eq (cu.offset, 0x0, "Wrong attribute information");
+	// check some of the attributes
 	int i = 0;
-	mu_assert_eq (cu.dies[i].abbrev_code, 1, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].length, 7, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].tag, DW_TAG_compile_unit, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[0].attr_name, DW_AT_producer, "Wrong attribute information");
-	mu_assert_streq (cu.dies[i].attr_values[2].string.content, "main.c", "Wrong attribute information");
+	check_die_abbr_code (1);
+
+	check_die_length (7);
+	check_die_tag (DW_TAG_compile_unit);
+
+	check_attr_name (0, DW_AT_producer);
+	check_attr_string (2, "main.c");
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 2, "Wrong attribute information");
+	check_die_abbr_code (2);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 3, "Wrong attribute information");
+	check_die_abbr_code (3);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 4, "Wrong attribute information");
+	check_die_abbr_code (4);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 5, "Wrong attribute information");
+	check_die_abbr_code (5);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 0, "Wrong attribute information");
+	check_die_abbr_code (0);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 6, "Wrong attribute information");
+	check_die_abbr_code (6);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 7, "Wrong attribute information");
-	mu_assert_streq (cu.dies[i].attr_values[0].string.content, "b", "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[3].data, 15, "Wrong attribute information");
+	check_die_abbr_code (7);
+
+	check_attr_string (0, "b");
+	check_attr_data (3, 15);
+
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 7, "Wrong attribute information");
+	check_die_abbr_code (7);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 0, "Wrong attribute information");
+	check_die_abbr_code (0);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 0, "Wrong attribute information");
+	check_die_abbr_code (0);
 
 	r_bin_dwarf_free_debug_info (info);
 	r_bin_dwarf_free_debug_abbrev (da);
@@ -80,199 +127,196 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 	RBinDwarfDebugAbbrev *da = r_bin_dwarf_parse_abbrev (bin, MODE);
 	mu_assert_eq (da->length, 37, "Incorrect number of abbreviation");
 	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (da, bin, MODE);
-	mu_assert_notnull(info, "Failed parsing of debug_info");
+	mu_assert_notnull (info, "Failed parsing of debug_info");
 	mu_assert_eq (info->length, 2, "Incorrect number of info compilation units");
 
 	// check header
 	RBinDwarfCompUnit cu = info->comp_units[0];
 	RBinDwarfCompUnitHdr hdr = cu.hdr;
-	mu_assert_eq (hdr.version, 4, "Wrong header information");
-	mu_assert_eq (hdr.length, 0x2c0, "Wrong header information");
-	mu_assert_eq (hdr.is_64bit, false, "Wrong header information");
-	mu_assert_eq (hdr.address_size, 8, "Wrong header information");
-	mu_assert_eq (hdr.abbrev_offset, 0x0, "Wrong header information");
+	check_basic_unit_header (4, 0x2c0, false, 8, 0x0);
 
 	// check some of the attributes
 	mu_assert_eq (cu.length, 73, "Wrong attribute information");
 	mu_assert_eq (cu.offset, 0x0, "Wrong attribute information");
 
 	int i = 0;
-	mu_assert_eq (cu.dies[i].abbrev_code, 1, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].length, 7, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].tag, DW_TAG_compile_unit, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[0].attr_name, DW_AT_producer, "Wrong attribute information");
-	mu_assert_streq (cu.dies[i].attr_values[2].string.content, "../main.cpp", "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[6].attr_name, DW_AT_ranges, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[6].reference, 0x0, "Wrong attribute information");
+	check_die_abbr_code (1);
+	check_die_length (7);
+	check_die_tag (DW_TAG_compile_unit);
+
+	check_attr_name (0, DW_AT_producer);
+	check_attr_string (2, "../main.cpp");
+	check_attr_name (6, DW_AT_ranges);
+	check_attr_reference (6, 0x0);
 
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 2, "Wrong attribute information");
+	check_die_abbr_code (2);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 3, "Wrong attribute information");
+	check_die_abbr_code (3);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 3, "Wrong attribute information");
+	check_die_abbr_code (3);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 3, "Wrong attribute information");
+	check_die_abbr_code (3);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 0, "Wrong attribute information");
+	check_die_abbr_code (0);
 	i++;
 	// i == 6
-	mu_assert_eq (cu.dies[i].abbrev_code, 4, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[0].reference, 0x6e, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[1].data, 4, "Wrong attribute information");
-	mu_assert_streq (cu.dies[i].attr_values[2].string.content, "Bird", "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[3].data, 8, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[4].data, 1, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[5].data, 9, "Wrong attribute information");
+	check_die_abbr_code (4);
+	check_attr_reference (0, 0x6e);
+	check_attr_data (1, 4);
+	check_attr_string (2, "Bird");
+	check_attr_data (3, 8);
+	check_attr_data (4, 1);
+	check_attr_data (5, 9);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 5, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].tag, DW_TAG_member, "Wrong attribute information");
-	mu_assert_streq (cu.dies[i].attr_values[0].string.content, "_vptr$Bird", "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[1].reference, 0xc5, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[2].data, 0, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[3].flag, true, "Wrong attribute information");
+	check_die_abbr_code (5);
+	check_die_tag (DW_TAG_member);
+	check_attr_string (0, "_vptr$Bird");
+	check_attr_reference (1, 0xc5);
+	check_attr_data (2, 0);
+	check_attr_data (3, true);
+
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 6, "Wrong attribute information");
+	check_die_abbr_code (6);
 	i++;
+	check_die_abbr_code (7);
+	i++;
+	check_die_abbr_code (0);
+	i++;
+	check_die_abbr_code (8);
+	i++;
+	check_die_abbr_code (7);
+	i++;
+	check_die_abbr_code (0);
+	i++;
+	check_die_abbr_code (9);
+	check_die_tag (DW_TAG_subprogram);
+	check_die_length (10);
+	check_attr_string (0, "_ZN4Bird3flyEv");
+	check_attr_string (1, "fly");
+	check_attr_data (2, 1);
+	check_attr_data (3, 12);
+	check_attr_reference (4, 0xd8);
+	check_attr_name (6, DW_AT_vtable_elem_location);
+	check_attr_form (7, DW_FORM_flag_present);
+	check_attr_flag (7, true);
+	check_attr_name (8, DW_AT_external);
+	check_attr_flag (8, true);
+	check_attr_name (9, DW_AT_containing_type);
+	check_attr_reference (9, 0x6e);
+	i++;
+	check_die_abbr_code (7);
 	mu_assert_eq (cu.dies[i].abbrev_code, 7, "Wrong attribute information");
 	i++;
+	check_die_abbr_code (0);
 	mu_assert_eq (cu.dies[i].abbrev_code, 0, "Wrong attribute information");
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 8, "Wrong attribute information");
-	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 7, "Wrong attribute information");
-	i++;
+	check_die_abbr_code (0);
 	mu_assert_eq (cu.dies[i].abbrev_code, 0, "Wrong attribute information");
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 9, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].tag, DW_TAG_subprogram, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].length, 10, "Wrong attribute information");
-	mu_assert_streq (cu.dies[i].attr_values[0].string.content, "_ZN4Bird3flyEv", "Wrong attribute information");
-	mu_assert_streq (cu.dies[i].attr_values[1].string.content, "fly", "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[2].data, 1, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[3].data, 12, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[4].reference, 0xd8, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[6].attr_name, DW_AT_vtable_elem_location, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[7].flag, true, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[7].attr_form, DW_FORM_flag_present	, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[8].attr_name, DW_AT_external, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[8].flag, true, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[9].attr_name, DW_AT_containing_type, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[9].reference, 0x6e, "Wrong attribute information");
-	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 7, "Wrong attribute information");
-	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 0, "Wrong attribute information");
-	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 0, "Wrong attribute information");
-	i++;
+	check_die_abbr_code (10);
 	mu_assert_eq (cu.dies[i].abbrev_code, 10, "Wrong attribute information");
 	i++;
+	check_die_abbr_code (11);
 	mu_assert_eq (cu.dies[i].abbrev_code, 11, "Wrong attribute information");
 	i++;
+	check_die_abbr_code (12);
 	mu_assert_eq (cu.dies[i].abbrev_code, 12, "Wrong attribute information");
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 13, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].tag, DW_TAG_base_type, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].length, 3, "Wrong attribute information");
+	check_die_abbr_code (13);
+	check_die_tag (DW_TAG_base_type);
+	check_die_length (3);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 10, "Wrong attribute information");
+	check_die_abbr_code (10);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 14, "Wrong attribute information");
+	check_die_abbr_code (14);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 15, "Wrong attribute information");
+	check_die_abbr_code (15);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 0, "Wrong attribute information");
+	check_die_abbr_code (0);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 4, "Wrong attribute information");
+	check_die_abbr_code (4);
 	i = 66;
-	mu_assert_eq (cu.dies[i].abbrev_code, 18, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].length, 5, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[3].reference, 0x2a7, "Wrong attribute information");
+	check_die_abbr_code (18);
+	check_die_length (5);
+	check_attr_reference (3, 0x2a7);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 15, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].length, 4, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[0].block.length, 2, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[0].block.data[0], 0x91, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[0].block.data[1], 0x78, "Wrong attribute information");
-	mu_assert_streq (cu.dies[i].attr_values[1].string.content, "this", "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[2].reference, 0x2be, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[3].flag, true, "Wrong attribute information");
+	check_die_abbr_code (15);
+	check_die_length (4);
+	check_attr_block_length (0, 2);
+	check_attr_block_data (0, 0, 0x91);
+	check_attr_block_data (0, 1, 0x78);
+	check_attr_string (1, "this");
+	check_attr_reference (2, 0x2be);
+	check_attr_flag (3, true);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 0, "Wrong attribute information");
+	check_die_abbr_code (0);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 10, "Wrong attribute information");
+	check_die_abbr_code (10);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 10, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].tag, DW_TAG_pointer_type, "Wrong attribute information");
+	check_die_abbr_code (10);
+	check_die_tag (DW_TAG_pointer_type);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 10, "Wrong attribute information");
+	check_die_abbr_code (10);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 0, "Wrong attribute information");
+	check_die_abbr_code (0);
 	i++;
 
 	cu = info->comp_units[1];
 	hdr = cu.hdr;
-	mu_assert_eq (hdr.version, 4, "Wrong header information");
-	mu_assert_eq (hdr.length, 0x192, "Wrong header information");
-	mu_assert_eq (hdr.is_64bit, false, "Wrong header information");
-	mu_assert_eq (hdr.address_size, 8, "Wrong header information");
-	mu_assert_eq (hdr.abbrev_offset, 0xfd, "Wrong header information");
+	check_basic_unit_header (4, 0x192, false, 8, 0xfd);
 
 	// check some of the attributes
 	mu_assert_eq (cu.length, 42, "Wrong attribute information");
 	mu_assert_eq (cu.offset, 0x2c4, "Wrong attribute information");
 
 	i = 0;
-
-	mu_assert_eq (cu.dies[i].abbrev_code, 1, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].length, 7, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].tag, DW_TAG_compile_unit, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[0].attr_name, DW_AT_producer, "Wrong attribute information");
-	mu_assert_streq (cu.dies[i].attr_values[0].string.content, "clang version 10.0.0-4ubuntu1 ", "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[1].data, 33, "Wrong attribute information");
-	mu_assert_streq (cu.dies[i].attr_values[2].string.content, "../mammal.cpp", "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[5].address, 0x0, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[5].attr_form, DW_FORM_addr, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[6].attr_name, DW_AT_ranges, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[6].reference, 0xb0, "Wrong attribute information");
-	
+	check_die_abbr_code (1);
+	check_die_length (7);
+	check_die_tag (DW_TAG_compile_unit);
+	check_attr_name (0, DW_AT_producer);
+	check_attr_string (0, "clang version 10.0.0-4ubuntu1 ");
+	check_attr_data (1, 33);
+	check_attr_string (2, "../mammal.cpp");
+	check_attr_address (5, 0x0);
+	check_attr_form (5, DW_FORM_addr);
+	check_attr_name (6, DW_AT_ranges);
+	check_attr_reference (6, 0xb0);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 2, "Wrong attribute information");
+	check_die_abbr_code (2);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 3, "Wrong attribute information");
+	check_die_abbr_code (3);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 4, "Wrong attribute information");
+	check_die_abbr_code (4);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 5, "Wrong attribute information");
+	check_die_abbr_code (5);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 0, "Wrong attribute information");
+	check_die_abbr_code (0);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 6, "Wrong attribute information");
+	check_die_abbr_code (6);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 5, "Wrong attribute information");
+	check_die_abbr_code (5);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 0, "Wrong attribute information");
+	check_die_abbr_code (0);
 	i = 35;
-	mu_assert_eq (cu.dies[i].abbrev_code, 8, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].tag, DW_TAG_pointer_type, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].length, 1, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[0].attr_form, DW_FORM_ref4, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[0].reference, 0x407, "Wrong attribute information");
+	check_die_abbr_code (8);
+	check_die_tag (DW_TAG_pointer_type);
+	check_die_length (1);
+	check_attr_form (0, DW_FORM_ref4);
+	check_attr_reference (0, 0x407);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 19, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].tag, DW_TAG_subprogram, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].length, 5, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[2].attr_name, DW_AT_frame_base, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[2].block.length, 1, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[2].block.data[0], 0x56, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[3].reference, 0x442, "Wrong attribute information");
-	mu_assert_eq (cu.dies[i].attr_values[4].reference, 0x410, "Wrong attribute information");
+	check_die_abbr_code (19);
+	check_die_tag (DW_TAG_subprogram);
+	check_die_length (5);
+	check_attr_name (2, DW_AT_frame_base);
+	check_attr_block_length (2, 1);
+	check_attr_block_data (2, 0, 0x56);
+	check_attr_reference (3, 0x442);
+	check_attr_reference (4, 0x410);
 	i=40;
-	mu_assert_eq (cu.dies[i].abbrev_code, 8, "Wrong attribute information");
+	check_die_abbr_code (8);
 	i++;
-	mu_assert_eq (cu.dies[i].abbrev_code, 0, "Wrong attribute information");
-
+	check_die_abbr_code (0);
 
 	r_bin_dwarf_free_debug_info (info);
 	r_bin_dwarf_free_debug_abbrev (da);

@@ -346,6 +346,24 @@ static inline bool is_printable_tag(ut64 attr_code) {
 	return (attr_code <= DW_TAG_LAST);
 }
 
+/**
+ * @brief Reads 64/32 bit unsigned based on format
+ * 
+ * @param is_64bit Format of the comp unit
+ * @param buf Pointer to the buffer to read from, to update after read
+ * @param buf_end To check the boundary
+ * @return ut64 Read value
+ */
+static ut64 dwarf_read_piece(bool is_64bit, const ut8 **buf, const ut8 *buf_end) {
+	ut64 result;
+	if (is_64bit) {
+		result = READ64 (*buf);
+	} else {
+		result = READ32 (*buf);
+	}
+	return result;
+}
+
 
 static int add_sdb_include_dir(Sdb *s, const char *incl, int idx) {
 	if (!s || !incl) {
@@ -534,12 +552,9 @@ static const ut8 *parse_line_header (
 		hdr->segment_selector_size = READ8 (buf);
 	}
 
-	if (hdr->is_64bit) {
-		hdr->header_length = READ64 (buf);
-	} else {
-		hdr->header_length = READ32 (buf);
-	}
-	const ut8 *tmp_buf = buf; // So I can skip parsing DWARF 5 headres for now
+	hdr->header_length = dwarf_read_piece(hdr->is_64bit, &buf, buf_end);
+
+	const ut8 *tmp_buf = buf; // So I can skip parsing DWARF 5 headers for now
 
 	if (buf_end - buf < 8) {
 		return NULL;
@@ -565,8 +580,7 @@ static const ut8 *parse_line_header (
 		r_cons_printf ("  Initial value of 'is_stmt':         %d\n", hdr->default_is_stmt);
 		r_cons_printf ("  Line Base:                          %d\n", hdr->line_base);
 		r_cons_printf ("  Line Range:                         %d\n", hdr->line_range);
-		r_cons_printf ("  Opcode Base:                        %d\n", hdr->opcode_base);
-		r_cons_printf ("\n");
+		r_cons_printf ("  Opcode Base:                        %d\n\n", hdr->opcode_base);
 	}
 
 	if (hdr->opcode_base > 0) {
@@ -1635,13 +1649,9 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 	case DW_FORM_flag:
 		value->flag = READ (buf, ut8);
 		break;
-	case DW_FORM_strp: // offset in .debug_str
-		// this offset can be 64bit, based on dwarf format
-		if (hdr->is_64bit) {
-			value->string.offset = READ64 (buf);
-		} else {
-			value->string.offset = READ32 (buf);
-		}
+	// offset in .debug_str
+	case DW_FORM_strp:
+		value->string.offset = dwarf_read_piece(hdr->is_64bit, &buf, buf_end);
 		if (debug_str && value->string.offset < debug_str_len) {
 			value->string.content =
 				strdup ((const char *)(debug_str + value->string.offset));
@@ -1649,20 +1659,9 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 			value->string.content = NULL;
 		}
 		break;
-	case DW_FORM_ref_addr: // offset in .debug_info
-		// This is 4 or 8 bytes depending where it refers to
-		// http://www.dwarfstd.org/doc/Dwarf3.pdf page 128
-		/*
-	 For references from one shared object or
-	static executable file to another, the relocation and identification of the target object must be
-	performed by the consumer. In the 32-bit DWARF format, this offset is a 4-byte unsigned
-	value; in the 64-bit DWARF format, it is an 8-byte unsigned value
-	*/
-		if (hdr->is_64bit) {
-			value->reference = READ64 (buf);
-		} else {
-			value->reference = READ32 (buf);
-		}
+	// offset in .debug_info
+	case DW_FORM_ref_addr:
+		value->reference = dwarf_read_piece(hdr->is_64bit, &buf, buf_end);
 		break;
 	// This type of reference is an offset from the first byte of the compilation
 	// header for the compilation unit containing the reference
@@ -1683,12 +1682,9 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		buf = r_uleb128 (buf, buf_end - buf, &value->reference);
 		value->reference += hdr->unit_offset;
 		break;
-	case DW_FORM_sec_offset: // offset in a section other than .debug_info or .debug_str
-		if (hdr->is_64bit) {
-			value->reference = READ64 (buf);
-		} else {
-			value->reference = READ32 (buf);
-		}
+	// offset in a section other than .debug_info or .debug_str
+	case DW_FORM_sec_offset:
+		value->reference = dwarf_read_piece(hdr->is_64bit, &buf, buf_end);
 		break;
 	case DW_FORM_exprloc:
 		buf = r_uleb128 (buf, buf_end - buf, &value->block.length);
@@ -1743,7 +1739,8 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 	case DW_FORM_addrx2:
 		value->address = READ16 (buf);
 		break;
-	case DW_FORM_addrx3: // I need to add 3byte endianess free read here TODO
+	case DW_FORM_addrx3:
+	// I need to add 3byte endianess free read here TODO
 		buf += 3;
 		break;
 	case DW_FORM_addrx4:
@@ -1751,20 +1748,19 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		break;
 	case DW_FORM_line_ptr: // offset in a section .debug_line_str
 	case DW_FORM_strp_sup: // offset in a section .debug_line_str
-		if (hdr->is_64bit) {
-			value->string.offset = READ64 (buf);
-		} else {
-			value->string.offset = READ32 (buf);
-		}
+		value->string.offset = dwarf_read_piece(hdr->is_64bit, &buf, buf_end);
 		break;
-	case DW_FORM_ref_sup4: // offset in the supplementary object file
+	// offset in the supplementary object file
+	case DW_FORM_ref_sup4:
 		value->reference = READ32 (buf);
 		break;
-	case DW_FORM_ref_sup8: // offset in the supplementary object file
+	case DW_FORM_ref_sup8:
 		value->reference = READ64 (buf);
 		break;
-	case DW_FORM_loclistx: // An index into the .debug_loclists
-	case DW_FORM_rnglistx: // An index into the .debug_rnglists
+	// An index into the .debug_loclists
+	case DW_FORM_loclistx:
+	 // An index into the .debug_rnglists
+	case DW_FORM_rnglistx:
 		buf = r_uleb128 (buf, buf_end - buf, &value->address);
 		break;
 	default:
@@ -1903,30 +1899,16 @@ static const ut8 *info_comp_unit_read_hdr(const ut8 *buf, const ut8 *buf_end, RB
 	if (hdr->version == 5) {
 		hdr->unit_type = READ8 (buf);
 		hdr->address_size = READ8 (buf);
-
-		if (hdr->is_64bit) {
-			hdr->abbrev_offset = READ64 (buf);
-		} else {
-			hdr->abbrev_offset = READ32 (buf);
-		}
+		hdr->abbrev_offset = dwarf_read_piece (hdr->is_64bit, &buf, buf_end);
 
 		if (hdr->unit_type == DW_UT_skeleton || hdr->unit_type == DW_UT_split_compile) {
 			hdr->dwo_id = READ8 (buf);
 		} else if (hdr->unit_type == DW_UT_type || hdr->unit_type == DW_UT_split_type) {
 			hdr->type_sig = READ64 (buf);
-
-			if (hdr->is_64bit) {
-				hdr->type_offset = READ64 (buf);
-			} else {
-				hdr->type_offset = READ32 (buf);
-			}
+			hdr->type_offset = dwarf_read_piece (hdr->is_64bit, &buf, buf_end);
 		}
 	} else {
-		if (hdr->is_64bit) {
-			hdr->abbrev_offset = READ64 (buf);
-		} else {
-			hdr->abbrev_offset = READ32 (buf);
-		}
+		hdr->abbrev_offset = dwarf_read_piece (hdr->is_64bit, &buf, buf_end);
 		hdr->address_size = READ8 (buf);
 	}
 	hdr->header_size = buf - tmp; // header size excluding length field
