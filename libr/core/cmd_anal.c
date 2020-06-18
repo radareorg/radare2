@@ -728,7 +728,7 @@ static const char *help_msg_ax[] = {
 	NULL
 };
 
-static void cmd_anal_init(RCore *core) {
+static void cmd_anal_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, a);
 	DEFINE_CMD_DESCRIPTOR (core, aa);
 	DEFINE_CMD_DESCRIPTOR (core, aar);

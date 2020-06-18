@@ -592,7 +592,8 @@ static const ut8 *parse_line_header (
 		if (mode == R_MODE_PRINT) {
 			print (" Opcodes:\n");
 		}
-		for (int i = 1; i <= hdr->opcode_base - 1; i++) {
+		size_t i;
+		for (i = 1; i < hdr->opcode_base; i++) {
 			if (buf + 2 > buf_end) {
 				break;
 			}

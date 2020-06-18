@@ -83,7 +83,7 @@ static const char *help_msg_zc[] = {
 	NULL
 };
 
-static void cmd_zign_init(RCore *core) {
+static void cmd_zign_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, z);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, z/, z_slash);
 	DEFINE_CMD_DESCRIPTOR (core, za);

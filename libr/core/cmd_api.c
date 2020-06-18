@@ -7,6 +7,14 @@
 #include <r_cmd.h>
 #include <r_util.h>
 
+static const RCmdDescHelp not_defined_help = {
+	.usage = "Usage not defined",
+	.summary = "Help summary not defined",
+	.args_str = "",
+	.description = "Help description not defined.",
+	.examples = NULL,
+};
+
 static int value = 0;
 
 #define NCMDS (sizeof (cmd->cmds)/sizeof(*cmd->cmds))
@@ -22,7 +30,7 @@ static bool cmd_desc_set_parent(RCmdDesc *cd, RCmdDesc *parent) {
 	return true;
 }
 
-static RCmdDesc *create_cmd_desc(RCmd *cmd, RCmdDesc *parent, RCmdDescType type, const char *name) {
+static RCmdDesc *create_cmd_desc(RCmd *cmd, RCmdDesc *parent, RCmdDescType type, const char *name, const RCmdDescHelp *help) {
 	RCmdDesc *res = R_NEW0 (RCmdDesc);
 	if (!res) {
 		return NULL;
@@ -33,6 +41,7 @@ static RCmdDesc *create_cmd_desc(RCmd *cmd, RCmdDesc *parent, RCmdDescType type,
 		goto err;
 	}
 	res->n_children = 0;
+	res->help = help? help: &not_defined_help;
 	r_pvector_init (&res->children, (RPVectorFree)r_cmd_desc_free);
 	if (!ht_pp_insert (cmd->ht_cmds, name, res)) {
 		goto err;
@@ -62,7 +71,7 @@ R_API RCmd *r_cmd_new(void) {
 	}
 	cmd->nullcallback = cmd->data = NULL;
 	cmd->ht_cmds = ht_pp_new0 ();
-	cmd->root_cmd_desc = create_cmd_desc (cmd, NULL, R_CMD_DESC_TYPE_ARGV, "");
+	cmd->root_cmd_desc = create_cmd_desc (cmd, NULL, R_CMD_DESC_TYPE_ARGV, "", NULL);
 	r_core_plugin_init (cmd);
 	r_cmd_macro_init (&cmd->macro);
 	r_cmd_alias_init (cmd);
@@ -243,7 +252,7 @@ R_API int r_cmd_add(RCmd *c, const char *cmd, RCmdCb cb) {
 	}
 	strncpy (item->cmd, cmd, sizeof (item->cmd)-1);
 	item->callback = cb;
-	r_cmd_desc_oldinput_new (c, c->root_cmd_desc, cmd, cb);
+	r_cmd_desc_oldinput_new (c, c->root_cmd_desc, cmd, cb, NULL);
 	return true;
 }
 
@@ -301,7 +310,7 @@ static RCmdStatus int2cmdstatus(int v) {
 	if (v == -2) {
 		return R_CMD_STATUS_EXIT;
 	} else if (v < 0) {
-		return R_CMD_STATUS_INVALID;
+		return R_CMD_STATUS_ERROR;
 	} else {
 		return R_CMD_STATUS_OK;
 	}
@@ -318,11 +327,9 @@ R_API RCmdStatus r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
 	RCorePlugin *cp;
 	char *exec_string = r_cmd_parsed_args_execstr (args);
 	r_list_foreach (cmd->plist, iter, cp) {
-		if (cp->call) {
-			if (cp->call (cmd->data, exec_string)) {
-				res = R_CMD_STATUS_OK;
-				break;
-			}
+		if (cp->call && cp->call (cmd->data, exec_string)) {
+			res = R_CMD_STATUS_OK;
+			break;
 		}
 	}
 	R_FREE (exec_string);
@@ -355,6 +362,177 @@ R_API RCmdStatus r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
 	return res;
 }
 
+static size_t strlen0(const char *s) {
+	return s? strlen (s): 0;
+}
+
+static void fill_usage_strbuf(RStrBuf *sb, RCmdDesc *cd, bool use_color) {
+	RCons *cons = r_cons_singleton ();
+	const char *pal_label_color = use_color? cons->context->pal.label: "",
+		   *pal_args_color = use_color? cons->context->pal.args: "",
+		   *pal_help_color = use_color? cons->context->pal.help: "",
+		   *pal_reset = use_color? cons->context->pal.reset: "";
+
+	r_strbuf_appendf (sb, "%sUsage:%s ", pal_label_color, pal_reset);
+	if (cd->help->usage) {
+		r_strbuf_appendf (sb, "%s%s%s", cd->help->usage, pal_args_color, pal_reset);
+	} else {
+		r_strbuf_appendf (sb, "%s %s%s%s", cd->name, pal_args_color, cd->help->args_str, pal_reset);
+	}
+	if (cd->help->group_summary) {
+		r_strbuf_appendf (sb, "   %s# %s%s\n", pal_help_color, cd->help->group_summary, pal_reset);
+	} else {
+		r_strbuf_appendf (sb, "   %s# %s%s\n", pal_help_color, cd->help->summary, pal_reset);
+	}
+}
+
+static size_t update_max_len(RCmdDesc *cd, size_t max_len) {
+	size_t name_len = strlen (cd->name);
+	size_t args_len = strlen0 (cd->help->args_str);
+	if (name_len + args_len > max_len) {
+		return name_len + args_len;
+	}
+	return max_len;
+}
+
+static void print_child_help(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use_color) {
+	size_t str_len = strlen (cd->name) + strlen0 (cd->help->args_str);
+	size_t padding = str_len < max_len? max_len - str_len: 0;
+	const char *cd_args_str = cd->help->args_str? cd->help->args_str: "";
+	const char *cd_summary = cd->help->summary? cd->help->summary: "";
+
+	RCons *cons = r_cons_singleton ();
+	const char *pal_args_color = use_color? cons->context->pal.args: "",
+		   *pal_help_color = use_color? cons->context->pal.help: "",
+		   *pal_reset = use_color? cons->context->pal.reset: "";
+	r_strbuf_appendf (sb, "| %s %s%s %*s%s# %s%s\n", cd->name, pal_args_color,
+		cd_args_str, padding, "", pal_help_color, cd_summary, pal_reset);
+}
+
+static char *inner_get_help(RCmd *cmd, RCmdDesc *cd, bool use_color) {
+	if (!cd->help->args_str || !cd->help->summary) {
+		return NULL;
+	}
+
+	RStrBuf *sb = r_strbuf_new (NULL);
+	fill_usage_strbuf (sb, cd, use_color);
+
+	void **it_cd;
+	size_t max_len = 0;
+
+	if (cd->d.argv_data.cb) {
+		max_len = update_max_len (cd, max_len);
+	}
+	r_cmd_desc_children_foreach (cd, it_cd) {
+		RCmdDesc *child = *(RCmdDesc **)it_cd;
+		max_len = update_max_len (child, max_len);
+	}
+
+	if (cd->d.argv_data.cb) {
+		print_child_help (sb, cd, max_len, use_color);
+	}
+	r_cmd_desc_children_foreach (cd, it_cd) {
+		RCmdDesc *child = *(RCmdDesc **)it_cd;
+		print_child_help (sb, child, max_len, use_color);
+	}
+	return r_strbuf_drain (sb);
+}
+
+static char *argv_get_help(RCmd *cmd, RCmdDesc *cd, RCmdParsedArgs *a, size_t detail, bool use_color) {
+	if (!cd->help->args_str || !cd->help->summary) {
+		return NULL;
+	}
+
+	RCons *cons = r_cons_singleton ();
+	const char *pal_help_color = use_color? cons->context->pal.help: "",
+		   *pal_input_color = use_color? cons->context->pal.input: "",
+		   *pal_label_color = use_color? cons->context->pal.label: "",
+		   *pal_reset = use_color? cons->context->pal.reset: "";
+
+	RStrBuf *sb = r_strbuf_new (NULL);
+
+	fill_usage_strbuf (sb, cd, use_color);
+
+	switch (detail) {
+	case 1:
+		return r_strbuf_drain (sb);
+	case 2:
+		if (cd->help->description) {
+			r_strbuf_appendf (sb, "\n%s\n", cd->help->description);
+		}
+		if (cd->help->examples) {
+			r_strbuf_appendf (sb, "\n%sExamples:%s\n", pal_label_color, pal_reset);
+			const RCmdDescExample *it = cd->help->examples;
+			while (it->example) {
+				r_strbuf_appendf (sb, "| %s%s%s %s# %s%s\n", pal_input_color,
+					it->example, pal_reset, pal_help_color, it->comment, pal_reset);
+				it++;
+			}
+		}
+		return r_strbuf_drain (sb);
+	default:
+		r_strbuf_free (sb);
+		return NULL;
+	}
+}
+
+static char *oldinput_get_help(RCmd *cmd, RCmdDesc *cd, RCmdParsedArgs *a) {
+	const char *s = NULL;
+	r_cons_push ();
+	RCmdStatus status = r_cmd_call_parsed_args (cmd, a);
+	if (status == R_CMD_STATUS_OK) {
+		r_cons_filter ();
+		s = r_cons_get_buffer ();
+	}
+	char *res = strdup (s? s: "");
+	r_cons_pop ();
+	return res;
+}
+
+R_API char *r_cmd_get_help(RCmd *cmd, RCmdParsedArgs *args, bool use_color) {
+	char *cmdid = strdup (r_cmd_parsed_args_cmd (args));
+	char *cmdid_p = cmdid + strlen (cmdid) - 1;
+	size_t detail = 0;
+	while (cmdid_p >= cmdid && *cmdid_p == '?') {
+		*cmdid_p = '\0';
+		cmdid_p--;
+		detail++;
+	}
+
+	if (detail == 0) {
+		// there should be at least one `?`
+		free (cmdid);
+		return NULL;
+	}
+
+	RCmdDesc *cd = cmdid_p >= cmdid? r_cmd_get_desc (cmd, cmdid): r_cmd_get_root (cmd);
+	free (cmdid);
+	if (!cd) {
+		return NULL;
+	}
+
+	switch (cd->type) {
+	case R_CMD_DESC_TYPE_ARGV:
+		if (detail == 1 && !r_pvector_empty (&cd->children)) {
+			if (args->argc > 1) {
+				return NULL;
+			}
+			return inner_get_help (cmd, cd, use_color);
+		}
+		if (detail == 1 && r_pvector_empty (&cd->children)) {
+			// if the current node does not have children, just
+			// print the full help
+			detail = 2;
+		}
+		return argv_get_help (cmd, cd, args, detail, use_color);
+	case R_CMD_DESC_TYPE_OLDINPUT:
+		return oldinput_get_help (cmd, cd, args);
+	default:
+		r_warn_if_reached ();
+		return NULL;
+	}
+}
+
 /** macro.c **/
 
 R_API RCmdMacroItem *r_cmd_macro_item_new(void) {
@@ -375,7 +553,7 @@ R_API void r_cmd_macro_init(RCmdMacro *mac) {
 	mac->counter = 0;
 	mac->_brk_value = 0;
 	mac->brk_value = &mac->_brk_value;
-	mac->cb_printf = (void*)printf;
+	mac->cb_printf = (void *)printf;
 	mac->num = NULL;
 	mac->user = NULL;
 	mac->cmd = NULL;
@@ -932,9 +1110,9 @@ R_API const char *r_cmd_parsed_args_cmd(RCmdParsedArgs *a) {
 
 /* RCmdDescriptor */
 
-R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb) {
+R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb, const RCmdDescHelp *help) {
 	r_return_val_if_fail (cmd && parent && name, NULL);
-	RCmdDesc *res = create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_ARGV, name);
+	RCmdDesc *res = create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_ARGV, name, help);
 	if (!res) {
 		return NULL;
 	}
@@ -943,9 +1121,9 @@ R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *nam
 	return res;
 }
 
-R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdCb cb) {
+R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdCb cb, const RCmdDescHelp *help) {
 	r_return_val_if_fail (cmd && parent && name && cb, NULL);
-	RCmdDesc *res = create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_OLDINPUT, name);
+	RCmdDesc *res = create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_OLDINPUT, name, help);
 	if (!res) {
 		return NULL;
 	}

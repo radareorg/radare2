@@ -24,7 +24,7 @@ static const char *help_msg_m[] = {
 	NULL
 };
 
-static void cmd_mount_init(RCore *core) {
+static void cmd_mount_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, m);
 }
 

@@ -1,4 +1,5 @@
 #include <r_cmd.h>
+#include <r_cons.h>
 #include <stdlib.h>
 #include "minunit.h"
 
@@ -84,7 +85,7 @@ static RCmdStatus afl_argv_handler(void *user, int argc, const char **argv) {
 bool test_cmd_descriptor_argv(void) {
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
-	RCmdDesc *cd = r_cmd_desc_argv_new (cmd, root, "afl", afl_argv_handler);
+	RCmdDesc *cd = r_cmd_desc_argv_new (cmd, root, "afl", afl_argv_handler, NULL);
 	mu_assert_notnull (cd, "cmddesc created");
 	mu_assert_streq (cd->name, "afl", "command descriptor name is afl");
 	mu_assert_eq (cd->type, R_CMD_DESC_TYPE_ARGV, "type of command descriptor is argv");
@@ -98,9 +99,9 @@ bool test_cmd_descriptor_argv(void) {
 bool test_cmd_descriptor_argv_nested(void) {
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
-	RCmdDesc *af_cd = r_cmd_desc_argv_new (cmd, root, "af", NULL);
-	r_cmd_desc_argv_new (cmd, root, "af2", NULL);
-	RCmdDesc *cd = r_cmd_desc_argv_new (cmd, af_cd, "afl", afl_argv_handler);
+	RCmdDesc *af_cd = r_cmd_desc_argv_new (cmd, root, "af", NULL, NULL);
+	r_cmd_desc_argv_new (cmd, root, "af2", NULL, NULL);
+	RCmdDesc *cd = r_cmd_desc_argv_new (cmd, af_cd, "afl", afl_argv_handler, NULL);
 	mu_assert_ptreq (r_cmd_desc_parent (cd), af_cd, "parent of afl is af");
 	mu_assert_true (r_pvector_contains (&af_cd->children, cd), "afl is child of af");
 	r_cmd_free (cmd);
@@ -114,7 +115,7 @@ static int a_oldinput_cb(void *user, const char *input) {
 bool test_cmd_descriptor_oldinput(void) {
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
-	RCmdDesc *cd = r_cmd_desc_oldinput_new (cmd, root, "a", a_oldinput_cb);
+	RCmdDesc *cd = r_cmd_desc_oldinput_new (cmd, root, "a", a_oldinput_cb, NULL);
 	mu_assert_notnull (cd, "cmddesc created");
 	mu_assert_streq (cd->name, "a", "command descriptor name is a");
 	mu_assert_eq (cd->type, R_CMD_DESC_TYPE_OLDINPUT, "type of command descriptor is oldinput");
@@ -143,9 +144,9 @@ static int w_handler(void *user, const char *input) {
 bool test_cmd_descriptor_tree(void) {
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
-	RCmdDesc *a_cd = r_cmd_desc_argv_new (cmd, root, "a", NULL);
-	r_cmd_desc_argv_new (cmd, a_cd, "ap", ap_handler);
-	r_cmd_desc_oldinput_new (cmd, root, "w", w_handler);
+	RCmdDesc *a_cd = r_cmd_desc_argv_new (cmd, root, "a", NULL, NULL);
+	r_cmd_desc_argv_new (cmd, a_cd, "ap", ap_handler, NULL);
+	r_cmd_desc_oldinput_new (cmd, root, "w", w_handler, NULL);
 
 	void **it_cd;
 	r_cmd_desc_children_foreach (root, it_cd) {
@@ -160,12 +161,12 @@ bool test_cmd_descriptor_tree(void) {
 bool test_cmd_get_desc(void) {
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
-	RCmdDesc *a_cd = r_cmd_desc_argv_new (cmd, root, "a", NULL);
-	RCmdDesc *ap_cd = r_cmd_desc_argv_new (cmd, a_cd, "ap", ap_handler);
-	RCmdDesc *apd_cd = r_cmd_desc_argv_new (cmd, ap_cd, "apd", ap_handler);
-	RCmdDesc *ae_cd = r_cmd_desc_oldinput_new (cmd, a_cd, "ae", ae_handler);
-	RCmdDesc *aeir_cd = r_cmd_desc_argv_new (cmd, a_cd, "aeir", aeir_handler);
-	RCmdDesc *w_cd = r_cmd_desc_oldinput_new (cmd, root, "w", w_handler);
+	RCmdDesc *a_cd = r_cmd_desc_argv_new (cmd, root, "a", NULL, NULL);
+	RCmdDesc *ap_cd = r_cmd_desc_argv_new (cmd, a_cd, "ap", ap_handler, NULL);
+	RCmdDesc *apd_cd = r_cmd_desc_argv_new (cmd, ap_cd, "apd", ap_handler, NULL);
+	RCmdDesc *ae_cd = r_cmd_desc_oldinput_new (cmd, a_cd, "ae", ae_handler, NULL);
+	RCmdDesc *aeir_cd = r_cmd_desc_argv_new (cmd, ae_cd, "aeir", aeir_handler, NULL);
+	RCmdDesc *w_cd = r_cmd_desc_oldinput_new (cmd, root, "w", w_handler, NULL);
 
 	mu_assert_null (r_cmd_get_desc (cmd, "afl"), "afl does not have any handler");
 	mu_assert_ptreq (r_cmd_get_desc (cmd, "ap"), ap_cd, "ap will be handled by ap");
@@ -189,9 +190,20 @@ static RCmdStatus pd_handler(void *user, int argc, const char **argv) {
 	return R_CMD_STATUS_OK;
 }
 
+static RCmdStatus p_handler_argv(void *user, int argc, const char **argv) {
+	return R_CMD_STATUS_OK;
+}
+
 static int p_handler(void *user, const char *input) {
 	mu_assert_streq (input, "x 10", "input is +1");
 	return -1;
+}
+
+static int px_handler(void *user, const char *input) {
+	if (*input == '?') {
+		r_cons_printf ("Free format px help\n");
+	}
+	return 0;
 }
 
 static int wv_handler(void *user, const char *input) {
@@ -206,11 +218,11 @@ static int q_handler(void *user, const char *input) {
 bool test_cmd_call_desc(void) {
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
-	RCmdDesc *p_cd = r_cmd_desc_argv_new (cmd, root, "p", NULL);
-	r_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler);
-	r_cmd_desc_oldinput_new (cmd, p_cd, "p", p_handler);
-	r_cmd_desc_oldinput_new (cmd, root, "wv", wv_handler);
-	r_cmd_desc_oldinput_new (cmd, root, "q", q_handler);
+	RCmdDesc *p_cd = r_cmd_desc_argv_new (cmd, root, "p", NULL, NULL);
+	r_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler, NULL);
+	r_cmd_desc_oldinput_new (cmd, p_cd, "p", p_handler, NULL);
+	r_cmd_desc_oldinput_new (cmd, root, "wv", wv_handler, NULL);
+	r_cmd_desc_oldinput_new (cmd, root, "q", q_handler, NULL);
 
 	char *pd_args[] = {"10"};
 	char *px_args[] = {"10"};
@@ -236,6 +248,143 @@ bool test_cmd_call_desc(void) {
 	mu_end;
 }
 
+bool test_cmd_help(void) {
+	const RCmdDescHelp p_help = {
+		.summary = "p summary",
+		.usage = "p-usage",
+		.group_summary = NULL,
+		.args_str = "",
+		.description = NULL,
+		.examples = NULL,
+	};
+
+	const RCmdDescExample pd_help_examples[] = {
+		{ .example = "pd 10", .comment = "print 10 disassembled instructions" },
+		{ 0 },
+	};
+
+	const RCmdDescHelp pd_help = {
+		.summary = "pd summary",
+		.usage = NULL,
+		.group_summary = NULL,
+		.args_str = "<num>",
+		.description = "pd long description",
+		.examples = pd_help_examples,
+	};
+
+	const RCmdDescHelp px_help = {
+		.summary = "px summary",
+		.usage = "px-usage",
+		.group_summary = NULL,
+		.args_str = "<verylongarg_str_num>",
+		.description = "px long description",
+		.examples = NULL,
+	};
+
+	RCmd *cmd = r_cmd_new ();
+	RCmdDesc *root = r_cmd_get_root (cmd);
+	RCmdDesc *p_cd = r_cmd_desc_argv_new (cmd, root, "p", NULL, &p_help);
+	r_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler, &pd_help);
+	r_cmd_desc_oldinput_new (cmd, p_cd, "px", px_handler, &px_help);
+
+	const char *p_help_exp = "Usage: p-usage   # p summary\n"
+		"| pd <num>                 # pd summary\n"
+		"| px <verylongarg_str_num> # px summary\n";
+	RCmdParsedArgs *a = r_cmd_parsed_args_newcmd ("p?");
+	char *h = r_cmd_get_help (cmd, a, false);
+	mu_assert_notnull (h, "help is not null");
+	mu_assert_streq (h, p_help_exp, "wrong help for p?");
+	free (h);
+	r_cmd_parsed_args_free (a);
+
+	const char *pd_help_exp = "Usage: pd <num>   # pd summary\n"
+		"\npd long description\n"
+		"\nExamples:\n"
+		"| pd 10 # print 10 disassembled instructions\n";
+	a = r_cmd_parsed_args_newcmd ("pd?");
+	h = r_cmd_get_help (cmd, a, false);
+	mu_assert_notnull (h, "help is not null");
+	mu_assert_streq (h, pd_help_exp, "wrong help for pd?");
+	free (h);
+	r_cmd_parsed_args_free (a);
+
+	const char *pd_long_help_exp = "Usage: pd <num>   # pd summary\n"
+		"\n"
+		"pd long description\n"
+		"\n"
+		"Examples:\n"
+		"| pd 10 # print 10 disassembled instructions\n";
+	a = r_cmd_parsed_args_newcmd ("pd??");
+	h = r_cmd_get_help (cmd, a, false);
+	mu_assert_notnull (h, "help is not null");
+	mu_assert_streq (h, pd_long_help_exp, "wrong help for pd??");
+	free (h);
+	r_cmd_parsed_args_free (a);
+
+	r_cmd_free (cmd);
+	mu_end;
+}
+
+bool test_cmd_group_help(void) {
+	const RCmdDescHelp p_help = {
+		.summary = "p summary",
+		.usage = "p-usage",
+		.group_summary = "p group-summary",
+		.args_str = "",
+		.description = NULL,
+		.examples = NULL,
+	};
+
+	const RCmdDescHelp pd_help = {
+		.summary = "pd summary",
+		.usage = NULL,
+		.group_summary = NULL,
+		.args_str = "<num>",
+		.description = "pd long description",
+		.examples = NULL,
+	};
+
+	RCmd *cmd = r_cmd_new ();
+	RCmdDesc *root = r_cmd_get_root (cmd);
+	RCmdDesc *p_cd = r_cmd_desc_argv_new (cmd, root, "p", p_handler_argv, &p_help);
+	r_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler, &pd_help);
+
+	const char *p_help_exp = "Usage: p-usage   # p group-summary\n"
+		"| p        # p summary\n"
+		"| pd <num> # pd summary\n";
+	RCmdParsedArgs *a = r_cmd_parsed_args_newcmd ("p?");
+	char *h = r_cmd_get_help (cmd, a, false);
+	mu_assert_notnull (h, "help is not null");
+	mu_assert_streq (h, p_help_exp, "wrong help for p?");
+	free (h);
+	r_cmd_parsed_args_free (a);
+
+	r_cmd_free (cmd);
+	mu_end;
+}
+
+bool test_cmd_oldinput_help(void) {
+	r_cons_new ();
+
+	RCmd *cmd = r_cmd_new ();
+	RCmdDesc *root = r_cmd_get_root (cmd);
+	RCmdDesc *p_cd = r_cmd_desc_argv_new (cmd, root, "p", NULL, NULL);
+	r_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler, NULL);
+	r_cmd_desc_oldinput_new (cmd, p_cd, "px", px_handler, NULL);
+
+	RCmdParsedArgs *a = r_cmd_parsed_args_newcmd ("px?");
+	const char *px_help_exp = "Free format px help\n";
+	char *h = r_cmd_get_help (cmd, a, false);
+	mu_assert_notnull (h, "help is not null");
+	mu_assert_streq (h, px_help_exp, "wrong help for px?");
+	free (h);
+	r_cmd_parsed_args_free (a);
+
+	r_cmd_free (cmd);
+	r_cons_free ();
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test (test_parsed_args_noargs);
 	mu_run_test (test_parsed_args_onearg);
@@ -249,6 +398,9 @@ int all_tests() {
 	mu_run_test (test_cmd_descriptor_tree);
 	mu_run_test (test_cmd_get_desc);
 	mu_run_test (test_cmd_call_desc);
+	mu_run_test (test_cmd_help);
+	mu_run_test (test_cmd_group_help);
+	mu_run_test (test_cmd_oldinput_help);
 	return tests_passed != tests_run;
 }
 
