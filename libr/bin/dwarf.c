@@ -424,13 +424,14 @@ static const ut8 *parse_line_header (
 		if (f) {
 			fprintf (f, " Opcodes:\n");
 		}
-		for (int i = 1; i <= hdr->opcode_base - 1; i++) {
+		size_t i;
+		for (i = 1; i < hdr->opcode_base; i++) {
 			if (buf + 2 > buf_end) {
 				break;
 			}
 			hdr->std_opcode_lengths[i] = READ (buf, ut8);
 			if (f) {
-				fprintf (f, "  Opcode %d has %d arg\n", i, hdr->std_opcode_lengths[i]);
+				fprintf (f, "  Opcode %zu has %d arg\n", i, hdr->std_opcode_lengths[i]);
 			}
 		}
 		if (f) {
