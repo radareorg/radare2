@@ -14,9 +14,6 @@
 #define addr_key_frame char S[32]
 #define addr_key(x) (snprintf(S,sizeof(S),"refs.0x%08"PFMT64x,x),S)
 
-#define R_FMT_FRAME(x) char r_fmt_frame[x]
-#define r_fmt(x,...) (snprintf(r_fmt_frame, sizeof(r_fmt_frame), x, __VA_ARGS__), r_fmt_frame)
-
 typedef struct {
 	RCore *core;
 #if USE_SDB
@@ -151,7 +148,8 @@ static bool objc_build_refs(RCoreObjc *objc) {
 		return false;
 	}
 
-	ut8 *buf = calloc (1, objc->_const->vsize);
+	size_t maxsize = R_MAX (objc->_const->vsize, objc->_selrefs->vsize);
+	ut8 *buf = calloc (1, maxsize);
 	if (!buf) {
 		return false;
 	}
@@ -165,14 +163,6 @@ static bool objc_build_refs(RCoreObjc *objc) {
 		}
 		array_add (objc, va, xrefs_to);
 	}
-	if (objc->_selrefs->vsize > objc->_const->vsize) {
-		free (buf);
-		buf = calloc (1, objc->_selrefs->vsize);
-		if (!buf) {
-			return false;
-		}
-	}
-
 	r_io_read_at (objc->core->io, objc->_selrefs->vaddr, buf, objc->_selrefs->vsize);
 	for (off = 0; off + 8 < objc->_selrefs->vsize; off += word_size) {
 		ut64 va = objc->_selrefs->vaddr + off;
@@ -186,9 +176,6 @@ static bool objc_build_refs(RCoreObjc *objc) {
 }
 
 static bool objc_find_refs(RCore *core) {
-	R_FMT_FRAME(128);
-	static const char *oldstr = NULL;
-
 	RCoreObjc objc = {0};
 
 	const size_t objc2ClassSize = 0x28;
@@ -236,11 +223,11 @@ static bool objc_find_refs(RCore *core) {
 	if (!objc_build_refs (&objc)) {
 		return false;
 	}
-	oldstr = r_print_rowlog (core->print, "Parsing metadata in ObjC to find hidden xrefs");
+	const char *oldstr = r_print_rowlog (core->print, "Parsing metadata in ObjC to find hidden xrefs");
 	r_print_rowlog_done (core->print, oldstr);
 
 	ut64 off;
-	size_t total = 0;
+	size_t total_xrefs = 0;
 	bool readSuccess = true;
 	for (off = 0; off < objc._data->vsize && readSuccess; off += objc2ClassSize) {
 		if (!readSuccess || r_cons_is_breaked ()) {
@@ -287,29 +274,29 @@ static bool objc_find_refs(RCore *core) {
 				RAnalRef *ref;
 				r_list_foreach (list, iter, ref) {
 					r_anal_xrefs_set (core->anal, ref->addr, funcVA, R_ANAL_REF_TYPE_CODE);
-					total++;
+					total_xrefs++;
 				}
 			}
 		}
 	}
 	array_free (&objc);
 
-	oldstr = r_print_rowlog (core->print,
-		r_fmt ("A total of %zu xref were found", total));
-	r_print_rowlog_done (core->print, oldstr);
+	char rs[128];
 
 	const ut64 from = objc._selrefs->vaddr;
 	const ut64 to = from + objc._selrefs->vsize;
-	total = 0;
+
+	snprintf (rs, sizeof (rs), "Found %zu objc xrefs...", total_xrefs);
+	r_print_rowlog (core->print, rs);
+	size_t total_words = 0;
 	ut64 a;
 	const size_t word_size = objc.word_size;
 	for (a = from; a < to; a += word_size) {
 		r_meta_set (core->anal, R_META_TYPE_DATA, a, word_size, NULL);
-		total ++;
+		total_words++;
 	}
-	oldstr = r_print_rowlog (core->print,
-		r_fmt ("Set %zu dwords at 0x%08"PFMT64x, total, from));
-	r_print_rowlog_done (core->print, oldstr);
+	snprintf (rs, sizeof (rs), "Found %zu objc xrefs in %zu dwords.", total_xrefs, total_words);
+	r_print_rowlog_done (core->print, rs);
 	return true;
 }
 
