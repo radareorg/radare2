@@ -713,7 +713,7 @@ typedef struct {
 typedef struct {
 	ut64	tag;
 	ut64	abbrev_code;
-	size_t	length;
+	size_t	count;
 	size_t	capacity;
 	RBinDwarfAttrValue *attr_values;
 } RBinDwarfDie;
@@ -721,7 +721,7 @@ typedef struct {
 typedef struct {
 	RBinDwarfCompUnitHdr hdr;
 	ut64	offset;
-	size_t	length;
+	size_t	count;
 	size_t	capacity;
 	RBinDwarfDie *dies;
 } RBinDwarfCompUnit;
@@ -729,7 +729,7 @@ typedef struct {
 #define COMP_UNIT_CAPACITY	8
 #define DEBUG_INFO_CAPACITY	8
 typedef struct {
-	size_t length;
+	size_t count;
 	size_t capacity;
 	RBinDwarfCompUnit *comp_units;
 } RBinDwarfDebugInfo;
@@ -741,7 +741,7 @@ typedef struct {
 	ut64 tag;
 	ut64 offset;
 	ut8 has_children;
-	size_t length;
+	size_t count;
 	size_t capacity;
 	RBinDwarfAttrDef *defs;
 } RBinDwarfAbbrevDecl;
@@ -749,7 +749,7 @@ typedef struct {
 #define DEBUG_ABBREV_CAP	32
 
 typedef struct {
-	size_t length;
+	size_t count;
 	size_t capacity;
 	RBinDwarfAbbrevDecl *decls;
 } RBinDwarfDebugAbbrev;

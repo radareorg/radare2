@@ -37,7 +37,7 @@
 	mu_assert_eq (cu.dies[i].abbrev_code, expect_code, "Wrong abbrev code")
 
 #define check_die_length(len) \
-	mu_assert_eq (cu.dies[i].length, len, "Wrong DIE length information")
+	mu_assert_eq (cu.dies[i].count, len, "Wrong DIE length information")
 
 #define check_die_tag(tg) \
 	mu_assert_eq (cu.dies[i].tag, tg, "Wrong DIE tag")
@@ -61,10 +61,9 @@ bool test_dwarf3_c(void) {
 	mu_assert ("dwarf3_c.elf binary could not be opened", res);
 
 	RBinDwarfDebugAbbrev *da = r_bin_dwarf_parse_abbrev (bin, MODE);
-	mu_assert_eq (da->length, 7, "Incorrect number of abbreviation");
+	mu_assert_eq (da->count, 7, "Incorrect number of abbreviation");
 	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (da, bin, MODE);
-
-	mu_assert_eq (info->length, 1, "Incorrect number of info compilation units");
+	mu_assert_eq (info->count, 1, "Incorrect number of info compilation units");
 
 	// check header
 	RBinDwarfCompUnit cu = info->comp_units[0];
@@ -72,7 +71,7 @@ bool test_dwarf3_c(void) {
 
 	check_basic_unit_header (3, 0xa9, false, 8, 0x0);
 
-	mu_assert_eq (cu.length, 11, "Wrong attribute information");
+	mu_assert_eq (cu.count, 11, "Wrong attribute information");
 	mu_assert_eq (cu.offset, 0x0, "Wrong attribute information");
 	// check some of the attributes
 	int i = 0;
@@ -125,10 +124,10 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 	mu_assert ("dwarf4_many_comp_units.elf binary could not be opened", res);
 
 	RBinDwarfDebugAbbrev *da = r_bin_dwarf_parse_abbrev (bin, MODE);
-	mu_assert_eq (da->length, 37, "Incorrect number of abbreviation");
+	mu_assert_eq (da->count, 37, "Incorrect number of abbreviation");
 	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (da, bin, MODE);
 	mu_assert_notnull (info, "Failed parsing of debug_info");
-	mu_assert_eq (info->length, 2, "Incorrect number of info compilation units");
+	mu_assert_eq (info->count, 2, "Incorrect number of info compilation units");
 
 	// check header
 	RBinDwarfCompUnit cu = info->comp_units[0];
@@ -136,7 +135,7 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 	check_basic_unit_header (4, 0x2c0, false, 8, 0x0);
 
 	// check some of the attributes
-	mu_assert_eq (cu.length, 73, "Wrong attribute information");
+	mu_assert_eq (cu.count, 73, "Wrong attribute information");
 	mu_assert_eq (cu.offset, 0x0, "Wrong attribute information");
 
 	int i = 0;
@@ -267,7 +266,7 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 	check_basic_unit_header (4, 0x192, false, 8, 0xfd);
 
 	// check some of the attributes
-	mu_assert_eq (cu.length, 42, "Wrong attribute information");
+	mu_assert_eq (cu.count, 42, "Wrong attribute information");
 	mu_assert_eq (cu.offset, 0x2c4, "Wrong attribute information");
 
 	i = 0;
