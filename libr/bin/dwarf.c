@@ -333,16 +333,20 @@ static int abbrev_cmp(const void *a, const void *b) {
 }
 
 static inline bool is_printable_attr(ut64 attr_code) {
-	return ((attr_code <= DW_AT_loclists_base && attr_code >= DW_AT_sibling) || 
+	return ((attr_code >= DW_AT_sibling && attr_code <= DW_AT_loclists_base) || 
 			attr_code == DW_AT_GNU_all_tail_call_sites);
 }
 
 static inline bool is_printable_form(ut64 form_code) {
-	return (form_code <= DW_FORM_addrx4 && form_code >= DW_FORM_addr);
+	return (form_code >= DW_FORM_addr && form_code <= DW_FORM_addrx4);
 }
 
 static inline bool is_printable_tag(ut64 attr_code) {
 	return (attr_code <= DW_TAG_LAST);
+}
+
+static inline bool is_printable_unit_type(ut64 unit_type) {
+	return (unit_type > 0 && unit_type <= DW_UT_split_type);
 }
 
 /**
@@ -1492,6 +1496,9 @@ static void print_debug_info(const RBinDwarfDebugInfo *inf, PrintfCallback print
 		print ("   Version:       %d\n", inf->comp_units[i].hdr.version);
 		print ("   Abbrev Offset: 0x%" PFMT64x "\n", inf->comp_units[i].hdr.abbrev_offset);
 		print ("   Pointer Size:  %d\n", inf->comp_units[i].hdr.address_size);
+		if (is_printable_unit_type(inf->comp_units[i].hdr.unit_type)) {
+			print ("   Unit Type:     %s\n", dwarf_unit_types[inf->comp_units[i].hdr.unit_type]);
+		}
 		print ("\n");
 
 		dies = inf->comp_units[i].dies;

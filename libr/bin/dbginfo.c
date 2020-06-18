@@ -78,7 +78,17 @@ R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 		// TODO: this is slow. must use a cached pool of mapped files and line:off entries
 		out = r_file_slurp_line (file, line, 0);
 		if (!out) {
-			return r_str_newf ("%s:%d", file, line);
+			if (origin > 1) {
+				file_nopath = file;
+			} else {
+				file_nopath = strrchr (file, '/');
+				if (file_nopath) {
+					file_nopath++;
+				} else {
+					file_nopath = file;
+				}
+			}
+			return r_str_newf ("%s:%d", file_nopath? file_nopath: "", line);
 		}
 		out2 = malloc ((strlen (file) + 64 + strlen (out)) * sizeof (char));
 		if (origin > 1) {
