@@ -1152,16 +1152,16 @@ static int init_debug_info(RBinDwarfDebugInfo *inf) {
 	return true;
 }
 
-static int init_die(RBinDwarfDie *die, ut64 abbr_code, ut64 abbr_length) {
+static int init_die(RBinDwarfDie *die, ut64 abbr_code, ut64 attr_count) {
 	if (!die) {
 		return -1;
 	}
-	die->attr_values = calloc (sizeof (RBinDwarfAttrValue), abbr_length);
+	die->attr_values = calloc (sizeof (RBinDwarfAttrValue), attr_count);
 	if (!die->attr_values) {
 		return -1;
 	}
 	die->abbrev_code = abbr_code;
-	die->capacity = abbr_length;
+	die->capacity = attr_count;
 	die->count = 0;
 	return 0;
 }
@@ -1812,7 +1812,7 @@ static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevD
  * @param buf_start Start of the compilation unit data
  * @param unit Unit to store the newly parsed information
  * @param abbrevs Parsed abbrev section info of *all* abbreviations
- * @param abbr_offset index offset into Abbrev array to current comp unit abbrevs
+ * @param first_abbr_idx index for first abbrev of the current comp unit in abbrev array
  * @param debug_str Ptr to string section start
  * @param debug_str_len Length of the string section
  * 
@@ -1820,7 +1820,7 @@ static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevD
  */
 static const ut8 *parse_comp_unit(Sdb *sdb, const ut8 *buf_start,
 		RBinDwarfCompUnit *unit, const RBinDwarfDebugAbbrev *abbrevs,
-		size_t abbr_offset, const ut8 *debug_str, size_t debug_str_len) {
+		size_t first_abbr_idx, const ut8 *debug_str, size_t debug_str_len) {
 
 	const ut8 *buf = buf_start;
 	const ut8 *buf_end = buf_start + unit->hdr.length - unit->hdr.header_size;
@@ -1847,7 +1847,7 @@ static const ut8 *parse_comp_unit(Sdb *sdb, const ut8 *buf_start,
 			unit->count++;
 			continue;
 		}
-		ut64 abbr_idx = abbr_code + abbr_offset;
+		ut64 abbr_idx = first_abbr_idx + abbr_code;
 
 		if (abbrevs->count < abbr_idx) {
 			return NULL;
@@ -1990,9 +1990,9 @@ static RBinDwarfDebugInfo *parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
 			goto cleanup;
 		}
 		// They point to the same array object, so should be def. behaviour
-		size_t abbrev_offset = abbrev_start - da->decls;
+		size_t first_abbr_idx = abbrev_start - da->decls;
 
-		buf = parse_comp_unit (sdb, buf, unit, da, abbrev_offset, debug_str, debug_str_len);
+		buf = parse_comp_unit (sdb, buf, unit, da, first_abbr_idx, debug_str, debug_str_len);
 
 		if (!buf) {
 			goto cleanup;
