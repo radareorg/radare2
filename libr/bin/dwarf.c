@@ -333,20 +333,20 @@ static int abbrev_cmp(const void *a, const void *b) {
 }
 
 static inline bool is_printable_attr(ut64 attr_code) {
-	return ((attr_code >= DW_AT_sibling && attr_code <= DW_AT_loclists_base) || 
-			attr_code == DW_AT_GNU_all_tail_call_sites);
+	return (attr_code >= DW_AT_sibling && attr_code <= DW_AT_loclists_base) || 
+			attr_code == DW_AT_GNU_all_tail_call_sites;
 }
 
 static inline bool is_printable_form(ut64 form_code) {
-	return (form_code >= DW_FORM_addr && form_code <= DW_FORM_addrx4);
+	return form_code >= DW_FORM_addr && form_code <= DW_FORM_addrx4;
 }
 
 static inline bool is_printable_tag(ut64 attr_code) {
-	return (attr_code <= DW_TAG_LAST);
+	return attr_code <= DW_TAG_LAST;
 }
 
 static inline bool is_printable_unit_type(ut64 unit_type) {
-	return (unit_type > 0 && unit_type <= DW_UT_split_type);
+	return unit_type > 0 && unit_type <= DW_UT_split_type;
 }
 
 /**
