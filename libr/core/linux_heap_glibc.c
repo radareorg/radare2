@@ -21,6 +21,45 @@
 #define GHT_MAX UT64_MAX
 #endif
 
+/**
+ * \brief Find the address of a given symbol
+ * \param core RCore Pointer to the r2's core
+ * \param path Pointer to the binary path in which to look for the symbol
+ * \param sym_name Pointer to the symbol's name to search for
+ * \return address
+ *
+ * Used to find the address of a given symbol inside a binary
+ *
+ * TODO: Stop using deprecated functions like r_bin_cur
+ */
+static GHT GH(get_va_symbol)(RCore *core, const char *path, const char *sym_name) {
+	GHT vaddr = GHT_MAX;
+	RBin *bin = core->bin;
+	RBinFile *current_bf = r_bin_cur (bin);
+	RListIter *iter;
+	RBinSymbol *s;
+
+	RBinOptions opt;
+	r_bin_options_init (&opt, -1, 0, 0, false);
+	bool res = r_bin_open (bin, path, &opt);
+	if (!res) {
+		return vaddr;
+	}
+
+	RList *syms = r_bin_get_symbols (bin);
+	r_list_foreach (syms, iter, s) {
+		if (!strcmp (s->name, sym_name)) {
+			vaddr = s->vaddr;
+			break;
+		}
+	}
+
+	RBinFile *libc_bf = r_bin_cur (bin);
+	r_bin_file_delete (bin, libc_bf->id);
+	r_bin_file_set_cur_binfile (bin, current_bf);
+	return vaddr;
+}
+
 static bool GH(is_tcache)(RCore *core) {
 	char *fp = NULL;
 	double v = 0;
@@ -48,11 +87,11 @@ static bool GH(is_tcache)(RCore *core) {
 static GHT GH(tcache_chunk_size)(RCore *core, GHT brk_start) {
 	GHT sz = 0;
 
-	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
+	GH (RHeapChunk) *cnk = R_NEW0 (GH (RHeapChunk));
 	if (!cnk) {
 		return sz;
 	}
-	r_io_read_at (core->io, brk_start, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
+	r_io_read_at (core->io, brk_start, (ut8 *)cnk, sizeof (GH (RHeapChunk)));
 	sz = (cnk->size >> 3) << 3; //clear chunk flag
 	return sz;
 }
@@ -67,12 +106,12 @@ static void GH(update_arena_with_tc)(GH(RHeap_MallocState_tcache) *cmain_arena, 
 	main_arena->have_fast_chunks = cmain_arena->have_fast_chunks;
 	main_arena->attached_threads = cmain_arena->attached_threads;
 	for (i = 0; i < NFASTBINS; i++) {
-		main_arena->GH(fastbinsY)[i] = cmain_arena->fastbinsY[i];
+		main_arena->GH (fastbinsY)[i] = cmain_arena->fastbinsY[i];
 	}
-	main_arena->GH(top) = cmain_arena->top;
-	main_arena->GH(last_remainder) = cmain_arena->last_remainder;
+	main_arena->GH (top) = cmain_arena->top;
+	main_arena->GH (last_remainder) = cmain_arena->last_remainder;
 	for (i = 0; i < NBINS * 2 - 2; i++) {
-		main_arena->GH(bins)[i] = cmain_arena->bins[i];
+		main_arena->GH (bins)[i] = cmain_arena->bins[i];
 	}
 	main_arena->GH(next) = cmain_arena->next;
 	main_arena->GH(next_free) = cmain_arena->next_free;
@@ -303,20 +342,41 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 }
 
 static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
-	if (!core || !core->dbg || !core->dbg->maps) {
-		return false;
+	r_return_val_if_fail (core && core->dbg && core->dbg->maps, false);
+
+	if (core->dbg->main_arena_resolved) {
+		return true;
 	}
 
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX;
 	GHT libc_addr_sta = GHT_MAX, libc_addr_end = 0;
 	GHT addr_srch = GHT_MAX, heap_sz = GHT_MAX;
+	const char *libc_path = NULL;
+	GHT libc_addr = GHT_MAX;
+	GHT main_arena_sym = GHT_MAX;
+	bool is_debugged = r_config_get_i (core->config, "cfg.debug");
 
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (is_debugged) {
 		RListIter *iter;
 		RDebugMap *map;
 		r_debug_map_sync (core->dbg);
 		r_list_foreach (core->dbg->maps, iter, map) {
-			if (strstr (map->name, "/libc-") && map->perm == 6) {
+			/* Try to find the main arena address using the glibc's symbols. */
+			if (strstr (map->name, "/libc-") && map->perm == R_PERM_R && main_arena_sym == GHT_MAX) {
+				libc_path = map->name;
+				libc_addr = map->addr;
+				char *path = strdup (libc_path);
+				if (libc_addr != GHT_MAX) {
+					if (path && r_file_exists (path)) {
+						GHT vaddr = GH (get_va_symbol) (core, path, "main_arena");
+						if (vaddr != GHT_MAX) {
+							main_arena_sym = libc_addr + vaddr;
+						}
+					}
+				}
+				free (path);
+			}
+			if (strstr (map->name, "/libc-") && map->perm == R_PERM_RW) {
 				libc_addr_sta = map->addr;
 				libc_addr_end = map->addr_end;
 				break;
@@ -355,6 +415,14 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	if (!ta) {
 		return false;
 	}
+
+	if (main_arena_sym != GHT_MAX) {
+		GH (update_main_arena) (core, main_arena_sym, ta);
+		*m_arena = main_arena_sym;
+		core->dbg->main_arena_resolved = true;
+		free (ta);
+		return true;
+	}
 	while (addr_srch < libc_addr_end) {
 		GH (update_main_arena) (core, addr_srch, ta);
 		if ( ta->GH(top) > brk_start && ta->GH(top) < brk_end &&
@@ -362,6 +430,9 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 
 			*m_arena = addr_srch;
 			free (ta);
+			if (is_debugged) {
+				core->dbg->main_arena_resolved = true;
+			}
 			return true;
 		}
 		addr_srch += sizeof (GHT);
@@ -898,16 +969,19 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
 	const int offset = r_config_get_i (core->config, "dbg.glibc.fc_offset");
 	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
+	bool is_main_arena = true;
 
 	if (m_arena == m_state) {
 		GH(get_brks) (core, &brk_start, &brk_end);
 		if (tcache) {
+			//tcache_initial_brk = ((brk_start >> 12) << 12) + GH(HDR_SZ);
 			GHT fc_offset = GH(tcache_chunk_size) (core, brk_start);
 			initial_brk = ((brk_start >> 12) << 12) + fc_offset;
 		} else {
 			initial_brk = (brk_start >> 12) << 12;
 		}
 	} else {
+		is_main_arena = false;
 		brk_start = ((m_state >> 16) << 16) ;
 		brk_end = brk_start + main_arena->GH(system_mem);
 		if (tcache) {
@@ -1105,6 +1179,9 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 						}
 					}
 				}
+			}
+			if (is_main_arena) {
+				tcache_initial_brk = ((brk_start >> 12) << 12) + GH(HDR_SZ);
 			}
 			free (tcache_heap);
 		}
@@ -1531,3 +1608,4 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 	free (main_arena);
 	return true;
 }
+
