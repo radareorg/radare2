@@ -1926,8 +1926,6 @@ static RList *sections(RBinFile *bf) {
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
-		ptr->name = strdup ("constpool");
-		//ptr->size = ptr->vsize = fsym;
 		ptr->paddr = ptr->vaddr = sizeof (struct dex_header_t);
 		if (bin->code_from != UT64_MAX) {
 			ptr->size = bin->code_from - ptr->vaddr; // fix size
@@ -1935,25 +1933,29 @@ static RList *sections(RBinFile *bf) {
 			eprintf ("Warning: Invalid code size\n");
 			ptr->size = ptr->vaddr; // fix size
 		}
-		ptr->vsize = ptr->size;
-		// Commenting this line speedups loading from 4.5s to 3s
-		ptr->format = r_str_newf ("Cd %d[%d]", 4, ptr->vsize / 4);
-		ptr->perm = R_PERM_R;
-		ptr->add = false;
-		r_list_append (ret, ptr);
+		if (ptr->size <= bin->size) {
+			ptr->vsize = ptr->size;
+			ptr->name = strdup ("constpool");
+			// Commenting this line speedups loading from 4.5s to 3s
+			ptr->format = r_str_newf ("Cd %d[%d]", 4, ptr->vsize / 4);
+			ptr->perm = R_PERM_R;
+			ptr->add = false;
+			r_list_append (ret, ptr);
+		}
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
-		ptr->name = strdup ("code");
 		ptr->vaddr = ptr->paddr = bin->code_from; //ptr->vaddr = fsym;
 		ptr->size = bin->code_to - ptr->paddr;
-		ptr->vsize = ptr->size;
-		ptr->perm = R_PERM_RX;
-		ptr->add = false;
-		r_list_append (ret, ptr);
+		if (ptr->size <= bin->size) {
+			ptr->name = strdup ("code");
+			ptr->vsize = ptr->size;
+			ptr->perm = R_PERM_RX;
+			ptr->add = false;
+			r_list_append (ret, ptr);
+		}
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
 		//ut64 sz = bf ? r_buf_size (bf->buf): 0;
-		ptr->name = strdup ("data");
 		ptr->paddr = ptr->vaddr = fsymsz+fsym;
 		if (ptr->vaddr > r_buf_size (bf->buf)) {
 			ptr->paddr = ptr->vaddr = bin->code_to;
@@ -1963,9 +1965,12 @@ static RList *sections(RBinFile *bf) {
 			// hacky workaround
 			//ptr->size = ptr->vsize = 1024;
 		}
-		ptr->perm = R_PERM_R; //|2;
-		ptr->add = false;
-		r_list_append (ret, ptr);
+		if (ptr->size <= bin->size) {
+			ptr->name = strdup ("data");
+			ptr->perm = R_PERM_R; //|2;
+			ptr->add = false;
+			r_list_append (ret, ptr);
+		}
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
 		ptr->name = strdup ("file");
@@ -1979,14 +1984,16 @@ static RList *sections(RBinFile *bf) {
 	}
 
 	if ((ptr = R_NEW0 (RBinSection))) {
-		ptr->name = strdup ("code");
 		ptr->vaddr = ptr->paddr = bin->code_from;
 		ptr->size = bin->code_to - ptr->paddr;
-		ptr->vsize = ptr->size;
-		ptr->perm = R_PERM_RX;
-		ptr->is_segment = true;
-		ptr->add = true;
-		r_list_append (ret, ptr);
+		if (ptr->size <= bin->size) {
+			ptr->name = strdup ("code");
+			ptr->vsize = ptr->size;
+			ptr->perm = R_PERM_RX;
+			ptr->is_segment = true;
+			ptr->add = true;
+			r_list_append (ret, ptr);
+		}
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
 		ptr->name = strdup ("file");
