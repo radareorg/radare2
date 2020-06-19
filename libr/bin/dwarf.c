@@ -331,6 +331,18 @@ static int abbrev_cmp(const void *a, const void *b) {
 		return 0;
 	}
 }
+static int die_tag_cmp(const void *a, const void *b) {
+	const RBinDwarfDie *first = a;
+	const RBinDwarfDie *second = b;
+
+	if (first->offset > second->offset) {
+		return 1;
+	} else if (first->offset < second->offset) {
+		return -1;
+	} else {
+		return 0;
+	}
+}
 
 static inline bool is_printable_attr(ut64 attr_code) {
 	return (attr_code >= DW_AT_sibling && attr_code <= DW_AT_loclists_base) || 
@@ -387,6 +399,144 @@ static void line_header_fini(RBinDwarfLineHeader *hdr) {
 		free (hdr->file_names);
 	}
 }
+
+static inline bool is_type_tag(ut64 tag_code) {
+	return (tag_code == DW_TAG_structure_type);
+}
+
+static void struct_type_fini(void *e, void *user) {
+	(void)user;
+	RAnalStructMember *member = e;
+	free ((char *)member->name);
+	free ((char *)member->type);
+}
+static char *parse_type(const RBinDwarfDie *all_dies, ut64 count, ut64 offset, char *type, ut64 type_length) {
+	RBinDwarfDie key = { .offset = offset };
+	RBinDwarfDie *type_die = bsearch (&key, all_dies, count, sizeof (key), die_tag_cmp);
+	if (!type_die) {
+		return NULL;
+	}
+	switch (type_die->tag) {
+	case DW_TAG_base_type:
+		strcpy (type, type_die->attr_values[2].string.content);
+		break;
+	// this should be recursive search for the type until you find base_type
+	// so many things hardcoded so I can get a picture of the things needed
+	// TODO - get_name() that will get me a name of the DIE if it has one
+	case DW_TAG_pointer_type:
+		parse_type (all_dies, count, type_die->attr_values[1].reference, type, type_length);
+		int len = strlen (type);
+		type[len] = ' ';
+		type[len + 1] = '*';
+		type[len + 2] = 0;
+		break;
+	case DW_TAG_structure_type:
+		strcpy (type, type_die->attr_values[0].string.content);
+		break;
+	default:
+		break;
+	}
+}
+
+static RAnalStructMember *parse_struct_member(const RBinDwarfDie *all_dies, ut64 count, const RBinDwarfDie *die) {
+	r_return_val_if_fail(die, NULL);
+	char *name = NULL;
+	char *type = NULL;
+	ut64 offset = 0;
+	ut64 type_ref = 0;
+	char type_buf[4128] = {};
+	for (size_t i = 0; i < die->count; i++) {
+		RBinDwarfAttrValue *value = &die->attr_values[i];
+		switch(die->attr_values[i].attr_name) {
+			// TODO, just assume its a string now
+			case DW_AT_name:
+				name = strdup(value->string.content);
+				break;
+			// solve by looking at the offset
+			case DW_AT_type:
+				parse_type(all_dies, count, value->reference, type_buf, 0);
+				type = strdup(type_buf);
+				break;
+			// Sadly it seems it can be a dwarf expression, this can get quite complex...
+			case DW_AT_data_member_location:
+				offset = value->data;
+				break;
+			default:
+				break;
+		}
+	}
+	RAnalStructMember member = {
+		.name = name,
+		.type = type,
+		.offset = (int)offset
+	};
+
+	RAnalStructMember *ret = R_NEW(RAnalStructMember);
+	if (!ret) {
+		// TODO clean up leaks after prototyping
+		return NULL;
+	}
+	memcpy(ret, &member, sizeof(RAnalStructMember));
+	return ret;
+}
+
+static void print_struct_member(RAnalBaseType *base_type) {
+	r_return_if_fail(base_type && base_type->kind == R_ANAL_BASE_TYPE_KIND_STRUCT);
+
+	RListIter *iter;
+	RAnalStructMember *member;
+	printf(" Members:\n");
+	r_vector_foreach(&base_type->struct_data.members, member) {
+		printf("  %s : %s\n", member->type, member->name);
+	}
+}
+
+static void parse_types(RBinDwarfDie *all_dies, ut64 count, ut64 idx) {
+	// now we control the flow, lets construct the structure
+	RBinDwarfDie *die = &all_dies[idx];
+	RAnalBaseType *base_type = R_NEW (RAnalBaseType);
+	base_type->kind = R_ANAL_BASE_TYPE_KIND_STRUCT;
+	printf ("Struct, name: %s\n", die->attr_values[0].string.content);
+
+	RVector members;
+	r_vector_init (&members, sizeof (RAnalStructMember), struct_type_fini, NULL);
+	// for now lets ignore possibility of any futher nesting
+	if (die->has_children) {
+		// sibling list is terminated by null entry
+		RBinDwarfDie *child_die = &all_dies[++idx];
+		for (size_t j = idx; child_die->abbrev_code != 0 && j < count; j++) {
+			child_die = &all_dies[j];
+			if (child_die->tag == DW_TAG_member) {
+				RAnalStructMember *member = parse_struct_member (all_dies, count, child_die);
+				void *element = r_vector_push (&members, member);
+				if (!element) {
+					goto cleanup;
+				}
+			}
+		}
+	}
+	base_type->struct_data.members = members;
+	print_struct_member (base_type);
+cleanup:
+	r_vector_fini (&base_type->struct_data.members);
+}
+
+R_API void r_bin_dwarf_parse_types(RBinDwarfDebugInfo *info) {
+	// naive solution, travel through all entries
+	// working just for basic C structures
+	for (size_t i = 0; i < info->count; i++) {
+		for (size_t j = 0; j < info->comp_units[i].count; j++) {
+			RBinDwarfDie *curr_die = &info->comp_units[i].dies[j];
+			if (is_type_tag (curr_die->tag)) {
+				// now we control the flow, lets construct the structure
+				parse_types(info->comp_units[i].dies, info->comp_units[i].count, j);
+			}
+		}
+	}
+cleanup:
+	return;
+}
+
 // Parses source file header of DWARF version <= 4
 static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const ut8 *buf_end,
 	RBinDwarfLineHeader *hdr, Sdb *sdb, int mode, PrintfCallback print) {
@@ -1486,7 +1636,7 @@ static void print_debug_info(const RBinDwarfDebugInfo *inf, PrintfCallback print
 		dies = inf->comp_units[i].dies;
 
 		for (j = 0; j < inf->comp_units[i].count; j++) {
-			print ("    Abbrev Number: %-4" PFMT64u " ", dies[j].abbrev_code);
+			print ("<%"PFMT64x">: Abbrev Number: %-4" PFMT64u " ", dies[j].offset,dies[j].abbrev_code);
 
 			if (is_printable_tag (dies[j].tag)) {
 				print ("(%s)\n", dwarf_tag_name_encodings[dies[j].tag]);
@@ -1831,6 +1981,10 @@ static const ut8 *parse_comp_unit(Sdb *sdb, const ut8 *buf_start,
 			expand_cu (unit);
 		}
 		RBinDwarfDie *die = &unit->dies[unit->count];
+
+		// add header size to the offset;
+		die->offset = buf - buf_start + unit->hdr.header_size;
+		die->offset += unit->hdr.is_64bit ? 12 : 4;
 		// DIE starts with ULEB128 with the abbreviation code
 		ut64 abbr_code;
 		buf = r_uleb128 (buf, buf_end - buf, &abbr_code);
@@ -1859,6 +2013,7 @@ static const ut8 *parse_comp_unit(Sdb *sdb, const ut8 *buf_start,
 			return NULL; // error
 		}
 		die->tag = abbrev->tag;
+		die->has_children = abbrev->has_children;
 
 		buf = parse_die (buf, buf_end, abbrev, &unit->hdr, die, debug_str, debug_str_len, sdb);
 		if (!buf) {
