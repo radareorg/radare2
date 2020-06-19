@@ -72,6 +72,7 @@ R_API RCmd *r_cmd_new(void) {
 	cmd->nullcallback = cmd->data = NULL;
 	cmd->ht_cmds = ht_pp_new0 ();
 	cmd->root_cmd_desc = create_cmd_desc (cmd, NULL, R_CMD_DESC_TYPE_ARGV, "", NULL);
+	cmd->root_cmd_desc->help = NULL;
 	r_core_plugin_init (cmd);
 	r_cmd_macro_init (&cmd->macro);
 	r_cmd_alias_init (cmd);
@@ -507,7 +508,7 @@ R_API char *r_cmd_get_help(RCmd *cmd, RCmdParsedArgs *args, bool use_color) {
 
 	RCmdDesc *cd = cmdid_p >= cmdid? r_cmd_get_desc (cmd, cmdid): r_cmd_get_root (cmd);
 	free (cmdid);
-	if (!cd) {
+	if (!cd || !cd->help) {
 		return NULL;
 	}
 
