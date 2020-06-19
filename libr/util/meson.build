@@ -16,7 +16,6 @@ r_util_sources = [
   'cache.c',
   'calc.c',
   'chmod.c',
-  'constr.c',
   'debruijn.c',
   'udiff.c',
   'event.c',

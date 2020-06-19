@@ -160,7 +160,7 @@ struct endlist_pair {
 	int delay_size;
 };
 
-static void cmd_search_init(RCore *core) {
+static void cmd_search_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /, slash);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /a, slash_a);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /c, slash_c);

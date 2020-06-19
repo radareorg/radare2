@@ -61,7 +61,7 @@ static const char *help_msg_ss[] = {
 	NULL
 };
 
-static void cmd_seek_init(RCore *core) {
+static void cmd_seek_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, s);
 	DEFINE_CMD_DESCRIPTOR (core, sC);
 	DEFINE_CMD_DESCRIPTOR (core, sl);

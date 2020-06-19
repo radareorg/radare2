@@ -225,3 +225,14 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME="base help"
+FILE=-
+CMDS=<<EOF
+?~print
+EOF
+EXPECT=<<EOF
+| p[?] [len]              print current block with format and length
+| x[?] [len]              alias for 'px' (print hexadecimal)
+EOF
+RUN

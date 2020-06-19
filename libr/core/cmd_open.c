@@ -160,7 +160,7 @@ static const char *help_msg_oonn[] = {
 	NULL
 };
 
-static void cmd_open_init(RCore *core) {
+static void cmd_open_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, o);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, o*, o_star);
 	DEFINE_CMD_DESCRIPTOR (core, oa);

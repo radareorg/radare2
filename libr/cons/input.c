@@ -663,6 +663,7 @@ R_API bool r_cons_yesno(int def, const char *fmt, ...) {
 	r_cons_set_raw (true);
 	char buf[] = " ?\n";
 	if (read (0, buf + 1, 1) == 1) {
+		key = (ut8)buf[1];
 		if (write (2, buf, 3) == 3) {
 			if (key == 'Y') {
 				key = 'y';

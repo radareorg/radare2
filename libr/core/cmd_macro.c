@@ -19,7 +19,7 @@ static const char *help_msg_lparen[] = {
 	NULL
 };
 
-static void cmd_macro_init(RCore *core) {
+static void cmd_macro_init(RCore *core, RCmdDesc *parent) {
 	RCmdDescriptor *d = R_NEW0 (RCmdDescriptor);
 	if (d) {
 		d->cmd = "(";

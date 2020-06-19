@@ -44,7 +44,7 @@ static const char *help_msg_T[] = {
 };
 
 // TODO #7967 help refactor: move L to another place
-static void cmd_log_init(RCore *core) {
+static void cmd_log_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, L);
 	DEFINE_CMD_DESCRIPTOR (core, T);
 }

@@ -70,7 +70,7 @@ Question mark commands
 (commands
   (arged_command (cmd_identifier)
     (args (arg (arg_identifier))))
-  (help_command (cmd_identifier))
+  (arged_command (cmd_identifier))
   (help_command (cmd_identifier))
   (arged_command (cmd_identifier)
     (args (arg (arg_identifier))))

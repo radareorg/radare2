@@ -757,7 +757,7 @@ const char* arm_prefix_cond(RAnalOp *op, int cond_type) {
 		break;
 	case ARM_CC_LS:
 		close_type = 1;
-		r_strbuf_setf (&op->esil, "cf,!,zf,!,|,?{,");
+		r_strbuf_setf (&op->esil, "cf,!,zf,|,?{,");
 		break;
 	case ARM_CC_GE:
 		close_type = 1;
@@ -1203,15 +1203,15 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_BIC:
         if (OPCOUNT64 () == 2) {
             if (REGSIZE64(0) == 4) {
-                r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&=",REG64 (1),REG64 (0));
+                r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&=", REG64 (1), REG64 (0));
             } else {
-                r_strbuf_appendf (&op->esil, "%s,0xffffffffffffffff,^,%s,&=",REG64 (1),REG64 (0));
+                r_strbuf_appendf (&op->esil, "%s,0xffffffffffffffff,^,%s,&=", REG64 (1), REG64 (0));
             }
         } else {
             if (REGSIZE64(0) == 4) {
-                r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&,%s,=",REG64 (2),REG64 (1),REG64 (0));
+                r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&,%s,=", REG64 (2), REG64 (1), REG64 (0));
             } else {
-                r_strbuf_appendf (&op->esil, "%s,0xffffffffffffffff,^,%s,&,%s,=",REG64 (2),REG64 (1),REG64 (0));
+                r_strbuf_appendf (&op->esil, "%s,0xffffffffffffffff,^,%s,&,%s,=", REG64 (2), REG64 (1), REG64 (0));
             }
         }
         break;
@@ -1387,10 +1387,10 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 				"0xffffffff", REG64(0), REG64(0));
 		break;
 	case ARM64_INS_UXTB:
-		r_strbuf_setf (&op->esil, "%s,0xff,&,%s,=", REG64(1),REG64(0));
+		r_strbuf_setf (&op->esil, "%s,0xff,&,%s,=", REG64(1), REG64(0));
 		break;
 	case ARM64_INS_UXTH:
-		r_strbuf_setf (&op->esil, "%s,0xffff,&,%s,=", REG64(1),REG64(0));
+		r_strbuf_setf (&op->esil, "%s,0xffff,&,%s,=", REG64(1), REG64(0));
 		break;
 	case ARM64_INS_RET:
 		r_strbuf_setf (&op->esil, "lr,pc,=");
@@ -1485,11 +1485,11 @@ static void arm32mathaddsub(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 		noflags = true;
 	}
 	if (OPCOUNT() == 3) {
-		r_strbuf_appendf (&op->esil, "%s,0xffffffff,&,%s,=,", ARG (1), dst);
-		src = ARG (2);
+		r_strbuf_appendf (&op->esil, "%s,0xffffffff,&,%s,=,", ARG(1), dst);
+		src = ARG(2);
 	} else {
-//		src = (!strcmp (ARG (1), "pc")) ? "$$" : ARG (1);
-		src = ARG (1);
+//		src = (!strcmp (ARG(1), "pc")) ? "$$" : ARG(1);
+		src = ARG(1);
 
 	}
 	r_strbuf_appendf (&op->esil, "%s,%s,%s,0xffffffff,&,%s,=", src, dst, opchar, dst);
@@ -1518,7 +1518,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		r_strbuf_appendf (&op->esil, "%d,pc,+=", op->fail);
 		break;
 	case ARM_INS_BKPT:
-		r_strbuf_setf (&op->esil, "%d,%d,TRAP", IMM (0), IMM (0));
+		r_strbuf_setf (&op->esil, "%d,%d,TRAP", IMM(0), IMM(0));
 		break;
 	case ARM_INS_NOP:
 		r_strbuf_setf (&op->esil, ",");
@@ -1545,8 +1545,14 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case ARM_INS_ADDW:
 	case ARM_INS_ADD:
-	case ARM_INS_ADC:
 		MATH32("+");
+		break;
+	case ARM_INS_ADC:
+		if (OPCOUNT() == 2) {
+			r_strbuf_appendf (&op->esil, "cf,%s,+,%s,+=", ARG(1), ARG(0));
+		} else {
+			r_strbuf_appendf (&op->esil, "cf,%s,+,%s,+=,%s,+=", ARG(2), ARG(1), ARG(0));
+		}
 		break;
 	case ARM_INS_SSUB16:
 	case ARM_INS_SSUB8:
@@ -1572,9 +1578,23 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		MATH32_NEG("|");
 		break;
 	case ARM_INS_LSR:
+	        if (insn->detail->arm.update_flags) {
+			if (OPCOUNT() == 2) {
+				r_strbuf_appendf (&op->esil, "%s,!,!,?{,%s,1,%s,-,0x1,<<,&,!,!,cf,:=,},", ARG(1), ARG(0), ARG(1));
+			} else {
+				r_strbuf_appendf (&op->esil, "%s,!,!,?{,%s,1,%s,-,0x1,<<,&,!,!,cf,:=,},", ARG(2), ARG(1), ARG(2));
+			}
+		}
 		MATH32(">>");
 		break;
 	case ARM_INS_LSL:
+                if (insn->detail->arm.update_flags) {
+                        if (OPCOUNT() == 2) {
+				r_strbuf_appendf (&op->esil, "%s,!,!,?,{,%s,32,-,%s,>>,cf,:=,},", ARG(1), ARG(1), ARG(0));
+                        } else {
+				r_strbuf_appendf (&op->esil, "%s,!,!,?,{,%s,32,-,%s,>>,cf,:=,},", ARG(2), ARG(2), ARG(1));
+                        }
+                }
 		MATH32("<<");
 		break;
 	case ARM_INS_SVC:
@@ -1594,7 +1614,7 @@ PUSH { r4, r5, r6, r7, lr }
 		r_strbuf_appendf (&op->esil, "%d,sp,-=,",
 			4 * insn->detail->arm.op_count);
 		for (i=insn->detail->arm.op_count; i>0; i--) {
-			r_strbuf_appendf (&op->esil, "%s,", REG (i-1));
+			r_strbuf_appendf (&op->esil, "%s,", REG(i-1));
 		}
 		r_strbuf_appendf (&op->esil, "%d,sp,=[*]",
 			insn->detail->arm.op_count);
@@ -1603,11 +1623,11 @@ PUSH { r4, r5, r6, r7, lr }
 		r_strbuf_setf (&op->esil, "");
 		for (i=1; i<insn->detail->arm.op_count; i++) {
 			r_strbuf_appendf (&op->esil, "%s,%s,%d,%c,=[4],",
-				REG (i), ARG (0), R_ABS(i*4), i > 0? '+' : '-');
+				REG(i), ARG(0), R_ABS(i*4), i > 0? '+' : '-');
 		}
 		if (insn->detail->arm.writeback == true) { //writeback, reg should be incremented
 			r_strbuf_appendf (&op->esil, "%d,%s,+=,",
-				(insn->detail->arm.op_count -1)*4, ARG (0));
+				(insn->detail->arm.op_count -1)*4, ARG(0));
 		}
 		break;
 	case ARM_INS_ASR:
@@ -1624,7 +1644,7 @@ POP { r4,r5, r6}
 r6,r5,r4,3,sp,[*],12,sp,+=
 #endif
 		for (i=insn->detail->arm.op_count; i>0; i--) {
-			r_strbuf_appendf (&op->esil, "%s,", REG (i-1));
+			r_strbuf_appendf (&op->esil, "%s,", REG(i-1));
 		}
 		r_strbuf_appendf (&op->esil, "%d,sp,[*],",
 			insn->detail->arm.op_count);
@@ -1636,7 +1656,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		const char *comma = "";
 		for (i=1; i<insn->detail->arm.op_count; i++) {
 			r_strbuf_appendf (&op->esil, "%s%s,%d,+,[4],%s,=",
-				comma, ARG (0), (i - 1) * 4, REG (i));
+				comma, ARG(0), (i - 1) * 4, REG(i));
 			comma = ",";
 		}
 		}
@@ -1953,7 +1973,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		break;
 	case ARM_INS_MSR:
 		msr_flags = insn->detail->arm.operands[0].reg >> 4;
-		r_strbuf_appendf (&op->esil, "0,",REG(1));
+		r_strbuf_appendf (&op->esil, "0,", REG(1));
 		if (msr_flags & 1) {
 			r_strbuf_appendf (&op->esil, "0xFF,|,");
 		}
@@ -1966,83 +1986,83 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		if (msr_flags & 8) {
 			r_strbuf_appendf (&op->esil, "0xFF000000,|,");
 		}
-		r_strbuf_appendf (&op->esil, "DUP,!,SWAP,&,%s,SWAP,cpsr,&,|,cpsr,=",REG(1));
+		r_strbuf_appendf (&op->esil, "DUP,!,SWAP,&,%s,SWAP,cpsr,&,|,cpsr,=", REG(1));
 		break;
 	case ARM_INS_UBFX:
-		if (IMM (3)>0 && IMM (3)<=32-IMM (2)) {
+		if (IMM(3)>0 && IMM(3)<=32-IMM(2)) {
 			r_strbuf_appendf (&op->esil, "%d,%s,%d,%"PFMT64u",<<,&,>>,%s,=",
-				IMM (2),REG (1),IMM (2),(ut64)bitmask_by_width[IMM (3)-1],REG (0));
+				IMM(2), REG(1), IMM(2),(ut64)bitmask_by_width[IMM(3)-1], REG(0));
 		}
 		break;
 	case ARM_INS_UXTB:
-		r_strbuf_appendf (&op->esil, "%s,0xff,&,%s,=",ARG (1),REG (0));
+		r_strbuf_appendf (&op->esil, "%s,0xff,&,%s,=", ARG(1), REG(0));
 		break;
 	case ARM_INS_RSB:
 		if (OPCOUNT () == 2) {
-			r_strbuf_appendf (&op->esil, "%s,%s,-=",ARG (0),ARG (1));
+			r_strbuf_appendf (&op->esil, "%s,%s,-=", ARG(0), ARG(1));
 		} else if (OPCOUNT () == 3) {
-			r_strbuf_appendf (&op->esil, "%s,%s,-,%s,=",ARG (1),ARG (2),ARG (0));
+			r_strbuf_appendf (&op->esil, "%s,%s,-,%s,=", ARG(1), ARG(2), ARG(0));
 		}
 		break;
 	case ARM_INS_BIC:
 		if (OPCOUNT () == 2) {
-			r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&=",ARG (1),ARG (0));
+			r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&=", ARG(1), ARG(0));
 		} else {
-			r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&,%s,=",ARG (2),ARG (1),ARG (0));
+			r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&,%s,=", ARG(2), ARG(1), ARG(0));
 		}
 		break;
 	case ARM_INS_SMMLA:
 		r_strbuf_appendf (&op->esil, "32,%s,%s,*,>>,%s,+,0xffffffff,&,%s,=",
-			REG (1), REG(2), REG(3), REG (0));
+			REG(1), REG(2), REG(3), REG(0));
 		break;
 	case ARM_INS_SMMLAR:
 		r_strbuf_appendf (&op->esil, "32,0x80000000,%s,%s,*,+,>>,%s,+,0xffffffff,&,%s,=",
-			REG (1), REG(2), REG(3), REG (0));
+			REG(1), REG(2), REG(3), REG(0));
 		break;
 	case ARM_INS_UMULL:
 		r_strbuf_appendf (&op->esil, "32,%s,%s,*,DUP,0xffffffff,&,%s,=,>>,%s,=",
-			REG(2), REG(3), REG (0), REG(1));
+			REG(2), REG(3), REG(0), REG(1));
 		break;
 	case ARM_INS_MLS:
 		r_strbuf_appendf (&op->esil, "%s,%s,*,%s,-,0xffffffff,&,%s,=",
-			REG (1), REG(2), REG(3), REG (0));
+			REG(1), REG(2), REG(3), REG(0));
 		break;
 	case ARM_INS_MLA:
 		r_strbuf_appendf (&op->esil, "%s,%s,*,%s,+,0xffffffff,&,%s,=",
-			REG (1), REG(2), REG(3), REG (0));
+			REG(1), REG(2), REG(3), REG(0));
 		break;
 	case ARM_INS_MVN:
 		r_strbuf_appendf (&op->esil, "-1,%s,^,0xffffffff,&,%s,=",
-			ARG (1), REG (0));
+			ARG(1), REG(0));
 		break;
 	case ARM_INS_BFI:
 	{
-		if (OPCOUNT() >= 3 && ISIMM (3) && IMM (3) > 0 && IMM (3) < 64) {
-			ut64 mask = bitmask_by_width[IMM (3) - 1];
-			ut64 shift = IMM (2);
+		if (OPCOUNT() >= 3 && ISIMM(3) && IMM(3) > 0 && IMM(3) < 64) {
+			ut64 mask = bitmask_by_width[IMM(3) - 1];
+			ut64 shift = IMM(2);
 			ut64 notmask = ~(mask << shift);
 			// notmask,dst,&,lsb,mask,src,&,<<,|,dst,=
 			r_strbuf_setf (&op->esil, "%"PFMT64u",%s,&,%"PFMT64u",%"PFMT64u",%s,&,<<,|,0xffffffff,&,%s,=",
-				notmask, REG (0), shift, mask, REG (1), REG (0));
+				notmask, REG(0), shift, mask, REG(1), REG(0));
 		}
 		break;
 	}
 	case ARM_INS_BFC:
 	{
-		if (OPCOUNT() >= 2 && ISIMM (2) && IMM (2) > 0 && IMM (2) < 64) {
-			ut64 mask = bitmask_by_width[IMM (2) - 1];
-			ut64 shift = IMM (1);
+		if (OPCOUNT() >= 2 && ISIMM(2) && IMM(2) > 0 && IMM(2) < 64) {
+			ut64 mask = bitmask_by_width[IMM(2) - 1];
+			ut64 shift = IMM(1);
 			ut64 notmask = ~(mask << shift);
 			// notmask,dst,&,dst,=
 			r_strbuf_setf (&op->esil, "%"PFMT64u",%s,&,0xffffffff,&,%s,=",
-				notmask, REG (0), REG (0));
+				notmask, REG(0), REG(0));
 		}
 		break;
 	}
 	case ARM_INS_REV:
 	{
-		const char *r0 = REG (0);
-		const char *r1 = REG (1);
+		const char *r0 = REG(0);
+		const char *r1 = REG(1);
 		r_strbuf_setf (&op->esil,
 			"24,0xff,%s,&,<<,%s,=,"
 			"16,0xff,8,%s,>>,&,<<,%s,|=,"
@@ -2053,8 +2073,8 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	}
 	case ARM_INS_REV16:
 	{
-		const char *r0 = REG (0);
-		const char *r1 = REG (1);
+		const char *r0 = REG(0);
+		const char *r1 = REG(1);
 		r_strbuf_setf (&op->esil,
 			"8,0xff00ff00,%s,&,>>,%s,=,"
 			"8,0x00ff00ff,%s,&,<<,%s,|=,",
@@ -2063,8 +2083,8 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	}
 	case ARM_INS_REVSH:
 	{
-		const char *r0 = REG (0);
-		const char *r1 = REG (1);
+		const char *r0 = REG(0);
+		const char *r1 = REG(1);
 		r_strbuf_setf (&op->esil,
 			"8,0xff00,%s,&,>>,%s,=,"
 			"8,0x00ff,%s,&,<<,%s,|=,"
@@ -2087,8 +2107,9 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		case ARM_INS_SUB:
 			r_strbuf_appendf (&op->esil, ",$z,zf,:=,31,$s,nf,:=,32,$b,!,cf,=,31,$o,vf,=");
 			break;
+		case ARM_INS_ADC:
 		case ARM_INS_ADD:
-			r_strbuf_appendf (&op->esil, ",$z,zf,:=,1,$c,cf,=,31,$o,vf,=");
+			r_strbuf_appendf (&op->esil, ",$z,zf,:=,31,$c,cf,=,31,$o,vf,=");
 			break;
 		default:
 			r_strbuf_appendf (&op->esil, ",$z,zf,:=,31,$s,nf,:=");
@@ -2632,10 +2653,10 @@ jmp $$ + 4 + ( [delta] * 2 )
 				op->stackop = R_ANAL_STACK_INC;
 				if (ISIMM(1)) {
 					//0x0000bf4e      95b0           sub sp, 0x54
-					op->stackptr = IMM (1);
+					op->stackptr = IMM(1);
 				} else if ( ISIMM(2) && ISREG(1) && REGID(1) == ARM_REG_SP) {
 					// 0x00008254    10d04de2     sub sp, sp, 0x10
-					op->stackptr = IMM (2);
+					op->stackptr = IMM(2);
 				}
 				op->val = op->stackptr;
 		}
@@ -2699,7 +2720,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 				op->type = R_ANAL_OP_TYPE_UJMP;
 			}
 		}
-		if (ISIMM (1)) {
+		if (ISIMM(1)) {
 			op->val = IMM(1);
 		}
 		/* fall-thru */

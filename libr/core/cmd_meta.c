@@ -134,7 +134,7 @@ static const char *help_msg_Cvs[] = {
 	NULL
 };
 
-static void cmd_meta_init(RCore *core) {
+static void cmd_meta_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, C);
 	DEFINE_CMD_DESCRIPTOR (core, CC);
 	DEFINE_CMD_DESCRIPTOR (core, CS);

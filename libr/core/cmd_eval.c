@@ -67,7 +67,7 @@ static const char *help_msg_eco[] = {
 static char *curtheme = "default";
 static bool getNext = false;
 
-static void cmd_eval_init(RCore *core) {
+static void cmd_eval_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, e);
 	DEFINE_CMD_DESCRIPTOR (core, ec);
 }

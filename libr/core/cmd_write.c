@@ -170,20 +170,6 @@ static const char *help_msg_wx[] = {
 	NULL
 };
 
-static void cmd_write_init(RCore *core) {
-	DEFINE_CMD_DESCRIPTOR (core, w);
-	DEFINE_CMD_DESCRIPTOR (core, wa);
-	DEFINE_CMD_DESCRIPTOR (core, wA);
-	DEFINE_CMD_DESCRIPTOR (core, wc);
-	DEFINE_CMD_DESCRIPTOR (core, we);
-	DEFINE_CMD_DESCRIPTOR (core, wo);
-	DEFINE_CMD_DESCRIPTOR (core, wop);
-	DEFINE_CMD_DESCRIPTOR (core, wp);
-	DEFINE_CMD_DESCRIPTOR (core, wt);
-	DEFINE_CMD_DESCRIPTOR (core, wv);
-	DEFINE_CMD_DESCRIPTOR (core, wx);
-}
-
 static void cmd_write_fail(RCore *core) {
 	eprintf ("Failed to write\n");
 	core->num->value = 1;
@@ -532,6 +518,75 @@ static void cmd_write_value (RCore *core, const char *input) {
 		break;
 	}
 	r_core_block_read (core);
+}
+
+static RCmdStatus common_wv_handler(RCore *core, int argc, const char **argv, int type) {
+	ut64 off = 0LL;
+	ut8 buf[sizeof(ut64)];
+	int wseek = r_config_get_i (core->config, "cfg.wseek");
+	bool be = r_config_get_i (core->config, "cfg.bigendian");
+
+	core->num->value = 0;
+	if (argc != 2) {
+		return R_CMD_STATUS_WRONG_ARGS;
+	}
+
+	off = r_num_math (core->num, argv[1]);
+	if (core->file) {
+		r_io_use_fd (core->io, core->file->fd);
+	}
+
+	ut64 res = r_io_seek (core->io, core->offset, R_IO_SEEK_SET);
+	if (res == UT64_MAX) {
+		return R_CMD_STATUS_ERROR;
+	}
+	if (type == 0) {
+		type = off & UT64_32U? 8: 4;
+	}
+
+	switch (type) {
+	case 1:
+		r_write_ble8 (buf, (ut8)(off & UT8_MAX));
+		break;
+	case 2:
+		r_write_ble16 (buf, (ut16)(off & UT16_MAX), be);
+		break;
+	case 4:
+		r_write_ble32 (buf, (ut32)(off & UT32_MAX), be);
+		break;
+	case 8:
+		r_write_ble64 (buf, off, be);
+		break;
+	}
+
+	if (!r_io_write (core->io, buf, type)) {
+		cmd_write_fail (core);
+	} else if (wseek) {
+		r_core_seek_delta (core, type);
+	}
+
+	r_core_block_read (core);
+	return R_CMD_STATUS_OK;
+}
+
+static RCmdStatus wv_handler(void *user, int argc, const char **argv) {
+	return common_wv_handler (user, argc, argv, 0);
+}
+
+static RCmdStatus wv1_handler(void *user, int argc, const char **argv) {
+	return common_wv_handler (user, argc, argv, 1);
+}
+
+static RCmdStatus wv2_handler(void *user, int argc, const char **argv) {
+	return common_wv_handler (user, argc, argv, 2);
+}
+
+static RCmdStatus wv4_handler(void *user, int argc, const char **argv) {
+	return common_wv_handler (user, argc, argv, 4);
+}
+
+static RCmdStatus wv8_handler(void *user, int argc, const char **argv) {
+	return common_wv_handler (user, argc, argv, 8);
 }
 
 static bool cmd_wff(RCore *core, const char *input) {
@@ -1787,4 +1842,68 @@ static int cmd_write(void *data, const char *input) {
 	}
 	R_FREE (ostr);
 	return 0;
+}
+
+static const RCmdDescExample wv_help_examples[] = {
+	{ .example = "wv 0xdeadbeef", .comment = "Write the value 0xdeadbeef at current offset" },
+	{ 0 },
+};
+
+static const RCmdDescHelp wv_help = {
+	.usage = "wv[size] [value]",
+	.summary = "Write value as 4 - bytes / 8 - bytes based on value",
+	.args_str = "[value]",
+	.description = "Write the number passed as argument at the current offset as a 4 - bytes value or 8 - bytes value if the input is bigger than UT32_MAX, respecting the cfg.bigendian variable",
+	.group_summary = "Write value of given size",
+	.examples = wv_help_examples,
+};
+
+static const RCmdDescHelp wv1_help = {
+	.summary = "Write value of 1 byte",
+	.args_str = "[value]",
+	.description = "Write the number passed as argument at the current offset as 1 - byte, respecting the cfg.bigendian variable",
+};
+static const RCmdDescHelp wv2_help = {
+	.summary = "Write value of 2 bytes",
+	.args_str = "[value]",
+	.description = "Write the number passed as argument at the current offset as 2 - bytes, respecting the cfg.bigendian variable",
+};
+static const RCmdDescHelp wv4_help = {
+	.summary = "Write value of 4 bytes",
+	.args_str = "[value]",
+	.description = "Write the number passed as argument at the current offset as 4 - bytes, respecting the cfg.bigendian variable",
+};
+static const RCmdDescHelp wv8_help = {
+	.summary = "Write value of 8 byte",
+	.args_str = "[value]",
+	.description = "Write the number passed as argument at the current offset as 8 - bytes, respecting the cfg.bigendian variable",
+};
+
+static void cmd_write_init(RCore *core, RCmdDesc *parent) {
+	DEFINE_CMD_DESCRIPTOR (core, w);
+	DEFINE_CMD_DESCRIPTOR (core, wa);
+	DEFINE_CMD_DESCRIPTOR (core, wA);
+	DEFINE_CMD_DESCRIPTOR (core, wc);
+	DEFINE_CMD_DESCRIPTOR (core, we);
+	DEFINE_CMD_DESCRIPTOR (core, wo);
+	DEFINE_CMD_DESCRIPTOR (core, wop);
+	DEFINE_CMD_DESCRIPTOR (core, wp);
+	DEFINE_CMD_DESCRIPTOR (core, wt);
+	DEFINE_CMD_DESCRIPTOR (core, wv);
+	DEFINE_CMD_DESCRIPTOR (core, wx);
+
+	RCmdDesc *wv_cd = r_cmd_desc_argv_new (core->rcmd, parent, "wv", wv_handler, &wv_help);
+	r_return_if_fail (wv_cd);
+
+	RCmdDesc *wv1_cd = r_cmd_desc_argv_new (core->rcmd, wv_cd, "wv1", wv1_handler, &wv1_help);
+	r_return_if_fail (wv1_cd);
+
+	RCmdDesc *wv2_cd = r_cmd_desc_argv_new (core->rcmd, wv_cd, "wv2", wv2_handler, &wv2_help);
+	r_return_if_fail (wv2_cd);
+
+	RCmdDesc *wv4_cd = r_cmd_desc_argv_new (core->rcmd, wv_cd, "wv4", wv4_handler, &wv4_help);
+	r_return_if_fail (wv4_cd);
+
+	RCmdDesc *wv8_cd = r_cmd_desc_argv_new (core->rcmd, wv_cd, "wv8", wv8_handler, &wv8_help);
+	r_return_if_fail (wv8_cd);
 }

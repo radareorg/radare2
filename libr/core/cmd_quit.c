@@ -15,7 +15,7 @@ static const char *help_msg_q[] = {
 	NULL
 };
 
-static void cmd_quit_init(RCore *core) {
+static void cmd_quit_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, q);
 }
 

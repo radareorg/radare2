@@ -585,7 +585,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	st64 ptr = 0;
 	char *addr, *esil_buf = NULL;
 
-	r_return_if_fail (anal && fcn && op);
+	r_return_if_fail (anal && fcn && op && reg);
 
 	size_t i;
 	for (i = 0; i < R_ARRAY_SIZE (op->src); i++) {
@@ -1001,8 +1001,10 @@ R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
 
 	const char *BP = anal->reg->name[R_REG_NAME_BP];
 	const char *SP = anal->reg->name[R_REG_NAME_SP];
-	extract_arg (anal, fcn, op, BP, "+", R_ANAL_VAR_KIND_BPV);
-	extract_arg (anal, fcn, op, BP, "-", R_ANAL_VAR_KIND_BPV);
+	if (BP) {
+		extract_arg (anal, fcn, op, BP, "+", R_ANAL_VAR_KIND_BPV);
+		extract_arg (anal, fcn, op, BP, "-", R_ANAL_VAR_KIND_BPV);
+	}
 	extract_arg (anal, fcn, op, SP, "+", R_ANAL_VAR_KIND_SPV);
 }
 

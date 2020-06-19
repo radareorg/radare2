@@ -385,6 +385,7 @@ R_API RDebug *r_debug_new(int hard) {
 	dbg->maps_user = r_debug_map_list_new ();
 	dbg->q_regs = NULL;
 	dbg->call_frames = NULL;
+	dbg->main_arena_resolved = false;
 	r_debug_signal_init (dbg);
 	if (hard) {
 		dbg->bp = r_bp_new ();
