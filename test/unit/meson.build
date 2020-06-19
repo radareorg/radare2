@@ -20,6 +20,7 @@ if get_option('enable_tests')
     'debruijn',
     'diff',
     'dwarf',
+    'dwarf_info',
     'esil_dfg_filter',
     'event',
     'flags',

@@ -4081,6 +4081,7 @@ EXPECT=<<EOF
 [Source file]
 /home/landley/work/ab7/build/temp-armv6l/gcc-core/gcc/config/arm/ieee754-df.S
 /home/landley/work/ab7/build/temp-armv6l/gcc-core/gcc/config/arm/lib1funcs.asm
+/home/landley/work/ab7/build/temp-armv6l/build-gcc/gcc
 EOF
 RUN
 
