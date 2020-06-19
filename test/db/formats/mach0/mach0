@@ -284,6 +284,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=mach0 arm/thumb symbols bitness
+FILE=bins/mach0/macho-bash
+CMDS=<<EOF
+ah. @ sym._main
+ah. @ sym.__dyld_func_lookup
+EOF
+EXPECT=<<EOF
+ 0x00002c44 => bits=16
+ 0x0000206c => bits=32
+EOF
+RUN
+
 NAME=mach0 symbols
 FILE=bins/mach0/longIdentifiers.dylib
 CMDS=is

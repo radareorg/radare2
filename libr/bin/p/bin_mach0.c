@@ -169,7 +169,6 @@ static RList *entries(RBinFile *bf) {
 
 static void _handle_arm_thumb(struct MACH0_(obj_t) *bin, RBinSymbol **p) {
 	RBinSymbol *ptr = *p;
-	ptr->bits = 32;
 	if (bin) {
 		if (ptr->paddr & 1) {
 			ptr->paddr--;
@@ -246,6 +245,7 @@ static RList *symbols(RBinFile *bf) {
 		ptr->vaddr = syms[i].addr;
 		ptr->paddr = syms[i].offset + obj->boffset;
 		ptr->size = syms[i].size;
+		ptr->bits = syms[i].bits;
 		if (bin->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
 			_handle_arm_thumb (bin, &ptr);
 		}

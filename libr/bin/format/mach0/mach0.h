@@ -52,6 +52,7 @@ struct symbol_t {
 	ut64 offset;
 	ut64 addr;
 	ut64 size;
+	int bits;
 	int type;
 	bool is_imported;
 	char *name;
