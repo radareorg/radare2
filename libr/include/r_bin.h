@@ -332,6 +332,7 @@ typedef struct r_bin_t {
 	char *srcdir; // dir.source
 	char *prefix; // bin.prefix
 	char *strenc;
+	bool trunc_nonascii;
 	ut64 filter_rules;
 	bool demanglercmd;
 	bool verbose;

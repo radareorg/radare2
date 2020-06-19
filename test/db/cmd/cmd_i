@@ -3443,17 +3443,22 @@ f main @ 0x0000142e
 EOF
 RUN
 
-NAME=iz utf16le
-BROKEN=1
+NAME=iz utf16le; str.truncnonascii
 FILE=bins/elf/strenc
 CMDS=<<EOF
 e str.escbslash=true
+e str.truncnonascii=true
 iz~green
 iz~wall
+?e
+e str.truncnonascii=false
+iz~green
 EOF
 EXPECT=<<EOF
-005 0x00002248 0x00402248  57 118 (.rodata) utf16le \nutf16le> \\u00a2\\u20ac\\U00010348 in green:\e[32m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
-007 0x000022c8 0x004022c8  33  68 (.rodata) utf16le is a wall with no embedded zeros\n
+5   0x00002248 0x00402248 48  97   .rodata utf16le \nutf16le> \\u00a2\\u20ac\\U00010348 in green:\e[32m 
+8   0x000022c8 0x004022c8 33  68   .rodata utf16le is a wall with no embedded zeros\n
+
+5   0x00002248 0x00402248 57  118  .rodata utf16le \nutf16le> \\u00a2\\u20ac\\U00010348 in green:\e[32m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
 EOF
 RUN
 

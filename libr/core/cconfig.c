@@ -940,6 +940,16 @@ static bool cb_binstrenc (void *user, void *data) {
 	return false;
 }
 
+static bool cb_truncnonascii(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (core->bin) {
+		core->bin->trunc_nonascii = node->i_value;
+		r_bin_reset_strings (core->bin);
+	}
+	return true;
+}
+
 static bool cb_binfilter(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -3602,6 +3612,7 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* str */
 	SETCB ("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash");
+	SETCB ("str.truncnonascii", "true", &cb_truncnonascii, "Truncate non-ascii chars from ascii strings");
 
 	/* search */
 	SETCB ("search.contiguous", "true", &cb_contiguous, "Accept contiguous/adjacent search hits");
