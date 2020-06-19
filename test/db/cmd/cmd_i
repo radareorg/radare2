@@ -3560,6 +3560,28 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=bin.str.enc string reset
+FILE=--
+CMDS=<<EOF
+mkdir .tmp
+cp bins/elf/analysis/x86-helloworld-gcc .tmp/strenc-bin
+o+ .tmp/strenc-bin
+iz~:3..
+s 0x080484b0
+wz k\0i\0abcdefgh
+(izenc enc; e bin.str.enc=$0; iz~:3..)
+.(izenc guess)
+.(izenc utf8)
+o-*
+rm .tmp/strenc-bin
+EOF
+EXPECT=<<EOF
+0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+0   0x000004b0 0x080484b0 6   13   .rodata utf16le ki扡摣晥桧 blocks=Basic Latin,CJK Unified Ideographs
+0   0x000004b4 0x080484b4 8   9    .rodata ascii abcdefgh
+EOF
+RUN
+
 NAME=ik-relro
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=ik info/elf.relro

@@ -930,8 +930,11 @@ static bool cb_binstrenc (void *user, void *data) {
 			free (node->value);
 			node->value = strdup (pair->name);
 			free (enc);
-			free (core->bin->strenc);
-			core->bin->strenc = !strcmp (node->value, "guess") ? NULL : strdup (node->value);
+			if (core->bin) {
+				free (core->bin->strenc);
+				core->bin->strenc = !strcmp (node->value, "guess") ? NULL : strdup (node->value);
+				r_bin_reset_strings (core->bin);
+			}
 			return true;
 		}
 	}
