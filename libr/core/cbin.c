@@ -903,7 +903,6 @@ static int bin_dwarf(RCore *core, int mode) {
 		r_bin_dwarf_parse_aranges (core->bin, mode);
 		list = ownlist = r_bin_dwarf_parse_line (core->bin, mode);
 		r_bin_dwarf_free_debug_abbrev (da);
-		free (da);
 	}
 	if (!list) {
 		return false;
