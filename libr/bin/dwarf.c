@@ -1315,6 +1315,7 @@ R_API void r_bin_dwarf_free_debug_abbrev(RBinDwarfDebugAbbrev *da) {
 		R_FREE (da->decls[i].defs);
 	}
 	R_FREE (da->decls);
+	free (da);
 }
 
 static void free_attr_value(RBinDwarfAttrValue *val) {

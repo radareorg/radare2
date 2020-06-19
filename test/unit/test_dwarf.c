@@ -12,17 +12,17 @@
 #define check_abbrev_tag(expected_tag) \
 	mu_assert_eq (da->decls[i].tag, expected_tag, "Incorrect abbreviation tag")
 
-#define check_abbrev_length(expected_length) \
-	mu_assert_eq (da->decls[i].length, expected_length, "Incorrect abbreviation length")
+#define check_abbrev_count(expected_count) \
+	mu_assert_eq (da->decls[i].count, expected_count, "Incorrect abbreviation count")
 
 #define check_abbrev_children(expected_children) \
 	mu_assert_eq (da->decls[i].has_children, expected_children, "Incorrect children flag")
 
 #define check_abbrev_attr_name(expected_name) \
-	mu_assert_eq (da->decls[i].specs[j].attr_name, expected_name, "Incorrect children flag");
+	mu_assert_eq (da->decls[i].defs[j].attr_name, expected_name, "Incorrect children flag");
 
 #define check_abbrev_attr_form(expected_form) \
-	mu_assert_eq (da->decls[i].specs[j].attr_form, expected_form, "Incorrect children flag");
+	mu_assert_eq (da->decls[i].defs[j].attr_form, expected_form, "Incorrect children flag");
 
 /**
  * @brief Comparator to sort list of line statements by address(collection of DwarfRows)
@@ -57,7 +57,7 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
 	da = r_bin_dwarf_parse_abbrev (bin, MODE);
-	mu_assert_eq (da->length, 7, "Incorrect number of abbreviation");
+	mu_assert_eq (da->count, 7, "Incorrect number of abbreviation");
 
 	// order matters
 	// I nest scopes to make it more readable, (hopefully)
@@ -65,7 +65,7 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	check_abbrev_tag (DW_TAG_compile_unit);
 	{
 		check_abbrev_children (true);
-		check_abbrev_length (8);
+		check_abbrev_count (8);
 		{
 			int j = 0;
 			check_abbrev_attr_name (DW_AT_producer);
@@ -93,45 +93,43 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	i++;
 	check_abbrev_tag (DW_TAG_variable);
 	{
-		check_abbrev_length (8);
+		check_abbrev_count (8);
 		check_abbrev_children (false);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_base_type);
 	{
-		check_abbrev_length (4);
+		check_abbrev_count (4);
 		check_abbrev_children (false);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_subprogram);
 	{
-		check_abbrev_length (12);
+		check_abbrev_count (12);
 		check_abbrev_children (true);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_variable);
 	{
-		check_abbrev_length (7);
+		check_abbrev_count (7);
 		check_abbrev_children (false);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_subprogram);
 	{
-		check_abbrev_length (10);
+		check_abbrev_count (10);
 		check_abbrev_children (true);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_variable);
 	{
-		check_abbrev_length (6);
+		check_abbrev_count (6);
 		check_abbrev_children (false);
 	}
 	i++;
 
-	RList *line_list = NULL;
-
-	line_list = r_bin_dwarf_parse_line (bin, MODE);
-	mu_assert_eq (line_list->length, 8, "Amount of line information parse doesn't match");
+	RList *line_list = r_bin_dwarf_parse_line (bin, MODE);
+	mu_assert_eq (r_list_length (line_list), 8, "Amount of line information parse doesn't match");
 
 	RBinDwarfRow *row;
 	RListIter *iter;
@@ -155,6 +153,9 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 		mu_assert_eq (row->address, test_addresses[i++], "Line number statement address doesn't match");
 	}
 
+	r_list_free (line_list);
+	r_bin_dwarf_free_debug_abbrev (da);
+	r_bin_free (bin);
 	r_io_free (io);
 	mu_end;
 }
@@ -183,7 +184,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
 	da = r_bin_dwarf_parse_abbrev (bin, MODE);
-	mu_assert ("Incorrect number of abbreviation", da->length == 32);
+	mu_assert ("Incorrect number of abbreviation", da->count == 32);
 
 	// order matters
 	// I nest scopes to make it more readable, (hopefully)
@@ -191,7 +192,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	check_abbrev_tag (DW_TAG_compile_unit);
 	{
 		check_abbrev_children (true);
-		check_abbrev_length (9);
+		check_abbrev_count (9);
 		{
 			/**
 			 *  Everything commented out is something that is missing from being printed by `id` Radare
@@ -229,7 +230,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	check_abbrev_tag (DW_TAG_structure_type);
 	{
 		check_abbrev_children (true);
-		check_abbrev_length (8);
+		check_abbrev_count (8);
 		{
 			/**
 			 *  Everything commented out is something that is missing from being printed by `id` Radare
@@ -264,31 +265,31 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	check_abbrev_tag (DW_TAG_subprogram);
 	{
 		check_abbrev_children (true);
-		check_abbrev_length (8);
+		check_abbrev_count (8);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_formal_parameter);
 	{
 		check_abbrev_children (false);
-		check_abbrev_length (3);
+		check_abbrev_count (3);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_formal_parameter);
 	{
 		check_abbrev_children (false);
-		check_abbrev_length (2);
+		check_abbrev_count (2);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_member);
 	{
 		check_abbrev_children (false);
-		check_abbrev_length (5);
+		check_abbrev_count (5);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_subprogram);
 	{
 		check_abbrev_children (true);
-		check_abbrev_length (10);
+		check_abbrev_count (10);
 	}
 	i++;
 
@@ -296,7 +297,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	check_abbrev_tag (DW_TAG_subprogram);
 	{
 		check_abbrev_children (true);
-		check_abbrev_length (12);
+		check_abbrev_count (12);
 		{
 			int j = 0;
 			check_abbrev_attr_name (DW_AT_external);
@@ -337,155 +338,153 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	check_abbrev_tag (DW_TAG_subprogram);
 	{
 		check_abbrev_children (true);
-		check_abbrev_length (13);
+		check_abbrev_count (13);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_const_type);
 	{
 		check_abbrev_children (false);
-		check_abbrev_length (2);
+		check_abbrev_count (2);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_pointer_type);
 	{
 		check_abbrev_children (false);
-		check_abbrev_length (3);
+		check_abbrev_count (3);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_reference_type);
 	{
 		check_abbrev_children (false);
-		check_abbrev_length (3);
+		check_abbrev_count (3);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_subroutine_type);
 	{
 		check_abbrev_children (true);
-		check_abbrev_length (3);
+		check_abbrev_count (3);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_unspecified_parameters);
 	{
 		check_abbrev_children (false);
-		check_abbrev_length (1);
+		check_abbrev_count (1);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_base_type);
 	{
 		check_abbrev_children (false);
-		check_abbrev_length (4);
+		check_abbrev_count (4);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_pointer_type);
 	{
 		check_abbrev_children (false);
-		check_abbrev_length (4);
+		check_abbrev_count (4);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_structure_type);
 	{
 		check_abbrev_children (true);
-		check_abbrev_length (8);
+		check_abbrev_count (8);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_inheritance);
 	{
 		check_abbrev_children (false);
-		check_abbrev_length (3);
+		check_abbrev_count (3);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_subprogram);
 	{
 		check_abbrev_children (true);
-		check_abbrev_length (8);
+		check_abbrev_count (8);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_subprogram);
 	{
 		check_abbrev_children (true);
-		check_abbrev_length (10);
+		check_abbrev_count (10);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_subprogram);
 	{
 		check_abbrev_children (true);
-		check_abbrev_length (13);
+		check_abbrev_count (13);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_subprogram);
 	{
 		check_abbrev_children (true);
-		check_abbrev_length (12);
+		check_abbrev_count (12);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_variable);
 	{
 		check_abbrev_children (false);
-		check_abbrev_length (7);
+		check_abbrev_count (7);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_variable);
 	{
 		check_abbrev_children (false);
-		check_abbrev_length (7);
+		check_abbrev_count (7);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_subprogram);
 	{
 		check_abbrev_children (true);
-		check_abbrev_length (8);
+		check_abbrev_count (8);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_formal_parameter);
 	{
 		check_abbrev_children (false);
-		check_abbrev_length (5);
+		check_abbrev_count (5);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_subprogram);
 	{
 		check_abbrev_children (true);
-		check_abbrev_length (5);
+		check_abbrev_count (5);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_formal_parameter);
 	{
 		check_abbrev_children (false);
-		check_abbrev_length (4);
+		check_abbrev_count (4);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_subprogram);
 	{
 		check_abbrev_children (true);
-		check_abbrev_length (9);
+		check_abbrev_count (9);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_formal_parameter);
 	{
 		check_abbrev_children (false);
-		check_abbrev_length (3);
+		check_abbrev_count (3);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_subprogram);
 	{
 		check_abbrev_children (true);
-		check_abbrev_length (9);
+		check_abbrev_count (9);
 	}
 	i++;
 	check_abbrev_tag (DW_TAG_subprogram);
 	{
 		check_abbrev_children (true);
-		check_abbrev_length (8);
+		check_abbrev_count (8);
 	}
 
 	// r_bin_dwarf_parse_info (da, core->bin, mode); Information not stored anywhere, not testable now?
 
 	// r_bin_dwarf_parse_aranges (core->bin, MODE); Information not stored anywhere, not testable now?
 
-	RList *line_list = NULL;
-
-	line_list = r_bin_dwarf_parse_line (bin, MODE);
-	mu_assert_eq (line_list->length, 60, "Amount of line information parse doesn't match");
+	RList *line_list = r_bin_dwarf_parse_line (bin, MODE);
+	mu_assert_eq (r_list_length (line_list), 60, "Amount of line information parse doesn't match");
 
 	RBinDwarfRow *row;
 	RListIter *iter;
@@ -563,6 +562,9 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 		mu_assert_eq (row->address, test_addresses[i++], "Line number statement address doesn't match");
 	}
 
+	r_list_free (line_list);
+	r_bin_dwarf_free_debug_abbrev (da);
+	r_bin_free (bin);
 	r_io_free (io);
 	mu_end;
 }
@@ -580,23 +582,21 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
 	da = r_bin_dwarf_parse_abbrev (bin, MODE);
-	mu_assert_eq (da->length, 58, "Incorrect number of abbreviation");
+	mu_assert_eq (da->count, 58, "Incorrect number of abbreviation");
 	int i = 18;
 
 	check_abbrev_tag (DW_TAG_formal_parameter);
-	check_abbrev_length (5);
+	check_abbrev_count (5);
 	check_abbrev_children (false);
 	check_abbrev_code (19);
 	i = 41;
 	check_abbrev_tag (DW_TAG_inheritance);
-	check_abbrev_length (3);
+	check_abbrev_count (3);
 	check_abbrev_children (false);
 	check_abbrev_code (18);
 
-	RList *line_list = NULL;
-
-	line_list = r_bin_dwarf_parse_line (bin, MODE);
-	mu_assert_eq (line_list->length, 64, "Amount of line information parse doesn't match");
+	RList *line_list = r_bin_dwarf_parse_line (bin, MODE);
+	mu_assert_eq (r_list_length (line_list), 64, "Amount of line information parse doesn't match");
 
 	RBinDwarfRow *row;
 	RListIter *iter;
@@ -678,6 +678,9 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 		mu_assert_eq (row->address, test_addresses[i++], "Line number statement address doesn't match");
 	}
 
+	r_list_free (line_list);
+	r_bin_dwarf_free_debug_abbrev (da);
+	r_bin_free (bin);
 	r_io_free (io);
 	mu_end;
 }
@@ -697,12 +700,10 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 	// which prints out all the abbreviation
 	da = r_bin_dwarf_parse_abbrev (bin, MODE);
 	// not ignoring null entries -> 755 abbrevs
-	mu_assert_eq (da->length, 731, "Incorrect number of abbreviation");
+	mu_assert_eq (da->count, 731, "Incorrect number of abbreviation");
 
-	RList *line_list = NULL;
-
-	line_list = r_bin_dwarf_parse_line (bin, MODE);
-	mu_assert_eq (line_list->length, 771, "Amount of line information parse doesn't match");
+	RList *line_list = r_bin_dwarf_parse_line (bin, MODE);
+	mu_assert_eq (r_list_length (line_list), 771, "Amount of line information parse doesn't match");
 
 	RBinDwarfRow *row;
 	RListIter *iter;
@@ -744,6 +745,8 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 			break;
 	}
 
+	r_list_free (line_list);
+	r_bin_dwarf_free_debug_abbrev (da);
 	r_io_free (io);
 	mu_end;
 }
@@ -762,24 +765,22 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
 	da = r_bin_dwarf_parse_abbrev (bin, MODE);
-	mu_assert_eq (da->length, 58, "Incorrect number of abbreviation");
+	mu_assert_eq (da->count, 58, "Incorrect number of abbreviation");
 
 	int i = 18;
 
 	check_abbrev_tag (DW_TAG_formal_parameter);
-	check_abbrev_length (5);
+	check_abbrev_count (5);
 	check_abbrev_children (false);
 	check_abbrev_code (19);
 	i = 41;
 	check_abbrev_tag (DW_TAG_inheritance);
-	check_abbrev_length (4);
+	check_abbrev_count (4);
 	check_abbrev_children (false);
 	check_abbrev_code (18);
 
-	RList *line_list = NULL;
-
-	line_list = r_bin_dwarf_parse_line (bin, MODE);
-	mu_assert_eq (line_list->length, 64, "Amount of line information parse doesn't match");
+	RList *line_list = r_bin_dwarf_parse_line (bin, MODE);
+	mu_assert_eq (r_list_length (line_list), 64, "Amount of line information parse doesn't match");
 
 	RBinDwarfRow *row;
 	RListIter *iter;
@@ -859,6 +860,9 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	}
 
 	// add line information check
+	r_list_free (line_list);
+	r_bin_dwarf_free_debug_abbrev (da);
+	r_bin_free (bin);
 	r_io_free (io);
 	mu_end;
 }
@@ -872,13 +876,10 @@ bool test_dwarf4_cpp_many_comp_units(void) {
 	bool res = r_bin_open (bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
 	mu_assert ("couldn't open file", res);
 
-	RBinDwarfDebugAbbrev *da = NULL;
 	// TODO add abbrev checks
 
-	RList *line_list = NULL;
-
-	line_list = r_bin_dwarf_parse_line (bin, MODE);
-	mu_assert_eq (line_list->length, 75, "Amount of line information parse doesn't match");
+	RList *line_list = r_bin_dwarf_parse_line (bin, MODE);
+	mu_assert_eq (r_list_length (line_list), 75, "Amount of line information parse doesn't match");
 
 	RBinDwarfRow *row;
 	RListIter *iter;
@@ -968,6 +969,8 @@ bool test_dwarf4_cpp_many_comp_units(void) {
 		mu_assert_eq (row->address, test_addresses[i++], "Line number statement address doesn't match");
 	}
 
+	r_list_free (line_list);
+	r_bin_free (bin);
 	r_io_free (io);
 	mu_end;
 }
