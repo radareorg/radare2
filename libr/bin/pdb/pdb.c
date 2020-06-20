@@ -1172,7 +1172,7 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-R_API bool init_pdb_parser(R_PDB *pdb, const char *filename) {
+R_API bool init_pdb_parser_with_buf(R_PDB *pdb, RBuffer* buf) {
 	char *signature = NULL;
 	int bytes_read = 0;
 
@@ -1181,18 +1181,13 @@ R_API bool init_pdb_parser(R_PDB *pdb, const char *filename) {
 		goto error;
 	}
 	if (!pdb->cb_printf) {
-		pdb->cb_printf = (PrintfCallback) printf;
+		pdb->cb_printf = (PrintfCallback)printf;
 	}
-	pdb->buf = r_buf_new_slurp (filename);
+	pdb->buf = buf;
 	if (!pdb->buf) {
-		eprintf ("File reading error/empty file\n");
+		eprintf ("Invalid PDB buffer\n");
 		goto error;
 	}
-// pdb->fp = r_sandbox_fopen (filename, "rb");
-// if (!pdb->fp) {
-// eprintf ("file %s can not be open\n", filename);
-// goto error;
-// }
 	signature = (char *) calloc (1, PDB7_SIGNATURE_LEN);
 	if (!signature) {
 		eprintf ("Memory allocation error.\n");
@@ -1201,7 +1196,7 @@ R_API bool init_pdb_parser(R_PDB *pdb, const char *filename) {
 
 	bytes_read = r_buf_read (pdb->buf, (ut8 *) signature, PDB7_SIGNATURE_LEN);
 	if (bytes_read != PDB7_SIGNATURE_LEN) {
-		eprintf ("File reading error.\n");
+		eprintf ("PDB reading error.\n");
 		goto error;
 	}
 
@@ -1225,4 +1220,13 @@ R_API bool init_pdb_parser(R_PDB *pdb, const char *filename) {
 error:
 	R_FREE (signature);
 	return false;
+}
+
+R_API bool init_pdb_parser(R_PDB *pdb, const char *filename) {
+	RBuffer *buf = r_buf_new_slurp (filename);
+	if (!buf) {
+		eprintf ("%s: Error reading file \"%s\"\n", __func__, filename);
+		return false;
+	}
+	return init_pdb_parser_with_buf (pdb, buf);
 }
