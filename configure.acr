@@ -218,9 +218,10 @@ IFEQ USEROSTYPE solaris ; {
 	HAVE_PTRACE = 0 ;
 	USE_PTRACE_WRAP = 0 ;
 }{
-	HAVE_PTRACE = 1 ;
+IFEQ USEROSTYPE haiku ; {
+	HAVE_PTRACE = 0 ;
 	USE_PTRACE_WRAP = 0 ;
-} } } } }
+} } } } } }
 
 IFNOT DEBUGGER {
 	HAVE_PTRACE = 0 ;

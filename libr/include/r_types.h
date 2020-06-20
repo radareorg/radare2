@@ -140,7 +140,7 @@
   static inline struct tm *gmtime_r(const time_t *t, struct tm *r) { return (gmtime_s(r, t))? NULL : r; }
 #endif
 
-#if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun)
+#if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun) || defined(__HAIKU__)
   #define __BSD__ 0
   #define __UNIX__ 1
 #endif
@@ -570,8 +570,12 @@ enum {
 	R_SYS_ARCH_LM32 =  0x80000000LL, // 1<<31
 };
 
+#if !defined(__HAIKU__)
 #if HAVE_CLOCK_NANOSLEEP && CLOCK_MONOTONIC && (__linux__ || (__FreeBSD__ && __FreeBSD_version >= 1101000) || (__NetBSD__ && __NetBSD_Version__ >= 700000000))
 #define HAS_CLOCK_NANOSLEEP 1
+#else
+#define HAS_CLOCK_NANOSLEEP 0
+#endif
 #else
 #define HAS_CLOCK_NANOSLEEP 0
 #endif
@@ -593,6 +597,8 @@ enum {
 #define R_SYS_OS "openbsd"
 #elif defined (__FreeBSD__) || defined (__FreeBSD_kernel__)
 #define R_SYS_OS "freebsd"
+#elif defined (__HAIKU__)
+#define R_SYS_OS "haiku"
 #else
 #define R_SYS_OS "unknown"
 #endif
