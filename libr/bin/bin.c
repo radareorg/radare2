@@ -764,9 +764,6 @@ R_API RList *r_bin_reset_strings(RBin *bin) {
 		bf->o->strings = NULL;
 	}
 
-	if (bin->minstrlen <= 0) {
-		return NULL;
-	}
 	bf->rawstr = bin->rawstr;
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 
