@@ -296,6 +296,8 @@ static const char *help_msg_do[] = {
 	"Usage:", "do", " # Debug (re)open commands",
 	"do", "", "Open process (reload, alias for 'oo')",
 	"dor", " [rarun2]", "Comma separated list of k=v rarun2 profile options (e dbg.profile)",
+	"doe", "", "Show rarun2 startup profile",
+	"doe!", "", "Edit rarun2 startup profile with $EDITOR",
 	"doo", " [args]", "Reopen in debug mode with args (alias for 'ood')",
 	"doof", " [args]", "Reopen in debug mode from file (alias for 'oodf')",
 	"doc", "", "Close debug session",
@@ -5382,6 +5384,26 @@ static int cmd_debug(void *data, const char *input) {
 		switch (input[1]) {
 		case '\0': // "do"
 			r_core_file_reopen (core, input[1] ? input + 2: NULL, 0, 1);
+			break;
+		case 'e': // "doe"
+			switch (input[2]) {
+			case '\0': // "doe"
+				if (core->io->envprofile) {
+					r_cons_println (core->io->envprofile);
+				}
+				break;
+			case '!': // "doe!"
+			{
+				char *out = r_core_editor (core, NULL, core->io->envprofile);
+				if (out) {
+					free (core->io->envprofile);
+					core->io->envprofile = out;
+					eprintf ("%s\n", core->io->envprofile);
+				}
+			} break;
+			default:
+				break;
+			}
 			break;
 		case 'r': // "dor" : rarun profile
 			if (input[2] == ' ') {
