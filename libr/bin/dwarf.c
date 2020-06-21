@@ -427,12 +427,12 @@ static st32 find_attr_idx(const RBinDwarfDie *die, st32 attr_name) {
 	return -1;
 }
 
-static char *parse_type(const RBinDwarfDie *all_dies, ut64 count, ut64 offset, char *type, ut64 type_length) {
+static void parse_type(const RBinDwarfDie *all_dies, ut64 count, ut64 offset, char *type, ut64 type_length) {
 	RBinDwarfDie key = { .offset = offset };
 	RBinDwarfDie *type_die = bsearch (&key, all_dies, count, sizeof (key), die_tag_cmp);
 
 	if (!type_die) {
-		return NULL;
+		return;
 	}
 	st32 name_idx;
 	st32 type_idx;
