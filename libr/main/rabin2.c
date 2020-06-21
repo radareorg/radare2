@@ -893,6 +893,12 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		return 1;
 	}
 	file = argv[opt.ind];
+
+	if (file && file[0] == '\0') {
+		eprintf ("Couldn't open empty path\n");
+		return 1;
+	}	
+
 	if (!query) {
 		if (action & R_BIN_REQ_HELP || action == R_BIN_REQ_UNK || !file) {
 			r_core_fini (&core);

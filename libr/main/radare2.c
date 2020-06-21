@@ -690,6 +690,13 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			pfile = argv[opt.ind] ? strdup (argv[opt.ind]) : NULL;
 		}
 	}
+
+	if (pfile && pfile[0] == '\0') {
+		eprintf ("Couldn't open empty path\n");
+		ret = 1;
+		goto beach;
+	}	
+
 	if (do_list_io_plugins) {
 		if (r_config_get_i (r->config, "cfg.plugins")) {
 			r_core_loadlibs (r, R_CORE_LOADLIBS_ALL, NULL);
