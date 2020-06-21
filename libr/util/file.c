@@ -181,7 +181,7 @@ R_API bool r_file_exists(const char *str) {
 	return S_IFREG == (S_IFREG & buf.st_mode);
 }
 
-R_API long r_file_proc_size(FILE *fd) {
+static inline long r_file_proc_size(FILE *fd) {
 	char buf[1024];
 	long size = 0;
 	do {
