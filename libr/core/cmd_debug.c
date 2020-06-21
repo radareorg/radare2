@@ -2360,7 +2360,8 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	char *arg;
 	struct r_reg_item_t *r;
 	const char *name, *use_color;
-	int size, i, type = R_REG_TYPE_GPR;
+	size_t i;
+	int size, type = R_REG_TYPE_GPR;
 	int bits = (core->dbg->bits & R_SYS_BITS_64)? 64: 32;
 	int use_colors = r_config_get_i (core->config, "scr.color");
 	int newbits = atoi ((str&&*str)? str + 1: "");
@@ -2860,15 +2861,17 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			rad = str[1];
 			str++;
 			if (rad == 'j' && !str[1]) {
-				// TODO use pj api here
-				r_cons_print ("[");
-				for (i = 0; (name = r_reg_get_type (i)); i++) {
-					if (i) {
-						r_cons_print (",");
-					}
-					r_cons_printf ("\"%s\"", name);
+				PJ *pj = pj_new ();
+				if (!pj) {
+					break;
 				}
-				r_cons_println ("]");
+				pj_a (pj);
+				for (i = 0; (name = r_reg_get_type (i)); i++) {
+					pj_s (pj, name);
+				}
+				pj_end (pj);
+				r_cons_println (pj_string (pj));
+				pj_free (pj);
 				break;
 			}
 			// fallthrough
