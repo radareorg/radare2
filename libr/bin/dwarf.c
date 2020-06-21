@@ -192,7 +192,7 @@ static const char *dwarf_attr_encodings[] = {
 	[DW_AT_recursive] = "DW_AT_recursive",
 	[DW_AT_signature] = "DW_AT_signature",
 	[DW_AT_main_subprogram] = "DW_AT_main_subprogram",
-	[DW_AT_data_big_offset] = "DW_AT_data_big_offset",
+	[DW_AT_data_bit_offset] = "DW_AT_data_big_offset",
 	[DW_AT_const_expr] = "DW_AT_const_expr",
 	[DW_AT_enum_class] = "DW_AT_enum_class",
 	[DW_AT_linkage_name] = "DW_AT_linkage_name",
@@ -410,41 +410,78 @@ static void struct_type_fini(void *e, void *user) {
 	free ((char *)member->name);
 	free ((char *)member->type);
 }
+
+/**
+ * @brief Finds index of a particular attribute of a DIE
+ * 
+ * @param die 
+ * @param attr_name 
+ * @return st32 Index, -1 if nothing found
+ */
+static st32 find_attr_idx(const RBinDwarfDie *die, st32 attr_name) {
+	for (st32 i = 0; i < die->count; i++) {
+		if (die->attr_values[i].attr_name == attr_name) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 static char *parse_type(const RBinDwarfDie *all_dies, ut64 count, ut64 offset, char *type, ut64 type_length) {
 	RBinDwarfDie key = { .offset = offset };
 	RBinDwarfDie *type_die = bsearch (&key, all_dies, count, sizeof (key), die_tag_cmp);
+
 	if (!type_die) {
 		return NULL;
 	}
+	st32 name_idx;
+	st32 type_idx;
+	int len;
 	switch (type_die->tag) {
 	case DW_TAG_base_type:
-		strcpy (type, type_die->attr_values[2].string.content);
+		name_idx = find_attr_idx(type_die, DW_AT_name);
+		strcpy (type, type_die->attr_values[name_idx].string.content);
 		break;
 	// this should be recursive search for the type until you find base_type
 	// so many things hardcoded so I can get a picture of the things needed
 	// TODO - get_name() that will get me a name of the DIE if it has one
 	case DW_TAG_pointer_type:
-		parse_type (all_dies, count, type_die->attr_values[1].reference, type, type_length);
-		int len = strlen (type);
+		type_idx = find_attr_idx(type_die, DW_AT_type);
+		parse_type (all_dies, count, type_die->attr_values[type_idx].reference, type, type_length);
+		len = strlen (type);
 		type[len] = ' ';
 		type[len + 1] = '*';
 		type[len + 2] = 0;
 		break;
 	case DW_TAG_structure_type:
-		strcpy (type, type_die->attr_values[0].string.content);
+		name_idx = find_attr_idx(type_die, DW_AT_name);
+		strcpy (type, type_die->attr_values[name_idx].string.content);
 		break;
+	case DW_TAG_subroutine_type:
+		type_idx = find_attr_idx(type_die, DW_AT_type);
+		parse_type (all_dies, count, type_die->attr_values[type_idx].reference, type, type_length);
+		len = strlen (type);
+		type[len] = ' ';
+		type[len + 1] = '(';
+		type[len + 2] = ')';
+		type[len + 3] = 0;
 	default:
 		break;
 	}
 }
+// http://www.dwarfstd.org/doc/DWARF4.pdf#page=102&zoom=100,0,0
+// Data member has a DW_AT_name attribute!
+static RAnalStructMember *parse_struct_member(const RBinDwarfDie *all_dies, ut64 all_dies_count, ut64 curr_die_idx) {
+	r_return_val_if_fail(all_dies, NULL);
 
-static RAnalStructMember *parse_struct_member(const RBinDwarfDie *all_dies, ut64 count, const RBinDwarfDie *die) {
-	r_return_val_if_fail(die, NULL);
+	RBinDwarfDie *die = &all_dies[curr_die_idx];
+
 	char *name = NULL;
 	char *type = NULL;
 	ut64 offset = 0;
 	ut64 type_ref = 0;
-	char type_buf[4128] = {};
+	char type_buf[4128] = {}; // FIXME
+
 	for (size_t i = 0; i < die->count; i++) {
 		RBinDwarfAttrValue *value = &die->attr_values[i];
 		switch(die->attr_values[i].attr_name) {
@@ -454,13 +491,32 @@ static RAnalStructMember *parse_struct_member(const RBinDwarfDie *all_dies, ut64
 				break;
 			// solve by looking at the offset
 			case DW_AT_type:
-				parse_type(all_dies, count, value->reference, type_buf, 0);
+				parse_type(all_dies, all_dies_count, value->reference, type_buf, 0);
 				type = strdup(type_buf);
 				break;
 			// Sadly it seems it can be a dwarf expression, this can get quite complex...
 			case DW_AT_data_member_location:
 				offset = value->data;
 				break;
+			case DW_AT_accessibility: // private, public etc.
+			case DW_AT_mutable: // flag is it is mutable
+			case DW_AT_data_bit_offset: 
+			/* 
+				int that specifies the number of bits from beginning
+				of containing entity to the beginning of the data member
+			*/
+			/*
+			case DW_AT_data_member_location: 
+				2 cases, 1.: If val is integer, it offset in bytes from
+				the beginning of containing entity. If containing entity has 
+				a bit offset, member has that bit offset aswell
+				2.: value is a location description 
+				http://www.dwarfstd.org/doc/DWARF4.pdf#page=39&zoom=100,0,0
+			*/
+			case DW_AT_byte_size:
+			case DW_AT_bit_size:
+			case DW_AT_containing_type:
+			
 			default:
 				break;
 		}
@@ -490,28 +546,40 @@ static void print_struct_member(RAnalBaseType *base_type) {
 		printf("  %s : %s\n", member->type, member->name);
 	}
 }
-
-static void parse_types(RBinDwarfDie *all_dies, ut64 count, ut64 idx) {
-	// now we control the flow, lets construct the structure
+// http://www.dwarfstd.org/doc/DWARF4.pdf#page=102&zoom=100,0,0
+static void parse_structure_type(RBinDwarfDie *all_dies, ut64 count, ut64 idx) {
 	RBinDwarfDie *die = &all_dies[idx];
+
 	RAnalBaseType *base_type = R_NEW (RAnalBaseType);
 	base_type->kind = R_ANAL_BASE_TYPE_KIND_STRUCT;
+	// TODO delete all printing shit again
 	printf ("Struct, name: %s\n", die->attr_values[0].string.content);
 
 	RVector members;
 	r_vector_init (&members, sizeof (RAnalStructMember), struct_type_fini, NULL);
 	// for now lets ignore possibility of any futher nesting
+
 	if (die->has_children) {
 		// sibling list is terminated by null entry
+		int child_depth = 1;
 		RBinDwarfDie *child_die = &all_dies[++idx];
-		for (size_t j = idx; child_die->abbrev_code != 0 && j < count; j++) {
+		for (size_t j = idx; child_depth > 0 && j < count; j++) {
 			child_die = &all_dies[j];
-			if (child_die->tag == DW_TAG_member) {
-				RAnalStructMember *member = parse_struct_member (all_dies, count, child_die);
+			// right now we skip non direct descendats of the structure
+			// can be also DW_TAG_suprogram for class methods or tag for templates
+			if (child_depth == 1 && child_die->tag == DW_TAG_member) {
+				RAnalStructMember *member = parse_struct_member (all_dies, count, j);
 				void *element = r_vector_push (&members, member);
 				if (!element) {
 					goto cleanup;
 				}
+			}
+			if (child_die->has_children) {
+				child_depth++;
+			}
+			// 0 abbr entry means end of a sibling list
+			if (child_die->abbrev_code == 0) {
+				child_depth--;
 			}
 		}
 	}
@@ -521,20 +589,29 @@ cleanup:
 	r_vector_fini (&base_type->struct_data.members);
 }
 
+static void parse_types(RBinDwarfDie *all_dies, ut64 count, ut64 idx) {
+	RBinDwarfDie *die = &all_dies[idx];
+
+	switch (die->tag)
+	{
+	case DW_TAG_structure_type:
+		parse_structure_type (all_dies, count, idx);
+		break;
+	
+	default:
+		break;
+	}
+}
+
 R_API void r_bin_dwarf_parse_types(RBinDwarfDebugInfo *info) {
-	// naive solution, travel through all entries
-	// working just for basic C structures
 	for (size_t i = 0; i < info->count; i++) {
 		for (size_t j = 0; j < info->comp_units[i].count; j++) {
 			RBinDwarfDie *curr_die = &info->comp_units[i].dies[j];
 			if (is_type_tag (curr_die->tag)) {
-				// now we control the flow, lets construct the structure
 				parse_types(info->comp_units[i].dies, info->comp_units[i].count, j);
 			}
 		}
 	}
-cleanup:
-	return;
 }
 
 // Parses source file header of DWARF version <= 4

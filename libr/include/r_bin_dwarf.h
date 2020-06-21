@@ -47,6 +47,8 @@ extern "C" {
 #define DW_LNE_hi_user                  0xff /* DWARF3 */
 
 /* debug_info tags */
+// this is not a real dwarf named entry, but I wanted to give it
+// a name so it's more obvious and readable that it's just a type of entry
 #define DW_TAG_null_entry               0x00
 #define DW_TAG_array_type               0x01
 #define DW_TAG_class_type               0x02
@@ -214,7 +216,7 @@ extern "C" {
 #define DW_AT_recursive                 0x68 // DWARF 3 additions end
 #define DW_AT_signature                 0x69
 #define DW_AT_main_subprogram           0x6a
-#define DW_AT_data_big_offset           0x6b
+#define DW_AT_data_bit_offset           0x6b
 #define DW_AT_const_expr                0x6c
 #define DW_AT_enum_class                0x6d
 #define DW_AT_linkage_name              0x6e
