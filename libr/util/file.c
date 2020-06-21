@@ -182,10 +182,11 @@ R_API bool r_file_exists(const char *str) {
 }
 
 R_API long r_file_proc_size(FILE *fd) {
+	char buf[1024];
 	long size = 0;
-	while (fgetc (fd) != EOF) {
-		size++;
-	}
+	do {
+		size += fread (buf, 1, sizeof (buf), fd);
+	} while (!feof (fd));
 	return size;
 }
 
