@@ -437,6 +437,34 @@ static st32 find_attr_idx(const RBinDwarfDie *die, st32 attr_name) {
 	}
 	return -1;
 }
+
+static bool strbuf_rev_prepend_char(RStrBuf *sb, const char *s, int c) {
+	r_return_val_if_fail (sb && s, false);
+	int l = strlen (s);
+	// fast path if no chars to append
+	if (l == 0) {
+		return true;
+	}
+	int newlen = l + sb->len;
+	char *ns = malloc (newlen + 1);
+	bool ret = false;
+	char *sb_str = sb->ptr ? sb->ptr: sb->buf;
+	char *pivot = strrchr(sb_str, c);
+	if (!pivot) {
+		return false;
+	}
+	size_t idx = pivot - sb_str;
+	if (ns) {
+		memcpy (ns, sb_str, idx);
+		memcpy (ns + idx, s, l);
+		memcpy (ns + idx + l, sb_str + idx, sb->len - idx);
+		ns[newlen] = 0;
+		ret = r_strbuf_set (sb, ns);
+		free (ns);
+	}
+	return ret;
+}
+
 /**
  * @brief This might need a better naming
  * 
@@ -445,18 +473,19 @@ static st32 find_attr_idx(const RBinDwarfDie *die, st32 attr_name) {
  * @param offset 
  * @param type 
  * @param type_length 
+ * @return st32 DW_TAG of the the type or -1 if fail
  */
-static void parse_type(const RBinDwarfDie *all_dies, ut64 count, ut64 offset, RStrBuf *strbuf, ut64 type_length) {
-	r_return_if_fail (all_dies && strbuf);
+static st32 parse_type(const RBinDwarfDie *all_dies, ut64 count, ut64 offset, RStrBuf *strbuf, ut64 type_length) {
+	r_return_val_if_fail (all_dies && strbuf, -1);
 	RBinDwarfDie key = { .offset = offset };
 	RBinDwarfDie *type_die = bsearch (&key, all_dies, count, sizeof (key), die_tag_cmp);
 
 	if (!type_die) {
-		return;
+		return -1;
 	}
 	st32 name_idx;
 	st32 type_idx;
-	int len;
+	st32 tag;
 	switch (type_die->tag) {
 	case DW_TAG_typedef:
 	case DW_TAG_base_type:
@@ -467,11 +496,15 @@ static void parse_type(const RBinDwarfDie *all_dies, ut64 count, ut64 offset, RS
 	case DW_TAG_pointer_type:
 		type_idx = find_attr_idx (type_die, DW_AT_type);
 		if (type_idx == -1) {
-			r_strbuf_append(strbuf, " void");
+			r_strbuf_append(strbuf, "void");
 		} else {
-			parse_type (all_dies, count, type_die->attr_values[type_idx].reference, strbuf, type_length);
+			tag = parse_type (all_dies, count, type_die->attr_values[type_idx].reference, strbuf, type_length);
 		}
-		r_strbuf_append(strbuf, " *");
+		if (tag == DW_TAG_subroutine_type) {
+			strbuf_rev_prepend_char(strbuf, "(*)", '(');
+		} else {
+			r_strbuf_append(strbuf, " *");
+		}
 		break;
 	case DW_TAG_structure_type:
 	case DW_TAG_enumeration_type:
@@ -480,7 +513,7 @@ static void parse_type(const RBinDwarfDie *all_dies, ut64 count, ut64 offset, RS
 	case DW_TAG_subroutine_type:
 		type_idx = find_attr_idx (type_die, DW_AT_type);
 		if (type_idx == -1) {
-			r_strbuf_append(strbuf, " void");
+			r_strbuf_append(strbuf, "void");
 		} else {
 			parse_type (all_dies, count, type_die->attr_values[type_idx].reference, strbuf, type_length);
 		}
@@ -514,6 +547,7 @@ static void parse_type(const RBinDwarfDie *all_dies, ut64 count, ut64 offset, RS
 	default:
 		break;
 	}
+	return (st32)type_die->tag;
 }
 // http://www.dwarfstd.org/doc/DWARF4.pdf#page=102&zoom=100,0,0
 // Data member has a DW_AT_name attribute!
