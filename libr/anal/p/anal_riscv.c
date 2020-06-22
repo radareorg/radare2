@@ -105,7 +105,7 @@ static void get_insn_args(riscv_args_t *args, const char *d, insn_t l, uint64_t 
 				snprintf (RISCVARGN(args), RISCVARGSIZE , "%s",
 				  riscv_gpr_names[EXTRACT_OPERAND (CRS2S, l) + 8]);
 				break;
-			case 'U': /* RS1, constrained to equal RD */
+			case 'U': /* RS1, constrained to equal RD in CI format*/
 				snprintf (RISCVARGN(args), RISCVARGSIZE , "%s", riscv_gpr_names[rd]);
 				break;
 			case 'c': /* RS1, constrained to equal sp */
@@ -400,13 +400,13 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		} else if (!strncmp (name, "and", 3)) {
 			esilprintf (op, "%s,%s,&,%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strcmp (name, "auipc")) {
-			esilprintf (op, "%s,pc,+,%s,=", ARG (1), ARG (0));
+			esilprintf (op, "%s,$$,+,%s,=", ARG (1), ARG (0));
 		} else if (!strncmp (name, "sll", 3)) {
 			esilprintf (op, "%s,%s,<<,%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strncmp (name, "srl", 3)) {
 			esilprintf (op, "%s,%s,>>,%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strncmp (name, "sra", 3)) {
-			esilprintf (op, "%s,%s,>>,%s,=", ARG (2), ARG (1), ARG (0));
+			esilprintf (op, "%s,%s,>>>>,%s,=", ARG (2), ARG (1), ARG (0));
 		}
 		// assigns
 		else if (!strcmp (name, "mv")) {
@@ -560,6 +560,8 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		// decide whether it's ret or call
 		int rd = (word >> OP_SH_RD) & OP_MASK_RD;
 		op->type = (rd == 0) ? R_ANAL_OP_TYPE_RET: R_ANAL_OP_TYPE_UCALL;
+	} else if (is_any ("c.jalr")) {
+		op->type = R_ANAL_OP_TYPE_UCALL;
 	} else if (is_any ("c.jr")) {
 		op->type = R_ANAL_OP_TYPE_RET;
 	} else if (is_any ("beqz", "beq", "blez", "bgez", "ble",
@@ -567,10 +569,14 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			   "bgt", "bgtu", "bnez", "bne")) {
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = EXTRACT_SBTYPE_IMM (word) + addr;
-		op->fail = addr + 4;
+		op->fail = addr + op->size;
+	} else if (is_any ("c.beqz", "c.bnez")) {
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = EXTRACT_RVC_B_IMM (word) + addr;
+		op->fail = addr + op->size;
 // math
 	} else if (is_any ("addi", "addw", "addiw", "add", "auipc", "c.addi",
-			   "c.addw", "c.add")) {
+			   "c.addw", "c.add", "c.addi4spn", "c.addi16sp")) {
 		op->type = R_ANAL_OP_TYPE_ADD;
 	} else if (is_any ("c.mv")) {
 		op->type = R_ANAL_OP_TYPE_MOV;
@@ -590,12 +596,19 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_MUL;
 	} else if (is_any ("div", "divu", "divw", "divuw")) {
 		op->type = R_ANAL_OP_TYPE_DIV;
+	} else if (is_any ("slli", "c.slli")) {
+		op->type = R_ANAL_OP_TYPE_SHL;
+	} else if (is_any ("srl", "c.srli")) {
+		op->type = R_ANAL_OP_TYPE_SHR;
+	} else if (is_any ("sra", "srai", "c.srai")) {
+		op->type = R_ANAL_OP_TYPE_SAR;
 // memory
-	} else if (is_any ("sd", "sb", "sh", "sw", "c.sd", "c.sw")) {
+	} else if (is_any ("sd", "sb", "sh", "sw", "c.sd", "c.sw",
+			   "c.swsp")) {
 		op->type = R_ANAL_OP_TYPE_STORE;
 	} else if (is_any ("ld", "lw", "lwu", "lui", "li",
 			   "lb", "lbu", "lh", "lhu", "la", "lla", "c.ld",
-			   "c.lw", "c.li")) {
+			   "c.lw", "c.lwsp", "c.li", "c.lui")) {
 		op->type = R_ANAL_OP_TYPE_LOAD;
 	}
 	if (mask & R_ANAL_OP_MASK_VAL && args.num) {

@@ -370,10 +370,7 @@ R_API char *r_file_slurp(const char *str, R_NULLABLE size_t *usz) {
 		if (r_file_is_regular (str)) {
 			/* proc file */
 			fseek (fd, 0, SEEK_SET);
-			sz = procfile_size (fd);
-			if (!sz) {
-				sz = -1;
-			}
+			sz = r_file_proc_size (fd);
 		} else {
 			sz = 65536;
 		}
