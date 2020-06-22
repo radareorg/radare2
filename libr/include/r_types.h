@@ -354,6 +354,11 @@ static inline void *r_new_copy(int size, void *data) {
 #include <dirent.h>
 #include <unistd.h>
 #include <sys/time.h>
+#ifdef __HAIKU__
+// Original macro cast it to clockid_t
+#undef CLOCK_MONOTONIC
+#define CLOCK_MONOTONIC 0
+#endif
 #endif
 
 #ifndef HAVE_EPRINTF
@@ -570,12 +575,8 @@ enum {
 	R_SYS_ARCH_LM32 =  0x80000000LL, // 1<<31
 };
 
-#if !defined(__HAIKU__)
 #if HAVE_CLOCK_NANOSLEEP && CLOCK_MONOTONIC && (__linux__ || (__FreeBSD__ && __FreeBSD_version >= 1101000) || (__NetBSD__ && __NetBSD_Version__ >= 700000000))
 #define HAS_CLOCK_NANOSLEEP 1
-#else
-#define HAS_CLOCK_NANOSLEEP 0
-#endif
 #else
 #define HAS_CLOCK_NANOSLEEP 0
 #endif
