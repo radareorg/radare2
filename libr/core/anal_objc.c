@@ -92,28 +92,27 @@ static ut64 getRefPtr(RCoreObjc *o, ut64 classMethodsVA, bool *rfound) {
 	}
 
 	size_t cnt = 0;
-	ut64 ref = 0LL;
-
-	bool found = false;
+	ut64 ref = UT64_MAX;
 	bool isMsgRef = false;
-	RVector *vec = ht_up_find (o->up, namePtr, &found);
-	if (found && vec) {
-		ut64 *addr;
-		r_vector_foreach (vec, addr) {
-			const ut64 at = *addr;
-			if (inBetween (o->_selrefs, at)) {
-				isMsgRef = false;
-				ref = at;
-			} else if (inBetween (o->_msgrefs, at)) {
-				isMsgRef = true;
-				ref = at;
-			} else if (inBetween (o->_const, at)) {
-				cnt++;
-			}
+
+	RVector *vec = ht_up_find (o->up, namePtr, rfound);
+	if (!*rfound || !vec) {
+		return false;
+	}
+	ut64 *addr;
+	r_vector_foreach (vec, addr) {
+		const ut64 at = *addr;
+		if (inBetween (o->_selrefs, at)) {
+			isMsgRef = false;
+			ref = at;
+		} else if (inBetween (o->_msgrefs, at)) {
+			isMsgRef = true;
+			ref = at;
+		} else if (inBetween (o->_const, at)) {
+			cnt++;
 		}
 	}
-	
-	*rfound = found; // (cnt > 1 && ref != 0);
+	// (cnt > 1 && ref != 0);
 	return isMsgRef? ref - 8: ref;
 }
 
