@@ -77,8 +77,7 @@ static ut64 readQword(RCoreObjc *objc, ut64 addr, bool *success) {
 }
 
 static void objc_analyze(RCore *core) {
-	const char *oldstr = r_print_rowlog (core->print,
-		"Analyzing searching references to selref");
+	const char *oldstr = r_print_rowlog (core->print, "Analyzing code to find selref references");
 	r_core_cmd0 (core, "aar");
 	if (!strcmp ("arm", r_config_get (core->config, "asm.arch"))) {
 		const bool emu_lazy = r_config_get_i (core->config, "emu.lazy");
@@ -196,7 +195,6 @@ static RCoreObjc *core_objc_new (RCore *core) {
 			o->_const = s;
 		}
 	}
-	r_list_free (sections); // XXX
 	if (!o->_const || ((o->_selrefs || o->_msgrefs) && !(o->_data && o->_const))) {
 		free (o);
 		return NULL;
@@ -235,6 +233,7 @@ static bool objc_find_refs(RCore *core) {
 		}
 
 		ut64 va = objc->_data->vaddr + off;
+		// XXX do a single r_io_read_at() and just r_read_le64() here
 		ut64 classRoVA = readQword (objc, va + objc2ClassInfoOffs, &readSuccess);
 		if (!readSuccess || isInvalid (classRoVA)) {
 			continue;
@@ -251,6 +250,10 @@ static bool objc_find_refs(RCore *core) {
 
 		classMethodsVA += 8; // advance to start of class methods array
 		ut64 to = classMethodsVA + (objc2ClassMethSize * count);
+		if (classMethodsVA > to || classMethodsVA + 0xfffff < to) {
+			eprintf ("Warning: Fuzzed binary or bug in here, checking next\n");
+			continue;
+		}
 		for (va = classMethodsVA; va < to; va += objc2ClassMethSize) {
 			if (r_cons_is_breaked ()) {
 				break;
@@ -260,8 +263,9 @@ static bool objc_find_refs(RCore *core) {
 			if (!found) {
 				continue;
 			}
-			ut64 funcVA = readQword (objc, va + objc2ClassMethImpOffs, &readSuccess);
-			if (!readSuccess) {
+			bool succ = false;
+			ut64 funcVA = readQword (objc, va + objc2ClassMethImpOffs, &succ);
+			if (!succ) {
 				break;
 			}
 
