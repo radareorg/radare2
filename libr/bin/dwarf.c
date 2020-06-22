@@ -517,7 +517,7 @@ static RAnalStructMember *parse_struct_member(const RBinDwarfDie *all_dies, ut64
 	char *name = NULL;
 	char *type = NULL;
 	ut64 offset = 0;
-	char type_buf[4128] = {}; // FIXME
+	char type_buf[4128] = {}; // TODO substitue this for something dynamic
 
 	for (size_t i = 0; i < die->count; i++) {
 		RBinDwarfAttrValue *value = &die->attr_values[i];
