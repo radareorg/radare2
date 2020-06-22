@@ -255,6 +255,7 @@ static int r_debug_recoil(RDebug *dbg, RDebugRecoilMode rc_mode) {
 	if (!dbg->reason.bp_addr && dbg->recoil_mode == R_DBG_RECOIL_STEP) {
 		return true;
 	}
+	dbg->reason.bp_addr = 0;
 
 	return r_debug_bps_enable (dbg);
 }
@@ -364,8 +365,6 @@ R_API RDebug *r_debug_new(int hard) {
 	R_FREE (dbg->btalgo);
 	dbg->trace_execs = 0;
 	dbg->anal = NULL;
-	dbg->snaps = r_list_newf ((RListFree)r_debug_snap_free);
-	dbg->sessions = r_list_newf ((RListFree)r_debug_session_free);
 	dbg->pid = -1;
 	dbg->bpsize = 1;
 	dbg->tid = -1;
@@ -374,6 +373,7 @@ R_API RDebug *r_debug_new(int hard) {
 	dbg->swstep = 0;
 	dbg->stop_all_threads = false;
 	dbg->trace = r_debug_trace_new ();
+	dbg->cnum = 0;
 	dbg->cb_printf = (void *)printf;
 	dbg->reg = r_reg_new ();
 	dbg->num = r_num_new (r_debug_num_callback, r_debug_str_callback, dbg);
@@ -414,8 +414,6 @@ R_API RDebug *r_debug_free(RDebug *dbg) {
 		r_bp_free (dbg->bp);
 		//r_reg_free(&dbg->reg);
 		free (dbg->snap_path);
-		r_list_free (dbg->snaps);
-		r_list_free (dbg->sessions);
 		r_list_free (dbg->maps);
 		r_list_free (dbg->maps_user);
 		r_list_free (dbg->threads);
@@ -428,6 +426,7 @@ R_API RDebug *r_debug_free(RDebug *dbg) {
 		r_list_free (dbg->call_frames);
 		free (dbg->btalgo);
 		r_debug_trace_free (dbg->trace);
+		r_debug_session_free (dbg->session);
 		dbg->trace = NULL;
 		r_egg_free (dbg->egg);
 		free (dbg->arch);
@@ -724,9 +723,9 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 
 		bool libs_bp = (dbg->glob_libs || dbg->glob_unlibs) ? true : false;
 		/* if the underlying stop reason is a breakpoint, call the handlers */
-		if (reason == R_DEBUG_REASON_BREAKPOINT || reason == R_DEBUG_REASON_STEP ||
-			(libs_bp &&
-			((reason == R_DEBUG_REASON_NEW_LIB) || (reason == R_DEBUG_REASON_EXIT_LIB)))) {
+		if (reason == R_DEBUG_REASON_BREAKPOINT ||
+			(dbg->swstep && reason == R_DEBUG_REASON_STEP) ||
+			(libs_bp && ((reason == R_DEBUG_REASON_NEW_LIB) || (reason == R_DEBUG_REASON_EXIT_LIB)))) {
 			RRegItem *pc_ri;
 			RBreakpointItem *b = NULL;
 			ut64 pc;
@@ -940,7 +939,19 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 
 	dbg->reason.type = R_DEBUG_REASON_STEP;
 
+	if (dbg->session) {
+		if (dbg->cnum != dbg->maxcnum) {
+			steps_taken = r_debug_step_cnum (dbg, steps);
+		}
+	}
+
 	for (; steps_taken < steps; steps_taken++) {
+		if (dbg->session) {
+			dbg->cnum++;
+			dbg->maxcnum++;
+			r_debug_trace_ins_before (dbg);
+		}
+
 		if (dbg->swstep) {
 			ret = r_debug_step_soft (dbg);
 		} else {
@@ -952,6 +963,10 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 		}
 		dbg->steps++;
 		dbg->reason.type = R_DEBUG_REASON_STEP;
+
+		if (dbg->session) {
+			r_debug_trace_ins_after (dbg);
+		}
 	}
 
 	return steps_taken;
@@ -1037,105 +1052,42 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 	return steps_taken;
 }
 
-static ut64 get_prev_instr(RDebug *dbg, ut64 from, ut64 to) {
-	int i, ret, bsize = 256;
-	int inc;
-	ut64 prev = 0, at;
-	RAnalOp aop = {0};
-	const int mininstrsz = r_anal_archinfo (dbg->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
-	const int minopcode = R_MAX (1, mininstrsz);
-	ut8 *buf = malloc (bsize);
+R_API bool r_debug_goto_cnum(RDebug *dbg, ut32 cnum) {
+	if (cnum < 0 || cnum > dbg->maxcnum) {
+		eprintf ("Error: out of cnum range\n");
+		return false;
+	}
+	eprintf ("current cnum %u goto cnum %u\n", dbg->cnum, cnum);
+	dbg->cnum = cnum;
 
-	if (!buf) {
-		eprintf ("Cannot allocate %d byte(s)\n", bsize);
-		free (buf);
-		return 0;
-	}
-	for (i = 0, at = from; at < to; at++, i++) {
-		if (i >= (bsize - 32)) {
-			i = 0;
-		}
-		if (!i) {
-			dbg->iob.read_at (dbg->iob.io, at, buf, bsize);
-		}
-		ret = r_anal_op (dbg->anal, &aop, at, buf + i, bsize - i, R_ANAL_OP_MASK_BASIC);
-		inc = ret - 1;
-		if (inc < 0) {
-			inc = minopcode;
-		}
-		prev = at;
-		i += inc;
-		at += inc;
-		r_anal_op_fini (&aop);
-	}
-	free (buf);
-	return prev;
+	// Restore registers
+	r_debug_session_restore_registers (dbg, cnum);
+	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, true);
+
+	// Restore memory
+	r_debug_session_restore_memory (dbg, cnum);
+
+	return true;
 }
 
-// TODO: add <int steps> parameter for repetition like step() and step_over() do and change return type to int
-R_API bool r_debug_step_back(RDebug *dbg) {
-	ut64 pc, prev = 0, end;
-	RDebugSession *before;
+R_API int r_debug_step_back(RDebug *dbg, int steps) {
+	if (steps > dbg->cnum) {
+		steps = dbg->cnum;
+	}
 
-	if (r_debug_is_dead (dbg)) {
-		return false;
-	}
-	if (!dbg->anal || !dbg->reg) {
-		return false;
-	}
-	if (r_list_empty (dbg->sessions)) {
-		return false;
-	}
-	end = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+	r_debug_goto_cnum (dbg, dbg->cnum - steps);
 
-	/* Get previous state */
-	before = r_debug_session_get (dbg, dbg->sessions->tail);
-	if (!before) {
-		return false;
-	}
-#if 0
-	ut64 cnt = 0;
-	//eprintf ("before session (%d) 0x%08"PFMT64x"\n", before->key.id, before->key.addr);
+	return steps;
+}
 
-	/* Rollback to previous state */
-	r_debug_session_set (dbg, before);
-
-	pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-	//eprintf ("execute from 0x%08"PFMT64x" to 0x%08"PFMT64x"\n", pc, end);
-
-	/* Get the previous operation address.
-	 * XXX: too slow... */
-	for (;;) {
-		if (r_debug_is_dead (dbg)) {
-			return false;
-		}
-		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-		if (pc == end) {
-			/* Reached the target address */
-			break;
-		}
-		prev = pc;
-		//eprintf ("executing 0x%08"PFMT64x"\n", pc);
-		if (cnt > CHECK_POINT_LIMIT) {
-			//eprintf ("Hit count limit %lld\n", cnt);
-			r_debug_session_add (dbg, NULL);
-			cnt = 0;
-		}
-		if (!r_debug_step (dbg, 1)) {
-			return false;
-		}
-		cnt++;
+R_API int r_debug_step_cnum(RDebug *dbg, int steps) {
+	if (steps > dbg->maxcnum - dbg->cnum) {
+		steps = dbg->maxcnum - dbg->cnum;
 	}
-#endif
-	/* Rollback to previous state and then run to the desired point */
-	r_debug_session_set (dbg, before);
-	pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-	prev = get_prev_instr (dbg, pc, end);
-	if (prev) {
-		eprintf ("continue until 0x%08"PFMT64x"\n", prev);
-		r_debug_continue_until_nonblock (dbg, prev);
-	}
-	return true;
+
+	r_debug_goto_cnum (dbg, dbg->cnum + steps);
+
+	return steps;
 }
 
 R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
@@ -1402,78 +1354,29 @@ R_API int r_debug_continue_until_nonblock(RDebug *dbg, ut64 addr) {
 }
 
 R_API bool r_debug_continue_back(RDebug *dbg) {
-	RBreakpointItem *prev = NULL;
-	ut64 pc;
-	if (!dbg) {
-		return false;
-	}
-	if (!dbg->anal || !dbg->reg) {
-		return false;
-	}
-	if (r_debug_is_dead (dbg)) {
-		return false;
-	}
-	if (r_list_empty (dbg->sessions)) {
-		return false;
-	}
+	int cnum;
+	bool has_bp = false;
 
-	if (!dbg->sessions) {
-		return false;
-	}
-	/* Get previous state */
-	RListIter *iter = dbg->sessions->head;
-	if (!iter || !iter->data) {
-		return false;
-	}
-	RDebugSession *before = iter->data; //XXX: currently use first session.
-	ut64 end_addr = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-	//eprintf ("before session (%d) 0x%08"PFMT64x"=> to 0x%08"PFMT64x"\n", before->key.id, before->key.addr, end_addr);
-
-	/* Rollback to previous state */
-	r_debug_session_set (dbg, before);
-
-	/* ### Get previous breakpoint ### */
-	// Firstly set the breakpoint at end address
-	bool has_bp = r_bp_get_in (dbg->bp, end_addr, R_BP_PROT_EXEC) != NULL;
-	if (!has_bp) {
-		r_bp_add_sw (dbg->bp, end_addr, dbg->bpsize, R_BP_PROT_EXEC);
-	}
-
-	// Continue until end_addr
-	for (;;) {
-		if (r_debug_is_dead (dbg)) {
+	RRegItem *ripc = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
+	RVector *vreg = ht_up_find (dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
+	RDebugChangeReg *reg;
+	r_vector_foreach_prev (vreg, reg) {
+		has_bp = r_bp_get_in (dbg->bp, reg->data, R_BP_PROT_EXEC) != NULL;
+		if (has_bp) {
+			cnum = reg->cnum;
+			eprintf ("hit breakpoint at: 0x%" PFMT64x " cnum: %d\n", reg->data, reg->cnum);
 			break;
 		}
-		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-		if (pc == end_addr) {
-			break;
-		}
-		prev = r_bp_get_at (dbg->bp, pc);
-		r_debug_continue (dbg);
 	}
-	// Clean up if needed
-	if (!has_bp) {
-		r_bp_del (dbg->bp, end_addr);
-	}
-	if (!prev) {
-		return false;
-	}
-	//eprintf ("prev->addr = 0x%08"PFMT64x"\n", prev->addr);
-	/* Now we got previous breakpoint.
-	 * ### Continue until prev breakpoint ### */
 
-	/* Rollback to previous state again */
-	r_debug_session_set (dbg, before);
-	for (;;) {
-		if (r_debug_is_dead (dbg)) {
-			break;
+	if (has_bp) {
+		r_debug_goto_cnum (dbg, cnum);
+	} else {
+		if (dbg->maxcnum > 0) {
+			r_debug_goto_cnum (dbg, 1);
 		}
-		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-		if (prev == r_bp_get_at (dbg->bp, pc)) {
-			break;
-		}
-		r_debug_continue (dbg);
 	}
+
 	return true;
 }
 

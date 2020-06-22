@@ -2755,16 +2755,6 @@ static bool cb_malloc(void *user, void *data) {
 	return true;
 }
 
-static bool cb_dbgsnap(void *user, void *data) {
-	RCore *core = (RCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
-
-	if (node->value){
-		r_debug_session_path (core->dbg, node->value);
-	}
-	return true;
-}
-
 static bool cb_log_config_level(void *coreptr, void *nodeptr) {
 	RConfigNode *node = (RConfigNode *)nodeptr;
 	r_log_set_level (node->i_value);
@@ -3275,7 +3265,6 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* dir */
 	SETI ("dir.depth", 10,  "Maximum depth when searching recursively for files");
-	SETCB ("dir.dbgsnap", ".", &cb_dbgsnap, "Path to session dump files");
 	{
 		char *path = r_str_newf (R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC), r_config_get (core->config, "dir.prefix"));
 		SETPREF ("dir.magic", path, "Path to r_magic files");

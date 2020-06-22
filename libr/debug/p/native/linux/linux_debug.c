@@ -111,14 +111,17 @@ int linux_handle_signals (RDebug *dbg, int tid) {
 							}
 							b->data = r_str_appendf (b->data, ";ps@r:%s", name);
 							dbg->reason.type = R_DEBUG_REASON_NEW_LIB;
+							break;
 						} else if (r_str_startswith (p, "dbg.unlibs")) {
 							dbg->reason.type = R_DEBUG_REASON_EXIT_LIB;
+							break;
 						}
 					}
 				}
 			}
-			if (dbg->reason.type != R_DEBUG_REASON_NEW_LIB &&
-				dbg->reason.type != R_DEBUG_REASON_EXIT_LIB) {
+			if (siginfo.si_code == TRAP_TRACE) {
+				dbg->reason.type = R_DEBUG_REASON_STEP;
+			} else {
 				dbg->reason.bp_addr = (ut64)(size_t)siginfo.si_addr;
 				dbg->reason.type = R_DEBUG_REASON_BREAKPOINT;
 				// Switch to the thread that hit the breakpoint
