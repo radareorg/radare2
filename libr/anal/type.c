@@ -388,7 +388,7 @@ R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
 
 // TODO eventually remove, just for dev purposes
 static void print_struct(RAnalBaseType *base_type) {
-	r_return_if_fail (base_type && base_type->kind == R_ANAL_BASE_TYPE_KIND_STRUCT);
+	r_return_if_fail (base_type && base_type->kind != R_ANAL_BASE_TYPE_KIND_ENUM);
 
 	RAnalStructMember *member;
 	if (base_type->struct_data.members.len == 0)

@@ -465,7 +465,17 @@ static void parse_type(const RBinDwarfDie *all_dies, ut64 count, ut64 offset, ch
 	// this should be recursive search for the type until you find base/user defined type
 	case DW_TAG_pointer_type:
 		type_idx = find_attr_idx (type_die, DW_AT_type);
-		parse_type (all_dies, count, type_die->attr_values[type_idx].reference, type, type_length);
+		if (type_idx == -1) {
+			len = strlen (type);
+			type[len] = ' ';
+			type[len + 1] = 'v';
+			type[len + 2] = 'o';
+			type[len + 3] = 'i';
+			type[len + 4] = 'd';
+			type[len + 5] = 0;
+		} else {
+			parse_type (all_dies, count, type_die->attr_values[type_idx].reference, type, type_length);
+		}
 		len = strlen (type);
 		type[len] = ' ';
 		type[len + 1] = '*';
@@ -483,7 +493,17 @@ static void parse_type(const RBinDwarfDie *all_dies, ut64 count, ut64 offset, ch
 		break;
 	case DW_TAG_subroutine_type:
 		type_idx = find_attr_idx (type_die, DW_AT_type);
-		parse_type (all_dies, count, type_die->attr_values[type_idx].reference, type, type_length);
+		if (type_idx == -1) {
+			len = strlen (type);
+			type[len] = ' ';
+			type[len + 1] = 'v';
+			type[len + 2] = 'o';
+			type[len + 3] = 'i';
+			type[len + 4] = 'd';
+			type[len + 5] = 0;
+		} else {
+			parse_type (all_dies, count, type_die->attr_values[type_idx].reference, type, type_length);
+		}
 		len = strlen (type);
 		type[len] = ' ';
 		type[len + 1] = '(';
