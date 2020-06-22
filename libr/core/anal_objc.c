@@ -121,7 +121,7 @@ static ut64 getRefPtr(RCoreObjc *o, ut64 classMethodsVA, bool *rfound) {
 		}
 	}
 	
-	*rfound = (cnt > 1 && ref != 0);
+	*rfound = found; // (cnt > 1 && ref != 0);
 	return isMsgRef? ref - 8: ref;
 }
 
@@ -131,24 +131,34 @@ static bool objc_build_refs(RCoreObjc *objc) {
 		return false;
 	}
 
-	size_t maxsize = R_MAX (objc->_const->vsize, objc->_selrefs->vsize);
+	size_t ss_const = objc->_const->vsize;
+	size_t ss_selrefs = objc->_selrefs->vsize;
+	// TODO: check if ss_const or ss_selrefs are too big before going further
+	size_t maxsize = R_MAX (ss_const, ss_selrefs);
 	ut8 *buf = calloc (1, maxsize);
 	if (!buf) {
 		return false;
 	}
 	const size_t word_size = objc->word_size;
-	(void)r_io_read_at (objc->core->io, objc->_const->vaddr, buf, objc->_const->vsize);
-	for (off = 0; off + 8 < objc->_const->vsize; off += word_size) {
-		ut64 va = objc->_const->vaddr + off;
-		ut64 xrefs_to = r_read_le64 (buf + off);
-		if (!xrefs_to) {
-			continue;
-		}
-		array_add (objc, va, xrefs_to);
+	if (!r_io_read_at (objc->core->io, objc->_const->vaddr, buf, ss_const)) {
+		eprintf ("aao: Cannot read the whole const section %z\n", ss_const);
+		return false;
 	}
-	r_io_read_at (objc->core->io, objc->_selrefs->vaddr, buf, objc->_selrefs->vsize);
+	const ut64 va_const = objc->_const->vaddr;
+	for (off = 0; off + 8 < objc->_const->vsize; off += word_size) {
+		ut64 va = va_const + off;
+		ut64 xrefs_to = r_read_le64 (buf + off);
+		if (isValid (xrefs_to)) {
+			array_add (objc, va, xrefs_to);
+		}
+	}
+	if (!r_io_read_at (objc->core->io, objc->_selrefs->vaddr, buf, ss_selrefs)) {
+		eprintf ("aao: Cannot read the whole selrefs section\n");
+		return false;
+	}
+	const ut64 va_selrefs = objc->_selrefs->vaddr;
 	for (off = 0; off + 8 < objc->_selrefs->vsize; off += word_size) {
-		ut64 va = objc->_selrefs->vaddr + off;
+		ut64 va = va_selrefs + off;
 		ut64 xrefs_to = r_read_le64 (buf + off);
 		if (isValid (xrefs_to)) {
 			array_add (objc, xrefs_to, va);
@@ -233,20 +243,18 @@ static bool objc_find_refs(RCore *core) {
 		}
 
 		classMethodsVA += 8; // advance to start of class methods array
-		ut64 from = classMethodsVA;
 		ut64 to = classMethodsVA + (objc2ClassMethSize * count);
-		ut64 va2;
-		for (va2 = from; va2 < to; va2 += objc2ClassMethSize) {
+		for (va = classMethodsVA; va < to; va += objc2ClassMethSize) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
 
 			bool found = false;
-			ut64 selRefVA = getRefPtr (&objc, va2, &found);
+			ut64 selRefVA = getRefPtr (&objc, va, &found);
 			if (!found) {
 				continue;
 			}
-			ut64 funcVA = readQword (&objc, va2 + objc2ClassMethImpOffs, &readSuccess);
+			ut64 funcVA = readQword (&objc, va + objc2ClassMethImpOffs, &readSuccess);
 			if (!readSuccess) {
 				break;
 			}
@@ -264,11 +272,11 @@ static bool objc_find_refs(RCore *core) {
 	}
 	array_free (&objc);
 
-	char rs[128];
 
 	const ut64 from = objc._selrefs->vaddr;
 	const ut64 to = from + objc._selrefs->vsize;
 
+	char rs[128];
 	snprintf (rs, sizeof (rs), "Found %zu objc xrefs...", total_xrefs);
 	r_print_rowlog (core->print, rs);
 	size_t total_words = 0;
