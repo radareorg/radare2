@@ -181,7 +181,7 @@ R_API bool r_file_exists(const char *str) {
 	return S_IFREG == (S_IFREG & buf.st_mode);
 }
 
-static inline long r_file_proc_size(FILE *fd) {
+static inline long procfile_size(FILE *fd) {
 	char buf[1024];
 	long size = 0;
 	do {
@@ -370,7 +370,7 @@ R_API char *r_file_slurp(const char *str, R_NULLABLE size_t *usz) {
 		if (r_file_is_regular (str)) {
 			/* proc file */
 			fseek (fd, 0, SEEK_SET);
-			sz = r_file_proc_size (fd);
+			sz = procfile_size (fd);
 			if (!sz) {
 				sz = -1;
 			}
