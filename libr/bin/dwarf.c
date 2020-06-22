@@ -438,6 +438,15 @@ static st32 find_attr_idx(const RBinDwarfDie *die, st32 attr_name) {
 	return -1;
 }
 
+/**
+ * @brief Prepends string before a last occurence of character c
+ * 	      Used to replicate proper C declaration for function pointers
+ * @param sb 
+ * @param s 
+ * @param c 
+ * @return true Success
+ * @return false Failure
+ */
 static bool strbuf_rev_prepend_char(RStrBuf *sb, const char *s, int c) {
 	r_return_val_if_fail (sb && s, false);
 	int l = strlen (s);
@@ -464,6 +473,42 @@ static bool strbuf_rev_prepend_char(RStrBuf *sb, const char *s, int c) {
 	}
 	return ret;
 }
+/**
+ * @brief Appends string after a first occurence of character c
+ * 	      Used to replicate proper C declaration for function pointers
+ * @param sb 
+ * @param s 
+ * @param c 
+ * @return true Success
+ * @return false Failure
+ */
+static bool strbuf_rev_append_char(RStrBuf *sb, const char *s, const char *needle) {
+	r_return_val_if_fail (sb && s, false);
+	int l = strlen (s);
+	// fast path if no chars to append
+	if (l == 0) {
+		return true;
+	}
+	int newlen = l + sb->len;
+	char *ns = malloc (newlen + 1);
+	bool ret = false;
+	char *sb_str = sb->ptr ? sb->ptr : sb->buf;
+	char *pivot = strstr (sb_str, needle);
+	if (!pivot) {
+		return false;
+	}
+	pivot += strlen (needle);
+	size_t idx = pivot - sb_str;
+	if (ns) {
+		memcpy (ns, sb_str, idx);
+		memcpy (ns + idx, s, l);
+		memcpy (ns + idx + l, sb_str + idx, sb->len - idx);
+		ns[newlen] = 0;
+		ret = r_strbuf_set (sb, ns);
+		free (ns);
+	}
+	return ret;
+}
 
 /**
  * @brief This might need a better naming
@@ -478,32 +523,36 @@ static bool strbuf_rev_prepend_char(RStrBuf *sb, const char *s, int c) {
 static st32 parse_type(const RBinDwarfDie *all_dies, ut64 count, ut64 offset, RStrBuf *strbuf, ut64 type_length) {
 	r_return_val_if_fail (all_dies && strbuf, -1);
 	RBinDwarfDie key = { .offset = offset };
-	RBinDwarfDie *type_die = bsearch (&key, all_dies, count, sizeof (key), die_tag_cmp);
+	RBinDwarfDie *die = bsearch (&key, all_dies, count, sizeof (key), die_tag_cmp);
 
-	if (!type_die) {
+	if (!die) {
 		return -1;
 	}
 	st32 name_idx;
 	st32 type_idx;
 	st32 tag;
-	switch (type_die->tag) {
+	switch (die->tag) {
 	case DW_TAG_typedef:
 	case DW_TAG_base_type:
-		name_idx = find_attr_idx (type_die, DW_AT_name);
-		r_strbuf_append(strbuf, type_die->attr_values[name_idx].string.content);
+		name_idx = find_attr_idx (die, DW_AT_name);
+		r_strbuf_append (strbuf, die->attr_values[name_idx].string.content);
 		break;
 	// this should be recursive search for the type until you find base/user defined type
 	case DW_TAG_pointer_type:
-		type_idx = find_attr_idx (type_die, DW_AT_type);
+		type_idx = find_attr_idx (die, DW_AT_type);
 		if (type_idx == -1) {
-			r_strbuf_append(strbuf, "void");
+			r_strbuf_append (strbuf, "void");
 		} else {
-			tag = parse_type (all_dies, count, type_die->attr_values[type_idx].reference, strbuf, type_length);
+			tag = parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, type_length);
 		}
 		if (tag == DW_TAG_subroutine_type) {
-			strbuf_rev_prepend_char(strbuf, "(*)", '(');
+			strbuf_rev_prepend_char (strbuf, "(*)", '(');
+		} else if (tag == DW_TAG_pointer_type) {
+			if (!strbuf_rev_append_char (strbuf, "*", "(*")) {
+				strbuf_rev_prepend_char (strbuf, "*", '*');
+			}
 		} else {
-			r_strbuf_append(strbuf, " *");
+			r_strbuf_append (strbuf, " *");
 		}
 		break;
 	case DW_TAG_structure_type:
@@ -511,43 +560,47 @@ static st32 parse_type(const RBinDwarfDie *all_dies, ut64 count, ut64 offset, RS
 	case DW_TAG_union_type:
 	case DW_TAG_class_type:
 	case DW_TAG_subroutine_type:
-		type_idx = find_attr_idx (type_die, DW_AT_type);
+		type_idx = find_attr_idx (die, DW_AT_type);
 		if (type_idx == -1) {
 			r_strbuf_append(strbuf, "void");
 		} else {
-			parse_type (all_dies, count, type_die->attr_values[type_idx].reference, strbuf, type_length);
+			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, type_length);
 		}
-		r_strbuf_append(strbuf, " ()");
+		r_strbuf_append(strbuf, " (");
+		if (die->has_children) { // has parameters
+
+		}
+		r_strbuf_append(strbuf, ")");
 		break;
 	case DW_TAG_const_type:
-		type_idx = find_attr_idx (type_die, DW_AT_type);
-		parse_type (all_dies, count, type_die->attr_values[type_idx].reference, strbuf, type_length);
+		type_idx = find_attr_idx (die, DW_AT_type);
+		parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, type_length);
 		r_strbuf_append(strbuf, " const");
 		break;
 	case DW_TAG_volatile_type:
-		type_idx = find_attr_idx (type_die, DW_AT_type);
-		parse_type (all_dies, count, type_die->attr_values[type_idx].reference, strbuf, type_length);
+		type_idx = find_attr_idx (die, DW_AT_type);
+		parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, type_length);
 		r_strbuf_append(strbuf, " volatile");
 		break;
 	case DW_TAG_restrict_type:
-		type_idx = find_attr_idx (type_die, DW_AT_type);
-		parse_type (all_dies, count, type_die->attr_values[type_idx].reference, strbuf, type_length);
+		type_idx = find_attr_idx (die, DW_AT_type);
+		parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, type_length);
 		r_strbuf_append(strbuf, " restrict");
 		break;
 	case DW_TAG_rvalue_reference_type:
-		type_idx = find_attr_idx (type_die, DW_AT_type);
-		parse_type (all_dies, count, type_die->attr_values[type_idx].reference, strbuf, type_length);
+		type_idx = find_attr_idx (die, DW_AT_type);
+		parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, type_length);
 		r_strbuf_append(strbuf, " &&");
 		break;
 	case DW_TAG_reference_type:
-		type_idx = find_attr_idx (type_die, DW_AT_type);
-		parse_type (all_dies, count, type_die->attr_values[type_idx].reference, strbuf, type_length);
+		type_idx = find_attr_idx (die, DW_AT_type);
+		parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, type_length);
 		r_strbuf_append(strbuf, " &");
 		break;
 	default:
 		break;
 	}
-	return (st32)type_die->tag;
+	return (st32)die->tag;
 }
 // http://www.dwarfstd.org/doc/DWARF4.pdf#page=102&zoom=100,0,0
 // Data member has a DW_AT_name attribute!
