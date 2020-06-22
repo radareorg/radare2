@@ -40,20 +40,12 @@ static void kv_array_free(HtUPKv *kv) {
 	r_vector_free (kv->value);
 }
 
-static void array_new(RCoreObjc *o) {
-	o->up = ht_up_new (NULL, kv_array_free, NULL);
-}
-
-static void array_free(RCoreObjc *o) {
-	ht_up_free (o->up);
-}
-
 static inline bool isValid(ut64 addr) {
 	return (addr != 0LL && addr != UT64_MAX);
 }
 
 static inline bool isInvalid(ut64 addr) {
-	return (addr == 0LL || addr == UT64_MAX);
+	return !isValid (addr);
 }
 
 static inline bool inBetween(RBinSection *s, ut64 addr) {
@@ -141,7 +133,7 @@ static bool objc_build_refs(RCoreObjc *objc) {
 	}
 	const size_t word_size = objc->word_size;
 	if (!r_io_read_at (objc->core->io, objc->_const->vaddr, buf, ss_const)) {
-		eprintf ("aao: Cannot read the whole const section %z\n", ss_const);
+		eprintf ("aao: Cannot read the whole const section %zu\n", ss_const);
 		return false;
 	}
 	const ut64 va_const = objc->_const->vaddr;
@@ -212,7 +204,7 @@ static bool objc_find_refs(RCore *core) {
 		return false;
 	}
 
-	array_new (&objc);
+	objc.up = ht_up_new (NULL, kv_array_free, NULL);
 	if (!objc_build_refs (&objc)) {
 		return false;
 	}
@@ -270,8 +262,7 @@ static bool objc_find_refs(RCore *core) {
 			}
 		}
 	}
-	array_free (&objc);
-
+	ht_up_free (objc.up);
 
 	const ut64 from = objc._selrefs->vaddr;
 	const ut64 to = from + objc._selrefs->vsize;
