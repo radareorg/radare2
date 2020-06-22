@@ -9,18 +9,9 @@
 #include <r_core.h>
 
 
-#define USE_SDB 1
-
-#define addr_key_frame char S[32]
-#define addr_key(x) (snprintf(S,sizeof(S),"refs.0x%08"PFMT64x,x),S)
-
 typedef struct {
 	RCore *core;
-#if USE_SDB
-	Sdb *db;
-#else
 	HtUP *up;
-#endif
 	size_t word_size;
 	RBinSection *_selrefs;
 	RBinSection *_msgrefs;
@@ -28,44 +19,34 @@ typedef struct {
 	RBinSection *_data;
 } RCoreObjc;
 
-#if USE_SDB
-static ut64 array_get(RCoreObjc *o, ut64 namePtr, ut64 index, bool *found) {
-	addr_key_frame;
-	const char *k = addr_key (namePtr);
-	ut64 res = sdb_array_get_num (o->db, k, index, NULL);
-	*found = (res != 0LL);
-	return res;
+static void array_add(RCoreObjc *o, ut64 va, ut64 xrefs_to) {
+	bool found = false;
+	RVector *vec = ht_up_find (o->up, va, &found);
+	if (!found || !vec) {
+		vec = r_vector_new (sizeof (ut64), NULL, NULL);
+		ht_up_insert (o->up, va, vec);
+	}
+	ut64 *addr;
+	r_vector_foreach (vec, addr) {
+		if (xrefs_to == *addr) {
+			return;
+		}
+	}
+	// extend vector and insert new element
+	r_vector_push (vec, &xrefs_to);
 }
 
-static void array_add(RCoreObjc *o, ut64 va, ut64 xrefs_to) {
-	addr_key_frame;
-	sdb_array_add_num (o->db, addr_key (va), xrefs_to, 0);
+static void kv_array_free(HtUPKv *kv) {
+	r_vector_free (kv->value);
 }
 
 static void array_new(RCoreObjc *o) {
-	o->db = sdb_new0 ();
+	o->up = ht_up_new (NULL, kv_array_free, NULL);
 }
 
 static void array_free(RCoreObjc *o) {
-	sdb_free (o->db);
-}
-#else
-static ut64 array_get(RCoreObjc *o, ut64 namePtr, ut64 index, bool *found) {
-	// TODO
-}
-
-static void array_add(RCoreObjc *o, ut64 va, ut64 xrefs_to) {
-	// TODO
-}
-
-static void array_new(RCoreObjc *o) {
-	o->up = ht_up_new ();
-}
-
-static void array_free(RCoreObjc *o);
 	ht_up_free (o->up);
 }
-#endif
 
 static inline bool isValid(ut64 addr) {
 	return (addr != 0LL && addr != UT64_MAX);
@@ -109,36 +90,38 @@ static void objc_analyze(RCore *core) {
 	r_print_rowlog_done (core->print, oldstr);
 }
 
-static ut64 getRefPtr(RCoreObjc *objc, ut64 classMethodsVA, bool *rfound) {
+static ut64 getRefPtr(RCoreObjc *o, ut64 classMethodsVA, bool *rfound) {
 	*rfound = false;
 
 	bool readSuccess;
-	ut64 namePtr = readQword (objc, classMethodsVA, &readSuccess);
+	ut64 namePtr = readQword (o, classMethodsVA, &readSuccess);
 	if (!readSuccess) {
 		return UT64_MAX;
 	}
 
-	size_t i, cnt = 0;
+	size_t cnt = 0;
 	ut64 ref = 0LL;
 
 	bool found = false;
 	bool isMsgRef = false;
-	for (i = 0; ; i++) {
-		ut64 at = array_get (objc, namePtr, i, &found);
-		if (!found) {
-			break;
-		}
-		if (inBetween (objc->_selrefs, at)) {
-			isMsgRef = false;
-			ref = at;
-		} else if (inBetween (objc->_msgrefs, at)) {
-			isMsgRef = true;
-			ref = at;
-		} else if (inBetween (objc->_const, at)) {
-			cnt++;
+	RVector *vec = ht_up_find (o->up, namePtr, &found);
+	if (found && vec) {
+		ut64 *addr;
+		r_vector_foreach (vec, addr) {
+			const ut64 at = *addr;
+			if (inBetween (o->_selrefs, at)) {
+				isMsgRef = false;
+				ref = at;
+			} else if (inBetween (o->_msgrefs, at)) {
+				isMsgRef = true;
+				ref = at;
+			} else if (inBetween (o->_const, at)) {
+				cnt++;
+			}
 		}
 	}
-	*rfound = (cnt > 1 && ref > 0);
+	
+	*rfound = (cnt > 1 && ref != 0);
 	return isMsgRef? ref - 8: ref;
 }
 
