@@ -870,7 +870,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			}
 			r_io_map_new (r->io, fh->fd, 7, 0LL, mapaddr,
 					r_io_fd_size (r->io, fh->fd));
-			r_io_write_at (r->io, mapaddr, buf, sz);
+			r_io_write_at (r->io, mapaddr, (const ut8 *)buf, sz);
 			r_core_block_read (r);
 			free (buf);
 			free (path);
