@@ -440,6 +440,15 @@ R_API int r_anal_save_base_type(RAnal *anal, RAnalBaseType *type, const char *na
 		}
 		print_struct (type);
 		break;
+	case R_ANAL_BASE_TYPE_KIND_TYPEDEF:
+		r_cons_printf ("Typedef '%s' to '%s'\n", type->name, type->type);
+		break;
+	case R_ANAL_BASE_TYPE_KIND_NONE:
+		r_cons_printf ("Base type - %s : %s\n", type->type, type->name);
+		break;
+	case R_ANAL_BASE_TYPE_KIND_ARRAY:
+		r_cons_printf ("Array- %s%s\n", type->type, type->name);
+		break;
 	default:
 		break;
 	}
