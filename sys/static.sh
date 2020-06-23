@@ -5,6 +5,12 @@
 case "$(uname)" in
 Linux)
 	LDFLAGS="${LDFLAGS} -lpthread -ldl -lutil -lm"
+	CFLAGS="${CFLAGS} -flto"
+	LDFLAGS="${LDFLAGS} -flto"
+	;;
+Darwin)
+	CFLAGS="${CFLAGS} -flto"
+	LDFLAGS="${LDFLAGS} -flto"
 	;;
 OpenBSD)
 	LDFLAGS="${LDFLAGS} -lpthread -lkvm -lutil -lm"
