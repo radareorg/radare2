@@ -1,0 +1,54 @@
+name: Packaging release assets
+
+on:
+  push:
+    branches:
+    - 'pre-release*'
+    - 'prerelease*'
+    - 'release-*'
+
+jobs:
+  build-deb:
+    name: Build DEB package
+    runs-on: ubuntu-latest
+    container: debian:jessie
+    steps:
+    - name: Install tools
+      run: apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config
+    - name: Checkout r2
+      run: |
+        git clone https://github.com/${{ github.repository }}
+        cd radare2
+        git fetch origin ${{ github.ref }}
+        git checkout -b local_branch FETCH_HEAD
+    - name: Making the static build
+      run: sys/static.sh
+      working-directory: radare2
+    - name: Cleaning up the unnecessary files
+      run: git clean -xdf
+      working-directory: radare2
+    - name: Preparing the Debian package
+      run: sys/debian.sh
+      working-directory: radare2
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: true
+          prerelease: true
+    - name: Upload DEB package
+      id: upload-deb-package
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./some.deb
+          asset_name: some.deb
+          asset_content_type: application/zip
+
+
