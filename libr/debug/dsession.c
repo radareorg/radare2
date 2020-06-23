@@ -43,7 +43,7 @@ R_API RDebugSession *r_debug_session_new(RDebug *dbg) {
 	}
 	r_reg_arena_push (dbg->reg);
 
-	session->snaps = r_list_newf ((RListFree) r_debug_snap_free);
+	session->snaps = r_list_newf ((RListFree)r_debug_snap_free);
 	if (!session->snaps) {
 		r_debug_session_free (session);
 	}
@@ -141,7 +141,7 @@ static bool restore_memory_cb(void *user, const ut64 key, const void *value) {
 	RVector *vmem = (RVector *)value;
 
 	r_vector_upper_bound (vmem, dbg->cnum, index, CMP_CNUM_MEM);
-	if (index > 0  && index <= vmem->len) {
+	if (index > 0 && index <= vmem->len) {
 		RDebugChangeMem *mem = r_vector_index_ptr (vmem, index - 1);
 		dbg->iob.write_at (dbg->iob.io, key, &mem->data, 1);
 	}

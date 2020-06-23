@@ -724,7 +724,7 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 		bool libs_bp = (dbg->glob_libs || dbg->glob_unlibs) ? true : false;
 		/* if the underlying stop reason is a breakpoint, call the handlers */
 		if (reason == R_DEBUG_REASON_BREAKPOINT ||
-			(dbg->swstep && reason == R_DEBUG_REASON_STEP) ||
+			reason == R_DEBUG_REASON_STEP ||
 			(libs_bp && ((reason == R_DEBUG_REASON_NEW_LIB) || (reason == R_DEBUG_REASON_EXIT_LIB)))) {
 			RRegItem *pc_ri;
 			RBreakpointItem *b = NULL;
@@ -946,9 +946,10 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 	}
 
 	for (; steps_taken < steps; steps_taken++) {
-		if (dbg->session) {
+		if (dbg->session && dbg->recoil_mode == R_DBG_RECOIL_NONE) {
 			dbg->cnum++;
 			dbg->maxcnum++;
+			eprintf ("trace_before %u\n", dbg->cnum);
 			r_debug_trace_ins_before (dbg);
 		}
 
@@ -964,7 +965,8 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 		dbg->steps++;
 		dbg->reason.type = R_DEBUG_REASON_STEP;
 
-		if (dbg->session) {
+		if (dbg->session && dbg->recoil_mode == R_DBG_RECOIL_NONE) {
+			eprintf ("trace_after %u\n", dbg->cnum);
 			r_debug_trace_ins_after (dbg);
 		}
 	}
@@ -1053,11 +1055,10 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 }
 
 R_API bool r_debug_goto_cnum(RDebug *dbg, ut32 cnum) {
-	if (cnum < 0 || cnum > dbg->maxcnum) {
+	if (cnum > dbg->maxcnum) {
 		eprintf ("Error: out of cnum range\n");
 		return false;
 	}
-	eprintf ("current cnum %u goto cnum %u\n", dbg->cnum, cnum);
 	dbg->cnum = cnum;
 
 	// Restore registers
