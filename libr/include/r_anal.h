@@ -225,8 +225,6 @@ typedef enum {
 	R_ANAL_BASE_TYPE_KIND_UNION,
 	R_ANAL_BASE_TYPE_KIND_ENUM,
 	R_ANAL_BASE_TYPE_KIND_TYPEDEF, // probably temporary addition, dev purposes
-	R_ANAL_BASE_TYPE_KIND_ARRAY, // probably temporary addition, dev purposes
-	R_ANAL_BASE_TYPE_KIND_NONE, // probably temporary addition, dev purposes
 } RAnalBaseTypeKind;
 
 typedef struct r_anal_base_type_struct_t {

@@ -959,7 +959,6 @@ static void parse_types(RAnal *anal, const RBinDwarfDie *all_dies, const ut64 co
 	case DW_TAG_typedef:
 		parse_typedef (anal, all_dies, count, idx);
 		break;
-	case DW_TAG_array_type: // uninteresting for standalone parsing I suppose?
 	case DW_TAG_subroutine_type: // one day TODO
 	default:
 		break;
