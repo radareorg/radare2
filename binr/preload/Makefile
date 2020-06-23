@@ -22,6 +22,7 @@ include ../../shlr/gdb/deps.mk
 include ../../shlr/bochs/deps.mk
 include ../../shlr/qnx/deps.mk
 include ../../shlr/ar/deps.mk
+include ../../shlr/radare2-shell-parser-deps.mk
 
 clean::
 	rm -f $(BIN).$(EXT_SO) $(BIN).o

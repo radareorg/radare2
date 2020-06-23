@@ -63,6 +63,7 @@ include ../../shlr/grub/deps.mk
 include ../../shlr/qnx/deps.mk
 include ../../shlr/ar/deps.mk
 include ../../shlr/capstone.mk
+include ../../shlr/radare2-shell-parser-deps.mk
 
 all: symlinks
 
