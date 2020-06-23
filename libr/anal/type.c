@@ -412,6 +412,46 @@ static void print_enum(RAnalBaseType *base_type) {
 	}
 }
 
+static void save_struct_type(RAnal *anal, RAnalBaseType *type, const char *name) {
+	r_return_if_fail (anal && name && type && type->kind == R_ANAL_BASE_TYPE_KIND_STRUCT);
+	/*
+		I need:
+		name=struct
+		struct.name=arg1,arg2,argN
+		struct.name.arg1=type,offset,???
+		struct.name.arg2=type,offset,???
+		struct.name.argN=type,offset,???
+	*/
+	// TODO use dynamic buffer instead of alloc/free all the time
+
+	char *sname = r_str_sanitize_sdb_key (name);
+	sdb_set (anal->sdb_types, sdb_fmt ("%s", sname), "struct", 0);
+	char *key = r_str_newf ("struct.%s", sname);
+
+	RStrBuf arglist;
+	r_strbuf_init (&arglist);
+
+	int i = 0;
+	RAnalStructMember *member;
+	r_vector_foreach (&type->struct_data.members, member) {
+		char *member_sname = r_str_sanitize_sdb_key (member->name);
+		if (i == 0) {
+			r_strbuf_appendf (&arglist, "%s", member->name);
+		} else {
+			r_strbuf_appendf (&arglist, ",%s", member->name);
+		}
+		char *param_key = r_str_newf ("struct.%s.%s", sname, member_sname);
+		char *param_val = r_str_newf ("%s,%"PFMT32u",%"PFMT32u"", member->type, 0, 0);
+		sdb_set (anal->sdb_types, param_key, param_val, 0);
+		free (param_key);
+		free (param_val);
+		i++;
+	}
+	sdb_set (anal->sdb_types, key, r_strbuf_drain_nofree (&arglist), 0);
+	free (key);
+}
+
+
 R_API int r_anal_save_base_type(RAnal *anal, RAnalBaseType *type, const char *name) {
 	r_return_val_if_fail (anal && type, -1);
 
@@ -421,6 +461,7 @@ R_API int r_anal_save_base_type(RAnal *anal, RAnalBaseType *type, const char *na
 			r_cons_printf ("Structured type, name: <noname>\n");
 		} else {
 			r_cons_printf ("Structured type, name: %s\n", name);
+			save_struct_type (anal, type, name);
 		}
 		print_struct (type);
 		break;

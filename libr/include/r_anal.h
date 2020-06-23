@@ -230,14 +230,17 @@ typedef enum {
 } RAnalBaseTypeKind;
 
 typedef struct r_anal_base_type_struct_t {
+	ut64 size;
 	RVector/*<RAnalStructMember>*/ members;
 } RAnalBaseTypeStruct;
 
 typedef struct r_anal_base_type_union_t {
+	ut64 size;
 	RVector/*<RAnalUnionMember>*/ members;
 } RAnalBaseTypeUnion;
 
 typedef struct r_anal_base_type_enum_t {
+	ut64 size;
 	RVector/*<RAnalEnumCase*/ cases; // list of all the enum casessssss
 } RAnalBaseTypeEnum;
 
