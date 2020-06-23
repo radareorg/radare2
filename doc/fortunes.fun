@@ -291,3 +291,4 @@ For a full documentation see `r2 -qc iz /lib/libr_core.so`
 I like my binary stripped.
 Now 8-bit clean with better ＡＳＣＩＩ!
 Please insert disc 2 and press any key to continue...
+You aren't losing functionality, you are losing the illusion that you ever had anything reliable. -- Darren J. Moffat, OpenSolaris developer
