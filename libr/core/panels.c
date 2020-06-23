@@ -1016,7 +1016,7 @@ void __panel_print(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
 	if (can->w <= panel->view->pos.x || can->h <= panel->view->pos.y) {
 		return;
 	}
-	panel->view->refresh = false;
+	panel->view->refresh = panel->model->type == PANEL_TYPE_MENU;
 	r_cons_canvas_fill (can, panel->view->pos.x, panel->view->pos.y, panel->view->pos.w, panel->view->pos.h, ' ');
 	if (panel->model->type == PANEL_TYPE_MENU) {
 		__menu_panel_print (can, panel, panel->view->sx, panel->view->sy, panel->view->pos.w, panel->view->pos.h);
@@ -3396,7 +3396,7 @@ int __settings_colors_cb(void *user) {
 	for (i = 1; i < menu->depth; i++) {
 		RPanel *p = menu->history[i]->p;
 		p->view->refresh = true;
-		menu->refreshPanels[menu->n_refresh++] = p;
+		menu->refreshPanels[i - 1] = p;
 	}
 	__update_menu(core, "Settings.Colors", __init_menu_color_settings_layout);
 	return 0;
@@ -3417,7 +3417,7 @@ int __config_toggle_cb(void *user) {
 	for (i = 1; i < menu->depth; i++) {
 		RPanel *p = menu->history[i]->p;
 		p->view->refresh = true;
-		menu->refreshPanels[menu->n_refresh++] = p;
+		menu->refreshPanels[i - 1] = p;
 	}
 	if (!strcmp (parent->name, "asm")) {
 		__update_menu(core, "Settings.Disassembly.asm", __init_menu_disasm_asm_settings_layout);
@@ -3444,7 +3444,7 @@ int __config_value_cb(void *user) {
 	for (i = 1; i < menu->depth; i++) {
 		RPanel *p = menu->history[i]->p;
 		p->view->refresh = true;
-		menu->refreshPanels[menu->n_refresh++] = p;
+		menu->refreshPanels[i - 1] = p;
 	}
 	if (!strcmp (parent->name, "asm")) {
 		__update_menu(core, "Settings.Disassembly.asm", __init_menu_disasm_asm_settings_layout);
@@ -4463,7 +4463,7 @@ void __update_menu_contents(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *par
 	p->view->pos.h += 4;
 	p->model->type = PANEL_TYPE_MENU;
 	p->view->refresh = true;
-	menu->refreshPanels[menu->n_refresh++] = p;
+	menu->refreshPanels[menu->n_refresh - 1] = p;
 }
 
 void __init_menu_saved_layout (void *_core, const char *parent) {
@@ -5019,7 +5019,6 @@ void __panels_refresh(RCore *core) {
 	for (i = 0; i < panels->panels_menu->n_refresh; i++) {
 		__panel_print (core, can, panels->panels_menu->refreshPanels[i], 1);
 	}
-	panels->panels_menu->n_refresh = 0;
 	(void) r_cons_canvas_gotoxy (can, -can->sx, -can->sy);
 	r_cons_canvas_fill (can, -can->sx, -can->sy, w, 1, ' ');
 	const char *color = core->cons->context->pal.graph_box2;
@@ -5445,6 +5444,7 @@ void __handle_menu(RCore *core, const int key) {
 	switch (key) {
 	case 'h':
 		if (menu->depth <= 2) {
+			menu->n_refresh = 0;
 			if (menu->root->selectedIndex > 0) {
 				menu->root->selectedIndex--;
 			} else {
@@ -5492,6 +5492,7 @@ void __handle_menu(RCore *core, const int key) {
 			if (parent->sub[parent->selectedIndex]->sub) {
 				(void)(parent->sub[parent->selectedIndex]->cb (core));
 			} else {
+				menu->n_refresh = 0;
 				menu->root->selectedIndex++;
 				menu->root->selectedIndex %= menu->root->n_sub;
 				menu->depth = 1;
@@ -5506,6 +5507,7 @@ void __handle_menu(RCore *core, const int key) {
 		if (panels->panels_menu->depth > 1) {
 			__del_menu (core);
 		} else {
+			menu->n_refresh = 0;
 			__set_mode (core, PANEL_MODE_DEFAULT);
 			__get_cur_panel (panels)->view->refresh = true;
 		}
@@ -5519,17 +5521,23 @@ void __handle_menu(RCore *core, const int key) {
 		(void)(child->cb (core));
 		break;
 	case 9:
+		menu->n_refresh = 0;
 		__handle_tab_key (core, false);
 		break;
 	case 'Z':
+		menu->n_refresh = 0;
 		__handle_tab_key (core, true);
 		break;
 	case ':':
+		menu->n_refresh = 0;
 		__handlePrompt (core, panels);
 		break;
 	case '?':
+		menu->n_refresh = 0;
 		__toggle_help (core);
+		break;
 	case '"':
+		menu->n_refresh = 0;
 		__create_almighty (core, __get_panel (panels, 0), panels->almighty_db);
 		__set_mode (core, PANEL_MODE_DEFAULT);
 		break;
