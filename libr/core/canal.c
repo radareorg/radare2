@@ -1926,7 +1926,8 @@ R_API int r_core_anal_esil_fcn(RCore *core, ut64 at, ut64 from, int reftype, int
 	return 0;
 }
 
-static int find_sym_flag(RAnalFunction *fcn, RFlagItem *f) {
+static int find_sym_flag(void *a1, void *a2) {
+	RFlagItem *f = (RFlagItem *)a2;
 	return f->space && !strcmp (f->space->name, R_FLAGS_FS_SYMBOLS)? 0: 1;
 }
 
@@ -1938,7 +1939,7 @@ static bool is_skippable_addr(RCore *core, ut64 addr) {
 	if (fcn->addr == addr) {
 		return true;
 	}
-	RList *flags = r_flag_get_list (core->flags, addr);
+	const RList *flags = r_flag_get_list (core->flags, addr);
 	return !(flags && r_list_find (flags, fcn, find_sym_flag));
 }
 
