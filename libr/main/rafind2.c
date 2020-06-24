@@ -13,25 +13,25 @@
 #include <r_io.h>
 
 // XXX kill those globals
-static int showstr = 0;
-static int rad = 0;
-static int align = 0;
-static ut64 from = 0LL, to = -1;
-static const char *mask = NULL;
-static int nonstop = 0;
+static bool showstr = false;
+static bool rad = false;
 static bool identify = false;
 static bool quiet = false;
+static bool hexstr = false;
+static bool widestr = false;
+static bool nonstop = false;
+static bool json = false;
 static int mode = R_SEARCH_STRING;
-static ut64 cur = 0;
+static int align = 0;
 static ut8 *buf = NULL;
-static const char *curfile = NULL;
 static ut64 bsize = 4096;
-static int hexstr = 0;
-static int widestr = 0;
+static ut64 from = 0LL, to = -1;
+static ut64 cur = 0;
 static RPrint *pr = NULL;
 static RList *keywords;
+static const char *mask = NULL;
+static const char *curfile = NULL;
 static const char *comma = "";
-static bool json = false;
 
 static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	int delta = addr - cur;
@@ -71,7 +71,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			}
 			str[j] = 0;
 		} else {
-			int i;
+			size_t i;
 			for (i = 0; i < sizeof (_str); i++) {
 				char ch = buf[delta + i];
 				if (ch == '"' || ch == '\\') {
@@ -85,7 +85,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			str[i] = 0;
 		}
 	} else {
-		int i;
+		size_t i;
 		for (i = 0; i < sizeof (_str); i++) {
 			char ch = buf[delta + i];
 			if (ch == '"' || ch == '\\') {
@@ -331,14 +331,14 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 
 	keywords = r_list_newf (NULL);
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "a:ie:b:jmM:s:S:x:Xzf:t:E:rqnhvZ");
+	r_getopt_init (&opt, argc, argv, "a:ie:b:jmM:s:S:x:Xzf:F:t:E:rqnhvZ");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
 			align = r_num_math (NULL, opt.arg);
 			break;
 		case 'r':
-			rad = 1;
+			rad = true;
 			break;
 		case 'i':
 			identify = true;
@@ -406,7 +406,7 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 			mode = R_SEARCH_STRING;
 			break;
 		case 'Z':
-			showstr = 1;
+			showstr = true;
 			break;
 		default:
 			return show_help (argv[0], 1);
