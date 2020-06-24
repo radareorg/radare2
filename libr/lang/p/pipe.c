@@ -16,7 +16,6 @@ static int lang_pipe_file(RLang *lang, const char *file) {
 }
 
 #if __WINDOWS__
-static HANDLE pipe = 0;
 static HANDLE myCreateChildProcess(const char * szCmdline) {
 	PROCESS_INFORMATION piProcInfo = {0};
 	STARTUPINFO siStartInfo = {0};
@@ -41,6 +40,16 @@ static HANDLE hproc = NULL;
 
 static DWORD WINAPI WaitForProcThread(LPVOID lParam) {
 	WaitForSingleObject (hproc, INFINITE);
+
+	// Just in case the #!pipe target didn't actually connect to the pipe,
+	// we connect to the pipe here to satisfy the ConnectNamedPipe().
+	LPTSTR pipeName = calloc (128, sizeof (TCHAR));
+	GetEnvironmentVariable (TEXT ("R2PIPE_PATH"), pipeName, 128);
+	HANDLE pipe = CreateFile (pipeName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+	if (pipe != INVALID_HANDLE_VALUE) {
+		CloseHandle (pipe);
+	}
+
 	bStopPipeLoop = TRUE;
 	return 0;
 }
@@ -223,15 +232,14 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	hproc = myCreateChildProcess (code);
 	bool connected = false;
 	if (hproc) {
-		connected = ConnectNamedPipe (hPipeInOut, NULL) ? true : (GetLastError () == ERROR_PIPE_CONNECTED);
-	}
-	if (hproc && connected) {
 		/* a separate thread is created that sets bStopPipeLoop once hproc terminates. */
 		bStopPipeLoop = FALSE;
 		CloseHandle (CreateThread (NULL, 0, WaitForProcThread, NULL, 0, NULL));
+		connected = ConnectNamedPipe (hPipeInOut, NULL) ? true : (GetLastError () == ERROR_PIPE_CONNECTED);
+	}
+	if (hproc && connected) {
 		/* lang_pipe_run_win has to run in the command thread to prevent deadlock. */
 		lang_pipe_run_win (lang);
-		CloseHandle (pipe);
 	}
 	DeleteFile (r2pipe_paz_);
 	CloseHandle (hPipeInOut);
