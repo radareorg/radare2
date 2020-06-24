@@ -7,6 +7,9 @@ Linux)
 	LDFLAGS="${LDFLAGS} -lpthread -ldl -lutil -lm"
 	CFLAGS="${CFLAGS} -flto"
 	LDFLAGS="${LDFLAGS} -flto"
+	if [ -n "`gcc -v 2>&1 | grep gcc`" ]; then
+		export AR=gcc-ar
+	fi
 	;;
 Darwin)
 	CFLAGS="${CFLAGS} -flto"
