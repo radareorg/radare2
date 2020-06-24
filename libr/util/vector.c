@@ -142,7 +142,7 @@ R_API void r_vector_remove_at(RVector *vec, size_t index, void *into) {
 }
 
 R_API void *r_vector_insert(RVector *vec, size_t index, void *x) {
-	r_return_val_if_fail (vec, NULL);
+	r_return_val_if_fail (vec && index <= vec->len, NULL);
 	if (vec->len >= vec->capacity) {
 		RESIZE_OR_RETURN_NULL (NEXT_VECTOR_CAPACITY);
 	}
