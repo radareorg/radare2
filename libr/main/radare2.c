@@ -691,7 +691,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 	}
 
-	if (pfile && pfile[0] == '\0') {
+	if (pfile && !*pfile) {
 		eprintf ("Couldn't open empty path\n");
 		ret = 1;
 		goto beach;

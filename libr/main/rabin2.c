@@ -894,7 +894,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	}
 	file = argv[opt.ind];
 
-	if (file && file[0] == '\0') {
+	if (file && !*file) {
 		eprintf ("Couldn't open empty path\n");
 		r_core_fini (&core);
 		return 1;
