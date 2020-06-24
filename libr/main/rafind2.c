@@ -128,6 +128,7 @@ static int show_help(const char *argv0, int line) {
 	" -b [size]  set block size\n"
 	" -e [regex] search for regex matches (can be used multiple times)\n"
 	" -f [from]  start searching from address 'from'\n"
+	" -F [file]  read the contents of the file and use it as keyword\n"
 	" -h         show this help\n"
 	" -i         identify filetype (r2 -nqcpm file)\n"
 	" -j         output in JSON\n"
@@ -376,12 +377,6 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 		case 'b':
 			bsize = r_num_math (NULL, opt.arg);
 			break;
-		case 'x':
-			mode = R_SEARCH_KEYWORD;
-			hexstr = 1;
-			widestr = 0;
-			r_list_append (keywords, (void*)opt.arg);
-			break;
 		case 'M':
 			// XXX should be from hexbin
 			mask = opt.arg;
@@ -389,8 +384,32 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 		case 'f':
 			from = r_num_math (NULL, opt.arg);
 			break;
+		case 'F':
+			{
+				size_t data_size;
+				char *data = r_file_slurp (opt.arg, &data_size);
+				if (!data) {
+					eprintf ("Cannot slurp '%s'\n", opt.arg);
+					return 1;
+				}
+				char *hexdata = r_hex_bin2strdup ((ut8*)data, data_size);
+				if (hexdata) {
+					mode = R_SEARCH_KEYWORD;
+					hexstr = true;
+					widestr = false;
+					r_list_append (keywords, (void*)hexdata);
+				}
+				free (data);
+			}
+			break;
 		case 't':
 			to = r_num_math (NULL, opt.arg);
+			break;
+		case 'x':
+			mode = R_SEARCH_KEYWORD;
+			hexstr = 1;
+			widestr = 0;
+			r_list_append (keywords, (void*)opt.arg);
 			break;
 		case 'X':
 			pr = r_print_new ();
