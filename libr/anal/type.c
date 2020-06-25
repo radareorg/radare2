@@ -411,162 +411,189 @@ static void print_enum(RAnalBaseType *base_type) {
 		r_cons_printf ("  %s : %d;\n", cas->name, cas->val);
 	}
 }
-static void save_struct(RAnal *anal, RAnalBaseType *type, const char *name) {
-	r_return_if_fail (anal && name && type && type->kind == R_ANAL_BASE_TYPE_KIND_STRUCT);
+static void save_struct(RAnal *anal, RAnalBaseType *type) {
+	r_return_if_fail (anal && type && type->name && type->kind == R_ANAL_BASE_TYPE_KIND_STRUCT);
 	char *kind = "struct";
 
-	char *sname = r_str_sanitize_sdb_key (name);
+	char *sname = r_str_sanitize_sdb_key (type->name);
 	// name=struct
-	sdb_set (anal->sdb_types, sdb_fmt ("%s", sname), kind, 0);
-	char *key = r_str_newf ("%s.%s", kind, sname);
+	sdb_set (anal->sdb_types, sname, kind, 0);
 
 	RStrBuf arglist;
+	RStrBuf param_key;
+	RStrBuf param_val;
 	r_strbuf_init (&arglist);
+	r_strbuf_init (&param_key);
+	r_strbuf_init (&param_val);
 	
 	int i = 0;
 	RAnalStructMember *member;
 	r_vector_foreach (&type->struct_data.members, member) {
 		// struct.name.arg1=type,offset,???
 		char *member_sname = r_str_sanitize_sdb_key (member->name);
-		if (i == 0) {
-			r_strbuf_appendf (&arglist, "%s", member->name);
-		} else {
-			r_strbuf_appendf (&arglist, ",%s", member->name);
-		}
-		// maybe there is better way than to reallocate for each argument?
-		char *param_key = r_str_newf ("%s.%s.%s", kind, sname, member_sname);
-		char *param_val = r_str_newf ("%s,%"PFMT32u",%"PFMT32u"", member->type, 0, 0);
-		sdb_set (anal->sdb_types, param_key, param_val, 0);
+		r_strbuf_setf (&param_key, "%s.%s.%s", kind, sname, member_sname);
+		r_strbuf_setf (&param_val, "%s,%"PFMT32u",%"PFMT32u"", member->type, 0, 0);
+		sdb_set (anal->sdb_types, r_strbuf_get (&param_key), r_strbuf_get (&param_val), 0);
 		free (member_sname);
-		free (param_key);
-		free (param_val);
-		i++;
+
+		r_strbuf_appendf (&arglist, (i++ == 0) ? "%s" : ",%s",  member->name);
 	}
 	// struct.name=arg1,arg2,argN
-	char *last_val = r_strbuf_drain_nofree (&arglist);
-	sdb_set (anal->sdb_types, key, last_val, 0);
-	free (sname);
+	char *key = r_str_newf ("%s.%s", kind, sname);
+	sdb_set (anal->sdb_types, key, r_strbuf_get (&arglist), 0);
 	free (key);
-	free (last_val);
+	free (sname);
+
+	r_strbuf_fini (&arglist);
+	r_strbuf_fini (&param_key);
+	r_strbuf_fini (&param_val);
 }
 
-static void save_union(RAnal *anal, RAnalBaseType *type, const char *name) {
-	r_return_if_fail (anal && name && type && type->kind == R_ANAL_BASE_TYPE_KIND_UNION);
+static void save_union(RAnal *anal, RAnalBaseType *type) {
+	r_return_if_fail (anal && type && type->name && type->kind == R_ANAL_BASE_TYPE_KIND_UNION);
 	const char *kind = "union";
 
-	char *sname = r_str_sanitize_sdb_key (name);
+	char *sname = r_str_sanitize_sdb_key (type->name);
 	// name=union
-	sdb_set (anal->sdb_types, sdb_fmt ("%s", sname), kind, 0);
-	char *key = r_str_newf ("%s.%s", kind, sname);
+	sdb_set (anal->sdb_types, sname, kind, 0);
 
 	RStrBuf arglist;
+	RStrBuf param_key;
+	RStrBuf param_val;
 	r_strbuf_init (&arglist);
+	r_strbuf_init (&param_key);
+	r_strbuf_init (&param_val);
 	
 	int i = 0;
 	RAnalUnionMember *member;
 	r_vector_foreach (&type->union_data.members, member) {
 		// union.name.arg1=type,offset,???
 		char *member_sname = r_str_sanitize_sdb_key (member->name);
-		if (i == 0) {
-			r_strbuf_appendf (&arglist, "%s", member->name);
-		} else {
-			r_strbuf_appendf (&arglist, ",%s", member->name);
-		}
-		// maybe there is better way than to reallocate for each argument?
-		char *param_key = r_str_newf ("%s.%s.%s", kind, sname, member_sname);
-		char *param_val = r_str_newf ("%s,%"PFMT32u",%"PFMT32u"", member->type, 0, 0);
-		sdb_set (anal->sdb_types, param_key, param_val, 0);
+		r_strbuf_setf (&param_key, "%s.%s.%s", kind, sname, member_sname);
+		r_strbuf_setf (&param_val, "%s,%"PFMT32u",%"PFMT32u"", member->type, 0, 0);
+		sdb_set (anal->sdb_types, r_strbuf_get (&param_key), r_strbuf_get (&param_val), 0);
 		free (member_sname);
-		free (param_key);
-		free (param_val);
-		i++;
+
+		r_strbuf_appendf (&arglist, (i++ == 0) ? "%s" : ",%s",  member->name);
 	}
 	// union.name=arg1,arg2,argN
-	char *last_val = r_strbuf_drain_nofree (&arglist);
-	sdb_set (anal->sdb_types, key, last_val, 0);
+	char *key = r_str_newf ("%s.%s", kind, sname);
+	sdb_set (anal->sdb_types, key, r_strbuf_get (&arglist), 0);
 	free (key);
 	free (sname);
-	free (last_val);
+
+	r_strbuf_fini (&arglist);
+	r_strbuf_fini (&param_key);
+	r_strbuf_fini (&param_val);
 }
 
-static void save_enum(RAnal *anal, RAnalBaseType *type, const char *name) {
-	r_return_if_fail (anal && name && type && type->kind == R_ANAL_BASE_TYPE_KIND_ENUM);
-	/* MyEnum=enum
-	enum.MyEnum=first,third,last
-	enum.MyEnum.0x1=first
-	enum.MyEnum.0x3=third
-	enum.MyEnum.0x63=last
-	enum.MyEnum.first=0x1
-	enum.MyEnum.last=0x63
-	enum.MyEnum.third=0x3
+static void save_enum(RAnal *anal, RAnalBaseType *type) {
+	r_return_if_fail (anal && type && type->name && type->kind == R_ANAL_BASE_TYPE_KIND_ENUM);
+	/*
+		name=enum
+		enum.name=arg1,arg2,argN
+		enum.MyEnum.0x1=arg1
+		enum.MyEnum.0x3=arg2
+		enum.MyEnum.0x63=argN
+		enum.MyEnum.arg1=0x1
+		enum.MyEnum.arg2=0x63
+		enum.MyEnum.argN=0x3
 	*/
-	char *sname = r_str_sanitize_sdb_key (name);
-	sdb_set (anal->sdb_types, sdb_fmt ("%s", sname), "enum", 0);
-	char *key = r_str_newf ("enum.%s", sname);
+	char *sname = r_str_sanitize_sdb_key (type->name);
+	sdb_set (anal->sdb_types, sname, "enum", 0);
 
 	RStrBuf arglist;
+	RStrBuf param_key;
+	RStrBuf param_val;
 	r_strbuf_init (&arglist);
+	r_strbuf_init (&param_key);
+	r_strbuf_init (&param_val);
+
 	int i = 0;
 	RAnalEnumCase *cas;
 	r_vector_foreach (&type->enum_data.cases, cas) {
 		// struct.name.arg1=type,offset,???
 		char *case_sname = r_str_sanitize_sdb_key (cas->name);
-		if (i == 0) {
-			r_strbuf_appendf (&arglist, "%s", cas->name);
-		} else {
-			r_strbuf_appendf (&arglist, ",%s", cas->name);
-		}
-		// maybe there is better way than to reallocate for each argument?
-		char *param_key1 = r_str_newf ("enum.%s.%s", sname, case_sname);
-		char *param_key2 = r_str_newf ("enum.%s.0x%"PFMT32x"", sname, cas->val);
-		char *param_val1 = r_str_newf ("0x%"PFMT32x"", cas->val);
-		sdb_set (anal->sdb_types, param_key1, param_val1, 0);
-		sdb_set (anal->sdb_types, param_key2, case_sname, 0);
+		r_strbuf_setf (&param_key, "enum.%s.%s", sname, case_sname);
+		r_strbuf_setf (&param_val, "0x%"PFMT32x"", cas->val);
+		sdb_set (anal->sdb_types, r_strbuf_get (&param_key), r_strbuf_get (&param_val), 0);
+
+		r_strbuf_setf (&param_key, "enum.%s.0x%"PFMT32x"", sname, cas->val);
+		sdb_set (anal->sdb_types, r_strbuf_get (&param_key), case_sname, 0);
 		free (case_sname);
-		free (param_val1);
-		free (param_key1);
-		free (param_key2);
-		i++;
+
+		r_strbuf_appendf (&arglist, (i++ == 0) ? "%s" : ",%s",  cas->name);
 	}
 	// struct.name=arg1,arg2,argN
-	char *last_val = r_strbuf_drain_nofree (&arglist);
-	sdb_set (anal->sdb_types, key, last_val, 0);
+	char *key = r_str_newf ("enum.%s", sname);
+	sdb_set (anal->sdb_types, key, r_strbuf_get (&arglist), 0);
+
+	r_strbuf_fini (&arglist);
+	r_strbuf_fini (&param_key);
+	r_strbuf_fini (&param_val);
 	free (key);
 	free (sname);
-	free (last_val);
 }
 
-
-R_API int r_anal_save_base_type(RAnal *anal, RAnalBaseType *type, const char *name) {
-	r_return_val_if_fail (anal && type, -1);
-
-	// TODO deal with lack of name or duplicate names
+R_API void r_anal_free_base_type(RAnalBaseType *type) {
+	r_return_if_fail (type);
+	R_FREE (type->name);
+	R_FREE (type->name);
+	
 	switch (type->kind) {
 	case R_ANAL_BASE_TYPE_KIND_STRUCT:
-		if (!name) {
-			r_cons_printf ("Structured type, name: <noname>\n");
-		} else {
-			r_cons_printf ("Structured type, name: %s\n", name);
-			save_struct (anal, type, name);
-		}
+		r_vector_fini (&type->struct_data.members);
+		break;
+	case R_ANAL_BASE_TYPE_KIND_UNION:
+		r_vector_fini (&type->union_data.members);
+		break;
+	case R_ANAL_BASE_TYPE_KIND_ENUM:
+		r_vector_fini (&type->enum_data.cases);
+		break;
+	case R_ANAL_BASE_TYPE_KIND_TYPEDEF:
+	case R_ANAL_BASE_TYPE_KIND_ATOMIC:
+		break;
+	default:
+		break;
+	}
+	R_FREE (type);
+}
+
+R_API RAnalBaseType *r_anal_new_base_type(RAnalBaseTypeKind kind) {
+	RAnalBaseType *type = R_NEW0 (RAnalBaseType);
+	if (!type) {
+		return NULL;
+	}
+	type->kind = kind;
+	return type;
+}
+
+/**
+ * @brief Saves RAnalBaseType into the SDB
+ * 
+ * @param anal 
+ * @param type RAnalBaseType to save
+ * @param name Name of the type
+ */
+R_API void r_anal_save_base_type(RAnal *anal, RAnalBaseType *type) {
+	r_return_if_fail (anal && type && type->name);
+
+	// TODO, solve collisions, if there are 2 types with the same name and kind
+
+	switch (type->kind) {
+	case R_ANAL_BASE_TYPE_KIND_STRUCT:
+		r_cons_printf ("Structured type, name: %s\n", type->name);
+		save_struct (anal, type);
 		print_struct (type);
 		break;
 	case R_ANAL_BASE_TYPE_KIND_ENUM:
-		if (!name) {
-			r_cons_printf ("Enum, name: <noname>\n");
-		} else {
-			r_cons_printf ("Enum, name: %s\n", name);
-			save_enum (anal, type, name);
-		}
+		r_cons_printf ("Enum, name: %s\n", type->name);
+		save_enum (anal, type);
 		print_enum (type);
 		break;
 	case R_ANAL_BASE_TYPE_KIND_UNION:
-		if (!name) {
-			r_cons_printf ("Union type, name: <noname>\n");
-		} else {
-			r_cons_printf ("Union type, name: %s\n", name);
-			save_union (anal, type, name);
-		}
+		r_cons_printf ("Union type, name: %s\n", type->name);
+		save_union (anal, type);
 		print_struct (type);
 		break;
 	case R_ANAL_BASE_TYPE_KIND_TYPEDEF:
@@ -575,7 +602,4 @@ R_API int r_anal_save_base_type(RAnal *anal, RAnalBaseType *type, const char *na
 	default:
 		break;
 	}
-
-	free((char *)name);
-	return 0;
 }
