@@ -52,11 +52,11 @@ r_debug_deps = [
   r_socket_dep
 ]
 
+if host_machine.system() == 'linux' or host_machine.system() == 'android'
+  r_debug_sources += ['p/native/linux/linux_debug.c']
+endif
 if host_machine.system() == 'linux'
-  r_debug_sources += [
-    'p/native/linux/linux_debug.c',
-    'p/native/linux/linux_coredump.c'
-  ]
+  r_debug_sources += ['p/native/linux/linux_coredump.c']
 endif
 
 if host_machine.system() == 'windows'

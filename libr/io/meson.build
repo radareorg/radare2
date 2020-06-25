@@ -64,7 +64,7 @@ if host_machine.system() == 'windows'
   r_io_deps += w32dbg_wrap_dep
 endif
 
-if host_machine.system() == 'linux'
+if host_machine.system() == 'linux' or host_machine.system() == 'android'
   r_io_sources += [
     'p/io_r2k_linux.c',
   ]
