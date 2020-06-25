@@ -524,9 +524,19 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			LISTS_FREE ();
 			return 0;
 		case 'i':
+			if (R_STR_ISEMPTY (opt.arg)) {
+				eprintf("Bad script file path\n");
+				ret = 1;
+				goto beach;
+			}
 			r_list_append (files, (void*)opt.arg);
 			break;
 		case 'I':
+			if (R_STR_ISEMPTY (opt.arg)) {
+				eprintf("Bad script file path\n");
+				ret = 1;
+				goto beach;
+			}
 			r_list_append (prefiles, (void*)opt.arg);
 			break;
 		case 'k':
@@ -572,6 +582,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_config_set (r->config, "prj.name", opt.arg);
 			break;
 		case 'P':
+			if (R_STR_ISEMPTY (opt.arg)) {
+				eprintf("Bad script file path\n");
+				ret = 1;
+				goto beach;
+			}
 			patchfile = opt.arg;
 			break;
 		case 'Q':
@@ -592,6 +607,12 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_config_set (r->config, "dbg.profile", opt.arg);
 			break;
 		case 'R':
+			file = opt.arg;
+			if (R_STR_ISEMPTY (file)) {
+				eprintf("R: bad path\n");
+				ret = 1;
+				goto beach;
+			}
 			customRarunProfile = r_str_appendf (customRarunProfile, "%s\n", opt.arg);
 			break;
 		case 's':
@@ -692,7 +713,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	}
 
 	if (pfile && !*pfile) {
-		eprintf ("Couldn't open empty path\n");
+		eprintf ("Cannot open empty path\n");
 		ret = 1;
 		goto beach;
 	}	
