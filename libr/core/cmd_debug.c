@@ -250,7 +250,8 @@ static const char *help_msg_dm[] = {
 
 static const char *help_msg_dmi[] = {
 	"Usage: dmi", "", " # List/Load Symbols",
-	"dmi", "[libname] [symname]", "List symbols of target lib",
+	"dmi", "[j|q|*] [libname] [symname]", "List symbols of target lib",
+	"dmia", "[j|q|*] [libname] [symname]", "List all info of target lib",
 	"dmi*", "", "List symbols of target lib in radare commands",
 	"dmi.", "", "List closest symbol to the current address",
 	"dmiv", "", "Show address of given symbol for given lib",
@@ -1571,6 +1572,34 @@ static int r_debug_heap(RCore *core, const char *input) {
 	return true;
 }
 
+static bool get_bin_info(RCore *core, const char *file, ut64 baseaddr, int mode, bool symbols_only, const char *symname) {
+	int fd;
+	if ((fd = r_io_fd_open (core->io, file, R_PERM_R, 0)) != -1) {
+		RBinOptions opt = { 0 };
+		opt.fd = fd;
+		opt.sz = r_io_fd_size (core->io, fd);
+		opt.baseaddr = baseaddr;
+		RBinFile *obf = r_bin_cur (core->bin);
+		if (r_bin_open_io (core->bin, &opt)) {
+			int action = R_CORE_BIN_ACC_ALL & ~R_CORE_BIN_ACC_INFO;
+			if (symbols_only || symname) {
+				action = R_CORE_BIN_ACC_SYMBOLS;
+			}
+			if (symname) {
+				r_cons_grep (symname);
+			}
+			r_core_bin_info (core, action, mode, 1, NULL, NULL);
+			RBinFile *bf = r_bin_cur (core->bin);
+			r_bin_file_delete (core->bin, bf->id);
+			r_bin_file_set_cur_binfile (core->bin, obf);
+			r_io_fd_close (core->io, fd);
+			return true;
+		}
+		r_io_fd_close (core->io, fd);
+	}
+	return false;
+}
+
 static int cmd_debug_map(RCore *core, const char *input) {
 	RListIter *iter;
 	RDebugMap *map;
@@ -1679,13 +1708,36 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		case ' ': // "dmi "
 		case '*': // "dmi*"
 		case 'v': // "dmiv"
+		case 'j': // "dmij"
+		case 'q': // "dmiq"
+		case 'a': // "dmia"
 			{
-				const char *libname = NULL, *symname = NULL, *mode = "", *a0;
+				const char *libname = NULL, *symname = NULL, *a0;
+				int mode;
 				ut64 baddr = 0LL;
 				char *ptr;
 				int i;
-				if (input[1]=='*') {
-					mode = "-r ";
+				bool symbols_only = true;
+				if (input[1] == 'a') {
+					symbols_only = false;
+					input++;
+				}
+				switch (input[1]) {
+				case 's':
+					mode = R_MODE_SET;
+					break;
+				case '*':
+					mode = R_MODE_RADARE;
+					break;
+				case 'j':
+					mode = R_MODE_JSON;
+					break;
+				case 'q':
+					mode = input[2] == 'q' ? input++, R_MODE_SIMPLEST : R_MODE_SIMPLE;
+					break;
+				default:
+					mode = R_MODE_PRINT;
+					break;
 				}
 				ptr = strdup (r_str_trim_head_ro (input + 2));
 				if (!ptr || !*ptr) {
@@ -1731,16 +1783,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 								             file, map->size, baddr, R_SYS_DEVNULL);
 							}
 						}
-						if (symname) {
-							cmd = r_str_newf ("rabin2 %s-B 0x%08"PFMT64x" -s %s | grep %s", mode, baddr, file, symname);
-						} else {
-							cmd = r_str_newf ("rabin2 %s-B 0x%08"PFMT64x" -s %s", mode, baddr, file);
-						}
-						// eprintf ("CMD (%s)\n", cmd);
-						res = r_sys_cmd_str (cmd, NULL, NULL);
-						r_cons_println (res);
-						free (res);
-						free (cmd);
+						get_bin_info (core, file, baddr, mode, symbols_only, symname);
 						if (newfile) {
 							if (!r_file_rm (newfile)) {
 								eprintf ("Error when removing %s\n", newfile);
