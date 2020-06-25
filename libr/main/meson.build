@@ -49,8 +49,8 @@ r_main = library('r_main', r_main_sources,
 )
 
 r_main_dep = declare_dependency(link_with: r_main,
-				include_directories: [platform_inc],
-				dependencies: r_main_deps)
+                                include_directories: [platform_inc],
+                                dependencies: r_main_deps)
 
 pkgconfig_mod.generate(r_main,
   subdirs: 'libr',
