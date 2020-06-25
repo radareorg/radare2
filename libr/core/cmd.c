@@ -1268,6 +1268,10 @@ static int cmd_interpret(void *data, const char *input) {
 	const char *host, *port, *cmd;
 	RCore *core = (RCore *)data;
 
+	if (!strcmp (input, "?")) {
+		r_core_cmd_help (core, help_msg_dot);
+		return 0;
+	}
 	switch (*input) {
 	case '\0': // "."
 		lastcmd_repeat (core, 0);
@@ -1352,9 +1356,6 @@ static int cmd_interpret(void *data, const char *input) {
 		break;
 	case '(': // ".("
 		r_cmd_macro_call (&core->rcmd->macro, input + 1);
-		break;
-	case '?': // ".?"
-		r_core_cmd_help (core, help_msg_dot);
 		break;
 	default:
 		if (*input >= 0 && *input <= 9) {
