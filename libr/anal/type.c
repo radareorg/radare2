@@ -362,7 +362,7 @@ R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
 	const char *type = sdb_const_get (anal->sdb_types, sname, NULL);
 
 	// Right now just types: struct, enum, union are supported
-	if (!type || (strcmp (type, "enum") || strcmp (type, "struct") || strcmp (type, "union"))) {
+	if (!type || !(strcmp (type, "enum") || strcmp (type, "struct") || strcmp (type, "union"))) {
 		free (sname);
 		return NULL;
 	}
