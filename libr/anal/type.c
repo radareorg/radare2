@@ -582,22 +582,22 @@ R_API void r_anal_save_base_type(RAnal *anal, RAnalBaseType *type) {
 
 	switch (type->kind) {
 	case R_ANAL_BASE_TYPE_KIND_STRUCT:
-		r_cons_printf ("Structured type, name: %s\n", type->name);
+		// r_cons_printf ("Structured type, name: %s\n", type->name);
 		save_struct (anal, type);
-		print_struct (type);
+		// print_struct (type);
 		break;
 	case R_ANAL_BASE_TYPE_KIND_ENUM:
-		r_cons_printf ("Enum, name: %s\n", type->name);
+		// r_cons_printf ("Enum, name: %s\n", type->name);
 		save_enum (anal, type);
-		print_enum (type);
+		// print_enum (type);
 		break;
 	case R_ANAL_BASE_TYPE_KIND_UNION:
-		r_cons_printf ("Union type, name: %s\n", type->name);
+		// r_cons_printf ("Union type, name: %s\n", type->name);
 		save_union (anal, type);
-		print_struct (type);
+		// print_struct (type);
 		break;
 	case R_ANAL_BASE_TYPE_KIND_TYPEDEF:
-		r_cons_printf ("Typedef '%s' to '%s'\n", type->name, type->type);
+		// r_cons_printf ("Typedef '%s' to '%s'\n", type->name, type->type);
 		break;
 	default:
 		break;
