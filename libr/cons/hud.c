@@ -258,7 +258,13 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 		for (i = I(line)->buffer.length; i > I(line)->buffer.index; i--) {
 			hud_prompt[i] = hud_prompt[i - 1];
 		}
-		memcpy (hud_prompt + I(line)->buffer.index, "|", 1);
+
+		// Buffer overflow len(hud_prompt) == HUD_BUF_SIZE + 1
+		// cpy_limit != len(hud_prompt) because we need the null char
+		if (I(line)->buffer.index < HUD_BUF_SIZE) {
+			memcpy (hud_prompt + I(line)->buffer.index, "|", 1);
+		}
+
 		if (!hud->activate) {
 			hud->top_entry_n = 0;
 			if (hud->current_entry_n >= 1 ) {
