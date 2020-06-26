@@ -24,7 +24,7 @@ static inline bool is_type_tag(ut64 tag_code) {
 		tag_code == DW_TAG_base_type ||
 		tag_code == DW_TAG_typedef);
 }
-
+ 
 static void struct_type_fini(void *e, void *user) {
 	(void)user;
 	RAnalStructMember *member = e;
@@ -126,6 +126,13 @@ static bool strbuf_rev_append_char(RStrBuf *sb, const char *s, const char *needl
 	}
 	return ret;
 }
+
+/**
+ * @brief Create a type name from offset
+ * 
+ * @param offset 
+ * @return char* Name or NULL if error
+ */
 static char *create_type_name_from_offset(ut64 offset) {
 	int offset_length = snprintf (NULL, 0, "type_0x%" PFMT64x, offset);
 	char *str = malloc (offset_length + 1);
@@ -133,6 +140,12 @@ static char *create_type_name_from_offset(ut64 offset) {
 	return str;
 }
 
+/**
+ * @brief Get the DIE name
+ * 
+ * @param die 
+ * @return char* DIEs name or NULL if not found
+ */
 static char *get_die_name(const RBinDwarfDie *die) {
 	char *name = NULL;
 	st32 name_attr_idx = find_attr_idx (die, DW_AT_name);
@@ -145,6 +158,12 @@ static char *get_die_name(const RBinDwarfDie *die) {
 	return name;
 }
 
+/**
+ * @brief Get the DIE size in bits
+ * 
+ * @param die
+ * @return ut64 size in bits or 0 if not found
+ */
 static ut64 get_die_size(const RBinDwarfDie *die) {
 	ut64 size = 0;
 	st32 byte_size_idx = find_attr_idx (die, DW_AT_byte_size);
@@ -161,6 +180,15 @@ static ut64 get_die_size(const RBinDwarfDie *die) {
 	return size;
 }
 
+/**
+ * @brief Parses array type entry into strbuf
+ * 
+ * @param all_dies Pointer to all DIEs
+ * @param count of all DIEs
+ * @param idx index of the current entry
+ * @param strbuf strbuf to store the type into
+ * @return st32 -1 if error else 0
+ */
 static st32 parse_array_type(const RBinDwarfDie *all_dies, ut64 count, ut64 idx, RStrBuf *strbuf) {
 
 	r_return_val_if_fail (all_dies && strbuf, -1);
@@ -200,14 +228,15 @@ static st32 parse_array_type(const RBinDwarfDie *all_dies, ut64 count, ut64 idx,
 }
 
 /**
- * @brief This might need a better naming
+ * @brief Recursively parses type entry of a certain offset into strbuf
+ *        saves type size into *size
  * 
- * @param all_dies 
- * @param count 
- * @param offset 
- * @param type 
- * @param type_length 
- * @return st32 DW_TAG of the the type or -1 if fail
+ * @param all_dies Pointer to all DIEs
+ * @param count of all DIEs
+ * @param offset offset of the type entry
+ * @param strbuf string to store the type into
+ * @param size ptr to size of a type to fill up
+ * @return st32 -1 if error else DW_TAG of the entry
  */
 static st32 parse_type(const RBinDwarfDie *all_dies, const ut64 count,
 	const ut64 offset, RStrBuf *strbuf, ut64 *size) {
@@ -258,6 +287,7 @@ static st32 parse_type(const RBinDwarfDie *all_dies, const ut64 count,
 	case DW_TAG_class_type:
 		name = get_die_name (die);
 		r_strbuf_append (strbuf, name);
+		free (name);
 		break;
 	case DW_TAG_subroutine_type:
 		type_idx = find_attr_idx (die, DW_AT_type);
@@ -310,15 +340,16 @@ static st32 parse_type(const RBinDwarfDie *all_dies, const ut64 count,
 	}
 	return (st32)die->tag;
 }
-// http://www.dwarfstd.org/doc/DWARF4.pdf#page=102&zoom=100,0,0
 // Data member has a DW_AT_name attribute!
 /**
- * @brief Parse struct member data into RAnalStructMember
+ * @brief Parses structured entry into *result RAnalStructMember
+ * http://www.dwarfstd.org/doc/DWARF4.pdf#page=102&zoom=100,0,0
  * 
- * @param all_dies array of all DIEs from unit
- * @param all_dies_count count of all DIEs in unit
- * @param curr_die_idx DIE of the member
- * @return RAnalStructMember* parsed member, NULL if fail
+ * @param all_dies Pointer to all DIEs
+ * @param count of all DIEs
+ * @param idx index of the current entry
+ * @param result ptr to result member to fill up
+ * @return RAnalStructMember* ptr to parsed Member
  */
 static RAnalStructMember *parse_struct_member(const RBinDwarfDie *all_dies, 
 	const ut64 all_dies_count, ut64 curr_die_idx, RAnalStructMember *result) {
@@ -391,15 +422,17 @@ cleanup:
 	return NULL;
 }
 
+
 /**
- * @brief Parse enumerator into RAnalEnumCase
+ * @brief  Parses enum entry into *result RAnalEnumCase
+ * http://www.dwarfstd.org/doc/DWARF4.pdf#page=110&zoom=100,0,0
  * 
- * @param all_dies array of all DIEs from unit
- * @param all_dies_count count of all DIEs in unit
- * @param curr_die_idx DIE of the member
- * @return RAnalEnumCase* parsed case, NULL if error
+ * @param all_dies Pointer to all DIEs
+ * @param count of all DIEs
+ * @param idx index of the current entry
+ * @param result ptr to result case to fill up
+ * @return RAnalEnumCase* Ptr to parsed enum case
  */
-// http://www.dwarfstd.org/doc/DWARF4.pdf#page=110&zoom=100,0,0
 static RAnalEnumCase *parse_enumerator(const RBinDwarfDie *all_dies,
 	const ut64 count, ut64 idx, RAnalEnumCase *result) {
 
@@ -437,15 +470,15 @@ cleanup:
 }
 
 /**
- * @brief Parses a structured type (structs, classes, unions) 
- *        and save the to the sdb
+ * @brief  Parses a structured entry (structs, classes, unions) into 
+ *         RAnalBaseType and saves it using r_anal_save_base_type ()
  * 
- * @param all_dies array of all DIEs of a unit
- * @param count count of all DIEs in the unit
- * @param idx Index of the structure DIE
+ * @param all_dies Pointer to all DIEs
+ * @param count of all DIEs
+ * @param idx index of the current entry
  */
 // http://www.dwarfstd.org/doc/DWARF4.pdf#page=102&zoom=100,0,0
-static void parse_structure_type(RAnal *anal, const RBinDwarfDie *all_dies, 
+static void parse_structure_type(const RAnal *anal, const RBinDwarfDie *all_dies, 
 	const ut64 count, ut64 idx) {
 
 	r_return_if_fail (all_dies && anal);
@@ -506,14 +539,15 @@ cleanup:
 }
 
 /**
- * @brief 
+ * @brief Parses a enum entry into RAnalBaseType and saves it
+ *        using r_anal_save_base_type ()
  * 
  * @param anal 
- * @param all_dies 
- * @param count 
- * @param idx 
+ * @param all_dies Pointer to all DIEs
+ * @param count of all DIEs
+ * @param idx index of the current entry
  */
-static void parse_enum_type(RAnal *anal, const RBinDwarfDie *all_dies,
+static void parse_enum_type(const RAnal *anal, const RBinDwarfDie *all_dies,
 	const ut64 count, ut64 idx) {
 
 	r_return_if_fail (all_dies);
@@ -575,15 +609,17 @@ cleanup:
 }
 
 /**
- * @brief 
+ * @brief Parses a typedef entry into RAnalBaseType and saves it
+ *        using r_anal_save_base_type ()
+ * 
+ * http://www.dwarfstd.org/doc/DWARF4.pdf#page=96&zoom=100,0,0
  * 
  * @param anal 
- * @param all_dies 
- * @param all_dies_count 
- * @param curr_die_idx 
+ * @param all_dies Pointer to all DIEs
+ * @param count of all DIEs
+ * @param idx index of the current entry
  */
-// http://www.dwarfstd.org/doc/DWARF4.pdf#page=96&zoom=100,0,0
-static void parse_typedef(RAnal *anal, const RBinDwarfDie *all_dies, 
+static void parse_typedef(const RAnal *anal, const RBinDwarfDie *all_dies, 
 	const ut64 count, ut64 idx) {
 
 	r_return_if_fail (all_dies);
@@ -603,7 +639,7 @@ static void parse_typedef(RAnal *anal, const RBinDwarfDie *all_dies,
 			break;
 		case DW_AT_type:
 			parse_type (all_dies, count, value->reference, &strbuf, &size);
-			type = r_strbuf_get (&strbuf);
+			type = r_strbuf_drain_nofree (&strbuf);
 			break;
 		default:
 			break;
@@ -620,7 +656,7 @@ static void parse_typedef(RAnal *anal, const RBinDwarfDie *all_dies,
 	r_strbuf_fini (&strbuf);
 }
 
-static void parse_atomic_type(RAnal *anal, const RBinDwarfDie *all_dies, 
+static void parse_atomic_type(const RAnal *anal, const RBinDwarfDie *all_dies, 
 	const ut64 count, ut64 idx) {
 
 	r_return_if_fail (all_dies);
@@ -657,14 +693,14 @@ static void parse_atomic_type(RAnal *anal, const RBinDwarfDie *all_dies,
 }
 
 /**
- * @brief 
+ * @brief Delegates DIE to it's proper parsing method
  * 
  * @param anal 
- * @param all_dies 
- * @param count 
- * @param idx 
+ * @param all_dies Pointer to all DIEs
+ * @param count of all DIEs
+ * @param idx index of the current entry
  */
-static void parse_types(RAnal *anal, const RBinDwarfDie *all_dies,
+static void parse_type_entry(const RAnal *anal, const RBinDwarfDie *all_dies,
 	const ut64 count, ut64 idx) {
 
 	r_return_if_fail (all_dies);
@@ -692,19 +728,20 @@ static void parse_types(RAnal *anal, const RBinDwarfDie *all_dies,
 }
 
 /**
- * @brief Parses types and stores the through r_anal_save_base_type() into the SDB
+ * @brief Parses type information out of DWARF entries
+ *        and stores them to the sdb
  * 
- * @param info Debugging information entries
+ * @param info 
  * @param anal 
  */
-R_API void r_anal_parse_dwarf_types(const RBinDwarfDebugInfo *info, RAnal *anal) {
+R_API void r_anal_parse_dwarf_types(const RAnal *anal, const RBinDwarfDebugInfo *info) {
 	r_return_if_fail (info && anal);
 	for (size_t i = 0; i < info->count; i++) {
 		RBinDwarfCompUnit *unit = &info->comp_units[i];
 		for (size_t j = 0; j < unit->count; j++) {
 			RBinDwarfDie *curr_die = &unit->dies[j];
 			if (is_type_tag (curr_die->tag)) {
-				parse_types (anal, unit->dies, unit->count, j);
+				parse_type_entry (anal, unit->dies, unit->count, j);
 			}
 		}
 	}

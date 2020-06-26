@@ -433,7 +433,7 @@ static void save_struct(RAnal *anal, RAnalBaseType *type) {
 		// struct.name.arg1=type,offset,???
 		char *member_sname = r_str_sanitize_sdb_key (member->name);
 		r_strbuf_setf (&param_key, "%s.%s.%s", kind, sname, member_sname);
-		r_strbuf_setf (&param_val, "%s,%"PFMT32u",%"PFMT32u"", member->type, member->offset, 0);
+		r_strbuf_setf (&param_val, "%s,%"PFMT64u",%"PFMT64u"", member->type, member->offset, 0);
 		sdb_set (anal->sdb_types, r_strbuf_get (&param_key), r_strbuf_get (&param_val), 0);
 		free (member_sname);
 
@@ -478,7 +478,7 @@ static void save_union(RAnal *anal, RAnalBaseType *type) {
 		// union.name.arg1=type,offset,???
 		char *member_sname = r_str_sanitize_sdb_key (member->name);
 		r_strbuf_setf (&param_key, "%s.%s.%s", kind, sname, member_sname);
-		r_strbuf_setf (&param_val, "%s,%"PFMT32u",%"PFMT32u"", member->type, member->offset, 0);
+		r_strbuf_setf (&param_val, "%s,%"PFMT64u",%"PFMT64u"", member->type, member->offset, 0);
 		sdb_set (anal->sdb_types, r_strbuf_get (&param_key), r_strbuf_get (&param_val), 0);
 		free (member_sname);
 
@@ -573,7 +573,7 @@ static void save_atomic_type(RAnal *anal, RAnalBaseType *type) {
 	r_strbuf_init (&val);
 
 	r_strbuf_setf (&key, "type.%s.size", sname);
-	r_strbuf_setf (&val, "0x%"PFMT32x"", type->size);
+	r_strbuf_setf (&val, "%"PFMT64u"", type->size);
 	sdb_set (anal->sdb_types, r_strbuf_get (&key), r_strbuf_get (&val), 0);
 
 	free (sname);
@@ -609,7 +609,7 @@ static void save_typedef(RAnal *anal, RAnalBaseType *type) {
 R_API void r_anal_free_base_type(RAnalBaseType *type) {
 	r_return_if_fail (type);
 	R_FREE (type->name);
-	R_FREE (type->name);
+	R_FREE (type->type);
 	
 	switch (type->kind) {
 	case R_ANAL_BASE_TYPE_KIND_STRUCT:
@@ -646,7 +646,7 @@ R_API RAnalBaseType *r_anal_new_base_type(RAnalBaseTypeKind kind) {
  * @param type RAnalBaseType to save
  * @param name Name of the type
  */
-R_API void r_anal_save_base_type(RAnal *anal, RAnalBaseType *type) {
+R_API void r_anal_save_base_type(const RAnal *anal, const RAnalBaseType *type) {
 	r_return_if_fail (anal && type && type->name);
 
 	// TODO, solve collisions, if there are 2 types with the same name and kind

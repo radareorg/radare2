@@ -212,15 +212,15 @@ typedef struct r_anal_enum_case_t {
 typedef struct r_anal_struct_member_t {
 	char *name;
 	char *type;
-	size_t offset;
-	size_t size;
+	size_t offset; // in bytes
+	size_t size; // in bits?
 } RAnalStructMember;
 
 typedef struct r_anal_union_member_t {
 	char *name;
 	char *type;
-	ut64 offset;
-	ut64 size;
+	size_t offset; // in bytes
+	size_t size; // in bits?
 } RAnalUnionMember;
 
 typedef enum {
@@ -246,7 +246,7 @@ typedef struct r_anal_base_type_enum_t {
 typedef struct r_anal_base_type_t {
 	char *name;
 	char *type; // Used by typedef, atomic type
-	ut64 size; // size of the whole type in bytes;
+	ut64 size; // size of the whole type in bits
 	RAnalBaseTypeKind kind;
 	union {
 		RAnalBaseTypeStruct struct_data;
@@ -2069,10 +2069,10 @@ R_API RStrBuf *r_anal_esil_dfg_filter(RAnalEsilDFG *dfg, const char *reg);
 R_API RStrBuf *r_anal_esil_dfg_filter_expr(RAnal *anal, const char *expr, const char *reg);
 R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn);
 R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name);
-R_API void r_anal_save_base_type(RAnal *anal, RAnalBaseType *type);
+R_API void r_anal_save_base_type(const RAnal *anal, const RAnalBaseType *type);
 R_API void r_anal_free_base_type(RAnalBaseType *type);
 R_API RAnalBaseType *r_anal_new_base_type(RAnalBaseTypeKind kind);
-R_API void r_anal_parse_dwarf_types(const RBinDwarfDebugInfo *info, RAnal *anal);
+R_API void r_anal_parse_dwarf_types(const RAnal *anal, const RBinDwarfDebugInfo *info);
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
 extern RAnalPlugin r_anal_plugin_6502;
