@@ -1,0 +1,632 @@
+#include <r_anal.h>
+#include "sdb/sdb.h"
+#include <string.h>
+#include <r_bin_dwarf.h>
+
+static int die_tag_cmp(const void *a, const void *b) {
+	const RBinDwarfDie *first = a;
+	const RBinDwarfDie *second = b;
+
+	if (first->offset > second->offset) {
+		return 1;
+	} else if (first->offset < second->offset) {
+		return -1;
+	} else {
+		return 0;
+	}
+}
+
+static inline bool is_type_tag(ut64 tag_code) {
+	return (tag_code == DW_TAG_structure_type ||
+		tag_code == DW_TAG_enumeration_type ||
+		tag_code == DW_TAG_class_type ||
+		tag_code == DW_TAG_union_type ||
+		tag_code == DW_TAG_typedef);
+}
+
+static void struct_type_fini(void *e, void *user) {
+	(void)user;
+	RAnalStructMember *member = e;
+	free ((char *)member->name);
+	free ((char *)member->type);
+}
+
+static void enum_type_fini(void *e, void *user) {
+	(void)user;
+	RAnalEnumCase *cas = e;
+	free ((char *)cas->name);
+}
+
+/**
+ * @brief Finds index of a particular attribute of a DIE
+ * 
+ * @param die 
+ * @param attr_name 
+ * @return st32 Index, -1 if nothing found
+ */
+static st32 find_attr_idx(const RBinDwarfDie *die, st32 attr_name) {
+	r_return_val_if_fail (die, -1);
+	for (st32 i = 0; i < die->count; i++) {
+		if (die->attr_values[i].attr_name == attr_name) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+/**
+ * @brief Prepends string before a last occurence of character c
+ * 	      Used to replicate proper C declaration for function pointers
+ * @param sb 
+ * @param s 
+ * @param c 
+ * @return true Success
+ * @return false Failure
+ */
+static bool strbuf_rev_prepend_char(RStrBuf *sb, const char *s, int c) {
+	r_return_val_if_fail (sb && s, false);
+	int l = strlen (s);
+	// fast path if no chars to append
+	if (l == 0) {
+		return true;
+	}
+	int newlen = l + sb->len;
+	char *ns = malloc (newlen + 1);
+	bool ret = false;
+	char *sb_str = sb->ptr ? sb->ptr: sb->buf;
+	char *pivot = strrchr(sb_str, c);
+	if (!pivot) {
+		return false;
+	}
+	size_t idx = pivot - sb_str;
+	if (ns) {
+		memcpy (ns, sb_str, idx);
+		memcpy (ns + idx, s, l);
+		memcpy (ns + idx + l, sb_str + idx, sb->len - idx);
+		ns[newlen] = 0;
+		ret = r_strbuf_set (sb, ns);
+		free (ns);
+	}
+	return ret;
+}
+/**
+ * @brief Appends string after a first occurence of character c
+ * 	      Used to replicate proper C declaration for function pointers
+ * @param sb 
+ * @param s 
+ * @param c 
+ * @return true Success
+ * @return false Failure
+ */
+static bool strbuf_rev_append_char(RStrBuf *sb, const char *s, const char *needle) {
+	r_return_val_if_fail (sb && s, false);
+	int l = strlen (s);
+	// fast path if no chars to append
+	if (l == 0) {
+		return true;
+	}
+	bool ret = false;
+	char *sb_str = sb->ptr ? sb->ptr : sb->buf;
+	char *pivot = strstr (sb_str, needle);
+	if (!pivot) {
+		return false;
+	}
+	pivot += strlen (needle);
+	size_t idx = pivot - sb_str;
+	int newlen = l + sb->len;
+	char *ns = malloc (newlen + 1);
+	if (ns) {
+		memcpy (ns, sb_str, idx);
+		memcpy (ns + idx, s, l);
+		memcpy (ns + idx + l, sb_str + idx, sb->len - idx);
+		ns[newlen] = 0;
+		ret = r_strbuf_set (sb, ns);
+		free (ns);
+	}
+	return ret;
+}
+static char *create_type_name_from_offset(ut64 offset) {
+	int offset_length = snprintf (NULL, 0, "type_0x%" PFMT64x, offset);
+	char *str = malloc (offset_length + 1);
+	snprintf (str, offset_length + 1, "type_0x%" PFMT64x, offset);
+	return str;
+}
+
+static char *get_die_name(RBinDwarfDie *die) {
+	char *name = NULL;
+	st32 name_attr_idx = find_attr_idx (die, DW_AT_name);
+
+	if (name_attr_idx != -1) {
+		name = strdup (die->attr_values[name_attr_idx].string.content);
+	} else {
+		name = create_type_name_from_offset (die->offset);
+	}
+	return name;
+}
+
+static st32 parse_array_type(const RBinDwarfDie *all_dies, ut64 count, ut64 idx, RStrBuf *strbuf) {
+	r_return_val_if_fail (all_dies && strbuf, -1);
+	const RBinDwarfDie *die = &all_dies[idx];
+
+	if (die->has_children) {
+		int child_depth = 1;
+		const RBinDwarfDie *child_die = &all_dies[++idx];
+		for (size_t j = idx; child_depth > 0 && j < count; j++) {
+			child_die = &all_dies[j];
+			// right now we skip non direct descendats of the structure
+			// can be also DW_TAG_suprogram for class methods or tag for templates
+			if (child_depth == 1 && child_die->tag == DW_TAG_subrange_type) {
+				for (size_t i = 0; i < child_die->count; i++) {
+					const RBinDwarfAttrValue *value = &child_die->attr_values[i];
+					switch (value->attr_name) {
+					case DW_AT_upper_bound:
+					case DW_AT_count:
+						r_strbuf_appendf (strbuf, "[%d]", value->data + 1);
+						break;
+
+					default:
+						break;
+					}
+				}
+			}
+			if (child_die->has_children) {
+				child_depth++;
+			}
+			// sibling list is terminated by null entry
+			if (child_die->abbrev_code == 0) {
+				child_depth--;
+			}
+		}
+	}
+	return 0;
+}
+
+/**
+ * @brief This might need a better naming
+ * 
+ * @param all_dies 
+ * @param count 
+ * @param offset 
+ * @param type 
+ * @param type_length 
+ * @return st32 DW_TAG of the the type or -1 if fail
+ */
+static st32 parse_type(const RBinDwarfDie *all_dies, const ut64 count, const ut64 offset, RStrBuf *strbuf) {
+	r_return_val_if_fail (all_dies && strbuf, -1);
+	RBinDwarfDie key = { .offset = offset };
+	RBinDwarfDie *die = bsearch (&key, all_dies, count, sizeof (key), die_tag_cmp);
+
+	if (!die) {
+		return -1;
+	}
+	st32 name_idx;
+	st32 type_idx;
+	st32 tag;
+	char *name = NULL;
+	switch (die->tag) {
+	case DW_TAG_typedef:
+	case DW_TAG_base_type:
+		name = get_die_name (die);
+		r_strbuf_append (strbuf, name);
+		break;
+	// this should be recursive search for the type until you find base/user defined type
+	case DW_TAG_pointer_type:
+		type_idx = find_attr_idx (die, DW_AT_type);
+		if (type_idx == -1) {
+			r_strbuf_append (strbuf, "void");
+			r_strbuf_append (strbuf, " *");
+		} else {
+			tag = parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf);
+			if (tag == DW_TAG_subroutine_type) {
+				strbuf_rev_prepend_char (strbuf, "(*)", '(');
+			} else if (tag == DW_TAG_pointer_type) {
+				if (!strbuf_rev_append_char (strbuf, "*", "(*")) {
+					strbuf_rev_prepend_char (strbuf, "*", '*');
+				}
+			} else {
+				r_strbuf_append (strbuf, " *");
+			}
+		}
+		break;
+	// We won't parse them as a complete type, because that will already be done
+	// so just a name now
+	case DW_TAG_structure_type:
+	case DW_TAG_enumeration_type:
+	case DW_TAG_union_type:
+	case DW_TAG_class_type:
+		name = get_die_name (die);
+		r_strbuf_append (strbuf, name);
+		break;
+	case DW_TAG_subroutine_type:
+		type_idx = find_attr_idx (die, DW_AT_type);
+		if (type_idx == -1) {
+			r_strbuf_append (strbuf, "void");
+		} else {
+			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf);
+		}
+		r_strbuf_append (strbuf, " (");
+		if (die->has_children) { // has parameters
+		}
+		r_strbuf_append (strbuf, ")");
+		break;
+	case DW_TAG_array_type:
+		type_idx = find_attr_idx (die, DW_AT_type);
+		if (type_idx != -1) {
+			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf);
+		}
+		parse_array_type (all_dies, count, die - all_dies, strbuf);
+		break;
+	case DW_TAG_const_type:
+		type_idx = find_attr_idx (die, DW_AT_type);
+		if (type_idx != -1) {
+			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf);
+		}
+		r_strbuf_append (strbuf, " const");
+		break;
+	case DW_TAG_volatile_type:
+		type_idx = find_attr_idx (die, DW_AT_type);
+		parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf);
+		r_strbuf_append (strbuf, " volatile");
+		break;
+	case DW_TAG_restrict_type:
+		type_idx = find_attr_idx (die, DW_AT_type);
+		parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf);
+		r_strbuf_append (strbuf, " restrict");
+		break;
+	case DW_TAG_rvalue_reference_type:
+		type_idx = find_attr_idx (die, DW_AT_type);
+		parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf);
+		r_strbuf_append (strbuf, " &&");
+		break;
+	case DW_TAG_reference_type:
+		type_idx = find_attr_idx (die, DW_AT_type);
+		parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf);
+		r_strbuf_append (strbuf, " &");
+		break;
+	default:
+		break;
+	}
+	return (st32)die->tag;
+}
+// http://www.dwarfstd.org/doc/DWARF4.pdf#page=102&zoom=100,0,0
+// Data member has a DW_AT_name attribute!
+/**
+ * @brief Parse struct member data into RAnalStructMember
+ * 
+ * @param all_dies array of all DIEs from unit
+ * @param all_dies_count count of all DIEs in unit
+ * @param curr_die_idx DIE of the member
+ * @return RAnalStructMember* parsed member, NULL if fail
+ */
+static RAnalStructMember *parse_struct_member(const RBinDwarfDie *all_dies, 
+	const ut64 all_dies_count, ut64 curr_die_idx, RAnalStructMember *result) {
+
+	r_return_val_if_fail (all_dies && result, NULL);
+	const RBinDwarfDie *die = &all_dies[curr_die_idx];
+
+	char *name = NULL;
+	char *type = NULL;
+	ut64 offset = 0;
+	RStrBuf strbuf;
+	r_strbuf_init (&strbuf);
+
+	for (size_t i = 0; i < die->count; i++) {
+		RBinDwarfAttrValue *value = &die->attr_values[i];
+		switch (die->attr_values[i].attr_name) {
+		case DW_AT_name:
+			name = strdup (value->string.content);
+			if (!name) {
+				goto cleanup;
+			}
+			break;
+		case DW_AT_type:
+			parse_type (all_dies, all_dies_count, value->reference, &strbuf);
+			type = r_strbuf_drain_nofree (&strbuf);
+			if (!type || !*type) {
+				goto cleanup;
+			}
+			break;
+		case DW_AT_data_member_location:
+			/*
+				2 cases, 1.: If val is integer, it offset in bytes from
+				the beginning of containing entity. If containing entity has 
+				a bit offset, member has that bit offset aswell
+				2.: value is a location description 
+				http://www.dwarfstd.org/doc/DWARF4.pdf#page=39&zoom=100,0,0
+			*/
+			offset = value->data;
+			break;
+		case DW_AT_accessibility: // private, public etc.
+		case DW_AT_mutable: // flag is it is mutable
+		case DW_AT_data_bit_offset:
+		/* 
+				int that specifies the number of bits from beginning
+				of containing entity to the beginning of the data member
+		*/
+		case DW_AT_byte_size:
+		case DW_AT_bit_size:
+		case DW_AT_containing_type:
+		default:
+			break;
+		}
+	}
+	
+	result->name = name;
+	result->type = type;
+	result->offset = (int)offset;
+	return result;
+cleanup:
+	free (name);
+	free (type);
+	return NULL;
+}
+
+/**
+ * @brief Parse enumerator into RAnalEnumCase
+ * 
+ * @param all_dies array of all DIEs from unit
+ * @param all_dies_count count of all DIEs in unit
+ * @param curr_die_idx DIE of the member
+ * @return RAnalEnumCase* parsed case, NULL if error
+ */
+// http://www.dwarfstd.org/doc/DWARF4.pdf#page=110&zoom=100,0,0
+static RAnalEnumCase *parse_enumerator(const RBinDwarfDie *all_dies,
+	const ut64 count, ut64 idx, RAnalEnumCase *result) {
+
+	r_return_val_if_fail (all_dies && result, NULL);
+	const RBinDwarfDie *die = &all_dies[idx];
+
+	char *name = NULL;
+	int val = 0;
+
+	// Enumerator has DW_AT_name and DW_AT_const_value
+	for (size_t i = 0; i < die->count; i++) {
+		RBinDwarfAttrValue *value = &die->attr_values[i];
+		switch (die->attr_values[i].attr_name) {
+		case DW_AT_name:
+			name = strdup (value->string.content);
+			if (!name) {
+				goto cleanup;
+			}
+			break;
+		case DW_AT_const_value:
+			// ?? can be block, sdata, data, string w/e
+			val = value->constant; // TODO solve the encoding, I don't know in which union member is it store
+			break;
+		default:
+			break;
+		}
+	}
+
+	result->name = name;
+	result->val = (int)val;
+	return result;
+cleanup:
+	free (name);
+	return NULL;
+}
+
+/**
+ * @brief Parses a structured type (structs, classes, unions) 
+ *        and save the to the sdb
+ * 
+ * @param all_dies array of all DIEs of a unit
+ * @param count count of all DIEs in the unit
+ * @param idx Index of the structure DIE
+ */
+// http://www.dwarfstd.org/doc/DWARF4.pdf#page=102&zoom=100,0,0
+static void parse_structure_type(RAnal *anal, const RBinDwarfDie *all_dies, 
+	const ut64 count, ut64 idx) {
+
+	r_return_if_fail (all_dies && anal);
+	const RBinDwarfDie *die = &all_dies[idx];
+
+	RAnalBaseTypeKind kind;
+	if (die->tag == DW_TAG_union_type) {
+		kind = R_ANAL_BASE_TYPE_KIND_UNION;
+	} else {
+		kind = R_ANAL_BASE_TYPE_KIND_STRUCT;
+	}
+
+	RAnalBaseType *base_type = r_anal_new_base_type (kind);
+	if (!base_type) {
+		return;
+	}
+
+	base_type->name = get_die_name (die);
+	if (!base_type->name) {
+		goto cleanup;
+	}
+
+	r_vector_init (&base_type->struct_data.members, 
+		sizeof (RAnalStructMember), struct_type_fini, NULL);
+	RAnalStructMember member = {0};
+	// Parse out all members, can this in someway be extracted to a function?
+	if (die->has_children) {
+		int child_depth = 1; // Direct children of the node
+		idx++; // Move to the first children node
+		for (size_t j = idx; child_depth > 0 && j < count; j++) {
+			const RBinDwarfDie *child_die = &all_dies[j];
+			// we take only direct descendats of the structure
+			// can be also DW_TAG_suprogram for class methods or tag for templates
+			if (child_depth == 1 && child_die->tag == DW_TAG_member) {
+				RAnalStructMember *result = parse_struct_member (all_dies, count, j, &member);
+				if (!result) {
+					goto cleanup;
+				} else {
+					void *element = r_vector_push (&base_type->struct_data.members, &member);
+					if (!element) {
+						goto cleanup;
+					}
+				}
+			}
+			if (child_die->has_children) {
+				child_depth++;
+			}
+			if (child_die->abbrev_code == 0) { // siblings terminator
+				child_depth--;
+			}
+		}
+	}
+	r_anal_save_base_type (anal, base_type);
+cleanup:
+	r_anal_free_base_type (base_type);
+}
+
+/**
+ * @brief 
+ * 
+ * @param anal 
+ * @param all_dies 
+ * @param count 
+ * @param idx 
+ */
+static void parse_enum_type(RAnal *anal, const RBinDwarfDie *all_dies,
+	const ut64 count, ut64 idx) {
+
+	r_return_if_fail (all_dies);
+	const RBinDwarfDie *die = &all_dies[idx];
+
+	RAnalBaseType *base_type = r_anal_new_base_type (R_ANAL_BASE_TYPE_KIND_ENUM);
+	if (!base_type) {
+		return;
+	}
+
+	base_type->name = get_die_name (die);
+	if (!base_type->name) {
+		goto cleanup;
+	}
+
+	st32 byte_size_attr_idx = find_attr_idx (die, DW_AT_byte_size);
+	if (byte_size_attr_idx != -1) {
+		base_type->size = die->attr_values[byte_size_attr_idx].data;
+	}
+
+	r_vector_init (&base_type->enum_data.cases,
+		sizeof (RAnalEnumCase), enum_type_fini, NULL);
+	RAnalEnumCase cas;
+	if (die->has_children) {
+		int child_depth = 1; // Direct children of the node
+		idx++; // Move to the first children node
+		for (size_t j = idx; child_depth > 0 && j < count; j++) {
+			const RBinDwarfDie *child_die = &all_dies[j];
+			// we take only direct descendats of the structure
+			if (child_depth == 1 && child_die->tag == DW_TAG_enumerator) {
+				RAnalEnumCase *result = parse_enumerator (all_dies, count, j, &cas);
+				if (!result) {
+					goto cleanup;
+				} else {
+					void *element = r_vector_push (&base_type->enum_data.cases, &cas);
+					if (!element) {
+						enum_type_fini (result, NULL);
+						goto cleanup;
+					}
+				}
+			}
+			if (child_die->has_children) {
+				child_depth++;
+			}
+			// sibling list is terminated by null entry
+			if (child_die->abbrev_code == 0) {
+				child_depth--;
+			}
+		}
+	}
+	r_anal_save_base_type (anal, base_type);
+cleanup:
+	r_anal_free_base_type (base_type);
+}
+
+/**
+ * @brief 
+ * 
+ * @param anal 
+ * @param all_dies 
+ * @param all_dies_count 
+ * @param curr_die_idx 
+ */
+// http://www.dwarfstd.org/doc/DWARF4.pdf#page=96&zoom=100,0,0
+static void parse_typedef(RAnal *anal, const RBinDwarfDie *all_dies, 
+	const ut64 count, ut64 idx) {
+
+	r_return_if_fail (all_dies);
+	const RBinDwarfDie *die = &all_dies[idx];
+
+	char *name = NULL;
+	char *type = NULL;
+	RStrBuf strbuf;
+	r_strbuf_init (&strbuf);
+
+	for (size_t i = 0; i < die->count; i++) {
+		RBinDwarfAttrValue *value = &die->attr_values[i];
+		switch (die->attr_values[i].attr_name) {
+		case DW_AT_name:
+			name = strdup (value->string.content);
+			break;
+		case DW_AT_type:
+			parse_type (all_dies, count, value->reference, &strbuf);
+			type = r_strbuf_get (&strbuf);
+			break;
+		default:
+			break;
+		}
+	}
+	RAnalBaseType *base_type = r_anal_new_base_type (R_ANAL_BASE_TYPE_KIND_TYPEDEF);
+	if (!base_type) {
+		return;
+	}
+	base_type->name = name;
+	base_type->type = type;
+	r_anal_save_base_type (anal, base_type);
+	r_anal_free_base_type (base_type);
+	r_strbuf_fini (&strbuf);
+}
+
+/**
+ * @brief 
+ * 
+ * @param anal 
+ * @param all_dies 
+ * @param count 
+ * @param idx 
+ */
+static void parse_types(RAnal *anal, const RBinDwarfDie *all_dies, const ut64 count, ut64 idx) {
+	r_return_if_fail (all_dies);
+	const RBinDwarfDie *die = &all_dies[idx];
+
+	switch (die->tag) {
+	case DW_TAG_structure_type:
+	case DW_TAG_union_type:
+	case DW_TAG_class_type:
+		parse_structure_type (anal, all_dies, count, idx);
+		break;
+	case DW_TAG_enumeration_type:
+		parse_enum_type (anal, all_dies, count, idx);
+		break;
+	case DW_TAG_typedef:
+		parse_typedef (anal, all_dies, count, idx);
+		break;
+	case DW_TAG_subroutine_type: // one day TODO ?
+	default:
+		break;
+	}
+}
+
+/**
+ * @brief Parses types and stores the through r_anal_save_base_type() into the SDB
+ * 
+ * @param info Debugging information entries
+ * @param anal 
+ */
+R_API void r_anal_parse_dwarf_types(const RBinDwarfDebugInfo *info, RAnal *anal) {
+	r_return_if_fail (info && anal);
+	for (size_t i = 0; i < info->count; i++) {
+		RBinDwarfCompUnit *unit = &info->comp_units[i];
+		for (size_t j = 0; j < unit->count; j++) {
+			RBinDwarfDie *curr_die = &unit->dies[j];
+			if (is_type_tag (curr_die->tag)) {
+				parse_types (anal, unit->dies, unit->count, j);
+			}
+		}
+	}
+}

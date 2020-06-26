@@ -899,7 +899,7 @@ static int bin_dwarf(RCore *core, int mode) {
 		RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (da, core->bin, mode);
 		// I suppose there is no reason the parse it for a printing purposes
 		if (info && mode != R_MODE_PRINT) {
-			r_bin_dwarf_parse_types (info, core->anal);
+			r_anal_parse_dwarf_types (info, core->anal);
 		}
 		r_bin_dwarf_free_debug_info (info);
 		
