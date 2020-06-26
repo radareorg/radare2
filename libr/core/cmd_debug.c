@@ -1574,30 +1574,40 @@ static int r_debug_heap(RCore *core, const char *input) {
 
 static bool get_bin_info(RCore *core, const char *file, ut64 baseaddr, int mode, bool symbols_only, const char *symname) {
 	int fd;
-	if ((fd = r_io_fd_open (core->io, file, R_PERM_R, 0)) != -1) {
-		RBinOptions opt = { 0 };
-		opt.fd = fd;
-		opt.sz = r_io_fd_size (core->io, fd);
-		opt.baseaddr = baseaddr;
-		RBinFile *obf = r_bin_cur (core->bin);
-		if (r_bin_open_io (core->bin, &opt)) {
-			int action = R_CORE_BIN_ACC_ALL & ~R_CORE_BIN_ACC_INFO;
-			if (symbols_only || symname) {
-				action = R_CORE_BIN_ACC_SYMBOLS;
-			}
-			if (symname) {
-				r_cons_grep (symname);
-			}
-			r_core_bin_info (core, action, mode, 1, NULL, NULL);
-			RBinFile *bf = r_bin_cur (core->bin);
-			r_bin_file_delete (core->bin, bf->id);
-			r_bin_file_set_cur_binfile (core->bin, obf);
-			r_io_fd_close (core->io, fd);
-			return true;
-		}
-		r_io_fd_close (core->io, fd);
+	if ((fd = r_io_fd_open (core->io, file, R_PERM_R, 0)) == -1) {
+		return false;
 	}
-	return false;
+	RBinOptions opt = { 0 };
+	opt.fd = fd;
+	opt.sz = r_io_fd_size (core->io, fd);
+	opt.baseaddr = baseaddr;
+	RBinFile *obf = r_bin_cur (core->bin);
+	if (!r_bin_open_io (core->bin, &opt)) {
+		r_io_fd_close (core->io, fd);
+		return false;
+	}
+	int action = R_CORE_BIN_ACC_ALL & ~R_CORE_BIN_ACC_INFO;
+	if (symbols_only || symname) {
+		action = R_CORE_BIN_ACC_SYMBOLS;
+	} else if (mode == R_MODE_SET || mode == R_MODE_RADARE) {
+		action &= ~R_CORE_BIN_ACC_ENTRIES & ~R_CORE_BIN_ACC_MAIN;
+	}
+	if (symname) {
+		r_cons_push ();
+	}
+	r_core_bin_info (core, action, mode, 1, NULL, NULL);
+	if (symname) {
+		r_cons_grep (symname);
+		char *buf = strdup (r_cons_get_buffer ()); 
+		r_cons_pop ();
+		r_cons_print (buf);
+		free (buf);
+	}	
+	RBinFile *bf = r_bin_cur (core->bin);
+	r_bin_file_delete (core->bin, bf->id);
+	r_bin_file_set_cur_binfile (core->bin, obf);
+	r_io_fd_close (core->io, fd);
+	return true;
 }
 
 static int cmd_debug_map(RCore *core, const char *input) {
@@ -1752,14 +1762,14 @@ static int cmd_debug_map(RCore *core, const char *input) {
 					// fall through
 				case 1:
 					a0 = r_str_word_get0 (ptr, 0);
-					addr = r_num_math (core->num, a0);
+					addr = r_num_get (core->num, a0);
 					if (!addr || addr == UT64_MAX) {
 						libname = r_str_word_get0 (ptr, 0);
 					}
 					break;
 				}
 				if (libname && !addr) {
-					addr = addroflib (core, libname);
+					addr = addroflib (core, r_file_basename (libname));
 					if (addr == UT64_MAX) {
 						eprintf ("Unknown library, or not found in dm\n");
 					}
