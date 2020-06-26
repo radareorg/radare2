@@ -74,8 +74,8 @@ static bool strbuf_rev_prepend_char(RStrBuf *sb, const char *s, int c) {
 	int newlen = l + sb->len;
 	char *ns = malloc (newlen + 1);
 	bool ret = false;
-	char *sb_str = sb->ptr ? sb->ptr: sb->buf;
-	char *pivot = strrchr(sb_str, c);
+	char *sb_str = sb->ptr ? sb->ptr : sb->buf;
+	char *pivot = strrchr (sb_str, c);
 	if (!pivot) {
 		return false;
 	}
@@ -169,7 +169,7 @@ static ut64 get_die_size(const RBinDwarfDie *die) {
 	st32 byte_size_idx = find_attr_idx (die, DW_AT_byte_size);
 
 	if (byte_size_idx != -1) {
-		size = die->attr_values[byte_size_idx].data  * CHAR_BIT;
+		size = die->attr_values[byte_size_idx].data * CHAR_BIT;
 	} else {
 		st32 bit_size_idx = find_attr_idx (die, DW_AT_bit_size);
 
@@ -238,7 +238,7 @@ static st32 parse_array_type(const RBinDwarfDie *all_dies, ut64 count, ut64 idx,
  * @param size ptr to size of a type to fill up
  * @return st32 -1 if error else DW_TAG of the entry
  */
-static st32 parse_type(const RBinDwarfDie *all_dies, const ut64 count,
+static st32 parse_type (const RBinDwarfDie *all_dies, const ut64 count,
 	const ut64 offset, RStrBuf *strbuf, ut64 *size) {
 
 	r_return_val_if_fail (all_dies && strbuf, -1);
@@ -351,7 +351,7 @@ static st32 parse_type(const RBinDwarfDie *all_dies, const ut64 count,
  * @param result ptr to result member to fill up
  * @return RAnalStructMember* ptr to parsed Member
  */
-static RAnalStructMember *parse_struct_member(const RBinDwarfDie *all_dies, 
+static RAnalStructMember *parse_struct_member (const RBinDwarfDie *all_dies,
 	const ut64 all_dies_count, ut64 curr_die_idx, RAnalStructMember *result) {
 
 	r_return_val_if_fail (all_dies && result, NULL);
@@ -393,12 +393,13 @@ static RAnalStructMember *parse_struct_member(const RBinDwarfDie *all_dies,
 		case DW_AT_accessibility: // private, public etc.
 		case DW_AT_mutable: // flag is it is mutable
 		case DW_AT_data_bit_offset:
-		/* 
+			/* 
 				int that specifies the number of bits from beginning
 				of containing entity to the beginning of the data member
-		*/
-		// If the size of a data member is not the same as the size of the type given for the data member
+			*/
 			break;
+		// If the size of a data member is not the same as the
+		//  size of the type given for the data member
 		case DW_AT_byte_size:
 			size = value->data * CHAR_BIT;
 			break;
@@ -410,7 +411,7 @@ static RAnalStructMember *parse_struct_member(const RBinDwarfDie *all_dies,
 			break;
 		}
 	}
-	
+
 	result->name = name;
 	result->type = type;
 	result->offset = offset;
@@ -421,7 +422,6 @@ cleanup:
 	free (type);
 	return NULL;
 }
-
 
 /**
  * @brief  Parses enum entry into *result RAnalEnumCase
@@ -503,9 +503,9 @@ static void parse_structure_type(const RAnal *anal, const RBinDwarfDie *all_dies
 
 	base_type->size = get_die_size (die);
 
-	r_vector_init (&base_type->struct_data.members, 
+	r_vector_init (&base_type->struct_data.members,
 		sizeof (RAnalStructMember), struct_type_fini, NULL);
-	RAnalStructMember member = {0};
+	RAnalStructMember member = { 0 };
 	// Parse out all members, can this in someway be extracted to a function?
 	if (die->has_children) {
 		int child_depth = 1; // Direct children of the node
