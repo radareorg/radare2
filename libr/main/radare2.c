@@ -607,12 +607,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_config_set (r->config, "dbg.profile", opt.arg);
 			break;
 		case 'R':
-			file = opt.arg;
-			if (R_STR_ISEMPTY (file)) {
-				eprintf("R: bad path\n");
-				ret = 1;
-				goto beach;
-			}
 			customRarunProfile = r_str_appendf (customRarunProfile, "%s\n", opt.arg);
 			break;
 		case 's':
