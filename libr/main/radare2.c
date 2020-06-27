@@ -583,7 +583,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			break;
 		case 'P':
 			if (R_STR_ISEMPTY (opt.arg)) {
-				eprintf ("Cannot open empty script path\n");
+				eprintf ("Cannot open empty rapatch path\n");
 				ret = 1;
 				goto beach;
 			}
@@ -607,6 +607,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_config_set (r->config, "dbg.profile", opt.arg);
 			break;
 		case 'R':
+			if (R_STR_ISEMPTY (opt.arg)) {
+				eprintf ("Cannot open empty custom rarun profile\n");
+				ret = 1;
+				goto beach;
+			}
 			customRarunProfile = r_str_appendf (customRarunProfile, "%s\n", opt.arg);
 			break;
 		case 's':
