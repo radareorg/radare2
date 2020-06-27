@@ -13,7 +13,9 @@ static inline void _heap_down(RBinHeap *h, size_t i, void *x) {
 		}
 		r_pvector_set (&h->a, i, r_pvector_at (&h->a, j));
 	}
-	r_pvector_set (&h->a, i, x);
+	if (i < h->a.v.len) {
+		r_pvector_set (&h->a, i, x);
+	}
 }
 
 static inline void _heap_up(RBinHeap *h, size_t i, void *x) {
