@@ -525,7 +525,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			return 0;
 		case 'i':
 			if (R_STR_ISEMPTY (opt.arg)) {
-				eprintf("Bad script file path\n");
+				eprintf ("Cannot open empty script path\n");
 				ret = 1;
 				goto beach;
 			}
@@ -533,7 +533,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			break;
 		case 'I':
 			if (R_STR_ISEMPTY (opt.arg)) {
-				eprintf("Bad script file path\n");
+				eprintf ("Cannot open empty script path\n");
 				ret = 1;
 				goto beach;
 			}
@@ -583,7 +583,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			break;
 		case 'P':
 			if (R_STR_ISEMPTY (opt.arg)) {
-				eprintf("Bad script file path\n");
+				eprintf ("Cannot open empty script path\n");
 				ret = 1;
 				goto beach;
 			}
