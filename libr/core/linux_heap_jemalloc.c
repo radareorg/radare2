@@ -29,7 +29,6 @@ static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 	RListIter *iter;
 	RBinSymbol *s;
 	RCore *core = r_core_new ();
-	RList * syms = NULL;
 	GHT vaddr = 0LL;
 
 	if (!core) {
@@ -38,15 +37,17 @@ static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 
 	RBinOptions opt;
 	r_bin_options_init (&opt, -1, 0, 0, false);
-	r_bin_open (core->bin, path, &opt);
-	syms = r_bin_get_symbols (core->bin);
-	if (!syms) {
-		return GHT_MAX;
-	}
-	r_list_foreach (syms, iter, s) {
-		if (!strcmp(s->name, symname)) {
-			vaddr = s->vaddr;
-			break;
+	if (r_bin_open (core->bin, path, &opt)) {
+		RList *syms = r_bin_get_symbols (core->bin);
+		if (!syms) {
+			r_core_free (core);
+			return GHT_MAX;
+		}
+		r_list_foreach (syms, iter, s) {
+			if (!strcmp(s->name, symname)) {
+				vaddr = s->vaddr;
+				break;
+			}
 		}
 	}
 	r_core_free (core);
