@@ -1774,7 +1774,6 @@ static int cmd_debug_map(RCore *core, const char *input) {
 					baddr = map->addr;
 
 					if (libname) {
-						char *cmd, *res;
 						const char *file = map->file? map->file: map->name;
 						char *newfile = NULL;
 						if (!r_file_exists (file)) {
