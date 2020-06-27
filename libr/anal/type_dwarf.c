@@ -501,6 +501,22 @@ static void parse_structure_type(const RAnal *anal, const RBinDwarfDie *all_dies
 		goto cleanup;
 	}
 
+	// if it is definition of previous declaration (TODO Fix, big ugly hotfix addition)
+	st32 spec_attr_idx = find_attr_idx (die, DW_AT_specification);
+	if (spec_attr_idx != -1) {
+		RBinDwarfDie key = { .offset = die->attr_values[spec_attr_idx].reference };
+		RBinDwarfDie *decl_die = bsearch (&key, all_dies, count, sizeof (key), die_tag_cmp);
+
+		if (!die) {
+			goto cleanup;
+		}
+		st32 name_attr_idx = find_attr_idx (decl_die, DW_AT_name);
+		if (name_attr_idx != -1) {
+			free (base_type->name);
+			base_type->name = get_die_name (decl_die);
+		}
+	}
+
 	base_type->size = get_die_size (die);
 
 	r_vector_init (&base_type->struct_data.members,
