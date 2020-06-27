@@ -77,7 +77,10 @@ static inline bool r_vector_empty(const RVector *vec) {
 R_API void r_vector_clear(RVector *vec);
 
 // returns a pointer to the offset inside the array where the element of the index lies.
-R_API void *r_vector_index_ptr(RVector *vec, size_t index);
+static inline void *r_vector_index_ptr(RVector *vec, size_t index) {
+	r_return_val_if_fail (vec && index < vec->capacity, NULL);
+	return (char *)vec->a + vec->elem_size * index;
+}
 
 // helper function to assign an element of size vec->elem_size from elem to p.
 // elem is a pointer to the actual data to assign!
@@ -169,14 +172,17 @@ R_API void r_pvector_clear(RPVector *vec);
 R_API void r_pvector_free(RPVector *vec);
 
 static inline size_t r_pvector_len(const RPVector *vec) {
+	r_return_val_if_fail (vec, 0);
 	return vec->v.len;
 }
 
 static inline void *r_pvector_at(const RPVector *vec, size_t index) {
+	r_return_val_if_fail (vec && index < vec->v.len, NULL);
 	return ((void **)vec->v.a)[index];
 }
 
 static inline void r_pvector_set(RPVector *vec, size_t index, void *e) {
+	r_return_if_fail (vec && index < vec->v.len);
 	((void **)vec->v.a)[index] = e;
 }
 
@@ -186,11 +192,13 @@ static inline bool r_pvector_empty(RPVector *vec) {
 
 // returns a pointer to the offset inside the array where the element of the index lies.
 static inline void **r_pvector_index_ptr(RPVector *vec, size_t index) {
+	r_return_val_if_fail (vec && index < vec->v.capacity, NULL);
 	return ((void **)vec->v.a) + index;
 }
 
 // same as r_pvector_index_ptr(<vec>, 0)
 static inline void **r_pvector_data(RPVector *vec) {
+	r_return_val_if_fail (vec, NULL);
 	return (void **)vec->v.a;
 }
 

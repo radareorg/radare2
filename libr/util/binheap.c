@@ -13,7 +13,9 @@ static inline void _heap_down(RBinHeap *h, size_t i, void *x) {
 		}
 		r_pvector_set (&h->a, i, r_pvector_at (&h->a, j));
 	}
-	r_pvector_set (&h->a, i, x);
+	if (i < h->a.v.len) {
+		r_pvector_set (&h->a, i, x);
+	}
 }
 
 static inline void _heap_up(RBinHeap *h, size_t i, void *x) {
@@ -45,8 +47,7 @@ R_API RBinHeap *r_binheap_new(RPVectorComparator cmp) {
 
 R_API void *r_binheap_pop(RBinHeap *h) {
 	void *ret = r_pvector_at (&h->a, 0);
-	h->a.v.len--;
-	_heap_down (h, 0, r_pvector_at (&h->a, h->a.v.len));
+	_heap_down (h, 0, r_pvector_pop (&h->a));
 	return ret;
 }
 
