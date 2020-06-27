@@ -243,20 +243,22 @@ static const char *dex_type_descriptor(RBinDexObj *bin, int type_idx) {
 	return getstr (bin, bin->types[type_idx].descriptor_id);
 }
 
-static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
-	ut32 params_off, type_id, list_size;
-	char *r = NULL, *signature = NULL;
-	ut16 type_idx;
-	int pos = 0, i, size = 1;
+static ut16 type_desc(RBinDexObj *bin, ut16 type_idx) {
+	if (type_idx >= bin->header.types_size || type_idx >= bin->size) {
+		return UT16_MAX;
+	}
+	return bin->types[type_idx].descriptor_id;
+}
 
+static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 	if (proto_id >= bin->header.prototypes_size) {
 		return NULL;
 	}
-	params_off = bin->protos[proto_id].parameters_off;
+	ut32 params_off = bin->protos[proto_id].parameters_off;
 	if (params_off >= bin->size) {
 		return NULL;
 	}
-	type_id = bin->protos[proto_id].return_type_id;
+	ut32 type_id = bin->protos[proto_id].return_type_id;
 	if (type_id >= bin->header.types_size ) {
 		return NULL;
 	}
@@ -271,48 +273,34 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 	if (!r_buf_read_at (bin->b, params_off, params_buf, sizeof (params_buf))) {
 		return NULL;
 	}
-	// size of the list, in entries
-	list_size = r_read_le32 (params_buf);
+	// size of the list, in 16 bit entries
+	ut32 list_size = r_read_le32 (params_buf);
 	if (list_size * sizeof (ut16) >= bin->size) {
 		return NULL;
 	}
-
-	for (i = 0; i < list_size; i++) {
-		int buff_len = 0;
-		int off = params_off + 4 + (i * 2);
-		if (off >= bin->size) {
-			break;
-		}
-		ut8 typeidx_buf[sizeof (ut16)];
-		if (!r_buf_read_at (bin->b, off, typeidx_buf, sizeof (typeidx_buf))) {
-			break;
-		}
-		type_idx = r_read_le16 (typeidx_buf);
-		if (type_idx >= bin->header.types_size || type_idx >= bin->size) {
-			break;
-		}
-		const char *buff = getstr (bin, bin->types[type_idx].descriptor_id);
-		if (!buff) {
-			break;
-		}
-		buff_len = strlen (buff);
-		size += buff_len + 1;
-		char *newsig = realloc (signature, size);
-		if (!newsig) {
-			eprintf ("Cannot realloc to %d\n", size);
-			free (signature);
-			break;
-		}
-		signature = newsig;
-		strcpy (signature + pos, buff);
-		pos += buff_len;
-		signature[pos] = '\0';
+	size_t typeidx_bufsize = (list_size * 2);
+	if (params_off + typeidx_bufsize > bin->size) {
+		typeidx_bufsize = bin->size - params_off;
+		eprintf ("Warning: truncated typeidx buffer\n");
 	}
-	if (signature) {
-		r = r_str_newf ("(%s)%s", signature, return_type);
-		free (signature);
+	ut8 *typeidx_buf = malloc (typeidx_bufsize);
+	if (!typeidx_buf || !r_buf_read_at (bin->b, params_off + 4, typeidx_buf, typeidx_bufsize)) {
+		return NULL;
 	}
-	return r;
+	RStrBuf *sig = r_strbuf_new ("(");
+	size_t off;
+	for (off = 0; off + 1 < typeidx_bufsize; off += 2) {
+		ut16 type_idx = r_read_le16 (typeidx_buf + off);
+		ut16 type_desc_id = type_desc (bin, type_idx);
+		if (type_desc_id == UT16_MAX) {
+			break;
+		}
+		const char *buff = getstr (bin, type_desc_id);
+		r_strbuf_append (sig, buff? buff: "?");
+	}
+	r_strbuf_appendf (sig, ")%s", return_type);
+	free (typeidx_buf);
+	return r_strbuf_drain (sig);
 }
 
 static char *dex_method_signature(RBinDexObj *bin, int method_idx) {
