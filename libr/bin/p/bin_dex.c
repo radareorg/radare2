@@ -275,32 +275,31 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 	}
 	// size of the list, in 16 bit entries
 	ut32 list_size = r_read_le32 (params_buf);
-	if (list_size * sizeof (ut16) >= bin->size) {
-		return NULL;
-	}
-	size_t typeidx_bufsize = (list_size * 2);
+	size_t typeidx_bufsize = (list_size * sizeof (ut16));
 	if (params_off + typeidx_bufsize > bin->size) {
 		typeidx_bufsize = bin->size - params_off;
 		eprintf ("Warning: truncated typeidx buffer\n");
 	}
-	ut8 *typeidx_buf = malloc (typeidx_bufsize);
-	if (!typeidx_buf || !r_buf_read_at (bin->b, params_off + 4, typeidx_buf, typeidx_bufsize)) {
-		return NULL;
-	}
 	RStrBuf *sig = r_strbuf_new ("(");
-	size_t off;
-	for (off = 0; off + 1 < typeidx_bufsize; off += 2) {
-		ut16 type_idx = r_read_le16 (typeidx_buf + off);
-		ut16 type_desc_id = type_desc (bin, type_idx);
-		if (type_desc_id == UT16_MAX) {
-			r_strbuf_append (sig, "?;");
-		} else {
-			const char *buff = getstr (bin, type_desc_id);
-			r_strbuf_append (sig, buff? buff: "?;");
+	if (typeidx_bufsize > 0) {
+		ut8 *typeidx_buf = malloc (typeidx_bufsize);
+		if (!typeidx_buf || !r_buf_read_at (bin->b, params_off + 4, typeidx_buf, typeidx_bufsize)) {
+			return NULL;
 		}
+		size_t off;
+		for (off = 0; off + 1 < typeidx_bufsize; off += 2) {
+			ut16 type_idx = r_read_le16 (typeidx_buf + off);
+			ut16 type_desc_id = type_desc (bin, type_idx);
+			if (type_desc_id == UT16_MAX) {
+				r_strbuf_append (sig, "?;");
+			} else {
+				const char *buff = getstr (bin, type_desc_id);
+				r_strbuf_append (sig, buff? buff: "?;");
+			}
+		}
+		free (typeidx_buf);
 	}
 	r_strbuf_appendf (sig, ")%s", return_type);
-	free (typeidx_buf);
 	return r_strbuf_drain (sig);
 }
 
