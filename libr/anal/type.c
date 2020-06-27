@@ -413,7 +413,7 @@ R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
 // 	}
 // }
 
-static void save_struct(RAnal *anal, RAnalBaseType *type) {
+static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
 	r_return_if_fail (anal && type && type->name 
 		&& type->kind == R_ANAL_BASE_TYPE_KIND_STRUCT);
 	char *kind = "struct";
@@ -459,7 +459,7 @@ static void save_struct(RAnal *anal, RAnalBaseType *type) {
 	r_strbuf_fini (&param_val);
 }
 
-static void save_union(RAnal *anal, RAnalBaseType *type) {
+static void save_union(const RAnal *anal, const RAnalBaseType *type) {
 	r_return_if_fail (anal && type && type->name 
 		&& type->kind == R_ANAL_BASE_TYPE_KIND_UNION);
 	const char *kind = "union";
@@ -505,7 +505,7 @@ static void save_union(RAnal *anal, RAnalBaseType *type) {
 	r_strbuf_fini (&param_val);
 }
 
-static void save_enum(RAnal *anal, RAnalBaseType *type) {
+static void save_enum(const RAnal *anal, const RAnalBaseType *type) {
 	r_return_if_fail (anal && type && type->name 
 		&& type->kind == R_ANAL_BASE_TYPE_KIND_ENUM);
 	/*
@@ -561,7 +561,7 @@ static void save_enum(RAnal *anal, RAnalBaseType *type) {
 	r_strbuf_fini (&param_val);
 }
 
-static void save_atomic_type(RAnal *anal, RAnalBaseType *type) {
+static void save_atomic_type(const RAnal *anal, const RAnalBaseType *type) {
 	r_return_if_fail (anal && type && type->name 
 		&& type->kind == R_ANAL_BASE_TYPE_KIND_ATOMIC);
 	/*
@@ -586,7 +586,7 @@ static void save_atomic_type(RAnal *anal, RAnalBaseType *type) {
 	r_strbuf_fini (&key);
 	r_strbuf_fini (&val);
 }
-static void save_typedef(RAnal *anal, RAnalBaseType *type) {
+static void save_typedef(const RAnal *anal, const RAnalBaseType *type) {
 	r_return_if_fail (anal && type && type->name && type->kind == R_ANAL_BASE_TYPE_KIND_TYPEDEF);
 	/*
 		char=type
