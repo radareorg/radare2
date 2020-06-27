@@ -45,8 +45,7 @@ R_API RBinHeap *r_binheap_new(RPVectorComparator cmp) {
 
 R_API void *r_binheap_pop(RBinHeap *h) {
 	void *ret = r_pvector_at (&h->a, 0);
-	h->a.v.len--;
-	_heap_down (h, 0, r_pvector_at (&h->a, h->a.v.len));
+	_heap_down (h, 0, r_pvector_pop (&h->a));
 	return ret;
 }
 
