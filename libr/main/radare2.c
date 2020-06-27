@@ -715,7 +715,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		eprintf ("Cannot open empty path\n");
 		ret = 1;
 		goto beach;
-	}	
+	}
 
 	if (do_list_io_plugins) {
 		if (r_config_get_i (r->config, "cfg.plugins")) {

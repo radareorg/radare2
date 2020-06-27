@@ -168,7 +168,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 				free (sequence);
 				r_egg_free (egg);
 				return 1;
-			}		
+			}
 			contents = opt.arg;
 			break;
 		case 'w':

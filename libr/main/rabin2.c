@@ -898,7 +898,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		eprintf ("Cannot open empty path\n");
 		r_core_fini (&core);
 		return 1;
-	}	
+	}
 
 	if (!query) {
 		if (action & R_BIN_REQ_HELP || action == R_BIN_REQ_UNK || !file) {

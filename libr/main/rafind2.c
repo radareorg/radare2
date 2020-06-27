@@ -428,7 +428,7 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 		if (file && !*file) {
 			eprintf ("Cannot open empty path\n");
 			return 1;
-		}	
+		}
 
 		rafind_open (file);
 	}
