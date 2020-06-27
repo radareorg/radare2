@@ -293,10 +293,11 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 		ut16 type_idx = r_read_le16 (typeidx_buf + off);
 		ut16 type_desc_id = type_desc (bin, type_idx);
 		if (type_desc_id == UT16_MAX) {
-			break;
+			r_strbuf_append (sig, "?;");
+		} else {
+			const char *buff = getstr (bin, type_desc_id);
+			r_strbuf_append (sig, buff? buff: "?;");
 		}
-		const char *buff = getstr (bin, type_desc_id);
-		r_strbuf_append (sig, buff? buff: "?");
 	}
 	r_strbuf_appendf (sig, ")%s", return_type);
 	free (typeidx_buf);
