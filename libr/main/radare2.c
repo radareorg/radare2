@@ -603,15 +603,15 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			quiet = true;
 			break;
 		case 'r':
+			if (R_STR_ISEMPTY (opt.arg)) {
+				eprintf ("Cannot open empty rarun2 profile path\n");
+				ret = 1;
+				goto beach;
+			}
 			haveRarunProfile = true;
 			r_config_set (r->config, "dbg.profile", opt.arg);
 			break;
 		case 'R':
-			if (R_STR_ISEMPTY (opt.arg)) {
-				eprintf ("Cannot open empty custom rarun profile\n");
-				ret = 1;
-				goto beach;
-			}
 			customRarunProfile = r_str_appendf (customRarunProfile, "%s\n", opt.arg);
 			break;
 		case 's':
@@ -1038,6 +1038,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		if (!debug || debug == 2) {
 			const char *dbg_profile = r_config_get (r->config, "dbg.profile");
 			if (opt.ind == argc && dbg_profile && *dbg_profile) {
+				if (R_STR_ISEMPTY (pfile)) {
+					eprintf ("Missing file to open\n");
+					ret = 1;
+					goto beach;
+				}
 				fh = r_core_file_open (r, pfile, perms, mapaddr);
 				if (fh) {
 					r_core_bin_load (r, pfile, baddr);
