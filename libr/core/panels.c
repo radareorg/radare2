@@ -3332,6 +3332,7 @@ int __clear_layout_cb(void *user) {
 	char *dir_path = __get_panels_config_dir_path ();
 	RList *dir = r_sys_dir ((const char *)dir_path);
 	if (!dir) {
+		free (dir_path);
 		return 0;
 	}
 	RListIter *it;

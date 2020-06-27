@@ -4279,7 +4279,7 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 			for (i = 0; i < nsects && (addr + off) < length && off < lcSize; i++) {
 				const char *sname = is64? "mach0_section64": "mach0_section";
 				RBinField *f = r_bin_field_new (addr + off, addr + off, 1,
-					sdb_fmt ("section_%d", j++), sname, sname, true);
+					sdb_fmt ("section_%zu", j++), sname, sname, true);
 				r_list_append (ret, f);
 				off += is64? 80: 68;
 			}
