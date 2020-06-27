@@ -1062,3 +1062,11 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=rabin2 -S ""
+FILE=-
+CMDS=!rabin2 -S ""
+EXPECT_ERR=<<EOF
+Cannot open empty path
+EOF
+RUN
