@@ -136,7 +136,7 @@ R_API bool r_file_is_regular(const char *str) {
 
 R_API bool r_file_is_directory(const char *str) {
 	struct stat buf = {0};
-	r_return_val_if_fail (!R_STR_IS_EMPTY (str), false);
+	r_return_val_if_fail (!R_STR_ISEMPTY (str), false);
 	if (file_stat (str, &buf) == -1) {
 		return false;
 	}
@@ -161,7 +161,7 @@ R_API bool r_file_fexists(const char *fmt, ...) {
 
 R_API bool r_file_exists(const char *str) {
 	struct stat buf = {0};
-	r_return_val_if_fail (!R_STR_IS_EMPTY (str), false);
+	r_return_val_if_fail (!R_STR_ISEMPTY (str), false);
 	if (file_stat (str, &buf) == -1) {
 		return false;
 	}
@@ -169,7 +169,7 @@ R_API bool r_file_exists(const char *str) {
 }
 
 R_API ut64 r_file_size(const char *str) {
-	r_return_val_if_fail (!R_STR_IS_EMPTY (str), 0);
+	r_return_val_if_fail (!R_STR_ISEMPTY (str), 0);
 	struct stat buf = {0};
 	if (file_stat (str, &buf) == -1) {
 		return 0;
@@ -178,7 +178,7 @@ R_API ut64 r_file_size(const char *str) {
 }
 
 R_API bool r_file_is_abspath(const char *file) {
-	r_return_val_if_fail (!R_STR_IS_EMPTY (file), 0);
+	r_return_val_if_fail (!R_STR_ISEMPTY (file), 0);
 	return ((*file && file[1]==':') || *file == '/');
 }
 
@@ -239,8 +239,9 @@ R_API char *r_file_abspath(const char *file) {
 	if (cwd) {
 		char *ret = r_file_abspath_rel (cwd, file);
 		free (cwd);
+		return ret;
 	}
-	return ret;
+	return NULL;
 }
 
 R_API char *r_file_path(const char *bin) {
@@ -363,7 +364,7 @@ R_API char *r_file_slurp(const char *str, R_NULLABLE size_t *usz) {
 			if (usz) {
 				*usz = size;
 			}
-			return size;
+			return buf;
 		}
 		// try to read 64K
 		sz = UT16_MAX;
