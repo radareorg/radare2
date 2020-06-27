@@ -8,7 +8,7 @@ RUN
 
 NAME=r2pipe.py
 FILE=bins/elf/_Exit (42)
-CMDS=. scripts/get-funcs.py
+CMDS=#!pipe python3 scripts/get-funcs.py
 EXPECT=<<EOF
 
 Function names:
@@ -26,5 +26,6 @@ Disassembly of entry0:
 |           0x08049026      83ec0c         sub esp, 0xc
 |           0x08049029      6a2a           push 0x2a                   ; '*' ; 42
 \           0x0804902b      e8e0ffffff     call sym.imp._Exit          ; void _Exit(int status)
+
 EOF
 RUN
