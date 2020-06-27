@@ -26,7 +26,7 @@
 #include <windows.h>
 #else
 
-#if __linux__ ||  __APPLE__ || __OpenBSD__ || __FreeBSD__ || __NetBSD__ || __DragonFly__
+#if __linux__ ||  __APPLE__ || __OpenBSD__ || __FreeBSD__ || __NetBSD__ || __DragonFly__ || __HAIKU__
 #include <sys/ioctl.h>
 #include <termios.h>
 #else

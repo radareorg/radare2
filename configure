@@ -646,7 +646,10 @@ if [ "$HOST_OS" = "openbsd" ]; then
 USEROSTYPE="bsd"
 else
 if [ "$HOST_OS" = "darwin" ]; then
-USEROSTYPE="darwin"; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi
+USEROSTYPE="darwin"
+else
+if [ "$HOST_OS" = "haiku" ]; then
+USEROSTYPE="haiku"; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi
 if [ "$LIBVERSION" = "xxx" ]; then
 LIBVERSION="$VERSION"; fi
 if [ "$USEROSTYPE" = "gnulinux" ]; then
@@ -673,8 +676,12 @@ if [ "$USEROSTYPE" = "solaris" ]; then
 HAVE_PTRACE="0"
 USE_PTRACE_WRAP="0"
 else
+if [ "$USEROSTYPE" = "haiku" ]; then
+HAVE_PTRACE="0"
+USE_PTRACE_WRAP="0"
+else
 HAVE_PTRACE="1"
-USE_PTRACE_WRAP="0"; fi; fi; fi; fi; fi
+USE_PTRACE_WRAP="0"; fi; fi; fi; fi; fi; fi
 if [ "$DEBUGGER" = "0" ]; then
 HAVE_PTRACE="0"; fi
 if [ "$WANT_PTRACE_WRAP" = "0" ]; then
