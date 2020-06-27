@@ -506,6 +506,7 @@ extern RIOPlugin r_io_plugin_ar;
 extern RIOPlugin r_io_plugin_rbuf;
 extern RIOPlugin r_io_plugin_winedbg;
 extern RIOPlugin r_io_plugin_gprobe;
+extern RIOPlugin r_io_plugin_fd;
 
 #if __cplusplus
 }
