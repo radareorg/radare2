@@ -4,6 +4,7 @@
 #include "r_lib.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <r_cons.h>
 #include <sys/types.h>
 
 typedef struct {
@@ -30,7 +31,10 @@ static bool __resize(RIO *io, RIODesc *desc, ut64 count) {
 static int __read(RIO *io, RIODesc *desc, ut8 *buf, int count) {
 	RIOMalloc *mal = (RIOMalloc*)desc->data;
 	if (mal) {
-		return read (mal->fd, buf, count);
+		r_cons_break_push (NULL, NULL);
+		int res = read (mal->fd, buf, count);
+		r_cons_break_pop ();
+		return res;
 	}
 	return -1;
 }
@@ -54,6 +58,10 @@ static bool __check(RIO *io, const char *pathname, bool many) {
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__check (io, pathname, 0)) {
+		if (r_sandbox_enable (false)) {
+			eprintf ("Do not permit fd:// in sandbox mode.\n");
+			return NULL;
+		}
 		RIOMalloc *mal = R_NEW0 (RIOMalloc);
 		if (mal) {
 			mal->fd = r_num_math (NULL, pathname + 4);
