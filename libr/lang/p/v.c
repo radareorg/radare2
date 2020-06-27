@@ -8,7 +8,7 @@ static int lang_v_file(RLang *lang, const char *file);
 
 static const char *r2v = \
 	"module main\n"
-	"import r2.pipe\n"
+//	"import r2.pipe\n"
 	"\n"
 	"#flag `pkg-config --cflags --libs r_core`\n"
 	"\n"
@@ -89,14 +89,15 @@ static int lang_v_file(RLang *lang, const char *file) {
 		libname = name;
 	}
 	r_sys_setenv ("PKG_CONFIG_PATH", R2_LIBDIR"/pkgconfig");
-	char *shl = r_str_newf ("%s/lib%s", libpath, libname);
-	char *she = r_str_newf ("%s/lib%s."R_LIB_EXT, libpath, libname);
+	char *shl = r_str_newf ("%s/r2v%s.lib", libpath, libname);
+	char *she = r_str_newf ("%s/r2v%s.lib."R_LIB_EXT, libpath, libname);
 	char *buf = r_str_newf ("v -shared -o %s %s", shl, file);
-	eprintf("v -shared -o %s %s", shl, file);
+	eprintf ("v -shared -o %s %s", shl, file);
 	free (name);
 	if (r_sandbox_system (buf, 1) != 0) {
-		free (shl);
 		free (buf);
+		free (she);
+		free (shl);
 		return false;
 	}
 	void *lib = r_lib_dl_open (she);
@@ -112,11 +113,11 @@ static int lang_v_file(RLang *lang, const char *file) {
 		}
 		r_lib_dl_close (lib);
 	} else {
-		eprintf ("Cannot open library\n");
+		eprintf ("Cannot open '%s' library\n", she);
 	}
 	r_file_rm (she);
-	free (she);
 	free (shl);
+	free (she);
 	free (buf);
 	return 0;
 }
