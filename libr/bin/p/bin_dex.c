@@ -275,6 +275,10 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 	}
 	// size of the list, in 16 bit entries
 	ut32 list_size = r_read_le32 (params_buf);
+	if (list_size >= ST32_MAX) {
+		eprintf ("Warning: function prototype contains too many parameters (> 2 million).\n");
+		list_size = ST32_MAX;
+	}
 	size_t typeidx_bufsize = (list_size * sizeof (ut16));
 	if (params_off + typeidx_bufsize > bin->size) {
 		typeidx_bufsize = bin->size - params_off;
