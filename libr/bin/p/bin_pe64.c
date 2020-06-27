@@ -361,7 +361,9 @@ static RList *trycatch(RBinFile *bf) {
 			savedBeginOff = rfcn.BeginAddress;
 			savedEndOff = rfcn.EndAddress;
 			do {
-				r_io_read_at_mapped (io, exceptionDataOff, (ut8 *)&rfcn, sizeof (rfcn));
+				if (!r_io_read_at_mapped (io, exceptionDataOff, (ut8 *)&rfcn, sizeof (rfcn))) {
+					break;
+				}
 				suc = r_io_read_at_mapped (io, rfcn.UnwindData + baseAddr, (ut8 *)&info, sizeof (info));
 				if (!suc || info.Version != 1) {
 					break;
@@ -384,12 +386,12 @@ static RList *trycatch(RBinFile *bf) {
 		}
 
 		ut32 handler;
-		r_io_read_at_mapped (io, exceptionDataOff, (ut8 *)&handler, sizeof (handler));
-
+		if (!r_io_read_at_mapped (io, exceptionDataOff, (ut8 *)&handler, sizeof (handler))) {
+			continue;
+		}
 		if (c_handler && c_handler != handler) {
 			continue;
 		}
-
 		exceptionDataOff += sizeof (ut32);
 
 		if (!c_handler) {
