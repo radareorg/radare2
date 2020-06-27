@@ -55,6 +55,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		(void)close (ifd);
 		free (asm_buf);
 		if (!success) {
+			free (as);
 			return -1;
 		}
 	}
