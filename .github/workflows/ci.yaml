@@ -54,7 +54,8 @@ jobs:
       if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest'
       run: sudo apt-get --assume-yes install clang
     - name: Install Python r2pipe
-      run: sudo pip install 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
+      run: |
+        sudo pip install 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
     - name: Checkout our Testsuite Binaries
       uses: actions/checkout@v2
       with:
