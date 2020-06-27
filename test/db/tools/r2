@@ -135,33 +135,33 @@ Script 'script/missing.r2' not found.
 EOF
 RUN
 
-NAME=r2 empty -i
+NAME=radare2 empty -i
 FILE=-
-CMDS=!r2 -i "" -
+CMDS=!radare2 -i "" -
 EXPECT_ERR=<<EOF
 Cannot open empty script path
 EOF
 RUN
 
-NAME=r2 empty -I
+NAME=radare2 empty -I
 FILE=-
-CMDS=!r2 -I "" -
+CMDS=!radare2 -I "" -
 EXPECT_ERR=<<EOF
 Cannot open empty script path
 EOF
 RUN
 
-NAME=r2 empty -R
+NAME=radare2 empty -R
 FILE=-
-CMDS=!r2 -R ""
+CMDS=!radare2 -R ""
 EXPECT_ERR=<<EOF
 Missing file to open
 EOF
 RUN
 
-NAME=r2 empty -P
+NAME=radare2 empty -P
 FILE=-
-CMDS=!r2 -P ""
+CMDS=!radare2 -P ""
 EXPECT_ERR=<<EOF
 Cannot open empty rapatch path
 EOF
