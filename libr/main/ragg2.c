@@ -163,6 +163,12 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			bytes = r_str_append (bytes, opt.arg);
 			break;
 		case 'C':
+			if (R_STR_ISEMPTY (opt.arg)) {
+				eprintf ("Cannot open empty contents path\n");
+				free (sequence);
+				r_egg_free (egg);
+				return 1;
+			}		
 			contents = opt.arg;
 			break;
 		case 'w':
@@ -241,6 +247,12 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			ofileauto = 1;
 			break;
 		case 'I':
+			if (R_STR_ISEMPTY (opt.arg)) {
+				eprintf ("Cannot open empty include path\n");
+				free (sequence);
+				r_egg_free (egg);
+				return 1;
+			}
 			r_egg_lang_include_path (egg, opt.arg);
 			break;
 		case 'i':
@@ -329,6 +341,13 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		return usage (0);
 	} else {
 		file = argv[opt.ind];
+	}
+
+	if (R_STR_ISEMPTY (opt.arg)) {
+		eprintf ("Cannot open empty path\n");
+		free (sequence);
+		r_egg_free (egg);
+		return 1;
 	}
 
 	if (bits == 64) {
