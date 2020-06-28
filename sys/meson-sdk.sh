@@ -14,7 +14,7 @@ sys/meson.py --options use_libuv=false use_sys_magic=false || exit 1
 	(
 		rm -f libr.a
 		cd a
-		ar crs ../libr.a */*.o
+		ar rs ../libr.a */*.o
 	)
 )
 D=r2sdk
