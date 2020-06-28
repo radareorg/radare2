@@ -569,12 +569,15 @@ static RList* libs(RBinFile *bf) {
 
 static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc *rel, ut64 GOT) {
 	r_return_val_if_fail (bin && rel, NULL);
+	if (GOT == UT64_MAX) {
+		GOT = 0;
+	}
 
 	ut64 B = bin->baddr;
 	ut64 P = rel->rva; // rva has taken baddr into account
 	RBinReloc *r = R_NEW0 (RBinReloc);
 	if (!r) {
-		return r;
+		return NULL;
 	}
 	r->import = NULL;
 	r->symbol = NULL;
@@ -669,51 +672,45 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 	default: break;
 	}
 
-	#undef SET
-	#undef ADD
+#	undef SET
+#	undef ADD
 
-	free (r);
-	return 0;
+	return r;
 }
 
 static RList* relocs(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinReloc *ptr = NULL;
 	RBinElfReloc *relocs = NULL;
-	struct Elf_(r_bin_elf_obj_t) *bin = NULL;
-	ut64 got_addr;
-	int i;
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	bin = bf->o->bin_obj;
+	struct Elf_(r_bin_elf_obj_t) *bin = bf->o->bin_obj;
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
 	/* FIXME: This is a _temporary_ fix/workaround to prevent a use-after-
 	 * free detected by ASan that would corrupt the relocation names */
 	r_list_free (imports (bf));
+	ut64 got_addr;
 	if ((got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got")) == -1) {
 		got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got.plt");
-		if (got_addr == -1) {
-			got_addr = 0;
-		}
 	}
-	if (got_addr < 1 && bin->ehdr.e_type == ET_REL) {
+	if (got_addr == UT64_MAX && bin->ehdr.e_type == ET_REL) {
 		got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got.r2");
-		if (got_addr == -1) {
-			got_addr = 0;
-		}
 	}
 	if (bf->o) {
 		if (!(relocs = Elf_(r_bin_elf_get_relocs) (bin))) {
 			return ret;
 		}
+		size_t i;
 		for (i = 0; !relocs[i].last; i++) {
 			if (!(ptr = reloc_convert (bin, &relocs[i], got_addr))) {
 				continue;
 			}
-			r_list_append (ret, ptr);
+			if (ptr->paddr) {
+				r_list_append (ret, ptr);
+			}
 		}
 	}
 	return ret;
@@ -860,30 +857,29 @@ static void _patch_reloc(ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S
 }
 
 static RList* patch_relocs(RBin *b) {
+	r_return_val_if_fail (b, NULL);
 	RList *ret = NULL;
 	RBinReloc *ptr = NULL;
-	RIO *io = NULL;
-	RBinObject *obj = NULL;
-	struct Elf_(r_bin_elf_obj_t) *bin = NULL;
 	RIOMap *g = NULL;
 	HtUU *relocs_by_sym;
 	RBinElfReloc *relcs = NULL;
 	RBinInfo *info;
-	int cdsz;
-	int i;
-	ut64 n_vaddr, vaddr, size, offset = 0;
+	ut64 size, offset = 0;
 
-	if (!b)
+	RIO *io = b->iob.io;
+	if (!io || !io->desc) {
 		return NULL;
-	io = b->iob.io;
-	if (!io || !io->desc)
-		return NULL;
-	obj = r_bin_cur_object (b);
+	}
+	RBinObject *obj = r_bin_cur_object (b);
 	if (!obj) {
 	   	return NULL;
 	}
-	bin = obj->bin_obj;
+	struct Elf_(r_bin_elf_obj_t) *bin = obj->bin_obj;
 	if (bin->ehdr.e_type != ET_REL) {
+		return NULL;
+	}
+	size = bin->g_reloc_num * 4;
+	if (size == 0) {
 		return NULL;
 	}
 	if (!io->cached) {
@@ -892,7 +888,7 @@ static RList* patch_relocs(RBin *b) {
 	}
 
 	info = obj ? obj->info: NULL;
-	cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
+	size_t cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
 
 	void **it;
 	r_pvector_foreach (&io->maps, it) {
@@ -905,9 +901,8 @@ static RList* patch_relocs(RBin *b) {
 	if (!g) {
 		return NULL;
 	}
-	n_vaddr = g->itv.addr + g->itv.size;
+	ut64 n_vaddr = g->itv.addr + g->itv.size;
 	//reserve at least that space
-	size = bin->g_reloc_num * 4;
 	char *muri = r_str_newf ("malloc://%" PFMT64u, size);
 	RIODesc *gotr2desc = b->iob.open_at (io, muri, R_PERM_R, 0664, n_vaddr);
 	free (muri);
@@ -932,9 +927,10 @@ static RList* patch_relocs(RBin *b) {
 		r_list_free (ret);
 		return NULL;
 	}
-	vaddr = n_vaddr;
+	ut64 vaddr = n_vaddr;
+	size_t i;
 	for (i = 0; !relcs[i].last; i++) {
-		ut64 sym_addr = 0;
+		ut64 sym_addr = UT64_MAX;
 
 		if (relcs[i].sym) {
 			if (relcs[i].sym < bin->imports_by_ord_size && bin->imports_by_ord[relcs[i].sym]) {
@@ -944,12 +940,12 @@ static RList* patch_relocs(RBin *b) {
 			}
 		}
 		// TODO relocation types B, L
-		_patch_reloc (bin->ehdr.e_machine, &b->iob, &relcs[i], sym_addr? sym_addr: vaddr, 0, n_vaddr);
+		_patch_reloc (bin->ehdr.e_machine, &b->iob, &relcs[i], sym_addr != UT64_MAX? sym_addr: vaddr, 0, n_vaddr);
 		if (!(ptr = reloc_convert (bin, &relcs[i], n_vaddr))) {
 			continue;
 		}
 
-		if (sym_addr) {
+		if (sym_addr != UT64_MAX) {
 			ptr->vaddr = sym_addr;
 		} else {
 			ptr->vaddr = vaddr;
