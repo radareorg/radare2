@@ -583,9 +583,8 @@ static RList* libs(RBinFile *bf) {
 	return ret;
 }
 
-static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc *rel, ut64 GOT) {
+static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc *rel, ut64 got_addr) {
 	r_return_val_if_fail (bin && rel, NULL);
-
 	ut64 B = bin->baddr;
 	ut64 P = rel->rva; // rva has taken baddr into account
 	RBinReloc *r = R_NEW0 (RBinReloc);
@@ -617,8 +616,8 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		case R_386_GLOB_DAT: SET(32);
 		case R_386_JMP_SLOT: SET(32);
 		case R_386_RELATIVE: ADD(32, B);
-		case R_386_GOTOFF:   ADD(32,-GOT);
-		case R_386_GOTPC:    ADD(32, GOT-P);
+		case R_386_GOTOFF:   ADD(32, -got_addr);
+		case R_386_GOTPC:    ADD(32, got_addr - P);
 		case R_386_16:       ADD(16, 0);
 		case R_386_PC16:     ADD(16,-P);
 		case R_386_8:        ADD(8,  0);
@@ -632,7 +631,7 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		case R_X86_64_NONE:	break; // malloc then free. meh. then again, there's no real world use for _NONE.
 		case R_X86_64_64:	ADD(64, 0);
 		case R_X86_64_PLT32:	ADD(32,-P /* +L */);
-		case R_X86_64_GOT32:	ADD(32, GOT);
+		case R_X86_64_GOT32:	ADD(32, got_addr);
 		case R_X86_64_PC32:	ADD(32,-P);
 		case R_X86_64_GLOB_DAT: r->vaddr -= rel->sto; SET(64);
 		case R_X86_64_JUMP_SLOT: r->vaddr -= rel->sto; SET(64);
@@ -643,7 +642,7 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		case R_X86_64_PC16:	ADD(16,-P);
 		case R_X86_64_8:	ADD(8,  0);
 		case R_X86_64_PC8:	ADD(8, -P);
-		case R_X86_64_GOTPCREL:	ADD(64, GOT-P);
+		case R_X86_64_GOTPCREL:	ADD(64, got_addr-P);
 		case R_X86_64_COPY:	ADD(64, 0); // XXX: copy symbol at runtime
 		case R_X86_64_IRELATIVE: r->is_ifunc = true; SET(64);
 		default: break;
@@ -660,8 +659,8 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		case R_ARM_GLOB_DAT:	ADD(32, 0);
 		case R_ARM_JUMP_SLOT:	ADD(32, 0);
 		case R_ARM_RELATIVE:	ADD(32, B);
-		case R_ARM_GOTOFF:	ADD(32,-GOT);
-		default: ADD(32,GOT); break; // reg relocations
+		case R_ARM_GOTOFF:	ADD(32,-got_addr);
+		default: ADD(32, got_addr); break; // reg relocations
 		}
 		break;
 	case EM_RISCV:
@@ -669,7 +668,7 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		case R_RISCV_NONE: break;
 		case R_RISCV_JUMP_SLOT: ADD(64, 0);
 		case R_RISCV_RELATIVE: ADD(64, B);
-		default: ADD(64, GOT); break; // reg relocations
+		default: ADD(64, got_addr); break; // reg relocations
 		}
 		break;
 	case EM_AARCH64: switch (rel->type) {
@@ -694,8 +693,8 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 	default: break;
 	}
 
-	#undef SET
-	#undef ADD
+#undef SET
+#undef ADD
 
 	free (r);
 	return NULL;
@@ -716,15 +715,9 @@ static RList* relocs(RBinFile *bf) {
 	ut64 got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got");
 	if (got_addr == UT64_MAX) {
 		got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got.plt");
-		if (got_addr == UT64_MAX) {
-			got_addr = 0;
-		}
 	}
-	if (got_addr < 1 && bin->ehdr.e_type == ET_REL) {
+	if (got_addr == UT64_MAX && bin->ehdr.e_type == ET_REL) {
 		got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got.r2");
-		if (got_addr == -1) {
-			got_addr = 0;
-		}
 	}
 	if (bf->o) {
 		if (!(relocs = Elf_(r_bin_elf_get_relocs) (bin))) {
@@ -735,7 +728,9 @@ static RList* relocs(RBinFile *bf) {
 			if (!(ptr = reloc_convert (bin, &relocs[i], got_addr))) {
 				continue;
 			}
-			r_list_append (ret, ptr);
+			if (ptr->paddr != UT64_MAX) {
+				r_list_append (ret, ptr);
+			}
 		}
 	}
 	return ret;
@@ -919,7 +914,6 @@ static RList* patch_relocs(RBin *b) {
 	if (size == 0) {
 		return NULL;
 	}
-
 	void **it;
 	r_pvector_foreach (&io->maps, it) {
 		RIOMap *map = *it;
@@ -966,8 +960,8 @@ static RList* patch_relocs(RBin *b) {
 	ut64 vaddr = n_vaddr;
 	size_t i;
 	for (i = 0; !relcs[i].last; i++) {
-		ut64 sym_addr = 0;
 		ut64 plt_entry_addr = vaddr;
+		ut64 sym_addr = UT64_MAX;
 
 		if (relcs[i].sym) {
 			if (relcs[i].sym < bin->imports_by_ord_size && bin->imports_by_ord[relcs[i].sym]) {
@@ -981,13 +975,14 @@ static RList* patch_relocs(RBin *b) {
 				plt_entry_addr = sym_addr;
 			}
 		}
-		// TODO relocation types B, L
-		_patch_reloc (bin->ehdr.e_machine, &b->iob, &relcs[i], sym_addr? sym_addr: vaddr, 0, plt_entry_addr);
+		//ut64 raddr = sym_addr? sym_addr: vaddr;
+		ut64 raddr = (sym_addr && sym_addr != UT64_MAX)? sym_addr: vaddr;
+		_patch_reloc (bin->ehdr.e_machine, &b->iob, &relcs[i], raddr, 0, plt_entry_addr);
 		if (!(ptr = reloc_convert (bin, &relcs[i], n_vaddr))) {
 			continue;
 		}
 
-		if (sym_addr) {
+		if (sym_addr != UT64_MAX) {
 			ptr->vaddr = sym_addr;
 		} else {
 			ptr->vaddr = vaddr;
