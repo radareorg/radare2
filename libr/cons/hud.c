@@ -208,6 +208,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 	I(line)->echo = false;
 	I(line)->hud = hud;
 	user_input [0] = 0;
+	user_input[HUD_BUF_SIZE] = 0;
 	hud->top_entry_n = 0;
 	r_cons_show_cursor (false);
 	r_cons_enable_mouse (false);
@@ -249,8 +250,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 #endif
 		r_cons_visual_flush ();
 		(void) r_line_readline ();
-		strncpy (user_input, I(line)->buffer.data, HUD_BUF_SIZE - 1); 				// to search
-		user_input[HUD_BUF_SIZE] = 0;
+		strncpy (user_input, I(line)->buffer.data, HUD_BUF_SIZE); 				// to search
 
 		if (!hud->activate) {
 			hud->top_entry_n = 0;
