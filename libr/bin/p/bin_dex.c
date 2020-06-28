@@ -1918,10 +1918,8 @@ static void add_segment(RList *ret, const char *name, Section s, int perm) {
 
 static bool dim(const char *name, Section *pre, Section *cur, Section *nex, Section *all) {
 	r_return_val_if_fail (cur && all, false);
-	if (pre) {
-		if (cur->addr < (pre->addr + pre->size)) {
-			eprintf ("Warning: %s Section starts before the previous.\n", name);
-		}
+	if (pre && cur->addr < (pre->addr + pre->size)) {
+		eprintf ("Warning: %s Section starts before the previous.\n", name);
 	}
 	if (cur->addr >= all->size) {
 		eprintf ("Warning: %s section starts beyond the end of the file.\n", name);
