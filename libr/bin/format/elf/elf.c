@@ -2654,35 +2654,41 @@ static size_t get_num_relocs_sections(ELFOBJ *bin) {
 }
 
 static size_t get_num_relocs_approx(ELFOBJ *bin) {
-	return get_num_relocs_dynamic (bin) + get_num_relocs_sections (bin);
+	size_t rd = get_num_relocs_dynamic (bin);
+	size_t rs = get_num_relocs_sections (bin);
+	return rd + rs;
 }
 
-static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin, RBinElfReloc *relocs, size_t pos, size_t num_relocs) {
+static void populate_relocs_record_from_dynamic(ELFOBJ *bin, RBinElfReloc *relocs, size_t num_relocs, size_t *pos) {
 	size_t offset;
 	size_t size = get_size_rel_mode (bin->dyn_info.dt_pltrel);
+	size_t p = *pos;
 
-	for (offset = 0; offset < bin->dyn_info.dt_pltrelsz && pos < num_relocs; offset += size, pos++) {
+	for (offset = 0; offset < bin->dyn_info.dt_pltrelsz && p < num_relocs; offset += size) {
 		if (!read_reloc (bin, relocs + pos, bin->dyn_info.dt_pltrel, bin->dyn_info.dt_jmprel + offset)) {
 			break;
 		}
-		fix_rva_and_offset_exec_file (bin, relocs + pos);
+		fix_rva_and_offset_exec_file (bin, relocs + p);
+		i++;
+		p++;
 	}
 
-	for (offset = 0; offset < bin->dyn_info.dt_relasz && pos < num_relocs; offset += bin->dyn_info.dt_relaent, pos++) {
+	for (offset = 0; offset < bin->dyn_info.dt_relasz && p < num_relocs; offset += bin->dyn_info.dt_relaent) {
 		if (!read_reloc (bin, relocs + pos, DT_RELA, bin->dyn_info.dt_rela + offset)) {
 			break;
 		}
-		fix_rva_and_offset_exec_file (bin, relocs + pos);
+		fix_rva_and_offset_exec_file (bin, relocs + p);
+		p++;
 	}
 
-	for (offset = 0; offset < bin->dyn_info.dt_relsz && pos < num_relocs; offset += bin->dyn_info.dt_relent, pos++) {
+	for (offset = 0; offset < bin->dyn_info.dt_relsz && p < num_relocs; offset += bin->dyn_info.dt_relent) {
 		if (!read_reloc (bin, relocs + pos, DT_REL, bin->dyn_info.dt_rel + offset)) {
 			break;
 		}
-		fix_rva_and_offset_exec_file (bin, relocs + pos);
+		fix_rva_and_offset_exec_file (bin, relocs + p);
+		p++;
 	}
-
-	return pos;
+	*pos = p;
 }
 
 static size_t get_next_not_analysed_offset(ELFOBJ *bin, size_t section_vaddr, size_t offset) {
@@ -2706,42 +2712,63 @@ static size_t get_next_not_analysed_offset(ELFOBJ *bin, size_t section_vaddr, si
 	return offset;
 }
 
-static size_t populate_relocs_record_from_section(ELFOBJ *bin, RBinElfReloc *relocs, size_t pos, size_t num_relocs) {
-	size_t size, i, j;
-	Elf_(Xword) rel_mode;
+static void populate_relocs_record_from_section(ELFOBJ *bin, RBinElfReloc *relocs, size_t num_relocs, size_t *pos) {
+	size_t p = *pos;
 
 	if (!bin->g_sections) {
-		return pos;
+		return;
 	}
 
-	for (i = 0; !bin->g_sections[i].last; i++) {
-		rel_mode = get_section_mode (bin, i);
-
-		if (!is_reloc_section (rel_mode) || bin->g_sections[i].size > bin->size || bin->g_sections[i].offset > bin->size) {
+	size_t si = 0; // section index
+	for (si = 0; !bin->g_sections[si].last; si++) {
+		RBinElfSection *s = &bin->g_sections[si];
+		Elf_(Xword) rel_mode = get_section_mode (bin, si);
+		if (!is_reloc_section (rel_mode) || s->size > bin->size || s->offset > bin->size) {
 			continue;
 		}
-
+		if (strstr (s->name, "rela")) {
+			continue;
+		}
+		size_t relsize = get_size_rel_mode (rel_mode);
+#if 0
+		size_t j, size;
 		size = get_size_rel_mode (rel_mode);
 
-		for (j = get_next_not_analysed_offset (bin, bin->g_sections[i].rva, 0);
-			j < bin->g_sections[i].size && pos < num_relocs;
-			j = get_next_not_analysed_offset (bin, bin->g_sections[i].rva, j + size)) {
-
-			if (!read_reloc (bin, relocs + pos, rel_mode, bin->g_sections[i].rva + j)) {
+		for (j = get_next_not_analysed_offset (bin, bin->g_sections[i].offset, 0, bin->baddr);
+				j < bin->g_sections[i].size && p < num_relocs;
+				j = get_next_not_analysed_offset (bin, bin->g_sections[i].offset, j + size, bin->baddr)) {
+			if (!j) {
 				break;
 			}
-
-			fix_rva_and_offset (bin, relocs + pos, i);
-			pos++;
+			if (!read_reloc (bin, relocs + p, rel_mode, bin->g_sections[i].offset + j)) {
+				break;
+			}
+			fix_rva_and_offset (bin, relocs + p, i);
+			p++;
 		}
+#else
+		ut64 j = get_next_not_analysed_offset (bin, s->offset, 0, bin->baddr);
+		ut64 sa = s->rva;
+		ut64 eos = s->size;
+		while (j != UT64_MAX && p < num_relocs && j < sa) {
+			if (!read_reloc (bin, relocs + p, rel_mode, s->offset + j)) {
+				break;
+			}
+			fix_rva_and_offset (bin, relocs + p, si);
+			j = get_next_not_analysed_offset (bin, s->offset, j + relsize, bin->baddr);
+			p++;
+		}
+#endif
 	}
-
-	return pos;
+	*pos = p;
 }
 
 static RBinElfReloc *populate_relocs_record(ELFOBJ *bin) {
 	size_t i = 0;
 	size_t num_relocs = get_num_relocs_approx (bin);
+	if (!num_relocs) {
+		return NULL;
+	}
 	RBinElfReloc *relocs = R_NEWS0 (RBinElfReloc, num_relocs + 1);
 	if (!relocs) {
 		// In case we can't allocate enough memory for all the claimed
@@ -2750,23 +2777,22 @@ static RBinElfReloc *populate_relocs_record(ELFOBJ *bin) {
 		num_relocs = get_num_relocs_dynamic (bin);
 		relocs = R_NEWS0 (RBinElfReloc, num_relocs + 1);
 		if (!relocs) {
+			if (bin->verbose) {
+				eprintf ("Warning: Cannot allocate %zd relocs\n", num_relocs);
+			}
 			return NULL;
 		}
 	}
 
-	i = populate_relocs_record_from_dynamic (bin, relocs, i, num_relocs);
-	i = populate_relocs_record_from_section (bin, relocs, i, num_relocs);
+	populate_relocs_record_from_dynamic (bin, relocs, num_relocs, &i);
+	populate_relocs_record_from_section (bin, relocs, num_relocs, &i);
 	relocs[i].last = 1;
-
 	bin->g_reloc_num = i;
 	return relocs;
 }
 
 RBinElfReloc* Elf_(r_bin_elf_get_relocs) (ELFOBJ *bin) {
-	if (!bin) {
-		return NULL;
-	}
-
+	r_return_val_if_fail (bin, NULL);
 	if (!bin->g_relocs) {
 		bin->g_relocs = populate_relocs_record (bin);
 	}
@@ -2872,10 +2898,18 @@ static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 	}
 
 	size_t i = 0;
-	create_section_from_phdr (bin, ret, &i, ".rel.dyn", reldyn, reldynsz);
-	create_section_from_phdr (bin, ret, &i, ".rela.plt", relava, pltgotsz);
-	create_section_from_phdr (bin, ret, &i, ".rel.plt", relva, relasz);
-	create_section_from_phdr (bin, ret, &i, ".got.plt", pltgotva, pltgotsz);
+	if (i < num_sections) {
+		create_section_from_phdr (bin, ret, &i, ".rel.dyn", reldyn, reldynsz);
+	}
+	if (i < num_sections) {
+		create_section_from_phdr (bin, ret, &i, ".rela.plt", relava, pltgotsz);
+	}
+	if (i < num_sections) {
+		create_section_from_phdr (bin, ret, &i, ".rel.plt", relva, relasz);
+	}
+	if (i < num_sections) {
+		create_section_from_phdr (bin, ret, &i, ".got.plt", pltgotva, pltgotsz);
+	}
 	ret[i].last = 1;
 
 	return ret;
