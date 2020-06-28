@@ -417,7 +417,17 @@ static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
 	r_return_if_fail (anal && type && type->name 
 		&& type->kind == R_ANAL_BASE_TYPE_KIND_STRUCT);
 	char *kind = "struct";
-
+	/*
+		C:
+		struct name {type param1; type param2; type paramN;};
+		Sdb:
+		name=struct
+		struct.name=param1,param2,paramN
+		struct.name.!size=96
+		struct.name.param1=type,0,0
+		struct.name.param2=type,4,0
+		struct.name.paramN=type,8,0
+	*/
 	char *sname = r_str_sanitize_sdb_key (type->name);
 	// name=struct
 	sdb_set (anal->sdb_types, sname, kind, 0);
@@ -432,7 +442,7 @@ static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
 	int i = 0;
 	RAnalStructMember *member;
 	r_vector_foreach (&type->struct_data.members, member) {
-		// struct.name.arg1=type,offset,???
+		// struct.name.param=type,offset,argsize
 		char *member_sname = r_str_sanitize_sdb_key (member->name);
 		r_strbuf_setf (&param_key, "%s.%s.%s", kind, sname, member_sname);
 		r_strbuf_setf (&param_val, "%s,%" PFMT64u ",%" PFMT64u "", member->type, member->offset, 0);
@@ -441,11 +451,11 @@ static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
 
 		r_strbuf_appendf (&arglist, (i++ == 0) ? "%s" : ",%s", member->name);
 	}
-	// struct.name=arg1,arg2,argN
+	// struct.name=param1,param2,paramN
 	char *key = r_str_newf ("%s.%s", kind, sname);
 	sdb_set (anal->sdb_types, key, r_strbuf_get (&arglist), 0);
 	free (key);
-
+	// struct.name.!size=96
 	key = r_str_newf ("%s.%s.!size", kind, sname);
 	char *val = r_str_newf ("%" PFMT64u "", type->size);
 	sdb_set (anal->sdb_types, key, val, 0);
@@ -463,7 +473,17 @@ static void save_union(const RAnal *anal, const RAnalBaseType *type) {
 	r_return_if_fail (anal && type && type->name 
 		&& type->kind == R_ANAL_BASE_TYPE_KIND_UNION);
 	const char *kind = "union";
-
+	/*
+	C:
+	union name {type param1; type param2; type paramN;};
+	Sdb:
+	name=union
+	union.name=param1,param2,paramN
+	union.name.!size=32
+	union.name.param1=type,0,0
+	union.name.param2=type,0,0
+	union.name.paramN=type,0,0
+	*/
 	char *sname = r_str_sanitize_sdb_key (type->name);
 	// name=union
 	sdb_set (anal->sdb_types, sname, kind, 0);
@@ -478,7 +498,7 @@ static void save_union(const RAnal *anal, const RAnalBaseType *type) {
 	int i = 0;
 	RAnalUnionMember *member;
 	r_vector_foreach (&type->union_data.members, member) {
-		// union.name.arg1=type,offset,???
+		// union.name.arg1=type,offset,argsize
 		char *member_sname = r_str_sanitize_sdb_key (member->name);
 		r_strbuf_setf (&param_key, "%s.%s.%s", kind, sname, member_sname);
 		r_strbuf_setf (&param_val, "%s,%" PFMT64u ",%" PFMT64u "", member->type, member->offset, 0);
@@ -509,6 +529,9 @@ static void save_enum(const RAnal *anal, const RAnalBaseType *type) {
 	r_return_if_fail (anal && type && type->name 
 		&& type->kind == R_ANAL_BASE_TYPE_KIND_ENUM);
 	/*
+		C:
+			enum name {case1 = 1, case2 = 2, caseN = 3};
+		Sdb:
 		name=enum
 		enum.name=arg1,arg2,argN
 		enum.MyEnum.0x1=arg1
@@ -565,6 +588,8 @@ static void save_atomic_type(const RAnal *anal, const RAnalBaseType *type) {
 	r_return_if_fail (anal && type && type->name 
 		&& type->kind == R_ANAL_BASE_TYPE_KIND_ATOMIC);
 	/*
+		C: (cannot define a custom atomic type)
+		Sdb:
 		char=type
 		type.char=c
 		type.char.size=8
@@ -589,9 +614,11 @@ static void save_atomic_type(const RAnal *anal, const RAnalBaseType *type) {
 static void save_typedef(const RAnal *anal, const RAnalBaseType *type) {
 	r_return_if_fail (anal && type && type->name && type->kind == R_ANAL_BASE_TYPE_KIND_TYPEDEF);
 	/*
-		char=type
-		type.char=c
-		type.char.size=8
+		C:
+		typedef char byte;
+		Sdb:
+		byte=typedef
+		typedef.byte=char
 	*/
 	char *sname = r_str_sanitize_sdb_key (type->name);
 	sdb_set (anal->sdb_types, sname, "typedef", 0);
