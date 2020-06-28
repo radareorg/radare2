@@ -1,3 +1,15 @@
+NAME=ppc-asserts
+FILE=bins/elf/powerpc-linux-gnu-symexec-palindrome
+CMDS=<<EOF
+%R2_DEBUG_ASSERT=1
+aaa
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+RUN
+
 NAME=ppc-aflm
 FILE=bins/elf/analysis/elf-ppc-execstack
 CMDS=<<EOF
