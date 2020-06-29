@@ -408,6 +408,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	r = r_core_new ();
 	if (!r) {
 		eprintf ("Cannot initialize RCore\n");
+		LISTS_FREE ();
 		return 1;
 	}
 	r->r_main_radare2 = r_main_radare2;
