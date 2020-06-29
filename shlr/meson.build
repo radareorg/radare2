@@ -199,7 +199,7 @@ sdb_dep = declare_dependency(
 )
 
 # Create sdb_version.h
-sdb_version = '1.2.0'
+sdb_version = '1.5.0'
 run_command(py3_exe, '-c', 'with open("sdb/src/sdb_version.h", "w") as f: f.write("#define SDB_VERSION \"' + sdb_version + '\"")')
 
 sdb_exe = executable('sdb', ['sdb/src/main.c'] + sdb_files,
