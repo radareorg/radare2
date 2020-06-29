@@ -90,7 +90,7 @@ typedef struct {
 	bool pseudo;
 	int filter;
 	int interactive;
-	bool jmpsub;
+	bool subjmp;
 	bool varsub;
 	bool show_lines;
 	bool show_lines_bb;
@@ -631,7 +631,7 @@ static RDisasmState * ds_init(RCore *core) {
 	}
 	ds->filter = r_config_get_i (core->config, "asm.filter");
 	ds->interactive = r_cons_is_interactive ();
-	ds->jmpsub = r_config_get_i (core->config, "asm.jmpsub");
+	ds->subjmp = r_config_get_i (core->config, "asm.sub.jmp");
 	ds->varsub = r_config_get_i (core->config, "asm.var.sub");
 	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
 	core->parser->regsub = r_config_get_i (core->config, "asm.regsub");
@@ -3378,7 +3378,7 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 		return;
 	}
 	RAnalFunction *f = fcnIn (ds, ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
-	if (!f && ds->core->flags && (!ds->core->vmode || (!ds->jmpsub && !ds->filter))) {
+	if (!f && ds->core->flags && (!ds->core->vmode || (!ds->subjmp && !ds->filter))) {
 		const char *arch;
 		RFlagItem *flag = r_flag_get_by_spaces (ds->core->flags, ds->analop.jump,
 		                                        R_FLAGS_FS_CLASSES, R_FLAGS_FS_SYMBOLS, NULL);
@@ -3417,7 +3417,7 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 		} else if (delta < 0) {
 			ds_begin_comment (ds);
 			ds_comment (ds, true, "; %s-0x%x", f->name, -delta);
-		} else if ((!ds->core->vmode || (!ds->jmpsub && !ds->filter))
+		} else if ((!ds->core->vmode || (!ds->subjmp && !ds->filter))
 			   && (!ds->opstr || !strstr (ds->opstr, f->name))) {
 			RFlagItem *flag_sym;
 			if (ds->core->vmode && ds->asm_demangle
@@ -5023,8 +5023,7 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 	RFlag *f = ds->core->flags;
 	const char *name = NULL;
 	const char *kw = "";
-
-	if (!ds->jmpsub || !anal) {
+	if (!ds->subjmp || !anal) {
 		return str;
 	}
 	int optype = ds->analop.type & 0xFFFF;

@@ -3010,7 +3010,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.calls", "true", "Show callee function related info as comments in disasm");
 	SETBPREF ("asm.comments", "true", "Show comments in disassembly view");
 	SETBPREF ("asm.usercomments", "false", "Show user comments even if asm.comments is false");
-	SETBPREF ("asm.jmpsub", "true", "Always substitute jump, call and branch targets in disassembly");
+	SETBPREF ("asm.sub.jmp", "true", "Always substitute jump, call and branch targets in disassembly");
 	SETBPREF ("asm.hints", "true", "Disable all asm.hint* if false");
 	SETBPREF ("asm.hint.jmp", "false", "Show jump hints [numbers] in disasm");
 	SETBPREF ("asm.hint.call", "true", "Show call hints [numbers] in disarm");
