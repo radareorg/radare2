@@ -160,6 +160,7 @@ static int main_help(int line) {
 		" R2_NOPLUGINS do not load r2 shared plugins\n"
 		" R2_RCFILE    ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
 		" R2_RDATAHOME %s\n" // TODO: rename to RHOME R2HOME?
+		" R2_VERSION   contains the current versaion of r2\n" 
 		"Paths:\n"
 		" R2_PREFIX    "R2_PREFIX"\n"
 		" R2_INCDIR    "R2_INCDIR"\n"
@@ -191,9 +192,9 @@ static int main_print_var(const char *var_name) {
 		const char *name;
 		const char *value;
 	} r2_vars[] = {
+		{ "R2_VERSION", R2_VERSION },
 		{ "R2_PREFIX", R2_PREFIX },
 		{ "R2_MAGICPATH", magicpath },
-		{ "R2_PREFIX", R2_PREFIX },
 		{ "R2_INCDIR", incdir },
 		{ "R2_LIBDIR", libdir },
 		{ "R2_LIBEXT", R_LIB_EXT },
