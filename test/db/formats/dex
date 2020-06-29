@@ -422,6 +422,15 @@ Class #1            -
 EOF
 RUN
 
+NAME=DEX radare2installer.dex classes (is getProper)
+FILE=bins/dex/org.radare.radare2installer.dex
+CMDS=is~getProper
+EXPECT=<<EOF
+1649  0x00006a20 0x00006a20 NONE   FUNC   0        imp.Ljava/lang/System.method.getProperty(Ljava/lang/String;)Ljava/lang/String;
+1650  0x00006a28 0x00006a28 NONE   FUNC   0        imp.Ljava/lang/System.method.getProperty(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+EOF
+RUN
+
 NAME=DEX radare2installer.dex classes (ic command)
 FILE=bins/dex/org.radare.radare2installer.dex
 CMDS=ic
