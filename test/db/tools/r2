@@ -134,3 +134,35 @@ EXPECT_ERR=<<EOF
 Script 'script/missing.r2' not found.
 EOF
 RUN
+
+NAME=radare2 empty -i
+FILE=-
+CMDS=!radare2 -i "" -
+EXPECT_ERR=<<EOF
+Cannot open empty script path
+EOF
+RUN
+
+NAME=radare2 empty -I
+FILE=-
+CMDS=!radare2 -I "" -
+EXPECT_ERR=<<EOF
+Cannot open empty script path
+EOF
+RUN
+
+NAME=radare2 empty -R
+FILE=-
+CMDS=!radare2 -R ""
+EXPECT_ERR=<<EOF
+Missing file to open
+EOF
+RUN
+
+NAME=radare2 empty -P
+FILE=-
+CMDS=!radare2 -P ""
+EXPECT_ERR=<<EOF
+Cannot open empty rapatch path
+EOF
+RUN

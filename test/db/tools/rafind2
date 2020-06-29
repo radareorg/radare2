@@ -196,3 +196,11 @@ EXPECT=<<EOF
 0x58f 250382
 EOF
 RUN
+
+NAME=rafind2 ""
+FILE=-
+CMDS=!rafind2 ""
+EXPECT_ERR=<<EOF
+Cannot open empty path
+EOF
+RUN

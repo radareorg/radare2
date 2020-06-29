@@ -327,6 +327,7 @@ static int rafind_open_dir(const char *dir) {
 
 R_API int r_main_rafind2(int argc, const char **argv) {
 	int c;
+	const char *file = NULL;
 
 	keywords = r_list_newf (NULL);
 	RGetopt opt;
@@ -422,7 +423,14 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 		printf ("[");
 	}
 	for (; opt.ind < argc; opt.ind++) {
-		rafind_open (argv[opt.ind]);
+		file = argv[opt.ind];
+
+		if (file && !*file) {
+			eprintf ("Cannot open empty path\n");
+			return 1;
+		}
+
+		rafind_open (file);
 	}
 	if (json) {
 		printf ("]\n");

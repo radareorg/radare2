@@ -893,6 +893,13 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		return 1;
 	}
 	file = argv[opt.ind];
+
+	if (file && !*file) {
+		eprintf ("Cannot open empty path\n");
+		r_core_fini (&core);
+		return 1;
+	}
+
 	if (!query) {
 		if (action & R_BIN_REQ_HELP || action == R_BIN_REQ_UNK || !file) {
 			r_core_fini (&core);
@@ -1001,6 +1008,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			r_core_fini (&core);
 			return 1;
 		}
+
 		eprintf ("FMT %s\n", format);
 		eprintf ("PKG %s\n", file);
 		for (i = opt.ind + 2; i < argc; i++) {

@@ -283,6 +283,7 @@ static const char *help_msg_visual[] = {
 	"?", "show visual help menu",
 	"??", "show this help",
 	"$", "set the program counter to the current offset + cursor",
+	"&", "rotate asm.bits between 8, 16, 32 and 64 applying hints",
 	"%", "in cursor mode finds matching pair, otherwise toggle autoblocksz",
 	"^", "seek to the beginning of the function",
 	"!", "enter into the visual panels mode",
@@ -391,7 +392,6 @@ static void printSnow(RCore *core) {
 
 static void rotateAsmBits(RCore *core) {
 	RAnalHint *hint = r_anal_hint_get (core->anal, core->offset);
-	// const char *arch = r_config_get_i (core->config, "asm.arch");
 	int bits = hint? hint->bits : r_config_get_i (core->config, "asm.bits");
 	int retries = 4;
 	while (retries > 0) {

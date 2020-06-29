@@ -20,6 +20,10 @@
 #  define FREEBSD_WITH_BACKTRACE
 # endif
 #endif
+#if defined(__HAIKU__)
+# include <kernel/image.h>
+# include <sys/param.h>
+#endif
 #include <sys/types.h>
 #include <r_types.h>
 #include <r_util.h>
@@ -1174,6 +1178,22 @@ R_API char *r_sys_pid_to_path(int pid) {
 	ret = sysctl (mib, 4, pathbuf, &pathbufl, NULL, 0);
 	if (ret != 0) {
 		return NULL;
+	}
+#elif __HAIKU__
+	char pathbuf[MAXPATHLEN];
+	int32_t group = 0;
+	image_info ii;
+
+	while (get_next_image_info (0, &group, &ii) == B_OK) {
+		if (ii.type == B_APP_IMAGE) {
+			break;
+		}
+	}
+
+	if (ii.type == B_APP_IMAGE) {
+		r_str_ncpy (pathbuf, ii.name, MAXPATHLEN);
+	} else {
+		pathbuf[0] = '\0';
 	}
 #else
 	char buf[128], pathbuf[1024];

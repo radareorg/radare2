@@ -668,9 +668,11 @@ static inline void add_sdb_addrline(Sdb *s, ut64 addr, const char *file, ut64 li
 }
 
 static const ut8 *parse_ext_opcode(const RBin *bin, const ut8 *obuf,
-		size_t len, const RBinDwarfLineHeader *hdr,
-		RBinDwarfSMRegisters *regs, int mode) {
-	// XXX - list is an unused parameter.
+	size_t len, const RBinDwarfLineHeader *hdr,
+	RBinDwarfSMRegisters *regs, int mode) {
+
+	r_return_val_if_fail (bin && bin->cur && obuf && hdr && regs, NULL);
+
 	PrintfCallback print = bin->cb_printf;
 	const ut8 *buf;
 	const ut8 *buf_end;
@@ -678,14 +680,10 @@ static const ut8 *parse_ext_opcode(const RBin *bin, const ut8 *obuf,
 	ut64 addr;
 	buf = obuf;
 	st64 op_len;
-	RBinFile *binfile = bin ? bin->cur : NULL;
-	RBinObject *o = binfile ? binfile->o : NULL;
+	RBinFile *binfile = bin->cur;
+	RBinObject *o = binfile->o;
 	ut32 addr_size = o && o->info && o->info->bits ? o->info->bits / 8 : 4;
 	const char *filename;
-
-	if (!binfile || !obuf || !hdr || !regs) {
-		return NULL;
-	}
 
 	buf_end = buf + len;
 	buf = r_leb128 (buf, len, &op_len);
@@ -765,21 +763,19 @@ static const ut8 *parse_ext_opcode(const RBin *bin, const ut8 *obuf,
 	return buf;
 }
 
-static const ut8* parse_spec_opcode(
-		const RBin *bin, const ut8 *obuf, size_t len,
-		const RBinDwarfLineHeader *hdr,
-		RBinDwarfSMRegisters *regs,
-		ut8 opcode, int mode) {
+static const ut8 *parse_spec_opcode(
+	const RBin *bin, const ut8 *obuf, size_t len,
+	const RBinDwarfLineHeader *hdr,
+	RBinDwarfSMRegisters *regs,
+	ut8 opcode, int mode) {
+
+	r_return_val_if_fail (bin && obuf && hdr && regs, NULL);
 
 	PrintfCallback print = bin->cb_printf;
+	RBinFile *binfile = bin->cur;
 	const ut8 *buf = obuf;
 	ut8 adj_opcode = 0;
 	ut64 advance_adr;
-	RBinFile *binfile = bin ? bin->cur : NULL;
-
-	if (!obuf || !hdr || !regs) {
-		return NULL;
-	}
 
 	adj_opcode = opcode - hdr->opcode_base;
 	if (!hdr->line_range) {
@@ -811,12 +807,15 @@ static const ut8* parse_spec_opcode(
 	return buf;
 }
 
-static const ut8* parse_std_opcode(
-		const RBin *bin, const ut8 *obuf, size_t len,
-		const RBinDwarfLineHeader *hdr, RBinDwarfSMRegisters *regs,
-		ut8 opcode, int mode) {
+static const ut8 *parse_std_opcode(
+	const RBin *bin, const ut8 *obuf, size_t len,
+	const RBinDwarfLineHeader *hdr, RBinDwarfSMRegisters *regs,
+	ut8 opcode, int mode) {
+
+	r_return_val_if_fail (bin && bin->cur && obuf && hdr && regs, NULL);
 
 	PrintfCallback print = bin->cb_printf;
+	RBinFile *binfile = bin->cur;
 	const ut8* buf = obuf;
 	const ut8* buf_end = obuf + len;
 	ut64 addr = 0LL;
@@ -824,11 +823,6 @@ static const ut8* parse_std_opcode(
 	ut8 adj_opcode;
 	ut64 op_advance;
 	ut16 operand;
-	RBinFile *binfile = bin ? bin->cur : NULL;
-
-	if (!binfile || !hdr || !regs || !obuf) {
-		return NULL;
-	}
 
 	if (mode == R_MODE_PRINT) {
 		print ("  "); // formatting
@@ -1404,6 +1398,7 @@ static void print_attr_value(const RBinDwarfAttrValue *val, PrintfCallback print
 	case DW_FORM_strp:
 		print ("(indirect string, offset: 0x%"PFMT64x"): ",
 				val->string.offset);
+		break;
 	case DW_FORM_string:
 		if (val->string.content) {
 			print ("%s", val->string.content);
@@ -2100,7 +2095,7 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin 
 	RBinSection *section = getsection (bin, "debug_info");
 	RBinFile *binfile = bin ? bin->cur : NULL;
 
-	ut64 debug_str_len;
+	ut64 debug_str_len = 0;
 	ut8 *debug_str_buf = NULL;
 
 	if (binfile && section) {
