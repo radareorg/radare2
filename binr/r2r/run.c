@@ -942,6 +942,9 @@ R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test,
 		}
 		r_list_push (files, "-");
 	}
+	if (!test->cmds.value) {
+		test->cmds.value = strdup ("");
+	}
 	R2RProcessOutput *out = run_r2_test (config, test->cmds.value, files, extra_args, test->load_plugins, runner, user);
 	r_list_free (extra_args);
 	r_list_free (files);
