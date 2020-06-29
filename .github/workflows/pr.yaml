@@ -51,6 +51,9 @@ jobs:
     - name: Install meson and ninja
       if: matrix.build_system == 'meson'
       run: pip3 install --user meson ninja
+    - name: Install test dependencies
+      if: matrix.run_tests
+      run: pip3 install --user 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
     - name: Install clang
       if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest'
       run: sudo apt-get --assume-yes install clang
@@ -97,7 +100,6 @@ jobs:
         if [ "$NEWSHELL" == "true" ]; then
           export R2_CFG_NEWSHELL=1
         fi
-        pip3 install --user 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
         cd test
         radare2 -N -Qc 'e cfg.newshell' -
         make

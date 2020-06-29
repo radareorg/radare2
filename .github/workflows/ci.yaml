@@ -35,7 +35,6 @@ jobs:
             os: ubuntu-latest
             build_system: meson
             compiler: gcc
-            run_tests: true
             newshell: true
           - name: macos-clang-tests
             os: macos-latest
@@ -48,10 +47,13 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: brew install pkg-config
     - name: Install python
+      if: matrix.os != 'macos-latest'
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools
     - name: Install meson and ninja
       if: matrix.build_system == 'meson'
       run: pip3 install --user meson ninja
+    - name: Install test dependencies
+      run: pip3 install --user 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
     - name: Install clang
       if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest'
       run: sudo apt-get --assume-yes install clang
@@ -97,7 +99,6 @@ jobs:
         if [ "$NEWSHELL" == "true" ]; then
           export R2_CFG_NEWSHELL=1
         fi
-        pip3 install --user 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
         cd test
         radare2 -N -Qc 'e cfg.newshell' -
         make
