@@ -160,7 +160,7 @@ static int main_help(int line) {
 		" R2_NOPLUGINS do not load r2 shared plugins\n"
 		" R2_RCFILE    ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
 		" R2_RDATAHOME %s\n" // TODO: rename to RHOME R2HOME?
-		" R2_VERSION   contains the current versaion of r2\n" 
+		" R2_VERSION   contains the current version of r2\n" 
 		"Paths:\n"
 		" R2_PREFIX    "R2_PREFIX"\n"
 		" R2_INCDIR    "R2_INCDIR"\n"
