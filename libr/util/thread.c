@@ -1,11 +1,16 @@
 /* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_th.h>
+#include <r_util.h>
 
 #if __APPLE__
 // Here to avoid polluting mach types macro redefinitions...
 #include <mach/thread_act.h>
 #include <mach/thread_policy.h>
+#endif
+
+#if __HAIKU__
+#include <kernel/scheduler.h>
 #endif
 
 #if __WINDOWS__
@@ -83,6 +88,11 @@ R_API bool r_th_setname(RThread *th, const char *name) {
 		eprintf ("Failed to set thread name\n");
 		return false;
 	}	
+#elif __HAIKU__
+	if (rename_thread ((thread_id)th->tid, name) != B_OK) {
+		eprintf ("Failed to set thread name\n");
+		return false;
+	}
 #else
 #pragma message("warning r_th_setname not implemented")
 #endif
@@ -99,6 +109,16 @@ R_API bool r_th_getname(RThread *th, char *name, size_t len) {
 	}
 #elif (__FreeBSD__ &&  __FreeBSD_version >= 1200000) || __DragonFly__  || (__OpenBSD__ && OpenBSD >= 201905)
 	pthread_get_name_np (th->tid, name, len);
+#elif defined(__HAIKU__)
+	thread_info ti;
+	size_t flen = len < B_OS_NAME_LENGTH ? len : B_OS_NAME_LENGTH;
+
+	if (get_thread_info ((thread_id)th->tid, &ti) != B_OK) {
+		eprintf ("Failed to get thread name\n");
+		return false;
+	}
+
+	r_str_ncpy (name, ti.name, flen);
 #else
 #pragma message("warning r_th_getname not implemented")
 #endif

@@ -1065,6 +1065,11 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 	file = (opt.ind < argc)? argv[opt.ind]: NULL;
 	file2 = (opt.ind + 1 < argc)? argv[opt.ind + 1]: NULL;
 
+	if (R_STR_ISEMPTY (file) || R_STR_ISEMPTY(file2)) {
+		eprintf ("Cannot open empty path\n");
+		return 1;
+	}
+
 	switch (mode) {
 	case MODE_GRAPH:
 	case MODE_CODE:

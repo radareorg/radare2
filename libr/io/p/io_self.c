@@ -34,6 +34,9 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 #include <errno.h>
 bool bsd_proc_vmmaps(RIO *io, int pid);
 #endif
+#ifdef __HAIKU__
+#include <kernel/image.h>
+#endif
 #ifdef _MSC_VER
 #include <process.h>  // to compile getpid for msvc windows
 #include <psapi.h>
@@ -130,6 +133,17 @@ static int update_self_regions(RIO *io, int pid) {
 	return true;
 #elif __BSD__
 	return bsd_proc_vmmaps(io, pid);
+#elif __HAIKU__
+	image_info ii;
+	int32_t cookie = 0;
+
+	while (get_next_image_info (0, &cookie, &ii) == B_OK) {
+		self_sections[self_sections_count].from = (ut64)ii.text;
+		self_sections[self_sections_count].to = (ut64)((char*)ii.text + ii.text_size);
+		self_sections[self_sections_count].name = strdup (ii.name);
+		self_sections[self_sections_count].perm = 0;
+		self_sections_count++;
+	}
 #else
 #ifdef _MSC_VER
 	int perm;

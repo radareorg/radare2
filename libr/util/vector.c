@@ -108,14 +108,6 @@ R_API RVector *r_vector_clone(RVector *vec) {
 	return ret;
 }
 
-R_API void *r_vector_index_ptr(RVector *vec, size_t index) {
-	r_return_val_if_fail (vec, NULL);
-	if (index >= vec->capacity) {
-		return NULL;
-	}
-	return (char *)vec->a + vec->elem_size * index;
-}
-
 R_API void r_vector_assign(RVector *vec, void *p, void *elem) {
 	r_return_if_fail (vec && p && elem);
 	memcpy (p, elem, vec->elem_size);
@@ -142,7 +134,7 @@ R_API void r_vector_remove_at(RVector *vec, size_t index, void *into) {
 }
 
 R_API void *r_vector_insert(RVector *vec, size_t index, void *x) {
-	r_return_val_if_fail (vec, NULL);
+	r_return_val_if_fail (vec && index <= vec->len, NULL);
 	if (vec->len >= vec->capacity) {
 		RESIZE_OR_RETURN_NULL (NEXT_VECTOR_CAPACITY);
 	}
@@ -158,7 +150,7 @@ R_API void *r_vector_insert(RVector *vec, size_t index, void *x) {
 }
 
 R_API void *r_vector_insert_range(RVector *vec, size_t index, void *first, size_t count) {
-	r_return_val_if_fail (vec, NULL);
+	r_return_val_if_fail (vec && index <= vec->len, NULL);
 	if (vec->len + count > vec->capacity) {
 		RESIZE_OR_RETURN_NULL (R_MAX (NEXT_VECTOR_CAPACITY, vec->len + count));
 	}

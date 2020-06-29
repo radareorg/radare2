@@ -425,6 +425,7 @@ static int encrypt_or_decrypt_file(const char *algo, int direction, const char *
 R_API int r_main_rahash2(int argc, const char **argv) {
 	ut64 i;
 	int ret, c, rad = 0, bsize = 0, numblocks = 0, ule = 0;
+	const char *file = NULL;
 	const char *algo = "sha256"; /* default hashing algorithm */
 	const char *seed = NULL;
 	const char *decrypt = NULL;
@@ -673,6 +674,13 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 
 	io = r_io_new ();
 	for (ret = 0, i = opt.ind; i < argc; i++) {
+		file = argv[i];
+
+		if (file && !*file) {
+			eprintf ("Cannot open empty path\n");
+			return 1;
+		}
+
 		if (encrypt) {// for encrytion when files are provided
 			int rt = encrypt_or_decrypt_file (encrypt, 0, argv[i], iv, ivlen, 0);
 			if (rt == -1) {

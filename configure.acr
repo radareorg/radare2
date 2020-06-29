@@ -183,7 +183,10 @@ IFEQ USEROSTYPE auto ; {
 	}{
 	IFEQ HOST_OS darwin ; {
 		USEROSTYPE = darwin ;
-	} } } } } } } } } } }
+        }{
+	IFEQ HOST_OS haiku ; {
+		USEROSTYPE = haiku ;
+	} } } } } } } } } } } }
 }
 
 (( this hack is required for openbsd ports ))
@@ -218,9 +221,13 @@ IFEQ USEROSTYPE solaris ; {
 	HAVE_PTRACE = 0 ;
 	USE_PTRACE_WRAP = 0 ;
 }{
+IFEQ USEROSTYPE haiku ; {
+	HAVE_PTRACE = 0 ;
+	USE_PTRACE_WRAP = 0 ;
+}{
 	HAVE_PTRACE = 1 ;
 	USE_PTRACE_WRAP = 0 ;
-} } } } }
+} } } } } }
 
 IFNOT DEBUGGER {
 	HAVE_PTRACE = 0 ;
