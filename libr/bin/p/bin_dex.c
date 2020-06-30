@@ -288,6 +288,7 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 	if (typeidx_bufsize > 0) {
 		ut8 *typeidx_buf = malloc (typeidx_bufsize);
 		if (!typeidx_buf || !r_buf_read_at (bin->b, params_off + 4, typeidx_buf, typeidx_bufsize)) {
+			r_strbuf_free (sig);
 			return NULL;
 		}
 		size_t off;

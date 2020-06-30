@@ -1489,5 +1489,6 @@ beach:
 	free (file);
 	r_cons_free ();
 	LISTS_FREE ();
+	R_FREE (pfile);
 	return ret;
 }
