@@ -10,7 +10,6 @@ R_LIB_VERSION(r_lang);
 #include "p/rust.c"  // hardcoded
 #include "p/zig.c"   // hardcoded
 #include "p/c.c"     // hardcoded
-#include "p/v.c"     // hardcoded
 #include "p/lib.c"
 #if __UNIX__
 #include "p/cpipe.c" // hardcoded
@@ -52,7 +51,6 @@ R_API RLang *r_lang_new(void) {
 	r_lang_add (lang, &r_lang_plugin_zig);
 	r_lang_add (lang, &r_lang_plugin_pipe);
 	r_lang_add (lang, &r_lang_plugin_lib);
-	r_lang_add (lang, &r_lang_plugin_v);
 
 	return lang;
 }
