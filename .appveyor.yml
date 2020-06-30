@@ -22,28 +22,28 @@ environment:
       INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 5'
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       BUILD_DIR: build
-      RUN_TESTS: false
+      RUN_TESTS: true
     # VS2019 64
     - builder: vs2019_64
       PYTHON: 'C:\\Python38-x64'
       INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 6'
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
       BUILD_DIR: build
-      RUN_TESTS: true
+      RUN_TESTS: false
     # VS2017 64 (Dynamic linking)
     - builder: vs2017_64_dyn
       PYTHON: 'C:\\Python37'
       INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 5'
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       BUILD_DIR: build
-      RUN_TESTS: false
+      RUN_TESTS: true
     # Clang-cl 64 (Dynamic linking)
     - builder: clang_cl_64_dyn
       PYTHON: 'C:\\Python38'
       INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 6'
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
       BUILD_DIR: build
-      RUN_TESTS: true
+      RUN_TESTS: false
 
 # Skip changes affecting only other CI services
 skip_commits:
