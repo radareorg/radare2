@@ -380,15 +380,14 @@ static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err)
 
 static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 	r_return_val_if_fail (cmd, 0);
-	if (!*cmd) {
-		return 0;
-	}
-
 #if __APPLE__ && !__POWERPC__
 	//XXX handle this in other layer since things changes a little bit
 	//this seems like a really good place to refactor stuff
 	return 0;
-#endif
+#else
+	if (!*cmd) {
+		return 0;
+	}
 	if (cmd[0] == '"') {
 #if __UNIX__
 		if (in) {
@@ -418,7 +417,6 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 #warning quoted string redirection handle not yet done
 #endif
 #endif
-		return 0;
 	} else if (cmd[0] == '!') {
 		// redirection to a process
 		return handle_redirection_proc (cmd + 1, in, out, err);
@@ -449,12 +447,13 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 			DUP(2);
 		}
 		close (f);
-		return 0;
 	}
+	return 0;
+#endif
 }
 
 R_API bool r_run_parsefile(RRunProfile *p, const char *b) {
-	r_return_val_if_fail (p && b, 0);
+	r_return_val_if_fail (p && b, false);
 	char *s = r_file_slurp (b, NULL);
 	if (s) {
 		bool ret = r_run_parse (p, s);
