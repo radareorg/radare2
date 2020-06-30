@@ -1,4 +1,4 @@
-NAME=lea_intel att relsub
+NAME=lea_intel att subrel
 FILE=bins/elf/ezpz
 CMDS=<<EOF
 e asm.lines.bb=0

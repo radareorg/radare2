@@ -1,4 +1,4 @@
-NAME=att relsub
+NAME=att subrel
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
 e asm.syntax=att

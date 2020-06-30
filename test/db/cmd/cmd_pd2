@@ -35,7 +35,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=arm indirect relsub fix (#11780)
+NAME=arm indirect subrel fix (#11780)
 FILE=bins/elf/analysis/arm_32_flags0
 CMDS=<<EOF
 e asm.bytes=false
@@ -528,7 +528,7 @@ CMDS=<<EOF
 e asm.demangle=true
 e asm.bytes=false
 e asm.filter=false
-e asm.jmpsub=false
+e asm.sub.jmp=false
 aa
 e asm.cmt.right=true
 pd 1 @ 0x080493b4
@@ -557,7 +557,7 @@ FILE=bins/elf/ls
 CMDS=<<EOF
 e asm.bytes=false
 e asm.filter=true
-(pd_tests; e asm.relsub=true; pd 15; ?e; e asm.relsub=false; pd 1 @ 0x000041ee; pd 1 @ 0x00004225)
+(pd_tests; e asm.sub.rel=true; pd 15; ?e; e asm.sub.rel=false; pd 1 @ 0x000041ee; pd 1 @ 0x00004225)
 (insn_tests; e scr.color=0; .(pd_tests); ?e; e scr.color=1; .(pd_tests))
 s 0x000041e0
 .(insn_tests)

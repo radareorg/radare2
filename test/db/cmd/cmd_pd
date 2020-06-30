@@ -8,7 +8,7 @@ e asm.var.sub=1
 pd 1
 f fin.dus=0x1000054d0
 pd 1
-e asm.relsub=0
+e asm.sub.rel=0
 pd 1
 EOF
 EXPECT=<<EOF
@@ -553,19 +553,19 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pd asm.relsub
+NAME=pd asm.sub.rel
 FILE=malloc://1024
 ARGS=-m 0x400000
 CMDS=<<EOF
 e io.va=true
-e asm.relsub=false
+e asm.sub.rel=false
 e asm.arch=x86
 e asm.bits=64
 wx 488d0502000000
 e asm.lines.bb=false
 e asm.comments=false
 pd 1
-e asm.relsub=true
+e asm.sub.rel=true
 pd 1
 EOF
 EXPECT=<<EOF
