@@ -348,7 +348,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 					}
 					return true;
 				}
-				if (p->tailsub) { //  && off > UT32_MAX && addr > UT32_MAX)
+				if (p->subtail) { //  && off > UT32_MAX && addr > UT32_MAX)
 					if (off != UT64_MAX) {
 						if (off == addr) {
 							insert (ptr, "$$");
