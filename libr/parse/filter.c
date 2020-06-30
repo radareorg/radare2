@@ -207,9 +207,9 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 				         && (data[3] == ' ' || data[3] == 0x1b);
 				bool remove_brackets = false;
 				flag = p->flag_get (f, off);
-				if ((!flag || arm) && p->relsub_addr) {
-					remove_brackets = lea || (arm && p->relsub_addr);
-					flag2 = p->flag_get (f, p->relsub_addr);
+				if ((!flag || arm) && p->subrel_addr) {
+					remove_brackets = lea || (arm && p->subrel_addr);
+					flag2 = p->flag_get (f, p->subrel_addr);
 					if (!flag || arm) {
 						flag = flag2;
 					}
@@ -289,7 +289,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 							banned = true;
 						}
 					}
-					if (p->relsub_addr && !banned && lea) {  // TODO: use remove_brackets
+					if (p->subrel_addr && !banned && lea) {  // TODO: use remove_brackets
 						int flag_len = strlen (flag->name);
 						char *ptr_end = str + strlen (data) + flag_len - 1;
 						char *ptr_right = ptr_end + 1, *ptr_left, *ptr_esc;

@@ -24,7 +24,7 @@ typedef struct r_parse_t {
 	bool subrel; // replace rip relative expressions in instruction
 	bool subtail; // replace any immediate relative to current address with .. prefix syntax
 	bool localvar_only; // if true use only the local variable name (e.g. [local_10h] instead of [ebp + local10h])
-	ut64 relsub_addr;
+	ut64 subrel_addr;
 	int maxflagnamelen;
 	int minval;
 	char *retleave_asm;

@@ -1739,7 +1739,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				strsub, sizeof (strsub));
 				ut64 killme = UT64_MAX;
 				if (r_io_read_i (core->io, op.ptr, &killme, op.refptr, be)) {
-					core->parser->relsub_addr = killme;
+					core->parser->subrel_addr = killme;
 				}
 			// 0x33->sym.xx
 			char *p = strdup (strsub);
@@ -1885,7 +1885,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			disasm, sizeof (disasm));
 		ut64 killme = UT64_MAX;
 		if (r_io_read_i (core->io, op.ptr, &killme, op.refptr, be)) {
-			core->parser->relsub_addr = killme;
+			core->parser->subrel_addr = killme;
 		}
 		char *p = strdup (disasm);
 		if (p) {
@@ -7083,7 +7083,7 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	core->parser->localvar_only = r_config_get_i (core->config, "asm.var.subonly");
 
 	if (core->parser->subrel) {
-		core->parser->relsub_addr = from;
+		core->parser->subrel_addr = from;
 	}
 	r_io_read_at (core->io, addr, buf, size);
 	r_asm_set_pc (core->rasm, addr);

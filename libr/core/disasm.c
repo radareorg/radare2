@@ -1005,12 +1005,12 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	/* initialize */
 	core->parser->subrel = r_config_get_i (core->config, "asm.sub.rel");
 	core->parser->subreg = r_config_get_i (core->config, "asm.sub.reg");
-	core->parser->relsub_addr = 0;
+	core->parser->subrel_addr = 0;
 	if (core->parser->subrel
 	    && (ds->analop.type == R_ANAL_OP_TYPE_LEA || ds->analop.type == R_ANAL_OP_TYPE_MOV
 	        || ds->analop.type == R_ANAL_OP_TYPE_CMP)
 	    && ds->analop.ptr != UT64_MAX) {
-		core->parser->relsub_addr = ds->analop.ptr;
+		core->parser->subrel_addr = ds->analop.ptr;
 	}
 	if (ds->varsub && ds->opstr) {
 		ut64 at = ds->vat;
@@ -1032,7 +1032,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 				if ((ref->type == R_ANAL_REF_TYPE_DATA
 					|| ref->type == R_ANAL_REF_TYPE_STRING)
 					&& ds->analop.type == R_ANAL_OP_TYPE_LEA) {
-					core->parser->relsub_addr = ref->addr;
+					core->parser->subrel_addr = ref->addr;
 					break;
 				}
 			}
@@ -1075,11 +1075,11 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			}
 		}
 		if (core->parser->subrel && ds->analop.refptr) {
-			if (core->parser->relsub_addr == 0) {
+			if (core->parser->subrel_addr == 0) {
 				ut64 killme = UT64_MAX;
 				const int be = core->rasm->big_endian;
 				r_io_read_i (core->io, ds->analop.ptr, &killme, ds->analop.refptr, be);
-				core->parser->relsub_addr = killme;
+				core->parser->subrel_addr = killme;
 			}
 		}
 		char *asm_str = colorize_asm_string (core, ds, print_color);
@@ -3931,9 +3931,9 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		if (((st64)p) > 0) {
 			f = r_flag_get_i (core->flags, p);
 			if (f) {
-				ut64 relsub_addr = core->parser->relsub_addr;
-				if (relsub_addr && relsub_addr != p) {
-					f2 = r_core_flag_get_by_spaces (core->flags, relsub_addr);
+				ut64 subrel_addr = core->parser->subrel_addr;
+				if (subrel_addr && subrel_addr != p) {
+					f2 = r_core_flag_get_by_spaces (core->flags, subrel_addr);
 					f2_in_opstr = f2 && ds->opstr && (strstr (ds->opstr, f2->name) || strstr (ds->opstr, f2->realname)) ;
 				}
 				refaddr = p;
@@ -6021,7 +6021,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			ut64 killme = UT64_MAX;
 			bool be = core->print->big_endian;
 			if (r_io_read_i (core->io, ds->analop.ptr, &killme, ds->analop.refptr, be)) {
-				core->parser->relsub_addr = killme;
+				core->parser->subrel_addr = killme;
 			}
 		}
 		{
