@@ -47,7 +47,7 @@ OSTYPE=@USEROSTYPE@
 BUILD_OS=@BUILD_OS@
 HOST_OS=@HOST_OS@
 # hack: must be fixed in acr
-ifeq($(WANT_DYLINK),1)
+ifeq ($(WANT_DYLINK),1)
 ifneq ($(OSTYPE),darwin)
 DL_LIBS=@DL_LIBS@
 endif
