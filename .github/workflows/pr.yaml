@@ -45,9 +45,15 @@ jobs:
     - name: Install pkg-config with Homebrew
       if: matrix.os == 'macos-latest'
       run: brew install pkg-config
+    - name: Install python
+      if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-latest'
+      run: sudo apt-get --assume-yes install python3-wheel python3-setuptools
     - name: Install meson and ninja
       if: matrix.build_system == 'meson'
-      run: sudo apt-get --assume-yes install python3-wheel python3-setuptools && pip3 install --user meson ninja
+      run: pip3 install --user meson ninja
+    - name: Install test dependencies
+      if: matrix.run_tests
+      run: pip3 install --user 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
     - name: Install clang
       if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest'
       run: sudo apt-get --assume-yes install clang
