@@ -1345,7 +1345,7 @@ static void listBytes(RAnal *a, RSignItem *it, PJ *pj, int format) {
 		a->cb_printf (" b(%d/%d)", masked, bytes->size);
 	} else if (format == 'j') {
 		pj_ks (pj, "bytes", strbytes);
-		pj_ks (pj, "mask", strbytes);
+		pj_ks (pj, "mask", strmask);
 	} else {
 		a->cb_printf ("  bytes: %s\n", strbytes);
 		a->cb_printf ("  mask: %s\n", strmask);
