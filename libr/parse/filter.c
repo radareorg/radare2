@@ -158,7 +158,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 	replaceWords (ptr, "dword ", src);
 	replaceWords (ptr, "qword ", src);
 #endif
-	if (p->regsub) {
+	if (p->subreg) {
 		__replaceRegisters (p->analb.anal->reg, ptr, false);
 		if (x86) {
 			__replaceRegisters (p->analb.anal->reg, ptr, true);

@@ -20,8 +20,8 @@ typedef struct r_parse_t {
 	RSpace *flagspace;
 	RSpace *notin_flagspace;
 	bool pseudo;
-	bool regsub; // replace registers with their respective alias/role name (rdi=A0, ...)
-	bool relsub; // replace rip relative expressions in instruction
+	bool subreg; // replace registers with their respective alias/role name (rdi=A0, ...)
+	bool subrel; // replace rip relative expressions in instruction
 	bool tailsub; // replace any immediate relative to current address with .. prefix syntax
 	bool localvar_only; // if true use only the local variable name (e.g. [local_10h] instead of [ebp + local10h])
 	ut64 relsub_addr;

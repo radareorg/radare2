@@ -25,7 +25,7 @@ R_API RParse *r_parse_new(void) {
 	p->notin_flagspace = NULL;
 	p->flagspace = NULL;
 	p->pseudo = false;
-	p->relsub = false;
+	p->subrel = false;
 	p->tailsub = false;
 	p->minval = 0x100;
 	p->localvar_only = false;

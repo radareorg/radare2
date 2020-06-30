@@ -633,8 +633,8 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->interactive = r_cons_is_interactive ();
 	ds->subjmp = r_config_get_i (core->config, "asm.sub.jmp");
 	ds->varsub = r_config_get_i (core->config, "asm.var.sub");
-	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
-	core->parser->regsub = r_config_get_i (core->config, "asm.regsub");
+	core->parser->subrel = r_config_get_i (core->config, "asm.sub.rel");
+	core->parser->subreg = r_config_get_i (core->config, "asm.sub.reg");
 	core->parser->localvar_only = r_config_get_i (core->config, "asm.var.subonly");
 	core->parser->retleave_asm = NULL;
 	ds->show_fcnsig = r_config_get_i (core->config, "asm.fcnsig");
@@ -1003,10 +1003,10 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		ds->opstr = strdup (r_asm_op_get_asm (&ds->asmop));
 	}
 	/* initialize */
-	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
-	core->parser->regsub = r_config_get_i (core->config, "asm.regsub");
+	core->parser->subrel = r_config_get_i (core->config, "asm.sub.rel");
+	core->parser->subreg = r_config_get_i (core->config, "asm.sub.reg");
 	core->parser->relsub_addr = 0;
-	if (core->parser->relsub
+	if (core->parser->subrel
 	    && (ds->analop.type == R_ANAL_OP_TYPE_LEA || ds->analop.type == R_ANAL_OP_TYPE_MOV
 	        || ds->analop.type == R_ANAL_OP_TYPE_CMP)
 	    && ds->analop.ptr != UT64_MAX) {
@@ -1024,7 +1024,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			free (ds->opstr);
 			ds->opstr = strdup (ds->strsub);
 		}
-		if (core->parser->relsub) {
+		if (core->parser->subrel) {
 			RList *list = r_anal_refs_get (core->anal, at);
 			RListIter *iter;
 			RAnalRef *ref;
@@ -1074,7 +1074,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 				core->parser->flagspace = NULL;
 			}
 		}
-		if (core->parser->relsub && ds->analop.refptr) {
+		if (core->parser->subrel && ds->analop.refptr) {
 			if (core->parser->relsub_addr == 0) {
 				ut64 killme = UT64_MAX;
 				const int be = core->rasm->big_endian;

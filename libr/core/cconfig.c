@@ -3109,8 +3109,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.var.sub", "true", "Substitute variables in disassembly");
 	SETI ("asm.var.summary", 0, "Show variables summary instead of full list in disasm (0, 1, 2)");
 	SETBPREF ("asm.var.subonly", "true", "Substitute the entire variable expression with the local variable name (e.g. [local10h] instead of [ebp+local10h])");
-	SETBPREF ("asm.regsub", "false", "Substitute register names with their associated role name (drp~=)");
-	SETBPREF ("asm.relsub", "true", "Substitute pc relative expressions in disasm");
+	SETBPREF ("asm.sub.reg", "false", "Substitute register names with their associated role name (drp~=)");
+	SETBPREF ("asm.sub.rel", "true", "Substitute pc relative expressions in disasm");
 	SETBPREF ("asm.cmt.fold", "false", "Fold comments, toggle with Vz");
 	SETBPREF ("asm.family", "false", "Show family name in disasm");
 	SETBPREF ("asm.symbol", "false", "Show symbol+delta instead of absolute offset");
