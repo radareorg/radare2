@@ -1916,7 +1916,7 @@ static void add_segment(RList *ret, const char *name, Section s, int perm) {
 	}
 }
 
-static bool dim(const char *name, Section *pre, Section *cur, Section *nex, Section *all) {
+static bool validate_section(const char *name, Section *pre, Section *cur, Section *nex, Section *all) {
 	r_return_val_if_fail (cur && all, false);
 	if (pre && cur->addr < (pre->addr + pre->size)) {
 		eprintf ("Warning: %s Section starts before the previous.\n", name);
@@ -1992,17 +1992,17 @@ static RList *sections(RBinFile *bf) {
 	Section s_file = { 0, bs };
 
 	/* sanity bound checks and section registrations */
-	if (dim ("header", NULL, &s_head, NULL, &s_file)) {
+	if (validate_section ("header", NULL, &s_head, NULL, &s_file)) {
 		add_section (ret, "header", s_head, R_PERM_R, NULL);
 	}
-	if (dim ("constpool", &s_head, &s_pool, &s_code, &s_file)) {
+	if (validate_section ("constpool", &s_head, &s_pool, &s_code, &s_file)) {
 		char *s_pool_format = r_str_newf ("Cd %d[%d]", 4, s_pool.size / 4);
 		add_section (ret, "constpool", s_pool, R_PERM_R, s_pool_format);
 	}
-	if (dim ("code", &s_pool, &s_code, &s_data, &s_file)) {
+	if (validate_section ("code", &s_pool, &s_code, &s_data, &s_file)) {
 		add_section (ret, "code", s_code, R_PERM_RX, NULL);
 	}
-	if (dim ("data", &s_code, &s_data, NULL, &s_file)) {
+	if (validate_section ("data", &s_code, &s_data, NULL, &s_file)) {
 		add_section (ret, "data", s_data, R_PERM_RX, NULL);
 	}
 	add_section (ret, "file", s_file, R_PERM_R, NULL);
