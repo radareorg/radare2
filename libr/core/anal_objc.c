@@ -123,7 +123,6 @@ static ut64 getRefPtr(RCoreObjc *o, ut64 classMethodsVA, bool *rfound) {
 		*rfound = false;
 		return UT64_MAX;
 	}
-	// (cnt > 1 && ref != 0);
 	return isMsgRef? ref - 8: ref;
 }
 
@@ -169,7 +168,7 @@ static bool objc_build_refs(RCoreObjc *objc) {
 	return true;
 }
 
-static RCoreObjc *core_objc_new (RCore *core) {
+static RCoreObjc *core_objc_new(RCore *core) {
 	RCoreObjc *o = R_NEW0 (RCoreObjc);
 	o->core = core;
 	o->word_size = (core->rasm->bits == 64)? 8: 4;
