@@ -363,7 +363,9 @@ typedef struct
 #define EM_CSKY		252     /* C-SKY */
 #define EM_LOONGARCH    258 /* Loongarch */
 
-#define EM_NUM		253
+#define EM_KVX		256	/* Kalray VLIW core of the MPPA processor family */
+
+#define EM_NUM		257
 
 /* Old spellings/synonyms.  */
 
