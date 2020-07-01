@@ -1799,11 +1799,11 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 	if (entry == UT64_MAX) {
 		return UT64_MAX;
 	}
+	ut8 buf[256];
 	if (entry > bin->size || (entry + sizeof (buf)) > bin->size) {
 		return UT64_MAX;
 	}
 	// unnecessary to read 512 bytes imho
-	ut8 buf[256];
 	if (r_buf_read_at (bin->b, entry, buf, sizeof (buf)) < 1) {
 		bprintf ("read (main)\n");
 		return UT64_MAX;
