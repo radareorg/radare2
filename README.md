@@ -43,7 +43,7 @@ You can also use [r2lrn](https://github.com/0ki/r2lrn) or r2golf for a hands-on 
 
 ## Operating Systems
 
-Windows>=7, GNU/Linux, GNU/Darwin, GNU/Hurd, Apple's {mac,i,iPad,watch}OS,
+Windows (since XP), GNU/Linux, GNU/Darwin, GNU/Hurd, Apple's {Mac,i,iPad,watch}OS,
 [Dragonfly|Net|Free|Open]BSD, Android, QNX, Solaris, Haiku, FirefoxOS.
 
 ## Architectures
