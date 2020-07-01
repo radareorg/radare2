@@ -2808,7 +2808,7 @@ RBinElfLib* Elf_(r_bin_elf_get_libs)(ELFOBJ *bin) {
 	return ret;
 }
 
-static void create_section_from_phdr(ELFOBJ *bin, RBinElfSection *ret, int *i, const char *name, ut64 addr, ut64 sz) {
+static void create_section_from_phdr(ELFOBJ *bin, RBinElfSection *ret, size_t *i, const char *name, ut64 addr, ut64 sz) {
 	if (!addr) {
 		return;
 	}
@@ -2864,7 +2864,7 @@ static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 		return NULL;
 	}
 
-	i = 0;
+	size_t i = 0;
 	create_section_from_phdr (bin, ret, &i, ".rel.dyn", reldyn, reldynsz);
 	create_section_from_phdr (bin, ret, &i, ".rela.plt", relava, pltgotsz);
 	create_section_from_phdr (bin, ret, &i, ".rel.plt", relva, relasz);
@@ -3904,18 +3904,17 @@ static bool get_nt_file_maps (ELFOBJ *bin, RList *core_maps) {
 			int len_str = 0;
 			while (n_maps > 0) {
 				ut64 addr;
-				char str[512] = {0};
 				if (bits == 64) {
 					addr = BREAD64 (bin->b, i);
 				} else {
 					addr = BREAD32 (bin->b, i);
 				}
 				if (addr == UT64_MAX) {
-					eprintf ("ffbreak\n");
 					break;
 				}
+				char str[512] = {0};
 				r_buf_read_at (bin->b, jump + len_str, (ut8*)str, sizeof (str) - 1);
-				str[sizeof(str) - 1] = 0; // null terminate string
+				str[sizeof (str) - 1] = 0; // null terminate string
 				RListIter *iter;
 				RBinMap *p;
 				r_list_foreach (core_maps, iter, p) {

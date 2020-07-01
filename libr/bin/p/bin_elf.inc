@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2020 - nibble, pancake */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -574,7 +574,7 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 	ut64 P = rel->rva; // rva has taken baddr into account
 	RBinReloc *r = R_NEW0 (RBinReloc);
 	if (!r) {
-		return r;
+		return NULL;
 	}
 	r->import = NULL;
 	r->symbol = NULL;
@@ -677,27 +677,20 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 }
 
 static RList* relocs(RBinFile *bf) {
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 	RList *ret = NULL;
 	RBinReloc *ptr = NULL;
 	RBinElfReloc *relocs = NULL;
-	struct Elf_(r_bin_elf_obj_t) *bin = NULL;
-	ut64 got_addr;
-	int i;
-	if (!bf || !bf->o || !bf->o->bin_obj) {
-		return NULL;
-	}
-	bin = bf->o->bin_obj;
+	struct Elf_(r_bin_elf_obj_t) *bin = bf->o->bin_obj;
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
 	/* FIXME: This is a _temporary_ fix/workaround to prevent a use-after-
 	 * free detected by ASan that would corrupt the relocation names */
 	r_list_free (imports (bf));
-	if ((got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got")) == -1) {
+	ut64 got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got");
+	if (got_addr == UT64_MAX) {
 		got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got.plt");
-		if (got_addr == -1) {
-			got_addr = 0;
-		}
 	}
 	if (got_addr < 1 && bin->ehdr.e_type == ET_REL) {
 		got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got.r2");
@@ -709,6 +702,7 @@ static RList* relocs(RBinFile *bf) {
 		if (!(relocs = Elf_(r_bin_elf_get_relocs) (bin))) {
 			return ret;
 		}
+		size_t i;
 		for (i = 0; !relocs[i].last; i++) {
 			if (!(ptr = reloc_convert (bin, &relocs[i], got_addr))) {
 				continue;
