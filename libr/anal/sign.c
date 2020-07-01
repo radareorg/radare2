@@ -778,38 +778,71 @@ static RSignGraph *r_sign_fcn_graph(RAnalFunction *fcn) {
 	return graph;
 }
 
+static int bb_sort_by_addr(const void *x, const void *y) {
+	RAnalBlock *a = (RAnalBlock *)x;
+	RAnalBlock *b = (RAnalBlock *)y;
+	if (a->addr > b->addr) {
+		return 1;
+	}
+	if (a->addr < b->addr) {
+		return -1;
+	}
+	return 0;
+}
+
 static RSignBytes *r_sign_fcn_bytes(RAnal *a, RAnalFunction *fcn) {
 	r_return_val_if_fail (a && fcn, false);
+
+	// get size
 	RCore *core = a->coreb.core;
 	int maxsz = a->coreb.cfggeti (core, "zign.maxsz");
-	int fcnlen = r_anal_function_realsize (fcn);
-	int size = R_MIN (core->io->addrbytes * fcnlen, maxsz);
+	r_list_sort (fcn->bbs, &bb_sort_by_addr);
+	ut64 ea = fcn->addr;
+	RAnalBlock *bb = (RAnalBlock *)fcn->bbs->tail->data;
+	int size = R_MIN (bb->addr + bb->size - ea, maxsz);
 
+	// alloc space for signature
 	RSignBytes *sig = R_NEW0 (RSignBytes);
 	if (!sig) {
 		goto bytes_failed;
 	}
-	sig->size = size;
-
-	// hopefully not necissary, but just in case
-	if (size <= 0) {
-		eprintf ("error: Negative size for bytes signature\n");
-		goto bytes_failed;
-	}
-
-	// get bytes part of signature
 	if (!(sig->bytes = malloc (size))) {
 		goto bytes_failed;
 	}
+	if (!(sig->mask = malloc (size))) {
+		goto bytes_failed;
+	}
+	memset (sig->mask, 0, size);
+	sig->size = size;
 
-	if (!a->iob.read_at (a->iob.io, fcn->addr, sig->bytes, size)) {
-		eprintf ("error: failed to read at 0x%08" PFMT64x "\n", fcn->addr);
+	// fill in bytes
+	if (!a->iob.read_at (a->iob.io, ea, sig->bytes, size)) {
+		eprintf ("error: failed to read at 0x%08" PFMT64x "\n", ea);
 		goto bytes_failed;
 	}
 
-	// get mask part of signature
-	if (!(sig->mask = r_anal_mask (a, size, sig->bytes, fcn->addr))) {
-		goto bytes_failed;
+	ut8 *tmpmask = NULL;
+	RListIter *iter;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (bb->addr >= ea) {
+			ut64 delta = bb->addr - ea;
+			ut64 rsize = bb->size;
+
+			// bounds check
+			if (delta > size) {
+				break;
+			}
+			if (size - delta < rsize) {
+				rsize = size - delta;
+			}
+
+			// get mask for block
+			if (!(tmpmask = r_anal_mask (a, rsize, sig->bytes + delta, ea))) {
+				goto bytes_failed;
+			}
+			memcpy (sig->mask + delta, tmpmask, rsize);
+			free (tmpmask);
+		}
 	}
 
 	return sig;
