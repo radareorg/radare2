@@ -574,6 +574,9 @@ static RList* libs(RBinFile *bf) {
 
 static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc *rel, ut64 GOT) {
 	r_return_val_if_fail (bin && rel, NULL);
+	if (GOT == UT64_MAX) {
+		GOT = 0;
+	}
 
 	ut64 B = bin->baddr;
 	ut64 P = rel->rva; // rva has taken baddr into account
@@ -724,7 +727,9 @@ static RList* relocs(RBinFile *bf) {
 			if (!(ptr = reloc_convert (bin, &relocs[i], got_addr))) {
 				continue;
 			}
-			r_list_append (ret, ptr);
+			if (ptr->paddr != UT64_MAX) {
+				r_list_append (ret, ptr);
+			}
 		}
 	}
 	return ret;
@@ -945,7 +950,7 @@ static RList* patch_relocs(RBin *b) {
 	ut64 vaddr = n_vaddr;
 	size_t i;
 	for (i = 0; !relcs[i].last; i++) {
-		ut64 sym_addr = 0;
+		ut64 sym_addr = UT64_MAX;
 
 		if (relcs[i].sym) {
 			if (relcs[i].sym < bin->imports_by_ord_size && bin->imports_by_ord[relcs[i].sym]) {
@@ -955,12 +960,12 @@ static RList* patch_relocs(RBin *b) {
 			}
 		}
 		// TODO relocation types B, L
-		_patch_reloc (bin->ehdr.e_machine, &b->iob, &relcs[i], sym_addr? sym_addr: vaddr, 0, n_vaddr);
+		_patch_reloc (bin->ehdr.e_machine, &b->iob, &relcs[i], sym_addr != UT64_MAX? sym_addr: vaddr, 0, n_vaddr);
 		if (!(ptr = reloc_convert (bin, &relcs[i], n_vaddr))) {
 			continue;
 		}
 
-		if (sym_addr) {
+		if (sym_addr != UT64_MAX) {
 			ptr->vaddr = sym_addr;
 		} else {
 			ptr->vaddr = vaddr;

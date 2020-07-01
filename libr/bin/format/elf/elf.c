@@ -58,19 +58,6 @@
 #define COMPUTE_PLTGOT_POSITION(rel, pltgot_addr, n_initial_unused_entries) \
 	((rel->rva - pltgot_addr - n_initial_unused_entries * WORDSIZE) / WORDSIZE)
 
-#if R_BIN_ELF64
-static inline int UTX_MUL(ut64 *r, ut64 a, ut64 b) {
-	return UT64_MUL (r, a, b);
-}
-#else
-static inline int UTX_MUL(ut64 *r, ut64 a, ut64 b) {
-	ut32 r2 = *r;
-	int res = UT32_MUL (&r2, a, b);
-	*r = r2;
-	return res;
-}
-#endif
-
 #define GROWTH_FACTOR (1.5)
 
 #define round_up(a) ((((a) + (4) - (1)) / (4)) * (4))
@@ -2544,8 +2531,8 @@ static bool has_valid_section_header(ELFOBJ *bin, size_t pos) {
 
 static void fix_rva_and_offset_relocable_file(ELFOBJ *bin, RBinElfReloc *r, size_t pos) {
 	if (has_valid_section_header (bin, pos)) {
-		r->rva = bin->shdr[bin->g_sections[pos].info].sh_offset + r->offset;
-		r->rva = Elf_(r_bin_elf_p2v) (bin, r->rva);
+		ut64 pa = bin->shdr[bin->g_sections[pos].info].sh_offset + r->offset;
+		r->rva = Elf_(r_bin_elf_p2v_new) (bin, pa);
 	} else {
 		r->rva = r->offset;
 	}
@@ -2815,18 +2802,16 @@ RBinElfLib* Elf_(r_bin_elf_get_libs)(ELFOBJ *bin) {
 	return ret;
 }
 
-static void create_section_from_phdr(ELFOBJ *bin, RBinElfSection *ret, size_t *i, const char *name, ut64 addr, ut64 sz) {
-	if (!addr) {
-		return;
+static void create_section_from_phdr(ELFOBJ *bin, RBinElfSection *ret, size_t *index, const char *name, ut64 addr, ut64 sz) {
+	if (addr != UT64_MAX) {
+		size_t i = *index;
+		ret[i].offset = Elf_(r_bin_elf_v2p_new) (bin, addr);
+		ret[i].rva = addr;
+		ret[i].size = sz;
+		r_str_ncpy (ret[i].name, name, R_ARRAY_SIZE (ret[i].name) - 1);
+		ret[i].last = false;
+		(*index)++;
 	}
-
-	ret[*i].offset = Elf_(r_bin_elf_v2p_new) (bin, addr);
-	ret[*i].rva = addr;
-	ret[*i].size = sz;
-	strncpy (ret[*i].name, name, R_ARRAY_SIZE (ret[*i].name) - 1);
-	ret[*i].name[R_ARRAY_SIZE (ret[*i].name) - 1] = '\0';
-	ret[*i].last = 0;
-	*i = *i + 1;
 }
 
 static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
