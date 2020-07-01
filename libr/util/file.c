@@ -349,16 +349,16 @@ R_API char *r_file_slurp(const char *str, R_NULLABLE size_t *usz) {
 	}
 	if (!sz) {
 		if (r_file_is_regular (str)) {
-			const size_t block_size = BS;
 			char *buf = NULL;
 			long size = 0;
 			(void)fseek (fd, 0, SEEK_SET);
 			do {
-				char *nbuf = realloc (buf, size + block_size);
-				if (nbuf) {
-					buf = nbuf;
+				char *nbuf = realloc (buf, size + BS);
+				if (!nbuf) {
+					break;
 				}
-				size_t r = fread (buf + size, 1, sizeof (buf), fd);
+				buf = nbuf;
+				size_t r = fread (buf + size, 1, BS, fd);
 				size += r;
 			} while (!feof (fd));
 			if (usz) {
@@ -1030,18 +1030,13 @@ R_API void r_file_mmap_free(RMmap *m) {
 }
 
 R_API char *r_file_temp (const char *prefix) {
-	r_return_val_if_fail (prefix, NULL);
-	int namesz;
-	char *name;
-	char *path = r_file_tmpdir ();
 	if (!prefix) {
 		prefix = "";
 	}
-	namesz = strlen (prefix) + strlen (path) + 32;
-	name = malloc (namesz);
-	snprintf (name, namesz, "%s/%s.%"PFMT64x, path, prefix, r_sys_now ());
+	char *path = r_file_tmpdir ();
+	char *res = r_str_newf ("%s/%s.%"PFMT64x, path, prefix, r_sys_now ());
 	free (path);
-	return name;
+	return res;
 }
 
 R_API int r_file_mkstemp(R_NULLABLE const char *prefix, char **oname) {
