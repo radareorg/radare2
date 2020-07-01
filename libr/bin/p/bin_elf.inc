@@ -666,6 +666,15 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		default: break; // reg relocations
 		}
 		break;
+	case EM_PPC: switch (rel->type) {
+		case R_PPC_NONE:    	break;
+		case R_PPC_GLOB_DAT:    ADD (32, 0);
+		case R_PPC_JMP_SLOT:    ADD (32, 0);
+		default:
+			eprintf ("unimplemented ELF/PPC reloc type %d\n", rel->type);
+		break;
+		}
+		break;
 	default: break;
 	}
 
