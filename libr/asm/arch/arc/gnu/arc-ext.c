@@ -21,7 +21,6 @@
    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
 
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -45,22 +44,20 @@
 /*                                                                            */
 /******************************************************************************/
 
-
 /* -------------------------------------------------------------------------- */
 /*                               local constants                              */
 /* -------------------------------------------------------------------------- */
 
-#define FIRST_EXTENSION_CORE_REGISTER   32
-#define LAST_EXTENSION_CORE_REGISTER    59
-#define FIRST_EXTENSION_CONDITION_CODE  0x10
-#define LAST_EXTENSION_CONDITION_CODE   0x1f
+#define FIRST_EXTENSION_CORE_REGISTER 32
+#define LAST_EXTENSION_CORE_REGISTER 59
+#define FIRST_EXTENSION_CONDITION_CODE 0x10
+#define LAST_EXTENSION_CONDITION_CODE 0x1f
 
-#define NUM_EXT_CORE      (LAST_EXTENSION_CORE_REGISTER  - FIRST_EXTENSION_CORE_REGISTER  + 1)
-#define NUM_EXT_COND      (LAST_EXTENSION_CONDITION_CODE - FIRST_EXTENSION_CONDITION_CODE + 1)
-#define INST_HASH_BITS    6
-#define INST_HASH_SIZE    (1 << INST_HASH_BITS)
-#define INST_HASH_MASK    (INST_HASH_SIZE - 1)
-
+#define NUM_EXT_CORE (LAST_EXTENSION_CORE_REGISTER - FIRST_EXTENSION_CORE_REGISTER + 1)
+#define NUM_EXT_COND (LAST_EXTENSION_CONDITION_CODE - FIRST_EXTENSION_CONDITION_CODE + 1)
+#define INST_HASH_BITS 6
+#define INST_HASH_SIZE (1 << INST_HASH_BITS)
+#define INST_HASH_MASK (INST_HASH_SIZE - 1)
 
 /* -------------------------------------------------------------------------- */
 /*                               local types                                  */
@@ -68,37 +65,32 @@
 
 /* these types define the information stored in the table */
 
-struct ExtInstruction
-{
-  char                   major;
-  char                   minor;
-  char                   flags;
-  char*                  name;
-  struct ExtInstruction* next;
+struct ExtInstruction {
+	char major;
+	char minor;
+	char flags;
+	char *name;
+	struct ExtInstruction *next;
 };
 
-struct ExtAuxRegister
-{
-  long                   address;
-  char*                  name;
-  struct ExtAuxRegister* next;
+struct ExtAuxRegister {
+	long address;
+	char *name;
+	struct ExtAuxRegister *next;
 };
 
-struct ExtCoreRegister
-{
-  short             number;
-  enum ExtReadWrite rw;
-  char*             name;
+struct ExtCoreRegister {
+	short number;
+	enum ExtReadWrite rw;
+	char *name;
 };
 
-struct arcExtMap
-{
-  struct ExtAuxRegister* auxRegisters;
-  struct ExtInstruction* instructions[INST_HASH_SIZE];
-  struct ExtCoreRegister coreRegisters[NUM_EXT_CORE];
-  char*                  condCodes[NUM_EXT_COND];
+struct arcExtMap {
+	struct ExtAuxRegister *auxRegisters;
+	struct ExtInstruction *instructions[INST_HASH_SIZE];
+	struct ExtCoreRegister coreRegisters[NUM_EXT_CORE];
+	char *condCodes[NUM_EXT_COND];
 };
-
 
 /* -------------------------------------------------------------------------- */
 /*                               local data                                   */
@@ -107,14 +99,12 @@ struct arcExtMap
 /* extension table */
 static struct arcExtMap arc_extension_map;
 
-
 /* -------------------------------------------------------------------------- */
 /*                               local macros                                 */
 /* -------------------------------------------------------------------------- */
 
 /* a hash function used to map instructions into the table */
-#define INST_HASH(MAJOR, MINOR)    ((((MAJOR) << 3) ^ (MINOR)) & INST_HASH_MASK)
-
+#define INST_HASH(MAJOR, MINOR) ((((MAJOR) << 3) ^ (MINOR)) & INST_HASH_MASK)
 
 /* -------------------------------------------------------------------------- */
 /*                               local functions                              */
@@ -276,19 +266,15 @@ static void destroy_map(void)
 }
 #endif
 
-
-static const char* ExtReadWrite_image(enum ExtReadWrite val)
-{
-    switch (val)
-    {
-        case REG_INVALID  : return "INVALID";
-        case REG_READ     : return "RO";
-        case REG_WRITE    : return "WO";
-        case REG_READWRITE: return "R/W";
-        default           : return "???";
-    }
+static const char *ExtReadWrite_image (enum ExtReadWrite val) {
+	switch (val) {
+	case REG_INVALID: return "INVALID";
+	case REG_READ: return "RO";
+	case REG_WRITE: return "WO";
+	case REG_READWRITE: return "R/W";
+	default: return "???";
+	}
 }
-
 
 /* -------------------------------------------------------------------------- */
 /*                               externally visible functions                 */
@@ -297,9 +283,8 @@ static const char* ExtReadWrite_image(enum ExtReadWrite val)
 /* Get the name of an extension instruction.  */
 
 const char *
-arcExtMap_instName (int opcode, int insn, int *flags)
-{
-  /* Here the following tasks need to be done.  First of all, the opcode
+arcExtMap_instName (int opcode, int insn, int *flags) {
+	/* Here the following tasks need to be done.  First of all, the opcode
      stored in the Extension Map is the real opcode.  However, the subopcode
      stored in the instruction to be disassembled is mangled.  We pass (in
      minor opcode), the instruction word.  Here we will un-mangle it and get
@@ -309,149 +294,128 @@ arcExtMap_instName (int opcode, int insn, int *flags)
      architectures.  This is because the ARCTangent does not do any of this
      mangling so we have no issues there.  */
 
-  /* If P[22:23] is 0 or 2 then un-mangle using iiiiiI.  If it is 1 then use
+	/* If P[22:23] is 0 or 2 then un-mangle using iiiiiI.  If it is 1 then use
      iiiiIi.  Now, if P is 3 then check M[5:5] and if it is 0 then un-mangle
      using iiiiiI else iiiiii.  */
 
-  unsigned char minor;
-  struct ExtInstruction *temp;
+	unsigned char minor;
+	struct ExtInstruction *temp;
 
-  if (*flags != E_ARC_MACH_A4) /* ARCompact extension instructions.  */
-    {
-      /* 16-bit instructions.  */
-      if (0x08 <= opcode && opcode <= 0x0b)
+	if (*flags != E_ARC_MACH_A4) /* ARCompact extension instructions.  */
 	{
-	  /* I - set but not used */
-	  unsigned char /* I, */ b, c, i;
+		/* 16-bit instructions.  */
+		if (0x08 <= opcode && opcode <= 0x0b) {
+			/* I - set but not used */
+			unsigned char /* I, */ b, c, i;
 
-	  /* I = (insn & 0xf800) >> 11; */
-	  b = (insn & 0x0700) >> 8;
-	  c = (insn & 0x00e0) >> 5;
-	  i = (insn & 0x001f);
+			/* I = (insn & 0xf800) >> 11; */
+			b = (insn & 0x0700) >> 8;
+			c = (insn & 0x00e0) >> 5;
+			i = (insn & 0x001f);
 
-	  if (i) {
-		  minor = i;
-	  } else {
-		  minor = (c == 0x07) ? b : c;
-	  }
-	}
-      /* 32-bit instructions.  */
-      else
-	{
-	  /* P, M - set but not used */
-	  unsigned char /* P, M, */ I, A, B;
-
-	  /* P = (insn & 0x00c00000) >> 22; */
-	  /* M = (insn & 0x00000020); */
-	  I = (insn & 0x003f0000) >> 16;
-	  A = (insn & 0x0000003f);
-	  B = ((insn & 0x07000000) >> 24) | ((insn & 0x00007000) >> 9);
-
-	  if (I != 0x2f)
-	    {
-#ifndef UNMANGLED
-	      switch (P)
-		{
-		case 3:
-		  if (M)
-		    {
-		      minor = I;
-		      break;
-		    }
-		case 0:
-		case 2:
-		  minor = (I >> 1) | ((I & 0x1) << 5);
-		  break;
-		case 1:
-		  minor = (I >> 1) | (I & 0x1) | ((I & 0x2) << 4);
+			if (i) {
+				minor = i;
+			} else {
+				minor = (c == 0x07) ? b : c;
+			}
 		}
+		/* 32-bit instructions.  */
+		else {
+			/* P, M - set but not used */
+			unsigned char /* P, M, */ I, A, B;
+
+			/* P = (insn & 0x00c00000) >> 22; */
+			/* M = (insn & 0x00000020); */
+			I = (insn & 0x003f0000) >> 16;
+			A = (insn & 0x0000003f);
+			B = ((insn & 0x07000000) >> 24) | ((insn & 0x00007000) >> 9);
+
+			if (I != 0x2f) {
+#ifndef UNMANGLED
+				switch (P) {
+				case 3:
+					if (M) {
+						minor = I;
+						break;
+					}
+				case 0:
+				case 2:
+					minor = (I >> 1) | ((I & 0x1) << 5);
+					break;
+				case 1:
+					minor = (I >> 1) | (I & 0x1) | ((I & 0x2) << 4);
+				}
 #else
-	      minor = I;
+				minor = I;
 #endif
-	    }
-	  else
-	    {
-		    if (A != 0x3f) {
-			    minor = A;
-		    } else {
-			    minor = B;
-		    }
-	    }
+			} else {
+				if (A != 0x3f) {
+					minor = A;
+				} else {
+					minor = B;
+				}
+			}
+		}
+	} else { /* ARCTangent extension instructions.  */
+		minor = insn;
 	}
-  } else { /* ARCTangent extension instructions.  */
-	  minor = insn;
-  }
 
-  temp = arc_extension_map.instructions[INST_HASH (opcode, minor)];
-  while (temp)
-    {
-      if ((temp->major == opcode) && (temp->minor == minor))
-	{
-	  *flags = temp->flags;
-	  return temp->name;
+	temp = arc_extension_map.instructions[INST_HASH (opcode, minor)];
+	while (temp) {
+		if ((temp->major == opcode) && (temp->minor == minor)) {
+			*flags = temp->flags;
+			return temp->name;
+		}
+		temp = temp->next;
 	}
-      temp = temp->next;
-    }
 
-  return NULL;
+	return NULL;
 }
-
 
 /* get the name of an extension core register */
 const char *
-arcExtMap_coreRegName (int regnum)
-{
+arcExtMap_coreRegName (int regnum) {
 	if (regnum < FIRST_EXTENSION_CORE_REGISTER || regnum > LAST_EXTENSION_CORE_REGISTER) {
 		return NULL;
 	}
 	return arc_extension_map.coreRegisters[regnum - FIRST_EXTENSION_CORE_REGISTER].name;
 }
 
-
 /* get the access mode of an extension core register */
 enum ExtReadWrite
-arcExtMap_coreReadWrite (int regnum)
-{
+arcExtMap_coreReadWrite (int regnum) {
 	if (regnum < FIRST_EXTENSION_CORE_REGISTER || regnum > LAST_EXTENSION_CORE_REGISTER) {
 		return REG_INVALID;
 	}
 	return arc_extension_map.coreRegisters[regnum - FIRST_EXTENSION_CORE_REGISTER].rw;
 }
 
-
 /* get the name of an extension condition code */
 const char *
-arcExtMap_condCodeName (int code)
-{
+arcExtMap_condCodeName (int code) {
 	if (code < FIRST_EXTENSION_CONDITION_CODE || code > LAST_EXTENSION_CONDITION_CODE) {
 		return NULL;
 	}
 	return arc_extension_map.condCodes[code - FIRST_EXTENSION_CONDITION_CODE];
 }
 
-
 /* Get the name of an extension auxiliary register.  */
 const char *
-arcExtMap_auxRegName (long address)
-{
-  /* Walk the list of auxiliary register names and find the name.  */
-  struct ExtAuxRegister *r;
+arcExtMap_auxRegName (long address) {
+	/* Walk the list of auxiliary register names and find the name.  */
+	struct ExtAuxRegister *r;
 
-  for (r = arc_extension_map.auxRegisters; r; r = r->next)
-    {
-	  if (r->address == address) {
-		  return (const char *)r->name;
-	  }
-    }
-  return NULL;
+	for (r = arc_extension_map.auxRegisters; r; r = r->next) {
+		if (r->address == address) {
+			return (const char *)r->name;
+		}
+	}
+	return NULL;
 }
-
 
 /* Load extensions described in .arcextmap and .gnu.linkonce.arcextmap.* ELF
    section.  */
-void
-build_ARC_extmap (void *text_bfd)
-{
+void build_ARC_extmap (void *text_bfd) {
 #if 0
   asection *sect;
 
@@ -479,43 +443,38 @@ build_ARC_extmap (void *text_bfd)
 #endif
 }
 
+void dump_ARC_extmap (void) {
+	struct ExtAuxRegister *r;
+	int i;
 
-void dump_ARC_extmap (void)
-{
-    struct ExtAuxRegister* r;
-    int                    i;
+	r = arc_extension_map.auxRegisters;
 
-    r = arc_extension_map.auxRegisters;
-
-    while (r)
-    {
-        printf("AUX : %s %ld\n", r->name, r->address);
-        r = r->next;
-    }
-
-    for (i = 0; i < INST_HASH_SIZE; i++)
-    {
-        struct ExtInstruction *insn;
-
-	for (insn = arc_extension_map.instructions[i]; insn != NULL; insn = insn->next) {
-		printf ("INST: %d %d %x %s\n", insn->major, insn->minor, insn->flags, insn->name);
+	while (r) {
+		printf ("AUX : %s %ld\n", r->name, r->address);
+		r = r->next;
 	}
-    }
 
-    for (i = 0; i < NUM_EXT_CORE; i++)
-    {
-        struct ExtCoreRegister reg = arc_extension_map.coreRegisters[i];
+	for (i = 0; i < INST_HASH_SIZE; i++) {
+		struct ExtInstruction *insn;
 
-	if (reg.name) {
-		printf ("CORE: %s %d %s\n", reg.name, reg.number, ExtReadWrite_image (reg.rw));
+		for (insn = arc_extension_map.instructions[i]; insn != NULL; insn = insn->next) {
+			printf ("INST: %d %d %x %s\n", insn->major, insn->minor, insn->flags, insn->name);
+		}
 	}
-    }
 
-    for (i = 0; i < NUM_EXT_COND; i++) {
-	    if (arc_extension_map.condCodes[i]) {
-		    printf ("COND: %s\n", arc_extension_map.condCodes[i]);
-	    }
-    }
+	for (i = 0; i < NUM_EXT_CORE; i++) {
+		struct ExtCoreRegister reg = arc_extension_map.coreRegisters[i];
+
+		if (reg.name) {
+			printf ("CORE: %s %d %s\n", reg.name, reg.number, ExtReadWrite_image (reg.rw));
+		}
+	}
+
+	for (i = 0; i < NUM_EXT_COND; i++) {
+		if (arc_extension_map.condCodes[i]) {
+			printf ("COND: %s\n", arc_extension_map.condCodes[i]);
+		}
+	}
 }
 
 /******************************************************************************/

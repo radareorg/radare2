@@ -4,9 +4,9 @@
 #define TYPE_NONE 0
 #define TYPE_STR 1
 #define TYPE_SYM 2
-#define IS_ALPHA(x) (IS_UPPER(x) || IS_LOWER(x))
-#define IS_STRING(x,y) ((x)+3<end && *(x) == 's' && *((x)+1) == 't' && *((x)+2) == 'r' && *((x)+3) == '.')
-#define IS_SYMBOL(x,y) ((x)+3<end && *(x) == 's' && *((x)+1) == 'y' && *((x)+2) == 'm' && *((x)+3) == '.')
+#define IS_ALPHA(x) (IS_UPPER (x) || IS_LOWER (x))
+#define IS_STRING(x, y) ((x) + 3 < end && *(x) == 's' && *((x) + 1) == 't' && *((x) + 2) == 'r' && *((x) + 3) == '.')
+#define IS_SYMBOL(x, y) ((x) + 3 < end && *(x) == 's' && *((x) + 1) == 'y' && *((x) + 2) == 'm' && *((x) + 3) == '.')
 
 typedef struct _find_ctx {
 	char *comment;
@@ -23,15 +23,15 @@ typedef struct _find_ctx {
 	int type;
 } RFindCTX;
 
-static void find_and_change (char* in, int len) {
+static void find_and_change (char *in, int len) {
 	// just to avoid underflows.. len can't be < then len(padding).
 	if (!in || len < 1) {
 		return;
 	}
 	char *end;
-	RFindCTX ctx = {0};
+	RFindCTX ctx = { 0 };
 	end = in + len;
-//	type = TYPE_NONE;
+	//	type = TYPE_NONE;
 	for (ctx.linebegin = in; in < end; in++) {
 		if (*in == '\n' || !*in) {
 			if (ctx.type == TYPE_SYM && ctx.linecount < 1) {
@@ -40,10 +40,10 @@ static void find_and_change (char* in, int len) {
 				continue;
 			}
 			if (ctx.type != TYPE_NONE && ctx.right && ctx.left && ctx.rightlen > 0 && ctx.leftlen > 0) {
-				char* copy = NULL;
+				char *copy = NULL;
 				if (ctx.leftlen > ctx.rightlen) {
 					// if new string is o
-					copy = (char*) malloc (ctx.leftlen);
+					copy = (char *)malloc (ctx.leftlen);
 					if (copy) {
 						memmove (copy, ctx.left, ctx.leftlen);
 						memmove (ctx.left, ctx.right, ctx.rightlen);
@@ -53,7 +53,7 @@ static void find_and_change (char* in, int len) {
 					}
 				} else if (ctx.leftlen < ctx.rightlen) {
 					if (ctx.linecount < 1) {
-						copy = (char*) malloc (ctx.rightlen);
+						copy = (char *)malloc (ctx.rightlen);
 						if (copy) {
 							// ###LEFTLEN### ### RIGHT
 							// backup ctx.right+len into copy
@@ -64,18 +64,18 @@ static void find_and_change (char* in, int len) {
 							memmove (ctx.left + ctx.rightlen - ctx.leftlen, copy, ctx.rightlen);
 						}
 					} else {
-//						copy = (char*) malloc (ctx.linebegin - ctx.left);
-//						if (copy) {
-//							memcpy (copy, ctx.left, ctx.linebegin - ctx.left);
+						//						copy = (char*) malloc (ctx.linebegin - ctx.left);
+						//						if (copy) {
+						//							memcpy (copy, ctx.left, ctx.linebegin - ctx.left);
 						memset (ctx.right - ctx.leftpos, ' ', ctx.leftpos);
 						*(ctx.right - ctx.leftpos - 1) = '\n';
-//							memcpy (ctx.comment + 3, copy, ctx.linebegin - ctx.left);
+						//							memcpy (ctx.comment + 3, copy, ctx.linebegin - ctx.left);
 						memset (ctx.left, ' ', ctx.leftlen);
 						memset (ctx.linebegin - ctx.leftlen, ' ', ctx.leftlen);
-//						}
+						//						}
 					}
 				} else if (ctx.leftlen == ctx.rightlen) {
-					copy = (char*) malloc (ctx.leftlen);
+					copy = (char *)malloc (ctx.leftlen);
 					if (copy) {
 						memcpy (copy, ctx.right, ctx.leftlen);
 						memcpy (ctx.right, ctx.left, ctx.leftlen);
@@ -166,7 +166,7 @@ static void find_and_change (char* in, int len) {
 	}
 }
 
-R_API int r_core_pseudo_code(RCore *core, const char *input) {
+R_API int r_core_pseudo_code (RCore *core, const char *input) {
 	const char *cmdPdc = r_config_get (core->config, "cmd.pdc");
 	if (cmdPdc && *cmdPdc && !strstr (cmdPdc, "pdc")) {
 		if (strstr (cmdPdc, "!*") || strstr (cmdPdc, "#!")) {
@@ -195,7 +195,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_config_hold_i (hc, "scr.color", "emu.str", "asm.emu", "emu.write", NULL);
 	r_config_hold_i (hc, "io.cache", NULL);
 	if (!fcn) {
-		eprintf ("Cannot find function in 0x%08"PFMT64x"\n", core->offset);
+		eprintf ("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
 		r_config_hold_free (hc);
 		return false;
 	}
@@ -227,7 +227,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	// asm.pseudo=true
 	// asm.decode=true
 	RAnalBlock *bb = r_list_first (fcn->bbs);
-	char indentstr[1024] = {0};
+	char indentstr[1024] = { 0 };
 	int n_bb = r_list_length (fcn->bbs);
 	r_cons_printf ("function %s () {", fcn->name);
 	int indent = 1;
@@ -236,10 +236,15 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_cons_printf ("\n    //  %d basic blocks\n", n_bb);
 	do {
 #define I_TAB 4
-#define K_MARK(x) sdb_fmt("mark.%"PFMT64x,x)
-#define K_ELSE(x) sdb_fmt("else.%"PFMT64x,x)
-#define K_INDENT(x) sdb_fmt("loc.%"PFMT64x,x)
-#define SET_INDENT(x) { (x) = (x)>0?(x):1; memset (indentstr, ' ', (x)*I_TAB); indentstr [((x)*I_TAB)-2] = 0; }
+#define K_MARK(x) sdb_fmt ("mark.%" PFMT64x, x)
+#define K_ELSE(x) sdb_fmt ("else.%" PFMT64x, x)
+#define K_INDENT(x) sdb_fmt ("loc.%" PFMT64x, x)
+#define SET_INDENT(x)                               \
+	{                                           \
+		(x) = (x) > 0 ? (x) : 1;            \
+		memset (indentstr, ' ', (x)*I_TAB); \
+		indentstr[((x)*I_TAB) - 2] = 0;     \
+	}
 		if (!bb) {
 			break;
 		}
@@ -247,7 +252,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		r_cons_push ();
 		bool html = r_config_get_i (core->config, "scr.html");
 		r_config_set_i (core->config, "scr.html", 0);
-		char *code = r_core_cmd_str (core, sdb_fmt ("pD %d @ 0x%08"PFMT64x"\n", bb->size, bb->addr));
+		char *code = r_core_cmd_str (core, sdb_fmt ("pD %d @ 0x%08" PFMT64x "\n", bb->size, bb->addr));
 		r_cons_pop ();
 		r_config_set_i (core->config, "scr.html", html);
 		if (indent * I_TAB + 2 >= sizeof (indentstr)) {
@@ -354,7 +359,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				} else {
 					bb = r_anal_bb_from_offset (core->anal, jump);
 					if (!bb) {
-						eprintf ("failed to retrieve block at 0x%"PFMT64x"\n", jump);
+						eprintf ("failed to retrieve block at 0x%" PFMT64x "\n", jump);
 						break;
 					}
 					if (fail != UT64_MAX) {
@@ -362,7 +367,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 						indent++;
 						if (sdb_get (db, K_INDENT (bb->fail), 0)) {
 							/* do nothing here */
-							eprintf ("BlockAlready 0x%"PFMT64x"\n", bb->addr);
+							eprintf ("BlockAlready 0x%" PFMT64x "\n", bb->addr);
 						} else {
 							// r_cons_printf (" { RADICAL %llx\n", bb->addr);
 							sdb_array_push_num (db, "indent", fail, 0);

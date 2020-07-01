@@ -3,7 +3,7 @@
 #include <r_userconf.h>
 #include <r_debug.h>
 
-int procfs_pid_slurp(int pid, char *prop, char *out, size_t len) {
+int procfs_pid_slurp (int pid, char *prop, char *out, size_t len) {
 	int fd, ret = -1;
 	ssize_t nr;
 
@@ -19,7 +19,7 @@ int procfs_pid_slurp(int pid, char *prop, char *out, size_t len) {
 	nr = read (fd, out, len);
 	out[len - 1] = 0;
 	if (nr > 0) {
-		out[nr - 1] = '\0';  /* terminate at newline */
+		out[nr - 1] = '\0'; /* terminate at newline */
 		ret = 0;
 	} else if (nr < 0) {
 		r_sys_perror ("read");

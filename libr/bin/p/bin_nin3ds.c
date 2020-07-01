@@ -10,21 +10,21 @@
 
 static struct n3ds_firm_hdr loaded_header;
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	ut8 magic[4];
 	r_buf_read_at (b, 0, magic, sizeof (magic));
 	return (!memcmp (magic, "FIRM", 4));
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
-	if (r_buf_read_at (b, 0, (ut8*)&loaded_header, sizeof (loaded_header)) == sizeof (loaded_header)) {
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+	if (r_buf_read_at (b, 0, (ut8 *)&loaded_header, sizeof (loaded_header)) == sizeof (loaded_header)) {
 		*bin_obj = &loaded_header;
 		return true;
 	}
 	return false;
 }
 
-static RList *sections(RBinFile *bf) {
+static RList *sections (RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *sections[4] = {
 		NULL, NULL, NULL, NULL
@@ -76,7 +76,7 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList *entries(RBinFile *bf) {
+static RList *entries (RBinFile *bf) {
 	RList *ret = r_list_new ();
 	RBinAddr *ptr9 = NULL, *ptr11 = NULL;
 
@@ -106,7 +106,7 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;

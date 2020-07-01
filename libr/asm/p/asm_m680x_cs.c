@@ -14,7 +14,7 @@
 
 static csh cd = 0;
 
-static int m680xmode(const char *str) {
+static int m680xmode (const char *str) {
 	if (!str) {
 		return CS_MODE_M680X_6800;
 	}
@@ -46,7 +46,7 @@ static int m680xmode(const char *str) {
 	return CS_MODE_M680X_6800;
 }
 
-static bool the_end(void *p) {
+static bool the_end (void *p) {
 	if (cd) {
 		cs_close (&cd);
 		cd = 0;
@@ -54,11 +54,11 @@ static bool the_end(void *p) {
 	return true;
 }
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int omode = 0;
 	int mode, n, ret;
 	ut64 off = a->pc;
-	cs_insn* insn = NULL;
+	cs_insn *insn = NULL;
 	mode = m680xmode (a->cpu);
 	if (cd && mode != omode) {
 		cs_close (&cd);
@@ -73,13 +73,13 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		}
 		cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
-	n = cs_disasm (cd, (const ut8*)buf, len, off, 1, &insn);
+	n = cs_disasm (cd, (const ut8 *)buf, len, off, 1, &insn);
 	if (n > 0) {
 		if (insn->size > 0) {
 			op->size = insn->size;
 			char *buf_asm = sdb_fmt ("%s%s%s",
-					insn->mnemonic, insn->op_str[0]?" ": "",
-					insn->op_str);
+				insn->mnemonic, insn->op_str[0] ? " " : "",
+				insn->op_str);
 			char *ptrstr = strstr (buf_asm, "ptr ");
 			if (ptrstr) {
 				memmove (ptrstr, ptrstr + 4, strlen (ptrstr + 4) + 1);
@@ -97,7 +97,7 @@ RAsmPlugin r_asm_plugin_m680x_cs = {
 	.desc = "Capstone M680X Disassembler",
 	.license = "BSD",
 	.arch = "m680x",
-	.bits = 8|32,
+	.bits = 8 | 32,
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.fini = the_end,
 	.disassemble = &disassemble,
@@ -109,7 +109,7 @@ RAsmPlugin r_asm_plugin_m680x_cs = {
 	.desc = "Capstone M680X Disassembler (Not supported)",
 	.license = "BSD",
 	.arch = "m680x",
-	.bits = 8|32,
+	.bits = 8 | 32,
 };
 #endif
 

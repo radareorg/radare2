@@ -5,8 +5,7 @@
 // the non-system-diff doesnt work well
 #define USE_SYSTEM_DIFF 1
 
-
-R_API RDiff *r_diff_new_from(ut64 off_a, ut64 off_b) {
+R_API RDiff *r_diff_new_from (ut64 off_a, ut64 off_b) {
 	RDiff *d = R_NEW0 (RDiff);
 	if (d) {
 		d->delta = 1;
@@ -18,22 +17,22 @@ R_API RDiff *r_diff_new_from(ut64 off_a, ut64 off_b) {
 	return d;
 }
 
-R_API RDiff *r_diff_new(void) {
+R_API RDiff *r_diff_new (void) {
 	return r_diff_new_from (0, 0);
 }
 
-R_API RDiff *r_diff_free(RDiff *d) {
+R_API RDiff *r_diff_free (RDiff *d) {
 	free (d);
 	return NULL;
 }
 
-R_API int r_diff_set_callback(RDiff *d, RDiffCallback callback, void *user) {
+R_API int r_diff_set_callback (RDiff *d, RDiffCallback callback, void *user) {
 	d->callback = callback;
 	d->user = user;
 	return 1;
 }
 
-R_API int r_diff_set_delta(RDiff *d, int delta) {
+R_API int r_diff_set_delta (RDiff *d, int delta) {
 	d->delta = delta;
 	return 1;
 }
@@ -44,14 +43,14 @@ typedef struct {
 } RDiffUser;
 
 #if USE_SYSTEM_DIFF
-R_API char *r_diff_buffers_to_string(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
+R_API char *r_diff_buffers_to_string (RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
 	return r_diff_buffers_unified (d, a, la, b, lb);
 }
 
 #else
 // XXX buffers_static doesnt constructs the correct string in this callback
-static int tostring(RDiff *d, void *user, RDiffOp *op) {
-	RDiffUser *u = (RDiffUser*)user;
+static int tostring (RDiff *d, void *user, RDiffOp *op) {
+	RDiffUser *u = (RDiffUser *)user;
 	if (op->a_len > 0) {
 		char *a_str = r_str_ndup ((const char *)op->a_buf + op->a_off, op->a_len);
 		u->str = r_str_appendf (u->str, "+(%s)", a_str);
@@ -82,11 +81,11 @@ static int tostring(RDiff *d, void *user, RDiffOp *op) {
 	return 1;
 }
 
-R_API char *r_diff_buffers_to_string(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
+R_API char *r_diff_buffers_to_string (RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
 	// XXX buffers_static doesnt constructs the correct string in this callback
 	void *c = d->callback;
 	void *u = d->user;
-	RDiffUser du = {d, strdup ("")};
+	RDiffUser du = { d, strdup ("") };
 	d->callback = &tostring;
 	d->user = &du;
 	r_diff_buffers_static (d, a, la, b, lb);
@@ -96,25 +95,25 @@ R_API char *r_diff_buffers_to_string(RDiff *d, const ut8 *a, int la, const ut8 *
 }
 #endif
 
-#define diffHit(void) {\
-	const size_t i_hit = i - hit;\
-	int ra = la - i_hit;\
-	int rb = lb - i_hit;\
-	struct r_diff_op_t o = {\
-		.a_off = d->off_a+i-hit, .a_buf = a+i-hit, .a_len = R_MIN (hit, ra),\
-		.b_off = d->off_b+i-hit, .b_buf = b+i-hit, .b_len = R_MIN (hit, rb)\
-	};\
-	d->callback (d, d->user, &o);\
-}
+#define diffHit(void)                                                                                                                                                            \
+	{                                                                                                                                                                        \
+		const size_t i_hit = i - hit;                                                                                                                                    \
+		int ra = la - i_hit;                                                                                                                                             \
+		int rb = lb - i_hit;                                                                                                                                             \
+		struct r_diff_op_t o = {                                                                                                                                         \
+			.a_off = d->off_a + i - hit, .a_buf = a + i - hit, .a_len = R_MIN (hit, ra), .b_off = d->off_b + i - hit, .b_buf = b + i - hit, .b_len = R_MIN (hit, rb) \
+		};                                                                                                                                                               \
+		d->callback (d, d->user, &o);                                                                                                                                    \
+	}
 
-R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
+R_API int r_diff_buffers_static (RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
 	int i, len;
 	int hit = 0;
 	la = R_ABS (la);
 	lb = R_ABS (lb);
 	if (la != lb) {
-	 	len = R_MIN (la, lb);
-		eprintf ("Buffer truncated to %d byte(s) (%d not compared)\n", len, R_ABS(lb-la));
+		len = R_MIN (la, lb);
+		eprintf ("Buffer truncated to %d byte(s) (%d not compared)\n", len, R_ABS (lb - la));
 	} else {
 		len = la;
 	}
@@ -135,7 +134,7 @@ R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 }
 
 // XXX: temporary files are
-R_API char *r_diff_buffers_unified(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
+R_API char *r_diff_buffers_unified (RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
 	r_file_dump (".a", a, la, 0);
 	r_file_dump (".b", b, lb, 0);
 #if 0
@@ -147,10 +146,10 @@ R_API char *r_diff_buffers_unified(RDiff *d, const ut8 *a, int la, const ut8 *b,
 		r_file_hexdump (".b", b, lb, 0);
 	}
 #endif
-	char* err = NULL;
-	char* out = NULL;
+	char *err = NULL;
+	char *out = NULL;
 	int out_len;
-	char* diff_cmdline = r_str_newf ("%s .a .b", d->diff_cmd);
+	char *diff_cmdline = r_str_newf ("%s .a .b", d->diff_cmd);
 	if (diff_cmdline) {
 		(void)r_sys_cmd_str_full (diff_cmdline, NULL, &out, &out_len, &err);
 		free (diff_cmdline);
@@ -161,14 +160,14 @@ R_API char *r_diff_buffers_unified(RDiff *d, const ut8 *a, int la, const ut8 *b,
 	return out;
 }
 
-R_API int r_diff_buffers(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb) {
+R_API int r_diff_buffers (RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb) {
 	return d->delta
 		? r_diff_buffers_delta (d, a, la, b, lb)
 		: r_diff_buffers_static (d, a, la, b, lb);
 }
 
-R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
-	const bool verbose = d? d->verbose: false;
+R_API bool r_diff_buffers_distance_levenstein (RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
+	const bool verbose = d ? d->verbose : false;
 	/*
 	More memory efficient version on Levenshtein Distance from:
 	https://en.wikipedia.org/wiki/Levenshtein_distance
@@ -257,13 +256,13 @@ R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, c
 	// Only calloc if we have to do some processing
 
 	// calloc v0 & v1 and check they initialised
-	v0 = (int*) calloc ((bLen + 3), sizeof (int));
+	v0 = (int *)calloc ((bLen + 3), sizeof (int));
 	if (!v0) {
 		eprintf ("Error: cannot allocate %i bytes.", bLen + 3);
 		return false;
 	}
 
-	v1 = (int*) calloc ((bLen + 3), sizeof (int));
+	v1 = (int *)calloc ((bLen + 3), sizeof (int));
 	if (!v1) {
 		eprintf ("Error: cannot allocate %i bytes", 2 * (bLen + 3));
 		free (v0);
@@ -272,7 +271,7 @@ R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, c
 
 	// initialise v0 and v1.
 	// With optimisiation we only strictly we only need to initialise v0[0..2]=0..2 & v1[0] = 1;
-	for (i = 0; i < bLen + 1 ; i++) {
+	for (i = 0; i < bLen + 1; i++) {
 		v0[i] = i;
 		v1[i] = i + 1;
 	}
@@ -318,7 +317,6 @@ R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, c
 
 			// If we have seen a smaller number, it's the new column Minimum
 			colMin = R_MIN ((colMin), (smallest));
-
 		}
 
 		// We're going to start at i+1 next iteration
@@ -334,7 +332,7 @@ R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, c
 		// have a vertical double up condition in our last two values of the results column.
 		// j-2 is used because j++ increments prior to loop exit in the processing loop above.
 		if (!cost && aBufPtr[i] != bBufPtr[j - 2]) {
-			extendStop ++;
+			extendStop++;
 		}
 
 		// If new start would be a match then we have a horizontal 'double up'
@@ -342,8 +340,8 @@ R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, c
 		// so don't increment the start counter this time, BUT keep
 		// extendStart up our sleeves for next iteration.
 		if (i + 1 < aLen && start < bLen && aBufPtr[i + 1] == bBufPtr[start]) {
-			start --;
-			extendStart ++;
+			start--;
+			extendStart++;
 		}
 		//Switch v0 and v1 pointers via temp pointer
 		temp = v0;
@@ -351,13 +349,13 @@ R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, c
 		v1 = temp;
 
 		//Print a processing update every 10K of outer loop
-		if (verbose && i % 10000==0) {
+		if (verbose && i % 10000 == 0) {
 			eprintf ("\rProcessing %d of %d\r", i, aLen);
 		}
 	}
 	//Clean up output on loop exit (purely aesthetic)
 	if (verbose) {
-		eprintf ("\rProcessing %d of %d (loops=%"PFMT64d")\n", i, aLen,loops);
+		eprintf ("\rProcessing %d of %d (loops=%" PFMT64d ")\n", i, aLen, loops);
 	}
 	if (distance) {
 		// the final distance is the last byte we processed in the inner loop.
@@ -365,7 +363,7 @@ R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, c
 		*distance = v0[stop];
 	}
 	if (similarity) {
-		double diff = (double) (v0[stop]) / (double) (R_MAX (aLen, bLen));
+		double diff = (double)(v0[stop]) / (double)(R_MAX (aLen, bLen));
 		*similarity = (double)1 - diff;
 	}
 	free (v0);
@@ -375,17 +373,19 @@ R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, c
 
 // Eugene W. Myers' O(ND) diff algorithm
 // Returns edit distance with costs: insertion=1, deletion=1, no substitution
-R_API bool r_diff_buffers_distance_myers(RDiff *diff, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
-	const bool verbose = diff ? diff->verbose: false;
+R_API bool r_diff_buffers_distance_myers (RDiff *diff, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
+	const bool verbose = diff ? diff->verbose : false;
 	if (!a || !b) {
 		return false;
 	}
 	const ut32 length = la + lb;
 	const ut8 *ea = a + la, *eb = b + lb;
 	// Strip prefix
-	for (; a < ea && b < eb && *a == *b; a++, b++) {}
+	for (; a < ea && b < eb && *a == *b; a++, b++) {
+	}
 	// Strip suffix
-	for (; a < ea && b < eb && ea[-1] == eb[-1]; ea--, eb--) {}
+	for (; a < ea && b < eb && ea[-1] == eb[-1]; ea--, eb--) {
+	}
 	la = ea - a;
 	lb = eb - b;
 	ut32 *v0, *v;
@@ -399,7 +399,7 @@ R_API bool r_diff_buffers_distance_myers(RDiff *diff, const ut8 *a, ut32 la, con
 		low = -di + 2 * R_MAX (0, di - (st64)lb);
 		high = di - 2 * R_MAX (0, di - (st64)la);
 		for (i = low; i <= high; i += 2) {
-			x = i == -di || (i != di && v[i-1] < v[i+1]) ? v[i+1] : v[i-1] + 1;
+			x = i == -di || (i != di && v[i - 1] < v[i + 1]) ? v[i + 1] : v[i - 1] + 1;
 			y = x - i;
 			while (x < la && y < lb && a[x] == b[y]) {
 				x++;
@@ -430,7 +430,7 @@ out:
 	return true;
 }
 
-R_API bool r_diff_buffers_distance_original(RDiff *diff, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
+R_API bool r_diff_buffers_distance_original (RDiff *diff, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
 	if (!a || !b) {
 		return false;
 	}
@@ -440,9 +440,11 @@ R_API bool r_diff_buffers_distance_original(RDiff *diff, const ut8 *a, ut32 la, 
 	const ut8 *ea = a + la, *eb = b + lb, *t;
 	ut32 *d, i, j;
 	// Strip prefix
-	for (; a < ea && b < eb && *a == *b; a++, b++) {}
+	for (; a < ea && b < eb && *a == *b; a++, b++) {
+	}
 	// Strip suffix
-	for (; a < ea && b < eb && ea[-1] == eb[-1]; ea--, eb--) {}
+	for (; a < ea && b < eb && ea[-1] == eb[-1]; ea--, eb--) {
+	}
 	la = ea - a;
 	lb = eb - b;
 	if (la < lb) {
@@ -486,7 +488,7 @@ R_API bool r_diff_buffers_distance_original(RDiff *diff, const ut8 *a, ut32 la, 
 	return true;
 }
 
-R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
+R_API bool r_diff_buffers_distance (RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
 	if (d) {
 		switch (d->type) {
 		case 'm':

@@ -35,10 +35,10 @@ struct hunklist {
 	struct hunk *base, *head;
 };
 
-static int splitlines(const char *a, int len, struct line **lr) {
+static int splitlines (const char *a, int len, struct line **lr) {
 	int h, i;
 	const char *p, *b = a;
-	const char * const plast = a + len - 1;
+	const char *const plast = a + len - 1;
 	struct line *l;
 
 	if (!a) {
@@ -54,7 +54,7 @@ static int splitlines(const char *a, int len, struct line **lr) {
 		}
 	}
 
-	*lr = l = (struct line *)malloc(sizeof(struct line) * i);
+	*lr = l = (struct line *)malloc (sizeof (struct line) * i);
 	if (!l) {
 		return -1;
 	}
@@ -82,11 +82,11 @@ static int splitlines(const char *a, int len, struct line **lr) {
 	return i - 1;
 }
 
-inline static int cmp(struct line *a, struct line *b) {
-	return a->h != b->h || a->len != b->len || memcmp(a->l, b->l, a->len);
+inline static int cmp (struct line *a, struct line *b) {
+	return a->h != b->h || a->len != b->len || memcmp (a->l, b->l, a->len);
 }
 
-static int equatelines(struct line *a, int an, struct line *b, int bn) {
+static int equatelines (struct line *a, int an, struct line *b, int bn) {
 	int i, j, buckets = 1, t, scale;
 	struct pos *h = NULL;
 
@@ -97,7 +97,7 @@ static int equatelines(struct line *a, int an, struct line *b, int bn) {
 
 	/* try to allocate a large hash table to avoid collisions */
 	for (scale = 4; scale; scale /= 2) {
-		h = (struct pos *)malloc(scale * buckets * sizeof(struct pos));
+		h = (struct pos *)malloc (scale * buckets * sizeof (struct pos));
 		if (h) {
 			break;
 		}
@@ -154,13 +154,12 @@ static int equatelines(struct line *a, int an, struct line *b, int bn) {
 	}
 
 	/* discard hash tables */
-	free(h);
+	free (h);
 	return 1;
 }
 
-static int longest_match(struct line *a, struct line *b, struct pos *pos,
-			 int a1, int a2, int b1, int b2, int *omi, int *omj)
-{
+static int longest_match (struct line *a, struct line *b, struct pos *pos,
+	int a1, int a2, int b1, int b2, int *omi, int *omj) {
 	int mi = a1, mj = b1, mk = 0, mb = 0, i, j, k;
 
 	for (i = a1; i < a2; i++) {
@@ -210,54 +209,52 @@ static int longest_match(struct line *a, struct line *b, struct pos *pos,
 	return mk + mb;
 }
 
-static void recurse(struct line *a, struct line *b, struct pos *pos,
-		    int a1, int a2, int b1, int b2, struct hunklist *l)
-{
+static void recurse (struct line *a, struct line *b, struct pos *pos,
+	int a1, int a2, int b1, int b2, struct hunklist *l) {
 	int i, j, k;
 
 	/* find the longest match in this chunk */
-	k = longest_match(a, b, pos, a1, a2, b1, b2, &i, &j);
+	k = longest_match (a, b, pos, a1, a2, b1, b2, &i, &j);
 	if (!k) {
 		return;
 	}
 
 	/* and recurse on the remaining chunks on either side */
-	recurse(a, b, pos, a1, i, b1, j, l);
+	recurse (a, b, pos, a1, i, b1, j, l);
 	l->head->a1 = i;
 	l->head->a2 = i + k;
 	l->head->b1 = j;
 	l->head->b2 = j + k;
 	l->head++;
-	recurse(a, b, pos, i + k, a2, j + k, b2, l);
+	recurse (a, b, pos, i + k, a2, j + k, b2, l);
 }
 
-static struct hunklist diff(struct line *a, int an, struct line *b, int bn)
-{
+static struct hunklist diff (struct line *a, int an, struct line *b, int bn) {
 	struct hunklist l;
 	struct hunk *curr;
 	struct pos *pos;
 	int t;
 
 	/* allocate and fill arrays */
-	t = equatelines(a, an, b, bn);
-	pos = (struct pos *)calloc(bn ? bn : 1, sizeof(struct pos));
+	t = equatelines (a, an, b, bn);
+	pos = (struct pos *)calloc (bn ? bn : 1, sizeof (struct pos));
 	/* we can't have more matches than lines in the shorter file */
-	l.head = l.base = (struct hunk *)malloc(sizeof(struct hunk) *
-	                                        ((an<bn ? an:bn) + 1));
+	l.head = l.base = (struct hunk *)malloc (sizeof (struct hunk) *
+		((an < bn ? an : bn) + 1));
 
 	if (pos && l.base && t) {
 		/* generate the matching block list */
-		recurse(a, b, pos, 0, an, 0, bn, &l);
+		recurse (a, b, pos, 0, an, 0, bn, &l);
 		l.head->a1 = l.head->a2 = an;
 		l.head->b1 = l.head->b2 = bn;
 		l.head++;
 	}
 
-	free(pos);
+	free (pos);
 
 	/* normalize the hunk list, try to push each hunk towards the end */
 	for (curr = l.base; curr != l.head; curr++) {
-		struct hunk *next = curr+1;
+		struct hunk *next = curr + 1;
 		int shift = 0;
 
 		if (next == l.head) {
@@ -287,7 +284,7 @@ static struct hunklist diff(struct line *a, int an, struct line *b, int bn)
 
 //--
 // TODO: implement the r_diff_lines // we need to implement r_file_line_at (file, off);
-R_API int r_diff_buffers_delta(RDiff *d, const ut8 *sa, int la, const ut8 *sb, int lb) {
+R_API int r_diff_buffers_delta (RDiff *d, const ut8 *sa, int la, const ut8 *sb, int lb) {
 	RDiffOp dop;
 	struct line *al = NULL;
 	struct line *bl = NULL;
@@ -297,12 +294,12 @@ R_API int r_diff_buffers_delta(RDiff *d, const ut8 *sa, int la, const ut8 *sb, i
 	int hits = -1;
 
 	an = splitlines ((const char *)sa, la, &al);
-	if (an<0) {
+	if (an < 0) {
 		free (al);
 		return -1;
 	}
 	bn = splitlines ((const char *)sb, lb, &bl);
-	if (bn<0) {
+	if (bn < 0) {
 		free (al);
 		free (bl);
 		return -1;
@@ -324,7 +321,7 @@ R_API int r_diff_buffers_delta(RDiff *d, const ut8 *sa, int la, const ut8 *sb, i
 			len = bl[h->b1].l - bl[lb].l;
 			offa = al[la].l - al->l;
 			offb = al[h->a1].l - al->l;
-			rlen = offb-offa;
+			rlen = offb - offa;
 
 			if (d->callback) {
 				/* source file */
@@ -356,7 +353,7 @@ R_API int r_diff_buffers_delta(RDiff *d, const ut8 *sa, int la, const ut8 *sb, i
 		la = h->a2;
 		lb = h->b2;
 	}
-	beach:
+beach:
 	free (al);
 	free (bl);
 	free (l.base);

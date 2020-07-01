@@ -31,16 +31,11 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
-
 #include "zipint.h"
 
-
-
 zip_compression_implementation
-_zip_get_compression_implementation(zip_int32_t cm)
-{
-    if (cm == ZIP_CM_DEFLATE || ZIP_CM_IS_DEFAULT(cm))
-	return zip_source_deflate;
-    return NULL;
+_zip_get_compression_implementation (zip_int32_t cm) {
+	if (cm == ZIP_CM_DEFLATE || ZIP_CM_IS_DEFAULT (cm))
+		return zip_source_deflate;
+	return NULL;
 }

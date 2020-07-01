@@ -32,16 +32,15 @@
  ****************************************************************************/
 
 /* Identify different overflow situations for error messages.  */
-enum overflow_type
-{
-  call_target_overflow = 0,
-  branch_target_overflow,
-  address_offset_overflow,
-  signed_immed16_overflow,
-  unsigned_immed16_overflow,
-  unsigned_immed5_overflow,
-  custom_opcode_overflow,
-  no_overflow
+enum overflow_type {
+	call_target_overflow = 0,
+	branch_target_overflow,
+	address_offset_overflow,
+	signed_immed16_overflow,
+	unsigned_immed16_overflow,
+	unsigned_immed5_overflow,
+	custom_opcode_overflow,
+	no_overflow
 };
 
 /* This structure holds information for a particular instruction. 
@@ -75,21 +74,20 @@ enum overflow_type
    when disassembling.  If the actual opcode anded with the match field
    equals the opcode field, then we have found the correct instruction.  */
 
-struct nios2_opcode
-{
-  const char *name;		/* The name of the instruction.  */
-  const char *args;		/* A string describing the arguments for this 
+struct nios2_opcode {
+	const char *name; /* The name of the instruction.  */
+	const char *args; /* A string describing the arguments for this 
 				   instruction.  */
-  const char *args_test;	/* Like args, but with an extra argument for 
+	const char *args_test; /* Like args, but with an extra argument for 
 				   the expected opcode.  */
-  unsigned long num_args;	/* The number of arguments the instruction 
+	unsigned long num_args; /* The number of arguments the instruction 
 				   takes.  */
-  unsigned long match;		/* The basic opcode for the instruction.  */
-  unsigned long mask;		/* Mask for the opcode field of the 
+	unsigned long match; /* The basic opcode for the instruction.  */
+	unsigned long mask; /* Mask for the opcode field of the 
 				   instruction.  */
-  unsigned long pinfo;		/* Is this a real instruction or instruction 
+	unsigned long pinfo; /* Is this a real instruction or instruction 
 				   macro?  */
-  enum overflow_type overflow_msg;  /* Used to generate informative 
+	enum overflow_type overflow_msg; /* Used to generate informative 
 				       message when fixup overflows.  */
 };
 
@@ -97,38 +95,35 @@ struct nios2_opcode
    instruction is a macro or pseudo-op.  This requires special treatment by 
    the assembler, and is used by the disassembler to determine whether to 
    check for a nop.  */
-#define NIOS2_INSN_MACRO	0x80000000
-#define NIOS2_INSN_MACRO_MOV	0x80000001
-#define NIOS2_INSN_MACRO_MOVI	0x80000002
-#define NIOS2_INSN_MACRO_MOVIA	0x80000004
+#define NIOS2_INSN_MACRO 0x80000000
+#define NIOS2_INSN_MACRO_MOV 0x80000001
+#define NIOS2_INSN_MACRO_MOVI 0x80000002
+#define NIOS2_INSN_MACRO_MOVIA 0x80000004
 
-#define NIOS2_INSN_RELAXABLE	0x40000000
-#define NIOS2_INSN_UBRANCH	0x00000010
-#define NIOS2_INSN_CBRANCH	0x00000020
-#define NIOS2_INSN_CALL		0x00000040
+#define NIOS2_INSN_RELAXABLE 0x40000000
+#define NIOS2_INSN_UBRANCH 0x00000010
+#define NIOS2_INSN_CBRANCH 0x00000020
+#define NIOS2_INSN_CALL 0x00000040
 
-#define NIOS2_INSN_ADDI		0x00000080
-#define NIOS2_INSN_ANDI		0x00000100
-#define NIOS2_INSN_ORI		0x00000200
-#define NIOS2_INSN_XORI		0x00000400
-
+#define NIOS2_INSN_ADDI 0x00000080
+#define NIOS2_INSN_ANDI 0x00000100
+#define NIOS2_INSN_ORI 0x00000200
+#define NIOS2_INSN_XORI 0x00000400
 
 /* Associates a register name ($6) with a 5-bit index (eg 6).  */
-struct nios2_reg
-{
-  const char *name;
-  const int index;
+struct nios2_reg {
+	const char *name;
+	const int index;
 };
-
 
 /* These are bit masks and shift counts for accessing the various
    fields of a Nios II instruction.  */
 
 /* Macros for getting and setting an instruction field.  */
 #define GET_INSN_FIELD(X, i) \
-  (((i) & OP_MASK_##X) >> OP_SH_##X)
+	(((i)&OP_MASK_##X) >> OP_SH_##X)
 #define SET_INSN_FIELD(X, i, j) \
-  ((i) = (((i) & ~OP_MASK_##X) | (((j) << OP_SH_##X) & OP_MASK_##X)))
+	((i) = (((i) & ~OP_MASK_##X) | (((j) << OP_SH_##X) & OP_MASK_##X)))
 
 /* Instruction field definitions.  */
 #define IW_A_LSB 27
@@ -177,79 +172,79 @@ struct nios2_reg
 #define IW_CONTROL_REGNUM_MASK 0xf
 
 /* Operator mask and shift.  */
-#define OP_MASK_OP		(IW_OP_MASK << IW_OP_LSB)
-#define OP_SH_OP		IW_OP_LSB
+#define OP_MASK_OP (IW_OP_MASK << IW_OP_LSB)
+#define OP_SH_OP IW_OP_LSB
 
 /* Masks and shifts for I-type instructions.  */
-#define OP_MASK_IOP		(IW_OP_MASK << IW_OP_LSB)
-#define OP_SH_IOP		IW_OP_LSB
+#define OP_MASK_IOP (IW_OP_MASK << IW_OP_LSB)
+#define OP_SH_IOP IW_OP_LSB
 
-#define OP_MASK_IMM16		(IW_IMM16_MASK << IW_IMM16_LSB)
-#define OP_SH_IMM16		IW_IMM16_LSB
+#define OP_MASK_IMM16 (IW_IMM16_MASK << IW_IMM16_LSB)
+#define OP_SH_IMM16 IW_IMM16_LSB
 
-#define OP_MASK_IRD		(IW_B_MASK << IW_B_LSB)
-#define OP_SH_IRD		IW_B_LSB /* The same as T for I-type.  */
+#define OP_MASK_IRD (IW_B_MASK << IW_B_LSB)
+#define OP_SH_IRD IW_B_LSB /* The same as T for I-type.  */
 
-#define OP_MASK_IRT		(IW_B_MASK << IW_B_LSB)
-#define OP_SH_IRT		IW_B_LSB
+#define OP_MASK_IRT (IW_B_MASK << IW_B_LSB)
+#define OP_SH_IRT IW_B_LSB
 
-#define OP_MASK_IRS		(IW_A_MASK << IW_A_LSB)
-#define OP_SH_IRS		IW_A_LSB
+#define OP_MASK_IRS (IW_A_MASK << IW_A_LSB)
+#define OP_SH_IRS IW_A_LSB
 
 /* Masks and shifts for R-type instructions.  */
-#define OP_MASK_ROP		(IW_OP_MASK << IW_OP_LSB)
-#define OP_SH_ROP		IW_OP_LSB
+#define OP_MASK_ROP (IW_OP_MASK << IW_OP_LSB)
+#define OP_SH_ROP IW_OP_LSB
 
-#define OP_MASK_ROPX		(IW_OPX_MASK << IW_OPX_LSB)
-#define OP_SH_ROPX		IW_OPX_LSB
+#define OP_MASK_ROPX (IW_OPX_MASK << IW_OPX_LSB)
+#define OP_SH_ROPX IW_OPX_LSB
 
-#define OP_MASK_RRD		(IW_C_MASK << IW_C_LSB)
-#define OP_SH_RRD		IW_C_LSB
+#define OP_MASK_RRD (IW_C_MASK << IW_C_LSB)
+#define OP_SH_RRD IW_C_LSB
 
-#define OP_MASK_RRT		(IW_B_MASK << IW_B_LSB)
-#define OP_SH_RRT		IW_B_LSB
+#define OP_MASK_RRT (IW_B_MASK << IW_B_LSB)
+#define OP_SH_RRT IW_B_LSB
 
-#define OP_MASK_RRS		(IW_A_MASK << IW_A_LSB)
-#define OP_SH_RRS		IW_A_LSB
+#define OP_MASK_RRS (IW_A_MASK << IW_A_LSB)
+#define OP_SH_RRS IW_A_LSB
 
 /* Masks and shifts for J-type instructions.  */
-#define OP_MASK_JOP		(IW_OP_MASK << IW_OP_LSB)
-#define OP_SH_JOP		IW_OP_LSB
+#define OP_MASK_JOP (IW_OP_MASK << IW_OP_LSB)
+#define OP_SH_JOP IW_OP_LSB
 
-#define OP_MASK_IMM26		(IW_IMM26_MASK << IW_IMM26_LSB)
-#define OP_SH_IMM26		IW_IMM26_LSB
+#define OP_MASK_IMM26 (IW_IMM26_MASK << IW_IMM26_LSB)
+#define OP_SH_IMM26 IW_IMM26_LSB
 
 /* Masks and shifts for CTL instructions.  */
-#define OP_MASK_RCTL	0x000007c0
-#define OP_SH_RCTL	6
+#define OP_MASK_RCTL 0x000007c0
+#define OP_SH_RCTL 6
 
 /* Break instruction imm5 field.  */
 #define OP_MASK_TRAP_IMM5 0x000007c0
-#define OP_SH_TRAP_IMM5	  6
+#define OP_SH_TRAP_IMM5 6
 
 /* Instruction imm5 field.  */
-#define OP_MASK_IMM5		(IW_SHIFT_IMM5_MASK << IW_SHIFT_IMM5_LSB)
-#define OP_SH_IMM5		IW_SHIFT_IMM5_LSB
+#define OP_MASK_IMM5 (IW_SHIFT_IMM5_MASK << IW_SHIFT_IMM5_LSB)
+#define OP_SH_IMM5 IW_SHIFT_IMM5_LSB
 
 /* Cache operation fields (type j,i(s)).  */
-#define OP_MASK_CACHE_OPX	(IW_B_MASK << IW_B_LSB)
-#define OP_SH_CACHE_OPX		IW_B_LSB
-#define OP_MASK_CACHE_RRS	(IW_A_MASK << IW_A_LSB)
-#define OP_SH_CACHE_RRS		IW_A_LSB
+#define OP_MASK_CACHE_OPX (IW_B_MASK << IW_B_LSB)
+#define OP_SH_CACHE_OPX IW_B_LSB
+#define OP_MASK_CACHE_RRS (IW_A_MASK << IW_A_LSB)
+#define OP_SH_CACHE_RRS IW_A_LSB
 
 /* Custom instruction masks.  */
-#define OP_MASK_CUSTOM_A	0x00010000
-#define OP_SH_CUSTOM_A		16
+#define OP_MASK_CUSTOM_A 0x00010000
+#define OP_SH_CUSTOM_A 16
 
-#define OP_MASK_CUSTOM_B	0x00008000
-#define OP_SH_CUSTOM_B		15
+#define OP_MASK_CUSTOM_B 0x00008000
+#define OP_SH_CUSTOM_B 15
 
-#define OP_MASK_CUSTOM_C	0x00004000
-#define OP_SH_CUSTOM_C		14
+#define OP_MASK_CUSTOM_C 0x00004000
+#define OP_SH_CUSTOM_C 14
 
-#define OP_MASK_CUSTOM_N	0x00003fc0
-#define OP_SH_CUSTOM_N		6
-#define OP_MAX_CUSTOM_N		255
+#define OP_MASK_CUSTOM_N 0x00003fc0
+#define OP_SH_CUSTOM_N 6
+#define OP_MAX_CUSTOM_N 255
 
 /* OP instruction values. */
 #define OP_ADDI 4
@@ -352,152 +347,140 @@ struct nios2_reg
    instruction code & OP_MASK_INST == OP_MATCH_INST.  */
 
 /* OP instruction matches.  */
-#define OP_MATCH_ADDI		OP_ADDI
-#define OP_MATCH_ANDHI		OP_ANDHI
-#define OP_MATCH_ANDI		OP_ANDI
-#define OP_MATCH_BEQ		OP_BEQ
-#define OP_MATCH_BGE		OP_BGE
-#define OP_MATCH_BGEU		OP_BGEU
-#define OP_MATCH_BLT		OP_BLT
-#define OP_MATCH_BLTU		OP_BLTU
-#define OP_MATCH_BNE		OP_BNE
-#define OP_MATCH_BR		OP_BR
-#define OP_MATCH_FLUSHD		OP_FLUSHD
-#define OP_MATCH_FLUSHDA	OP_FLUSHDA
-#define OP_MATCH_INITD		OP_INITD
-#define OP_MATCH_INITDA		OP_INITDA
-#define OP_MATCH_CALL		OP_CALL
-#define OP_MATCH_CMPEQI		OP_CMPEQI
-#define OP_MATCH_CMPGEI		OP_CMPGEI
-#define OP_MATCH_CMPGEUI	OP_CMPGEUI
-#define OP_MATCH_CMPLTI		OP_CMPLTI
-#define OP_MATCH_CMPLTUI	OP_CMPLTUI
-#define OP_MATCH_CMPNEI		OP_CMPNEI
-#define OP_MATCH_JMPI		OP_JMPI
-#define OP_MATCH_LDB		OP_LDB
-#define OP_MATCH_LDBIO		OP_LDBIO
-#define OP_MATCH_LDBU		OP_LDBU
-#define OP_MATCH_LDBUIO		OP_LDBUIO
-#define OP_MATCH_LDH		OP_LDH
-#define OP_MATCH_LDHIO		OP_LDHIO
-#define OP_MATCH_LDHU		OP_LDHU
-#define OP_MATCH_LDHUIO		OP_LDHUIO
-#define OP_MATCH_LDL		OP_LDL
-#define OP_MATCH_LDW		OP_LDW
-#define OP_MATCH_LDWIO		OP_LDWIO
-#define OP_MATCH_MULI		OP_MULI
-#define OP_MATCH_OPX		OP_OPX
-#define OP_MATCH_ORHI		OP_ORHI
-#define OP_MATCH_ORI		OP_ORI
-#define OP_MATCH_RDPRS		OP_RDPRS
-#define OP_MATCH_STB		OP_STB
-#define OP_MATCH_STBIO		OP_STBIO
-#define OP_MATCH_STC		OP_STC
-#define OP_MATCH_STH		OP_STH
-#define OP_MATCH_STHIO		OP_STHIO
-#define OP_MATCH_STW		OP_STW
-#define OP_MATCH_STWIO		OP_STWIO
-#define OP_MATCH_CUSTOM		OP_CUSTOM
-#define OP_MATCH_XORHI		OP_XORHI
-#define OP_MATCH_XORI		OP_XORI
-#define OP_MATCH_OPX		OP_OPX
+#define OP_MATCH_ADDI OP_ADDI
+#define OP_MATCH_ANDHI OP_ANDHI
+#define OP_MATCH_ANDI OP_ANDI
+#define OP_MATCH_BEQ OP_BEQ
+#define OP_MATCH_BGE OP_BGE
+#define OP_MATCH_BGEU OP_BGEU
+#define OP_MATCH_BLT OP_BLT
+#define OP_MATCH_BLTU OP_BLTU
+#define OP_MATCH_BNE OP_BNE
+#define OP_MATCH_BR OP_BR
+#define OP_MATCH_FLUSHD OP_FLUSHD
+#define OP_MATCH_FLUSHDA OP_FLUSHDA
+#define OP_MATCH_INITD OP_INITD
+#define OP_MATCH_INITDA OP_INITDA
+#define OP_MATCH_CALL OP_CALL
+#define OP_MATCH_CMPEQI OP_CMPEQI
+#define OP_MATCH_CMPGEI OP_CMPGEI
+#define OP_MATCH_CMPGEUI OP_CMPGEUI
+#define OP_MATCH_CMPLTI OP_CMPLTI
+#define OP_MATCH_CMPLTUI OP_CMPLTUI
+#define OP_MATCH_CMPNEI OP_CMPNEI
+#define OP_MATCH_JMPI OP_JMPI
+#define OP_MATCH_LDB OP_LDB
+#define OP_MATCH_LDBIO OP_LDBIO
+#define OP_MATCH_LDBU OP_LDBU
+#define OP_MATCH_LDBUIO OP_LDBUIO
+#define OP_MATCH_LDH OP_LDH
+#define OP_MATCH_LDHIO OP_LDHIO
+#define OP_MATCH_LDHU OP_LDHU
+#define OP_MATCH_LDHUIO OP_LDHUIO
+#define OP_MATCH_LDL OP_LDL
+#define OP_MATCH_LDW OP_LDW
+#define OP_MATCH_LDWIO OP_LDWIO
+#define OP_MATCH_MULI OP_MULI
+#define OP_MATCH_OPX OP_OPX
+#define OP_MATCH_ORHI OP_ORHI
+#define OP_MATCH_ORI OP_ORI
+#define OP_MATCH_RDPRS OP_RDPRS
+#define OP_MATCH_STB OP_STB
+#define OP_MATCH_STBIO OP_STBIO
+#define OP_MATCH_STC OP_STC
+#define OP_MATCH_STH OP_STH
+#define OP_MATCH_STHIO OP_STHIO
+#define OP_MATCH_STW OP_STW
+#define OP_MATCH_STWIO OP_STWIO
+#define OP_MATCH_CUSTOM OP_CUSTOM
+#define OP_MATCH_XORHI OP_XORHI
+#define OP_MATCH_XORI OP_XORI
+#define OP_MATCH_OPX OP_OPX
 
 /* OPX instruction values.  */
 #define OPX_MATCH(code) ((code << IW_OPX_LSB) | OP_OPX)
 
-#define OP_MATCH_ADD		OPX_MATCH (OPX_ADD)
-#define OP_MATCH_AND		OPX_MATCH (OPX_AND)
-#define OP_MATCH_BREAK		((0x1e << 17) | OPX_MATCH (OPX_BREAK))
-#define OP_MATCH_BRET		(0xf0000000 | OPX_MATCH (OPX_BRET))
-#define OP_MATCH_CALLR		((0x1f << 17) | OPX_MATCH (OPX_CALLR))
-#define OP_MATCH_CMPEQ		OPX_MATCH (OPX_CMPEQ)
-#define OP_MATCH_CMPGE		OPX_MATCH (OPX_CMPGE)
-#define OP_MATCH_CMPGEU		OPX_MATCH (OPX_CMPGEU)
-#define OP_MATCH_CMPLT		OPX_MATCH (OPX_CMPLT)
-#define OP_MATCH_CMPLTU		OPX_MATCH (OPX_CMPLTU)
-#define OP_MATCH_CMPNE		OPX_MATCH (OPX_CMPNE)
-#define OP_MATCH_DIV		OPX_MATCH (OPX_DIV)
-#define OP_MATCH_DIVU		OPX_MATCH (OPX_DIVU)
-#define OP_MATCH_JMP		OPX_MATCH (OPX_JMP)
-#define OP_MATCH_MUL		OPX_MATCH (OPX_MUL)
-#define OP_MATCH_MULXSS		OPX_MATCH (OPX_MULXSS)
-#define OP_MATCH_MULXSU		OPX_MATCH (OPX_MULXSU)
-#define OP_MATCH_MULXUU		OPX_MATCH (OPX_MULXUU)
-#define OP_MATCH_NEXTPC		OPX_MATCH (OPX_NEXTPC)
-#define OP_MATCH_NOR		OPX_MATCH (OPX_NOR)
-#define OP_MATCH_OR		OPX_MATCH (OPX_OR)
-#define OP_MATCH_RDCTL		OPX_MATCH (OPX_RDCTL)
-#define OP_MATCH_RET		(0xf8000000 | OPX_MATCH (OPX_RET))
-#define OP_MATCH_ROL		OPX_MATCH (OPX_ROL)
-#define OP_MATCH_ROLI		OPX_MATCH (OPX_ROLI)
-#define OP_MATCH_ROR		OPX_MATCH (OPX_ROR)
-#define OP_MATCH_SLL		OPX_MATCH (OPX_SLL)
-#define OP_MATCH_SLLI		OPX_MATCH (OPX_SLLI)
-#define OP_MATCH_SRA		OPX_MATCH (OPX_SRA)
-#define OP_MATCH_SRAI		OPX_MATCH (OPX_SRAI)
-#define OP_MATCH_SRL		OPX_MATCH (OPX_SRL)
-#define OP_MATCH_SRLI		OPX_MATCH (OPX_SRLI)
-#define OP_MATCH_SUB		OPX_MATCH (OPX_SUB)
-#define OP_MATCH_SYNC		OPX_MATCH (OPX_SYNC)
-#define OP_MATCH_TRAP		((0x1d << 17) | OPX_MATCH (OPX_TRAP))
-#define OP_MATCH_ERET		(0xef800000 | OPX_MATCH (OPX_ERET))
-#define OP_MATCH_WRCTL		OPX_MATCH (OPX_WRCTL)
-#define OP_MATCH_WRPRS		OPX_MATCH (OPX_WRPRS)
-#define OP_MATCH_XOR		OPX_MATCH (OPX_XOR)
-#define OP_MATCH_FLUSHI		OPX_MATCH (OPX_FLUSHI)
-#define OP_MATCH_FLUSHP		OPX_MATCH (OPX_FLUSHP)
-#define OP_MATCH_INITI		OPX_MATCH (OPX_INITI)
+#define OP_MATCH_ADD OPX_MATCH (OPX_ADD)
+#define OP_MATCH_AND OPX_MATCH (OPX_AND)
+#define OP_MATCH_BREAK ((0x1e << 17) | OPX_MATCH (OPX_BREAK))
+#define OP_MATCH_BRET (0xf0000000 | OPX_MATCH (OPX_BRET))
+#define OP_MATCH_CALLR ((0x1f << 17) | OPX_MATCH (OPX_CALLR))
+#define OP_MATCH_CMPEQ OPX_MATCH (OPX_CMPEQ)
+#define OP_MATCH_CMPGE OPX_MATCH (OPX_CMPGE)
+#define OP_MATCH_CMPGEU OPX_MATCH (OPX_CMPGEU)
+#define OP_MATCH_CMPLT OPX_MATCH (OPX_CMPLT)
+#define OP_MATCH_CMPLTU OPX_MATCH (OPX_CMPLTU)
+#define OP_MATCH_CMPNE OPX_MATCH (OPX_CMPNE)
+#define OP_MATCH_DIV OPX_MATCH (OPX_DIV)
+#define OP_MATCH_DIVU OPX_MATCH (OPX_DIVU)
+#define OP_MATCH_JMP OPX_MATCH (OPX_JMP)
+#define OP_MATCH_MUL OPX_MATCH (OPX_MUL)
+#define OP_MATCH_MULXSS OPX_MATCH (OPX_MULXSS)
+#define OP_MATCH_MULXSU OPX_MATCH (OPX_MULXSU)
+#define OP_MATCH_MULXUU OPX_MATCH (OPX_MULXUU)
+#define OP_MATCH_NEXTPC OPX_MATCH (OPX_NEXTPC)
+#define OP_MATCH_NOR OPX_MATCH (OPX_NOR)
+#define OP_MATCH_OR OPX_MATCH (OPX_OR)
+#define OP_MATCH_RDCTL OPX_MATCH (OPX_RDCTL)
+#define OP_MATCH_RET (0xf8000000 | OPX_MATCH (OPX_RET))
+#define OP_MATCH_ROL OPX_MATCH (OPX_ROL)
+#define OP_MATCH_ROLI OPX_MATCH (OPX_ROLI)
+#define OP_MATCH_ROR OPX_MATCH (OPX_ROR)
+#define OP_MATCH_SLL OPX_MATCH (OPX_SLL)
+#define OP_MATCH_SLLI OPX_MATCH (OPX_SLLI)
+#define OP_MATCH_SRA OPX_MATCH (OPX_SRA)
+#define OP_MATCH_SRAI OPX_MATCH (OPX_SRAI)
+#define OP_MATCH_SRL OPX_MATCH (OPX_SRL)
+#define OP_MATCH_SRLI OPX_MATCH (OPX_SRLI)
+#define OP_MATCH_SUB OPX_MATCH (OPX_SUB)
+#define OP_MATCH_SYNC OPX_MATCH (OPX_SYNC)
+#define OP_MATCH_TRAP ((0x1d << 17) | OPX_MATCH (OPX_TRAP))
+#define OP_MATCH_ERET (0xef800000 | OPX_MATCH (OPX_ERET))
+#define OP_MATCH_WRCTL OPX_MATCH (OPX_WRCTL)
+#define OP_MATCH_WRPRS OPX_MATCH (OPX_WRPRS)
+#define OP_MATCH_XOR OPX_MATCH (OPX_XOR)
+#define OP_MATCH_FLUSHI OPX_MATCH (OPX_FLUSHI)
+#define OP_MATCH_FLUSHP OPX_MATCH (OPX_FLUSHP)
+#define OP_MATCH_INITI OPX_MATCH (OPX_INITI)
 
 /* Some unusual op masks.  */
-#define OP_MASK_BREAK		((OP_MASK_RRS | OP_MASK_RRT | OP_MASK_RRD \
-				  | OP_MASK_ROPX | OP_MASK_OP) \
-				 & 0xfffff03f)
-#define OP_MASK_CALLR		((OP_MASK_RRT | OP_MASK_RRD | OP_MASK_ROPX \
-				  | OP_MASK_OP))
-#define OP_MASK_JMP		((OP_MASK_RRT | OP_MASK_RRD | OP_MASK_ROPX \
-				  | OP_MASK_OP))
-#define OP_MASK_SYNC		((OP_MASK_RRT | OP_MASK_RRD | OP_MASK_ROPX \
-				  | OP_MASK_OP))
-#define OP_MASK_TRAP		((OP_MASK_RRS | OP_MASK_RRT | OP_MASK_RRD \
-				  | OP_MASK_ROPX | OP_MASK_OP) \
-				 & 0xfffff83f)
-#define OP_MASK_WRCTL		((OP_MASK_RRT | OP_MASK_RRD | OP_MASK_ROPX \
-				  | OP_MASK_OP))	/*& 0xfffff83f */
-#define OP_MASK_NEXTPC		((OP_MASK_RRS | OP_MASK_RRT | OP_MASK_ROPX \
-				  | OP_MASK_OP))
-#define OP_MASK_FLUSHI		((OP_MASK_RRT | OP_MASK_RRD | OP_MASK_ROPX \
-				  | OP_MASK_OP))
-#define OP_MASK_INITI		((OP_MASK_RRT | OP_MASK_RRD | OP_MASK_ROPX \
-				  | OP_MASK_OP))
+#define OP_MASK_BREAK ((OP_MASK_RRS | OP_MASK_RRT | OP_MASK_RRD | OP_MASK_ROPX | OP_MASK_OP) & 0xfffff03f)
+#define OP_MASK_CALLR ((OP_MASK_RRT | OP_MASK_RRD | OP_MASK_ROPX | OP_MASK_OP))
+#define OP_MASK_JMP ((OP_MASK_RRT | OP_MASK_RRD | OP_MASK_ROPX | OP_MASK_OP))
+#define OP_MASK_SYNC ((OP_MASK_RRT | OP_MASK_RRD | OP_MASK_ROPX | OP_MASK_OP))
+#define OP_MASK_TRAP ((OP_MASK_RRS | OP_MASK_RRT | OP_MASK_RRD | OP_MASK_ROPX | OP_MASK_OP) & 0xfffff83f)
+#define OP_MASK_WRCTL ((OP_MASK_RRT | OP_MASK_RRD | OP_MASK_ROPX | OP_MASK_OP)) /*& 0xfffff83f */
+#define OP_MASK_NEXTPC ((OP_MASK_RRS | OP_MASK_RRT | OP_MASK_ROPX | OP_MASK_OP))
+#define OP_MASK_FLUSHI ((OP_MASK_RRT | OP_MASK_RRD | OP_MASK_ROPX | OP_MASK_OP))
+#define OP_MASK_INITI ((OP_MASK_RRT | OP_MASK_RRD | OP_MASK_ROPX | OP_MASK_OP))
 
-#define OP_MASK_ROLI		((OP_MASK_RRT | OP_MASK_ROPX | OP_MASK_OP))
-#define OP_MASK_SLLI		((OP_MASK_RRT | OP_MASK_ROPX | OP_MASK_OP))
-#define OP_MASK_SRAI		((OP_MASK_RRT | OP_MASK_ROPX | OP_MASK_OP))
-#define OP_MASK_SRLI		((OP_MASK_RRT | OP_MASK_ROPX | OP_MASK_OP))
-#define OP_MASK_RDCTL		((OP_MASK_RRS | OP_MASK_RRT | OP_MASK_ROPX \
-				  | OP_MASK_OP))	/*& 0xfffff83f */
+#define OP_MASK_ROLI ((OP_MASK_RRT | OP_MASK_ROPX | OP_MASK_OP))
+#define OP_MASK_SLLI ((OP_MASK_RRT | OP_MASK_ROPX | OP_MASK_OP))
+#define OP_MASK_SRAI ((OP_MASK_RRT | OP_MASK_ROPX | OP_MASK_OP))
+#define OP_MASK_SRLI ((OP_MASK_RRT | OP_MASK_ROPX | OP_MASK_OP))
+#define OP_MASK_RDCTL ((OP_MASK_RRS | OP_MASK_RRT | OP_MASK_ROPX | OP_MASK_OP)) /*& 0xfffff83f */
 
 #ifndef OP_MASK
-#define OP_MASK				0xffffffff
+#define OP_MASK 0xffffffff
 #endif
 
 /* These convenience macros to extract instruction fields are used by GDB.  */
 #define GET_IW_A(Iw) \
-    (((Iw) >> IW_A_LSB) & IW_A_MASK)
+	(((Iw) >> IW_A_LSB) & IW_A_MASK)
 #define GET_IW_B(Iw) \
-    (((Iw) >> IW_B_LSB) & IW_B_MASK)
+	(((Iw) >> IW_B_LSB) & IW_B_MASK)
 #define GET_IW_C(Iw) \
-    (((Iw) >> IW_C_LSB) & IW_C_MASK)
+	(((Iw) >> IW_C_LSB) & IW_C_MASK)
 #define GET_IW_CONTROL_REGNUM(Iw) \
-    (((Iw) >> IW_CONTROL_REGNUM_LSB) & IW_CONTROL_REGNUM_MASK)
+	(((Iw) >> IW_CONTROL_REGNUM_LSB) & IW_CONTROL_REGNUM_MASK)
 #define GET_IW_IMM16(Iw) \
-    (((Iw) >> IW_IMM16_LSB) & IW_IMM16_MASK)
+	(((Iw) >> IW_IMM16_LSB) & IW_IMM16_MASK)
 #define GET_IW_IMM26(Iw) \
-    (((Iw) >> IW_IMM26_LSB) & IW_IMM26_MASK)
+	(((Iw) >> IW_IMM26_LSB) & IW_IMM26_MASK)
 #define GET_IW_OP(Iw) \
-    (((Iw) >> IW_OP_LSB) & IW_OP_MASK)
+	(((Iw) >> IW_OP_LSB) & IW_OP_MASK)
 #define GET_IW_OPX(Iw) \
-    (((Iw) >> IW_OPX_LSB) & IW_OPX_MASK)
+	(((Iw) >> IW_OPX_LSB) & IW_OPX_MASK)
 
 /* These are the data structures we use to hold the instruction information.  */
 extern const struct nios2_opcode nios2_builtin_opcodes[];

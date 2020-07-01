@@ -12,58 +12,57 @@ typedef struct {
 	ut64 offset;
 } RIOMalloc;
 
-static inline ut32 _io_malloc_sz(RIODesc *desc) {
+static inline ut32 _io_malloc_sz (RIODesc *desc) {
 	if (!desc) {
 		return 0;
 	}
-	RIOMalloc *mal = (RIOMalloc*)desc->data;
-	return mal? mal->size: 0;
+	RIOMalloc *mal = (RIOMalloc *)desc->data;
+	return mal ? mal->size : 0;
 }
 
-static inline void _io_malloc_set_sz(RIODesc *desc, ut32 sz) {
+static inline void _io_malloc_set_sz (RIODesc *desc, ut32 sz) {
 	if (!desc) {
 		return;
 	}
-	RIOMalloc *mal = (RIOMalloc*)desc->data;
+	RIOMalloc *mal = (RIOMalloc *)desc->data;
 	if (mal) {
 		mal->size = sz;
 	}
 }
 
-static inline ut8* _io_malloc_buf(RIODesc *desc) {
+static inline ut8 *_io_malloc_buf (RIODesc *desc) {
 	if (!desc) {
 		return NULL;
 	}
-	RIOMalloc *mal = (RIOMalloc*)desc->data;
+	RIOMalloc *mal = (RIOMalloc *)desc->data;
 	return mal->buf;
 }
 
-
-static inline ut8* _io_malloc_set_buf(RIODesc *desc, ut8* buf) {
+static inline ut8 *_io_malloc_set_buf (RIODesc *desc, ut8 *buf) {
 	if (!desc) {
 		return NULL;
 	}
-	RIOMalloc *mal = (RIOMalloc*)desc->data;
+	RIOMalloc *mal = (RIOMalloc *)desc->data;
 	return mal->buf = buf;
 }
 
-static inline ut64 _io_malloc_off(RIODesc *desc) {
+static inline ut64 _io_malloc_off (RIODesc *desc) {
 	if (!desc) {
 		return 0;
 	}
-	RIOMalloc *mal = (RIOMalloc*)desc->data;
+	RIOMalloc *mal = (RIOMalloc *)desc->data;
 	return mal->offset;
 }
 
-static inline void _io_malloc_set_off(RIODesc *desc, ut64 off) {
+static inline void _io_malloc_set_off (RIODesc *desc, ut64 off) {
 	if (!desc) {
 		return;
 	}
-	RIOMalloc *mal = (RIOMalloc*)desc->data;
+	RIOMalloc *mal = (RIOMalloc *)desc->data;
 	mal->offset = off;
 }
 
-static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
+static int __write (RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (!fd || !buf || count < 0 || !fd->data) {
 		return -1;
 	}
@@ -71,7 +70,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		return -1;
 	}
 	if (_io_malloc_off (fd) + count > _io_malloc_sz (fd)) {
-		count -= (_io_malloc_off (fd) + count -_io_malloc_sz (fd));
+		count -= (_io_malloc_off (fd) + count - _io_malloc_sz (fd));
 	}
 	if (count > 0) {
 		memcpy (_io_malloc_buf (fd) + _io_malloc_off (fd), buf, count);
@@ -81,8 +80,8 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	return -1;
 }
 
-static bool __resize(RIO *io, RIODesc *fd, ut64 count) {
-	ut8 * new_buf = NULL;
+static bool __resize (RIO *io, RIODesc *fd, ut64 count) {
+	ut8 *new_buf = NULL;
 	if (!fd || !fd->data || count == 0) {
 		return false;
 	}
@@ -104,7 +103,7 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 count) {
 	return true;
 }
 
-static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
+static int __read (RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	memset (buf, 0xff, count);
 	if (!fd || !fd->data) {
 		return -1;
@@ -121,7 +120,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return count;
 }
 
-static int __close(RIODesc *fd) {
+static int __close (RIODesc *fd) {
 	RIOMalloc *riom;
 	if (!fd || !fd->data) {
 		return -1;
@@ -132,7 +131,7 @@ static int __close(RIODesc *fd) {
 	return 0;
 }
 
-static ut64 __lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 __lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	ut64 r_offset = offset;
 	if (!fd || !fd->data) {
 		return offset;
@@ -143,7 +142,7 @@ static ut64 __lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {
 		r_offset = (offset <= mallocsz) ? offset : mallocsz;
 		break;
 	case SEEK_CUR:
-		r_offset = (_io_malloc_off (fd) + offset <= mallocsz ) ? _io_malloc_off (fd) + offset : mallocsz;
+		r_offset = (_io_malloc_off (fd) + offset <= mallocsz) ? _io_malloc_off (fd) + offset : mallocsz;
 		break;
 	case SEEK_END:
 		r_offset = _io_malloc_sz (fd);
@@ -153,11 +152,11 @@ static ut64 __lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {
 	return r_offset;
 }
 
-static bool __check(RIO *io, const char *pathname, bool many) {
+static bool __check (RIO *io, const char *pathname, bool many) {
 	return (!strncmp (pathname, "malloc://", 9)) || (!strncmp (pathname, "hex://", 6));
 }
 
-static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
+static RIODesc *__open (RIO *io, const char *pathname, int rw, int mode) {
 	if (__check (io, pathname, 0)) {
 		RIOMalloc *mal = R_NEW0 (RIOMalloc);
 		if (!strncmp (pathname, "hex://", 6)) {

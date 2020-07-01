@@ -3,7 +3,7 @@
 #include <r_bin.h>
 #include "../i/private.h"
 
-R_API char *r_bin_demangle_objc(RBinFile *bf, const char *sym) {
+R_API char *r_bin_demangle_objc (RBinFile *bf, const char *sym) {
 	r_return_val_if_fail ((!bf || (bf && bf->o && bf->o->classes)) && sym, NULL);
 	char *ret = NULL;
 	char *clas = NULL;
@@ -61,15 +61,15 @@ R_API char *r_bin_demangle_objc(RBinFile *bf, const char *sym) {
 			if (name) {
 				*name++ = 0;
 				name = strdup (name);
-				if (!name){
+				if (!name) {
 					free (clas);
 					return NULL;
 				}
 				for (i = 0; name[i]; i++) {
-					if (name[i]==']') {
+					if (name[i] == ']') {
 						name[i] = 0;
 					}
-					if (name[i]==':') {
+					if (name[i] == ':') {
 						nargs++;
 						name[i] = 0;
 					}
@@ -116,7 +116,7 @@ R_API char *r_bin_demangle_objc(RBinFile *bf, const char *sym) {
 				const char *arg = "int";
 				args = malloc (((strlen (arg) + 4) * nargs) + 1);
 				args[0] = 0;
-				for (i = 0;i < nargs; i++) {
+				for (i = 0; i < nargs; i++) {
 					strcat (args, arg);
 					if (i + 1 < nargs) {
 						strcat (args, ", ");

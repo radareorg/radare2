@@ -4,7 +4,7 @@
 
 #define MAXSTRLEN 50
 
-static void set_fcn_args_info(RAnalFuncArg *arg, RAnal *anal, const char *fcn_name, const char *cc, int arg_num) {
+static void set_fcn_args_info (RAnalFuncArg *arg, RAnal *anal, const char *fcn_name, const char *cc, int arg_num) {
 	if (!fcn_name || !arg || !anal) {
 		return;
 	}
@@ -27,7 +27,7 @@ static void set_fcn_args_info(RAnalFuncArg *arg, RAnal *anal, const char *fcn_na
 	arg->cc_source = r_anal_cc_arg (anal, cc, arg_num);
 }
 
-R_API char *resolve_fcn_name(RAnal *anal, const char *func_name) {
+R_API char *resolve_fcn_name (RAnal *anal, const char *func_name) {
 	const char *str = func_name;
 	const char *name = func_name;
 	if (r_type_func_exist (anal->sdb_types, func_name)) {
@@ -40,28 +40,28 @@ R_API char *resolve_fcn_name(RAnal *anal, const char *func_name) {
 	if (r_type_func_exist (anal->sdb_types, name)) {
 		return strdup (name);
 	}
-	return r_type_func_guess (anal->sdb_types, (char*)func_name);
+	return r_type_func_guess (anal->sdb_types, (char *)func_name);
 }
 
-static ut64 get_buf_val(ut8 *buf, int endian, int width) {
-	return (width == 8)? r_read_ble64 (buf, endian) : (ut64) r_read_ble32 (buf,endian);
+static ut64 get_buf_val (ut8 *buf, int endian, int width) {
+	return (width == 8) ? r_read_ble64 (buf, endian) : (ut64)r_read_ble32 (buf, endian);
 }
 
-static void print_arg_str(int argcnt, const char *name, bool color) {
+static void print_arg_str (int argcnt, const char *name, bool color) {
 	if (color) {
-		r_cons_printf (Color_BYELLOW" arg [%d]"Color_RESET" -"Color_BCYAN" %s"Color_RESET" : ",
-				argcnt, name);
+		r_cons_printf (Color_BYELLOW " arg [%d]" Color_RESET " -" Color_BCYAN " %s" Color_RESET " : ",
+			argcnt, name);
 	} else {
 		r_cons_printf (" arg [%d] -  %s : ", argcnt, name);
 	}
 }
 
-static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64 src, bool color) {
+static void print_format_values (RCore *core, const char *fmt, bool onstack, ut64 src, bool color) {
 	char opt;
 	ut64 bval = src;
 	int i;
 	int endian = core->print->big_endian;
-	int width = (core->anal->bits == 64)? 8: 4;
+	int width = (core->anal->bits == 64) ? 8 : 4;
 	int bsize = R_MIN (64, core->blocksize);
 
 	ut8 *buf = malloc (bsize);
@@ -77,9 +77,9 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 	}
 	if (onstack || ((opt != 'd' && opt != 'x') && !onstack)) {
 		if (color) {
-			r_cons_printf (Color_BGREEN"0x%08"PFMT64x Color_RESET" --> ", bval);
+			r_cons_printf (Color_BGREEN "0x%08" PFMT64x Color_RESET " --> ", bval);
 		} else {
-			r_cons_printf ("0x%08"PFMT64x" --> ", bval);
+			r_cons_printf ("0x%08" PFMT64x " --> ", bval);
 		}
 		r_io_read_at (core->io, bval, buf, bsize);
 	}
@@ -89,10 +89,10 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 			r_io_read_at (core->io, bval, buf, bsize); // update buf with val from stack
 		}
 	}
-	r_cons_print (color? Color_BGREEN: "");
+	r_cons_print (color ? Color_BGREEN : "");
 	switch (opt) {
-	case 'z' : // Null terminated string
-		r_cons_print (color ?Color_RESET Color_BWHITE:"");
+	case 'z': // Null terminated string
+		r_cons_print (color ? Color_RESET Color_BWHITE : "");
 		r_cons_print ("\"");
 		for (i = 0; i < MAXSTRLEN; i++) {
 			if (buf[i] == '\0') {
@@ -105,18 +105,18 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 				r_cons_printf ("\\x%02x", b);
 			}
 			if (i == MAXSTRLEN - 1) {
-				 r_cons_print ("..."); // To show string is truncated
+				r_cons_print ("..."); // To show string is truncated
 			}
 		}
 		r_cons_print ("\"");
 		r_cons_newline ();
 		break;
-	case 'd' : // integer
-	case 'x' :
+	case 'd': // integer
+	case 'x':
 		r_cons_printf ("0x%08" PFMT64x, bval);
 		r_cons_newline ();
 		break;
-	case 'c' : // char
+	case 'c': // char
 		r_cons_print ("\'");
 		ut8 ch = buf[0];
 		if (IS_PRINTABLE (ch)) {
@@ -127,13 +127,13 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 		r_cons_print ("\'");
 		r_cons_newline ();
 		break;
-	case 'p' : // pointer
-		{
+	case 'p': // pointer
+	{
 		// Try to deref the pointer once again
-		r_cons_printf ("0x%08"PFMT64x, get_buf_val (buf, endian, width));
+		r_cons_printf ("0x%08" PFMT64x, get_buf_val (buf, endian, width));
 		r_cons_newline ();
 		break;
-		}
+	}
 	default:
 		//TODO: support types like structs and unions
 		r_cons_println ("unk_format");
@@ -144,7 +144,7 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 
 /* This function display list of arg with some colors */
 
-R_API void r_core_print_func_args(RCore *core) {
+R_API void r_core_print_func_args (RCore *core) {
 	RListIter *iter;
 	bool color = r_config_get_i (core->config, "scr.color");
 	if (!core->anal) {
@@ -193,13 +193,13 @@ R_API void r_core_print_func_args(RCore *core) {
 		} else {
 			int nargs = 4; // TODO: use a correct value here when available
 			//if (nargs > 0) {
-				int i;
-				for (i = 0; i < nargs; i++) {
-					ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_STDCALL, i);
-					print_arg_str (i, "", color);
-					r_cons_printf ("0x%08" PFMT64x, v);
-					r_cons_newline ();
-				}
+			int i;
+			for (i = 0; i < nargs; i++) {
+				ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_STDCALL, i);
+				print_arg_str (i, "", color);
+				r_cons_printf ("0x%08" PFMT64x, v);
+				r_cons_newline ();
+			}
 			//} else {
 			//	print_arg_str (0, "void", color);
 			//}
@@ -208,7 +208,7 @@ R_API void r_core_print_func_args(RCore *core) {
 	r_anal_op_fini (op);
 }
 
-static void r_anal_fcn_arg_free(RAnalFuncArg *arg) {
+static void r_anal_fcn_arg_free (RAnalFuncArg *arg) {
 	if (!arg) {
 		return;
 	}
@@ -217,7 +217,7 @@ static void r_anal_fcn_arg_free(RAnalFuncArg *arg) {
 }
 
 /* Returns a list of RAnalFuncArg */
-R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
+R_API RList *r_core_get_func_args (RCore *core, const char *fcn_name) {
 	if (!fcn_name || !core->anal) {
 		return NULL;
 	}
@@ -229,7 +229,7 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 	}
 	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 	int nargs = r_type_func_args_count (TDB, key);
-	if (!r_anal_cc_func (core->anal, key)){
+	if (!r_anal_cc_func (core->anal, key)) {
 		return NULL;
 	}
 	char *cc = strdup (r_anal_cc_func (core->anal, key));
@@ -241,13 +241,13 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 	}
 	int i;
 	ut64 spv = r_reg_getv (core->anal->reg, sp);
-	ut64 s_width = (core->anal->bits == 64)? 8: 4;
+	ut64 s_width = (core->anal->bits == 64) ? 8 : 4;
 	if (src && !strcmp (src, "stack_rev")) {
 		for (i = nargs - 1; i >= 0; i--) {
 			RAnalFuncArg *arg = R_NEW0 (RAnalFuncArg);
 			set_fcn_args_info (arg, core->anal, key, cc, i);
 			arg->src = spv;
-			spv += arg->size? arg->size : s_width;
+			spv += arg->size ? arg->size : s_width;
 			r_list_append (list, arg);
 		}
 	} else {

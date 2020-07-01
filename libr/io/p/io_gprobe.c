@@ -26,7 +26,7 @@
 #include <windows.h>
 #else
 
-#if __linux__ ||  __APPLE__ || __OpenBSD__ || __FreeBSD__ || __NetBSD__ || __DragonFly__ || __HAIKU__
+#if __linux__ || __APPLE__ || __OpenBSD__ || __FreeBSD__ || __NetBSD__ || __DragonFly__ || __HAIKU__
 #include <sys/ioctl.h>
 #include <termios.h>
 #else
@@ -93,9 +93,9 @@ static ut8 gprobe_checksum_i2c (const ut8 *p, unsigned int size, ut8 initial) {
 	return res;
 }
 
-static void gprobe_frame_i2c(RBuffer *frame) {
+static void gprobe_frame_i2c (RBuffer *frame) {
 	ut8 size = r_buf_size (frame) + 1;
-	ut8 header[] = {0x51, 0x80 + size + 3, 0xc2, 0x00, 0x00};
+	ut8 header[] = { 0x51, 0x80 + size + 3, 0xc2, 0x00, 0x00 };
 
 	r_buf_prepend_bytes (frame, &size, 1);
 	r_buf_prepend_bytes (frame, header, sizeof (header));
@@ -107,7 +107,7 @@ static void gprobe_frame_i2c(RBuffer *frame) {
 	r_buf_append_bytes (frame, &checksum, 1);
 }
 
-static int gprobe_get_reply_i2c(struct gport *port, ut8 cmd, RBuffer *reply) {
+static int gprobe_get_reply_i2c (struct gport *port, ut8 cmd, RBuffer *reply) {
 	ut8 buf[131];
 	int count;
 	int ddc2bi3_len;
@@ -124,14 +124,7 @@ static int gprobe_get_reply_i2c(struct gport *port, ut8 cmd, RBuffer *reply) {
 
 	ddc2bi3_len = buf[1] & ~0x80;
 
-	if (((buf[0] & 0xfe) != GPROBE_I2C_ADDR)
-	    || !(buf[1] & 0x80)
-	    || (buf[2] != 0xc2)
-	    || (buf[3] != 0x00)
-	    || (buf[4] != 0x00)
-	    || (cmd != buf[6])
-	    || !(buf[5] - 2)
-	    || (buf[5] != ddc2bi3_len - 2)) {
+	if (((buf[0] & 0xfe) != GPROBE_I2C_ADDR) || !(buf[1] & 0x80) || (buf[2] != 0xc2) || (buf[3] != 0x00) || (buf[4] != 0x00) || (cmd != buf[6]) || !(buf[5] - 2) || (buf[5] != ddc2bi3_len - 2)) {
 		return -1;
 	}
 
@@ -146,7 +139,7 @@ static int gprobe_get_reply_i2c(struct gport *port, ut8 cmd, RBuffer *reply) {
 	return 0;
 }
 
-static int gprobe_send_request_i2c(struct gport *port, RBuffer *request) {
+static int gprobe_send_request_i2c (struct gport *port, RBuffer *request) {
 	ut64 tmpsz;
 	const ut8 *tmp = r_buf_data (request, &tmpsz);
 	if (write (port->fd, tmp, tmpsz) != r_buf_size (request)) {
@@ -155,7 +148,7 @@ static int gprobe_send_request_i2c(struct gport *port, RBuffer *request) {
 	return 0;
 }
 
-static int i2c_open(struct gport *port) {
+static int i2c_open (struct gport *port) {
 	char *end, filename[32];
 	int i2cbus = strtol (port->name + 4, &end, 0);
 
@@ -184,10 +177,10 @@ static int i2c_open(struct gport *port) {
 }
 #endif
 
-static int sp_close(struct gport *port) {
+static int sp_close (struct gport *port) {
 #if __WINDOWS__
 	/* Returns non-zero upon success, 0 upon failure. */
-	if (CloseHandle (port->hdl) == 0){
+	if (CloseHandle (port->hdl) == 0) {
 		return -1;
 	}
 	port->hdl = INVALID_HANDLE_VALUE;
@@ -220,7 +213,7 @@ static int restart_wait (struct gport *port) {
 	if (port->wait_running) {
 		/* Check status of running wait operation. */
 		if (GetOverlappedResult (port->hdl, &port->wait_ovl,
-					 &wait_result, FALSE)) {
+			    &wait_result, FALSE)) {
 			port->wait_running = FALSE;
 		} else if (GetLastError () == ERROR_IO_INCOMPLETE) {
 			return 0;
@@ -230,7 +223,7 @@ static int restart_wait (struct gport *port) {
 	if (!port->wait_running) {
 		/* Start new wait operation. */
 		if (WaitCommEvent (port->hdl, &port->events,
-				   &port->wait_ovl)) {
+			    &port->wait_ovl)) {
 		} else if (GetLastError () == ERROR_IO_PENDING) {
 			port->wait_running = TRUE;
 		}
@@ -258,8 +251,8 @@ static int sp_open (struct gport *port) {
 	filename_ = r_sys_conv_utf8_to_win (escaped_port_name);
 
 	port->hdl = CreateFile (filename_, GENERIC_READ | GENERIC_WRITE, 0, 0,
-				OPEN_EXISTING,
-				FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, 0);
+		OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, 0);
 
 	free (escaped_port_name);
 
@@ -338,7 +331,7 @@ static int sp_open (struct gport *port) {
 
 	return 0;
 #else
-	struct termios tty = {0};
+	struct termios tty = { 0 };
 
 	if ((port->fd = r_sandbox_open (port->name, O_NONBLOCK | O_NOCTTY | O_RDWR, 0)) < 0) {
 		return -1;
@@ -402,14 +395,14 @@ static int restart_wait_if_needed (struct gport *port, unsigned int bytes_read) 
 #endif
 
 static int sp_blocking_read (struct gport *port, void *buf,
-			     size_t count, unsigned int timeout_ms) {
+	size_t count, unsigned int timeout_ms) {
 #if __WINDOWS__
 	DWORD bytes_read = 0;
 
 	/* Set timeout. */
 	if (port->timeouts.ReadIntervalTimeout != 0 ||
-	    port->timeouts.ReadTotalTimeoutMultiplier != 0 ||
-	    port->timeouts.ReadTotalTimeoutConstant != timeout_ms) {
+		port->timeouts.ReadTotalTimeoutMultiplier != 0 ||
+		port->timeouts.ReadTotalTimeoutConstant != timeout_ms) {
 		port->timeouts.ReadIntervalTimeout = 0;
 		port->timeouts.ReadTotalTimeoutMultiplier = 0;
 		port->timeouts.ReadTotalTimeoutConstant = timeout_ms;
@@ -436,7 +429,7 @@ static int sp_blocking_read (struct gport *port, void *buf,
 #else
 	size_t bytes_read = 0;
 	unsigned char *ptr = (unsigned char *)buf;
-	struct timeval start, delta, now, end = {0, 0};
+	struct timeval start, delta, now, end = { 0, 0 };
 	int started = 0;
 	fd_set fds;
 	int result;
@@ -544,7 +537,7 @@ static int await_write_completion (struct gport *port) {
 #endif
 
 static int sp_blocking_write (struct gport *port, const void *buf,
-			      size_t count, unsigned int timeout_ms) {
+	size_t count, unsigned int timeout_ms) {
 #if __WINDOWS__
 	DWORD bytes_written = 0;
 
@@ -577,7 +570,7 @@ static int sp_blocking_write (struct gport *port, const void *buf,
 #else
 	size_t bytes_written = 0;
 	unsigned char *ptr = (unsigned char *)buf;
-	struct timeval start, delta, now, end = {0, 0};
+	struct timeval start, delta, now, end = { 0, 0 };
 	int started = 0;
 	fd_set fds;
 	int result;
@@ -657,7 +650,7 @@ static ut8 gprobe_checksum (const ut8 *p, unsigned int size) {
 	return res;
 }
 
-static void gprobe_frame_sp(RBuffer *frame) {
+static void gprobe_frame_sp (RBuffer *frame) {
 	ut64 size;
 	const ut8 *tmp = r_buf_data (frame, &size);
 	size += 2;
@@ -669,7 +662,7 @@ static void gprobe_frame_sp(RBuffer *frame) {
 	r_buf_append_bytes (frame, &checksum, 1);
 }
 
-static int gprobe_get_reply_sp(struct gport *port, ut8 cmd, RBuffer *reply) {
+static int gprobe_get_reply_sp (struct gport *port, ut8 cmd, RBuffer *reply) {
 	ut8 buf[256];
 	int count = sp_blocking_read (port, buf, 2, 50);
 
@@ -703,7 +696,7 @@ static int gprobe_get_reply_sp(struct gport *port, ut8 cmd, RBuffer *reply) {
 	return 0;
 }
 
-static int gprobe_send_request_sp(struct gport *port, RBuffer *request) {
+static int gprobe_send_request_sp (struct gport *port, RBuffer *request) {
 	sp_flush (port);
 
 	ut64 tmpsz;
@@ -715,7 +708,7 @@ static int gprobe_send_request_sp(struct gport *port, RBuffer *request) {
 	return 0;
 }
 
-static int gprobe_read(struct gport *port, ut32 addr, ut8 *buf, ut32 count) {
+static int gprobe_read (struct gport *port, ut32 addr, ut8 *buf, ut32 count) {
 	RBuffer *request = r_buf_new ();
 	RBuffer *reply = r_buf_new ();
 	const ut8 cmd = GPROBE_RAM_READ_2;
@@ -1023,7 +1016,7 @@ fail:
 	return -1;
 }
 
-static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
+static int __write (RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	RIOGprobe *gprobe;
 	int res;
 	int has_written = 0;
@@ -1245,5 +1238,6 @@ RIOPlugin r_io_plugin_gprobe = {
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_gprobe,
-	.version = R2_VERSION};
+	.version = R2_VERSION
+};
 #endif

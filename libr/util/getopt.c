@@ -7,11 +7,11 @@
 
 #include <r_util.h>
 
-#define	BADCH	(int)'?'
-#define	BADARG	(int)':'
-#define	EMSG	""
+#define BADCH (int)'?'
+#define BADARG (int)':'
+#define EMSG ""
 
-R_API void r_getopt_init(RGetopt *opt, int argc, const char **argv, const char *ostr) {
+R_API void r_getopt_init (RGetopt *opt, int argc, const char **argv, const char *ostr) {
 	memset (opt, 0, sizeof (RGetopt));
 	opt->err = 1;
 	opt->ind = 1;
@@ -23,7 +23,7 @@ R_API void r_getopt_init(RGetopt *opt, int argc, const char **argv, const char *
 	opt->ostr = ostr;
 }
 
-R_API int r_getopt_next(RGetopt *opt) {
+R_API int r_getopt_next (RGetopt *opt) {
 	static const char *place = EMSG; // option letter processing
 	const char *oli; // option letter list index
 
@@ -59,7 +59,7 @@ R_API int r_getopt_next(RGetopt *opt) {
 	if (*++oli == ':') { /* need argument */
 		if (*place) { /* no white space */
 			opt->arg = place;
-		} else if (opt->argc <= ++opt->ind) {  /* no arg */
+		} else if (opt->argc <= ++opt->ind) { /* no arg */
 			place = EMSG;
 			if (*opt->ostr == ':') {
 				return BADARG;

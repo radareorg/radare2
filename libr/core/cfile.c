@@ -6,14 +6,14 @@
 
 #define UPDATE_TIME(a) (r->times->file_open_time = r_sys_now () - (a))
 
-static int r_core_file_do_load_for_debug(RCore *r, ut64 loadaddr, const char *filenameuri);
-static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr);
+static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *filenameuri);
+static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 loadaddr);
 
 static bool __isMips (RAsm *a) {
 	return a && a->cur && a->cur->arch && strstr (a->cur->arch, "mips");
 }
 
-static void loadGP(RCore *core) {
+static void loadGP (RCore *core) {
 	if (__isMips (core->rasm)) {
 		ut64 gp = r_num_math (core->num, "loc._gp");
 		if (!gp || gp == UT64_MAX) {
@@ -27,17 +27,16 @@ static void loadGP(RCore *core) {
 	}
 }
 
-
-R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbin) {
+R_API int r_core_file_reopen (RCore *core, const char *args, int perm, int loadbin) {
 	int isdebug = r_config_get_i (core->config, "cfg.debug");
 	char *path;
 	ut64 laddr = r_config_get_i (core->config, "bin.laddr");
 	RCoreFile *file = NULL;
 	RCoreFile *ofile = core->file;
 	RBinFile *bf = ofile ? r_bin_file_find_by_fd (core->bin, ofile->fd)
-		: NULL;
+			     : NULL;
 	RIODesc *odesc = (core->io && ofile) ? r_io_desc_get (core->io, ofile->fd) : NULL;
-	char *ofilepath = NULL, *obinfilepath = (bf && bf->file)? strdup (bf->file): NULL;
+	char *ofilepath = NULL, *obinfilepath = (bf && bf->file) ? strdup (bf->file) : NULL;
 	int ret = false;
 	ut64 origoff = core->offset;
 	if (odesc) {
@@ -72,7 +71,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		free (obinfilepath);
 		return false;
 	}
-	int newpid = odesc? odesc->fd: -1;
+	int newpid = odesc ? odesc->fd : -1;
 
 	if (isdebug) {
 		r_debug_kill (core->dbg, core->dbg->pid, core->dbg->tid, 9); // SIGKILL
@@ -135,7 +134,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		odesc = NULL;
 		//	core->file = file;
 		eprintf ("File %s reopened in %s mode\n", path,
-			(perm & R_PERM_W)? "read-write": "read-only");
+			(perm & R_PERM_W) ? "read-write" : "read-only");
 
 		if (loadbin && (loadbin == 2 || had_rbin_info)) {
 			ut64 baddr;
@@ -161,7 +160,8 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		// close old file
 	} else if (ofile) {
 		eprintf ("r_core_file_reopen: Cannot reopen file: %s with perms 0x%x,"
-			" attempting to open read-only.\n", path, perm);
+			 " attempting to open read-only.\n",
+			path, perm);
 		// lower it down back
 		//ofile = r_core_file_open (core, path, R_PERM_R, addr);
 		r_core_file_set_by_file (core, ofile);
@@ -201,7 +201,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	return ret;
 }
 
-R_API void r_core_sysenv_end(RCore *core, const char *cmd) {
+R_API void r_core_sysenv_end (RCore *core, const char *cmd) {
 	// TODO: remove tmpfilez
 	if (strstr (cmd, "R2_BLOCK")) {
 		// remove temporary BLOCK file
@@ -228,11 +228,11 @@ R_API void r_core_sysenv_end(RCore *core, const char *cmd) {
 #if DISCUSS
 EDITOR r_sys_setenv ("EDITOR", r_config_get (core->config, "cfg.editor"));
 CURSOR cursor position (offset from curseek)
-VERBOSE cfg.verbose
+	VERBOSE cfg.verbose
 #endif
 
-R_API char *r_core_sysenv_begin(RCore * core, const char *cmd) {
-	char *f, *ret = cmd? strdup (cmd): NULL;
+	R_API char *r_core_sysenv_begin (RCore *core, const char *cmd) {
+	char *f, *ret = cmd ? strdup (cmd) : NULL;
 	RIODesc *desc = core->file ? r_io_desc_get (core->io, core->file->fd) : NULL;
 	if (cmd && strstr (cmd, "R2_BYTES")) {
 		char *s = r_hex_bin2strdup (core->block, core->blocksize);
@@ -242,7 +242,7 @@ R_API char *r_core_sysenv_begin(RCore * core, const char *cmd) {
 	r_sys_setenv ("RABIN2_PDBSERVER", r_config_get (core->config, "pdb.server"));
 	if (desc && desc->name) {
 		r_sys_setenv ("R2_FILE", desc->name);
-		r_sys_setenv ("R2_SIZE", sdb_fmt ("%"PFMT64d, r_io_desc_size (desc)));
+		r_sys_setenv ("R2_SIZE", sdb_fmt ("%" PFMT64d, r_io_desc_size (desc)));
 		if (cmd && strstr (cmd, "R2_BLOCK")) {
 			// replace BLOCK in RET string
 			if ((f = r_file_temp ("r2block"))) {
@@ -253,9 +253,9 @@ R_API char *r_core_sysenv_begin(RCore * core, const char *cmd) {
 			}
 		}
 	}
-	r_sys_setenv ("R2_OFFSET", sdb_fmt ("%"PFMT64d, core->offset));
-	r_sys_setenv ("R2_XOFFSET", sdb_fmt ("0x%08"PFMT64x, core->offset));
-	r_sys_setenv ("R2_ENDIAN", core->rasm->big_endian? "big": "little");
+	r_sys_setenv ("R2_OFFSET", sdb_fmt ("%" PFMT64d, core->offset));
+	r_sys_setenv ("R2_XOFFSET", sdb_fmt ("0x%08" PFMT64x, core->offset));
+	r_sys_setenv ("R2_ENDIAN", core->rasm->big_endian ? "big" : "little");
 	r_sys_setenv ("R2_BSIZE", sdb_fmt ("%d", core->blocksize));
 
 	// dump current config file so other r2 tools can use the same options
@@ -275,15 +275,15 @@ R_API char *r_core_sysenv_begin(RCore * core, const char *cmd) {
 	r_sys_setenv ("RABIN2_DEMANGLE", r_config_get (core->config, "bin.demangle"));
 	r_sys_setenv ("R2_ARCH", r_config_get (core->config, "asm.arch"));
 	r_sys_setenv ("R2_BITS", sdb_fmt ("%d", r_config_get_i (core->config, "asm.bits")));
-	r_sys_setenv ("R2_COLOR", r_config_get_i (core->config, "scr.color")? "1": "0");
-	r_sys_setenv ("R2_DEBUG", r_config_get_i (core->config, "cfg.debug")? "1": "0");
-	r_sys_setenv ("R2_IOVA", r_config_get_i (core->config, "io.va")? "1": "0");
+	r_sys_setenv ("R2_COLOR", r_config_get_i (core->config, "scr.color") ? "1" : "0");
+	r_sys_setenv ("R2_DEBUG", r_config_get_i (core->config, "cfg.debug") ? "1" : "0");
+	r_sys_setenv ("R2_IOVA", r_config_get_i (core->config, "io.va") ? "1" : "0");
 	free (config_sdb_path);
 	return ret;
 }
 
 #if !__linux__ && !__WINDOWS__
-static ut64 get_base_from_maps(RCore *core, const char *file) {
+static ut64 get_base_from_maps (RCore *core, const char *file) {
 	RDebugMap *map;
 	RListIter *iter;
 	ut64 b = 0LL;
@@ -318,7 +318,7 @@ static ut64 get_base_from_maps(RCore *core, const char *file) {
 #endif
 
 #if __linux__ || __APPLE__
-static bool setbpint(RCore *r, const char *mode, const char *sym) {
+static bool setbpint (RCore *r, const char *mode, const char *sym) {
 	RBreakpointItem *bp;
 	RFlagItem *fi = r_flag_get (r->flags, sym);
 	if (!fi) {
@@ -340,7 +340,7 @@ static bool setbpint(RCore *r, const char *mode, const char *sym) {
 #endif
 
 // XXX - need to handle index selection during debugging
-static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *filenameuri) {
+static int r_core_file_do_load_for_debug (RCore *r, ut64 baseaddr, const char *filenameuri) {
 	RCoreFile *cf = r_core_file_cur (r);
 	RIODesc *desc = cf ? r_io_desc_get (r->io, cf->fd) : NULL;
 	RBinFile *binfile = NULL;
@@ -356,7 +356,7 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 	}
 	if (cf) {
 		r_debug_select (r->dbg, r_io_fd_get_pid (r->io, cf->fd),
-				r_io_fd_get_tid (r->io, cf->fd));
+			r_io_fd_get_tid (r->io, cf->fd));
 	}
 #if !__linux__
 #if !__WINDOWS__
@@ -366,7 +366,7 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 		r_config_set_i (r->config, "bin.baddr", baseaddr);
 	}
 #endif
-	int fd = cf? cf->fd: -1;
+	int fd = cf ? cf->fd : -1;
 	RBinOptions opt;
 	r_bin_options_init (&opt, fd, baseaddr, UT64_MAX, false);
 	opt.xtr_idx = xtr_idx;
@@ -404,7 +404,7 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 		r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
 	} else if (binfile) {
 		RBinObject *obj = r_bin_cur_object (r->bin);
-		RBinInfo *info = obj? obj->info: NULL;
+		RBinInfo *info = obj ? obj->info : NULL;
 		if (plugin && strcmp (plugin->name, "any") && info) {
 			r_core_bin_set_arch_bits (r, binfile->file, info->arch, info->bits);
 		}
@@ -417,7 +417,7 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 	return true;
 }
 
-static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr) {
+static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 loadaddr) {
 	RCoreFile *cf = r_core_file_cur (r);
 	int fd = cf ? cf->fd : -1;
 	RBinFile *binfile = NULL;
@@ -440,7 +440,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 	plugin = r_bin_file_cur_plugin (binfile);
 	if (plugin && !strcmp (plugin->name, "any")) {
 		RBinObject *obj = r_bin_cur_object (r->bin);
-		RBinInfo *info = obj? obj->info: NULL;
+		RBinInfo *info = obj ? obj->info : NULL;
 		if (!info) {
 			return false;
 		}
@@ -453,7 +453,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 		r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
 	} else if (binfile) {
 		RBinObject *obj = r_bin_cur_object (r->bin);
-		RBinInfo *info = obj? obj->info: NULL;
+		RBinInfo *info = obj ? obj->info : NULL;
 		if (!info) {
 			return false;
 		}
@@ -469,7 +469,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 	return true;
 }
 
-static bool try_loadlib(RCore *core, const char *lib, ut64 addr) {
+static bool try_loadlib (RCore *core, const char *lib, ut64 addr) {
 	if (r_core_file_open (core, lib, 0, addr) != NULL) {
 		r_core_bin_load (core, lib, addr);
 		return true;
@@ -477,7 +477,7 @@ static bool try_loadlib(RCore *core, const char *lib, ut64 addr) {
 	return false;
 }
 
-R_API bool r_core_file_loadlib(RCore *core, const char *lib, ut64 libaddr) {
+R_API bool r_core_file_loadlib (RCore *core, const char *lib, ut64 libaddr) {
 	const char *dirlibs = r_config_get (core->config, "dir.libs");
 	bool free_libdir = true;
 #ifdef __WINDOWS__
@@ -503,7 +503,7 @@ R_API bool r_core_file_loadlib(RCore *core, const char *lib, ut64 libaddr) {
 		"." R_SYS_DIR,
 		NULL
 	};
-	const char * *libpath = (const char * *) &ldlibrarypath;
+	const char **libpath = (const char **)&ldlibrarypath;
 
 	bool ret = false;
 #ifdef __WINDOWS__
@@ -533,7 +533,7 @@ R_API bool r_core_file_loadlib(RCore *core, const char *lib, ut64 libaddr) {
 	return ret;
 }
 
-R_API int r_core_bin_rebase(RCore *core, ut64 baddr) {
+R_API int r_core_bin_rebase (RCore *core, ut64 baddr) {
 	if (!core || !core->bin || !core->bin->cur) {
 		return 0;
 	}
@@ -547,7 +547,7 @@ R_API int r_core_bin_rebase(RCore *core, ut64 baddr) {
 	return 1;
 }
 
-static void load_scripts_for(RCore *core, const char *name) {
+static void load_scripts_for (RCore *core, const char *name) {
 	// TODO:
 	char *file;
 	RListIter *iter;
@@ -573,7 +573,7 @@ typedef struct {
 	bool found;
 } RCoreFileData;
 
-static bool filecb(void *user, void *data, ut32 id) {
+static bool filecb (void *user, void *data, ut32 id) {
 	RCoreFileData *fd = user;
 	RIODesc *desc = (RIODesc *)data;
 	if (!strcmp (desc->name, fd->name)) {
@@ -588,7 +588,7 @@ typedef struct {
 	RBin *bin;
 } RCoreLinkData;
 
-static bool linkcb(void *user, void *data, ut32 id) {
+static bool linkcb (void *user, void *data, ut32 id) {
 	RCoreLinkData *ld = user;
 	RIODesc *desc = (RIODesc *)data;
 
@@ -607,8 +607,7 @@ static bool linkcb(void *user, void *data, ut32 id) {
 	return true;
 }
 
-
-R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
+R_API bool r_core_bin_load (RCore *r, const char *filenameuri, ut64 baddr) {
 	RCoreFile *cf = r_core_file_cur (r);
 	RIODesc *desc = cf ? r_io_desc_get (r->io, cf->fd) : NULL;
 	ut64 laddr = r_config_get_i (r->config, "bin.laddr");
@@ -707,8 +706,8 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		}
 		if (binfile) {
 			r_core_bin_set_arch_bits (r, binfile->file,
-					r_config_get (r->config, "asm.arch"),
-					r_config_get_i (r->config, "asm.bits"));
+				r_config_get (r->config, "asm.arch"),
+				r_config_get_i (r->config, "asm.bits"));
 		}
 	}
 	if (desc && r_config_get_i (r->config, "io.exec")) {
@@ -716,7 +715,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 	if (plugin && plugin->name && !strcmp (plugin->name, "dex")) {
 		r_core_cmd0 (r, "\"(fix-dex,wx `ph sha1 $s-32 @32` @12 ;"
-			" wx `ph adler32 $s-12 @12` @8)\"\n");
+				" wx `ph adler32 $s-12 @12` @8)\"\n");
 	}
 	if (!r_config_get_i (r->config, "cfg.debug")) {
 		loadGP (r);
@@ -727,7 +726,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		RList *libs = r_bin_get_libs (r->bin);
 		r_list_foreach (libs, iter, lib) {
 			eprintf ("[bin.libs] Opening %s\n", lib);
-			RCoreFileData filedata = {lib, false};
+			RCoreFileData filedata = { lib, false };
 			r_id_storage_foreach (r->io->files, filecb, &filedata);
 			if (filedata.found) {
 				eprintf ("Already opened\n");
@@ -752,13 +751,13 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			}
 			ut64 imp_addr = impsym->offset;
 			eprintf ("Resolving %s... ", imp->name);
-			RCoreLinkData linkdata = {imp->name, UT64_MAX, r->bin};
+			RCoreLinkData linkdata = { imp->name, UT64_MAX, r->bin };
 			r_id_storage_foreach (r->io->files, linkcb, &linkdata);
 			if (linkdata.addr != UT64_MAX) {
-				eprintf ("0x%08"PFMT64x"\n", linkdata.addr);
+				eprintf ("0x%08" PFMT64x "\n", linkdata.addr);
 				ut64 a = linkdata.addr;
 				ut64 b = imp_addr;
-				r_core_cmdf (r, "ax 0x%08"PFMT64x" 0x%08"PFMT64x, a, b);
+				r_core_cmdf (r, "ax 0x%08" PFMT64x " 0x%08" PFMT64x, a, b);
 			} else {
 				eprintf ("NO\n");
 			}
@@ -766,8 +765,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 
 	//If type == R_BIN_TYPE_CORE, we need to create all the maps
-	if (plugin && binfile && plugin->file_type
-		 && plugin->file_type (binfile) == R_BIN_TYPE_CORE) {
+	if (plugin && binfile && plugin->file_type && plugin->file_type (binfile) == R_BIN_TYPE_CORE) {
 		ut64 sp_addr = (ut64)-1;
 		RIOMap *stack_map = NULL;
 
@@ -827,7 +825,7 @@ beach:
 	return true;
 }
 
-R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int perm, ut64 loadaddr) {
+R_API RCoreFile *r_core_file_open_many (RCore *r, const char *file, int perm, ut64 loadaddr) {
 	const bool openmany = r_config_get_i (r->config, "file.openmany");
 	int opened_count = 0;
 	RListIter *fd_iter, *iter2;
@@ -865,7 +863,7 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int perm, ut6
 }
 
 /* loadaddr is r2 -m (mapaddr) */
-R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 loadaddr) {
+R_API RCoreFile *r_core_file_open (RCore *r, const char *file, int flags, ut64 loadaddr) {
 	r_return_val_if_fail (r && file, NULL);
 	ut64 prev = r_sys_now ();
 	const bool openmany = r_config_get_i (r->config, "file.openmany");
@@ -880,7 +878,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 	}
 	r->io->bits = r->rasm->bits; // TODO: we need an api for this
 	RIODesc *fd = r_io_open_nomap (r->io, file, flags, 0644);
-	if (r_cons_is_breaked()) {
+	if (r_cons_is_breaked ()) {
 		goto beach;
 	}
 	if (!fd && openmany) {
@@ -892,7 +890,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 	}
 	if (!fd) {
 		if (flags & R_PERM_W) {
-		//	flags |= R_IO_CREAT;
+			//	flags |= R_IO_CREAT;
 			if (!(fd = r_io_open_nomap (r->io, file, flags, 0644))) {
 				goto beach;
 			}
@@ -960,7 +958,7 @@ beach:
 	return fh;
 }
 
-R_API void r_core_file_free(RCoreFile *cf) {
+R_API void r_core_file_free (RCoreFile *cf) {
 	int res = 1;
 
 	r_return_if_fail (cf);
@@ -985,10 +983,10 @@ R_API void r_core_file_free(RCoreFile *cf) {
 	}
 }
 
-R_API int r_core_file_close(RCore *r, RCoreFile *fh) {
+R_API int r_core_file_close (RCore *r, RCoreFile *fh) {
 	int ret;
 	RIODesc *desc = fh && r ? r_io_desc_get (r->io, fh->fd) : NULL;
-	RCoreFile *prev_cf = r && r->file != fh? r->file: NULL;
+	RCoreFile *prev_cf = r && r->file != fh ? r->file : NULL;
 
 	// TODO: This is not correctly done. because map and iodesc are
 	// still referenced // we need to fully clear all R_IO structs
@@ -1020,7 +1018,7 @@ R_API int r_core_file_close(RCore *r, RCoreFile *fh) {
 	ret = r_list_delete_data (r->files, fh);
 	if (ret) {
 		if (!prev_cf && r_list_length (r->files) > 0) {
-			prev_cf = (RCoreFile *) r_list_get_n (r->files, 0);
+			prev_cf = (RCoreFile *)r_list_get_n (r->files, 0);
 		}
 
 		if (prev_cf) {
@@ -1036,7 +1034,7 @@ R_API int r_core_file_close(RCore *r, RCoreFile *fh) {
 	return ret;
 }
 
-R_API RCoreFile *r_core_file_get_by_fd(RCore *core, int fd) {
+R_API RCoreFile *r_core_file_get_by_fd (RCore *core, int fd) {
 	RCoreFile *file;
 	RListIter *iter;
 	r_list_foreach (core->files, iter, file) {
@@ -1047,7 +1045,7 @@ R_API RCoreFile *r_core_file_get_by_fd(RCore *core, int fd) {
 	return NULL;
 }
 
-R_API int r_core_file_list(RCore *core, int mode) {
+R_API int r_core_file_list (RCore *core, int mode) {
 	int count = 0;
 	RCoreFile *f;
 	RIODesc *desc;
@@ -1067,13 +1065,12 @@ R_API int r_core_file_list(RCore *core, int mode) {
 		from = 0LL;
 		switch (mode) {
 		case 'j':
-			r_cons_printf ("{\"raised\":%s,\"fd\":%d,\"uri\":\"%s\",\"from\":%"
-				PFMT64d ",\"writable\":%s,\"size\":%d}%s",
+			r_cons_printf ("{\"raised\":%s,\"fd\":%d,\"uri\":\"%s\",\"from\":%" PFMT64d ",\"writable\":%s,\"size\":%d}%s",
 				r_str_bool (core->io->desc->fd == f->fd),
-				(int) f->fd, desc->uri, (ut64) from,
+				(int)f->fd, desc->uri, (ut64)from,
 				r_str_bool (desc->perm & R_PERM_W),
-				(int) r_io_desc_size (desc),
-				iter->n? ",": "");
+				(int)r_io_desc_size (desc),
+				iter->n ? "," : "");
 			break;
 		case '*':
 		case 'r':
@@ -1083,58 +1080,53 @@ R_API int r_core_file_list(RCore *core, int mode) {
 				char *absfile = r_file_abspath (desc->uri);
 				r_list_foreach (core->bin->binfiles, it, bf) {
 					if (bf->fd == f->fd) {
-						r_cons_printf ("o %s 0x%"PFMT64x "\n", absfile, (ut64) from);
+						r_cons_printf ("o %s 0x%" PFMT64x "\n", absfile, (ut64)from);
 						fileHaveBin = true;
 					}
 				}
 				if (!fileHaveBin && !strstr (absfile, "://")) {
-					r_cons_printf ("o %s 0x%"PFMT64x "\n", absfile, (ut64) from);
+					r_cons_printf ("o %s 0x%" PFMT64x "\n", absfile, (ut64)from);
 				}
 				free (absfile);
 			}
 			break;
-		case 'n':
-			{
-				bool header_loaded = false;
-				r_list_foreach (core->bin->binfiles, it, bf) {
-					if (bf->fd == f->fd) {
-						header_loaded = true;
-						break;
-					}
-				}
-				if (!header_loaded) {
-					RList* maps = r_io_map_get_for_fd (core->io, f->fd);
-					RListIter *iter;
-					RIOMap* current_map;
-					char *absfile = r_file_abspath (desc->uri);
-					r_list_foreach (maps, iter, current_map) {
-						if (current_map) {
-							r_cons_printf ("on %s 0x%"PFMT64x "\n", absfile, current_map->itv.addr);
-						}
-					}
-					r_list_free (maps);
-					free(absfile);
-
+		case 'n': {
+			bool header_loaded = false;
+			r_list_foreach (core->bin->binfiles, it, bf) {
+				if (bf->fd == f->fd) {
+					header_loaded = true;
+					break;
 				}
 			}
-			break;
-		default:
-		{
+			if (!header_loaded) {
+				RList *maps = r_io_map_get_for_fd (core->io, f->fd);
+				RListIter *iter;
+				RIOMap *current_map;
+				char *absfile = r_file_abspath (desc->uri);
+				r_list_foreach (maps, iter, current_map) {
+					if (current_map) {
+						r_cons_printf ("on %s 0x%" PFMT64x "\n", absfile, current_map->itv.addr);
+					}
+				}
+				r_list_free (maps);
+				free (absfile);
+			}
+		} break;
+		default: {
 			ut64 sz = r_io_desc_size (desc);
 			const char *fmt;
 			if (sz == UT64_MAX) {
-				fmt = "%c %d %d %s @ 0x%"PFMT64x " ; %s size=%"PFMT64d "\n";
+				fmt = "%c %d %d %s @ 0x%" PFMT64x " ; %s size=%" PFMT64d "\n";
 			} else {
-				fmt = "%c %d %d %s @ 0x%"PFMT64x " ; %s size=%"PFMT64u "\n";
+				fmt = "%c %d %d %s @ 0x%" PFMT64x " ; %s size=%" PFMT64u "\n";
 			}
 			r_cons_printf (fmt,
-				core->io->desc->fd == f->fd ? '*': '-',
+				core->io->desc->fd == f->fd ? '*' : '-',
 				count,
-				(int) f->fd, desc->uri, (ut64) from,
-				desc->perm & R_PERM_W? "rw": "r",
+				(int)f->fd, desc->uri, (ut64)from,
+				desc->perm & R_PERM_W ? "rw" : "r",
 				r_io_desc_size (desc));
-		}
-		break;
+		} break;
 		}
 		count++;
 	}
@@ -1145,7 +1137,7 @@ R_API int r_core_file_list(RCore *core, int mode) {
 }
 
 // XXX - needs to account for binfile index and bin object index
-R_API bool r_core_file_bin_raise(RCore *core, ut32 bfid) {
+R_API bool r_core_file_bin_raise (RCore *core, ut32 bfid) {
 	RBin *bin = core->bin;
 	RBinFile *bf = r_list_get_n (bin->binfiles, bfid);
 	bool res = false;
@@ -1154,7 +1146,7 @@ R_API bool r_core_file_bin_raise(RCore *core, ut32 bfid) {
 		if (res) {
 			r_io_use_fd (core->io, bf->fd);
 		}
-		res = res? r_core_file_set_by_fd (core, bf->fd): res;
+		res = res ? r_core_file_set_by_fd (core, bf->fd) : res;
 		if (res) {
 			core->switch_file_view = 1;
 		}
@@ -1162,14 +1154,14 @@ R_API bool r_core_file_bin_raise(RCore *core, ut32 bfid) {
 	return res;
 }
 
-R_API int r_core_file_binlist(RCore *core) {
+R_API int r_core_file_binlist (RCore *core) {
 	int count = 0;
 	RListIter *iter;
 	RCoreFile *cur_cf = core->file, *cf = NULL;
 	RBinFile *binfile = NULL;
 	RIODesc *desc;
 	RBin *bin = core->bin;
-	const RList *binfiles = bin? bin->binfiles: NULL;
+	const RList *binfiles = bin ? bin->binfiles : NULL;
 
 	if (!binfiles) {
 		return false;
@@ -1180,8 +1172,8 @@ R_API int r_core_file_binlist(RCore *core) {
 		desc = r_io_desc_get (core->io, fd);
 		if (cf) {
 			r_cons_printf ("%c %d %s ; %s\n",
-				core->io->desc == desc ? '*': '-',
-				fd, desc->uri, desc->perm & R_PERM_W? "rw": "r");
+				core->io->desc == desc ? '*' : '-',
+				fd, desc->uri, desc->perm & R_PERM_W ? "rw" : "r");
 		}
 	}
 	r_core_file_set_by_file (core, cur_cf);
@@ -1189,7 +1181,7 @@ R_API int r_core_file_binlist(RCore *core) {
 	return count;
 }
 
-static bool close_but_cb(void *user, void *data, ut32 id) {
+static bool close_but_cb (void *user, void *data, ut32 id) {
 	RCore *core = (RCore *)user;
 	RIODesc *desc = (RIODesc *)data;
 	if (core && desc && core->file) {
@@ -1201,12 +1193,12 @@ static bool close_but_cb(void *user, void *data, ut32 id) {
 	return true;
 }
 
-R_API bool r_core_file_close_all_but(RCore *core) {
+R_API bool r_core_file_close_all_but (RCore *core) {
 	r_id_storage_foreach (core->io->files, close_but_cb, core);
 	return true;
 }
 
-R_API bool r_core_file_close_fd(RCore *core, int fd) {
+R_API bool r_core_file_close_fd (RCore *core, int fd) {
 	RCoreFile *file;
 	RListIter *iter;
 	if (fd == -1) {
@@ -1228,7 +1220,7 @@ R_API bool r_core_file_close_fd(RCore *core, int fd) {
 	return r_io_fd_close (core->io, fd);
 }
 
-R_API RCoreFile *r_core_file_find_by_fd(RCore *core, ut64 fd) {
+R_API RCoreFile *r_core_file_find_by_fd (RCore *core, ut64 fd) {
 	RListIter *iter;
 	RCoreFile *cf = NULL;
 	r_list_foreach (core->files, iter, cf) {
@@ -1240,7 +1232,7 @@ R_API RCoreFile *r_core_file_find_by_fd(RCore *core, ut64 fd) {
 	return cf;
 }
 
-R_API RCoreFile *r_core_file_find_by_name(RCore *core, const char *name) {
+R_API RCoreFile *r_core_file_find_by_name (RCore *core, const char *name) {
 	RListIter *iter;
 	RCoreFile *cf = NULL;
 	RIODesc *desc;
@@ -1259,7 +1251,7 @@ R_API RCoreFile *r_core_file_find_by_name(RCore *core, const char *name) {
 	return cf;
 }
 
-R_API int r_core_file_set_by_fd(RCore *core, ut64 fd) {
+R_API int r_core_file_set_by_fd (RCore *core, ut64 fd) {
 	if (core) {
 		r_io_use_fd (core->io, fd);
 		r_core_bin_set_by_fd (core, fd);
@@ -1268,12 +1260,12 @@ R_API int r_core_file_set_by_fd(RCore *core, ut64 fd) {
 	return false;
 }
 
-R_API int r_core_file_set_by_name(RCore *core, const char *name) {
+R_API int r_core_file_set_by_name (RCore *core, const char *name) {
 	RCoreFile *cf = r_core_file_find_by_name (core, name);
 	return r_core_file_set_by_file (core, cf);
 }
 
-R_API int r_core_file_set_by_file(RCore *core, RCoreFile *cf) {
+R_API int r_core_file_set_by_file (RCore *core, RCoreFile *cf) {
 	if (core && cf) {
 		if (!r_core_file_set_by_fd (core, cf->fd)) {
 			return false;
@@ -1284,14 +1276,14 @@ R_API int r_core_file_set_by_file(RCore *core, RCoreFile *cf) {
 	return false;
 }
 
-R_API ut32 r_core_file_cur_fd(RCore *core) {
+R_API ut32 r_core_file_cur_fd (RCore *core) {
 	if (core && core->file) {
 		return core->file->fd;
 	}
 	return UT32_MAX;
 }
 
-R_API RCoreFile *r_core_file_cur(RCore *r) {
+R_API RCoreFile *r_core_file_cur (RCore *r) {
 	// Add any locks here
 	return r->file;
 }

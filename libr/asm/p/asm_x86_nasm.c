@@ -3,7 +3,7 @@
 #include <r_lib.h>
 #include <r_asm.h>
 
-static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
+static int assemble (RAsm *a, RAsmOp *op, const char *buf) {
 	char *ipath, *opath;
 	if (a->syntax != R_ASM_SYNTAX_INTEL) {
 		eprintf ("asm.x86.nasm does not support non-intel syntax\n");
@@ -21,7 +21,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		return -1;
 	}
 
-	char *asm_buf = r_str_newf ("[BITS %i]\nORG 0x%"PFMT64x"\n%s\n", a->bits, a->pc, buf);
+	char *asm_buf = r_str_newf ("[BITS %i]\nORG 0x%" PFMT64x "\n%s\n", a->bits, a->pc, buf);
 	if (asm_buf) {
 		(void)write (ifd, asm_buf, strlen (asm_buf));
 		free (asm_buf);

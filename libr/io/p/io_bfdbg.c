@@ -18,23 +18,23 @@ typedef struct {
 	BfvmCPU *bfvm;
 } RIOBfdbg;
 
-#define RIOBFDBG_FD(x) (((RIOBfdbg*)(x)->data)->fd)
-#define RIOBFDBG_SZ(x) (((RIOBfdbg*)(x)->data)->size)
-#define RIOBFDBG_BUF(x) (((RIOBfdbg*)(x)->data)->buf)
+#define RIOBFDBG_FD(x) (((RIOBfdbg *)(x)->data)->fd)
+#define RIOBFDBG_SZ(x) (((RIOBfdbg *)(x)->data)->size)
+#define RIOBFDBG_BUF(x) (((RIOBfdbg *)(x)->data)->buf)
 
-static inline int is_in_screen(ut64 off, BfvmCPU *c) {
-	return (off >= c->screen && off < c->screen+c->screen_size);
+static inline int is_in_screen (ut64 off, BfvmCPU *c) {
+	return (off >= c->screen && off < c->screen + c->screen_size);
 }
 
-static inline int is_in_input(ut64 off, BfvmCPU *c) {
-	return (off >= c->input && off < c->input+c->input_size);
+static inline int is_in_input (ut64 off, BfvmCPU *c) {
+	return (off >= c->input && off < c->input + c->input_size);
 }
 
-static inline int is_in_base(ut64 off, BfvmCPU *c) {
-	return (off >= c->base && off < c->base+c->size);
+static inline int is_in_base (ut64 off, BfvmCPU *c) {
+	return (off >= c->base && off < c->base + c->size);
 }
 
-static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
+static int __write (RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	RIOBfdbg *riom;
 	int sz;
 	if (!fd || !fd->data) {
@@ -43,29 +43,29 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	riom = fd->data;
 	/* data base buffer */
 	if (is_in_base (io->off, riom->bfvm)) {
-		int n = io->off-riom->bfvm->base;
+		int n = io->off - riom->bfvm->base;
 		if (n > count) {
 			count = n;
 		}
-		memcpy (riom->bfvm->mem+n, buf, count);
+		memcpy (riom->bfvm->mem + n, buf, count);
 		return count;
 	}
 	/* screen buffer */
 	if (is_in_screen (io->off, riom->bfvm)) {
-		int n = io->off-riom->bfvm->screen;
+		int n = io->off - riom->bfvm->screen;
 		if (n > count) {
 			count = riom->bfvm->screen_size - n;
 		}
-		memcpy (riom->bfvm->screen_buf+n, buf, count);
+		memcpy (riom->bfvm->screen_buf + n, buf, count);
 		return count;
 	}
 	/* input buffer */
 	if (is_in_input (io->off, riom->bfvm)) {
-		int n = io->off-riom->bfvm->input;
+		int n = io->off - riom->bfvm->input;
 		if (n > count) {
 			count = riom->bfvm->input_size - n;
 		}
-		memcpy (riom->bfvm->input_buf+n, buf, count);
+		memcpy (riom->bfvm->input_buf + n, buf, count);
 		return count;
 	}
 	/* read from file */
@@ -76,11 +76,11 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (io->off >= sz) {
 		return -1;
 	}
-	memcpy (RIOBFDBG_BUF (fd)+io->off, buf, count);
+	memcpy (RIOBFDBG_BUF (fd) + io->off, buf, count);
 	return count;
 }
 
-static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
+static int __read (RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	RIOBfdbg *riom;
 	int sz;
 	if (!fd || !fd->data) {
@@ -89,29 +89,29 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	riom = fd->data;
 	/* data base buffer */
 	if (is_in_base (io->off, riom->bfvm)) {
-		int n = io->off-riom->bfvm->base;
+		int n = io->off - riom->bfvm->base;
 		if (n > count) {
 			count = n;
 		}
-		memcpy (buf, riom->bfvm->mem+n, count);
+		memcpy (buf, riom->bfvm->mem + n, count);
 		return count;
 	}
 	/* screen buffer */
 	if (is_in_screen (io->off, riom->bfvm)) {
-		int n = io->off-riom->bfvm->screen;
+		int n = io->off - riom->bfvm->screen;
 		if (n > count) {
 			count = riom->bfvm->screen_size - n;
 		}
-		memcpy (buf, riom->bfvm->screen_buf+n, count);
+		memcpy (buf, riom->bfvm->screen_buf + n, count);
 		return count;
 	}
 	/* input buffer */
 	if (is_in_input (io->off, riom->bfvm)) {
-		int n = io->off-riom->bfvm->input;
+		int n = io->off - riom->bfvm->input;
 		if (n > count) {
 			count = riom->bfvm->input_size - n;
 		}
-		memcpy (buf, riom->bfvm->input_buf+n, count);
+		memcpy (buf, riom->bfvm->input_buf + n, count);
 		return count;
 	}
 	/* read from file */
@@ -122,11 +122,11 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	if (io->off >= sz) {
 		return -1;
 	}
-	memcpy (buf, RIOBFDBG_BUF (fd)+io->off, count);
+	memcpy (buf, RIOBFDBG_BUF (fd) + io->off, count);
 	return count;
 }
 
-static int __close(RIODesc *fd) {
+static int __close (RIODesc *fd) {
 	RIOBfdbg *riom;
 	if (!fd || !fd->data) {
 		return -1;
@@ -138,7 +138,7 @@ static int __close(RIODesc *fd) {
 	return 0;
 }
 
-static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 __lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
 	case SEEK_SET: return offset;
 	case SEEK_CUR: return io->off + offset;
@@ -147,7 +147,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static bool __plugin_open(RIO *io, const char *pathname, bool many) {
+static bool __plugin_open (RIO *io, const char *pathname, bool many) {
 	return (!strncmp (pathname, "bfdbg://", 8));
 }
 
@@ -155,7 +155,7 @@ static inline int getmalfd (RIOBfdbg *mal) {
 	return 0xffff & (int)(size_t)mal->buf;
 }
 
-static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
+static RIODesc *__open (RIO *io, const char *pathname, int rw, int mode) {
 	char *out;
 	if (__plugin_open (io, pathname, 0)) {
 		RIOBind iob;
@@ -171,22 +171,22 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			return NULL;
 		}
 		size_t rlen;
-		out = r_file_slurp (pathname+8, &rlen);
+		out = r_file_slurp (pathname + 8, &rlen);
 		if (!out || rlen < 1) {
 			free (mal);
 			free (out);
 			return NULL;
 		}
 		mal->size = (ut32)rlen;
-		mal->buf = malloc (mal->size+1);
+		mal->buf = malloc (mal->size + 1);
 		if (mal->buf != NULL) {
 			memcpy (mal->buf, out, rlen);
 			free (out);
 			return r_io_desc_new (io, &r_io_plugin_bfdbg,
 				pathname, rw, mode, mal);
 		}
-		eprintf ("Cannot allocate (%s) %"PFMT32u" byte(s)\n",
-			pathname+9, mal->size);
+		eprintf ("Cannot allocate (%s) %" PFMT32u " byte(s)\n",
+			pathname + 9, mal->size);
 		free (mal);
 		free (out);
 	}

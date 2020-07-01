@@ -7,10 +7,10 @@
 #include "bfvm.c"
 
 typedef struct {
-        int desc;
-        ut8 *buf;
-        ut32 size;
-        BfvmCPU *bfvm;
+	int desc;
+	ut8 *buf;
+	ut32 size;
+	BfvmCPU *bfvm;
 } RIOBdescbg;
 
 struct bfvm_regs {
@@ -27,7 +27,7 @@ struct bfvm_regs {
 
 static struct bfvm_regs r;
 
-static bool is_io_bf(RDebug *dbg) {
+static bool is_io_bf (RDebug *dbg) {
 	RIODesc *d = dbg->iob.io->desc;
 	if (d && d->plugin && d->plugin->name) {
 		if (!strcmp ("bfdbg", d->plugin->name)) {
@@ -38,7 +38,7 @@ static bool is_io_bf(RDebug *dbg) {
 	return false;
 }
 
-static int r_debug_bf_step_over(RDebug *dbg) {
+static int r_debug_bf_step_over (RDebug *dbg) {
 	RIOBdescbg *o = dbg->iob.io->desc->data;
 	int op, oop = 0;
 	for (;;) {
@@ -55,13 +55,13 @@ static int r_debug_bf_step_over(RDebug *dbg) {
 	return true;
 }
 
-static int r_debug_bf_step(RDebug *dbg) {
+static int r_debug_bf_step (RDebug *dbg) {
 	RIOBdescbg *o = dbg->iob.io->desc->data;
 	bfvm_step (o->bfvm, 0);
 	return true;
 }
 
-static int r_debug_bf_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
+static int r_debug_bf_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	r_return_val_if_fail (dbg && buf && size > 0, -1);
 	if (!is_io_bf (dbg)) {
 		return 0;
@@ -84,7 +84,7 @@ static int r_debug_bf_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	return sizeof (r);
 }
 
-static int r_debug_bf_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
+static int r_debug_bf_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 	if (!dbg) {
 		return false;
 	}
@@ -108,50 +108,49 @@ static int r_debug_bf_reg_write(RDebug *dbg, int type, const ut8 *buf, int size)
 	return true;
 }
 
-static int r_debug_bf_continue(RDebug *dbg, int pid, int tid, int sig) {
+static int r_debug_bf_continue (RDebug *dbg, int pid, int tid, int sig) {
 	RIOBdescbg *o = dbg->iob.io->desc->data;
 	bfvm_cont (o->bfvm, UT64_MAX);
 	return true;
 }
 
-static int r_debug_bf_continue_syscall(RDebug *dbg, int pid, int num) {
+static int r_debug_bf_continue_syscall (RDebug *dbg, int pid, int num) {
 	RIOBdescbg *o = dbg->iob.io->desc->data;
 	bfvm_contsc (o->bfvm);
 	return true;
 }
 
-static int r_debug_bf_wait(RDebug *dbg, int pid) {
+static int r_debug_bf_wait (RDebug *dbg, int pid) {
 	/* do nothing */
 	return true;
 }
 
-static int r_debug_bf_attach(RDebug *dbg, int pid) {
+static int r_debug_bf_attach (RDebug *dbg, int pid) {
 	if (!is_io_bf (dbg)) {
 		return false;
 	}
 	return true;
 }
 
-static int r_debug_bf_detach(RDebug *dbg, int pid) {
+static int r_debug_bf_detach (RDebug *dbg, int pid) {
 	// reset vm?
 	return true;
 }
 
-static char *r_debug_bf_reg_profile(RDebug *dbg) {
+static char *r_debug_bf_reg_profile (RDebug *dbg) {
 	return strdup (
-	"=PC	pc\n"
-	"=SP	esp\n"
-	"=BP	ptr\n"
-	"gpr	pc	.32	0	0\n"
-	"gpr	ptr	.32	4	0\n"
-	"gpr	esp	.32	8	0\n"
-	"gpr	scr	.32	12	0\n"
-	"gpr	scri	.32	16	0\n"
-	"gpr	inp	.32	20	0\n"
-	"gpr	inpi	.32	24	0\n"
-	"gpr	mem	.32	28	0\n"
-	"gpr	memi	.32	32	0\n"
-	);
+		"=PC	pc\n"
+		"=SP	esp\n"
+		"=BP	ptr\n"
+		"gpr	pc	.32	0	0\n"
+		"gpr	ptr	.32	4	0\n"
+		"gpr	esp	.32	8	0\n"
+		"gpr	scr	.32	12	0\n"
+		"gpr	scri	.32	16	0\n"
+		"gpr	inp	.32	20	0\n"
+		"gpr	inpi	.32	24	0\n"
+		"gpr	mem	.32	28	0\n"
+		"gpr	memi	.32	32	0\n");
 }
 
 static int r_debug_bf_breakpoint (struct r_bp_t *bp, RBreakpointItem *b, bool set) {
@@ -159,7 +158,7 @@ static int r_debug_bf_breakpoint (struct r_bp_t *bp, RBreakpointItem *b, bool se
 	return false;
 }
 
-static bool r_debug_bf_kill(RDebug *dbg, int pid, int tid, int sig) {
+static bool r_debug_bf_kill (RDebug *dbg, int pid, int tid, int sig) {
 	if (!is_io_bf (dbg)) {
 		return false;
 	}
@@ -170,7 +169,7 @@ static bool r_debug_bf_kill(RDebug *dbg, int pid, int tid, int sig) {
 	return true;
 }
 
-static RList *r_debug_native_map_get(RDebug *dbg) {
+static RList *r_debug_native_map_get (RDebug *dbg) {
 	if (!is_io_bf (dbg)) {
 		return false;
 	}
@@ -180,18 +179,14 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 	if (!list) {
 		return NULL;
 	}
-	r_list_append (list, r_debug_map_new (
-		"code", 0, 4096, 6, 0));
-	r_list_append (list, r_debug_map_new (
-		"memory", c->base, c->base+c->size, 6, 0));
-	r_list_append (list, r_debug_map_new (
-		"screen", c->screen, c->screen+c->screen_size, 6, 0));
-	r_list_append (list, r_debug_map_new (
-		"input", c->input, c->input+c->input_size, 6, 0));
+	r_list_append (list, r_debug_map_new ("code", 0, 4096, 6, 0));
+	r_list_append (list, r_debug_map_new ("memory", c->base, c->base + c->size, 6, 0));
+	r_list_append (list, r_debug_map_new ("screen", c->screen, c->screen + c->screen_size, 6, 0));
+	r_list_append (list, r_debug_map_new ("input", c->input, c->input + c->input_size, 6, 0));
 	return list;
 }
 
-static int r_debug_bf_stop(RDebug *dbg) {
+static int r_debug_bf_stop (RDebug *dbg) {
 	if (!is_io_bf (dbg)) {
 		return false;
 	}

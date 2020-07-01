@@ -14,7 +14,7 @@
 #include "coff_specs.h"
 
 struct r_bin_coff_obj {
-	struct coff_hdr	hdr;
+	struct coff_hdr hdr;
 	struct coff_opt_hdr opt_hdr;
 	struct coff_scn_hdr *scn_hdrs;
 	struct coff_symbol *symbols;
@@ -28,10 +28,10 @@ struct r_bin_coff_obj {
 	bool verbose;
 };
 
-bool r_coff_supported_arch(const ut8 *buf); /* Reads two bytes from buf. */
-struct r_bin_coff_obj* r_bin_coff_new_buf(RBuffer *buf, bool verbose);
-void r_bin_coff_free(struct r_bin_coff_obj *obj);
-RBinAddr *r_coff_get_entry(struct r_bin_coff_obj *obj);
+bool r_coff_supported_arch (const ut8 *buf); /* Reads two bytes from buf. */
+struct r_bin_coff_obj *r_bin_coff_new_buf (RBuffer *buf, bool verbose);
+void r_bin_coff_free (struct r_bin_coff_obj *obj);
+RBinAddr *r_coff_get_entry (struct r_bin_coff_obj *obj);
 char *r_coff_symbol_name (struct r_bin_coff_obj *obj, void *ptr);
 
 #endif /* COFF_H */

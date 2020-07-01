@@ -6,7 +6,7 @@
 #include "r_core.h"
 #include "r_lang.h"
 
-static int lang_vala_file(RLang *lang, const char *file, bool silent) {
+static int lang_vala_file (RLang *lang, const char *file, bool silent) {
 	void *lib;
 	char *p, name[512], buf[512];
 	char *vapidir, *srcdir, *libname;
@@ -26,20 +26,20 @@ static int lang_vala_file(RLang *lang, const char *file, bool silent) {
 	}
 
 	srcdir = strdup (file);
-	p = (char*)r_str_lchr (srcdir, '/');
+	p = (char *)r_str_lchr (srcdir, '/');
 	if (p) {
 		*p = 0;
-		libname = strdup (p+1);
-		if (*file!='/') {
+		libname = strdup (p + 1);
+		if (*file != '/') {
 			strcpy (srcdir, ".");
 		}
 	} else {
 		libname = strdup (file);
 		strcpy (srcdir, ".");
 	}
-	r_sys_setenv ("PKG_CONFIG_PATH", R2_LIBDIR"/pkgconfig");
+	r_sys_setenv ("PKG_CONFIG_PATH", R2_LIBDIR "/pkgconfig");
 	vapidir = r_sys_getenv ("VAPIDIR");
-	char *tail = silent?  " > /dev/null 2>&1": "";
+	char *tail = silent ? " > /dev/null 2>&1" : "";
 	char *src = r_file_slurp (name, NULL);
 	const char *pkgs = "";
 	const char *libs = "";
@@ -85,8 +85,7 @@ static int lang_vala_file(RLang *lang, const char *file, bool silent) {
 		*p = 0;
 	}
 	// TODO: use CC environ if possible
-	len = snprintf (buf, sizeof (buf), "gcc -fPIC -shared %s.c -o lib%s." R_LIB_EXT
-		" $(pkg-config --cflags --libs r_core gobject-2.0 %s)", name, libname, libs);
+	len = snprintf (buf, sizeof (buf), "gcc -fPIC -shared %s.c -o lib%s." R_LIB_EXT " $(pkg-config --cflags --libs r_core gobject-2.0 %s)", name, libname, libs);
 	if (len >= sizeof (buf) || r_sandbox_system (buf, 1) != 0) {
 		free (libname);
 		return false;
@@ -121,16 +120,16 @@ static int lang_vala_file(RLang *lang, const char *file, bool silent) {
 	return 0;
 }
 
-static int vala_run_file(RLang *lang, const char *file) {
-	return lang_vala_file(lang, file, false);
+static int vala_run_file (RLang *lang, const char *file) {
+	return lang_vala_file (lang, file, false);
 }
 
-static int lang_vala_init(void *user) {
+static int lang_vala_init (void *user) {
 	// TODO: check if "valac" is found in path
 	return true;
 }
 
-static int lang_vala_run(RLang *lang, const char *code, int len) {
+static int lang_vala_run (RLang *lang, const char *code, int len) {
 	bool silent = !strncmp (code, "-s", 2);
 	FILE *fd = r_sandbox_fopen (".tmp.vala", "w");
 	if (fd) {
@@ -155,6 +154,6 @@ static RLangPlugin r_lang_plugin_vala = {
 	.license = "LGPL",
 	.desc = "Vala language extension",
 	.run = lang_vala_run,
-	.init = (void*)lang_vala_init,
-	.run_file = (void*)vala_run_file,
+	.init = (void *)lang_vala_init,
+	.run_file = (void *)vala_run_file,
 };

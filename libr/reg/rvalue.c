@@ -4,7 +4,7 @@
 #include <r_util.h>
 
 typedef ut32 ut27;
-static ut27 r_read_me27(const ut8 *buf, int boff) {
+static ut27 r_read_me27 (const ut8 *buf, int boff) {
 	ut27 ret = 0;
 	r_mem_copybits_delta ((ut8 *)&ret, 18, buf, boff, 9);
 	r_mem_copybits_delta ((ut8 *)&ret, 9, buf, boff + 9, 9);
@@ -12,7 +12,7 @@ static ut27 r_read_me27(const ut8 *buf, int boff) {
 	return ret;
 }
 
-R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
+R_API ut64 r_reg_get_value_big (RReg *reg, RRegItem *item, utX *val) {
 	r_return_val_if_fail (reg && item, 0);
 
 	ut64 ret = 0LL;
@@ -49,7 +49,7 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 		}
 		ret = val->v128.Low;
 		break;
-	case 256:// qword + qword + qword + qword
+	case 256: // qword + qword + qword + qword
 		if (regset->arena->bytes && (off + 32 <= regset->arena->size)) {
 			val->v256.Low.Low = *((ut64 *)(regset->arena->bytes + off));
 			val->v256.Low.High = *((ut64 *)(regset->arena->bytes + off + 8));
@@ -67,7 +67,7 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 	return ret;
 }
 
-R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
+R_API ut64 r_reg_get_value (RReg *reg, RRegItem *item) {
 	r_return_val_if_fail (reg && item, 0);
 	if (!reg || !item || item->offset == -1) {
 		return 0LL;
@@ -134,12 +134,12 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	return 0LL;
 }
 
-R_API ut64 r_reg_get_value_by_role(RReg *reg, RRegisterId role) {
+R_API ut64 r_reg_get_value_by_role (RReg *reg, RRegisterId role) {
 	// TODO use mapping from RRegisterId to RRegItem (via RRegSet)
 	return r_reg_get_value (reg, r_reg_get (reg, r_reg_get_name (reg, role), -1));
 }
 
-R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
+R_API bool r_reg_set_value (RReg *reg, RRegItem *item, ut64 value) {
 	ut8 bytes[12];
 	ut8 *src = bytes;
 	r_return_val_if_fail (reg && item, false);
@@ -212,20 +212,20 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	if (src && fits_in_arena) {
 		r_mem_copybits (reg->regset[item->arena].arena->bytes +
 				BITS2BYTES (item->offset),
-				src, item->size);
+			src, item->size);
 		return true;
 	}
 	eprintf ("r_reg_set_value: Cannot set %s to 0x%" PFMT64x "\n", item->name, value);
 	return false;
 }
 
-R_API bool r_reg_set_value_by_role(RReg *reg, RRegisterId role, ut64 val) {
+R_API bool r_reg_set_value_by_role (RReg *reg, RRegisterId role, ut64 val) {
 	// TODO use mapping from RRegisterId to RRegItem (via RRegSet)
 	RRegItem *r = r_reg_get (reg, r_reg_get_name (reg, role), -1);
 	return r_reg_set_value (reg, r, val);
 }
 
-R_API ut64 r_reg_set_bvalue(RReg *reg, RRegItem *item, const char *str) {
+R_API ut64 r_reg_set_bvalue (RReg *reg, RRegItem *item, const char *str) {
 	ut64 num = UT64_MAX;
 	if (item && item->flags && str) {
 		num = r_str_bits_from_string (str, item->flags);
@@ -237,7 +237,7 @@ R_API ut64 r_reg_set_bvalue(RReg *reg, RRegItem *item, const char *str) {
 	return num;
 }
 
-R_API R_HEAP char *r_reg_get_bvalue(RReg *reg, RRegItem *item) {
+R_API R_HEAP char *r_reg_get_bvalue (RReg *reg, RRegItem *item) {
 	char *out = NULL;
 	if (reg && item && item->flags) {
 		out = malloc (strlen (item->flags) + 1);
@@ -254,7 +254,7 @@ R_API R_HEAP char *r_reg_get_bvalue(RReg *reg, RRegItem *item) {
 // packbits can be 8, 16, 32 or 64
 // result value is always casted into ut64
 // TODO: support packbits=128 for xmm registers
-R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) {
+R_API ut64 r_reg_get_pack (RReg *reg, RRegItem *item, int packidx, int packbits) {
 	r_return_val_if_fail (reg && item, 0LL);
 
 	if (packbits < 1) {
@@ -289,7 +289,7 @@ R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) 
 }
 
 // TODO: support packbits=128 for xmm registers
-R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, ut64 val) {
+R_API int r_reg_set_pack (RReg *reg, RRegItem *item, int packidx, int packbits, ut64 val) {
 	r_return_val_if_fail (reg && reg->regset->arena && item, false);
 
 	if (packbits < 1) {
@@ -309,7 +309,7 @@ R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, u
 	off += (packidx * packbytes);
 	if (reg->regset[item->arena].arena->size - BITS2BYTES (off) - BITS2BYTES (packbytes) >= 0) {
 		ut8 *dst = reg->regset[item->arena].arena->bytes + off;
-		memcpy (dst, (ut8*)&val, packbytes);
+		memcpy (dst, (ut8 *)&val, packbytes);
 		return true;
 	}
 	eprintf ("r_reg_set_value: Cannot set %s to 0x%" PFMT64x "\n", item->name, val);

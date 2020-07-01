@@ -3,7 +3,7 @@
 #include <r_anal.h>
 
 #define MINLEN 1
-static int is_string(const ut8 *buf, int size, int *len) {
+static int is_string (const ut8 *buf, int size, int *len) {
 	int i;
 	if (size < 1) {
 		return 0;
@@ -33,28 +33,28 @@ static int is_string(const ut8 *buf, int size, int *len) {
 	return 1;
 }
 
-static int is_number(const ut8 *buf, int size) {
+static int is_number (const ut8 *buf, int size) {
 	ut64 n = r_mem_get_num (buf, size);
-	return (n < UT32_MAX)? (int)n: 0;
+	return (n < UT32_MAX) ? (int)n : 0;
 }
 
-static int is_null(const ut8 *buf, int size) {
+static int is_null (const ut8 *buf, int size) {
 	const char zero[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-	return (!memcmp (buf, &zero, size))? 1: 0;
+	return (!memcmp (buf, &zero, size)) ? 1 : 0;
 }
 
-static int is_invalid(const ut8 *buf, int size) {
+static int is_invalid (const ut8 *buf, int size) {
 	if (size < 1) {
 		return 1;
 	}
 	if (size > 8) {
 		size = 8;
 	}
-	return (!memcmp (buf, "\xff\xff\xff\xff\xff\xff\xff\xff", size))? 1: 0;
+	return (!memcmp (buf, "\xff\xff\xff\xff\xff\xff\xff\xff", size)) ? 1 : 0;
 }
 
 #define USE_IS_VALID_OFFSET 1
-static ut64 is_pointer(RAnal *anal, const ut8 *buf, int size) {
+static ut64 is_pointer (RAnal *anal, const ut8 *buf, int size) {
 	ut64 n;
 	ut8 buf2[32];
 	RIOBind *iob = &anal->iob;
@@ -67,21 +67,24 @@ static ut64 is_pointer(RAnal *anal, const ut8 *buf, int size) {
 	}
 #if USE_IS_VALID_OFFSET
 	int r = iob->is_valid_offset (iob->io, n, 0);
-	return r? n: 0LL;
+	return r ? n : 0LL;
 #else
 	// optimization to ignore very low and very high pointers
 	// this makes disasm 5x faster, but can result in some false positives
 	// we should compare with current offset, to avoid
 	// short/long references. and discard invalid ones
-	if (n < 0x1000) return 0;	// probably wrong
-	if (n > 0xffffffffffffLL) return 0; // probably wrong
+	if (n < 0x1000)
+		return 0; // probably wrong
+	if (n > 0xffffffffffffLL)
+		return 0; // probably wrong
 
-	if (iob->read_at (iob->io, n, buf2, size) != size) return 0;
-	return is_invalid (buf2, size)? 0: n;
+	if (iob->read_at (iob->io, n, buf2, size) != size)
+		return 0;
+	return is_invalid (buf2, size) ? 0 : n;
 #endif
 }
 
-static bool is_bin(const ut8 *buf, int size) {
+static bool is_bin (const ut8 *buf, int size) {
 	// TODO: add more magic signatures heres
 	if ((size >= 4 && !memcmp (buf, "\xcf\xfa\xed\xfe", 4))) {
 		return true;
@@ -97,7 +100,7 @@ static bool is_bin(const ut8 *buf, int size) {
 
 // TODO: add is_flag, is comment?
 
-R_API char *r_anal_data_to_string(RAnalData *d, RConsPrintablePalette *pal) {
+R_API char *r_anal_data_to_string (RAnalData *d, RConsPrintablePalette *pal) {
 	int i, len, mallocsz = 1024;
 	ut32 n32;
 
@@ -112,7 +115,7 @@ R_API char *r_anal_data_to_string(RAnalData *d, RConsPrintablePalette *pal) {
 	}
 	if (pal) {
 		const char *k = pal->offset;
-		r_strbuf_appendf (sb, "%s0x%08" PFMT64x Color_RESET"  ", k, d->addr);
+		r_strbuf_appendf (sb, "%s0x%08" PFMT64x Color_RESET "  ", k, d->addr);
 	} else {
 		r_strbuf_appendf (sb, "0x%08" PFMT64x "  ", d->addr);
 	}
@@ -128,7 +131,7 @@ R_API char *r_anal_data_to_string(RAnalData *d, RConsPrintablePalette *pal) {
 	switch (d->type) {
 	case R_ANAL_DATA_TYPE_STRING:
 		if (pal) {
-			r_strbuf_appendf (sb, "%sstring \"%s\""Color_RESET, pal->comment, d->str);
+			r_strbuf_appendf (sb, "%sstring \"%s\"" Color_RESET, pal->comment, d->str);
 		} else {
 			r_strbuf_appendf (sb, "string \"%s\"", d->str);
 		}
@@ -140,17 +143,17 @@ R_API char *r_anal_data_to_string(RAnalData *d, RConsPrintablePalette *pal) {
 		if (pal) {
 			const char *k = pal->num;
 			if (n32 == d->ptr) {
-				r_strbuf_appendf (sb, "%snumber %d (0x%x)"Color_RESET, k, n32, n32);
+				r_strbuf_appendf (sb, "%snumber %d (0x%x)" Color_RESET, k, n32, n32);
 			} else {
-				r_strbuf_appendf (sb, "%snumber %" PFMT64d " (0x%" PFMT64x ")"Color_RESET,
-						k, d->ptr, d->ptr);
+				r_strbuf_appendf (sb, "%snumber %" PFMT64d " (0x%" PFMT64x ")" Color_RESET,
+					k, d->ptr, d->ptr);
 			}
 		} else {
 			if (n32 == d->ptr) {
 				r_strbuf_appendf (sb, "number %d 0x%x", n32, n32);
 			} else {
 				r_strbuf_appendf (sb, "number %" PFMT64d " 0x%" PFMT64x,
-						d->ptr, d->ptr);
+					d->ptr, d->ptr);
 			}
 		}
 		break;
@@ -165,7 +168,7 @@ R_API char *r_anal_data_to_string(RAnalData *d, RConsPrintablePalette *pal) {
 		break;
 	case R_ANAL_DATA_TYPE_INVALID:
 		if (pal) {
-			r_strbuf_appendf (sb, "%sinvalid"Color_RESET, pal->invalid);
+			r_strbuf_appendf (sb, "%sinvalid" Color_RESET, pal->invalid);
 		} else {
 			r_strbuf_append (sb, "invalid");
 		}
@@ -181,14 +184,14 @@ R_API char *r_anal_data_to_string(RAnalData *d, RConsPrintablePalette *pal) {
 		break;
 	case R_ANAL_DATA_TYPE_UNKNOWN:
 		if (pal) {
-			r_strbuf_appendf (sb, "%sunknown"Color_RESET, pal->invalid);
+			r_strbuf_appendf (sb, "%sunknown" Color_RESET, pal->invalid);
 		} else {
 			r_strbuf_append (sb, "unknown");
 		}
 		break;
 	default:
 		if (pal) {
-			r_strbuf_appendf (sb, "%s(null)"Color_RESET, pal->b0x00);
+			r_strbuf_appendf (sb, "%s(null)" Color_RESET, pal->b0x00);
 		} else {
 			r_strbuf_append (sb, "(null)");
 		}
@@ -197,7 +200,7 @@ R_API char *r_anal_data_to_string(RAnalData *d, RConsPrintablePalette *pal) {
 	return r_strbuf_drain (sb);
 }
 
-R_API RAnalData *r_anal_data_new_string(ut64 addr, const char *p, int len, int type) {
+R_API RAnalData *r_anal_data_new_string (ut64 addr, const char *p, int len, int type) {
 	RAnalData *ad = R_NEW0 (RAnalData);
 	if (!ad) {
 		return NULL;
@@ -232,7 +235,7 @@ R_API RAnalData *r_anal_data_new_string(ut64 addr, const char *p, int len, int t
 	return ad;
 }
 
-R_API RAnalData *r_anal_data_new(ut64 addr, int type, ut64 n, const ut8 *buf, int len) {
+R_API RAnalData *r_anal_data_new (ut64 addr, int type, ut64 n, const ut8 *buf, int len) {
 	RAnalData *ad = R_NEW0 (RAnalData);
 	int l = R_MIN (len, 8);
 	if (!ad) {
@@ -262,7 +265,7 @@ R_API RAnalData *r_anal_data_new(ut64 addr, int type, ut64 n, const ut8 *buf, in
 	return ad;
 }
 
-R_API void r_anal_data_free(RAnalData *d) {
+R_API void r_anal_data_free (RAnalData *d) {
 	if (d) {
 		if (d->buf != (ut8 *)&(d->sbuf)) {
 			free (d->buf);
@@ -272,11 +275,11 @@ R_API void r_anal_data_free(RAnalData *d) {
 	}
 }
 
-R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size, int wordsize) {
+R_API RAnalData *r_anal_data (RAnal *anal, ut64 addr, const ut8 *buf, int size, int wordsize) {
 	ut64 dst = 0;
 	int n, nsize = 0;
 	int bits = anal->bits;
-	int word = wordsize? wordsize: R_MIN (8, bits / 8);
+	int word = wordsize ? wordsize : R_MIN (8, bits / 8);
 
 	if (size < 4) {
 		return NULL;
@@ -303,11 +306,11 @@ R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size, i
 		}
 		if (is_sequence > len - 2) {
 			return r_anal_data_new (addr, R_ANAL_DATA_TYPE_SEQUENCE, -1,
-						buf, is_sequence);
+				buf, is_sequence);
 		}
 		if (is_pattern > len - 2) {
 			return r_anal_data_new (addr, R_ANAL_DATA_TYPE_PATTERN, -1,
-						buf, is_pattern);
+				buf, is_pattern);
 		}
 	}
 	if (size >= word && is_null (buf, word)) {
@@ -335,7 +338,7 @@ R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size, i
 	return r_anal_data_new (addr, R_ANAL_DATA_TYPE_UNKNOWN, dst, buf, R_MIN (word, size));
 }
 
-R_API const char *r_anal_data_kind(RAnal *a, ut64 addr, const ut8 *buf, int len) {
+R_API const char *r_anal_data_kind (RAnal *a, ut64 addr, const ut8 *buf, int len) {
 	int inv = 0;
 	int unk = 0;
 	int str = 0;
@@ -398,7 +401,7 @@ R_API const char *r_anal_data_kind(RAnal *a, ut64 addr, const ut8 *buf, int len)
 	return "data";
 }
 
-R_API const char *r_anal_datatype_to_string(RAnalDataType t) {
+R_API const char *r_anal_datatype_to_string (RAnalDataType t) {
 	switch (t) {
 	case R_ANAL_DATATYPE_NULL:
 		return NULL;

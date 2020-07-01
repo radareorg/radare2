@@ -5,7 +5,7 @@
 #include <r_core.h>
 #include "pdb_downloader.h"
 
-static bool checkExtract(void) {
+static bool checkExtract (void) {
 #if __WINDOWS__
 	return r_sys_cmd ("expand -? >nul") == 0;
 #else
@@ -13,7 +13,7 @@ static bool checkExtract(void) {
 #endif
 }
 
-static bool download_and_write(SPDBDownloaderOpt *opt, const char *file) {
+static bool download_and_write (SPDBDownloaderOpt *opt, const char *file) {
 	char *dir = r_str_newf ("%s%s%s%s%s",
 		opt->symbol_store_path, R_SYS_DIR,
 		opt->dbg_file, R_SYS_DIR,
@@ -43,7 +43,7 @@ static bool download_and_write(SPDBDownloaderOpt *opt, const char *file) {
 	return true;
 }
 
-static int download(struct SPDBDownloader *pd) {
+static int download (struct SPDBDownloader *pd) {
 	SPDBDownloaderOpt *opt = pd->opt;
 	int res = 0;
 	int cmd_ret;
@@ -118,7 +118,7 @@ static int download(struct SPDBDownloader *pd) {
 	return res;
 }
 
-void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pd) {
+void init_pdb_downloader (SPDBDownloaderOpt *opt, SPDBDownloader *pd) {
 	pd->opt = R_NEW0 (SPDBDownloaderOpt);
 	if (!pd->opt) {
 		pd->download = 0;
@@ -134,7 +134,7 @@ void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pd) {
 	pd->download = download;
 }
 
-void deinit_pdb_downloader(SPDBDownloader *pd) {
+void deinit_pdb_downloader (SPDBDownloader *pd) {
 	R_FREE (pd->opt->dbg_file);
 	R_FREE (pd->opt->guid);
 	R_FREE (pd->opt->symbol_server);
@@ -144,7 +144,7 @@ void deinit_pdb_downloader(SPDBDownloader *pd) {
 	pd->download = 0;
 }
 
-static bool is_valid_guid(const char *guid) {
+static bool is_valid_guid (const char *guid) {
 	if (!guid) {
 		return false;
 	}
@@ -157,7 +157,7 @@ static bool is_valid_guid(const char *guid) {
 	return i >= 33; // len of GUID and age
 }
 
-int r_bin_pdb_download(RCore *core, int isradjson, int *actions_done, SPDBOptions *options) {
+int r_bin_pdb_download (RCore *core, int isradjson, int *actions_done, SPDBOptions *options) {
 	int ret;
 	SPDBDownloaderOpt opt;
 	SPDBDownloader pdb_downloader;
@@ -178,7 +178,7 @@ int r_bin_pdb_download(RCore *core, int isradjson, int *actions_done, SPDBOption
 		return 1;
 	}
 
-	opt.dbg_file = (char*) r_file_basename (info->debug_file_name);
+	opt.dbg_file = (char *)r_file_basename (info->debug_file_name);
 	opt.guid = info->guid;
 	opt.symbol_server = options->symbol_server;
 	opt.user_agent = options->user_agent;
@@ -189,10 +189,10 @@ int r_bin_pdb_download(RCore *core, int isradjson, int *actions_done, SPDBOption
 	ret = pdb_downloader.download ? pdb_downloader.download (&pdb_downloader) : 0;
 	if (isradjson && actions_done) {
 		printf ("%s\"pdb\":{\"file\":\"%s\",\"download\":%s}",
-		        *actions_done ? "," : "", opt.dbg_file, ret ? "true" : "false");
+			*actions_done ? "," : "", opt.dbg_file, ret ? "true" : "false");
 	} else {
 		printf ("PDB \"%s\" download %s\n",
-		        opt.dbg_file, ret ? "success" : "failed");
+			opt.dbg_file, ret ? "success" : "failed");
 	}
 	if (actions_done) {
 		(*actions_done)++;

@@ -56,10 +56,10 @@ struct r_bin_mdmp_obj {
 	Sdb *kv;
 };
 
-struct r_bin_mdmp_obj *r_bin_mdmp_new_buf(RBuffer *buf);
-void r_bin_mdmp_free(struct r_bin_mdmp_obj *obj);
-ut64 r_bin_mdmp_get_paddr(struct r_bin_mdmp_obj *obj, ut64 vaddr);
-ut32 r_bin_mdmp_get_perm(struct r_bin_mdmp_obj *obj, ut64 vaddr);
-struct minidump_memory_info *r_bin_mdmp_get_mem_info(struct r_bin_mdmp_obj *obj, ut64 vaddr);
+struct r_bin_mdmp_obj *r_bin_mdmp_new_buf (RBuffer *buf);
+void r_bin_mdmp_free (struct r_bin_mdmp_obj *obj);
+ut64 r_bin_mdmp_get_paddr (struct r_bin_mdmp_obj *obj, ut64 vaddr);
+ut32 r_bin_mdmp_get_perm (struct r_bin_mdmp_obj *obj, ut64 vaddr);
+struct minidump_memory_info *r_bin_mdmp_get_mem_info (struct r_bin_mdmp_obj *obj, ut64 vaddr);
 
 #endif /* MDMP_H */

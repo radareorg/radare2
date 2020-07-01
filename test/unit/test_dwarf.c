@@ -27,14 +27,14 @@
 /**
  * @brief Comparator to sort list of line statements by address(collection of DwarfRows)
  */
-int row_comparator(const void *a, const void *b){
+int row_comparator (const void *a, const void *b) {
 	const RBinDwarfRow *left = a;
 	const RBinDwarfRow *right = b;
 
 	return (left->address >= right->address) ? 1 : -1;
 }
 
-int int_compare(const void *a, const void *b){
+int int_compare (const void *a, const void *b) {
 	const int *left = a;
 	const int *right = b;
 	return (*left >= *right) ? 1 : -1;
@@ -43,7 +43,7 @@ int int_compare(const void *a, const void *b){
 /**
  * @brief Tests correct parsing of abbreviations and line information of DWARF3 C binary
  */
-bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
+bool test_dwarf3_c_basic (void) { // this should work for dwarf2 aswell
 	RBin *bin = r_bin_new ();
 	RIO *io = r_io_new ();
 	r_io_bind (io, &bin->iob);
@@ -167,7 +167,7 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
  * 
  * 
  */
-bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
+bool test_dwarf3_cpp_basic (void) { // this should work for dwarf2 aswell
 	RBin *bin = r_bin_new ();
 	RIO *io = r_io_new ();
 	r_io_bind (io, &bin->iob);
@@ -568,7 +568,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	r_io_free (io);
 	mu_end;
 }
-bool test_dwarf3_cpp_many_comp_units(void) {
+bool test_dwarf3_cpp_many_comp_units (void) {
 	RBin *bin = r_bin_new ();
 	RIO *io = r_io_new ();
 	r_io_bind (io, &bin->iob);
@@ -685,7 +685,7 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	mu_end;
 }
 
-bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswell
+bool test_dwarf_cpp_empty_line_info (void) { // this should work for dwarf2 aswell
 	RBin *bin = r_bin_new ();
 	RIO *io = r_io_new ();
 	r_io_bind (io, &bin->iob);
@@ -751,7 +751,7 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 	mu_end;
 }
 
-bool test_dwarf2_cpp_many_comp_units(void) {
+bool test_dwarf2_cpp_many_comp_units (void) {
 	RBin *bin = r_bin_new ();
 	RIO *io = r_io_new ();
 	r_io_bind (io, &bin->iob);
@@ -867,7 +867,7 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	mu_end;
 }
 
-bool test_dwarf4_cpp_many_comp_units(void) {
+bool test_dwarf4_cpp_many_comp_units (void) {
 	RBin *bin = r_bin_new ();
 	RIO *io = r_io_new ();
 	r_io_bind (io, &bin->iob);
@@ -975,8 +975,7 @@ bool test_dwarf4_cpp_many_comp_units(void) {
 	mu_end;
 }
 
-
-bool all_tests() {
+bool all_tests () {
 	// TODO add tests for debug_info section and abbreviations for DWARF4,5
 	// after merging debug_info parsing PR
 	// right now we test abbreviations + line_information
@@ -990,6 +989,6 @@ bool all_tests() {
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
+int main (int argc, char **argv) {
 	return all_tests ();
 }

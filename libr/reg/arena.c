@@ -4,7 +4,7 @@
 #include <r_util/r_str.h>
 
 /* non-endian safe - used for raw mapping with system registers */
-R_API ut8 *r_reg_get_bytes(RReg *reg, int type, int *size) {
+R_API ut8 *r_reg_get_bytes (RReg *reg, int type, int *size) {
 	RRegArena *arena;
 	int i, sz, osize;
 	ut8 *buf, *newbuf;
@@ -51,7 +51,7 @@ R_API ut8 *r_reg_get_bytes(RReg *reg, int type, int *size) {
 
 /* deserialize ALL register types into buffer */
 /* XXX does the same as r_reg_get_bytes? */
-R_API bool r_reg_read_regs(RReg *reg, ut8 *buf, const int len) {
+R_API bool r_reg_read_regs (RReg *reg, ut8 *buf, const int len) {
 	int i, off = 0;
 	RRegArena *arena;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
@@ -85,7 +85,7 @@ R_API bool r_reg_read_regs(RReg *reg, ut8 *buf, const int len) {
 }
 
 /* TODO reduce number of return statements */
-R_API bool r_reg_set_bytes(RReg *reg, int type, const ut8 *buf, const int len) {
+R_API bool r_reg_set_bytes (RReg *reg, int type, const ut8 *buf, const int len) {
 	int maxsz, minsz;
 	struct r_reg_set_t *regset;
 	RRegArena *arena;
@@ -128,7 +128,7 @@ R_API bool r_reg_set_bytes(RReg *reg, int type, const ut8 *buf, const int len) {
 	return false;
 }
 
-R_API int r_reg_fit_arena(RReg *reg) {
+R_API int r_reg_fit_arena (RReg *reg) {
 	RRegArena *arena;
 	RListIter *iter;
 	RRegItem *r;
@@ -163,7 +163,7 @@ R_API int r_reg_fit_arena(RReg *reg) {
 	return true;
 }
 
-R_API RRegArena *r_reg_arena_new(int size) {
+R_API RRegArena *r_reg_arena_new (int size) {
 	RRegArena *arena = R_NEW0 (RRegArena);
 	if (arena) {
 		if (size < 1) {
@@ -178,14 +178,14 @@ R_API RRegArena *r_reg_arena_new(int size) {
 	return arena;
 }
 
-R_API void r_reg_arena_free(RRegArena *ra) {
+R_API void r_reg_arena_free (RRegArena *ra) {
 	if (ra) {
 		free (ra->bytes);
 		free (ra);
 	}
 }
 
-R_API void r_reg_arena_swap(RReg *reg, int copy) {
+R_API void r_reg_arena_swap (RReg *reg, int copy) {
 	/* XXX: swap current arena to head(previous arena) */
 	int i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
@@ -205,7 +205,7 @@ R_API void r_reg_arena_swap(RReg *reg, int copy) {
 	}
 }
 
-R_API void r_reg_arena_pop(RReg *reg) {
+R_API void r_reg_arena_pop (RReg *reg) {
 	RRegArena *a;
 	int i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
@@ -225,7 +225,7 @@ R_API void r_reg_arena_pop(RReg *reg) {
 	}
 }
 
-R_API int r_reg_arena_push(RReg *reg) {
+R_API int r_reg_arena_push (RReg *reg) {
 	int i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		RRegArena *a = reg->regset[i].arena; // current arena
@@ -250,7 +250,7 @@ R_API int r_reg_arena_push(RReg *reg) {
 	return 0;
 }
 
-R_API void r_reg_arena_zero(RReg *reg) {
+R_API void r_reg_arena_zero (RReg *reg) {
 	int i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		RRegArena *a = reg->regset[i].arena;
@@ -260,7 +260,7 @@ R_API void r_reg_arena_zero(RReg *reg) {
 	}
 }
 
-R_API ut8 *r_reg_arena_peek(RReg *reg) {
+R_API ut8 *r_reg_arena_peek (RReg *reg) {
 	RRegSet *regset = r_reg_regset_get (reg, R_REG_TYPE_GPR);
 	if (!reg || !regset || !regset->arena || (regset->arena->size < 1)) {
 		return NULL;
@@ -273,7 +273,7 @@ R_API ut8 *r_reg_arena_peek(RReg *reg) {
 	return ret;
 }
 
-R_API void r_reg_arena_poke(RReg *reg, const ut8 *ret) {
+R_API void r_reg_arena_poke (RReg *reg, const ut8 *ret) {
 	RRegSet *regset = r_reg_regset_get (reg, R_REG_TYPE_GPR);
 	if (!ret || !regset || !regset->arena || !regset->arena->bytes) {
 		return;
@@ -281,7 +281,7 @@ R_API void r_reg_arena_poke(RReg *reg, const ut8 *ret) {
 	memcpy (regset->arena->bytes, ret, regset->arena->size);
 }
 
-R_API ut8 *r_reg_arena_dup(RReg *reg, const ut8 *source) {
+R_API ut8 *r_reg_arena_dup (RReg *reg, const ut8 *source) {
 	RRegSet *regset = r_reg_regset_get (reg, R_REG_TYPE_GPR);
 	if (!reg || !regset || !regset->arena || (regset->arena->size < 1)) {
 		return NULL;
@@ -294,7 +294,7 @@ R_API ut8 *r_reg_arena_dup(RReg *reg, const ut8 *source) {
 	return ret;
 }
 
-R_API int r_reg_arena_set_bytes(RReg *reg, const char *str) {
+R_API int r_reg_arena_set_bytes (RReg *reg, const char *str) {
 	str = r_str_trim_head_ro (str);
 	int len = r_hex_str_is_valid (str);
 	if (len == -1) {
@@ -325,7 +325,7 @@ R_API int r_reg_arena_set_bytes(RReg *reg, const char *str) {
 	return 0;
 }
 
-R_API void r_reg_arena_shrink(RReg *reg) {
+R_API void r_reg_arena_shrink (RReg *reg) {
 	RListIter *iter;
 	RRegArena *a;
 	int i;

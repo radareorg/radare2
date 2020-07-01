@@ -2,27 +2,28 @@
 #include <r_diff.h>
 #include "minunit.h"
 
-#define R(a,b,c,d) {(const ut8*)a, (const ut8*)b, (int)c, (int)d}
+#define R(a, b, c, d) \
+	{ (const ut8 *)a, (const ut8 *)b, (int)c, (int)d }
 static struct {
 	const ut8 *a;
 	const ut8 *b;
 	int di_distance;
 	int dis_distance;
 } tests[] = {
-	R("", "zzz", 3, 3),
-	R("meow", "", 4, 4),
-	R("a", "b", 2, 1),
-	R("aaa", "aaa", 0, 0),
-	R("aaaaa", "aabaa", 2, 1),
-	R("aaaa", "aabaa", 1, 1),
-	R("aaba", "babca", 3, 2),
-	R("foo", "foobar", 3, 3),
-	R("wallaby", "wallet", 5, 3),
-	R("identity", "identity", 0, 0),
-	{NULL,NULL,0,0}
+	R ("", "zzz", 3, 3),
+	R ("meow", "", 4, 4),
+	R ("a", "b", 2, 1),
+	R ("aaa", "aaa", 0, 0),
+	R ("aaaaa", "aabaa", 2, 1),
+	R ("aaaa", "aabaa", 1, 1),
+	R ("aaba", "babca", 3, 2),
+	R ("foo", "foobar", 3, 3),
+	R ("wallaby", "wallet", 5, 3),
+	R ("identity", "identity", 0, 0),
+	{ NULL, NULL, 0, 0 }
 };
 
-bool test_r_diff_buffers_distance(void) {
+bool test_r_diff_buffers_distance (void) {
 	char msg[128];
 	RDiff *diff = r_diff_new ();
 	if (!diff) {
@@ -62,11 +63,11 @@ bool test_r_diff_buffers_distance(void) {
 	mu_end;
 }
 
-int all_tests() {
-	mu_run_test(test_r_diff_buffers_distance);
+int all_tests () {
+	mu_run_test (test_r_diff_buffers_distance);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
+int main (int argc, char **argv) {
+	return all_tests ();
 }

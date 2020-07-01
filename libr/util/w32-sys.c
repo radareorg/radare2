@@ -7,12 +7,16 @@
 #include <tchar.h>
 
 #define BUFSIZE 1024
-void r_sys_perror_str(const char *fun);
+void r_sys_perror_str (const char *fun);
 
-#define ErrorExit(x) { r_sys_perror(x); return false; }
-char *ReadFromPipe(HANDLE fh, int *outlen);
+#define ErrorExit(x)              \
+	{                         \
+		r_sys_perror (x); \
+		return false;     \
+	}
+char *ReadFromPipe (HANDLE fh, int *outlen);
 
-R_API char *r_sys_get_src_dir_w32(void) {
+R_API char *r_sys_get_src_dir_w32 (void) {
 	TCHAR fullpath[MAX_PATH + 1];
 	TCHAR shortpath[MAX_PATH + 1];
 
@@ -30,7 +34,7 @@ R_API char *r_sys_get_src_dir_w32(void) {
 	return dir;
 }
 
-R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **output, int *outlen, char **sterr) {
+R_API bool r_sys_cmd_str_full_w32 (const char *cmd, const char *input, char **output, int *outlen, char **sterr) {
 	HANDLE in = NULL;
 	HANDLE out = NULL;
 	HANDLE err = NULL;
@@ -112,9 +116,9 @@ R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **out
 	return true;
 }
 
-R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE out, HANDLE err) {
-	PROCESS_INFORMATION pi = {0};
-	STARTUPINFO si = {0};
+R_API bool r_sys_create_child_proc_w32 (const char *cmdline, HANDLE in, HANDLE out, HANDLE err) {
+	PROCESS_INFORMATION pi = { 0 };
+	STARTUPINFO si = { 0 };
 	LPTSTR cmdline_;
 	bool ret = false;
 	const size_t max_length = 32768 * sizeof (TCHAR);
@@ -135,15 +139,15 @@ R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE ou
 	cmdline_ = r_sys_conv_utf8_to_win (cmdline);
 	ExpandEnvironmentStrings (cmdline_, _cmdline_, max_length - 1);
 	if ((ret = CreateProcess (NULL,
-			_cmdline_,     // command line
-			NULL,          // process security attributes
-			NULL,          // primary thread security attributes
-			TRUE,          // handles are inherited
-			0,             // creation flags
-			NULL,          // use parent's environment
-			NULL,          // use parent's current directory
-			&si,           // STARTUPINFO pointer
-			&pi))) {  // receives PROCESS_INFORMATION
+		     _cmdline_, // command line
+		     NULL, // process security attributes
+		     NULL, // primary thread security attributes
+		     TRUE, // handles are inherited
+		     0, // creation flags
+		     NULL, // use parent's environment
+		     NULL, // use parent's current directory
+		     &si, // STARTUPINFO pointer
+		     &pi))) { // receives PROCESS_INFORMATION
 		ret = true;
 		CloseHandle (pi.hProcess);
 		CloseHandle (pi.hThread);
@@ -155,13 +159,13 @@ R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE ou
 	return ret;
 }
 
-char *ReadFromPipe(HANDLE fh, int *outlen) {
+char *ReadFromPipe (HANDLE fh, int *outlen) {
 	DWORD dwRead;
 	CHAR chBuf[BUFSIZE];
 	BOOL bSuccess = FALSE;
 	char *str;
 	int strl = 0;
-	int strsz = BUFSIZE+1;
+	int strsz = BUFSIZE + 1;
 
 	if (outlen) {
 		*outlen = 0;
@@ -175,7 +179,7 @@ char *ReadFromPipe(HANDLE fh, int *outlen) {
 		if (!bSuccess || dwRead == 0) {
 			break;
 		}
-		if (strl+dwRead>strsz) {
+		if (strl + dwRead > strsz) {
 			char *str_tmp = str;
 			strsz += 4096;
 			str = realloc (str, strsz);
@@ -184,7 +188,7 @@ char *ReadFromPipe(HANDLE fh, int *outlen) {
 				return NULL;
 			}
 		}
-		memcpy (str+strl, chBuf, dwRead);
+		memcpy (str + strl, chBuf, dwRead);
 		strl += dwRead;
 	}
 	str[strl] = 0;

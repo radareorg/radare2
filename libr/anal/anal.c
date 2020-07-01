@@ -6,13 +6,13 @@
 #include <r_io.h>
 #include <config.h>
 
-R_LIB_VERSION(r_anal);
+R_LIB_VERSION (r_anal);
 
 static RAnalPlugin *anal_static_plugins[] = {
 	R_ANAL_STATIC_PLUGINS
 };
 
-R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to) {
+R_API void r_anal_set_limits (RAnal *anal, ut64 from, ut64 to) {
 	free (anal->limit);
 	anal->limit = R_NEW0 (RAnalRange);
 	if (anal->limit) {
@@ -21,39 +21,39 @@ R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to) {
 	}
 }
 
-R_API void r_anal_unset_limits(RAnal *anal) {
+R_API void r_anal_unset_limits (RAnal *anal) {
 	R_FREE (anal->limit);
 }
 
-static void meta_unset_for(REvent *ev, int type, void *user, void *data) {
+static void meta_unset_for (REvent *ev, int type, void *user, void *data) {
 	RSpaces *s = (RSpaces *)ev->user;
 	RAnal *anal = container_of (s, RAnal, meta_spaces);
 	RSpaceEvent *se = (RSpaceEvent *)data;
 	r_meta_space_unset_for (anal, se->data.unset.space);
 }
 
-static void meta_count_for(REvent *ev, int type, void *user, void *data) {
+static void meta_count_for (REvent *ev, int type, void *user, void *data) {
 	RSpaces *s = (RSpaces *)ev->user;
 	RAnal *anal = container_of (s, RAnal, meta_spaces);
 	RSpaceEvent *se = (RSpaceEvent *)data;
 	se->res = r_meta_space_count_for (anal, se->data.count.space);
 }
 
-static void zign_unset_for(REvent *ev, int type, void *user, void *data) {
+static void zign_unset_for (REvent *ev, int type, void *user, void *data) {
 	RSpaces *s = (RSpaces *)ev->user;
 	RAnal *anal = container_of (s, RAnal, zign_spaces);
 	RSpaceEvent *se = (RSpaceEvent *)data;
 	r_sign_space_unset_for (anal, se->data.unset.space);
 }
 
-static void zign_count_for(REvent *ev, int type, void *user, void *data) {
+static void zign_count_for (REvent *ev, int type, void *user, void *data) {
 	RSpaces *s = (RSpaces *)ev->user;
 	RAnal *anal = container_of (s, RAnal, zign_spaces);
 	RSpaceEvent *se = (RSpaceEvent *)data;
 	se->res = r_sign_space_count_for (anal, se->data.count.space);
 }
 
-static void zign_rename_for(REvent *ev, int type, void *user, void *data) {
+static void zign_rename_for (REvent *ev, int type, void *user, void *data) {
 	RSpaces *s = (RSpaces *)ev->user;
 	RAnal *anal = container_of (s, RAnal, zign_spaces);
 	RSpaceEvent *se = (RSpaceEvent *)data;
@@ -61,14 +61,14 @@ static void zign_rename_for(REvent *ev, int type, void *user, void *data) {
 		se->data.rename.oldname, se->data.rename.newname);
 }
 
-void r_anal_hint_storage_init(RAnal *a);
-void r_anal_hint_storage_fini(RAnal *a);
+void r_anal_hint_storage_init (RAnal *a);
+void r_anal_hint_storage_fini (RAnal *a);
 
-static void r_meta_item_fini(RAnalMetaItem *item) {
+static void r_meta_item_fini (RAnalMetaItem *item) {
 	free (item->str);
 }
 
-static void r_meta_item_free(void *_item) {
+static void r_meta_item_free (void *_item) {
 	if (_item) {
 		RAnalMetaItem *item = _item;
 		r_meta_item_fini (item);
@@ -76,7 +76,7 @@ static void r_meta_item_free(void *_item) {
 	}
 }
 
-R_API RAnal *r_anal_new(void) {
+R_API RAnal *r_anal_new (void) {
 	int i;
 	RAnal *anal = R_NEW0 (RAnal);
 	if (!anal) {
@@ -116,7 +116,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->sdb_classes = sdb_ns (anal->sdb, "classes", 1);
 	anal->sdb_classes_attrs = sdb_ns (anal->sdb_classes, "attrs", 1);
 	anal->zign_path = strdup ("");
-	anal->cb_printf = (PrintfCallback) printf;
+	anal->cb_printf = (PrintfCallback)printf;
 	(void)r_anal_pin_init (anal);
 	(void)r_anal_xrefs_init (anal);
 	anal->diff_thbb = R_ANAL_THRESHOLDBB;
@@ -132,7 +132,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->refs = r_anal_ref_list_new ();
 	anal->leaddrs = NULL;
 	r_anal_set_bits (anal, 32);
-	anal->plugins = r_list_newf ((RListFree) r_anal_plugin_free);
+	anal->plugins = r_list_newf ((RListFree)r_anal_plugin_free);
 	if (anal->plugins) {
 		for (i = 0; anal_static_plugins[i]; i++) {
 			r_anal_add (anal, anal_static_plugins[i]);
@@ -147,9 +147,9 @@ R_API void r_anal_plugin_free (RAnalPlugin *p) {
 	}
 }
 
-void __block_free_rb(RBNode *node, void *user);
+void __block_free_rb (RBNode *node, void *user);
 
-R_API RAnal *r_anal_free(RAnal *a) {
+R_API RAnal *r_anal_free (RAnal *a) {
 	if (!a) {
 		return NULL;
 	}
@@ -186,11 +186,11 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	return NULL;
 }
 
-R_API void r_anal_set_user_ptr(RAnal *anal, void *user) {
+R_API void r_anal_set_user_ptr (RAnal *anal, void *user) {
 	anal->user = user;
 }
 
-R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo) {
+R_API int r_anal_add (RAnal *anal, RAnalPlugin *foo) {
 	if (foo->init) {
 		foo->init (anal->user);
 	}
@@ -198,7 +198,7 @@ R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo) {
 	return true;
 }
 
-R_API bool r_anal_use(RAnal *anal, const char *name) {
+R_API bool r_anal_use (RAnal *anal, const char *name) {
 	RListIter *it;
 	RAnalPlugin *h;
 
@@ -225,13 +225,14 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 	return false;
 }
 
-R_API char *r_anal_get_reg_profile(RAnal *anal) {
+R_API char *r_anal_get_reg_profile (RAnal *anal) {
 	return (anal && anal->cur && anal->cur->get_reg_profile)
-		? anal->cur->get_reg_profile (anal) : NULL;
+		? anal->cur->get_reg_profile (anal)
+		: NULL;
 }
 
 // deprecate.. or at least reuse get_reg_profile...
-R_API bool r_anal_set_reg_profile(RAnal *anal) {
+R_API bool r_anal_set_reg_profile (RAnal *anal) {
 	bool ret = false;
 	if (anal && anal->cur && anal->cur->set_reg_profile) {
 		ret = anal->cur->set_reg_profile (anal);
@@ -246,13 +247,13 @@ R_API bool r_anal_set_reg_profile(RAnal *anal) {
 	return ret;
 }
 
-R_API bool r_anal_set_fcnsign(RAnal *anal, const char *name) {
+R_API bool r_anal_set_fcnsign (RAnal *anal, const char *name) {
 	const char *dirPrefix = r_sys_prefix (NULL);
 	const char *arch = (anal->cur && anal->cur->arch) ? anal->cur->arch : R_SYS_ARCH;
 	const char *file = (name && *name)
 		? sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "%s.sdb"), dirPrefix, name)
 		: sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "%s-%s-%d.sdb"), dirPrefix,
-			anal->os, arch, anal->bits);
+			  anal->os, arch, anal->bits);
 	if (r_file_exists (file)) {
 		sdb_close (anal->sdb_fcnsign);
 		sdb_free (anal->sdb_fcnsign);
@@ -263,17 +264,17 @@ R_API bool r_anal_set_fcnsign(RAnal *anal, const char *name) {
 	return false;
 }
 
-R_API const char *r_anal_get_fcnsign(RAnal *anal, const char *sym) {
+R_API const char *r_anal_get_fcnsign (RAnal *anal, const char *sym) {
 	return sdb_const_get (anal->sdb_fcnsign, sym, 0);
 }
 
-R_API bool r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int bits) {
+R_API bool r_anal_set_triplet (RAnal *anal, const char *os, const char *arch, int bits) {
 	r_return_val_if_fail (anal, false);
 	if (!os || !*os) {
 		os = R_SYS_OS;
 	}
 	if (!arch || !*arch) {
-		arch = anal->cur? anal->cur->arch: R_SYS_ARCH;
+		arch = anal->cur ? anal->cur->arch : R_SYS_ARCH;
 	}
 	if (bits < 1) {
 		bits = anal->bits;
@@ -285,14 +286,14 @@ R_API bool r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int
 }
 
 // copypasta from core/cbin.c
-static void sdb_concat_by_path(Sdb *s, const char *path) {
+static void sdb_concat_by_path (Sdb *s, const char *path) {
 	Sdb *db = sdb_new (0, path, 0);
 	sdb_merge (s, db);
 	sdb_close (db);
 	sdb_free (db);
 }
 
-R_API bool r_anal_set_os(RAnal *anal, const char *os) {
+R_API bool r_anal_set_os (RAnal *anal, const char *os) {
 	Sdb *types = anal->sdb_types;
 	const char *dir_prefix = r_sys_prefix (NULL);
 	const char *dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s.sdb"),
@@ -303,7 +304,7 @@ R_API bool r_anal_set_os(RAnal *anal, const char *os) {
 	return r_anal_set_triplet (anal, os, NULL, -1);
 }
 
-R_API bool r_anal_set_bits(RAnal *anal, int bits) {
+R_API bool r_anal_set_bits (RAnal *anal, int bits) {
 	switch (bits) {
 	case 8:
 	case 16:
@@ -320,7 +321,7 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 	return false;
 }
 
-R_API void r_anal_set_cpu(RAnal *anal, const char *cpu) {
+R_API void r_anal_set_cpu (RAnal *anal, const char *cpu) {
 	free (anal->cpu);
 	anal->cpu = cpu ? strdup (cpu) : NULL;
 	int v = r_anal_archinfo (anal, R_ANAL_ARCHINFO_ALIGN);
@@ -329,13 +330,13 @@ R_API void r_anal_set_cpu(RAnal *anal, const char *cpu) {
 	}
 }
 
-R_API int r_anal_set_big_endian(RAnal *anal, int bigend) {
+R_API int r_anal_set_big_endian (RAnal *anal, int bigend) {
 	anal->big_endian = bigend;
 	anal->reg->big_endian = bigend;
 	return true;
 }
 
-R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
+R_API ut8 *r_anal_mask (RAnal *anal, int size, const ut8 *data, ut64 at) {
 	RAnalOp *op = NULL;
 	ut8 *ret = NULL;
 	int oplen, idx = 0;
@@ -375,7 +376,7 @@ R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	return ret;
 }
 
-R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
+R_API void r_anal_trace_bb (RAnal *anal, ut64 addr) {
 	RAnalBlock *bbi;
 	RAnalFunction *fcni;
 	RListIter *iter2;
@@ -390,7 +391,7 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 	}
 }
 
-R_API void r_anal_colorize_bb(RAnal *anal, ut64 addr, ut32 color) {
+R_API void r_anal_colorize_bb (RAnal *anal, ut64 addr, ut32 color) {
 	RAnalBlock *bbi;
 	bbi = r_anal_bb_from_offset (anal, addr);
 	if (bbi) {
@@ -398,13 +399,13 @@ R_API void r_anal_colorize_bb(RAnal *anal, ut64 addr, ut32 color) {
 	}
 }
 
-R_API RList* r_anal_get_fcns (RAnal *anal) {
+R_API RList *r_anal_get_fcns (RAnal *anal) {
 	// avoid received to free this thing
 	anal->fcns->free = NULL;
 	return anal->fcns;
 }
 
-R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *str) {
+R_API RAnalOp *r_anal_op_hexstr (RAnal *anal, ut64 addr, const char *str) {
 	RAnalOp *op = R_NEW0 (RAnalOp);
 	if (!op) {
 		return NULL;
@@ -420,7 +421,7 @@ R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *str) {
 	return op;
 }
 
-R_API bool r_anal_op_is_eob(RAnalOp *op) {
+R_API bool r_anal_op_is_eob (RAnalOp *op) {
 	if (op->eob) {
 		return true;
 	}
@@ -455,7 +456,7 @@ R_API int r_anal_purge (RAnal *anal) {
 	return 0;
 }
 
-R_API int r_anal_archinfo(RAnal *anal, int query) {
+R_API int r_anal_archinfo (RAnal *anal, int query) {
 	r_return_val_if_fail (anal, -1);
 	switch (query) {
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
@@ -469,7 +470,7 @@ R_API int r_anal_archinfo(RAnal *anal, int query) {
 	return -1;
 }
 
-static bool __nonreturn_print_commands(void *p, const char *k, const char *v) {
+static bool __nonreturn_print_commands (void *p, const char *k, const char *v) {
 	RAnal *anal = (RAnal *)p;
 	if (!strncmp (v, "func", strlen ("func") + 1)) {
 		char *query = sdb_fmt ("func.%s.noreturn", k);
@@ -483,7 +484,7 @@ static bool __nonreturn_print_commands(void *p, const char *k, const char *v) {
 	return true;
 }
 
-static bool __nonreturn_print(void *p, const char *k, const char *v) {
+static bool __nonreturn_print (void *p, const char *k, const char *v) {
 	RAnal *anal = (RAnal *)p;
 	if (!strncmp (k, "func.", 5) && strstr (k, ".noreturn")) {
 		char *s = strdup (k + 5);
@@ -509,7 +510,7 @@ static bool __nonreturn_print(void *p, const char *k, const char *v) {
 	return true;
 }
 
-R_API void r_anal_noreturn_list(RAnal *anal, int mode) {
+R_API void r_anal_noreturn_list (RAnal *anal, int mode) {
 	switch (mode) {
 	case 1:
 	case '*':
@@ -522,10 +523,10 @@ R_API void r_anal_noreturn_list(RAnal *anal, int mode) {
 	}
 }
 
-#define K_NORET_ADDR(x) sdb_fmt ("addr.%"PFMT64x".noreturn", x)
+#define K_NORET_ADDR(x) sdb_fmt ("addr.%" PFMT64x ".noreturn", x)
 #define K_NORET_FUNC(x) sdb_fmt ("func.%s.noreturn", x)
 
-R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
+R_API bool r_anal_noreturn_add (RAnal *anal, const char *name, ut64 addr) {
 	const char *tmp_name = NULL;
 	Sdb *TDB = anal->sdb_types;
 	char *fnl_name = NULL;
@@ -547,7 +548,7 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 			eprintf ("Can't find Function at given address\n");
 			return false;
 		}
-		tmp_name = fcn ? fcn->name: fi->name;
+		tmp_name = fcn ? fcn->name : fi->name;
 		if (fcn) {
 			fcn->is_noreturn = true;
 		}
@@ -573,7 +574,7 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 	return true;
 }
 
-R_API bool r_anal_noreturn_drop(RAnal *anal, const char *expr) {
+R_API bool r_anal_noreturn_drop (RAnal *anal, const char *expr) {
 	Sdb *TDB = anal->sdb_types;
 	expr = r_str_trim_head_ro (expr);
 	const char *fcnname = NULL;
@@ -606,8 +607,8 @@ R_API bool r_anal_noreturn_drop(RAnal *anal, const char *expr) {
 	return false;
 }
 
-static bool r_anal_noreturn_at_name(RAnal *anal, const char *name) {
-	if (sdb_bool_get (anal->sdb_types, K_NORET_FUNC(name), NULL)) {
+static bool r_anal_noreturn_at_name (RAnal *anal, const char *name) {
+	if (sdb_bool_get (anal->sdb_types, K_NORET_FUNC (name), NULL)) {
 		return true;
 	}
 	char *tmp = r_type_func_guess (anal->sdb_types, (char *)name);
@@ -624,13 +625,13 @@ static bool r_anal_noreturn_at_name(RAnal *anal, const char *name) {
 	return false;
 }
 
-R_API bool r_anal_noreturn_at_addr(RAnal *anal, ut64 addr) {
+R_API bool r_anal_noreturn_at_addr (RAnal *anal, ut64 addr) {
 	return sdb_bool_get (anal->sdb_types, K_NORET_ADDR (addr), NULL);
 }
 
-static bool noreturn_recurse(RAnal *anal, ut64 addr) {
-	RAnalOp op = {0};
-	ut8 bbuf[0x10] = {0};
+static bool noreturn_recurse (RAnal *anal, ut64 addr) {
+	RAnalOp op = { 0 };
+	ut8 bbuf[0x10] = { 0 };
 	ut64 recurse_addr = UT64_MAX;
 	if (!anal->iob.read_at (anal->iob.io, addr, bbuf, sizeof (bbuf))) {
 		eprintf ("Couldn't read buffer\n");
@@ -664,7 +665,7 @@ static bool noreturn_recurse(RAnal *anal, ut64 addr) {
 	return r_anal_noreturn_at (anal, recurse_addr);
 }
 
-R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
+R_API bool r_anal_noreturn_at (RAnal *anal, ut64 addr) {
 	if (!addr || addr == UT64_MAX) {
 		return false;
 	}
@@ -690,7 +691,7 @@ R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
 	return false;
 }
 
-R_API void r_anal_bind(RAnal *anal, RAnalBind *b) {
+R_API void r_anal_bind (RAnal *anal, RAnalBind *b) {
 	if (b) {
 		b->anal = anal;
 		b->get_fcn_in = r_anal_get_fcn_in;
@@ -698,14 +699,14 @@ R_API void r_anal_bind(RAnal *anal, RAnalBind *b) {
 	}
 }
 
-R_API RList *r_anal_preludes(RAnal *anal) {
-	if (anal->cur && anal->cur->preludes ) {
+R_API RList *r_anal_preludes (RAnal *anal) {
+	if (anal->cur && anal->cur->preludes) {
 		return anal->cur->preludes (anal);
 	}
 	return NULL;
 }
 
-R_API bool r_anal_is_prelude(RAnal *anal, const ut8 *data, int len) {
+R_API bool r_anal_is_prelude (RAnal *anal, const ut8 *data, int len) {
 	RList *l = r_anal_preludes (anal);
 	if (l) {
 		RSearchKeyword *kw;

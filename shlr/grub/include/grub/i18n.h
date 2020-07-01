@@ -16,22 +16,22 @@
  *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef	GRUB_I18N_H
-#define	GRUB_I18N_H	1
+#ifndef GRUB_I18N_H
+#define GRUB_I18N_H 1
 
 #include <grub/symbol.h>
 
-extern const char *(*EXPORT_VAR(grub_gettext)) (const char *s);
+extern const char *(*EXPORT_VAR (grub_gettext)) (const char *s);
 
 /* NLS can be disabled through the configure --disable-nls option.  */
 #if (defined(ENABLE_NLS) && ENABLE_NLS)
 
-# ifdef GRUB_UTIL
+#ifdef GRUB_UTIL
 
-#  include <locale.h>
-#  include <libintl.h>
+#include <locale.h>
+#include <libintl.h>
 
-# endif /* GRUB_UTIL */
+#endif /* GRUB_UTIL */
 
 #else /* ! (defined(ENABLE_NLS) && ENABLE_NLS) */
 
@@ -40,18 +40,18 @@ extern const char *(*EXPORT_VAR(grub_gettext)) (const char *s);
    for invalid uses of the value returned from these functions.
    On pre-ANSI systems without 'const', the config.h file is supposed to
    contain "#define const".  */
-# ifdef GRUB_UTIL
-#  define gettext(Msgid) ((const char *) (Msgid))
-# else
-#  define grub_gettext(str) ((const char *) (str))
-# endif /* GRUB_UTIL */
+#ifdef GRUB_UTIL
+#define gettext(Msgid) ((const char *)(Msgid))
+#else
+#define grub_gettext(str) ((const char *)(str))
+#endif /* GRUB_UTIL */
 
 #endif /* (defined(ENABLE_NLS) && ENABLE_NLS) */
 
 #ifdef GRUB_UTIL
-# define _(str) gettext(str)
+#define _(str) gettext (str)
 #else
-# define _(str) grub_gettext(str)
+#define _(str) grub_gettext (str)
 #endif /* GRUB_UTIL */
 
 #define N_(str) str

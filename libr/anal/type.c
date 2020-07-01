@@ -4,7 +4,7 @@
 #include <string.h>
 #include "sdb/sdb.h"
 
-static char *is_type(char *type) {
+static char *is_type (char *type) {
 	char *name = NULL;
 	if ((name = strstr (type, "=type")) ||
 		(name = strstr (type, "=struct")) ||
@@ -22,7 +22,7 @@ static char *is_type(char *type) {
  * \param sdb_types pointer to the sdb for types
  * \param name the datatype whose size if to be stored
  */
-static void save_type_size(Sdb *sdb_types, char *name) {
+static void save_type_size (Sdb *sdb_types, char *name) {
 	const char *type = NULL;
 	r_return_if_fail (sdb_types && name);
 	if (!sdb_exists (sdb_types, name) || !(type = sdb_const_get (sdb_types, name, 0))) {
@@ -40,7 +40,7 @@ static void save_type_size(Sdb *sdb_types, char *name) {
  * \param core pointer to radare2 core
  * \param parsed the parsed c string in sdb format
  */
-static void __save_parsed_type_size(RAnal *anal, const char *parsed) {
+static void __save_parsed_type_size (RAnal *anal, const char *parsed) {
 	r_return_if_fail (anal && parsed);
 	char *str = strdup (parsed);
 	if (str) {
@@ -67,7 +67,7 @@ static void __save_parsed_type_size(RAnal *anal, const char *parsed) {
 	}
 }
 
-static char *get_type_data(Sdb *sdb_types, const char *type, const char *sname) {
+static char *get_type_data (Sdb *sdb_types, const char *type, const char *sname) {
 	char *key = r_str_newf ("%s.%s", type, sname);
 	if (!key) {
 		return NULL;
@@ -77,7 +77,7 @@ static char *get_type_data(Sdb *sdb_types, const char *type, const char *sname) 
 	return members;
 }
 
-R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name) {
+R_API void r_anal_remove_parsed_type (RAnal *anal, const char *name) {
 	r_return_if_fail (anal && name);
 	Sdb *TDB = anal->sdb_types;
 	SdbKv *kv;
@@ -102,7 +102,7 @@ R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name) {
 	}
 }
 
-R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed) {
+R_API void r_anal_save_parsed_type (RAnal *anal, const char *parsed) {
 	r_return_if_fail (anal && parsed);
 
 	// First, if any parsed types exist, let's remove them.
@@ -129,11 +129,11 @@ R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed) {
 	__save_parsed_type_size (anal, parsed);
 }
 
-static int typecmp(const void *a, const void *b) {
+static int typecmp (const void *a, const void *b) {
 	return strcmp (a, b);
 }
 
-R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn) {
+R_API RList *r_anal_types_from_fcn (RAnal *anal, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalVar *var;
 	RList *list = r_anal_var_all_list (anal, fcn);
@@ -146,27 +146,27 @@ R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn) {
 	return uniq;
 }
 
-static void enum_type_fini(void *e, void *user) {
+static void enum_type_fini (void *e, void *user) {
 	(void)user;
 	RAnalEnumCase *cas = e;
 	free ((char *)cas->name);
 }
 
-static void struct_type_fini(void *e, void *user) {
+static void struct_type_fini (void *e, void *user) {
 	(void)user;
 	RAnalStructMember *member = e;
 	free ((char *)member->name);
 	free ((char *)member->type);
 }
 
-static void union_type_fini(void *e, void *user) {
+static void union_type_fini (void *e, void *user) {
 	(void)user;
 	RAnalUnionMember *member = e;
 	free ((char *)member->name);
 	free ((char *)member->type);
 }
 
-static RAnalBaseType *get_enum_type(RAnal *anal, const char *sname) {
+static RAnalBaseType *get_enum_type (RAnal *anal, const char *sname) {
 	r_return_val_if_fail (anal && sname, NULL);
 
 	RAnalBaseType *base_type = R_NEW0 (RAnalBaseType);
@@ -224,7 +224,7 @@ error:
 	return NULL;
 }
 
-static RAnalBaseType *get_struct_type(RAnal *anal, const char *sname) {
+static RAnalBaseType *get_struct_type (RAnal *anal, const char *sname) {
 	r_return_val_if_fail (anal && sname, NULL);
 
 	RAnalBaseType *base_type = R_NEW0 (RAnalBaseType);
@@ -294,7 +294,7 @@ error:
 	return NULL;
 }
 
-static RAnalBaseType *get_union_type(RAnal *anal, const char *sname) {
+static RAnalBaseType *get_union_type (RAnal *anal, const char *sname) {
 	r_return_val_if_fail (anal && sname, NULL);
 
 	RAnalBaseType *base_type = R_NEW0 (RAnalBaseType);
@@ -354,7 +354,7 @@ error:
 }
 
 // returns NULL if name is not found or any failure happened
-R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
+R_API RAnalBaseType *r_anal_get_base_type (RAnal *anal, const char *name) {
 	r_return_val_if_fail (anal && name, NULL);
 
 	char *sname = r_str_sanitize_sdb_key (name);

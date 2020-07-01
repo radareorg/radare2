@@ -4,7 +4,7 @@
 #include <r_util.h>
 #include <r_lib.h>
 
-static const char *parse_alias(RReg *reg, char **tok, const int n) {
+static const char *parse_alias (RReg *reg, char **tok, const int n) {
 	if (n == 2) {
 		int role = r_reg_get_name_idx (tok[0] + 1);
 		return r_reg_set_name (reg, role, tok[1])
@@ -17,7 +17,7 @@ static const char *parse_alias(RReg *reg, char **tok, const int n) {
 // Sizes prepended with a dot are expressed in bits
 // strtoul with base 0 allows the input to be in decimal/octal/hex format
 
-static ut64 parse_size(char *s, char **end) {
+static ut64 parse_size (char *s, char **end) {
 	if (*s == '.') {
 		return strtoul (s + 1, end, 10);
 	}
@@ -32,7 +32,7 @@ static ut64 parse_size(char *s, char **end) {
 }
 
 //TODO: implement bool r_reg_set_def_string()
-static const char *parse_def(RReg *reg, char **tok, const int n) {
+static const char *parse_def (RReg *reg, char **tok, const int n) {
 	char *end;
 	int type, type2;
 
@@ -126,7 +126,7 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 }
 
 #define PARSER_MAX_TOKENS 8
-R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
+R_API bool r_reg_set_profile_string (RReg *reg, const char *str) {
 	char *tok[PARSER_MAX_TOKENS];
 	char tmp[128];
 	int i, j, l;
@@ -242,7 +242,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 	return true;
 }
 
-R_API bool r_reg_set_profile(RReg *reg, const char *profile) {
+R_API bool r_reg_set_profile (RReg *reg, const char *profile) {
 	char *base, *file;
 	char *str = r_file_slurp (profile, NULL);
 	if (!str) {
@@ -262,7 +262,7 @@ R_API bool r_reg_set_profile(RReg *reg, const char *profile) {
 	return ret;
 }
 
-static bool gdb_to_r2_profile(char *gdb) {
+static bool gdb_to_r2_profile (char *gdb) {
 	char *ptr = gdb, *ptr1, *gptr, *gptr1;
 	char name[16], groups[128], type[16];
 	const int all = 1, gpr = 2, save = 4, restore = 8, float_ = 16,
@@ -378,7 +378,7 @@ static bool gdb_to_r2_profile(char *gdb) {
 	return true;
 }
 
-R_API bool r_reg_parse_gdb_profile(const char *profile_file) {
+R_API bool r_reg_parse_gdb_profile (const char *profile_file) {
 	char *base, *str = NULL;
 	if (!(str = r_file_slurp (profile_file, NULL))) {
 		if ((base = r_sys_getenv (R_LIB_ENV))) {

@@ -6,14 +6,14 @@
 #include <r_lib.h>
 #include <r_asm.h>
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int opsz = 0;
 	r_strbuf_set (&op->buf_asm, "");
 	op->size = opsz;
 	return opsz;
 }
 
-static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
+static int assemble (RAsm *a, RAsmOp *op, const char *buf) {
 	return 0;
 }
 

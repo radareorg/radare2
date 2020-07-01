@@ -38,10 +38,10 @@ static const char *_8051_regs[] = {
 	"acc", 0, 0, 0, 0, 0, 0, 0, // 0xe0
 	0, 0, 0, 0, 0, 0, 0, 0, // 0xe8
 	"b", 0, 0, 0, 0, 0, 0, 0, // 0xf0
-	0, 0, 0, 0, 0, 0, 0, 0  // 0xf8
+	0, 0, 0, 0, 0, 0, 0, 0 // 0xf8
 };
 
-static char* _replace_register(char* disasm, ut8 arg, ut8 val) {
+static char *_replace_register (char *disasm, ut8 arg, ut8 val) {
 	char key[10];
 	char subst[10];
 	if (arg == A_DIRECT) {
@@ -61,7 +61,7 @@ static char* _replace_register(char* disasm, ut8 arg, ut8 val) {
 	return disasm;
 }
 
-static char *r_8051_disas(ut64 pc, const ut8 *buf, int len, int *olen) {
+static char *r_8051_disas (ut64 pc, const ut8 *buf, int len, int *olen) {
 	int i = 0;
 	while (_8051_ops[i].string && _8051_ops[i].op != (buf[0] & ~_8051_ops[i].mask)) {
 		i++;
@@ -69,14 +69,14 @@ static char *r_8051_disas(ut64 pc, const ut8 *buf, int len, int *olen) {
 
 	if (_8051_ops[i].string) {
 		// valid opcodes
-		const char* name = _8051_ops[i].string;
+		const char *name = _8051_ops[i].string;
 		ut8 mask = _8051_ops[i].mask;
 		ut8 arg1 = _8051_ops[i].arg1;
 		ut8 arg2 = _8051_ops[i].arg2;
 		ut8 arg3 = _8051_ops[i].arg3;
 		ut8 oplen = _8051_ops[i].len;
 		ut8 val1 = 0, val2 = 0;
-		char* disasm = 0;
+		char *disasm = 0;
 
 		switch (oplen) {
 		case 1:
@@ -88,7 +88,7 @@ static char *r_8051_disas(ut64 pc, const ut8 *buf, int len, int *olen) {
 			}
 			break;
 		case 2:
-			if (len>1) {
+			if (len > 1) {
 				if (arg1 == A_OFFSET) {
 					disasm = r_str_newf (name, arg_offset (pc + 2, buf[1]));
 				} else if (arg1 == A_ADDR11) {

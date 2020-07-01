@@ -22,7 +22,7 @@ static ut8 z80_op_24_branch_index_res (ut8 hex) {
 	case 0x76: return 0x46;
 	case 0x7e: return 0x47;
 	}
-	return (hex > 0x7f)? hex - 0x38: 0xc8;
+	return (hex > 0x7f) ? hex - 0x38 : 0xc8;
 }
 
 static int z80OpLength (const ut8 *buf, int len) {
@@ -38,10 +38,10 @@ static int z80OpLength (const ut8 *buf, int len) {
 		}
 		if (op[buf[0]].type & Z80_ENC0) {
 			op = (z80_opcode *)op[buf[0]].op_moar;
-			type = op[z80_fddd_branch_index_res(buf[1])].type;
+			type = op[z80_fddd_branch_index_res (buf[1])].type;
 		} else if (op[buf[0]].type & Z80_ENC1) {
 			op = (z80_opcode *)op[buf[0]].op_moar;
-			type = op[z80_ed_branch_index_res(buf[1])].type;
+			type = op[z80_ed_branch_index_res (buf[1])].type;
 		}
 	} else {
 		type = op[buf[0]].type;
@@ -82,14 +82,14 @@ FUNC_ATTR_USED static int z80Disass (RAsmOp *op, const ut8 *buf, int len) {
 	case Z80_OP8:
 		buf_asm = sdb_fmt ("%s", z_op[buf[0]].name);
 		break;
-	case Z80_OP8^Z80_ARG8:
+	case Z80_OP8 ^ Z80_ARG8:
 		buf_asm = sdb_fmt (z_op[buf[0]].name, buf[1]);
 		break;
-	case Z80_OP8^Z80_ARG16:
-		buf_asm = sdb_fmt (z_op[buf[0]].name, buf[1]+(buf[2]<<8));
+	case Z80_OP8 ^ Z80_ARG16:
+		buf_asm = sdb_fmt (z_op[buf[0]].name, buf[1] + (buf[2] << 8));
 		break;
 	case Z80_OP16:
-		cb_tab = (char **) z_op[buf[0]].op_moar;
+		cb_tab = (char **)z_op[buf[0]].op_moar;
 		buf_asm = sdb_fmt ("%s", cb_tab[buf[1]]);
 		break;
 	case Z80_OP_UNK ^ Z80_ENC1:
@@ -98,8 +98,8 @@ FUNC_ATTR_USED static int z80Disass (RAsmOp *op, const ut8 *buf, int len) {
 		if (z_op[res].type == Z80_OP16) {
 			buf_asm = sdb_fmt ("%s", z_op[res].name);
 		}
-		if (z_op[res].type == (Z80_OP16^Z80_ARG16)) {
-			buf_asm = sdb_fmt (z_op[res].name, buf[2]+(buf[3]<<8));
+		if (z_op[res].type == (Z80_OP16 ^ Z80_ARG16)) {
+			buf_asm = sdb_fmt (z_op[res].name, buf[2] + (buf[3] << 8));
 		}
 		break;
 	case Z80_OP_UNK ^ Z80_ENC0:
@@ -108,14 +108,14 @@ FUNC_ATTR_USED static int z80Disass (RAsmOp *op, const ut8 *buf, int len) {
 		if (z_op[res].type == Z80_OP16) {
 			buf_asm = sdb_fmt ("%s", z_op[res].name);
 		}
-		if (z_op[res].type == (Z80_OP16^Z80_ARG16)) {
-			buf_asm = sdb_fmt (z_op[res].name, buf[2]+(buf[3]<<8));
+		if (z_op[res].type == (Z80_OP16 ^ Z80_ARG16)) {
+			buf_asm = sdb_fmt (z_op[res].name, buf[2] + (buf[3] << 8));
 		}
-		if (z_op[res].type == (Z80_OP16^Z80_ARG8)) {
+		if (z_op[res].type == (Z80_OP16 ^ Z80_ARG8)) {
 			buf_asm = sdb_fmt (z_op[res].name, buf[2], buf[3]);
 		}
 		if (z_op[res].type == (Z80_OP24 ^ Z80_ARG8)) {
-			cb_tab = (char **) z_op[res].op_moar;
+			cb_tab = (char **)z_op[res].op_moar;
 			buf_asm = sdb_fmt (cb_tab[z80_op_24_branch_index_res (buf[3])], buf[2]);
 		}
 		if (z_op[res].type == (Z80_OP16 ^ Z80_ARG8 ^ Z80_ARG16)) {

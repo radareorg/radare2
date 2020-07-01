@@ -17,51 +17,49 @@
  */
 
 #ifndef GRUB_HFS_HEADER
-#define GRUB_HFS_HEADER	1
+#define GRUB_HFS_HEADER 1
 
 #include <grub/types.h>
 #include <r_types.h>
 
-#define GRUB_HFS_MAGIC		0x4244
+#define GRUB_HFS_MAGIC 0x4244
 
 /* A single extent.  A file consists of one or more extents.  */
-struct grub_hfs_extent
-{
-  /* The first physical block.  */
-  grub_uint16_t first_block;
-  grub_uint16_t count;
+struct grub_hfs_extent {
+	/* The first physical block.  */
+	grub_uint16_t first_block;
+	grub_uint16_t count;
 };
 
 /* HFS stores extents in groups of 3.  */
 typedef struct grub_hfs_extent grub_hfs_datarecord_t[3]
 #ifdef __GNUC__
-  __attribute__((aligned(1)))
+	__attribute__ ((aligned (1)))
 #endif
-;
+	;
 
 /* The HFS superblock (The official name is `Master Directory
    Block').  */
 R_PACKED (
-struct grub_hfs_sblock
-{
-  grub_uint16_t magic;
-  grub_uint8_t unused[18];
-  grub_uint32_t blksz;
-  grub_uint8_t unused2[4];
-  grub_uint16_t first_block;
-  grub_uint8_t unused4[6];
+	struct grub_hfs_sblock {
+		grub_uint16_t magic;
+		grub_uint8_t unused[18];
+		grub_uint32_t blksz;
+		grub_uint8_t unused2[4];
+		grub_uint16_t first_block;
+		grub_uint8_t unused4[6];
 
-  /* A pascal style string that holds the volumename.  */
-  grub_uint8_t volname[28];
+		/* A pascal style string that holds the volumename.  */
+		grub_uint8_t volname[28];
 
-  grub_uint8_t unused5[52];
-  grub_uint64_t num_serial;
-  grub_uint16_t embed_sig;
-  struct grub_hfs_extent embed_extent;
-  grub_uint8_t unused6[4];
-  grub_hfs_datarecord_t extent_recs;
-  grub_uint32_t catalog_size;
-  grub_hfs_datarecord_t catalog_recs;
-});
+		grub_uint8_t unused5[52];
+		grub_uint64_t num_serial;
+		grub_uint16_t embed_sig;
+		struct grub_hfs_extent embed_extent;
+		grub_uint8_t unused6[4];
+		grub_hfs_datarecord_t extent_recs;
+		grub_uint32_t catalog_size;
+		grub_hfs_datarecord_t catalog_recs;
+	});
 
 #endif /* ! GRUB_HFS_HEADER */

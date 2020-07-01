@@ -10,7 +10,7 @@
 #define SOCKET_HTTP_MAX_HEADER_LENGTH 0x2000
 #define SOCKET_HTTP_MAX_REDIRECTS 5
 
-static size_t socket_slurp(RSocket *s, RBuffer *buf) {
+static size_t socket_slurp (RSocket *s, RBuffer *buf) {
 	size_t i;
 	if (r_socket_ready (s, 1, 0) != 1) {
 		return 0;
@@ -28,9 +28,9 @@ static size_t socket_slurp(RSocket *s, RBuffer *buf) {
 	return i;
 }
 
-static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut32 redirections);
+static char *socket_http_get_recursive (const char *url, int *code, int *rlen, ut32 redirections);
 
-static char *socket_http_answer(RSocket *s, int *code, int *rlen, ut32 redirections) {
+static char *socket_http_answer (RSocket *s, int *code, int *rlen, ut32 redirections) {
 	r_return_val_if_fail (s, NULL);
 	const char *p;
 	int ret, len = 0, delta = 0;
@@ -47,9 +47,9 @@ static char *socket_http_answer(RSocket *s, int *code, int *rlen, ut32 redirecti
 	}
 	r_buf_read_at (b, 0, (ut8 *)buf, olen);
 	buf[olen] = 0;
-	if ((dn = (char*)r_str_casestr (buf, "\n\n"))) {
+	if ((dn = (char *)r_str_casestr (buf, "\n\n"))) {
 		delta += 2;
-	} else if ((dn = (char*)r_str_casestr (buf, "\r\n\r\n"))) {
+	} else if ((dn = (char *)r_str_casestr (buf, "\r\n\r\n"))) {
 		delta += 4;
 	} else {
 		goto exit;
@@ -94,7 +94,7 @@ static char *socket_http_answer(RSocket *s, int *code, int *rlen, ut32 redirecti
 			olen -= dn - buf;
 			memcpy (res, dn + delta, olen);
 			do {
-				ret = r_socket_read_block (s, (ut8*) res + olen, len - olen);
+				ret = r_socket_read_block (s, (ut8 *)res + olen, len - olen);
 				if (ret < 1) {
 					break;
 				}
@@ -122,8 +122,8 @@ exit:
 }
 
 #if __WINDOWS__
-static char *http_get_w32(const char *url, int *code, int *rlen) {
-	HINTERNET hInternet = InternetOpenA ("radare2 "R2_VERSION, INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
+static char *http_get_w32 (const char *url, int *code, int *rlen) {
+	HINTERNET hInternet = InternetOpenA ("radare2 " R2_VERSION, INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
 	if (!hInternet) {
 		r_sys_perror ("InternetOpenA");
 		return NULL;
@@ -177,7 +177,7 @@ exit:
 }
 #endif
 
-static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut32 redirections) {
+static char *socket_http_get_recursive (const char *url, int *code, int *rlen, ut32 redirections) {
 	if (code) {
 		*code = 0;
 	}
@@ -233,7 +233,7 @@ static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut
 	port = strchr (host, ':');
 	if (!port) {
 #if HAVE_LIB_SSL
-		port = ssl? "443": "80";
+		port = ssl ? "443" : "80";
 #else
 		port = "80";
 #endif
@@ -256,11 +256,12 @@ static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut
 	}
 	if (r_socket_connect_tcp (s, host, port, 0)) {
 		r_socket_printf (s,
-				"GET /%s HTTP/1.1\r\n"
-				"User-Agent: radare2 "R2_VERSION"\r\n"
-				"Accept: */*\r\n"
-				"Host: %s:%s\r\n"
-				"\r\n", path, host, port);
+			"GET /%s HTTP/1.1\r\n"
+			"User-Agent: radare2 " R2_VERSION "\r\n"
+			"Accept: */*\r\n"
+			"Host: %s:%s\r\n"
+			"\r\n",
+			path, host, port);
 		response = socket_http_answer (s, code, rlen, redirections);
 	} else {
 		eprintf ("Cannot connect to %s:%s\n", host, port);
@@ -272,11 +273,11 @@ static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut
 #endif
 }
 
-R_API char *r_socket_http_get(const char *url, int *code, int *rlen) {
+R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
 	return socket_http_get_recursive (url, code, rlen, SOCKET_HTTP_MAX_REDIRECTS);
 }
 
-R_API char *r_socket_http_post(const char *url, const char *data, int *code, int *rlen) {
+R_API char *r_socket_http_post (const char *url, const char *data, int *code, int *rlen) {
 	RSocket *s;
 	bool ssl = r_str_startswith (url, "https://");
 	char *uri = strdup (url);
@@ -293,7 +294,7 @@ R_API char *r_socket_http_post(const char *url, const char *data, int *code, int
 	host += 3;
 	char *port = strchr (host, ':');
 	if (!port) {
-		port = (ssl)? "443": "80";
+		port = (ssl) ? "443" : "80";
 	} else {
 		*port++ = 0;
 	}
@@ -316,13 +317,14 @@ R_API char *r_socket_http_post(const char *url, const char *data, int *code, int
 	}
 	/* Send */
 	r_socket_printf (s,
-			"POST /%s HTTP/1.0\r\n"
-			"User-Agent: radare2 "R2_VERSION"\r\n"
-			"Accept: */*\r\n"
-			"Host: %s\r\n"
-			"Content-Length: %i\r\n"
-			"Content-Type: application/x-www-form-urlencoded\r\n"
-			"\r\n", path, host, (int)strlen (data));
+		"POST /%s HTTP/1.0\r\n"
+		"User-Agent: radare2 " R2_VERSION "\r\n"
+		"Accept: */*\r\n"
+		"Host: %s\r\n"
+		"Content-Length: %i\r\n"
+		"Content-Type: application/x-www-form-urlencoded\r\n"
+		"\r\n",
+		path, host, (int)strlen (data));
 	free (uri);
 	r_socket_write (s, (void *)data, strlen (data));
 	return socket_http_answer (s, code, rlen, 0);

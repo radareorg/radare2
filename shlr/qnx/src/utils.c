@@ -35,39 +35,39 @@ enum {
 };
 
 enum i386_regnum {
-	I386_EAX_REGNUM,    /* %eax */
-	I386_ECX_REGNUM,    /* %ecx */
-	I386_EDX_REGNUM,    /* %edx */
-	I386_EBX_REGNUM,    /* %ebx */
-	I386_ESP_REGNUM,    /* %esp */
-	I386_EBP_REGNUM,    /* %ebp */
-	I386_ESI_REGNUM,    /* %esi */
-	I386_EDI_REGNUM,    /* %edi */
-	I386_EIP_REGNUM,    /* %eip */
+	I386_EAX_REGNUM, /* %eax */
+	I386_ECX_REGNUM, /* %ecx */
+	I386_EDX_REGNUM, /* %edx */
+	I386_EBX_REGNUM, /* %ebx */
+	I386_ESP_REGNUM, /* %esp */
+	I386_EBP_REGNUM, /* %ebp */
+	I386_ESI_REGNUM, /* %esi */
+	I386_EDI_REGNUM, /* %edi */
+	I386_EIP_REGNUM, /* %eip */
 	I386_EFLAGS_REGNUM, /* %eflags */
-	I386_CS_REGNUM,     /* %cs */
-	I386_SS_REGNUM,     /* %ss */
-	I386_DS_REGNUM,     /* %ds */
-	I386_ES_REGNUM,     /* %es */
-	I386_FS_REGNUM,     /* %fs */
-	I386_GS_REGNUM,     /* %gs */
-	I386_ST0_REGNUM     /* %st(0) */
+	I386_CS_REGNUM, /* %cs */
+	I386_SS_REGNUM, /* %ss */
+	I386_DS_REGNUM, /* %ds */
+	I386_ES_REGNUM, /* %es */
+	I386_FS_REGNUM, /* %fs */
+	I386_GS_REGNUM, /* %gs */
+	I386_ST0_REGNUM /* %st(0) */
 };
 
 static int i386nto_gregset_reg_offset[] = {
-	7 * 4,  /* %eax */
-	6 * 4,  /* %ecx */
-	5 * 4,  /* %edx */
-	4 * 4,  /* %ebx */
+	7 * 4, /* %eax */
+	6 * 4, /* %ecx */
+	5 * 4, /* %edx */
+	4 * 4, /* %ebx */
 	11 * 4, /* %esp */
-	2 * 4,  /* %epb */
-	1 * 4,  /* %esi */
-	0 * 4,  /* %edi */
-	8 * 4,  /* %eip */
+	2 * 4, /* %epb */
+	1 * 4, /* %esi */
+	0 * 4, /* %edi */
+	8 * 4, /* %eip */
 	10 * 4, /* %eflags */
-	9 * 4,  /* %cs */
+	9 * 4, /* %cs */
 	12 * 4, /* %ss */
-	-1      /* filler */
+	-1 /* filler */
 };
 
 /* Pdebug returns errno values on Neutrino that do not correspond to right
@@ -92,34 +92,34 @@ struct errnomap_t {
 int errnoconvert (int x) {
 	struct errnomap_t errnomap[] = {
 #if defined(__linux__)
-		{NTO_ENAMETOOLONG, ENAMETOOLONG},
-		{NTO_ELIBACC, ELIBACC},
-		{NTO_ELIBBAD, ELIBBAD},
-		{NTO_ELIBSCN, ELIBSCN},
-		{NTO_ELIBMAX, ELIBMAX},
-		{NTO_ELIBEXEC, ELIBEXEC},
-		{NTO_EILSEQ, EILSEQ},
-		{NTO_ENOSYS, ENOSYS}
+		{ NTO_ENAMETOOLONG, ENAMETOOLONG },
+		{ NTO_ELIBACC, ELIBACC },
+		{ NTO_ELIBBAD, ELIBBAD },
+		{ NTO_ELIBSCN, ELIBSCN },
+		{ NTO_ELIBMAX, ELIBMAX },
+		{ NTO_ELIBEXEC, ELIBEXEC },
+		{ NTO_EILSEQ, EILSEQ },
+		{ NTO_ENOSYS, ENOSYS }
 #elif defined(__CYGWIN__)
-		{NTO_ENAMETOOLONG, ENAMETOOLONG},
-		{NTO_ENOSYS, ENOSYS}
+		{ NTO_ENAMETOOLONG, ENAMETOOLONG },
+		{ NTO_ENOSYS, ENOSYS }
 #elif defined(__MINGW32__) || defined(MINGW32) || defined(__NetBSD__)
 		/* The closest mappings from mingw's errno.h.  */
-		{NTO_ENAMETOOLONG, ENAMETOOLONG},
-		{NTO_ELIBACC, ESRCH},
-		{NTO_ELIBBAD, ESRCH},
-		{NTO_ELIBSCN, ENOEXEC},
-		{NTO_ELIBMAX, EPERM},
-		{NTO_ELIBEXEC, ENOEXEC},
-		{NTO_EILSEQ, EILSEQ},
-		{NTO_ENOSYS, ENOSYS}
+		{ NTO_ENAMETOOLONG, ENAMETOOLONG },
+		{ NTO_ELIBACC, ESRCH },
+		{ NTO_ELIBBAD, ESRCH },
+		{ NTO_ELIBSCN, ENOEXEC },
+		{ NTO_ELIBMAX, EPERM },
+		{ NTO_ELIBEXEC, ENOEXEC },
+		{ NTO_EILSEQ, EILSEQ },
+		{ NTO_ENOSYS, ENOSYS }
 #else
-		{0}
+		{ 0 }
 #endif
 	};
 	int i;
 
-	for (i = 0; i < sizeof(errnomap) / sizeof(errnomap[0]); i++)
+	for (i = 0; i < sizeof (errnomap) / sizeof (errnomap[0]); i++)
 		if (errnomap[i].nto == x)
 			return errnomap[i].other;
 	return x;
@@ -138,10 +138,10 @@ extract_signed_integer (const ut8 *addr, int len, int be) {
 	const ut8 *startaddr = addr;
 	const ut8 *endaddr = startaddr + len;
 
-	if (len > (int)sizeof(LONGEST))
+	if (len > (int)sizeof (LONGEST))
 		eprintf (
 			"This operation is not available on integers of more than %d byte(s)\n",
-			(int)sizeof(LONGEST));
+			(int)sizeof (LONGEST));
 
 	/* Start at the most significant end of the integer, and work towards
  the least significant.  */
@@ -168,10 +168,10 @@ extract_unsigned_integer (const ut8 *addr, int len, int be) {
 	const ut8 *startaddr = addr;
 	const ut8 *endaddr = startaddr + len;
 
-	if (len > (int)sizeof(LONGEST))
+	if (len > (int)sizeof (LONGEST))
 		eprintf (
 			"This operation is not available on integers of more than %d byte(s)\n",
-			(int)sizeof(LONGEST));
+			(int)sizeof (LONGEST));
 
 	/* Start at the most significant end of the integer, and work towards
  the least significant.  */

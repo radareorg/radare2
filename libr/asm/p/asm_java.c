@@ -9,11 +9,10 @@
 #include "../../shlr/java/code.h"
 #include "../../shlr/java/class.h"
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	RBinJavaObj *obj = NULL;
 	RBin *bin = a->binb.bin;
-	RBinPlugin *plugin = bin && bin->cur && bin->cur->o ?
-		bin->cur->o->plugin : NULL;
+	RBinPlugin *plugin = bin && bin->cur && bin->cur->o ? bin->cur->o->plugin : NULL;
 	if (plugin && plugin->name) {
 		if (!strcmp (plugin->name, "java")) { // XXX slow
 			obj = bin->cur->o->bin_obj; //o;
@@ -26,10 +25,10 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static int assemble(RAsm *a, RAsmOp *op, const char *input) {
+static int assemble (RAsm *a, RAsmOp *op, const char *input) {
 	// TODO: get class info from bin if possible
 	// XXX wrong usage of strbuf_get here
-	return op->size = r_java_assemble (a->pc, (ut8*)r_strbuf_get (&op->buf), input);
+	return op->size = r_java_assemble (a->pc, (ut8 *)r_strbuf_get (&op->buf), input);
 }
 
 RAsmPlugin r_asm_plugin_java = {

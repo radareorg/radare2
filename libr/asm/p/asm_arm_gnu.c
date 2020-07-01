@@ -11,7 +11,8 @@
 #include "../arch/arm/gnu/opcode-arm.h"
 
 #if 0
-#define ARM_ARCH_OPT(N, V, DF) { N, sizeof (N) - 1, V, DF }
+#define ARM_ARCH_OPT(N, V, DF) \
+	{ N, sizeof (N) - 1, V, DF }
 struct arm_arch_option_table {
 	const char name;
 	int namelen;
@@ -70,11 +71,11 @@ static unsigned long Offset = 0;
 static RStrBuf *buf_global = NULL;
 static unsigned char bytes[8];
 
-static int arm_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr,
-                                  unsigned int length, struct disassemble_info *info) {
+static int arm_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr,
+	unsigned int length, struct disassemble_info *info) {
 	int delta = (memaddr - Offset);
 	if (delta < 0) {
-		return -1;      // disable backward reads
+		return -1; // disable backward reads
 	}
 	if ((delta + length) > 4) {
 		return -1;
@@ -83,23 +84,23 @@ static int arm_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr,
 	return 0;
 }
 
-static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
+static int symbol_at_address (bfd_vma addr, struct disassemble_info *info) {
 	return 0;
 }
 
-static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_info *info) {
+static void memory_error_func (int status, bfd_vma memaddr, struct disassemble_info *info) {
 	// --
 }
 
-DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
-DECLARE_GENERIC_FPRINTF_FUNC()
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC ()
+DECLARE_GENERIC_FPRINTF_FUNC ()
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static char *oldcpu = NULL;
 	static int oldcpucode = 0;
 	int opsize;
 	struct disassemble_info obj;
-	char *options = (a->bits == 16)? "force-thumb": "no-force-thumb";
+	char *options = (a->bits == 16) ? "force-thumb" : "no-force-thumb";
 
 	if (len < 2) {
 		return -1;
@@ -128,7 +129,7 @@ printf ("v7em = core { 0x%x, 0x%x } copro 0x%x\n", afs.core[0], afs.core[1], afs
 cpucode = afs.core[0];
 cpucode = 66471;
 #endif
-// printf ("fpu- = 0x%x\n", FPU_ARCH_VFP_V4D16);
+	// printf ("fpu- = 0x%x\n", FPU_ARCH_VFP_V4D16);
 
 	struct {
 		const char name[32];
@@ -153,9 +154,9 @@ cpucode = 66471;
 	if (oldcpu != a->cpu) {
 		int cpucode = 0;
 		if (a->cpu) {
- 			int i;
+			int i;
 			cpucode = atoi (a->cpu);
-			for (i = 0; i < (sizeof(arm_cpucodes) / sizeof(arm_cpucodes[0])); i++) {
+			for (i = 0; i < (sizeof (arm_cpucodes) / sizeof (arm_cpucodes[0])); i++) {
 				if (!strcmp (arm_cpucodes[i].name, a->cpu)) {
 					cpucode = arm_cpucodes[i].cpucode;
 					break;
@@ -187,12 +188,10 @@ cpucode = 66471;
 	if (a->bits == 64) {
 		obj.disassembler_options = NULL;
 		memcpy (bytes, buf, 4);
-		op->size = print_insn_aarch64 ((bfd_vma) Offset, &obj);
+		op->size = print_insn_aarch64 ((bfd_vma)Offset, &obj);
 	} else {
 		obj.disassembler_options = options;
-		op->size = (obj.endian == BFD_ENDIAN_LITTLE)?
-		           print_insn_little_arm ((bfd_vma) Offset, &obj):
-		           print_insn_big_arm ((bfd_vma) Offset, &obj);
+		op->size = (obj.endian == BFD_ENDIAN_LITTLE) ? print_insn_little_arm ((bfd_vma)Offset, &obj) : print_insn_big_arm ((bfd_vma)Offset, &obj);
 	}
 	opsize = op->size;
 	if (op->size == -1) {

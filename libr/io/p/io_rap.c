@@ -6,17 +6,17 @@
 #include <r_socket.h>
 #include <sys/types.h>
 
-#define RIORAP_FD(x) (((x)->data)?(((RIORap*)((x)->data))->client):NULL)
-#define RIORAP_IS_LISTEN(x) (((RIORap*)((x)->data))->listener)
+#define RIORAP_FD(x) (((x)->data) ? (((RIORap *)((x)->data))->client) : NULL)
+#define RIORAP_IS_LISTEN(x) (((RIORap *)((x)->data))->listener)
 #define RIORAP_IS_VALID(x) ((x) && ((x)->data) && ((x)->plugin == &r_io_plugin_rap))
 
-static int __rap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
+static int __rap_write (RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	RSocket *s = RIORAP_FD (fd);
 	return r_socket_rap_client_write (s, buf, count);
 }
 
-static bool __rap_accept(RIO *io, RIODesc *desc, int fd) {
-	RIORap *rap = desc? desc->data: NULL;
+static bool __rap_accept (RIO *io, RIODesc *desc, int fd) {
+	RIORap *rap = desc ? desc->data : NULL;
 	if (rap && fd != -1) {
 		rap->client = r_socket_new_from_fd (fd);
 		return true;
@@ -24,12 +24,12 @@ static bool __rap_accept(RIO *io, RIODesc *desc, int fd) {
 	return false;
 }
 
-static int __rap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
+static int __rap_read (RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	RSocket *s = RIORAP_FD (fd);
 	return r_socket_rap_client_read (s, buf, count);
 }
 
-static int __rap_close(RIODesc *fd) {
+static int __rap_close (RIODesc *fd) {
 	int ret = -1;
 	if (RIORAP_IS_VALID (fd)) {
 		if (RIORAP_FD (fd) != NULL) {
@@ -50,16 +50,16 @@ static int __rap_close(RIODesc *fd) {
 	return ret;
 }
 
-static ut64 __rap_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 __rap_lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	RSocket *s = RIORAP_FD (fd);
 	return r_socket_rap_client_seek (s, offset, whence);
 }
 
-static bool __rap_plugin_open(RIO *io, const char *pathname, bool many) {
+static bool __rap_plugin_open (RIO *io, const char *pathname, bool many) {
 	return r_str_startswith (pathname, "rap://") || r_str_startswith (pathname, "raps://");
 }
 
-static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
+static RIODesc *__rap_open (RIO *io, const char *pathname, int rw, int mode) {
 	int i, p, listenmode;
 	char *file, *port;
 
@@ -67,7 +67,7 @@ static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
 		return NULL;
 	}
 	bool is_ssl = (!strncmp (pathname, "raps://", 7));
-	const char *host = pathname + (is_ssl? 7: 6);
+	const char *host = pathname + (is_ssl ? 7 : 6);
 	if (!(port = strchr (host, ':'))) {
 		eprintf ("rap: wrong uri\n");
 		return NULL;
@@ -92,7 +92,7 @@ static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
 			return NULL;
 		}
 		//TODO: Handle ^C signal (SIGINT, exit); // ???
-		eprintf ("rap: listening at port %s ssl %s\n", port, (is_ssl)?"on":"off");
+		eprintf ("rap: listening at port %s ssl %s\n", port, (is_ssl) ? "on" : "off");
 		RIORap *rior = R_NEW0 (RIORap);
 		rior->listener = true;
 		rior->client = rior->fd = r_socket_new (is_ssl);
@@ -159,11 +159,11 @@ static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
 		pathname, rw, mode, rior);
 }
 
-static int __rap_listener(RIODesc *fd) {
-	return (RIORAP_IS_VALID (fd))? RIORAP_IS_LISTEN (fd): 0; // -1 ?
+static int __rap_listener (RIODesc *fd) {
+	return (RIORAP_IS_VALID (fd)) ? RIORAP_IS_LISTEN (fd) : 0; // -1 ?
 }
 
-static char *__rap_system(RIO *io, RIODesc *fd, const char *command) {
+static char *__rap_system (RIO *io, RIODesc *fd, const char *command) {
 	RSocket *s = RIORAP_FD (fd);
 	// TODO: bind core into RSocket instead of pass the one from io?
 	return r_socket_rap_client_command (s, command, &io->corebind);
@@ -269,7 +269,7 @@ static char *__rap_system(RIO *io, RIODesc *fd, const char *command) {
 	}
 #endif
 #endif
-	
+
 	return NULL;
 }
 

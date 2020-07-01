@@ -8,12 +8,12 @@ typedef struct {
 	ut64 offset;
 } RIONull;
 
-static int __write(RIO* io, RIODesc* fd, const ut8* buf, int count) {
-	RIONull* null;
+static int __write (RIO *io, RIODesc *fd, const ut8 *buf, int count) {
+	RIONull *null;
 	if (!fd || !fd->data || !buf) {
 		return -1;
 	}
-	null = (RIONull*) fd->data;
+	null = (RIONull *)fd->data;
 	if ((null->offset + count) > null->size) {
 		int ret = null->size - null->offset;
 		return ret;
@@ -22,9 +22,9 @@ static int __write(RIO* io, RIODesc* fd, const ut8* buf, int count) {
 	return count;
 }
 
-static bool __resize(RIO* io, RIODesc* fd, ut64 count) {
+static bool __resize (RIO *io, RIODesc *fd, ut64 count) {
 	if (fd && fd->data) {
-		RIONull* null = (RIONull*) fd->data;
+		RIONull *null = (RIONull *)fd->data;
 		null->size = count;
 		if (null->offset >= count) {
 			if (count) {
@@ -38,12 +38,12 @@ static bool __resize(RIO* io, RIODesc* fd, ut64 count) {
 	return false;
 }
 
-static int __read(RIO* io, RIODesc* fd, ut8* buf, int count) {
-	RIONull* null;
+static int __read (RIO *io, RIODesc *fd, ut8 *buf, int count) {
+	RIONull *null;
 	if (!fd || !fd->data || !buf) {
 		return -1;
 	}
-	null = (RIONull*) fd->data;
+	null = (RIONull *)fd->data;
 	if ((null->offset + count) > null->size) {
 		int ret = null->size - null->offset;
 		memset (buf, 0x00, ret);
@@ -55,17 +55,17 @@ static int __read(RIO* io, RIODesc* fd, ut8* buf, int count) {
 	return count;
 }
 
-static int __close(RIODesc* fd) {
+static int __close (RIODesc *fd) {
 	R_FREE (fd->data);
 	return 0;
 }
 
-static ut64 __lseek(RIO* io, RIODesc* fd, ut64 offset, int whence) {
-	RIONull* null;
+static ut64 __lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
+	RIONull *null;
 	if (!fd || !fd->data) {
 		return offset;
 	}
-	null = (RIONull*) fd->data;
+	null = (RIONull *)fd->data;
 	switch (whence) {
 	case SEEK_SET:
 		if (offset >= null->size) {
@@ -83,16 +83,16 @@ static ut64 __lseek(RIO* io, RIODesc* fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static bool __plugin_open(RIO* io, const char* pathname, bool many) {
+static bool __plugin_open (RIO *io, const char *pathname, bool many) {
 	return (!strncmp (pathname, "null://", 7));
 }
 
-static RIODesc* __open(RIO* io, const char* pathname, int rw, int mode) {
-	RIONull* null;
-	if (__plugin_open (io, pathname,0)) {
+static RIODesc *__open (RIO *io, const char *pathname, int rw, int mode) {
+	RIONull *null;
+	if (__plugin_open (io, pathname, 0)) {
 		if (!strncmp (pathname, "null://", 7) && strlen (pathname + 7)) {
 			null = R_NEW0 (RIONull);
-			null->size = r_num_math (NULL, pathname + 7) + 1;         //???
+			null->size = r_num_math (NULL, pathname + 7) + 1; //???
 			null->offset = 0LL;
 			return r_io_desc_new (io, &r_io_plugin_null, pathname, rw, mode, null);
 		}

@@ -1,4 +1,4 @@
-static bool rtr_visual(RCore *core, TextLog T, const char *cmd) {
+static bool rtr_visual (RCore *core, TextLog T, const char *cmd) {
 	bool autorefresh = false;
 	if (cmd) {
 		r_cons_break_push (NULL, NULL);
@@ -34,7 +34,7 @@ static bool rtr_visual(RCore *core, TextLog T, const char *cmd) {
 				r_cons_flush ();
 				r_cons_break_push (NULL, NULL);
 				r_sys_sleep (1);
-				if (r_cons_is_breaked ())  {
+				if (r_cons_is_breaked ()) {
 					autorefresh = false;
 					ch = r_cons_readchar ();
 				} else {
@@ -54,45 +54,43 @@ TODO:
 			case '?':
 				r_cons_clear00 ();
 				r_cons_printf ("Remote Visual keys:\n"
-				" hjkl : move\n"
-				" HJKL : move faster\n"
-				" +-*/ : change block size\n"
-				" pP   : rotate print modes\n"
-				" T    : enter TextLog chat console\n"
-				" @    : enter auto-refresh mode\n"
-				" i    : insert hexpair\n"
-				" q    : quit this mode and go back to the shell\n"
-				" sS   : step / step over\n"
-				" .    : seek entry or pc\n");
+					       " hjkl : move\n"
+					       " HJKL : move faster\n"
+					       " +-*/ : change block size\n"
+					       " pP   : rotate print modes\n"
+					       " T    : enter TextLog chat console\n"
+					       " @    : enter auto-refresh mode\n"
+					       " i    : insert hexpair\n"
+					       " q    : quit this mode and go back to the shell\n"
+					       " sS   : step / step over\n"
+					       " .    : seek entry or pc\n");
 				r_cons_flush ();
 				r_cons_any_key (NULL);
 				break;
-			case 'i':
-				{
+			case 'i': {
 #if __UNIX__
 #define COLORFLAGS (core->print->flags & R_PRINT_FLAGS_COLOR)
 #else
 #define COLORFLAGS 0
 #endif
-					char buf[1024];
-					if (COLORFLAGS) {
-						r_line_set_prompt (Color_RESET":> ");
-					} else {
-						r_line_set_prompt (":> ");
-					}
-					showcursor (core, true);
-					r_cons_fgets (buf + 3, sizeof (buf) - 3, 0, NULL);
-					memcpy (buf, "wx ", 3);
-					if (buf[3]) {
-						char *res = rtrcmd (T, buf);
-						if (res) {
-							r_cons_println (res);
-							free (res);
-						}
-						r_cons_flush ();
-					}
+				char buf[1024];
+				if (COLORFLAGS) {
+					r_line_set_prompt (Color_RESET ":> ");
+				} else {
+					r_line_set_prompt (":> ");
 				}
-				break;
+				showcursor (core, true);
+				r_cons_fgets (buf + 3, sizeof (buf) - 3, 0, NULL);
+				memcpy (buf, "wx ", 3);
+				if (buf[3]) {
+					char *res = rtrcmd (T, buf);
+					if (res) {
+						r_cons_println (res);
+						free (res);
+					}
+					r_cons_flush ();
+				}
+			} break;
 			case 's':
 				free (rtrcmd (T, "ds;.dr*"));
 				break;
@@ -102,43 +100,43 @@ TODO:
 			case '.':
 				free (rtrcmd (T, "s entry0;dr?rip;?? sr PC"));
 				break;
-			case ':':
-				{
-					int ret;
-					eprintf ("Press <enter> to return to Visual mode.\n");
-					do {
-						char buf[1024];
+			case ':': {
+				int ret;
+				eprintf ("Press <enter> to return to Visual mode.\n");
+				do {
+					char buf[1024];
 #if __UNIX__
-						r_line_set_prompt (Color_RESET":> ");
+					r_line_set_prompt (Color_RESET ":> ");
 #else
-						r_line_set_prompt (":> ");
+					r_line_set_prompt (":> ");
 #endif
-						showcursor (core, true);
-						r_cons_fgets (buf, sizeof (buf), 0, NULL);
-						if (*buf) {
-							r_line_hist_add (buf);
-							char *res = rtrcmd (T, buf);
-							if (res) {
-								r_cons_println (res);
-								free (res);
-							}
-							r_cons_flush ();
-							ret = true;
-						} else {
-							ret = false;
-							//r_cons_any_key ();
-							r_cons_clear00 ();
-							showcursor (core, false);
+					showcursor (core, true);
+					r_cons_fgets (buf, sizeof (buf), 0, NULL);
+					if (*buf) {
+						r_line_hist_add (buf);
+						char *res = rtrcmd (T, buf);
+						if (res) {
+							r_cons_println (res);
+							free (res);
 						}
-					} while (ret);
-				}
-				break;
+						r_cons_flush ();
+						ret = true;
+					} else {
+						ret = false;
+						//r_cons_any_key ();
+						r_cons_clear00 ();
+						showcursor (core, false);
+					}
+				} while (ret);
+			} break;
 			case '@': autorefresh = true; break;
 			case 'j':
 				if (cmdidx == 1) {
-					free (rtrcmd (T, "so")); break;
+					free (rtrcmd (T, "so"));
+					break;
 				} else {
-					free (rtrcmd (T, "s+16")); break;
+					free (rtrcmd (T, "s+16"));
+					break;
 				}
 				break;
 			case 'k': free (rtrcmd (T, "s-16")); break;
@@ -159,12 +157,14 @@ TODO:
 			case '*': free (rtrcmd (T, "b+16")); break;
 			case '-': free (rtrcmd (T, "b-1")); break;
 			case '/': free (rtrcmd (T, "b-16")); break;
-			case 'p': cmdidx++;
+			case 'p':
+				cmdidx++;
 				if (!cmds[cmdidx]) {
 					cmdidx = 0;
 				}
 				break;
-			case 'P': cmdidx--;
+			case 'P':
+				cmdidx--;
 				if (cmdidx < 0) {
 					cmdidx = 2;
 				}
@@ -177,19 +177,19 @@ TODO:
 }
 
 // XXX: this needs to be moved to use the standard shell like in !=! and support visual+panels
-static void __rtr_shell(RCore *core, int nth) {
+static void __rtr_shell (RCore *core, int nth) {
 	char *proto = "http";
 	char *host = "";
-	char *port= "";
-	char *file= "";
+	char *port = "";
+	char *file = "";
 	char prompt[64], prompt2[64], *str, *ptr;
 	int len;
-	const char* res;
+	const char *res;
 	RSocket *s = NULL;
 
 	TextLog T = { host, port, file };
 	snprintf (prompt, sizeof (prompt), "[%s://%s:%s/%s]> ",
-			proto, host, port, file);
+		proto, host, port, file);
 	snprintf (prompt2, sizeof (prompt2), "[%s:%s]$ ", host, port);
 	for (;;) {
 		r_line_set_prompt (prompt);
@@ -216,8 +216,8 @@ static void __rtr_shell(RCore *core, int nth) {
 					if (res) {
 						res = strstr (res + 1, "\n\n");
 					}
-					res = res? res + 2: str;
-					const char *tail = (res[strlen (res) - 1] == '\n')? "": "\n";
+					res = res ? res + 2 : str;
+					const char *tail = (res[strlen (res) - 1] == '\n') ? "" : "\n";
 					printf ("%s%s", res, tail);
 					r_line_hist_add (str);
 					free (str);
@@ -225,8 +225,8 @@ static void __rtr_shell(RCore *core, int nth) {
 				free (ptr);
 				free (uri);
 			}
-		} else if (res[0]=='v' || res[0] == 'V') {
-			if (res[1]==' ') {
+		} else if (res[0] == 'v' || res[0] == 'V') {
+			if (res[1] == ' ') {
 				rtr_visual (core, T, res + 1);
 			} else {
 				rtr_visual (core, T, NULL);
@@ -242,4 +242,3 @@ static void __rtr_shell(RCore *core, int nth) {
 	}
 	r_socket_free (s);
 }
-

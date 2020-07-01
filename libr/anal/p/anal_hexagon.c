@@ -9,11 +9,12 @@
 #include "hexagon_insn.h"
 #include "hexagon_anal.h"
 
-static int hexagon_v6_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	HexInsn hi = {0};;
+static int hexagon_v6_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	HexInsn hi = { 0 };
+	;
 	ut32 data = 0;
 	data = r_read_le32 (buf);
-	int size = hexagon_disasm_instruction (data, &hi, (ut32) addr);
+	int size = hexagon_disasm_instruction (data, &hi, (ut32)addr);
 	op->size = size;
 	if (size <= 0) {
 		return size;
@@ -23,7 +24,7 @@ static int hexagon_v6_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, in
 	return hexagon_anal_instruction (&hi, op);
 }
 
-static bool set_reg_profile(RAnal *anal) {
+static bool set_reg_profile (RAnal *anal) {
 	// TODO: Add missing registers
 	const char *p =
 		"=PC	pc\n"

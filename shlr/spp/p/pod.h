@@ -1,17 +1,17 @@
 /* CPP */
 
-static TAG_CALLBACK(pod_default) {
+static TAG_CALLBACK (pod_default) {
 	out_printf (out, "DEFAULT: (%s)\n", buf);
 	return 0;
 }
 
-static TAG_CALLBACK(pod_cut) {
+static TAG_CALLBACK (pod_cut) {
 	out_printf (out, "\n");
 	state->echo[state->ifl] = 0;
 	return 0;
 }
 
-static TAG_CALLBACK(pod_head1) {
+static TAG_CALLBACK (pod_head1) {
 	state->echo[state->ifl] = 1;
 	out_printf (out, "\n");
 	if (!buf) {

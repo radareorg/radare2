@@ -3,45 +3,45 @@
 #include "pic_baseline.h"
 
 static const PicBaselineOpInfo pic_baseline_op_info[PIC_BASELINE_OPCODE_INVALID] = {
-		{ "nop", PIC_BASELINE_OP_ARGS_NONE },
-		{ "option", PIC_BASELINE_OP_ARGS_NONE },
-		{ "sleep", PIC_BASELINE_OP_ARGS_NONE },
-		{ "clrwdt", PIC_BASELINE_OP_ARGS_NONE },
-		{ "tris", PIC_BASELINE_OP_ARGS_3F },
-		{ "movlb", PIC_BASELINE_OP_ARGS_3K },
-		{ "return", PIC_BASELINE_OP_ARGS_NONE },
-		{ "retfie", PIC_BASELINE_OP_ARGS_NONE },
-		{ "movwf", PIC_BASELINE_OP_ARGS_5F },
-		{ "clrf", PIC_BASELINE_OP_ARGS_5F },
-		{ "clrw", PIC_BASELINE_OP_ARGS_NONE },
-		{ "subwf", PIC_BASELINE_OP_ARGS_1D_5F },
-		{ "decf", PIC_BASELINE_OP_ARGS_1D_5F },
-		{ "iorwf", PIC_BASELINE_OP_ARGS_1D_5F },
-		{ "andwf", PIC_BASELINE_OP_ARGS_1D_5F },
-		{ "xorwf", PIC_BASELINE_OP_ARGS_1D_5F },
-		{ "andwf", PIC_BASELINE_OP_ARGS_1D_5F },
-		{ "movf", PIC_BASELINE_OP_ARGS_1D_5F },
-		{ "comf", PIC_BASELINE_OP_ARGS_1D_5F },
-		{ "incf", PIC_BASELINE_OP_ARGS_1D_5F },
-		{ "decfsz", PIC_BASELINE_OP_ARGS_1D_5F },
-		{ "rrf", PIC_BASELINE_OP_ARGS_1D_5F },
-		{ "rlf", PIC_BASELINE_OP_ARGS_1D_5F },
-		{ "swapf", PIC_BASELINE_OP_ARGS_1D_5F },
-		{ "incfsz", PIC_BASELINE_OP_ARGS_1D_5F },
-		{ "bcf", PIC_BASELINE_OP_ARGS_3B_5F },
-		{ "bsf", PIC_BASELINE_OP_ARGS_3B_5F },
-		{ "btfsc", PIC_BASELINE_OP_ARGS_3B_5F },
-		{ "btfss", PIC_BASELINE_OP_ARGS_3B_5F },
-		{ "retlw", PIC_BASELINE_OP_ARGS_8K },
-		{ "call", PIC_BASELINE_OP_ARGS_8K },
-		{ "goto", PIC_BASELINE_OP_ARGS_9K },
-		{ "movlw", PIC_BASELINE_OP_ARGS_8K },
-		{ "iorlw", PIC_BASELINE_OP_ARGS_8K },
-		{ "andlw", PIC_BASELINE_OP_ARGS_8K },
-		{ "xorlw", PIC_BASELINE_OP_ARGS_8K }
+	{ "nop", PIC_BASELINE_OP_ARGS_NONE },
+	{ "option", PIC_BASELINE_OP_ARGS_NONE },
+	{ "sleep", PIC_BASELINE_OP_ARGS_NONE },
+	{ "clrwdt", PIC_BASELINE_OP_ARGS_NONE },
+	{ "tris", PIC_BASELINE_OP_ARGS_3F },
+	{ "movlb", PIC_BASELINE_OP_ARGS_3K },
+	{ "return", PIC_BASELINE_OP_ARGS_NONE },
+	{ "retfie", PIC_BASELINE_OP_ARGS_NONE },
+	{ "movwf", PIC_BASELINE_OP_ARGS_5F },
+	{ "clrf", PIC_BASELINE_OP_ARGS_5F },
+	{ "clrw", PIC_BASELINE_OP_ARGS_NONE },
+	{ "subwf", PIC_BASELINE_OP_ARGS_1D_5F },
+	{ "decf", PIC_BASELINE_OP_ARGS_1D_5F },
+	{ "iorwf", PIC_BASELINE_OP_ARGS_1D_5F },
+	{ "andwf", PIC_BASELINE_OP_ARGS_1D_5F },
+	{ "xorwf", PIC_BASELINE_OP_ARGS_1D_5F },
+	{ "andwf", PIC_BASELINE_OP_ARGS_1D_5F },
+	{ "movf", PIC_BASELINE_OP_ARGS_1D_5F },
+	{ "comf", PIC_BASELINE_OP_ARGS_1D_5F },
+	{ "incf", PIC_BASELINE_OP_ARGS_1D_5F },
+	{ "decfsz", PIC_BASELINE_OP_ARGS_1D_5F },
+	{ "rrf", PIC_BASELINE_OP_ARGS_1D_5F },
+	{ "rlf", PIC_BASELINE_OP_ARGS_1D_5F },
+	{ "swapf", PIC_BASELINE_OP_ARGS_1D_5F },
+	{ "incfsz", PIC_BASELINE_OP_ARGS_1D_5F },
+	{ "bcf", PIC_BASELINE_OP_ARGS_3B_5F },
+	{ "bsf", PIC_BASELINE_OP_ARGS_3B_5F },
+	{ "btfsc", PIC_BASELINE_OP_ARGS_3B_5F },
+	{ "btfss", PIC_BASELINE_OP_ARGS_3B_5F },
+	{ "retlw", PIC_BASELINE_OP_ARGS_8K },
+	{ "call", PIC_BASELINE_OP_ARGS_8K },
+	{ "goto", PIC_BASELINE_OP_ARGS_9K },
+	{ "movlw", PIC_BASELINE_OP_ARGS_8K },
+	{ "iorlw", PIC_BASELINE_OP_ARGS_8K },
+	{ "andlw", PIC_BASELINE_OP_ARGS_8K },
+	{ "xorlw", PIC_BASELINE_OP_ARGS_8K }
 };
 
-PicBaselineOpcode pic_baseline_get_opcode(ut16 instr) {
+PicBaselineOpcode pic_baseline_get_opcode (ut16 instr) {
 	if (instr & 0xf000) {
 		return PIC_BASELINE_OPCODE_INVALID;
 	}
@@ -182,21 +182,20 @@ PicBaselineOpcode pic_baseline_get_opcode(ut16 instr) {
 	}
 }
 
-
-const PicBaselineOpInfo *pic_baseline_get_op_info(PicBaselineOpcode opcode) {
+const PicBaselineOpInfo *pic_baseline_get_op_info (PicBaselineOpcode opcode) {
 	if (opcode >= PIC_BASELINE_OPCODE_INVALID) {
 		return NULL;
 	}
 	return &pic_baseline_op_info[opcode];
 }
 
-
-int pic_baseline_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int l) {
-#define EMIT_INVALID { \
-	op->size = 1; \
-	strcpy (opbuf, "invalid"); \
-	return 1; \
-}
+int pic_baseline_disassemble (RAsmOp *op, char *opbuf, const ut8 *b, int l) {
+#define EMIT_INVALID                       \
+	{                                  \
+		op->size = 1;              \
+		strcpy (opbuf, "invalid"); \
+		return 1;                  \
+	}
 	if (!b || l < 2) {
 		EMIT_INVALID
 	}
@@ -207,7 +206,7 @@ int pic_baseline_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int l) {
 		EMIT_INVALID
 	}
 
-	const PicBaselineOpInfo *op_info = pic_baseline_get_op_info(opcode);
+	const PicBaselineOpInfo *op_info = pic_baseline_get_op_info (opcode);
 	if (!op_info) {
 		EMIT_INVALID
 	}
@@ -232,14 +231,14 @@ int pic_baseline_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int l) {
 		break;
 	case PIC_BASELINE_OP_ARGS_1D_5F:
 		buf_asm = sdb_fmt ("%s 0x%x, %c", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_1D_5F_MASK_F,
-				  (instr & PIC_BASELINE_OP_ARGS_1D_5F_MASK_D) >> 5 ? 'f' : 'w');
+			(instr & PIC_BASELINE_OP_ARGS_1D_5F_MASK_D) >> 5 ? 'f' : 'w');
 		break;
 	case PIC_BASELINE_OP_ARGS_5F:
 		buf_asm = sdb_fmt ("%s 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_5F_MASK_F);
 		break;
 	case PIC_BASELINE_OP_ARGS_3B_5F:
 		buf_asm = sdb_fmt ("%s 0x%x, 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_3B_5F_MASK_F,
-				  (instr & PIC_BASELINE_OP_ARGS_3B_5F_MASK_B) >> 5);
+			(instr & PIC_BASELINE_OP_ARGS_3B_5F_MASK_B) >> 5);
 		break;
 	case PIC_BASELINE_OP_ARGS_8K:
 		buf_asm = sdb_fmt ("%s 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_8K_MASK_K);

@@ -8,7 +8,7 @@
 
 #include "../arch/v810/v810_disas.h"
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct v810_cmd cmd = {
 		.instr = "",
 		.operands = ""

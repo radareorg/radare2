@@ -19,18 +19,18 @@ static int sparc_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, unsigned
 	return 0;
 }
 
-static int symbol_at_address(bfd_vma addr, struct disassemble_info * info) {
+static int symbol_at_address (bfd_vma addr, struct disassemble_info *info) {
 	return 0;
 }
 
-static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_info *info) {
+static void memory_error_func (int status, bfd_vma memaddr, struct disassemble_info *info) {
 	//--
 }
 
-DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
-DECLARE_GENERIC_FPRINTF_FUNC()
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC ()
+DECLARE_GENERIC_FPRINTF_FUNC ()
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static struct disassemble_info disasm_obj;
 	if (len < 4) {
 		return -1;
@@ -42,7 +42,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 	r_strbuf_set (&op->buf_asm, "");
 	/* prepare disassembler */
-	memset (&disasm_obj,'\0', sizeof (struct disassemble_info));
+	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
 	disasm_obj.buffer = bytes;
 	disasm_obj.read_memory_func = &sparc_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
@@ -52,8 +52,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = stdout;
 	disasm_obj.mach = ((a->bits == 64)
-			   ? bfd_mach_sparc_v9b
-			   : 0);
+			? bfd_mach_sparc_v9b
+			: 0);
 
 	op->size = print_insn_sparc ((bfd_vma)Offset, &disasm_obj);
 
@@ -69,7 +69,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 RAsmPlugin r_asm_plugin_sparc_gnu = {
 	.name = "sparc.gnu",
 	.arch = "sparc",
-	.bits = 32|64,
+	.bits = 32 | 64,
 	.endian = R_SYS_ENDIAN_BIG | R_SYS_ENDIAN_LITTLE,
 	.license = "GPL3",
 	.desc = "Scalable Processor Architecture",

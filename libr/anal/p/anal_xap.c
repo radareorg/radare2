@@ -7,19 +7,19 @@
 #include <r_anal.h>
 #include "../asm/arch/xap/dis.c"
 
-static int label_off(struct directive *d) {
+static int label_off (struct directive *d) {
 	int off = d->d_operand;
 	int lame = off & 0x80;
 
 	if (!d->d_prefix) { // WTF
-		off = (char) (off & 0xff);
+		off = (char)(off & 0xff);
 	} else if (d->d_prefix == 1) {
-		off = (short) (off & 0xffff);
+		off = (short)(off & 0xffff);
 		if (lame) {
 			off -= 0x100;
 		}
 	} else {
-		off = (int) (off & 0xffffff);
+		off = (int)(off & 0xffffff);
 		if (off & 0x800000) {
 			off |= 0xff000000;
 		}
@@ -33,15 +33,15 @@ static int label_off(struct directive *d) {
 	return d->d_off + off;
 }
 
-static inline ut16 i2ut16(struct instruction *in) {
-	return *((uint16_t*)in);
+static inline ut16 i2ut16 (struct instruction *in) {
+	return *((uint16_t *)in);
 }
 
-static int xap_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len, RAnalOpMask mask) {
+static int xap_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len, RAnalOpMask mask) {
 	struct instruction *in = (struct instruction *)bytes;
 	ut16 lol, ins;
-	struct directive d = {{0}};
-	struct state s = {0};
+	struct directive d = { { 0 } };
+	struct state s = { 0 };
 
 	if (!anal || !op) {
 		return 2;
@@ -80,7 +80,7 @@ static int xap_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 	default:
 		switch (in->in_opcode) {
 		case 0:
-			switch (lol&0xf) {
+			switch (lol & 0xf) {
 			case 1:
 			case 2:
 			case 3:
@@ -115,7 +115,7 @@ static int xap_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 			op->type = R_ANAL_OP_TYPE_CMP;
 			break;
 		case 9:
-			switch(in->in_reg) {
+			switch (in->in_reg) {
 			case 0:
 				op->type = R_ANAL_OP_TYPE_MUL;
 				break;
@@ -132,7 +132,7 @@ static int xap_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 				if (op->jump & 1) {
 					op->jump += 3;
 				}
-				op->fail = addr+2;
+				op->fail = addr + 2;
 				op->eob = true;
 				break;
 			}
@@ -150,7 +150,7 @@ static int xap_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 			switch (in->in_reg) {
 			case 0: // BRA
 				op->type = R_ANAL_OP_TYPE_JMP;
-				op->jump = label_off (&d)+4;
+				op->jump = label_off (&d) + 4;
 				if (op->jump & 1) {
 					op->jump += 3;
 				}
@@ -199,7 +199,7 @@ static int xap_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 				if (op->jump & 1) {
 					op->jump += 3;
 				}
-				op->fail = addr+2;
+				op->fail = addr + 2;
 				break;
 			}
 			break;

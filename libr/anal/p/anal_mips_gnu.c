@@ -7,8 +7,8 @@
 #include <r_anal.h>
 
 /* Return a mapping from the register number i.e. $0 .. $31 to string name */
-static const char* mips_reg_decode(unsigned reg_num) {
-/* See page 36 of "See Mips Run Linux, 2e, D. Sweetman, 2007"*/
+static const char *mips_reg_decode (unsigned reg_num) {
+	/* See page 36 of "See Mips Run Linux, 2e, D. Sweetman, 2007"*/
 	static const char *REGISTERS[32] = {
 		"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3",
 		"t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7",
@@ -21,10 +21,10 @@ static const char* mips_reg_decode(unsigned reg_num) {
 	return NULL;
 }
 
-static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
+static int mips_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
 	ut32 opcode;
 	// WIP char buf[10]; int reg; int family;
-	int optype, oplen = (anal->bits==16)?2:4;
+	int optype, oplen = (anal->bits == 16) ? 2 : 4;
 
 	if (!op) {
 		return oplen;
@@ -43,7 +43,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		return oplen;
 	}
 
-	optype = (b[0]>>2);
+	optype = (b[0] >> 2);
 
 	if (optype == 0) {
 /*
@@ -65,12 +65,12 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		  (b[0]&3)<<3)+(b[1]>>5)   (b[2]&7)+(b[3]>>6)
 */
 #if WIP
-		int rs = ((b[0]&3)<<3) + (b[1]>>5);
-		int rt = b[1]&31;
-		int rd = b[2]>>3;
-		int sa = (b[2]&7)+(b[3]>>6);
+		int rs = ((b[0] & 3) << 3) + (b[1] >> 5);
+		int rt = b[1] & 31;
+		int rd = b[2] >> 3;
+		int sa = (b[2] & 7) + (b[3] >> 6);
 #endif
-		int fun = b[3]&63;
+		int fun = b[3] & 63;
 		switch (fun) {
 		case 0: // sll
 			break;
@@ -87,7 +87,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		case 8: // jr
 			//eprintf ("%llx jr\n", addr);
 			// TODO: check return value or gtfo
-			if (((b[0]&3)<<3) + (b[1]>>5) == 31) {
+			if (((b[0] & 3) << 3) + (b[1] >> 5) == 31) {
 				op->type = R_ANAL_OP_TYPE_RET;
 			} else {
 				op->type = R_ANAL_OP_TYPE_JMP;
@@ -141,13 +141,12 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 
 			break;
 		default:
-		//	eprintf ("%llx %d\n", addr, optype);
+			//	eprintf ("%llx %d\n", addr, optype);
 			break;
 		}
 		//family = 'R';
-	} else
-	if ((optype & 0x3e) == 2) {
-/*
+	} else if ((optype & 0x3e) == 2) {
+		/*
 		// J-TYPE
 		 |--[0]--|  |--[1]--|  |--[2]--|  |--[3]--|
 		 1111 1111  1111 1111  1111 1111  1111 1111
@@ -173,7 +172,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		// Maybe better solution: use a cfg. variable to do
 		// the offset... but I dont yet know how to get to that
 		// from this static function
-		int address = (((b[0]&3)<<24)+(b[1]<<16)+(b[2]<<8)+b[3]) << 2;
+		int address = (((b[0] & 3) << 24) + (b[1] << 16) + (b[2] << 8) + b[3]) << 2;
 		ut64 page_hack = addr & 0xf0000000;
 		switch (optype) {
 		case 2: // j
@@ -185,7 +184,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		case 3: // jal
 			op->type = R_ANAL_OP_TYPE_CALL;
 			op->jump = page_hack + address;
-			op->fail = addr+8;
+			op->fail = addr + 8;
 			op->delay = 1;
 			r_strbuf_setf (&op->esil, "pc,lr,=,0x%08x,pc,=", (ut32)address);
 			break;
@@ -206,12 +205,12 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		  (b[0]&3)<<3)+(b[1]>>5)   (b[2]&7)+(b[3]>>6)
 */
 #if WIP
-		int fmt = ((b[0]&3)<<3) + (b[1]>>5);
-		int ft = (b[1]&31);
-		int fs = (b[2]>>3);
-		int fd = (b[2]&7)+(b[3]>>6);
+		int fmt = ((b[0] & 3) << 3) + (b[1] >> 5);
+		int ft = (b[1] & 31);
+		int fs = (b[2] >> 3);
+		int fd = (b[2] & 7) + (b[3] >> 6);
 #endif
-		int fun = (b[3]&63);
+		int fun = (b[3] & 63);
 		//family = 'C';
 		switch (fun) {
 		case 0: // mtc1
@@ -222,10 +221,10 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			break;
 		case 3: // div.s
 			break;
-		// ....
+			// ....
 		}
 	} else {
-/*
+		/*
 	I-TYPE
 	======
    	all opcodes but 000000 000001x and 0100xx
@@ -239,9 +238,9 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		          |                     |
 		 ((b[0]&3)<<3)+(b[1]>>5)   (b[2]<<8)+b[3]
 */
-		int rs = ((b[0]&3)<<3)+(b[1]>>5);
-		int rt = b[1]&31;
-		int imm = (b[2]<<8)+b[3];
+		int rs = ((b[0] & 3) << 3) + (b[1] >> 5);
+		int rt = b[1] & 31;
+		int imm = (b[2] << 8) + b[3];
 		if (((optype >> 2) ^ 0x3) && (imm & 0x8000)) {
 			imm = 0 - (0x10000 - imm);
 		}
@@ -253,8 +252,8 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		case 7: // bgtz
 			// XXX: use imm here
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->jump = addr+(imm<<2)+4;
-			op->fail = addr+8;
+			op->jump = addr + (imm << 2) + 4;
+			op->fail = addr + 8;
 			op->delay = 1;
 			break;
 		// The following idiom is very common in mips 32 bit:
@@ -275,16 +274,16 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		// flags directly, as suggested here: https://github.com/radareorg/radare2/issues/949#issuecomment-43654922
 		case 15: // lui
 			op->dst = r_anal_value_new ();
-			op->dst->reg = r_reg_get (anal->reg, mips_reg_decode(rt), R_REG_TYPE_GPR);
+			op->dst->reg = r_reg_get (anal->reg, mips_reg_decode (rt), R_REG_TYPE_GPR);
 			// TODO: currently there is no way for the macro to get access to this register
 			op->val = imm;
 			break;
 		case 9: // addiu
 			op->dst = r_anal_value_new ();
-			op->dst->reg = r_reg_get (anal->reg, mips_reg_decode(rt), R_REG_TYPE_GPR);
+			op->dst->reg = r_reg_get (anal->reg, mips_reg_decode (rt), R_REG_TYPE_GPR);
 			// TODO: currently there is no way for the macro to get access to this register
 			op->src[0] = r_anal_value_new ();
-			op->src[0]->reg = r_reg_get (anal->reg, mips_reg_decode(rs), R_REG_TYPE_GPR);
+			op->src[0]->reg = r_reg_get (anal->reg, mips_reg_decode (rs), R_REG_TYPE_GPR);
 			op->val = imm; // Beware: this one is signed... use `?vi $v`
 			break;
 		case 8: // addi
@@ -306,7 +305,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			break;
 		case 29: // jalx
 			op->type = R_ANAL_OP_TYPE_CALL;
-			op->jump = addr + 4*((b[3] | b[2]<<8 | b[1]<<16));
+			op->jump = addr + 4 * ((b[3] | b[2] << 8 | b[1] << 16));
 			op->fail = addr + 8;
 			op->delay = 1;
 			break;
@@ -332,7 +331,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 #endif
 	//eprintf ("MIPS: family=%c optype=%d oplen=%d op=>type=%d\n", family, optype, oplen, op->type);
 	return oplen;
-/*
+	/*
  R - all instructions that only take registers as arguments (jalr, jr)
      opcode 000000
      opcode (6) 	rs (5) 	rt (5) 	rd (5) 	sa (5) 	function (6)
@@ -426,8 +425,8 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 }
 
 /* Set the profile register */
-static bool mips_set_reg_profile(RAnal* anal){
-     const char *p =
+static bool mips_set_reg_profile (RAnal *anal) {
+	const char *p =
 #if 0
           "=PC    pc\n"
 	  "=SP    sp\n"
@@ -469,59 +468,58 @@ static bool mips_set_reg_profile(RAnal* anal){
 	  "gpr	ra	.32	124	0\n"
 	  "gpr	pc	.32	128	0\n";
 #else
-     // take the one from the debugger //
-	"=PC	pc\n"
-	"=SP	sp\n"
-	"=BP	fp\n"
-	"=A0	a0\n"
-	"=A1	a1\n"
-	"=A2	a2\n"
-	"=A3	a3\n"
-	"gpr	zero	.64	0	0\n"
-	// XXX DUPPED CAUSES FAILURE "gpr	at	.32	8	0\n"
-	"gpr	at	.64	8	0\n"
-	"gpr	v0	.64	16	0\n"
-	"gpr	v1	.64	24	0\n"
-	/* args */
-	"gpr	a0	.64	32	0\n"
-	"gpr	a1	.64	40	0\n"
-	"gpr	a2	.64	48	0\n"
-	"gpr	a3	.64	56	0\n"
-	/* tmp */
-	"gpr	t0	.64	64	0\n"
-	"gpr	t1	.64	72	0\n"
-	"gpr	t2	.64	80	0\n"
-	"gpr	t3	.64	88	0\n"
-	"gpr	t4	.64	96	0\n"
-	"gpr	t5	.64	104	0\n"
-	"gpr	t6	.64	112	0\n"
-	"gpr	t7	.64	120	0\n"
-	/* saved */
-	"gpr	s0	.64	128	0\n"
-	"gpr	s1	.64	136	0\n"
-	"gpr	s2	.64	144	0\n"
-	"gpr	s3	.64	152	0\n"
-	"gpr	s4	.64	160	0\n"
-	"gpr	s5	.64	168	0\n"
-	"gpr	s6	.64	176	0\n"
-	"gpr	s7	.64	184	0\n"
-	"gpr	t8	.64	192	0\n"
-	"gpr	t9	.64	200	0\n"
-	/* special */
-	"gpr	k0	.64	208	0\n"
-	"gpr	k1	.64	216	0\n"
-	"gpr	gp	.64	224	0\n"
-	"gpr	sp	.64	232	0\n"
-	"gpr	fp	.64	240	0\n"
-	"gpr	ra	.64	248	0\n"
-	/* extra */
-	"gpr	pc	.64	272	0\n"
-	;
+		// take the one from the debugger //
+		"=PC	pc\n"
+		"=SP	sp\n"
+		"=BP	fp\n"
+		"=A0	a0\n"
+		"=A1	a1\n"
+		"=A2	a2\n"
+		"=A3	a3\n"
+		"gpr	zero	.64	0	0\n"
+		// XXX DUPPED CAUSES FAILURE "gpr	at	.32	8	0\n"
+		"gpr	at	.64	8	0\n"
+		"gpr	v0	.64	16	0\n"
+		"gpr	v1	.64	24	0\n"
+		/* args */
+		"gpr	a0	.64	32	0\n"
+		"gpr	a1	.64	40	0\n"
+		"gpr	a2	.64	48	0\n"
+		"gpr	a3	.64	56	0\n"
+		/* tmp */
+		"gpr	t0	.64	64	0\n"
+		"gpr	t1	.64	72	0\n"
+		"gpr	t2	.64	80	0\n"
+		"gpr	t3	.64	88	0\n"
+		"gpr	t4	.64	96	0\n"
+		"gpr	t5	.64	104	0\n"
+		"gpr	t6	.64	112	0\n"
+		"gpr	t7	.64	120	0\n"
+		/* saved */
+		"gpr	s0	.64	128	0\n"
+		"gpr	s1	.64	136	0\n"
+		"gpr	s2	.64	144	0\n"
+		"gpr	s3	.64	152	0\n"
+		"gpr	s4	.64	160	0\n"
+		"gpr	s5	.64	168	0\n"
+		"gpr	s6	.64	176	0\n"
+		"gpr	s7	.64	184	0\n"
+		"gpr	t8	.64	192	0\n"
+		"gpr	t9	.64	200	0\n"
+		/* special */
+		"gpr	k0	.64	208	0\n"
+		"gpr	k1	.64	216	0\n"
+		"gpr	gp	.64	224	0\n"
+		"gpr	sp	.64	232	0\n"
+		"gpr	fp	.64	240	0\n"
+		"gpr	ra	.64	248	0\n"
+		/* extra */
+		"gpr	pc	.64	272	0\n";
 #endif
-	return r_reg_set_profile_string (anal->reg, p);
+		return r_reg_set_profile_string (anal->reg, p);
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo (RAnal *anal, int q) {
 	return 4;
 }
 
@@ -539,7 +537,7 @@ RAnalPlugin r_anal_plugin_mips_gnu = {
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-        .type = R_LIB_TYPE_ANAL,
-        .data = &r_anal_plugin_mips_gnu
+	.type = R_LIB_TYPE_ANAL,
+	.data = &r_anal_plugin_mips_gnu
 };
 #endif

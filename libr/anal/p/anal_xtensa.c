@@ -14,9 +14,9 @@
 #if defined(_MSC_VER)
 __declspec(dllimport)
 #endif
-extern xtensa_isa xtensa_default_isa;
+	extern xtensa_isa xtensa_default_isa;
 
-static int xtensa_length(const ut8 *insn) {
+static int xtensa_length (const ut8 *insn) {
 	static int length_table[16] = { 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 8, 8 };
 	return length_table[*insn & 0xf];
 }
@@ -126,16 +126,23 @@ static void xtensa_l32r_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf)
 
 static void xtensa_snm0_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	switch ((buf[0] >> 4) & 0xf) {
-	case 0x0: case 0x1: case 0x2: case 0x3:
+	case 0x0:
+	case 0x1:
+	case 0x2:
+	case 0x3:
 		op->type = R_ANAL_OP_TYPE_ILL;
 		break;
-	case 0x8: case 0x9:
+	case 0x8:
+	case 0x9:
 		op->type = R_ANAL_OP_TYPE_RET;
 		break;
 	case 0xa:
 		op->type = R_ANAL_OP_TYPE_UJMP;
 		break;
-	case 0xc: case 0xd: case 0xe: case 0xf:
+	case 0xc:
+	case 0xd:
+	case 0xe:
+	case 0xf:
 		op->type = R_ANAL_OP_TYPE_UCALL;
 		break;
 	default:
@@ -146,9 +153,13 @@ static void xtensa_snm0_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf)
 
 static void xtensa_sync_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	switch ((buf[0] >> 4) & 0xf) {
-	case 0x0: case 0x1: case 0x2: case 0x3:
+	case 0x0:
+	case 0x1:
+	case 0x2:
+	case 0x3:
 	case 0x8:
-	case 0xc: case 0xd:
+	case 0xc:
+	case 0xd:
 		/* Wait/sync instructions? */
 		op->type = R_ANAL_OP_TYPE_NULL;
 		break;
@@ -162,8 +173,11 @@ static void xtensa_rfei_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf)
 	switch ((buf[0] >> 4) & 0xf) {
 	case 0x0:
 		switch (buf[1] & 0xf) {
-		case 0x0: case 0x1: case 0x2:
-		case 0x4: case 0x5:
+		case 0x0:
+		case 0x1:
+		case 0x2:
+		case 0x4:
+		case 0x5:
 			op->type = R_ANAL_OP_TYPE_RET;
 			break;
 		default:
@@ -171,7 +185,8 @@ static void xtensa_rfei_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf)
 			break;
 		}
 		break;
-	case 0x1: case 0x2:
+	case 0x1:
+	case 0x2:
 		op->type = R_ANAL_OP_TYPE_RET;
 		break;
 	default:
@@ -197,10 +212,15 @@ static void xtensa_st0_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) 
 	case 0x4:
 		op->type = R_ANAL_OP_TYPE_TRAP;
 		break;
-	case 0x5: case 0x6: case 0x7:
+	case 0x5:
+	case 0x6:
+	case 0x7:
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
-	case 0x8: case 0x9: case 0xa: case 0xb:
+	case 0x8:
+	case 0x9:
+	case 0xa:
+	case 0xb:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
 	default:
@@ -211,20 +231,25 @@ static void xtensa_st0_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) 
 
 static void xtensa_st1_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	switch ((buf[1] >> 4) & 0xf) {
-	case 0x0: case 0x1: case 0x2: case 0x3:
+	case 0x0:
+	case 0x1:
+	case 0x2:
+	case 0x3:
 	case 0x4:
 		/* Set shift-amount-register */
 		op->type = R_ANAL_OP_TYPE_NULL;
 		/*op->type = R_ANAL_OP_TYPE_MOV;*/
 		break;
-	case 0x6: case 0x7:
+	case 0x6:
+	case 0x7:
 		op->type = R_ANAL_OP_TYPE_IO;
 		/*op->type = R_ANAL_OP_TYPE_MOV;*/
 		break;
 	case 0x8:
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
-	case 0xe: case 0xf:
+	case 0xe:
+	case 0xf:
 		op->type = R_ANAL_OP_TYPE_NULL;
 		break;
 	default:
@@ -251,9 +276,15 @@ static void xtensa_rt0_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) 
 static void xtensa_tlb_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	switch ((buf[2] >> 4) & 0xf) {
 	case 0x3:
-	case 0x4: case 0x5: case 0x6: case 0x7:
+	case 0x4:
+	case 0x5:
+	case 0x6:
+	case 0x7:
 	case 0xb:
-	case 0xc: case 0xd: case 0xe: case 0xf:
+	case 0xc:
+	case 0xd:
+	case 0xe:
+	case 0xf:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
 	default:
@@ -277,8 +308,12 @@ static void xtensa_accer_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 
 static void xtensa_imp_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	switch ((buf[1] >> 4) & 0xf) {
-	case 0x0: case 0x1: case 0x2: case 0x3:
-	case 0x8: case 0x9:
+	case 0x0:
+	case 0x1:
+	case 0x2:
+	case 0x3:
+	case 0x8:
+	case 0x9:
 		op->type = R_ANAL_OP_TYPE_NULL;
 		break;
 	case 0xe:
@@ -352,14 +387,14 @@ static XtensaOpFn xtensa_rst2_fns[] = {
 };
 
 static void xtensa_rst0_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
-	xtensa_rst0_fns[(buf[2] >> 4) & 0xf] (anal, op, addr, buf);
+	xtensa_rst0_fns[(buf[2] >> 4) & 0xf](anal, op, addr, buf);
 }
 static void xtensa_rst1_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
-	xtensa_rst1_fns[(buf[2] >> 4) & 0xf] (anal, op, addr, buf);
+	xtensa_rst1_fns[(buf[2] >> 4) & 0xf](anal, op, addr, buf);
 }
 
 static void xtensa_rst2_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
-	xtensa_rst2_fns[(buf[2] >> 4) & 0xf] (anal, op, addr, buf);
+	xtensa_rst2_fns[(buf[2] >> 4) & 0xf](anal, op, addr, buf);
 }
 
 static void xtensa_lsc4_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
@@ -379,10 +414,12 @@ static void xtensa_lsc4_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf)
 static void xtensa_lscx_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	op->family = R_ANAL_OP_FAMILY_FPU;
 	switch ((buf[2] >> 4) & 0xf) {
-	case 0x0: case 0x1:
+	case 0x0:
+	case 0x1:
 		xtensa_load_op (anal, op, addr, buf);
 		break;
-	case 0x4: case 0x5:
+	case 0x4:
+	case 0x5:
 		xtensa_store_op (anal, op, addr, buf);
 		break;
 	default:
@@ -394,22 +431,31 @@ static void xtensa_lscx_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf)
 static void xtensa_fp0_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	op->family = R_ANAL_OP_FAMILY_FPU;
 	switch ((buf[2] >> 4) & 0xf) {
-	case 0x0: case 0x4:
+	case 0x0:
+	case 0x4:
 		op->type = R_ANAL_OP_TYPE_ADD;
 		break;
-	case 0x1: case 0x5:
+	case 0x1:
+	case 0x5:
 		op->type = R_ANAL_OP_TYPE_SUB;
 		break;
 	case 0x2:
 		op->type = R_ANAL_OP_TYPE_MUL;
 		break;
-	case 0x8: case 0x9: case 0xa: case 0xb:
-	case 0xc: case 0xd: case 0xe:
+	case 0x8:
+	case 0x9:
+	case 0xa:
+	case 0xb:
+	case 0xc:
+	case 0xd:
+	case 0xe:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
 	case 0xf:
 		switch ((buf[0] >> 4) & 0xf) {
-		case 0x0: case 0x4: case 0x5:
+		case 0x0:
+		case 0x4:
+		case 0x5:
 			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
 		case 0x1:
@@ -432,12 +478,21 @@ static void xtensa_fp0_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) 
 static void xtensa_fp1_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	op->family = R_ANAL_OP_FAMILY_FPU;
 	switch ((buf[2] >> 4) & 0xf) {
-	case 0x1: case 0x2: case 0x3:
-	case 0x4: case 0x5: case 0x6: case 0x7:
+	case 0x1:
+	case 0x2:
+	case 0x3:
+	case 0x4:
+	case 0x5:
+	case 0x6:
+	case 0x7:
 		op->type = R_ANAL_OP_TYPE_CMP;
 		break;
-	case 0x8: case 0x9: case 0xa: case 0xb:
-	case 0xc: case 0xd:
+	case 0x8:
+	case 0x9:
+	case 0xa:
+	case 0xb:
+	case 0xc:
+	case 0xd:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
 	default:
@@ -466,7 +521,7 @@ static XtensaOpFn xtensa_qrst_fns[] = {
 };
 
 static void xtensa_qrst_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
-	xtensa_qrst_fns[buf[2] & 0xf] (anal, op, addr, buf);
+	xtensa_qrst_fns[buf[2] & 0xf](anal, op, addr, buf);
 }
 
 static XtensaOpFn xtensa_lsai_fns[] = {
@@ -489,7 +544,7 @@ static XtensaOpFn xtensa_lsai_fns[] = {
 };
 
 static void xtensa_lsai_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
-	xtensa_lsai_fns[(buf[1] >> 4) & 0xf] (anal, op, addr, buf);
+	xtensa_lsai_fns[(buf[1] >> 4) & 0xf](anal, op, addr, buf);
 }
 
 static void xtensa_lsci_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
@@ -541,10 +596,13 @@ static void xtensa_si_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
 			break;
 		case 1:
 			switch (buf[1] >> 4) {
-			case 0: case 1:
+			case 0:
+			case 1:
 				xtensa_b_op (anal, op, addr, buf);
 				break;
-			case 0x8: case 0x9: case 0xa:
+			case 0x8:
+			case 0x9:
+			case 0xa:
 				op->type = R_ANAL_OP_TYPE_CJMP;
 				op->fail = addr + op->size;
 				op->jump = addr + 4 + buf[2];
@@ -554,7 +612,8 @@ static void xtensa_si_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
 				break;
 			}
 			break;
-		case 2: case 3:
+		case 2:
+		case 3:
 			xtensa_b_op (anal, op, addr, buf);
 			break;
 		default:
@@ -585,7 +644,8 @@ static void xtensa_st3n_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf)
 		break;
 	case 0xf:
 		switch ((buf[0] >> 4) & 0xf) {
-		case 0: case 1:
+		case 0:
+		case 1:
 			op->type = R_ANAL_OP_TYPE_RET;
 			break;
 		case 2:
@@ -625,24 +685,24 @@ static XtensaOpFn xtensa_op0_fns[] = {
 	xtensa_st2n_op,
 	xtensa_st3n_op,
 	xtensa_null_op, /*xtensa_xt_format1_op,*/ /*TODO*/
-	xtensa_null_op  /*xtensa_xt_format2_op*/ /*TODO*/
+	xtensa_null_op /*xtensa_xt_format2_op*/ /*TODO*/
 };
 
-static inline void sign_extend(st32 *value, ut8 bit) {
+static inline void sign_extend (st32 *value, ut8 bit) {
 	if (*value & (1 << bit)) {
 		*value |= 0xFFFFFFFF << bit;
 	}
 }
 
-static void xtensa_check_stack_op(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+static void xtensa_check_stack_op (xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
+	size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	st32 imm;
 	ut32 dst;
 	ut32 src;
 
 	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &dst);
 	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, &src);
-	xtensa_operand_get_field (isa, opcode, 2, format, i, slot_buffer, (ut32 *) &imm);
+	xtensa_operand_get_field (isa, opcode, 2, format, i, slot_buffer, (ut32 *)&imm);
 
 	// wide form of addi requires sign extension
 	if (opcode == 39) {
@@ -657,21 +717,20 @@ static void xtensa_check_stack_op(xtensa_isa isa, xtensa_opcode opcode, xtensa_f
 	}
 }
 
-static void esil_push_signed_imm(RStrBuf * esil, st32 imm) {
+static void esil_push_signed_imm (RStrBuf *esil, st32 imm) {
 	if (imm >= 0) {
 		r_strbuf_appendf (esil, "0x%x" CM, imm);
 	} else {
 		r_strbuf_appendf (
 			esil,
-			"0x%x"	CM
-			"0x0"	CM
-			"-"	CM,
-			- imm
-		);
+			"0x%x" CM
+			"0x0" CM
+			"-" CM,
+			-imm);
 	}
 }
 
-static void esil_sign_extend(RStrBuf *esil, ut8 bit) {
+static void esil_sign_extend (RStrBuf *esil, ut8 bit) {
 	// check sign bit, and, if needed, apply or mask
 
 	ut32 bit_mask = 1 << bit;
@@ -679,22 +738,21 @@ static void esil_sign_extend(RStrBuf *esil, ut8 bit) {
 
 	r_strbuf_appendf (
 		esil,
-		"DUP"	CM
-		"0x%x"	CM
-		"&"	CM
-		"0"	CM
-		"==,$z,!"	CM
-		"?{"	CM
-			"0x%x"	CM
-			"|"	CM
-		"}"	CM,
+		"DUP" CM
+		"0x%x" CM
+		"&" CM
+		"0" CM
+		"==,$z,!" CM
+		"?{" CM
+		"0x%x" CM
+		"|" CM
+		"}" CM,
 		bit_mask,
-		extend_mask
-	);
+		extend_mask);
 }
 
-static void esil_load_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+static void esil_load_imm (xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
+	size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	ut32 offset;
 	ut32 reg_d;
 	ut32 reg_a;
@@ -714,10 +772,10 @@ static void esil_load_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format fo
 	//			= // assign to data reg
 
 	ut8 data_size = opcode == 82 ? 2 // l16ui
-			: opcode == 83 ? 2 // l16si
-			: opcode == 84 ? 4 // l32i
-			: opcode == 31 ? 4 // l32i.n
-			: 1; // opcode == 86 ? 1 : 1; // l8ui
+				     : opcode == 83 ? 2 // l16si
+						    : opcode == 84 ? 4 // l32i
+								   : opcode == 31 ? 4 // l32i.n
+										  : 1; // opcode == 86 ? 1 : 1; // l8ui
 
 	sign_extend_bit = 0;
 
@@ -736,18 +794,17 @@ static void esil_load_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format fo
 
 	r_strbuf_appendf (
 		&op->esil,
-			"0x%x"	CM
-			"%s%d"	CM
-			"+"	CM
-			"[%d]"	CM,
+		"0x%x" CM
+		"%s%d" CM
+		"+" CM
+		"[%d]" CM,
 		// offset
 		offset,
 		// address
 		xtensa_regfile_shortname (isa, src_rf),
 		reg_a,
 		// size
-		data_size
-	);
+		data_size);
 
 	if (sign_extend_bit != 0) {
 		esil_sign_extend (&op->esil, sign_extend_bit);
@@ -755,20 +812,19 @@ static void esil_load_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format fo
 
 	r_strbuf_appendf (
 		&op->esil,
-			"%s%d"	CM
-			"=",
+		"%s%d" CM
+		"=",
 		// data
 		xtensa_regfile_shortname (isa, dst_rf),
-		reg_d
-	);
+		reg_d);
 }
 
-static void esil_load_relative(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+static void esil_load_relative (xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
+	size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	ut32 offset;
 	st32 dst;
 
-	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, (ut32 *) &dst);
+	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, (ut32 *)&dst);
 	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, &offset);
 
 	xtensa_regfile dst_rf = xtensa_operand_regfile (isa, opcode, 0);
@@ -781,37 +837,36 @@ static void esil_load_relative(xtensa_isa isa, xtensa_opcode opcode, xtensa_form
 	//          a2, // push data reg
 	//          = // assign to data reg
 
-	offset = - ((offset | 0xFFFF0000) << 2);
+	offset = -((offset | 0xFFFF0000) << 2);
 
 	r_strbuf_appendf (
 		&op->esil,
-			"0x%x" 		CM
-			"$$"   		CM
-			"3"		CM
-			"+"		CM
-			"0xFFFFFFFC"	CM
-			"&" 		CM
-			"-"    		CM
-			"[4]"		CM
-			"%s%d" 		CM
-			"=",
+		"0x%x" CM
+		"$$" CM
+		"3" CM
+		"+" CM
+		"0xFFFFFFFC" CM
+		"&" CM
+		"-" CM
+		"[4]" CM
+		"%s%d" CM
+		"=",
 		// offset
 		offset,
 		// data
 		xtensa_regfile_shortname (isa, dst_rf),
-		dst
-	);
+		dst);
 }
 
-static void esil_add_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+static void esil_add_imm (xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
+	size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	st32 imm;
 	ut32 dst;
 	ut32 src;
 
 	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &dst);
 	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, &src);
-	xtensa_operand_get_field (isa, opcode, 2, format, i, slot_buffer, (ut32 *) &imm);
+	xtensa_operand_get_field (isa, opcode, 2, format, i, slot_buffer, (ut32 *)&imm);
 
 	xtensa_regfile dst_rf = xtensa_operand_regfile (isa, opcode, 0);
 	xtensa_regfile src_rf = xtensa_operand_regfile (isa, opcode, 1);
@@ -828,16 +883,15 @@ static void esil_add_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format for
 	esil_push_signed_imm (&op->esil, imm);
 	r_strbuf_appendf (
 		&op->esil,
-			"+"    CM
-			"%s%d" CM
-			"=",
+		"+" CM
+		"%s%d" CM
+		"=",
 		xtensa_regfile_shortname (isa, dst_rf),
-		dst
-	);
+		dst);
 }
 
-static void esil_store_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+static void esil_store_imm (xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
+	size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 
 	ut32 offset;
 	ut32 reg_d;
@@ -857,10 +911,10 @@ static void esil_store_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format f
 
 	ut8 data_size =
 		opcode == 453 ? 4 // s32cli
-		: opcode == 36 ? 4 // s32i.n
-		: opcode == 100 ? 4 // s32i
-		: opcode == 99 ? 2 // s16i
-		: 1; // opcode == 101 ? 1 : 1; // s8i
+			      : opcode == 36 ? 4 // s32i.n
+					     : opcode == 100 ? 4 // s32i
+							     : opcode == 99 ? 2 // s16i
+									    : 1; // opcode == 101 ? 1 : 1; // s8i
 
 	switch (opcode) {
 	case 100: // s32i
@@ -875,11 +929,11 @@ static void esil_store_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format f
 
 	r_strbuf_appendf (
 		&op->esil,
-			"%s%d" CM
-			"0x%x" CM
-			"%s%d" CM
-			"+"    CM
-			"=[%d]",
+		"%s%d" CM
+		"0x%x" CM
+		"%s%d" CM
+		"+" CM
+		"=[%d]",
 		// data
 		xtensa_regfile_shortname (isa, dst_rf),
 		reg_d,
@@ -889,17 +943,16 @@ static void esil_store_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format f
 		xtensa_regfile_shortname (isa, src_rf),
 		reg_a,
 		// size
-		data_size
-	);
+		data_size);
 }
 
-static void esil_move_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+static void esil_move_imm (xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
+	size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	st32 imm;
 	ut32 reg;
 
 	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &reg);
-	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, (ut32 *) &imm);
+	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, (ut32 *)&imm);
 
 	xtensa_regfile rf = xtensa_operand_regfile (isa, opcode, 0);
 
@@ -918,15 +971,14 @@ static void esil_move_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format fo
 
 	r_strbuf_appendf (
 		&op->esil,
-			"%s%d" CM
-			"=",
+		"%s%d" CM
+		"=",
 		xtensa_regfile_shortname (isa, rf),
-		reg
-	);
+		reg);
 }
 
-static void esil_move(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+static void esil_move (xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
+	size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	ut32 dst;
 	ut32 src;
 
@@ -938,18 +990,17 @@ static void esil_move(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format
 
 	r_strbuf_appendf (
 		&op->esil,
-			"%s%d" CM
-			"%s%d" CM
-			"=",
+		"%s%d" CM
+		"%s%d" CM
+		"=",
 		xtensa_regfile_shortname (isa, src_rf),
 		src,
 		xtensa_regfile_shortname (isa, dst_rf),
-		dst
-	);
+		dst);
 }
 
-static void esil_move_conditional(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+static void esil_move_conditional (xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
+	size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	ut32 dst;
 	ut32 src;
 	ut32 cond;
@@ -965,16 +1016,16 @@ static void esil_move_conditional(xtensa_isa isa, xtensa_opcode opcode, xtensa_f
 	const char *compare_op = "";
 
 	switch (opcode) {
-	case 91:	/* moveqz */
+	case 91: /* moveqz */
 		compare_op = "==,$z";
 		break;
-	case 92:	/* movnez */
+	case 92: /* movnez */
 		compare_op = "==,$z,!";
 		break;
-	case 93:	/* movltz */
+	case 93: /* movltz */
 		compare_op = "<";
 		break;
-	case 94:	/* movgez */
+	case 94: /* movgez */
 		compare_op = ">=";
 		break;
 	}
@@ -991,26 +1042,25 @@ static void esil_move_conditional(xtensa_isa isa, xtensa_opcode opcode, xtensa_f
 
 	r_strbuf_appendf (
 		&op->esil,
-			"0"	CM
-			"%s%d"	CM
-			"%s"	CM
-			"?{"	CM
-				"%s%d"	CM
-				"%s%d"	CM
-				"="	CM
-			"}",
+		"0" CM
+		"%s%d" CM
+		"%s" CM
+		"?{" CM
+		"%s%d" CM
+		"%s%d" CM
+		"=" CM
+		"}",
 		xtensa_regfile_shortname (isa, cond_rf),
 		cond,
 		compare_op,
 		xtensa_regfile_shortname (isa, src_rf),
 		src,
 		xtensa_regfile_shortname (isa, dst_rf),
-		dst
-	);
+		dst);
 }
 
-static void esil_add_sub(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+static void esil_add_sub (xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
+	size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	ut32 dst;
 	ut32 op1;
 	ut32 op2;
@@ -1052,13 +1102,13 @@ static void esil_add_sub(xtensa_isa isa, xtensa_opcode opcode, xtensa_format for
 
 	r_strbuf_appendf (
 		&op->esil,
-			"%s%d"	CM
-			"%d"    CM
-			"%s%d"	CM
-			"<<"    CM
-			"%s"	CM
-			"%s%d"	CM
-			"=",
+		"%s%d" CM
+		"%d" CM
+		"%s%d" CM
+		"<<" CM
+		"%s" CM
+		"%s%d" CM
+		"=",
 		xtensa_regfile_shortname (isa, op2_rf),
 		op2,
 		shift,
@@ -1066,12 +1116,11 @@ static void esil_add_sub(xtensa_isa isa, xtensa_opcode opcode, xtensa_format for
 		op1,
 		(is_add ? "+" : "-"),
 		xtensa_regfile_shortname (isa, dst_rf),
-		dst
-	);
+		dst);
 }
 
-static void esil_branch_compare_imm(xtensa_isa isa, xtensa_opcode opcode,
-		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+static void esil_branch_compare_imm (xtensa_isa isa, xtensa_opcode opcode,
+	xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	ut32 cmp_reg;
 	// Unsigned immediate operands still fit in st32
 	st32 cmp_imm;
@@ -1080,25 +1129,25 @@ static void esil_branch_compare_imm(xtensa_isa isa, xtensa_opcode opcode,
 	const char *compare_op = "";
 
 	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &cmp_reg);
-	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, (ut32 *) &cmp_imm);
-	xtensa_operand_get_field (isa, opcode, 2, format, i, slot_buffer, (ut32 *) &branch_imm);
+	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, (ut32 *)&cmp_imm);
+	xtensa_operand_get_field (isa, opcode, 2, format, i, slot_buffer, (ut32 *)&branch_imm);
 
 	xtensa_regfile cmp_rf = xtensa_operand_regfile (isa, opcode, 0);
 
 	// TODO: unsigned comparisons
 	switch (opcode) {
-	case 52:	/* beqi */
+	case 52: /* beqi */
 		compare_op = "==,$z";
 		break;
-	case 53:	/* bnei */
+	case 53: /* bnei */
 		compare_op = "==,$z,!";
 		break;
-	case 58:	/* bgeui */
-	case 54:	/* bgei */
+	case 58: /* bgeui */
+	case 54: /* bgei */
 		compare_op = ">=";
 		break;
-	case 59:	/* bltui */
-	case 55:	/* blti */
+	case 59: /* bltui */
+	case 55: /* blti */
 		compare_op = "<";
 		break;
 	}
@@ -1118,8 +1167,7 @@ static void esil_branch_compare_imm(xtensa_isa isa, xtensa_opcode opcode,
 		"%s%d" CM,
 		// data reg
 		xtensa_regfile_shortname (isa, cmp_rf),
-		cmp_reg
-	);
+		cmp_reg);
 
 	esil_push_signed_imm (&op->esil, cmp_imm);
 
@@ -1134,8 +1182,8 @@ static void esil_branch_compare_imm(xtensa_isa isa, xtensa_opcode opcode,
 	r_strbuf_appendf (&op->esil, "pc" CM "+=" CM "}");
 }
 
-static void esil_branch_compare(xtensa_isa isa, xtensa_opcode opcode,
-		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+static void esil_branch_compare (xtensa_isa isa, xtensa_opcode opcode,
+	xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	ut32 op1_reg;
 	ut32 op2_reg;
 	st32 branch_imm;
@@ -1144,24 +1192,24 @@ static void esil_branch_compare(xtensa_isa isa, xtensa_opcode opcode,
 
 	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &op1_reg);
 	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, &op2_reg);
-	xtensa_operand_get_field (isa, opcode, 2, format, i, slot_buffer, (ut32 *) &branch_imm);
+	xtensa_operand_get_field (isa, opcode, 2, format, i, slot_buffer, (ut32 *)&branch_imm);
 
 	xtensa_regfile op1_rf = xtensa_operand_regfile (isa, opcode, 0);
 	xtensa_regfile op2_rf = xtensa_operand_regfile (isa, opcode, 1);
 
 	switch (opcode) {
-	case 60:	/* beq */
+	case 60: /* beq */
 		compare_op = "==,$z";
 		break;
-	case 61:	/* bne */
+	case 61: /* bne */
 		compare_op = "==,$z,!";
 		break;
-	case 62:	/* bge */
-	case 64:	/* bgeu */
+	case 62: /* bge */
+	case 64: /* bgeu */
 		compare_op = ">=";
 		break;
-	case 63:	/* blt */
-	case 65:	/* bltu */
+	case 63: /* blt */
+	case 65: /* bltu */
 		compare_op = "<";
 		break;
 	}
@@ -1181,47 +1229,46 @@ static void esil_branch_compare(xtensa_isa isa, xtensa_opcode opcode,
 
 	r_strbuf_appendf (
 		&op->esil,
-			"%s%d"	CM
-			"%s%d"	CM
-			"%s"	CM
-			"?{"	CM,
+		"%s%d" CM
+		"%s%d" CM
+		"%s" CM
+		"?{" CM,
 		xtensa_regfile_shortname (isa, op2_rf),
 		op2_reg,
 		xtensa_regfile_shortname (isa, op1_rf),
 		op1_reg,
-		compare_op
-	);
+		compare_op);
 
 	esil_push_signed_imm (&op->esil, branch_imm);
 
 	r_strbuf_append (&op->esil, "pc" CM "+=" CM "}");
 }
 
-static void esil_branch_compare_single(xtensa_isa isa, xtensa_opcode opcode,
-		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+static void esil_branch_compare_single (xtensa_isa isa, xtensa_opcode opcode,
+	xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	ut32 op_reg;
 	st32 branch_imm;
 
 	const char *compare_op = "";
 
 	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &op_reg);
-	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, (ut32 *) &branch_imm);
+	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, (ut32 *)&branch_imm);
 
 	xtensa_regfile op_rf = xtensa_operand_regfile (isa, opcode, 0);
 
 	switch (opcode) {
-	case 72:	/* beqz */
-	case 28:	/* beqz.n */
+	case 72: /* beqz */
+	case 28: /* beqz.n */
 		compare_op = "==,$z";
 		break;
-	case 73:	/* bnez */
-	case 29:	/* bnez.n */
+	case 73: /* bnez */
+	case 29: /* bnez.n */
 		compare_op = "==,$z,!";
 		break;
-	case 74:	/* bgez */
+	case 74: /* bgez */
 		compare_op = ">=";
 		break;
-	case 75:	/* bltz */
+	case 75: /* bltz */
 		compare_op = "<";
 		break;
 	}
@@ -1241,22 +1288,21 @@ static void esil_branch_compare_single(xtensa_isa isa, xtensa_opcode opcode,
 
 	r_strbuf_appendf (
 		&op->esil,
-			"0"	CM
-			"%s%d"	CM
-			"%s"	CM
-			"?{"	CM,
+		"0" CM
+		"%s%d" CM
+		"%s" CM
+		"?{" CM,
 		xtensa_regfile_shortname (isa, op_rf),
 		op_reg,
-		compare_op
-	);
+		compare_op);
 
 	esil_push_signed_imm (&op->esil, branch_imm);
 
 	r_strbuf_append (&op->esil, "pc" CM "+=" CM "}");
 }
 
-static void esil_branch_check_mask(xtensa_isa isa, xtensa_opcode opcode,
-		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+static void esil_branch_check_mask (xtensa_isa isa, xtensa_opcode opcode,
+	xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	ut32 op1_reg;
 	ut32 op2_reg;
 	st32 branch_imm;
@@ -1266,32 +1312,31 @@ static void esil_branch_check_mask(xtensa_isa isa, xtensa_opcode opcode,
 
 	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &op1_reg);
 	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, &op2_reg);
-	xtensa_operand_get_field (isa, opcode, 2, format, i, slot_buffer, (ut32 *) &branch_imm);
+	xtensa_operand_get_field (isa, opcode, 2, format, i, slot_buffer, (ut32 *)&branch_imm);
 
 	xtensa_regfile op1_rf = xtensa_operand_regfile (isa, opcode, 0);
 	xtensa_regfile op2_rf = xtensa_operand_regfile (isa, opcode, 1);
 
 	switch (opcode) {
-	case 69:	/* bnall */
-	case 66:	/* bany */
+	case 69: /* bnall */
+	case 66: /* bany */
 		compare_op = "==,$z,!";
 		break;
-	case 68:	/* ball */
-	case 67:	/* bnone */
+	case 68: /* ball */
+	case 67: /* bnone */
 		compare_op = "==,$z";
 		break;
 	}
 
 	switch (opcode) {
-	case 69:	/* bnall */
-	case 68:	/* ball */
-		snprintf(
+	case 69: /* bnall */
+	case 68: /* ball */
+		snprintf (
 			compare_val,
-			sizeof(compare_val),
+			sizeof (compare_val),
 			"%s%d",
 			xtensa_regfile_shortname (isa, op2_rf),
-			op2_reg
-		);
+			op2_reg);
 		break;
 	}
 
@@ -1312,28 +1357,27 @@ static void esil_branch_check_mask(xtensa_isa isa, xtensa_opcode opcode,
 
 	r_strbuf_appendf (
 		&op->esil,
-			"%s%d"	CM
-			"%s%d"	CM
-			"&"	CM
-			"%s%d"	CM
-			"%s"	CM
-			"?{"	CM,
+		"%s%d" CM
+		"%s%d" CM
+		"&" CM
+		"%s%d" CM
+		"%s" CM
+		"?{" CM,
 		xtensa_regfile_shortname (isa, op1_rf),
 		op1_reg,
 		xtensa_regfile_shortname (isa, op2_rf),
 		op2_reg,
 		xtensa_regfile_shortname (isa, op2_rf),
 		op2_reg,
-		compare_op
-	);
+		compare_op);
 
 	esil_push_signed_imm (&op->esil, branch_imm);
 
 	r_strbuf_append (&op->esil, "pc" CM "+=" CM "}");
 }
 
-static void esil_bitwise_op(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+static void esil_bitwise_op (xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
+	size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	ut32 dst;
 	ut32 op1;
 	ut32 op2;
@@ -1348,13 +1392,13 @@ static void esil_bitwise_op(xtensa_isa isa, xtensa_opcode opcode, xtensa_format 
 	xtensa_regfile op2_rf = xtensa_operand_regfile (isa, opcode, 2);
 
 	switch (opcode) {
-	case 49:	/* and */
+	case 49: /* and */
 		bop = '&';
 		break;
-	case 50:	/* or */
+	case 50: /* or */
 		bop = '|';
 		break;
-	case 51:	/* xor */
+	case 51: /* xor */
 		bop = '^';
 		break;
 	default:
@@ -1364,23 +1408,22 @@ static void esil_bitwise_op(xtensa_isa isa, xtensa_opcode opcode, xtensa_format 
 
 	r_strbuf_appendf (
 		&op->esil,
-			"%s%d"	CM
-			"%s%d"	CM
-			"%c"    CM
-			"%s%d"	CM
-			"=",
+		"%s%d" CM
+		"%s%d" CM
+		"%c" CM
+		"%s%d" CM
+		"=",
 		xtensa_regfile_shortname (isa, op1_rf),
 		op1,
 		xtensa_regfile_shortname (isa, op2_rf),
 		op2,
 		bop,
 		xtensa_regfile_shortname (isa, dst_rf),
-		dst
-	);
+		dst);
 }
 
-static void esil_branch_check_bit_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+static void esil_branch_check_bit_imm (xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
+	size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	ut32 src_reg;
 	ut32 imm_bit;
 	st32 imm_offset;
@@ -1391,7 +1434,7 @@ static void esil_branch_check_bit_imm(xtensa_isa isa, xtensa_opcode opcode, xten
 	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &src_reg);
 	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, &imm_bit);
 	xtensa_operand_decode (isa, opcode, 1, &imm_bit);
-	xtensa_operand_get_field (isa, opcode, 2, format, i, slot_buffer, (ut32 *) &imm_offset);
+	xtensa_operand_get_field (isa, opcode, 2, format, i, slot_buffer, (ut32 *)&imm_offset);
 
 	xtensa_regfile src_rf = xtensa_operand_regfile (isa, opcode, 0);
 
@@ -1416,30 +1459,28 @@ static void esil_branch_check_bit_imm(xtensa_isa isa, xtensa_opcode opcode, xten
 
 	r_strbuf_appendf (
 		&op->esil,
-			"%s%d"	CM
-			"0x%x"	CM
-			"&"	CM
-			"0"	CM
-			"%s"	CM
-			"?{"	CM,
+		"%s%d" CM
+		"0x%x" CM
+		"&" CM
+		"0" CM
+		"%s" CM
+		"?{" CM,
 		xtensa_regfile_shortname (isa, src_rf),
 		src_reg,
 		mask,
-		cmp_op
-	);
+		cmp_op);
 
 	esil_push_signed_imm (&op->esil, imm_offset);
 
 	r_strbuf_appendf (
 		&op->esil,
-			"pc"	CM
-			"+="	CM
-			"}"
-	);
+		"pc" CM
+		"+=" CM
+		"}");
 }
 
-static void esil_branch_check_bit(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+static void esil_branch_check_bit (xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
+	size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	ut32 src_reg;
 	ut32 bit_reg;
 	st32 imm_offset;
@@ -1449,7 +1490,7 @@ static void esil_branch_check_bit(xtensa_isa isa, xtensa_opcode opcode, xtensa_f
 
 	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &src_reg);
 	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, &bit_reg);
-	xtensa_operand_get_field (isa, opcode, 2, format, i, slot_buffer, (ut32 *) &imm_offset);
+	xtensa_operand_get_field (isa, opcode, 2, format, i, slot_buffer, (ut32 *)&imm_offset);
 
 	xtensa_regfile src_rf = xtensa_operand_regfile (isa, opcode, 0);
 	xtensa_regfile bit_rf = xtensa_operand_regfile (isa, opcode, 1);
@@ -1477,33 +1518,31 @@ static void esil_branch_check_bit(xtensa_isa isa, xtensa_opcode opcode, xtensa_f
 
 	r_strbuf_appendf (
 		&op->esil,
-			"%s%d"	CM
-			"1"	CM
-			"<<"	CM
-			"%s%d"	CM
-			"&"	CM
-			"0"	CM
-			"%s"	CM
-			"?{"	CM,
+		"%s%d" CM
+		"1" CM
+		"<<" CM
+		"%s%d" CM
+		"&" CM
+		"0" CM
+		"%s" CM
+		"?{" CM,
 		xtensa_regfile_shortname (isa, bit_rf),
 		bit_reg,
 		xtensa_regfile_shortname (isa, src_rf),
 		src_reg,
-		cmp_op
-	);
+		cmp_op);
 
 	esil_push_signed_imm (&op->esil, imm_offset);
 
 	r_strbuf_appendf (
 		&op->esil,
-			"pc"	CM
-			"+="	CM
-			"}"
-	);
+		"pc" CM
+		"+=" CM
+		"}");
 }
 
-static void esil_abs_neg(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+static void esil_abs_neg (xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
+	size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	ut32 src_reg;
 	ut32 dst_reg;
 
@@ -1520,20 +1559,20 @@ static void esil_abs_neg(xtensa_isa isa, xtensa_opcode opcode, xtensa_format for
 	if (!neg) {
 		r_strbuf_appendf (
 			&op->esil,
-				"0"	CM
-				"%s%d"	CM
-				"<"	CM
-				"?{"	CM
-				"0"     CM
-				"%s%d"	CM
-				"-"     CM
-				"}"	CM
-				"0"	CM
-				"%s%d"	CM
-				">="	CM
-				"?{"	CM
-				"%s%d"	CM
-				"}"	CM,
+			"0" CM
+			"%s%d" CM
+			"<" CM
+			"?{" CM
+			"0" CM
+			"%s%d" CM
+			"-" CM
+			"}" CM
+			"0" CM
+			"%s%d" CM
+			">=" CM
+			"?{" CM
+			"%s%d" CM
+			"}" CM,
 			xtensa_regfile_shortname (isa, src_rf),
 			src_reg,
 			xtensa_regfile_shortname (isa, src_rf),
@@ -1541,43 +1580,39 @@ static void esil_abs_neg(xtensa_isa isa, xtensa_opcode opcode, xtensa_format for
 			xtensa_regfile_shortname (isa, src_rf),
 			src_reg,
 			xtensa_regfile_shortname (isa, src_rf),
-			src_reg
-		);
+			src_reg);
 	} else {
 		r_strbuf_appendf (
 			&op->esil,
-				"0"	CM
-				"%s%d"	CM
-				"-"	CM,
+			"0" CM
+			"%s%d" CM
+			"-" CM,
 			xtensa_regfile_shortname (isa, src_rf),
-			src_reg
-		);
+			src_reg);
 	}
 
 	r_strbuf_appendf (
 		&op->esil,
-			"%s%d"	CM
-			"="	CM,
+		"%s%d" CM
+		"=" CM,
 		xtensa_regfile_shortname (isa, dst_rf),
-		dst_reg
-	);
+		dst_reg);
 }
 
-static void esil_call(xtensa_isa isa, xtensa_opcode opcode,
-		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+static void esil_call (xtensa_isa isa, xtensa_opcode opcode,
+	xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	bool call = opcode == 76;
 	st32 imm_offset;
 
 	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer,
-			(ut32 *) &imm_offset);
+		(ut32 *)&imm_offset);
 
 	if (call) {
-		r_strbuf_append(
+		r_strbuf_append (
 			&op->esil,
-			"pc"	CM
-			"a0"	CM
-			"="	CM
-		);
+			"pc" CM
+			"a0" CM
+			"=" CM);
 	}
 
 	sign_extend (&imm_offset, 17);
@@ -1593,8 +1628,8 @@ static void esil_call(xtensa_isa isa, xtensa_opcode opcode,
 	r_strbuf_append (&op->esil, "pc" CM "+=");
 }
 
-static void esil_callx(xtensa_isa isa, xtensa_opcode opcode,
-		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+static void esil_callx (xtensa_isa isa, xtensa_opcode opcode,
+	xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	bool callx = opcode == 77;
 	ut32 dst_reg;
 
@@ -1605,23 +1640,21 @@ static void esil_callx(xtensa_isa isa, xtensa_opcode opcode,
 		&op->esil,
 		"%s%d" CM "0" CM "+" CM,
 		xtensa_regfile_shortname (isa, dst_rf),
-		dst_reg
-	);
+		dst_reg);
 
 	if (callx) {
 		r_strbuf_append (
 			&op->esil,
-			"pc"	CM
-			"a0"	CM
-			"="	CM
-		);
+			"pc" CM
+			"a0" CM
+			"=" CM);
 	}
 
 	r_strbuf_append (&op->esil, "pc" CM "=");
 }
 
-static void esil_set_shift_amount(xtensa_isa isa, xtensa_opcode opcode,
-		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+static void esil_set_shift_amount (xtensa_isa isa, xtensa_opcode opcode,
+	xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	ut32 src_reg;
 
 	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &src_reg);
@@ -1629,16 +1662,15 @@ static void esil_set_shift_amount(xtensa_isa isa, xtensa_opcode opcode,
 
 	r_strbuf_appendf (
 		&op->esil,
-			"%s%d"	CM
-			"sar"	CM
-			"=",
+		"%s%d" CM
+		"sar" CM
+		"=",
 		xtensa_regfile_shortname (isa, src_rf),
-		src_reg
-	);
+		src_reg);
 }
 
-static void esil_set_shift_amount_imm(xtensa_isa isa, xtensa_opcode opcode,
-		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+static void esil_set_shift_amount_imm (xtensa_isa isa, xtensa_opcode opcode,
+	xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	ut32 sa_imm;
 
 	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &sa_imm);
@@ -1646,15 +1678,14 @@ static void esil_set_shift_amount_imm(xtensa_isa isa, xtensa_opcode opcode,
 
 	r_strbuf_appendf (
 		&op->esil,
-			"0x%x"	CM
-			"sar"	CM
-			"=",
-		sa_imm
-	);
+		"0x%x" CM
+		"sar" CM
+		"=",
+		sa_imm);
 }
 
-static void esil_shift_logic_imm(xtensa_isa isa, xtensa_opcode opcode,
-		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+static void esil_shift_logic_imm (xtensa_isa isa, xtensa_opcode opcode,
+	xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	ut32 reg_dst;
 	ut32 reg_src;
 	ut32 imm_amount;
@@ -1678,22 +1709,21 @@ static void esil_shift_logic_imm(xtensa_isa isa, xtensa_opcode opcode,
 
 	r_strbuf_appendf (
 		&op->esil,
-			"0x%x"	CM
-			"%s%d"	CM
-			"%s"	CM
-			"%s%d"	CM
-			"=",
+		"0x%x" CM
+		"%s%d" CM
+		"%s" CM
+		"%s%d" CM
+		"=",
 		imm_amount,
 		xtensa_regfile_shortname (isa, src_rf),
 		reg_src,
 		shift_op,
 		xtensa_regfile_shortname (isa, dst_rf),
-		reg_dst
-	);
+		reg_dst);
 }
 
-static void esil_shift_logic_sar(xtensa_isa isa, xtensa_opcode opcode,
-		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+static void esil_shift_logic_sar (xtensa_isa isa, xtensa_opcode opcode,
+	xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	ut32 reg_dst;
 	ut32 reg_src;
 
@@ -1714,21 +1744,20 @@ static void esil_shift_logic_sar(xtensa_isa isa, xtensa_opcode opcode,
 
 	r_strbuf_appendf (
 		&op->esil,
-			"sar"	CM
-			"%s%d"	CM
-			"%s"	CM
-			"%s%d"	CM
-			"=",
+		"sar" CM
+		"%s%d" CM
+		"%s" CM
+		"%s%d" CM
+		"=",
 		xtensa_regfile_shortname (isa, src_rf),
 		reg_src,
 		shift_op,
 		xtensa_regfile_shortname (isa, dst_rf),
-		reg_dst
-	);
+		reg_dst);
 }
 
-static void esil_extract_unsigned(xtensa_isa isa, xtensa_opcode opcode,
-		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+static void esil_extract_unsigned (xtensa_isa isa, xtensa_opcode opcode,
+	xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	ut32 reg_dst;
 	ut32 reg_src;
 	ut32 imm_shift;
@@ -1746,24 +1775,23 @@ static void esil_extract_unsigned(xtensa_isa isa, xtensa_opcode opcode,
 
 	r_strbuf_appendf (
 		&op->esil,
-			"0x%x"	CM
-			"%s%d"	CM
-			">>"	CM
-			"0x%x"	CM
-			"&"	CM
-			"%s%d"	CM
-			"=",
+		"0x%x" CM
+		"%s%d" CM
+		">>" CM
+		"0x%x" CM
+		"&" CM
+		"%s%d" CM
+		"=",
 		imm_shift,
 		xtensa_regfile_shortname (isa, src_rf),
 		reg_src,
 		and_mask,
 		xtensa_regfile_shortname (isa, dst_rf),
-		reg_dst
-	);
+		reg_dst);
 }
 
 static void analop_esil (xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-						 size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+	size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	switch (opcode) {
 	case 26: /* add.n */
 	case 41: /* add */
@@ -1783,16 +1811,16 @@ static void analop_esil (xtensa_isa isa, xtensa_opcode opcode, xtensa_format for
 	case 33: /* movi.n */
 		esil_move_imm (isa, opcode, format, i, slot_buffer, op);
 		break;
-	case 0:  /* excw */
+	case 0: /* excw */
 	case 34: /* nop.n */
 		r_strbuf_setf (&op->esil, "");
 		break;
 	// TODO: s32cli (s32c1i) is conditional (CAS)
 	// should it be handled here?
 	case 453: /* s32c1i */
-	case 36:  /* s32i.n */
+	case 36: /* s32i.n */
 	case 100: /* s32i */
-	case 99:  /* s16i */
+	case 99: /* s16i */
 	case 101: /* s8i */
 		esil_store_imm (isa, opcode, format, i, slot_buffer, op);
 		break;
@@ -1918,10 +1946,10 @@ static int xtensa_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf_origin
 		return 1;
 	}
 
-	xtensa_op0_fns[(buf_original[0] & 0xf)] (anal, op, addr, buf_original);
+	xtensa_op0_fns[(buf_original[0] & 0xf)](anal, op, addr, buf_original);
 
 	ut8 buffer[XTENSA_MAX_LENGTH] = { 0 };
-	int len = R_MIN(op->size, XTENSA_MAX_LENGTH);
+	int len = R_MIN (op->size, XTENSA_MAX_LENGTH);
 	memcpy (buffer, buf_original, len);
 
 	unsigned int i;
@@ -1942,7 +1970,7 @@ static int xtensa_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf_origin
 		slot_buffer = xtensa_insnbuf_alloc (isa);
 	}
 
-	memset (insn_buffer, 0,	xtensa_insnbuf_size (isa) * sizeof(xtensa_insnbuf_word));
+	memset (insn_buffer, 0, xtensa_insnbuf_size (isa) * sizeof (xtensa_insnbuf_word));
 
 	xtensa_insnbuf_from_chars (isa, insn_buffer, buffer, len);
 	format = xtensa_format_decode (isa, insn_buffer);
@@ -1972,7 +2000,7 @@ static int xtensa_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf_origin
 	return op->size;
 }
 
-static char *get_reg_profile(RAnal *anal) {
+static char *get_reg_profile (RAnal *anal) {
 	return strdup (
 		// Assuming call0 ABI
 		"# a0		return address\n"
@@ -2010,8 +2038,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	pc	.32	68	0\n"
 
 		// sr
-		"gpr	sar	.32	72	0\n"
-	);
+		"gpr	sar	.32	72	0\n");
 }
 
 RAnalPlugin r_anal_plugin_xtensa = {

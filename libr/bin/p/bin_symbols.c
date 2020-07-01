@@ -40,7 +40,7 @@ typedef struct symbols_metadata_t { // 0x40
 } SymbolsMetadata;
 
 // header starts at offset 0 and ends at offset 0x40
-static SymbolsHeader parseHeader(RBuffer *buf) {
+static SymbolsHeader parseHeader (RBuffer *buf) {
 	ut8 b[64];
 	SymbolsHeader sh = { 0 };
 	(void)r_buf_read_at (buf, 0, b, sizeof (b));
@@ -58,7 +58,7 @@ static SymbolsHeader parseHeader(RBuffer *buf) {
 	return sh;
 }
 
-static const char *typeString(ut32 n, int *bits) {
+static const char *typeString (ut32 n, int *bits) {
 	*bits = 32;
 	if (n == 12) { // CPU_SUBTYPE_ARM_V7) {
 		return "arm";
@@ -75,7 +75,7 @@ static const char *typeString(ut32 n, int *bits) {
 	return "x86";
 }
 
-static const char *subtypeString(int n) {
+static const char *subtypeString (int n) {
 	if (n == 9) { // CPU_SUBTYPE_ARM_V7) {
 		return "armv7";
 	}
@@ -83,7 +83,7 @@ static const char *subtypeString(int n) {
 }
 
 // metadata section starts at offset 0x40 and ends around 0xb0 depending on filenamelength
-static SymbolsMetadata parseMetadata(RBuffer *buf, int off) {
+static SymbolsMetadata parseMetadata (RBuffer *buf, int off) {
 	SymbolsMetadata sm = { 0 };
 	ut8 b[0x100] = { 0 };
 	(void)r_buf_read_at (buf, off, b, sizeof (b));
@@ -118,7 +118,7 @@ static SymbolsMetadata parseMetadata(RBuffer *buf, int off) {
 	return sm;
 }
 
-static void printSymbolsHeader(SymbolsHeader sh) {
+static void printSymbolsHeader (SymbolsHeader sh) {
 	// eprintf ("0x%08x  version  0x%x\n", 4, sh.version);
 	eprintf ("0x%08x  uuid     ", 24);
 	int i;
@@ -132,7 +132,7 @@ static void printSymbolsHeader(SymbolsHeader sh) {
 	// eprintf ("0x%08x  slotsize %d\n", 0x2e, sh.slotsize); // r_read_le16 (b+ 0x2e));
 }
 
-static RBinSection *bin_section_from_section(RCoreSymCacheElementSection *sect) {
+static RBinSection *bin_section_from_section (RCoreSymCacheElementSection *sect) {
 	if (!sect->name) {
 		return NULL;
 	}
@@ -151,7 +151,7 @@ static RBinSection *bin_section_from_section(RCoreSymCacheElementSection *sect) 
 	return s;
 }
 
-static RBinSection *bin_section_from_segment(RCoreSymCacheElementSegment *seg) {
+static RBinSection *bin_section_from_segment (RCoreSymCacheElementSegment *seg) {
 	if (!seg->name) {
 		return NULL;
 	}
@@ -170,7 +170,7 @@ static RBinSection *bin_section_from_segment(RCoreSymCacheElementSegment *seg) {
 	return s;
 }
 
-static RBinSymbol *bin_symbol_from_symbol(RCoreSymCacheElement *element, RCoreSymCacheElementSymbol *s) {
+static RBinSymbol *bin_symbol_from_symbol (RCoreSymCacheElement *element, RCoreSymCacheElementSymbol *s) {
 	if (!s->name && !s->mangled_name) {
 		return NULL;
 	}
@@ -193,7 +193,7 @@ static RBinSymbol *bin_symbol_from_symbol(RCoreSymCacheElement *element, RCoreSy
 	return sym;
 }
 
-static RCoreSymCacheElement *parseDragons(RBinFile *bf, RBuffer *buf, int off, int bits) {
+static RCoreSymCacheElement *parseDragons (RBinFile *bf, RBuffer *buf, int off, int bits) {
 	D eprintf ("Dragons at 0x%x\n", off);
 	ut64 size = r_buf_size (buf);
 	if (off >= size) {
@@ -264,7 +264,7 @@ static RCoreSymCacheElement *parseDragons(RBinFile *bf, RBuffer *buf, int off, i
 	return r_coresym_cache_element_new (bf, buf, off + 16, bits);
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 #if 0
 	SYMBOLS HEADER
 
@@ -299,7 +299,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return false;
 }
 
-static RList *sections(RBinFile *bf) {
+static RList *sections (RBinFile *bf) {
 	RList *res = r_list_newf ((RListFree)r_bin_section_free);
 	r_return_val_if_fail (res && bf->o && bf->o->bin_obj, res);
 	RCoreSymCacheElement *element = bf->o->bin_obj;
@@ -321,11 +321,11 @@ static RList *sections(RBinFile *bf) {
 	return res;
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr (RBinFile *bf) {
 	return 0LL;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	SymbolsMetadata sm = parseMetadata (bf->buf, 0x40);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
@@ -343,13 +343,13 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	ut8 buf[4];
 	r_buf_read_at (b, 0, buf, sizeof (buf));
 	return !memcmp (buf, "\x02\xff\x01\xff", 4);
 }
 
-static RList *symbols(RBinFile *bf) {
+static RList *symbols (RBinFile *bf) {
 	RList *res = r_list_newf ((RListFree)r_bin_symbol_free);
 	r_return_val_if_fail (res && bf->o && bf->o->bin_obj, res);
 	RCoreSymCacheElement *element = bf->o->bin_obj;
@@ -386,15 +386,15 @@ static RList *symbols(RBinFile *bf) {
 	return res;
 }
 
-static ut64 size(RBinFile *bf) {
+static ut64 size (RBinFile *bf) {
 	return UT64_MAX;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy (RBinFile *bf) {
 	r_coresym_cache_element_free (bf->o->bin_obj);
 }
 
-static void header(RBinFile *bf) {
+static void header (RBinFile *bf) {
 	r_return_if_fail (bf && bf->o);
 
 	RCoreSymCacheElement *element = bf->o->bin_obj;

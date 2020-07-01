@@ -4,11 +4,11 @@
 #include <r_lib.h>
 #include <sys/stat.h>
 #ifdef _MSC_VER
-#define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
-#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+#define S_ISREG(m) (((m)&S_IFMT) == S_IFREG)
+#define S_ISDIR(m) (((m)&S_IFMT) == S_IFDIR)
 #define MAXPATHLEN 255
 #endif
-static RFSFile* fs_posix_open(RFSRoot *root, const char *path, bool create) {
+static RFSFile *fs_posix_open (RFSRoot *root, const char *path, bool create) {
 	FILE *fd;
 	RFSFile *file = r_fs_file_new (root, path);
 	if (!file) {
@@ -16,7 +16,7 @@ static RFSFile* fs_posix_open(RFSRoot *root, const char *path, bool create) {
 	}
 	file->ptr = NULL;
 	file->p = root->p;
-	fd = r_sandbox_fopen (path, create? "wb": "rb");
+	fd = r_sandbox_fopen (path, create ? "wb" : "rb");
 	if (fd) {
 		fseek (fd, 0, SEEK_END);
 		file->size = ftell (fd);
@@ -28,17 +28,17 @@ static RFSFile* fs_posix_open(RFSRoot *root, const char *path, bool create) {
 	return file;
 }
 
-static bool fs_posix_read(RFSFile *file, ut64 addr, int len) {
+static bool fs_posix_read (RFSFile *file, ut64 addr, int len) {
 	free (file->data);
-	file->data = (void*)r_file_slurp_range (file->name, 0, len, NULL);
+	file->data = (void *)r_file_slurp_range (file->name, 0, len, NULL);
 	return false;
 }
 
-static void fs_posix_close(RFSFile *file) {
+static void fs_posix_close (RFSFile *file) {
 	//fclose (file->ptr);
 }
 
-static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
+static RList *fs_posix_dir (RFSRoot *root, const char *path, int view /*ignored*/) {
 	RList *list;
 	char fullpath[4096];
 	struct stat st;
@@ -76,9 +76,9 @@ static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/
 				return NULL;
 			}
 			fsf->type = 'f';
-			snprintf (fullpath, sizeof (fullpath)-1, "%s/%s", path, wctocbuff);
+			snprintf (fullpath, sizeof (fullpath) - 1, "%s/%s", path, wctocbuff);
 			if (!stat (fullpath, &st)) {
-				fsf->type = S_ISDIR (st.st_mode)?'d':'f';
+				fsf->type = S_ISDIR (st.st_mode) ? 'd' : 'f';
 				fsf->time = st.st_atime;
 			} else {
 				fsf->type = 'f';
@@ -104,9 +104,9 @@ static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/
 			return NULL;
 		}
 		fsf->type = 'f';
-		snprintf (fullpath, sizeof (fullpath)-1, "%s/%s", path, de->d_name);
+		snprintf (fullpath, sizeof (fullpath) - 1, "%s/%s", path, de->d_name);
 		if (!stat (fullpath, &st)) {
-			fsf->type = S_ISDIR (st.st_mode)?'d':'f';
+			fsf->type = S_ISDIR (st.st_mode) ? 'd' : 'f';
 			fsf->time = st.st_atime;
 		} else {
 			fsf->type = 'f';
@@ -119,12 +119,12 @@ static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/
 	return list;
 }
 
-static int fs_posix_mount(RFSRoot *root) {
+static int fs_posix_mount (RFSRoot *root) {
 	root->ptr = NULL; // XXX: TODO
 	return true;
 }
 
-static void fs_posix_umount(RFSRoot *root) {
+static void fs_posix_umount (RFSRoot *root) {
 	root->ptr = NULL;
 }
 
@@ -142,8 +142,8 @@ RFSPlugin r_fs_plugin_posix = {
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-        .type = R_LIB_TYPE_FS,
-        .data = &r_fs_plugin_posix,
-        .version = R2_VERSION
+	.type = R_LIB_TYPE_FS,
+	.data = &r_fs_plugin_posix,
+	.version = R2_VERSION
 };
 #endif

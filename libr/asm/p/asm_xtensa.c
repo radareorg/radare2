@@ -25,18 +25,18 @@ static int xtensa_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 le
 	return 0;
 }
 
-static int symbol_at_address(bfd_vma addr, struct disassemble_info * info) {
+static int symbol_at_address (bfd_vma addr, struct disassemble_info *info) {
 	return 0;
 }
 
-static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_info *info) {
+static void memory_error_func (int status, bfd_vma memaddr, struct disassemble_info *info) {
 	//--
 }
 
-DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
-DECLARE_GENERIC_FPRINTF_FUNC()
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC ()
+DECLARE_GENERIC_FPRINTF_FUNC ()
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
 	buf_global = &op->buf_asm;
 	offset = a->pc;
@@ -47,7 +47,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
-	disasm_obj.disassembler_options=(a->bits==64)?"64":"";
+	disasm_obj.disassembler_options = (a->bits == 64) ? "64" : "";
 	disasm_obj.buffer = bytes;
 	disasm_obj.buffer_length = len;
 	disasm_obj.read_memory_func = &xtensa_buffer_read_memory;

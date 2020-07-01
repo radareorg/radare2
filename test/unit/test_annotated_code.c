@@ -6,7 +6,7 @@
 
 #include "minunit.h"
 
-static RCodeAnnotation make_code_annotation(int st, int en, RCodeAnnotationType typec,
+static RCodeAnnotation make_code_annotation (int st, int en, RCodeAnnotationType typec,
 	ut64 offset, RSyntaxHighlightType types) {
 	RCodeAnnotation annotation = { 0 };
 	annotation.start = st;
@@ -21,7 +21,7 @@ static RCodeAnnotation make_code_annotation(int st, int en, RCodeAnnotationType 
 	return annotation;
 }
 
-static RVector *get_some_code_annotation_for_add(void) {
+static RVector *get_some_code_annotation_for_add (void) {
 	RVector *test_annotations = r_vector_new (sizeof (RCodeAnnotation), NULL, NULL);
 	RCodeAnnotation annotation;
 	r_vector_init (test_annotations, sizeof (RCodeAnnotation), NULL, NULL);
@@ -32,7 +32,7 @@ static RVector *get_some_code_annotation_for_add(void) {
 	return test_annotations;
 }
 
-static RVector *get_some_annotations_for_in(void) {
+static RVector *get_some_annotations_for_in (void) {
 	RVector *test_annotations = r_vector_new (sizeof (RCodeAnnotation), NULL, NULL);
 	RCodeAnnotation annotation;
 	annotation = make_code_annotation (1, 2, R_CODE_ANNOTATION_TYPE_OFFSET, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
@@ -55,7 +55,7 @@ static RVector *get_some_annotations_for_in(void) {
 	return test_annotations;
 }
 
-static RVector *get_annotations_for_hello_world(void) {
+static RVector *get_annotations_for_hello_world (void) {
 	RVector *test_annotations = r_vector_new (sizeof (RCodeAnnotation), NULL, NULL);
 	RCodeAnnotation annotation;
 	// r_vector_init (&test_annotations, sizeof (RCodeAnnotation), NULL, NULL);
@@ -82,7 +82,7 @@ static RVector *get_annotations_for_hello_world(void) {
 	return test_annotations;
 }
 
-static RAnnotatedCode *get_hello_world(void) {
+static RAnnotatedCode *get_hello_world (void) {
 	char *test_string = strdup ("\nvoid main(void)\n{\n    sym.imp.puts(\"Hello, World!\");\n    return;\n}\n");
 	RAnnotatedCode *code = r_annotated_code_new (test_string);
 
@@ -97,7 +97,7 @@ static RAnnotatedCode *get_hello_world(void) {
 	return code;
 }
 
-static bool test_r_annotated_code_new(void) {
+static bool test_r_annotated_code_new (void) {
 	//Testing RAnnoatedCode->code
 	char *test_string = strdup ("How are you?");
 	RAnnotatedCode *code = r_annotated_code_new (test_string);
@@ -110,7 +110,7 @@ static bool test_r_annotated_code_new(void) {
 	mu_end;
 }
 
-static bool test_r_annotated_code_free(void) {
+static bool test_r_annotated_code_free (void) {
 	char *test_string = strdup ("How are you?");
 	RAnnotatedCode *code = r_annotated_code_new (test_string);
 
@@ -126,7 +126,7 @@ static bool test_r_annotated_code_free(void) {
 	mu_end;
 }
 
-static bool test_equal(RCodeAnnotation *first, RCodeAnnotation *second) { // First - Got, Second - Expected
+static bool test_equal (RCodeAnnotation *first, RCodeAnnotation *second) { // First - Got, Second - Expected
 	mu_assert_eq (first->start, second->start, "start of annotations doesn't match");
 	mu_assert_eq (first->end, second->end, "end of annotations doesn't match");
 	mu_assert_eq (first->type, second->type, "type of annotation doesn't match");
@@ -141,7 +141,7 @@ static bool test_equal(RCodeAnnotation *first, RCodeAnnotation *second) { // Fir
 	return false;
 }
 
-static bool test_r_annotated_code_add_annotation(void) {
+static bool test_r_annotated_code_add_annotation (void) {
 	char *test_string = strdup ("abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	RAnnotatedCode *code = r_annotated_code_new (test_string);
 	RVector /*<RCodeAnnotation>*/ *test_annotations;
@@ -164,7 +164,7 @@ static bool test_r_annotated_code_add_annotation(void) {
 	mu_end;
 }
 
-static bool test_r_annotated_code_annotations_in(void) {
+static bool test_r_annotated_code_annotations_in (void) {
 	char *test_string = strdup ("abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	RAnnotatedCode *code = r_annotated_code_new (test_string);
 	RVector /*<RCodeAnnotation>*/ *test_annotations;
@@ -194,7 +194,7 @@ static bool test_r_annotated_code_annotations_in(void) {
 	mu_end;
 }
 
-static bool test_r_annotated_code_annotations_range(void) {
+static bool test_r_annotated_code_annotations_range (void) {
 	char *test_string = strdup ("abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	RAnnotatedCode *code = r_annotated_code_new (test_string);
 	RVector /*<RCodeAnnotation>*/ *test_annotations;
@@ -226,7 +226,7 @@ static bool test_r_annotated_code_annotations_range(void) {
 	mu_end;
 }
 
-static bool test_r_annotated_code_line_offsets(void) {
+static bool test_r_annotated_code_line_offsets (void) {
 
 	RAnnotatedCode *code = get_hello_world ();
 	RVector *offsets = r_annotated_code_line_offsets (code);
@@ -250,7 +250,7 @@ static bool test_r_annotated_code_line_offsets(void) {
 	mu_end;
 }
 
-static bool test_r_core_annotated_code_print_json(void) {
+static bool test_r_core_annotated_code_print_json (void) {
 	RAnnotatedCode *code = get_hello_world ();
 	char *actual;
 	char *expected = "{\"code\":\"\\nvoid main(void)\\n{\\n    sym.imp.puts(\\\"Hello, World!\\\");\\n    return;\\n}\\n\",\"annotations\":[{\"start\":1,\"end\":5,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"datatype\"},{\"start\":6,\"end\":10,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"function_name\"},{\"start\":11,\"end\":15,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"keyword\"},{\"start\":23,\"end\":35,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"function_name\"},{\"start\":36,\"end\":51,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"constant_variable\"},{\"start\":23,\"end\":52,\"type\":\"offset\",\"offset\":4440},{\"start\":58,\"end\":64,\"type\":\"offset\",\"offset\":4447},{\"start\":58,\"end\":64,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"keyword\"},{\"start\":58,\"end\":64,\"type\":\"offset\",\"offset\":4447}]}\n";
@@ -267,7 +267,7 @@ static bool test_r_core_annotated_code_print_json(void) {
 	mu_end;
 }
 
-static bool test_r_core_annotated_code_print(void) {
+static bool test_r_core_annotated_code_print (void) {
 	RAnnotatedCode *code = get_hello_world ();
 	char *actual;
 	//Checking without line offset
@@ -307,7 +307,7 @@ static bool test_r_core_annotated_code_print(void) {
 	mu_end;
 }
 
-static bool test_r_core_annotated_code_print_comment_cmds(void) {
+static bool test_r_core_annotated_code_print_comment_cmds (void) {
 	RAnnotatedCode *code = get_hello_world ();
 	char *actual;
 	char *expected = "CCu base64:c3ltLmltcC5wdXRzKCJIZWxsbywgV29ybGQhIik= @ 0x1158\n"
@@ -325,7 +325,7 @@ static bool test_r_core_annotated_code_print_comment_cmds(void) {
 	mu_end;
 }
 
-static int all_tests(void) {
+static int all_tests (void) {
 	mu_run_test (test_r_annotated_code_new);
 	mu_run_test (test_r_annotated_code_free);
 	mu_run_test (test_r_annotated_code_add_annotation);

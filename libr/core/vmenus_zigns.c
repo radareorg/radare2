@@ -23,7 +23,7 @@ static char *print_item (void *_core, void *_item, bool selected) {
 	int bytes_size = item->bytes->size;
 	//  int bytes_null = bytes_size - bytes_mask;
 	if (item->bytes->mask) {
-		for (i = 0; i < bytes_size;i++) {
+		for (i = 0; i < bytes_size; i++) {
 			if (item->bytes->mask[i]) {
 				bytes_mask++;
 			}
@@ -32,36 +32,36 @@ static char *print_item (void *_core, void *_item, bool selected) {
 	if (selected && item->name) {
 		cur_name = strdup (item->name);
 	}
-	return r_str_newf ("%c 0x%08"PFMT64x" bytes=%d/%d %20s\n", selected?'>':' ',
+	return r_str_newf ("%c 0x%08" PFMT64x " bytes=%d/%d %20s\n", selected ? '>' : ' ',
 		item->addr, bytes_mask, bytes_size, item->name);
 }
 
-static RList *__signs(RCoreVisualViewZigns *status, ut64 addr, bool update) {
+static RList *__signs (RCoreVisualViewZigns *status, ut64 addr, bool update) {
 	RCore *core = status->core;
 	return r_sign_get_list (core->anal);
 }
 
-R_API int __core_visual_view_zigns_update(RCore *core, RCoreVisualViewZigns *status) {
+R_API int __core_visual_view_zigns_update (RCore *core, RCoreVisualViewZigns *status) {
 	int h, w = r_cons_get_size (&h);
 	r_cons_clear00 ();
-	int colh = h -2;
-	int colw = w -1;
+	int colh = h - 2;
+	int colw = w - 1;
 	RList *col0 = __signs (status, status->addr, true);
 	char *col0str = r_str_widget_list (core, col0, colh, status->cur, print_item);
 
-	char *title = r_str_newf ("[r2-visual-signatures] 0x%08"PFMT64x" 0x%08"PFMT64x, status->addr, status->faddr);
+	char *title = r_str_newf ("[r2-visual-signatures] 0x%08" PFMT64x " 0x%08" PFMT64x, status->addr, status->faddr);
 	if (title) {
 		r_cons_strcat_at (title, 0, 0, w - 1, 2);
 		free (title);
 	}
 	r_cons_strcat_at (col0str, 0, 2, colw, colh);
 	r_list_free (col0);
-	r_cons_flush();
+	r_cons_flush ();
 	return 0;
 }
 
-R_API int r_core_visual_view_zigns(RCore *core) {
-	RCoreVisualViewZigns status = {0};
+R_API int r_core_visual_view_zigns (RCore *core) {
+	RCoreVisualViewZigns status = { 0 };
 	status.core = core;
 	status.addr = core->offset;
 	status.fcn = NULL;
@@ -141,13 +141,13 @@ R_API int r_core_visual_view_zigns(RCore *core) {
 		case '?':
 			r_cons_clear00 ();
 			r_cons_printf (
-			"vbz: Visual Zignatures:\n\n"
-			" jkJK  - scroll up/down\n"
-			" d     - delete current signature\n"
-			" g     - regenerate signatures\n"
-			" q     - quit this visual mode\n"
-			" _     - enter the hud\n"
-			" :     - enter command\n");
+				"vbz: Visual Zignatures:\n\n"
+				" jkJK  - scroll up/down\n"
+				" d     - delete current signature\n"
+				" g     - regenerate signatures\n"
+				" q     - quit this visual mode\n"
+				" _     - enter the hud\n"
+				" :     - enter command\n");
 			r_cons_flush ();
 			r_cons_any_key (NULL);
 			break;
@@ -155,11 +155,11 @@ R_API int r_core_visual_view_zigns(RCore *core) {
 			R_FREE (cur_name);
 			return false;
 		case ':': // TODO: move this into a separate helper function
-			{
+		{
 			char cmd[1024];
 			r_cons_show_cursor (true);
 			r_cons_set_raw (0);
-			cmd[0]='\0';
+			cmd[0] = '\0';
 			r_line_set_prompt (":> ");
 			if (r_cons_fgets (cmd, sizeof (cmd), 0, NULL) < 0) {
 				cmd[0] = '\0';
@@ -171,8 +171,7 @@ R_API int r_core_visual_view_zigns(RCore *core) {
 				r_cons_any_key (NULL);
 			}
 			r_cons_clear ();
-			}
-			break;
+		} break;
 		}
 	}
 	return false;

@@ -182,7 +182,6 @@ typedef struct r_bin_wasm_data_t {
 
 // TODO: custom sections
 
-
 typedef struct r_bin_wasm_custom_name_function_names_t {
 	ut32 count;
 	RIDStorage *names;
@@ -207,7 +206,7 @@ typedef struct r_bin_wasm_custom_name_entry_t {
 
 	ut8 payload_data;
 	union {
-		struct r_bin_wasm_name_t* mod_name;
+		struct r_bin_wasm_name_t *mod_name;
 		RBinWasmCustomNameFunctionNames *func;
 		RBinWasmCustomNameLocalNames *local;
 	};

@@ -21,7 +21,7 @@
    MA 02110-1301, USA.  */
 
 #ifdef ENABLE_NLS
-# include <libintl.h>
+#include <libintl.h>
 /* Note the use of dgetext() and PACKAGE here, rather than gettext().
    
    This is because the code in this directory is used to build a library which
@@ -35,18 +35,18 @@
    use the OPCODES domain rather than the domain of the program that included
    the opcodes library, (eg OBJDUMP).  Hence we use dgettext (PACKAGE, String)
    and define PACKAGE to be 'opcodes'.  (See the code in configure).  */
-# define _(String) dgettext (PACKAGE, String)
-# ifdef gettext_noop
-#  define N_(String) gettext_noop (String)
-# else
-#  define N_(String) (String)
-# endif
+#define _(String) dgettext (PACKAGE, String)
+#ifdef gettext_noop
+#define N_(String) gettext_noop (String)
 #else
-# define gettext(Msgid) (Msgid)
-# define dgettext(Domainname, Msgid) (Msgid)
-# define dcgettext(Domainname, Msgid, Category) (Msgid)
-# define textdomain(Domainname) while (0) /* nothing */
-# define bindtextdomain(Domainname, Dirname) while (0) /* nothing */
-# define _(String) (String)
-# define N_(String) (String)
+#define N_(String) (String)
+#endif
+#else
+#define gettext(Msgid) (Msgid)
+#define dgettext(Domainname, Msgid) (Msgid)
+#define dcgettext(Domainname, Msgid, Category) (Msgid)
+#define textdomain(Domainname) while (0) /* nothing */
+#define bindtextdomain(Domainname, Dirname) while (0) /* nothing */
+#define _(String) (String)
+#define N_(String) (String)
 #endif

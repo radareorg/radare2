@@ -6,8 +6,8 @@
 #include <string.h>
 #include "spc700_opcode_table.h"
 
-static int spc700OpLength(int spcoptype){
-	switch(spcoptype) {
+static int spc700OpLength (int spcoptype) {
+	switch (spcoptype) {
 	case SPC_OP:
 		return 1;
 	case SPC_ARG8_1:
@@ -19,7 +19,7 @@ static int spc700OpLength(int spcoptype){
 	return 0;
 }
 
-static int spc700Disass(RAsmOp *op, const ut8 *buf, int len) {
+static int spc700Disass (RAsmOp *op, const ut8 *buf, int len) {
 	int foo = spc700OpLength (spc_op_table[buf[0]].type);
 	if (len < foo) {
 		return 0;
@@ -36,7 +36,7 @@ static int spc700Disass(RAsmOp *op, const ut8 *buf, int len) {
 		buf_asm = sdb_fmt (spc_op_table[buf[0]].name, buf[1], buf[2]);
 		break;
 	case SPC_ARG16:
-		buf_asm = sdb_fmt (spc_op_table[buf[0]].name, buf[1]+0x100*buf[2]);
+		buf_asm = sdb_fmt (spc_op_table[buf[0]].name, buf[1] + 0x100 * buf[2]);
 		break;
 	}
 	r_asm_op_set_asm (op, buf_asm);

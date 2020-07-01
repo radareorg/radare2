@@ -15,7 +15,7 @@
 
 #define CHKFLAG(x) if (!flags || flags & (x))
 
-R_API RHash *r_hash_new(bool rst, ut64 flags) {
+R_API RHash *r_hash_new (bool rst, ut64 flags) {
 	RHash *ctx = R_NEW0 (RHash);
 	if (ctx) {
 		r_hash_do_begin (ctx, flags);
@@ -24,29 +24,39 @@ R_API RHash *r_hash_new(bool rst, ut64 flags) {
 	return ctx;
 }
 
-R_API void r_hash_do_begin(RHash *ctx, ut64 flags) {
-	CHKFLAG (R_HASH_MD5) r_hash_do_md5 (ctx, NULL, -1);
-	CHKFLAG (R_HASH_SHA1) SHA1_Init (&ctx->sha1);
-	CHKFLAG (R_HASH_SHA256) SHA256_Init (&ctx->sha256);
-	CHKFLAG (R_HASH_SHA384) SHA384_Init (&ctx->sha384);
-	CHKFLAG (R_HASH_SHA512) SHA512_Init (&ctx->sha512);
+R_API void r_hash_do_begin (RHash *ctx, ut64 flags) {
+	CHKFLAG (R_HASH_MD5)
+	r_hash_do_md5 (ctx, NULL, -1);
+	CHKFLAG (R_HASH_SHA1)
+	SHA1_Init (&ctx->sha1);
+	CHKFLAG (R_HASH_SHA256)
+	SHA256_Init (&ctx->sha256);
+	CHKFLAG (R_HASH_SHA384)
+	SHA384_Init (&ctx->sha384);
+	CHKFLAG (R_HASH_SHA512)
+	SHA512_Init (&ctx->sha512);
 	ctx->rst = false;
 }
 
-R_API void r_hash_do_end(RHash *ctx, ut64 flags) {
-	CHKFLAG (R_HASH_MD5) r_hash_do_md5 (ctx, NULL, -2);
-	CHKFLAG (R_HASH_SHA1) SHA1_Final (ctx->digest, &ctx->sha1);
-	CHKFLAG (R_HASH_SHA256) SHA256_Final (ctx->digest, &ctx->sha256);
-	CHKFLAG (R_HASH_SHA384) SHA384_Final (ctx->digest, &ctx->sha384);
-	CHKFLAG (R_HASH_SHA512) SHA512_Final (ctx->digest, &ctx->sha512);
+R_API void r_hash_do_end (RHash *ctx, ut64 flags) {
+	CHKFLAG (R_HASH_MD5)
+	r_hash_do_md5 (ctx, NULL, -2);
+	CHKFLAG (R_HASH_SHA1)
+	SHA1_Final (ctx->digest, &ctx->sha1);
+	CHKFLAG (R_HASH_SHA256)
+	SHA256_Final (ctx->digest, &ctx->sha256);
+	CHKFLAG (R_HASH_SHA384)
+	SHA384_Final (ctx->digest, &ctx->sha384);
+	CHKFLAG (R_HASH_SHA512)
+	SHA512_Final (ctx->digest, &ctx->sha512);
 	ctx->rst = true;
 }
 
-R_API void r_hash_free(RHash *ctx) {
+R_API void r_hash_free (RHash *ctx) {
 	free (ctx);
 }
 
-R_API ut8 *r_hash_do_sha1(RHash *ctx, const ut8 *input, int len) {
+R_API ut8 *r_hash_do_sha1 (RHash *ctx, const ut8 *input, int len) {
 	if (len < 0) {
 		return NULL;
 	}
@@ -60,7 +70,7 @@ R_API ut8 *r_hash_do_sha1(RHash *ctx, const ut8 *input, int len) {
 	return ctx->digest;
 }
 
-R_API ut8 *r_hash_do_sha256(RHash *ctx, const ut8 *input, int len) {
+R_API ut8 *r_hash_do_sha256 (RHash *ctx, const ut8 *input, int len) {
 	if (len < 0) {
 		return NULL;
 	}
@@ -74,7 +84,7 @@ R_API ut8 *r_hash_do_sha256(RHash *ctx, const ut8 *input, int len) {
 	return ctx->digest;
 }
 
-R_API ut8 *r_hash_do_sha384(RHash *ctx, const ut8 *input, int len) {
+R_API ut8 *r_hash_do_sha384 (RHash *ctx, const ut8 *input, int len) {
 	if (len < 0) {
 		return NULL;
 	}
@@ -88,7 +98,7 @@ R_API ut8 *r_hash_do_sha384(RHash *ctx, const ut8 *input, int len) {
 	return ctx->digest;
 }
 
-R_API ut8 *r_hash_do_sha512(RHash *ctx, const ut8 *input, int len) {
+R_API ut8 *r_hash_do_sha512 (RHash *ctx, const ut8 *input, int len) {
 	if (len < 0) {
 		return NULL;
 	}
@@ -102,7 +112,7 @@ R_API ut8 *r_hash_do_sha512(RHash *ctx, const ut8 *input, int len) {
 	return ctx->digest;
 }
 
-R_API ut8 *r_hash_do_md5(RHash *ctx, const ut8 *input, int len) {
+R_API ut8 *r_hash_do_md5 (RHash *ctx, const ut8 *input, int len) {
 	if (len < 0) {
 		if (len == -1) {
 			MD5_Init (&ctx->md5);
@@ -117,7 +127,7 @@ R_API ut8 *r_hash_do_md5(RHash *ctx, const ut8 *input, int len) {
 	if (len > 0) {
 		MD5_Update (&ctx->md5, input, len);
 	} else {
-		MD5_Update (&ctx->md5, (const ut8 *) "", 0);
+		MD5_Update (&ctx->md5, (const ut8 *)"", 0);
 	}
 	if (ctx->rst) {
 		MD5_Final (ctx->digest, &ctx->md5);
@@ -125,7 +135,7 @@ R_API ut8 *r_hash_do_md5(RHash *ctx, const ut8 *input, int len) {
 	return ctx->digest;
 }
 
-R_API ut8 *r_hash_do_md4(RHash *ctx, const ut8 *input, int len) {
+R_API ut8 *r_hash_do_md4 (RHash *ctx, const ut8 *input, int len) {
 	if (len >= 0) {
 		MD4 (input, len, ctx->digest);
 		return ctx->digest;

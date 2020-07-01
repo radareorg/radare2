@@ -11,7 +11,7 @@ static const char *kt_name[] = {
 #include "../format/xbe/kernel.h"
 };
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	ut8 magic[4];
 	if (r_buf_read_at (b, 0, magic, sizeof (magic)) == 4) {
 		return !memcmp (magic, "XBEH", 4);
@@ -19,7 +19,7 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	r_bin_xbe_obj_t *obj = R_NEW (r_bin_xbe_obj_t);
 	if (!obj) {
 		return false;
@@ -47,11 +47,11 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return true;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy (RBinFile *bf) {
 	R_FREE (bf->o->bin_obj);
 }
 
-static RBinAddr *binsym(RBinFile *bf, int type) {
+static RBinAddr *binsym (RBinFile *bf, int type) {
 	if (!bf || !bf->buf || type != R_BIN_SYM_MAIN) {
 		return NULL;
 	}
@@ -65,7 +65,7 @@ static RBinAddr *binsym(RBinFile *bf, int type) {
 	return ret;
 }
 
-static RList *entries(RBinFile *bf) {
+static RList *entries (RBinFile *bf) {
 	const r_bin_xbe_obj_t *obj;
 	RList *ret;
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
@@ -86,7 +86,7 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
+static RList *sections (RBinFile *bf) {
 	xbe_section *sect = NULL;
 	r_bin_xbe_obj_t *obj = NULL;
 	xbe_header *h = NULL;
@@ -116,10 +116,10 @@ static RList *sections(RBinFile *bf) {
 		goto out_error;
 	}
 	addr = h->sechdr_addr - h->base;
-	if (addr > bf->size || addr + (sizeof(xbe_section) * h->sections) > bf->size) {
+	if (addr > bf->size || addr + (sizeof (xbe_section) * h->sections) > bf->size) {
 		goto out_error;
 	}
-	r = r_buf_read_at (bf->buf, addr, (ut8 *) sect, sizeof(xbe_section) * h->sections);
+	r = r_buf_read_at (bf->buf, addr, (ut8 *)sect, sizeof (xbe_section) * h->sections);
 	if (r < 1) {
 		goto out_error;
 	}
@@ -131,7 +131,7 @@ static RList *sections(RBinFile *bf) {
 			free (item);
 			goto out_error;
 		}
-		r = r_buf_read_at (bf->buf, addr, (ut8 *) tmp, sizeof (tmp));
+		r = r_buf_read_at (bf->buf, addr, (ut8 *)tmp, sizeof (tmp));
 		if (r < 1) {
 			free (item);
 			goto out_error;
@@ -161,7 +161,7 @@ out_error:
 	return NULL;
 }
 
-static RList *libs(RBinFile *bf) {
+static RList *libs (RBinFile *bf) {
 	r_bin_xbe_obj_t *obj;
 	xbe_header *h = NULL;
 	int i, off, libs, r;
@@ -185,10 +185,10 @@ static RList *libs(RBinFile *bf) {
 	} else {
 		off = h->kernel_lib_addr - h->base;
 	}
-	if (off > bf->size || off + sizeof(xbe_lib) > bf->size) {
+	if (off > bf->size || off + sizeof (xbe_lib) > bf->size) {
 		goto out_error;
 	}
-	r = r_buf_read_at (bf->buf, off, (ut8 *) &lib, sizeof(xbe_lib));
+	r = r_buf_read_at (bf->buf, off, (ut8 *)&lib, sizeof (xbe_lib));
 	if (r < 1) {
 		goto out_error;
 	}
@@ -202,10 +202,10 @@ static RList *libs(RBinFile *bf) {
 	} else {
 		off = h->xapi_lib_addr - h->base;
 	}
-	if (off > bf->size || off + sizeof(xbe_lib) > bf->size) {
+	if (off > bf->size || off + sizeof (xbe_lib) > bf->size) {
 		goto out_error;
 	}
-	r = r_buf_read_at (bf->buf, off, (ut8 *) &lib, sizeof(xbe_lib));
+	r = r_buf_read_at (bf->buf, off, (ut8 *)&lib, sizeof (xbe_lib));
 	if (r < 1) {
 		goto out_error;
 	}
@@ -224,7 +224,7 @@ static RList *libs(RBinFile *bf) {
 		if (addr > bf->size || addr + sizeof (xbe_lib) > bf->size) {
 			goto out_error;
 		}
-		r = r_buf_read_at (bf->buf, addr, (ut8 *) &lib, sizeof (xbe_lib));
+		r = r_buf_read_at (bf->buf, addr, (ut8 *)&lib, sizeof (xbe_lib));
 		if (r < 1) {
 			goto out_error;
 		}
@@ -242,7 +242,7 @@ out_error:
 	return NULL;
 }
 
-static RList *symbols(RBinFile *bf) {
+static RList *symbols (RBinFile *bf) {
 	r_bin_xbe_obj_t *obj;
 	xbe_header *h;
 	RList *ret;
@@ -266,15 +266,15 @@ static RList *symbols(RBinFile *bf) {
 	ret->free = free;
 	eprintf ("sections %d\n", h->sections);
 	int limit = h->sections;
-	if (limit * (sizeof(xbe_section)) >= bf->size - h->sechdr_addr) {
+	if (limit * (sizeof (xbe_section)) >= bf->size - h->sechdr_addr) {
 		goto out_error;
 	}
 	for (i = 0; found == false && i < limit; i++) {
 		addr = h->sechdr_addr - h->base + (sizeof (xbe_section) * i);
-		if (addr > bf->size || addr + sizeof(sect) > bf->size) {
+		if (addr > bf->size || addr + sizeof (sect) > bf->size) {
 			goto out_error;
 		}
-		r_buf_read_at (bf->buf, addr, (ut8 *) &sect, sizeof(sect));
+		r_buf_read_at (bf->buf, addr, (ut8 *)&sect, sizeof (sect));
 		if (kt_addr >= sect.vaddr && kt_addr < sect.vaddr + sect.vsize) {
 			found = true;
 		}
@@ -283,10 +283,10 @@ static RList *symbols(RBinFile *bf) {
 		goto out_error;
 	}
 	addr = sect.offset + (kt_addr - sect.vaddr);
-	if (addr > bf->size || addr + sizeof(thunk_addr) > bf->size) {
+	if (addr > bf->size || addr + sizeof (thunk_addr) > bf->size) {
 		goto out_error;
 	}
-	i = r_buf_read_at (bf->buf, addr, (ut8 *) &thunk_addr, sizeof (thunk_addr));
+	i = r_buf_read_at (bf->buf, addr, (ut8 *)&thunk_addr, sizeof (thunk_addr));
 	if (i != sizeof (thunk_addr)) {
 		goto out_error;
 	}
@@ -315,7 +315,7 @@ out_error:
 	return NULL;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	r_bin_xbe_obj_t *obj;
 	RBinInfo *ret;
 	ut8 dbg_name[256];
@@ -332,10 +332,9 @@ static RBinInfo *info(RBinFile *bf) {
 	obj = bf->o->bin_obj;
 
 	memset (dbg_name, 0, sizeof (dbg_name));
-	r_buf_read_at (bf->buf, obj->header.debug_name_addr -\
-		obj->header.base, dbg_name, sizeof (dbg_name));
-	dbg_name[sizeof(dbg_name) - 1] = 0;
-	ret->file = strdup ((char *) dbg_name);
+	r_buf_read_at (bf->buf, obj->header.debug_name_addr - obj->header.base, dbg_name, sizeof (dbg_name));
+	dbg_name[sizeof (dbg_name) - 1] = 0;
+	ret->file = strdup ((char *)dbg_name);
 	ret->bclass = strdup ("program");
 	ret->machine = strdup ("Microsoft Xbox");
 	ret->os = strdup ("xbox");
@@ -349,7 +348,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr (RBinFile *bf) {
 	r_bin_xbe_obj_t *obj = bf->o->bin_obj;
 	return obj->header.base;
 }

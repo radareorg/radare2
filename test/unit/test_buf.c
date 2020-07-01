@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "minunit.h"
 
-bool test_buf(RBuffer *b) {
+bool test_buf (RBuffer *b) {
 	ut8 buffer[1024] = { 0 };
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
@@ -100,7 +100,7 @@ bool test_buf(RBuffer *b) {
 	return MU_PASSED;
 }
 
-bool test_r_buf_file(void) {
+bool test_r_buf_file (void) {
 	RBuffer *b;
 	char *filename = "r2-XXXXXX";
 	const char *content = "Something To\nSay Here..";
@@ -125,7 +125,7 @@ bool test_r_buf_file(void) {
 	mu_end;
 }
 
-bool test_r_buf_bytes(void) {
+bool test_r_buf_bytes (void) {
 	RBuffer *b;
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
@@ -142,7 +142,7 @@ bool test_r_buf_bytes(void) {
 	mu_end;
 }
 
-bool test_r_buf_mmap(void) {
+bool test_r_buf_mmap (void) {
 	RBuffer *b;
 	char *filename = "r2-XXXXXX";
 	const char *content = "Something To\nSay Here..";
@@ -158,17 +158,17 @@ bool test_r_buf_mmap(void) {
 	mu_assert_notnull (b, "r_buf_new_mmap failed");
 
 	if (test_buf (b) != MU_PASSED) {
-		unlink(filename);
+		unlink (filename);
 		mu_fail ("test failed");
 	}
 
 	// Cleanup
 	r_buf_free (b);
-	unlink(filename);
+	unlink (filename);
 	mu_end;
 }
 
-bool test_r_buf_io(void) {
+bool test_r_buf_io (void) {
 	RBuffer *b;
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
@@ -183,7 +183,7 @@ bool test_r_buf_io(void) {
 	RIOBind bnd;
 	r_io_bind (io, &bnd);
 
-	b = r_buf_new_with_io(&bnd, desc->fd);
+	b = r_buf_new_with_io (&bnd, desc->fd);
 	mu_assert_notnull (b, "r_buf_new_file failed");
 
 	if (test_buf (b) != MU_PASSED) {
@@ -197,7 +197,7 @@ bool test_r_buf_io(void) {
 	mu_end;
 }
 
-bool test_r_buf_sparse(void) {
+bool test_r_buf_sparse (void) {
 	RBuffer *b;
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
@@ -217,7 +217,7 @@ bool test_r_buf_sparse(void) {
 	mu_end;
 }
 
-bool test_r_buf_sparse2(void) {
+bool test_r_buf_sparse2 (void) {
 	RBuffer *b = r_buf_new_sparse (0xff);
 	r_buf_write (b, (ut8 *)"aaaa", 4);
 	r_buf_write (b, (ut8 *)"bbbbb", 5);
@@ -263,7 +263,7 @@ bool test_r_buf_sparse2(void) {
 	mu_end;
 }
 
-bool test_r_buf_bytes_steal(void) {
+bool test_r_buf_bytes_steal (void) {
 	RBuffer *b;
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
@@ -279,14 +279,14 @@ bool test_r_buf_bytes_steal(void) {
 	mu_end;
 }
 
-bool test_r_buf_format(void) {
+bool test_r_buf_format (void) {
 	RBuffer *b = r_buf_new ();
-	uint16_t a[] = {0xdead, 0xbeef, 0xcafe, 0xbabe};
+	uint16_t a[] = { 0xdead, 0xbeef, 0xcafe, 0xbabe };
 	ut8 buf[4 * sizeof (uint16_t)];
 
 	r_buf_fwrite (b, (ut8 *)a, "4s", 1);
 	r_buf_read_at (b, 0, buf, sizeof (buf));
-	mu_assert_memeq (buf, (ut8 *)"\xad\xde\xef\xbe\xfe\xca\xbe\xba", sizeof(buf), "fwrite");
+	mu_assert_memeq (buf, (ut8 *)"\xad\xde\xef\xbe\xfe\xca\xbe\xba", sizeof (buf), "fwrite");
 
 	r_buf_fread_at (b, 0, (ut8 *)a, "S", 4);
 	mu_assert_eq (a[0], 0xadde, "first");
@@ -298,7 +298,7 @@ bool test_r_buf_format(void) {
 	mu_end;
 }
 
-bool test_r_buf_with_buf(void) {
+bool test_r_buf_with_buf (void) {
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
 	RBuffer *buf = r_buf_new_with_bytes ((ut8 *)content, length);
@@ -316,7 +316,7 @@ bool test_r_buf_with_buf(void) {
 	mu_end;
 }
 
-bool test_r_buf_slice(void) {
+bool test_r_buf_slice (void) {
 	const char *content = "AAAAAAAAAASomething To\nSay Here..BBBBBBBBBB";
 	const int length = strlen (content);
 	RBuffer *buf = r_buf_new_with_bytes ((ut8 *)content, length);
@@ -351,7 +351,7 @@ bool test_r_buf_slice(void) {
 	mu_end;
 }
 
-bool test_r_buf_get_string(void) {
+bool test_r_buf_get_string (void) {
 	ut8 *ch = malloc (128);
 	memset (ch, 'A', 127);
 	ch[127] = '\0';
@@ -370,7 +370,7 @@ bool test_r_buf_get_string(void) {
 	mu_end;
 }
 
-bool test_r_buf_get_string_nothing(void) {
+bool test_r_buf_get_string_nothing (void) {
 	RBuffer *b = r_buf_new_with_bytes ((ut8 *)"\x33\x22", 2);
 	char *s = r_buf_get_string (b, 0);
 	mu_assert_null (s, "there is no string in the buffer (no null terminator)");
@@ -382,7 +382,7 @@ bool test_r_buf_get_string_nothing(void) {
 	mu_end;
 }
 
-bool test_r_buf_slice_too_big(void) {
+bool test_r_buf_slice_too_big (void) {
 	RBuffer *buf = r_buf_new_with_bytes ((ut8 *)"AAAA", 4);
 	RBuffer *sl = r_buf_new_slice (buf, 1, 5);
 	ut64 sz = r_buf_size (sl);
@@ -399,7 +399,7 @@ bool test_r_buf_slice_too_big(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests () {
 	mu_run_test (test_r_buf_file);
 	mu_run_test (test_r_buf_bytes);
 	mu_run_test (test_r_buf_mmap);
@@ -416,6 +416,6 @@ int all_tests() {
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
+int main (int argc, char **argv) {
+	return all_tests ();
 }

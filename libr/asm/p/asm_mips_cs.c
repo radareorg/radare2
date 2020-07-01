@@ -4,15 +4,15 @@
 #include <r_lib.h>
 #include <capstone/capstone.h>
 
-R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out);
+R_IPI int mips_assemble (const char *str, ut64 pc, ut8 *out);
 
 static csh cd = 0;
 #include "cs_mnemonics.c"
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	cs_insn* insn;
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	cs_insn *insn;
 	int mode, n, ret = -1;
-	mode = (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	mode = (a->big_endian) ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 	if (!op) {
 		return 0;
 	}
@@ -29,7 +29,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 #endif
 		}
 	}
-	mode |= (a->bits == 64)? CS_MODE_MIPS64 : CS_MODE_MIPS32;
+	mode |= (a->bits == 64) ? CS_MODE_MIPS64 : CS_MODE_MIPS32;
 	memset (op, 0, sizeof (RAsmOp));
 	op->size = 4;
 	if (cd != 0) {
@@ -45,7 +45,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
 	}
 	cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
-	n = cs_disasm (cd, (ut8*)buf, len, a->pc, 1, &insn);
+	n = cs_disasm (cd, (ut8 *)buf, len, a->pc, 1, &insn);
 	if (n < 1) {
 		r_asm_op_set_asm (op, "invalid");
 		op->size = 4;
@@ -55,7 +55,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		goto beach;
 	}
 	op->size = insn->size;
-	char *str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
+	char *str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
 	if (str) {
 		r_str_replace_char (str, '$', 0);
 		// remove the '$'<registername> in the string
@@ -69,8 +69,8 @@ fin:
 	return op->size;
 }
 
-static int assemble(RAsm *a, RAsmOp *op, const char *str) {
-	ut8 *opbuf = (ut8*)r_strbuf_get (&op->buf);
+static int assemble (RAsm *a, RAsmOp *op, const char *str) {
+	ut8 *opbuf = (ut8 *)r_strbuf_get (&op->buf);
 	int ret = mips_assemble (str, a->pc, opbuf);
 	if (a->big_endian) {
 		ut8 *buf = opbuf;
@@ -90,7 +90,7 @@ RAsmPlugin r_asm_plugin_mips_cs = {
 	.license = "BSD",
 	.arch = "mips",
 	.cpus = "mips32/64,micro,r6,v3,v2",
-	.bits = 16|32|64,
+	.bits = 16 | 32 | 64,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
 	.mnemonics = mnemonics,

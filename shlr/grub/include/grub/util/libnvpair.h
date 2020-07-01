@@ -25,7 +25,7 @@
 #include <libnvpair.h>
 #else /* ! HAVE_LIBNVPAIR_H */
 
-#include <stdio.h>	/* FILE */
+#include <stdio.h> /* FILE */
 
 typedef void nvlist_t;
 

@@ -1,7 +1,7 @@
 #include <r_anal.h>
 #include "minunit.h"
 
-static bool sanitize_instr_acc(void *user, const ut64 k, const void *v) {
+static bool sanitize_instr_acc (void *user, const ut64 k, const void *v) {
 	RPVector *vec = (RPVector *)v;
 	void **it;
 	r_pvector_foreach (vec, it) {
@@ -19,7 +19,7 @@ static bool sanitize_instr_acc(void *user, const ut64 k, const void *v) {
 	return true;
 }
 
-static bool sanitize(RAnalFunction *fcn) {
+static bool sanitize (RAnalFunction *fcn) {
 	ht_up_foreach (fcn->inst_vars, sanitize_instr_acc, NULL);
 
 	void **it;
@@ -34,15 +34,18 @@ static bool sanitize(RAnalFunction *fcn) {
 	return true;
 }
 
-#define assert_sane(anal) do { RListIter *ass_it; RAnalFunction *ass_fcn; \
-	r_list_foreach ((anal)->fcns, ass_it, ass_fcn) { \
-		if (!sanitize (ass_fcn)) { \
-			return false; \
-		} \
-	} \
-} while (0);
+#define assert_sane(anal)                                        \
+	do {                                                     \
+		RListIter *ass_it;                               \
+		RAnalFunction *ass_fcn;                          \
+		r_list_foreach ((anal)->fcns, ass_it, ass_fcn) { \
+			if (!sanitize (ass_fcn)) {               \
+				return false;                    \
+			}                                        \
+		}                                                \
+	} while (0);
 
-bool test_r_anal_var() {
+bool test_r_anal_var () {
 	RAnal *anal = r_anal_new ();
 	r_anal_use (anal, "x86");
 	r_anal_set_bits (anal, 64);
@@ -142,7 +145,7 @@ bool test_r_anal_var() {
 
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0x123);
 	mu_assert ("no used vars", !used_vars || r_pvector_len (used_vars));
-	r_anal_var_set_access (a, "rbp" , 0x123, R_ANAL_VAR_ACCESS_TYPE_READ, 42);
+	r_anal_var_set_access (a, "rbp", 0x123, R_ANAL_VAR_ACCESS_TYPE_READ, 42);
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0x123);
 	mu_assert_eq (r_pvector_len (used_vars), 1, "used vars count");
 	mu_assert ("used vars", r_pvector_contains (used_vars, a));
@@ -223,11 +226,11 @@ bool test_r_anal_var() {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests () {
 	mu_run_test (test_r_anal_var);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
+int main (int argc, char **argv) {
+	return all_tests ();
 }

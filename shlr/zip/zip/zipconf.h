@@ -43,5 +43,4 @@ typedef int64_t zip_int64_t;
 typedef uint64_t zip_uint64_t;
 #define ZIP_UINT64_MAX UINT64_MAX
 
-
 #endif /* zipconf.h */

@@ -4,7 +4,7 @@
 
 // allocates a vector of len ut32 values from 0 to len
 // with capacity len + padding
-static bool _init_test_vector(RVector *v, size_t len, size_t padding, RVectorFree free, void *free_user) {
+static bool _init_test_vector (RVector *v, size_t len, size_t padding, RVectorFree free, void *free_user) {
 	r_vector_init (v, sizeof (ut32), free, free_user);
 	r_vector_reserve (v, len + padding);
 
@@ -16,14 +16,15 @@ static bool _init_test_vector(RVector *v, size_t len, size_t padding, RVectorFre
 	return v->len == len && v->capacity == len + padding;
 }
 
-#define init_test_vector(v, len, padding, free, free_user) { \
-	bool _r = _init_test_vector((v), (len), (padding), (free), (free_user)); \
-	mu_assert ("init_test_vector", _r); \
-}
+#define init_test_vector(v, len, padding, free, free_user)                                \
+	{                                                                                 \
+		bool _r = _init_test_vector ((v), (len), (padding), (free), (free_user)); \
+		mu_assert ("init_test_vector", _r);                                       \
+	}
 
 // allocates a pvector of len pointers to ut32 values from 0 to len
 // with capacity len + padding
-static bool _init_test_pvector(RPVector *v, size_t len, size_t padding) {
+static bool _init_test_pvector (RPVector *v, size_t len, size_t padding) {
 	r_pvector_init (v, free);
 	r_pvector_reserve (v, len + padding);
 
@@ -37,14 +38,15 @@ static bool _init_test_pvector(RPVector *v, size_t len, size_t padding) {
 	return v->v.len == len && v->v.capacity == len + padding;
 }
 
-#define init_test_pvector(v, len, padding) { \
-	bool _r = _init_test_pvector((v), (len), (padding)); \
-	mu_assert ("init_test_pvector", _r); \
-}
+#define init_test_pvector(v, len, padding)                            \
+	{                                                             \
+		bool _r = _init_test_pvector ((v), (len), (padding)); \
+		mu_assert ("init_test_pvector", _r);                  \
+	}
 
 // allocates a pvector of len pointers with values from 0 to len
 // with capacity len + padding
-static bool _init_test_pvector2(RPVector *v, size_t len, size_t padding) {
+static bool _init_test_pvector2 (RPVector *v, size_t len, size_t padding) {
 	r_pvector_init (v, NULL);
 	r_pvector_reserve (v, len + padding);
 
@@ -52,16 +54,17 @@ static bool _init_test_pvector2(RPVector *v, size_t len, size_t padding) {
 	for (i = 0; (size_t)i < len; i++) {
 		r_pvector_push (v, (void *)((size_t)i));
 	}
-	
+
 	return v->v.len == len && v->v.capacity == len + padding;
 }
 
-#define init_test_pvector2(v, len, padding) { \
-	bool _r = _init_test_pvector2((v), (len), (padding)); \
-	mu_assert ("init_test_pvector2", _r); \
-}
+#define init_test_pvector2(v, len, padding)                            \
+	{                                                              \
+		bool _r = _init_test_pvector2 ((v), (len), (padding)); \
+		mu_assert ("init_test_pvector2", _r);                  \
+	}
 
-static bool test_vector_fini(void) {
+static bool test_vector_fini (void) {
 	RVector v;
 	r_vector_init (&v, sizeof (void *), NULL, free);
 	r_vector_push (&v, &v);
@@ -70,14 +73,14 @@ static bool test_vector_fini(void) {
 	mu_assert_notnull (v.a, "init a");
 	mu_assert_eq (v.capacity, 4, "init capacity");
 	mu_assert_null (v.free, "init free");
-	mu_assert_eq (v.free_user, (void*)free, "init free_user");
+	mu_assert_eq (v.free_user, (void *)free, "init free_user");
 	r_vector_clear (&v);
 	mu_assert_eq (v.elem_size, 8UL, "init elem_size");
 	mu_assert_eq (v.len, 0, "init len");
 	mu_assert_null (v.a, "init a");
 	mu_assert_eq (v.capacity, 0, "init capacity");
 	mu_assert_null (v.free, "init free");
-	mu_assert_eq (v.free_user, (void*)free, "init free_user");
+	mu_assert_eq (v.free_user, (void *)free, "init free_user");
 	r_vector_fini (&v);
 	mu_assert_eq (v.elem_size, 8UL, "init elem_size");
 	mu_assert_eq (v.len, 0, "init len");
@@ -88,8 +91,7 @@ static bool test_vector_fini(void) {
 	mu_end;
 }
 
-
-static bool test_vector_init(void) {
+static bool test_vector_init (void) {
 	RVector v;
 	r_vector_init (&v, 42, (void *)1337, (void *)42);
 	mu_assert_eq (v.elem_size, 42UL, "init elem_size");
@@ -101,7 +103,7 @@ static bool test_vector_init(void) {
 	mu_end;
 }
 
-static bool test_vector_new(void) {
+static bool test_vector_new (void) {
 	RVector *v = r_vector_new (42, (void *)1337, (void *)42);
 	mu_assert ("new", v);
 	mu_assert_eq (v->elem_size, 42UL, "new elem_size");
@@ -116,7 +118,7 @@ static bool test_vector_new(void) {
 
 #define FREE_TEST_COUNT 10
 
-static void elem_free_test(void *e, void *user) {
+static void elem_free_test (void *e, void *user) {
 	ut32 e_val = *((ut32 *)e);
 	int *acc = (int *)user;
 	if (e_val > FREE_TEST_COUNT) {
@@ -125,9 +127,9 @@ static void elem_free_test(void *e, void *user) {
 	acc[e_val]++;
 }
 
-static bool test_vector_clear(void) {
+static bool test_vector_clear (void) {
 	RVector v;
-	int acc[FREE_TEST_COUNT+1] = {0};
+	int acc[FREE_TEST_COUNT + 1] = { 0 };
 	init_test_vector (&v, FREE_TEST_COUNT, 0, elem_free_test, acc);
 	r_vector_clear (&v);
 
@@ -142,9 +144,9 @@ static bool test_vector_clear(void) {
 	mu_end;
 }
 
-static bool test_vector_free(void) {
+static bool test_vector_free (void) {
 	RVector *v = r_vector_new (4, NULL, NULL);
-	int acc[FREE_TEST_COUNT+1] = {0};
+	int acc[FREE_TEST_COUNT + 1] = { 0 };
 	init_test_vector (v, FREE_TEST_COUNT, 0, elem_free_test, acc);
 
 	r_vector_free (v);
@@ -154,7 +156,7 @@ static bool test_vector_free(void) {
 	// acc[FREE_TEST_COUNT] is for potentially invalid calls of elem_free_test
 
 	ut32 i;
-	for (i=0; i<FREE_TEST_COUNT; i++) {
+	for (i = 0; i < FREE_TEST_COUNT; i++) {
 		mu_assert_eq (acc[i], 1, "free individual elements");
 	}
 
@@ -162,8 +164,7 @@ static bool test_vector_free(void) {
 	mu_end;
 }
 
-
-static bool test_vector_clone(void) {
+static bool test_vector_clone (void) {
 	RVector v;
 	init_test_vector (&v, 5, 0, NULL, NULL);
 	RVector *v1 = r_vector_clone (&v);
@@ -176,7 +177,6 @@ static bool test_vector_clone(void) {
 		mu_assert_eq (*((ut32 *)r_vector_index_ptr (v1, i)), i, "r_vector_clone => content");
 	}
 	r_vector_free (v1);
-
 
 	init_test_vector (&v, 5, 5, NULL, NULL);
 	v1 = r_vector_clone (&v);
@@ -196,7 +196,7 @@ static bool test_vector_clone(void) {
 	mu_end;
 }
 
-static bool test_vector_empty(void) {
+static bool test_vector_empty (void) {
 	RVector v;
 	r_vector_init (&v, 1, NULL, NULL);
 	bool empty = r_vector_empty (&v);
@@ -218,7 +218,7 @@ static bool test_vector_empty(void) {
 	mu_end;
 }
 
-static bool test_vector_remove_at(void) {
+static bool test_vector_remove_at (void) {
 	RVector v;
 	init_test_vector (&v, 5, 0, NULL, NULL);
 
@@ -245,7 +245,7 @@ static bool test_vector_remove_at(void) {
 	mu_end;
 }
 
-static bool test_vector_insert(void) {
+static bool test_vector_insert (void) {
 	RVector v;
 
 	init_test_vector (&v, 4, 2, NULL, NULL);
@@ -312,7 +312,7 @@ static bool test_vector_insert(void) {
 	mu_end;
 }
 
-static bool test_vector_insert_range(void) {
+static bool test_vector_insert_range (void) {
 	RVector v;
 	ut32 range[] = { 0xC0, 0xFF, 0xEE };
 
@@ -379,7 +379,7 @@ static bool test_vector_insert_range(void) {
 	mu_end;
 }
 
-static bool test_vector_pop(void) {
+static bool test_vector_pop (void) {
 	RVector v;
 	init_test_vector (&v, 3, 0, NULL, NULL);
 
@@ -404,7 +404,7 @@ static bool test_vector_pop(void) {
 	mu_end;
 }
 
-static bool test_vector_pop_front(void) {
+static bool test_vector_pop_front (void) {
 	RVector v;
 	init_test_vector (&v, 3, 0, NULL, NULL);
 
@@ -429,7 +429,7 @@ static bool test_vector_pop_front(void) {
 	mu_end;
 }
 
-static bool test_vector_push(void) {
+static bool test_vector_push (void) {
 	RVector v;
 	r_vector_init (&v, 4, NULL, NULL);
 
@@ -440,7 +440,6 @@ static bool test_vector_push(void) {
 	mu_assert_eq (e, 1337, "r_vector_push (null, empty, assign) => content");
 
 	r_vector_clear (&v);
-
 
 	r_vector_init (&v, 4, NULL, NULL);
 
@@ -473,7 +472,6 @@ static bool test_vector_push(void) {
 
 	r_vector_clear (&v);
 
-
 	init_test_vector (&v, 5, 0, NULL, NULL);
 	e = 1337;
 	e = *((ut32 *)r_vector_push (&v, &e));
@@ -494,7 +492,7 @@ static bool test_vector_push(void) {
 	mu_end;
 }
 
-static bool test_vector_push_front(void) {
+static bool test_vector_push_front (void) {
 	RVector v;
 	r_vector_init (&v, 4, NULL, NULL);
 
@@ -537,7 +535,6 @@ static bool test_vector_push_front(void) {
 
 	r_vector_clear (&v);
 
-
 	init_test_vector (&v, 5, 0, NULL, NULL);
 	e = 1337;
 	e = *((ut32 *)r_vector_push_front (&v, &e));
@@ -558,7 +555,7 @@ static bool test_vector_push_front(void) {
 	mu_end;
 }
 
-static bool test_vector_reserve(void) {
+static bool test_vector_reserve (void) {
 	RVector v;
 	r_vector_init (&v, 4, NULL, NULL);
 
@@ -583,7 +580,7 @@ static bool test_vector_reserve(void) {
 	mu_end;
 }
 
-static bool test_vector_shrink(void) {
+static bool test_vector_shrink (void) {
 	RVector v;
 	init_test_vector (&v, 5, 5, NULL, NULL);
 	void *a = r_vector_shrink (&v);
@@ -602,13 +599,13 @@ static bool test_vector_shrink(void) {
 	mu_end;
 }
 
-static bool test_vector_foreach(void) {
+static bool test_vector_foreach (void) {
 	RVector v;
 	init_test_vector (&v, 5, 5, NULL, NULL);
 
 	int i = 1;
 	ut32 *it;
-	int acc[5] = {0};
+	int acc[5] = { 0 };
 	r_vector_foreach (&v, it) {
 		mu_assert_eq (acc[*it], 0, "unset acc element");
 		acc[*it] = i++;
@@ -623,10 +620,10 @@ static bool test_vector_foreach(void) {
 	mu_end;
 }
 
-static bool test_vector_lower_bound(void) {
+static bool test_vector_lower_bound (void) {
 	RVector v;
 	r_vector_init (&v, sizeof (st64), NULL, NULL);
-	st64 a[] = {0, 2, 4, 6, 8};
+	st64 a[] = { 0, 2, 4, 6, 8 };
 	r_vector_insert_range (&v, 0, a, 5);
 
 	size_t l;
@@ -646,7 +643,7 @@ static bool test_vector_lower_bound(void) {
 	mu_end;
 }
 
-static bool test_pvector_init(void) {
+static bool test_pvector_init (void) {
 	RPVector v;
 	r_pvector_init (&v, (void *)1337);
 	mu_assert_eq (v.v.elem_size, sizeof (void *), "elem_size");
@@ -657,7 +654,7 @@ static bool test_pvector_init(void) {
 	mu_end;
 }
 
-static bool test_pvector_new(void) {
+static bool test_pvector_new (void) {
 	RPVector *v = r_pvector_new ((void *)1337);
 	mu_assert_eq (v->v.elem_size, sizeof (void *), "elem_size");
 	mu_assert_eq (v->v.len, 0UL, "len");
@@ -668,7 +665,7 @@ static bool test_pvector_new(void) {
 	mu_end;
 }
 
-static bool test_pvector_clear(void) {
+static bool test_pvector_clear (void) {
 	// run with asan or valgrind
 	RPVector v;
 	init_test_pvector (&v, 5, 5);
@@ -682,7 +679,7 @@ static bool test_pvector_clear(void) {
 	mu_end;
 }
 
-static bool test_pvector_free(void) {
+static bool test_pvector_free (void) {
 	// run with asan or valgrind
 	RPVector *v = R_NEW (RPVector);
 	init_test_pvector (v, 5, 5);
@@ -693,7 +690,7 @@ static bool test_pvector_free(void) {
 	mu_end;
 }
 
-static bool test_pvector_at(void) {
+static bool test_pvector_at (void) {
 	RPVector v;
 	init_test_pvector (&v, 5, 0);
 	ut32 i;
@@ -705,7 +702,7 @@ static bool test_pvector_at(void) {
 	mu_end;
 }
 
-static bool test_pvector_set(void) {
+static bool test_pvector_set (void) {
 	RPVector v;
 	init_test_pvector (&v, 5, 0);
 	free (((void **)v.v.a)[3]);
@@ -717,7 +714,7 @@ static bool test_pvector_set(void) {
 	mu_end;
 }
 
-static bool test_pvector_contains(void) {
+static bool test_pvector_contains (void) {
 	RPVector v;
 	init_test_pvector (&v, 5, 0);
 	void *e = ((void **)v.v.a)[3];
@@ -729,7 +726,7 @@ static bool test_pvector_contains(void) {
 	mu_end;
 }
 
-static bool test_pvector_remove_at(void) {
+static bool test_pvector_remove_at (void) {
 	RPVector v;
 	init_test_pvector (&v, 5, 0);
 	ut32 *e = r_pvector_remove_at (&v, 3);
@@ -744,7 +741,7 @@ static bool test_pvector_remove_at(void) {
 	mu_end;
 }
 
-static bool test_pvector_insert(void) {
+static bool test_pvector_insert (void) {
 	RPVector v;
 
 	init_test_pvector2 (&v, 4, 2);
@@ -800,7 +797,7 @@ static bool test_pvector_insert(void) {
 	mu_end;
 }
 
-static bool test_pvector_insert_range(void) {
+static bool test_pvector_insert_range (void) {
 	RPVector v;
 	void *range[] = { (void *)0xC0, (void *)0xFF, (void *)0xEE };
 
@@ -852,7 +849,7 @@ static bool test_pvector_insert_range(void) {
 	mu_end;
 }
 
-static bool test_pvector_pop(void) {
+static bool test_pvector_pop (void) {
 	RPVector v;
 	init_test_pvector2 (&v, 3, 0);
 
@@ -876,7 +873,7 @@ static bool test_pvector_pop(void) {
 	mu_end;
 }
 
-static bool test_pvector_pop_front(void) {
+static bool test_pvector_pop_front (void) {
 	RPVector v;
 	init_test_pvector2 (&v, 3, 0);
 
@@ -900,7 +897,7 @@ static bool test_pvector_pop_front(void) {
 	mu_end;
 }
 
-static bool test_pvector_push(void) {
+static bool test_pvector_push (void) {
 	RPVector v;
 	r_pvector_init (&v, NULL);
 
@@ -933,7 +930,6 @@ static bool test_pvector_push(void) {
 
 	r_vector_clear (&v.v);
 
-
 	init_test_pvector2 (&v, 5, 0);
 	e = (void *)1337;
 	e = *r_pvector_push (&v, e);
@@ -954,7 +950,7 @@ static bool test_pvector_push(void) {
 	mu_end;
 }
 
-static bool test_pvector_push_front(void) {
+static bool test_pvector_push_front (void) {
 	RPVector v;
 	r_pvector_init (&v, NULL);
 
@@ -987,7 +983,6 @@ static bool test_pvector_push_front(void) {
 
 	r_pvector_clear (&v);
 
-
 	init_test_pvector2 (&v, 5, 0);
 	e = (void *)1337;
 	e = *r_pvector_push_front (&v, e);
@@ -1008,7 +1003,7 @@ static bool test_pvector_push_front(void) {
 	mu_end;
 }
 
-static bool test_pvector_sort(void) {
+static bool test_pvector_sort (void) {
 	RPVector v;
 	r_pvector_init (&v, free);
 	r_pvector_push (&v, strdup ("Charmander"));
@@ -1016,7 +1011,7 @@ static bool test_pvector_sort(void) {
 	r_pvector_push (&v, strdup ("Bulbasaur"));
 	r_pvector_push (&v, strdup ("Meowth"));
 	r_pvector_push (&v, strdup ("Caterpie"));
-	r_pvector_sort (&v, (RPVectorComparator) strcmp);
+	r_pvector_sort (&v, (RPVectorComparator)strcmp);
 
 	mu_assert_eq (v.v.len, 5UL, "sort len");
 	mu_assert_streq ((const char *)((void **)v.v.a)[0], "Bulbasaur", "sorted strings");
@@ -1029,13 +1024,13 @@ static bool test_pvector_sort(void) {
 	mu_end;
 }
 
-static bool test_pvector_foreach(void) {
+static bool test_pvector_foreach (void) {
 	RPVector v;
 	init_test_pvector2 (&v, 5, 5);
 
 	int i = 1;
 	void **it;
-	int acc[5] = {0};
+	int acc[5] = { 0 };
 	r_pvector_foreach (&v, it) {
 		void *e = *it;
 		int ev = (int)((size_t)e);
@@ -1052,8 +1047,8 @@ static bool test_pvector_foreach(void) {
 	mu_end;
 }
 
-static bool test_pvector_lower_bound(void) {
-	void *a[] = {(void*)0, (void*)2, (void*)4, (void*)6, (void*)8};
+static bool test_pvector_lower_bound (void) {
+	void *a[] = { (void *)0, (void *)2, (void *)4, (void *)6, (void *)8 };
 	RPVector s;
 	r_pvector_init (&s, NULL);
 	s.v.a = malloc (sizeof (void *) * 5);
@@ -1078,7 +1073,7 @@ static bool test_pvector_lower_bound(void) {
 	mu_end;
 }
 
-static int all_tests(void) {
+static int all_tests (void) {
 	mu_run_test (test_vector_init);
 	mu_run_test (test_vector_new);
 	mu_run_test (test_vector_fini);
@@ -1119,6 +1114,6 @@ static int all_tests(void) {
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
+int main (int argc, char **argv) {
+	return all_tests ();
 }

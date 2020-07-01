@@ -1,7 +1,7 @@
 // included from rtr.c
 
 // return 1 on error
-static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *path) {
+static int r_core_rtr_http_run (RCore *core, int launch, int browse, const char *path) {
 	RConfig *newcfg = NULL, *origcfg = NULL;
 	char headers[128] = R_EMPTY;
 	RSocketHTTPRequest *rs;
@@ -41,10 +41,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		path = NULL;
 	} else {
 		if (core->file && (!path || !*path)) {
-			if (!strcmp (httpui, "p")
-			|| !strcmp (httpui, "m")
-			|| !strcmp (httpui, "enyo")
-			|| !strcmp (httpui, "t")) {
+			if (!strcmp (httpui, "p") || !strcmp (httpui, "m") || !strcmp (httpui, "enyo") || !strcmp (httpui, "t")) {
 				path = httpui;
 			}
 		}
@@ -68,7 +65,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 			} else if (!strcmp (host, "local")) {
 				s->local = true;
 				r_config_set (core->config, "http.bind", "localhost");
-			} else if (host[0]=='0' || !strcmp (host, "public")) {
+			} else if (host[0] == '0' || !strcmp (host, "public")) {
 				// public
 				host = "127.0.0.1";
 				r_config_set (core->config, "http.bind", "0.0.0.0");
@@ -90,7 +87,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	if (browse == 'H') {
 		const char *browser = r_config_get (core->config, "http.browser");
 		r_sys_cmdf ("%s http://%s:%d/%s &",
-			browser, host, atoi (port), path? path:"");
+			browser, host, atoi (port), path ? path : "");
 	}
 
 	so.httpauth = r_config_get_i (core->config, "http.auth");
@@ -153,7 +150,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	memcpy (newblk, core->block, core->blocksize);
 
 	core->block = newblk;
-// TODO: handle mutex lock/unlock here
+	// TODO: handle mutex lock/unlock here
 	r_cons_break_push ((RConsBreak)r_core_rtr_http_stop, core);
 	while (!r_cons_is_breaked ()) {
 		/* restore environment */
@@ -171,7 +168,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		core->block = origblk;
 		core->blocksize = origblksz;
 
-// backup and restore offset and blocksize
+		// backup and restore offset and blocksize
 
 		/* this is blocking */
 		activateDieTime (core);
@@ -187,7 +184,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		core->block = newblk;
 		core->blocksize = newblksz;
 		/* set environment */
-// backup and restore offset and blocksize
+		// backup and restore offset and blocksize
 		core->http_up = 1;
 		core->config = newcfg;
 		r_config_set (newcfg, "scr.html", r_config_get (newcfg, "scr.html"));
@@ -249,8 +246,8 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		}
 		if (r_config_get_i (core->config, "http.cors")) {
 			strcpy (headers, "Access-Control-Allow-Origin: *\n"
-				"Access-Control-Allow-Headers: Origin, "
-				"X-Requested-With, Content-Type, Accept\n");
+					 "Access-Control-Allow-Headers: Origin, "
+					 "X-Requested-With, Content-Type, Accept\n");
 		}
 		if (!strcmp (rs->method, "OPTIONS")) {
 			r_socket_http_response (rs, 200, "", 0, headers);
@@ -258,7 +255,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 			if (!strncmp (rs->path, "/up/", 4)) {
 				if (r_config_get_i (core->config, "http.upget")) {
 					const char *uproot = r_config_get (core->config, "http.uproot");
-					if (!rs->path[3] || (rs->path[3]=='/' && !rs->path[4])) {
+					if (!rs->path[3] || (rs->path[3] == '/' && !rs->path[4])) {
 						char *ptr = rtr_dir_files (uproot);
 						r_socket_http_response (rs, 200, ptr, 0, headers);
 						free (ptr);
@@ -330,8 +327,8 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 							r_config_set (core->config, "scr.interactive", "false");
 
 							if (!r_sandbox_enable (0) &&
-									(!strcmp (cmd, "=h*") ||
-									 !strcmp (cmd, "=h--"))) {
+								(!strcmp (cmd, "=h*") ||
+									!strcmp (cmd, "=h--"))) {
 								out = NULL;
 							} else if (*cmd == ':') {
 								/* commands in /cmd/: starting with : do not show any output */
@@ -344,7 +341,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 							if (out) {
 								char *res = r_str_uri_encode (out);
 								char *newheaders = r_str_newf (
-										"Content-Type: text/plain\n%s", headers);
+									"Content-Type: text/plain\n%s", headers);
 								r_socket_http_response (rs, 200, out, 0, newheaders);
 								free (out);
 								free (newheaders);
@@ -401,8 +398,8 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 					}
 				}
 				// FD IS OK HERE
-				if (rs->path [strlen (rs->path) - 1] == '/') {
-					path = (*index == '/')? strdup (index): r_str_append (path, index);
+				if (rs->path[strlen (rs->path) - 1] == '/') {
+					path = (*index == '/') ? strdup (index) : r_str_append (path, index);
 				} else {
 					//snprintf (path, sizeof (path), "%s/%s", root, rs->path);
 					if (r_file_is_directory (path)) {
@@ -469,7 +466,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 						free (filename);
 						snprintf (buf, sizeof (buf),
 							"<html><body><h2>uploaded %d byte(s). Thanks</h2>\n", retlen);
-							r_socket_http_response (rs, 200, buf, 0, headers);
+						r_socket_http_response (rs, 200, buf, 0, headers);
 					}
 					free (ret);
 				}
@@ -482,22 +479,21 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		r_socket_http_close (rs);
 		free (dir);
 	}
-the_end:
-	{
-		int timeout = r_config_get_i (core->config, "http.timeout");
-		const char *host = r_config_get (core->config, "http.bind");
-		const char *port = r_config_get (core->config, "http.port");
-		const char *cors = r_config_get (core->config, "http.cors");
-		const char *allow = r_config_get (core->config, "http.allow");
-		const char *httpui = r_config_get (core->config, "http.ui");
-		core->config = origcfg;
-		r_config_set_i (core->config, "http.timeout", timeout);
-		r_config_set (core->config, "http.bind", host);
-		r_config_set (core->config, "http.port", port);
-		r_config_set (core->config, "http.cors", cors);
-		r_config_set (core->config, "http.allow", allow);
-		r_config_set (core->config, "http.ui", httpui);
-	}
+the_end : {
+	int timeout = r_config_get_i (core->config, "http.timeout");
+	const char *host = r_config_get (core->config, "http.bind");
+	const char *port = r_config_get (core->config, "http.port");
+	const char *cors = r_config_get (core->config, "http.cors");
+	const char *allow = r_config_get (core->config, "http.allow");
+	const char *httpui = r_config_get (core->config, "http.ui");
+	core->config = origcfg;
+	r_config_set_i (core->config, "http.timeout", timeout);
+	r_config_set (core->config, "http.bind", host);
+	r_config_set (core->config, "http.port", port);
+	r_config_set (core->config, "http.cors", cors);
+	r_config_set (core->config, "http.allow", allow);
+	r_config_set (core->config, "http.ui", httpui);
+}
 	r_cons_break_pop ();
 	core->http_up = false;
 	free (pfile);
@@ -536,7 +532,7 @@ static RThreadFunctionRet r_core_rtr_http_thread (RThread *th) {
 }
 #endif
 
-R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path) {
+R_API int r_core_rtr_http (RCore *core, int launch, int browse, const char *path) {
 	int ret;
 	if (r_sandbox_enable (0)) {
 		eprintf ("sandbox: connect disabled\n");

@@ -8,29 +8,29 @@
 
 #include <ebc_disas.h>
 
-static void ebc_anal_jmp8(RAnalOp *op, ut64 addr, const ut8 *buf) {
+static void ebc_anal_jmp8 (RAnalOp *op, ut64 addr, const ut8 *buf) {
 	int jmpadr = (int8_t)buf[1];
 	op->jump = addr + 2 + (jmpadr * 2);
 	op->addr = addr;
 	op->fail = addr + 2;
 
-	if (TEST_BIT(buf[0], 7)) {
+	if (TEST_BIT (buf[0], 7)) {
 		op->type = R_ANAL_OP_TYPE_CJMP;
 	} else {
 		op->type = R_ANAL_OP_TYPE_JMP;
 	}
 }
 
-static void ebc_anal_jmp(RAnalOp *op, ut64 addr, const ut8 *buf) {
+static void ebc_anal_jmp (RAnalOp *op, ut64 addr, const ut8 *buf) {
 	op->fail = addr + 6;
-	op->jump = (ut64)*(int32_t*)(buf + 2);
+	op->jump = (ut64) * (int32_t *)(buf + 2);
 	if (TEST_BIT (buf[1], 4)) {
 		op->jump += addr + 6;
 	}
 	if (buf[1] & 0x7) {
 		op->type = R_ANAL_OP_TYPE_UJMP;
 	} else {
-		if (TEST_BIT(buf[1], 7)) {
+		if (TEST_BIT (buf[1], 7)) {
 			op->type = R_ANAL_OP_TYPE_CJMP;
 		} else {
 			op->type = R_ANAL_OP_TYPE_JMP;
@@ -38,15 +38,14 @@ static void ebc_anal_jmp(RAnalOp *op, ut64 addr, const ut8 *buf) {
 	}
 }
 
-static void ebc_anal_call(RAnalOp *op, ut64 addr, const ut8 *buf) {
+static void ebc_anal_call (RAnalOp *op, ut64 addr, const ut8 *buf) {
 	int32_t addr_call;
 
 	op->fail = addr + 6;
-	if ((buf[1] & 0x7) == 0 && TEST_BIT(buf[0], 6) == 0
-			&& TEST_BIT(buf[0], 7)) {
-		addr_call = *(int32_t*)(buf + 2);
+	if ((buf[1] & 0x7) == 0 && TEST_BIT (buf[0], 6) == 0 && TEST_BIT (buf[0], 7)) {
+		addr_call = *(int32_t *)(buf + 2);
 
-		if (TEST_BIT(buf[1], 4)) {
+		if (TEST_BIT (buf[1], 4)) {
 			op->jump = (addr + 6 + addr_call);
 		} else {
 			op->jump = addr_call;
@@ -57,7 +56,7 @@ static void ebc_anal_call(RAnalOp *op, ut64 addr, const ut8 *buf) {
 	}
 }
 
-static int ebc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int ebc_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	int ret;
 	ebc_command_t cmd;
 	ut8 opcode = buf[0] & EBC_OPCODE_MASK;
@@ -68,7 +67,7 @@ static int ebc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 
 	op->addr = addr;
 
-	ret = op->size = ebc_decode_command(buf, &cmd);
+	ret = op->size = ebc_decode_command (buf, &cmd);
 
 	if (ret < 0) {
 		return ret;
@@ -76,10 +75,10 @@ static int ebc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 
 	switch (opcode) {
 	case EBC_JMP8:
-		ebc_anal_jmp8(op, addr, buf);
+		ebc_anal_jmp8 (op, addr, buf);
 		break;
 	case EBC_JMP:
-		ebc_anal_jmp(op, addr, buf);
+		ebc_anal_jmp (op, addr, buf);
 		break;
 	case EBC_MOVBW:
 	case EBC_MOVWW:
@@ -148,7 +147,7 @@ static int ebc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		op->type = R_ANAL_OP_TYPE_SUB;
 		break;
 	case EBC_CALL:
-		ebc_anal_call(op, addr, buf);
+		ebc_anal_call (op, addr, buf);
 		break;
 	case EBC_BREAK:
 		op->type = R_ANAL_OP_TYPE_SWI;

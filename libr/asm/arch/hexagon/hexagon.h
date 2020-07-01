@@ -14,19 +14,19 @@ typedef enum {
 // Pre/post-fixes, different types
 typedef enum {
 	HEX_PF_RND = 1, // :rnd
-	HEX_PF_CRND = 1<<1, // :crnd
-	HEX_PF_RAW = 1<<2, // :raw
-	HEX_PF_CHOP = 1<<3, // :chop
-	HEX_PF_SAT = 1<<4, // :sat
-	HEX_PF_HI = 1<<5, // :hi
-	HEX_PF_LO = 1<<6, // :lo
-	HEX_PF_LSH1 = 1<<7, // :<<1
-	HEX_PF_LSH16 = 1<<8, // :<<16
-	HEX_PF_RSH1 = 1<<9, // :>>1
-	HEX_PF_NEG = 1<<10, // :neg
-	HEX_PF_POS = 1<<11, // :pos
-	HEX_PF_SCALE = 1<<12, // :scale, for FMA instructions
-	HEX_PF_DEPRECATED = 1<<15, // :deprecated
+	HEX_PF_CRND = 1 << 1, // :crnd
+	HEX_PF_RAW = 1 << 2, // :raw
+	HEX_PF_CHOP = 1 << 3, // :chop
+	HEX_PF_SAT = 1 << 4, // :sat
+	HEX_PF_HI = 1 << 5, // :hi
+	HEX_PF_LO = 1 << 6, // :lo
+	HEX_PF_LSH1 = 1 << 7, // :<<1
+	HEX_PF_LSH16 = 1 << 8, // :<<16
+	HEX_PF_RSH1 = 1 << 9, // :>>1
+	HEX_PF_NEG = 1 << 10, // :neg
+	HEX_PF_POS = 1 << 11, // :pos
+	HEX_PF_SCALE = 1 << 12, // :scale, for FMA instructions
+	HEX_PF_DEPRECATED = 1 << 15, // :deprecated
 } HexPf;
 
 typedef enum {
@@ -206,7 +206,7 @@ typedef enum {
 	HEX_REG_CFGBASE = 27, // S27
 	HEX_REG_DIAG = 28, // S28
 	HEX_REG_REV = 29, // S29
-	HEX_REG_PCYCLELO = 30,  // S30
+	HEX_REG_PCYCLELO = 30, // S30
 	HEX_REG_PCYCLEHI = 31, // S31
 	HEX_REG_ISDBST = 32, // S32
 	HEX_REG_ISDBCFG0 = 33, // S33
@@ -251,7 +251,6 @@ typedef enum {
 	HEX_SUB_REG_R23 = 15, // 0b1111
 } HEX_SUB_REG;
 
-
 typedef enum {
 	HEX_SUB_REGPAIR_R1_R0 = 0, // 0b000
 	HEX_SUB_REGPAIR_R3_R2 = 1, // 0b001
@@ -263,20 +262,19 @@ typedef enum {
 	HEX_SUB_REGPAIR_R23_R22 = 7, // 0b111
 } HEX_SUB_REGPAIR;
 
-
-#define BIT_MASK(len) (BIT(len)-1)
-#define BF_MASK(start, len) (BIT_MASK(len)<<(start))
-#define BF_PREP(x, start, len) (((x)&BIT_MASK(len))<<(start))
-#define BF_GET(y, start, len) (((y)>>(start)) & BIT_MASK(len))
+#define BIT_MASK(len) (BIT (len) - 1)
+#define BF_MASK(start, len) (BIT_MASK (len) << (start))
+#define BF_PREP(x, start, len) (((x)&BIT_MASK (len)) << (start))
+#define BF_GET(y, start, len) (((y) >> (start)) & BIT_MASK (len))
 #define BF_GETB(y, start, end) (BF_GET((y), (start), (end) - (start) + 1)
 
-char* hex_get_cntl_reg(int opreg);
-char* hex_get_sys_reg(int opreg);
-char* hex_get_sub_reg(int opreg);
-char* hex_get_sub_regpair(int opreg);
-bool hex_if_duplex(ut32 insn_word);
-void hex_op_extend(HexOp *op);
-void hex_op_extend_off(HexOp *op, int offset);
-int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr);
+char *hex_get_cntl_reg (int opreg);
+char *hex_get_sys_reg (int opreg);
+char *hex_get_sub_reg (int opreg);
+char *hex_get_sub_regpair (int opreg);
+bool hex_if_duplex (ut32 insn_word);
+void hex_op_extend (HexOp *op);
+void hex_op_extend_off (HexOp *op, int offset);
+int hexagon_disasm_instruction (ut32 hi_u32, HexInsn *hi, ut32 addr);
 
 #endif

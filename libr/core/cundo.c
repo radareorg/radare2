@@ -10,7 +10,7 @@ TODO:
 - undo all comments in current offfset
 #endif
 
-R_API RCoreUndo *r_core_undo_new(ut64 offset, const char *action, const char *revert) {
+R_API RCoreUndo *r_core_undo_new (ut64 offset, const char *action, const char *revert) {
 	RCoreUndo *cu = R_NEW (RCoreUndo);
 	if (cu) {
 		cu->action = strdup (action);
@@ -21,7 +21,7 @@ R_API RCoreUndo *r_core_undo_new(ut64 offset, const char *action, const char *re
 	return cu;
 }
 
-R_API void r_core_undo_free(RCoreUndo *cu) {
+R_API void r_core_undo_free (RCoreUndo *cu) {
 	if (cu) {
 		free (cu->action);
 		free (cu->revert);
@@ -29,11 +29,11 @@ R_API void r_core_undo_free(RCoreUndo *cu) {
 	free (cu);
 }
 
-R_API void r_core_undo_push(RCore *core, RCoreUndo *cu) {
+R_API void r_core_undo_push (RCore *core, RCoreUndo *cu) {
 	r_list_append (core->undos, cu);
 }
 
-R_API void r_core_undo_pop(RCore *core) {
+R_API void r_core_undo_pop (RCore *core) {
 	RCoreUndo *undo = r_list_pop (core->undos);
 	if (undo) {
 		r_core_cmd0 (core, undo->revert);
@@ -41,7 +41,7 @@ R_API void r_core_undo_pop(RCore *core) {
 	}
 }
 
-R_API bool r_core_undo_condition(RCoreUndo *cu, RCoreUndoCondition *cond) {
+R_API bool r_core_undo_condition (RCoreUndo *cu, RCoreUndoCondition *cond) {
 	if (!cond) {
 		return true;
 	}
@@ -58,18 +58,18 @@ R_API bool r_core_undo_condition(RCoreUndo *cu, RCoreUndoCondition *cond) {
 	return mustPrint;
 }
 
-R_API void r_core_undo_print(RCore *core, int mode, RCoreUndoCondition *cond) {
+R_API void r_core_undo_print (RCore *core, int mode, RCoreUndoCondition *cond) {
 	RCoreUndo *cu;
 	RListIter *iter;
 	if (mode) {
 		r_list_foreach (core->undos, iter, cu) {
 			if (r_core_undo_condition (cu, cond)) {
-				r_cons_printf ("%s @ 0x%"PFMT64x"\n", cu->revert, cu->offset);
+				r_cons_printf ("%s @ 0x%" PFMT64x "\n", cu->revert, cu->offset);
 			}
 		}
 	} else {
 		r_list_foreach (core->undos, iter, cu) {
-			r_cons_printf ("0x%08"PFMT64x" %"PFMT64d"  %s (revert: %s)\n",
+			r_cons_printf ("0x%08" PFMT64x " %" PFMT64d "  %s (revert: %s)\n",
 				cu->offset, cu->tstamp, cu->action, cu->revert);
 		}
 	}

@@ -6,7 +6,7 @@ static ut8 twok_buf[4][4];
 static int score = 0;
 static int moves = 0;
 
-static void twok_init(void) {
+static void twok_init (void) {
 	int i, j;
 	score = 0;
 	for (i = 0; i < 4; i++) {
@@ -16,7 +16,7 @@ static void twok_init(void) {
 	}
 }
 
-static void twok_add(void) {
+static void twok_add (void) {
 	int i, j;
 	while (true) {
 		i = r_num_rand (4);
@@ -28,7 +28,7 @@ static void twok_add(void) {
 	}
 }
 
-static bool twok_fin(void) {
+static bool twok_fin (void) {
 	int i, j;
 	for (i = 0; i < 4; i++) {
 		for (j = 0; j < 4; j++) {
@@ -54,7 +54,7 @@ static bool twok_fin(void) {
 	return false;
 }
 
-static void twok_move(int u, int v) {
+static void twok_move (int u, int v) {
 	int i, j, k;
 	int nKI = 0, nKJ = 0, nIK = 0, nJK = 0;
 	int moved = 0;
@@ -66,8 +66,8 @@ static void twok_move(int u, int v) {
 			if (j == 4) {
 				continue;
 			}
-			nKI = u? k: v? i: 3 - i;
-			nIK = !u? k: v? i: 3 - i;
+			nKI = u ? k : v ? i : 3 - i;
+			nIK = !u ? k : v ? i : 3 - i;
 			if (!twok_buf[nKI][nIK]) {
 				twok_buf[nKI][nIK] = twok_buf[nKJ][nJK];
 				twok_buf[nKJ][nJK] = 0;
@@ -86,8 +86,8 @@ static void twok_move(int u, int v) {
 	}
 }
 
-static void getval(bool color, char *val0, int i, int x) {
-	const char * colorarray[] = {
+static void getval (bool color, char *val0, int i, int x) {
+	const char *colorarray[] = {
 		Color_WHITE,
 		Color_RED,
 		Color_GREEN,
@@ -99,23 +99,23 @@ static void getval(bool color, char *val0, int i, int x) {
 	};
 	if (twok_buf[i][x]) {
 		if (color) {
-			snprintf (val0,31, "%s%4d"Color_RESET, colorarray [twok_buf [i][x] % 8 ], 1 << twok_buf[i][x]);
+			snprintf (val0, 31, "%s%4d" Color_RESET, colorarray[twok_buf[i][x] % 8], 1 << twok_buf[i][x]);
 		} else {
-			snprintf (val0,31, "%4d", 1 << twok_buf[i][x]);
+			snprintf (val0, 31, "%4d", 1 << twok_buf[i][x]);
 		}
 	} else {
 		strcpy (val0, "    ");
 	}
 }
 
-static void twok_print(bool color) {
+static void twok_print (bool color) {
 	char val0[32];
 	char val1[32];
 	char val2[32];
 	char val3[32];
 	int i;
 	if (color) {
-		printf (Color_BBLUE"  +------+------+------+------+\n");
+		printf (Color_BBLUE "  +------+------+------+------+\n");
 	} else {
 		printf ("  +------+------+------+------+\n");
 	}
@@ -125,12 +125,11 @@ static void twok_print(bool color) {
 		getval (color, val2, i, 2);
 		getval (color, val3, i, 3);
 		if (color) {
-			printf (Color_BBLUE"  |      |      |      |      |\n");
-			printf ("  |"Color_RESET" %s "Color_BBLUE"|"Color_RESET" %s "
-				Color_BBLUE"|"Color_RESET" %s "Color_BBLUE"|"Color_RESET" %s "Color_BBLUE"|\n",
+			printf (Color_BBLUE "  |      |      |      |      |\n");
+			printf ("  |" Color_RESET " %s " Color_BBLUE "|" Color_RESET " %s " Color_BBLUE "|" Color_RESET " %s " Color_BBLUE "|" Color_RESET " %s " Color_BBLUE "|\n",
 				val0, val1, val2, val3);
 			printf ("  |      |      |      |      |\n");
-			printf ("  +------+------+------+------+\n"Color_RESET);
+			printf ("  +------+------+------+------+\n" Color_RESET);
 		} else {
 			printf ("  |      |      |      |      |\n");
 			printf ("  | %s | %s | %s | %s |\n",
@@ -147,7 +146,7 @@ static void twok_print(bool color) {
 	}
 }
 
-R_API void r_cons_2048(bool color) {
+R_API void r_cons_2048 (bool color) {
 	int ch;
 	r_cons_set_raw (1);
 	twok_init ();
@@ -156,7 +155,7 @@ R_API void r_cons_2048(bool color) {
 	while (twok_fin ()) {
 		r_cons_clear00 ();
 		if (color) {
-			r_cons_printf (Color_GREEN"[r2048]"Color_BYELLOW" score: %d   moves: %d\n"Color_RESET, score, moves);
+			r_cons_printf (Color_GREEN "[r2048]" Color_BYELLOW " score: %d   moves: %d\n" Color_RESET, score, moves);
 		} else {
 			r_cons_printf ("[r2048] score: %d   moves: %d\n", score, moves);
 		}

@@ -11,7 +11,7 @@
 // TODO: better rounding ascii art
 // TODO: add support for xy_factor
 
-static void drawSectorLine(char *out, int size, int percent) {
+static void drawSectorLine (char *out, int size, int percent) {
 	int i, x, y;
 	double A = (percent)*PI / 50;
 	double foo = 0.1;
@@ -24,7 +24,7 @@ static void drawSectorLine(char *out, int size, int percent) {
 	}
 }
 
-R_API int r_print_pie(RPrint *p, ut64 *values, int nvalues, int size) {
+R_API int r_print_pie (RPrint *p, ut64 *values, int nvalues, int size) {
 	ut8 *nv = calloc (nvalues, sizeof (ut8));
 	char *out = calloc (size, size);
 	int i, x, y;

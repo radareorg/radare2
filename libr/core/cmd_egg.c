@@ -22,11 +22,11 @@ static const char *help_msg_g[] = {
 	NULL
 };
 
-static void cmd_egg_init(RCore *core, RCmdDesc *parent) {
+static void cmd_egg_init (RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, g);
 }
 
-static void cmd_egg_option(REgg *egg, const char *key, const char *input) {
+static void cmd_egg_option (REgg *egg, const char *key, const char *input) {
 	if (!*input) {
 		return;
 	}
@@ -41,7 +41,7 @@ static void cmd_egg_option(REgg *egg, const char *key, const char *input) {
 	}
 }
 
-static void showBuffer(RBuffer *b) {
+static void showBuffer (RBuffer *b) {
 	int i;
 	if (b && r_buf_size (b) > 0) {
 		r_buf_seek (b, 0, R_BUF_SET);
@@ -83,7 +83,7 @@ static int compileShellcode(REgg *egg, const char *input){
 }
 #endif
 
-static int cmd_egg_compile(REgg *egg) {
+static int cmd_egg_compile (REgg *egg) {
 	RBuffer *b;
 	int ret = false;
 	char *p = r_egg_option_get (egg, "egg.shellcode");
@@ -130,8 +130,8 @@ static int cmd_egg_compile(REgg *egg) {
 	return ret;
 }
 
-static int cmd_egg(void *data, const char *input) {
-	RCore *core = (RCore *) data;
+static int cmd_egg (void *data, const char *input) {
+	RCore *core = (RCore *)data;
 	REgg *egg = core->egg;
 	char *oa, *p;
 	r_egg_setup (egg,
@@ -144,7 +144,8 @@ static int cmd_egg(void *data, const char *input) {
 		if (input[1] == ' ') {
 			RBuffer *buf = NULL;
 			const char *ooaa = input + 2;
-			while (IS_WHITESPACE (*ooaa) && *ooaa) ooaa++;
+			while (IS_WHITESPACE (*ooaa) && *ooaa)
+				ooaa++;
 			oa = strdup (ooaa);
 			p = strchr (oa + 1, ' ');
 			if (p) {
@@ -183,7 +184,7 @@ static int cmd_egg(void *data, const char *input) {
 				r_egg_option_set (egg, "egg.padding", input + 2);
 			}
 		} else {
-			eprintf ("Usage: gp [padding]\n");	
+			eprintf ("Usage: gp [padding]\n");
 		}
 		break;
 	case 'e': // "ge"
@@ -201,14 +202,14 @@ static int cmd_egg(void *data, const char *input) {
 				r_egg_option_set (egg, "key", p + 1);
 				r_egg_option_set (egg, "egg.encoder", oa);
 			} else {
-				eprintf ("Usage: ge [encoder] [key]\n");	
+				eprintf ("Usage: ge [encoder] [key]\n");
 			}
 			free (oa);
 		} else {
 			eprintf ("Usage: ge [encoder] [key]\n");
 		}
 		break;
-	case 'i': // "gi" 
+	case 'i': // "gi"
 		if (input[1] == ' ') {
 			if (input[0] && input[2]) {
 				r_egg_option_set (egg, "egg.shellcode", input + 2);
@@ -225,11 +226,9 @@ static int cmd_egg(void *data, const char *input) {
 		REggPlugin *p;
 		r_list_foreach (egg->plugins, iter, p) {
 			r_cons_printf ("%s  %6s : %s\n",
-				(p->type == R_EGG_PLUGIN_SHELLCODE)?
-				"shc": "enc", p->name, p->desc);
+				(p->type == R_EGG_PLUGIN_SHELLCODE) ? "shc" : "enc", p->name, p->desc);
 		}
-	}
-	break;
+	} break;
 	case 'S': // "gS"
 	{
 		static const char *configList[] = {
@@ -255,8 +254,7 @@ static int cmd_egg(void *data, const char *input) {
 		r_cons_printf ("arch : %s\n", core->anal->cpu);
 		r_cons_printf ("os   : %s\n", core->anal->os);
 		r_cons_printf ("bits : %d\n", core->anal->bits);
-	}
-	break;
+	} break;
 	case 'r': // "gr"
 		cmd_egg_option (egg, "egg.padding", "");
 		cmd_egg_option (egg, "egg.shellcode", "");

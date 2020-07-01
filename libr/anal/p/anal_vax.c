@@ -11,7 +11,7 @@
 // XXX: do not hardcode size/type here, use proper decoding table
 // http://hotkosc.ru:8080/method-vax.doc
 
-static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int vax_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	op->size = 1;
 	if (len < 1) {
 		return -1;
@@ -87,12 +87,12 @@ RAnalPlugin r_anal_plugin_vax = {
 	.esil = true,
 	.bits = 8 | 32,
 	.op = &vax_op,
-	#if 0
+#if 0
 	.archinfo = archinfo,
 	.set_reg_profile = &set_reg_profile,
 	.esil_init = esil_vax_init,
 	.esil_fini = esil_vax_fini,
-	#endif
+#endif
 };
 
 #ifndef R2_PLUGIN_INCORE

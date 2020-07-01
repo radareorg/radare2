@@ -4,7 +4,7 @@
 #include <signal.h>
 #if _MSC_VER
 #include <process.h> // to compile execl under msvc windows
-#include <direct.h>  // to compile chdir under msvc windows
+#include <direct.h> // to compile chdir under msvc windows
 #endif
 
 #if HAVE_CAPSICUM
@@ -14,7 +14,7 @@
 static bool enabled = false;
 static bool disabled = false;
 
-static bool inHomeWww(const char *path) {
+static bool inHomeWww (const char *path) {
 	r_return_val_if_fail (path, false);
 	bool ret = false;
 	char *homeWww = r_str_home (R2_HOME_WWWROOT R_SYS_DIR);
@@ -38,12 +38,12 @@ R_API bool r_sandbox_check_path (const char *path) {
 	size_t root_len;
 	char *p;
 	/* XXX: the sandbox can be bypassed if a directory is symlink */
-	root_len = strlen (R2_LIBDIR"/radare2");
-	if (!strncmp (path, R2_LIBDIR"/radare2", root_len)) {
+	root_len = strlen (R2_LIBDIR "/radare2");
+	if (!strncmp (path, R2_LIBDIR "/radare2", root_len)) {
 		return true;
 	}
-	root_len = strlen (R2_DATDIR"/radare2");
-	if (!strncmp (path, R2_DATDIR"/radare2", root_len)) {
+	root_len = strlen (R2_DATDIR "/radare2");
+	if (!strncmp (path, R2_DATDIR "/radare2", root_len)) {
 		return true;
 	}
 	if (inHomeWww (path)) {
@@ -51,8 +51,7 @@ R_API bool r_sandbox_check_path (const char *path) {
 	}
 	// Accessing stuff inside the webroot is ok even if we need .. or leading / for that
 	root_len = strlen (R2_WWWROOT);
-	if (R2_WWWROOT[0] && !strncmp (path, R2_WWWROOT, root_len) && (
-			R2_WWWROOT[root_len-1] == '/' || path[root_len] == '/' || path[root_len] == '\0')) {
+	if (R2_WWWROOT[0] && !strncmp (path, R2_WWWROOT, root_len) && (R2_WWWROOT[root_len - 1] == '/' || path[root_len] == '/' || path[root_len] == '\0')) {
 		path += strlen (R2_WWWROOT);
 		while (*path == '/') {
 			path++;
@@ -60,7 +59,7 @@ R_API bool r_sandbox_check_path (const char *path) {
 	}
 
 	// ./ path is not allowed
-        if (path[0]=='.' && path[1]=='/') {
+	if (path[0] == '.' && path[1] == '/') {
 		return false;
 	}
 	// Properly check for directory traversal using "..". First, does it start with a .. part?
@@ -69,7 +68,7 @@ R_API bool r_sandbox_check_path (const char *path) {
 	}
 
 	// Or does it have .. in some other position?
-	for (p = strstr (path, "/.."); p; p = strstr(p, "/..")) {
+	for (p = strstr (path, "/.."); p; p = strstr (p, "/..")) {
 		if (p[3] == '\0' || p[3] == '/') {
 			return false;
 		}
@@ -164,7 +163,7 @@ R_API bool r_sandbox_enable (bool e) {
 	return enabled;
 }
 
-R_API int r_sandbox_system(const char *x, int n) {
+R_API int r_sandbox_system (const char *x, int n) {
 	r_return_val_if_fail (x, -1);
 	if (enabled) {
 		eprintf ("sandbox: system call disabled\n");
@@ -175,8 +174,7 @@ R_API int r_sandbox_system(const char *x, int n) {
 	if (n) {
 #if APPLE_SDK_IPHONEOS
 #include <dlfcn.h>
-		int (*__system)(const char *cmd)
-			= dlsym (NULL, "system");
+		int (*__system) (const char *cmd) = dlsym (NULL, "system");
 		if (__system) {
 			return __system (x);
 		}
@@ -185,9 +183,9 @@ R_API int r_sandbox_system(const char *x, int n) {
 		return system (x);
 #endif
 	}
-	return execl ("/bin/sh", "sh", "-c", x, (const char*)NULL);
+	return execl ("/bin/sh", "sh", "-c", x, (const char *)NULL);
 #else
-	#include <spawn.h>
+#include <spawn.h>
 	if (n && !strchr (x, '|')) {
 		char **argv, *cmd = strdup (x);
 		int rc, pid, argc;
@@ -225,7 +223,7 @@ R_API int r_sandbox_system(const char *x, int n) {
 	if (child) {
 		return waitpid (child, NULL, 0);
 	}
-	if (execl ("/bin/sh", "sh", "-c", x, (const char*)NULL) == -1) {
+	if (execl ("/bin/sh", "sh", "-c", x, (const char *)NULL) == -1) {
 		perror ("execl");
 	}
 	exit (1);
@@ -252,18 +250,18 @@ R_API bool r_sandbox_creat (const char *path, int mode) {
 	return false;
 }
 
-static inline char *expand_home(const char *p) {
-	return (*p == '~')? r_str_home (p): strdup (p);
+static inline char *expand_home (const char *p) {
+	return (*p == '~') ? r_str_home (p) : strdup (p);
 }
 
-R_API int r_sandbox_lseek(int fd, ut64 addr, int whence) {
+R_API int r_sandbox_lseek (int fd, ut64 addr, int whence) {
 	if (enabled) {
 		return -1;
 	}
 	return lseek (fd, (off_t)addr, whence);
 }
 
-R_API int r_sandbox_truncate(int fd, ut64 length) {
+R_API int r_sandbox_truncate (int fd, ut64 length) {
 	if (enabled) {
 		return -1;
 	}
@@ -274,20 +272,20 @@ R_API int r_sandbox_truncate(int fd, ut64 length) {
 #endif
 }
 
-R_API int r_sandbox_read(int fd, ut8 *buf, int len) {
-	return enabled? -1: read (fd, buf, len);
+R_API int r_sandbox_read (int fd, ut8 *buf, int len) {
+	return enabled ? -1 : read (fd, buf, len);
 }
 
-R_API int r_sandbox_write(int fd, const ut8* buf, int len) {
-	return enabled? -1: write (fd, buf, len);
+R_API int r_sandbox_write (int fd, const ut8 *buf, int len) {
+	return enabled ? -1 : write (fd, buf, len);
 }
 
-R_API int r_sandbox_close(int fd) {
-	return enabled? -1: close (fd);
+R_API int r_sandbox_close (int fd) {
+	return enabled ? -1 : close (fd);
 }
 
 /* perm <-> mode */
-R_API int r_sandbox_open(const char *path, int perm, int mode) {
+R_API int r_sandbox_open (const char *path, int perm, int mode) {
 	r_return_val_if_fail (path, -1);
 	char *epath = expand_home (path);
 	int ret = -1;
@@ -298,9 +296,7 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 	}
 #endif
 	if (enabled) {
-		if ((mode & O_CREAT)
-			|| (mode & O_RDWR)
-			|| (!r_sandbox_check_path (epath))) {
+		if ((mode & O_CREAT) || (mode & O_RDWR) || (!r_sandbox_check_path (epath))) {
 			free (epath);
 			return -1;
 		}
@@ -363,7 +359,7 @@ R_API FILE *r_sandbox_fopen (const char *path, const char *mode) {
 	return ret;
 }
 
-R_API int r_sandbox_chdir(const char *path) {
+R_API int r_sandbox_chdir (const char *path) {
 	r_return_val_if_fail (path, -1);
 	if (enabled) {
 		// TODO: check path
@@ -378,7 +374,7 @@ R_API int r_sandbox_chdir(const char *path) {
 	return chdir (path);
 }
 
-R_API int r_sandbox_kill(int pid, int sig) {
+R_API int r_sandbox_kill (int pid, int sig) {
 	r_return_val_if_fail (pid != -1, -1);
 	// XXX: fine-tune. maybe we want to enable kill for child?
 	if (enabled) {
@@ -407,7 +403,7 @@ R_API HANDLE r_sandbox_opendir (const char *path, WIN32_FIND_DATAW *entry) {
 	return FindFirstFileW (dir, entry);
 }
 #else
-R_API DIR* r_sandbox_opendir (const char *path) {
+R_API DIR *r_sandbox_opendir (const char *path) {
 	r_return_val_if_fail (path, NULL);
 	if (r_sandbox_enable (0)) {
 		if (path && !r_sandbox_check_path (path)) {

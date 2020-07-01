@@ -22,15 +22,15 @@
 			-What about the parsing functions? Alter its behaviour depending on version or create
 				one function for each version
 */
-#define EXTRA_FLAG			(1ULL << (sizeof (size_t) * 8 - 1))
+#define EXTRA_FLAG (1ULL << (sizeof (size_t) * 8 - 1))
 
 #define SHIFT 16
-#define LFH_BLOCK			(1 << (SHIFT))
-#define LARGE_BLOCK			(1 << (SHIFT + 1))
-#define NT_BLOCK			(1 << (SHIFT + 2))
-#define SEGMENT_HEAP_BLOCK	(1 << (SHIFT + 3))
-#define VS_BLOCK			(1 << (SHIFT + 4))
-#define BACKEND_BLOCK		(1 << (SHIFT + 5))
+#define LFH_BLOCK (1 << (SHIFT))
+#define LARGE_BLOCK (1 << (SHIFT + 1))
+#define NT_BLOCK (1 << (SHIFT + 2))
+#define SEGMENT_HEAP_BLOCK (1 << (SHIFT + 3))
+#define VS_BLOCK (1 << (SHIFT + 4))
+#define BACKEND_BLOCK (1 << (SHIFT + 5))
 
 typedef struct _HEAP_LOCAL_DATA *PHEAP_LOCAL_DATA;
 typedef struct _HEAP_SUBSEGMENT *PHEAP_SUBSEGMENT;
@@ -113,7 +113,7 @@ typedef struct _INTERLOCK_SEQ { // Is this right? NO!
 
 typedef struct _HEAP_UNPACKED_ENTRY {
 #if defined(_M_X64)
-	PVOID                       PreviousBlockPrivateData;
+	PVOID PreviousBlockPrivateData;
 #endif
 	union {
 		struct {
@@ -385,10 +385,10 @@ typedef struct _HEAP_VS_CHUNK_HEADER {
 
 enum {
 	PAGE_RANGE_FLAGS_LFH_SUBSEGMENT = 0x01,
-	PAGE_RANGE_FLAGS_COMMITED		= 0x02,
-	PAGE_RANGE_FLAGS_ALLOCATED		= 0x04,
-	PAGE_RANGE_FLAGS_FIRST			= 0x08,
-	PAGE_RANGE_FLAGS_VS_SUBSEGMENT	= 0x20 // LIES
+	PAGE_RANGE_FLAGS_COMMITED = 0x02,
+	PAGE_RANGE_FLAGS_ALLOCATED = 0x04,
+	PAGE_RANGE_FLAGS_FIRST = 0x08,
+	PAGE_RANGE_FLAGS_VS_SUBSEGMENT = 0x20 // LIES
 };
 
 typedef struct _HEAP_PAGE_RANGE_DESCRIPTOR {
@@ -713,7 +713,8 @@ typedef struct _HEAP {
 	PHEAP_PSEUDO_TAG_ENTRY PseudoTagEntries;
 	LIST_ENTRY FreeLists;
 	PHEAP_LOCK LockVariable;
-	LONG32 (WINAPI * CommitRoutine) (PVOID, PVOID *, WPARAM *);
+	LONG32 (WINAPI *CommitRoutine)
+	(PVOID, PVOID *, WPARAM *);
 	RTL_RUN_ONCE StackTraceInitVar;
 	RTL_HEAP_MEMORY_LIMIT_DATA CommitLimitData;
 	PVOID FrontEndHeap;
@@ -811,7 +812,6 @@ typedef struct _HEAP_USERDATA_HEADER {
 	RTL_BITMAP_EX BusyBitmap;
 	WPARAM BitmapData;
 } HEAP_USERDATA_HEADER, *PHEAP_USERDATA_HEADER;
-
 
 typedef struct _HEAP_SUBSEGMENT *PHEAP_SUBSEGMENT;
 typedef struct _HEAP_LOCAL_SEGMENT_INFO {
@@ -966,7 +966,6 @@ typedef struct _DEBUG_BUFFER {
 	PVOID Reserved[4];
 } DEBUG_BUFFER, *PDEBUG_BUFFER;
 
-
 typedef struct _DEBUG_HEAP_INFORMATION {
 	PVOID Base;
 	DWORD Flags;
@@ -988,26 +987,25 @@ typedef struct _HeapInformation {
 	DEBUG_HEAP_INFORMATION heaps[/* count */];
 } HeapInformation, *PHeapInformation;
 
-PDEBUG_BUFFER (NTAPI *RtlCreateQueryDebugBuffer)(
+PDEBUG_BUFFER (NTAPI *RtlCreateQueryDebugBuffer)
+(
 	IN DWORD Size,
-	IN BOOLEAN EventPair
-);
+	IN BOOLEAN EventPair);
 
-NTSTATUS (NTAPI *RtlQueryProcessDebugInformation)(
+NTSTATUS (NTAPI *RtlQueryProcessDebugInformation)
+(
 	IN DWORD ProcessId,
 	IN DWORD DebugInfoClassMask,
-	IN OUT PDEBUG_BUFFER DebugBuffer
-);
+	IN OUT PDEBUG_BUFFER DebugBuffer);
 
-NTSTATUS (NTAPI *RtlDestroyQueryDebugBuffer)(
-	IN PDEBUG_BUFFER DebugBuffer
-);
+NTSTATUS (NTAPI *RtlDestroyQueryDebugBuffer)
+(
+	IN PDEBUG_BUFFER DebugBuffer);
 
-__kernel_entry NTSTATUS (NTAPI *w32_NtQueryInformationProcess)(
-  IN HANDLE           ProcessHandle,
-  IN PROCESSINFOCLASS ProcessInformationClass,
-  OUT PVOID           ProcessInformation,
-  IN ULONG            ProcessInformationLength,
-  OUT PULONG          ReturnLength
-);
+__kernel_entry NTSTATUS (NTAPI *w32_NtQueryInformationProcess) (
+	IN HANDLE ProcessHandle,
+	IN PROCESSINFOCLASS ProcessInformationClass,
+	OUT PVOID ProcessInformation,
+	IN ULONG ProcessInformationLength,
+	OUT PULONG ReturnLength);
 #endif

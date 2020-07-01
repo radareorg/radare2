@@ -4,8 +4,8 @@
 #include <r_bin.h>
 #include "pe/pe.h"
 
-static bool scn_perms(RBinFile *bf, const char *name, int perms) {
-	return PE_(r_bin_pe_section_perms) (bf, name, perms);
+static bool scn_perms (RBinFile *bf, const char *name, int perms) {
+	return PE_ (r_bin_pe_section_perms) (bf, name, perms);
 }
 
 #if !R_BIN_PE64

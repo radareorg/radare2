@@ -6,7 +6,7 @@ typedef struct timeval tv;
 
 // Subtract the 'tv' values begin from end, storing result in RESULT
 // Return 1 if the difference is negative, otherwise 0.
-static int timeval_subtract(tv *result, tv *end, tv *begin) {
+static int timeval_subtract (tv *result, tv *end, tv *begin) {
 	// Perform the carry for the later subtraction by updating Y
 	if (end->tv_usec < begin->tv_usec) {
 		int nsec = (begin->tv_usec - end->tv_usec) / 1000000 + 1;
@@ -27,18 +27,17 @@ static int timeval_subtract(tv *result, tv *end, tv *begin) {
 	return end->tv_sec < begin->tv_sec;
 }
 
-R_API void r_prof_start(struct r_prof_t *p) {
+R_API void r_prof_start (struct r_prof_t *p) {
 	tv *begin = &p->begin;
 	p->result = 0.0;
-	gettimeofday(begin, NULL);
+	gettimeofday (begin, NULL);
 }
 
-R_API double r_prof_end(struct r_prof_t *p) {
+R_API double r_prof_end (struct r_prof_t *p) {
 	tv end, diff, *begin = &p->begin;
 	int sign;
 	gettimeofday (&end, NULL);
 	sign = timeval_subtract (&diff, begin, &end);
-	p->result = R_ABS (((double)(diff.tv_sec)
-		+ ((double)diff.tv_usec / 1000000.)));
+	p->result = R_ABS (((double)(diff.tv_sec) + ((double)diff.tv_usec / 1000000.)));
 	return R_ABS (sign);
 }

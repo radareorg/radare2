@@ -9,11 +9,11 @@
 #include <stdio.h>
 
 #undef eprintf
-#define eprintf(...) fprintf(stderr,__VA_ARGS__)
+#define eprintf(...) fprintf (stderr, __VA_ARGS__)
 
 #ifndef SDB_API
 #if defined(__GNUC__) && __GNUC__ >= 4
-#define SDB_API __attribute__((visibility("default")))
+#define SDB_API __attribute__ ((visibility ("default")))
 #else
 #define SDB_API
 #endif
@@ -25,7 +25,6 @@
 #endif
 #define SDB_IPI static
 #endif
-
 
 #if MINGW || __MINGW32__ || __MINGW64__
 #define __MINGW__ 1
@@ -57,13 +56,13 @@
 #endif
 
 #ifndef UNUSED
-#  define UNUSED
-#  ifdef __GNUC__
-#    if __GNUC__ >= 4
-#      undef UNUSED
-#      define UNUSED __attribute__((__unused__))
-#    endif
-#  endif
+#define UNUSED
+#ifdef __GNUC__
+#if __GNUC__ >= 4
+#undef UNUSED
+#define UNUSED __attribute__ ((__unused__))
+#endif
+#endif
 #endif
 
 #ifndef ut8
@@ -75,34 +74,38 @@
 // TODO: deprecate R_NEW
 #ifndef R_NEW
 //it means we are within sdb
-#define R_NEW(x) (x*)malloc(sizeof(x))
+#define R_NEW(x) (x *)malloc (sizeof (x))
 #endif
 #ifndef R_NEW0
-#define R_NEW0(x) (x*)calloc(1, sizeof(x))
+#define R_NEW0(x) (x *)calloc (1, sizeof (x))
 #endif
 #ifndef R_FREE
-#define R_FREE(x) { free (x); x = NULL; }
+#define R_FREE(x)         \
+	{                 \
+		free (x); \
+		x = NULL; \
+	}
 #endif
 #define UT32_MAX ((ut32)0xffffffff)
-#define UT64_MAX ((ut64)(0xffffffffffffffffLL))
+#define UT64_MAX ((ut64) (0xffffffffffffffffLL))
 #endif
 #ifndef R_MAX_DEFINED
-#define R_MAX(x,y) (((x)>(y))?(x):(y))
+#define R_MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define R_MAX_DEFINED 1
 #endif
 
 #ifndef R_MIN_DEFINED
-#define R_MIN(x,y) (((x)>(y))?(y):(x))
+#define R_MIN(x, y) (((x) > (y)) ? (y) : (x))
 #define R_MIN_DEFINED 1
 #endif
 
 #include "config.h"
 
-static inline int seek_set(int fd, off_t pos) {
-	return ((fd == -1) || (lseek (fd, (off_t) pos, SEEK_SET) == -1))? 0:1;
+static inline int seek_set (int fd, off_t pos) {
+	return ((fd == -1) || (lseek (fd, (off_t)pos, SEEK_SET) == -1)) ? 0 : 1;
 }
 
-static inline void ut32_pack(char s[4], ut32 u) {
+static inline void ut32_pack (char s[4], ut32 u) {
 	s[0] = u & 255;
 	u >>= 8;
 	s[1] = u & 255;
@@ -111,7 +114,7 @@ static inline void ut32_pack(char s[4], ut32 u) {
 	s[3] = u >> 8;
 }
 
-static inline void ut32_pack_big(char s[4], ut32 u) {
+static inline void ut32_pack_big (char s[4], ut32 u) {
 	s[3] = u & 255;
 	u >>= 8;
 	s[2] = u & 255;
@@ -120,15 +123,15 @@ static inline void ut32_pack_big(char s[4], ut32 u) {
 	s[0] = u >> 8;
 }
 
-static inline void ut32_unpack(char s[4], ut32 *u) {
+static inline void ut32_unpack (char s[4], ut32 *u) {
 	ut32 result = 0;
-	result = (ut8) s[3];
+	result = (ut8)s[3];
 	result <<= 8;
-	result += (ut8) s[2];
+	result += (ut8)s[2];
 	result <<= 8;
-	result += (ut8) s[1];
+	result += (ut8)s[1];
 	result <<= 8;
-	result += (ut8) s[0];
+	result += (ut8)s[0];
 	*u = result;
 }
 

@@ -2,8 +2,8 @@
 #define MAX_LINE 2048
 #define PORT "4433"
 
-int main (int argc, char ** argv) {
-	char buf [MAX_LINE+1];
+int main (int argc, char **argv) {
+	char buf[MAX_LINE + 1];
 	RSocket *s, *cli;
 
 	if (argc < 2) {
@@ -20,8 +20,8 @@ int main (int argc, char ** argv) {
 			break;
 		r_socket_read (cli, (unsigned char *)buf, 9);
 		strcpy (buf, "HTTP/1.0 200 OK\r\n"
-				"Server: EKRServer\r\n\r\n"
-				"Server test page\r\n");
+			     "Server: EKRServer\r\n\r\n"
+			     "Server test page\r\n");
 		r_socket_write (cli, buf, strlen (buf));
 		r_socket_flush (cli);
 		r_socket_free (cli);

@@ -3,7 +3,7 @@
 #include <r_asm.h>
 #include <r_lib.h>
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *b, int l) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *b, int l) {
 	ut16 opcode = r_read_be16 (b);
 	uint8_t x = (opcode >> 8) & 0x0F;
 	uint8_t y = (opcode >> 4) & 0x0F;

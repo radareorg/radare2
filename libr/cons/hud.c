@@ -6,7 +6,7 @@
 #define I(x) r_cons_singleton ()->x
 
 // Display the content of a file in the hud
-R_API char *r_cons_hud_file(const char *f) {
+R_API char *r_cons_hud_file (const char *f) {
 	char *s = r_file_slurp (f, NULL);
 	if (s) {
 		char *ret = r_cons_hud_string (s);
@@ -18,7 +18,7 @@ R_API char *r_cons_hud_file(const char *f) {
 
 // Display a buffer in the hud (splitting it line-by-line and ignoring
 // the lines starting with # )
-R_API char *r_cons_hud_string(const char *s) {
+R_API char *r_cons_hud_string (const char *s) {
 	char *os, *track, *ret, *o = strdup (s);
 	if (!o) {
 		return NULL;
@@ -56,7 +56,7 @@ R_API char *r_cons_hud_string(const char *s) {
    entry. If all words are present, the function returns true.
    The mask is a character buffer which is filled by 'x' to mark those characters
    that match the filter */
-static bool __matchString(char *entry, char *filter, char *mask, const int mask_size) {
+static bool __matchString (char *entry, char *filter, char *mask, const int mask_size) {
 	char *p, *current_token = filter;
 	const char *filter_end = filter + strlen (filter);
 	char *ansi_filtered = strdup (entry);
@@ -104,14 +104,13 @@ static bool __matchString(char *entry, char *filter, char *mask, const int mask_
 	return true;
 }
 
-
-static RList *hud_filter(RList *list, char *user_input, int top_entry_n, int *current_entry_n, char **selected_entry) {
+static RList *hud_filter (RList *list, char *user_input, int top_entry_n, int *current_entry_n, char **selected_entry) {
 	RListIter *iter;
 	char *current_entry;
 	char mask[HUD_BUF_SIZE];
 	char *p, *x;
 	int j, rows;
-	(void) r_cons_get_size (&rows);
+	(void)r_cons_get_size (&rows);
 	int counter = 0;
 	bool first_line = true;
 	RList *res = r_list_newf (free);
@@ -133,13 +132,13 @@ static RList *hud_filter(RList *list, char *user_input, int top_entry_n, int *cu
 			p = strdup (current_entry);
 			// if the filter is empty, print the entry and move on
 			if (!user_input[0]) {
-				r_list_append (res, r_str_newf (" %c %s", first_line? '-': ' ', p));
+				r_list_append (res, r_str_newf (" %c %s", first_line ? '-' : ' ', p));
 			} else {
 				// otherwise we need to emphasize the matching part
 				if (I (context->color_mode)) {
 					int last_color_change = 0;
 					int last_mask = 0;
-					char *str = r_str_newf (" %c ", first_line? '-': ' ');
+					char *str = r_str_newf (" %c ", first_line ? '-' : ' ');
 					// Instead of printing one char at the time
 					// (which would be slow), we group substrings of the same color
 					for (j = 0; p[j] && j < HUD_BUF_SIZE; j++) {
@@ -157,7 +156,7 @@ static RList *hud_filter(RList *list, char *user_input, int top_entry_n, int *cu
 						}
 					}
 					if (last_mask) {
-						str = r_str_appendf (str, Color_GREEN "%s"Color_RESET, p + last_color_change);
+						str = r_str_appendf (str, Color_GREEN "%s" Color_RESET, p + last_color_change);
 					} else {
 						str = r_str_appendf (str, Color_RESET "%s", p + last_color_change);
 					}
@@ -166,10 +165,10 @@ static RList *hud_filter(RList *list, char *user_input, int top_entry_n, int *cu
 					// Otherwise we print the matching characters uppercase
 					for (j = 0; p[j]; j++) {
 						if (mask[j]) {
-							p[j] = toupper ((unsigned char) p[j]);
+							p[j] = toupper ((unsigned char)p[j]);
 						}
 					}
-					r_list_append (res, r_str_newf (" %c %s", first_line? '-': ' ', p));
+					r_list_append (res, r_str_newf (" %c %s", first_line ? '-' : ' ', p));
 				}
 			}
 			// Clean up and restore the tab character (if any)
@@ -183,12 +182,11 @@ static RList *hud_filter(RList *list, char *user_input, int top_entry_n, int *cu
 			first_line = false;
 		}
 		(*current_entry_n)++;
-
 	}
 	return res;
 }
 
-static void mht_free_kv(HtPPKv *kv) {
+static void mht_free_kv (HtPPKv *kv) {
 	free (kv->key);
 	r_list_free (kv->value);
 }
@@ -196,18 +194,18 @@ static void mht_free_kv(HtPPKv *kv) {
 // Display a list of entries in the hud, filtered and emphasized based on the user input.
 
 #define HUD_CACHE 0
-R_API char *r_cons_hud(RList *list, const char *prompt) {
+R_API char *r_cons_hud (RList *list, const char *prompt) {
 	char user_input[HUD_BUF_SIZE + 1];
 	char *selected_entry = NULL;
 	RListIter *iter;
 
 	HtPP *ht = ht_pp_new (NULL, (HtPPKvFreeFunc)mht_free_kv, (HtPPCalcSizeV)strlen);
-	RLineHud *hud = (RLineHud*) R_NEW (RLineHud);
+	RLineHud *hud = (RLineHud *)R_NEW (RLineHud);
 	hud->activate = 0;
 	hud->vi = 0;
-	I(line)->echo = false;
-	I(line)->hud = hud;
-	user_input [0] = 0;
+	I (line)->echo = false;
+	I (line)->hud = hud;
+	user_input[0] = 0;
 	user_input[HUD_BUF_SIZE] = 0;
 	hud->top_entry_n = 0;
 	r_cons_show_cursor (false);
@@ -242,22 +240,22 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 		r_list_foreach (filtered_list, iter, row) {
 			r_cons_printf ("%s\n", row);
 		}
-		if (!filtered_list->length) {				// hack to remove garbage value when list is empty
+		if (!filtered_list->length) { // hack to remove garbage value when list is empty
 			printf ("%s", R_CONS_CLEAR_LINE);
 		}
 #if !HUD_CACHE
 		r_list_free (filtered_list);
 #endif
 		r_cons_visual_flush ();
-		(void) r_line_readline ();
-		strncpy (user_input, I(line)->buffer.data, HUD_BUF_SIZE); 				// to search
+		(void)r_line_readline ();
+		strncpy (user_input, I (line)->buffer.data, HUD_BUF_SIZE); // to search
 
 		if (!hud->activate) {
 			hud->top_entry_n = 0;
-			if (hud->current_entry_n >= 1 ) {
+			if (hud->current_entry_n >= 1) {
 				if (selected_entry) {
-					R_FREE (I(line)->hud);
-					I(line)->echo = true;
+					R_FREE (I (line)->hud);
+					I (line)->echo = true;
 					r_cons_enable_mouse (false);
 					r_cons_show_cursor (true);
 					r_cons_set_raw (false);
@@ -269,8 +267,8 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 		}
 	}
 _beach:
-	R_FREE (I(line)->hud);
-	I(line)->echo = true;
+	R_FREE (I (line)->hud);
+	I (line)->echo = true;
 	r_cons_show_cursor (true);
 	r_cons_enable_mouse (false);
 	r_cons_set_raw (false);
@@ -279,12 +277,12 @@ _beach:
 }
 
 // Display the list of files in a directory
-R_API char *r_cons_hud_path(const char *path, int dir) {
+R_API char *r_cons_hud_path (const char *path, int dir) {
 	char *tmp, *ret = NULL;
 	RList *files;
 	if (path) {
 		path = r_str_trim_head_ro (path);
-		tmp = strdup (*path? path: "./");
+		tmp = strdup (*path ? path : "./");
 	} else {
 		tmp = strdup ("./");
 	}
@@ -315,7 +313,7 @@ R_API char *r_cons_hud_path(const char *path, int dir) {
 	return tmp;
 }
 
-R_API char *r_cons_message(const char *msg) {
+R_API char *r_cons_message (const char *msg) {
 	int len = strlen (msg);
 	int rows, cols = r_cons_get_size (&rows);
 	r_cons_clear ();

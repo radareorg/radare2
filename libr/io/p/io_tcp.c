@@ -12,22 +12,22 @@ typedef struct {
 	ut32 size;
 } RIOMalloc;
 
-#define RIOTCP_FD(x) (((RIOMalloc*)(x)->data)->fd)
-#define RIOTCP_SZ(x) (((RIOMalloc*)(x)->data)->size)
-#define RIOTCP_BUF(x) (((RIOMalloc*)(x)->data)->buf)
+#define RIOTCP_FD(x) (((RIOMalloc *)(x)->data)->fd)
+#define RIOTCP_SZ(x) (((RIOMalloc *)(x)->data)->size)
+#define RIOTCP_BUF(x) (((RIOMalloc *)(x)->data)->buf)
 
-static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
+static int __write (RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (!fd || !fd->data) {
 		return -1;
 	}
 	if (io->off + count > RIOTCP_SZ (fd)) {
 		return -1;
 	}
-	memcpy (RIOTCP_BUF (fd)+io->off, buf, count);
+	memcpy (RIOTCP_BUF (fd) + io->off, buf, count);
 	return count;
 }
 
-static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
+static int __read (RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	unsigned int sz;
 	if (!fd || !fd->data) {
 		return -1;
@@ -43,7 +43,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return count;
 }
 
-static int __close(RIODesc *fd) {
+static int __close (RIODesc *fd) {
 	RIOMalloc *riom;
 	if (!fd || !fd->data) {
 		return -1;
@@ -54,7 +54,7 @@ static int __close(RIODesc *fd) {
 	return 0;
 }
 
-static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 __lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
 	case SEEK_SET: return offset;
 	case SEEK_CUR: return io->off + offset;
@@ -63,7 +63,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static bool __plugin_open(RIO *io, const char *pathname, bool many) {
+static bool __plugin_open (RIO *io, const char *pathname, bool many) {
 	return (!strncmp (pathname, "tcp://", 6));
 }
 
@@ -123,7 +123,7 @@ static ut8 *tcpme (const char *pathname, int *code, int *len) {
 	return NULL;
 }
 
-static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
+static RIODesc *__open (RIO *io, const char *pathname, int rw, int mode) {
 	ut8 *out;
 	int rlen, code;
 	if (__plugin_open (io, pathname, 0)) {

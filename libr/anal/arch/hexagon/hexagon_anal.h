@@ -1,2 +1,1 @@
-int hexagon_anal_instruction(HexInsn *hi, RAnalOp *op);
-
+int hexagon_anal_instruction (HexInsn *hi, RAnalOp *op);

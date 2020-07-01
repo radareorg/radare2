@@ -7,38 +7,38 @@
 #define attsyntax 0
 
 #ifdef ARCH_X86_64
-# define EMIT_NAME emit_x64
-# define R_ARCH "x64"
-# define R_SZ 8
-# define R_SP "rsp"
-# define R_BP "rbp"
-# define R_AX "rax"
-# define SYSCALL_ATT "syscall"
-# define SYSCALL_INTEL "syscall"
-# define R_REG_AR_OFF 1
+#define EMIT_NAME emit_x64
+#define R_ARCH "x64"
+#define R_SZ 8
+#define R_SP "rsp"
+#define R_BP "rbp"
+#define R_AX "rax"
+#define SYSCALL_ATT "syscall"
+#define SYSCALL_INTEL "syscall"
+#define R_REG_AR_OFF 1
 static char *regs[] = { "rax", "rdi", "rsi", "rdx", "r10", "r8", "r9" };
 #else
-# define EMIT_NAME emit_x86
-# define R_ARCH "x86"
-# define R_SZ 4
-# define R_SP "esp"
-# define R_BP "ebp"
-# define R_AX "eax"
-# define SYSCALL_ATT "int $0x80"
-# define SYSCALL_INTEL "int 0x80"
-# define R_REG_AR_OFF 0
+#define EMIT_NAME emit_x86
+#define R_ARCH "x86"
+#define R_SZ 4
+#define R_SP "esp"
+#define R_BP "ebp"
+#define R_AX "eax"
+#define SYSCALL_ATT "int $0x80"
+#define SYSCALL_INTEL "int 0x80"
+#define R_REG_AR_OFF 0
 static char *regs[] = { "eax", "ebx", "ecx", "edx", "esi", "edi", "ebp" };
 #endif
 
-# define R_NGP (sizeof (regs)/sizeof (char *))
+#define R_NGP (sizeof (regs) / sizeof (char *))
 
 static void emit_init (REgg *egg) {
-// TODO: add 'andb rsp, 0xf0'
-if (attsyntax) {
-	r_egg_printf (egg, "mov %%" R_SP ", %%" R_BP "\n");
-} else {
-	r_egg_printf (egg, "mov " R_BP ", " R_SP "\n");
-}
+	// TODO: add 'andb rsp, 0xf0'
+	if (attsyntax) {
+		r_egg_printf (egg, "mov %%" R_SP ", %%" R_BP "\n");
+	} else {
+		r_egg_printf (egg, "mov " R_BP ", " R_SP "\n");
+	}
 }
 
 static char *emit_syscall (REgg *egg, int nargs) {
@@ -48,21 +48,21 @@ static char *emit_syscall (REgg *egg, int nargs) {
 	}
 	switch (egg->os) {
 	case R_EGG_OS_LINUX:
-		strcpy (p, "\n : mov "R_AX", `.arg`\n : "SYSCALL_INTEL "\n");
+		strcpy (p, "\n : mov " R_AX ", `.arg`\n : " SYSCALL_INTEL "\n");
 		break;
 	case R_EGG_OS_OSX:
 	case R_EGG_OS_MACOS:
 	case R_EGG_OS_DARWIN:
 #if ARCH_X86_64
 		snprintf (p, sizeof (p), "\n"
-			"  : mov rax, `.arg`\n"
-			"  : syscall\n");
+					 "  : mov rax, `.arg`\n"
+					 "  : syscall\n");
 #else
 		snprintf (p, sizeof (p), "\n"
-			"  : mov eax, `.arg`\n"
-			"  : push eax\n"
-			"  : int 0x80\n"
-			"  : add esp, %d\n",
+					 "  : mov eax, `.arg`\n"
+					 "  : push eax\n"
+					 "  : int 0x80\n"
+					 "  : add esp, %d\n",
 			4); //(nargs+2)*(egg->bits/8));
 #endif
 		break;
@@ -78,9 +78,10 @@ static void emit_frame (REgg *egg, int sz) {
 	}
 	if (attsyntax) {
 		r_egg_printf (egg,
-		"  push %%"R_BP"\n"
-		"  mov %%"R_SP", %%"R_BP"\n"
-		"  sub $%d, %%"R_SP"\n", sz);
+			"  push %%" R_BP "\n"
+			"  mov %%" R_SP ", %%" R_BP "\n"
+			"  sub $%d, %%" R_SP "\n",
+			sz);
 	} else {
 		r_egg_printf (egg,
 			"  push " R_BP "\n"
@@ -91,13 +92,13 @@ static void emit_frame (REgg *egg, int sz) {
 }
 
 static void emit_frame_end (REgg *egg, int sz, int ctx) {
-	if (sz>0) {
+	if (sz > 0) {
 		if (attsyntax) {
-			r_egg_printf (egg, "  add $%d, %%"R_SP"\n", sz);
-			r_egg_printf (egg, "  pop %%"R_BP"\n");
+			r_egg_printf (egg, "  add $%d, %%" R_SP "\n", sz);
+			r_egg_printf (egg, "  pop %%" R_BP "\n");
 		} else {
-			r_egg_printf (egg, "  add "R_SP", %d\n", sz);
-			r_egg_printf (egg, "  pop "R_BP"\n");
+			r_egg_printf (egg, "  add " R_SP ", %d\n", sz);
+			r_egg_printf (egg, "  pop " R_BP "\n");
 		}
 	}
 	if (ctx > 0) {
@@ -105,7 +106,7 @@ static void emit_frame_end (REgg *egg, int sz, int ctx) {
 	}
 }
 
-static void emit_comment(REgg *egg, const char *fmt, ...) {
+static void emit_comment (REgg *egg, const char *fmt, ...) {
 	va_list ap;
 	char buf[1024];
 	va_start (ap, fmt);
@@ -122,14 +123,14 @@ static void emit_equ (REgg *egg, const char *key, const char *value) {
 	r_egg_printf (egg, ".equ %s,%s\n", key, value);
 }
 
-static const char *getreg(int i) {
+static const char *getreg (int i) {
 	if (i < 0 || i >= R_NGP) {
 		return NULL;
 	}
 	return regs[i];
 }
 
-static void emit_syscall_args(REgg *egg, int nargs) {
+static void emit_syscall_args (REgg *egg, int nargs) {
 	int j, k;
 	for (j = 0; j < nargs; j++) {
 		k = j * R_SZ;
@@ -139,20 +140,20 @@ static void emit_syscall_args(REgg *egg, int nargs) {
 			break;
 		}
 		if (attsyntax) {
-			r_egg_printf (egg, "  mov %d(%%"R_SP"), %%%s\n", k, reg);
+			r_egg_printf (egg, "  mov %d(%%" R_SP "), %%%s\n", k, reg);
 		} else {
 			if (k > 0) {
-				r_egg_printf (egg, "  mov %s, ["R_SP"+%d]\n", reg, k);
+				r_egg_printf (egg, "  mov %s, [" R_SP "+%d]\n", reg, k);
 			} else if (k < 0) {
-				r_egg_printf (egg, "  mov %s, ["R_SP"%d]\n", reg, k);
+				r_egg_printf (egg, "  mov %s, [" R_SP "%d]\n", reg, k);
 			} else {
-				r_egg_printf (egg, "  mov %s, ["R_SP"]\n", reg);
+				r_egg_printf (egg, "  mov %s, [" R_SP "]\n", reg);
 			}
 		}
 	}
 }
 
-static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
+static void emit_string (REgg *egg, const char *dstvar, const char *str, int j) {
 	char *p, str2[64];
 	int i, oj = j;
 
@@ -165,13 +166,13 @@ static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
 	memset (s + len, 0, 4);
 
 	/* XXX: Hack: Adjust offset in R_BP correctly for 64b addresses */
-#define BPOFF (R_SZ-4)
-#define M32(x) (unsigned int)((x) & 0xffffffff)
+#define BPOFF (R_SZ - 4)
+#define M32(x) (unsigned int)((x)&0xffffffff)
 	/* XXX: Assumes sizeof(ut32) == 4 */
-	for (i=4; i<=oj; i+=4) {
+	for (i = 4; i <= oj; i += 4) {
 		/* XXX endian issues (non-portable asm) */
-		ut32 *n = (ut32 *)(s+i-4);
-		p = r_egg_mkvar (egg, str2, dstvar, i+BPOFF);
+		ut32 *n = (ut32 *)(s + i - 4);
+		p = r_egg_mkvar (egg, str2, dstvar, i + BPOFF);
 		if (attsyntax) {
 			r_egg_printf (egg, "  movl $0x%x, %s\n", M32 (*n), p);
 		} else {
@@ -183,7 +184,7 @@ static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
 #undef M32
 
 	/* zero */
-	p = r_egg_mkvar (egg, str2, dstvar, i+BPOFF);
+	p = r_egg_mkvar (egg, str2, dstvar, i + BPOFF);
 	if (attsyntax) {
 		r_egg_printf (egg, "  movl $0, %s\n", p);
 	} else {
@@ -192,7 +193,7 @@ static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
 	free (p);
 
 	/* store pointer */
-	p = r_egg_mkvar (egg, str2, dstvar, j+4+BPOFF);
+	p = r_egg_mkvar (egg, str2, dstvar, j + 4 + BPOFF);
 	if (attsyntax) {
 		r_egg_printf (egg, "  lea %s, %%" R_AX "\n", p);
 	} else {
@@ -230,7 +231,7 @@ static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
 	free (s);
 }
 
-static void emit_call(REgg *egg, const char *str, int atr) {
+static void emit_call (REgg *egg, const char *str, int atr) {
 	if (atr) {
 		if (attsyntax) {
 			r_egg_printf (egg, "  call *%s\n", str);
@@ -242,7 +243,7 @@ static void emit_call(REgg *egg, const char *str, int atr) {
 	}
 }
 
-static void emit_jmp(REgg *egg, const char *str, int atr) {
+static void emit_jmp (REgg *egg, const char *str, int atr) {
 	if (str) {
 		if (atr) {
 			if (attsyntax) {
@@ -271,11 +272,11 @@ static void emit_arg (REgg *egg, int xs, int num, const char *str) {
 			push rax
 		*/
 		if (attsyntax) {
-			r_egg_printf (egg, "  mov %s, %%"R_AX "\n", str);
-			r_egg_printf (egg, "  push %%"R_AX "\n");
+			r_egg_printf (egg, "  mov %s, %%" R_AX "\n", str);
+			r_egg_printf (egg, "  push %%" R_AX "\n");
 		} else {
-			r_egg_printf (egg, "  mov "R_AX ", %s\n", str);
-			r_egg_printf (egg, "  push "R_AX "\n");
+			r_egg_printf (egg, "  mov " R_AX ", %s\n", str);
+			r_egg_printf (egg, "  push " R_AX "\n");
 		}
 #else
 		r_egg_printf (egg, "  push %s\n", str);
@@ -293,7 +294,7 @@ static void emit_arg (REgg *egg, int xs, int num, const char *str) {
 			if (d != 0) {
 				r_egg_printf (egg, "  addl $%d, %%" R_BP "\n", d);
 			}
-			r_egg_printf (egg, "  pushl %%"R_BP"\n");
+			r_egg_printf (egg, "  pushl %%" R_BP "\n");
 			if (d != 0) {
 				r_egg_printf (egg, "  subl $%d, %%" R_BP "\n", d);
 			}
@@ -301,7 +302,7 @@ static void emit_arg (REgg *egg, int xs, int num, const char *str) {
 			if (d != 0) {
 				r_egg_printf (egg, "  add " R_BP ", %d\n", d);
 			}
-			r_egg_printf (egg, "  push "R_BP"\n");
+			r_egg_printf (egg, "  push " R_BP "\n");
 			if (d != 0) {
 				r_egg_printf (egg, "  sub " R_BP ", %d\n", d);
 			}
@@ -310,7 +311,7 @@ static void emit_arg (REgg *egg, int xs, int num, const char *str) {
 	}
 }
 
-static void emit_get_result(REgg *egg, const char *ocn) {
+static void emit_get_result (REgg *egg, const char *ocn) {
 	if (attsyntax) {
 		r_egg_printf (egg, "  mov %%" R_AX ", %s\n", ocn);
 	} else {
@@ -338,16 +339,16 @@ static void emit_while_end (REgg *egg, const char *labelback) {
 		r_egg_printf (egg, "  jnz %s\n", labelback);
 	} else {
 #endif
-		r_egg_printf (egg, "  pop "R_AX"\n");
-		r_egg_printf (egg, "  test "R_AX", "R_AX"\n"); // XXX MUST SUPPORT != 0 COMPARE HERE
-		r_egg_printf (egg, "  jnz %s\n", labelback);
-//	}
+	r_egg_printf (egg, "  pop " R_AX "\n");
+	r_egg_printf (egg, "  test " R_AX ", " R_AX "\n"); // XXX MUST SUPPORT != 0 COMPARE HERE
+	r_egg_printf (egg, "  jnz %s\n", labelback);
+	//	}
 }
 
 // XXX: this is wrong
 static void emit_get_var (REgg *egg, int type, char *out, int idx) {
 	switch (type) {
-	case 0:  /* variable */
+	case 0: /* variable */
 		if (idx > 0) {
 			sprintf (out, "[" R_BP "+%d]", idx);
 		} else if (idx < 0) {
@@ -357,7 +358,7 @@ static void emit_get_var (REgg *egg, int type, char *out, int idx) {
 		}
 		break;
 	case 1: /* argument */
-// OMG WE CAN'T stuff found in relative address in stack in the stack
+		// OMG WE CAN'T stuff found in relative address in stack in the stack
 		eprintf ("WARNING: Using stack vars in naked functions\n");
 		idx = 8; // HACK to make arg0, arg4, ... work
 		if (idx > 0) {
@@ -384,7 +385,7 @@ static void emit_trap (REgg *egg) {
 	r_egg_printf (egg, "  int3\n");
 }
 
-static void emit_load_ptr(REgg *egg, const char *dst) {
+static void emit_load_ptr (REgg *egg, const char *dst) {
 	int d = atoi (dst);
 	if (d == 0) { // hack to handle stackvarptrz
 		char *p = strchr (dst, '+');
@@ -396,15 +397,15 @@ static void emit_load_ptr(REgg *egg, const char *dst) {
 	// XXX: 32/64bit care
 	//r_egg_printf (egg, "# DELTA IS (%s)\n", dst);
 	if (attsyntax) {
-		r_egg_printf (egg, "  leal %d(%%"R_BP"), %%"R_AX"\n", d);
+		r_egg_printf (egg, "  leal %d(%%" R_BP "), %%" R_AX "\n", d);
 	} else {
-		r_egg_printf (egg, "  lea "R_AX", ["R_BP"+%d]\n", d);
+		r_egg_printf (egg, "  lea " R_AX ", [" R_BP "+%d]\n", d);
 	}
 	//r_egg_printf (egg, "  movl %%"R_BP", %%"R_AX"\n");
 	//r_egg_printf (egg, "  addl $%d, %%"R_AX"\n", d);
 }
 
-static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, const char *dst) {
+static void emit_branch (REgg *egg, char *b, char *g, char *e, char *n, int sz, const char *dst) {
 	char *p, str[64];
 	char *arg = NULL;
 	char *op = "jz";
@@ -413,27 +414,26 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 	if (b) {
 		*b = '\0';
 		if (signed_value) {
-			op = e? "jge": "jg";
+			op = e ? "jge" : "jg";
 		} else {
-			op = e? "jae": "ja";
+			op = e ? "jae" : "ja";
 		}
-		arg = b+1;
-	} else
-	if (g) {
+		arg = b + 1;
+	} else if (g) {
 		*g = '\0';
 		if (signed_value) {
-			op = e? "jle": "jl";
+			op = e ? "jle" : "jl";
 		} else {
-			op = e? "jbe": "jb";
+			op = e ? "jbe" : "jb";
 		}
 		arg = g + 1;
 	}
 	if (!arg) {
 		if (e) {
-			arg = e+1;
+			arg = e + 1;
 			op = "jne";
 		} else {
-			arg = attsyntax? "$0": "0";
+			arg = attsyntax ? "$0" : "0";
 			if (n) {
 				op = "jnz";
 			} else {
@@ -447,62 +447,62 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 	}
 	p = r_egg_mkvar (egg, str, arg, 0);
 	if (attsyntax) {
-		r_egg_printf (egg, "  pop %%"R_AX"\n"); /* TODO: add support for more than one arg get arg0 */
-		r_egg_printf (egg, "  cmp%c %s, %%"R_AX"\n", sz, p);
+		r_egg_printf (egg, "  pop %%" R_AX "\n"); /* TODO: add support for more than one arg get arg0 */
+		r_egg_printf (egg, "  cmp%c %s, %%" R_AX "\n", sz, p);
 	} else {
-		r_egg_printf (egg, "  pop "R_AX"\n"); /* TODO: add support for more than one arg get arg0 */
-		r_egg_printf (egg, "  cmp "R_AX", %s\n", p);
+		r_egg_printf (egg, "  pop " R_AX "\n"); /* TODO: add support for more than one arg get arg0 */
+		r_egg_printf (egg, "  cmp " R_AX ", %s\n", p);
 	}
 	// if (context>0)
 	free (p);
 	r_egg_printf (egg, "  %s %s\n", op, dst);
 }
 
-static void emit_load(REgg *egg, const char *dst, int sz) {
+static void emit_load (REgg *egg, const char *dst, int sz) {
 	if (attsyntax) {
 		switch (sz) {
 		case 'l':
-			r_egg_printf (egg, "  movl %s, %%"R_AX"\n", dst);
-			r_egg_printf (egg, "  movl (%%"R_AX"), %%"R_AX"\n");
+			r_egg_printf (egg, "  movl %s, %%" R_AX "\n", dst);
+			r_egg_printf (egg, "  movl (%%" R_AX "), %%" R_AX "\n");
 			break;
 		case 'b':
-			r_egg_printf (egg, "  movl %s, %%"R_AX"\n", dst);
-			r_egg_printf (egg, "  movzb (%%"R_AX"), %%"R_AX"\n");
+			r_egg_printf (egg, "  movl %s, %%" R_AX "\n", dst);
+			r_egg_printf (egg, "  movzb (%%" R_AX "), %%" R_AX "\n");
 			break;
 		default:
 			// TODO: unhandled?!?
-			r_egg_printf (egg, "  mov%c %s, %%"R_AX"\n", sz, dst);
-			r_egg_printf (egg, "  mov%c (%%"R_AX"), %%"R_AX"\n", sz);
+			r_egg_printf (egg, "  mov%c %s, %%" R_AX "\n", sz, dst);
+			r_egg_printf (egg, "  mov%c (%%" R_AX "), %%" R_AX "\n", sz);
 		}
 	} else {
 		switch (sz) {
 		case 'l':
-			r_egg_printf (egg, "  mov "R_AX", %s\n", dst);
-			r_egg_printf (egg, "  mov "R_AX", ["R_AX"]\n");
+			r_egg_printf (egg, "  mov " R_AX ", %s\n", dst);
+			r_egg_printf (egg, "  mov " R_AX ", [" R_AX "]\n");
 			break;
 		case 'b':
-			r_egg_printf (egg, "  mov "R_AX", %s\n", dst);
-			r_egg_printf (egg, "  movz "R_AX", ["R_AX"]\n");
+			r_egg_printf (egg, "  mov " R_AX ", %s\n", dst);
+			r_egg_printf (egg, "  movz " R_AX ", [" R_AX "]\n");
 			break;
 		default:
 			// TODO: unhandled?!?
-			r_egg_printf (egg, "  mov "R_AX", %s\n", dst);
-			r_egg_printf (egg, "  mov "R_AX", ["R_AX"]\n");
+			r_egg_printf (egg, "  mov " R_AX ", %s\n", dst);
+			r_egg_printf (egg, "  mov " R_AX ", [" R_AX "]\n");
 		}
 	}
 }
 
-static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, const char *p) {
+static void emit_mathop (REgg *egg, int ch, int vs, int type, const char *eq, const char *p) {
 	char *op;
-	switch(ch) {
+	switch (ch) {
 	case '^': op = "xor"; break;
 	case '&': op = "and"; break;
-	case '|': op = "or";  break;
+	case '|': op = "or"; break;
 	case '-': op = "sub"; break;
 	case '+': op = "add"; break;
 	case '*': op = "mul"; break;
 	case '/': op = "div"; break;
-	default:  op = "mov"; break;
+	default: op = "mov"; break;
 	}
 	if (attsyntax) {
 		if (!eq) {
@@ -533,8 +533,8 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 	}
 }
 
-static const char* emit_regs(REgg *egg, int idx) {
-	return regs[idx%R_NGP];
+static const char *emit_regs (REgg *egg, int idx) {
+	return regs[idx % R_NGP];
 }
 
 static void emit_get_ar (REgg *egg, char *out, int idx) {

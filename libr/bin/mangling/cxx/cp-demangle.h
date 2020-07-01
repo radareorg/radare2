@@ -33,95 +33,91 @@
 
 /* Information we keep for operators.  */
 
-struct demangle_operator_info
-{
-  /* Mangled name.  */
-  const char *code;
-  /* Real name.  */
-  const char *name;
-  /* Length of real name.  */
-  int len;
-  /* Number of arguments.  */
-  int args;
+struct demangle_operator_info {
+	/* Mangled name.  */
+	const char *code;
+	/* Real name.  */
+	const char *name;
+	/* Length of real name.  */
+	int len;
+	/* Number of arguments.  */
+	int args;
 };
 
 /* How to print the value of a builtin type.  */
 
-enum d_builtin_type_print
-{
-  /* Print as (type)val.  */
-  D_PRINT_DEFAULT,
-  /* Print as integer.  */
-  D_PRINT_INT,
-  /* Print as unsigned integer, with trailing "u".  */
-  D_PRINT_UNSIGNED,
-  /* Print as long, with trailing "l".  */
-  D_PRINT_LONG,
-  /* Print as unsigned long, with trailing "ul".  */
-  D_PRINT_UNSIGNED_LONG,
-  /* Print as long long, with trailing "ll".  */
-  D_PRINT_LONG_LONG,
-  /* Print as unsigned long long, with trailing "ull".  */
-  D_PRINT_UNSIGNED_LONG_LONG,
-  /* Print as bool.  */
-  D_PRINT_BOOL,
-  /* Print as float--put value in square brackets.  */
-  D_PRINT_FLOAT,
-  /* Print in usual way, but here to detect void.  */
-  D_PRINT_VOID
+enum d_builtin_type_print {
+	/* Print as (type)val.  */
+	D_PRINT_DEFAULT,
+	/* Print as integer.  */
+	D_PRINT_INT,
+	/* Print as unsigned integer, with trailing "u".  */
+	D_PRINT_UNSIGNED,
+	/* Print as long, with trailing "l".  */
+	D_PRINT_LONG,
+	/* Print as unsigned long, with trailing "ul".  */
+	D_PRINT_UNSIGNED_LONG,
+	/* Print as long long, with trailing "ll".  */
+	D_PRINT_LONG_LONG,
+	/* Print as unsigned long long, with trailing "ull".  */
+	D_PRINT_UNSIGNED_LONG_LONG,
+	/* Print as bool.  */
+	D_PRINT_BOOL,
+	/* Print as float--put value in square brackets.  */
+	D_PRINT_FLOAT,
+	/* Print in usual way, but here to detect void.  */
+	D_PRINT_VOID
 };
 
 /* Information we keep for a builtin type.  */
 
-struct demangle_builtin_type_info
-{
-  /* Type name.  */
-  const char *name;
-  /* Length of type name.  */
-  int len;
-  /* Type name when using Java.  */
-  const char *java_name;
-  /* Length of java name.  */
-  int java_len;
-  /* How to print a value of this type.  */
-  enum d_builtin_type_print print;
+struct demangle_builtin_type_info {
+	/* Type name.  */
+	const char *name;
+	/* Length of type name.  */
+	int len;
+	/* Type name when using Java.  */
+	const char *java_name;
+	/* Length of java name.  */
+	int java_len;
+	/* How to print a value of this type.  */
+	enum d_builtin_type_print print;
 };
 
 /* The information structure we pass around.  */
 
-struct d_info
-{
-  /* The string we are demangling.  */
-  const char *s;
-  /* The end of the string we are demangling.  */
-  const char *send;
-  /* The options passed to the demangler.  */
-  int options;
-  /* The next character in the string to consider.  */
-  const char *n;
-  /* The array of components.  */
-  struct demangle_component *comps;
-  /* The index of the next available component.  */
-  int next_comp;
-  /* The number of available component structures.  */
-  int num_comps;
-  /* The array of substitutions.  */
-  struct demangle_component **subs;
-  /* The index of the next substitution.  */
-  int next_sub;
-  /* The number of available entries in the subs array.  */
-  int num_subs;
-  /* The last name we saw, for constructors and destructors.  */
-  struct demangle_component *last_name;
-  /* A running total of the length of large expansions from the
+struct d_info {
+	/* The string we are demangling.  */
+	const char *s;
+	/* The end of the string we are demangling.  */
+	const char *send;
+	/* The options passed to the demangler.  */
+	int options;
+	/* The next character in the string to consider.  */
+	const char *n;
+	/* The array of components.  */
+	struct demangle_component *comps;
+	/* The index of the next available component.  */
+	int next_comp;
+	/* The number of available component structures.  */
+	int num_comps;
+	/* The array of substitutions.  */
+	struct demangle_component **subs;
+	/* The index of the next substitution.  */
+	int next_sub;
+	/* The number of available entries in the subs array.  */
+	int num_subs;
+	/* The last name we saw, for constructors and destructors.  */
+	struct demangle_component *last_name;
+	/* A running total of the length of large expansions from the
      mangled name to the demangled name, such as standard
      substitutions and builtin types.  */
-  int expansion;
-  /* Non-zero if we are parsing an expression.  */
-  int is_expression;
-  /* Non-zero if we are parsing the type operand of a conversion
+	int expansion;
+	/* Non-zero if we are parsing an expression.  */
+	int is_expression;
+	/* Non-zero if we are parsing the type operand of a conversion
      operator, but not when in an expression.  */
-  int is_conversion;
+	int is_conversion;
 };
 
 /* To avoid running past the ending '\0', don't:
@@ -131,33 +127,30 @@ struct d_info
    Everything else is safe.  */
 #define d_peek_char(di) (*((di)->n))
 #ifndef CHECK_DEMANGLER
-#  define d_peek_next_char(di) ((di)->n[1])
-#  define d_advance(di, i) ((di)->n += (i))
+#define d_peek_next_char(di) ((di)->n[1])
+#define d_advance(di, i) ((di)->n += (i))
 #endif
-#define d_check_char(di, c) (d_peek_char(di) == c ? ((di)->n++, 1) : 0)
-#define d_next_char(di) (d_peek_char(di) == '\0' ? '\0' : *((di)->n++))
+#define d_check_char(di, c) (d_peek_char (di) == c ? ((di)->n++, 1) : 0)
+#define d_next_char(di) (d_peek_char (di) == '\0' ? '\0' : *((di)->n++))
 #define d_str(di) ((di)->n)
 
 #ifdef CHECK_DEMANGLER
 static inline char
-d_peek_next_char (const struct d_info *di)
-{
-  if (!di->n[0])
-    abort ();
-  return di->n[1];
+d_peek_next_char (const struct d_info *di) {
+	if (!di->n[0])
+		abort ();
+	return di->n[1];
 }
 
 static inline void
-d_advance (struct d_info *di, int i)
-{
-  if (i < 0)
-    abort ();
-  while (i--)
-    {
-      if (!di->n[0])
-	abort ();
-      di->n++;
-    }
+d_advance (struct d_info *di, int i) {
+	if (i < 0)
+		abort ();
+	while (i--) {
+		if (!di->n[0])
+			abort ();
+		di->n++;
+	}
 }
 #endif
 
@@ -177,7 +170,7 @@ extern const struct demangle_operator_info cplus_demangle_operators[];
 
 CP_STATIC_IF_GLIBCPP_V3
 const struct demangle_builtin_type_info
-cplus_demangle_builtin_types[D_BUILTIN_TYPE_COUNT];
+	cplus_demangle_builtin_types[D_BUILTIN_TYPE_COUNT];
 
 CP_STATIC_IF_GLIBCPP_V3
 struct demangle_component *

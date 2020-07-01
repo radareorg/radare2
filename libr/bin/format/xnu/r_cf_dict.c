@@ -25,42 +25,42 @@ typedef struct _RCFParseState {
 	RCFValueArray *array;
 } RCFParseState;
 
-static RCFParseState *r_cf_parse_state_new(RCFParsePhase phase);
-static void r_cf_parse_state_free(RCFParseState *state);
+static RCFParseState *r_cf_parse_state_new (RCFParsePhase phase);
+static void r_cf_parse_state_free (RCFParseState *state);
 
-static RCFKeyValue *r_cf_key_value_new(char *key, RCFValue *value);
-static void r_cf_key_value_free(RCFKeyValue *key_value);
+static RCFKeyValue *r_cf_key_value_new (char *key, RCFValue *value);
+static void r_cf_key_value_free (RCFKeyValue *key_value);
 
-static RCFValueDict *r_cf_value_dict_new(void);
-static void r_cf_value_dict_add(RCFValueDict *dict, RCFKeyValue *key_value);
-static void r_cf_value_dict_print(RCFValueDict *dict);
+static RCFValueDict *r_cf_value_dict_new (void);
+static void r_cf_value_dict_add (RCFValueDict *dict, RCFKeyValue *key_value);
+static void r_cf_value_dict_print (RCFValueDict *dict);
 
-static RCFValueArray *r_cf_value_array_new(void);
-static void r_cf_value_array_free(RCFValueArray *array);
-static void r_cf_value_array_add(RCFValueArray *array, RCFValue *value);
-static void r_cf_value_array_print(RCFValueArray *dict);
+static RCFValueArray *r_cf_value_array_new (void);
+static void r_cf_value_array_free (RCFValueArray *array);
+static void r_cf_value_array_add (RCFValueArray *array, RCFValue *value);
+static void r_cf_value_array_print (RCFValueArray *dict);
 
-static RCFValueString *r_cf_value_string_new(char *string);
-static void r_cf_value_string_free(RCFValueString *string);
-static void r_cf_value_string_print(RCFValueString *string);
+static RCFValueString *r_cf_value_string_new (char *string);
+static void r_cf_value_string_free (RCFValueString *string);
+static void r_cf_value_string_print (RCFValueString *string);
 
-static RCFValueInteger *r_cf_value_integer_new(char *string);
-static void r_cf_value_integer_free(RCFValueInteger *integer);
-static void r_cf_value_integer_print(RCFValueInteger *integer);
+static RCFValueInteger *r_cf_value_integer_new (char *string);
+static void r_cf_value_integer_free (RCFValueInteger *integer);
+static void r_cf_value_integer_print (RCFValueInteger *integer);
 
-static RCFValueData *r_cf_value_data_new(char *string);
-static void r_cf_value_data_free(RCFValueData *data);
-static void r_cf_value_data_print(RCFValueData *data);
+static RCFValueData *r_cf_value_data_new (char *string);
+static void r_cf_value_data_free (RCFValueData *data);
+static void r_cf_value_data_print (RCFValueData *data);
 
-static RCFValueNULL *r_cf_value_null_new(void);
-static void r_cf_value_null_free(RCFValueNULL *null);
-static void r_cf_value_null_print(RCFValueNULL *null);
+static RCFValueNULL *r_cf_value_null_new (void);
+static void r_cf_value_null_free (RCFValueNULL *null);
+static void r_cf_value_null_print (RCFValueNULL *null);
 
-static RCFValueBool *r_cf_value_bool_new(bool value);
-static void r_cf_value_bool_free(RCFValueBool *bool_value);
-static void r_cf_value_bool_print(RCFValueBool *bool_value);
+static RCFValueBool *r_cf_value_bool_new (bool value);
+static void r_cf_value_bool_free (RCFValueBool *bool_value);
+static void r_cf_value_bool_print (RCFValueBool *bool_value);
 
-static void r_cf_value_free(RCFValue *value);
+static void r_cf_value_free (RCFValue *value);
 
 RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, int options) {
 	RCFValueDict *result = NULL;
@@ -292,7 +292,7 @@ beach:
 	return result;
 }
 
-static RCFParseState *r_cf_parse_state_new(RCFParsePhase phase) {
+static RCFParseState *r_cf_parse_state_new (RCFParsePhase phase) {
 	RCFParseState *state = R_NEW0 (RCFParseState);
 	if (state) {
 		state->phase = phase;
@@ -300,13 +300,13 @@ static RCFParseState *r_cf_parse_state_new(RCFParsePhase phase) {
 	return state;
 }
 
-static void r_cf_parse_state_free(RCFParseState *state) {
+static void r_cf_parse_state_free (RCFParseState *state) {
 	if (state) {
 		R_FREE (state);
 	}
 }
 
-static RCFKeyValue *r_cf_key_value_new(char *key, RCFValue *value) {
+static RCFKeyValue *r_cf_key_value_new (char *key, RCFValue *value) {
 	RCFKeyValue *key_value = R_NEW0 (RCFKeyValue);
 	if (!key_value) {
 		return NULL;
@@ -318,7 +318,7 @@ static RCFKeyValue *r_cf_key_value_new(char *key, RCFValue *value) {
 	return key_value;
 }
 
-static void r_cf_key_value_free(RCFKeyValue *key_value) {
+static void r_cf_key_value_free (RCFKeyValue *key_value) {
 	if (!key_value) {
 		return;
 	}
@@ -334,7 +334,7 @@ static void r_cf_key_value_free(RCFKeyValue *key_value) {
 	R_FREE (key_value);
 }
 
-static RCFValueDict *r_cf_value_dict_new(void) {
+static RCFValueDict *r_cf_value_dict_new (void) {
 	RCFValueDict *dict = R_NEW0 (RCFValueDict);
 	if (!dict) {
 		return NULL;
@@ -357,7 +357,7 @@ void r_cf_value_dict_free (RCFValueDict *dict) {
 	R_FREE (dict);
 }
 
-static void r_cf_value_dict_add(RCFValueDict *dict, RCFKeyValue *key_value) {
+static void r_cf_value_dict_add (RCFValueDict *dict, RCFKeyValue *key_value) {
 	if (!dict || !dict->pairs) {
 		return;
 	}
@@ -365,7 +365,7 @@ static void r_cf_value_dict_add(RCFValueDict *dict, RCFKeyValue *key_value) {
 	r_list_push (dict->pairs, key_value);
 }
 
-static void r_cf_value_dict_print(RCFValueDict *dict) {
+static void r_cf_value_dict_print (RCFValueDict *dict) {
 	RListIter *iter;
 	RCFKeyValue *key_value;
 	int length = r_list_length (dict->pairs);
@@ -381,7 +381,7 @@ static void r_cf_value_dict_print(RCFValueDict *dict) {
 	printf ("}");
 }
 
-static RCFValueArray *r_cf_value_array_new(void) {
+static RCFValueArray *r_cf_value_array_new (void) {
 	RCFValueArray *array = R_NEW0 (RCFValueArray);
 	if (!array) {
 		return NULL;
@@ -393,7 +393,7 @@ static RCFValueArray *r_cf_value_array_new(void) {
 	return array;
 }
 
-static void r_cf_value_array_free(RCFValueArray *array) {
+static void r_cf_value_array_free (RCFValueArray *array) {
 	if (!array) {
 		return;
 	}
@@ -407,7 +407,7 @@ static void r_cf_value_array_free(RCFValueArray *array) {
 	R_FREE (array);
 }
 
-static void r_cf_value_array_add(RCFValueArray *array, RCFValue *value) {
+static void r_cf_value_array_add (RCFValueArray *array, RCFValue *value) {
 	if (!array || !array->values) {
 		return;
 	}
@@ -415,7 +415,7 @@ static void r_cf_value_array_add(RCFValueArray *array, RCFValue *value) {
 	r_list_push (array->values, value);
 }
 
-static void r_cf_value_array_print(RCFValueArray *array) {
+static void r_cf_value_array_print (RCFValueArray *array) {
 	RListIter *iter;
 	RCFValue *value;
 	int length = r_list_length (array->values);
@@ -430,7 +430,7 @@ static void r_cf_value_array_print(RCFValueArray *array) {
 	printf ("]");
 }
 
-static RCFValueString *r_cf_value_string_new(char *string) {
+static RCFValueString *r_cf_value_string_new (char *string) {
 	RCFValueString *value_string = R_NEW0 (RCFValueString);
 	if (!value_string) {
 		return NULL;
@@ -442,7 +442,7 @@ static RCFValueString *r_cf_value_string_new(char *string) {
 	return value_string;
 }
 
-static void r_cf_value_string_free(RCFValueString *string) {
+static void r_cf_value_string_free (RCFValueString *string) {
 	if (!string) {
 		return;
 	}
@@ -455,14 +455,14 @@ static void r_cf_value_string_free(RCFValueString *string) {
 	R_FREE (string);
 }
 
-static void r_cf_value_string_print(RCFValueString *string) {
+static void r_cf_value_string_print (RCFValueString *string) {
 	char *escaped = strdup (string->value);
 	escaped = r_str_replace (escaped, "\"", "\\\"", 1);
 	printf ("\"%s\"", escaped);
 	R_FREE (escaped);
 }
 
-static RCFValueInteger *r_cf_value_integer_new(char *string) {
+static RCFValueInteger *r_cf_value_integer_new (char *string) {
 	RCFValueInteger *integer = R_NEW0 (RCFValueInteger);
 	if (!integer) {
 		return NULL;
@@ -474,7 +474,7 @@ static RCFValueInteger *r_cf_value_integer_new(char *string) {
 	return integer;
 }
 
-static void r_cf_value_integer_free(RCFValueInteger *integer) {
+static void r_cf_value_integer_free (RCFValueInteger *integer) {
 	if (!integer) {
 		return;
 	}
@@ -483,11 +483,11 @@ static void r_cf_value_integer_free(RCFValueInteger *integer) {
 	R_FREE (integer);
 }
 
-static void r_cf_value_integer_print(RCFValueInteger *integer) {
+static void r_cf_value_integer_print (RCFValueInteger *integer) {
 	printf ("%llu", integer->value);
 }
 
-static RCFValueData *r_cf_value_data_new(char *string) {
+static RCFValueData *r_cf_value_data_new (char *string) {
 	RCFValueData *data = R_NEW0 (RCFValueData);
 	if (!data) {
 		return NULL;
@@ -508,7 +508,7 @@ static RCFValueData *r_cf_value_data_new(char *string) {
 	return data;
 }
 
-static void r_cf_value_data_free(RCFValueData *data) {
+static void r_cf_value_data_free (RCFValueData *data) {
 	if (!data) {
 		return;
 	}
@@ -522,11 +522,11 @@ static void r_cf_value_data_free(RCFValueData *data) {
 	R_FREE (data);
 }
 
-static void r_cf_value_data_print(RCFValueData *data) {
+static void r_cf_value_data_print (RCFValueData *data) {
 	printf ("\"...\"");
 }
 
-static RCFValueNULL *r_cf_value_null_new(void) {
+static RCFValueNULL *r_cf_value_null_new (void) {
 	RCFValueNULL *null = R_NEW0 (RCFValueNULL);
 	if (!null) {
 		return NULL;
@@ -537,7 +537,7 @@ static RCFValueNULL *r_cf_value_null_new(void) {
 	return null;
 }
 
-static void r_cf_value_null_free(RCFValueNULL *null) {
+static void r_cf_value_null_free (RCFValueNULL *null) {
 	if (!null) {
 		return;
 	}
@@ -546,11 +546,11 @@ static void r_cf_value_null_free(RCFValueNULL *null) {
 	R_FREE (null);
 }
 
-static void r_cf_value_null_print(RCFValueNULL *null) {
+static void r_cf_value_null_print (RCFValueNULL *null) {
 	printf ("null");
 }
 
-static RCFValueBool *r_cf_value_bool_new(bool value) {
+static RCFValueBool *r_cf_value_bool_new (bool value) {
 	RCFValueBool *bool_value = R_NEW0 (RCFValueBool);
 	if (!bool_value) {
 		return NULL;
@@ -560,21 +560,21 @@ static RCFValueBool *r_cf_value_bool_new(bool value) {
 	return bool_value;
 }
 
-static void r_cf_value_bool_free(RCFValueBool *bool_value) {
+static void r_cf_value_bool_free (RCFValueBool *bool_value) {
 	if (bool_value) {
 		bool_value->type = R_CF_INVALID;
 		R_FREE (bool_value);
 	}
 }
 
-static void r_cf_value_bool_print(RCFValueBool *bool_value) {
+static void r_cf_value_bool_print (RCFValueBool *bool_value) {
 	if (bool_value->type == R_CF_TRUE) {
 		printf ("true");
 	} else {
 		printf ("false");
 	}
 }
-static void r_cf_value_free(RCFValue *value) {
+static void r_cf_value_free (RCFValue *value) {
 	if (!value) {
 		return;
 	}

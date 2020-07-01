@@ -6,9 +6,9 @@
 
 // don't use fixed sized buffers
 #define STDIN_BUFFER_SIZE 354096
-static int rax(RNum *num, char *str, int len, int last, ut64 *flags, int *fm);
+static int rax (RNum *num, char *str, int len, int last, ut64 *flags, int *fm);
 
-static int use_stdin(RNum *num, ut64 *flags, int *fm) {
+static int use_stdin (RNum *num, ut64 *flags, int *fm) {
 	if (!flags) {
 		return 0;
 	}
@@ -17,7 +17,7 @@ static int use_stdin(RNum *num, ut64 *flags, int *fm) {
 	if (!buf) {
 		return 0;
 	}
-	if (!(*flags & (1<<14))) {
+	if (!(*flags & (1 << 14))) {
 		for (l = 0; l >= 0 && l < STDIN_BUFFER_SIZE; l++) {
 			// make sure we don't read beyond boundaries
 			int n = read (0, buf + l, STDIN_BUFFER_SIZE - l);
@@ -47,7 +47,7 @@ static int use_stdin(RNum *num, ut64 *flags, int *fm) {
 	return 0;
 }
 
-static int format_output(RNum *num, char mode, const char *s, int force_mode, ut64 flags) {
+static int format_output (RNum *num, char mode, const char *s, int force_mode, ut64 flags) {
 	ut64 n = r_num_math (num, s);
 	char strbits[65];
 	if (force_mode) {
@@ -55,7 +55,7 @@ static int format_output(RNum *num, char mode, const char *s, int force_mode, ut
 	}
 	if (flags & 2) {
 		ut64 n2 = n;
-		r_mem_swapendian ((ut8 *) &n, (ut8 *) &n2, (n >> 32)? 8: 4);
+		r_mem_swapendian ((ut8 *)&n, (ut8 *)&n2, (n >> 32) ? 8 : 4);
 	}
 	switch (mode) {
 	case 'I':
@@ -65,14 +65,14 @@ static int format_output(RNum *num, char mode, const char *s, int force_mode, ut
 		printf ("0x%" PFMT64x "\n", n);
 		break;
 	case 'F': {
-		float *f = (float *) &n;
+		float *f = (float *)&n;
 		printf ("%ff\n", *f);
 	} break;
 	case 'f': printf ("%.01lf\n", num->fvalue); break;
 	case 'l':
 		R_STATIC_ASSERT (sizeof (float) == 4);
-		float f = (float) num->fvalue;
-		ut8 *p = (ut8 *) &f;
+		float f = (float)num->fvalue;
+		ut8 *p = (ut8 *)&f;
 		printf ("Fx%02x%02x%02x%02x\n", p[3], p[2], p[1], p[0]);
 		break;
 	case 'O': printf ("0%" PFMT64o "\n", n); break;
@@ -99,11 +99,11 @@ static int format_output(RNum *num, char mode, const char *s, int force_mode, ut
 	return true;
 }
 
-static void print_ascii_table(void) {
-	printf ("%s", ret_ascii_table());
+static void print_ascii_table (void) {
+	printf ("%s", ret_ascii_table ());
 }
 
-static int help(void) {
+static int help (void) {
 	printf (
 		"  =[base]                      ;  rax2 =10 0x46 -> output in base 10\n"
 		"  int     ->  hex              ;  rax2 10\n"
@@ -153,11 +153,11 @@ static int help(void) {
 	return true;
 }
 
-static int rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) {
+static int rax (RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) {
 	ut64 flags = *_flags;
 	const char *nl = "";
 	ut8 *buf;
-	char *p, out_mode = (flags & 128)? 'I': '0';
+	char *p, out_mode = (flags & 128) ? 'I' : '0';
 	int i;
 	if (!(flags & 4) || !len) {
 		len = strlen (str);
@@ -211,7 +211,7 @@ static int rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) {
 				return !use_stdin (num, _flags, fm);
 			default:
 				/* not as complete as for positive numbers */
-				out_mode = (flags ^ 32)? '0': 'I';
+				out_mode = (flags ^ 32) ? '0' : 'I';
 				if (str[1] >= '0' && str[1] <= '9') {
 					if (str[2] == 'x') {
 						out_mode = 'I';
@@ -247,7 +247,7 @@ dotherax:
 		buf = malloc (n);
 		if (buf) {
 			memset (buf, '\0', n);
-			n = r_hex_str2bin (str, (ut8 *) buf);
+			n = r_hex_str2bin (str, (ut8 *)buf);
 			if (n > 0) {
 				fwrite (buf, n, 1, stdout);
 			}
@@ -265,7 +265,7 @@ dotherax:
 	}
 	if (flags & (1 << 2)) { // -S
 		for (i = 0; i < len; i++) {
-			printf ("%02x", (ut8) str[i]);
+			printf ("%02x", (ut8)str[i]);
 		}
 		printf ("\n");
 		return true;
@@ -288,20 +288,20 @@ dotherax:
 	} else if (flags & (1 << 8)) { // -K
 		int n = ((strlen (str)) >> 1) + 1;
 		char *s = NULL;
-		buf = (ut8 *) malloc (n);
+		buf = (ut8 *)malloc (n);
 		if (!buf) {
 			return false;
 		}
-		ut32 *m = (ut32 *) buf;
+		ut32 *m = (ut32 *)buf;
 		memset (buf, '\0', n);
-		n = r_hex_str2bin (str, (ut8 *) buf);
+		n = r_hex_str2bin (str, (ut8 *)buf);
 		if (n < 1 || !memcmp (str, "0x", 2)) {
 			ut64 q = r_num_math (num, str);
-			s = r_print_randomart ((ut8 *) &q, sizeof (q), q);
+			s = r_print_randomart ((ut8 *)&q, sizeof (q), q);
 			printf ("%s\n", s);
 			free (s);
 		} else {
-			s = r_print_randomart ((ut8 *) buf, n, *m);
+			s = r_print_randomart ((ut8 *)buf, n, *m);
 			printf ("%s\n", s);
 			free (s);
 		}
@@ -311,7 +311,7 @@ dotherax:
 		ut64 n = r_num_math (num, str);
 		if (n >> 32) {
 			/* is 64 bit value */
-			ut8 *np = (ut8 *) &n;
+			ut8 *np = (ut8 *)&n;
 			if (flags & 1) {
 				fwrite (&n, sizeof (n), 1, stdout);
 			} else {
@@ -323,7 +323,7 @@ dotherax:
 		} else {
 			/* is 32 bit value */
 			ut32 n32 = (ut32) (n & UT32_MAX);
-			ut8 *np = (ut8 *) &n32;
+			ut8 *np = (ut8 *)&n32;
 			if (flags & 1) {
 				fwrite (&n32, sizeof (n32), 1, stdout);
 			} else {
@@ -340,25 +340,25 @@ dotherax:
 			ut8 ch = str[i];
 			printf ("%d%d%d%d"
 				"%d%d%d%d",
-				ch & 128? 1: 0,
-				ch & 64? 1: 0,
-				ch & 32? 1: 0,
-				ch & 16? 1: 0,
-				ch & 8? 1: 0,
-				ch & 4? 1: 0,
-				ch & 2? 1: 0,
-				ch & 1? 1: 0);
+				ch & 128 ? 1 : 0,
+				ch & 64 ? 1 : 0,
+				ch & 32 ? 1 : 0,
+				ch & 16 ? 1 : 0,
+				ch & 8 ? 1 : 0,
+				ch & 4 ? 1 : 0,
+				ch & 2 ? 1 : 0,
+				ch & 1 ? 1 : 0);
 		}
 		return true;
 	} else if (flags & (1 << 16)) { // -w
 		ut64 n = r_num_math (num, str);
 		if (n >> 31) {
 			// is >32bit
-			n = (st64) (st32) n;
+			n = (st64) (st32)n;
 		} else if (n >> 14) {
-			n = (st64) (st16) n;
+			n = (st64) (st16)n;
 		} else if (n >> 7) {
-			n = (st64) (st8) n;
+			n = (st64) (st8)n;
 		}
 		printf ("%" PFMT64d "\n", n);
 		fflush (stdout);
@@ -367,7 +367,7 @@ dotherax:
 		ut64 n = r_num_math (num, str);
 		if (n >> 32) {
 			/* is 64 bit value */
-			ut8 *np = (ut8 *) &n;
+			ut8 *np = (ut8 *)&n;
 			if (flags & 1) {
 				fwrite (&n, sizeof (n), 1, stdout);
 			} else {
@@ -379,7 +379,7 @@ dotherax:
 		} else {
 			/* is 32 bit value */
 			ut32 n32 = (ut32) (n & UT32_MAX);
-			ut8 *np = (ut8 *) &n32;
+			ut8 *np = (ut8 *)&n32;
 			if (flags & 1) {
 				fwrite (&n32, sizeof (n32), 1, stdout);
 			} else {
@@ -399,14 +399,14 @@ dotherax:
 		char *ts = r_list_head (split)->data;
 		const char *gmt = NULL;
 		if (r_list_length (split) >= 2 && strlen (r_list_head (split)->n->data) > 2) {
-			gmt = (const char*) r_list_head (split)->n->data + 2;
+			gmt = (const char *)r_list_head (split)->n->data + 2;
 		}
 		ut32 n = r_num_math (num, ts);
 		RPrint *p = r_print_new ();
 		if (gmt) {
 			p->datezone = r_num_math (num, gmt);
 		}
-		r_print_date_unix (p, (const ut8 *) &n, sizeof (ut32));
+		r_print_date_unix (p, (const ut8 *)&n, sizeof (ut32));
 		r_print_free (p);
 		r_list_free (split);
 		return true;
@@ -415,7 +415,7 @@ dotherax:
 		/* http://stackoverflow.com/questions/4715415/base64-what-is-the-worst-possible-increase-in-space-usage */
 		char *out = calloc (1, (n + 2) / 3 * 4 + 1); // ceil(n/3)*4 plus 1 for NUL
 		if (out) {
-			r_base64_encode (out, (const ut8 *) str, n);
+			r_base64_encode (out, (const ut8 *)str, n);
 			printf ("%s%s", out, nl);
 			fflush (stdout);
 			free (out);
@@ -485,30 +485,30 @@ dotherax:
 		eprintf ("%s %.01lf %ff %lf\n",
 			out, num->fvalue, f, d);
 #endif
-				printf ("hex     0x%"PFMT64x"\n", n);
-				printf ("octal   0%"PFMT64o"\n", n);
-				printf ("unit    %s\n", unit);
-				printf ("segment %04x:%04x\n", s, a);
-				if (n >> 32) {
-					printf ("int64   %"PFMT64d"\n", (st64)n);
-				} else {
-					printf ("int32   %d\n", (st32)n);
-				}
-				if (asnum) {
-					printf ("string  \"%s\"\n", asnum);
-					free (asnum);
-				}
-				/* binary and floating point */
-				r_str_bits64 (out, n);
-				memcpy (&f, &n, sizeof (f));
-				memcpy (&d, &n, sizeof (d));
-				printf ("binary  0b%s\n", out);
-				printf ("float:  %ff\n", f);
-				printf ("double: %lf\n", d);
+		printf ("hex     0x%" PFMT64x "\n", n);
+		printf ("octal   0%" PFMT64o "\n", n);
+		printf ("unit    %s\n", unit);
+		printf ("segment %04x:%04x\n", s, a);
+		if (n >> 32) {
+			printf ("int64   %" PFMT64d "\n", (st64)n);
+		} else {
+			printf ("int32   %d\n", (st32)n);
+		}
+		if (asnum) {
+			printf ("string  \"%s\"\n", asnum);
+			free (asnum);
+		}
+		/* binary and floating point */
+		r_str_bits64 (out, n);
+		memcpy (&f, &n, sizeof (f));
+		memcpy (&d, &n, sizeof (d));
+		printf ("binary  0b%s\n", out);
+		printf ("float:  %ff\n", f);
+		printf ("double: %lf\n", d);
 
-				/* ternary */
-				r_num_to_trits (out, n);
-				printf ("trits   0t%s\n", out);
+		/* ternary */
+		r_num_to_trits (out, n);
+		printf ("trits   0t%s\n", out);
 
 		return true;
 	} else if (flags & (1 << 19)) { // -L
@@ -519,18 +519,18 @@ dotherax:
 		printf (start);
 		/* reasonable amount of bytes per line */
 		const int byte_per_col = 12;
-		for (i = 0; i < len-1; i++) {
+		for (i = 0; i < len - 1; i++) {
 			/* wrapping every N bytes */
 			if (i % byte_per_col == 0) {
 				printf ("\n  ");
 			}
-			printf ("0x%02x, ", (ut8) str[i]);
+			printf ("0x%02x, ", (ut8)str[i]);
 		}
 		/* some care for the last element */
 		if (i % byte_per_col == 0) {
-			printf("\n  ");
+			printf ("\n  ");
 		}
-		printf ("0x%02x\n", (ut8) str[len-1]);
+		printf ("0x%02x\n", (ut8)str[len - 1]);
 		printf ("};\n");
 		printf ("unsigned int buf_len = %d;\n", len);
 		return true;
@@ -558,13 +558,13 @@ dotherax:
 			printf ("%s", asnum);
 			free (asnum);
 		} else {
-			printf("No String Possible");
+			printf ("No String Possible");
 		}
 		return true;
 	}
 
-	if  (str[0] == '0' && (tolower (str[1]) == 'x')) {
-		out_mode = (flags & 32)? '0': 'I';
+	if (str[0] == '0' && (tolower (str[1]) == 'x')) {
+		out_mode = (flags & 32) ? '0' : 'I';
 	} else if (r_str_startswith (str, "b")) {
 		out_mode = 'B';
 		str++;
@@ -605,7 +605,7 @@ dotherax:
 	return true;
 }
 
-R_API int r_main_rax2(int argc, const char **argv) {
+R_API int r_main_rax2 (int argc, const char **argv) {
 	int i, fm = 0;
 	RNum *num = r_num_new (NULL, NULL, NULL);
 	if (argc == 1) {

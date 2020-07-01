@@ -13,7 +13,7 @@
 #define R_CS_EL_SIZE_LSYM 0x24
 #define R_CS_EL_SIZE_LINFO 0x14
 
-static RCoreSymCacheElementHdr *r_coresym_cache_element_header_new(RBuffer *buf, size_t off, int bits) {
+static RCoreSymCacheElementHdr *r_coresym_cache_element_header_new (RBuffer *buf, size_t off, int bits) {
 	RCoreSymCacheElementHdr *hdr = R_NEW0 (RCoreSymCacheElementHdr);
 	if (hdr && r_buf_fread_at (buf, off, (ut8 *)hdr, "13i16c5i", 1) == sizeof (RCoreSymCacheElementHdr)) {
 		return hdr;
@@ -22,45 +22,45 @@ static RCoreSymCacheElementHdr *r_coresym_cache_element_header_new(RBuffer *buf,
 	return NULL;
 }
 
-static void r_coresym_cache_element_segment_fini(RCoreSymCacheElementSegment *seg) {
+static void r_coresym_cache_element_segment_fini (RCoreSymCacheElementSegment *seg) {
 	if (seg) {
 		free (seg->name);
 	}
 }
 
-static void r_coresym_cache_element_section_fini(RCoreSymCacheElementSection *sec) {
+static void r_coresym_cache_element_section_fini (RCoreSymCacheElementSection *sec) {
 	if (sec) {
 		free (sec->name);
 	}
 }
 
-static void r_coresym_cache_element_flc_fini(RCoreSymCacheElementFLC *flc) {
+static void r_coresym_cache_element_flc_fini (RCoreSymCacheElementFLC *flc) {
 	if (flc) {
 		free (flc->file);
 	}
 }
 
-static void r_coresym_cache_element_symbol_fini(RCoreSymCacheElementSymbol *sym) {
+static void r_coresym_cache_element_symbol_fini (RCoreSymCacheElementSymbol *sym) {
 	if (sym) {
 		free (sym->name);
 		free (sym->mangled_name);
 	}
 }
 
-static void r_coresym_cache_element_lined_symbol_fini(RCoreSymCacheElementLinedSymbol *sym) {
+static void r_coresym_cache_element_lined_symbol_fini (RCoreSymCacheElementLinedSymbol *sym) {
 	if (sym) {
 		r_coresym_cache_element_symbol_fini (&sym->sym);
 		r_coresym_cache_element_flc_fini (&sym->flc);
 	}
 }
 
-static void r_coresym_cache_element_line_info_fini(RCoreSymCacheElementLineInfo *line) {
+static void r_coresym_cache_element_line_info_fini (RCoreSymCacheElementLineInfo *line) {
 	if (line) {
 		r_coresym_cache_element_flc_fini (&line->flc);
 	}
 }
 
-void r_coresym_cache_element_free(RCoreSymCacheElement *element) {
+void r_coresym_cache_element_free (RCoreSymCacheElement *element) {
 	if (!element) {
 		return;
 	}
@@ -101,7 +101,7 @@ void r_coresym_cache_element_free(RCoreSymCacheElement *element) {
 	free (element);
 }
 
-ut64 r_coresym_cache_element_pa2va(RCoreSymCacheElement *element, ut64 pa) {
+ut64 r_coresym_cache_element_pa2va (RCoreSymCacheElement *element, ut64 pa) {
 	size_t i;
 	for (i = 0; i < element->hdr->n_segments; i++) {
 		RCoreSymCacheElementSegment *seg = &element->segments[i];
@@ -115,7 +115,7 @@ ut64 r_coresym_cache_element_pa2va(RCoreSymCacheElement *element, ut64 pa) {
 	return pa;
 }
 
-static void meta_add_fileline(RBinFile *bf, ut64 vaddr, ut32 size, RCoreSymCacheElementFLC *flc) {
+static void meta_add_fileline (RBinFile *bf, ut64 vaddr, ut32 size, RCoreSymCacheElementFLC *flc) {
 	Sdb *s = bf->sdb_addrinfo;
 	if (!s) {
 		return;
@@ -136,7 +136,7 @@ static void meta_add_fileline(RBinFile *bf, ut64 vaddr, ut32 size, RCoreSymCache
 	free (fileline);
 }
 
-static char *str_dup_safe(const ut8 *b, const ut8 *str, const ut8 *end) {
+static char *str_dup_safe (const ut8 *b, const ut8 *str, const ut8 *end) {
 	if (str >= b && str < end) {
 		int len = r_str_nlen ((const char *)str, end - str);
 		if (len) {
@@ -146,7 +146,7 @@ static char *str_dup_safe(const ut8 *b, const ut8 *str, const ut8 *end) {
 	return NULL;
 }
 
-static char *str_dup_safe_fixed(const ut8 *b, const ut8 *str, ut64 len, const ut8 *end) {
+static char *str_dup_safe_fixed (const ut8 *b, const ut8 *str, ut64 len, const ut8 *end) {
 	if (str >= b && str + len < end) {
 		char *result = calloc (1, len + 1);
 		if (result) {
@@ -157,7 +157,7 @@ static char *str_dup_safe_fixed(const ut8 *b, const ut8 *str, ut64 len, const ut
 	return NULL;
 }
 
-RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut64 off, int bits) {
+RCoreSymCacheElement *r_coresym_cache_element_new (RBinFile *bf, RBuffer *buf, ut64 off, int bits) {
 	RCoreSymCacheElement *result = NULL;
 	ut8 *b = NULL;
 	RCoreSymCacheElementHdr *hdr = r_coresym_cache_element_header_new (buf, off, bits);
@@ -371,4 +371,3 @@ beach:
 	free (b);
 	return result;
 }
-

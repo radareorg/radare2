@@ -5,21 +5,21 @@
 #define DB anal->sdb_fcns
 
 // list of all the labels for a specific function
-#define LABELS sdb_fmt ("fcn.%"PFMT64x".labels", fcn->addr)
+#define LABELS sdb_fmt ("fcn.%" PFMT64x ".labels", fcn->addr)
 // value of each element in the labels list
-#define ADDRLABEL(x,y) sdb_fmt ("0x%"PFMT64x"/%s", x,y)
+#define ADDRLABEL(x, y) sdb_fmt ("0x%" PFMT64x "/%s", x, y)
 // resolve by name
-#define LABEL(x) sdb_fmt ("fcn.%"PFMT64x".label.%s", fcn->addr, x)
+#define LABEL(x) sdb_fmt ("fcn.%" PFMT64x ".label.%s", fcn->addr, x)
 // resolve by addr
-#define ADDR(x) sdb_fmt ("fcn.%"PFMT64x".label.0x%"PFMT64x, fcn->addr,x)
+#define ADDR(x) sdb_fmt ("fcn.%" PFMT64x ".label.0x%" PFMT64x, fcn->addr, x)
 // SDB looks like fcn.0x80480408.labels=0x8048480/patata,0x0405850/potro
 
 R_API ut64 r_anal_fcn_label_get (RAnal *anal, RAnalFunction *fcn, const char *name) {
-	return (anal && fcn)? sdb_num_get (DB, LABEL (name), NULL): UT64_MAX;
+	return (anal && fcn) ? sdb_num_get (DB, LABEL (name), NULL) : UT64_MAX;
 }
 
 R_API const char *r_anal_fcn_label_at (RAnal *anal, RAnalFunction *fcn, ut64 addr) {
-	return (anal && fcn)? sdb_const_get (DB, ADDR (addr), NULL): NULL;
+	return (anal && fcn) ? sdb_const_get (DB, ADDR (addr), NULL) : NULL;
 }
 
 R_API int r_anal_fcn_label_set (RAnal *anal, RAnalFunction *fcn, const char *name, ut64 addr) {
@@ -49,7 +49,7 @@ R_API int r_anal_fcn_label_del (RAnal *anal, RAnalFunction *fcn, const char *nam
 	return true;
 }
 
-R_API int r_anal_fcn_labels(RAnal *anal, RAnalFunction *fcn, int rad) {
+R_API int r_anal_fcn_labels (RAnal *anal, RAnalFunction *fcn, int rad) {
 	if (!anal) {
 		return 0;
 	}
@@ -70,14 +70,14 @@ R_API int r_anal_fcn_labels(RAnal *anal, RAnalFunction *fcn, int rad) {
 			switch (rad) {
 			case '*':
 			case 1:
-				anal->cb_printf ("f.%s@0x%08"PFMT64x"\n",
+				anal->cb_printf ("f.%s@0x%08" PFMT64x "\n",
 					loc.name, loc.addr);
 				break;
 			case 'j':
 				eprintf ("TODO\n");
 				break;
 			default:
-				anal->cb_printf ("0x%08"PFMT64x" %s   [%s + %"PFMT64d"]\n",
+				anal->cb_printf ("0x%08" PFMT64x " %s   [%s + %" PFMT64d "]\n",
 					loc.addr,
 					loc.name, fcn->name,
 					loc.addr - fcn->addr, loc.addr);

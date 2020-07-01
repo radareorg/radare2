@@ -58,16 +58,16 @@ static const char tartype[][32] = {
  *
  * Result is -1 if the field is invalid (all blank, or nonoctal).
  */
-#define	isodigit(c)	( ((c) >= '0') && ((c) <= '7') )
-static int from_oct(int digs, const char *where) {
+#define isodigit(c) (((c) >= '0') && ((c) <= '7'))
+static int from_oct (int digs, const char *where) {
 	int value = 0;
-	while (isspace ((ut8)*where)) {	/* Skip spaces */
+	while (isspace ((ut8)*where)) { /* Skip spaces */
 		where++;
 		if (--digs <= 0) {
 			return -1; /* All blank field */
 		}
 	}
-	while (digs > 0 && isodigit(*where)) {	/* Scan til nonoctal */
+	while (digs > 0 && isodigit (*where)) { /* Scan til nonoctal */
 		value = (value << 3) | (*where++ - '0');
 		--digs;
 	}
@@ -84,7 +84,7 @@ static int from_oct(int digs, const char *where) {
  *	2 for Unix Std (POSIX) tar file,
  *	3 for GNU tar file.
  */
-static int is_tar(const ut8 *buf, size_t nbytes) {
+static int is_tar (const ut8 *buf, size_t nbytes) {
 	const union record *header = (const union record *)(const void *)buf;
 	int i, sum, recsum;
 	const char *p;
@@ -97,7 +97,7 @@ static int is_tar(const ut8 *buf, size_t nbytes) {
 
 	sum = 0;
 	p = header->charptr;
-	for (i = sizeof(union record); --i >= 0;) {
+	for (i = sizeof (union record); --i >= 0;) {
 		/*
 		 * We cannot use ut8 here because of old compilers,
 		 * e.g. V7.
@@ -119,15 +119,15 @@ static int is_tar(const ut8 *buf, size_t nbytes) {
 	if (strcmp (header->header.magic, TMAGIC) == 0) {
 		return 2; /* Unix Standard tar archive */
 	}
-	return 1;			/* Old fashioned tar archive */
+	return 1; /* Old fashioned tar archive */
 }
 
-int file_is_tar(RMagic *ms, const ut8 *buf, size_t nbytes) {
+int file_is_tar (RMagic *ms, const ut8 *buf, size_t nbytes) {
 	/*
 	 * Do the tar test first, because if the first file in the tar
 	 * archive starts with a dot, we can confuse it with an nroff file.
 	 */
-	int tar = is_tar(buf, nbytes);
+	int tar = is_tar (buf, nbytes);
 	int mime = ms->flags & R_MAGIC_MIME;
 
 	if (tar < 1 || tar > 3) {

@@ -6,17 +6,17 @@
 extern io_backend_t iob_pipe;
 
 static io_backend_t *io_backends[] = {
-// #if __WINDOWS__
-// #warning TODO: add proper IO backend for windows here
-// #else
+	// #if __WINDOWS__
+	// #warning TODO: add proper IO backend for windows here
+	// #else
 	&iob_pipe,
-// #endif
+	// #endif
 	NULL,
 };
 
 static io_backend_t *sel_backend = &iob_pipe;
 
-int iob_select(const char *name) {
+int iob_select (const char *name) {
 	io_backend_t *iob;
 
 	iob = io_backends[0];
@@ -38,28 +38,28 @@ int iob_select(const char *name) {
 	return 1;
 }
 
-void *iob_open(const char *path) {
+void *iob_open (const char *path) {
 	if (!sel_backend) {
 		return NULL;
 	}
 	return sel_backend->open (path);
 }
 
-int iob_close(void *fp) {
+int iob_close (void *fp) {
 	if (!sel_backend) {
 		return E_NOIF;
 	}
 	return sel_backend->close (fp);
 }
 
-int iob_config(void *fp, void *cfg) {
+int iob_config (void *fp, void *cfg) {
 	if (!sel_backend) {
 		return E_NOIF;
 	}
 	return sel_backend->config (fp, cfg);
 }
 
-int iob_write(void *fp, const uint8_t *buf, const uint32_t buf_len) {
+int iob_write (void *fp, const uint8_t *buf, const uint32_t buf_len) {
 	uint32_t done;
 	static RThreadLock *lock = NULL;
 	if (!lock) {
@@ -80,7 +80,7 @@ int iob_write(void *fp, const uint8_t *buf, const uint32_t buf_len) {
 	return done;
 }
 
-int iob_read(void *fp, uint8_t *buf, const uint32_t buf_len) {
+int iob_read (void *fp, uint8_t *buf, const uint32_t buf_len) {
 	uint32_t done;
 	static RThreadLock *lock = NULL;
 	if (!lock) {

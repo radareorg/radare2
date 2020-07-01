@@ -11,10 +11,10 @@ struct pyc_version {
 	char *revision;
 };
 
-struct pyc_version get_pyc_version(ut32 magic);
+struct pyc_version get_pyc_version (ut32 magic);
 
-double version2double(const char *version);
+double version2double (const char *version);
 
-bool magic_int_within(ut32 target_magic, ut32 lower, ut32 uppper, bool *error);
+bool magic_int_within (ut32 target_magic, ut32 lower, ut32 uppper, bool *error);
 
 #endif

@@ -7,7 +7,7 @@
 #define USE_R2 1
 #include <spp/spp.h>
 
-static bool is_valid_project_name(const char *name) {
+static bool is_valid_project_name (const char *name) {
 	int i;
 	if (r_str_endswith (name, ".zip")) {
 		return false;
@@ -35,7 +35,7 @@ static bool is_valid_project_name(const char *name) {
 	return true;
 }
 
-static char *projectScriptPath(RCore *core, const char *file) {
+static char *projectScriptPath (RCore *core, const char *file) {
 	const char *magic = "# r2 rdb project file";
 	char *data, *prjfile;
 	if (r_file_is_abspath (file)) {
@@ -61,7 +61,7 @@ static char *projectScriptPath(RCore *core, const char *file) {
 	return prjfile;
 }
 
-static int projectInit(RCore *core) {
+static int projectInit (RCore *core) {
 	char *prjdir = r_file_abspath (r_config_get (core->config, "dir.projects"));
 	int ret = r_sys_mkdirp (prjdir);
 	if (!ret) {
@@ -71,7 +71,7 @@ static int projectInit(RCore *core) {
 	return ret;
 }
 
-R_API bool r_core_is_project(RCore *core, const char *name) {
+R_API bool r_core_is_project (RCore *core, const char *name) {
 	bool ret = false;
 	if (name && *name && *name != '.') {
 		char *path = projectScriptPath (core, name);
@@ -91,7 +91,7 @@ R_API bool r_core_is_project(RCore *core, const char *name) {
 	return ret;
 }
 
-R_API int r_core_project_cat(RCore *core, const char *name) {
+R_API int r_core_project_cat (RCore *core, const char *name) {
 	char *path = projectScriptPath (core, name);
 	if (path) {
 		char *data = r_file_slurp (path, NULL);
@@ -104,7 +104,7 @@ R_API int r_core_project_cat(RCore *core, const char *name) {
 	return 0;
 }
 
-R_API int r_core_project_list(RCore *core, int mode) {
+R_API int r_core_project_list (RCore *core, int mode) {
 	PJ *pj = NULL;
 	RListIter *iter;
 	RList *list;
@@ -144,7 +144,7 @@ R_API int r_core_project_list(RCore *core, int mode) {
 	return 0;
 }
 
-R_API int r_core_project_delete(RCore *core, const char *prjfile) {
+R_API int r_core_project_delete (RCore *core, const char *prjfile) {
 	if (r_sandbox_enable (0)) {
 		eprintf ("Cannot delete project in sandbox mode\n");
 		return 0;
@@ -173,7 +173,7 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 			r_file_rm (notes_txt);
 			eprintf ("rm %s\n", notes_txt);
 		}
-		free(notes_txt);
+		free (notes_txt);
 
 		char *rop_d = r_str_newf ("%s%s%s", prjDir, R_SYS_DIR, "rop.d");
 
@@ -203,7 +203,7 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 	return 0;
 }
 
-static bool projectLoadRop(RCore *core, const char *prjfile) {
+static bool projectLoadRop (RCore *core, const char *prjfile) {
 	char *path, *db = NULL, *path_ns;
 	bool found = 0;
 	SdbListIter *it;
@@ -256,7 +256,7 @@ static bool projectLoadRop(RCore *core, const char *prjfile) {
 		return false;
 	}
 	if (rop_db) {
-		ls_foreach (core->sdb->ns, it, ns){
+		ls_foreach (core->sdb->ns, it, ns) {
 			if (ns->sdb == rop_db) {
 				ls_delete (core->sdb->ns, it);
 				found = true;
@@ -304,7 +304,7 @@ static bool projectLoadRop(RCore *core, const char *prjfile) {
 	return true;
 }
 
-R_API void r_core_project_execute_cmds(RCore *core, const char *prjfile) {
+R_API void r_core_project_execute_cmds (RCore *core, const char *prjfile) {
 	char *str = r_core_project_notes_file (core, prjfile);
 	char *data = r_file_slurp (str, NULL);
 	if (!data) {
@@ -339,7 +339,7 @@ typedef struct {
 	char *rcPath;
 } ProjectState;
 
-static RThreadFunctionRet projectLoadBackground(RThread *th) {
+static RThreadFunctionRet projectLoadBackground (RThread *th) {
 	ProjectState *ps = th->user;
 	r_core_project_load (ps->core, ps->prjName, ps->rcPath);
 	free (ps->prjName);
@@ -348,7 +348,7 @@ static RThreadFunctionRet projectLoadBackground(RThread *th) {
 	return R_TH_STOP;
 }
 
-R_API RThread *r_core_project_load_bg(RCore *core, const char *prjName, const char *rcPath) {
+R_API RThread *r_core_project_load_bg (RCore *core, const char *prjName, const char *rcPath) {
 	ProjectState *ps = R_NEW (ProjectState);
 	ps->core = core;
 	ps->prjName = strdup (prjName);
@@ -356,8 +356,8 @@ R_API RThread *r_core_project_load_bg(RCore *core, const char *prjName, const ch
 	RThread *th = r_th_new (projectLoadBackground, ps, false);
 	if (th) {
 		r_th_start (th, true);
-		char thname[16] = {0};
-		size_t thlen = R_MIN (strlen(prjName), sizeof(thname) - 1);
+		char thname[16] = { 0 };
+		size_t thlen = R_MIN (strlen (prjName), sizeof (thname) - 1);
 		strncpy (thname, prjName, thlen);
 		thname[15] = 0;
 		r_th_setname (th, thname);
@@ -367,12 +367,12 @@ R_API RThread *r_core_project_load_bg(RCore *core, const char *prjName, const ch
 
 /*** ^^^ thready ***/
 
-static ut64 getProjectLaddr(RCore *core, const char *prjfile) {
+static ut64 getProjectLaddr (RCore *core, const char *prjfile) {
 	ut64 laddr = 0;
 	char *buf = r_file_slurp (prjfile, NULL);
 	char *pos;
 	if (buf) {
-		if ((pos = strstr(buf, "\"e bin.laddr = "))) {
+		if ((pos = strstr (buf, "\"e bin.laddr = "))) {
 			laddr = r_num_math (NULL, pos + 15);
 		}
 		free (buf);
@@ -380,7 +380,7 @@ static ut64 getProjectLaddr(RCore *core, const char *prjfile) {
 	return laddr;
 }
 
-R_API bool r_core_project_open(RCore *core, const char *prjfile, bool thready) {
+R_API bool r_core_project_open (RCore *core, const char *prjfile, bool thready) {
 	bool askuser = true;
 	int ret, close_current_session = 1;
 	char *oldbin;
@@ -419,8 +419,7 @@ R_API bool r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 			return false;
 		}
 	}
- cookiefactory:
-	;
+cookiefactory:;
 	const char *file_path = r_config_get (core->config, "file.path");
 	if (!file_path || !*file_path) {
 		file_path = r_config_get (core->config, "file.lastpath");
@@ -464,7 +463,7 @@ R_API bool r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 	}
 	if (filepath[0] && close_current_session && r_config_get_i (core->config, "file.info")) {
 		mapaddr = r_config_get_i (core->config, "file.offset");
-		(void)r_core_bin_load (core, filepath, mapaddr? mapaddr: UT64_MAX);
+		(void)r_core_bin_load (core, filepath, mapaddr ? mapaddr : UT64_MAX);
 	}
 	/* load sdb stuff in here */
 	ret = r_core_project_load (core, prjfile, prj);
@@ -484,7 +483,7 @@ beach:
 	return ret;
 }
 
-R_API char *r_core_project_info(RCore *core, const char *prjfile) {
+R_API char *r_core_project_info (RCore *core, const char *prjfile) {
 	FILE *fd;
 	char buf[256], *file = NULL;
 	char *prj = projectScriptPath (core, prjfile);
@@ -532,7 +531,7 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 	return file;
 }
 
-static int fdc;		//this is a ugly, remove it, when we have $fd
+static int fdc; //this is a ugly, remove it, when we have $fd
 
 static bool store_files_and_maps (RCore *core, RIODesc *desc, ut32 id) {
 	RList *maps = NULL;
@@ -544,7 +543,7 @@ static bool store_files_and_maps (RCore *core, RIODesc *desc, ut32 id) {
 		r_cons_printf ("\"ofs \\\"%s\\\" %s\"\n", desc->uri, r_str_rwx_i (desc->perm));
 		if ((maps = r_io_map_get_for_fd (core->io, id))) {
 			r_list_foreach (maps, iter, map) {
-				r_cons_printf ("om %d 0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x" %s%s%s\n", fdc,
+				r_cons_printf ("om %d 0x%" PFMT64x " 0x%" PFMT64x " 0x%" PFMT64x " %s%s%s\n", fdc,
 					map->itv.addr, map->itv.size, map->delta, r_str_rwx_i (map->perm),
 					map->name ? " " : "", map->name ? map->name : "");
 			}
@@ -555,11 +554,11 @@ static bool store_files_and_maps (RCore *core, RIODesc *desc, ut32 id) {
 	return true;
 }
 
-static bool simpleProjectSaveScript(RCore *core, const char *file, int opts) {
+static bool simpleProjectSaveScript (RCore *core, const char *file, int opts) {
 	char *filename, *hl, *ohl = NULL;
 	int fd, fdold;
 
-	if (!file || * file == '\0') {
+	if (!file || *file == '\0') {
 		return false;
 	}
 
@@ -613,7 +612,6 @@ static bool simpleProjectSaveScript(RCore *core, const char *file, int opts) {
 		r_cons_flush ();
 	}
 
-
 	r_cons_singleton ()->fdout = fdold;
 	r_cons_singleton ()->context->is_interactive = true;
 
@@ -628,7 +626,7 @@ static bool simpleProjectSaveScript(RCore *core, const char *file, int opts) {
 	return true;
 }
 
-static bool projectSaveScript(RCore *core, const char *file, int opts) {
+static bool projectSaveScript (RCore *core, const char *file, int opts) {
 	char *filename, *hl, *ohl = NULL;
 	int fd, fdold;
 
@@ -723,7 +721,8 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 	}
 	if (opts & R_CORE_PRJ_ANAL_SEEK) {
 		r_cons_printf ("# seek\n"
-			"s 0x%08"PFMT64x "\n", core->offset);
+			       "s 0x%08" PFMT64x "\n",
+			core->offset);
 		r_cons_flush ();
 	}
 
@@ -742,13 +741,13 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 }
 
 // TODO: rename to r_core_project_save_script
-R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
+R_API bool r_core_project_save_rdb (RCore *core, const char *file, int opts) {
 	return projectSaveScript (core, file, opts);
 }
 
 #define TRANSITION 1
 
-R_API bool r_core_project_save(RCore *core, const char *prjName) {
+R_API bool r_core_project_save (RCore *core, const char *prjName) {
 	bool scr_null = false;
 	bool ret = true;
 	char *scriptPath, *prjDir;
@@ -893,20 +892,20 @@ R_API bool r_core_project_save(RCore *core, const char *prjName) {
 	return ret;
 }
 
-R_API char *r_core_project_notes_file(RCore *core, const char *prjName) {
+R_API char *r_core_project_notes_file (RCore *core, const char *prjName) {
 	char *notes_txt;
 	const char *prjdir = r_config_get (core->config, "dir.projects");
 	char *prjpath = r_file_abspath (prjdir);
-	notes_txt = r_str_newf ("%s"R_SYS_DIR "%s"R_SYS_DIR "notes.txt", prjpath, prjName);
+	notes_txt = r_str_newf ("%s" R_SYS_DIR "%s" R_SYS_DIR "notes.txt", prjpath, prjName);
 	free (prjpath);
 	return notes_txt;
 }
 
-R_API bool r_core_project_load(RCore *core, const char *prjName, const char *rcpath) {
+R_API bool r_core_project_load (RCore *core, const char *prjName, const char *rcpath) {
 	const bool cfg_fortunes = r_config_get_i (core->config, "cfg.fortunes");
 	const bool scr_interactive = r_cons_is_interactive ();
 	const bool scr_prompt = r_config_get_i (core->config, "scr.prompt");
-	(void) projectLoadRop (core, prjName);
+	(void)projectLoadRop (core, prjName);
 	bool ret = r_core_cmd_file (core, rcpath);
 	r_config_set_i (core->config, "cfg.fortunes", cfg_fortunes);
 	r_config_set_i (core->config, "scr.interactive", scr_interactive);

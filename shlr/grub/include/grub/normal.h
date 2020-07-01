@@ -18,7 +18,7 @@
  */
 
 #ifndef GRUB_NORMAL_HEADER
-#define GRUB_NORMAL_HEADER	1
+#define GRUB_NORMAL_HEADER 1
 
 extern int grub_normal_exit_level;
 

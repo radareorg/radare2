@@ -14,7 +14,7 @@ Parses a single field of the key, beginning at start.  Each field
 consists of a type, a length, and a value.  Puts the type of field
 into type, the number of bytes into len, and returns a pointer to
 the beginning of the value. */
-static const ut8 *parse_next_field(const ut8 *start, ut32 *len) {
+static const ut8 *parse_next_field (const ut8 *start, ut32 *len) {
 	*len = 0;
 	if (!(start[1] & 0x80)) {
 		*len = (ut32)start[1];
@@ -32,7 +32,7 @@ static const ut8 *parse_next_field(const ut8 *start, ut32 *len) {
 /* Check if `start` points to an ensemble of BER fields
 with the format as a private key syntax. We check only the first 
 three fields of the key */
-static int check_fields(const ut8 *start) {
+static int check_fields (const ut8 *start) {
 #define KEY_MAX_LEN 26000
 	ut32 field_len = 0;
 	// Sequence field
@@ -57,9 +57,9 @@ static int check_fields(const ut8 *start) {
 }
 
 // Finds and return index of a private key:
-// As defined in RFC 3447 for RSA, as defined in RFC 5915 for 
+// As defined in RFC 3447 for RSA, as defined in RFC 5915 for
 // elliptic curves and as defined in 7 of RFC 8410 for SafeCurves
-R_API int r_search_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
+R_API int r_search_privkey_update (RSearch *s, ut64 from, const ut8 *buf, int len) {
 	int i, k, max, index;
 	RListIter *iter;
 	RSearchKeyword *kw;
@@ -72,9 +72,9 @@ R_API int r_search_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len
 	}
 	r_list_foreach (s->kws, iter, kw) {
 		for (i = 2; i < len - sizeof (rsa_versionmarker); i++) {
-			if (memcmp (&buf[i], rsa_versionmarker, sizeof (rsa_versionmarker)) && 
-			memcmp (&buf[i], ecc_versionmarker, sizeof (ecc_versionmarker)) &&
-			memcmp (&buf[i], safecurves_versionmarker, sizeof (safecurves_versionmarker))) {
+			if (memcmp (&buf[i], rsa_versionmarker, sizeof (rsa_versionmarker)) &&
+				memcmp (&buf[i], ecc_versionmarker, sizeof (ecc_versionmarker)) &&
+				memcmp (&buf[i], safecurves_versionmarker, sizeof (safecurves_versionmarker))) {
 				continue;
 			}
 
@@ -97,7 +97,7 @@ R_API int r_search_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len
 			}
 
 			if (check_fields (buf + index)) {
-				parse_next_field(buf + index, &kw->keyword_length);
+				parse_next_field (buf + index, &kw->keyword_length);
 				return r_search_hit_new (s, kw, from + index);
 			}
 		}

@@ -252,7 +252,7 @@ void __free_window (void *ptr) {
 	free (win);
 }
 
-static window *__window_from_handle(HANDLE hwnd) {
+static window *__window_from_handle (HANDLE hwnd) {
 	r_return_val_if_fail (hwnd, NULL);
 	window *win = R_NEW0 (window);
 	if (!win) {
@@ -276,7 +276,7 @@ static window *__window_from_handle(HANDLE hwnd) {
 	return win;
 }
 
-static RTable *__create_window_table(void) {
+static RTable *__create_window_table (void) {
 	RTable *tbl = r_table_new ();
 	if (!tbl) {
 		return NULL;
@@ -288,9 +288,9 @@ static RTable *__create_window_table(void) {
 	return tbl;
 }
 
-static void __add_window_to_table(RTable *tbl, window *win) {
+static void __add_window_to_table (RTable *tbl, window *win) {
 	r_return_if_fail (tbl && win);
-	char *handle = r_str_newf ("0x%08"PFMT64x"", win->h);
+	char *handle = r_str_newf ("0x%08" PFMT64x "", win->h);
 	char *pid = r_str_newf ("%lu", win->pid);
 	char *tid = r_str_newf ("%lu", win->tid);
 	r_table_add_row (tbl, handle, pid, tid, win->name, NULL);
@@ -299,8 +299,9 @@ static void __add_window_to_table(RTable *tbl, window *win) {
 	free (pid);
 }
 
-R_API void r_w32_identify_window(void) {
-	while (!r_cons_yesno ('y', "Move cursor to the window to be identified. Ready?"));
+R_API void r_w32_identify_window (void) {
+	while (!r_cons_yesno ('y', "Move cursor to the window to be identified. Ready?"))
+		;
 	POINT p;
 	GetCursorPos (&p);
 	HANDLE hwnd = WindowFromPoint (p);
@@ -316,7 +317,7 @@ R_API void r_w32_identify_window(void) {
 		return;
 	}
 	if (!win) {
-		eprintf ("Error trying to get information from 0x%08"PFMT64x"\n", (ut64)hwnd);
+		eprintf ("Error trying to get information from 0x%08" PFMT64x "\n", (ut64)hwnd);
 		return;
 	}
 	RTable *tbl = __create_window_table ();
@@ -330,10 +331,9 @@ R_API void r_w32_identify_window(void) {
 	r_table_free (tbl);
 }
 
-static BOOL CALLBACK __enum_childs(
-	_In_ HWND   hwnd,
-	_In_ LPARAM lParam
-) {
+static BOOL CALLBACK __enum_childs (
+	_In_ HWND hwnd,
+	_In_ LPARAM lParam) {
 	RList *windows = (RList *)lParam;
 	window *win = __window_from_handle (hwnd);
 	if (!win) {
@@ -343,7 +343,7 @@ static BOOL CALLBACK __enum_childs(
 	return true;
 }
 
-static RList *__get_windows(RDebug *dbg) {
+static RList *__get_windows (RDebug *dbg) {
 	RList *windows = r_list_newf ((RListFree)__free_window);
 	HWND hCurWnd = NULL;
 	do {
@@ -363,7 +363,7 @@ static RList *__get_windows(RDebug *dbg) {
 	return windows;
 }
 
-static ut64 __get_dispatchmessage_offset(RDebug *dbg) {
+static ut64 __get_dispatchmessage_offset (RDebug *dbg) {
 	RList *modlist = r_debug_modules_list (dbg);
 	RListIter *it;
 	RDebugMap *mod;
@@ -384,7 +384,7 @@ static ut64 __get_dispatchmessage_offset(RDebug *dbg) {
 	}
 	char *line = strtok (res, "\n");
 	ut64 offset = 0;
-	do  {
+	do {
 		char *sym = strrchr (line, ' ');
 		if (sym && r_str_startswith (sym + 1, "sym.imp")) {
 			offset = r_num_math (NULL, line);
@@ -396,7 +396,7 @@ static ut64 __get_dispatchmessage_offset(RDebug *dbg) {
 	return offset;
 }
 
-static void __init_msg_types(Sdb **msg_types) {
+static void __init_msg_types (Sdb **msg_types) {
 	*msg_types = sdb_new0 ();
 	int i;
 	char *cur_type;
@@ -405,7 +405,7 @@ static void __init_msg_types(Sdb **msg_types) {
 	}
 }
 
-static DWORD __get_msg_type(char *name) {
+static DWORD __get_msg_type (char *name) {
 	static Sdb *msg_types = NULL;
 	if (!msg_types) {
 		__init_msg_types (&msg_types);
@@ -419,7 +419,7 @@ static DWORD __get_msg_type(char *name) {
 	return 0;
 }
 
-static void __print_windows(RDebug *dbg, RList *windows) {
+static void __print_windows (RDebug *dbg, RList *windows) {
 	RTable *tbl = __create_window_table ();
 	if (!tbl) {
 		return;
@@ -435,7 +435,7 @@ static void __print_windows(RDebug *dbg, RList *windows) {
 	r_table_free (tbl);
 }
 
-R_API void r_w32_print_windows(RDebug *dbg) {
+R_API void r_w32_print_windows (RDebug *dbg) {
 	RList *windows = __get_windows (dbg);
 	if (windows) {
 		if (!windows->length) {
@@ -447,7 +447,7 @@ R_API void r_w32_print_windows(RDebug *dbg) {
 	r_list_free (windows);
 }
 
-R_API bool r_w32_add_winmsg_breakpoint(RDebug *dbg, const char *input) {
+R_API bool r_w32_add_winmsg_breakpoint (RDebug *dbg, const char *input) {
 	r_return_val_if_fail (dbg && input, false);
 	char *name = strdup (input);
 	r_str_trim (name);
@@ -501,7 +501,7 @@ R_API bool r_w32_add_winmsg_breakpoint(RDebug *dbg, const char *input) {
 		}
 		cond = r_str_newf ("?= `ae %d,%s,%d,+,[4],-`", type, reg, dbg->bits);
 	}
-	dbg->corebind.cmdf (dbg->corebind.core, "\"dbC 0x%"PFMT64x" %s\"", offset, cond);
+	dbg->corebind.cmdf (dbg->corebind.core, "\"dbC 0x%" PFMT64x " %s\"", offset, cond);
 	free (name);
 	return true;
 }

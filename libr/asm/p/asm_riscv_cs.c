@@ -9,9 +9,9 @@
 static csh cd = 0;
 #include "cs_mnemonics.c"
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	cs_insn* insn;
-	int mode = (a->bits == 64)? CS_MODE_RISCV64 : CS_MODE_RISCV32;
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	cs_insn *insn;
+	int mode = (a->bits == 64) ? CS_MODE_RISCV64 : CS_MODE_RISCV32;
 	op->size = 4;
 	if (cd != 0) {
 		cs_close (&cd);
@@ -28,7 +28,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 #endif
-	int n = cs_disasm (cd, (ut8*)buf, len, a->pc, 1, &insn);
+	int n = cs_disasm (cd, (ut8 *)buf, len, a->pc, 1, &insn);
 	if (n < 1) {
 		r_asm_op_set_asm (op, "invalid");
 		op->size = 2;
@@ -38,7 +38,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		goto beach;
 	}
 	op->size = insn->size;
-	char *str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
+	char *str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
 	if (str) {
 		r_str_replace_char (str, '$', 0);
 		// remove the '$'<registername> in the string
@@ -58,7 +58,7 @@ RAsmPlugin r_asm_plugin_riscv_cs = {
 	.license = "BSD",
 	.arch = "riscv",
 	.cpus = "",
-	.bits = 32|64,
+	.bits = 32 | 64,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
 	.mnemonics = mnemonics,

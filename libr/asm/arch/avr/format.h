@@ -22,7 +22,7 @@
  *  regard to the several formatting features this disasssembler supports.
  *
  */
- 
+
 #include "avr_disasm.h"
 #include "errorcodes.h"
 
@@ -33,16 +33,16 @@
  * In order to keep the disassembler as straightforward as possible,
  * but still have some fundamental formatting options, I decided to hardcode
  * the operand prefixes. Feel free to change them here.  */
-#define OPERAND_PREFIX_REGISTER			"r"	/* i.e. mov R0, R2 */
-#define OPERAND_PREFIX_DATA_HEX			"0x"	/* i.e. ldi R16, 0x3D */
-#define OPERAND_PREFIX_DATA_BIN			"0b"	/* i.e. ldi R16, 0b00111101 */
-#define OPERAND_PREFIX_DATA_DEC			""	/* i.e. ldi R16, 61  */
-#define OPERAND_PREFIX_BIT			"" 	/* i.e. bset 7 */
-#define OPERAND_PREFIX_IO_REGISTER		"0x"	/* i.e. out $39, R16 */
-#define OPERAND_PREFIX_ABSOLUTE_ADDRESS 	"0x"	/* i.e. call 0x23 */
-#define OPERAND_PREFIX_BRANCH_ADDRESS 		"."	/* i.e. rcall .+4 */
-#define OPERAND_PREFIX_DES_ROUND		"0x"	/* i.e. des 0x01 */
-#define OPERAND_PREFIX_WORD_DATA		"0x"	/* i.e. .DW 0x1234 */
+#define OPERAND_PREFIX_REGISTER "r" /* i.e. mov R0, R2 */
+#define OPERAND_PREFIX_DATA_HEX "0x" /* i.e. ldi R16, 0x3D */
+#define OPERAND_PREFIX_DATA_BIN "0b" /* i.e. ldi R16, 0b00111101 */
+#define OPERAND_PREFIX_DATA_DEC "" /* i.e. ldi R16, 61  */
+#define OPERAND_PREFIX_BIT "" /* i.e. bset 7 */
+#define OPERAND_PREFIX_IO_REGISTER "0x" /* i.e. out $39, R16 */
+#define OPERAND_PREFIX_ABSOLUTE_ADDRESS "0x" /* i.e. call 0x23 */
+#define OPERAND_PREFIX_BRANCH_ADDRESS "." /* i.e. rcall .+4 */
+#define OPERAND_PREFIX_DES_ROUND "0x" /* i.e. des 0x01 */
+#define OPERAND_PREFIX_WORD_DATA "0x" /* i.e. .DW 0x1234 */
 
 /* Enumeration for different types of formatting options supported by this disassembler. */
 /* Formatting Options Toggle Bits:
@@ -78,9 +78,8 @@ struct _formattingOptions {
 };
 typedef struct _formattingOptions formattingOptions;
 
-
 /* Prints a disassembled instruction, formatted with options set in the formattingOptions structure. */
-static int printDisassembledInstruction(char *out, const disassembledInstruction dInstruction, formattingOptions fOptions);
+static int printDisassembledInstruction (char *out, const disassembledInstruction dInstruction, formattingOptions fOptions);
 #ifdef _MSC_VER
 extern uint32_t AVR_Long_Address;
 extern int AVR_Long_Instruction;

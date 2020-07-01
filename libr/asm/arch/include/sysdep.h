@@ -19,7 +19,6 @@
    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
 
-
 /* Do system-dependent stuff, mainly driven by autoconf-detected info.
 
    Well, some generic common stuff is done here too, like including

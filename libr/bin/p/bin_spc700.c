@@ -4,7 +4,7 @@
 #include <r_lib.h>
 #include "../format/spc700/spc_specs.h"
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	ut8 buf[27];
 	if (r_buf_read_at (b, 0, buf, sizeof (buf)) == 27) {
 		return !memcmp (buf, SPC_MAGIC, 27);
@@ -12,15 +12,15 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (b);
 }
 
-static RBinInfo* info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	RBinInfo *ret = NULL;
 	spc_hdr spchdr;
 	memset (&spchdr, 0, SPC_HDR_SIZE);
-	int reat = r_buf_read_at (bf->buf, 0, (ut8*)&spchdr, SPC_HDR_SIZE);
+	int reat = r_buf_read_at (bf->buf, 0, (ut8 *)&spchdr, SPC_HDR_SIZE);
 	if (reat != SPC_HDR_SIZE) {
 		eprintf ("Truncated Header\n");
 		return NULL;
@@ -38,12 +38,12 @@ static RBinInfo* info(RBinFile *bf) {
 	return ret;
 }
 
-static RList* sections(RBinFile *bf) {
+static RList *sections (RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	spc_hdr spchdr;
 	memset (&spchdr, 0, SPC_HDR_SIZE);
-	int reat = r_buf_read_at (bf->buf, 0, (ut8*)&spchdr, SPC_HDR_SIZE);
+	int reat = r_buf_read_at (bf->buf, 0, (ut8 *)&spchdr, SPC_HDR_SIZE);
 	if (reat != SPC_HDR_SIZE) {
 		eprintf ("Truncated Header\n");
 		return NULL;
@@ -66,7 +66,7 @@ static RList* sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList* entries(RBinFile *bf) {
+static RList *entries (RBinFile *bf) {
 	RList *ret = r_list_newf (free);
 	if (ret) {
 		RBinAddr *ptr = R_NEW0 (RBinAddr);

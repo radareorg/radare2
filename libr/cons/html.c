@@ -2,7 +2,7 @@
 
 #include <r_cons.h>
 
-static const char *gethtmlrgb(const char *str) {
+static const char *gethtmlrgb (const char *str) {
 	ut8 r = 0, g = 0, b = 0;
 	if (r_cons_rgb_parse (str, &r, &g, &b, 0)) {
 		static char buf[32];
@@ -12,7 +12,7 @@ static const char *gethtmlrgb(const char *str) {
 	return "";
 }
 
-static const char *gethtmlcolor(const char ptrch, const char *def) {
+static const char *gethtmlcolor (const char ptrch, const char *def) {
 	switch (ptrch) {
 	case '0': return "#000"; // BLACK
 	case '1': return "#f00"; // RED
@@ -29,7 +29,7 @@ static const char *gethtmlcolor(const char ptrch, const char *def) {
 }
 
 // TODO: move into r_util/str
-R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
+R_API char *r_cons_html_filter (const char *ptr, int *newlen) {
 	const char *str = ptr;
 	int esc = 0;
 	int len = 0;
@@ -45,7 +45,7 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 	}
 	for (; ptr[0]; ptr = ptr + 1) {
 		if (ptr[0] == '\n') {
-			tmp = (int) (size_t) (ptr - str);
+			tmp = (int)(size_t) (ptr - str);
 			r_strbuf_append_n (res, str, tmp);
 			if (!ptr[1]) {
 				// write new line if it's the end of the output
@@ -56,19 +56,19 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 			str = ptr + 1;
 			continue;
 		} else if (ptr[0] == '<') {
-			tmp = (int) (size_t) (ptr - str);
+			tmp = (int)(size_t) (ptr - str);
 			r_strbuf_append_n (res, str, tmp);
 			r_strbuf_append (res, "&lt;");
 			str = ptr + 1;
 			continue;
 		} else if (ptr[0] == '>') {
-			tmp = (int) (size_t) (ptr - str);
+			tmp = (int)(size_t) (ptr - str);
 			r_strbuf_append_n (res, str, tmp);
 			r_strbuf_append (res, "&gt;");
 			str = ptr + 1;
 			continue;
 		} else if (ptr[0] == ' ') {
-			tmp = (int) (size_t) (ptr - str);
+			tmp = (int)(size_t) (ptr - str);
 			r_strbuf_append_n (res, str, tmp);
 			r_strbuf_append (res, "&nbsp;");
 			str = ptr + 1;
@@ -76,7 +76,7 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 		}
 		if (ptr[0] == 0x1b) {
 			esc = 1;
-			tmp = (int) (size_t) (ptr - str);
+			tmp = (int)(size_t) (ptr - str);
 			r_strbuf_append_n (res, str, tmp);
 			if (tag_font) {
 				r_strbuf_append (res, "</font>");
@@ -145,7 +145,7 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 				continue;
 				// reset color
 			} else if (ptr[0] == '3' && ptr[2] == 'm') {
-				const char *htmlColor = gethtmlcolor (ptr[1], inv? "#fff":NULL);
+				const char *htmlColor = gethtmlcolor (ptr[1], inv ? "#fff" : NULL);
 				if (htmlColor) {
 					r_strbuf_appendf (res, "<font color='%s'>", htmlColor);
 				}
@@ -155,7 +155,7 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 				esc = 0;
 				continue;
 			} else if (ptr[0] == '4' && ptr[2] == 'm') {
-				const char *htmlColor = gethtmlcolor (ptr[1], inv? "#000":NULL);
+				const char *htmlColor = gethtmlcolor (ptr[1], inv ? "#000" : NULL);
 				if (htmlColor) {
 					r_strbuf_appendf (res, "<font style='background-color:%s'>", htmlColor);
 				}
@@ -177,4 +177,3 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 	}
 	return r_strbuf_drain (res);
 }
-

@@ -2,17 +2,17 @@
 
 #include <r_hash.h>
 
-#define HANDLE_CRC_PRESET(rbits, aname) \
-	do { \
-		if (algobit & R_HASH_##aname) { \
+#define HANDLE_CRC_PRESET(rbits, aname)                                                   \
+	do {                                                                              \
+		if (algobit & R_HASH_##aname) {                                           \
 			ut##rbits res = r_hash_crc_preset (buf, len, CRC_PRESET_##aname); \
-			r_write_be##rbits (ctx->digest, res); \
-			return R_HASH_SIZE_##aname; \
-		} \
-	} while(0)
+			r_write_be##rbits (ctx->digest, res);                             \
+			return R_HASH_SIZE_##aname;                                       \
+		}                                                                         \
+	} while (0)
 
 /* TODO: do it more beautiful with structs and not spaguetis */
-R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
+R_API int r_hash_calculate (RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 	if (len < 0) {
 		return 0;
 	}

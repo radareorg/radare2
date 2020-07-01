@@ -11,7 +11,6 @@
 
 #include "disas-asm.h"
 
-
 int print_insn_big_nios2 (bfd_vma address, disassemble_info *info);
 int print_insn_little_nios2 (bfd_vma address, disassemble_info *info);
 static unsigned long Offset = 0;
@@ -23,18 +22,18 @@ static int nios2_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 len
 	return 0;
 }
 
-static int symbol_at_address(bfd_vma addr, struct disassemble_info * info) {
+static int symbol_at_address (bfd_vma addr, struct disassemble_info *info) {
 	return 0;
 }
 
-static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_info *info) {
+static void memory_error_func (int status, bfd_vma memaddr, struct disassemble_info *info) {
 	//--
 }
 
-DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
-DECLARE_GENERIC_FPRINTF_FUNC()
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC ()
+DECLARE_GENERIC_FPRINTF_FUNC ()
 
-static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
 	if (len < 4) {
 		return -1;

@@ -4,23 +4,23 @@
 
 #include <assert.h>
 
-#define LINEFMT "%s, line %"PFMT64u": "
+#define LINEFMT "%s, line %" PFMT64u ": "
 
-R_API R2RCmdTest *r2r_cmd_test_new(void) {
+R_API R2RCmdTest *r2r_cmd_test_new (void) {
 	return R_NEW0 (R2RCmdTest);
 }
 
-R_API void r2r_cmd_test_free(R2RCmdTest *test) {
+R_API void r2r_cmd_test_free (R2RCmdTest *test) {
 	if (!test) {
 		return;
 	}
 #define DO_KEY_STR(key, field) free (test->field.value);
-	R2R_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, R2R_CMD_TEST_FOREACH_RECORD_NOP)
+	R2R_CMD_TEST_FOREACH_RECORD (DO_KEY_STR, R2R_CMD_TEST_FOREACH_RECORD_NOP)
 #undef DO_KEY_STR
 	free (test);
 }
 
-static char *readline(char *buf, size_t *linesz) {
+static char *readline (char *buf, size_t *linesz) {
 	char *end = strchr (buf, '\n');
 	if (end) {
 		size_t len = end - buf;
@@ -49,7 +49,7 @@ static char *readline(char *buf, size_t *linesz) {
 // if nextline is at the beginning of line 1,
 // read_string_val(&nextline, "<<EOF\0")
 // will return "Hello\nWorld\n" with nextline being at the beginning of line 4 afterwards.
-static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
+static char *read_string_val (char **nextline, const char *val, ut64 *linenum) {
 	if (val[0] == '\'') {
 		size_t len = strlen (val);
 		if (len > 1 && val[len - 1] == '\'') {
@@ -101,7 +101,7 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 	return strdup (val);
 }
 
-R_API RPVector *r2r_load_cmd_test_file(const char *file) {
+R_API RPVector *r2r_load_cmd_test_file (const char *file) {
 	char *contents = r_file_slurp (file, NULL);
 	if (!contents) {
 		eprintf ("Failed to open file \"%s\"\n", file);
@@ -150,54 +150,54 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 			continue;
 		}
 
-#define DO_KEY_STR(key, field) \
-		if (strcmp (line, key) == 0) { \
-			if (test->field.value) { \
-				free (test->field.value); \
-				eprintf (LINEFMT "Warning: Duplicate key \"%s\"\n", file, linenum, key); \
-			} \
-			if (!val) { \
-				eprintf (LINEFMT "Error: No value for key \"%s\"\n", file, linenum, key); \
-				goto fail; \
-			} \
-			test->field.line_begin = linenum; \
-			test->field.value = read_string_val (&nextline, val, &linenum); \
-			test->field.line_end = linenum + 1; \
-			if (!test->field.value) { \
-				eprintf (LINEFMT "Error: Failed to read value for key \"%s\"\n", file, linenum, key); \
-				goto fail; \
-			} \
-			continue; \
-		}
+#define DO_KEY_STR(key, field)                                                                                \
+	if (strcmp (line, key) == 0) {                                                                        \
+		if (test->field.value) {                                                                      \
+			free (test->field.value);                                                             \
+			eprintf (LINEFMT "Warning: Duplicate key \"%s\"\n", file, linenum, key);              \
+		}                                                                                             \
+		if (!val) {                                                                                   \
+			eprintf (LINEFMT "Error: No value for key \"%s\"\n", file, linenum, key);             \
+			goto fail;                                                                            \
+		}                                                                                             \
+		test->field.line_begin = linenum;                                                             \
+		test->field.value = read_string_val (&nextline, val, &linenum);                               \
+		test->field.line_end = linenum + 1;                                                           \
+		if (!test->field.value) {                                                                     \
+			eprintf (LINEFMT "Error: Failed to read value for key \"%s\"\n", file, linenum, key); \
+			goto fail;                                                                            \
+		}                                                                                             \
+		continue;                                                                                     \
+	}
 
-#define DO_KEY_BOOL(key, field) \
-		if (strcmp (line, key) == 0) { \
-			if (test->field.value) { \
-				eprintf (LINEFMT "Warning: Duplicate key \"%s\"\n", file, linenum, key); \
-			} \
-			test->field.set = true; \
-			/* Strip comment */ \
-			char *cmt = strchr (val, '#'); \
-			if (cmt) { \
-				*cmt = '\0'; \
-				cmt--; \
-				while (cmt > val && *cmt == ' ') { \
-					*cmt = '\0'; \
-					cmt--; \
-				} \
-			} \
-			if (!strcmp (val, "1")) { \
-				test->field.value = true; \
-			} else if (!strcmp (val, "0")) { \
-                test->field.value = false; \
-			} else { \
-				eprintf (LINEFMT "Error: Invalid value \"%s\" for boolean key \"%s\", only \"1\" or \"0\" allowed.\n", file, linenum, val, key); \
-				goto fail; \
-            } \
-			continue; \
-		}
+#define DO_KEY_BOOL(key, field)                                                                                                                          \
+	if (strcmp (line, key) == 0) {                                                                                                                   \
+		if (test->field.value) {                                                                                                                 \
+			eprintf (LINEFMT "Warning: Duplicate key \"%s\"\n", file, linenum, key);                                                         \
+		}                                                                                                                                        \
+		test->field.set = true;                                                                                                                  \
+		/* Strip comment */                                                                                                                      \
+		char *cmt = strchr (val, '#');                                                                                                           \
+		if (cmt) {                                                                                                                               \
+			*cmt = '\0';                                                                                                                     \
+			cmt--;                                                                                                                           \
+			while (cmt > val && *cmt == ' ') {                                                                                               \
+				*cmt = '\0';                                                                                                             \
+				cmt--;                                                                                                                   \
+			}                                                                                                                                \
+		}                                                                                                                                        \
+		if (!strcmp (val, "1")) {                                                                                                                \
+			test->field.value = true;                                                                                                        \
+		} else if (!strcmp (val, "0")) {                                                                                                         \
+			test->field.value = false;                                                                                                       \
+		} else {                                                                                                                                 \
+			eprintf (LINEFMT "Error: Invalid value \"%s\" for boolean key \"%s\", only \"1\" or \"0\" allowed.\n", file, linenum, val, key); \
+			goto fail;                                                                                                                       \
+		}                                                                                                                                        \
+		continue;                                                                                                                                \
+	}
 
-		R2R_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, DO_KEY_BOOL)
+		R2R_CMD_TEST_FOREACH_RECORD (DO_KEY_STR, DO_KEY_BOOL)
 #undef DO_KEY_STR
 #undef DO_KEY_BOOL
 
@@ -217,11 +217,11 @@ fail:
 	goto beach;
 }
 
-R_API R2RAsmTest *r2r_asm_test_new(void) {
+R_API R2RAsmTest *r2r_asm_test_new (void) {
 	return R_NEW0 (R2RAsmTest);
 }
 
-R_API void r2r_asm_test_free(R2RAsmTest *test) {
+R_API void r2r_asm_test_free (R2RAsmTest *test) {
 	if (!test) {
 		return;
 	}
@@ -230,7 +230,7 @@ R_API void r2r_asm_test_free(R2RAsmTest *test) {
 	free (test);
 }
 
-static bool parse_asm_path(const char *path, RStrConstPool *strpool, const char **arch_out, const char **cpuout, int *bitsout) {
+static bool parse_asm_path (const char *path, RStrConstPool *strpool, const char **arch_out, const char **cpuout, int *bitsout) {
 	RList *file_tokens = r_str_split_duplist (path, R_SYS_DIR, true);
 	if (!file_tokens || r_list_empty (file_tokens)) {
 		r_list_free (file_tokens);
@@ -270,7 +270,7 @@ static bool parse_asm_path(const char *path, RStrConstPool *strpool, const char 
 	return true;
 }
 
-R_API RPVector *r2r_load_asm_test_file(RStrConstPool *strpool, const char *file) {
+R_API RPVector *r2r_load_asm_test_file (RStrConstPool *strpool, const char *file) {
 	const char *arch;
 	const char *cpu;
 	int bits;
@@ -400,11 +400,11 @@ fail:
 	goto beach;
 }
 
-R_API R2RJsonTest *r2r_json_test_new(void) {
+R_API R2RJsonTest *r2r_json_test_new (void) {
 	return R_NEW0 (R2RJsonTest);
 }
 
-R_API void r2r_json_test_free(R2RJsonTest *test) {
+R_API void r2r_json_test_free (R2RJsonTest *test) {
 	if (!test) {
 		return;
 	}
@@ -412,7 +412,7 @@ R_API void r2r_json_test_free(R2RJsonTest *test) {
 	free (test);
 }
 
-R_API RPVector *r2r_load_json_test_file(const char *file) {
+R_API RPVector *r2r_load_json_test_file (const char *file) {
 	char *contents = r_file_slurp (file, NULL);
 	if (!contents) {
 		eprintf ("Failed to open file \"%s\"\n", file);
@@ -468,7 +468,7 @@ R_API RPVector *r2r_load_json_test_file(const char *file) {
 	return ret;
 }
 
-R_API void r2r_fuzz_test_free(R2RFuzzTest *test) {
+R_API void r2r_fuzz_test_free (R2RFuzzTest *test) {
 	if (!test) {
 		return;
 	}
@@ -476,7 +476,7 @@ R_API void r2r_fuzz_test_free(R2RFuzzTest *test) {
 	free (test);
 }
 
-R_API void r2r_test_free(R2RTest *test) {
+R_API void r2r_test_free (R2RTest *test) {
 	if (!test) {
 		return;
 	}
@@ -497,7 +497,7 @@ R_API void r2r_test_free(R2RTest *test) {
 	free (test);
 }
 
-R_API R2RTestDatabase *r2r_test_database_new(void) {
+R_API R2RTestDatabase *r2r_test_database_new (void) {
 	R2RTestDatabase *db = R_NEW (R2RTestDatabase);
 	if (!db) {
 		return NULL;
@@ -507,7 +507,7 @@ R_API R2RTestDatabase *r2r_test_database_new(void) {
 	return db;
 }
 
-R_API void r2r_test_database_free(R2RTestDatabase *db) {
+R_API void r2r_test_database_free (R2RTestDatabase *db) {
 	if (!db) {
 		return;
 	}
@@ -516,7 +516,7 @@ R_API void r2r_test_database_free(R2RTestDatabase *db) {
 	free (db);
 }
 
-static R2RTestType test_type_for_path(const char *path, bool *load_plugins) {
+static R2RTestType test_type_for_path (const char *path, bool *load_plugins) {
 	R2RTestType ret = R2R_TEST_TYPE_CMD;
 	char *pathdup = strdup (path);
 	RList *tokens = r_str_split_list (pathdup, R_SYS_DIR, 0);
@@ -547,7 +547,7 @@ static R2RTestType test_type_for_path(const char *path, bool *load_plugins) {
 	return ret;
 }
 
-static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
+static bool database_load (R2RTestDatabase *db, const char *path, int depth) {
 	if (depth <= 0) {
 		eprintf ("Directories for loading tests too deep: %s\n", path);
 		return false;
@@ -568,12 +568,11 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 			}
 			if (!strcmp (subname, "extras")) {
 				// Only load "extras" dirs if explicitly specified
-				eprintf ("Skipping %s"R_SYS_DIR"%s because it requires additional dependencies.\n", path, subname);
+				eprintf ("Skipping %s" R_SYS_DIR "%s because it requires additional dependencies.\n", path, subname);
 				continue;
 			}
-			if ((!strcmp (path, "archos") || r_str_endswith (path, R_SYS_DIR"archos"))
-				&& strcmp (subname, R2R_ARCH_OS)) {
-				eprintf ("Skipping %s"R_SYS_DIR"%s because it does not match the current platform.\n", path, subname);
+			if ((!strcmp (path, "archos") || r_str_endswith (path, R_SYS_DIR "archos")) && strcmp (subname, R2R_ARCH_OS)) {
+				eprintf ("Skipping %s" R_SYS_DIR "%s because it does not match the current platform.\n", path, subname);
 				continue;
 			}
 			r_strbuf_setf (&subpath, "%s%s%s", path, R_SYS_DIR, subname);
@@ -664,11 +663,11 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 	return true;
 }
 
-R_API bool r2r_test_database_load(R2RTestDatabase *db, const char *path) {
+R_API bool r2r_test_database_load (R2RTestDatabase *db, const char *path) {
 	return database_load (db, path, 4);
 }
 
-static void database_load_fuzz_file(R2RTestDatabase *db, const char *path, const char *file) {
+static void database_load_fuzz_file (R2RTestDatabase *db, const char *path, const char *file) {
 	R2RFuzzTest *fuzz_test = R_NEW (R2RFuzzTest);
 	if (!fuzz_test) {
 		return;
@@ -690,7 +689,7 @@ static void database_load_fuzz_file(R2RTestDatabase *db, const char *path, const
 	r_pvector_push (&db->tests, test);
 }
 
-R_API bool r2r_test_database_load_fuzz(R2RTestDatabase *db, const char *path) {
+R_API bool r2r_test_database_load_fuzz (R2RTestDatabase *db, const char *path) {
 	if (r_file_is_directory (path)) {
 		RList *dir = r_sys_dir (path);
 		if (!dir) {

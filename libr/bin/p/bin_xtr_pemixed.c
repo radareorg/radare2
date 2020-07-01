@@ -6,18 +6,18 @@
 #include <r_bin.h>
 #include "pe/pemixed.h"
 
-static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size);
-static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int subbin_type);
+static RList *oneshotall (RBin *bin, const ut8 *buf, ut64 size);
+static RBinXtrData *oneshot (RBin *bin, const ut8 *buf, ut64 size, int subbin_type);
 
 static void free_xtr (void *xtr_obj) {
-	r_bin_pemixed_free ((struct r_bin_pemixed_obj_t*) xtr_obj);
+	r_bin_pemixed_free ((struct r_bin_pemixed_obj_t *)xtr_obj);
 }
 
-static void destroy(RBin *bin) {
+static void destroy (RBin *bin) {
 	free_xtr (bin->cur->xtr_obj);
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	return false;
 #if 0
 	if (!bytes) {
@@ -47,7 +47,7 @@ static bool check_buffer(RBuffer *b) {
 }
 
 // TODO RBufferify
-static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
+static RList *oneshotall (RBin *bin, const ut8 *buf, ut64 size) {
 	//extract dos componenent first
 	RBinXtrData *data = oneshot (bin, buf, size, SUB_BIN_DOS);
 
@@ -55,14 +55,14 @@ static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
 		return NULL;
 	}
 	// XXX - how do we validate a valid narch?
-	RList * res = r_list_newf (r_bin_xtrdata_free);
+	RList *res = r_list_newf (r_bin_xtrdata_free);
 	r_list_append (res, data);
 
-	if ((data = oneshot (bin, buf, size, SUB_BIN_NATIVE))){
+	if ((data = oneshot (bin, buf, size, SUB_BIN_NATIVE))) {
 		r_list_append (res, data);
 	}
 
-	if ((data = oneshot (bin, buf, size, SUB_BIN_NET))){
+	if ((data = oneshot (bin, buf, size, SUB_BIN_NET))) {
 		r_list_append (res, data);
 	}
 
@@ -70,7 +70,7 @@ static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
 }
 
 //implement this later
-static void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, void *foo) {// struct Pe_32_r_bin_pemixed_obj_t* pe_bin){
+static void fill_metadata_info_from_hdr (RBinXtrMetadata *meta, void *foo) { // struct Pe_32_r_bin_pemixed_obj_t* pe_bin){
 	meta->arch = NULL;
 	meta->bits = 0;
 	meta->machine = NULL;
@@ -81,16 +81,16 @@ static void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, void *foo) {// st
 }
 
 // XXX: ut8* should be RBuffer *
-static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int sub_bin_type) {
+static RBinXtrData *oneshot (RBin *bin, const ut8 *buf, ut64 size, int sub_bin_type) {
 	r_return_val_if_fail (bin && bin->cur && buf, false);
 
 	if (!bin->cur->xtr_obj) {
 		bin->cur->xtr_obj = r_bin_pemixed_from_bytes_new (buf, size);
 	}
 
-	struct r_bin_pemixed_obj_t* fb = bin->cur->xtr_obj;
+	struct r_bin_pemixed_obj_t *fb = bin->cur->xtr_obj;
 	// this function is prolly not nessescary
-	struct PE_(r_bin_pe_obj_t)* pe = r_bin_pemixed_extract (fb, sub_bin_type);
+	struct PE_ (r_bin_pe_obj_t) *pe = r_bin_pemixed_extract (fb, sub_bin_type);
 	if (!pe) {
 		return NULL;
 	}
@@ -105,8 +105,8 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int sub_bin_t
 RBinXtrPlugin r_bin_xtr_plugin_xtr_pemixed = {
 	.name = "xtr.pemixed",
 	.desc = "Extract sub-binaries in PE files",
-	.load = NULL, 		//not yet implemented
-	.extract = NULL, 	//not yet implemented
+	.load = NULL, //not yet implemented
+	.extract = NULL, //not yet implemented
 	.extractall = NULL, //not yet implemented
 	.destroy = &destroy,
 	.extract_from_bytes = &oneshot,

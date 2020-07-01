@@ -1,7 +1,7 @@
 #include <r_util.h>
 #include "minunit.h"
 
-bool test_space_basic(void) {
+bool test_space_basic (void) {
 	RSpaces *sps = r_spaces_new ("spacename");
 	mu_assert_streq (sps->name, "spacename", "spacename should be the name");
 
@@ -26,7 +26,7 @@ bool test_space_basic(void) {
 	mu_end;
 }
 
-bool test_space_stack(void) {
+bool test_space_stack (void) {
 	RSpaces *sps = r_spaces_new ("spacename");
 
 	RSpace *first = r_spaces_set (sps, "firstspace");
@@ -61,7 +61,7 @@ bool test_space_stack(void) {
 	mu_end;
 }
 
-static void count_event(REvent *ev, int type, void *user, void *data) {
+static void count_event (REvent *ev, int type, void *user, void *data) {
 	RSpaceEvent *spev = (RSpaceEvent *)data;
 
 	if (!strcmp (spev->data.count.space->name, "firstspace")) {
@@ -75,11 +75,11 @@ static void count_event(REvent *ev, int type, void *user, void *data) {
 
 static bool test_event_called = false;
 
-static void test_event(REvent *ev, int type, void *user, void *data) {
+static void test_event (REvent *ev, int type, void *user, void *data) {
 	test_event_called = true;
 }
 
-bool test_space_event(void) {
+bool test_space_event (void) {
 	RSpaces *sps = r_spaces_new ("spacename");
 	r_spaces_add (sps, "firstspace");
 	r_spaces_add (sps, "secondspace");
@@ -112,13 +112,13 @@ bool test_space_event(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests () {
 	mu_run_test (test_space_basic);
 	mu_run_test (test_space_stack);
 	mu_run_test (test_space_event);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
+int main (int argc, char **argv) {
+	return all_tests ();
 }

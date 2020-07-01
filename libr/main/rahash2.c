@@ -16,9 +16,10 @@ static int iterations = 0;
 static int quiet = 0;
 static RHashSeed s = {
 	0
-}, *_s = NULL;
+},
+		 *_s = NULL;
 
-static void compare_hashes(const RHash *ctx, const ut8 *compare, int length, int *ret) {
+static void compare_hashes (const RHash *ctx, const ut8 *compare, int length, int *ret) {
 	if (compare) {
 		// algobit has only 1 bit set
 		if (!memcmp (ctx->digest, compare, length)) {
@@ -30,7 +31,7 @@ static void compare_hashes(const RHash *ctx, const ut8 *compare, int length, int
 	}
 }
 
-static void do_hash_seed(const char *seed) {
+static void do_hash_seed (const char *seed) {
 	const char *sptr = seed;
 	if (!seed) {
 		_s = NULL;
@@ -47,7 +48,7 @@ static void do_hash_seed(const char *seed) {
 		s.len = (size_t)len;
 		return;
 	}
-	s.buf = (ut8 *) malloc (strlen (seed) + 128);
+	s.buf = (ut8 *)malloc (strlen (seed) + 128);
 	if (!s.buf) {
 		_s = NULL;
 		return;
@@ -59,19 +60,19 @@ static void do_hash_seed(const char *seed) {
 		s.prefix = 0;
 	}
 	if (!strncmp (sptr, "s:", 2)) {
-		strcpy ((char *) s.buf, sptr + 2);
+		strcpy ((char *)s.buf, sptr + 2);
 		s.len = strlen (sptr + 2);
 	} else {
 		s.len = r_hex_str2bin (sptr, s.buf);
 		if (s.len < 1) {
-			strcpy ((char *) s.buf, sptr);
+			strcpy ((char *)s.buf, sptr);
 			s.len = strlen (sptr);
 			eprintf ("Warning: This is not an hexpair, assuming a string, prefix it with 's:' to skip this message.");
 		}
 	}
 }
 
-static void do_hash_hexprint(const ut8 *c, int len, int ule, int rad) {
+static void do_hash_hexprint (const ut8 *c, int len, int ule, int rad) {
 	int i;
 	if (ule) {
 		for (i = len - 1; i >= 0; i--) {
@@ -87,18 +88,18 @@ static void do_hash_hexprint(const ut8 *c, int len, int ule, int rad) {
 	}
 }
 
-static void do_hash_print(RHash *ctx, ut64 hash, int dlen, int rad, int ule) {
+static void do_hash_print (RHash *ctx, ut64 hash, int dlen, int rad, int ule) {
 	char *o;
 	const ut8 *c = ctx->digest;
 	const char *hname = r_hash_name (hash);
 	switch (rad) {
 	case 0:
 		if (!quiet) {
-			printf ("0x%08"PFMT64x "-0x%08"PFMT64x " %s: ",
-				from, to > 0? to - 1: 0, hname);
+			printf ("0x%08" PFMT64x "-0x%08" PFMT64x " %s: ",
+				from, to > 0 ? to - 1 : 0, hname);
 		}
 		if (dlen == R_HASH_SIZE_ENTROPY) {
-			printf("%.8f\n", ctx->entropy);
+			printf ("%.8f\n", ctx->entropy);
 		} else {
 			do_hash_hexprint (c, dlen, ule, rad);
 		}
@@ -123,7 +124,7 @@ static void do_hash_print(RHash *ctx, ut64 hash, int dlen, int rad, int ule) {
 	}
 }
 
-static int do_hash_internal(RHash *ctx, ut64 hash, const ut8 *buf, int len, int rad, int print, int le) {
+static int do_hash_internal (RHash *ctx, ut64 hash, const ut8 *buf, int len, int rad, int print, int le) {
 	if (len < 0) {
 		return 0;
 	}
@@ -138,7 +139,7 @@ static int do_hash_internal(RHash *ctx, ut64 hash, const ut8 *buf, int len, int 
 	return 1;
 }
 
-static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int rad, int ule, const ut8 *compare) {
+static int do_hash (const char *file, const char *algo, RIO *io, int bsize, int rad, int ule, const ut8 *compare) {
 	ut64 j, fsize, algobit = r_hash_name_to_bits (algo);
 	RHash *ctx;
 	ut8 *buf;
@@ -190,7 +191,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 					do_hash_internal (ctx, hashbit, s.buf, s.len, rad, 0, ule);
 				}
 				for (j = from; j < to; j += bsize) {
-					int len = ((j + bsize) > to)? (to - j): bsize;
+					int len = ((j + bsize) > to) ? (to - j) : bsize;
 					r_io_pread_at (io, j, buf, len);
 					do_hash_internal (ctx, hashbit, buf, len, rad, 0, ule);
 				}
@@ -214,7 +215,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 				if (!quiet && rad != 'j') {
 					printf ("%s: ", file);
 				}
-				do_hash_print (ctx, i, dlen, quiet? 'n': rad, ule);
+				do_hash_print (ctx, i, dlen, quiet ? 'n' : rad, ule);
 				if (quiet == 1) {
 					printf (" %s\n", file);
 				} else {
@@ -241,7 +242,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 				f = from;
 				t = to;
 				for (j = f; j < t; j += bsize) {
-					int nsize = (j + bsize < fsize)? bsize: (fsize - j);
+					int nsize = (j + bsize < fsize) ? bsize : (fsize - j);
 					r_io_pread_at (io, j, buf, bsize);
 					from = j;
 					to = j + bsize;
@@ -266,7 +267,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 	return ret;
 }
 
-static int do_help(int line) {
+static int do_help (int line) {
 	printf ("Usage: rahash2 [-rBhLkv] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...\n");
 	if (line) {
 		return 0;
@@ -295,7 +296,7 @@ static int do_help(int line) {
 	return 0;
 }
 
-static void algolist(void) {
+static void algolist (void) {
 	ut64 bits;
 	ut64 i;
 	for (i = 0; i < R_HASH_NBITS; i++) {
@@ -310,7 +311,7 @@ static void algolist(void) {
 	printf ("e  base91\n");
 	printf ("e  punycode\n");
 	for (i = 0;; i++) {
-		bits = ((ut64) 1) << i;
+		bits = ((ut64)1) << i;
 		const char *name = r_crypto_name (bits);
 		if (!name || !*name) {
 			break;
@@ -319,21 +320,22 @@ static void algolist(void) {
 	}
 }
 
-#define setHashString(x, y) {\
-	if (hashstr) {\
-		eprintf ("Hashstring already defined\n");\
-		return 1;\
-	}\
-	hashstr_hex = y;\
-	hashstr = (char*)x;\
-}
+#define setHashString(x, y)                                       \
+	{                                                         \
+		if (hashstr) {                                    \
+			eprintf ("Hashstring already defined\n"); \
+			return 1;                                 \
+		}                                                 \
+		hashstr_hex = y;                                  \
+		hashstr = (char *)x;                              \
+	}
 
-static bool is_power_of_two(const ut64 x) {
+static bool is_power_of_two (const ut64 x) {
 	return x && !(x & (x - 1));
 }
 
 // direction: 0 => encrypt, 1 => decrypt
-static int encrypt_or_decrypt(const char *algo, int direction, const char *hashstr, int hashstr_len, const ut8 *iv, int ivlen, int mode) {
+static int encrypt_or_decrypt (const char *algo, int direction, const char *hashstr, int hashstr_len, const ut8 *iv, int ivlen, int mode) {
 	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo); // TODO: generalise this for all non key encoding/decoding.
 	if (no_key_mode || s.len > 0) {
 		RCrypto *cry = r_crypto_new ();
@@ -347,7 +349,7 @@ static int encrypt_or_decrypt(const char *algo, int direction, const char *hashs
 					return 0;
 				}
 
-				r_crypto_update (cry, (const ut8 *) buf, buflen);
+				r_crypto_update (cry, (const ut8 *)buf, buflen);
 				r_crypto_final (cry, NULL, 0);
 
 				int result_size = 0;
@@ -363,16 +365,16 @@ static int encrypt_or_decrypt(const char *algo, int direction, const char *hashs
 			}
 			return 0;
 		} else {
-			eprintf ("Unknown %s algorithm '%s'\n", ((!direction)? "encryption": "decryption"), algo);
+			eprintf ("Unknown %s algorithm '%s'\n", ((!direction) ? "encryption" : "decryption"), algo);
 		}
 		r_crypto_free (cry);
 	} else {
-		eprintf ("%s key not defined. Use -S [key]\n", ((!direction)? "Encryption": "Decryption"));
+		eprintf ("%s key not defined. Use -S [key]\n", ((!direction) ? "Encryption" : "Decryption"));
 	}
 	return 1;
 }
 
-static int encrypt_or_decrypt_file(const char *algo, int direction, const char *filename, const ut8 *iv, int ivlen, int mode) {
+static int encrypt_or_decrypt_file (const char *algo, int direction, const char *filename, const ut8 *iv, int ivlen, int mode) {
 	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo); // TODO: generalise this for all non key encoding/decoding.
 	if (no_key_mode || s.len > 0) {
 		RCrypto *cry = r_crypto_new ();
@@ -413,16 +415,16 @@ static int encrypt_or_decrypt_file(const char *algo, int direction, const char *
 			}
 			return 0;
 		} else {
-			eprintf ("Unknown %s algorithm '%s'\n", ((!direction)? "encryption": "decryption"), algo);
+			eprintf ("Unknown %s algorithm '%s'\n", ((!direction) ? "encryption" : "decryption"), algo);
 		}
 		r_crypto_free (cry);
 	} else {
-		eprintf ("%s key not defined. Use -S [key]\n", ((!direction)? "Encryption": "Decryption"));
+		eprintf ("%s key not defined. Use -S [key]\n", ((!direction) ? "Encryption" : "Decryption"));
 	}
 	return 1;
 }
 
-R_API int r_main_rahash2(int argc, const char **argv) {
+R_API int r_main_rahash2 (int argc, const char **argv) {
 	ut64 i;
 	int ret, c, rad = 0, bsize = 0, numblocks = 0, ule = 0;
 	const char *file = NULL;
@@ -439,7 +441,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 	ut8 *compareBin = NULL;
 	int hashstr_len = -1;
 	int hashstr_hex = 0;
-	size_t bytes_read = 0;// bytes read from stdin
+	size_t bytes_read = 0; // bytes read from stdin
 	ut64 algobit;
 	RHash *ctx;
 	RIO *io;
@@ -469,7 +471,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		case 'p': ptype = opt.arg; break;
 		case 'a': algo = opt.arg; break;
 		case 'B': incremental = false; break;
-		case 'b': bsize = (int) r_num_math (NULL, opt.arg); break;
+		case 'b': bsize = (int)r_num_math (NULL, opt.arg); break;
 		case 'f': from = r_num_math (NULL, opt.arg); break;
 		case 't': to = 1 + r_num_math (NULL, opt.arg); break;
 		case 'v': return r_main_version_print ("rahash2");
@@ -515,7 +517,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			eprintf ("rahash2: Invalid -c hex hash\n");
 			free (compareBin);
 			return 1;
-		} else if (compareBin_len != r_hash_size (algobit))   {
+		} else if (compareBin_len != r_hash_size (algobit)) {
 			eprintf (
 				"rahash2: Given -c hash has %d byte(s) but the selected algorithm returns %d byte(s).\n",
 				compareBin_len,
@@ -524,7 +526,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			return 1;
 		}
 	}
-	if ((st64) from >= 0 && (st64) to < 0) {
+	if ((st64)from >= 0 && (st64)to < 0) {
 		to = 0; // end of file
 	}
 	if (from || to) {
@@ -545,14 +547,14 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 	}
 	// convert iv to hex or string.
 	if (ivseed) {
-		iv = (ut8 *) malloc (strlen (ivseed) + 128);
+		iv = (ut8 *)malloc (strlen (ivseed) + 128);
 		if (!strncmp (ivseed, "s:", 2)) {
-			strcpy ((char *) iv, ivseed + 2);
+			strcpy ((char *)iv, ivseed + 2);
 			ivlen = strlen (ivseed + 2);
 		} else {
 			ivlen = r_hex_str2bin (ivseed, iv);
 			if (ivlen < 1) {
-				strcpy ((char *) iv, ivseed);
+				strcpy ((char *)iv, ivseed);
 				ivlen = strlen (ivseed);
 			}
 		}
@@ -567,7 +569,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 				free (iv);
 				return 1;
 			}
-			bytes_read = fread ((void *) hashstr, 1, INSIZE - 1, stdin);
+			bytes_read = fread ((void *)hashstr, 1, INSIZE - 1, stdin);
 			if (bytes_read < 1) {
 				bytes_read = 0;
 			}
@@ -583,7 +585,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 				free (iv);
 				return 1;
 			}
-			hashstr = (char *) out;
+			hashstr = (char *)out;
 			/* out memleaks here, hashstr can't be freed */
 		} else {
 			if (!bytes_read) {
@@ -616,7 +618,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		} else if (decrypt) {
 			return encrypt_or_decrypt (decrypt, 1, hashstr, hashstr_len, iv, ivlen, 0);
 		} else {
-			char *str = (char *) hashstr;
+			char *str = (char *)hashstr;
 			int strsz = hashstr_len;
 			if (_s) {
 				// alloc/concat/resize
@@ -646,7 +648,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 					ctx = r_hash_new (true, hashbit);
 					from = 0;
 					to = strsz;
-					do_hash_internal (ctx, hashbit, (const ut8 *) str, strsz, rad, 1, ule);
+					do_hash_internal (ctx, hashbit, (const ut8 *)str, strsz, rad, 1, ule);
 					compare_hashes (ctx, compareBin, r_hash_size (algobit), &ret);
 					r_hash_free (ctx);
 				}
@@ -681,7 +683,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			return 1;
 		}
 
-		if (encrypt) {// for encrytion when files are provided
+		if (encrypt) { // for encrytion when files are provided
 			int rt = encrypt_or_decrypt_file (encrypt, 0, argv[i], iv, ivlen, 0);
 			if (rt == -1) {
 				continue;
@@ -699,7 +701,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			RIODesc *desc = NULL;
 			if (!strcmp (argv[i], "-")) {
 				int sz = 0;
-				ut8 *buf = (ut8 *) r_stdin_slurp (&sz);
+				ut8 *buf = (ut8 *)r_stdin_slurp (&sz);
 				char *uri = r_str_newf ("malloc://%d", sz);
 				if (sz > 0) {
 					desc = r_io_open_nomap (io, uri, R_PERM_R, 0);

@@ -4,7 +4,7 @@
 #include <r_util.h>
 
 /* Convert an UTF-32 buf into a unicode RRune */
-R_API int r_utf32_decode(const ut8 *ptr, int ptrlen, RRune *ch, bool bigendian) {
+R_API int r_utf32_decode (const ut8 *ptr, int ptrlen, RRune *ch, bool bigendian) {
 	if (ptrlen < 1) {
 		return 0;
 	}
@@ -35,11 +35,11 @@ R_API int r_utf32_decode(const ut8 *ptr, int ptrlen, RRune *ch, bool bigendian) 
 }
 
 /* Convert an UTF-32LE buf into a unicode RRune */
-R_API int r_utf32le_decode(const ut8 *ptr, int ptrlen, RRune *ch) {
+R_API int r_utf32le_decode (const ut8 *ptr, int ptrlen, RRune *ch) {
 	return r_utf32_decode (ptr, ptrlen, ch, false);
 }
 
 /* Convert an UTF-32BE buf into a unicode RRune */
-R_API int r_utf32be_decode(const ut8 *ptr, int ptrlen, RRune *ch) {
+R_API int r_utf32be_decode (const ut8 *ptr, int ptrlen, RRune *ch) {
 	return r_utf32_decode (ptr, ptrlen, ch, true);
 }

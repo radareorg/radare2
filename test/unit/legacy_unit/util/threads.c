@@ -1,10 +1,10 @@
 #include <r_th.h>
 #include <r_util.h>
 
-int looper(struct r_th_t *th) {
+int looper (struct r_th_t *th) {
 	int i;
 	int *ctr = th->user;
-	for (i=0;i<9999;i++) {
+	for (i = 0; i < 9999; i++) {
 		if (th->breaked)
 			break;
 		(*ctr)++;
@@ -17,7 +17,7 @@ int looper(struct r_th_t *th) {
 	return 0; // do not loop
 }
 
-int test1() {
+int test1 () {
 	int ctr = 0;
 	struct r_th_t *th;
 
@@ -26,7 +26,7 @@ int test1() {
 	//th = r_th_new (&looper, &ctr, 0);
 
 #if __i386__ || __x86_64__
-	asm ("int3");
+	asm("int3");
 #endif
 	//r_th_start (th, true);
 	while (r_th_wait_async (th)) {
@@ -48,6 +48,6 @@ int test1() {
 	return 0;
 }
 
-int main() {
+int main () {
 	return test1 ();
 }

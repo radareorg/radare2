@@ -73,8 +73,8 @@ ut32 *utf8toutf32 (const ut8 *input) {
 	int i = 0;
 	int j = 0;
 	int val = 0;
-	int len = strlen ((const char *) input);
-	ut32 *result = calloc (strlen ((const char *) input) + 1, 4);
+	int len = strlen ((const char *)input);
+	ut32 *result = calloc (strlen ((const char *)input) + 1, 4);
 
 	if (!result) {
 		eprintf ("ERROR: out of memory\n");
@@ -87,18 +87,18 @@ ut32 *utf8toutf32 (const ut8 *input) {
 			i += 1;
 		} else if (input[i] >> 5 == 0x6) {
 			val = (((input[i] & 0x1f) << 6) & 0xfc0) |
-			(input[i + 1] & 0x3f);
+				(input[i + 1] & 0x3f);
 			i += 2;
 		} else if (input[i] >> 4 == 0xe) {
 			val = (((input[i] & 0xf) << 12) & 0xf000) |
-			(((input[i + 1] & 0x3f) << 6) & 0xffc0) |
-			(input[i + 2] & 0x3f);
+				(((input[i + 1] & 0x3f) << 6) & 0xffc0) |
+				(input[i + 2] & 0x3f);
 			i += 3;
 		} else if (input[i] >> 3 == 0x1e) {
 			val = (((input[i] & 0xf) << 18) & 0x1c0000) |
-			(((input[i + 1] & 0x3f) << 12) & 0x1ff000) |
-			(((input[i + 2] & 0x3f) << 6) & 0x1fffc0) |
-			(input[i + 3] & 0x3f);
+				(((input[i + 1] & 0x3f) << 12) & 0x1ff000) |
+				(((input[i + 2] & 0x3f) << 6) & 0x1fffc0) |
+				(input[i + 3] & 0x3f);
 			i += 4;
 		} else {
 			eprintf ("ERROR in toutf32. Seems like input is invalid.\n");
@@ -112,10 +112,9 @@ ut32 *utf8toutf32 (const ut8 *input) {
 	return result;
 }
 
-
-ut32 adapt_bias(ut32 delta, unsigned n_points, int is_first) {
+ut32 adapt_bias (ut32 delta, unsigned n_points, int is_first) {
 	ut32 k = 0;
-	delta /= is_first? DAMP: 2;
+	delta /= is_first ? DAMP : 2;
 	delta += delta / n_points;
 
 	while (delta > ((BASE - TMIN) * TMAX) / 2) {
@@ -126,15 +125,15 @@ ut32 adapt_bias(ut32 delta, unsigned n_points, int is_first) {
 	return k + (((BASE - TMIN + 1) * delta) / (delta + SKEW));
 }
 
-char encode_digit(int c) {
-//	assert (c >= 0 && c <= BASE - TMIN);
+char encode_digit (int c) {
+	//	assert (c >= 0 && c <= BASE - TMIN);
 	if (c > 25) {
 		return c + 22;
 	}
 	return c + 'a';
 }
 
-static ut32 encode_var_int(const ut32 bias, const ut32 delta, char *dst) {
+static ut32 encode_var_int (const ut32 bias, const ut32 delta, char *dst) {
 	ut32 i, k, q, t;
 	i = 0;
 	k = BASE;
@@ -164,7 +163,7 @@ static ut32 encode_var_int(const ut32 bias, const ut32 delta, char *dst) {
 	return i;
 }
 
-static ut32 decode_digit(ut32 v) {
+static ut32 decode_digit (ut32 v) {
 	if (IS_DIGIT (v)) {
 		return v - 22;
 	}
@@ -177,7 +176,7 @@ static ut32 decode_digit(ut32 v) {
 	return UT32_MAX;
 }
 
-R_API char *r_punycode_encode(const ut8 *src, int srclen, int *dstlen) {
+R_API char *r_punycode_encode (const ut8 *src, int srclen, int *dstlen) {
 	ut32 m, n;
 	ut32 b, h;
 	ut32 si, di;
@@ -256,7 +255,7 @@ R_API char *r_punycode_encode(const ut8 *src, int srclen, int *dstlen) {
 	return dst;
 }
 
-R_API char *r_punycode_decode(const char *src, int srclen, int *dstlen) {
+R_API char *r_punycode_decode (const char *src, int srclen, int *dstlen) {
 	const char *p;
 	ut32 si, di;
 	ut32 b, n, t, i, k, w;
@@ -277,7 +276,7 @@ R_API char *r_punycode_decode(const char *src, int srclen, int *dstlen) {
 	for (si = 0; si < srclen; si++) {
 		if (src[si] & 0x80) {
 			free (dst);
-			return NULL;       /*just return it*/
+			return NULL; /*just return it*/
 		}
 	}
 
@@ -343,17 +342,17 @@ R_API char *r_punycode_decode(const char *src, int srclen, int *dstlen) {
 		n += i / (di + 1);
 		i %= (di + 1);
 
-		memmove (dst + i + 1, dst + i, (di - i) * sizeof(ut32));
+		memmove (dst + i + 1, dst + i, (di - i) * sizeof (ut32));
 		dst[i++] = n;
 	}
 
 	finaldst = utf32toutf8 (dst);
 	free (dst);
 	if (finaldst) {
-		*dstlen = strlen ((const char *) finaldst);
+		*dstlen = strlen ((const char *)finaldst);
 	} else {
 		eprintf ("ERROR: finaldst is null\n");
 		return NULL;
 	}
-	return (char *) finaldst;
+	return (char *)finaldst;
 }

@@ -2,16 +2,16 @@
 
 #include <r_anal.h>
 
-R_API RAnalValue *r_anal_value_new(void) { //macro for this ?
+R_API RAnalValue *r_anal_value_new (void) { //macro for this ?
 	return R_NEW0 (RAnalValue);
 }
 
-R_API RAnalValue *r_anal_value_new_from_string(const char *str) {
+R_API RAnalValue *r_anal_value_new_from_string (const char *str) {
 	/* TODO */
 	return NULL;
 }
 
-R_API RAnalValue *r_anal_value_copy(RAnalValue *ov) {
+R_API RAnalValue *r_anal_value_copy (RAnalValue *ov) {
 	RAnalValue *v = R_NEW0 (RAnalValue);
 	if (!v) {
 		return NULL;
@@ -22,7 +22,7 @@ R_API RAnalValue *r_anal_value_copy(RAnalValue *ov) {
 }
 
 // TODO: move into .h as #define free
-R_API void r_anal_value_free(RAnalValue *value) {
+R_API void r_anal_value_free (RAnalValue *value) {
 	free (value);
 #if 0
 	ut64 pval = (ut64)(size_t)value;
@@ -34,12 +34,12 @@ R_API void r_anal_value_free(RAnalValue *value) {
 }
 
 // mul*value+regbase+regidx+delta
-R_API ut64 r_anal_value_to_ut64(RAnal *anal, RAnalValue *val) {
+R_API ut64 r_anal_value_to_ut64 (RAnal *anal, RAnalValue *val) {
 	ut64 num;
 	if (!val) {
 		return 0LL;
 	}
-	num = val->base + (val->delta*(val->mul?val->mul:1));
+	num = val->base + (val->delta * (val->mul ? val->mul : 1));
 	if (val->reg) {
 		num += r_reg_get_value (anal->reg, val->reg);
 	}
@@ -58,7 +58,7 @@ R_API ut64 r_anal_value_to_ut64(RAnal *anal, RAnalValue *val) {
 	return num;
 }
 
-R_API int r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num) {
+R_API int r_anal_value_set_ut64 (RAnal *anal, RAnalValue *val, ut64 num) {
 	if (val->memref) {
 		if (anal->iob.io) {
 			ut8 data[8];
@@ -73,7 +73,7 @@ R_API int r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num) {
 			r_reg_set_value (anal->reg, val->reg, num);
 		}
 	}
-	return false;							//is this necessary
+	return false; //is this necessary
 }
 
 R_API char *r_anal_value_to_string (RAnalValue *value) {
@@ -82,7 +82,7 @@ R_API char *r_anal_value_to_string (RAnalValue *value) {
 		out = r_str_new ("");
 		if (!value->base && !value->reg) {
 			if (value->imm != -1LL) {
-				out = r_str_appendf (out, "0x%"PFMT64x, value->imm);
+				out = r_str_appendf (out, "0x%" PFMT64x, value->imm);
 			} else {
 				out = r_str_append (out, "-1");
 			}

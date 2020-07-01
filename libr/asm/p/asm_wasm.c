@@ -10,8 +10,8 @@
 
 #include "../arch/wasm/wasm.h"
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	WasmOp wop = {{0}};
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	WasmOp wop = { { 0 } };
 	int ret = wasm_dis (&wop, buf, len);
 	r_asm_op_set_asm (op, wop.txt);
 	free (wop.txt);
@@ -19,8 +19,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
-	ut8 *opbuf = (ut8*)r_strbuf_get (&op->buf);
+static int assemble (RAsm *a, RAsmOp *op, const char *buf) {
+	ut8 *opbuf = (ut8 *)r_strbuf_get (&op->buf);
 	op->size = wasm_asm (buf, opbuf, 32); // XXX hardcoded opsize
 	return op->size;
 }

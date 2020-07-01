@@ -31,18 +31,18 @@ static int vax_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 lengt
 	return 0;
 }
 
-static int symbol_at_address(bfd_vma addr, struct disassemble_info * info) {
+static int symbol_at_address (bfd_vma addr, struct disassemble_info *info) {
 	return 0;
 }
 
-static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_info *info) {
+static void memory_error_func (int status, bfd_vma memaddr, struct disassemble_info *info) {
 	//--
 }
 
-DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
-DECLARE_GENERIC_FPRINTF_FUNC()
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC ()
+DECLARE_GENERIC_FPRINTF_FUNC ()
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
 	if (len < 4) {
 		return -1;
@@ -54,7 +54,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
-	disasm_obj.buffer = (ut8*)bytes;
+	disasm_obj.buffer = (ut8 *)bytes;
 	disasm_obj.read_memory_func = &vax_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;

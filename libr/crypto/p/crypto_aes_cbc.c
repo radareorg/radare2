@@ -10,7 +10,7 @@ static struct aes_state st;
 static bool iv_set = 0;
 static ut8 iv[32];
 
-static bool aes_cbc_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+static bool aes_cbc_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	if (!(keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
 		return false;
 	}
@@ -22,11 +22,11 @@ static bool aes_cbc_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, 
 	return true;
 }
 
-static int aes_cbc_get_key_size(RCrypto *cry) {
+static int aes_cbc_get_key_size (RCrypto *cry) {
 	return st.key_size;
 }
 
-static bool aes_cbc_set_iv(RCrypto *cry, const ut8 *iv_src, int ivlen) {
+static bool aes_cbc_set_iv (RCrypto *cry, const ut8 *iv_src, int ivlen) {
 	if (ivlen != BLOCK_SIZE) {
 		return false;
 	}
@@ -35,11 +35,11 @@ static bool aes_cbc_set_iv(RCrypto *cry, const ut8 *iv_src, int ivlen) {
 	return true;
 }
 
-static bool aes_cbc_use(const char *algo) {
+static bool aes_cbc_use (const char *algo) {
 	return algo && !strcmp (algo, "aes-cbc");
 }
 
-static bool update(RCrypto *cry, const ut8 *buf, int len) {
+static bool update (RCrypto *cry, const ut8 *buf, int len) {
 	if (!iv_set) {
 		eprintf ("IV not set. Use -I [iv]\n");
 		return false;
@@ -81,7 +81,7 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 			for (j = 0; j < BLOCK_SIZE; j++) {
 				obuf[i * BLOCK_SIZE + j] ^= iv[j];
 			}
-			memcpy(iv, buf + BLOCK_SIZE * i, BLOCK_SIZE);
+			memcpy (iv, buf + BLOCK_SIZE * i, BLOCK_SIZE);
 		}
 	}
 
@@ -91,7 +91,7 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	return true;
 }
 
-static bool final(RCrypto *cry, const ut8 *buf, int len) {
+static bool final (RCrypto *cry, const ut8 *buf, int len) {
 	return update (cry, buf, len);
 }
 

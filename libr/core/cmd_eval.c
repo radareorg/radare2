@@ -6,7 +6,7 @@
 
 static const char *help_msg_e[] = {
 	"Usage:", "e [var[=value]]", "Evaluable vars",
-	"e","?asm.bytes", "show description",
+	"e", "?asm.bytes", "show description",
 	"e", "??", "list config vars with description",
 	"e", " a", "get value of var 'a'",
 	"e", " a=b", "set var 'a' the 'b' value",
@@ -67,12 +67,12 @@ static const char *help_msg_eco[] = {
 static char *curtheme = "default";
 static bool getNext = false;
 
-static void cmd_eval_init(RCore *core, RCmdDesc *parent) {
+static void cmd_eval_init (RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, e);
 	DEFINE_CMD_DESCRIPTOR (core, ec);
 }
 
-static bool load_theme(RCore *core, const char *path) {
+static bool load_theme (RCore *core, const char *path) {
 	if (!r_file_exists (path)) {
 		return false;
 	}
@@ -85,12 +85,13 @@ static bool load_theme(RCore *core, const char *path) {
 	return res;
 }
 
-static bool nextpal_item(RCore *core, int mode, const char *file, int ctr) {
+static bool nextpal_item (RCore *core, int mode, const char *file, int ctr) {
 	const char *fn = r_str_lchr (file, '/');
-	if (!fn) fn = file;
+	if (!fn)
+		fn = file;
 	switch (mode) {
 	case 'j': // json
-		r_cons_printf ("%s\"%s\"", ctr?",":"", fn);
+		r_cons_printf ("%s\"%s\"", ctr ? "," : "", fn);
 		break;
 	case 'l': // list
 		r_cons_println (fn);
@@ -116,7 +117,7 @@ static bool nextpal_item(RCore *core, int mode, const char *file, int ctr) {
 	return true;
 }
 
-static bool cmd_load_theme(RCore *core, const char *_arg) {
+static bool cmd_load_theme (RCore *core, const char *_arg) {
 	bool failed = false;
 	char *path;
 	if (!_arg || !*_arg) {
@@ -157,7 +158,7 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 	return !failed;
 }
 
-static void list_themes_in_path(RList *list, const char *path) {
+static void list_themes_in_path (RList *list, const char *path) {
 	RListIter *iter;
 	const char *fn;
 	RList *files = r_sys_dir (path);
@@ -173,7 +174,7 @@ R_API char *r_core_get_theme (void) {
 	return curtheme;
 }
 
-R_API RList *r_core_list_themes(RCore *core) {
+R_API RList *r_core_list_themes (RCore *core) {
 	RList *list = r_list_newf (free);
 	getNext = false;
 	char *tmp = strdup ("default");
@@ -193,8 +194,8 @@ R_API RList *r_core_list_themes(RCore *core) {
 	return list;
 }
 
-static void nextpal(RCore *core, int mode) {
-// TODO: use r_core_list_themes() here instead of rewalking all the time
+static void nextpal (RCore *core, int mode) {
+	// TODO: use r_core_list_themes() here instead of rewalking all the time
 	RList *files = NULL;
 	RListIter *iter;
 	const char *fn;
@@ -211,7 +212,7 @@ static void nextpal(RCore *core, int mode) {
 		r_list_foreach (files, iter, fn) {
 			if (*fn && *fn != '.') {
 				if (mode == 'p') {
-					const char *nfn = iter->n? iter->n->data: NULL;
+					const char *nfn = iter->n ? iter->n->data : NULL;
 					if (!curtheme) {
 						free (home);
 						r_list_free (files);
@@ -246,7 +247,7 @@ static void nextpal(RCore *core, int mode) {
 		r_list_foreach (files, iter, fn) {
 			if (*fn && *fn != '.') {
 				if (mode == 'p') {
-					const char *nfn = iter->n? iter->n->data: NULL;
+					const char *nfn = iter->n ? iter->n->data : NULL;
 					if (!curtheme) {
 						free (home);
 						r_list_free (files);
@@ -288,10 +289,10 @@ done:
 	}
 }
 
-R_API void r_core_echo(RCore *core, const char *input) {
+R_API void r_core_echo (RCore *core, const char *input) {
 	if (!strncmp (input, "64 ", 3)) {
 		char *buf = strdup (input);
-		r_base64_decode ((ut8*)buf, input + 3, -1);
+		r_base64_decode ((ut8 *)buf, input + 3, -1);
 		if (*buf) {
 			r_cons_echo (buf);
 		}
@@ -305,7 +306,7 @@ R_API void r_core_echo(RCore *core, const char *input) {
 	}
 }
 
-static int cmd_eval(void *data, const char *input) {
+static int cmd_eval (void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case '\0': // "e"
@@ -321,9 +322,9 @@ static int cmd_eval(void *data, const char *input) {
 		break;
 	case 't': // "et"
 		if (input[1] == 'a') {
-			r_cons_printf ("%s\n", (r_num_rand (10) % 2)? "wen": "son");
-		} else if (input[1]==' ' && input[2]) {
-			RConfigNode *node = r_config_node_get (core->config, input+2);
+			r_cons_printf ("%s\n", (r_num_rand (10) % 2) ? "wen" : "son");
+		} else if (input[1] == ' ' && input[2]) {
+			RConfigNode *node = r_config_node_get (core->config, input + 2);
 			if (node) {
 				const char *type = r_config_node_type (node);
 				if (type && *type) {
@@ -338,7 +339,9 @@ static int cmd_eval(void *data, const char *input) {
 		if (!strchr (input, '=')) {
 			char *var, *p;
 			var = strchr (input, ' ');
-			if (var) while (*var==' ') var++;
+			if (var)
+				while (*var == ' ')
+					var++;
 			p = r_sys_getenv (var);
 			if (p) {
 				r_cons_println (p);
@@ -350,9 +353,10 @@ static int cmd_eval(void *data, const char *input) {
 					e++;
 				}
 			}
-		} else if (strlen (input)>3) {
-			char *v, *k = strdup (input+3);
-			if (!k) break;
+		} else if (strlen (input) > 3) {
+			char *v, *k = strdup (input + 3);
+			if (!k)
+				break;
 			v = strchr (k, '=');
 			if (v) {
 				*v++ = 0;
@@ -445,22 +449,22 @@ static int cmd_eval(void *data, const char *input) {
 			char *color_code = NULL;
 			char *word = NULL;
 			int argc = 0;
-			int delta = (input[2])? 3: 2;
-			char** argv = r_str_argv (r_str_trim_head_ro (input + delta), &argc);
+			int delta = (input[2]) ? 3 : 2;
+			char **argv = r_str_argv (r_str_trim_head_ro (input + delta), &argc);
 			switch (input[2]) {
 			case '?': {
 				const char *helpmsg[] = {
-					"Usage ecH[iw-?]","","",
-					"ecHi","[color]","highlight current instruction with 'color' background",
-					"ecHw","[word] [color]","highlight 'word ' in current instruction with 'color' background",
-					"ecH","","list all the highlight rules",
-					"ecH.","","show highlight rule in current offset",
-					"ecH-","*","remove all the highlight hints",
-					"ecH-","","remove all highlights on current instruction",
+					"Usage ecH[iw-?]", "", "",
+					"ecHi", "[color]", "highlight current instruction with 'color' background",
+					"ecHw", "[word] [color]", "highlight 'word ' in current instruction with 'color' background",
+					"ecH", "", "list all the highlight rules",
+					"ecH.", "", "show highlight rule in current offset",
+					"ecH-", "*", "remove all the highlight hints",
+					"ecH-", "", "remove all highlights on current instruction",
 					NULL
 				};
 				r_core_cmd_help (core, helpmsg);
-				}
+			}
 				r_str_argv_free (argv);
 				return false;
 			case '-': // ecH-
@@ -527,33 +531,33 @@ static int cmd_eval(void *data, const char *input) {
 			}
 			r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, "");
 			const char *str = r_meta_get_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset);
-			char *dup = r_str_newf ("%s \"%s%s\"", str?str:"", word?word:"", color_code?color_code:r_cons_singleton ()->context->pal.wordhl);
+			char *dup = r_str_newf ("%s \"%s%s\"", str ? str : "", word ? word : "", color_code ? color_code : r_cons_singleton ()->context->pal.wordhl);
 			r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, dup);
 			r_str_argv_free (argv);
 			R_FREE (word);
 			R_FREE (dup);
 			break;
-			  }
+		}
 		default: {
-				 char *p = strdup (input + 2);
-				 char *q = strchr (p, '=');
-				 if (!q) {
-					 q = strchr (p, ' ');
-				 }
-				 if (q) {
-					 // Set color
-					 *q++ = 0;
-					 if (r_cons_pal_set (p, q)) {
-						 r_cons_pal_update_event ();
-					 }
-				 } else {
-					 char color[32];
-					 RColor rcolor = r_cons_pal_get (p);
-					 r_cons_rgb_str (color, sizeof (color), &rcolor);
-					 eprintf ("(%s)(%sCOLOR"Color_RESET")\n", p, color);
-				 }
-				 free (p);
-			 }
+			char *p = strdup (input + 2);
+			char *q = strchr (p, '=');
+			if (!q) {
+				q = strchr (p, ' ');
+			}
+			if (q) {
+				// Set color
+				*q++ = 0;
+				if (r_cons_pal_set (p, q)) {
+					r_cons_pal_update_event ();
+				}
+			} else {
+				char color[32];
+				RColor rcolor = r_cons_pal_get (p);
+				r_cons_rgb_str (color, sizeof (color), &rcolor);
+				eprintf ("(%s)(%sCOLOR" Color_RESET ")\n", p, color);
+			}
+			free (p);
+		}
 		}
 		break;
 	case 'd': // "ed"
@@ -571,7 +575,7 @@ static int cmd_eval(void *data, const char *input) {
 			char *file = r_str_home (".radare2rc");
 			if (r_cons_is_interactive ()) {
 				r_file_touch (file);
-				char * res = r_cons_editor (file, NULL);
+				char *res = r_cons_editor (file, NULL);
 				if (res) {
 					if (r_cons_yesno ('y', "Reload? (Y/n)")) {
 						r_core_run_script (core, file);
@@ -605,7 +609,7 @@ static int cmd_eval(void *data, const char *input) {
 		}
 		break;
 	case 's': // "es"
-		r_config_list (core->config, (input[1])? input + 1: NULL, 's');
+		r_config_list (core->config, (input[1]) ? input + 1 : NULL, 's');
 		break;
 	case '-': // "e-"
 		r_core_config_init (core);
@@ -616,7 +620,7 @@ static int cmd_eval(void *data, const char *input) {
 		break;
 	case 'r': // "er"
 		if (input[1]) {
-			const char *key = input + ((input[1] == ' ')? 2: 1);
+			const char *key = input + ((input[1] == ' ') ? 2 : 1);
 			if (!r_config_readonly (core->config, key)) {
 				eprintf ("cannot find key '%s'\n", key);
 			}

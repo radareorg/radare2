@@ -1,7 +1,7 @@
 #include <r_util.h>
 #include "arch.h"
 
-static ut64 parse_size(char *s, char **end) {
+static ut64 parse_size (char *s, char **end) {
 	if (*s == '.') {
 		return strtoul (s + 1, end, 10);
 	}
@@ -15,7 +15,7 @@ static ut64 parse_size(char *s, char **end) {
 	return strtoul (s, end, 0) << 3;
 }
 
-gdb_reg_t *parse_def(char **tok) {
+gdb_reg_t *parse_def (char **tok) {
 	char *end;
 	gdb_reg_t *r = R_NEW0 (gdb_reg_t);
 	if (!r) {
@@ -38,7 +38,7 @@ gdb_reg_t *parse_def(char **tok) {
 }
 
 #define PARSER_MAX_TOKENS 8
-gdb_reg_t *arch_parse_reg_profile(const char * reg_profile) {
+gdb_reg_t *arch_parse_reg_profile (const char *reg_profile) {
 	char *tok[PARSER_MAX_TOKENS];
 	char tmp[128];
 	int i, j, l;

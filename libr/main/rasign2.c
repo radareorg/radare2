@@ -2,7 +2,7 @@
 #include <r_main.h>
 #include <r_core.h>
 
-static void rasign_show_help(void) {
+static void rasign_show_help (void) {
 	printf ("Usage: rasign2 [options] [file]\n"
 		" -a [-a]          add extra 'a' to analysis command\n"
 		" -o sigs.sdb      add signatures to file, create if it does not exist\n"
@@ -16,8 +16,8 @@ static void rasign_show_help(void) {
 		"  rasign2 -o libc.sdb libc.so.6\n");
 }
 
-static RCore *opencore(const char *fname) {
-	RCoreFile * rfile = NULL;
+static RCore *opencore (const char *fname) {
+	RCoreFile *rfile = NULL;
 	RCore *c = r_core_new ();
 	if (!c) {
 		eprintf ("Count not get core\n");
@@ -46,7 +46,7 @@ static RCore *opencore(const char *fname) {
 	return c;
 }
 
-static void find_functions(RCore *core, size_t count) {
+static void find_functions (RCore *core, size_t count) {
 	const char *cmd = NULL;
 	switch (count) {
 	case 0: cmd = "aa"; break;
@@ -56,7 +56,7 @@ static void find_functions(RCore *core, size_t count) {
 	r_core_cmd0 (core, cmd);
 }
 
-R_API int r_main_rasign2(int argc, const char **argv) {
+R_API int r_main_rasign2 (int argc, const char **argv) {
 	const char *ofile = NULL;
 	int c;
 	size_t a_cnt = 0;

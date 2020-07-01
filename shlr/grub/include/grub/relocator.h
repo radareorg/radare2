@@ -17,7 +17,7 @@
  */
 
 #ifndef GRUB_RELOCATOR_HEADER
-#define GRUB_RELOCATOR_HEADER	1
+#define GRUB_RELOCATOR_HEADER 1
 
 #include <grub/types.h>
 #include <grub/err.h>
@@ -32,8 +32,8 @@ struct grub_relocator *grub_relocator_new (void);
 
 grub_err_t
 grub_relocator_alloc_chunk_addr (struct grub_relocator *rel,
-				 grub_relocator_chunk_t *out,
-				 grub_phys_addr_t target, grub_size_t size);
+	grub_relocator_chunk_t *out,
+	grub_phys_addr_t target, grub_size_t size);
 
 void *
 get_virtual_current_address (grub_relocator_chunk_t in);
@@ -41,18 +41,17 @@ grub_phys_addr_t
 get_physical_target_address (grub_relocator_chunk_t in);
 
 grub_err_t
-grub_relocator_alloc_chunk_align (struct grub_relocator *rel, 
-				  grub_relocator_chunk_t *out,
-				  grub_phys_addr_t min_addr,
-				  grub_phys_addr_t max_addr,
-				  grub_size_t size, grub_size_t align,
-				  int preference);
+grub_relocator_alloc_chunk_align (struct grub_relocator *rel,
+	grub_relocator_chunk_t *out,
+	grub_phys_addr_t min_addr,
+	grub_phys_addr_t max_addr,
+	grub_size_t size, grub_size_t align,
+	int preference);
 
 #define GRUB_RELOCATOR_PREFERENCE_NONE 0
 #define GRUB_RELOCATOR_PREFERENCE_LOW 1
 #define GRUB_RELOCATOR_PREFERENCE_HIGH 2
 
-void
-grub_relocator_unload (struct grub_relocator *rel);
+void grub_relocator_unload (struct grub_relocator *rel);
 
 #endif

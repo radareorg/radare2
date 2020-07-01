@@ -8,6 +8,6 @@ typedef struct _window {
 	ut64 proc;
 } window;
 
-R_API bool r_w32_add_winmsg_breakpoint(RDebug *dbg, const char *input);
-R_API void r_w32_identify_window(void);
-R_API void r_w32_print_windows(RDebug *dbg);
+R_API bool r_w32_add_winmsg_breakpoint (RDebug *dbg, const char *input);
+R_API void r_w32_identify_window (void);
+R_API void r_w32_print_windows (RDebug *dbg);

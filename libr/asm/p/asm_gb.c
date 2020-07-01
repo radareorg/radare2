@@ -9,12 +9,12 @@
 #include "../arch/gb/gbdis.c"
 #include "../arch/gb/gbasm.c"
 
-static int disassemble(RAsm *a, RAsmOp *r_op, const ut8 *buf, int len) {
-	int dlen = gbDisass(r_op,buf,len);
+static int disassemble (RAsm *a, RAsmOp *r_op, const ut8 *buf, int len) {
+	int dlen = gbDisass (r_op, buf, len);
 	return r_op->size = R_MAX (0, dlen);
 }
 
-static int assemble(RAsm *a, RAsmOp *r_op, const char *buf) {
+static int assemble (RAsm *a, RAsmOp *r_op, const char *buf) {
 	return gbAsm (a, r_op, buf);
 }
 

@@ -4,7 +4,7 @@
 #include "../i/private.h"
 #include "./cxx/demangle.h"
 
-R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
+R_API char *r_bin_demangle_cxx (RBinFile *bf, const char *str, ut64 vaddr) {
 	// DMGL_TYPES | DMGL_PARAMS | DMGL_ANSI | DMGL_VERBOSE
 	// | DMGL_RET_POSTFIX | DMGL_TYPES;
 	int i;

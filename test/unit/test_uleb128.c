@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "minunit.h"
 
-bool test_uleb128_small(void) {
+bool test_uleb128_small (void) {
 	int len;
 	ut8 *data = r_uleb128_encode (0xbeef, &len);
 	mu_assert_eq (len, 3, "uleb128 encoded should be 3 bytes");
@@ -25,7 +25,7 @@ bool test_uleb128_small(void) {
 	mu_end;
 }
 
-bool test_sleb128_small(void) {
+bool test_sleb128_small (void) {
 	st64 val;
 	const ut8 *data = (const ut8 *)"\xd3\xc2\x7c";
 	val = r_sleb128 (&data, data + 3);
@@ -40,7 +40,7 @@ bool test_sleb128_small(void) {
 	mu_end;
 }
 
-bool test_uleb128_big(void) {
+bool test_uleb128_big (void) {
 	int len;
 	ut8 *data = r_uleb128_encode (9019283812387, &len);
 	mu_assert_eq (len, 7, "uleb128 encoded should be 7 bytes");
@@ -62,7 +62,7 @@ bool test_uleb128_big(void) {
 	mu_end;
 }
 
-bool test_sleb128_big(void) {
+bool test_sleb128_big (void) {
 	st64 val;
 	const ut8 *data = (ut8 *)"\xdd\x9f\xab\xc6\xc0\xf9\x7d";
 	val = r_sleb128 (&data, data + 7);
@@ -77,7 +77,7 @@ bool test_sleb128_big(void) {
 	mu_end;
 }
 
-bool test_leb128_correctness(void) {
+bool test_leb128_correctness (void) {
 	st64 val;
 	const ut8 *data = (ut8 *)"\xc5\x00";
 	const ut8 *buf = r_leb128 (data, 2, &val);
@@ -86,7 +86,7 @@ bool test_leb128_correctness(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests () {
 	mu_run_test (test_uleb128_small);
 	mu_run_test (test_sleb128_small);
 	mu_run_test (test_uleb128_big);
@@ -95,6 +95,6 @@ int all_tests() {
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
+int main (int argc, char **argv) {
+	return all_tests ();
 }

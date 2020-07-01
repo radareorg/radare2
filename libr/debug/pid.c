@@ -2,7 +2,7 @@
 
 #include <r_debug.h>
 
-R_API RDebugPid *r_debug_pid_new(const char *path, int pid, int uid, char status, ut64 pc) {
+R_API RDebugPid *r_debug_pid_new (const char *path, int pid, int uid, char status, ut64 pc) {
 	RDebugPid *p = R_NEW0 (RDebugPid);
 	if (!p) {
 		return NULL;
@@ -16,13 +16,13 @@ R_API RDebugPid *r_debug_pid_new(const char *path, int pid, int uid, char status
 	return p;
 }
 
-R_API RDebugPid *r_debug_pid_free(RDebugPid *pid) {
+R_API RDebugPid *r_debug_pid_free (RDebugPid *pid) {
 	free (pid->path);
 	free (pid);
 	return NULL;
 }
 
-R_API RList *r_debug_pids(RDebug *dbg, int pid) {
+R_API RList *r_debug_pids (RDebug *dbg, int pid) {
 	if (dbg && dbg->h && dbg->h->pids) {
 		return dbg->h->pids (dbg, pid);
 	}
@@ -30,7 +30,7 @@ R_API RList *r_debug_pids(RDebug *dbg, int pid) {
 }
 
 // TODO: deprecate list/iterate functions from core apis? keep them for easiness?
-R_API int r_debug_pid_list(RDebug *dbg, int pid, char fmt) {
+R_API int r_debug_pid_list (RDebug *dbg, int pid, char fmt) {
 	RList *list;
 	RListIter *iter;
 	RDebugPid *p;
@@ -55,7 +55,7 @@ R_API int r_debug_pid_list(RDebug *dbg, int pid, char fmt) {
 				break;
 			default:
 				dbg->cb_printf (" %c %d ppid:%d uid:%d %c %s\n",
-					dbg->pid == p->pid? '*': '-',
+					dbg->pid == p->pid ? '*' : '-',
 					p->pid, p->ppid, p->uid, p->status, p->path);
 				break;
 			}
@@ -70,7 +70,7 @@ R_API int r_debug_pid_list(RDebug *dbg, int pid, char fmt) {
 	return false;
 }
 
-R_API int r_debug_thread_list(RDebug *dbg, int pid, char fmt) {
+R_API int r_debug_thread_list (RDebug *dbg, int pid, char fmt) {
 	RList *list;
 	RListIter *iter;
 	RDebugPid *p;
@@ -113,7 +113,7 @@ R_API int r_debug_thread_list(RDebug *dbg, int pid, char fmt) {
 				break;
 			default:
 				dbg->cb_printf (" %c %d %c %s\n",
-					dbg->tid == p->pid? '*': '-',
+					dbg->tid == p->pid ? '*' : '-',
 					p->pid, p->status, r_strbuf_get (path));
 				break;
 			}
@@ -130,7 +130,7 @@ R_API int r_debug_thread_list(RDebug *dbg, int pid, char fmt) {
 }
 
 /* processes */
-R_API int r_debug_pid_parent(RDebugPid *pid) {
+R_API int r_debug_pid_parent (RDebugPid *pid) {
 	// fork in child
 	return 0;
 }
@@ -154,11 +154,11 @@ R_API int r_debug_pid_del_thread(struct r_debug_t *dbg) {
 #endif
 
 /* status */
-R_API int r_debug_pid_set_state(struct r_debug_t *dbg, int status) {
+R_API int r_debug_pid_set_state (struct r_debug_t *dbg, int status) {
 	return true;
 }
 
 /* status */
-R_API struct r_debug_pid_t *r_debug_pid_get_status(struct r_debug_t *dbg, int pid) {
+R_API struct r_debug_pid_t *r_debug_pid_get_status (struct r_debug_t *dbg, int pid) {
 	return NULL;
 }

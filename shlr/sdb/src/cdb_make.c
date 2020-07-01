@@ -6,12 +6,12 @@
 #include "cdb.h"
 #include "cdb_make.h"
 
-#define ALIGNMENT sizeof (void*)
+#define ALIGNMENT sizeof (void *)
 
-char *cdb_alloc(ut32 n) {
+char *cdb_alloc (ut32 n) {
 #if __APPLE__ && !__POWERPC__
 	void *ret = NULL;
-	return posix_memalign (&ret, ALIGNMENT, n)? NULL: ret;
+	return posix_memalign (&ret, ALIGNMENT, n) ? NULL : ret;
 #elif __SDB_WINDOWS__ && !__CYGWIN__
 	return _aligned_malloc (n, ALIGNMENT);
 #else
@@ -19,7 +19,7 @@ char *cdb_alloc(ut32 n) {
 #endif
 }
 
-void cdb_alloc_free(void *x) {
+void cdb_alloc_free (void *x) {
 #if __SDB_WINDOWS__ && !__CYGWIN__
 	_aligned_free (x);
 #else
@@ -27,7 +27,7 @@ void cdb_alloc_free(void *x) {
 #endif
 }
 
-int cdb_make_start(struct cdb_make *c, int fd) {
+int cdb_make_start (struct cdb_make *c, int fd) {
 	int i;
 	c->head = 0;
 	c->split = 0;
@@ -43,7 +43,7 @@ int cdb_make_start(struct cdb_make *c, int fd) {
 	return seek_set (fd, c->pos);
 }
 
-static inline int incpos(struct cdb_make *c, ut32 len) {
+static inline int incpos (struct cdb_make *c, ut32 len) {
 	ut32 newpos = c->pos + len;
 	if (newpos < len) {
 		return 0;
@@ -52,8 +52,8 @@ static inline int incpos(struct cdb_make *c, ut32 len) {
 	return 1;
 }
 
-#define R_ANEW(x) (x*)cdb_alloc(sizeof(x))
-int cdb_make_addend(struct cdb_make *c, ut32 keylen, ut32 datalen, ut32 h) {
+#define R_ANEW(x) (x *)cdb_alloc (sizeof (x))
+int cdb_make_addend (struct cdb_make *c, ut32 keylen, ut32 datalen, ut32 h) {
 	ut32 u;
 	struct cdb_hplist *head = c->head;
 	if (!head || (head->num >= CDB_HPLIST)) {
@@ -68,7 +68,7 @@ int cdb_make_addend(struct cdb_make *c, ut32 keylen, ut32 datalen, ut32 h) {
 	head->hp[head->num].p = c->pos;
 	head->num++;
 	c->numentries++;
-	c->count[255 & h] ++;
+	c->count[255 & h]++;
 	u = c->count[255 & h] * 2;
 	if (u > c->memsize) {
 		c->memsize = u;
@@ -76,7 +76,7 @@ int cdb_make_addend(struct cdb_make *c, ut32 keylen, ut32 datalen, ut32 h) {
 	return incpos (c, KVLSZ + keylen + datalen);
 }
 
-static int pack_kvlen(ut8 *buf, ut32 klen, ut32 vlen) {
+static int pack_kvlen (ut8 *buf, ut32 klen, ut32 vlen) {
 	if (klen > SDB_MAX_KEY) {
 		return 0; // 0xff = 254 chars+trailing zero
 	}
@@ -84,13 +84,13 @@ static int pack_kvlen(ut8 *buf, ut32 klen, ut32 vlen) {
 		return 0;
 	}
 	buf[0] = (ut8)klen;
-	buf[1] = (ut8)((vlen      ) & 0xff);
-	buf[2] = (ut8)((vlen >> 8 ) & 0xff);
-	buf[3] = (ut8)((vlen >> 16) & 0xff);
+	buf[1] = (ut8) ((vlen)&0xff);
+	buf[2] = (ut8) ((vlen >> 8) & 0xff);
+	buf[3] = (ut8) ((vlen >> 16) & 0xff);
 	return 1;
 }
 
-int cdb_make_addbegin(struct cdb_make *c, ut32 keylen, ut32 datalen) {
+int cdb_make_addbegin (struct cdb_make *c, ut32 keylen, ut32 datalen) {
 	ut8 buf[KVLSZ];
 	if (!pack_kvlen (buf, keylen, datalen)) {
 		return 0;
@@ -98,7 +98,7 @@ int cdb_make_addbegin(struct cdb_make *c, ut32 keylen, ut32 datalen) {
 	return buffer_putalign (&c->b, (const char *)buf, KVLSZ);
 }
 
-int cdb_make_add(struct cdb_make *c, const char *key, ut32 keylen, const char *data, ut32 datalen) {
+int cdb_make_add (struct cdb_make *c, const char *key, ut32 keylen, const char *data, ut32 datalen) {
 	/* add tailing \0 to allow mmap to work later */
 	keylen++;
 	datalen++;
@@ -114,7 +114,7 @@ int cdb_make_add(struct cdb_make *c, const char *key, ut32 keylen, const char *d
 	return cdb_make_addend (c, keylen, datalen, sdb_hash (key));
 }
 
-int cdb_make_finish(struct cdb_make *c) {
+int cdb_make_finish (struct cdb_make *c) {
 	int i;
 	char buf[8];
 	struct cdb_hp *hp;
@@ -125,18 +125,18 @@ int cdb_make_finish(struct cdb_make *c) {
 	if (memsize > (UT32_MAX / sizeof (struct cdb_hp))) {
 		return 0;
 	}
-	c->split = (struct cdb_hp *) cdb_alloc (memsize * sizeof (struct cdb_hp));
+	c->split = (struct cdb_hp *)cdb_alloc (memsize * sizeof (struct cdb_hp));
 	if (!c->split) {
 		return 0;
 	}
 	c->hash = c->split + c->numentries;
 
-	for (u = i = 0; i<256; i++) {
+	for (u = i = 0; i < 256; i++) {
 		u += c->count[i]; /* bounded by numentries, so no overflow */
 		c->start[i] = u;
 	}
 
-	for (x = c->head; x; x=x->next) {
+	for (x = c->head; x; x = x->next) {
 		i = x->num;
 		while (i--) {
 			c->split[--c->start[255 & x->hp[i].h]] = x->hp[i];
@@ -147,7 +147,7 @@ int cdb_make_finish(struct cdb_make *c) {
 		count = c->count[i];
 		len = count << 1;
 		ut32_pack (c->final + 4 * i, c->pos);
-		for (u = 0; u<len; u++) {
+		for (u = 0; u < len; u++) {
 			c->hash[u].h = c->hash[u].p = 0;
 		}
 		hp = c->split + c->start[i];

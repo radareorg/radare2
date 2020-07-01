@@ -35,9 +35,9 @@ typedef struct bfvm_cpu_t {
 } BfvmCPU;
 
 #ifdef R_API
-R_API BfvmCPU *bfvm_new(RIOBind *iob);
-R_API BfvmCPU *bfvm_free(BfvmCPU *c);
-R_API int bfvm_step(BfvmCPU *c, int over);
+R_API BfvmCPU *bfvm_new (RIOBind *iob);
+R_API BfvmCPU *bfvm_free (BfvmCPU *c);
+R_API int bfvm_step (BfvmCPU *c, int over);
 #endif
 
 #endif

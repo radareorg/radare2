@@ -8,55 +8,60 @@
 #include "te_specs.h"
 #include "te.h"
 
-ut64 r_bin_te_get_stripped_delta(struct r_bin_te_obj_t *bin) {
+ut64 r_bin_te_get_stripped_delta (struct r_bin_te_obj_t *bin) {
 	if (bin && bin->header) {
 		return bin->header->StrippedSize - sizeof (TE_image_file_header);
 	}
 	return 0LL;
 }
 
-static int r_bin_te_init_hdr(struct r_bin_te_obj_t *bin) {
+static int r_bin_te_init_hdr (struct r_bin_te_obj_t *bin) {
 	if (!bin) {
 		return false;
 	}
-	if (!(bin->header = malloc (sizeof(TE_image_file_header)))) {
+	if (!(bin->header = malloc (sizeof (TE_image_file_header)))) {
 		r_sys_perror ("malloc (header)");
 		return false;
 	}
-	if (r_buf_read_at (bin->b, 0, (ut8*)bin->header, sizeof (TE_image_file_header)) == -1) {
-		eprintf("Error: read (header)\n");
+	if (r_buf_read_at (bin->b, 0, (ut8 *)bin->header, sizeof (TE_image_file_header)) == -1) {
+		eprintf ("Error: read (header)\n");
 		return false;
 	}
 	if (!bin->kv) {
-		eprintf("Error: sdb instance is empty\n");
+		eprintf ("Error: sdb instance is empty\n");
 		return false;
 	}
 
 	sdb_set (bin->kv, "te_machine.cparse", "enum te_machine { TE_IMAGE_FILE_MACHINE_UNKNOWN=0x0, TE_IMAGE_FILE_MACHINE_ALPHA=0x184, "
-	"TE_IMAGE_FILE_MACHINE_ALPHA64=0x284, TE_IMAGE_FILE_MACHINE_AM33=0x1d3, TE_IMAGE_FILE_MACHINE_AMD64=0x8664, "
-	"TE_IMAGE_FILE_MACHINE_ARM=0x1c0, TE_IMAGE_FILE_MACHINE_AXP64=0x184, TE_IMAGE_FILE_MACHINE_CEE=0xc0ee, "
-	"TE_IMAGE_FILE_MACHINE_CEF=0x0cef, TE_IMAGE_FILE_MACHINE_EBC=0x0ebc, TE_IMAGE_FILE_MACHINE_I386=0x014c, "
-	"TE_IMAGE_FILE_MACHINE_IA64=0x0200, TE_IMAGE_FILE_MACHINE_M32R=0x9041, TE_IMAGE_FILE_MACHINE_M68K=0x0268, "
-	"TE_IMAGE_FILE_MACHINE_MIPS16=0x0266, TE_IMAGE_FILE_MACHINE_MIPSFPU=0x0366, TE_IMAGE_FILE_MACHINE_MIPSFPU16=0x0466, "
-	"TE_IMAGE_FILE_MACHINE_POWERPC=0x01f0, TE_IMAGE_FILE_MACHINE_POWERPCFP=0x01f1, TE_IMAGE_FILE_MACHINE_R10000=0x0168, "
-	"TE_IMAGE_FILE_MACHINE_R3000=0x0162, TE_IMAGE_FILE_MACHINE_R4000=0x0166, TE_IMAGE_FILE_MACHINE_SH3=0x01a2, "
-	"TE_IMAGE_FILE_MACHINE_SH3DSP=0x01a3, TE_IMAGE_FILE_MACHINE_SH3E=0x01a4, TE_IMAGE_FILE_MACHINE_SH4=0x01a6, "
-	"TE_IMAGE_FILE_MACHINE_SH5=0x01a8, TE_IMAGE_FILE_MACHINE_THUMB=0x01c2, TE_IMAGE_FILE_MACHINE_TRICORE=0x0520, "
-	"TE_IMAGE_FILE_MACHINE_WCEMIPSV2=0x0169};", 0);
+					       "TE_IMAGE_FILE_MACHINE_ALPHA64=0x284, TE_IMAGE_FILE_MACHINE_AM33=0x1d3, TE_IMAGE_FILE_MACHINE_AMD64=0x8664, "
+					       "TE_IMAGE_FILE_MACHINE_ARM=0x1c0, TE_IMAGE_FILE_MACHINE_AXP64=0x184, TE_IMAGE_FILE_MACHINE_CEE=0xc0ee, "
+					       "TE_IMAGE_FILE_MACHINE_CEF=0x0cef, TE_IMAGE_FILE_MACHINE_EBC=0x0ebc, TE_IMAGE_FILE_MACHINE_I386=0x014c, "
+					       "TE_IMAGE_FILE_MACHINE_IA64=0x0200, TE_IMAGE_FILE_MACHINE_M32R=0x9041, TE_IMAGE_FILE_MACHINE_M68K=0x0268, "
+					       "TE_IMAGE_FILE_MACHINE_MIPS16=0x0266, TE_IMAGE_FILE_MACHINE_MIPSFPU=0x0366, TE_IMAGE_FILE_MACHINE_MIPSFPU16=0x0466, "
+					       "TE_IMAGE_FILE_MACHINE_POWERPC=0x01f0, TE_IMAGE_FILE_MACHINE_POWERPCFP=0x01f1, TE_IMAGE_FILE_MACHINE_R10000=0x0168, "
+					       "TE_IMAGE_FILE_MACHINE_R3000=0x0162, TE_IMAGE_FILE_MACHINE_R4000=0x0166, TE_IMAGE_FILE_MACHINE_SH3=0x01a2, "
+					       "TE_IMAGE_FILE_MACHINE_SH3DSP=0x01a3, TE_IMAGE_FILE_MACHINE_SH3E=0x01a4, TE_IMAGE_FILE_MACHINE_SH4=0x01a6, "
+					       "TE_IMAGE_FILE_MACHINE_SH5=0x01a8, TE_IMAGE_FILE_MACHINE_THUMB=0x01c2, TE_IMAGE_FILE_MACHINE_TRICORE=0x0520, "
+					       "TE_IMAGE_FILE_MACHINE_WCEMIPSV2=0x0169};",
+		0);
 	sdb_set (bin->kv, "te_subsystem.cparse", "enum te_subsystem { TE_IMAGE_SUBSYSTEM_UNKNOWN=0, TE_IMAGE_SUBSYSTEM_NATIVE=1, "
-	"TE_IMAGE_SUBSYSTEM_WINDOWS_GUI=2, TE_IMAGE_SUBSYSTEM_WINDOWS_CUI=3, "
-	"TE_IMAGE_SUBSYSTEM_POSIX_CUI=7, TE_IMAGE_SUBSYSTEM_WINDOWS_CE_GU=9, "
-	"TE_IMAGE_SUBSYSTEM_EFI_APPLICATION=10, TE_IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER=11, TE_IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER=12, "
-	"TE_IMAGE_SUBSYSTEM_EFI_ROM=13, TE_IMAGE_SUBSYSTEM_XBOX=14};", 0);
+						 "TE_IMAGE_SUBSYSTEM_WINDOWS_GUI=2, TE_IMAGE_SUBSYSTEM_WINDOWS_CUI=3, "
+						 "TE_IMAGE_SUBSYSTEM_POSIX_CUI=7, TE_IMAGE_SUBSYSTEM_WINDOWS_CE_GU=9, "
+						 "TE_IMAGE_SUBSYSTEM_EFI_APPLICATION=10, TE_IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER=11, TE_IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER=12, "
+						 "TE_IMAGE_SUBSYSTEM_EFI_ROM=13, TE_IMAGE_SUBSYSTEM_XBOX=14};",
+		0);
 	sdb_num_set (bin->kv, "te_header.offset", 0, 0);
 	sdb_set (bin->kv, "te_header.format", "[2]z[2]Eb[1]Ewxxq"
-		" Signature (te_machine)Machine NumberOfSections (te_subsystem)Subsystem StrippedSize AddressOfEntryPoint BaseOfCode ImageBase", 0);
+					      " Signature (te_machine)Machine NumberOfSections (te_subsystem)Subsystem StrippedSize AddressOfEntryPoint BaseOfCode ImageBase",
+		0);
 	sdb_num_set (bin->kv, "te_directory1_header.offset", 24, 0);
 	sdb_set (bin->kv, "te_directory1_header.format", "xx"
-		" VirtualAddress Size", 0);
+							 " VirtualAddress Size",
+		0);
 	sdb_num_set (bin->kv, "te_directory2_header.offset", 32, 0);
 	sdb_set (bin->kv, "te_directory2_header.format", "xx"
-		" VirtualAddress Size", 0);
+							 " VirtualAddress Size",
+		0);
 
 	if (strncmp ((char *)&bin->header->Signature, "VZ", 2)) {
 		return false;
@@ -64,7 +69,7 @@ static int r_bin_te_init_hdr(struct r_bin_te_obj_t *bin) {
 	return true;
 }
 
-ut64 r_bin_te_get_main_paddr(struct r_bin_te_obj_t *bin) {
+ut64 r_bin_te_get_main_paddr (struct r_bin_te_obj_t *bin) {
 	RBinAddr *entry = r_bin_te_get_entrypoint (bin);
 	ut64 addr = 0LL;
 	ut8 buf[512];
@@ -75,7 +80,7 @@ ut64 r_bin_te_get_main_paddr(struct r_bin_te_obj_t *bin) {
 		eprintf ("Error: read (entry)\n");
 	} else {
 		if (buf[367] == 0xe8) {
-			int delta = (buf[368] | buf[369]<<8 | buf[370]<<16 | buf[371]<<24);
+			int delta = (buf[368] | buf[369] << 8 | buf[370] << 16 | buf[371] << 24);
 			delta += 367 + 5;
 			addr = entry->vaddr;
 			if (delta >= (UT64_MAX - addr)) {
@@ -89,7 +94,7 @@ ut64 r_bin_te_get_main_paddr(struct r_bin_te_obj_t *bin) {
 	return addr;
 }
 
-static TE_DWord r_bin_te_vaddr_to_paddr(struct r_bin_te_obj_t* bin, TE_DWord vaddr) {
+static TE_DWord r_bin_te_vaddr_to_paddr (struct r_bin_te_obj_t *bin, TE_DWord vaddr) {
 	TE_DWord section_base;
 	int i, section_size;
 
@@ -103,8 +108,8 @@ static TE_DWord r_bin_te_vaddr_to_paddr(struct r_bin_te_obj_t* bin, TE_DWord vad
 	return 0;
 }
 
-static int r_bin_te_init_sections(struct r_bin_te_obj_t* bin) {
-	int sections_size = sizeof(TE_image_section_header) * bin->header->NumberOfSections;
+static int r_bin_te_init_sections (struct r_bin_te_obj_t *bin) {
+	int sections_size = sizeof (TE_image_section_header) * bin->header->NumberOfSections;
 	if (sections_size > bin->size) {
 		eprintf ("Invalid NumberOfSections value\n");
 		return false;
@@ -113,30 +118,30 @@ static int r_bin_te_init_sections(struct r_bin_te_obj_t* bin) {
 		perror ("malloc (sections headers)");
 		return false;
 	}
-	if (r_buf_read_at (bin->b, sizeof(TE_image_file_header),
-				(ut8*)bin->section_header, sections_size) == -1) {
+	if (r_buf_read_at (bin->b, sizeof (TE_image_file_header),
+		    (ut8 *)bin->section_header, sections_size) == -1) {
 		eprintf ("Error: read (sections headers)\n");
 		return false;
 	}
 	return true;
 }
 
-static int r_bin_te_init(struct r_bin_te_obj_t* bin) {
+static int r_bin_te_init (struct r_bin_te_obj_t *bin) {
 	bin->header = NULL;
 	bin->section_header = NULL;
 	bin->endian = 0;
 	if (!r_bin_te_init_hdr (bin)) {
-		eprintf("Warning: File is not TE\n");
+		eprintf ("Warning: File is not TE\n");
 		return false;
 	}
 	if (!r_bin_te_init_sections (bin)) {
-		eprintf("Warning: Cannot initialize sections\n");
+		eprintf ("Warning: Cannot initialize sections\n");
 		return false;
 	}
 	return true;
 }
 
-char* r_bin_te_get_arch(struct r_bin_te_obj_t* bin) {
+char *r_bin_te_get_arch (struct r_bin_te_obj_t *bin) {
 	char *arch;
 	if (!bin) {
 		return NULL;
@@ -169,19 +174,18 @@ char* r_bin_te_get_arch(struct r_bin_te_obj_t* bin) {
 	return arch;
 }
 
-int r_bin_te_get_bits(struct r_bin_te_obj_t* bin) {
+int r_bin_te_get_bits (struct r_bin_te_obj_t *bin) {
 	return 32; // It is always 32 bit by now
 }
 
-
-RBinAddr* r_bin_te_get_entrypoint(struct r_bin_te_obj_t* bin) {
+RBinAddr *r_bin_te_get_entrypoint (struct r_bin_te_obj_t *bin) {
 	RBinAddr *entry = NULL;
 
 	if (!bin || !bin->header) {
 		return NULL;
 	}
 	if (!(entry = malloc (sizeof (RBinAddr)))) {
-		perror("malloc (entrypoint)");
+		perror ("malloc (entrypoint)");
 		return NULL;
 	}
 	entry->vaddr = bin->header->AddressOfEntryPoint - r_bin_te_get_stripped_delta (bin);
@@ -192,15 +196,14 @@ RBinAddr* r_bin_te_get_entrypoint(struct r_bin_te_obj_t* bin) {
 	return entry;
 }
 
-ut64 r_bin_te_get_image_base(struct r_bin_te_obj_t* bin)
-{
+ut64 r_bin_te_get_image_base (struct r_bin_te_obj_t *bin) {
 	if (bin && bin->header) {
 		return (ut64)bin->header->ImageBase;
 	}
 	return 0LL;
 }
 
-char* r_bin_te_get_machine(struct r_bin_te_obj_t* bin) {
+char *r_bin_te_get_machine (struct r_bin_te_obj_t *bin) {
 	char *machine;
 	if (!bin) {
 		return NULL;
@@ -296,7 +299,7 @@ char* r_bin_te_get_machine(struct r_bin_te_obj_t* bin) {
 	return machine;
 }
 
-char* r_bin_te_get_os(struct r_bin_te_obj_t* bin) {
+char *r_bin_te_get_os (struct r_bin_te_obj_t *bin) {
 	char *os;
 	if (!bin) {
 		return NULL;
@@ -330,7 +333,7 @@ char* r_bin_te_get_os(struct r_bin_te_obj_t* bin) {
 	return os;
 }
 
-struct r_bin_te_section_t* r_bin_te_get_sections(struct r_bin_te_obj_t* bin) {
+struct r_bin_te_section_t *r_bin_te_get_sections (struct r_bin_te_obj_t *bin) {
 	struct r_bin_te_section_t *sections = NULL;
 	TE_image_section_header *shdr;
 	int i, sections_count;
@@ -359,7 +362,7 @@ struct r_bin_te_section_t* r_bin_te_get_sections(struct r_bin_te_obj_t* bin) {
 	return sections;
 }
 
-char* r_bin_te_get_subsystem(struct r_bin_te_obj_t* bin) {
+char *r_bin_te_get_subsystem (struct r_bin_te_obj_t *bin) {
 	char *subsystem;
 
 	if (!bin) {
@@ -402,7 +405,7 @@ char* r_bin_te_get_subsystem(struct r_bin_te_obj_t* bin) {
 	return subsystem;
 }
 
-void* r_bin_te_free(struct r_bin_te_obj_t* bin) {
+void *r_bin_te_free (struct r_bin_te_obj_t *bin) {
 	if (!bin) {
 		return NULL;
 	}
@@ -413,14 +416,14 @@ void* r_bin_te_free(struct r_bin_te_obj_t* bin) {
 	return NULL;
 }
 
-struct r_bin_te_obj_t* r_bin_te_new(const char* file) {
+struct r_bin_te_obj_t *r_bin_te_new (const char *file) {
 	struct r_bin_te_obj_t *bin = R_NEW0 (struct r_bin_te_obj_t);
 	if (!bin) {
 		return NULL;
 	}
 	bin->file = file;
 	size_t binsz;
-	ut8 *buf = (ut8*)r_file_slurp (file, &binsz);
+	ut8 *buf = (ut8 *)r_file_slurp (file, &binsz);
 	bin->size = binsz;
 	if (!buf) {
 		return r_bin_te_free (bin);
@@ -437,7 +440,7 @@ struct r_bin_te_obj_t* r_bin_te_new(const char* file) {
 	return bin;
 }
 
-struct r_bin_te_obj_t* r_bin_te_new_buf(RBuffer *buf) {
+struct r_bin_te_obj_t *r_bin_te_new_buf (RBuffer *buf) {
 	struct r_bin_te_obj_t *bin = R_NEW0 (struct r_bin_te_obj_t);
 	if (!bin) {
 		return NULL;

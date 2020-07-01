@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "minunit.h"
 
-bool test_parsed_args_noargs(void) {
+bool test_parsed_args_noargs (void) {
 	RCmdParsedArgs *a = r_cmd_parsed_args_new ("pd", 0, NULL);
 	mu_assert_streq (a->argv[0], "pd", "pd is the command");
 	mu_assert_streq_free (r_cmd_parsed_args_argstr (a), "", "empty arguments");
@@ -12,8 +12,8 @@ bool test_parsed_args_noargs(void) {
 	mu_end;
 }
 
-bool test_parsed_args_onearg(void) {
-	char *args[] = {"10"};
+bool test_parsed_args_onearg (void) {
+	char *args[] = { "10" };
 	RCmdParsedArgs *a = r_cmd_parsed_args_new ("pd", 1, args);
 	mu_assert_streq (a->argv[0], "pd", "pd is the command");
 	mu_assert_streq_free (r_cmd_parsed_args_argstr (a), "10", "one argument");
@@ -22,7 +22,7 @@ bool test_parsed_args_onearg(void) {
 	mu_end;
 }
 
-bool test_parsed_args_args(void) {
+bool test_parsed_args_args (void) {
 	char *args[] = { "d", "0" };
 	RCmdParsedArgs *a = r_cmd_parsed_args_new ("wA", 2, args);
 	mu_assert_streq (a->argv[0], "wA", "wA is the command");
@@ -32,7 +32,7 @@ bool test_parsed_args_args(void) {
 	mu_end;
 }
 
-bool test_parsed_args_nospace(void) {
+bool test_parsed_args_nospace (void) {
 	char *args[] = { "dr*" };
 	RCmdParsedArgs *a = r_cmd_parsed_args_new (".", 1, args);
 	a->has_space_after_cmd = false;
@@ -43,7 +43,7 @@ bool test_parsed_args_nospace(void) {
 	mu_end;
 }
 
-bool test_parsed_args_newcmd(void) {
+bool test_parsed_args_newcmd (void) {
 	RCmdParsedArgs *a = r_cmd_parsed_args_newcmd ("pd");
 	mu_assert_streq (a->argv[0], "pd", "pd is the command");
 	char *args[] = { "10" };
@@ -63,7 +63,7 @@ bool test_parsed_args_newcmd(void) {
 	mu_end;
 }
 
-bool test_parsed_args_newargs(void) {
+bool test_parsed_args_newargs (void) {
 	char *args[] = { "0", "1", "2" };
 	RCmdParsedArgs *a = r_cmd_parsed_args_newargs (3, args);
 	mu_assert_eq (a->argc, 4, "argc == 4");
@@ -78,11 +78,11 @@ bool test_parsed_args_newargs(void) {
 	mu_end;
 }
 
-static RCmdStatus afl_argv_handler(void *user, int argc, const char **argv) {
+static RCmdStatus afl_argv_handler (void *user, int argc, const char **argv) {
 	return R_CMD_STATUS_OK;
 }
 
-bool test_cmd_descriptor_argv(void) {
+bool test_cmd_descriptor_argv (void) {
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
 	RCmdDesc *cd = r_cmd_desc_argv_new (cmd, root, "afl", afl_argv_handler, NULL);
@@ -96,7 +96,7 @@ bool test_cmd_descriptor_argv(void) {
 	mu_end;
 }
 
-bool test_cmd_descriptor_argv_nested(void) {
+bool test_cmd_descriptor_argv_nested (void) {
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
 	RCmdDesc *af_cd = r_cmd_desc_argv_new (cmd, root, "af", NULL, NULL);
@@ -108,11 +108,11 @@ bool test_cmd_descriptor_argv_nested(void) {
 	mu_end;
 }
 
-static int a_oldinput_cb(void *user, const char *input) {
+static int a_oldinput_cb (void *user, const char *input) {
 	return 0;
 }
 
-bool test_cmd_descriptor_oldinput(void) {
+bool test_cmd_descriptor_oldinput (void) {
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
 	RCmdDesc *cd = r_cmd_desc_oldinput_new (cmd, root, "a", a_oldinput_cb, NULL);
@@ -125,23 +125,23 @@ bool test_cmd_descriptor_oldinput(void) {
 	mu_end;
 }
 
-static RCmdStatus ap_handler(void *user, int argc, const char **argv) {
+static RCmdStatus ap_handler (void *user, int argc, const char **argv) {
 	return R_CMD_STATUS_OK;
 }
 
-static RCmdStatus aeir_handler(void *user, int argc, const char **argv) {
+static RCmdStatus aeir_handler (void *user, int argc, const char **argv) {
 	return R_CMD_STATUS_OK;
 }
 
-static int ae_handler(void *user, const char *input) {
+static int ae_handler (void *user, const char *input) {
 	return 0;
 }
 
-static int w_handler(void *user, const char *input) {
+static int w_handler (void *user, const char *input) {
 	return 0;
 }
 
-bool test_cmd_descriptor_tree(void) {
+bool test_cmd_descriptor_tree (void) {
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
 	RCmdDesc *a_cd = r_cmd_desc_argv_new (cmd, root, "a", NULL, NULL);
@@ -158,7 +158,7 @@ bool test_cmd_descriptor_tree(void) {
 	mu_end;
 }
 
-bool test_cmd_get_desc(void) {
+bool test_cmd_get_desc (void) {
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
 	RCmdDesc *a_cd = r_cmd_desc_argv_new (cmd, root, "a", NULL, NULL);
@@ -183,39 +183,39 @@ bool test_cmd_get_desc(void) {
 	mu_end;
 }
 
-static RCmdStatus pd_handler(void *user, int argc, const char **argv) {
+static RCmdStatus pd_handler (void *user, int argc, const char **argv) {
 	mu_assert_eq (argc, 2, "pd_handler called with 2 arguments (name and arg)");
 	mu_assert_streq (argv[0], "pd", "pd is argv[0]");
 	mu_assert_streq (argv[1], "10", "10 is argv[1]");
 	return R_CMD_STATUS_OK;
 }
 
-static RCmdStatus p_handler_argv(void *user, int argc, const char **argv) {
+static RCmdStatus p_handler_argv (void *user, int argc, const char **argv) {
 	return R_CMD_STATUS_OK;
 }
 
-static int p_handler(void *user, const char *input) {
+static int p_handler (void *user, const char *input) {
 	mu_assert_streq (input, "x 10", "input is +1");
 	return -1;
 }
 
-static int px_handler(void *user, const char *input) {
+static int px_handler (void *user, const char *input) {
 	if (*input == '?') {
 		r_cons_printf ("Free format px help\n");
 	}
 	return 0;
 }
 
-static int wv_handler(void *user, const char *input) {
+static int wv_handler (void *user, const char *input) {
 	mu_assert_streq (input, "8 0xdeadbeef", "input is +2");
 	return 1;
 }
 
-static int q_handler(void *user, const char *input) {
+static int q_handler (void *user, const char *input) {
 	return -2;
 }
 
-bool test_cmd_call_desc(void) {
+bool test_cmd_call_desc (void) {
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
 	RCmdDesc *p_cd = r_cmd_desc_argv_new (cmd, root, "p", NULL, NULL);
@@ -224,20 +224,20 @@ bool test_cmd_call_desc(void) {
 	r_cmd_desc_oldinput_new (cmd, root, "wv", wv_handler, NULL);
 	r_cmd_desc_oldinput_new (cmd, root, "q", q_handler, NULL);
 
-	char *pd_args[] = {"10"};
-	char *px_args[] = {"10"};
-	char *wv8_args[] = {"0xdeadbeef"};
+	char *pd_args[] = { "10" };
+	char *px_args[] = { "10" };
+	char *wv8_args[] = { "0xdeadbeef" };
 
 	RCmdParsedArgs *a = r_cmd_parsed_args_new ("pd", 1, pd_args);
-	mu_assert_eq(r_cmd_call_parsed_args (cmd, a), R_CMD_STATUS_OK, "pd was called correctly");
+	mu_assert_eq (r_cmd_call_parsed_args (cmd, a), R_CMD_STATUS_OK, "pd was called correctly");
 	r_cmd_parsed_args_free (a);
 
 	a = r_cmd_parsed_args_new ("px", 1, px_args);
-	mu_assert_eq(r_cmd_call_parsed_args (cmd, a), R_CMD_STATUS_INVALID, "p was called correctly");
+	mu_assert_eq (r_cmd_call_parsed_args (cmd, a), R_CMD_STATUS_INVALID, "p was called correctly");
 	r_cmd_parsed_args_free (a);
 
 	a = r_cmd_parsed_args_new ("wv8", 1, wv8_args);
-	mu_assert_eq(r_cmd_call_parsed_args (cmd, a), R_CMD_STATUS_OK, "wv was called correctly");
+	mu_assert_eq (r_cmd_call_parsed_args (cmd, a), R_CMD_STATUS_OK, "wv was called correctly");
 	r_cmd_parsed_args_free (a);
 
 	a = r_cmd_parsed_args_new ("quit", 0, NULL);
@@ -248,7 +248,7 @@ bool test_cmd_call_desc(void) {
 	mu_end;
 }
 
-bool test_cmd_help(void) {
+bool test_cmd_help (void) {
 	const RCmdDescHelp p_help = {
 		.summary = "p summary",
 		.usage = "p-usage",
@@ -288,8 +288,8 @@ bool test_cmd_help(void) {
 	r_cmd_desc_oldinput_new (cmd, p_cd, "px", px_handler, &px_help);
 
 	const char *p_help_exp = "Usage: p-usage   # p summary\n"
-		"| pd <num>                 # pd summary\n"
-		"| px <verylongarg_str_num> # px summary\n";
+				 "| pd <num>                 # pd summary\n"
+				 "| px <verylongarg_str_num> # px summary\n";
 	RCmdParsedArgs *a = r_cmd_parsed_args_newcmd ("p?");
 	char *h = r_cmd_get_help (cmd, a, false);
 	mu_assert_notnull (h, "help is not null");
@@ -298,9 +298,9 @@ bool test_cmd_help(void) {
 	r_cmd_parsed_args_free (a);
 
 	const char *pd_help_exp = "Usage: pd <num>   # pd summary\n"
-		"\npd long description\n"
-		"\nExamples:\n"
-		"| pd 10 # print 10 disassembled instructions\n";
+				  "\npd long description\n"
+				  "\nExamples:\n"
+				  "| pd 10 # print 10 disassembled instructions\n";
 	a = r_cmd_parsed_args_newcmd ("pd?");
 	h = r_cmd_get_help (cmd, a, false);
 	mu_assert_notnull (h, "help is not null");
@@ -309,11 +309,11 @@ bool test_cmd_help(void) {
 	r_cmd_parsed_args_free (a);
 
 	const char *pd_long_help_exp = "Usage: pd <num>   # pd summary\n"
-		"\n"
-		"pd long description\n"
-		"\n"
-		"Examples:\n"
-		"| pd 10 # print 10 disassembled instructions\n";
+				       "\n"
+				       "pd long description\n"
+				       "\n"
+				       "Examples:\n"
+				       "| pd 10 # print 10 disassembled instructions\n";
 	a = r_cmd_parsed_args_newcmd ("pd??");
 	h = r_cmd_get_help (cmd, a, false);
 	mu_assert_notnull (h, "help is not null");
@@ -325,7 +325,7 @@ bool test_cmd_help(void) {
 	mu_end;
 }
 
-bool test_cmd_group_help(void) {
+bool test_cmd_group_help (void) {
 	const RCmdDescHelp p_help = {
 		.summary = "p summary",
 		.usage = "p-usage",
@@ -350,8 +350,8 @@ bool test_cmd_group_help(void) {
 	r_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler, &pd_help);
 
 	const char *p_help_exp = "Usage: p-usage   # p group-summary\n"
-		"| p        # p summary\n"
-		"| pd <num> # pd summary\n";
+				 "| p        # p summary\n"
+				 "| pd <num> # pd summary\n";
 	RCmdParsedArgs *a = r_cmd_parsed_args_newcmd ("p?");
 	char *h = r_cmd_get_help (cmd, a, false);
 	mu_assert_notnull (h, "help is not null");
@@ -363,7 +363,7 @@ bool test_cmd_group_help(void) {
 	mu_end;
 }
 
-bool test_cmd_oldinput_help(void) {
+bool test_cmd_oldinput_help (void) {
 	r_cons_new ();
 
 	RCmd *cmd = r_cmd_new ();
@@ -385,7 +385,7 @@ bool test_cmd_oldinput_help(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests () {
 	mu_run_test (test_parsed_args_noargs);
 	mu_run_test (test_parsed_args_onearg);
 	mu_run_test (test_parsed_args_args);
@@ -404,6 +404,6 @@ int all_tests() {
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
+int main (int argc, char **argv) {
 	return all_tests ();
 }

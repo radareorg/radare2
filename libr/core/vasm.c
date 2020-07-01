@@ -15,7 +15,7 @@ typedef struct {
 	ut64 off;
 } RCoreVisualAsm;
 
-static int readline_callback(void *_a, const char *str) {
+static int readline_callback (void *_a, const char *str) {
 	RCoreVisualAsm *a = _a;
 	RCore *core = a->core;
 	r_cons_clear00 ();
@@ -24,17 +24,17 @@ static int readline_callback(void *_a, const char *str) {
 		r_config_get_i (a->core->config, "asm.bits"));
 	if (*str == '?') {
 		r_cons_printf ("0> ?\n\n"
-			"Visual assembler help:\n\n"
-			"  assemble input while typing using asm.arch, asm.bits and cfg.bigendian\n"
-			"  press enter to quit (prompt if there are bytes to be written)\n"
-			"  this assembler supports various directives like .hex ...\n");
+			       "Visual assembler help:\n\n"
+			       "  assemble input while typing using asm.arch, asm.bits and cfg.bigendian\n"
+			       "  press enter to quit (prompt if there are bytes to be written)\n"
+			       "  this assembler supports various directives like .hex ...\n");
 	} else {
 		r_asm_code_free (a->acode);
 		r_asm_set_pc (a->core->rasm, a->off);
 		a->acode = r_asm_massemble (a->core->rasm, str);
 		if (a->acode) {
-			char* hex = r_asm_code_get_hex (a->acode);
-			r_cons_printf ("[VA:%d]> %s\n", a->acode? a->acode->len: 0, str);
+			char *hex = r_asm_code_get_hex (a->acode);
+			r_cons_printf ("[VA:%d]> %s\n", a->acode ? a->acode->len : 0, str);
 			if (a->acode && a->acode->len) {
 				r_cons_printf ("* %s\n\n", hex);
 			} else {
@@ -55,10 +55,10 @@ static int readline_callback(void *_a, const char *str) {
 			int cols = r_cons_get_size (&rows);
 			core->print->cur_enabled = 1;
 			core->print->ocur = 0;
-			core->print->cur = (a->acode && a->acode->len) ? a->acode->len - 1: 0;
-			char *cmd = r_str_newf ("pd %d @x:%s @0x%"PFMT64x, rows - 11, a->codebuf, a->off);
+			core->print->cur = (a->acode && a->acode->len) ? a->acode->len - 1 : 0;
+			char *cmd = r_str_newf ("pd %d @x:%s @0x%" PFMT64x, rows - 11, a->codebuf, a->off);
 			char *res = r_core_cmd_str (a->core, cmd);
-			char *msg = r_str_ansi_crop (res, 0,0, cols - 2, rows - 5);
+			char *msg = r_str_ansi_crop (res, 0, 0, cols - 2, rows - 5);
 			r_cons_printf ("%s\n", msg);
 			free (msg);
 			free (res);
@@ -69,7 +69,7 @@ static int readline_callback(void *_a, const char *str) {
 	return 1;
 }
 
-R_API void r_core_visual_asm(RCore *core, ut64 off) {
+R_API void r_core_visual_asm (RCore *core, ut64 off) {
 	RCoreVisualAsm cva = {
 		.core = core,
 		.off = off

@@ -10,13 +10,12 @@
 
 #define R_BIN_MACH0_STRING_LENGTH 256
 
-
-#define CSMAGIC_CODEDIRECTORY      0xfade0c02
+#define CSMAGIC_CODEDIRECTORY 0xfade0c02
 #define CSMAGIC_EMBEDDED_SIGNATURE 0xfade0cc0
 #define CSMAGIC_DETACHED_SIGNATURE 0xfade0cc1 /* multi-arch collection of embedded signatures */
-#define CSMAGIC_ENTITLEMENTS       0xfade7171
-#define CSMAGIC_REQUIREMENT        0xfade0c00 /* single Requirement blob */
-#define CSMAGIC_REQUIREMENTS       0xfade0c01 /* Requirements vector (internal requirements) */
+#define CSMAGIC_ENTITLEMENTS 0xfade7171
+#define CSMAGIC_REQUIREMENT 0xfade0c00 /* single Requirement blob */
+#define CSMAGIC_REQUIREMENTS 0xfade0c01 /* Requirements vector (internal requirements) */
 
 #define CS_PAGE_SIZE 4096
 
@@ -30,10 +29,10 @@
 
 #define CSSLOT_CODEDIRECTORY 0
 #define CSSLOT_INFOSLOT 1
-#define CSSLOT_REQUIREMENTS  2
+#define CSSLOT_REQUIREMENTS 2
 #define CSSLOT_RESOURCEDIR 3
 #define CSSLOT_APPLICATION 4
-#define CSSLOT_ENTITLEMENTS  5
+#define CSSLOT_ENTITLEMENTS 5
 #define CSSLOT_CMS_SIGNATURE 0x10000
 
 struct section_t {
@@ -106,21 +105,21 @@ struct super_blob_t {
 	struct blob_index_t index[];
 };
 
-struct MACH0_(opts_t) {
+struct MACH0_ (opts_t) {
 	bool verbose;
 	ut64 header_at;
 };
 
-struct MACH0_(obj_t) {
-	struct MACH0_(mach_header) hdr;
-	struct MACH0_(segment_command) *segs;
+struct MACH0_ (obj_t) {
+	struct MACH0_ (mach_header) hdr;
+	struct MACH0_ (segment_command) * segs;
 	char *intrp;
 	char *compiler;
 	int nsegs;
 	struct r_dyld_chained_starts_in_segment **chained_starts;
-	struct MACH0_(section) *sects;
+	struct MACH0_ (section) * sects;
 	int nsects;
-	struct MACH0_(nlist) *symtab;
+	struct MACH0_ (nlist) * symtab;
 	ut8 *symstr;
 	ut8 *func_start; //buffer that hold the data from LC_FUNCTION_STARTS
 	int symstrlen;
@@ -137,7 +136,7 @@ struct MACH0_(obj_t) {
 	struct dyld_info_command *dyld_info;
 	struct dylib_table_of_contents *toc;
 	int ntoc;
-	struct MACH0_(dylib_module) *modtab;
+	struct MACH0_ (dylib_module) * modtab;
 	int nmodtab;
 	struct thread_command thread;
 	ut8 *signature;
@@ -171,44 +170,44 @@ struct MACH0_(obj_t) {
 	bool verbose;
 	ut64 header_at;
 	void *user;
-	ut64 (*va2pa)(ut64 p, ut32 *offset, ut32 *left, RBinFile *bf);
+	ut64 (*va2pa) (ut64 p, ut32 *offset, ut32 *left, RBinFile *bf);
 	struct symbol_t *symbols;
 	ut64 main_addr;
-	int (*original_io_read)(RIO *io, RIODesc *fd, ut8 *buf, int count);
+	int (*original_io_read) (RIO *io, RIODesc *fd, ut8 *buf, int count);
 	bool rebasing_buffer;
 };
 
-void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile *bf);
-struct MACH0_(obj_t) *MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) *options);
-struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *options);
-void *MACH0_(mach0_free)(struct MACH0_(obj_t) *bin);
-struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin);
+void MACH0_ (opts_set_default) (struct MACH0_ (opts_t) * options, RBinFile *bf);
+struct MACH0_ (obj_t) * MACH0_ (mach0_new) (const char *file, struct MACH0_ (opts_t) * options);
+struct MACH0_ (obj_t) * MACH0_ (new_buf) (RBuffer *buf, struct MACH0_ (opts_t) * options);
+void *MACH0_ (mach0_free) (struct MACH0_ (obj_t) * bin);
+struct section_t *MACH0_ (get_sections) (struct MACH0_ (obj_t) * bin);
 //RList *MACH0_(get_segments)(struct MACH0_(obj_t) *bin);
-RList *MACH0_(get_segments)(RBinFile *bf); // struct MACH0_(obj_t) *bin);
-const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin);
-const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin);
-void MACH0_(pull_symbols)(struct MACH0_(obj_t) *mo, RBinSymbolCallback cb, void *user);
-struct import_t *MACH0_(get_imports)(struct MACH0_(obj_t) *bin);
-RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin);
-struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) *bin);
-struct lib_t *MACH0_(get_libs)(struct MACH0_(obj_t) *bin);
-ut64 MACH0_(get_baddr)(struct MACH0_(obj_t) *bin);
-char *MACH0_(get_class)(struct MACH0_(obj_t) *bin);
-int MACH0_(get_bits)(struct MACH0_(obj_t) *bin);
-bool MACH0_(is_big_endian)(struct MACH0_(obj_t) *bin);
-bool MACH0_(is_pie)(struct MACH0_(obj_t) *bin);
-bool MACH0_(has_nx)(struct MACH0_(obj_t) *bin);
-const char *MACH0_(get_intrp)(struct MACH0_(obj_t) *bin);
-const char *MACH0_(get_os)(struct MACH0_(obj_t) *bin);
-const char *MACH0_(get_cputype)(struct MACH0_(obj_t) *bin);
-char *MACH0_(get_cpusubtype)(struct MACH0_(obj_t) *bin);
-char *MACH0_(get_cpusubtype_from_hdr)(struct MACH0_(mach_header) *hdr);
-char *MACH0_(get_filetype)(struct MACH0_(obj_t) *bin);
-char *MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) *hdr);
-ut64 MACH0_(get_main)(struct MACH0_(obj_t) *bin);
-const char *MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) *hdr);
-int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header) *hdr);
-struct MACH0_(mach_header) *MACH0_(get_hdr)(RBuffer *buf);
-void MACH0_(mach_headerfields)(RBinFile *bf);
-RList *MACH0_(mach_fields)(RBinFile *bf);
+RList *MACH0_ (get_segments) (RBinFile *bf); // struct MACH0_(obj_t) *bin);
+const struct symbol_t *MACH0_ (get_symbols) (struct MACH0_ (obj_t) * bin);
+const RList *MACH0_ (get_symbols_list) (struct MACH0_ (obj_t) * bin);
+void MACH0_ (pull_symbols) (struct MACH0_ (obj_t) * mo, RBinSymbolCallback cb, void *user);
+struct import_t *MACH0_ (get_imports) (struct MACH0_ (obj_t) * bin);
+RSkipList *MACH0_ (get_relocs) (struct MACH0_ (obj_t) * bin);
+struct addr_t *MACH0_ (get_entrypoint) (struct MACH0_ (obj_t) * bin);
+struct lib_t *MACH0_ (get_libs) (struct MACH0_ (obj_t) * bin);
+ut64 MACH0_ (get_baddr) (struct MACH0_ (obj_t) * bin);
+char *MACH0_ (get_class) (struct MACH0_ (obj_t) * bin);
+int MACH0_ (get_bits) (struct MACH0_ (obj_t) * bin);
+bool MACH0_ (is_big_endian) (struct MACH0_ (obj_t) * bin);
+bool MACH0_ (is_pie) (struct MACH0_ (obj_t) * bin);
+bool MACH0_ (has_nx) (struct MACH0_ (obj_t) * bin);
+const char *MACH0_ (get_intrp) (struct MACH0_ (obj_t) * bin);
+const char *MACH0_ (get_os) (struct MACH0_ (obj_t) * bin);
+const char *MACH0_ (get_cputype) (struct MACH0_ (obj_t) * bin);
+char *MACH0_ (get_cpusubtype) (struct MACH0_ (obj_t) * bin);
+char *MACH0_ (get_cpusubtype_from_hdr) (struct MACH0_ (mach_header) * hdr);
+char *MACH0_ (get_filetype) (struct MACH0_ (obj_t) * bin);
+char *MACH0_ (get_filetype_from_hdr) (struct MACH0_ (mach_header) * hdr);
+ut64 MACH0_ (get_main) (struct MACH0_ (obj_t) * bin);
+const char *MACH0_ (get_cputype_from_hdr) (struct MACH0_ (mach_header) * hdr);
+int MACH0_ (get_bits_from_hdr) (struct MACH0_ (mach_header) * hdr);
+struct MACH0_ (mach_header) * MACH0_ (get_hdr) (RBuffer *buf);
+void MACH0_ (mach_headerfields) (RBinFile *bf);
+RList *MACH0_ (mach_fields) (RBinFile *bf);
 #endif

@@ -7,8 +7,7 @@
 #include "utils.h"
 #include "r_util/r_str.h"
 
-
-int handle_g(libgdbr_t *g) {
+int handle_g (libgdbr_t *g) {
 	if (unpack_hex (g->data, g->data_len, g->data) < 0) {
 		return -1;
 	}
@@ -16,15 +15,15 @@ int handle_g(libgdbr_t *g) {
 	return send_ack (g);
 }
 
-int handle_G(libgdbr_t *g) {
+int handle_G (libgdbr_t *g) {
 	return send_ack (g);
 }
 
-int handle_M(libgdbr_t *g) {
+int handle_M (libgdbr_t *g) {
 	return send_ack (g);
 }
 
-int handle_P(libgdbr_t *g) {
+int handle_P (libgdbr_t *g) {
 	if (g->data_len == 0) {
 		g->last_code = MSG_NOT_SUPPORTED;
 	} else {
@@ -33,7 +32,7 @@ int handle_P(libgdbr_t *g) {
 	return send_ack (g);
 }
 
-int handle_m(libgdbr_t *g) {
+int handle_m (libgdbr_t *g) {
 	if (g->data_len == 3 && g->data[0] == 'E') {
 		// TODO: figure out if this is a problem
 		send_ack (g);
@@ -45,7 +44,7 @@ int handle_m(libgdbr_t *g) {
 	return send_ack (g);
 }
 
-int handle_qStatus(libgdbr_t *g) {
+int handle_qStatus (libgdbr_t *g) {
 	if (!g || !g->data || !*g->data) {
 		return -1;
 	}
@@ -74,7 +73,7 @@ int handle_qStatus(libgdbr_t *g) {
 	return -1;
 }
 
-int handle_qC(libgdbr_t *g) {
+int handle_qC (libgdbr_t *g) {
 	// We get process and thread ID
 	if (strncmp (g->data, "QC", 2)) {
 		send_ack (g);
@@ -113,15 +112,15 @@ int handle_fOpen(libgdbr_t *g) {
 }
  */
 
-int handle_setbp(libgdbr_t *g) {
+int handle_setbp (libgdbr_t *g) {
 	return send_ack (g);
 }
 
-int handle_removebp(libgdbr_t *g) {
+int handle_removebp (libgdbr_t *g) {
 	return send_ack (g);
 }
 
-int handle_attach(libgdbr_t *g) {
+int handle_attach (libgdbr_t *g) {
 	if (g->data_len == 3 && g->data[0] == 'E') {
 		send_ack (g);
 		return -1;
@@ -129,9 +128,8 @@ int handle_attach(libgdbr_t *g) {
 	return send_ack (g);
 }
 
-int handle_vFile_open(libgdbr_t *g) {
-	if (g->data_len < 2 || g->data[0] != 'F' || g->data[1] == '-'
-	    || !isxdigit (g->data[1])) {
+int handle_vFile_open (libgdbr_t *g) {
+	if (g->data_len < 2 || g->data[0] != 'F' || g->data[1] == '-' || !isxdigit (g->data[1])) {
 		send_ack (g);
 		return -1;
 	}
@@ -143,7 +141,7 @@ int handle_vFile_open(libgdbr_t *g) {
 	return send_ack (g);
 }
 
-int handle_vFile_pread(libgdbr_t *g, ut8 *buf) {
+int handle_vFile_pread (libgdbr_t *g, ut8 *buf) {
 	send_ack (g);
 	char *ptr;
 	int len;
@@ -175,9 +173,8 @@ int handle_vFile_pread(libgdbr_t *g, ut8 *buf) {
 	return len;
 }
 
-int handle_vFile_close(libgdbr_t *g) {
-	if (g->data_len < 2 || g->data[0] != 'F' || g->data[1] == '-'
-	    || !isxdigit (g->data[1])) {
+int handle_vFile_close (libgdbr_t *g) {
+	if (g->data_len < 2 || g->data[0] != 'F' || g->data[1] == '-' || !isxdigit (g->data[1])) {
 		send_ack (g);
 		return -1;
 	}
@@ -187,7 +184,7 @@ int handle_vFile_close(libgdbr_t *g) {
 #include <r_debug.h>
 #include <gdbclient/commands.h>
 
-static int stop_reason_exit(libgdbr_t *g) {
+static int stop_reason_exit (libgdbr_t *g) {
 	int status = 0, pid = g->pid;
 	g->stop_reason.reason = R_DEBUG_REASON_DEAD;
 	if (g->stub_features.multiprocess && g->data_len > 3) {
@@ -205,7 +202,7 @@ static int stop_reason_exit(libgdbr_t *g) {
 		eprintf ("Message from remote: %s\n", g->data);
 		return -1;
 	}
-	status = (int) strtol (g->data + 1, NULL, 16);
+	status = (int)strtol (g->data + 1, NULL, 16);
 	eprintf ("Process %d exited with status %d\n", g->pid, status);
 	g->stop_reason.thread.pid = pid;
 	g->stop_reason.thread.tid = pid;
@@ -214,7 +211,7 @@ static int stop_reason_exit(libgdbr_t *g) {
 	return gdbr_disconnect (g);
 }
 
-static int stop_reason_terminated(libgdbr_t *g) {
+static int stop_reason_terminated (libgdbr_t *g) {
 	int signal = 0, pid = g->pid;
 	g->stop_reason.reason = R_DEBUG_REASON_DEAD;
 	if (g->stub_features.multiprocess && g->data_len > 3) {
@@ -233,7 +230,7 @@ static int stop_reason_terminated(libgdbr_t *g) {
 		eprintf ("Message from remote: %s\n", g->data);
 		return -1;
 	}
-	signal = (int) strtol (g->data + 1, NULL, 16);
+	signal = (int)strtol (g->data + 1, NULL, 16);
 	eprintf ("Process %d terminated with signal %d\n", g->pid, signal);
 	g->stop_reason.thread.pid = pid;
 	g->stop_reason.thread.tid = pid;
@@ -243,7 +240,7 @@ static int stop_reason_terminated(libgdbr_t *g) {
 	return gdbr_disconnect (g);
 }
 
-int handle_stop_reason(libgdbr_t *g) {
+int handle_stop_reason (libgdbr_t *g) {
 	send_ack (g);
 	if (g->data_len < 3) {
 		return -1;
@@ -285,8 +282,8 @@ int handle_stop_reason(libgdbr_t *g) {
 			}
 			ptr2++;
 			if (read_thread_id (ptr2, &g->stop_reason.thread.pid,
-					    &g->stop_reason.thread.tid,
-					    g->stub_features.multiprocess) < 0) {
+				    &g->stop_reason.thread.tid,
+				    g->stub_features.multiprocess) < 0) {
 				continue;
 			}
 			g->stop_reason.thread.present = true;
@@ -300,13 +297,11 @@ int handle_stop_reason(libgdbr_t *g) {
 			if (!isxdigit (*ptr2)) {
 				continue;
 			}
-			g->stop_reason.core = (int) strtol (ptr2, NULL, 16);
+			g->stop_reason.core = (int)strtol (ptr2, NULL, 16);
 			continue;
 		}
 		if (g->stop_reason.signum == 5) {
-			if (r_str_startswith (ptr1, "watch")
-			    || r_str_startswith (ptr1, "rwatch")
-			    || r_str_startswith (ptr1, "awatch")) {
+			if (r_str_startswith (ptr1, "watch") || r_str_startswith (ptr1, "rwatch") || r_str_startswith (ptr1, "awatch")) {
 				if (!(ptr2 = strchr (ptr1, ':'))) {
 					continue;
 				}
@@ -336,8 +331,8 @@ int handle_stop_reason(libgdbr_t *g) {
 				}
 				ptr2++;
 				if (read_thread_id (ptr2, &g->stop_reason.fork.pid,
-						    &g->stop_reason.fork.tid,
-						    g->stub_features.multiprocess) < 0) {
+					    &g->stop_reason.fork.tid,
+					    g->stub_features.multiprocess) < 0) {
 					continue;
 				}
 				g->stop_reason.fork.present = true;
@@ -349,8 +344,8 @@ int handle_stop_reason(libgdbr_t *g) {
 				}
 				ptr2++;
 				if (read_thread_id (ptr2, &g->stop_reason.vfork.pid,
-						    &g->stop_reason.vfork.tid,
-						    g->stub_features.multiprocess) < 0) {
+					    &g->stop_reason.vfork.tid,
+					    g->stub_features.multiprocess) < 0) {
 					continue;
 				}
 				g->stop_reason.vfork.present = true;
@@ -384,11 +379,11 @@ int handle_stop_reason(libgdbr_t *g) {
 	return 0;
 }
 
-int handle_cont(libgdbr_t *g) {
+int handle_cont (libgdbr_t *g) {
 	return handle_stop_reason (g);
 }
 
-int handle_lldb_read_reg(libgdbr_t *g) {
+int handle_lldb_read_reg (libgdbr_t *g) {
 	if (send_ack (g) < 0) {
 		return -1;
 	}
@@ -417,7 +412,7 @@ int handle_lldb_read_reg(libgdbr_t *g) {
 			continue;
 		}
 		// Get register number
-		regnum = (int) strtoul (ptr, NULL, 16);
+		regnum = (int)strtoul (ptr, NULL, 16);
 		if (regnum >= tot_regs || !(ptr2 = strchr (ptr, ':'))) {
 			ptr = strtok (NULL, ";");
 			continue;

@@ -18,10 +18,10 @@
  */
 
 #ifndef GRUB_RAID_UTIL_HEADER
-#define GRUB_RAID_UTIL_HEADER	1
+#define GRUB_RAID_UTIL_HEADER 1
 
 #ifdef __linux__
-char** grub_util_raid_getmembers (char *name);
+char **grub_util_raid_getmembers (char *name);
 #endif
 
 #endif /* ! GRUB_RAID_UTIL_HEADER */

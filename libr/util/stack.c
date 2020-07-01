@@ -2,7 +2,7 @@
 
 #include <r_util.h>
 
-R_API RStack *r_stack_new(ut32 n) {
+R_API RStack *r_stack_new (ut32 n) {
 	RStack *s = R_NEW0 (RStack);
 	if (!s) {
 		return NULL;
@@ -17,7 +17,7 @@ R_API RStack *r_stack_new(ut32 n) {
 	return s;
 }
 
-R_API RStack *r_stack_newf(ut32 n, RStackFree f) {
+R_API RStack *r_stack_newf (ut32 n, RStackFree f) {
 	RStack *s = r_stack_new (n);
 	if (s) {
 		s->free = f;
@@ -25,7 +25,7 @@ R_API RStack *r_stack_newf(ut32 n, RStackFree f) {
 	return s;
 }
 
-R_API void r_stack_free(RStack *s) {
+R_API void r_stack_free (RStack *s) {
 	if (s) {
 		if (s->free) {
 			int i;
@@ -38,7 +38,7 @@ R_API void r_stack_free(RStack *s) {
 	}
 }
 
-R_API bool r_stack_push(RStack *s, void *el) {
+R_API bool r_stack_push (RStack *s, void *el) {
 	if (s->top == s->n_elems - 1) {
 		/* reallocate the stack */
 		s->n_elems *= 2;
@@ -55,7 +55,7 @@ R_API bool r_stack_push(RStack *s, void *el) {
 }
 
 //the caller should be take care of the object returned
-R_API void *r_stack_pop(RStack *s) {
+R_API void *r_stack_pop (RStack *s) {
 	if (s->top == -1) {
 		return NULL;
 	}
@@ -64,14 +64,14 @@ R_API void *r_stack_pop(RStack *s) {
 	return res;
 }
 
-R_API bool r_stack_is_empty(RStack *s) {
+R_API bool r_stack_is_empty (RStack *s) {
 	return s->top == -1;
 }
 
-R_API size_t r_stack_size(RStack *s) {
-	return (size_t)(s->top + 1);
+R_API size_t r_stack_size (RStack *s) {
+	return (size_t) (s->top + 1);
 }
 
-R_API void *r_stack_peek(RStack *s) {
-	return r_stack_is_empty (s)? NULL: s->elems[s->top];
+R_API void *r_stack_peek (RStack *s) {
+	return r_stack_is_empty (s) ? NULL : s->elems[s->top];
 }

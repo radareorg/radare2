@@ -15,76 +15,76 @@ enum TokenType {
 	CONCAT_PF_DOT,
 };
 
-void *tree_sitter_r2cmd_external_scanner_create() {
+void *tree_sitter_r2cmd_external_scanner_create () {
 	return NULL;
 }
 
-void tree_sitter_r2cmd_external_scanner_destroy(void *payload) {
+void tree_sitter_r2cmd_external_scanner_destroy (void *payload) {
 }
 
-unsigned tree_sitter_r2cmd_external_scanner_serialize(void *payload, char *buffer) {
+unsigned tree_sitter_r2cmd_external_scanner_serialize (void *payload, char *buffer) {
 	return 0;
 }
 
-void tree_sitter_r2cmd_external_scanner_deserialize(void *payload, const char *buffer, unsigned length) {
+void tree_sitter_r2cmd_external_scanner_deserialize (void *payload, const char *buffer, unsigned length) {
 }
 
-static bool is_pf_cmd(const char *s) {
+static bool is_pf_cmd (const char *s) {
 	return (strcmp (s, "pfo") && !strncmp (s, "pf", 2)) || !strcmp (s, "Cf");
 }
 
-static bool is_env_cmd(const char *s) {
+static bool is_env_cmd (const char *s) {
 	return !strncmp (s, "env", 3);
 }
 
-static bool is_at_cmd(const char *s) {
+static bool is_at_cmd (const char *s) {
 	return s[0] == '@';
 }
 
-static bool is_comment(const char *s) {
+static bool is_comment (const char *s) {
 	return !strncmp (s, "/*", 2);
 }
 
-static bool is_special_start(const int32_t ch) {
+static bool is_special_start (const int32_t ch) {
 	return ch == '*' || ch == '(' || ch == '*' || ch == '@' || ch == '|' ||
 		ch == '.' || ch == '|' || ch == '%' || ch == '~' || ch == '&' ||
 		ch == '>';
 }
 
-static bool is_start_of_command(const int32_t ch) {
+static bool is_start_of_command (const int32_t ch) {
 	return isalpha (ch) || ch == '$' || ch == '?' || ch == ':' || ch == '+' ||
 		ch == '=' || ch == '/' || ch == '_' || is_special_start (ch);
 }
 
-static bool is_mid_command(const char *res, const int32_t ch) {
-	return isalnum(ch) ||  ch == '$' || ch == '?' || ch == '.' || ch == '!' ||
+static bool is_mid_command (const char *res, const int32_t ch) {
+	return isalnum (ch) || ch == '$' || ch == '?' || ch == '.' || ch == '!' ||
 		ch == ':' || ch == '+' || ch == '=' || ch == '/' || ch == '*' ||
 		ch == '-' || ch == ',' || ch == '&' || (is_at_cmd (res) && ch == '@');
 }
 
-static bool is_concat(const int32_t ch) {
-	return ch != '\0' && !isspace(ch) && ch != '#' && ch != '@' &&
+static bool is_concat (const int32_t ch) {
+	return ch != '\0' && !isspace (ch) && ch != '#' && ch != '@' &&
 		ch != '|' && ch != '>' && ch != ';' &&
 		ch != ')' && ch != '`' && ch != '~' && ch != '\\';
 }
 
-static bool is_concat_brace(const int32_t ch) {
-	return is_concat(ch) && ch != '}' && ch != '{';
+static bool is_concat_brace (const int32_t ch) {
+	return is_concat (ch) && ch != '}' && ch != '{';
 }
 
-static bool is_concat_pf_dot(const int32_t ch) {
-	return is_concat(ch) && ch != '=';
+static bool is_concat_pf_dot (const int32_t ch) {
+	return is_concat (ch) && ch != '=';
 }
 
-static bool is_concat_eq_sep(const int32_t ch) {
-	return is_concat(ch) && ch != '=';
+static bool is_concat_eq_sep (const int32_t ch) {
+	return is_concat (ch) && ch != '=';
 }
 
-static bool is_recursive_help(int id_len, const int32_t before_last_ch, const int32_t last_ch) {
+static bool is_recursive_help (int id_len, const int32_t before_last_ch, const int32_t last_ch) {
 	return id_len >= 2 && before_last_ch == '?' && last_ch == '*';
 }
 
-static bool scan_number(TSLexer *lexer, const bool *valid_symbols) {
+static bool scan_number (TSLexer *lexer, const bool *valid_symbols) {
 	if (!valid_symbols[FILE_DESCRIPTOR]) {
 		return false;
 	}
@@ -114,7 +114,7 @@ static bool scan_number(TSLexer *lexer, const bool *valid_symbols) {
 	return false;
 }
 
-bool tree_sitter_r2cmd_external_scanner_scan(void *payload, TSLexer *lexer, const bool *valid_symbols) {
+bool tree_sitter_r2cmd_external_scanner_scan (void *payload, TSLexer *lexer, const bool *valid_symbols) {
 	// FIXME: /* in the shell should become a multiline comment
 	if (valid_symbols[CONCAT] && is_concat (lexer->lookahead)) {
 		lexer->result_symbol = CONCAT;
@@ -148,7 +148,7 @@ bool tree_sitter_r2cmd_external_scanner_scan(void *payload, TSLexer *lexer, cons
 		while (i_res < CMD_IDENTIFIER_MAX_LENGTH && is_mid_command (res, lexer->lookahead)) {
 			res[i_res++] = lexer->lookahead;
 			lexer->advance (lexer, false);
-                }
+		}
 		res[i_res] = '\0';
 		if (is_comment (res)) {
 			return false;

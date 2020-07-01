@@ -10,9 +10,9 @@ enum {
 
 static char *encodings[3] = { "ascii", "cp850", NULL };
 //static int encoding = ENCODING_ASCII; // default
-	//encoding = resolve_encoding(config_get("cfg.encoding"));
+//encoding = resolve_encoding(config_get("cfg.encoding"));
 
-R_API int r_search_get_encoding(const char *name) {
+R_API int r_search_get_encoding (const char *name) {
 	int i;
 	if (!name || !*name) {
 		return ENCODING_ASCII;
@@ -21,13 +21,13 @@ R_API int r_search_get_encoding(const char *name) {
 	for (i = 0; encodings[i]; i++) {
 		ut32 sz = R_MIN (strlen (encodings[i]), lename);
 		if (!r_str_ncasecmp (name, encodings[i], sz)) {
-			return i; 
+			return i;
 		}
 	}
 	return ENCODING_ASCII;
 }
 
-static bool is_encoded(int encoding, unsigned char c) {
+static bool is_encoded (int encoding, unsigned char c) {
 	switch (encoding) {
 	case ENCODING_ASCII:
 		break;
@@ -58,7 +58,7 @@ static bool is_encoded(int encoding, unsigned char c) {
 	return false;
 }
 
-R_API int r_search_strings_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
+R_API int r_search_strings_update (RSearch *s, ut64 from, const ut8 *buf, int len) {
 	int i = 0;
 	int widechar = 0;
 	int matches = 0;
@@ -70,27 +70,27 @@ R_API int r_search_strings_update(RSearch *s, ut64 from, const ut8 *buf, int len
 		for (i = 0; i < len; i++) {
 			char ch = buf[i];
 			// non-cp850 encoded
-			if (IS_PRINTABLE(ch) || IS_WHITESPACE(ch) || is_encoded (0, ch)) {
+			if (IS_PRINTABLE (ch) || IS_WHITESPACE (ch) || is_encoded (0, ch)) {
 				str[matches] = ch;
 				if (matches < sizeof (str)) {
 					matches++;
 				}
 			} else {
 				/* wide char check \x??\x00\x??\x00 */
-				if (matches && i + 2 < len && buf[i+2]=='\0' && buf[i]=='\0' && buf[i+1]!='\0') {
+				if (matches && i + 2 < len && buf[i + 2] == '\0' && buf[i] == '\0' && buf[i + 1] != '\0') {
 					// widechar = 1;
 					return 1; // widechar
 				}
 				/* check if the length fits on our request */
 				if (matches >= s->string_min && (s->string_max == 0 || matches <= s->string_max)) {
 					str[matches] = '\0';
-					int len = strlen(str);
-					if (len>2) {
+					int len = strlen (str);
+					if (len > 2) {
 						if (widechar) {
-							ut64 off = (ut64)from+i-(len*2)+1;
+							ut64 off = (ut64)from + i - (len * 2) + 1;
 							r_search_hit_new (s, kw, off);
 						} else {
-							ut64 off = (ut64)from+i-matches;
+							ut64 off = (ut64)from + i - matches;
 							r_search_hit_new (s, kw, off);
 						}
 					}

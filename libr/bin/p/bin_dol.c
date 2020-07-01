@@ -24,21 +24,22 @@
 #define N_DATA 11
 
 R_PACKED (
-typedef struct {
-	ut32 text_paddr[N_TEXT];
-	ut32 data_paddr[N_DATA];
-	ut32 text_vaddr[N_TEXT];
-	ut32 data_vaddr[N_DATA];
-	ut32 text_size[N_TEXT];
-	ut32 data_size[N_DATA];
-	ut32 bss_addr;
-	ut32 bss_size;
-	ut32 entrypoint;
-	ut32 padding[10];
-	// 0x100 -- start of data section
-}) DolHeader;
+	typedef struct {
+		ut32 text_paddr[N_TEXT];
+		ut32 data_paddr[N_DATA];
+		ut32 text_vaddr[N_TEXT];
+		ut32 data_vaddr[N_DATA];
+		ut32 text_size[N_TEXT];
+		ut32 data_size[N_DATA];
+		ut32 bss_addr;
+		ut32 bss_size;
+		ut32 entrypoint;
+		ut32 padding[10];
+		// 0x100 -- start of data section
+	})
+DolHeader;
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer (RBuffer *buf) {
 	ut8 tmp[6];
 	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
 	bool one = r == sizeof (tmp) && !memcmp (tmp, "\x00\x00\x01\x00\x00\x00", sizeof (tmp));
@@ -52,7 +53,7 @@ static bool check_buffer(RBuffer *buf) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	if (r_buf_size (buf) < sizeof (DolHeader)) {
 		return false;
 	}
@@ -70,7 +71,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 		goto lowername_err;
 	}
 	free (lowername);
-	r_buf_fread_at (bf->buf, 0, (void *) dol, "67I", 1);
+	r_buf_fread_at (bf->buf, 0, (void *)dol, "67I", 1);
 	*bin_obj = dol;
 	return true;
 
@@ -81,7 +82,7 @@ dol_err:
 	return false;
 }
 
-static RList *sections(RBinFile *bf) {
+static RList *sections (RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 	int i;
 	RList *ret;
@@ -135,18 +136,18 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList *entries(RBinFile *bf) {
+static RList *entries (RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 	RList *ret = r_list_new ();
 	RBinAddr *addr = R_NEW0 (RBinAddr);
 	DolHeader *dol = bf->o->bin_obj;
-	addr->vaddr = (ut64) dol->entrypoint;
+	addr->vaddr = (ut64)dol->entrypoint;
 	addr->paddr = addr->vaddr & 0xFFFF;
 	r_list_append (ret, addr);
 	return ret;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->buf, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
@@ -164,7 +165,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr (RBinFile *bf) {
 	return 0x80b00000; // XXX
 }
 

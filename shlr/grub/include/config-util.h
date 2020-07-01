@@ -967,9 +967,9 @@
 /* #undef HAVE___UCMPDI2 */
 
 #if FILE_SYSTEM_BACKSLASH_IS_FILE_NAME_SEPARATOR
-# define ISSLASH(C) ((C) == '/' || (C) == '\\')
+#define ISSLASH(C) ((C) == '/' || (C) == '\\')
 #else
-# define ISSLASH(C) ((C) == '/')
+#define ISSLASH(C) ((C) == '/')
 #endif
 
 /* Define to a substitute value for mmap()'s MAP_ANONYMOUS flag. */
@@ -1060,7 +1060,7 @@
 
 /* Define to the prefix of C symbols at the assembler and linker level, either
    an underscore or empty. */
-#define USER_LABEL_PREFIX 
+#define USER_LABEL_PREFIX
 
 /* Version number of package */
 #define VERSION "1.99~beta0"
@@ -1076,13 +1076,13 @@
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */
 #if defined AC_APPLE_UNIVERSAL_BUILD
-# if defined __BIG_ENDIAN__
-#  define WORDS_BIGENDIAN 1
-# endif
+#if defined __BIG_ENDIAN__
+#define WORDS_BIGENDIAN 1
+#endif
 #else
-# ifndef WORDS_BIGENDIAN
+#ifndef WORDS_BIGENDIAN
 /* #  undef WORDS_BIGENDIAN */
-# endif
+#endif
 #endif
 
 /* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
@@ -1113,25 +1113,24 @@
 
 /* Enable extensions on AIX 3, Interix.  */
 #ifndef _ALL_SOURCE
-# define _ALL_SOURCE 1
+#define _ALL_SOURCE 1
 #endif
 /* Enable GNU extensions on systems that have them.  */
 #ifndef _GNU_SOURCE
-# define _GNU_SOURCE 1
+#define _GNU_SOURCE 1
 #endif
 /* Enable threading extensions on Solaris.  */
 #ifndef _POSIX_PTHREAD_SEMANTICS
-# define _POSIX_PTHREAD_SEMANTICS 1
+#define _POSIX_PTHREAD_SEMANTICS 1
 #endif
 /* Enable extensions on HP NonStop.  */
 #ifndef _TANDEM_SOURCE
-# define _TANDEM_SOURCE 1
+#define _TANDEM_SOURCE 1
 #endif
 /* Enable general extensions on Solaris.  */
 #ifndef __EXTENSIONS__
-# define __EXTENSIONS__ 1
+#define __EXTENSIONS__ 1
 #endif
-
 
 /* Define to rpl_ if the getopt replacement functions and variables should be
    used. */
@@ -1156,7 +1155,7 @@
    __APPLE_CC__ tests for the Apple compiler and its version.
    __STDC_VERSION__ tests for the C99 mode.  */
 #if defined __APPLE__ && defined __MACH__ && __APPLE_CC__ >= 5465 && !defined __cplusplus && __STDC_VERSION__ >= 199901L && !defined __GNUC_STDC_INLINE__
-# define __GNUC_STDC_INLINE__ 1
+#define __GNUC_STDC_INLINE__ 1
 #endif
 
 /* Define to a type if <wchar.h> does not define. */
@@ -1221,8 +1220,8 @@
    previous line.  Perhaps some future version of Sun C++ will work with
    restrict; if so, hopefully it defines __RESTRICT like Sun C does.  */
 #if defined __SUNPRO_CC && !defined __RESTRICT
-# define _Restrict
-# define __restrict__
+#define _Restrict
+#define __restrict__
 #endif
 
 /* Define to `unsigned int' if <sys/types.h> does not define. */
@@ -1235,11 +1234,10 @@
     be used.  This helps to reduce warnings, such as from
     GCC -Wunused-parameter.  */
 #if __GNUC__ >= 3 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 7)
-# define _GL_UNUSED __attribute__ ((__unused__))
+#define _GL_UNUSED __attribute__ ((__unused__))
 #else
-# define _GL_UNUSED
+#define _GL_UNUSED
 #endif
 /* The name _UNUSED_PARAMETER_ is an earlier spelling, although the name
    is a misnomer outside of parameter lists.  */
 #define _UNUSED_PARAMETER_ _GL_UNUSED
-

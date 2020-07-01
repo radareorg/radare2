@@ -7,9 +7,9 @@
 #include <sys/stat.h>
 
 #if __UNIX__
-static bool chmodr(const char *, int recursive);
-static bool parsemode(const char *);
-static void recurse(const char *path, int rec, bool (*fn)(const char *,int));
+static bool chmodr (const char *, int recursive);
+static bool parsemode (const char *);
+static void recurse (const char *path, int rec, bool (*fn) (const char *, int));
 
 static char oper = '=';
 static mode_t mode = 0;
@@ -30,7 +30,7 @@ R_API bool r_file_chmod (const char *file, const char *mod, int recursive) {
 
 #if __UNIX__
 /* copied from sbase/chmod.c (suckless.org) */
-static bool chmodr(const char *path, int rflag) {
+static bool chmodr (const char *path, int rflag) {
 	struct stat st;
 
 	if (stat (path, &st) == -1) {
@@ -58,13 +58,13 @@ static bool chmodr(const char *path, int rflag) {
 	return true;
 }
 
-static bool parsemode(const char *str) {
+static bool parsemode (const char *str) {
 	char *end;
 	const char *p;
 	int octal;
 	mode_t mask = 0;
 
-	octal = strtol(str, &end, 8);
+	octal = strtol (str, &end, 8);
 	if (*end == '\0') {
 		if (octal & 04000) {
 			mode |= S_ISUID;
@@ -102,7 +102,7 @@ static bool parsemode(const char *str) {
 		return true;
 	}
 	for (p = str; *p; p++) {
-		switch(*p) {
+		switch (*p) {
 		/* masks */
 		case 'u':
 			mask |= S_IRWXU;
@@ -114,7 +114,7 @@ static bool parsemode(const char *str) {
 			mask |= S_IRWXO;
 			break;
 		case 'a':
-			mask |= S_IRWXU|S_IRWXG|S_IRWXO;
+			mask |= S_IRWXU | S_IRWXG | S_IRWXO;
 			break;
 		/* opers */
 		case '+':
@@ -124,16 +124,16 @@ static bool parsemode(const char *str) {
 			break;
 		/* modes */
 		case 'r':
-			mode |= S_IRUSR|S_IRGRP|S_IROTH;
+			mode |= S_IRUSR | S_IRGRP | S_IROTH;
 			break;
 		case 'w':
-			mode |= S_IWUSR|S_IWGRP|S_IWOTH;
+			mode |= S_IWUSR | S_IWGRP | S_IWOTH;
 			break;
 		case 'x':
-			mode |= S_IXUSR|S_IXGRP|S_IXOTH;
+			mode |= S_IXUSR | S_IXGRP | S_IXOTH;
 			break;
 		case 's':
-			mode |= S_ISUID|S_ISGID;
+			mode |= S_ISUID | S_ISGID;
 			break;
 		/* error */
 		default:
@@ -147,8 +147,8 @@ static bool parsemode(const char *str) {
 	return true;
 }
 
-static char *agetcwd(void) {
-        char *buf = malloc (4096);
+static char *agetcwd (void) {
+	char *buf = malloc (4096);
 	if (!buf) {
 		return NULL;
 	}
@@ -158,11 +158,11 @@ static char *agetcwd(void) {
 	return buf;
 }
 
-static void recurse(const char *path, int rec, bool (*fn)(const char *,int)) {
-        char *cwd;
-        struct dirent *d;
-        struct stat st;
-        DIR *dp;
+static void recurse (const char *path, int rec, bool (*fn) (const char *, int)) {
+	char *cwd;
+	struct dirent *d;
+	struct stat st;
+	DIR *dp;
 
 	if (lstat (path, &st) == -1 || !S_ISDIR (st.st_mode)) {
 		return;
@@ -170,9 +170,9 @@ static void recurse(const char *path, int rec, bool (*fn)(const char *,int)) {
 		eprintf ("opendir %s:", path);
 		return;
 	}
-        cwd = agetcwd();
-        if (chdir (path) == -1) {
-                eprintf ("chdir %s:", path);
+	cwd = agetcwd ();
+	if (chdir (path) == -1) {
+		eprintf ("chdir %s:", path);
 		closedir (dp);
 		free (cwd);
 		return;

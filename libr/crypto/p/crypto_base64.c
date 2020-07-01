@@ -4,24 +4,24 @@
 #include <r_crypto.h>
 #include <r_util.h>
 
-static bool base64_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+static bool base64_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	cry->dir = direction;
 	return true;
 }
 
-static int base64_get_key_size(RCrypto *cry) {
+static int base64_get_key_size (RCrypto *cry) {
 	return 0;
 }
 
-static bool base64_use(const char *algo) {
+static bool base64_use (const char *algo) {
 	return !strcmp (algo, "base64");
 }
 
-static bool update(RCrypto *cry, const ut8 *buf, int len) {
+static bool update (RCrypto *cry, const ut8 *buf, int len) {
 	int olen = 0;
 	ut8 *obuf = NULL;
 	if (cry->dir == 0) {
-		olen = ((len + 2) / 3 ) * 4;
+		olen = ((len + 2) / 3) * 4;
 		obuf = malloc (olen + 1);
 		if (!obuf) {
 			return false;
@@ -30,7 +30,7 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	} else if (cry->dir == 1) {
 		olen = 4 + ((len / 4) * 3);
 		if (len > 0) {
-			olen -= (buf[len-1] == '=') ? ((buf[len-2] == '=') ? 2 : 1) : 0;
+			olen -= (buf[len - 1] == '=') ? ((buf[len - 2] == '=') ? 2 : 1) : 0;
 		}
 		obuf = malloc (olen + 4);
 		if (!obuf) {
@@ -45,7 +45,7 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	return true;
 }
 
-static bool final(RCrypto *cry, const ut8 *buf, int len) {
+static bool final (RCrypto *cry, const ut8 *buf, int len) {
 	return update (cry, buf, len);
 }
 

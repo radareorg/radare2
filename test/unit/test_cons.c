@@ -1,11 +1,11 @@
 #include <r_cons.h>
 #include "minunit.h"
 
-bool test_r_cons() {
+bool test_r_cons () {
 	// NOTE: not initializing a value here results in UB
 	ut8 r = 0, g = 0, b = 0, a = 0;
 
-	r_cons_rgb_init();
+	r_cons_rgb_init ();
 
 	// all these strdup are for asan/valgrind to have some exact bounds to work with
 
@@ -118,11 +118,11 @@ bool test_r_cons() {
 	mu_end;
 }
 
-bool all_tests() {
+bool all_tests () {
 	mu_run_test (test_r_cons);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
+int main (int argc, char **argv) {
 	return all_tests ();
 }

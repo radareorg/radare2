@@ -4,7 +4,7 @@
 #include "i/private.h"
 #include <cxx/demangle.h>
 
-R_API void r_bin_demangle_list(RBin *bin) {
+R_API void r_bin_demangle_list (RBin *bin) {
 	const char *langs[] = { "c++", "java", "objc", "swift", "dlang", "msvc", "rust", NULL };
 	RBinPlugin *plugin;
 	RListIter *it;
@@ -22,7 +22,7 @@ R_API void r_bin_demangle_list(RBin *bin) {
 	}
 }
 
-R_API char *r_bin_demangle_plugin(RBin *bin, const char *name, const char *str) {
+R_API char *r_bin_demangle_plugin (RBin *bin, const char *name, const char *str) {
 	RBinPlugin *plugin;
 	RListIter *it;
 	if (bin && name && str) {
@@ -35,7 +35,7 @@ R_API char *r_bin_demangle_plugin(RBin *bin, const char *name, const char *str) 
 	return NULL;
 }
 
-R_API int r_bin_demangle_type(const char *str) {
+R_API int r_bin_demangle_type (const char *str) {
 	if (str && *str) {
 		if (!strcmp (str, "swift")) {
 			return R_BIN_NM_SWIFT;
@@ -62,13 +62,13 @@ R_API int r_bin_demangle_type(const char *str) {
 	return R_BIN_NM_NONE;
 }
 
-R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 vaddr, bool libs) {
+R_API char *r_bin_demangle (RBinFile *bf, const char *def, const char *str, ut64 vaddr, bool libs) {
 	int type = -1;
 	if (!str || !*str) {
 		return NULL;
 	}
-	RBin *bin = bf? bf->rbin: NULL;
-	RBinObject *o = bf? bf->o: NULL;
+	RBin *bin = bf ? bf->rbin : NULL;
+	RBinObject *o = bf ? bf->o : NULL;
 	RListIter *iter;
 	const char *lib = NULL;
 	if (!strncmp (str, "reloc.", 6)) {
@@ -110,7 +110,7 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 			type = R_BIN_NM_SWIFT;
 		} else {
 			type = R_BIN_NM_CXX;
-		//	str++;
+			//	str++;
 		}
 	}
 	// if str is sym. or imp. when str+=4 str points to the end so just return
@@ -125,7 +125,7 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 	case R_BIN_NM_JAVA: demangled = r_bin_demangle_java (str); break;
 	case R_BIN_NM_RUST: demangled = r_bin_demangle_rust (bf, str, vaddr); break;
 	case R_BIN_NM_OBJC: demangled = r_bin_demangle_objc (NULL, str); break;
-	case R_BIN_NM_SWIFT: demangled = r_bin_demangle_swift (str, bin? bin->demanglercmd: false); break;
+	case R_BIN_NM_SWIFT: demangled = r_bin_demangle_swift (str, bin ? bin->demanglercmd : false); break;
 	case R_BIN_NM_CXX: demangled = r_bin_demangle_cxx (bf, str, vaddr); break;
 	case R_BIN_NM_MSVC: demangled = r_bin_demangle_msvc (str); break;
 	case R_BIN_NM_DLANG: demangled = r_bin_demangle_plugin (bin, "dlang", str); break;
@@ -139,12 +139,12 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 }
 
 #ifdef TEST
-main() {
+main () {
 	char *out, str[128];
-	strncpy (str, "_Z1hic", sizeof (str)-1);
-	strncpy (str, "main(Ljava/lang/String;I)V", sizeof (str)-1);
-	strncpy (str, "main([Ljava/lang/String;)V", sizeof (str)-1);
-	strncpy (str, "foo([III)Ljava/lang/Integer;", sizeof (str)-1);
+	strncpy (str, "_Z1hic", sizeof (str) - 1);
+	strncpy (str, "main(Ljava/lang/String;I)V", sizeof (str) - 1);
+	strncpy (str, "main([Ljava/lang/String;)V", sizeof (str) - 1);
+	strncpy (str, "foo([III)Ljava/lang/Integer;", sizeof (str) - 1);
 	//out = cplus_demangle_v3 (str, flags);
 	out = r_bin_demangle_java (str); //, flags);
 	printf ("INPUT (%s)\n", str);

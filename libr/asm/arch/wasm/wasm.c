@@ -21,7 +21,7 @@ static WasmOpDef opcodes[256] = {
 	[WASM_OP_BRIF] = { "br_if", 2, 2 },
 	[WASM_OP_BRTABLE] = { "brtable", 3, 0 },
 	[WASM_OP_RETURN] = { "return", 1, 1 },
-	[WASM_OP_CALL] = { "call" , 2, 2 },
+	[WASM_OP_CALL] = { "call", 2, 2 },
 	[WASM_OP_CALLINDIRECT] = { "call_indirect", 3, 3 },
 	[WASM_OP_DROP] = { "drop", 1, 1 },
 	[WASM_OP_SELECT] = { "select", 1, 1 },
@@ -61,7 +61,7 @@ static WasmOpDef opcodes[256] = {
 	[WASM_OP_F64CONST] = { "f64.const", 2, 2 },
 	[WASM_OP_I32EQZ] = { "i32.eqz", 1, 1 },
 	[WASM_OP_I32EQ] = { "i32.eq", 1, 1 },
-	[WASM_OP_I32NE] = { "i32.ne", 1, 1},
+	[WASM_OP_I32NE] = { "i32.ne", 1, 1 },
 	[WASM_OP_I32LTS] = { "i32.lt_s", 1, 1 },
 	[WASM_OP_I32LTU] = { "i32.lt_u", 1, 1 },
 	[WASM_OP_I32GTS] = { "i32.gt_s", 1, 1 },
@@ -71,8 +71,8 @@ static WasmOpDef opcodes[256] = {
 	[WASM_OP_I32GES] = { "i32.ge_s", 1, 1 },
 	[WASM_OP_I32GEU] = { "i32.ge_u", 1, 1 },
 	[WASM_OP_I64EQZ] = { "i64.eqz", 1, 1 },
-	[WASM_OP_I64EQ] = {" i64.eq", 1, 1 },
-	[WASM_OP_I64NE] = {" i64.ne", 1, 1 },
+	[WASM_OP_I64EQ] = { " i64.eq", 1, 1 },
+	[WASM_OP_I64NE] = { " i64.ne", 1, 1 },
 	[WASM_OP_I64LTS] = { "i64.lt_s", 1, 1 },
 	[WASM_OP_I64LTU] = { "i64.lt_u", 1, 1 },
 	[WASM_OP_I64GTS] = { "i64.gt_s", 1, 1 },
@@ -137,12 +137,12 @@ static WasmOpDef opcodes[256] = {
 	[WASM_OP_F32NEAREST] = { "f32.nearest", 1, 1 },
 	[WASM_OP_F32SQRT] = { "f32.sqrt", 1, 1 },
 	[WASM_OP_F32ADD] = { "f32.add", 1, 1 },
-	[WASM_OP_F32SUB] =  { "f32.sub", 1, 1 },
+	[WASM_OP_F32SUB] = { "f32.sub", 1, 1 },
 	[WASM_OP_F32MUL] = { "f32.mul", 1, 1 },
 	[WASM_OP_F32DIV] = { "f32.div", 1, 1 },
 	[WASM_OP_F32MIN] = { "f32.min", 1, 1 },
 	[WASM_OP_F32MAX] = { "f32.max", 1, 1 },
-	[WASM_OP_F32COPYSIGN] = {" f32.copysign", 1, 1 },
+	[WASM_OP_F32COPYSIGN] = { " f32.copysign", 1, 1 },
 	[WASM_OP_F64ABS] = { "f64.abs", 1, 1 },
 	[WASM_OP_F64NEG] = { "f64.neg", 1, 1 },
 	[WASM_OP_F64CEIL] = { "f64.ceil", 1, 1 },
@@ -186,70 +186,70 @@ static WasmOpDef opcodes[256] = {
 
 static WasmOpDef opcodes_threads[256] = {
 	[WASM_OP_ATOMICNOTIFY] = { "atomic.notify", 1, 1 },
-	[WASM_OP_I32ATOMICWAIT ] = { "i32.atomic.wait", 1, 1 },
-	[WASM_OP_I64ATOMICWAIT ] = { "i64.atomic.wait", 1, 1 },
+	[WASM_OP_I32ATOMICWAIT] = { "i32.atomic.wait", 1, 1 },
+	[WASM_OP_I64ATOMICWAIT] = { "i64.atomic.wait", 1, 1 },
 	[WASM_OP_I32ATOMICLOAD] = { "i32.atomic.load", 3, 3 },
 	[WASM_OP_I64ATOMICLOAD] = { "i64.atomic.load", 3, 3 },
-	[WASM_OP_I32ATOMICLOAD16U] = { "i32.atomic.load16_u" , 3, 3 },
-	[WASM_OP_I64ATOMICLOAD8U] = { "i64.atomic.load8_u" , 3, 3 },
-	[WASM_OP_I64ATOMICLOAD16U] = { "i64.atomic.load16_u" , 3, 3 },
-	[WASM_OP_I64ATOMICLOAD32U] = { "i64.atomic.load32_u" , 3, 3 },
-	[WASM_OP_I32ATOMICSTORE] = { "i32.atomic.store" , 3, 3 },
-	[WASM_OP_I64ATOMICSTORE] = { "i64.atomic.store" , 3, 3 },
-	[WASM_OP_I32ATOMICSTORE8] = { "i32.atomic.store8" , 3, 3 },
-	[WASM_OP_I32ATOMICSTORE16] = { "i32.atomic.store16" , 3, 3 },
-	[WASM_OP_I64ATOMICSTORE8] = { "i64.atomic.store8" , 3, 3 },
-	[WASM_OP_I64ATOMICSTORE16] = { "i64.atomic.store16" , 3, 3 },
-	[WASM_OP_I64ATOMICSTORE32] = { "i64.atomic.store32" , 3, 3 },
-	[WASM_OP_I32ATOMICRMWADD] = { "i32.atomic.rmw.add" , 3, 3 },
-	[WASM_OP_I64ATOMICRMWADD] = { "i64.atomic.rmw.add" , 3, 3 },
-	[WASM_OP_I32ATOMICRMW8UADD] = { "i32.atomic.rmw8_u.add" , 3, 3 },
-	[WASM_OP_I32ATOMICRMW16UADD] = { "i32.atomic.rmw16_u.add" , 3, 3 },
-	[WASM_OP_I64ATOMICRMW8UADD] = { "i64.atomic.rmw8_u.add" , 3, 3 },
-	[WASM_OP_I64ATOMICRMW16UADD] = { "i64.atomic.rmw16_u.add" , 3, 3 },
-	[WASM_OP_I64ATOMICRMW32UADD] = { "i64.atomic.rmw32_u.add" , 3, 3 },
-	[WASM_OP_I32ATOMICRMW8USUB] = { "i32.atomic.rmw8_u.sub" , 3, 3 },
-	[WASM_OP_I32ATOMICRMW16USUB] = { "i32.atomic.rmw16_u.sub" , 3, 3 },
-	[WASM_OP_I32ATOMICRMWSUB] = { "i32.atomic.rmw.sub" , 3, 3 },
-	[WASM_OP_I64ATOMICRMW8USUB] = { "i64.atomic.rmw8_u.sub" , 3, 3 },
-	[WASM_OP_I64ATOMICRMW16USUB] = { "i64.atomic.rmw16_u.sub" , 3, 3 },
-	[WASM_OP_I64ATOMICRMW32USUB] = { "i64.atomic.rmw32_u.sub" , 3, 3 },
-	[WASM_OP_I64ATOMICRMWSUB] = { "i64.atomic.rmw.sub" , 3, 3 },
-	[WASM_OP_I32ATOMICRMWAND] = { "i32.atomic.rmw.and" , 3, 3 },
-	[WASM_OP_I64ATOMICRMWAND] = { "i64.atomic.rmw.and" , 3, 3 },
-	[WASM_OP_I32ATOMICRMW8UAND] = { "i32.atomic.rmw8_u.and" , 3, 3 },
-	[WASM_OP_I32ATOMICRMW16UAND] = { "i32.atomic.rmw16_u.and" , 3, 3 },
-	[WASM_OP_I64ATOMICRMW8UAND] = { "i64.atomic.rmw8_u.and" , 3, 3 },
-	[WASM_OP_I64ATOMICRMW16UAND] = { "i64.atomic.rmw16_u.and" , 3, 3 },
-	[WASM_OP_I64ATOMICRMW32UAND] = { "i64.atomic.rmw32_u.and" , 3, 3 },
-	[WASM_OP_I32ATOMICRMWOR] = { "i32.atomic.rmw.or" , 3, 3 },
-	[WASM_OP_I64ATOMICRMWOR] = { "i64.atomic.rmw.or" , 3, 3 },
-	[WASM_OP_I32ATOMICRMW8UOR] = { "i32.atomic.rmw8_u.or" , 3, 3 },
-	[WASM_OP_I32ATOMICRMW16UOR] = { "i32.atomic.rmw16_u.or" , 3, 3 },
-	[WASM_OP_I64ATOMICRMW8UOR] = { "i64.atomic.rmw8_u.or" , 3, 3 },
-	[WASM_OP_I64ATOMICRMW16UOR] = { "i64.atomic.rmw16_u.or" , 3, 3 },
-	[WASM_OP_I64ATOMICRMW32UOR] = { "i64.atomic.rmw32_u.or" , 3, 3 },
-	[WASM_OP_I32ATOMICRMWXOR] = { "i32.atomic.rmw.xor" , 3, 3 },
-	[WASM_OP_I64ATOMICRMWXOR] = { "i64.atomic.rmw.xor" , 3, 3 },
-	[WASM_OP_I32ATOMICRMW8UXOR] = { "i32.atomic.rmw8_u.xor" , 3, 3 },
-	[WASM_OP_I32ATOMICRMW16UXOR] = { "i32.atomic.rmw16_u.xor" , 3, 3 },
-	[WASM_OP_I64ATOMICRMW8UXOR] = { "i64.atomic.rmw8_u.xor" , 3, 3 },
-	[WASM_OP_I64ATOMICRMW16UXOR] = { "i64.atomic.rmw16_u.xor" , 3, 3 },
-	[WASM_OP_I64ATOMICRMW32UXOR] = { "i64.atomic.rmw32_u.xor" , 3, 3 },
-	[WASM_OP_I32ATOMICRMWXCHG] = { "i32.atomic.rmw.xchg" , 3, 3 },
-	[WASM_OP_I64ATOMICRMWXCHG] = { "i64.atomic.rmw.xchg" , 3, 3 },
-	[WASM_OP_I32ATOMICRMW8UXCHG] = { "i32.atomic.rmw8_u.xchg" , 3, 3 },
-	[WASM_OP_I32ATOMICRMW16UXCHG] = { "i32.atomic.rmw16_u.xchg" , 3, 3 },
-	[WASM_OP_I64ATOMICRMW8UXCHG] = { "i64.atomic.rmw8_u.xchg" , 3, 3 },
-	[WASM_OP_I64ATOMICRMW16UXCHG] = { "i64.atomic.rmw16_u.xchg" , 3, 3 },
-	[WASM_OP_I64ATOMICRMW32UXCHG] = { "i64.atomic.rmw32_u.xchg" , 3, 3 },
-	[WASM_OP_I32ATOMICRMWCMPXCHG] = { "i32.atomic.rmw.cmpxchg" , 3, 3 },
-	[WASM_OP_I64ATOMICRMWCMPXCHG] = { "i64.atomic.rmw.cmpxchg" , 3, 3 },
-	[WASM_OP_I32ATOMICRMW8UCMPXCHG] = { "i32.atomic.rmw8_u.cmpxchg" , 3, 3 },
-	[WASM_OP_I32ATOMICRMW16UCMPXCHG] = { "i32.atomic.rmw16_u.cmpxchg" , 3, 3 },
-	[WASM_OP_I64ATOMICRMW8UCMPXCHG] = { "i64.atomic.rmw8_u.cmpxchg" , 3, 3 },
-	[WASM_OP_I64ATOMICRMW16UCMPXCHG] = { "i64.atomic.rmw16_u.cmpxchg" , 3, 3 },
-	[WASM_OP_I64ATOMICRMW32UCMPXCHG] = { "i64.atomic.rmw32_u.cmpxchg" , 3, 3 }
+	[WASM_OP_I32ATOMICLOAD16U] = { "i32.atomic.load16_u", 3, 3 },
+	[WASM_OP_I64ATOMICLOAD8U] = { "i64.atomic.load8_u", 3, 3 },
+	[WASM_OP_I64ATOMICLOAD16U] = { "i64.atomic.load16_u", 3, 3 },
+	[WASM_OP_I64ATOMICLOAD32U] = { "i64.atomic.load32_u", 3, 3 },
+	[WASM_OP_I32ATOMICSTORE] = { "i32.atomic.store", 3, 3 },
+	[WASM_OP_I64ATOMICSTORE] = { "i64.atomic.store", 3, 3 },
+	[WASM_OP_I32ATOMICSTORE8] = { "i32.atomic.store8", 3, 3 },
+	[WASM_OP_I32ATOMICSTORE16] = { "i32.atomic.store16", 3, 3 },
+	[WASM_OP_I64ATOMICSTORE8] = { "i64.atomic.store8", 3, 3 },
+	[WASM_OP_I64ATOMICSTORE16] = { "i64.atomic.store16", 3, 3 },
+	[WASM_OP_I64ATOMICSTORE32] = { "i64.atomic.store32", 3, 3 },
+	[WASM_OP_I32ATOMICRMWADD] = { "i32.atomic.rmw.add", 3, 3 },
+	[WASM_OP_I64ATOMICRMWADD] = { "i64.atomic.rmw.add", 3, 3 },
+	[WASM_OP_I32ATOMICRMW8UADD] = { "i32.atomic.rmw8_u.add", 3, 3 },
+	[WASM_OP_I32ATOMICRMW16UADD] = { "i32.atomic.rmw16_u.add", 3, 3 },
+	[WASM_OP_I64ATOMICRMW8UADD] = { "i64.atomic.rmw8_u.add", 3, 3 },
+	[WASM_OP_I64ATOMICRMW16UADD] = { "i64.atomic.rmw16_u.add", 3, 3 },
+	[WASM_OP_I64ATOMICRMW32UADD] = { "i64.atomic.rmw32_u.add", 3, 3 },
+	[WASM_OP_I32ATOMICRMW8USUB] = { "i32.atomic.rmw8_u.sub", 3, 3 },
+	[WASM_OP_I32ATOMICRMW16USUB] = { "i32.atomic.rmw16_u.sub", 3, 3 },
+	[WASM_OP_I32ATOMICRMWSUB] = { "i32.atomic.rmw.sub", 3, 3 },
+	[WASM_OP_I64ATOMICRMW8USUB] = { "i64.atomic.rmw8_u.sub", 3, 3 },
+	[WASM_OP_I64ATOMICRMW16USUB] = { "i64.atomic.rmw16_u.sub", 3, 3 },
+	[WASM_OP_I64ATOMICRMW32USUB] = { "i64.atomic.rmw32_u.sub", 3, 3 },
+	[WASM_OP_I64ATOMICRMWSUB] = { "i64.atomic.rmw.sub", 3, 3 },
+	[WASM_OP_I32ATOMICRMWAND] = { "i32.atomic.rmw.and", 3, 3 },
+	[WASM_OP_I64ATOMICRMWAND] = { "i64.atomic.rmw.and", 3, 3 },
+	[WASM_OP_I32ATOMICRMW8UAND] = { "i32.atomic.rmw8_u.and", 3, 3 },
+	[WASM_OP_I32ATOMICRMW16UAND] = { "i32.atomic.rmw16_u.and", 3, 3 },
+	[WASM_OP_I64ATOMICRMW8UAND] = { "i64.atomic.rmw8_u.and", 3, 3 },
+	[WASM_OP_I64ATOMICRMW16UAND] = { "i64.atomic.rmw16_u.and", 3, 3 },
+	[WASM_OP_I64ATOMICRMW32UAND] = { "i64.atomic.rmw32_u.and", 3, 3 },
+	[WASM_OP_I32ATOMICRMWOR] = { "i32.atomic.rmw.or", 3, 3 },
+	[WASM_OP_I64ATOMICRMWOR] = { "i64.atomic.rmw.or", 3, 3 },
+	[WASM_OP_I32ATOMICRMW8UOR] = { "i32.atomic.rmw8_u.or", 3, 3 },
+	[WASM_OP_I32ATOMICRMW16UOR] = { "i32.atomic.rmw16_u.or", 3, 3 },
+	[WASM_OP_I64ATOMICRMW8UOR] = { "i64.atomic.rmw8_u.or", 3, 3 },
+	[WASM_OP_I64ATOMICRMW16UOR] = { "i64.atomic.rmw16_u.or", 3, 3 },
+	[WASM_OP_I64ATOMICRMW32UOR] = { "i64.atomic.rmw32_u.or", 3, 3 },
+	[WASM_OP_I32ATOMICRMWXOR] = { "i32.atomic.rmw.xor", 3, 3 },
+	[WASM_OP_I64ATOMICRMWXOR] = { "i64.atomic.rmw.xor", 3, 3 },
+	[WASM_OP_I32ATOMICRMW8UXOR] = { "i32.atomic.rmw8_u.xor", 3, 3 },
+	[WASM_OP_I32ATOMICRMW16UXOR] = { "i32.atomic.rmw16_u.xor", 3, 3 },
+	[WASM_OP_I64ATOMICRMW8UXOR] = { "i64.atomic.rmw8_u.xor", 3, 3 },
+	[WASM_OP_I64ATOMICRMW16UXOR] = { "i64.atomic.rmw16_u.xor", 3, 3 },
+	[WASM_OP_I64ATOMICRMW32UXOR] = { "i64.atomic.rmw32_u.xor", 3, 3 },
+	[WASM_OP_I32ATOMICRMWXCHG] = { "i32.atomic.rmw.xchg", 3, 3 },
+	[WASM_OP_I64ATOMICRMWXCHG] = { "i64.atomic.rmw.xchg", 3, 3 },
+	[WASM_OP_I32ATOMICRMW8UXCHG] = { "i32.atomic.rmw8_u.xchg", 3, 3 },
+	[WASM_OP_I32ATOMICRMW16UXCHG] = { "i32.atomic.rmw16_u.xchg", 3, 3 },
+	[WASM_OP_I64ATOMICRMW8UXCHG] = { "i64.atomic.rmw8_u.xchg", 3, 3 },
+	[WASM_OP_I64ATOMICRMW16UXCHG] = { "i64.atomic.rmw16_u.xchg", 3, 3 },
+	[WASM_OP_I64ATOMICRMW32UXCHG] = { "i64.atomic.rmw32_u.xchg", 3, 3 },
+	[WASM_OP_I32ATOMICRMWCMPXCHG] = { "i32.atomic.rmw.cmpxchg", 3, 3 },
+	[WASM_OP_I64ATOMICRMWCMPXCHG] = { "i64.atomic.rmw.cmpxchg", 3, 3 },
+	[WASM_OP_I32ATOMICRMW8UCMPXCHG] = { "i32.atomic.rmw8_u.cmpxchg", 3, 3 },
+	[WASM_OP_I32ATOMICRMW16UCMPXCHG] = { "i32.atomic.rmw16_u.cmpxchg", 3, 3 },
+	[WASM_OP_I64ATOMICRMW8UCMPXCHG] = { "i64.atomic.rmw8_u.cmpxchg", 3, 3 },
+	[WASM_OP_I64ATOMICRMW16UCMPXCHG] = { "i64.atomic.rmw16_u.cmpxchg", 3, 3 },
+	[WASM_OP_I64ATOMICRMW32UCMPXCHG] = { "i64.atomic.rmw32_u.cmpxchg", 3, 3 }
 };
 
 static WasmOpDef opcodes_simd[256] = {
@@ -431,7 +431,7 @@ static WasmOpDef opcodes_simd[256] = {
 
 #ifndef WASM_NO_ASM
 // assembles the given line of wasm assembly.
-R_IPI int wasm_asm(const char *str, unsigned char *buf, int buf_len) {
+R_IPI int wasm_asm (const char *str, unsigned char *buf, int buf_len) {
 	int i = 0, len = 0;
 	char tmp[256];
 	WasmOpDef *opdef = NULL;
@@ -464,16 +464,17 @@ R_IPI int wasm_asm(const char *str, unsigned char *buf, int buf_len) {
 		}
 	}
 	// Abort
-	if (len == 0) goto err;
+	if (len == 0)
+		goto err;
 	// TODO: parse immediates
 	return len;
-  err:
+err:
 	return -1;
 }
 #endif
 
 // disassemble an instruction from the given buffer.
-R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
+R_IPI int wasm_dis (WasmOp *op, const unsigned char *buf, int buf_len) {
 	RStrBuf *sb = r_strbuf_new ("");
 	int id = buf[0];
 	if (id < 0xc0) {
@@ -611,130 +612,118 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		case WASM_OP_I64REINTERPRETF64:
 		case WASM_OP_F32REINTERPRETI32:
 		case WASM_OP_F64REINTERPRETI64:
-		case WASM_OP_END:
-			{
-				r_strbuf_set (sb, opdef->txt);
-			}
-			break;
+		case WASM_OP_END: {
+			r_strbuf_set (sb, opdef->txt);
+		} break;
 		case WASM_OP_BLOCK:
 		case WASM_OP_LOOP:
-		case WASM_OP_IF:
-			{
-				st32 val = 0;
-				size_t n = read_i32_leb128 (buf + 1, buf + buf_len, &val);
-				if (!(n > 0 && n < buf_len)) {
-					goto err;
-				}
-				switch (0x80 - val) {
-				case R_BIN_WASM_VALUETYPE_EMPTY:
-					r_strbuf_set (sb, opdef->txt);
-					break;
-				case R_BIN_WASM_VALUETYPE_i32:
-					r_strbuf_setf (sb, "%s (result i32)", opdef->txt);
-					break;
-				case R_BIN_WASM_VALUETYPE_i64:
-					r_strbuf_setf (sb, "%s (result i64)", opdef->txt);
-					break;
-				case R_BIN_WASM_VALUETYPE_f32:
-					r_strbuf_setf (sb, "%s (result f32)", opdef->txt);
-					break;
-				case R_BIN_WASM_VALUETYPE_f64:
-					r_strbuf_setf (sb, "%s (result f64)", opdef->txt);
-					break;
-				case R_BIN_WASM_VALUETYPE_v128:
-					r_strbuf_setf (sb, "%s (result v128)", opdef->txt);
-					break;
-				default:
-					r_strbuf_setf (sb, "%s (result ?)", opdef->txt);
-					break;
-				}
-				op->len += n;
-			}
-			break;
-		case WASM_OP_BR:
-		case WASM_OP_BRIF:
-		case WASM_OP_CALL:
-			{
-				ut32 val = 0;
-				size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &val);
-				if (!(n > 0 && n < buf_len)) {
-					goto err;
-				}
-				r_strbuf_setf (sb, "%s %d", opdef->txt, val);
-				op->len += n;
-			}
-			break;
-		case WASM_OP_BRTABLE:
-			{
-				ut32 count = 0, *table = NULL, def = 0;
-				size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &count);
-				if (!(n > 0 && n < buf_len && count < 0xffff)) {
-					goto err;
-				}
-				if (!(table = calloc (count, sizeof (ut32)))) {
-					goto err;
-				}
-				int i = 0;
-				op->len += n;
-				for (i = 0; i < count; i++) {
-					n = read_u32_leb128 (buf + op->len, buf + buf_len, &table[i]);
-					if (!(op->len + n <= buf_len)) {
-						goto beach;
-					}
-					if (n < 1) {
-						break;
-					}
-					op->len += n;
-				}
-				n = read_u32_leb128 (buf + op->len, buf + buf_len, &def);
-				if (!(n > 0 && n + op->len < buf_len)) {
-					goto beach;
-				}
-				op->len += n;
-				r_strbuf_setf (sb, "%s %d ", opdef->txt, count);
-				for (i = 0; i < count; i++) {
-					r_strbuf_appendf (sb, "%d ", table[i]);
-				}
-				r_strbuf_appendf (sb, "%d", def);
-				free (table);
-				break;
-			beach:
-				free (table);
+		case WASM_OP_IF: {
+			st32 val = 0;
+			size_t n = read_i32_leb128 (buf + 1, buf + buf_len, &val);
+			if (!(n > 0 && n < buf_len)) {
 				goto err;
 			}
-			break;
-		case WASM_OP_CALLINDIRECT:
-			{
-				ut32 val = 0, reserved = 0;
-				size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &val);
-				if (!(n > 0 && n < buf_len)) {
-					goto err;
+			switch (0x80 - val) {
+			case R_BIN_WASM_VALUETYPE_EMPTY:
+				r_strbuf_set (sb, opdef->txt);
+				break;
+			case R_BIN_WASM_VALUETYPE_i32:
+				r_strbuf_setf (sb, "%s (result i32)", opdef->txt);
+				break;
+			case R_BIN_WASM_VALUETYPE_i64:
+				r_strbuf_setf (sb, "%s (result i64)", opdef->txt);
+				break;
+			case R_BIN_WASM_VALUETYPE_f32:
+				r_strbuf_setf (sb, "%s (result f32)", opdef->txt);
+				break;
+			case R_BIN_WASM_VALUETYPE_f64:
+				r_strbuf_setf (sb, "%s (result f64)", opdef->txt);
+				break;
+			case R_BIN_WASM_VALUETYPE_v128:
+				r_strbuf_setf (sb, "%s (result v128)", opdef->txt);
+				break;
+			default:
+				r_strbuf_setf (sb, "%s (result ?)", opdef->txt);
+				break;
+			}
+			op->len += n;
+		} break;
+		case WASM_OP_BR:
+		case WASM_OP_BRIF:
+		case WASM_OP_CALL: {
+			ut32 val = 0;
+			size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &val);
+			if (!(n > 0 && n < buf_len)) {
+				goto err;
+			}
+			r_strbuf_setf (sb, "%s %d", opdef->txt, val);
+			op->len += n;
+		} break;
+		case WASM_OP_BRTABLE: {
+			ut32 count = 0, *table = NULL, def = 0;
+			size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &count);
+			if (!(n > 0 && n < buf_len && count < 0xffff)) {
+				goto err;
+			}
+			if (!(table = calloc (count, sizeof (ut32)))) {
+				goto err;
+			}
+			int i = 0;
+			op->len += n;
+			for (i = 0; i < count; i++) {
+				n = read_u32_leb128 (buf + op->len, buf + buf_len, &table[i]);
+				if (!(op->len + n <= buf_len)) {
+					goto beach;
 				}
-				op->len += n;
-				n = read_u32_leb128 (buf + op->len, buf + buf_len, &reserved);
-				if (!(n == 1 && op->len + n <= buf_len)) {
-					goto err;
+				if (n < 1) {
+					break;
 				}
-				reserved &= 0x1;
-				r_strbuf_setf (sb, "%s %d %d", opdef->txt, val, reserved);
 				op->len += n;
 			}
+			n = read_u32_leb128 (buf + op->len, buf + buf_len, &def);
+			if (!(n > 0 && n + op->len < buf_len)) {
+				goto beach;
+			}
+			op->len += n;
+			r_strbuf_setf (sb, "%s %d ", opdef->txt, count);
+			for (i = 0; i < count; i++) {
+				r_strbuf_appendf (sb, "%d ", table[i]);
+			}
+			r_strbuf_appendf (sb, "%d", def);
+			free (table);
 			break;
+beach:
+			free (table);
+			goto err;
+		} break;
+		case WASM_OP_CALLINDIRECT: {
+			ut32 val = 0, reserved = 0;
+			size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &val);
+			if (!(n > 0 && n < buf_len)) {
+				goto err;
+			}
+			op->len += n;
+			n = read_u32_leb128 (buf + op->len, buf + buf_len, &reserved);
+			if (!(n == 1 && op->len + n <= buf_len)) {
+				goto err;
+			}
+			reserved &= 0x1;
+			r_strbuf_setf (sb, "%s %d %d", opdef->txt, val, reserved);
+			op->len += n;
+		} break;
 		case WASM_OP_GETLOCAL:
 		case WASM_OP_SETLOCAL:
 		case WASM_OP_TEELOCAL:
 		case WASM_OP_GETGLOBAL:
-		case WASM_OP_SETGLOBAL:
-			{
-				ut32 val = 0;
-				size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &val);
-				if (!(n > 0 && n < buf_len)) {
-					goto err;
-				}
-				r_strbuf_setf (sb, "%s %d", opdef->txt, val);
-				op->len += n;
+		case WASM_OP_SETGLOBAL: {
+			ut32 val = 0;
+			size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &val);
+			if (!(n > 0 && n < buf_len)) {
+				goto err;
 			}
-			break;
+			r_strbuf_setf (sb, "%s %d", opdef->txt, val);
+			op->len += n;
+		} break;
 		case WASM_OP_I32LOAD:
 		case WASM_OP_I64LOAD:
 		case WASM_OP_F32LOAD:
@@ -757,61 +746,53 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		case WASM_OP_I32STORE16:
 		case WASM_OP_I64STORE8:
 		case WASM_OP_I64STORE16:
-		case WASM_OP_I64STORE32:
-			{
-				ut32 flag = 0, offset = 0;
-				size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &flag);
-				if (!(n > 0 && n < buf_len)) {
-					goto err;
-				}
-				op->len += n;
-				n = read_u32_leb128 (buf + op->len, buf + buf_len, &offset);
-				if (!(n > 0 && op->len + n <= buf_len)) {
-					goto err;
-				}
-				r_strbuf_setf (sb, "%s %d %d", opdef->txt, flag, offset);
-				op->len += n;
+		case WASM_OP_I64STORE32: {
+			ut32 flag = 0, offset = 0;
+			size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &flag);
+			if (!(n > 0 && n < buf_len)) {
+				goto err;
 			}
-			break;
+			op->len += n;
+			n = read_u32_leb128 (buf + op->len, buf + buf_len, &offset);
+			if (!(n > 0 && op->len + n <= buf_len)) {
+				goto err;
+			}
+			r_strbuf_setf (sb, "%s %d %d", opdef->txt, flag, offset);
+			op->len += n;
+		} break;
 		case WASM_OP_CURRENTMEMORY:
-		case WASM_OP_GROWMEMORY:
-			{
-				ut32 reserved = 0;
-				size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &reserved);
-				if (!(n == 1 && n < buf_len)) {
-					goto err;
-				}
-				reserved &= 0x1;
-				r_strbuf_setf (sb, "%s %d", opdef->txt, reserved);
-				op->len += n;
+		case WASM_OP_GROWMEMORY: {
+			ut32 reserved = 0;
+			size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &reserved);
+			if (!(n == 1 && n < buf_len)) {
+				goto err;
 			}
-			break;
-		case WASM_OP_I32CONST:
-			{
-				st32 val = 0;
-				size_t n = read_i32_leb128 (buf + 1, buf + buf_len, &val);
-				if (!(n > 0 && n < buf_len)) {
-					goto err;
-				}
-				r_strbuf_setf (sb, "%s %" PFMT32d, opdef->txt, val);
-				op->len += n;
+			reserved &= 0x1;
+			r_strbuf_setf (sb, "%s %d", opdef->txt, reserved);
+			op->len += n;
+		} break;
+		case WASM_OP_I32CONST: {
+			st32 val = 0;
+			size_t n = read_i32_leb128 (buf + 1, buf + buf_len, &val);
+			if (!(n > 0 && n < buf_len)) {
+				goto err;
 			}
-			break;
-		case WASM_OP_I64CONST:
-			{
-				st64 val = 0;
-				size_t n = read_i64_leb128 (buf + 1, buf + buf_len, &val);
-				if (!(n > 0 && n < buf_len)) {
-					goto err;
-				}
-				r_strbuf_setf (sb, "%s %" PFMT64d, opdef->txt, val);
-				op->len += n;
+			r_strbuf_setf (sb, "%s %" PFMT32d, opdef->txt, val);
+			op->len += n;
+		} break;
+		case WASM_OP_I64CONST: {
+			st64 val = 0;
+			size_t n = read_i64_leb128 (buf + 1, buf + buf_len, &val);
+			if (!(n > 0 && n < buf_len)) {
+				goto err;
 			}
-			break;
+			r_strbuf_setf (sb, "%s %" PFMT64d, opdef->txt, val);
+			op->len += n;
+		} break;
 		case WASM_OP_F32CONST:
 			if (buf_len > 4) {
 				union fi {
-					ut32  v;
+					ut32 v;
 					float f;
 				} u;
 				u.v = r_read_at_le32 (buf, 1);
@@ -824,7 +805,7 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		case WASM_OP_F64CONST:
 			if (buf_len > 8) {
 				union di {
-					ut64   v;
+					ut64 v;
 					double f;
 				} u;
 				u.v = r_read_at_le64 (buf, 1);
@@ -838,8 +819,9 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 			goto err;
 		}
 	} else if (id == 0xfe) {
-		op->type =  WASM_TYPE_OP_ATOMIC;
-		if (buf_len < 2) goto err;
+		op->type = WASM_TYPE_OP_ATOMIC;
+		if (buf_len < 2)
+			goto err;
 		op->len = 2;
 		id = buf[1]; // skip 0xfe
 		op->op.atomic = id;
@@ -900,22 +882,20 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		case WASM_OP_I32ATOMICRMW16UXCHG:
 		case WASM_OP_I64ATOMICRMW8UXCHG:
 		case WASM_OP_I64ATOMICRMW16UXCHG:
-		case WASM_OP_I64ATOMICRMW32UXCHG:
-			{
-				ut32 flag = 0, offset = 0;
-				size_t n = read_u32_leb128 (buf + 2, buf + buf_len, &flag);
-				if (!(n > 0 && n < buf_len)) {
-					goto err;
-				}
-				op->len += n;
-				n = read_u32_leb128 (buf + op->len, buf + buf_len, &offset);
-				if (!(n > 0 && op->len + n <= buf_len)) {
-					goto err;
-				}
-				r_strbuf_setf (sb, "%s %d %d", opdef->txt, flag, offset);
-				op->len += n;
+		case WASM_OP_I64ATOMICRMW32UXCHG: {
+			ut32 flag = 0, offset = 0;
+			size_t n = read_u32_leb128 (buf + 2, buf + buf_len, &flag);
+			if (!(n > 0 && n < buf_len)) {
+				goto err;
 			}
-			break;
+			op->len += n;
+			n = read_u32_leb128 (buf + op->len, buf + buf_len, &offset);
+			if (!(n > 0 && op->len + n <= buf_len)) {
+				goto err;
+			}
+			r_strbuf_setf (sb, "%s %d %d", opdef->txt, flag, offset);
+			op->len += n;
+		} break;
 		default:
 			goto err;
 		}
@@ -1081,11 +1061,9 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		case WASM_OP_I16X8AVGRU:
 		case WASM_OP_I8X16ABS:
 		case WASM_OP_I16X8ABS:
-		case WASM_OP_I32X4ABS:
-			{
-				r_strbuf_set (sb, opdef->txt);
-			}
-			break;
+		case WASM_OP_I32X4ABS: {
+			r_strbuf_set (sb, opdef->txt);
+		} break;
 		case WASM_OP_V128LOAD:
 		case WASM_OP_I16X8LOAD8X8S:
 		case WASM_OP_I16X8LOAD8X8U:
@@ -1097,42 +1075,38 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		case WASM_OP_V16X8LOADSPLAT:
 		case WASM_OP_V32X4LOADSPLAT:
 		case WASM_OP_V64X2LOADSPLAT:
-		case WASM_OP_V128STORE:
-			{
-				ut32 offset = 0, align = 0;
-				size_t n = read_u32_leb128 (buf + 1 + simdop_size, buf + buf_len, &offset);
-				op->len += n;
-				if (!(n > 0 && n < buf_len)) {
-					goto err;
-				}
-				n = read_u32_leb128 (buf + 1 + simdop_size + n, buf + buf_len, &align);
-				op->len += n;
-				if (!(n > 0 && n < buf_len)) {
-					goto err;
-				}
-				r_strbuf_setf (sb, "%s o:%d a:2^%d", opdef->txt, offset, align);
+		case WASM_OP_V128STORE: {
+			ut32 offset = 0, align = 0;
+			size_t n = read_u32_leb128 (buf + 1 + simdop_size, buf + buf_len, &offset);
+			op->len += n;
+			if (!(n > 0 && n < buf_len)) {
+				goto err;
 			}
-			break;
+			n = read_u32_leb128 (buf + 1 + simdop_size + n, buf + buf_len, &align);
+			op->len += n;
+			if (!(n > 0 && n < buf_len)) {
+				goto err;
+			}
+			r_strbuf_setf (sb, "%s o:%d a:2^%d", opdef->txt, offset, align);
+		} break;
 		case WASM_OP_V128CONST:
-		case WASM_OP_V8X16SHUFFLE:
-			{
-				if (buf_len < 18) {
-					goto err;
-				}
-				op->len += 16;
-				unsigned char bytes[16] = { 0 };
-				int i;
-				for (i = 0; i < 16; ++i) {
-					bytes[i] = buf[i + 1 + simdop_size];
-				}
-				r_strbuf_setf (sb, "%s %02x %02x %02x %02x %02x %02x %02x " \
-						"%02x %02x %02x %02x %02x %02x %02x %02x %02x",
-						opdef->txt, bytes[0], bytes[1], bytes[2], bytes[3],
-						bytes[4], bytes[5], bytes[6], bytes[7], bytes[8],
-						bytes[9], bytes[10], bytes[11], bytes[12], bytes[13],
-						bytes[14], bytes[15]);
+		case WASM_OP_V8X16SHUFFLE: {
+			if (buf_len < 18) {
+				goto err;
 			}
-			break;
+			op->len += 16;
+			unsigned char bytes[16] = { 0 };
+			int i;
+			for (i = 0; i < 16; ++i) {
+				bytes[i] = buf[i + 1 + simdop_size];
+			}
+			r_strbuf_setf (sb, "%s %02x %02x %02x %02x %02x %02x %02x "
+					   "%02x %02x %02x %02x %02x %02x %02x %02x %02x",
+				opdef->txt, bytes[0], bytes[1], bytes[2], bytes[3],
+				bytes[4], bytes[5], bytes[6], bytes[7], bytes[8],
+				bytes[9], bytes[10], bytes[11], bytes[12], bytes[13],
+				bytes[14], bytes[15]);
+		} break;
 		case WASM_OP_I8X16EXTRACTLANES:
 		case WASM_OP_I8X16EXTRACTLANEU:
 		case WASM_OP_I8X16REPLACELANE:
@@ -1146,16 +1120,14 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		case WASM_OP_F32X4EXTRACTLANE:
 		case WASM_OP_F32X4REPLACELANE:
 		case WASM_OP_F64X2EXTRACTLANE:
-		case WASM_OP_F64X2REPLACELANE:
-			{
-				if (buf_len < 3) {
-					goto err;
-				}
-				unsigned char lane = buf[1 + simdop_size];
-				++op->len;
-				r_strbuf_setf (sb, "%s %d", opdef->txt, lane);
+		case WASM_OP_F64X2REPLACELANE: {
+			if (buf_len < 3) {
+				goto err;
 			}
-			break;
+			unsigned char lane = buf[1 + simdop_size];
+			++op->len;
+			r_strbuf_setf (sb, "%s %d", opdef->txt, lane);
+		} break;
 		}
 	} else {
 		goto err;
@@ -1163,7 +1135,7 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 	op->txt = r_strbuf_drain (sb);
 	return op->len;
 
-  err:
+err:
 	op->len = 1;
 	r_strbuf_set (sb, "invalid");
 	op->txt = r_strbuf_drain (sb);

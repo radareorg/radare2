@@ -21,7 +21,7 @@ static wchar_t *r_utf8_to_utf16_l (const char *cstring, int len) {
 
 	if ((wcsize = MultiByteToWideChar (CP_UTF8, 0, cstring, len, NULL, 0))) {
 		wcsize += 1;
-		if ((rutf16 = (wchar_t *) calloc (wcsize, sizeof (wchar_t)))) {
+		if ((rutf16 = (wchar_t *)calloc (wcsize, sizeof (wchar_t)))) {
 			MultiByteToWideChar (CP_UTF8, 0, cstring, len, rutf16, wcsize);
 			if (len != -1) {
 				rutf16[wcsize - 1] = L'\0';
@@ -33,7 +33,7 @@ static wchar_t *r_utf8_to_utf16_l (const char *cstring, int len) {
 
 #define r_sys_conv_utf8_to_utf16(buf) r_utf8_to_utf16_l ((buf), -1)
 
-static bool r_sys_mkdir(const char *path) {
+static bool r_sys_mkdir (const char *path) {
 	LPTSTR path_ = r_sys_conv_utf8_to_utf16 (path);
 	bool ret = CreateDirectory (path_, NULL);
 
@@ -49,11 +49,11 @@ static bool r_sys_mkdir(const char *path) {
 #endif
 #define r_sys_mkdir_failed() (GetLastError () != 183)
 #else
-#define r_sys_mkdir(x) (mkdir (x,0755)!=-1)
+#define r_sys_mkdir(x) (mkdir (x, 0755) != -1)
 #define r_sys_mkdir_failed() (errno != EEXIST)
 #endif
 
-static inline int r_sys_mkdirp(char *dir) {
+static inline int r_sys_mkdirp (char *dir) {
 	int ret = 1;
 	const char slash = DIRSEP;
 	char *path = dir;
@@ -80,7 +80,7 @@ static inline int r_sys_mkdirp(char *dir) {
 	return ret;
 }
 
-SDB_API bool sdb_disk_create(Sdb* s) {
+SDB_API bool sdb_disk_create (Sdb *s) {
 	int nlen;
 	char *str;
 	const char *dir;
@@ -124,7 +124,7 @@ SDB_API bool sdb_disk_create(Sdb* s) {
 	return true;
 }
 
-SDB_API bool sdb_disk_insert(Sdb* s, const char *key, const char *val) {
+SDB_API bool sdb_disk_insert (Sdb *s, const char *key, const char *val) {
 	struct cdb_make *c = &s->m;
 	if (!key || !val) {
 		return false;
@@ -133,8 +133,10 @@ SDB_API bool sdb_disk_insert(Sdb* s, const char *key, const char *val) {
 	return cdb_make_add (c, key, strlen (key), val, strlen (val));
 }
 
-#define IFRET(x) if (x) ret = 0
-SDB_API bool sdb_disk_finish (Sdb* s) {
+#define IFRET(x) \
+	if (x)   \
+	ret = 0
+SDB_API bool sdb_disk_finish (Sdb *s) {
 	bool reopen = false, ret = true;
 	IFRET (!cdb_make_finish (&s->m));
 #if USE_MMAN

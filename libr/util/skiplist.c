@@ -17,7 +17,7 @@ static RSkipListNode *r_skiplist_node_new (void *data, int level) {
 		return NULL;
 	}
 	res->forward = R_NEWS0 (RSkipListNode *, level + 1);
-	if (!res->forward)  {
+	if (!res->forward) {
 		free (res);
 		return NULL;
 	}
@@ -48,14 +48,13 @@ static void init_head (RSkipListNode *head) {
 //
 // NOTE: `updates` should be big enough to contain `list->list_level + 1`
 //       elements, when provided.
-static RSkipListNode *find_insertpoint(RSkipList *list, void *data, RSkipListNode **updates, bool by_data) {
+static RSkipListNode *find_insertpoint (RSkipList *list, void *data, RSkipListNode **updates, bool by_data) {
 	RSkipListNode *x = list->head;
 	int i;
 
 	for (i = list->list_level; i >= 0; i--) {
 		if (by_data) {
-			while (x->forward[i] != list->head
-				&& list->compare (x->forward[i]->data, data) < 0) {
+			while (x->forward[i] != list->head && list->compare (x->forward[i]->data, data) < 0) {
 				x = x->forward[i];
 			}
 		} else {
@@ -71,14 +70,14 @@ static RSkipListNode *find_insertpoint(RSkipList *list, void *data, RSkipListNod
 	return x;
 }
 
-static bool delete_element(RSkipList* list, void* data, bool by_data) {
+static bool delete_element (RSkipList *list, void *data, bool by_data) {
 	int i;
 	RSkipListNode *update[SKIPLIST_MAX_DEPTH + 1], *x;
 
 	// locate delete points in the lists of all levels
 	x = find_insertpoint (list, data, update, by_data);
 	// do nothing if the element is not present in the list
-	if (x == list->head || list->compare(x->data, data) != 0) {
+	if (x == list->head || list->compare (x->data, data) != 0) {
 		return false;
 	}
 
@@ -105,7 +104,7 @@ static bool delete_element(RSkipList* list, void* data, bool by_data) {
 // a function that returns 0 on equality between two elements, and -1 or 1
 // when unequal (for sorting).
 // Returns a new heap-allocated skiplist.
-R_API RSkipList* r_skiplist_new(RListFree freefn, RListComparator comparefn) {
+R_API RSkipList *r_skiplist_new (RListFree freefn, RListComparator comparefn) {
 	RSkipList *list = R_NEW0 (RSkipList);
 	if (!list) {
 		return NULL;
@@ -126,7 +125,7 @@ R_API RSkipList* r_skiplist_new(RListFree freefn, RListComparator comparefn) {
 }
 
 // Remove all elements from the list
-R_API void r_skiplist_purge(RSkipList *list) {
+R_API void r_skiplist_purge (RSkipList *list) {
 	RSkipListNode *n;
 	if (!list) {
 		return;
@@ -143,7 +142,7 @@ R_API void r_skiplist_purge(RSkipList *list) {
 }
 
 // Free the entire list and it's element (if freefn is specified)
-R_API void r_skiplist_free(RSkipList *list) {
+R_API void r_skiplist_free (RSkipList *list) {
 	if (!list) {
 		return;
 	}
@@ -154,7 +153,7 @@ R_API void r_skiplist_free(RSkipList *list) {
 
 // Inserts an element to the skiplist, and returns a pointer to the element's
 // node.
-R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data) {
+R_API RSkipListNode *r_skiplist_insert (RSkipList *list, void *data) {
 	RSkipListNode *update[SKIPLIST_MAX_DEPTH + 1];
 	RSkipListNode *x;
 	int i, x_level, new_level;
@@ -162,7 +161,7 @@ R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data) {
 	// locate insertion points in the lists of all levels
 	x = find_insertpoint (list, data, update, true);
 	// check whether the element is already in the list
-	if (x != list->head && !list->compare(x->data, data)) {
+	if (x != list->head && !list->compare (x->data, data)) {
 		return x;
 	}
 
@@ -199,35 +198,34 @@ R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data) {
 }
 
 // Delete node with data as it's payload.
-R_API bool r_skiplist_delete(RSkipList* list, void* data) {
+R_API bool r_skiplist_delete (RSkipList *list, void *data) {
 	return delete_element (list, data, true);
 }
 
 // Delete the given RSkipListNode from the skiplist
-R_API bool r_skiplist_delete_node(RSkipList *list, RSkipListNode *node) {
+R_API bool r_skiplist_delete_node (RSkipList *list, RSkipListNode *node) {
 	return delete_element (list, node, false);
 }
 
-R_API RSkipListNode* r_skiplist_find(RSkipList* list, void* data) {
-	RSkipListNode* x = find_insertpoint (list, data, NULL, true);
+R_API RSkipListNode *r_skiplist_find (RSkipList *list, void *data) {
+	RSkipListNode *x = find_insertpoint (list, data, NULL, true);
 	if (x != list->head && list->compare (x->data, data) == 0) {
 		return x;
 	}
 	return NULL;
 }
 
-R_API RSkipListNode* r_skiplist_find_geq(RSkipList* list, void* data) {
-	RSkipListNode* x = find_insertpoint (list, data, NULL, true);
+R_API RSkipListNode *r_skiplist_find_geq (RSkipList *list, void *data) {
+	RSkipListNode *x = find_insertpoint (list, data, NULL, true);
 	return x != list->head ? x : NULL;
 }
 
-R_API RSkipListNode* r_skiplist_find_leq(RSkipList* list, void* data) {
+R_API RSkipListNode *r_skiplist_find_leq (RSkipList *list, void *data) {
 	RSkipListNode *x = list->head;
 	int i;
 
 	for (i = list->list_level; i >= 0; i--) {
-		while (x->forward[i] != list->head 
-			&& list->compare (x->forward[i]->data, data) <= 0) {
+		while (x->forward[i] != list->head && list->compare (x->forward[i]->data, data) <= 0) {
 			x = x->forward[i];
 		}
 	}
@@ -235,7 +233,7 @@ R_API RSkipListNode* r_skiplist_find_leq(RSkipList* list, void* data) {
 }
 
 // Move all the elements of `l2` in `l1`.
-R_API void r_skiplist_join(RSkipList *l1, RSkipList *l2) {
+R_API void r_skiplist_join (RSkipList *l1, RSkipList *l2) {
 	RSkipListNode *it;
 	void *data;
 
@@ -247,7 +245,7 @@ R_API void r_skiplist_join(RSkipList *l1, RSkipList *l2) {
 }
 
 // Returns the first data element in the list, if present, NULL otherwise
-R_API void *r_skiplist_get_first(RSkipList *list) {
+R_API void *r_skiplist_get_first (RSkipList *list) {
 	if (!list) {
 		return NULL;
 	}
@@ -256,7 +254,7 @@ R_API void *r_skiplist_get_first(RSkipList *list) {
 }
 
 // Returns the nth data element in the list, if present, NULL otherwise
-R_API void *r_skiplist_get_n(RSkipList *list, int n) {
+R_API void *r_skiplist_get_n (RSkipList *list, int n) {
 	int count = 0;
 	RSkipListNode *node;
 	void *data;
@@ -272,19 +270,18 @@ R_API void *r_skiplist_get_n(RSkipList *list, int n) {
 	return NULL;
 }
 
-
-R_API void* r_skiplist_get_geq(RSkipList* list, void* data) {
+R_API void *r_skiplist_get_geq (RSkipList *list, void *data) {
 	RSkipListNode *x = r_skiplist_find_geq (list, data);
 	return x ? x->data : NULL;
 }
 
-R_API void* r_skiplist_get_leq(RSkipList* list, void* data) {
+R_API void *r_skiplist_get_leq (RSkipList *list, void *data) {
 	RSkipListNode *x = r_skiplist_find_leq (list, data);
 	return x ? x->data : NULL;
 }
 
 // Return true if the list is empty
-R_API bool r_skiplist_empty(RSkipList *list) {
+R_API bool r_skiplist_empty (RSkipList *list) {
 	return list->size == 0;
 }
 
@@ -292,7 +289,7 @@ R_API bool r_skiplist_empty(RSkipList *list) {
 //
 // NOTE: the data will be shared between the two lists. The user of this
 //       function should choose which list will "own" the data pointers.
-R_API RList *r_skiplist_to_list(RSkipList *list) {
+R_API RList *r_skiplist_to_list (RSkipList *list) {
 	RList *res = r_list_new ();
 	RSkipListNode *n;
 	void *data;

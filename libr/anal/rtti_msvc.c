@@ -2,34 +2,32 @@
 
 #include "r_anal.h"
 
-#define NAME_BUF_SIZE    64
+#define NAME_BUF_SIZE 64
 #define BASE_CLASSES_MAX 32
-
 
 typedef struct rtti_complete_object_locator_t {
 	ut32 signature;
-	ut32 vtable_offset;         // offset of the vtable within class
-	ut32 cd_offset;             // constructor displacement offset
-	ut32 type_descriptor_addr;  // only a relative offset for 64bit
+	ut32 vtable_offset; // offset of the vtable within class
+	ut32 cd_offset; // constructor displacement offset
+	ut32 type_descriptor_addr; // only a relative offset for 64bit
 	ut32 class_descriptor_addr; // only a relative offset for 64bit
-	ut32 object_base;           // only for 64bit, see rtti_msvc_read_complete_object_locator()
+	ut32 object_base; // only for 64bit, see rtti_msvc_read_complete_object_locator()
 } rtti_complete_object_locator;
-
 
 typedef struct rtti_class_hierarchy_descriptor_t {
 	ut32 signature;
-	ut32 attributes;            // bit 0 set = multiple inheritance, bit 1 set = virtual inheritance
+	ut32 attributes; // bit 0 set = multiple inheritance, bit 1 set = virtual inheritance
 	ut32 num_base_classes;
 	ut32 base_class_array_addr; // only a relative offset for 64bit
 } rtti_class_hierarchy_descriptor;
 
 typedef struct rtti_base_class_descriptor_t {
-	ut32 type_descriptor_addr;  // only a relative offset for 64bit
+	ut32 type_descriptor_addr; // only a relative offset for 64bit
 	ut32 num_contained_bases;
 	struct {
-		st32 mdisp;             // member displacement
-		st32 pdisp;             // vbtable displacement
-		st32 vdisp;             // displacement inside vbtable
+		st32 mdisp; // member displacement
+		st32 pdisp; // vbtable displacement
+		st32 vdisp; // displacement inside vbtable
 	} where;
 	ut32 attributes;
 } rtti_base_class_descriptor;
@@ -40,19 +38,19 @@ typedef struct rtti_type_descriptor_t {
 	char *name;
 } rtti_type_descriptor;
 
-static void rtti_type_descriptor_fini(rtti_type_descriptor *td) {
+static void rtti_type_descriptor_fini (rtti_type_descriptor *td) {
 	free (td->name);
 	td->name = NULL;
 }
 
-static inline ut64 rtti_msvc_addr(RVTableContext *context, ut64 col_addr, ut64 col_base, ut32 addr) {
+static inline ut64 rtti_msvc_addr (RVTableContext *context, ut64 col_addr, ut64 col_base, ut32 addr) {
 	if (context->word_size != 8) {
 		return addr;
 	}
 	return addr + (col_addr - col_base);
 }
 
-static bool rtti_msvc_read_complete_object_locator(RVTableContext *context, ut64 addr, rtti_complete_object_locator *col) {
+static bool rtti_msvc_read_complete_object_locator (RVTableContext *context, ut64 addr, rtti_complete_object_locator *col) {
 	if (addr == UT64_MAX) {
 		return false;
 	}
@@ -60,7 +58,7 @@ static bool rtti_msvc_read_complete_object_locator(RVTableContext *context, ut64
 	ut8 buf[6 * sizeof (ut32)];
 	int colSize = 5 * sizeof (ut32);
 	if (context->word_size == 8) {
-		colSize += sizeof(ut32);
+		colSize += sizeof (ut32);
 	}
 	if (colSize > sizeof (buf)) {
 		return false;
@@ -70,14 +68,14 @@ static bool rtti_msvc_read_complete_object_locator(RVTableContext *context, ut64
 		return false;
 	}
 
-	ut32 (*read_at_32)(const void *src, size_t offset) = context->anal->big_endian ? r_read_at_be32 : r_read_at_le32;
+	ut32 (*read_at_32) (const void *src, size_t offset) = context->anal->big_endian ? r_read_at_be32 : r_read_at_le32;
 	col->signature = read_at_32 (buf, 0);
 	col->vtable_offset = read_at_32 (buf, 4);
 	col->cd_offset = read_at_32 (buf, 8);
 
 	int offsetSize = R_MIN (context->word_size, 4);
-	col->type_descriptor_addr = (ut32) r_read_ble (buf + 12, (bool) context->anal->big_endian, offsetSize * 8);
-	col->class_descriptor_addr = (ut32) r_read_ble (buf + 12 + offsetSize, (bool) context->anal->big_endian, offsetSize * 8);
+	col->type_descriptor_addr = (ut32)r_read_ble (buf + 12, (bool)context->anal->big_endian, offsetSize * 8);
+	col->class_descriptor_addr = (ut32)r_read_ble (buf + 12 + offsetSize, (bool)context->anal->big_endian, offsetSize * 8);
 	if (context->word_size == 8) {
 		// 64bit is special:
 		// Type Descriptor and Class Hierarchy Descriptor addresses are computed
@@ -91,7 +89,7 @@ static bool rtti_msvc_read_complete_object_locator(RVTableContext *context, ut64
 	return true;
 }
 
-static bool rtti_msvc_read_class_hierarchy_descriptor(RVTableContext *context, ut64 addr, rtti_class_hierarchy_descriptor *chd) {
+static bool rtti_msvc_read_class_hierarchy_descriptor (RVTableContext *context, ut64 addr, rtti_class_hierarchy_descriptor *chd) {
 	if (addr == UT64_MAX) {
 		return false;
 	}
@@ -106,12 +104,12 @@ static bool rtti_msvc_read_class_hierarchy_descriptor(RVTableContext *context, u
 		return false;
 	}
 
-	ut32 (*read_at_32)(const void *src, size_t offset) = context->anal->big_endian ? r_read_at_be32 : r_read_at_le32;
+	ut32 (*read_at_32) (const void *src, size_t offset) = context->anal->big_endian ? r_read_at_be32 : r_read_at_le32;
 	chd->signature = read_at_32 (buf, 0);
 	chd->attributes = read_at_32 (buf, 4);
 	chd->num_base_classes = read_at_32 (buf, 8);
 	if (context->word_size <= 4) {
-		chd->base_class_array_addr = (ut32) r_read_ble (buf + 12, (bool) context->anal->big_endian, context->word_size * 8);
+		chd->base_class_array_addr = (ut32)r_read_ble (buf + 12, (bool)context->anal->big_endian, context->word_size * 8);
 	} else {
 		// 64bit is special, like in Complete Object Locator.
 		// Only the offset from the base from Complete Object Locator
@@ -121,17 +119,17 @@ static bool rtti_msvc_read_class_hierarchy_descriptor(RVTableContext *context, u
 	return true;
 }
 
-static ut64 rtti_msvc_base_class_descriptor_size(RVTableContext *context) {
+static ut64 rtti_msvc_base_class_descriptor_size (RVTableContext *context) {
 	return context->word_size + 5 * sizeof (ut32);
 }
 
-static bool rtti_msvc_read_base_class_descriptor(RVTableContext *context, ut64 addr, rtti_base_class_descriptor *bcd) {
+static bool rtti_msvc_read_base_class_descriptor (RVTableContext *context, ut64 addr, rtti_base_class_descriptor *bcd) {
 	if (addr == UT64_MAX) {
 		return false;
 	}
 
 	ut8 buf[sizeof (ut64) + 5 * sizeof (ut32)];
-	int bcdSize = (int) rtti_msvc_base_class_descriptor_size (context);
+	int bcdSize = (int)rtti_msvc_base_class_descriptor_size (context);
 	if (bcdSize > sizeof (buf)) {
 		return false;
 	}
@@ -140,10 +138,10 @@ static bool rtti_msvc_read_base_class_descriptor(RVTableContext *context, ut64 a
 		return false;
 	}
 
-	ut32 (*read_at_32)(const void *src, size_t offset) = context->anal->big_endian ? r_read_at_be32 : r_read_at_le32;
+	ut32 (*read_at_32) (const void *src, size_t offset) = context->anal->big_endian ? r_read_at_be32 : r_read_at_le32;
 	int typeDescriptorAddrSize = R_MIN (context->word_size, 4);
-	bcd->type_descriptor_addr = (ut32) r_read_ble (buf, (bool) context->anal->big_endian, typeDescriptorAddrSize * 8);
-	size_t offset = (size_t) typeDescriptorAddrSize;
+	bcd->type_descriptor_addr = (ut32)r_read_ble (buf, (bool)context->anal->big_endian, typeDescriptorAddrSize * 8);
+	size_t offset = (size_t)typeDescriptorAddrSize;
 	bcd->num_contained_bases = read_at_32 (buf, offset);
 	bcd->where.mdisp = read_at_32 (buf, offset + sizeof (ut32));
 	bcd->where.pdisp = read_at_32 (buf, offset + 2 * sizeof (ut32));
@@ -152,7 +150,7 @@ static bool rtti_msvc_read_base_class_descriptor(RVTableContext *context, ut64 a
 	return true;
 }
 
-static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_base_classes, ut64 base, ut32 offset) {
+static RList *rtti_msvc_read_base_class_array (RVTableContext *context, ut32 num_base_classes, ut64 base, ut32 offset) {
 	if (base == UT64_MAX || offset == UT32_MAX || num_base_classes == UT32_MAX) {
 		return NULL;
 	}
@@ -167,7 +165,7 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 
 	if (num_base_classes > BASE_CLASSES_MAX) {
 		if (context->anal->verbose) {
-			eprintf ("WARNING: Length of base class array at 0x%08"PFMT64x" exceeds %d.\n", addr, BASE_CLASSES_MAX);
+			eprintf ("WARNING: Length of base class array at 0x%08" PFMT64x " exceeds %d.\n", addr, BASE_CLASSES_MAX);
 		}
 		num_base_classes = BASE_CLASSES_MAX;
 	}
@@ -188,12 +186,12 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 			}
 		} else {
 			// special offset calculation for 64bit
-			ut8 tmp[4] = {0};
-			if (!context->anal->iob.read_at(context->anal->iob.io, addr, tmp, 4)) {
+			ut8 tmp[4] = { 0 };
+			if (!context->anal->iob.read_at (context->anal->iob.io, addr, tmp, 4)) {
 				r_list_free (ret);
 				return NULL;
 			}
-			ut32 (*read_32)(const void *src) = context->anal->big_endian ? r_read_be32 : r_read_le32;
+			ut32 (*read_32) (const void *src) = context->anal->big_endian ? r_read_be32 : r_read_le32;
 			ut32 bcdOffset = read_32 (tmp);
 			if (bcdOffset == UT32_MAX) {
 				break;
@@ -224,7 +222,7 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 	return ret;
 }
 
-static bool rtti_msvc_read_type_descriptor(RVTableContext *context, ut64 addr, rtti_type_descriptor *td) {
+static bool rtti_msvc_read_type_descriptor (RVTableContext *context, ut64 addr, rtti_type_descriptor *td) {
 	if (addr == UT64_MAX) {
 		return false;
 	}
@@ -245,7 +243,7 @@ static bool rtti_msvc_read_type_descriptor(RVTableContext *context, ut64 addr, r
 	while (1) {
 		context->anal->iob.read_at (context->anal->iob.io, nameAddr + bufOffset, buf, sizeof (buf));
 		int i;
-		for (i=0; i<sizeof (buf); i++) {
+		for (i = 0; i < sizeof (buf); i++) {
 			if (buf[i] == '\0') {
 				endFound = true;
 				break;
@@ -275,98 +273,97 @@ static bool rtti_msvc_read_type_descriptor(RVTableContext *context, ut64 addr, r
 		memcpy (td->name, buf, nameLen + 1);
 	} else {
 		context->anal->iob.read_at (context->anal->iob.io, nameAddr,
-									(ut8 *)td->name, (int) (nameLen + 1));
+			(ut8 *)td->name, (int)(nameLen + 1));
 	}
 
 	return true;
 }
 
-static void rtti_msvc_print_complete_object_locator(rtti_complete_object_locator *col, ut64 addr, const char *prefix) {
-	r_cons_printf ("%sComplete Object Locator at 0x%08"PFMT64x":\n"
-				   "%s\tsignature: %#x\n"
-				   "%s\tvftableOffset: %#x\n"
-				   "%s\tcdOffset: %#x\n"
-				   "%s\ttypeDescriptorAddr: 0x%08"PFMT32x"\n"
-				   "%s\tclassDescriptorAddr: 0x%08"PFMT32x"\n",
-				   prefix, addr,
-				   prefix, col->signature,
-				   prefix, col->vtable_offset,
-				   prefix, col->cd_offset,
-				   prefix, col->type_descriptor_addr,
-				   prefix, col->class_descriptor_addr);
-	r_cons_printf ("%s\tobjectBase: 0x%08"PFMT32x"\n\n",
-				   prefix, col->object_base);
+static void rtti_msvc_print_complete_object_locator (rtti_complete_object_locator *col, ut64 addr, const char *prefix) {
+	r_cons_printf ("%sComplete Object Locator at 0x%08" PFMT64x ":\n"
+		       "%s\tsignature: %#x\n"
+		       "%s\tvftableOffset: %#x\n"
+		       "%s\tcdOffset: %#x\n"
+		       "%s\ttypeDescriptorAddr: 0x%08" PFMT32x "\n"
+		       "%s\tclassDescriptorAddr: 0x%08" PFMT32x "\n",
+		prefix, addr,
+		prefix, col->signature,
+		prefix, col->vtable_offset,
+		prefix, col->cd_offset,
+		prefix, col->type_descriptor_addr,
+		prefix, col->class_descriptor_addr);
+	r_cons_printf ("%s\tobjectBase: 0x%08" PFMT32x "\n\n",
+		prefix, col->object_base);
 }
 
-static void rtti_msvc_print_complete_object_locator_json(rtti_complete_object_locator *col) {
-	r_cons_printf ("{\"signature\":%"PFMT32u",\"vftable_offset\":%"PFMT32u",\"cd_offset\":%"PFMT32u","
-				   "\"type_desc_addr\":%"PFMT32u",\"class_desc_addr\":%"PFMT32u",\"object_base\":%"PFMT32u"}",
-				   col->signature, col->vtable_offset, col->cd_offset, col->type_descriptor_addr,
-				   col->class_descriptor_addr, col->object_base);
+static void rtti_msvc_print_complete_object_locator_json (rtti_complete_object_locator *col) {
+	r_cons_printf ("{\"signature\":%" PFMT32u ",\"vftable_offset\":%" PFMT32u ",\"cd_offset\":%" PFMT32u ","
+		       "\"type_desc_addr\":%" PFMT32u ",\"class_desc_addr\":%" PFMT32u ",\"object_base\":%" PFMT32u "}",
+		col->signature, col->vtable_offset, col->cd_offset, col->type_descriptor_addr,
+		col->class_descriptor_addr, col->object_base);
 }
 
-static void rtti_msvc_print_type_descriptor(rtti_type_descriptor *td, ut64 addr, const char *prefix) {
-	r_cons_printf ("%sType Descriptor at 0x%08"PFMT64x":\n"
-				   "%s\tvtableAddr: 0x%08"PFMT64x"\n"
-				   "%s\tspare: 0x%08"PFMT64x"\n"
-				   "%s\tname: %s\n\n",
-				   prefix, addr,
-				   prefix, td->vtable_addr,
-				   prefix, td->spare,
-				   prefix, td->name);
+static void rtti_msvc_print_type_descriptor (rtti_type_descriptor *td, ut64 addr, const char *prefix) {
+	r_cons_printf ("%sType Descriptor at 0x%08" PFMT64x ":\n"
+		       "%s\tvtableAddr: 0x%08" PFMT64x "\n"
+		       "%s\tspare: 0x%08" PFMT64x "\n"
+		       "%s\tname: %s\n\n",
+		prefix, addr,
+		prefix, td->vtable_addr,
+		prefix, td->spare,
+		prefix, td->name);
 }
 
-static void rtti_msvc_print_type_descriptor_json(rtti_type_descriptor *td) {
-	r_cons_printf ("{\"vtable_addr\":%"PFMT32u",\"spare\":%"PFMT32u",\"name\":\"%s\"}",
-				   td->vtable_addr, td->spare, td->name);
+static void rtti_msvc_print_type_descriptor_json (rtti_type_descriptor *td) {
+	r_cons_printf ("{\"vtable_addr\":%" PFMT32u ",\"spare\":%" PFMT32u ",\"name\":\"%s\"}",
+		td->vtable_addr, td->spare, td->name);
 }
 
-static void rtti_msvc_print_class_hierarchy_descriptor(rtti_class_hierarchy_descriptor *chd, ut64 addr, const char *prefix) {
-	r_cons_printf ("%sClass Hierarchy Descriptor at 0x%08"PFMT64x":\n"
-				   "%s\tsignature: %#x\n"
-				   "%s\tattributes: %#x\n"
-				   "%s\tnumBaseClasses: %#x\n"
-				   "%s\tbaseClassArrayAddr: 0x%08"PFMT32x"\n\n",
-				   prefix, addr,
-				   prefix, chd->signature,
-				   prefix, chd->attributes,
-				   prefix, chd->num_base_classes,
-				   prefix, chd->base_class_array_addr);
+static void rtti_msvc_print_class_hierarchy_descriptor (rtti_class_hierarchy_descriptor *chd, ut64 addr, const char *prefix) {
+	r_cons_printf ("%sClass Hierarchy Descriptor at 0x%08" PFMT64x ":\n"
+		       "%s\tsignature: %#x\n"
+		       "%s\tattributes: %#x\n"
+		       "%s\tnumBaseClasses: %#x\n"
+		       "%s\tbaseClassArrayAddr: 0x%08" PFMT32x "\n\n",
+		prefix, addr,
+		prefix, chd->signature,
+		prefix, chd->attributes,
+		prefix, chd->num_base_classes,
+		prefix, chd->base_class_array_addr);
 }
 
-static void rtti_msvc_print_class_hierarchy_descriptor_json(rtti_class_hierarchy_descriptor *chd) {
-	r_cons_printf ("{\"signature\":%"PFMT32u",\"attributes\":%"PFMT32u",\"num_base_classes\":%"PFMT32u","
-				   "\"base_class_array_addr\":%"PFMT32u"}",
-				   chd->signature, chd->attributes, chd->num_base_classes, chd->base_class_array_addr);
+static void rtti_msvc_print_class_hierarchy_descriptor_json (rtti_class_hierarchy_descriptor *chd) {
+	r_cons_printf ("{\"signature\":%" PFMT32u ",\"attributes\":%" PFMT32u ",\"num_base_classes\":%" PFMT32u ","
+		       "\"base_class_array_addr\":%" PFMT32u "}",
+		chd->signature, chd->attributes, chd->num_base_classes, chd->base_class_array_addr);
 }
 
-static void rtti_msvc_print_base_class_descriptor(rtti_base_class_descriptor *bcd, const char *prefix) {
+static void rtti_msvc_print_base_class_descriptor (rtti_base_class_descriptor *bcd, const char *prefix) {
 	r_cons_printf ("%sBase Class Descriptor:\n"
-				   "%s\ttypeDescriptorAddr: 0x%08"PFMT32x"\n"
-				   "%s\tnumContainedBases: %#x\n"
-				   "%s\twhere:\n"
-				   "%s\t\tmdisp: %d\n"
-				   "%s\t\tpdisp: %d\n"
-				   "%s\t\tvdisp: %d\n"
-				   "%s\tattributes: %#x\n\n",
-				   prefix,
-				   prefix, bcd->type_descriptor_addr,
-				   prefix, bcd->num_contained_bases,
-				   prefix,
-				   prefix, bcd->where.mdisp,
-				   prefix, bcd->where.pdisp,
-				   prefix, bcd->where.vdisp,
-				   prefix, bcd->attributes);
+		       "%s\ttypeDescriptorAddr: 0x%08" PFMT32x "\n"
+		       "%s\tnumContainedBases: %#x\n"
+		       "%s\twhere:\n"
+		       "%s\t\tmdisp: %d\n"
+		       "%s\t\tpdisp: %d\n"
+		       "%s\t\tvdisp: %d\n"
+		       "%s\tattributes: %#x\n\n",
+		prefix,
+		prefix, bcd->type_descriptor_addr,
+		prefix, bcd->num_contained_bases,
+		prefix,
+		prefix, bcd->where.mdisp,
+		prefix, bcd->where.pdisp,
+		prefix, bcd->where.vdisp,
+		prefix, bcd->attributes);
 }
 
-static void rtti_msvc_print_base_class_descriptor_json(rtti_base_class_descriptor *bcd) {
-	r_cons_printf ("{\"type_desc_addr\":%"PFMT32u",\"num_contained_bases\":%"PFMT32u","
-				   "\"where\":{\"mdisp\":%"PFMT32d",\"pdisp\":%"PFMT32d",\"vdisp\":%"PFMT32d"},"
-				   "\"attributes\":%"PFMT32u"}",
-				   bcd->type_descriptor_addr, bcd->num_contained_bases,
-				   bcd->where.mdisp, bcd->where.pdisp, bcd->where.vdisp, bcd->attributes);
+static void rtti_msvc_print_base_class_descriptor_json (rtti_base_class_descriptor *bcd) {
+	r_cons_printf ("{\"type_desc_addr\":%" PFMT32u ",\"num_contained_bases\":%" PFMT32u ","
+		       "\"where\":{\"mdisp\":%" PFMT32d ",\"pdisp\":%" PFMT32d ",\"vdisp\":%" PFMT32d "},"
+		       "\"attributes\":%" PFMT32u "}",
+		bcd->type_descriptor_addr, bcd->num_contained_bases,
+		bcd->where.mdisp, bcd->where.pdisp, bcd->where.vdisp, bcd->attributes);
 }
-
 
 /**
  * Demangle a class name as found in MSVC RTTI type descriptors.
@@ -377,14 +374,12 @@ static void rtti_msvc_print_base_class_descriptor_json(rtti_base_class_descripto
  * .?AVClassInInnerNamespace@InnerNamespace@OuterNamespace@@
  * => OuterNamespace::InnerNamespace::AVClassInInnerNamespace
  */
-R_API char *r_anal_rtti_msvc_demangle_class_name(RVTableContext *context, const char *name) {
+R_API char *r_anal_rtti_msvc_demangle_class_name (RVTableContext *context, const char *name) {
 	if (!name) {
 		return NULL;
 	}
 	size_t original_len = strlen (name);
-	if (original_len < 7
-		|| (strncmp (name, ".?AV", 4) != 0 && strncmp (name, ".?AU", 4) != 0)
-		|| strncmp (name + original_len - 2, "@@", 2) != 0) {
+	if (original_len < 7 || (strncmp (name, ".?AV", 4) != 0 && strncmp (name, ".?AU", 4) != 0) || strncmp (name + original_len - 2, "@@", 2) != 0) {
 		return NULL;
 	}
 	char *ret = context->anal->binb.demangle (NULL, "msvc", name, 0, false);
@@ -403,10 +398,10 @@ R_API char *r_anal_rtti_msvc_demangle_class_name(RVTableContext *context, const 
 	return ret;
 }
 
-R_API void r_anal_rtti_msvc_print_complete_object_locator(RVTableContext *context, ut64 addr, int mode) {
+R_API void r_anal_rtti_msvc_print_complete_object_locator (RVTableContext *context, ut64 addr, int mode) {
 	rtti_complete_object_locator col;
 	if (!rtti_msvc_read_complete_object_locator (context, addr, &col)) {
-		eprintf ("Failed to parse Complete Object Locator at 0x%08"PFMT64x"\n", addr);
+		eprintf ("Failed to parse Complete Object Locator at 0x%08" PFMT64x "\n", addr);
 		return;
 	}
 
@@ -417,10 +412,10 @@ R_API void r_anal_rtti_msvc_print_complete_object_locator(RVTableContext *contex
 	}
 }
 
-R_API void r_anal_rtti_msvc_print_type_descriptor(RVTableContext *context, ut64 addr, int mode) {
+R_API void r_anal_rtti_msvc_print_type_descriptor (RVTableContext *context, ut64 addr, int mode) {
 	rtti_type_descriptor td = { 0 };
 	if (!rtti_msvc_read_type_descriptor (context, addr, &td)) {
-		eprintf ("Failed to parse Type Descriptor at 0x%08"PFMT64x"\n", addr);
+		eprintf ("Failed to parse Type Descriptor at 0x%08" PFMT64x "\n", addr);
 		return;
 	}
 
@@ -433,10 +428,10 @@ R_API void r_anal_rtti_msvc_print_type_descriptor(RVTableContext *context, ut64 
 	rtti_type_descriptor_fini (&td);
 }
 
-R_API void r_anal_rtti_msvc_print_class_hierarchy_descriptor(RVTableContext *context, ut64 addr, int mode) {
+R_API void r_anal_rtti_msvc_print_class_hierarchy_descriptor (RVTableContext *context, ut64 addr, int mode) {
 	rtti_class_hierarchy_descriptor chd;
 	if (!rtti_msvc_read_class_hierarchy_descriptor (context, addr, &chd)) {
-		eprintf ("Failed to parse Class Hierarchy Descriptor at 0x%08"PFMT64x"\n", addr);
+		eprintf ("Failed to parse Class Hierarchy Descriptor at 0x%08" PFMT64x "\n", addr);
 		return;
 	}
 
@@ -447,10 +442,10 @@ R_API void r_anal_rtti_msvc_print_class_hierarchy_descriptor(RVTableContext *con
 	}
 }
 
-R_API void r_anal_rtti_msvc_print_base_class_descriptor(RVTableContext *context, ut64 addr, int mode) {
+R_API void r_anal_rtti_msvc_print_base_class_descriptor (RVTableContext *context, ut64 addr, int mode) {
 	rtti_base_class_descriptor bcd;
 	if (!rtti_msvc_read_base_class_descriptor (context, addr, &bcd)) {
-		eprintf ("Failed to parse Base Class Descriptor at 0x%08"PFMT64x"\n", addr);
+		eprintf ("Failed to parse Base Class Descriptor at 0x%08" PFMT64x "\n", addr);
 		return;
 	}
 
@@ -461,7 +456,7 @@ R_API void r_anal_rtti_msvc_print_base_class_descriptor(RVTableContext *context,
 	}
 }
 
-static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *context, ut64 atAddress, int mode, bool strict) {
+static bool rtti_msvc_print_complete_object_locator_recurse (RVTableContext *context, ut64 atAddress, int mode, bool strict) {
 	bool use_json = mode == 'j';
 
 	ut64 colRefAddr = atAddress - context->word_size;
@@ -474,7 +469,7 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 	rtti_complete_object_locator col;
 	if (!rtti_msvc_read_complete_object_locator (context, colAddr, &col)) {
 		if (!strict) {
-			eprintf ("Failed to parse Complete Object Locator at 0x%08"PFMT64x" (referenced from 0x%08"PFMT64x")\n", colAddr, colRefAddr);
+			eprintf ("Failed to parse Complete Object Locator at 0x%08" PFMT64x " (referenced from 0x%08" PFMT64x ")\n", colAddr, colRefAddr);
 		}
 		return false;
 	}
@@ -484,7 +479,7 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 	rtti_type_descriptor td = { 0 };
 	if (!rtti_msvc_read_type_descriptor (context, typeDescriptorAddr, &td)) {
 		if (!strict) {
-			eprintf ("Failed to parse Type Descriptor at 0x%08"PFMT64x"\n", typeDescriptorAddr);
+			eprintf ("Failed to parse Type Descriptor at 0x%08" PFMT64x "\n", typeDescriptorAddr);
 		}
 		return false;
 	}
@@ -494,7 +489,7 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 	rtti_class_hierarchy_descriptor chd;
 	if (!rtti_msvc_read_class_hierarchy_descriptor (context, classHierarchyDescriptorAddr, &chd)) {
 		if (!strict) {
-			eprintf ("Failed to parse Class Hierarchy Descriptor at 0x%08"PFMT64x"\n", classHierarchyDescriptorAddr);
+			eprintf ("Failed to parse Class Hierarchy Descriptor at 0x%08" PFMT64x "\n", classHierarchyDescriptorAddr);
 		}
 		rtti_type_descriptor_fini (&td);
 		return false;
@@ -510,12 +505,11 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 	RList *baseClassArray = rtti_msvc_read_base_class_array (context, chd.num_base_classes, base, baseClassArrayOffset);
 	if (!baseClassArray) {
 		if (!strict) {
-			eprintf ("Failed to parse Base Class Array starting at 0x%08"PFMT64x"\n", base + baseClassArrayOffset);
+			eprintf ("Failed to parse Base Class Array starting at 0x%08" PFMT64x "\n", base + baseClassArrayOffset);
 		}
 		rtti_type_descriptor_fini (&td);
 		return false;
 	}
-
 
 	// print
 	if (use_json) {
@@ -531,7 +525,6 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 		rtti_msvc_print_type_descriptor (&td, typeDescriptorAddr, "\t");
 		rtti_msvc_print_class_hierarchy_descriptor (&chd, classHierarchyDescriptorAddr, "\t");
 	}
-
 
 	// base classes
 	bool json_first = true;
@@ -565,11 +558,11 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 			rtti_type_descriptor_fini (&btd);
 		} else {
 			if (!strict) {
-				eprintf ("Failed to parse Type Descriptor at 0x%08"PFMT64x"\n", baseTypeDescriptorAddr);
+				eprintf ("Failed to parse Type Descriptor at 0x%08" PFMT64x "\n", baseTypeDescriptorAddr);
 			}
 		}
 
-		if(use_json) {
+		if (use_json) {
 			r_cons_print ("}");
 		}
 	}
@@ -585,7 +578,7 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 	return true;
 }
 
-R_API bool r_anal_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, int mode, bool strict) {
+R_API bool r_anal_rtti_msvc_print_at_vtable (RVTableContext *context, ut64 addr, int mode, bool strict) {
 	return rtti_msvc_print_complete_object_locator_recurse (context, addr, mode, strict);
 }
 
@@ -607,16 +600,16 @@ typedef struct recovery_complete_object_locator_t {
 	RVector base_td; // <RecoveryBaseDescriptor>
 } RecoveryCompleteObjectLocator;
 
-RecoveryCompleteObjectLocator *recovery_complete_object_locator_new() {
+RecoveryCompleteObjectLocator *recovery_complete_object_locator_new () {
 	RecoveryCompleteObjectLocator *col = R_NEW0 (RecoveryCompleteObjectLocator);
 	if (!col) {
 		return NULL;
 	}
-	r_vector_init (&col->base_td, sizeof(RecoveryBaseDescriptor), NULL, NULL);
+	r_vector_init (&col->base_td, sizeof (RecoveryBaseDescriptor), NULL, NULL);
 	return col;
 }
 
-void recovery_complete_object_locator_free(RecoveryCompleteObjectLocator *col) {
+void recovery_complete_object_locator_free (RecoveryCompleteObjectLocator *col) {
 	if (!col) {
 		return;
 	}
@@ -625,7 +618,6 @@ void recovery_complete_object_locator_free(RecoveryCompleteObjectLocator *col) {
 	free (col);
 }
 
-
 struct recovery_type_descriptor_t {
 	ut64 addr;
 	bool valid;
@@ -633,7 +625,7 @@ struct recovery_type_descriptor_t {
 	RecoveryCompleteObjectLocator *col;
 };
 
-RecoveryTypeDescriptor *recovery_type_descriptor_new() {
+RecoveryTypeDescriptor *recovery_type_descriptor_new () {
 	RecoveryTypeDescriptor *td = R_NEW (RecoveryTypeDescriptor);
 	if (!td) {
 		return NULL;
@@ -647,14 +639,13 @@ RecoveryTypeDescriptor *recovery_type_descriptor_new() {
 	return td;
 }
 
-void recovery_type_descriptor_free(RecoveryTypeDescriptor *td) {
+void recovery_type_descriptor_free (RecoveryTypeDescriptor *td) {
 	if (!td) {
 		return;
 	}
 	rtti_type_descriptor_fini (&td->td);
 	free (td);
 }
-
 
 typedef struct rtti_msvc_anal_context_t {
 	RVTableContext *vt_context;
@@ -666,10 +657,9 @@ typedef struct rtti_msvc_anal_context_t {
 	HtUP *col_td_classes; // <ut64, char *> contains already recovered classes for col (or td) addresses
 } RRTTIMSVCAnalContext;
 
+RecoveryTypeDescriptor *recovery_anal_type_descriptor (RRTTIMSVCAnalContext *context, ut64 addr, RecoveryCompleteObjectLocator *col);
 
-RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *context, ut64 addr, RecoveryCompleteObjectLocator *col);
-
-RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAnalContext *context, ut64 addr, RVTableInfo *vtable) {
+RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator (RRTTIMSVCAnalContext *context, ut64 addr, RVTableInfo *vtable) {
 	RecoveryCompleteObjectLocator *col = ht_up_find (context->addr_col, addr, NULL);
 	if (col) {
 		return col;
@@ -688,7 +678,6 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 	}
 	col->vtable = vtable;
 
-
 	ut64 td_addr = rtti_msvc_addr (context->vt_context, col->addr, col->col.object_base, col->col.type_descriptor_addr);
 	col->td = recovery_anal_type_descriptor (context, td_addr, col);
 	if (!col->td->valid) {
@@ -697,13 +686,11 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 	}
 	col->td->col = col;
 
-
 	ut64 chd_addr = rtti_msvc_addr (context->vt_context, col->addr, col->col.object_base, col->col.class_descriptor_addr);
 	col->valid &= rtti_msvc_read_class_hierarchy_descriptor (context->vt_context, chd_addr, &col->chd);
 	if (!col->valid) {
 		return col;
 	}
-
 
 	ut64 base = col->chd.base_class_array_addr;
 	ut32 baseClassArrayOffset = 0;
@@ -717,7 +704,6 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 		col->valid = false;
 		return col;
 	}
-
 
 	r_vector_reserve (&col->base_td, (size_t)col->bcd->length);
 	RListIter *bcdIter;
@@ -742,7 +728,7 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 	return col;
 }
 
-RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *context, ut64 addr, RecoveryCompleteObjectLocator *col) {
+RecoveryTypeDescriptor *recovery_anal_type_descriptor (RRTTIMSVCAnalContext *context, ut64 addr, RecoveryCompleteObjectLocator *col) {
 	RecoveryTypeDescriptor *td = ht_up_find (context->addr_td, addr, NULL);
 	if (td) {
 		if (col != NULL) {
@@ -768,8 +754,7 @@ RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *cont
 	return td;
 }
 
-
-static char *unique_class_name(RAnal *anal, const char *original_name) {
+static char *unique_class_name (RAnal *anal, const char *original_name) {
 	if (!r_anal_class_exists (anal, original_name)) {
 		return strdup (original_name);
 	}
@@ -791,7 +776,7 @@ static char *unique_class_name(RAnal *anal, const char *original_name) {
 	return name;
 }
 
-static void recovery_apply_vtable(RAnal *anal, const char *class_name, RVTableInfo *vtable_info) {
+static void recovery_apply_vtable (RAnal *anal, const char *class_name, RVTableInfo *vtable_info) {
 	if (!vtable_info) {
 		return;
 	}
@@ -814,10 +799,10 @@ static void recovery_apply_vtable(RAnal *anal, const char *class_name, RVTableIn
 	}
 }
 
-static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *context, RecoveryCompleteObjectLocator *col);
-static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context, RecoveryTypeDescriptor *td);
+static const char *recovery_apply_complete_object_locator (RRTTIMSVCAnalContext *context, RecoveryCompleteObjectLocator *col);
+static const char *recovery_apply_type_descriptor (RRTTIMSVCAnalContext *context, RecoveryTypeDescriptor *td);
 
-static void recovery_apply_bases(RRTTIMSVCAnalContext *context, const char *class_name, RVector *base_descs) {
+static void recovery_apply_bases (RRTTIMSVCAnalContext *context, const char *class_name, RVector *base_descs) {
 	RecoveryBaseDescriptor *base_desc;
 	r_vector_foreach (base_descs, base_desc) {
 		RecoveryTypeDescriptor *base_td = base_desc->td;
@@ -852,15 +837,14 @@ static void recovery_apply_bases(RRTTIMSVCAnalContext *context, const char *clas
 	}
 }
 
-
-static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *context, RecoveryCompleteObjectLocator *col) {
+static const char *recovery_apply_complete_object_locator (RRTTIMSVCAnalContext *context, RecoveryCompleteObjectLocator *col) {
 	if (!col->valid) {
 		return NULL;
 	}
 
 	if (!col->td) {
 		if (context->vt_context->anal->verbose) {
-			eprintf ("Warning: no td for col at 0x%"PFMT64x"\n", col->addr);
+			eprintf ("Warning: no td for col at 0x%" PFMT64x "\n", col->addr);
 		}
 		return NULL;
 	}
@@ -899,9 +883,7 @@ static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 	return name;
 }
 
-
-
-static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context, RecoveryTypeDescriptor *td) {
+static const char *recovery_apply_type_descriptor (RRTTIMSVCAnalContext *context, RecoveryTypeDescriptor *td) {
 	if (!td->valid) {
 		return NULL;
 	}
@@ -916,7 +898,7 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 	char *name = r_anal_rtti_msvc_demangle_class_name (context->vt_context, td->td.name);
 	if (!name) {
 		if (context->vt_context->anal->verbose) {
-			eprintf("Failed to demangle a class name: \"%s\"\n", td->td.name);
+			eprintf ("Failed to demangle a class name: \"%s\"\n", td->td.name);
 		}
 		name = strdup (td->td.name);
 		if (!name) {
@@ -937,18 +919,18 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 	return name;
 }
 
-void str_value_free(HtPPKv *kv) {
+void str_value_free (HtPPKv *kv) {
 	free (kv->value);
 }
 
-R_API void r_anal_rtti_msvc_recover_all(RVTableContext *vt_context, RList *vtables) {
+R_API void r_anal_rtti_msvc_recover_all (RVTableContext *vt_context, RList *vtables) {
 	RRTTIMSVCAnalContext context;
 	context.vt_context = vt_context;
 	r_pvector_init (&context.vtables, (RPVectorFree)r_anal_vtable_info_free);
 
-	r_pvector_init (&context.complete_object_locators, (RPVectorFree) recovery_complete_object_locator_free);
+	r_pvector_init (&context.complete_object_locators, (RPVectorFree)recovery_complete_object_locator_free);
 	context.addr_col = ht_up_new0 ();
-	r_pvector_init (&context.type_descriptors, (RPVectorFree) recovery_type_descriptor_free);
+	r_pvector_init (&context.type_descriptors, (RPVectorFree)recovery_type_descriptor_free);
 	context.addr_td = ht_up_new0 ();
 
 	context.col_td_classes = ht_up_new (NULL, (HtUPKvFreeFunc)str_value_free, (HtUPCalcSizeV)strlen);
@@ -990,4 +972,3 @@ R_API void r_anal_rtti_msvc_recover_all(RVTableContext *vt_context, RList *vtabl
 	ht_up_free (context.addr_td);
 	ht_up_free (context.col_td_classes);
 }
-

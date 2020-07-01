@@ -11,11 +11,11 @@ typedef struct {
 	bool msvc;
 } Langs;
 
-static inline bool check_rust(RBinSymbol *sym) {
+static inline bool check_rust (RBinSymbol *sym) {
 	return sym->name && strstr (sym->name, "_$LT$");
 }
 
-static inline bool check_objc(RBinSymbol *sym) {
+static inline bool check_objc (RBinSymbol *sym) {
 	if (sym->name && !strncmp (sym->name, "_OBJC_", 6)) {
 		// free (r_bin_demangle_objc (binfile, sym->name));
 		return true;
@@ -23,7 +23,7 @@ static inline bool check_objc(RBinSymbol *sym) {
 	return false;
 }
 
-static bool check_dlang(RBinSymbol *sym) {
+static bool check_dlang (RBinSymbol *sym) {
 	if (!strncmp (sym->name, "_D2", 3)) {
 		return true;
 	}
@@ -33,14 +33,14 @@ static bool check_dlang(RBinSymbol *sym) {
 	return false;
 }
 
-static bool check_swift(RBinSymbol *sym) {
+static bool check_swift (RBinSymbol *sym) {
 	if (sym->name && strstr (sym->name, "swift_once")) {
 		return true;
 	}
 	return false;
 }
 
-static bool check_golang(RBinSymbol *sym) {
+static bool check_golang (RBinSymbol *sym) {
 	return !strncmp (sym->name, "go.", 3);
 }
 
@@ -55,16 +55,16 @@ static inline bool is_cxx_symbol (const char *name) {
 	return false;
 }
 
-static bool check_cxx(RBinSymbol *sym) {
+static bool check_cxx (RBinSymbol *sym) {
 	return is_cxx_symbol (sym->name);
 }
 
-static bool check_msvc(RBinSymbol *sym) {
+static bool check_msvc (RBinSymbol *sym) {
 	return *sym->name == '?';
 }
 
 /* This is about 10% of the loading time, optimize if possible */
-R_API int r_bin_load_languages(RBinFile *binfile) {
+R_API int r_bin_load_languages (RBinFile *binfile) {
 	r_return_val_if_fail (binfile, R_BIN_NM_NONE);
 	r_return_val_if_fail (binfile->o, R_BIN_NM_NONE);
 	r_return_val_if_fail (binfile->o->info, R_BIN_NM_NONE);
@@ -72,14 +72,14 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 	RBinInfo *info = o->info;
 	RBinSymbol *sym;
 	RListIter *iter, *iter2;
-	Langs cantbe = {0};
+	Langs cantbe = { 0 };
 	bool phobosIsChecked = false;
 	bool swiftIsChecked = false;
 	bool canBeCxx = false;
 	bool cxxIsChecked = false;
 	bool isMsvc = false;
 
-	char *ft = info->rclass? info->rclass: "";
+	char *ft = info->rclass ? info->rclass : "";
 	bool unknownType = info->rclass == NULL;
 	bool isMacho = strstr (ft, "mach");
 	bool isElf = strstr (ft, "elf");
@@ -135,7 +135,7 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 			if (!cxxIsChecked) {
 				r_list_foreach (o->libs, iter2, lib) {
 					if (strstr (lib, "stdc++") ||
-					    strstr (lib, "c++")) {
+						strstr (lib, "c++")) {
 						hascxx = true;
 						break;
 					}
@@ -180,18 +180,18 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 		}
 	}
 	if (isObjC) {
-		return R_BIN_NM_OBJC | (isBlocks?R_BIN_NM_BLOCKS:0);
+		return R_BIN_NM_OBJC | (isBlocks ? R_BIN_NM_BLOCKS : 0);
 	}
 	if (canBeCxx) {
-		return R_BIN_NM_CXX | (isBlocks?R_BIN_NM_BLOCKS:0);
+		return R_BIN_NM_CXX | (isBlocks ? R_BIN_NM_BLOCKS : 0);
 	}
 	if (isMsvc) {
 		return R_BIN_NM_MSVC;
 	}
-	return R_BIN_NM_C | (isBlocks?R_BIN_NM_BLOCKS:0);
+	return R_BIN_NM_C | (isBlocks ? R_BIN_NM_BLOCKS : 0);
 }
 
-R_IPI int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym) {
+R_IPI int r_bin_lang_type (RBinFile *binfile, const char *def, const char *sym) {
 	int type = 0;
 	RBinPlugin *plugin;
 	if (sym && sym[0] == sym[1] && sym[0] == '_') {
@@ -217,7 +217,7 @@ R_IPI int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym) {
 	return type;
 }
 
-R_API const char *r_bin_lang_tostring(int lang) {
+R_API const char *r_bin_lang_tostring (int lang) {
 	switch (lang & 0xffff) {
 	case R_BIN_NM_SWIFT:
 		return "swift";
@@ -228,13 +228,13 @@ R_API const char *r_bin_lang_tostring(int lang) {
 	case R_BIN_NM_KOTLIN:
 		return "kotlin";
 	case R_BIN_NM_C:
-		return (lang & R_BIN_NM_BLOCKS)? "c with blocks": "c";
+		return (lang & R_BIN_NM_BLOCKS) ? "c with blocks" : "c";
 	case R_BIN_NM_CXX:
-		return (lang & R_BIN_NM_BLOCKS)? "c++ with blocks": "c++";
+		return (lang & R_BIN_NM_BLOCKS) ? "c++ with blocks" : "c++";
 	case R_BIN_NM_DLANG:
 		return "d";
 	case R_BIN_NM_OBJC:
-		return (lang & R_BIN_NM_BLOCKS)? "objc with blocks": "objc";
+		return (lang & R_BIN_NM_BLOCKS) ? "objc with blocks" : "objc";
 	case R_BIN_NM_MSVC:
 		return "msvc";
 	case R_BIN_NM_RUST:
@@ -242,4 +242,3 @@ R_API const char *r_bin_lang_tostring(int lang) {
 	}
 	return NULL;
 }
-

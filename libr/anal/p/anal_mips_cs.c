@@ -11,94 +11,92 @@
 #define REGID(x) insn->detail->mips.operands[x].reg
 #define REG(x) cs_reg_name (*handle, insn->detail->mips.operands[x].reg)
 #define IMM(x) insn->detail->mips.operands[x].imm
-#define MEMBASE(x) cs_reg_name(*handle, insn->detail->mips.operands[x].mem.base)
+#define MEMBASE(x) cs_reg_name (*handle, insn->detail->mips.operands[x].mem.base)
 #define MEMINDEX(x) insn->detail->mips.operands[x].mem.index
 #define MEMDISP(x) insn->detail->mips.operands[x].mem.disp
 #define OPCOUNT() insn->detail->mips.op_count
 // TODO scale and disp
 
-#define SET_VAL(op,i) \
-	if ((i)<OPCOUNT() && OPERAND(i).type == MIPS_OP_IMM) {\
-		(op)->val = OPERAND(i).imm;\
+#define SET_VAL(op, i)                                             \
+	if ((i) < OPCOUNT () && OPERAND (i).type == MIPS_OP_IMM) { \
+		(op)->val = OPERAND (i).imm;                       \
 	}
 
-#define CREATE_SRC_DST_3(op) \
-	(op)->src[0] = r_anal_value_new ();\
-	(op)->src[1] = r_anal_value_new ();\
+#define CREATE_SRC_DST_3(op)                \
+	(op)->src[0] = r_anal_value_new (); \
+	(op)->src[1] = r_anal_value_new (); \
 	(op)->dst = r_anal_value_new ();
 
-#define CREATE_SRC_DST_2(op) \
-	(op)->src[0] = r_anal_value_new ();\
+#define CREATE_SRC_DST_2(op)                \
+	(op)->src[0] = r_anal_value_new (); \
 	(op)->dst = r_anal_value_new ();
 
-#define SET_SRC_DST_3_REGS(op) \
-	CREATE_SRC_DST_3 (op);\
-	(op)->dst->reg = r_reg_get (anal->reg, REG (0), R_REG_TYPE_GPR);\
-	(op)->src[0]->reg = r_reg_get (anal->reg, REG (1), R_REG_TYPE_GPR);\
+#define SET_SRC_DST_3_REGS(op)                                              \
+	CREATE_SRC_DST_3 (op);                                              \
+	(op)->dst->reg = r_reg_get (anal->reg, REG (0), R_REG_TYPE_GPR);    \
+	(op)->src[0]->reg = r_reg_get (anal->reg, REG (1), R_REG_TYPE_GPR); \
 	(op)->src[1]->reg = r_reg_get (anal->reg, REG (2), R_REG_TYPE_GPR);
 
-#define SET_SRC_DST_3_IMM(op) \
-	CREATE_SRC_DST_3 (op);\
-	(op)->dst->reg = r_reg_get (anal->reg, REG (0), R_REG_TYPE_GPR);\
-	(op)->src[0]->reg = r_reg_get (anal->reg, REG (1), R_REG_TYPE_GPR);\
+#define SET_SRC_DST_3_IMM(op)                                               \
+	CREATE_SRC_DST_3 (op);                                              \
+	(op)->dst->reg = r_reg_get (anal->reg, REG (0), R_REG_TYPE_GPR);    \
+	(op)->src[0]->reg = r_reg_get (anal->reg, REG (1), R_REG_TYPE_GPR); \
 	(op)->src[1]->imm = IMM (2);
 
-#define SET_SRC_DST_2_REGS(op) \
-	CREATE_SRC_DST_2 (op);\
-	(op)->dst->reg = r_reg_get (anal->reg, REG (0), R_REG_TYPE_GPR);\
+#define SET_SRC_DST_2_REGS(op)                                           \
+	CREATE_SRC_DST_2 (op);                                           \
+	(op)->dst->reg = r_reg_get (anal->reg, REG (0), R_REG_TYPE_GPR); \
 	(op)->src[0]->reg = r_reg_get (anal->reg, REG (1), R_REG_TYPE_GPR);
 
-#define SET_SRC_DST_3_REG_OR_IMM(op) \
-	if (OPERAND(2).type == MIPS_OP_IMM) {\
-		SET_SRC_DST_3_IMM (op);\
-	} else if (OPERAND(2).type == MIPS_OP_REG) {\
-		SET_SRC_DST_3_REGS (op);\
+#define SET_SRC_DST_3_REG_OR_IMM(op)                  \
+	if (OPERAND (2).type == MIPS_OP_IMM) {        \
+		SET_SRC_DST_3_IMM (op);               \
+	} else if (OPERAND (2).type == MIPS_OP_REG) { \
+		SET_SRC_DST_3_REGS (op);              \
 	}
-
 
 // ESIL macros:
 
 // put the sign bit on the stack
-#define ES_IS_NEGATIVE(arg) "1,"arg",<<<,1,&"
-
+#define ES_IS_NEGATIVE(arg) "1," arg ",<<<,1,&"
 
 // call with delay slot
-#define ES_CALL_DR(ra, addr) "pc,4,+,"ra",=,"ES_J(addr)
-#define ES_CALL_D(addr) ES_CALL_DR("ra", addr)
+#define ES_CALL_DR(ra, addr) "pc,4,+," ra ",=," ES_J (addr)
+#define ES_CALL_D(addr) ES_CALL_DR ("ra", addr)
 
 // call without delay slot
-#define ES_CALL_NDR(ra, addr) "pc,"ra",=,"ES_J(addr)
-#define ES_CALL_ND(addr) ES_CALL_NDR("ra", addr)
+#define ES_CALL_NDR(ra, addr) "pc," ra ",=," ES_J (addr)
+#define ES_CALL_ND(addr) ES_CALL_NDR ("ra", addr)
 
 #define USE_DS 0
 #if USE_DS
 // emit ERR trap if executed in a delay slot
 #define ES_TRAP_DS() "$ds,!,!,?{,$$,1,TRAP,BREAK,},"
 // jump to address
-#define ES_J(addr) addr",SETJT,1,SETD"
+#define ES_J(addr) addr ",SETJT,1,SETD"
 #else
 #define ES_TRAP_DS() ""
-#define ES_J(addr) addr",pc,="
+#define ES_J(addr) addr ",pc,="
 #endif
 
 // sign extend 32 -> 64
-#define ES_SIGN_EXT64(arg) \
-	arg",0x80000000,&,0,<,?{,"\
-		"0xffffffff00000000,"arg",|=,"\
-	"}"
+#define ES_SIGN_EXT64(arg)                   \
+	arg ",0x80000000,&,0,<,?{,"          \
+	    "0xffffffff00000000," arg ",|=," \
+	    "}"
 
-#define PROTECT_ZERO() \
-	if (REG(0)[0]=='z'){\
-		r_strbuf_appendf (&op->esil, ",");\
+#define PROTECT_ZERO()                             \
+	if (REG (0)[0] == 'z') {                   \
+		r_strbuf_appendf (&op->esil, ","); \
 	} else
 
-#define ESIL_LOAD(size) \
-	PROTECT_ZERO () {\
-		r_strbuf_appendf (&op->esil, "%s,["size"],%s,=",\
-			ARG(1), REG(0));\
+#define ESIL_LOAD(size)                                            \
+	PROTECT_ZERO () {                                          \
+		r_strbuf_appendf (&op->esil, "%s,[" size "],%s,=", \
+			ARG (1), REG (0));                         \
 	}
 
-static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
+static void opex (RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	r_strbuf_init (buf);
 	r_strbuf_append (buf, "{");
@@ -117,14 +115,14 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case MIPS_OP_IMM:
 			r_strbuf_append (buf, "\"type\":\"imm\"");
-			r_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
+			r_strbuf_appendf (buf, ",\"value\":%" PFMT64d, op->imm);
 			break;
 		case MIPS_OP_MEM:
 			r_strbuf_append (buf, "\"type\":\"mem\"");
 			if (op->mem.base != MIPS_REG_INVALID) {
 				r_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
 			}
-			r_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", op->mem.disp);
+			r_strbuf_appendf (buf, ",\"disp\":%" PFMT64d "", op->mem.disp);
 			break;
 		default:
 			r_strbuf_append (buf, "\"type\":\"invalid\"");
@@ -136,7 +134,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	r_strbuf_append (buf, "}");
 }
 
-static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
+static const char *arg (csh *handle, cs_insn *insn, char *buf, int n) {
 	*buf = 0;
 	switch (insn->detail->mips.operands[n].type) {
 	case MIPS_OP_INVALID:
@@ -146,36 +144,32 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 			cs_reg_name (*handle,
 				insn->detail->mips.operands[n].reg));
 		break;
-	case MIPS_OP_IMM:
-		{
-			st64 x = (st64)insn->detail->mips.operands[n].imm;
-			sprintf (buf, "%"PFMT64d, x);
-		}
-		break;
-	case MIPS_OP_MEM:
-		{
-			int disp = insn->detail->mips.operands[n].mem.disp;
-		if (disp<0) {
-		sprintf (buf, "%"PFMT64d",%s,-",
-			(ut64)-insn->detail->mips.operands[n].mem.disp,
-			cs_reg_name (*handle,
-				insn->detail->mips.operands[n].mem.base));
+	case MIPS_OP_IMM: {
+		st64 x = (st64)insn->detail->mips.operands[n].imm;
+		sprintf (buf, "%" PFMT64d, x);
+	} break;
+	case MIPS_OP_MEM: {
+		int disp = insn->detail->mips.operands[n].mem.disp;
+		if (disp < 0) {
+			sprintf (buf, "%" PFMT64d ",%s,-",
+				(ut64)-insn->detail->mips.operands[n].mem.disp,
+				cs_reg_name (*handle,
+					insn->detail->mips.operands[n].mem.base));
 		} else {
-		sprintf (buf, "0x%"PFMT64x",%s,+",
-			(ut64)insn->detail->mips.operands[n].mem.disp,
-			cs_reg_name (*handle,
-				insn->detail->mips.operands[n].mem.base));
+			sprintf (buf, "0x%" PFMT64x ",%s,+",
+				(ut64)insn->detail->mips.operands[n].mem.disp,
+				cs_reg_name (*handle,
+					insn->detail->mips.operands[n].mem.base));
 		}
-		}
-		break;
+	} break;
 	}
 	return buf;
 }
 
-#define ARG(x) (*str[x]!=0)?str[x]:arg(handle, insn, str[x], x)
+#define ARG(x) (*str[x] != 0) ? str[x] : arg (handle, insn, str[x], x)
 
-static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
-	char str[8][32] = {{0}};
+static int analop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
+	char str[8][32] = { { 0 } };
 	int i;
 
 	r_strbuf_init (&op->esil);
@@ -396,177 +390,159 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 				"0,32,%s,%s,+,>>,>,?{,1,TRAP,}{,%s,%s,+,%s,=,}",
 				ARG(2), ARG(1), ARG(2), ARG(1), ARG(0));
 #endif
-		}
-		}
-		break;
-	case MIPS_INS_ADDI:
-		PROTECT_ZERO () {
-			r_strbuf_appendf (&op->esil, "30,0x80000000,%s,%s,^,&,>>,31,0x80000000,%s,&,0x80000000,%s,%s,+,&,^,>>,|,1,==,$z,?{,$$,1,TRAP,}{,%s,%s,+,%s,=,}",
-				ARG(2), ARG(1), ARG(2), ARG(2), ARG(1), ARG(2), ARG(1), ARG(0));
-		}
-		break;
-	case MIPS_INS_DADD:
-	case MIPS_INS_DADDI:
-	/** unsigned */
-	case MIPS_INS_ADDU:
-	case MIPS_INS_ADDIU:
-	case MIPS_INS_DADDIU:
-		{
-		const char *arg0 = ARG(0);
-		const char *arg1 = ARG(1);
-		const char *arg2 = ARG(2);
-		PROTECT_ZERO () {
-			if (*arg2 == '-') {
-				r_strbuf_appendf (&op->esil, "%s,%s,-,%s,=",
-						arg2+1, arg1, arg0);
-			} else {
-				r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=",
-						arg2, arg1, arg0);
 			}
-		}
-		}
-		break;
-	case MIPS_INS_LI:
-	case MIPS_INS_LDI:
-		r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,=", IMM(1), ARG(0));
-		break;
-	case MIPS_INS_LUI:
-		r_strbuf_appendf (&op->esil, "0x%"PFMT64x"0000,%s,=", IMM(1), ARG(0));
-		break;
-	case MIPS_INS_LB:
-		op->sign = true;
-		ESIL_LOAD ("1");
-		break;
-	case MIPS_INS_LBU:
-		//one of these is wrong
-		ESIL_LOAD ("1");
-		break;
-	case MIPS_INS_LW:
-	case MIPS_INS_LWC1:
-	case MIPS_INS_LWC2:
-	case MIPS_INS_LWL:
-	case MIPS_INS_LWR:
-	case MIPS_INS_LWU:
-	case MIPS_INS_LL:
-		ESIL_LOAD ("4");
-		break;
+		} break;
+		case MIPS_INS_ADDI:
+			PROTECT_ZERO () {
+				r_strbuf_appendf (&op->esil, "30,0x80000000,%s,%s,^,&,>>,31,0x80000000,%s,&,0x80000000,%s,%s,+,&,^,>>,|,1,==,$z,?{,$$,1,TRAP,}{,%s,%s,+,%s,=,}",
+					ARG (2), ARG (1), ARG (2), ARG (2), ARG (1), ARG (2), ARG (1), ARG (0));
+			}
+			break;
+		case MIPS_INS_DADD:
+		case MIPS_INS_DADDI:
+		/** unsigned */
+		case MIPS_INS_ADDU:
+		case MIPS_INS_ADDIU:
+		case MIPS_INS_DADDIU: {
+			const char *arg0 = ARG (0);
+			const char *arg1 = ARG (1);
+			const char *arg2 = ARG (2);
+			PROTECT_ZERO () {
+				if (*arg2 == '-') {
+					r_strbuf_appendf (&op->esil, "%s,%s,-,%s,=",
+						arg2 + 1, arg1, arg0);
+				} else {
+					r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=",
+						arg2, arg1, arg0);
+				}
+			}
+		} break;
+		case MIPS_INS_LI:
+		case MIPS_INS_LDI:
+			r_strbuf_appendf (&op->esil, "0x%" PFMT64x ",%s,=", IMM (1), ARG (0));
+			break;
+		case MIPS_INS_LUI:
+			r_strbuf_appendf (&op->esil, "0x%" PFMT64x "0000,%s,=", IMM (1), ARG (0));
+			break;
+		case MIPS_INS_LB:
+			op->sign = true;
+			ESIL_LOAD ("1");
+			break;
+		case MIPS_INS_LBU:
+			//one of these is wrong
+			ESIL_LOAD ("1");
+			break;
+		case MIPS_INS_LW:
+		case MIPS_INS_LWC1:
+		case MIPS_INS_LWC2:
+		case MIPS_INS_LWL:
+		case MIPS_INS_LWR:
+		case MIPS_INS_LWU:
+		case MIPS_INS_LL:
+			ESIL_LOAD ("4");
+			break;
 
-	case MIPS_INS_LDL:
-	case MIPS_INS_LDC1:
-	case MIPS_INS_LDC2:
-	case MIPS_INS_LLD:
-	case MIPS_INS_LD:
-		ESIL_LOAD ("8");
-		break;
+		case MIPS_INS_LDL:
+		case MIPS_INS_LDC1:
+		case MIPS_INS_LDC2:
+		case MIPS_INS_LLD:
+		case MIPS_INS_LD:
+			ESIL_LOAD ("8");
+			break;
 
-	case MIPS_INS_LWX:
-	case MIPS_INS_LH:
-	case MIPS_INS_LHU:
-	case MIPS_INS_LHX:
-		ESIL_LOAD ("2");
-		break;
+		case MIPS_INS_LWX:
+		case MIPS_INS_LH:
+		case MIPS_INS_LHU:
+		case MIPS_INS_LHX:
+			ESIL_LOAD ("2");
+			break;
 
-	case MIPS_INS_AND:
-	case MIPS_INS_ANDI:
-		{
-		const char *arg0 = ARG(0);
-		const char *arg1 = ARG(1);
-		const char *arg2 = ARG(2);
-		if (!strcmp (arg0, arg1)) {
-			r_strbuf_appendf (&op->esil, "%s,%s,&=", arg2, arg1);
-		} else {
-			r_strbuf_appendf (&op->esil, "%s,%s,&,%s,=", arg2, arg1, arg0);
-		}
-		}
-		break;
-	case MIPS_INS_OR:
-	case MIPS_INS_ORI:
-		{
-		const char *arg0 = ARG(0);
-		const char *arg1 = ARG(1);
-		const char *arg2 = ARG(2);
-		PROTECT_ZERO () {
-			r_strbuf_appendf (&op->esil, "%s,%s,|,%s,=",
-				arg2, arg1, arg0);
-		}
-		}
-		break;
-	case MIPS_INS_XOR:
-	case MIPS_INS_XORI:
-		{
-		const char *arg0 = ARG(0);
-		const char *arg1 = ARG(1);
-		const char *arg2 = ARG(2);
-		PROTECT_ZERO () {
-			r_strbuf_appendf (&op->esil, "%s,%s,^,%s,=",
-				arg2, arg1, arg0);
-		}
-		}
-		break;
-	case MIPS_INS_NOR:
-		{
-		const char *arg0 = ARG(0);
-		const char *arg1 = ARG(1);
-		const char *arg2 = ARG(2);
-		PROTECT_ZERO () {
-			r_strbuf_appendf (&op->esil, "%s,%s,|,0xffffffff,^,%s,=",
-				arg2, arg1, arg0);
-		}
-		}
-		break;
-	case MIPS_INS_SLT:
-	case MIPS_INS_SLTI:
-		if (OPCOUNT () < 3) {
-			r_strbuf_appendf (&op->esil, "%s,%s,<,t,=", ARG(1), ARG(0));
-		} else {
-			r_strbuf_appendf (&op->esil, "%s,%s,<,%s,=", ARG(2), ARG(1), ARG(0));
-		}
-		break;
-	case MIPS_INS_SLTU:
-	case MIPS_INS_SLTIU:
-		if (OPCOUNT () < 3) {
-			r_strbuf_appendf (&op->esil, "%s,0xffffffff,&,%s,0xffffffff,&,<,t,=",
-				ARG (1), ARG (0));
-		} else {
-			r_strbuf_appendf (&op->esil, "%s,0xffffffff,&,%s,0xffffffff,&,<,%s,=",
-				ARG (2), ARG (1), ARG (0));
-		}
-		break;
-	case MIPS_INS_MUL:
-		r_strbuf_appendf (&op->esil,
-			"%s,%s,*,0xffffffff,&,lo,=,"
-			ES_SIGN_EXT64 ("lo")
-			",32,%s,%s,*,>>,0xffffffff,&,hi,=,"
-			ES_SIGN_EXT64 ("hi")
-			",lo,%s,=",
-			ARG (1), ARG (2), ARG (1), ARG (2), REG (0));
-		break;
-	case MIPS_INS_MULT:
-	case MIPS_INS_MULTU:
-		r_strbuf_appendf (&op->esil,
-			"%s,%s,*,0xffffffff,&,lo,=,"
-			ES_SIGN_EXT64 ("lo")
-			",32,%s,%s,*,>>,0xffffffff,&,hi,=,"
-			ES_SIGN_EXT64 ("hi"),
+		case MIPS_INS_AND:
+		case MIPS_INS_ANDI: {
+			const char *arg0 = ARG (0);
+			const char *arg1 = ARG (1);
+			const char *arg2 = ARG (2);
+			if (!strcmp (arg0, arg1)) {
+				r_strbuf_appendf (&op->esil, "%s,%s,&=", arg2, arg1);
+			} else {
+				r_strbuf_appendf (&op->esil, "%s,%s,&,%s,=", arg2, arg1, arg0);
+			}
+		} break;
+		case MIPS_INS_OR:
+		case MIPS_INS_ORI: {
+			const char *arg0 = ARG (0);
+			const char *arg1 = ARG (1);
+			const char *arg2 = ARG (2);
+			PROTECT_ZERO () {
+				r_strbuf_appendf (&op->esil, "%s,%s,|,%s,=",
+					arg2, arg1, arg0);
+			}
+		} break;
+		case MIPS_INS_XOR:
+		case MIPS_INS_XORI: {
+			const char *arg0 = ARG (0);
+			const char *arg1 = ARG (1);
+			const char *arg2 = ARG (2);
+			PROTECT_ZERO () {
+				r_strbuf_appendf (&op->esil, "%s,%s,^,%s,=",
+					arg2, arg1, arg0);
+			}
+		} break;
+		case MIPS_INS_NOR: {
+			const char *arg0 = ARG (0);
+			const char *arg1 = ARG (1);
+			const char *arg2 = ARG (2);
+			PROTECT_ZERO () {
+				r_strbuf_appendf (&op->esil, "%s,%s,|,0xffffffff,^,%s,=",
+					arg2, arg1, arg0);
+			}
+		} break;
+		case MIPS_INS_SLT:
+		case MIPS_INS_SLTI:
+			if (OPCOUNT () < 3) {
+				r_strbuf_appendf (&op->esil, "%s,%s,<,t,=", ARG (1), ARG (0));
+			} else {
+				r_strbuf_appendf (&op->esil, "%s,%s,<,%s,=", ARG (2), ARG (1), ARG (0));
+			}
+			break;
+		case MIPS_INS_SLTU:
+		case MIPS_INS_SLTIU:
+			if (OPCOUNT () < 3) {
+				r_strbuf_appendf (&op->esil, "%s,0xffffffff,&,%s,0xffffffff,&,<,t,=",
+					ARG (1), ARG (0));
+			} else {
+				r_strbuf_appendf (&op->esil, "%s,0xffffffff,&,%s,0xffffffff,&,<,%s,=",
+					ARG (2), ARG (1), ARG (0));
+			}
+			break;
+		case MIPS_INS_MUL:
+			r_strbuf_appendf (&op->esil,
+				"%s,%s,*,0xffffffff,&,lo,=," ES_SIGN_EXT64 ("lo") ",32,%s,%s,*,>>,0xffffffff,&,hi,=," ES_SIGN_EXT64 ("hi") ",lo,%s,=",
+				ARG (1), ARG (2), ARG (1), ARG (2), REG (0));
+			break;
+		case MIPS_INS_MULT:
+		case MIPS_INS_MULTU:
+			r_strbuf_appendf (&op->esil,
+				"%s,%s,*,0xffffffff,&,lo,=," ES_SIGN_EXT64 ("lo") ",32,%s,%s,*,>>,0xffffffff,&,hi,=," ES_SIGN_EXT64 ("hi"),
 
-			ARG (0), ARG (1), ARG (0), ARG (1));
-		break;
-	case MIPS_INS_MFLO:
-		PROTECT_ZERO () {
-			r_strbuf_appendf (&op->esil, "lo,%s,=", REG (0));
-		}
-		break;
-	case MIPS_INS_MFHI:
-		PROTECT_ZERO () {
-			r_strbuf_appendf (&op->esil, "hi,%s,=", REG (0));
-		}
-		break;
-	case MIPS_INS_MTLO:
-		r_strbuf_appendf (&op->esil, "%s,lo,=,"ES_SIGN_EXT64 ("lo"), REG (0));
-		break;
-	case MIPS_INS_MTHI:
-		r_strbuf_appendf (&op->esil, "%s,hi,=,"ES_SIGN_EXT64 ("hi"), REG (0));
-		break;
+				ARG (0), ARG (1), ARG (0), ARG (1));
+			break;
+		case MIPS_INS_MFLO:
+			PROTECT_ZERO () {
+				r_strbuf_appendf (&op->esil, "lo,%s,=", REG (0));
+			}
+			break;
+		case MIPS_INS_MFHI:
+			PROTECT_ZERO () {
+				r_strbuf_appendf (&op->esil, "hi,%s,=", REG (0));
+			}
+			break;
+		case MIPS_INS_MTLO:
+			r_strbuf_appendf (&op->esil, "%s,lo,=," ES_SIGN_EXT64 ("lo"), REG (0));
+			break;
+		case MIPS_INS_MTHI:
+			r_strbuf_appendf (&op->esil, "%s,hi,=," ES_SIGN_EXT64 ("hi"), REG (0));
+			break;
 #if 0
 	// could not test div
 	case MIPS_INS_DIV:
@@ -579,14 +555,14 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		}
 		break;
 #endif
-	default:
-		return -1;
-	}
+		default:
+			return -1;
+		}
 	}
 	return 0;
 }
 
-static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
+static int parse_reg_name (RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
 	if (!reg) {
 		return -1;
 	}
@@ -604,25 +580,25 @@ static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num)
 	return 0;
 }
 
-static void op_fillval(RAnal *anal, RAnalOp *op, csh *handle, cs_insn *insn) {
+static void op_fillval (RAnal *anal, RAnalOp *op, csh *handle, cs_insn *insn) {
 	static RRegItem reg;
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_LOAD:
-		if (OPERAND(1).type == MIPS_OP_MEM) {
+		if (OPERAND (1).type == MIPS_OP_MEM) {
 			ZERO_FILL (reg);
 			op->src[0] = r_anal_value_new ();
 			op->src[0]->reg = &reg;
 			parse_reg_name (op->src[0]->reg, *handle, insn, 1);
-			op->src[0]->delta = OPERAND(1).mem.disp;
+			op->src[0]->delta = OPERAND (1).mem.disp;
 		}
 		break;
 	case R_ANAL_OP_TYPE_STORE:
-		if (OPERAND(1).type == MIPS_OP_MEM) {
+		if (OPERAND (1).type == MIPS_OP_MEM) {
 			ZERO_FILL (reg);
 			op->dst = r_anal_value_new ();
 			op->dst->reg = &reg;
 			parse_reg_name (op->dst->reg, *handle, insn, 1);
-			op->dst->delta = OPERAND(1).mem.disp;
+			op->dst->delta = OPERAND (1).mem.disp;
 		}
 		break;
 	case R_ANAL_OP_TYPE_SHL:
@@ -666,12 +642,12 @@ capstone bug
 	      ]
 	    },
 #endif
-		if (OPERAND(0).type == MIPS_OP_REG && OPERAND(1).type == MIPS_OP_REG && OPERAND(2).type == MIPS_OP_REG) {
+		if (OPERAND (0).type == MIPS_OP_REG && OPERAND (1).type == MIPS_OP_REG && OPERAND (2).type == MIPS_OP_REG) {
 			SET_SRC_DST_3_REGS (op);
-		} else if (OPERAND(0).type == MIPS_OP_REG && OPERAND(1).type == MIPS_OP_REG) {
+		} else if (OPERAND (0).type == MIPS_OP_REG && OPERAND (1).type == MIPS_OP_REG) {
 			SET_SRC_DST_2_REGS (op);
 		} else {
-			eprintf ("Unknown div at 0x%08"PFMT64x"\n", op->addr);
+			eprintf ("Unknown div at 0x%08" PFMT64x "\n", op->addr);
 		}
 		break;
 	}
@@ -680,35 +656,35 @@ capstone bug
 	}
 }
 
-static void set_opdir(RAnalOp *op) {
-        switch (op->type & R_ANAL_OP_TYPE_MASK) {
-        case R_ANAL_OP_TYPE_LOAD:
-                op->direction = R_ANAL_OP_DIR_READ;
-                break;
-        case R_ANAL_OP_TYPE_STORE:
-                op->direction = R_ANAL_OP_DIR_WRITE;
-                break;
-        case R_ANAL_OP_TYPE_LEA:
-                op->direction = R_ANAL_OP_DIR_REF;
-                break;
-        case R_ANAL_OP_TYPE_CALL:
-        case R_ANAL_OP_TYPE_JMP:
-        case R_ANAL_OP_TYPE_UJMP:
-        case R_ANAL_OP_TYPE_UCALL:
-                op->direction = R_ANAL_OP_DIR_EXEC;
-                break;
-        default:
-                break;
-        }
+static void set_opdir (RAnalOp *op) {
+	switch (op->type & R_ANAL_OP_TYPE_MASK) {
+	case R_ANAL_OP_TYPE_LOAD:
+		op->direction = R_ANAL_OP_DIR_READ;
+		break;
+	case R_ANAL_OP_TYPE_STORE:
+		op->direction = R_ANAL_OP_DIR_WRITE;
+		break;
+	case R_ANAL_OP_TYPE_LEA:
+		op->direction = R_ANAL_OP_DIR_REF;
+		break;
+	case R_ANAL_OP_TYPE_CALL:
+	case R_ANAL_OP_TYPE_JMP:
+	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_UCALL:
+		op->direction = R_ANAL_OP_DIR_EXEC;
+		break;
+	default:
+		break;
+	}
 }
 
-static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int analop (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	int n, ret, opsize = -1;
 	static csh hndl = 0;
 	static int omode = -1;
 	static int obits = 32;
-	cs_insn* insn;
-	int mode = anal->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	cs_insn *insn;
+	int mode = anal->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 
 	if (anal->cpu && *anal->cpu) {
 		if (!strcmp (anal->cpu, "micro")) {
@@ -723,14 +699,14 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 #endif
 		}
 	}
-	mode |= (anal->bits==64)? CS_MODE_MIPS64: CS_MODE_MIPS32;
+	mode |= (anal->bits == 64) ? CS_MODE_MIPS64 : CS_MODE_MIPS32;
 	if (mode != omode || anal->bits != obits) {
 		cs_close (&hndl);
 		hndl = 0;
 		omode = mode;
 		obits = anal->bits;
 	}
-// XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
+	// XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	op->addr = addr;
 	if (len < 4) {
 		return -1;
@@ -743,7 +719,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		}
 		cs_option (hndl, CS_OPT_DETAIL, CS_OPT_ON);
 	}
-	n = cs_disasm (hndl, (ut8*)buf, len, addr, 1, &insn);
+	n = cs_disasm (hndl, (ut8 *)buf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
 		if (mask & R_ANAL_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
@@ -753,7 +729,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	if (mask & R_ANAL_OP_MASK_DISASM) {
 		op->mnemonic = r_str_newf ("%s%s%s",
 			insn->mnemonic,
-			insn->op_str[0]?" ":"",
+			insn->op_str[0] ? " " : "",
 			insn->op_str);
 	}
 	op->id = insn->id;
@@ -779,15 +755,15 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case MIPS_INS_LDXC1:
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		op->refptr = 4;
-		switch (OPERAND(1).type) {
+		switch (OPERAND (1).type) {
 		case MIPS_OP_MEM:
-			if (OPERAND(1).mem.base == MIPS_REG_GP) {
-				op->ptr = anal->gp + OPERAND(1).mem.disp;
+			if (OPERAND (1).mem.base == MIPS_REG_GP) {
+				op->ptr = anal->gp + OPERAND (1).mem.disp;
 				op->refptr = 4;
 			}
 			break;
 		case MIPS_OP_IMM:
-			op->ptr = OPERAND(1).imm;
+			op->ptr = OPERAND (1).imm;
 			break;
 		case MIPS_OP_REG:
 			// wtf?
@@ -838,7 +814,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case MIPS_INS_JIALC:
 	case MIPS_INS_JIC:
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = IMM(0);
+		op->jump = IMM (0);
 
 		switch (insn->id) {
 		case MIPS_INS_JIALC:
@@ -849,11 +825,11 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		case MIPS_INS_BGTZALC:
 			// compact versions (no delay)
 			op->delay = 0;
-			op->fail = addr+4;
+			op->fail = addr + 4;
 			break;
 		default:
 			op->delay = 1;
-			op->fail = addr+8;
+			op->fail = addr + 8;
 			break;
 		}
 		break;
@@ -875,9 +851,9 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		SET_VAL (op, 2);
 		op->sign = (insn->id == MIPS_INS_ADDI || insn->id == MIPS_INS_ADD);
 		op->type = R_ANAL_OP_TYPE_ADD;
-		if (REGID(0) == MIPS_REG_SP) {
+		if (REGID (0) == MIPS_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
-			op->stackptr = -IMM(2);
+			op->stackptr = -IMM (2);
 		}
 		break;
 	case MIPS_INS_SUB:
@@ -892,7 +868,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case MIPS_INS_SUBS_U:
 	case MIPS_INS_SUBUH:
 	case MIPS_INS_SUBUH_R:
-		SET_VAL (op,2);
+		SET_VAL (op, 2);
 		op->sign = insn->id == MIPS_INS_SUB;
 		op->type = R_ANAL_OP_TYPE_SUB;
 		break;
@@ -907,14 +883,14 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		break;
 	case MIPS_INS_XOR:
 	case MIPS_INS_XORI:
-		SET_VAL (op,2);
+		SET_VAL (op, 2);
 		op->type = R_ANAL_OP_TYPE_XOR;
 		break;
 	case MIPS_INS_AND:
 	case MIPS_INS_ANDI:
-		SET_VAL (op,2);
+		SET_VAL (op, 2);
 		op->type = R_ANAL_OP_TYPE_AND;
-		if (REGID(0) == MIPS_REG_SP) {
+		if (REGID (0) == MIPS_REG_SP) {
 			op->stackop = R_ANAL_STACK_ALIGN;
 		}
 		break;
@@ -923,7 +899,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		break;
 	case MIPS_INS_OR:
 	case MIPS_INS_ORI:
-		SET_VAL (op,2);
+		SET_VAL (op, 2);
 		op->type = R_ANAL_OP_TYPE_OR;
 		break;
 	case MIPS_INS_DIV:
@@ -967,18 +943,18 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case MIPS_INS_BGEZC:
 	case MIPS_INS_BLTZC:
 	case MIPS_INS_BGTZC:
-		if (insn->id == MIPS_INS_J || insn->id == MIPS_INS_B ) {
+		if (insn->id == MIPS_INS_J || insn->id == MIPS_INS_B) {
 			op->type = R_ANAL_OP_TYPE_JMP;
 		} else {
 			op->type = R_ANAL_OP_TYPE_CJMP;
 		}
 
-		if (OPERAND(0).type == MIPS_OP_IMM) {
-			op->jump = IMM(0);
-		} else if (OPERAND(1).type == MIPS_OP_IMM) {
-			op->jump = IMM(1);
-		} else if (OPERAND(2).type == MIPS_OP_IMM) {
-			op->jump = IMM(2);
+		if (OPERAND (0).type == MIPS_OP_IMM) {
+			op->jump = IMM (0);
+		} else if (OPERAND (1).type == MIPS_OP_IMM) {
+			op->jump = IMM (1);
+		} else if (OPERAND (2).type == MIPS_OP_IMM) {
+			op->jump = IMM (2);
 		}
 
 		switch (insn->id) {
@@ -988,11 +964,11 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		case MIPS_INS_BGTZC:
 			// compact versions (no delay)
 			op->delay = 0;
-			op->fail = addr+4;
+			op->fail = addr + 4;
 			break;
 		default:
 			op->delay = 1;
-			op->fail = addr+8;
+			op->fail = addr + 8;
 			break;
 		}
 
@@ -1020,18 +996,18 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case MIPS_INS_SHRA_R:
 	case MIPS_INS_SRA:
 		op->type = R_ANAL_OP_TYPE_SAR;
-		SET_VAL (op,2);
+		SET_VAL (op, 2);
 		break;
 	case MIPS_INS_SHRL:
 	case MIPS_INS_SRLV:
 	case MIPS_INS_SRL:
 		op->type = R_ANAL_OP_TYPE_SHR;
-		SET_VAL (op,2);
+		SET_VAL (op, 2);
 		break;
 	case MIPS_INS_SLLV:
 	case MIPS_INS_SLL:
 		op->type = R_ANAL_OP_TYPE_SHL;
-		SET_VAL (op,2);
+		SET_VAL (op, 2);
 		break;
 	}
 beach:
@@ -1053,116 +1029,118 @@ fin:
 	return opsize;
 }
 
-static char *get_reg_profile(RAnal *anal) {
+static char *get_reg_profile (RAnal *anal) {
 	const char *p = NULL;
 	switch (anal->bits) {
 	default:
-	case 32: p =
-		"=PC    pc\n"
-		"=SP    sp\n"
-		"=BP    fp\n"
-		"=SN    v0\n"
-		"=A0    a0\n"
-		"=A1    a1\n"
-		"=A2    a2\n"
-		"=A3    a3\n"
-		"=R0    v0\n"
-		"=R1    v1\n"
-		"gpr	zero	.32	?	0\n"
-		"gpr	at	.32	4	0\n"
-		"gpr	v0	.32	8	0\n"
-		"gpr	v1	.32	12	0\n"
-		"gpr	a0	.32	16	0\n"
-		"gpr	a1	.32	20	0\n"
-		"gpr	a2	.32	24	0\n"
-		"gpr	a3	.32	28	0\n"
-		"gpr	t0	.32	32	0\n"
-		"gpr	t1	.32	36	0\n"
-		"gpr	t2 	.32	40	0\n"
-		"gpr	t3 	.32	44	0\n"
-		"gpr	t4 	.32	48	0\n"
-		"gpr	t5 	.32	52	0\n"
-		"gpr	t6 	.32	56	0\n"
-		"gpr	t7 	.32	60	0\n"
-		"gpr	s0	.32	64	0\n"
-		"gpr	s1	.32	68	0\n"
-		"gpr	s2	.32	72	0\n"
-		"gpr	s3	.32	76	0\n"
-		"gpr	s4 	.32	80	0\n"
-		"gpr	s5 	.32	84	0\n"
-		"gpr	s6 	.32	88	0\n"
-		"gpr	s7 	.32	92	0\n"
-		"gpr	t8 	.32	96	0\n"
-		"gpr	t9 	.32	100	0\n"
-		"gpr	k0 	.32	104	0\n"
-		"gpr	k1 	.32	108	0\n"
-		"gpr	gp 	.32	112	0\n"
-		"gpr	sp	.32	116	0\n"
-		"gpr	fp	.32	120	0\n"
-		"gpr	ra	.32	124	0\n"
-		"gpr	pc	.32	128	0\n"
-		"gpr	hi	.32	132	0\n"
-		"gpr	lo	.32	136	0\n"
-		"gpr	t	.32	140	0\n";
+	case 32:
+		p =
+			"=PC    pc\n"
+			"=SP    sp\n"
+			"=BP    fp\n"
+			"=SN    v0\n"
+			"=A0    a0\n"
+			"=A1    a1\n"
+			"=A2    a2\n"
+			"=A3    a3\n"
+			"=R0    v0\n"
+			"=R1    v1\n"
+			"gpr	zero	.32	?	0\n"
+			"gpr	at	.32	4	0\n"
+			"gpr	v0	.32	8	0\n"
+			"gpr	v1	.32	12	0\n"
+			"gpr	a0	.32	16	0\n"
+			"gpr	a1	.32	20	0\n"
+			"gpr	a2	.32	24	0\n"
+			"gpr	a3	.32	28	0\n"
+			"gpr	t0	.32	32	0\n"
+			"gpr	t1	.32	36	0\n"
+			"gpr	t2 	.32	40	0\n"
+			"gpr	t3 	.32	44	0\n"
+			"gpr	t4 	.32	48	0\n"
+			"gpr	t5 	.32	52	0\n"
+			"gpr	t6 	.32	56	0\n"
+			"gpr	t7 	.32	60	0\n"
+			"gpr	s0	.32	64	0\n"
+			"gpr	s1	.32	68	0\n"
+			"gpr	s2	.32	72	0\n"
+			"gpr	s3	.32	76	0\n"
+			"gpr	s4 	.32	80	0\n"
+			"gpr	s5 	.32	84	0\n"
+			"gpr	s6 	.32	88	0\n"
+			"gpr	s7 	.32	92	0\n"
+			"gpr	t8 	.32	96	0\n"
+			"gpr	t9 	.32	100	0\n"
+			"gpr	k0 	.32	104	0\n"
+			"gpr	k1 	.32	108	0\n"
+			"gpr	gp 	.32	112	0\n"
+			"gpr	sp	.32	116	0\n"
+			"gpr	fp	.32	120	0\n"
+			"gpr	ra	.32	124	0\n"
+			"gpr	pc	.32	128	0\n"
+			"gpr	hi	.32	132	0\n"
+			"gpr	lo	.32	136	0\n"
+			"gpr	t	.32	140	0\n";
 		break;
-	case 64: p =
-		"=PC    pc\n"
-		"=SP    sp\n"
-		"=BP    fp\n"
-		"=A0    a0\n"
-		"=A1    a1\n"
-		"=A2    a2\n"
-		"=A3    a3\n"
-		"=SN    v0\n"
-		"=R0    v0\n"
-		"=R1    v1\n"
-		"gpr	zero	.64	?	0\n"
-		"gpr	at	.64	8	0\n"
-		"gpr	v0	.64	16	0\n"
-		"gpr	v1	.64	24	0\n"
-		"gpr	a0	.64	32	0\n"
-		"gpr	a1	.64	40	0\n"
-		"gpr	a2	.64	48	0\n"
-		"gpr	a3	.64	56	0\n"
-		"gpr	t0	.64	64	0\n"
-		"gpr	t1	.64	72	0\n"
-		"gpr	t2 	.64	80	0\n"
-		"gpr	t3 	.64	88	0\n"
-		"gpr	t4 	.64	96	0\n"
-		"gpr	t5 	.64	104	0\n"
-		"gpr	t6 	.64	112	0\n"
-		"gpr	t7 	.64	120	0\n"
-		"gpr	s0	.64	128	0\n"
-		"gpr	s1	.64	136	0\n"
-		"gpr	s2	.64	144	0\n"
-		"gpr	s3	.64	152	0\n"
-		"gpr	s4 	.64	160	0\n"
-		"gpr	s5 	.64	168	0\n"
-		"gpr	s6 	.64	176	0\n"
-		"gpr	s7 	.64	184	0\n"
-		"gpr	t8 	.64	192	0\n"
-		"gpr	t9 	.64	200	0\n"
-		"gpr	k0 	.64	208	0\n"
-		"gpr	k1 	.64	216	0\n"
-		"gpr	gp 	.64	224	0\n"
-		"gpr	sp	.64	232	0\n"
-		"gpr	fp	.64	240	0\n"
-		"gpr	ra	.64	248	0\n"
-		"gpr	pc	.64	256	0\n"
-		"gpr	hi	.64	264	0\n"
-		"gpr	lo	.64	272	0\n"
-		"gpr	t	.64	280	0\n";
+	case 64:
+		p =
+			"=PC    pc\n"
+			"=SP    sp\n"
+			"=BP    fp\n"
+			"=A0    a0\n"
+			"=A1    a1\n"
+			"=A2    a2\n"
+			"=A3    a3\n"
+			"=SN    v0\n"
+			"=R0    v0\n"
+			"=R1    v1\n"
+			"gpr	zero	.64	?	0\n"
+			"gpr	at	.64	8	0\n"
+			"gpr	v0	.64	16	0\n"
+			"gpr	v1	.64	24	0\n"
+			"gpr	a0	.64	32	0\n"
+			"gpr	a1	.64	40	0\n"
+			"gpr	a2	.64	48	0\n"
+			"gpr	a3	.64	56	0\n"
+			"gpr	t0	.64	64	0\n"
+			"gpr	t1	.64	72	0\n"
+			"gpr	t2 	.64	80	0\n"
+			"gpr	t3 	.64	88	0\n"
+			"gpr	t4 	.64	96	0\n"
+			"gpr	t5 	.64	104	0\n"
+			"gpr	t6 	.64	112	0\n"
+			"gpr	t7 	.64	120	0\n"
+			"gpr	s0	.64	128	0\n"
+			"gpr	s1	.64	136	0\n"
+			"gpr	s2	.64	144	0\n"
+			"gpr	s3	.64	152	0\n"
+			"gpr	s4 	.64	160	0\n"
+			"gpr	s5 	.64	168	0\n"
+			"gpr	s6 	.64	176	0\n"
+			"gpr	s7 	.64	184	0\n"
+			"gpr	t8 	.64	192	0\n"
+			"gpr	t9 	.64	200	0\n"
+			"gpr	k0 	.64	208	0\n"
+			"gpr	k1 	.64	216	0\n"
+			"gpr	gp 	.64	224	0\n"
+			"gpr	sp	.64	232	0\n"
+			"gpr	fp	.64	240	0\n"
+			"gpr	ra	.64	248	0\n"
+			"gpr	pc	.64	256	0\n"
+			"gpr	hi	.64	264	0\n"
+			"gpr	lo	.64	272	0\n"
+			"gpr	t	.64	280	0\n";
 		break;
 	}
-	return p? strdup (p): NULL;
+	return p ? strdup (p) : NULL;
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo (RAnal *anal, int q) {
 	return 4;
 }
 
-static RList *anal_preludes(RAnal *anal) {
-#define KW(d,ds,m,ms) r_list_append (l, r_search_keyword_new((const ut8*)d,ds,(const ut8*)m, ms, NULL))
+static RList *anal_preludes (RAnal *anal) {
+#define KW(d, ds, m, ms) r_list_append (l, r_search_keyword_new ((const ut8 *)d, ds, (const ut8 *)m, ms, NULL))
 	RList *l = r_list_newf ((RListFree)r_search_keyword_free);
 	KW ("\x27\xbd\x00", 3, NULL, 0);
 	return l;
@@ -1177,7 +1155,7 @@ RAnalPlugin r_anal_plugin_mips_cs = {
 	.get_reg_profile = get_reg_profile,
 	.archinfo = archinfo,
 	.preludes = anal_preludes,
-	.bits = 16|32|64,
+	.bits = 16 | 32 | 64,
 	.op = &analop,
 };
 

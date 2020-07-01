@@ -7,18 +7,18 @@
 #include <string.h>
 #include "../format/nin/gba.h"
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	ut8 lict[156];
 	r_return_val_if_fail (b, false);
-	r_buf_read_at (b, 4, (ut8*)lict, sizeof (lict));
+	r_buf_read_at (b, 4, (ut8 *)lict, sizeof (lict));
 	return !memcmp (lict, lic_gba, 156);
 }
 
-static bool load_buffer(RBinFile * bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (buf);
 }
 
-static RList *entries(RBinFile *bf) {
+static RList *entries (RBinFile *bf) {
 	RList *ret = r_list_newf (free);
 	RBinAddr *ptr = NULL;
 
@@ -35,7 +35,7 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	ut8 rom_info[16];
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 
@@ -50,8 +50,8 @@ static RBinInfo *info(RBinFile *bf) {
 
 	ret->lang = NULL;
 	r_buf_read_at (bf->buf, 0xa0, rom_info, 16);
-	ret->file = r_str_ndup ((const char *) rom_info, 12);
-	ret->type = r_str_ndup ((char *) &rom_info[12], 4);
+	ret->file = r_str_ndup ((const char *)rom_info, 12);
+	ret->type = r_str_ndup ((char *)&rom_info[12], 4);
 	ret->machine = strdup ("GameBoy Advance");
 	ret->os = strdup ("any");
 	ret->arch = strdup ("arm");
@@ -62,7 +62,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
+static RList *sections (RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *s = R_NEW0 (RBinSection);
 	ut64 sz = r_buf_size (bf->buf);

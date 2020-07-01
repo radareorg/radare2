@@ -13,7 +13,7 @@
 
 #define BUFFER_SIZE 4096
 
-R_API struct r_socket_proc_t *r_socket_proc_open(char* const argv[]) {
+R_API struct r_socket_proc_t *r_socket_proc_open (char *const argv[]) {
 #if __UNIX__ && LIBC_HAVE_FORK
 	RSocketProc *sp = R_NEW (RSocketProc);
 #ifdef O_CLOEXEC
@@ -26,7 +26,7 @@ R_API struct r_socket_proc_t *r_socket_proc_open(char* const argv[]) {
 		return NULL;
 	}
 
-	if (pipe (sp->fd0)==-1) {
+	if (pipe (sp->fd0) == -1) {
 		perror ("pipe");
 		goto error;
 	}
@@ -37,7 +37,7 @@ R_API struct r_socket_proc_t *r_socket_proc_open(char* const argv[]) {
 		goto error;
 	}
 
-	if (pipe (sp->fd1)==-1) {
+	if (pipe (sp->fd1) == -1) {
 		perror ("pipe");
 		goto error;
 	}
@@ -73,7 +73,7 @@ error:
 #endif
 }
 
-R_API int r_socket_proc_close(struct r_socket_proc_t *sp) {
+R_API int r_socket_proc_close (struct r_socket_proc_t *sp) {
 #if __UNIX__
 	/* this is wrong */
 	kill (sp->pid, SIGKILL);
@@ -118,7 +118,7 @@ R_API void r_socket_proc_printf (RSocketProc *sp, const char *fmt, ...) {
 	if (s.fd != R_INVALID_SOCKET) {
 		va_start (ap, fmt);
 		vsnprintf (buf, BUFFER_SIZE, fmt, ap);
-		r_socket_write (&s, buf, strlen(buf));
+		r_socket_write (&s, buf, strlen (buf));
 		va_end (ap);
 	}
 }

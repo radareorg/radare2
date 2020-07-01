@@ -8,24 +8,24 @@
 #include "mdmp/mdmp_specs.h"
 #include "mdmp/mdmp_windefs.h"
 
-#define DMP64_MAGIC		"\x50\x41\x47\x45\x44\x55\x36\x34" // PAGEDU64
-#define DMP_BMP_MAGIC		"\x53\x44\x4d\x50\x44\x55\x4d\x50" // SDMPDUMP
-#define DMP_UNUSED_MAGIC	"\x50\x41\x47\x45" // PAGE
+#define DMP64_MAGIC "\x50\x41\x47\x45\x44\x55\x36\x34" // PAGEDU64
+#define DMP_BMP_MAGIC "\x53\x44\x4d\x50\x44\x55\x4d\x50" // SDMPDUMP
+#define DMP_UNUSED_MAGIC "\x50\x41\x47\x45" // PAGE
 
-#define DMP_DUMPTYPE_UNKNOWN		0
-#define DMP_DUMPTYPE_FULL		1
-#define DMP_DUMPTYPE_SUMMARY		2
-#define DMP_DUMPTYPE_HEADER		3
-#define DMP_DUMPTYPE_TRIAGE		4
-#define DMP_DUMPTYPE_BITMAPFULL	5
-#define DMP_DUMPTYPE_BITMAPKERNEL	6
-#define DMP_DUMPTYPE_AUTOMATIC		7
+#define DMP_DUMPTYPE_UNKNOWN 0
+#define DMP_DUMPTYPE_FULL 1
+#define DMP_DUMPTYPE_SUMMARY 2
+#define DMP_DUMPTYPE_HEADER 3
+#define DMP_DUMPTYPE_TRIAGE 4
+#define DMP_DUMPTYPE_BITMAPFULL 5
+#define DMP_DUMPTYPE_BITMAPKERNEL 6
+#define DMP_DUMPTYPE_AUTOMATIC 7
 
-#define PAGE_SIZE	0x1000
+#define PAGE_SIZE 0x1000
 
 typedef struct _PHYSICAL_MEMORY_RUN {
-    ut64 BasePage;
-    ut64 PageCount;
+	ut64 BasePage;
+	ut64 PageCount;
 } dmp_p_memory_run;
 
 typedef struct _PHYSICAL_MEMORY_DESCRIPTOR32 {

@@ -36,23 +36,27 @@
  */
 
 /* utility definitions */
-#define	DUPMAX		255
+#define DUPMAX 255
 //_POSIX2_RE_DUP_MAX	/* xxx is this right? */
-#define	INTFINITY	(DUPMAX + 1)
-#define	NC		(CHAR_MAX - CHAR_MIN + 1)
+#define INTFINITY (DUPMAX + 1)
+#define NC (CHAR_MAX - CHAR_MIN + 1)
 
-#define STRLCPY(x,y,z) { strncpy ((x),(y),(z)); (x)[(z)? (z) - 1: 0] = 0; }
+#define STRLCPY(x, y, z)                  \
+	{                                 \
+		strncpy ((x), (y), (z));  \
+		(x)[(z) ? (z)-1 : 0] = 0; \
+	}
 
 /* switch off assertions (if not already off) if no REDEBUG */
 #ifndef REDEBUG
 #ifndef NDEBUG
-#define	NDEBUG	/* no assertions please */
+#define NDEBUG /* no assertions please */
 #endif
 #endif
 #include <assert.h>
 
 /* for old systems with bcopy() but no memmove() */
 #ifdef USEBCOPY
-#define	memmove(d, s, c)	bcopy(s, d, c)
+#define memmove(d, s, c) bcopy (s, d, c)
 #endif
 #define ut8 unsigned char

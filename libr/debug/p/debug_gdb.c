@@ -14,21 +14,21 @@ typedef struct {
 #define UNSUPPORTED 0
 #define SUPPORTED 1
 
-static RIOGdb ** origriogdb = NULL;
+static RIOGdb **origriogdb = NULL;
 static libgdbr_t *desc = NULL;
-static ut8* reg_buf = NULL;
+static ut8 *reg_buf = NULL;
 static int buf_size = 0;
 static int support_sw_bp = UNKNOWN;
 static int support_hw_bp = UNKNOWN;
 
-static int r_debug_gdb_attach(RDebug *dbg, int pid);
+static int r_debug_gdb_attach (RDebug *dbg, int pid);
 static void check_connection (RDebug *dbg) {
 	if (!desc) {
 		r_debug_gdb_attach (dbg, -1);
 	}
 }
 
-static int r_debug_gdb_step(RDebug *dbg) {
+static int r_debug_gdb_step (RDebug *dbg) {
 	check_connection (dbg);
 	if (!desc) {
 		return R_DEBUG_REASON_UNKNOWN;
@@ -37,23 +37,23 @@ static int r_debug_gdb_step(RDebug *dbg) {
 	return true;
 }
 
-static RList* r_debug_gdb_threads(RDebug *dbg, int pid) {
+static RList *r_debug_gdb_threads (RDebug *dbg, int pid) {
 	RList *list;
 	if ((list = gdbr_threads_list (desc, pid))) {
-		list->free = (RListFree) &r_debug_pid_free;
+		list->free = (RListFree)&r_debug_pid_free;
 	}
 	return list;
 }
 
-static RList* r_debug_gdb_pids(RDebug *dbg, int pid) {
+static RList *r_debug_gdb_pids (RDebug *dbg, int pid) {
 	RList *list;
 	if ((list = gdbr_pids_list (desc, pid))) {
-		list->free = (RListFree) &r_debug_pid_free;
+		list->free = (RListFree)&r_debug_pid_free;
 	}
 	return list;
 }
 
-static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
+static int r_debug_gdb_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	int copy_size;
 	int buflen = 0;
 	check_connection (dbg);
@@ -76,7 +76,7 @@ static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	if (reg_buf) {
 		// if (buf_size < copy_size) { //desc->data_len) {
 		if (buflen > buf_size) { //copy_size) {
-			ut8* new_buf = realloc (reg_buf, buflen);
+			ut8 *new_buf = realloc (reg_buf, buflen);
 			if (!new_buf) {
 				return -1;
 			}
@@ -90,10 +90,10 @@ static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		}
 		buf_size = buflen;
 	}
-	memset ((void*)(volatile void*)buf, 0, size);
-	memcpy ((void*)(volatile void*)buf, desc->data, R_MIN (copy_size, size));
-	memset ((void*)(volatile void*)reg_buf, 0, buflen);
-	memcpy ((void*)(volatile void*)reg_buf, desc->data, copy_size);
+	memset ((void *)(volatile void *)buf, 0, size);
+	memcpy ((void *)(volatile void *)buf, desc->data, R_MIN (copy_size, size));
+	memset ((void *)(volatile void *)reg_buf, 0, buflen);
+	memcpy ((void *)(volatile void *)reg_buf, desc->data, copy_size);
 #if 0
 	int i;
 	//for(i=0;i<168;i++) {
@@ -106,7 +106,7 @@ static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	return desc->data_len;
 }
 
-static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
+static RList *r_debug_gdb_map_get (RDebug *dbg) { //TODO
 	check_connection (dbg);
 	if (!desc || desc->pid <= 0) {
 		return NULL;
@@ -168,7 +168,7 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 	RDebugMap *map = NULL;
 	region1[0] = region2[0] = '0';
 	region1[1] = region2[1] = 'x';
-	if (!(ptr = strtok ((char*) buf, "\n"))) {
+	if (!(ptr = strtok ((char *)buf, "\n"))) {
 		gdbr_close_file (desc);
 		free (buf);
 		return NULL;
@@ -188,13 +188,13 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 		}
 		// We assume Linux target, for now, so -
 		// 7ffff7dda000-7ffff7dfd000 r-xp 00000000 08:05 265428 /usr/lib/ld-2.25.so
-		ret = sscanf (ptr, "%s %s %"PFMT64x" %*s %*s %[^\n]", &region1[2],
-			      perms, &offset, name);
+		ret = sscanf (ptr, "%s %s %" PFMT64x " %*s %*s %[^\n]", &region1[2],
+			perms, &offset, name);
 		if (ret == 3) {
 			name[0] = '\0';
 		} else if (ret != 4) {
 			eprintf ("%s: Unable to parse \"%s\"\nContent:\n%s\n",
-				 __func__, path, buf);
+				__func__, path, buf);
 			gdbr_close_file (desc);
 			free (buf);
 			r_list_free (retlist);
@@ -222,7 +222,7 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 		map_end = r_num_get (NULL, region2);
 		if (map_start == map_end || map_end == 0) {
 			eprintf ("%s: ignoring invalid map size: %s - %s\n",
-				 __func__, region1, region2);
+				__func__, region1, region2);
 			ptr = strtok (NULL, "\n");
 			continue;
 		}
@@ -240,7 +240,7 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 	return retlist;
 }
 
-static RList* r_debug_gdb_modules_get(RDebug *dbg) {
+static RList *r_debug_gdb_modules_get (RDebug *dbg) {
 	char *lastname = NULL;
 	RDebugMap *map;
 	RListIter *iter, *iter2;
@@ -278,7 +278,7 @@ static RList* r_debug_gdb_modules_get(RDebug *dbg) {
 	return last;
 }
 
-static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
+static int r_debug_gdb_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 	check_connection (dbg);
 	if (!desc) {
 		return R_DEBUG_REASON_UNKNOWN;
@@ -304,7 +304,7 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 	// so this workaround resizes the small register profile buffer
 	// to the whole set and fills the rest with 0
 	if (buf_size < buflen) {
-		ut8* new_buf = realloc (reg_buf, buflen * sizeof (ut8));
+		ut8 *new_buf = realloc (reg_buf, buflen * sizeof (ut8));
 		if (!new_buf) {
 			return -1;
 		}
@@ -312,7 +312,7 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 		memset (new_buf + buf_size, 0, buflen - buf_size);
 	}
 
-	RRegItem* current = NULL;
+	RRegItem *current = NULL;
 	// We default to little endian if there's no way to get the configuration,
 	// since this was the behaviour prior to the change.
 	RRegArena *arena = dbg->reg->regset[type].arena;
@@ -321,12 +321,12 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 		if (!current) {
 			break;
 		}
-		gdbr_write_reg (desc, current->name, (char*)arena->bytes + (current->offset / 8), current->size / 8);
+		gdbr_write_reg (desc, current->name, (char *)arena->bytes + (current->offset / 8), current->size / 8);
 	}
 	return true;
 }
 
-static int r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
+static int r_debug_gdb_continue (RDebug *dbg, int pid, int tid, int sig) {
 	check_connection (dbg);
 	if (!desc) {
 		return R_DEBUG_REASON_UNKNOWN;
@@ -341,7 +341,7 @@ static int r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return desc->tid;
 }
 
-static RDebugReasonType r_debug_gdb_wait(RDebug *dbg, int pid) {
+static RDebugReasonType r_debug_gdb_wait (RDebug *dbg, int pid) {
 	check_connection (dbg);
 	if (!desc) {
 		return R_DEBUG_REASON_UNKNOWN;
@@ -366,7 +366,7 @@ static RDebugReasonType r_debug_gdb_wait(RDebug *dbg, int pid) {
 	return desc->stop_reason.reason;
 }
 
-static int r_debug_gdb_attach(RDebug *dbg, int pid) {
+static int r_debug_gdb_attach (RDebug *dbg, int pid) {
 	RIODesc *d = dbg->iob.io->desc;
 	// TODO: the core must update the dbg.swstep config var when this var is changed
 	dbg->swstep = false;
@@ -374,7 +374,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 	if (d && d->plugin && d->plugin->name && d->data) {
 		if (!strcmp ("gdb", d->plugin->name)) {
 			RIOGdb *g = d->data;
-			origriogdb = (RIOGdb **)&d->data;	//TODO bit of a hack, please improve
+			origriogdb = (RIOGdb **)&d->data; //TODO bit of a hack, please improve
 			support_sw_bp = UNKNOWN;
 			support_hw_bp = UNKNOWN;
 			desc = &g->desc;
@@ -388,7 +388,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 	return true;
 }
 
-static int r_debug_gdb_detach(RDebug *dbg, int pid) {
+static int r_debug_gdb_detach (RDebug *dbg, int pid) {
 	int ret = 0;
 
 	if (pid <= 0 || !desc->stub_features.multiprocess) {
@@ -402,7 +402,7 @@ static int r_debug_gdb_detach(RDebug *dbg, int pid) {
 	return ret;
 }
 
-static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
+static const char *r_debug_gdb_reg_profile (RDebug *dbg) {
 	check_connection (dbg);
 	int arch = r_sys_arch_id (dbg->arch);
 	int bits = dbg->anal->bits;
@@ -419,7 +419,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	return NULL;
 }
 
-static int r_debug_gdb_set_reg_profile(const char *str) {
+static int r_debug_gdb_set_reg_profile (const char *str) {
 	if (desc && str) {
 		return gdbr_set_reg_profile (desc, str);
 	}
@@ -432,13 +432,11 @@ static int r_debug_gdb_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set
 		return false;
 	}
 	bpsize = b->size;
-        // TODO handle conditions
+	// TODO handle conditions
 	switch (b->perm) {
-	case R_BP_PROT_EXEC : {
+	case R_BP_PROT_EXEC: {
 		if (set) {
-			ret = b->hw?
-					gdbr_set_hwbp (desc, b->addr, "", bpsize):
-					gdbr_set_bp (desc, b->addr, "", bpsize);
+			ret = b->hw ? gdbr_set_hwbp (desc, b->addr, "", bpsize) : gdbr_set_bp (desc, b->addr, "", bpsize);
 		} else {
 			ret = b->hw ? gdbr_remove_hwbp (desc, b->addr, bpsize) : gdbr_remove_bp (desc, b->addr, bpsize);
 		}
@@ -473,7 +471,7 @@ static int r_debug_gdb_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set
 	return !ret;
 }
 
-static bool r_debug_gdb_kill(RDebug *dbg, int pid, int tid, int sig) {
+static bool r_debug_gdb_kill (RDebug *dbg, int pid, int tid, int sig) {
 	// TODO kill based on pid and signal
 	if (sig != 0) {
 		if (gdbr_kill (desc) < 0) {
@@ -483,16 +481,16 @@ static bool r_debug_gdb_kill(RDebug *dbg, int pid, int tid, int sig) {
 	return true;
 }
 
-static int r_debug_gdb_select(RDebug *dbg, int pid, int tid) {
+static int r_debug_gdb_select (RDebug *dbg, int pid, int tid) {
 	if (!desc || !*origriogdb) {
-		desc = NULL;	//TODO hacky fix, please improve. I would suggest using a **desc instead of a *desc, so it is automatically updated
+		desc = NULL; //TODO hacky fix, please improve. I would suggest using a **desc instead of a *desc, so it is automatically updated
 		return false;
 	}
 
 	return gdbr_select (desc, pid, tid) >= 0;
 }
 
-static RDebugInfo* r_debug_gdb_info(RDebug *dbg, const char *arg) {
+static RDebugInfo *r_debug_gdb_info (RDebug *dbg, const char *arg) {
 	RDebugInfo *rdi;
 	if (!(rdi = R_NEW0 (RDebugInfo))) {
 		return NULL;
@@ -532,7 +530,7 @@ static RDebugInfo* r_debug_gdb_info(RDebug *dbg, const char *arg) {
 
 #include "native/bt.c"
 
-static RList* r_debug_gdb_frames(RDebug *dbg, ut64 at) {
+static RList *r_debug_gdb_frames (RDebug *dbg, ut64 at) {
 	return r_debug_native_frames (dbg, at);
 }
 

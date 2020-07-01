@@ -18,7 +18,7 @@
  */
 
 #ifndef GRUB_BUFIO_H
-#define GRUB_BUFIO_H	1
+#define GRUB_BUFIO_H 1
 
 #include <grub/file.h>
 

@@ -12,7 +12,7 @@
 #define HAVE_FCNTL_H 1
 #define HAVE_LOCALE_H 1
 #define HAVE_SYS_STAT_H 1
-#define	HAVE_INTTYPES_H 1
+#define HAVE_INTTYPES_H 1
 #define HAVE_GETOPT_H 1
 #define HAVE_LIMITS_H 1
 
@@ -32,7 +32,7 @@
 #define SIZEOF_LONG_LONG sizeof (long long)
 
 /* Library issues */
-#define HAVE_GETOPT_LONG 0	/* in-tree as of 3.2 */
+#define HAVE_GETOPT_LONG 0 /* in-tree as of 3.2 */
 #define HAVE_ST_RDEV 1
 
 /* ELF support */

@@ -24,8 +24,7 @@ static const char *lang =
 	"array      : '[' <integerlit> ']';"
 	"type       : <qualifier>? <identifier> (<pointer> | <array>)*;";
 
-
-R_API RParseCType *r_parse_ctype_new(void) {
+R_API RParseCType *r_parse_ctype_new (void) {
 	RParseCType *ctype = R_NEW (RParseCType);
 	if (!ctype) {
 		return NULL;
@@ -49,7 +48,7 @@ R_API RParseCType *r_parse_ctype_new(void) {
 	return ctype;
 }
 
-R_API void r_parse_ctype_free(RParseCType *ctype) {
+R_API void r_parse_ctype_free (RParseCType *ctype) {
 	if (!ctype) {
 		return;
 	}
@@ -57,55 +56,31 @@ R_API void r_parse_ctype_free(RParseCType *ctype) {
 	free (ctype);
 }
 
-static bool is_qualifier_const(mpc_ast_t *a) {
-	return strcmp (a->tag, "qualifier|string") == 0
-		&& a->contents
-		&& strcmp (a->contents, "const") == 0;
+static bool is_qualifier_const (mpc_ast_t *a) {
+	return strcmp (a->tag, "qualifier|string") == 0 && a->contents && strcmp (a->contents, "const") == 0;
 }
 
-static bool is_identifier_string(mpc_ast_t *a) {
-	return strcmp (a->tag, "identifier|regex") == 0
-		&& a->contents;
+static bool is_identifier_string (mpc_ast_t *a) {
+	return strcmp (a->tag, "identifier|regex") == 0 && a->contents;
 }
 
-static bool is_identifier_kind(mpc_ast_t *a) {
-	return strcmp (a->tag, "identifier|>") == 0
-		&& a->children_num == 2
-		&& strcmp (a->children[0]->tag, "string") == 0
-		&& a->children[0]->contents
-		&& strcmp (a->children[1]->tag, "regex") == 0
-		&& a->children[1]->contents;
+static bool is_identifier_kind (mpc_ast_t *a) {
+	return strcmp (a->tag, "identifier|>") == 0 && a->children_num == 2 && strcmp (a->children[0]->tag, "string") == 0 && a->children[0]->contents && strcmp (a->children[1]->tag, "regex") == 0 && a->children[1]->contents;
 }
 
-static bool is_non_const_pointer(mpc_ast_t *a) {
-	return strcmp (a->tag, "pointer|char") == 0
-		&& a->contents
-		&& strcmp (a->contents, "*") == 0;
+static bool is_non_const_pointer (mpc_ast_t *a) {
+	return strcmp (a->tag, "pointer|char") == 0 && a->contents && strcmp (a->contents, "*") == 0;
 }
 
-static bool is_const_pointer(mpc_ast_t *a) {
-	return strcmp (a->tag, "pointer|>") == 0
-		&& a->children_num == 2
-		&& is_qualifier_const (a->children[0])
-		&& strcmp (a->children[1]->tag, "char") == 0
-		&& a->children[1]->contents
-		&& strcmp (a->children[1]->contents, "*") == 0;
+static bool is_const_pointer (mpc_ast_t *a) {
+	return strcmp (a->tag, "pointer|>") == 0 && a->children_num == 2 && is_qualifier_const (a->children[0]) && strcmp (a->children[1]->tag, "char") == 0 && a->children[1]->contents && strcmp (a->children[1]->contents, "*") == 0;
 }
 
-static bool is_array(mpc_ast_t *a) {
-	return strcmp (a->tag, "array|>") == 0
-		&& a->children_num == 3
-		&& strcmp (a->children[0]->tag, "char") == 0
-		&& a->children[0]->contents
-		&& strcmp (a->children[0]->contents, "[") == 0
-		&& strcmp (a->children[1]->tag, "integerlit|regex") == 0
-		&& a->children[1]->contents
-		&& strcmp (a->children[2]->tag, "char") == 0
-		&& a->children[2]->contents
-		&& strcmp (a->children[2]->contents, "]") == 0;
+static bool is_array (mpc_ast_t *a) {
+	return strcmp (a->tag, "array|>") == 0 && a->children_num == 3 && strcmp (a->children[0]->tag, "char") == 0 && a->children[0]->contents && strcmp (a->children[0]->contents, "[") == 0 && strcmp (a->children[1]->tag, "integerlit|regex") == 0 && a->children[1]->contents && strcmp (a->children[2]->tag, "char") == 0 && a->children[2]->contents && strcmp (a->children[2]->contents, "]") == 0;
 }
 
-static RParseCTypeType *ctype_convert_ast(mpc_ast_t *a) {
+static RParseCTypeType *ctype_convert_ast (mpc_ast_t *a) {
 	bool is_const = false;
 	RParseCTypeType *cur = NULL;
 	int i;
@@ -217,7 +192,7 @@ beach:
 	return NULL;
 }
 
-R_API RParseCTypeType *r_parse_ctype_parse(RParseCType *ctype, const char *str, char **error) {
+R_API RParseCTypeType *r_parse_ctype_parse (RParseCType *ctype, const char *str, char **error) {
 	mpc_result_t r;
 	if (mpc_parse ("<string>", str, ctype->type, &r)) {
 		RParseCTypeType *ret = ctype_convert_ast (r.output);
@@ -235,7 +210,7 @@ R_API RParseCTypeType *r_parse_ctype_parse(RParseCType *ctype, const char *str, 
 	}
 }
 
-R_API void r_parse_ctype_type_free(RParseCTypeType *type) {
+R_API void r_parse_ctype_type_free (RParseCTypeType *type) {
 	if (!type) {
 		return;
 	}

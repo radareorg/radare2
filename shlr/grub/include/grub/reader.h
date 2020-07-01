@@ -18,7 +18,7 @@
  */
 
 #ifndef GRUB_READER_HEADER
-#define GRUB_READER_HEADER	1
+#define GRUB_READER_HEADER 1
 
 #include <grub/err.h>
 

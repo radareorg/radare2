@@ -5,9 +5,9 @@
 #include <r_lib.h>
 #include "../../asm/arch/mcore/mcore.h"
 
-static int mcore_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	mcore_handle handle = {0};
-	mcore_t* instr = NULL;
+static int mcore_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	mcore_handle handle = { 0 };
+	mcore_t *instr = NULL;
 
 	if (mcore_init (&handle, buf, len)) {
 		eprintf ("[!] mcore: bad or invalid data.\n");
@@ -43,8 +43,8 @@ static int mcore_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	return op->size;
 }
 
-static bool set_reg_profile(RAnal *anal) {
-	const char *p = \
+static bool set_reg_profile (RAnal *anal) {
+	const char *p =
 		"=PC	pc\n"
 		"=SP	r1\n"
 		"=SR	sr\n"
@@ -109,7 +109,7 @@ static bool set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo (RAnal *anal, int q) {
 	return 2;
 }
 

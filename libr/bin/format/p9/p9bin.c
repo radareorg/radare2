@@ -3,8 +3,8 @@
 #include "p9bin.h"
 #include <r_asm.h>
 
-int r_bin_p9_get_arch(RBuffer *b, int *bits, int *big_endian) {
-	st32 a = (st32) r_buf_read_be32_at (b, 0);
+int r_bin_p9_get_arch (RBuffer *b, int *bits, int *big_endian) {
+	st32 a = (st32)r_buf_read_be32_at (b, 0);
 	if (bits) {
 		*bits = 32;
 	}
@@ -40,7 +40,7 @@ int r_bin_p9_get_arch(RBuffer *b, int *bits, int *big_endian) {
 		return R_ASM_ARCH_ARM;
 	case Q_MAGIC:
 		return R_ASM_ARCH_PPC;
-	//case A_MAGIC: // 68020
+		//case A_MAGIC: // 68020
 	}
 	return 0;
 }

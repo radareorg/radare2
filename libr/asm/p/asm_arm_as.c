@@ -15,7 +15,7 @@
 // toolchains/arm-linux-androideabi-4.8/prebuilt/darwin-arm_64/bin/
 // toolchains/aarch64-linux-android-4.9/prebuilt/darwin-arm_64/bin/
 
-static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
+static int assemble (RAsm *a, RAsmOp *op, const char *buf) {
 	const char *bitconfig = "";
 	char *ipath, *opath;
 	char *as = NULL;
@@ -45,10 +45,10 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	}
 
 	char *asm_buf = r_str_newf ("%s\n" //.org 0x%"PFMT64x"\n"
-			".ascii \"BEGINMARK\"\n"
-			"%s\n"
-			".ascii \"ENDMARK\"\n",
-			bitconfig, buf); // a->pc ??
+				    ".ascii \"BEGINMARK\"\n"
+				    "%s\n"
+				    ".ascii \"ENDMARK\"\n",
+		bitconfig, buf); // a->pc ??
 	if (asm_buf) {
 		const size_t asm_buf_len = strlen (asm_buf);
 		const bool success = write (ifd, asm_buf, asm_buf_len) != asm_buf_len;
@@ -66,7 +66,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	if (!r_sys_cmdf ("%s %s -o %s", as, ipath, opath)) {
 		const ut8 *begin, *end;
 		close (ofd);
-		ofd = r_sandbox_open (opath, O_BINARY|O_RDONLY, 0644);
+		ofd = r_sandbox_open (opath, O_BINARY | O_RDONLY, 0644);
 		if (ofd < 0) {
 			free (as);
 			free (ipath);
@@ -75,13 +75,13 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		}
 		ut8 buf[4096];
 		len = read (ofd, buf, sizeof (buf));
-		begin = r_mem_mem (buf, len, (const ut8*)"BEGINMARK", 9);
-		end = r_mem_mem (buf, len, (const ut8*)"ENDMARK", 7);
+		begin = r_mem_mem (buf, len, (const ut8 *)"BEGINMARK", 9);
+		end = r_mem_mem (buf, len, (const ut8 *)"ENDMARK", 7);
 		if (!begin || !end) {
 			eprintf ("Cannot find water marks\n");
 			len = 0;
 		} else {
-			len = (int)(size_t)(end - begin - 9);
+			len = (int)(size_t) (end - begin - 9);
 			if (len > 0) {
 				r_strbuf_setbin (&op->buf, begin + 9, len);
 			} else {
@@ -110,7 +110,7 @@ RAsmPlugin r_asm_plugin_arm_as = {
 	.arch = "arm",
 	.author = "pancake",
 	.license = "LGPL3",
-	.bits = 16|32|64,
+	.bits = 16 | 32 | 64,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.assemble = &assemble,
 };

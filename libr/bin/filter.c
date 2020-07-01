@@ -3,7 +3,7 @@
 #include <r_bin.h>
 #include "i/private.h"
 
-static char *__hashify(char *s, ut64 vaddr) {
+static char *__hashify (char *s, ut64 vaddr) {
 	r_return_val_if_fail (s, NULL);
 
 	char *os = s;
@@ -29,7 +29,7 @@ static char *__hashify(char *s, ut64 vaddr) {
 }
 
 // - name should be allocated on the heap
-R_API char *r_bin_filter_name(RBinFile *bf, Sdb *db, ut64 vaddr, char *name) {
+R_API char *r_bin_filter_name (RBinFile *bf, Sdb *db, ut64 vaddr, char *name) {
 	r_return_val_if_fail (db && name, NULL);
 
 	char *resname = name;
@@ -61,7 +61,7 @@ R_API char *r_bin_filter_name(RBinFile *bf, Sdb *db, ut64 vaddr, char *name) {
 	return resname;
 }
 
-R_API void r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym) {
+R_API void r_bin_filter_sym (RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym) {
 	r_return_if_fail (ht && sym && sym->name);
 	const char *name = sym->name;
 	// if (!strncmp (sym->name, "imp.", 4)) {
@@ -111,7 +111,7 @@ R_API void r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym)
 	}
 }
 
-R_API void r_bin_filter_symbols(RBinFile *bf, RList *list) {
+R_API void r_bin_filter_symbols (RBinFile *bf, RList *list) {
 	HtPP *ht = ht_pp_new0 ();
 	if (!ht) {
 		return;
@@ -127,7 +127,7 @@ R_API void r_bin_filter_symbols(RBinFile *bf, RList *list) {
 	ht_pp_free (ht);
 }
 
-R_API void r_bin_filter_sections(RBinFile *bf, RList *list) {
+R_API void r_bin_filter_sections (RBinFile *bf, RList *list) {
 	RBinSection *sec;
 	Sdb *db = sdb_new0 ();
 	RListIter *iter;
@@ -140,7 +140,7 @@ R_API void r_bin_filter_sections(RBinFile *bf, RList *list) {
 	sdb_free (db);
 }
 
-static bool false_positive(const char *str) {
+static bool false_positive (const char *str) {
 	int i;
 	ut8 bo[0x100];
 	int up = 0;
@@ -156,23 +156,23 @@ static bool false_positive(const char *str) {
 	for (i = 0; str[i]; i++) {
 		if (IS_DIGIT (str[i])) {
 			nm++;
-		} else if (str[i]>='a' && str[i]<='z') {
+		} else if (str[i] >= 'a' && str[i] <= 'z') {
 			lo++;
-		} else if (str[i]>='A' && str[i]<='Z') {
+		} else if (str[i] >= 'A' && str[i] <= 'Z') {
 			up++;
 		} else {
 			ot++;
 		}
-		if (str[i]=='\\') {
+		if (str[i] == '\\') {
 			ot++;
 		}
-		if (str[i]==' ') {
+		if (str[i] == ' ') {
 			sp++;
 		}
 		bo[(ut8)str[i]] = 1;
 		ln++;
 	}
-	for (i = 0; i<0x100; i++) {
+	for (i = 0; i < 0x100; i++) {
 		if (bo[i]) {
 			di++;
 		}
@@ -191,7 +191,7 @@ static bool false_positive(const char *str) {
 	return false;
 }
 
-R_API bool r_bin_strpurge(RBin *bin, const char *str, ut64 refaddr) {
+R_API bool r_bin_strpurge (RBin *bin, const char *str, ut64 refaddr) {
 	bool purge = false;
 	if (bin->strpurge) {
 		char *addrs = strdup (bin->strpurge);
@@ -240,7 +240,7 @@ R_API bool r_bin_strpurge(RBin *bin, const char *str, ut64 refaddr) {
 	return purge;
 }
 
-static int get_char_ratio(char ch, const char *str) {
+static int get_char_ratio (char ch, const char *str) {
 	int i;
 	int ch_count = 0;
 	for (i = 0; str[i]; i++) {
@@ -251,7 +251,7 @@ static int get_char_ratio(char ch, const char *str) {
 	return i ? ch_count * 100 / i : 0;
 }
 
-static bool bin_strfilter(RBin *bin, const char *str) {
+static bool bin_strfilter (RBin *bin, const char *str) {
 	int i;
 	bool got_uppercase, in_esc_seq;
 	switch (bin->strfilter) {
@@ -261,7 +261,7 @@ static bool bin_strfilter(RBin *bin, const char *str) {
 		for (i = 0; str[i]; i++) {
 			char ch = str[i];
 			if (ch == ' ' ||
-			    (in_esc_seq && (ch == 't' || ch == 'n' || ch == 'r'))) {
+				(in_esc_seq && (ch == 't' || ch == 'n' || ch == 'r'))) {
 				goto loop_end;
 			}
 			if (ch < 0 || !IS_PRINTABLE (ch) || IS_LOWER (ch)) {
@@ -317,36 +317,36 @@ loop_end:
 			return false;
 		}
 		break;
-        case 'i': //IPV4
-		{
-			int segment = 0;
-			int segmentsum = 0;
-			bool prevd = false;
-			for (i = 0; str[i]; i++) {
-				char ch = str[i];
-				if (IS_DIGIT (ch)) {
-					segmentsum = segmentsum*10 + (ch - '0');
-					if (segment == 3) {
-						return true;
-					}
-					prevd = true;
-				} else if (ch == '.') {
-					if (prevd == true && segmentsum < 256){
-						segment++;
-						segmentsum = 0;
-					} else {
-						segmentsum = 0;
-						segment = 0;
-					}
-					prevd = false;
+	case 'i': //IPV4
+	{
+		int segment = 0;
+		int segmentsum = 0;
+		bool prevd = false;
+		for (i = 0; str[i]; i++) {
+			char ch = str[i];
+			if (IS_DIGIT (ch)) {
+				segmentsum = segmentsum * 10 + (ch - '0');
+				if (segment == 3) {
+					return true;
+				}
+				prevd = true;
+			} else if (ch == '.') {
+				if (prevd == true && segmentsum < 256) {
+					segment++;
+					segmentsum = 0;
 				} else {
 					segmentsum = 0;
-					prevd = false;
 					segment = 0;
 				}
+				prevd = false;
+			} else {
+				segmentsum = 0;
+				prevd = false;
+				segment = 0;
 			}
-			return false;
 		}
+		return false;
+	}
 	case 'p': // path
 		if (str[0] != '/') {
 			return false;
@@ -364,7 +364,7 @@ loop_end:
 	return true;
 }
 
-R_API bool r_bin_string_filter(RBin *bin, const char *str, ut64 addr) {
+R_API bool r_bin_string_filter (RBin *bin, const char *str, ut64 addr) {
 	if (r_bin_strpurge (bin, str, addr) || !bin_strfilter (bin, str)) {
 		return false;
 	}

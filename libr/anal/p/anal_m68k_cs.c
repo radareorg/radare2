@@ -9,7 +9,7 @@
 #else
 #define CAPSTONE_HAS_M68K 0
 #ifdef _MSC_VER
-#pragma message ("Cannot find capstone-m68k support")
+#pragma message("Cannot find capstone-m68k support")
 #else
 #warning Cannot find capstone-m68k support
 #endif
@@ -22,31 +22,31 @@
 #define OPERAND(x) insn->detail->m68k.operands[x]
 #define REG(x) cs_reg_name (*handle, insn->detail->m68k.operands[x].reg)
 #define IMM(x) insn->detail->m68k.operands[x].imm
-#define MEMBASE(x) cs_reg_name(*handle, insn->detail->m68k.operands[x].mem.base)
+#define MEMBASE(x) cs_reg_name (*handle, insn->detail->m68k.operands[x].mem.base)
 #define MEMINDEX(x) insn->detail->m68k.operands[x].mem.index
 #define MEMDISP(x) insn->detail->m68k.operands[x].mem.disp
 
-static inline ut64 make_64bits_address(ut64 address) {
+static inline ut64 make_64bits_address (ut64 address) {
 	return UT32_MAX & address;
 }
 
-static inline void handle_branch_instruction(RAnalOp *op, ut64 addr, cs_m68k *m68k, ut32 type, int index) {
+static inline void handle_branch_instruction (RAnalOp *op, ut64 addr, cs_m68k *m68k, ut32 type, int index) {
 #if CS_API_MAJOR >= 4
-		if (m68k->operands[index].type == M68K_OP_BR_DISP) {
-			op->type = type;
-			// TODO: disp_size is ignored
-			op->jump = make_64bits_address (addr + m68k->operands[index].br_disp.disp + 2);
-			op->fail = make_64bits_address (addr + op->size);
-		}
-#else
+	if (m68k->operands[index].type == M68K_OP_BR_DISP) {
 		op->type = type;
 		// TODO: disp_size is ignored
 		op->jump = make_64bits_address (addr + m68k->operands[index].br_disp.disp + 2);
 		op->fail = make_64bits_address (addr + op->size);
+	}
+#else
+	op->type = type;
+	// TODO: disp_size is ignored
+	op->jump = make_64bits_address (addr + m68k->operands[index].br_disp.disp + 2);
+	op->fail = make_64bits_address (addr + op->size);
 #endif
 }
 
-static inline void handle_jump_instruction(RAnalOp *op, ut64 addr, cs_m68k *m68k, ut32 type) {
+static inline void handle_jump_instruction (RAnalOp *op, ut64 addr, cs_m68k *m68k, ut32 type) {
 	op->type = type;
 
 	// Handle PC relative mode jump
@@ -59,7 +59,7 @@ static inline void handle_jump_instruction(RAnalOp *op, ut64 addr, cs_m68k *m68k
 	op->fail = make_64bits_address (addr + op->size);
 }
 
-static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
+static void opex (RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	r_strbuf_init (buf);
 	r_strbuf_append (buf, "{");
@@ -78,7 +78,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case M68K_OP_IMM:
 			r_strbuf_append (buf, "\"type\":\"imm\"");
-			r_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
+			r_strbuf_appendf (buf, ",\"value\":%" PFMT64d, op->imm);
 			break;
 		case M68K_OP_MEM:
 			r_strbuf_append (buf, "\"type\":\"mem\"");
@@ -91,14 +91,14 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			if (op->mem.in_base_reg != M68K_REG_INVALID) {
 				r_strbuf_appendf (buf, ",\"base_reg\":\"%s\"", cs_reg_name (handle, op->mem.in_base_reg));
 			}
-			r_strbuf_appendf (buf, ",\"in_disp\":%"PFMT64d"", op->mem.in_disp);
-			r_strbuf_appendf (buf, ",\"out_disp\":%"PFMT64d"", op->mem.out_disp);
-			r_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", (st64)op->mem.disp);
-			r_strbuf_appendf (buf, ",\"scale\":%"PFMT64d"", (st64)op->mem.scale);
-			r_strbuf_appendf (buf, ",\"bitfield\":%"PFMT64d"", (st64)op->mem.bitfield);
-			r_strbuf_appendf (buf, ",\"width\":%"PFMT64d"", (st64)op->mem.width);
-			r_strbuf_appendf (buf, ",\"offset\":%"PFMT64d"", (st64)op->mem.offset);
-			r_strbuf_appendf (buf, ",\"index_size\":%"PFMT64d"", (st64)op->mem.index_size);
+			r_strbuf_appendf (buf, ",\"in_disp\":%" PFMT64d "", op->mem.in_disp);
+			r_strbuf_appendf (buf, ",\"out_disp\":%" PFMT64d "", op->mem.out_disp);
+			r_strbuf_appendf (buf, ",\"disp\":%" PFMT64d "", (st64)op->mem.disp);
+			r_strbuf_appendf (buf, ",\"scale\":%" PFMT64d "", (st64)op->mem.scale);
+			r_strbuf_appendf (buf, ",\"bitfield\":%" PFMT64d "", (st64)op->mem.bitfield);
+			r_strbuf_appendf (buf, ",\"width\":%" PFMT64d "", (st64)op->mem.width);
+			r_strbuf_appendf (buf, ",\"offset\":%" PFMT64d "", (st64)op->mem.offset);
+			r_strbuf_appendf (buf, ",\"index_size\":%" PFMT64d "", (st64)op->mem.index_size);
 			break;
 		default:
 			r_strbuf_append (buf, "\"type\":\"invalid\"");
@@ -109,7 +109,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	r_strbuf_append (buf, "]}");
 }
 
-static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
+static int parse_reg_name (RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
 	if (!reg) {
 		return -1;
 	}
@@ -128,45 +128,45 @@ static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num)
 	return 0;
 }
 
-static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
+static void op_fillval (RAnalOp *op, csh handle, cs_insn *insn) {
 	static RRegItem reg;
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_MOV:
 		ZERO_FILL (reg);
-		if (OPERAND(1).type == M68K_OP_MEM) {
+		if (OPERAND (1).type == M68K_OP_MEM) {
 			op->src[0] = r_anal_value_new ();
 			op->src[0]->reg = &reg;
 			parse_reg_name (op->src[0]->reg, handle, insn, 1);
-			op->src[0]->delta = OPERAND(0).mem.disp;
-		} else if (OPERAND(0).type == M68K_OP_MEM) {
+			op->src[0]->delta = OPERAND (0).mem.disp;
+		} else if (OPERAND (0).type == M68K_OP_MEM) {
 			op->dst = r_anal_value_new ();
 			op->dst->reg = &reg;
 			parse_reg_name (op->dst->reg, handle, insn, 0);
-			op->dst->delta = OPERAND(1).mem.disp;
+			op->dst->delta = OPERAND (1).mem.disp;
 		}
 		break;
 	case R_ANAL_OP_TYPE_LEA:
 		ZERO_FILL (reg);
-		if (OPERAND(1).type == M68K_OP_MEM) {
+		if (OPERAND (1).type == M68K_OP_MEM) {
 			op->dst = r_anal_value_new ();
 			op->dst->reg = &reg;
 			parse_reg_name (op->dst->reg, handle, insn, 1);
-			op->dst->delta = OPERAND(1).mem.disp;
+			op->dst->delta = OPERAND (1).mem.disp;
 		}
 		break;
 	}
 }
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int analop (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	int n, ret, opsize = -1;
 	static csh handle = 0;
 	static int omode = -1;
 	static int obits = 32;
-	cs_insn* insn;
+	cs_insn *insn;
 	cs_m68k *m68k;
 	cs_detail *detail;
 
-	int mode = a->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	int mode = a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 
 	//mode |= (a->bits==64)? CS_MODE_64: CS_MODE_32;
 	if (mode != omode || a->bits != obits) {
@@ -175,7 +175,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		omode = mode;
 		obits = a->bits;
 	}
-// XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
+	// XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	// replace this with the asm.features?
 	if (a->cpu && strstr (a->cpu, "68000")) {
 		mode |= CS_MODE_M68K_000;
@@ -203,7 +203,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		}
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
-	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
+	n = cs_disasm (handle, (ut8 *)buf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->size = 2;
@@ -225,24 +225,24 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	}
 	switch (insn->id) {
 	case M68K_INS_INVALID:
-		op->type  = R_ANAL_OP_TYPE_ILL;
+		op->type = R_ANAL_OP_TYPE_ILL;
 		break;
 	case M68K_INS_ADD:
 	case M68K_INS_ADDA:
 	case M68K_INS_ADDI:
 	case M68K_INS_ADDQ:
 	case M68K_INS_ADDX:
-		op->type  = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ANAL_OP_TYPE_ADD;
 		break;
 	case M68K_INS_AND:
 	case M68K_INS_ANDI:
-		op->type  = R_ANAL_OP_TYPE_AND;
+		op->type = R_ANAL_OP_TYPE_AND;
 		break;
 	case M68K_INS_ASL:
-		op->type  = R_ANAL_OP_TYPE_SHL;
+		op->type = R_ANAL_OP_TYPE_SHL;
 		break;
 	case M68K_INS_ASR:
-		op->type  = R_ANAL_OP_TYPE_SHR;
+		op->type = R_ANAL_OP_TYPE_SHR;
 		break;
 	case M68K_INS_ABCD:
 		break;
@@ -553,7 +553,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M68K_INS_LINK:
 		op->type = R_ANAL_OP_TYPE_PUSH;
 		op->stackop = R_ANAL_STACK_INC;
-		op->stackptr = -(st16)IMM(1);
+		op->stackptr = -(st16)IMM (1);
 		break;
 	case M68K_INS_LSR:
 		op->type = R_ANAL_OP_TYPE_SHR;
@@ -702,8 +702,8 @@ fin:
 	return opsize;
 }
 
-static bool set_reg_profile(RAnal *anal) {
-	const char *p = \
+static bool set_reg_profile (RAnal *anal) {
+	const char *p =
 		"=PC    pc\n"
 		"=SP    a7\n"
 		"=BP    a6\n"

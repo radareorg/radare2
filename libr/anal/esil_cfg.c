@@ -52,7 +52,7 @@ typedef struct esil_value_t {
 
 /*	HELPERS 	*/
 
-static char *condrets_strtok(char *str, const char tok) {
+static char *condrets_strtok (char *str, const char tok) {
 	if (!str) {
 		return NULL;
 	}
@@ -76,7 +76,7 @@ RAnalEsilOp *esil_get_op (RAnalEsil *esil, const char *op) {
 }
 
 // this little thot atomizes an esil expressions by splitting it on ','
-static void esil_expr_atomize(RIDStorage *atoms, char *expr) {
+static void esil_expr_atomize (RIDStorage *atoms, char *expr) {
 	ut32 forget_me;
 	for (
 		; !!expr && r_id_storage_add (atoms, expr, &forget_me);
@@ -84,7 +84,7 @@ static void esil_expr_atomize(RIDStorage *atoms, char *expr) {
 	}
 }
 
-static void _free_bb_cb(void *data) {
+static void _free_bb_cb (void *data) {
 	RAnalEsilBB *bb = (RAnalEsilBB *)data;
 	free (bb->expr);
 	free (bb);
@@ -94,7 +94,7 @@ static void _free_bb_cb(void *data) {
 // r_anal_esil_cfg_op does this ^, use it whenever generating cfg from op
 
 // this nasty function is an insert-compare for RGraphNodes that contain RAnalEsilBB
-static int _graphnode_esilbb_insert_cmp(void *incoming, void *in, void *user) {
+static int _graphnode_esilbb_insert_cmp (void *incoming, void *in, void *user) {
 	RGraphNode *incoming_gnode = (RGraphNode *)incoming;
 	RGraphNode *in_gnode = (RGraphNode *)in;
 	RAnalEsilBB *incoming_bb = (RAnalEsilBB *)incoming_gnode->data;
@@ -117,7 +117,7 @@ static int _graphnode_esilbb_insert_cmp(void *incoming, void *in, void *user) {
 	return incoming_bb->first.idx - in_bb->first.idx;
 }
 
-static int _graphnode_esilbb_find_cmp(void *incoming, void *in, void *user) {
+static int _graphnode_esilbb_find_cmp (void *incoming, void *in, void *user) {
 	RAnalEsilEOffset *find_me = (RAnalEsilEOffset *)incoming;
 	RGraphNode *in_gnode = (RGraphNode *)in;
 	RAnalEsilBB *in_bb = (RAnalEsilBB *)in_gnode->data;
@@ -137,7 +137,7 @@ static int _graphnode_esilbb_find_cmp(void *incoming, void *in, void *user) {
 	return 0;
 }
 
-static int _graphnode_delete_always_0_cmp(void *incoming, void *in, void *user) {
+static int _graphnode_delete_always_0_cmp (void *incoming, void *in, void *user) {
 	EsilCfgGen *gen = (EsilCfgGen *)user;
 	RGraphNode *delete_me = (RGraphNode *)in;
 	RAnalEsilBB *delete_me_bb = (RAnalEsilBB *)delete_me->data;
@@ -408,7 +408,7 @@ void _round_2_cb (RGraphNode *n, RGraphVisitor *vi) {
 // this function takes a cfg, an offset and an esil expression
 // concatinates to already existing graph.
 // Also expects RIDStorage atoms and RContRBTree to be allocate in prior of the call
-static RAnalEsilCFG *esil_cfg_gen(RAnalEsilCFG *cfg, RAnal *anal, RIDStorage *atoms, RContRBTree *blocks, RStack *stack, ut64 off, char *expr) {
+static RAnalEsilCFG *esil_cfg_gen (RAnalEsilCFG *cfg, RAnal *anal, RIDStorage *atoms, RContRBTree *blocks, RStack *stack, ut64 off, char *expr) {
 	// consider expr as RStrBuf, so that we can sanitze broken esil
 	// (ex: "b,a,+=,$z,zf,:=,7,$c,cf,:=,zf,?{,1,b,+=,cf,?{,3,a,-=" =>
 	// 	"b,a,+=,$z,zf,:=,7,$c,cf,:=,zf,?{,1,b,+=,cf,?{,3,a,-=,},}")
@@ -498,7 +498,7 @@ static RAnalEsilCFG *esil_cfg_gen(RAnalEsilCFG *cfg, RAnal *anal, RIDStorage *at
 	return cfg;
 }
 
-R_API RAnalEsilCFG *r_anal_esil_cfg_new(void) {
+R_API RAnalEsilCFG *r_anal_esil_cfg_new (void) {
 	RAnalEsilCFG *cf = R_NEW0 (RAnalEsilCFG);
 	if (cf) {
 		RAnalEsilBB *p = R_NEW0 (RAnalEsilBB);
@@ -538,7 +538,7 @@ R_API RAnalEsilCFG *r_anal_esil_cfg_new(void) {
 
 // this little function takes a cfg, an offset and an esil expression
 // concatinates to already existing graph
-R_API RAnalEsilCFG *r_anal_esil_cfg_expr(RAnalEsilCFG *cfg, RAnal *anal, const ut64 off, char *expr) {
+R_API RAnalEsilCFG *r_anal_esil_cfg_expr (RAnalEsilCFG *cfg, RAnal *anal, const ut64 off, char *expr) {
 	if (!anal || !anal->esil) {
 		return NULL;
 	}
@@ -571,7 +571,7 @@ R_API RAnalEsilCFG *r_anal_esil_cfg_expr(RAnalEsilCFG *cfg, RAnal *anal, const u
 	return ret;
 }
 
-R_API RAnalEsilCFG *r_anal_esil_cfg_op(RAnalEsilCFG *cfg, RAnal *anal, RAnalOp *op) {
+R_API RAnalEsilCFG *r_anal_esil_cfg_op (RAnalEsilCFG *cfg, RAnal *anal, RAnalOp *op) {
 	if (!op || !anal || !anal->reg || !anal->esil) {
 		return NULL;
 	}
@@ -620,7 +620,7 @@ R_API RAnalEsilCFG *r_anal_esil_cfg_op(RAnalEsilCFG *cfg, RAnal *anal, RAnalOp *
 	return ret;
 }
 
-static void merge_2_blocks(RAnalEsilCFG *cfg, RGraphNode *node, RGraphNode *block) {
+static void merge_2_blocks (RAnalEsilCFG *cfg, RGraphNode *node, RGraphNode *block) {
 	// merge node and block, block dies in this
 	// block----->node ===> node
 	if (node == cfg->end) {
@@ -651,7 +651,7 @@ static void merge_2_blocks(RAnalEsilCFG *cfg, RGraphNode *node, RGraphNode *bloc
 }
 
 // this shit is slow af, bc of foolish graph api
-R_API void r_anal_esil_cfg_merge_blocks(RAnalEsilCFG *cfg) {
+R_API void r_anal_esil_cfg_merge_blocks (RAnalEsilCFG *cfg) {
 	if (!cfg || !cfg->g || !cfg->g->nodes) {
 		return;
 	}
@@ -672,7 +672,7 @@ R_API void r_anal_esil_cfg_merge_blocks(RAnalEsilCFG *cfg) {
 	}
 }
 
-R_API void r_anal_esil_cfg_free(RAnalEsilCFG *cfg) {
+R_API void r_anal_esil_cfg_free (RAnalEsilCFG *cfg) {
 	if (cfg && cfg->g) {
 		r_graph_free (cfg->g);
 	}

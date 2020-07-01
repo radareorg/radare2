@@ -4,11 +4,11 @@
 #include <r_lib.h>
 #include <capstone/capstone.h>
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	csh handle;
-	cs_insn* insn;
+	cs_insn *insn;
 	int mode, n, ret = -1;
-	mode = a->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	mode = a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 	memset (op, 0, sizeof (RAsmOp));
 	op->size = 4;
 	ret = cs_open (CS_ARCH_XCORE, mode, &handle);
@@ -16,7 +16,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		goto fin;
 	}
 	cs_option (handle, CS_OPT_DETAIL, CS_OPT_OFF);
-	n = cs_disasm (handle, (ut8*)buf, len, a->pc, 1, &insn);
+	n = cs_disasm (handle, (ut8 *)buf, len, a->pc, 1, &insn);
 	if (n < 1) {
 		r_asm_op_set_asm (op, "invalid");
 		op->size = 4;
@@ -28,14 +28,12 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		goto beach;
 	}
 	op->size = insn->size;
-	r_asm_op_set_asm (op, sdb_fmt ("%s%s%s",
-		insn->mnemonic, insn->op_str[0]? " ": "",
-		insn->op_str));
-	// TODO: remove the '$'<registername> in the string
-	beach:
+	r_asm_op_set_asm (op, sdb_fmt ("%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str));
+// TODO: remove the '$'<registername> in the string
+beach:
 	cs_free (insn, n);
 	cs_close (&handle);
-	fin:
+fin:
 	return ret;
 }
 

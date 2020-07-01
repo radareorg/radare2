@@ -3,7 +3,7 @@
 #include <r_bin.h>
 #include "../format/le/le.h"
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	ut64 length = r_buf_size (b);
 	if (length < 2) {
 		return false;
@@ -25,7 +25,7 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	r_return_val_if_fail (bf && bin_obj && buf, false);
 	r_bin_le_obj_t *res = r_bin_le_new_buf (buf);
 	if (res) {
@@ -35,11 +35,11 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return false;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy (RBinFile *bf) {
 	r_bin_le_free (bf->o->bin_obj);
 }
 
-static void header(RBinFile *bf) {
+static void header (RBinFile *bf) {
 	r_return_if_fail (bf && bf->rbin && bf->o && bf->o->bin_obj);
 	RBin *rbin = bf->rbin;
 	r_bin_le_obj_t *bin = bf->o->bin_obj;
@@ -101,31 +101,31 @@ static void header(RBinFile *bf) {
 	p ("Stack Size: 0x%04x\n", h->stacksize);
 }
 
-static RList *sections(RBinFile *bf) {
+static RList *sections (RBinFile *bf) {
 	return r_bin_le_get_sections (bf->o->bin_obj);
 }
 
-static RList *entries(RBinFile *bf) {
+static RList *entries (RBinFile *bf) {
 	return r_bin_le_get_entrypoints (bf->o->bin_obj);
 }
 
-static RList *symbols(RBinFile *bf) {
+static RList *symbols (RBinFile *bf) {
 	return r_bin_le_get_symbols (bf->o->bin_obj);
 }
 
-static RList *imports(RBinFile *bf) {
+static RList *imports (RBinFile *bf) {
 	return r_bin_le_get_imports (bf->o->bin_obj);
 }
 
-static RList *libs(RBinFile *bf) {
+static RList *libs (RBinFile *bf) {
 	return r_bin_le_get_libs (bf->o->bin_obj);
 }
 
-static RList *relocs(RBinFile *bf) {
+static RList *relocs (RBinFile *bf) {
 	return r_bin_le_get_relocs (bf->o->bin_obj);
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	RBinInfo *info = R_NEW0 (RBinInfo);
 	if (info) {
 		r_bin_le_obj_t *bin = bf->o->bin_obj;

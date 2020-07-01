@@ -12,7 +12,7 @@ typedef enum EDemanglerErr {
 } EDemanglerErr;
 
 struct SDemangler;
-typedef EDemanglerErr (*demangle_func)(struct SDemangler *, char **res);
+typedef EDemanglerErr (*demangle_func) (struct SDemangler *, char **res);
 
 /// Demangler object
 typedef struct SDemangler {

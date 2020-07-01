@@ -5,12 +5,11 @@
 #include <r_cons.h>
 #include "ar.h"
 
-
-static bool r_io_ar_plugin_open(RIO *io, const char *file, bool many) {
+static bool r_io_ar_plugin_open (RIO *io, const char *file, bool many) {
 	return !strncmp ("ar://", file, 5) || !strncmp ("lib://", file, 6);
 }
 
-static RIODesc *r_io_ar_open(RIO *io, const char *file, int rw, int mode) {
+static RIODesc *r_io_ar_open (RIO *io, const char *file, int rw, int mode) {
 	RIODesc *res = NULL;
 	char *url = strdup (file);
 	char *arname = strstr (url, "://") + 3;
@@ -28,12 +27,12 @@ static RIODesc *r_io_ar_open(RIO *io, const char *file, int rw, int mode) {
 	return res;
 }
 
-static RList *r_io_ar_open_many(RIO *io, const char *file, int rw, int mode) {
+static RList *r_io_ar_open_many (RIO *io, const char *file, int rw, int mode) {
 	eprintf ("Not implemented\n");
 	return NULL;
 }
 
-static ut64 r_io_ar_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 r_io_ar_lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	RBuffer *b;
 	ut64 seek_val = 0;
 
@@ -46,12 +45,12 @@ static ut64 r_io_ar_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 
 	switch (whence) {
 	case SEEK_SET:
-		seek_val = (r_buf_size (b) < offset)? r_buf_size (b) : offset;
+		seek_val = (r_buf_size (b) < offset) ? r_buf_size (b) : offset;
 		io->off = seek_val;
 		r_buf_seek (b, seek_val, R_BUF_SET);
 		return seek_val;
 	case SEEK_CUR:
-		seek_val = (r_buf_size (b) < offset)? r_buf_size (b) : offset;
+		seek_val = (r_buf_size (b) < offset) ? r_buf_size (b) : offset;
 		io->off = seek_val;
 		r_buf_seek (b, seek_val, R_BUF_SET);
 		return seek_val;
@@ -64,7 +63,7 @@ static ut64 r_io_ar_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return seek_val;
 }
 
-static int r_io_ar_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
+static int r_io_ar_read (RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	RBuffer *b;
 	if (!fd || !fd->data || !buf) {
 		return -1;
@@ -73,15 +72,15 @@ static int r_io_ar_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return ar_read_at (b, io->off, buf, count);
 }
 
-static int r_io_ar_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
+static int r_io_ar_write (RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	RBuffer *b = NULL;
 	if (!fd || !fd->data || !buf) {
 		return -1;
 	}
-	return ar_write_at (b, io->off, (void *) buf, count);
+	return ar_write_at (b, io->off, (void *)buf, count);
 }
 
-static int r_io_ar_close(RIODesc *fd) {
+static int r_io_ar_close (RIODesc *fd) {
 	RBuffer *b = NULL;
 	if (!fd || !fd->data) {
 		return -1;

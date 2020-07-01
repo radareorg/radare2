@@ -8,10 +8,10 @@
 static char hex_str[] = "01234567890abcdef";
 
 // TODO: Add in a Coverity modelling file
-char *strcat_dup(char *s1, char *s2, st32 n_free) {
+char *strcat_dup (char *s1, char *s2, st32 n_free) {
 	char *res;
-	ut32 len_s1 = s1? strlen (s1) : 0;
-	ut32 len_s2 = s2? strlen (s2) : 0;
+	ut32 len_s1 = s1 ? strlen (s1) : 0;
+	ut32 len_s2 = s2 ? strlen (s2) : 0;
 
 	if (!(res = (char *)malloc (len_s1 + len_s2 + 1))) {
 		return NULL;
@@ -34,12 +34,12 @@ char *strcat_dup(char *s1, char *s2, st32 n_free) {
 	return res;
 }
 
-char *get_hex_str(ut32 hex_num) {
-    char aux[3];
+char *get_hex_str (ut32 hex_num) {
+	char aux[3];
 
-    aux[2] = '\0';
-    aux[1] = hex_str[hex_num & 0xF];
-    aux[0] = hex_str[(hex_num >> 4) & 0xF];
+	aux[2] = '\0';
+	aux[1] = hex_str[hex_num & 0xF];
+	aux[0] = hex_str[(hex_num >> 4) & 0xF];
 
-    return strdup(aux);
+	return strdup (aux);
 }

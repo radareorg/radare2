@@ -497,8 +497,8 @@ typedef struct {
 } WasmOpDef;
 
 #ifndef WASM_NO_ASM
-R_IPI int wasm_asm(const char *str, unsigned char *buf, int buf_len);
+R_IPI int wasm_asm (const char *str, unsigned char *buf, int buf_len);
 #endif
-R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len);
+R_IPI int wasm_dis (WasmOp *op, const unsigned char *buf, int buf_len);
 
 #endif

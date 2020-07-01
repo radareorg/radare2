@@ -13,23 +13,23 @@ static unsigned long Offset = 0;
 static RStrBuf *buf_global = NULL;
 static unsigned char bytes[4];
 
-static int lanai_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
+static int lanai_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	memcpy (myaddr, bytes, length);
 	return 0;
 }
 
-static int symbol_at_address(bfd_vma addr, struct disassemble_info * info) {
+static int symbol_at_address (bfd_vma addr, struct disassemble_info *info) {
 	return 0;
 }
 
-static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_info *info) {
+static void memory_error_func (int status, bfd_vma memaddr, struct disassemble_info *info) {
 	//--
 }
 
-DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
-DECLARE_GENERIC_FPRINTF_FUNC()
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC ()
+DECLARE_GENERIC_FPRINTF_FUNC ()
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
 	if (len < 4) {
 		return -1;
@@ -40,7 +40,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
-	disasm_obj.disassembler_options = (a->bits==64)? "64": "";
+	disasm_obj.disassembler_options = (a->bits == 64) ? "64" : "";
 	disasm_obj.buffer = bytes;
 	disasm_obj.read_memory_func = &lanai_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;

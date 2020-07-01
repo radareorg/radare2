@@ -3,11 +3,11 @@
 #include "mz.h"
 #include <r_list.h>
 
-static ut64 r_bin_mz_va_to_la(const ut16 segment, const ut16 offset) {
+static ut64 r_bin_mz_va_to_la (const ut16 segment, const ut16 offset) {
 	return (segment << 4) + offset;
 }
 
-static ut64 r_bin_mz_la_to_pa(const struct r_bin_mz_obj_t *bin, ut64 la) {
+static ut64 r_bin_mz_la_to_pa (const struct r_bin_mz_obj_t *bin, ut64 la) {
 	return la + (bin->dos_header->header_paragraphs << 4);
 }
 
@@ -36,7 +36,7 @@ RBinAddr *r_bin_mz_get_entrypoint (const struct r_bin_mz_obj_t *bin) {
 	return entrypoint;
 }
 
-static int cmp_sections(const void *a, const void *b) {
+static int cmp_sections (const void *a, const void *b) {
 	const RBinSection *s_a, *s_b;
 
 	s_a = a;
@@ -45,8 +45,8 @@ static int cmp_sections(const void *a, const void *b) {
 	return s_a->vaddr - s_b->vaddr;
 }
 
-static RBinSection *r_bin_mz_init_section(const struct r_bin_mz_obj_t *bin,
-					  ut64 laddr) {
+static RBinSection *r_bin_mz_init_section (const struct r_bin_mz_obj_t *bin,
+	ut64 laddr) {
 	RBinSection *section;
 
 	section = R_NEW0 (RBinSection);
@@ -194,7 +194,7 @@ void *r_bin_mz_free (struct r_bin_mz_obj_t *bin) {
 	return NULL;
 }
 
-static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t *bin) {
+static int r_bin_mz_init_hdr (struct r_bin_mz_obj_t *bin) {
 	int relocations_size, dos_file_size;
 	MZ_image_dos_header *mz;
 	if (!(mz = R_NEW0 (MZ_image_dos_header))) {
@@ -268,7 +268,7 @@ static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t *bin) {
 	return true;
 }
 
-static bool r_bin_mz_init(struct r_bin_mz_obj_t *bin) {
+static bool r_bin_mz_init (struct r_bin_mz_obj_t *bin) {
 	bin->dos_header = NULL;
 	bin->dos_extended_header = NULL;
 	bin->relocation_entries = NULL;
@@ -287,7 +287,7 @@ struct r_bin_mz_obj_t *r_bin_mz_new (const char *file) {
 	}
 	bin->file = file;
 	size_t binsz;
-	ut8 *buf = (ut8*)r_file_slurp (file, &binsz);
+	ut8 *buf = (ut8 *)r_file_slurp (file, &binsz);
 	bin->size = binsz;
 	if (!buf) {
 		return r_bin_mz_free (bin);
@@ -304,7 +304,7 @@ struct r_bin_mz_obj_t *r_bin_mz_new (const char *file) {
 	return bin;
 }
 
-struct r_bin_mz_obj_t *r_bin_mz_new_buf(RBuffer *buf) {
+struct r_bin_mz_obj_t *r_bin_mz_new_buf (RBuffer *buf) {
 	struct r_bin_mz_obj_t *bin = R_NEW0 (struct r_bin_mz_obj_t);
 	if (!bin) {
 		return NULL;
@@ -314,7 +314,7 @@ struct r_bin_mz_obj_t *r_bin_mz_new_buf(RBuffer *buf) {
 		return r_bin_mz_free (bin);
 	}
 	bin->size = r_buf_size (buf);
-	return r_bin_mz_init (bin)? bin: r_bin_mz_free (bin);
+	return r_bin_mz_init (bin) ? bin : r_bin_mz_free (bin);
 }
 
 RBinAddr *r_bin_mz_get_main_vaddr (struct r_bin_mz_obj_t *bin) {

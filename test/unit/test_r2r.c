@@ -9,7 +9,7 @@
 
 #define FILENAME "unit/r2r_cmd_test"
 
-bool test_r2r_database_load_cmd(void) {
+bool test_r2r_database_load_cmd (void) {
 	R2RTestDatabase *db = r2r_test_database_new ();
 	database_load (db, FILENAME, 1);
 
@@ -53,7 +53,7 @@ bool test_r2r_database_load_cmd(void) {
 	mu_end;
 }
 
-bool test_r2r_fix(void) {
+bool test_r2r_fix (void) {
 	R2RTestDatabase *db = r2r_test_database_new ();
 	database_load (db, FILENAME, 1);
 
@@ -95,25 +95,25 @@ bool test_r2r_fix(void) {
 	mu_assert ("test file", content);
 
 	char *newc = replace_cmd_kv (result0->test->path, content, result0->test->cmd_test->expect.line_begin,
-			result0->test->cmd_test->expect.line_end, "EXPECT", result0->proc_out->out, results);
+		result0->test->cmd_test->expect.line_end, "EXPECT", result0->proc_out->out, results);
 	mu_assert ("fixed", newc);
 	free (content);
 	content = newc;
 
 	newc = replace_cmd_kv (result1->test->path, content, result1->test->cmd_test->expect.line_begin,
-			result1->test->cmd_test->expect.line_end, "EXPECT", result1->proc_out->out, results);
+		result1->test->cmd_test->expect.line_end, "EXPECT", result1->proc_out->out, results);
 	mu_assert ("fixed", newc);
 	free (content);
 	content = newc;
 
 	newc = replace_cmd_kv (result2->test->path, content, result2->test->cmd_test->expect.line_begin,
-			result2->test->cmd_test->expect.line_end, "EXPECT", result2->proc_out->out, results);
+		result2->test->cmd_test->expect.line_end, "EXPECT", result2->proc_out->out, results);
 	mu_assert ("fixed", newc);
 	free (content);
 	content = newc;
 
 	newc = replace_cmd_kv (result3->test->path, content, result3->test->cmd_test->expect.line_begin,
-			result3->test->cmd_test->expect.line_end, "EXPECT", result3->proc_out->out, results);
+		result3->test->cmd_test->expect.line_end, "EXPECT", result3->proc_out->out, results);
 	mu_assert ("fixed", newc);
 	free (content);
 	content = newc;
@@ -171,7 +171,8 @@ bool test_r2r_fix(void) {
 		"for\n"
 		"3\n"
 		"EOF\n"
-		"RUN", "fixed contents");
+		"RUN",
+		"fixed contents");
 
 	free (content);
 
@@ -179,12 +180,12 @@ bool test_r2r_fix(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests () {
 	mu_run_test (test_r2r_database_load_cmd);
 	mu_run_test (test_r2r_fix);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
+int main (int argc, char **argv) {
+	return all_tests ();
 }

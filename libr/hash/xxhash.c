@@ -41,14 +41,14 @@
 
 #define XXH_rotl32(x, r) (((x) << (r)) | ((x) >> (32 - (r))))
 
-#define PRIME32_1   2654435761U
-#define PRIME32_2   2246822519U
-#define PRIME32_3   3266489917U
-#define PRIME32_4    668265263U
-#define PRIME32_5    374761393U
+#define PRIME32_1 2654435761U
+#define PRIME32_2 2246822519U
+#define PRIME32_3 3266489917U
+#define PRIME32_4 668265263U
+#define PRIME32_5 374761393U
 
-ut32 XXH32(const void *input, size_t len, ut32 seed) {
-	const ut8 *p = (const ut8 *) input;
+ut32 XXH32 (const void *input, size_t len, ut32 seed) {
+	const ut8 *p = (const ut8 *)input;
 	const ut8 *const bEnd = p + len;
 	ut32 h32;
 
@@ -79,12 +79,12 @@ ut32 XXH32(const void *input, size_t len, ut32 seed) {
 		} while (p <= limit);
 
 		h32 = XXH_rotl32 (v1, 1) + XXH_rotl32 (v2, 7) +
-		XXH_rotl32 (v3, 12) + XXH_rotl32 (v4, 18);
+			XXH_rotl32 (v3, 12) + XXH_rotl32 (v4, 18);
 	} else {
 		h32 = seed + PRIME32_5;
 	}
 
-	h32 += (ut32) len;
+	h32 += (ut32)len;
 
 	while (p <= bEnd - 4) {
 		h32 += r_read_le32 (p) * PRIME32_3;
@@ -120,7 +120,7 @@ struct XXH_state32_t {
 
 void *XXH32_init (ut32 seed) {
 	struct XXH_state32_t *state =
-		(struct XXH_state32_t *) malloc (sizeof (struct XXH_state32_t));
+		(struct XXH_state32_t *)malloc (sizeof (struct XXH_state32_t));
 	if (!state) {
 		return NULL;
 	}
@@ -131,12 +131,12 @@ void *XXH32_init (ut32 seed) {
 	state->v4 = seed - PRIME32_1;
 	state->total_len = 0;
 	state->memsize = 0;
-	return (void *) state;
+	return (void *)state;
 }
 
 int XXH32_feed (void *state_in, const void *input, int len) {
 	struct XXH_state32_t *state = state_in;
-	const ut8 *p = (const ut8 *) input;
+	const ut8 *p = (const ut8 *)input;
 	const ut8 *const bEnd = p + len;
 
 	state->total_len += len;
@@ -151,7 +151,7 @@ int XXH32_feed (void *state_in, const void *input, int len) {
 	if (state->memsize) {
 		memcpy (state->memory + state->memsize, input, 16 - state->memsize);
 		{
-			const ut32 *p32 = (const ut32 *) state->memory;
+			const ut32 *p32 = (const ut32 *)state->memory;
 			state->v1 += r_read_le32 (p32) * PRIME32_2;
 			state->v1 = XXH_rotl32 (state->v1, 13);
 			state->v1 *= PRIME32_1;
@@ -213,18 +213,18 @@ int XXH32_feed (void *state_in, const void *input, int len) {
 
 ut32 XXH32_getIntermediateResult (void *state_in) {
 	struct XXH_state32_t *state = state_in;
-	ut8 *p = (ut8 *) state->memory;
-	ut8 *bEnd = (ut8 *) state->memory + state->memsize;
+	ut8 *p = (ut8 *)state->memory;
+	ut8 *bEnd = (ut8 *)state->memory + state->memsize;
 	ut32 h32;
 
 	if (state->total_len >= 16) {
 		h32 = XXH_rotl32 (state->v1, 1) + XXH_rotl32 (state->v2, 7) +
-		XXH_rotl32 (state->v3, 12) + XXH_rotl32 (state->v4, 18);
+			XXH_rotl32 (state->v3, 12) + XXH_rotl32 (state->v4, 18);
 	} else {
 		h32 = state->seed + PRIME32_5;
 	}
 
-	h32 += (ut32) state->total_len;
+	h32 += (ut32)state->total_len;
 
 	while (p <= bEnd - 4) {
 		h32 += r_read_le32 (p) * PRIME32_3;

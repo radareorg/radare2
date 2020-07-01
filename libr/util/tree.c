@@ -71,7 +71,7 @@ R_API RTree *r_tree_new (void) {
 	return R_NEW0 (RTree);
 }
 
-R_API void r_tree_free (RTree* t) {
+R_API void r_tree_free (RTree *t) {
 	if (!t) {
 		return;
 	}
@@ -140,28 +140,28 @@ R_API void r_tree_bfs (RTree *t, RTreeVisitor *vis) {
 	}
 	r_queue_enqueue (q, t->root);
 	while (!r_queue_is_empty (q)) {
-		 RTreeNode *el = (RTreeNode *)r_queue_dequeue (q);
-		 if (!el) {
-			 r_queue_free (q);
-			 return;
-		 }
-		 RTreeNode *n;
-		 RListIter *it;
+		RTreeNode *el = (RTreeNode *)r_queue_dequeue (q);
+		if (!el) {
+			r_queue_free (q);
+			return;
+		}
+		RTreeNode *n;
+		RListIter *it;
 
-		 if (vis->pre_visit) {
-			 vis->pre_visit (el, vis);
-		 }
+		if (vis->pre_visit) {
+			vis->pre_visit (el, vis);
+		}
 
-		 r_list_foreach (el->children, it, n) {
-			 if (vis->discover_child) {
-				 vis->discover_child (n, vis);
-			 }
-			 r_queue_enqueue (q, n);
-		 }
+		r_list_foreach (el->children, it, n) {
+			if (vis->discover_child) {
+				vis->discover_child (n, vis);
+			}
+			r_queue_enqueue (q, n);
+		}
 
-		 if (vis->post_visit) {
-			 vis->post_visit (el, vis);
-		 }
+		if (vis->post_visit) {
+			vis->post_visit (el, vis);
+		}
 	}
 
 	r_queue_free (q);

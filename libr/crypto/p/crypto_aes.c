@@ -5,7 +5,7 @@
 #include "crypto_aes_algo.h"
 
 // TODO: avoid globals
-static struct aes_state st = {{0}};
+static struct aes_state st = { { 0 } };
 
 static bool aes_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	if (!(keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
@@ -93,4 +93,3 @@ R_API RLibStruct radare_plugin = {
 	.version = R2_VERSION
 };
 #endif
-

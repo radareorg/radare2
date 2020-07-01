@@ -10,7 +10,7 @@
 
 static struct nds_hdr loaded_header;
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	ut8 ninlogohead[6];
 	if (r_buf_read_at (b, 0xc0, ninlogohead, sizeof (ninlogohead)) == 6) {
 		/* begin of nintendo logo =    \x24\xff\xae\x51\x69\x9a */
@@ -18,7 +18,7 @@ static bool check_buffer(RBuffer *b) {
 			return true;
 		}
 		/* begin of Homebrew magic */
-		if (!memcmp (ninlogohead, "\xC8\x60\x4F\xE2\x01\x70", 6)){
+		if (!memcmp (ninlogohead, "\xC8\x60\x4F\xE2\x01\x70", 6)) {
 			return true;
 		}
 	}
@@ -26,20 +26,20 @@ static bool check_buffer(RBuffer *b) {
 }
 
 static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
-	r_buf_read_at (b, 0, (ut8*)&loaded_header, sizeof (loaded_header));
+	r_buf_read_at (b, 0, (ut8 *)&loaded_header, sizeof (loaded_header));
 	*bin_obj = &loaded_header;
 	return (*bin_obj != NULL);
 }
 
-static ut64 baddr(RBinFile *bf) {
-	return (ut64) loaded_header.arm9_ram_address;
+static ut64 baddr (RBinFile *bf) {
+	return (ut64)loaded_header.arm9_ram_address;
 }
 
-static ut64 boffset(RBinFile *bf) {
+static ut64 boffset (RBinFile *bf) {
 	return 0LL;
 }
 
-static RList *sections(RBinFile *bf) {
+static RList *sections (RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *ptr9 = NULL, *ptr7 = NULL;
 
@@ -77,7 +77,7 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList *entries(RBinFile *bf) {
+static RList *entries (RBinFile *bf) {
 	RList *ret = r_list_new ();
 	RBinAddr *ptr9 = NULL, *ptr7 = NULL;
 
@@ -109,7 +109,7 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->buf, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (ret) {

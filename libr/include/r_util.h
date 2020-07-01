@@ -23,7 +23,7 @@
 #endif
 #ifdef _MSC_VER
 #include <windows.h>
-int gettimeofday (struct timeval* p, void* tz);
+int gettimeofday (struct timeval *p, void *tz);
 #endif
 #include "r_util/r_event.h"
 #include "r_util/r_assert.h"
@@ -82,7 +82,7 @@ int gettimeofday (struct timeval* p, void* tz);
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER(r_util);
+R_LIB_VERSION_HEADER (r_util);
 
 #ifdef __cplusplus
 }

@@ -32,13 +32,13 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 #include <kvm.h>
 #endif
 #include <errno.h>
-bool bsd_proc_vmmaps(RIO *io, int pid);
+bool bsd_proc_vmmaps (RIO *io, int pid);
 #endif
 #ifdef __HAIKU__
 #include <kernel/image.h>
 #endif
 #ifdef _MSC_VER
-#include <process.h>  // to compile getpid for msvc windows
+#include <process.h> // to compile getpid for msvc windows
 #include <psapi.h>
 #endif
 
@@ -53,12 +53,12 @@ static RIOSelfSection self_sections[1024];
 static int self_sections_count = 0;
 static bool mameio = false;
 
-static int self_in_section(RIO *io, ut64 addr, int *left, int *perm) {
+static int self_in_section (RIO *io, ut64 addr, int *left, int *perm) {
 	int i;
 	for (i = 0; i < self_sections_count; i++) {
 		if (addr >= self_sections[i].from && addr < self_sections[i].to) {
 			if (left) {
-				*left = self_sections[i].to-addr;
+				*left = self_sections[i].to - addr;
 			}
 			if (perm) {
 				*perm = self_sections[i].perm;
@@ -69,7 +69,7 @@ static int self_in_section(RIO *io, ut64 addr, int *left, int *perm) {
 	return false;
 }
 
-static int update_self_regions(RIO *io, int pid) {
+static int update_self_regions (RIO *io, int pid) {
 	self_sections_count = 0;
 #if __APPLE__
 	mach_port_t task;
@@ -93,15 +93,15 @@ static int update_self_regions(RIO *io, int pid) {
 	}
 
 	while (!feof (fd)) {
-		line[0]='\0';
+		line[0] = '\0';
 		if (!fgets (line, sizeof (line), fd)) {
 			break;
 		}
 		if (line[0] == '\0') {
 			break;
 		}
-		path[0]='\0';
-		sscanf (line, "%s %s %*s %*s %*s %[^\n]", region+2, perms, path);
+		path[0] = '\0';
+		sscanf (line, "%s %s %*s %*s %*s %[^\n]", region + 2, perms, path);
 		memcpy (region, "0x", 2);
 		pos_c = strchr (region + 2, '-');
 		if (pos_c) {
@@ -132,14 +132,14 @@ static int update_self_regions(RIO *io, int pid) {
 
 	return true;
 #elif __BSD__
-	return bsd_proc_vmmaps(io, pid);
+	return bsd_proc_vmmaps (io, pid);
 #elif __HAIKU__
 	image_info ii;
 	int32_t cookie = 0;
 
 	while (get_next_image_info (0, &cookie, &ii) == B_OK) {
 		self_sections[self_sections_count].from = (ut64)ii.text;
-		self_sections[self_sections_count].to = (ut64)((char*)ii.text + ii.text_size);
+		self_sections[self_sections_count].to = (ut64) ((char *)ii.text + ii.text_size);
 		self_sections[self_sections_count].name = strdup (ii.name);
 		self_sections[self_sections_count].perm = 0;
 		self_sections_count++;
@@ -158,7 +158,7 @@ static int update_self_regions(RIO *io, int pid) {
 		return false;
 	}
 	while (VirtualQuery (to, &mbi, sizeof (mbi))) {
-		to = (PBYTE) mbi.BaseAddress + mbi.RegionSize;
+		to = (PBYTE)mbi.BaseAddress + mbi.RegionSize;
 		perm = 0;
 		perm |= mbi.Protect & PAGE_READONLY ? R_PERM_R : 0;
 		perm |= mbi.Protect & PAGE_READWRITE ? R_PERM_RW : 0;
@@ -166,11 +166,11 @@ static int update_self_regions(RIO *io, int pid) {
 		perm |= mbi.Protect & PAGE_EXECUTE_READ ? R_PERM_RX : 0;
 		perm |= mbi.Protect & PAGE_EXECUTE_READWRITE ? R_PERM_RWX : 0;
 		perm = mbi.Protect & PAGE_NOACCESS ? 0 : perm;
-		if (perm && !GetMappedFileName (h, (LPVOID) mbi.BaseAddress, name, name_size)) {
+		if (perm && !GetMappedFileName (h, (LPVOID)mbi.BaseAddress, name, name_size)) {
 			name[0] = '\0';
 		}
-		self_sections[self_sections_count].from = (ut64) mbi.BaseAddress;
-		self_sections[self_sections_count].to = (ut64) to;
+		self_sections[self_sections_count].from = (ut64)mbi.BaseAddress;
+		self_sections[self_sections_count].to = (ut64)to;
 		self_sections[self_sections_count].name = r_sys_conv_win_to_utf8 (name);
 		self_sections[self_sections_count].perm = perm;
 		self_sections_count++;
@@ -180,17 +180,17 @@ static int update_self_regions(RIO *io, int pid) {
 	CloseHandle (h);
 	return true;
 #else
-	#warning not yet implemented for this platform
+#warning not yet implemented for this platform
 #endif
 	return false;
 #endif
 }
 
-static bool __plugin_open(RIO *io, const char *file, bool many) {
+static bool __plugin_open (RIO *io, const char *file, bool many) {
 	return (!strncmp (file, "self://", 7));
 }
 
-static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
+static RIODesc *__open (RIO *io, const char *file, int rw, int mode) {
 	int ret, pid = getpid ();
 	if (r_sandbox_enable (0)) {
 		return NULL;
@@ -204,12 +204,12 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	return NULL;
 }
 
-static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
+static int __read (RIO *io, RIODesc *fd, ut8 *buf, int len) {
 	int left, perm;
 	if (self_in_section (io, io->off, &left, &perm)) {
 		if (perm & R_PERM_R) {
 			int newlen = R_MIN (len, left);
-			ut8 *ptr = (ut8*)(size_t)io->off;
+			ut8 *ptr = (ut8 *)(size_t)io->off;
 			memcpy (buf, ptr, newlen);
 			return newlen;
 		}
@@ -217,12 +217,12 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 	return 0;
 }
 
-static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
+static int __write (RIO *io, RIODesc *fd, const ut8 *buf, int len) {
 	if (fd->perm & R_PERM_W) {
 		int left, perm;
 		if (self_in_section (io, io->off, &left, &perm)) {
 			int newlen = R_MIN (len, left);
-			ut8 *ptr = (ut8*)(size_t)io->off;
+			ut8 *ptr = (ut8 *)(size_t)io->off;
 			if (newlen > 0) {
 				memcpy (ptr, buf, newlen);
 			}
@@ -232,7 +232,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
 	return -1;
 }
 
-static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 __lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
 	case SEEK_SET: return offset;
 	case SEEK_CUR: return io->off + offset;
@@ -241,18 +241,18 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static int __close(RIODesc *fd) {
+static int __close (RIODesc *fd) {
 	return 0;
 }
 
-static void got_alarm(int sig) {
+static void got_alarm (int sig) {
 #if !defined(__WINDOWS__)
 	// !!! may die if not running from r2preload !!! //
 	kill (getpid (), SIGUSR1);
 #endif
 }
 
-static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
+static char *__system (RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strcmp (cmd, "pid")) {
 		return r_str_newf ("%d", fd->fd);
 	} else if (!strncmp (cmd, "pid", 3)) {
@@ -286,21 +286,21 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			void *lib = r_lib_dl_open (NULL);
 			void *ptr = r_lib_dl_sym (lib, symbol);
 			if (ptr) {
-				cbptr = (ut64)(size_t)ptr;
+				cbptr = (ut64) (size_t)ptr;
 			} else {
 				cbptr = r_num_math (NULL, symbol);
 			}
 			r_lib_dl_close (lib);
 		}
 		if (argc == 1) {
-			size_t (*cb)() = (size_t(*)())cbptr;
+			size_t (*cb) () = (size_t (*) ())cbptr;
 			if (cb) {
 				result = cb ();
 			} else {
 				eprintf ("No callback defined\n");
 			}
 		} else if (argc == 2) {
-			size_t (*cb)(size_t a0) = (size_t(*)(size_t))cbptr;
+			size_t (*cb) (size_t a0) = (size_t (*) (size_t))cbptr;
 			if (cb) {
 				ut64 a0 = r_num_math (NULL, r_str_word_get0 (argv, 1));
 				result = cb (a0);
@@ -308,7 +308,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 				eprintf ("No callback defined\n");
 			}
 		} else if (argc == 3) {
-			size_t (*cb)(size_t a0, size_t a1) = (size_t(*)(size_t,size_t))cbptr;
+			size_t (*cb) (size_t a0, size_t a1) = (size_t (*) (size_t, size_t))cbptr;
 			ut64 a0 = r_num_math (NULL, r_str_word_get0 (argv, 1));
 			ut64 a1 = r_num_math (NULL, r_str_word_get0 (argv, 2));
 			if (cb) {
@@ -317,8 +317,8 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 				eprintf ("No callback defined\n");
 			}
 		} else if (argc == 4) {
-			size_t (*cb)(size_t a0, size_t a1, size_t a2) = \
-				(size_t(*)(size_t,size_t,size_t))cbptr;
+			size_t (*cb) (size_t a0, size_t a1, size_t a2) =
+				(size_t (*) (size_t, size_t, size_t))cbptr;
 			ut64 a0 = r_num_math (NULL, r_str_word_get0 (argv, 1));
 			ut64 a1 = r_num_math (NULL, r_str_word_get0 (argv, 2));
 			ut64 a2 = r_num_math (NULL, r_str_word_get0 (argv, 3));
@@ -328,8 +328,8 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 				eprintf ("No callback defined\n");
 			}
 		} else if (argc == 5) {
-			size_t (*cb)(size_t a0, size_t a1, size_t a2, size_t a3) = \
-				(size_t(*)(size_t,size_t,size_t,size_t))cbptr;
+			size_t (*cb) (size_t a0, size_t a1, size_t a2, size_t a3) =
+				(size_t (*) (size_t, size_t, size_t, size_t))cbptr;
 			ut64 a0 = r_num_math (NULL, r_str_word_get0 (argv, 1));
 			ut64 a1 = r_num_math (NULL, r_str_word_get0 (argv, 2));
 			ut64 a2 = r_num_math (NULL, r_str_word_get0 (argv, 3));
@@ -340,8 +340,8 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 				eprintf ("No callback defined\n");
 			}
 		} else if (argc == 6) {
-			size_t (*cb)(size_t a0, size_t a1, size_t a2, size_t a3, size_t a4) = \
-				(size_t(*)(size_t,size_t,size_t,size_t,size_t))cbptr;
+			size_t (*cb) (size_t a0, size_t a1, size_t a2, size_t a3, size_t a4) =
+				(size_t (*) (size_t, size_t, size_t, size_t, size_t))cbptr;
 			ut64 a0 = r_num_math (NULL, r_str_word_get0 (argv, 1));
 			ut64 a1 = r_num_math (NULL, r_str_word_get0 (argv, 2));
 			ut64 a2 = r_num_math (NULL, r_str_word_get0 (argv, 3));
@@ -355,7 +355,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		} else {
 			eprintf ("Unsupported number of arguments in call\n");
 		}
-		eprintf ("RES %"PFMT64d"\n", result);
+		eprintf ("RES %" PFMT64d "\n", result);
 		free (argv);
 #if !defined(__WINDOWS__)
 	} else if (!strncmp (cmd, "alarm ", 6)) {
@@ -369,24 +369,24 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		setitimer (ITIMER_REAL, &tmout, NULL);
 #else
 #ifdef _MSC_VER
-#pragma message ("self:// alarm is not implemented for this platform yet")
+#pragma message("self:// alarm is not implemented for this platform yet")
 #else
-	#warning "self:// alarm is not implemented for this platform yet"
+#warning "self:// alarm is not implemented for this platform yet"
 #endif
 #endif
 	} else if (!strncmp (cmd, "dlsym ", 6)) {
 		const char *symbol = cmd + 6;
 		void *lib = r_lib_dl_open (NULL);
 		void *ptr = r_lib_dl_sym (lib, symbol);
-		eprintf ("(%s) 0x%08"PFMT64x"\n", symbol, (ut64)(size_t)ptr);
+		eprintf ("(%s) 0x%08" PFMT64x "\n", symbol, (ut64) (size_t)ptr);
 		r_lib_dl_close (lib);
 	} else if (!strcmp (cmd, "mameio")) {
 		void *lib = r_lib_dl_open (NULL);
 		void *ptr = r_lib_dl_sym (lib, "_ZN12device_debug2goEj");
-	//	void *readmem = dlsym (lib, "_ZN23device_memory_interface11memory_readE16address_spacenumjiRy");
+		//	void *readmem = dlsym (lib, "_ZN23device_memory_interface11memory_readE16address_spacenumjiRy");
 		// readmem(0, )
 		if (ptr) {
-		//	gothis =
+			//	gothis =
 			eprintf ("TODO: No MAME IO implemented yet\n");
 			mameio = true;
 		} else {
@@ -396,7 +396,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	} else if (!strcmp (cmd, "maps")) {
 		int i;
 		for (i = 0; i < self_sections_count; i++) {
-			eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %s %s\n",
+			eprintf ("0x%08" PFMT64x " - 0x%08" PFMT64x " %s %s\n",
 				self_sections[i].from, self_sections[i].to,
 				r_str_rwx_i (self_sections[i].perm),
 				self_sections[i].name);
@@ -441,13 +441,12 @@ R_API RLibStruct radare_plugin = {
 #if __APPLE__
 // mach/mach_vm.h not available for iOS
 kern_return_t mach_vm_region_recurse (
-        vm_map_t target_task,
-        mach_vm_address_t *address,
-        mach_vm_size_t *size,
-        natural_t *depth,
-        vm_region_recurse_info_t info,
-        mach_msg_type_number_t *infoCnt
-);
+	vm_map_t target_task,
+	mach_vm_address_t *address,
+	mach_vm_size_t *size,
+	natural_t *depth,
+	vm_region_recurse_info_t info,
+	mach_msg_type_number_t *infoCnt);
 // TODO: unify that implementation in a single reusable place
 void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int max) {
 	kern_return_t kret;
@@ -474,10 +473,10 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 	for (;;) {
 		count = VM_REGION_SUBMAP_INFO_COUNT_64;
 		kret = mach_vm_region_recurse (task, &address, &size, &nsubregions,
-				(vm_region_recurse_info_t) &info, &count);
+			(vm_region_recurse_info_t)&info, &count);
 		if (kret != KERN_SUCCESS) {
 			if (!num_printed) {
-				eprintf ("mach_vm_region_recurse: Error %d - %s", kret, mach_error_string(kret));
+				eprintf ("mach_vm_region_recurse: Error %d - %s", kret, mach_error_string (kret));
 			}
 			break;
 		}
@@ -487,27 +486,36 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 			char *print_size_unit;
 			int perm = 0;
 
-			io->cb_printf (num_printed? "   ... ": "Region ");
+			io->cb_printf (num_printed ? "   ... " : "Region ");
 			//findListOfBinaries(task, prev_address, prev_size);
 			/* Quick hack to show size of segment, which GDB does not */
 			print_size = size;
-			if (print_size > 1024) { print_size /= 1024; print_size_unit = "K"; }
-			if (print_size > 1024) { print_size /= 1024; print_size_unit = "M"; }
-			if (print_size > 1024) { print_size /= 1024; print_size_unit = "G"; }
+			if (print_size > 1024) {
+				print_size /= 1024;
+				print_size_unit = "K";
+			}
+			if (print_size > 1024) {
+				print_size /= 1024;
+				print_size_unit = "M";
+			}
+			if (print_size > 1024) {
+				print_size /= 1024;
+				print_size_unit = "G";
+			}
 			/* End Quick hack */
 			io->cb_printf (" %p - %p [%d%s](%x/%x; %d, %s, %u p. res, %u p. swp, %u p. drt, %u ref)",
-					(void*)(size_t)(address),
-					(void*)(size_t)(address + size),
-					print_size,
-					print_size_unit,
-					info.protection,
-					info.max_protection,
-					info.inheritance,
-					share_mode[info.share_mode],
-					info.pages_resident,
-					info.pages_swapped_out,
-					info.pages_dirtied,
-					info.ref_count);
+				(void *)(size_t) (address),
+				(void *)(size_t) (address + size),
+				print_size,
+				print_size_unit,
+				info.protection,
+				info.max_protection,
+				info.inheritance,
+				share_mode[info.share_mode],
+				info.pages_resident,
+				info.pages_swapped_out,
+				info.pages_dirtied,
+				info.ref_count);
 
 			if (info.protection & VM_PROT_READ) {
 				perm |= R_PERM_R;
@@ -520,7 +528,7 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 			}
 
 			self_sections[self_sections_count].from = address;
-			self_sections[self_sections_count].to = address+size;
+			self_sections[self_sections_count].to = address + size;
 			self_sections[self_sections_count].perm = perm;
 			self_sections_count++;
 			if (nsubregions > 1) {
@@ -542,7 +550,7 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 	}
 }
 #elif __BSD__
-bool bsd_proc_vmmaps(RIO *io, int pid) {
+bool bsd_proc_vmmaps (RIO *io, int pid) {
 #if __FreeBSD__
 	size_t size;
 	bool ret = false;
@@ -586,10 +594,10 @@ bool bsd_proc_vmmaps(RIO *io, int pid) {
 
 			if (entry->kve_path[0] != '\0') {
 				io->cb_printf (" %p - %p %s (%s)\n",
-						(void *)entry->kve_start,
-						(void *)entry->kve_end,
-						r_str_rwx_i (perm),
-						entry->kve_path);
+					(void *)entry->kve_start,
+					(void *)entry->kve_end,
+					r_str_rwx_i (perm),
+					entry->kve_path);
 			}
 
 			self_sections[self_sections_count].from = entry->kve_start;
@@ -639,10 +647,10 @@ exit:
 		}
 
 		io->cb_printf (" %p - %p %s [off. %zu]\n",
-				(void *)entry.kve_start,
-				(void *)entry.kve_end,
-				r_str_rwx_i (perm),
-				entry.kve_offset);
+			(void *)entry.kve_start,
+			(void *)entry.kve_end,
+			r_str_rwx_i (perm),
+			entry.kve_offset);
 
 		self_sections[self_sections_count].from = entry.kve_start;
 		self_sections[self_sections_count].to = entry.kve_end;
@@ -677,7 +685,7 @@ exit:
 
 		while (p_start < p_end) {
 			struct kinfo_vmentry *entry = (struct kinfo_vmentry *)p_start;
-			size_t sz = sizeof(*entry);
+			size_t sz = sizeof (*entry);
 			int perm = 0;
 			if (sz == 0) {
 				break;
@@ -697,7 +705,7 @@ exit:
 				io->cb_printf (" %p - %p %s (%s)\n",
 					(void *)entry->kve_start,
 					(void *)entry->kve_end,
-				 	r_str_rwx_i (perm),
+					r_str_rwx_i (perm),
 					entry->kve_path);
 			}
 
@@ -755,10 +763,10 @@ exit:
 		}
 
 		io->cb_printf (" %p - %p %s [off. %zu]\n",
-				(void *)entry.start,
-				(void *)entry.end,
-				r_tr_rwx_i (perm),
-				entry.offset);
+			(void *)entry.start,
+			(void *)entry.end,
+			r_tr_rwx_i (perm),
+			entry.offset);
 
 		self_sections[self_sections_count].from = entry.start;
 		self_sections[self_sections_count].to = entry.end;

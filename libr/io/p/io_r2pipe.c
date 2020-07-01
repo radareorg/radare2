@@ -8,11 +8,11 @@
 #include <sys/types.h>
 
 /* --------------------------------------------------------- */
-#define R2P(x) ((R2Pipe*)(x)->data)
+#define R2P(x) ((R2Pipe *)(x)->data)
 
 // TODO: add r2pipe_assert
 
-static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
+static int __write (RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	char fmt[4096];
 	char *bufn, bufnum[4096];
 	int i, rv, rescount = -1;
@@ -49,7 +49,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	return rescount;
 }
 
-static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
+static int __read (RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	char fmt[4096], num[128];
 	int rv, rescount = -1;
 	int bufi, numi;
@@ -61,7 +61,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		count = 1024;
 	}
 	snprintf (fmt, sizeof (fmt),
-		"{\"op\":\"read\",\"address\":%"PFMT64d",\"count\":%d}",
+		"{\"op\":\"read\",\"address\":%" PFMT64d ",\"count\":%d}",
 		io->off, count);
 	rv = r2pipe_write (R2P (fd), fmt);
 	if (rv < 1) {
@@ -78,7 +78,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	r = strstr (res, "data");
 	if (r) {
 		char *arr = strchr (r, ':');
-		if (!arr || arr[1]!='[') {
+		if (!arr || arr[1] != '[') {
 			goto beach;
 		}
 		arr += 2;
@@ -120,7 +120,7 @@ beach:
 	return rescount;
 }
 
-static int __close(RIODesc *fd) {
+static int __close (RIODesc *fd) {
 	if (!fd || !fd->data) {
 		return -1;
 	}
@@ -129,7 +129,7 @@ static int __close(RIODesc *fd) {
 	return 0;
 }
 
-static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 __lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
 	case SEEK_SET: return offset;
 	case SEEK_CUR: return io->off + offset;
@@ -138,20 +138,21 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static bool __check(RIO *io, const char *pathname, bool many) {
+static bool __check (RIO *io, const char *pathname, bool many) {
 	return (!strncmp (pathname, "r2pipe://", 9));
 }
 
-static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
+static RIODesc *__open (RIO *io, const char *pathname, int rw, int mode) {
 	R2Pipe *r2p = NULL;
 	if (__check (io, pathname, 0)) {
 		r2p = r2pipe_open (pathname + 9);
 	}
-	return r2p? r_io_desc_new (io, &r_io_plugin_r2pipe,
-		pathname, rw, mode, r2p): NULL;
+	return r2p ? r_io_desc_new (io, &r_io_plugin_r2pipe,
+			     pathname, rw, mode, r2p)
+		   : NULL;
 }
 
-static char *__system(RIO *io, RIODesc *fd, const char *msg) {
+static char *__system (RIO *io, RIODesc *fd, const char *msg) {
 	r_return_val_if_fail (io && fd && msg, NULL);
 	PJ *pj = pj_new ();
 	pj_o (pj);

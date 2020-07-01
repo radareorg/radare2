@@ -5,7 +5,7 @@
 #include <r_main.h>
 #include <r_util.h>
 
-R_LIB_VERSION(r_main);
+R_LIB_VERSION (r_main);
 
 static RMain foo[] = {
 	{ "r2", r_main_radare2 },
@@ -36,16 +36,16 @@ R_API RMain *r_main_new (const char *name) {
 	return NULL;
 }
 
-R_API void r_main_free(RMain *m) {
+R_API void r_main_free (RMain *m) {
 	free (m);
 }
 
-R_API int r_main_run(RMain *m, int argc, const char **argv) {
+R_API int r_main_run (RMain *m, int argc, const char **argv) {
 	r_return_val_if_fail (m && m->main, -1);
 	return m->main (argc, argv);
 }
 
-R_API int r_main_version_print(const char *progname) {
+R_API int r_main_version_print (const char *progname) {
 	char *s = r_str_version (progname);
 	printf ("%s\n", s);
 	free (s);

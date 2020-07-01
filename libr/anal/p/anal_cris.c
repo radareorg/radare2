@@ -3,7 +3,7 @@
 #include <r_asm.h>
 #include <r_lib.h>
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int analop (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	int opsize = -1;
 	op->type = -1;
 	opsize = 2;
@@ -21,9 +21,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		op->type = R_ANAL_OP_TYPE_LEA;
 		if (len > 5) {
 			op->ptr = buf[2];
-			op->ptr |= buf[3]<<8;
-			op->ptr |= buf[4]<<16;
-			op->ptr |= ((ut32)(0xff&buf[5]))<<24;
+			op->ptr |= buf[3] << 8;
+			op->ptr |= buf[4] << 16;
+			op->ptr |= ((ut32) (0xff & buf[5])) << 24;
 			op->ptr += addr;
 			opsize = 6;
 		} else {
@@ -35,9 +35,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		op->type = R_ANAL_OP_TYPE_CALL;
 		if (len > 5) {
 			st32 delta = buf[2];
-			delta |= buf[3]<<8;
-			delta |= buf[4]<<16;
-			delta |= buf[5]<<24;
+			delta |= buf[3] << 8;
+			delta |= buf[4] << 16;
+			delta |= buf[5] << 24;
 			op->jump = addr + delta;
 		} else {
 			op->jump = UT64_MAX;
@@ -57,7 +57,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		}
 		break;
 	case 0xf0:
-		if (buf[1]==0xb9) {
+		if (buf[1] == 0xb9) {
 			op->type = R_ANAL_OP_TYPE_RET;
 		}
 		break;
@@ -70,7 +70,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			op->type = R_ANAL_OP_TYPE_SHR;
 			break;
 		case 0x96: // move.d r, r
-			if (buf[0] >=0xc0) {
+			if (buf[0] >= 0xc0) {
 				op->type = R_ANAL_OP_TYPE_CMP;
 			} else {
 				op->type = R_ANAL_OP_TYPE_MOV;
@@ -237,7 +237,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	return opsize;
 }
 
-static bool set_reg_profile(RAnal *anal) {
+static bool set_reg_profile (RAnal *anal) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	r14\n" // XXX

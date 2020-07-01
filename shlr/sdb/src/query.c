@@ -14,13 +14,13 @@ typedef struct {
 	int size;
 } StrBuf;
 
-static StrBuf* strbuf_new(void) {
+static StrBuf *strbuf_new (void) {
 	return calloc (sizeof (StrBuf), 1);
 }
 
 #define NEWLINE_AFTER_QUERY 1
 
-static StrBuf* strbuf_append(StrBuf *sb, const char *str, const int nl) {
+static StrBuf *strbuf_append (StrBuf *sb, const char *str, const int nl) {
 	if (!sb || !str || nl < 0) {
 		return sb;
 	}
@@ -51,38 +51,39 @@ static StrBuf* strbuf_append(StrBuf *sb, const char *str, const int nl) {
 	return sb;
 }
 
-static StrBuf *strbuf_free(StrBuf *sb) {
+static StrBuf *strbuf_free (StrBuf *sb) {
 	free (sb->buf);
 	free (sb);
 	return NULL;
 }
 
 SDB_API int sdb_queryf (Sdb *s, const char *fmt, ...) {
-        char string[4096];
-        int ret;
-        va_list ap;
-        va_start (ap, fmt);
-        vsnprintf (string, sizeof (string), fmt, ap);
-        ret = sdb_query (s, string);
-        va_end (ap);
-        return ret;
+	char string[4096];
+	int ret;
+	va_list ap;
+	va_start (ap, fmt);
+	vsnprintf (string, sizeof (string), fmt, ap);
+	ret = sdb_query (s, string);
+	va_end (ap);
+	return ret;
 }
 
 SDB_API char *sdb_querysf (Sdb *s, char *buf, size_t buflen, const char *fmt, ...) {
-        char string[4096];
-        char *ret;
-        va_list ap;
-        va_start (ap, fmt);
-        vsnprintf (string, sizeof (string), fmt, ap);
-        ret = sdb_querys (s, buf, buflen, string);
-        va_end (ap);
-        return ret;
+	char string[4096];
+	char *ret;
+	va_list ap;
+	va_start (ap, fmt);
+	vsnprintf (string, sizeof (string), fmt, ap);
+	ret = sdb_querys (s, buf, buflen, string);
+	va_end (ap);
+	return ret;
 }
 
 // TODO: Reimplement as a function with optimized concat
-#define out_concat(x) if (x&&*x) { \
-	strbuf_append (out, x, 1); \
-}
+#define out_concat(x)                      \
+	if (x && *x) {                     \
+		strbuf_append (out, x, 1); \
+	}
 
 typedef struct {
 	StrBuf *out;
@@ -90,7 +91,7 @@ typedef struct {
 	char *root;
 } ForeachListUser;
 
-static bool foreach_list_cb(void *user, const char *k, const char *v) {
+static bool foreach_list_cb (void *user, const char *k, const char *v) {
 	ForeachListUser *rlu = user;
 	char *line, *root;
 	int rlen, klen, vlen;
@@ -115,7 +116,7 @@ static bool foreach_list_cb(void *user, const char *k, const char *v) {
 			return false;
 		}
 		memcpy (line, root, rlen);
-		line[rlen]='/'; /*append the '/' at the end of the namespace */
+		line[rlen] = '/'; /*append the '/' at the end of the namespace */
 		memcpy (line + rlen + 1, k, klen);
 		line[rlen + klen + 1] = '=';
 		memcpy (line + rlen + klen + 2, v, vlen + 1);
@@ -220,26 +221,28 @@ repeat:
 			*next = ';';
 		}
 		goto runNext;
-	} else
-	if (*p == '%') {
+	} else if (*p == '%') {
 		encode = 1;
 		cmd++;
 		p++;
 	}
-	if (next) *next = ';';
+	if (next)
+		*next = ';';
 	eq = strchr (p, '=');
 	if (eq) {
 		d = 1;
 		*eq++ = 0;
 		if (*eq == '$') {
 			next = strchr (eq + 1, ';');
-			if (next) *next = 0;
+			if (next)
+				*next = 0;
 			val = sdb_const_get (s, eq + 1, 0);
 			if (!val) {
 				eprintf ("No value for '%s'\n", eq + 1);
 				goto fail;
 			}
-			if (next) *next = ';';
+			if (next)
+				*next = ';';
 			is_ref = 1; // protect readonly buffer from being processed
 		} else {
 			val = eq;
@@ -249,18 +252,18 @@ repeat:
 		d = 0;
 	}
 	if (!is_ref) {
-		next = strchr (val? val: cmd, ';');
+		next = strchr (val ? val : cmd, ';');
 	}
 	//if (!val) val = eq;
 	if (!is_ref && val && *val == '"') {
 		val++;
 		// TODO: escape \" too
-		quot = (char*)val;
+		quot = (char *)val;
 next_quote:
 		quot = strchr (quot, '"');
 		if (quot) {
 			quot--;
-			if (*quot=='\\') {
+			if (*quot == '\\') {
 				memmove (quot, quot + 1, strlen (quot));
 				quot++;
 				goto next_quote;
@@ -283,7 +286,7 @@ next_quote:
 	slash = strchr (cmd, '/');
 	while (slash) {
 		*slash = 0;
-		s = sdb_ns (s, cmd, eq? 1: 0);
+		s = sdb_ns (s, cmd, eq ? 1 : 0);
 		if (!s) {
 			eprintf ("Cant find namespace %s\n", cmd);
 			out = strbuf_free (out);
@@ -292,12 +295,11 @@ next_quote:
 		cmd = slash + 1;
 		slash = strchr (cmd, '/');
 	}
-	if (*cmd=='?') {
-		const char *val = sdb_const_get (s, cmd+1, 0);
+	if (*cmd == '?') {
+		const char *val = sdb_const_get (s, cmd + 1, 0);
 		const char *type = sdb_type (val);
 		out_concat (type);
-	} else
-	if (*cmd == '*') {
+	} else if (*cmd == '*') {
 		if (!strcmp (cmd, "***")) {
 			char root[1024]; // limit namespace length?
 			SdbListIter *it;
@@ -314,16 +316,14 @@ next_quote:
 				}
 			}
 			goto fail;
-		} else
-		if (!strcmp (cmd, "**")) {
+		} else if (!strcmp (cmd, "**")) {
 			SdbListIter *it;
 			SdbNs *ns;
 			ls_foreach (s->ns, it, ns) {
 				out_concat (ns->name);
 			}
 			goto fail;
-		} else
-		if (!strcmp (cmd, "*")) {
+		} else if (!strcmp (cmd, "*")) {
 			ForeachListUser user = { out, encode, NULL };
 			SdbList *list = sdb_foreach_list (s, true);
 			SdbListIter *iter;
@@ -357,7 +357,7 @@ next_quote:
 	if (*cmd == '.') {
 		if (s->options & SDB_OPTION_FS) {
 			if (!sdb_query_file (s, cmd + 1)) {
-				eprintf ("sdb: cannot open '%s'\n", cmd+1);
+				eprintf ("sdb: cannot open '%s'\n", cmd + 1);
 				goto fail;
 			}
 		} else {
@@ -389,7 +389,7 @@ next_quote:
 			bufset = 1;
 		}
 		*buf = 0;
-		if (cmd[1]=='[') {
+		if (cmd[1] == '[') {
 			const char *eb = strchr (cmd, ']');
 			if (!eb) {
 				eprintf ("Missing ']'.\n");
@@ -404,22 +404,22 @@ next_quote:
 				/* +[idx]key=n  -->  key[idx] += n */
 				/* -[idx]key=n  -->  key[idx] -= n */
 				st64 n = sdb_atoi (eq);
-				if (*cmd=='+') {
+				if (*cmd == '+') {
 					curnum += n;
-				} else if (*cmd=='-') {
+				} else if (*cmd == '-') {
 					curnum -= n;
 				} else {
 					// never happens
 				}
-				sdb_array_set_num (s, eb+1, idx, curnum, 0);
+				sdb_array_set_num (s, eb + 1, idx, curnum, 0);
 			} else {
 				/* +[idx]key    -->  key[idx] + 1 */
 				/* -[idx]key    -->  key[idx] - 1 */
 				char *nstr, numstr[128];
-				if (*cmd=='+') {
-					curnum ++;
-				} else if (*cmd=='-') {
-					curnum --;
+				if (*cmd == '+') {
+					curnum++;
+				} else if (*cmd == '-') {
+					curnum--;
 				} else {
 					// never happens
 				}
@@ -439,10 +439,10 @@ next_quote:
 				} else {
 					d = sdb_atoi (val);
 				}
-				if (op=='+') {
-					sdb_num_inc (s, cmd+1, d, 0);
+				if (op == '+') {
+					sdb_num_inc (s, cmd + 1, d, 0);
 				} else {
-					sdb_num_dec (s, cmd+1, d, 0);
+					sdb_num_dec (s, cmd + 1, d, 0);
 				}
 			} else {
 				if (*cmd == '+') {
@@ -452,18 +452,18 @@ next_quote:
 				}
 			}
 		} else {
-			int base = sdb_num_base (sdb_const_get (s, cmd+1, 0));
+			int base = sdb_num_base (sdb_const_get (s, cmd + 1, 0));
 			if (json) {
 				base = 10; // NOTE: json is base10 only
 				*json = 0;
-				if (*cmd=='+') {
+				if (*cmd == '+') {
 					n = sdb_json_num_inc (s, cmd + 1, json + 1, d, 0);
 				} else {
 					n = sdb_json_num_dec (s, cmd + 1, json + 1, d, 0);
 				}
 				*json = ':';
 			} else {
-				if (*cmd=='+') {
+				if (*cmd == '+') {
 					n = sdb_num_inc (s, cmd + 1, d, 0);
 				} else {
 					n = sdb_num_dec (s, cmd + 1, d, 0);
@@ -471,7 +471,7 @@ next_quote:
 			}
 			// keep base
 			if (base == 16) {
-				w = snprintf (buf, len - 1, "0x%"ULLFMT"x", n);
+				w = snprintf (buf, len - 1, "0x%" ULLFMT "x", n);
 				if (w < 0 || (size_t)w > len) {
 					if (bufset && len < 0xff) {
 						free (buf);
@@ -481,10 +481,10 @@ next_quote:
 						}
 					}
 					bufset = 1;
-					snprintf (buf, 0xff, "0x%"ULLFMT"x", n);
+					snprintf (buf, 0xff, "0x%" ULLFMT "x", n);
 				}
 			} else {
-				w = snprintf (buf, len-1, "%"ULLFMT"d", n);
+				w = snprintf (buf, len - 1, "%" ULLFMT "d", n);
 				if (w < 0 || (size_t)w > len) {
 					if (bufset && len < 0xff) {
 						free (buf);
@@ -494,7 +494,7 @@ next_quote:
 						}
 					}
 					bufset = 1;
-					snprintf (buf, 0xff, "%"ULLFMT"d", n);
+					snprintf (buf, 0xff, "%" ULLFMT "d", n);
 				}
 			}
 		}
@@ -521,17 +521,17 @@ next_quote:
 				snprintf (buf, 31, "%d", alength);
 			}
 			out_concat (buf);
-		} else if (cmd[1]=='!') {
-			if (cmd[2]=='+') {
+		} else if (cmd[1] == '!') {
+			if (cmd[2] == '+') {
 				// [!+]key=aa	# add_sorted
 				sdb_array_add_sorted (s, p, val, 0);
 			} else {
 				// [!]key		# sort
 				sdb_array_sort (s, p, 0);
 			}
-		} else if (cmd[1]=='#') {
-				// [#+]key=num	# add_sorted_num
-			if (cmd[2]=='+') {
+		} else if (cmd[1] == '#') {
+			// [#+]key=num	# add_sorted_num
+			if (cmd[2] == '+') {
 				// [#]key		# sort_num
 				sdb_array_add_sorted_num (s, p, sdb_atoi (val), 0);
 			} else {
@@ -560,11 +560,11 @@ next_quote:
 					}
 				}
 			} else
-			// [+]foo        remove first element */
-			// [+]foo=bar    ADD */
-			// [-]foo        POP */
-			// [-]foo=xx     REMOVE (=xx ignored) */
-			if (!cmd[2] || cmd[2] == ']') {
+				// [+]foo        remove first element */
+				// [+]foo=bar    ADD */
+				// [-]foo        POP */
+				// [-]foo=xx     REMOVE (=xx ignored) */
+				if (!cmd[2] || cmd[2] == ']') {
 				// insert
 				if (eq) {
 					if (cmd[1] == '+') {
@@ -606,7 +606,7 @@ next_quote:
 						char *tmp = sdb_array_get (s, p, -i, NULL);
 						if (tmp) {
 							if (encode) {
-								char *newtmp = (void*)sdb_decode (tmp, NULL);
+								char *newtmp = (void *)sdb_decode (tmp, NULL);
 								if (!newtmp) {
 									goto fail;
 								}
@@ -617,32 +617,32 @@ next_quote:
 							out_concat (tmp);
 							sdb_array_delete (s, p, -i, 0);
 							free (tmp);
-						} else goto fail;
+						} else
+							goto fail;
 					} else {
 						if (encode) {
-							val = sdb_encode ((const ut8*)val, -1);
+							val = sdb_encode ((const ut8 *)val, -1);
 						}
-						ok = cmd[1]? ((cmd[1]=='+')?
-							sdb_array_insert (s, p, i, val, 0):
-							sdb_array_set (s, p, i, val, 0)
-							): sdb_array_delete (s, p, i, 0);
+						ok = cmd[1] ? ((cmd[1] == '+') ? sdb_array_insert (s, p, i, val, 0) : sdb_array_set (s, p, i, val, 0)) : sdb_array_delete (s, p, i, 0);
 						if (encode) {
-							free ((void*)val);
+							free ((void *)val);
 							val = NULL;
 						}
 					}
-					if (ok && buf) *buf = 0;
-					else buf = NULL;
+					if (ok && buf)
+						*buf = 0;
+					else
+						buf = NULL;
 				} else {
-					if (i==0) {
+					if (i == 0) {
 						/* [-b]foo */
-						if (cmd[1]=='-') {
-							sdb_array_remove (s, p, cmd+2, 0);
+						if (cmd[1] == '-') {
+							sdb_array_remove (s, p, cmd + 2, 0);
 						} else {
 							eprintf ("TODO: [b]foo -> get index of b key inside foo array\n");
-						//	sdb_array_dels (s, p, cmd+1, 0);
+							//	sdb_array_dels (s, p, cmd+1, 0);
 						}
-					} else if (i<0) {
+					} else if (i < 0) {
 						/* [-3]foo */
 						char *tmp = sdb_array_get (s, p, -i, NULL);
 						if (tmp && *tmp) {
@@ -663,14 +663,14 @@ next_quote:
 		} else {
 			if (eq) {
 				/* [3]foo=bla */
-				char *sval = (char*)val;
+				char *sval = (char *)val;
 				if (encode) {
-					sval = sdb_encode ((const ut8*)val, -1);
+					sval = sdb_encode ((const ut8 *)val, -1);
 				}
 				if (cmd[1]) {
-					int idx = atoi (cmd+1);
+					int idx = atoi (cmd + 1);
 					ok = sdb_array_set (s, p, idx, sval, 0);
-// TODO: handle when idx > sdb_alen
+					// TODO: handle when idx > sdb_alen
 					if (encode)
 						free (sval);
 				} else {
@@ -692,14 +692,14 @@ next_quote:
 					buf = sdb_array_get (s, p, i, NULL);
 					if (buf) {
 						bufset = 1;
-						len = strlen(buf) + 1;
+						len = strlen (buf) + 1;
 					}
 					if (encode) {
-						char *newbuf = (void*)sdb_decode (buf, NULL);
+						char *newbuf = (void *)sdb_decode (buf, NULL);
 						if (newbuf) {
 							free (buf);
 							buf = newbuf;
-							len = strlen(buf) + 1;
+							len = strlen (buf) + 1;
 						}
 					}
 					out_concat (buf);
@@ -721,14 +721,15 @@ next_quote:
 					for (i = 0; sval[i]; i++) {
 						if (sval[i + 1]) {
 							buf[i] = (sval[i] == SDB_RS)
-								? '\n': sval[i];
+								? '\n'
+								: sval[i];
 						} else {
 							buf[i] = sval[i];
 						}
 					}
 					buf[i] = 0;
 					if (encode) {
-						char *newbuf = (void*)sdb_decode (buf, NULL);
+						char *newbuf = (void *)sdb_decode (buf, NULL);
 						if (newbuf) {
 							if (bufset) {
 								free (buf);
@@ -746,7 +747,7 @@ next_quote:
 			// 1 0 kvpath=value
 			// 1 1 kvpath:jspath=value
 			if (encode) {
-				val = sdb_encode ((const ut8*)val, -1);
+				val = sdb_encode ((const ut8 *)val, -1);
 			}
 			if (json > eq) {
 				json = NULL;
@@ -767,7 +768,7 @@ next_quote:
 				ok = sdb_set (s, cmd, val, 0);
 			}
 			if (encode) {
-				free ((void*)val);
+				free ((void *)val);
 				val = NULL;
 			}
 			if (ok && buf) {
@@ -782,7 +783,7 @@ next_quote:
 					// TODO: not optimized to reuse 'buf'
 					if ((tmp = sdb_json_get (s, cmd, json, 0))) {
 						if (encode) {
-							char *newtmp = (void*)sdb_decode (tmp, NULL);
+							char *newtmp = (void *)sdb_decode (tmp, NULL);
 							if (!newtmp)
 								goto fail;
 							free (tmp);
@@ -801,11 +802,11 @@ next_quote:
 				// sdbget
 				if ((q = sdb_const_get (s, cmd, 0))) {
 					if (encode) {
-						q = (void*)sdb_decode (q, NULL);
+						q = (void *)sdb_decode (q, NULL);
 					}
 					out_concat (q);
 					if (encode) {
-						free ((void*)q);
+						free ((void *)q);
 					}
 				}
 			}
@@ -842,7 +843,7 @@ fail:
 
 SDB_API int sdb_query (Sdb *s, const char *cmd) {
 	char buf[1024], *out;
-	int must_save = ((*cmd=='~') || strchr (cmd, '='));
+	int must_save = ((*cmd == '~') || strchr (cmd, '='));
 	out = sdb_querys (s, buf, sizeof (buf) - 1, cmd);
 	if (out) {
 		if (*out) {
@@ -879,7 +880,7 @@ SDB_API int sdb_query_lines (Sdb *s, const char *cmd) {
 	return 1;
 }
 
-static char *slurp(const char *file) {
+static char *slurp (const char *file) {
 	int ret, fd;
 	char *text;
 	long sz;
@@ -890,7 +891,7 @@ static char *slurp(const char *file) {
 		return NULL;
 	}
 	sz = lseek (fd, 0, SEEK_END);
-	if (sz < 0){
+	if (sz < 0) {
 		close (fd);
 		return NULL;
 	}
@@ -911,7 +912,7 @@ static char *slurp(const char *file) {
 	return text;
 }
 
-SDB_API int sdb_query_file(Sdb *s, const char* file) {
+SDB_API int sdb_query_file (Sdb *s, const char *file) {
 	int ret = 0;
 	char *txt = slurp (file);
 	if (txt) {

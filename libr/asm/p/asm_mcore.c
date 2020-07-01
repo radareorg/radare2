@@ -4,10 +4,10 @@
 #include <r_lib.h>
 #include "../arch/mcore/mcore.h"
 
-static mcore_handle handle = {0};
+static mcore_handle handle = { 0 };
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	mcore_t* instr = NULL;
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	mcore_t *instr = NULL;
 	char tmp[256];
 	if (!op || mcore_init (&handle, buf, len)) {
 		return -1;

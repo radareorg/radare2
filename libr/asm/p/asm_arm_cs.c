@@ -5,12 +5,12 @@
 #include <capstone/capstone.h>
 #include "../arch/arm/asm-arm.h"
 
-bool arm64ass(const char *str, ut64 addr, ut32 *op);
+bool arm64ass (const char *str, ut64 addr, ut32 *op);
 static csh cd = 0;
 
 #include "cs_mnemonics.c"
 
-static bool check_features(RAsm *a, cs_insn *insn) {
+static bool check_features (RAsm *a, cs_insn *insn) {
 	int i;
 	if (!insn || !insn->detail) {
 		return true;
@@ -39,15 +39,15 @@ static bool check_features(RAsm *a, cs_insn *insn) {
 	return true;
 }
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int omode = -1;
 	static int obits = 32;
 	bool disp_hash = a->immdisp;
-	cs_insn* insn = NULL;
+	cs_insn *insn = NULL;
 	cs_mode mode = 0;
 	int ret, n = 0;
-	mode |= (a->bits == 16)? CS_MODE_THUMB: CS_MODE_ARM;
-	mode |= (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	mode |= (a->bits == 16) ? CS_MODE_THUMB : CS_MODE_ARM;
+	mode |= (a->big_endian) ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 	if (mode != omode || a->bits != obits) {
 		cs_close (&cd);
 		cd = 0; // unnecessary
@@ -75,19 +75,14 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		r_strbuf_set (&op->buf_asm, "");
 	}
 	if (!cd || mode != omode) {
-		ret = (a->bits == 64)?
-			cs_open (CS_ARCH_ARM64, mode, &cd):
-			cs_open (CS_ARCH_ARM, mode, &cd);
+		ret = (a->bits == 64) ? cs_open (CS_ARCH_ARM64, mode, &cd) : cs_open (CS_ARCH_ARM, mode, &cd);
 		if (ret) {
 			ret = -1;
 			goto beach;
 		}
 	}
-	cs_option (cd, CS_OPT_SYNTAX, (a->syntax == R_ASM_SYNTAX_REGNUM)
-			? CS_OPT_SYNTAX_NOREGNAME
-			: CS_OPT_SYNTAX_DEFAULT);
-	cs_option (cd, CS_OPT_DETAIL, (a->features && *a->features)
-		? CS_OPT_ON: CS_OPT_OFF);
+	cs_option (cd, CS_OPT_SYNTAX, (a->syntax == R_ASM_SYNTAX_REGNUM) ? CS_OPT_SYNTAX_NOREGNAME : CS_OPT_SYNTAX_DEFAULT);
+	cs_option (cd, CS_OPT_DETAIL, (a->features && *a->features) ? CS_OPT_ON : CS_OPT_OFF);
 	if (!buf) {
 		goto beach;
 	}
@@ -109,7 +104,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		op->size = insn->size;
 		char *buf_asm = sdb_fmt ("%s%s%s",
 			insn->mnemonic,
-			insn->op_str[0]?" ":"",
+			insn->op_str[0] ? " " : "",
 			insn->op_str);
 		if (!disp_hash) {
 			r_str_replace_char (buf_asm, '#', 0);
@@ -117,7 +112,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		r_strbuf_set (&op->buf_asm, buf_asm);
 	}
 	cs_free (insn, n);
-	beach:
+beach:
 	cs_close (&cd);
 	if (op) {
 		if (!*r_strbuf_get (&op->buf_asm)) {
@@ -128,7 +123,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return ret;
 }
 
-static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
+static int assemble (RAsm *a, RAsmOp *op, const char *buf) {
 	const bool is_thumb = (a->bits == 16);
 	int opsize;
 	ut32 opcode;
@@ -149,7 +144,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	ut8 opbuf[4];
 	if (is_thumb) {
 		const int o = opcode >> 16;
-		opsize = o > 0? 4: 2;
+		opsize = o > 0 ? 4 : 2;
 		if (opsize == 4) {
 			if (a->big_endian) {
 				r_write_le16 (opbuf, opcode >> 16);
@@ -173,7 +168,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		}
 	}
 	r_strbuf_setbin (&op->buf, opbuf, opsize);
-// XXX. thumb endian assembler needs no swap
+	// XXX. thumb endian assembler needs no swap
 	return opsize;
 }
 
@@ -197,7 +192,6 @@ RAsmPlugin r_asm_plugin_arm_cs = {
 	"mulops,crc,dpvfp,v6m"
 #endif
 };
-
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {

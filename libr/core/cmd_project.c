@@ -35,13 +35,13 @@ static const char *help_msg_Pn[] = {
 	NULL
 };
 
-static void cmd_project_init(RCore *core, RCmdDesc *parent) {
+static void cmd_project_init (RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, P);
 	DEFINE_CMD_DESCRIPTOR (core, Pn);
 }
 
-static int cmd_project(void *data, const char *input) {
-	RCore *core = (RCore *) data;
+static int cmd_project (void *data, const char *input) {
+	RCore *core = (RCore *)data;
 	const char *file, *arg;
 	const char *fileproject = r_config_get (core->config, "prj.name");
 	char *str = NULL;
@@ -110,37 +110,37 @@ static int cmd_project(void *data, const char *input) {
 			switch (input[1]) {
 			case '-': // "Pn-"
 				/* remove lines containing specific words */
-			{
-				FILE *fd = r_sandbox_fopen (str, "w");
-				if (!fd) {
-					eprintf ("Cannot open %s\n", str);
-				} else {
-					char *str = r_core_project_notes_file (core, fileproject);
-					char *data = r_file_slurp (str, NULL);
-					int del = 0;
-					if (data) {
-						char *ptr, *nl;
-						for (ptr = data; ptr; ptr = nl) {
-							nl = strchr (ptr, '\n');
-							if (nl) {
-								*nl++ = 0;
-								if (strstr (ptr, input + 2)) {
-									del++;
-								} else {
-									fprintf (fd, "%s\n", ptr);
+				{
+					FILE *fd = r_sandbox_fopen (str, "w");
+					if (!fd) {
+						eprintf ("Cannot open %s\n", str);
+					} else {
+						char *str = r_core_project_notes_file (core, fileproject);
+						char *data = r_file_slurp (str, NULL);
+						int del = 0;
+						if (data) {
+							char *ptr, *nl;
+							for (ptr = data; ptr; ptr = nl) {
+								nl = strchr (ptr, '\n');
+								if (nl) {
+									*nl++ = 0;
+									if (strstr (ptr, input + 2)) {
+										del++;
+									} else {
+										fprintf (fd, "%s\n", ptr);
+									}
 								}
 							}
+							free (data);
 						}
-						free (data);
+						if (del > 0) {
+							eprintf ("Deleted %d lines\n", del);
+						}
+						free (str);
+						fclose (fd);
 					}
-					if (del > 0) {
-						eprintf ("Deleted %d lines\n", del);
-					}
-					free (str);
-					fclose (fd);
 				}
-			}
-			break;
+				break;
 			case ' ': // "Pn "
 				if (input[2] == '-') {
 					char *str = r_core_project_notes_file (core, fileproject);
@@ -167,16 +167,15 @@ static int cmd_project(void *data, const char *input) {
 				}
 				break;
 			case '+': // "Pn+"
-				{
-					char *str = r_core_project_notes_file (core, fileproject);
-					char *data = r_file_slurp (str, NULL);
-					data = r_str_append (data, input + 2);
-					data = r_str_append (data, "\n");
-					r_file_dump (str, (const ut8*)data, strlen (data), false);
-					free (data);
-					free (str);
-				}
-				break;
+			{
+				char *str = r_core_project_notes_file (core, fileproject);
+				char *data = r_file_slurp (str, NULL);
+				data = r_str_append (data, input + 2);
+				data = r_str_append (data, "\n");
+				r_file_dump (str, (const ut8 *)data, strlen (data), false);
+				free (data);
+				free (str);
+			} break;
 			case 'j': // "Pnj"
 				if (!input[2]) {
 					size_t len = 0;
@@ -198,7 +197,7 @@ static int cmd_project(void *data, const char *input) {
 					if (data) {
 						char *str = r_core_project_notes_file (core, fileproject);
 						if (str) {
-							r_file_dump (str, data, strlen ((const char *) data), 0);
+							r_file_dump (str, data, strlen ((const char *)data), 0);
 							free (str);
 						}
 						free (data);
@@ -219,8 +218,7 @@ static int cmd_project(void *data, const char *input) {
 					free (data);
 				}
 				free (str);
-			}
-			break;
+			} break;
 			}
 		}
 		break;

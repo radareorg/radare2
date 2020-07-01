@@ -12,7 +12,7 @@
 
 // starting at 0x10 (16th byte)
 typedef struct {
-	ut32 magic;  // NRO0
+	ut32 magic; // NRO0
 	ut32 unknown; // 4
 	ut32 size; // 8
 	ut32 unknown2; // 12
@@ -26,11 +26,11 @@ typedef struct {
 	ut32 unknown3;
 } NROHeader;
 
-static ut64 baddr(RBinFile *bf) {
-	return bf? r_buf_read_le32_at (bf->buf, NRO_OFFSET_MODMEMOFF): 0;
+static ut64 baddr (RBinFile *bf) {
+	return bf ? r_buf_read_le32_at (bf->buf, NRO_OFFSET_MODMEMOFF) : 0;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	ut8 magic[4];
 	if (r_buf_read_at (b, NRO_OFF (magic), magic, sizeof (magic)) == 4) {
 		return fileType (magic) != NULL;
@@ -38,7 +38,7 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	// XX bf->buf vs b :D this load_b
 	RBinNXOObj *bin = R_NEW0 (RBinNXOObj);
 	if (bin) {
@@ -53,11 +53,11 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 	return true;
 }
 
-static RBinAddr *binsym(RBinFile *bf, int type) {
+static RBinAddr *binsym (RBinFile *bf, int type) {
 	return NULL; // TODO
 }
 
-static RList *entries(RBinFile *bf) {
+static RList *entries (RBinFile *bf) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
 	if (!(ret = r_list_new ())) {
@@ -72,7 +72,7 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static Sdb *get_sdb(RBinFile *bf) {
+static Sdb *get_sdb (RBinFile *bf) {
 	Sdb *kv = sdb_new0 ();
 	sdb_num_set (kv, "nro_start.offset", 0, 0);
 	sdb_num_set (kv, "nro_start.size", 16, 0);
@@ -84,7 +84,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return kv;
 }
 
-static RList *sections(RBinFile *bf) {
+static RList *sections (RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	RBuffer *b = bf->buf;
@@ -185,36 +185,35 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = ptr->paddr + ba;
 	ptr->perm = R_PERM_RW;
 	ptr->add = true;
-	eprintf ("Base Address 0x%08"PFMT64x "\n", ba);
-	eprintf ("BSS Size 0x%08"PFMT64x "\n", (ut64)
-			r_buf_read_le32_at (bf->buf, NRO_OFF (bss_size)));
+	eprintf ("Base Address 0x%08" PFMT64x "\n", ba);
+	eprintf ("BSS Size 0x%08" PFMT64x "\n", (ut64)r_buf_read_le32_at (bf->buf, NRO_OFF (bss_size)));
 	r_list_append (ret, ptr);
 	return ret;
 }
 
-static RList *symbols(RBinFile *bf) {
+static RList *symbols (RBinFile *bf) {
 	RBinNXOObj *bin;
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	bin = (RBinNXOObj*) bf->o->bin_obj;
+	bin = (RBinNXOObj *)bf->o->bin_obj;
 	return bin->methods_list;
 }
 
-static RList *imports(RBinFile *bf) {
+static RList *imports (RBinFile *bf) {
 	RBinNXOObj *bin;
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	bin = (RBinNXOObj*) bf->o->bin_obj;
+	bin = (RBinNXOObj *)bf->o->bin_obj;
 	return bin->imports_list;
 }
 
-static RList *libs(RBinFile *bf) {
+static RList *libs (RBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;

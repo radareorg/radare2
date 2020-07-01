@@ -8,12 +8,14 @@
 // TODO #7967 help refactor: move to another place
 static const char *help_msg_L[] = {
 	"Usage:", "L[acio]", "[-name][ file]",
-	"L",  "", "show this help",
-	"L", " blah."R_LIB_EXT, "load plugin file",
+	"L", "", "show this help",
+	"L", " blah." R_LIB_EXT, "load plugin file",
 	"L-", "duk", "unload core plugin by name",
 	"Ll", "", "list lang plugins (same as #!)",
 	"LL", "", "lock screen",
-	"La", "", "list asm/anal plugins (aL, e asm.arch=" "??" ")",
+	"La", "", "list asm/anal plugins (aL, e asm.arch="
+		  "??"
+		  ")",
 	"Lc", "", "list core plugins",
 	"Ld", "", "list debug plugins (same as dL)",
 	"LD", "", "list supported decompilers (e cmd.pdc=?)",
@@ -44,18 +46,18 @@ static const char *help_msg_T[] = {
 };
 
 // TODO #7967 help refactor: move L to another place
-static void cmd_log_init(RCore *core, RCmdDesc *parent) {
+static void cmd_log_init (RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, L);
 	DEFINE_CMD_DESCRIPTOR (core, T);
 }
 
-static void screenlock(RCore *core) {
+static void screenlock (RCore *core) {
 	//  char *pass = r_cons_input ("Enter new password: ");
-	char *pass = r_cons_password (Color_INVERT "Enter new password:"Color_INVERT_RESET);
+	char *pass = r_cons_password (Color_INVERT "Enter new password:" Color_INVERT_RESET);
 	if (!pass || !*pass) {
 		return;
 	}
-	char *again = r_cons_password (Color_INVERT "Type it again:"Color_INVERT_RESET);
+	char *again = r_cons_password (Color_INVERT "Type it again:" Color_INVERT_RESET);
 	if (!again || !*again) {
 		free (pass);
 		return;
@@ -97,7 +99,7 @@ static void screenlock(RCore *core) {
 	eprintf ("Unlocked!\n");
 }
 
-static int textlog_chat(RCore *core) {
+static int textlog_chat (RCore *core) {
 	char prompt[64];
 	char buf[1024];
 	int lastmsg = 0;
@@ -148,7 +150,7 @@ static int textlog_chat(RCore *core) {
 	return 1;
 }
 
-static int getIndexFromLogString(const char *s) {
+static int getIndexFromLogString (const char *s) {
 	int len = strlen (s);
 	const char *m = s + len;
 	int nlctr = 2;
@@ -162,7 +164,7 @@ static int getIndexFromLogString(const char *s) {
 		}
 		m--;
 	}
-		return atoi (nl?nl + 1: s);
+	return atoi (nl ? nl + 1 : s);
 	return -1;
 }
 
@@ -178,7 +180,7 @@ static char *expr2cmd (RCoreLog *log, const char *line) {
 			if (sp) {
 				char *msg = sp + 1;
 				ut64 addr = r_num_get (NULL, line);
-				return r_str_newf ("CCu base64:%s @ 0x%"PFMT64x"\n", msg, addr);
+				return r_str_newf ("CCu base64:%s @ 0x%" PFMT64x "\n", msg, addr);
 			}
 		}
 		eprintf ("add-comment parsing error\n");
@@ -209,8 +211,8 @@ static int log_callback_all (RCore *log, int count, const char *line) {
 	return 0;
 }
 
-static int cmd_log(void *data, const char *input) {
-	RCore *core = (RCore *) data;
+static int cmd_log (void *data, const char *input) {
+	RCore *core = (RCore *)data;
 	const char *arg, *input2;
 	int n, n2;
 
@@ -218,28 +220,27 @@ static int cmd_log(void *data, const char *input) {
 		return 1;
 	}
 
-	input2 = (input && *input)? input + 1: "";
+	input2 = (input && *input) ? input + 1 : "";
 	arg = strchr (input2, ' ');
 	n = atoi (input2);
-	n2 = arg? atoi (arg + 1): 0;
+	n2 = arg ? atoi (arg + 1) : 0;
 
 	switch (*input) {
 	case 'e': // "Te" shell: less
-		{
-			char *p = strchr (input, ' ');
-			if (p) {
-				char *b = r_file_slurp (p + 1, NULL);
-				if (b) {
-					r_cons_less_str (b, NULL);
-					free (b);
-				} else {
-					eprintf ("File not found\n");
-				}
+	{
+		char *p = strchr (input, ' ');
+		if (p) {
+			char *b = r_file_slurp (p + 1, NULL);
+			if (b) {
+				r_cons_less_str (b, NULL);
+				free (b);
 			} else {
-				eprintf ("Usage: less [filename]\n");
+				eprintf ("File not found\n");
 			}
+		} else {
+			eprintf ("Usage: less [filename]\n");
 		}
-		break;
+	} break;
 	case 'l': // "Tl"
 		r_cons_printf ("%d\n", core->log->last - 1);
 		break;
@@ -262,7 +263,7 @@ static int cmd_log(void *data, const char *input) {
 				r_cons_break_push (NULL, NULL);
 				while (!r_cons_is_breaked ()) {
 					r_core_cmd0 (core, "T=");
-					void *bed = r_cons_sleep_begin();
+					void *bed = r_cons_sleep_begin ();
 					r_sys_sleep (1);
 					r_cons_sleep_end (bed);
 				}
@@ -278,7 +279,8 @@ static int cmd_log(void *data, const char *input) {
 				core->sync_index = 0;
 			} else {
 				RCoreLogCallback log_callback = (input[1] == '*')
-					? log_callback_all: log_callback_r2;
+					? log_callback_all
+					: log_callback_r2;
 				char *res = r_core_log_get (core, core->sync_index);
 				if (res) {
 					int idx = getIndexFromLogString (res);
@@ -316,8 +318,8 @@ static int cmd_log(void *data, const char *input) {
 	return 0;
 }
 
-static int cmd_plugins(void *data, const char *input) {
-	RCore *core = (RCore *) data;
+static int cmd_plugins (void *data, const char *input) {
+	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case 0:
 		r_core_cmd_help (core, help_msg_L);
@@ -370,12 +372,12 @@ static int cmd_plugins(void *data, const char *input) {
 			bool is_first_element = true;
 			r_list_foreach (core->rcmd->plist, iter, cp) {
 				r_cons_printf ("%s{\"Name\":\"%s\",\"Description\":\"%s\"}",
-					is_first_element? "" : ",", cp->name, cp->desc);
+					is_first_element ? "" : ",", cp->name, cp->desc);
 				is_first_element = false;
 			}
 			r_cons_printf ("]\n");
 			break;
-			}
+		}
 		case 0:
 			r_lib_list (core->lib);
 			r_list_foreach (core->rcmd->plist, iter, cp) {
@@ -386,8 +388,7 @@ static int cmd_plugins(void *data, const char *input) {
 			eprintf ("oops\n");
 			break;
 		}
-		}
-		break;
+	} break;
 	}
 	return 0;
 }

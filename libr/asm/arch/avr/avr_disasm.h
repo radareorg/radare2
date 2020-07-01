@@ -30,19 +30,37 @@
 static int avrdis (char *out, unsigned long long addr, const unsigned char *buf, int len);
 
 /* Total number of assembly instructions, Maximum number of operands */
-#define AVR_TOTAL_INSTRUCTIONS	145
-#define AVR_MAX_NUM_OPERANDS	2
+#define AVR_TOTAL_INSTRUCTIONS 145
+#define AVR_MAX_NUM_OPERANDS 2
 
 /* Enumeration for all types of AVR Operands */
 enum AVR_Operand_Types {
-	OPERAND_NONE, OPERAND_REGISTER_GHOST,
-	OPERAND_REGISTER, OPERAND_REGISTER_STARTR16,
-	OPERAND_REGISTER_EVEN_PAIR, OPERAND_REGISTER_EVEN_PAIR_STARTR24,
-	OPERAND_BRANCH_ADDRESS, OPERAND_RELATIVE_ADDRESS, OPERAND_LONG_ABSOLUTE_ADDRESS,
-	OPERAND_IO_REGISTER, OPERAND_DATA, OPERAND_DES_ROUND, OPERAND_COMPLEMENTED_DATA, OPERAND_BIT, OPERAND_WORD_DATA,
-	OPERAND_X, OPERAND_XP, OPERAND_MX,
-	OPERAND_Y, OPERAND_YP, OPERAND_MY, OPERAND_YPQ,
-	OPERAND_Z, OPERAND_ZP, OPERAND_MZ, OPERAND_ZPQ,
+	OPERAND_NONE,
+	OPERAND_REGISTER_GHOST,
+	OPERAND_REGISTER,
+	OPERAND_REGISTER_STARTR16,
+	OPERAND_REGISTER_EVEN_PAIR,
+	OPERAND_REGISTER_EVEN_PAIR_STARTR24,
+	OPERAND_BRANCH_ADDRESS,
+	OPERAND_RELATIVE_ADDRESS,
+	OPERAND_LONG_ABSOLUTE_ADDRESS,
+	OPERAND_IO_REGISTER,
+	OPERAND_DATA,
+	OPERAND_DES_ROUND,
+	OPERAND_COMPLEMENTED_DATA,
+	OPERAND_BIT,
+	OPERAND_WORD_DATA,
+	OPERAND_X,
+	OPERAND_XP,
+	OPERAND_MX,
+	OPERAND_Y,
+	OPERAND_YP,
+	OPERAND_MY,
+	OPERAND_YPQ,
+	OPERAND_Z,
+	OPERAND_ZP,
+	OPERAND_MZ,
+	OPERAND_ZPQ,
 };
 /* OPERAND_REGISTER_GHOST:
  * Some instructions, like clr, only have one instruction when written in assembly,
@@ -53,8 +71,8 @@ enum AVR_Operand_Types {
 /* These defines go along with AVR_Long_Instruction, and help the program keep track of when
  * a long instruction has been encountered and when it is to be printed. See avrdisam.c for more
  * information on these variables. */
-#define AVR_LONG_INSTRUCTION_FOUND	1
-#define AVR_LONG_INSTRUCTION_PRINT	2
+#define AVR_LONG_INSTRUCTION_FOUND 1
+#define AVR_LONG_INSTRUCTION_PRINT 2
 
 /* Structure for each instruction in the instruction set */
 struct _instructionInfo {
@@ -92,7 +110,6 @@ struct _disassembledInstruction {
 typedef struct _disassembledInstruction disassembledInstruction;
 
 /* Disassembles an assembled instruction, including its operands. */
-static int disassembleInstruction(disassembledInstruction *dInstruction, const assembledInstruction aInstruction);
+static int disassembleInstruction (disassembledInstruction *dInstruction, const assembledInstruction aInstruction);
 
 #endif
-

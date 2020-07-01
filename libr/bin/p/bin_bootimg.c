@@ -17,29 +17,29 @@ typedef struct boot_img_hdr BootImage;
 #define ROUND_DOWN(val, aln) ((aln) != 0 ? (((val) / (aln)) * (aln)) : (val))
 
 R_PACKED (
-struct boot_img_hdr {
-	ut8 magic[BOOT_MAGIC_SIZE];
+	struct boot_img_hdr {
+		ut8 magic[BOOT_MAGIC_SIZE];
 
-	ut32 kernel_size;  /* size in bytes */
-	ut32 kernel_addr;  /* physical load addr */
+		ut32 kernel_size; /* size in bytes */
+		ut32 kernel_addr; /* physical load addr */
 
-	ut32 ramdisk_size; /* size in bytes */
-	ut32 ramdisk_addr; /* physical load addr */
+		ut32 ramdisk_size; /* size in bytes */
+		ut32 ramdisk_addr; /* physical load addr */
 
-	ut32 second_size;  /* size in bytes */
-	ut32 second_addr;  /* physical load addr */
+		ut32 second_size; /* size in bytes */
+		ut32 second_addr; /* physical load addr */
 
-	ut32 tags_addr;    /* physical addr for kernel tags */
-	ut32 page_size;    /* flash page size we assume */
-	ut32 unused[2];    /* future expansion: should be 0 */
-	ut8 name[BOOT_NAME_SIZE]; /* asciiz product name */
-	ut8 cmdline[BOOT_ARGS_SIZE];
-	ut32 id[8]; /* timestamp / checksum / sha1 / etc */
+		ut32 tags_addr; /* physical addr for kernel tags */
+		ut32 page_size; /* flash page size we assume */
+		ut32 unused[2]; /* future expansion: should be 0 */
+		ut8 name[BOOT_NAME_SIZE]; /* asciiz product name */
+		ut8 cmdline[BOOT_ARGS_SIZE];
+		ut32 id[8]; /* timestamp / checksum / sha1 / etc */
 
-	/* Supplemental command line data; kept here to maintain
+		/* Supplemental command line data; kept here to maintain
 	 * binary compatibility with older versions of mkbootimg */
-	ut8 extra_cmdline[BOOT_EXTRA_ARGS_SIZE];
-});
+		ut8 extra_cmdline[BOOT_EXTRA_ARGS_SIZE];
+	});
 
 typedef struct {
 	Sdb *kv;
@@ -47,7 +47,7 @@ typedef struct {
 	RBuffer *buf;
 } BootImageObj;
 
-static int bootimg_header_load(BootImageObj *obj, Sdb *db) {
+static int bootimg_header_load (BootImageObj *obj, Sdb *db) {
 	char *n;
 	int i;
 	if (r_buf_size (obj->buf) < sizeof (BootImage)) {
@@ -55,36 +55,36 @@ static int bootimg_header_load(BootImageObj *obj, Sdb *db) {
 	}
 	// TODO make it endian-safe (void)r_buf_fread_at (buf, 0, (ut8*)bi, "IIiiiiiiiiiiii", 1);
 	BootImage *bi = &obj->bi;
-	(void) r_buf_read_at (obj->buf, 0, (ut8 *)bi, sizeof (BootImage));
-	if ((n = r_str_ndup ((char *) bi->name, BOOT_NAME_SIZE))) {
+	(void)r_buf_read_at (obj->buf, 0, (ut8 *)bi, sizeof (BootImage));
+	if ((n = r_str_ndup ((char *)bi->name, BOOT_NAME_SIZE))) {
 		sdb_set (db, "name", n, 0);
 		free (n);
 	}
-	if ((n = r_str_ndup ((char *) bi->cmdline, BOOT_ARGS_SIZE))) {
+	if ((n = r_str_ndup ((char *)bi->cmdline, BOOT_ARGS_SIZE))) {
 		sdb_set (db, "cmdline", n, 0);
 		free (n);
 	}
 	for (i = 0; i < 8; i++) {
-		sdb_num_set (db, "id", (ut64) bi->id[i], 0);
+		sdb_num_set (db, "id", (ut64)bi->id[i], 0);
 	}
-	if ((n = r_str_ndup ((char *) bi->extra_cmdline, BOOT_EXTRA_ARGS_SIZE))) {
+	if ((n = r_str_ndup ((char *)bi->extra_cmdline, BOOT_EXTRA_ARGS_SIZE))) {
 		sdb_set (db, "extra_cmdline", n, 0);
 		free (n);
 	}
 	return true;
 }
 
-static Sdb *get_sdb(RBinFile *bf) {
+static Sdb *get_sdb (RBinFile *bf) {
 	RBinObject *o = bf->o;
 	BootImageObj *ao;
 	if (!o) {
 		return NULL;
 	}
 	ao = o->bin_obj;
-	return ao? ao->kv: NULL;
+	return ao ? ao->kv : NULL;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	BootImageObj *bio = R_NEW0 (BootImageObj);
 	if (!bio) {
 		return false;
@@ -104,22 +104,22 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return true;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy (RBinFile *bf) {
 	BootImageObj *bio = bf->o->bin_obj;
 	r_buf_free (bio->buf);
 	R_FREE (bf->o->bin_obj);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr (RBinFile *bf) {
 	BootImageObj *bio = bf->o->bin_obj;
-	return bio? bio->bi.kernel_addr: 0;
+	return bio ? bio->bi.kernel_addr : 0;
 }
 
-static RList *strings(RBinFile *bf) {
+static RList *strings (RBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	RBinInfo *ret;
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
@@ -130,7 +130,7 @@ static RBinInfo *info(RBinFile *bf) {
 	}
 
 	ret->lang = NULL;
-	ret->file = bf->file? strdup (bf->file): NULL;
+	ret->file = bf->file ? strdup (bf->file) : NULL;
 	ret->type = strdup ("Android Boot Image");
 	ret->os = strdup ("android");
 	ret->subsystem = strdup ("unknown");
@@ -145,13 +145,13 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer (RBuffer *buf) {
 	ut8 tmp[13];
 	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
 	return r > 12 && !strncmp ((const char *)tmp, "ANDROID!", 8);
 }
 
-static RList *entries(RBinFile *bf) {
+static RList *entries (RBinFile *bf) {
 	BootImageObj *bio = bf->o->bin_obj;
 	RBinAddr *ptr = NULL;
 	if (!bio) {
@@ -172,7 +172,7 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
+static RList *sections (RBinFile *bf) {
 	BootImageObj *bio = bf->o->bin_obj;
 	if (!bio) {
 		return NULL;

@@ -9,16 +9,16 @@
 #else
 
 #ifdef _MSC_VER
-#pragma message ("gettimeofday: Windows support is ugly here")
+#pragma message("gettimeofday: Windows support is ugly here")
 #include <windows.h>
 #include <time.h>
 
 struct timezone {
-	int  tz_minuteswest; /* minutes W of Greenwich */
-	int  tz_dsttime;     /* type of dst correction */
+	int tz_minuteswest; /* minutes W of Greenwich */
+	int tz_dsttime; /* type of dst correction */
 };
 
-SDB_API int gettimeofday (struct timeval* p, struct timezone * tz) {
+SDB_API int gettimeofday (struct timeval *p, struct timezone *tz) {
 	//ULARGE_INTEGER ul; // As specified on MSDN.
 	ut64 ul = 0;
 	static int tzflag = 0;
@@ -62,7 +62,7 @@ SDB_API int gettimeofday (struct timeval* p, struct timezone * tz) {
 #endif
 #endif
 
-SDB_API ut32 sdb_hash_len(const char *s, ut32 *len) {
+SDB_API ut32 sdb_hash_len (const char *s, ut32 *len) {
 	ut32 h = CDB_HASHSTART;
 #if FORCE_COLLISION
 	h = 0;
@@ -85,24 +85,24 @@ SDB_API ut32 sdb_hash_len(const char *s, ut32 *len) {
 	return h;
 }
 
-SDB_API ut32 sdb_hash(const char *s) {
+SDB_API ut32 sdb_hash (const char *s) {
 	return sdb_hash_len (s, NULL);
 }
 
-SDB_API ut8 sdb_hash_byte(const char *s) {
+SDB_API ut8 sdb_hash_byte (const char *s) {
 	const ut32 hash = sdb_hash_len (s, NULL);
-	const ut8 *h = (const ut8*)&hash;
+	const ut8 *h = (const ut8 *)&hash;
 	return h[0] ^ h[1] ^ h[2] ^ h[3];
 }
 
-SDB_API const char *sdb_itoca(ut64 n) {
+SDB_API const char *sdb_itoca (ut64 n) {
 	return sdb_itoa (n, sdb_fmt (NULL), 16);
 }
 
 // assert (sizeof (s)>64)
 // if s is null, the returned pointer must be freed!!
-SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
-	static const char* lookup = "0123456789abcdef";
+SDB_API char *sdb_itoa (ut64 n, char *s, int base) {
+	static const char *lookup = "0123456789abcdef";
 	char tmpbuf[64], *os = NULL;
 	const int imax = 62;
 	int i = imax, copy_string = 1;
@@ -152,24 +152,25 @@ SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
 	return s + i + 1;
 }
 
-SDB_API ut64 sdb_atoi(const char *s) {
+SDB_API ut64 sdb_atoi (const char *s) {
 	char *p;
 	ut64 ret;
 	if (!s || *s == '-') {
 		return 0LL;
 	}
 	ret = strtoull (s, &p, 0);
-	return p ? ret: 0LL;
+	return p ? ret : 0LL;
 }
 
 // NOTE: Reuses memory. probably not bindings friendly..
-SDB_API char *sdb_array_compact(char *p) {
+SDB_API char *sdb_array_compact (char *p) {
 	char *e;
 	// remove empty elements
 	while (*p) {
 		if (!strncmp (p, ",,", 2)) {
 			p++;
-			for (e = p + 1; *e == ','; e++) {};
+			for (e = p + 1; *e == ','; e++) {
+			};
 			memmove (p, e, strlen (e) + 1);
 		} else {
 			p++;
@@ -179,7 +180,7 @@ SDB_API char *sdb_array_compact(char *p) {
 }
 
 // NOTE: Reuses memory. probably not bindings friendly..
-SDB_API char *sdb_aslice(char *out, int from, int to) {
+SDB_API char *sdb_aslice (char *out, int from, int to) {
 	int len, idx = 0;
 	char *str = NULL;
 	char *end = NULL;
@@ -204,7 +205,7 @@ SDB_API char *sdb_aslice(char *out, int from, int to) {
 		if (!end) {
 			end = str + strlen (str);
 		}
-		len = (size_t)(end - str);
+		len = (size_t) (end - str);
 		memmove (out, str, len);
 		out[len] = 0;
 		return out;
@@ -214,13 +215,13 @@ SDB_API char *sdb_aslice(char *out, int from, int to) {
 
 // TODO: find better name for it
 // TODO: optimize, because this is the main bottleneck for sdb_array_set()
-SDB_API int sdb_alen(const char *str) {
+SDB_API int sdb_alen (const char *str) {
 	int len = 1;
 	const char *n, *p = str;
-	if (!p|| !*p) {
+	if (!p || !*p) {
 		return 0;
 	}
-	for (len = 0; ; len++) {
+	for (len = 0;; len++) {
 		n = strchr (p, SDB_RS);
 		if (!n) {
 			break;
@@ -230,7 +231,7 @@ SDB_API int sdb_alen(const char *str) {
 	return ++len;
 }
 
-SDB_API int sdb_alen_ignore_empty(const char *str) {
+SDB_API int sdb_alen_ignore_empty (const char *str) {
 	int len = 1;
 	const char *n, *p = str;
 	if (!p || !*p) {
@@ -239,7 +240,7 @@ SDB_API int sdb_alen_ignore_empty(const char *str) {
 	while (*p == SDB_RS) {
 		p++;
 	}
-	for (len = 0; ; ) {
+	for (len = 0;;) {
 		n = strchr (p, SDB_RS);
 		if (!n) {
 			break;
@@ -250,11 +251,12 @@ SDB_API int sdb_alen_ignore_empty(const char *str) {
 		}
 		len++;
 	}
-	if (*p) len++;
+	if (*p)
+		len++;
 	return len;
 }
 
-SDB_API char *sdb_anext(char *str, char **next) {
+SDB_API char *sdb_anext (char *str, char **next) {
 	char *nxt, *p = strchr (str, SDB_RS);
 	if (p) {
 		*p = 0;
@@ -268,7 +270,7 @@ SDB_API char *sdb_anext(char *str, char **next) {
 	return str;
 }
 
-SDB_API const char *sdb_const_anext(const char *str) {
+SDB_API const char *sdb_const_anext (const char *str) {
 	const char *p = strchr (str, SDB_RS);
 	return p ? p + 1 : NULL;
 }
@@ -298,8 +300,8 @@ SDB_API ut64 sdb_unow () {
 		x += ts.tv_nsec / 1000;
 	}
 #else
-        struct timeval now;
-        if (!gettimeofday (&now, NULL)) {
+	struct timeval now;
+	if (!gettimeofday (&now, NULL)) {
 		x = now.tv_sec;
 		x <<= 32;
 		x += now.tv_usec;
@@ -308,22 +310,22 @@ SDB_API ut64 sdb_unow () {
 	return x;
 }
 
-SDB_API int sdb_isnum(const char *s) {
+SDB_API int sdb_isnum (const char *s) {
 	const char vs = *s;
 	return ((vs == '-' || vs == '+') || (vs >= '0' && vs <= '9'));
 }
 
-SDB_API int sdb_num_base(const char *s) {
+SDB_API int sdb_num_base (const char *s) {
 	if (!s) {
 		return SDB_NUM_BASE;
 	}
 	if (!strncmp (s, "0x", 2)) {
 		return 16;
 	}
-	return (*s=='0' && s[1]) ? 8: 10;
+	return (*s == '0' && s[1]) ? 8 : 10;
 }
 
-SDB_API const char *sdb_type(const char *k) {
+SDB_API const char *sdb_type (const char *k) {
 	if (!k || !*k) {
 		return "undefined";
 	}

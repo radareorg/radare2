@@ -12,12 +12,12 @@ R_LIB_VERSION (r_syscall);
 extern RSyscallPort sysport_x86[];
 extern RSyscallPort sysport_avr[];
 
-R_API RSyscall* r_syscall_ref(RSyscall *sc) {
+R_API RSyscall *r_syscall_ref (RSyscall *sc) {
 	sc->refs++;
 	return sc;
 }
 
-R_API RSyscall* r_syscall_new(void) {
+R_API RSyscall *r_syscall_new (void) {
 	RSyscall *rs = R_NEW0 (RSyscall);
 	if (rs) {
 		rs->sysport = sysport_x86;
@@ -27,7 +27,7 @@ R_API RSyscall* r_syscall_new(void) {
 	return rs;
 }
 
-R_API void r_syscall_free(RSyscall *s) {
+R_API void r_syscall_free (RSyscall *s) {
 	if (s) {
 		if (s->refs > 0) {
 			s->refs--;
@@ -42,8 +42,8 @@ R_API void r_syscall_free(RSyscall *s) {
 	}
 }
 
-static Sdb *openDatabase(Sdb *db, const char *name) {
-	char *file = r_str_newf ( R_JOIN_3_PATHS ("%s", R2_SDB, "%s.sdb"),
+static Sdb *openDatabase (Sdb *db, const char *name) {
+	char *file = r_str_newf (R_JOIN_3_PATHS ("%s", R2_SDB, "%s.sdb"),
 		r_sys_prefix (NULL), name);
 	if (r_file_exists (file)) {
 		if (db) {
@@ -57,7 +57,7 @@ static Sdb *openDatabase(Sdb *db, const char *name) {
 	return db;
 }
 
-static inline bool syscall_reload_needed(RSyscall *s, const char *os, const char *arch, int bits) {
+static inline bool syscall_reload_needed (RSyscall *s, const char *os, const char *arch, int bits) {
 	if (!s->os || strcmp (s->os, os)) {
 		return true;
 	}
@@ -67,7 +67,7 @@ static inline bool syscall_reload_needed(RSyscall *s, const char *os, const char
 	return s->bits != bits;
 }
 
-static inline bool sysregs_reload_needed(RSyscall *s, const char *arch, int bits, const char *cpu) {
+static inline bool sysregs_reload_needed (RSyscall *s, const char *arch, int bits, const char *cpu) {
 	if (!s->arch || strcmp (s->arch, arch)) {
 		return true;
 	}
@@ -78,7 +78,7 @@ static inline bool sysregs_reload_needed(RSyscall *s, const char *arch, int bits
 }
 
 // TODO: should be renamed to r_syscall_use();
-R_API bool r_syscall_setup(RSyscall *s, const char *arch, int bits, const char *cpu, const char *os) {
+R_API bool r_syscall_setup (RSyscall *s, const char *arch, int bits, const char *cpu, const char *os) {
 	bool syscall_changed, sysregs_changed;
 
 	if (!os || !*os) {
@@ -140,7 +140,7 @@ R_API bool r_syscall_setup(RSyscall *s, const char *arch, int bits, const char *
 	return true;
 }
 
-R_API RSyscallItem *r_syscall_item_new_from_string(const char *name, const char *s) {
+R_API RSyscallItem *r_syscall_item_new_from_string (const char *name, const char *s) {
 	RSyscallItem *si;
 	char *o;
 	if (!name || !s) {
@@ -175,7 +175,7 @@ R_API RSyscallItem *r_syscall_item_new_from_string(const char *name, const char 
 	return si;
 }
 
-R_API void r_syscall_item_free(RSyscallItem *si) {
+R_API void r_syscall_item_free (RSyscallItem *si) {
 	if (!si) {
 		return;
 	}
@@ -184,18 +184,18 @@ R_API void r_syscall_item_free(RSyscallItem *si) {
 	free (si);
 }
 
-static int getswi(RSyscall *s, int swi) {
+static int getswi (RSyscall *s, int swi) {
 	if (s && swi == -1) {
 		return r_syscall_get_swi (s);
 	}
 	return swi;
 }
 
-R_API int r_syscall_get_swi(RSyscall *s) {
+R_API int r_syscall_get_swi (RSyscall *s) {
 	return (int)sdb_num_get (s->db, "_", NULL);
 }
 
-R_API RSyscallItem *r_syscall_get(RSyscall *s, int num, int swi) {
+R_API RSyscallItem *r_syscall_get (RSyscall *s, int num, int swi) {
 	r_return_val_if_fail (s && s->db, NULL);
 	const char *ret, *ret2, *key;
 	swi = getswi (s, swi);
@@ -223,7 +223,7 @@ R_API RSyscallItem *r_syscall_get(RSyscall *s, int num, int swi) {
 	return r_syscall_item_new_from_string (ret, ret2);
 }
 
-R_API int r_syscall_get_num(RSyscall *s, const char *str) {
+R_API int r_syscall_get_num (RSyscall *s, const char *str) {
 	r_return_val_if_fail (s && str && s->db, -1);
 	int sn = (int)sdb_array_get_num (s->db, str, 1, NULL);
 	if (sn == 0) {
@@ -232,7 +232,7 @@ R_API int r_syscall_get_num(RSyscall *s, const char *str) {
 	return sn;
 }
 
-R_API const char *r_syscall_get_i(RSyscall *s, int num, int swi) {
+R_API const char *r_syscall_get_i (RSyscall *s, int num, int swi) {
 	r_return_val_if_fail (s && s->db, NULL);
 	char foo[32];
 	swi = getswi (s, swi);
@@ -240,8 +240,8 @@ R_API const char *r_syscall_get_i(RSyscall *s, int num, int swi) {
 	return sdb_const_get (s->db, foo, 0);
 }
 
-static bool callback_list(void *u, const char *k, const char *v) {
-	RList *list = (RList*)u;
+static bool callback_list (void *u, const char *k, const char *v) {
+	RList *list = (RList *)u;
 	if (!strchr (k, '.')) {
 		RSyscallItem *si = r_syscall_item_new_from_string (k, v);
 		if (!si) {
@@ -256,7 +256,7 @@ static bool callback_list(void *u, const char *k, const char *v) {
 	return true; // continue loop
 }
 
-R_API RList *r_syscall_list(RSyscall *s) {
+R_API RList *r_syscall_list (RSyscall *s) {
 	r_return_val_if_fail (s && s->db, NULL);
 	RList *list = r_list_newf ((RListFree)r_syscall_item_free);
 	sdb_foreach (s->db, callback_list, list);
@@ -264,7 +264,7 @@ R_API RList *r_syscall_list(RSyscall *s) {
 }
 
 /* io and sysregs */
-R_API const char *r_syscall_get_io(RSyscall *s, int ioport) {
+R_API const char *r_syscall_get_io (RSyscall *s, int ioport) {
 	r_return_val_if_fail (s, NULL);
 	int i;
 	const char *name = r_syscall_sysreg (s, "io", ioport);
@@ -279,8 +279,8 @@ R_API const char *r_syscall_get_io(RSyscall *s, int ioport) {
 	return NULL;
 }
 
-R_API const char* r_syscall_sysreg(RSyscall *s, const char *type, ut64 num) {
+R_API const char *r_syscall_sysreg (RSyscall *s, const char *type, ut64 num) {
 	r_return_val_if_fail (s && s->db, NULL);
-	const char *key = sdb_fmt ("%s,%"PFMT64d, type, num);
+	const char *key = sdb_fmt ("%s,%" PFMT64d, type, num);
 	return sdb_const_get (s->db, key, 0);
 }

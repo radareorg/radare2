@@ -18,42 +18,42 @@ typedef struct {
 	int pid;
 } RIOProcpid;
 
-#define RIOPROCPID_PID(x) (((RIOProcpid*)(x)->data)->pid)
-#define RIOPROCPID_FD(x) (((RIOProcpid*)(x)->data)->fd)
+#define RIOPROCPID_PID(x) (((RIOProcpid *)(x)->data)->pid)
+#define RIOPROCPID_FD(x) (((RIOProcpid *)(x)->data)->fd)
 
-static int __waitpid(int pid) {
+static int __waitpid (int pid) {
 	int st = 0;
-	return (waitpid(pid, &st, 0) != -1);
+	return (waitpid (pid, &st, 0) != -1);
 }
 
-static int debug_os_read_at(int fdn, void *buf, int sz, ut64 addr) {
+static int debug_os_read_at (int fdn, void *buf, int sz, ut64 addr) {
 	if (lseek (fdn, addr, 0) < 0) {
 		return -1;
 	}
 	return read (fdn, buf, sz);
 }
 
-static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
+static int __read (RIO *io, RIODesc *fd, ut8 *buf, int len) {
 	memset (buf, 0xff, len); // TODO: only memset the non-readed bytes
 	return debug_os_read_at (RIOPROCPID_FD (fd), buf, len, io->off);
 }
 
-static int procpid_write_at(int fd, const ut8 *buf, int sz, ut64 addr) {
+static int procpid_write_at (int fd, const ut8 *buf, int sz, ut64 addr) {
 	if (lseek (fd, addr, 0) < 0) {
 		return -1;
 	}
 	return write (fd, buf, sz);
 }
 
-static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
+static int __write (RIO *io, RIODesc *fd, const ut8 *buf, int len) {
 	return procpid_write_at (RIOPROCPID_FD (fd), buf, len, io->off);
 }
 
-static bool __plugin_open(RIO *io, const char *file, bool many) {
+static bool __plugin_open (RIO *io, const char *file, bool many) {
 	return (!strncmp (file, "procpid://", 10));
 }
 
-static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
+static RIODesc *__open (RIO *io, const char *file, int rw, int mode) {
 	char procpidpath[64];
 	int fd, ret = -1;
 	if (__plugin_open (io, file, 0)) {
@@ -101,18 +101,18 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	return NULL;
 }
 
-static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 __lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static int __close(RIODesc *fd) {
+static int __close (RIODesc *fd) {
 	int ret = ptrace (PTRACE_DETACH, RIOPROCPID_PID (fd), 0, 0);
 	R_FREE (fd->data);
 	return ret;
 }
 
-static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
-	RIOProcpid *iop = (RIOProcpid*)fd->data;
+static char *__system (RIO *io, RIODesc *fd, const char *cmd) {
+	RIOProcpid *iop = (RIOProcpid *)fd->data;
 	if (!strncmp (cmd, "pid", 3)) {
 		int pid = atoi (cmd + 3);
 		if (pid > 0) {

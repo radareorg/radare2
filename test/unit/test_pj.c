@@ -2,7 +2,7 @@
 #include <r_util/pj.h>
 #include "minunit.h"
 
-bool test_pj_reset() {
+bool test_pj_reset () {
 	PJ *j = pj_new ();
 	pj_o (j);
 	pj_ks (j, "test", "object");
@@ -19,11 +19,11 @@ bool test_pj_reset() {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests () {
 	mu_run_test (test_pj_reset);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
+int main (int argc, char **argv) {
+	return all_tests ();
 }

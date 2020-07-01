@@ -66,11 +66,11 @@ static int debug_qnx_write_at (const ut8 *buf, int sz, ut64 addr) {
 	}
 	for (x = 0; x < packets; x++) {
 		qnxr_write_memory (desc, addr + x * size_max,
-				   (const uint8_t *)(buf + x * size_max), size_max);
+			(const uint8_t *)(buf + x * size_max), size_max);
 	}
 	if (last) {
 		qnxr_write_memory (desc, addr + x * size_max,
-				   (buf + x * size_max), last);
+			(buf + x * size_max), last);
 	}
 
 	return sz;
@@ -87,8 +87,8 @@ static RIODesc *__open (RIO *io, const char *file, int rw, int mode) {
 		// FIX: Don't allocate more than one RIODesc
 		return rioqnx;
 	}
-	strncpy (host, file + 6, sizeof(host) - 1);
-	host[sizeof(host) - 1] = '\0';
+	strncpy (host, file + 6, sizeof (host) - 1);
+	host[sizeof (host) - 1] = '\0';
 	port = strchr (host, ':');
 	if (!port) {
 		eprintf ("Port not specified. Please use qnx://[host]:[port]\n");

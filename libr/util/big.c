@@ -5,13 +5,13 @@
 #include <r_util.h>
 
 /* Functions for shifting number in-place. */
-static void _lshift_one_bit(RNumBig *a);
-static void _rshift_one_bit(RNumBig *a);
-static void _lshift_word(RNumBig *a, int nwords);
-static void _rshift_word(RNumBig *a, int nwords);
-static void _r_big_zero_out(RNumBig *n);
+static void _lshift_one_bit (RNumBig *a);
+static void _rshift_one_bit (RNumBig *a);
+static void _lshift_word (RNumBig *a, int nwords);
+static void _rshift_word (RNumBig *a, int nwords);
+static void _r_big_zero_out (RNumBig *n);
 
-R_API RNumBig *r_big_new(void) {
+R_API RNumBig *r_big_new (void) {
 	RNumBig *n = R_NEW (RNumBig);
 	if (n) {
 		_r_big_zero_out (n);
@@ -19,23 +19,23 @@ R_API RNumBig *r_big_new(void) {
 	return n;
 }
 
-R_API void r_big_free(RNumBig *b) {
+R_API void r_big_free (RNumBig *b) {
 	free (b);
 }
 
-R_API void r_big_init(RNumBig *b) {
+R_API void r_big_init (RNumBig *b) {
 	_r_big_zero_out (b);
 }
 
-R_API void r_big_fini(RNumBig *b) {
+R_API void r_big_fini (RNumBig *b) {
 	_r_big_zero_out (b);
 }
 
-R_API void r_big_from_int(RNumBig *b, st64 n) {
+R_API void r_big_from_int (RNumBig *b, st64 n) {
 	r_return_if_fail (b);
 
 	_r_big_zero_out (b);
-	b->sign = (n < 0)? -1: 1;
+	b->sign = (n < 0) ? -1 : 1;
 	R_BIG_DTYPE_TMP v = n * b->sign;
 
 	/* Endianness issue if machine is not little-endian? */
@@ -57,7 +57,7 @@ R_API void r_big_from_int(RNumBig *b, st64 n) {
 #endif
 }
 
-static void r_big_from_unsigned(RNumBig *b, ut64 v) {
+static void r_big_from_unsigned (RNumBig *b, ut64 v) {
 	r_return_if_fail (b);
 
 	_r_big_zero_out (b);
@@ -81,7 +81,7 @@ static void r_big_from_unsigned(RNumBig *b, ut64 v) {
 #endif
 }
 
-R_API st64 r_big_to_int(RNumBig *b) {
+R_API st64 r_big_to_int (RNumBig *b) {
 	r_return_val_if_fail (b, 0);
 
 	R_BIG_DTYPE_TMP ret = 0;
@@ -107,7 +107,7 @@ R_API st64 r_big_to_int(RNumBig *b) {
 	return ret;
 }
 
-R_API void r_big_from_hexstr(RNumBig *n, const char *str) {
+R_API void r_big_from_hexstr (RNumBig *n, const char *str) {
 	r_return_if_fail (n);
 	r_return_if_fail (str);
 	int nbytes = strlen (str);
@@ -151,7 +151,7 @@ R_API void r_big_from_hexstr(RNumBig *n, const char *str) {
 	}
 }
 
-R_API char *r_big_to_hexstr(RNumBig *b) {
+R_API char *r_big_to_hexstr (RNumBig *b) {
 	r_return_val_if_fail (b, NULL);
 
 	int j = R_BIG_ARRAY_SIZE - 1; /* index into array - reading "MSB" first -> big-endian */
@@ -165,7 +165,7 @@ R_API char *r_big_to_hexstr(RNumBig *b) {
 		return "0x0";
 	}
 
-	size_t size = 3 + 2 * R_BIG_WORD_SIZE * (j + 1) + ((b->sign > 0)? 0: 1);
+	size_t size = 3 + 2 * R_BIG_WORD_SIZE * (j + 1) + ((b->sign > 0) ? 0 : 1);
 	char *ret_str = calloc (size, sizeof (char));
 	if (!ret_str) {
 		return NULL;
@@ -194,14 +194,14 @@ R_API char *r_big_to_hexstr(RNumBig *b) {
 	return ret_str;
 }
 
-R_API void r_big_assign(RNumBig *dst, RNumBig *src) {
+R_API void r_big_assign (RNumBig *dst, RNumBig *src) {
 	r_return_if_fail (dst);
 	r_return_if_fail (src);
 
 	memcpy (dst, src, sizeof (RNumBig));
 }
 
-static void r_big_add_inner(RNumBig *c, RNumBig *a, RNumBig *b) {
+static void r_big_add_inner (RNumBig *c, RNumBig *a, RNumBig *b) {
 	R_BIG_DTYPE_TMP tmp;
 	int carry = 0;
 	int i;
@@ -212,14 +212,14 @@ static void r_big_add_inner(RNumBig *c, RNumBig *a, RNumBig *b) {
 	}
 }
 
-static void r_big_sub_inner(RNumBig *c, RNumBig *a, RNumBig *b) {
+static void r_big_sub_inner (RNumBig *c, RNumBig *a, RNumBig *b) {
 	R_BIG_DTYPE_TMP res;
 	RNumBig *tmp;
 	R_BIG_DTYPE_TMP tmp1;
 	R_BIG_DTYPE_TMP tmp2;
 	int borrow = 0;
 	int sign = r_big_cmp (a, b);
-	c->sign = (sign >= 0? 1: -1);
+	c->sign = (sign >= 0 ? 1 : -1);
 	if (sign < 0) {
 		tmp = a;
 		a = b;
@@ -236,7 +236,7 @@ static void r_big_sub_inner(RNumBig *c, RNumBig *a, RNumBig *b) {
 	}
 }
 
-R_API void r_big_add(RNumBig *c, RNumBig *a, RNumBig *b) {
+R_API void r_big_add (RNumBig *c, RNumBig *a, RNumBig *b) {
 	r_return_if_fail (a);
 	r_return_if_fail (b);
 	r_return_if_fail (c);
@@ -261,7 +261,7 @@ R_API void r_big_add(RNumBig *c, RNumBig *a, RNumBig *b) {
 	}
 }
 
-R_API void r_big_sub(RNumBig *c, RNumBig *a, RNumBig *b) {
+R_API void r_big_sub (RNumBig *c, RNumBig *a, RNumBig *b) {
 	r_return_if_fail (a);
 	r_return_if_fail (b);
 	r_return_if_fail (c);
@@ -286,7 +286,7 @@ R_API void r_big_sub(RNumBig *c, RNumBig *a, RNumBig *b) {
 	}
 }
 
-R_API void r_big_mul(RNumBig *c, RNumBig *a, RNumBig *b) {
+R_API void r_big_mul (RNumBig *c, RNumBig *a, RNumBig *b) {
 	r_return_if_fail (a);
 	r_return_if_fail (b);
 	r_return_if_fail (c);
@@ -322,7 +322,7 @@ R_API void r_big_mul(RNumBig *c, RNumBig *a, RNumBig *b) {
 	r_big_free (res);
 }
 
-R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b) {
+R_API void r_big_div (RNumBig *c, RNumBig *a, RNumBig *b) {
 	r_return_if_fail (a);
 	r_return_if_fail (b);
 	r_return_if_fail (c);
@@ -373,7 +373,7 @@ R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b) {
 	r_big_free (tmp);
 }
 
-R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b) {
+R_API void r_big_mod (RNumBig *c, RNumBig *a, RNumBig *b) {
 	/*  
     Take divmod and throw away div part
     */
@@ -389,7 +389,7 @@ R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b) {
 	r_big_free (tmp);
 }
 
-R_API void r_big_divmod(RNumBig *c, RNumBig *d, RNumBig *a, RNumBig *b) {
+R_API void r_big_divmod (RNumBig *c, RNumBig *d, RNumBig *a, RNumBig *b) {
 	/*
     Puts a%b in d 
     and a/b in c
@@ -418,7 +418,7 @@ R_API void r_big_divmod(RNumBig *c, RNumBig *d, RNumBig *a, RNumBig *b) {
 	r_big_free (tmp);
 }
 
-R_API void r_big_and(RNumBig *c, RNumBig *a, RNumBig *b) {
+R_API void r_big_and (RNumBig *c, RNumBig *a, RNumBig *b) {
 	r_return_if_fail (a);
 	r_return_if_fail (b);
 	r_return_if_fail (c);
@@ -431,7 +431,7 @@ R_API void r_big_and(RNumBig *c, RNumBig *a, RNumBig *b) {
 	}
 }
 
-R_API void r_big_or(RNumBig *c, RNumBig *a, RNumBig *b) {
+R_API void r_big_or (RNumBig *c, RNumBig *a, RNumBig *b) {
 	r_return_if_fail (a);
 	r_return_if_fail (b);
 	r_return_if_fail (c);
@@ -444,7 +444,7 @@ R_API void r_big_or(RNumBig *c, RNumBig *a, RNumBig *b) {
 	}
 }
 
-R_API void r_big_xor(RNumBig *c, RNumBig *a, RNumBig *b) {
+R_API void r_big_xor (RNumBig *c, RNumBig *a, RNumBig *b) {
 	r_return_if_fail (a);
 	r_return_if_fail (b);
 	r_return_if_fail (c);
@@ -457,7 +457,7 @@ R_API void r_big_xor(RNumBig *c, RNumBig *a, RNumBig *b) {
 	}
 }
 
-R_API void r_big_lshift(RNumBig *b, RNumBig *a, size_t nbits) {
+R_API void r_big_lshift (RNumBig *b, RNumBig *a, size_t nbits) {
 	r_return_if_fail (a);
 	r_return_if_fail (b);
 	r_return_if_fail (a->sign > 0);
@@ -481,7 +481,7 @@ R_API void r_big_lshift(RNumBig *b, RNumBig *a, size_t nbits) {
 	}
 }
 
-R_API void r_big_rshift(RNumBig *b, RNumBig *a, size_t nbits) {
+R_API void r_big_rshift (RNumBig *b, RNumBig *a, size_t nbits) {
 	r_return_if_fail (a);
 	r_return_if_fail (b);
 	r_return_if_fail (a->sign > 0);
@@ -505,12 +505,12 @@ R_API void r_big_rshift(RNumBig *b, RNumBig *a, size_t nbits) {
 	}
 }
 
-R_API int r_big_cmp(RNumBig *a, RNumBig *b) {
+R_API int r_big_cmp (RNumBig *a, RNumBig *b) {
 	r_return_val_if_fail (a, 0);
 	r_return_val_if_fail (b, 0);
 
 	if (a->sign != b->sign)
-		return a->sign > 0? 1: -1;
+		return a->sign > 0 ? 1 : -1;
 
 	int i = R_BIG_ARRAY_SIZE;
 	do {
@@ -526,7 +526,7 @@ R_API int r_big_cmp(RNumBig *a, RNumBig *b) {
 	return 0;
 }
 
-R_API int r_big_is_zero(RNumBig *a) {
+R_API int r_big_is_zero (RNumBig *a) {
 	r_return_val_if_fail (a, -1);
 
 	int i;
@@ -539,7 +539,7 @@ R_API int r_big_is_zero(RNumBig *a) {
 	return 1;
 }
 
-R_API void r_big_inc(RNumBig *a) {
+R_API void r_big_inc (RNumBig *a) {
 	r_return_if_fail (a);
 	RNumBig *tmp = r_big_new ();
 
@@ -549,7 +549,7 @@ R_API void r_big_inc(RNumBig *a) {
 	r_big_free (tmp);
 }
 
-R_API void r_big_dec(RNumBig *a) {
+R_API void r_big_dec (RNumBig *a) {
 	r_return_if_fail (a);
 	RNumBig *tmp = r_big_new ();
 
@@ -559,7 +559,7 @@ R_API void r_big_dec(RNumBig *a) {
 	r_big_free (tmp);
 }
 
-R_API void r_big_powm(RNumBig *c, RNumBig *a, RNumBig *b, RNumBig *m) {
+R_API void r_big_powm (RNumBig *c, RNumBig *a, RNumBig *b, RNumBig *m) {
 	r_return_if_fail (a);
 	r_return_if_fail (b);
 	r_return_if_fail (c);
@@ -587,7 +587,7 @@ R_API void r_big_powm(RNumBig *c, RNumBig *a, RNumBig *b, RNumBig *m) {
 	r_big_free (acopy);
 }
 
-R_API void r_big_isqrt(RNumBig *b, RNumBig *a) {
+R_API void r_big_isqrt (RNumBig *b, RNumBig *a) {
 	r_return_if_fail (a);
 	r_return_if_fail (b);
 
@@ -622,7 +622,7 @@ R_API void r_big_isqrt(RNumBig *b, RNumBig *a) {
 }
 
 /* Private / Static functions. */
-static void _rshift_word(RNumBig *a, int nwords) {
+static void _rshift_word (RNumBig *a, int nwords) {
 	/* Naive method: */
 	r_return_if_fail (a);
 	r_return_if_fail (nwords >= 0);
@@ -643,7 +643,7 @@ static void _rshift_word(RNumBig *a, int nwords) {
 	}
 }
 
-static void _lshift_word(RNumBig *a, int nwords) {
+static void _lshift_word (RNumBig *a, int nwords) {
 	r_return_if_fail (a);
 	r_return_if_fail (nwords >= 0);
 
@@ -658,7 +658,7 @@ static void _lshift_word(RNumBig *a, int nwords) {
 	}
 }
 
-static void _lshift_one_bit(RNumBig *a) {
+static void _lshift_one_bit (RNumBig *a) {
 	r_return_if_fail (a);
 
 	int i;
@@ -668,7 +668,7 @@ static void _lshift_one_bit(RNumBig *a) {
 	a->array[0] <<= 1;
 }
 
-static void _rshift_one_bit(RNumBig *a) {
+static void _rshift_one_bit (RNumBig *a) {
 	r_return_if_fail (a);
 
 	int i;
@@ -678,7 +678,7 @@ static void _rshift_one_bit(RNumBig *a) {
 	a->array[R_BIG_ARRAY_SIZE - 1] >>= 1;
 }
 
-static void _r_big_zero_out(RNumBig *a) {
+static void _r_big_zero_out (RNumBig *a) {
 	r_return_if_fail (a);
 
 	size_t i;

@@ -3,14 +3,14 @@
 #include <r_anal.h>
 
 #define DB esil->db_trace
-#define KEY(x) sdb_fmt ("%d."x, esil->trace_idx)
-#define KEYAT(x,y) sdb_fmt ("%d."x".0x%"PFMT64x, esil->trace_idx, y)
-#define KEYREG(x,y) sdb_fmt ("%d."x".%s", esil->trace_idx, y)
+#define KEY(x) sdb_fmt ("%d." x, esil->trace_idx)
+#define KEYAT(x, y) sdb_fmt ("%d." x ".0x%" PFMT64x, esil->trace_idx, y)
+#define KEYREG(x, y) sdb_fmt ("%d." x ".%s", esil->trace_idx, y)
 
 static int ocbs_set = false;
-static RAnalEsilCallbacks ocbs = {0};
+static RAnalEsilCallbacks ocbs = { 0 };
 
-static int trace_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
+static int trace_hook_reg_read (RAnalEsil *esil, const char *name, ut64 *res, int *size) {
 	int ret = 0;
 	if (*name == '0') {
 		//eprintf ("Register not found in profile\n");
@@ -31,12 +31,12 @@ static int trace_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int
 		sdb_array_add (DB, KEY ("reg.read"), name, 0);
 		sdb_num_set (DB, KEYREG ("reg.read", name), val, 0);
 	} //else {
-		//eprintf ("[ESIL] REG READ %s FAILED\n", name);
+	//eprintf ("[ESIL] REG READ %s FAILED\n", name);
 	//}
 	return ret;
 }
 
-static int trace_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
+static int trace_hook_reg_write (RAnalEsil *esil, const char *name, ut64 *val) {
 	int ret = 0;
 	//eprintf ("[ESIL] REG WRITE %s 0x%08"PFMT64x"\n", name, *val);
 	sdb_array_add (DB, KEY ("reg.write"), name, 0);
@@ -50,7 +50,7 @@ static int trace_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	return ret;
 }
 
-static int trace_hook_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+static int trace_hook_mem_read (RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	char *hexbuf = calloc ((1 + len), 4);
 	int ret = 0;
 	if (esil->cb.mem_read) {
@@ -71,9 +71,9 @@ static int trace_hook_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	return ret;
 }
 
-static int trace_hook_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static int trace_hook_mem_write (RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	int ret = 0;
-	char *hexbuf = malloc ((1+len)*3);
+	char *hexbuf = malloc ((1 + len) * 3);
 	sdb_array_add_num (DB, KEY ("mem.write"), addr, 0);
 	r_hex_bin2str (buf, len, hexbuf);
 	sdb_set (DB, KEYAT ("mem.write.data", addr), hexbuf, 0);
@@ -109,8 +109,8 @@ R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op) {
 	}
 	sdb_num_set (DB, "idx", esil->trace_idx, 0);
 	sdb_num_set (DB, KEY ("addr"), op->addr, 0);
-//	sdb_set (DB, KEY ("opcode"), op->mnemonic, 0);
-//	sdb_set (DB, KEY ("addr"), expr, 0);
+	//	sdb_set (DB, KEY ("opcode"), op->mnemonic, 0);
+	//	sdb_set (DB, KEY ("addr"), expr, 0);
 
 	//eprintf ("[ESIL] ADDR 0x%08"PFMT64x"\n", op->addr);
 	//eprintf ("[ESIL] OPCODE %s\n", op->mnemonic);
@@ -128,12 +128,12 @@ R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op) {
 	esil->cb = ocbs;
 	ocbs_set = false;
 	esil->verbose = esil_verbose;
-	esil->trace_idx ++;
+	esil->trace_idx++;
 }
 
-static int cmp_strings_by_leading_number(void *data1, void *data2) {
-	const char* a = sdbkv_key ((const SdbKv *)data1);
-	const char* b = sdbkv_key ((const SdbKv *)data2);
+static int cmp_strings_by_leading_number (void *data1, void *data2) {
+	const char *a = sdbkv_key ((const SdbKv *)data1);
+	const char *b = sdbkv_key ((const SdbKv *)data2);
 	int i = 0;
 	int j = 0;
 	int k = 0;
@@ -188,14 +188,14 @@ R_API void r_anal_esil_trace_list (RAnalEsil *esil) {
 	SdbKv *kv;
 	SdbListIter *iter;
 	SdbList *list = sdb_foreach_list (esil->db_trace, true);
-	ls_sort (list, (SdbListComparator) cmp_strings_by_leading_number);
+	ls_sort (list, (SdbListComparator)cmp_strings_by_leading_number);
 	ls_foreach (list, iter, kv) {
 		p ("%s=%s\n", sdbkv_key (kv), sdbkv_value (kv));
 	}
 	ls_free (list);
 }
 
-R_API void r_anal_esil_trace_show(RAnalEsil *esil, int idx) {
+R_API void r_anal_esil_trace_show (RAnalEsil *esil, int idx) {
 	PrintfCallback p = esil->anal->cb_printf;
 	const char *str2;
 	const char *str;
@@ -215,8 +215,8 @@ R_API void r_anal_esil_trace_show(RAnalEsil *esil, int idx) {
 		if (ptr && *ptr) {
 			do {
 				next = sdb_const_anext (ptr);
-				int len = next? (int)(size_t)(next-ptr)-1 : strlen (ptr);
-				if (len <sizeof(regname)) {
+				int len = next ? (int)(size_t) (next - ptr) - 1 : strlen (ptr);
+				if (len < sizeof (regname)) {
 					memcpy (regname, ptr, len);
 					regname[len] = 0;
 					str2 = sdb_const_get (DB, KEYREG ("reg.read", regname), 0);
@@ -236,12 +236,11 @@ R_API void r_anal_esil_trace_show(RAnalEsil *esil, int idx) {
 		if (ptr && *ptr) {
 			do {
 				next = sdb_const_anext (ptr);
-				int len = next? (int)(size_t)(next-ptr)-1 : strlen (ptr);
-				if (len <sizeof(addr)) {
+				int len = next ? (int)(size_t) (next - ptr) - 1 : strlen (ptr);
+				if (len < sizeof (addr)) {
 					memcpy (addr, ptr, len);
 					addr[len] = 0;
-					str2 = sdb_const_get (DB, KEYAT ("mem.read.data",
-						r_num_get (NULL, addr)), 0);
+					str2 = sdb_const_get (DB, KEYAT ("mem.read.data", r_num_get (NULL, addr)), 0);
 					p ("wx %s @ %s\n", str2, addr);
 				} else {
 					eprintf ("Invalid entry in reg.read\n");

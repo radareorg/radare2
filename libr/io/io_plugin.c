@@ -10,7 +10,7 @@ static RIOPlugin *io_static_plugins[] = {
 	R_IO_STATIC_PLUGINS
 };
 
-R_API bool r_io_plugin_add(RIO *io, RIOPlugin *plugin) {
+R_API bool r_io_plugin_add (RIO *io, RIOPlugin *plugin) {
 	if (!io || !io->plugins || !plugin || !plugin->name) {
 		return false;
 	}
@@ -18,7 +18,7 @@ R_API bool r_io_plugin_add(RIO *io, RIOPlugin *plugin) {
 	return true;
 }
 
-R_API bool r_io_plugin_init(RIO *io) {
+R_API bool r_io_plugin_init (RIO *io) {
 	RIOPlugin *static_plugin;
 	int i;
 	if (!io) {
@@ -39,14 +39,14 @@ R_API bool r_io_plugin_init(RIO *io) {
 	return true;
 }
 
-R_API RIOPlugin *r_io_plugin_get_default(RIO *io, const char *filename, bool many) {
-	if (!DEFAULT || !DEFAULT->check || !DEFAULT->check (io, filename, many) ) {
+R_API RIOPlugin *r_io_plugin_get_default (RIO *io, const char *filename, bool many) {
+	if (!DEFAULT || !DEFAULT->check || !DEFAULT->check (io, filename, many)) {
 		return NULL;
 	}
-	return (RIOPlugin*) DEFAULT;
+	return (RIOPlugin *)DEFAULT;
 }
 
-R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many) {
+R_API RIOPlugin *r_io_plugin_resolve (RIO *io, const char *filename, bool many) {
 	SdbListIter *iter;
 	RIOPlugin *ret;
 	ls_foreach (io->plugins, iter, ret) {
@@ -60,7 +60,7 @@ R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many) {
 	return r_io_plugin_get_default (io, filename, many);
 }
 
-R_API RIOPlugin *r_io_plugin_byname(RIO *io, const char *name) {
+R_API RIOPlugin *r_io_plugin_byname (RIO *io, const char *name) {
 	SdbListIter *iter;
 	RIOPlugin *iop;
 	ls_foreach (io->plugins, iter, iop) {
@@ -71,7 +71,7 @@ R_API RIOPlugin *r_io_plugin_byname(RIO *io, const char *name) {
 	return r_io_plugin_get_default (io, name, false);
 }
 
-R_API int r_io_plugin_list(RIO *io) {
+R_API int r_io_plugin_list (RIO *io) {
 	RIOPlugin *plugin;
 	SdbListIter *iter;
 	char str[4];
@@ -83,7 +83,7 @@ R_API int r_io_plugin_list(RIO *io) {
 		str[2] = plugin->isdbg ? 'd' : '_';
 		str[3] = 0;
 		io->cb_printf ("%s  %-8s %s (%s)",
-				str, plugin->name,
+			str, plugin->name,
 			plugin->desc, plugin->license);
 		if (plugin->uris) {
 			io->cb_printf (" %s", plugin->uris);
@@ -100,14 +100,14 @@ R_API int r_io_plugin_list(RIO *io) {
 	return n;
 }
 
-R_API int r_io_plugin_list_json(RIO *io) {
+R_API int r_io_plugin_list_json (RIO *io) {
 	RIOPlugin *plugin;
 	SdbListIter *iter;
 	PJ *pj = pj_new ();
 	if (!pj) {
 		return 0;
 	}
-	
+
 	char str[4];
 	int n = 0;
 	pj_o (pj);
@@ -128,7 +128,7 @@ R_API int r_io_plugin_list_json(RIO *io) {
 		if (plugin->uris) {
 			char *uri;
 			char *uris = strdup (plugin->uris);
-			RList *plist = r_str_split_list (uris, ",",  0);
+			RList *plist = r_str_split_list (uris, ",", 0);
 			RListIter *piter;
 			pj_k (pj, "uris");
 			pj_a (pj);
@@ -155,7 +155,7 @@ R_API int r_io_plugin_list_json(RIO *io) {
 	return n;
 }
 
-R_API int r_io_plugin_read(RIODesc *desc, ut8 *buf, int len) {
+R_API int r_io_plugin_read (RIODesc *desc, ut8 *buf, int len) {
 	if (!buf || !desc || !desc->plugin || len < 1 || !(desc->perm & R_PERM_R)) {
 		return 0;
 	}
@@ -165,7 +165,7 @@ R_API int r_io_plugin_read(RIODesc *desc, ut8 *buf, int len) {
 	return desc->plugin->read (desc->io, desc, buf, len);
 }
 
-R_API int r_io_plugin_write(RIODesc *desc, const ut8 *buf, int len) {
+R_API int r_io_plugin_write (RIODesc *desc, const ut8 *buf, int len) {
 	if (!buf || !desc || !desc->plugin || len < 1 || !(desc->perm & R_PERM_W)) {
 		return 0;
 	}
@@ -175,15 +175,15 @@ R_API int r_io_plugin_write(RIODesc *desc, const ut8 *buf, int len) {
 	return desc->plugin->write (desc->io, desc, buf, len);
 }
 
-R_API int r_io_plugin_read_at(RIODesc *desc, ut64 addr, ut8 *buf, int len) {
+R_API int r_io_plugin_read_at (RIODesc *desc, ut64 addr, ut8 *buf, int len) {
 	if (r_io_desc_is_chardevice (desc) || (r_io_desc_seek (desc, addr, R_IO_SEEK_SET) == addr)) {
 		return r_io_plugin_read (desc, buf, len);
 	}
 	return 0;
 }
 
-R_API int r_io_plugin_write_at(RIODesc *desc, ut64 addr, const ut8 *buf, int len) {
-	if (r_io_desc_is_chardevice (desc) || r_io_desc_seek (desc, addr, R_IO_SEEK_SET)  == addr) {
+R_API int r_io_plugin_write_at (RIODesc *desc, ut64 addr, const ut8 *buf, int len) {
+	if (r_io_desc_is_chardevice (desc) || r_io_desc_seek (desc, addr, R_IO_SEEK_SET) == addr) {
 		return r_io_plugin_write (desc, buf, len);
 	}
 	return 0;

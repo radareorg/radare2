@@ -15,8 +15,8 @@ static csh cd = 0;
 
 #if CAPSTONE_HAS_TMS320C64X
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	cs_insn* insn;
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	cs_insn *insn;
 	int n = -1, ret = -1;
 	int mode = 0;
 	if (op) {
@@ -47,15 +47,13 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		goto beach;
 	}
 	op->size = insn->size;
-	r_asm_op_set_asm (op, sdb_fmt ("%s%s%s",
-		insn->mnemonic, insn->op_str[0]? " ": "",
-		insn->op_str));
+	r_asm_op_set_asm (op, sdb_fmt ("%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str));
 	r_str_replace_char (r_strbuf_get (&op->buf_asm), '%', 0);
 	r_str_case (r_strbuf_get (&op->buf_asm), false);
 	cs_free (insn, n);
-	beach:
-	// cs_close (&cd);
-	fin:
+beach:
+// cs_close (&cd);
+fin:
 	return ret;
 }
 

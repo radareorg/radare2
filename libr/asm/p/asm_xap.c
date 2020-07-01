@@ -7,14 +7,14 @@
 #include <r_asm.h>
 #include "xap/dis.c"
 
-static int arch_xap_disasm(char *str, const unsigned char *buf, ut64 seek) {
-	struct state *s = get_state();
+static int arch_xap_disasm (char *str, const unsigned char *buf, ut64 seek) {
+	struct state *s = get_state ();
 	struct directive *d;
-	memset(s, 0, sizeof(*s));
+	memset (s, 0, sizeof (*s));
 	s->s_buf = buf;
 	s->s_off = seek;
 	s->s_out = NULL;
-	d = next_inst(s);
+	d = next_inst (s);
 	if (d != NULL) {
 		xap_decode (s, d);
 		strcpy (str, d->d_asm);
@@ -30,7 +30,7 @@ static int arch_xap_disasm(char *str, const unsigned char *buf, ut64 seek) {
 #endif
 	return 0;
 }
-static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
 	char *buf_asm = r_strbuf_get (&op->buf_asm);
 	arch_xap_disasm (buf_asm, buf, a->pc);
 	return (op->size = 2);

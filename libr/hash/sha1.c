@@ -38,7 +38,7 @@
 
 #define SHA_ROT(X, n) (((X) << (n)) | ((X) >> (32 - (n))))
 
-static void shaHashBlock(R_SHA_CTX *ctx) {
+static void shaHashBlock (R_SHA_CTX *ctx) {
 	int t;
 	unsigned int A, B, C, D, E, TEMP;
 
@@ -55,19 +55,35 @@ static void shaHashBlock(R_SHA_CTX *ctx) {
 
 	for (t = 0; t <= 19; t++) {
 		TEMP = SHA_ROT (A, 5) + (((C ^ D) & B) ^ D) + E + ctx->W[t] + 0x5a827999;
-		E = D; D = C; C = SHA_ROT (B, 30); B = A; A = TEMP;
+		E = D;
+		D = C;
+		C = SHA_ROT (B, 30);
+		B = A;
+		A = TEMP;
 	}
 	for (t = 20; t <= 39; t++) {
 		TEMP = SHA_ROT (A, 5) + (B ^ C ^ D) + E + ctx->W[t] + 0x6ed9eba1;
-		E = D; D = C; C = SHA_ROT (B, 30); B = A; A = TEMP;
+		E = D;
+		D = C;
+		C = SHA_ROT (B, 30);
+		B = A;
+		A = TEMP;
 	}
 	for (t = 40; t <= 59; t++) {
 		TEMP = SHA_ROT (A, 5) + ((B & C) | (D & (B | C))) + E + ctx->W[t] + 0x8f1bbcdc;
-		E = D; D = C; C = SHA_ROT (B, 30); B = A; A = TEMP;
+		E = D;
+		D = C;
+		C = SHA_ROT (B, 30);
+		B = A;
+		A = TEMP;
 	}
 	for (t = 60; t <= 79; t++) {
 		TEMP = SHA_ROT (A, 5) + (B ^ C ^ D) + E + ctx->W[t] + 0xca62c1d6;
-		E = D; D = C; C = SHA_ROT (B, 30); B = A; A = TEMP;
+		E = D;
+		D = C;
+		C = SHA_ROT (B, 30);
+		B = A;
+		A = TEMP;
 	}
 
 	ctx->H[0] += A;
@@ -77,7 +93,7 @@ static void shaHashBlock(R_SHA_CTX *ctx) {
 	ctx->H[4] += E;
 }
 
-void SHA1_Init(R_SHA_CTX *ctx) {
+void SHA1_Init (R_SHA_CTX *ctx) {
 	int i;
 
 	ctx->lenW = 0;
@@ -95,14 +111,14 @@ void SHA1_Init(R_SHA_CTX *ctx) {
 	}
 }
 
-void SHA1_Update(R_SHA_CTX *ctx, const void *_dataIn, int len) {
+void SHA1_Update (R_SHA_CTX *ctx, const void *_dataIn, int len) {
 	const ut8 *dataIn = _dataIn;
 	int i;
 
 	// Read the data into W and process blocks as they get full
 	for (i = 0; i < len; i++) {
 		ctx->W[ctx->lenW / 4] <<= 8;
-		ctx->W[ctx->lenW / 4] |= (unsigned int) dataIn[i];
+		ctx->W[ctx->lenW / 4] |= (unsigned int)dataIn[i];
 		if ((++ctx->lenW) % 64 == 0) {
 			shaHashBlock (ctx);
 			ctx->lenW = 0;
@@ -112,7 +128,7 @@ void SHA1_Update(R_SHA_CTX *ctx, const void *_dataIn, int len) {
 	}
 }
 
-void SHA1_Final(ut8 hashout[20], R_SHA_CTX *ctx) {
+void SHA1_Final (ut8 hashout[20], R_SHA_CTX *ctx) {
 	ut8 pad0x80 = 0x80;
 	ut8 pad0x00 = 0x00;
 	ut8 padlen[8];

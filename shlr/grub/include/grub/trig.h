@@ -28,17 +28,15 @@ extern short grub_trig_sintab[];
 extern short grub_trig_costab[];
 
 static __inline int
-grub_sin (int x)
-{
-  x &= GRUB_TRIG_ANGLE_MASK;
-  return grub_trig_sintab[x];
+grub_sin (int x) {
+	x &= GRUB_TRIG_ANGLE_MASK;
+	return grub_trig_sintab[x];
 }
 
 static __inline int
-grub_cos (int x)
-{
-  x &= GRUB_TRIG_ANGLE_MASK;
-  return grub_trig_costab[x];
+grub_cos (int x) {
+	x &= GRUB_TRIG_ANGLE_MASK;
+	return grub_trig_costab[x];
 }
 
 #endif /* ! GRUB_TRIG_HEADER */

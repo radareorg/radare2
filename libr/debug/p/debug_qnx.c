@@ -5,7 +5,7 @@
 #include <libqnxr.h>
 
 /* HACK_FOR_PLUGIN_LINKAGE */
-R_API RDebugPid *__r_debug_pid_new(const char *path, int pid, char status, ut64 pc) {
+R_API RDebugPid *__r_debug_pid_new (const char *path, int pid, char status, ut64 pc) {
 	RDebugPid *p = R_NEW0 (RDebugPid);
 	if (!p) {
 		return NULL;
@@ -17,7 +17,7 @@ R_API RDebugPid *__r_debug_pid_new(const char *path, int pid, char status, ut64 
 	p->pc = pc;
 	return p;
 }
-R_API void *__r_debug_pid_free(RDebugPid *pid) {
+R_API void *__r_debug_pid_free (RDebugPid *pid) {
 	free (pid->path);
 	free (pid);
 	return NULL;
@@ -45,7 +45,6 @@ static RList *r_debug_qnx_tids (RDebug *dbg, int pid) {
 	eprintf ("%s: TODO: Threads\n", __func__);
 	return NULL;
 }
-
 
 static RList *r_debug_qnx_pids (RDebug *dbg, int pid) {
 	RList *list = r_list_new ();
@@ -78,7 +77,7 @@ static int r_debug_qnx_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	free (r_reg_get_bytes (dbg->reg, type, &buflen));
 	if (size < len) {
 		eprintf ("r_debug_qnx_reg_read: small buffer %d vs %d\n",
-			 (int)size, (int)len);
+			(int)size, (int)len);
 	}
 	copy_size = R_MIN (len, size);
 	buflen = R_MAX (len, buflen);
@@ -99,10 +98,10 @@ static int r_debug_qnx_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 		}
 		buf_size = buflen;
 	}
-	memset ((void *)(volatile void *) buf, 0, size);
-	memcpy ((void *)(volatile void *) buf, desc->recv.data, copy_size);
-	memset ((void *)(volatile void *) reg_buf, 0, buflen);
-	memcpy ((void *)(volatile void *) reg_buf, desc->recv.data, copy_size);
+	memset ((void *)(volatile void *)buf, 0, size);
+	memcpy ((void *)(volatile void *)buf, desc->recv.data, copy_size);
+	memset ((void *)(volatile void *)reg_buf, 0, buflen);
+	memcpy ((void *)(volatile void *)reg_buf, desc->recv.data, copy_size);
 
 	return len;
 }
@@ -257,7 +256,7 @@ static const char *r_debug_qnx_reg_profile (RDebug *dbg) {
 			"seg	fs	.32	56	0\n"
 			"seg	gs	.32	60	0\n"
 #endif
-			);
+		);
 	case R_SYS_ARCH_ARM:
 		if (bits == 32) {
 			return strdup (
@@ -366,5 +365,6 @@ RDebugPlugin r_debug_plugin_qnx = {
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_qnx,
-	.version = R2_VERSION};
+	.version = R2_VERSION
+};
 #endif

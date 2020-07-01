@@ -32,7 +32,7 @@ static int __is_fd_ready(int fd) {
 }
 #endif
 
-R_API int r_cons_controlz(int ch) {
+R_API int r_cons_controlz (int ch) {
 #if __UNIX__
 	if (ch == 0x1a) {
 		r_cons_show_cursor (true);
@@ -48,7 +48,7 @@ R_API int r_cons_controlz(int ch) {
 // 97 - wheel down
 // 95 - mouse up
 // 92 - mouse down
-static int __parseMouseEvent(void) {
+static int __parseMouseEvent (void) {
 	char xpos[32];
 	char ypos[32];
 	(void)r_cons_readchar (); // skip first char
@@ -76,7 +76,7 @@ static int __parseMouseEvent(void) {
 		}
 		ypos[i] = 0;
 		r_cons_set_click (atoi (xpos), atoi (ypos));
-		(void) r_cons_readchar ();
+		(void)r_cons_readchar ();
 		// ignored
 		int ch = r_cons_readchar ();
 		if (ch == 27) {
@@ -96,7 +96,7 @@ static bool bCtrl;
 static bool is_arrow;
 #endif
 
-R_API int r_cons_arrow_to_hjkl(int ch) {
+R_API int r_cons_arrow_to_hjkl (int ch) {
 #if __WINDOWS__
 	if (I->vtmode != 2) {
 		if (is_arrow) {
@@ -127,12 +127,15 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 	I->mouse_event = 0;
 	/* emacs */
 	switch ((ut8)ch) {
-	case 0xc3: r_cons_readchar (); ch='K'; break; // emacs repag (alt + v)
-	case 0x16: ch='J'; break; // emacs avpag (ctrl + v)
-	case 0x10: ch='k'; break; // emacs up (ctrl + p)
-	case 0x0e: ch='j'; break; // emacs down (ctrl + n)
-	case 0x06: ch='l'; break; // emacs right (ctrl + f)
-	case 0x02: ch='h'; break; // emacs left (ctrl + b)
+	case 0xc3:
+		r_cons_readchar ();
+		ch = 'K';
+		break; // emacs repag (alt + v)
+	case 0x16: ch = 'J'; break; // emacs avpag (ctrl + v)
+	case 0x10: ch = 'k'; break; // emacs up (ctrl + p)
+	case 0x0e: ch = 'j'; break; // emacs down (ctrl + n)
+	case 0x06: ch = 'l'; break; // emacs right (ctrl + f)
+	case 0x02: ch = 'h'; break; // emacs left (ctrl + b)
 	}
 	if (ch != 0x1b) {
 		return ch;
@@ -149,8 +152,8 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 		ch = r_cons_readchar ();
 #if defined(__HAIKU__)
 		/* Haiku't don use the '[' char for function keys */
-		if (ch > 'O') {/* only in f1..f12 function keys */
-			ch = 0xf1 + (ch&0xf);
+		if (ch > 'O') { /* only in f1..f12 function keys */
+			ch = 0xf1 + (ch & 0xf);
 			break;
 		}
 	case '[': // 0x5b function keys (2)
@@ -165,53 +168,52 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 		ch = r_cons_readchar ();
 #endif
 		switch (ch) {
-		case '<':
-			{
-				char pos[8] = {0};
-				int p = 0;
-				int x = 0;
-				int y = 0;
-				int sc = 0;
+		case '<': {
+			char pos[8] = { 0 };
+			int p = 0;
+			int x = 0;
+			int y = 0;
+			int sc = 0;
 
-				char vel[8] = {0};
-				int vn = 0;
-				do {
-					ch = r_cons_readchar ();
-					// just for debugging
-					//eprintf ( "%c", ch);
-					if (sc > 0) {
-						if (ch >= '0' && ch <= '9') {
-							pos[p++] = ch;
-						}
+			char vel[8] = { 0 };
+			int vn = 0;
+			do {
+				ch = r_cons_readchar ();
+				// just for debugging
+				//eprintf ( "%c", ch);
+				if (sc > 0) {
+					if (ch >= '0' && ch <= '9') {
+						pos[p++] = ch;
 					}
-					if (sc < 1) {
-						vel[vn++] = ch;
-					}
-					if (ch == ';') {
-						if (sc == 1) {
-							pos[p++] = 0;
-							x = atoi (pos);
-						}
-						sc++;
-						p = 0;
-					}
-				} while (ch != 'M' && ch != 'm');
-				int nvel = atoi (vel);
-				switch (nvel) {
-				case 2: // right click
-					if (ch == 'M') {
-						return INT8_MAX;
-					}
-					return -INT8_MAX;
-				case 64: // wheel up
-					return 'k';
-				case 65: // wheel down
-					return 'j';
 				}
-				pos[p++] = 0;
-				y = atoi (pos);
-				r_cons_set_click (x, y);
+				if (sc < 1) {
+					vel[vn++] = ch;
+				}
+				if (ch == ';') {
+					if (sc == 1) {
+						pos[p++] = 0;
+						x = atoi (pos);
+					}
+					sc++;
+					p = 0;
+				}
+			} while (ch != 'M' && ch != 'm');
+			int nvel = atoi (vel);
+			switch (nvel) {
+			case 2: // right click
+				if (ch == 'M') {
+					return INT8_MAX;
+				}
+				return -INT8_MAX;
+			case 64: // wheel up
+				return 'k';
+			case 65: // wheel down
+				return 'j';
 			}
+			pos[p++] = 0;
+			y = atoi (pos);
+			r_cons_set_click (x, y);
+		}
 			return 0;
 		case '[':
 			ch = r_cons_readchar ();
@@ -225,7 +227,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 			break;
 		case '9':
 			// handle mouse wheel
-	//		__parseWheelEvent();
+			//		__parseWheelEvent();
 			ch = r_cons_readchar ();
 			// 6 is up
 			// 7 is down
@@ -245,7 +247,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 			break;
 		case '3':
 			// handle mouse down /up events (35 vs 32)
-			__parseMouseEvent();
+			__parseMouseEvent ();
 			return 0;
 			break;
 		case '2':
@@ -312,7 +314,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 					case 'D': ch = 'H'; break;
 					}
 					break;
-				// add other modifiers
+					// add other modifiers
 				}
 				break;
 			case ':': // arrow+shift
@@ -327,13 +329,21 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 				break;
 			} // F9-F12 not yet supported!!
 			break;
-		case '5': ch = 'K'; r_cons_readchar (); break; // repag
-		case '6': ch = 'J'; r_cons_readchar (); break; // avpag
+		case '5':
+			ch = 'K';
+			r_cons_readchar ();
+			break; // repag
+		case '6':
+			ch = 'J';
+			r_cons_readchar ();
+			break; // avpag
 		/* arrow keys */
 		case 'A': ch = 'k'; break; // up
 		case 'B': ch = 'j'; break; // down
 		case 'C': ch = 'l'; break; // right
-		case 'D': ch = 'h'; break; // left
+		case 'D':
+			ch = 'h';
+			break; // left
 		// Support rxvt-unicode term for shift+arrows
 		case 'a': ch = 'K'; break; // shift+up
 		case 'b': ch = 'J'; break; // shift+down
@@ -347,8 +357,12 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 }
 
 // XXX no control for max length here?!?!
-R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
-#define RETURN(x) { ret=x; goto beach; }
+R_API int r_cons_fgets (char *buf, int len, int argc, const char **argv) {
+#define RETURN(x)           \
+	{                   \
+		ret = x;    \
+		goto beach; \
+	}
 	RCons *cons = r_cons_singleton ();
 	int ret = 0, color = cons->context->pal.input && *cons->context->pal.input;
 	if (cons->echo) {
@@ -397,7 +411,7 @@ beach:
 	return ret;
 }
 
-R_API int r_cons_any_key(const char *msg) {
+R_API int r_cons_any_key (const char *msg) {
 	if (msg && *msg) {
 		r_cons_printf ("\n-- %s --\n", msg);
 	} else {
@@ -408,10 +422,10 @@ R_API int r_cons_any_key(const char *msg) {
 	//r_cons_strcat ("\x1b[2J\x1b[0;0H"); // wtf?
 }
 
-extern void resizeWin(void);
+extern void resizeWin (void);
 
 #if __WINDOWS__
-static int __cons_readchar_w32(ut32 usec) {
+static int __cons_readchar_w32 (ut32 usec) {
 	int ch = 0;
 	BOOL ret;
 	bCtrl = false;
@@ -426,9 +440,9 @@ static int __cons_readchar_w32(ut32 usec) {
 	I->mouse_event = 0;
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
-	DWORD newmode = I->vtmode == 2 
-			? ENABLE_VIRTUAL_TERMINAL_INPUT
-			: ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT | ENABLE_EXTENDED_FLAGS;
+	DWORD newmode = I->vtmode == 2
+		? ENABLE_VIRTUAL_TERMINAL_INPUT
+		: ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT | ENABLE_EXTENDED_FLAGS;
 	SetConsoleMode (h, newmode);
 	do {
 		bed = r_cons_sleep_begin ();
@@ -553,7 +567,7 @@ static int __cons_readchar_w32(ut32 usec) {
 }
 #endif
 
-R_API int r_cons_readchar_timeout(ut32 usec) {
+R_API int r_cons_readchar_timeout (ut32 usec) {
 #if __UNIX__
 	struct timeval tv;
 	fd_set fdset, errset;
@@ -570,11 +584,11 @@ R_API int r_cons_readchar_timeout(ut32 usec) {
 	// timeout
 	return -1;
 #else
-	return  __cons_readchar_w32 (usec);
+	return __cons_readchar_w32 (usec);
 #endif
 }
 
-R_API bool r_cons_readpush(const char *str, int len) {
+R_API bool r_cons_readpush (const char *str, int len) {
 	char *res = (len + readbuffer_length > 0) ? realloc (readbuffer, len + readbuffer_length) : NULL;
 	if (res) {
 		readbuffer = res;
@@ -585,12 +599,12 @@ R_API bool r_cons_readpush(const char *str, int len) {
 	return false;
 }
 
-R_API void r_cons_readflush(void) {
+R_API void r_cons_readflush (void) {
 	R_FREE (readbuffer);
 	readbuffer_length = 0;
 }
 
-R_API void r_cons_switchbuf(bool active) {
+R_API void r_cons_switchbuf (bool active) {
 	bufactive = active;
 }
 
@@ -598,7 +612,7 @@ R_API void r_cons_switchbuf(bool active) {
 extern volatile sig_atomic_t sigwinchFlag;
 #endif
 
-R_API int r_cons_readchar(void) {
+R_API int r_cons_readchar (void) {
 	char buf[2];
 	buf[0] = -1;
 	if (readbuffer_length > 0) {
@@ -648,7 +662,7 @@ R_API int r_cons_readchar(void) {
 #endif
 }
 
-R_API bool r_cons_yesno(int def, const char *fmt, ...) {
+R_API bool r_cons_yesno (int def, const char *fmt, ...) {
 	va_list ap;
 	ut8 key = (ut8)def;
 	va_start (ap, fmt);
@@ -678,9 +692,9 @@ R_API bool r_cons_yesno(int def, const char *fmt, ...) {
 	return false;
 }
 
-R_API char *r_cons_password(const char *msg) {
+R_API char *r_cons_password (const char *msg) {
 	int i = 0;
-	char buf[256] = {0};
+	char buf[256] = { 0 };
 	printf ("\r%s", msg);
 	fflush (stdout);
 	r_cons_set_raw (1);
@@ -716,7 +730,7 @@ R_API char *r_cons_password(const char *msg) {
 	return strdup (buf);
 }
 
-R_API char *r_cons_input(const char *msg) {
+R_API char *r_cons_input (const char *msg) {
 	char *oprompt = r_line_get_prompt ();
 	if (!oprompt) {
 		return NULL;

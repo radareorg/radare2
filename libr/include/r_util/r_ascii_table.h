@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-R_API const char *ret_ascii_table(void);
+R_API const char *ret_ascii_table (void);
 
 #ifdef __cplusplus
 }

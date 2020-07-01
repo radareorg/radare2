@@ -27,11 +27,10 @@ typedef struct r_ascii_node_t {
 } RANode;
 
 typedef struct r_core_graph_hits_t {
-	char *old_word ;
+	char *old_word;
 	RVector word_list;
 	int word_nth;
 } RAGraphHits;
-
 
 #define R_AGRAPH_MODE_NORMAL 0
 #define R_AGRAPH_MODE_OFFSET 1
@@ -41,8 +40,8 @@ typedef struct r_core_graph_hits_t {
 #define R_AGRAPH_MODE_COMMENTS 5
 #define R_AGRAPH_MODE_MAX 6
 
-typedef void (*RANodeCallback)(RANode *n, void *user);
-typedef void (*RAEdgeCallback)(RANode *from, RANode *to, void *user);
+typedef void (*RANodeCallback) (RANode *n, void *user);
+typedef void (*RAEdgeCallback) (RANode *from, RANode *to, void *user);
 
 typedef struct r_ascii_graph_t {
 	RConsCanvas *can;
@@ -92,24 +91,24 @@ typedef struct r_ascii_graph_t {
 } RAGraph;
 
 #ifdef R_API
-R_API RAGraph *r_agraph_new(RConsCanvas *can);
-R_API void r_agraph_free(RAGraph *g);
-R_API void r_agraph_reset(RAGraph *g);
-R_API void r_agraph_set_title(RAGraph *g, const char *title);
-R_API RANode *r_agraph_get_first_node(const RAGraph *g);
-R_API RANode *r_agraph_get_node(const RAGraph *g, const char *title);
-R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char *body);
-R_API RANode *r_agraph_add_node_with_color(const RAGraph *g, const char *title, const char *body, int color);
-R_API bool r_agraph_del_node(const RAGraph *g, const char *title);
-R_API void r_agraph_add_edge(const RAGraph *g, RANode *a, RANode *b);
-R_API void r_agraph_add_edge_at(const RAGraph *g, RANode *a, RANode *b, int nth);
-R_API void r_agraph_del_edge(const RAGraph *g, RANode *a, RANode *b);
-R_API void r_agraph_print(RAGraph *g);
-R_API void r_agraph_print_json(RAGraph *g, PJ *pj);
-R_API Sdb *r_agraph_get_sdb(RAGraph *g);
-R_API void r_agraph_foreach(RAGraph *g, RANodeCallback cb, void *user);
-R_API void r_agraph_foreach_edge(RAGraph *g, RAEdgeCallback cb, void *user);
-R_API void r_agraph_set_curnode(RAGraph *g, RANode *node);
+R_API RAGraph *r_agraph_new (RConsCanvas *can);
+R_API void r_agraph_free (RAGraph *g);
+R_API void r_agraph_reset (RAGraph *g);
+R_API void r_agraph_set_title (RAGraph *g, const char *title);
+R_API RANode *r_agraph_get_first_node (const RAGraph *g);
+R_API RANode *r_agraph_get_node (const RAGraph *g, const char *title);
+R_API RANode *r_agraph_add_node (const RAGraph *g, const char *title, const char *body);
+R_API RANode *r_agraph_add_node_with_color (const RAGraph *g, const char *title, const char *body, int color);
+R_API bool r_agraph_del_node (const RAGraph *g, const char *title);
+R_API void r_agraph_add_edge (const RAGraph *g, RANode *a, RANode *b);
+R_API void r_agraph_add_edge_at (const RAGraph *g, RANode *a, RANode *b, int nth);
+R_API void r_agraph_del_edge (const RAGraph *g, RANode *a, RANode *b);
+R_API void r_agraph_print (RAGraph *g);
+R_API void r_agraph_print_json (RAGraph *g, PJ *pj);
+R_API Sdb *r_agraph_get_sdb (RAGraph *g);
+R_API void r_agraph_foreach (RAGraph *g, RANodeCallback cb, void *user);
+R_API void r_agraph_foreach_edge (RAGraph *g, RAEdgeCallback cb, void *user);
+R_API void r_agraph_set_curnode (RAGraph *g, RANode *node);
 #endif
 
 #endif

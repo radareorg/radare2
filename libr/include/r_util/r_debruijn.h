@@ -16,11 +16,10 @@ extern "C" {
 // offset of start.
 // The returned string is malloced, and it is the responsibility of the caller
 // to free the memory.
-R_API char* r_debruijn_pattern(int size, int start, const char* charset);
-
+R_API char *r_debruijn_pattern (int size, int start, const char *charset);
 
 // Finds the offset of a given value in a cyclic pattern of an integer.
-R_API int r_debruijn_offset(ut64 value, bool is_big_endian);
+R_API int r_debruijn_offset (ut64 value, bool is_big_endian);
 
 #ifdef __cplusplus
 }

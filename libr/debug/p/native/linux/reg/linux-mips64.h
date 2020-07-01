@@ -28,7 +28,7 @@ PC = 272
 #endif
 
 #endif
-	return strdup (
+return strdup (
 	"=PC	pc\n"
 	"=SP	sp\n"
 	"=BP	fp\n"
@@ -75,5 +75,4 @@ PC = 272
 	"gpr	fp	.64	240	0\n"
 	"gpr	ra	.64	248	0\n"
 	/* extra */
-	"gpr	pc	.64	272	0\n"
-	);
+	"gpr	pc	.64	272	0\n");

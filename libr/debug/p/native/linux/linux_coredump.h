@@ -18,48 +18,48 @@
         Bit 08: Used for IA32_XSS.
         Bit 09: PKRU state
 */
-#define X87_BIT                 (1ULL << 0)
-#define SSE_BIT                 (1ULL << 1)
-#define AVX_BIT                 (1ULL << 2)
-#define BNDREGS_BIT             (1ULL << 3)
-#define BNDCSR_BIT              (1ULL << 4)
+#define X87_BIT (1ULL << 0)
+#define SSE_BIT (1ULL << 1)
+#define AVX_BIT (1ULL << 2)
+#define BNDREGS_BIT (1ULL << 3)
+#define BNDCSR_BIT (1ULL << 4)
 /* From Intel MPX: "The OS should set both bits to ONE to enable Intel MPX; otherwise the processor would interpret Intel MPX instructions as NOPs" */
-#define MPX_BIT			(BNDREGS_BIT | BNDCSR_BIT) 
+#define MPX_BIT (BNDREGS_BIT | BNDCSR_BIT)
 /* https://software.intel.com/sites/default/files/managed/b4/3a/319433-024.pdf - Page 66
 "Execute XGETBV and verify that XCR0[7:5] = ‘111b’ (OPMASK state, upper 256-bit of ZMM0-ZMM15 and ZMM16-ZMM31 state are enabled by OS) and that XCR0[2:1] = ‘11b’ (XMM state and YMM state are enabled by OS)" */
-#define AVX512_k_BIT            (1ULL << 5)
-#define AVX512_ZMM0_15_BIT      (1ULL << 6)
-#define AVX512_ZMM16_31_BIT     (1ULL << 7)
-#define AVX512_FULL_BIT         (AVX512_k_BIT|AVX512_ZMM0_15_BIT|AVX512_ZMM16_31_BIT)
-#define IA32_XSS_BIT    	(1ULL << 8)     /* ?? */
-#define PKRU_BIT        	(1ULL << 9)     /* ?? */
+#define AVX512_k_BIT (1ULL << 5)
+#define AVX512_ZMM0_15_BIT (1ULL << 6)
+#define AVX512_ZMM16_31_BIT (1ULL << 7)
+#define AVX512_FULL_BIT (AVX512_k_BIT | AVX512_ZMM0_15_BIT | AVX512_ZMM16_31_BIT)
+#define IA32_XSS_BIT (1ULL << 8) /* ?? */
+#define PKRU_BIT (1ULL << 9) /* ?? */
 
-#define NO_STATE_BIT            X87_BIT
-#define XSTATE_SSE_SIZE         576
-#define XSTATE_AVX_SIZE         832
+#define NO_STATE_BIT X87_BIT
+#define XSTATE_SSE_SIZE 576
+#define XSTATE_AVX_SIZE 832
 /*#define XSTATE_BNDCGR ?? */
-#define XSTATE_MPX_SIZE         1088
-#define XSTATE_AVX512_k_SIZE    1152
-#define XSTATE_AVX512_ZMM0_7    1408
-#define XSTATE_AVX512_ZMM8_15   1664
-#define XSTATE_AVX512_ZMM16_31  2688
-#define XSTATE_FULL_SIZE        XSTATE_AVX512_ZMM16_31
+#define XSTATE_MPX_SIZE 1088
+#define XSTATE_AVX512_k_SIZE 1152
+#define XSTATE_AVX512_ZMM0_7 1408
+#define XSTATE_AVX512_ZMM8_15 1664
+#define XSTATE_AVX512_ZMM16_31 2688
+#define XSTATE_FULL_SIZE XSTATE_AVX512_ZMM16_31
 
-#define XSTATE_HDR_SIZE         XSTATE_SSE_SIZE
-#define XCR0_OFFSET             464
+#define XSTATE_HDR_SIZE XSTATE_SSE_SIZE
+#define XCR0_OFFSET 464
 
-#define XSTATE_SSE_MASK         (X87_BIT|SSE_BIT)
-#define XSTATE_AVX_MASK         (XSTATE_SSE_MASK|AVX_BIT)
-#define XSTATE_MPX_MASK         (MPX_BIT|XSTATE_AVX_MASK|XSTATE_SSE_MASK)
-#define XSTATE_AVX512_MASK      (XSTATE_AVX_MASK|AVX512_FULL_BIT)
+#define XSTATE_SSE_MASK (X87_BIT | SSE_BIT)
+#define XSTATE_AVX_MASK (XSTATE_SSE_MASK | AVX_BIT)
+#define XSTATE_MPX_MASK (MPX_BIT | XSTATE_AVX_MASK | XSTATE_SSE_MASK)
+#define XSTATE_AVX512_MASK (XSTATE_AVX_MASK | AVX512_FULL_BIT)
 /*********************************/
 #endif
 
-#define SIZE_PR_FNAME	16
+#define SIZE_PR_FNAME 16
 
-#define R_DEBUG_REG_T	struct user_regs_struct
+#define R_DEBUG_REG_T struct user_regs_struct
 
-#define SIZE_NT_FILE_DESCSZ	sizeof(unsigned long) * 3   /* start_address * end_address * offset_address */
+#define SIZE_NT_FILE_DESCSZ sizeof (unsigned long) * 3 /* start_address * end_address * offset_address */
 /* 
 NT_FILE layout:
 	[number of mappings]
@@ -71,26 +71,26 @@ NT_FILE layout:
 	[filenames]
 */
 
-#define	X_MEM	0x1
-#define	W_MEM	0x2
-#define	R_MEM	0x4
-#define	P_MEM	0x8
-#define	S_MEM	0x10
-#define	WRG_PERM	0x20
+#define X_MEM 0x1
+#define W_MEM 0x2
+#define R_MEM 0x4
+#define P_MEM 0x8
+#define S_MEM 0x10
+#define WRG_PERM 0x20
 
-#define	MAP_ANON_PRIV	0x1
-#define	MAP_ANON_SHR	0x2
-#define	MAP_FILE_PRIV	0x4
-#define	MAP_FILE_SHR	0x8
-#define	MAP_ELF_HDR	0x10
-#define	MAP_HUG_PRIV	0x20
-#define	MAP_HUG_SHR	0x40
+#define MAP_ANON_PRIV 0x1
+#define MAP_ANON_SHR 0x2
+#define MAP_FILE_PRIV 0x4
+#define MAP_FILE_SHR 0x8
+#define MAP_ELF_HDR 0x10
+#define MAP_HUG_PRIV 0x20
+#define MAP_HUG_SHR 0x40
 
-#define	SH_FLAG	0x1
-#define	IO_FLAG	0x2
-#define	DD_FLAG	0x4
-#define	HT_FLAG	0x8
-#define	PV_FLAG	0x10 /* just for us */
+#define SH_FLAG 0x1
+#define IO_FLAG 0x2
+#define DD_FLAG 0x4
+#define HT_FLAG 0x8
+#define PV_FLAG 0x10 /* just for us */
 
 typedef struct proc_per_process {
 	int pid;
@@ -141,11 +141,21 @@ typedef struct linux_map_entry {
 	struct linux_map_entry *n;
 } linux_map_entry_t;
 
-#define ADD_MAP_NODE(p)	{ if (me_head) { p->n = NULL; me_tail->n = p; me_tail = p; } else { me_head = p; me_tail = p; } }
+#define ADD_MAP_NODE(p)                 \
+	{                               \
+		if (me_head) {          \
+			p->n = NULL;    \
+			me_tail->n = p; \
+			me_tail = p;    \
+		} else {                \
+			me_head = p;    \
+			me_tail = p;    \
+		}                       \
+	}
 
 typedef struct auxv_buff {
-        void *data;
-        size_t size;
+	void *data;
+	size_t size;
 } auxv_buff_t;
 
 /*NT_* thread-wide*/
@@ -153,7 +163,7 @@ typedef struct thread_elf_note {
 	prstatus_t *prstatus;
 	elf_fpregset_t *fp_regset;
 #if __i386__
-	elf_fpxregset_t	*fpx_regset;
+	elf_fpxregset_t *fpx_regset;
 #endif
 	siginfo_t *siginfo;
 #if __i386__ || __x86_64__
@@ -196,7 +206,7 @@ typedef struct elf_note_types {
 	int size_roundedup;
 	int size_name;
 	char name[8];
-} note_info_t;		
+} note_info_t;
 
 typedef enum {
 	ADDR,
@@ -207,7 +217,7 @@ typedef enum {
 	NAME
 } MAPS_FIELD;
 
-extern ssize_t process_vm_readv(pid_t pid, const struct iovec *local_iov,
+extern ssize_t process_vm_readv (pid_t pid, const struct iovec *local_iov,
 	unsigned long liovcnt, const struct iovec *remote_iov,
 	unsigned long riovcnt, unsigned long flags);
 

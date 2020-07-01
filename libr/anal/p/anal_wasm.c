@@ -17,7 +17,7 @@ static ut64 scope_hint = UT64_MAX;
 static ut64 addr_old = UT64_MAX;
 
 // finds the address of the call function (essentially where to jump to).
-static ut64 get_cf_offset(RAnal *anal, const ut8 *data, int len) {
+static ut64 get_cf_offset (RAnal *anal, const ut8 *data, int len) {
 	ut32 fcn_id;
 
 	if (!read_u32_leb128 (&data[1], &data[len - 1], &fcn_id)) {
@@ -36,11 +36,11 @@ static ut64 get_cf_offset(RAnal *anal, const ut8 *data, int len) {
 	return UT64_MAX;
 }
 
-static bool advance_till_scope_end(RAnal* anal, RAnalOp *op, ut64 address, ut32 expected_type, ut32 depth, bool use_else) {
+static bool advance_till_scope_end (RAnal *anal, RAnalOp *op, ut64 address, ut32 expected_type, ut32 depth, bool use_else) {
 	ut8 buffer[16];
 	ut8 *ptr = buffer;
 	ut8 *end = ptr + sizeof (buffer);
-	WasmOp wop = {{0}};
+	WasmOp wop = { { 0 } };
 	int size = 0;
 	while (anal->iob.read_at (anal->iob.io, address, buffer, sizeof (buffer))) {
 		size = wasm_dis (&wop, ptr, end - ptr);
@@ -72,8 +72,8 @@ static bool advance_till_scope_end(RAnal* anal, RAnalOp *op, ut64 address, ut32 
 }
 
 // analyzes the wasm opcode.
-static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
-	WasmOp wop = {{0}};
+static int wasm_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+	WasmOp wop = { { 0 } };
 	RAnalHint *hint = NULL;
 	int ret = wasm_dis (&wop, data, len);
 	op->size = ret;
@@ -145,100 +145,94 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 				op->jump = hint->jump;
 			}
 			break;
-		case WASM_OP_BR:
-			{
-				RAnalHint *hint2 = NULL;
-				ut32 val;
-				read_u32_leb128 (data + 1, data + len, &val);
-				if ((hint2 = r_anal_hint_get (anal, addr)) && hint2->jump != UT64_MAX) {
+		case WASM_OP_BR: {
+			RAnalHint *hint2 = NULL;
+			ut32 val;
+			read_u32_leb128 (data + 1, data + len, &val);
+			if ((hint2 = r_anal_hint_get (anal, addr)) && hint2->jump != UT64_MAX) {
+				op->type = R_ANAL_OP_TYPE_JMP;
+				op->jump = hint2->jump;
+			} else if ((hint = r_anal_hint_get (anal, scope_hint))) {
+				if (hint->opcode && !strncmp ("loop", hint->opcode, 4)) {
 					op->type = R_ANAL_OP_TYPE_JMP;
-					op->jump = hint2->jump;
-				} else if ((hint = r_anal_hint_get (anal, scope_hint))) {
-					if (hint->opcode && !strncmp ("loop", hint->opcode, 4)) {
-						op->type = R_ANAL_OP_TYPE_JMP;
-						op->jump = hint->jump;
-						r_anal_hint_set_jump (anal, addr, op->jump);
-					} else {
-						if (advance_till_scope_end (anal, op, addr + op->size, R_ANAL_OP_TYPE_JMP, val, false)) {
-							r_anal_hint_set_jump (anal, addr, op->jump);
-						}
-					}
+					op->jump = hint->jump;
+					r_anal_hint_set_jump (anal, addr, op->jump);
 				} else {
 					if (advance_till_scope_end (anal, op, addr + op->size, R_ANAL_OP_TYPE_JMP, val, false)) {
-						eprintf ("[wasm] cannot find jump type for br (using block type)\n");
 						r_anal_hint_set_jump (anal, addr, op->jump);
-					} else {
-						eprintf ("[wasm] cannot find jump for br\n");
 					}
 				}
-				r_anal_hint_free (hint2);
+			} else {
+				if (advance_till_scope_end (anal, op, addr + op->size, R_ANAL_OP_TYPE_JMP, val, false)) {
+					eprintf ("[wasm] cannot find jump type for br (using block type)\n");
+					r_anal_hint_set_jump (anal, addr, op->jump);
+				} else {
+					eprintf ("[wasm] cannot find jump for br\n");
+				}
 			}
-			break;
-		case WASM_OP_BRIF:
-			{
-				RAnalHint *hint2 = NULL;
-				ut32 val;
-				read_u32_leb128 (data + 1, data + len, &val);
-				if ((hint2 = r_anal_hint_get (anal, addr)) && hint2->jump != UT64_MAX) {
-					op->type = R_ANAL_OP_TYPE_CJMP;
-					op->jump = hint2->jump;
+			r_anal_hint_free (hint2);
+		} break;
+		case WASM_OP_BRIF: {
+			RAnalHint *hint2 = NULL;
+			ut32 val;
+			read_u32_leb128 (data + 1, data + len, &val);
+			if ((hint2 = r_anal_hint_get (anal, addr)) && hint2->jump != UT64_MAX) {
+				op->type = R_ANAL_OP_TYPE_CJMP;
+				op->jump = hint2->jump;
+				op->fail = addr + op->size;
+			} else if ((hint = r_anal_hint_get (anal, scope_hint))) {
+				if (hint->opcode && !strncmp ("loop", hint->opcode, 4)) {
 					op->fail = addr + op->size;
-				} else if ((hint = r_anal_hint_get (anal, scope_hint))) {
-					if (hint->opcode && !strncmp ("loop", hint->opcode, 4)) {
-						op->fail = addr + op->size;
-						op->jump = hint->jump;
-						r_anal_hint_set_jump (anal, addr, op->jump);
-					} else {
-						if (advance_till_scope_end (anal, op, addr + op->size, R_ANAL_OP_TYPE_CJMP, val, false)) {
-							op->fail = addr + op->size;
-							r_anal_hint_set_jump (anal, addr, op->jump);
-						}
-					}
+					op->jump = hint->jump;
+					r_anal_hint_set_jump (anal, addr, op->jump);
 				} else {
 					if (advance_till_scope_end (anal, op, addr + op->size, R_ANAL_OP_TYPE_CJMP, val, false)) {
-						eprintf ("[wasm] cannot find jump type for br_if (using block type)\n");
 						op->fail = addr + op->size;
 						r_anal_hint_set_jump (anal, addr, op->jump);
-					} else {
-						eprintf ("[wasm] cannot find jump for br_if\n");
 					}
 				}
-				r_anal_hint_free (hint2);
-			}
-			break;
-		case WASM_OP_END:
-			{
-				op->type = R_ANAL_OP_TYPE_NOP;
-				if (scope_hint < UT64_MAX) {
-					hint = r_anal_hint_get (anal, scope_hint);
-					if (hint && !strncmp ("loop", hint->opcode, 4)) {
-						r_anal_hint_set_jump (anal, addr, op->jump);
-						r_anal_hint_set_jump (anal, op->jump, addr);
-					} else if (hint && !strncmp ("block", hint->opcode, 5)) {
-						// if/else/block
-						r_anal_hint_set_jump (anal, hint->jump, addr);
-						r_anal_hint_set_jump (anal, addr, UT64_MAX);
-					}
-					if (hint) {
-						r_anal_hint_set_opcode (anal, scope_hint, "invalid");
-						r_anal_hint_set_jump (anal, scope_hint, UT64_MAX);
-						r_anal_hint_del (anal, scope_hint, 1);
-						scope_hint++;
-					} else {
-						// all wasm routines ends with an end.
-						op->eob = true;
-						op->type = R_ANAL_OP_TYPE_RET;
-						scope_hint = UT64_MAX;
-					}
+			} else {
+				if (advance_till_scope_end (anal, op, addr + op->size, R_ANAL_OP_TYPE_CJMP, val, false)) {
+					eprintf ("[wasm] cannot find jump type for br_if (using block type)\n");
+					op->fail = addr + op->size;
+					r_anal_hint_set_jump (anal, addr, op->jump);
 				} else {
-					if (!(hint = r_anal_hint_get (anal, addr))) {
-						// all wasm routines ends with an end.
-						op->eob = true;
-						op->type = R_ANAL_OP_TYPE_RET;
-					}
+					eprintf ("[wasm] cannot find jump for br_if\n");
 				}
 			}
-			break;
+			r_anal_hint_free (hint2);
+		} break;
+		case WASM_OP_END: {
+			op->type = R_ANAL_OP_TYPE_NOP;
+			if (scope_hint < UT64_MAX) {
+				hint = r_anal_hint_get (anal, scope_hint);
+				if (hint && !strncmp ("loop", hint->opcode, 4)) {
+					r_anal_hint_set_jump (anal, addr, op->jump);
+					r_anal_hint_set_jump (anal, op->jump, addr);
+				} else if (hint && !strncmp ("block", hint->opcode, 5)) {
+					// if/else/block
+					r_anal_hint_set_jump (anal, hint->jump, addr);
+					r_anal_hint_set_jump (anal, addr, UT64_MAX);
+				}
+				if (hint) {
+					r_anal_hint_set_opcode (anal, scope_hint, "invalid");
+					r_anal_hint_set_jump (anal, scope_hint, UT64_MAX);
+					r_anal_hint_del (anal, scope_hint, 1);
+					scope_hint++;
+				} else {
+					// all wasm routines ends with an end.
+					op->eob = true;
+					op->type = R_ANAL_OP_TYPE_RET;
+					scope_hint = UT64_MAX;
+				}
+			} else {
+				if (!(hint = r_anal_hint_get (anal, addr))) {
+					// all wasm routines ends with an end.
+					op->eob = true;
+					op->type = R_ANAL_OP_TYPE_RET;
+				}
+			}
+		} break;
 		case WASM_OP_I32REMS:
 		case WASM_OP_I32REMU:
 			op->type = R_ANAL_OP_TYPE_MOD;
@@ -342,7 +336,7 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			if (op->jump != UT64_MAX) {
 				op->ptr = op->jump;
 			}
-			r_strbuf_setf (&op->esil, "4,sp,-=,0x%"PFMT64x",sp,=[4],0x%"PFMT64x",pc,=", op->fail, op->jump);
+			r_strbuf_setf (&op->esil, "4,sp,-=,0x%" PFMT64x ",sp,=[4],0x%" PFMT64x ",pc,=", op->fail, op->jump);
 			break;
 		case WASM_OP_RETURN:
 			// should be ret, but if there the analisys is stopped.
@@ -439,11 +433,11 @@ anal_end:
 	return op->size;
 }
 
-static int archinfo(RAnal *a, int q) {
+static int archinfo (RAnal *a, int q) {
 	return 1;
 }
 
-static char *get_reg_profile(RAnal *anal) {
+static char *get_reg_profile (RAnal *anal) {
 	return strdup (
 		"=PC	pc\n"
 		"=BP	bp\n"

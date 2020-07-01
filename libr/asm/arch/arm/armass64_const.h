@@ -1,6 +1,6 @@
 struct {
-        const char *name;
-        ut16 val;
+	const char *name;
+	ut16 val;
 } msr_const[] = {
 	{ "MDCCSR_EL0", 0x9808 },
 	{ "DBGDTRRX_EL0", 0x9828 },

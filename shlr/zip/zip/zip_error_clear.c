@@ -31,17 +31,12 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
-
 #include "zipint.h"
 
-
-
 ZIP_EXTERN void
-zip_error_clear(struct zip *za)
-{
-    if (za == NULL)
-	return;
+zip_error_clear (struct zip *za) {
+	if (za == NULL)
+		return;
 
-    _zip_error_clear(&za->error);
+	_zip_error_clear (&za->error);
 }

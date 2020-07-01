@@ -6,8 +6,8 @@
 #include <r_types.h>
 #include <r_lib.h>
 
-static int disassemble(RAsm *as, RAsmOp *op, const ut8 *buf, int len) {
-	struct lh5801_insn insn = {0};
+static int disassemble (RAsm *as, RAsmOp *op, const ut8 *buf, int len) {
+	struct lh5801_insn insn = { 0 };
 	if (!op) {
 		return 0;
 	}
@@ -17,7 +17,7 @@ static int disassemble(RAsm *as, RAsmOp *op, const ut8 *buf, int len) {
 		op->size = 1;
 		return 0;
 	}
-	char buf_asm[128] = {0};
+	char buf_asm[128] = { 0 };
 	lh5801_print_insn (buf_asm, sizeof (buf_asm), &insn);
 	r_strbuf_set (&op->buf_asm, buf_asm);
 	op->size = consumed;

@@ -6,126 +6,126 @@
 #include "v810_disas.h"
 
 static const char *instrs[] = {
-	[V810_MOV]			= "mov",
-	[V810_ADD]			= "add",
-	[V810_SUB]			= "sub",
-	[V810_CMP]			= "cmp",
-	[V810_SHL]			= "shl",
-	[V810_SHR]			= "shr",
-	[V810_JMP]			= "jmp",
-	[V810_SAR]			= "sar",
-	[V810_MUL]			= "mul",
-	[V810_DIV]			= "div",
-	[V810_MULU]			= "mulu",
-	[V810_DIVU]			= "divu",
-	[V810_OR]			= "or",
-	[V810_AND]			= "and",
-	[V810_XOR]			= "xor",
-	[V810_NOT]			= "not",
-	[V810_MOV_IMM5]		= "mov",
-	[V810_ADD_IMM5]		= "add",
-	[V810_CMP_IMM5]		= "cmp",
-	[V810_SHL_IMM5]		= "shl",
-	[V810_SHR_IMM5]		= "shr",
-	[V810_SAR_IMM5]		= "sar",
-	[V810_MOVEA]		= "movea",
-	[V810_MOVHI]		= "movhi",
-	[V810_ADDI]			= "addi",
-	[V810_ORI]			= "ori",
-	[V810_ANDI]			= "andi",
-	[V810_XORI]			= "xori",
-	[V810_JR]			= "jr",
-	[V810_JAL]			= "jal",
-	[V810_LDB]			= "ld.b",
-	[V810_LDH]			= "ld.h",
-	[V810_LDW]			= "ld.w",
-	[V810_STB]			= "st.b",
-	[V810_STH]			= "st.h",
-	[V810_STW]			= "st.w",
-	[V810_INB]			= "in.b",
-	[V810_INH]			= "in.h",
-	[V810_CAXI]			= "caxi",
-	[V810_INW]			= "in.w",
-	[V810_OUTB]			= "out.b",
-	[V810_OUTH]			= "out.h",
-	[V810_OUTW]			= "out.w",
-	[V810_SETF]			= "setf",
-	[V810_LDSR]			= "ldsr",
-	[V810_STSR]			= "stsr",
-	[V810_TRAP]			= "trap",
-	[V810_HALT]			= "halt",
-	[V810_RETI]			= "reti",
-	[V810_SEI]			= "sei",
-	[V810_CLI]			= "cli",
+	[V810_MOV] = "mov",
+	[V810_ADD] = "add",
+	[V810_SUB] = "sub",
+	[V810_CMP] = "cmp",
+	[V810_SHL] = "shl",
+	[V810_SHR] = "shr",
+	[V810_JMP] = "jmp",
+	[V810_SAR] = "sar",
+	[V810_MUL] = "mul",
+	[V810_DIV] = "div",
+	[V810_MULU] = "mulu",
+	[V810_DIVU] = "divu",
+	[V810_OR] = "or",
+	[V810_AND] = "and",
+	[V810_XOR] = "xor",
+	[V810_NOT] = "not",
+	[V810_MOV_IMM5] = "mov",
+	[V810_ADD_IMM5] = "add",
+	[V810_CMP_IMM5] = "cmp",
+	[V810_SHL_IMM5] = "shl",
+	[V810_SHR_IMM5] = "shr",
+	[V810_SAR_IMM5] = "sar",
+	[V810_MOVEA] = "movea",
+	[V810_MOVHI] = "movhi",
+	[V810_ADDI] = "addi",
+	[V810_ORI] = "ori",
+	[V810_ANDI] = "andi",
+	[V810_XORI] = "xori",
+	[V810_JR] = "jr",
+	[V810_JAL] = "jal",
+	[V810_LDB] = "ld.b",
+	[V810_LDH] = "ld.h",
+	[V810_LDW] = "ld.w",
+	[V810_STB] = "st.b",
+	[V810_STH] = "st.h",
+	[V810_STW] = "st.w",
+	[V810_INB] = "in.b",
+	[V810_INH] = "in.h",
+	[V810_CAXI] = "caxi",
+	[V810_INW] = "in.w",
+	[V810_OUTB] = "out.b",
+	[V810_OUTH] = "out.h",
+	[V810_OUTW] = "out.w",
+	[V810_SETF] = "setf",
+	[V810_LDSR] = "ldsr",
+	[V810_STSR] = "stsr",
+	[V810_TRAP] = "trap",
+	[V810_HALT] = "halt",
+	[V810_RETI] = "reti",
+	[V810_SEI] = "sei",
+	[V810_CLI] = "cli",
 };
 
 static const char *bit_instrs[] = {
-	[V810_BIT_SCH0U]	= "sch0bsu",
-	[V810_BIT_SCH0D]	= "sch0bsd",
-	[V810_BIT_SCH1U]	= "sch1bsu",
-	[V810_BIT_SCH1D]	= "sch1bsd",
-	[V810_BIT_ORU]		= "orbsu",
-	[V810_BIT_ANDU]		= "andbsu",
-	[V810_BIT_XORU]		= "xorbsu",
-	[V810_BIT_MOVU]		= "movbsu",
-	[V810_BIT_ORNU]		= "ornbsu",
-	[V810_BIT_ANDNU]	= "andnbsu",
-	[V810_BIT_XORNU]	= "xornbsu",
-	[V810_BIT_NOTU]		= "notbsu",
+	[V810_BIT_SCH0U] = "sch0bsu",
+	[V810_BIT_SCH0D] = "sch0bsd",
+	[V810_BIT_SCH1U] = "sch1bsu",
+	[V810_BIT_SCH1D] = "sch1bsd",
+	[V810_BIT_ORU] = "orbsu",
+	[V810_BIT_ANDU] = "andbsu",
+	[V810_BIT_XORU] = "xorbsu",
+	[V810_BIT_MOVU] = "movbsu",
+	[V810_BIT_ORNU] = "ornbsu",
+	[V810_BIT_ANDNU] = "andnbsu",
+	[V810_BIT_XORNU] = "xornbsu",
+	[V810_BIT_NOTU] = "notbsu",
 };
 
 static const char *ext_instrs[] = {
-	[V810_EXT_CMPF_S]	= "cmpf.s",
-	[V810_EXT_CVT_WS]	= "cvt.ws",
-	[V810_EXT_CVT_SW]	= "cvt.sw",
-	[V810_EXT_ADDF_S]	= "addf.s",
-	[V810_EXT_SUBF_S]	= "subf.s",
-	[V810_EXT_MULF_S]	= "mulf.s",
-	[V810_EXT_DIVF_S]	= "divf.s",
-	[V810_EXT_XB]		= "xb",
-	[V810_EXT_XH]		= "xh",
-	[V810_EXT_REV]		= "rev",
-	[V810_EXT_TRNC_SW]	= "trnc.sw",
-	[V810_EXT_MPYHW]	= "mpyhw",
+	[V810_EXT_CMPF_S] = "cmpf.s",
+	[V810_EXT_CVT_WS] = "cvt.ws",
+	[V810_EXT_CVT_SW] = "cvt.sw",
+	[V810_EXT_ADDF_S] = "addf.s",
+	[V810_EXT_SUBF_S] = "subf.s",
+	[V810_EXT_MULF_S] = "mulf.s",
+	[V810_EXT_DIVF_S] = "divf.s",
+	[V810_EXT_XB] = "xb",
+	[V810_EXT_XH] = "xh",
+	[V810_EXT_REV] = "rev",
+	[V810_EXT_TRNC_SW] = "trnc.sw",
+	[V810_EXT_MPYHW] = "mpyhw",
 };
 
 static const char *conds[] = {
-	[V810_COND_V]	= "v",
-	[V810_COND_L]	= "l",
-	[V810_COND_E]	= "e",
-	[V810_COND_NH]	= "nh",
-	[V810_COND_N]	= "n",
-	[V810_COND_NONE]= "r",
-	[V810_COND_LT]	= "lt",
-	[V810_COND_LE]	= "le",
-	[V810_COND_NV]	= "nv",
-	[V810_COND_NL]	= "nl",
-	[V810_COND_NE]	= "ne",
-	[V810_COND_H]	= "h",
-	[V810_COND_P]	= "p",
-	[V810_COND_GE]	= "ge",
-	[V810_COND_GT]	= "gt",
+	[V810_COND_V] = "v",
+	[V810_COND_L] = "l",
+	[V810_COND_E] = "e",
+	[V810_COND_NH] = "nh",
+	[V810_COND_N] = "n",
+	[V810_COND_NONE] = "r",
+	[V810_COND_LT] = "lt",
+	[V810_COND_LE] = "le",
+	[V810_COND_NV] = "nv",
+	[V810_COND_NL] = "nl",
+	[V810_COND_NE] = "ne",
+	[V810_COND_H] = "h",
+	[V810_COND_P] = "p",
+	[V810_COND_GE] = "ge",
+	[V810_COND_GT] = "gt",
 };
 
 static const char *sysreg_names[] = {
-	[V810_SREG_EIPC]	= "EIPC",
-	[V810_SREG_EIPSW]	= "EIPSW",
-	[V810_SREG_FEPC]	= "FEPC",
-	[V810_SREG_FEPSW]	= "FEPSW",
-	[V810_SREG_ECR]		= "ECR",
-	[V810_SREG_PSW]		= "PSW",
-	[V810_SREG_PIR]		= "PIR",
-	[V810_SREG_TKCW]	= "TKCW",
-	[V810_SREG_CHCW]	= "CHCW",
-	[V810_SREG_ADTRE]	= "ADTRE",
+	[V810_SREG_EIPC] = "EIPC",
+	[V810_SREG_EIPSW] = "EIPSW",
+	[V810_SREG_FEPC] = "FEPC",
+	[V810_SREG_FEPSW] = "FEPSW",
+	[V810_SREG_ECR] = "ECR",
+	[V810_SREG_PSW] = "PSW",
+	[V810_SREG_PIR] = "PIR",
+	[V810_SREG_TKCW] = "TKCW",
+	[V810_SREG_CHCW] = "CHCW",
+	[V810_SREG_ADTRE] = "ADTRE",
 };
 
-static int decode_reg_reg(const ut16 instr, struct v810_cmd *cmd) {
+static int decode_reg_reg (const ut16 instr, struct v810_cmd *cmd) {
 	ut8 opcode;
 
-	opcode = OPCODE(instr);
+	opcode = OPCODE (instr);
 
-	if (opcode >= sizeof(instrs) / sizeof(char *)) {
+	if (opcode >= sizeof (instrs) / sizeof (char *)) {
 		return -1;
 	}
 
@@ -133,44 +133,44 @@ static int decode_reg_reg(const ut16 instr, struct v810_cmd *cmd) {
 
 	if (opcode == V810_JMP) {
 		snprintf (cmd->operands, V810_INSTR_MAXLEN - 1, "[r%u]",
-				REG1(instr));
+			REG1 (instr));
 	} else {
 		snprintf (cmd->operands, V810_INSTR_MAXLEN - 1, "r%u, r%u",
-				REG1(instr), REG2(instr));
+			REG1 (instr), REG2 (instr));
 	}
 
 	return 2;
 }
 
-static int decode_imm_reg(const ut16 instr, struct v810_cmd *cmd) {
+static int decode_imm_reg (const ut16 instr, struct v810_cmd *cmd) {
 	ut8 opcode;
 	ut8 immed;
 
-	opcode = OPCODE(instr);
+	opcode = OPCODE (instr);
 
-	if (opcode >= sizeof(instrs) / sizeof(char *)) {
+	if (opcode >= sizeof (instrs) / sizeof (char *)) {
 		return -1;
 	}
 
 	snprintf (cmd->instr, V810_INSTR_MAXLEN - 1, "%s", instrs[opcode]);
 
-	immed = IMM5(instr);
+	immed = IMM5 (instr);
 
 	switch (opcode) {
 	case V810_MOV_IMM5:
 	case V810_ADD_IMM5:
 	case V810_CMP_IMM5:
 		snprintf (cmd->operands, V810_INSTR_MAXLEN - 1, "%d, r%u",
-				(st8)SEXT5(immed), REG2(instr));
+			(st8)SEXT5 (immed), REG2 (instr));
 		break;
 	case V810_LDSR:
 	case V810_STSR:
 		if (immed > 0x19 || (immed > 0x7 && immed < 0x18)) {
 			snprintf (cmd->operands, V810_INSTR_MAXLEN - 1, "s%u, r%u",
-					  (ut8)immed, REG2(instr));
+				(ut8)immed, REG2 (instr));
 		} else if (sysreg_names[immed]) {
 			snprintf (cmd->operands, V810_INSTR_MAXLEN - 1, "%s, r%u",
-					sysreg_names[immed], REG2(instr));
+				sysreg_names[immed], REG2 (instr));
 		}
 		break;
 	case V810_SETF:
@@ -178,23 +178,23 @@ static int decode_imm_reg(const ut16 instr, struct v810_cmd *cmd) {
 	case V810_SHR_IMM5:
 	case V810_SAR_IMM5:
 		snprintf (cmd->operands, V810_INSTR_MAXLEN - 1, "%u, r%u",
-				immed, REG2(instr));
+			immed, REG2 (instr));
 		break;
 	case V810_TRAP:
 		snprintf (cmd->operands, V810_INSTR_MAXLEN - 1, "%u",
-				immed);
+			immed);
 		break;
 	}
 
 	return 2;
 }
 
-static int decode_bcond(const ut16 instr, struct v810_cmd *cmd) {
+static int decode_bcond (const ut16 instr, struct v810_cmd *cmd) {
 	st16 disp;
 	ut8 cond;
 
 	cond = (instr >> 9) & 0xF;
-	disp = DISP9(instr);
+	disp = DISP9 (instr);
 
 	if (cond == V810_COND_NOP) {
 		snprintf (cmd->instr, V810_INSTR_MAXLEN - 1, "nop");
@@ -206,35 +206,35 @@ static int decode_bcond(const ut16 instr, struct v810_cmd *cmd) {
 	return 2;
 }
 
-static int decode_jump(const ut16 word1, const ut16 word2, struct v810_cmd *cmd) {
+static int decode_jump (const ut16 word1, const ut16 word2, struct v810_cmd *cmd) {
 	snprintf (cmd->instr, V810_INSTR_MAXLEN - 1, "%s",
-			instrs[OPCODE(word1)]);
+		instrs[OPCODE (word1)]);
 	snprintf (cmd->operands, V810_INSTR_MAXLEN - 1, "%d",
-			DISP26(word1, word2));
+		DISP26 (word1, word2));
 
 	return 4;
 }
 
-static int decode_3operands(const ut16 word1, const ut16 word2, struct v810_cmd *cmd) {
+static int decode_3operands (const ut16 word1, const ut16 word2, struct v810_cmd *cmd) {
 	snprintf (cmd->instr, V810_INSTR_MAXLEN - 1, "%s",
-			instrs[OPCODE(word1)]);
+		instrs[OPCODE (word1)]);
 
-	if (OPCODE(word1) == V810_ADDI) {
+	if (OPCODE (word1) == V810_ADDI) {
 		snprintf (cmd->operands, V810_INSTR_MAXLEN - 1, "%d, r%d, r%d",
-				(st16) word2, REG1(word1), REG2(word1));
+			(st16)word2, REG1 (word1), REG2 (word1));
 	} else {
 		snprintf (cmd->operands, V810_INSTR_MAXLEN - 1, "0x%x, r%d, r%d",
-				word2, REG1(word1), REG2(word1));
+			word2, REG1 (word1), REG2 (word1));
 	}
 
 	return 4;
 }
 
-static int decode_load_store(const ut16 word1, const ut16 word2, struct v810_cmd *cmd) {
+static int decode_load_store (const ut16 word1, const ut16 word2, struct v810_cmd *cmd) {
 	snprintf (cmd->instr, V810_INSTR_MAXLEN - 1, "%s",
-		instrs[OPCODE(word1)]);
+		instrs[OPCODE (word1)]);
 
-	switch (OPCODE(word1)) {
+	switch (OPCODE (word1)) {
 	case V810_STB:
 	case V810_STH:
 	case V810_STW:
@@ -242,8 +242,8 @@ static int decode_load_store(const ut16 word1, const ut16 word2, struct v810_cmd
 	case V810_OUTH:
 	case V810_OUTW:
 		snprintf (cmd->operands, V810_INSTR_MAXLEN - 1,
-				"r%d, %hd[r%d]",
-				REG2(word1), (st16)word2, REG1(word1));
+			"r%d, %hd[r%d]",
+			REG2 (word1), (st16)word2, REG1 (word1));
 		break;
 	case V810_LDB:
 	case V810_LDH:
@@ -253,31 +253,31 @@ static int decode_load_store(const ut16 word1, const ut16 word2, struct v810_cmd
 	case V810_INW:
 	case V810_CAXI:
 		snprintf (cmd->operands, V810_INSTR_MAXLEN - 1,
-				"%hd[r%d], r%d",
-				(st16)word2, REG1(word1), REG2(word1));
+			"%hd[r%d], r%d",
+			(st16)word2, REG1 (word1), REG2 (word1));
 		break;
 	}
 
 	return 4;
 }
 
-static int decode_bit_op(const ut16 instr, struct v810_cmd *cmd) {
+static int decode_bit_op (const ut16 instr, struct v810_cmd *cmd) {
 	ut8 subop;
 
-	subop = REG1(instr);
+	subop = REG1 (instr);
 	snprintf (cmd->instr, V810_INSTR_MAXLEN - 1, "%s", bit_instrs[subop]);
 
 	return 2;
 }
 
-static int decode_extended(const ut16 word1, const ut16 word2, struct v810_cmd *cmd) {
-	ut8 subop = OPCODE(word2);
+static int decode_extended (const ut16 word1, const ut16 word2, struct v810_cmd *cmd) {
+	ut8 subop = OPCODE (word2);
 	if (subop > 0xC) {
 		return -1;
 	}
 
 	snprintf (cmd->instr, V810_INSTR_MAXLEN - 1, "%s",
-			ext_instrs[subop]);
+		ext_instrs[subop]);
 
 	switch (subop) {
 	case V810_EXT_CMPF_S:
@@ -291,12 +291,12 @@ static int decode_extended(const ut16 word1, const ut16 word2, struct v810_cmd *
 	case V810_EXT_TRNC_SW:
 	case V810_EXT_MPYHW:
 		snprintf (cmd->operands, V810_INSTR_MAXLEN - 1, "r%d, r%d",
-				REG1(word1), REG2(word1));
+			REG1 (word1), REG2 (word1));
 		break;
 	case V810_EXT_XB:
 	case V810_EXT_XH:
 		snprintf (cmd->operands, V810_INSTR_MAXLEN - 1, "r%d",
-				REG2(word1));
+			REG2 (word1));
 		break;
 	default:
 		return -1;
@@ -305,7 +305,7 @@ static int decode_extended(const ut16 word1, const ut16 word2, struct v810_cmd *
 	return 4;
 }
 
-int v810_decode_command(const ut8 *instr, int len, struct v810_cmd *cmd) {
+int v810_decode_command (const ut8 *instr, int len, struct v810_cmd *cmd) {
 	int ret;
 	ut16 word1 = 0;
 	ut16 word2 = 0;
@@ -315,7 +315,7 @@ int v810_decode_command(const ut8 *instr, int len, struct v810_cmd *cmd) {
 		word2 = r_read_le16 (instr + 2);
 	}
 
-	switch (OPCODE(word1)) {
+	switch (OPCODE (word1)) {
 	case V810_MOV:
 	case V810_ADD:
 	case V810_SUB:
@@ -384,7 +384,7 @@ int v810_decode_command(const ut8 *instr, int len, struct v810_cmd *cmd) {
 		ret = decode_extended (word1, word2, cmd);
 		break;
 	default:
-		if ((OPCODE(word1) >> 3) == 0x4) {
+		if ((OPCODE (word1) >> 3) == 0x4) {
 			ret = decode_bcond (word1, cmd);
 		} else {
 			ret = -1;

@@ -5,7 +5,6 @@
 
 #define MODE 2
 
-
 #define check_attr_string(attr_idx, expect_string) \
 	mu_assert_streq (cu.dies[i].attr_values[attr_idx].string.content, expect_string, "Wrong string attribute information")
 
@@ -17,7 +16,7 @@
 
 #define check_attr_form(attr_idx, expect_form) \
 	mu_assert_eq (cu.dies[i].attr_values[attr_idx].attr_form, expect_form, "Wrong attribute name")
-	
+
 #define check_attr_data(attr_idx, expect_data) \
 	mu_assert_eq (cu.dies[i].attr_values[attr_idx].data, expect_data, "Wrong attribute data")
 
@@ -51,7 +50,7 @@
 		mu_assert_eq (hdr.abbrev_offset, abbr_offset, "Wrong header abbrev_offset information"); \
 	} while (0)
 
-bool test_dwarf3_c(void) {
+bool test_dwarf3_c (void) {
 	RBin *bin = r_bin_new ();
 	RIO *io = r_io_new ();
 	r_io_bind (io, &bin->iob);
@@ -114,7 +113,7 @@ bool test_dwarf3_c(void) {
 	mu_end;
 }
 
-bool test_dwarf4_cpp_multiple_modules(void) {
+bool test_dwarf4_cpp_multiple_modules (void) {
 	RBin *bin = r_bin_new ();
 	RIO *io = r_io_new ();
 	r_io_bind (io, &bin->iob);
@@ -312,7 +311,7 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 	check_attr_block_data (2, 0, 0x56);
 	check_attr_reference (3, 0x442);
 	check_attr_reference (4, 0x410);
-	i=40;
+	i = 40;
 	check_die_abbr_code (8);
 	i++;
 	check_die_abbr_code (0);
@@ -324,12 +323,12 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 	mu_end;
 }
 
-bool all_tests() {
+bool all_tests () {
 	mu_run_test (test_dwarf3_c);
 	mu_run_test (test_dwarf4_cpp_multiple_modules);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
+int main (int argc, char **argv) {
 	return all_tests ();
 }

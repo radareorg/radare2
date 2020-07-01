@@ -2,17 +2,17 @@
 
 #include <limits.h>
 
-static void doIndent(int idt, char **o, const char *tab) {
+static void doIndent (int idt, char **o, const char *tab) {
 	int i;
 	char *x;
 	for (i = 0; i < idt; i++) {
-		for (x = (char *) tab; *x; x++) {
+		for (x = (char *)tab; *x; x++) {
 			*(*o)++ = *x;
 		}
 	}
 }
 
-SDB_API char *sdb_json_indent(const char *s, const char *tab) {
+SDB_API char *sdb_json_indent (const char *s, const char *tab) {
 	int idx, indent = 0;
 	int instr = 0;
 	size_t o_size = 0;
@@ -85,7 +85,7 @@ SDB_API char *sdb_json_indent(const char *s, const char *tab) {
 		case '{':
 		case '[':
 			*o++ = *s;
-			*o++ = (indent != -1)? '\n': ' ';
+			*o++ = (indent != -1) ? '\n' : ' ';
 			indent++;
 			doIndent (indent, &o, tab);
 			break;
@@ -107,7 +107,7 @@ SDB_API char *sdb_json_indent(const char *s, const char *tab) {
 }
 
 // TODO: move to utils?
-SDB_API char *sdb_json_unindent(const char *s) {
+SDB_API char *sdb_json_unindent (const char *s) {
 	int instr = 0;
 	int len = strlen (s);
 	char *o, *O = malloc (len + 1);

@@ -4,12 +4,12 @@
 #include <errno.h>
 
 #define FMT_NONE 0
-#define FMT_RAW  1
+#define FMT_RAW 1
 #define FMT_JSON 2
 
 static int needs_newline = 0;
 
-static char *showfile(char *res, const int nth, const char *fpath, const char *name, int printfmt) {
+static char *showfile (char *res, const int nth, const char *fpath, const char *name, int printfmt) {
 #if __UNIX__
 	struct stat sb;
 #endif
@@ -31,10 +31,10 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 		free (nn);
 		return res;
 	}
-	perm = isdir? 0755: 0644;
+	perm = isdir ? 0755 : 0644;
 	if (!printfmt) {
-		needs_newline = ((nth + 1) % 4)? 1: 0;
-		res = r_str_appendf (res, "%18s%s", nn, needs_newline? "  ": "\n");
+		needs_newline = ((nth + 1) % 4) ? 1 : 0;
+		res = r_str_appendf (res, "%18s%s", nn, needs_newline ? "  " : "\n");
 		free (nn);
 		return res;
 	}
@@ -70,7 +70,7 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 	}
 #else
 	u_rwx = strdup ("-");
-	fch = isdir? 'd': '-';
+	fch = isdir ? 'd' : '-';
 #endif
 	if (printfmt == 'q') {
 		res = r_str_appendf (res, "%s\n", nn);
@@ -99,8 +99,8 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 		res = r_str_appendf (res, "%s %s\n", icon, nn);
 	} else if (printfmt == FMT_RAW) {
 		res = r_str_appendf (res, "%c%s%s%s  1 %4d:%-4d  %-10d  %s\n",
-			isdir?'d': fch,
-			u_rwx? u_rwx: "-",
+			isdir ? 'd' : fch,
+			u_rwx ? u_rwx : "-",
 			r_str_rwx_i ((perm >> 3) & 7),
 			r_str_rwx_i (perm & 7),
 			uid, gid, sz, nn);
@@ -109,8 +109,8 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 			res = r_str_append (res, ",");
 		}
 		res = r_str_appendf (res, "{\"name\":\"%s\",\"size\":%d,\"uid\":%d,"
-			"\"gid\":%d,\"perm\":%d,\"isdir\":%s}",
-			name, sz, uid, gid, perm, isdir? "true": "false");
+					  "\"gid\":%d,\"perm\":%d,\"isdir\":%s}",
+			name, sz, uid, gid, perm, isdir ? "true" : "false");
 	}
 	free (nn);
 	free (u_rwx);
@@ -118,7 +118,7 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 }
 
 // TODO: Move into r_util .. r_print maybe? r_cons dep is annoying
-R_API char *r_syscmd_ls(const char *input) {
+R_API char *r_syscmd_ls (const char *input) {
 	char *res = NULL;
 	const char *path = ".";
 	char *d = NULL;
@@ -179,7 +179,7 @@ R_API char *r_syscmd_ls(const char *input) {
 		}
 	} else if (*path == '$') {
 		if (!strncmp (path + 1, "home", 4) || !strncmp (path + 1, "HOME", 4)) {
-			homepath = r_str_home ((strlen (path) > 5)? path + 6: NULL);
+			homepath = r_str_home ((strlen (path) > 5) ? path + 6 : NULL);
 			if (homepath) {
 				path = (const char *)homepath;
 			}
@@ -189,7 +189,7 @@ R_API char *r_syscmd_ls(const char *input) {
 		p = strrchr (path, '/');
 		if (p) {
 			off = p - path;
-			d = (char *) calloc (1, off + 1);
+			d = (char *)calloc (1, off + 1);
 			if (!d) {
 				free (homepath);
 				return NULL;
@@ -255,7 +255,7 @@ static int cmpstr (const void *_a, const void *_b) {
 	return (int)strcmp (a, b);
 }
 
-R_API char *r_syscmd_sort(const char *file) {
+R_API char *r_syscmd_sort (const char *file) {
 	const char *p = NULL;
 	RList *list = NULL;
 	if (file) {
@@ -285,7 +285,7 @@ R_API char *r_syscmd_sort(const char *file) {
 	return NULL;
 }
 
-R_API char *r_syscmd_head(const char *file, int count) {
+R_API char *r_syscmd_head (const char *file, int count) {
 	const char *p = NULL;
 	if (file) {
 		if ((p = strchr (file, ' '))) {
@@ -293,7 +293,7 @@ R_API char *r_syscmd_head(const char *file, int count) {
 		} else {
 			p = file;
 		}
-	} 
+	}
 	if (p && *p) {
 		char *filename = strdup (p);
 		r_str_trim (filename);
@@ -309,7 +309,7 @@ R_API char *r_syscmd_head(const char *file, int count) {
 	return NULL;
 }
 
-R_API char *r_syscmd_tail(const char *file, int count) {
+R_API char *r_syscmd_tail (const char *file, int count) {
 	const char *p = NULL;
 	if (file) {
 		if ((p = strchr (file, ' '))) {
@@ -333,7 +333,7 @@ R_API char *r_syscmd_tail(const char *file, int count) {
 	return NULL;
 }
 
-R_API char *r_syscmd_uniq(const char *file) {
+R_API char *r_syscmd_uniq (const char *file) {
 	const char *p = NULL;
 	RList *list = NULL;
 	if (file) {
@@ -364,7 +364,7 @@ R_API char *r_syscmd_uniq(const char *file) {
 	return NULL;
 }
 
-R_API char *r_syscmd_join(const char *file1, const char *file2) {
+R_API char *r_syscmd_join (const char *file1, const char *file2) {
 	const char *p1 = NULL, *p2 = NULL;
 	RList *list1, *list2, *list = r_list_newf (NULL);
 	if (!list) {
@@ -384,7 +384,7 @@ R_API char *r_syscmd_join(const char *file1, const char *file2) {
 			p2 = file2;
 		}
 	}
-	if (p1 && *p1 && p2 && *p2 ) {
+	if (p1 && *p1 && p2 && *p2) {
 		char *filename1 = strdup (p1);
 		char *filename2 = strdup (p2);
 		r_str_trim (filename1);
@@ -396,12 +396,12 @@ R_API char *r_syscmd_join(const char *file1, const char *file2) {
 		if (!data1 && !data2) {
 			eprintf ("No such files or directory\n");
 		} else {
-			list1 = r_str_split_list (data1, "\n",  0);
+			list1 = r_str_split_list (data1, "\n", 0);
 			list2 = r_str_split_list (data2, "\n", 0);
 
 			char *str1, *str2;
 			r_list_foreach (list1, iter1, str1) {
-				char *field = strdup (str1);			// extract comman field
+				char *field = strdup (str1); // extract comman field
 				char *end = strchr (field, ' ');
 				if (end) {
 					*end = '\0';
@@ -435,7 +435,7 @@ R_API char *r_syscmd_join(const char *file1, const char *file2) {
 	return NULL;
 }
 
-R_API char *r_syscmd_cat(const char *file) {
+R_API char *r_syscmd_cat (const char *file) {
 	const char *p = NULL;
 	if (file) {
 		if ((p = strchr (file, ' '))) {
@@ -459,14 +459,15 @@ R_API char *r_syscmd_cat(const char *file) {
 	return NULL;
 }
 
-R_API char *r_syscmd_mkdir(const char *dir) {
+R_API char *r_syscmd_mkdir (const char *dir) {
 	const char *suffix = r_str_trim_head_ro (strchr (dir, ' '));
 	if (!suffix || !strncmp (suffix, "-p", 3)) {
 		return r_str_dup (NULL, "Usage: mkdir [-p] [directory]\n");
 	}
 	int ret;
 	char *dirname = (!strncmp (suffix, "-p ", 3))
-		? strdup (suffix + 3): strdup (suffix);
+		? strdup (suffix + 3)
+		: strdup (suffix);
 	r_str_trim (dirname);
 	ret = r_sys_mkdirp (dirname);
 	if (!ret) {
@@ -480,7 +481,7 @@ R_API char *r_syscmd_mkdir(const char *dir) {
 	return NULL;
 }
 
-R_API bool r_syscmd_mv(const char *input) {
+R_API bool r_syscmd_mv (const char *input) {
 	if (strlen (input) < 3) {
 		eprintf ("Usage: mv src dst\n");
 		return false;

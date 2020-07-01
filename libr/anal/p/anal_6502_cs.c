@@ -18,12 +18,12 @@
 
 static csh handle = 0;
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int analop (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	static int omode = 0;
 #if USE_ITER_API
 	static
 #endif
-	cs_insn *insn = NULL;
+		cs_insn *insn = NULL;
 	int mode = 0;
 	int n, ret;
 
@@ -49,11 +49,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		if (!insn) {
 			insn = cs_malloc (handle);
 		}
-		n = cs_disasm_iter (handle, (const uint8_t**)&buf,
-			&size, (uint64_t*)&naddr, insn);
+		n = cs_disasm_iter (handle, (const uint8_t **)&buf,
+			&size, (uint64_t *)&naddr, insn);
 	}
 #else
-	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
+	n = cs_disasm (handle, (const ut8 *)buf, len, addr, 1, &insn);
 #endif
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
@@ -168,7 +168,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	return op->size;
 }
 
-static bool set_reg_profile(RAnal *anal) {
+static bool set_reg_profile (RAnal *anal) {
 	char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"

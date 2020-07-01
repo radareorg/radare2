@@ -4,7 +4,7 @@
 #include <string.h>
 #include <r_core.h>
 
-static bool matchBytes(RSignItem *a, RSignItem *b) {
+static bool matchBytes (RSignItem *a, RSignItem *b) {
 	if (a->bytes && b->bytes) {
 		if (a->bytes->size == b->bytes->size) {
 			return !memcmp (a->bytes->bytes, b->bytes->bytes, b->bytes->size);
@@ -13,7 +13,7 @@ static bool matchBytes(RSignItem *a, RSignItem *b) {
 	return false;
 }
 
-static bool matchGraph(RSignItem *a, RSignItem *b) {
+static bool matchGraph (RSignItem *a, RSignItem *b) {
 	if (a->graph && b->graph) {
 		if (a->graph->cc != b->graph->cc) {
 			return false;
@@ -27,7 +27,7 @@ static bool matchGraph(RSignItem *a, RSignItem *b) {
 		if (a->graph->edges != b->graph->edges) {
 			return false;
 		}
-		if (a->graph->bbsum!= b->graph->bbsum) {
+		if (a->graph->bbsum != b->graph->bbsum) {
 			return false;
 		}
 		return true;
@@ -35,7 +35,7 @@ static bool matchGraph(RSignItem *a, RSignItem *b) {
 	return false;
 }
 
-R_API int r_core_zdiff(RCore *c, RCore *c2) {
+R_API int r_core_zdiff (RCore *c, RCore *c2) {
 	if (!c || !c2) {
 		return false;
 	}
@@ -81,14 +81,14 @@ R_API int r_core_zdiff(RCore *c, RCore *c2) {
 				continue;
 			}
 			if (matchBytes (si, si2)) {
-				eprintf ("0x%08"PFMT64x" 0x%08"PFMT64x" B %s\n", si->addr, si2->addr, si->name);
+				eprintf ("0x%08" PFMT64x " 0x%08" PFMT64x " B %s\n", si->addr, si2->addr, si->name);
 			}
 			if (matchGraph (si, si2)) {
-				eprintf ("0x%08"PFMT64x" 0x%08"PFMT64x" G %s\n", si->addr, si2->addr, si->name);
+				eprintf ("0x%08" PFMT64x " 0x%08" PFMT64x " G %s\n", si->addr, si2->addr, si->name);
 			}
 		}
 	}
-	
+
 	/* Diff functions */
 	// r_anal_diff_fcn (cores[0]->anal, cores[0]->anal->fcns, cores[1]->anal->fcns);
 

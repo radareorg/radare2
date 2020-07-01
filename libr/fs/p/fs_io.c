@@ -4,7 +4,7 @@
 #include <r_lib.h>
 #include <sys/stat.h>
 
-static RFSFile *fs_io_open(RFSRoot *root, const char *path, bool create) {
+static RFSFile *fs_io_open (RFSRoot *root, const char *path, bool create) {
 	char *cmd = r_str_newf ("m %s", path);
 	char *res = root->iob.system (root->iob.io, cmd);
 	R_FREE (cmd);
@@ -29,7 +29,7 @@ static RFSFile *fs_io_open(RFSRoot *root, const char *path, bool create) {
 	return NULL;
 }
 
-static bool fs_io_read(RFSFile *file, ut64 addr, int len) {
+static bool fs_io_read (RFSFile *file, ut64 addr, int len) {
 	RFSRoot *root = file->root;
 	char *abs_path = r_fs_file_copy_abs_path (file);
 	if (!abs_path) {
@@ -45,11 +45,11 @@ static bool fs_io_read(RFSFile *file, ut64 addr, int len) {
 	if (res) {
 		int encoded_size = strlen (res);
 		if (encoded_size != len * 2) {
-			eprintf ("Unexpected size (%d vs %d)\n", encoded_size, len*2);
+			eprintf ("Unexpected size (%d vs %d)\n", encoded_size, len * 2);
 			R_FREE (res);
 			return false;
 		}
-		file->data = (ut8 *) calloc (1, len);
+		file->data = (ut8 *)calloc (1, len);
 		if (!file->data) {
 			R_FREE (res);
 			return false;
@@ -64,11 +64,11 @@ static bool fs_io_read(RFSFile *file, ut64 addr, int len) {
 	return false;
 }
 
-static void fs_io_close(RFSFile *file) {
+static void fs_io_close (RFSFile *file) {
 	// fclose (file->ptr);
 }
 
-static void append_file(RList *list, const char *name, int type, int time, ut64 size) {
+static void append_file (RList *list, const char *name, int type, int time, ut64 size) {
 	RFSFile *fsf = r_fs_file_new (NULL, name);
 	if (!fsf) {
 		return;
@@ -79,7 +79,7 @@ static void append_file(RList *list, const char *name, int type, int time, ut64 
 	r_list_append (list, fsf);
 }
 
-static RList *fs_io_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
+static RList *fs_io_dir (RFSRoot *root, const char *path, int view /*ignored*/) {
 	RList *list = r_list_new ();
 	if (!list) {
 		return NULL;
@@ -110,12 +110,12 @@ static RList *fs_io_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
 	return list;
 }
 
-static int fs_io_mount(RFSRoot *root) {
+static int fs_io_mount (RFSRoot *root) {
 	root->ptr = NULL;
 	return true;
 }
 
-static void fs_io_umount(RFSRoot *root) {
+static void fs_io_umount (RFSRoot *root) {
 	root->ptr = NULL;
 }
 

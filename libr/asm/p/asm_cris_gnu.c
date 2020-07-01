@@ -20,7 +20,6 @@ http://developer.axis.com/old/documentation/hw/etraxfs/iop_howto/iop_howto.pdf
 
 #include "disas-asm.h"
 
-
 static unsigned long Offset = 0;
 static RStrBuf *buf_global = NULL;
 static unsigned char bytes[8];
@@ -30,16 +29,16 @@ static int cris_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 leng
 	return 0;
 }
 
-static int symbol_at_address(bfd_vma addr, struct disassemble_info * info) {
+static int symbol_at_address (bfd_vma addr, struct disassemble_info *info) {
 	return 0;
 }
 
-static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_info *info) {
+static void memory_error_func (int status, bfd_vma memaddr, struct disassemble_info *info) {
 	//--
 }
 
-DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
-DECLARE_GENERIC_FPRINTF_FUNC()
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC ()
+DECLARE_GENERIC_FPRINTF_FUNC ()
 
 bfd_boolean cris_parse_disassembler_options (disassemble_info *info, int distype);
 
@@ -51,7 +50,7 @@ int print_insn_cris_without_register_prefix (bfd_vma vma, disassemble_info *info
 int print_insn_crisv32_with_register_prefix (bfd_vma vma, disassemble_info *info);
 int print_insn_crisv32_without_register_prefix (bfd_vma vma, disassemble_info *info);
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
 	int mode = 2;
 	if (len < 4) {
@@ -63,7 +62,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
-	disasm_obj.disassembler_options=(a->bits==64)?"64":"";
+	disasm_obj.disassembler_options = (a->bits == 64) ? "64" : "";
 	disasm_obj.buffer = bytes;
 	disasm_obj.read_memory_func = &cris_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
@@ -79,10 +78,10 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		// 1: v10-v32
 		// 2: v32
 		mode = 0;
-		if (strstr (a->cpu,  "v10")) {
+		if (strstr (a->cpu, "v10")) {
 			mode = 1;
 		}
-		if (strstr (a->cpu,  "v32")) {
+		if (strstr (a->cpu, "v32")) {
 			mode = 2;
 		}
 	} else {

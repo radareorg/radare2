@@ -2,8 +2,8 @@
 
 #include <r_fs.h>
 
-R_API RFSFile* r_fs_file_new(RFSRoot* root, const char* path) {
-	RFSFile* file = R_NEW0 (RFSFile);
+R_API RFSFile *r_fs_file_new (RFSRoot *root, const char *path) {
+	RFSFile *file = R_NEW0 (RFSFile);
 	if (!file) {
 		return NULL;
 	}
@@ -22,7 +22,7 @@ R_API RFSFile* r_fs_file_new(RFSRoot* root, const char* path) {
 	return file;
 }
 
-R_API void r_fs_file_free(RFSFile* file) {
+R_API void r_fs_file_free (RFSFile *file) {
 	if (file) {
 		free (file->path);
 		free (file->name);
@@ -31,7 +31,7 @@ R_API void r_fs_file_free(RFSFile* file) {
 	}
 }
 
-R_API char* r_fs_file_copy_abs_path(RFSFile* file) {
+R_API char *r_fs_file_copy_abs_path (RFSFile *file) {
 	if (!file) {
 		return NULL;
 	}
@@ -42,9 +42,9 @@ R_API char* r_fs_file_copy_abs_path(RFSFile* file) {
 }
 
 // TODO: Use RFSRoot and pass it in the stack instead of heap? problematic with bindings
-R_API RFSRoot* r_fs_root_new(const char* path, ut64 delta) {
-	char* p;
-	RFSRoot* root = R_NEW0 (RFSRoot);
+R_API RFSRoot *r_fs_root_new (const char *path, ut64 delta) {
+	char *p;
+	RFSRoot *root = R_NEW0 (RFSRoot);
 	if (!root) {
 		return NULL;
 	}
@@ -55,13 +55,13 @@ R_API RFSRoot* r_fs_root_new(const char* path, ut64 delta) {
 	}
 	p = root->path + strlen (path);
 	if (*p == '/') {
-		*p = 0;        // chop tailing slash
+		*p = 0; // chop tailing slash
 	}
 	root->delta = delta;
 	return root;
 }
 
-R_API void r_fs_root_free(RFSRoot* root) {
+R_API void r_fs_root_free (RFSRoot *root) {
 	if (root) {
 		if (root->p && root->p->umount) {
 			root->p->umount (root);
@@ -71,8 +71,8 @@ R_API void r_fs_root_free(RFSRoot* root) {
 	}
 }
 
-R_API RFSPartition* r_fs_partition_new(int num, ut64 start, ut64 length) {
-	RFSPartition* p = R_NEW0 (RFSPartition);
+R_API RFSPartition *r_fs_partition_new (int num, ut64 start, ut64 length) {
+	RFSPartition *p = R_NEW0 (RFSPartition);
 	if (!p) {
 		return NULL;
 	}
@@ -83,6 +83,6 @@ R_API RFSPartition* r_fs_partition_new(int num, ut64 start, ut64 length) {
 	return p;
 }
 
-R_API void r_fs_partition_free(RFSPartition* p) {
+R_API void r_fs_partition_free (RFSPartition *p) {
 	free (p);
 }

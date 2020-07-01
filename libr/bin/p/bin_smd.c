@@ -91,11 +91,11 @@ typedef struct gen_vect {
 	};
 } SMD_Vectors;
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr (RBinFile *bf) {
 	return 0;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	if (r_buf_size (b) > 0x190) {
 		ut8 buf[4];
 		r_buf_read_at (b, 0x100, buf, sizeof (buf));
@@ -104,11 +104,11 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (b);
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	RBinInfo *ret = NULL;
 	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
@@ -127,25 +127,25 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static void addsym(RList *ret, const char *name, ut64 addr) {
+static void addsym (RList *ret, const char *name, ut64 addr) {
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
 	if (!ptr) {
 		return;
 	}
-	ptr->name = strdup (name? name: "");
+	ptr->name = strdup (name ? name : "");
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->size = 0;
 	ptr->ordinal = 0;
 	r_list_append (ret, ptr);
 }
 
-static void showstr(const char *str, const ut8 *s, int len) {
-	char *msg = r_str_ndup ((const char *) s, len);
+static void showstr (const char *str, const ut8 *s, int len) {
+	char *msg = r_str_ndup ((const char *)s, len);
 	eprintf ("%s: %s\n", str, msg);
 	free (msg);
 }
 
-static RList *symbols(RBinFile *bf) {
+static RList *symbols (RBinFile *bf) {
 	RList *ret = NULL;
 	const char *name = NULL;
 	int i;
@@ -154,7 +154,7 @@ static RList *symbols(RBinFile *bf) {
 		return NULL;
 	}
 	SMD_Header hdr;
-	int left = r_buf_read_at (bf->buf, 0x100, (ut8*)&hdr, sizeof (hdr));
+	int left = r_buf_read_at (bf->buf, 0x100, (ut8 *)&hdr, sizeof (hdr));
 	if (left < sizeof (SMD_Header)) {
 		return NULL;
 	}
@@ -167,13 +167,13 @@ static RList *symbols(RBinFile *bf) {
 	showstr ("DomesticName", hdr.DomesticName, 48);
 	showstr ("OverseasName", hdr.OverseasName, 48);
 	showstr ("ProductCode", hdr.ProductCode, 14);
-	eprintf ("Checksum: 0x%04x\n", (ut32) hdr.CheckSum);
+	eprintf ("Checksum: 0x%04x\n", (ut32)hdr.CheckSum);
 	showstr ("Peripherials", hdr.Peripherials, 16);
 	showstr ("SramCode", hdr.SramCode, 12);
 	showstr ("ModemCode", hdr.ModemCode, 12);
 	showstr ("CountryCode", hdr.CountryCode, 16);
 	ut32 vtable[64];
-	r_buf_read_at (bf->buf, 0, (ut8*)&vtable, sizeof (ut32) * 64);
+	r_buf_read_at (bf->buf, 0, (ut8 *)&vtable, sizeof (ut32) * 64);
 	/* parse vtable */
 	for (i = 0; i < 64; i++) {
 		switch (i) {
@@ -251,7 +251,7 @@ static RList *symbols(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
+static RList *sections (RBinFile *bf) {
 	RList *ret = NULL;
 	if (!(ret = r_list_new ())) {
 		return NULL;
@@ -283,8 +283,8 @@ static RList *sections(RBinFile *bf) {
 	ptr->name = strdup ("text");
 	ptr->paddr = ptr->vaddr = 0x100 + sizeof (SMD_Header);
 	{
-		SMD_Header hdr = {{0}};
-		r_buf_read_at (bf->buf, 0x100, (ut8*)&hdr, sizeof (hdr));
+		SMD_Header hdr = { { 0 } };
+		r_buf_read_at (bf->buf, 0x100, (ut8 *)&hdr, sizeof (hdr));
 		ut64 baddr = r_read_be32 (&hdr.RomStart);
 		ptr->vaddr += baddr;
 	}
@@ -295,7 +295,7 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList *entries(RBinFile *bf) { // Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
+static RList *entries (RBinFile *bf) { // Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
 	RList *ret;
 	RBinAddr *ptr = NULL;
 	if (!(ret = r_list_new ())) {
@@ -310,7 +310,7 @@ static RList *entries(RBinFile *bf) { // Should be 3 offsets pointed by NMI, RES
 		r_list_append (ret, ptr);
 	} else {
 		SMD_Vectors vectors;
-		r_buf_read_at (bf->buf, 0, (ut8*)&vectors, sizeof (vectors));
+		r_buf_read_at (bf->buf, 0, (ut8 *)&vectors, sizeof (vectors));
 		ptr->paddr = ptr->vaddr = r_read_be32 (&vectors.Reset);
 		r_list_append (ret, ptr);
 	}

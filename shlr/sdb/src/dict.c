@@ -15,7 +15,7 @@ SDB_API dict *dict_new (ut32 size, dict_freecb f) {
 }
 
 // maybe internal?
-static ut32 dict_bucket(dict *m, dicti k) {
+static ut32 dict_bucket (dict *m, dicti k) {
 	if (m->size > 0) {
 		return k % m->size;
 	}

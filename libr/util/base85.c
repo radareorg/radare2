@@ -30,7 +30,7 @@
 #include <ctype.h>
 #include <r_types.h>
 
-static int getc_nospace(FILE *f) {
+static int getc_nospace (FILE *f) {
 	int c;
 	while (isspace (c = getc (f))) {
 		;
@@ -38,44 +38,42 @@ static int getc_nospace(FILE *f) {
 	return c;
 }
 
-static void putc_wrap(char c, int wrap, int *len) {
+static void putc_wrap (char c, int wrap, int *len) {
 	if (wrap && *len >= wrap) {
 		putchar ('\n');
 		*len = 0;
 	}
-	putchar(c);
+	putchar (c);
 	(*len)++;
 }
 
-static void encode_tuple(unsigned long tuple, int count, int wrap, int *plen, int y_abbr) {
+static void encode_tuple (unsigned long tuple, int count, int wrap, int *plen, int y_abbr) {
 	int i, lim;
 	char out[5];
 	if (tuple == 0 && count == 4) {
-		putc_wrap('z', wrap, plen);
-	}
-	else if (tuple == 0x20202020 && count == 4 && y_abbr) {
-		putc_wrap('y', wrap, plen);
-	}
-	else {
+		putc_wrap ('z', wrap, plen);
+	} else if (tuple == 0x20202020 && count == 4 && y_abbr) {
+		putc_wrap ('y', wrap, plen);
+	} else {
 		for (i = 0; i < 5; i++) {
 			out[i] = tuple % 85 + '!';
 			tuple /= 85;
 		}
 		lim = 4 - count;
 		for (i = 4; i >= lim; i--) {
-			putc_wrap(out[i], wrap, plen);
+			putc_wrap (out[i], wrap, plen);
 		}
 	}
 }
 
-R_API void r_base85_decode_tuple(unsigned long tuple, int count) {
+R_API void r_base85_decode_tuple (unsigned long tuple, int count) {
 	int i;
 	for (i = 1; i < count; i++) {
-		putchar(tuple >> ((4 - i) * 8));
+		putchar (tuple >> ((4 - i) * 8));
 	}
 }
 
-R_API void r_base85_encode(FILE *fp, int delims, int wrap, int y_abbr) {
+R_API void r_base85_encode (FILE *fp, int delims, int wrap, int y_abbr) {
 	int c, count = 0, len = 0;
 	unsigned long tuple = 0;
 	if (delims) {
@@ -83,7 +81,7 @@ R_API void r_base85_encode(FILE *fp, int delims, int wrap, int y_abbr) {
 		putc_wrap ('~', wrap, &len);
 	}
 	for (;;) {
-		c = getc(fp);
+		c = getc (fp);
 		if (c != EOF) {
 			tuple |= c << ((3 - count++) * 8);
 			if (count < 4) {
@@ -92,7 +90,7 @@ R_API void r_base85_encode(FILE *fp, int delims, int wrap, int y_abbr) {
 		} else if (count == 0) {
 			break;
 		}
-		encode_tuple(tuple, count, wrap, &len, y_abbr);
+		encode_tuple (tuple, count, wrap, &len, y_abbr);
 		if (c == EOF) {
 			break;
 		}
@@ -105,9 +103,9 @@ R_API void r_base85_encode(FILE *fp, int delims, int wrap, int y_abbr) {
 	}
 }
 
-R_API bool r_base85_decode(FILE *fp, int delims, int ignore_garbage) {
+R_API bool r_base85_decode (FILE *fp, int delims, int ignore_garbage) {
 	int c, count = 0, end = 0;
-	unsigned long tuple = 0, pows[] = {85*85*85*85, 85*85*85, 85*85, 85, 1};
+	unsigned long tuple = 0, pows[] = { 85 * 85 * 85 * 85, 85 * 85 * 85, 85 * 85, 85, 1 };
 	while (delims) {
 		c = getc_nospace (fp);
 		if (c == '<') {
@@ -122,7 +120,7 @@ R_API bool r_base85_decode(FILE *fp, int delims, int ignore_garbage) {
 		}
 	}
 	for (;;) {
-		c = getc_nospace(fp);
+		c = getc_nospace (fp);
 		if (c == 'z' && count == 0) {
 			r_base85_decode_tuple (0, 5);
 			continue;
@@ -146,8 +144,8 @@ R_API bool r_base85_decode(FILE *fp, int delims, int ignore_garbage) {
 				return false;
 			}
 			if (count > 0) {
-				tuple += pows[count-1];
-				r_base85_decode_tuple(tuple, count);
+				tuple += pows[count - 1];
+				r_base85_decode_tuple (tuple, count);
 			}
 			break;
 		}
@@ -160,7 +158,7 @@ R_API bool r_base85_decode(FILE *fp, int delims, int ignore_garbage) {
 		}
 		tuple += (c - '!') * pows[count++];
 		if (count == 5) {
-			r_base85_decode_tuple(tuple, count);
+			r_base85_decode_tuple (tuple, count);
 			tuple = 0;
 			count = 0;
 		}

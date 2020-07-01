@@ -17,7 +17,7 @@
  */
 
 #ifndef GRUB_TERMINFO_HEADER
-#define GRUB_TERMINFO_HEADER	1
+#define GRUB_TERMINFO_HEADER 1
 
 #include <grub/err.h>
 #include <grub/types.h>
@@ -27,7 +27,7 @@ char *grub_terminfo_get_current (void);
 grub_err_t grub_terminfo_set_current (const char *);
 
 void grub_terminfo_gotoxy (grub_uint8_t x, grub_uint8_t y,
-			   grub_term_output_t oterm);
+	grub_term_output_t oterm);
 void grub_terminfo_cls (grub_term_output_t oterm);
 void grub_terminfo_reverse_video_on (grub_term_output_t oterm);
 void grub_terminfo_reverse_video_off (grub_term_output_t oterm);

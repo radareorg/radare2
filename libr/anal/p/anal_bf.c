@@ -6,7 +6,7 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
-static size_t countChar(const ut8 *buf, int len, char ch) {
+static size_t countChar (const ut8 *buf, int len, char ch) {
 	int i;
 	for (i = 0; i < len; i++) {
 		if (buf[i] != ch) {
@@ -19,11 +19,11 @@ static size_t countChar(const ut8 *buf, int len, char ch) {
 static int getid (char ch) {
 	const char *keys = "[]<>+-,.";
 	const char *cidx = strchr (keys, ch);
-	return cidx? cidx - keys + 1: 0;
+	return cidx ? cidx - keys + 1 : 0;
 }
 
 #define BUFSIZE_INC 32
-static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int bf_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	ut64 dst = 0LL;
 	if (!op) {
 		return 1;
@@ -36,7 +36,7 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 	switch (buf[0]) {
 	case '[':
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->fail = addr+1;
+		op->fail = addr + 1;
 		buf = r_mem_dup ((void *)buf, len);
 		if (!buf) {
 			break;
@@ -51,13 +51,14 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 				}
 				if (*p == ']') {
 					lev--;
-					if (lev==-1) {
-						dst = addr + (size_t)(p-buf);
-						dst ++;
+					if (lev == -1) {
+						dst = addr + (size_t) (p - buf);
+						dst++;
 						op->jump = dst;
 						r_strbuf_setf (&op->esil,
-								"$$,brk,=[1],brk,++=,"
-								"ptr,[1],!,?{,0x%"PFMT64x",pc,=,brk,--=,}", dst);
+							"$$,brk,=[1],brk,++=,"
+							"ptr,[1],!,?{,0x%" PFMT64x ",pc,=,brk,--=,}",
+							dst);
 						goto beach;
 					}
 				}
@@ -83,7 +84,8 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 beach:
 		free ((ut8 *)buf);
 		break;
-	case ']': op->type = R_ANAL_OP_TYPE_UJMP;
+	case ']':
+		op->type = R_ANAL_OP_TYPE_UJMP;
 		// XXX This is wrong esil
 		r_strbuf_set (&op->esil, "brk,--=,brk,[1],pc,=");
 		break;
@@ -128,7 +130,7 @@ beach:
 	return op->size;
 }
 
-static char *get_reg_profile(RAnal *anal) {
+static char *get_reg_profile (RAnal *anal) {
 	return strdup (
 		"=PC	pc\n"
 		"=BP	brk\n"

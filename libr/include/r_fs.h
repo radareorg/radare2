@@ -60,17 +60,17 @@ typedef struct r_fs_plugin_t {
 	const char *name;
 	const char *desc;
 	const char *license;
-	RFSFile* (*slurp)(RFSRoot *root, const char *path);
-	RFSFile* (*open)(RFSRoot *root, const char *path, bool create);
-	bool (*unlink)(RFSRoot *root, const char *path);
-	bool (*write)(RFSFile *fs, ut64 addr, const ut8 *data, int len);
-	bool (*read)(RFSFile *fs, ut64 addr, int len);
-	void (*close)(RFSFile *fs);
-	RList *(*dir)(RFSRoot *root, const char *path, int view);
-	void (*init)(void);
-	void (*fini)(void);
-	int (*mount)(RFSRoot *root);
-	void (*umount)(RFSRoot *root);
+	RFSFile *(*slurp) (RFSRoot *root, const char *path);
+	RFSFile *(*open) (RFSRoot *root, const char *path, bool create);
+	bool (*unlink) (RFSRoot *root, const char *path);
+	bool (*write) (RFSFile *fs, ut64 addr, const ut8 *data, int len);
+	bool (*read) (RFSFile *fs, ut64 addr, int len);
+	void (*close) (RFSFile *fs);
+	RList *(*dir) (RFSRoot *root, const char *path, int view);
+	void (*init) (void);
+	void (*fini) (void);
+	int (*mount) (RFSRoot *root);
+	void (*umount) (RFSRoot *root);
 } RFSPlugin;
 
 typedef struct r_fs_partition_t {
@@ -83,9 +83,9 @@ typedef struct r_fs_partition_t {
 
 typedef struct r_fs_shell_t {
 	char **cwd;
-	void (*set_prompt)(const char *prompt);
-	const char* (*readline)(void);
-	int (*hist_add)(const char *line);
+	void (*set_prompt) (const char *prompt);
+	const char *(*readline) (void);
+	int (*hist_add) (const char *line);
 } RFSShell;
 
 #define R_FS_FILE_TYPE_MOUNTPOINT 'm'
@@ -95,14 +95,14 @@ typedef struct r_fs_shell_t {
 #define R_FS_FILE_TYPE_SPECIAL 's'
 #define R_FS_FILE_TYPE_MOUNT 'm'
 
-typedef int (*RFSPartitionIterator)(void *disk, void *ptr, void *user);
+typedef int (*RFSPartitionIterator) (void *disk, void *ptr, void *user);
 typedef struct r_fs_partition_type_t {
 	const char *name;
 	void *ptr; // grub_msdos_partition_map
 	RFSPartitionIterator iterate;
 	//RFSPartitionIterator parhook;
 } RFSPartitionType;
-#define R_FS_PARTITIONS_LENGTH (int)(sizeof (partitions)/sizeof(RFSPartitionType)-1)
+#define R_FS_PARTITIONS_LENGTH (int)(sizeof (partitions) / sizeof (RFSPartitionType) - 1)
 
 enum {
 	R_FS_VIEW_NORMAL = 0,
@@ -112,40 +112,40 @@ enum {
 };
 
 #ifdef R_API
-R_API RFS *r_fs_new(void);
-R_API void r_fs_view(RFS* fs, int view);
-R_API void r_fs_free(RFS* fs);
-R_API void r_fs_add(RFS *fs, RFSPlugin *p);
-R_API void r_fs_del(RFS *fs, RFSPlugin *p);
-R_API RFSRoot *r_fs_mount(RFS* fs, const char *fstype, const char *path, ut64 delta);
-R_API bool r_fs_umount(RFS* fs, const char *path);
-R_API RList *r_fs_root(RFS *fs, const char *path);
-R_API RFSFile *r_fs_open(RFS* fs, const char *path, bool create);
-R_API void r_fs_close(RFS* fs, RFSFile *file);
-R_API int r_fs_read(RFS* fs, RFSFile *file, ut64 addr, int len);
-R_API int r_fs_write(RFS* fs, RFSFile* file, ut64 addr, const ut8 *data, int len);
-R_API RFSFile *r_fs_slurp(RFS* fs, const char *path);
-R_API RList *r_fs_dir(RFS* fs, const char *path);
-R_API int r_fs_dir_dump(RFS* fs, const char *path, const char *name);
-R_API RList *r_fs_find_name(RFS* fs, const char *name, const char *glob);
-R_API RList *r_fs_find_off(RFS* fs, const char *name, ut64 off);
-R_API RList *r_fs_partitions(RFS* fs, const char *ptype, ut64 delta);
-R_API char *r_fs_name(RFS *fs, ut64 offset);
-R_API int r_fs_prompt(RFS *fs, const char *root);
-R_API bool r_fs_check(RFS *fs, const char *p);
-R_API int r_fs_shell_prompt(RFSShell *shell, RFS *fs, const char *root);
+R_API RFS *r_fs_new (void);
+R_API void r_fs_view (RFS *fs, int view);
+R_API void r_fs_free (RFS *fs);
+R_API void r_fs_add (RFS *fs, RFSPlugin *p);
+R_API void r_fs_del (RFS *fs, RFSPlugin *p);
+R_API RFSRoot *r_fs_mount (RFS *fs, const char *fstype, const char *path, ut64 delta);
+R_API bool r_fs_umount (RFS *fs, const char *path);
+R_API RList *r_fs_root (RFS *fs, const char *path);
+R_API RFSFile *r_fs_open (RFS *fs, const char *path, bool create);
+R_API void r_fs_close (RFS *fs, RFSFile *file);
+R_API int r_fs_read (RFS *fs, RFSFile *file, ut64 addr, int len);
+R_API int r_fs_write (RFS *fs, RFSFile *file, ut64 addr, const ut8 *data, int len);
+R_API RFSFile *r_fs_slurp (RFS *fs, const char *path);
+R_API RList *r_fs_dir (RFS *fs, const char *path);
+R_API int r_fs_dir_dump (RFS *fs, const char *path, const char *name);
+R_API RList *r_fs_find_name (RFS *fs, const char *name, const char *glob);
+R_API RList *r_fs_find_off (RFS *fs, const char *name, ut64 off);
+R_API RList *r_fs_partitions (RFS *fs, const char *ptype, ut64 delta);
+R_API char *r_fs_name (RFS *fs, ut64 offset);
+R_API int r_fs_prompt (RFS *fs, const char *root);
+R_API bool r_fs_check (RFS *fs, const char *p);
+R_API int r_fs_shell_prompt (RFSShell *shell, RFS *fs, const char *root);
 
 /* file.c */
-R_API RFSFile *r_fs_file_new(RFSRoot *root, const char *path);
-R_API void r_fs_file_free(RFSFile *file);
-R_API char* r_fs_file_copy_abs_path(RFSFile* file);
-R_API RFSRoot *r_fs_root_new(const char *path, ut64 delta);
-R_API void r_fs_root_free(RFSRoot *root);
-R_API RFSPartition *r_fs_partition_new(int num, ut64 start, ut64 length);
-R_API void r_fs_partition_free(RFSPartition *p);
-R_API const char *r_fs_partition_type(const char *part, int type);
-R_API const char *r_fs_partition_type_get(int n);
-R_API int r_fs_partition_get_size(void); // WTF. wrong function name
+R_API RFSFile *r_fs_file_new (RFSRoot *root, const char *path);
+R_API void r_fs_file_free (RFSFile *file);
+R_API char *r_fs_file_copy_abs_path (RFSFile *file);
+R_API RFSRoot *r_fs_root_new (const char *path, ut64 delta);
+R_API void r_fs_root_free (RFSRoot *root);
+R_API RFSPartition *r_fs_partition_new (int num, ut64 start, ut64 length);
+R_API void r_fs_partition_free (RFSPartition *p);
+R_API const char *r_fs_partition_type (const char *part, int type);
+R_API const char *r_fs_partition_type_get (int n);
+R_API int r_fs_partition_get_size (void); // WTF. wrong function name
 
 /* plugins */
 extern RFSPlugin r_fs_plugin_io;

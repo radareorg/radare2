@@ -70,7 +70,7 @@ typedef struct {
 	st64 end_offset;
 } pyc_code_object;
 
-bool get_sections_symbols_from_code_objects(RBuffer *buffer, RList *sections, RList *symbols, RList *objs, ut32 magic);
-ut64 get_code_object_addr(RBuffer *buffer, ut32 magic);
+bool get_sections_symbols_from_code_objects (RBuffer *buffer, RList *sections, RList *symbols, RList *objs, ut32 magic);
+ut64 get_code_object_addr (RBuffer *buffer, ut32 magic);
 
 #endif

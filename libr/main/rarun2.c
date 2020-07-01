@@ -5,11 +5,11 @@
 #include <r_socket.h>
 
 #if __UNIX__
-static void fwd(int sig) {
+static void fwd (int sig) {
 	/* do nothing? send kill signal to remote process */
 }
 
-static void rarun2_tty(void) {
+static void rarun2_tty (void) {
 	/* TODO: Implement in native code */
 	r_sys_cmd ("tty");
 	close (1);
@@ -21,7 +21,7 @@ static void rarun2_tty(void) {
 }
 #endif
 
-R_API int r_main_rarun2(int argc, const char **argv) {
+R_API int r_main_rarun2 (int argc, const char **argv) {
 	RRunProfile *p;
 	int i, ret;
 	if (argc == 1 || !strcmp (argv[1], "-h")) {
@@ -59,7 +59,7 @@ R_API int r_main_rarun2(int argc, const char **argv) {
 					? r_str_newf ("arg%d=%s", directiveIndex, word)
 					: r_str_newf ("program=%s", word);
 				r_run_parseline (p, line);
-				directiveIndex ++;
+				directiveIndex++;
 				free (line);
 			} else {
 				r_run_parseline (p, argv[i]);
@@ -71,7 +71,7 @@ R_API int r_main_rarun2(int argc, const char **argv) {
 	}
 	ret = r_run_config_env (p);
 	if (ret) {
-		printf("error while configuring the environment.\n");
+		printf ("error while configuring the environment.\n");
 		return 1;
 	}
 	ret = r_run_start (p);

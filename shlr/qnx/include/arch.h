@@ -14,9 +14,9 @@
  * register view
  */
 typedef struct registers_t {
-	char name[32];   /*! The Name of the current register */
+	char name[32]; /*! The Name of the current register */
 	ut64 offset; /*! Offset in the data block */
-	ut64 size;   /*! Size of the register */
+	ut64 size; /*! Size of the register */
 } registers_t;
 
 #endif

@@ -2,7 +2,7 @@
 
 #include <r_anal.h>
 
-typedef void (*RAnalEsilPin)(RAnal *a);
+typedef void (*RAnalEsilPin) (RAnal *a);
 
 #if 0
 // TODO: those hardcoded functions should go
@@ -28,30 +28,30 @@ static void pin_write(RAnal *a) {
 
 #define DB a->sdb_pins
 
-R_API void r_anal_pin_init(RAnal *a) {
+R_API void r_anal_pin_init (RAnal *a) {
 	sdb_free (DB);
-	DB = sdb_new0();
-//	sdb_ptr_set (DB, "strlen", pin_strlen, 0);
-//	sdb_ptr_set (DB, "write", pin_write, 0);
+	DB = sdb_new0 ();
+	//	sdb_ptr_set (DB, "strlen", pin_strlen, 0);
+	//	sdb_ptr_set (DB, "write", pin_write, 0);
 }
 
-R_API void r_anal_pin_fini(RAnal *a) {
+R_API void r_anal_pin_fini (RAnal *a) {
 	sdb_free (DB);
 }
 
-R_API void r_anal_pin(RAnal *a, ut64 addr, const char *name) {
+R_API void r_anal_pin (RAnal *a, ut64 addr, const char *name) {
 	char buf[64];
 	const char *key = sdb_itoa (addr, buf, 16);
 	sdb_set (DB, key, name, 0);
 }
 
-R_API void r_anal_pin_unset(RAnal *a, ut64 addr) {
+R_API void r_anal_pin_unset (RAnal *a, ut64 addr) {
 	char buf[64];
 	const char *key = sdb_itoa (addr, buf, 16);
 	sdb_unset (DB, key, 0);
 }
 
-R_API const char *r_anal_pin_call(RAnal *a, ut64 addr) {
+R_API const char *r_anal_pin_call (RAnal *a, ut64 addr) {
 	char buf[64];
 	const char *key = sdb_itoa (addr, buf, 16);
 	if (key) {
@@ -71,8 +71,8 @@ R_API const char *r_anal_pin_call(RAnal *a, ut64 addr) {
 	return NULL;
 }
 
-static bool cb_list(void *user, const char *k, const char *v) {
-	RAnal *a = (RAnal*)user;
+static bool cb_list (void *user, const char *k, const char *v) {
+	RAnal *a = (RAnal *)user;
 	if (*k == '0') {
 		// bind
 		a->cb_printf ("%s = %s\n", k, v);
@@ -83,6 +83,6 @@ static bool cb_list(void *user, const char *k, const char *v) {
 	return true;
 }
 
-R_API void r_anal_pin_list(RAnal *a) {
+R_API void r_anal_pin_list (RAnal *a) {
 	sdb_foreach (DB, cb_list, a);
 }

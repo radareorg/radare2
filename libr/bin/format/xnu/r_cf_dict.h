@@ -21,23 +21,23 @@ typedef struct _CFValue {
 } RCFValue;
 
 typedef struct _CFKeyValue {
-	char * key;
-	RCFValue * value;
+	char *key;
+	RCFValue *value;
 } RCFKeyValue;
 
 typedef struct _CFValueDict {
 	RCFValueType type;
-	RList * pairs; //_CFKeyValue
+	RList *pairs; //_CFKeyValue
 } RCFValueDict;
 
 typedef struct _CFValueArray {
 	RCFValueType type;
-	RList * values; //_CFValue
+	RList *values; //_CFValue
 } RCFValueArray;
 
 typedef struct _CFValueString {
 	RCFValueType type;
-	char * value;
+	char *value;
 } RCFValueString;
 
 typedef struct _CFValueInteger {
@@ -47,7 +47,7 @@ typedef struct _CFValueInteger {
 
 typedef struct _CFValueData {
 	RCFValueType type;
-	RBuffer * value;
+	RBuffer *value;
 } RCFValueData;
 
 typedef struct _CFValueBool {
@@ -58,8 +58,8 @@ typedef struct _CFValueNULL {
 	RCFValueType type;
 } RCFValueNULL;
 
-R_API RCFValueDict * r_cf_value_dict_parse(RBuffer * file_buf, ut64 offset, ut64 size, int options);
-R_API void r_cf_value_dict_free(RCFValueDict * dict);
-R_API void r_cf_value_print(RCFValue * value);
+R_API RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, int options);
+R_API void r_cf_value_dict_free (RCFValueDict *dict);
+R_API void r_cf_value_print (RCFValue *value);
 
 #endif

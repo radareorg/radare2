@@ -111,8 +111,8 @@ Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA. 
    CONST, VOLATILE, SIGNED, PROTO, EXFUN, DEFUN, DEFUN_VOID,
    AND, DOTS, NOARGS.  Don't use them.  */
 
-#ifndef	_ANSIDECL_H
-#define _ANSIDECL_H	1
+#ifndef _ANSIDECL_H
+#define _ANSIDECL_H 1
 
 /* Every source file includes this file,
    so they will all get the switch for lint.  */
@@ -136,7 +136,7 @@ So instead we use the macro below and test it against specific values.  */
 #define GCC_VERSION (__GNUC__ * 1000 + __GNUC_MINOR__)
 #endif /* GCC_VERSION */
 
-#if defined (__STDC__) || defined (_AIX) || (defined (__mips) && defined (_SYSTYPE_SVR4)) || defined(_WIN32) || defined(__WINDOWS__) || (defined(__alpha) && defined(__cplusplus))
+#if defined(__STDC__) || defined(_AIX) || (defined(__mips) && defined(_SYSTYPE_SVR4)) || defined(_WIN32) || defined(__WINDOWS__) || (defined(__alpha) && defined(__cplusplus))
 /* All known AIX compilers implement these things (but don't always
    define __STDC__).  The RISC/OS MIPS compiler defines these things
    in SVR4 mode, but does not define __STDC__.  */
@@ -144,27 +144,35 @@ So instead we use the macro below and test it against specific values.  */
    C++ compilers, does not define __STDC__, though it acts as if this
    was so. (Verified versions: 5.7, 6.2, 6.3, 6.5) */
 
-#define ANSI_PROTOTYPES	1
-#define PTR		void *
-#define PTRCONST	void *const
-#define LONG_DOUBLE	long double
+#define ANSI_PROTOTYPES 1
+#define PTR void *
+#define PTRCONST void *const
+#define LONG_DOUBLE long double
 
 /* PARAMS is often defined elsewhere (e.g. by libintl.h), so wrap it in
    a #ifndef.  */
 #ifndef PARAMS
-#define PARAMS(ARGS)		ARGS
+#define PARAMS(ARGS) ARGS
 #endif
 
-#define VPARAMS(ARGS)		ARGS
-#define VA_START(VA_LIST, VAR)	va_start(VA_LIST, VAR)
+#define VPARAMS(ARGS) ARGS
+#define VA_START(VA_LIST, VAR) va_start (VA_LIST, VAR)
 
 /* variadic function helper macros */
 /* "struct Qdmy" swallows the semicolon after VA_OPEN/VA_FIXEDARG's
    use without inhibiting further decls and without declaring an
    actual variable.  */
-#define VA_OPEN(AP, VAR)	{ va_list AP; va_start(AP, VAR); { struct Qdmy
-#define VA_CLOSE(AP)		} va_end(AP); }
-#define VA_FIXEDARG(AP, T, N)	struct Qdmy
+#define VA_OPEN(AP, VAR)            \
+	{                           \
+		va_list AP;         \
+		va_start (AP, VAR); \
+		{                   \
+			struct Qdmy
+#define VA_CLOSE(AP) \
+	}            \
+	va_end (AP); \
+	}
+#define VA_FIXEDARG(AP, T, N) struct Qdmy
 
 #undef const
 #undef volatile
@@ -176,42 +184,50 @@ So instead we use the macro below and test it against specific values.  */
 #if __STDC_VERSION__ > 199901L
 /* it's a keyword */
 #else
-# if GCC_VERSION >= 2007
-#  define inline __inline__   /* __inline__ prevents -pedantic warnings */
-# else
-#  define inline  /* nothing */
-# endif
+#if GCC_VERSION >= 2007
+#define inline __inline__ /* __inline__ prevents -pedantic warnings */
+#else
+#define inline /* nothing */
+#endif
 #endif
 
 /* These are obsolete.  Do not use.  */
 #ifndef IN_GCC
-#define CONST		const
-#define VOLATILE	volatile
-#define SIGNED		signed
+#define CONST const
+#define VOLATILE volatile
+#define SIGNED signed
 
-#define PROTO(type, name, arglist)	type name arglist
-#define EXFUN(name, proto)		name proto
-#define DEFUN(name, arglist, args)	name(args)
-#define DEFUN_VOID(name)		name(void)
-#define AND		,
-#define DOTS		, ...
-#define NOARGS		void
+#define PROTO(type, name, arglist) type name arglist
+#define EXFUN(name, proto) name proto
+#define DEFUN(name, arglist, args) name (args)
+#define DEFUN_VOID(name) name (void)
+#define AND ,
+#define DOTS , ...
+#define NOARGS void
 #endif /* ! IN_GCC */
 
-#else	/* Not ANSI C.  */
+#else /* Not ANSI C.  */
 
-#undef  ANSI_PROTOTYPES
-#define PTR		char *
-#define PTRCONST	PTR
-#define LONG_DOUBLE	double
+#undef ANSI_PROTOTYPES
+#define PTR char *
+#define PTRCONST PTR
+#define LONG_DOUBLE double
 
-#define PARAMS(args)		()
-#define VPARAMS(args)		(va_alist) va_dcl
-#define VA_START(va_list, var)	va_start(va_list)
+#define PARAMS(args) ()
+#define VPARAMS(args) (va_alist) va_dcl
+#define VA_START(va_list, var) va_start (va_list)
 
-#define VA_OPEN(AP, VAR)		{ va_list AP; va_start(AP); { struct Qdmy
-#define VA_CLOSE(AP)			} va_end(AP); }
-#define VA_FIXEDARG(AP, TYPE, NAME)	TYPE NAME = va_arg(AP, TYPE)
+#define VA_OPEN(AP, VAR)       \
+	{                      \
+		va_list AP;    \
+		va_start (AP); \
+		{              \
+			struct Qdmy
+#define VA_CLOSE(AP) \
+	}            \
+	va_end (AP); \
+	}
+#define VA_FIXEDARG(AP, TYPE, NAME) TYPE NAME = va_arg (AP, TYPE)
 
 /* some systems define these in header files for non-ansi mode */
 #undef const
@@ -228,41 +244,41 @@ So instead we use the macro below and test it against specific values.  */
 #define VOLATILE
 #define SIGNED
 
-#define PROTO(type, name, arglist)	type name ()
-#define EXFUN(name, proto)		name()
-#define DEFUN(name, arglist, args)	name arglist args;
-#define DEFUN_VOID(name)		name()
-#define AND		;
+#define PROTO(type, name, arglist) type name ()
+#define EXFUN(name, proto) name ()
+#define DEFUN(name, arglist, args) name arglist args;
+#define DEFUN_VOID(name) name ()
+#define AND ;
 #define DOTS
 #define NOARGS
 #endif /* ! IN_GCC */
 
-#endif	/* ANSI C.  */
+#endif /* ANSI C.  */
 
 /* Define macros for some gcc attributes.  This permits us to use the
    macros freely, and know that they will come into play for the
    version of gcc in which they are supported.  */
 
 #if (GCC_VERSION < 2007)
-# define __attribute__(x)
+#define __attribute__(x)
 #endif
 
 /* Attribute __malloc__ on functions was valid as of gcc 2.96. */
 #ifndef ATTRIBUTE_MALLOC
-# if (GCC_VERSION >= 2096)
-#  define ATTRIBUTE_MALLOC __attribute__ ((__malloc__))
-# else
-#  define ATTRIBUTE_MALLOC
-# endif /* GNUC >= 2.96 */
+#if (GCC_VERSION >= 2096)
+#define ATTRIBUTE_MALLOC __attribute__ ((__malloc__))
+#else
+#define ATTRIBUTE_MALLOC
+#endif /* GNUC >= 2.96 */
 #endif /* ATTRIBUTE_MALLOC */
 
 /* Attributes on labels were valid as of gcc 2.93. */
 #ifndef ATTRIBUTE_UNUSED_LABEL
-# if (!defined (__cplusplus) && GCC_VERSION >= 2093)
-#  define ATTRIBUTE_UNUSED_LABEL ATTRIBUTE_UNUSED
-# else
-#  define ATTRIBUTE_UNUSED_LABEL
-# endif /* !__cplusplus && GNUC >= 2.93 */
+#if (!defined(__cplusplus) && GCC_VERSION >= 2093)
+#define ATTRIBUTE_UNUSED_LABEL ATTRIBUTE_UNUSED
+#else
+#define ATTRIBUTE_UNUSED_LABEL
+#endif /* !__cplusplus && GNUC >= 2.93 */
 #endif /* ATTRIBUTE_UNUSED_LABEL */
 
 #ifndef ATTRIBUTE_UNUSED
@@ -271,10 +287,10 @@ So instead we use the macro below and test it against specific values.  */
 
 /* Before GCC 3.4, the C++ frontend couldn't parse attributes placed after the
    identifier name.  */
-#if ! defined(__cplusplus) || (GCC_VERSION >= 3004)
-# define ARG_UNUSED(NAME) NAME ATTRIBUTE_UNUSED
+#if !defined(__cplusplus) || (GCC_VERSION >= 3004)
+#define ARG_UNUSED(NAME) NAME ATTRIBUTE_UNUSED
 #else /* !__cplusplus || GNUC >= 3.4 */
-# define ARG_UNUSED(NAME) NAME
+#define ARG_UNUSED(NAME) NAME
 #endif /* !__cplusplus || GNUC >= 3.4 */
 
 #ifndef ATTRIBUTE_NORETURN
@@ -283,20 +299,20 @@ So instead we use the macro below and test it against specific values.  */
 
 /* Attribute `nonnull' was valid as of gcc 3.3.  */
 #ifndef ATTRIBUTE_NONNULL
-# if (GCC_VERSION >= 3003)
-#  define ATTRIBUTE_NONNULL(m) __attribute__ ((__nonnull__ (m)))
-# else
-#  define ATTRIBUTE_NONNULL(m)
-# endif /* GNUC >= 3.3 */
+#if (GCC_VERSION >= 3003)
+#define ATTRIBUTE_NONNULL(m) __attribute__ ((__nonnull__ (m)))
+#else
+#define ATTRIBUTE_NONNULL(m)
+#endif /* GNUC >= 3.3 */
 #endif /* ATTRIBUTE_NONNULL */
 
 /* Attribute `pure' was valid as of gcc 3.0.  */
 #ifndef ATTRIBUTE_PURE
-# if (GCC_VERSION >= 3000)
-#  define ATTRIBUTE_PURE __attribute__ ((__pure__))
-# else
-#  define ATTRIBUTE_PURE
-# endif /* GNUC >= 3.0 */
+#if (GCC_VERSION >= 3000)
+#define ATTRIBUTE_PURE __attribute__ ((__pure__))
+#else
+#define ATTRIBUTE_PURE
+#endif /* GNUC >= 3.0 */
 #endif /* ATTRIBUTE_PURE */
 
 /* Use ATTRIBUTE_PRINTF when the format specifier must not be NULL.
@@ -304,83 +320,82 @@ So instead we use the macro below and test it against specific values.  */
    before GCC 3.3, but as of 3.3 we need to add the `nonnull'
    attribute to retain this behavior.  */
 #ifndef ATTRIBUTE_PRINTF
-#define ATTRIBUTE_PRINTF(m, n) __attribute__ ((__format__ (__printf__, m, n))) ATTRIBUTE_NONNULL(m)
-#define ATTRIBUTE_PRINTF_1 ATTRIBUTE_PRINTF(1, 2)
-#define ATTRIBUTE_PRINTF_2 ATTRIBUTE_PRINTF(2, 3)
-#define ATTRIBUTE_PRINTF_3 ATTRIBUTE_PRINTF(3, 4)
-#define ATTRIBUTE_PRINTF_4 ATTRIBUTE_PRINTF(4, 5)
-#define ATTRIBUTE_PRINTF_5 ATTRIBUTE_PRINTF(5, 6)
+#define ATTRIBUTE_PRINTF(m, n) __attribute__ ((__format__ (__printf__, m, n))) ATTRIBUTE_NONNULL (m)
+#define ATTRIBUTE_PRINTF_1 ATTRIBUTE_PRINTF (1, 2)
+#define ATTRIBUTE_PRINTF_2 ATTRIBUTE_PRINTF (2, 3)
+#define ATTRIBUTE_PRINTF_3 ATTRIBUTE_PRINTF (3, 4)
+#define ATTRIBUTE_PRINTF_4 ATTRIBUTE_PRINTF (4, 5)
+#define ATTRIBUTE_PRINTF_5 ATTRIBUTE_PRINTF (5, 6)
 #endif /* ATTRIBUTE_PRINTF */
 
 /* Use ATTRIBUTE_FPTR_PRINTF when the format attribute is to be set on
    a function pointer.  Format attributes were allowed on function
    pointers as of gcc 3.1.  */
 #ifndef ATTRIBUTE_FPTR_PRINTF
-# if (GCC_VERSION >= 3001)
-#  define ATTRIBUTE_FPTR_PRINTF(m, n) ATTRIBUTE_PRINTF(m, n)
-# else
-#  define ATTRIBUTE_FPTR_PRINTF(m, n)
-# endif /* GNUC >= 3.1 */
-# define ATTRIBUTE_FPTR_PRINTF_1 ATTRIBUTE_FPTR_PRINTF(1, 2)
-# define ATTRIBUTE_FPTR_PRINTF_2 ATTRIBUTE_FPTR_PRINTF(2, 3)
-# define ATTRIBUTE_FPTR_PRINTF_3 ATTRIBUTE_FPTR_PRINTF(3, 4)
-# define ATTRIBUTE_FPTR_PRINTF_4 ATTRIBUTE_FPTR_PRINTF(4, 5)
-# define ATTRIBUTE_FPTR_PRINTF_5 ATTRIBUTE_FPTR_PRINTF(5, 6)
+#if (GCC_VERSION >= 3001)
+#define ATTRIBUTE_FPTR_PRINTF(m, n) ATTRIBUTE_PRINTF (m, n)
+#else
+#define ATTRIBUTE_FPTR_PRINTF(m, n)
+#endif /* GNUC >= 3.1 */
+#define ATTRIBUTE_FPTR_PRINTF_1 ATTRIBUTE_FPTR_PRINTF (1, 2)
+#define ATTRIBUTE_FPTR_PRINTF_2 ATTRIBUTE_FPTR_PRINTF (2, 3)
+#define ATTRIBUTE_FPTR_PRINTF_3 ATTRIBUTE_FPTR_PRINTF (3, 4)
+#define ATTRIBUTE_FPTR_PRINTF_4 ATTRIBUTE_FPTR_PRINTF (4, 5)
+#define ATTRIBUTE_FPTR_PRINTF_5 ATTRIBUTE_FPTR_PRINTF (5, 6)
 #endif /* ATTRIBUTE_FPTR_PRINTF */
 
 /* Use ATTRIBUTE_NULL_PRINTF when the format specifier may be NULL.  A
    NULL format specifier was allowed as of gcc 3.3.  */
 #ifndef ATTRIBUTE_NULL_PRINTF
-# if (GCC_VERSION >= 3003)
-#  define ATTRIBUTE_NULL_PRINTF(m, n) __attribute__ ((__format__ (__printf__, m, n)))
-# else
-#  define ATTRIBUTE_NULL_PRINTF(m, n)
-# endif /* GNUC >= 3.3 */
-# define ATTRIBUTE_NULL_PRINTF_1 ATTRIBUTE_NULL_PRINTF(1, 2)
-# define ATTRIBUTE_NULL_PRINTF_2 ATTRIBUTE_NULL_PRINTF(2, 3)
-# define ATTRIBUTE_NULL_PRINTF_3 ATTRIBUTE_NULL_PRINTF(3, 4)
-# define ATTRIBUTE_NULL_PRINTF_4 ATTRIBUTE_NULL_PRINTF(4, 5)
-# define ATTRIBUTE_NULL_PRINTF_5 ATTRIBUTE_NULL_PRINTF(5, 6)
+#if (GCC_VERSION >= 3003)
+#define ATTRIBUTE_NULL_PRINTF(m, n) __attribute__ ((__format__ (__printf__, m, n)))
+#else
+#define ATTRIBUTE_NULL_PRINTF(m, n)
+#endif /* GNUC >= 3.3 */
+#define ATTRIBUTE_NULL_PRINTF_1 ATTRIBUTE_NULL_PRINTF (1, 2)
+#define ATTRIBUTE_NULL_PRINTF_2 ATTRIBUTE_NULL_PRINTF (2, 3)
+#define ATTRIBUTE_NULL_PRINTF_3 ATTRIBUTE_NULL_PRINTF (3, 4)
+#define ATTRIBUTE_NULL_PRINTF_4 ATTRIBUTE_NULL_PRINTF (4, 5)
+#define ATTRIBUTE_NULL_PRINTF_5 ATTRIBUTE_NULL_PRINTF (5, 6)
 #endif /* ATTRIBUTE_NULL_PRINTF */
 
 /* Attribute `sentinel' was valid as of gcc 3.5.  */
 #ifndef ATTRIBUTE_SENTINEL
-# if (GCC_VERSION >= 3005)
-#  define ATTRIBUTE_SENTINEL __attribute__ ((__sentinel__))
-# else
-#  define ATTRIBUTE_SENTINEL
-# endif /* GNUC >= 3.5 */
+#if (GCC_VERSION >= 3005)
+#define ATTRIBUTE_SENTINEL __attribute__ ((__sentinel__))
+#else
+#define ATTRIBUTE_SENTINEL
+#endif /* GNUC >= 3.5 */
 #endif /* ATTRIBUTE_SENTINEL */
 
-
 #ifndef ATTRIBUTE_ALIGNED_ALIGNOF
-# if (GCC_VERSION >= 3000)
-#  define ATTRIBUTE_ALIGNED_ALIGNOF(m) __attribute__ ((__aligned__ (__alignof__ (m))))
-# else
-#  define ATTRIBUTE_ALIGNED_ALIGNOF(m)
-# endif /* GNUC >= 3.0 */
+#if (GCC_VERSION >= 3000)
+#define ATTRIBUTE_ALIGNED_ALIGNOF(m) __attribute__ ((__aligned__ (__alignof__(m))))
+#else
+#define ATTRIBUTE_ALIGNED_ALIGNOF(m)
+#endif /* GNUC >= 3.0 */
 #endif /* ATTRIBUTE_ALIGNED_ALIGNOF */
 
 /* Useful for structures whose layout must much some binary specification
    regardless of the alignment and padding qualities of the compiler.  */
 #ifndef ATTRIBUTE_PACKED
-# define ATTRIBUTE_PACKED __attribute__ ((packed))
+#define ATTRIBUTE_PACKED __attribute__ ((packed))
 #endif
 
 /* Attribute `hot' and `cold' was valid as of gcc 4.3.  */
 #ifndef ATTRIBUTE_COLD
-# if (GCC_VERSION >= 4003)
-#  define ATTRIBUTE_COLD __attribute__ ((__cold__))
-# else
-#  define ATTRIBUTE_COLD
-# endif /* GNUC >= 4.3 */
+#if (GCC_VERSION >= 4003)
+#define ATTRIBUTE_COLD __attribute__ ((__cold__))
+#else
+#define ATTRIBUTE_COLD
+#endif /* GNUC >= 4.3 */
 #endif /* ATTRIBUTE_COLD */
 #ifndef ATTRIBUTE_HOT
-# if (GCC_VERSION >= 4003)
-#  define ATTRIBUTE_HOT __attribute__ ((__hot__))
-# else
-#  define ATTRIBUTE_HOT
-# endif /* GNUC >= 4.3 */
+#if (GCC_VERSION >= 4003)
+#define ATTRIBUTE_HOT __attribute__ ((__hot__))
+#else
+#define ATTRIBUTE_HOT
+#endif /* GNUC >= 4.3 */
 #endif /* ATTRIBUTE_HOT */
 
 /* We use __extension__ in some places to suppress -pedantic warnings
@@ -390,4 +405,4 @@ So instead we use the macro below and test it against specific values.  */
 #define __extension__
 #endif
 
-#endif	/* ansidecl.h	*/
+#endif /* ansidecl.h	*/

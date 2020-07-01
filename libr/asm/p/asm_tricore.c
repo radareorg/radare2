@@ -11,7 +11,6 @@
 
 #include "disas-asm.h"
 
-
 static unsigned long Offset = 0;
 static RStrBuf *buf_global = NULL;
 static ut8 bytes[128];
@@ -20,12 +19,12 @@ enum {
 	TRICORE_RIDER_A = 0x00000001,
 	TRICORE_RIDER_B = 0x00000002,
 	TRICORE_RIDER_D = TRICORE_RIDER_B,
-	TRICORE_V2      = 0x00000004,
-	TRICORE_PCP     = 0x00000010,
-	TRICORE_PCP2    = 0x00000020
+	TRICORE_V2 = 0x00000004,
+	TRICORE_PCP = 0x00000010,
+	TRICORE_PCP2 = 0x00000020
 };
 
-static int cpu_to_mach(char *cpu_type) {
+static int cpu_to_mach (char *cpu_type) {
 	if (cpu_type && *cpu_type) {
 		if (!strcmp (cpu_type, "generic")) {
 			return TRICORE_GENERIC;
@@ -49,26 +48,26 @@ static int cpu_to_mach(char *cpu_type) {
 	return TRICORE_RIDER_B;
 }
 
-static int tricore_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
+static int tricore_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	int delta = memaddr - Offset;
-	if (delta >= 0 && length + delta < sizeof(bytes)) {
+	if (delta >= 0 && length + delta < sizeof (bytes)) {
 		memcpy (myaddr, bytes + delta, length);
 	}
 	return 0;
 }
 
-static int symbol_at_address(bfd_vma addr, struct disassemble_info * info) {
+static int symbol_at_address (bfd_vma addr, struct disassemble_info *info) {
 	return 0;
 }
 
-static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_info *info) {
+static void memory_error_func (int status, bfd_vma memaddr, struct disassemble_info *info) {
 	//--
 }
 
-DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
-DECLARE_GENERIC_FPRINTF_FUNC()
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC ()
+DECLARE_GENERIC_FPRINTF_FUNC ()
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
 	buf_global = &op->buf_asm;
 	Offset = a->pc;
@@ -76,7 +75,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
-	disasm_obj.disassembler_options = (a->bits==64)?"64":"";
+	disasm_obj.disassembler_options = (a->bits == 64) ? "64" : "";
 	disasm_obj.buffer = bytes;
 	disasm_obj.read_memory_func = &tricore_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;

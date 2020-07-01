@@ -4,7 +4,7 @@
 
 #include <r_debug.h>
 
-R_API RDebugDesc *r_debug_desc_new (int fd, char* path, int perm, int type, int off) {
+R_API RDebugDesc *r_debug_desc_new (int fd, char *path, int perm, int type, int off) {
 	RDebugDesc *desc = R_NEW (RDebugDesc);
 	if (desc) {
 		desc->fd = fd;
@@ -25,49 +25,49 @@ R_API void r_debug_desc_free (RDebugDesc *p) {
 	}
 }
 
-R_API int r_debug_desc_open(RDebug *dbg, const char *path) {
+R_API int r_debug_desc_open (RDebug *dbg, const char *path) {
 	if (dbg && dbg->h && dbg->h->desc.open) {
 		return dbg->h->desc.open (path);
 	}
 	return false;
 }
 
-R_API int r_debug_desc_close(RDebug *dbg, int fd) {
+R_API int r_debug_desc_close (RDebug *dbg, int fd) {
 	if (dbg && dbg->h && dbg->h->desc.close) {
 		return dbg->h->desc.close (fd);
 	}
 	return false;
 }
 
-R_API int r_debug_desc_dup(RDebug *dbg, int fd, int newfd) {
+R_API int r_debug_desc_dup (RDebug *dbg, int fd, int newfd) {
 	if (dbg && dbg->h && dbg->h->desc.dup) {
 		return dbg->h->desc.dup (fd, newfd);
 	}
 	return false;
 }
 
-R_API int r_debug_desc_read(RDebug *dbg, int fd, ut64 addr, int len) {
+R_API int r_debug_desc_read (RDebug *dbg, int fd, ut64 addr, int len) {
 	if (dbg && dbg->h && dbg->h->desc.read) {
 		return dbg->h->desc.read (fd, addr, len);
 	}
 	return false;
 }
 
-R_API int r_debug_desc_seek(RDebug *dbg, int fd, ut64 addr) {
+R_API int r_debug_desc_seek (RDebug *dbg, int fd, ut64 addr) {
 	if (dbg && dbg->h && dbg->h->desc.seek) {
 		return dbg->h->desc.seek (fd, addr);
 	}
 	return false;
 }
 
-R_API int r_debug_desc_write(RDebug *dbg, int fd, ut64 addr, int len) {
+R_API int r_debug_desc_write (RDebug *dbg, int fd, ut64 addr, int len) {
 	if (dbg && dbg->h && dbg->h->desc.write) {
 		return dbg->h->desc.write (fd, addr, len);
 	}
 	return false;
 }
 
-R_API int r_debug_desc_list(RDebug *dbg, int rad) {
+R_API int r_debug_desc_list (RDebug *dbg, int rad) {
 	int count = 0;
 	RList *list;
 	RListIter *iter;
@@ -81,10 +81,10 @@ R_API int r_debug_desc_list(RDebug *dbg, int rad) {
 		if (dbg && dbg->h && dbg->h->desc.list) {
 			list = dbg->h->desc.list (dbg->pid);
 			r_list_foreach (list, iter, p) {
-				dbg->cb_printf ("%i 0x%"PFMT64x" %c%c%c %s\n", p->fd, p->off,
-						(p->perm & R_PERM_R)?'r':'-',
-						(p->perm & R_PERM_W)?'w':'-',
-						p->type, p->path);
+				dbg->cb_printf ("%i 0x%" PFMT64x " %c%c%c %s\n", p->fd, p->off,
+					(p->perm & R_PERM_R) ? 'r' : '-',
+					(p->perm & R_PERM_W) ? 'w' : '-',
+					p->type, p->path);
 			}
 			r_list_purge (list);
 			free (list);

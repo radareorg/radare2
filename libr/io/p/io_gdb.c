@@ -16,21 +16,21 @@ typedef struct {
 
 #define R_GDB_MAGIC r_str_hash ("gdb")
 
-static int __close(RIODesc *fd);
+static int __close (RIODesc *fd);
 static libgdbr_t *desc = NULL;
 
-static bool __plugin_open(RIO *io, const char *file, bool many) {
+static bool __plugin_open (RIO *io, const char *file, bool many) {
 	return (!strncmp (file, "gdb://", 6));
 }
 
-static int debug_gdb_read_at(ut8 *buf, int sz, ut64 addr) {
+static int debug_gdb_read_at (ut8 *buf, int sz, ut64 addr) {
 	if (sz < 1 || addr >= UT64_MAX || !desc) {
 		return -1;
 	}
 	return gdbr_read_memory (desc, addr, buf, sz);
 }
 
-static int debug_gdb_write_at(const ut8 *buf, int sz, ut64 addr) {
+static int debug_gdb_write_at (const ut8 *buf, int sz, ut64 addr) {
 	ut32 x, size_max;
 	ut32 packets;
 	ut32 last;
@@ -50,7 +50,7 @@ static int debug_gdb_write_at(const ut8 *buf, int sz, ut64 addr) {
 	return sz;
 }
 
-static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
+static RIODesc *__open (RIO *io, const char *file, int rw, int mode) {
 	RIODesc *riogdb = NULL;
 	RIOGdb *riog;
 	char host[128], *port, *pid;
@@ -61,7 +61,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 	strncpy (host, file + 6, sizeof (host) - 1);
-	host [sizeof (host) - 1] = '\0';
+	host[sizeof (host) - 1] = '\0';
 	if (host[0] == '/') {
 		isdev = true;
 	}
@@ -82,11 +82,11 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			return NULL;
 		}
 
-		port = strchr (host , ':');
+		port = strchr (host, ':');
 		if (!port) {
 			eprintf ("Invalid debugger URI. Port missing?\nPlease use either\n"
-				" - gdb://host:port[/pid] for a network gdbserver.\n"
-				" - gdb:///dev/DEVICENAME[@speed][:pid] for a serial gdbserver.\n");
+				 " - gdb://host:port[/pid] for a network gdbserver.\n"
+				 " - gdb:///dev/DEVICENAME[@speed][:pid] for a serial gdbserver.\n");
 			return NULL;
 		}
 		*port = '\0';
@@ -135,7 +135,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	return riogdb;
 }
 
-static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
+static int __write (RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	ut64 addr = io->off;
 	if (!desc || !desc->data) {
 		return -1;
@@ -143,7 +143,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	return debug_gdb_write_at (buf, count, addr);
 }
 
-static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 __lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
 	case R_IO_SEEK_SET:
 		io->off = offset;
@@ -157,7 +157,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return io->off;
 }
 
-static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
+static int __read (RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	if (!io || !fd || !buf || count < 1) {
 		return -1;
 	}
@@ -169,7 +169,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return debug_gdb_read_at (buf, count, addr);
 }
 
-static int __close(RIODesc *fd) {
+static int __close (RIODesc *fd) {
 	if (fd) {
 		R_FREE (fd->name);
 	}
@@ -179,7 +179,7 @@ static int __close(RIODesc *fd) {
 	return -1;
 }
 
-static int __getpid(RIODesc *fd) {
+static int __getpid (RIODesc *fd) {
 	// XXX don't use globals
 	return desc ? desc->pid : -1;
 #if 0
@@ -198,14 +198,14 @@ static int __getpid(RIODesc *fd) {
 #endif
 }
 
-static int __gettid(RIODesc *fd) {
+static int __gettid (RIODesc *fd) {
 	return desc ? desc->tid : -1;
 }
 
-extern int send_msg(libgdbr_t *g, const char *command);
-extern int read_packet(libgdbr_t *instance);
+extern int send_msg (libgdbr_t *g, const char *command);
+extern int read_packet (libgdbr_t *instance);
 
-static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
+static char *__system (RIO *io, RIODesc *fd, const char *cmd) {
 	if (!desc) {
 		return NULL;
 	}
@@ -220,24 +220,24 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			 " =!dsb             - step backwards\n"
 			 " =!dcb             - continue backwards\n"
 			 " =!monitor cmd     - hex-encode monitor command and pass"
-			                     " to target interpreter\n"
+			 " to target interpreter\n"
 			 " =!detach [pid]    - detach from remote/detach specific pid\n"
 			 " =!inv.reg         - invalidate reg cache\n"
 			 " =!pktsz           - get max packet size used\n"
 			 " =!pktsz bytes     - set max. packet size as 'bytes' bytes\n"
 			 " =!exec_file [pid] - get file which was executed for"
-			                     " current/specified pid\n");
+			 " current/specified pid\n");
 		return NULL;
 	}
 	if (r_str_startswith (cmd, "pktsz")) {
 		const char *ptr = r_str_trim_head_ro (cmd + 5);
 		if (!isdigit ((ut8)*ptr)) {
 			io->cb_printf ("packet size: %u bytes\n",
-				       desc->stub_features.pkt_sz);
+				desc->stub_features.pkt_sz);
 			return NULL;
 		}
 		ut32 pktsz;
-		if (!(pktsz = (ut32) strtoul (ptr, NULL, 10))) {
+		if (!(pktsz = (ut32)strtoul (ptr, NULL, 10))) {
 			// pktsz = 0 doesn't make sense
 			return NULL;
 		}
@@ -297,7 +297,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			} else {
 				handle_stop_reason (desc);
 				if (desc->stop_reason.is_valid == false) {
-					eprintf("Thread (%d) stopped for an invalid reason: %d\n",
+					eprintf ("Thread (%d) stopped for an invalid reason: %d\n",
 						desc->stop_reason.thread.tid, desc->stop_reason.reason);
 				}
 			}
@@ -320,7 +320,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			} else {
 				handle_stop_reason (desc);
 				if (desc->stop_reason.is_valid == false) {
-					eprintf("Thread (%d) stopped for an invalid reason: %d\n",
+					eprintf ("Thread (%d) stopped for an invalid reason: %d\n",
 						desc->stop_reason.thread.tid, desc->stop_reason.reason);
 				}
 			}

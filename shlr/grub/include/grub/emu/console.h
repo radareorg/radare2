@@ -17,7 +17,7 @@
  */
 
 #ifndef GRUB_CONSOLE_UTIL_HEADER
-#define GRUB_CONSOLE_UTIL_HEADER	1
+#define GRUB_CONSOLE_UTIL_HEADER 1
 
 /* Initialize the console system.  */
 void grub_console_init (void);

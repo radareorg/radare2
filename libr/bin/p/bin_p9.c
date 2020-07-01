@@ -6,27 +6,27 @@
 #include <r_bin.h>
 #include "../format/p9/p9bin.h"
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer (RBuffer *buf) {
 	return r_bin_p9_get_arch (buf, NULL, NULL);
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (b);
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy (RBinFile *bf) {
 	r_buf_free (bf->o->bin_obj);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr (RBinFile *bf) {
 	return 0x1000000; // XXX
 }
 
-static RBinAddr *binsym(RBinFile *bf, int type) {
+static RBinAddr *binsym (RBinFile *bf, int type) {
 	return NULL; // TODO
 }
 
-static RList *entries(RBinFile *bf) {
+static RList *entries (RBinFile *bf) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
 
@@ -36,13 +36,13 @@ static RList *entries(RBinFile *bf) {
 	ret->free = free;
 	if ((ptr = R_NEW0 (RBinAddr))) {
 		ptr->paddr = 8 * 4;
-		ptr->vaddr = 8 * 4;// + baddr (bf);
+		ptr->vaddr = 8 * 4; // + baddr (bf);
 		r_list_append (ret, ptr);
 	}
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
+static RList *sections (RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	ut64 textsize, datasize, symssize, spszsize, pcszsize;
@@ -135,20 +135,20 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList *symbols(RBinFile *bf) {
+static RList *symbols (RBinFile *bf) {
 	// TODO: parse symbol table
 	return NULL;
 }
 
-static RList *imports(RBinFile *bf) {
+static RList *imports (RBinFile *bf) {
 	return NULL;
 }
 
-static RList *libs(RBinFile *bf) {
+static RList *libs (RBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	RBinInfo *ret = NULL;
 	int bits = 32, bina, big_endian = 0;
 
@@ -173,7 +173,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static ut64 size(RBinFile *bf) {
+static ut64 size (RBinFile *bf) {
 	ut64 text, data, syms, spsz;
 	if (!bf) {
 		return 0;
@@ -198,9 +198,9 @@ static ut64 size(RBinFile *bf) {
 #if !R_BIN_P9
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
-static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
+static RBuffer *create (RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
 	RBuffer *buf = r_buf_new ();
-#define B(x, y) r_buf_append_bytes (buf, (const ut8 *) (x), y)
+#define B(x, y) r_buf_append_bytes (buf, (const ut8 *)(x), y)
 #define D(x) r_buf_append_ut32 (buf, x)
 	D (I_MAGIC); // i386 only atm
 	D (codelen);

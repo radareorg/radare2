@@ -6,7 +6,7 @@
 #include "r_hash.h"
 #include "r_types_base.h"
 
-typedef void (*HashHandler)(const ut8 *block, int len);
+typedef void (*HashHandler) (const ut8 *block, int len);
 
 static void handle_md4 (const ut8 *block, int len);
 static void handle_md5 (const ut8 *block, int len);
@@ -74,23 +74,23 @@ static void handle_crc32 (const ut8 *block, int len);
 static void handle_crc32c (const ut8 *block, int len);
 static void handle_crc32_ecma_267 (const ut8 *block, int len);
 #if R_HAVE_CRC32_EXTRA
-static void handle_crc32_bzip2 (const ut8 * block, int len);
-static void handle_crc32d (const ut8 * block, int len);
-static void handle_crc32_mpeg2 (const ut8 * block, int len);
-static void handle_crc32_posix (const ut8 * block, int len);
-static void handle_crc32q (const ut8 * block, int len);
-static void handle_crc32_jamcrc (const ut8 * block, int len);
-static void handle_crc32_xfer (const ut8 * block, int len);
+static void handle_crc32_bzip2 (const ut8 *block, int len);
+static void handle_crc32d (const ut8 *block, int len);
+static void handle_crc32_mpeg2 (const ut8 *block, int len);
+static void handle_crc32_posix (const ut8 *block, int len);
+static void handle_crc32q (const ut8 *block, int len);
+static void handle_crc32_jamcrc (const ut8 *block, int len);
+static void handle_crc32_xfer (const ut8 *block, int len);
 #endif /* #if R_HAVE_CRC32_EXTRA */
 
 #if R_HAVE_CRC64
-static void handle_crc64 (const ut8 * block, int len);
+static void handle_crc64 (const ut8 *block, int len);
 #endif /* #if R_HAVE_CRC64 */
 #if R_HAVE_CRC64_EXTRA
-static void handle_crc64_ecma182 (const ut8 * block, int len);
-static void handle_crc64_we (const ut8 * block, int len);
-static void handle_crc64_xz (const ut8 * block, int len);
-static void handle_crc64_iso (const ut8 * block, int len);
+static void handle_crc64_ecma182 (const ut8 *block, int len);
+static void handle_crc64_we (const ut8 *block, int len);
+static void handle_crc64_xz (const ut8 *block, int len);
+static void handle_crc64_iso (const ut8 *block, int len);
 #endif /* #if R_HAVE_CRC64_EXTRA */
 
 typedef struct {
@@ -99,41 +99,41 @@ typedef struct {
 } RHashHashHandlers;
 
 static RHashHashHandlers hash_handlers[] = {
-	{"md4", handle_md4},
-	{"md5", handle_md5},
-	{"sha1", handle_sha1},
-	{"sha256", handle_sha256},
-	{"sha512", handle_sha512},
-	{"adler32", handle_adler32},
-	{"xor", handle_xor},
-	{"entropy", handle_entropy},
-	{"parity", handle_parity},
-	{"hamdist", handle_hamdist},
-	{"pcprint", handle_pcprint},
-	{"mod255", handle_mod255},
-	{"luhn", handle_luhn},
+	{ "md4", handle_md4 },
+	{ "md5", handle_md5 },
+	{ "sha1", handle_sha1 },
+	{ "sha256", handle_sha256 },
+	{ "sha512", handle_sha512 },
+	{ "adler32", handle_adler32 },
+	{ "xor", handle_xor },
+	{ "entropy", handle_entropy },
+	{ "parity", handle_parity },
+	{ "hamdist", handle_hamdist },
+	{ "pcprint", handle_pcprint },
+	{ "mod255", handle_mod255 },
+	{ "luhn", handle_luhn },
 
-	{"crc8smbus", handle_crc8_smbus},
+	{ "crc8smbus", handle_crc8_smbus },
 #if R_HAVE_CRC8_EXTRA
-	{ /* CRC-8/CDMA2000     */ "crc8cdma2000", handle_crc8_cdma2000},
-	{ /* CRC-8/DARC         */ "crc8darc", handle_crc8_darc},
-	{ /* CRC-8/DVB-S2       */ "crc8dvbs2", handle_crc8_dvb_s2},
-	{ /* CRC-8/EBU          */ "crc8ebu", handle_crc8_ebu},
-	{ /* CRC-8/I-CODE       */ "crc8icode", handle_crc8_icode},
-	{ /* CRC-8/ITU          */ "crc8itu", handle_crc8_itu},
-	{ /* CRC-8/MAXIM        */ "crc8maxim", handle_crc8_maxim},
-	{ /* CRC-8/ROHC         */ "crc8rohc", handle_crc8_rohc},
-	{ /* CRC-8/WCDMA        */ "crc8wcdma", handle_crc8_wcdma},
+	{ /* CRC-8/CDMA2000     */ "crc8cdma2000", handle_crc8_cdma2000 },
+	{ /* CRC-8/DARC         */ "crc8darc", handle_crc8_darc },
+	{ /* CRC-8/DVB-S2       */ "crc8dvbs2", handle_crc8_dvb_s2 },
+	{ /* CRC-8/EBU          */ "crc8ebu", handle_crc8_ebu },
+	{ /* CRC-8/I-CODE       */ "crc8icode", handle_crc8_icode },
+	{ /* CRC-8/ITU          */ "crc8itu", handle_crc8_itu },
+	{ /* CRC-8/MAXIM        */ "crc8maxim", handle_crc8_maxim },
+	{ /* CRC-8/ROHC         */ "crc8rohc", handle_crc8_rohc },
+	{ /* CRC-8/WCDMA        */ "crc8wcdma", handle_crc8_wcdma },
 #endif /* #if R_HAVE_CRC8_EXTRA */
 
 #if R_HAVE_CRC15_EXTRA
-	{"crc15can", handle_crc15_can},
+	{ "crc15can", handle_crc15_can },
 #endif /* #if R_HAVE_CRC15_EXTRA */
 
-	{"crc16", handle_crc16},
-	{"crc16hdlc", handle_crc16_hdlc},
-	{ /* CRC-16/USB         */ "crc16usb", handle_crc16_usb},
-	{ /* CRC-16/CCITT-FALSE */ "crc16citt", handle_crc16_citt},
+	{ "crc16", handle_crc16 },
+	{ "crc16hdlc", handle_crc16_hdlc },
+	{ /* CRC-16/USB         */ "crc16usb", handle_crc16_usb },
+	{ /* CRC-16/CCITT-FALSE */ "crc16citt", handle_crc16_citt },
 #if R_HAVE_CRC16_EXTRA
 	{ /* CRC-16/AUG-CCITT   */ "crc16augccitt", handle_crc16_aug_ccitt },
 	{ /* CRC-16/BUYPASS     */ "crc16buypass", handle_crc16_buypass },
@@ -158,12 +158,12 @@ static RHashHashHandlers hash_handlers[] = {
 #endif /* #if R_HAVE_CRC16_EXTRA */
 
 #if R_HAVE_CRC24
-	{"crc24", handle_crc24},
+	{ "crc24", handle_crc24 },
 #endif /* #if R_HAVE_CRC24 */
 
-	{"crc32", handle_crc32},
-	{"crc32c", handle_crc32c},
-	{"crc32ecma267", handle_crc32_ecma_267},
+	{ "crc32", handle_crc32 },
+	{ "crc32c", handle_crc32c },
+	{ "crc32ecma267", handle_crc32_ecma_267 },
 #if R_HAVE_CRC32_EXTRA
 	{ /* CRC-32/BZIP2       */ "crc32bzip2", handle_crc32_bzip2 },
 	{ /* CRC-32D            */ "crc32d", handle_crc32d },
@@ -185,14 +185,15 @@ static RHashHashHandlers hash_handlers[] = {
 	{ /* CRC-64/ISO         */ "crc64iso", handle_crc64_iso },
 #endif /* #if R_HAVE_CRC64_EXTRA */
 
-	{NULL, NULL},
+	{ NULL, NULL },
 };
 
 static void handle_md4 (const ut8 *block, int len) {
 	int i = 0;
 	RHash *ctx = r_hash_new (true, R_HASH_MD4);
 	const ut8 *c = r_hash_do_md4 (ctx, block, len);
-	for (i=0; i<R_HASH_SIZE_MD4; i++) r_cons_printf ("%02x", c[i]);
+	for (i = 0; i < R_HASH_SIZE_MD4; i++)
+		r_cons_printf ("%02x", c[i]);
 	r_cons_newline ();
 	r_hash_free (ctx);
 }
@@ -201,7 +202,8 @@ static void handle_md5 (const ut8 *block, int len) {
 	int i = 0;
 	RHash *ctx = r_hash_new (true, R_HASH_MD5);
 	const ut8 *c = r_hash_do_md5 (ctx, block, len);
-	for (i=0; i<R_HASH_SIZE_MD5; i++) r_cons_printf ("%02x", c[i]);
+	for (i = 0; i < R_HASH_SIZE_MD5; i++)
+		r_cons_printf ("%02x", c[i]);
 	r_cons_newline ();
 	r_hash_free (ctx);
 }
@@ -210,7 +212,8 @@ static void handle_sha1 (const ut8 *block, int len) {
 	int i = 0;
 	RHash *ctx = r_hash_new (true, R_HASH_SHA1);
 	const ut8 *c = r_hash_do_sha1 (ctx, block, len);
-	for (i=0; i<R_HASH_SIZE_SHA1; i++) r_cons_printf ("%02x", c[i]);
+	for (i = 0; i < R_HASH_SIZE_SHA1; i++)
+		r_cons_printf ("%02x", c[i]);
 	r_cons_newline ();
 	r_hash_free (ctx);
 }
@@ -219,7 +222,8 @@ static void handle_sha256 (const ut8 *block, int len) {
 	int i = 0;
 	RHash *ctx = r_hash_new (true, R_HASH_SHA256);
 	const ut8 *c = r_hash_do_sha256 (ctx, block, len);
-	for (i=0; i<R_HASH_SIZE_SHA256; i++) r_cons_printf ("%02x", c[i]);
+	for (i = 0; i < R_HASH_SIZE_SHA256; i++)
+		r_cons_printf ("%02x", c[i]);
 	r_cons_newline ();
 	r_hash_free (ctx);
 }
@@ -228,14 +232,15 @@ static void handle_sha512 (const ut8 *block, int len) {
 	int i = 0;
 	RHash *ctx = r_hash_new (true, R_HASH_SHA512);
 	const ut8 *c = r_hash_do_sha512 (ctx, block, len);
-	for (i = 0; i < R_HASH_SIZE_SHA512; i++) r_cons_printf ("%02x", c[i]);
+	for (i = 0; i < R_HASH_SIZE_SHA512; i++)
+		r_cons_printf ("%02x", c[i]);
 	r_cons_newline ();
 	r_hash_free (ctx);
 }
 
 static void handle_adler32 (const ut8 *block, int len) {
 	ut32 hn = r_hash_adler32 (block, len);
-	ut8 *b = (ut8*)&hn;
+	ut8 *b = (ut8 *)&hn;
 	r_cons_printf ("%02x%02x%02x%02x\n", b[0], b[1], b[2], b[3]);
 }
 
@@ -248,7 +253,7 @@ static void handle_entropy (const ut8 *block, int len) {
 }
 
 static void handle_parity (const ut8 *block, int len) {
-	r_cons_printf ("%d\n", r_hash_parity (block, len)?1:0);
+	r_cons_printf ("%d\n", r_hash_parity (block, len) ? 1 : 0);
 }
 
 static void handle_hamdist (const ut8 *block, int len) {
@@ -464,25 +469,25 @@ static void handle_crc32_xfer (const ut8 *block, int len) {
 #endif /* #ifR_HAVE_CRC32_EXTRA */
 
 #if R_HAVE_CRC64
-static void handle_crc64 (const ut8 * block, int len) {
+static void handle_crc64 (const ut8 *block, int len) {
 	r_cons_printf ("%016" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC64));
 }
 #endif /* #if R_HAVE_CRC64 */
 
 #if R_HAVE_CRC64_EXTRA
-static void handle_crc64_ecma182 (const ut8 * block, int len) {
+static void handle_crc64_ecma182 (const ut8 *block, int len) {
 	r_cons_printf ("%016" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC64_ECMA182));
 }
 
-static void handle_crc64_we (const ut8 * block, int len) {
+static void handle_crc64_we (const ut8 *block, int len) {
 	r_cons_printf ("%016" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC64_WE));
 }
 
-static void handle_crc64_xz (const ut8 * block, int len) {
+static void handle_crc64_xz (const ut8 *block, int len) {
 	r_cons_printf ("%016" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC64_XZ));
 }
 
-static void handle_crc64_iso (const ut8 * block, int len) {
+static void handle_crc64_iso (const ut8 *block, int len) {
 	r_cons_printf ("%016" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC64_ISO));
 }
 #endif /* #if R_HAVE_CRC64_EXTRA */
@@ -519,17 +524,17 @@ static int cmd_hash_bang (RCore *core, const char *input) {
 					eprintf ("Error: scr.interactive required to run the rlang prompt\n");
 				}
 			}
-		} else if (av[0][0]=='?' || av[0][0]=='*') {
+		} else if (av[0][0] == '?' || av[0][0] == '*') {
 			r_lang_list (core->lang);
 		}
 	} else {
 		r_lang_list (core->lang);
 	}
-	r_str_argv_free(av);
+	r_str_argv_free (av);
 	return true;
 }
 
-static int cmd_hash(void *data, const char *input) {
+static int cmd_hash (void *data, const char *input) {
 	RCore *core = (RCore *)data;
 
 	if (*input == '!') {
@@ -537,14 +542,15 @@ static int cmd_hash(void *data, const char *input) {
 	}
 	if (*input == '?') {
 		const char *helpmsg3[] = {
-		"Usage #!interpreter [<args>] [<file] [<<eof]","","",
-		" #", "", "comment - do nothing",
-		" #!","","list all available interpreters",
-		" #!python","","run python commandline",
-		" #!python"," foo.py","run foo.py python script (same as '. foo.py')",
-		//" #!python <<EOF        get python code until 'EOF' mark\n"
-		" #!python"," arg0 a1 <<q","set arg0 and arg1 and read until 'q'",
-		NULL};
+			"Usage #!interpreter [<args>] [<file] [<<eof]", "", "",
+			" #", "", "comment - do nothing",
+			" #!", "", "list all available interpreters",
+			" #!python", "", "run python commandline",
+			" #!python", " foo.py", "run foo.py python script (same as '. foo.py')",
+			//" #!python <<EOF        get python code until 'EOF' mark\n"
+			" #!python", " arg0 a1 <<q", "set arg0 and arg1 and read until 'q'",
+			NULL
+		};
 		r_core_cmd_help (core, helpmsg3);
 		return false;
 	}

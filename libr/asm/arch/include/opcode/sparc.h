@@ -26,7 +26,7 @@
    the opcodes library in sparc-opc.c.  If you change anything here, make
    sure you fix up that file, and vice versa.  */
 
- /* FIXME-someday: perhaps the ,a's and such should be embedded in the
+/* FIXME-someday: perhaps the ,a's and such should be embedded in the
     instruction's name rather than the args.  This would make gas faster, pinsn
     slower, but would mess up some macros a bit.  xoxorich. */
 
@@ -37,18 +37,17 @@
    The values are indices into `sparc_opcode_archs' defined in sparc-opc.c.
    Don't change this without updating sparc-opc.c.  */
 
-enum sparc_opcode_arch_val
-{
-  SPARC_OPCODE_ARCH_V6 = 0,
-  SPARC_OPCODE_ARCH_V7,
-  SPARC_OPCODE_ARCH_V8,
-  SPARC_OPCODE_ARCH_SPARCLET,
-  SPARC_OPCODE_ARCH_SPARCLITE,
-  /* V9 variants must appear last.  */
-  SPARC_OPCODE_ARCH_V9,
-  SPARC_OPCODE_ARCH_V9A, /* V9 with ultrasparc additions.  */
-  SPARC_OPCODE_ARCH_V9B, /* V9 with ultrasparc and cheetah additions.  */
-  SPARC_OPCODE_ARCH_BAD  /* Error return from sparc_opcode_lookup_arch.  */
+enum sparc_opcode_arch_val {
+	SPARC_OPCODE_ARCH_V6 = 0,
+	SPARC_OPCODE_ARCH_V7,
+	SPARC_OPCODE_ARCH_V8,
+	SPARC_OPCODE_ARCH_SPARCLET,
+	SPARC_OPCODE_ARCH_SPARCLITE,
+	/* V9 variants must appear last.  */
+	SPARC_OPCODE_ARCH_V9,
+	SPARC_OPCODE_ARCH_V9A, /* V9 with ultrasparc additions.  */
+	SPARC_OPCODE_ARCH_V9B, /* V9 with ultrasparc and cheetah additions.  */
+	SPARC_OPCODE_ARCH_BAD /* Error return from sparc_opcode_lookup_arch.  */
 };
 
 /* The highest architecture in the table.  */
@@ -63,14 +62,13 @@ enum sparc_opcode_arch_val
 
 /* Table of cpu variants.  */
 
-typedef struct sparc_opcode_arch
-{
-  const char *name;
-  /* Mask of sparc_opcode_arch_val's supported.
+typedef struct sparc_opcode_arch {
+	const char *name;
+	/* Mask of sparc_opcode_arch_val's supported.
      EG: For v7 this would be
      (SPARC_OPCODE_ARCH_MASK (..._V6) | SPARC_OPCODE_ARCH_MASK (..._V7)).
      These are short's because sparc_opcode.architecture is.  */
-  short supported;
+	short supported;
 } sparc_opcode_arch;
 
 extern const struct sparc_opcode_arch sparc_opcode_archs[];
@@ -84,31 +82,27 @@ extern enum sparc_opcode_arch_val sparc_opcode_lookup_arch (const char *);
 /* Non-zero if ARCH1 conflicts with ARCH2.
    IE: ARCH1 as a supported bit set that ARCH2 doesn't, and vice versa.  */
 #define SPARC_OPCODE_CONFLICT_P(ARCH1, ARCH2) \
- (((SPARC_OPCODE_SUPPORTED (ARCH1) & SPARC_OPCODE_SUPPORTED (ARCH2)) \
-   != SPARC_OPCODE_SUPPORTED (ARCH1)) \
-  && ((SPARC_OPCODE_SUPPORTED (ARCH1) & SPARC_OPCODE_SUPPORTED (ARCH2)) \
-     != SPARC_OPCODE_SUPPORTED (ARCH2)))
+	(((SPARC_OPCODE_SUPPORTED (ARCH1) & SPARC_OPCODE_SUPPORTED (ARCH2)) != SPARC_OPCODE_SUPPORTED (ARCH1)) && ((SPARC_OPCODE_SUPPORTED (ARCH1) & SPARC_OPCODE_SUPPORTED (ARCH2)) != SPARC_OPCODE_SUPPORTED (ARCH2)))
 
 /* Structure of an opcode table entry.  */
 
-typedef struct sparc_opcode
-{
-  const char *name;
-  unsigned long match;	/* Bits that must be set.  */
-  unsigned long lose;	/* Bits that must not be set.  */
-  const char *args;
-  /* This was called "delayed" in versions before the flags.  */
-  char flags;
-  short architecture;	/* Bitmask of sparc_opcode_arch_val's.  */
+typedef struct sparc_opcode {
+	const char *name;
+	unsigned long match; /* Bits that must be set.  */
+	unsigned long lose; /* Bits that must not be set.  */
+	const char *args;
+	/* This was called "delayed" in versions before the flags.  */
+	char flags;
+	short architecture; /* Bitmask of sparc_opcode_arch_val's.  */
 } sparc_opcode;
 
-#define	F_DELAYED	1	/* Delayed branch.  */
-#define	F_ALIAS		2	/* Alias for a "real" instruction.  */
-#define	F_UNBR		4	/* Unconditional branch.  */
-#define	F_CONDBR	8	/* Conditional branch.  */
-#define	F_JSR		16	/* Subroutine call.  */
-#define F_FLOAT		32	/* Floating point instruction (not a branch).  */
-#define F_FBR		64	/* Floating point branch.  */
+#define F_DELAYED 1 /* Delayed branch.  */
+#define F_ALIAS 2 /* Alias for a "real" instruction.  */
+#define F_UNBR 4 /* Unconditional branch.  */
+#define F_CONDBR 8 /* Conditional branch.  */
+#define F_JSR 16 /* Subroutine call.  */
+#define F_FLOAT 32 /* Floating point instruction (not a branch).  */
+#define F_FBR 64 /* Floating point branch.  */
 /* FIXME: Add F_ANACHRONISTIC flag for v9.  */
 
 /* All sparc opcodes are 32 bits, except for the `set' instruction (really a
@@ -191,32 +185,32 @@ typedef struct sparc_opcode
   The following chars are unused: (note: ,[] are used as punctuation)
   [45].  */
 
-#define OP2(x)		(((x) & 0x7) << 22)  /* Op2 field of format2 insns.  */
-#define OP3(x)		(((x) & 0x3f) << 19) /* Op3 field of format3 insns.  */
-#define OP(x)		((unsigned) ((x) & 0x3) << 30) /* Op field of all insns.  */
-#define OPF(x)		(((x) & 0x1ff) << 5) /* Opf field of float insns.  */
-#define OPF_LOW5(x)	OPF ((x) & 0x1f)     /* V9.  */
-#define F3F(x, y, z)	(OP (x) | OP3 (y) | OPF (z)) /* Format3 float insns.  */
-#define F3I(x)		(((x) & 0x1) << 13)  /* Immediate field of format 3 insns.  */
-#define F2(x, y)	(OP (x) | OP2(y))    /* Format 2 insns.  */
-#define F3(x, y, z)	(OP (x) | OP3(y) | F3I(z)) /* Format3 insns.  */
-#define F1(x)		(OP (x))
-#define DISP30(x)	((x) & 0x3fffffff)
-#define ASI(x)		(((x) & 0xff) << 5)  /* Asi field of format3 insns.  */
-#define RS2(x)		((x) & 0x1f)         /* Rs2 field.  */
-#define SIMM13(x)	((x) & 0x1fff)       /* Simm13 field.  */
-#define RD(x)		(((x) & 0x1f) << 25) /* Destination register field.  */
-#define RS1(x)		(((x) & 0x1f) << 14) /* Rs1 field.  */
-#define ASI_RS2(x)	(SIMM13 (x))
-#define MEMBAR(x)	((x) & 0x7f)
-#define SLCPOP(x)	(((x) & 0x7f) << 6)  /* Sparclet cpop.  */
+#define OP2(x) (((x)&0x7) << 22) /* Op2 field of format2 insns.  */
+#define OP3(x) (((x)&0x3f) << 19) /* Op3 field of format3 insns.  */
+#define OP(x) ((unsigned)((x)&0x3) << 30) /* Op field of all insns.  */
+#define OPF(x) (((x)&0x1ff) << 5) /* Opf field of float insns.  */
+#define OPF_LOW5(x) OPF ((x)&0x1f) /* V9.  */
+#define F3F(x, y, z) (OP (x) | OP3 (y) | OPF (z)) /* Format3 float insns.  */
+#define F3I(x) (((x)&0x1) << 13) /* Immediate field of format 3 insns.  */
+#define F2(x, y) (OP (x) | OP2 (y)) /* Format 2 insns.  */
+#define F3(x, y, z) (OP (x) | OP3 (y) | F3I (z)) /* Format3 insns.  */
+#define F1(x) (OP (x))
+#define DISP30(x) ((x)&0x3fffffff)
+#define ASI(x) (((x)&0xff) << 5) /* Asi field of format3 insns.  */
+#define RS2(x) ((x)&0x1f) /* Rs2 field.  */
+#define SIMM13(x) ((x)&0x1fff) /* Simm13 field.  */
+#define RD(x) (((x)&0x1f) << 25) /* Destination register field.  */
+#define RS1(x) (((x)&0x1f) << 14) /* Rs1 field.  */
+#define ASI_RS2(x) (SIMM13 (x))
+#define MEMBAR(x) ((x)&0x7f)
+#define SLCPOP(x) (((x)&0x7f) << 6) /* Sparclet cpop.  */
 
-#define ANNUL	(1 << 29)
-#define BPRED	(1 << 19)	/* V9.  */
-#define	IMMED	F3I (1)
-#define RD_G0	RD (~0)
-#define	RS1_G0	RS1 (~0)
-#define	RS2_G0	RS2 (~0)
+#define ANNUL (1 << 29)
+#define BPRED (1 << 19) /* V9.  */
+#define IMMED F3I (1)
+#define RD_G0 RD (~0)
+#define RS1_G0 RS1 (~0)
+#define RS2_G0 RS2 (~0)
 
 extern const struct sparc_opcode sparc_opcodes[];
 extern const int sparc_num_opcodes;
@@ -234,4 +228,3 @@ extern const char *sparc_decode_sparclet_cpreg (int);
    fill-column: 131
    comment-column: 0
    End: */
-

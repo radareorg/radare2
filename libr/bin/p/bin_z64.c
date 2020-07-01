@@ -65,11 +65,11 @@ typedef struct {
 
 static N64Header n64_header;
 
-static ut64 baddr(RBinFile *bf) {
-	return (ut64) r_read_be32(&n64_header.BootAddress);
+static ut64 baddr (RBinFile *bf) {
+	return (ut64)r_read_be32 (&n64_header.BootAddress);
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	ut8 magic[4];
 	if (r_buf_size (b) < N64_ROM_START) {
 		return false;
@@ -78,9 +78,9 @@ static bool check_buffer(RBuffer *b) {
 	return !memcmp (magic, "\x80\x37\x12\x40", 4);
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	if (check_buffer (b)) {
-		ut8 buf[sizeof (N64Header)] = {0};
+		ut8 buf[sizeof (N64Header)] = { 0 };
 		r_buf_read_at (b, 0, buf, sizeof (buf));
 		*bin_obj = memcpy (&n64_header, buf, sizeof (N64Header));
 		return true;
@@ -88,7 +88,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 	return false;
 }
 
-static RList *entries(RBinFile *bf) {
+static RList *entries (RBinFile *bf) {
 	RList /*<RBinAddr>*/ *ret = r_list_newf (free);
 	if (!ret) {
 		return NULL;
@@ -102,7 +102,7 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
+static RList *sections (RBinFile *bf) {
 	RList /*<RBinSection>*/ *ret = r_list_new ();
 	if (!ret) {
 		return NULL;
@@ -123,12 +123,12 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static ut64 boffset(RBinFile *bf) {
+static ut64 boffset (RBinFile *bf) {
 	return 0LL;
 }
 
-static RBinInfo *info(RBinFile *bf) {
-	char GameName[21] = {0};
+static RBinInfo *info (RBinFile *bf) {
+	char GameName[21] = { 0 };
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;

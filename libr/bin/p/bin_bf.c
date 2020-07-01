@@ -5,29 +5,29 @@
 #include <r_lib.h>
 #include <r_bin.h>
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return true;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy (RBinFile *bf) {
 	r_buf_free (bf->o->bin_obj);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr (RBinFile *bf) {
 	return 0;
 }
 
-static RList *strings(RBinFile *bf) {
+static RList *strings (RBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	RBinInfo *ret = NULL;
 	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
 	}
 	ret->lang = NULL;
-	ret->file = bf->file? strdup (bf->file): NULL;
+	ret->file = bf->file ? strdup (bf->file) : NULL;
 	ret->type = strdup ("brainfuck");
 	ret->bclass = strdup ("1.0");
 	ret->rclass = strdup ("program");
@@ -60,7 +60,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer (RBuffer *buf) {
 	r_return_val_if_fail (buf, false);
 
 	ut8 tmp[16];
@@ -92,7 +92,7 @@ static bool check_buffer(RBuffer *buf) {
 	return true;
 }
 
-static RList *entries(RBinFile *bf) {
+static RList *entries (RBinFile *bf) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
 

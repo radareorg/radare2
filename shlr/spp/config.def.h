@@ -3,13 +3,13 @@
 #endif
 
 #if HAVE_FORK
-# if TARGET_OS_IPHONE || APPLE_SDK_IPHONEOS || APPLE_SDK_IPHONESIMULATOR
-#  define HAVE_SYSTEM 0
-# else
-#  define HAVE_SYSTEM 1
-# endif
+#if TARGET_OS_IPHONE || APPLE_SDK_IPHONEOS || APPLE_SDK_IPHONESIMULATOR
+#define HAVE_SYSTEM 0
 #else
-# define HAVE_SYSTEM 0
+#define HAVE_SYSTEM 1
+#endif
+#else
+#define HAVE_SYSTEM 0
 #endif
 
 #if HAVE_SYSTEM
@@ -32,6 +32,6 @@ struct Proc *procs[] = {
 	NULL
 };
 
-DEFAULT_PROC(spp)
+DEFAULT_PROC (spp)
 
 #define DEBUG 0

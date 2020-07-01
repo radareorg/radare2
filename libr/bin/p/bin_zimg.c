@@ -6,22 +6,22 @@
 #include <r_bin.h>
 #include "zimg/zimg.h"
 
-static Sdb *get_sdb(RBinFile *bf) {
+static Sdb *get_sdb (RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o, false);
-	struct r_bin_zimg_obj_t *bin = (struct r_bin_zimg_obj_t *) bf->o->bin_obj;
-	return bin? bin->kv: NULL;
+	struct r_bin_zimg_obj_t *bin = (struct r_bin_zimg_obj_t *)bf->o->bin_obj;
+	return bin ? bin->kv : NULL;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	*bin_obj = r_bin_zimg_new_buf (b);
 	return *bin_obj != NULL;
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr (RBinFile *bf) {
 	return 0;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	ut8 zimghdr[8];
 	if (r_buf_read_at (b, 0, zimghdr, sizeof (zimghdr))) {
 		// Checking ARM zImage kernel
@@ -32,12 +32,12 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
-	ret->file = bf->file? strdup (bf->file): NULL;
+	ret->file = bf->file ? strdup (bf->file) : NULL;
 	ret->type = strdup ("Linux zImage Kernel");
 	ret->has_va = false;
 	ret->bclass = strdup ("Compressed Linux Kernel");

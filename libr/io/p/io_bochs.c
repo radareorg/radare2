@@ -13,16 +13,16 @@ static libbochs_t *desc = NULL;
 static RIODesc *riobochs = NULL;
 extern RIOPlugin r_io_plugin_bochs; // forward declaration
 
-static bool __plugin_open(RIO *io, const char *file, bool many) {
+static bool __plugin_open (RIO *io, const char *file, bool many) {
 	return !strncmp (file, "bochs://", strlen ("bochs://"));
 }
 
-static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
-	RIOBochs  *riob;
-	lprintf("io_open\n");
+static RIODesc *__open (RIO *io, const char *file, int rw, int mode) {
+	RIOBochs *riob;
+	lprintf ("io_open\n");
 	const char *i;
-	char * fileBochs = NULL;
-	char * fileCfg = NULL;
+	char *fileBochs = NULL;
+	char *fileCfg = NULL;
 	int l;
 	if (!__plugin_open (io, file, 0)) {
 		return NULL;
@@ -52,8 +52,8 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		desc = &riob->desc;
 		riobochs = r_io_desc_new (io, &r_io_plugin_bochs, file, rw, mode, riob);
 		//riogdb = r_io_desc_new (&r_io_plugin_gdb, riog->desc.sock->fd, file, rw, mode, riog);
-		free(fileBochs);
-		free(fileCfg);
+		free (fileBochs);
+		free (fileCfg);
 		return riobochs;
 	}
 	lprintf ("bochsio.open: Cannot connect to bochs.\n");
@@ -63,39 +63,39 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	return NULL;
 }
 
-static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	lprintf("io_write\n");
+static int __write (RIO *io, RIODesc *fd, const ut8 *buf, int count) {
+	lprintf ("io_write\n");
 	return -1;
 }
 
-static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
-	lprintf("io_seek %016"PFMT64x" \n",offset);
+static ut64 __lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
+	lprintf ("io_seek %016" PFMT64x " \n", offset);
 	return offset;
 }
 
-static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
+static int __read (RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	memset (buf, 0xff, count);
 	ut64 addr = io->off;
 	if (!desc || !desc->data) {
 		return -1;
 	}
-	lprintf ("io_read ofs= %016"PFMT64x" count= %x\n", io->off, count);
-	bochs_read (desc,addr,count,buf);
+	lprintf ("io_read ofs= %016" PFMT64x " count= %x\n", io->off, count);
+	bochs_read (desc, addr, count, buf);
 	return count;
 }
 
-static int __close(RIODesc *fd) {
-	lprintf("io_close\n");
+static int __close (RIODesc *fd) {
+	lprintf ("io_close\n");
 	bochs_close (desc);
 	return true;
 }
 
-static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
-        lprintf ("system command (%s)\n", cmd);
-        if (!strcmp (cmd, "help")) {
-                lprintf ("Usage: =!cmd args\n"
-                        " =!:<bochscmd>      - Send a bochs command.\n"
-                        " =!dobreak          - pause bochs.\n");
+static char *__system (RIO *io, RIODesc *fd, const char *cmd) {
+	lprintf ("system command (%s)\n", cmd);
+	if (!strcmp (cmd, "help")) {
+		lprintf ("Usage: =!cmd args\n"
+			 " =!:<bochscmd>      - Send a bochs command.\n"
+			 " =!dobreak          - pause bochs.\n");
 		lprintf ("io_system: Enviando commando bochs\n");
 		bochs_send_cmd (desc, &cmd[1], true);
 		io->cb_printf ("%s\n", desc->data);
@@ -103,7 +103,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		bochs_cmd_stop (desc);
 		io->cb_printf ("%s\n", desc->data);
 	}
-        return NULL;
+	return NULL;
 }
 
 RIOPlugin r_io_plugin_bochs = {

@@ -9,7 +9,7 @@
 #else
 #define CAPSTONE_HAS_M68K 0
 #ifdef _MSC_VER
-#pragma message ("Cannot find capstone-m68k support")
+#pragma message("Cannot find capstone-m68k support")
 #else
 #warning Cannot find capstone-m68k support
 #endif
@@ -20,17 +20,17 @@
 // Size of the longest instruction in bytes
 #define M68K_LONGEST_INSTRUCTION 10
 
-static bool check_features(RAsm *a, cs_insn *insn);
+static bool check_features (RAsm *a, cs_insn *insn);
 static csh cd = 0;
 #include "cs_mnemonics.c"
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	const char *buf_asm = NULL;
 	static int omode = -1;
 	static int obits = 32;
-	cs_insn* insn = NULL;
+	cs_insn *insn = NULL;
 	int ret = 0, n = 0;
-	cs_mode mode = a->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	cs_mode mode = a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 	if (mode != omode || a->bits != obits) {
 		cs_close (&cd);
 		cd = 0; // unnecessary
@@ -76,7 +76,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		goto beach;
 	}
 
-	ut8 mybuf[M68K_LONGEST_INSTRUCTION] = {0};
+	ut8 mybuf[M68K_LONGEST_INSTRUCTION] = { 0 };
 	int mylen = R_MIN (M68K_LONGEST_INSTRUCTION, len);
 	memcpy (mybuf, buf, mylen);
 
@@ -88,7 +88,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (op) {
 		op->size = 0;
 	}
-	if (insn->size<1) {
+	if (insn->size < 1) {
 		ret = -1;
 		goto beach;
 	}
@@ -102,7 +102,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	if (op && !op->size) {
 		op->size = insn->size;
-		buf_asm = sdb_fmt ("%s%s%s", insn->mnemonic, insn->op_str[0]?" ":"", insn->op_str);
+		buf_asm = sdb_fmt ("%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
 	}
 	if (op && buf_asm) {
 		char *p = r_str_replace (strdup (buf_asm), "$", "0x", true);
@@ -136,7 +136,7 @@ RAsmPlugin r_asm_plugin_m68k_cs = {
 	.mnemonics = &mnemonics,
 };
 
-static bool check_features(RAsm *a, cs_insn *insn) {
+static bool check_features (RAsm *a, cs_insn *insn) {
 	/* TODO: Implement support for m68k */
 	return true;
 }

@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 
-static int ASN1_STD_FORMAT  = 1;
+static int ASN1_STD_FORMAT = 1;
 
 R_API void asn1_setformat (int fmt) {
 	ASN1_STD_FORMAT = fmt;
@@ -16,21 +16,21 @@ static ut32 asn1_ber_indefinite (const ut8 *buffer, ut32 length) {
 	if (!buffer || length < 3) {
 		return 0;
 	}
-	const ut8* next = buffer + 2;
-	const ut8* end = buffer + (length - 3);
+	const ut8 *next = buffer + 2;
+	const ut8 *end = buffer + (length - 3);
 	while (next < end) {
 		if (!next[0] && !next[1]) {
 			break;
 		}
 		if (next[0] == 0x80 && (next[-1] & ASN1_FORM) == FORM_CONSTRUCTED) {
-			next --;
+			next--;
 			int sz = asn1_ber_indefinite (next, end - next);
 			if (sz < 1) {
 				break;
 			}
 			next += sz;
 		}
-		next ++;
+		next++;
 	}
 	return (next - buffer) + 2;
 }
@@ -71,9 +71,9 @@ static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length, const ut8
 		} else {
 			length64 = asn1_ber_indefinite (object->sector, length - 2);
 		}
-		object->length = (ut32) length64;
+		object->length = (ut32)length64;
 	} else {
-		object->length = (ut32) length8;
+		object->length = (ut32)length8;
 		object->sector = buffer + 2;
 	}
 
@@ -128,7 +128,7 @@ R_API RASN1Object *r_asn1_create_object (const ut8 *buffer, ut32 length, const u
 		ut32 count = r_asn1_count_objects (object->sector, object->length);
 		if (count > 0) {
 			object->list.length = count;
-			object->list.objects = R_NEWS0 (RASN1Object*, count);
+			object->list.objects = R_NEWS0 (RASN1Object *, count);
 			if (!object->list.objects) {
 				r_asn1_free_object (object);
 				return NULL;
@@ -152,11 +152,11 @@ R_API RASN1Binary *r_asn1_create_binary (const ut8 *buffer, ut32 length) {
 	if (!buffer || !length) {
 		return NULL;
 	}
-	ut8* buf = (ut8*) calloc (sizeof (*buf), length);
+	ut8 *buf = (ut8 *)calloc (sizeof (*buf), length);
 	if (!buf) {
 		return NULL;
 	}
-	RASN1Binary* bin = R_NEW0 (RASN1Binary);
+	RASN1Binary *bin = R_NEW0 (RASN1Binary);
 	if (!bin) {
 		free (buf);
 		return NULL;
@@ -167,17 +167,17 @@ R_API RASN1Binary *r_asn1_create_binary (const ut8 *buffer, ut32 length) {
 	return bin;
 }
 
-R_API void r_asn1_print_hex (RASN1Object *object, char* buffer, ut32 size, ut32 depth) {
+R_API void r_asn1_print_hex (RASN1Object *object, char *buffer, ut32 size, ut32 depth) {
 	ut32 i;
 	if (!object || !object->sector) {
 		return;
 	}
-	char* p = buffer;
-	char* end = buffer + size;
+	char *p = buffer;
+	char *end = buffer + size;
 	if (depth > 0 && !ASN1_STD_FORMAT) {
 		const char *pad = r_str_pad (' ', (depth * 2) - 2);
 		snprintf (p, end - p, "%s", pad);
-		p += strlen(pad);
+		p += strlen (pad);
 	}
 	for (i = 0; i < object->length && p < end; i++) {
 		snprintf (p, end - p, "%02x", object->sector[i]);
@@ -190,7 +190,7 @@ R_API void r_asn1_print_hex (RASN1Object *object, char* buffer, ut32 size, ut32 
 }
 
 #if !ASN1_STD_FORMAT
-static void r_asn1_print_padded(RStrBuf *sb, RASN1Object *object, int depth, const char *k, const char *v) {
+static void r_asn1_print_padded (RStrBuf *sb, RASN1Object *object, int depth, const char *k, const char *v) {
 	const char *pad = r_str_pad (' ', (depth * 2) - 2);
 	if (object->form && !*v) {
 		return;
@@ -215,10 +215,10 @@ static void r_asn1_print_padded(RStrBuf *sb, RASN1Object *object, int depth, con
 }
 #endif
 
-static RASN1String* r_asn1_print_hexdump_padded (RASN1Object *object, ut32 depth) {
+static RASN1String *r_asn1_print_hexdump_padded (RASN1Object *object, ut32 depth) {
 	const char *pad;
 	ut32 i, j;
-	char readable[20] = {0};
+	char readable[20] = { 0 };
 	if (!object || !object->sector || object->length < 1) {
 		return NULL;
 	}
@@ -238,7 +238,7 @@ static RASN1String* r_asn1_print_hexdump_padded (RASN1Object *object, ut32 depth
 			j = 0;
 		}
 		r_strbuf_appendf (sb, "%02x ", c);
-		readable[j] = IS_PRINTABLE(c) ? c : '.';
+		readable[j] = IS_PRINTABLE (c) ? c : '.';
 	}
 
 	while ((i % 16) != 0) {
@@ -246,8 +246,8 @@ static RASN1String* r_asn1_print_hexdump_padded (RASN1Object *object, ut32 depth
 		i++;
 	}
 	r_strbuf_appendf (sb, "|%-16s|", readable);
-	char* text = r_strbuf_drain (sb);
-	RASN1String* asn1str = r_asn1_create_string (text, true, strlen (text) + 1);
+	char *text = r_strbuf_drain (sb);
+	RASN1String *asn1str = r_asn1_create_string (text, true, strlen (text) + 1);
 	if (!asn1str) {
 		/* no memory left.. */
 		free (text);
@@ -266,10 +266,10 @@ R_API char *r_asn1_to_string (RASN1Object *object, ut32 depth, RStrBuf *sb) {
 		root = true;
 	}
 	//this shall not be freed. it's a pointer into the buffer.
-	RASN1String* asn1str = NULL;
-	static char temp_name[4096] = {0};
-	const char* name = "";
-	const char* string = "";
+	RASN1String *asn1str = NULL;
+	static char temp_name[4096] = { 0 };
+	const char *name = "";
+	const char *string = "";
 
 	switch (object->klass) {
 	case CLASS_UNIVERSAL: // universal
@@ -419,7 +419,7 @@ R_API char *r_asn1_to_string (RASN1Object *object, ut32 depth, RStrBuf *sb) {
 		string = asn1str->string;
 	}
 	if (ASN1_STD_FORMAT) {
-		r_strbuf_appendf (sb, "%4"PFMT64d"  ", object->offset);
+		r_strbuf_appendf (sb, "%4" PFMT64d "  ", object->offset);
 		r_strbuf_appendf (sb, "%4u:%2d: %s %-20s: %s\n", object->length,
 			depth, object->form ? "cons" : "prim", name, string);
 		r_asn1_free_string (asn1str);
@@ -438,7 +438,7 @@ R_API char *r_asn1_to_string (RASN1Object *object, ut32 depth, RStrBuf *sb) {
 			}
 		}
 	}
-	return root? r_strbuf_drain (sb): NULL;
+	return root ? r_strbuf_drain (sb) : NULL;
 }
 
 R_API void r_asn1_free_object (RASN1Object *object) {
@@ -459,7 +459,7 @@ R_API void r_asn1_free_object (RASN1Object *object) {
 	free (object);
 }
 
-R_API void r_asn1_free_binary (RASN1Binary* bin) {
+R_API void r_asn1_free_binary (RASN1Binary *bin) {
 	if (bin) {
 		free (bin->binary);
 		free (bin);

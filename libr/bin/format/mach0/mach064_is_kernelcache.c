@@ -1,8 +1,8 @@
 #include "mach0_defines.h"
 
-static bool is_kernelcache_buffer(RBuffer *b) {
+static bool is_kernelcache_buffer (RBuffer *b) {
 	ut64 length = r_buf_size (b);
-	if (length < sizeof (struct MACH0_(mach_header))) {
+	if (length < sizeof (struct MACH0_ (mach_header))) {
 		return false;
 	}
 	ut32 cputype = r_buf_read_le32_at (b, 4);
@@ -19,7 +19,7 @@ static bool is_kernelcache_buffer(RBuffer *b) {
 	bool has_unixthread = false;
 	bool has_negative_vaddr = false;
 
-	ut32 cursor = sizeof (struct MACH0_(mach_header));
+	ut32 cursor = sizeof (struct MACH0_ (mach_header));
 	for (i = 0; i < ncmds && cursor < length; i++) {
 
 		ut32 cmdtype = r_buf_read_le32_at (b, cursor);
@@ -33,17 +33,15 @@ static bool is_kernelcache_buffer(RBuffer *b) {
 		case LC_LOAD_WEAK_DYLIB:
 		case LC_LAZY_LOAD_DYLIB:
 			return false;
-		case LC_SEGMENT_64:
-			{
-				if (has_negative_vaddr) {
-					break;
-				}
-				st64 vmaddr = r_buf_read_le64_at (b, cursor + 24);
-				if (vmaddr < 0) {
-					has_negative_vaddr = true;
-				}
+		case LC_SEGMENT_64: {
+			if (has_negative_vaddr) {
+				break;
 			}
-			break;
+			st64 vmaddr = r_buf_read_le64_at (b, cursor + 24);
+			if (vmaddr < 0) {
+				has_negative_vaddr = true;
+			}
+		} break;
 		}
 
 		cursor += cmdsize;

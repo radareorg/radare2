@@ -11,10 +11,10 @@ typedef struct {
 	char *url;
 } RIOR2Web;
 
-#define rFD(x) (((RIOR2Web*)(x)->data)->fd)
-#define rURL(x) (((RIOR2Web*)(x)->data)->url)
+#define rFD(x) (((RIOR2Web *)(x)->data)->fd)
+#define rURL(x) (((RIOR2Web *)(x)->data)->url)
 
-static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
+static int __write (RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	int code, rlen;
 	char *out, *url, *hexbuf;
 	if (!fd || !fd->data) {
@@ -29,8 +29,8 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	}
 	hexbuf[0] = 0;
 	r_hex_bin2str (buf, count, hexbuf);
-	url = r_str_newf ("%s/wx%%20%s@%"PFMT64d,
-		rURL(fd), hexbuf, io->off);
+	url = r_str_newf ("%s/wx%%20%s@%" PFMT64d,
+		rURL (fd), hexbuf, io->off);
 	out = r_socket_http_get (url, &code, &rlen);
 	free (out);
 	free (url);
@@ -38,18 +38,18 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	return count;
 }
 
-static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
+static int __read (RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	int code, rlen;
 	char *out, *url;
 	int ret = 0;
 	if (!fd || !fd->data) {
 		return -1;
 	}
-	url = r_str_newf ("%s/p8%%20%d@0x%"PFMT64x,
-		rURL(fd), count, io->off);
+	url = r_str_newf ("%s/p8%%20%d@0x%" PFMT64x,
+		rURL (fd), count, io->off);
 	out = r_socket_http_get (url, &code, &rlen);
 	if (out && rlen > 0) {
-		ut8 *tmp = calloc (1, rlen+1);
+		ut8 *tmp = calloc (1, rlen + 1);
 		if (!tmp) {
 			goto beach;
 		}
@@ -67,7 +67,7 @@ beach:
 	return ret;
 }
 
-static int __close(RIODesc *fd) {
+static int __close (RIODesc *fd) {
 	RIOR2Web *riom;
 	if (!fd || !fd->data) {
 		return -1;
@@ -78,7 +78,7 @@ static int __close(RIODesc *fd) {
 	return 0;
 }
 
-static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 __lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
 	case SEEK_SET: return offset;
 	case SEEK_CUR: return io->off + offset;
@@ -87,7 +87,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static bool __plugin_open(RIO *io, const char *pathname, bool many) {
+static bool __plugin_open (RIO *io, const char *pathname, bool many) {
 	const char *uri = "r2web://";
 	return (!strncmp (pathname, uri, strlen (uri)));
 }
@@ -96,7 +96,7 @@ static inline int getmalfd (RIOR2Web *mal) {
 	return 0xfffffff & (int)(size_t)mal;
 }
 
-static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
+static RIODesc *__open (RIO *io, const char *pathname, int rw, int mode) {
 	char *out;
 	int rlen, code;
 	if (__plugin_open (io, pathname, 0)) {
@@ -134,13 +134,13 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	return NULL;
 }
 
-static char *__system(RIO *io, RIODesc *fd, const char *command) {
+static char *__system (RIO *io, RIODesc *fd, const char *command) {
 	if (!*command) {
 		return NULL;
 	}
 	int code, rlen;
 	char *cmd = r_str_uri_encode (command);
-	char *url = r_str_newf ("%s/%s", rURL(fd), cmd);
+	char *url = r_str_newf ("%s/%s", rURL (fd), cmd);
 	char *out = r_socket_http_get (url, &code, &rlen);
 	if (out && rlen > 0) {
 		io->cb_printf ("%s", out);

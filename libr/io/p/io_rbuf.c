@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
-static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
+static int __write (RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (!fd || !buf || count < 0 || !fd->data) {
 		return -1;
 	}
@@ -15,27 +15,27 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	return r_buf_write (b, buf, count);
 }
 
-static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
+static int __read (RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	RBuffer *b = fd->data;
 	return r_buf_read (b, buf, count);
 }
 
-static int __close(RIODesc *fd) {
+static int __close (RIODesc *fd) {
 	RBuffer *b = fd->data;
 	r_buf_free (b);
 	return 0;
 }
 
-static ut64 __lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 __lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	RBuffer *buf = fd->data;
 	return r_buf_seek (buf, offset, whence);
 }
 
-static bool __check(RIO *io, const char *pathname, bool many) {
+static bool __check (RIO *io, const char *pathname, bool many) {
 	return (!strncmp (pathname, "rbuf://", 7));
 }
 
-static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
+static RIODesc *__open (RIO *io, const char *pathname, int rw, int mode) {
 	RIODesc *desc;
 	RBuffer *buf = r_buf_new ();
 	if (buf && (desc = r_io_desc_new (io, &r_io_plugin_rbuf, pathname, 7, 0, buf))) {

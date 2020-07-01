@@ -19,7 +19,7 @@ enum {
 	WS_OP_IO
 };
 
-static int get_ws_pref_optype(const ut8 *buf, int len) {
+static int get_ws_pref_optype (const ut8 *buf, int len) {
 	if (len < 1) {
 		return WS_OP_UNK;
 	}
@@ -31,7 +31,7 @@ static int get_ws_pref_optype(const ut8 *buf, int len) {
 	}
 }
 
-static int get_ws_suf_optype(const ut8 *buf, int len) {
+static int get_ws_suf_optype (const ut8 *buf, int len) {
 	if (len < 1) {
 		return WS_OP_UNK;
 	}
@@ -43,7 +43,7 @@ static int get_ws_suf_optype(const ut8 *buf, int len) {
 	}
 }
 
-WS_API int get_ws_optype(const ut8 *buf, int len) {
+WS_API int get_ws_optype (const ut8 *buf, int len) {
 	const ut8 *ptr;
 	if (get_ws_pref_optype (buf, len) == WS_OP_PREF) {
 		ptr = buf + 1;
@@ -55,7 +55,7 @@ WS_API int get_ws_optype(const ut8 *buf, int len) {
 	return get_ws_pref_optype (buf, len);
 }
 
-WS_API const ut8 *get_ws_next_token(const ut8 *buf, int len) {
+WS_API const ut8 *get_ws_next_token (const ut8 *buf, int len) {
 	const ut8 *ret;
 	ret = buf;
 	while (len - (ret - buf)) {
@@ -70,7 +70,7 @@ WS_API const ut8 *get_ws_next_token(const ut8 *buf, int len) {
 	return NULL;
 }
 
-static st32 get_ws_val(const ut8 *buf, int len) {
+static st32 get_ws_val (const ut8 *buf, int len) {
 	ut8 sig;
 	int i, ret = 0;
 	const ut8 *tok = get_ws_next_token (buf, len);
@@ -89,10 +89,10 @@ static st32 get_ws_val(const ut8 *buf, int len) {
 		ret = ret + (*tok == '\t');
 		len = len - (tok - buf) - 1;
 	}
-	return sig? ret * (-1): ret;
+	return sig ? ret * (-1) : ret;
 }
 
-WS_API int test_ws_token_exist(const ut8 *buf, ut8 token, int len) {
+WS_API int test_ws_token_exist (const ut8 *buf, ut8 token, int len) {
 	const ut8 *ptr = get_ws_next_token (buf, len);
 	int size = 1;
 	while (ptr && *ptr != token && (len > 0)) {
@@ -103,7 +103,7 @@ WS_API int test_ws_token_exist(const ut8 *buf, ut8 token, int len) {
 	return size;
 }
 
-WS_API int wsdis(RAsmOp *op, const ut8 *buf, int len) {
+WS_API int wsdis (RAsmOp *op, const ut8 *buf, int len) {
 	const char *buf_asm = NULL;
 	const ut8 *ptr = buf;
 	switch (get_ws_optype (buf, len)) {
@@ -269,7 +269,7 @@ WS_API int wsdis(RAsmOp *op, const ut8 *buf, int len) {
 		return op->size = ptr - buf + 1;
 	case WS_OP_FLOW:
 		ptr = get_ws_next_token (ptr + 1, len - 1);
-		if (!ptr) {											// evil
+		if (!ptr) { // evil
 			return op->size = 0;
 		}
 		switch (*ptr) {

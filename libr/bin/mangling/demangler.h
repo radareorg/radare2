@@ -20,7 +20,7 @@
 /// \return Returns eDemangleErrOK if creating of object has been finish with
 ///			success, else - eDemanglerErrMemoryAllocation
 ///////////////////////////////////////////////////////////////////////////////
-EDemanglerErr create_demangler(SDemangler **demangler);
+EDemanglerErr create_demangler (SDemangler **demangler);
 
 ///////////////////////////////////////////////////////////////////////////////
 /// \brief Initialize object of demangler
@@ -31,13 +31,13 @@ EDemanglerErr create_demangler(SDemangler **demangler);
 ///			eDemanglerErrMemoryAllocation, eDemanglerErrUnsupportedMangling,
 ///			eDemanglerErrUnkown
 ///////////////////////////////////////////////////////////////////////////////
-EDemanglerErr init_demangler(SDemangler *demangler, char *sym);
+EDemanglerErr init_demangler (SDemangler *demangler, char *sym);
 
 ///////////////////////////////////////////////////////////////////////////////
 /// \brief Deallocate demangler object
 /// \param demangler Demangler object that will be deallocated
 /// \return Returns void
 ///////////////////////////////////////////////////////////////////////////////
-void free_demangler(SDemangler *demangler);
+void free_demangler (SDemangler *demangler);
 
 #endif // DEMANGLER_H

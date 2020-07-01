@@ -5,7 +5,7 @@
 
 typedef struct {
 	st32 code;
-	st32 (*hash_func)(st32 A1, st32 A2);
+	st32 (*hash_func) (st32 A1, st32 A2);
 } HASHCODE_ENTRY_T;
 
 #endif

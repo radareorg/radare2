@@ -6,7 +6,7 @@
 #include <r_bin.h>
 #include "../../fs/types.h"
 
-static char *fsname(RBuffer *b) {
+static char *fsname (RBuffer *b) {
 	ut8 buf[1024];
 	int i, j;
 
@@ -39,7 +39,7 @@ static char *fsname(RBuffer *b) {
 	return NULL;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	r_return_val_if_fail (b, false);
 	char *p = fsname (b);
 	bool hasFs = p != NULL;
@@ -47,24 +47,24 @@ static bool check_buffer(RBuffer *b) {
 	return hasFs;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (buf);
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy (RBinFile *bf) {
 	//r_bin_fs_free ((struct r_bin_fs_obj_t*)bf->o->bin_obj);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr (RBinFile *bf) {
 	return 0;
 }
 
 /* accelerate binary load */
-static RList *strings(RBinFile *bf) {
+static RList *strings (RBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo* info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	RBinInfo *ret = NULL;
 	if (!bf) {
 		return NULL;
@@ -72,7 +72,7 @@ static RBinInfo* info(RBinFile *bf) {
 	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
 	}
-	ret->file = bf->file? strdup (bf->file): NULL;
+	ret->file = bf->file ? strdup (bf->file) : NULL;
 	ret->type = strdup ("fs");
 	ret->bclass = fsname (bf->buf);
 	ret->rclass = strdup ("fs");

@@ -18,7 +18,7 @@ R_API RCoreItem *r_core_item_at (RCore *core, ut64 addr) {
 				case R_META_TYPE_DATA:
 					ci->type = "data";
 					ci->size = size;
-					ci->data = r_core_cmd_strf (core, "pdi 1 @e:asm.flags=0@e:asm.lines=0@e:scr.color=0@0x%08"PFMT64x, addr);
+					ci->data = r_core_cmd_strf (core, "pdi 1 @e:asm.flags=0@e:asm.lines=0@e:scr.color=0@0x%08" PFMT64x, addr);
 					r_str_trim (ci->data);
 					break;
 				case R_META_TYPE_FORMAT:
@@ -50,13 +50,13 @@ R_API RCoreItem *r_core_item_at (RCore *core, ut64 addr) {
 		ci->sectname = strdup (sec->name);
 	}
 	if (!ci->data) {
-		RAnalOp* op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
+		RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 		if (op) {
 			if (!ci->data) {
 				if (op->mnemonic) {
 					ci->data = strdup (op->mnemonic);
 				} else {
-					ci->data = r_core_cmd_strf (core, "pi 1 @e:scr.color=0@0x%08"PFMT64x, addr);
+					ci->data = r_core_cmd_strf (core, "pi 1 @e:scr.color=0@0x%08" PFMT64x, addr);
 					r_str_trim (ci->data);
 				}
 			}
@@ -64,7 +64,7 @@ R_API RCoreItem *r_core_item_at (RCore *core, ut64 addr) {
 			r_anal_op_free (op);
 		}
 	}
-	char *cmt = r_core_cmd_strf (core, "CC.@0x%08"PFMT64x, addr);
+	char *cmt = r_core_cmd_strf (core, "CC.@0x%08" PFMT64x, addr);
 	if (cmt) {
 		if (*cmt) {
 			ci->comment = strdup (cmt);
@@ -87,4 +87,3 @@ R_API void r_core_item_free (RCoreItem *ci) {
 	free (ci->data);
 	free (ci);
 }
-

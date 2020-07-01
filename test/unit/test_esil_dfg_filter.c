@@ -3,7 +3,7 @@
 #include <r_util.h>
 #include "minunit.h"
 
-bool test_filter_regs(void) {
+bool test_filter_regs (void) {
 	RAnal *anal = r_anal_new ();
 	r_anal_use (anal, "x86");
 	r_anal_set_bits (anal, 32);
@@ -50,7 +50,7 @@ bool test_filter_regs(void) {
 	mu_end;
 }
 
-int main(int argc, char **argv) {
+int main (int argc, char **argv) {
 	mu_run_test (test_filter_regs);
 	return tests_passed != tests_run;
 }

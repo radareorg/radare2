@@ -9,7 +9,7 @@ static char *path = NULL;
 static char prompt[32];
 static int bytes, nlines, _n = 0;
 
-static void setnewline(int old) {
+static void setnewline (int old) {
 	snprintf (prompt, sizeof (prompt), "%d: ", _n);
 	r_line_set_prompt (prompt);
 	strncpy (I->line->buffer.data, r_str_word_get0 (lines, _n),
@@ -19,7 +19,7 @@ static void setnewline(int old) {
 	I->line->contents = I->line->buffer.data;
 }
 
-static void saveline(int n, const char *str) {
+static void saveline (int n, const char *str) {
 	char *out;
 	if (!str) {
 		return;
@@ -29,7 +29,7 @@ static void saveline(int n, const char *str) {
 	lines = out;
 }
 
-static int up(void *n) {
+static int up (void *n) {
 	int old = _n;
 	if (_n > 0) {
 		_n--;
@@ -38,13 +38,13 @@ static int up(void *n) {
 	return -1;
 }
 
-static int down(void *n) {
+static int down (void *n) {
 	int old = _n++;
 	setnewline (old);
 	return -1;
 }
 
-static void filesave(void) {
+static void filesave (void) {
 	char buf[128];
 	int i;
 	if (!path) {
@@ -73,7 +73,7 @@ static void filesave(void) {
 	nlines = r_str_split (lines, '\n');
 }
 
-R_API char *r_cons_editor(const char *file, const char *str) {
+R_API char *r_cons_editor (const char *file, const char *str) {
 	const char *line;
 	_n = 0;
 	if (I->cb_editor) {
@@ -93,7 +93,7 @@ R_API char *r_cons_editor(const char *file, const char *str) {
 		}
 		nlines = r_str_split (lines, '\n');
 		eprintf ("Loaded %d lines on %d byte(s)\n",
-			(nlines? (nlines - 1): 0), bytes);
+			(nlines ? (nlines - 1) : 0), bytes);
 	} else {
 		path = NULL;
 	}

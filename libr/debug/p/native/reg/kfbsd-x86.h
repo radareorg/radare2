@@ -53,5 +53,5 @@ return strdup (
 	"gpr	sp	.16	64	0\n"
 	"seg	ss	.32	68	0\n"
 	"seg	gs	.32	72	0\n"
-// TODO: implement flags like in linux --those flags are wrong
-	);
+	// TODO: implement flags like in linux --those flags are wrong
+);

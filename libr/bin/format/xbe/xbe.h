@@ -11,63 +11,63 @@
 #define XBE_KP_CHIHIRO 0x2290059D
 
 #define XBE_MAX_THUNK 378
-R_PACKED(
-typedef struct {
-	ut32 magic;
-	ut8  signature[0x100];
-	ut32 base;
-	ut32 headers_size;
-	ut32 image_size;
-	ut32 image_header_size;
-	ut32 timestamp;
-	ut32 cert_addr;
-	ut32 sections;
-	ut32 sechdr_addr;
-	ut32 init_flags;
-	ut32 ep;
-	ut32 tls_addr;
-	ut32 pe_shit[7];
-	ut32 debug_path_addr;
-	ut32 debug_name_addr;
-	ut32 debug_uname_addr;
-	ut32 kernel_thunk_addr;
-	ut32 nonkernel_import_dir_addr;
-	ut32 lib_versions;
-	ut32 lib_versions_addr;
-	ut32 kernel_lib_addr;
-	ut32 xapi_lib_addr;
-	ut32 shit[2];
-}) xbe_header;
-
+R_PACKED (
+	typedef struct {
+		ut32 magic;
+		ut8 signature[0x100];
+		ut32 base;
+		ut32 headers_size;
+		ut32 image_size;
+		ut32 image_header_size;
+		ut32 timestamp;
+		ut32 cert_addr;
+		ut32 sections;
+		ut32 sechdr_addr;
+		ut32 init_flags;
+		ut32 ep;
+		ut32 tls_addr;
+		ut32 pe_shit[7];
+		ut32 debug_path_addr;
+		ut32 debug_name_addr;
+		ut32 debug_uname_addr;
+		ut32 kernel_thunk_addr;
+		ut32 nonkernel_import_dir_addr;
+		ut32 lib_versions;
+		ut32 lib_versions_addr;
+		ut32 kernel_lib_addr;
+		ut32 xapi_lib_addr;
+		ut32 shit[2];
+	})
+xbe_header;
 
 #define SECT_FLAG_X 0x00000004
 #define SECT_FLAG_W 0x00000001
 R_PACKED (
-typedef struct  {
-	ut32 flags;
-	ut32 vaddr;
-	ut32 vsize;
-	ut32 offset;
-	ut32 size;
-	ut32 name_addr;
-	ut32 refcount;
-	ut32 shit[2];
-	ut8  digest[20];
-}) xbe_section;
+	typedef struct {
+		ut32 flags;
+		ut32 vaddr;
+		ut32 vsize;
+		ut32 offset;
+		ut32 size;
+		ut32 name_addr;
+		ut32 refcount;
+		ut32 shit[2];
+		ut8 digest[20];
+	})
+xbe_section;
 
 R_PACKED (
-typedef struct  {
-	ut8 name[8];
-	ut16 major;
-	ut16 minor;
-	ut16 build;
-	ut16 flags;
-}) xbe_lib;
+	typedef struct {
+		ut8 name[8];
+		ut16 major;
+		ut16 minor;
+		ut16 build;
+		ut16 flags;
+	})
+xbe_lib;
 
 typedef struct {
 	xbe_header header;
 	int kt_key;
 	int ep_key;
-} r_bin_xbe_obj_t; 
-
-
+} r_bin_xbe_obj_t;

@@ -26,12 +26,12 @@ static const ut8 Rcon[30] = {
 // key        - The 128/192/256-bit user-key to use.
 //expkey[2][Nr + 1][Nb]
 //void aes_expkey (const struct aes_state *st, ut32 ***expkey) { //expkey[2][st->rounds + 1][Nb]) {
-#if defined (__GNUC__)
+#if defined(__GNUC__)
 void aes_expkey (const struct aes_state *st, ut32 expkey[2][st->rounds + 1][Nb])
 #else
 // XXX this is wrong, but at least it compiles
 #ifdef _MSC_VER
-#pragma message ("AES broken for non-gcc compilers")
+#pragma message("AES broken for non-gcc compilers")
 #else
 #warning AES broken for non-gcc compilers
 #endif
@@ -43,7 +43,7 @@ void aes_expkey (const struct aes_state *st, ut32 expkey[2][Nr_AES256 + 1][Nb])
 	// memcpy (&expkey, _expkey, 2 * (st->rounds + 1) * Nb);
 	int ROUND_KEY_COUNT = 4 * (1 + st->rounds);
 #ifdef _MSC_VER
-	ut32 *tk = (ut32*)malloc (sizeof (ut32) * st->columns);
+	ut32 *tk = (ut32 *)malloc (sizeof (ut32) * st->columns);
 #else
 	ut32 tk[st->columns];
 #endif
@@ -81,8 +81,8 @@ void aes_expkey (const struct aes_state *st, ut32 expkey[2][Nr_AES256 + 1][Nb])
 	while (t < ROUND_KEY_COUNT) {
 		// Extrapolate using phi (the round key evolution function)
 		tt = tk[st->columns - 1];
-		tk[0] ^= Sbox[(ut8)(tt >> 16)] << 24 ^ Sbox[(ut8)(tt >> 8)] << 16 ^
-			Sbox[(ut8)tt] << 8 ^ Sbox[(ut8)(tt >> 24)] ^ Rcon[idx++] << 24;
+		tk[0] ^= Sbox[(ut8) (tt >> 16)] << 24 ^ Sbox[(ut8) (tt >> 8)] << 16 ^
+			Sbox[(ut8)tt] << 8 ^ Sbox[(ut8) (tt >> 24)] ^ Rcon[idx++] << 24;
 
 		if (st->columns != 8) {
 			for (i = 1, j = 0; i < st->columns;) {
@@ -93,9 +93,9 @@ void aes_expkey (const struct aes_state *st, ut32 expkey[2][Nr_AES256 + 1][Nb])
 				tk[i++] ^= tk[j++];
 			}
 			tt = tk[st->columns / 2 - 1];
-			tk[st->columns / 2] ^= Sbox[(ut8)tt] ^ Sbox[(ut8)(tt >> 8)] << 8 ^
-				Sbox[(ut8)(tt >> 16)] << 16 ^
-				Sbox[(ut8)(tt >> 24)] << 24;
+			tk[st->columns / 2] ^= Sbox[(ut8)tt] ^ Sbox[(ut8) (tt >> 8)] << 8 ^
+				Sbox[(ut8) (tt >> 16)] << 16 ^
+				Sbox[(ut8) (tt >> 24)] << 24;
 			for (j = st->columns / 2, i = j + 1; i < st->columns;) {
 				tk[i++] ^= tk[j++];
 			}
@@ -111,8 +111,8 @@ void aes_expkey (const struct aes_state *st, ut32 expkey[2][Nr_AES256 + 1][Nb])
 	for (r = 1; r < st->rounds; r++) {
 		for (j = 0; j < Nb; j++) {
 			tt = expkey[1][r][j];
-			expkey[1][r][j] = U0[(ut8)(tt >> 24)] ^ U1[(ut8)(tt >> 16)] ^
-				U2[(ut8)(tt >> 8)] ^ U3[(ut8)tt];
+			expkey[1][r][j] = U0[(ut8) (tt >> 24)] ^ U1[(ut8) (tt >> 16)] ^
+				U2[(ut8) (tt >> 8)] ^ U3[(ut8)tt];
 		}
 	}
 #ifdef _MSC_VER
@@ -130,7 +130,7 @@ void aes_encrypt (struct aes_state *st, ut8 *in, ut8 *result) {
 #else
 	ut32 expkey[2][st->rounds + 1][Nb];
 #endif
-	aes_expkey(st, expkey);
+	aes_expkey (st, expkey);
 
 	ut32 t0, t1, t2, t3, tt;
 	ut32 a0, a1, a2, a3, r;
@@ -161,14 +161,14 @@ void aes_encrypt (struct aes_state *st, ut8 *in, ut8 *result) {
 
 	// Apply Round Transforms
 	for (r = 1; r < st->rounds; r++) {
-		a0 = (FT0[(ut8)(t0 >> 24)] ^ FT1[(ut8)(t1 >> 16)] ^ FT2[(ut8)(t2 >> 8)] ^
-				FT3[(ut8)t3]);
-		a1 = (FT0[(ut8)(t1 >> 24)] ^ FT1[(ut8)(t2 >> 16)] ^ FT2[(ut8)(t3 >> 8)] ^
-				FT3[(ut8)t0]);
-		a2 = (FT0[(ut8)(t2 >> 24)] ^ FT1[(ut8)(t3 >> 16)] ^ FT2[(ut8)(t0 >> 8)] ^
-				FT3[(ut8)t1]);
-		a3 = (FT0[(ut8)(t3 >> 24)] ^ FT1[(ut8)(t0 >> 16)] ^ FT2[(ut8)(t1 >> 8)] ^
-				FT3[(ut8)t2]);
+		a0 = (FT0[(ut8) (t0 >> 24)] ^ FT1[(ut8) (t1 >> 16)] ^ FT2[(ut8) (t2 >> 8)] ^
+			FT3[(ut8)t3]);
+		a1 = (FT0[(ut8) (t1 >> 24)] ^ FT1[(ut8) (t2 >> 16)] ^ FT2[(ut8) (t3 >> 8)] ^
+			FT3[(ut8)t0]);
+		a2 = (FT0[(ut8) (t2 >> 24)] ^ FT1[(ut8) (t3 >> 16)] ^ FT2[(ut8) (t0 >> 8)] ^
+			FT3[(ut8)t1]);
+		a3 = (FT0[(ut8) (t3 >> 24)] ^ FT1[(ut8) (t0 >> 16)] ^ FT2[(ut8) (t1 >> 8)] ^
+			FT3[(ut8)t2]);
 		t0 = a0 ^ expkey[0][r][0];
 		t1 = a1 ^ expkey[0][r][1];
 		t2 = a2 ^ expkey[0][r][2];
@@ -178,27 +178,27 @@ void aes_encrypt (struct aes_state *st, ut8 *in, ut8 *result) {
 	// Last Round is special
 
 	tt = expkey[0][st->rounds][0];
-	result[0] = Sbox[(ut8)(t0 >> 24)] ^ (ut8)(tt >> 24);
-	result[1] = Sbox[(ut8)(t1 >> 16)] ^ (ut8)(tt >> 16);
-	result[2] = Sbox[(ut8)(t2 >> 8)] ^ (ut8)(tt >> 8);
+	result[0] = Sbox[(ut8) (t0 >> 24)] ^ (ut8) (tt >> 24);
+	result[1] = Sbox[(ut8) (t1 >> 16)] ^ (ut8) (tt >> 16);
+	result[2] = Sbox[(ut8) (t2 >> 8)] ^ (ut8) (tt >> 8);
 	result[3] = Sbox[(ut8)t3] ^ (ut8)tt;
 
 	tt = expkey[0][st->rounds][1];
-	result[4] = Sbox[(ut8)(t1 >> 24)] ^ (ut8)(tt >> 24);
-	result[5] = Sbox[(ut8)(t2 >> 16)] ^ (ut8)(tt >> 16);
-	result[6] = Sbox[(ut8)(t3 >> 8)] ^ (ut8)(tt >> 8);
+	result[4] = Sbox[(ut8) (t1 >> 24)] ^ (ut8) (tt >> 24);
+	result[5] = Sbox[(ut8) (t2 >> 16)] ^ (ut8) (tt >> 16);
+	result[6] = Sbox[(ut8) (t3 >> 8)] ^ (ut8) (tt >> 8);
 	result[7] = Sbox[(ut8)t0] ^ (ut8)tt;
 
 	tt = expkey[0][st->rounds][2];
-	result[8] = Sbox[(ut8)(t2 >> 24)] ^ (ut8)(tt >> 24);
-	result[9] = Sbox[(ut8)(t3 >> 16)] ^ (ut8)(tt >> 16);
-	result[10] = Sbox[(ut8)(t0 >> 8)] ^ (ut8)(tt >> 8);
+	result[8] = Sbox[(ut8) (t2 >> 24)] ^ (ut8) (tt >> 24);
+	result[9] = Sbox[(ut8) (t3 >> 16)] ^ (ut8) (tt >> 16);
+	result[10] = Sbox[(ut8) (t0 >> 8)] ^ (ut8) (tt >> 8);
 	result[11] = Sbox[(ut8)t1] ^ (ut8)tt;
 
 	tt = expkey[0][st->rounds][3];
-	result[12] = Sbox[(ut8)(t3 >> 24)] ^ (ut8)(tt >> 24);
-	result[13] = Sbox[(ut8)(t0 >> 16)] ^ (ut8)(tt >> 16);
-	result[14] = Sbox[(ut8)(t1 >> 8)] ^ (ut8)(tt >> 8);
+	result[12] = Sbox[(ut8) (t3 >> 24)] ^ (ut8) (tt >> 24);
+	result[13] = Sbox[(ut8) (t0 >> 16)] ^ (ut8) (tt >> 16);
+	result[14] = Sbox[(ut8) (t1 >> 8)] ^ (ut8) (tt >> 8);
 	result[15] = Sbox[(ut8)t2] ^ (ut8)tt;
 }
 
@@ -212,8 +212,8 @@ void aes_decrypt (struct aes_state *st, ut8 *in, ut8 *result) {
 #else
 	ut32 expkey[2][st->rounds + 1][Nb];
 #endif
-	
-	aes_expkey(st, expkey);
+
+	aes_expkey (st, expkey);
 
 	ut32 t0, t1, t2, t3, tt;
 	ut32 a0, a1, a2, a3, r;
@@ -244,10 +244,10 @@ void aes_decrypt (struct aes_state *st, ut8 *in, ut8 *result) {
 
 	// Apply round transforms
 	for (r = 1; r < st->rounds; r++) {
-		a0 = (RT0[(ut8)(t0 >> 24)] ^ RT1[(ut8)(t3 >> 16)] ^ RT2[(ut8)(t2 >> 8)] ^ RT3[(ut8)t1]);
-		a1 = (RT0[(ut8)(t1 >> 24)] ^ RT1[(ut8)(t0 >> 16)] ^ RT2[(ut8)(t3 >> 8)] ^ RT3[(ut8)t2]);
-		a2 = (RT0[(ut8)(t2 >> 24)] ^ RT1[(ut8)(t1 >> 16)] ^ RT2[(ut8)(t0 >> 8)] ^ RT3[(ut8)t3]);
-		a3 = (RT0[(ut8)(t3 >> 24)] ^ RT1[(ut8)(t2 >> 16)] ^ RT2[(ut8)(t1 >> 8)] ^ RT3[(ut8)t0]);
+		a0 = (RT0[(ut8) (t0 >> 24)] ^ RT1[(ut8) (t3 >> 16)] ^ RT2[(ut8) (t2 >> 8)] ^ RT3[(ut8)t1]);
+		a1 = (RT0[(ut8) (t1 >> 24)] ^ RT1[(ut8) (t0 >> 16)] ^ RT2[(ut8) (t3 >> 8)] ^ RT3[(ut8)t2]);
+		a2 = (RT0[(ut8) (t2 >> 24)] ^ RT1[(ut8) (t1 >> 16)] ^ RT2[(ut8) (t0 >> 8)] ^ RT3[(ut8)t3]);
+		a3 = (RT0[(ut8) (t3 >> 24)] ^ RT1[(ut8) (t2 >> 16)] ^ RT2[(ut8) (t1 >> 8)] ^ RT3[(ut8)t0]);
 		t0 = a0 ^ expkey[1][r][0];
 		t1 = a1 ^ expkey[1][r][1];
 		t2 = a2 ^ expkey[1][r][2];
@@ -256,26 +256,26 @@ void aes_decrypt (struct aes_state *st, ut8 *in, ut8 *result) {
 
 	// Last Round is special
 	tt = expkey[1][st->rounds][0];
-	result[0] = InvSbox[(ut8)(t0 >> 24)] ^ (ut8)(tt >> 24);
-	result[1] = InvSbox[(ut8)(t3 >> 16)] ^ (ut8)(tt >> 16);
-	result[2] = InvSbox[(ut8)(t2 >> 8)] ^ (ut8)(tt >> 8);
+	result[0] = InvSbox[(ut8) (t0 >> 24)] ^ (ut8) (tt >> 24);
+	result[1] = InvSbox[(ut8) (t3 >> 16)] ^ (ut8) (tt >> 16);
+	result[2] = InvSbox[(ut8) (t2 >> 8)] ^ (ut8) (tt >> 8);
 	result[3] = InvSbox[(ut8)t1] ^ (ut8)tt;
 
 	tt = expkey[1][st->rounds][1];
-	result[4] = InvSbox[(ut8)(t1 >> 24)] ^ (ut8)(tt >> 24);
-	result[5] = InvSbox[(ut8)(t0 >> 16)] ^ (ut8)(tt >> 16);
-	result[6] = InvSbox[(ut8)(t3 >> 8)] ^ (ut8)(tt >> 8);
+	result[4] = InvSbox[(ut8) (t1 >> 24)] ^ (ut8) (tt >> 24);
+	result[5] = InvSbox[(ut8) (t0 >> 16)] ^ (ut8) (tt >> 16);
+	result[6] = InvSbox[(ut8) (t3 >> 8)] ^ (ut8) (tt >> 8);
 	result[7] = InvSbox[(ut8)t2] ^ (ut8)tt;
 
 	tt = expkey[1][st->rounds][2];
-	result[8] = InvSbox[(ut8)(t2 >> 24)] ^ (ut8)(tt >> 24);
-	result[9] = InvSbox[(ut8)(t1 >> 16)] ^ (ut8)(tt >> 16);
-	result[10] = InvSbox[(ut8)(t0 >> 8)] ^ (ut8)(tt >> 8);
+	result[8] = InvSbox[(ut8) (t2 >> 24)] ^ (ut8) (tt >> 24);
+	result[9] = InvSbox[(ut8) (t1 >> 16)] ^ (ut8) (tt >> 16);
+	result[10] = InvSbox[(ut8) (t0 >> 8)] ^ (ut8) (tt >> 8);
 	result[11] = InvSbox[(ut8)t3] ^ (ut8)tt;
 
 	tt = expkey[1][st->rounds][3];
-	result[12] = InvSbox[(ut8)(t3 >> 24)] ^ (ut8)(tt >> 24);
-	result[13] = InvSbox[(ut8)(t2 >> 16)] ^ (ut8)(tt >> 16);
-	result[14] = InvSbox[(ut8)(t1 >> 8)] ^ (ut8)(tt >> 8);
+	result[12] = InvSbox[(ut8) (t3 >> 24)] ^ (ut8) (tt >> 24);
+	result[13] = InvSbox[(ut8) (t2 >> 16)] ^ (ut8) (tt >> 16);
+	result[14] = InvSbox[(ut8) (t1 >> 8)] ^ (ut8) (tt >> 8);
 	result[15] = InvSbox[(ut8)t0] ^ (ut8)tt;
 }

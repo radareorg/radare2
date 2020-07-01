@@ -40,7 +40,7 @@
 #define HAVE_INTTYPES_H 1
 
 /* Define to 1 if you have the `z' library (-lz). */
-#define HAVE_LIBZ 0 
+#define HAVE_LIBZ 0
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
@@ -199,16 +199,14 @@
 /* Version number of package */
 #define VERSION "0.11.1"
 
-
 #ifndef HAVE_SSIZE_T
-#  if SIZEOF_SIZE_T == SIZEOF_INT
+#if SIZEOF_SIZE_T == SIZEOF_INT
 typedef int ssize_t;
-#  elif SIZEOF_SIZE_T == SIZEOF_LONG
+#elif SIZEOF_SIZE_T == SIZEOF_LONG
 typedef long ssize_t;
-#  elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG
+#elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG
 typedef long long ssize_t;
-#  else
+#else
 #error no suitable type for ssize_t found
-#  endif
 #endif
-
+#endif

@@ -13,7 +13,7 @@
 #define O f->o
 #define P f->p
 
-R_API RRegItem *r_reg_cond_get(RReg *reg, const char *name) {
+R_API RRegItem *r_reg_cond_get (RReg *reg, const char *name) {
 	int i = R_REG_TYPE_GPR;
 	RListIter *iter;
 	RRegItem *r;
@@ -27,11 +27,11 @@ R_API RRegItem *r_reg_cond_get(RReg *reg, const char *name) {
 	return NULL;
 }
 
-R_API int r_reg_cond_get_value(RReg *r, const char *name) {
+R_API int r_reg_cond_get_value (RReg *r, const char *name) {
 	return (int)r_reg_get_value (r, r_reg_cond_get (r, name)) ? 1 : 0;
 }
 
-R_API bool r_reg_cond_set(RReg *r, const char *name, bool val) {
+R_API bool r_reg_cond_set (RReg *r, const char *name, bool val) {
 	RRegItem *item = r_reg_cond_get (r, name);
 	if (item) {
 		r_reg_set_value (r, item, val);
@@ -41,7 +41,7 @@ R_API bool r_reg_cond_set(RReg *r, const char *name, bool val) {
 	return false;
 }
 
-R_API const char *r_reg_cond_to_string(int n) {
+R_API const char *r_reg_cond_to_string (int n) {
 	const char *cs[] = {
 		"eq", "ne", "cf", "neg", "of", "hi", "he",
 		"lo", "loe", "ge", "gt", "lt", "le"
@@ -52,7 +52,7 @@ R_API const char *r_reg_cond_to_string(int n) {
 	return cs[n];
 }
 
-R_API int r_reg_cond_from_string(const char *str) {
+R_API int r_reg_cond_from_string (const char *str) {
 	if (!strcmp (str, "eq")) {
 		return R_REG_COND_EQ;
 	}
@@ -112,7 +112,7 @@ R_API int r_reg_cond_from_string(const char *str) {
 	return -1;
 }
 
-R_API int r_reg_cond_bits(RReg *r, int type, RRegFlags *f) {
+R_API int r_reg_cond_bits (RReg *r, int type, RRegFlags *f) {
 	switch (type) {
 	case R_REG_COND_EQ: return Z;
 	case R_REG_COND_NE: return !Z;
@@ -135,7 +135,7 @@ R_API int r_reg_cond_bits(RReg *r, int type, RRegFlags *f) {
 	return false;
 }
 
-R_API bool r_reg_cond_bits_set(RReg *r, int type, RRegFlags *f, bool v) {
+R_API bool r_reg_cond_bits_set (RReg *r, int type, RRegFlags *f, bool v) {
 	switch (type) {
 	case R_REG_COND_EQ: Z = v; break;
 	case R_REG_COND_NE: Z = !v; break;
@@ -223,13 +223,13 @@ R_API bool r_reg_cond_bits_set(RReg *r, int type, RRegFlags *f, bool v) {
 	return true;
 }
 
-R_API int r_reg_cond(RReg *r, int type) {
+R_API int r_reg_cond (RReg *r, int type) {
 	RRegFlags f = { 0 };
 	r_reg_cond_retrieve (r, &f);
 	return r_reg_cond_bits (r, type, &f);
 }
 
-R_API RRegFlags *r_reg_cond_retrieve(RReg *r, RRegFlags *f) {
+R_API RRegFlags *r_reg_cond_retrieve (RReg *r, RRegFlags *f) {
 	if (!f) {
 		f = R_NEW0 (RRegFlags);
 	}
@@ -244,7 +244,7 @@ R_API RRegFlags *r_reg_cond_retrieve(RReg *r, RRegFlags *f) {
 	return f;
 }
 
-R_API void r_reg_cond_apply(RReg *r, RRegFlags *f) {
+R_API void r_reg_cond_apply (RReg *r, RRegFlags *f) {
 	r_return_if_fail (r && f);
 	r_reg_cond_set (r, "sign", f->s);
 	r_reg_cond_set (r, "zero", f->z);

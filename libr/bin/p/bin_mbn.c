@@ -10,25 +10,25 @@
 
 typedef struct sbl_header {
 	ut32 load_index;
-	ut32 version;    // (flash_partition_version) 3 = nand
-	ut32 paddr;      // This + 40 is the start of the code in the file
-	ut32 vaddr;	 // Where it's loaded in memory
-	ut32 psize;      // code_size + signature_size + cert_chain_size
-	ut32 code_pa;    // Only what's loaded to memory
+	ut32 version; // (flash_partition_version) 3 = nand
+	ut32 paddr; // This + 40 is the start of the code in the file
+	ut32 vaddr; // Where it's loaded in memory
+	ut32 psize; // code_size + signature_size + cert_chain_size
+	ut32 code_pa; // Only what's loaded to memory
 	ut32 sign_va;
 	ut32 sign_sz;
-	ut32 cert_va;    // Max of 3 certs?
+	ut32 cert_va; // Max of 3 certs?
 	ut32 cert_sz;
 } SblHeader;
 
 // TODO avoid globals
-static SblHeader sb = {0};
+static SblHeader sb = { 0 };
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	r_return_val_if_fail (b, false);
 	ut64 bufsz = r_buf_size (b);
 	if (sizeof (SblHeader) < bufsz) {
-		int ret = r_buf_fread_at (b, 0, (ut8*)&sb, "10i", 1);
+		int ret = r_buf_fread_at (b, 0, (ut8 *)&sb, "10i", 1);
 		if (!ret) {
 			return false;
 		}
@@ -68,22 +68,23 @@ static bool check_buffer(RBuffer *b) {
 		if (sb.load_index < 1 || sb.load_index > 0x40) {
 			return false; // should be 0x19 ?
 		}
-// TODO: Add more checks here
+		// TODO: Add more checks here
 		return true;
 	}
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (b);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr (RBinFile *bf) {
 	return sb.vaddr; // XXX
 }
 
-static RList* entries(RBinFile *bf) {
-	RList* ret = r_list_newf (free);;
+static RList *entries (RBinFile *bf) {
+	RList *ret = r_list_newf (free);
+	;
 	if (ret) {
 		RBinAddr *ptr = R_NEW0 (RBinAddr);
 		if (ptr) {
@@ -95,7 +96,7 @@ static RList* entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList* sections(RBinFile *bf) {
+static RList *sections (RBinFile *bf) {
 	RBinSection *ptr = NULL;
 	RList *ret = NULL;
 	int rc;
@@ -104,7 +105,7 @@ static RList* sections(RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	rc = r_buf_fread_at (bf->buf, 0, (ut8*)&sb, "10i", 1);
+	rc = r_buf_fread_at (bf->buf, 0, (ut8 *)&sb, "10i", 1);
 	if (!rc) {
 		r_list_free (ret);
 		return false;
@@ -154,7 +155,7 @@ static RList* sections(RBinFile *bf) {
 	return ret;
 }
 
-static RBinInfo* info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	RBinInfo *ret = NULL;
 	const int bits = 16;
 	if (!(ret = R_NEW0 (RBinInfo))) {
@@ -178,7 +179,7 @@ static RBinInfo* info(RBinFile *bf) {
 	return ret;
 }
 
-static ut64 size(RBinFile *bf) {
+static ut64 size (RBinFile *bf) {
 	return sizeof (SblHeader) + sb.psize;
 }
 

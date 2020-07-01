@@ -15,7 +15,7 @@ static int index_filename = -2;
 /**
  * Open an ar/lib file. If filename is NULL, list archive files
  */
-R_API RBuffer *ar_open_file(const char *arname, const char *filename) {
+R_API RBuffer *ar_open_file (const char *arname, const char *filename) {
 	int r;
 	RList *files = NULL;
 	RBuffer *b = r_buf_new_file (arname, O_RDWR, 0);
@@ -66,20 +66,20 @@ fail:
 	return NULL;
 }
 
-R_API int ar_close(RBuffer *b) {
+R_API int ar_close (RBuffer *b) {
 	r_buf_free (b);
 	return 0;
 }
 
-R_API int ar_read_at(RBuffer *b, ut64 off, void *buf, int count) {
+R_API int ar_read_at (RBuffer *b, ut64 off, void *buf, int count) {
 	return r_buf_read_at (b, off, buf, count);
 }
 
-R_API int ar_write_at(RBuffer *b, ut64 off, void *buf, int count) {
+R_API int ar_write_at (RBuffer *b, ut64 off, void *buf, int count) {
 	return r_buf_write_at (b, off, buf, count);
 }
 
-int ar_read(RBuffer *b, void *dest, int len) {
+int ar_read (RBuffer *b, void *dest, int len) {
 	int r = r_buf_read (b, dest, len);
 	if (!r) {
 		return 0;
@@ -88,9 +88,9 @@ int ar_read(RBuffer *b, void *dest, int len) {
 	return r;
 }
 
-int ar_read_until_slash(RBuffer *b, char *buffer, int limit) {
+int ar_read_until_slash (RBuffer *b, char *buffer, int limit) {
 	ut32 i = 0;
-	ut32 lim = (limit && limit < BUF_SIZE)? limit: BUF_SIZE;
+	ut32 lim = (limit && limit < BUF_SIZE) ? limit : BUF_SIZE;
 	while (i < lim) {
 		ar_read (b, buffer + i, 1);
 		if (buffer[i] == '/') {
@@ -102,7 +102,7 @@ int ar_read_until_slash(RBuffer *b, char *buffer, int limit) {
 	return i;
 }
 
-int ar_read_header(RBuffer *b, char *buffer) {
+int ar_read_header (RBuffer *b, char *buffer) {
 	int r = ar_read (b, buffer, 8);
 	if (!r) {
 		return 0;
@@ -114,7 +114,7 @@ int ar_read_header(RBuffer *b, char *buffer) {
 	return r;
 }
 
-int ar_read_file(RBuffer *b, char *buffer, bool lookup, RList *files, const char *filename) {
+int ar_read_file (RBuffer *b, char *buffer, bool lookup, RList *files, const char *filename) {
 	ut64 filesize = 0;
 	char *tmp = NULL;
 	char *curfile = NULL;
@@ -142,7 +142,7 @@ int ar_read_file(RBuffer *b, char *buffer, bool lookup, RList *files, const char
 		if (!tmp) {
 			goto fail;
 		}
-		int dif = (int) (tmp - buffer);
+		int dif = (int)(tmp - buffer);
 		dif = 31 - dif;
 		// Re-read the whole filename
 		r_buf_seek (b, -dif, R_BUF_CUR);
@@ -192,7 +192,7 @@ int ar_read_file(RBuffer *b, char *buffer, bool lookup, RList *files, const char
 	if (!lookup && filename) {
 		/* Check filename */
 		if (index == index_filename || !strcmp (curfile, filename)) {
-			r_buf_resize(b, filesize);
+			r_buf_resize (b, filesize);
 			free (curfile);
 			return r_buf_size (b);
 		}
@@ -207,7 +207,7 @@ fail:
 	return 0;
 }
 
-int ar_read_filename_table(RBuffer *b, char *buffer, RList *files, const char *filename) {
+int ar_read_filename_table (RBuffer *b, char *buffer, RList *files, const char *filename) {
 	int r = ar_read (b, buffer, AR_FILENAME_LEN);
 	if (r != AR_FILENAME_LEN) {
 		return 0;
@@ -237,13 +237,13 @@ int ar_read_filename_table(RBuffer *b, char *buffer, RList *files, const char *f
 	ut32 index = 0;
 	while (r && len < tablesize) {
 		r = ar_read_until_slash (b, buffer, tablesize - len);
-		if (filename && !strcmp (filename, (char *) buffer)) {
+		if (filename && !strcmp (filename, (char *)buffer)) {
 			index_filename = index;
 		}
-		if (*(char *) buffer == '\n') {
+		if (*(char *)buffer == '\n') {
 			break;
 		}
-		r_list_append (files, strdup ((char *) buffer));
+		r_list_append (files, strdup ((char *)buffer));
 		/* End slash plus separation character ("/\n") */
 		len += r + 2;
 		/* Separation character (not always '\n') */

@@ -5,16 +5,16 @@
 
 #include "bfvm.h"
 
-static ut8 bfvm_op(BfvmCPU *c) {
+static ut8 bfvm_op (BfvmCPU *c) {
 	// XXX: this is slow :(
-	ut8 buf[4] = {0};
+	ut8 buf[4] = { 0 };
 	if (c && c->iob.read_at && !c->iob.read_at (c->iob.io, c->eip, buf, 4)) {
 		return 0xff;
 	}
 	return buf[0];
 }
 
-R_API int bfvm_in_trap(BfvmCPU *c) {
+R_API int bfvm_in_trap (BfvmCPU *c) {
 	switch (bfvm_op (c)) {
 	case 0x00:
 	case 0xcc:
@@ -24,7 +24,7 @@ R_API int bfvm_in_trap(BfvmCPU *c) {
 	return 0;
 }
 
-R_API void bfvm_reset(BfvmCPU *c) {
+R_API void bfvm_reset (BfvmCPU *c) {
 	memset (c->mem, '\0', c->size);
 	memset (c->input_buf, '\0', c->input_size);
 	memset (c->screen_buf, '\0', c->screen_size);
@@ -38,7 +38,7 @@ R_API void bfvm_reset(BfvmCPU *c) {
 	c->esp = c->base;
 }
 
-R_API int bfvm_init(BfvmCPU *c, ut32 size, int circular) {
+R_API int bfvm_init (BfvmCPU *c, ut32 size, int circular) {
 	memset (c, '\0', sizeof (BfvmCPU));
 
 	/* data */
@@ -56,24 +56,24 @@ R_API int bfvm_init(BfvmCPU *c, ut32 size, int circular) {
 	/* screen */
 	c->screen = BFVM_SCREEN_ADDR;
 	c->screen_size = BFVM_SCREEN_SIZE;
-	c->screen_buf = (ut8*)malloc (c->screen_size);
+	c->screen_buf = (ut8 *)malloc (c->screen_size);
 	memset (c->screen_buf, '\0', c->screen_size);
 
 	/* input */
 	c->input_size = BFVM_INPUT_SIZE;
-	c->input_buf = (ut8*)malloc (c->input_size);
+	c->input_buf = (ut8 *)malloc (c->input_size);
 	bfvm_reset (c);
 	return 1;
 }
 
-R_API BfvmCPU *bfvm_new(RIOBind *iob) {
+R_API BfvmCPU *bfvm_new (RIOBind *iob) {
 	BfvmCPU *c = R_NEW0 (BfvmCPU);
 	bfvm_init (c, 4096, 1);
 	memcpy (&c->iob, iob, sizeof (c->iob));
 	return c;
 }
 
-R_API BfvmCPU *bfvm_free(BfvmCPU *c) {
+R_API BfvmCPU *bfvm_free (BfvmCPU *c) {
 	free (c->mem);
 	c->mem = 0;
 	free (c->screen_buf);
@@ -82,48 +82,48 @@ R_API BfvmCPU *bfvm_free(BfvmCPU *c) {
 	return NULL;
 }
 
-R_API ut8 *bfvm_get_ptr_at(BfvmCPU *c, ut64 at) {
+R_API ut8 *bfvm_get_ptr_at (BfvmCPU *c, ut64 at) {
 	if (at >= c->base) {
 		at -= c->base;
 	} else if (at >= c->size) {
-		at = c->circular? 0: c->size-1;
+		at = c->circular ? 0 : c->size - 1;
 	}
 	return c->mem + at;
 }
 
-R_API ut8 *bfvm_get_ptr(BfvmCPU *c) {
+R_API ut8 *bfvm_get_ptr (BfvmCPU *c) {
 	//return bfvm_cpu.mem;
 	return bfvm_get_ptr_at (c, c->ptr);
 }
 
-R_API ut8 bfvm_get(BfvmCPU *c) {
+R_API ut8 bfvm_get (BfvmCPU *c) {
 	ut8 *ptr = bfvm_get_ptr (c);
-	return ptr? *ptr: 0;
+	return ptr ? *ptr : 0;
 }
 
-R_API void bfvm_inc(BfvmCPU *c) {
+R_API void bfvm_inc (BfvmCPU *c) {
 	ut8 *mem = bfvm_get_ptr (c);
 	if (mem != NULL) {
 		mem[0]++;
 	}
 }
 
-R_API void bfvm_dec(BfvmCPU *c) {
+R_API void bfvm_dec (BfvmCPU *c) {
 	ut8 *mem = bfvm_get_ptr (c);
 	if (mem != NULL) {
 		mem[0]--;
 	}
 }
 
-R_API int bfvm_reg_set(BfvmCPU *c, const char *str) {
+R_API int bfvm_reg_set (BfvmCPU *c, const char *str) {
 	char *ptr = strchr (str, ' ');
 	if (!ptr) {
 		return 0;
 	}
 	if (strstr (str, "eip")) {
-		c->eip = r_num_math (NULL, ptr+1);
+		c->eip = r_num_math (NULL, ptr + 1);
 	} else if (strstr (str, "esp")) {
-		c->esp = r_num_math (NULL, ptr+1);
+		c->esp = r_num_math (NULL, ptr + 1);
 	} else if (strstr (str, "ptr")) {
 		c->ptr = r_num_math (NULL, ptr + 1);
 	}
@@ -131,7 +131,7 @@ R_API int bfvm_reg_set(BfvmCPU *c, const char *str) {
 }
 
 /* screen and input */
-R_API void bfvm_peek(BfvmCPU *c) {
+R_API void bfvm_peek (BfvmCPU *c) {
 	int idx = c->input_idx;
 	ut8 *ptr = bfvm_get_ptr (c);
 
@@ -141,17 +141,17 @@ R_API void bfvm_peek(BfvmCPU *c) {
 
 	if (ptr) {
 		*ptr = c->input_buf[idx];
-		c->input_idx = idx+1;
+		c->input_idx = idx + 1;
 	}
 }
 
-R_API void bfvm_poke(BfvmCPU *c) {
+R_API void bfvm_poke (BfvmCPU *c) {
 	int idx = c->screen_idx;
 	c->screen_buf[idx] = bfvm_get (c);
-	c->screen_idx = idx+1;
+	c->screen_idx = idx + 1;
 }
 
-R_API int bfvm_trace_op(BfvmCPU *c, ut8 op) {
+R_API int bfvm_trace_op (BfvmCPU *c, ut8 op) {
 	ut8 g;
 	switch (op) {
 	case '\0':
@@ -178,7 +178,7 @@ R_API int bfvm_trace_op(BfvmCPU *c, ut8 op) {
 
 #define T if (c->trace)
 /* debug */
-R_API int bfvm_step(BfvmCPU *c, int over) {
+R_API int bfvm_step (BfvmCPU *c, int over) {
 	ut8 op2, op = bfvm_op (c);
 
 	do {
@@ -213,12 +213,12 @@ R_API int bfvm_step(BfvmCPU *c, int over) {
 			if (bfvm_get (c) != 0) {
 				do {
 					/* control underflow */
-					if (c->eip < (c->eip-1)) {
+					if (c->eip < (c->eip - 1)) {
 						c->eip = 0;
 						break;
 					}
 					c->eip--;
-				} while (bfvm_op (c)!='[');
+				} while (bfvm_op (c) != '[');
 			}
 			break;
 		default:
@@ -231,17 +231,17 @@ R_API int bfvm_step(BfvmCPU *c, int over) {
 	return 0;
 }
 
-R_API int bfvm_contsc(BfvmCPU *c) {
+R_API int bfvm_contsc (BfvmCPU *c) {
 	c->breaked = 0;
 	while (!c->breaked) {
 		bfvm_step (c, 0);
 		if (bfvm_in_trap (c)) {
-			eprintf ("Trap instruction at 0x%08"PFMT64x"\n", c->eip);
+			eprintf ("Trap instruction at 0x%08" PFMT64x "\n", c->eip);
 			break;
 		}
 		switch (bfvm_op (c)) {
 		case ',':
-			eprintf("contsc: read from input trap\n");
+			eprintf ("contsc: read from input trap\n");
 			c->breaked = 1;
 			continue;
 		case '.':
@@ -253,64 +253,64 @@ R_API int bfvm_contsc(BfvmCPU *c) {
 	return 0;
 }
 
-R_API int bfvm_cont(BfvmCPU *c, ut64 until) {
+R_API int bfvm_cont (BfvmCPU *c, ut64 until) {
 	c->breaked = 0;
 	while (!c->breaked && c->eip != until) {
 		bfvm_step (c, 0);
 		if (bfvm_in_trap (c)) {
-			eprintf ("Trap instruction at 0x%"PFMT64x"\n", c->eip);
+			eprintf ("Trap instruction at 0x%" PFMT64x "\n", c->eip);
 			break;
 		}
 	}
 	return 0;
 }
 
-R_API int bfvm_trace(BfvmCPU *c, ut64 until) {
-	c->trace=1;
+R_API int bfvm_trace (BfvmCPU *c, ut64 until) {
+	c->trace = 1;
 	bfvm_cont (c, until);
-	c->trace=0;
+	c->trace = 0;
 	return 0;
 }
 
-R_API void bfvm_show_regs(BfvmCPU *c, int rad) {
+R_API void bfvm_show_regs (BfvmCPU *c, int rad) {
 	if (rad) {
 		eprintf ("fs regs\n");
-		eprintf ("f eip @ 0x%08"PFMT64x"\n", (ut64)c->eip);
-		eprintf ("f esp @ 0x%08"PFMT64x"\n", (ut64)c->esp);
-		eprintf ("f ptr @ 0x%08"PFMT64x"\n", (ut64)c->ptr+c->base);
+		eprintf ("f eip @ 0x%08" PFMT64x "\n", (ut64)c->eip);
+		eprintf ("f esp @ 0x%08" PFMT64x "\n", (ut64)c->esp);
+		eprintf ("f ptr @ 0x%08" PFMT64x "\n", (ut64)c->ptr + c->base);
 		eprintf ("fs *\n");
 	} else {
 		ut8 ch = bfvm_get (c);
-		eprintf ("  eip  0x%08"PFMT64x"     esp  0x%08"PFMT64x"\n",
+		eprintf ("  eip  0x%08" PFMT64x "     esp  0x%08" PFMT64x "\n",
 			(ut64)c->eip, (ut64)c->esp);
 		eprintf ("  ptr  0x%08x     [ptr]  %d = 0x%02x '%c'\n",
-			(ut32)c->ptr, ch, ch, IS_PRINTABLE (ch)? ch:' ');
+			(ut32)c->ptr, ch, ch, IS_PRINTABLE (ch) ? ch : ' ');
 	}
 }
 
-R_API void bfvm_maps(BfvmCPU *c, int rad) {
+R_API void bfvm_maps (BfvmCPU *c, int rad) {
 	if (rad) {
 		eprintf ("fs sections\n");
 		eprintf ("e cmd.vprompt=px@screen\n");
-		eprintf ("f section_code @ 0x%08"PFMT64x"\n", (ut64)BFVM_CODE_ADDR);
-		eprintf ("f section_code_end @ 0x%08"PFMT64x"\n", (ut64)BFVM_CODE_ADDR+BFVM_CODE_SIZE);
-		eprintf ("f section_data @ 0x%08"PFMT64x"\n", (ut64)c->base);
-		eprintf ("f section_data_end @ 0x%08"PFMT64x"\n", (ut64)c->base+c->size);
-		eprintf ("f screen @ 0x%08"PFMT64x"\n", (ut64)c->screen);
-		eprintf ("f section_screen @ 0x%08"PFMT64x"\n", (ut64)c->screen);
-		eprintf ("f section_screen_end @ 0x%08"PFMT64x"\n", (ut64)c->screen+c->screen_size);
-		eprintf ("f input @ 0x%08"PFMT64x"\n", (ut64)c->input);
-		eprintf ("f section_input @ 0x%08"PFMT64x"\n", (ut64)c->input);
-		eprintf ("f section_input_end @ 0x%08"PFMT64x"\n", (ut64)c->input+c->input_size);
+		eprintf ("f section_code @ 0x%08" PFMT64x "\n", (ut64)BFVM_CODE_ADDR);
+		eprintf ("f section_code_end @ 0x%08" PFMT64x "\n", (ut64)BFVM_CODE_ADDR + BFVM_CODE_SIZE);
+		eprintf ("f section_data @ 0x%08" PFMT64x "\n", (ut64)c->base);
+		eprintf ("f section_data_end @ 0x%08" PFMT64x "\n", (ut64)c->base + c->size);
+		eprintf ("f screen @ 0x%08" PFMT64x "\n", (ut64)c->screen);
+		eprintf ("f section_screen @ 0x%08" PFMT64x "\n", (ut64)c->screen);
+		eprintf ("f section_screen_end @ 0x%08" PFMT64x "\n", (ut64)c->screen + c->screen_size);
+		eprintf ("f input @ 0x%08" PFMT64x "\n", (ut64)c->input);
+		eprintf ("f section_input @ 0x%08" PFMT64x "\n", (ut64)c->input);
+		eprintf ("f section_input_end @ 0x%08" PFMT64x "\n", (ut64)c->input + c->input_size);
 		eprintf ("fs *\n");
 	} else {
-		eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" rwxu 0x%08"PFMT64x" .code\n",
+		eprintf ("0x%08" PFMT64x " - 0x%08" PFMT64x " rwxu 0x%08" PFMT64x " .code\n",
 			(ut64)0, (ut64)c->size, (ut64)c->size);
-		eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" rw-- 0x%08"PFMT64x" .data\n",
-			(ut64)c->base, (ut64)(c->base+c->size), (ut64)c->size);
-		eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" rw-- 0x%08"PFMT64x" .screen\n",
-			(ut64)c->screen, (ut64)(c->screen+c->screen_size), (ut64)c->screen_size);
-		eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" rw-- 0x%08"PFMT64x" .input\n",
-			(ut64)c->input, (ut64)(c->input+c->input_size), (ut64)c->input_size);
+		eprintf ("0x%08" PFMT64x " - 0x%08" PFMT64x " rw-- 0x%08" PFMT64x " .data\n",
+			(ut64)c->base, (ut64) (c->base + c->size), (ut64)c->size);
+		eprintf ("0x%08" PFMT64x " - 0x%08" PFMT64x " rw-- 0x%08" PFMT64x " .screen\n",
+			(ut64)c->screen, (ut64) (c->screen + c->screen_size), (ut64)c->screen_size);
+		eprintf ("0x%08" PFMT64x " - 0x%08" PFMT64x " rw-- 0x%08" PFMT64x " .input\n",
+			(ut64)c->input, (ut64) (c->input + c->input_size), (ut64)c->input_size);
 	}
 }

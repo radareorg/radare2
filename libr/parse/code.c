@@ -7,7 +7,7 @@
 
 /* parse C code and return it in key-value form */
 
-static void __appendString(const char *msg, char **s) {
+static void __appendString (const char *msg, char **s) {
 	if (!s) {
 		printf ("%s\n", msg);
 	} else if (*s) {
@@ -23,12 +23,12 @@ static void __appendString(const char *msg, char **s) {
 	}
 }
 
-static bool __typeLoad(void *p, const char *k, const char *v) {
+static bool __typeLoad (void *p, const char *k, const char *v) {
 	if (!p) {
 		return false;
 	}
 	int btype = 0;
-	RAnal *anal = (RAnal*)p;
+	RAnal *anal = (RAnal *)p;
 	//r_cons_printf ("tk %s=%s\n", k, v);
 	// TODO: Add unions support
 	if (!strncmp (v, "struct", 6) && strncmp (k, "struct.", 7)) {
@@ -37,7 +37,7 @@ static bool __typeLoad(void *p, const char *k, const char *v) {
 		const char *typename = k;
 		int typesize = 0;
 		// TODO: Add typesize here
-		char* query = sdb_fmt ("struct.%s", k);
+		char *query = sdb_fmt ("struct.%s", k);
 		char *members = sdb_get (anal->sdb_types, query, 0);
 		char *next, *ptr = members;
 		if (members) {
@@ -74,11 +74,11 @@ static bool __typeLoad(void *p, const char *k, const char *v) {
 	return true;
 }
 
-static void __errorFunc(void *opaque, const char *msg) {
+static void __errorFunc (void *opaque, const char *msg) {
 	__appendString (msg, opaque);
 	char **p = (char **)opaque;
 	if (p && *p) {
-		int n = strlen(*p);
+		int n = strlen (*p);
 		char *ptr = malloc (n + 2);
 		if (!ptr) {
 			return;
@@ -91,7 +91,7 @@ static void __errorFunc(void *opaque, const char *msg) {
 	}
 }
 
-R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char **error_msg) {
+R_API char *r_parse_c_file (RAnal *anal, const char *path, const char *dir, char **error_msg) {
 	char *str = NULL;
 	TCCState *T = tcc_new (anal->cpu, anal->bits, anal->os);
 	if (!T) {
@@ -108,7 +108,7 @@ R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char 
 	return str;
 }
 
-R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg) {
+R_API char *r_parse_c_string (RAnal *anal, const char *code, char **error_msg) {
 	char *str = NULL;
 	TCCState *T = tcc_new (anal->cpu, anal->bits, anal->os);
 	if (!T) {
@@ -126,6 +126,6 @@ R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg) {
 }
 
 // XXX do not use globals
-R_API void r_parse_c_reset(RParse *p) {
+R_API void r_parse_c_reset (RParse *p) {
 	anon_sym = SYM_FIRST_ANOM;
 }

@@ -8,15 +8,15 @@ static int usage (void) {
 	return 1;
 }
 
-int main(int argc, char **argv) {
+int main (int argc, char **argv) {
 	const char *arch = "x86";
 	int bits = 32;
 	int c, i;
 	RBuffer *b;
 	REgg *egg = r_egg_new ();
 
-        while ((c = getopt (argc, argv, "ha:b:")) != -1) {
-                switch (c) {
+	while ((c = getopt (argc, argv, "ha:b:")) != -1) {
+		switch (c) {
 		case 'a':
 			arch = optarg;
 			break;
@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
 		eprintf ("Cannot assemble egg :(\n");
 	} else {
 		printf ("BUFFER : %d\n", b->length);
-		for (i=0;i<b->length;i++) {
+		for (i = 0; i < b->length; i++) {
 			printf ("%02x", b->buf[i]);
 		}
 		printf ("\n");

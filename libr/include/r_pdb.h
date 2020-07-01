@@ -15,23 +15,23 @@ struct R_PDB;
 struct R_PDB7_ROOT_STREAM;
 
 typedef struct R_PDB {
-	bool (*pdb_parse)(struct R_PDB *pdb);
-	void (*finish_pdb_parse)(struct R_PDB *pdb);
-	void (*print_types)(struct R_PDB *pdb, int mode);
-//	FILE *fp;
+	bool (*pdb_parse) (struct R_PDB *pdb);
+	void (*finish_pdb_parse) (struct R_PDB *pdb);
+	void (*print_types) (struct R_PDB *pdb, int mode);
+	//	FILE *fp;
 	PrintfCallback cb_printf;
 	struct R_PDB7_ROOT_STREAM *root_stream;
 	void *stream_map;
 	RList *pdb_streams;
 	RList *pdb_streams2;
 	RBuffer *buf; // mmap of file
-//	int curr;
+	//	int curr;
 
-	void (*print_gvars)(struct R_PDB *pdb, ut64 img_base, int format);
+	void (*print_gvars) (struct R_PDB *pdb, ut64 img_base, int format);
 } R_PDB;
 
-R_API bool init_pdb_parser(R_PDB *pdb, const char *filename);
-R_API bool init_pdb_parser_with_buf(R_PDB *pdb, RBuffer *buf);
+R_API bool init_pdb_parser (R_PDB *pdb, const char *filename);
+R_API bool init_pdb_parser_with_buf (R_PDB *pdb, RBuffer *buf);
 
 #ifdef __cplusplus
 }

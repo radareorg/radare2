@@ -9,8 +9,8 @@
 #include <r_lib.h>
 #include "../arch/spc700/spc700dis.c"
 
-static int disassemble(RAsm *a, RAsmOp *r_op, const ut8 *buf, int len) {
-	int dlen = spc700Disass(r_op, buf, len);
+static int disassemble (RAsm *a, RAsmOp *r_op, const ut8 *buf, int len) {
+	int dlen = spc700Disass (r_op, buf, len);
 	if (dlen < 0) {
 		dlen = 0;
 	}

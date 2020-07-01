@@ -63,7 +63,7 @@ typedef struct {
 	RList *classes_list;
 } RBinNXOObj;
 
-void parseMod(RBuffer *buf, RBinNXOObj *bin, ut32 mod0, ut64 baddr);
-const char *fileType(const ut8 *buf);
+void parseMod (RBuffer *buf, RBinNXOObj *bin, ut32 mod0, ut64 baddr);
+const char *fileType (const ut8 *buf);
 
 #endif

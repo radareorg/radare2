@@ -29,8 +29,8 @@ R_PACKED (struct winedbg_x86_32 {
 });
 
 // TODO: make it vargarg...
-static char *runcmd(const char *cmd) {
-	char buf[4096] = {0};
+static char *runcmd (const char *cmd) {
+	char buf[4096] = { 0 };
 	if (cmd) {
 		r_socket_printf (gs, "%s\n", cmd);
 	}
@@ -39,7 +39,7 @@ static char *runcmd(const char *cmd) {
 	r_socket_block_time (gs, 1, timeout, 0);
 	while (true) {
 		memset (buf, 0, sizeof (buf));
-		int rc = r_socket_read (gs, (ut8*)buf, sizeof (buf) - 1); // NULL-terminate the string always
+		int rc = r_socket_read (gs, (ut8 *)buf, sizeof (buf) - 1); // NULL-terminate the string always
 		if (rc == -1) {
 			break;
 		}
@@ -54,17 +54,17 @@ static char *runcmd(const char *cmd) {
 	return NULL;
 }
 
-static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
+static int __write (RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (!fd || !fd->data) {
 		return -1;
 	}
 	int wordSize = 4;
-	ut32 *w = (ut32*)buf;
+	ut32 *w = (ut32 *)buf;
 	int i;
 	int words = count / wordSize; // XXX must pad align to 4
-	for (i = 0; i < words ; i++) {
+	for (i = 0; i < words; i++) {
 		ut64 addr = io->off + (i * wordSize);
-		char *cmd = r_str_newf ("set *0x%"PFMT64x" = 0x%x", addr, w[i]);
+		char *cmd = r_str_newf ("set *0x%" PFMT64x " = 0x%x", addr, w[i]);
 		free (runcmd (cmd));
 		free (cmd);
 	}
@@ -74,18 +74,18 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		ut32 leftW = -1;
 		memcpy (&leftW, w + words, left);
 		ut64 addr = io->off + (words * wordSize);
-		char *cmd = r_str_newf ("set *0x%"PFMT64x" = 0x%x", addr, leftW);
+		char *cmd = r_str_newf ("set *0x%" PFMT64x " = 0x%x", addr, leftW);
 		free (runcmd (cmd));
 		free (cmd);
 	}
 	return count;
 }
 
-static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
+static int __read (RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	if (!fd || !fd->data) {
 		return -1;
 	}
-	if (count > (1024*128)) {
+	if (count > (1024 * 128)) {
 		// cannot read that much
 		return -1;
 	}
@@ -103,13 +103,13 @@ Wine-dbg>x/128b 0x7b444730
 Wine-dbg>
 #endif
 	int wordSize = 4;
-	ut32 *w = (ut32*)buf;
+	ut32 *w = (ut32 *)buf;
 	int i;
 	memset (buf, 0xff, count);
 	int words = count / wordSize; // XXX must pad align to 4
-	for (i = 0; i < words ; i++) {
+	for (i = 0; i < words; i++) {
 		ut64 addr = io->off + (i * wordSize);
-		char *cmd = r_str_newf ("x 0x%"PFMT64x, addr);
+		char *cmd = r_str_newf ("x 0x%" PFMT64x, addr);
 		char *res = runcmd (cmd);
 		if (res) {
 			sscanf (res, "%x", &w[i]);
@@ -121,9 +121,9 @@ Wine-dbg>
 	int left = count % wordSize;
 	if (left > 0) {
 		ut32 n = 0xff;
-		ut8 *wn = (ut8*)&n;
+		ut8 *wn = (ut8 *)&n;
 		ut64 addr = io->off + (i * wordSize);
-		char *cmd = r_str_newf ("x 0x%"PFMT64x, addr);
+		char *cmd = r_str_newf ("x 0x%" PFMT64x, addr);
 		char *res = runcmd (cmd);
 		sscanf (res, "%x", &n);
 		free (res);
@@ -133,7 +133,7 @@ Wine-dbg>
 	return count;
 }
 
-static int __close(RIODesc *fd) {
+static int __close (RIODesc *fd) {
 	if (!fd || !fd->data) {
 		return -1;
 	}
@@ -142,7 +142,7 @@ static int __close(RIODesc *fd) {
 	return 0;
 }
 
-static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 __lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
 	case R_IO_SEEK_SET:
 		io->off = offset;
@@ -157,11 +157,11 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static bool __plugin_open(RIO *io, const char *pathname, bool many) {
+static bool __plugin_open (RIO *io, const char *pathname, bool many) {
 	return (!strncmp (pathname, "winedbg://", 10));
 }
 
-static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
+static RIODesc *__open (RIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname, 0)) {
 		if (gs) {
 			return NULL;
@@ -191,8 +191,8 @@ static void printcmd (RIO *io, const char *cmd) {
 	free (res);
 }
 
-static struct winedbg_x86_32 regState(void) {
-	struct winedbg_x86_32 r = {0};
+static struct winedbg_x86_32 regState (void) {
+	struct winedbg_x86_32 r = { 0 };
 	char *res = runcmd ("info reg");
 	if (res) {
 		char *line = strstr (res, "EIP:");
@@ -227,7 +227,7 @@ static struct winedbg_x86_32 regState(void) {
 	return r;
 }
 
-static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
+static char *__system (RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strcmp (cmd, "")) {
 		return NULL;
 	}
@@ -243,56 +243,56 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		eprintf ("pid : show current process id\n");
 	} else if (!strncmp (cmd, "dr8", 3)) {
 		struct winedbg_x86_32 r = regState ();
-		ut8 *arena = (ut8*)calloc (3, sizeof (struct winedbg_x86_32));
+		ut8 *arena = (ut8 *)calloc (3, sizeof (struct winedbg_x86_32));
 		if (arena) {
-			r_hex_bin2str ((ut8*)&r, sizeof (r), (char *)arena);
+			r_hex_bin2str ((ut8 *)&r, sizeof (r), (char *)arena);
 			return (char *)arena;
 		}
 	} else if (!strncmp (cmd, "drp", 3)) {
-const char *msg =
-"=PC	eip\n"\
-"=SP	esp\n"\
-"=BP	ebp\n"\
-"=A0	eax\n"\
-"=A1	ebx\n"\
-"=A2	ecx\n"\
-"=A3	edx\n"\
-"=A4	esi\n"\
-"=A5	edi\n"\
-"=SN	eax\n"\
+		const char *msg =
+			"=PC	eip\n"
+			"=SP	esp\n"
+			"=BP	ebp\n"
+			"=A0	eax\n"
+			"=A1	ebx\n"
+			"=A2	ecx\n"
+			"=A3	edx\n"
+			"=A4	esi\n"
+			"=A5	edi\n"
+			"=SN	eax\n"
 
-"seg	cs	.16	0	0\n"\
-"seg	ss	.16	2	0\n"\
-"seg	ds	.16	4	0\n"\
-"seg	es	.16	6	0\n"\
-"seg	fs	.16	8	0\n"\
-"seg	gs	.16	10	0\n"\
+			"seg	cs	.16	0	0\n"
+			"seg	ss	.16	2	0\n"
+			"seg	ds	.16	4	0\n"
+			"seg	es	.16	6	0\n"
+			"seg	fs	.16	8	0\n"
+			"seg	gs	.16	10	0\n"
 
-"gpr	eip	.32	12	0\n"\
-"gpr	esp	.32	16	0\n"\
-"gpr	ebp	.32	20	0\n"\
-"gpr	eflags	.32	24	0\n"\
+			"gpr	eip	.32	12	0\n"
+			"gpr	esp	.32	16	0\n"
+			"gpr	ebp	.32	20	0\n"
+			"gpr	eflags	.32	24	0\n"
 
-"gpr	eax	.32	28	0\n"\
-"gpr	ebx	.32	32	0\n"\
-"gpr	ecx	.32	36	0\n"\
-"gpr	edx	.32	40	0\n"\
-"gpr	esi	.32	44	0\n"\
-"gpr	edi	.32	48	0\n"\
+			"gpr	eax	.32	28	0\n"
+			"gpr	ebx	.32	32	0\n"
+			"gpr	ecx	.32	36	0\n"
+			"gpr	edx	.32	40	0\n"
+			"gpr	esi	.32	44	0\n"
+			"gpr	edi	.32	48	0\n"
 
-"flg	flags	.16	24	0\n"\
-"flg	cf	.1	.192	0\n"\
-"flg	pf	.1	.193	0\n"\
-"flg	af	.1	.194	0\n"\
-"flg	zf	.1	.195	0\n"\
-"flg	sf	.1	.196	0\n"\
-"flg	tf	.1	.197	0\n"\
-"flg	if	.1	.198	0\n"\
-"flg	df	.1	.199	0\n"\
-"flg	of	.1	.200	0\n"\
-"flg	nt	.1	.201	0\n"\
-"flg	rf	.1	.202	0\n"\
-"flg	vm	.1	.203	0\n";
+			"flg	flags	.16	24	0\n"
+			"flg	cf	.1	.192	0\n"
+			"flg	pf	.1	.193	0\n"
+			"flg	af	.1	.194	0\n"
+			"flg	zf	.1	.195	0\n"
+			"flg	sf	.1	.196	0\n"
+			"flg	tf	.1	.197	0\n"
+			"flg	if	.1	.198	0\n"
+			"flg	df	.1	.199	0\n"
+			"flg	of	.1	.200	0\n"
+			"flg	nt	.1	.201	0\n"
+			"flg	rf	.1	.202	0\n"
+			"flg	vm	.1	.203	0\n";
 		return strdup (msg);
 	} else if (!strncmp (cmd, "dr*", 3)) {
 		struct winedbg_x86_32 r = regState ();
@@ -342,9 +342,9 @@ const char *msg =
 					if (strstr (ptr, "RW")) {
 						perm = "rw-";
 					}
-					sscanf (ptr, "%08"PFMT64x" %08"PFMT64x, &from, &to);
+					sscanf (ptr, "%08" PFMT64x " %08" PFMT64x, &from, &to);
 				}
-				char *row = r_str_newf ("0x%08"PFMT64x" - 0x%08" PFMT64x" %s %s\n", from, to, perm, "");
+				char *row = r_str_newf ("0x%08" PFMT64x " - 0x%08" PFMT64x " %s %s\n", from, to, perm, "");
 				ptr = nl;
 				if (row) {
 					res = r_str_append (res, row);

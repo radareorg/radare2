@@ -34,10 +34,10 @@
  * and so that the printing of the formatted operand is not hard coded into the format operand code.
  * If an addressLabelPrefix is specified in formattingOptions (option is set and string is not NULL),
  * it will print the relative branch/jump/call with this prefix and the destination address as the label. */
-static int formatDisassembledOperand(char *strOperand, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions);
+static int formatDisassembledOperand (char *strOperand, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions);
 
 /* Prints a disassembled instruction, formatted with options set in the formattingOptions structure. */
-static int printDisassembledInstruction(char *out, const disassembledInstruction dInstruction, formattingOptions fOptions) {
+static int printDisassembledInstruction (char *out, const disassembledInstruction dInstruction, formattingOptions fOptions) {
 	//char fmt[64];
 	int retVal, i;
 	char strOperand[256];
@@ -58,7 +58,7 @@ static int printDisassembledInstruction(char *out, const disassembledInstruction
 		if (i > 0 && i != dInstruction.instruction->numOperands)
 			strcat (out, ", ");
 		/* Format the disassembled operand into the string strOperand, and print it */
-		retVal = formatDisassembledOperand(strOperand, i, dInstruction, fOptions);
+		retVal = formatDisassembledOperand (strOperand, i, dInstruction, fOptions);
 		if (retVal < 0)
 			return retVal;
 		/* Print the operand and free if it's not NULL */
@@ -74,7 +74,7 @@ static int printDisassembledInstruction(char *out, const disassembledInstruction
  * and so that the printing of the formatted operand is not hard coded into the format operand code.
  * If an addressLabelPrefix is specified in formattingOptions (option is set and string is not NULL), 
  * it will print the relative branch/jump/call with this prefix and the destination address as the label. */
-static int formatDisassembledOperand(char *strOperand, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions) {
+static int formatDisassembledOperand (char *strOperand, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions) {
 	char binary[9];
 	int retVal;
 
@@ -99,26 +99,26 @@ static int formatDisassembledOperand(char *strOperand, int operandNum, const dis
 		if (fOptions.options & FORMAT_OPTION_DATA_BIN) {
 			int i;
 			for (i = 7; i >= 0; i--) {
-				if (dInstruction.operands[operandNum] & (1<<i))
-					binary[7-i] = '1';
+				if (dInstruction.operands[operandNum] & (1 << i))
+					binary[7 - i] = '1';
 				else
-					binary[7-i] = '0';
+					binary[7 - i] = '0';
 			}
 			binary[8] = '\0';
-			retVal = sprintf(strOperand, "%s%s",
+			retVal = sprintf (strOperand, "%s%s",
 				OPERAND_PREFIX_DATA_BIN, binary);
 		} else if (fOptions.options & FORMAT_OPTION_DATA_DEC) {
-			retVal = sprintf(strOperand, "%s%d",
+			retVal = sprintf (strOperand, "%s%d",
 				OPERAND_PREFIX_DATA_DEC,
 				dInstruction.operands[operandNum]);
 		} else {
-			retVal = sprintf(strOperand, "%s%02x",
+			retVal = sprintf (strOperand, "%s%02x",
 				OPERAND_PREFIX_DATA_HEX,
 				dInstruction.operands[operandNum]);
 		}
 		break;
 	case OPERAND_BIT:
-		retVal = sprintf(strOperand, "%s%d", OPERAND_PREFIX_BIT,
+		retVal = sprintf (strOperand, "%s%d", OPERAND_PREFIX_BIT,
 			dInstruction.operands[operandNum]);
 		break;
 	case OPERAND_BRANCH_ADDRESS:
@@ -146,17 +146,17 @@ static int formatDisassembledOperand(char *strOperand, int operandNum, const dis
 //					retVal = sprintf(strOperand, "%s%d", OPERAND_PREFIX_BRANCH_ADDRESS, dInstruction.operands[operandNum]);
 			}
 #endif
-			retVal = sprintf(strOperand, "0x%x",
-				dInstruction.address + dInstruction.operands[operandNum]);
+		retVal = sprintf (strOperand, "0x%x",
+			dInstruction.address + dInstruction.operands[operandNum]);
 		//}
 		break;
 	case OPERAND_LONG_ABSOLUTE_ADDRESS:
-		retVal = sprintf(strOperand, "%s%0*x",
+		retVal = sprintf (strOperand, "%s%0*x",
 			OPERAND_PREFIX_ABSOLUTE_ADDRESS,
 			fOptions.addressFieldWidth, AVR_Long_Address);
 		break;
 	case OPERAND_IO_REGISTER:
-		retVal = sprintf(strOperand, "%s%02x",
+		retVal = sprintf (strOperand, "%s%02x",
 			OPERAND_PREFIX_IO_REGISTER,
 			dInstruction.operands[operandNum]);
 		break;
@@ -172,22 +172,22 @@ static int formatDisassembledOperand(char *strOperand, int operandNum, const dis
 			dInstruction.operands[operandNum]);
 		break;
 	case OPERAND_YPQ:
-		retVal = sprintf(strOperand, "y+%d",
+		retVal = sprintf (strOperand, "y+%d",
 			dInstruction.operands[operandNum]);
 		break;
 	case OPERAND_ZPQ:
-		retVal = sprintf(strOperand, "z+%d",
+		retVal = sprintf (strOperand, "z+%d",
 			dInstruction.operands[operandNum]);
 		break;
-	case OPERAND_X: retVal = sprintf(strOperand, "x"); break;
-	case OPERAND_XP: retVal = sprintf(strOperand, "x+"); break;
-	case OPERAND_MX: retVal = sprintf(strOperand, "-x"); break;
-	case OPERAND_Y: retVal = sprintf(strOperand, "y"); break;
-	case OPERAND_YP: retVal = sprintf(strOperand, "y+"); break;
-	case OPERAND_MY: retVal = sprintf(strOperand, "-y"); break;
-	case OPERAND_Z: retVal = sprintf(strOperand, "z"); break;
-	case OPERAND_ZP: retVal = sprintf(strOperand, "z+"); break;
-	case OPERAND_MZ: retVal = sprintf(strOperand, "-z"); break;
+	case OPERAND_X: retVal = sprintf (strOperand, "x"); break;
+	case OPERAND_XP: retVal = sprintf (strOperand, "x+"); break;
+	case OPERAND_MX: retVal = sprintf (strOperand, "-x"); break;
+	case OPERAND_Y: retVal = sprintf (strOperand, "y"); break;
+	case OPERAND_YP: retVal = sprintf (strOperand, "y+"); break;
+	case OPERAND_MY: retVal = sprintf (strOperand, "-y"); break;
+	case OPERAND_Z: retVal = sprintf (strOperand, "z"); break;
+	case OPERAND_ZP: retVal = sprintf (strOperand, "z+"); break;
+	case OPERAND_MZ: retVal = sprintf (strOperand, "-z"); break;
 	/* This is impossible by normal operation. */
 	default: return ERROR_UNKNOWN_OPERAND;
 	}

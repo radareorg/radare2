@@ -3,11 +3,11 @@
 #include <stdio.h>
 #include <r_asm.h>
 
-R_API RAsmCode *r_asm_code_new(void) {
+R_API RAsmCode *r_asm_code_new (void) {
 	return R_NEW0 (RAsmCode);
 }
 
-R_API void* r_asm_code_free(RAsmCode *acode) {
+R_API void *r_asm_code_free (RAsmCode *acode) {
 	if (acode) {
 		r_list_free (acode->equs);
 		free (acode->bytes);
@@ -17,7 +17,7 @@ R_API void* r_asm_code_free(RAsmCode *acode) {
 	return NULL;
 }
 
-R_API void r_asm_equ_item_free(RAsmEqu *equ) {
+R_API void r_asm_equ_item_free (RAsmEqu *equ) {
 	if (equ) {
 		free (equ->key);
 		free (equ->value);
@@ -25,7 +25,7 @@ R_API void r_asm_equ_item_free(RAsmEqu *equ) {
 	}
 }
 
-static RAsmEqu *__asm_equ_new(const char *key, const char *value) {
+static RAsmEqu *__asm_equ_new (const char *key, const char *value) {
 	RAsmEqu *equ = R_NEW0 (RAsmEqu);
 	if (equ) {
 		equ->key = strdup (key);
@@ -64,9 +64,9 @@ R_API char *r_asm_code_equ_replace (RAsmCode *code, char *str) {
 	return str;
 }
 
-R_API char* r_asm_code_get_hex(RAsmCode *acode) {
+R_API char *r_asm_code_get_hex (RAsmCode *acode) {
 	r_return_val_if_fail (acode, NULL);
-	char* str = calloc (acode->len + 1, 2);
+	char *str = calloc (acode->len + 1, 2);
 	if (str) {
 		r_hex_bin2str (acode->bytes, acode->len, str);
 	}

@@ -16,12 +16,12 @@ typedef struct r_bin_le_obj_s {
 	void *buf; /* Pointer to RBuffer of file */
 } r_bin_le_obj_t;
 
-r_bin_le_obj_t *r_bin_le_new_buf(RBuffer *buf);
-void r_bin_le_free(r_bin_le_obj_t *bin);
-RList *r_bin_le_get_entrypoints(r_bin_le_obj_t *bin);
-RList *r_bin_le_get_sections(r_bin_le_obj_t *bin);
-RList *r_bin_le_get_symbols(r_bin_le_obj_t *bin);
-RList *r_bin_le_get_imports(r_bin_le_obj_t *bin);
-RList *r_bin_le_get_libs(r_bin_le_obj_t *bin);
-RList *r_bin_le_get_relocs(r_bin_le_obj_t *bin);
+r_bin_le_obj_t *r_bin_le_new_buf (RBuffer *buf);
+void r_bin_le_free (r_bin_le_obj_t *bin);
+RList *r_bin_le_get_entrypoints (r_bin_le_obj_t *bin);
+RList *r_bin_le_get_sections (r_bin_le_obj_t *bin);
+RList *r_bin_le_get_symbols (r_bin_le_obj_t *bin);
+RList *r_bin_le_get_imports (r_bin_le_obj_t *bin);
+RList *r_bin_le_get_libs (r_bin_le_obj_t *bin);
+RList *r_bin_le_get_relocs (r_bin_le_obj_t *bin);
 #endif

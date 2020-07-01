@@ -12,7 +12,7 @@
 #define esilprintf(op, fmt, ...) r_strbuf_setf (&op->esil, fmt, ##__VA_ARGS__)
 #define INSOP(n) insn->detail->xcore.operands[n]
 
-static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
+static void opex (RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	r_strbuf_init (buf);
 	r_strbuf_append (buf, "{");
@@ -31,14 +31,14 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case XCORE_OP_IMM:
 			r_strbuf_append (buf, "\"type\":\"imm\"");
-			r_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
+			r_strbuf_appendf (buf, ",\"value\":%" PFMT64d, op->imm);
 			break;
 		case XCORE_OP_MEM:
 			r_strbuf_append (buf, "\"type\":\"mem\"");
 			if (op->mem.base != XCORE_REG_INVALID) {
 				r_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
 			}
-			r_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", op->mem.disp);
+			r_strbuf_appendf (buf, ",\"disp\":%" PFMT64d "", op->mem.disp);
 			break;
 		default:
 			r_strbuf_append (buf, "\"type\":\"invalid\"");
@@ -50,7 +50,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	r_strbuf_append (buf, "}");
 }
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int analop (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	static csh handle = 0;
 	static int omode = 0;
 	cs_insn *insn;
@@ -74,7 +74,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
 	// capstone-next
-	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
+	n = cs_disasm (handle, (const ut8 *)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
@@ -94,7 +94,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		case XCORE_INS_ECALLF:
 		case XCORE_INS_ECALLT:
 			op->type = R_ANAL_OP_TYPE_CALL;
-			op->jump = INSOP(0).imm;
+			op->jump = INSOP (0).imm;
 			break;
 		/* ??? */
 		case XCORE_INS_BL:
@@ -105,7 +105,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		case XCORE_INS_BU:
 		case XCORE_INS_BRU:
 			op->type = R_ANAL_OP_TYPE_CALL;
-			op->jump = INSOP(0).imm;
+			op->jump = INSOP (0).imm;
 			break;
 		case XCORE_INS_SUB:
 		case XCORE_INS_LSUB:

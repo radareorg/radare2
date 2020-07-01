@@ -16,8 +16,8 @@ typedef struct _pic_midrange_op_args_val {
 } PicMidrangeOpArgsVal;
 
 typedef void (*pic_midrange_inst_handler_t) (RAnal *anal, RAnalOp *op,
-					     ut64 addr,
-					     PicMidrangeOpArgsVal *args);
+	ut64 addr,
+	PicMidrangeOpArgsVal *args);
 
 typedef struct _pic_midrange_op_anal_info {
 	PicMidrangeOpcode opcode;
@@ -25,14 +25,14 @@ typedef struct _pic_midrange_op_anal_info {
 	pic_midrange_inst_handler_t handler;
 } PicMidrangeOpAnalInfo;
 
-#define INST_HANDLER(OPCODE_NAME)                                            \
-	static void _inst__##OPCODE_NAME (RAnal *anal, RAnalOp *op,          \
-					  ut64 addr,                         \
-					  PicMidrangeOpArgsVal *args)
-#define INST_DECL(NAME, ARGS)                                                \
-	{                                                                    \
-		PIC_MIDRANGE_OPCODE_##NAME, PIC_MIDRANGE_OP_ARGS_##ARGS,     \
-			_inst__##NAME                                        \
+#define INST_HANDLER(OPCODE_NAME)                                   \
+	static void _inst__##OPCODE_NAME (RAnal *anal, RAnalOp *op, \
+		ut64 addr,                                          \
+		PicMidrangeOpArgsVal *args)
+#define INST_DECL(NAME, ARGS)                                            \
+	{                                                                \
+		PIC_MIDRANGE_OPCODE_##NAME, PIC_MIDRANGE_OP_ARGS_##ARGS, \
+			_inst__##NAME                                    \
 	}
 
 #define e(frag) r_strbuf_append (&op->esil, frag)
@@ -45,30 +45,30 @@ typedef struct _pic_midrange_op_anal_info {
 
 #define PIC_MIDRANGE_ESIL_OPTION_ADDR "0x95,_sram,+"
 
-#define PIC_MIDRANGE_ESIL_UPDATE_FLAGS                                       \
-	"$z,z,:=,"                                                            \
-	"7,$c,c,:=,"                                                           \
+#define PIC_MIDRANGE_ESIL_UPDATE_FLAGS \
+	"$z,z,:=,"                     \
+	"7,$c,c,:=,"                   \
 	"4,$c,dc,:=,"
 
-#define PIC_MIDRANGE_ESIL_LW_OP(O)                                           \
+#define PIC_MIDRANGE_ESIL_LW_OP(O) \
 	"0x%x,wreg," #O "=," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
-#define PIC_MIDRANGE_ESIL_FWF_OP(O)                                          \
-	"wreg," PIC_MIDRANGE_ESIL_BSR_ADDR "," #O                            \
+#define PIC_MIDRANGE_ESIL_FWF_OP(O)               \
+	"wreg," PIC_MIDRANGE_ESIL_BSR_ADDR "," #O \
 	"=[1]," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
-#define PIC_MIDRANGE_ESIL_WWF_OP(O)                                          \
-	PIC_MIDRANGE_ESIL_BSR_ADDR                                           \
-	",[1],"                                                              \
+#define PIC_MIDRANGE_ESIL_WWF_OP(O) \
+	PIC_MIDRANGE_ESIL_BSR_ADDR  \
+	",[1],"                     \
 	"wreg," #O "=," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
-#define PIC_MIDRANGE_ESIL_FWF_OP_C(O)                                        \
-	"c,wreg,"                                                            \
-	"+," PIC_MIDRANGE_ESIL_BSR_ADDR "," #O                               \
+#define PIC_MIDRANGE_ESIL_FWF_OP_C(O)          \
+	"c,wreg,"                              \
+	"+," PIC_MIDRANGE_ESIL_BSR_ADDR "," #O \
 	"=[1]," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
-#define PIC_MIDRANGE_ESIL_WWF_OP_C(O)                                        \
-	"c," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1]," #O ","                       \
+#define PIC_MIDRANGE_ESIL_WWF_OP_C(O)                  \
+	"c," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1]," #O "," \
 	"wreg," #O "=," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
 INST_HANDLER (NOP) {}
@@ -116,15 +116,15 @@ INST_HANDLER (GOTO) {
 INST_HANDLER (BCF) {
 	ut8 mask = ~(1 << args->b);
 	ef (PIC_MIDRANGE_ESIL_BSR_ADDR
-	    ",[1],0x%x,&," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],",
-	    args->f, mask, args->f);
+		",[1],0x%x,&," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],",
+		args->f, mask, args->f);
 }
 
 INST_HANDLER (BSF) {
 	ut8 mask = (1 << args->b);
 	ef (PIC_MIDRANGE_ESIL_BSR_ADDR
-	    ",[1],0x%x,|," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],",
-	    args->f, mask, args->f);
+		",[1],0x%x,|," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],",
+		args->f, mask, args->f);
 }
 
 INST_HANDLER (BTFSC) {
@@ -133,7 +133,7 @@ INST_HANDLER (BTFSC) {
 	op->jump = addr + 4;
 	op->fail = addr + 2;
 	ef (PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],0x%x,&,!,?{,0x%x,pc,=,},",
-	    args->f, mask, op->jump);
+		args->f, mask, op->jump);
 }
 
 INST_HANDLER (BTFSS) {
@@ -142,7 +142,7 @@ INST_HANDLER (BTFSS) {
 	op->jump = addr + 4;
 	op->fail = addr + 2;
 	ef (PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],0x%x,&,?{,0x%x,pc,=,},", args->f,
-	    mask, op->jump);
+		mask, op->jump);
 }
 
 INST_HANDLER (BRA) {
@@ -151,7 +151,7 @@ INST_HANDLER (BRA) {
 	branch |= ((branch & 0x100) ? 0xfe00 : 0);
 	op->jump = addr + 2 * (branch + 1);
 	ef ("%s0x%x,1,+,2,*,pc,+=,", branch < 0 ? "-" : "",
-	    branch < 0 ? -branch : branch);
+		branch < 0 ? -branch : branch);
 }
 
 INST_HANDLER (BRW) {
@@ -189,10 +189,10 @@ INST_HANDLER (DECFSZ) {
 		ef ("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",-=[1],", args->f);
 	} else {
 		ef ("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],-,wreg,=,",
-		    args->f);
+			args->f);
 	}
 	ef (PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],!,?{,0x%x,pc,=,},", args->f,
-	    op->jump);
+		op->jump);
 }
 
 INST_HANDLER (INCFSZ) {
@@ -203,10 +203,10 @@ INST_HANDLER (INCFSZ) {
 		ef ("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",+=[1],", args->f);
 	} else {
 		ef ("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],+,wreg,=,",
-		    args->f);
+			args->f);
 	}
 	ef (PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],!,?{,0x%x,pc,=,},", args->f,
-	    op->jump);
+		op->jump);
 }
 
 INST_HANDLER (INCF) {
@@ -215,7 +215,7 @@ INST_HANDLER (INCF) {
 		ef ("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",+=[1],", args->f);
 	} else {
 		ef ("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],+,wreg,=,",
-		    args->f);
+			args->f);
 	}
 	e ("$z,z,:=,");
 }
@@ -226,7 +226,7 @@ INST_HANDLER (DECF) {
 		ef ("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",-=[1],", args->f);
 	} else {
 		ef ("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],-,wreg,=,",
-		    args->f);
+			args->f);
 	}
 	e ("$z,z,:=,");
 }
@@ -334,8 +334,8 @@ INST_HANDLER (MOVF) {
 	op->type = R_ANAL_OP_TYPE_LOAD;
 	if (args->d) {
 		ef (PIC_MIDRANGE_ESIL_BSR_ADDR
-		    ",[1]," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],",
-		    args->f, args->f);
+			",[1]," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],",
+			args->f, args->f);
 	} else {
 		ef (PIC_MIDRANGE_ESIL_BSR_ADDR, ",[1],wreg,=,", args->f);
 	}
@@ -356,7 +356,7 @@ INST_HANDLER (LSLF) {
 		ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",<<=[1],", args->f);
 	} else {
 		ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],<<,wreg,=,",
-		    args->f);
+			args->f);
 	}
 	e ("$z,z,:=,");
 }
@@ -368,7 +368,7 @@ INST_HANDLER (LSRF) {
 		ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",>>=[1],", args->f);
 	} else {
 		ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],>>,wreg,=,",
-		    args->f);
+			args->f);
 	}
 	e ("$z,z,:=,");
 }
@@ -392,11 +392,11 @@ INST_HANDLER (RRF) {
 	if (args->d) {
 		ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",>>=[1],"
 		    "c," PIC_MIDRANGE_ESIL_BSR_ADDR ",|=[1],",
-		    args->f, args->f);
+			args->f, args->f);
 	} else {
 		ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],>>,wreg,=,"
 		    "c,wreg,|=[1],",
-		    args->f);
+			args->f);
 	}
 	e ("c,=,");
 }
@@ -407,11 +407,11 @@ INST_HANDLER (RLF) {
 	if (args->d) {
 		ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",<<=[1],"
 		    "c," PIC_MIDRANGE_ESIL_BSR_ADDR ",|=[1],",
-		    args->f, args->f);
+			args->f, args->f);
 	} else {
 		ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],<<,wreg,=,"
 		    "c,wreg,|=[1],",
-		    args->f);
+			args->f);
 	}
 	e ("c,=,");
 }
@@ -478,27 +478,27 @@ INST_HANDLER (MOVIW_1) {
 		if (!(args->m & 2)) {
 			ef ("1,fsr0l,%s=,", (args->m & 1) ? "-" : "+");
 			ef ("7,$c%s,fsr0h,%s,", (args->m & 1) ? ",!" : "",
-			    (args->m & 1) ? "-" : "+");
+				(args->m & 1) ? "-" : "+");
 		}
 		e ("indf0,wreg,=,");
 		e ("$z,z,:=,");
 		if (args->m & 2) {
 			ef ("1,fsr0l,%s=,", (args->m & 1) ? "-" : "+");
 			ef ("7,$c%s,fsr0h,%s,", (args->m & 1) ? ",!" : "",
-			    (args->m & 1) ? "-" : "+");
+				(args->m & 1) ? "-" : "+");
 		}
 	} else {
 		if (!(args->m & 2)) {
 			ef ("1,fsr1l,%s=,", (args->m & 1) ? "-" : "+");
 			ef ("7,$c%s,fsr1h,%s,", (args->m & 1) ? ",!" : "",
-			    (args->m & 1) ? "-" : "+");
+				(args->m & 1) ? "-" : "+");
 		}
 		e ("indf1,wreg,=,");
 		e ("$z,z,:=,");
 		if (args->m & 2) {
 			ef ("1,fsr1l,%s=,", (args->m & 1) ? "-" : "+");
 			ef ("7,$c%s,fsr1h,%s,", (args->m & 1) ? ",!" : "",
-			    (args->m & 1) ? "-" : "+");
+				(args->m & 1) ? "-" : "+");
 		}
 	}
 }
@@ -508,27 +508,27 @@ INST_HANDLER (MOVWI_1) {
 		if (!(args->m & 2)) {
 			ef ("1,fsr0l,%s=,", (args->m & 1) ? "-" : "+");
 			ef ("$c7%s,fsr0h,%s,", (args->m & 1) ? ",!" : "",
-			    (args->m & 1) ? "-" : "+");
+				(args->m & 1) ? "-" : "+");
 		}
 		e ("wreg,indf0=,");
 		e ("$z,z,:=,");
 		if (args->m & 2) {
 			ef ("1,fsr0l,%s=,", (args->m & 1) ? "-" : "+");
 			ef ("$c7%s,fsr0h,%s,", (args->m & 1) ? ",!" : "",
-			    (args->m & 1) ? "-" : "+");
+				(args->m & 1) ? "-" : "+");
 		}
 	} else {
 		if (!(args->m & 2)) {
 			ef ("1,fsr1l,%s=,", (args->m & 1) ? "-" : "+");
 			ef ("$c7,fsr1h,%s,", (args->m & 1) ? ",!" : "",
-			    (args->m & 1) ? "-" : "+");
+				(args->m & 1) ? "-" : "+");
 		}
 		e ("wreg,indf1=,");
 		e ("$z,z,:=,");
 		if (args->m & 2) {
 			ef ("1,fsr1l,%s=,", (args->m & 1) ? "-" : "+");
 			ef ("$c7%s,fsr1h,%s,", (args->m & 1) ? ",!" : "",
-			    (args->m & 1) ? "-" : "+");
+				(args->m & 1) ? "-" : "+");
 		}
 	}
 }
@@ -554,37 +554,37 @@ INST_HANDLER (MOVWI_2) {
 
 #define PIC_MIDRANGE_OPINFO_LEN 52
 static const PicMidrangeOpAnalInfo pic_midrange_op_anal_info[PIC_MIDRANGE_OPINFO_LEN] = {
-	INST_DECL (NOP, NONE),      INST_DECL (RETURN, NONE),
-	INST_DECL (RETFIE, NONE),   INST_DECL (OPTION, NONE),
-	INST_DECL (SLEEP, NONE),    INST_DECL (CLRWDT, NONE),
-	INST_DECL (TRIS, 2F),       INST_DECL (MOVWF, 7F),
-	INST_DECL (CLR, 1D_7F),     INST_DECL (SUBWF, 1D_7F),
-	INST_DECL (DECF, 1D_7F),    INST_DECL (IORWF, 1D_7F),
-	INST_DECL (ANDWF, 1D_7F),   INST_DECL (XORWF, 1D_7F),
-	INST_DECL (ADDWF, 1D_7F),   INST_DECL (MOVF, 1D_7F),
-	INST_DECL (COMF, 1D_7F),    INST_DECL (INCF, 1D_7F),
-	INST_DECL (DECFSZ, 1D_7F),  INST_DECL (RRF, 1D_7F),
-	INST_DECL (RLF, 1D_7F),     INST_DECL (SWAPF, 1D_7F),
-	INST_DECL (INCFSZ, 1D_7F),  INST_DECL (BCF, 3B_7F),
-	INST_DECL (BSF, 3B_7F),     INST_DECL (BTFSC, 3B_7F),
-	INST_DECL (BTFSS, 3B_7F),   INST_DECL (CALL, 11K),
-	INST_DECL (GOTO, 11K),      INST_DECL (MOVLW, 8K),
-	INST_DECL (RETLW, 8K),      INST_DECL (IORLW, 8K),
-	INST_DECL (ANDLW, 8K),      INST_DECL (XORLW, 8K),
-	INST_DECL (SUBLW, 8K),      INST_DECL (ADDLW, 8K),
-	INST_DECL (RESET, NONE),    INST_DECL (CALLW, NONE),
-	INST_DECL (BRW, NONE),      INST_DECL (MOVIW_1, 1N_2M),
+	INST_DECL (NOP, NONE), INST_DECL (RETURN, NONE),
+	INST_DECL (RETFIE, NONE), INST_DECL (OPTION, NONE),
+	INST_DECL (SLEEP, NONE), INST_DECL (CLRWDT, NONE),
+	INST_DECL (TRIS, 2F), INST_DECL (MOVWF, 7F),
+	INST_DECL (CLR, 1D_7F), INST_DECL (SUBWF, 1D_7F),
+	INST_DECL (DECF, 1D_7F), INST_DECL (IORWF, 1D_7F),
+	INST_DECL (ANDWF, 1D_7F), INST_DECL (XORWF, 1D_7F),
+	INST_DECL (ADDWF, 1D_7F), INST_DECL (MOVF, 1D_7F),
+	INST_DECL (COMF, 1D_7F), INST_DECL (INCF, 1D_7F),
+	INST_DECL (DECFSZ, 1D_7F), INST_DECL (RRF, 1D_7F),
+	INST_DECL (RLF, 1D_7F), INST_DECL (SWAPF, 1D_7F),
+	INST_DECL (INCFSZ, 1D_7F), INST_DECL (BCF, 3B_7F),
+	INST_DECL (BSF, 3B_7F), INST_DECL (BTFSC, 3B_7F),
+	INST_DECL (BTFSS, 3B_7F), INST_DECL (CALL, 11K),
+	INST_DECL (GOTO, 11K), INST_DECL (MOVLW, 8K),
+	INST_DECL (RETLW, 8K), INST_DECL (IORLW, 8K),
+	INST_DECL (ANDLW, 8K), INST_DECL (XORLW, 8K),
+	INST_DECL (SUBLW, 8K), INST_DECL (ADDLW, 8K),
+	INST_DECL (RESET, NONE), INST_DECL (CALLW, NONE),
+	INST_DECL (BRW, NONE), INST_DECL (MOVIW_1, 1N_2M),
 	INST_DECL (MOVWI_1, 1N_2M), INST_DECL (MOVLB, 4K),
-	INST_DECL (LSLF, 1D_7F),    INST_DECL (LSRF, 1D_7F),
-	INST_DECL (ASRF, 1D_7F),    INST_DECL (SUBWFB, 1D_7F),
-	INST_DECL (ADDWFC, 1D_7F),  INST_DECL (ADDFSR, 1N_6K),
-	INST_DECL (MOVLP, 7F),      INST_DECL (BRA, 9K),
+	INST_DECL (LSLF, 1D_7F), INST_DECL (LSRF, 1D_7F),
+	INST_DECL (ASRF, 1D_7F), INST_DECL (SUBWFB, 1D_7F),
+	INST_DECL (ADDWFC, 1D_7F), INST_DECL (ADDFSR, 1N_6K),
+	INST_DECL (MOVLP, 7F), INST_DECL (BRA, 9K),
 	INST_DECL (MOVIW_2, 1N_6K), INST_DECL (MOVWI_2, 1N_6K)
 };
 
 static void anal_pic_midrange_extract_args (ut16 instr,
-					    PicMidrangeOpArgs args,
-					    PicMidrangeOpArgsVal *args_val) {
+	PicMidrangeOpArgs args,
+	PicMidrangeOpArgsVal *args_val) {
 
 	memset (args_val, 0, sizeof (PicMidrangeOpArgsVal));
 
@@ -635,7 +635,7 @@ static RIODesc *mem_sram = 0;
 static RIODesc *mem_stack = 0;
 
 static RIODesc *cpu_memory_map (RIOBind *iob, RIODesc *desc, ut32 addr,
-				ut32 size) {
+	ut32 size) {
 	char *mstr = r_str_newf ("malloc://%d", size);
 	if (desc && iob->fd_get_name (iob->io, desc->fd)) {
 		iob->fd_remap (iob->io, desc->fd, addr);
@@ -666,15 +666,15 @@ static void anal_pic_midrange_malloc (RAnal *anal, bool force) {
 		// image
 		mem_sram =
 			cpu_memory_map (&anal->iob, mem_sram,
-					PIC_MIDRANGE_ESIL_SRAM_START, 0x1000);
+				PIC_MIDRANGE_ESIL_SRAM_START, 0x1000);
 		mem_stack =
 			cpu_memory_map (&anal->iob, mem_stack,
-					PIC_MIDRANGE_ESIL_CSTACK_TOP, 0x20);
+				PIC_MIDRANGE_ESIL_CSTACK_TOP, 0x20);
 
 		pic_midrange_reg_write (anal->reg, "_sram",
-					PIC_MIDRANGE_ESIL_SRAM_START);
+			PIC_MIDRANGE_ESIL_SRAM_START);
 		pic_midrange_reg_write (anal->reg, "_stack",
-					PIC_MIDRANGE_ESIL_CSTACK_TOP);
+			PIC_MIDRANGE_ESIL_CSTACK_TOP);
 		pic_midrange_reg_write (anal->reg, "stkptr", 0x1f);
 
 		init_done = true;
@@ -682,7 +682,7 @@ static void anal_pic_midrange_malloc (RAnal *anal, bool force) {
 }
 
 static int anal_pic_midrange_op (RAnal *anal, RAnalOp *op, ut64 addr,
-				 const ut8 *buf, int len) {
+	const ut8 *buf, int len) {
 
 	ut16 instr;
 	int i;
@@ -710,7 +710,7 @@ static int anal_pic_midrange_op (RAnal *anal, RAnalOp *op, ut64 addr,
 				instr, pic_midrange_op_anal_info[i].args,
 				&args_val);
 			pic_midrange_op_anal_info[i].handler (anal, op, addr,
-							      &args_val);
+				&args_val);
 			break;
 		}
 	}
@@ -726,7 +726,7 @@ static void pic18_cond_branch (RAnalOp *op, ut64 addr, const ut8 *buf, char *fla
 	r_strbuf_setf (&op->esil, "%s,?,{,0x%x,pc,=,}", flag, op->jump);
 }
 
-static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int anal_pic_pic18_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	//TODO code should be refactored and broken into smaller chunks!!
 	//TODO complete the esil emitter
 	if (len < 2) {
@@ -750,7 +750,7 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 		return op->size;
 	};
 	switch (b >> 11) { //NEX_T
-	case 0x1b:	//rcall
+	case 0x1b: //rcall
 		op->type = R_ANAL_OP_TYPE_CALL;
 		return op->size;
 	case 0x1a: //bra
@@ -761,7 +761,7 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 		return op->size;
 	}
 	switch (b >> 12) { //NOP,movff,BAF_T
-	case 0xf:	//nop
+	case 0xf: //nop
 		op->type = R_ANAL_OP_TYPE_NOP;
 		op->cycles = 1;
 		r_strbuf_setf (&op->esil, ",");
@@ -788,7 +788,7 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 	};
 
 	switch (b >> 8) { //GOTO_T,N_T,K_T
-	case 0xe0:	//bz
+	case 0xe0: //bz
 		pic18_cond_branch (op, addr, buf, "z");
 		return op->size;
 	case 0xe1: //bnz
@@ -870,7 +870,7 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 	};
 
 	switch (b >> 6) { //LFSR
-	case 0x3b8:       //lfsr
+	case 0x3b8: //lfsr
 		if (len < 4) {
 			goto beach;
 		}
@@ -882,21 +882,21 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 		return op->size;
 	};
 	switch (b >> 10) { //DAF_T
-	case 0x17:	//subwf
-	case 0x16:	//subwfb
-	case 0x15:	//subfwb
-	case 0x13:	//dcfsnz
-	case 0xb:	//decfsz
-	case 0x1:	//decf
+	case 0x17: //subwf
+	case 0x16: //subwfb
+	case 0x15: //subfwb
+	case 0x13: //dcfsnz
+	case 0xb: //decfsz
+	case 0x1: //decf
 		op->type = R_ANAL_OP_TYPE_SUB;
 		return op->size;
 	case 0x14: //movf
 		op->type = R_ANAL_OP_TYPE_MOV;
 		return op->size;
 	case 0x12: //infsnz
-	case 0xf:  //incfsz
-	case 0xa:  //incf
-	case 0x8:  //addwfc
+	case 0xf: //incfsz
+	case 0xa: //incf
+	case 0x8: //addwfc
 		op->type = R_ANAL_OP_TYPE_ADD;
 		return op->size;
 	case 0x9: //addwf
@@ -904,11 +904,11 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 		op->type = R_ANAL_OP_TYPE_ADD;
 		return op->size;
 	case 0x11: //rlncf
-	case 0xd:  //rlcf
+	case 0xd: //rlcf
 		op->type = R_ANAL_OP_TYPE_ROL;
 		return op->size;
 	case 0x10: //rrncf
-	case 0xc:  //rrcf
+	case 0xc: //rrcf
 		op->type = R_ANAL_OP_TYPE_ROR;
 		return op->size;
 	case 0xe: //swapf
@@ -928,7 +928,7 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 		return op->size;
 	};
 	switch (b >> 9) { //AF_T
-	case 0x37:	//movwf
+	case 0x37: //movwf
 		op->type = R_ANAL_OP_TYPE_STORE;
 		return op->size;
 	case 0x36: //negf
@@ -957,9 +957,9 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 	};
 	switch (b) {
 	case 0xff: //reset
-	case 0x7:  //daw
-	case 0x4:  //clwdt
-	case 0x3:  //sleep
+	case 0x7: //daw
+	case 0x4: //clwdt
+	case 0x3: //sleep
 		op->type = R_ANAL_OP_TYPE_UNK;
 		return op->size;
 	case 0x13: //return
@@ -1006,7 +1006,7 @@ beach:
 }
 
 static bool anal_pic_midrange_set_reg_profile (RAnal *esil) {
-	const char *p = \
+	const char *p =
 		"=PC	pc\n"
 		"=SP	stkptr\n"
 		"gpr	indf0	.8	0	0\n"
@@ -1033,7 +1033,7 @@ static bool anal_pic_midrange_set_reg_profile (RAnal *esil) {
 	return r_reg_set_profile_string (esil->reg, p);
 }
 
-static bool anal_pic_pic18_set_reg_profile(RAnal *esil) {
+static bool anal_pic_pic18_set_reg_profile (RAnal *esil) {
 	const char *p =
 		"#pc lives in nowhere actually"
 		"=PC	pc\n"
@@ -1150,8 +1150,7 @@ static bool anal_pic_pic18_set_reg_profile(RAnal *esil) {
 	return r_reg_set_profile_string (esil->reg, p);
 }
 
-
-static int anal_pic_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int anal_pic_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	if (anal->cpu && strcasecmp (anal->cpu, "baseline") == 0) {
 		// TODO: implement
 		return -1;
@@ -1165,7 +1164,7 @@ static int anal_pic_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 	return -1;
 }
 
-static bool anal_pic_set_reg_profile(RAnal *anal) {
+static bool anal_pic_set_reg_profile (RAnal *anal) {
 	if (anal->cpu && strcasecmp (anal->cpu, "baseline") == 0) {
 		// TODO: We are using the midrange profile as the baseline
 		return anal_pic_midrange_set_reg_profile (anal);

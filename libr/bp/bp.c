@@ -5,8 +5,7 @@
 
 R_LIB_VERSION (r_bp);
 
-static struct r_bp_plugin_t *bp_static_plugins[] =
-	{ R_BP_STATIC_PLUGINS };
+static struct r_bp_plugin_t *bp_static_plugins[] = { R_BP_STATIC_PLUGINS };
 
 static void r_bp_item_free (RBreakpointItem *b) {
 	free (b->name);
@@ -18,7 +17,7 @@ static void r_bp_item_free (RBreakpointItem *b) {
 	free (b);
 }
 
-R_API RBreakpoint *r_bp_new(void) {
+R_API RBreakpoint *r_bp_new (void) {
 	int i;
 	RBreakpointPlugin *static_plugin;
 	RBreakpoint *bp = R_NEW0 (RBreakpoint);
@@ -26,7 +25,7 @@ R_API RBreakpoint *r_bp_new(void) {
 		return NULL;
 	}
 	bp->bps_idx_count = 16;
-	bp->bps_idx = R_NEWS0 (RBreakpointItem*, bp->bps_idx_count);
+	bp->bps_idx = R_NEWS0 (RBreakpointItem *, bp->bps_idx_count);
 	bp->stepcont = R_BP_CONT_NORMAL;
 	bp->traces = r_bp_traptrace_new ();
 	bp->cb_printf = (PrintfCallback)printf;
@@ -43,7 +42,7 @@ R_API RBreakpoint *r_bp_new(void) {
 	return bp;
 }
 
-R_API RBreakpoint *r_bp_free(RBreakpoint *bp) {
+R_API RBreakpoint *r_bp_free (RBreakpoint *bp) {
 	r_list_free (bp->bps);
 	r_list_free (bp->plugins);
 	r_list_free (bp->traces);
@@ -52,7 +51,7 @@ R_API RBreakpoint *r_bp_free(RBreakpoint *bp) {
 	return NULL;
 }
 
-R_API int r_bp_get_bytes(RBreakpoint *bp, ut8 *buf, int len, int endian, int idx) {
+R_API int r_bp_get_bytes (RBreakpoint *bp, ut8 *buf, int len, int endian, int idx) {
 	int i;
 	struct r_bp_arch_t *b;
 	if (bp->cur) {
@@ -88,10 +87,10 @@ repeat:
 	return 0;
 }
 
-R_API RBreakpointItem *r_bp_get_at(RBreakpoint *bp, ut64 addr) {
+R_API RBreakpointItem *r_bp_get_at (RBreakpoint *bp, ut64 addr) {
 	RListIter *iter;
 	RBreakpointItem *b;
-	r_list_foreach(bp->bps, iter, b) {
+	r_list_foreach (bp->bps, iter, b) {
 		if (b->addr == addr) {
 			return b;
 		}
@@ -99,15 +98,15 @@ R_API RBreakpointItem *r_bp_get_at(RBreakpoint *bp, ut64 addr) {
 	return NULL;
 }
 
-static inline bool inRange(RBreakpointItem *b, ut64 addr) {
+static inline bool inRange (RBreakpointItem *b, ut64 addr) {
 	return (addr >= b->addr && addr < (b->addr + b->size));
 }
 
-static inline bool matchProt(RBreakpointItem *b, int perm) {
+static inline bool matchProt (RBreakpointItem *b, int perm) {
 	return (!perm || (perm && b->perm));
 }
 
-R_API RBreakpointItem *r_bp_get_in(RBreakpoint *bp, ut64 addr, int perm) {
+R_API RBreakpointItem *r_bp_get_in (RBreakpoint *bp, ut64 addr, int perm) {
 	RBreakpointItem *b;
 	RListIter *iter;
 	r_list_foreach (bp->bps, iter, b) {
@@ -120,7 +119,7 @@ R_API RBreakpointItem *r_bp_get_in(RBreakpoint *bp, ut64 addr, int perm) {
 	return NULL;
 }
 
-R_API RBreakpointItem *r_bp_enable(RBreakpoint *bp, ut64 addr, int set, int count) {
+R_API RBreakpointItem *r_bp_enable (RBreakpoint *bp, ut64 addr, int set, int count) {
 	RBreakpointItem *b = r_bp_get_in (bp, addr, 0);
 	if (b) {
 		b->enabled = set;
@@ -130,7 +129,7 @@ R_API RBreakpointItem *r_bp_enable(RBreakpoint *bp, ut64 addr, int set, int coun
 	return NULL;
 }
 
-R_API int r_bp_enable_all(RBreakpoint *bp, int set) {
+R_API int r_bp_enable_all (RBreakpoint *bp, int set) {
 	RListIter *iter;
 	RBreakpointItem *b;
 	r_list_foreach (bp->bps, iter, b) {
@@ -139,12 +138,12 @@ R_API int r_bp_enable_all(RBreakpoint *bp, int set) {
 	return true;
 }
 
-R_API int r_bp_stepy_continuation(RBreakpoint *bp) {
+R_API int r_bp_stepy_continuation (RBreakpoint *bp) {
 	// TODO: implement
 	return bp->stepcont;
 }
 
-static void unlinkBreakpoint(RBreakpoint *bp, RBreakpointItem *b) {
+static void unlinkBreakpoint (RBreakpoint *bp, RBreakpointItem *b) {
 	int i;
 	for (i = 0; i < bp->bps_idx_count; i++) {
 		if (bp->bps_idx[i] == b) {
@@ -155,7 +154,7 @@ static void unlinkBreakpoint(RBreakpoint *bp, RBreakpointItem *b) {
 }
 
 /* TODO: detect overlapping of breakpoints */
-static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, int size, int hw, int perm) {
+static RBreakpointItem *r_bp_add (RBreakpoint *bp, const ut8 *obytes, ut64 addr, int size, int hw, int perm) {
 	int ret;
 	RBreakpointItem *b;
 	if (addr == UT64_MAX || size < 1) {
@@ -208,12 +207,12 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 	return b;
 }
 
-R_API int r_bp_add_fault(RBreakpoint *bp, ut64 addr, int size, int perm) {
+R_API int r_bp_add_fault (RBreakpoint *bp, ut64 addr, int size, int perm) {
 	// TODO
 	return false;
 }
 
-R_API RBreakpointItem* r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int perm) {
+R_API RBreakpointItem *r_bp_add_sw (RBreakpoint *bp, ut64 addr, int size, int perm) {
 	RBreakpointItem *item;
 	ut8 *bytes;
 	if (size < 1) {
@@ -231,11 +230,11 @@ R_API RBreakpointItem* r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int per
 	return item;
 }
 
-R_API RBreakpointItem* r_bp_add_hw(RBreakpoint *bp, ut64 addr, int size, int perm) {
+R_API RBreakpointItem *r_bp_add_hw (RBreakpoint *bp, ut64 addr, int size, int perm) {
 	return r_bp_add (bp, NULL, addr, size, R_BP_TYPE_HW, perm);
 }
 
-R_API int r_bp_del_all(RBreakpoint *bp) {
+R_API int r_bp_del_all (RBreakpoint *bp) {
 	int i;
 	if (!r_list_empty (bp->bps)) {
 		r_list_purge (bp->bps);
@@ -247,7 +246,7 @@ R_API int r_bp_del_all(RBreakpoint *bp) {
 	return false;
 }
 
-R_API int r_bp_del(RBreakpoint *bp, ut64 addr) {
+R_API int r_bp_del (RBreakpoint *bp, ut64 addr) {
 	RListIter *iter;
 	RBreakpointItem *b;
 	/* No _safe loop necessary because we return immediately after the delete. */
@@ -261,7 +260,7 @@ R_API int r_bp_del(RBreakpoint *bp, ut64 addr) {
 	return false;
 }
 
-R_API int r_bp_set_trace(RBreakpoint *bp, ut64 addr, int set) {
+R_API int r_bp_set_trace (RBreakpoint *bp, ut64 addr, int set) {
 	RBreakpointItem *b = r_bp_get_in (bp, addr, 0);
 	if (b) {
 		b->trace = set;
@@ -270,7 +269,7 @@ R_API int r_bp_set_trace(RBreakpoint *bp, ut64 addr, int set) {
 	return false;
 }
 
-R_API int r_bp_set_trace_all(RBreakpoint *bp, int set) {
+R_API int r_bp_set_trace_all (RBreakpoint *bp, int set) {
 	RListIter *iter;
 	RBreakpointItem *b;
 	r_list_foreach (bp->bps, iter, b) {
@@ -280,7 +279,7 @@ R_API int r_bp_set_trace_all(RBreakpoint *bp, int set) {
 }
 
 // TODO: deprecate
-R_API int r_bp_list(RBreakpoint *bp, int rad) {
+R_API int r_bp_list (RBreakpoint *bp, int rad) {
 	int n = 0;
 	RBreakpointItem *b;
 	RListIter *iter;
@@ -291,14 +290,14 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 	r_list_foreach (bp->bps, iter, b) {
 		switch (rad) {
 		case 0:
-			bp->cb_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x \
-				" %d %c%c%c %s %s %s %s cmd=\"%s\" cond=\"%s\" " \
-				"name=\"%s\" module=\"%s\"\n",
+			bp->cb_printf ("0x%08" PFMT64x " - 0x%08" PFMT64x
+				       " %d %c%c%c %s %s %s %s cmd=\"%s\" cond=\"%s\" "
+				       "name=\"%s\" module=\"%s\"\n",
 				b->addr, b->addr + b->size, b->size,
 				((b->perm & R_BP_PROT_READ) | (b->perm & R_BP_PROT_ACCESS)) ? 'r' : '-',
-				((b->perm & R_BP_PROT_WRITE)| (b->perm & R_BP_PROT_ACCESS)) ? 'w' : '-',
+				((b->perm & R_BP_PROT_WRITE) | (b->perm & R_BP_PROT_ACCESS)) ? 'w' : '-',
 				(b->perm & R_BP_PROT_EXEC) ? 'x' : '-',
-				b->hw ? "hw": "sw",
+				b->hw ? "hw" : "sw",
 				b->trace ? "trace" : "break",
 				b->enabled ? "enabled" : "disabled",
 				r_bp_is_valid (bp, b) ? "valid" : "invalid",
@@ -312,20 +311,20 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 		case '*':
 			// TODO: add command, tracing, enable, ..
 			if (b->module_name) {
-			    	bp->cb_printf ("dbm %s %"PFMT64d"\n", b->module_name, b->module_delta);
+				bp->cb_printf ("dbm %s %" PFMT64d "\n", b->module_name, b->module_delta);
 			} else {
-				bp->cb_printf ("db 0x%08"PFMT64x"\n", b->addr);
+				bp->cb_printf ("db 0x%08" PFMT64x "\n", b->addr);
 			}
 			//b->trace? "trace": "break",
 			//b->enabled? "enabled": "disabled",
 			// b->data? b->data: "");
 			break;
 		case 'j':
-			bp->cb_printf ("%s{\"addr\":%"PFMT64d",\"size\":%d,"
-				"\"prot\":\"%c%c%c\",\"hw\":%s,"
-				"\"trace\":%s,\"enabled\":%s,"
-				"\"valid\":%s,\"data\":\"%s\","
-				"\"cond\":\"%s\"}",
+			bp->cb_printf ("%s{\"addr\":%" PFMT64d ",\"size\":%d,"
+				       "\"prot\":\"%c%c%c\",\"hw\":%s,"
+				       "\"trace\":%s,\"enabled\":%s,"
+				       "\"valid\":%s,\"data\":\"%s\","
+				       "\"cond\":\"%s\"}",
 				iter->p ? "," : "",
 				b->addr, b->size,
 				(b->perm & R_BP_PROT_READ) ? 'r' : '-',
@@ -358,7 +357,7 @@ R_API RBreakpointItem *r_bp_item_new (RBreakpoint *bp) {
 	}
 	/* allocate new slot */
 	bp->bps_idx_count += 16; // allocate space for 16 more bps
-	RBreakpointItem **newbps = realloc (bp->bps_idx, bp->bps_idx_count * sizeof (RBreakpointItem*));
+	RBreakpointItem **newbps = realloc (bp->bps_idx, bp->bps_idx_count * sizeof (RBreakpointItem *));
 	if (newbps) {
 		bp->bps_idx = newbps;
 	} else {
@@ -372,7 +371,7 @@ return_slot:
 	return (bp->bps_idx[i] = R_NEW0 (RBreakpointItem));
 }
 
-R_API RBreakpointItem *r_bp_get_index(RBreakpoint *bp, int idx) {
+R_API RBreakpointItem *r_bp_get_index (RBreakpoint *bp, int idx) {
 	if (idx >= 0 && idx < bp->bps_idx_count) {
 		return bp->bps_idx[idx];
 	}
@@ -381,7 +380,7 @@ R_API RBreakpointItem *r_bp_get_index(RBreakpoint *bp, int idx) {
 
 R_API int r_bp_get_index_at (RBreakpoint *bp, ut64 addr) {
 	int i;
-	for (i = 0; i< bp->bps_idx_count; i++) {
+	for (i = 0; i < bp->bps_idx_count; i++) {
 		if (bp->bps_idx[i] && bp->bps_idx[i]->addr == addr) {
 			return i;
 		}
@@ -389,7 +388,7 @@ R_API int r_bp_get_index_at (RBreakpoint *bp, ut64 addr) {
 	return -1;
 }
 
-R_API int r_bp_del_index(RBreakpoint *bp, int idx) {
+R_API int r_bp_del_index (RBreakpoint *bp, int idx) {
 	if (idx >= 0 && idx < bp->bps_idx_count) {
 		r_list_delete_data (bp->bps, bp->bps_idx[idx]);
 		bp->bps_idx[idx] = 0;
@@ -398,7 +397,7 @@ R_API int r_bp_del_index(RBreakpoint *bp, int idx) {
 	return false;
 }
 
-R_API int r_bp_size(RBreakpoint *bp) {
+R_API int r_bp_size (RBreakpoint *bp) {
 	RBreakpointArch *bpa;
 	int i, bpsize = 8;
 	if (!bp || !bp->cur) {
@@ -417,7 +416,7 @@ R_API int r_bp_size(RBreakpoint *bp) {
 }
 
 // Check if the breakpoint is in a valid map
-R_API bool r_bp_is_valid(RBreakpoint *bp, RBreakpointItem *b) {
+R_API bool r_bp_is_valid (RBreakpoint *bp, RBreakpointItem *b) {
 	if (!bp->bpinmaps) {
 		return true;
 	}

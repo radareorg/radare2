@@ -4,7 +4,7 @@
 
 /* dex/dwarf uleb128 implementation */
 
-R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v) {
+R_API const ut8 *r_uleb128 (const ut8 *data, int datalen, ut64 *v) {
 	ut8 c;
 	ut64 s, sum = 0;
 	const ut8 *data_end;
@@ -56,12 +56,12 @@ R_API int r_uleb128_len (const ut8 *data, int size) {
  * datalen will point (if not NULL) to the length of the uleb number
  * v (if not NULL) will point to the data's value (if fitting the size of an ut64)
  */
-R_API const ut8 *r_uleb128_decode(const ut8 *data, int *datalen, ut64 *v) {
+R_API const ut8 *r_uleb128_decode (const ut8 *data, int *datalen, ut64 *v) {
 	ut8 c = 0xff;
 	ut64 s = 0, sum = 0, l = 0;
 	do {
 		c = *(data++) & 0xff;
-		sum |= ((ut64) (c&0x7f) << s);
+		sum |= ((ut64) (c & 0x7f) << s);
 		s += 7;
 		l++;
 	} while (c & 0x80);
@@ -74,7 +74,7 @@ R_API const ut8 *r_uleb128_decode(const ut8 *data, int *datalen, ut64 *v) {
 	return data;
 }
 
-R_API ut8 *r_uleb128_encode(const ut64 s, int *len) {
+R_API ut8 *r_uleb128_encode (const ut64 s, int *len) {
 	ut8 c = 0;
 	int l = 0;
 	ut8 *otarget = NULL, *target = NULL, *tmptarget = NULL;
@@ -88,7 +88,7 @@ R_API ut8 *r_uleb128_encode(const ut64 s, int *len) {
 			break;
 		}
 		otarget = tmptarget;
-		target = otarget+l-1;
+		target = otarget + l - 1;
 		c = source & 0x7f;
 		source >>= 7;
 		if (source) {
@@ -102,7 +102,7 @@ R_API ut8 *r_uleb128_encode(const ut64 s, int *len) {
 	return otarget;
 }
 
-R_API const ut8 *r_leb128(const ut8 *data, int datalen, st64 *v) {
+R_API const ut8 *r_leb128 (const ut8 *data, int datalen, st64 *v) {
 	ut8 c = 0;
 	st64 s = 0, sum = 0;
 	const ut8 *data_end = data + datalen;
@@ -130,8 +130,7 @@ beach:
 	return data;
 }
 
-
-R_API st64 r_sleb128(const ut8 **data, const ut8 *end) {
+R_API st64 r_sleb128 (const ut8 **data, const ut8 *end) {
 	const ut8 *p = *data;
 	st64 result = 0;
 	int offset = 0;
@@ -154,7 +153,7 @@ R_API st64 r_sleb128(const ut8 **data, const ut8 *end) {
 
 // API from https://github.com/WebAssembly/wabt/blob/master/src/binary-reader.cc
 
-#define BYTE_AT(type, i, shift) (((type)(p[i]) & 0x7f) << (shift))
+#define BYTE_AT(type, i, shift) (((type) (p[i]) & 0x7f) << (shift))
 
 #define LEB128_1(type) (BYTE_AT (type, 0, 0))
 #define LEB128_2(type) (BYTE_AT (type, 1, 7) | LEB128_1 (type))
@@ -167,12 +166,12 @@ R_API st64 r_sleb128(const ut8 **data, const ut8 *end) {
 #define LEB128_9(type) (BYTE_AT (type, 8, 56) | LEB128_8 (type))
 #define LEB128_10(type) (BYTE_AT (type, 9, 63) | LEB128_9 (type))
 
-#define SHIFT_AMOUNT(type, sign_bit) (sizeof(type) * 8 - 1 - (sign_bit))
-#define SIGN_EXTEND(type, value, sign_bit) \
-	((type)((value) << SHIFT_AMOUNT (type, sign_bit)) >> \
+#define SHIFT_AMOUNT(type, sign_bit) (sizeof (type) * 8 - 1 - (sign_bit))
+#define SIGN_EXTEND(type, value, sign_bit)                    \
+	((type) ((value) << SHIFT_AMOUNT (type, sign_bit)) >> \
 		SHIFT_AMOUNT (type, sign_bit))
 
-R_API size_t read_u32_leb128 (const ut8* p, const ut8* max, ut32* out_value) {
+R_API size_t read_u32_leb128 (const ut8 *p, const ut8 *max, ut32 *out_value) {
 	if (p < max && !(p[0] & 0x80)) {
 		*out_value = LEB128_1 (ut32);
 		return 1;
@@ -197,7 +196,7 @@ R_API size_t read_u32_leb128 (const ut8* p, const ut8* max, ut32* out_value) {
 	}
 }
 
-R_API size_t read_i32_leb128 (const ut8* p, const ut8* max, st32* out_value) {
+R_API size_t read_i32_leb128 (const ut8 *p, const ut8 *max, st32 *out_value) {
 	if (p < max && !(p[0] & 0x80)) {
 		ut32 result = LEB128_1 (ut32);
 		*out_value = SIGN_EXTEND (ut32, result, 6);
@@ -214,7 +213,7 @@ R_API size_t read_i32_leb128 (const ut8* p, const ut8* max, st32* out_value) {
 		ut32 result = LEB128_4 (ut32);
 		*out_value = SIGN_EXTEND (ut32, result, 27);
 		return 4;
-	} else if (p+4 < max && !(p[4] & 0x80)) {
+	} else if (p + 4 < max && !(p[4] & 0x80)) {
 		/* the top bits should be a sign-extension of the sign bit */
 		bool sign_bit_set = (p[4] & 0x8);
 		int top_bits = p[4] & 0xf0;
@@ -230,7 +229,7 @@ R_API size_t read_i32_leb128 (const ut8* p, const ut8* max, st32* out_value) {
 	}
 }
 
-R_API size_t read_u64_leb128 (const ut8* p, const ut8* max, ut64* out_value) {
+R_API size_t read_u64_leb128 (const ut8 *p, const ut8 *max, ut64 *out_value) {
 	if (p < max && !(p[0] & 0x80)) {
 		*out_value = LEB128_1 (ut64);
 		return 1;
@@ -268,13 +267,13 @@ R_API size_t read_u64_leb128 (const ut8* p, const ut8* max, ut64* out_value) {
 	}
 }
 
-R_API size_t read_i64_leb128 (const ut8* p, const ut8* max, st64* out_value) {
+R_API size_t read_i64_leb128 (const ut8 *p, const ut8 *max, st64 *out_value) {
 	if (p < max && !(p[0] & 0x80)) {
 		ut64 result = LEB128_1 (ut64);
 		*out_value = SIGN_EXTEND (ut64, result, 6);
 		return 1;
 	} else if (p + 1 < max && !(p[1] & 0x80)) {
-		ut64 result = LEB128_2(ut64);
+		ut64 result = LEB128_2 (ut64);
 		*out_value = SIGN_EXTEND (ut64, result, 13);
 		return 2;
 	} else if (p + 2 < max && !(p[2] & 0x80)) {

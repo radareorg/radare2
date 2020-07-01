@@ -1,10 +1,10 @@
 #if __arm || __arm64 || __arch64
 
-static int isThumb32(ut16 op) {
+static int isThumb32 (ut16 op) {
 	return (((op & 0xE000) == 0xE000) && (op & 0x1800));
 }
 
-static bool ios_hwstep_enable64(RDebug *dbg, bool enable) {
+static bool ios_hwstep_enable64 (RDebug *dbg, bool enable) {
 	ARMDebugState64 ds;
 	thread_t th = getcurthread (dbg, NULL);
 
@@ -30,9 +30,9 @@ static bool ios_hwstep_enable64(RDebug *dbg, bool enable) {
 	return true;
 }
 
-static bool ios_hwstep_enable32(RDebug *dbg, bool enable) {
+static bool ios_hwstep_enable32 (RDebug *dbg, bool enable) {
 	mach_msg_type_number_t count;
-	arm_unified_thread_state_t state = {{0}};
+	arm_unified_thread_state_t state = { { 0 } };
 	_STRUCT_ARM_DEBUG_STATE ds;
 	task_t task = 0;
 	thread_t th = getcurthread (dbg, &task);
@@ -55,7 +55,7 @@ static bool ios_hwstep_enable32(RDebug *dbg, bool enable) {
 		RIOBind *bio = &dbg->iob;
 		ut32 pc = state.ts_32.__pc;
 		ut32 cpsr = state.ts_32.__cpsr;
-		for (i = 0; i < 16 ; i++) {
+		for (i = 0; i < 16; i++) {
 			ds.__bcr[i] = ds.__bvr[i] = 0;
 		}
 		i = 0;
@@ -86,7 +86,7 @@ static bool ios_hwstep_enable32(RDebug *dbg, bool enable) {
 	return true;
 }
 
-bool xnu_native_hwstep_enable(RDebug *dbg, bool enable) {
+bool xnu_native_hwstep_enable (RDebug *dbg, bool enable) {
 	if (dbg->bits == R_SYS_BITS_64 || dbg->bits == 64) {
 		return ios_hwstep_enable64 (dbg, enable);
 	}

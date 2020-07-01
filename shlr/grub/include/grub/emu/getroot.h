@@ -17,14 +17,14 @@
  */
 
 #ifndef GRUB_UTIL_GETROOT_HEADER
-#define GRUB_UTIL_GETROOT_HEADER	1
+#define GRUB_UTIL_GETROOT_HEADER 1
 
 #include <sys/types.h>
 
 enum grub_dev_abstraction_types {
-  GRUB_DEV_ABSTRACTION_NONE,
-  GRUB_DEV_ABSTRACTION_LVM,
-  GRUB_DEV_ABSTRACTION_RAID,
+	GRUB_DEV_ABSTRACTION_NONE,
+	GRUB_DEV_ABSTRACTION_LVM,
+	GRUB_DEV_ABSTRACTION_RAID,
 };
 
 char *grub_find_device (const char *dir, dev_t dev);

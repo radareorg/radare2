@@ -68,33 +68,34 @@
    string version name of the name of that relocation.  If
    the relocation is not recognised, NULL is returned.  */
 
-#define START_RELOC_NUMBERS(name)   				\
-static const char *name (unsigned long rtype);			\
-static const char *						\
-name (unsigned long rtype)					\
-{								\
-  switch (rtype)						\
-    {
+#define START_RELOC_NUMBERS(name)                      \
+	static const char *name (unsigned long rtype); \
+	static const char *                            \
+	name (unsigned long rtype) {                   \
+		switch (rtype) {
 
 #define RELOC_NUMBER(name, number) \
-    case number: return #name;
+	case number:               \
+		return #name;
 
 #define FAKE_RELOC(name, number)
 #define EMPTY_RELOC(name)
 
-#define END_RELOC_NUMBERS(name)	\
-    default: return NULL;	\
-    }				\
-}
-
+#define END_RELOC_NUMBERS(name) \
+	default: return NULL;   \
+		}               \
+		}
 
 #else /* Default to generating enum.  */
 
-#define START_RELOC_NUMBERS(name)   enum name {
-#define RELOC_NUMBER(name, number)  name = number,
-#define FAKE_RELOC(name, number)    name = number,
-#define EMPTY_RELOC(name)           name,
-#define END_RELOC_NUMBERS(name)     name };
+#define START_RELOC_NUMBERS(name) enum name {
+#define RELOC_NUMBER(name, number) name = number,
+#define FAKE_RELOC(name, number) name = number,
+#define EMPTY_RELOC(name) name,
+#define END_RELOC_NUMBERS(name) \
+	name                    \
+	}                       \
+	;
 
 #endif
 

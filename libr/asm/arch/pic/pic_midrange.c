@@ -4,61 +4,62 @@
 
 static const PicMidrangeOpInfo
 	pic_midrange_op_info[PIC_MIDRANGE_OPCODE_INVALID] = {
-		{"nop", PIC_MIDRANGE_OP_ARGS_NONE},
-		{"return", PIC_MIDRANGE_OP_ARGS_NONE},
-		{"retfie", PIC_MIDRANGE_OP_ARGS_NONE},
-		{"option", PIC_MIDRANGE_OP_ARGS_NONE},
-		{"sleep", PIC_MIDRANGE_OP_ARGS_NONE},
-		{"clrwdt", PIC_MIDRANGE_OP_ARGS_NONE},
-		{"tris", PIC_MIDRANGE_OP_ARGS_2F},
-		{"movwf", PIC_MIDRANGE_OP_ARGS_7F},
-		{"clr", PIC_MIDRANGE_OP_ARGS_1D_7F},
-		{"subwf", PIC_MIDRANGE_OP_ARGS_1D_7F},
-		{"decf", PIC_MIDRANGE_OP_ARGS_1D_7F},
-		{"iorwf", PIC_MIDRANGE_OP_ARGS_1D_7F},
-		{"andwf", PIC_MIDRANGE_OP_ARGS_1D_7F},
-		{"xorwf", PIC_MIDRANGE_OP_ARGS_1D_7F},
-		{"addwf", PIC_MIDRANGE_OP_ARGS_1D_7F},
-		{"movf", PIC_MIDRANGE_OP_ARGS_1D_7F},
-		{"comf", PIC_MIDRANGE_OP_ARGS_1D_7F},
-		{"incf", PIC_MIDRANGE_OP_ARGS_1D_7F},
-		{"decfsz", PIC_MIDRANGE_OP_ARGS_1D_7F},
-		{"rrf", PIC_MIDRANGE_OP_ARGS_1D_7F},
-		{"rlf", PIC_MIDRANGE_OP_ARGS_1D_7F},
-		{"swapf", PIC_MIDRANGE_OP_ARGS_1D_7F},
-		{"incfsz", PIC_MIDRANGE_OP_ARGS_1D_7F},
-		{"bcf", PIC_MIDRANGE_OP_ARGS_3B_7F},
-		{"bsf", PIC_MIDRANGE_OP_ARGS_3B_7F},
-		{"btfsc", PIC_MIDRANGE_OP_ARGS_3B_7F},
-		{"btfss", PIC_MIDRANGE_OP_ARGS_3B_7F},
-		{"call", PIC_MIDRANGE_OP_ARGS_11K},
-		{"goto", PIC_MIDRANGE_OP_ARGS_11K},
-		{"movlw", PIC_MIDRANGE_OP_ARGS_8K},
-		{"retlw", PIC_MIDRANGE_OP_ARGS_8K},
-		{"iorlw", PIC_MIDRANGE_OP_ARGS_8K},
-		{"andlw", PIC_MIDRANGE_OP_ARGS_8K},
-		{"xorlw", PIC_MIDRANGE_OP_ARGS_8K},
-		{"sublw", PIC_MIDRANGE_OP_ARGS_8K},
-		{"addlw", PIC_MIDRANGE_OP_ARGS_8K},
-		{"reset", PIC_MIDRANGE_OP_ARGS_NONE},
-		{"callw", PIC_MIDRANGE_OP_ARGS_NONE},
-		{"brw", PIC_MIDRANGE_OP_ARGS_NONE},
-		{"moviw", PIC_MIDRANGE_OP_ARGS_1N_2M},
-		{"movwi", PIC_MIDRANGE_OP_ARGS_1N_2M},
-		{"movlb", PIC_MIDRANGE_OP_ARGS_4K},
-		{"lslf", PIC_MIDRANGE_OP_ARGS_1D_7F},
-		{"lsrf", PIC_MIDRANGE_OP_ARGS_1D_7F},
-		{"asrf", PIC_MIDRANGE_OP_ARGS_1D_7F},
-		{"subwfb", PIC_MIDRANGE_OP_ARGS_1D_7F},
-		{"addwfc", PIC_MIDRANGE_OP_ARGS_1D_7F},
-		{"addfsr", PIC_MIDRANGE_OP_ARGS_1N_6K},
-		{"movlp", PIC_MIDRANGE_OP_ARGS_7F},
-		{"bra", PIC_MIDRANGE_OP_ARGS_9K},
-		{"moviw", PIC_MIDRANGE_OP_ARGS_1N_6K},
-		{"movwi", PIC_MIDRANGE_OP_ARGS_1N_6K}};
+		{ "nop", PIC_MIDRANGE_OP_ARGS_NONE },
+		{ "return", PIC_MIDRANGE_OP_ARGS_NONE },
+		{ "retfie", PIC_MIDRANGE_OP_ARGS_NONE },
+		{ "option", PIC_MIDRANGE_OP_ARGS_NONE },
+		{ "sleep", PIC_MIDRANGE_OP_ARGS_NONE },
+		{ "clrwdt", PIC_MIDRANGE_OP_ARGS_NONE },
+		{ "tris", PIC_MIDRANGE_OP_ARGS_2F },
+		{ "movwf", PIC_MIDRANGE_OP_ARGS_7F },
+		{ "clr", PIC_MIDRANGE_OP_ARGS_1D_7F },
+		{ "subwf", PIC_MIDRANGE_OP_ARGS_1D_7F },
+		{ "decf", PIC_MIDRANGE_OP_ARGS_1D_7F },
+		{ "iorwf", PIC_MIDRANGE_OP_ARGS_1D_7F },
+		{ "andwf", PIC_MIDRANGE_OP_ARGS_1D_7F },
+		{ "xorwf", PIC_MIDRANGE_OP_ARGS_1D_7F },
+		{ "addwf", PIC_MIDRANGE_OP_ARGS_1D_7F },
+		{ "movf", PIC_MIDRANGE_OP_ARGS_1D_7F },
+		{ "comf", PIC_MIDRANGE_OP_ARGS_1D_7F },
+		{ "incf", PIC_MIDRANGE_OP_ARGS_1D_7F },
+		{ "decfsz", PIC_MIDRANGE_OP_ARGS_1D_7F },
+		{ "rrf", PIC_MIDRANGE_OP_ARGS_1D_7F },
+		{ "rlf", PIC_MIDRANGE_OP_ARGS_1D_7F },
+		{ "swapf", PIC_MIDRANGE_OP_ARGS_1D_7F },
+		{ "incfsz", PIC_MIDRANGE_OP_ARGS_1D_7F },
+		{ "bcf", PIC_MIDRANGE_OP_ARGS_3B_7F },
+		{ "bsf", PIC_MIDRANGE_OP_ARGS_3B_7F },
+		{ "btfsc", PIC_MIDRANGE_OP_ARGS_3B_7F },
+		{ "btfss", PIC_MIDRANGE_OP_ARGS_3B_7F },
+		{ "call", PIC_MIDRANGE_OP_ARGS_11K },
+		{ "goto", PIC_MIDRANGE_OP_ARGS_11K },
+		{ "movlw", PIC_MIDRANGE_OP_ARGS_8K },
+		{ "retlw", PIC_MIDRANGE_OP_ARGS_8K },
+		{ "iorlw", PIC_MIDRANGE_OP_ARGS_8K },
+		{ "andlw", PIC_MIDRANGE_OP_ARGS_8K },
+		{ "xorlw", PIC_MIDRANGE_OP_ARGS_8K },
+		{ "sublw", PIC_MIDRANGE_OP_ARGS_8K },
+		{ "addlw", PIC_MIDRANGE_OP_ARGS_8K },
+		{ "reset", PIC_MIDRANGE_OP_ARGS_NONE },
+		{ "callw", PIC_MIDRANGE_OP_ARGS_NONE },
+		{ "brw", PIC_MIDRANGE_OP_ARGS_NONE },
+		{ "moviw", PIC_MIDRANGE_OP_ARGS_1N_2M },
+		{ "movwi", PIC_MIDRANGE_OP_ARGS_1N_2M },
+		{ "movlb", PIC_MIDRANGE_OP_ARGS_4K },
+		{ "lslf", PIC_MIDRANGE_OP_ARGS_1D_7F },
+		{ "lsrf", PIC_MIDRANGE_OP_ARGS_1D_7F },
+		{ "asrf", PIC_MIDRANGE_OP_ARGS_1D_7F },
+		{ "subwfb", PIC_MIDRANGE_OP_ARGS_1D_7F },
+		{ "addwfc", PIC_MIDRANGE_OP_ARGS_1D_7F },
+		{ "addfsr", PIC_MIDRANGE_OP_ARGS_1N_6K },
+		{ "movlp", PIC_MIDRANGE_OP_ARGS_7F },
+		{ "bra", PIC_MIDRANGE_OP_ARGS_9K },
+		{ "moviw", PIC_MIDRANGE_OP_ARGS_1N_6K },
+		{ "movwi", PIC_MIDRANGE_OP_ARGS_1N_6K }
+	};
 
-static const char *PicMidrangeFsrOps[] = {"++FSR%d", "--FSR%d", "FSR%d++",
-					  "FSR%d--"};
+static const char *PicMidrangeFsrOps[] = { "++FSR%d", "--FSR%d", "FSR%d++",
+	"FSR%d--" };
 
 PicMidrangeOpcode pic_midrange_get_opcode (ut16 instr) {
 	if (instr & (1 << 14)) {
@@ -158,10 +159,11 @@ int pic_midrange_disassemble (RAsmOp *op, char *opbuf, const ut8 *b, int l) {
 	char fsr_op[6];
 	st16 branch;
 
-#define EMIT_INVALID {\
-		op->size = 2; \
+#define EMIT_INVALID                       \
+	{                                  \
+		op->size = 2;              \
 		strcpy (opbuf, "invalid"); \
-		return 1; \
+		return 1;                  \
 	}
 	if (!b || l < 2) {
 		EMIT_INVALID
@@ -195,14 +197,15 @@ int pic_midrange_disassemble (RAsmOp *op, char *opbuf, const ut8 *b, int l) {
 		break;
 	case PIC_MIDRANGE_OP_ARGS_1D_7F:
 		buf_asm = sdb_fmt ("%s 0x%x, %c", op_info->mnemonic,
-			  instr & PIC_MIDRANGE_OP_ARGS_1D_7F_MASK_F,
-			  (instr & PIC_MIDRANGE_OP_ARGS_1D_7F_MASK_D) >> 7 ?  'f' : 'w');
+			instr & PIC_MIDRANGE_OP_ARGS_1D_7F_MASK_F,
+			(instr & PIC_MIDRANGE_OP_ARGS_1D_7F_MASK_D) >> 7 ? 'f' : 'w');
 		break;
 	case PIC_MIDRANGE_OP_ARGS_1N_6K:
 		if (opcode == PIC_MIDRANGE_OPCODE_ADDFSR) {
-			buf_asm = sdb_fmt ( "%s FSR%d, 0x%x", op_info->mnemonic,
-					(instr & PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_N) >>
-					6, instr & PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_K);
+			buf_asm = sdb_fmt ("%s FSR%d, 0x%x", op_info->mnemonic,
+				(instr & PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_N) >>
+					6,
+				instr & PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_K);
 		} else {
 			buf_asm = sdb_fmt ("%s 0x%x[FSR%d]", op_info->mnemonic,
 				instr & PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_K,
@@ -211,7 +214,7 @@ int pic_midrange_disassemble (RAsmOp *op, char *opbuf, const ut8 *b, int l) {
 		break;
 	case PIC_MIDRANGE_OP_ARGS_3B_7F:
 		buf_asm = sdb_fmt ("%s 0x%x, %d", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_3B_7F_MASK_F,
-			  (instr & PIC_MIDRANGE_OP_ARGS_3B_7F_MASK_B) >> 7);
+			(instr & PIC_MIDRANGE_OP_ARGS_3B_7F_MASK_B) >> 7);
 		break;
 	case PIC_MIDRANGE_OP_ARGS_4K:
 		buf_asm = sdb_fmt ("%s 0x%x", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_4K_MASK_K);
@@ -223,8 +226,8 @@ int pic_midrange_disassemble (RAsmOp *op, char *opbuf, const ut8 *b, int l) {
 		branch = (instr & PIC_MIDRANGE_OP_ARGS_9K_MASK_K);
 		branch |= ((branch & 0x100) ? 0xfe00 : 0);
 		buf_asm = sdb_fmt ("%s %s0x%x",
-			  op_info->mnemonic, branch < 0 ? "-" : "",
-			  branch < 0 ? -branch : branch);
+			op_info->mnemonic, branch < 0 ? "-" : "",
+			branch < 0 ? -branch : branch);
 		break;
 	case PIC_MIDRANGE_OP_ARGS_11K:
 		buf_asm = sdb_fmt ("%s 0x%x", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_11K_MASK_K);
@@ -233,7 +236,7 @@ int pic_midrange_disassemble (RAsmOp *op, char *opbuf, const ut8 *b, int l) {
 		snprintf (
 			fsr_op, sizeof (fsr_op),
 			PicMidrangeFsrOps[instr &
-					  PIC_MIDRANGE_OP_ARGS_1N_2M_MASK_M],
+				PIC_MIDRANGE_OP_ARGS_1N_2M_MASK_M],
 			(instr & PIC_MIDRANGE_OP_ARGS_1N_2M_MASK_N) >> 2);
 		buf_asm = sdb_fmt ("%s %s", op_info->mnemonic, fsr_op);
 		break;

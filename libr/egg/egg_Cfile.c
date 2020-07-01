@@ -16,9 +16,9 @@ struct cEnv_t {
 	const char *TEXT;
 };
 
-static char* r_egg_Cfile_getCompiler(void) {
+static char *r_egg_Cfile_getCompiler (void) {
 	size_t i;
-	const char *compilers[] = {"llvm-gcc", "clang", "gcc"};
+	const char *compilers[] = { "llvm-gcc", "clang", "gcc" };
 	char *output = r_sys_getenv ("CC");
 
 	if (output) {
@@ -38,13 +38,11 @@ static char* r_egg_Cfile_getCompiler(void) {
 	return NULL;
 }
 
-static inline bool r_egg_Cfile_armOrMips(const char *arch) {
-	return (!strcmp (arch, "arm") || !strcmp (arch, "arm64") || !strcmp (arch, "aarch64")
-	  	|| !strcmp (arch, "thumb") || !strcmp (arch, "arm32") || !strcmp (arch, "mips")
-		|| !strcmp (arch, "mips32") || !strcmp (arch, "mips64"));
+static inline bool r_egg_Cfile_armOrMips (const char *arch) {
+	return (!strcmp (arch, "arm") || !strcmp (arch, "arm64") || !strcmp (arch, "aarch64") || !strcmp (arch, "thumb") || !strcmp (arch, "arm32") || !strcmp (arch, "mips") || !strcmp (arch, "mips32") || !strcmp (arch, "mips64"));
 }
 
-static void r_egg_Cfile_free_cEnv(struct cEnv_t *cEnv) {
+static void r_egg_Cfile_free_cEnv (struct cEnv_t *cEnv) {
 	if (cEnv) {
 		free (cEnv->SFLIBPATH);
 		free (cEnv->CC);
@@ -56,17 +54,15 @@ static void r_egg_Cfile_free_cEnv(struct cEnv_t *cEnv) {
 	free (cEnv);
 }
 
-static inline bool r_egg_Cfile_check_cEnv(struct cEnv_t *cEnv) {
-	return (!cEnv->SFLIBPATH || !cEnv->CC || !cEnv->CFLAGS || !cEnv->LDFLAGS
-		|| !cEnv->SHDR || !cEnv->TRIPLET);
+static inline bool r_egg_Cfile_check_cEnv (struct cEnv_t *cEnv) {
+	return (!cEnv->SFLIBPATH || !cEnv->CC || !cEnv->CFLAGS || !cEnv->LDFLAGS || !cEnv->SHDR || !cEnv->TRIPLET);
 }
 
-static inline bool isXNU(const char *os) {
-	return (!strcmp (os, "darwin") || !strcmp (os, "macos")
-		|| !strcmp (os, "tvos") || !strcmp (os, "watchos") || !strcmp (os, "ios"));
+static inline bool isXNU (const char *os) {
+	return (!strcmp (os, "darwin") || !strcmp (os, "macos") || !strcmp (os, "tvos") || !strcmp (os, "watchos") || !strcmp (os, "ios"));
 }
 
-static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int bits) {
+static struct cEnv_t *r_egg_Cfile_set_cEnv (const char *arch, const char *os, int bits) {
 	struct cEnv_t *cEnv = calloc (1, sizeof (struct cEnv_t));
 	bool use_clang;
 	char *buffer = NULL;
@@ -76,7 +72,7 @@ static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int
 		return NULL;
 	}
 
-	if (!(cEnv->CC = r_egg_Cfile_getCompiler())) {
+	if (!(cEnv->CC = r_egg_Cfile_getCompiler ())) {
 		goto fail;
 	}
 
@@ -85,7 +81,7 @@ static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int
 		output = r_sys_cmd_strf ("r2 -hh | grep INCDIR | awk '{print $2}'");
 		if (!output || (output[0] == '\0')) {
 			eprintf ("Cannot find SFLIBPATH env var.\n"
-		  		 "Please define it, or fix r2 installation.\n");
+				 "Please define it, or fix r2 installation.\n");
 			goto fail;
 		}
 
@@ -118,7 +114,8 @@ static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int
 		cEnv->OBJCOPY = "objcopy";
 		cEnv->FMT = "elf";
 		cEnv->SHDR = r_str_newf ("\n.section .text\n.globl  main\n"
-				   "// .type   main, @function\n%s main\n", cEnv->JMP);
+					 "// .type   main, @function\n%s main\n",
+			cEnv->JMP);
 		if (!strcmp (arch, "x86")) {
 			if (bits == 32) {
 				cEnv->CFLAGS = strdup ("-fPIC -fPIE -pie -fpic -m32");
@@ -138,7 +135,7 @@ static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int
 	if (!strcmp (os, "windows")) {
 		cEnv->TEXT = ".text";
 		cEnv->FMT = "pe";
-	} else if (isXNU(os)) {
+	} else if (isXNU (os)) {
 		//cEnv->TEXT = "0.__TEXT.__text";
 		cEnv->TEXT = "0..__text";
 	} else {
@@ -159,7 +156,7 @@ static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int
 	}
 
 	buffer = r_str_newf ("%s -fno-stack-protector -nostdinc -include '%s'/'%s'/sflib.h",
-	  		cEnv->CFLAGS, cEnv->SFLIBPATH, cEnv->TRIPLET);
+		cEnv->CFLAGS, cEnv->SFLIBPATH, cEnv->TRIPLET);
 	if (!buffer) {
 		goto fail;
 	}
@@ -169,7 +166,8 @@ static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int
 	if (use_clang) {
 		free (buffer);
 		buffer = r_str_newf ("%s -fomit-frame-pointer"
-		  		" -fno-zero-initialized-in-bss", cEnv->CFLAGS);
+				     " -fno-zero-initialized-in-bss",
+			cEnv->CFLAGS);
 		if (!buffer) {
 			goto fail;
 		}
@@ -178,7 +176,8 @@ static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int
 	} else {
 		free (buffer);
 		buffer = r_str_newf ("%s -z execstack -fomit-frame-pointer"
-				" -finline-functions -fno-zero-initialized-in-bss", cEnv->CFLAGS);
+				     " -finline-functions -fno-zero-initialized-in-bss",
+			cEnv->CFLAGS);
 		if (!buffer) {
 			goto fail;
 		}
@@ -209,7 +208,7 @@ fail:
 	return NULL;
 }
 
-static bool r_egg_Cfile_parseCompiled(const char *file) {
+static bool r_egg_Cfile_parseCompiled (const char *file) {
 	char *fileExt = r_str_newf ("%s.tmp", file);
 	char *buffer = r_file_slurp (fileExt, NULL);
 	if (!buffer) {
@@ -221,7 +220,7 @@ static bool r_egg_Cfile_parseCompiled(const char *file) {
 	buffer = r_str_replace (buffer, "rodata", "text", false);
 	buffer = r_str_replace (buffer, "get_pc_thunk.bx", "__getesp__", true);
 
-	const char *words[] = {".cstring", "size", "___main", "section", "__alloca", "zero", "cfi"};
+	const char *words[] = { ".cstring", "size", "___main", "section", "__alloca", "zero", "cfi" };
 	size_t i;
 	for (i = 0; i < 7; i++) {
 		r_str_stripLine (buffer, words[i]);
@@ -229,7 +228,7 @@ static bool r_egg_Cfile_parseCompiled(const char *file) {
 
 	free (fileExt);
 	fileExt = r_str_newf ("%s.s", file);
-	if (!r_file_dump (fileExt, (const ut8*) buffer, strlen (buffer), true)) {
+	if (!r_file_dump (fileExt, (const ut8 *)buffer, strlen (buffer), true)) {
 		eprintf ("Error while opening %s.s\n", file);
 		goto fail;
 	}
@@ -244,7 +243,7 @@ fail:
 	return false;
 }
 
-R_API char* r_egg_Cfile_parser(const char *file, const char *arch, const char *os, int bits) {
+R_API char *r_egg_Cfile_parser (const char *file, const char *arch, const char *os, int bits) {
 	char *output = NULL;
 	char *fileExt = NULL; // "file" with extension (.s, .text, ...)
 	struct cEnv_t *cEnv = r_egg_Cfile_set_cEnv (arch, os, bits);
@@ -267,7 +266,7 @@ R_API char* r_egg_Cfile_parser(const char *file, const char *arch, const char *o
 		goto fail;
 	}
 
-	if (!r_file_dump (fileExt, (const ut8*) cEnv->SHDR, strlen (cEnv->SHDR), false)) {
+	if (!r_file_dump (fileExt, (const ut8 *)cEnv->SHDR, strlen (cEnv->SHDR), false)) {
 		eprintf ("Error while opening %s.s\n", file);
 		goto fail;
 	}
@@ -287,7 +286,7 @@ R_API char* r_egg_Cfile_parser(const char *file, const char *arch, const char *o
 	// Link
 	printf ("rabin2 -o '%s.text' -O d/S/'%s' '%s.o'\n", file, cEnv->TEXT, file);
 	output = r_sys_cmd_strf ("rabin2 -o '%s.text' -O d/S/'%s' '%s'.o",
-		   		file, cEnv->TEXT, file);
+		file, cEnv->TEXT, file);
 	if (!output) {
 		eprintf ("Linkage failed!\n");
 		goto fail;
@@ -311,7 +310,7 @@ R_API char* r_egg_Cfile_parser(const char *file, const char *arch, const char *o
 		eprintf ("FALLBACK: Using objcopy instead of rabin2");
 		free (output);
 		output = r_sys_cmd_strf ("'%s' -j .text -O binary '%s.o' '%s.text'",
-		  		cEnv->OBJCOPY, file, file);
+			cEnv->OBJCOPY, file, file);
 		if (!output) {
 			eprintf ("objcopy failed!\n");
 			goto fail;
@@ -319,7 +318,7 @@ R_API char* r_egg_Cfile_parser(const char *file, const char *arch, const char *o
 	}
 
 	size_t i;
-	const char *extArray[] = {"bin", "tmp", "s", "o"};
+	const char *extArray[] = { "bin", "tmp", "s", "o" };
 	for (i = 0; i < 4; i++) {
 		free (fileExt);
 		if (!(fileExt = r_str_newf ("%s.%s", file, extArray[i]))) {

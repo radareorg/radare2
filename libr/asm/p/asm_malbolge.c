@@ -5,7 +5,7 @@
 #include <r_lib.h>
 #include <string.h>
 
-static const char *mal_dis(ut64 c, const ut8 *buf, ut64 len) {
+static const char *mal_dis (ut64 c, const ut8 *buf, ut64 len) {
 	if (len) {
 		switch ((buf[0] + c) % 94) {
 		case 4: return "jmp [d]";
@@ -21,9 +21,9 @@ static const char *mal_dis(ut64 c, const ut8 *buf, ut64 len) {
 	return NULL;
 }
 
-static int __disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int __disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	const char *opstr = mal_dis (a->pc, buf, len);
-	return op->size = opstr? 1: 0;
+	return op->size = opstr ? 1 : 0;
 }
 
 RAsmPlugin r_asm_plugin_malbolge = {

@@ -4,8 +4,8 @@
 #include <r_list.h>
 
 /* Print out the JSON body for memory maps in the passed map region */
-static void print_debug_map_json(RDebug *dbg, RDebugMap *map, bool prefix_comma) {
-	dbg->cb_printf ("%s{", prefix_comma ? ",": "");
+static void print_debug_map_json (RDebug *dbg, RDebugMap *map, bool prefix_comma) {
+	dbg->cb_printf ("%s{", prefix_comma ? "," : "");
 	if (map->name && *map->name) {
 		char *escaped_name = r_str_escape (map->name);
 		dbg->cb_printf ("\"name\":\"%s\",", escaped_name);
@@ -18,18 +18,18 @@ static void print_debug_map_json(RDebug *dbg, RDebugMap *map, bool prefix_comma)
 	}
 	dbg->cb_printf ("\"addr\":%" PFMT64u ",", map->addr);
 	dbg->cb_printf ("\"addr_end\":%" PFMT64u ",", map->addr_end);
-	dbg->cb_printf ("\"type\":\"%c\",", map->user?'u':'s');
+	dbg->cb_printf ("\"type\":\"%c\",", map->user ? 'u' : 's');
 	dbg->cb_printf ("\"perm\":\"%s\"", r_str_rwx_i (map->perm));
 	dbg->cb_printf ("}");
 }
 
 /* Write the memory map header describing the line columns */
-static void print_debug_map_line_header(RDebug *dbg, const char *input) {
+static void print_debug_map_line_header (RDebug *dbg, const char *input) {
 	// TODO: Write header to console based on which command is being ran
 }
 
 /* Write a single memory map line to the console */
-static void print_debug_map_line(RDebug *dbg, RDebugMap *map, ut64 addr, const char *input) {
+static void print_debug_map_line (RDebug *dbg, RDebugMap *map, ut64 addr, const char *input) {
 	char humansz[8];
 	if (input[0] == 'q') { // "dmq"
 		char *name = (map->name && *map->name)
@@ -42,22 +42,22 @@ static void print_debug_map_line(RDebug *dbg, RDebugMap *map, ut64 addr, const c
 			map->addr_end,
 			humansz,
 			r_str_rwx_i (map->perm),
-			name
-		);
+			name);
 		free (name);
 	} else {
 		const char *fmtstr = dbg->bits & R_SYS_BITS_64
 			? "0x%016" PFMT64x " - 0x%016" PFMT64x " %c %s %6s %c %s %s %s%s%s\n"
 			: "0x%08" PFMT64x " - 0x%08" PFMT64x " %c %s %6s %c %s %s %s%s%s\n";
-		const char *type = map->shared ? "sys": "usr";
+		const char *type = map->shared ? "sys" : "usr";
 		const char *flagname = dbg->corebind.getName
-			? dbg->corebind.getName (dbg->corebind.core, map->addr) : NULL;
+			? dbg->corebind.getName (dbg->corebind.core, map->addr)
+			: NULL;
 		if (!flagname) {
 			flagname = "";
 		} else if (map->name) {
 			char *filtered_name = strdup (map->name);
 			r_name_filter (filtered_name, 0);
-			if (!strncmp (flagname, "map.", 4) && \
+			if (!strncmp (flagname, "map.", 4) &&
 				!strcmp (flagname + 4, filtered_name)) {
 				flagname = "";
 			}
@@ -75,12 +75,11 @@ static void print_debug_map_line(RDebug *dbg, RDebugMap *map, ut64 addr, const c
 			map->name ? map->name : "?",
 			map->file ? map->file : "?",
 			*flagname ? " ; " : "",
-			flagname
-		);
+			flagname);
 	}
 }
 
-R_API void r_debug_map_list(RDebug *dbg, ut64 addr, const char *input) {
+R_API void r_debug_map_list (RDebug *dbg, ut64 addr, const char *input) {
 	int i;
 	bool notfirst = false;
 	RListIter *iter;
@@ -109,16 +108,15 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, const char *input) {
 				notfirst = true;
 				break;
 			case '*': // "dm*"
-				{
-					char *name = (map->name && *map->name)
-						? r_str_newf ("%s.%s", map->name, r_str_rwx_i (map->perm))
-						: r_str_newf ("%08" PFMT64x ".%s", map->addr, r_str_rwx_i (map->perm));
-					r_name_filter (name, 0);
-					dbg->cb_printf ("f map.%s 0x%08" PFMT64x " 0x%08" PFMT64x "\n",
-						name, map->addr_end - map->addr + 1, map->addr);
-					free (name);
-				}
-				break;
+			{
+				char *name = (map->name && *map->name)
+					? r_str_newf ("%s.%s", map->name, r_str_rwx_i (map->perm))
+					: r_str_newf ("%08" PFMT64x ".%s", map->addr, r_str_rwx_i (map->perm));
+				r_name_filter (name, 0);
+				dbg->cb_printf ("f map.%s 0x%08" PFMT64x " 0x%08" PFMT64x "\n",
+					name, map->addr_end - map->addr + 1, map->addr);
+				free (name);
+			} break;
 			case 'q': // "dmq"
 				if (input[1] == '.') { // "dmq."
 					if (addr >= map->addr && addr < map->addr_end) {
@@ -145,9 +143,9 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, const char *input) {
 	}
 }
 
-static int cmp(const void *a, const void *b) {
-	RDebugMap *ma = (RDebugMap*) a;
-	RDebugMap *mb = (RDebugMap*) b;
+static int cmp (const void *a, const void *b) {
+	RDebugMap *ma = (RDebugMap *)a;
+	RDebugMap *mb = (RDebugMap *)b;
 	return ma->addr - mb->addr;
 }
 
@@ -163,7 +161,7 @@ static int cmp(const void *a, const void *b) {
  * Used to determine the min & max addresses of maps and
  * scale the ascii bar to the width of the terminal
  */
-static int findMinMax(RList *maps, ut64 *min, ut64 *max, int skip, int width) {
+static int findMinMax (RList *maps, ut64 *min, ut64 *max, int skip, int width) {
 	RDebugMap *map;
 	RListIter *iter;
 	*min = UT64_MAX;
@@ -183,7 +181,7 @@ static int findMinMax(RList *maps, ut64 *min, ut64 *max, int skip, int width) {
 	return (*max - *min) / width;
 }
 
-static void print_debug_maps_ascii_art(RDebug *dbg, RList *maps, ut64 addr, int colors) {
+static void print_debug_maps_ascii_art (RDebug *dbg, RList *maps, ut64 addr, int colors) {
 	ut64 mul; // The amount of address space a single console column will represent in bar graph
 	ut64 min = -1, max = 0;
 	int width = r_cons_get_size (NULL) - 90;
@@ -228,8 +226,10 @@ static void print_debug_maps_ascii_art(RDebug *dbg, RList *maps, ut64 addr, int 
 				? "map %4.8s %c %s0x%016" PFMT64x "%s |"
 				: "map %4.8s %c %s0x%08" PFMT64x "%s |";
 			dbg->cb_printf (fmtstr, humansz,
-				(addr >= map->addr && \
-				addr < map->addr_end) ? '*' : '-',
+				(addr >= map->addr &&
+					addr < map->addr_end)
+					? '*'
+					: '-',
 				color_prefix, map->addr, color_suffix); // * indicates map is within our current sought offset
 			int col;
 			for (col = 0; col < width; col++) { // Iterate over the available width/columns for bar graph
@@ -242,8 +242,8 @@ static void print_debug_maps_ascii_art(RDebug *dbg, RList *maps, ut64 addr, int 
 				}
 			}
 			fmtstr = dbg->bits & R_SYS_BITS_64 ? // Suffix formatting string (after bar)
-				"| %s0x%016" PFMT64x "%s %s %s\n" :
-				"| %s0x%08" PFMT64x "%s %s %s\n";
+				"| %s0x%016" PFMT64x "%s %s %s\n"
+							   : "| %s0x%08" PFMT64x "%s %s %s\n";
 			dbg->cb_printf (fmtstr, color_prefix, map->addr_end, color_suffix,
 				r_str_rwx_i (map->perm), map->name);
 			last = map->addr;
@@ -251,7 +251,7 @@ static void print_debug_maps_ascii_art(RDebug *dbg, RList *maps, ut64 addr, int 
 	}
 }
 
-R_API void r_debug_map_list_visual(RDebug *dbg, ut64 addr, const char *input, int colors) {
+R_API void r_debug_map_list_visual (RDebug *dbg, ut64 addr, const char *input, int colors) {
 	if (dbg) {
 		int i;
 		for (i = 0; i < 2; i++) { // Iterate over dbg::maps and dbg::maps_user
@@ -274,12 +274,13 @@ R_API void r_debug_map_list_visual(RDebug *dbg, ut64 addr, const char *input, in
 	}
 }
 
-R_API RDebugMap *r_debug_map_new(char *name, ut64 addr, ut64 addr_end, int perm, int user) {
+R_API RDebugMap *r_debug_map_new (char *name, ut64 addr, ut64 addr_end, int perm, int user) {
 	RDebugMap *map;
 	/* range could be 0k on OpenBSD, it's a honeypot */
 	if (!name || addr > addr_end) {
 		eprintf ("r_debug_map_new: error (\
-			%" PFMT64x ">%" PFMT64x ")\n", addr, addr_end);
+			%" PFMT64x ">%" PFMT64x ")\n",
+			addr, addr_end);
 		return NULL;
 	}
 	map = R_NEW0 (RDebugMap);
@@ -289,18 +290,17 @@ R_API RDebugMap *r_debug_map_new(char *name, ut64 addr, ut64 addr_end, int perm,
 	map->name = strdup (name);
 	map->addr = addr;
 	map->addr_end = addr_end;
-	map->size = addr_end-addr;
+	map->size = addr_end - addr;
 	map->perm = perm;
 	map->user = user;
 	return map;
 }
 
-R_API RList *r_debug_modules_list(RDebug *dbg) {
-	return (dbg && dbg->h && dbg->h->modules_get)?
-		dbg->h->modules_get (dbg): NULL;
+R_API RList *r_debug_modules_list (RDebug *dbg) {
+	return (dbg && dbg->h && dbg->h->modules_get) ? dbg->h->modules_get (dbg) : NULL;
 }
 
-R_API bool r_debug_map_sync(RDebug *dbg) {
+R_API bool r_debug_map_sync (RDebug *dbg) {
 	bool ret = false;
 	if (dbg && dbg->h && dbg->h->map_get) {
 		RList *newmaps = dbg->h->map_get (dbg);
@@ -313,7 +313,7 @@ R_API bool r_debug_map_sync(RDebug *dbg) {
 	return ret;
 }
 
-R_API RDebugMap* r_debug_map_alloc(RDebug *dbg, ut64 addr, int size, bool thp) {
+R_API RDebugMap *r_debug_map_alloc (RDebug *dbg, ut64 addr, int size, bool thp) {
 	RDebugMap *map = NULL;
 	if (dbg && dbg->h && dbg->h->map_alloc) {
 		map = dbg->h->map_alloc (dbg, addr, size, thp);
@@ -321,7 +321,7 @@ R_API RDebugMap* r_debug_map_alloc(RDebug *dbg, ut64 addr, int size, bool thp) {
 	return map;
 }
 
-R_API int r_debug_map_dealloc(RDebug *dbg, RDebugMap *map) {
+R_API int r_debug_map_dealloc (RDebug *dbg, RDebugMap *map) {
 	bool ret = false;
 	ut64 addr = map->addr;
 	if (dbg && dbg->h && dbg->h->map_dealloc) {
@@ -332,7 +332,7 @@ R_API int r_debug_map_dealloc(RDebug *dbg, RDebugMap *map) {
 	return (int)ret;
 }
 
-R_API RDebugMap *r_debug_map_get(RDebug *dbg, ut64 addr) {
+R_API RDebugMap *r_debug_map_get (RDebug *dbg, ut64 addr) {
 	RDebugMap *map, *ret = NULL;
 	RListIter *iter;
 	r_list_foreach (dbg->maps, iter, map) {
@@ -344,13 +344,13 @@ R_API RDebugMap *r_debug_map_get(RDebug *dbg, ut64 addr) {
 	return ret;
 }
 
-R_API void r_debug_map_free(RDebugMap *map) {
+R_API void r_debug_map_free (RDebugMap *map) {
 	free (map->name);
 	free (map->file);
 	free (map);
 }
 
-R_API RList *r_debug_map_list_new(void) {
+R_API RList *r_debug_map_list_new (void) {
 	RList *list = r_list_new ();
 	if (!list) {
 		return NULL;

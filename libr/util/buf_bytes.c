@@ -16,13 +16,13 @@ struct buf_bytes_priv {
 	bool is_bufowner;
 };
 
-static inline struct buf_bytes_priv *get_priv_bytes(RBuffer *b) {
+static inline struct buf_bytes_priv *get_priv_bytes (RBuffer *b) {
 	struct buf_bytes_priv *priv = (struct buf_bytes_priv *)b->priv;
 	r_warn_if_fail (priv);
 	return priv;
 }
 
-static bool buf_bytes_init(RBuffer *b, const void *user) {
+static bool buf_bytes_init (RBuffer *b, const void *user) {
 	const struct buf_bytes_user *u = (const struct buf_bytes_user *)user;
 	struct buf_bytes_priv *priv = R_NEW0 (struct buf_bytes_priv);
 	if (!priv) {
@@ -49,7 +49,7 @@ static bool buf_bytes_init(RBuffer *b, const void *user) {
 	return true;
 }
 
-static bool buf_bytes_fini(RBuffer *b) {
+static bool buf_bytes_fini (RBuffer *b) {
 	struct buf_bytes_priv *priv = get_priv_bytes (b);
 	if (priv->is_bufowner) {
 		free (priv->buf);
@@ -58,7 +58,7 @@ static bool buf_bytes_fini(RBuffer *b) {
 	return true;
 }
 
-static bool buf_bytes_resize(RBuffer *b, ut64 newsize) {
+static bool buf_bytes_resize (RBuffer *b, ut64 newsize) {
 	struct buf_bytes_priv *priv = get_priv_bytes (b);
 	if (newsize > priv->length) {
 		ut8 *t = realloc (priv->buf, newsize);
@@ -72,15 +72,15 @@ static bool buf_bytes_resize(RBuffer *b, ut64 newsize) {
 	return true;
 }
 
-static st64 buf_bytes_read(RBuffer *b, ut8 *buf, ut64 len) {
+static st64 buf_bytes_read (RBuffer *b, ut8 *buf, ut64 len) {
 	struct buf_bytes_priv *priv = get_priv_bytes (b);
-	ut64 real_len = priv->length < priv->offset? 0: R_MIN (priv->length - priv->offset, len);
+	ut64 real_len = priv->length < priv->offset ? 0 : R_MIN (priv->length - priv->offset, len);
 	memmove (buf, priv->buf + priv->offset, real_len);
 	priv->offset += real_len;
 	return real_len;
 }
 
-static st64 buf_bytes_write(RBuffer *b, const ut8 *buf, ut64 len) {
+static st64 buf_bytes_write (RBuffer *b, const ut8 *buf, ut64 len) {
 	struct buf_bytes_priv *priv = get_priv_bytes (b);
 	if (priv->offset > priv->length || priv->offset + len >= priv->length) {
 		bool r = r_buf_resize (b, priv->offset + len);
@@ -93,12 +93,12 @@ static st64 buf_bytes_write(RBuffer *b, const ut8 *buf, ut64 len) {
 	return len;
 }
 
-static ut64 buf_bytes_get_size(RBuffer *b) {
+static ut64 buf_bytes_get_size (RBuffer *b) {
 	struct buf_bytes_priv *priv = get_priv_bytes (b);
 	return priv->length;
 }
 
-static st64 buf_bytes_seek(RBuffer *b, st64 addr, int whence) {
+static st64 buf_bytes_seek (RBuffer *b, st64 addr, int whence) {
 	struct buf_bytes_priv *priv = get_priv_bytes (b);
 	if (addr < 0 && (-addr) > (st64)priv->offset) {
 		return -1;
@@ -121,7 +121,7 @@ static st64 buf_bytes_seek(RBuffer *b, st64 addr, int whence) {
 	return priv->offset;
 }
 
-static ut8 *buf_bytes_get_whole_buf(RBuffer *b, ut64 *sz) {
+static ut8 *buf_bytes_get_whole_buf (RBuffer *b, ut64 *sz) {
 	struct buf_bytes_priv *priv = get_priv_bytes (b);
 	if (sz) {
 		*sz = priv->length;

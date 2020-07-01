@@ -11,6 +11,6 @@
 /// \return Returns OK if initialization has been finish with success, else one
 ///			of next errors: eDemanglerErrUnsupportedMangling, ...
 ///////////////////////////////////////////////////////////////////////////////
-EDemanglerErr microsoft_demangle(SDemangler *demangler, char **demangled_name);
+EDemanglerErr microsoft_demangle (SDemangler *demangler, char **demangled_name);
 
 #endif // MICROSOFT_DEMANGLE_H

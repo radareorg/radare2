@@ -4,7 +4,7 @@
 
 #define PROMPT_PATH_BUFSIZE 1024
 
-static bool handlePipes(RFS *fs, char *msg, const ut8 *data, const char *cwd) {
+static bool handlePipes (RFS *fs, char *msg, const ut8 *data, const char *cwd) {
 	char *red = strchr (msg, '>');
 	if (!red) {
 		return false;
@@ -23,23 +23,23 @@ static bool handlePipes(RFS *fs, char *msg, const ut8 *data, const char *cwd) {
 		free (red);
 		return true;
 	}
-	r_fs_write (fs, f, 0, data ? data : (ut8*)msg, strlen (data ? (char*)data : msg));
+	r_fs_write (fs, f, 0, data ? data : (ut8 *)msg, strlen (data ? (char *)data : msg));
 	free (red);
 	r_fs_close (fs, f);
 	r_fs_file_free (f);
 	return true;
 }
 
-R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
+R_API int r_fs_shell_prompt (RFSShell *shell, RFS *fs, const char *root) {
 	char buf[PROMPT_PATH_BUFSIZE];
 	char path[PROMPT_PATH_BUFSIZE];
 	char prompt[PROMPT_PATH_BUFSIZE];
 	char str[2048];
-	char* input;
-	const char* ptr;
-	RList* list = NULL;
-	RListIter* iter;
-	RFSFile* file = NULL;
+	char *input;
+	const char *ptr;
+	RList *list = NULL;
+	RListIter *iter;
+	RFSFile *file = NULL;
 
 	if (root && *root) {
 		strncpy (buf, root, sizeof (buf) - 1);
@@ -153,7 +153,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				}
 				// TODO: adjust contents between //
 				if (!strcmp (me, base)) {
-					cb_printf ("m %s\n", (r->path && r->path[0]) ? r->path + 1: "");
+					cb_printf ("m %s\n", (r->path && r->path[0]) ? r->path + 1 : "");
 				}
 				free (base);
 			}
@@ -168,9 +168,9 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				input++;
 			}
 			if (!strcmp (input, "..")) {
-				char* p = (char*) r_str_lchr (path, '/');
+				char *p = (char *)r_str_lchr (path, '/');
 				if (p) {
-					p[(p == path)? 1: 0] = 0;
+					p[(p == path) ? 1 : 0] = 0;
 				}
 			} else {
 				strcat (path, "/");
@@ -212,7 +212,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			} else {
 				strncpy (str, path, sizeof (str) - 1);
 			}
-			strncat (str, "/",   sizeof (str) - strlen (str) - 1);
+			strncat (str, "/", sizeof (str) - strlen (str) - 1);
 			strncat (str, input, sizeof (str) - strlen (str) - 1);
 			char *p = strchr (str, '>');
 			if (p) {
@@ -235,12 +235,12 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				eprintf ("Cannot open file\n");
 			}
 		} else if (!memcmp (buf, "mount", 5)) {
-			RFSRoot* r;
+			RFSRoot *r;
 			r_list_foreach (fs->roots, iter, r) {
 				cb_printf ("%s %s\n", r->path, r->p->name);
 			}
 		} else if (!memcmp (buf, "get ", 4)) {
-			char* s = 0;
+			char *s = 0;
 			input = buf + 3;
 			while (input[0] == ' ') {
 				input++;
@@ -309,4 +309,3 @@ beach:
 	r_list_free (list);
 	return true;
 }
-

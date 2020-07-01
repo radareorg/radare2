@@ -11,14 +11,14 @@
 #include "utils.h"
 #include "r_util/r_str.h"
 
-static int _server_handle_qSupported(libgdbr_t *g) {
+static int _server_handle_qSupported (libgdbr_t *g) {
 	int ret;
 	char *buf;
 	if (!(buf = malloc (128))) {
 		return -1;
 	}
 	snprintf (buf, 127, "PacketSize=%x;QStartNoAckMode+;qXfer:exec-file:read+",
-		  (ut32) (g->read_max - 1));
+		(ut32) (g->read_max - 1));
 	if ((ret = handle_qSupported (g)) < 0) {
 		free (buf);
 		return -1;
@@ -28,7 +28,7 @@ static int _server_handle_qSupported(libgdbr_t *g) {
 	return ret;
 }
 
-static int _server_handle_qTStatus(libgdbr_t *g) {
+static int _server_handle_qTStatus (libgdbr_t *g) {
 	int ret;
 	// TODO Handle proper reporting of trace status
 	const char *message = "";
@@ -38,7 +38,7 @@ static int _server_handle_qTStatus(libgdbr_t *g) {
 	return send_msg (g, message);
 }
 
-static int _server_handle_qOffsets(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+static int _server_handle_qOffsets (libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	char buf[64], *ptr;
 	ptr = buf + sprintf (buf, "TextSeg=");
 	if (send_ack (g) < 0) {
@@ -51,8 +51,8 @@ static int _server_handle_qOffsets(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void
 	return send_msg (g, buf);
 }
 
-static int _server_handle_exec_file_read(libgdbr_t *g, gdbr_server_cmd_cb cb,
-					 void *core_ptr) {
+static int _server_handle_exec_file_read (libgdbr_t *g, gdbr_server_cmd_cb cb,
+	void *core_ptr) {
 	char *buf, *ptr, cmd[64] = { 0 };
 	size_t buflen = 512;
 	int ret;
@@ -62,7 +62,7 @@ static int _server_handle_exec_file_read(libgdbr_t *g, gdbr_server_cmd_cb cb,
 	ptr = g->data + strlen ("qXfer:exec-file:read:");
 	if (*ptr != ':') {
 		int pid;
-		if ((pid = (int) strtol (ptr, NULL, 16)) <= 0 || pid != g->pid) {
+		if ((pid = (int)strtol (ptr, NULL, 16)) <= 0 || pid != g->pid) {
 			return send_msg (g, "E00");
 		}
 	}
@@ -84,14 +84,14 @@ static int _server_handle_exec_file_read(libgdbr_t *g, gdbr_server_cmd_cb cb,
 	return ret;
 }
 
-static int _server_handle_M(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+static int _server_handle_M (libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	if (send_ack (g) < 0) {
 		return -1;
 	}
 	char *memstr, *buf;
 	ut64 memlen, memlen2, addr;
 	g->data[g->data_len] = '\0';
-	if (sscanf (g->data + 1, "%"PFMT64x",%"PFMT64x, &addr, &memlen) != 2) {
+	if (sscanf (g->data + 1, "%" PFMT64x ",%" PFMT64x, &addr, &memlen) != 2) {
 		return send_msg (g, "E01");
 	}
 	memlen2 = memlen * 2;
@@ -104,7 +104,7 @@ static int _server_handle_M(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 	if (!(buf = malloc (memlen2 + 64))) {
 		return send_msg (g, "E01");
 	}
-	snprintf (buf, memlen2 + 63, "wx 0x%s @ 0x%"PFMT64x, memstr, addr);
+	snprintf (buf, memlen2 + 63, "wx 0x%s @ 0x%" PFMT64x, memstr, addr);
 	buf[memlen2 + 63] = '\0';
 	eprintf ("buf: %s\n", buf);
 	if (cmd_cb (g, core_ptr, buf, NULL, 0) < 0) {
@@ -115,7 +115,7 @@ static int _server_handle_M(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 	return send_msg (g, "OK");
 }
 
-static int _server_handle_s(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+static int _server_handle_s (libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	char message[64];
 	if (send_ack (g) < 0) {
 		return -1;
@@ -135,7 +135,7 @@ static int _server_handle_s(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 	return send_msg (g, message);
 }
 
-static int _server_handle_c(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+static int _server_handle_c (libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	char message[64];
 	if (send_ack (g) < 0) {
 		return -1;
@@ -155,7 +155,7 @@ static int _server_handle_c(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 	return send_msg (g, message);
 }
 
-static int _server_handle_ques(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+static int _server_handle_ques (libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	char message[64] = { 0 };
 	if (send_ack (g) < 0) {
 		return -1;
@@ -167,7 +167,7 @@ static int _server_handle_ques(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *co
 	return send_msg (g, message);
 }
 
-static int _server_handle_qC(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+static int _server_handle_qC (libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	char *buf;
 	int ret;
 	size_t buf_len = 80;
@@ -186,12 +186,12 @@ static int _server_handle_qC(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core
 	return ret;
 }
 
-static int _server_handle_k(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+static int _server_handle_k (libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	send_ack (g);
 	return -1;
 }
 
-static int _server_handle_vKill(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+static int _server_handle_vKill (libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	if (send_ack (g) < 0) {
 		return -1;
 	}
@@ -200,7 +200,7 @@ static int _server_handle_vKill(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *c
 	return -1;
 }
 
-static int _server_handle_z(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+static int _server_handle_z (libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	if (send_ack (g) < 0) {
 		return -1;
 	}
@@ -208,7 +208,7 @@ static int _server_handle_z(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 	int type;
 	ut64 addr;
 	char cmd[64];
-	sscanf (g->data, "%c%d,%"PFMT64x, &set, &type, &addr);
+	sscanf (g->data, "%c%d,%" PFMT64x, &set, &type, &addr);
 	if (type != 0) {
 		// TODO handle hw breakpoints and watchpoints
 		return send_msg (g, "E01");
@@ -216,11 +216,11 @@ static int _server_handle_z(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 	switch (set) {
 	case 'Z':
 		// Set
-		snprintf (cmd, sizeof (cmd) - 1, "db 0x%"PFMT64x, addr);
+		snprintf (cmd, sizeof (cmd) - 1, "db 0x%" PFMT64x, addr);
 		break;
 	case 'z':
 		// Remove
-		snprintf (cmd, sizeof (cmd) - 1, "db- 0x%"PFMT64x, addr);
+		snprintf (cmd, sizeof (cmd) - 1, "db- 0x%" PFMT64x, addr);
 		break;
 	default:
 		return send_msg (g, "E01");
@@ -232,7 +232,7 @@ static int _server_handle_z(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 	return send_msg (g, "OK");
 }
 
-static int _server_handle_vCont(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+static int _server_handle_vCont (libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	char *action = NULL;
 	if (send_ack (g) < 0) {
 		return -1;
@@ -270,7 +270,7 @@ static int _server_handle_vCont(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *c
 	return -1;
 }
 
-static int _server_handle_qAttached(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+static int _server_handle_qAttached (libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	if (send_ack (g) < 0) {
 		return -1;
 	}
@@ -282,7 +282,7 @@ static int _server_handle_qAttached(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, voi
 // TODO, proper handling of Hg and Hc (right now handled identically)
 
 // Set thread for all operations other than "step" and "continue"
-static int _server_handle_Hg(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+static int _server_handle_Hg (libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	// We don't yet support multiprocess. Client is not supposed to send Hgp. If we receive it anyway,
 	// send error
 	char cmd[32];
@@ -308,7 +308,7 @@ static int _server_handle_Hg(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core
 }
 
 // Set thread for "step" and "continue"
-static int _server_handle_Hc(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+static int _server_handle_Hc (libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	// Usually this is only sent with Hc-1. Still. Set the threads for next operations
 	char cmd[32];
 	int tid;
@@ -332,7 +332,7 @@ static int _server_handle_Hc(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core
 	return send_msg (g, "OK");
 }
 
-static int _server_handle_qfThreadInfo(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+static int _server_handle_qfThreadInfo (libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	char *buf;
 	int ret;
 	size_t buf_len = g->stub_features.pkt_sz;
@@ -351,7 +351,7 @@ static int _server_handle_qfThreadInfo(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, 
 	return ret;
 }
 
-static int _server_handle_qsThreadInfo(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+static int _server_handle_qsThreadInfo (libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	// TODO handle overflow from qfThreadInfo. Otherwise this won't work with programs with many threads
 	if (send_ack (g) < 0 || send_msg (g, "l") < 0) {
 		return -1;
@@ -359,7 +359,7 @@ static int _server_handle_qsThreadInfo(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, 
 	return 0;
 }
 
-static int _server_handle_g(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+static int _server_handle_g (libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	char *buf;
 	// To be very safe
 	int buf_len = 4096;
@@ -382,7 +382,7 @@ static int _server_handle_g(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 	return ret;
 }
 
-static int _server_handle_m(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+static int _server_handle_m (libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	ut64 addr;
 	int length;
 	char *cmd, *buf;
@@ -390,7 +390,7 @@ static int _server_handle_m(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 		return -1;
 	}
 	g->data[g->data_len] = 0;
-	sscanf (g->data, "m%"PFMT64x, &addr);
+	sscanf (g->data, "m%" PFMT64x, &addr);
 	if (!(cmd = strdup (g->data))) {
 		send_msg (g, "E01");
 		return -1;
@@ -400,8 +400,7 @@ static int _server_handle_m(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 		send_msg (g, "E01");
 		return -1;
 	}
-	if ((length = cmd_cb (g, core_ptr, cmd, buf, (g->data_max / 2) - 1)) < 0
-	    || length >= g->data_max / 2) {
+	if ((length = cmd_cb (g, core_ptr, cmd, buf, (g->data_max / 2) - 1)) < 0 || length >= g->data_max / 2) {
 		free (cmd);
 		free (buf);
 		return send_msg (g, "E01");
@@ -414,7 +413,7 @@ static int _server_handle_m(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 }
 
 // Read register number
-static int _server_handle_p(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+static int _server_handle_p (libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	char message[128] = { 0 }, cmd[128] = { 0 };
 	int regnum, i;
 	if (send_ack (g) < 0) {
@@ -442,7 +441,7 @@ static int _server_handle_p(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 }
 
 // Write register number
-static int _server_handle_P(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+static int _server_handle_P (libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	char *ptr, *cmd;
 	int regnum, len, i;
 	if (send_ack (g) < 0) {
@@ -476,14 +475,14 @@ static int _server_handle_P(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 	return send_msg (g, "OK");
 }
 
-static int _server_handle_vMustReplyEmpty(libgdbr_t *g) {
+static int _server_handle_vMustReplyEmpty (libgdbr_t *g) {
 	if (send_ack (g) < 0) {
 		return -1;
 	}
 	return send_msg (g, "");
 }
 
-static int _server_handle_qTfV(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+static int _server_handle_qTfV (libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	// TODO
 	if (send_ack (g) < 0) {
 		return -1;
@@ -491,7 +490,7 @@ static int _server_handle_qTfV(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *co
 	return send_msg (g, "");
 }
 
-int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+int gdbr_server_serve (libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	int ret;
 	if (!g) {
 		return -1;
@@ -636,7 +635,7 @@ int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 			continue;
 		}
 		if (r_str_startswith (g->data, "qXfer:exec-file:read:")) {
-			if ((ret = _server_handle_exec_file_read (g, cmd_cb, core_ptr)) < 0 ) {
+			if ((ret = _server_handle_exec_file_read (g, cmd_cb, core_ptr)) < 0) {
 				return ret;
 			}
 			continue;

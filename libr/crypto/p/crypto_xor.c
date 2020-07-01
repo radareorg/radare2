@@ -12,7 +12,7 @@ struct xor_state {
 
 static struct xor_state st;
 
-static bool xor_init(struct xor_state *const state, const ut8 *key, int keylen) {
+static bool xor_init (struct xor_state *const state, const ut8 *key, int keylen) {
 	if (!state || !key || keylen < 1) { // || keylen > MAX_xor_KEY_SIZE) {
 		return false;
 	}
@@ -26,25 +26,25 @@ static bool xor_init(struct xor_state *const state, const ut8 *key, int keylen) 
  * Encrypt/Decrypt xor state buffer using the supplied key
  */
 
-static void xor_crypt(struct xor_state *const state, const ut8 *inbuf, ut8 *outbuf, int buflen) {
-	int i;//index for input
+static void xor_crypt (struct xor_state *const state, const ut8 *inbuf, ut8 *outbuf, int buflen) {
+	int i; //index for input
 	for (i = 0; i < buflen; i++) {
-		outbuf[i] = inbuf[i] ^ state->key[(i%state->key_size)];
+		outbuf[i] = inbuf[i] ^ state->key[(i % state->key_size)];
 	}
 }
-static bool xor_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+static bool xor_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	return xor_init (&st, key, keylen);
 }
 
-static int xor_get_key_size(RCrypto *cry) {
+static int xor_get_key_size (RCrypto *cry) {
 	return st.key_size;
 }
 
-static bool xor_use(const char *algo) {
+static bool xor_use (const char *algo) {
 	return !strcmp (algo, "xor");
 }
 
-static bool update(RCrypto *cry, const ut8 *buf, int len) {
+static bool update (RCrypto *cry, const ut8 *buf, int len) {
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) {
 		return false;
@@ -55,7 +55,7 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	return true;
 }
 
-static bool final(RCrypto *cry, const ut8 *buf, int len) {
+static bool final (RCrypto *cry, const ut8 *buf, int len) {
 	return update (cry, buf, len);
 }
 

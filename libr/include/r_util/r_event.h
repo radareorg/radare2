@@ -23,7 +23,7 @@ typedef struct r_event_callback_handle_t {
 	int type;
 } REventCallbackHandle;
 
-typedef void (*REventCallback)(REvent *ev, int type, void *user, void *data);
+typedef void (*REventCallback) (REvent *ev, int type, void *user, void *data);
 
 typedef enum {
 	R_EVENT_ALL = 0,
@@ -75,11 +75,11 @@ typedef struct r_event_debug_process_finished_t {
 	int pid;
 } REventDebugProcessFinished;
 
-R_API REvent *r_event_new(void *user);
-R_API void r_event_free(REvent *ev);
-R_API REventCallbackHandle r_event_hook(REvent *ev, int type, REventCallback cb, void *user);
-R_API void r_event_unhook(REvent *ev, REventCallbackHandle handle);
-R_API void r_event_send(REvent *ev, int type, void *data);
+R_API REvent *r_event_new (void *user);
+R_API void r_event_free (REvent *ev);
+R_API REventCallbackHandle r_event_hook (REvent *ev, int type, REventCallback cb, void *user);
+R_API void r_event_unhook (REvent *ev, REventCallbackHandle handle);
+R_API void r_event_send (REvent *ev, int type, void *data);
 
 #ifdef __cplusplus
 }

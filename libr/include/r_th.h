@@ -45,8 +45,10 @@
 #error Threading library only supported for pthread and w32
 #endif
 
-typedef enum { R_TH_FREED = -1, R_TH_STOP = 0, R_TH_REPEAT = 1 } RThreadFunctionRet;
-#define R_TH_FUNCTION(x) RThreadFunctionRet (*x)(struct r_th_t *)
+typedef enum { R_TH_FREED = -1,
+	R_TH_STOP = 0,
+	R_TH_REPEAT = 1 } RThreadFunctionRet;
+#define R_TH_FUNCTION(x) RThreadFunctionRet (*x) (struct r_th_t *)
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,12 +69,12 @@ typedef struct r_th_cond_t {
 typedef struct r_th_t {
 	R_TH_TID tid;
 	RThreadLock *lock;
-	R_TH_FUNCTION(fun);
-	void *user;    // user pointer
+	R_TH_FUNCTION (fun);
+	void *user; // user pointer
 	int running;
-	int breaked;   // thread aims to be interrupted
-	int delay;     // delay the startup of the thread N seconds
-	int ready;     // thread is properly setup
+	int breaked; // thread aims to be interrupted
+	int delay; // delay the startup of the thread N seconds
+	int ready; // thread is properly setup
 } RThread;
 
 typedef struct r_th_pool_t {
@@ -81,36 +83,36 @@ typedef struct r_th_pool_t {
 } RThreadPool;
 
 #ifdef R_API
-R_API RThread *r_th_new(R_TH_FUNCTION(fun), void *user, int delay);
-R_API bool r_th_start(RThread *th, int enable);
-R_API int r_th_wait(RThread *th);
-R_API int r_th_wait_async(RThread *th);
-R_API void r_th_break(RThread *th);
-R_API void *r_th_free(RThread *th);
-R_API void *r_th_kill_free(RThread *th);
-R_API bool r_th_kill(RThread *th, bool force);
-R_API R_TH_TID r_th_self(void);
-R_API bool r_th_setname(RThread *th, const char *name);
-R_API bool r_th_getname(RThread *th, char *name, size_t len);
-R_API bool r_th_setaffinity(RThread *th, int cpuid);
+R_API RThread *r_th_new (R_TH_FUNCTION (fun), void *user, int delay);
+R_API bool r_th_start (RThread *th, int enable);
+R_API int r_th_wait (RThread *th);
+R_API int r_th_wait_async (RThread *th);
+R_API void r_th_break (RThread *th);
+R_API void *r_th_free (RThread *th);
+R_API void *r_th_kill_free (RThread *th);
+R_API bool r_th_kill (RThread *th, bool force);
+R_API R_TH_TID r_th_self (void);
+R_API bool r_th_setname (RThread *th, const char *name);
+R_API bool r_th_getname (RThread *th, char *name, size_t len);
+R_API bool r_th_setaffinity (RThread *th, int cpuid);
 
-R_API RThreadSemaphore *r_th_sem_new(unsigned int initial);
-R_API void r_th_sem_free(RThreadSemaphore *sem);
-R_API void r_th_sem_post(RThreadSemaphore *sem);
-R_API void r_th_sem_wait(RThreadSemaphore *sem);
+R_API RThreadSemaphore *r_th_sem_new (unsigned int initial);
+R_API void r_th_sem_free (RThreadSemaphore *sem);
+R_API void r_th_sem_post (RThreadSemaphore *sem);
+R_API void r_th_sem_wait (RThreadSemaphore *sem);
 
-R_API RThreadLock *r_th_lock_new(bool recursive);
-R_API int r_th_lock_wait(RThreadLock *th);
-R_API int r_th_lock_tryenter(RThreadLock *thl);
-R_API int r_th_lock_enter(RThreadLock *thl);
-R_API int r_th_lock_leave(RThreadLock *thl);
-R_API void *r_th_lock_free(RThreadLock *thl);
+R_API RThreadLock *r_th_lock_new (bool recursive);
+R_API int r_th_lock_wait (RThreadLock *th);
+R_API int r_th_lock_tryenter (RThreadLock *thl);
+R_API int r_th_lock_enter (RThreadLock *thl);
+R_API int r_th_lock_leave (RThreadLock *thl);
+R_API void *r_th_lock_free (RThreadLock *thl);
 
-R_API RThreadCond *r_th_cond_new(void);
-R_API void r_th_cond_signal(RThreadCond *cond);
-R_API void r_th_cond_signal_all(RThreadCond *cond);
-R_API void r_th_cond_wait(RThreadCond *cond, RThreadLock *lock);
-R_API void r_th_cond_free(RThreadCond *cond);
+R_API RThreadCond *r_th_cond_new (void);
+R_API void r_th_cond_signal (RThreadCond *cond);
+R_API void r_th_cond_signal_all (RThreadCond *cond);
+R_API void r_th_cond_wait (RThreadCond *cond, RThreadLock *lock);
+R_API void r_th_cond_free (RThreadCond *cond);
 
 #endif
 

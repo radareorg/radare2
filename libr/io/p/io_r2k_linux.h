@@ -11,7 +11,7 @@
 #include <sys/mman.h>
 #include <errno.h>
 
-#define MAX_PHYS_ADDR   128
+#define MAX_PHYS_ADDR 128
 
 /*
  * Backend Id (be_id):
@@ -80,15 +80,15 @@ struct r2k_proc_info {
 
 #define R2_TYPE 0x69
 
-#define READ_KERNEL_MEMORY  0x1
+#define READ_KERNEL_MEMORY 0x1
 #define WRITE_KERNEL_MEMORY 0x2
-#define READ_PROCESS_ADDR   0x3
-#define WRITE_PROCESS_ADDR  0X4
-#define READ_PHYSICAL_ADDR  0x5
+#define READ_PROCESS_ADDR 0x3
+#define WRITE_PROCESS_ADDR 0X4
+#define READ_PHYSICAL_ADDR 0x5
 #define WRITE_PHYSICAL_ADDR 0x6
-#define GET_KERNEL_MAP      0x7
-#define READ_CONTROL_REG    0x8
-#define PRINT_PROC_INFO     0x9
+#define GET_KERNEL_MAP 0x7
+#define READ_CONTROL_REG 0x8
+#define PRINT_PROC_INFO 0x9
 
 #ifdef _IOC_TYPECHECK
 #define r2k_data_size struct r2k_data
@@ -102,15 +102,15 @@ struct r2k_proc_info {
 #define r2k_proc_info_size sizeof (struct r2k_proc_info)
 #endif
 
-#define IOCTL_READ_KERNEL_MEMORY  _IOR (R2_TYPE, READ_KERNEL_MEMORY, r2k_data_size)
+#define IOCTL_READ_KERNEL_MEMORY _IOR (R2_TYPE, READ_KERNEL_MEMORY, r2k_data_size)
 #define IOCTL_WRITE_KERNEL_MEMORY _IOR (R2_TYPE, WRITE_KERNEL_MEMORY, r2k_data_size)
-#define IOCTL_READ_PROCESS_ADDR   _IOR (R2_TYPE, READ_PROCESS_ADDR, r2k_data_size)
-#define IOCTL_WRITE_PROCESS_ADDR  _IOR (R2_TYPE, WRITE_PROCESS_ADDR, r2k_data_size)
-#define IOCTL_READ_PHYSICAL_ADDR  _IOR (R2_TYPE, READ_PHYSICAL_ADDR, r2k_data_size)
+#define IOCTL_READ_PROCESS_ADDR _IOR (R2_TYPE, READ_PROCESS_ADDR, r2k_data_size)
+#define IOCTL_WRITE_PROCESS_ADDR _IOR (R2_TYPE, WRITE_PROCESS_ADDR, r2k_data_size)
+#define IOCTL_READ_PHYSICAL_ADDR _IOR (R2_TYPE, READ_PHYSICAL_ADDR, r2k_data_size)
 #define IOCTL_WRITE_PHYSICAL_ADDR _IOR (R2_TYPE, WRITE_PHYSICAL_ADDR, r2k_data_size)
-#define IOCTL_GET_KERNEL_MAP      _IOR (R2_TYPE, GET_KERNEL_MAP, r2k_kernel_maps_size)
-#define IOCTL_READ_CONTROL_REG    _IOR (R2_TYPE, READ_CONTROL_REG, r2k_control_reg_size)
-#define IOCTL_PRINT_PROC_INFO     _IOR (R2_TYPE, PRINT_PROC_INFO, r2k_data_size) // Bad hack. Incorrect size, but since module does not use _IOC_SIZE, it won't matter if size parameter is wrong
+#define IOCTL_GET_KERNEL_MAP _IOR (R2_TYPE, GET_KERNEL_MAP, r2k_kernel_maps_size)
+#define IOCTL_READ_CONTROL_REG _IOR (R2_TYPE, READ_CONTROL_REG, r2k_control_reg_size)
+#define IOCTL_PRINT_PROC_INFO _IOR (R2_TYPE, PRINT_PROC_INFO, r2k_data_size) // Bad hack. Incorrect size, but since module does not use _IOC_SIZE, it won't matter if size parameter is wrong
 
 #define VM_READ 0x1
 #define VM_WRITE 0x2
@@ -121,6 +121,6 @@ extern struct io_r2k_linux r2k_struct;
 
 int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t address, ut8 *buf, int len);
 int WriteMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, ut64 address, const ut8 *buf, int len);
-int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf);
+int run_ioctl_command (RIO *io, RIODesc *iodesc, const char *buf);
 
 #endif

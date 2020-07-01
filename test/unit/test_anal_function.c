@@ -3,19 +3,19 @@
 
 #include "test_anal_block_invars.inl"
 
-bool ht_up_count(void *user, const ut64 k, const void *v) {
+bool ht_up_count (void *user, const ut64 k, const void *v) {
 	size_t *count = user;
 	(*count)++;
 	return true;
 }
 
-bool ht_pp_count(void *user, const void *k, const void *v) {
+bool ht_pp_count (void *user, const void *k, const void *v) {
 	size_t *count = user;
 	(*count)++;
 	return true;
 }
 
-static bool function_check_invariants(RAnal *anal) {
+static bool function_check_invariants (RAnal *anal) {
 	if (!block_check_invariants (anal)) {
 		return false;
 	}
@@ -41,10 +41,20 @@ static bool function_check_invariants(RAnal *anal) {
 #define check_invariants function_check_invariants
 #define check_leaks block_check_leaks
 
-#define assert_invariants(anal) do { if (!check_invariants (anal)) { return false; } } while (0)
-#define assert_leaks(anal) do { if (!check_leaks (anal)) { return false; } } while (0)
+#define assert_invariants(anal)                 \
+	do {                                    \
+		if (!check_invariants (anal)) { \
+			return false;           \
+		}                               \
+	} while (0)
+#define assert_leaks(anal)                 \
+	do {                               \
+		if (!check_leaks (anal)) { \
+			return false;      \
+		}                          \
+	} while (0)
 
-bool test_r_anal_function_relocate() {
+bool test_r_anal_function_relocate () {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
 
@@ -70,12 +80,11 @@ bool test_r_anal_function_relocate() {
 	mu_end;
 }
 
-
-int all_tests() {
+int all_tests () {
 	mu_run_test (test_r_anal_function_relocate);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
+int main (int argc, char **argv) {
+	return all_tests ();
 }

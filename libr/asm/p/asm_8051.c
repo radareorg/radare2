@@ -11,7 +11,7 @@
 #include <8051_ass.h>
 #include "../arch/8051/8051_disas.c"
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int dlen = 0;
 	char *s = r_8051_disas (a->pc, buf, len, &dlen);
 	if (dlen < 0) {

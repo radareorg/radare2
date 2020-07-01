@@ -50,11 +50,11 @@ static struct {
 	{ NULL }
 };
 
-R_API void r_debug_signal_init(RDebug *dbg) {
+R_API void r_debug_signal_init (RDebug *dbg) {
 	int i;
 	// XXX
 	DB = sdb_new (NULL, "signals", 0);
-	for (i=0; signals[i].k; i++) {
+	for (i = 0; signals[i].k; i++) {
 		sdb_set (DB, signals[i].k, signals[i].v, 0);
 		sdb_set (DB, signals[i].v, signals[i].k, 0);
 	}
@@ -89,7 +89,7 @@ static bool siglistjsoncb (void *p, const char *k, const char *v) {
 	static char key[32] = "cfg.";
 	RDebug *dbg = (RDebug *)p;
 	int opt;
-	if (atoi (k)>0) {
+	if (atoi (k) > 0) {
 		strncpy (key + 4, k, 20);
 		opt = (int)sdb_num_get (DB, key, 0);
 		if (dbg->_mode == 2) {
@@ -110,7 +110,7 @@ static bool siglistjsoncb (void *p, const char *k, const char *v) {
 	return true;
 }
 
-R_API void r_debug_signal_list(RDebug *dbg, int mode) {
+R_API void r_debug_signal_list (RDebug *dbg, int mode) {
 	dbg->_mode = mode;
 	switch (mode) {
 	case 0:
@@ -121,41 +121,41 @@ R_API void r_debug_signal_list(RDebug *dbg, int mode) {
 		r_cons_strcat ("[");
 		sdb_foreach (DB, siglistjsoncb, dbg);
 		r_cons_strcat ("]");
-		r_cons_newline();
+		r_cons_newline ();
 		break;
 	}
 	dbg->_mode = 0;
 }
 
-R_API int r_debug_signal_send(RDebug *dbg, int num) {
+R_API int r_debug_signal_send (RDebug *dbg, int num) {
 	return r_sandbox_kill (dbg->pid, num);
 }
 
-R_API void r_debug_signal_setup(RDebug *dbg, int num, int opt) {
+R_API void r_debug_signal_setup (RDebug *dbg, int num, int opt) {
 	sdb_queryf (DB, "cfg.%d=%d", num, opt);
 }
 
-R_API int r_debug_signal_what(RDebug *dbg, int num) {
+R_API int r_debug_signal_what (RDebug *dbg, int num) {
 	char k[32];
 	snprintf (k, sizeof (k), "cfg.%d", num);
 	return sdb_num_get (DB, k, 0);
 }
 
-R_API int r_debug_signal_set(RDebug *dbg, int num, ut64 addr) {
+R_API int r_debug_signal_set (RDebug *dbg, int num, ut64 addr) {
 	// TODO
 	// r_debug_syscall (dbg, "signal", "addr");
 	return 0;
 }
 
 /* TODO rename to _kill_ -> _signal_ */
-R_API RList *r_debug_kill_list(RDebug *dbg) {
+R_API RList *r_debug_kill_list (RDebug *dbg) {
 	if (dbg->h->kill_list) {
 		return dbg->h->kill_list (dbg);
 	}
 	return NULL;
 }
 
-R_API int r_debug_kill_setup(RDebug *dbg, int sig, int action) {
+R_API int r_debug_kill_setup (RDebug *dbg, int sig, int action) {
 	eprintf ("TODO: set signal handlers of child\n");
 	// TODO: must inject code to call signal()
 #if 0

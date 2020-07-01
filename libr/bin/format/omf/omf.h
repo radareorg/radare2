@@ -17,15 +17,15 @@ typedef struct {
 	void *elems;
 } OMF_multi_datas;
 
-typedef struct OMF_DATA{
+typedef struct OMF_DATA {
 	ut64 paddr; // offset in file
 	ut64 size;
 	ut32 offset;
 	ut16 seg_idx;
-	struct OMF_DATA	*next;
+	struct OMF_DATA *next;
 } OMF_data;
 
-// sections return by the plugin are the addr of datas because sections are 
+// sections return by the plugin are the addr of datas because sections are
 // separate on non contiguous block on the omf file
 typedef struct {
 	ut32 name_idx;
@@ -56,13 +56,13 @@ typedef struct {
 // if someone want to implement rellocation for omf he has to remove this
 #define OMF_BASE_ADDR 0x1000
 
-bool r_bin_checksum_omf_ok(const ut8 *buf, ut64 buf_size);
-r_bin_omf_obj *r_bin_internal_omf_load(const ut8 *buf, ut64 size);
-void r_bin_free_all_omf_obj(r_bin_omf_obj *obj);
-bool r_bin_omf_get_entry(r_bin_omf_obj *obj, RBinAddr *addr);
-int r_bin_omf_get_bits(r_bin_omf_obj *obj);
-int r_bin_omf_send_sections(RList *list, OMF_segment *section, r_bin_omf_obj *obj);
-ut64 r_bin_omf_get_paddr_sym(r_bin_omf_obj *obj, OMF_symbol *sym);
-ut64 r_bin_omf_get_vaddr_sym(r_bin_omf_obj *obj, OMF_symbol *sym);
+bool r_bin_checksum_omf_ok (const ut8 *buf, ut64 buf_size);
+r_bin_omf_obj *r_bin_internal_omf_load (const ut8 *buf, ut64 size);
+void r_bin_free_all_omf_obj (r_bin_omf_obj *obj);
+bool r_bin_omf_get_entry (r_bin_omf_obj *obj, RBinAddr *addr);
+int r_bin_omf_get_bits (r_bin_omf_obj *obj);
+int r_bin_omf_send_sections (RList *list, OMF_segment *section, r_bin_omf_obj *obj);
+ut64 r_bin_omf_get_paddr_sym (r_bin_omf_obj *obj, OMF_symbol *sym);
+ut64 r_bin_omf_get_vaddr_sym (r_bin_omf_obj *obj, OMF_symbol *sym);
 
 #endif

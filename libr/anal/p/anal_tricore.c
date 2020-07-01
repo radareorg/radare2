@@ -5,7 +5,7 @@
 #include <r_anal.h>
 //#include "../../asm/arch/tricore/gnu/tricore-opc.c"
 
-static bool set_reg_profile(RAnal *anal) {
+static bool set_reg_profile (RAnal *anal) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	a10\n"

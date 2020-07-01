@@ -40,22 +40,22 @@ R_API void r_debug_trace_free (RDebugTrace *trace) {
 // TODO: think about tagged traces
 R_API int r_debug_trace_tag (RDebug *dbg, int tag) {
 	//if (tag>0 && tag<31) core->dbg->trace->tag = 1<<(sz-1);
-	return (dbg->trace->tag = (tag>0)? tag: UT32_MAX);
+	return (dbg->trace->tag = (tag > 0) ? tag : UT32_MAX);
 }
 
 /*
  * something happened at the given pc that we need to trace
  */
-R_API int r_debug_trace_pc(RDebug *dbg, ut64 pc) {
+R_API int r_debug_trace_pc (RDebug *dbg, ut64 pc) {
 	ut8 buf[32];
-	RAnalOp op = {0};
+	RAnalOp op = { 0 };
 	if (!dbg->iob.is_valid_offset (dbg->iob.io, pc, 0)) {
-		eprintf ("trace_pc: cannot read memory at 0x%"PFMT64x"\n", pc);
+		eprintf ("trace_pc: cannot read memory at 0x%" PFMT64x "\n", pc);
 		return false;
 	}
 	(void)dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
 	if (r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_ESIL) < 1) {
-		eprintf ("trace_pc: cannot get opcode size at 0x%"PFMT64x"\n", pc);
+		eprintf ("trace_pc: cannot get opcode size at 0x%" PFMT64x "\n", pc);
 		return false;
 	}
 	r_debug_trace_op (dbg, &op);
@@ -63,7 +63,7 @@ R_API int r_debug_trace_pc(RDebug *dbg, ut64 pc) {
 	return true;
 }
 
-R_API void r_debug_trace_op(RDebug *dbg, RAnalOp *op) {
+R_API void r_debug_trace_op (RDebug *dbg, RAnalOp *op) {
 	static ut64 oldpc = UT64_MAX; // Must trace the previously traced instruction
 	if (dbg->trace->enabled) {
 		if (dbg->anal->esil) {
@@ -80,25 +80,22 @@ R_API void r_debug_trace_op(RDebug *dbg, RAnalOp *op) {
 	oldpc = op->addr;
 }
 
-R_API void r_debug_trace_at(RDebug *dbg, const char *str) {
+R_API void r_debug_trace_at (RDebug *dbg, const char *str) {
 	// TODO: parse offsets and so use ut64 instead of strstr()
 	free (dbg->trace->addresses);
-	dbg->trace->addresses = (str&&*str)? strdup (str): NULL;
+	dbg->trace->addresses = (str && *str) ? strdup (str) : NULL;
 }
 
 R_API RDebugTracepoint *r_debug_trace_get (RDebug *dbg, ut64 addr) {
 	int tag = dbg->trace->tag;
 	return ht_pp_find (dbg->trace->ht,
-		sdb_fmt ("trace.%d.%"PFMT64x, tag, addr), NULL);
+		sdb_fmt ("trace.%d.%" PFMT64x, tag, addr), NULL);
 }
 
 static int cmpaddr (const void *_a, const void *_b) {
 	const RListInfo *a = _a, *b = _b;
-	return (r_itv_begin (a->pitv) > r_itv_begin (b->pitv))? 1:
-		 (r_itv_begin (a->pitv) < r_itv_begin (b->pitv))? -1: 0;
+	return (r_itv_begin (a->pitv) > r_itv_begin (b->pitv)) ? 1 : (r_itv_begin (a->pitv) < r_itv_begin (b->pitv)) ? -1 : 0;
 }
-
-
 
 R_API void r_debug_trace_list (RDebug *dbg, int mode, ut64 offset) {
 	int tag = dbg->trace->tag;
@@ -113,27 +110,27 @@ R_API void r_debug_trace_list (RDebug *dbg, int mode, ut64 offset) {
 		if (!trace->tag || (tag & trace->tag)) {
 			switch (mode) {
 			case 'q':
-				dbg->cb_printf ("0x%"PFMT64x"\n", trace->addr);
+				dbg->cb_printf ("0x%" PFMT64x "\n", trace->addr);
 				break;
 			case '=': {
 				RListInfo *info = R_NEW0 (RListInfo);
 				if (!info) {
 					return;
 				}
-				info->pitv = (RInterval) {trace->addr, trace->size};
+				info->pitv = (RInterval){ trace->addr, trace->size };
 				info->vitv = info->pitv;
 				info->perm = -1;
 				info->name = r_str_newf ("%d", trace->times);
 				info->extra = r_str_newf ("%d", trace->count);
 				r_list_append (info_list, info);
 				flag = true;
-			}	break;
+			} break;
 			case 1:
 			case '*':
-				dbg->cb_printf ("dt+ 0x%"PFMT64x" %d\n", trace->addr, trace->times);
+				dbg->cb_printf ("dt+ 0x%" PFMT64x " %d\n", trace->addr, trace->times);
 				break;
 			default:
-				dbg->cb_printf ("0x%08"PFMT64x" size=%d count=%d times=%d tag=%d\n",
+				dbg->cb_printf ("0x%08" PFMT64x " size=%d count=%d times=%d tag=%d\n",
 					trace->addr, trace->size, trace->count, trace->times, trace->tag);
 				break;
 			}
@@ -142,7 +139,7 @@ R_API void r_debug_trace_list (RDebug *dbg, int mode, ut64 offset) {
 	if (flag) {
 		r_list_sort (info_list, cmpaddr);
 		RTable *table = r_table_new ();
-		table->cons = r_cons_singleton();
+		table->cons = r_cons_singleton ();
 		RIO *io = dbg->iob.io;
 		r_table_visual_list (table, info_list, offset, 1,
 			r_cons_get_size (NULL), io->va);
@@ -153,10 +150,10 @@ R_API void r_debug_trace_list (RDebug *dbg, int mode, ut64 offset) {
 }
 
 // XXX: find better name, make it public?
-static int r_debug_trace_is_traceable(RDebug *dbg, ut64 addr) {
+static int r_debug_trace_is_traceable (RDebug *dbg, ut64 addr) {
 	if (dbg->trace->addresses) {
 		char addr_str[32];
-		snprintf (addr_str, sizeof (addr_str), "0x%08"PFMT64x, addr);
+		snprintf (addr_str, sizeof (addr_str), "0x%08" PFMT64x, addr);
 		if (!strstr (dbg->trace->addresses, addr_str)) {
 			return false;
 		}
@@ -183,7 +180,7 @@ R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size) {
 	tp->times = 1;
 	r_list_append (dbg->trace->traces, tp);
 	ht_pp_update (dbg->trace->ht,
-		sdb_fmt ("trace.%d.%"PFMT64x, tag, addr), tp);
+		sdb_fmt ("trace.%d.%" PFMT64x, tag, addr), tp);
 	return tp;
 }
 

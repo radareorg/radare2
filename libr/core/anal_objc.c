@@ -8,7 +8,6 @@
 
 #include <r_core.h>
 
-
 typedef struct {
 	RCore *core;
 	Sdb *db;
@@ -24,10 +23,10 @@ static bool isInvalid (ut64 addr) {
 }
 
 static const char *addr_key (ut64 va) {
-	return sdb_fmt ("refs.0x%08"PFMT64x, va);
+	return sdb_fmt ("refs.0x%08" PFMT64x, va);
 }
 
-static bool inBetween(RBinSection *s, ut64 addr) {
+static bool inBetween (RBinSection *s, ut64 addr) {
 	if (!s || addr == UT64_MAX) {
 		return false;
 	}
@@ -48,7 +47,7 @@ static ut64 readQword (RCoreObjc *objc, ut64 addr, bool *success) {
 	return r_read_le64 (buf);
 }
 
-static void objc_analyze(RCore *core) {
+static void objc_analyze (RCore *core) {
 	static const char *oldstr = NULL;
 	oldstr = r_print_rowlog (core->print, "Analyzing searching references to selref");
 	r_core_cmd0 (core, "aar");
@@ -61,7 +60,7 @@ static void objc_analyze(RCore *core) {
 	r_print_rowlog_done (core->print, oldstr);
 }
 
-static ut64 getRefPtr(RCoreObjc *objc, ut64 classMethodsVA, bool *res) {
+static ut64 getRefPtr (RCoreObjc *objc, ut64 classMethodsVA, bool *res) {
 	*res = false;
 
 	bool readSuccess;
@@ -74,7 +73,7 @@ static ut64 getRefPtr(RCoreObjc *objc, ut64 classMethodsVA, bool *res) {
 	ut64 res_at = 0LL;
 	const char *k = addr_key (namePtr);
 
-	for (i = 0; ; i++) {
+	for (i = 0;; i++) {
 		ut64 at = sdb_array_get_num (objc->db, k, i, NULL);
 		if (!at) {
 			break;
@@ -95,7 +94,7 @@ static ut64 getRefPtr(RCoreObjc *objc, ut64 classMethodsVA, bool *res) {
 	return res_at;
 }
 
-static bool objc_build_refs(RCoreObjc *objc) {
+static bool objc_build_refs (RCoreObjc *objc) {
 	ut64 off;
 	if (!objc->_const || !objc->_selrefs) {
 		return false;
@@ -133,10 +132,10 @@ static bool objc_build_refs(RCoreObjc *objc) {
 	return true;
 }
 
-static bool objc_find_refs(RCore *core) {
+static bool objc_find_refs (RCore *core) {
 	static const char *oldstr = NULL;
 
-	RCoreObjc objc = {0};
+	RCoreObjc objc = { 0 };
 
 	const int objc2ClassSize = 0x28;
 	const int objc2ClassInfoOffs = 0x20;
@@ -145,7 +144,7 @@ static bool objc_find_refs(RCore *core) {
 	const int objc2ClassMethImpOffs = 0x10;
 
 	objc.core = core;
-	objc.word_size = (core->rasm->bits == 64)? 8: 4;
+	objc.word_size = (core->rasm->bits == 64) ? 8 : 4;
 
 	RList *sections = r_bin_get_sections (core->bin);
 	if (!sections) {
@@ -251,9 +250,9 @@ static bool objc_find_refs(RCore *core) {
 	ut64 a;
 	for (a = from; a < to; a += objc.word_size) {
 		r_meta_set (core->anal, R_META_TYPE_DATA, a, 8, NULL);
-		total ++;
+		total++;
 	}
-	oldstr = r_print_rowlog (core->print, sdb_fmt ("Set %d dwords at 0x%08"PFMT64x, total, from));
+	oldstr = r_print_rowlog (core->print, sdb_fmt ("Set %d dwords at 0x%08" PFMT64x, total, from));
 	r_print_rowlog_done (core->print, oldstr);
 	return true;
 }

@@ -59,16 +59,15 @@ It depends on successfully passing SMHasher test set.
 
 #pragma once
 
-#if defined (__cplusplus)
+#if defined(__cplusplus)
 extern "C" {
 #endif
-
 
 //****************************
 // Simple Hash Functions
 //****************************
 
-unsigned int XXH32 (const void* input, size_t len, unsigned int seed);
+unsigned int XXH32 (const void *input, size_t len, unsigned int seed);
 
 /*
 XXH32() :
@@ -80,15 +79,13 @@ XXH32() :
 	If your data is larger, use the advanced functions below.
 */
 
-
-
 //****************************
 // Advanced Hash Functions
 //****************************
 
-void*        XXH32_init   (unsigned int seed);
-int          XXH32_feed   (void* state, const void* input, int len);
-unsigned int XXH32_result (void* state);
+void *XXH32_init (unsigned int seed);
+int XXH32_feed (void *state, const void *input, int len);
+unsigned int XXH32_result (void *state);
 
 /*
 These functions calculate the xxhash of an input provided in several small packets,
@@ -112,8 +109,7 @@ You must provide the same "void* state" parameter created by XXH32_init().
 Memory will be freed by XXH32_result().
 */
 
-
-unsigned int XXH32_getIntermediateResult (void* state);
+unsigned int XXH32_getIntermediateResult (void *state);
 /*
 This function does the same as XXH32_result(), generating a 32-bit hash,
 but preserve memory context.
@@ -121,8 +117,6 @@ This way, it becomes possible to generate intermediate hashes, and then continue
 To free memory context, use XXH32_result().
 */
 
-
-
-#if defined (__cplusplus)
+#if defined(__cplusplus)
 }
 #endif

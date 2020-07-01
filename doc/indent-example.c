@@ -11,13 +11,19 @@ typedef struct r_core_rtr_host_t2 {
 } RCoreRtrHost2;
 
 static const char *help_msg_aa[] = {
-	"Usage:", "aa[0*?]", " # see also 'af' and 'afna'",
-	"aa", " ", "alias for 'af@@ sym.*;af@entry0;afva'", //;.afna @@ fcn.*'",
-	"aa*", "", "analyze all flags starting with sym. (af @@ sym.*)",
+	"Usage:",
+	"aa[0*?]",
+	" # see also 'af' and 'afna'",
+	"aa",
+	" ",
+	"alias for 'af@@ sym.*;af@entry0;afva'", //;.afna @@ fcn.*'",
+	"aa*",
+	"",
+	"analyze all flags starting with sym. (af @@ sym.*)",
 	NULL,
 };
 
-static int cmpaddr(const void *_a, const void *_b) {
+static int cmpaddr (const void *_a, const void *_b) {
 	const RAnalFunction *a = _a, *b = _b;
 	return a->addr - b->addr;
 }

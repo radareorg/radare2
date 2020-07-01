@@ -9,7 +9,7 @@
 #include <r_anal.h>
 #include <r_parse.h>
 
-static char* get_fcn_name(RAnal *anal, ut32 fcn_id) {
+static char *get_fcn_name (RAnal *anal, ut32 fcn_id) {
 	r_cons_push ();
 	char *s = anal->coreb.cmdstrf (anal->coreb.core, "is~FUNC[6:%u]", fcn_id);
 	r_cons_pop ();
@@ -20,11 +20,11 @@ static char* get_fcn_name(RAnal *anal, ut32 fcn_id) {
 	return s;
 }
 
-static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	char *fcn_name = NULL;
 	str[0] = 0;
 	if (!strncmp (data, "call ", 5)) {
-		ut32 fcn_id = (ut32) r_num_get (NULL, data + 5);
+		ut32 fcn_id = (ut32)r_num_get (NULL, data + 5);
 		if (!(fcn_name = get_fcn_name (p->analb.anal, fcn_id))) {
 			return false;
 		}

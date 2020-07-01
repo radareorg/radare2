@@ -16,13 +16,12 @@
 #define CAPSTONE_HAS_TMS320C64X 0
 #endif
 
-
 #if CAPSTONE_HAS_TMS320C64X
 
 #define INSOP(n) insn->detail->tms320c64x.operands[n]
 #define INSCC insn->detail->tms320c64x.cc
 
-static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
+static void opex (RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	r_strbuf_init (buf);
 	r_strbuf_append (buf, "{");
@@ -41,14 +40,14 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case TMS320C64X_OP_IMM:
 			r_strbuf_append (buf, "\"type\":\"imm\"");
-			r_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
+			r_strbuf_appendf (buf, ",\"value\":%" PFMT64d, op->imm);
 			break;
 		case TMS320C64X_OP_MEM:
 			r_strbuf_append (buf, "\"type\":\"mem\"");
 			if (op->mem.base != SPARC_REG_INVALID) {
 				r_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
 			}
-			r_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", op->mem.disp);
+			r_strbuf_appendf (buf, ",\"disp\":%" PFMT64d "", op->mem.disp);
 			break;
 		default:
 			r_strbuf_append (buf, "\"type\":\"invalid\"");
@@ -59,7 +58,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	r_strbuf_append (buf, "]}");
 }
 
-static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int tms320c64x_analop (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	static csh handle = 0;
 	static int omode;
 	cs_insn *insn;
@@ -78,7 +77,7 @@ static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, i
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
 	// capstone-next
-	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
+	n = cs_disasm (handle, (const ut8 *)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
@@ -103,7 +102,7 @@ static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, i
 			break;
 		case TMS320C64X_INS_SWAP2:
 		case TMS320C64X_INS_SWAP4:
-		op->type = R_ANAL_OP_TYPE_MOV;
+			op->type = R_ANAL_OP_TYPE_MOV;
 			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
 		case TMS320C64X_INS_BNOP:
@@ -123,7 +122,7 @@ static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, i
 		case TMS320C64X_INS_B:
 			op->type = R_ANAL_OP_TYPE_JMP;
 			// higher 32bits of the 64bit address is lost, lets clone
-			op->jump = INSOP(0).imm + (addr & 0xFFFFFFFF00000000);
+			op->jump = INSOP (0).imm + (addr & 0xFFFFFFFF00000000);
 			break;
 		case TMS320C64X_INS_LDB:
 		case TMS320C64X_INS_LDBU:

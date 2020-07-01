@@ -5,11 +5,11 @@
 #include <sys/mman.h>
 #endif
 
-#define SET_BIT(p,n) ((p) |= (1 << (n)))
-#define CLR_BIT(p,n) ((p) &= (~(1) << (n)))
+#define SET_BIT(p, n) ((p) |= (1 << (n)))
+#define CLR_BIT(p, n) ((p) &= (~(1) << (n)))
 
 // TODO: find better name (r_mem_length()); is this used somewhere?
-R_API int r_mem_count(const ut8 **addr) {
+R_API int r_mem_count (const ut8 **addr) {
 	int i = 0;
 	while (*addr++) {
 		i++;
@@ -17,7 +17,7 @@ R_API int r_mem_count(const ut8 **addr) {
 	return i;
 }
 
-R_API int r_mem_eq(ut8 *a, ut8 *b, int len) {
+R_API int r_mem_eq (ut8 *a, ut8 *b, int len) {
 	register int i;
 	for (i = 0; i < len; i++) {
 		if (a[i] != b[i]) {
@@ -27,7 +27,7 @@ R_API int r_mem_eq(ut8 *a, ut8 *b, int len) {
 	return true;
 }
 
-R_API void r_mem_copyloop(ut8 *dest, const ut8 *orig, int dsize, int osize) {
+R_API void r_mem_copyloop (ut8 *dest, const ut8 *orig, int dsize, int osize) {
 	int i = 0, j;
 	while (i < dsize) {
 		for (j = 0; j < osize && i < dsize; j++) {
@@ -36,7 +36,7 @@ R_API void r_mem_copyloop(ut8 *dest, const ut8 *orig, int dsize, int osize) {
 	}
 }
 
-R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len) {
+R_API int r_mem_cmp_mask (const ut8 *dest, const ut8 *orig, const ut8 *mask, int len) {
 	ut8 *mdest = malloc (len);
 	if (!mdest) {
 		return -1;
@@ -57,31 +57,52 @@ R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int 
 	return ret;
 }
 
-R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits) {
+R_API void r_mem_copybits (ut8 *dst, const ut8 *src, int bits) {
 	ut8 srcmask, dstmask;
-	int bytes = (int) (bits / 8);
+	int bytes = (int)(bits / 8);
 	bits = bits % 8;
 	memcpy (dst, src, bytes);
 	if (bits) {
 		srcmask = dstmask = 0;
 		switch (bits) {
-		case 1: srcmask = 0x80; dstmask = 0x7f; break;
-		case 2: srcmask = 0xc0; dstmask = 0x3f; break;
-		case 3: srcmask = 0xe0; dstmask = 0x1f; break;
-		case 4: srcmask = 0xf0; dstmask = 0x0f; break;
-		case 5: srcmask = 0xf8; dstmask = 0x07; break;
-		case 6: srcmask = 0xfc; dstmask = 0x03; break;
-		case 7: srcmask = 0xfe; dstmask = 0x01; break;
+		case 1:
+			srcmask = 0x80;
+			dstmask = 0x7f;
+			break;
+		case 2:
+			srcmask = 0xc0;
+			dstmask = 0x3f;
+			break;
+		case 3:
+			srcmask = 0xe0;
+			dstmask = 0x1f;
+			break;
+		case 4:
+			srcmask = 0xf0;
+			dstmask = 0x0f;
+			break;
+		case 5:
+			srcmask = 0xf8;
+			dstmask = 0x07;
+			break;
+		case 6:
+			srcmask = 0xfc;
+			dstmask = 0x03;
+			break;
+		case 7:
+			srcmask = 0xfe;
+			dstmask = 0x01;
+			break;
 		}
 		dst[bytes] = ((dst[bytes] & dstmask) | (src[bytes] & srcmask));
 	}
 }
 
-static inline char readbit(const ut8 *src, int bitoffset) {
+static inline char readbit (const ut8 *src, int bitoffset) {
 	const int wholeBytes = bitoffset / 8;
 	const int remainingBits = bitoffset % 8;
 	// return (src[wholeBytes] >> remainingBits) & 1;
-	return (src[wholeBytes] & 1<< remainingBits);
+	return (src[wholeBytes] & 1 << remainingBits);
 }
 
 static inline void writebit (ut8 *dst, int i, bool c) {
@@ -91,14 +112,14 @@ static inline void writebit (ut8 *dst, int i, bool c) {
 	dst += byte;
 	if (c) {
 		//dst[byte] |= (1 << bit);
-		R_BIT_SET (dst , bit);
+		R_BIT_SET (dst, bit);
 	} else {
 		//dst[byte] &= (1 << bit);
-		R_BIT_UNSET (dst , bit);
+		R_BIT_UNSET (dst, bit);
 	}
 }
 
-R_API void r_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, int bits) {
+R_API void r_mem_copybits_delta (ut8 *dst, int doff, const ut8 *src, int soff, int bits) {
 	int i;
 	if (doff < 0 || soff < 0 || !dst || !src) {
 		return;
@@ -109,7 +130,7 @@ R_API void r_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, in
 	}
 }
 
-R_API ut64 r_mem_get_num(const ut8 *b, int size) {
+R_API ut64 r_mem_get_num (const ut8 *b, int size) {
 	// LITTLE ENDIAN is the default for streams
 	switch (size) {
 	case 1:
@@ -125,7 +146,7 @@ R_API ut64 r_mem_get_num(const ut8 *b, int size) {
 }
 
 // TODO: SEE: R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) { .. dupped code?
-R_API int r_mem_set_num(ut8 *dest, int dest_size, ut64 num) {
+R_API int r_mem_set_num (ut8 *dest, int dest_size, ut64 num) {
 	// LITTLE ENDIAN is the default for streams
 	switch (dest_size) {
 	case 1:
@@ -149,7 +170,7 @@ R_API int r_mem_set_num(ut8 *dest, int dest_size, ut64 num) {
 // The default endian is LE for streams.
 // This function either swaps or copies len bytes depending on bool big_endian
 // TODO: Remove completely
-R_API void r_mem_swaporcopy(ut8 *dest, const ut8 *src, int len, bool big_endian) {
+R_API void r_mem_swaporcopy (ut8 *dest, const ut8 *src, int len, bool big_endian) {
 	if (big_endian) {
 		r_mem_swapendian (dest, src, len);
 	} else {
@@ -159,7 +180,7 @@ R_API void r_mem_swaporcopy(ut8 *dest, const ut8 *src, int len, bool big_endian)
 
 // This function unconditionally swaps endian of size bytes of orig -> dest
 // TODO: Remove completely
-R_API void r_mem_swapendian(ut8 *dest, const ut8 *orig, int size) {
+R_API void r_mem_swapendian (ut8 *dest, const ut8 *orig, int size) {
 	ut8 buffer[8];
 	switch (size) {
 	case 1:
@@ -203,7 +224,7 @@ R_API void r_mem_swapendian(ut8 *dest, const ut8 *orig, int size) {
 
 // R_DOC r_mem_mem: Finds the needle of nlen size into the haystack of hlen size
 // R_UNIT printf("%s\n", r_mem_mem("food is pure lame", 20, "is", 2));
-R_API const ut8 *r_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int nlen) {
+R_API const ut8 *r_mem_mem (const ut8 *haystack, int hlen, const ut8 *needle, int nlen) {
 	int i, until = hlen - nlen + 1;
 	if (hlen < 1 || nlen < 1) {
 		return NULL;
@@ -217,7 +238,7 @@ R_API const ut8 *r_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int
 }
 
 // TODO: rename to r_mem_mem and refactor all calls to this function
-R_API const ut8 *r_mem_mem_aligned(const ut8 *haystack, int hlen, const ut8 *needle, int nlen, int align) {
+R_API const ut8 *r_mem_mem_aligned (const ut8 *haystack, int hlen, const ut8 *needle, int nlen, int align) {
 	int i, until = hlen - nlen + 1;
 	if (align < 1) {
 		align = 1;
@@ -236,7 +257,7 @@ R_API const ut8 *r_mem_mem_aligned(const ut8 *haystack, int hlen, const ut8 *nee
 	return NULL;
 }
 
-R_API int r_mem_protect(void *ptr, int size, const char *prot) {
+R_API int r_mem_protect (void *ptr, int size, const char *prot) {
 #if __UNIX__
 	int p = 0;
 	if (strchr (prot, 'x')) {
@@ -254,9 +275,9 @@ R_API int r_mem_protect(void *ptr, int size, const char *prot) {
 #elif __WINDOWS__
 	int r, w, x;
 	DWORD p = PAGE_NOACCESS;
-	r = strchr (prot, 'r')? 1: 0;
-	w = strchr (prot, 'w')? 1: 0;
-	x = strchr (prot, 'x')? 1: 0;
+	r = strchr (prot, 'r') ? 1 : 0;
+	w = strchr (prot, 'w') ? 1 : 0;
+	x = strchr (prot, 'x') ? 1 : 0;
 	if (w && x) {
 		return false;
 	}
@@ -276,7 +297,7 @@ R_API int r_mem_protect(void *ptr, int size, const char *prot) {
 	return true;
 }
 
-R_API void *r_mem_dup(const void *s, int l) {
+R_API void *r_mem_dup (const void *s, int l) {
 	void *d = malloc (l);
 	if (d) {
 		memcpy (d, s, l);
@@ -284,7 +305,7 @@ R_API void *r_mem_dup(const void *s, int l) {
 	return d;
 }
 
-R_API void r_mem_reverse(ut8 *b, int l) {
+R_API void r_mem_reverse (ut8 *b, int l) {
 	ut8 tmp;
 	int i, end = l / 2;
 	for (i = 0; i < end; i++) {
@@ -294,7 +315,7 @@ R_API void r_mem_reverse(ut8 *b, int l) {
 	}
 }
 
-R_API bool r_mem_is_printable(const ut8 *a, int la) {
+R_API bool r_mem_is_printable (const ut8 *a, int la) {
 	int i;
 	for (i = 0; i < la; i++) {
 		if (a[i] != '\n' && a[i] != '\t' && !IS_PRINTABLE (a[i])) {
@@ -304,7 +325,7 @@ R_API bool r_mem_is_printable(const ut8 *a, int la) {
 	return true;
 }
 
-R_API bool r_mem_is_zero(const ut8 *b, int l) {
+R_API bool r_mem_is_zero (const ut8 *b, int l) {
 	int i;
 	for (i = 0; i < l; i++) {
 		if (b[i]) {
@@ -314,15 +335,15 @@ R_API bool r_mem_is_zero(const ut8 *b, int l) {
 	return true;
 }
 
-R_API void *r_mem_alloc(int sz) {
+R_API void *r_mem_alloc (int sz) {
 	return calloc (sz, 1);
 }
 
-R_API void r_mem_free(void *p) {
+R_API void r_mem_free (void *p) {
 	free (p);
 }
 
-R_API void r_mem_memzero(void *dst, size_t l) {
+R_API void r_mem_memzero (void *dst, size_t l) {
 #ifdef _MSC_VER
 	RtlSecureZeroMemory (dst, l);
 #else
@@ -332,12 +353,13 @@ R_API void r_mem_memzero(void *dst, size_t l) {
 	(void)explicit_memset (dst, 0, l);
 #else
 	memset (dst, 0, l);
-	__asm__ volatile ("" :: "r"(dst) : "memory");
+	__asm__ volatile("" ::"r"(dst)
+			 : "memory");
 #endif
 #endif
 }
 
-R_API void *r_mem_mmap_resize(RMmap *m, ut64 newsize) {
+R_API void *r_mem_mmap_resize (RMmap *m, ut64 newsize) {
 #if __WINDOWS__
 	if (m->fm != INVALID_HANDLE_VALUE) {
 		CloseHandle (m->fm);

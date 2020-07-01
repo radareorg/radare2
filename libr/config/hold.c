@@ -2,30 +2,30 @@
 
 #include <r_config.h>
 
-static void r_config_hold_char_free(RConfigHoldChar *hc) {
+static void r_config_hold_char_free (RConfigHoldChar *hc) {
 	free (hc->key);
 	free (hc->value);
 	free (hc);
 }
 
-static void r_config_hold_num_free(RConfigHoldNum *hc) {
+static void r_config_hold_num_free (RConfigHoldNum *hc) {
 	free (hc->key);
 	free (hc);
 }
 
-static int key_cmp_hold_s(const void *a, const void *b) {
+static int key_cmp_hold_s (const void *a, const void *b) {
 	const char *a_s = (const char *)a;
 	const RConfigHoldChar *b_s = (const RConfigHoldChar *)b;
 	return strcmp (a_s, b_s->key);
 }
 
-static int key_cmp_hold_i(const void *a, const void *b) {
+static int key_cmp_hold_i (const void *a, const void *b) {
 	const char *a_s = (const char *)a;
 	const RConfigHoldNum *b_s = (const RConfigHoldNum *)b;
 	return strcmp (a_s, b_s->key);
 }
 
-R_API bool r_config_hold_s(RConfigHold *h, ...) {
+R_API bool r_config_hold_s (RConfigHold *h, ...) {
 	va_list ap;
 	char *key;
 	va_start (ap, h);
@@ -55,7 +55,7 @@ R_API bool r_config_hold_s(RConfigHold *h, ...) {
 	return true;
 }
 
-R_API bool r_config_hold_i(RConfigHold *h, ...) {
+R_API bool r_config_hold_i (RConfigHold *h, ...) {
 	va_list ap;
 	char *key;
 	if (!h) {
@@ -84,7 +84,7 @@ R_API bool r_config_hold_i(RConfigHold *h, ...) {
 	return true;
 }
 
-R_API RConfigHold* r_config_hold_new(RConfig *cfg) {
+R_API RConfigHold *r_config_hold_new (RConfig *cfg) {
 	if (cfg) {
 		RConfigHold *hold = R_NEW0 (RConfigHold);
 		if (hold) {
@@ -95,7 +95,7 @@ R_API RConfigHold* r_config_hold_new(RConfig *cfg) {
 	return NULL;
 }
 
-R_API void r_config_hold_restore(RConfigHold *h) {
+R_API void r_config_hold_restore (RConfigHold *h) {
 	RListIter *iter;
 	RConfigHoldChar *hchar;
 	RConfigHoldNum *hnum;
@@ -110,7 +110,7 @@ R_API void r_config_hold_restore(RConfigHold *h) {
 	}
 }
 
-R_API void r_config_hold_free(RConfigHold *h) {
+R_API void r_config_hold_free (RConfigHold *h) {
 	if (h) {
 		r_list_free (h->list_num);
 		r_list_free (h->list_char);

@@ -110,7 +110,7 @@ typedef struct {
 	DWORD dwExitCode;
 } THREAD_ITEM, *PTHREAD_ITEM;
 
-typedef struct{
+typedef struct {
 	int pid;
 	HANDLE hFile;
 	void *BaseOfDll;
@@ -118,53 +118,73 @@ typedef struct{
 	char *Name;
 } LIB_ITEM, *PLIB_ITEM;
 
-DWORD (WINAPI *w32_GetModuleBaseName)(HANDLE, HMODULE, LPTSTR, DWORD);
-BOOL (WINAPI *w32_GetModuleInformation)(HANDLE, HMODULE, LPMODULEINFO, DWORD);
-BOOL (WINAPI *w32_DebugActiveProcessStop)(DWORD);
-HANDLE (WINAPI *w32_OpenThread)(DWORD, BOOL, DWORD);
-BOOL (WINAPI *w32_DebugBreakProcess)(HANDLE);
-DWORD (WINAPI *w32_GetThreadId)(HANDLE); // Vista
-DWORD (WINAPI *w32_GetProcessId)(HANDLE); // XP
-HANDLE (WINAPI *w32_OpenProcess)(DWORD, BOOL, DWORD);
-BOOL (WINAPI *w32_QueryFullProcessImageName)(HANDLE, DWORD, LPTSTR, PDWORD);
-DWORD (WINAPI *w32_GetMappedFileName)(HANDLE, LPVOID, LPTSTR, DWORD);
-NTSTATUS (WINAPI *w32_NtQuerySystemInformation)(ULONG, PVOID, ULONG, PULONG);
-NTSTATUS (WINAPI *w32_NtQueryInformationThread)(HANDLE, ULONG, PVOID, ULONG, PULONG);
-NTSTATUS (WINAPI *w32_NtDuplicateObject)(HANDLE, HANDLE, HANDLE, PHANDLE, ACCESS_MASK, ULONG, ULONG);
-NTSTATUS (WINAPI *w32_NtQueryObject)(HANDLE, ULONG, PVOID, ULONG, PULONG);
+DWORD (WINAPI *w32_GetModuleBaseName)
+(HANDLE, HMODULE, LPTSTR, DWORD);
+BOOL (WINAPI *w32_GetModuleInformation)
+(HANDLE, HMODULE, LPMODULEINFO, DWORD);
+BOOL (WINAPI *w32_DebugActiveProcessStop)
+(DWORD);
+HANDLE (WINAPI *w32_OpenThread)
+(DWORD, BOOL, DWORD);
+BOOL (WINAPI *w32_DebugBreakProcess)
+(HANDLE);
+DWORD (WINAPI *w32_GetThreadId)
+(HANDLE); // Vista
+DWORD (WINAPI *w32_GetProcessId)
+(HANDLE); // XP
+HANDLE (WINAPI *w32_OpenProcess)
+(DWORD, BOOL, DWORD);
+BOOL (WINAPI *w32_QueryFullProcessImageName)
+(HANDLE, DWORD, LPTSTR, PDWORD);
+DWORD (WINAPI *w32_GetMappedFileName)
+(HANDLE, LPVOID, LPTSTR, DWORD);
+NTSTATUS (WINAPI *w32_NtQuerySystemInformation)
+(ULONG, PVOID, ULONG, PULONG);
+NTSTATUS (WINAPI *w32_NtQueryInformationThread)
+(HANDLE, ULONG, PVOID, ULONG, PULONG);
+NTSTATUS (WINAPI *w32_NtDuplicateObject)
+(HANDLE, HANDLE, HANDLE, PHANDLE, ACCESS_MASK, ULONG, ULONG);
+NTSTATUS (WINAPI *w32_NtQueryObject)
+(HANDLE, ULONG, PVOID, ULONG, PULONG);
 // fpu access API
-ut64 (WINAPI *w32_GetEnabledXStateFeatures)();
-BOOL (WINAPI *w32_InitializeContext)(PVOID, DWORD, PCONTEXT*, PDWORD);
-BOOL (WINAPI *w32_GetXStateFeaturesMask)(PCONTEXT Context, PDWORD64);
-PVOID (WINAPI *w32_LocateXStateFeature)(PCONTEXT Context, DWORD, PDWORD);
-BOOL (WINAPI *w32_SetXStateFeaturesMask)(PCONTEXT Context, DWORD64);
-DWORD (WINAPI *w32_GetModuleFileNameEx)(HANDLE, HMODULE, LPTSTR, DWORD);
-HANDLE (WINAPI *w32_CreateToolhelp32Snapshot)(DWORD, DWORD);
+ut64 (WINAPI *w32_GetEnabledXStateFeatures) ();
+BOOL (WINAPI *w32_InitializeContext)
+(PVOID, DWORD, PCONTEXT *, PDWORD);
+BOOL (WINAPI *w32_GetXStateFeaturesMask)
+(PCONTEXT Context, PDWORD64);
+PVOID (WINAPI *w32_LocateXStateFeature)
+(PCONTEXT Context, DWORD, PDWORD);
+BOOL (WINAPI *w32_SetXStateFeaturesMask)
+(PCONTEXT Context, DWORD64);
+DWORD (WINAPI *w32_GetModuleFileNameEx)
+(HANDLE, HMODULE, LPTSTR, DWORD);
+HANDLE (WINAPI *w32_CreateToolhelp32Snapshot)
+(DWORD, DWORD);
 
 // APIs
-int w32_init(RDebug *dbg);
+int w32_init (RDebug *dbg);
 
-int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size);
-int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size);
+int w32_reg_read (RDebug *dbg, int type, ut8 *buf, int size);
+int w32_reg_write (RDebug *dbg, int type, const ut8 *buf, int size);
 
-int w32_attach(RDebug *dbg, int pid);
-int w32_detach(RDebug *dbg, int pid);
-int w32_attach_new_process(RDebug* dbg, int pid);
-int w32_select(RDebug *dbg, int pid, int tid);
-int w32_kill(RDebug *dbg, int pid, int tid, int sig);
-void w32_break_process(void *user);
-int w32_dbg_wait(RDebug *dbg, int pid);
+int w32_attach (RDebug *dbg, int pid);
+int w32_detach (RDebug *dbg, int pid);
+int w32_attach_new_process (RDebug *dbg, int pid);
+int w32_select (RDebug *dbg, int pid, int tid);
+int w32_kill (RDebug *dbg, int pid, int tid, int sig);
+void w32_break_process (void *user);
+int w32_dbg_wait (RDebug *dbg, int pid);
 
-int w32_step(RDebug *dbg);
-int w32_continue(RDebug *dbg, int pid, int tid, int sig);
-RDebugMap *w32_map_alloc(RDebug *dbg, ut64 addr, int size);
-int w32_map_dealloc(RDebug *dbg, ut64 addr, int size);
-int w32_map_protect(RDebug *dbg, ut64 addr, int size, int perms);
+int w32_step (RDebug *dbg);
+int w32_continue (RDebug *dbg, int pid, int tid, int sig);
+RDebugMap *w32_map_alloc (RDebug *dbg, ut64 addr, int size);
+int w32_map_dealloc (RDebug *dbg, ut64 addr, int size);
+int w32_map_protect (RDebug *dbg, ut64 addr, int size, int perms);
 
-RList *w32_thread_list(RDebug *dbg, int pid, RList *list);
-RDebugInfo *w32_info(RDebug *dbg, const char *arg);
+RList *w32_thread_list (RDebug *dbg, int pid, RList *list);
+RDebugInfo *w32_info (RDebug *dbg, const char *arg);
 
-RList *w32_pid_list(RDebug *dbg, int pid, RList *list);
+RList *w32_pid_list (RDebug *dbg, int pid, RList *list);
 
-RList *w32_desc_list(int pid);
+RList *w32_desc_list (int pid);
 #endif

@@ -7,7 +7,7 @@
 #include "../arch/pic/pic_pic18.h"
 #include "../arch/pic/pic_midrange.h"
 
-static int asm_pic_disassemble(RAsm *a, RAsmOp *op, const ut8 *b, int l) {
+static int asm_pic_disassemble (RAsm *a, RAsmOp *op, const ut8 *b, int l) {
 	int res = -1;
 	char opbuf[128];
 	const char *opstr = opbuf;

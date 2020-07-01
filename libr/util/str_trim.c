@@ -11,7 +11,7 @@
 #include <stdarg.h>
 
 // TODO: simplify this horrible loop
-R_API void r_str_trim_path(char *s) {
+R_API void r_str_trim_path (char *s) {
 	char *src, *dst, *p;
 	int i = 0;
 	if (!s || !*s) {
@@ -56,7 +56,7 @@ R_API void r_str_trim_path(char *s) {
 	}
 }
 
-R_API char* r_str_trim_lines(char *str) {
+R_API char *r_str_trim_lines (char *str) {
 	RList *list = r_str_split_list (str, "\n", 0);
 	char *s;
 	RListIter *iter;
@@ -74,7 +74,7 @@ R_API char* r_str_trim_lines(char *str) {
 	return r_strbuf_drain (sb);
 }
 
-R_API char *r_str_trim_dup(const char *str) {
+R_API char *r_str_trim_dup (const char *str) {
 	char *a = strdup (str);
 	r_str_trim (a);
 	return a;
@@ -82,7 +82,7 @@ R_API char *r_str_trim_dup(const char *str) {
 
 // Returns a pointer to the first non-whitespace character of str.
 // TODO: Find a better name: to r_str_trim_head_ro(), r_str_skip_head or so
-R_API const char *r_str_trim_head_ro(const char *str) {
+R_API const char *r_str_trim_head_ro (const char *str) {
 	r_return_val_if_fail (str, NULL);
 	for (; *str && IS_WHITECHAR (*str); str++) {
 		;
@@ -91,7 +91,7 @@ R_API const char *r_str_trim_head_ro(const char *str) {
 }
 
 // TODO: find better name
-R_API const char *r_str_trim_head_wp(const char *str) {
+R_API const char *r_str_trim_head_wp (const char *str) {
 	r_return_val_if_fail (str, NULL);
 	for (; *str && !IS_WHITESPACE (*str); str++) {
 		;
@@ -101,7 +101,7 @@ R_API const char *r_str_trim_head_wp(const char *str) {
 
 /* remove spaces from the head of the string.
  * the string is changed in place */
-R_API void r_str_trim_head(char *str) {
+R_API void r_str_trim_head (char *str) {
 	char *p = (char *)r_str_trim_head_ro (str);
 	if (p) {
 		memmove (str, p, strlen (p) + 1);
@@ -110,7 +110,7 @@ R_API void r_str_trim_head(char *str) {
 
 // Remove whitespace chars from the tail of the string, replacing them with
 // null bytes. The string is changed in-place.
-R_API void r_str_trim_tail(char *str) {
+R_API void r_str_trim_tail (char *str) {
 	r_return_if_fail (str);
 	size_t length = strlen (str);
 	while (length-- > 0) {
@@ -124,21 +124,21 @@ R_API void r_str_trim_tail(char *str) {
 
 // Removes spaces from the head of the string, and zeros out whitespaces from
 // the tail of the string. The string is changed in place.
-R_API void r_str_trim(char *str) {
+R_API void r_str_trim (char *str) {
 	r_str_trim_head (str);
 	r_str_trim_tail (str);
 }
 
 // no copy, like trim_head+tail but with trim_head_ro, beware heap issues
 // TODO: rename to r_str_trim_weak() ?
-R_API char *r_str_trim_nc(char *str) {
+R_API char *r_str_trim_nc (char *str) {
 	char *s = (char *)r_str_trim_head_ro (str);
 	r_str_trim_tail (s);
 	return s;
 }
 
 /* supposed to chop a string with ansi controls to max length of n. */
-R_API int r_str_ansi_trim(char *str, int str_len, int n) {
+R_API int r_str_ansi_trim (char *str, int str_len, int n) {
 	r_return_val_if_fail (str, 0);
 	char ch, ch2;
 	int back = 0, i = 0, len = 0;

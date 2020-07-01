@@ -21,7 +21,7 @@ char *api_json_set (const char *s, const char *k, const char *v) {
 	if (!rs.p) {
 		return NULL;
 	}
-#define WLEN(x) (int)(size_t)(end[x]-beg[x])
+#define WLEN(x) (int)(size_t) (end[x] - beg[x])
 
 	beg[0] = s;
 	end[0] = rs.p + rs.f;
@@ -35,16 +35,16 @@ char *api_json_set (const char *s, const char *k, const char *v) {
 	end[2] = s + strlen (s);
 	len[2] = WLEN (2);
 
-	str = malloc (len[0]+len[1]+len[2]+1);
+	str = malloc (len[0] + len[1] + len[2] + 1);
 	if (!str) {
 		return NULL;
 	}
 	idx = len[0];
 	memcpy (str, beg[0], idx);
-	memcpy (str+idx, beg[1], len[1]);
+	memcpy (str + idx, beg[1], len[1]);
 	idx += len[1];
-	memcpy (str+idx, beg[2], len[2]);
-	str[idx+len[2]] = 0;
+	memcpy (str + idx, beg[2], len[2]);
+	str[idx + len[2]] = 0;
 	return str;
 }
 

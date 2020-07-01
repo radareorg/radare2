@@ -6,8 +6,8 @@
 static csh cd = 0;
 #include "cs_mnemonics.c"
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	cs_insn* insn;
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	cs_insn *insn;
 	int n = -1, ret = -1;
 	int mode = CS_MODE_BIG_ENDIAN;
 	if (a->cpu && *a->cpu) {
@@ -46,15 +46,15 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	op->size = insn->size;
 	char *buf_asm = sdb_fmt ("%s%s%s",
-		insn->mnemonic, insn->op_str[0]? " ": "",
+		insn->mnemonic, insn->op_str[0] ? " " : "",
 		insn->op_str);
 	r_str_replace_char (buf_asm, '%', 0);
 	r_asm_op_set_asm (op, buf_asm);
 	// TODO: remove the '$'<registername> in the string
 	cs_free (insn, n);
-	beach:
-	// cs_close (&cd);
-	fin:
+beach:
+// cs_close (&cd);
+fin:
 	return ret;
 }
 
@@ -64,7 +64,7 @@ RAsmPlugin r_asm_plugin_sparc_cs = {
 	.license = "BSD",
 	.arch = "sparc",
 	.cpus = "v9",
-	.bits = 32|64,
+	.bits = 32 | 64,
 	.endian = R_SYS_ENDIAN_BIG | R_SYS_ENDIAN_LITTLE,
 	.disassemble = &disassemble,
 	.mnemonics = mnemonics

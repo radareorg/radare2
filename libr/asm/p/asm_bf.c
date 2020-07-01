@@ -2,7 +2,7 @@
 
 #include <r_asm.h>
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	const ut8 *b;
 	int rep = 1;
 
@@ -21,16 +21,16 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		buf_asm = "loop";
 		break;
 	case '>':
-		buf_asm = (rep > 1)? "add ptr": "inc ptr";
+		buf_asm = (rep > 1) ? "add ptr" : "inc ptr";
 		break;
 	case '<':
-		buf_asm = (rep > 1)? "sub ptr": "dec ptr";
+		buf_asm = (rep > 1) ? "sub ptr" : "dec ptr";
 		break;
 	case '+':
-		buf_asm = (rep > 1)? "add [ptr]": "inc [ptr]";
+		buf_asm = (rep > 1) ? "add [ptr]" : "inc [ptr]";
 		break;
 	case '-':
-		buf_asm = (rep > 1)? "sub [ptr]": "dec [ptr]";
+		buf_asm = (rep > 1) ? "sub [ptr]" : "dec [ptr]";
 		break;
 	case ',':
 		buf_asm = "in [ptr]";
@@ -50,7 +50,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (rep > 1) {
 		/* Note: snprintf's source and destination buffers may not
 		* overlap. */
-		const char *fmt = strchr (buf_asm, ' ')? "%s, %d": "%s %d";
+		const char *fmt = strchr (buf_asm, ' ') ? "%s, %d" : "%s %d";
 		buf_asm = sdb_fmt (fmt, buf_asm, rep);
 	}
 	r_strbuf_set (&op->buf_asm, buf_asm);
@@ -58,7 +58,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return rep;
 }
 
-static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
+static int assemble (RAsm *a, RAsmOp *op, const char *buf) {
 	int n = 0;
 	if (buf[0] && buf[1] == ' ') {
 		buf += 2;
@@ -74,7 +74,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 			opbuf[0] = 0x90;
 			n = 1;
 		}
-	} else if (!strncmp (buf, "nop", 3))        {
+	} else if (!strncmp (buf, "nop", 3)) {
 		if (arg) {
 			n = atoi (arg + 1);
 			memset (opbuf, 0x90, n);
@@ -82,16 +82,16 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 			opbuf[0] = 0x90;
 			n = 1;
 		}
-	} else if (!strncmp (buf, "inc", 3))        {
-		char ch = ref? '+': '>';
+	} else if (!strncmp (buf, "inc", 3)) {
+		char ch = ref ? '+' : '>';
 		opbuf[0] = ch;
 		n = 1;
-	} else if (!strncmp (buf, "dec", 3))        {
-		char ch = ref? '-': '<';
+	} else if (!strncmp (buf, "dec", 3)) {
+		char ch = ref ? '-' : '<';
 		opbuf[0] = ch;
 		n = 1;
-	} else if (!strncmp (buf, "sub", 3))        {
-		char ch = ref? '-': '<';
+	} else if (!strncmp (buf, "sub", 3)) {
+		char ch = ref ? '-' : '<';
 		if (arg) {
 			n = atoi (arg + 1);
 			memset (opbuf, ch, n);
@@ -99,8 +99,8 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 			opbuf[0] = '<';
 			n = 1;
 		}
-	} else if (!strncmp (buf, "add", 3))        {
-		char ch = ref? '+': '>';
+	} else if (!strncmp (buf, "add", 3)) {
+		char ch = ref ? '+' : '>';
 		if (arg) {
 			n = atoi (arg + 1);
 			memset (opbuf, ch, n);
@@ -108,13 +108,13 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 			opbuf[0] = '<';
 			n = 1;
 		}
-	} else if (!strncmp (buf, "while", 5))        {
+	} else if (!strncmp (buf, "while", 5)) {
 		opbuf[0] = '[';
 		n = 1;
-	} else if (!strncmp (buf, "loop", 4))        {
+	} else if (!strncmp (buf, "loop", 4)) {
 		opbuf[0] = ']';
 		n = 1;
-	} else if (!strncmp (buf, "in", 2))        {
+	} else if (!strncmp (buf, "in", 2)) {
 		if (arg) {
 			n = atoi (arg + 1);
 			memset (opbuf, ',', n);
@@ -122,7 +122,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 			opbuf[0] = ',';
 			n = 1;
 		}
-	} else if (!strncmp (buf, "out", 3))        {
+	} else if (!strncmp (buf, "out", 3)) {
 		if (arg) {
 			n = atoi (arg + 1);
 			memset (opbuf, '.', n);

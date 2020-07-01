@@ -24,7 +24,7 @@ R_API char *r_bin_demangle_rust (RBinFile *binfile, const char *sym, ut64 vaddr)
 	char *str, *out, *in;
 
 	str = r_bin_demangle_cxx (binfile, sym, vaddr);
-	
+
 	if (!str) {
 		return str;
 	}
@@ -38,23 +38,9 @@ R_API char *r_bin_demangle_rust (RBinFile *binfile, const char *sym, ut64 vaddr)
 	}
 
 	while ((len = strlen (in)) > 0) {
-		if (!(*in == '$' && (RS("$SP$", '@')
-				|| RS("$BP$", '*')
-				|| RS("$RF$", '&')
-				|| RS("$LT$", '<')
-				|| RS("$GT$", '>')
-				|| RS("$LP$", '(')
-				|| RS("$RP$", ')')
-				|| RS("$C$", ',')
-				// maybe a good idea to replace all utf-sequences by regexp \$u[0-9a-f]{2}\$ or so
-				|| RS("$u20$", ' ')
-				|| RS("$u22$", '\"')
-				|| RS("$u27$", '\'')
-				|| RS("$u2b$", '+')
-				|| RS("$u3b$", ';')
-				|| RS("$u5b$", '[')
-				|| RS("$u5d$", ']')
-				|| RS("$u7e$", '~')))) {
+		if (!(*in == '$' && (RS ("$SP$", '@') || RS ("$BP$", '*') || RS ("$RF$", '&') || RS ("$LT$", '<') || RS ("$GT$", '>') || RS ("$LP$", '(') || RS ("$RP$", ')') || RS ("$C$", ',')
+					    // maybe a good idea to replace all utf-sequences by regexp \$u[0-9a-f]{2}\$ or so
+					    || RS ("$u20$", ' ') || RS ("$u22$", '\"') || RS ("$u27$", '\'') || RS ("$u2b$", '+') || RS ("$u3b$", ';') || RS ("$u5b$", '[') || RS ("$u5d$", ']') || RS ("$u7e$", '~')))) {
 			if (*in == '.') {
 				if (len > 0 && in[1] == '.') {
 					in += 2;

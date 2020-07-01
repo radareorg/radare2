@@ -6,7 +6,7 @@
 #include <r_util/r_print.h>
 #include <r_util.h>
 
-static int usage(int v) {
+static int usage (int v) {
 	printf ("Usage: ragg2 [-FOLsrxhvz] [-a arch] [-b bits] [-k os] [-o file] [-I path]\n"
 		"             [-i sc] [-e enc] [-B hex] [-c k=v] [-C file] [-p pad] [-q off]\n"
 		"             [-S string] [-f fmt] [-nN dword] [-dDw off:hex] file|f.asm|-\n");
@@ -48,8 +48,7 @@ static int usage(int v) {
 	return 1;
 }
 
-
-static void list(REgg *egg) {
+static void list (REgg *egg) {
 	RListIter *iter;
 	REggPlugin *p;
 	printf ("shellcodes:\n");
@@ -66,7 +65,7 @@ static void list(REgg *egg) {
 	}
 }
 
-static int create(const char *format, const char *arch, int bits, const ut8 *code, int codelen) {
+static int create (const char *format, const char *arch, int bits, const ut8 *code, int codelen) {
 	RBin *bin = r_bin_new ();
 	RBinArchOptions opts;
 	RBuffer *b;
@@ -86,7 +85,7 @@ static int create(const char *format, const char *arch, int bits, const ut8 *cod
 	return 0;
 }
 
-static int openfile(const char *f, int x) {
+static int openfile (const char *f, int x) {
 	int fd = open (f, O_RDWR | O_CREAT, 0644);
 	if (fd == -1) {
 		fd = open (f, O_RDWR);
@@ -111,9 +110,9 @@ static int openfile(const char *f, int x) {
 	dup2 (fd, 1);
 	return fd;
 }
-#define ISEXEC (fmt!='r')
+#define ISEXEC (fmt != 'r')
 
-R_API int r_main_ragg2(int argc, const char **argv) {
+R_API int r_main_ragg2 (int argc, const char **argv) {
 	const char *file = NULL;
 	const char *padding = NULL;
 	const char *pattern = NULL;
@@ -130,11 +129,11 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	int show_raw = 0;
 	int append = 0;
 	int show_str = 0;
-	ut64 get_offset  = 0;
+	ut64 get_offset = 0;
 	const char *shellcode = NULL;
 	const char *encoder = NULL;
 	char *sequence = NULL;
-	int bits = (R_SYS_BITS & R_SYS_BITS_64)? 64: 32;
+	int bits = (R_SYS_BITS & R_SYS_BITS_64) ? 64 : 32;
 	int fmt = 0;
 	const char *ofile = NULL;
 	int ofileauto = 0;
@@ -171,8 +170,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			}
 			contents = opt.arg;
 			break;
-		case 'w':
-			{
+		case 'w': {
 			char *arg = strdup (opt.arg);
 			char *p = strchr (arg, ':');
 			if (p) {
@@ -183,7 +181,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 				b = malloc (strlen (opt.arg) + 1);
 				len = r_hex_str2bin (p, b);
 				if (len > 0) {
-					r_egg_patch (egg, off, (const ut8*)b, len);
+					r_egg_patch (egg, off, (const ut8 *)b, len);
 				} else {
 					eprintf ("Invalid hexstr for -w\n");
 				}
@@ -192,24 +190,18 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 				eprintf ("Missing colon in -w\n");
 			}
 			free (arg);
-			}
-			break;
-		case 'n':
-			{
+		} break;
+		case 'n': {
 			ut32 n = r_num_math (NULL, opt.arg);
 			append = 1;
-			r_egg_patch (egg, -1, (const ut8*)&n, 4);
-			}
-			break;
-		case 'N':
-			{
+			r_egg_patch (egg, -1, (const ut8 *)&n, 4);
+		} break;
+		case 'N': {
 			ut64 n = r_num_math (NULL, opt.arg);
-			r_egg_patch (egg, -1, (const ut8*)&n, 8);
+			r_egg_patch (egg, -1, (const ut8 *)&n, 8);
 			append = 1;
-			}
-			break;
-		case 'd':
-			{
+		} break;
+		case 'd': {
 			ut32 off, n;
 			char *p = strchr (opt.arg, ':');
 			if (p) {
@@ -218,25 +210,22 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 				n = r_num_math (NULL, p + 1);
 				*p = ':';
 				// TODO: honor endianness here
-				r_egg_patch (egg, off, (const ut8*)&n, 4);
+				r_egg_patch (egg, off, (const ut8 *)&n, 4);
 			} else {
 				eprintf ("Missing colon in -d\n");
 			}
-			}
-			break;
-		case 'D':
-			{
+		} break;
+		case 'D': {
 			char *p = strchr (opt.arg, ':');
 			if (p) {
 				ut64 n, off = r_num_math (NULL, opt.arg);
 				n = r_num_math (NULL, p + 1);
 				// TODO: honor endianness here
-				r_egg_patch (egg, off, (const ut8*)&n, 8);
+				r_egg_patch (egg, off, (const ut8 *)&n, 8);
 			} else {
 				eprintf ("Missing colon in -d\n");
 			}
-			}
-			break;
+		} break;
 		case 'S':
 			str = opt.arg;
 			break;
@@ -264,8 +253,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		case 'P':
 			pattern = opt.arg;
 			break;
-		case 'c':
-			{
+		case 'c': {
 			char *p = strchr (opt.arg, '=');
 			if (p) {
 				*p++ = 0;
@@ -273,8 +261,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			} else {
 				r_egg_option_set (egg, opt.arg, "true");
 			}
-			}
-			break;
+		} break;
 		case 'F':
 #if __APPLE__
 			format = "mach0";
@@ -402,7 +389,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			size_t l;
 			char *buf = r_file_slurp (textFile, &l);
 			if (buf && l > 0) {
-				r_egg_raw (egg, (const ut8*)buf, (int)l);
+				r_egg_raw (egg, (const ut8 *)buf, (int)l);
 			} else {
 				eprintf ("Error loading '%s'\n", textFile);
 			}
@@ -438,7 +425,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	if (str) {
 		int l = strlen (str);
 		if (l > 0) {
-			r_egg_raw (egg, (const ut8*)str, l);
+			r_egg_raw (egg, (const ut8 *)str, l);
 		}
 	}
 
@@ -447,7 +434,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		size_t l;
 		char *buf = r_file_slurp (contents, &l);
 		if (buf && l > 0) {
-			r_egg_raw (egg, (const ut8*)buf, (int)l);
+			r_egg_raw (egg, (const ut8 *)buf, (int)l);
 		} else {
 			eprintf ("Error loading '%s'\n", contents);
 		}
@@ -485,7 +472,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		if (file) {
 			char *o, *q, *p = strdup (file);
 			if ((o = strchr (p, '.'))) {
-				while ( (q = strchr (o + 1, '.')) ) {
+				while ((q = strchr (o + 1, '.'))) {
 					o = q;
 				}
 				*o = 0;
@@ -597,7 +584,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 				} // else show_raw is_above()
 				break;
 			case 'p': // PE
-				if (strlen(format) >= 2 && format[1] == 'y') { // Python
+				if (strlen (format) >= 2 && format[1] == 'y') { // Python
 					r_print_code (p, 0, tmp, tmpsz, 'p');
 				}
 				break;

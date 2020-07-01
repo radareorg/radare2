@@ -10,15 +10,15 @@
 #include <process.h>
 #endif
 
-static int lang_pipe_run(RLang *lang, const char *code, int len);
-static int lang_pipe_file(RLang *lang, const char *file) {
+static int lang_pipe_run (RLang *lang, const char *code, int len);
+static int lang_pipe_file (RLang *lang, const char *file) {
 	return lang_pipe_run (lang, file, -1);
 }
 
 #if __WINDOWS__
-static HANDLE myCreateChildProcess(const char * szCmdline) {
-	PROCESS_INFORMATION piProcInfo = {0};
-	STARTUPINFO siStartInfo = {0};
+static HANDLE myCreateChildProcess (const char *szCmdline) {
+	PROCESS_INFORMATION piProcInfo = { 0 };
+	STARTUPINFO siStartInfo = { 0 };
 	BOOL bSuccess = FALSE;
 	siStartInfo.cb = sizeof (STARTUPINFO);
 	siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
@@ -38,7 +38,7 @@ static HANDLE hPipeInOut = NULL;
 static HANDLE hproc = NULL;
 #define PIPE_BUF_SIZE 8192
 
-static DWORD WINAPI WaitForProcThread(LPVOID lParam) {
+static DWORD WINAPI WaitForProcThread (LPVOID lParam) {
 	WaitForSingleObject (hproc, INFINITE);
 
 	// Just in case the #!pipe target didn't actually connect to the pipe,
@@ -53,7 +53,7 @@ static DWORD WINAPI WaitForProcThread(LPVOID lParam) {
 	bStopPipeLoop = TRUE;
 	return 0;
 }
-static void lang_pipe_run_win(RLang *lang) {
+static void lang_pipe_run_win (RLang *lang) {
 	CHAR buf[PIPE_BUF_SIZE];
 	BOOL bSuccess = TRUE;
 	int i, res = 0;
@@ -76,7 +76,7 @@ static void lang_pipe_run_win(RLang *lang) {
 			if (bStopPipeLoop) {
 				break;
 			}
-			char *res = lang->cmd_str ((RCore*)lang->user, buf);
+			char *res = lang->cmd_str ((RCore *)lang->user, buf);
 			if (res) {
 				int res_len = strlen (res) + 1;
 				for (i = 0; i < res_len; i++) {
@@ -108,15 +108,15 @@ static void lang_pipe_run_win(RLang *lang) {
 	r_cons_break_pop ();
 }
 #else
-static void env(const char *s, int f) {
+static void env (const char *s, int f) {
 	char *a = r_str_newf ("%d", f);
 	r_sys_setenv (s, a);
-//	eprintf ("%s %s\n", s, a);
+	//	eprintf ("%s %s\n", s, a);
 	free (a);
 }
 #endif
 
-static int lang_pipe_run(RLang *lang, const char *code, int len) {
+static int lang_pipe_run (RLang *lang, const char *code, int len) {
 #if __UNIX__
 	int safe_in = dup (0);
 	int child, ret;
@@ -137,7 +137,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 		}
 		return false;
 	}
-	
+
 	env ("R2PIPE_IN", input[0]);
 	env ("R2PIPE_OUT", output[1]);
 
@@ -148,7 +148,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	} else if (!child) {
 		/* children */
 		r_sandbox_system (code, 1);
-		(void) write (input[1], "", 1);
+		(void)write (input[1], "", 1);
 		close (input[0]);
 		close (input[1]);
 		close (output[0]);
@@ -179,14 +179,14 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 				continue;
 			}
 			buf[sizeof (buf) - 1] = 0;
-			res = lang->cmd_str ((RCore*)lang->user, buf);
+			res = lang->cmd_str ((RCore *)lang->user, buf);
 			//eprintf ("%d %s\n", ret, buf);
 			if (res) {
-				(void) write (input[1], res, strlen (res) + 1);
+				(void)write (input[1], res, strlen (res) + 1);
 				free (res);
 			} else {
 				eprintf ("r_lang_pipe: NULL reply for (%s)\n", buf);
-				(void) write (input[1], "", 1); // NULL byte
+				(void)write (input[1], "", 1); // NULL byte
 			}
 		}
 		r_cons_break_pop ();
@@ -194,11 +194,11 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 		if (safe_in != -1) {
 			close (safe_in);
 		}
-		safe_in = open (ttyname(0), O_RDONLY);
+		safe_in = open (ttyname (0), O_RDONLY);
 		if (safe_in != -1) {
 			dup2 (safe_in, 0);
 		} else {
-			eprintf ("Cannot open ttyname(0) %s\n", ttyname(0));
+			eprintf ("Cannot open ttyname(0) %s\n", ttyname (0));
 		}
 	}
 
@@ -219,11 +219,11 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 
 	SetEnvironmentVariable (TEXT ("R2PIPE_PATH"), r2pipe_paz_);
 	hPipeInOut = CreateNamedPipe (r2pipe_paz_,
-			PIPE_ACCESS_DUPLEX,
-			PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
-			PIPE_BUF_SIZE,
-			PIPE_BUF_SIZE,
-			0, NULL);
+		PIPE_ACCESS_DUPLEX,
+		PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
+		PIPE_BUF_SIZE,
+		PIPE_BUF_SIZE,
+		0, NULL);
 	if (hPipeInOut == INVALID_HANDLE_VALUE) {
 		eprintf ("CreateNamedPipe failed: %#x\n", (int)GetLastError ());
 		goto beach;
@@ -257,5 +257,5 @@ static RLangPlugin r_lang_plugin_pipe = {
 	.license = "LGPL",
 	.desc = "Use #!pipe node script.js",
 	.run = lang_pipe_run,
-	.run_file = (void*)lang_pipe_file,
+	.run_file = (void *)lang_pipe_file,
 };

@@ -60,25 +60,25 @@ extern "C" {
 #endif
 
 // Called by r_core to set the configuration variables
-R_API void r_log_set_level(RLogLevel level);
-R_API void r_log_set_file(const char *filename);
-R_API void r_log_set_srcinfo(bool show_info);
-R_API void r_log_set_colors(bool show_colors);
-R_API void r_log_set_traplevel(RLogLevel level);
+R_API void r_log_set_level (RLogLevel level);
+R_API void r_log_set_file (const char *filename);
+R_API void r_log_set_srcinfo (bool show_info);
+R_API void r_log_set_colors (bool show_colors);
+R_API void r_log_set_traplevel (RLogLevel level);
 // TODO: r_log_set_options(enum RLogOptions)
 
 // Functions for adding log callbacks
-R_API void r_log_add_callback(RLogCallback cbfunc);
-R_API void r_log_del_callback(RLogCallback cbfunc);
+R_API void r_log_add_callback (RLogCallback cbfunc);
+R_API void r_log_del_callback (RLogCallback cbfunc);
 // TODO: r_log_get_callbacks()
 
 /* Define r_log as weak so it can be 'overwritten' externally
    This allows another method of output redirection on POSIX (Windows?)
    You can override this function to handle all logging logic / output yourself */
-R_API MACRO_WEAK_SYM void r_log(const char *funcname, const char *filename,
+R_API MACRO_WEAK_SYM void r_log (const char *funcname, const char *filename,
 	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...);
 
-R_API MACRO_WEAK_SYM void r_vlog(const char *funcname, const char *filename,
+R_API MACRO_WEAK_SYM void r_vlog (const char *funcname, const char *filename,
 	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, va_list args);
 
 #ifdef __cplusplus

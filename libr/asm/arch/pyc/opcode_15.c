@@ -1,6 +1,6 @@
 #include "opcode.h"
 
-pyc_opcodes *opcode_15(void) {
+pyc_opcodes *opcode_15 (void) {
 	pyc_opcodes *ret = new_pyc_opcodes ();
 	if (!ret) {
 		return NULL;
@@ -8,7 +8,7 @@ pyc_opcodes *opcode_15(void) {
 
 	ret->version_sig = (void *(*)())opcode_15;
 
-	def_opN ((struct op_parameter) {.op_obj = ret->opcodes, .op_name = "STOP_CODE", .op_code = 0, .pop = 0, .push = 0, .fallthrough = false});
+	def_opN ((struct op_parameter){ .op_obj = ret->opcodes, .op_name = "STOP_CODE", .op_code = 0, .pop = 0, .push = 0, .fallthrough = false });
 	def_op (.op_obj = ret->opcodes, .op_name = "POP_TOP", .op_code = 1);
 	def_op (.op_obj = ret->opcodes, .op_name = "ROT_TWO", .op_code = 2);
 	def_op (.op_obj = ret->opcodes, .op_name = "ROT_THREE", .op_code = 3);

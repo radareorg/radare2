@@ -14,7 +14,7 @@
 // make this work across all unixes without adding extra depenencies
 #define USE_SHM_OPEN 0
 
-#if __UNIX__ && !defined (__QNX__) && !defined (__HAIKU__)
+#if __UNIX__ && !defined(__QNX__) && !defined(__HAIKU__)
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/mman.h>
@@ -25,11 +25,11 @@ typedef struct {
 	ut8 *buf;
 	ut32 size;
 } RIOShm;
-#define RIOSHM_FD(x) (((RIOShm*)(x))->fd)
+#define RIOSHM_FD(x) (((RIOShm *)(x))->fd)
 
 #define SHMATSZ 0x9000; // 32*1024*1024; /* 32MB : XXX not used correctly? */
 
-static int shm__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
+static int shm__write (RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	r_return_val_if_fail (fd && fd->data, -1);
 	RIOShm *shm = fd->data;
 	if (shm->buf) {
@@ -39,7 +39,7 @@ static int shm__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	return write (shm->fd, buf, count);
 }
 
-static int shm__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
+static int shm__read (RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	r_return_val_if_fail (fd && fd->data, -1);
 	RIOShm *shm = fd->data;
 	if (io->off + count >= shm->size) {
@@ -49,18 +49,18 @@ static int shm__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		count = shm->size - io->off;
 	}
 	if (shm->buf) {
-		memcpy (buf, shm->buf+io->off , count);
+		memcpy (buf, shm->buf + io->off, count);
 		return count;
 	}
 	return read (shm->fd, buf, count);
 }
 
-static int shm__close(RIODesc *fd) {
+static int shm__close (RIODesc *fd) {
 	r_return_val_if_fail (fd && fd->data, -1);
 	int ret;
 	RIOShm *shm = fd->data;
 	if (shm->buf) {
-		ret = shmdt (((RIOShm*)(fd->data))->buf);
+		ret = shmdt (((RIOShm *)(fd->data))->buf);
 	} else {
 		ret = close (shm->fd);
 	}
@@ -68,7 +68,7 @@ static int shm__close(RIODesc *fd) {
 	return ret;
 }
 
-static ut64 shm__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 shm__lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	r_return_val_if_fail (fd && fd->data, -1);
 	RIOShm *shm = fd->data;
 	switch (whence) {
@@ -86,7 +86,7 @@ static ut64 shm__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return io->off;
 }
 
-static bool shm__plugin_open(RIO *io, const char *pathname, bool many) {
+static bool shm__plugin_open (RIO *io, const char *pathname, bool many) {
 	return (!strncmp (pathname, "shm://", 6));
 }
 
@@ -94,7 +94,7 @@ static inline int getshmfd (RIOShm *shm) {
 	return (((int)(size_t)shm->buf) >> 4) & 0xfff;
 }
 
-static RIODesc *shm__open(RIO *io, const char *pathname, int rw, int mode) {
+static RIODesc *shm__open (RIO *io, const char *pathname, int rw, int mode) {
 	if (!strncmp (pathname, "shm://", 6)) {
 		RIOShm *shm = R_NEW0 (RIOShm);
 		if (!shm) {
@@ -106,10 +106,10 @@ static RIODesc *shm__open(RIO *io, const char *pathname, int rw, int mode) {
 			shm->id = r_str_hash (ptr);
 		}
 		shm->buf = shmat (shm->id, 0, 0);
-		if (shm->buf == (void*)(size_t)-1) {
+		if (shm->buf == (void *)(size_t)-1) {
 #if USE_SHM_OPEN
 			shm->buf = NULL;
-			shm->fd = shm_open (ptr, O_CREAT | (rw?O_RDWR:O_RDONLY), 0644);
+			shm->fd = shm_open (ptr, O_CREAT | (rw ? O_RDWR : O_RDONLY), 0644);
 #else
 			shm->fd = -1;
 #endif

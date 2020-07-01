@@ -3,11 +3,11 @@
 #include "r_search.h"
 #include <r_regex.h>
 
-R_API int r_search_regexp_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
+R_API int r_search_regexp_update (RSearch *s, ut64 from, const ut8 *buf, int len) {
 	RSearchKeyword *kw;
 	RListIter *iter;
 	RRegexMatch match;
-	RRegex compiled = {0};
+	RRegex compiled = { 0 };
 	const int old_nhits = s->nhits;
 	int ret = 0;
 

@@ -12,7 +12,7 @@
 // TODO: add support for 80bit floating point value
 
 // long double = 128 bit
-R_API double r_reg_get_double(RReg *reg, RRegItem *item) {
+R_API double r_reg_get_double (RReg *reg, RRegItem *item) {
 	RRegSet *regset;
 	double vld = 0.0f;
 	int off;
@@ -36,7 +36,7 @@ R_API double r_reg_get_double(RReg *reg, RRegItem *item) {
 	return ret;
 }
 
-R_API bool r_reg_set_double(RReg *reg, RRegItem *item, double value) {
+R_API bool r_reg_set_double (RReg *reg, RRegItem *item, double value) {
 	ut8 *src;
 
 	if (!item) {
@@ -63,7 +63,7 @@ R_API bool r_reg_set_double(RReg *reg, RRegItem *item, double value) {
 }
 
 // long double = 80 bit
-R_API long double r_reg_get_longdouble(RReg *reg, RRegItem *item) {
+R_API long double r_reg_get_longdouble (RReg *reg, RRegItem *item) {
 	RRegSet *regset;
 	long double vld = 0.0f;
 	int off;
@@ -89,7 +89,7 @@ R_API long double r_reg_get_longdouble(RReg *reg, RRegItem *item) {
 	return ret;
 }
 
-R_API bool r_reg_set_longdouble(RReg *reg, RRegItem *item, long double value) {
+R_API bool r_reg_set_longdouble (RReg *reg, RRegItem *item, long double value) {
 	ut8 *src = NULL;
 
 	if (!item) {
@@ -119,11 +119,11 @@ R_API bool r_reg_set_longdouble(RReg *reg, RRegItem *item, long double value) {
 }
 
 /* floating point . deprecate maybe? */
-R_API float r_reg_get_float(RReg *reg, RRegItem *item) {
+R_API float r_reg_get_float (RReg *reg, RRegItem *item) {
 	// TODO
 	return 0.0f;
 }
 
-R_API bool r_reg_set_float(RReg *reg, RRegItem *item, float value) {
+R_API bool r_reg_set_float (RReg *reg, RRegItem *item, float value) {
 	return false;
 }

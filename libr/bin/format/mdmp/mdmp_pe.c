@@ -5,7 +5,7 @@
 
 #include "mdmp_pe.h"
 
-static void PE_(add_tls_callbacks)(struct PE_(r_bin_pe_obj_t) * bin, RList *list) {
+static void PE_ (add_tls_callbacks) (struct PE_ (r_bin_pe_obj_t) * bin, RList *list) {
 	char *key;
 	int count = 0;
 	PE_DWord haddr, paddr, vaddr;
@@ -40,13 +40,13 @@ static void PE_(add_tls_callbacks)(struct PE_(r_bin_pe_obj_t) * bin, RList *list
 	} while (vaddr);
 }
 
-RList *PE_(r_bin_mdmp_pe_get_entrypoint) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
+RList *PE_ (r_bin_mdmp_pe_get_entrypoint) (struct PE_ (r_bin_mdmp_pe_bin) * pe_bin) {
 	ut64 offset;
 	struct r_bin_pe_addr_t *entry = NULL;
 	RBinAddr *ptr = NULL;
 	RList *ret;
 
-	if (!(entry = PE_(r_bin_pe_get_entrypoint) (pe_bin->bin))) {
+	if (!(entry = PE_ (r_bin_pe_get_entrypoint) (pe_bin->bin))) {
 		return NULL;
 	}
 	if (!(ret = r_list_new ())) {
@@ -66,7 +66,7 @@ RList *PE_(r_bin_mdmp_pe_get_entrypoint) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin
 		r_list_append (ret, ptr);
 	}
 
-	PE_(add_tls_callbacks)
+	PE_ (add_tls_callbacks)
 	(pe_bin->bin, ret);
 
 	free (entry);
@@ -74,7 +74,7 @@ RList *PE_(r_bin_mdmp_pe_get_entrypoint) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin
 	return ret;
 }
 
-static void filter_import(ut8 *n) {
+static void filter_import (ut8 *n) {
 	int I;
 	for (I = 0; n[I]; I++) {
 		if (n[I] < 30 || n[I] >= 0x7f) {
@@ -84,7 +84,7 @@ static void filter_import(ut8 *n) {
 	}
 }
 
-RList *PE_(r_bin_mdmp_pe_get_imports) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
+RList *PE_ (r_bin_mdmp_pe_get_imports) (struct PE_ (r_bin_mdmp_pe_bin) * pe_bin) {
 	int i;
 	ut64 offset;
 	struct r_bin_pe_import_t *imports = NULL;
@@ -92,7 +92,7 @@ RList *PE_(r_bin_mdmp_pe_get_imports) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
 	RBinReloc *rel;
 	RList *ret, *relocs;
 
-	imports = PE_(r_bin_pe_get_imports) (pe_bin->bin);
+	imports = PE_ (r_bin_pe_get_imports) (pe_bin->bin);
 	ret = r_list_new ();
 	relocs = r_list_newf (free);
 
@@ -140,7 +140,7 @@ RList *PE_(r_bin_mdmp_pe_get_imports) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
 	return ret;
 }
 
-RList *PE_(r_bin_mdmp_pe_get_sections) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
+RList *PE_ (r_bin_mdmp_pe_get_sections) (struct PE_ (r_bin_mdmp_pe_bin) * pe_bin) {
 	/* TODO: Vet code, taken verbatim(ish) from bin_pe.c */
 	int i;
 	ut64 ba = pe_bin->vaddr; //baddr (arch);
@@ -155,7 +155,7 @@ RList *PE_(r_bin_mdmp_pe_get_sections) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) 
 		r_list_free (ret);
 		return NULL;
 	}
-	PE_(r_bin_pe_check_sections)
+	PE_ (r_bin_pe_check_sections)
 	(pe_bin->bin, &sections);
 	for (i = 0; !sections[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
@@ -207,7 +207,7 @@ RList *PE_(r_bin_mdmp_pe_get_sections) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) 
 	return ret;
 }
 
-RList *PE_(r_bin_mdmp_pe_get_symbols) (RBin *rbin, struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
+RList *PE_ (r_bin_mdmp_pe_get_symbols) (RBin *rbin, struct PE_ (r_bin_mdmp_pe_bin) * pe_bin) {
 	int i;
 	ut64 offset;
 	struct r_bin_pe_export_t *symbols = NULL;
@@ -220,7 +220,7 @@ RList *PE_(r_bin_mdmp_pe_get_symbols) (RBin *rbin, struct PE_(r_bin_mdmp_pe_bin)
 	}
 
 	/* TODO: Load symbol table from pdb file */
-	if ((symbols = PE_(r_bin_pe_get_exports) (pe_bin->bin))) {
+	if ((symbols = PE_ (r_bin_pe_get_exports) (pe_bin->bin))) {
 		for (i = 0; !symbols[i].last; i++) {
 			if (!(ptr = R_NEW0 (RBinSymbol))) {
 				break;
@@ -244,7 +244,7 @@ RList *PE_(r_bin_mdmp_pe_get_symbols) (RBin *rbin, struct PE_(r_bin_mdmp_pe_bin)
 		free (symbols);
 	}
 	/* Calling imports is unstable at the moment, I think this is an issue in pe.c */
-	if ((imports = PE_(r_bin_pe_get_imports) (pe_bin->bin))) {
+	if ((imports = PE_ (r_bin_pe_get_imports) (pe_bin->bin))) {
 		for (i = 0; !imports[i].last; i++) {
 			if (!(ptr = R_NEW0 (RBinSymbol))) {
 				break;

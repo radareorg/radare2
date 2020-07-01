@@ -11,7 +11,7 @@ struct r_bin_dyldcache_obj_t {
 	int size;
 	int nlibs;
 	struct cache_header hdr;
-	RBuffer* b;
+	RBuffer *b;
 };
 
 struct r_bin_dyldcache_lib_t {
@@ -21,7 +21,6 @@ struct r_bin_dyldcache_lib_t {
 	RBuffer *b;
 	int last;
 };
-
 
 struct dyld_cache_mapping_info {
 	ut64 address;
@@ -63,10 +62,10 @@ typedef struct _dyld_cache_local_symbols_entry {
 	ut32 nlistCount;
 } dyld_cache_local_symbols_entry;
 
-struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj_t* bin, int idx, int *nlib);
-void *r_bin_dyldcache_free(struct r_bin_dyldcache_obj_t* bin);
-struct r_bin_dyldcache_obj_t* r_bin_dyldcache_new(const char* file);
-struct r_bin_dyldcache_obj_t* r_bin_dyldcache_from_bytes_new (const ut8* bytes, ut64 size);
-void r_bin_dydlcache_get_libname(struct r_bin_dyldcache_lib_t *lib, char **libname);
+struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract (struct r_bin_dyldcache_obj_t *bin, int idx, int *nlib);
+void *r_bin_dyldcache_free (struct r_bin_dyldcache_obj_t *bin);
+struct r_bin_dyldcache_obj_t *r_bin_dyldcache_new (const char *file);
+struct r_bin_dyldcache_obj_t *r_bin_dyldcache_from_bytes_new (const ut8 *bytes, ut64 size);
+void r_bin_dydlcache_get_libname (struct r_bin_dyldcache_lib_t *lib, char **libname);
 
 #endif

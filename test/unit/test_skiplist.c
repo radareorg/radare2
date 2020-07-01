@@ -1,11 +1,11 @@
 #include <r_skiplist.h>
 #include "minunit.h"
 
-int cmp_int(int a, int b) {
+int cmp_int (int a, int b) {
 	return (a > b) - (a < b);
 }
 
-bool test_empty(void) {
+bool test_empty (void) {
 	RSkipList *list = r_skiplist_new (NULL, (RListComparator)cmp_int);
 	RSkipListNode *it;
 	void *data;
@@ -18,12 +18,12 @@ bool test_empty(void) {
 	mu_end;
 }
 
-bool test_oneelement(void) {
+bool test_oneelement (void) {
 	RSkipList *list = r_skiplist_new (NULL, (RListComparator)cmp_int);
 	RSkipListNode *it;
 	void *data;
 
-	r_skiplist_insert (list, (void *)(intptr_t)(3));
+	r_skiplist_insert (list, (void *)(intptr_t) (3));
 	r_skiplist_foreach (list, it, data) {
 		if ((int)(intptr_t)data != 3) {
 			mu_fail ("there shouldn't be any element apart from 3");
@@ -34,7 +34,7 @@ bool test_oneelement(void) {
 	mu_end;
 }
 
-bool test_insert(void) {
+bool test_insert (void) {
 	int i;
 	RSkipList *list = r_skiplist_new (NULL, (RListComparator)cmp_int);
 	RSkipListNode *n;
@@ -62,14 +62,14 @@ bool test_insert(void) {
 	// check non existing items
 	n = r_skiplist_find (list, (void *)(intptr_t)150);
 	mu_assert_null (n, "150 shouldn't be in the list");
-	n = r_skiplist_find (list, (void *)(intptr_t)(-10));
+	n = r_skiplist_find (list, (void *)(intptr_t) (-10));
 	mu_assert_null (n, "-10 shouldn't be in the list");
 
 	r_skiplist_free (list);
 	mu_end;
 }
 
-bool test_insert_existing(void) {
+bool test_insert_existing (void) {
 	RSkipList *list = r_skiplist_new (NULL, (RListComparator)cmp_int);
 	int i;
 	// Add 100 items.
@@ -92,7 +92,7 @@ bool test_insert_existing(void) {
 	mu_end;
 }
 
-bool test_purge(void) {
+bool test_purge (void) {
 	RSkipList *list = r_skiplist_new (NULL, (RListComparator)cmp_int);
 	r_skiplist_insert (list, (void *)(intptr_t)3);
 	r_skiplist_insert (list, (void *)(intptr_t)1);
@@ -108,7 +108,7 @@ bool test_purge(void) {
 	mu_end;
 }
 
-bool test_delete(void) {
+bool test_delete (void) {
 	RSkipList *list = r_skiplist_new (NULL, (RListComparator)cmp_int);
 	r_skiplist_insert (list, (void *)(intptr_t)3);
 	r_skiplist_insert (list, (void *)(intptr_t)1);
@@ -136,7 +136,7 @@ bool test_delete(void) {
 	mu_end;
 }
 
-bool test_join(void) {
+bool test_join (void) {
 	RSkipList *l1 = r_skiplist_new (NULL, (RListComparator)cmp_int);
 	r_skiplist_insert (l1, (void *)(intptr_t)3);
 	r_skiplist_insert (l1, (void *)(intptr_t)1);
@@ -160,17 +160,17 @@ bool test_join(void) {
 	mu_end;
 }
 
-int all_tests() {
-	mu_run_test(test_empty);
-	mu_run_test(test_oneelement);
-	mu_run_test(test_insert);
-	mu_run_test(test_insert_existing);
-	mu_run_test(test_purge);
-	mu_run_test(test_delete);
-	mu_run_test(test_join);
+int all_tests () {
+	mu_run_test (test_empty);
+	mu_run_test (test_oneelement);
+	mu_run_test (test_insert);
+	mu_run_test (test_insert_existing);
+	mu_run_test (test_purge);
+	mu_run_test (test_delete);
+	mu_run_test (test_join);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
+int main (int argc, char **argv) {
+	return all_tests ();
 }

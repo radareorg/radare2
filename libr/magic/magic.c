@@ -7,13 +7,13 @@
 R_LIB_VERSION (r_magic);
 
 #ifdef _MSC_VER
-# include <io.h>
-# include <sys\stat.h>
-# define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
-# define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
-# define S_IFIFO (-1)
-# define S_ISFIFO(m) (((m) & S_IFIFO) == S_IFIFO)
-# define MAXPATHLEN 255
+#include <io.h>
+#include <sys\stat.h>
+#define S_ISREG(m) (((m)&S_IFMT) == S_IFREG)
+#define S_ISDIR(m) (((m)&S_IFMT) == S_IFDIR)
+#define S_IFIFO (-1)
+#define S_ISFIFO(m) (((m)&S_IFIFO) == S_IFIFO)
+#define MAXPATHLEN 255
 #endif
 
 #if USE_LIB_MAGIC
@@ -24,17 +24,41 @@ R_LIB_VERSION (r_magic);
 #undef R_API
 #define R_API
 
-R_API RMagic* r_magic_new(int flags) { return magic_open (flags); }
-R_API void r_magic_free(RMagic* m) { if (m) { magic_close (m); } }
-R_API const char *r_magic_file(RMagic* m, const char * f) { return magic_file (m, f); } 
-R_API const char *r_magic_descriptor(RMagic* m, int fd) { return magic_descriptor (m, fd); }
-R_API const char *r_magic_buffer(RMagic* m, const void *b, size_t s) { return magic_buffer (m, b, s); }
-R_API const char *r_magic_error(RMagic* m) { return magic_error (m); }
-R_API void r_magic_setflags(RMagic* m, int f) { magic_setflags (m, f); }
-R_API bool r_magic_load(RMagic* m, const char *f) { return magic_load (m, f) != -1; }
-R_API bool r_magic_compile(RMagic* m, const char *x) { return magic_compile (m, x) != -1; }
-R_API bool r_magic_check(RMagic* m, const char *x) { return magic_check (m, x) != -1; }
-R_API int r_magic_errno(RMagic* m) { return magic_errno (m); }
+R_API RMagic *r_magic_new (int flags) {
+	return magic_open (flags);
+}
+R_API void r_magic_free (RMagic *m) {
+	if (m) {
+		magic_close (m);
+	}
+}
+R_API const char *r_magic_file (RMagic *m, const char *f) {
+	return magic_file (m, f);
+}
+R_API const char *r_magic_descriptor (RMagic *m, int fd) {
+	return magic_descriptor (m, fd);
+}
+R_API const char *r_magic_buffer (RMagic *m, const void *b, size_t s) {
+	return magic_buffer (m, b, s);
+}
+R_API const char *r_magic_error (RMagic *m) {
+	return magic_error (m);
+}
+R_API void r_magic_setflags (RMagic *m, int f) {
+	magic_setflags (m, f);
+}
+R_API bool r_magic_load (RMagic *m, const char *f) {
+	return magic_load (m, f) != -1;
+}
+R_API bool r_magic_compile (RMagic *m, const char *x) {
+	return magic_compile (m, x) != -1;
+}
+R_API bool r_magic_check (RMagic *m, const char *x) {
+	return magic_check (m, x) != -1;
+}
+R_API int r_magic_errno (RMagic *m) {
+	return magic_errno (m);
+}
 
 #else
 
@@ -42,16 +66,16 @@ R_API int r_magic_errno(RMagic* m) { return magic_errno (m); }
 
 #include "file.h"
 
-#ifndef PIPE_BUF 
+#ifndef PIPE_BUF
 /* Get the PIPE_BUF from pathconf */
 #ifdef _PC_PIPE_BUF
-#define PIPE_BUF pathconf(".", _PC_PIPE_BUF)
+#define PIPE_BUF pathconf (".", _PC_PIPE_BUF)
 #else
 #define PIPE_BUF 512
 #endif
 #endif
 
-static void free_mlist(struct mlist *mlist) {
+static void free_mlist (struct mlist *mlist) {
 	struct mlist *ml;
 	if (!mlist) {
 		return;
@@ -66,7 +90,7 @@ static void free_mlist(struct mlist *mlist) {
 	free (ml);
 }
 
-static int info_from_stat(RMagic *ms, unsigned short md) {
+static int info_from_stat (RMagic *ms, unsigned short md) {
 	/* We cannot open it, but we were able to stat it. */
 	if (md & 0222) {
 		if (file_printf (ms, "writable, ") == -1) {
@@ -95,18 +119,18 @@ static void close_and_restore (const RMagic *ms, const char *name, int fd, const
 	}
 }
 
-static const char *file_or_fd(RMagic *ms, const char *inname, int fd) {
+static const char *file_or_fd (RMagic *ms, const char *inname, int fd) {
 	bool ispipe = false;
 	int rv = -1;
 	unsigned char *buf;
 	struct stat sb;
-	int nbytes = 0;	/* number of bytes read from a datafile */
+	int nbytes = 0; /* number of bytes read from a datafile */
 
 	/*
 	 * one extra for terminating '\0', and
 	 * some overlapping space for matches near EOF
 	 */
-#define SLOP (1 + sizeof(union VALUETYPE))
+#define SLOP (1 + sizeof (union VALUETYPE))
 	if (!(buf = malloc (HOWMANY + SLOP))) {
 		return NULL;
 	}
@@ -116,9 +140,9 @@ static const char *file_or_fd(RMagic *ms, const char *inname, int fd) {
 	}
 
 	switch (file_fsmagic (ms, inname, &sb)) {
-	case -1: goto done;		/* error */
-	case 0:	break;			/* nothing found */
-	default: rv = 0; goto done;	/* matched it and printed type */
+	case -1: goto done; /* error */
+	case 0: break; /* nothing found */
+	default: rv = 0; goto done; /* matched it and printed type */
 	}
 
 	if (!inname) {
@@ -126,7 +150,7 @@ static const char *file_or_fd(RMagic *ms, const char *inname, int fd) {
 			ispipe = true;
 		}
 	} else {
-		int flags = O_RDONLY|O_BINARY;
+		int flags = O_RDONLY | O_BINARY;
 
 		if (stat (inname, &sb) == 0 && S_ISFIFO (sb.st_mode)) {
 #if O_NONBLOCK
@@ -159,8 +183,8 @@ static const char *file_or_fd(RMagic *ms, const char *inname, int fd) {
 		ssize_t r = 0;
 
 		//while ((r = sread(fd, (void *)&buf[nbytes],
-		while ((r = read(fd, (void *)&buf[nbytes],
-		    (size_t)(HOWMANY - nbytes))) > 0) {
+		while ((r = read (fd, (void *)&buf[nbytes],
+				(size_t) (HOWMANY - nbytes))) > 0) {
 			nbytes += r;
 			if (r < PIPE_BUF) {
 				break;
@@ -177,8 +201,8 @@ static const char *file_or_fd(RMagic *ms, const char *inname, int fd) {
 		}
 	} else {
 #endif
-		if ((nbytes = read(fd, (char *)buf, HOWMANY)) == -1) {
-			file_error(ms, errno, "cannot read `%s'", inname);
+		if ((nbytes = read (fd, (char *)buf, HOWMANY)) == -1) {
+			file_error (ms, errno, "cannot read `%s'", inname);
 			goto done;
 		}
 #ifdef O_NONBLOCK
@@ -193,13 +217,13 @@ static const char *file_or_fd(RMagic *ms, const char *inname, int fd) {
 done:
 	free (buf);
 	close_and_restore (ms, inname, fd, &sb);
-	return rv == 0 ? file_getbuffer(ms) : NULL;
+	return rv == 0 ? file_getbuffer (ms) : NULL;
 }
 
 /* API */
 
 // TODO: reinitialize all the time
-R_API RMagic* r_magic_new(int flags) {
+R_API RMagic *r_magic_new (int flags) {
 	RMagic *ms = R_NEW0 (RMagic);
 	if (!ms) {
 		return NULL;
@@ -218,7 +242,7 @@ R_API RMagic* r_magic_new(int flags) {
 	return ms;
 }
 
-R_API void r_magic_free(RMagic *ms) {
+R_API void r_magic_free (RMagic *ms) {
 	if (ms) {
 		free_mlist (ms->mlist);
 		free (ms->o.pbuf);
@@ -228,7 +252,7 @@ R_API void r_magic_free(RMagic *ms) {
 	}
 }
 
-R_API bool r_magic_load_buffer(RMagic* ms, const char *magicdata) {
+R_API bool r_magic_load_buffer (RMagic *ms, const char *magicdata) {
 	if (*magicdata == '#') {
 		struct mlist *ml = file_apprentice (ms, magicdata, FILE_LOAD);
 		if (ml) {
@@ -242,7 +266,7 @@ R_API bool r_magic_load_buffer(RMagic* ms, const char *magicdata) {
 	return false;
 }
 
-R_API bool r_magic_load(RMagic* ms, const char *magicfile) {
+R_API bool r_magic_load (RMagic *ms, const char *magicfile) {
 	struct mlist *ml = file_apprentice (ms, magicfile, FILE_LOAD);
 	if (ml) {
 		free_mlist (ms->mlist);
@@ -252,27 +276,27 @@ R_API bool r_magic_load(RMagic* ms, const char *magicfile) {
 	return false;
 }
 
-R_API bool r_magic_compile(RMagic *ms, const char *magicfile) {
+R_API bool r_magic_compile (RMagic *ms, const char *magicfile) {
 	struct mlist *ml = file_apprentice (ms, magicfile, FILE_COMPILE);
 	free_mlist (ml);
 	return ml != NULL;
 }
 
-R_API bool r_magic_check(RMagic *ms, const char *magicfile) {
+R_API bool r_magic_check (RMagic *ms, const char *magicfile) {
 	struct mlist *ml = file_apprentice (ms, magicfile, FILE_CHECK);
 	free_mlist (ml);
 	return ml != NULL;
 }
 
-R_API const char* r_magic_descriptor(RMagic *ms, int fd) {
+R_API const char *r_magic_descriptor (RMagic *ms, int fd) {
 	return file_or_fd (ms, NULL, fd);
 }
 
-R_API const char * r_magic_file(RMagic *ms, const char *inname) {
+R_API const char *r_magic_file (RMagic *ms, const char *inname) {
 	return file_or_fd (ms, inname, 0); // 0 = stdin
 }
 
-R_API const char * r_magic_buffer(RMagic *ms, const void *buf, size_t nb) {
+R_API const char *r_magic_buffer (RMagic *ms, const void *buf, size_t nb) {
 	if (file_reset (ms) == -1) {
 		return NULL;
 	}
@@ -282,21 +306,21 @@ R_API const char * r_magic_buffer(RMagic *ms, const void *buf, size_t nb) {
 	return file_getbuffer (ms);
 }
 
-R_API const char *r_magic_error(RMagic *ms) {
+R_API const char *r_magic_error (RMagic *ms) {
 	if (ms && ms->haderr) {
 		return ms->o.buf;
 	}
 	return NULL;
 }
 
-R_API int r_magic_errno(RMagic *ms) {
+R_API int r_magic_errno (RMagic *ms) {
 	if (ms && ms->haderr) {
 		return ms->error;
 	}
 	return 0;
 }
 
-R_API void r_magic_setflags(RMagic *ms, int flags) {
+R_API void r_magic_setflags (RMagic *ms, int flags) {
 	if (ms) {
 		ms->flags = flags;
 	}

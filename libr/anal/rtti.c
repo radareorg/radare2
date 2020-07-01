@@ -2,7 +2,7 @@
 
 #include "r_anal.h"
 
-R_API char *r_anal_rtti_demangle_class_name(RAnal *anal, const char *name) {
+R_API char *r_anal_rtti_demangle_class_name (RAnal *anal, const char *name) {
 	RVTableContext context;
 	r_anal_vtable_begin (anal, &context);
 	if (context.abi == R_ANAL_CPP_ABI_MSVC) {
@@ -11,7 +11,7 @@ R_API char *r_anal_rtti_demangle_class_name(RAnal *anal, const char *name) {
 	return r_anal_rtti_itanium_demangle_class_name (&context, name);
 }
 
-R_API void r_anal_rtti_print_at_vtable(RAnal *anal, ut64 addr, int mode) {
+R_API void r_anal_rtti_print_at_vtable (RAnal *anal, ut64 addr, int mode) {
 	bool use_json = mode == 'j';
 	if (use_json) {
 		r_cons_print ("[");
@@ -30,7 +30,7 @@ R_API void r_anal_rtti_print_at_vtable(RAnal *anal, ut64 addr, int mode) {
 	}
 }
 
-R_API void r_anal_rtti_print_all(RAnal *anal, int mode) {
+R_API void r_anal_rtti_print_all (RAnal *anal, int mode) {
 	RVTableContext context;
 	r_anal_vtable_begin (anal, &context);
 
@@ -81,7 +81,7 @@ R_API void r_anal_rtti_print_all(RAnal *anal, int mode) {
 	r_cons_break_pop ();
 }
 
-R_API void r_anal_rtti_recover_all(RAnal *anal) {
+R_API void r_anal_rtti_recover_all (RAnal *anal) {
 	RVTableContext context;
 	r_anal_vtable_begin (anal, &context);
 

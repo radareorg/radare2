@@ -9,7 +9,8 @@
 #define R_SP "sp"
 #define R_BP "bp"
 #define R_AX "a0"
-#define R_GP { "a0", "a1", "a2", "a3", "a4" }
+#define R_GP \
+	{ "a0", "a1", "a2", "a3", "a4" }
 #define R_TMP "t0"
 #define R_NGP 5
 
@@ -34,7 +35,7 @@ static void emit_frame_end (REgg *egg, int sz, int ctx) {
 	r_egg_printf (egg, "frame_end (%d, %d)\n", sz, ctx);
 }
 
-static void emit_comment(REgg *egg, const char *fmt, ...) {
+static void emit_comment (REgg *egg, const char *fmt, ...) {
 	va_list ap;
 	char buf[1024];
 	va_start (ap, fmt);
@@ -47,16 +48,16 @@ static void emit_equ (REgg *egg, const char *key, const char *value) {
 	r_egg_printf (egg, "equ (%s, %s)\n", key, value);
 }
 
-static void emit_syscall_args(REgg *egg, int nargs) {
+static void emit_syscall_args (REgg *egg, int nargs) {
 	r_egg_printf (egg, "syscall_args (%d)\n", nargs);
 }
 
-static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int j) {
+static void emit_set_string (REgg *egg, const char *dstvar, const char *str, int j) {
 	// what is j?
 	r_egg_printf (egg, "set (\"%s\", \"%s\", %d)\n", dstvar, str, j);
 }
 
-static void emit_call(REgg *egg, const char *str, int atr) {
+static void emit_call (REgg *egg, const char *str, int atr) {
 	if (atr) {
 		r_egg_printf (egg, "call ([%s])\n", str);
 	} else {
@@ -64,7 +65,7 @@ static void emit_call(REgg *egg, const char *str, int atr) {
 	}
 }
 
-static void emit_jmp(REgg *egg, const char *str, int atr) {
+static void emit_jmp (REgg *egg, const char *str, int atr) {
 	if (atr) {
 		r_egg_printf (egg, "goto ([%s])\n", str);
 	} else {
@@ -77,7 +78,7 @@ static void emit_arg (REgg *egg, int xs, int num, const char *str) {
 	r_egg_printf (egg, "arg.%d.%d=%s\n", xs, num, str);
 }
 
-static void emit_get_result(REgg *egg, const char *ocn) {
+static void emit_get_result (REgg *egg, const char *ocn) {
 	r_egg_printf (egg, "get_result (%s)\n", ocn);
 }
 
@@ -107,11 +108,11 @@ static void emit_trap (REgg *egg) {
 }
 
 // TODO atoi here?
-static void emit_load_ptr(REgg *egg, const char *dst) {
+static void emit_load_ptr (REgg *egg, const char *dst) {
 	r_egg_printf (egg, "loadptr (%s)\n", dst);
 }
 
-static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, const char *dst) {
+static void emit_branch (REgg *egg, char *b, char *g, char *e, char *n, int sz, const char *dst) {
 	// This function signature is crap
 	char *p, str[64];
 	char *arg = NULL;
@@ -119,21 +120,20 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 	/* NOTE that jb/ja are inverted to fit cmp opcode */
 	if (b) {
 		*b = '\0';
-		op = e?"bge":"bgt";
-		arg = b+1;
-	} else
-	if (g) {
+		op = e ? "bge" : "bgt";
+		arg = b + 1;
+	} else if (g) {
 		*g = '\0';
-		op = e?"ble":"blt";
-		arg = g+1;
+		op = e ? "ble" : "blt";
+		arg = g + 1;
 	}
 	if (!arg) {
 		if (e) {
-			arg = e+1;
+			arg = e + 1;
 			op = "bne";
 		} else {
 			arg = "0";
-			op = n?"bne":"beq";
+			op = n ? "bne" : "beq";
 		}
 	}
 
@@ -146,11 +146,11 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 }
 
 // XXX: sz must be char
-static void emit_load(REgg *egg, const char *dst, int sz) {
+static void emit_load (REgg *egg, const char *dst, int sz) {
 	r_egg_printf (egg, "load (\"%s\", %c)\n", dst, sz);
 }
 
-static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, const char *p) {
+static void emit_mathop (REgg *egg, int ch, int vs, int type, const char *eq, const char *p) {
 	char *op;
 	switch (ch) {
 	case '^': op = "eor"; break;
@@ -160,7 +160,7 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 	case '+': op = "add"; break;
 	case '*': op = "mul"; break;
 	case '/': op = "div"; break;
-	default:  op = "mov"; break;
+	default: op = "mov"; break;
 	}
 	if (!eq) {
 		eq = R_AX;
@@ -181,8 +181,8 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 	}
 }
 
-static const char* emit_regs(REgg *egg, int idx) {
-	return regs[idx%R_NGP];
+static const char *emit_regs (REgg *egg, int idx) {
+	return regs[idx % R_NGP];
 }
 
 REggEmit EMIT_NAME = {

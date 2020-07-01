@@ -8,7 +8,7 @@
 #include "../../asm/arch/dalvik/opcode.h"
 #include "../../bin/format/dex/dex.h"
 
-static const char *getCond(ut8 cond) {
+static const char *getCond (ut8 cond) {
 	switch (cond) {
 	case 0x32: // if-eq
 		return "$z";
@@ -26,7 +26,7 @@ static const char *getCond(ut8 cond) {
 	return "";
 }
 
-static const char *getCondz(ut8 cond) {
+static const char *getCondz (ut8 cond) {
 	switch (cond) {
 	case 0x38: // if-eqz
 		return "NOP";
@@ -44,7 +44,7 @@ static const char *getCondz(ut8 cond) {
 	return "";
 }
 
-static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static int dalvik_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	int sz = dalvik_opcodes[data[0]].len;
 	if (!op || sz >= len) {
 		if (op && (mask & R_ANAL_OP_MASK_DISASM)) {
@@ -75,43 +75,41 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x17: // const
 	case 0x42: // const
 	case 0x12: // const/4
-		{
-			op->type = R_ANAL_OP_TYPE_MOV;
-			ut32 vB = (data[1] & 0x0f);
-			ut32 vA = (data[1] & 0xf0) >> 4;
-			ut32 vC = (len > 4)? r_read_le32 (data + 2): 0x22;
-			// op->stackop = R_ANAL_STACK_SET;
-			// op->ptr = vC; // why
-			ut32 val = vC?vC:vA;
-			op->val = val;
-	//		op->reg = vB;
-			op->nopcode = 2;
-			if (mask & R_ANAL_OP_MASK_ESIL) {
-				esilprintf (op, "0x%"PFMT64x",v%d,=", val, vB);
-			}
+	{
+		op->type = R_ANAL_OP_TYPE_MOV;
+		ut32 vB = (data[1] & 0x0f);
+		ut32 vA = (data[1] & 0xf0) >> 4;
+		ut32 vC = (len > 4) ? r_read_le32 (data + 2) : 0x22;
+		// op->stackop = R_ANAL_STACK_SET;
+		// op->ptr = vC; // why
+		ut32 val = vC ? vC : vA;
+		op->val = val;
+		//		op->reg = vB;
+		op->nopcode = 2;
+		if (mask & R_ANAL_OP_MASK_ESIL) {
+			esilprintf (op, "0x%" PFMT64x ",v%d,=", val, vB);
 		}
-		break;
+	} break;
 	case 0x01: // move
 	case 0x07: // move-object
 	case 0x04: // mov-wide
-		{
-			ut32 vB = (data[1] & 0x0f);
-			ut32 vA = (data[1] & 0xf0) >> 4;
-			if (vA == vB) {
-				op->type = R_ANAL_OP_TYPE_NOP;
-				if (mask & R_ANAL_OP_MASK_ESIL) {
-					esilprintf (op, ",");
-				}
-			} else {
-				op->type = R_ANAL_OP_TYPE_MOV;
-				//op->stackop = R_ANAL_STACK_SET;
-				//op->ptr = -vA;
-				if (mask & R_ANAL_OP_MASK_ESIL) {
-					esilprintf (op, "v%d,v%d,=", vA, vB);
-				}
+	{
+		ut32 vB = (data[1] & 0x0f);
+		ut32 vA = (data[1] & 0xf0) >> 4;
+		if (vA == vB) {
+			op->type = R_ANAL_OP_TYPE_NOP;
+			if (mask & R_ANAL_OP_MASK_ESIL) {
+				esilprintf (op, ",");
+			}
+		} else {
+			op->type = R_ANAL_OP_TYPE_MOV;
+			//op->stackop = R_ANAL_STACK_SET;
+			//op->ptr = -vA;
+			if (mask & R_ANAL_OP_MASK_ESIL) {
+				esilprintf (op, "v%d,v%d,=", vA, vB);
 			}
 		}
-		break;
+	} break;
 	case 0x02: // move/from16
 	case 0x03: // move/16
 	case 0x05: // move-wide/from16
@@ -121,7 +119,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x13: // const/16
 		op->type = R_ANAL_OP_TYPE_MOV;
 		if (len > 2) {
-			int vA = (int) data[1];
+			int vA = (int)data[1];
 			ut32 vB = (data[3] << 8) | data[2];
 			if (mask & R_ANAL_OP_MASK_ESIL) {
 				esilprintf (op, "v%d,v%d,=", vA, vB);
@@ -138,7 +136,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x0d: // move-exception
 	case 0x0c: // move-result-object
 	case 0x0b: // move-result-wide
-	 	// TODO: add MOVRET OP TYPE ??
+		// TODO: add MOVRET OP TYPE ??
 		op->type = R_ANAL_OP_TYPE_MOV;
 		if (mask & R_ANAL_OP_MASK_ESIL) {
 			ut32 vA = data[1];
@@ -150,12 +148,12 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->datatype = R_ANAL_DATATYPE_STRING;
 		if (len > 2) {
 			ut32 vA = data[1];
-			ut32 vB = (data[3]<<8) | data[2];
+			ut32 vB = (data[3] << 8) | data[2];
 			ut64 offset = R_ANAL_GET_OFFSET (anal, 's', vB);
 			op->ptr = offset;
 			if (mask & R_ANAL_OP_MASK_ESIL) {
 				// op->refptr = 0;
-				esilprintf (op, "0x%"PFMT64x",v%d,=", offset, vA);
+				esilprintf (op, "0x%" PFMT64x ",v%d,=", offset, vA);
 			}
 		}
 		break;
@@ -265,17 +263,16 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		}
 		break;
 	case 0x62: // sget-object
-		{
-			op->datatype = R_ANAL_DATATYPE_OBJECT;
-			op->type = R_ANAL_OP_TYPE_LOAD;
-			ut32 vC = len > 3?(data[3] << 8) | data[2] : 0;
-			op->ptr = anal->binb.get_offset (anal->binb.bin, 'f', vC);
-			if (mask & R_ANAL_OP_MASK_ESIL) {
-				ut32 vA = (data[1] & 0x0f);
-				esilprintf (op, "%d,v%d,=", op->ptr, vA);
-			}
+	{
+		op->datatype = R_ANAL_DATATYPE_OBJECT;
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		ut32 vC = len > 3 ? (data[3] << 8) | data[2] : 0;
+		op->ptr = anal->binb.get_offset (anal->binb.bin, 'f', vC);
+		if (mask & R_ANAL_OP_MASK_ESIL) {
+			ut32 vA = (data[1] & 0x0f);
+			esilprintf (op, "%d,v%d,=", op->ptr, vA);
 		}
-		break;
+	} break;
 	case 0x6b: //sput-byte
 	case 0x6d: //sput-short
 	case 0xeb: //sput-wide-volatile
@@ -304,11 +301,11 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x6a: // sput-boolean
 	case 0x6c: // sput-wide
 	case 0xfe: // sput
-{
-	op->type = R_ANAL_OP_TYPE_STORE;
-	ut32 vC = len > 3?(data[3] << 8) | data[2] : 0;
-	op->ptr = anal->binb.get_offset (anal->binb.bin, 'f', vC);
-}
+	{
+		op->type = R_ANAL_OP_TYPE_STORE;
+		ut32 vC = len > 3 ? (data[3] << 8) | data[2] : 0;
+		op->ptr = anal->binb.get_offset (anal->binb.bin, 'f', vC);
+	}
 		if (mask & R_ANAL_OP_MASK_ESIL) {
 			ut32 vA = (data[1] & 0x0f);
 			esilprintf (op, "%d,v%d,=", op->ptr, vA);
@@ -404,7 +401,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->eob = true;
 		//TODO: handle return if(0x0e) {} else {}
 		if (mask & R_ANAL_OP_MASK_ESIL) {
-			if (data[0] == 0x0e) {// return-void
+			if (data[0] == 0x0e) { // return-void
 				esilprintf (op, "sp,[8],ip,=,8,sp,+=");
 			} else {
 				ut32 vA = data[1];
@@ -413,31 +410,31 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		}
 		break;
 	case 0x28: // goto
-		op->jump = addr + ((char)data[1])*2;
+		op->jump = addr + ((char)data[1]) * 2;
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->eob = true;
 		if (mask & R_ANAL_OP_MASK_ESIL) {
-			esilprintf (op, "0x%"PFMT64x",ip,=", op->jump);
+			esilprintf (op, "0x%" PFMT64x ",ip,=", op->jump);
 		}
 		break;
 	case 0x29: // goto/16
 		if (len > 3) {
-			op->jump = addr + (short)(data[2]|data[3]<<8)*2;
+			op->jump = addr + (short)(data[2] | data[3] << 8) * 2;
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->eob = true;
 			if (mask & R_ANAL_OP_MASK_ESIL) {
-				esilprintf (op, "0x%"PFMT64x",ip,=", op->jump);
+				esilprintf (op, "0x%" PFMT64x ",ip,=", op->jump);
 			}
 		}
 		break;
 	case 0x2a: // goto/32
 		if (len > 5) {
-			st64 dst = (st64)(data[2]|(data[3]<<8)|(data[4]<<16)|(data[5]<<24));
+			st64 dst = (st64) (data[2] | (data[3] << 8) | (data[4] << 16) | (data[5] << 24));
 			op->jump = addr + (dst * 2);
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->eob = true;
 			if (mask & R_ANAL_OP_MASK_ESIL) {
-				esilprintf (op, "0x%"PFMT64x",ip,=", op->jump);
+				esilprintf (op, "0x%" PFMT64x ",ip,=", op->jump);
 			}
 		}
 		break;
@@ -472,14 +469,14 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		//XXX fix this better the check is to avoid an oob
 		if (len > 2) {
-			op->jump = addr + (len>3?(short)(data[2]|data[3]<<8)*2 : 0);
+			op->jump = addr + (len > 3 ? (short)(data[2] | data[3] << 8) * 2 : 0);
 			op->fail = addr + sz;
 			op->eob = true;
 			if (mask & R_ANAL_OP_MASK_ESIL) {
 				ut32 vA = data[1];
 				ut32 vB = data[2];
 				const char *cond = getCond (data[0]);
-				esilprintf (op, "v%d,v%d,==,%s,?{,%"PFMT64d",ip,=}", vB, vA, cond, op->jump);
+				esilprintf (op, "v%d,v%d,==,%s,?{,%" PFMT64d ",ip,=}", vB, vA, cond, op->jump);
 			}
 		}
 		break;
@@ -492,13 +489,13 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		//XXX fix this better the check is to avoid an oob
 		if (len > 2) {
-			op->jump = addr + (len>3?(short)(data[2]|data[3]<<8)*2 : 0);
+			op->jump = addr + (len > 3 ? (short)(data[2] | data[3] << 8) * 2 : 0);
 			op->fail = addr + sz;
 			op->eob = true;
 			if (mask & R_ANAL_OP_MASK_ESIL) {
 				ut32 vA = data[1];
 				const char *cond = getCondz (data[0]);
-				esilprintf (op, "v%d,%s,?{,%"PFMT64d",ip,=}", vA, cond, op->jump);
+				esilprintf (op, "v%d,%s,?{,%" PFMT64d ",ip,=}", vA, cond, op->jump);
 			}
 		}
 		break;
@@ -538,7 +535,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		if (len > 2) {
 			//XXX fix this better since the check avoid an oob
 			//but the jump will be incorrect
-			ut32 vB = len > 3?(data[3] << 8) | data[2] : 0;
+			ut32 vB = len > 3 ? (data[3] << 8) | data[2] : 0;
 			ut64 dst = anal->binb.get_offset (anal->binb.bin, 'm', vB);
 			if (dst == 0) {
 				op->type = R_ANAL_OP_TYPE_UCALL;
@@ -549,7 +546,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			op->fail = addr + sz;
 			if (mask & R_ANAL_OP_MASK_ESIL) {
 				// TODO: handle /range instructions
-				esilprintf (op, "8,sp,-=,0x%"PFMT64x",sp,=[8],0x%"PFMT64x",ip,=", op->fail, op->jump);
+				esilprintf (op, "8,sp,-=,0x%" PFMT64x ",sp,=[8],0x%" PFMT64x ",ip,=", op->fail, op->jump);
 			}
 		}
 		break;
@@ -574,18 +571,17 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		}
 		if (mask & R_ANAL_OP_MASK_ESIL) {
 			// TODO: handle /range instructions
-			esilprintf (op, "8,sp,-=,0x%"PFMT64x",sp,=[8],0x%"PFMT64x",ip,=", op->fail, op->jump);
+			esilprintf (op, "8,sp,-=,0x%" PFMT64x ",sp,=[8],0x%" PFMT64x ",ip,=", op->fail, op->jump);
 		}
 		break;
 	case 0x27: // throw
-		{
-			op->type = R_ANAL_OP_TYPE_TRAP;
-			if (mask & R_ANAL_OP_MASK_ESIL) {
-				ut32 vA = data[1];
-				esilprintf (op, "v%d,TRAP", vA);
-			}
+	{
+		op->type = R_ANAL_OP_TYPE_TRAP;
+		if (mask & R_ANAL_OP_MASK_ESIL) {
+			ut32 vA = data[1];
+			esilprintf (op, "v%d,TRAP", vA);
 		}
-		break;
+	} break;
 	case 0xee: // execute-inline
 	case 0xef: // execute-inline/range
 		op->type = R_ANAL_OP_TYPE_SWI;
@@ -601,7 +597,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			ut64 off = R_ANAL_GET_OFFSET (anal, 't', vB);
 			op->ptr = off;
 			if (mask & R_ANAL_OP_MASK_ESIL) {
-				int vA = (int) data[1];
+				int vA = (int)data[1];
 				esilprintf (op, "%d,new,v%d,=", off, vA);
 			}
 		}
@@ -612,8 +608,8 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		if (len > 2 && mask & R_ANAL_OP_MASK_ESIL) {
 			ut32 vA = (data[1] & 0x0f);
 			ut32 vB = (data[1] & 0xf0) >> 4;
-			ut32 vC = (int) data[2] | (data[3]<<8);
-			esilprintf (op, "%d,%d,new-array,v%d,=",vC, vB, vA);
+			ut32 vC = (int)data[2] | (data[3] << 8);
+			esilprintf (op, "%d,%d,new-array,v%d,=", vC, vB, vA);
 		}
 		break;
 	case 0x24: // filled-new-array
@@ -703,55 +699,54 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	return sz;
 }
 
-static bool set_reg_profile(RAnal *anal) {
+static bool set_reg_profile (RAnal *anal) {
 	const char *p =
-	"=PC	ip\n"
-	"=SP	sp\n"
-	"=BP	bp\n"
-	"=A0	v0\n"
-	"=A1	v1\n"
-	"=A2	v2\n"
-	"=A3	v3\n"
-	"=SN	v0\n"
-	"gpr	v0	.32	0	0\n"
-	"gpr	v1	.32	4	0\n"
-	"gpr	v2	.32	8	0\n"
-	"gpr	v3	.32	12	0\n"
-	"gpr	v4	.32	16	0\n"
-	"gpr	v5	.32	20	0\n"
-	"gpr	v6	.32	24	0\n"
-	"gpr	v7	.32	28	0\n"
-	"gpr	v8	.32	32	0\n"
-	"gpr	v9	.32	36	0\n"
-	"gpr	v10	.32	40	0\n"
-	"gpr	v11	.32	44	0\n"
-	"gpr	v12	.32	48	0\n"
-	"gpr	v13	.32	52	0\n"
-	"gpr	v14	.32	56	0\n"
-	"gpr	v15	.32	60	0\n"
-	"gpr	v16	.32	40	0\n"
-	"gpr	v17	.32	44	0\n"
-	"gpr	v18	.32	48	0\n"
-	"gpr	v19	.32	52	0\n"
-	"gpr	v20	.32	56	0\n"
-	"gpr	v21	.32	60	0\n"
-	"gpr	v22	.32	64	0\n"
-	"gpr	v23	.32	68	0\n"
-	"gpr	v24	.32	72	0\n"
-	"gpr	v25	.32	76	0\n"
-	"gpr	v26	.32	80	0\n"
-	"gpr	v27	.32	84	0\n"
-	"gpr	v28	.32	88	0\n"
-	"gpr	v29	.32	92	0\n"
-	"gpr	v30	.32	96	0\n"
-	"gpr	v31	.32	100	0\n"
-	"gpr	v32	.32	104	0\n"
-	"gpr	v33	.32	108	0\n"
-	"gpr	v34	.32	112	0\n"
-	"gpr	ip	.32	116	0\n"
-	"gpr	sp	.32	120	0\n"
-	"gpr	bp	.32	124	0\n"
-	;
+		"=PC	ip\n"
+		"=SP	sp\n"
+		"=BP	bp\n"
+		"=A0	v0\n"
+		"=A1	v1\n"
+		"=A2	v2\n"
+		"=A3	v3\n"
+		"=SN	v0\n"
+		"gpr	v0	.32	0	0\n"
+		"gpr	v1	.32	4	0\n"
+		"gpr	v2	.32	8	0\n"
+		"gpr	v3	.32	12	0\n"
+		"gpr	v4	.32	16	0\n"
+		"gpr	v5	.32	20	0\n"
+		"gpr	v6	.32	24	0\n"
+		"gpr	v7	.32	28	0\n"
+		"gpr	v8	.32	32	0\n"
+		"gpr	v9	.32	36	0\n"
+		"gpr	v10	.32	40	0\n"
+		"gpr	v11	.32	44	0\n"
+		"gpr	v12	.32	48	0\n"
+		"gpr	v13	.32	52	0\n"
+		"gpr	v14	.32	56	0\n"
+		"gpr	v15	.32	60	0\n"
+		"gpr	v16	.32	40	0\n"
+		"gpr	v17	.32	44	0\n"
+		"gpr	v18	.32	48	0\n"
+		"gpr	v19	.32	52	0\n"
+		"gpr	v20	.32	56	0\n"
+		"gpr	v21	.32	60	0\n"
+		"gpr	v22	.32	64	0\n"
+		"gpr	v23	.32	68	0\n"
+		"gpr	v24	.32	72	0\n"
+		"gpr	v25	.32	76	0\n"
+		"gpr	v26	.32	80	0\n"
+		"gpr	v27	.32	84	0\n"
+		"gpr	v28	.32	88	0\n"
+		"gpr	v29	.32	92	0\n"
+		"gpr	v30	.32	96	0\n"
+		"gpr	v31	.32	100	0\n"
+		"gpr	v32	.32	104	0\n"
+		"gpr	v33	.32	108	0\n"
+		"gpr	v34	.32	112	0\n"
+		"gpr	ip	.32	116	0\n"
+		"gpr	sp	.32	120	0\n"
+		"gpr	bp	.32	124	0\n";
 	return r_reg_set_profile_string (anal->reg, p);
 }
 

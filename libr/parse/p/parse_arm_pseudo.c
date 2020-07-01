@@ -9,7 +9,7 @@
 #include <r_anal.h>
 #include <r_parse.h>
 
-static int replace(int argc, const char *argv[], char *newstr) {
+static int replace (int argc, const char *argv[], char *newstr) {
 #define MAXPSEUDOOPS 10
 	int i, j, k, d;
 	char ch;
@@ -186,14 +186,14 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	newstr[0] = '\0';
 	for (i = 0; i < argc; i++) {
 		strcat (newstr, argv[i]);
-		strcat (newstr, (!i || i == argc - 1)? " " : ",");
+		strcat (newstr, (!i || i == argc - 1) ? " " : ",");
 	}
 	r_str_replace_char (newstr, '{', '(');
 	r_str_replace_char (newstr, '}', ')');
 	return false;
 }
 
-static int parse(RParse *p, const char *data, char *str) {
+static int parse (RParse *p, const char *data, char *str) {
 	char w0[256], w1[256], w2[256], w3[256];
 	int i, len = strlen (data);
 	char *buf, *ptr, *optr;
@@ -222,17 +222,17 @@ static int parse(RParse *p, const char *data, char *str) {
 
 			optr = ptr;
 			if (*ptr == '(') {
-				ptr = strchr (ptr+1, ')');
+				ptr = strchr (ptr + 1, ')');
 			}
 			if (ptr && *ptr == '[') {
-				ptr = strchr (ptr+1, ']');
+				ptr = strchr (ptr + 1, ']');
 			}
 			if (ptr && *ptr == '{') {
-				ptr = strchr (ptr+1, '}');
+				ptr = strchr (ptr + 1, '}');
 			}
 			if (!ptr) {
 				eprintf ("Unbalanced bracket\n");
-				free(buf);
+				free (buf);
 				return false;
 			}
 			ptr = strchr (ptr, ',');
@@ -277,7 +277,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	return true;
 }
 
-static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	RList *spargs = NULL;
 	RList *bpargs = NULL;
 	RListIter *iter;
@@ -301,7 +301,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 			rip += 4;
 			char *tstr_new, *ripend = strchr (rip, ']');
 			const char *neg = strchr (rip, '-');
-			ut64 off = (oplen == 2 || strstr (tstr, ".w") || strstr(tstr, ".W")) ? 4 : 8;
+			ut64 off = (oplen == 2 || strstr (tstr, ".w") || strstr (tstr, ".W")) ? 4 : 8;
 			ut64 repl_num = (addr + off) & ~3;
 			if (!ripend) {
 				ripend = "]";
@@ -313,7 +313,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 			}
 			rip -= 3;
 			*rip = 0;
-			tstr_new = r_str_newf ("%s0x%08"PFMT64x"%s", tstr, repl_num, ripend);
+			tstr_new = r_str_newf ("%s0x%08" PFMT64x "%s", tstr, repl_num, ripend);
 			free (tstr);
 			tstr = tstr_new;
 		}
@@ -424,7 +424,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	r_list_free (bpargs);
 	r_list_free (spargs);
 	if (len > strlen (tstr)) {
-		strcpy  (str, tstr);
+		strcpy (str, tstr);
 	} else {
 		// TOO BIG STRING CANNOT REPLACE HERE
 		free (tstr);

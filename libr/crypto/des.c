@@ -99,19 +99,26 @@ R_API void r_des_permute_key (ut32 *keylo, ut32 *keyhi) {
 		return;
 	}
 	ut32 perm = ((*keylo >> 4) ^ *keyhi) & 0x0F0F0F0F;
-	*keyhi ^= perm; *keylo ^= (perm << 4);
+	*keyhi ^= perm;
+	*keylo ^= (perm << 4);
 	perm = ((*keyhi >> 16) ^ *keylo) & 0x0000FFFF;
-	*keylo ^= perm; *keyhi ^= (perm << 16);
+	*keylo ^= perm;
+	*keyhi ^= (perm << 16);
 	perm = ((*keylo >> 2) ^ *keyhi) & 0x33333333;
-	*keyhi ^= perm; *keylo ^= (perm << 2);
+	*keyhi ^= perm;
+	*keylo ^= (perm << 2);
 	perm = ((*keyhi >> 16) ^ *keylo) & 0x0000FFFF;
-	*keylo ^= perm; *keyhi ^= (perm << 16);
+	*keylo ^= perm;
+	*keyhi ^= (perm << 16);
 	perm = ((*keylo >> 1) ^ *keyhi) & 0x55555555;
-	*keyhi ^= perm; *keylo ^= (perm << 1);
+	*keyhi ^= perm;
+	*keylo ^= (perm << 1);
 	perm = ((*keyhi >> 8) ^ *keylo) & 0x00FF00FF;
-	*keylo ^= perm; *keyhi ^= (perm << 8);
+	*keylo ^= perm;
+	*keyhi ^= (perm << 8);
 	perm = ((*keylo >> 1) ^ *keyhi) & 0x55555555;
-	*keyhi ^= perm; *keylo ^= (perm << 1);
+	*keyhi ^= perm;
+	*keylo ^= (perm << 1);
 	perm = (*keylo << 8) | ((*keyhi >> 20) & 0x000000F0);
 	*keylo = ((*keyhi << 20) & 0x0FF00000);
 	*keylo |= ((*keyhi << 4) & 0x000FF000);
@@ -121,22 +128,27 @@ R_API void r_des_permute_key (ut32 *keylo, ut32 *keyhi) {
 }
 
 // first permutation of the block
-R_API void r_des_permute_block0  (ut32 *blocklo, ut32 *blockhi) {
+R_API void r_des_permute_block0 (ut32 *blocklo, ut32 *blockhi) {
 	if (!blocklo || !blockhi) {
 		return;
 	}
 	ut32 lo = *blocklo;
 	ut32 hi = *blockhi;
 	ut32 perm = ((lo >> 4) ^ hi) & 0x0F0F0F0F;
-	hi ^= perm; lo ^= perm << 4;
+	hi ^= perm;
+	lo ^= perm << 4;
 	perm = ((lo >> 16) ^ hi) & 0x0000FFFF;
-	hi ^= perm; lo ^= perm << 16;
+	hi ^= perm;
+	lo ^= perm << 16;
 	perm = ((hi >> 2) ^ lo) & 0x33333333;
-	lo ^= perm; hi ^= perm << 2;
+	lo ^= perm;
+	hi ^= perm << 2;
 	perm = ((hi >> 8) ^ lo) & 0x00FF00FF;
-	lo ^= perm; hi ^= perm << 8;
+	lo ^= perm;
+	hi ^= perm << 8;
 	perm = ((lo >> 1) ^ hi) & 0x55555555;
-	hi ^= perm; lo ^= perm << 1;
+	hi ^= perm;
+	lo ^= perm << 1;
 	*blocklo = ROTL (lo, 1);
 	*blockhi = ROTL (hi, 1);
 }
@@ -151,15 +163,20 @@ R_API void r_des_permute_block1 (ut32 *blocklo, ut32 *blockhi) {
 	lo = ROTR (lo, 1);
 	hi = ROTR (hi, 1);
 	ut32 perm = ((lo >> 1) ^ hi) & 0x55555555;
-	hi ^= perm; lo ^= perm << 1;
+	hi ^= perm;
+	lo ^= perm << 1;
 	perm = ((hi >> 8) ^ lo) & 0x00FF00FF;
-	lo ^= perm; hi ^= perm << 8;
+	lo ^= perm;
+	hi ^= perm << 8;
 	perm = ((hi >> 2) ^ lo) & 0x33333333;
-	lo ^= perm; hi ^= perm << 2;
+	lo ^= perm;
+	hi ^= perm << 2;
 	perm = ((lo >> 16) ^ hi) & 0x0000FFFF;
-	hi ^= perm; lo ^= perm << 16;
+	hi ^= perm;
+	lo ^= perm << 16;
 	perm = ((lo >> 4) ^ hi) & 0x0F0F0F0F;
-	hi ^= perm; lo ^= perm << 4;
+	hi ^= perm;
+	lo ^= perm << 4;
 	*blocklo = lo;
 	*blockhi = hi;
 }
@@ -181,29 +198,29 @@ R_API void r_des_round_key (int i, ut32 *keylo, ut32 *keyhi, ut32 *deskeylo, ut3
 	ut32 deslo = *deskeylo;
 	ut32 deshi = *deskeyhi;
 
-	*keylo =((deslo << 4)  & 0x24000000) | ((deslo << 28) & 0x10000000) |
-			((deslo << 14) & 0x08000000) | ((deslo << 18) & 0x02080000) |
-			((deslo << 6)  & 0x01000000) | ((deslo << 9)  & 0x00200000) |
-			((deslo >> 1)  & 0x00100000) | ((deslo << 10) & 0x00040000) |
-			((deslo << 2)  & 0x00020000) | ((deslo >> 10) & 0x00010000) |
-			((deshi >> 13) & 0x00002000) | ((deshi >> 4)  & 0x00001000) |
-			((deshi << 6)  & 0x00000800) | ((deshi >> 1)  & 0x00000400) |
-			((deshi >> 14) & 0x00000200) | ((deshi)	   & 0x00000100) |
-			((deshi >> 5)  & 0x00000020) | ((deshi >> 10) & 0x00000010) |
-			((deshi >> 3)  & 0x00000008) | ((deshi >> 18) & 0x00000004) |
-			((deshi >> 26) & 0x00000002) | ((deshi >> 24) & 0x00000001);
+	*keylo = ((deslo << 4) & 0x24000000) | ((deslo << 28) & 0x10000000) |
+		((deslo << 14) & 0x08000000) | ((deslo << 18) & 0x02080000) |
+		((deslo << 6) & 0x01000000) | ((deslo << 9) & 0x00200000) |
+		((deslo >> 1) & 0x00100000) | ((deslo << 10) & 0x00040000) |
+		((deslo << 2) & 0x00020000) | ((deslo >> 10) & 0x00010000) |
+		((deshi >> 13) & 0x00002000) | ((deshi >> 4) & 0x00001000) |
+		((deshi << 6) & 0x00000800) | ((deshi >> 1) & 0x00000400) |
+		((deshi >> 14) & 0x00000200) | ((deshi)&0x00000100) |
+		((deshi >> 5) & 0x00000020) | ((deshi >> 10) & 0x00000010) |
+		((deshi >> 3) & 0x00000008) | ((deshi >> 18) & 0x00000004) |
+		((deshi >> 26) & 0x00000002) | ((deshi >> 24) & 0x00000001);
 
-	*keyhi =((deslo << 15) & 0x20000000) | ((deslo << 17) & 0x10000000) |
-			((deslo << 10) & 0x08000000) | ((deslo << 22) & 0x04000000) |
-			((deslo >> 2)  & 0x02000000) | ((deslo << 1)  & 0x01000000) |
-			((deslo << 16) & 0x00200000) | ((deslo << 11) & 0x00100000) |
-			((deslo << 3)  & 0x00080000) | ((deslo >> 6)  & 0x00040000) |
-			((deslo << 15) & 0x00020000) | ((deslo >> 4)  & 0x00010000) |
-			((deshi >> 2)  & 0x00002000) | ((deshi << 8)  & 0x00001000) |
-			((deshi >> 14) & 0x00000808) | ((deshi >> 9)  & 0x00000400) |
-			((deshi)	   & 0x00000200) | ((deshi << 7)  & 0x00000100) |
-			((deshi >> 7)  & 0x00000020) | ((deshi >> 3)  & 0x00000011) |
-			((deshi << 2)  & 0x00000004) | ((deshi >> 21) & 0x00000002);
+	*keyhi = ((deslo << 15) & 0x20000000) | ((deslo << 17) & 0x10000000) |
+		((deslo << 10) & 0x08000000) | ((deslo << 22) & 0x04000000) |
+		((deslo >> 2) & 0x02000000) | ((deslo << 1) & 0x01000000) |
+		((deslo << 16) & 0x00200000) | ((deslo << 11) & 0x00100000) |
+		((deslo << 3) & 0x00080000) | ((deslo >> 6) & 0x00040000) |
+		((deslo << 15) & 0x00020000) | ((deslo >> 4) & 0x00010000) |
+		((deshi >> 2) & 0x00002000) | ((deshi << 8) & 0x00001000) |
+		((deshi >> 14) & 0x00000808) | ((deshi >> 9) & 0x00000400) |
+		((deshi)&0x00000200) | ((deshi << 7) & 0x00000100) |
+		((deshi >> 7) & 0x00000020) | ((deshi >> 3) & 0x00000011) |
+		((deshi << 2) & 0x00000004) | ((deshi >> 21) & 0x00000002);
 }
 
 R_API void r_des_round (ut32 *buflo, ut32 *bufhi, ut32 *roundkeylo, ut32 *roundkeyhi) {

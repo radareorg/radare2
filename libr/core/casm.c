@@ -6,14 +6,14 @@
 
 #define IFDBG if (0)
 
-static RCoreAsmHit * find_addr(RList *hits, ut64 addr);
-static int prune_hits_in_hit_range(RList *hits, RCoreAsmHit *hit);
-static int is_hit_inrange(RCoreAsmHit *hit, ut64 start_range, ut64 end_range);
-static int is_addr_in_range(ut64 start, ut64 end, ut64 start_range, ut64 end_range);
-static void add_hit_to_sorted_hits(RList* hits, ut64 addr, int len, ut8 is_valid);
-static int prune_hits_in_addr_range(RList *hits, ut64 addr, ut64 len, ut8 is_valid);
+static RCoreAsmHit *find_addr (RList *hits, ut64 addr);
+static int prune_hits_in_hit_range (RList *hits, RCoreAsmHit *hit);
+static int is_hit_inrange (RCoreAsmHit *hit, ut64 start_range, ut64 end_range);
+static int is_addr_in_range (ut64 start, ut64 end, ut64 start_range, ut64 end_range);
+static void add_hit_to_sorted_hits (RList *hits, ut64 addr, int len, ut8 is_valid);
+static int prune_hits_in_addr_range (RList *hits, ut64 addr, ut64 len, ut8 is_valid);
 
-static int rcoreasm_address_comparator(RCoreAsmHit *a, RCoreAsmHit *b){
+static int rcoreasm_address_comparator (RCoreAsmHit *a, RCoreAsmHit *b) {
 	if (a->addr == b->addr) {
 		return 0;
 	}
@@ -23,7 +23,7 @@ static int rcoreasm_address_comparator(RCoreAsmHit *a, RCoreAsmHit *b){
 	return 1; /* a->addr > b->addr */
 }
 
-R_API RCoreAsmHit *r_core_asm_hit_new(void) {
+R_API RCoreAsmHit *r_core_asm_hit_new (void) {
 	RCoreAsmHit *hit = R_NEW0 (RCoreAsmHit);
 	if (!hit) {
 		return NULL;
@@ -33,7 +33,7 @@ R_API RCoreAsmHit *r_core_asm_hit_new(void) {
 	return hit;
 }
 
-R_API RList *r_core_asm_hit_list_new(void) {
+R_API RList *r_core_asm_hit_list_new (void) {
 	RList *list = r_list_new ();
 	if (list) {
 		list->free = &r_core_asm_hit_free;
@@ -41,7 +41,7 @@ R_API RList *r_core_asm_hit_list_new(void) {
 	return list;
 }
 
-R_API void r_core_asm_hit_free(void *_hit) {
+R_API void r_core_asm_hit_free (void *_hit) {
 	RCoreAsmHit *hit = _hit;
 	if (hit) {
 		if (hit->code) {
@@ -51,7 +51,7 @@ R_API void r_core_asm_hit_free(void *_hit) {
 	}
 }
 
-R_API char* r_core_asm_search(RCore *core, const char *input) {
+R_API char *r_core_asm_search (RCore *core, const char *input) {
 	RAsmCode *acode;
 	char *ret;
 	if (!(acode = r_asm_massemble (core->rasm, input))) {
@@ -63,14 +63,14 @@ R_API char* r_core_asm_search(RCore *core, const char *input) {
 }
 
 // TODO: add support for byte-per-byte opcode search
-R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to, int maxhits, int regexp, int everyByte, int mode) {
+R_API RList *r_core_asm_strsearch (RCore *core, const char *input, ut64 from, ut64 to, int maxhits, int regexp, int everyByte, int mode) {
 	RCoreAsmHit *hit;
 	RAsmOp op;
 	RList *hits;
 	ut64 at, toff = core->offset;
 	ut8 *buf;
 	int align = core->search->align;
-	RRegex* rx = NULL;
+	RRegex *rx = NULL;
 	char *tok, *tokens[1024], *code = NULL, *ptr;
 	int idx, tidx = 0, len = 0;
 	int tokcount, matchcount, count = 0;
@@ -87,7 +87,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		*inp_arg++ = 0;
 	}
 	ut64 usrimm = r_num_math (core->num, inp);
-	ut64 usrimm2 = inp_arg? r_num_math (core->num, inp_arg): usrimm;
+	ut64 usrimm2 = inp_arg ? r_num_math (core->num, inp_arg) : usrimm;
 	if (usrimm > usrimm2) {
 		eprintf ("Error: /ci : Invalid range\n");
 		return NULL;
@@ -111,7 +111,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	}
 	tokens[0] = NULL;
 	for (tokcount = 0; tokcount < R_ARRAY_SIZE (tokens) - 1; tokcount++) {
-		tok = strtok (tokcount? NULL: ptr, ";");
+		tok = strtok (tokcount ? NULL : ptr, ";");
 		if (!tok) {
 			break;
 		}
@@ -137,10 +137,10 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 			}
 			r_asm_set_pc (core->rasm, addr);
 			if (mode == 'i') {
-				RAnalOp analop = {0};
+				RAnalOp analop = { 0 };
 				ut64 len = R_MIN (15, core->blocksize - idx);
 				if (r_anal_op (core->anal, &analop, addr, buf + idx, len, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM) < 1) {
-					idx ++; // TODO: honor mininstrsz
+					idx++; // TODO: honor mininstrsz
 					continue;
 				}
 				ut64 val = analop.val; // maybe chk for ptr or others?
@@ -160,26 +160,26 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 						goto beach;
 					}
 					hit->addr = addr;
-					hit->len = analop.size;  //  idx + len - tidx;
+					hit->len = analop.size; //  idx + len - tidx;
 					if (hit->len == -1) {
 						r_core_asm_hit_free (hit);
 						goto beach;
 					}
 					r_asm_disassemble (core->rasm, &op, buf + addrbytes * idx,
-					      core->blocksize - addrbytes * idx);
+						core->blocksize - addrbytes * idx);
 					hit->code = r_str_newf (r_strbuf_get (&op.buf_asm));
-					idx = (matchcount)? tidx + 1: idx + 1;
+					idx = (matchcount) ? tidx + 1 : idx + 1;
 					matchcount = 0;
 					r_list_append (hits, hit);
 					continue;
 				}
 				r_anal_op_fini (&analop);
-				idx ++; // TODO: honor mininstrsz
+				idx++; // TODO: honor mininstrsz
 				continue;
 			} else if (mode == 'e') {
-				RAnalOp analop = {0};
+				RAnalOp analop = { 0 };
 				if (r_anal_op (core->anal, &analop, addr, buf + idx, 15, R_ANAL_OP_MASK_ESIL) < 1) {
-					idx ++; // TODO: honor mininstrsz
+					idx++; // TODO: honor mininstrsz
 					continue;
 				}
 				//opsz = analop.size;
@@ -190,7 +190,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					      core->rasm, &op,
 					      buf + addrbytes * idx,
 					      core->blocksize - addrbytes * idx))) {
-					idx = (matchcount)? tidx + 1: idx + 1;
+					idx = (matchcount) ? tidx + 1 : idx + 1;
 					matchcount = 0;
 					continue;
 				}
@@ -256,7 +256,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				}
 			} else {
 				if (everyByte) {
-					idx = matchcount? tidx + 1: idx + 1;
+					idx = matchcount ? tidx + 1 : idx + 1;
 				} else {
 					idx += R_MAX (1, len);
 				}
@@ -277,10 +277,10 @@ beach:
 	return hits;
 }
 
-static void add_hit_to_sorted_hits(RList* hits, ut64 addr, int len, ut8 is_valid) {
-	RCoreAsmHit *hit = r_core_asm_hit_new();
+static void add_hit_to_sorted_hits (RList *hits, ut64 addr, int len, ut8 is_valid) {
+	RCoreAsmHit *hit = r_core_asm_hit_new ();
 	if (hit) {
-		IFDBG eprintf("*** Inserting instruction (valid?: %d): instr_addr: 0x%"PFMT64x" instr_len: %d\n", is_valid, addr, len );
+		IFDBG eprintf ("*** Inserting instruction (valid?: %d): instr_addr: 0x%" PFMT64x " instr_len: %d\n", is_valid, addr, len);
 		hit->addr = addr;
 		hit->len = len;
 		hit->valid = is_valid;
@@ -289,29 +289,29 @@ static void add_hit_to_sorted_hits(RList* hits, ut64 addr, int len, ut8 is_valid
 	}
 }
 
-static void add_hit_to_hits(RList* hits, ut64 addr, int len, ut8 is_valid) {
-	RCoreAsmHit *hit = r_core_asm_hit_new();
+static void add_hit_to_hits (RList *hits, ut64 addr, int len, ut8 is_valid) {
+	RCoreAsmHit *hit = r_core_asm_hit_new ();
 	if (hit) {
-		IFDBG eprintf("*** Inserting instruction (valid?: %d): instr_addr: 0x%"PFMT64x" instr_len: %d\n", is_valid, addr, len);
+		IFDBG eprintf ("*** Inserting instruction (valid?: %d): instr_addr: 0x%" PFMT64x " instr_len: %d\n", is_valid, addr, len);
 		hit->addr = addr;
 		hit->len = len;
 		hit->valid = is_valid;
 		hit->code = NULL;
-		if (!r_list_append (hits, hit)){
+		if (!r_list_append (hits, hit)) {
 			free (hit);
 		}
 	}
 }
 
-static int prune_hits_in_addr_range(RList *hits, ut64 addr, ut64 len, ut8 is_valid) {
+static int prune_hits_in_addr_range (RList *hits, ut64 addr, ut64 len, ut8 is_valid) {
 	RCoreAsmHit hit = R_EMPTY;
 	hit.addr = addr;
 	hit.len = len;
 	hit.valid = is_valid;
-	return prune_hits_in_hit_range(hits, &hit);
+	return prune_hits_in_hit_range (hits, &hit);
 }
 
-static int prune_hits_in_hit_range(RList *hits, RCoreAsmHit *hit){
+static int prune_hits_in_hit_range (RList *hits, RCoreAsmHit *hit) {
 	RListIter *iter, *iter_tmp;
 	RCoreAsmHit *to_check_hit;
 	int result = 0;
@@ -320,34 +320,35 @@ static int prune_hits_in_hit_range(RList *hits, RCoreAsmHit *hit){
 		return 0;
 	}
 	start_range = hit->addr;
-	end_range =  hit->addr +  hit->len;
-	r_list_foreach_safe (hits, iter, iter_tmp, to_check_hit){
-		if (to_check_hit && is_hit_inrange(to_check_hit, start_range, end_range)) {
-			IFDBG eprintf ("Found hit that clashed (start: 0x%"PFMT64x
-				" - end: 0x%"PFMT64x" ), 0x%"PFMT64x" len: %d (valid: %d 0x%"PFMT64x
-				" - 0x%"PFMT64x")\n", start_range, end_range, to_check_hit->addr,
+	end_range = hit->addr + hit->len;
+	r_list_foreach_safe (hits, iter, iter_tmp, to_check_hit) {
+		if (to_check_hit && is_hit_inrange (to_check_hit, start_range, end_range)) {
+			IFDBG eprintf ("Found hit that clashed (start: 0x%" PFMT64x
+				       " - end: 0x%" PFMT64x " ), 0x%" PFMT64x " len: %d (valid: %d 0x%" PFMT64x
+				       " - 0x%" PFMT64x ")\n",
+				start_range, end_range, to_check_hit->addr,
 				to_check_hit->len, to_check_hit->valid, to_check_hit->addr,
-				to_check_hit->addr+to_check_hit->len);
+				to_check_hit->addr + to_check_hit->len);
 			// XXX - could this be a valid decode instruction we are deleting?
 			r_list_delete (hits, iter);
 			//iter->data = NULL;
 			to_check_hit = NULL;
-			result ++;
+			result++;
 		}
 	}
 	return result;
 }
 
-static RCoreAsmHit * find_addr(RList *hits, ut64 addr) {
+static RCoreAsmHit *find_addr (RList *hits, ut64 addr) {
 	// Find an address in the list of hits
 	RListIter *addr_iter = NULL;
 	RCoreAsmHit dummy_value;
 	dummy_value.addr = addr;
 	addr_iter = r_list_find (hits, &dummy_value, ((RListComparator)rcoreasm_address_comparator));
-	return r_list_iter_get_data(addr_iter);
+	return r_list_iter_get_data (addr_iter);
 }
 
-static int handle_forward_disassemble(RCore* core, RList *hits, ut8* buf, ut64 len, ut64 current_buf_pos, ut64 current_instr_addr, ut64 end_addr){
+static int handle_forward_disassemble (RCore *core, RList *hits, ut8 *buf, ut64 len, ut64 current_buf_pos, ut64 current_instr_addr, ut64 end_addr) {
 	RCoreAsmHit *hit = NULL, *found_addr = NULL;
 	// forward disassemble from the current instruction up to the end address
 	ut64 temp_instr_addr = current_instr_addr;
@@ -366,10 +367,10 @@ static int handle_forward_disassemble(RCore* core, RList *hits, ut8* buf, ut64 l
 	r_asm_set_pc (core->rasm, current_instr_addr);
 	while (tmp_current_buf_pos < len && temp_instr_addr < end_addr) {
 		temp_instr_len = len - tmp_current_buf_pos;
-		IFDBG eprintf("Current position: %"PFMT64d" instr_addr: 0x%"PFMT64x"\n", tmp_current_buf_pos, temp_instr_addr);
-		temp_instr_len = r_asm_disassemble (core->rasm, &op, buf+tmp_current_buf_pos, temp_instr_len);
+		IFDBG eprintf ("Current position: %" PFMT64d " instr_addr: 0x%" PFMT64x "\n", tmp_current_buf_pos, temp_instr_addr);
+		temp_instr_len = r_asm_disassemble (core->rasm, &op, buf + tmp_current_buf_pos, temp_instr_len);
 
-		if (temp_instr_len == 0){
+		if (temp_instr_len == 0) {
 			is_valid = false;
 			temp_instr_len = 1;
 		} else {
@@ -377,19 +378,19 @@ static int handle_forward_disassemble(RCore* core, RList *hits, ut8* buf, ut64 l
 		}
 
 		// check to see if addr exits
-		found_addr = find_addr(hits, temp_instr_addr);
+		found_addr = find_addr (hits, temp_instr_addr);
 		start = temp_instr_addr;
 		end = temp_instr_addr + temp_instr_len;
 
 		if (!found_addr) {
-			add_hit_to_sorted_hits(hits, temp_instr_addr, temp_instr_len, is_valid);
-		} else if (is_valid && !found_addr->valid && is_addr_in_range(start, end, start_range, end_range )) {
+			add_hit_to_sorted_hits (hits, temp_instr_addr, temp_instr_len, is_valid);
+		} else if (is_valid && !found_addr->valid && is_addr_in_range (start, end, start_range, end_range)) {
 			ut32 prune_results = 0;
-			prune_results = prune_hits_in_addr_range(hits, temp_instr_addr, temp_instr_len, is_valid);
-			add_hit_to_sorted_hits(hits, temp_instr_addr, temp_instr_len, is_valid);
+			prune_results = prune_hits_in_addr_range (hits, temp_instr_addr, temp_instr_len, is_valid);
+			add_hit_to_sorted_hits (hits, temp_instr_addr, temp_instr_len, is_valid);
 			if (prune_results) {
 				r_list_add_sorted (hits, hit, ((RListComparator)rcoreasm_address_comparator));
-				IFDBG eprintf("Pruned %u hits from list in fwd sweep.\n", prune_results);
+				IFDBG eprintf ("Pruned %u hits from list in fwd sweep.\n", prune_results);
 			} else {
 				R_FREE (hit);
 			}
@@ -414,7 +415,7 @@ static int handle_disassembly_overlap(RCore* core, RList *hits, ut8* buf, int le
 }
 #endif
 
-static int is_addr_in_range(ut64 start, ut64 end, ut64 start_range, ut64 end_range){
+static int is_addr_in_range (ut64 start, ut64 end, ut64 start_range, ut64 end_range) {
 	int result = false;
 	if (start == start_range) {
 		return true;
@@ -425,11 +426,11 @@ static int is_addr_in_range(ut64 start, ut64 end, ut64 start_range, ut64 end_ran
 			result = true;
 		} else if (start_range < end && end < end_range) {
 			result = true;
-		} else if ( start <= start_range && end_range < end) {
+		} else if (start <= start_range && end_range < end) {
 			result = true;
 		}
-	// XXX - these cases need to be tested
-	// (long long) start_range < 0 < end_range
+		// XXX - these cases need to be tested
+		// (long long) start_range < 0 < end_range
 	} else if (start_range > end_range) {
 		if (start < end) {
 			if (start < end_range) {
@@ -451,8 +452,8 @@ static int is_addr_in_range(ut64 start, ut64 end, ut64 start_range, ut64 end_ran
 				result = true;
 			}
 		}
-	// XXX - these cases need to be tested
-	// (long long) start < 0 < end
+		// XXX - these cases need to be tested
+		// (long long) start < 0 < end
 	} else if (start_range < end_range) {
 		if (start < end_range) {
 			result = true;
@@ -465,7 +466,7 @@ static int is_addr_in_range(ut64 start, ut64 end, ut64 start_range, ut64 end_ran
 	return result;
 }
 
-static int is_hit_inrange(RCoreAsmHit *hit, ut64 start_range, ut64 end_range){
+static int is_hit_inrange (RCoreAsmHit *hit, ut64 start_range, ut64 end_range) {
 	int result = false;
 	if (hit) {
 		result = is_addr_in_range (hit->addr,
@@ -475,7 +476,7 @@ static int is_hit_inrange(RCoreAsmHit *hit, ut64 start_range, ut64 end_range){
 	return result;
 }
 
-R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
+R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 	RAsmOp op;
 	// if (n > core->blocksize) n = core->blocksize;
 	ut64 at;
@@ -514,7 +515,7 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 		}
 		c = r_asm_mdisassemble (core->rasm, buf + len - idx, idx);
 		if (strstr (c->assembly, "invalid") || strstr (c->assembly, ".byte")) {
-			r_asm_code_free(c);
+			r_asm_code_free (c);
 			continue;
 		}
 		numinstr = 0;
@@ -524,7 +525,7 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 				++numinstr;
 			}
 		}
-		r_asm_code_free(c);
+		r_asm_code_free (c);
 		if (numinstr >= n || idx > 16 * n) { // assume average instruction length <= 16
 			break;
 		}
@@ -541,7 +542,7 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 	return hits;
 }
 
-static RList * r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len, ut64 max_hit_count, ut32 extra_padding){
+static RList *r_core_asm_back_disassemble_all (RCore *core, ut64 addr, ut64 len, ut64 max_hit_count, ut32 extra_padding) {
 	RList *hits = r_core_asm_hit_list_new ();
 	RCoreAsmHit dummy_value;
 	RCoreAsmHit *hit = NULL;
@@ -549,12 +550,12 @@ static RList * r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len,
 	ut8 *buf = (ut8 *)malloc (len + extra_padding);
 	int current_instr_len = 0;
 	ut64 current_instr_addr = addr,
-		 current_buf_pos = len - 1,
-		 hit_count = 0;
+	     current_buf_pos = len - 1,
+	     hit_count = 0;
 
 	memset (&dummy_value, 0, sizeof (RCoreAsmHit));
 
-	if (!hits || !buf ){
+	if (!hits || !buf) {
 		if (hits) {
 			r_list_purge (hits);
 			free (hits);
@@ -563,7 +564,7 @@ static RList * r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len,
 		return NULL;
 	}
 
-	if (!r_io_read_at (core->io, addr-(len+extra_padding), buf, len + extra_padding)) {
+	if (!r_io_read_at (core->io, addr - (len + extra_padding), buf, len + extra_padding)) {
 		r_list_purge (hits);
 		free (hits);
 		free (buf);
@@ -581,8 +582,8 @@ static RList * r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len,
 		// reset assembler
 		r_asm_set_pc (core->rasm, current_instr_addr);
 		current_instr_len = len - current_buf_pos + extra_padding;
-		IFDBG eprintf("current_buf_pos: 0x%"PFMT64x", current_instr_len: %d\n", current_buf_pos, current_instr_len);
-		current_instr_len = r_asm_disassemble (core->rasm, &op, buf+current_buf_pos, current_instr_len);
+		IFDBG eprintf ("current_buf_pos: 0x%" PFMT64x ", current_instr_len: %d\n", current_buf_pos, current_instr_len);
+		current_instr_len = r_asm_disassemble (core->rasm, &op, buf + current_buf_pos, current_instr_len);
 		hit = r_core_asm_hit_new ();
 		hit->addr = current_instr_addr;
 		hit->len = current_instr_len;
@@ -592,28 +593,29 @@ static RList * r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len,
 		current_buf_pos--;
 		current_instr_addr--;
 		hit_count++;
-	} while ( ((int) current_buf_pos  >= 0) && (int)(len - current_buf_pos) >= 0 && hit_count <= max_hit_count);
+	} while (((int)current_buf_pos >= 0) && (int)(len - current_buf_pos) >= 0 && hit_count <= max_hit_count);
 
-	free(buf);
+	free (buf);
 	return hits;
 }
 
 static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64 max_hit_count, ut8 disassmble_each_addr, ut32 extra_padding) {
-	RList *hits;;
+	RList *hits;
+	;
 	RAsmOp op;
 	ut8 *buf = NULL;
 	ut8 max_invalid_b4_exit = 4,
-		last_num_invalid = 0;
+	    last_num_invalid = 0;
 	int current_instr_len = 0;
 	ut64 current_instr_addr = addr,
-		current_buf_pos = 0,
-		next_buf_pos = len;
+	     current_buf_pos = 0,
+	     next_buf_pos = len;
 
 	RCoreAsmHit dummy_value;
 	ut32 hit_count = 0;
 
 	if (disassmble_each_addr) {
-		return r_core_asm_back_disassemble_all(core, addr, len, max_hit_count, extra_padding+1);
+		return r_core_asm_back_disassemble_all (core, addr, len, max_hit_count, extra_padding + 1);
 	}
 
 	hits = r_core_asm_hit_list_new ();
@@ -661,18 +663,18 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 		// reset assembler
 		r_asm_set_pc (core->rasm, current_instr_addr);
 		current_instr_len = next_buf_pos - current_buf_pos;
-		current_instr_len = r_asm_disassemble (core->rasm, &op, buf+current_buf_pos, current_instr_len);
+		current_instr_len = r_asm_disassemble (core->rasm, &op, buf + current_buf_pos, current_instr_len);
 		IFDBG {
-			ut32 byte_cnt =  current_instr_len ? current_instr_len : 1;
-			eprintf("current_instr_addr: 0x%"PFMT64x", current_buf_pos: 0x%"PFMT64x", current_instr_len: %d \n", current_instr_addr, current_buf_pos, current_instr_len);
+			ut32 byte_cnt = current_instr_len ? current_instr_len : 1;
+			eprintf ("current_instr_addr: 0x%" PFMT64x ", current_buf_pos: 0x%" PFMT64x ", current_instr_len: %d \n", current_instr_addr, current_buf_pos, current_instr_len);
 
-			ut8 *hex_str = (ut8*)r_hex_bin2strdup(buf+current_buf_pos, byte_cnt);
-			eprintf ("==== current_instr_bytes: %s ",hex_str);
+			ut8 *hex_str = (ut8 *)r_hex_bin2strdup (buf + current_buf_pos, byte_cnt);
+			eprintf ("==== current_instr_bytes: %s ", hex_str);
 
 			if (current_instr_len > 0) {
-				eprintf("op.buf_asm: %s\n", r_strbuf_get (&op.buf_asm));
+				eprintf ("op.buf_asm: %s\n", r_strbuf_get (&op.buf_asm));
 			} else {
-				eprintf("op.buf_asm: <invalid>\n");
+				eprintf ("op.buf_asm: <invalid>\n");
 			}
 			free (hex_str);
 		}
@@ -681,10 +683,10 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 			if (current_instr_len == 0) {
 				current_instr_len = 1;
 			}
-			add_hit_to_sorted_hits(hits, current_instr_addr, current_instr_len, /* is_valid */ false);
-			hit_count ++;
-			last_num_invalid ++;
-		// disassembly perfect
+			add_hit_to_sorted_hits (hits, current_instr_addr, current_instr_len, /* is_valid */ false);
+			hit_count++;
+			last_num_invalid++;
+			// disassembly perfect
 		} else if (current_buf_pos + current_instr_len == next_buf_pos) {
 			// i think this may be the only case where an invalid instruction will be
 			// added because handle_forward_disassemble and handle_disassembly_overlap
@@ -692,23 +694,23 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 			// and they are lazy, since they purge the hit list
 			ut32 purge_results = 0;
 			ut8 is_valid = true;
-			IFDBG eprintf(" handling underlap case: current_instr_addr: 0x%"PFMT64x".\n", current_instr_addr);
-			purge_results =  prune_hits_in_addr_range(hits, current_instr_addr, current_instr_len, /* is_valid */ true);
+			IFDBG eprintf (" handling underlap case: current_instr_addr: 0x%" PFMT64x ".\n", current_instr_addr);
+			purge_results = prune_hits_in_addr_range (hits, current_instr_addr, current_instr_len, /* is_valid */ true);
 			if (purge_results) {
-				handle_forward_disassemble(core, hits, buf, len, current_buf_pos+current_instr_len, current_instr_addr+current_instr_len, addr);
-				hit_count = r_list_length(hits);
+				handle_forward_disassemble (core, hits, buf, len, current_buf_pos + current_instr_len, current_instr_addr + current_instr_len, addr);
+				hit_count = r_list_length (hits);
 			}
-			add_hit_to_sorted_hits(hits, current_instr_addr, current_instr_len, is_valid);
+			add_hit_to_sorted_hits (hits, current_instr_addr, current_instr_len, is_valid);
 			//handle_forward_disassemble(core, hits, buf, len, current_buf_pos+current_instr_len, current_instr_addr+current_instr_len, addr/*end_addr*/);
-			hit_count ++;
+			hit_count++;
 			next_buf_pos = current_buf_pos;
 			last_num_invalid = 0;
-		// disassembly underlap
+			// disassembly underlap
 		} else if (current_buf_pos + current_instr_len < next_buf_pos) {
 			ut32 purge_results = 0;
 			ut8 is_valid = true;
-			purge_results =  prune_hits_in_addr_range(hits, current_instr_addr, current_instr_len, /* is_valid */ true);
-			add_hit_to_sorted_hits(hits, current_instr_addr, current_instr_len, is_valid);
+			purge_results = prune_hits_in_addr_range (hits, current_instr_addr, current_instr_len, /* is_valid */ true);
+			add_hit_to_sorted_hits (hits, current_instr_addr, current_instr_len, is_valid);
 
 			if (hit_count < purge_results) {
 				hit_count = 0; // WTF??
@@ -717,10 +719,10 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 			}
 
 			next_buf_pos = current_buf_pos;
-			handle_forward_disassemble(core, hits, buf, len - extra_padding, current_buf_pos+current_instr_len, current_instr_addr+current_instr_len, addr);
-			hit_count = r_list_length(hits);
+			handle_forward_disassemble (core, hits, buf, len - extra_padding, current_buf_pos + current_instr_len, current_instr_addr + current_instr_len, addr);
+			hit_count = r_list_length (hits);
 			last_num_invalid = 0;
-		// disassembly overlap
+			// disassembly overlap
 		} else if (current_buf_pos + current_instr_len > next_buf_pos) {
 			//ut64 value = handle_disassembly_overlap(core, hits, buf, len, current_buf_pos, current_instr_addr);
 			next_buf_pos = current_buf_pos;
@@ -729,9 +731,9 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 		}
 
 		// walk backwards by one instruction
-		IFDBG eprintf(" current_instr_addr: 0x%"PFMT64x" current_instr_len: %d next_instr_addr: 0x%04"PFMT64x"\n",
+		IFDBG eprintf (" current_instr_addr: 0x%" PFMT64x " current_instr_len: %d next_instr_addr: 0x%04" PFMT64x "\n",
 			current_instr_addr, current_instr_len, next_buf_pos);
-		IFDBG eprintf(" hit count: %d \n", hit_count );
+		IFDBG eprintf (" hit count: %d \n", hit_count);
 		current_instr_addr -= 1;
 		current_buf_pos -= 1;
 
@@ -739,33 +741,33 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 			(last_num_invalid >= max_invalid_b4_exit || last_num_invalid == 0)) {
 			break;
 		}
-	} while (((int) current_buf_pos >= 0) && (int)(len - current_buf_pos) >= 0);
+	} while (((int)current_buf_pos >= 0) && (int)(len - current_buf_pos) >= 0);
 
 	r_asm_set_pc (core->rasm, addr);
 	free (buf);
 	return hits;
 }
 
-R_API RList *r_core_asm_back_disassemble_instr (RCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding){
+R_API RList *r_core_asm_back_disassemble_instr (RCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding) {
 	// extra padding to allow for additional disassembly on border buffer cases
-	ut8 disassmble_each_addr  = false;
+	ut8 disassmble_each_addr = false;
 	return r_core_asm_back_disassemble (core, addr, len, hit_count, disassmble_each_addr, extra_padding);
 }
 
-R_API RList *r_core_asm_back_disassemble_byte (RCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding){
+R_API RList *r_core_asm_back_disassemble_byte (RCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding) {
 	// extra padding to allow for additional disassembly on border buffer cases
-	ut8 disassmble_each_addr  = true;
+	ut8 disassmble_each_addr = true;
 	return r_core_asm_back_disassemble (core, addr, len, hit_count, disassmble_each_addr, extra_padding);
 }
 
 /* Compute the len and the starting address
  * when disassembling `nb` opcodes backward. */
-R_API ut32 r_core_asm_bwdis_len(RCore* core, int* instr_len, ut64* start_addr, ut32 nb) {
+R_API ut32 r_core_asm_bwdis_len (RCore *core, int *instr_len, ut64 *start_addr, ut32 nb) {
 	ut32 instr_run = 0;
 	RCoreAsmHit *hit;
 	RListIter *iter = NULL;
 	// TODO if length of nb instructions is larger than blocksize
-	RList* hits = r_core_asm_bwdisassemble (core, core->offset, nb, core->blocksize);
+	RList *hits = r_core_asm_bwdisassemble (core, core->offset, nb, core->blocksize);
 	if (instr_len) {
 		*instr_len = 0;
 	}

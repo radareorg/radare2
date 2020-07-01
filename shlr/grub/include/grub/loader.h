@@ -18,7 +18,7 @@
  */
 
 #ifndef GRUB_LOADER_HEADER
-#define GRUB_LOADER_HEADER	1
+#define GRUB_LOADER_HEADER 1
 
 #include <grub/file.h>
 #include <grub/symbol.h>
@@ -31,8 +31,8 @@ int grub_loader_is_loaded (void);
 /* Set loader functions. NORETURN must be set to true, if BOOT won't return
    to the original state.  */
 void grub_loader_set (grub_err_t (*boot) (void),
-		      grub_err_t (*unload) (void),
-		      int noreturn);
+	grub_err_t (*unload) (void),
+	int noreturn);
 
 /* Unset current loader, if any.  */
 void grub_loader_unset (void);
@@ -44,21 +44,21 @@ grub_err_t grub_loader_boot (void);
 /* The space between numbers is intentional for the simplicity of adding new
    values even if external modules use them. */
 typedef enum {
-  /* A preboot hook which can use everything and turns nothing off. */
-  GRUB_LOADER_PREBOOT_HOOK_PRIO_NORMAL = 400,
-  /* A preboot hook which can't use disks and may stop disks. */
-  GRUB_LOADER_PREBOOT_HOOK_PRIO_DISK = 300,
-  /* A preboot hook which can't use disks or console and may stop console. */
-  GRUB_LOADER_PREBOOT_HOOK_PRIO_CONSOLE = 200,
-  /* A preboot hook which can't use disks or console, can't modify memory map
+	/* A preboot hook which can use everything and turns nothing off. */
+	GRUB_LOADER_PREBOOT_HOOK_PRIO_NORMAL = 400,
+	/* A preboot hook which can't use disks and may stop disks. */
+	GRUB_LOADER_PREBOOT_HOOK_PRIO_DISK = 300,
+	/* A preboot hook which can't use disks or console and may stop console. */
+	GRUB_LOADER_PREBOOT_HOOK_PRIO_CONSOLE = 200,
+	/* A preboot hook which can't use disks or console, can't modify memory map
      and may stop memory services or finalize memory map. */
-  GRUB_LOADER_PREBOOT_HOOK_PRIO_MEMORY = 100,
+	GRUB_LOADER_PREBOOT_HOOK_PRIO_MEMORY = 100,
 } grub_loader_preboot_hook_prio_t;
 
 /* Register a preboot hook. */
 void *grub_loader_register_preboot_hook (grub_err_t (*preboot_func) (int noret),
-					 grub_err_t (*preboot_rest_func) (void),
-					 grub_loader_preboot_hook_prio_t prio);
+	grub_err_t (*preboot_rest_func) (void),
+	grub_loader_preboot_hook_prio_t prio);
 
 /* Unregister given preboot hook. */
 void grub_loader_unregister_preboot_hook (void *hnd);

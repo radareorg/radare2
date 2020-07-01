@@ -3,13 +3,13 @@
 #include <r_lang.h>
 #include <r_util.h>
 
-R_LIB_VERSION(r_lang);
+R_LIB_VERSION (r_lang);
 
-#include "p/pipe.c"  // hardcoded
-#include "p/vala.c"  // hardcoded
-#include "p/rust.c"  // hardcoded
-#include "p/zig.c"   // hardcoded
-#include "p/c.c"     // hardcoded
+#include "p/pipe.c" // hardcoded
+#include "p/vala.c" // hardcoded
+#include "p/rust.c" // hardcoded
+#include "p/zig.c" // hardcoded
+#include "p/c.c" // hardcoded
 #include "p/lib.c"
 #if __UNIX__
 #include "p/cpipe.c" // hardcoded
@@ -23,7 +23,7 @@ R_API void r_lang_plugin_free (RLangPlugin *p) {
 	}
 }
 
-R_API RLang *r_lang_new(void) {
+R_API RLang *r_lang_new (void) {
 	RLang *lang = R_NEW0 (RLang);
 	if (!lang) {
 		return NULL;
@@ -55,7 +55,7 @@ R_API RLang *r_lang_new(void) {
 	return lang;
 }
 
-R_API void r_lang_free(RLang *lang) {
+R_API void r_lang_free (RLang *lang) {
 	if (lang) {
 		__lang = NULL;
 		r_lang_undef (lang, NULL);
@@ -70,17 +70,17 @@ R_API void r_lang_free(RLang *lang) {
 // TODO: when language bindings are done we will need an api to
 // define symbols from C to the language namespace
 // XXX: Depcreate!!
-R_API void r_lang_set_user_ptr(RLang *lang, void *user) {
+R_API void r_lang_set_user_ptr (RLang *lang, void *user) {
 	lang->user = user;
 }
 
-R_API bool r_lang_define(RLang *lang, const char *type, const char *name, void *value) {
+R_API bool r_lang_define (RLang *lang, const char *type, const char *name, void *value) {
 	RLangDef *def;
 	RListIter *iter;
 	r_list_foreach (lang->defs, iter, def) {
 		if (!r_str_casecmp (name, def->name)) {
 			def->value = value;
-			return  true;
+			return true;
 		}
 	}
 	def = R_NEW0 (RLangDef);
@@ -100,7 +100,7 @@ R_API void r_lang_def_free (RLangDef *def) {
 	free (def);
 }
 
-R_API void r_lang_undef(RLang *lang, const char *name) {
+R_API void r_lang_undef (RLang *lang, const char *name) {
 	if (name && *name) {
 		RLangDef *def;
 		RListIter *iter;
@@ -117,14 +117,14 @@ R_API void r_lang_undef(RLang *lang, const char *name) {
 	}
 }
 
-R_API bool r_lang_setup(RLang *lang) {
+R_API bool r_lang_setup (RLang *lang) {
 	if (lang && lang->cur && lang->cur->setup) {
 		return lang->cur->setup (lang);
 	}
 	return false;
 }
 
-R_API bool r_lang_add(RLang *lang, RLangPlugin *foo) {
+R_API bool r_lang_add (RLang *lang, RLangPlugin *foo) {
 	if (foo && (!r_lang_get_by_name (lang, foo->name))) {
 		if (foo->init) {
 			foo->init (lang);
@@ -136,7 +136,7 @@ R_API bool r_lang_add(RLang *lang, RLangPlugin *foo) {
 }
 
 /* TODO: deprecate all list methods */
-R_API bool r_lang_list(RLang *lang) {
+R_API bool r_lang_list (RLang *lang) {
 	RListIter *iter;
 	RLangPlugin *h;
 	if (!lang) {
@@ -144,7 +144,8 @@ R_API bool r_lang_list(RLang *lang) {
 	}
 	r_list_foreach (lang->langs, iter, h) {
 		const char *license = h->license
-			? h->license : "???";
+			? h->license
+			: "???";
 		lang->cb_printf ("%s: (%s) %s\n",
 			h->name, license, h->desc);
 	}
@@ -180,7 +181,7 @@ R_API RLangPlugin *r_lang_get_by_name (RLang *lang, const char *name) {
 	return NULL;
 }
 
-R_API bool r_lang_use(RLang *lang, const char *name) {
+R_API bool r_lang_use (RLang *lang, const char *name) {
 	RLangPlugin *h = r_lang_get_by_name (lang, name);
 	if (h) {
 		lang->cur = h;
@@ -190,25 +191,25 @@ R_API bool r_lang_use(RLang *lang, const char *name) {
 }
 
 // TODO: store in r_lang and use it from the plugin?
-R_API bool r_lang_set_argv(RLang *lang, int argc, char **argv) {
+R_API bool r_lang_set_argv (RLang *lang, int argc, char **argv) {
 	if (lang->cur && lang->cur->set_argv) {
 		return lang->cur->set_argv (lang, argc, argv);
 	}
 	return false;
 }
 
-R_API int r_lang_run(RLang *lang, const char *code, int len) {
+R_API int r_lang_run (RLang *lang, const char *code, int len) {
 	if (lang->cur && lang->cur->run) {
 		return lang->cur->run (lang, code, len);
 	}
 	return false;
 }
 
-R_API int r_lang_run_string(RLang *lang, const char *code) {
+R_API int r_lang_run_string (RLang *lang, const char *code) {
 	return r_lang_run (lang, code, strlen (code));
 }
 
-R_API int r_lang_run_file(RLang *lang, const char *file) {
+R_API int r_lang_run_file (RLang *lang, const char *file) {
 	int ret = false;
 	if (lang->cur) {
 		if (!lang->cur->run_file) {
@@ -230,7 +231,7 @@ R_API int r_lang_run_file(RLang *lang, const char *file) {
 }
 
 /* TODO: deprecate or make it more modular .. reading from stdin in a lib?!? wtf */
-R_API int r_lang_prompt(RLang *lang) {
+R_API int r_lang_prompt (RLang *lang) {
 	char buf[1024];
 	const char *p;
 
@@ -246,16 +247,16 @@ R_API int r_lang_prompt(RLang *lang) {
 	/* init line */
 	RLine *line = r_line_singleton ();
 	RLineHistory hist = line->history;
-	RLineHistory histnull = {0};
+	RLineHistory histnull = { 0 };
 	RLineCompletion oc = line->completion;
-	RLineCompletion ocnull = {0};
+	RLineCompletion ocnull = { 0 };
 	char *prompt = strdup (line->prompt);
 	line->completion = ocnull;
 	line->history = histnull;
 
 	/* foo */
 	for (;;) {
-		snprintf (buf, sizeof (buf)-1, "%s> ", lang->cur->name);
+		snprintf (buf, sizeof (buf) - 1, "%s> ", lang->cur->name);
 		r_line_set_prompt (buf);
 #if 0
 		printf ("%s> ", lang->cur->name);
@@ -286,7 +287,7 @@ R_API int r_lang_prompt(RLang *lang) {
 			continue;
 		}
 		if (!memcmp (buf, ". ", 2)) {
-			char *file = r_file_abspath (buf+2);
+			char *file = r_file_abspath (buf + 2);
 			if (file) {
 				r_lang_run_file (lang, file);
 				free (file);
@@ -300,11 +301,11 @@ R_API int r_lang_prompt(RLang *lang) {
 		if (!strcmp (buf, "?")) {
 			RLangDef *def;
 			RListIter *iter;
-			eprintf("  ?        - show this help message\n"
-				"  !        - run $EDITOR\n"
-				"  !command - run system command\n"
-				"  . file   - interpret file\n"
-				"  q        - quit prompt\n");
+			eprintf ("  ?        - show this help message\n"
+				 "  !        - run $EDITOR\n"
+				 "  !command - run system command\n"
+				 "  . file   - interpret file\n"
+				 "  q        - quit prompt\n");
 			eprintf ("%s example:\n", lang->cur->name);
 			if (lang->cur->help) {
 				eprintf ("%s", *lang->cur->help);

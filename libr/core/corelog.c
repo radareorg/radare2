@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-R_API int r_core_log_list(RCore *core, int n, int nth, char fmt) {
+R_API int r_core_log_list (RCore *core, int n, int nth, char fmt) {
 	int printed = 0;
 	int count = 0, i, idx, id = core->log->first;
 	RStrpool *sp = core->log->sp;
@@ -16,7 +16,7 @@ R_API int r_core_log_list(RCore *core, int n, int nth, char fmt) {
 			switch (fmt) {
 			case 'j':
 				r_cons_printf ("%s[%d,\"%s\"]",
-					printed? ",": "", id, str);
+					printed ? "," : "", id, str);
 				break;
 			case 't':
 				r_cons_println (str);
@@ -46,7 +46,7 @@ R_API int r_core_log_list(RCore *core, int n, int nth, char fmt) {
 	return count;
 }
 
-R_API RCoreLog *r_core_log_new(void) {
+R_API RCoreLog *r_core_log_new (void) {
 	RCoreLog *log = R_NEW0 (RCoreLog);
 	if (!log) {
 		return NULL;
@@ -55,18 +55,18 @@ R_API RCoreLog *r_core_log_new(void) {
 	return log;
 }
 
-R_API void r_core_log_init(RCoreLog *log) {
+R_API void r_core_log_init (RCoreLog *log) {
 	log->first = 1;
 	log->last = 1;
 	log->sp = r_strpool_new (0);
 }
 
-R_API void r_core_log_free(RCoreLog *log) {
+R_API void r_core_log_free (RCoreLog *log) {
 	r_strpool_free (log->sp);
 	free (log);
 }
 
-R_API bool r_core_log_run(RCore *core, const char *_buf, RCoreLogCallback runLine) {
+R_API bool r_core_log_run (RCore *core, const char *_buf, RCoreLogCallback runLine) {
 	char *obuf = strdup (_buf);
 	char *buf = obuf;
 	while (buf) {
@@ -88,7 +88,7 @@ R_API bool r_core_log_run(RCore *core, const char *_buf, RCoreLogCallback runLin
 	return true;
 }
 
-R_API char *r_core_log_get(RCore *core, int index) {
+R_API char *r_core_log_get (RCore *core, int index) {
 	const char *host = r_config_get (core->config, "http.sync");
 	if (host && *host) {
 		char *url = index > 0
@@ -96,12 +96,12 @@ R_API char *r_core_log_get(RCore *core, int index) {
 			: r_str_newf ("%s/cmd/T", host);
 		char *res = r_socket_http_get (url, NULL, NULL);
 		free (url);
-		return res? res: strdup ("");
+		return res ? res : strdup ("");
 	}
 	return NULL;
 }
 
-R_API void r_core_log_add(RCore *core, const char *msg) {
+R_API void r_core_log_add (RCore *core, const char *msg) {
 	static bool inProcess = false;
 	r_strpool_append (core->log->sp, msg);
 	core->log->last++;
@@ -116,7 +116,7 @@ R_API void r_core_log_add(RCore *core, const char *msg) {
 	}
 }
 
-R_API void r_core_log_del(RCore *core, int n) {
+R_API void r_core_log_del (RCore *core, int n) {
 	int idx;
 	if (n > 0) {
 		if (n + 1 >= core->log->last) {

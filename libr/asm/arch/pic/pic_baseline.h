@@ -18,16 +18,16 @@ typedef enum {
 	PIC_BASELINE_OP_ARGS_9K
 } PicBaselineOpArgs;
 
-#define PIC_BASELINE_OP_ARGS_2F_MASK_F		0x3
-#define PIC_BASELINE_OP_ARGS_3F_MASK_F		0x7
-#define PIC_BASELINE_OP_ARGS_3K_MASK_K		0x7
-#define PIC_BASELINE_OP_ARGS_1D_5F_MASK_D	(1 << 5)
-#define PIC_BASELINE_OP_ARGS_1D_5F_MASK_F	0x1f
-#define PIC_BASELINE_OP_ARGS_5F_MASK_F		0x1f
-#define PIC_BASELINE_OP_ARGS_3B_5F_MASK_B	(0x7 << 5)
-#define PIC_BASELINE_OP_ARGS_3B_5F_MASK_F	0x1f
-#define PIC_BASELINE_OP_ARGS_8K_MASK_K		0xff
-#define PIC_BASELINE_OP_ARGS_9K_MASK_K		0x1ff
+#define PIC_BASELINE_OP_ARGS_2F_MASK_F 0x3
+#define PIC_BASELINE_OP_ARGS_3F_MASK_F 0x7
+#define PIC_BASELINE_OP_ARGS_3K_MASK_K 0x7
+#define PIC_BASELINE_OP_ARGS_1D_5F_MASK_D (1 << 5)
+#define PIC_BASELINE_OP_ARGS_1D_5F_MASK_F 0x1f
+#define PIC_BASELINE_OP_ARGS_5F_MASK_F 0x1f
+#define PIC_BASELINE_OP_ARGS_3B_5F_MASK_B (0x7 << 5)
+#define PIC_BASELINE_OP_ARGS_3B_5F_MASK_F 0x1f
+#define PIC_BASELINE_OP_ARGS_8K_MASK_K 0xff
+#define PIC_BASELINE_OP_ARGS_9K_MASK_K 0x1ff
 
 typedef struct _pic_baseline_op {
 	const char *mnemonic;
@@ -74,8 +74,8 @@ typedef enum {
 	PIC_BASELINE_OPCODE_INVALID
 } PicBaselineOpcode;
 
-PicBaselineOpcode pic_baseline_get_opcode(ut16 instr);
-const PicBaselineOpInfo *pic_baseline_get_op_info(PicBaselineOpcode opcode);
-int pic_baseline_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int l);
+PicBaselineOpcode pic_baseline_get_opcode (ut16 instr);
+const PicBaselineOpInfo *pic_baseline_get_op_info (PicBaselineOpcode opcode);
+int pic_baseline_disassemble (RAsmOp *op, char *opbuf, const ut8 *b, int l);
 
 #endif //PIC_BASELINE_H

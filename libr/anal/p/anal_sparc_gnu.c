@@ -42,10 +42,10 @@ enum {
 	GPR_I7 = 31,
 };
 
-const char * gpr_regs[] = {"g0", "g1", "g2", "g3", "g4", "g5", "g6", "g7",
+const char *gpr_regs[] = { "g0", "g1", "g2", "g3", "g4", "g5", "g6", "g7",
 	"o0", "o1", "o2", "o3", "o4", "o5", "o6", "o7",
 	"l0", "l1", "l2", "l3", "l4", "l5", "l6", "l7",
-	"i0", "i1", "i2", "i3", "i4", "i5", "i6","i7"};
+	"i0", "i1", "i2", "i3", "i4", "i5", "i6", "i7" };
 
 enum {
 	ICC_A = 0x8,
@@ -93,9 +93,9 @@ enum {
 	R_ANAL_COND_UNKNOWN = -3,
 };
 
-static int icc_to_r_cond(const int cond) {
+static int icc_to_r_cond (const int cond) {
 	/* we treat signed and unsigned the same here */
-	switch(cond) {
+	switch (cond) {
 	case ICC_A: return R_ANAL_COND_ALWAYS;
 	case ICC_CC: return R_ANAL_COND_GE;
 	case ICC_CS: return R_ANAL_COND_LT;
@@ -116,7 +116,7 @@ static int icc_to_r_cond(const int cond) {
 	}
 }
 
-static int fcc_to_r_cond(const int cond) {
+static int fcc_to_r_cond (const int cond) {
 	switch (cond) {
 	case FCC_A: return R_ANAL_COND_ALWAYS;
 	case FCC_E: return R_ANAL_COND_EQ;
@@ -144,21 +144,21 @@ static int fcc_to_r_cond(const int cond) {
 #define X_OP3(i) (((i) >> 19) & 0x3f)
 #define X_COND(i) (((i) >> 25) & 0x1f)
 
-#define X_RD(i)      (((i) >> 25) & 0x1f)
-#define X_RS1(i)     (((i) >> 14) & 0x1f)
-#define X_LDST_I(i)  (((i) >> 13) & 1)
-#define X_ASI(i)     (((i) >> 5) & 0xff)
-#define X_RS2(i)     (((i) >> 0) & 0x1f)
-#define X_IMM(i,n)   (((i) >> 0) & ((1 << (n)) - 1))
-#define X_SIMM(i,n)  SEX (X_IMM ((i), (n)), (n))
-#define X_DISP22(i)  (((i) >> 0) & 0x3fffff)
-#define X_IMM22(i)   X_DISP22 (i)
-#define X_DISP30(i)  (((i) >> 0) & 0x3fffffff)
+#define X_RD(i) (((i) >> 25) & 0x1f)
+#define X_RS1(i) (((i) >> 14) & 0x1f)
+#define X_LDST_I(i) (((i) >> 13) & 1)
+#define X_ASI(i) (((i) >> 5) & 0xff)
+#define X_RS2(i) (((i) >> 0) & 0x1f)
+#define X_IMM(i, n) (((i) >> 0) & ((1 << (n)) - 1))
+#define X_SIMM(i, n) SEX (X_IMM ((i), (n)), (n))
+#define X_DISP22(i) (((i) >> 0) & 0x3fffff)
+#define X_IMM22(i) X_DISP22 (i)
+#define X_DISP30(i) (((i) >> 0) & 0x3fffffff)
 
 /* These are for v9.  */
-#define X_DISP16(i)  (((((i) >> 20) & 3) << 14) | (((i) >> 0) & 0x3fff))
-#define X_DISP19(i)  (((i) >> 0) & 0x7ffff)
-#define X_MEMBAR(i)  ((i) & 0x7f)
+#define X_DISP16(i) (((((i) >> 20) & 3) << 14) | (((i) >> 0) & 0x3fff))
+#define X_DISP19(i) (((i) >> 0) & 0x7ffff)
+#define X_MEMBAR(i) ((i)&0x7f)
 
 enum {
 	OP_0 = 0,
@@ -268,80 +268,75 @@ enum {
 	OP33_INV16 = 0x3f,
 };
 
-static st64 get_immed_sgnext(const ut64 insn, const ut8 nbit) {
+static st64 get_immed_sgnext (const ut64 insn, const ut8 nbit) {
 	const ut64 mask = ~(((ut64)1 << (nbit + 1)) - 1);
-	return (st64) ((insn & ~mask)
-		| (((insn & ((ut64)1 << nbit)) >> nbit) * mask));
+	return (st64) ((insn & ~mask) | (((insn & ((ut64)1 << nbit)) >> nbit) * mask));
 }
 
-static RAnalValue * value_fill_addr_pc_disp(const ut64 addr, const st64 disp) {
-	RAnalValue *val = r_anal_value_new();
+static RAnalValue *value_fill_addr_pc_disp (const ut64 addr, const st64 disp) {
+	RAnalValue *val = r_anal_value_new ();
 	val->base = addr + disp;
 	return val;
 }
 
-static RAnalValue * value_fill_addr_reg_regdelta(RAnal const * const anal, const int ireg, const int iregdelta) {
-	RAnalValue *val = r_anal_value_new();
-	val->reg = r_reg_get(anal->reg, gpr_regs[ireg], R_REG_TYPE_GPR);
-	val->reg = r_reg_get(anal->reg, gpr_regs[iregdelta], R_REG_TYPE_GPR);
+static RAnalValue *value_fill_addr_reg_regdelta (RAnal const *const anal, const int ireg, const int iregdelta) {
+	RAnalValue *val = r_anal_value_new ();
+	val->reg = r_reg_get (anal->reg, gpr_regs[ireg], R_REG_TYPE_GPR);
+	val->reg = r_reg_get (anal->reg, gpr_regs[iregdelta], R_REG_TYPE_GPR);
 	return val;
 }
 
-static RAnalValue * value_fill_addr_reg_disp(RAnal const * const anal, const int ireg, const st64 disp) {
-	RAnalValue *val = r_anal_value_new();
-	val->reg = r_reg_get(anal->reg, gpr_regs[ireg], R_REG_TYPE_GPR);
+static RAnalValue *value_fill_addr_reg_disp (RAnal const *const anal, const int ireg, const st64 disp) {
+	RAnalValue *val = r_anal_value_new ();
+	val->reg = r_reg_get (anal->reg, gpr_regs[ireg], R_REG_TYPE_GPR);
 	val->delta = disp;
 	return val;
 }
 
-static void anal_call(RAnalOp *op, const ut32 insn, const ut64 addr) {
-	const st64 disp = (get_immed_sgnext(insn, 29) * 4);
+static void anal_call (RAnalOp *op, const ut32 insn, const ut64 addr) {
+	const st64 disp = (get_immed_sgnext (insn, 29) * 4);
 	op->type = R_ANAL_OP_TYPE_CALL;
-	op->dst = value_fill_addr_pc_disp(addr, disp);
+	op->dst = value_fill_addr_pc_disp (addr, disp);
 	op->jump = addr + disp;
 	op->fail = addr + 4;
 }
 
-static void anal_jmpl(RAnal const * const anal, RAnalOp *op, const ut32 insn, const ut64 addr) {
+static void anal_jmpl (RAnal const *const anal, RAnalOp *op, const ut32 insn, const ut64 addr) {
 	st64 disp = 0;
 	if (X_LDST_I (insn)) {
 		disp = get_immed_sgnext (insn, 12);
 	}
 
-	if (X_RD(insn) == GPR_O7) {
+	if (X_RD (insn) == GPR_O7) {
 		op->type = R_ANAL_OP_TYPE_UCALL;
 		op->fail = addr + 4;
-	} else if (X_RD(insn) == GPR_G0
-		&& X_LDST_I(insn) == 1
-		&& (X_RS1(insn) == GPR_I7 || X_RS1(insn) == GPR_O7)
-		&& disp == 8) {
-			op->type = R_ANAL_OP_TYPE_RET;
-			op->eob = true;
-			return;
-		 }
-	else {
+	} else if (X_RD (insn) == GPR_G0 && X_LDST_I (insn) == 1 && (X_RS1 (insn) == GPR_I7 || X_RS1 (insn) == GPR_O7) && disp == 8) {
+		op->type = R_ANAL_OP_TYPE_RET;
+		op->eob = true;
+		return;
+	} else {
 		op->type = R_ANAL_OP_TYPE_UJMP;
 		op->eob = true;
 	}
 
-	if(X_LDST_I(insn)) {
-		op->dst = value_fill_addr_reg_disp(anal, X_RS1(insn), disp);
+	if (X_LDST_I (insn)) {
+		op->dst = value_fill_addr_reg_disp (anal, X_RS1 (insn), disp);
 	} else {
-		op->dst = value_fill_addr_reg_regdelta(anal, X_RS1(insn), X_RS2(insn));
+		op->dst = value_fill_addr_reg_regdelta (anal, X_RS1 (insn), X_RS2 (insn));
 	}
 }
 
-static void anal_branch(RAnalOp *op, const ut32 insn, const ut64 addr) {
+static void anal_branch (RAnalOp *op, const ut32 insn, const ut64 addr) {
 	st64 disp = 0;
 	int r_cond = 0;
 	op->eob = true;
 
 	/* handle the conditions */
-	if(X_OP2(insn) == OP2_Bicc || X_OP2(insn) == OP2_BPcc) {
-		r_cond = icc_to_r_cond (X_COND(insn));
-	} else if(X_OP2(insn) == OP2_FBfcc || X_OP2(insn) == OP2_FBPfcc) {
-		r_cond = fcc_to_r_cond (X_COND(insn));
-	} else if(X_OP2(insn) == OP2_BPr) {
+	if (X_OP2 (insn) == OP2_Bicc || X_OP2 (insn) == OP2_BPcc) {
+		r_cond = icc_to_r_cond (X_COND (insn));
+	} else if (X_OP2 (insn) == OP2_FBfcc || X_OP2 (insn) == OP2_FBPfcc) {
+		r_cond = fcc_to_r_cond (X_COND (insn));
+	} else if (X_OP2 (insn) == OP2_BPr) {
 		r_cond = R_ANAL_COND_UNKNOWN;
 	}
 
@@ -355,13 +350,12 @@ static void anal_branch(RAnalOp *op, const ut32 insn, const ut64 addr) {
 		op->fail = addr + 4;
 	}
 
-
 	/* handle displacement */
 	if (X_OP2 (insn) == OP2_Bicc || X_OP2 (insn) == OP2_FBfcc) {
-		disp = get_immed_sgnext(insn, 21) * 4;
-	} else if (X_OP2(insn) == OP2_BPcc || X_OP2 (insn) == OP2_FBPfcc) {
+		disp = get_immed_sgnext (insn, 21) * 4;
+	} else if (X_OP2 (insn) == OP2_BPcc || X_OP2 (insn) == OP2_FBPfcc) {
 		disp = get_immed_sgnext (insn, 18) * 4;
-	} else if (X_OP2(insn) == OP2_BPr) {
+	} else if (X_OP2 (insn) == OP2_BPr) {
 		disp = get_immed_sgnext (X_DISP16 (insn), 15) * 4;
 	}
 	op->dst = value_fill_addr_pc_disp (addr, disp);
@@ -369,7 +363,7 @@ static void anal_branch(RAnalOp *op, const ut32 insn, const ut64 addr) {
 }
 
 // TODO: this implementation is just a fast hack. needs to be rewritten and completed
-static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static int sparc_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	int sz = 4;
 	ut32 insn;
 
@@ -377,17 +371,17 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	op->addr = addr;
 	op->size = sz;
 
-	if(!anal->big_endian) {
-		((char*)&insn)[0] = data[3];
-		((char*)&insn)[1] = data[2];
-		((char*)&insn)[2] = data[1];
-		((char*)&insn)[3] = data[0];
+	if (!anal->big_endian) {
+		((char *)&insn)[0] = data[3];
+		((char *)&insn)[1] = data[2];
+		((char *)&insn)[2] = data[1];
+		((char *)&insn)[3] = data[0];
 	} else {
-		memcpy(&insn, data, sz);
+		memcpy (&insn, data, sz);
 	}
 
-	if (X_OP(insn) == OP_0) {
-		switch(X_OP2(insn)) {
+	if (X_OP (insn) == OP_0) {
+		switch (X_OP2 (insn)) {
 		case OP2_ILLTRAP:
 		case OP2_INV:
 			op->type = R_ANAL_OP_TYPE_ILL;
@@ -398,14 +392,13 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		case OP2_BPr:
 		case OP2_FBPfcc:
 		case OP2_FBfcc:
-			anal_branch(op, insn, addr);
+			anal_branch (op, insn, addr);
 			break;
 		}
-	} else if(X_OP(insn) == OP_1) {
-		anal_call(op, insn, addr);
-	} else if(X_OP(insn) == OP_2) {
-		switch(X_OP3(insn))
-		 {
+	} else if (X_OP (insn) == OP_1) {
+		anal_call (op, insn, addr);
+	} else if (X_OP (insn) == OP_2) {
+		switch (X_OP3 (insn)) {
 		case OP32_INV1:
 		case OP32_INV2:
 		case OP32_INV3:
@@ -415,30 +408,30 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			sz = 0; /* make r_core_anal_bb stop */
 			break;
 		case OP32_CONDINV1:
-			if(X_RD(insn) == 1) {
+			if (X_RD (insn) == 1) {
 				op->type = R_ANAL_OP_TYPE_ILL;
 				sz = 0; /* make r_core_anal_bb stop */
 			}
 			break;
 		case OP32_CONDINV2:
-			if(X_RS1(insn) == 1) {
+			if (X_RS1 (insn) == 1) {
 				op->type = R_ANAL_OP_TYPE_ILL;
 				sz = 0; /* make r_core_anal_bb stop */
 			}
 			break;
 		case OP32_CONDINV3:
-			if(X_RS1(insn) != 0) {
+			if (X_RS1 (insn) != 0) {
 				op->type = R_ANAL_OP_TYPE_ILL;
 				sz = 0; /* make r_core_anal_bb stop */
 			}
 			break;
 
 		case OP32_JMPL:
-			anal_jmpl(anal, op, insn, addr);
+			anal_jmpl (anal, op, insn, addr);
 			break;
-		 }
-	} else if (X_OP(insn) == OP_3) {
-		switch(X_OP3(insn)) {
+		}
+	} else if (X_OP (insn) == OP_3) {
+		switch (X_OP3 (insn)) {
 		case OP33_INV1:
 		case OP33_INV2:
 		case OP33_INV3:
@@ -458,13 +451,13 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			op->type = R_ANAL_OP_TYPE_ILL;
 			sz = 0; /* make r_core_anal_bb stop */
 			break;
-		 }
+		}
 	}
 
 	return sz;
 }
 
-static bool set_reg_profile(RAnal *anal) {
+static bool set_reg_profile (RAnal *anal) {
 	/* As far as I can see, sparc v9 register and instruction set
 	   don't depened  on bits of the running application.
 	   But: They depend on the bits of the consuming application,
@@ -473,135 +466,135 @@ static bool set_reg_profile(RAnal *anal) {
 	   'man 4 core' for reference.
 	 */
 	const char *p =
-	"=PC	pc\n"
-	"=SP	o6\n"
-	"=BP	i6\n"
-	/* prgregset_t for _LP64 */
-	"gpr	g0	.64	0	0\n"
-	"gpr	g1	.64	8	0\n"
-	"gpr	g2	.64	16	0\n"
-	"gpr	g3	.64	24	0\n"
-	"gpr	g4	.64	32	0\n"
-	"gpr	g5	.64	40	0\n"
-	"gpr	g6	.64	48	0\n"
-	"gpr	g7	.64	56	0\n"
-	"gpr	o0	.64	64	0\n"
-	"gpr	o1	.64	72	0\n"
-	"gpr	o2	.64	80	0\n"
-	"gpr	o3	.64	88	0\n"
-	"gpr	o4	.64	96	0\n"
-	"gpr	o5	.64	104	0\n"
-	"gpr	o6	.64	112	0\n"
-	"gpr	o7	.64	120	0\n"
-	"gpr	l0	.64	128	0\n"
-	"gpr	l1	.64	136	0\n"
-	"gpr	l2	.64	144	0\n"
-	"gpr	l3	.64	152	0\n"
-	"gpr	l4	.64	160	0\n"
-	"gpr	l5	.64	168	0\n"
-	"gpr	l6	.64	176	0\n"
-	"gpr	l7	.64	184	0\n"
-	"gpr	i0	.64	192	0\n"
-	"gpr	i1	.64	200	0\n"
-	"gpr	i2	.64	208	0\n"
-	"gpr	i3	.64	216	0\n"
-	"gpr	i4	.64	224	0\n"
-	"gpr	i5	.64	232	0\n"
-	"gpr	i6	.64	240	0\n"
-	"gpr	i7	.64	248	0\n"
-	"gpr	ccr	.64	256	0\n"
-	"gpr	pc	.64	264	0\n"
-	"gpr	ncp	.64	272	0\n"
-	"gpr	y	.64	280	0\n"
-	"gpr	asi	.64	288	0\n"
-	"gpr	fprs	.64	296	0\n"
-	/* beginning of prfpregset_t for __sparcv9 */
-	"fpu	sf0	.32	304	0\n"
-	"fpu	sf1	.32	308	0\n"
-	"fpu	sf2	.32	312	0\n"
-	"fpu	sf3	.32	316	0\n"
-	"fpu	sf4	.32	320	0\n"
-	"fpu	sf5	.32	324	0\n"
-	"fpu	sf6	.32	328	0\n"
-	"fpu	sf7	.32	332	0\n"
-	"fpu	sf8	.32	336	0\n"
-	"fpu	sf9	.32	340	0\n"
-	"fpu	sf10	.32	344	0\n"
-	"fpu	sf11	.32	348	0\n"
-	"fpu	sf12	.32	352	0\n"
-	"fpu	sf13	.32	356	0\n"
-	"fpu	sf14	.32	360	0\n"
-	"fpu	sf15	.32	364	0\n"
-	"fpu	sf16	.32	368	0\n"
-	"fpu	sf17	.32	372	0\n"
-	"fpu	sf18	.32	376	0\n"
-	"fpu	sf19	.32	380	0\n"
-	"fpu	sf20	.32	384	0\n"
-	"fpu	sf21	.32	388	0\n"
-	"fpu	sf22	.32	392	0\n"
-	"fpu	sf23	.32	396	0\n"
-	"fpu	sf24	.32	400	0\n"
-	"fpu	sf25	.32	404	0\n"
-	"fpu	sf26	.32	408	0\n"
-	"fpu	sf27	.32	412	0\n"
-	"fpu	sf28	.32	416	0\n"
-	"fpu	sf29	.32	420	0\n"
-	"fpu	sf30	.32	424	0\n"
-	"fpu	sf31	.32	428	0\n"
-	"fpu	df0	.64	304	0\n"	/* sf0 sf1 */
-	"fpu	df2	.64	312	0\n"	/* sf2 sf3 */
-	"fpu	df4	.64	320	0\n"	/* sf4 sf5 */
-	"fpu	df6	.64	328	0\n"	/* sf6 sf7 */
-	"fpu	df8	.64	336	0\n"	/* sf8 sf9 */
-	"fpu	df10	.64	344	0\n"	/* sf10 sf11 */
-	"fpu	df12	.64	352	0\n"	/* sf12 sf13 */
-	"fpu	df14	.64	360	0\n"	/* sf14 sf15 */
-	"fpu	df16	.64	368	0\n"	/* sf16 sf17 */
-	"fpu	df18	.64	376	0\n"	/* sf18 sf19 */
-	"fpu	df20	.64	384	0\n"	/* sf20 sf21 */
-	"fpu	df22	.64	392	0\n"	/* sf22 sf23 */
-	"fpu	df24	.64	400	0\n"	/* sf24 sf25 */
-	"fpu	df26	.64	408	0\n"	/* sf26 sf27 */
-	"fpu	df28	.64	416	0\n"	/* sf28 sf29 */
-	"fpu	df30	.64	424	0\n"	/* sf30 sf31 */
-	"fpu	df32	.64	432	0\n"
-	"fpu	df34	.64	440	0\n"
-	"fpu	df36	.64	448	0\n"
-	"fpu	df38	.64	456	0\n"
-	"fpu	df40	.64	464	0\n"
-	"fpu	df42	.64	472	0\n"
-	"fpu	df44	.64	480	0\n"
-	"fpu	df46	.64	488	0\n"
-	"fpu	df48	.64	496	0\n"
-	"fpu	df50	.64	504	0\n"
-	"fpu	df52	.64	512	0\n"
-	"fpu	df54	.64	520	0\n"
-	"fpu	df56	.64	528	0\n"
-	"fpu	df58	.64	536	0\n"
-	"fpu	df60	.64	544	0\n"
-	"fpu	df62	.64	552	0\n"
-	"fpu	qf0	.128	304	0\n"	/* sf0 sf1 sf2 sf3 */
-	"fpu	qf4	.128	320	0\n"	/* sf4 sf5 sf6 sf7 */
-	"fpu	qf8	.128	336	0\n"	/* sf8 sf9 sf10 sf11 */
-	"fpu	qf12	.128	352	0\n"	/* sf12 sf13 sf14 sf15 */
-	"fpu	qf16	.128	368	0\n"	/* sf16 sf17 sf18 sf19 */
-	"fpu	qf20	.128	384	0\n"	/* sf20 sf21 sf22 sf23 */
-	"fpu	qf24	.128	400	0\n"	/* sf24 sf25 sf26 sf27 */
-	"fpu	qf28	.128	416	0\n"	/* sf28 sf29 sf30 sf31 */
-	"fpu	qf32	.128	432	0\n"	/* df32 df34 */
-	"fpu	qf36	.128	448	0\n"	/* df36 df38 */
-	"fpu	qf40	.128	464	0\n"	/* df40 df42 */
-	"fpu	qf44	.128	480	0\n"	/* df44 df46 */
-	"fpu	qf48	.128	496	0\n"	/* df48 df50 */
-	"fpu	qf52	.128	512	0\n"	/* df52 df54 */
-	"fpu	qf56	.128	528	0\n"	/* df56 df68 */
-	"fpu	qf60	.128	544	0\n"	/* df60 df62 */
-	"gpr	fsr	.64	560	0\n";	/* note that
+		"=PC	pc\n"
+		"=SP	o6\n"
+		"=BP	i6\n"
+		/* prgregset_t for _LP64 */
+		"gpr	g0	.64	0	0\n"
+		"gpr	g1	.64	8	0\n"
+		"gpr	g2	.64	16	0\n"
+		"gpr	g3	.64	24	0\n"
+		"gpr	g4	.64	32	0\n"
+		"gpr	g5	.64	40	0\n"
+		"gpr	g6	.64	48	0\n"
+		"gpr	g7	.64	56	0\n"
+		"gpr	o0	.64	64	0\n"
+		"gpr	o1	.64	72	0\n"
+		"gpr	o2	.64	80	0\n"
+		"gpr	o3	.64	88	0\n"
+		"gpr	o4	.64	96	0\n"
+		"gpr	o5	.64	104	0\n"
+		"gpr	o6	.64	112	0\n"
+		"gpr	o7	.64	120	0\n"
+		"gpr	l0	.64	128	0\n"
+		"gpr	l1	.64	136	0\n"
+		"gpr	l2	.64	144	0\n"
+		"gpr	l3	.64	152	0\n"
+		"gpr	l4	.64	160	0\n"
+		"gpr	l5	.64	168	0\n"
+		"gpr	l6	.64	176	0\n"
+		"gpr	l7	.64	184	0\n"
+		"gpr	i0	.64	192	0\n"
+		"gpr	i1	.64	200	0\n"
+		"gpr	i2	.64	208	0\n"
+		"gpr	i3	.64	216	0\n"
+		"gpr	i4	.64	224	0\n"
+		"gpr	i5	.64	232	0\n"
+		"gpr	i6	.64	240	0\n"
+		"gpr	i7	.64	248	0\n"
+		"gpr	ccr	.64	256	0\n"
+		"gpr	pc	.64	264	0\n"
+		"gpr	ncp	.64	272	0\n"
+		"gpr	y	.64	280	0\n"
+		"gpr	asi	.64	288	0\n"
+		"gpr	fprs	.64	296	0\n"
+		/* beginning of prfpregset_t for __sparcv9 */
+		"fpu	sf0	.32	304	0\n"
+		"fpu	sf1	.32	308	0\n"
+		"fpu	sf2	.32	312	0\n"
+		"fpu	sf3	.32	316	0\n"
+		"fpu	sf4	.32	320	0\n"
+		"fpu	sf5	.32	324	0\n"
+		"fpu	sf6	.32	328	0\n"
+		"fpu	sf7	.32	332	0\n"
+		"fpu	sf8	.32	336	0\n"
+		"fpu	sf9	.32	340	0\n"
+		"fpu	sf10	.32	344	0\n"
+		"fpu	sf11	.32	348	0\n"
+		"fpu	sf12	.32	352	0\n"
+		"fpu	sf13	.32	356	0\n"
+		"fpu	sf14	.32	360	0\n"
+		"fpu	sf15	.32	364	0\n"
+		"fpu	sf16	.32	368	0\n"
+		"fpu	sf17	.32	372	0\n"
+		"fpu	sf18	.32	376	0\n"
+		"fpu	sf19	.32	380	0\n"
+		"fpu	sf20	.32	384	0\n"
+		"fpu	sf21	.32	388	0\n"
+		"fpu	sf22	.32	392	0\n"
+		"fpu	sf23	.32	396	0\n"
+		"fpu	sf24	.32	400	0\n"
+		"fpu	sf25	.32	404	0\n"
+		"fpu	sf26	.32	408	0\n"
+		"fpu	sf27	.32	412	0\n"
+		"fpu	sf28	.32	416	0\n"
+		"fpu	sf29	.32	420	0\n"
+		"fpu	sf30	.32	424	0\n"
+		"fpu	sf31	.32	428	0\n"
+		"fpu	df0	.64	304	0\n" /* sf0 sf1 */
+		"fpu	df2	.64	312	0\n" /* sf2 sf3 */
+		"fpu	df4	.64	320	0\n" /* sf4 sf5 */
+		"fpu	df6	.64	328	0\n" /* sf6 sf7 */
+		"fpu	df8	.64	336	0\n" /* sf8 sf9 */
+		"fpu	df10	.64	344	0\n" /* sf10 sf11 */
+		"fpu	df12	.64	352	0\n" /* sf12 sf13 */
+		"fpu	df14	.64	360	0\n" /* sf14 sf15 */
+		"fpu	df16	.64	368	0\n" /* sf16 sf17 */
+		"fpu	df18	.64	376	0\n" /* sf18 sf19 */
+		"fpu	df20	.64	384	0\n" /* sf20 sf21 */
+		"fpu	df22	.64	392	0\n" /* sf22 sf23 */
+		"fpu	df24	.64	400	0\n" /* sf24 sf25 */
+		"fpu	df26	.64	408	0\n" /* sf26 sf27 */
+		"fpu	df28	.64	416	0\n" /* sf28 sf29 */
+		"fpu	df30	.64	424	0\n" /* sf30 sf31 */
+		"fpu	df32	.64	432	0\n"
+		"fpu	df34	.64	440	0\n"
+		"fpu	df36	.64	448	0\n"
+		"fpu	df38	.64	456	0\n"
+		"fpu	df40	.64	464	0\n"
+		"fpu	df42	.64	472	0\n"
+		"fpu	df44	.64	480	0\n"
+		"fpu	df46	.64	488	0\n"
+		"fpu	df48	.64	496	0\n"
+		"fpu	df50	.64	504	0\n"
+		"fpu	df52	.64	512	0\n"
+		"fpu	df54	.64	520	0\n"
+		"fpu	df56	.64	528	0\n"
+		"fpu	df58	.64	536	0\n"
+		"fpu	df60	.64	544	0\n"
+		"fpu	df62	.64	552	0\n"
+		"fpu	qf0	.128	304	0\n" /* sf0 sf1 sf2 sf3 */
+		"fpu	qf4	.128	320	0\n" /* sf4 sf5 sf6 sf7 */
+		"fpu	qf8	.128	336	0\n" /* sf8 sf9 sf10 sf11 */
+		"fpu	qf12	.128	352	0\n" /* sf12 sf13 sf14 sf15 */
+		"fpu	qf16	.128	368	0\n" /* sf16 sf17 sf18 sf19 */
+		"fpu	qf20	.128	384	0\n" /* sf20 sf21 sf22 sf23 */
+		"fpu	qf24	.128	400	0\n" /* sf24 sf25 sf26 sf27 */
+		"fpu	qf28	.128	416	0\n" /* sf28 sf29 sf30 sf31 */
+		"fpu	qf32	.128	432	0\n" /* df32 df34 */
+		"fpu	qf36	.128	448	0\n" /* df36 df38 */
+		"fpu	qf40	.128	464	0\n" /* df40 df42 */
+		"fpu	qf44	.128	480	0\n" /* df44 df46 */
+		"fpu	qf48	.128	496	0\n" /* df48 df50 */
+		"fpu	qf52	.128	512	0\n" /* df52 df54 */
+		"fpu	qf56	.128	528	0\n" /* df56 df68 */
+		"fpu	qf60	.128	544	0\n" /* df60 df62 */
+		"gpr	fsr	.64	560	0\n"; /* note that
 						   we've left out the filler */
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo (RAnal *anal, int q) {
 	return 4; /* :D */
 }
 

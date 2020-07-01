@@ -20,17 +20,17 @@
 #include <transport.h>
 #include <windbg.h>
 
-static bool __plugin_open(RIO *io, const char *file, bool many) {
+static bool __plugin_open (RIO *io, const char *file, bool many) {
 	return (!strncmp (file, "windbg://", 9));
 }
 
-static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
+static RIODesc *__open (RIO *io, const char *file, int rw, int mode) {
 	if (!__plugin_open (io, file, 0)) {
 		return NULL;
 	}
 
 	if (!iob_select ("pipe")) {
-		eprintf("Could not initialize the IO backend\n");
+		eprintf ("Could not initialize the IO backend\n");
 		return NULL;
 	}
 
@@ -49,7 +49,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	return r_io_desc_new (io, &r_io_plugin_windbg, file, rw, mode, ctx);
 }
 
-static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
+static int __write (RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (!fd) {
 		return -1;
 	}
@@ -59,7 +59,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	return windbg_write_at (fd->data, buf, io->off, count);
 }
 
-static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 __lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
 	case R_IO_SEEK_SET:
 		return io->off = offset;
@@ -72,7 +72,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	}
 }
 
-static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
+static int __read (RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	if (!fd) {
 		return -1;
 	}
@@ -84,8 +84,8 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return windbg_read_at (fd->data, buf, io->off, count);
 }
 
-static int __close(RIODesc *fd) {
-	windbg_ctx_free ((WindCtx**)&fd->data);
+static int __close (RIODesc *fd) {
+	windbg_ctx_free ((WindCtx **)&fd->data);
 	return true;
 }
 

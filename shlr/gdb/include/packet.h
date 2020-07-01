@@ -18,7 +18,7 @@
  * \param g the "instance" of the current libgdbr session
  * \returns a failure code (currently -1) or 0 if call successfully
  */
-int send_packet(libgdbr_t *g);
+int send_packet (libgdbr_t *g);
 
 /*!
  * \brief Function reads data from the established connection
@@ -26,8 +26,8 @@ int send_packet(libgdbr_t *g);
  * \param vcont whether it's called to receive reply to a vcont packet
  * \returns a failure code (currently -1) or 0 if call successfully
  */
-int read_packet(libgdbr_t *g, bool vcont);
+int read_packet (libgdbr_t *g, bool vcont);
 
-int pack(libgdbr_t *g, const char *msg);
+int pack (libgdbr_t *g, const char *msg);
 
 #endif

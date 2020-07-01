@@ -8,9 +8,9 @@
 #include <r_anal.h>
 #include "../../asm/arch/z80/z80_tab.h"
 
-static void z80_op_size(const ut8 *data, int len, int *size, int *size_prefix) {
+static void z80_op_size (const ut8 *data, int len, int *size, int *size_prefix) {
 	int type = 0;
-	if (len <1) {
+	if (len < 1) {
 		return;
 	}
 	switch (data[0]) {
@@ -24,13 +24,13 @@ static void z80_op_size(const ut8 *data, int len, int *size, int *size_prefix) {
 		type = Z80_OP16;
 		break;
 	case 0xdd:
-		if (len >1) {
-			type = dd[z80_fddd_branch_index_res(data[1])].type;
+		if (len > 1) {
+			type = dd[z80_fddd_branch_index_res (data[1])].type;
 		}
 		break;
 	case 0xfd:
 		if (len > 1) {
-			type = fd[z80_fddd_branch_index_res(data[1])].type;
+			type = fd[z80_fddd_branch_index_res (data[1])].type;
 		}
 		break;
 	default:
@@ -55,7 +55,7 @@ static void z80_op_size(const ut8 *data, int len, int *size, int *size_prefix) {
 	}
 }
 
-static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static int z80_anal_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	int ilen = 0;
 	z80_op_size (data, len, &ilen, &op->nopcode);
 
@@ -106,7 +106,7 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 	case 0x97:
 	case 0xd6:
 		op->type = R_ANAL_OP_TYPE_SUB;
-                break;
+		break;
 	case 0x22: // ld (**), hl
 		op->type = R_ANAL_OP_TYPE_STORE;
 		op->refptr = 2;
@@ -144,7 +144,7 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 		op->stackptr = -2;
 		break;
 	case 0xed:
-		switch(data[1]) {
+		switch (data[1]) {
 		case 0x43:
 		case 0x53:
 		case 0x63:
@@ -161,8 +161,8 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 			op->refptr = 2;
 			op->ptr = data[2] | data[3] << 8;
 			break;
-		case 0x45:	//retn
-		case 0x4d:	//reti
+		case 0x45: //retn
+		case 0x4d: //reti
 			op->type = R_ANAL_OP_TYPE_RET;
 			op->eob = true;
 			break;
@@ -225,7 +225,7 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 
 	case 0x10: // djnz
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = addr + (st8)data[1] + ilen ;
+		op->jump = addr + (st8)data[1] + ilen;
 		op->fail = addr + ilen;
 		break;
 	case 0x18: // jr xx
@@ -238,7 +238,7 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 	case 0x30:
 	case 0x38:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = addr + ((len>1)? (st8)data[1]:0) + ilen;
+		op->jump = addr + ((len > 1) ? (st8)data[1] : 0) + ilen;
 		op->fail = addr + ilen;
 		break;
 
@@ -252,49 +252,49 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 	case 0xf2:
 	case 0xfa:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = (len > 2)? data[1] | data[2] << 8: 0;
+		op->jump = (len > 2) ? data[1] | data[2] << 8 : 0;
 		op->fail = addr + ilen;
 		break;
 	case 0xc3: // jp xx
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = (len > 2)? data[1] | data[2] << 8: 0;
+		op->jump = (len > 2) ? data[1] | data[2] << 8 : 0;
 		break;
 	case 0xe9: // jp (HL)
 		op->type = R_ANAL_OP_TYPE_UJMP;
 		break;
 
-	case 0xc7:				//rst 0
+	case 0xc7: //rst 0
 		op->jump = 0x00;
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
-	case 0xcf:				//rst 8
+	case 0xcf: //rst 8
 		op->jump = 0x08;
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
-	case 0xd7:				//rst 16
+	case 0xd7: //rst 16
 		op->jump = 0x10;
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
-	case 0xdf:				//rst 24
+	case 0xdf: //rst 24
 		op->jump = 0x18;
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
-	case 0xe7:				//rst 32
+	case 0xe7: //rst 32
 		op->jump = 0x20;
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
-	case 0xef:				//rst 40
+	case 0xef: //rst 40
 		op->jump = 0x28;
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
-	case 0xf7:				//rst 48
+	case 0xf7: //rst 48
 		op->jump = 0x30;
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
-	case 0xff:				//rst 56
+	case 0xff: //rst 56
 		op->jump = 0x38;
 		op->type = R_ANAL_OP_TYPE_SWI;
-		break;				// condret: i think that foo resets some regs, but i'm not sure
+		break; // condret: i think that foo resets some regs, but i'm not sure
 
 	// conditional call
 	case 0xc4: // nz
@@ -307,7 +307,7 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 	case 0xec: // pe
 	case 0xfc: // m
 		op->type = R_ANAL_OP_TYPE_CCALL;
-		op->jump = (len>2)? data[1] | data[2] << 8: 0;
+		op->jump = (len > 2) ? data[1] | data[2] << 8 : 0;
 		op->fail = addr + ilen;
 		break;
 
@@ -318,12 +318,12 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 		op->stackptr = 2;
 		op->jump = data[1] | data[2] << 8;
 		break;
-	case 0xcb:			//the same as for gameboy
-		switch(data[1]/8) {
+	case 0xcb: //the same as for gameboy
+		switch (data[1] / 8) {
 		case 0:
 		case 2:
 		case 4:
-		case 6:				//swap
+		case 6: //swap
 			op->type = R_ANAL_OP_TYPE_ROL;
 			break;
 		case 1:
@@ -341,7 +341,7 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 		case 14:
 		case 15:
 			op->type = R_ANAL_OP_TYPE_AND;
-			break;			//bit
+			break; //bit
 		case 16:
 		case 17:
 		case 18:
@@ -351,7 +351,7 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 		case 22:
 		case 23:
 			op->type = R_ANAL_OP_TYPE_XOR;
-			break;			//set
+			break; //set
 		case 24:
 		case 25:
 		case 26:
@@ -361,14 +361,14 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 		case 30:
 		case 31:
 			op->type = R_ANAL_OP_TYPE_MOV;
-			break;			//res
+			break; //res
 		}
 		break;
 	}
 	return ilen;
 }
 
-static bool set_reg_profile(RAnal *anal) {
+static bool set_reg_profile (RAnal *anal) {
 	const char *p =
 		"=PC	mpc\n"
 		"=SP	sp\n"
@@ -410,7 +410,7 @@ static bool set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo (RAnal *anal, int q) {
 	return 1;
 }
 

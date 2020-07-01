@@ -27,7 +27,7 @@ typedef struct SPDBDownloaderOpt {
 typedef struct SPDBDownloader {
 	SPDBDownloaderOpt *opt;
 
-	int (*download)(struct SPDBDownloader *pdb_downloader);
+	int (*download) (struct SPDBDownloader *pdb_downloader);
 } SPDBDownloader;
 
 ///
@@ -35,17 +35,17 @@ typedef struct SPDBDownloader {
 /// \param opt PDB options
 /// \param pdb_downloader PDB downloader that will be init
 ///
-void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pdb_downloader);
+void init_pdb_downloader (SPDBDownloaderOpt *opt, SPDBDownloader *pdb_downloader);
 
 ///
 /// \brief deinitialization of PDB downloader
 /// \param pdb_downloader PDB downloader that will be deinit
 ///
-void deinit_pdb_downloader(SPDBDownloader *pdb_downloader);
+void deinit_pdb_downloader (SPDBDownloader *pdb_downloader);
 
 ///
 /// \brief download PDB file
-R_API int r_bin_pdb_download(RCore *core, int isradjson, int *actions_done, SPDBOptions *options);
+R_API int r_bin_pdb_download (RCore *core, int isradjson, int *actions_done, SPDBOptions *options);
 
 #ifdef __cplusplus
 }

@@ -97,7 +97,7 @@ extern void expandargv PARAMS ((int *, char ***));
    to find the declaration so provide a fully prototyped one.  If it
    is 1, we found it so don't provide any declaration at all.  */
 #if !HAVE_DECL_BASENAME
-#if defined (__GNU_LIBRARY__ ) || defined (__linux__) || defined (__FreeBSD__) || defined (__OpenBSD__) || defined(__NetBSD__) || defined (__CYGWIN__) || defined (__CYGWIN32__) || defined (__MINGW32__) || defined (HAVE_DECL_BASENAME)
+#if defined(__GNU_LIBRARY__) || defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__CYGWIN__) || defined(__CYGWIN32__) || defined(__MINGW32__) || defined(HAVE_DECL_BASENAME)
 extern char *basename (const char *);
 #else
 /* Do not allow basename to be used if there is no prototype seen.  We
@@ -158,9 +158,9 @@ extern char *libiberty_concat_ptr;
    the last argument of this function, to terminate the list of
    strings.  Allocates memory using alloca.  The arguments are
    evaluated twice!  */
-#define ACONCAT(ACONCAT_PARAMS) \
-  (libiberty_concat_ptr = (char *) alloca (concat_length ACONCAT_PARAMS + 1), \
-   concat_copy2 ACONCAT_PARAMS)
+#define ACONCAT(ACONCAT_PARAMS)                                                    \
+	(libiberty_concat_ptr = (char *)alloca (concat_length ACONCAT_PARAMS + 1), \
+		concat_copy2 ACONCAT_PARAMS)
 
 /* Check whether two file descriptors refer to the same file.  */
 
@@ -169,14 +169,14 @@ extern int fdmatch (int fd1, int fd2);
 /* Return the position of the first bit set in the argument.  */
 /* Prototypes vary from system to system, so we only provide a
    prototype on systems where we know that we need it.  */
-#if defined (HAVE_DECL_FFS) && !HAVE_DECL_FFS
-extern int ffs(int);
+#if defined(HAVE_DECL_FFS) && !HAVE_DECL_FFS
+extern int ffs (int);
 #endif
 
 /* Get the working directory.  The result is cached, so don't call
    chdir() between calls to getpwd().  */
 
-extern char * getpwd (void);
+extern char *getpwd (void);
 
 /* Get the current time.  */
 /* Prototypes vary from system to system, so we only provide a
@@ -184,7 +184,7 @@ extern char * getpwd (void);
 #ifdef __MINGW32__
 /* Forward declaration to avoid #include <sys/time.h>.   */
 struct timeval;
-extern int gettimeofday (struct timeval *, void *); 
+extern int gettimeofday (struct timeval *, void *);
 #endif
 
 /* Get the amount of time the process has run, in microseconds.  */
@@ -195,7 +195,7 @@ extern long get_run_time (void);
    return value using malloc.  */
 
 extern char *make_relative_prefix (const char *, const char *,
-                                   const char *) ATTRIBUTE_MALLOC;
+	const char *) ATTRIBUTE_MALLOC;
 
 /* Choose a temporary directory to use for scratch files.  */
 
@@ -300,7 +300,6 @@ extern void *xmemdup (const void *, size_t, size_t) ATTRIBUTE_MALLOC;
 extern double physmem_total (void);
 extern double physmem_available (void);
 
-
 /* These macros provide a K&R/C89/C++-friendly way of allocating structures
    with nice encapsulation.  The XDELETE*() macros are technically
    superfluous, but provided here for symmetry.  Using them consistently
@@ -314,49 +313,49 @@ extern double physmem_available (void);
 #define xcalloc calloc
 #define xrealloc realloc
 #endif
-#define XNEW(T)			((T *) xmalloc (sizeof (T)))
-#define XCNEW(T)		((T *) xcalloc (1, sizeof (T)))
-#define XDELETE(P)		free ((void*) (P))
+#define XNEW(T) ((T *)xmalloc (sizeof (T)))
+#define XCNEW(T) ((T *)xcalloc (1, sizeof (T)))
+#define XDELETE(P) free ((void *)(P))
 
 /* Array allocators.  */
 
-#define XNEWVEC(T, N)		((T *) xmalloc (sizeof (T) * (N)))
-#define XCNEWVEC(T, N)		((T *) xcalloc ((N), sizeof (T)))
-#define XRESIZEVEC(T, P, N)	((T *) xrealloc ((void *) (P), sizeof (T) * (N)))
-#define XDELETEVEC(P)		free ((void*) (P))
+#define XNEWVEC(T, N) ((T *)xmalloc (sizeof (T) * (N)))
+#define XCNEWVEC(T, N) ((T *)xcalloc ((N), sizeof (T)))
+#define XRESIZEVEC(T, P, N) ((T *)xrealloc ((void *)(P), sizeof (T) * (N)))
+#define XDELETEVEC(P) free ((void *)(P))
 
 /* Allocators for variable-sized structures and raw buffers.  */
 
-#define XNEWVAR(T, S)		((T *) xmalloc ((S)))
-#define XCNEWVAR(T, S)		((T *) xcalloc (1, (S)))
-#define XRESIZEVAR(T, P, S)	((T *) xrealloc ((P), (S)))
+#define XNEWVAR(T, S) ((T *)xmalloc ((S)))
+#define XCNEWVAR(T, S) ((T *)xcalloc (1, (S)))
+#define XRESIZEVAR(T, P, S) ((T *)xrealloc ((P), (S)))
 
 /* Type-safe obstack allocator.  */
 
-#define XOBNEW(O, T)		((T *) obstack_alloc ((O), sizeof (T)))
-#define XOBFINISH(O, T)         ((T) obstack_finish ((O)))
+#define XOBNEW(O, T) ((T *)obstack_alloc ((O), sizeof (T)))
+#define XOBFINISH(O, T) ((T)obstack_finish ((O)))
 
 /* hex character manipulation routines */
 
 #define _hex_array_size 256
-#define _hex_bad	99
+#define _hex_bad 99
 extern const unsigned char _hex_value[_hex_array_size];
 extern void hex_init (void);
-#define hex_p(c)	(hex_value (c) != _hex_bad)
+#define hex_p(c) (hex_value (c) != _hex_bad)
 /* If you change this, note well: Some code relies on side effects in
    the argument being performed exactly once.  */
-#define hex_value(c)	((unsigned int) _hex_value[(unsigned char) (c)])
+#define hex_value(c) ((unsigned int)_hex_value[(unsigned char)(c)])
 
 /* Flags for pex_init.  These are bits to be or'ed together.  */
 
 /* Record subprocess times, if possible.  */
-#define PEX_RECORD_TIMES	0x1
+#define PEX_RECORD_TIMES 0x1
 
 /* Use pipes for communication between processes, if possible.  */
-#define PEX_USE_PIPES		0x2
+#define PEX_USE_PIPES 0x2
 
 /* Save files used for communication between processes.  */
-#define PEX_SAVE_TEMPS		0x4
+#define PEX_SAVE_TEMPS 0x4
 
 /* Prepare to execute one or more programs, with standard output of
    each program fed to standard input of the next.
@@ -367,7 +366,7 @@ extern void hex_init (void);
    Returns NULL on error.  */
 
 extern struct pex_obj *pex_init (int flags, const char *pname,
-				 const char *tempbase);
+	const char *tempbase);
 
 /* Flags for pex_run.  These are bits to be or'ed together.  */
 
@@ -376,27 +375,27 @@ extern struct pex_obj *pex_init (int flags, const char *pname,
    not set this if you want to call pex_read_output.  After this is
    set, pex_run may no longer be called with the same struct
    pex_obj.  */
-#define PEX_LAST		0x1
+#define PEX_LAST 0x1
 
 /* Search for program in executable search path.  */
-#define PEX_SEARCH		0x2
+#define PEX_SEARCH 0x2
 
 /* OUTNAME is a suffix.  */
-#define PEX_SUFFIX		0x4
+#define PEX_SUFFIX 0x4
 
 /* Send program's standard error to standard output.  */
-#define PEX_STDERR_TO_STDOUT	0x8
+#define PEX_STDERR_TO_STDOUT 0x8
 
 /* Input file should be opened in binary mode.  This flag is ignored
    on Unix.  */
-#define PEX_BINARY_INPUT	0x10
+#define PEX_BINARY_INPUT 0x10
 
 /* Output file should be opened in binary mode.  This flag is ignored
    on Unix.  For proper behaviour PEX_BINARY_INPUT and
    PEX_BINARY_OUTPUT have to match appropriately--i.e., a call using
    PEX_BINARY_OUTPUT should be followed by a call using
    PEX_BINARY_INPUT.  */
-#define PEX_BINARY_OUTPUT	0x20
+#define PEX_BINARY_OUTPUT 0x20
 
 /* Execute one program.  Returns NULL on success.  On error returns an
    error string (typically just the name of a system call); the error
@@ -449,9 +448,9 @@ extern struct pex_obj *pex_init (int flags, const char *pname,
 */
 
 extern const char *pex_run (struct pex_obj *obj, int flags,
-			    const char *executable, char * const *argv,
-			    const char *outname, const char *errname,
-			    int *err);
+	const char *executable, char *const *argv,
+	const char *outname, const char *errname,
+	int *err);
 
 /* Return a `FILE' pointer FP for the standard input of the first
    program in the pipeline; FP is opened for writing.  You must have
@@ -485,7 +484,7 @@ extern FILE *pex_write_input (struct pex_obj *obj, int binary);
    pex_run closes the file automatically; don't close it yourself.  */
 
 extern FILE *pex_input_file (struct pex_obj *obj, int flags,
-                             const char *in_name);
+	const char *in_name);
 
 /* Return a stream for a pipe connected to the standard input of the
    first program in the pipeline.  You must have passed
@@ -513,16 +512,15 @@ extern int pex_get_status (struct pex_obj *, int count, int *vector);
    is not portable to all systems.  Returns 0 on error, 1 on
    success.  */
 
-struct pex_time
-{
-  unsigned long user_seconds;
-  unsigned long user_microseconds;
-  unsigned long system_seconds;
-  unsigned long system_microseconds;
+struct pex_time {
+	unsigned long user_seconds;
+	unsigned long user_microseconds;
+	unsigned long system_seconds;
+	unsigned long system_microseconds;
 };
 
 extern int pex_get_times (struct pex_obj *, int count,
-			  struct pex_time *vector);
+	struct pex_time *vector);
 
 /* Clean up a pex_obj.  */
 
@@ -540,9 +538,9 @@ extern void pex_free (struct pex_obj *);
 */
 
 extern const char *pex_one (int flags, const char *executable,
-			    char * const *argv, const char *pname,
-			    const char *outname, const char *errname,
-			    int *status, int *err);
+	char *const *argv, const char *pname,
+	const char *outname, const char *errname,
+	int *status, int *err);
 
 /* pexecute and pwait are the old pexecute interface, still here for
    backward compatibility.  Don't use these for new code.  Instead,
@@ -550,16 +548,16 @@ extern const char *pex_one (int flags, const char *executable,
 
 /* Definitions used by the pexecute routine.  */
 
-#define PEXECUTE_FIRST   1
-#define PEXECUTE_LAST    2
-#define PEXECUTE_ONE     (PEXECUTE_FIRST + PEXECUTE_LAST)
-#define PEXECUTE_SEARCH  4
+#define PEXECUTE_FIRST 1
+#define PEXECUTE_LAST 2
+#define PEXECUTE_ONE (PEXECUTE_FIRST + PEXECUTE_LAST)
+#define PEXECUTE_SEARCH 4
 #define PEXECUTE_VERBOSE 8
 
 /* Execute a program.  */
 
-extern int pexecute (const char *, char * const *, const char *,
-                     const char *, char **, char **, int);
+extern int pexecute (const char *, char *const *, const char *,
+	const char *, char **, char **, int);
 
 /* Wait for pexecute to finish.  */
 
@@ -581,32 +579,31 @@ extern int strverscmp (const char *, const char *);
 extern void *C_alloca (size_t) ATTRIBUTE_MALLOC;
 #undef alloca
 #if GCC_VERSION >= 2000 && !defined USE_C_ALLOCA
-# define alloca(x) __builtin_alloca(x)
-# undef C_ALLOCA
-# define ASTRDUP(X) \
-  (__extension__ ({ const char *const libiberty_optr = (X); \
+#define alloca(x) __builtin_alloca (x)
+#undef C_ALLOCA
+#define ASTRDUP(X) \
+	(__extension__({ const char *const libiberty_optr = (X); \
    const unsigned long libiberty_len = strlen (libiberty_optr) + 1; \
    char *const libiberty_nptr = (char *const) alloca (libiberty_len); \
    (char *) memcpy (libiberty_nptr, libiberty_optr, libiberty_len); }))
 #else
-# define alloca(x) C_alloca(x)
-# undef USE_C_ALLOCA
-# define USE_C_ALLOCA 1
-# undef C_ALLOCA
-# define C_ALLOCA 1
+#define alloca(x) C_alloca (x)
+#undef USE_C_ALLOCA
+#define USE_C_ALLOCA 1
+#undef C_ALLOCA
+#define C_ALLOCA 1
 extern const char *libiberty_optr;
 extern char *libiberty_nptr;
 extern unsigned long libiberty_len;
-# define ASTRDUP(X) \
-  (libiberty_optr = (X), \
-   libiberty_len = strlen (libiberty_optr) + 1, \
-   libiberty_nptr = (char *) alloca (libiberty_len), \
-   (char *) memcpy (libiberty_nptr, libiberty_optr, libiberty_len))
+#define ASTRDUP(X)                                               \
+	(libiberty_optr = (X),                                   \
+		libiberty_len = strlen (libiberty_optr) + 1,     \
+		libiberty_nptr = (char *)alloca (libiberty_len), \
+		(char *)memcpy (libiberty_nptr, libiberty_optr, libiberty_len))
 #endif
 
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif /* ! defined (LIBIBERTY_H) */

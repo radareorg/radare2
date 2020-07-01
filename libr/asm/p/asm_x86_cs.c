@@ -9,7 +9,7 @@
 static csh cd = 0;
 static int n = 0;
 
-static bool the_end(void *p) {
+static bool the_end (void *p) {
 #if 0
 #if !USE_ITER_API
 	if (insn) {
@@ -25,20 +25,18 @@ static bool the_end(void *p) {
 	return true;
 }
 
-static int check_features(RAsm *a, cs_insn *insn);
+static int check_features (RAsm *a, cs_insn *insn);
 
 #include "cs_mnemonics.c"
 
 #include "asm_x86_vm.c"
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int omode = 0;
 	int mode, ret;
 	ut64 off = a->pc;
 
-	mode =  (a->bits == 64)? CS_MODE_64:
-		(a->bits == 32)? CS_MODE_32:
-		(a->bits == 16)? CS_MODE_16: 0;
+	mode = (a->bits == 64) ? CS_MODE_64 : (a->bits == 32) ? CS_MODE_32 : (a->bits == 16) ? CS_MODE_16 : 0;
 	if (cd && mode != omode) {
 		cs_close (&cd);
 		cd = 0;
@@ -89,10 +87,10 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		}
 		memset (insn, 0, insn->size);
 		insn->size = 1;
-		n = cs_disasm_iter (cd, (const uint8_t**)&buf, &size, (uint64_t*)&off, insn);
+		n = cs_disasm_iter (cd, (const uint8_t **)&buf, &size, (uint64_t *)&off, insn);
 	}
 #else
-	n = cs_disasm (cd, (const ut8*)buf, len, off, 1, &insn);
+	n = cs_disasm (cd, (const ut8 *)buf, len, off, 1, &insn);
 #endif
 	if (op) {
 		op->size = 0;
@@ -107,8 +105,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		char *ptrstr;
 		op->size = insn->size;
 		char *buf_asm = sdb_fmt ("%s%s%s",
-				insn->mnemonic, insn->op_str[0]?" ":"",
-				insn->op_str);
+			insn->mnemonic, insn->op_str[0] ? " " : "",
+			insn->op_str);
 		ptrstr = strstr (buf_asm, "ptr ");
 		if (ptrstr) {
 			memmove (ptrstr, ptrstr + 4, strlen (ptrstr + 4) + 1);
@@ -160,17 +158,17 @@ RAsmPlugin r_asm_plugin_x86_cs = {
 	.desc = "Capstone X86 disassembler",
 	.license = "BSD",
 	.arch = "x86",
-	.bits = 16|32|64,
+	.bits = 16 | 32 | 64,
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.fini = the_end,
 	.mnemonics = mnemonics,
 	.disassemble = &disassemble,
 	.features = "vm,3dnow,aes,adx,avx,avx2,avx512,bmi,bmi2,cmov,"
-		"f16c,fma,fma4,fsgsbase,hle,mmx,rtm,sha,sse1,sse2,"
-		"sse3,sse41,sse42,sse4a,ssse3,pclmul,xop"
+		    "f16c,fma,fma4,fsgsbase,hle,mmx,rtm,sha,sse1,sse2,"
+		    "sse3,sse41,sse42,sse4a,ssse3,pclmul,xop"
 };
 
-static int check_features(RAsm *a, cs_insn *insn) {
+static int check_features (RAsm *a, cs_insn *insn) {
 	const char *name;
 	int i;
 	if (!insn || !insn->detail) {
@@ -199,7 +197,7 @@ static int check_features(RAsm *a, cs_insn *insn) {
 }
 
 #ifndef R2_PLUGIN_INCORE
-R_API RLibStruct *radare_plugin_function(void) {
+R_API RLibStruct *radare_plugin_function (void) {
 	RLibStruct *rp = R_NEW0 (RLibStruct);
 	if (rp) {
 		rp->type = R_LIB_TYPE_ASM;

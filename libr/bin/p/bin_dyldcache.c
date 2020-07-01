@@ -11,7 +11,7 @@
 #include "../format/mach0/mach0.h"
 #include "objc/mach0_classes.h"
 
-#define R_IS_PTR_AUTHENTICATED(x) B_IS_SET(x, 63)
+#define R_IS_PTR_AUTHENTICATED(x) B_IS_SET (x, 63)
 
 typedef struct {
 	ut8 version;
@@ -65,7 +65,7 @@ typedef struct {
 typedef struct {
 	char *strings;
 	ut64 strings_size;
-	struct MACH0_(nlist) *nlists;
+	struct MACH0_ (nlist) * nlists;
 	ut64 nlists_count;
 	cache_locsym_entry_t *entries;
 	ut64 entries_count;
@@ -75,7 +75,7 @@ typedef struct _r_dyldcache {
 	ut8 magic[8];
 	RList *bins;
 	RBuffer *buf;
-	int (*original_io_read)(RIO *io, RIODesc *fd, ut8 *buf, int count);
+	int (*original_io_read) (RIO *io, RIODesc *fd, ut8 *buf, int count);
 	RDyldRebaseInfo *rebase_info;
 	cache_hdr_t *hdr;
 	cache_map_t *maps;
@@ -88,11 +88,11 @@ typedef struct _r_bin_image {
 	ut64 header_at;
 } RDyldBinImage;
 
-static RList * pending_bin_files = NULL;
+static RList *pending_bin_files = NULL;
 
-static ut64 va2pa(uint64_t addr, cache_hdr_t *hdr, cache_map_t *maps, RBuffer *cache_buf, ut64 slide, ut32 *offset, ut32 *left);
+static ut64 va2pa (uint64_t addr, cache_hdr_t *hdr, cache_map_t *maps, RBuffer *cache_buf, ut64 slide, ut32 *offset, ut32 *left);
 
-static void free_bin(RDyldBinImage *bin) {
+static void free_bin (RDyldBinImage *bin) {
 	if (!bin) {
 		return;
 	}
@@ -101,7 +101,7 @@ static void free_bin(RDyldBinImage *bin) {
 	R_FREE (bin);
 }
 
-static void rebase_info3_free(RDyldRebaseInfo3 *rebase_info) {
+static void rebase_info3_free (RDyldRebaseInfo3 *rebase_info) {
 	if (!rebase_info) {
 		return;
 	}
@@ -110,7 +110,7 @@ static void rebase_info3_free(RDyldRebaseInfo3 *rebase_info) {
 	R_FREE (rebase_info);
 }
 
-static void rebase_info2_free(RDyldRebaseInfo2 *rebase_info) {
+static void rebase_info2_free (RDyldRebaseInfo2 *rebase_info) {
 	if (!rebase_info) {
 		return;
 	}
@@ -120,7 +120,7 @@ static void rebase_info2_free(RDyldRebaseInfo2 *rebase_info) {
 	R_FREE (rebase_info);
 }
 
-static void rebase_info1_free(RDyldRebaseInfo1 *rebase_info) {
+static void rebase_info1_free (RDyldRebaseInfo1 *rebase_info) {
 	if (!rebase_info) {
 		return;
 	}
@@ -130,7 +130,7 @@ static void rebase_info1_free(RDyldRebaseInfo1 *rebase_info) {
 	R_FREE (rebase_info);
 }
 
-static void rebase_info_free(RDyldRebaseInfo *rebase_info) {
+static void rebase_info_free (RDyldRebaseInfo *rebase_info) {
 	if (!rebase_info) {
 		return;
 	}
@@ -140,17 +140,17 @@ static void rebase_info_free(RDyldRebaseInfo *rebase_info) {
 	ut8 version = rebase_info->version;
 
 	if (version == 1) {
-		rebase_info1_free ((RDyldRebaseInfo1*) rebase_info);
+		rebase_info1_free ((RDyldRebaseInfo1 *)rebase_info);
 	} else if (version == 2 || version == 4) {
-		rebase_info2_free ((RDyldRebaseInfo2*) rebase_info);
+		rebase_info2_free ((RDyldRebaseInfo2 *)rebase_info);
 	} else if (version == 3) {
-		rebase_info3_free ((RDyldRebaseInfo3*) rebase_info);
+		rebase_info3_free ((RDyldRebaseInfo3 *)rebase_info);
 	} else {
 		R_FREE (rebase_info);
 	}
 }
 
-static RDyldLocSym *r_dyld_locsym_new(RBuffer *cache_buf, cache_hdr_t *hdr) {
+static RDyldLocSym *r_dyld_locsym_new (RBuffer *cache_buf, cache_hdr_t *hdr) {
 	if (!cache_buf || !hdr || !hdr->localSymbolsSize || !hdr->localSymbolsOffset) {
 		return NULL;
 	}
@@ -158,24 +158,24 @@ static RDyldLocSym *r_dyld_locsym_new(RBuffer *cache_buf, cache_hdr_t *hdr) {
 	cache_locsym_info_t *info = NULL;
 	char *strings = NULL;
 	cache_locsym_entry_t *entries = NULL;
-	struct MACH0_(nlist) *nlists = NULL;
+	struct MACH0_ (nlist) *nlists = NULL;
 
 	ut64 info_size = sizeof (cache_locsym_info_t);
 	info = R_NEW0 (cache_locsym_info_t);
 	if (!info) {
 		goto beach;
 	}
-	if (r_buf_fread_at (cache_buf, hdr->localSymbolsOffset, (ut8*) info, "6i", 1) != info_size) {
+	if (r_buf_fread_at (cache_buf, hdr->localSymbolsOffset, (ut8 *)info, "6i", 1) != info_size) {
 		goto beach;
 	}
 
-	ut64 nlists_size = sizeof (struct MACH0_(nlist)) * info->nlistCount;
-	nlists = R_NEWS0 (struct MACH0_(nlist), info->nlistCount);
+	ut64 nlists_size = sizeof (struct MACH0_ (nlist)) * info->nlistCount;
+	nlists = R_NEWS0 (struct MACH0_ (nlist), info->nlistCount);
 	if (!nlists) {
 		goto beach;
 	}
-	if (r_buf_fread_at (cache_buf, hdr->localSymbolsOffset + info->nlistOffset, (ut8*) nlists, "iccsl",
-			info->nlistCount) != nlists_size) {
+	if (r_buf_fread_at (cache_buf, hdr->localSymbolsOffset + info->nlistOffset, (ut8 *)nlists, "iccsl",
+		    info->nlistCount) != nlists_size) {
 		goto beach;
 	}
 
@@ -183,8 +183,8 @@ static RDyldLocSym *r_dyld_locsym_new(RBuffer *cache_buf, cache_hdr_t *hdr) {
 	if (!strings) {
 		goto beach;
 	}
-	if (r_buf_read_at (cache_buf, hdr->localSymbolsOffset + info->stringsOffset, (ut8*) strings,
-			info->stringsSize) != info->stringsSize) {
+	if (r_buf_read_at (cache_buf, hdr->localSymbolsOffset + info->stringsOffset, (ut8 *)strings,
+		    info->stringsSize) != info->stringsSize) {
 		goto beach;
 	}
 
@@ -193,12 +193,12 @@ static RDyldLocSym *r_dyld_locsym_new(RBuffer *cache_buf, cache_hdr_t *hdr) {
 	if (!entries) {
 		goto beach;
 	}
-	if (r_buf_fread_at (cache_buf, hdr->localSymbolsOffset + info->entriesOffset, (ut8*) entries, "3i",
-			info->entriesCount) != entries_size) {
+	if (r_buf_fread_at (cache_buf, hdr->localSymbolsOffset + info->entriesOffset, (ut8 *)entries, "3i",
+		    info->entriesCount) != entries_size) {
 		goto beach;
 	}
 
-	RDyldLocSym * locsym = R_NEW0 (RDyldLocSym);
+	RDyldLocSym *locsym = R_NEW0 (RDyldLocSym);
 	if (!locsym) {
 		goto beach;
 	}
@@ -224,7 +224,7 @@ beach:
 	return NULL;
 }
 
-static void r_dyld_locsym_free(RDyldLocSym *locsym) {
+static void r_dyld_locsym_free (RDyldLocSym *locsym) {
 	if (!locsym) {
 		return;
 	}
@@ -234,7 +234,7 @@ static void r_dyld_locsym_free(RDyldLocSym *locsym) {
 	free (locsym);
 }
 
-static void r_dyld_locsym_entries_by_offset(RDyldCache *cache, RList *symbols, HtPP *hash, ut64 bin_header_offset) {
+static void r_dyld_locsym_entries_by_offset (RDyldCache *cache, RList *symbols, HtPP *hash, ut64 bin_header_offset) {
 	RDyldLocSym *locsym = cache->locsym;
 	if (!locsym->entries) {
 		return;
@@ -248,16 +248,16 @@ static void r_dyld_locsym_entries_by_offset(RDyldCache *cache, RList *symbols, H
 		}
 
 		if (entry->nlistStartIndex >= locsym->nlists_count ||
-				entry->nlistStartIndex + entry->nlistCount > locsym->nlists_count) {
+			entry->nlistStartIndex + entry->nlistCount > locsym->nlists_count) {
 			eprintf ("dyldcache: malformed local symbol entry\n");
 			break;
 		}
 
 		ut32 j;
 		for (j = 0; j != entry->nlistCount; j++) {
-			struct MACH0_(nlist) *nlist = &locsym->nlists[j + entry->nlistStartIndex];
+			struct MACH0_ (nlist) *nlist = &locsym->nlists[j + entry->nlistStartIndex];
 			bool found;
-			const char *key = sdb_fmt ("%"PFMT64x, nlist->n_value);
+			const char *key = sdb_fmt ("%" PFMT64x, nlist->n_value);
 			ht_pp_find (hash, key, &found);
 			if (found) {
 				continue;
@@ -278,7 +278,7 @@ static void r_dyld_locsym_entries_by_offset(RDyldCache *cache, RList *symbols, H
 			int len = locsym->strings_size - nlist->n_strx;
 			ut32 k;
 			for (k = 0; k < len; k++) {
-				if (((ut8) symstr[k] & 0xff) == 0xff || !symstr[k]) {
+				if (((ut8)symstr[k] & 0xff) == 0xff || !symstr[k]) {
 					len = k;
 					break;
 				}
@@ -295,7 +295,7 @@ static void r_dyld_locsym_entries_by_offset(RDyldCache *cache, RList *symbols, H
 	}
 }
 
-static void r_dyldcache_free(RDyldCache *cache) {
+static void r_dyldcache_free (RDyldCache *cache) {
 	if (!cache) {
 		return;
 	}
@@ -313,7 +313,7 @@ static void r_dyldcache_free(RDyldCache *cache) {
 	R_FREE (cache);
 }
 
-static ut64 va2pa(uint64_t addr, cache_hdr_t *hdr, cache_map_t *maps, RBuffer *cache_buf, ut64 slide, ut32 *offset, ut32 *left) {
+static ut64 va2pa (uint64_t addr, cache_hdr_t *hdr, cache_map_t *maps, RBuffer *cache_buf, ut64 slide, ut32 *offset, ut32 *left) {
 	ut64 res = UT64_MAX;
 	uint32_t i;
 
@@ -335,12 +335,12 @@ static ut64 va2pa(uint64_t addr, cache_hdr_t *hdr, cache_map_t *maps, RBuffer *c
 	return res;
 }
 
-static ut64 bin_obj_va2pa(ut64 p, ut32 *offset, ut32 *left, RBinFile *bf) {
+static ut64 bin_obj_va2pa (ut64 p, ut32 *offset, ut32 *left, RBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return 0;
 	}
 
-	RDyldCache *cache = (RDyldCache*) ((struct MACH0_(obj_t)*)bf->o->bin_obj)->user;
+	RDyldCache *cache = (RDyldCache *)((struct MACH0_ (obj_t) *)bf->o->bin_obj)->user;
 	if (!cache) {
 		return 0;
 	}
@@ -352,26 +352,27 @@ static ut64 bin_obj_va2pa(ut64 p, ut32 *offset, ut32 *left, RBinFile *bf) {
 	return res;
 }
 
-static struct MACH0_(obj_t) *bin_to_mach0(RBinFile *bf, RDyldBinImage *bin) {
+static struct MACH0_ (obj_t) * bin_to_mach0 (RBinFile *bf, RDyldBinImage *bin) {
 	if (!bin || !bf) {
 		return NULL;
 	}
 
-	RDyldCache *cache = (RDyldCache*) bf->o->bin_obj;
+	RDyldCache *cache = (RDyldCache *)bf->o->bin_obj;
 	if (!cache) {
 		return NULL;
 	}
 
-	struct MACH0_(opts_t) opts;
-	MACH0_(opts_set_default) (&opts, bf);
+	struct MACH0_ (opts_t) opts;
+	MACH0_ (opts_set_default)
+	(&opts, bf);
 	opts.header_at = bin->header_at;
-	struct MACH0_(obj_t) *mach0 = MACH0_(new_buf) (cache->buf, &opts);
+	struct MACH0_ (obj_t) *mach0 = MACH0_ (new_buf) (cache->buf, &opts);
 	mach0->user = cache;
 	mach0->va2pa = &bin_obj_va2pa;
 	return mach0;
 }
 
-static int prot2perm(int x) {
+static int prot2perm (int x) {
 	int r = 0;
 	if (x & 1) {
 		r |= 4;
@@ -385,7 +386,7 @@ static int prot2perm(int x) {
 	return r;
 }
 
-static ut32 dumb_ctzll(ut64 x) {
+static ut32 dumb_ctzll (ut64 x) {
 	ut64 result = 0;
 	int i, j;
 	for (i = 0; i < 64; i += 8) {
@@ -406,7 +407,7 @@ static ut32 dumb_ctzll(ut64 x) {
 	return result;
 }
 
-static ut64 estimate_slide(RBinFile *bf, RDyldCache *cache, ut64 value_mask) {
+static ut64 estimate_slide (RBinFile *bf, RDyldCache *cache, ut64 value_mask) {
 	ut64 slide = 0;
 	ut64 *classlist = malloc (64);
 	if (!classlist) {
@@ -418,18 +419,19 @@ static ut64 estimate_slide(RBinFile *bf, RDyldCache *cache, ut64 value_mask) {
 	r_list_foreach (cache->bins, iter, bin) {
 		bool found_sample = false;
 
-		struct MACH0_(opts_t) opts;
+		struct MACH0_ (opts_t) opts;
 		opts.verbose = bf->rbin->verbose;
 		opts.header_at = bin->header_at;
 
-		struct MACH0_(obj_t) *mach0 = MACH0_(new_buf) (cache->buf, &opts);
+		struct MACH0_ (obj_t) *mach0 = MACH0_ (new_buf) (cache->buf, &opts);
 		if (!mach0) {
 			goto beach;
 		}
 
 		struct section_t *sections = NULL;
-		if (!(sections = MACH0_(get_sections) (mach0))) {
-			MACH0_(mach0_free) (mach0);
+		if (!(sections = MACH0_ (get_sections) (mach0))) {
+			MACH0_ (mach0_free)
+			(mach0);
 			goto beach;
 		}
 
@@ -459,7 +461,7 @@ static ut64 estimate_slide(RBinFile *bf, RDyldCache *cache, ut64 value_mask) {
 		int classlist_sample_size = R_MIN (64, sections[classlist_idx].size);
 		int n_classes = classlist_sample_size / 8;
 
-		if (r_buf_fread_at (cache->buf, sections[classlist_idx].offset, (ut8*) classlist, "l", n_classes) < classlist_sample_size) {
+		if (r_buf_fread_at (cache->buf, sections[classlist_idx].offset, (ut8 *)classlist, "l", n_classes) < classlist_sample_size) {
 			goto next_bin;
 		}
 
@@ -477,7 +479,8 @@ static ut64 estimate_slide(RBinFile *bf, RDyldCache *cache, ut64 value_mask) {
 		}
 
 next_bin:
-		MACH0_(mach0_free) (mach0);
+		MACH0_ (mach0_free)
+		(mach0);
 		R_FREE (sections);
 
 		if (found_sample) {
@@ -490,7 +493,7 @@ beach:
 	return slide;
 }
 
-static RDyldRebaseInfo *get_rebase_info(RBinFile *bf, RDyldCache *cache) {
+static RDyldRebaseInfo *get_rebase_info (RBinFile *bf, RDyldCache *cache) {
 	ut8 *tmp_buf_1 = NULL;
 	ut8 *tmp_buf_2 = NULL;
 	ut8 *one_page_buf = NULL;
@@ -502,7 +505,7 @@ static RDyldRebaseInfo *get_rebase_info(RBinFile *bf, RDyldCache *cache) {
 	for (i = 0; i < cache->hdr->mappingCount; i++) {
 		int perm = prot2perm (cache->maps[i].initProt);
 		if (!(perm & R_PERM_X)) {
-			start_of_data = cache->maps[i].fileOffset;// + bf->o->boffset;
+			start_of_data = cache->maps[i].fileOffset; // + bf->o->boffset;
 			break;
 		}
 	}
@@ -513,14 +516,14 @@ static RDyldRebaseInfo *get_rebase_info(RBinFile *bf, RDyldCache *cache) {
 
 	ut64 offset = cache->hdr->slideInfoOffset;
 	ut32 slide_info_version = 0;
-	if (r_buf_read_at (cache_buf, offset, (ut8*) &slide_info_version, 4) != 4) {
+	if (r_buf_read_at (cache_buf, offset, (ut8 *)&slide_info_version, 4) != 4) {
 		return NULL;
 	}
 
 	if (slide_info_version == 3) {
 		cache_slide3_t slide_info;
 		ut64 size = sizeof (cache_slide3_t);
-		if (r_buf_fread_at (cache_buf, offset, (ut8*) &slide_info, "4i1l", 1) < 20) {
+		if (r_buf_fread_at (cache_buf, offset, (ut8 *)&slide_info, "4i1l", 1) < 20) {
 			return NULL;
 		}
 
@@ -557,21 +560,21 @@ static RDyldRebaseInfo *get_rebase_info(RBinFile *bf, RDyldCache *cache) {
 		rebase_info->delta_mask = 0x3ff8000000000000ULL;
 		rebase_info->delta_shift = 48;
 		rebase_info->start_of_data = start_of_data;
-		rebase_info->page_starts = (ut16*) tmp_buf_1;
+		rebase_info->page_starts = (ut16 *)tmp_buf_1;
 		rebase_info->page_starts_count = slide_info.page_starts_count;
 		rebase_info->auth_value_add = slide_info.auth_value_add;
 		rebase_info->page_size = slide_info.page_size;
 		rebase_info->one_page_buf = one_page_buf;
 		rebase_info->slide = estimate_slide (bf, cache, 0x7ffffffffffffULL);
 		if (rebase_info->slide) {
-			eprintf ("dyldcache is slid: 0x%"PFMT64x"\n", rebase_info->slide);
+			eprintf ("dyldcache is slid: 0x%" PFMT64x "\n", rebase_info->slide);
 		}
 
-		return (RDyldRebaseInfo*) rebase_info;
+		return (RDyldRebaseInfo *)rebase_info;
 	} else if (slide_info_version == 2 || slide_info_version == 4) {
 		cache_slide2_t slide_info;
 		ut64 size = sizeof (cache_slide2_t);
-		if (r_buf_fread_at (cache_buf, offset, (ut8*) &slide_info, "6i2l", 1) != size) {
+		if (r_buf_fread_at (cache_buf, offset, (ut8 *)&slide_info, "6i2l", 1) != size) {
 			return NULL;
 		}
 
@@ -625,9 +628,9 @@ static RDyldRebaseInfo *get_rebase_info(RBinFile *bf, RDyldCache *cache) {
 
 		rebase_info->version = slide_info_version;
 		rebase_info->start_of_data = start_of_data;
-		rebase_info->page_starts = (ut16*) tmp_buf_1;
+		rebase_info->page_starts = (ut16 *)tmp_buf_1;
 		rebase_info->page_starts_count = slide_info.page_starts_count;
-		rebase_info->page_extras = (ut16*) tmp_buf_2;
+		rebase_info->page_extras = (ut16 *)tmp_buf_2;
 		rebase_info->page_extras_count = slide_info.page_extras_count;
 		rebase_info->value_add = slide_info.value_add;
 		rebase_info->delta_mask = slide_info.delta_mask;
@@ -637,14 +640,14 @@ static RDyldRebaseInfo *get_rebase_info(RBinFile *bf, RDyldCache *cache) {
 		rebase_info->one_page_buf = one_page_buf;
 		rebase_info->slide = estimate_slide (bf, cache, rebase_info->value_mask);
 		if (rebase_info->slide) {
-			eprintf ("dyldcache is slid: 0x%"PFMT64x"\n", rebase_info->slide);
+			eprintf ("dyldcache is slid: 0x%" PFMT64x "\n", rebase_info->slide);
 		}
 
-		return (RDyldRebaseInfo*) rebase_info;
+		return (RDyldRebaseInfo *)rebase_info;
 	} else if (slide_info_version == 1) {
 		cache_slide1_t slide_info;
 		ut64 size = sizeof (cache_slide1_t);
-		if (r_buf_fread_at (cache_buf, offset, (ut8*) &slide_info, "6i", 1) != size) {
+		if (r_buf_fread_at (cache_buf, offset, (ut8 *)&slide_info, "6i", 1) != size) {
 			return NULL;
 		}
 
@@ -673,7 +676,7 @@ static RDyldRebaseInfo *get_rebase_info(RBinFile *bf, RDyldCache *cache) {
 		}
 
 		if (slide_info.entries_count > 0) {
-			ut64 size = (ut64) slide_info.entries_count * (ut64) slide_info.entries_size;
+			ut64 size = (ut64)slide_info.entries_count * (ut64)slide_info.entries_size;
 			ut64 at = cache->hdr->slideInfoOffset + slide_info.entries_offset;
 			tmp_buf_2 = malloc (size);
 			if (!tmp_buf_2) {
@@ -699,15 +702,15 @@ static RDyldRebaseInfo *get_rebase_info(RBinFile *bf, RDyldCache *cache) {
 		rebase_info->one_page_buf = one_page_buf;
 		rebase_info->page_size = 4096;
 		rebase_info->slide = estimate_slide (bf, cache, UT64_MAX);
-		rebase_info->toc = (ut16*) tmp_buf_1;
+		rebase_info->toc = (ut16 *)tmp_buf_1;
 		rebase_info->toc_count = slide_info.toc_count;
 		rebase_info->entries = tmp_buf_2;
 		rebase_info->entries_size = slide_info.entries_size;
 		if (rebase_info->slide) {
-			eprintf ("dyldcache is slid: 0x%"PFMT64x"\n", rebase_info->slide);
+			eprintf ("dyldcache is slid: 0x%" PFMT64x "\n", rebase_info->slide);
 		}
 
-		return (RDyldRebaseInfo*) rebase_info;
+		return (RDyldRebaseInfo *)rebase_info;
 	} else {
 		eprintf ("unsupported slide info version %d\n", slide_info_version);
 		return NULL;
@@ -720,7 +723,7 @@ beach:
 	return NULL;
 }
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer (RBuffer *buf) {
 	if (r_buf_size (buf) < 32) {
 		return false;
 	}
@@ -738,7 +741,7 @@ static bool check_buffer(RBuffer *buf) {
 	return true;
 }
 
-static cache_img_t *read_cache_images(RBuffer *cache_buf, cache_hdr_t *hdr) {
+static cache_img_t *read_cache_images (RBuffer *cache_buf, cache_hdr_t *hdr) {
 	if (!cache_buf || !hdr || !hdr->imagesCount || !hdr->imagesOffset) {
 		return NULL;
 	}
@@ -749,7 +752,7 @@ static cache_img_t *read_cache_images(RBuffer *cache_buf, cache_hdr_t *hdr) {
 		return NULL;
 	}
 
-	if (r_buf_fread_at (cache_buf, hdr->imagesOffset, (ut8*) images, "3l2i", hdr->imagesCount) != size) {
+	if (r_buf_fread_at (cache_buf, hdr->imagesOffset, (ut8 *)images, "3l2i", hdr->imagesCount) != size) {
 		R_FREE (images);
 		return NULL;
 	}
@@ -757,7 +760,7 @@ static cache_img_t *read_cache_images(RBuffer *cache_buf, cache_hdr_t *hdr) {
 	return images;
 }
 
-static cache_imgxtr_t *read_cache_imgextra(RBuffer *cache_buf, cache_hdr_t *hdr, cache_accel_t *accel) {
+static cache_imgxtr_t *read_cache_imgextra (RBuffer *cache_buf, cache_hdr_t *hdr, cache_accel_t *accel) {
 	if (!cache_buf || !hdr || !hdr->imagesCount || !accel || !accel->imageExtrasCount || !accel->imagesExtrasOffset) {
 		return NULL;
 	}
@@ -768,7 +771,7 @@ static cache_imgxtr_t *read_cache_imgextra(RBuffer *cache_buf, cache_hdr_t *hdr,
 		return NULL;
 	}
 
-	if (r_buf_fread_at (cache_buf, accel->imagesExtrasOffset, (ut8*) images, "ll4i", accel->imageExtrasCount) != size) {
+	if (r_buf_fread_at (cache_buf, accel->imagesExtrasOffset, (ut8 *)images, "ll4i", accel->imageExtrasCount) != size) {
 		R_FREE (images);
 		return NULL;
 	}
@@ -776,10 +779,10 @@ static cache_imgxtr_t *read_cache_imgextra(RBuffer *cache_buf, cache_hdr_t *hdr,
 	return images;
 }
 
-static char *get_lib_name(RBuffer *cache_buf, cache_img_t *img) {
+static char *get_lib_name (RBuffer *cache_buf, cache_img_t *img) {
 	char file[256];
 	char *lib_name = file;
-	if (r_buf_read_at (cache_buf, img->pathFileOffset, (ut8*) &file, sizeof (file)) == sizeof (file)) {
+	if (r_buf_read_at (cache_buf, img->pathFileOffset, (ut8 *)&file, sizeof (file)) == sizeof (file)) {
 		file[255] = 0;
 		/*char * last_slash = strrchr (file, '/');
 		if (last_slash && *last_slash) {
@@ -790,11 +793,11 @@ static char *get_lib_name(RBuffer *cache_buf, cache_img_t *img) {
 	return strdup ("FAIL");
 }
 
-static int string_contains(const void *a, const void *b) {
-	return !strstr ((const char*) a, (const char*) b);
+static int string_contains (const void *a, const void *b) {
+	return !strstr ((const char *)a, (const char *)b);
 }
 
-static HtPP * create_path_to_index(RBuffer *cache_buf, cache_img_t *img, cache_hdr_t *hdr) {
+static HtPP *create_path_to_index (RBuffer *cache_buf, cache_img_t *img, cache_hdr_t *hdr) {
 	HtPP *path_to_idx = ht_pp_new0 ();
 	if (!path_to_idx) {
 		return NULL;
@@ -802,30 +805,30 @@ static HtPP * create_path_to_index(RBuffer *cache_buf, cache_img_t *img, cache_h
 	size_t i;
 	for (i = 0; i != hdr->imagesCount; i++) {
 		char file[256];
-		if (r_buf_read_at (cache_buf, img[i].pathFileOffset, (ut8*) &file, sizeof (file)) != sizeof (file)) {
+		if (r_buf_read_at (cache_buf, img[i].pathFileOffset, (ut8 *)&file, sizeof (file)) != sizeof (file)) {
 			continue;
 		}
 		file[255] = 0;
 		const char *key = sdb_fmt ("%s", file);
-		ht_pp_insert (path_to_idx, key, (void*) i);
+		ht_pp_insert (path_to_idx, key, (void *)i);
 	}
 
 	return path_to_idx;
 }
 
-static void carve_deps_at_address(RBuffer *cache_buf, cache_img_t *img, cache_hdr_t *hdr, cache_map_t *maps, HtPP *path_to_idx, ut64 address, int *deps) {
+static void carve_deps_at_address (RBuffer *cache_buf, cache_img_t *img, cache_hdr_t *hdr, cache_map_t *maps, HtPP *path_to_idx, ut64 address, int *deps) {
 	ut64 pa = va2pa (address, hdr, maps, cache_buf, 0, NULL, NULL);
 	if (pa == UT64_MAX) {
 		return;
 	}
-	struct MACH0_(mach_header) mh;
-	if (r_buf_fread_at (cache_buf, pa, (ut8*) &mh, "8i", 1) != sizeof (struct MACH0_(mach_header))) {
+	struct MACH0_ (mach_header) mh;
+	if (r_buf_fread_at (cache_buf, pa, (ut8 *)&mh, "8i", 1) != sizeof (struct MACH0_ (mach_header))) {
 		return;
 	}
 	if (mh.magic != MH_MAGIC_64 || mh.sizeofcmds == 0) {
 		return;
 	}
-	ut64 cmds_at = pa + sizeof (struct MACH0_(mach_header));
+	ut64 cmds_at = pa + sizeof (struct MACH0_ (mach_header));
 	ut8 *cmds = malloc (mh.sizeofcmds + 1);
 	if (!cmds || r_buf_read_at (cache_buf, cmds_at, cmds, mh.sizeofcmds) != mh.sizeofcmds) {
 		goto beach;
@@ -837,15 +840,15 @@ static void carve_deps_at_address(RBuffer *cache_buf, cache_img_t *img, cache_hd
 		ut32 cmd = r_read_le32 (cursor);
 		ut32 cmdsize = r_read_le32 (cursor + sizeof (ut32));
 		if (cmd == LC_LOAD_DYLIB ||
-				cmd == LC_LOAD_WEAK_DYLIB ||
-				cmd == LC_REEXPORT_DYLIB ||
-				cmd == LC_LOAD_UPWARD_DYLIB) {
+			cmd == LC_LOAD_WEAK_DYLIB ||
+			cmd == LC_REEXPORT_DYLIB ||
+			cmd == LC_LOAD_UPWARD_DYLIB) {
 			bool found;
 			if (cursor + 24 >= end) {
 				break;
 			}
-			const char *key = (const char *) cursor + 24;
-			size_t dep_index = (size_t) ht_pp_find (path_to_idx, key, &found);
+			const char *key = (const char *)cursor + 24;
+			size_t dep_index = (size_t)ht_pp_find (path_to_idx, key, &found);
 			if (!found || dep_index >= hdr->imagesCount) {
 				eprintf ("WARNING: alien dep '%s'\n", key);
 				continue;
@@ -860,7 +863,7 @@ beach:
 	free (cmds);
 }
 
-static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *hdr, cache_map_t *maps, cache_accel_t *accel) {
+static RList *create_cache_bins (RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *hdr, cache_map_t *maps, cache_accel_t *accel) {
 	RList *bins = r_list_newf ((RListFree)free_bin);
 	if (!bins) {
 		return NULL;
@@ -897,7 +900,7 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 				goto error;
 			}
 
-			if (r_buf_fread_at (cache_buf, accel->depListOffset, (ut8*) depArray, "s", accel->depListCount) != accel->depListCount * 2) {
+			if (r_buf_fread_at (cache_buf, accel->depListOffset, (ut8 *)depArray, "s", accel->depListCount) != accel->depListCount * 2) {
 				goto error;
 			}
 
@@ -966,15 +969,14 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 		case MH_MAGIC:
 			// parse_mach0 (ret, *ptr, bf);
 			break;
-		case MH_MAGIC_64:
-		{
+		case MH_MAGIC_64: {
 			char file[256];
 			RDyldBinImage *bin = R_NEW0 (RDyldBinImage);
 			if (!bin) {
 				goto error;
 			}
 			bin->header_at = pa;
-			if (r_buf_read_at (cache_buf, img[i].pathFileOffset, (ut8*) &file, sizeof (file)) == sizeof (file)) {
+			if (r_buf_read_at (cache_buf, img[i].pathFileOffset, (ut8 *)&file, sizeof (file)) == sizeof (file)) {
 				file[255] = 0;
 				char *last_slash = strrchr (file, '/');
 				if (last_slash && *last_slash) {
@@ -1022,7 +1024,7 @@ beach:
 	return bins;
 }
 
-static void rebase_bytes_v1(RDyldRebaseInfo1 *rebase_info, ut8 *buf, ut64 offset, int count, ut64 start_of_write) {
+static void rebase_bytes_v1 (RDyldRebaseInfo1 *rebase_info, ut8 *buf, ut64 offset, int count, ut64 start_of_write) {
 	int in_buf = 0;
 	while (in_buf < count) {
 		ut64 offset_in_data = offset - rebase_info->start_of_data;
@@ -1058,7 +1060,7 @@ static void rebase_bytes_v1(RDyldRebaseInfo1 *rebase_info, ut8 *buf, ut64 offset
 	}
 }
 
-static void rebase_bytes_v2(RDyldRebaseInfo2 *rebase_info, ut8 *buf, ut64 offset, int count, ut64 start_of_write) {
+static void rebase_bytes_v2 (RDyldRebaseInfo2 *rebase_info, ut8 *buf, ut64 offset, int count, ut64 start_of_write) {
 	int in_buf = 0;
 	while (in_buf < count) {
 		ut64 offset_in_data = offset - rebase_info->start_of_data;
@@ -1104,7 +1106,7 @@ next_page:
 	}
 }
 
-static void rebase_bytes_v3(RDyldRebaseInfo3 *rebase_info, ut8 *buf, ut64 offset, int count, ut64 start_of_write) {
+static void rebase_bytes_v3 (RDyldRebaseInfo3 *rebase_info, ut8 *buf, ut64 offset, int count, ut64 start_of_write) {
 	int in_buf = 0;
 	while (in_buf < count) {
 		ut64 offset_in_data = offset - rebase_info->start_of_data;
@@ -1153,23 +1155,23 @@ next_page:
 	}
 }
 
-static void rebase_bytes(RDyldRebaseInfo *rebase_info, ut8 *buf, ut64 offset, int count, ut64 start_of_write) {
+static void rebase_bytes (RDyldRebaseInfo *rebase_info, ut8 *buf, ut64 offset, int count, ut64 start_of_write) {
 	if (!rebase_info || !buf) {
 		return;
 	}
 
 	if (rebase_info->version == 3) {
-		rebase_bytes_v3 ((RDyldRebaseInfo3*) rebase_info, buf, offset, count, start_of_write);
+		rebase_bytes_v3 ((RDyldRebaseInfo3 *)rebase_info, buf, offset, count, start_of_write);
 	} else if (rebase_info->version == 2 || rebase_info->version == 4) {
-		rebase_bytes_v2 ((RDyldRebaseInfo2*) rebase_info, buf, offset, count, start_of_write);
+		rebase_bytes_v2 ((RDyldRebaseInfo2 *)rebase_info, buf, offset, count, start_of_write);
 	} else if (rebase_info->version == 1) {
-		rebase_bytes_v1 ((RDyldRebaseInfo1*) rebase_info, buf, offset, count, start_of_write);
+		rebase_bytes_v1 ((RDyldRebaseInfo1 *)rebase_info, buf, offset, count, start_of_write);
 	}
 }
 
-static int dyldcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
+static int dyldcache_io_read (RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	r_return_val_if_fail (io, -1);
-	RCore *core = (RCore*) io->corebind.core;
+	RCore *core = (RCore *)io->corebind.core;
 
 	if (!core || !core->bin || !core->bin->binfiles) {
 		return -1;
@@ -1179,11 +1181,11 @@ static int dyldcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	RListIter *iter;
 	RBinFile *bf;
 	r_list_foreach (core->bin->binfiles, iter, bf) {
-		if (bf->fd == fd->fd ) {
-			if (!strncmp ((char*) bf->o->bin_obj, "dyldcac", 7)) {
+		if (bf->fd == fd->fd) {
+			if (!strncmp ((char *)bf->o->bin_obj, "dyldcac", 7)) {
 				cache = bf->o->bin_obj;
 			} else {
-				cache = ((struct MACH0_(obj_t)*) bf->o->bin_obj)->user;
+				cache = ((struct MACH0_ (obj_t) *)bf->o->bin_obj)->user;
 			}
 			if (pending_bin_files) {
 				RListIter *to_remove = r_list_contains (pending_bin_files, bf);
@@ -1201,10 +1203,10 @@ static int dyldcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	if (!cache) {
 		r_list_foreach (pending_bin_files, iter, bf) {
 			if (bf->fd == fd->fd && bf->o) {
-				if (!strncmp ((char*) bf->o->bin_obj, "dyldcac", 7)) {
+				if (!strncmp ((char *)bf->o->bin_obj, "dyldcac", 7)) {
 					cache = bf->o->bin_obj;
 				} else {
-					cache = ((struct MACH0_(obj_t)*) bf->o->bin_obj)->user;
+					cache = ((struct MACH0_ (obj_t) *)bf->o->bin_obj)->user;
 				}
 				break;
 			}
@@ -1267,7 +1269,7 @@ static int dyldcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return result;
 }
 
-static void swizzle_io_read(RDyldCache *cache, RIO *io) {
+static void swizzle_io_read (RDyldCache *cache, RIO *io) {
 	if (!io || !io->desc || !io->desc->plugin) {
 		return;
 	}
@@ -1277,7 +1279,7 @@ static void swizzle_io_read(RDyldCache *cache, RIO *io) {
 	plugin->read = &dyldcache_io_read;
 }
 
-static cache_hdr_t *read_cache_header(RBuffer *cache_buf) {
+static cache_hdr_t *read_cache_header (RBuffer *cache_buf) {
 	if (!cache_buf) {
 		return NULL;
 	}
@@ -1288,7 +1290,7 @@ static cache_hdr_t *read_cache_header(RBuffer *cache_buf) {
 	}
 
 	ut64 size = sizeof (cache_hdr_t);
-	if (r_buf_fread_at (cache_buf, 0, (ut8*) hdr, "16c4i7l16clii4l", 1) != size) {
+	if (r_buf_fread_at (cache_buf, 0, (ut8 *)hdr, "16c4i7l16clii4l", 1) != size) {
 		R_FREE (hdr);
 		return NULL;
 	}
@@ -1296,7 +1298,7 @@ static cache_hdr_t *read_cache_header(RBuffer *cache_buf) {
 	return hdr;
 }
 
-static cache_map_t *read_cache_maps(RBuffer *cache_buf, cache_hdr_t *hdr) {
+static cache_map_t *read_cache_maps (RBuffer *cache_buf, cache_hdr_t *hdr) {
 	if (!cache_buf || !hdr || !hdr->mappingCount || !hdr->mappingOffset) {
 		return NULL;
 	}
@@ -1307,7 +1309,7 @@ static cache_map_t *read_cache_maps(RBuffer *cache_buf, cache_hdr_t *hdr) {
 		return NULL;
 	}
 
-	if (r_buf_fread_at (cache_buf, hdr->mappingOffset, (ut8*) maps, "3l2i", hdr->mappingCount) != size) {
+	if (r_buf_fread_at (cache_buf, hdr->mappingOffset, (ut8 *)maps, "3l2i", hdr->mappingCount) != size) {
 		R_FREE (maps);
 		return NULL;
 	}
@@ -1315,7 +1317,7 @@ static cache_map_t *read_cache_maps(RBuffer *cache_buf, cache_hdr_t *hdr) {
 	return maps;
 }
 
-static cache_accel_t *read_cache_accel(RBuffer *cache_buf, cache_hdr_t *hdr, cache_map_t *maps) {
+static cache_accel_t *read_cache_accel (RBuffer *cache_buf, cache_hdr_t *hdr, cache_map_t *maps) {
 	if (!cache_buf || !hdr || !hdr->accelerateInfoSize || !hdr->accelerateInfoAddr) {
 		return NULL;
 	}
@@ -1331,7 +1333,7 @@ static cache_accel_t *read_cache_accel(RBuffer *cache_buf, cache_hdr_t *hdr, cac
 		return NULL;
 	}
 
-	if (r_buf_fread_at (cache_buf, offset, (ut8*) accel, "16il", 1) != size) {
+	if (r_buf_fread_at (cache_buf, offset, (ut8 *)accel, "16il", 1) != size) {
 		R_FREE (accel);
 		return NULL;
 	}
@@ -1348,7 +1350,7 @@ static cache_accel_t *read_cache_accel(RBuffer *cache_buf, cache_hdr_t *hdr, cac
 	return accel;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	RDyldCache *cache = R_NEW0 (RDyldCache);
 	memcpy (cache->magic, "dyldcac", 7);
 	cache->buf = r_buf_ref (buf);
@@ -1393,7 +1395,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return true;
 }
 
-static RList *entries(RBinFile *bf) {
+static RList *entries (RBinFile *bf) {
 	RBinAddr *ptr = NULL;
 	RList *ret = r_list_newf (free);
 	if (!ret) {
@@ -1405,14 +1407,14 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	RBinInfo *ret = NULL;
 
 	if (!bf || !bf->o) {
 		return NULL;
 	}
 
-	RDyldCache *cache = (RDyldCache*) bf->o->bin_obj;
+	RDyldCache *cache = (RDyldCache *)bf->o->bin_obj;
 	if (!cache) {
 		return NULL;
 	}
@@ -1429,8 +1431,8 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->machine = strdup (ret->arch);
 	ret->subsystem = strdup ("xnu");
 	ret->type = strdup ("library-cache");
-	bool dyld64 = strstr(cache->hdr->magic, "arm64") != NULL;
-	ret->bits = dyld64? 64: 32;
+	bool dyld64 = strstr (cache->hdr->magic, "arm64") != NULL;
+	ret->bits = dyld64 ? 64 : 32;
 	ret->has_va = true;
 	ret->big_endian = big_endian;
 	ret->dbg_info = 0;
@@ -1443,19 +1445,19 @@ static void parse_mach0 (RList *ret, ut64 paddr, RBinFile *bf) {
 }
 #endif
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr (RBinFile *bf) {
 	// XXX hardcoded
 	return 0x180000000;
 }
 
-void symbols_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin, HtPP *hash) {
-	struct MACH0_(obj_t) *mach0 = bin_to_mach0 (bf, bin);
+void symbols_from_bin (RList *ret, RBinFile *bf, RDyldBinImage *bin, HtPP *hash) {
+	struct MACH0_ (obj_t) *mach0 = bin_to_mach0 (bf, bin);
 	if (!mach0) {
 		return;
 	}
 
 	// const RList*symbols = MACH0_(get_symbols_list) (mach0);
-	const struct symbol_t *symbols = MACH0_(get_symbols) (mach0);
+	const struct symbol_t *symbols = MACH0_ (get_symbols) (mach0);
 	if (!symbols) {
 		return;
 	}
@@ -1474,20 +1476,21 @@ void symbols_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin, HtPP *hash) 
 		sym->name = strdup (symbols[i].name);
 		sym->vaddr = symbols[i].addr;
 		sym->forwarder = "NONE";
-		sym->bind = (symbols[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)? R_BIN_BIND_LOCAL_STR: R_BIN_BIND_GLOBAL_STR;
+		sym->bind = (symbols[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL) ? R_BIN_BIND_LOCAL_STR : R_BIN_BIND_GLOBAL_STR;
 		sym->type = R_BIN_TYPE_FUNC_STR;
 		sym->paddr = symbols[i].offset + bf->o->boffset;
 		sym->size = symbols[i].size;
 		sym->ordinal = i;
 
-		const char *key = sdb_fmt ("%"PFMT64x, sym->vaddr);
+		const char *key = sdb_fmt ("%" PFMT64x, sym->vaddr);
 		ht_pp_insert (hash, key, "1");
 		r_list_append (ret, sym);
 	}
-	MACH0_(mach0_free) (mach0);
+	MACH0_ (mach0_free)
+	(mach0);
 }
 
-static bool __is_data_section(const char *name) {
+static bool __is_data_section (const char *name) {
 	if (strstr (name, "_cstring")) {
 		return true;
 	}
@@ -1506,14 +1509,14 @@ static bool __is_data_section(const char *name) {
 	return false;
 }
 
-static void sections_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
-	struct MACH0_(obj_t) *mach0 = bin_to_mach0 (bf, bin);
+static void sections_from_bin (RList *ret, RBinFile *bf, RDyldBinImage *bin) {
+	struct MACH0_ (obj_t) *mach0 = bin_to_mach0 (bf, bin);
 	if (!mach0) {
 		return;
 	}
 
 	struct section_t *sections = NULL;
-	if (!(sections = MACH0_(get_sections) (mach0))) {
+	if (!(sections = MACH0_ (get_sections) (mach0))) {
 		return;
 	}
 
@@ -1524,9 +1527,9 @@ static void sections_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 			break;
 		}
 		if (bin->file) {
-			ptr->name = r_str_newf ("%s.%s", bin->file, (char*)sections[i].name);
+			ptr->name = r_str_newf ("%s.%s", bin->file, (char *)sections[i].name);
 		} else {
-			ptr->name = r_str_newf ("%s", (char*)sections[i].name);
+			ptr->name = r_str_newf ("%s", (char *)sections[i].name);
 		}
 		if (strstr (ptr->name, "la_symbol_ptr")) {
 			int len = sections[i].size / 8;
@@ -1544,11 +1547,12 @@ static void sections_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 		r_list_append (ret, ptr);
 	}
 	free (sections);
-	MACH0_(mach0_free) (mach0);
+	MACH0_ (mach0_free)
+	(mach0);
 }
 
-static RList *sections(RBinFile *bf) {
-	RDyldCache *cache = (RDyldCache*) bf->o->bin_obj;
+static RList *sections (RBinFile *bf) {
+	RDyldCache *cache = (RDyldCache *)bf->o->bin_obj;
 	if (!cache) {
 		return NULL;
 	}
@@ -1591,8 +1595,8 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList *symbols(RBinFile *bf) {
-	RDyldCache *cache = (RDyldCache*) bf->o->bin_obj;
+static RList *symbols (RBinFile *bf) {
+	RDyldCache *cache = (RDyldCache *)bf->o->bin_obj;
 	if (!cache) {
 		return NULL;
 	}
@@ -1635,14 +1639,14 @@ static RList *symbols(RBinFile *bf) {
 	cache->original_io_read = NULL;
 } */
 
-static void destroy(RBinFile *bf) {
-	RDyldCache *cache = (RDyldCache*) bf->o->bin_obj;
+static void destroy (RBinFile *bf) {
+	RDyldCache *cache = (RDyldCache *)bf->o->bin_obj;
 	// unswizzle_io_read (cache, bf->rbin->iob.io); // XXX io may be dead here
 	r_dyldcache_free (cache);
 }
 
-static RList *classes(RBinFile *bf) {
-	RDyldCache *cache = (RDyldCache*) bf->o->bin_obj;
+static RList *classes (RBinFile *bf) {
+	RDyldCache *cache = (RDyldCache *)bf->o->bin_obj;
 	if (!cache) {
 		return NULL;
 	}
@@ -1658,14 +1662,15 @@ static RList *classes(RBinFile *bf) {
 	RBuffer *orig_buf = bf->buf;
 	ut32 num_of_unnamed_class = 0;
 	r_list_foreach (cache->bins, iter, bin) {
-		struct MACH0_(obj_t) *mach0 = bin_to_mach0 (bf, bin);
+		struct MACH0_ (obj_t) *mach0 = bin_to_mach0 (bf, bin);
 		if (!mach0) {
 			goto beach;
 		}
 
 		struct section_t *sections = NULL;
-		if (!(sections = MACH0_(get_sections) (mach0))) {
-			MACH0_(mach0_free) (mach0);
+		if (!(sections = MACH0_ (get_sections) (mach0))) {
+			MACH0_ (mach0_free)
+			(mach0);
 			goto beach;
 		}
 
@@ -1700,16 +1705,19 @@ static RList *classes(RBinFile *bf) {
 					R_FREE (klass);
 					R_FREE (pointers);
 					R_FREE (sections);
-					MACH0_(mach0_free) (mach0);
+					MACH0_ (mach0_free)
+					(mach0);
 					goto beach;
 				}
 
 				bf->o->bin_obj = mach0;
 				bf->buf = cache->buf;
 				if (is_classlist) {
-					MACH0_(get_class_t) ((ut64) pointer_to_class, bf, klass, false, NULL);
+					MACH0_ (get_class_t)
+					((ut64)pointer_to_class, bf, klass, false, NULL);
 				} else {
-					MACH0_(get_category_t) ((ut64) pointer_to_class, bf, klass, NULL);
+					MACH0_ (get_category_t)
+					((ut64)pointer_to_class, bf, klass, NULL);
 				}
 				bf->o->bin_obj = cache;
 				bf->buf = orig_buf;
@@ -1720,7 +1728,8 @@ static RList *classes(RBinFile *bf) {
 						R_FREE (klass);
 						R_FREE (pointers);
 						R_FREE (sections);
-						MACH0_(mach0_free) (mach0);
+						MACH0_ (mach0_free)
+						(mach0);
 						goto beach;
 					}
 					num_of_unnamed_class++;
@@ -1732,7 +1741,8 @@ static RList *classes(RBinFile *bf) {
 		}
 
 		R_FREE (sections);
-		MACH0_(mach0_free) (mach0);
+		MACH0_ (mach0_free)
+		(mach0);
 	}
 
 	return ret;
@@ -1742,12 +1752,12 @@ beach:
 	return NULL;
 }
 
-static void header(RBinFile *bf) {
+static void header (RBinFile *bf) {
 	if (!bf || !bf->o) {
 		return;
 	}
 
-	RDyldCache *cache = (RDyldCache*) bf->o->bin_obj;
+	RDyldCache *cache = (RDyldCache *)bf->o->bin_obj;
 	if (!cache) {
 		return;
 	}
@@ -1777,7 +1787,7 @@ static void header(RBinFile *bf) {
 	pj_kn (pj, "localSymbolsOffset", cache->hdr->localSymbolsOffset);
 	pj_kn (pj, "localSymbolsSize", cache->hdr->localSymbolsSize);
 	char uuidstr[128];
-	r_hex_bin2str ((ut8*)cache->hdr->uuid, 16, uuidstr);
+	r_hex_bin2str ((ut8 *)cache->hdr->uuid, 16, uuidstr);
 	pj_ks (pj, "uuid", uuidstr);
 	pj_ks (pj, "cacheType", (cache->hdr->cacheType == 0) ? "development" : "production");
 	pj_kn (pj, "branchPoolsOffset", cache->hdr->branchPoolsOffset);
@@ -1817,12 +1827,12 @@ static void header(RBinFile *bf) {
 	pj_kn (pj, "version", version);
 	pj_kn (pj, "slide", slide);
 	if (version == 3) {
-		RDyldRebaseInfo3 *info3 = (RDyldRebaseInfo3*) cache->rebase_info;
+		RDyldRebaseInfo3 *info3 = (RDyldRebaseInfo3 *)cache->rebase_info;
 		pj_kn (pj, "page_starts_count", info3->page_starts_count);
 		pj_kn (pj, "page_size", info3->page_size);
 		pj_kn (pj, "auth_value_add", info3->auth_value_add);
 	} else if (version == 2 || version == 4) {
-		RDyldRebaseInfo2 *info2 = (RDyldRebaseInfo2*) cache->rebase_info;
+		RDyldRebaseInfo2 *info2 = (RDyldRebaseInfo2 *)cache->rebase_info;
 		pj_kn (pj, "page_starts_count", info2->page_starts_count);
 		pj_kn (pj, "page_extras_count", info2->page_extras_count);
 		pj_kn (pj, "delta_mask", info2->delta_mask);
@@ -1830,7 +1840,7 @@ static void header(RBinFile *bf) {
 		pj_kn (pj, "delta_shift", info2->delta_shift);
 		pj_kn (pj, "page_size", info2->page_size);
 	} else if (version == 1) {
-		RDyldRebaseInfo1 *info1 = (RDyldRebaseInfo1*) cache->rebase_info;
+		RDyldRebaseInfo1 *info1 = (RDyldRebaseInfo1 *)cache->rebase_info;
 		pj_kn (pj, "toc_count", info1->toc_count);
 		pj_kn (pj, "entries_size", info1->entries_size);
 		pj_kn (pj, "page_size", 4096);
@@ -1841,24 +1851,24 @@ static void header(RBinFile *bf) {
 		pj_k (pj, "images");
 		pj_a (pj);
 		ut64 total_size = cache->hdr->imagesTextCount * sizeof (cache_text_info_t);
-		cache_text_info_t * text_infos = malloc (total_size);
+		cache_text_info_t *text_infos = malloc (total_size);
 		if (!text_infos) {
 			goto beach;
 		}
-		if (r_buf_fread_at (cache->buf, cache->hdr->imagesTextOffset, (ut8*)text_infos, "16clii", cache->hdr->imagesTextCount) != total_size) {
+		if (r_buf_fread_at (cache->buf, cache->hdr->imagesTextOffset, (ut8 *)text_infos, "16clii", cache->hdr->imagesTextCount) != total_size) {
 			free (text_infos);
 			goto beach;
 		}
 		size_t i;
 		for (i = 0; i != cache->hdr->imagesTextCount; i++) {
-			cache_text_info_t * text_info = &text_infos[i];
-			r_hex_bin2str ((ut8*)text_info->uuid, 16, uuidstr);
+			cache_text_info_t *text_info = &text_infos[i];
+			r_hex_bin2str ((ut8 *)text_info->uuid, 16, uuidstr);
 			pj_o (pj);
 			pj_ks (pj, "uuid", uuidstr);
 			pj_kn (pj, "address", text_info->loadAddress + slide);
 			pj_kn (pj, "textSegmentSize", text_info->textSegmentSize);
 			char file[256];
-			if (r_buf_read_at (cache->buf, text_info->pathOffset, (ut8*) &file, sizeof (file)) == sizeof (file)) {
+			if (r_buf_read_at (cache->buf, text_info->pathOffset, (ut8 *)&file, sizeof (file)) == sizeof (file)) {
 				file[255] = 0;
 				pj_ks (pj, "path", file);
 				char *last_slash = strrchr (file, '/');

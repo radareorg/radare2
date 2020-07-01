@@ -2,7 +2,7 @@
 
 #include "bin_elf.inc"
 
-static void headers32(RBinFile *bf) {
+static void headers32 (RBinFile *bf) {
 #define p bf->rbin->cb_printf
 	p ("0x00000000  ELF MAGIC   0x%08x\n", r_buf_read_le32_at (bf->buf, 0));
 	p ("0x00000010  Type        0x%04x\n", r_buf_read_le16_at (bf->buf, 0x10));
@@ -13,8 +13,8 @@ static void headers32(RBinFile *bf) {
 	p ("0x00000020  ShOff       0x%08x\n", r_buf_read_le32_at (bf->buf, 0x20));
 }
 
-static bool check_buffer(RBuffer *buf) {
-	ut8 b[5] = {0};
+static bool check_buffer (RBuffer *buf) {
+	ut8 b[5] = { 0 };
 	r_buf_read_at (buf, 0, b, sizeof (b));
 	return !memcmp (b, ELFMAG, SELFMAG) && b[4] != 2;
 }
@@ -22,7 +22,7 @@ static bool check_buffer(RBuffer *buf) {
 extern struct r_bin_dbginfo_t r_bin_dbginfo_elf;
 extern struct r_bin_write_t r_bin_write_elf;
 
-static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
+static RBuffer *create (RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
 	r_return_val_if_fail (bin && opt && opt->arch, NULL);
 
 	ut32 filesize, code_va, code_pa, phoff;
@@ -41,14 +41,20 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 		baddr = 0x8048000;
 	}
 
-#define B(x,y) r_buf_append_bytes(buf,(const ut8*)(x),y)
-#define D(x) r_buf_append_ut32(buf,x)
-#define H(x) r_buf_append_ut16(buf,x)
-#define Z(x) r_buf_append_nbytes(buf,x)
-#define W(x,y,z) r_buf_write_at(buf,x,(const ut8*)(y),z)
-#define WZ(x,y) p_tmp=r_buf_size (buf);Z(x);W(p_tmp,y,strlen(y))
+#define B(x, y) r_buf_append_bytes (buf, (const ut8 *)(x), y)
+#define D(x) r_buf_append_ut32 (buf, x)
+#define H(x) r_buf_append_ut16 (buf, x)
+#define Z(x) r_buf_append_nbytes (buf, x)
+#define W(x, y, z) r_buf_write_at (buf, x, (const ut8 *)(y), z)
+#define WZ(x, y)                  \
+	p_tmp = r_buf_size (buf); \
+	Z (x);                    \
+	W (p_tmp, y, strlen (y))
 
-	B ("\x7F" "ELF" "\x01\x01\x01\x00", 8);
+	B ("\x7F"
+	   "ELF"
+	   "\x01\x01\x01\x00",
+		8);
 	Z (8);
 	H (2); // ET_EXEC
 	if (is_arm) {
@@ -62,7 +68,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	D (-1); // _start
 	p_phoff = r_buf_size (buf);
 	D (-1); // phoff -- program headers offset
-	D (0);  // shoff -- section headers offset
+	D (0); // shoff -- section headers offset
 	D (0); // flags
 	p_ehdrsz = r_buf_size (buf);
 	H (-1); // ehdrsz
@@ -91,7 +97,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	phdrsz = r_buf_size (buf) - p_phdr;
 	code_pa = r_buf_size (buf);
 	code_va = code_pa + baddr;
-	phoff = 0x34;//p_phdr ;
+	phoff = 0x34; //p_phdr ;
 	filesize = code_pa + codelen + datalen;
 
 	W (p_start, &code_va, 4);

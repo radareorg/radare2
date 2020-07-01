@@ -5,7 +5,6 @@
 #define set_trace_bit(dbg, thread) modify_trace_bit (dbg, thread, 1)
 #define clear_trace_bit(dbg, thread) modify_trace_bit (dbg, thread, 0)
 
-
 #if defined __i386__ || __x86_64__ // intel processors
 
 /* Set/clear bit 8 (Trap Flag) of the EFLAGS processor control
@@ -13,7 +12,7 @@
    ENABLE is a boolean, indicating whether to set (1) the Trap Flag
    or clear it (0).  */
 
-static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
+static bool modify_trace_bit (RDebug *dbg, xnu_thread_t *th, int enable) {
 	R_REG_T *state;
 	int ret;
 	ret = xnu_thread_get_gpr (dbg, th);
@@ -23,11 +22,13 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 	}
 	state = (R_REG_T *)&th->gpr;
 	if (state->tsh.flavor == x86_THREAD_STATE32) {
-		state->uts.ts32.__eflags = (state->uts.ts32.__eflags & \
-					~0x100UL) | (enable ? 0x100UL : 0);
+		state->uts.ts32.__eflags = (state->uts.ts32.__eflags &
+						   ~0x100UL) |
+			(enable ? 0x100UL : 0);
 	} else if (state->tsh.flavor == x86_THREAD_STATE64) {
-		state->uts.ts64.__rflags = (state->uts.ts64.__rflags & \
-					~0x100UL) | (enable ? 0x100UL : 0);
+		state->uts.ts64.__rflags = (state->uts.ts64.__rflags &
+						   ~0x100UL) |
+			(enable ? 0x100UL : 0);
 	} else {
 		eprintf ("Invalid bit size\n");
 		return false;
@@ -42,7 +43,7 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 #elif __POWERPC__ //ppc processor
 //XXX poor support at this stage i don't care so much. Once intel and arm done it could be done
 //TODO add better support for ppc
-static bool modify_trace_bit(RDebug *dbg, void *th, int enable) {
+static bool modify_trace_bit (RDebug *dbg, void *th, int enable) {
 	return false;
 }
 #if 0
@@ -68,50 +69,50 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
 }
 #endif
 
-#elif __arm || __arm64 || __aarch64//arm processor
+#elif __arm || __arm64 || __aarch64 //arm processor
 
 // BCR address match type
-#define BCR_M_IMVA_MATCH        ((uint32_t)(0u << 21))
-#define BCR_M_CONTEXT_ID_MATCH  ((uint32_t)(1u << 21))
-#define BCR_M_IMVA_MISMATCH     ((uint32_t)(2u << 21))
-#define BCR_M_RESERVED          ((uint32_t)(3u << 21))
+#define BCR_M_IMVA_MATCH ((uint32_t) (0u << 21))
+#define BCR_M_CONTEXT_ID_MATCH ((uint32_t) (1u << 21))
+#define BCR_M_IMVA_MISMATCH ((uint32_t) (2u << 21))
+#define BCR_M_RESERVED ((uint32_t) (3u << 21))
 
 // Link a BVR/BCR or WVR/WCR pair to another
-#define E_ENABLE_LINKING	((uint32_t)(1u << 20))
+#define E_ENABLE_LINKING ((uint32_t) (1u << 20))
 
 // Byte Address Select
-#define BAS_IMVA_PLUS_0		((uint32_t)(1u << 5))
-#define BAS_IMVA_PLUS_1		((uint32_t)(1u << 6))
-#define BAS_IMVA_PLUS_2		((uint32_t)(1u << 7))
-#define BAS_IMVA_PLUS_3		((uint32_t)(1u << 8))
-#define BAS_IMVA_0_1		((uint32_t)(3u << 5))
-#define BAS_IMVA_2_3		((uint32_t)(3u << 7))
-#define BAS_IMVA_ALL		((uint32_t)(0xfu << 5))
+#define BAS_IMVA_PLUS_0 ((uint32_t) (1u << 5))
+#define BAS_IMVA_PLUS_1 ((uint32_t) (1u << 6))
+#define BAS_IMVA_PLUS_2 ((uint32_t) (1u << 7))
+#define BAS_IMVA_PLUS_3 ((uint32_t) (1u << 8))
+#define BAS_IMVA_0_1 ((uint32_t) (3u << 5))
+#define BAS_IMVA_2_3 ((uint32_t) (3u << 7))
+#define BAS_IMVA_ALL ((uint32_t) (0xfu << 5))
 
 // Break only in privileged or user mode
-#define S_RSVD			((uint32_t)(0u << 1))
-#define S_PRIV			((uint32_t)(1u << 1))
-#define S_USER			((uint32_t)(2u << 1))
-#define S_PRIV_USER		((S_PRIV) | (S_USER))
+#define S_RSVD ((uint32_t) (0u << 1))
+#define S_PRIV ((uint32_t) (1u << 1))
+#define S_USER ((uint32_t) (2u << 1))
+#define S_PRIV_USER ((S_PRIV) | (S_USER))
 
-#define BCR_ENABLE		((uint32_t)(1u))
-#define WCR_ENABLE		((uint32_t)(1u))
+#define BCR_ENABLE ((uint32_t) (1u))
+#define WCR_ENABLE ((uint32_t) (1u))
 
 // Watchpoint load/store
-#define WCR_LOAD		((uint32_t)(1u << 3))
-#define WCR_STORE		((uint32_t)(1u << 4))
+#define WCR_LOAD ((uint32_t) (1u << 3))
+#define WCR_STORE ((uint32_t) (1u << 4))
 
 // Single instruction step
 // (SS bit in the MDSCR_EL1 register)
-#define SS_ENABLE ((uint32_t)(1u))
+#define SS_ENABLE ((uint32_t) (1u))
 
 #if __arm || __arm__ || __armv7 || __armv7__
-static bool is_thumb_32(ut16 op) {
+static bool is_thumb_32 (ut16 op) {
 	return (((op & 0xE000) == 0xE000) && (op & 0x1800));
 }
 #endif
 
-static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
+static int modify_trace_bit (RDebug *dbg, xnu_thread_t *th, int enable) {
 	int i = 0;
 	int ret = xnu_thread_get_drx (dbg, th);
 	if (!ret) {
@@ -143,7 +144,7 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 			eprintf ("error to get gpr register modificy_trace_bit arm\n");
 			return false;
 		}
-		regs = (R_REG_T*)&th->gpr;
+		regs = (R_REG_T *)&th->gpr;
 		if (enable) {
 			static ut64 chained_address = 0;
 			RIOBind *bio = &dbg->iob;
@@ -156,11 +157,11 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 			} else {
 				state->__bvr[i] = regs->ts_32.__pc & 0xFFFFFFFCu;
 			}
-			state->__bcr[i] = BCR_M_IMVA_MISMATCH |  // stop on
-								 // address
-								 // mismatch
-					  S_USER |  // stop only in user mode
-					  BCR_ENABLE;  // enable this breakpoint
+			state->__bcr[i] = BCR_M_IMVA_MISMATCH | // stop on
+				// address
+				// mismatch
+				S_USER | // stop only in user mode
+				BCR_ENABLE; // enable this breakpoint
 			if (regs->ts_32.__cpsr & 0x20) {
 				ut16 op;
 				// Thumb breakpoint
@@ -209,8 +210,8 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 }
 
 #elif __POWERPC__
-	// no need to do this here
-static int modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
+// no need to do this here
+static int modify_trace_bit (RDebug *dbg, xnu_thread *th, int enable) {
 	return true;
 }
 #else
@@ -228,7 +229,7 @@ static bool xnu_restore_exception_ports (int pid) {
 		return false;
 	for (i = 0; i < ex.count; i++) {
 		kr = task_set_exception_ports (task, ex.masks[i], ex.ports[i],
-					       ex.behaviors[i], ex.flavors[i]);
+			ex.behaviors[i], ex.flavors[i]);
 		if (kr != KERN_SUCCESS) {
 			eprintf ("fail to restore exception ports\n");
 			return false;
@@ -242,13 +243,12 @@ static bool xnu_restore_exception_ports (int pid) {
 	return true;
 }
 
-
 //TODO review more closely we are failing here
-static void encode_reply(mig_reply_error_t *reply, mach_msg_header_t *hdr, int code) {
+static void encode_reply (mig_reply_error_t *reply, mach_msg_header_t *hdr, int code) {
 	mach_msg_header_t *rh = &reply->Head;
-	rh->msgh_bits = MACH_MSGH_BITS (MACH_MSGH_BITS_REMOTE(hdr->msgh_bits), 0);
+	rh->msgh_bits = MACH_MSGH_BITS (MACH_MSGH_BITS_REMOTE (hdr->msgh_bits), 0);
 	rh->msgh_remote_port = hdr->msgh_remote_port;
-	rh->msgh_size = (mach_msg_size_t) sizeof (mig_reply_error_t);
+	rh->msgh_size = (mach_msg_size_t)sizeof (mig_reply_error_t);
 	rh->msgh_local_port = MACH_PORT_NULL;
 	rh->msgh_id = hdr->msgh_id + 100;
 	reply->NDR = NDR_record;
@@ -275,19 +275,19 @@ static bool validate_mach_message (RDebug *dbg, exc_msg *msg) {
 	}
 	/* check descriptors.  */
 	if (msg->hdr.msgh_size <
-	    sizeof (mach_msg_header_t) + sizeof (mach_msg_body_t) +
-		    2 * sizeof (mach_msg_port_descriptor_t) +
-		    sizeof (NDR_record_t) + sizeof (exception_type_t) +
-		    sizeof (mach_msg_type_number_t) +
-		    sizeof (mach_exception_data_t))
+		sizeof (mach_msg_header_t) + sizeof (mach_msg_body_t) +
+			2 * sizeof (mach_msg_port_descriptor_t) +
+			sizeof (NDR_record_t) + sizeof (exception_type_t) +
+			sizeof (mach_msg_type_number_t) +
+			sizeof (mach_exception_data_t))
 		return false;
 	/* check data representation.  */
 	if (msg->NDR.mig_vers != NDR_PROTOCOL_2_0 ||
-	    msg->NDR.if_vers != NDR_PROTOCOL_2_0 ||
-	    msg->NDR.mig_encoding != NDR_record.mig_encoding ||
-	    msg->NDR.int_rep != NDR_record.int_rep ||
-	    msg->NDR.char_rep != NDR_record.char_rep ||
-	    msg->NDR.float_rep != NDR_record.float_rep) {
+		msg->NDR.if_vers != NDR_PROTOCOL_2_0 ||
+		msg->NDR.mig_encoding != NDR_record.mig_encoding ||
+		msg->NDR.int_rep != NDR_record.int_rep ||
+		msg->NDR.char_rep != NDR_record.char_rep ||
+		msg->NDR.float_rep != NDR_record.float_rep) {
 		return false;
 	}
 	if (pid_to_task (dbg->pid) != msg->task.name) {
@@ -408,11 +408,11 @@ static int __xnu_wait (RDebug *dbg, int pid) {
 		if (!ret) {
 			encode_reply (&reply, &msg.hdr, KERN_FAILURE);
 			kr = mach_msg (&reply.Head, MACH_SEND_MSG | MACH_SEND_INTERRUPT,
-					reply.Head.msgh_size, 0,
-					MACH_PORT_NULL, MACH_MSG_TIMEOUT_NONE,
-					MACH_PORT_NULL);
+				reply.Head.msgh_size, 0,
+				MACH_PORT_NULL, MACH_MSG_TIMEOUT_NONE,
+				MACH_PORT_NULL);
 			if (reply.Head.msgh_remote_port != 0 && kr != MACH_MSG_SUCCESS) {
-				kr = mach_port_deallocate(mach_task_self (), reply.Head.msgh_remote_port);
+				kr = mach_port_deallocate (mach_task_self (), reply.Head.msgh_remote_port);
 				if (kr != KERN_SUCCESS) {
 					eprintf ("failed to deallocate reply port\n");
 				}
@@ -423,11 +423,11 @@ static int __xnu_wait (RDebug *dbg, int pid) {
 		reason = handle_exception_message (dbg, &msg, &ret_code);
 		encode_reply (&reply, &msg.hdr, ret_code);
 		kr = mach_msg (&reply.Head, MACH_SEND_MSG | MACH_SEND_INTERRUPT,
-				reply.Head.msgh_size, 0,
-				MACH_PORT_NULL, 0,
-				MACH_PORT_NULL);
+			reply.Head.msgh_size, 0,
+			MACH_PORT_NULL, 0,
+			MACH_PORT_NULL);
 		if (reply.Head.msgh_remote_port != 0 && kr != MACH_MSG_SUCCESS) {
-			kr = mach_port_deallocate(mach_task_self (), reply.Head.msgh_remote_port);
+			kr = mach_port_deallocate (mach_task_self (), reply.Head.msgh_remote_port);
 			if (kr != KERN_SUCCESS)
 				eprintf ("failed to deallocate reply port\n");
 		}
@@ -437,34 +437,34 @@ static int __xnu_wait (RDebug *dbg, int pid) {
 	return reason;
 }
 
-bool xnu_create_exception_thread(RDebug *dbg) {
+bool xnu_create_exception_thread (RDebug *dbg) {
 #if __POWERPC__
 	return false;
 #else
 	kern_return_t kr;
 	mach_port_t exception_port = MACH_PORT_NULL;
 	mach_port_t req_port;
-        // Got the mach port for the current process
+	// Got the mach port for the current process
 	mach_port_t task_self = mach_task_self ();
 	task_t task = pid_to_task (dbg->pid);
 	if (!task) {
 		eprintf ("error to get task for the debuggee process"
-			" xnu_start_exception_thread\n");
+			 " xnu_start_exception_thread\n");
 		return false;
 	}
 	r_debug_ptrace (dbg, PT_ATTACHEXC, dbg->pid, 0, 0);
 	if (!MACH_PORT_VALID (task_self)) {
 		eprintf ("error to get the task for the current process"
-			" xnu_start_exception_thread\n");
+			 " xnu_start_exception_thread\n");
 		return false;
 	}
-        // Allocate an exception port that we will use to track our child process
-        kr = mach_port_allocate (task_self, MACH_PORT_RIGHT_RECEIVE,
-				&exception_port);
+	// Allocate an exception port that we will use to track our child process
+	kr = mach_port_allocate (task_self, MACH_PORT_RIGHT_RECEIVE,
+		&exception_port);
 	RETURN_ON_MACH_ERROR ("error to allocate mach_port exception\n", false);
-        // Add the ability to send messages on the new exception port
+	// Add the ability to send messages on the new exception port
 	kr = mach_port_insert_right (task_self, exception_port, exception_port,
-				     MACH_MSG_TYPE_MAKE_SEND);
+		MACH_MSG_TYPE_MAKE_SEND);
 	RETURN_ON_MACH_ERROR ("error to allocate insert right\n", false);
 	// Atomically swap out (and save) the child process's exception ports
 	// for the one we just created. We'll want to receive all exceptions.
@@ -475,7 +475,7 @@ bool xnu_create_exception_thread(RDebug *dbg) {
 	RETURN_ON_MACH_ERROR ("failed to swap exception ports\n", false);
 	//get notification when process die
 	kr = mach_port_request_notification (task_self, task, MACH_NOTIFY_DEAD_NAME,
-		 0, exception_port, MACH_MSG_TYPE_MAKE_SEND_ONCE, &req_port);
+		0, exception_port, MACH_MSG_TYPE_MAKE_SEND_ONCE, &req_port);
 	if (kr != KERN_SUCCESS) {
 		eprintf ("Termination notification request failed\n");
 	}

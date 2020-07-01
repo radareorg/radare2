@@ -3,27 +3,27 @@
 #include "r_core.h"
 #include "config.h"
 
-#define CB(x, y)\
-	static int __lib_ ## x ## _cb (RLibPlugin * pl, void *user, void *data) {\
-		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data;\
-		RCore *core = (RCore *) user;\
-		pl->free = NULL; \
-		r_ ## x ## _add (core->y, hand);\
-		return true;\
-	}\
-	static int __lib_ ## x ## _dt (RLibPlugin * pl, void *p, void *u) { return true; }
+#define CB(x, y)                                                                 \
+	static int __lib_##x##_cb (RLibPlugin *pl, void *user, void *data) {     \
+		struct r_##x##_plugin_t *hand = (struct r_##x##_plugin_t *)data; \
+		RCore *core = (RCore *)user;                                     \
+		pl->free = NULL;                                                 \
+		r_##x##_add (core->y, hand);                                     \
+		return true;                                                     \
+	}                                                                        \
+	static int __lib_##x##_dt (RLibPlugin *pl, void *p, void *u) { return true; }
 
-#define CB_COPY(x, y)\
-	static int __lib_ ## x ## _cb (RLibPlugin * pl, void *user, void *data) {\
-		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data;\
-		struct r_ ## x ## _plugin_t *instance;\
-		RCore *core = (RCore *) user;\
-		instance = R_NEW (struct r_ ## x ## _plugin_t);\
-		memcpy (instance, hand, sizeof (struct r_ ## x ## _plugin_t));\
-		r_ ## x ## _add (core->y, instance);\
-		return true;\
-	}\
-	static int __lib_ ## x ## _dt (RLibPlugin * pl, void *p, void *u) { return true; }
+#define CB_COPY(x, y)                                                            \
+	static int __lib_##x##_cb (RLibPlugin *pl, void *user, void *data) {     \
+		struct r_##x##_plugin_t *hand = (struct r_##x##_plugin_t *)data; \
+		struct r_##x##_plugin_t *instance;                               \
+		RCore *core = (RCore *)user;                                     \
+		instance = R_NEW (struct r_##x##_plugin_t);                      \
+		memcpy (instance, hand, sizeof (struct r_##x##_plugin_t));       \
+		r_##x##_add (core->y, instance);                                 \
+		return true;                                                     \
+	}                                                                        \
+	static int __lib_##x##_dt (RLibPlugin *pl, void *p, void *u) { return true; }
 
 // XXX api consistency issues
 #define r_io_add r_io_plugin_add
@@ -42,7 +42,7 @@ CB (bin, bin)
 CB (egg, egg)
 CB (fs, fs)
 
-static void __openPluginsAt(RCore *core, const char *arg, const char *user_path) {
+static void __openPluginsAt (RCore *core, const char *arg, const char *user_path) {
 	if (arg && *arg) {
 		if (user_path) {
 			if (r_str_endswith (user_path, arg)) {
@@ -57,7 +57,7 @@ static void __openPluginsAt(RCore *core, const char *arg, const char *user_path)
 	}
 }
 
-static void __loadSystemPlugins(RCore *core, int where, const char *path) {
+static void __loadSystemPlugins (RCore *core, int where, const char *path) {
 #if R2_LOADLIBS
 	if (!where) {
 		where = -1;
@@ -91,9 +91,9 @@ static void __loadSystemPlugins(RCore *core, int where, const char *path) {
 #endif
 }
 
-R_API void r_core_loadlibs_init(RCore *core) {
+R_API void r_core_loadlibs_init (RCore *core) {
 	ut64 prev = r_sys_now ();
-#define DF(x, y, z) r_lib_add_handler (core->lib, R_LIB_TYPE_ ## x, y, &__lib_ ## z ## _cb, &__lib_ ## z ## _dt, core);
+#define DF(x, y, z) r_lib_add_handler (core->lib, R_LIB_TYPE_##x, y, &__lib_##z##_cb, &__lib_##z##_dt, core);
 	core->lib = r_lib_new (NULL, NULL);
 	DF (IO, "io plugins", io);
 	DF (CORE, "core plugins", core);
@@ -109,20 +109,18 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	core->times->loadlibs_init_time = r_sys_now () - prev;
 }
 
-static bool __isScriptFilename(const char *name) {
+static bool __isScriptFilename (const char *name) {
 	const char *ext = r_str_lchr (name, '.');
 	if (ext) {
 		ext++;
-		if (!strcmp (ext, "py")
-		||  !strcmp (ext, "js")
-		||  !strcmp (ext, "lua")) {
+		if (!strcmp (ext, "py") || !strcmp (ext, "js") || !strcmp (ext, "lua")) {
 			return true;
 		}
 	}
 	return false;
 }
 
-R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
+R_API int r_core_loadlibs (RCore *core, int where, const char *path) {
 	ut64 prev = r_sys_now ();
 	__loadSystemPlugins (core, where, path);
 	/* TODO: all those default plugin paths should be defined in r_lib */
@@ -132,7 +130,7 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 	}
 	// load script plugins
 	char *homeplugindir = r_str_home (R2_HOME_PLUGINS);
-        RList *files = r_sys_dir (homeplugindir);
+	RList *files = r_sys_dir (homeplugindir);
 	RListIter *iter;
 	char *file;
 	r_list_foreach (files, iter, file) {
@@ -140,7 +138,7 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 			r_core_cmdf (core, ". %s/%s", homeplugindir, file);
 		}
 	}
-	
+
 	free (homeplugindir);
 	core->times->loadlibs_time = r_sys_now () - prev;
 	r_list_free (files);

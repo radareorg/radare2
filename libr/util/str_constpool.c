@@ -2,20 +2,20 @@
 
 #include "r_util/r_str_constpool.h"
 
-static void kv_fini(HtPPKv *kv) {
+static void kv_fini (HtPPKv *kv) {
 	free (kv->key);
 }
 
-R_API bool r_str_constpool_init(RStrConstPool *pool) {
+R_API bool r_str_constpool_init (RStrConstPool *pool) {
 	pool->ht = ht_pp_new (NULL, kv_fini, NULL);
 	return pool->ht != NULL;
 }
 
-R_API void r_str_constpool_fini(RStrConstPool *pool) {
+R_API void r_str_constpool_fini (RStrConstPool *pool) {
 	ht_pp_free (pool->ht);
 }
 
-R_API const char *r_str_constpool_get(RStrConstPool *pool, const char *str) {
+R_API const char *r_str_constpool_get (RStrConstPool *pool, const char *str) {
 	if (!str) {
 		return NULL;
 	}

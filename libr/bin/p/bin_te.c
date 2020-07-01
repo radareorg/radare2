@@ -7,16 +7,16 @@
 #include "te/te_specs.h"
 #include "te/te.h"
 
-static Sdb *get_sdb(RBinFile *bf) {
+static Sdb *get_sdb (RBinFile *bf) {
 	RBinObject *o = bf->o;
 	if (!o) {
 		return NULL;
 	}
-	struct r_bin_te_obj_t *bin = (struct r_bin_te_obj_t *) o->bin_obj;
-	return bin? bin->kv: NULL;
+	struct r_bin_te_obj_t *bin = (struct r_bin_te_obj_t *)o->bin_obj;
+	return bin ? bin->kv : NULL;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	r_return_val_if_fail (bf && bin_obj && b, false);
 	ut64 sz = r_buf_size (b);
 	if (sz == 0 || sz == UT64_MAX) {
@@ -30,15 +30,15 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 	return true;
 }
 
-static void destroy(RBinFile *bf) {
-	r_bin_te_free ((struct r_bin_te_obj_t *) bf->o->bin_obj);
+static void destroy (RBinFile *bf) {
+	r_bin_te_free ((struct r_bin_te_obj_t *)bf->o->bin_obj);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr (RBinFile *bf) {
 	return r_bin_te_get_image_base (bf->o->bin_obj);
 }
 
-static RBinAddr *binsym(RBinFile *bf, int type) {
+static RBinAddr *binsym (RBinFile *bf, int type) {
 	RBinAddr *ret = NULL;
 	switch (type) {
 	case R_BIN_SYM_MAIN:
@@ -51,7 +51,7 @@ static RBinAddr *binsym(RBinFile *bf, int type) {
 	return ret;
 }
 
-static RList *entries(RBinFile *bf) {
+static RList *entries (RBinFile *bf) {
 	RList *ret = r_list_newf (free);
 	if (ret) {
 		RBinAddr *entry = r_bin_te_get_entrypoint (bf->o->bin_obj);
@@ -68,7 +68,7 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
+static RList *sections (RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	struct r_bin_te_section_t *sections = NULL;
@@ -86,7 +86,7 @@ static RList *sections(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			break;
 		}
-		ptr->name = strdup ((char*)sections[i].name);
+		ptr->name = strdup ((char *)sections[i].name);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
 		ptr->paddr = sections[i].paddr;
@@ -116,7 +116,7 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
@@ -139,7 +139,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	ut8 buf[2];
 	if (r_buf_read_at (b, 0, buf, 2) == 2) {
 		return !memcmp (buf, "\x56\x5a", 2);

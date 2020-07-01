@@ -7,13 +7,13 @@
 #include <r_io.h>
 #include "bflt/bflt.h"
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	*bin_obj = r_bin_bflt_new_buf (buf);
 	return *bin_obj;
 }
 
-static RList *entries(RBinFile *bf) {
-	struct r_bin_bflt_obj *obj = (struct r_bin_bflt_obj *) bf->o->bin_obj;
+static RList *entries (RBinFile *bf) {
+	struct r_bin_bflt_obj *obj = (struct r_bin_bflt_obj *)bf->o->bin_obj;
 	RList *ret;
 	RBinAddr *ptr;
 
@@ -29,16 +29,16 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static void __patch_reloc(RBuffer *buf, ut32 addr_to_patch, ut32 data_offset) {
+static void __patch_reloc (RBuffer *buf, ut32 addr_to_patch, ut32 data_offset) {
 	ut8 val[4] = {
 		0
 	};
 	r_write_le32 (val, data_offset);
-	r_buf_write_at (buf, addr_to_patch, (void *) val, sizeof (val));
+	r_buf_write_at (buf, addr_to_patch, (void *)val, sizeof (val));
 }
 
-static int search_old_relocation(struct reloc_struct_t *reloc_table,
-                                 ut32 addr_to_patch, int n_reloc) {
+static int search_old_relocation (struct reloc_struct_t *reloc_table,
+	ut32 addr_to_patch, int n_reloc) {
 	int i;
 	for (i = 0; i < n_reloc; i++) {
 		if (addr_to_patch == reloc_table[i].data_offset) {
@@ -48,7 +48,7 @@ static int search_old_relocation(struct reloc_struct_t *reloc_table,
 	return -1;
 }
 
-static RList *patch_relocs(RBin *b) {
+static RList *patch_relocs (RBin *b) {
 	struct r_bin_bflt_obj *bin = NULL;
 	RList *list = NULL;
 	RBinObject *obj;
@@ -68,7 +68,7 @@ static RList *patch_relocs(RBin *b) {
 		return NULL;
 	}
 	bin = obj->bin_obj;
-	list = r_list_newf ((RListFree) free);
+	list = r_list_newf ((RListFree)free);
 	if (!list) {
 		return NULL;
 	}
@@ -117,7 +117,7 @@ static RList *patch_relocs(RBin *b) {
 	return list;
 }
 
-static ut32 get_ngot_entries(struct r_bin_bflt_obj *obj) {
+static ut32 get_ngot_entries (struct r_bin_bflt_obj *obj) {
 	ut32 data_size = obj->hdr->data_end - obj->hdr->data_start;
 	ut32 i = 0, n_got = 0;
 	if (data_size > obj->size) {
@@ -126,10 +126,10 @@ static ut32 get_ngot_entries(struct r_bin_bflt_obj *obj) {
 	for (; i < data_size; i += 4, n_got++) {
 		ut32 entry, offset = obj->hdr->data_start;
 		if (offset + i + sizeof (ut32) > obj->size ||
-		    offset + i + sizeof (ut32) < offset) {
+			offset + i + sizeof (ut32) < offset) {
 			return 0;
 		}
-		int len = r_buf_read_at (obj->b, offset + i, (ut8 *) &entry,
+		int len = r_buf_read_at (obj->b, offset + i, (ut8 *)&entry,
 			sizeof (ut32));
 		if (len != sizeof (ut32)) {
 			return 0;
@@ -141,9 +141,9 @@ static ut32 get_ngot_entries(struct r_bin_bflt_obj *obj) {
 	return n_got;
 }
 
-static RList *relocs(RBinFile *bf) {
-	struct r_bin_bflt_obj *obj = (struct r_bin_bflt_obj *) bf->o->bin_obj;
-	RList *list = r_list_newf ((RListFree) free);
+static RList *relocs (RBinFile *bf) {
+	struct r_bin_bflt_obj *obj = (struct r_bin_bflt_obj *)bf->o->bin_obj;
+	RList *list = r_list_newf ((RListFree)free);
 	ut32 i, len, n_got, amount;
 	if (!list || !obj) {
 		r_list_free (list);
@@ -162,11 +162,11 @@ static RList *relocs(RBinFile *bf) {
 				for (i = 0; i < n_got; offset += 4, i++) {
 					ut32 got_entry;
 					if (obj->hdr->data_start + offset + 4 > obj->size ||
-					    obj->hdr->data_start + offset + 4 < offset) {
+						obj->hdr->data_start + offset + 4 < offset) {
 						break;
 					}
 					len = r_buf_read_at (obj->b, obj->hdr->data_start + offset,
-						(ut8 *) &got_entry, sizeof (ut32));
+						(ut8 *)&got_entry, sizeof (ut32));
 					if (!VALID_GOT_ENTRY (got_entry) || len != sizeof (ut32)) {
 						break;
 					}
@@ -196,13 +196,13 @@ static RList *relocs(RBinFile *bf) {
 			goto out_error;
 		}
 		if (obj->hdr->reloc_start + amount > obj->size ||
-		    obj->hdr->reloc_start + amount < amount) {
+			obj->hdr->reloc_start + amount < amount) {
 			free (reloc_table);
 			free (reloc_pointer_table);
 			goto out_error;
 		}
 		len = r_buf_read_at (obj->b, obj->hdr->reloc_start,
-			(ut8 *) reloc_pointer_table, amount);
+			(ut8 *)reloc_pointer_table, amount);
 		if (len != amount) {
 			free (reloc_table);
 			free (reloc_pointer_table);
@@ -217,13 +217,13 @@ static RList *relocs(RBinFile *bf) {
 			if (reloc_offset < obj->hdr->bss_end && reloc_offset < obj->size) {
 				ut32 reloc_fixed, reloc_data_offset;
 				if (reloc_offset + sizeof (ut32) > obj->size ||
-				    reloc_offset + sizeof (ut32) < reloc_offset) {
+					reloc_offset + sizeof (ut32) < reloc_offset) {
 					free (reloc_table);
 					free (reloc_pointer_table);
 					goto out_error;
 				}
 				len = r_buf_read_at (obj->b, reloc_offset,
-					(ut8 *) &reloc_fixed,
+					(ut8 *)&reloc_fixed,
 					sizeof (ut32));
 				if (len != sizeof (ut32)) {
 					eprintf ("problem while reading relocation entries\n");
@@ -253,19 +253,19 @@ out_error:
 	return NULL;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	struct r_bin_bflt_obj *obj = NULL;
 	RBinInfo *info = NULL;
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	obj = (struct r_bin_bflt_obj *) bf->o->bin_obj;
+	obj = (struct r_bin_bflt_obj *)bf->o->bin_obj;
 	if (!(info = R_NEW0 (RBinInfo))) {
 		return NULL;
 	}
-	info->file = bf->file? strdup (bf->file): NULL;
+	info->file = bf->file ? strdup (bf->file) : NULL;
 	info->rclass = strdup ("bflt");
-	info->bclass = strdup ("bflt" );
+	info->bclass = strdup ("bflt");
 	info->type = strdup ("bFLT (Executable file)");
 	info->os = strdup ("Linux");
 	info->subsystem = strdup ("Linux");
@@ -278,13 +278,13 @@ static RBinInfo *info(RBinFile *bf) {
 	return info;
 }
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer (RBuffer *buf) {
 	ut8 tmp[4];
 	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
 	return r == sizeof (tmp) && !memcmp (tmp, "bFLT", 4);
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy (RBinFile *bf) {
 	r_bin_bflt_free (bf->o->bin_obj);
 }
 

@@ -6,7 +6,7 @@
 
 //shall be used by plugins for creating descs
 //XXX kill mode
-R_API RIODesc* r_io_desc_new(RIO* io, RIOPlugin* plugin, const char* uri, int perm, int mode, void* data) {
+R_API RIODesc *r_io_desc_new (RIO *io, RIOPlugin *plugin, const char *uri, int perm, int mode, void *data) {
 	ut32 fd32 = 0;
 	// this is required for emscripten builds to work, but should assert
 	if (!io || !plugin || !uri) {
@@ -17,7 +17,7 @@ R_API RIODesc* r_io_desc_new(RIO* io, RIOPlugin* plugin, const char* uri, int pe
 			return NULL;
 		}
 	}
-	RIODesc* desc = R_NEW0 (RIODesc);
+	RIODesc *desc = R_NEW0 (RIODesc);
 	if (desc) {
 		desc->fd = fd32;
 		desc->io = io;
@@ -30,7 +30,7 @@ R_API RIODesc* r_io_desc_new(RIO* io, RIOPlugin* plugin, const char* uri, int pe
 	return desc;
 }
 
-R_API void r_io_desc_free(RIODesc* desc) {
+R_API void r_io_desc_free (RIODesc *desc) {
 	if (desc) {
 		free (desc->uri);
 		free (desc->referer);
@@ -39,12 +39,12 @@ R_API void r_io_desc_free(RIODesc* desc) {
 		if (desc->io && desc->io->files) {
 			r_id_storage_delete (desc->io->files, desc->fd);
 		}
-//		free (desc->plugin);
+		//		free (desc->plugin);
 	}
 	free (desc);
 }
 
-R_API bool r_io_desc_add(RIO* io, RIODesc* desc) {
+R_API bool r_io_desc_add (RIO *io, RIODesc *desc) {
 	r_return_val_if_fail (io && desc && desc->io, false);
 	if (!r_id_storage_set (io->files, desc, desc->fd)) {
 		// TODO: use assert here
@@ -56,9 +56,9 @@ R_API bool r_io_desc_add(RIO* io, RIODesc* desc) {
 	return true;
 }
 
-R_API bool r_io_desc_del(RIO* io, int fd) {		//can we pass this a riodesc and check if it belongs to the desc->io ?
+R_API bool r_io_desc_del (RIO *io, int fd) { //can we pass this a riodesc and check if it belongs to the desc->io ?
 	r_return_val_if_fail (io && io->files, false);
-	RIODesc* desc = r_id_storage_get (io->files, fd);
+	RIODesc *desc = r_id_storage_get (io->files, fd);
 	r_io_desc_free (desc);
 	if (desc == io->desc) {
 		io->desc = NULL;
@@ -68,12 +68,12 @@ R_API bool r_io_desc_del(RIO* io, int fd) {		//can we pass this a riodesc and ch
 	return true;
 }
 
-R_API RIODesc* r_io_desc_get(RIO* io, int fd) {
+R_API RIODesc *r_io_desc_get (RIO *io, int fd) {
 	r_return_val_if_fail (io && io->files, NULL);
-	return (RIODesc*) r_id_storage_get (io->files, fd);
+	return (RIODesc *)r_id_storage_get (io->files, fd);
 }
 
-R_API RIODesc *r_io_desc_open(RIO *io, const char *uri, int perm, int mode) {
+R_API RIODesc *r_io_desc_open (RIO *io, const char *uri, int perm, int mode) {
 	r_return_val_if_fail (io && uri, NULL);
 	RIOPlugin *plugin = r_io_plugin_resolve (io, uri, 0);
 	if (!plugin || !plugin->open) {
@@ -100,7 +100,7 @@ R_API RIODesc *r_io_desc_open(RIO *io, const char *uri, int perm, int mode) {
 	return desc;
 }
 
-R_API RIODesc *r_io_desc_open_plugin(RIO *io, RIOPlugin *plugin, const char *uri, int perm, int mode) {
+R_API RIODesc *r_io_desc_open_plugin (RIO *io, RIOPlugin *plugin, const char *uri, int perm, int mode) {
 	r_return_val_if_fail (io && io->files && uri, NULL);
 	if (!plugin || !plugin->open || !plugin->check || !plugin->check (io, uri, false)) {
 		return NULL;
@@ -126,8 +126,7 @@ R_API RIODesc *r_io_desc_open_plugin(RIO *io, RIOPlugin *plugin, const char *uri
 	return desc;
 }
 
-
-R_API bool r_io_desc_close(RIODesc *desc) {
+R_API bool r_io_desc_close (RIODesc *desc) {
 	RIO *io;
 	if (!desc || !desc->io || !desc->plugin) {
 		return false;
@@ -144,7 +143,7 @@ R_API bool r_io_desc_close(RIODesc *desc) {
 }
 
 //returns length of written bytes
-R_API int r_io_desc_write(RIODesc *desc, const ut8* buf, int len) {
+R_API int r_io_desc_write (RIODesc *desc, const ut8 *buf, int len) {
 	r_return_val_if_fail (desc && buf, -1);
 	if (len < 0) {
 		return -1;
@@ -152,13 +151,13 @@ R_API int r_io_desc_write(RIODesc *desc, const ut8* buf, int len) {
 	//check pointers and pcache
 	if (desc->io && (desc->io->p_cache & 2)) {
 		return r_io_desc_cache_write (desc,
-				r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR), buf, len);
+			r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR), buf, len);
 	}
 	return r_io_plugin_write (desc, buf, len);
 }
 
 // returns length of read bytes
-R_API int r_io_desc_read(RIODesc *desc, ut8 *buf, int len) {
+R_API int r_io_desc_read (RIODesc *desc, ut8 *buf, int len) {
 	// check pointers and permissions
 	if (!buf || !desc || !desc->plugin || !(desc->perm & R_PERM_R)) {
 		return -1;
@@ -178,14 +177,14 @@ R_API int r_io_desc_read(RIODesc *desc, ut8 *buf, int len) {
 	return ret;
 }
 
-R_API ut64 r_io_desc_seek(RIODesc* desc, ut64 offset, int whence) {
+R_API ut64 r_io_desc_seek (RIODesc *desc, ut64 offset, int whence) {
 	if (!desc || !desc->plugin || !desc->plugin->lseek) {
-		return (ut64) -1;
+		return (ut64)-1;
 	}
 	return desc->plugin->lseek (desc->io, desc, offset, whence);
 }
 
-R_API ut64 r_io_desc_size(RIODesc* desc) {
+R_API ut64 r_io_desc_size (RIODesc *desc) {
 	if (!desc || !desc->plugin || !desc->plugin->lseek) {
 		return 0LL;
 	}
@@ -196,7 +195,7 @@ R_API ut64 r_io_desc_size(RIODesc* desc) {
 	return ret;
 }
 
-R_API bool r_io_desc_resize(RIODesc *desc, ut64 newsize) {
+R_API bool r_io_desc_resize (RIODesc *desc, ut64 newsize) {
 	if (desc && desc->plugin && desc->plugin->resize) {
 		bool ret = desc->plugin->resize (desc->io, desc, newsize);
 		if (desc->io && desc->io->p_cache) {
@@ -207,31 +206,31 @@ R_API bool r_io_desc_resize(RIODesc *desc, ut64 newsize) {
 	return false;
 }
 
-R_API bool r_io_desc_is_blockdevice(RIODesc *desc) {
+R_API bool r_io_desc_is_blockdevice (RIODesc *desc) {
 	if (!desc || !desc->plugin || !desc->plugin->is_blockdevice) {
 		return false;
 	}
 	return desc->plugin->is_blockdevice (desc);
 }
 
-R_API bool r_io_desc_is_chardevice(RIODesc *desc) {
+R_API bool r_io_desc_is_chardevice (RIODesc *desc) {
 	if (!desc || !desc->plugin || !desc->plugin->is_chardevice) {
 		return false;
 	}
 	return desc->plugin->is_chardevice (desc);
 }
 
-R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
-	RIODesc* desc, * descx;
+R_API bool r_io_desc_exchange (RIO *io, int fd, int fdx) {
+	RIODesc *desc, *descx;
 	if (!(desc = r_io_desc_get (io, fd)) || !(descx = r_io_desc_get (io, fdx))) {
 		return false;
 	}
 	desc->fd = fdx;
 	descx->fd = fd;
-	r_id_storage_set (io->files, desc,  fdx);
+	r_id_storage_set (io->files, desc, fdx);
 	r_id_storage_set (io->files, descx, fd);
 	if (io->p_cache) {
-		Sdb* cache = desc->cache;
+		Sdb *cache = desc->cache;
 		desc->cache = descx->cache;
 		descx->cache = cache;
 		r_io_desc_cache_cleanup (desc);
@@ -249,14 +248,14 @@ R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
 	return true;
 }
 
-R_API bool r_io_desc_is_dbg(RIODesc *desc) {
+R_API bool r_io_desc_is_dbg (RIODesc *desc) {
 	if (desc && desc->plugin) {
 		return desc->plugin->isdbg;
 	}
 	return false;
 }
 
-R_API int r_io_desc_get_pid(RIODesc *desc) {
+R_API int r_io_desc_get_pid (RIODesc *desc) {
 	//-1 and -2 are reserved
 	if (!desc) {
 		return -3;
@@ -273,7 +272,7 @@ R_API int r_io_desc_get_pid(RIODesc *desc) {
 	return desc->plugin->getpid (desc);
 }
 
-R_API int r_io_desc_get_tid(RIODesc *desc) {
+R_API int r_io_desc_get_tid (RIODesc *desc) {
 	//-1 and -2 are reserved
 	if (!desc) {
 		return -3;
@@ -297,21 +296,21 @@ R_API bool r_io_desc_get_base (RIODesc *desc, ut64 *base) {
 	return desc->plugin->getbase (desc, base);
 }
 
-R_API int r_io_desc_read_at(RIODesc *desc, ut64 addr, ut8 *buf, int len) {
+R_API int r_io_desc_read_at (RIODesc *desc, ut64 addr, ut8 *buf, int len) {
 	if (desc && buf && (r_io_desc_seek (desc, addr, R_IO_SEEK_SET) == addr)) {
 		return r_io_desc_read (desc, buf, len);
 	}
 	return 0;
 }
 
-R_API int r_io_desc_write_at(RIODesc *desc, ut64 addr, const ut8 *buf, int len) {
+R_API int r_io_desc_write_at (RIODesc *desc, ut64 addr, const ut8 *buf, int len) {
 	if (desc && buf && (r_io_desc_seek (desc, addr, R_IO_SEEK_SET) == addr)) {
 		return r_io_desc_write (desc, buf, len);
 	}
 	return 0;
 }
 
-R_API int r_io_desc_extend(RIODesc *desc, ut64 size) {
+R_API int r_io_desc_extend (RIODesc *desc, ut64 size) {
 	if (desc && desc->plugin && desc->plugin->extend) {
 		return desc->plugin->extend (desc->io, desc, size);
 	}
@@ -321,7 +320,7 @@ R_API int r_io_desc_extend(RIODesc *desc, ut64 size) {
 /* lifecycle */
 
 // TODO: move into io.c : r_io_init
-R_IPI bool r_io_desc_init(RIO* io) {
+R_IPI bool r_io_desc_init (RIO *io) {
 	r_return_val_if_fail (io, false);
 	r_io_desc_fini (io);
 	// TODO: it leaks if called twice
@@ -333,8 +332,8 @@ R_IPI bool r_io_desc_init(RIO* io) {
 	return true;
 }
 
-static bool desc_fini_cb(void* user, void* data, ut32 id) {
-	RIODesc* desc = (RIODesc*) data;
+static bool desc_fini_cb (void *user, void *data, ut32 id) {
+	RIODesc *desc = (RIODesc *)data;
 	if (desc->plugin && desc->plugin->close) {
 		desc->plugin->close (desc);
 	}
@@ -343,7 +342,7 @@ static bool desc_fini_cb(void* user, void* data, ut32 id) {
 }
 
 //closes all descs and frees all descs and io->files
-R_IPI bool r_io_desc_fini(RIO* io) {
+R_IPI bool r_io_desc_fini (RIO *io) {
 	r_return_val_if_fail (io, NULL);
 	if (io->files) {
 		r_id_storage_foreach (io->files, desc_fini_cb, io);

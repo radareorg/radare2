@@ -8,9 +8,9 @@
 extern void r_x509_name_json (PJ *pj, RX509Name *name);
 extern void r_x509_free_crl (RX509CertificateRevocationList *crl);
 extern void r_x509_crlentry_dump (RX509CRLEntry *crle, const char *pad, RStrBuf *sb);
-static bool r_pkcs7_parse_attributes(RPKCS7Attributes *attribute, RASN1Object *object);
+static bool r_pkcs7_parse_attributes (RPKCS7Attributes *attribute, RASN1Object *object);
 
-static bool r_pkcs7_parse_contentinfo(RPKCS7ContentInfo *ci, RASN1Object *object) {
+static bool r_pkcs7_parse_contentinfo (RPKCS7ContentInfo *ci, RASN1Object *object) {
 	if (!ci || !object || object->list.length < 1 || !object->list.objects[0]) {
 		return false;
 	}
@@ -24,7 +24,7 @@ static bool r_pkcs7_parse_contentinfo(RPKCS7ContentInfo *ci, RASN1Object *object
 	return true;
 }
 
-static bool r_pkcs7_parse_certificaterevocationlists(RPKCS7CertificateRevocationLists *crls, RASN1Object *object) {
+static bool r_pkcs7_parse_certificaterevocationlists (RPKCS7CertificateRevocationLists *crls, RASN1Object *object) {
 	ut32 i;
 	if (!crls || !object) {
 		return false;
@@ -42,7 +42,7 @@ static bool r_pkcs7_parse_certificaterevocationlists(RPKCS7CertificateRevocation
 	return true;
 }
 
-static void r_pkcs7_free_certificaterevocationlists(RPKCS7CertificateRevocationLists *crls) {
+static void r_pkcs7_free_certificaterevocationlists (RPKCS7CertificateRevocationLists *crls) {
 	ut32 i;
 	if (crls) {
 		for (i = 0; i < crls->length; i++) {
@@ -54,7 +54,7 @@ static void r_pkcs7_free_certificaterevocationlists(RPKCS7CertificateRevocationL
 	}
 }
 
-static bool r_pkcs7_parse_extendedcertificatesandcertificates(RPKCS7ExtendedCertificatesAndCertificates *ecac, RASN1Object *object) {
+static bool r_pkcs7_parse_extendedcertificatesandcertificates (RPKCS7ExtendedCertificatesAndCertificates *ecac, RASN1Object *object) {
 	ut32 i;
 	if (!ecac || !object) {
 		return false;
@@ -73,7 +73,7 @@ static bool r_pkcs7_parse_extendedcertificatesandcertificates(RPKCS7ExtendedCert
 	return true;
 }
 
-static void r_pkcs7_free_extendedcertificatesandcertificates(RPKCS7ExtendedCertificatesAndCertificates *ecac) {
+static void r_pkcs7_free_extendedcertificatesandcertificates (RPKCS7ExtendedCertificatesAndCertificates *ecac) {
 	ut32 i;
 	if (ecac) {
 		for (i = 0; i < ecac->length; i++) {
@@ -85,7 +85,7 @@ static void r_pkcs7_free_extendedcertificatesandcertificates(RPKCS7ExtendedCerti
 	}
 }
 
-static bool r_pkcs7_parse_digestalgorithmidentifier(RPKCS7DigestAlgorithmIdentifiers *dai, RASN1Object *object) {
+static bool r_pkcs7_parse_digestalgorithmidentifier (RPKCS7DigestAlgorithmIdentifiers *dai, RASN1Object *object) {
 	ut32 i;
 	if (!dai || !object) {
 		return false;
@@ -112,7 +112,7 @@ static bool r_pkcs7_parse_digestalgorithmidentifier(RPKCS7DigestAlgorithmIdentif
 	return true;
 }
 
-static void r_pkcs7_free_digestalgorithmidentifier(RPKCS7DigestAlgorithmIdentifiers *dai) {
+static void r_pkcs7_free_digestalgorithmidentifier (RPKCS7DigestAlgorithmIdentifiers *dai) {
 	ut32 i;
 	if (dai) {
 		for (i = 0; i < dai->length; i++) {
@@ -128,7 +128,7 @@ static void r_pkcs7_free_digestalgorithmidentifier(RPKCS7DigestAlgorithmIdentifi
 	}
 }
 
-static void r_pkcs7_free_contentinfo(RPKCS7ContentInfo *ci) {
+static void r_pkcs7_free_contentinfo (RPKCS7ContentInfo *ci) {
 	if (ci) {
 		r_asn1_free_binary (ci->content);
 		r_asn1_free_string (ci->contentType);
@@ -136,7 +136,7 @@ static void r_pkcs7_free_contentinfo(RPKCS7ContentInfo *ci) {
 	}
 }
 
-static bool r_pkcs7_parse_issuerandserialnumber(RPKCS7IssuerAndSerialNumber *iasu, RASN1Object *object) {
+static bool r_pkcs7_parse_issuerandserialnumber (RPKCS7IssuerAndSerialNumber *iasu, RASN1Object *object) {
 	if (!iasu || !object || object->list.length != 2) {
 		return false;
 	}
@@ -148,7 +148,7 @@ static bool r_pkcs7_parse_issuerandserialnumber(RPKCS7IssuerAndSerialNumber *ias
 	return true;
 }
 
-static void r_pkcs7_free_issuerandserialnumber(RPKCS7IssuerAndSerialNumber *iasu) {
+static void r_pkcs7_free_issuerandserialnumber (RPKCS7IssuerAndSerialNumber *iasu) {
 	if (iasu) {
 		r_x509_free_name (&iasu->issuer);
 		r_asn1_free_binary (iasu->serialNumber);
@@ -163,7 +163,7 @@ static void r_pkcs7_free_issuerandserialnumber(RPKCS7IssuerAndSerialNumber *iasu
 } RPKCS7SignerInfo;
  */
 
-static bool r_pkcs7_parse_signerinfo(RPKCS7SignerInfo *si, RASN1Object *object) {
+static bool r_pkcs7_parse_signerinfo (RPKCS7SignerInfo *si, RASN1Object *object) {
 	RASN1Object **elems;
 	ut32 shift = 3;
 	if (!si || !object || object->list.length < 5) {
@@ -198,7 +198,7 @@ static bool r_pkcs7_parse_signerinfo(RPKCS7SignerInfo *si, RASN1Object *object) 
 	return true;
 }
 
-static void r_pkcs7_free_attribute(RPKCS7Attribute *attribute) {
+static void r_pkcs7_free_attribute (RPKCS7Attribute *attribute) {
 	if (attribute) {
 		r_asn1_free_binary (attribute->data);
 		r_asn1_free_string (attribute->oid);
@@ -206,7 +206,7 @@ static void r_pkcs7_free_attribute(RPKCS7Attribute *attribute) {
 	}
 }
 
-static void r_pkcs7_free_attributes(RPKCS7Attributes *attributes) {
+static void r_pkcs7_free_attributes (RPKCS7Attributes *attributes) {
 	ut32 i;
 	if (attributes) {
 		for (i = 0; i < attributes->length; i++) {
@@ -217,7 +217,7 @@ static void r_pkcs7_free_attributes(RPKCS7Attributes *attributes) {
 	}
 }
 
-static void r_pkcs7_free_signerinfo(RPKCS7SignerInfo *si) {
+static void r_pkcs7_free_signerinfo (RPKCS7SignerInfo *si) {
 	if (si) {
 		r_pkcs7_free_issuerandserialnumber (&si->issuerAndSerialNumber);
 		r_x509_free_algorithmidentifier (&si->digestAlgorithm);
@@ -229,7 +229,7 @@ static void r_pkcs7_free_signerinfo(RPKCS7SignerInfo *si) {
 	}
 }
 
-static bool r_pkcs7_parse_signerinfos(RPKCS7SignerInfos *ss, RASN1Object *object) {
+static bool r_pkcs7_parse_signerinfos (RPKCS7SignerInfos *ss, RASN1Object *object) {
 	ut32 i;
 	if (!ss || !object) {
 		return false;
@@ -252,7 +252,7 @@ static bool r_pkcs7_parse_signerinfos(RPKCS7SignerInfos *ss, RASN1Object *object
 	return true;
 }
 
-static void r_pkcs7_free_signerinfos(RPKCS7SignerInfos *ss) {
+static void r_pkcs7_free_signerinfos (RPKCS7SignerInfos *ss) {
 	ut32 i;
 	if (ss) {
 		for (i = 0; i < ss->length; i++) {
@@ -264,7 +264,7 @@ static void r_pkcs7_free_signerinfos(RPKCS7SignerInfos *ss) {
 	}
 }
 
-static bool r_pkcs7_parse_signeddata(RPKCS7SignedData *sd, RASN1Object *object) {
+static bool r_pkcs7_parse_signeddata (RPKCS7SignedData *sd, RASN1Object *object) {
 	ut32 shift = 3;
 	if (!sd || !object || object->list.length < 4) {
 		return false;
@@ -293,7 +293,7 @@ static bool r_pkcs7_parse_signeddata(RPKCS7SignedData *sd, RASN1Object *object) 
 	return true;
 }
 
-static void r_pkcs7_free_signeddata(RPKCS7SignedData *sd) {
+static void r_pkcs7_free_signeddata (RPKCS7SignedData *sd) {
 	if (sd) {
 		r_pkcs7_free_digestalgorithmidentifier (&sd->digestAlgorithms);
 		r_pkcs7_free_contentinfo (&sd->contentInfo);
@@ -304,7 +304,7 @@ static void r_pkcs7_free_signeddata(RPKCS7SignedData *sd) {
 	}
 }
 
-R_API RCMS *r_pkcs7_parse_cms(const ut8 *buffer, ut32 length) {
+R_API RCMS *r_pkcs7_parse_cms (const ut8 *buffer, ut32 length) {
 	RASN1Object *object;
 	RCMS *container;
 	if (!buffer || !length) {
@@ -332,7 +332,7 @@ R_API RCMS *r_pkcs7_parse_cms(const ut8 *buffer, ut32 length) {
 	return container;
 }
 
-R_API void r_pkcs7_free_cms(RCMS *container) {
+R_API void r_pkcs7_free_cms (RCMS *container) {
 	if (container) {
 		r_asn1_free_string (container->contentType);
 		r_pkcs7_free_signeddata (&container->signedData);
@@ -340,7 +340,7 @@ R_API void r_pkcs7_free_cms(RCMS *container) {
 	}
 }
 
-static RPKCS7Attribute *r_pkcs7_parse_attribute(RASN1Object *object) {
+static RPKCS7Attribute *r_pkcs7_parse_attribute (RASN1Object *object) {
 	RPKCS7Attribute *attribute;
 	if (!object || object->list.length < 1) {
 		return NULL;
@@ -361,7 +361,7 @@ static RPKCS7Attribute *r_pkcs7_parse_attribute(RASN1Object *object) {
 	return attribute;
 }
 
-static bool r_pkcs7_parse_attributes(RPKCS7Attributes *attributes, RASN1Object *object) {
+static bool r_pkcs7_parse_attributes (RPKCS7Attributes *attributes, RASN1Object *object) {
 	ut32 i;
 	if (!attributes || !object || !object->list.length) {
 		return false;
@@ -412,7 +412,7 @@ static void r_pkcs7_signerinfos_dump(RX509CertificateRevocationList *crl, const 
 }
 #endif
 
-static void r_x509_signedinfo_dump(RPKCS7SignerInfo *si, const char *pad, RStrBuf *sb) {
+static void r_x509_signedinfo_dump (RPKCS7SignerInfo *si, const char *pad, RStrBuf *sb) {
 	RASN1String *s = NULL;
 	RASN1Binary *o = NULL;
 	ut32 i;
@@ -470,7 +470,7 @@ static void r_x509_signedinfo_dump(RPKCS7SignerInfo *si, const char *pad, RStrBu
 	free (pad3);
 }
 
-R_API char *r_pkcs7_cms_to_string(RCMS *container) {
+R_API char *r_pkcs7_cms_to_string (RCMS *container) {
 	ut32 i;
 	if (!container) {
 		return NULL;
@@ -511,7 +511,7 @@ R_API char *r_pkcs7_cms_to_string(RCMS *container) {
 	return r_strbuf_drain (sb);
 }
 
-R_API void r_x509_signedinfo_json(PJ *pj, RPKCS7SignerInfo *si) {
+R_API void r_x509_signedinfo_json (PJ *pj, RPKCS7SignerInfo *si) {
 	ut32 i;
 	if (si) {
 		pj_o (pj);
@@ -634,7 +634,7 @@ R_API PJ *r_pkcs7_cms_json (RCMS *container) {
 	return pj;
 }
 
-static bool r_pkcs7_parse_spcdata(SpcAttributeTypeAndOptionalValue *data, RASN1Object *object) {
+static bool r_pkcs7_parse_spcdata (SpcAttributeTypeAndOptionalValue *data, RASN1Object *object) {
 	if (!data || !object || object->list.length < 1 ||
 		!object->list.objects[0]) {
 		return false;
@@ -649,7 +649,7 @@ static bool r_pkcs7_parse_spcdata(SpcAttributeTypeAndOptionalValue *data, RASN1O
 	return true;
 }
 
-static bool r_pkcs7_parse_spcmessagedigest(SpcDigestInfo *messageDigest, RASN1Object *object) {
+static bool r_pkcs7_parse_spcmessagedigest (SpcDigestInfo *messageDigest, RASN1Object *object) {
 	if (!messageDigest || !object || object->list.length < 2 ||
 		!object->list.objects[0] || !object->list.objects[1]) {
 		return false;
@@ -660,7 +660,7 @@ static bool r_pkcs7_parse_spcmessagedigest(SpcDigestInfo *messageDigest, RASN1Ob
 	return true;
 }
 
-R_API SpcIndirectDataContent *r_pkcs7_parse_spcinfo(RCMS *cms) {
+R_API SpcIndirectDataContent *r_pkcs7_parse_spcinfo (RCMS *cms) {
 	if (!cms) {
 		return NULL;
 	}
@@ -692,21 +692,21 @@ R_API SpcIndirectDataContent *r_pkcs7_parse_spcinfo(RCMS *cms) {
 	return spcinfo;
 }
 
-static void r_pkcs7_free_spcdata(SpcAttributeTypeAndOptionalValue *data) {
+static void r_pkcs7_free_spcdata (SpcAttributeTypeAndOptionalValue *data) {
 	if (data) {
 		r_asn1_free_string (data->type);
 		r_asn1_free_binary (data->data);
 	}
 }
 
-static void r_pkcs7_free_spcmessagedigest(SpcDigestInfo *messageDigest) {
+static void r_pkcs7_free_spcmessagedigest (SpcDigestInfo *messageDigest) {
 	if (messageDigest) {
 		r_asn1_free_binary (messageDigest->digest);
 		r_x509_free_algorithmidentifier (&messageDigest->digestAlgorithm);
 	}
 }
 
-R_API void r_pkcs7_free_spcinfo(SpcIndirectDataContent *spcinfo) {
+R_API void r_pkcs7_free_spcinfo (SpcIndirectDataContent *spcinfo) {
 	if (spcinfo) {
 		r_pkcs7_free_spcdata (&spcinfo->data);
 		r_pkcs7_free_spcmessagedigest (&spcinfo->messageDigest);

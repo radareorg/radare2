@@ -3,11 +3,11 @@
 #include "qnx/qnx.h"
 #include "../i/private.h"
 
-static int lmf_header_load(lmf_header *lmfh, RBuffer *buf, Sdb *db) {
+static int lmf_header_load (lmf_header *lmfh, RBuffer *buf, Sdb *db) {
 	if (r_buf_size (buf) < sizeof (lmf_header)) {
 		return false;
 	}
-	if (r_buf_fread_at (buf, QNX_HEADER_ADDR, (ut8 *) lmfh, "iiiiiiiicccciiiicc", 1) < QNX_HDR_SIZE) {
+	if (r_buf_fread_at (buf, QNX_HEADER_ADDR, (ut8 *)lmfh, "iiiiiiiicccciiiicc", 1) < QNX_HDR_SIZE) {
 		return false;
 	}
 	sdb_set (db, "qnx.version", sdb_fmt ("0x%xH", lmfh->version), 0);
@@ -25,14 +25,14 @@ static int lmf_header_load(lmf_header *lmfh, RBuffer *buf, Sdb *db) {
 	return true;
 }
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer (RBuffer *buf) {
 	ut8 tmp[6];
 	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
 	return r == sizeof (tmp) && !memcmp (tmp, QNX_MAGIC, sizeof (tmp));
 }
 
 // Frees the bin_obj of the binary file
-static void destroy(RBinFile *bf) {
+static void destroy (RBinFile *bf) {
 	QnxObj *qo = bf->o->bin_obj;
 	r_list_free (qo->sections);
 	r_list_free (qo->fixups);
@@ -40,7 +40,7 @@ static void destroy(RBinFile *bf) {
 	free (qo);
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	QnxObj *qo = R_NEW0 (QnxObj);
 	if (!qo) {
 		return false;
@@ -91,7 +91,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 			ptr->vsize = lrec.data_nbytes - sizeof (lmf_resource);
 			ptr->size = ptr->vsize;
 			ptr->add = true;
-		 	r_list_append (sections, ptr);
+			r_list_append (sections, ptr);
 		} else if (lrec.rec_type == LMF_LOAD_REC) {
 			RBinSection *ptr = R_NEW0 (RBinSection);
 			if (r_buf_fread_at (bf->buf, offset, (ut8 *)&ldata, "si", 1) < sizeof (lmf_data)) {
@@ -106,7 +106,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 			ptr->vsize = lrec.data_nbytes - sizeof (lmf_data);
 			ptr->size = ptr->vsize;
 			ptr->add = true;
-		 	r_list_append (sections, ptr);
+			r_list_append (sections, ptr);
 		} else if (lrec.rec_type == LMF_FIXUP_REC) {
 			RBinReloc *ptr = R_NEW0 (RBinReloc);
 			if (!ptr || r_buf_fread_at (bf->buf, offset, (ut8 *)&ldata, "si", 1) < sizeof (lmf_data)) {
@@ -145,13 +145,13 @@ beach:
  * @param RBinFile to extract the data from
  * @return RBinInfo file with the info
  */
-static RBinInfo *info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
-	ret->file = bf->file? strdup (bf->file): NULL;
+	ret->file = bf->file ? strdup (bf->file) : NULL;
 	ret->type = strdup ("QNX Executable");
 	ret->bclass = strdup ("qnx");
 	ret->machine = strdup ("i386");
@@ -164,13 +164,13 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RList *relocs(RBinFile *bf) {
+static RList *relocs (RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o, NULL);
 	QnxObj *qo = bf->o->bin_obj;
 	return r_list_clone (qo->fixups);
 }
 
-static void header(RBinFile *bf) {
+static void header (RBinFile *bf) {
 	r_return_if_fail (bf && bf->o && bf->rbin);
 	QnxObj *bin = bf->o->bin_obj;
 	RBin *rbin = bf->rbin;
@@ -193,13 +193,13 @@ static void header(RBinFile *bf) {
 
 /*
  * No mention of symbols in the doc
- */ 
-static RList* symbols(RBinFile *bf) {
+ */
+static RList *symbols (RBinFile *bf) {
 	return NULL;
 }
 
-// Returns the sections 
-static RList* sections(RBinFile *bf) {
+// Returns the sections
+static RList *sections (RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o, NULL);
 	QnxObj *qo = bf->o->bin_obj;
 	return r_list_clone (qo->sections);
@@ -209,31 +209,31 @@ static RList* sections(RBinFile *bf) {
  * Returns the sdb
  * @param RBinFile
  * @return sdb of the bin_obj
- */ 
-static Sdb *get_sdb(RBinFile *bf) {
+ */
+static Sdb *get_sdb (RBinFile *bf) {
 	RBinObject *o = bf->o;
 	if (!o) {
 		return NULL;
 	}
 	QnxObj *qo = o->bin_obj;
-	return qo? qo->kv: NULL;
+	return qo ? qo->kv : NULL;
 }
 
 /* 
  * Returns the base address of the image from the binary header
  * @param RBinFile
  * @return image_base address
- */ 
-static ut64 baddr(RBinFile *bf) {
+ */
+static ut64 baddr (RBinFile *bf) {
 	QnxObj *qo = bf->o->bin_obj;
-	return qo? qo->lmfh.image_base: 0;
+	return qo ? qo->lmfh.image_base : 0;
 }
 
 /* 
  * Currently both physical and virtual address are set to 0
  * The memory map has different values for entry
  */
-static RList* entries(RBinFile *bf) { 
+static RList *entries (RBinFile *bf) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
 	QnxObj *qo = bf->o->bin_obj;
@@ -253,17 +253,17 @@ static RList* entries(RBinFile *bf) {
 /* 
  * @param RBinFile
  * @return signature of the binary
- */ 
-static char *signature(RBinFile *bf, bool json) {
- 	char buf[64];
- 	QnxObj *qo = bf->o->bin_obj;
-	return qo? r_str_dup (NULL, sdb_itoa (qo->rwend.signature, buf, 10)): NULL;	
+ */
+static char *signature (RBinFile *bf, bool json) {
+	char buf[64];
+	QnxObj *qo = bf->o->bin_obj;
+	return qo ? r_str_dup (NULL, sdb_itoa (qo->rwend.signature, buf, 10)) : NULL;
 }
 
 /* 
  * @return: returns the vaddr
- */ 
-static ut64 get_vaddr(RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
+ */
+static ut64 get_vaddr (RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	return vaddr;
 }
 

@@ -76,21 +76,21 @@ static struct {
 	{ NULL }
 };
 
-static int mips_r(ut8 *b, int op, int rs, int rt, int rd, int sa, int fun) {
-//^this will keep the below mips_r fuctions working
-// diff instructions use a diff arg order (add is rd, rs, rt - sll is rd, rt, sa - sllv is rd, rt, rs
-//static int mips_r (ut8 *b, int op, int rd, int rs, int rt, int sa, int fun) {
+static int mips_r (ut8 *b, int op, int rs, int rt, int rd, int sa, int fun) {
+	//^this will keep the below mips_r fuctions working
+	// diff instructions use a diff arg order (add is rd, rs, rt - sll is rd, rt, sa - sllv is rd, rt, rs
+	//static int mips_r (ut8 *b, int op, int rd, int rs, int rt, int sa, int fun) {
 	if (rs == -1 || rt == -1) {
 		return -1;
 	}
-	b[3] = ((op<<2)&0xfc) | ((rs>>3)&3); // 2
-	b[2] = (rs<<5) | (rt&0x1f); // 1
-	b[1] = ((rd<<3)&0xff) | (sa>>2); // 0
-	b[0] = (fun&0x3f) | ((sa&3)<<6);
+	b[3] = ((op << 2) & 0xfc) | ((rs >> 3) & 3); // 2
+	b[2] = (rs << 5) | (rt & 0x1f); // 1
+	b[1] = ((rd << 3) & 0xff) | (sa >> 2); // 0
+	b[0] = (fun & 0x3f) | ((sa & 3) << 6);
 	return 4;
 }
 
-static int mips_i(ut8 *b, int op, int rs, int rt, int imm, int is_branch) {
+static int mips_i (ut8 *b, int op, int rs, int rt, int imm, int is_branch) {
 	if (rs == -1 || rt == -1) {
 		return -1;
 	}
@@ -102,23 +102,23 @@ static int mips_i(ut8 *b, int op, int rs, int rt, int imm, int is_branch) {
 			imm = 0;
 		}
 	}
-	b[3] = ((op<<2)&0xfc) | ((rs>>3)&3);
-	b[2] = (rs<<5) | (rt);
-	b[1] = (imm>>8) &0xff;
+	b[3] = ((op << 2) & 0xfc) | ((rs >> 3) & 3);
+	b[2] = (rs << 5) | (rt);
+	b[1] = (imm >> 8) & 0xff;
 	b[0] = imm & 0xff;
 	return 4;
 }
 
-static int mips_j(ut8 *b, int op, int addr) {
+static int mips_j (ut8 *b, int op, int addr) {
 	addr /= 4;
-	b[3] = ((op<<2)&0xfc) | ((addr>>24)&3);
-	b[2] = (addr>>16)&0xff;
-	b[1] = (addr>>8) &0xff;
+	b[3] = ((op << 2) & 0xfc) | ((addr >> 24) & 3);
+	b[2] = (addr >> 16) & 0xff;
+	b[1] = (addr >> 8) & 0xff;
 	b[0] = addr & 0xff;
 	return 4;
 }
 
-static int getreg(const char *p) {
+static int getreg (const char *p) {
 	int n;
 	if (!p || !*p) {
 		eprintf ("Missing argument\n");
@@ -132,10 +132,10 @@ static int getreg(const char *p) {
 	}
 	/* try to convert it into a number */
 	if (p[0] == '-') {
-		n = (int) r_num_get (NULL, &p[1]);
+		n = (int)r_num_get (NULL, &p[1]);
 		n = -n;
 	} else {
-		n = (int) r_num_get (NULL, p);
+		n = (int)r_num_get (NULL, p);
 	}
 	if (n != 0 || p[0] == '0') {
 		return n;
@@ -144,7 +144,7 @@ static int getreg(const char *p) {
 	return -1;
 }
 
-R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
+R_IPI int mips_assemble (const char *str, ut64 pc, ut8 *out) {
 	int i, hasp, is_branch;
 	char *s = strdup (str);
 	char w0[32], w1[32], w2[32], w3[32];
@@ -152,7 +152,7 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 	hasp = r_str_replace_char (s, '(', ' ');
 	r_str_replace_char (s, ')', ' ');
 	*out = 0;
-	*w0=*w1=*w2=*w3=0;
+	*w0 = *w1 = *w2 = *w3 = 0;
 
 	if (!strncmp (s, "jalr", 4) && !strchr (s, ',')) {
 		char opstr[32];

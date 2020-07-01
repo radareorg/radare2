@@ -49,7 +49,7 @@ static const char *i4004_f[16] = {
 };
 
 static int i4004_get_ins_len (ut8 hex) {
-	ut8 high = (hex & 0xf0)>>4;
+	ut8 high = (hex & 0xf0) >> 4;
 	int ret = i4004_ins_len[high];
 	if (ret == 3)
 		ret = (hex & 1) ? 1 : 2;
@@ -61,11 +61,11 @@ static int i4004dis (RAsmOp *op, const ut8 *buf, int len) {
 	ut8 high = (*buf & 0xf0) >> 4;
 	ut8 low = (*buf & 0xf);
 	const char *buf_asm = "invalid";
-	if (rlen > len)	{
+	if (rlen > len) {
 		return op->size = 0;
 	}
 	switch (high) {
-	case 0: buf_asm = low? "invalid": "nop"; break;
+	case 0: buf_asm = low ? "invalid" : "nop"; break;
 	case 1: buf_asm = sdb_fmt ("jcn %d 0x%02x", low, buf[1]); break;
 	case 2:
 		if (rlen == 1) {
@@ -81,8 +81,8 @@ static int i4004dis (RAsmOp *op, const ut8 *buf, int len) {
 			buf_asm = sdb_fmt ("fin r%d", (low & 0xe));
 		}
 		break;
-	case 4: buf_asm = sdb_fmt ("jun 0x%03x", ((ut16)(low<<8) | buf[1])); break;
-	case 5: buf_asm = sdb_fmt ("jms 0x%03x", ((ut16)(low<<8) | buf[1])); break;
+	case 4: buf_asm = sdb_fmt ("jun 0x%03x", ((ut16) (low << 8) | buf[1])); break;
+	case 5: buf_asm = sdb_fmt ("jms 0x%03x", ((ut16) (low << 8) | buf[1])); break;
 	case 6: buf_asm = sdb_fmt ("inc r%d", low); break;
 	case 7: buf_asm = sdb_fmt ("isz r%d, 0x%02x", low, buf[1]); break;
 	case 8: buf_asm = sdb_fmt ("add r%d", low); break;

@@ -20,12 +20,12 @@
 
 static WindCtx *wctx = NULL;
 
-static int r_debug_windbg_step(RDebug *dbg) {
+static int r_debug_windbg_step (RDebug *dbg) {
 	return true;
 }
 
-static int r_debug_windbg_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
-	int ret = windbg_read_reg(wctx, buf, size);
+static int r_debug_windbg_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
+	int ret = windbg_read_reg (wctx, buf, size);
 	if (!ret || size != ret) {
 		return -1;
 	}
@@ -34,7 +34,7 @@ static int r_debug_windbg_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	return 0;
 }
 
-static int r_debug_windbg_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
+static int r_debug_windbg_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 	if (!dbg->reg) {
 		return false;
 	}
@@ -49,11 +49,11 @@ static int r_debug_windbg_reg_write(RDebug *dbg, int type, const ut8 *buf, int s
 	return ret;
 }
 
-static int r_debug_windbg_continue(RDebug *dbg, int pid, int tid, int sig) {
-	return windbg_continue(wctx);
+static int r_debug_windbg_continue (RDebug *dbg, int pid, int tid, int sig) {
+	return windbg_continue (wctx);
 }
 
-static RDebugReasonType r_debug_windbg_wait(RDebug *dbg, int pid) {
+static RDebugReasonType r_debug_windbg_wait (RDebug *dbg, int pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
 	kd_packet_t *pkt = NULL;
 	kd_stc_64 *stc;
@@ -66,7 +66,7 @@ static RDebugReasonType r_debug_windbg_wait(RDebug *dbg, int pid) {
 			reason = R_DEBUG_REASON_ERROR;
 			break;
 		}
-		stc = (kd_stc_64 *) pkt->data;
+		stc = (kd_stc_64 *)pkt->data;
 		dbg->reason.addr = stc->pc;
 		dbg->reason.tid = stc->kthread;
 		dbg->reason.signum = stc->state;
@@ -87,7 +87,7 @@ static RDebugReasonType r_debug_windbg_wait(RDebug *dbg, int pid) {
 	return reason;
 }
 
-static int r_debug_windbg_attach(RDebug *dbg, int pid) {
+static int r_debug_windbg_attach (RDebug *dbg, int pid) {
 	RIODesc *desc = dbg->iob.io->desc;
 
 	if (!desc || !desc->plugin || !desc->plugin->name || !desc->data) {
@@ -117,12 +117,12 @@ static int r_debug_windbg_attach(RDebug *dbg, int pid) {
 	return true;
 }
 
-static int r_debug_windbg_detach(RDebug *dbg, int pid) {
+static int r_debug_windbg_detach (RDebug *dbg, int pid) {
 	eprintf ("Detaching...\n");
 	return true;
 }
 
-static char *r_debug_windbg_reg_profile(RDebug *dbg) {
+static char *r_debug_windbg_reg_profile (RDebug *dbg) {
 	if (!dbg) {
 		return NULL;
 	}
@@ -138,7 +138,7 @@ static char *r_debug_windbg_reg_profile(RDebug *dbg) {
 	return NULL;
 }
 
-static int r_debug_windbg_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
+static int r_debug_windbg_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	int *tag;
 	if (!b) {
 		return false;
@@ -154,11 +154,11 @@ static int r_debug_windbg_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool s
 	return windbg_bkpt (wctx, b->addr, set, b->hw, tag);
 }
 
-static int r_debug_windbg_init(RDebug *dbg) {
+static int r_debug_windbg_init (RDebug *dbg) {
 	return true;
 }
 
-static RList *r_debug_windbg_pids(RDebug *dbg, int pid) {
+static RList *r_debug_windbg_pids (RDebug *dbg, int pid) {
 	RListIter *it;
 	WindProc *p;
 
@@ -167,7 +167,7 @@ static RList *r_debug_windbg_pids(RDebug *dbg, int pid) {
 		return NULL;
 	}
 
-	RList *pids = windbg_list_process(wctx);
+	RList *pids = windbg_list_process (wctx);
 	if (!pids) {
 		return ret;
 	}
@@ -187,7 +187,7 @@ static RList *r_debug_windbg_pids(RDebug *dbg, int pid) {
 	return ret;
 }
 
-static int r_debug_windbg_select(RDebug *dbg, int pid, int tid) {
+static int r_debug_windbg_select (RDebug *dbg, int pid, int tid) {
 	ut32 old = windbg_get_target (wctx);
 	int ret = windbg_set_target (wctx, pid);
 	if (!ret) {
@@ -198,11 +198,11 @@ static int r_debug_windbg_select(RDebug *dbg, int pid, int tid) {
 		windbg_set_target (wctx, old);
 		return false;
 	}
-	eprintf ("Process base is 0x%"PFMT64x"\n", base);
+	eprintf ("Process base is 0x%" PFMT64x "\n", base);
 	return true;
 }
 
-static RList *r_debug_windbg_threads(RDebug *dbg, int pid) {
+static RList *r_debug_windbg_threads (RDebug *dbg, int pid) {
 	RListIter *it;
 	WindThread *t;
 
@@ -232,7 +232,7 @@ static RList *r_debug_windbg_threads(RDebug *dbg, int pid) {
 	return ret;
 }
 
-static RList *r_debug_windbg_modules(RDebug *dbg) {
+static RList *r_debug_windbg_modules (RDebug *dbg) {
 	RListIter *it;
 	WindModule *m;
 

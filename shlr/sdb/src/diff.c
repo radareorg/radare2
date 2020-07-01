@@ -2,23 +2,24 @@
 
 #include "sdb.h"
 
-SDB_API int sdb_diff_format(char *str, int size, const SdbDiff *diff) {
+SDB_API int sdb_diff_format (char *str, int size, const SdbDiff *diff) {
 	int r = 0;
-#define APPENDF(...) do { \
-		int sr = snprintf (str, size, __VA_ARGS__); \
-		if (sr < 0) { \
-			return sr; \
-		} \
-		r += sr; \
-		if (sr >= size) { \
+#define APPENDF(...)                                                  \
+	do {                                                          \
+		int sr = snprintf (str, size, __VA_ARGS__);           \
+		if (sr < 0) {                                         \
+			return sr;                                    \
+		}                                                     \
+		r += sr;                                              \
+		if (sr >= size) {                                     \
 			/* no space left, only measure from now on */ \
-			str = NULL; \
-			size = 0; \
-		} else { \
-			str += sr; \
-			size -= sr; \
-		} \
-	} while(0)
+			str = NULL;                                   \
+			size = 0;                                     \
+		} else {                                              \
+			str += sr;                                    \
+			size -= sr;                                   \
+		}                                                     \
+	} while (0)
 
 	APPENDF ("%c%s ", diff->add ? '+' : '-', diff->v ? "  " : "NS");
 
@@ -47,23 +48,23 @@ typedef struct sdb_diff_ctx_t {
 	void *cb_user;
 } SdbDiffCtx;
 
-#define DIFF(ctx, c, ret) do { \
-	(ctx)->equal = false; \
-	if ((ctx)->cb) { \
-		c \
-	} else { \
-		/* we already know it's not equal and don't care about the rest of the diff */ \
-		return ret; \
-	} \
-} while(0)
+#define DIFF(ctx, c, ret)                                                                              \
+	do {                                                                                           \
+		(ctx)->equal = false;                                                                  \
+		if ((ctx)->cb) {                                                                       \
+			c                                                                              \
+		} else {                                                                               \
+			/* we already know it's not equal and don't care about the rest of the diff */ \
+			return ret;                                                                    \
+		}                                                                                      \
+	} while (0)
 
-
-static void sdb_diff_report_ns(SdbDiffCtx *ctx, SdbNs *ns, bool add) {
+static void sdb_diff_report_ns (SdbDiffCtx *ctx, SdbNs *ns, bool add) {
 	SdbDiff diff = { ctx->path, ns->name, NULL, add };
 	ctx->cb (&diff, ctx->cb_user);
 }
 
-static void sdb_diff_report_kv(SdbDiffCtx *ctx, const char *k, const char *v, bool add) {
+static void sdb_diff_report_kv (SdbDiffCtx *ctx, const char *k, const char *v, bool add) {
 	SdbDiff diff = { ctx->path, k, v, add };
 	ctx->cb (&diff, ctx->cb_user);
 }
@@ -73,7 +74,7 @@ typedef struct sdb_diff_kv_cb_ctx {
 	bool add;
 } SdbDiffKVCbCtx;
 
-static bool sdb_diff_report_kv_cb(void *user, const char *k, const char *v) {
+static bool sdb_diff_report_kv_cb (void *user, const char *k, const char *v) {
 	const SdbDiffKVCbCtx *ctx = user;
 	sdb_diff_report_kv (ctx->ctx, k, v, ctx->add);
 	return true;
@@ -82,7 +83,7 @@ static bool sdb_diff_report_kv_cb(void *user, const char *k, const char *v) {
 /**
  * just report everything from sdb to buf with prefix
  */
-static void sdb_diff_report(SdbDiffCtx *ctx, Sdb *sdb, bool add) {
+static void sdb_diff_report (SdbDiffCtx *ctx, Sdb *sdb, bool add) {
 	SdbListIter *it;
 	SdbNs *ns;
 	ls_foreach (sdb->ns, it, ns) {
@@ -95,24 +96,24 @@ static void sdb_diff_report(SdbDiffCtx *ctx, Sdb *sdb, bool add) {
 	sdb_foreach (sdb, sdb_diff_report_kv_cb, &cb_ctx);
 }
 
-static bool sdb_diff_kv_cb(void *user, const char *k, const char *v) {
+static bool sdb_diff_kv_cb (void *user, const char *k, const char *v) {
 	const SdbDiffKVCbCtx *ctx = user;
 	Sdb *other = ctx->add ? ctx->ctx->a : ctx->ctx->b;
 	const char *other_val = sdb_const_get (other, k, NULL);
 	if (!other_val || !*other_val) {
 		DIFF (ctx->ctx,
 			sdb_diff_report_kv (ctx->ctx, k, v, ctx->add);
-		, false);
+			, false);
 	} else if (!ctx->add && strcmp (v, other_val) != 0) {
 		DIFF (ctx->ctx,
 			sdb_diff_report_kv (ctx->ctx, k, v, false);
 			sdb_diff_report_kv (ctx->ctx, k, other_val, true);
-		, false);
+			, false);
 	}
 	return true;
 }
 
-static void sdb_diff_ctx(SdbDiffCtx *ctx) {
+static void sdb_diff_ctx (SdbDiffCtx *ctx) {
 	SdbListIter *it;
 	SdbNs *ns;
 	ls_foreach (ctx->a->ns, it, ns) {
@@ -123,7 +124,7 @@ static void sdb_diff_ctx(SdbDiffCtx *ctx) {
 				ls_push (ctx->path, ns->name);
 				sdb_diff_report (ctx, ns->sdb, false);
 				ls_pop (ctx->path);
-			,);
+				, );
 			continue;
 		}
 		Sdb *a = ctx->a;
@@ -143,7 +144,7 @@ static void sdb_diff_ctx(SdbDiffCtx *ctx) {
 				ls_push (ctx->path, ns->name);
 				sdb_diff_report (ctx, ns->sdb, true);
 				ls_pop (ctx->path);
-			,);
+				, );
 		}
 	}
 	SdbDiffKVCbCtx kv_ctx = { ctx, false };
@@ -154,7 +155,7 @@ static void sdb_diff_ctx(SdbDiffCtx *ctx) {
 	sdb_foreach (ctx->b, sdb_diff_kv_cb, &kv_ctx);
 }
 
-SDB_API bool sdb_diff(Sdb *a, Sdb *b, SdbDiffCallback cb, void *cb_user) {
+SDB_API bool sdb_diff (Sdb *a, Sdb *b, SdbDiffCallback cb, void *cb_user) {
 	SdbDiffCtx ctx;
 	ctx.a = a;
 	ctx.b = b;

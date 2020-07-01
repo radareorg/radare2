@@ -19,7 +19,7 @@ static const char *help_msg_lparen[] = {
 	NULL
 };
 
-static void cmd_macro_init(RCore *core, RCmdDesc *parent) {
+static void cmd_macro_init (RCore *core, RCmdDesc *parent) {
 	RCmdDescriptor *d = R_NEW0 (RCmdDescriptor);
 	if (d) {
 		d->cmd = "(";
@@ -28,9 +28,9 @@ static void cmd_macro_init(RCore *core, RCmdDesc *parent) {
 	}
 }
 
-static int cmd_macro(void *data, const char *input) {
+static int cmd_macro (void *data, const char *input) {
 	char *buf = NULL;
-	RCore *core = (RCore*)data;
+	RCore *core = (RCore *)data;
 
 	switch (*input) {
 	case ')':
@@ -63,14 +63,14 @@ static int cmd_macro(void *data, const char *input) {
 				break;
 			case ')':
 				j--;
-				if (buf[i+1] =='(') {
+				if (buf[i + 1] == '(') {
 					buf[i + 1] = 0;
 					mustcall = i + 2;
 				}
 				break;
 			}
 		}
-		buf[strlen (buf) - 1]=0;
+		buf[strlen (buf) - 1] = 0;
 		r_cmd_macro_add (&core->rcmd->macro, buf);
 		if (mustcall) {
 			char *comma = strchr (buf, ' ');
@@ -86,7 +86,7 @@ static int cmd_macro(void *data, const char *input) {
 			}
 		}
 		free (buf);
-		} break;
+	} break;
 	}
 	return 0;
 }

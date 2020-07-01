@@ -6,10 +6,10 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
-static int chip8_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static int chip8_anop (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	ut16 opcode = r_read_be16 (data);
-//	uint8_t x = (opcode >> 8) & 0x0F;
-//	uint8_t y = (opcode >> 4) & 0x0F;
+	//	uint8_t x = (opcode >> 8) & 0x0F;
+	//	uint8_t y = (opcode >> 4) & 0x0F;
 	uint8_t nibble = opcode & 0x0F;
 	uint16_t nnn = opcode & 0x0FFF;
 	uint8_t kk = opcode & 0xFF;

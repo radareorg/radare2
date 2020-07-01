@@ -5,26 +5,27 @@
 
 #ifndef HAVE_EPRINTF
 #include <stdio.h>
-#define eprintf(...) { fprintf(stderr,##__VA_ARGS__); }
+#define eprintf(...) \
+	{ fprintf (stderr, ##__VA_ARGS__); }
 #define HAVE_EPRINTF 1
 #endif
 
 enum {
-    E_OK = 0,
-    E_TIMEOUT = -1,
-    E_ERROR = -2,
-    E_NOIF = -3,
+	E_OK = 0,
+	E_TIMEOUT = -1,
+	E_ERROR = -2,
+	E_NOIF = -3,
 };
 
 typedef struct io_backend_t {
-    const char *name;
-    int (* init)(void);
-    int (* deinit)(void);
-    void *(* open)(const char *path);
-    int (* close)(void *);
-    int (* config)(void *, void *);
-    int (* read)(void *, uint8_t *buf, const uint64_t count, const int timeout);
-    int (* write)(void *, const uint8_t *buf, const uint64_t count, const int timeout);
+	const char *name;
+	int (*init) (void);
+	int (*deinit) (void);
+	void *(*open) (const char *path);
+	int (*close) (void *);
+	int (*config) (void *, void *);
+	int (*read) (void *, uint8_t *buf, const uint64_t count, const int timeout);
+	int (*write) (void *, const uint8_t *buf, const uint64_t count, const int timeout);
 } io_backend_t;
 
 int iob_select (const char *name);

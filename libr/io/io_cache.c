@@ -5,14 +5,14 @@
 #include "r_io.h"
 
 #if 0
-#define CACHE_CONTAINER(x) container_of ((RBNode*)x, RCache, rb)
+#define CACHE_CONTAINER(x) container_of ((RBNode *)x, RCache, rb)
 
 static void _fcn_tree_calc_max_addr(RBNode *node) {
 	RIOCache *c = CACHE_CONTAINER (node);
 }
 #endif // 0
 
-static void cache_item_free(RIOCache *cache) {
+static void cache_item_free (RIOCache *cache) {
 	if (!cache) {
 		return;
 	}
@@ -21,7 +21,7 @@ static void cache_item_free(RIOCache *cache) {
 	free (cache);
 }
 
-R_API bool r_io_cache_at(RIO *io, ut64 addr) {
+R_API bool r_io_cache_at (RIO *io, ut64 addr) {
 	RIOCache *c;
 	RListIter *iter;
 	r_list_foreach (io->cache, iter, c) {
@@ -32,7 +32,7 @@ R_API bool r_io_cache_at(RIO *io, ut64 addr) {
 	return false;
 }
 
-R_API void r_io_cache_init(RIO *io) {
+R_API void r_io_cache_init (RIO *io) {
 	io->cache = r_list_newf ((RListFree)cache_item_free);
 	io->buffer = r_cache_new ();
 	io->cached = 0;
@@ -46,10 +46,10 @@ R_API void r_io_cache_fini (RIO *io) {
 	io->cached = 0;
 }
 
-R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to) {
+R_API void r_io_cache_commit (RIO *io, ut64 from, ut64 to) {
 	RListIter *iter;
 	RIOCache *c;
-	RInterval range = (RInterval){from, to - from};
+	RInterval range = (RInterval){ from, to - from };
 	r_list_foreach (io->cache, iter, c) {
 		// if (from <= c->to - 1 && c->from <= to - 1) {
 		if (r_itv_overlap (c->itv, range)) {
@@ -58,7 +58,7 @@ R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to) {
 			if (r_io_write_at (io, r_itv_begin (c->itv), c->data, r_itv_size (c->itv))) {
 				c->written = true;
 			} else {
-				eprintf ("Error writing change at 0x%08"PFMT64x"\n", r_itv_begin (c->itv));
+				eprintf ("Error writing change at 0x%08" PFMT64x "\n", r_itv_begin (c->itv));
 			}
 			io->cached = cached;
 			// break; // XXX old behavior, revisit this
@@ -66,16 +66,16 @@ R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to) {
 	}
 }
 
-R_API void r_io_cache_reset(RIO *io, int set) {
+R_API void r_io_cache_reset (RIO *io, int set) {
 	io->cached = set;
 	r_list_purge (io->cache);
 }
 
-R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
+R_API int r_io_cache_invalidate (RIO *io, ut64 from, ut64 to) {
 	int invalidated = 0;
 	RListIter *iter, *tmp;
 	RIOCache *c;
-	RInterval range = (RInterval){from, to - from};
+	RInterval range = (RInterval){ from, to - from };
 	r_list_foreach_prev_safe (io->cache, iter, tmp, c) {
 		if (r_itv_overlap (c->itv, range)) {
 			int cached = io->cached;
@@ -90,7 +90,7 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
 	return invalidated;
 }
 
-R_API int r_io_cache_list(RIO *io, int rad) {
+R_API int r_io_cache_list (RIO *io, int rad) {
 	int i, j = 0;
 	RListIter *iter;
 	RIOCache *c;
@@ -102,29 +102,28 @@ R_API int r_io_cache_list(RIO *io, int rad) {
 		if (rad == 1) {
 			io->cb_printf ("wx ");
 			for (i = 0; i < dataSize; i++) {
-				io->cb_printf ("%02x", (ut8)(c->data[i] & 0xff));
+				io->cb_printf ("%02x", (ut8) (c->data[i] & 0xff));
 			}
-			io->cb_printf (" @ 0x%08"PFMT64x, r_itv_begin (c->itv));
+			io->cb_printf (" @ 0x%08" PFMT64x, r_itv_begin (c->itv));
 			io->cb_printf (" # replaces: ");
-		  	for (i = 0; i < dataSize; i++) {
-				io->cb_printf ("%02x", (ut8)(c->odata[i] & 0xff));
+			for (i = 0; i < dataSize; i++) {
+				io->cb_printf ("%02x", (ut8) (c->odata[i] & 0xff));
 			}
 			io->cb_printf ("\n");
 		} else if (rad == 2) {
-			io->cb_printf ("{\"idx\":%"PFMT64d",\"addr\":%"PFMT64d",\"size\":%d,",
+			io->cb_printf ("{\"idx\":%" PFMT64d ",\"addr\":%" PFMT64d ",\"size\":%d,",
 				j, r_itv_begin (c->itv), dataSize);
 			io->cb_printf ("\"before\":\"");
-		  	for (i = 0; i < dataSize; i++) {
+			for (i = 0; i < dataSize; i++) {
 				io->cb_printf ("%02x", c->odata[i]);
 			}
 			io->cb_printf ("\",\"after\":\"");
-		  	for (i = 0; i < dataSize; i++) {
+			for (i = 0; i < dataSize; i++) {
 				io->cb_printf ("%02x", c->data[i]);
 			}
-			io->cb_printf ("\",\"written\":%s}%s", c->written
-				? "true": "false", iter->n? ",": "");
+			io->cb_printf ("\",\"written\":%s}%s", c->written ? "true" : "false", iter->n ? "," : "");
 		} else if (rad == 0) {
-			io->cb_printf ("idx=%d addr=0x%08"PFMT64x" size=%d ", j, r_itv_begin (c->itv), dataSize);
+			io->cb_printf ("idx=%d addr=0x%08" PFMT64x " size=%d ", j, r_itv_begin (c->itv), dataSize);
 			for (i = 0; i < dataSize; i++) {
 				io->cb_printf ("%02x", c->odata[i]);
 			}
@@ -132,7 +131,7 @@ R_API int r_io_cache_list(RIO *io, int rad) {
 			for (i = 0; i < dataSize; i++) {
 				io->cb_printf ("%02x", c->data[i]);
 			}
-			io->cb_printf (" %s\n", c->written? "(written)": "(not written)");
+			io->cb_printf (" %s\n", c->written ? "(written)" : "(not written)");
 		}
 		j++;
 	}
@@ -142,19 +141,19 @@ R_API int r_io_cache_list(RIO *io, int rad) {
 	return false;
 }
 
-R_API bool r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
+R_API bool r_io_cache_write (RIO *io, ut64 addr, const ut8 *buf, int len) {
 	RIOCache *ch;
 	ch = R_NEW0 (RIOCache);
 	if (!ch) {
 		return false;
 	}
-	ch->itv = (RInterval){addr, len};
-	ch->odata = (ut8*)calloc (1, len + 1);
+	ch->itv = (RInterval){ addr, len };
+	ch->odata = (ut8 *)calloc (1, len + 1);
 	if (!ch->odata) {
 		free (ch);
 		return false;
 	}
-	ch->data = (ut8*)calloc (1, len + 1);
+	ch->data = (ut8 *)calloc (1, len + 1);
 	if (!ch->data) {
 		free (ch->odata);
 		free (ch);
@@ -172,7 +171,7 @@ R_API bool r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 	return true;
 }
 
-R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
+R_API bool r_io_cache_read (RIO *io, ut64 addr, ut8 *buf, int len) {
 	bool covered = false;
 	RListIter *iter;
 	RIOCache *c;

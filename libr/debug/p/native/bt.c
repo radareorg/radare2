@@ -6,7 +6,7 @@
 #include "bt/generic-x64.c"
 #include "bt/fuzzy-all.c"
 
-typedef RList* (*RDebugFrameCallback)(RDebug *dbg, ut64 at);
+typedef RList *(*RDebugFrameCallback) (RDebug *dbg, ut64 at);
 
 static void prepend_current_pc (RDebug *dbg, RList *list) {
 	RDebugFrame *frame;
@@ -23,7 +23,6 @@ static void prepend_current_pc (RDebug *dbg, RList *list) {
 	}
 }
 
-
 #if HAVE_PTRACE
 struct frames_proxy_args {
 	RDebugFrameCallback cb;
@@ -31,7 +30,7 @@ struct frames_proxy_args {
 	ut64 at;
 };
 
-static void *backtrace_proxy(void *user) {
+static void *backtrace_proxy (void *user) {
 	struct frames_proxy_args *args = user;
 	if (args->cb) {
 		return args->cb (args->dbg, args->at);
@@ -40,7 +39,7 @@ static void *backtrace_proxy(void *user) {
 }
 #endif
 
-static RList *r_debug_native_frames(RDebug *dbg, ut64 at) {
+static RList *r_debug_native_frames (RDebug *dbg, ut64 at) {
 	RDebugFrameCallback cb = NULL;
 	if (dbg->btalgo) {
 		if (!strcmp (dbg->btalgo, "fuzzy")) {

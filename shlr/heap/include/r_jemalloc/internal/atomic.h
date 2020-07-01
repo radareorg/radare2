@@ -9,11 +9,11 @@
 /******************************************************************************/
 #ifdef JEMALLOC_H_EXTERNS
 
-#define	atomic_read_uint64(p)	atomic_add_uint64(p, 0)
-#define	atomic_read_uint32(p)	atomic_add_uint32(p, 0)
-#define	atomic_read_p(p)	atomic_add_p(p, NULL)
-#define	atomic_read_z(p)	atomic_add_z(p, 0)
-#define	atomic_read_u(p)	atomic_add_u(p, 0)
+#define atomic_read_uint64(p) atomic_add_uint64 (p, 0)
+#define atomic_read_uint32(p) atomic_add_uint32 (p, 0)
+#define atomic_read_p(p) atomic_add_p (p, NULL)
+#define atomic_read_z(p) atomic_add_z (p, 0)
+#define atomic_read_u(p) atomic_add_u (p, 0)
 
 #endif /* JEMALLOC_H_EXTERNS */
 /******************************************************************************/
@@ -67,20 +67,17 @@ void	atomic_write_u(unsigned *p, unsigned x);
 
 #if 1
 JEMALLOC_INLINE uint64_t
-atomic_add_uint64(uint64_t *p, uint64_t x)
-{
+atomic_add_uint64 (uint64_t *p, uint64_t x) {
 	return *p += x;
 }
 
 JEMALLOC_INLINE uint64_t
-atomic_sub_uint64(uint64_t *p, uint64_t x)
-{
+atomic_sub_uint64 (uint64_t *p, uint64_t x) {
 	return *p -= x;
 }
 
 JEMALLOC_INLINE bool
-atomic_cas_uint64(uint64_t *p, uint64_t c, uint64_t s)
-{
+atomic_cas_uint64 (uint64_t *p, uint64_t c, uint64_t s) {
 	if (*p == c) {
 		*p = s;
 		return true;
@@ -89,12 +86,11 @@ atomic_cas_uint64(uint64_t *p, uint64_t c, uint64_t s)
 }
 
 JEMALLOC_INLINE void
-atomic_write_uint64(uint64_t *p, uint64_t x)
-{
+atomic_write_uint64 (uint64_t *p, uint64_t x) {
 	uint64_t o;
 	do {
-		o = atomic_read_uint64(p);
-	} while (atomic_cas_uint64(p, o, x));
+		o = atomic_read_uint64 (p);
+	} while (atomic_cas_uint64 (p, o, x));
 }
 
 #endif
@@ -103,20 +99,17 @@ atomic_write_uint64(uint64_t *p, uint64_t x)
 /* 32-bit operations. */
 #if 1
 JEMALLOC_INLINE uint32_t
-atomic_add_uint32(uint32_t *p, uint32_t x)
-{
+atomic_add_uint32 (uint32_t *p, uint32_t x) {
 	return *p += x;
 }
 
 JEMALLOC_INLINE uint32_t
-atomic_sub_uint32(uint32_t *p, uint32_t x)
-{
+atomic_sub_uint32 (uint32_t *p, uint32_t x) {
 	return *p -= x;
 }
 
 JEMALLOC_INLINE bool
-atomic_cas_uint32(uint32_t *p, uint32_t c, uint32_t s)
-{
+atomic_cas_uint32 (uint32_t *p, uint32_t c, uint32_t s) {
 	if (*p == c) {
 		*p = s;
 		return true;
@@ -125,8 +118,7 @@ atomic_cas_uint32(uint32_t *p, uint32_t c, uint32_t s)
 }
 
 JEMALLOC_INLINE void
-atomic_write_uint32(uint32_t *p, uint32_t x)
-{
+atomic_write_uint32 (uint32_t *p, uint32_t x) {
 	*p = x;
 }
 #endif
@@ -134,12 +126,11 @@ atomic_write_uint32(uint32_t *p, uint32_t x)
 /******************************************************************************/
 /* Pointer operations. */
 JEMALLOC_INLINE void *
-atomic_add_p(void **p, void *x)
-{
+atomic_add_p (void **p, void *x) {
 	if (sizeof (*p) == 8) {
-		return ((void *)(size_t)atomic_add_uint64((uint64_t *)p, (uint64_t)(size_t)x));
+		return ((void *)(size_t)atomic_add_uint64 ((uint64_t *)p, (uint64_t) (size_t)x));
 	}
-	return ((void *)(size_t)atomic_add_uint32((uint32_t *)(size_t)p, (uint32_t)(size_t)x));
+	return ((void *)(size_t)atomic_add_uint32 ((uint32_t *)(size_t)p, (uint32_t) (size_t)x));
 }
 
 #if 0
@@ -170,46 +161,41 @@ atomic_cas_p(void **p, void *c, void *s)
 #endif
 
 JEMALLOC_INLINE void
-atomic_write_p(void **p, const void *x)
-{
+atomic_write_p (void **p, const void *x) {
 
 #if (LG_SIZEOF_PTR == 3)
-	atomic_write_uint64((uint64_t *)p, (uint64_t)(size_t)x);
+	atomic_write_uint64 ((uint64_t *)p, (uint64_t) (size_t)x);
 #elif (LG_SIZEOF_PTR == 2)
-	atomic_write_uint32((uint32_t *)p, (uint32_t)(size_t)x);
+	atomic_write_uint32 ((uint32_t *)p, (uint32_t) (size_t)x);
 #endif
 }
 
 /******************************************************************************/
 /* size_t operations. */
 JEMALLOC_INLINE size_t
-atomic_add_z(size_t *p, size_t x)
-{
+atomic_add_z (size_t *p, size_t x) {
 	if (sizeof (*p) == 8) {
-		return ((size_t)atomic_add_uint64((uint64_t *)p, (uint64_t)x));
+		return ((size_t)atomic_add_uint64 ((uint64_t *)p, (uint64_t)x));
 	}
-	return ((size_t)atomic_add_uint32((uint32_t *)p, (uint32_t)x));
+	return ((size_t)atomic_add_uint32 ((uint32_t *)p, (uint32_t)x));
 }
 
 JEMALLOC_INLINE size_t
-atomic_sub_z(size_t *p, size_t x)
-{
+atomic_sub_z (size_t *p, size_t x) {
 	if (sizeof (*p) == 8) {
-		return ((size_t)atomic_add_uint64((uint64_t *)p,
-		    (uint64_t)-((int64_t)x)));
+		return ((size_t)atomic_add_uint64 ((uint64_t *)p,
+			(uint64_t) - ((int64_t)x)));
 	}
-	return ((size_t)atomic_add_uint32((uint32_t *)p,
-	    (uint32_t)-((int32_t)x)));
+	return ((size_t)atomic_add_uint32 ((uint32_t *)p,
+		(uint32_t) - ((int32_t)x)));
 }
 
-
 JEMALLOC_INLINE bool
-atomic_cas_z(size_t *p, size_t c, size_t s)
-{
+atomic_cas_z (size_t *p, size_t c, size_t s) {
 	if (sizeof (*p) == 8) {
-		return (atomic_cas_uint64((uint64_t *)p, (uint64_t)c, (uint64_t)s));
+		return (atomic_cas_uint64 ((uint64_t *)p, (uint64_t)c, (uint64_t)s));
 	}
-	return (atomic_cas_uint32((uint32_t *)p, (uint32_t)c, (uint32_t)s));
+	return (atomic_cas_uint32 ((uint32_t *)p, (uint32_t)c, (uint32_t)s));
 }
 
 #if 0

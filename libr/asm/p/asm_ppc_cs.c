@@ -8,7 +8,7 @@
 
 static csh handle = 0;
 
-static bool the_end(void *p) {
+static bool the_end (void *p) {
 	if (handle) {
 		cs_close (&handle);
 		handle = 0;
@@ -16,9 +16,9 @@ static bool the_end(void *p) {
 	return true;
 }
 
-static int decompile_vle(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	vle_t* instr = 0;
-	vle_handle handle = {0};
+static int decompile_vle (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	vle_t *instr = 0;
+	vle_handle handle = { 0 };
 	if (len < 2) {
 		return -1;
 	}
@@ -36,8 +36,8 @@ static int decompile_vle(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static int decompile_ps(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	ppcps_t instr = {0};
+static int decompile_ps (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	ppcps_t instr = { 0 };
 	if (len < 4) {
 		return -1;
 	}
@@ -53,11 +53,11 @@ static int decompile_ps(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int omode = -1, obits = -1;
 	int n, ret;
 	ut64 off = a->pc;
-	cs_insn* insn;
+	cs_insn *insn;
 	int mode = (a->bits == 64) ? CS_MODE_64 : (a->bits == 32) ? CS_MODE_32 : 0;
 	mode |= a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 
@@ -94,7 +94,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	op->size = 4;
 	cs_option (handle, CS_OPT_DETAIL, CS_OPT_OFF);
-	n = cs_disasm (handle, (const ut8*) buf, len, off, 1, &insn);
+	n = cs_disasm (handle, (const ut8 *)buf, len, off, 1, &insn);
 	op->size = 4;
 	if (n > 0 && insn->size > 0) {
 		const char *opstr = sdb_fmt ("%s%s%s", insn->mnemonic,

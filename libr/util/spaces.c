@@ -2,7 +2,7 @@
 
 #include "r_util/r_spaces.h"
 
-R_API RSpaces *r_spaces_new(const char *name) {
+R_API RSpaces *r_spaces_new (const char *name) {
 	RSpaces *sp = R_NEW0 (RSpaces);
 	if (!sp || !r_spaces_init (sp, name)) {
 		free (sp);
@@ -11,7 +11,7 @@ R_API RSpaces *r_spaces_new(const char *name) {
 	return sp;
 }
 
-R_API bool r_spaces_init(RSpaces *sp, const char *name) {
+R_API bool r_spaces_init (RSpaces *sp, const char *name) {
 	r_return_val_if_fail (sp && name, false);
 	sp->name = strdup (name);
 	if (!sp->name) {
@@ -37,24 +37,24 @@ fail:
 	return false;
 }
 
-R_API void r_spaces_free(RSpaces *sp) {
+R_API void r_spaces_free (RSpaces *sp) {
 	r_spaces_fini (sp);
 	free (sp);
 }
 
-static inline void space_free(RSpace *s) {
+static inline void space_free (RSpace *s) {
 	if (s) {
 		free (s->name);
 		free (s);
 	}
 }
 
-static void space_node_free(RBNode *n, void *user) {
+static void space_node_free (RBNode *n, void *user) {
 	RSpace *s = container_of (n, RSpace, rb);
 	space_free (s);
 }
 
-R_API void r_spaces_fini(RSpaces *sp) {
+R_API void r_spaces_fini (RSpaces *sp) {
 	r_list_free (sp->spacestack);
 	sp->spacestack = NULL;
 	r_rbtree_free (sp->spaces, space_node_free, NULL);
@@ -65,33 +65,33 @@ R_API void r_spaces_fini(RSpaces *sp) {
 	R_FREE (sp->name);
 }
 
-R_API void r_spaces_purge(RSpaces *sp) {
+R_API void r_spaces_purge (RSpaces *sp) {
 	sp->current = NULL;
 	r_list_purge (sp->spacestack);
 	r_rbtree_free (sp->spaces, space_node_free, NULL);
 	sp->spaces = NULL;
 }
 
-static int name_space_cmp(const void *incoming, const RBNode *rb, void *user) {
+static int name_space_cmp (const void *incoming, const RBNode *rb, void *user) {
 	const RSpace *s = container_of (rb, const RSpace, rb);
 	return strcmp (incoming, s->name);
 }
 
-R_API RSpace *r_spaces_get(RSpaces *sp, const char *name) {
+R_API RSpace *r_spaces_get (RSpaces *sp, const char *name) {
 	if (!name) {
 		return NULL;
 	}
 	RBNode *n = r_rbtree_find (sp->spaces, (void *)name, name_space_cmp, NULL);
-	return n? container_of (n, RSpace, rb): NULL;
+	return n ? container_of (n, RSpace, rb) : NULL;
 }
 
-static int space_cmp(const void *incoming, const RBNode *rb, void *user) {
+static int space_cmp (const void *incoming, const RBNode *rb, void *user) {
 	const RSpace *a = (const RSpace *)incoming;
 	const RSpace *b = container_of (rb, const RSpace, rb);
 	return strcmp (a->name, b->name);
 }
 
-R_API RSpace *r_spaces_add(RSpaces *sp, const char *name) {
+R_API RSpace *r_spaces_add (RSpaces *sp, const char *name) {
 	r_return_val_if_fail (sp, NULL);
 	if (!name || !*name || *name == '*') {
 		return NULL;
@@ -117,12 +117,12 @@ R_API RSpace *r_spaces_add(RSpaces *sp, const char *name) {
 	return s;
 }
 
-R_API RSpace *r_spaces_set(RSpaces *sp, const char *name) {
+R_API RSpace *r_spaces_set (RSpaces *sp, const char *name) {
 	sp->current = r_spaces_add (sp, name);
 	return sp->current;
 }
 
-static inline bool spaces_unset_single(RSpaces *sp, const char *name) {
+static inline bool spaces_unset_single (RSpaces *sp, const char *name) {
 	RSpace *space = r_spaces_get (sp, name);
 	if (!space) {
 		return false;
@@ -136,7 +136,7 @@ static inline bool spaces_unset_single(RSpaces *sp, const char *name) {
 	return r_rbtree_delete (&sp->spaces, (void *)name, name_space_cmp, NULL, space_node_free, NULL);
 }
 
-R_API bool r_spaces_unset(RSpaces *sp, const char *name) {
+R_API bool r_spaces_unset (RSpaces *sp, const char *name) {
 	if (name) {
 		return spaces_unset_single (sp, name);
 	}
@@ -162,7 +162,7 @@ R_API bool r_spaces_unset(RSpaces *sp, const char *name) {
 	return res;
 }
 
-R_API int r_spaces_count(RSpaces *sp, const char *name) {
+R_API int r_spaces_count (RSpaces *sp, const char *name) {
 	RSpace *s = r_spaces_get (sp, name);
 	if (!s) {
 		return 0;
@@ -172,26 +172,26 @@ R_API int r_spaces_count(RSpaces *sp, const char *name) {
 	return ev.res;
 }
 
-R_API bool r_spaces_push(RSpaces *sp, const char *name) {
+R_API bool r_spaces_push (RSpaces *sp, const char *name) {
 	r_return_val_if_fail (sp, false);
 
-	r_list_push (sp->spacestack, sp->current? sp->current->name: "*");
+	r_list_push (sp->spacestack, sp->current ? sp->current->name : "*");
 	r_spaces_set (sp, name);
 	return true;
 }
 
-R_API bool r_spaces_pop(RSpaces *sp) {
+R_API bool r_spaces_pop (RSpaces *sp) {
 	char *name = r_list_pop (sp->spacestack);
 	if (!name) {
 		return false;
 	}
 
 	RSpace *s = r_spaces_get (sp, name);
-	r_spaces_set (sp, s? s->name: NULL);
+	r_spaces_set (sp, s ? s->name : NULL);
 	return true;
 }
 
-R_API bool r_spaces_rename(RSpaces *sp, const char *oname, const char *nname) {
+R_API bool r_spaces_rename (RSpaces *sp, const char *oname, const char *nname) {
 	if (!oname && !sp->current) {
 		return false;
 	}

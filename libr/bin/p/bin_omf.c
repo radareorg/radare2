@@ -14,12 +14,12 @@ static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr
 	return *bin_obj != NULL;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy (RBinFile *bf) {
 	r_bin_free_all_omf_obj (bf->o->bin_obj);
 	bf->o->bin_obj = NULL;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	int i;
 	ut8 ch;
 	if (r_buf_read_at (b, 0, &ch, 1) != 1) {
@@ -29,7 +29,8 @@ static bool check_buffer(RBuffer *b) {
 		return false;
 	}
 	ut16 rec_size = r_buf_read_le16_at (b, 1);
-	ut8 str_size; (void)r_buf_read_at (b, 3, &str_size, 1);
+	ut8 str_size;
+	(void)r_buf_read_at (b, 3, &str_size, 1);
 	ut64 length = r_buf_size (b);
 	if (str_size + 2 != rec_size || length < rec_size + 3) {
 		return false;
@@ -46,7 +47,7 @@ static bool check_buffer(RBuffer *b) {
 	const ut8 *buf = r_buf_data (b, NULL);
 	if (buf == NULL) {
 		// hackaround until we make this plugin not use RBuf.data
-		ut8 buf[1024] = {0};
+		ut8 buf[1024] = { 0 };
 		r_buf_read_at (b, 0, buf, sizeof (buf));
 		return r_bin_checksum_omf_ok (buf, sizeof (buf));
 	}
@@ -54,11 +55,11 @@ static bool check_buffer(RBuffer *b) {
 	return r_bin_checksum_omf_ok (buf, length);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr (RBinFile *bf) {
 	return OMF_BASE_ADDR;
 }
 
-static RList *entries(RBinFile *bf) {
+static RList *entries (RBinFile *bf) {
 	RList *ret;
 	RBinAddr *addr;
 
@@ -77,7 +78,7 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
+static RList *sections (RBinFile *bf) {
 	RList *ret;
 	ut32 ct_omf_sect = 0;
 
@@ -91,7 +92,7 @@ static RList *sections(RBinFile *bf) {
 	}
 
 	while (ct_omf_sect < obj->nb_section) {
-		if (!r_bin_omf_send_sections (ret,\
+		if (!r_bin_omf_send_sections (ret,
 			    obj->sections[ct_omf_sect++], bf->o->bin_obj)) {
 			return ret;
 		}
@@ -99,7 +100,7 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList *symbols(RBinFile *bf) {
+static RList *symbols (RBinFile *bf) {
 	RList *ret;
 	RBinSymbol *sym;
 	OMF_symbol *sym_omf;
@@ -113,11 +114,11 @@ static RList *symbols(RBinFile *bf) {
 
 	ret->free = free;
 
-	while (ct_sym < ((r_bin_omf_obj *) bf->o->bin_obj)->nb_symbol) {
+	while (ct_sym < ((r_bin_omf_obj *)bf->o->bin_obj)->nb_symbol) {
 		if (!(sym = R_NEW0 (RBinSymbol))) {
 			return ret;
 		}
-		sym_omf = ((r_bin_omf_obj *) bf->o->bin_obj)->symbols[ct_sym++];
+		sym_omf = ((r_bin_omf_obj *)bf->o->bin_obj)->symbols[ct_sym++];
 		sym->name = strdup (sym_omf->name);
 		sym->forwarder = "NONE";
 		sym->paddr = r_bin_omf_get_paddr_sym (bf->o->bin_obj, sym_omf);
@@ -129,7 +130,7 @@ static RList *symbols(RBinFile *bf) {
 	return ret;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	RBinInfo *ret;
 
 	if (!(ret = R_NEW0 (RBinInfo))) {
@@ -152,7 +153,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static ut64 get_vaddr(RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
+static ut64 get_vaddr (RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	return vaddr;
 }
 

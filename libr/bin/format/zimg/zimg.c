@@ -4,8 +4,7 @@
 #include <r_util.h>
 #include "zimg.h"
 
-
-struct r_bin_zimg_obj_t* r_bin_zimg_new_buf(RBuffer *buf) {
+struct r_bin_zimg_obj_t *r_bin_zimg_new_buf (RBuffer *buf) {
 	struct r_bin_zimg_obj_t *bin = R_NEW0 (struct r_bin_zimg_obj_t);
 	if (!bin) {
 		goto fail;
@@ -25,4 +24,3 @@ fail:
 	}
 	return NULL;
 }
-

@@ -2,7 +2,7 @@
 
 #include <r_bp.h>
 
-R_API int r_bp_plugin_del(RBreakpoint *bp, const char *name) {
+R_API int r_bp_plugin_del (RBreakpoint *bp, const char *name) {
 	RListIter *iter;
 	RBreakpointPlugin *h;
 	if (name && *name) {
@@ -20,7 +20,7 @@ R_API int r_bp_plugin_del(RBreakpoint *bp, const char *name) {
 	return false;
 }
 
-R_API int r_bp_plugin_add(RBreakpoint *bp, RBreakpointPlugin *foo) {
+R_API int r_bp_plugin_add (RBreakpoint *bp, RBreakpointPlugin *foo) {
 	RListIter *iter;
 	RBreakpointPlugin *h;
 	if (!bp) {
@@ -38,7 +38,7 @@ R_API int r_bp_plugin_add(RBreakpoint *bp, RBreakpointPlugin *foo) {
 	return true;
 }
 
-R_API int r_bp_use(RBreakpoint *bp, const char *name, int bits) {
+R_API int r_bp_use (RBreakpoint *bp, const char *name, int bits) {
 	RListIter *iter;
 	bp->bits = bits;
 	RBreakpointPlugin *h;
@@ -52,12 +52,12 @@ R_API int r_bp_use(RBreakpoint *bp, const char *name, int bits) {
 }
 
 // TODO: deprecate
-R_API void r_bp_plugin_list(RBreakpoint *bp) {
+R_API void r_bp_plugin_list (RBreakpoint *bp) {
 	RListIter *iter;
 	RBreakpointPlugin *b;
 	r_list_foreach (bp->plugins, iter, b) {
 		bp->cb_printf ("bp %c %s\n",
-			(bp->cur && !strcmp (bp->cur->name, b->name))? '*': '-',
+			(bp->cur && !strcmp (bp->cur->name, b->name)) ? '*' : '-',
 			b->name);
 	}
 }

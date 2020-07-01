@@ -13,13 +13,13 @@ static struct state _state;
 #include <r_types.h>
 #include <r_util/r_assert.h>
 
-static inline struct state *get_state(void) {
+static inline struct state *get_state (void) {
 	memset (&_state, 0, sizeof (struct state));
 	return &_state;
 }
 
-static uint16_t i2u16(struct instruction *in) {
-	return *((uint16_t*)in);
+static uint16_t i2u16 (struct instruction *in) {
+	return *((uint16_t *)in);
 }
 
 #if 0
@@ -34,15 +34,15 @@ static void output(struct state *s, char *fmt, ...)
 }
 #endif
 
-static void decode_unknown(struct state *s, struct directive *d) {
+static void decode_unknown (struct state *s, struct directive *d) {
 #if 0
 	printf("Opcode 0x%x reg %d mode %d operand 0x%x",
 	       in->in_opcode, in->in_reg, in->in_mode, in->in_operand);
 #endif
-	sprintf (d->d_asm, "DC 0x%4x", i2u16(&d->d_inst));
+	sprintf (d->d_asm, "DC 0x%4x", i2u16 (&d->d_inst));
 }
 
-static int decode_fixed(struct state *s, struct directive *d) {
+static int decode_fixed (struct state *s, struct directive *d) {
 	*d->d_asm = '\0';
 	switch (i2u16 (&d->d_inst)) {
 	case INST_NOP:
@@ -50,20 +50,23 @@ static int decode_fixed(struct state *s, struct directive *d) {
 			return 0;
 		}
 		s->s_nop++;
-		strcpy(d->d_asm, "nop");
+		strcpy (d->d_asm, "nop");
 		break;
-	case INST_BRK: strcpy(d->d_asm, "brk"); break;
-	case INST_SLEEP: strcpy(d->d_asm, "sleep"); break;
-	case INST_SIF: strcpy(d->d_asm, "sif"); break;
-	case INST_BC: strcpy(d->d_asm, "bc"); break;
-	case INST_BRXL: strcpy(d->d_asm, "brxl"); break;
-	case INST_U: strcpy(d->d_asm, ""); s->s_u = 1; break;
-	case INST_RTS: strcpy(d->d_asm, "rts"); break;
+	case INST_BRK: strcpy (d->d_asm, "brk"); break;
+	case INST_SLEEP: strcpy (d->d_asm, "sleep"); break;
+	case INST_SIF: strcpy (d->d_asm, "sif"); break;
+	case INST_BC: strcpy (d->d_asm, "bc"); break;
+	case INST_BRXL: strcpy (d->d_asm, "brxl"); break;
+	case INST_U:
+		strcpy (d->d_asm, "");
+		s->s_u = 1;
+		break;
+	case INST_RTS: strcpy (d->d_asm, "rts"); break;
 	}
-	return d->d_asm[0]!=0;
+	return d->d_asm[0] != 0;
 }
 
-static char *regname(int reg) {
+static char *regname (int reg) {
 	switch (reg) {
 	case REG_AH: return "AH";
 	case REG_AL: return "AL";
@@ -73,21 +76,21 @@ static char *regname(int reg) {
 	return NULL;
 }
 
-static int get_num(int num, int shift) {
-	char x = (char) ((num >> shift) & 0xff);
-	return (int)(x<<shift);
+static int get_num (int num, int shift) {
+	char x = (char)((num >> shift) & 0xff);
+	return (int)(x << shift);
 }
 
-static int get_operand(struct state *s, struct directive *d) {
-	int total = get_num(d->d_inst.in_operand, 0);
+static int get_operand (struct state *s, struct directive *d) {
+	int total = get_num (d->d_inst.in_operand, 0);
 	if (s->s_prefix)
-		total += get_num(s->s_prefix_val, 8);
+		total += get_num (s->s_prefix_val, 8);
 	if (s->s_prefix == 2)
-		total += get_num(s->s_prefix_val, 16);
+		total += get_num (s->s_prefix_val, 16);
 	return total;
 }
 
-static int decode_known(struct state *s, struct directive *d) {
+static int decode_known (struct state *s, struct directive *d) {
 	char *op = NULL;
 	char *regn = NULL;
 	int reg = 0;
@@ -100,7 +103,7 @@ static int decode_known(struct state *s, struct directive *d) {
 	int fmtsz;
 	int branch = 0;
 	struct instruction *in = &d->d_inst;
-//	int operand;
+	//	int operand;
 	char *sign = "";
 	int rti = 0;
 
@@ -121,47 +124,47 @@ static int decode_known(struct state *s, struct directive *d) {
 #endif
 			s->s_prefix_val |= in->in_operand << 8;
 
-			strcpy(d->d_asm, "");
+			strcpy (d->d_asm, "");
 			return 1;
 		}
 
-		switch (i2u16(in) & 0xf) {
+		switch (i2u16 (in) & 0xf) {
 		case 1:
-			op	= "st";
-			regn	= "FLAGS";
+			op = "st";
+			regn = "FLAGS";
 			break;
 		case 2:
-			op	= "st";
-			regn	= "UX";
+			op = "st";
+			regn = "UX";
 			break;
 		case 3:
-			op	= "st";
-			regn	= "UY";
+			op = "st";
+			regn = "UY";
 			break;
 		case 5:
-			op	= "ld";
-			regn	= "FLAGS";
+			op = "ld";
+			regn = "FLAGS";
 			break;
 		case 6:
-			op	= "ld";
-			regn	= "UX";
+			op = "ld";
+			regn = "UX";
 			break;
 		case 7:
-			op	= "ld";
-			regn	= "UY";
+			op = "ld";
+			regn = "UY";
 			break;
 		case 0xa:
-			op	= "st";
-			regn	= "XH";
+			op = "st";
+			regn = "XH";
 			break;
 		case 0xd:
-			op	= "rti";
-			regn	= "";
-			rti	= 1;
+			op = "rti";
+			regn = "";
+			rti = 1;
 			break;
 		case 0xe:
-			op	= "ld";
-			regn	= "XH";
+			op = "ld";
+			regn = "XH";
 			break;
 		}
 		break;
@@ -230,16 +233,20 @@ static int decode_known(struct state *s, struct directive *d) {
 	case 0x9:
 		switch (in->in_reg) {
 		case 0:
-			if (s->s_u) op = "umult";
-			else op = "smult";
+			if (s->s_u)
+				op = "umult";
+			else
+				op = "smult";
 			imm = 1;
 			s->s_u = 0;
 			idx = 1;
 			ptr = 1;
 			break;
 		case 1:
-			if (s->s_u) op = "udiv";
-			else op = "sdiv";
+			if (s->s_u)
+				op = "udiv";
+			else
+				op = "sdiv";
 			s->s_u = 0;
 			imm = 1;
 			break;
@@ -266,8 +273,10 @@ static int decode_known(struct state *s, struct directive *d) {
 			imm = 1;
 			break;
 		case 1:
-			if (s->s_u) op = "lsr";
-			else op = "asr";
+			if (s->s_u)
+				op = "lsr";
+			else
+				op = "asr";
 			s->s_u = 0;
 			imm = 1;
 			idx = 1;
@@ -346,7 +355,8 @@ static int decode_known(struct state *s, struct directive *d) {
 		break;
 	}
 
-	if (!op) return 0;
+	if (!op)
+		return 0;
 
 	if (ptr && in->in_mode == DATA_MODE_IMMEDIATE)
 		ptr = 0;
@@ -390,17 +400,19 @@ static int decode_known(struct state *s, struct directive *d) {
 //	d->d_operand = get_operand(s, d);
 #if 1
 	if ((branch && idx) || rti) {
-		d->d_operand = get_operand(s, d);
+		d->d_operand = get_operand (s, d);
 		if (d->d_operand < 0) {
 			d->d_operand *= -1;
 			sign = "-";
-		}	
+		}
 	} else {
 		d->d_operand = s->s_prefix_val | in->in_operand;
 		if (d->d_operand & 0x80) {
 			if (d->d_prefix) {
-				if (!rel) d->d_operand -= 0x100;
-			} else d->d_operand |= 0xff00;
+				if (!rel)
+					d->d_operand -= 0x100;
+			} else
+				d->d_operand |= 0xff00;
 		}
 	}
 #endif
@@ -420,11 +432,12 @@ static int decode_known(struct state *s, struct directive *d) {
 
 	if (idx) {
 		char *r = in->in_mode == DATA_MODE_INDEXED_X ? "X" : "Y";
-		if (regn) r = "Y";
-		snprintf(tmp, sizeof(tmp), ", %s", r);
-		strcat(d->d_asm, tmp);
+		if (regn)
+			r = "Y";
+		snprintf (tmp, sizeof (tmp), ", %s", r);
+		strcat (d->d_asm, tmp);
 		if (ptr)
-			strcat(d->d_asm, ")");
+			strcat (d->d_asm, ")");
 	}
 
 #if 0
@@ -445,7 +458,7 @@ static int decode_known(struct state *s, struct directive *d) {
 	return 1;
 }
 
-static void xap_decode(struct state *s, struct directive *d) {
+static void xap_decode (struct state *s, struct directive *d) {
 	int prefix = s->s_prefix;
 	if (!decode_fixed (s, d))
 		if (!decode_known (s, d))
@@ -454,13 +467,13 @@ static void xap_decode(struct state *s, struct directive *d) {
 		s->s_prefix_val = s->s_prefix = 0;
 }
 
-static int read_bin(struct state *s, struct directive *d) {
-	memcpy(&d->d_inst, s->s_buf, sizeof(d->d_inst));
+static int read_bin (struct state *s, struct directive *d) {
+	memcpy (&d->d_inst, s->s_buf, sizeof (d->d_inst));
 	d->d_off = s->s_off++;
 	return 1;
 }
 
-static inline struct directive *next_inst(struct state *s) {
+static inline struct directive *next_inst (struct state *s) {
 	int rd;
 	struct directive *d = malloc (sizeof (*d));
 	if (!d) {

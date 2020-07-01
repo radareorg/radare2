@@ -5,8 +5,8 @@
 extern "C" {
 #endif
 
-R_API char *r_punycode_encode(const ut8 *src, int srclen, int *dstlen);
-R_API char *r_punycode_decode(const char *src, int srclen, int *dstlen);
+R_API char *r_punycode_encode (const ut8 *src, int srclen, int *dstlen);
+R_API char *r_punycode_decode (const char *src, int srclen, int *dstlen);
 
 #ifdef __cplusplus
 }

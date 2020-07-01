@@ -18,36 +18,36 @@
 
 // starting at 0
 typedef struct {
-	ut32 magic;	// NSO0
-	ut32 pad0;	// 4
-	ut32 pad1;	// 8
-	ut32 pad2;	// 12
-	ut32 text_memoffset;	// 16
-	ut32 text_loc;	// 20
-	ut32 text_size;	// 24
-	ut32 pad3;	// 28
-	ut32 ro_memoffset;	// 32
-	ut32 ro_loc;	// 36
-	ut32 ro_size;	// 40
-	ut32 pad4;	// 44
-	ut32 data_memoffset;	// 48
-	ut32 data_loc;	// 52
-	ut32 data_size;	// 56
-	ut32 bss_size;	// 60
+	ut32 magic; // NSO0
+	ut32 pad0; // 4
+	ut32 pad1; // 8
+	ut32 pad2; // 12
+	ut32 text_memoffset; // 16
+	ut32 text_loc; // 20
+	ut32 text_size; // 24
+	ut32 pad3; // 28
+	ut32 ro_memoffset; // 32
+	ut32 ro_loc; // 36
+	ut32 ro_size; // 40
+	ut32 pad4; // 44
+	ut32 data_memoffset; // 48
+	ut32 data_loc; // 52
+	ut32 data_size; // 56
+	ut32 bss_size; // 60
 } NSOHeader;
 
-static uint32_t decompress(const ut8 *cbuf, ut8 *obuf, int32_t csize, int32_t usize) {
+static uint32_t decompress (const ut8 *cbuf, ut8 *obuf, int32_t csize, int32_t usize) {
 	if (csize < 0 || usize < 0 || !cbuf || !obuf) {
 		return -1;
 	}
-	return LZ4_decompress_safe ((const char*)cbuf, (char*)obuf, (uint32_t) csize, (uint32_t) usize);
+	return LZ4_decompress_safe ((const char *)cbuf, (char *)obuf, (uint32_t)csize, (uint32_t)usize);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr (RBinFile *bf) {
 	return 0x8000000;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	if (r_buf_size (b) >= 0x20) {
 		ut8 magic[4];
 		if (r_buf_read_at (b, 0, magic, sizeof (magic)) != 4) {
@@ -58,7 +58,7 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static RBinNXOObj *nso_new(void) {
+static RBinNXOObj *nso_new (void) {
 	RBinNXOObj *bin = R_NEW0 (RBinNXOObj);
 	if (bin) {
 		bin->methods_list = r_list_newf ((RListFree)free);
@@ -68,7 +68,7 @@ static RBinNXOObj *nso_new(void) {
 	return bin;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static bool load_bytes (RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	eprintf ("load_bytes in bin.nso must die\n");
 	RBin *rbin = bf->rbin;
 	ut32 toff = r_buf_read_le32_at (bf->buf, NSO_OFF (text_memoffset));
@@ -125,7 +125,7 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	r_io_write_at (rbin->iob.io, ba, tmpbuf, total_size);
 	ut32 modoff = r_buf_read_le32_at (newbuf, NSO_OFFSET_MODMEMOFF);
 	RBinNXOObj *bin = nso_new ();
-	eprintf ("MOD Offset = 0x%"PFMT64x"\n", (ut64)modoff);
+	eprintf ("MOD Offset = 0x%" PFMT64x "\n", (ut64)modoff);
 	parseMod (newbuf, bin, modoff, ba);
 	r_buf_free (newbuf);
 	*bin_obj = bin;
@@ -137,7 +137,7 @@ fail:
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	r_return_val_if_fail (bf && buf, NULL);
 	const ut64 la = bf->loadaddr;
 	ut64 sz = 0;
@@ -145,11 +145,11 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return load_bytes (bf, bin_obj, bytes, sz, la, bf->sdb);
 }
 
-static RBinAddr *binsym(RBinFile *bf, int type) {
+static RBinAddr *binsym (RBinFile *bf, int type) {
 	return NULL; // TODO
 }
 
-static RList *entries(RBinFile *bf) {
+static RList *entries (RBinFile *bf) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
 	RBuffer *b = bf->buf;
@@ -165,7 +165,7 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static Sdb *get_sdb(RBinFile *bf) {
+static Sdb *get_sdb (RBinFile *bf) {
 	Sdb *kv = sdb_new0 ();
 	sdb_num_set (kv, "nso_start.offset", 0, 0);
 	sdb_num_set (kv, "nso_start.size", 16, 0);
@@ -177,7 +177,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return kv;
 }
 
-static RList *sections(RBinFile *bf) {
+static RList *sections (RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	RBuffer *b = bf->buf;
@@ -212,7 +212,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = r_buf_read_le32_at (b, NSO_OFF (text_memoffset));
 	ptr->vaddr = r_buf_read_le32_at (b, NSO_OFF (text_loc)) + ba;
-	ptr->perm = R_PERM_RX;	// r-x
+	ptr->perm = R_PERM_RX; // r-x
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -225,7 +225,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = r_buf_read_le32_at (b, NSO_OFF (ro_memoffset));
 	ptr->vaddr = r_buf_read_le32_at (b, NSO_OFF (ro_loc)) + ba;
-	ptr->perm = R_PERM_R;	// r--
+	ptr->perm = R_PERM_R; // r--
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -240,13 +240,12 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = r_buf_read_le32_at (b, NSO_OFF (data_loc)) + ba;
 	ptr->perm = R_PERM_RW;
 	ptr->add = true;
-	eprintf ("BSS Size 0x%08"PFMT64x "\n", (ut64)
-		r_buf_read_le32_at (bf->buf, NSO_OFF (bss_size)));
+	eprintf ("BSS Size 0x%08" PFMT64x "\n", (ut64)r_buf_read_le32_at (bf->buf, NSO_OFF (bss_size)));
 	r_list_append (ret, ptr);
 	return ret;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;

@@ -2,7 +2,7 @@
 
 #include <r_th.h>
 
-R_API RThreadCond *r_th_cond_new(void) {
+R_API RThreadCond *r_th_cond_new (void) {
 	RThreadCond *cond = R_NEW0 (RThreadCond);
 	if (!cond) {
 		return NULL;
@@ -18,7 +18,7 @@ R_API RThreadCond *r_th_cond_new(void) {
 	return cond;
 }
 
-R_API void r_th_cond_signal(RThreadCond *cond) {
+R_API void r_th_cond_signal (RThreadCond *cond) {
 #if HAVE_PTHREAD
 	pthread_cond_signal (&cond->cond);
 #elif __WINDOWS__
@@ -26,7 +26,7 @@ R_API void r_th_cond_signal(RThreadCond *cond) {
 #endif
 }
 
-R_API void r_th_cond_signal_all(RThreadCond *cond) {
+R_API void r_th_cond_signal_all (RThreadCond *cond) {
 #if HAVE_PTHREAD
 	pthread_cond_broadcast (&cond->cond);
 #elif __WINDOWS__
@@ -34,7 +34,7 @@ R_API void r_th_cond_signal_all(RThreadCond *cond) {
 #endif
 }
 
-R_API void r_th_cond_wait(RThreadCond *cond, RThreadLock *lock) {
+R_API void r_th_cond_wait (RThreadCond *cond, RThreadLock *lock) {
 #if HAVE_PTHREAD
 	pthread_cond_wait (&cond->cond, &lock->lock);
 #elif __WINDOWS__
@@ -42,7 +42,7 @@ R_API void r_th_cond_wait(RThreadCond *cond, RThreadLock *lock) {
 #endif
 }
 
-R_API void r_th_cond_free(RThreadCond *cond) {
+R_API void r_th_cond_free (RThreadCond *cond) {
 	if (!cond) {
 		return;
 	}

@@ -8,7 +8,7 @@
 
 #include <propeller_disas.h>
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	const char *buf_asm;
 	struct propeller_cmd cmd;
 	int ret = propeller_decode_command (buf, &cmd);

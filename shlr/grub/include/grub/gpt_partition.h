@@ -17,65 +17,65 @@
  */
 
 #ifndef GRUB_GPT_PARTITION_HEADER
-#define GRUB_GPT_PARTITION_HEADER	1
+#define GRUB_GPT_PARTITION_HEADER 1
 
 #include <grub/types.h>
 
-R_PACKED(
-struct grub_gpt_part_type
-{
-  grub_uint32_t data1;
-  grub_uint16_t data2;
-  grub_uint16_t data3;
-  grub_uint8_t data4[8];
-});
+R_PACKED (
+	struct grub_gpt_part_type {
+		grub_uint32_t data1;
+		grub_uint16_t data2;
+		grub_uint16_t data3;
+		grub_uint8_t data4[8];
+	});
 typedef struct grub_gpt_part_type grub_gpt_part_type_t;
 
-#define GRUB_GPT_PARTITION_TYPE_EMPTY \
-  { 0x0, 0x0, 0x0, \
-    { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 } \
-  }
+#define GRUB_GPT_PARTITION_TYPE_EMPTY                      \
+	{                                                  \
+		0x0, 0x0, 0x0,                             \
+		{ 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 } \
+	}
 
 #ifdef GRUB_CPU_WORDS_BIGENDIAN
-#define GRUB_GPT_PARTITION_TYPE_BIOS_BOOT \
-  { 0x48616821, 0x4964, 0x6f6e, \
-    { 0x74, 0x4e, 0x65, 0x65, 0x64, 0x45, 0x46, 0x49 } \
-  }
+#define GRUB_GPT_PARTITION_TYPE_BIOS_BOOT                          \
+	{                                                          \
+		0x48616821, 0x4964, 0x6f6e,                        \
+		{ 0x74, 0x4e, 0x65, 0x65, 0x64, 0x45, 0x46, 0x49 } \
+	}
 #else
-#define GRUB_GPT_PARTITION_TYPE_BIOS_BOOT \
-  { 0x21686148, 0x6449, 0x6e6f, \
-    { 0x74, 0x4e, 0x65, 0x65, 0x64, 0x45, 0x46, 0x49 } \
-  }
+#define GRUB_GPT_PARTITION_TYPE_BIOS_BOOT                          \
+	{                                                          \
+		0x21686148, 0x6449, 0x6e6f,                        \
+		{ 0x74, 0x4e, 0x65, 0x65, 0x64, 0x45, 0x46, 0x49 } \
+	}
 #endif
 
 R_PACKED (
-struct grub_gpt_header
-{
-  grub_uint8_t magic[8];
-  grub_uint32_t version;
-  grub_uint32_t headersize;
-  grub_uint32_t crc32;
-  grub_uint32_t unused1;
-  grub_uint64_t primary;
-  grub_uint64_t backup;
-  grub_uint64_t start;
-  grub_uint64_t end;
-  grub_uint8_t guid[16];
-  grub_uint64_t partitions;
-  grub_uint32_t maxpart;
-  grub_uint32_t partentry_size;
-  grub_uint32_t partentry_crc32;
-});
+	struct grub_gpt_header {
+		grub_uint8_t magic[8];
+		grub_uint32_t version;
+		grub_uint32_t headersize;
+		grub_uint32_t crc32;
+		grub_uint32_t unused1;
+		grub_uint64_t primary;
+		grub_uint64_t backup;
+		grub_uint64_t start;
+		grub_uint64_t end;
+		grub_uint8_t guid[16];
+		grub_uint64_t partitions;
+		grub_uint32_t maxpart;
+		grub_uint32_t partentry_size;
+		grub_uint32_t partentry_crc32;
+	});
 
 R_PACKED (
-struct grub_gpt_partentry
-{
-  grub_gpt_part_type_t type;
-  grub_uint8_t guid[16];
-  grub_uint64_t start;
-  grub_uint64_t end;
-  grub_uint64_t attrib;
-  char name[72];
-});
+	struct grub_gpt_partentry {
+		grub_gpt_part_type_t type;
+		grub_uint8_t guid[16];
+		grub_uint64_t start;
+		grub_uint64_t end;
+		grub_uint64_t attrib;
+		char name[72];
+	});
 
 #endif /* ! GRUB_GPT_PARTITION_HEADER */

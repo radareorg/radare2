@@ -4,8 +4,8 @@
 #include <r_lib.h>
 
 static struct r_bp_arch_t r_bp_plugin_bf_bps[] = {
-	{ 0, 1, 0, (const ut8*)"\xff" },
-	{ 0, 1, 0, (const ut8*)"\x00" },
+	{ 0, 1, 0, (const ut8 *)"\xff" },
+	{ 0, 1, 0, (const ut8 *)"\x00" },
 	{ 0, 0, 0, NULL },
 };
 

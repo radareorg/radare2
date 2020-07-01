@@ -1,7 +1,6 @@
 #ifndef LIB_PPCVLE_INTERNAL
 #define LIB_PPCVLE_INTERNAL
 
-
 typedef struct {
 	ut16 mask;
 	ut16 shr;
@@ -12,7 +11,7 @@ typedef struct {
 } field_t;
 
 typedef struct {
-	const char* name;
+	const char *name;
 	ut32 op;
 	ut32 mask;
 	ut16 type;
@@ -22,7 +21,7 @@ typedef struct {
 } e_vle_t;
 
 typedef struct {
-	const char* name;
+	const char *name;
 	ut16 op;
 	ut16 mask;
 	ut16 n;
@@ -32,7 +31,7 @@ typedef struct {
 } se_vle_t;
 
 typedef struct {
-	const char* name;
+	const char *name;
 	ut32 op;
 	ut32 mask;
 	ut16 type;

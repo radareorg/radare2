@@ -1,8 +1,8 @@
 /* radare - LGPL - Copyright 2013-2019 - pancake */
 
 #include <r_cons.h>
-#define W(y) r_cons_canvas_write(c,y)
-#define G(x,y) r_cons_canvas_gotoxy(c,x,y)
+#define W(y) r_cons_canvas_write (c, y)
+#define G(x, y) r_cons_canvas_gotoxy (c, x, y)
 
 #define useUtf8 (r_cons_singleton ()->use_utf8)
 #define useUtf8Curvy (r_cons_singleton ()->use_utf8_curvy)
@@ -25,30 +25,30 @@ enum {
 	NRM_NRM
 };
 
-static char* utf8_line_vert (int dot_style) {
+static char *utf8_line_vert (int dot_style) {
 	if (r_cons_singleton ()->dotted_lines) {
 		switch (dot_style) {
-		case DOT_STYLE_NORMAL:      return RUNECODESTR_LINE_VERT;
+		case DOT_STYLE_NORMAL: return RUNECODESTR_LINE_VERT;
 		case DOT_STYLE_CONDITIONAL: return DOTTED_LINE_VERT;
-		case DOT_STYLE_BACKEDGE:    return DASHED_LINE_VERT;
+		case DOT_STYLE_BACKEDGE: return DASHED_LINE_VERT;
 		}
 	}
 	return RUNECODESTR_LINE_VERT;
 }
 
-static char* utf8_line_horiz (int dot_style) {
+static char *utf8_line_horiz (int dot_style) {
 	if (r_cons_singleton ()->dotted_lines) {
 		switch (dot_style) {
-		case DOT_STYLE_NORMAL:      return RUNECODESTR_LINE_HORIZ;
+		case DOT_STYLE_NORMAL: return RUNECODESTR_LINE_HORIZ;
 		case DOT_STYLE_CONDITIONAL: return DOTTED_LINE_HORIZ;
-		case DOT_STYLE_BACKEDGE:    return DASHED_LINE_HORIZ;
+		case DOT_STYLE_BACKEDGE: return DASHED_LINE_HORIZ;
 		}
 	}
 	return RUNECODESTR_LINE_HORIZ;
 }
 
-static void apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2,
-		RCanvasLineStyle *style, int isvert) {
+static void apply_line_style (RConsCanvas *c, int x, int y, int x2, int y2,
+	RCanvasLineStyle *style, int isvert) {
 	RCons *cons = r_cons_singleton ();
 	switch (style->color) {
 	case LINE_UNCJMP:
@@ -283,7 +283,7 @@ static void draw_vertical_line (RConsCanvas *c, int x, int y, int height, int do
 R_API void r_cons_canvas_line_diagonal (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style) {
 	if (x == x2 || y == y2) {
 		style->dot_style = DOT_STYLE_NORMAL;
-		r_cons_canvas_line_square (c, x, y +1, x2, y2, style);
+		r_cons_canvas_line_square (c, x, y + 1, x2, y2, style);
 		return;
 	}
 	apply_line_style (c, x, y, x2, y2, style, 1);
@@ -295,15 +295,15 @@ R_API void r_cons_canvas_line_diagonal (RConsCanvas *c, int x, int y, int x2, in
 		x2 = x;
 		x = tmp;
 	}
-	char chizzle[2] = {0}; // = '.';//my nizzle
+	char chizzle[2] = { 0 }; // = '.';//my nizzle
 	// destination
-	int dx = abs (x2-x);
-        int dy = abs (y2-y);
+	int dx = abs (x2 - x);
+	int dy = abs (y2 - y);
 	// source
 	int sx = (x < x2) ? 1 : -1;
 	int sy = (y < y2) ? 1 : -1;
 
-	int err = (dx > (dy?dx:-dy)) / 2;
+	int err = (dx > (dy ? dx : -dy)) / 2;
 	int e2;
 
 	// TODO: find if there's any collision in this line
@@ -312,55 +312,55 @@ loop:
 	if (e2 > -dx) {
 		*chizzle = '_';
 		err -= dy;
-		x+=sx;
+		x += sx;
 	}
 	if (e2 < dy) {
-		*chizzle='|';
+		*chizzle = '|';
 		err += dx;
 		y += sy;
 	}
 	if ((e2 < dy) && (e2 > -dx)) {
 		if (sy > 0) {
-			*chizzle = (sx > 0)?'\\':'/';
+			*chizzle = (sx > 0) ? '\\' : '/';
 		} else {
-			*chizzle = (sx > 0)?'/':'\\';
+			*chizzle = (sx > 0) ? '/' : '\\';
 		}
 	}
 	if (!(x == x2 && y == y2)) {
 		int i = (*chizzle == '_' && sy < 0) ? 1 : 0;
-		if (G(x, y - i)) {
+		if (G (x, y - i)) {
 			if (useUtf8) {
 				switch (*chizzle) {
 				case '/':
-					W("╯");
+					W ("╯");
 					break;
 				case '\\':
-					W("└");
+					W ("└");
 					break;
 				case '|':
-					W("│");
+					W ("│");
 					break;
 				case '_':
-					W("─");
+					W ("─");
 					break;
 				default:
-					W("?");
+					W ("?");
 					break;
 				}
 			} else {
-				W(chizzle);
+				W (chizzle);
 			}
 		}
 		goto loop;
 	}
 	if (dx) {
 		if (dy && (dx / dy) < 1) {
-			if (G(x, y)) {
-				W("|");
+			if (G (x, y)) {
+				W ("|");
 			}
 		}
-		if (G(x, y + 1)) {
-			W("|");
+		if (G (x, y + 1)) {
+			W ("|");
 		}
 	}
 	c->attr = Color_RESET;
@@ -383,7 +383,7 @@ R_API void r_cons_canvas_line_square (RConsCanvas *c, int x, int y, int x2, int 
 		draw_vertical_line (c, x, y + 1, hl, style->dot_style);
 		draw_vertical_line (c, x2, y + hl + 1, hl2, style->dot_style);
 		draw_horizontal_line (c, min_x, y + hl + 1, w, apex_style, style->dot_style);
-	} else  {
+	} else {
 		if (y2 == y) {
 			draw_horizontal_line (c, min_x, y, diff_x + 1, DOT_DOT, style->dot_style);
 		} else {
@@ -427,7 +427,7 @@ R_API void r_cons_canvas_line_square_defined (RConsCanvas *c, int x, int y, int 
 				if (x != x2) {
 					draw_horizontal_line (c, min_x, y, diff_x + 1, REV_APEX_APEX, style->dot_style);
 				}
-				draw_vertical_line (c, x2, y2, diff_y-2, style->dot_style);
+				draw_vertical_line (c, x2, y2, diff_y - 2, style->dot_style);
 			}
 		}
 	} else {
@@ -460,7 +460,7 @@ R_API void r_cons_canvas_line_back_edge (RConsCanvas *c, int x, int y, int x2, i
 	int diff_x1 = R_ABS (x - xbendpoint);
 	int diff_x2 = R_ABS (x2 - xbendpoint);
 
-	int diff_y = R_ABS ((y + ybendpoint1 + 1) - (y2 - ybendpoint2- 1));
+	int diff_y = R_ABS ((y + ybendpoint1 + 1) - (y2 - ybendpoint2 - 1));
 
 	int w1 = diff_x1 == 0 ? 0 : diff_x1 + 1;
 	int w2 = diff_x2 == 0 ? 0 : diff_x2 + 1;

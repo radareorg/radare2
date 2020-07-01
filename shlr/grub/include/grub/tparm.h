@@ -18,7 +18,7 @@
  */
 
 #ifndef GRUB_TPARM_HEADER
-#define GRUB_TPARM_HEADER	1
+#define GRUB_TPARM_HEADER 1
 
 /* Function prototypes.  */
 char *grub_terminfo_tparm (const char *string, ...);

@@ -4,7 +4,7 @@
 
 #define D if (anal->verbose)
 
-static bool get_functions_block_cb(RAnalBlock *block, void *user) {
+static bool get_functions_block_cb (RAnalBlock *block, void *user) {
 	RList *list = user;
 	RListIter *iter;
 	RAnalFunction *fcn;
@@ -17,7 +17,7 @@ static bool get_functions_block_cb(RAnalBlock *block, void *user) {
 	return true;
 }
 
-R_API RList *r_anal_get_functions_in(RAnal *anal, ut64 addr) {
+R_API RList *r_anal_get_functions_in (RAnal *anal, ut64 addr) {
 	RList *list = r_list_new ();
 	if (!list) {
 		return NULL;
@@ -26,7 +26,7 @@ R_API RList *r_anal_get_functions_in(RAnal *anal, ut64 addr) {
 	return list;
 }
 
-static bool __fcn_exists(RAnal *anal, const char *name, ut64 addr) {
+static bool __fcn_exists (RAnal *anal, const char *name, ut64 addr) {
 	// check if name is already registered
 	bool found = false;
 	if (addr == UT64_MAX) {
@@ -39,26 +39,26 @@ static bool __fcn_exists(RAnal *anal, const char *name, ut64 addr) {
 	}
 	RAnalFunction *f = ht_pp_find (anal->ht_name_fun, name, &found);
 	if (f && found) {
-		eprintf ("Invalid function name '%s' at 0x%08"PFMT64x"\n", name, addr);
+		eprintf ("Invalid function name '%s' at 0x%08" PFMT64x "\n", name, addr);
 		return true;
 	}
 	// check if there's a function already in the given address
 	found = false;
 	f = ht_up_find (anal->ht_addr_fun, addr, &found);
 	if (f && found) {
-		eprintf ("Function already defined in 0x%08"PFMT64x"\n", addr);
+		eprintf ("Function already defined in 0x%08" PFMT64x "\n", addr);
 		return true;
 	}
 	return false;
 }
 
-R_IPI void r_anal_var_free(RAnalVar *av);
+R_IPI void r_anal_var_free (RAnalVar *av);
 
-static void inst_vars_kv_free(HtUPKv *kv) {
+static void inst_vars_kv_free (HtUPKv *kv) {
 	r_pvector_free (kv->value);
 }
 
-R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
+R_API RAnalFunction *r_anal_function_new (RAnal *anal) {
 	RAnalFunction *fcn = R_NEW0 (RAnalFunction);
 	if (!fcn) {
 		return NULL;
@@ -78,7 +78,7 @@ R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	return fcn;
 }
 
-R_API void r_anal_function_free(void *_fcn) {
+R_API void r_anal_function_free (void *_fcn) {
 	RAnalFunction *fcn = _fcn;
 	if (!_fcn) {
 		return;
@@ -111,7 +111,7 @@ R_API void r_anal_function_free(void *_fcn) {
 	free (fcn);
 }
 
-R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn) {
+R_API bool r_anal_add_function (RAnal *anal, RAnalFunction *fcn) {
 	if (__fcn_exists (anal, fcn->name, fcn->addr)) {
 		return false;
 	}
@@ -128,7 +128,7 @@ R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn) {
 	return true;
 }
 
-R_API RAnalFunction *r_anal_create_function(RAnal *anal, const char *name, ut64 addr, int type, RAnalDiff *diff) {
+R_API RAnalFunction *r_anal_create_function (RAnal *anal, const char *name, ut64 addr, int type, RAnalDiff *diff) {
 	RAnalFunction *fcn = r_anal_function_new (anal);
 	if (!fcn) {
 		return NULL;
@@ -145,7 +145,7 @@ R_API RAnalFunction *r_anal_create_function(RAnal *anal, const char *name, ut64 
 		if (!fcnprefix) {
 			fcnprefix = "fcn";
 		}
-		fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnprefix, fcn->addr);
+		fcn->name = r_str_newf ("%s.%08" PFMT64x, fcnprefix, fcn->addr);
 	}
 	if (diff) {
 		fcn->diff->type = diff->type;
@@ -162,11 +162,11 @@ R_API RAnalFunction *r_anal_create_function(RAnal *anal, const char *name, ut64 
 	return fcn;
 }
 
-R_API bool r_anal_function_delete(RAnalFunction *fcn) {
+R_API bool r_anal_function_delete (RAnalFunction *fcn) {
 	return r_list_delete_data (fcn->anal->fcns, fcn);
 }
 
-R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr) {
+R_API RAnalFunction *r_anal_get_function_at (RAnal *anal, ut64 addr) {
 	bool found = false;
 	RAnalFunction *f = ht_up_find (anal->ht_addr_fun, addr, &found);
 	if (f && found) {
@@ -180,13 +180,13 @@ typedef struct {
 	st64 delta;
 } InstVarsRelocateCtx;
 
-static bool inst_vars_relocate_cb(void *user, const ut64 k, const void *v) {
+static bool inst_vars_relocate_cb (void *user, const ut64 k, const void *v) {
 	InstVarsRelocateCtx *ctx = user;
 	ht_up_insert (ctx->inst_vars_new, k - ctx->delta, (void *)v);
 	return true;
 }
 
-R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr) {
+R_API bool r_anal_function_relocate (RAnalFunction *fcn, ut64 addr) {
 	if (fcn->addr == addr) {
 		return true;
 	}
@@ -222,7 +222,7 @@ R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr) {
 	return true;
 }
 
-R_API bool r_anal_function_rename(RAnalFunction *fcn, const char *name) {
+R_API bool r_anal_function_rename (RAnalFunction *fcn, const char *name) {
 	RAnal *anal = fcn->anal;
 	RAnalFunction *existing = ht_pp_find (anal->ht_name_fun, name, NULL);
 	if (existing) {
@@ -246,7 +246,7 @@ R_API bool r_anal_function_rename(RAnalFunction *fcn, const char *name) {
 	return true;
 }
 
-R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb) {
+R_API void r_anal_function_add_block (RAnalFunction *fcn, RAnalBlock *bb) {
 	if (r_list_contains (bb->fcns, fcn)) {
 		return;
 	}
@@ -268,11 +268,10 @@ R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb) {
 	}
 }
 
-R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb) {
+R_API void r_anal_function_remove_block (RAnalFunction *fcn, RAnalBlock *bb) {
 	r_list_delete_data (bb->fcns, fcn);
 
-	if (fcn->meta._min != UT64_MAX
-		&& (fcn->meta._min == bb->addr || fcn->meta._max == bb->addr + bb->size)) {
+	if (fcn->meta._min != UT64_MAX && (fcn->meta._min == bb->addr || fcn->meta._max == bb->addr + bb->size)) {
 		// If a block is removed at the beginning or end, updating min/max is not trivial anymore, just invalidate
 		fcn->meta._min = UT64_MAX;
 	}
@@ -281,7 +280,7 @@ R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb) {
 	r_anal_block_unref (bb);
 }
 
-static void ensure_fcn_range(RAnalFunction *fcn) {
+static void ensure_fcn_range (RAnalFunction *fcn) {
 	if (fcn->meta._min != UT64_MAX) { // recalculate only if invalid
 		return;
 	}
@@ -290,38 +289,38 @@ static void ensure_fcn_range(RAnalFunction *fcn) {
 	RAnalBlock *block;
 	RListIter *iter;
 	r_list_foreach (fcn->bbs, iter, block) {
-			if (block->addr < minval) {
-				minval = block->addr;
-			}
-			if (block->addr + block->size > maxval) {
-				maxval = block->addr + block->size;
-			}
+		if (block->addr < minval) {
+			minval = block->addr;
 		}
+		if (block->addr + block->size > maxval) {
+			maxval = block->addr + block->size;
+		}
+	}
 	fcn->meta._min = minval;
 	fcn->meta._max = minval == UT64_MAX ? UT64_MAX : maxval;
 }
 
-R_API ut64 r_anal_function_linear_size(RAnalFunction *fcn) {
+R_API ut64 r_anal_function_linear_size (RAnalFunction *fcn) {
 	ensure_fcn_range (fcn);
 	return fcn->meta._max - fcn->meta._min;
 }
 
-R_API ut64 r_anal_function_min_addr(RAnalFunction *fcn) {
+R_API ut64 r_anal_function_min_addr (RAnalFunction *fcn) {
 	ensure_fcn_range (fcn);
 	return fcn->meta._min;
 }
 
-R_API ut64 r_anal_function_max_addr(RAnalFunction *fcn) {
+R_API ut64 r_anal_function_max_addr (RAnalFunction *fcn) {
 	ensure_fcn_range (fcn);
 	return fcn->meta._max;
 }
 
-R_API ut64 r_anal_function_size_from_entry(RAnalFunction *fcn) {
+R_API ut64 r_anal_function_size_from_entry (RAnalFunction *fcn) {
 	ensure_fcn_range (fcn);
 	return fcn->meta._min == UT64_MAX ? 0 : fcn->meta._max - fcn->addr;
 }
 
-R_API ut64 r_anal_function_realsize(const RAnalFunction *fcn) {
+R_API ut64 r_anal_function_realsize (const RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	ut64 sz = 0;
@@ -333,7 +332,7 @@ R_API ut64 r_anal_function_realsize(const RAnalFunction *fcn) {
 	return sz;
 }
 
-static bool fcn_in_cb(RAnalBlock *block, void *user) {
+static bool fcn_in_cb (RAnalBlock *block, void *user) {
 	RListIter *iter;
 	RAnalFunction *fcn;
 	r_list_foreach (block->fcns, iter, fcn) {
@@ -344,7 +343,7 @@ static bool fcn_in_cb(RAnalBlock *block, void *user) {
 	return true;
 }
 
-R_API bool r_anal_function_contains(RAnalFunction *fcn, ut64 addr) {
+R_API bool r_anal_function_contains (RAnalFunction *fcn, ut64 addr) {
 	// fcn_in_cb breaks with false if it finds the fcn
 	return !r_anal_blocks_foreach_in (fcn->anal, addr, fcn_in_cb, fcn);
 }

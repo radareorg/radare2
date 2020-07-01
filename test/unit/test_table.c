@@ -4,7 +4,7 @@
 
 //TODO test r_str_chop_path
 
-bool test_r_table(void) {
+bool test_r_table (void) {
 	RTable *t = r_table_new ();
 
 	// r_table_fromcsv (t, csv);
@@ -31,7 +31,7 @@ bool test_r_table(void) {
 	mu_end;
 }
 
-RTable *__table_test_data1() {
+RTable *__table_test_data1 () {
 	RTable *t = r_table_new ();
 
 	r_table_add_column (t, r_table_type ("string"), "ascii", 0);
@@ -44,7 +44,7 @@ RTable *__table_test_data1() {
 	return t;
 }
 
-bool test_r_table_column_type(void) {
+bool test_r_table_column_type (void) {
 	RTable *t = __table_test_data1 ();
 	RTableColumn *c = r_list_get_n (t->cols, 1);
 	c->type = r_table_type ("NUMBER");
@@ -55,13 +55,14 @@ bool test_r_table_column_type(void) {
 		"----------\n"
 		"a     97\n"
 		"b     98\n"
-		"c     99\n", "not sorted by second column due to undefined type");
+		"c     99\n",
+		"not sorted by second column due to undefined type");
 	free (s);
 	r_table_free (t);
 	mu_end;
 }
 
-bool test_r_table_tostring(void) {
+bool test_r_table_tostring (void) {
 	RTable *t = __table_test_data1 ();
 	char buf[BUF_LENGTH];
 
@@ -74,14 +75,15 @@ bool test_r_table_tostring(void) {
 			"----------\n"
 			"a     97\n"
 			"b     98\n"
-			"c     99\n", buf);
+			"c     99\n",
+			buf);
 		free (s);
 	}
 	r_table_free (t);
 	mu_end;
 }
 
-bool test_r_table_sort1(void) {
+bool test_r_table_sort1 (void) {
 	RTable *t = __table_test_data1 ();
 
 	r_table_sort (t, 1, true);
@@ -91,7 +93,8 @@ bool test_r_table_sort1(void) {
 		"----------\n"
 		"c     99\n"
 		"b     98\n"
-		"a     97\n", "sort decreasing second column using number type");
+		"a     97\n",
+		"sort decreasing second column using number type");
 	free (strd);
 
 	r_table_sort (t, 1, false);
@@ -101,13 +104,14 @@ bool test_r_table_sort1(void) {
 		"----------\n"
 		"a     97\n"
 		"b     98\n"
-		"c     99\n", "sort increasing second column using number type");
+		"c     99\n",
+		"sort increasing second column using number type");
 	free (stri);
 	r_table_free (t);
 	mu_end;
 }
 
-bool test_r_table_uniq(void) {
+bool test_r_table_uniq (void) {
 	RTable *t = __table_test_data1 ();
 
 	r_table_uniq (t);
@@ -150,7 +154,7 @@ bool test_r_table_uniq(void) {
 	mu_end;
 }
 
-static void simple_merge(RTableRow *acc, RTableRow *new_row, int nth) {
+static void simple_merge (RTableRow *acc, RTableRow *new_row, int nth) {
 	RList *lhs = acc->items;
 	RList *rhs = new_row->items;
 	RListIter *iter_lhs;
@@ -261,7 +265,8 @@ bool test_r_table_columns () {
 	mu_assert_streq (s,
 		"name,address\n"
 		"hello,100\n"
-		"namings,20000\n", "original");
+		"namings,20000\n",
+		"original");
 	free (s);
 
 	RList *newcols = r_list_new ();
@@ -270,7 +275,8 @@ bool test_r_table_columns () {
 	mu_assert_streq (s,
 		"\n"
 		"\n"
-		"\n", "no cols");
+		"\n",
+		"no cols");
 	free (s);
 
 	CREATE_TABLE
@@ -280,7 +286,8 @@ bool test_r_table_columns () {
 	mu_assert_streq (s,
 		"address\n"
 		"100\n"
-		"20000\n", "select");
+		"20000\n",
+		"select");
 	free (s);
 
 	CREATE_TABLE
@@ -290,7 +297,8 @@ bool test_r_table_columns () {
 	mu_assert_streq (s,
 		"address,name\n"
 		"100,hello\n"
-		"20000,namings\n", "reorder");
+		"20000,namings\n",
+		"reorder");
 	free (s);
 
 	CREATE_TABLE
@@ -301,7 +309,8 @@ bool test_r_table_columns () {
 	mu_assert_streq (s,
 		"address,name,name,address\n"
 		"100,hello,hello,100\n"
-		"20000,namings,namings,20000\n", "replicate");
+		"20000,namings,namings,20000\n",
+		"replicate");
 	free (s);
 
 	r_list_free (newcols);
@@ -310,17 +319,17 @@ bool test_r_table_columns () {
 #undef CREATE_TABLE
 }
 
-bool all_tests() {
-	mu_run_test(test_r_table);
-	mu_run_test(test_r_table_column_type);
-	mu_run_test(test_r_table_tostring);
-	mu_run_test(test_r_table_sort1);
-	mu_run_test(test_r_table_uniq);
-	mu_run_test(test_r_table_group);
+bool all_tests () {
+	mu_run_test (test_r_table);
+	mu_run_test (test_r_table_column_type);
+	mu_run_test (test_r_table_tostring);
+	mu_run_test (test_r_table_sort1);
+	mu_run_test (test_r_table_uniq);
+	mu_run_test (test_r_table_group);
 	mu_run_test (test_r_table_columns);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
+int main (int argc, char **argv) {
+	return all_tests ();
 }

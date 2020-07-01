@@ -4,17 +4,17 @@
 #include <r_util.h>
 #include "dex.h"
 
-char* r_bin_dex_get_version(RBinDexObj *bin) {
+char *r_bin_dex_get_version (RBinDexObj *bin) {
 	r_return_val_if_fail (bin, NULL);
-	char* version = calloc (1, 8);
+	char *version = calloc (1, 8);
 	if (version) {
-		r_buf_read_at (bin->b, 4, (ut8*)version, 3);
+		r_buf_read_at (bin->b, 4, (ut8 *)version, 3);
 		return version;
 	}
 	return NULL;
 }
 
-void r_bin_dex_free(RBinDexObj *dex) {
+void r_bin_dex_free (RBinDexObj *dex) {
 	size_t i;
 	struct dex_header_t *dexhdr = &dex->header;
 	for (i = 0; i < dexhdr->strings_size; i++) {
@@ -24,7 +24,7 @@ void r_bin_dex_free(RBinDexObj *dex) {
 	free (dex);
 }
 
-RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
+RBinDexObj *r_bin_dex_new_buf (RBuffer *buf) {
 	r_return_val_if_fail (buf, NULL);
 	RBinDexObj *bin = R_NEW0 (RBinDexObj);
 	int i;
@@ -71,8 +71,8 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	dexhdr->data_size = r_buf_read_le32 (bin->b);
 	dexhdr->data_offset = r_buf_read_le32 (bin->b);
 
-	/* strings */
-	#define STRINGS_SIZE ((dexhdr->strings_size + 1) * sizeof (ut32))
+/* strings */
+#define STRINGS_SIZE ((dexhdr->strings_size + 1) * sizeof (ut32))
 	if (dexhdr->strings_size > bin->size) {
 		goto fail;
 	}
@@ -80,7 +80,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	if (!bin->strings) {
 		goto fail;
 	}
-	r_buf_read_at (bin->b, dexhdr->strings_offset, (ut8*)bin->strings, dexhdr->strings_size * sizeof (ut32));
+	r_buf_read_at (bin->b, dexhdr->strings_offset, (ut8 *)bin->strings, dexhdr->strings_size * sizeof (ut32));
 	// TODO: this is unnecessary on Big endian machines
 	for (i = 0; i < dexhdr->strings_size; i++) {
 		ut64 offset = dexhdr->strings_offset + (i * sizeof (ut32));
@@ -101,7 +101,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	}
 
 	dexhdr->class_size = classes_size / DEX_CLASS_SIZE;
-	bin->classes = (struct dex_class_t *) calloc (dexhdr->class_size + 1,
+	bin->classes = (struct dex_class_t *)calloc (dexhdr->class_size + 1,
 		sizeof (struct dex_class_t));
 	for (i = 0; i < dexhdr->class_size; i++) {
 		ut64 offset = dexhdr->class_offset + i * DEX_CLASS_SIZE;
@@ -131,7 +131,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 		}
 	}
 	dexhdr->method_size = methods_size / sizeof (struct dex_method_t);
-	bin->methods = (struct dex_method_t *) calloc (methods_size + 1, 1);
+	bin->methods = (struct dex_method_t *)calloc (methods_size + 1, 1);
 	for (i = 0; i < dexhdr->method_size; i++) {
 		ut64 offset = dexhdr->method_offset + i * sizeof (struct dex_method_t);
 		if (offset + 8 > bin->size) {
@@ -152,7 +152,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 		types_size = bin->size - dexhdr->types_offset;
 	}
 	dexhdr->types_size = types_size / sizeof (struct dex_type_t);
-	bin->types = (struct dex_type_t *) calloc (types_size + 1, 1);
+	bin->types = (struct dex_type_t *)calloc (types_size + 1, 1);
 	for (i = 0; i < dexhdr->types_size; i++) {
 		ut64 offset = dexhdr->types_offset + i * sizeof (struct dex_type_t);
 		if (offset + 4 > bin->size) {
@@ -175,7 +175,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 		}
 	}
 	dexhdr->fields_size = fields_size / sizeof (struct dex_field_t);
-	bin->fields = (struct dex_field_t *) calloc (fields_size + 1, 1);
+	bin->fields = (struct dex_field_t *)calloc (fields_size + 1, 1);
 	for (i = 0; i < dexhdr->fields_size; i++) {
 		ut64 offset = dexhdr->fields_offset + i * sizeof (struct dex_field_t);
 		if (offset + 8 > bin->size) {
@@ -202,7 +202,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 		}
 	}
 	dexhdr->prototypes_size = protos_size / sizeof (struct dex_proto_t);
-	bin->protos = (struct dex_proto_t *) calloc (protos_size + 1, 1);
+	bin->protos = (struct dex_proto_t *)calloc (protos_size + 1, 1);
 	for (i = 0; i < dexhdr->prototypes_size; i++) {
 		ut64 offset = dexhdr->prototypes_offset + i * sizeof (struct dex_proto_t);
 		if (offset + 12 > bin->size) {

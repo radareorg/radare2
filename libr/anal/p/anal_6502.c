@@ -26,7 +26,7 @@ enum {
 	_6502_FLAGS_BNZ = (_6502_FLAGS_B | _6502_FLAGS_Z | _6502_FLAGS_N),
 };
 
-static void _6502_anal_update_flags(RAnalOp *op, int flags) {
+static void _6502_anal_update_flags (RAnalOp *op, int flags) {
 	/* FIXME: 9,$b instead of 8,$b to prevent the bug triggered by: A = 0 - 0xff - 1 */
 	if (flags & _6502_FLAGS_B) {
 		r_strbuf_append (&op->esil, ",9,$b,C,:=");
@@ -43,7 +43,7 @@ static void _6502_anal_update_flags(RAnalOp *op, int flags) {
 }
 
 /* ORA, AND, EOR, ADC, STA, LDA, CMP and SBC share this pattern */
-static void _6502_anal_esil_get_addr_pattern1(RAnalOp *op, const ut8* data, int len, char* addrbuf, int addrsize) {
+static void _6502_anal_esil_get_addr_pattern1 (RAnalOp *op, const ut8 *data, int len, char *addrbuf, int addrsize) {
 	if (len < 1) {
 		return;
 	}
@@ -51,44 +51,44 @@ static void _6502_anal_esil_get_addr_pattern1(RAnalOp *op, const ut8* data, int 
 	switch (data[0] & 0x1f) { // 0x1f = b00111111
 	case 0x09: // op #$ff
 		op->cycles = 2;
-		snprintf (addrbuf, addrsize,"0x%02x", (len > 1)? data[1]: 0);
+		snprintf (addrbuf, addrsize, "0x%02x", (len > 1) ? data[1] : 0);
 		break;
 	case 0x05: // op $ff
 		op->cycles = 3;
-		snprintf (addrbuf, addrsize,"0x%02x", (len > 1)? data[1]: 0);
+		snprintf (addrbuf, addrsize, "0x%02x", (len > 1) ? data[1] : 0);
 		break;
 	case 0x15: // op $ff,x
 		op->cycles = 4;
-		snprintf (addrbuf, addrsize,"x,0x%02x,+", (len > 1)? data[1]: 0);
+		snprintf (addrbuf, addrsize, "x,0x%02x,+", (len > 1) ? data[1] : 0);
 		break;
 	case 0x0d: // op $ffff
 		op->cycles = 4;
-		snprintf (addrbuf, addrsize,"0x%04x", (len > 2) ? (data[1] | data[2] << 8): 0);
+		snprintf (addrbuf, addrsize, "0x%04x", (len > 2) ? (data[1] | data[2] << 8) : 0);
 		break;
 	case 0x1d: // op $ffff,x
 		// FIXME: Add 1 if page boundary is crossed.
 		op->cycles = 4;
-		snprintf (addrbuf, addrsize,"x,0x%04x,+", (len > 2) ? data[1] | data[2] << 8: 0);
+		snprintf (addrbuf, addrsize, "x,0x%04x,+", (len > 2) ? data[1] | data[2] << 8 : 0);
 		break;
 	case 0x19: // op $ffff,y
 		// FIXME: Add 1 if page boundary is crossed.
 		op->cycles = 4;
-		snprintf (addrbuf, addrsize,"y,0x%04x,+", (len > 2)? data[1] | data[2] << 8: 0);
+		snprintf (addrbuf, addrsize, "y,0x%04x,+", (len > 2) ? data[1] | data[2] << 8 : 0);
 		break;
 	case 0x01: // op ($ff,x)
 		op->cycles = 6;
-		snprintf (addrbuf, addrsize,"x,0x%02x,+,[2]", (len > 1)? data[1]: 0);
+		snprintf (addrbuf, addrsize, "x,0x%02x,+,[2]", (len > 1) ? data[1] : 0);
 		break;
 	case 0x11: // op ($ff),y
 		// FIXME: Add 1 if page boundary is crossed.
 		op->cycles = 5;
-		snprintf (addrbuf, addrsize,"y,0x%02x,[2],+", (len > 1) ? data[1]: 0);
+		snprintf (addrbuf, addrsize, "y,0x%02x,[2],+", (len > 1) ? data[1] : 0);
 		break;
 	}
 }
 
 /* ASL, ROL, LSR, ROR, STX, LDX, DEC and INC share this pattern */
-static void _6502_anal_esil_get_addr_pattern2(RAnalOp *op, const ut8* data, int len, char* addrbuf, int addrsize, char reg) {
+static void _6502_anal_esil_get_addr_pattern2 (RAnalOp *op, const ut8 *data, int len, char *addrbuf, int addrsize, char reg) {
 	// turn off bits 5, 6 and 7
 	if (len < 1) {
 		return;
@@ -96,7 +96,7 @@ static void _6502_anal_esil_get_addr_pattern2(RAnalOp *op, const ut8* data, int 
 	switch (data[0] & 0x1f) { // 0x1f = b00111111
 	case 0x02: // op #$ff
 		op->cycles = 2;
-		snprintf (addrbuf, addrsize, "0x%02x", (len>1)? data[1]: 0);
+		snprintf (addrbuf, addrsize, "0x%02x", (len > 1) ? data[1] : 0);
 		break;
 	case 0x0a: //op a
 		op->cycles = 2;
@@ -104,25 +104,25 @@ static void _6502_anal_esil_get_addr_pattern2(RAnalOp *op, const ut8* data, int 
 		break;
 	case 0x06: // op $ff
 		op->cycles = 5;
-		snprintf (addrbuf, addrsize, "0x%02x", (len>1)?data[1]:0);
+		snprintf (addrbuf, addrsize, "0x%02x", (len > 1) ? data[1] : 0);
 		break;
 	case 0x16: // op $ff,x
 		op->cycles = 6;
-		snprintf (addrbuf, addrsize, "%c,0x%02x,+", reg, (len >1)? data[1]:0);
+		snprintf (addrbuf, addrsize, "%c,0x%02x,+", reg, (len > 1) ? data[1] : 0);
 		break;
 	case 0x0e: // op $ffff
 		op->cycles = 6;
-		snprintf (addrbuf, addrsize, "0x%04x", (len>2)? data[1] | data[2] << 8: 0);
+		snprintf (addrbuf, addrsize, "0x%04x", (len > 2) ? data[1] | data[2] << 8 : 0);
 		break;
 	case 0x1e: // op $ffff,x
 		op->cycles = 7;
-		snprintf (addrbuf, addrsize, "%c,0x%04x,+", reg, (len>2)? data[1] | data[2] << 8: 0);
+		snprintf (addrbuf, addrsize, "%c,0x%04x,+", reg, (len > 2) ? data[1] | data[2] << 8 : 0);
 		break;
 	}
 }
 
 /* BIT, JMP, JMP(), STY, LDY, CPY, and CPX share this pattern */
-static void _6502_anal_esil_get_addr_pattern3(RAnalOp *op, const ut8* data, int len, char* addrbuf, int addrsize, char reg) {
+static void _6502_anal_esil_get_addr_pattern3 (RAnalOp *op, const ut8 *data, int len, char *addrbuf, int addrsize, char reg) {
 	// turn off bits 5, 6 and 7
 	if (len < 1) {
 		return;
@@ -130,7 +130,7 @@ static void _6502_anal_esil_get_addr_pattern3(RAnalOp *op, const ut8* data, int 
 	switch (data[0] & 0x1f) { // 0x1f = b00111111
 	case 0x00: // op #$ff
 		op->cycles = 2;
-		snprintf (addrbuf, addrsize, "0x%02x", (len > 1) ? data[1]: 0);
+		snprintf (addrbuf, addrsize, "0x%02x", (len > 1) ? data[1] : 0);
 		break;
 	case 0x08: //op a
 		op->cycles = 2;
@@ -138,24 +138,24 @@ static void _6502_anal_esil_get_addr_pattern3(RAnalOp *op, const ut8* data, int 
 		break;
 	case 0x04: // op $ff
 		op->cycles = 5;
-		snprintf (addrbuf, addrsize, "0x%02x", (len > 1)? data[1]: 0);
+		snprintf (addrbuf, addrsize, "0x%02x", (len > 1) ? data[1] : 0);
 		break;
 	case 0x14: // op $ff,x
 		op->cycles = 6;
-		snprintf (addrbuf, addrsize, "%c,0x%02x,+", reg, (len>1)? data[1]:0);
+		snprintf (addrbuf, addrsize, "%c,0x%02x,+", reg, (len > 1) ? data[1] : 0);
 		break;
 	case 0x0c: // op $ffff
 		op->cycles = 6;
-		snprintf (addrbuf, addrsize, "0x%04x", (len>2)? data[1] | data[2] << 8: 0);
+		snprintf (addrbuf, addrsize, "0x%04x", (len > 2) ? data[1] | data[2] << 8 : 0);
 		break;
 	case 0x1c: // op $ffff,x
 		op->cycles = 7;
-		snprintf (addrbuf, addrsize, "%c,0x%04x,+", reg, (len>2)? data[1] | data[2] << 8: 0);
+		snprintf (addrbuf, addrsize, "%c,0x%04x,+", reg, (len > 2) ? data[1] | data[2] << 8 : 0);
 		break;
 	}
 }
 
-static void _6502_anal_esil_ccall(RAnalOp *op, ut8 data0) {
+static void _6502_anal_esil_ccall (RAnalOp *op, ut8 data0) {
 	char *flag;
 	switch (data0) {
 	case 0x10: // bpl $ffff
@@ -191,10 +191,10 @@ static void _6502_anal_esil_ccall(RAnalOp *op, ut8 data0) {
 }
 
 // inc register
-static void _6502_anal_esil_inc_reg(RAnalOp *op, ut8 data0, char* sign) {
-	char* reg = NULL;
+static void _6502_anal_esil_inc_reg (RAnalOp *op, ut8 data0, char *sign) {
+	char *reg = NULL;
 
-	switch(data0) {
+	switch (data0) {
 	case 0xe8: // inx
 	case 0xca: // dex
 		reg = "x";
@@ -208,39 +208,39 @@ static void _6502_anal_esil_inc_reg(RAnalOp *op, ut8 data0, char* sign) {
 	_6502_anal_update_flags (op, _6502_FLAGS_NZ);
 }
 
-static void _6502_anal_esil_mov(RAnalOp *op, ut8 data0) {
-	const char* src="unk";
-	const char* dst="unk";
-	switch(data0) {
+static void _6502_anal_esil_mov (RAnalOp *op, ut8 data0) {
+	const char *src = "unk";
+	const char *dst = "unk";
+	switch (data0) {
 	case 0xaa: // tax
-		src="a";
-		dst="x";
+		src = "a";
+		dst = "x";
 		break;
 	case 0x8a: // txa
-		src="x";
-		dst="a";
+		src = "x";
+		dst = "a";
 		break;
 	case 0xa8: // tay
-		src="a";
-		dst="y";
+		src = "a";
+		dst = "y";
 		break;
 	case 0x98: // tya
-		src="y";
-		dst="a";
+		src = "y";
+		dst = "a";
 		break;
 	case 0x9a: // txs
-		src="x";
-		dst="sp";
+		src = "x";
+		dst = "sp";
 		break;
 	case 0xba: // tsx
-		src="sp";
-		dst="x";
+		src = "sp";
+		dst = "x";
 		break;
 	default:
 		// FIXME: should not happen
 		break;
 	}
-	r_strbuf_setf (&op->esil, "%s,%s,=",src,dst);
+	r_strbuf_setf (&op->esil, "%s,%s,=", src, dst);
 
 	// don't update NZ on txs
 	if (data0 != 0x9a) {
@@ -248,18 +248,18 @@ static void _6502_anal_esil_mov(RAnalOp *op, ut8 data0) {
 	}
 }
 
-static void _6502_anal_esil_push(RAnalOp *op, ut8 data0) {
+static void _6502_anal_esil_push (RAnalOp *op, ut8 data0) {
 	// case 0x08: // php
 	// case 0x48: // pha
-	char *reg = (data0==0x08) ? "flags" : "a";
+	char *reg = (data0 == 0x08) ? "flags" : "a";
 	// stack is on page one: sp + 0x100
 	r_strbuf_setf (&op->esil, "%s,sp,0x100,+,=[1],sp,--=", reg);
 }
 
-static void _6502_anal_esil_pop(RAnalOp *op, ut8 data0) {
+static void _6502_anal_esil_pop (RAnalOp *op, ut8 data0) {
 	// case 0x28: // plp
 	// case 0x68: // pla
-	char *reg = (data0==0x28) ? "flags" : "a";
+	char *reg = (data0 == 0x28) ? "flags" : "a";
 	// stack is on page one: sp + 0x100
 	r_strbuf_setf (&op->esil, "sp,++=,sp,0x100,+,[1],%s,=", reg);
 
@@ -268,10 +268,10 @@ static void _6502_anal_esil_pop(RAnalOp *op, ut8 data0) {
 	}
 }
 
-static void _6502_anal_esil_flags(RAnalOp *op, ut8 data0) {
-	int enabled=0;
-	char flag ='u';
-	switch(data0) {
+static void _6502_anal_esil_flags (RAnalOp *op, ut8 data0) {
+	int enabled = 0;
+	char flag = 'u';
+	switch (data0) {
 	case 0x78: // sei
 		enabled = 1;
 		flag = 'I';
@@ -305,14 +305,14 @@ static void _6502_anal_esil_flags(RAnalOp *op, ut8 data0) {
 	r_strbuf_setf (&op->esil, "%d,%c,=", enabled, flag);
 }
 
-static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static int _6502_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	char addrbuf[64];
 	const int buffsize = sizeof (addrbuf) - 1;
 	if (len < 1) {
 		return -1;
 	}
 
-	op->size = snes_op_get_size (1, 1, &snes_op[data[0]]);	//snes-arch is similar to nes/6502
+	op->size = snes_op_get_size (1, 1, &snes_op[data[0]]); //snes-arch is similar to nes/6502
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->id = data[0];
@@ -568,7 +568,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_SHL;
 		if (data[0] == 0x0a) {
 			r_strbuf_set (&op->esil, "1,a,<<=,7,$c,C,:=,a,a,=");
-		} else  {
+		} else {
 			_6502_anal_esil_get_addr_pattern2 (op, data, len, addrbuf, buffsize, 'x');
 			r_strbuf_setf (&op->esil, "1,%s,[1],<<,%s,=[1],7,$c,C,:=", addrbuf, addrbuf);
 		}
@@ -737,7 +737,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	case 0x20: // jsr $ffff
 		op->cycles = 6;
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = (len > 2)? data[1] | data[2] << 8: 0;
+		op->jump = (len > 2) ? data[1] | data[2] << 8 : 0;
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = 2;
 		// JSR pushes the address-1 of the next operation on to the stack before transferring program
@@ -749,7 +749,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	case 0x4c: // jmp $ffff
 		op->cycles = 3;
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = (len > 2)? data[1] | data[2] << 8: 0;
+		op->jump = (len > 2) ? data[1] | data[2] << 8 : 0;
 		r_strbuf_setf (&op->esil, "0x%04x,pc,=", op->jump);
 		break;
 	case 0x6c: // jmp ($ffff)
@@ -757,7 +757,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_UJMP;
 		// FIXME: how to read memory?
 		// op->jump = data[1] | data[2] << 8;
-		r_strbuf_setf (&op->esil, "0x%04x,[2],pc,=", len > 2? data[1] | data[2] << 8: 0);
+		r_strbuf_setf (&op->esil, "0x%04x,[2],pc,=", len > 2 ? data[1] | data[2] << 8 : 0);
 		break;
 	// RTS
 	case 0x60: // rts
@@ -907,7 +907,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	return op->size;
 }
 
-static bool set_reg_profile(RAnal *anal) {
+static bool set_reg_profile (RAnal *anal) {
 	char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
@@ -931,7 +931,7 @@ static bool set_reg_profile(RAnal *anal) {
 }
 
 static int esil_6502_init (RAnalEsil *esil) {
-	if (esil->anal && esil->anal->reg) {		//initial values
+	if (esil->anal && esil->anal->reg) { //initial values
 		r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "pc", -1), 0x0000);
 		r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "sp", -1), 0xff);
 		r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "a", -1), 0x00);

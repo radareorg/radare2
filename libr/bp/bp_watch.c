@@ -2,13 +2,13 @@
 
 #include <r_bp.h>
 
-static void r_bp_watch_add_hw(RBreakpoint *bp, RBreakpointItem *b) {
+static void r_bp_watch_add_hw (RBreakpoint *bp, RBreakpointItem *b) {
 	if (bp->breakpoint) {
 		bp->breakpoint (bp, b, true);
 	}
 }
 
-R_API RBreakpointItem* r_bp_watch_add(RBreakpoint *bp, ut64 addr, int size, int hw, int perm) {
+R_API RBreakpointItem *r_bp_watch_add (RBreakpoint *bp, ut64 addr, int size, int hw, int perm) {
 	RBreakpointItem *b;
 	if (addr == UT64_MAX || size < 1) {
 		return NULL;
@@ -34,5 +34,5 @@ R_API RBreakpointItem* r_bp_watch_add(RBreakpoint *bp, ut64 addr, int size, int 
 	return b;
 }
 
-R_API void r_bp_watch_del(void) {
+R_API void r_bp_watch_del (void) {
 }

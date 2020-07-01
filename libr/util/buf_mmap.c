@@ -14,13 +14,13 @@ struct buf_mmap_priv {
 	RMmap *mmap;
 };
 
-static inline struct buf_mmap_priv *get_priv_mmap(RBuffer *b) {
+static inline struct buf_mmap_priv *get_priv_mmap (RBuffer *b) {
 	struct buf_mmap_priv *priv = (struct buf_mmap_priv *)b->priv;
 	r_warn_if_fail (priv);
 	return priv;
 }
 
-static bool buf_mmap_init(RBuffer *b, const void *user) {
+static bool buf_mmap_init (RBuffer *b, const void *user) {
 	const struct buf_mmap_user *u = (const struct buf_mmap_user *)user;
 	struct buf_mmap_priv *priv = R_NEW0 (struct buf_mmap_priv);
 	if (!priv) {
@@ -39,14 +39,14 @@ static bool buf_mmap_init(RBuffer *b, const void *user) {
 	return true;
 }
 
-static bool buf_mmap_fini(RBuffer *b) {
+static bool buf_mmap_fini (RBuffer *b) {
 	struct buf_mmap_priv *priv = get_priv_mmap (b);
 	r_file_mmap_free (priv->mmap);
 	R_FREE (b->priv);
 	return true;
 }
 
-static bool buf_mmap_resize(RBuffer *b, ut64 newsize) {
+static bool buf_mmap_resize (RBuffer *b, ut64 newsize) {
 	struct buf_mmap_priv *priv = get_priv_mmap (b);
 	if (newsize > priv->mmap->len) {
 		ut8 *t = r_mem_mmap_resize (priv->mmap, newsize);

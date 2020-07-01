@@ -8,7 +8,7 @@
 #define USE_IOS_JETSAM 1
 
 #define MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT 6
-extern int memorystatus_control(uint32_t command, pid_t pid, uint32_t flags, void *buffer, size_t buffersize);
+extern int memorystatus_control (uint32_t command, pid_t pid, uint32_t flags, void *buffer, size_t buffersize);
 
 #else
 #define USE_IOS_JETSAM 0
@@ -16,21 +16,21 @@ extern int memorystatus_control(uint32_t command, pid_t pid, uint32_t flags, voi
 
 static int usage (int v) {
 	printf ("Usage: r2agent [-adhs] [-p port]\n"
-	"  -a        listen for everyone (localhost by default)\n"
-	"  -d        run in daemon mode (background)\n"
-	"  -h        show this help message\n"
-	"  -s        run in sandbox mode\n"
-	"  -u        enable http Authorization access\n"
-	"  -t        user:password authentication file\n"
-	"  -p [port] specify listening port (defaults to 8080)\n");
+		"  -a        listen for everyone (localhost by default)\n"
+		"  -d        run in daemon mode (background)\n"
+		"  -h        show this help message\n"
+		"  -s        run in sandbox mode\n"
+		"  -u        enable http Authorization access\n"
+		"  -t        user:password authentication file\n"
+		"  -p [port] specify listening port (defaults to 8080)\n");
 	return !v;
 }
 
-static int showversion(void) {
+static int showversion (void) {
 	return r_main_version_print ("r2agent");
 }
 
-R_API int r_main_r2agent(int argc, const char **argv) {
+R_API int r_main_r2agent (int argc, const char **argv) {
 	RSocket *s;
 	RSocketHTTPOptions so;
 	RSocketHTTPRequest *rs;
@@ -162,7 +162,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 					return 1;
 				}
 				snprintf (cmd, cmd_len, "r2 -q %s-e http.port=%d -c=h \"%s\"",
-					listenlocal? "": "-e http.bind=public ",
+					listenlocal ? "" : "-e http.bind=public ",
 					session_port, escaped_filename);
 
 				// TODO: use r_sys api to get pid when running in bg
@@ -177,11 +177,12 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 					return 1;
 				}
 				sprintf (result_heap,
-				"<html><body>"
-				"<a href='/'>back</a><hr size=1/>"
-				" - <a target='_blank' href='http://localhost:%d/'>open</a><br />"
-				" - <a href='/proc/kill/%d'>kill</a><br />"
-				"</body></html>", session_port, pid);
+					"<html><body>"
+					"<a href='/'>back</a><hr size=1/>"
+					" - <a target='_blank' href='http://localhost:%d/'>open</a><br />"
+					" - <a href='/proc/kill/%d'>kill</a><br />"
+					"</body></html>",
+					session_port, pid);
 				eprintf ("\nchild pid %d\n\n", pid);
 			}
 		}

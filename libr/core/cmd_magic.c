@@ -8,11 +8,11 @@ static RMagic *ck = NULL; // XXX: Use RCore->magic
 static char *ofile = NULL;
 static int kw_count = 0;
 
-static void r_core_magic_reset(RCore *core) {
+static void r_core_magic_reset (RCore *core) {
 	kw_count = 0;
 }
 
-static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, int v, bool json, int *hits) {
+static int r_core_magic_at (RCore *core, const char *file, ut64 addr, int depth, int v, bool json, int *hits) {
 	const char *fmt;
 	char *q, *p;
 	const char *str;
@@ -24,13 +24,13 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 	}
 #define NAH 32
 
-	if (--depth<0) {
+	if (--depth < 0) {
 		ret = 0;
 		goto seek_exit;
 	}
 	if (addr != core->offset) {
 #if 1
-		if (addr >= core->offset && (addr+NAH) < (core->offset + core->blocksize)) {
+		if (addr >= core->offset && (addr + NAH) < (core->offset + core->blocksize)) {
 			delta = addr - core->offset;
 		} else {
 			r_core_seek (core, addr, true);
@@ -45,13 +45,15 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 			goto seek_exit;
 		}
 	}
-	if (((addr&7)==0) && ((addr&(7<<8))==0))
+	if (((addr & 7) == 0) && ((addr & (7 << 8)) == 0))
 		if (!json) { // update search display
 			eprintf ("0x%08" PFMT64x " [%d matches found]\r", addr, *hits);
 		}
 	if (file) {
-		if (*file == ' ') file++;
-		if (!*file) file = NULL;
+		if (*file == ' ')
+			file++;
+		if (!*file)
+			file = NULL;
 	}
 	if (file && ofile && file != ofile) {
 		if (strcmp (file, ofile)) {
@@ -83,18 +85,18 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 			}
 		}
 	}
-//repeat:
+	//repeat:
 	//if (v) r_cons_printf ("  %d # pm %s @ 0x%"PFMT64x"\n", depth, file? file: "", addr);
 	if (delta + 2 > core->blocksize) {
 		eprintf ("EOB\n");
 		ret = -1;
 		goto seek_exit;
 	}
-	str = r_magic_buffer (ck, core->block+delta, core->blocksize - delta);
+	str = r_magic_buffer (ck, core->block + delta, core->blocksize - delta);
 	if (str) {
 		const char *cmdhit;
 #if USE_LIB_MAGIC
-		if (!v && (!strcmp (str, "data") || strstr(str, "ASCII") || strstr(str, "ISO") || strstr(str, "no line terminator"))) {
+		if (!v && (!strcmp (str, "data") || strstr (str, "ASCII") || strstr (str, "ISO") || strstr (str, "no line terminator"))) {
 #else
 		if (!v && (!strcmp (str, "data"))) {
 #endif
@@ -111,10 +113,10 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		p = strdup (str);
 		fmt = p;
 		// processing newlinez
-		for (q=p; *q; q++) {
-			if (q[0]=='\\' && q[1]=='n') {
+		for (q = p; *q; q++) {
+			if (q[0] == '\\' && q[1] == 'n') {
 				*q = '\n';
-				strcpy (q + 1, q + ((q[2] == ' ')? 3: 2));
+				strcpy (q + 1, q + ((q[2] == ' ') ? 3 : 2));
 			}
 		}
 		(*hits)++;
@@ -129,13 +131,13 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		}
 		// TODO: This must be a callback .. move this into RSearch?
 		if (!json) {
-			r_cons_printf ("0x%08"PFMT64x" %d %s\n", addr + adelta, magicdepth-depth, p);
+			r_cons_printf ("0x%08" PFMT64x " %d %s\n", addr + adelta, magicdepth - depth, p);
 		} else {
 			if (found >= 1) {
 				r_cons_printf (",");
 			}
-			r_cons_printf ("{\"offset\":%"PFMT64d ",\"depth\":%d,\"info\":\"%s\"}",
-					addr + adelta, magicdepth-depth, p);
+			r_cons_printf ("{\"offset\":%" PFMT64d ",\"depth\":%d,\"info\":\"%s\"}",
+				addr + adelta, magicdepth - depth, p);
 		}
 		r_cons_clear_line (1);
 		//eprintf ("0x%08"PFMT64x" 0x%08"PFMT64x" %d %s\n", addr+adelta, addr+adelta, magicdepth-depth, p);
@@ -145,44 +147,42 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 			case ' ':
 				fmt = q + 1;
 				break;
-			case '@':
-				{
-					ut64 addr = 0LL;
-					*q = 0;
-					if (!strncmp (q + 1, "0x", 2)) {
-						sscanf (q + 3, "%"PFMT64x, &addr);
-					} else {
-						sscanf (q + 1, "%"PFMT64d, &addr);
-					}
-					if (!fmt || !*fmt) {
-						fmt = file;
-					}
-					r_core_magic_at (core, fmt, addr, depth, 1, json, hits);
-					*q = '@';
+			case '@': {
+				ut64 addr = 0LL;
+				*q = 0;
+				if (!strncmp (q + 1, "0x", 2)) {
+					sscanf (q + 3, "%" PFMT64x, &addr);
+				} else {
+					sscanf (q + 1, "%" PFMT64d, &addr);
 				}
-				break;
+				if (!fmt || !*fmt) {
+					fmt = file;
+				}
+				r_core_magic_at (core, fmt, addr, depth, 1, json, hits);
+				*q = '@';
+			} break;
 			}
 		}
 		free (p);
 		r_magic_free (ck);
 		ck = NULL;
 
-		found ++;
-//		return adelta+1;
+		found++;
+		//		return adelta+1;
 	}
-	adelta ++;
-	delta ++;
+	adelta++;
+	delta++;
 #if 0
 	r_magic_free (ck);
 	ck = NULL;
 #endif
-{
-	int mod = core->search->align;
-	if (mod) {
-		ret = mod; //adelta%addr + deR_ABS(mod-adelta)+1;
-		goto seek_exit;
+	{
+		int mod = core->search->align;
+		if (mod) {
+			ret = mod; //adelta%addr + deR_ABS(mod-adelta)+1;
+			goto seek_exit;
+		}
 	}
-}
 	ret = adelta; //found;
 
 seek_exit:
@@ -190,7 +190,7 @@ seek_exit:
 	return ret;
 }
 
-static void r_core_magic(RCore *core, const char *file, int v, int json) {
+static void r_core_magic (RCore *core, const char *file, int v, int json) {
 	ut64 addr = core->offset;
 	int hits = 0;
 	magicdepth = r_config_get_i (core->config, "magic.depth"); // TODO: do not use global var here

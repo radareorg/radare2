@@ -4,7 +4,7 @@
 #include <r_util.h>
 #include "minunit.h"
 
-static void random_iota(int *a, int n) {
+static void random_iota (int *a, int n) {
 	int i;
 	a[0] = 0;
 	for (i = 1; i < n; i++) {
@@ -22,11 +22,11 @@ struct Node {
 	RBNode rb; // intrusive red-black tree node
 };
 
-static void freefn(RBNode *a, void *user) {
+static void freefn (RBNode *a, void *user) {
 	free (container_of (a, struct Node, rb));
 }
 
-static void size(RBNode *a_) {
+static void size (RBNode *a_) {
 	int i;
 	struct Node *a = container_of (a_, struct Node, rb);
 	a->size = 1;
@@ -37,17 +37,17 @@ static void size(RBNode *a_) {
 	}
 }
 
-static int cmp(const void *a, const RBNode *b, void *user) {
+static int cmp (const void *a, const RBNode *b, void *user) {
 	return ((const struct Node *)a)->key - container_of (b, const struct Node, rb)->key;
 }
 
-static struct Node *make(int key) {
+static struct Node *make (int key) {
 	struct Node *x = R_NEW (struct Node);
 	x->key = key;
 	return x;
 }
 
-static bool check1(RBNode *x, int dep, int black, bool leftmost) {
+static bool check1 (RBNode *x, int dep, int black, bool leftmost) {
 	static int black_;
 	if (x) {
 		black += !x->red;
@@ -57,7 +57,7 @@ static bool check1(RBNode *x, int dep, int black, bool leftmost) {
 		}
 		if ((x->child[0] ? container_of (x->child[0], struct Node, rb)->size : 0) +
 				(x->child[1] ? container_of (x->child[1], struct Node, rb)->size : 0) + 1 !=
-				container_of (x, struct Node, rb)->size) {
+			container_of (x, struct Node, rb)->size) {
 			printf ("error: size violation\n");
 			return false;
 		}
@@ -76,11 +76,11 @@ static bool check1(RBNode *x, int dep, int black, bool leftmost) {
 	return true;
 }
 
-bool check(RBNode *tree) {
+bool check (RBNode *tree) {
 	return check1 (tree, 0, 0, true);
 }
 
-bool test_r_rbtree_bound_iterate() {
+bool test_r_rbtree_bound_iterate () {
 	struct Node key = { 0 };
 	RBIter it;
 	RBNode *tree = NULL;
@@ -137,14 +137,14 @@ bool test_r_rbtree_bound_iterate() {
 	mu_end;
 }
 
-bool test_r_rbtree_bound() {
+bool test_r_rbtree_bound () {
 	struct Node key = { 0 };
 	RBNode *tree = NULL;
 	struct Node *x;
 	int i;
 
 	for (i = 0; i < 99; i++) {
-		x = make (i*2);
+		x = make (i * 2);
 		r_rbtree_insert (&tree, x, &x->rb, cmp, NULL);
 	}
 
@@ -168,7 +168,7 @@ bool test_r_rbtree_bound() {
 	mu_end;
 }
 
-static bool insert_delete(int *a, int n, RBNodeSum sum) {
+static bool insert_delete (int *a, int n, RBNodeSum sum) {
 	RBNode *tree = NULL;
 	struct Node *x;
 	int i, t;
@@ -184,13 +184,13 @@ static bool insert_delete(int *a, int n, RBNodeSum sum) {
 
 	random_iota (a, n);
 	for (i = 0; i < n; i++) {
-		struct Node x = {.key = a[i]};
+		struct Node x = { .key = a[i] };
 		t = r_rbtree_aug_delete (&tree, &x, cmp, NULL, freefn, NULL, sum);
 		mu_assert ("delete", t);
 		t = r_rbtree_aug_delete (&tree, &x, cmp, NULL, freefn, NULL, sum);
 		mu_assert ("delete non-existent", !t);
 		if (sum) {
-			if (i == n-1)
+			if (i == n - 1)
 				mu_assert ("size", tree == NULL);
 			else
 				mu_assert_eq (n - i - 1, container_of (tree, struct Node, rb)->size, "size");
@@ -202,7 +202,7 @@ static bool insert_delete(int *a, int n, RBNodeSum sum) {
 	return MU_PASSED;
 }
 
-bool test_r_rbtree_insert_delete(void) {
+bool test_r_rbtree_insert_delete (void) {
 #define N 1000
 	int a[N], i;
 
@@ -224,7 +224,7 @@ bool test_r_rbtree_insert_delete(void) {
 #undef N
 }
 
-bool test_r_rbtree_augmented_insert_delete(void) {
+bool test_r_rbtree_augmented_insert_delete (void) {
 #define N 1000
 	int a[N], i;
 
@@ -246,7 +246,7 @@ bool test_r_rbtree_augmented_insert_delete(void) {
 #undef N
 }
 
-bool test_r_rbtree_augmented_insert_delete2(void) {
+bool test_r_rbtree_augmented_insert_delete2 (void) {
 #define N 1000
 	RBNode *tree = NULL;
 	struct Node *x;
@@ -259,7 +259,7 @@ bool test_r_rbtree_augmented_insert_delete2(void) {
 		r_rbtree_aug_insert (&tree, x, &x->rb, cmp, NULL, size);
 	}
 	for (i = 0; i < N; i++) {
-		struct Node x = {.key = a[i] * 2 + 1};
+		struct Node x = { .key = a[i] * 2 + 1 };
 		t = r_rbtree_aug_delete (&tree, &x, cmp, NULL, freefn, NULL, size);
 		mu_assert ("delete non-existent", !t);
 		mu_assert_eq (N - i, container_of (tree, struct Node, rb)->size, "size");
@@ -275,7 +275,7 @@ bool test_r_rbtree_augmented_insert_delete2(void) {
 #undef N
 }
 
-bool test_r_rbtree_traverse(void) {
+bool test_r_rbtree_traverse (void) {
 	RBIter it;
 	RBNode *tree = NULL;
 	struct Node *x;
@@ -299,7 +299,7 @@ bool test_r_rbtree_traverse(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests () {
 	mu_run_test (test_r_rbtree_bound);
 	mu_run_test (test_r_rbtree_bound_iterate);
 	mu_run_test (test_r_rbtree_insert_delete);
@@ -309,6 +309,6 @@ int all_tests() {
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
+int main (int argc, char **argv) {
 	return all_tests ();
 }

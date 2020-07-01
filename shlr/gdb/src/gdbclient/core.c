@@ -76,7 +76,7 @@ static struct {
 	bool valid, init;
 } reg_cache;
 
-static void reg_cache_init(libgdbr_t *g) {
+static void reg_cache_init (libgdbr_t *g) {
 	reg_cache.maxlen = g->data_max;
 	reg_cache.buflen = 0;
 	reg_cache.valid = false;
@@ -86,13 +86,13 @@ static void reg_cache_init(libgdbr_t *g) {
 	}
 }
 
-static void gdbr_break_process(void *arg) {
+static void gdbr_break_process (void *arg) {
 	libgdbr_t *g = (libgdbr_t *)arg;
 	(void)g;
 	g->isbreaked = true;
 }
 
-bool gdbr_lock_tryenter(libgdbr_t *g) {
+bool gdbr_lock_tryenter (libgdbr_t *g) {
 	if (!r_th_lock_tryenter (g->gdbr_lock)) {
 		return false;
 	}
@@ -101,7 +101,7 @@ bool gdbr_lock_tryenter(libgdbr_t *g) {
 	return true;
 }
 
-bool gdbr_lock_enter(libgdbr_t *g) {
+bool gdbr_lock_enter (libgdbr_t *g) {
 	r_cons_break_push (gdbr_break_process, g);
 	void *bed = r_cons_sleep_begin ();
 	r_th_lock_enter (g->gdbr_lock);
@@ -113,7 +113,7 @@ bool gdbr_lock_enter(libgdbr_t *g) {
 	return true;
 }
 
-void gdbr_lock_leave(libgdbr_t *g) {
+void gdbr_lock_leave (libgdbr_t *g) {
 	r_cons_break_pop ();
 	assert (g->gdbr_lock_depth > 0);
 	bool last_leave = g->gdbr_lock_depth == 1;
@@ -125,7 +125,7 @@ void gdbr_lock_leave(libgdbr_t *g) {
 	}
 }
 
-static int gdbr_connect_lldb(libgdbr_t *g) {
+static int gdbr_connect_lldb (libgdbr_t *g) {
 	int ret = -1;
 	if (!gdbr_lock_enter (g)) {
 		goto end;
@@ -151,7 +151,7 @@ end:
 	return ret;
 }
 
-int gdbr_connect(libgdbr_t *g, const char *host, int port) {
+int gdbr_connect (libgdbr_t *g, const char *host, int port) {
 	const char *message = "qSupported:multiprocess+;qRelocInsn+;xmlRegisters=i386";
 	int i;
 	int ret = -1;
@@ -278,7 +278,7 @@ end:
 	return ret;
 }
 
-int gdbr_disconnect(libgdbr_t *g) {
+int gdbr_disconnect (libgdbr_t *g) {
 	// TODO Disconnect maybe send something to gdbserver
 	if (!g || !r_socket_close (g->sock)) {
 		return -1;
@@ -299,7 +299,7 @@ end:
 	return 0;
 }
 
-int gdbr_select(libgdbr_t *g, int pid, int tid) {
+int gdbr_select (libgdbr_t *g, int pid, int tid) {
 	char cmd[64] = { 0 };
 	int ret = -1;
 
@@ -311,7 +311,7 @@ int gdbr_select(libgdbr_t *g, int pid, int tid) {
 	g->tid = tid;
 	strcpy (cmd, "Hg");
 	if ((ret = write_thread_id (cmd + 2, sizeof (cmd) - 3, pid, tid,
-		    g->stub_features.multiprocess)) < 0) {
+		     g->stub_features.multiprocess)) < 0) {
 		goto end;
 	}
 	g->stop_reason.is_valid = false;
@@ -330,7 +330,7 @@ end:
 	return ret;
 }
 
-int gdbr_check_vcont(libgdbr_t *g) {
+int gdbr_check_vcont (libgdbr_t *g) {
 	int ret = -1;
 	char *ptr = NULL;
 
@@ -386,7 +386,7 @@ end:
 	return ret;
 }
 
-int gdbr_stop_reason(libgdbr_t *g) {
+int gdbr_stop_reason (libgdbr_t *g) {
 	int ret = -1;
 	if (!gdbr_lock_enter (g)) {
 		goto end;
@@ -401,7 +401,7 @@ end:
 	return ret;
 }
 
-int gdbr_check_extended_mode(libgdbr_t *g) {
+int gdbr_check_extended_mode (libgdbr_t *g) {
 	int ret = -1;
 
 	if (!gdbr_lock_enter (g)) {
@@ -434,7 +434,7 @@ end:
 	return ret;
 }
 
-int gdbr_attach(libgdbr_t *g, int pid) {
+int gdbr_attach (libgdbr_t *g, int pid) {
 	int ret = -1;
 	char *cmd = NULL;
 	size_t buffer_size;
@@ -490,7 +490,7 @@ end:
 	return ret;
 }
 
-int gdbr_detach(libgdbr_t *g) {
+int gdbr_detach (libgdbr_t *g) {
 	int ret = -1;
 
 	if (!g || !g->sock) {
@@ -515,7 +515,7 @@ end:
 	return ret;
 }
 
-int gdbr_detach_pid(libgdbr_t *g, int pid) {
+int gdbr_detach_pid (libgdbr_t *g, int pid) {
 	char *cmd = NULL;
 	int ret = -1;
 	size_t buffer_size;
@@ -567,7 +567,7 @@ end:
 	return ret;
 }
 
-int gdbr_kill(libgdbr_t *g) {
+int gdbr_kill (libgdbr_t *g) {
 	int ret = -1;
 
 	if (!g || !g->sock) {
@@ -600,7 +600,7 @@ end:
 	return ret;
 }
 
-int gdbr_kill_pid(libgdbr_t *g, int pid) {
+int gdbr_kill_pid (libgdbr_t *g, int pid) {
 	char *cmd = NULL;
 	int ret = -1;
 	size_t buffer_size;
@@ -648,7 +648,7 @@ end:
 	return ret;
 }
 
-static int gdbr_read_registers_lldb(libgdbr_t *g) {
+static int gdbr_read_registers_lldb (libgdbr_t *g) {
 	// Send the stop reply query packet and get register info
 	// (this is what lldb does)
 	int ret = -1;
@@ -680,7 +680,7 @@ end:
 	return ret;
 }
 
-int gdbr_read_registers(libgdbr_t *g) {
+int gdbr_read_registers (libgdbr_t *g) {
 	int ret = -1;
 
 	if (!g || !g->data) {
@@ -722,7 +722,7 @@ end:
 	return ret;
 }
 
-static int gdbr_read_memory_page(libgdbr_t *g, ut64 address, ut8 *buf, int len) {
+static int gdbr_read_memory_page (libgdbr_t *g, ut64 address, ut8 *buf, int len) {
 	char command[128] = { 0 };
 	int last, ret_len, pkt;
 	ret_len = 0;
@@ -745,7 +745,7 @@ static int gdbr_read_memory_page(libgdbr_t *g, ut64 address, ut8 *buf, int len) 
 	ret_len = 0;
 	for (pkt = 0; pkt < num_pkts; pkt++) {
 		if (snprintf (command, sizeof (command) - 1,
-			    "%s%"PFMT64x ",%"PFMT64x, CMD_READMEM,
+			    "%s%" PFMT64x ",%" PFMT64x, CMD_READMEM,
 			    (ut64)address + (pkt * data_sz),
 			    (ut64)data_sz) < 0) {
 			ret_len = -1;
@@ -777,8 +777,8 @@ static int gdbr_read_memory_page(libgdbr_t *g, ut64 address, ut8 *buf, int len) 
 	}
 	if (last) {
 		if (snprintf (command, sizeof (command) - 1,
-			    "%s%016"PFMT64x ",%"PFMT64x, CMD_READMEM,
-			    (ut64)(address + (num_pkts * data_sz)),
+			    "%s%016" PFMT64x ",%" PFMT64x, CMD_READMEM,
+			    (ut64) (address + (num_pkts * data_sz)),
 			    (ut64)last) < 0) {
 			ret_len = -1;
 			goto end;
@@ -807,7 +807,7 @@ end:
 	return ret_len;
 }
 
-int gdbr_read_memory(libgdbr_t *g, ut64 address, ut8 *buf, int len) {
+int gdbr_read_memory (libgdbr_t *g, ut64 address, ut8 *buf, int len) {
 	int ret_len, ret, tmp;
 	int page_size = g->page_size;
 	ret_len = 0;
@@ -855,7 +855,7 @@ end:
 	return ret_len;
 }
 
-int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len) {
+int gdbr_write_memory (libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len) {
 	int ret = -1;
 	int command_len, pkt, max_cmd_len = 64;
 	ut64 num_pkts, last, data_sz;
@@ -880,8 +880,8 @@ int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len)
 
 	for (pkt = num_pkts - 1; pkt >= 0; pkt--) {
 		if ((command_len = snprintf (tmp, max_cmd_len,
-			    "%s%016"PFMT64x ",%"PFMT64x ":", CMD_WRITEMEM,
-			    address + (pkt * data_sz), data_sz)) < 0) {
+			     "%s%016" PFMT64x ",%" PFMT64x ":", CMD_WRITEMEM,
+			     address + (pkt * data_sz), data_sz)) < 0) {
 			ret = -1;
 			goto end;
 		}
@@ -898,8 +898,8 @@ int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len)
 	}
 	if (last) {
 		if ((command_len = snprintf (tmp, max_cmd_len,
-			    "%s%016"PFMT64x ",%"PFMT64x ":", CMD_WRITEMEM,
-			    address + (num_pkts * data_sz), last)) < 0) {
+			     "%s%016" PFMT64x ",%" PFMT64x ":", CMD_WRITEMEM,
+			     address + (num_pkts * data_sz), last)) < 0) {
 			ret = -1;
 			goto end;
 		}
@@ -924,7 +924,7 @@ end:
 	return ret;
 }
 
-int gdbr_step(libgdbr_t *g, int tid) {
+int gdbr_step (libgdbr_t *g, int tid) {
 	int ret = -1;
 	char thread_id[64] = { 0 };
 
@@ -932,8 +932,7 @@ int gdbr_step(libgdbr_t *g, int tid) {
 		goto end;
 	}
 
-	if (tid <= 0 || write_thread_id (thread_id, sizeof (thread_id) - 1, g->pid, tid,
-		    g->stub_features.multiprocess) < 0) {
+	if (tid <= 0 || write_thread_id (thread_id, sizeof (thread_id) - 1, g->pid, tid, g->stub_features.multiprocess) < 0) {
 		send_vcont (g, "vCont?", NULL);
 		send_vcont (g, sdb_fmt ("Hc%d", tid), NULL);
 		ret = send_vcont (g, CMD_C_STEP, NULL);
@@ -946,7 +945,7 @@ end:
 	return ret;
 }
 
-int gdbr_continue(libgdbr_t *g, int pid, int tid, int sig) {
+int gdbr_continue (libgdbr_t *g, int pid, int tid, int sig) {
 	char thread_id[64] = { 0 };
 	char command[16] = { 0 };
 	int ret = -1;
@@ -960,8 +959,7 @@ int gdbr_continue(libgdbr_t *g, int pid, int tid, int sig) {
 	} else {
 		snprintf (command, sizeof (command) - 1, "%s%02x", CMD_C_CONT_SIG, sig);
 	}
-	if (tid <= 0 || write_thread_id (thread_id, sizeof (thread_id) - 1, g->pid, tid,
-		    g->stub_features.multiprocess) < 0) {
+	if (tid <= 0 || write_thread_id (thread_id, sizeof (thread_id) - 1, g->pid, tid, g->stub_features.multiprocess) < 0) {
 		ret = send_vcont (g, command, NULL);
 		goto end;
 	}
@@ -972,7 +970,7 @@ end:
 	return ret;
 }
 
-int gdbr_write_bin_registers(libgdbr_t *g, const char *regs, int len) {
+int gdbr_write_bin_registers (libgdbr_t *g, const char *regs, int len) {
 	int ret = -1;
 	uint64_t buffer_size = 0;
 	char *command = NULL;
@@ -1015,7 +1013,7 @@ end:
 	return ret;
 }
 
-int gdbr_write_register(libgdbr_t *g, int index, char *value, int len) {
+int gdbr_write_register (libgdbr_t *g, int index, char *value, int len) {
 	int ret = -1;
 	char command[255] = { 0 };
 	if (!g || !g->stub_features.P) {
@@ -1055,7 +1053,7 @@ end:
 	return ret;
 }
 
-int gdbr_write_reg(libgdbr_t *g, const char *name, char *value, int len) {
+int gdbr_write_reg (libgdbr_t *g, const char *name, char *value, int len) {
 	int i = 0;
 	int ret = -1;
 	if (!g) {
@@ -1093,14 +1091,14 @@ end:
 	return ret;
 }
 
-int gdbr_write_registers(libgdbr_t *g, char *registers) {
+int gdbr_write_registers (libgdbr_t *g, char *registers) {
 	uint64_t buffer_size;
 	int i = 0;
 	int ret = -1;
 	unsigned int x, len;
 	char *command, *reg, *buff, *value;
 	// read current register set
-	
+
 	command = buff = value = NULL;
 
 	if (!g) {
@@ -1190,7 +1188,7 @@ end:
 	return ret;
 }
 
-int test_command(libgdbr_t *g, const char *command) {
+int test_command (libgdbr_t *g, const char *command) {
 	int ret = -1;
 
 	if (!gdbr_lock_enter (g)) {
@@ -1209,7 +1207,7 @@ end:
 	return ret;
 }
 
-int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
+int send_vcont (libgdbr_t *g, const char *command, const char *thread_id) {
 	char tmp[255] = { 0 };
 	int ret = -1;
 	void *bed = NULL;
@@ -1279,7 +1277,8 @@ int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 	}
 
 	bed = r_cons_sleep_begin ();
-	while ((ret = read_packet (g, true)) < 0 && !g->isbreaked && r_socket_is_connected (g->sock));
+	while ((ret = read_packet (g, true)) < 0 && !g->isbreaked && r_socket_is_connected (g->sock))
+		;
 	if (g->isbreaked) {
 		g->isbreaked = false;
 		// Stop target
@@ -1298,7 +1297,7 @@ end:
 	return ret;
 }
 
-int set_bp(libgdbr_t *g, ut64 address, const char *conditions, enum Breakpoint type, int sizebp) {
+int set_bp (libgdbr_t *g, ut64 address, const char *conditions, enum Breakpoint type, int sizebp) {
 	char tmp[255] = { 0 };
 	int ret = -1;
 
@@ -1309,23 +1308,23 @@ int set_bp(libgdbr_t *g, ut64 address, const char *conditions, enum Breakpoint t
 	switch (type) {
 	case BREAKPOINT:
 		ret = snprintf (tmp, sizeof (tmp) - 1,
-			"%s,%"PFMT64x ",%d", CMD_BP, address, sizebp);
+			"%s,%" PFMT64x ",%d", CMD_BP, address, sizebp);
 		break;
 	case HARDWARE_BREAKPOINT:
 		ret = snprintf (tmp, sizeof (tmp) - 1,
-			"%s,%"PFMT64x ",%d", CMD_HBP, address, sizebp);
+			"%s,%" PFMT64x ",%d", CMD_HBP, address, sizebp);
 		break;
 	case WRITE_WATCHPOINT:
 		ret = snprintf (tmp, sizeof (tmp) - 1,
-			"%s,%"PFMT64x ",%d", CMD_HWW, address, sizebp);
+			"%s,%" PFMT64x ",%d", CMD_HWW, address, sizebp);
 		break;
 	case READ_WATCHPOINT:
 		ret = snprintf (tmp, sizeof (tmp) - 1,
-			"%s,%"PFMT64x ",%d", CMD_HWR, address, sizebp);
+			"%s,%" PFMT64x ",%d", CMD_HWR, address, sizebp);
 		break;
 	case ACCESS_WATCHPOINT:
 		ret = snprintf (tmp, sizeof (tmp) - 1,
-			"%s,%"PFMT64x ",%d", CMD_HWA, address, sizebp);
+			"%s,%" PFMT64x ",%d", CMD_HWA, address, sizebp);
 		break;
 	default:
 		break;
@@ -1353,47 +1352,46 @@ end:
 	return ret;
 }
 
-int gdbr_set_bp(libgdbr_t *g, ut64 address, const char *conditions, int sizebp) {
+int gdbr_set_bp (libgdbr_t *g, ut64 address, const char *conditions, int sizebp) {
 	return set_bp (g, address, conditions, BREAKPOINT, sizebp);
 }
 
-int gdbr_set_hwbp(libgdbr_t *g, ut64 address, const char *conditions, int sizebp) {
+int gdbr_set_hwbp (libgdbr_t *g, ut64 address, const char *conditions, int sizebp) {
 	return set_bp (g, address, conditions, HARDWARE_BREAKPOINT, sizebp);
 }
 
-int gdbr_set_hww(libgdbr_t *g, ut64 address, const char *conditions, int sizebp) {
+int gdbr_set_hww (libgdbr_t *g, ut64 address, const char *conditions, int sizebp) {
 	return set_bp (g, address, conditions, WRITE_WATCHPOINT, sizebp);
 }
 
-int gdbr_set_hwr(libgdbr_t *g, ut64 address, const char *conditions, int sizebp) {
+int gdbr_set_hwr (libgdbr_t *g, ut64 address, const char *conditions, int sizebp) {
 	return set_bp (g, address, conditions, READ_WATCHPOINT, sizebp);
 }
 
-int gdbr_set_hwa(libgdbr_t *g, ut64 address, const char *conditions, int sizebp) {
+int gdbr_set_hwa (libgdbr_t *g, ut64 address, const char *conditions, int sizebp) {
 	return set_bp (g, address, conditions, ACCESS_WATCHPOINT, sizebp);
 }
 
-int gdbr_remove_bp(libgdbr_t *g, ut64 address, int sizebp) {
+int gdbr_remove_bp (libgdbr_t *g, ut64 address, int sizebp) {
 	return remove_bp (g, address, BREAKPOINT, sizebp);
 }
-int gdbr_remove_hwbp(libgdbr_t *g, ut64 address, int sizebp) {
+int gdbr_remove_hwbp (libgdbr_t *g, ut64 address, int sizebp) {
 	return remove_bp (g, address, HARDWARE_BREAKPOINT, sizebp);
 }
 
-int gdbr_remove_hww(libgdbr_t *g, ut64 address, int sizebp) {
+int gdbr_remove_hww (libgdbr_t *g, ut64 address, int sizebp) {
 	return remove_bp (g, address, WRITE_WATCHPOINT, sizebp);
 }
 
-int gdbr_remove_hwr(libgdbr_t *g, ut64 address, int sizebp) {
+int gdbr_remove_hwr (libgdbr_t *g, ut64 address, int sizebp) {
 	return remove_bp (g, address, READ_WATCHPOINT, sizebp);
 }
 
-int gdbr_remove_hwa(libgdbr_t *g, ut64 address, int sizebp) {
+int gdbr_remove_hwa (libgdbr_t *g, ut64 address, int sizebp) {
 	return remove_bp (g, address, ACCESS_WATCHPOINT, sizebp);
 }
 
-
-int remove_bp(libgdbr_t *g, ut64 address, enum Breakpoint type, int sizebp) {
+int remove_bp (libgdbr_t *g, ut64 address, enum Breakpoint type, int sizebp) {
 	char tmp[255] = { 0 };
 	int ret = -1;
 
@@ -1403,19 +1401,19 @@ int remove_bp(libgdbr_t *g, ut64 address, enum Breakpoint type, int sizebp) {
 
 	switch (type) {
 	case BREAKPOINT:
-		ret = snprintf (tmp, sizeof (tmp) - 1, "%s,%"PFMT64x ",%d", CMD_RBP, address, sizebp);
+		ret = snprintf (tmp, sizeof (tmp) - 1, "%s,%" PFMT64x ",%d", CMD_RBP, address, sizebp);
 		break;
 	case HARDWARE_BREAKPOINT:
-		ret = snprintf (tmp, sizeof (tmp) - 1, "%s,%"PFMT64x ",%d", CMD_RHBP, address, sizebp);
+		ret = snprintf (tmp, sizeof (tmp) - 1, "%s,%" PFMT64x ",%d", CMD_RHBP, address, sizebp);
 		break;
 	case WRITE_WATCHPOINT:
-		ret = snprintf (tmp, sizeof (tmp) - 1, "%s,%"PFMT64x ",%d", CMD_RHWW, address, sizebp);
+		ret = snprintf (tmp, sizeof (tmp) - 1, "%s,%" PFMT64x ",%d", CMD_RHWW, address, sizebp);
 		break;
 	case READ_WATCHPOINT:
-		ret = snprintf (tmp, sizeof (tmp) - 1, "%s,%"PFMT64x ",%d", CMD_RHWR, address, sizebp);
+		ret = snprintf (tmp, sizeof (tmp) - 1, "%s,%" PFMT64x ",%d", CMD_RHWR, address, sizebp);
 		break;
 	case ACCESS_WATCHPOINT:
-		ret = snprintf (tmp, sizeof (tmp) - 1, "%s,%"PFMT64x ",%d", CMD_RHWA, address, sizebp);
+		ret = snprintf (tmp, sizeof (tmp) - 1, "%s,%" PFMT64x ",%d", CMD_RHWA, address, sizebp);
 		break;
 	default:
 		break;
@@ -1442,7 +1440,7 @@ end:
 	return ret;
 }
 
-int gdbr_open_file(libgdbr_t *g, const char *filename, int flags, int mode) {
+int gdbr_open_file (libgdbr_t *g, const char *filename, int flags, int mode) {
 	int ret = -1;
 	char *buf;
 	size_t buf_len;
@@ -1482,7 +1480,7 @@ end:
 	return ret;
 }
 
-int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
+int gdbr_read_file (libgdbr_t *g, ut8 *buf, ut64 max_len) {
 	int ret, ret1;
 	char command[64];
 	ut64 data_sz;
@@ -1491,7 +1489,7 @@ int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
 		return -1;
 	}
 	if (max_len >= INT32_MAX) {
-		eprintf ("%s: Too big a file read requested: %"PFMT64d, __func__, max_len);
+		eprintf ("%s: Too big a file read requested: %" PFMT64d, __func__, max_len);
 		return -1;
 	}
 	if (g->remote_file_fd < 0) {
@@ -1507,9 +1505,9 @@ int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
 	ret = 0;
 	while (ret < max_len) {
 		if ((ret1 = snprintf (command, sizeof (command) - 1,
-			    "vFile:pread:%x,%"PFMT64x",%"PFMT64x,
-			    (int)g->remote_file_fd, (ut64)R_MIN(data_sz, max_len - ret),
-			    (ut64)ret)) < 0) {
+			     "vFile:pread:%x,%" PFMT64x ",%" PFMT64x,
+			     (int)g->remote_file_fd, (ut64)R_MIN (data_sz, max_len - ret),
+			     (ut64)ret)) < 0) {
 			ret = -1;
 			goto end;
 		}
@@ -1529,14 +1527,14 @@ int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
 			goto end;
 		}
 		ret += ret1;
-    }
+	}
 
 end:
 	gdbr_lock_leave (g);
 	return ret;
 }
 
-int gdbr_close_file(libgdbr_t *g) {
+int gdbr_close_file (libgdbr_t *g) {
 	int ret = -1;
 	char buf[64];
 
@@ -1567,11 +1565,11 @@ end:
 	return ret;
 }
 
-void gdbr_invalidate_reg_cache() {
+void gdbr_invalidate_reg_cache () {
 	reg_cache.valid = false;
 }
 
-int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, PrintfCallback cb_printf) {
+int gdbr_send_qRcmd (libgdbr_t *g, const char *cmd, PrintfCallback cb_printf) {
 	int ret = -1;
 	char *buf;
 	size_t len;
@@ -1605,8 +1603,7 @@ int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, PrintfCallback cb_printf) {
 			ret = -1;
 			goto end;
 		}
-		if (g->data_len == 3 && g->data[0] == 'E'
-			    && isxdigit (g->data[1]) && isxdigit (g->data[2])) {
+		if (g->data_len == 3 && g->data[0] == 'E' && isxdigit (g->data[1]) && isxdigit (g->data[2])) {
 			ret = -1;
 			goto end;
 		}
@@ -1633,7 +1630,7 @@ end:
 	return ret;
 }
 
-char* gdbr_exec_file_read(libgdbr_t *g, int pid) {
+char *gdbr_exec_file_read (libgdbr_t *g, int pid) {
 	char msg[128], pidstr[16];
 	char *path = NULL;
 	ut64 len, off = 0;
@@ -1654,13 +1651,12 @@ char* gdbr_exec_file_read(libgdbr_t *g, int pid) {
 	}
 	while (1) {
 		if (snprintf (msg, sizeof (msg) - 1,
-			    "qXfer:exec-file:read:%s:%"PFMT64x",%"PFMT64x,
+			    "qXfer:exec-file:read:%s:%" PFMT64x ",%" PFMT64x,
 			    pidstr, off, len) < 0) {
 			ret = -1;
 			goto end;
 		}
-		if (send_msg (g, msg) < 0 || read_packet (g, false) < 0
-			    || send_ack (g) < 0 || g->data_len == 0) {
+		if (send_msg (g, msg) < 0 || read_packet (g, false) < 0 || send_ack (g) < 0 || g->data_len == 0) {
 			ret = -1;
 			goto end;
 		}
@@ -1730,7 +1726,7 @@ end:
 	return ret;
 }
 
-RList* gdbr_pids_list(libgdbr_t *g, int pid) {
+RList *gdbr_pids_list (libgdbr_t *g, int pid) {
 	int ret = -1;
 	RList *list = NULL;
 	int tpid = -1, ttid = -1;
@@ -1751,7 +1747,7 @@ RList* gdbr_pids_list(libgdbr_t *g, int pid) {
 	}
 	// Use qfThreadInfo as a fallback since it doesn't actually show all children
 	if (g->stub_features.qXfer_threads_read) {
-		if (gdbr_read_processes_xml(g, pid, list) == 0) {
+		if (gdbr_read_processes_xml (g, pid, list) == 0) {
 			ret = 0;
 			goto end;
 		}
@@ -1761,12 +1757,10 @@ RList* gdbr_pids_list(libgdbr_t *g, int pid) {
 	// gdb `info inferiors` behavior that can only be avoided using xml.
 	eprintf ("WARNING: Showing possibly incomplete pid list due to xml protocol failure\n");
 
-	if (!g->stub_features.qXfer_exec_file_read
-		    || !(exec_file = gdbr_exec_file_read (g, pid))) {
+	if (!g->stub_features.qXfer_exec_file_read || !(exec_file = gdbr_exec_file_read (g, pid))) {
 		exec_file = "";
 	}
-	if (send_msg (g, "qfThreadInfo") < 0 || read_packet (g, false) < 0 || send_ack (g) < 0
-		    || g->data_len == 0 || g->data[0] != 'm') {
+	if (send_msg (g, "qfThreadInfo") < 0 || read_packet (g, false) < 0 || send_ack (g) < 0 || g->data_len == 0 || g->data[0] != 'm') {
 		ret = -1;
 		goto end;
 	}
@@ -1803,9 +1797,7 @@ RList* gdbr_pids_list(libgdbr_t *g, int pid) {
 			r_list_append (list, dpid);
 			ptr = ptr2;
 		}
-		if (send_msg (g, "qsThreadInfo") < 0 || read_packet (g, false) < 0
-			    || send_ack (g) < 0 || g->data_len == 0
-			    || (g->data[0] != 'm' && g->data[0] != 'l')) {
+		if (send_msg (g, "qsThreadInfo") < 0 || read_packet (g, false) < 0 || send_ack (g) < 0 || g->data_len == 0 || (g->data[0] != 'm' && g->data[0] != 'l')) {
 			ret = -1;
 			goto end;
 		}
@@ -1836,7 +1828,7 @@ end:
 	return list;
 }
 
-RList* gdbr_threads_list(libgdbr_t *g, int pid) {
+RList *gdbr_threads_list (libgdbr_t *g, int pid) {
 	int ret = -1;
 	RList *list = NULL;
 	int tpid = -1, ttid = -1;
@@ -1851,16 +1843,14 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 	if (!gdbr_lock_enter (g)) {
 		goto end;
 	}
-	if (!g->stub_features.qXfer_exec_file_read
-		    || !(exec_file = gdbr_exec_file_read (g, pid))) {
+	if (!g->stub_features.qXfer_exec_file_read || !(exec_file = gdbr_exec_file_read (g, pid))) {
 		exec_file = "";
 	}
 	if (g->stub_features.qXfer_threads_read) {
 		// XML thread description is supported
 		// TODO: Handle this case
 	}
-	if (send_msg (g, "qfThreadInfo") < 0 || read_packet (g, false) < 0 || send_ack (g) < 0
-		    || g->data_len == 0 || g->data[0] != 'm') {
+	if (send_msg (g, "qfThreadInfo") < 0 || read_packet (g, false) < 0 || send_ack (g) < 0 || g->data_len == 0 || g->data[0] != 'm') {
 		ret = -1;
 		goto end;
 	}
@@ -1899,9 +1889,7 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 			r_list_append (list, dpid);
 			ptr = ptr2;
 		}
-		if (send_msg (g, "qsThreadInfo") < 0 || read_packet (g, false) < 0
-			    || send_ack (g) < 0 || g->data_len == 0
-			    || (g->data[0] != 'm' && g->data[0] != 'l')) {
+		if (send_msg (g, "qsThreadInfo") < 0 || read_packet (g, false) < 0 || send_ack (g) < 0 || g->data_len == 0 || (g->data[0] != 'm' && g->data[0] != 'l')) {
 			ret = -1;
 			goto end;
 		}
@@ -1938,7 +1926,7 @@ end:
 	return list;
 }
 
-ut64 gdbr_get_baddr(libgdbr_t *g) {
+ut64 gdbr_get_baddr (libgdbr_t *g) {
 	ut64 off, min = UINT64_MAX;
 	char *ptr;
 	if (!g) {
@@ -1948,8 +1936,7 @@ ut64 gdbr_get_baddr(libgdbr_t *g) {
 	if (!gdbr_lock_enter (g)) {
 		goto end;
 	}
-	if (send_msg (g, "qOffsets") < 0 || read_packet (g, false) < 0
-		    || send_ack (g) < 0 || g->data_len == 0) {
+	if (send_msg (g, "qOffsets") < 0 || read_packet (g, false) < 0 || send_ack (g) < 0 || g->data_len == 0) {
 		min = UINT64_MAX;
 		goto end;
 	}

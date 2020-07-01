@@ -31,18 +31,13 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
-
 #include "zipint.h"
 
-
-
 ZIP_EXTERN int
-zip_get_archive_flag(struct zip *za, unsigned int flag, zip_flags_t flags)
-{
-    unsigned int fl;
+zip_get_archive_flag (struct zip *za, unsigned int flag, zip_flags_t flags) {
+	unsigned int fl;
 
-    fl = (flags & ZIP_FL_UNCHANGED) ? za->flags : za->ch_flags;
+	fl = (flags & ZIP_FL_UNCHANGED) ? za->flags : za->ch_flags;
 
-    return (fl & flag) ? 1 : 0;
+	return (fl & flag) ? 1 : 0;
 }

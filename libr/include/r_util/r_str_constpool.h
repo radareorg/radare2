@@ -19,9 +19,9 @@ typedef struct r_str_constpool_t {
 	HtPP *ht;
 } RStrConstPool;
 
-R_API bool r_str_constpool_init(RStrConstPool *pool);
-R_API void r_str_constpool_fini(RStrConstPool *pool);
-R_API const char *r_str_constpool_get(RStrConstPool *pool, const char *str);
+R_API bool r_str_constpool_init (RStrConstPool *pool);
+R_API void r_str_constpool_fini (RStrConstPool *pool);
+R_API const char *r_str_constpool_get (RStrConstPool *pool, const char *str);
 
 #ifdef __cplusplus
 }

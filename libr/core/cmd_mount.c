@@ -24,11 +24,11 @@ static const char *help_msg_m[] = {
 	NULL
 };
 
-static void cmd_mount_init(RCore *core, RCmdDesc *parent) {
+static void cmd_mount_init (RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, m);
 }
 
-static int cmd_mkdir(void *data, const char *input) {
+static int cmd_mkdir (void *data, const char *input) {
 	char *res = r_syscmd_mkdir (input);
 	if (res) {
 		r_cons_print (res);
@@ -37,14 +37,14 @@ static int cmd_mkdir(void *data, const char *input) {
 	return 0;
 }
 
-static int cmd_mv(void *data, const char *input) {
-	return r_syscmd_mv (input)? 1: 0;
+static int cmd_mv (void *data, const char *input) {
+	return r_syscmd_mv (input) ? 1 : 0;
 }
 
 static char *cwd = NULL;
 #define av_max 1024
 
-static const char *t2s(const char ch) {
+static const char *t2s (const char ch) {
 	switch (ch) {
 	case 'f': return "file";
 	case 'd': return "directory";
@@ -69,7 +69,7 @@ static void cmd_mount_ls (RCore *core, const char *input) {
 		r_list_foreach (list, iter, file) {
 			if (isJSON) {
 				pj_o (pj);
-				pj_ks (pj, "type", t2s(file->type));
+				pj_ks (pj, "type", t2s (file->type));
 				pj_ks (pj, "name", file->name);
 				pj_end (pj);
 			} else {
@@ -78,7 +78,7 @@ static void cmd_mount_ls (RCore *core, const char *input) {
 		}
 		r_list_free (list);
 	}
-	const char *path = *input? input: "/";
+	const char *path = *input ? input : "/";
 	r_list_foreach (core->fs->roots, iter, root) {
 		// TODO: adjust contents between //
 		if (!strncmp (path, root->path, strlen (path))) {
@@ -109,7 +109,7 @@ static void cmd_mount_ls (RCore *core, const char *input) {
 	}
 }
 
-static int cmd_mount(void *data, const char *_input) {
+static int cmd_mount (void *data, const char *_input) {
 	ut64 off = 0;
 	char *input, *oinput, *ptr, *ptr2;
 	RList *list;
@@ -138,10 +138,10 @@ static int cmd_mount(void *data, const char *_input) {
 			ptr2 = strchr (ptr, ' ');
 			if (ptr2) {
 				*ptr2 = 0;
-				off = r_num_math (core->num, ptr2+1);
+				off = r_num_math (core->num, ptr2 + 1);
 			}
 			input = (char *)r_str_trim_head_ro (input);
-			ptr = (char*)r_str_trim_head_ro (ptr);
+			ptr = (char *)r_str_trim_head_ro (ptr);
 
 			const char *mountp = input;
 			const char *fstype = ptr;
@@ -168,46 +168,44 @@ static int cmd_mount(void *data, const char *_input) {
 		}
 		break;
 	case '-':
-		r_fs_umount (core->fs, input+1);
+		r_fs_umount (core->fs, input + 1);
 		break;
-	case 'j':
-		{
-			PJ *pj = pj_new ();
+	case 'j': {
+		PJ *pj = pj_new ();
+		pj_o (pj);
+		pj_k (pj, "mountpoints");
+		pj_a (pj);
+		r_list_foreach (core->fs->roots, iter, root) {
 			pj_o (pj);
-			pj_k (pj, "mountpoints");
-			pj_a (pj);
-			r_list_foreach (core->fs->roots, iter, root) {
-				pj_o (pj);
-				pj_ks (pj, "path", root->path);
-				pj_ks (pj, "plugin", root->p->name);
-				pj_kn (pj, "offset", root->delta);
-				pj_end (pj);
-			}
+			pj_ks (pj, "path", root->path);
+			pj_ks (pj, "plugin", root->p->name);
+			pj_kn (pj, "offset", root->delta);
 			pj_end (pj);
-			pj_k (pj, "plugins");
-			pj_a (pj);
-			r_list_foreach (core->fs->plugins, iter, plug) {
-				pj_o (pj);
-				pj_ks (pj, "name", plug->name);
-				pj_ks (pj, "description", plug->desc);
-				pj_end (pj);
-			}
-
-			pj_end (pj);
-			pj_end (pj);
-			r_cons_printf ("%s\n", pj_string (pj));
-			pj_free (pj);
 		}
-		break;
+		pj_end (pj);
+		pj_k (pj, "plugins");
+		pj_a (pj);
+		r_list_foreach (core->fs->plugins, iter, plug) {
+			pj_o (pj);
+			pj_ks (pj, "name", plug->name);
+			pj_ks (pj, "description", plug->desc);
+			pj_end (pj);
+		}
+
+		pj_end (pj);
+		pj_end (pj);
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
+	} break;
 	case '*':
 		r_list_foreach (core->fs->roots, iter, root) {
-			r_cons_printf ("m %s %s 0x%"PFMT64x"\n",
-				root-> path, root->p->name, root->delta);
+			r_cons_printf ("m %s %s 0x%" PFMT64x "\n",
+				root->path, root->p->name, root->delta);
 		}
 		break;
 	case '\0':
 		r_list_foreach (core->fs->roots, iter, root) {
-			r_cons_printf ("%s\t0x%"PFMT64x"\t%s\n",
+			r_cons_printf ("%s\t0x%" PFMT64x "\t%s\n",
 				root->p->name, root->delta, root->path);
 		}
 		break;
@@ -217,7 +215,7 @@ static int cmd_mount(void *data, const char *_input) {
 		}
 		break;
 	case 'l': // "ml"
-	case 'd': // "md" 
+	case 'd': // "md"
 		cmd_mount_ls (core, input + 1);
 		break;
 	case 'p':
@@ -228,14 +226,14 @@ static int cmd_mount(void *data, const char *_input) {
 		ptr = strchr (input, ' ');
 		if (ptr) {
 			*ptr = 0;
-			off = r_num_math (core->num, ptr+1);
+			off = r_num_math (core->num, ptr + 1);
 		}
 		list = r_fs_partitions (core->fs, input, off);
 		if (list) {
 			r_list_foreach (list, iter, part) {
-				r_cons_printf ("%d %02x 0x%010"PFMT64x" 0x%010"PFMT64x"\n",
+				r_cons_printf ("%d %02x 0x%010" PFMT64x " 0x%010" PFMT64x "\n",
 					part->number, part->type,
-					part->start, part->start+part->length);
+					part->start, part->start + part->length);
 			}
 			r_list_free (list);
 		} else {
@@ -244,7 +242,7 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'o': //"mo"
 		input++;
-		if (input[0]==' ') {
+		if (input[0] == ' ') {
 			input++;
 		}
 		file = r_fs_open (core->fs, input, false);
@@ -261,14 +259,14 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'i':
 		input++;
-		if (input[0]==' ') {
+		if (input[0] == ' ') {
 			input++;
 		}
 		file = r_fs_open (core->fs, input, false);
 		if (file) {
 			// XXX: dump to file or just pipe?
 			r_fs_read (core->fs, file, 0, file->size);
-			r_cons_printf ("f file %d 0x%08"PFMT64x"\n", file->size, file->off);
+			r_cons_printf ("f file %d 0x%08" PFMT64x "\n", file->size, file->off);
 			r_fs_close (core->fs, file);
 		} else {
 			eprintf ("Cannot open file\n");
@@ -327,10 +325,9 @@ static int cmd_mount(void *data, const char *_input) {
 		switch (*input) {
 		case '?':
 			r_cons_printf (
-			"Usage: mf[no] [...]\n"
-			" mfn /foo *.c       ; search files by name in /foo path\n"
-			" mfo /foo 0x5e91    ; search files by offset in /foo path\n"
-			);
+				"Usage: mf[no] [...]\n"
+				" mfn /foo *.c       ; search files by name in /foo path\n"
+				" mfo /foo 0x5e91    ; search files by offset in /foo path\n");
 			break;
 		case 'n':
 			input++;
@@ -345,7 +342,8 @@ static int cmd_mount(void *data, const char *_input) {
 					printf ("%s\n", ptr);
 				}
 				//XXX: r_list_purge (list);
-			} else eprintf ("Unknown store path\n");
+			} else
+				eprintf ("Unknown store path\n");
 			break;
 		case 'o':
 			input++;
@@ -361,7 +359,8 @@ static int cmd_mount(void *data, const char *_input) {
 					printf ("%s\n", ptr);
 				}
 				//XXX: r_list_purge (list);
-			} else eprintf ("Unknown store path\n");
+			} else
+				eprintf ("Unknown store path\n");
 			break;
 		}
 		break;

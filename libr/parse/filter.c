@@ -6,12 +6,12 @@
 #include <r_parse.h>
 #include <config.h>
 
-#define isx86separator(x) ( \
-	(x)==' '||(x)=='\t'||(x)=='\n'|| (x)=='\r'||(x)==' '|| \
-	(x)==','||(x)==';'||(x)=='['||(x)==']'|| \
-	(x)=='('||(x)==')'||(x)=='{'||(x)=='}'||(x)=='\x1b')
+#define isx86separator(x) (                                                      \
+	(x) == ' ' || (x) == '\t' || (x) == '\n' || (x) == '\r' || (x) == ' ' || \
+	(x) == ',' || (x) == ';' || (x) == '[' || (x) == ']' ||                  \
+	(x) == '(' || (x) == ')' || (x) == '{' || (x) == '}' || (x) == '\x1b')
 
-static bool isvalidflag(RFlagItem *flag) {
+static bool isvalidflag (RFlagItem *flag) {
 	if (flag) {
 		if (strstr (flag->name, "main") || strstr (flag->name, "entry")) {
 			return true;
@@ -23,7 +23,7 @@ static bool isvalidflag(RFlagItem *flag) {
 	return false;
 }
 
-static char *findEnd(const char *s) {
+static char *findEnd (const char *s) {
 	while (*s == 'x' || IS_HEXCHAR (*s)) {
 		s++;
 		// also skip ansi escape codes here :?
@@ -31,7 +31,7 @@ static char *findEnd(const char *s) {
 	return strdup (s);
 }
 
-static void insert(char *dst, const char *src) {
+static void insert (char *dst, const char *src) {
 	char *endNum = findEnd (dst);
 	strcpy (dst, src);
 	strcpy (dst + strlen (src), endNum);
@@ -39,7 +39,7 @@ static void insert(char *dst, const char *src) {
 }
 
 // TODO: move into r_util/r_str
-static void replaceWords(char *s, const char *k, const char *v) {
+static void replaceWords (char *s, const char *k, const char *v) {
 	for (;;) {
 		char *p = strstr (s, k);
 		if (!p) {
@@ -53,7 +53,7 @@ static void replaceWords(char *s, const char *k, const char *v) {
 	}
 }
 
-static char *findNextNumber(char *op) {
+static char *findNextNumber (char *op) {
 	if (!op) {
 		return NULL;
 	}
@@ -111,7 +111,7 @@ static char *findNextNumber(char *op) {
 	return NULL;
 }
 
-static void __replaceRegisters(RReg *reg, char *s, bool x86) {
+static void __replaceRegisters (RReg *reg, char *s, bool x86) {
 	int i;
 	for (i = 0; i < 64; i++) {
 		const char *k = r_reg_get_name (reg, i);
@@ -133,7 +133,7 @@ static void __replaceRegisters(RReg *reg, char *s, bool x86) {
 	}
 }
 
-static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
+static bool filter (RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
 	char *ptr = data, *ptr2, *ptr_backup;
 	RAnalFunction *fcn;
 	RFlagItem *flag;
@@ -168,7 +168,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 	// remove "dword" 2
 	char *nptr;
 	int count = 0;
-	for (count = 0; (nptr = findNextNumber (ptr)) ; count++) {
+	for (count = 0; (nptr = findNextNumber (ptr)); count++) {
 		ptr = nptr;
 		if (x86) {
 			for (ptr2 = ptr; *ptr2 && !isx86separator (*ptr2); ptr2++) {
@@ -198,13 +198,12 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 					}
 				}
 				snprintf (str, len, "%s%s%s", data, name,
-					(ptr != ptr2)? ptr2: "");
+					(ptr != ptr2) ? ptr2 : "");
 				return true;
 			}
 			if (f) {
 				RFlagItem *flag2;
-				bool lea = x86 && r_str_startswith (data, "lea")
-				         && (data[3] == ' ' || data[3] == 0x1b);
+				bool lea = x86 && r_str_startswith (data, "lea") && (data[3] == ' ' || data[3] == 0x1b);
 				bool remove_brackets = false;
 				flag = p->flag_get (f, off);
 				if ((!flag || arm) && p->relsub_addr) {
@@ -249,7 +248,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 					if (label) {
 						flagname = r_str_newf (".%s", label);
 					} else {
-						flagname = strdup (f->realnames? flag->realname : flag->name);
+						flagname = strdup (f->realnames ? flag->realname : flag->name);
 					}
 					int maxflagname = p->maxflagnamelen;
 					if (maxflagname > 0 && strlen (flagname) > maxflagname) {
@@ -259,10 +258,10 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 						if (doublelower && doublecolon) {
 							token = R_MAX (doublelower, doublecolon);
 						} else {
-							token = doublelower? doublelower: doublecolon;
+							token = doublelower ? doublelower : doublecolon;
 						}
 						if (token) {
-							const char *mod = doublecolon? "(cxx)": "(...)";
+							const char *mod = doublecolon ? "(cxx)" : "(...)";
 							char *newstr = r_str_newf ("%s%s", mod, token);
 							free (flagname);
 							flagname = newstr;
@@ -289,7 +288,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 							banned = true;
 						}
 					}
-					if (p->relsub_addr && !banned && lea) {  // TODO: use remove_brackets
+					if (p->relsub_addr && !banned && lea) { // TODO: use remove_brackets
 						int flag_len = strlen (flag->name);
 						char *ptr_end = str + strlen (data) + flag_len - 1;
 						char *ptr_right = ptr_end + 1, *ptr_left, *ptr_esc;
@@ -312,7 +311,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 								ptr_left = ptr_esc = ptr_end - flag_len;
 								while (ptr_left >= str) {
 									if (*ptr_left == '[' &&
-									(ptr_left == str || *(ptr_left - 1) != 0x1b)) {
+										(ptr_left == str || *(ptr_left - 1) != 0x1b)) {
 										break;
 									}
 									ptr_left--;
@@ -332,7 +331,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 								}
 								memmove (ptr_left, ptr_esc, copied_len);
 								char *dptr_left = strcpy (ptr_left + copied_len,
-										(ansi_found && ptr_right - ptr_end + 1 >= 4) ? Color_RESET : "");
+									(ansi_found && ptr_right - ptr_end + 1 >= 4) ? Color_RESET : "");
 								int dlen = strlen (dptr_left);
 								dptr_left += dlen;
 								char *dptr_end = ptr_right + 1;
@@ -356,7 +355,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 							ut64 tail = r_num_tail_base (NULL, addr, off);
 							if (tail != UT64_MAX) {
 								char str[128];
-								snprintf (str, sizeof (str), "..%"PFMT64x, tail);
+								snprintf (str, sizeof (str), "..%" PFMT64x, tail);
 								insert (ptr, str);
 							}
 						}
@@ -371,15 +370,15 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 				continue;
 			}
 			int pnumleft, immbase = hint->immbase;
-			char num[256] = {0}, *pnum, *tmp;
+			char num[256] = { 0 }, *pnum, *tmp;
 			bool is_hex = false;
 			int tmp_count;
 			if (hint->offset) {
 				*ptr = 0;
-				snprintf (str, len, "%s%s%s", data, hint->offset, (ptr != ptr2)? ptr2: "");
+				snprintf (str, len, "%s%s%s", data, hint->offset, (ptr != ptr2) ? ptr2 : "");
 				return true;
 			}
-			strncpy (num, ptr, sizeof (num)-2);
+			strncpy (num, ptr, sizeof (num) - 2);
 			pnum = num;
 			if (!strncmp (pnum, "0x", 2)) {
 				is_hex = true;
@@ -435,9 +434,9 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 					if (num[1] == '\0' && ch == '\0') {
 						continue;
 					}
-					if (IS_PRINTABLE(ch)) {
+					if (IS_PRINTABLE (ch)) {
 						*pnum++ = ch;
-						pnumleft --;
+						pnumleft--;
 					} else {
 						int sz = snprintf (pnum, pnumleft, "\\x%2.2x", ch);
 						if (sz < 0) {
@@ -454,59 +453,53 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 				r_num_to_bits (num, off);
 				strcat (num, "b");
 				break;
-			case 3:
-				{
-					ut64 swap = 0;
-					if (big_endian) {
-						swap = off & 0xffff;
+			case 3: {
+				ut64 swap = 0;
+				if (big_endian) {
+					swap = off & 0xffff;
+				} else {
+					if (off >> 32) {
+						r_mem_swapendian ((ut8 *)&swap, (const ut8 *)&off, sizeof (off));
+					} else if (off >> 16) {
+						ut32 port = 0;
+						r_mem_swapendian ((ut8 *)&port, (const ut8 *)&off, sizeof (port));
+						swap = port;
 					} else {
-						if (off >> 32) {
-							r_mem_swapendian ((ut8*)&swap, (const ut8*)&off, sizeof (off));
-						} else if (off >> 16) {
-							ut32 port = 0;
-							r_mem_swapendian ((ut8*)&port, (const ut8*)&off, sizeof (port));
-							swap = port;
-						} else {
-							ut16 port = 0;
-							r_mem_swapendian ((ut8*)&port, (const ut8*)&off, sizeof (port));
-							swap = port;
-						}
+						ut16 port = 0;
+						r_mem_swapendian ((ut8 *)&port, (const ut8 *)&off, sizeof (port));
+						swap = port;
 					}
-					snprintf (num, sizeof (num), "htons (%d)", (int)(swap & 0xFFFF));
 				}
-				break;
+				snprintf (num, sizeof (num), "htons (%d)", (int)(swap & 0xFFFF));
+			} break;
 			case 8:
 				snprintf (num, sizeof (num), "0%o", (int)off);
 				break;
-			case 10:
-				{
-					RList *regs = r_reg_get_list (p->analb.anal->reg, R_REG_TYPE_GPR);
-					RRegItem *reg;
-					RListIter *iter;
-					bool imm32 = false;
-					r_list_foreach (regs, iter, reg) {
-						if (reg->size == 32 && r_str_casestr (data, reg->name)) {
-							imm32 = true;
-							break;
-						}
-					}
-					if (imm32) {
-						snprintf (num, sizeof (num), "%"PFMT32d, (st32)off);
+			case 10: {
+				RList *regs = r_reg_get_list (p->analb.anal->reg, R_REG_TYPE_GPR);
+				RRegItem *reg;
+				RListIter *iter;
+				bool imm32 = false;
+				r_list_foreach (regs, iter, reg) {
+					if (reg->size == 32 && r_str_casestr (data, reg->name)) {
+						imm32 = true;
 						break;
 					}
-					snprintf (num, sizeof (num), "%"PFMT64d, (st64)off);
 				}
-				break;
+				if (imm32) {
+					snprintf (num, sizeof (num), "%" PFMT32d, (st32)off);
+					break;
+				}
+				snprintf (num, sizeof (num), "%" PFMT64d, (st64)off);
+			} break;
 			case 11:
-				snprintf (num, sizeof (num), "%"PFMT64u, off);
+				snprintf (num, sizeof (num), "%" PFMT64u, off);
 				break;
-			case 32:
-				{
-					ut32 ip32 = off;
-					ut8 *ip = (ut8*)&ip32;
-					snprintf (num, sizeof (num), "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
-				}
-				break;
+			case 32: {
+				ut32 ip32 = off;
+				ut8 *ip = (ut8 *)&ip32;
+				snprintf (num, sizeof (num), "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
+			} break;
 			case 80:
 				if (p && p->analb.anal && p->analb.anal->syscall) {
 					RSyscallItem *si;
@@ -521,11 +514,11 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 			case 16:
 				/* do nothing */
 			default:
-				snprintf (num, sizeof (num), "0x%"PFMT64x, (ut64) off);
+				snprintf (num, sizeof (num), "0x%" PFMT64x, (ut64)off);
 				break;
 			}
 			*ptr = 0;
-			snprintf (str, len, "%s%s%s", data, num, (ptr != ptr2)? ptr2: "");
+			snprintf (str, len, "%s%s%s", data, num, (ptr != ptr2) ? ptr2 : "");
 			return true;
 		}
 		ptr = ptr2;
@@ -544,7 +537,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 // TODO we shouhld use RCoreBind and use the hintGet/flagGet methods, but we can also have rflagbind+ranalbind, but kiss pls
 // TODO: NEW SIGNATURE: R_API char *r_parse_filter(RParse *p, ut64 addr, const char *str)
 // DEPRECATE
-R_API bool r_parse_filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
+R_API bool r_parse_filter (RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
 	filter (p, addr, f, hint, data, str, len, big_endian);
 	if (p->cur && p->cur->filter) {
 		return p->cur->filter (p, addr, f, data, str, len, big_endian);
@@ -553,7 +546,7 @@ R_API bool r_parse_filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char 
 }
 
 // easier to use, should replace r_parse_filter(), but its not using rflag, analhint, endian, etc
-R_API char *r_parse_filter_dup(RParse *p, ut64 addr, const char *opstr) {
+R_API char *r_parse_filter_dup (RParse *p, ut64 addr, const char *opstr) {
 	const size_t out_len = 256;
 	char *in = strdup (opstr);
 	char *out = calloc (out_len, 1);

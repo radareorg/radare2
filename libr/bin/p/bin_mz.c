@@ -5,11 +5,10 @@
 #include <r_lib.h>
 #include "mz/mz.h"
 
-
 /* half-magic */
-#define HM(x) (int)((int)(x[0]<<8)|(int)(x[1]))
+#define HM(x) (int)((int)(x[0] << 8) | (int)(x[1]))
 
-static Sdb *get_sdb(RBinFile *bf) {
+static Sdb *get_sdb (RBinFile *bf) {
 	const struct r_bin_mz_obj_t *bin;
 	if (bf && bf->o && bf->o->bin_obj) {
 		bin = (struct r_bin_mz_obj_t *)bf->o->bin_obj;
@@ -20,7 +19,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return NULL;
 }
 
-static bool knownHeaderBuffer(RBuffer *b, ut16 offset) {
+static bool knownHeaderBuffer (RBuffer *b, ut16 offset) {
 	ut8 h[2];
 	if (r_buf_read_at (b, offset, h, sizeof (h)) != sizeof (h)) {
 		return false;
@@ -35,17 +34,14 @@ static bool knownHeaderBuffer(RBuffer *b, ut16 offset) {
 			}
 		}
 	} else {
-		if (!memcmp (h, "NE", 2)
-		 || !memcmp (h, "LE", 2)
-		 || !memcmp (h, "LX", 2)
-		 || !memcmp (h, "PL", 2)) {
+		if (!memcmp (h, "NE", 2) || !memcmp (h, "LE", 2) || !memcmp (h, "LX", 2) || !memcmp (h, "PL", 2)) {
 			return true;
 		}
 	}
 	return false;
 }
 
-static bool checkEntrypointBuffer(RBuffer *b) {
+static bool checkEntrypointBuffer (RBuffer *b) {
 	st16 cs = r_buf_read_le16_at (b, 0x16);
 	ut16 ip = r_buf_read_le16_at (b, 0x14);
 	ut32 pa = ((r_buf_read_le16_at (b, 0x08) + cs) << 4) + ip;
@@ -58,7 +54,7 @@ static bool checkEntrypointBuffer(RBuffer *b) {
 	pa &= 0xffff;
 	ut64 length = r_buf_size (b);
 	if (pa >= 0x20 && pa + 1 < length) {
-		ut16 pe = r_buf_read_le16_at (b,  0x3c);
+		ut16 pe = r_buf_read_le16_at (b, 0x3c);
 		if (pe + 2 < length && length > 0x104) {
 			ut8 h[2];
 			if (r_buf_read_at (b, pe, h, 2) == 2) {
@@ -72,7 +68,7 @@ static bool checkEntrypointBuffer(RBuffer *b) {
 	return false;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	r_return_val_if_fail (b, false);
 	ut64 b_size = r_buf_size (b);
 	if (b_size <= 0x3d) {
@@ -103,7 +99,7 @@ static bool check_buffer(RBuffer *b) {
 	return true;
 }
 
-static bool load(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load (RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	struct r_bin_mz_obj_t *mz_obj = r_bin_mz_new_buf (buf);
 	if (mz_obj) {
 		sdb_ns_set (sdb, "info", mz_obj->kv);
@@ -113,11 +109,11 @@ static bool load(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb 
 	return false;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy (RBinFile *bf) {
 	r_bin_mz_free ((struct r_bin_mz_obj_t *)bf->o->bin_obj);
 }
 
-static RBinAddr *binsym(RBinFile *bf, int type) {
+static RBinAddr *binsym (RBinFile *bf, int type) {
 	RBinAddr *mzaddr = NULL;
 	if (bf && bf->o && bf->o->bin_obj) {
 		switch (type) {
@@ -129,7 +125,7 @@ static RBinAddr *binsym(RBinFile *bf, int type) {
 	return mzaddr;
 }
 
-static RList *entries(RBinFile *bf) {
+static RList *entries (RBinFile *bf) {
 	RBinAddr *ptr = NULL;
 	RList *res = NULL;
 	if (!(res = r_list_newf (free))) {
@@ -142,11 +138,11 @@ static RList *entries(RBinFile *bf) {
 	return res;
 }
 
-static RList *sections(RBinFile *bf) {
+static RList *sections (RBinFile *bf) {
 	return r_bin_mz_get_segments (bf->o->bin_obj);
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	RBinInfo *const ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
@@ -171,7 +167,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static void header(RBinFile *bf) {
+static void header (RBinFile *bf) {
 	const struct r_bin_mz_obj_t *mz = (struct r_bin_mz_obj_t *)bf->o->bin_obj;
 	eprintf ("[0000:0000]  Signature           %c%c\n",
 		mz->dos_header->signature & 0xFF,
@@ -204,7 +200,7 @@ static void header(RBinFile *bf) {
 		mz->dos_header->overlay_number);
 }
 
-static RList *relocs(RBinFile *bf) {
+static RList *relocs (RBinFile *bf) {
 	RList *ret = NULL;
 	RBinReloc *rel = NULL;
 	const struct r_bin_mz_reloc_t *relocs = NULL;

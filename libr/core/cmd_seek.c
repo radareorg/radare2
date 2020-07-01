@@ -61,14 +61,14 @@ static const char *help_msg_ss[] = {
 	NULL
 };
 
-static void cmd_seek_init(RCore *core, RCmdDesc *parent) {
+static void cmd_seek_init (RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, s);
 	DEFINE_CMD_DESCRIPTOR (core, sC);
 	DEFINE_CMD_DESCRIPTOR (core, sl);
 	DEFINE_CMD_DESCRIPTOR (core, ss);
 }
 
-static void __init_seek_line(RCore *core) {
+static void __init_seek_line (RCore *core) {
 	ut64 from, to;
 
 	r_config_bump (core->config, "lines.to");
@@ -80,7 +80,7 @@ static void __init_seek_line(RCore *core) {
 	}
 }
 
-static void printPadded(RCore *core, int pad) {
+static void printPadded (RCore *core, int pad) {
 	if (pad < 1) {
 		pad = 8;
 	}
@@ -91,14 +91,14 @@ static void printPadded(RCore *core, int pad) {
 	free (fmt);
 }
 
-static void __get_current_line(RCore *core) {
+static void __get_current_line (RCore *core) {
 	if (core->print->lines_cache_sz > 0) {
 		int curr = r_util_lines_getline (core->print->lines_cache, core->print->lines_cache_sz, core->offset);
 		r_cons_printf ("%d\n", curr);
 	}
 }
 
-static void __seek_line_absolute(RCore *core, int numline) {
+static void __seek_line_absolute (RCore *core, int numline) {
 	if (numline < 1 || numline > core->print->lines_cache_sz - 1) {
 		eprintf ("ERROR: Line must be between 1 and %d\n", core->print->lines_cache_sz - 1);
 	} else {
@@ -106,7 +106,7 @@ static void __seek_line_absolute(RCore *core, int numline) {
 	}
 }
 
-static void __seek_line_relative(RCore *core, int numlines) {
+static void __seek_line_relative (RCore *core, int numlines) {
 	int curr = r_util_lines_getline (core->print->lines_cache, core->print->lines_cache_sz, core->offset);
 	if (numlines > 0 && curr + numlines >= core->print->lines_cache_sz - 1) {
 		eprintf ("ERROR: Line must be < %d\n", core->print->lines_cache_sz - 1);
@@ -117,12 +117,12 @@ static void __seek_line_relative(RCore *core, int numlines) {
 	}
 }
 
-static void __clean_lines_cache(RCore *core) {
+static void __clean_lines_cache (RCore *core) {
 	core->print->lines_cache_sz = -1;
 	R_FREE (core->print->lines_cache);
 }
 
-R_API int r_core_lines_currline(RCore *core) {  // make priv8 again
+R_API int r_core_lines_currline (RCore *core) { // make priv8 again
 	int imin = 0;
 	int imax = core->print->lines_cache_sz;
 	int imid = 0;
@@ -140,7 +140,7 @@ R_API int r_core_lines_currline(RCore *core) {  // make priv8 again
 	return imin;
 }
 
-R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
+R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr) {
 	int i, bsz = core->blocksize;
 	ut64 off = start_addr;
 	ut64 baddr;
@@ -156,8 +156,8 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 
 	baddr = r_config_get_i (core->config, "bin.baddr");
 
-	int line_count = start_addr? 0: 1;
-	core->print->lines_cache[0] = start_addr? 0: baddr;
+	int line_count = start_addr ? 0 : 1;
+	core->print->lines_cache[0] = start_addr ? 0 : baddr;
 	char *buf = malloc (bsz);
 	if (!buf) {
 		return -1;
@@ -167,7 +167,7 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		r_io_read_at (core->io, off, (ut8 *) buf, bsz);
+		r_io_read_at (core->io, off, (ut8 *)buf, bsz);
 		for (i = 0; i < bsz; i++) {
 			if (buf[i] != '\n') {
 				continue;
@@ -175,7 +175,7 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 			if ((line_count + 1) >= bsz) {
 				break;
 			}
-			core->print->lines_cache[line_count] = start_addr? off + i + 1: off + i + 1 + baddr;
+			core->print->lines_cache[line_count] = start_addr ? off + i + 1 : off + i + 1 + baddr;
 			line_count++;
 			if (line_count % bsz == 0) {
 				ut64 *tmp = realloc (core->print->lines_cache,
@@ -199,7 +199,7 @@ beach:
 	return -1;
 }
 
-static void seek_to_register(RCore *core, const char *input, bool is_silent) {
+static void seek_to_register (RCore *core, const char *input, bool is_silent) {
 	ut64 off;
 	if (core->io->debug) {
 		off = r_debug_reg_get (core->dbg, input);
@@ -219,7 +219,7 @@ static void seek_to_register(RCore *core, const char *input, bool is_silent) {
 	}
 }
 
-static int cmd_sort(void *data, const char *input) { // "sort"
+static int cmd_sort (void *data, const char *input) { // "sort"
 	RCore *core = (RCore *)data;
 	const char *arg = strchr (input, ' ');
 	if (arg) {
@@ -247,7 +247,7 @@ static int cmd_sort(void *data, const char *input) { // "sort"
 	return 0;
 }
 
-static int cmd_seek_opcode_backward(RCore *core, int numinstr) {
+static int cmd_seek_opcode_backward (RCore *core, int numinstr) {
 	int i, val = 0;
 	// N previous instructions
 	ut64 addr = core->offset;
@@ -270,7 +270,7 @@ static int cmd_seek_opcode_backward(RCore *core, int numinstr) {
 			if (prev_addr == UT64_MAX || prev_addr >= core->offset) {
 				break;
 			}
-			RAsmOp op = {0};
+			RAsmOp op = { 0 };
 			r_core_seek (core, prev_addr, true);
 			r_asm_disassemble (core->rasm, &op, core->block, 32);
 			if (op.size < mininstrsize) {
@@ -302,7 +302,7 @@ static int cmd_seek_opcode_forward (RCore *core, int n) {
 	return val;
 }
 
-static void cmd_seek_opcode(RCore *core, const char *input) {
+static void cmd_seek_opcode (RCore *core, const char *input) {
 	if (input[0] == '?') {
 		eprintf ("Usage: so [-][n]\n");
 		return;
@@ -320,13 +320,13 @@ static void cmd_seek_opcode(RCore *core, const char *input) {
 	core->num->value = val;
 }
 
-static int cmd_seek(void *data, const char *input) {
-	RCore *core = (RCore *) data;
+static int cmd_seek (void *data, const char *input) {
+	RCore *core = (RCore *)data;
 	char *cmd, *p;
 	ut64 off = core->offset;
 
 	if (!*input) {
-		r_cons_printf ("0x%"PFMT64x "\n", core->offset);
+		r_cons_printf ("0x%" PFMT64x "\n", core->offset);
 		return 0;
 	}
 	char *ptr;
@@ -338,19 +338,19 @@ static int cmd_seek(void *data, const char *input) {
 		free (dup);
 	}
 	const char *inputnum = strchr (input, ' ');
-	if (r_str_cmp (input, "ort", 3)) {					// hack to handle Invalid Argument for sort
-		const char *u_num = inputnum? inputnum + 1: input + 1;
+	if (r_str_cmp (input, "ort", 3)) { // hack to handle Invalid Argument for sort
+		const char *u_num = inputnum ? inputnum + 1 : input + 1;
 		off = r_num_math (core->num, u_num);
 		if (*u_num == '-') {
 			off = -(st64)off;
 		}
 	}
 #if 1
-//	int sign = 1;
+	//	int sign = 1;
 	if (input[0] == ' ') {
 		switch (input[1]) {
 		case '-':
-//			sign = -1;
+			//			sign = -1;
 			/* pass thru */
 		case '+':
 			input++;
@@ -415,14 +415,13 @@ static int cmd_seek(void *data, const char *input) {
 		}
 		r_core_seek (core, addr, true);
 		r_core_block_read (core);
-	}
-	break;
+	} break;
 	case '/': // "s/"
 	{
 		const char *pfx = r_config_get (core->config, "search.prefix");
 		const ut64 saved_from = r_config_get_i (core->config, "search.from");
 		const ut64 saved_maxhits = r_config_get_i (core->config, "search.maxhits");
-// kwidx cfg var is ignored
+		// kwidx cfg var is ignored
 		int kwidx = core->search->n_kws; // (int)r_config_get_i (core->config, "search.kwidx")-1;
 		if (kwidx < 0) {
 			kwidx = 0;
@@ -459,8 +458,7 @@ static int cmd_seek(void *data, const char *input) {
 			eprintf ("unknown search method\n");
 			break;
 		}
-	}
-	break;
+	} break;
 	case '.': // "s." "s.."
 		for (input++; *input == '.'; input++) {
 			;
@@ -468,108 +466,106 @@ static int cmd_seek(void *data, const char *input) {
 		r_core_seek_base (core, input);
 		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		break;
-	case 'j':  // "sj"
-		{
-			RList /*<ut64 *>*/ *addrs = r_list_newf (free);
-			RList /*<char *>*/ *names = r_list_newf (free);
-			RList *list = r_io_sundo_list (core->io, '!');
-			ut64 lsz = 0;
-			ut64 i;
-			RListIter *iter;
-			RIOUndos *undo;
-			if (list) {
-				r_list_foreach (list, iter, undo) {
-					char *name = NULL;
+	case 'j': // "sj"
+	{
+		RList /*<ut64 *>*/ *addrs = r_list_newf (free);
+		RList /*<char *>*/ *names = r_list_newf (free);
+		RList *list = r_io_sundo_list (core->io, '!');
+		ut64 lsz = 0;
+		ut64 i;
+		RListIter *iter;
+		RIOUndos *undo;
+		if (list) {
+			r_list_foreach (list, iter, undo) {
+				char *name = NULL;
 
-					RFlagItem *f = r_flag_get_at (core->flags, undo->off, true);
-					if (f) {
-						if (f->offset != undo->off) {
-							name = r_str_newf ("%s+%d", f->name,
-									(int)(undo->off- f->offset));
-						} else {
-							name = strdup (f->name);
-						}
+				RFlagItem *f = r_flag_get_at (core->flags, undo->off, true);
+				if (f) {
+					if (f->offset != undo->off) {
+						name = r_str_newf ("%s+%d", f->name,
+							(int)(undo->off - f->offset));
+					} else {
+						name = strdup (f->name);
 					}
-					if (!name) {
-						name = strdup ("");
-					}
-					ut64 *val = malloc (sizeof (ut64));
-					if (!val) {
-						free (name);
-						break;
-					}
-					*val = undo->off;
-					r_list_append (addrs, val);
-					r_list_append (names, strdup (name));
-					lsz++;
+				}
+				if (!name) {
+					name = strdup ("");
+				}
+				ut64 *val = malloc (sizeof (ut64));
+				if (!val) {
 					free (name);
+					break;
 				}
-				r_list_free (list);
+				*val = undo->off;
+				r_list_append (addrs, val);
+				r_list_append (names, strdup (name));
+				lsz++;
+				free (name);
 			}
-			PJ *pj = pj_new ();
-			pj_a (pj);
-			for (i = 0; i < lsz; i++) {
-				ut64 *addr = r_list_get_n (addrs, i);
-				const char *name = r_list_get_n (names, i);
-				pj_o (pj);
-				pj_kn (pj, "offset", *addr);
-				if (name && *name) {
-					pj_ks (pj, "name", name);
-				}
-				if (core->io->undo.undos == i) {
-					pj_kb (pj, "current", true);
-				}
-				pj_end (pj);
+			r_list_free (list);
+		}
+		PJ *pj = pj_new ();
+		pj_a (pj);
+		for (i = 0; i < lsz; i++) {
+			ut64 *addr = r_list_get_n (addrs, i);
+			const char *name = r_list_get_n (names, i);
+			pj_o (pj);
+			pj_kn (pj, "offset", *addr);
+			if (name && *name) {
+				pj_ks (pj, "name", name);
+			}
+			if (core->io->undo.undos == i) {
+				pj_kb (pj, "current", true);
 			}
 			pj_end (pj);
-			char *s = pj_drain (pj);
-			r_cons_printf ("%s\n", s);
-			free (s);
-			r_list_free (addrs);
-			r_list_free (names);
 		}
-		break;
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		r_cons_printf ("%s\n", s);
+		free (s);
+		r_list_free (addrs);
+		r_list_free (names);
+	} break;
 	case '*': // "s*"
 	case '=': // "s="
 	case '!': // "s!"
-		{
-			char mode = input[0];
-			if (input[1] == '=') {
-				mode = 0;
-			}
-			RList *list = r_io_sundo_list (core->io, mode);
-			if (list) {
-				RListIter *iter;
-				RIOUndos *undo;
-				r_list_foreach (list, iter, undo) {
-					char *name = NULL;
+	{
+		char mode = input[0];
+		if (input[1] == '=') {
+			mode = 0;
+		}
+		RList *list = r_io_sundo_list (core->io, mode);
+		if (list) {
+			RListIter *iter;
+			RIOUndos *undo;
+			r_list_foreach (list, iter, undo) {
+				char *name = NULL;
 
-					RFlagItem *f = r_flag_get_at (core->flags, undo->off, true);
-					if (f) {
-						if (f->offset != undo->off) {
-							name = r_str_newf ("%s + %d\n", f->name,
-									(int)(undo->off - f->offset));
-						} else {
-							name = strdup (f->name);
-						}
-					}
-					if (mode) {
-						r_cons_printf ("0x%"PFMT64x" %s\n", undo->off, name? name: "");
+				RFlagItem *f = r_flag_get_at (core->flags, undo->off, true);
+				if (f) {
+					if (f->offset != undo->off) {
+						name = r_str_newf ("%s + %d\n", f->name,
+							(int)(undo->off - f->offset));
 					} else {
-						if (!name) {
-							name = r_str_newf ("0x%"PFMT64x, undo->off);
-						}
-						r_cons_printf ("%s%s", name, iter->n? " > ":"");
+						name = strdup (f->name);
 					}
-					free (name);
 				}
-				r_list_free (list);
-				if (!mode) {
-					r_cons_newline ();
+				if (mode) {
+					r_cons_printf ("0x%" PFMT64x " %s\n", undo->off, name ? name : "");
+				} else {
+					if (!name) {
+						name = r_str_newf ("0x%" PFMT64x, undo->off);
+					}
+					r_cons_printf ("%s%s", name, iter->n ? " > " : "");
 				}
+				free (name);
+			}
+			r_list_free (list);
+			if (!mode) {
+				r_cons_newline ();
 			}
 		}
-		break;
+	} break;
 	case '+': // "s+"
 		if (input[1] != '\0') {
 			int delta = off;
@@ -601,64 +597,60 @@ static int cmd_seek(void *data, const char *input) {
 			r_io_sundo_reset (core->io);
 			break;
 		case 0: // "s-"
-			{
-				RIOUndos *undo = r_io_sundo (core->io, core->offset);
-				if (undo) {
-					r_core_seek (core, undo->off, false);
-					r_core_block_read (core);
-				}
-			}
-			break;
-		case '-': // "s--"
-		default:
-			{
-				int delta = -off;
-				if (input[1] == '-') {
-					delta = -core->blocksize;
-					int mult = r_num_math (core->num, input + 2);
-					if (mult > 0) {
-						delta /= mult;
-					}
-				}
-				if (!silent) {
-					r_io_sundo_push (core->io, core->offset,
-							r_print_get_cursor (core->print));
-				}
-				r_core_seek_delta (core, delta);
+		{
+			RIOUndos *undo = r_io_sundo (core->io, core->offset);
+			if (undo) {
+				r_core_seek (core, undo->off, false);
 				r_core_block_read (core);
 			}
-		break;
+		} break;
+		case '-': // "s--"
+		default: {
+			int delta = -off;
+			if (input[1] == '-') {
+				delta = -core->blocksize;
+				int mult = r_num_math (core->num, input + 2);
+				if (mult > 0) {
+					delta /= mult;
+				}
+			}
+			if (!silent) {
+				r_io_sundo_push (core->io, core->offset,
+					r_print_get_cursor (core->print));
+			}
+			r_core_seek_delta (core, delta);
+			r_core_block_read (core);
+		} break;
 		}
 		break;
 	case 'n': // "sn"
-		{
-			if (!silent) {
-				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
-			}
-			const char *nkey = (input[1] == ' ')
-				? input + 2
-				: r_config_get (core->config, "scr.nkey");
-			r_core_seek_next (core, nkey);
+	{
+		if (!silent) {
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		}
-		break;
+		const char *nkey = (input[1] == ' ')
+			? input + 2
+			: r_config_get (core->config, "scr.nkey");
+		r_core_seek_next (core, nkey);
+	} break;
 	case 'p': // "sp"
-		{
-			if (!silent) {
-				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
-			}
-			const char *nkey = (input[1] == ' ')
-				? input + 2
-				: r_config_get (core->config, "scr.nkey");
-			r_core_seek_previous (core, nkey);
+	{
+		if (!silent) {
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		}
-		break;
+		const char *nkey = (input[1] == ' ')
+			? input + 2
+			: r_config_get (core->config, "scr.nkey");
+		r_core_seek_previous (core, nkey);
+	} break;
 	case 'a': // "sa"
 		off = core->blocksize;
 		if (input[1] && input[2]) {
 			cmd = strdup (input);
 			p = strchr (cmd + 2, ' ');
 			if (p) {
-				off = r_num_math (core->num, p + 1);;
+				off = r_num_math (core->num, p + 1);
+				;
 				*p = '\0';
 			}
 			cmd[0] = 's';
@@ -720,19 +712,18 @@ static int cmd_seek(void *data, const char *input) {
 			cmd_seek_opcode (core, input + 1);
 			break;
 		default:
-			return -1;	// invalid command
+			return -1; // invalid command
 		}
 		break;
 	case 'g': // "sg"
 	{
-		RIOMap *map  = r_io_map_get (core->io, core->offset);
+		RIOMap *map = r_io_map_get (core->io, core->offset);
 		if (map) {
 			r_core_seek (core, map->itv.addr, true);
 		} else {
 			r_core_seek (core, 0, true);
 		}
-	}
-	break;
+	} break;
 	case 'G': // "sG"
 	{
 		if (!core->file) {
@@ -745,8 +736,7 @@ static int cmd_seek(void *data, const char *input) {
 		} else {
 			r_core_seek (core, r_io_fd_size (core->io, core->file->fd), true);
 		}
-	}
-	break;
+	} break;
 	case 'l': // "sl"
 	{
 		int sl_arg = r_num_math (core->num, input + 1);
@@ -783,26 +773,23 @@ static int cmd_seek(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_sl);
 			break;
 		}
-	}
-	break;
+	} break;
 	case ':': // "s:"
 		printPadded (core, atoi (input + 1));
 		break;
 	case '?': // "s?"
 		r_core_cmd_help (core, help_msg_s);
 		break;
-	default:
-		{
-			ut64 n = r_num_math (core->num, input);
-			if (n) {
-				if (!silent) {
-					r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
-				}
-				r_core_seek (core, n, true);
-				r_core_block_read (core);
+	default: {
+		ut64 n = r_num_math (core->num, input);
+		if (n) {
+			if (!silent) {
+				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 			}
+			r_core_seek (core, n, true);
+			r_core_block_read (core);
 		}
-		break;
+	} break;
 	}
 	return 0;
 }

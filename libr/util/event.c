@@ -9,11 +9,11 @@ typedef struct r_event_callback_hook_t {
 	int handle;
 } REventCallbackHook;
 
-static void ht_callback_free(HtUPKv *kv) {
+static void ht_callback_free (HtUPKv *kv) {
 	r_vector_free ((RVector *)kv->value);
 }
 
-R_API REvent *r_event_new(void *user) {
+R_API REvent *r_event_new (void *user) {
 	REvent *ev = R_NEW0 (REvent);
 	if (!ev) {
 		return NULL;
@@ -32,7 +32,7 @@ err:
 	return NULL;
 }
 
-R_API void r_event_free(REvent *ev) {
+R_API void r_event_free (REvent *ev) {
 	if (!ev) {
 		return;
 	}
@@ -41,7 +41,7 @@ R_API void r_event_free(REvent *ev) {
 	free (ev);
 }
 
-static RVector *get_cbs(REvent *ev, int type) {
+static RVector *get_cbs (REvent *ev, int type) {
 	RVector *cbs = ht_up_find (ev->callbacks, (ut64)type, NULL);
 	if (!cbs) {
 		cbs = r_vector_new (sizeof (REventCallbackHook), NULL, NULL);
@@ -52,7 +52,7 @@ static RVector *get_cbs(REvent *ev, int type) {
 	return cbs;
 }
 
-R_API REventCallbackHandle r_event_hook(REvent *ev, int type, REventCallback cb, void *user) {
+R_API REventCallbackHandle r_event_hook (REvent *ev, int type, REventCallback cb, void *user) {
 	REventCallbackHandle handle = { 0 };
 	REventCallbackHook hook;
 
@@ -74,7 +74,7 @@ R_API REventCallbackHandle r_event_hook(REvent *ev, int type, REventCallback cb,
 	return handle;
 }
 
-static bool del_hook(void *user, const ut64 k, const void *v) {
+static bool del_hook (void *user, const ut64 k, const void *v) {
 	int handle = *(int *)user;
 	RVector *cbs = (RVector *)v;
 	REventCallbackHook *hook;
@@ -89,7 +89,7 @@ static bool del_hook(void *user, const ut64 k, const void *v) {
 	return true;
 }
 
-R_API void r_event_unhook(REvent *ev, REventCallbackHandle handle) {
+R_API void r_event_unhook (REvent *ev, REventCallbackHandle handle) {
 	r_return_if_fail (ev);
 	if (handle.type == R_EVENT_ALL) {
 		// try to delete it both from each list of callbacks and from
@@ -103,7 +103,7 @@ R_API void r_event_unhook(REvent *ev, REventCallbackHandle handle) {
 	}
 }
 
-R_API void r_event_send(REvent *ev, int type, void *data) {
+R_API void r_event_send (REvent *ev, int type, void *data) {
 	REventCallbackHook *hook;
 	r_return_if_fail (ev && !ev->incall);
 

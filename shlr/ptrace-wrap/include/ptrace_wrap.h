@@ -35,7 +35,7 @@ typedef enum {
 	PTRACE_WRAP_REQUEST_TYPE_FUNC
 } ptrace_wrap_request_type;
 
-typedef void *(*ptrace_wrap_func_func)(void *);
+typedef void *(*ptrace_wrap_func_func) (void *);
 
 typedef struct ptrace_wrap_request_t {
 	ptrace_wrap_request_type type;
@@ -48,7 +48,7 @@ typedef struct ptrace_wrap_request_t {
 			int *_errno;
 		} ptrace;
 		struct {
-			void (*child_callback)(void *);
+			void (*child_callback) (void *);
 			void *child_callback_user;
 			int *_errno;
 		} fork;
@@ -71,10 +71,10 @@ typedef struct ptrace_wrap_instance_t {
 	};
 } ptrace_wrap_instance;
 
-int ptrace_wrap_instance_start(ptrace_wrap_instance *inst);
-void ptrace_wrap_instance_stop(ptrace_wrap_instance *inst);
-long ptrace_wrap(ptrace_wrap_instance *inst, ptrace_wrap_ptrace_request request, pid_t pid, void *addr, void *data);
-pid_t ptrace_wrap_fork(ptrace_wrap_instance *inst, void (*child_callback)(void *), void *child_callback_user);
-void *ptrace_wrap_func(ptrace_wrap_instance *inst, ptrace_wrap_func_func func, void *user);
+int ptrace_wrap_instance_start (ptrace_wrap_instance *inst);
+void ptrace_wrap_instance_stop (ptrace_wrap_instance *inst);
+long ptrace_wrap (ptrace_wrap_instance *inst, ptrace_wrap_ptrace_request request, pid_t pid, void *addr, void *data);
+pid_t ptrace_wrap_fork (ptrace_wrap_instance *inst, void (*child_callback) (void *), void *child_callback_user);
+void *ptrace_wrap_func (ptrace_wrap_instance *inst, ptrace_wrap_func_func func, void *user);
 
 #endif //PTRACE_WRAP_H

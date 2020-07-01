@@ -2,7 +2,7 @@
 
 #include <r_hash.h>
 
-R_API ut16 r_hash_fletcher8(const ut8 *d, size_t length) {
+R_API ut16 r_hash_fletcher8 (const ut8 *d, size_t length) {
 	size_t i;
 	ut16 a = 0;
 	ut16 b = 0;
@@ -15,7 +15,7 @@ R_API ut16 r_hash_fletcher8(const ut8 *d, size_t length) {
 	return (a & 0xff);
 }
 
-R_API ut16 r_hash_fletcher16(const ut8 *data, size_t len) {
+R_API ut16 r_hash_fletcher16 (const ut8 *data, size_t len) {
 	ut32 c0, c1;
 	size_t i;
 
@@ -36,12 +36,12 @@ R_API ut16 r_hash_fletcher16(const ut8 *data, size_t len) {
 	return (c1 << 8 | c0);
 }
 
-R_API ut32 r_hash_fletcher32(const ut8 *data, size_t len) {
+R_API ut32 r_hash_fletcher32 (const ut8 *data, size_t len) {
 	ut32 c0, c1;
 	size_t i;
 	ut8 word[sizeof (ut16)];
 	for (c0 = c1 = 0; len >= 360; len -= 360) {
-		for (i = 0; i < 360; i+=2) {
+		for (i = 0; i < 360; i += 2) {
 			size_t left = 360 - i;
 			memset (word, 0, sizeof (word));
 			memcpy (word, data, R_MIN (sizeof (word), left));
@@ -52,7 +52,7 @@ R_API ut32 r_hash_fletcher32(const ut8 *data, size_t len) {
 		c0 %= UT16_MAX;
 		c1 %= UT16_MAX;
 	}
-	for (i = 0; i < len; i+=2) {
+	for (i = 0; i < len; i += 2) {
 		size_t left = len - i;
 		memset (word, 0, sizeof (word));
 		memcpy (word, data, R_MIN (sizeof (word), left));
@@ -65,7 +65,7 @@ R_API ut32 r_hash_fletcher32(const ut8 *data, size_t len) {
 	return (c1 << 16 | c0);
 }
 
-R_API ut64 r_hash_fletcher64(const ut8 *addr, size_t len) {
+R_API ut64 r_hash_fletcher64 (const ut8 *addr, size_t len) {
 	const ut8 *p32 = addr;
 	const ut8 *p32end = addr + len;
 	ut32 lo32 = 0;

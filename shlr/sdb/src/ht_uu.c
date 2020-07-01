@@ -2,8 +2,9 @@
 
 #include "ht_inc.c"
 
-SDB_API HtName_(Ht)* Ht_(new0)(void) {
-	HT_(Options) opt = {
+SDB_API HtName_ (Ht) * Ht_ (new0) (void) {
+	HT_ (Options)
+	opt = {
 		.cmp = NULL,
 		.hashfn = NULL,
 		.dupkey = NULL,
@@ -12,5 +13,5 @@ SDB_API HtName_(Ht)* Ht_(new0)(void) {
 		.calcsizeV = NULL,
 		.freefn = NULL
 	};
-	return Ht_(new_opt) (&opt);
+	return Ht_ (new_opt) (&opt);
 }

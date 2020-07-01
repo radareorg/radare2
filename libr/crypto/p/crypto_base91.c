@@ -6,20 +6,20 @@
 
 #define INSIZE 32768
 
-static bool base91_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+static bool base91_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	cry->dir = direction;
 	return true;
 }
 
-static int base91_get_key_size(RCrypto *cry) {
+static int base91_get_key_size (RCrypto *cry) {
 	return 0;
 }
 
-static bool base91_use(const char *algo) {
+static bool base91_use (const char *algo) {
 	return algo && !strcmp (algo, "base91");
 }
 
-static bool update(RCrypto *cry, const ut8 *buf, int len) {
+static bool update (RCrypto *cry, const ut8 *buf, int len) {
 	int olen = INSIZE;
 	if (!cry || !buf || len < 1) {
 		return false;
@@ -38,7 +38,7 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	return true;
 }
 
-static bool final(RCrypto *cry, const ut8 *buf, int len) {
+static bool final (RCrypto *cry, const ut8 *buf, int len) {
 	return update (cry, buf, len);
 }
 

@@ -4,13 +4,13 @@
 #include <r_util.h>
 #include <r_list.h>
 
-R_API RAnalOp *r_anal_op_new(void) {
+R_API RAnalOp *r_anal_op_new (void) {
 	RAnalOp *op = R_NEW (RAnalOp);
 	r_anal_op_init (op);
 	return op;
 }
 
-R_API RList *r_anal_op_list_new(void) {
+R_API RList *r_anal_op_list_new (void) {
 	RList *list = r_list_new ();
 	if (list) {
 		list->free = &r_anal_op_free;
@@ -18,7 +18,7 @@ R_API RList *r_anal_op_list_new(void) {
 	return list;
 }
 
-R_API void r_anal_op_init(RAnalOp *op) {
+R_API void r_anal_op_init (RAnalOp *op) {
 	if (op) {
 		memset (op, 0, sizeof (*op));
 		op->addr = UT64_MAX;
@@ -31,7 +31,7 @@ R_API void r_anal_op_init(RAnalOp *op) {
 	}
 }
 
-R_API bool r_anal_op_fini(RAnalOp *op) {
+R_API bool r_anal_op_fini (RAnalOp *op) {
 	if (!op) {
 		return false;
 	}
@@ -51,7 +51,7 @@ R_API bool r_anal_op_fini(RAnalOp *op) {
 	return true;
 }
 
-R_API void r_anal_op_free(void *_op) {
+R_API void r_anal_op_free (void *_op) {
 	if (!_op) {
 		return;
 	}
@@ -60,7 +60,7 @@ R_API void r_anal_op_free(void *_op) {
 	free (_op);
 }
 
-static int defaultCycles(RAnalOp *op) {
+static int defaultCycles (RAnalOp *op) {
 	switch (op->type) {
 	case R_ANAL_OP_TYPE_PUSH:
 	case R_ANAL_OP_TYPE_POP:
@@ -86,7 +86,7 @@ static int defaultCycles(RAnalOp *op) {
 	}
 }
 
-R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+R_API int r_anal_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	r_anal_op_init (op);
 	r_return_val_if_fail (anal && op && len > 0, -1);
 
@@ -125,7 +125,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		if (anal->verbose) {
 			eprintf ("Warning: unhandled R_ANAL_OP_MASK_DISASM in r_anal_op\n");
 		}
-        }
+	}
 	if (mask & R_ANAL_OP_MASK_HINT) {
 		RAnalHint *hint = r_anal_hint_get (anal, addr);
 		if (hint) {
@@ -136,7 +136,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	return ret;
 }
 
-R_API RAnalOp *r_anal_op_copy(RAnalOp *op) {
+R_API RAnalOp *r_anal_op_copy (RAnalOp *op) {
 	RAnalOp *nop = R_NEW0 (RAnalOp);
 	if (!nop) {
 		return NULL;
@@ -160,7 +160,7 @@ R_API RAnalOp *r_anal_op_copy(RAnalOp *op) {
 	return nop;
 }
 
-R_API bool r_anal_op_nonlinear(int t) {
+R_API bool r_anal_op_nonlinear (int t) {
 	t &= R_ANAL_OP_TYPE_MASK;
 	switch (t) {
 	//call
@@ -191,7 +191,7 @@ R_API bool r_anal_op_nonlinear(int t) {
 	}
 }
 
-R_API bool r_anal_op_ismemref(int t) {
+R_API bool r_anal_op_ismemref (int t) {
 	t &= R_ANAL_OP_TYPE_MASK;
 	switch (t) {
 	case R_ANAL_OP_TYPE_LOAD:
@@ -234,48 +234,48 @@ static struct optype {
 	{ R_ANAL_OP_TYPE_DIV, "div" },
 	{ R_ANAL_OP_TYPE_NOP, "nop" },
 	{ R_ANAL_OP_TYPE_NOT, "not" },
-	{ R_ANAL_OP_TYPE_NULL  , "null" },
-	{ R_ANAL_OP_TYPE_OR    , "or" },
-	{ R_ANAL_OP_TYPE_POP   , "pop" },
-	{ R_ANAL_OP_TYPE_PUSH  , "push" },
-	{ R_ANAL_OP_TYPE_REP   , "rep" },
-	{ R_ANAL_OP_TYPE_RET   , "ret" },
-	{ R_ANAL_OP_TYPE_ROL   , "rol" },
-	{ R_ANAL_OP_TYPE_ROR   , "ror" },
-	{ R_ANAL_OP_TYPE_SAL   , "sal" },
-	{ R_ANAL_OP_TYPE_SAR   , "sar" },
-	{ R_ANAL_OP_TYPE_SHL   , "shl" },
-	{ R_ANAL_OP_TYPE_SHR   , "shr" },
-	{ R_ANAL_OP_TYPE_STORE , "store" },
-	{ R_ANAL_OP_TYPE_SUB   , "sub" },
-	{ R_ANAL_OP_TYPE_SWI   , "swi" },
-	{ R_ANAL_OP_TYPE_CSWI  , "cswi" },
+	{ R_ANAL_OP_TYPE_NULL, "null" },
+	{ R_ANAL_OP_TYPE_OR, "or" },
+	{ R_ANAL_OP_TYPE_POP, "pop" },
+	{ R_ANAL_OP_TYPE_PUSH, "push" },
+	{ R_ANAL_OP_TYPE_REP, "rep" },
+	{ R_ANAL_OP_TYPE_RET, "ret" },
+	{ R_ANAL_OP_TYPE_ROL, "rol" },
+	{ R_ANAL_OP_TYPE_ROR, "ror" },
+	{ R_ANAL_OP_TYPE_SAL, "sal" },
+	{ R_ANAL_OP_TYPE_SAR, "sar" },
+	{ R_ANAL_OP_TYPE_SHL, "shl" },
+	{ R_ANAL_OP_TYPE_SHR, "shr" },
+	{ R_ANAL_OP_TYPE_STORE, "store" },
+	{ R_ANAL_OP_TYPE_SUB, "sub" },
+	{ R_ANAL_OP_TYPE_SWI, "swi" },
+	{ R_ANAL_OP_TYPE_CSWI, "cswi" },
 	{ R_ANAL_OP_TYPE_SWITCH, "switch" },
-	{ R_ANAL_OP_TYPE_TRAP  , "trap" },
-	{ R_ANAL_OP_TYPE_UCALL , "ucall" },
-	{ R_ANAL_OP_TYPE_RCALL , "rcall" }, // needs to be changed
-	{ R_ANAL_OP_TYPE_ICALL , "ucall" }, // needs to be changed
+	{ R_ANAL_OP_TYPE_TRAP, "trap" },
+	{ R_ANAL_OP_TYPE_UCALL, "ucall" },
+	{ R_ANAL_OP_TYPE_RCALL, "rcall" }, // needs to be changed
+	{ R_ANAL_OP_TYPE_ICALL, "ucall" }, // needs to be changed
 	{ R_ANAL_OP_TYPE_IRCALL, "ucall" }, // needs to be changed
 	{ R_ANAL_OP_TYPE_UCCALL, "uccall" },
-	{ R_ANAL_OP_TYPE_UCJMP , "ucjmp" },
-	{ R_ANAL_OP_TYPE_UJMP  , "ujmp" },
-	{ R_ANAL_OP_TYPE_RJMP  , "rjmp" }, // needs to be changed
-	{ R_ANAL_OP_TYPE_IJMP  , "ujmp" }, // needs to be changed
-	{ R_ANAL_OP_TYPE_IRJMP , "ujmp" }, // needs to be changed
-	{ R_ANAL_OP_TYPE_UNK   , "unk" },
-	{ R_ANAL_OP_TYPE_UPUSH , "upush" },
-	{ R_ANAL_OP_TYPE_RPUSH , "rpush" },
-	{ R_ANAL_OP_TYPE_XCHG  , "xchg" },
-	{ R_ANAL_OP_TYPE_XOR   , "xor" },
-	{ R_ANAL_OP_TYPE_CASE  , "case" },
-	{ R_ANAL_OP_TYPE_CPL   , "cpl" },
+	{ R_ANAL_OP_TYPE_UCJMP, "ucjmp" },
+	{ R_ANAL_OP_TYPE_UJMP, "ujmp" },
+	{ R_ANAL_OP_TYPE_RJMP, "rjmp" }, // needs to be changed
+	{ R_ANAL_OP_TYPE_IJMP, "ujmp" }, // needs to be changed
+	{ R_ANAL_OP_TYPE_IRJMP, "ujmp" }, // needs to be changed
+	{ R_ANAL_OP_TYPE_UNK, "unk" },
+	{ R_ANAL_OP_TYPE_UPUSH, "upush" },
+	{ R_ANAL_OP_TYPE_RPUSH, "rpush" },
+	{ R_ANAL_OP_TYPE_XCHG, "xchg" },
+	{ R_ANAL_OP_TYPE_XOR, "xor" },
+	{ R_ANAL_OP_TYPE_CASE, "case" },
+	{ R_ANAL_OP_TYPE_CPL, "cpl" },
 	{ R_ANAL_OP_TYPE_CRYPTO, "crypto" },
-	{0,NULL}
+	{ 0, NULL }
 };
 
-R_API int r_anal_optype_from_string(const char *type) {
+R_API int r_anal_optype_from_string (const char *type) {
 	int i;
-	for  (i = 0; optypes[i].name;i++) {
+	for (i = 0; optypes[i].name; i++) {
 		if (!strcmp (optypes[i].name, type)) {
 			return optypes[i].type;
 		}
@@ -283,71 +283,71 @@ R_API int r_anal_optype_from_string(const char *type) {
 	return -1;
 }
 
-R_API const char *r_anal_optype_to_string(int t) {
+R_API const char *r_anal_optype_to_string (int t) {
 	bool once = true;
 repeat:
 	// TODO: delete
 	switch (t) {
-	case R_ANAL_OP_TYPE_IO    : return "io";
-	case R_ANAL_OP_TYPE_ACMP  : return "acmp";
-	case R_ANAL_OP_TYPE_ADD   : return "add";
-	case R_ANAL_OP_TYPE_SYNC  : return "sync";
-	case R_ANAL_OP_TYPE_AND   : return "and";
-	case R_ANAL_OP_TYPE_CALL  : return "call";
-	case R_ANAL_OP_TYPE_CCALL : return "ccall";
-	case R_ANAL_OP_TYPE_CJMP  : return "cjmp";
-	case R_ANAL_OP_TYPE_MJMP  : return "mjmp";
-	case R_ANAL_OP_TYPE_CMP   : return "cmp";
-	case R_ANAL_OP_TYPE_CRET  : return "cret";
-	case R_ANAL_OP_TYPE_DIV   : return "div";
-	case R_ANAL_OP_TYPE_ILL   : return "ill";
-	case R_ANAL_OP_TYPE_JMP   : return "jmp";
-	case R_ANAL_OP_TYPE_LEA   : return "lea";
-	case R_ANAL_OP_TYPE_LEAVE : return "leave";
-	case R_ANAL_OP_TYPE_LOAD  : return "load";
-	case R_ANAL_OP_TYPE_NEW   : return "new";
-	case R_ANAL_OP_TYPE_MOD   : return "mod";
-	case R_ANAL_OP_TYPE_CMOV  : return "cmov";
-	case R_ANAL_OP_TYPE_MOV   : return "mov";
-	case R_ANAL_OP_TYPE_CAST  : return "cast";
-	case R_ANAL_OP_TYPE_MUL   : return "mul";
-	case R_ANAL_OP_TYPE_NOP   : return "nop";
-	case R_ANAL_OP_TYPE_NOT   : return "not";
-	case R_ANAL_OP_TYPE_NULL  : return "null";
-	case R_ANAL_OP_TYPE_OR    : return "or";
-	case R_ANAL_OP_TYPE_POP   : return "pop";
-	case R_ANAL_OP_TYPE_PUSH  : return "push";
-	case R_ANAL_OP_TYPE_RPUSH : return "rpush";
-	case R_ANAL_OP_TYPE_REP   : return "rep";
-	case R_ANAL_OP_TYPE_RET   : return "ret";
-	case R_ANAL_OP_TYPE_ROL   : return "rol";
-	case R_ANAL_OP_TYPE_ROR   : return "ror";
-	case R_ANAL_OP_TYPE_SAL   : return "sal";
-	case R_ANAL_OP_TYPE_SAR   : return "sar";
-	case R_ANAL_OP_TYPE_SHL   : return "shl";
-	case R_ANAL_OP_TYPE_SHR   : return "shr";
-	case R_ANAL_OP_TYPE_STORE : return "store";
-	case R_ANAL_OP_TYPE_SUB   : return "sub";
-	case R_ANAL_OP_TYPE_SWI   : return "swi";
-	case R_ANAL_OP_TYPE_CSWI  : return "cswi";
+	case R_ANAL_OP_TYPE_IO: return "io";
+	case R_ANAL_OP_TYPE_ACMP: return "acmp";
+	case R_ANAL_OP_TYPE_ADD: return "add";
+	case R_ANAL_OP_TYPE_SYNC: return "sync";
+	case R_ANAL_OP_TYPE_AND: return "and";
+	case R_ANAL_OP_TYPE_CALL: return "call";
+	case R_ANAL_OP_TYPE_CCALL: return "ccall";
+	case R_ANAL_OP_TYPE_CJMP: return "cjmp";
+	case R_ANAL_OP_TYPE_MJMP: return "mjmp";
+	case R_ANAL_OP_TYPE_CMP: return "cmp";
+	case R_ANAL_OP_TYPE_CRET: return "cret";
+	case R_ANAL_OP_TYPE_DIV: return "div";
+	case R_ANAL_OP_TYPE_ILL: return "ill";
+	case R_ANAL_OP_TYPE_JMP: return "jmp";
+	case R_ANAL_OP_TYPE_LEA: return "lea";
+	case R_ANAL_OP_TYPE_LEAVE: return "leave";
+	case R_ANAL_OP_TYPE_LOAD: return "load";
+	case R_ANAL_OP_TYPE_NEW: return "new";
+	case R_ANAL_OP_TYPE_MOD: return "mod";
+	case R_ANAL_OP_TYPE_CMOV: return "cmov";
+	case R_ANAL_OP_TYPE_MOV: return "mov";
+	case R_ANAL_OP_TYPE_CAST: return "cast";
+	case R_ANAL_OP_TYPE_MUL: return "mul";
+	case R_ANAL_OP_TYPE_NOP: return "nop";
+	case R_ANAL_OP_TYPE_NOT: return "not";
+	case R_ANAL_OP_TYPE_NULL: return "null";
+	case R_ANAL_OP_TYPE_OR: return "or";
+	case R_ANAL_OP_TYPE_POP: return "pop";
+	case R_ANAL_OP_TYPE_PUSH: return "push";
+	case R_ANAL_OP_TYPE_RPUSH: return "rpush";
+	case R_ANAL_OP_TYPE_REP: return "rep";
+	case R_ANAL_OP_TYPE_RET: return "ret";
+	case R_ANAL_OP_TYPE_ROL: return "rol";
+	case R_ANAL_OP_TYPE_ROR: return "ror";
+	case R_ANAL_OP_TYPE_SAL: return "sal";
+	case R_ANAL_OP_TYPE_SAR: return "sar";
+	case R_ANAL_OP_TYPE_SHL: return "shl";
+	case R_ANAL_OP_TYPE_SHR: return "shr";
+	case R_ANAL_OP_TYPE_STORE: return "store";
+	case R_ANAL_OP_TYPE_SUB: return "sub";
+	case R_ANAL_OP_TYPE_SWI: return "swi";
+	case R_ANAL_OP_TYPE_CSWI: return "cswi";
 	case R_ANAL_OP_TYPE_SWITCH: return "switch";
-	case R_ANAL_OP_TYPE_TRAP  : return "trap";
-	case R_ANAL_OP_TYPE_UCALL : return "ucall";
-	case R_ANAL_OP_TYPE_RCALL : return "rcall"; // needs to be changed
-	case R_ANAL_OP_TYPE_ICALL : return "ucall"; // needs to be changed
+	case R_ANAL_OP_TYPE_TRAP: return "trap";
+	case R_ANAL_OP_TYPE_UCALL: return "ucall";
+	case R_ANAL_OP_TYPE_RCALL: return "rcall"; // needs to be changed
+	case R_ANAL_OP_TYPE_ICALL: return "ucall"; // needs to be changed
 	case R_ANAL_OP_TYPE_IRCALL: return "ucall"; // needs to be changed
 	case R_ANAL_OP_TYPE_UCCALL: return "uccall";
-	case R_ANAL_OP_TYPE_UCJMP : return "ucjmp";
-	case R_ANAL_OP_TYPE_UJMP  : return "ujmp";
-	case R_ANAL_OP_TYPE_RJMP  : return "rjmp"; // needs to be changed
-	case R_ANAL_OP_TYPE_IJMP  : return "ujmp"; // needs to be changed
-	case R_ANAL_OP_TYPE_IRJMP : return "ujmp"; // needs to be changed
-	case R_ANAL_OP_TYPE_UNK   : return "unk";
-	case R_ANAL_OP_TYPE_UPUSH : return "upush";
-	case R_ANAL_OP_TYPE_XCHG  : return "xchg";
-	case R_ANAL_OP_TYPE_XOR   : return "xor";
-	case R_ANAL_OP_TYPE_CASE  : return "case";
-	case R_ANAL_OP_TYPE_CPL   : return "cpl";
+	case R_ANAL_OP_TYPE_UCJMP: return "ucjmp";
+	case R_ANAL_OP_TYPE_UJMP: return "ujmp";
+	case R_ANAL_OP_TYPE_RJMP: return "rjmp"; // needs to be changed
+	case R_ANAL_OP_TYPE_IJMP: return "ujmp"; // needs to be changed
+	case R_ANAL_OP_TYPE_IRJMP: return "ujmp"; // needs to be changed
+	case R_ANAL_OP_TYPE_UNK: return "unk";
+	case R_ANAL_OP_TYPE_UPUSH: return "upush";
+	case R_ANAL_OP_TYPE_XCHG: return "xchg";
+	case R_ANAL_OP_TYPE_XOR: return "xor";
+	case R_ANAL_OP_TYPE_CASE: return "case";
+	case R_ANAL_OP_TYPE_CPL: return "cpl";
 	case R_ANAL_OP_TYPE_CRYPTO: return "crypto";
 	}
 	if (once) {
@@ -358,12 +358,12 @@ repeat:
 	return "undefined";
 }
 
-R_API const char *r_anal_op_to_esil_string(RAnal *anal, RAnalOp *op) {
+R_API const char *r_anal_op_to_esil_string (RAnal *anal, RAnalOp *op) {
 	return r_strbuf_get (&op->esil);
 }
 
 // TODO: use esil here?
-R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
+R_API char *r_anal_op_to_string (RAnal *anal, RAnalOp *op) {
 	RAnalBlock *bb;
 	RAnalFunction *f;
 	char *cstr, ret[128];
@@ -387,14 +387,14 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	case R_ANAL_OP_TYPE_CJMP:
 		if ((bb = r_anal_bb_from_offset (anal, op->addr))) {
 			cstr = r_anal_cond_to_string (bb->cond);
-			snprintf (ret, sizeof (ret), "if (%s) goto 0x%"PFMT64x, cstr, op->jump);
+			snprintf (ret, sizeof (ret), "if (%s) goto 0x%" PFMT64x, cstr, op->jump);
 			free (cstr);
 		} else {
-			snprintf (ret, sizeof (ret), "if (%s) goto 0x%"PFMT64x, "?", op->jump);
+			snprintf (ret, sizeof (ret), "if (%s) goto 0x%" PFMT64x, "?", op->jump);
 		}
 		break;
 	case R_ANAL_OP_TYPE_JMP:
-		snprintf (ret, sizeof (ret), "goto 0x%"PFMT64x, op->jump);
+		snprintf (ret, sizeof (ret), "goto 0x%" PFMT64x, op->jump);
 		break;
 	case R_ANAL_OP_TYPE_UJMP:
 	case R_ANAL_OP_TYPE_RJMP:
@@ -421,7 +421,7 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 		if (f) {
 			snprintf (ret, sizeof (ret), "%s()", f->name);
 		} else {
-			snprintf (ret, sizeof (ret), "0x%"PFMT64x"()", op->jump);
+			snprintf (ret, sizeof (ret), "0x%" PFMT64x "()", op->jump);
 		}
 		break;
 	case R_ANAL_OP_TYPE_CCALL:
@@ -550,7 +550,7 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	return strdup (ret);
 }
 
-R_API const char *r_anal_stackop_tostring(int s) {
+R_API const char *r_anal_stackop_tostring (int s) {
 	switch (s) {
 	case R_ANAL_STACK_NULL:
 		return "null";
@@ -568,7 +568,7 @@ R_API const char *r_anal_stackop_tostring(int s) {
 	return "unk";
 }
 
-R_API const char *r_anal_op_family_to_string(int n) {
+R_API const char *r_anal_op_family_to_string (int n) {
 	switch (n) {
 	case R_ANAL_OP_FAMILY_UNKNOWN: return "unk";
 	case R_ANAL_OP_FAMILY_CPU: return "cpu";
@@ -585,26 +585,26 @@ R_API const char *r_anal_op_family_to_string(int n) {
 	return NULL;
 }
 
-R_API int r_anal_op_family_from_string(const char *f) {
+R_API int r_anal_op_family_from_string (const char *f) {
 	struct op_family {
 		const char *name;
 		int id;
 	};
 	static const struct op_family of[] = {
-		{"cpu", R_ANAL_OP_FAMILY_CPU},
-		{"fpu", R_ANAL_OP_FAMILY_FPU},
-		{"mmx", R_ANAL_OP_FAMILY_MMX},
-		{"sse", R_ANAL_OP_FAMILY_SSE},
-		{"priv", R_ANAL_OP_FAMILY_PRIV},
-		{"virt", R_ANAL_OP_FAMILY_VIRT},
-		{"crpt", R_ANAL_OP_FAMILY_CRYPTO},
-		{"io", R_ANAL_OP_FAMILY_IO},
-		{"pac", R_ANAL_OP_FAMILY_PAC},
-		{"thread", R_ANAL_OP_FAMILY_THREAD},
+		{ "cpu", R_ANAL_OP_FAMILY_CPU },
+		{ "fpu", R_ANAL_OP_FAMILY_FPU },
+		{ "mmx", R_ANAL_OP_FAMILY_MMX },
+		{ "sse", R_ANAL_OP_FAMILY_SSE },
+		{ "priv", R_ANAL_OP_FAMILY_PRIV },
+		{ "virt", R_ANAL_OP_FAMILY_VIRT },
+		{ "crpt", R_ANAL_OP_FAMILY_CRYPTO },
+		{ "io", R_ANAL_OP_FAMILY_IO },
+		{ "pac", R_ANAL_OP_FAMILY_PAC },
+		{ "thread", R_ANAL_OP_FAMILY_THREAD },
 	};
 
 	int i;
-	for (i = 0; i < sizeof (of) / sizeof (of[0]); i ++) {
+	for (i = 0; i < sizeof (of) / sizeof (of[0]); i++) {
 		if (!strcmp (f, of[i].name)) {
 			return of[i].id;
 		}
@@ -613,7 +613,7 @@ R_API int r_anal_op_family_from_string(const char *f) {
 }
 
 /* apply hint to op, return the number of hints applied */
-R_API int r_anal_op_hint(RAnalOp *op, RAnalHint *hint) {
+R_API int r_anal_op_hint (RAnalOp *op, RAnalHint *hint) {
 	int changes = 0;
 	if (hint) {
 		if (hint->val != UT64_MAX) {
@@ -653,7 +653,7 @@ R_API int r_anal_op_hint(RAnalOp *op, RAnalHint *hint) {
 // returns the '33' in 'rax + 33'
 // returns value for the given register name in specific address / range
 // imho this should not iterate, should be just a helper to get that value
-R_API int r_anal_op_reg_delta(RAnal *anal, ut64 addr, const char *name) {
+R_API int r_anal_op_reg_delta (RAnal *anal, ut64 addr, const char *name) {
 	ut8 buf[32];
 	anal->iob.read_at (anal->iob.io, addr, buf, sizeof (buf));
 	RAnalOp op = { 0 };

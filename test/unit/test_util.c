@@ -1,7 +1,7 @@
 #include <r_util.h>
 #include "minunit.h"
 
-static Sdb *setup_sdb(void) {
+static Sdb *setup_sdb (void) {
 	Sdb *res = sdb_new0 ();
 	sdb_set (res, "ExitProcess", "func", 0);
 	sdb_set (res, "ReadFile", "func", 0);
@@ -12,7 +12,7 @@ static Sdb *setup_sdb(void) {
 	return res;
 }
 
-bool test_dll_names(void) {
+bool test_dll_names (void) {
 	Sdb *TDB = setup_sdb ();
 	char *s;
 
@@ -50,7 +50,7 @@ bool test_dll_names(void) {
 	mu_end;
 }
 
-bool test_ignore_prefixes(void) {
+bool test_ignore_prefixes (void) {
 	Sdb *TDB = setup_sdb ();
 	char *s;
 
@@ -66,7 +66,7 @@ bool test_ignore_prefixes(void) {
 	mu_end;
 }
 
-bool test_remove_r2_prefixes(void) {
+bool test_remove_r2_prefixes (void) {
 	Sdb *TDB = setup_sdb ();
 	char *s;
 
@@ -88,7 +88,7 @@ bool test_remove_r2_prefixes(void) {
 	mu_end;
 }
 
-bool test_autonames(void) {
+bool test_autonames (void) {
 	Sdb *TDB = setup_sdb ();
 	char *s;
 
@@ -113,7 +113,7 @@ bool test_autonames(void) {
 	mu_end;
 }
 
-bool test_initial_underscore(void) {
+bool test_initial_underscore (void) {
 	Sdb *TDB = setup_sdb ();
 	char *s;
 
@@ -132,7 +132,7 @@ typedef struct {
 	R_REF_TYPE;
 } TypeTest;
 
-static TypeTest *r_type_test_new(const char *name) {
+static TypeTest *r_type_test_new (const char *name) {
 	TypeTest *tt = R_NEW0 (TypeTest);
 	if (tt) {
 		r_ref_init (tt);
@@ -141,13 +141,13 @@ static TypeTest *r_type_test_new(const char *name) {
 	return tt;
 }
 
-static void r_type_test_free(TypeTest *tt) {
+static void r_type_test_free (TypeTest *tt) {
 	tt->name = "";
 }
 
-R_REF_FUNCTIONS(TypeTest, r_type_test);
+R_REF_FUNCTIONS (TypeTest, r_type_test);
 
-bool test_references(void) {
+bool test_references (void) {
 	TypeTest *tt = r_type_test_new ("foo");
 	mu_assert_eq (tt->refcount, 1, "reference count issue");
 	r_type_test_ref (tt);
@@ -162,7 +162,7 @@ bool test_references(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests () {
 	mu_run_test (test_ignore_prefixes);
 	mu_run_test (test_remove_r2_prefixes);
 	mu_run_test (test_dll_names);
@@ -172,6 +172,6 @@ int all_tests() {
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
+int main (int argc, char **argv) {
+	return all_tests ();
 }

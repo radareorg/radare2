@@ -6,7 +6,7 @@
 #include <r_asm.h>
 #include "../arch/i8080/i8080dis.c"
 
-static int do_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int do_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int dlen = i8080_disasm (buf, r_strbuf_get (&op->buf_asm), len);
 	return op->size = R_MAX (0, dlen);
 }

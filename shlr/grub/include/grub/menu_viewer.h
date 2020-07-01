@@ -26,23 +26,22 @@
 #include <grub/menu.h>
 #include <grub/term.h>
 
-struct grub_menu_viewer
-{
-  struct grub_menu_viewer *next;
-  void *data;
-  void (*set_chosen_entry) (int entry, void *data);
-  void (*print_timeout) (int timeout, void *data);
-  void (*clear_timeout) (void *data);
-  void (*fini) (void *fini);
+struct grub_menu_viewer {
+	struct grub_menu_viewer *next;
+	void *data;
+	void (*set_chosen_entry) (int entry, void *data);
+	void (*print_timeout) (int timeout, void *data);
+	void (*clear_timeout) (void *data);
+	void (*fini) (void *fini);
 };
 
 void grub_menu_register_viewer (struct grub_menu_viewer *viewer);
 
 grub_err_t
 grub_menu_try_text (struct grub_term_output *term,
-		    int entry, grub_menu_t menu, int nested);
+	int entry, grub_menu_t menu, int nested);
 
 extern grub_err_t (*grub_gfxmenu_try_hook) (int entry, grub_menu_t menu,
-					    int nested);
+	int nested);
 
 #endif /* GRUB_MENU_VIEWER_HEADER */

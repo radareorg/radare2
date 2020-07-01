@@ -145,45 +145,40 @@ typedef struct xtensa_relax_info_struct xtensa_relax_info;
 #endif
 
 xtensa_isa xtensa_default_isa;
-    // xtensa_default_isa = xtensa_isa_init (0, 0);
+// xtensa_default_isa = xtensa_isa_init (0, 0);
 
-int
-filename_cmp (const char *s1, const char *s2)
-{
-#if !defined(HAVE_DOS_BASED_FILE_SYSTEM) \
-    && !defined(HAVE_CASE_INSENSITIVE_FILE_SYSTEM)
-  return strcmp(s1, s2);
+int filename_cmp (const char *s1, const char *s2) {
+#if !defined(HAVE_DOS_BASED_FILE_SYSTEM) && !defined(HAVE_CASE_INSENSITIVE_FILE_SYSTEM)
+	return strcmp (s1, s2);
 #else
-  for (;;)
-    {
-      int c1 = *s1;
-      int c2 = *s2;
+	for (;;) {
+		int c1 = *s1;
+		int c2 = *s2;
 
-#if defined (HAVE_CASE_INSENSITIVE_FILE_SYSTEM)
-      c1 = TOLOWER (c1);
-      c2 = TOLOWER (c2);
+#if defined(HAVE_CASE_INSENSITIVE_FILE_SYSTEM)
+		c1 = TOLOWER (c1);
+		c2 = TOLOWER (c2);
 #endif
 
-#if defined (HAVE_DOS_BASED_FILE_SYSTEM)
-      /* On DOS-based file systems, the '/' and the '\' are equivalent.  */
-      if (c1 == '/')
-        c1 = '\\';
-      if (c2 == '/')
-        c2 = '\\';
+#if defined(HAVE_DOS_BASED_FILE_SYSTEM)
+		/* On DOS-based file systems, the '/' and the '\' are equivalent.  */
+		if (c1 == '/')
+			c1 = '\\';
+		if (c2 == '/')
+			c2 = '\\';
 #endif
 
-      if (c1 != c2)
-        return (c1 - c2);
+		if (c1 != c2)
+			return (c1 - c2);
 
-      if (c1 == '\0')
-        return 0;
+		if (c1 == '\0')
+			return 0;
 
-      s1++;
-      s2++;
-    }
+		s1++;
+		s2++;
+	}
 #endif
 }
-
 
 #if 0
 
@@ -364,7 +359,7 @@ static reloc_howto_type elf_howto_table[] =
 
 #if DEBUG_GEN_RELOC
 #define TRACE(str) \
-  fprintf (stderr, "Xtensa bfd reloc lookup %d (%s)\n", code, str)
+	fprintf (stderr, "Xtensa bfd reloc lookup %d (%s)\n", code, str)
 #else
 #define TRACE(str)
 #endif
@@ -584,7 +579,7 @@ static const bfd_byte elf_xtensa_le_plt_entry[PLT_ENTRY_SIZE] =
 };
 
 /* The size of the thread control block.  */
-#define TCB_SIZE	8
+#define TCB_SIZE 8
 
 struct elf_xtensa_link_hash_entry
 {
@@ -592,11 +587,11 @@ struct elf_xtensa_link_hash_entry
 
   bfd_signed_vma tlsfunc_refcount;
 
-#define GOT_UNKNOWN	0
-#define GOT_NORMAL	1
-#define GOT_TLS_GD	2	/* global or local dynamic */
-#define GOT_TLS_IE	4	/* initial or local exec */
-#define GOT_TLS_ANY	(GOT_TLS_GD | GOT_TLS_IE)
+#define GOT_UNKNOWN 0
+#define GOT_NORMAL 1
+#define GOT_TLS_GD 2 /* global or local dynamic */
+#define GOT_TLS_IE 4 /* initial or local exec */
+#define GOT_TLS_ANY (GOT_TLS_GD | GOT_TLS_IE)
   unsigned char tls_type;
 };
 
@@ -613,18 +608,16 @@ struct elf_xtensa_obj_tdata
 };
 
 #define elf_xtensa_tdata(abfd) \
-  ((struct elf_xtensa_obj_tdata *) (abfd)->tdata.any)
+	((struct elf_xtensa_obj_tdata *)(abfd)->tdata.any)
 
 #define elf_xtensa_local_got_tls_type(abfd) \
-  (elf_xtensa_tdata (abfd)->local_got_tls_type)
+	(elf_xtensa_tdata (abfd)->local_got_tls_type)
 
 #define elf_xtensa_local_tlsfunc_refcounts(abfd) \
-  (elf_xtensa_tdata (abfd)->local_tlsfunc_refcounts)
+	(elf_xtensa_tdata (abfd)->local_tlsfunc_refcounts)
 
 #define is_xtensa_elf(bfd) \
-  (bfd_get_flavour (bfd) == bfd_target_elf_flavour \
-   && elf_tdata (bfd) != NULL \
-   && elf_object_id (bfd) == XTENSA_ELF_DATA)
+	(bfd_get_flavour (bfd) == bfd_target_elf_flavour && elf_tdata (bfd) != NULL && elf_object_id (bfd) == XTENSA_ELF_DATA)
 
 static bfd_boolean
 elf_xtensa_mkobject (bfd *abfd)
@@ -662,8 +655,7 @@ struct elf_xtensa_link_hash_table
 /* Get the Xtensa ELF linker hash table from a link_info structure.  */
 
 #define elf_xtensa_hash_table(p) \
-  (elf_hash_table_id ((struct elf_link_hash_table *) ((p)->hash)) \
-  == XTENSA_ELF_DATA ? ((struct elf_xtensa_link_hash_table *) ((p)->hash)) : NULL)
+	(elf_hash_table_id ((struct elf_link_hash_table *)((p)->hash)) == XTENSA_ELF_DATA ? ((struct elf_xtensa_link_hash_table *)((p)->hash)) : NULL)
 
 /* Create an entry in an Xtensa ELF linker hash table.  */
 
@@ -1858,7 +1850,7 @@ elf_xtensa_size_dynamic_sections (bfd *output_bfd ATTRIBUTE_UNUSED,
 	 the .dynamic section.  The DT_DEBUG entry is filled in by the
 	 dynamic linker and used by the debugger.  */
 #define add_dynamic_entry(TAG, VAL) \
-  _bfd_elf_add_dynamic_entry (info, TAG, VAL)
+	_bfd_elf_add_dynamic_entry (info, TAG, VAL)
 
       if (info->executable)
 	{
@@ -2573,15 +2565,8 @@ replace_tls_insn (Elf_Internal_Rela *rel,
   return TRUE;
 }
 
-
 #define IS_XTENSA_TLS_RELOC(R_TYPE) \
-  ((R_TYPE) == R_XTENSA_TLSDESC_FN \
-   || (R_TYPE) == R_XTENSA_TLSDESC_ARG \
-   || (R_TYPE) == R_XTENSA_TLS_DTPOFF \
-   || (R_TYPE) == R_XTENSA_TLS_TPOFF \
-   || (R_TYPE) == R_XTENSA_TLS_FUNC \
-   || (R_TYPE) == R_XTENSA_TLS_ARG \
-   || (R_TYPE) == R_XTENSA_TLS_CALL)
+	((R_TYPE) == R_XTENSA_TLSDESC_FN || (R_TYPE) == R_XTENSA_TLSDESC_ARG || (R_TYPE) == R_XTENSA_TLS_DTPOFF || (R_TYPE) == R_XTENSA_TLS_TPOFF || (R_TYPE) == R_XTENSA_TLS_FUNC || (R_TYPE) == R_XTENSA_TLS_ARG || (R_TYPE) == R_XTENSA_TLS_CALL)
 
 /* Relocate an Xtensa ELF section.  This is invoked by the linker for
    both relocatable and final links.  */
@@ -4187,7 +4172,6 @@ is_operand_relocation (int r_type)
   return FALSE;
 }
 
-
 #define MIN_INSN_LENGTH 2
 
 /* Return 0 if it fails to decode.  */
@@ -5060,7 +5044,6 @@ r_reloc_init (r_reloc *r_rel,
     memset (r_rel, 0, sizeof (r_reloc));
 }
 
-
 #if DEBUG
 
 static void
@@ -5872,7 +5855,6 @@ find_insn_action (text_action_list *action_list, bfd_vma offset)
   return NULL;
 }
 
-
 #if DEBUG
 
 static void
@@ -6061,7 +6043,6 @@ find_removed_literal (removed_literal_list *removed_list, bfd_vma addr)
     }
   return r;
 }
-
 
 #if DEBUG
 
@@ -11378,69 +11359,69 @@ static const struct bfd_elf_special_section elf_xtensa_special_sections[] =
   { STRING_COMMA_LEN (".xtensa.info"),  0, SHT_NOTE,     0 },
   { NULL,                       0,      0, 0,            0 }
 };
-
-#define ELF_TARGET_ID			XTENSA_ELF_DATA
-#ifndef ELF_ARCH
-#define TARGET_LITTLE_SYM		xtensa_elf32_le_vec
-#define TARGET_LITTLE_NAME		"elf32-xtensa-le"
-#define TARGET_BIG_SYM			xtensa_elf32_be_vec
-#define TARGET_BIG_NAME			"elf32-xtensa-be"
-#define ELF_ARCH			bfd_arch_xtensa
 
-#define ELF_MACHINE_CODE		EM_XTENSA
-#define ELF_MACHINE_ALT1		EM_XTENSA_OLD
+#define ELF_TARGET_ID XTENSA_ELF_DATA
+#ifndef ELF_ARCH
+#define TARGET_LITTLE_SYM xtensa_elf32_le_vec
+#define TARGET_LITTLE_NAME "elf32-xtensa-le"
+#define TARGET_BIG_SYM xtensa_elf32_be_vec
+#define TARGET_BIG_NAME "elf32-xtensa-be"
+#define ELF_ARCH bfd_arch_xtensa
+
+#define ELF_MACHINE_CODE EM_XTENSA
+#define ELF_MACHINE_ALT1 EM_XTENSA_OLD
 
 #if XCHAL_HAVE_MMU
-#define ELF_MAXPAGESIZE			(1 << XCHAL_MMU_MIN_PTE_PAGE_SIZE)
+#define ELF_MAXPAGESIZE (1 << XCHAL_MMU_MIN_PTE_PAGE_SIZE)
 #else /* !XCHAL_HAVE_MMU */
-#define ELF_MAXPAGESIZE			1
+#define ELF_MAXPAGESIZE 1
 #endif /* !XCHAL_HAVE_MMU */
 #endif /* ELF_ARCH */
 
-#define elf_backend_can_gc_sections	1
-#define elf_backend_can_refcount	1
-#define elf_backend_plt_readonly	1
-#define elf_backend_got_header_size	4
-#define elf_backend_want_dynbss		0
-#define elf_backend_want_got_plt	1
+#define elf_backend_can_gc_sections 1
+#define elf_backend_can_refcount 1
+#define elf_backend_plt_readonly 1
+#define elf_backend_got_header_size 4
+#define elf_backend_want_dynbss 0
+#define elf_backend_want_got_plt 1
 
-#define elf_info_to_howto		     elf_xtensa_info_to_howto_rela
+#define elf_info_to_howto elf_xtensa_info_to_howto_rela
 
-#define bfd_elf32_mkobject		     elf_xtensa_mkobject
+#define bfd_elf32_mkobject elf_xtensa_mkobject
 
 #define bfd_elf32_bfd_merge_private_bfd_data elf_xtensa_merge_private_bfd_data
-#define bfd_elf32_new_section_hook	     elf_xtensa_new_section_hook
+#define bfd_elf32_new_section_hook elf_xtensa_new_section_hook
 #define bfd_elf32_bfd_print_private_bfd_data elf_xtensa_print_private_bfd_data
-#define bfd_elf32_bfd_relax_section	     elf_xtensa_relax_section
-#define bfd_elf32_bfd_reloc_type_lookup	     elf_xtensa_reloc_type_lookup
+#define bfd_elf32_bfd_relax_section elf_xtensa_relax_section
+#define bfd_elf32_bfd_reloc_type_lookup elf_xtensa_reloc_type_lookup
 #define bfd_elf32_bfd_reloc_name_lookup \
-  elf_xtensa_reloc_name_lookup
-#define bfd_elf32_bfd_set_private_flags	     elf_xtensa_set_private_flags
+	elf_xtensa_reloc_name_lookup
+#define bfd_elf32_bfd_set_private_flags elf_xtensa_set_private_flags
 #define bfd_elf32_bfd_link_hash_table_create elf_xtensa_link_hash_table_create
 
-#define elf_backend_adjust_dynamic_symbol    elf_xtensa_adjust_dynamic_symbol
-#define elf_backend_check_relocs	     elf_xtensa_check_relocs
-#define elf_backend_create_dynamic_sections  elf_xtensa_create_dynamic_sections
-#define elf_backend_discard_info	     elf_xtensa_discard_info
-#define elf_backend_ignore_discarded_relocs  elf_xtensa_ignore_discarded_relocs
-#define elf_backend_final_write_processing   elf_xtensa_final_write_processing
-#define elf_backend_finish_dynamic_sections  elf_xtensa_finish_dynamic_sections
-#define elf_backend_finish_dynamic_symbol    elf_xtensa_finish_dynamic_symbol
-#define elf_backend_gc_mark_hook	     elf_xtensa_gc_mark_hook
-#define elf_backend_gc_sweep_hook	     elf_xtensa_gc_sweep_hook
-#define elf_backend_grok_prstatus	     elf_xtensa_grok_prstatus
-#define elf_backend_grok_psinfo		     elf_xtensa_grok_psinfo
-#define elf_backend_hide_symbol		     elf_xtensa_hide_symbol
-#define elf_backend_object_p		     elf_xtensa_object_p
-#define elf_backend_reloc_type_class	     elf_xtensa_reloc_type_class
-#define elf_backend_relocate_section	     elf_xtensa_relocate_section
-#define elf_backend_size_dynamic_sections    elf_xtensa_size_dynamic_sections
-#define elf_backend_always_size_sections     elf_xtensa_always_size_sections
+#define elf_backend_adjust_dynamic_symbol elf_xtensa_adjust_dynamic_symbol
+#define elf_backend_check_relocs elf_xtensa_check_relocs
+#define elf_backend_create_dynamic_sections elf_xtensa_create_dynamic_sections
+#define elf_backend_discard_info elf_xtensa_discard_info
+#define elf_backend_ignore_discarded_relocs elf_xtensa_ignore_discarded_relocs
+#define elf_backend_final_write_processing elf_xtensa_final_write_processing
+#define elf_backend_finish_dynamic_sections elf_xtensa_finish_dynamic_sections
+#define elf_backend_finish_dynamic_symbol elf_xtensa_finish_dynamic_symbol
+#define elf_backend_gc_mark_hook elf_xtensa_gc_mark_hook
+#define elf_backend_gc_sweep_hook elf_xtensa_gc_sweep_hook
+#define elf_backend_grok_prstatus elf_xtensa_grok_prstatus
+#define elf_backend_grok_psinfo elf_xtensa_grok_psinfo
+#define elf_backend_hide_symbol elf_xtensa_hide_symbol
+#define elf_backend_object_p elf_xtensa_object_p
+#define elf_backend_reloc_type_class elf_xtensa_reloc_type_class
+#define elf_backend_relocate_section elf_xtensa_relocate_section
+#define elf_backend_size_dynamic_sections elf_xtensa_size_dynamic_sections
+#define elf_backend_always_size_sections elf_xtensa_always_size_sections
 #define elf_backend_omit_section_dynsym \
-  ((bfd_boolean (*) (bfd *, struct bfd_link_info *, asection *)) bfd_true)
-#define elf_backend_special_sections	     elf_xtensa_special_sections
-#define elf_backend_action_discarded	     elf_xtensa_action_discarded
-#define elf_backend_copy_indirect_symbol     elf_xtensa_copy_indirect_symbol
+	((bfd_boolean (*) (bfd *, struct bfd_link_info *, asection *))bfd_true)
+#define elf_backend_special_sections elf_xtensa_special_sections
+#define elf_backend_action_discarded elf_xtensa_action_discarded
+#define elf_backend_copy_indirect_symbol elf_xtensa_copy_indirect_symbol
 
 #include "elf32-target.h"
 #endif

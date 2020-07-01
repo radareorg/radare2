@@ -49,7 +49,7 @@
 
 #endif
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	ut8 buf[8];
 	if (r_buf_read_at (b, 0, buf, sizeof (buf)) != sizeof (buf)) {
 		return false;
@@ -66,16 +66,16 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (b);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr (RBinFile *bf) {
 	return 0; // 0x800000;
 }
 
-static ut64 menuetEntry(const ut8 *buf, int buf_size) {
-	switch (MENUET_VERSION(buf)) {
+static ut64 menuetEntry (const ut8 *buf, int buf_size) {
+	switch (MENUET_VERSION (buf)) {
 	case '0': return r_read_ble32 (buf + 12, false);
 	case '1': return r_read_ble32 (buf + 12, false);
 	case '2': return r_read_ble32 (buf + 44, false);
@@ -83,9 +83,9 @@ static ut64 menuetEntry(const ut8 *buf, int buf_size) {
 	return UT64_MAX;
 }
 
-static RList* entries(RBinFile *bf) {
-	RList* ret;
-	ut8 buf[64] = {0};
+static RList *entries (RBinFile *bf) {
+	RList *ret;
+	ut8 buf[64] = { 0 };
 	RBinAddr *ptr = NULL;
 	const int buf_size = R_MIN (sizeof (buf), r_buf_size (bf->buf));
 
@@ -106,10 +106,10 @@ static RList* entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList* sections(RBinFile *bf) {
+static RList *sections (RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
-	ut8 buf[64] = {0};
+	ut8 buf[64] = { 0 };
 	const int buf_size = R_MIN (sizeof (buf), r_buf_size (bf->buf));
 
 	r_buf_read_at (bf->buf, 0, buf, buf_size);
@@ -133,7 +133,7 @@ static RList* sections(RBinFile *bf) {
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
-	if (MENUET_VERSION(buf)) {
+	if (MENUET_VERSION (buf)) {
 		/* add data section */
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
@@ -153,7 +153,7 @@ static RList* sections(RBinFile *bf) {
 	return ret;
 }
 
-static RBinInfo* info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (ret) {
 		ret->file = strdup (bf->file);
@@ -173,8 +173,8 @@ static RBinInfo* info(RBinFile *bf) {
 	return ret;
 }
 
-static ut64 size(RBinFile *bf) {
-	ut8 buf[4] = {0};
+static ut64 size (RBinFile *bf) {
+	ut8 buf[4] = { 0 };
 	if (!bf->o->info) {
 		bf->o->info = info (bf);
 	}
@@ -188,10 +188,10 @@ static ut64 size(RBinFile *bf) {
 #if !R_BIN_P9
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
-static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
+static RBuffer *create (RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
 	RBuffer *buf = r_buf_new ();
-#define B(x,y) r_buf_append_bytes(buf,(const ut8*)(x),y)
-#define D(x) r_buf_append_ut32(buf,x)
+#define B(x, y) r_buf_append_bytes (buf, (const ut8 *)(x), y)
+#define D(x) r_buf_append_ut32 (buf, x)
 	B ("MENUET01", 8);
 	D (1); // header version
 	D (32); // program start

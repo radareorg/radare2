@@ -8,14 +8,14 @@ typedef struct {
 	void *last_data;
 } EventTestAcc;
 
-static void callback_test(REvent *ev, int type, void *user, void *data) {
+static void callback_test (REvent *ev, int type, void *user, void *data) {
 	EventTestAcc *acc = user;
 	acc->count++;
 	acc->last_type = type;
 	acc->last_data = data;
 }
 
-bool test_r_event(void) {
+bool test_r_event (void) {
 	REvent *ev = r_event_new ((void *)0x1337);
 	mu_assert_notnull (ev, "r_event_new ()");
 	mu_assert_ptreq (ev->user, (void *)0x1337, "ev->user");
@@ -66,11 +66,11 @@ bool test_r_event(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests () {
 	mu_run_test (test_r_event);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
+int main (int argc, char **argv) {
+	return all_tests ();
 }

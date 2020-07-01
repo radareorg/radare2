@@ -20,7 +20,7 @@ typedef struct {
 			DWORD wait_time;
 		} wait;
 		struct {
-			int (*func)(void *);
+			int (*func) (void *);
 			void *user;
 		} func;
 	};
@@ -42,8 +42,8 @@ typedef struct {
 #define w32dbgw_ret(inst) inst->params.ret
 #define w32dbgw_err(inst) (SetLastError (inst->params.err), inst->params.err)
 
-W32DbgWInst *w32dbg_wrap_new(void);
-int w32dbg_wrap_wait_ret(W32DbgWInst *inst);
-void w32dbg_wrap_fini(W32DbgWInst *inst);
+W32DbgWInst *w32dbg_wrap_new (void);
+int w32dbg_wrap_wait_ret (W32DbgWInst *inst);
+void w32dbg_wrap_fini (W32DbgWInst *inst);
 
 #endif

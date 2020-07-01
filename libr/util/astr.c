@@ -3,7 +3,7 @@
 #include <r_util.h>
 #include "asn1_oids.h"
 
-static const char* _hex = "0123456789abcdef";
+static const char *_hex = "0123456789abcdef";
 
 R_API RASN1String *r_asn1_create_string (const char *string, bool allocated, ut32 length) {
 	if (!string || !length) {
@@ -18,18 +18,18 @@ R_API RASN1String *r_asn1_create_string (const char *string, bool allocated, ut3
 	return s;
 }
 
-static RASN1String *newstr(const char *string) {
+static RASN1String *newstr (const char *string) {
 	return r_asn1_create_string (string, false, strlen (string) + 1);
 }
 
 R_API RASN1String *r_asn1_concatenate_strings (RASN1String *s0, RASN1String *s1, bool freestr) {
-	char* str;
+	char *str;
 	ut32 len;
 	if (!s0 || !s1 || s0->length == 0 || s1->length == 0) {
 		return NULL;
 	}
 	len = s0->length + s1->length - 1;
-	str = (char*) malloc (len);
+	str = (char *)malloc (len);
 	if (!str) {
 		if (freestr) {
 			r_asn1_free_string (s0);
@@ -96,7 +96,7 @@ R_API RASN1String *r_asn1_stringify_utctime (const ut8 *buffer, ut32 length) {
 	str[22] = 'T';
 	str[23] = '\0';
 
-	RASN1String* asn1str = r_asn1_create_string (str, true, str_sz);
+	RASN1String *asn1str = r_asn1_create_string (str, true, str_sz);
 	if (!asn1str) {
 		free (str);
 	}
@@ -138,7 +138,7 @@ R_API RASN1String *r_asn1_stringify_time (const ut8 *buffer, ut32 length) {
 	str[22] = 'T';
 	str[23] = '\0';
 
-	RASN1String* asn1str = r_asn1_create_string (str, true, str_sz);
+	RASN1String *asn1str = r_asn1_create_string (str, true, str_sz);
 	if (!asn1str) {
 		free (str);
 	}
@@ -153,8 +153,8 @@ R_API RASN1String *r_asn1_stringify_bits (const ut8 *buffer, ut32 length) {
 	if (!buffer || !length) {
 		return NULL;
 	}
-	size = 1 + ((length - 1)* 8) - buffer[0];
-	str = (char*) malloc (size);
+	size = 1 + ((length - 1) * 8) - buffer[0];
+	str = (char *)malloc (size);
 	if (!str) {
 		return NULL;
 	}
@@ -166,7 +166,7 @@ R_API RASN1String *r_asn1_stringify_bits (const ut8 *buffer, ut32 length) {
 		}
 	}
 	str[size - 1] = '\0';
-	RASN1String* asn1str = r_asn1_create_string (str, true, size);
+	RASN1String *asn1str = r_asn1_create_string (str, true, size);
 	if (!asn1str) {
 		free (str);
 	}
@@ -189,7 +189,7 @@ R_API RASN1String *r_asn1_stringify_integer (const ut8 *buffer, ut32 length) {
 		return NULL;
 	}
 	size = 3 * length;
-	str = (char*) malloc (size);
+	str = (char *)malloc (size);
 	if (!str) {
 		return NULL;
 	}
@@ -201,14 +201,14 @@ R_API RASN1String *r_asn1_stringify_integer (const ut8 *buffer, ut32 length) {
 		str[j + 2] = ':';
 	}
 	str[size - 1] = '\0';
-	RASN1String* asn1str = r_asn1_create_string (str, true, size);
+	RASN1String *asn1str = r_asn1_create_string (str, true, size);
 	if (!asn1str) {
 		free (str);
 	}
 	return asn1str;
 }
 
-R_API RASN1String* r_asn1_stringify_bytes (const ut8 *buffer, ut32 length) {
+R_API RASN1String *r_asn1_stringify_bytes (const ut8 *buffer, ut32 length) {
 	ut32 i, j, k;
 	ut64 size;
 	ut8 c;
@@ -218,7 +218,7 @@ R_API RASN1String* r_asn1_stringify_bytes (const ut8 *buffer, ut32 length) {
 	}
 	size = (4 * length);
 	size += (64 - (size % 64));
-	str = (char*) malloc (size);
+	str = (char *)malloc (size);
 	if (!str) {
 		return NULL;
 	}
@@ -237,14 +237,14 @@ R_API RASN1String* r_asn1_stringify_bytes (const ut8 *buffer, ut32 length) {
 		}
 	}
 	str[size - 1] = '\0';
-	RASN1String* asn1str = r_asn1_create_string (str, true, size);
+	RASN1String *asn1str = r_asn1_create_string (str, true, size);
 	if (!asn1str) {
 		free (str);
 	}
 	return asn1str;
 }
 
-R_API RASN1String *r_asn1_stringify_oid (const ut8* buffer, ut32 length) {
+R_API RASN1String *r_asn1_stringify_oid (const ut8 *buffer, ut32 length) {
 	const ut8 *start, *end;
 	char *str, *t;
 	ut32 i, slen, bits;
@@ -253,7 +253,7 @@ R_API RASN1String *r_asn1_stringify_oid (const ut8* buffer, ut32 length) {
 		return NULL;
 	}
 
-	str = (char*) calloc (1, ASN1_OID_LEN);
+	str = (char *)calloc (1, ASN1_OID_LEN);
 	if (!str) {
 		return NULL;
 	}
@@ -277,7 +277,7 @@ R_API RASN1String *r_asn1_stringify_oid (const ut8* buffer, ut32 length) {
 				slen = strlen (str);
 				t = str + slen;
 			} else {
-				snprintf (t, ASN1_OID_LEN - slen, ".%01u", (ut32) oid);
+				snprintf (t, ASN1_OID_LEN - slen, ".%01u", (ut32)oid);
 				slen = strlen (str);
 				t = str + slen;
 			}
@@ -301,17 +301,17 @@ R_API RASN1String *r_asn1_stringify_oid (const ut8* buffer, ut32 length) {
 		}
 		++i;
 	} while (X509OIDList[i].oid && X509OIDList[i].name);
-	RASN1String* asn1str = r_asn1_create_string (str, true, ASN1_OID_LEN);
+	RASN1String *asn1str = r_asn1_create_string (str, true, ASN1_OID_LEN);
 	if (!asn1str) {
 		free (str);
 	}
 	return asn1str;
 }
 
-R_API void r_asn1_free_string (RASN1String* str) {
+R_API void r_asn1_free_string (RASN1String *str) {
 	if (str) {
 		if (str->allocated) {
-			free ((char*) str->string);
+			free ((char *)str->string);
 		}
 		free (str);
 	}

@@ -24,8 +24,8 @@ enum msp430_jumps {
 };
 
 enum msp430_twoop_opcodes {
-	MSP430_JMP_OPC	= 0x1,
-	MSP430_MOV	= 0x4,
+	MSP430_JMP_OPC = 0x1,
+	MSP430_MOV = 0x4,
 	MSP430_ADD,
 	MSP430_ADDC,
 	MSP430_SUBC,
@@ -74,21 +74,21 @@ enum msp430_registers {
 
 struct msp430_cmd {
 	ut8 type;
-	ut8	opcode;
-	st16	jmp_addr;
-	ut16	call_addr;
-	ut8	jmp_cond;
+	ut8 opcode;
+	st16 jmp_addr;
+	ut16 call_addr;
+	ut8 jmp_cond;
 
 	// Null-delimited string representation of an assembly operation mnemonic.
 	// Length of array: 'i', 'n', 'v', 'a', 'l', 'i', 'd', '\0'
 	// (This is longer than any real assembly mnemonic.)
-	char	instr[7 + 1];
+	char instr[7 + 1];
 
 	// Null-delimited string representation of assembly operands.
 	// Length of array: 2 * ('0', 'x', 4-digit hexadecimal numeral, '(', 'r', 2-digit
 	// decimal numeral, ')'), ',', ' ', '\0'
-	char	operands[2 * (2 + 4 + 2 + 3) + 2 + 1];
+	char operands[2 * (2 + 4 + 2 + 3) + 2 + 1];
 };
 
-int msp430_decode_command(const ut8 *instr, int len, struct msp430_cmd *cmd);
+int msp430_decode_command (const ut8 *instr, int len, struct msp430_cmd *cmd);
 #endif /* MSP430_DISAS_H */

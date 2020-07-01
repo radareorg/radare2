@@ -11,15 +11,15 @@
 #include <mybfd.h>
 
 /* extern */
-int decodeInstr (bfd_vma address, disassemble_info * info);
-int ARCTangent_decodeInstr (bfd_vma address, disassemble_info * info);
-int ARCompact_decodeInstr (bfd_vma address, disassemble_info * info);
+int decodeInstr (bfd_vma address, disassemble_info *info);
+int ARCTangent_decodeInstr (bfd_vma address, disassemble_info *info);
+int ARCompact_decodeInstr (bfd_vma address, disassemble_info *info);
 
 /* ugly globals */
 static ut32 Offset = 0;
 static RStrBuf *buf_global = NULL;
 static int buf_len = 0;
-static ut8 bytes[32] = {0};
+static ut8 bytes[32] = { 0 };
 
 static int arc_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
 	int delta = (memaddr - Offset);
@@ -33,18 +33,18 @@ static int arc_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, unsigned i
 	return 0;
 }
 
-static int symbol_at_address(bfd_vma addr, struct disassemble_info * info) {
+static int symbol_at_address (bfd_vma addr, struct disassemble_info *info) {
 	return 0;
 }
 
-static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_info *info) {
+static void memory_error_func (int status, bfd_vma memaddr, struct disassemble_info *info) {
 	//--
 }
 
-DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
-DECLARE_GENERIC_FPRINTF_FUNC()
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC ()
+DECLARE_GENERIC_FPRINTF_FUNC ()
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static struct disassemble_info disasm_obj;
 	if (len < 2) {
 		return -1;
@@ -57,7 +57,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	memcpy (bytes, buf, len); // TODO handle compact
 	buf_len = len;
 	/* prepare disassembler */
-	memset (&disasm_obj,'\0', sizeof (struct disassemble_info));
+	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
 	disasm_obj.buffer = bytes;
 	disasm_obj.buffer_length = len;
 	disasm_obj.read_memory_func = &arc_buffer_read_memory;

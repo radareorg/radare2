@@ -5,7 +5,7 @@
 #include <fcntl.h>
 #include "sdb.h"
 
-SDB_API const char *sdb_lock_file(const char *f) {
+SDB_API const char *sdb_lock_file (const char *f) {
 	static char buf[128];
 	size_t len;
 	if (!f || !*f) {
@@ -20,9 +20,9 @@ SDB_API const char *sdb_lock_file(const char *f) {
 	return buf;
 }
 
-#define os_getpid() getpid()
+#define os_getpid() getpid ()
 
-SDB_API bool sdb_lock(const char *s) {
+SDB_API bool sdb_lock (const char *s) {
 	int fd;
 	char *pid, pidstr[64];
 	if (!s) {
@@ -32,10 +32,9 @@ SDB_API bool sdb_lock(const char *s) {
 	if (fd == -1) {
 		return false;
 	}
-	pid = sdb_itoa (getpid(), pidstr, 10);
+	pid = sdb_itoa (getpid (), pidstr, 10);
 	if (pid) {
-		if ((write (fd, pid, strlen (pid)) < 0)
-			|| (write (fd, "\n", 1) < 0)) {
+		if ((write (fd, pid, strlen (pid)) < 0) || (write (fd, "\n", 1) < 0)) {
 			close (fd);
 			return false;
 		}
@@ -44,22 +43,22 @@ SDB_API bool sdb_lock(const char *s) {
 	return true;
 }
 
-SDB_API int sdb_lock_wait(const char *s) {
+SDB_API int sdb_lock_wait (const char *s) {
 	// TODO use flock() here
 	// wait forever here?
- 	while (!sdb_lock (s)) {
+	while (!sdb_lock (s)) {
 		// TODO: if waiting too much return 0
 #if __SDB_WINDOWS__
-	 	Sleep (500); // hack
+		Sleep (500); // hack
 #else
-	// TODO use lockf() here .. flock is not much useful (fd, LOCK_EX);
-	 	sleep (1); // hack
+		// TODO use lockf() here .. flock is not much useful (fd, LOCK_EX);
+		sleep (1); // hack
 #endif
- 	}
+	}
 	return 1;
 }
 
-SDB_API void sdb_unlock(const char *s) {
+SDB_API void sdb_unlock (const char *s) {
 	//flock (fd, LOCK_UN);
 	unlink (s);
 }

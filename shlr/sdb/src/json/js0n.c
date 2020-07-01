@@ -5,8 +5,12 @@
 
 #include "rangstr.h"
 
-#define PUSH(i) if(depth == 1) prev = *out++ = ((cur+i) - js)
-#define CAP(i) if(depth == 1) prev = *out++ = ((cur+i) - (js + prev) + 1)
+#define PUSH(i)         \
+	if (depth == 1) \
+	prev = *out++ = ((cur + i) - js)
+#define CAP(i)          \
+	if (depth == 1) \
+	prev = *out++ = ((cur + i) - (js + prev) + 1)
 
 #ifdef _MSC_VER
 #define HAVE_COMPUTED_GOTOS 0
@@ -27,53 +31,53 @@
 
 #define HAVE_RAWSTR 0
 
-int sdb_js0n(const ut8 *js, RangstrType len, RangstrType *out) {
+int sdb_js0n (const ut8 *js, RangstrType len, RangstrType *out) {
 	ut32 prev = 0;
 	const ut8 *cur, *end;
 	int depth = 0, utf8_remain = 0;
 	static void *gostruct[] = {
 		[0 ... 255] = &&l_bad,
-		['\t'] = &&l_loop, [' '] = &&l_loop, ['\r'] = &&l_loop, ['\n'] = &&l_loop,
+		['\t'] = &&l_loop,
+		[' '] = &&l_loop,
+		['\r'] = &&l_loop,
+		['\n'] = &&l_loop,
 		['"'] = &&l_qup,
-		[':'] = &&l_loop, [','] = &&l_loop,
-		['['] = &&l_up, [']'] = &&l_down, // tracking [] and {} individually would allow fuller validation but is really messy
-		['{'] = &&l_up, ['}'] = &&l_down,
-//TODO: add support for rawstrings 
+		[':'] = &&l_loop,
+		[','] = &&l_loop,
+		['['] = &&l_up,
+		[']'] = &&l_down, // tracking [] and {} individually would allow fuller validation but is really messy
+		['{'] = &&l_up,
+		['}'] = &&l_down,
+//TODO: add support for rawstrings
 #if HAVE_RAWSTR
-		['a'...'z'] = &&l_rawstr,
+		['a' ... 'z'] = &&l_rawstr,
 #else
-		['-'] = &&l_bare, [48 ... 57] = &&l_bare, // 0-9
-		['t'] = &&l_bare, ['f'] = &&l_bare, ['n'] = &&l_bare // true, false, null
+		['-'] = &&l_bare,
+		[48 ... 57] = &&l_bare, // 0-9
+		['t'] = &&l_bare,
+		['f'] = &&l_bare,
+		['n'] = &&l_bare // true, false, null
 #endif
 	};
 	static void *gobare[] = {
 		[0 ... 31] = &&l_bad,
 		[32 ... 126] = &&l_loop, // could be more pedantic/validation-checking
-		['\t'] = &&l_unbare, [' '] = &&l_unbare, ['\r'] = &&l_unbare, ['\n'] = &&l_unbare,
-		[','] = &&l_unbare, [']'] = &&l_unbare, ['}'] = &&l_unbare,
+		['\t'] = &&l_unbare,
+		[' '] = &&l_unbare,
+		['\r'] = &&l_unbare,
+		['\n'] = &&l_unbare,
+		[','] = &&l_unbare,
+		[']'] = &&l_unbare,
+		['}'] = &&l_unbare,
 		[127 ... 255] = &&l_bad
 	};
 #if HAVE_RAWSTR
 	static void *gorawstr[] = {
-		[0 ... 31] = &&l_bad, [127] = &&l_bad,
-		[32 ... 126] = &&l_loop,
-		['\\'] = &&l_esc, [':'] = &&l_qdown,
-		[128 ... 191] = &&l_bad,
-		[192 ... 223] = &&l_utf8_2,
-		[224 ... 239] = &&l_utf8_3,
-		[240 ... 247] = &&l_utf8_4,
-		[248 ... 255] = &&l_bad
+		[0 ... 31] = &&l_bad, [127] = &&l_bad, [32 ... 126] = &&l_loop, ['\\'] = &&l_esc, [':'] = &&l_qdown, [128 ... 191] = &&l_bad, [192 ... 223] = &&l_utf8_2, [224 ... 239] = &&l_utf8_3, [240 ... 247] = &&l_utf8_4, [248 ... 255] = &&l_bad
 	};
 #endif
 	static void *gostring[] = {
-		[0 ... 31] = &&l_bad, [127] = &&l_bad,
-		[32 ... 126] = &&l_loop,
-		['\\'] = &&l_esc, ['"'] = &&l_qdown,
-		[128 ... 191] = &&l_bad,
-		[192 ... 223] = &&l_utf8_2,
-		[224 ... 239] = &&l_utf8_3,
-		[240 ... 247] = &&l_utf8_4,
-		[248 ... 255] = &&l_bad
+		[0 ... 31] = &&l_bad, [127] = &&l_bad, [32 ... 126] = &&l_loop, ['\\'] = &&l_esc, ['"'] = &&l_qdown, [128 ... 191] = &&l_bad, [192 ... 223] = &&l_utf8_2, [224 ... 239] = &&l_utf8_3, [240 ... 247] = &&l_utf8_4, [248 ... 255] = &&l_bad
 	};
 	static void *goutf8_continue[] = {
 		[0 ... 127] = &&l_bad,
@@ -82,11 +86,18 @@ int sdb_js0n(const ut8 *js, RangstrType len, RangstrType *out) {
 	};
 	static void *goesc[] = {
 		[0 ... 255] = &&l_bad,
-		['"'] = &&l_unesc, ['\\'] = &&l_unesc, ['/'] = &&l_unesc, ['b'] = &&l_unesc,
-		['f'] = &&l_unesc, ['n'] = &&l_unesc, ['r'] = &&l_unesc, ['t'] = &&l_unesc, ['u'] = &&l_unesc
+		['"'] = &&l_unesc,
+		['\\'] = &&l_unesc,
+		['/'] = &&l_unesc,
+		['b'] = &&l_unesc,
+		['f'] = &&l_unesc,
+		['n'] = &&l_unesc,
+		['r'] = &&l_unesc,
+		['t'] = &&l_unesc,
+		['u'] = &&l_unesc
 	};
 	static void **go = gostruct;
-	
+
 #if 0 
 printf ("                 gostrct= %p\n", gostruct);
 printf ("                 gobare = %p\n", gobare);
@@ -94,8 +105,8 @@ printf ("                 gostr = %p\n", gostring);
 printf ("                 goesc = %p\n", goesc);
 printf ("                 goutf8= %p\n", goutf8_continue);
 #endif
-	for (cur=js, end = js+len; cur<end; cur++) {
-//printf (" --> %s %p\n", cur, go[*cur]);
+	for (cur = js, end = js + len; cur < end; cur++) {
+		//printf (" --> %s %p\n", cur, go[*cur]);
 		goto *go[*cur];
 l_loop:;
 	}
@@ -103,7 +114,7 @@ l_loop:;
 l_bad:
 	return 1;
 l_up:
-	PUSH(0);
+	PUSH (0);
 	++depth;
 	goto l_loop;
 l_down:
@@ -168,7 +179,7 @@ l_utf_continue:
 #define GO_UNESCAPE (1 << 7)
 #define GO_UTF8 (1 << 8)
 #define GO_UTF8_CONTINUE (1 << 9)
-int sdb_js0n(const ut8 *js, RangstrType len, RangstrType *out) {
+int sdb_js0n (const ut8 *js, RangstrType len, RangstrType *out) {
 	ut32 prev = 0;
 	const ut8 *cur, *end;
 	int depth = 0, utf8_remain = 0, what_did = 1;
@@ -194,7 +205,7 @@ int sdb_js0n(const ut8 *js, RangstrType len, RangstrType *out) {
 			// Same *cur
 		}
 		if (what_did & GO_UTF8) {
-			if (*cur < 128 || (*cur >=192 && *cur <= 255)) {
+			if (*cur < 128 || (*cur >= 192 && *cur <= 255)) {
 				return 1;
 			}
 			if (!--utf8_remain) {
@@ -251,43 +262,43 @@ int sdb_js0n(const ut8 *js, RangstrType len, RangstrType *out) {
 			continue;
 		}
 		switch (*cur) {
-			case '\t':
-			case ' ':
-			case '\r':
-			case '\n':
-			case ',':
-			case ':':
-				break;
-			case '"':
-				PUSH (1);
-				what_did = GO_Q_UP;
-				break;
-			case '[':
-			case '{':
-				PUSH (0);
-				++depth;
-				what_did = GO_UP;
-				break;
-			case ']':
-			case '}':
-				--depth;
-				CAP (0);
-				what_did = GO_DOWN;
-				break;
-			case '-':
-			case 't':
-			case 'f':
-			case 'n':
+		case '\t':
+		case ' ':
+		case '\r':
+		case '\n':
+		case ',':
+		case ':':
+			break;
+		case '"':
+			PUSH (1);
+			what_did = GO_Q_UP;
+			break;
+		case '[':
+		case '{':
+			PUSH (0);
+			++depth;
+			what_did = GO_UP;
+			break;
+		case ']':
+		case '}':
+			--depth;
+			CAP (0);
+			what_did = GO_DOWN;
+			break;
+		case '-':
+		case 't':
+		case 'f':
+		case 'n':
+			what_did = GO_BARE;
+			PUSH (0);
+			break;
+		default:
+			if (*cur >= 48 && *cur <= 57) { // 0-9
 				what_did = GO_BARE;
 				PUSH (0);
 				break;
-			default:
-				if (*cur >= 48 && *cur  <= 57) { // 0-9
-					what_did = GO_BARE;
-					PUSH (0);
-					break;
-				}
-				return 1;
+			}
+			return 1;
 		}
 	}
 	return depth;

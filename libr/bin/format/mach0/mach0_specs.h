@@ -23,54 +23,54 @@ typedef int integer_t;
 #define R_BIN_MACH0_SYMBOL_TYPE_LOCAL 1
 
 struct x86_thread_state32 {
-	ut32	eax;
-	ut32	ebx;
-	ut32	ecx;
-	ut32	edx;
-	ut32	edi;
-	ut32	esi;
-	ut32	ebp;
-	ut32	esp;
-	ut32	ss;
-	ut32	eflags;
-	ut32	eip;
-	ut32	cs;
-	ut32	ds;
-	ut32	es;
-	ut32	fs;
-	ut32	gs;
+	ut32 eax;
+	ut32 ebx;
+	ut32 ecx;
+	ut32 edx;
+	ut32 edi;
+	ut32 esi;
+	ut32 ebp;
+	ut32 esp;
+	ut32 ss;
+	ut32 eflags;
+	ut32 eip;
+	ut32 cs;
+	ut32 ds;
+	ut32 es;
+	ut32 fs;
+	ut32 gs;
 };
 
 struct x86_thread_state64 {
-	ut64	rax;
-	ut64	rbx;
-	ut64	rcx;
-	ut64	rdx;
-	ut64	rdi;
-	ut64	rsi;
-	ut64	rbp;
-	ut64	rsp;
-	ut64	r8;
-	ut64	r9;
-	ut64	r10;
-	ut64	r11;
-	ut64	r12;
-	ut64	r13;
-	ut64	r14;
-	ut64	r15;
-	ut64	rip;
-	ut64	rflags;
-	ut64	cs;
-	ut64	fs;
-	ut64	gs;
+	ut64 rax;
+	ut64 rbx;
+	ut64 rcx;
+	ut64 rdx;
+	ut64 rdi;
+	ut64 rsi;
+	ut64 rbp;
+	ut64 rsp;
+	ut64 r8;
+	ut64 r9;
+	ut64 r10;
+	ut64 r11;
+	ut64 r12;
+	ut64 r13;
+	ut64 r14;
+	ut64 r15;
+	ut64 rip;
+	ut64 rflags;
+	ut64 cs;
+	ut64 fs;
+	ut64 gs;
 };
 
-#define X86_THREAD_STATE32	1
-#define X86_THREAD_STATE64	4
+#define X86_THREAD_STATE32 1
+#define X86_THREAD_STATE64 4
 
 struct ppc_thread_state32 {
-	ut32 srr0;  /* Instruction address register (PC) */
-	ut32 srr1;	/* Machine state register (supervisor) */
+	ut32 srr0; /* Instruction address register (PC) */
+	ut32 srr1; /* Machine state register (supervisor) */
 	ut32 r0;
 	ut32 r1;
 	ut32 r2;
@@ -104,18 +104,18 @@ struct ppc_thread_state32 {
 	ut32 r30;
 	ut32 r31;
 
-	ut32 cr;    /* Condition register */
-	ut32 xer;	/* User's integer exception register */
-	ut32 lr;	/* Link register */
-	ut32 ctr;	/* Count register */
-	ut32 mq;	/* MQ register (601 only) */
+	ut32 cr; /* Condition register */
+	ut32 xer; /* User's integer exception register */
+	ut32 lr; /* Link register */
+	ut32 ctr; /* Count register */
+	ut32 mq; /* MQ register (601 only) */
 
-	ut32 vrsave;	/* Vector Save Register */
+	ut32 vrsave; /* Vector Save Register */
 };
 
 struct ppc_thread_state64 {
-	ut64 srr0;  /* Instruction address register (PC) */
-	ut64 srr1;  /* Machine state register (supervisor) */
+	ut64 srr0; /* Instruction address register (PC) */
+	ut64 srr1; /* Machine state register (supervisor) */
 	ut64 r0;
 	ut64 r1;
 	ut64 r2;
@@ -149,12 +149,12 @@ struct ppc_thread_state64 {
 	ut64 r30;
 	ut64 r31;
 
-	ut32 cr;			/* Condition register */
-	ut64 xer;		/* User's integer exception register */
-	ut64 lr;		/* Link register */
-	ut64 ctr;		/* Count register */
+	ut32 cr; /* Condition register */
+	ut64 xer; /* User's integer exception register */
+	ut64 lr; /* Link register */
+	ut64 ctr; /* Count register */
 
-	ut32 vrsave;		/* Vector Save Register */
+	ut32 vrsave; /* Vector Save Register */
 };
 
 struct arm_thread_state32 {
@@ -174,7 +174,7 @@ struct arm_thread_state32 {
 	ut32 r13;
 	ut32 r14;
 	ut32 r15;
-	ut32 r16;   /* Apple's thread_state has this 17th reg, bug?? */
+	ut32 r16; /* Apple's thread_state has this 17th reg, bug?? */
 };
 
 struct arm_thread_state64 {
@@ -205,7 +205,7 @@ struct cache_header {
 
 // dupe?
 typedef struct {
-	char     magic[16];
+	char magic[16];
 	uint32_t mappingOffset;
 	uint32_t mappingCount;
 	uint32_t imagesOffset;
@@ -217,7 +217,7 @@ typedef struct {
 	uint64_t slideInfoSize;
 	uint64_t localSymbolsOffset;
 	uint64_t localSymbolsSize;
-	uint8_t  uuid[16];
+	uint8_t uuid[16];
 	uint64_t cacheType;
 	uint32_t branchPoolsOffset;
 	uint32_t branchPoolsCount;

@@ -25,8 +25,8 @@ typedef unsigned int ssize_t;
  */
 typedef struct libgdbr_message_t {
 	ssize_t len; /*! Len of the message */
-	char *msg;      /*! Pointer to the buffer that contains the message */
-	uint8_t chk;    /*! Cheksum of the current message read from the packet */
+	char *msg; /*! Pointer to the buffer that contains the message */
+	uint8_t chk; /*! Cheksum of the current message read from the packet */
 } libgdbr_message_t;
 
 /*!
@@ -105,22 +105,23 @@ typedef struct libgdbr_stub_features_t {
 /*!
  * Structure for fstat data sent by gdb remote server
  */
-R_PACKED(
-typedef struct libgdbr_fstat_t {
-	unsigned dev;
-	unsigned ino;
-	unsigned mode;
-	unsigned numlinks;
-	unsigned uid;
-	unsigned gid;
-	unsigned rdev;
-	uint64_t size;
-	uint64_t blksize;
-	uint64_t blocks;
-	unsigned atime;
-	unsigned mtime;
-	unsigned ctime;
-}) libgdbr_fstat_t;
+R_PACKED (
+	typedef struct libgdbr_fstat_t {
+		unsigned dev;
+		unsigned ino;
+		unsigned mode;
+		unsigned numlinks;
+		unsigned uid;
+		unsigned gid;
+		unsigned rdev;
+		uint64_t size;
+		uint64_t blksize;
+		uint64_t blocks;
+		unsigned atime;
+		unsigned mtime;
+		unsigned ctime;
+	})
+libgdbr_fstat_t;
 
 /*!
  * Stores information from the stop-reply packet (why target stopped)
@@ -205,33 +206,33 @@ typedef struct libgdbr_t {
  * \brief Function initializes the libgdbr lib
  * \returns a failure code (currently -1) or 0 if call successfully
  */
-int gdbr_init(libgdbr_t *g, bool is_server);
+int gdbr_init (libgdbr_t *g, bool is_server);
 
 /*!
  * \brief Function initializes the architecture of the gdbsession
  * \param architecture defines the architecure used (registersize, and such)
  * \returns a failure code
  */
-int gdbr_set_architecture(libgdbr_t *g, int arch, int bits);
+int gdbr_set_architecture (libgdbr_t *g, int arch, int bits);
 
 /*!
  * \brief Function get gdb registers profile based on arch and bits
  * \param architecture and bit size.
  * \returns a failure code
  */
-const char *gdbr_get_reg_profile(int arch, int bits);
+const char *gdbr_get_reg_profile (int arch, int bits);
 
 /*!
  * \brief Function set the gdbr internal registers profile
  * \param registers profile string which shares the same format as RReg API
  * \returns a failure code
  */
-int gdbr_set_reg_profile(libgdbr_t *g, const char *str);
+int gdbr_set_reg_profile (libgdbr_t *g, const char *str);
 
 /*!
  * \brief frees all buffers and cleans the libgdbr instance stuff
  * \returns a failure code (currently -1) or 0 if call successfully
  */
-int gdbr_cleanup(libgdbr_t *g);
+int gdbr_cleanup (libgdbr_t *g);
 
 #endif

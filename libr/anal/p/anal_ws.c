@@ -9,7 +9,7 @@
 #define WS_API static
 #include "../../asm/arch/whitespace/wsdis.c"
 
-static ut64 ws_find_label(int l, const RIOBind *iob) {
+static ut64 ws_find_label (int l, const RIOBind *iob) {
 	RIO *io = iob->io;
 	ut64 cur = 0, size = iob->desc_size (io->desc);
 	ut8 buf[128];
@@ -26,7 +26,7 @@ static ut64 ws_find_label(int l, const RIOBind *iob) {
 	return 0;
 }
 
-static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static int ws_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	RAsmOp *aop = R_NEW0 (RAsmOp);
@@ -41,7 +41,7 @@ static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			op->type = R_ANAL_OP_TYPE_TRAP;
 			break;
 		case 'd':
-			op->type = (buf_asm[1] == 'u')? R_ANAL_OP_TYPE_UPUSH: R_ANAL_OP_TYPE_DIV;
+			op->type = (buf_asm[1] == 'u') ? R_ANAL_OP_TYPE_UPUSH : R_ANAL_OP_TYPE_DIV;
 			break;
 		case 'i':
 			op->type = R_ANAL_OP_TYPE_ILL;
@@ -70,10 +70,10 @@ static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 'j':
 			if (buf_asm[1] == 'm') {
 				op->type = R_ANAL_OP_TYPE_JMP;
-				op->jump = ws_find_label(atoi (buf_asm + 4), &anal->iob);
+				op->jump = ws_find_label (atoi (buf_asm + 4), &anal->iob);
 			} else {
 				op->type = R_ANAL_OP_TYPE_CJMP;
-				op->jump = ws_find_label(atoi(buf_asm + 3), &anal->iob);
+				op->jump = ws_find_label (atoi (buf_asm + 3), &anal->iob);
 			}
 			op->fail = addr + aop->size;
 			break;
@@ -90,7 +90,7 @@ static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 						char c[4];
 						c[3] = '\0';
 						c[0] = c[2] = '\'';
-						c[1] = (char) atoi (buf_asm + 5);
+						c[1] = (char)atoi (buf_asm + 5);
 						r_meta_set_string (anal, R_META_TYPE_COMMENT, addr, c);
 					}
 				} else {
@@ -107,7 +107,7 @@ static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 				op->type = R_ANAL_OP_TYPE_STORE;
 				break;
 			case 'l':
-				op->type = R_ANAL_OP_TYPE_LOAD;	// XXX
+				op->type = R_ANAL_OP_TYPE_LOAD; // XXX
 				break;
 			case 'w':
 				op->type = R_ANAL_OP_TYPE_ROR;

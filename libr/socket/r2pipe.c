@@ -20,19 +20,19 @@ Usage Example:
 #include <r_lib.h>
 #include <r_socket.h>
 
-#define R2P_PID(x) (((R2Pipe*)(x)->data)->pid)
-#define R2P_INPUT(x) (((R2Pipe*)(x)->data)->input[0])
-#define R2P_OUTPUT(x) (((R2Pipe*)(x)->data)->output[1])
+#define R2P_PID(x) (((R2Pipe *)(x)->data)->pid)
+#define R2P_INPUT(x) (((R2Pipe *)(x)->data)->input[0])
+#define R2P_OUTPUT(x) (((R2Pipe *)(x)->data)->output[1])
 
 #if !__WINDOWS__
-static void env(const char *s, int f) {
-        char *a = r_str_newf ("%d", f);
-        r_sys_setenv (s, a);
-        free (a);
+static void env (const char *s, int f) {
+	char *a = r_str_newf ("%d", f);
+	r_sys_setenv (s, a);
+	free (a);
 }
 #endif
 
-R_API int r2pipe_write(R2Pipe *r2pipe, const char *str) {
+R_API int r2pipe_write (R2Pipe *r2pipe, const char *str) {
 	char *cmd;
 	int ret, len;
 	if (!r2pipe || !str) {
@@ -57,7 +57,7 @@ R_API int r2pipe_write(R2Pipe *r2pipe, const char *str) {
 }
 
 /* TODO: add timeout here ? */
-R_API char *r2pipe_read(R2Pipe *r2pipe) {
+R_API char *r2pipe_read (R2Pipe *r2pipe) {
 	int bufsz = 0;
 	char *buf = NULL;
 	if (!r2pipe) {
@@ -99,14 +99,14 @@ R_API char *r2pipe_read(R2Pipe *r2pipe) {
 		}
 	}
 	if (buf) {
-		int zpos = (i < bufsz)? i: i - 1;
+		int zpos = (i < bufsz) ? i : i - 1;
 		buf[zpos] = 0;
 	}
 #endif
 	return buf;
 }
 
-R_API int r2pipe_close(R2Pipe *r2pipe) {
+R_API int r2pipe_close (R2Pipe *r2pipe) {
 	if (!r2pipe) {
 		return 0;
 	}
@@ -151,12 +151,10 @@ R_API int r2pipe_close(R2Pipe *r2pipe) {
 }
 
 #if __WINDOWS__
-static int w32_createPipe(R2Pipe *r2pipe, const char *cmd) {
+static int w32_createPipe (R2Pipe *r2pipe, const char *cmd) {
 	CHAR buf[1024];
 	r2pipe->pipe = CreateNamedPipe (TEXT ("\\\\.\\pipe\\R2PIPE_IN"),
-		PIPE_ACCESS_DUPLEX,PIPE_TYPE_MESSAGE | \
-		PIPE_READMODE_MESSAGE | \
-		PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
+		PIPE_ACCESS_DUPLEX, PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
 		sizeof (buf), sizeof (buf), 0, NULL);
 	if (r_sys_create_child_proc_w32 (cmd, NULL, NULL, NULL)) {
 		if (ConnectNamedPipe (r2pipe->pipe, NULL)) {
@@ -167,7 +165,7 @@ static int w32_createPipe(R2Pipe *r2pipe, const char *cmd) {
 }
 #endif
 
-static R2Pipe* r2pipe_open_spawn(R2Pipe* r2pipe) {
+static R2Pipe *r2pipe_open_spawn (R2Pipe *r2pipe) {
 #if __UNIX__
 	char *out = r_sys_getenv ("R2PIPE_IN");
 	char *in = r_sys_getenv ("R2PIPE_OUT");
@@ -194,7 +192,7 @@ static R2Pipe* r2pipe_open_spawn(R2Pipe* r2pipe) {
 #endif
 }
 
-static R2Pipe *r2pipe_new(void) {
+static R2Pipe *r2pipe_new (void) {
 	R2Pipe *r2pipe = R_NEW0 (R2Pipe);
 	if (r2pipe) {
 #if __UNIX__
@@ -206,7 +204,7 @@ static R2Pipe *r2pipe_new(void) {
 	return r2pipe;
 }
 
-R_API R2Pipe *r2pipe_open_corebind(RCoreBind *coreb) {
+R_API R2Pipe *r2pipe_open_corebind (RCoreBind *coreb) {
 	R2Pipe *r2pipe = r2pipe_new ();
 	if (r2pipe) {
 		memcpy (&r2pipe->coreb, coreb, sizeof (RCoreBind));
@@ -214,10 +212,10 @@ R_API R2Pipe *r2pipe_open_corebind(RCoreBind *coreb) {
 	return r2pipe;
 }
 
-R_API R2Pipe *r2pipe_open_dl(const char *libr_path) {
+R_API R2Pipe *r2pipe_open_dl (const char *libr_path) {
 	void *libr = r_lib_dl_open (libr_path);
-	void* (*rnew)() = r_lib_dl_sym (libr, "r_core_new");
-	char* (*rcmd)(void *c, const char *cmd) = r_lib_dl_sym (libr, "r_core_cmd_str");
+	void *(*rnew) () = r_lib_dl_sym (libr, "r_core_new");
+	char *(*rcmd) (void *c, const char *cmd) = r_lib_dl_sym (libr, "r_core_cmd_str");
 
 	if (rnew && rcmd) {
 		R2Pipe *r2pipe = r2pipe_new ();
@@ -232,7 +230,7 @@ R_API R2Pipe *r2pipe_open_dl(const char *libr_path) {
 	return NULL;
 }
 
-R_API R2Pipe *r2pipe_open(const char *cmd) {
+R_API R2Pipe *r2pipe_open (const char *cmd) {
 	R2Pipe *r2pipe = r2pipe_new ();
 	if (!r2pipe) {
 		return NULL;
@@ -308,7 +306,7 @@ R_API R2Pipe *r2pipe_open(const char *cmd) {
 	return r2pipe;
 }
 
-R_API char *r2pipe_cmd(R2Pipe *r2pipe, const char *str) {
+R_API char *r2pipe_cmd (R2Pipe *r2pipe, const char *str) {
 	if (r2pipe->coreb.core) {
 		return r2pipe->coreb.cmdstr (r2pipe->coreb.core, str);
 	}
@@ -319,7 +317,7 @@ R_API char *r2pipe_cmd(R2Pipe *r2pipe, const char *str) {
 	return r2pipe_read (r2pipe);
 }
 
-R_API char *r2pipe_cmdf(R2Pipe *r2pipe, const char *fmt, ...) {
+R_API char *r2pipe_cmdf (R2Pipe *r2pipe, const char *fmt, ...) {
 	int ret, ret2;
 	char *p, string[1024];
 	va_list ap, ap2;
@@ -347,6 +345,5 @@ R_API char *r2pipe_cmdf(R2Pipe *r2pipe, const char *fmt, ...) {
 	}
 	va_end (ap2);
 	va_end (ap);
-	return (char*)fmt;
+	return (char *)fmt;
 }
-

@@ -8,7 +8,7 @@
 #include "r_types.h"
 #include "sdb/sdb.h"
 
-char *getcommapath(RCore *core);
+char *getcommapath (RCore *core);
 
 static const char *help_msg_C[] = {
 	"Usage:", "C[-LCvsdfm*?][*?] [...]", " # Metadata management",
@@ -67,16 +67,16 @@ static const char *help_msg_Ct[] = {
 };
 
 static const char *help_msg_CS[] = {
-	"Usage: CS","[*] [+-][metaspace|addr]", " # Manage metaspaces",
-	"CS","","display metaspaces",
-	"CS"," *","select all metaspaces",
-	"CS"," metaspace","select metaspace or create if it doesn't exist",
-	"CS","-metaspace","remove metaspace",
-	"CS","-*","remove all metaspaces",
-	"CS","+foo","push previous metaspace and set",
-	"CS","-","pop to the previous metaspace",
+	"Usage: CS", "[*] [+-][metaspace|addr]", " # Manage metaspaces",
+	"CS", "", "display metaspaces",
+	"CS", " *", "select all metaspaces",
+	"CS", " metaspace", "select metaspace or create if it doesn't exist",
+	"CS", "-metaspace", "remove metaspace",
+	"CS", "-*", "remove all metaspaces",
+	"CS", "+foo", "push previous metaspace and set",
+	"CS", "-", "pop to the previous metaspace",
 	//	"CSm"," [addr]","move metas at given address to the current metaspace",
-	"CSr"," newname","rename selected metaspace",
+	"CSr", " newname", "rename selected metaspace",
 	NULL
 };
 
@@ -134,7 +134,7 @@ static const char *help_msg_Cvs[] = {
 	NULL
 };
 
-static void cmd_meta_init(RCore *core, RCmdDesc *parent) {
+static void cmd_meta_init (RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, C);
 	DEFINE_CMD_DESCRIPTOR (core, CC);
 	DEFINE_CMD_DESCRIPTOR (core, CS);
@@ -144,17 +144,17 @@ static void cmd_meta_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, Cvs);
 }
 
-static int remove_meta_offset(RCore *core, ut64 offset) {
+static int remove_meta_offset (RCore *core, ut64 offset) {
 	char aoffset[64];
 	char *aoffsetptr = sdb_itoa (offset, aoffset, 16);
 	if (!aoffsetptr) {
-		eprintf ("Failed to convert %"PFMT64x" to a key", offset);
+		eprintf ("Failed to convert %" PFMT64x " to a key", offset);
 		return -1;
 	}
 	return sdb_unset (core->bin->cur->sdb_addrinfo, aoffsetptr, 0);
 }
 
-static bool print_meta_offset(RCore *core, ut64 addr) {
+static bool print_meta_offset (RCore *core, ut64 addr) {
 	int line, line_old, i;
 	char file[1024];
 
@@ -169,7 +169,7 @@ static bool print_meta_offset(RCore *core, ut64 addr) {
 			for (i = 0; i < 5; i++) {
 				char *row = r_file_slurp_line (file, line + i, 0);
 				if (row) {
-					r_cons_printf ("%c %.3x  %s\n", line+i == line_old ? '>' : ' ', line+i, row);
+					r_cons_printf ("%c %.3x  %s\n", line + i == line_old ? '>' : ' ', line + i, row);
 					free (row);
 				}
 			}
@@ -228,7 +228,7 @@ static bool print_addrinfo (void *user, const char *k, const char *v) {
 	return true;
 }
 
-static int cmd_meta_add_fileline(Sdb *s, char *fileline, ut64 offset) {
+static int cmd_meta_add_fileline (Sdb *s, char *fileline, ut64 offset) {
 	char aoffset[64];
 	char *aoffsetptr = sdb_itoa (offset, aoffset, 16);
 
@@ -244,7 +244,7 @@ static int cmd_meta_add_fileline(Sdb *s, char *fileline, ut64 offset) {
 	return 0;
 }
 
-static int cmd_meta_lineinfo(RCore *core, const char *input) {
+static int cmd_meta_lineinfo (RCore *core, const char *input) {
 	int ret;
 	ut64 offset = UT64_MAX; // use this as error value
 	bool remove = false;
@@ -339,19 +339,20 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	return 0;
 }
 
-static int cmd_meta_comment(RCore *core, const char *input) {
+static int cmd_meta_comment (RCore *core, const char *input) {
 	ut64 addr = core->offset;
 	switch (input[1]) {
 	case '?':
 		r_core_cmd_help (core, help_msg_CC);
 		break;
 	case ',': // "CC,"
-		if (input[2]=='?') {
+		if (input[2] == '?') {
 			eprintf ("Usage: CC, [file]\n");
 		} else if (input[2] == ' ') {
-			const char *fn = input+2;
+			const char *fn = input + 2;
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
-			while (*fn== ' ')fn++;
+			while (*fn == ' ')
+				fn++;
 			if (comment && *comment) {
 				// append filename in current comment
 				char *nc = r_str_newf ("%s ,(%s)", comment, fn);
@@ -368,47 +369,44 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 				char *cmtfile = r_str_between (comment, ",(", ")");
 				if (cmtfile && *cmtfile) {
 					char *cwd = getcommapath (core);
-					r_cons_printf ("%s"R_SYS_DIR"%s\n", cwd, cmtfile);
+					r_cons_printf ("%s" R_SYS_DIR "%s\n", cwd, cmtfile);
 					free (cwd);
 				}
 				free (cmtfile);
 			}
 		}
 		break;
-	case '.':
-		  {
-			  ut64 at = input[2]? r_num_math (core->num, input + 2): addr;
-			  const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, at);
-			  if (comment) {
-				  r_cons_println (comment);
-			  }
-		  }
-		break;
+	case '.': {
+		ut64 at = input[2] ? r_num_math (core->num, input + 2) : addr;
+		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, at);
+		if (comment) {
+			r_cons_println (comment);
+		}
+	} break;
 	case 0: // "CC"
 		r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, 0);
 		break;
 	case 'f': // "CCf"
 		switch (input[2]) {
 		case '-': // "CCf-"
-			{
-				ut64 arg = r_num_math (core->num, input + 2);
-				if (!arg) {
-					arg = core->offset;
-				}
-				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, arg, 0);
-				if (fcn) {
-					RAnalBlock *bb;
-					RListIter *iter;
-					r_list_foreach (fcn->bbs, iter, bb) {
-						int i;
-						for (i = 0; i < bb->size; i++) {
-							ut64 addr = bb->addr + i;
-							r_meta_del (core->anal, R_META_TYPE_COMMENT, addr, 1);
-						}
+		{
+			ut64 arg = r_num_math (core->num, input + 2);
+			if (!arg) {
+				arg = core->offset;
+			}
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, arg, 0);
+			if (fcn) {
+				RAnalBlock *bb;
+				RListIter *iter;
+				r_list_foreach (fcn->bbs, iter, bb) {
+					int i;
+					for (i = 0; i < bb->size; i++) {
+						ut64 addr = bb->addr + i;
+						r_meta_del (core->anal, R_META_TYPE_COMMENT, addr, 1);
 					}
 				}
 			}
-			break;
+		} break;
 		case 'j': // "CCfj"
 			r_meta_print_list_in_function (core->anal, R_META_TYPE_COMMENT, 'j', core->offset);
 			break;
@@ -423,24 +421,21 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	case 'j': // "CCj"
 		r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, 'j');
 		break;
-	case '!':
-		{
-			char *out;
-			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
-			out = r_core_editor (core, NULL, comment);
-			if (out) {
-				//r_meta_set (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
-				r_core_cmdf (core, "CC-@0x%08"PFMT64x, addr);
-				//r_meta_del (core->anal->meta, input[0], addr, addr+1);
-				r_meta_set_string (core->anal,
-						R_META_TYPE_COMMENT, addr, out);
-				free (out);
-			}
+	case '!': {
+		char *out;
+		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+		out = r_core_editor (core, NULL, comment);
+		if (out) {
+			//r_meta_set (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
+			r_core_cmdf (core, "CC-@0x%08" PFMT64x, addr);
+			//r_meta_del (core->anal->meta, input[0], addr, addr+1);
+			r_meta_set_string (core->anal,
+				R_META_TYPE_COMMENT, addr, out);
+			free (out);
 		}
-		break;
+	} break;
 	case '+':
-	case ' ':
-		{
+	case ' ': {
 		const char *newcomment = r_str_trim_head_ro (input + 2);
 		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 		char *text;
@@ -461,8 +456,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, nc);
 		}
 		free (nc);
-		}
-		break;
+	} break;
 	case '*': // "CC*"
 		r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, 1);
 		break;
@@ -479,30 +473,31 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	case 'u': // "CCu"
 		//
 		{
-		char *newcomment;
-		const char *arg = input + 2;
-		while (*arg && *arg == ' ') arg++;
-		if (!strncmp (arg, "base64:", 7)) {
-			char *s = (char *)sdb_decode (arg + 7, NULL);
-			if (s) {
-				newcomment = s;
+			char *newcomment;
+			const char *arg = input + 2;
+			while (*arg && *arg == ' ')
+				arg++;
+			if (!strncmp (arg, "base64:", 7)) {
+				char *s = (char *)sdb_decode (arg + 7, NULL);
+				if (s) {
+					newcomment = s;
+				} else {
+					newcomment = NULL;
+				}
 			} else {
-				newcomment = NULL;
+				newcomment = strdup (arg);
 			}
-		} else {
-			newcomment = strdup (arg);
-		}
-		if (newcomment) {
-			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
-			if (!comment || (comment && !strstr (comment, newcomment))) {
-				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, newcomment);
+			if (newcomment) {
+				const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+				if (!comment || (comment && !strstr (comment, newcomment))) {
+					r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, newcomment);
+				}
+				free (newcomment);
 			}
-			free (newcomment);
-		}
 		}
 		break;
 	case 'a': // "CCa"
-		{
+	{
 		char *s, *p;
 		s = strchr (input, ' ');
 		if (s) {
@@ -516,20 +511,21 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			*p++ = 0;
 		}
 		ut64 addr;
-		if (input[2]=='-') {
+		if (input[2] == '-') {
 			if (input[3]) {
-				addr = r_num_math (core->num, input+3);
+				addr = r_num_math (core->num, input + 3);
 				r_meta_del (core->anal,
-						R_META_TYPE_COMMENT,
-						addr, 1);
-			} else eprintf ("Usage: CCa-[address]\n");
+					R_META_TYPE_COMMENT,
+					addr, 1);
+			} else
+				eprintf ("Usage: CCa-[address]\n");
 			free (s);
 			return true;
 		}
 		addr = r_num_math (core->num, s);
 		// Comment at
 		if (p) {
-			if (input[2]=='+') {
+			if (input[2] == '+') {
 				const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 				if (comment) {
 					char *text = r_str_newf ("%s\n%s", comment, p);
@@ -546,12 +542,12 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		}
 		free (s);
 		return true;
-		}
+	}
 	}
 	return true;
 }
 
-static int cmd_meta_vartype_comment(RCore *core, const char *input) {
+static int cmd_meta_vartype_comment (RCore *core, const char *input) {
 	ut64 addr = core->offset;
 	switch (input[1]) {
 	case '?': // "Ct?"
@@ -561,8 +557,8 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 		r_meta_print_list_all (core->anal, R_META_TYPE_VARTYPE, 0);
 		break;
 	case ' ': // "Ct <vartype comment> @ addr"
-		{
-		const char* newcomment = r_str_trim_head_ro (input + 2);
+	{
+		const char *newcomment = r_str_trim_head_ro (input + 2);
 		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, addr);
 		char *nc = strdup (newcomment);
 		r_str_unescape (nc);
@@ -578,17 +574,15 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 			r_meta_set_string (core->anal, R_META_TYPE_VARTYPE, addr, nc);
 		}
 		free (nc);
-		}
-		break;
+	} break;
 	case '.': // "Ct. @ addr"
-		{
-		ut64 at = input[2]? r_num_math (core->num, input + 2): addr;
+	{
+		ut64 at = input[2] ? r_num_math (core->num, input + 2) : addr;
 		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, at);
 		if (comment) {
 			r_cons_println (comment);
 		}
-		}
-		break;
+	} break;
 	case '-': // "Ct-"
 		r_meta_del (core->anal, R_META_TYPE_VARTYPE, core->offset, 1);
 		break;
@@ -600,7 +594,7 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 	return true;
 }
 
-static int cmd_meta_others(RCore *core, const char *input) {
+static int cmd_meta_others (RCore *core, const char *input) {
 	int n, type = input[0], subtype;
 	char *t = 0, *p, *p2, name[256];
 	int repeat = 1;
@@ -610,7 +604,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	case '?':
 		switch (input[0]) {
 		case 'f': // "Cf?"
-			r_cons_println(
+			r_cons_println (
 				"Usage: Cf[-] [sz] [fmt..] [@addr]\n\n"
 				"'sz' indicates the byte size taken up by struct.\n"
 				"'fmt' is a 'pf?' style format string. It controls only the display format.\n\n"
@@ -662,19 +656,18 @@ static int cmd_meta_others(RCore *core, const char *input) {
 		r_meta_print_list_all (core->anal, input[0], 'j');
 		break;
 	case '!': // "Cf!", "Cd!", ...
-		{
-			char *out;
-			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
-			out = r_core_editor (core, NULL, comment);
-			if (out) {
-				//r_meta_set (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
-				r_core_cmdf (core, "CC-@0x%08"PFMT64x, addr);
-				//r_meta_del (core->anal->meta, input[0], addr, addr+1);
-				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, out);
-				free (out);
-			}
+	{
+		char *out;
+		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+		out = r_core_editor (core, NULL, comment);
+		if (out) {
+			//r_meta_set (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
+			r_core_cmdf (core, "CC-@0x%08" PFMT64x, addr);
+			//r_meta_del (core->anal->meta, input[0], addr, addr+1);
+			r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, out);
+			free (out);
 		}
-		break;
+	} break;
 	case '.': // "Cf.", "Cd.", ...
 		if (input[2] == '.') { // "Cs.."
 			ut64 size;
@@ -704,7 +697,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			case R_STRING_ENC_UTF8:
 				esc_str = r_str_escape_utf8 (mi->str, false, esc_bslash);
 				break;
-			case 0:  /* temporary legacy workaround */
+			case 0: /* temporary legacy workaround */
 				esc_bslash = false;
 			default:
 				esc_str = r_str_escape_latin1 (mi->str, false, esc_bslash, false);
@@ -716,7 +709,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				r_cons_println ("<oom>");
 			}
 		} else if (type == 'd') {
-			r_cons_printf ("%"PFMT64u"\n", size);
+			r_cons_printf ("%" PFMT64u "\n", size);
 		} else {
 			r_cons_println (mi->str);
 		}
@@ -784,7 +777,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 						int r = r_print_format (core->print, addr, core->block,
 							n, p, 0, NULL, NULL);
 						if (r < 0) {
-							n  = -1;
+							n = -1;
 						}
 					} else {
 						eprintf ("Usage: Cf [size] [pf-format-string]\n");
@@ -794,11 +787,11 @@ static int cmd_meta_others(RCore *core, const char *input) {
 					char tmp[256] = R_EMPTY;
 					int i, j, name_len = 0;
 					if (input[1] == 'a' || input[1] == '8') {
-						(void)r_io_read_at (core->io, addr, (ut8*)name, sizeof (name) - 1);
+						(void)r_io_read_at (core->io, addr, (ut8 *)name, sizeof (name) - 1);
 						name[sizeof (name) - 1] = '\0';
 						name_len = strlen (name);
 					} else {
-						(void)r_io_read_at (core->io, addr, (ut8*)tmp, sizeof (tmp) - 3);
+						(void)r_io_read_at (core->io, addr, (ut8 *)tmp, sizeof (tmp) - 3);
 						name_len = r_str_nlen_w (tmp, sizeof (tmp) - 3);
 						//handle wide strings
 						for (i = 0, j = 0; i < sizeof (name); i++, j++) {
@@ -835,12 +828,12 @@ static int cmd_meta_others(RCore *core, const char *input) {
 					if (p) {
 						*p++ = '\0';
 						p = (char *)r_str_trim_head_ro (p);
-						strncpy (name, p, sizeof (name)-1);
+						strncpy (name, p, sizeof (name) - 1);
 					} else {
 						if (type != 's') {
 							fi = r_flag_get_i (core->flags, addr);
 							if (fi) {
-								strncpy (name, fi->name, sizeof (name)-1);
+								strncpy (name, fi->name, sizeof (name) - 1);
 							}
 						}
 					}
@@ -863,7 +856,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				r_meta_set (core->anal, type, addr, n, name);
 			}
 			free (t);
-			repcnt ++;
+			repcnt++;
 			addr += n;
 		}
 		//r_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
@@ -876,7 +869,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	return true;
 }
 
-void r_comment_var_help(RCore *core, char type) {
+void r_comment_var_help (RCore *core, char type) {
 	switch (type) {
 	case 'b':
 		r_core_cmd_help (core, help_msg_Cvb);
@@ -888,11 +881,11 @@ void r_comment_var_help(RCore *core, char type) {
 		r_core_cmd_help (core, help_msg_Cvr);
 		break;
 	case '?':
-		r_cons_printf("See Cvb?, Cvs? and Cvr?\n");
+		r_cons_printf ("See Cvb?, Cvs? and Cvr?\n");
 	}
 }
 
-void r_comment_vars(RCore *core, const char *input) {
+void r_comment_vars (RCore *core, const char *input) {
 	//TODO enable base64 and make it the default for C*
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 	char *oname = NULL, *name = NULL;
@@ -923,11 +916,10 @@ void r_comment_vars(RCore *core, const char *input) {
 				if (!b64) {
 					continue;
 				}
-				r_cons_printf ("\"Cv%c %s base64:%s @ 0x%08"PFMT64x"\"\n", kind, var->name, b64, fcn->addr);
+				r_cons_printf ("\"Cv%c %s base64:%s @ 0x%08" PFMT64x "\"\n", kind, var->name, b64, fcn->addr);
 			}
 		}
-		}
-		break;
+	} break;
 	case ' ': { // "Cv "
 		char *comment = strchr (name, ' ');
 		char *heap_comment = NULL;
@@ -961,8 +953,7 @@ void r_comment_vars(RCore *core, const char *input) {
 			}
 		}
 		free (heap_comment);
-		}
-		break;
+	} break;
 	case '-': { // "Cv-"
 		name++;
 		r_str_trim (name);
@@ -993,14 +984,13 @@ void r_comment_vars(RCore *core, const char *input) {
 			free (var->comment);
 			var->comment = comment;
 		}
-		}
-		break;
+	} break;
 	}
 	free (oname);
 }
 
-static int cmd_meta(void *data, const char *input) {
-	RCore *core = (RCore*)data;
+static int cmd_meta (void *data, const char *input) {
+	RCore *core = (RCore *)data;
 	RAnalFunction *f;
 	RSpaces *ms;
 	int i;
@@ -1056,7 +1046,7 @@ static int cmd_meta(void *data, const char *input) {
 		break;
 	case 'F': // "CF"
 		f = r_anal_get_fcn_in (core->anal, core->offset,
-			R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
+			R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 		if (f) {
 			r_anal_str_to_fcn (core->anal, f, input + 2);
 		} else {
@@ -1075,17 +1065,17 @@ static int cmd_meta(void *data, const char *input) {
 			break;
 		case 'r': // "CSr"
 			if (input[2] == ' ') {
-				r_spaces_rename (ms, NULL, input+2);
+				r_spaces_rename (ms, NULL, input + 2);
 			} else {
 				eprintf ("Usage: CSr [newname]\n");
 			}
 			break;
 		case '-': // "CS-"
 			if (input[2]) {
-				if (input[2]=='*') {
+				if (input[2] == '*') {
 					r_spaces_unset (ms, NULL);
 				} else {
-					r_spaces_unset (ms, input+2);
+					r_spaces_unset (ms, input + 2);
 				}
 			} else {
 				r_spaces_pop (ms);

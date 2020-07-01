@@ -11,7 +11,7 @@
 
 #include "disas-asm.h"
 #include "opcode/mips.h"
-int mips_assemble(const char *str, ut64 pc, ut8 *out);
+int mips_assemble (const char *str, ut64 pc, ut8 *out);
 
 static int mips_mode = 0;
 static unsigned long Offset = 0;
@@ -23,18 +23,18 @@ static int mips_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, unsigned 
 	return 0;
 }
 
-static int symbol_at_address(bfd_vma addr, struct disassemble_info * info) {
+static int symbol_at_address (bfd_vma addr, struct disassemble_info *info) {
 	return 0;
 }
 
-static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_info *info) {
+static void memory_error_func (int status, bfd_vma memaddr, struct disassemble_info *info) {
 	//--
 }
 
-DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
-DECLARE_GENERIC_FPRINTF_FUNC()
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC ()
+DECLARE_GENERIC_FPRINTF_FUNC ()
 
-static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
+static int disassemble (struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
 	static struct disassemble_info disasm_obj;
 	if (len < 4) {
 		return -1;
@@ -44,7 +44,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 	memcpy (bytes, buf, 4); // TODO handle thumb
 
 	/* prepare disassembler */
-	memset (&disasm_obj,'\0', sizeof (struct disassemble_info));
+	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
 	mips_mode = a->bits;
 	disasm_obj.arch = CPU_LOONGSON_2F;
 	disasm_obj.buffer = bytes;
@@ -67,8 +67,8 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 	return op->size;
 }
 
-static int assemble(RAsm *a, RAsmOp *op, const char *str) {
-	ut8 *opbuf = (ut8*)r_strbuf_get (&op->buf);
+static int assemble (RAsm *a, RAsmOp *op, const char *str) {
+	ut8 *opbuf = (ut8 *)r_strbuf_get (&op->buf);
 	int ret = mips_assemble (str, a->pc, opbuf);
 	if (a->big_endian) {
 		ut8 tmp = opbuf[0];

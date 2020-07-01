@@ -5,13 +5,13 @@
 #include <r_util.h>
 #include <r_bind.h>
 
-R_API void r_anal_esil_session_free(void *p) {
-	RAnalEsilSession *session = (RAnalEsilSession *) p;
+R_API void r_anal_esil_session_free (void *p) {
+	RAnalEsilSession *session = (RAnalEsilSession *)p;
 	free (session->data);
 	free (session);
 }
 
-R_API void r_anal_esil_session_list(RAnalEsil *esil) {
+R_API void r_anal_esil_session_list (RAnalEsil *esil) {
 	if (!esil || !esil->sessions) {
 		return;
 	}
@@ -19,11 +19,11 @@ R_API void r_anal_esil_session_list(RAnalEsil *esil) {
 	RAnalEsilSession *session;
 	ut64 idx = 0;
 	r_list_foreach (esil->sessions, iter, session) {
-		esil->anal->cb_printf ("[%d] 0x%08"PFMT64x "\n", idx++, session->key);
+		esil->anal->cb_printf ("[%d] 0x%08" PFMT64x "\n", idx++, session->key);
 	}
 }
 
-R_API RAnalEsilSession *r_anal_esil_session_add(RAnalEsil *esil) {
+R_API RAnalEsilSession *r_anal_esil_session_add (RAnalEsil *esil) {
 	if (!esil || !esil->stack_addr || !esil->stack_size) {
 		eprintf ("r_anal_esil_session_add: Cannot find any stack, use 'aeim' first.\n");
 		return NULL;
@@ -40,9 +40,9 @@ R_API RAnalEsilSession *r_anal_esil_session_add(RAnalEsil *esil) {
 	session->key = r_reg_getv (esil->anal->reg, name);
 	session->addr = esil->stack_addr;
 	session->size = esil->stack_size;
-	session->data = (ut8 *) R_NEWS0 (ut8, session->size);
+	session->data = (ut8 *)R_NEWS0 (ut8, session->size);
 	if (!session->data) {
-		eprintf ("Cannot allocate 0x%"PFMT64x" bytes for stack\n", session->size);
+		eprintf ("Cannot allocate 0x%" PFMT64x " bytes for stack\n", session->size);
 		R_FREE (session);
 		return NULL;
 	}
@@ -61,7 +61,7 @@ R_API RAnalEsilSession *r_anal_esil_session_add(RAnalEsil *esil) {
 	return session;
 }
 
-R_API void r_anal_esil_session_set(RAnalEsil *esil, RAnalEsilSession *session) {
+R_API void r_anal_esil_session_set (RAnalEsil *esil, RAnalEsilSession *session) {
 	if (!esil || !session) {
 		return;
 	}

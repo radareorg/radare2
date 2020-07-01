@@ -13,7 +13,7 @@
 #define INSOP(n) insn->detail->sparc.operands[n]
 #define INSCC insn->detail->sparc.cc
 
-static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
+static void opex (RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	r_strbuf_init (buf);
 	r_strbuf_append (buf, "{");
@@ -32,14 +32,14 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case SPARC_OP_IMM:
 			r_strbuf_append (buf, "\"type\":\"imm\"");
-			r_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
+			r_strbuf_appendf (buf, ",\"value\":%" PFMT64d, op->imm);
 			break;
 		case SPARC_OP_MEM:
 			r_strbuf_append (buf, "\"type\":\"mem\"");
 			if (op->mem.base != SPARC_REG_INVALID) {
 				r_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
 			}
-			r_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", op->mem.disp);
+			r_strbuf_appendf (buf, ",\"disp\":%" PFMT64d "", op->mem.disp);
 			break;
 		default:
 			r_strbuf_append (buf, "\"type\":\"invalid\"");
@@ -51,7 +51,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	r_strbuf_append (buf, "}");
 }
 
-static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
+static int parse_reg_name (RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
 	if (!reg) {
 		return -1;
 	}
@@ -70,31 +70,31 @@ static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num)
 	return 0;
 }
 
-static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
+static void op_fillval (RAnalOp *op, csh handle, cs_insn *insn) {
 	static RRegItem reg;
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_LOAD:
-		if (INSOP(0).type == SPARC_OP_MEM) {
+		if (INSOP (0).type == SPARC_OP_MEM) {
 			ZERO_FILL (reg);
 			op->src[0] = r_anal_value_new ();
 			op->src[0]->reg = &reg;
 			parse_reg_name (op->src[0]->reg, handle, insn, 0);
-			op->src[0]->delta = INSOP(0).mem.disp;
+			op->src[0]->delta = INSOP (0).mem.disp;
 		}
 		break;
 	case R_ANAL_OP_TYPE_STORE:
-		if (INSOP(1).type == SPARC_OP_MEM) {
+		if (INSOP (1).type == SPARC_OP_MEM) {
 			ZERO_FILL (reg);
 			op->dst = r_anal_value_new ();
 			op->dst->reg = &reg;
 			parse_reg_name (op->dst->reg, handle, insn, 1);
-			op->dst->delta = INSOP(1).mem.disp;
+			op->dst->delta = INSOP (1).mem.disp;
 		}
 		break;
 	}
 }
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int analop (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	static csh handle = 0;
 	static int omode;
 	cs_insn *insn;
@@ -121,7 +121,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
 	// capstone-next
-	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
+	n = cs_disasm (handle, (const ut8 *)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
@@ -147,7 +147,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			op->type = R_ANAL_OP_TYPE_UNK;
 			break;
 		case SPARC_INS_CALL:
-			switch (INSOP(0).type) {
+			switch (INSOP (0).type) {
 			case SPARC_OP_MEM:
 				// TODO
 				break;
@@ -158,7 +158,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			default:
 				op->type = R_ANAL_OP_TYPE_CALL;
 				op->delay = 1;
-				op->jump = INSOP(0).imm;
+				op->jump = INSOP (0).imm;
 				break;
 			}
 			break;
@@ -172,7 +172,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		case SPARC_INS_JMPL:
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->delay = 1;
-			op->jump = INSOP(0).imm;
+			op->jump = INSOP (0).imm;
 			break;
 		case SPARC_INS_LDD:
 		case SPARC_INS_LD:
@@ -209,7 +209,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		case SPARC_INS_BRNZ:
 		case SPARC_INS_BRZ:
 		case SPARC_INS_FB:
-			switch (INSOP(0).type) {
+			switch (INSOP (0).type) {
 			case SPARC_OP_REG:
 				op->type = R_ANAL_OP_TYPE_CJMP;
 				op->delay = 1;
@@ -318,8 +318,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	return op->size;
 }
 
-static bool set_reg_profile(RAnal *anal) {
-	const char *p = \
+static bool set_reg_profile (RAnal *anal) {
+	const char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
 		"=BP	fp\n"
@@ -371,12 +371,11 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr	i5	.32	132	0\n"
 		"gpr	i6	.32	136	0\n"
 		"gpr	fp	.32	136	0\n"
-		"gpr	i7	.32	140	0\n"
-	;
+		"gpr	i7	.32	140	0\n";
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo (RAnal *anal, int q) {
 	return 4; /* :D */
 }
 
@@ -386,7 +385,7 @@ RAnalPlugin r_anal_plugin_sparc_cs = {
 	.esil = true,
 	.license = "BSD",
 	.arch = "sparc",
-	.bits = 32|64,
+	.bits = 32 | 64,
 	.archinfo = archinfo,
 	.op = &analop,
 	.set_reg_profile = &set_reg_profile,

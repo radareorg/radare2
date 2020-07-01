@@ -13,7 +13,7 @@
 #define HAS_MAIN 0
 #endif
 
-#define IFDBG if(0)
+#define IFDBG if (0)
 
 // $ echo "..." | xcrun swift-demangle
 
@@ -49,7 +49,7 @@ static struct Type types[] = {
 	{ NULL, NULL }
 };
 
-static struct Type metas [] = {
+static struct Type metas[] = {
 	/* attributes */
 	{ "FC", "ClassFunc" },
 	{ "S0_FT", "?" },
@@ -62,7 +62,7 @@ static struct Type metas [] = {
 	{ NULL, NULL }
 };
 
-static struct Type flags [] = {
+static struct Type flags[] = {
 	//{ "f", "function" }, // this is not an accessor
 	{ "s", "setter" },
 	{ "g", "getter" },
@@ -71,28 +71,28 @@ static struct Type flags [] = {
 	{ "D", "deallocator" },
 	{ "c", "constructor" },
 	{ "C", "allocator" },
-	{ NULL , NULL}
+	{ NULL, NULL }
 };
 
-static const char *getnum(const char* n, int *num) {
+static const char *getnum (const char *n, int *num) {
 	if (num && *n) {
 		*num = atoi (n);
 	}
-	while (*n && *n>='0' && *n <='9') {
+	while (*n && *n >= '0' && *n <= '9') {
 		n++;
 	}
 	return n;
 }
 
-static const char *numpos(const char* n) {
+static const char *numpos (const char *n) {
 	while (*n && (*n < '0' || *n > '9')) {
 		n++;
 	}
 	return n;
 }
 
-static const char *getstring(const char *s, int len) {
-	static char buf[256] = {0};
+static const char *getstring (const char *s, int len) {
+	static char buf[256] = { 0 };
 	if (len < 0 || len > sizeof (buf) - 2) {
 		return "";
 	}
@@ -101,7 +101,7 @@ static const char *getstring(const char *s, int len) {
 	return buf;
 }
 
-static const char *resolve(struct Type *t, const char *foo, const char **bar) {
+static const char *resolve (struct Type *t, const char *foo, const char **bar) {
 	if (!t || !foo || !*foo) {
 		return NULL;
 	}
@@ -119,7 +119,7 @@ static const char *resolve(struct Type *t, const char *foo, const char **bar) {
 
 static int have_swift_demangle = -1;
 
-static char *swift_demangle_cmd(const char *s) {
+static char *swift_demangle_cmd (const char *s) {
 	/* XXX: command injection issue here */
 	static char *swift_demangle = NULL;
 	if (have_swift_demangle == -1) {
@@ -157,10 +157,10 @@ static char *swift_demangle_cmd(const char *s) {
 	return NULL;
 }
 
-static char *swift_demangle_lib(const char *s) {
+static char *swift_demangle_lib (const char *s) {
 #if __UNIX__
 	static bool haveSwiftCore = false;
-	static char *(*swift_demangle)(const char *sym, int symlen, void *out, int *outlen, int flags) = NULL;
+	static char *(*swift_demangle) (const char *sym, int symlen, void *out, int *outlen, int flags) = NULL;
 	if (!haveSwiftCore) {
 		void *lib = r_lib_dl_open ("/usr/lib/swift/libswiftCore.dylib");
 		if (lib) {
@@ -175,8 +175,10 @@ static char *swift_demangle_lib(const char *s) {
 	return NULL;
 }
 
-R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
-#define STRCAT_BOUNDS(x) if (((x) + 2 + strlen (out)) > sizeof (out)) break;
+R_API char *r_bin_demangle_swift (const char *s, bool syscmd) {
+#define STRCAT_BOUNDS(x)                             \
+	if (((x) + 2 + strlen (out)) > sizeof (out)) \
+		break;
 	char out[1024];
 	int i, len, is_generic = 0;
 	int is_first = 1;
@@ -280,10 +282,10 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 
 	// XXX
 	q = getnum (p, NULL);
-	
+
 	// _TF or __TW
 	if (IS_DIGIT (*p) || *p == 'v' || *p == 'I' || *p == 'o' || *p == 'T' || *p == 'V' || *p == 'M' || *p == 'C' || *p == 'F' || *p == 'W') {
-		if (!strncmp (p+1, "SS", 2)) {
+		if (!strncmp (p + 1, "SS", 2)) {
 			strcat (out, "Swift.String.init (");
 			p += 3;
 		}
@@ -307,7 +309,7 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 		//printf ("(%s)\n", getstring (p, (q-p)));
 		for (i = 0, len = 1; len && q < q_end; q += len, i++) {
 			if (*q == 'P') {
-		//		printf ("PUBLIC: ");
+				//		printf ("PUBLIC: ");
 				q++;
 			}
 			q = getnum (q, &len);
@@ -341,11 +343,11 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 				attr = NULL;
 				q += 3;
 				//q = p + 1;
-//				//printf ("Template (%s)\n", attr);
+				//				//printf ("Template (%s)\n", attr);
 			} else {
 				//printf ("Findus (%s)\n", q);
 			}
-//			return 0;
+			//			return 0;
 		}
 		/* parse accessors */
 		if (attr) {
@@ -367,7 +369,7 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 			} else {
 				resolve (types, q, &attr2);
 			}
-//			printf ("Field Type: %s\n", attr2);
+			//			printf ("Field Type: %s\n", attr2);
 
 			do {
 				if (name && *name) {
@@ -397,22 +399,20 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 					q++;
 				}
 				switch (*q) {
-				case 's':
-					{
-						int n = 0;
-						const char *Q = getnum (q + 1, &n);
-						const char *res = getstring (Q, n);
-						if (res) {
-							strcat (out, res);
-						}
-						q = Q + n + 1;
-						continue;
+				case 's': {
+					int n = 0;
+					const char *Q = getnum (q + 1, &n);
+					const char *res = getstring (Q, n);
+					if (res) {
+						strcat (out, res);
 					}
-					break;
+					q = Q + n + 1;
+					continue;
+				} break;
 				case 'u':
 					if (!strncmp (q, "uRxs", 4)) {
 						strcat (out, "..");
-						int n = 0 ;
+						int n = 0;
 						const char *Q = getnum (q + 4, &n);
 						strcat (out, getstring (Q, n));
 						q = Q + n + 1;
@@ -460,7 +460,7 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 					break;
 				case 'F':
 					strcat (out, " ()");
-					p = resolve (types, (strlen (q) > 2)? q + 3: "", &attr); // type
+					p = resolve (types, (strlen (q) > 2) ? q + 3 : "", &attr); // type
 					break;
 				case 'G':
 					q += 2;
@@ -499,9 +499,9 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 								}
 								break;
 							}
-							p = resolve (types, *q? q + 1: q, &attr); // type
+							p = resolve (types, *q ? q + 1 : q, &attr); // type
 							//printf ("RETURN TYPE %s\n", attr);
-		//					printf ("RET %s\n", attr);
+							//					printf ("RET %s\n", attr);
 							if (attr) {
 								strcat (out, " -> ");
 								STRCAT_BOUNDS (strlen (attr));
@@ -519,8 +519,8 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 					if (len <= (q_end - q) && q[len]) {
 						const char *s = getstring (q, len);
 						if (s && *s) {
-							if (is_first) {	
-								strcat (out, is_generic?"<":"(");
+							if (is_first) {
+								strcat (out, is_generic ? "<" : "(");
 								is_first = 0;
 							}
 							//printf ("ISLAST (%s)\n", q+len);
@@ -533,7 +533,7 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 							STRCAT_BOUNDS (strlen (s));
 							strcat (out, s);
 							if (is_last) {
-								strcat (out, is_generic?">":")");
+								strcat (out, is_generic ? ">" : ")");
 								is_first = (*s != '_');
 								if (is_generic && !is_first) {
 									break;
@@ -592,7 +592,7 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 			if (p) {
 				p[0] = '_';
 				p[1] = '_';
-				p+=2;
+				p += 2;
 			} else {
 				break;
 			}
@@ -612,114 +612,55 @@ typedef struct {
 } Test;
 
 Test swift_tests[] = {
-{
-	"_TWPu0_Rq_Ss14CollectionType_GVSs17MapCollectionViewq_q0__Ss23_CollectionDefaultsTypeSs_8",
-	"<generic _CollectionDefaultsType>"
-},
-{
-	"_TWPurGVSs15CollectionOfOneq__Ss14CollectionTypeSs_248",
-	"CollectionOfOne<generic CollectionType><generic S>"
-},
-{
-	"_TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS"
-	,"Swift.String.init (_builtinStringLiteral(Builtin.RawPointer byteSize__Builtin.Word isASCII__Builtin.Int1 _) -> String"
-	//, "Swift.String.init (Swift.String.Type) -> (_builtinStringLiteral : Builtin.RawPointer, byteSize : Builtin.Word, isASCII : Builtin.Int1) -> Swift.String
-},{
-	"_TFC10swifthello5Hellog5WorldSS" // getter
-	,"swifthello.Hello.World.getter__String"
-	// swifthello.Hello.World.getter : Swift.String
-},{
-	"_TFC10swifthello5Hellom5WorldSS" // getter
-	,"swifthello.Hello.World.method__String"
-},{
-	"_TFC10swifthello5Hellos5WorldSS" // getter
-	,"swifthello.Hello.World.setter__String"
-},{
-	"_TFSSCfMSSFT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS"
-	,"Swift.String.init (_builtinStringLiteral(Builtin.RawPointer byteSize__Builtin.Word isASCII__Builtin.Int1 _) -> String"
-},{
-	"_TF10swifthello3norFT_Si"
-	,"swifthello.nor () -> Swift.Int"
-},{
-	"_TFSs7printlnU__FQ_T_"
-	,"println.<A>(A) -> ()"
-},{
-	"_TFSsa6C_ARGVGVSs20UnsafeMutablePointerGS_VSs4Int8__"
-	,"C_ARGV<generic UnsafeMutablePointer><generic Int8>"
-},{
-	"_TFC10FlappyBird9GameScene10resetScenefS0_FT_T_"
-	,"FlappyBird.GameScene.resetScene (self) -> (__ _) ()" // XXX this is not correct
-},{
-	"__TFC4main8BarClass8sayHellofT_T_"
-	,"main.BarClass.sayHello"
-},{
-	"__TFC4main4TostCfT_S0_"
-	,"main.Tost.allocator"
-},{
-	"__TFC4main4TostD"
-	,"main.Tost.deallocator"
-},{
-	"__TFC4main4TostcfT_S0_"
-	,"main.Tost.constructor"
-},{
-	"__TF4main4moinFT_Si"
-	,"main.moin () -> Swift.Int"
-},{
-	"__TFC4main4Tostg3msgSS"
-	,"main.Tost.msg.getter__String"
-},{
-	"__TMC4main4Tost"
-	,"main.Tost..metadata"
-},{
-	"__TMLC4main4Tost"
-	,"main.Tost..lazy.metadata"
+	{ "_TWPu0_Rq_Ss14CollectionType_GVSs17MapCollectionViewq_q0__Ss23_CollectionDefaultsTypeSs_8",
+		"<generic _CollectionDefaultsType>" },
+	{ "_TWPurGVSs15CollectionOfOneq__Ss14CollectionTypeSs_248",
+		"CollectionOfOne<generic CollectionType><generic S>" },
+	{
+		"_TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS", "Swift.String.init (_builtinStringLiteral(Builtin.RawPointer byteSize__Builtin.Word isASCII__Builtin.Int1 _) -> String"
+		//, "Swift.String.init (Swift.String.Type) -> (_builtinStringLiteral : Builtin.RawPointer, byteSize : Builtin.Word, isASCII : Builtin.Int1) -> Swift.String
+	},
+	{
+		"_TFC10swifthello5Hellog5WorldSS" // getter
+		,
+		"swifthello.Hello.World.getter__String"
+		// swifthello.Hello.World.getter : Swift.String
+	},
+	{ "_TFC10swifthello5Hellom5WorldSS" // getter
+		,
+		"swifthello.Hello.World.method__String" },
+	{ "_TFC10swifthello5Hellos5WorldSS" // getter
+		,
+		"swifthello.Hello.World.setter__String" },
+	{ "_TFSSCfMSSFT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS", "Swift.String.init (_builtinStringLiteral(Builtin.RawPointer byteSize__Builtin.Word isASCII__Builtin.Int1 _) -> String" }, { "_TF10swifthello3norFT_Si", "swifthello.nor () -> Swift.Int" }, { "_TFSs7printlnU__FQ_T_", "println.<A>(A) -> ()" }, { "_TFSsa6C_ARGVGVSs20UnsafeMutablePointerGS_VSs4Int8__", "C_ARGV<generic UnsafeMutablePointer><generic Int8>" }, {
+																																																							 "_TFC10FlappyBird9GameScene10resetScenefS0_FT_T_", "FlappyBird.GameScene.resetScene (self) -> (__ _) ()" // XXX this is not correct
+																																																						 },
+	{ "__TFC4main8BarClass8sayHellofT_T_", "main.BarClass.sayHello" }, { "__TFC4main4TostCfT_S0_", "main.Tost.allocator" }, { "__TFC4main4TostD", "main.Tost.deallocator" }, { "__TFC4main4TostcfT_S0_", "main.Tost.constructor" }, { "__TF4main4moinFT_Si", "main.moin () -> Swift.Int" }, { "__TFC4main4Tostg3msgSS", "main.Tost.msg.getter__String" }, { "__TMC4main4Tost", "main.Tost..metadata" }, { "__TMLC4main4Tost", "main.Tost..lazy.metadata"
 
-},{
-	"__TMaC4main4Tost"
-	,"main.Tost..accessor.metadata"
-	//,"_lazy cache variable for type metadata for main.Tost"
-},{
-	"__TMmC4main4Tost"
-	,"main.Tost..metaclass"
-},{
-	"__TFV4main7Balanceg5widthSd"
-	,"main.Balance.width.getter__Double"
-},{
-	"__TWoFC4main4TostCfT_S0_"
-	,"Tost.allocator..init.witnesstable"
-},{
-	"__TMBi256_"
-	,"_..metadata"
-},{
-	"__TWvdvC4main4Tost3msgSS"
-	,"main.Tost.msg__String..field"
-},{
-	"__TIFC10Moscapsule10MQTTClient11unsubscribeFTSS17requestCompletionGSqFTOS_10MosqResultSi_T___T_A0_"
-	,"Moscapsule.MQTTClient.unsubscribe ()"
-////imp._TIFC10Moscapsule10MQTTClient11unsubscribeFTSS17requestCompletionGSqFTOS_10MosqResultSi_T___T_A0_
-},{
-	"__TWaC4main8FooClassS_9FoodClassS_"
-	,"main.FooClass..FoodClass..protocol"
-},{
-	"__TFe4mainRxCS_8FooClassxS_9FoodClassrS1_8sayHellofT_T_"
-	,"main..FooClass..FoodClass..sayHello..extension"
-},{
-	"_TTSg5P____TFs27_allocateUninitializedArrayurFBwTGSax_Bp_",
-	"P____(GenericSpec F)_allocateUninitializedArray -> Builtin.RawPointer" // TODO poor translation
-	// "generic specialization <protocol<>> of Swift._allocateUninitializedArray <A> (Builtin.Word) -> ([A], Builtin.RawPointer)"
-},{
-	"_TIFs5printFTGSaP__9separatorSS10terminatorSS_T_A0_",
-	"print (__Array P)", // TODO: poor translation
-	//"Swift.(print ([protocol<>], separator : Swift.String, terminator : Swift.String) -> ()).(default argument 1)"
-},{
-	"__TZFsoi2eeuRxs9EquatablerFTGSqx_GSqx__Sb",
-	"Swift..Equatable () -> Bool"
-},{
-	// _direct field offset for main.Tost.msg : Swift.String
-	NULL, NULL
-}};
+																																																	    },
+	{
+		"__TMaC4main4Tost", "main.Tost..accessor.metadata"
+		//,"_lazy cache variable for type metadata for main.Tost"
+	},
+	{ "__TMmC4main4Tost", "main.Tost..metaclass" }, { "__TFV4main7Balanceg5widthSd", "main.Balance.width.getter__Double" }, { "__TWoFC4main4TostCfT_S0_", "Tost.allocator..init.witnesstable" }, { "__TMBi256_", "_..metadata" }, { "__TWvdvC4main4Tost3msgSS", "main.Tost.msg__String..field" }, {
+																																					      "__TIFC10Moscapsule10MQTTClient11unsubscribeFTSS17requestCompletionGSqFTOS_10MosqResultSi_T___T_A0_", "Moscapsule.MQTTClient.unsubscribe ()"
+																																					      ////imp._TIFC10Moscapsule10MQTTClient11unsubscribeFTSS17requestCompletionGSqFTOS_10MosqResultSi_T___T_A0_
+																																				      },
+	{ "__TWaC4main8FooClassS_9FoodClassS_", "main.FooClass..FoodClass..protocol" }, { "__TFe4mainRxCS_8FooClassxS_9FoodClassrS1_8sayHellofT_T_", "main..FooClass..FoodClass..sayHello..extension" }, {
+																										 "_TTSg5P____TFs27_allocateUninitializedArrayurFBwTGSax_Bp_",
+																										 "P____(GenericSpec F)_allocateUninitializedArray -> Builtin.RawPointer" // TODO poor translation
+																										 // "generic specialization <protocol<>> of Swift._allocateUninitializedArray <A> (Builtin.Word) -> ([A], Builtin.RawPointer)"
+																									 },
+	{
+		"_TIFs5printFTGSaP__9separatorSS10terminatorSS_T_A0_",
+		"print (__Array P)", // TODO: poor translation
+		//"Swift.(print ([protocol<>], separator : Swift.String, terminator : Swift.String) -> ()).(default argument 1)"
+	},
+	{ "__TZFsoi2eeuRxs9EquatablerFTGSqx_GSqx__Sb", "Swift..Equatable () -> Bool" }, { // _direct field offset for main.Tost.msg : Swift.String
+												NULL, NULL }
+};
 
-int main(int argc, char **argv) {
+int main (int argc, char **argv) {
 	int rc = 0;
 	char *ret;
 	if (argc > 1) {
@@ -736,16 +677,16 @@ int main(int argc, char **argv) {
 			ret = r_bin_demangle_swift (test->sym, 0);
 			if (ret) {
 				if (test->dem && !strcmp (ret, test->dem)) {
-					printf (Color_GREEN"[OK]"Color_RESET"  %s\n", ret);
+					printf (Color_GREEN "[OK]" Color_RESET "  %s\n", ret);
 				} else {
-					printf (Color_RED"[XX]"Color_RESET"  %s\n", ret);
-					printf (Color_YELLOW"[MUSTBE]"Color_RESET"  %s\n", test->dem);
+					printf (Color_RED "[XX]" Color_RESET "  %s\n", ret);
+					printf (Color_YELLOW "[MUSTBE]" Color_RESET "  %s\n", test->dem);
 					rc = 1;
 				}
 				free (ret);
 			} else {
-				printf (Color_RED"[XX]"Color_RESET"  \"(null)\"\n");
-				printf (Color_YELLOW"[MUSTBE]"Color_RESET"  %s\n", test->dem);
+				printf (Color_RED "[XX]" Color_RESET "  \"(null)\"\n");
+				printf (Color_YELLOW "[MUSTBE]" Color_RESET "  %s\n", test->dem);
 				rc = 1;
 			}
 		}

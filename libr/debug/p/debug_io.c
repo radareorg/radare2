@@ -4,17 +4,17 @@
 #include <r_asm.h>
 #include <r_debug.h>
 
-static int __io_step(RDebug *dbg) {
+static int __io_step (RDebug *dbg) {
 	free (dbg->iob.system (dbg->iob.io, "ds"));
 	return true;
 }
 
-static int __io_step_over(RDebug *dbg) {
+static int __io_step_over (RDebug *dbg) {
 	free (dbg->iob.system (dbg->iob.io, "dso"));
 	return true;
 }
 
-static RList *__io_maps(RDebug *dbg) {
+static RList *__io_maps (RDebug *dbg) {
 	RList *list = r_list_new ();
 	char *str = dbg->iob.system (dbg->iob.io, "dm");
 	if (!str) {
@@ -48,7 +48,7 @@ static RList *__io_maps(RDebug *dbg) {
 			if (_s_) {
 				memmove (_s_, _s_ + 2, strlen (_s_));
 			}
-			sscanf (str, "0x%"PFMT64x" - 0x%"PFMT64x" %s %s",
+			sscanf (str, "0x%" PFMT64x " - 0x%" PFMT64x " %s %s",
 				&map_start, &map_end, perm, name);
 			if (map_end != 0LL) {
 				RDebugMap *map = r_debug_map_new (name, map_start, map_end, r_str_rwx (perm), 0);
@@ -60,21 +60,21 @@ static RList *__io_maps(RDebug *dbg) {
 		}
 	}
 	free (ostr);
-	r_cons_reset();
+	r_cons_reset ();
 	return list;
 }
 
-static int __io_wait(RDebug *dbg, int pid) {
+static int __io_wait (RDebug *dbg, int pid) {
 	/* do nothing */
 	return true;
 }
 
-static int __io_attach(RDebug *dbg, int pid) {
+static int __io_attach (RDebug *dbg, int pid) {
 	return true;
 }
 
 // "drp" register profile
-static char *__io_reg_profile(RDebug *dbg) {
+static char *__io_reg_profile (RDebug *dbg) {
 	r_cons_push ();
 	char *drp = dbg->iob.system (dbg->iob.io, "drp");
 	if (drp) {
@@ -90,7 +90,7 @@ static char *__io_reg_profile(RDebug *dbg) {
 }
 
 // "dr8" read register state
-static int __reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
+static int __reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	char *dr8 = dbg->iob.system (dbg->iob.io, "dr8");
 	if (!dr8) {
 		const char *fb = r_cons_get_buffer ();
@@ -122,14 +122,14 @@ static int __reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 }
 
 // "dc" continue execution
-static int __io_continue(RDebug *dbg, int pid, int tid, int sig) {
+static int __io_continue (RDebug *dbg, int pid, int tid, int sig) {
 	dbg->iob.system (dbg->iob.io, "dc");
 	r_cons_flush ();
 	return true;
 }
 
 // "dk" send kill signal
-static bool __io_kill(RDebug *dbg, int pid, int tid, int sig) {
+static bool __io_kill (RDebug *dbg, int pid, int tid, int sig) {
 	const char *cmd = sdb_fmt ("dk %d", sig);
 	dbg->iob.system (dbg->iob.io, cmd);
 	r_cons_flush ();

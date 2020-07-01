@@ -12,58 +12,57 @@ typedef struct {
 	ut64 offset;
 } RIOGzip;
 
-static inline ut32 _io_malloc_sz(RIODesc *desc) {
+static inline ut32 _io_malloc_sz (RIODesc *desc) {
 	if (!desc) {
 		return 0;
 	}
-	RIOGzip *mal = (RIOGzip*)desc->data;
-	return mal? mal->size: 0;
+	RIOGzip *mal = (RIOGzip *)desc->data;
+	return mal ? mal->size : 0;
 }
 
-static inline void _io_malloc_set_sz(RIODesc *desc, ut32 sz) {
+static inline void _io_malloc_set_sz (RIODesc *desc, ut32 sz) {
 	if (!desc) {
 		return;
 	}
-	RIOGzip *mal = (RIOGzip*)desc->data;
+	RIOGzip *mal = (RIOGzip *)desc->data;
 	if (mal) {
 		mal->size = sz;
 	}
 }
 
-static inline ut8* _io_malloc_buf(RIODesc *desc) {
+static inline ut8 *_io_malloc_buf (RIODesc *desc) {
 	if (!desc) {
 		return NULL;
 	}
-	RIOGzip *mal = (RIOGzip*)desc->data;
+	RIOGzip *mal = (RIOGzip *)desc->data;
 	return mal->buf;
 }
 
-
-static inline ut8* _io_malloc_set_buf(RIODesc *desc, ut8* buf) {
+static inline ut8 *_io_malloc_set_buf (RIODesc *desc, ut8 *buf) {
 	if (!desc) {
 		return NULL;
 	}
-	RIOGzip *mal = (RIOGzip*)desc->data;
+	RIOGzip *mal = (RIOGzip *)desc->data;
 	return mal->buf = buf;
 }
 
-static inline ut64 _io_malloc_off(RIODesc *desc) {
+static inline ut64 _io_malloc_off (RIODesc *desc) {
 	if (!desc) {
 		return 0;
 	}
-	RIOGzip *mal = (RIOGzip*)desc->data;
+	RIOGzip *mal = (RIOGzip *)desc->data;
 	return mal->offset;
 }
 
-static inline void _io_malloc_set_off(RIODesc *desc, ut64 off) {
+static inline void _io_malloc_set_off (RIODesc *desc, ut64 off) {
 	if (!desc) {
 		return;
 	}
-	RIOGzip *mal = (RIOGzip*)desc->data;
+	RIOGzip *mal = (RIOGzip *)desc->data;
 	mal->offset = off;
 }
 
-static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
+static int __write (RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (!fd || !buf || count < 0 || !fd->data) {
 		return -1;
 	}
@@ -71,7 +70,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		return -1;
 	}
 	if (_io_malloc_off (fd) + count > _io_malloc_sz (fd)) {
-		count -= (_io_malloc_off (fd) + count -_io_malloc_sz (fd));
+		count -= (_io_malloc_off (fd) + count - _io_malloc_sz (fd));
 	}
 	if (count > 0) {
 		memcpy (_io_malloc_buf (fd) + _io_malloc_off (fd), buf, count);
@@ -81,8 +80,8 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	return -1;
 }
 
-static bool __resize(RIO *io, RIODesc *fd, ut64 count) {
-	ut8 * new_buf = NULL;
+static bool __resize (RIO *io, RIODesc *fd, ut64 count) {
+	ut8 *new_buf = NULL;
 	if (!fd || !fd->data || count == 0) {
 		return false;
 	}
@@ -104,7 +103,7 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 count) {
 	return true;
 }
 
-static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
+static int __read (RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	memset (buf, 0xff, count);
 	if (!fd || !fd->data) {
 		return -1;
@@ -120,7 +119,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return count;
 }
 
-static int __close(RIODesc *fd) {
+static int __close (RIODesc *fd) {
 	RIOGzip *riom;
 	if (!fd || !fd->data) {
 		return -1;
@@ -132,7 +131,7 @@ static int __close(RIODesc *fd) {
 	return 0;
 }
 
-static ut64 __lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 __lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	ut64 r_offset = offset;
 	if (!fd || !fd->data) {
 		return offset;
@@ -143,7 +142,7 @@ static ut64 __lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {
 		r_offset = (offset <= mallocsz) ? offset : mallocsz;
 		break;
 	case SEEK_CUR:
-		r_offset = (_io_malloc_off (fd) + offset <= mallocsz ) ? _io_malloc_off (fd) + offset : mallocsz;
+		r_offset = (_io_malloc_off (fd) + offset <= mallocsz) ? _io_malloc_off (fd) + offset : mallocsz;
 		break;
 	case SEEK_END:
 		r_offset = _io_malloc_sz (fd);
@@ -153,25 +152,25 @@ static ut64 __lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {
 	return r_offset;
 }
 
-static bool __plugin_open(RIO *io, const char *pathname, bool many) {
+static bool __plugin_open (RIO *io, const char *pathname, bool many) {
 	return (!strncmp (pathname, "gzip://", 7));
 }
 
-static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
+static RIODesc *__open (RIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname, 0)) {
 		RIOGzip *mal = R_NEW0 (RIOGzip);
 		if (!mal) {
 			return NULL;
 		}
 		size_t len;
-		ut8 *data = (ut8 *)r_file_slurp (pathname+7, &len);	//memleak here?
-		int *size = (int*)&mal->size;
+		ut8 *data = (ut8 *)r_file_slurp (pathname + 7, &len); //memleak here?
+		int *size = (int *)&mal->size;
 		mal->buf = r_inflate (data, (int)len, NULL, size);
 		if (mal->buf) {
 			return r_io_desc_new (io, &r_io_plugin_gzip, pathname, rw, mode, mal);
 		}
 		free (data);
-		eprintf ("Cannot allocate (%s) %d byte(s)\n", pathname+9, mal->size);
+		eprintf ("Cannot allocate (%s) %d byte(s)\n", pathname + 9, mal->size);
 		free (mal);
 	}
 	return NULL;

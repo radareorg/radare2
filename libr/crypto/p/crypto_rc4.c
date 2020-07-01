@@ -3,7 +3,6 @@
 #include <r_lib.h>
 #include <r_crypto.h>
 
-
 struct rc4_state {
 	ut8 perm[256];
 	ut8 index1;
@@ -11,7 +10,7 @@ struct rc4_state {
 	int key_size;
 };
 
-static __inline void swap_bytes(ut8 *a, ut8 *b) {
+static __inline void swap_bytes (ut8 *a, ut8 *b) {
 	if (a != b) {
 		ut8 temp = *a;
 		*a = *b;
@@ -24,7 +23,7 @@ static __inline void swap_bytes(ut8 *a, ut8 *b) {
  * which can have arbitrary length.
  */
 
-static bool rc4_init(struct rc4_state *const state, const ut8 *key, int keylen) {
+static bool rc4_init (struct rc4_state *const state, const ut8 *key, int keylen) {
 	ut8 j;
 	int i;
 
@@ -53,7 +52,7 @@ static bool rc4_init(struct rc4_state *const state, const ut8 *key, int keylen) 
  * Since RC4 is a stream cypher, this function is used
  * for both encryption and decryption.
  */
-static void rc4_crypt(struct rc4_state *const state, const ut8 *inbuf, ut8 *outbuf, int buflen) {
+static void rc4_crypt (struct rc4_state *const state, const ut8 *inbuf, ut8 *outbuf, int buflen) {
 	int i;
 	ut8 j;
 
@@ -63,7 +62,7 @@ static void rc4_crypt(struct rc4_state *const state, const ut8 *inbuf, ut8 *outb
 		state->index2 += state->perm[state->index1];
 		/* Modify permutation */
 		swap_bytes (&state->perm[state->index1],
-		    &state->perm[state->index2]);
+			&state->perm[state->index2]);
 		/* Encrypt/decrypt next byte */
 		j = state->perm[state->index1] + state->perm[state->index2];
 		outbuf[i] = inbuf[i] ^ state->perm[j];
@@ -74,19 +73,19 @@ static void rc4_crypt(struct rc4_state *const state, const ut8 *inbuf, ut8 *outb
 
 static struct rc4_state st;
 
-static bool rc4_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+static bool rc4_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	return rc4_init (&st, key, keylen);
 }
 
-static int rc4_get_key_size(RCrypto *cry) {
+static int rc4_get_key_size (RCrypto *cry) {
 	return st.key_size;
 }
 
-static bool rc4_use(const char *algo) {
+static bool rc4_use (const char *algo) {
 	return !strcmp (algo, "rc4");
 }
 
-static bool update(RCrypto *cry, const ut8 *buf, int len) {
+static bool update (RCrypto *cry, const ut8 *buf, int len) {
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) {
 		return false;
@@ -97,7 +96,7 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	return false;
 }
 
-static bool final(RCrypto *cry, const ut8 *buf, int len) {
+static bool final (RCrypto *cry, const ut8 *buf, int len) {
 	return update (cry, buf, len);
 }
 

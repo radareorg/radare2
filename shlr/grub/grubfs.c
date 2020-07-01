@@ -6,13 +6,13 @@
 #include <stdio.h>
 #include <string.h>
 
-
 static RIOBind *bio = NULL;
 static ut64 delta = 0;
 
-static void* empty (int sz) {
+static void *empty (int sz) {
 	void *p = malloc (sz);
-	if (p) memset (p, '\0', sz);
+	if (p)
+		memset (p, '\0', sz);
 	return p;
 }
 
@@ -27,7 +27,7 @@ static grub_err_t read_foo (struct grub_disk *disk, grub_disk_addr_t sector, gru
 		iob = bio;
 	}
 	//printf ("io %p\n", file->root->iob.io);
-	return !iob->read_at (iob->io, delta+(blocksize*sector), (ut8*)buf, size*blocksize);
+	return !iob->read_at (iob->io, delta + (blocksize * sector), (ut8 *)buf, size * blocksize);
 }
 
 GrubFS *grubfs_new (struct grub_fs *myfs, void *data) {
@@ -35,7 +35,7 @@ GrubFS *grubfs_new (struct grub_fs *myfs, void *data) {
 	GrubFS *gfs = empty (sizeof (GrubFS));
 	// hacky mallocs :D
 	gfs->file = file = empty (sizeof (struct grub_file));
-	file->device = empty (sizeof (struct grub_device)+1024);
+	file->device = empty (sizeof (struct grub_device) + 1024);
 	file->device->disk = empty (sizeof (struct grub_disk));
 	file->device->disk->dev = (grub_disk_dev_t)file->device; // hack!
 	file->device->disk->dev->read = read_foo; // grub_disk_dev

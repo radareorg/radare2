@@ -13,11 +13,11 @@ typedef struct gen_hdr {
 
 static ut32 cb = 0;
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	ut32 *off, offs[] = { 0x2000, 0x4000, 0x8000, 0x9000, 0 };
 	ut8 signature[8];
-	for (off = (ut32*)&offs; *off; off++) {
-		r_buf_read_at (b, *off - 16, (ut8*)&signature, 8);
+	for (off = (ut32 *)&offs; *off; off++) {
+		r_buf_read_at (b, *off - 16, (ut8 *)&signature, 8);
 		if (!strncmp ((const char *)signature, "TMR SEGA", 8)) {
 			cb = *off - 16;
 			return true; // int)(*off - 16);
@@ -32,11 +32,11 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (buf);
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret || !bf || !bf->buf) {
 		free (ret);
@@ -54,8 +54,8 @@ static RBinInfo *info(RBinFile *bf) {
 		free (ret);
 		return NULL;
 	}
-	SMS_Header hdr = {{0}};
-	r_buf_read_at (bf->buf, cb, (ut8*)&hdr, sizeof (hdr));
+	SMS_Header hdr = { { 0 } };
+	r_buf_read_at (bf->buf, cb, (ut8 *)&hdr, sizeof (hdr));
 	hdr.CheckSum = r_read_le16 (&hdr.CheckSum);
 
 	eprintf ("Checksum: 0x%04x\n", (ut32)hdr.CheckSum); // use endian safe apis here

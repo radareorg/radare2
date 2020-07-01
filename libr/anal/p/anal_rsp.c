@@ -13,10 +13,10 @@
 #include <r_anal.h>
 #include "../../asm/arch/rsp/rsp_idec.h"
 
-static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
+static int rsp_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
 	int i;
 	typedef struct {
-		RAnalValue* value;
+		RAnalValue *value;
 		char esil[32];
 	} ParsedOperands;
 
@@ -49,16 +49,16 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 			break;
 		case RSP_OPND_ZIMM:
 		case RSP_OPND_SHIFT_AMOUNT:
-			snprintf (parsed_operands[i].esil, sizeof (parsed_operands[i].esil), "%"PFMT64d, r_instr.operands[i].u);
+			snprintf (parsed_operands[i].esil, sizeof (parsed_operands[i].esil), "%" PFMT64d, r_instr.operands[i].u);
 			parsed_operands[i].value->imm = op->val = r_instr.operands[i].u;
 			break;
 		case RSP_OPND_SIMM:
-			snprintf (parsed_operands[i].esil, sizeof (parsed_operands[i].esil), "%"PFMT64d, r_instr.operands[i].s);
+			snprintf (parsed_operands[i].esil, sizeof (parsed_operands[i].esil), "%" PFMT64d, r_instr.operands[i].s);
 			parsed_operands[i].value->imm = op->val = r_instr.operands[i].s;
 			break;
 		case RSP_OPND_BASE_OFFSET:
 			snprintf (parsed_operands[i].esil, sizeof (parsed_operands[i].esil),
-			"%"PFMT64d",%s,+", r_instr.operands[i].s, rsp_gp_reg_soft_names[r_instr.operands[i].u]);
+				"%" PFMT64d ",%s,+", r_instr.operands[i].s, rsp_gp_reg_soft_names[r_instr.operands[i].u]);
 			parsed_operands[i].value->reg = r_reg_get (anal->reg, rsp_gp_reg_soft_names[r_instr.operands[i].u], R_REG_TYPE_GPR);
 			parsed_operands[i].value->imm = r_instr.operands[i].s;
 			break;
@@ -68,7 +68,7 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 			op->jump = r_instr.operands[i].u;
 			op->fail = rsp_mem_addr (addr + 8, RSP_IMEM_OFFSET);
 			op->eob = 1;
-			snprintf (parsed_operands[i].esil, sizeof (parsed_operands[i].esil), "%"PFMT64d, r_instr.operands[i].u);
+			snprintf (parsed_operands[i].esil, sizeof (parsed_operands[i].esil), "%" PFMT64d, r_instr.operands[i].u);
 			parsed_operands[i].value->imm = r_instr.operands[i].u;
 			parsed_operands[i].value->memref = 4;
 			break;
@@ -242,7 +242,7 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 		op->src[0] = parsed_operands[0].value;
 		op->src[1] = parsed_operands[1].value;
 		r_strbuf_setf (&op->esil, "%s,!,%s,0x80000000,&,!,!,|,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[0].esil, parsed_operands[1].esil);
-//		r_strbuf_setf (&op->esil, "0,%s,<=,$z,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
+		//		r_strbuf_setf (&op->esil, "0,%s,<=,$z,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
 		break;
 	case RSP_OP_BGTZ:
 		op->type = R_ANAL_OP_TYPE_CJMP;
@@ -252,7 +252,7 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 		op->src[0] = parsed_operands[0].value;
 		op->src[1] = parsed_operands[1].value;
 		r_strbuf_setf (&op->esil, "%s,0x80000000,&,!,%s,!,!,&,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[0].esil, parsed_operands[1].esil);
-//		r_strbuf_setf (&op->esil, "0,%s,>,$z,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
+		//		r_strbuf_setf (&op->esil, "0,%s,>,$z,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
 		break;
 	case RSP_OP_BLTZ:
 		op->type = R_ANAL_OP_TYPE_CJMP;
@@ -262,7 +262,7 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 		op->src[0] = parsed_operands[0].value;
 		op->src[1] = parsed_operands[1].value;
 		r_strbuf_setf (&op->esil, "%s,0x80000000,&,!,!,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
-//		r_strbuf_setf (&op->esil, "0,%s,<,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
+		//		r_strbuf_setf (&op->esil, "0,%s,<,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
 		break;
 	case RSP_OP_BGEZ:
 		op->type = R_ANAL_OP_TYPE_CJMP;
@@ -272,7 +272,7 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 		op->src[0] = parsed_operands[0].value;
 		op->src[1] = parsed_operands[1].value;
 		r_strbuf_setf (&op->esil, "%s,0x80000000,&,!,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
-//		r_strbuf_setf (&op->esil, "0,%s,>=,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
+		//		r_strbuf_setf (&op->esil, "0,%s,>=,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
 		break;
 	case RSP_OP_BLTZAL:
 		op->type = R_ANAL_OP_TYPE_CCALL;
@@ -577,8 +577,7 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 	return op->size;
 }
 
-
-static char *get_reg_profile(RAnal *anal) {
+static char *get_reg_profile (RAnal *anal) {
 	static const char *p =
 		"=PC    pc\n"
 		"=SP    sp\n"
@@ -588,7 +587,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"=A3    a3\n"
 		"=R0    v0\n"
 		"=R1    v1\n"
-/* GP registers */
+		/* GP registers */
 		"gpr	zero	.32	0	0\n"
 		"gpr	at	.32	4	0\n"
 		"gpr	v0	.32	8	0\n"
@@ -621,9 +620,9 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	sp	.32	116	0\n"
 		"gpr	s8	.32	120	0\n"
 		"gpr	ra	.32	124	0\n"
-/* PC register */
+		/* PC register */
 		"gpr	pc	.32	128	0\n"
-/* C0 registers */
+		/* C0 registers */
 		"gpr	$c0	.32	132	0\n"
 		"gpr	$c1	.32	136	0\n"
 		"gpr	$c2	.32	140	0\n"
@@ -640,7 +639,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	$c13	.32	184	0\n"
 		"gpr	$c14	.32	188	0\n"
 		"gpr	$c15	.32	192	0\n"
-/* C2 vector registers - (32 x 128 bit) */
+		/* C2 vector registers - (32 x 128 bit) */
 		"gpr	$v0	.128	196	0\n"
 		"gpr	$v1	.128	212	0\n"
 		"gpr	$v2	.128	228	0\n"
@@ -673,16 +672,15 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	$v29	.128	660	0\n"
 		"gpr	$v30	.128	676	0\n"
 		"gpr	$v31	.128	692	0\n"
-/* C2 control registers - (vco, vcc, vce) */
+		/* C2 control registers - (vco, vcc, vce) */
 		"gpr    $vco	.128	708	0\n"
 		"gpr    $vcc	.128	724	0\n"
-		"gpr    $vce	.128	740	0\n"
-	;
+		"gpr    $vce	.128	740	0\n";
 
 	return strdup (p);
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo (RAnal *anal, int q) {
 	return 4;
 }
 

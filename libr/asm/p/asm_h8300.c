@@ -7,9 +7,9 @@
 #include <r_asm.h>
 #include <h8300_disas.h>
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct h8300_cmd cmd;
-	int ret = h8300_decode_command(buf, &cmd);
+	int ret = h8300_decode_command (buf, &cmd);
 	r_strbuf_set (&op->buf_asm, sdb_fmt ("%s %s", cmd.instr, cmd.operands));
 	return op->size = ret;
 }

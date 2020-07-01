@@ -7,7 +7,7 @@
 #include <r_asm.h>
 #include <cr16_disas.h>
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct cr16_cmd cmd;
 	int ret = cr16_decode_command (buf, &cmd);
 	r_strbuf_set (&op->buf_asm, sdb_fmt ("%s %s", cmd.instr, cmd.operands));

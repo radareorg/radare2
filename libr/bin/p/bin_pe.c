@@ -2,7 +2,7 @@
 
 #include "bin_pe.inc"
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	ut64 length = r_buf_size (b);
 	if (length <= 0x3d) {
 		return false;
@@ -30,17 +30,20 @@ static bool check_buffer(RBuffer *b) {
 }
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
-static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
+static RBuffer *create (RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
 	ut32 hdrsize, p_start, p_opthdr, p_sections, p_lsrlc, n;
 	ut32 baddr = 0x400000;
 	RBuffer *buf = r_buf_new ();
 
-#define B(x,y) r_buf_append_bytes(buf,(const ut8*)(x),y)
-#define H(x) r_buf_append_ut16(buf,x)
-#define D(x) r_buf_append_ut32(buf,x)
-#define Z(x) r_buf_append_nbytes(buf,x)
-#define W(x,y,z) r_buf_write_at(buf,x,(const ut8*)(y),z)
-#define WZ(x,y) p_tmp=r_buf_size (buf);Z(x);W(p_tmp,y,strlen(y))
+#define B(x, y) r_buf_append_bytes (buf, (const ut8 *)(x), y)
+#define H(x) r_buf_append_ut16 (buf, x)
+#define D(x) r_buf_append_ut32 (buf, x)
+#define Z(x) r_buf_append_nbytes (buf, x)
+#define W(x, y, z) r_buf_write_at (buf, x, (const ut8 *)(y), z)
+#define WZ(x, y)                  \
+	p_tmp = r_buf_size (buf); \
+	Z (x);                    \
+	W (p_tmp, y, strlen (y))
 
 	B ("MZ\x00\x00", 4); // MZ Header
 	B ("PE\x00\x00", 4); // PE Signature
@@ -95,7 +98,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	D (0); // NumberOfRvaAndSizes (Unused)
 	B (code, codelen);
 
-	if (data && datalen>0) {
+	if (data && datalen > 0) {
 		//ut32 data_section = buf->length;
 		eprintf ("Warning: DATA section not support for PE yet\n");
 		B (data, datalen);
@@ -107,7 +110,7 @@ static char *signature (RBinFile *bf, bool json) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	struct PE_ (r_bin_pe_obj_t) * bin = bf->o->bin_obj;
+	struct PE_ (r_bin_pe_obj_t) *bin = bf->o->bin_obj;
 	if (json) {
 		PJ *pj = r_pkcs7_cms_json (bin->cms);
 		if (pj) {
@@ -118,176 +121,217 @@ static char *signature (RBinFile *bf, bool json) {
 	return r_pkcs7_cms_to_string (bin->cms);
 }
 
-static RList *fields(RBinFile *bf) {
-	RList *ret  = r_list_new ();
+static RList *fields (RBinFile *bf) {
+	RList *ret = r_list_new ();
 	if (!ret) {
 		return NULL;
 	}
 
-	#define ROWL(nam,siz,val,fmt) \
+#define ROWL(nam, siz, val, fmt) \
 	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%08x", val), fmt, false));
 
-	struct PE_(r_bin_pe_obj_t) * bin = bf->o->bin_obj;
+	struct PE_ (r_bin_pe_obj_t) *bin = bf->o->bin_obj;
 	ut64 addr = bin->rich_header_offset ? bin->rich_header_offset : 128;
 
 	RListIter *it;
 	Pe_image_rich_entry *rich;
 	r_list_foreach (bin->rich_entries, it, rich) {
 		r_list_append (ret, r_bin_field_new (addr, addr, 0, "RICH_ENTRY_NAME", strdup (rich->productName), "s", false));
-		ROWL ("RICH_ENTRY_ID", 2, rich->productId, "x"); addr += 2;
-		ROWL ("RICH_ENTRY_VERSION", 2, rich->minVersion, "x"); addr += 2;
-		ROWL ("RICH_ENTRY_TIMES", 4, rich->timesUsed, "x"); addr += 4;
+		ROWL ("RICH_ENTRY_ID", 2, rich->productId, "x");
+		addr += 2;
+		ROWL ("RICH_ENTRY_VERSION", 2, rich->minVersion, "x");
+		addr += 2;
+		ROWL ("RICH_ENTRY_TIMES", 4, rich->timesUsed, "x");
+		addr += 4;
 	}
 
-	ROWL ("Signature", 4, bin->nt_headers->Signature, "x"); addr += 4;
-	ROWL ("Machine", 2, bin->nt_headers->file_header.Machine, "x"); addr += 2;
-	ROWL ("NumberOfSections", 2, bin->nt_headers->file_header.NumberOfSections, "x"); addr += 2;
-	ROWL ("TimeDateStamp", 4, bin->nt_headers->file_header.TimeDateStamp, "x"); addr += 4;
-	ROWL ("PointerToSymbolTable", 4, bin->nt_headers->file_header.PointerToSymbolTable, "x"); addr += 4;
-	ROWL ("NumberOfSymbols ", 4, bin->nt_headers->file_header.NumberOfSymbols, "x"); addr += 4;
-	ROWL ("SizeOfOptionalHeader", 2, bin->nt_headers->file_header.SizeOfOptionalHeader, "x"); addr += 2;
-	ROWL ("Characteristics", 2, bin->nt_headers->file_header.Characteristics, "x"); addr += 2;
-	ROWL ("Magic", 2, bin->nt_headers->optional_header.Magic, "x"); addr += 2;
-	ROWL ("MajorLinkerVersion", 1, bin->nt_headers->optional_header.MajorLinkerVersion, "x"); addr += 1;
-	ROWL ("MinorLinkerVersion", 1, bin->nt_headers->optional_header.MinorLinkerVersion, "x"); addr += 1;
-	ROWL ("SizeOfCode", 4, bin->nt_headers->optional_header.SizeOfCode, "x"); addr += 4;
-	ROWL ("SizeOfInitializedData", 4, bin->nt_headers->optional_header.SizeOfInitializedData, "x"); addr += 4;
-	ROWL ("SizeOfUninitializedData", 4, bin->nt_headers->optional_header.SizeOfUninitializedData, "x"); addr += 4;
-	ROWL ("AddressOfEntryPoint", 4, bin->nt_headers->optional_header.AddressOfEntryPoint, "x"); addr += 4;
-	ROWL ("BaseOfCode", 4, bin->nt_headers->optional_header.BaseOfCode, "x"); addr += 4;
-	ROWL ("BaseOfData", 4, bin->nt_headers->optional_header.BaseOfData, "x"); addr += 4;
-	ROWL ("ImageBase", 4, bin->nt_headers->optional_header.ImageBase, "x"); addr += 4;
-	ROWL ("SectionAlignment", 4, bin->nt_headers->optional_header.SectionAlignment, "x"); addr += 4;
-	ROWL ("FileAlignment", 4, bin->nt_headers->optional_header.FileAlignment, "x"); addr += 4;
-	ROWL ("MajorOperatingSystemVersion", 2, bin->nt_headers->optional_header.MajorOperatingSystemVersion, "x"); addr += 2;
-	ROWL ("MinorOperatingSystemVersion", 2, bin->nt_headers->optional_header.MinorOperatingSystemVersion, "x"); addr += 2;
-	ROWL ("MajorImageVersion", 2, bin->nt_headers->optional_header.MajorImageVersion, "x"); addr += 2;
-	ROWL ("MinorImageVersion", 2, bin->nt_headers->optional_header.MinorImageVersion, "x"); addr += 2;
-	ROWL ("MajorSubsystemVersion", 2, bin->nt_headers->optional_header.MajorSubsystemVersion, "x"); addr += 2;
-	ROWL ("MinorSubsystemVersion", 2, bin->nt_headers->optional_header.MinorSubsystemVersion, "x"); addr += 2;
-	ROWL ("Win32VersionValue", 4, bin->nt_headers->optional_header.Win32VersionValue, "x"); addr += 4;
-	ROWL ("SizeOfImage", 4, bin->nt_headers->optional_header.SizeOfImage, "x"); addr += 4;
-	ROWL ("SizeOfHeaders", 4, bin->nt_headers->optional_header.SizeOfHeaders, "x"); addr += 4;
-	ROWL ("CheckSum", 4, bin->nt_headers->optional_header.CheckSum, "x"); addr += 4;
-	ROWL ("Subsystem",24, bin->nt_headers->optional_header.Subsystem, "x"); addr += 2;
-	ROWL ("DllCharacteristics", 2, bin->nt_headers->optional_header.DllCharacteristics, "x"); addr += 2;
-	ROWL ("SizeOfStackReserve", 4, bin->nt_headers->optional_header.SizeOfStackReserve, "x"); addr += 4;
-	ROWL ("SizeOfStackCommit", 4, bin->nt_headers->optional_header.SizeOfStackCommit, "x"); addr += 4;
-	ROWL ("SizeOfHeapReserve", 4, bin->nt_headers->optional_header.SizeOfHeapReserve, "x"); addr += 4;
-	ROWL ("SizeOfHeapCommit", 4, bin->nt_headers->optional_header.SizeOfHeapCommit, "x"); addr += 4;
-	ROWL ("LoaderFlags", 4, bin->nt_headers->optional_header.LoaderFlags, "x"); addr += 4;
-	ROWL ("NumberOfRvaAndSizes", 4, bin->nt_headers->optional_header.NumberOfRvaAndSizes, "x"); addr += 4;
+	ROWL ("Signature", 4, bin->nt_headers->Signature, "x");
+	addr += 4;
+	ROWL ("Machine", 2, bin->nt_headers->file_header.Machine, "x");
+	addr += 2;
+	ROWL ("NumberOfSections", 2, bin->nt_headers->file_header.NumberOfSections, "x");
+	addr += 2;
+	ROWL ("TimeDateStamp", 4, bin->nt_headers->file_header.TimeDateStamp, "x");
+	addr += 4;
+	ROWL ("PointerToSymbolTable", 4, bin->nt_headers->file_header.PointerToSymbolTable, "x");
+	addr += 4;
+	ROWL ("NumberOfSymbols ", 4, bin->nt_headers->file_header.NumberOfSymbols, "x");
+	addr += 4;
+	ROWL ("SizeOfOptionalHeader", 2, bin->nt_headers->file_header.SizeOfOptionalHeader, "x");
+	addr += 2;
+	ROWL ("Characteristics", 2, bin->nt_headers->file_header.Characteristics, "x");
+	addr += 2;
+	ROWL ("Magic", 2, bin->nt_headers->optional_header.Magic, "x");
+	addr += 2;
+	ROWL ("MajorLinkerVersion", 1, bin->nt_headers->optional_header.MajorLinkerVersion, "x");
+	addr += 1;
+	ROWL ("MinorLinkerVersion", 1, bin->nt_headers->optional_header.MinorLinkerVersion, "x");
+	addr += 1;
+	ROWL ("SizeOfCode", 4, bin->nt_headers->optional_header.SizeOfCode, "x");
+	addr += 4;
+	ROWL ("SizeOfInitializedData", 4, bin->nt_headers->optional_header.SizeOfInitializedData, "x");
+	addr += 4;
+	ROWL ("SizeOfUninitializedData", 4, bin->nt_headers->optional_header.SizeOfUninitializedData, "x");
+	addr += 4;
+	ROWL ("AddressOfEntryPoint", 4, bin->nt_headers->optional_header.AddressOfEntryPoint, "x");
+	addr += 4;
+	ROWL ("BaseOfCode", 4, bin->nt_headers->optional_header.BaseOfCode, "x");
+	addr += 4;
+	ROWL ("BaseOfData", 4, bin->nt_headers->optional_header.BaseOfData, "x");
+	addr += 4;
+	ROWL ("ImageBase", 4, bin->nt_headers->optional_header.ImageBase, "x");
+	addr += 4;
+	ROWL ("SectionAlignment", 4, bin->nt_headers->optional_header.SectionAlignment, "x");
+	addr += 4;
+	ROWL ("FileAlignment", 4, bin->nt_headers->optional_header.FileAlignment, "x");
+	addr += 4;
+	ROWL ("MajorOperatingSystemVersion", 2, bin->nt_headers->optional_header.MajorOperatingSystemVersion, "x");
+	addr += 2;
+	ROWL ("MinorOperatingSystemVersion", 2, bin->nt_headers->optional_header.MinorOperatingSystemVersion, "x");
+	addr += 2;
+	ROWL ("MajorImageVersion", 2, bin->nt_headers->optional_header.MajorImageVersion, "x");
+	addr += 2;
+	ROWL ("MinorImageVersion", 2, bin->nt_headers->optional_header.MinorImageVersion, "x");
+	addr += 2;
+	ROWL ("MajorSubsystemVersion", 2, bin->nt_headers->optional_header.MajorSubsystemVersion, "x");
+	addr += 2;
+	ROWL ("MinorSubsystemVersion", 2, bin->nt_headers->optional_header.MinorSubsystemVersion, "x");
+	addr += 2;
+	ROWL ("Win32VersionValue", 4, bin->nt_headers->optional_header.Win32VersionValue, "x");
+	addr += 4;
+	ROWL ("SizeOfImage", 4, bin->nt_headers->optional_header.SizeOfImage, "x");
+	addr += 4;
+	ROWL ("SizeOfHeaders", 4, bin->nt_headers->optional_header.SizeOfHeaders, "x");
+	addr += 4;
+	ROWL ("CheckSum", 4, bin->nt_headers->optional_header.CheckSum, "x");
+	addr += 4;
+	ROWL ("Subsystem", 24, bin->nt_headers->optional_header.Subsystem, "x");
+	addr += 2;
+	ROWL ("DllCharacteristics", 2, bin->nt_headers->optional_header.DllCharacteristics, "x");
+	addr += 2;
+	ROWL ("SizeOfStackReserve", 4, bin->nt_headers->optional_header.SizeOfStackReserve, "x");
+	addr += 4;
+	ROWL ("SizeOfStackCommit", 4, bin->nt_headers->optional_header.SizeOfStackCommit, "x");
+	addr += 4;
+	ROWL ("SizeOfHeapReserve", 4, bin->nt_headers->optional_header.SizeOfHeapReserve, "x");
+	addr += 4;
+	ROWL ("SizeOfHeapCommit", 4, bin->nt_headers->optional_header.SizeOfHeapCommit, "x");
+	addr += 4;
+	ROWL ("LoaderFlags", 4, bin->nt_headers->optional_header.LoaderFlags, "x");
+	addr += 4;
+	ROWL ("NumberOfRvaAndSizes", 4, bin->nt_headers->optional_header.NumberOfRvaAndSizes, "x");
+	addr += 4;
 
 	int i;
 	ut64 tmp = addr;
 	for (i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES - 1; i++) {
 		if (bin->nt_headers->optional_header.DataDirectory[i].Size > 0) {
-			addr = tmp + i*8;
+			addr = tmp + i * 8;
 			switch (i) {
 			case PE_IMAGE_DIRECTORY_ENTRY_EXPORT:
-				ROWL ("IMAGE_DIRECTORY_ENTRY_EXPORT", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
+				ROWL ("IMAGE_DIRECTORY_ENTRY_EXPORT", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
 				addr += 4;
-				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_EXPORT", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
+				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_EXPORT", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_IMPORT:
-				ROWL ("IMAGE_DIRECTORY_ENTRY_IMPORT", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
+				ROWL ("IMAGE_DIRECTORY_ENTRY_IMPORT", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
 				addr += 4;
-				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_IMPORT", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
+				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_IMPORT", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_RESOURCE:
-				ROWL ("IMAGE_DIRECTORY_ENTRY_RESOURCE", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
+				ROWL ("IMAGE_DIRECTORY_ENTRY_RESOURCE", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
 				addr += 4;
-				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_RESOURCE", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
+				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_RESOURCE", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_EXCEPTION:
-				ROWL ("IMAGE_DIRECTORY_ENTRY_EXCEPTION", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
+				ROWL ("IMAGE_DIRECTORY_ENTRY_EXCEPTION", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
 				addr += 4;
-				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_EXCEPTION", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
+				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_EXCEPTION", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_SECURITY:
-				ROWL ("IMAGE_DIRECTORY_ENTRY_SECURITY", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
+				ROWL ("IMAGE_DIRECTORY_ENTRY_SECURITY", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
 				addr += 4;
-				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_SECURITY", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
+				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_SECURITY", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_BASERELOC:
-				ROWL ("IMAGE_DIRECTORY_ENTRY_BASERELOC", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
+				ROWL ("IMAGE_DIRECTORY_ENTRY_BASERELOC", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
 				addr += 4;
-				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_BASERELOC", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
+				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_BASERELOC", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_DEBUG:
-				ROWL ("IMAGE_DIRECTORY_ENTRY_DEBUG", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
+				ROWL ("IMAGE_DIRECTORY_ENTRY_DEBUG", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
 				addr += 4;
-				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_DEBUG", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
+				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_DEBUG", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_COPYRIGHT:
-				ROWL ("IMAGE_DIRECTORY_ENTRY_COPYRIGHT", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
+				ROWL ("IMAGE_DIRECTORY_ENTRY_COPYRIGHT", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
 				addr += 4;
-				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_COPYRIGHT", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
+				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_COPYRIGHT", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_GLOBALPTR:
-				ROWL ("IMAGE_DIRECTORY_ENTRY_GLOBALPTR", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
+				ROWL ("IMAGE_DIRECTORY_ENTRY_GLOBALPTR", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
 				addr += 4;
-				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_GLOBALPTR", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
+				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_GLOBALPTR", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_TLS:
-				ROWL ("IMAGE_DIRECTORY_ENTRY_TLS", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
+				ROWL ("IMAGE_DIRECTORY_ENTRY_TLS", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
 				addr += 4;
-				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_TLS", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
+				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_TLS", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG:
-				ROWL ("IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
+				ROWL ("IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
 				addr += 4;
-				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
+				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT:
-				ROWL ("IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
+				ROWL ("IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
 				addr += 4;
-				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
+				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_IAT:
-				ROWL ("IMAGE_DIRECTORY_ENTRY_IAT", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
+				ROWL ("IMAGE_DIRECTORY_ENTRY_IAT", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
 				addr += 4;
-				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_IAT", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
+				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_IAT", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT:
-				ROWL ("IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
+				ROWL ("IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
 				addr += 4;
-				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
+				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR:
-				ROWL ("IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
+				ROWL ("IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, "x");
 				addr += 4;
-				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR", 4, \
-				bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
+				ROWL ("SIZE_IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR", 4,
+					bin->nt_headers->optional_header.DataDirectory[i].Size, "x");
 				break;
 			}
 		}
@@ -296,8 +340,8 @@ static RList *fields(RBinFile *bf) {
 	return ret;
 }
 
-static void header(RBinFile *bf) {
-	struct PE_(r_bin_pe_obj_t) * bin = bf->o->bin_obj;
+static void header (RBinFile *bf) {
+	struct PE_ (r_bin_pe_obj_t) *bin = bf->o->bin_obj;
 	struct r_bin_t *rbin = bf->rbin;
 	rbin->cb_printf ("PE file header:\n");
 	rbin->cb_printf ("IMAGE_NT_HEADERS\n");

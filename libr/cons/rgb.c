@@ -5,9 +5,9 @@
 #include <r_cons.h>
 
 int color_table[256] = { 0 };
-int value_range[6] = { 0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff};
+int value_range[6] = { 0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff };
 
-static void init_color_table(void) {
+static void init_color_table (void) {
 	int i, r, g, b;
 	// ansi colors
 	color_table[0] = 0x000000;
@@ -42,7 +42,7 @@ static void init_color_table(void) {
 	}
 }
 
-static int __lookup_rgb(int r, int g, int b) {
+static int __lookup_rgb (int r, int g, int b) {
 	int i, color = (r << 16) + (g << 8) + b;
 	// lookup extended colors only, coz non-extended can be changed by users.
 	for (i = 16; i < 256; i++) {
@@ -53,7 +53,7 @@ static int __lookup_rgb(int r, int g, int b) {
 	return -1;
 }
 
-static ut32 __approximate_rgb(int r, int g, int b) {
+static ut32 __approximate_rgb (int r, int g, int b) {
 	bool grey = (r > 0 && r < 255 && r == g && r == b);
 	if (grey) {
 		return 232 + (int)((double)r / (255 / 24.1));
@@ -82,7 +82,7 @@ static ut32 __approximate_rgb(int r, int g, int b) {
 #endif
 }
 
-static int rgb(int r, int g, int b) {
+static int rgb (int r, int g, int b) {
 	int c = __lookup_rgb (r, g, b);
 	if (c == -1) {
 		return __approximate_rgb (r, g, b);
@@ -90,7 +90,7 @@ static int rgb(int r, int g, int b) {
 	return c;
 }
 
-static void __unrgb(int color, int *r, int *g, int *b) {
+static void __unrgb (int color, int *r, int *g, int *b) {
 	if (color < 0 || color > 255) {
 		*r = *g = *b = 0;
 	} else {
@@ -101,14 +101,14 @@ static void __unrgb(int color, int *r, int *g, int *b) {
 	}
 }
 
-R_API void r_cons_rgb_init(void) {
+R_API void r_cons_rgb_init (void) {
 	if (color_table[255] == 0) {
 		init_color_table ();
 	}
 }
 
 /* Parse an ANSI code string into RGB values -- Used by HTML filter only */
-R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
+R_API int r_cons_rgb_parse (const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
 	const char *q = 0;
 	ut8 isbg = 0, bold = 127;
 	if (!p) {
@@ -138,12 +138,18 @@ R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
 	case '3': isbg = 0; break;
 	case '4': isbg = 1; break;
 	}
-#define SETRGB(x,y,z) if (r) *r = (x); if (g) *g = (y); if (b) *b = (z)
+#define SETRGB(x, y, z)   \
+	if (r)            \
+		*r = (x); \
+	if (g)            \
+		*g = (y); \
+	if (b)            \
+	*b = (z)
 	if (bold != 255 && strchr (p, ';')) {
 		if (!p[0] || !p[1] || !p[2]) {
 			return 0;
 		}
-		if (p[3] == '5')  { // \x1b[%d;5;%dm is 256 colors
+		if (p[3] == '5') { // \x1b[%d;5;%dm is 256 colors
 			int x, y, z;
 			if (!p[3] || !p[4]) {
 				return 0;
@@ -198,7 +204,7 @@ R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
 	return 1;
 }
 
-R_API char *r_cons_rgb_str_off(char *outstr, size_t sz, ut64 off) {
+R_API char *r_cons_rgb_str_off (char *outstr, size_t sz, ut64 off) {
 	RColor rc = RColor_BLACK;
 	rc.id16 = -1;
 	rc.r = (off >> 2) & 0xff;
@@ -208,9 +214,9 @@ R_API char *r_cons_rgb_str_off(char *outstr, size_t sz, ut64 off) {
 }
 
 /* Compute color string depending on cons->color */
-static void r_cons_rgb_gen(RConsColorMode mode, char *outstr, size_t sz, ut8 attr, ut8 a, ut8 r, ut8 g, ut8 b,
-                           st8 id16) {
-	ut8 fgbg = (a == ALPHA_BG)? 48: 38; // ANSI codes for Background/Foreground
+static void r_cons_rgb_gen (RConsColorMode mode, char *outstr, size_t sz, ut8 attr, ut8 a, ut8 r, ut8 g, ut8 b,
+	st8 id16) {
+	ut8 fgbg = (a == ALPHA_BG) ? 48 : 38; // ANSI codes for Background/Foreground
 
 	if (sz < 4) { // must have at least room for "<esc>[m\0"
 		if (sz > 0) {
@@ -254,7 +260,7 @@ static void r_cons_rgb_gen(RConsColorMode mode, char *outstr, size_t sz, ut8 att
 			bright = id16 >= 8 ? 60 : 0;
 		} else {
 			bright = (r == 0x80 && g == 0x80 && b == 0x80) ? 53
-			         : (r == 0xff || g == 0xff || b == 0xff) ? 60 : 0;  // eco bright-specific
+								       : (r == 0xff || g == 0xff || b == 0xff) ? 60 : 0; // eco bright-specific
 			if (r == g && g == b) {
 				r = (r > 0x7f) ? 1 : 0;
 				g = (g > 0x7f) ? 1 : 0;
@@ -280,7 +286,7 @@ static void r_cons_rgb_gen(RConsColorMode mode, char *outstr, size_t sz, ut8 att
 }
 
 /* Return the computed color string for the specified color in the specified mode */
-R_API char *r_cons_rgb_str_mode(RConsColorMode mode, char *outstr, size_t sz, RColor *rcolor) {
+R_API char *r_cons_rgb_str_mode (RConsColorMode mode, char *outstr, size_t sz, RColor *rcolor) {
 	if (!rcolor) {
 		return NULL;
 	}
@@ -300,17 +306,17 @@ R_API char *r_cons_rgb_str_mode(RConsColorMode mode, char *outstr, size_t sz, RC
 	// APPEND
 	size_t len = strlen (outstr);
 	r_cons_rgb_gen (mode, outstr + len, sz - len, rcolor->attr, rcolor->a, rcolor->r, rcolor->g, rcolor->b,
-	                rcolor->id16);
+		rcolor->id16);
 
 	return outstr;
 }
 
 /* Return the computed color string for the specified color */
-R_API char *r_cons_rgb_str(char *outstr, size_t sz, RColor *rcolor) {
+R_API char *r_cons_rgb_str (char *outstr, size_t sz, RColor *rcolor) {
 	return r_cons_rgb_str_mode (r_cons_singleton ()->context->color_mode, outstr, sz, rcolor);
 }
 
-R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b) {
+R_API char *r_cons_rgb_tostring (ut8 r, ut8 g, ut8 b) {
 	const char *str = NULL;
 	if (r == 0x00 && g == b && g == 0) {
 		str = "black";
@@ -336,5 +342,5 @@ R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b) {
 	if (r == 0xff && g == 0x00 && b == 0xff) {
 		str = "magenta";
 	}
-	return str? strdup (str) : r_str_newf ("#%02x%02x%02x", r, g, b);
+	return str ? strdup (str) : r_str_newf ("#%02x%02x%02x", r, g, b);
 }

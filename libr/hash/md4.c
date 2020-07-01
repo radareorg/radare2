@@ -24,29 +24,29 @@
 
 #if WITH_GPL
 
-static inline ut32 F(ut32 X, ut32 Y, ut32 Z) {
+static inline ut32 F (ut32 X, ut32 Y, ut32 Z) {
 	return (X & Y) | ((~X) & Z);
 }
 
-static inline ut32 G(ut32 X, ut32 Y, ut32 Z) {
+static inline ut32 G (ut32 X, ut32 Y, ut32 Z) {
 	return (X & Y) | (X & Z) | (Y & Z);
 }
 
-static inline ut32 H(ut32 X, ut32 Y, ut32 Z) {
+static inline ut32 H (ut32 X, ut32 Y, ut32 Z) {
 	return X ^ Y ^ Z;
 }
 
-static inline ut32 lshift(ut32 x, int s) {
+static inline ut32 lshift (ut32 x, int s) {
 	x &= UT32_MAX;
 	return ((x << s) & UT32_MAX) | (x >> (32 - s));
 }
 
 #define ROUND1(a, b, c, d, k, s) (*a) = lshift ((*a) + F (*b, *c, *d) + X[k], s)
-#define ROUND2(a, b, c, d, k, s) (*a) = lshift ((*a) + G (*b, *c, *d) + X[k] + (ut32) 0x5A827999, s)
-#define ROUND3(a, b, c, d, k, s) (*a) = lshift ((*a) + H (*b, *c, *d) + X[k] + (ut32) 0x6ED9EBA1, s)
+#define ROUND2(a, b, c, d, k, s) (*a) = lshift ((*a) + G (*b, *c, *d) + X[k] + (ut32)0x5A827999, s)
+#define ROUND3(a, b, c, d, k, s) (*a) = lshift ((*a) + H (*b, *c, *d) + X[k] + (ut32)0x6ED9EBA1, s)
 
 /* this applies md4 to 64 byte chunks */
-static void mdfour64(ut32 *M, ut32 *A, ut32 *B, ut32 *C, ut32 *D) {
+static void mdfour64 (ut32 *M, ut32 *A, ut32 *B, ut32 *C, ut32 *D) {
 	int j;
 	ut32 X[16];
 
@@ -125,22 +125,22 @@ static void mdfour64(ut32 *M, ut32 *A, ut32 *B, ut32 *C, ut32 *D) {
 	}
 }
 
-static void copy64(ut32 *M, const ut8 *in) {
+static void copy64 (ut32 *M, const ut8 *in) {
 	int i;
 	for (i = 0; i < 16; i++) {
 		M[i] = (in[i * 4 + 3] << 24) | (in[i * 4 + 2] << 16) |
-		(in[i * 4 + 1] << 8) | (in[i * 4 + 0] << 0);
+			(in[i * 4 + 1] << 8) | (in[i * 4 + 0] << 0);
 	}
 }
 
-static void copy4(ut8 *out, ut32 x) {
+static void copy4 (ut8 *out, ut32 x) {
 	out[0] = x & 0xFF;
 	out[1] = (x >> 8) & 0xFF;
 	out[2] = (x >> 16) & 0xFF;
 	out[3] = (x >> 24) & 0xFF;
 }
 
-void MD4(const ut8 *in, int n, ut8 *out) {
+void MD4 (const ut8 *in, int n, ut8 *out) {
 	ut8 buf[128];
 	ut32 M[16];
 	ut32 b = n * 8;
@@ -189,7 +189,7 @@ void MD4(const ut8 *in, int n, ut8 *out) {
 }
 
 #else
-void MD4(const ut8 *in, int n, ut8 *out) {
+void MD4 (const ut8 *in, int n, ut8 *out) {
 	eprintf ("md4: only available on GPL builds.\n");
 }
 #endif

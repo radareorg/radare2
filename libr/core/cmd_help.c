@@ -6,7 +6,7 @@
 #include "r_core.h"
 #include "r_util.h"
 
-static ut32 vernum(const char *s) {
+static ut32 vernum (const char *s) {
 	// XXX this is known to be buggy, only works for strings like "x.x.x"
 	// XXX anything like "x.xx.x" will break the parsing
 	// XXX -git is ignored, maybe we should shift for it
@@ -44,7 +44,7 @@ static const char *help_msg_env[] = {
 	"R2_IOVA", "", "is io.va true? virtual addressing (1,0)",
 	"R2_DEBUG", "", "debug mode enabled? (1,0)",
 	"R2_BLOCK", "", "TODO: dump current block to tmp file",
-	"R2_SIZE", "","file size",
+	"R2_SIZE", "", "file size",
 	"R2_ARCH", "", "value of asm.arch",
 	"R2_BITS", "", "arch reg size (8, 16, 32, 64)",
 	"RABIN2_LANG", "", "assume this lang to demangle",
@@ -74,44 +74,45 @@ static const char *help_msg_exclamation[] = {
 static const char *help_msg_root[] = {
 	"%var", "=value", "alias for 'env' command",
 	"*", "[?] off[=[0x]value]", "pointer read/write data/values (see ?v, wx, wv)",
-	"(macro arg0 arg1)",  "", "manage scripting macros",
+	"(macro arg0 arg1)", "", "manage scripting macros",
 	".", "[?] [-|(m)|f|!sh|cmd]", "Define macro or load r2, cparse or rlang file",
 	"_", "[?]", "Print last output",
-	"=","[?] [cmd]", "send/listen for remote commands (rap://, raps://, udp://, http://, <fd>)",
-	"<","[...]", "push escaped string into the RCons.readChar buffer",
-	"/","[?]", "search for bytes, regexps, patterns, ..",
-	"!","[?] [cmd]", "run given command as in system(3)",
-	"#","[?] !lang [..]", "Hashbang to run an rlang script",
-	"a","[?]", "analysis commands",
-	"b","[?]", "display or change the block size",
-	"c","[?] [arg]", "compare block with given data",
-	"C","[?]", "code metadata (comments, format, hints, ..)",
-	"d","[?]", "debugger commands",
-	"e","[?] [a[=b]]", "list/get/set config evaluable vars",
-	"f","[?] [name][sz][at]", "add flag at current address",
-	"g","[?] [arg]", "generate shellcodes with r_egg",
-	"i","[?] [file]", "get info about opened file from r_bin",
-	"k","[?] [sdb-query]", "run sdb-query. see k? for help, 'k *', 'k **' ...",
-	"l"," [filepattern]", "list files and directories",
-	"L","[?] [-] [plugin]", "list, unload load r2 plugins",
-	"m","[?]", "mountpoints commands",
-	"o","[?] [file] ([offset])", "open file at optional address",
-	"p","[?] [len]", "print current block with format and length",
-	"P","[?]", "project management utilities",
-	"q","[?] [ret]", "quit program with a return value",
-	"r","[?] [len]", "resize file",
-	"s","[?] [addr]", "seek to address (also for '0x', '0x1' == 's 0x1')",
-	"t","[?]", "types, noreturn, signatures, C parser and more",
-	"T","[?] [-] [num|msg]", "Text log utility (used to chat, sync, log, ...)",
-	"u","[?]", "uname/undo seek/write",
-	"v","", "visual mode (v! = panels, vv = fcnview, vV = fcngraph, vVV = callgraph)",
-	"w","[?] [str]", "multiple write operations",
-	"x","[?] [len]", "alias for 'px' (print hexadecimal)",
-	"y","[?] [len] [[[@]addr", "Yank/paste bytes from/to memory",
+	"=", "[?] [cmd]", "send/listen for remote commands (rap://, raps://, udp://, http://, <fd>)",
+	"<", "[...]", "push escaped string into the RCons.readChar buffer",
+	"/", "[?]", "search for bytes, regexps, patterns, ..",
+	"!", "[?] [cmd]", "run given command as in system(3)",
+	"#", "[?] !lang [..]", "Hashbang to run an rlang script",
+	"a", "[?]", "analysis commands",
+	"b", "[?]", "display or change the block size",
+	"c", "[?] [arg]", "compare block with given data",
+	"C", "[?]", "code metadata (comments, format, hints, ..)",
+	"d", "[?]", "debugger commands",
+	"e", "[?] [a[=b]]", "list/get/set config evaluable vars",
+	"f", "[?] [name][sz][at]", "add flag at current address",
+	"g", "[?] [arg]", "generate shellcodes with r_egg",
+	"i", "[?] [file]", "get info about opened file from r_bin",
+	"k", "[?] [sdb-query]", "run sdb-query. see k? for help, 'k *', 'k **' ...",
+	"l", " [filepattern]", "list files and directories",
+	"L", "[?] [-] [plugin]", "list, unload load r2 plugins",
+	"m", "[?]", "mountpoints commands",
+	"o", "[?] [file] ([offset])", "open file at optional address",
+	"p", "[?] [len]", "print current block with format and length",
+	"P", "[?]", "project management utilities",
+	"q", "[?] [ret]", "quit program with a return value",
+	"r", "[?] [len]", "resize file",
+	"s", "[?] [addr]", "seek to address (also for '0x', '0x1' == 's 0x1')",
+	"t", "[?]", "types, noreturn, signatures, C parser and more",
+	"T", "[?] [-] [num|msg]", "Text log utility (used to chat, sync, log, ...)",
+	"u", "[?]", "uname/undo seek/write",
+	"v", "", "visual mode (v! = panels, vv = fcnview, vV = fcngraph, vVV = callgraph)",
+	"w", "[?] [str]", "multiple write operations",
+	"x", "[?] [len]", "alias for 'px' (print hexadecimal)",
+	"y", "[?] [len] [[[@]addr", "Yank/paste bytes from/to memory",
 	"z", "[?]", "zignatures management",
-	"?[??]","[expr]", "Help or evaluate math expression",
+	"?[??]", "[expr]", "Help or evaluate math expression",
 	"?$?", "", "show available '$' variables and aliases",
-	"?@?", "", "misc help for '@' (seek), '~' (grep) (see ~?""?)",
+	"?@?", "", "misc help for '@' (seek), '~' (grep) (see ~?"
+		   "?)",
 	"?>?", "", "output redirection",
 	"?|?", "", "help for '|' (pipe)",
 	NULL
@@ -167,7 +168,7 @@ static const char *help_msg_question[] = {
 };
 
 static const char *help_msg_question_v[] = {
-	"Usage: ?v [$.]","","",
+	"Usage: ?v [$.]", "", "",
 	"flag", "", "offset of flag",
 	"$$", "", "here (current virtual seek)",
 	"$$$", "", "current non-temporary virtual seek",
@@ -223,7 +224,7 @@ static const char *help_msg_question_v[] = {
 };
 
 static const char *help_msg_question_V[] = {
-	"Usage: ?V[jq]","","",
+	"Usage: ?V[jq]", "", "",
 	"?V", "", "show version information",
 	"?V0", "", "show major version",
 	"?V1", "", "show minor version",
@@ -252,23 +253,23 @@ static const char *help_msg_intro[] = {
 	NULL
 };
 
-static void cmd_help_exclamation(RCore *core) {
+static void cmd_help_exclamation (RCore *core) {
 	r_core_cmd_help (core, help_msg_exclamation);
 	r_core_cmd_help (core, help_msg_env);
 }
 
-static void cmd_help_percent(RCore *core) {
+static void cmd_help_percent (RCore *core) {
 	r_core_cmd_help (core, help_msg_percent);
 	r_core_cmd_help (core, help_msg_env);
 }
 
-static void cmd_help_init(RCore *core, RCmdDesc *parent) {
+static void cmd_help_init (RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?, question);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?v, question_v);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?V, question_V);
 }
 
-static const char* findBreakChar(const char *s) {
+static const char *findBreakChar (const char *s) {
 	while (*s) {
 		if (!r_name_validate_char (*s)) {
 			break;
@@ -278,7 +279,7 @@ static const char* findBreakChar(const char *s) {
 	return s;
 }
 
-static char *filterFlags(RCore *core, const char *msg) {
+static char *filterFlags (RCore *core, const char *msg) {
 	const char *dollar, *end;
 	char *word, *buf = NULL;
 	for (;;) {
@@ -286,29 +287,29 @@ static char *filterFlags(RCore *core, const char *msg) {
 		if (!dollar) {
 			break;
 		}
-		buf = r_str_appendlen (buf, msg, dollar-msg);
-		if (dollar[1]=='{') {
+		buf = r_str_appendlen (buf, msg, dollar - msg);
+		if (dollar[1] == '{') {
 			// find }
-			end = strchr (dollar+2, '}');
+			end = strchr (dollar + 2, '}');
 			if (end) {
-				word = r_str_newlen (dollar+2, end-dollar-2);
+				word = r_str_newlen (dollar + 2, end - dollar - 2);
 				end++;
 			} else {
-				msg = dollar+1;
+				msg = dollar + 1;
 				buf = r_str_append (buf, "$");
 				continue;
 			}
 		} else {
-			end = findBreakChar (dollar+1);
+			end = findBreakChar (dollar + 1);
 			if (!end) {
 				end = dollar + strlen (dollar);
 			}
-			word = r_str_newlen (dollar+1, end-dollar-1);
+			word = r_str_newlen (dollar + 1, end - dollar - 1);
 		}
 		if (end && word) {
 			ut64 val = r_num_math (core->num, word);
 			char num[32];
-			snprintf (num, sizeof (num), "0x%"PFMT64x, val);
+			snprintf (num, sizeof (num), "0x%" PFMT64x, val);
 			buf = r_str_append (buf, num);
 			msg = end;
 		} else {
@@ -381,21 +382,21 @@ static const char *avatar_clippy_utf8[] = {
 };
 
 static const char *avatar_cybcat[] = {
-"     /\\.---./\\       .-%s-.\n"
-" '--           --'   | %s |\n"
-"----   ^   ^   ---- <  %s |\n"
-"  _.-    Y    -._    | %s |\n"
-"                     `-%s-'\n",
-"     /\\.---./\\       .-%s-.\n"
-" '--   @   @   --'   | %s |\n"
-"----     Y     ---- <  %s |\n"
-"  _.-    O    -._    | %s |\n"
-"                     `-%s-'\n",
-"     /\\.---./\\       .-%s-.\n"
-" '--   =   =   --'   | %s |\n"
-"----     Y     ---- <  %s |\n"
-"  _.-    U    -._    | %s |\n"
-"                     `-%s-'\n",
+	"     /\\.---./\\       .-%s-.\n"
+	" '--           --'   | %s |\n"
+	"----   ^   ^   ---- <  %s |\n"
+	"  _.-    Y    -._    | %s |\n"
+	"                     `-%s-'\n",
+	"     /\\.---./\\       .-%s-.\n"
+	" '--   @   @   --'   | %s |\n"
+	"----     Y     ---- <  %s |\n"
+	"  _.-    O    -._    | %s |\n"
+	"                     `-%s-'\n",
+	"     /\\.---./\\       .-%s-.\n"
+	" '--   =   =   --'   | %s |\n"
+	"----     Y     ---- <  %s |\n"
+	"  _.-    U    -._    | %s |\n"
+	"                     `-%s-'\n",
 };
 
 enum {
@@ -404,14 +405,14 @@ enum {
 	R_AVATAR_CLIPPY,
 };
 
-R_API void r_core_clippy(RCore *core, const char *msg) {
+R_API void r_core_clippy (RCore *core, const char *msg) {
 	int type = R_AVATAR_CLIPPY;
 	if (*msg == '+' || *msg == '3') {
 		char *space = strchr (msg, ' ');
 		if (!space) {
 			return;
 		}
-		type = (*msg == '+')? R_AVATAR_ORANGG: R_AVATAR_CYBCAT;
+		type = (*msg == '+') ? R_AVATAR_ORANGG : R_AVATAR_CYBCAT;
 		msg = space + 1;
 	}
 	const char *f;
@@ -438,8 +439,7 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 	free (s);
 }
 
-
-static int cmd_help(void *data, const char *input) {
+static int cmd_help (void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	RIOMap *map;
 	const char *k;
@@ -457,19 +457,19 @@ static int cmd_help(void *data, const char *input) {
 		if (core->curtab < 0) {
 			core->curtab = 0;
 		}
-		core->curtab ++;
+		core->curtab++;
 		break;
 	case 'r': // "?r"
-		{ // TODO : Add support for 64bit random numbers
+	{ // TODO : Add support for 64bit random numbers
 		ut64 b = 0;
 		ut32 r = UT32_MAX;
 		if (input[1]) {
-			strncpy (out, input+(input[1]==' '? 2: 1), sizeof (out)-1);
+			strncpy (out, input + (input[1] == ' ' ? 2 : 1), sizeof (out) - 1);
 			p = strchr (out + 1, ' ');
 			if (p) {
 				*p = 0;
 				b = (ut32)r_num_math (core->num, out);
-				r = (ut32)r_num_math (core->num, p+1)-b;
+				r = (ut32)r_num_math (core->num, p + 1) - b;
 			} else {
 				r = (ut32)r_num_math (core->num, out);
 			}
@@ -480,24 +480,23 @@ static int cmd_help(void *data, const char *input) {
 			r = UT32_MAX >> 1;
 		}
 		core->num->value = (ut64) (b + r_num_rand (r));
-		r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
-		}
-		break;
+		r_cons_printf ("0x%" PFMT64x "\n", core->num->value);
+	} break;
 	case 'a': // "?a"
-		r_cons_printf ("%s", ret_ascii_table());
+		r_cons_printf ("%s", ret_ascii_table ());
 		break;
 	case 'b': // "?b"
 		if (input[1] == '6' && input[2] == '4') {
 			//b64 decoding takes at most strlen(str) * 4
-			const int buflen = (strlen (input+3) * 4) + 1;
-			char* buf = calloc (buflen, sizeof(char));
+			const int buflen = (strlen (input + 3) * 4) + 1;
+			char *buf = calloc (buflen, sizeof (char));
 			if (!buf) {
 				return false;
 			}
 			if (input[3] == '-') {
-				r_base64_decode ((ut8*)buf, input + 4, -1);
+				r_base64_decode ((ut8 *)buf, input + 4, -1);
 			} else if (input[3] == ' ') {
-				r_base64_encode (buf, (const ut8*)input + 4, -1);
+				r_base64_encode (buf, (const ut8 *)input + 4, -1);
 			}
 			r_cons_println (buf);
 			free (buf);
@@ -506,7 +505,7 @@ static int cmd_help(void *data, const char *input) {
 				eprintf ("Usage: ?btw num|(expr) num|(expr) num|(expr)\n");
 			}
 		} else {
-			n = r_num_get (core->num, input+1);
+			n = r_num_get (core->num, input + 1);
 			r_num_to_bits (out, n);
 			r_cons_printf ("%sb\n", out);
 		}
@@ -518,7 +517,7 @@ static int cmd_help(void *data, const char *input) {
 			return false;
 		}
 		r_list_foreach (tmp, iter, map) {
-			r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
+			r_cons_printf ("0x%" PFMT64x " 0x%" PFMT64x "\n", map->itv.addr, r_itv_end (map->itv));
 		}
 		r_list_free (tmp);
 		break;
@@ -543,7 +542,7 @@ static int cmd_help(void *data, const char *input) {
 			if (q) {
 				*q = 0;
 				n = r_num_get (core->num, p);
-				r_str_bits (out, (const ut8*)&n, sizeof (n) * 8, q + 1);
+				r_str_bits (out, (const ut8 *)&n, sizeof (n) * 8, q + 1);
 				r_cons_println (out);
 			} else {
 				eprintf ("Usage: \"?b value bitstring\"\n");
@@ -554,130 +553,128 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'o': // "?o"
-		n = r_num_math (core->num, input+1);
-		r_cons_printf ("0%"PFMT64o"\n", n);
+		n = r_num_math (core->num, input + 1);
+		r_cons_printf ("0%" PFMT64o "\n", n);
 		break;
 	case 'T': // "?T"
-		r_cons_printf("plug.init = %"PFMT64d"\n"
-			"plug.load = %"PFMT64d"\n"
-			"file.load = %"PFMT64d"\n",
+		r_cons_printf ("plug.init = %" PFMT64d "\n"
+			       "plug.load = %" PFMT64d "\n"
+			       "file.load = %" PFMT64d "\n",
 			core->times->loadlibs_init_time,
 			core->times->loadlibs_time,
 			core->times->file_open_time);
 		break;
 	case 'u': // "?u"
-		{
-			char unit[8];
-			n = r_num_math (core->num, input+1);
-			r_num_units (unit, sizeof (unit), n);
-			r_cons_println (unit);
-		}
-		break;
+	{
+		char unit[8];
+		n = r_num_math (core->num, input + 1);
+		r_num_units (unit, sizeof (unit), n);
+		r_cons_println (unit);
+	} break;
 	case 'j': // "?j"
 	case ' ': // "? "
-		{
-			char *asnum, unit[8];
-			ut32 s, a;
-			double d;
-			float f;
-			char * const inputs = strdup (input + 1);
-			RList *list = r_num_str_split_list (inputs);
-			const int list_len = r_list_length (list);
-			PJ *pj = NULL;
-			if (*input ==  'j') {
-				pj = pj_new ();
-				pj_o (pj);
+	{
+		char *asnum, unit[8];
+		ut32 s, a;
+		double d;
+		float f;
+		char *const inputs = strdup (input + 1);
+		RList *list = r_num_str_split_list (inputs);
+		const int list_len = r_list_length (list);
+		PJ *pj = NULL;
+		if (*input == 'j') {
+			pj = pj_new ();
+			pj_o (pj);
+		}
+		for (i = 0; i < list_len; i++) {
+			const char *str = r_list_pop_head (list);
+			if (!*str) {
+				continue;
 			}
-			for (i = 0; i < list_len; i++) {
-				const char *str = r_list_pop_head (list);
-				if (!*str) {
-					continue;
-				}
-				n = r_num_math (core->num, str);
-				if (core->num->dbz) {
-					eprintf ("RNum ERROR: Division by Zero\n");
-				}
-				asnum  = r_num_as_string (NULL, n, false);
-				/* decimal, hexa, octal */
-				s = n >> 16 << 12;
-				a = n & 0x0fff;
-				r_num_units (unit, sizeof (unit), n);
-				if (*input ==  'j') {
-					pj_ks (pj, "int32", sdb_fmt ("%d", (st32)(n & UT32_MAX)));
-					pj_ks (pj, "uint32", sdb_fmt ("%u", (ut32)n));
-					pj_ks (pj, "int64", sdb_fmt ("%"PFMT64d, (st64)n));
-					pj_ks (pj, "uint64", sdb_fmt ("%"PFMT64u, (ut64)n));
-					pj_ks (pj, "hex", sdb_fmt ("0x%08"PFMT64x, n));
-					pj_ks (pj, "octal", sdb_fmt ("0%"PFMT64o, n));
-					pj_ks (pj, "unit", unit);
-					pj_ks (pj, "segment", sdb_fmt ("%04x:%04x", s, a));
+			n = r_num_math (core->num, str);
+			if (core->num->dbz) {
+				eprintf ("RNum ERROR: Division by Zero\n");
+			}
+			asnum = r_num_as_string (NULL, n, false);
+			/* decimal, hexa, octal */
+			s = n >> 16 << 12;
+			a = n & 0x0fff;
+			r_num_units (unit, sizeof (unit), n);
+			if (*input == 'j') {
+				pj_ks (pj, "int32", sdb_fmt ("%d", (st32) (n & UT32_MAX)));
+				pj_ks (pj, "uint32", sdb_fmt ("%u", (ut32)n));
+				pj_ks (pj, "int64", sdb_fmt ("%" PFMT64d, (st64)n));
+				pj_ks (pj, "uint64", sdb_fmt ("%" PFMT64u, (ut64)n));
+				pj_ks (pj, "hex", sdb_fmt ("0x%08" PFMT64x, n));
+				pj_ks (pj, "octal", sdb_fmt ("0%" PFMT64o, n));
+				pj_ks (pj, "unit", unit);
+				pj_ks (pj, "segment", sdb_fmt ("%04x:%04x", s, a));
 
+			} else {
+				if (n >> 32) {
+					r_cons_printf ("int64   %" PFMT64d "\n", (st64)n);
+					r_cons_printf ("uint64  %" PFMT64u "\n", (ut64)n);
 				} else {
-					if (n >> 32) {
-						r_cons_printf ("int64   %"PFMT64d"\n", (st64)n);
-						r_cons_printf ("uint64  %"PFMT64u"\n", (ut64)n);
-					} else {
-						r_cons_printf ("int32   %d\n", (st32)n);
-						r_cons_printf ("uint32  %u\n", (ut32)n);
-					}
-					r_cons_printf ("hex     0x%"PFMT64x"\n", n);
-					r_cons_printf ("octal   0%"PFMT64o"\n", n);
-					r_cons_printf ("unit    %s\n", unit);
-					r_cons_printf ("segment %04x:%04x\n", s, a);
+					r_cons_printf ("int32   %d\n", (st32)n);
+					r_cons_printf ("uint32  %u\n", (ut32)n);
+				}
+				r_cons_printf ("hex     0x%" PFMT64x "\n", n);
+				r_cons_printf ("octal   0%" PFMT64o "\n", n);
+				r_cons_printf ("unit    %s\n", unit);
+				r_cons_printf ("segment %04x:%04x\n", s, a);
 
-					if (asnum) {
-						r_cons_printf ("string  \"%s\"\n", asnum);
-						free (asnum);
-					}
-				}
-				/* binary and floating point */
-				r_str_bits64 (out, n);
-				f = d = core->num->fvalue;
-				memcpy (&f, &n, sizeof (f));
-				memcpy (&d, &n, sizeof (d));
-				/* adjust sign for nan floats, different libcs are confused */
-				if (isnan (f) && signbit (f)) {
-					f = -f;
-				}
-				if (isnan (d) && signbit (d)) {
-					d = -d;
-				}
-				if (*input ==  'j') {
-					pj_ks (pj, "fvalue", sdb_fmt ("%.1lf", core->num->fvalue));
-					pj_ks (pj, "float", sdb_fmt ("%ff", f));
-					pj_ks (pj, "double", sdb_fmt ("%lf", d));
-					pj_ks (pj, "binary", sdb_fmt ("0b%s", out));
-					r_num_to_trits (out, n);
-					pj_ks (pj, "trits", sdb_fmt ("0t%s", out));
-				} else {
-					r_cons_printf ("fvalue: %.1lf\n", core->num->fvalue);
-					r_cons_printf ("float:  %ff\n", f);
-					r_cons_printf ("double: %lf\n", d);
-					r_cons_printf ("binary  0b%s\n", out);
-
-					/* ternary */
-					r_num_to_trits (out, n);
-					r_cons_printf ("trits   0t%s\n", out);
+				if (asnum) {
+					r_cons_printf ("string  \"%s\"\n", asnum);
+					free (asnum);
 				}
 			}
-			if (*input ==  'j') {
-				pj_end (pj);
+			/* binary and floating point */
+			r_str_bits64 (out, n);
+			f = d = core->num->fvalue;
+			memcpy (&f, &n, sizeof (f));
+			memcpy (&d, &n, sizeof (d));
+			/* adjust sign for nan floats, different libcs are confused */
+			if (isnan (f) && signbit (f)) {
+				f = -f;
 			}
-			free (inputs);
-			r_list_free (list);
-			if (pj) {
-				r_cons_printf ("%s\n", pj_string (pj));
-				pj_free (pj);
+			if (isnan (d) && signbit (d)) {
+				d = -d;
+			}
+			if (*input == 'j') {
+				pj_ks (pj, "fvalue", sdb_fmt ("%.1lf", core->num->fvalue));
+				pj_ks (pj, "float", sdb_fmt ("%ff", f));
+				pj_ks (pj, "double", sdb_fmt ("%lf", d));
+				pj_ks (pj, "binary", sdb_fmt ("0b%s", out));
+				r_num_to_trits (out, n);
+				pj_ks (pj, "trits", sdb_fmt ("0t%s", out));
+			} else {
+				r_cons_printf ("fvalue: %.1lf\n", core->num->fvalue);
+				r_cons_printf ("float:  %ff\n", f);
+				r_cons_printf ("double: %lf\n", d);
+				r_cons_printf ("binary  0b%s\n", out);
+
+				/* ternary */
+				r_num_to_trits (out, n);
+				r_cons_printf ("trits   0t%s\n", out);
 			}
 		}
-		break;
+		if (*input == 'j') {
+			pj_end (pj);
+		}
+		free (inputs);
+		r_list_free (list);
+		if (pj) {
+			r_cons_printf ("%s\n", pj_string (pj));
+			pj_free (pj);
+		}
+	} break;
 	case 'q': // "?q"
 		if (core->num->dbz) {
 			eprintf ("RNum ERROR: Division by Zero\n");
 		}
 		if (input[1] == '?') {
 			r_cons_printf ("|Usage: ?q [num]  # Update $? without printing anything\n"
-				"|?q 123; ?? x    # hexdump if 123 != 0");
+				       "|?q 123; ?? x    # hexdump if 123 != 0");
 		} else {
 			const char *space = strchr (input, ' ');
 			if (space) {
@@ -689,66 +686,66 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'v': // "?v"
-		{
-			const char *space = strchr (input, ' ');
-			if (space) {
-				n = r_num_math (core->num, space + 1);
-			} else {
-				n = r_num_math (core->num, "$?");
-			}
+	{
+		const char *space = strchr (input, ' ');
+		if (space) {
+			n = r_num_math (core->num, space + 1);
+		} else {
+			n = r_num_math (core->num, "$?");
 		}
+	}
 		if (core->num->dbz) {
 			eprintf ("RNum ERROR: Division by Zero\n");
 		}
 		switch (input[1]) {
 		case '?':
 			r_cons_printf ("|Usage: ?v[id][ num]  # Show value\n"
-				"|?vx number  -> show 8 digit padding in hex\n"
-				"|?vi1 200    -> 1 byte size value (char)\n"
-				"|?vi2 0xffff -> 2 byte size value (short)\n"
-				"|?vi4 0xffff -> 4 byte size value (int)\n"
-				"|?vi8 0xffff -> 8 byte size value (st64)\n"
-				"| No argument shows $? value\n"
-				"|?vi will show in decimal instead of hex\n");
+				       "|?vx number  -> show 8 digit padding in hex\n"
+				       "|?vi1 200    -> 1 byte size value (char)\n"
+				       "|?vi2 0xffff -> 2 byte size value (short)\n"
+				       "|?vi4 0xffff -> 4 byte size value (int)\n"
+				       "|?vi8 0xffff -> 8 byte size value (st64)\n"
+				       "| No argument shows $? value\n"
+				       "|?vi will show in decimal instead of hex\n");
 			break;
 		case '\0':
 			r_cons_printf ("%d\n", (st32)n);
 			break;
 		case 'x': // "?vx"
-			r_cons_printf ("0x%08"PFMT64x"\n", n);
+			r_cons_printf ("0x%08" PFMT64x "\n", n);
 			break;
 		case 'i': // "?vi"
 			switch (input[2]) {
 			case '1': // byte
-				r_cons_printf ("%d\n", (st8)(n & UT8_MAX));
+				r_cons_printf ("%d\n", (st8) (n & UT8_MAX));
 				break;
 			case '2': // word
-				r_cons_printf ("%d\n", (st16)(n & UT16_MAX));
+				r_cons_printf ("%d\n", (st16) (n & UT16_MAX));
 				break;
 			case '4': // dword
-				r_cons_printf ("%d\n", (st32)(n & UT32_MAX));
+				r_cons_printf ("%d\n", (st32) (n & UT32_MAX));
 				break;
 			case '8': // qword
-				r_cons_printf ("%"PFMT64d"\n", (st64)(n & UT64_MAX));
+				r_cons_printf ("%" PFMT64d "\n", (st64) (n & UT64_MAX));
 				break;
 			default:
-				r_cons_printf ("%"PFMT64d"\n", n);
+				r_cons_printf ("%" PFMT64d "\n", n);
 				break;
 			}
 			break;
 		case 'd':
-			r_cons_printf ("%"PFMT64d"\n", n);
+			r_cons_printf ("%" PFMT64d "\n", n);
 			break;
 		default:
-			r_cons_printf ("0x%"PFMT64x"\n", n);
+			r_cons_printf ("0x%" PFMT64x "\n", n);
 		}
 		core->num->value = n; // redundant
 		break;
 	case '=': // "?=" set num->value
 		if (input[1]) {
-			r_num_math (core->num, input+1);
+			r_num_math (core->num, input + 1);
 		} else {
-			r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
+			r_cons_printf ("0x%" PFMT64x "\n", core->num->value);
 		}
 		break;
 	case '+': // "?+"
@@ -758,7 +755,7 @@ static int cmd_help(void *data, const char *input) {
 				r_core_cmd (core, input + 1, 0);
 			}
 		} else {
-			r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
+			r_cons_printf ("0x%" PFMT64x "\n", core->num->value);
 		}
 		break;
 	case '-': // "?-"
@@ -768,7 +765,7 @@ static int cmd_help(void *data, const char *input) {
 				r_core_cmd (core, input + 1, 0);
 			}
 		} else {
-			r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
+			r_cons_printf ("0x%" PFMT64x "\n", core->num->value);
 		}
 		break;
 	case '!': // "?!"
@@ -778,11 +775,11 @@ static int cmd_help(void *data, const char *input) {
 					cmd_help_exclamation (core);
 					return 0;
 				} else {
-					return core->num->value = r_core_cmd (core, input+1, 0);
+					return core->num->value = r_core_cmd (core, input + 1, 0);
 				}
 			}
 		} else {
-			r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
+			r_cons_printf ("0x%" PFMT64x "\n", core->num->value);
 		}
 		break;
 	case '@': // "?@"
@@ -818,9 +815,9 @@ static int cmd_help(void *data, const char *input) {
 			while (vars[i]) {
 				const char *pad = r_str_pad (' ', 6 - strlen (vars[i]));
 				if (wideOffsets) {
-					eprintf ("%s %s 0x%016"PFMT64x"\n", vars[i], pad, r_num_math (core->num, vars[i]));
+					eprintf ("%s %s 0x%016" PFMT64x "\n", vars[i], pad, r_num_math (core->num, vars[i]));
 				} else {
-					eprintf ("%s %s 0x%08"PFMT64x"\n", vars[i], pad, r_num_math (core->num, vars[i]));
+					eprintf ("%s %s 0x%08" PFMT64x "\n", vars[i], pad, r_num_math (core->num, vars[i]));
 				}
 				i++;
 			}
@@ -846,25 +843,24 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_printf ("%d\n", vernum (R2_VERSION));
 			break;
 		case 'j': // "?Vj"
-			{
-				PJ *pj = pj_new ();
-				pj_o (pj);
-				pj_ks (pj, "arch", R_SYS_ARCH);
-				pj_ks (pj, "os", R_SYS_OS);
-				pj_ki (pj, "bits", R_SYS_BITS);
-				pj_ki (pj, "commit", R2_VERSION_COMMIT);
-				pj_ks (pj, "tap", R2_GITTAP);
-				pj_ki (pj, "major", R2_VERSION_MAJOR);
-				pj_ki (pj, "minor", R2_VERSION_MINOR);
-				pj_ki (pj, "patch", R2_VERSION_PATCH);
-				pj_ki (pj, "number", R2_VERSION_NUMBER);
-				pj_ki (pj, "nversion", vernum (R2_VERSION));
-				pj_ks (pj, "version", R2_VERSION);
-				pj_end (pj);
-				r_cons_printf ("%s\n", pj_string (pj));
-				pj_free (pj);
-			}
-			break;
+		{
+			PJ *pj = pj_new ();
+			pj_o (pj);
+			pj_ks (pj, "arch", R_SYS_ARCH);
+			pj_ks (pj, "os", R_SYS_OS);
+			pj_ki (pj, "bits", R_SYS_BITS);
+			pj_ki (pj, "commit", R2_VERSION_COMMIT);
+			pj_ks (pj, "tap", R2_GITTAP);
+			pj_ki (pj, "major", R2_VERSION_MAJOR);
+			pj_ki (pj, "minor", R2_VERSION_MINOR);
+			pj_ki (pj, "patch", R2_VERSION_PATCH);
+			pj_ki (pj, "number", R2_VERSION_NUMBER);
+			pj_ki (pj, "nversion", vernum (R2_VERSION));
+			pj_ks (pj, "version", R2_VERSION);
+			pj_end (pj);
+			r_cons_printf ("%s\n", pj_string (pj));
+			pj_free (pj);
+		} break;
 		case 'n': // "?Vn"
 			r_cons_printf ("%d\n", R2_VERSION_NUMBER);
 			break;
@@ -884,28 +880,32 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'l': // "?l"
 		if (input[1] == 'q') {
-			for (input+=2; input[0] == ' '; input++);
+			for (input += 2; input[0] == ' '; input++)
+				;
 			core->num->value = strlen (input);
 		} else {
-			for (input++; input[0] == ' '; input++);
+			for (input++; input[0] == ' '; input++)
+				;
 			core->num->value = strlen (input);
 			r_cons_printf ("%d\n", core->num->value);
 		}
 		break;
 	case 'X': // "?X"
-		for (input++; input[0] == ' '; input++);
+		for (input++; input[0] == ' '; input++)
+			;
 		n = r_num_math (core->num, input);
-		r_cons_printf ("%"PFMT64x"\n", n);
+		r_cons_printf ("%" PFMT64x "\n", n);
 		break;
 	case 'x': // "?x"
-		for (input++; input[0] == ' '; input++);
+		for (input++; input[0] == ' '; input++)
+			;
 		if (*input == '-') {
 			ut8 *out = malloc (strlen (input) + 1);
 			if (out) {
 				int len = r_hex_str2bin (input + 1, out);
 				if (len >= 0) {
 					out[len] = 0;
-					r_cons_println ((const char*)out);
+					r_cons_println ((const char *)out);
 				} else {
 					eprintf ("Error parsing the hexpair string\n");
 				}
@@ -915,7 +915,7 @@ static int cmd_help(void *data, const char *input) {
 			ut64 n = r_num_math (core->num, input);
 			int bits = r_num_to_bits (NULL, n) / 8;
 			for (i = 0; i < bits; i++) {
-				r_cons_printf ("%02x", (ut8)((n >> (i * 8)) &0xff));
+				r_cons_printf ("%02x", (ut8) ((n >> (i * 8)) & 0xff));
 			}
 			r_cons_newline ();
 		} else {
@@ -954,7 +954,8 @@ static int cmd_help(void *data, const char *input) {
 			char *msg = strdup (input + 2);
 			r_str_trim (msg);
 			char *p = strchr (msg, '&');
-			if (p) *p = 0;
+			if (p)
+				*p = 0;
 			r_sys_tts (msg, p != NULL);
 			free (msg);
 			break;
@@ -965,10 +966,9 @@ static int cmd_help(void *data, const char *input) {
 		case 'g': { // "?eg" gotoxy
 			int x = atoi (input + 2);
 			char *arg = strchr (input + 2, ' ');
-			int y = arg? atoi (arg + 1): 0;
+			int y = arg ? atoi (arg + 1) : 0;
 			r_cons_gotoxy (x, y);
-			}
-			break;
+		} break;
 		case 'n': { // "?en" echo -n
 			const char *msg = r_str_trim_head_ro (input + 2);
 			// TODO: replace all ${flagname} by its value in hexa
@@ -979,64 +979,62 @@ static int cmd_help(void *data, const char *input) {
 			break;
 		}
 		case 'd': // "?ed"
-			  if (input[2] == 'd') {
-				  int i,j;
-				  r_cons_show_cursor (0);
-				  r_cons_clear00 ();
-				  for (i = 1; i < 100; i++) {
-					  if (r_cons_is_breaked ()) {
-						  break;
-					  }
-					  for (j = 0; j < 20; j++) {
-						  char *d = r_str_donut (i);
-						  r_cons_gotoxy (0,0);
-						  r_str_trim_tail (d);
-						  r_cons_clear_line (0);
-						  r_cons_printf ("Downloading the Gibson...\n\n");
-						  r_core_cmdf (core, "?e=%d", i);
-						  r_cons_strcat (d);
-						  r_cons_clear_line (0);
-						  r_cons_newline ();
-						  free (d);
-						  r_cons_flush ();
-						  r_sys_usleep (2000);
-					  }
-				  }
-				  r_cons_clear00();
-				  r_cons_printf ("\nPayload installed. Thanks for your patience.\n\n");
+			if (input[2] == 'd') {
+				int i, j;
+				r_cons_show_cursor (0);
+				r_cons_clear00 ();
+				for (i = 1; i < 100; i++) {
+					if (r_cons_is_breaked ()) {
+						break;
+					}
+					for (j = 0; j < 20; j++) {
+						char *d = r_str_donut (i);
+						r_cons_gotoxy (0, 0);
+						r_str_trim_tail (d);
+						r_cons_clear_line (0);
+						r_cons_printf ("Downloading the Gibson...\n\n");
+						r_core_cmdf (core, "?e=%d", i);
+						r_cons_strcat (d);
+						r_cons_clear_line (0);
+						r_cons_newline ();
+						free (d);
+						r_cons_flush ();
+						r_sys_usleep (2000);
+					}
+				}
+				r_cons_clear00 ();
+				r_cons_printf ("\nPayload installed. Thanks for your patience.\n\n");
 			} else {
-				  char *d = r_str_donut (r_num_math (core->num, input + 2));
-				  r_str_trim_tail (d);
-				  const char *color = (core->cons && core->cons->context->pal.flag)? core->cons->context->pal.flag: "";
-				  r_cons_printf ("%s%s", color, d);
-				  r_cons_newline ();
-				  free (d);
+				char *d = r_str_donut (r_num_math (core->num, input + 2));
+				r_str_trim_tail (d);
+				const char *color = (core->cons && core->cons->context->pal.flag) ? core->cons->context->pal.flag : "";
+				r_cons_printf ("%s%s", color, d);
+				r_cons_newline ();
+				free (d);
 			}
 			break;
-		case 'p':
-			  {
+		case 'p': {
 			char *word, *str = strdup (input + 2);
-				  RList *list = r_str_split_list (str, " ", 0);
-				  ut64 *nums = calloc (sizeof (ut64), r_list_length (list));
-				  int i = 0;
-				  r_list_foreach (list, iter, word) {
-					nums[i] = r_num_math (core->num, word);;
-					i++;
-				  }
-				  int size = r_config_get_i (core->config, "hex.cols");
-				  r_print_pie (core->print, nums, r_list_length (list), size);
-				  r_list_free (list);
-			  }
-			break;
+			RList *list = r_str_split_list (str, " ", 0);
+			ut64 *nums = calloc (sizeof (ut64), r_list_length (list));
+			int i = 0;
+			r_list_foreach (list, iter, word) {
+				nums[i] = r_num_math (core->num, word);
+				;
+				i++;
+			}
+			int size = r_config_get_i (core->config, "hex.cols");
+			r_print_pie (core->print, nums, r_list_length (list), size);
+			r_list_free (list);
+		} break;
 		case ' ': {
-			const char *msg = r_str_trim_head_ro (input+1);
+			const char *msg = r_str_trim_head_ro (input + 1);
 			// TODO: replace all ${flagname} by its value in hexa
 			char *newmsg = filterFlags (core, msg);
 			r_str_unescape (newmsg);
 			r_cons_println (newmsg);
 			free (newmsg);
-			}
-			break;
+		} break;
 		case 0:
 			r_cons_newline ();
 			break;
@@ -1056,12 +1054,13 @@ static int cmd_help(void *data, const char *input) {
 	case 's': { // "?s" sequence from to step
 		ut64 from, to, step;
 		char *p, *p2;
-		for (input++; *input==' '; input++);
+		for (input++; *input == ' '; input++)
+			;
 		p = strchr (input, ' ');
 		if (p) {
 			*p = '\0';
 			from = r_num_math (core->num, input);
-			p2 = strchr (p+1, ' ');
+			p2 = strchr (p + 1, ' ');
 			if (p2) {
 				*p2 = '\0';
 				step = r_num_math (core->num, p2 + 1);
@@ -1069,48 +1068,46 @@ static int cmd_help(void *data, const char *input) {
 				step = 1;
 			}
 			to = r_num_math (core->num, p + 1);
-			for (;from <= to; from += step)
-				r_cons_printf ("%"PFMT64d" ", from);
+			for (; from <= to; from += step)
+				r_cons_printf ("%" PFMT64d " ", from);
 			r_cons_newline ();
 		}
 		break;
 	}
 	case 'P': // "?P"
 		if (core->io->va) {
-			ut64 o, n = (input[0] && input[1])?
-				r_num_math (core->num, input+2): core->offset;
+			ut64 o, n = (input[0] && input[1]) ? r_num_math (core->num, input + 2) : core->offset;
 			RIOMap *map = r_io_map_get_paddr (core->io, n);
 			if (map) {
 				o = n + map->itv.addr - map->delta;
-				r_cons_printf ("0x%08"PFMT64x"\n", o);
+				r_cons_printf ("0x%08" PFMT64x "\n", o);
 			} else {
-				r_cons_printf ("no map at 0x%08"PFMT64x"\n", n);
+				r_cons_printf ("no map at 0x%08" PFMT64x "\n", n);
 			}
 		} else {
-			r_cons_printf ("0x%08"PFMT64x"\n", core->offset);
+			r_cons_printf ("0x%08" PFMT64x "\n", core->offset);
 		}
 		break;
 	case 'p': // "?p"
 		if (core->io->va) {
 			// physical address
-			ut64 o, n = (input[0] && input[1])?
-				r_num_math (core->num, input + 2): core->offset;
+			ut64 o, n = (input[0] && input[1]) ? r_num_math (core->num, input + 2) : core->offset;
 			RIOMap *map = r_io_map_get (core->io, n);
 			if (map) {
 				o = n - map->itv.addr + map->delta;
-				r_cons_printf ("0x%08"PFMT64x"\n", o);
+				r_cons_printf ("0x%08" PFMT64x "\n", o);
 			} else {
-				r_cons_printf ("no map at 0x%08"PFMT64x"\n", n);
+				r_cons_printf ("no map at 0x%08" PFMT64x "\n", n);
 			}
 		} else {
-			r_cons_printf ("0x%08"PFMT64x"\n", core->offset);
+			r_cons_printf ("0x%08" PFMT64x "\n", core->offset);
 		}
 		break;
 	case '_': // "?_" hud input
-		r_core_yank_hud_file (core, input+1);
+		r_core_yank_hud_file (core, input + 1);
 		break;
 	case 'i': // "?i" input num
-		r_cons_set_raw(0);
+		r_cons_set_raw (0);
 		if (!r_cons_is_interactive ()) {
 			eprintf ("Not running in interactive mode\n");
 		} else {
@@ -1126,20 +1123,23 @@ static int cmd_help(void *data, const char *input) {
 				core->num->value = r_core_yank_hud_path (core, input + 2, 0) == true;
 				break;
 			case 'k': // "?ik"
-				 r_cons_any_key (NULL);
-				 break;
+				r_cons_any_key (NULL);
+				break;
 			case 'y': // "?iy"
-				 for (input += 2; *input==' '; input++);
-				 core->num->value = r_cons_yesno (1, "%s? (Y/n)", input);
-				 break;
+				for (input += 2; *input == ' '; input++)
+					;
+				core->num->value = r_cons_yesno (1, "%s? (Y/n)", input);
+				break;
 			case 'n': // "?in"
-				 for (input += 2; *input==' '; input++);
-				 core->num->value = r_cons_yesno (0, "%s? (y/N)", input);
-				 break;
+				for (input += 2; *input == ' '; input++)
+					;
+				core->num->value = r_cons_yesno (0, "%s? (y/N)", input);
+				break;
 			default: {
 				char foo[1024];
 				r_cons_flush ();
-				for (input++; *input == ' '; input++);
+				for (input++; *input == ' '; input++)
+					;
 				// TODO: r_cons_input()
 				snprintf (foo, sizeof (foo) - 1, "%s: ", input);
 				r_line_set_prompt (foo);
@@ -1147,8 +1147,7 @@ static int cmd_help(void *data, const char *input) {
 				foo[sizeof (foo) - 1] = 0;
 				r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, foo, strlen (foo) + 1);
 				core->num->value = r_num_math (core->num, foo);
-				}
-				break;
+			} break;
 			}
 		}
 		r_cons_set_raw (0);
@@ -1169,7 +1168,7 @@ static int cmd_help(void *data, const char *input) {
 		r_prof_start (&prof);
 		r_core_cmd (core, input + 1, 0);
 		r_prof_end (&prof);
-		core->num->value = (ut64)(int)prof.result;
+		core->num->value = (ut64) (int)prof.result;
 		eprintf ("%lf\n", prof.result);
 		break;
 	}
@@ -1189,13 +1188,13 @@ static int cmd_help(void *data, const char *input) {
 			return 0;
 		} else if (input[1]) {
 			if (core->num->value) {
-				core->num->value = r_core_cmd (core, input+1, 0);
+				core->num->value = r_core_cmd (core, input + 1, 0);
 			}
 		} else {
 			if (core->num->dbz) {
 				eprintf ("RNum ERROR: Division by Zero\n");
 			}
-			r_cons_printf ("%"PFMT64d"\n", core->num->value);
+			r_cons_printf ("%" PFMT64d "\n", core->num->value);
 		}
 		break;
 	case '\0': // "?"

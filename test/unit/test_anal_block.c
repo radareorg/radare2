@@ -6,21 +6,30 @@
 #define check_invariants block_check_invariants
 #define check_leaks block_check_leaks
 
-static size_t blocks_count(RAnal *anal) {
+static size_t blocks_count (RAnal *anal) {
 	size_t count = 0;
 	RBIter iter;
 	RAnalBlock *block;
-	r_rbtree_foreach(anal->bb_tree, iter, block, RAnalBlock, _rb) {
+	r_rbtree_foreach (anal->bb_tree, iter, block, RAnalBlock, _rb) {
 		count++;
 	}
 	return count;
 }
 
+#define assert_invariants(anal)                 \
+	do {                                    \
+		if (!check_invariants (anal)) { \
+			return false;           \
+		}                               \
+	} while (0)
+#define assert_leaks(anal)                 \
+	do {                               \
+		if (!check_leaks (anal)) { \
+			return false;      \
+		}                          \
+	} while (0)
 
-#define assert_invariants(anal) do { if (!check_invariants (anal)) { return false; } } while (0)
-#define assert_leaks(anal) do { if (!check_leaks (anal)) { return false; } } while (0)
-
-bool test_r_anal_block_create() {
+bool test_r_anal_block_create () {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
 
@@ -55,7 +64,7 @@ bool test_r_anal_block_create() {
 	mu_end;
 }
 
-bool test_r_anal_block_contains() {
+bool test_r_anal_block_contains () {
 	RAnalBlock dummy = { 0 };
 	dummy.addr = 0x1337;
 	dummy.size = 42;
@@ -67,7 +76,7 @@ bool test_r_anal_block_contains() {
 	mu_end;
 }
 
-bool test_r_anal_block_split() {
+bool test_r_anal_block_split () {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
 
@@ -122,7 +131,7 @@ bool test_r_anal_block_split() {
 	mu_end;
 }
 
-bool test_r_anal_block_split_in_function() {
+bool test_r_anal_block_split_in_function () {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
 
@@ -156,7 +165,7 @@ bool test_r_anal_block_split_in_function() {
 	mu_end;
 }
 
-bool test_r_anal_block_merge() {
+bool test_r_anal_block_merge () {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
 
@@ -187,14 +196,14 @@ bool test_r_anal_block_merge() {
 	mu_assert_eq (first->jump, 0xdeadbeef, "jump after merge");
 	mu_assert_eq (first->fail, 0xc0ffee, "fail after merge");
 
-	mu_assert_eq (first->ninstr, 3+4, "ninstr after merge");
+	mu_assert_eq (first->ninstr, 3 + 4, "ninstr after merge");
 	mu_assert_eq (r_anal_bb_offset_inst (first, 0), 0, "offset 0 after merge");
 	mu_assert_eq (r_anal_bb_offset_inst (first, 1), 13, "offset 1 after merge");
 	mu_assert_eq (r_anal_bb_offset_inst (first, 2), 16, "offset 2 after merge");
-	mu_assert_eq (r_anal_bb_offset_inst (first, 3), 42+0, "offset 3 after merge");
-	mu_assert_eq (r_anal_bb_offset_inst (first, 4), 42+4, "offset 4 after merge");
-	mu_assert_eq (r_anal_bb_offset_inst (first, 5), 42+9, "offset 5 after merge");
-	mu_assert_eq (r_anal_bb_offset_inst (first, 6), 42+30, "offset 6 after merge");
+	mu_assert_eq (r_anal_bb_offset_inst (first, 3), 42 + 0, "offset 3 after merge");
+	mu_assert_eq (r_anal_bb_offset_inst (first, 4), 42 + 4, "offset 4 after merge");
+	mu_assert_eq (r_anal_bb_offset_inst (first, 5), 42 + 9, "offset 5 after merge");
+	mu_assert_eq (r_anal_bb_offset_inst (first, 6), 42 + 30, "offset 6 after merge");
 
 	r_anal_block_unref (first);
 	// second must be already freed by the merge!
@@ -204,7 +213,7 @@ bool test_r_anal_block_merge() {
 	mu_end;
 }
 
-bool test_r_anal_block_merge_in_function() {
+bool test_r_anal_block_merge_in_function () {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
 
@@ -237,7 +246,7 @@ bool test_r_anal_block_merge_in_function() {
 	mu_end;
 }
 
-bool test_r_anal_block_delete() {
+bool test_r_anal_block_delete () {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
 
@@ -265,7 +274,7 @@ bool test_r_anal_block_delete() {
 	mu_end;
 }
 
-bool test_r_anal_block_set_size() {
+bool test_r_anal_block_set_size () {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
 
@@ -281,7 +290,7 @@ bool test_r_anal_block_set_size() {
 	assert_invariants (anal);
 	mu_assert_eq (block->size, 300, "size after set_size");
 
-	RAnalBlock *second = r_anal_create_block (anal, 0x1337+300, 100);
+	RAnalBlock *second = r_anal_create_block (anal, 0x1337 + 300, 100);
 	assert_invariants (anal);
 	r_anal_function_add_block (fcn, block);
 	assert_invariants (anal);
@@ -304,7 +313,7 @@ bool test_r_anal_block_set_size() {
 	mu_end;
 }
 
-bool test_r_anal_block_relocate() {
+bool test_r_anal_block_relocate () {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
 
@@ -324,7 +333,7 @@ bool test_r_anal_block_relocate() {
 	mu_assert_eq (block->addr, 0x200, "addr after relocate");
 	mu_assert_eq (block->size, 0x100, "size after relocate");
 
-	RAnalBlock *second = r_anal_create_block (anal, 0x1337+300, 100);
+	RAnalBlock *second = r_anal_create_block (anal, 0x1337 + 300, 100);
 	assert_invariants (anal);
 	r_anal_function_add_block (fcn, second);
 	assert_invariants (anal);
@@ -369,7 +378,7 @@ bool test_r_anal_block_relocate() {
 	mu_end;
 }
 
-bool test_r_anal_block_query() {
+bool test_r_anal_block_query () {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
 
@@ -448,7 +457,7 @@ bool test_r_anal_block_query() {
 
 	for (i = 0; i < SAMPLES; i++) {
 		ut64 addr = rand () % SPACE;
-		ut64 size = rand() % MAXSIZE;
+		ut64 size = rand () % MAXSIZE;
 		RList *in = r_anal_get_blocks_intersect (anal, addr, size);
 
 		RAnalBlock *block;
@@ -480,13 +489,13 @@ bool test_r_anal_block_query() {
 	mu_end;
 }
 
-bool addr_list_cb(ut64 addr, void *user) {
+bool addr_list_cb (ut64 addr, void *user) {
 	RList *list = user;
 	r_list_push (list, (void *)addr);
 	return true;
 }
 
-bool test_r_anal_block_successors() {
+bool test_r_anal_block_successors () {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
 
@@ -567,7 +576,7 @@ bool test_r_anal_block_successors() {
 	mu_end;
 }
 
-bool test_r_anal_block_automerge() {
+bool test_r_anal_block_automerge () {
 	size_t i;
 	for (i = 0; i < SAMPLES; i++) {
 		RAnal *anal = r_anal_new ();
@@ -645,7 +654,7 @@ bool test_r_anal_block_automerge() {
 	mu_end;
 }
 
-bool test_r_anal_block_chop_noreturn(void) {
+bool test_r_anal_block_chop_noreturn (void) {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
 
@@ -670,7 +679,7 @@ bool test_r_anal_block_chop_noreturn(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests () {
 	mu_run_test (test_r_anal_block_chop_noreturn);
 	mu_run_test (test_r_anal_block_create);
 	mu_run_test (test_r_anal_block_contains);
@@ -687,10 +696,10 @@ int all_tests() {
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
+int main (int argc, char **argv) {
 	struct timeval tv;
 	gettimeofday (&tv, NULL);
 	unsigned int seed = argc > 1 ? strtoul (argv[1], NULL, 0) : tv.tv_sec + tv.tv_usec;
-	printf("seed for test_anal_block: %u\n", seed);
-	return all_tests();
+	printf ("seed for test_anal_block: %u\n", seed);
+	return all_tests ();
 }

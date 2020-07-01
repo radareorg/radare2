@@ -6,20 +6,20 @@
 
 static int flag = 0;
 
-static bool punycode_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+static bool punycode_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	flag = direction;
 	return true;
 }
 
-static int punycode_get_key_size(RCrypto *cry) {
+static int punycode_get_key_size (RCrypto *cry) {
 	return 0;
 }
 
-static bool punycode_use(const char *algo) {
+static bool punycode_use (const char *algo) {
 	return !strcmp (algo, "punycode");
 }
 
-static bool update(RCrypto *cry, const ut8 *buf, int len) {
+static bool update (RCrypto *cry, const ut8 *buf, int len) {
 	char *obuf;
 	int olen;
 	if (flag) {
@@ -27,12 +27,12 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	} else {
 		obuf = r_punycode_encode (buf, len, &olen);
 	}
-	r_crypto_append (cry, (ut8*)obuf, olen);
+	r_crypto_append (cry, (ut8 *)obuf, olen);
 	free (obuf);
 	return true;
 }
 
-static bool final(RCrypto *cry, const ut8* buf, int len) {
+static bool final (RCrypto *cry, const ut8 *buf, int len) {
 	return update (cry, buf, len);
 }
 

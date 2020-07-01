@@ -69,7 +69,7 @@ typedef struct r_annotated_code_t {
  * 
  * Return: Pointer to the new RAnnotatedCode structure created.
  */
-R_API RAnnotatedCode *r_annotated_code_new(char *code);
+R_API RAnnotatedCode *r_annotated_code_new (char *code);
 /**
  * r_annotated_code_free() - Deallocates *code.
  * @code: Pointer to a RAnnotatedCode.
@@ -78,7 +78,7 @@ R_API RAnnotatedCode *r_annotated_code_new(char *code);
  * 
  * Return: Nothing.
  */
-R_API void r_annotated_code_free(RAnnotatedCode *code);
+R_API void r_annotated_code_free (RAnnotatedCode *code);
 /**
  * r_annotated_code_add_annotation() - Inserts *annotation in *code.
  * @code: Pointer to a RAnnotatedCode.
@@ -90,7 +90,7 @@ R_API void r_annotated_code_free(RAnnotatedCode *code);
  * 
  * Return: Nothing.
  */
-R_API void r_annotated_code_add_annotation(RAnnotatedCode *code, RCodeAnnotation *annotation);
+R_API void r_annotated_code_add_annotation (RAnnotatedCode *code, RCodeAnnotation *annotation);
 /**
  * r_annotated_code_annotations_in() - Returns all annotations with range that contains the given offset.
  * @code: Pointer to a RAnnotatedCode.
@@ -101,7 +101,7 @@ R_API void r_annotated_code_add_annotation(RAnnotatedCode *code, RCodeAnnotation
  * 
  * Return: Pointer to the RPVecrtor created.
  */
-R_API RPVector *r_annotated_code_annotations_in(RAnnotatedCode *code, size_t offset);
+R_API RPVector *r_annotated_code_annotations_in (RAnnotatedCode *code, size_t offset);
 /**
  * r_annotated_code_annotations_range() - Returns all annotations with range that overlap with the given range.
  * @code: Pointer to a RAnnotatedCode.
@@ -113,7 +113,7 @@ R_API RPVector *r_annotated_code_annotations_in(RAnnotatedCode *code, size_t off
  * 
  * Return: Pointer to the RPVecrtor created.
  */
-R_API RPVector *r_annotated_code_annotations_range(RAnnotatedCode *code, size_t start, size_t end);
+R_API RPVector *r_annotated_code_annotations_range (RAnnotatedCode *code, size_t start, size_t end);
 /**
  * r_annotated_code_line_offsets() - Returns the offset for every line of decompiled code in RAnnotatedCode *code.
  * @code: Pointer to a RAnnotatedCode.
@@ -124,7 +124,7 @@ R_API RPVector *r_annotated_code_annotations_range(RAnnotatedCode *code, size_t 
  * 	
  * Return: Pointer to the RVector created.
  */
-R_API RVector *r_annotated_code_line_offsets(RAnnotatedCode *code);
+R_API RVector *r_annotated_code_line_offsets (RAnnotatedCode *code);
 
 #ifdef __cplusplus
 }

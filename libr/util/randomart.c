@@ -35,30 +35,30 @@
  */
 #include <r_util.h>
 
-#define	FLDBASE		8
-#define	FLDSIZE_Y	(FLDBASE + 1)
-#define	FLDSIZE_X	(FLDBASE * 2 + 1)
+#define FLDBASE 8
+#define FLDSIZE_Y (FLDBASE + 1)
+#define FLDSIZE_X (FLDBASE * 2 + 1)
 
 //static char * key_fingerprint_randomart(ut8 *dgst_raw, ut32 dgst_raw_len) {
-R_API char *r_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr) {
+R_API char *r_print_randomart (const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr) {
 	/*
 	 * Chars to be used after each other every time the worm
 	 * intersects with itself.  Matter of taste.
 	 */
-	char	*augmentation_string = " .o+=*BOX@%&#/^SE";
-	char	*retval, *p;
-	ut8	 field[FLDSIZE_X][FLDSIZE_Y];
-	ut32	 i, b;
-	int	 x, y;
-	size_t	 len = strlen(augmentation_string) - 1;
-	
+	char *augmentation_string = " .o+=*BOX@%&#/^SE";
+	char *retval, *p;
+	ut8 field[FLDSIZE_X][FLDSIZE_Y];
+	ut32 i, b;
+	int x, y;
+	size_t len = strlen (augmentation_string) - 1;
+
 	// 2*(FLDSIZE_X+3) there are two for loops that iterate over this
 	// FLDSIZE_Y * (FLDSIZE_X+3) there is a loop that for each y iterates over the whole FLDSIZE_X
 	// The rest is counting the +--[0x%08"PFMT64x"]- and '\0'
-	retval = calloc (1, 2*(FLDSIZE_X+3) + (FLDSIZE_Y * (FLDSIZE_X+3))+ 7 + sizeof (PFMT64x));
+	retval = calloc (1, 2 * (FLDSIZE_X + 3) + (FLDSIZE_Y * (FLDSIZE_X + 3)) + 7 + sizeof (PFMT64x));
 
 	/* initialize field */
-	memset(field, 0, FLDSIZE_X * FLDSIZE_Y * sizeof(char));
+	memset (field, 0, FLDSIZE_X * FLDSIZE_Y * sizeof (char));
 	x = FLDSIZE_X / 2;
 	y = FLDSIZE_Y / 2;
 
@@ -73,10 +73,10 @@ R_API char *r_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr)
 			y += (input & 0x2) ? 1 : -1;
 
 			/* assure we are still in bounds */
-			x = R_MAX(x, 0);
-			y = R_MAX(y, 0);
-			x = R_MIN(x, FLDSIZE_X - 1);
-			y = R_MIN(y, FLDSIZE_Y - 1);
+			x = R_MAX (x, 0);
+			y = R_MAX (y, 0);
+			x = R_MIN (x, FLDSIZE_X - 1);
+			y = R_MIN (y, FLDSIZE_Y - 1);
 
 			/* augment the field */
 			if (field[x][y] < len - 2) {
@@ -95,9 +95,9 @@ R_API char *r_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr)
 	snprintf(retval, FLDSIZE_X, "+--[%4s %4u]", key_type(k), key_size(k));
 #else
 	//strcpy (retval, "+-------------");
-	sprintf (retval, "+--[0x%08"PFMT64x"]-", addr);
+	sprintf (retval, "+--[0x%08" PFMT64x "]-", addr);
 #endif
-	p = strchr(retval, '\0');
+	p = strchr (retval, '\0');
 
 	/* output upper border */
 	for (i = p - retval - 1; i < FLDSIZE_X; i++) {

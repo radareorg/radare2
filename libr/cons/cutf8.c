@@ -9,8 +9,8 @@
 #include <termios.h>
 #include <errno.h>
 
-#define RD_EOF   (-1)
-#define RD_EIO   (-2)
+#define RD_EOF (-1)
+#define RD_EIO (-2)
 
 /* select utf8 terminal detection method */
 #define UTF8_DETECT_ENV 1
@@ -18,12 +18,12 @@
 #define UTF8_DETECT_CURSOR 0
 
 #if UTF8_DETECT_CURSOR
-static inline int rd(const int fd) {
-	unsigned char   buffer[4];
-	ssize_t         n;
+static inline int rd (const int fd) {
+	unsigned char buffer[4];
+	ssize_t n;
 
 	for (;;) {
-		n = read(fd, buffer, 1);
+		n = read (fd, buffer, 1);
 		if (n > (ssize_t)0) {
 			return buffer[0];
 		}
@@ -45,14 +45,14 @@ static inline int rd(const int fd) {
 
 /* Return a new file descriptor to the current TTY.
  */
-int current_tty(void) {
+int current_tty (void) {
 #if __WINDOWS__
 	return 0;
 #elif __ANDROID__
 	return 1;
 #else
 	int fd;
-	const char *dev = ttyname(STDERR_FILENO);
+	const char *dev = ttyname (STDERR_FILENO);
 #if 0
 	if (!dev)
 		dev = ttyname(STDIN_FILENO);
@@ -79,8 +79,8 @@ int current_tty(void) {
  * This function returns 0 if success, errno code otherwise.
  * Actual errno will be unchanged.
  */
-static int cursor_position(const int tty, int *const rowptr, int *const colptr) {
-	struct termios  saved, temporary;
+static int cursor_position (const int tty, int *const rowptr, int *const colptr) {
+	struct termios saved, temporary;
 	int ret, res, rows, cols, saved_errno;
 
 	/* Bad tty? */
@@ -116,7 +116,7 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 	 */
 	do {
 		/* Set modified settings. */
-		res = tcsetattr(tty, TCSANOW, &temporary);
+		res = tcsetattr (tty, TCSANOW, &temporary);
 		if (res == -1) {
 			ret = errno;
 			break;
@@ -137,23 +137,23 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 
 		/* Expect an ESC. */
 		for (;;) {
-			res = rd(tty);
+			res = rd (tty);
 			if (res == 27 || res < 1)
 				break;
 			// else store_skipped_data_from_stdin_here
 		}
 
 		/* Expect [ after the ESC. */
-		res = rd(tty);
+		res = rd (tty);
 		if (res != '[')
 			break;
 
 		/* Parse rows. */
 		rows = 0;
-		res = rd(tty);
-		while (IS_DIGIT(res)) {
+		res = rd (tty);
+		while (IS_DIGIT (res)) {
 			rows = 10 * rows + res - '0';
-			res = rd(tty);
+			res = rd (tty);
 		}
 
 		if (res != ';')
@@ -161,12 +161,12 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 
 		/* Parse cols. */
 		cols = 0;
-		res = rd(tty);
-		if (res==-1)
+		res = rd (tty);
+		if (res == -1)
 			break;
-		while (IS_DIGIT(res)) {
+		while (IS_DIGIT (res)) {
 			cols = 10 * cols + res - '0';
-			res = rd(tty);
+			res = rd (tty);
 		}
 
 		if (res != 'R')
@@ -191,7 +191,7 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 }
 #endif
 
-R_API bool r_cons_is_utf8(void) {
+R_API bool r_cons_is_utf8 (void) {
 	bool ret = false;
 #if UTF8_DETECT_ENV
 	const char *keys[] = { "LC_ALL", "LC_CTYPE", "LANG", NULL };
@@ -208,9 +208,9 @@ R_API bool r_cons_is_utf8(void) {
 #endif
 #if UTF8_DETECT_LOCALE
 #include <locale.h>
-	const char *ctype = setlocale(LC_CTYPE, NULL);
-	if ( (ctype != NULL) && (ctype = strchr(ctype, '.')) && ctype++ &&
-		(r_str_casecmp(ctype, "UTF-8") == 0 || r_str_casecmp(ctype, "UTF8") == 0)) {
+	const char *ctype = setlocale (LC_CTYPE, NULL);
+	if ((ctype != NULL) && (ctype = strchr (ctype, '.')) && ctype++ &&
+		(r_str_casecmp (ctype, "UTF-8") == 0 || r_str_casecmp (ctype, "UTF8") == 0)) {
 		return true;
 	}
 #endif
@@ -220,7 +220,7 @@ R_API bool r_cons_is_utf8(void) {
 	int fd = current_tty ();
 	if (fd == -1)
 		return false;
-	if (cursor_position(fd, &row, &col)) {
+	if (cursor_position (fd, &row, &col)) {
 		close (fd);
 		return false;
 	}
@@ -231,12 +231,12 @@ R_API bool r_cons_is_utf8(void) {
 	}
 	close (fd);
 	write (1, "\r    \r", 6);
-	return ((col2-col)==2);
+	return ((col2 - col) == 2);
 #endif
 	return ret;
 }
 #else
-R_API bool r_cons_is_utf8(void) {
+R_API bool r_cons_is_utf8 (void) {
 #if __WINDOWS__
 	return GetConsoleOutputCP () == CP_UTF8;
 #else

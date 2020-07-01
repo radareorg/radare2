@@ -2,8 +2,8 @@
 
 #include <r_util.h>
 
-R_API bool r_name_validate_char(const char ch) {
-	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (IS_DIGIT(ch))) {
+R_API bool r_name_validate_char (const char ch) {
+	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (IS_DIGIT (ch))) {
 		return true;
 	}
 	switch (ch) {
@@ -15,7 +15,7 @@ R_API bool r_name_validate_char(const char ch) {
 	return false;
 }
 
-R_API bool r_name_check(const char *name) {
+R_API bool r_name_check (const char *name) {
 	/* Cannot start by number */
 	if (!name || !*name || IS_DIGIT (*name)) {
 		return false;
@@ -34,7 +34,7 @@ static inline bool is_special_char (char *name) {
 	return (n == 'b' || n == 'f' || n == 'n' || n == 'r' || n == 't' || n == 'v' || n == 'a');
 }
 
-R_API bool r_name_filter(char *name, int maxlen) {
+R_API bool r_name_filter (char *name, int maxlen) {
 	size_t i, len;
 	if (!name) {
 		return false;
@@ -85,7 +85,7 @@ R_API bool r_name_filter(char *name, int maxlen) {
 	return r_name_check (oname);
 }
 
-R_API char *r_name_filter2(const char *name) {
+R_API char *r_name_filter2 (const char *name) {
 	size_t i;
 	while (!IS_PRINTABLE (*name)) {
 		name++;

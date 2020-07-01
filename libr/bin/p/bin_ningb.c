@@ -7,7 +7,7 @@
 #include <string.h>
 #include "../format/nin/nin.h"
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	ut8 lict[sizeof (lic)];
 	if (r_buf_read_at (b, 0x104, lict, sizeof (lict)) == sizeof (lict)) {
 		return !memcmp (lict, lic, sizeof (lict));
@@ -15,15 +15,15 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (buf);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr (RBinFile *bf) {
 	return 0LL;
 }
 
-static RBinAddr* binsym(RBinFile *bf, int type) {
+static RBinAddr *binsym (RBinFile *bf, int type) {
 	if (type == R_BIN_SYM_MAIN && bf && bf->buf) {
 		ut8 init_jmp[4];
 		RBinAddr *ret = R_NEW0 (RBinAddr);
@@ -32,7 +32,7 @@ static RBinAddr* binsym(RBinFile *bf, int type) {
 		}
 		r_buf_read_at (bf->buf, 0x100, init_jmp, 4);
 		if (init_jmp[1] == 0xc3) {
-			ret->paddr = ret->vaddr = init_jmp[3]*0x100 + init_jmp[2];
+			ret->paddr = ret->vaddr = init_jmp[3] * 0x100 + init_jmp[2];
 			return ret;
 		}
 		free (ret);
@@ -40,7 +40,7 @@ static RBinAddr* binsym(RBinFile *bf, int type) {
 	return NULL;
 }
 
-static RList* entries(RBinFile *bf) {
+static RList *entries (RBinFile *bf) {
 	RList *ret = r_list_new ();
 	RBinAddr *ptr = NULL;
 
@@ -58,7 +58,7 @@ static RList* entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList* sections(RBinFile *bf){
+static RList *sections (RBinFile *bf) {
 	ut8 bank;
 	int i;
 	RList *ret;
@@ -73,9 +73,9 @@ static RList* sections(RBinFile *bf){
 	}
 
 	r_buf_read_at (bf->buf, 0x148, &bank, 1);
-	bank = gb_get_rombanks(bank);
+	bank = gb_get_rombanks (bank);
 #ifdef _MSC_VER
-	RBinSection **rombank = (RBinSection**) malloc (sizeof (RBinSection*) * bank);
+	RBinSection **rombank = (RBinSection **)malloc (sizeof (RBinSection *) * bank);
 #else
 	RBinSection *rombank[bank];
 #endif
@@ -104,12 +104,12 @@ static RList* sections(RBinFile *bf){
 	for (i = 1; i < bank; i++) {
 		rombank[i] = R_NEW0 (RBinSection);
 		rombank[i]->name = r_str_newf ("rombank%02x", i);
-		rombank[i]->paddr = i*0x4000;
-		rombank[i]->vaddr = i*0x10000-0xc000;			//spaaaaaaaaaaaaaaaace!!!
+		rombank[i]->paddr = i * 0x4000;
+		rombank[i]->vaddr = i * 0x10000 - 0xc000; //spaaaaaaaaaaaaaaaace!!!
 		rombank[i]->size = rombank[i]->vsize = 0x4000;
 		rombank[i]->perm = r_str_rwx ("rx");
 		rombank[i]->add = true;
-		r_list_append (ret,rombank[i]);
+		r_list_append (ret, rombank[i]);
 	}
 #ifdef _MSC_VER
 	free (rombank);
@@ -117,7 +117,7 @@ static RList* sections(RBinFile *bf){
 	return ret;
 }
 
-static RList* symbols(RBinFile *bf) {
+static RList *symbols (RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSymbol *ptr[13];
 	int i;
@@ -131,8 +131,8 @@ static RList* symbols(RBinFile *bf) {
 			ret->free (ret);
 			return NULL;
 		}
-		ptr[i]->name = r_str_newf ("rst_%i", i*8);
-		ptr[i]->paddr = ptr[i]->vaddr = i*8;
+		ptr[i]->name = r_str_newf ("rst_%i", i * 8);
+		ptr[i]->paddr = ptr[i]->vaddr = i * 8;
 		ptr[i]->size = 1;
 		ptr[i]->ordinal = i;
 		r_list_append (ret, ptr[i]);
@@ -191,7 +191,7 @@ static RList* symbols(RBinFile *bf) {
 	return ret;
 }
 
-static RBinInfo* info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	ut8 rom_header[76];
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret || !bf || !bf->buf) {
@@ -199,7 +199,7 @@ static RBinInfo* info(RBinFile *bf) {
 		return NULL;
 	}
 	r_buf_read_at (bf->buf, 0x104, rom_header, 76);
-	ret->file = r_str_ndup ((const char*)&rom_header[48], 16);
+	ret->file = r_str_ndup ((const char *)&rom_header[48], 16);
 	ret->type = malloc (128);
 	ret->type[0] = 0;
 	gb_get_gbtype (ret->type, rom_header[66], rom_header[63]);

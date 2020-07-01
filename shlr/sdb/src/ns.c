@@ -2,30 +2,30 @@
 
 #include "sdb.h"
 
-SDB_API void sdb_ns_lock(Sdb *s, int lock, int depth) {
+SDB_API void sdb_ns_lock (Sdb *s, int lock, int depth) {
 	SdbListIter *it;
 	SdbNs *ns;
 	s->ns_lock = lock;
 	if (depth) { // handles -1 as infinite
 		ls_foreach (s->ns, it, ns) {
-			sdb_ns_lock (ns->sdb, lock, depth-1);
+			sdb_ns_lock (ns->sdb, lock, depth - 1);
 		}
 	}
 }
 
-static int in_list(SdbList *list, void *item) {
+static int in_list (SdbList *list, void *item) {
 	SdbNs *ns;
 	SdbListIter *it;
 	if (list && item)
-	ls_foreach (list, it, ns) {
-		if (item == ns) {
-			return 1;
+		ls_foreach (list, it, ns) {
+			if (item == ns) {
+				return 1;
+			}
 		}
-	}
 	return 0;
 }
 
-static void ns_free(Sdb *s, SdbList *list) {
+static void ns_free (Sdb *s, SdbList *list) {
 	SdbListIter next;
 	SdbListIter *it;
 	int deleted;
@@ -70,7 +70,7 @@ static void ns_free(Sdb *s, SdbList *list) {
 	s->ns = NULL;
 }
 
-SDB_API void sdb_ns_free(Sdb *s) {
+SDB_API void sdb_ns_free (Sdb *s) {
 	SdbList *list;
 	if (!s) {
 		return;
@@ -89,7 +89,7 @@ static SdbNs *sdb_ns_new (Sdb *s, const char *name, ut32 hash) {
 	if (s->dir && *s->dir && name && *name) {
 		int dir_len = strlen (s->dir);
 		int name_len = strlen (name);
-		if ((dir_len+name_len+3)>SDB_MAX_PATH) {
+		if ((dir_len + name_len + 3) > SDB_MAX_PATH) {
 			return NULL;
 		}
 		memcpy (dir, s->dir, dir_len);
@@ -103,7 +103,7 @@ static SdbNs *sdb_ns_new (Sdb *s, const char *name, ut32 hash) {
 		return NULL;
 	}
 	ns->hash = hash;
-	ns->name = name? strdup (name): NULL;
+	ns->name = name ? strdup (name) : NULL;
 	//ns->sdb = sdb_new (dir, ns->name, 0);
 	ns->sdb = sdb_new0 ();
 	// TODO: generate path
@@ -174,7 +174,7 @@ SDB_API int sdb_ns_set (Sdb *s, const char *name, Sdb *r) {
 	return 1;
 }
 
-SDB_API Sdb *sdb_ns(Sdb *s, const char *name, int create) {
+SDB_API Sdb *sdb_ns (Sdb *s, const char *name, int create) {
 	SdbListIter *it;
 	SdbNs *ns;
 	ut32 hash;
@@ -201,7 +201,7 @@ SDB_API Sdb *sdb_ns(Sdb *s, const char *name, int create) {
 	return ns->sdb;
 }
 
-SDB_API Sdb *sdb_ns_path(Sdb *s, const char *path, int create) {
+SDB_API Sdb *sdb_ns_path (Sdb *s, const char *path, int create) {
 	char *ptr, *str;
 	char *slash;
 
@@ -213,9 +213,10 @@ SDB_API Sdb *sdb_ns_path(Sdb *s, const char *path, int create) {
 		if (slash)
 			*slash = 0;
 		s = sdb_ns (s, ptr, create);
-		if (!s) break;
+		if (!s)
+			break;
 		if (slash)
-			ptr = slash+1;
+			ptr = slash + 1;
 	} while (slash);
 	free (str);
 	return s;

@@ -31,7 +31,7 @@
 #define PT_FORCEQUOTA 30 /* Enforce quota for root */
 #define PT_DENY_ATTACH 31
 #define PT_FIRSTMACH 32 /* for machine-specific requests */
-int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
+int ptrace (int _request, pid_t _pid, caddr_t _addr, int _data);
 #else
 #include <sys/ptrace.h>
 #if !__POWERPC__
@@ -140,37 +140,36 @@ typedef struct {
 	ut64 mdscr_el1;
 } ARMDebugState32;
 
-
 // BCR address match type
-#define BCR_M_IMVA_MATCH        ((uint32_t)(0u << 21))
-#define BCR_M_CONTEXT_ID_MATCH  ((uint32_t)(1u << 21))
-#define BCR_M_IMVA_MISMATCH     ((uint32_t)(2u << 21))
-#define BCR_M_RESERVED          ((uint32_t)(3u << 21))
+#define BCR_M_IMVA_MATCH ((uint32_t) (0u << 21))
+#define BCR_M_CONTEXT_ID_MATCH ((uint32_t) (1u << 21))
+#define BCR_M_IMVA_MISMATCH ((uint32_t) (2u << 21))
+#define BCR_M_RESERVED ((uint32_t) (3u << 21))
 
 // Link a BVR/BCR or WVR/WCR pair to another
-#define E_ENABLE_LINKING        ((uint32_t)(1u << 20))
+#define E_ENABLE_LINKING ((uint32_t) (1u << 20))
 
 // Byte Address Select
-#define BAS_IMVA_PLUS_0         ((uint32_t)(1u << 5))
-#define BAS_IMVA_PLUS_1         ((uint32_t)(1u << 6))
-#define BAS_IMVA_PLUS_2         ((uint32_t)(1u << 7))
-#define BAS_IMVA_PLUS_3         ((uint32_t)(1u << 8))
-#define BAS_IMVA_0_1            ((uint32_t)(3u << 5))
-#define BAS_IMVA_2_3            ((uint32_t)(3u << 7))
-#define BAS_IMVA_ALL            ((uint32_t)(0xfu << 5))
+#define BAS_IMVA_PLUS_0 ((uint32_t) (1u << 5))
+#define BAS_IMVA_PLUS_1 ((uint32_t) (1u << 6))
+#define BAS_IMVA_PLUS_2 ((uint32_t) (1u << 7))
+#define BAS_IMVA_PLUS_3 ((uint32_t) (1u << 8))
+#define BAS_IMVA_0_1 ((uint32_t) (3u << 5))
+#define BAS_IMVA_2_3 ((uint32_t) (3u << 7))
+#define BAS_IMVA_ALL ((uint32_t) (0xfu << 5))
 
 // Break only in privileged or user mode
-#define S_RSVD                  ((uint32_t)(0u << 1))
-#define S_PRIV                  ((uint32_t)(1u << 1))
-#define S_USER                  ((uint32_t)(2u << 1))
-#define S_PRIV_USER             ((S_PRIV) | (S_USER))
+#define S_RSVD ((uint32_t) (0u << 1))
+#define S_PRIV ((uint32_t) (1u << 1))
+#define S_USER ((uint32_t) (2u << 1))
+#define S_PRIV_USER ((S_PRIV) | (S_USER))
 
-#define BCR_ENABLE              ((uint32_t)(1u))
-#define WCR_ENABLE              ((uint32_t)(1u))
+#define BCR_ENABLE ((uint32_t) (1u))
+#define WCR_ENABLE ((uint32_t) (1u))
 
 // Watchpoint load/store
-#define WCR_LOAD                ((uint32_t)(1u << 3))
-#define WCR_STORE               ((uint32_t)(1u << 4))
+#define WCR_LOAD ((uint32_t) (1u << 3))
+#define WCR_STORE ((uint32_t) (1u << 4))
 
 #endif
 
@@ -179,67 +178,67 @@ typedef struct {
 	mach_msg_type_number_t count;
 } coredump_thread_state_flavor_t;
 
-#if defined (__ppc__)
+#if defined(__ppc__)
 
 static coredump_thread_state_flavor_t
-thread_flavor_array[] = {
-	{ PPC_THREAD_STATE,	PPC_THREAD_STATE_COUNT },
-	{ PPC_FLOAT_STATE, PPC_FLOAT_STATE_COUNT },
-	{ PPC_EXCEPTION_STATE, PPC_EXCEPTION_STATE_COUNT },
-	{ PPC_VECTOR_STATE,	PPC_VECTOR_STATE_COUNT },
-};
+	thread_flavor_array[] = {
+		{ PPC_THREAD_STATE, PPC_THREAD_STATE_COUNT },
+		{ PPC_FLOAT_STATE, PPC_FLOAT_STATE_COUNT },
+		{ PPC_EXCEPTION_STATE, PPC_EXCEPTION_STATE_COUNT },
+		{ PPC_VECTOR_STATE, PPC_VECTOR_STATE_COUNT },
+	};
 
 static int coredump_nflavors = 4;
 
-#elif defined (__ppc64__)
+#elif defined(__ppc64__)
 
 coredump_thread_state_flavor_t
-thread_flavor_array[] = {
-	{ PPC_THREAD_STATE64, PPC_THREAD_STATE64_COUNT },
-	{ PPC_FLOAT_STATE, PPC_FLOAT_STATE_COUNT },
-	{ PPC_EXCEPTION_STATE64, PPC_EXCEPTION_STATE64_COUNT },
-	{ PPC_VECTOR_STATE,	PPC_VECTOR_STATE_COUNT },
-};
+	thread_flavor_array[] = {
+		{ PPC_THREAD_STATE64, PPC_THREAD_STATE64_COUNT },
+		{ PPC_FLOAT_STATE, PPC_FLOAT_STATE_COUNT },
+		{ PPC_EXCEPTION_STATE64, PPC_EXCEPTION_STATE64_COUNT },
+		{ PPC_VECTOR_STATE, PPC_VECTOR_STATE_COUNT },
+	};
 
 static int coredump_nflavors = 4;
 
-#elif defined (__i386__)
+#elif defined(__i386__)
 
 static coredump_thread_state_flavor_t
-thread_flavor_array[] = {
-	{ x86_THREAD_STATE32, x86_THREAD_STATE32_COUNT },
-	{ x86_FLOAT_STATE32, x86_FLOAT_STATE32_COUNT },
-	{ x86_EXCEPTION_STATE32, x86_EXCEPTION_STATE32_COUNT },
-};
+	thread_flavor_array[] = {
+		{ x86_THREAD_STATE32, x86_THREAD_STATE32_COUNT },
+		{ x86_FLOAT_STATE32, x86_FLOAT_STATE32_COUNT },
+		{ x86_EXCEPTION_STATE32, x86_EXCEPTION_STATE32_COUNT },
+	};
 
 static int coredump_nflavors = 3;
 
-#elif defined (__x86_64__)
+#elif defined(__x86_64__)
 
 static coredump_thread_state_flavor_t
-thread_flavor_array[] = {
-	{ x86_THREAD_STATE64, x86_THREAD_STATE64_COUNT },
-	{ x86_FLOAT_STATE64, x86_FLOAT_STATE64_COUNT },
-	{ x86_EXCEPTION_STATE64, x86_EXCEPTION_STATE64_COUNT },
-};
+	thread_flavor_array[] = {
+		{ x86_THREAD_STATE64, x86_THREAD_STATE64_COUNT },
+		{ x86_FLOAT_STATE64, x86_FLOAT_STATE64_COUNT },
+		{ x86_EXCEPTION_STATE64, x86_EXCEPTION_STATE64_COUNT },
+	};
 
 static int coredump_nflavors = 3;
 
-#elif defined (__aarch64__) || defined (__arm64__)
+#elif defined(__aarch64__) || defined(__arm64__)
 
 static coredump_thread_state_flavor_t
-thread_flavor_array[] = {
-	{ ARM_UNIFIED_THREAD_STATE, ARM_UNIFIED_THREAD_STATE_COUNT}
-};
+	thread_flavor_array[] = {
+		{ ARM_UNIFIED_THREAD_STATE, ARM_UNIFIED_THREAD_STATE_COUNT }
+	};
 
 static int coredump_nflavors = 1;
 
-#elif defined (__arm__)
+#elif defined(__arm__)
 
 static coredump_thread_state_flavor_t
-thread_flavor_array[] = {
-	{ ARM_THREAD_STATE64, ARM_THREAD_STATE64_COUNT }
-};
+	thread_flavor_array[] = {
+		{ ARM_THREAD_STATE64, ARM_THREAD_STATE64_COUNT }
+	};
 
 static int coredump_nflavors = 1;
 
@@ -262,8 +261,8 @@ typedef struct {
 
 task_t pid_to_task (int pid);
 int xnu_get_vmmap_entries_for_pid (pid_t pid);
-char *xnu_corefile_default_location(void);
-bool xnu_generate_corefile(RDebug *dbg, RBuffer *dest);
+char *xnu_corefile_default_location (void);
+bool xnu_generate_corefile (RDebug *dbg, RBuffer *dest);
 int xnu_reg_read (RDebug *dbg, int type, ut8 *buf, int size);
 int xnu_reg_write (RDebug *dgb, int type, const ut8 *buf, int size);
 char *xnu_reg_profile (RDebug *dbg);

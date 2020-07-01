@@ -8,10 +8,9 @@
 
 R_LIB_VERSION (r_parse);
 
-static RParsePlugin *parse_static_plugins[] =
-	{ R_PARSE_STATIC_PLUGINS };
+static RParsePlugin *parse_static_plugins[] = { R_PARSE_STATIC_PLUGINS };
 
-R_API RParse *r_parse_new(void) {
+R_API RParse *r_parse_new (void) {
 	int i;
 	RParse *p = R_NEW0 (RParse);
 	if (!p) {
@@ -35,12 +34,12 @@ R_API RParse *r_parse_new(void) {
 	return p;
 }
 
-R_API void r_parse_free(RParse *p) {
+R_API void r_parse_free (RParse *p) {
 	r_list_free (p->parsers);
 	free (p);
 }
 
-R_API bool r_parse_add(RParse *p, RParsePlugin *foo) {
+R_API bool r_parse_add (RParse *p, RParsePlugin *foo) {
 	bool itsFine = true;
 	if (foo->init) {
 		itsFine = foo->init (p, p->user);
@@ -51,7 +50,7 @@ R_API bool r_parse_add(RParse *p, RParsePlugin *foo) {
 	return true;
 }
 
-R_API bool r_parse_use(RParse *p, const char *name) {
+R_API bool r_parse_use (RParse *p, const char *name) {
 	RListIter *iter;
 	RParsePlugin *h;
 	r_return_val_if_fail (p && name, false);
@@ -66,12 +65,12 @@ R_API bool r_parse_use(RParse *p, const char *name) {
 
 // this function is a bit confussing, assembles C code into wat?, whehres theh input and wheres the output
 // and its unused. so imho it sshould be DEPRECATED this conflicts with rasm.assemble imhoh
-R_API bool r_parse_assemble(RParse *p, char *data, char *str) {
+R_API bool r_parse_assemble (RParse *p, char *data, char *str) {
 	char *in = strdup (str);
 	bool ret = false;
 	char *s, *o;
 
-	data[0]='\0';
+	data[0] = '\0';
 	if (p->cur && p->cur->assemble) {
 		o = data + strlen (data);
 		do {
@@ -98,13 +97,14 @@ R_API bool r_parse_assemble(RParse *p, char *data, char *str) {
 
 // data is input disasm, str is output pseudo
 // TODO: refactooring, this should return char * instead
-R_API bool r_parse_parse(RParse *p, const char *data, char *str) {
+R_API bool r_parse_parse (RParse *p, const char *data, char *str) {
 	r_return_val_if_fail (p && data && str, false);
 	return (p && data && *data && p->cur && p->cur->parse)
-		? p->cur->parse (p, data, str) : false;
+		? p->cur->parse (p, data, str)
+		: false;
 }
 
-R_API char *r_parse_immtrim(char *opstr) {
+R_API char *r_parse_immtrim (char *opstr) {
 	if (!opstr || !*opstr) {
 		return NULL;
 	}
@@ -134,7 +134,7 @@ R_API char *r_parse_immtrim(char *opstr) {
 	return opstr;
 }
 
-R_API bool r_parse_varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+R_API bool r_parse_varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	if (p->cur && p->cur->varsub) {
 		return p->cur->varsub (p, f, addr, oplen, data, str, len);
 	}
@@ -142,6 +142,6 @@ R_API bool r_parse_varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, cha
 }
 
 /* setters */
-R_API void r_parse_set_user_ptr(RParse *p, void *user) {
+R_API void r_parse_set_user_ptr (RParse *p, void *user) {
 	p->user = user;
 }

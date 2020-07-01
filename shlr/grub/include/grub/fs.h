@@ -18,7 +18,7 @@
  */
 
 #ifndef GRUB_FS_HEADER
-#define GRUB_FS_HEADER	1
+#define GRUB_FS_HEADER 1
 
 #include <grub/device.h>
 #include <grub/symbol.h>
@@ -28,55 +28,53 @@
 /* Forward declaration is required, because of mutual reference.  */
 struct grub_file;
 
-struct grub_dirhook_info
-{
-  unsigned int dir:1;
-  unsigned int mtimeset:1;
-  unsigned int case_insensitive:1;
-  grub_int32_t mtime;
+struct grub_dirhook_info {
+	unsigned int dir : 1;
+	unsigned int mtimeset : 1;
+	unsigned int case_insensitive : 1;
+	grub_int32_t mtime;
 };
 
 /* Filesystem descriptor.  */
-struct grub_fs
-{
-  /* The next filesystem.  */
-  struct grub_fs *next;
+struct grub_fs {
+	/* The next filesystem.  */
+	struct grub_fs *next;
 
-  /* My name.  */
-  const char *name;
+	/* My name.  */
+	const char *name;
 
-  /* Call HOOK with each file under DIR.  */
-  grub_err_t (*dir) (grub_device_t device, const char *path,
-		     int (*hook) (const char *filename,
-				  const struct grub_dirhook_info *info,
-				  void *closure),
-		     void *closure);
+	/* Call HOOK with each file under DIR.  */
+	grub_err_t (*dir) (grub_device_t device, const char *path,
+		int (*hook) (const char *filename,
+			const struct grub_dirhook_info *info,
+			void *closure),
+		void *closure);
 
-  /* Open a file named NAME and initialize FILE.  */
-  grub_err_t (*open) (struct grub_file *file, const char *name);
+	/* Open a file named NAME and initialize FILE.  */
+	grub_err_t (*open) (struct grub_file *file, const char *name);
 
-  /* Read LEN bytes data from FILE into BUF.  */
-  grub_ssize_t (*read) (struct grub_file *file, char *buf, grub_size_t len);
+	/* Read LEN bytes data from FILE into BUF.  */
+	grub_ssize_t (*read) (struct grub_file *file, char *buf, grub_size_t len);
 
-  /* Close the file FILE.  */
-  grub_err_t (*close) (struct grub_file *file);
+	/* Close the file FILE.  */
+	grub_err_t (*close) (struct grub_file *file);
 
-  /* Return the label of the device DEVICE in LABEL.  The label is
+	/* Return the label of the device DEVICE in LABEL.  The label is
      returned in a grub_malloc'ed buffer and should be freed by the
      caller.  */
-  grub_err_t (*label) (grub_device_t device, char **label);
+	grub_err_t (*label) (grub_device_t device, char **label);
 
-  /* Return the uuid of the device DEVICE in UUID.  The uuid is
+	/* Return the uuid of the device DEVICE in UUID.  The uuid is
      returned in a grub_malloc'ed buffer and should be freed by the
      caller.  */
-  grub_err_t (*uuid) (grub_device_t device, char **uuid);
+	grub_err_t (*uuid) (grub_device_t device, char **uuid);
 
-  /* Get writing time of filesystem. */
-  grub_err_t (*mtime) (grub_device_t device, grub_int32_t *timebuf);
+	/* Get writing time of filesystem. */
+	grub_err_t (*mtime) (grub_device_t device, grub_int32_t *timebuf);
 
 #ifdef GRUB_UTIL
-  /* Whether this filesystem reserves first sector for DOS-style boot.  */
-  int reserved_first_sector;
+	/* Whether this filesystem reserves first sector for DOS-style boot.  */
+	int reserved_first_sector;
 #endif
 };
 typedef struct grub_fs *grub_fs_t;
@@ -90,10 +88,9 @@ extern grub_fs_t grub_fs_list;
 
 static inline void
 grub_fs_iterate (int (*hook) (const grub_fs_t fs, void *closure),
-		 void *closure)
-{
-  grub_list_iterate (GRUB_AS_LIST (grub_fs_list), (grub_list_hook_t) hook,
-		     closure);
+	void *closure) {
+	grub_list_iterate (GRUB_AS_LIST (grub_fs_list), (grub_list_hook_t)hook,
+		closure);
 }
 
 grub_fs_t grub_fs_probe (grub_device_t device);

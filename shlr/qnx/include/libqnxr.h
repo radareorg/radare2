@@ -25,7 +25,7 @@ typedef int pid_t;
 #define ARM_64 ARCH_ARM_64
 
 typedef struct
-	{
+{
 	st32 pid;
 	st64 tid;
 } ptid_t;
@@ -64,7 +64,7 @@ typedef struct libqnxr_t {
 	int waiting_for_stop;
 } libqnxr_t;
 
-typedef void(pidlist_cb_t)(void *ctx, pid_t pid, char *name);
+typedef void (pidlist_cb_t) (void *ctx, pid_t pid, char *name);
 
 int qnxr_init (libqnxr_t *g);
 int qnxr_set_architecture (libqnxr_t *g, ut8 architecture);

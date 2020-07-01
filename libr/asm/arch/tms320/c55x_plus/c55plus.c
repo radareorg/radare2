@@ -16,9 +16,9 @@
 
 extern ut8 *ins_buff;
 extern ut32 ins_buff_len;
-extern char *c55plus_decode(ut32 ins_pos, ut32 *next_ins_pos);
+extern char *c55plus_decode (ut32 ins_pos, ut32 *next_ins_pos);
 
-int c55x_plus_disassemble(tms320_dasm_t *dasm, const ut8 *buf, int len) {
+int c55x_plus_disassemble (tms320_dasm_t *dasm, const ut8 *buf, int len) {
 	unsigned int next_ins_pos;
 	char *ins_decoded;
 	size_t i, ins_decoded_len;
@@ -29,7 +29,7 @@ int c55x_plus_disassemble(tms320_dasm_t *dasm, const ut8 *buf, int len) {
 	next_ins_pos = 0;
 
 	// decode instruction
-	ins_decoded = c55plus_decode(0, &next_ins_pos);
+	ins_decoded = c55plus_decode (0, &next_ins_pos);
 	dasm->length = next_ins_pos;
 	if (!ins_decoded) {
 		return 0;
@@ -37,14 +37,14 @@ int c55x_plus_disassemble(tms320_dasm_t *dasm, const ut8 *buf, int len) {
 
 	// opcode length
 	dasm->length = next_ins_pos;
-	ins_decoded_len = strlen(ins_decoded);
+	ins_decoded_len = strlen (ins_decoded);
 	for (i = 0; i < ins_decoded_len; i++) {
 		{
 			ins_decoded[i] = tolower ((unsigned char)ins_decoded[i]);
 		}
 	}
-	snprintf (dasm->syntax, sizeof(dasm->syntax), "%s", ins_decoded);
+	snprintf (dasm->syntax, sizeof (dasm->syntax), "%s", ins_decoded);
 	free (ins_decoded);
-	
+
 	return next_ins_pos;
 }

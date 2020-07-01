@@ -8,12 +8,12 @@
 #include "../arch/z80/z80.c"
 #include "../arch/z80/z80asm.c"
 
-static int do_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int do_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size = z80Disass (op, buf, len);
 }
 
-static int do_assemble(RAsm *a, RAsmOp *op, const char *buf) {
-	return op->size = z80asm ((ut8*)r_strbuf_get (&op->buf), buf);
+static int do_assemble (RAsm *a, RAsmOp *op, const char *buf) {
+	return op->size = z80asm ((ut8 *)r_strbuf_get (&op->buf), buf);
 }
 
 RAsmPlugin r_asm_plugin_z80 = {

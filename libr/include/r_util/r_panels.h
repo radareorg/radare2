@@ -22,10 +22,10 @@ typedef enum {
 	PANEL_EDGE_RIGHT
 } RPanelEdge;
 
-typedef void (*RPanelMenuUpdateCallback)(void *user, const char *parent);
-typedef void (*RPanelDirectionCallback)(void *user, int direction);
-typedef void (*RPanelRotateCallback)(void *user, bool rev);
-typedef void (*RPanelPrintCallback)(void *user, void *p);
+typedef void (*RPanelMenuUpdateCallback) (void *user, const char *parent);
+typedef void (*RPanelDirectionCallback) (void *user, int direction);
+typedef void (*RPanelRotateCallback) (void *user, bool rev);
+typedef void (*RPanelPrintCallback) (void *user, void *p);
 
 typedef struct r_panel_pos_t {
 	int x;
@@ -63,11 +63,11 @@ typedef struct r_panel_view_t {
 } RPanelView;
 
 typedef struct r_panel_t {
-    RPanelModel *model;
-    RPanelView *view;
+	RPanelModel *model;
+	RPanelView *view;
 } RPanel;
 
-typedef void (*RPanelAlmightyCallback)(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title);
+typedef void (*RPanelAlmightyCallback) (void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title);
 
 #ifdef __cplusplus
 }

@@ -13,13 +13,13 @@ SDB_API char *sdb_json_get_str (const char *json, const char *path) {
 	return rangstr_dup (&rs);
 }
 
-SDB_API bool sdb_json_get_bool(const char *json, const char *path) {
+SDB_API bool sdb_json_get_bool (const char *json, const char *path) {
 	Rangstr rs = json_get (json, path);
 	const char *p = rs.p + rs.f;
 	return (rangstr_length (&rs) == 4 && !strncmp (p, "true", 4));
 }
 
-SDB_API char *sdb_json_get(Sdb *s, const char *k, const char *p, ut32 *cas) {
+SDB_API char *sdb_json_get (Sdb *s, const char *k, const char *p, ut32 *cas) {
 	Rangstr rs;
 	char *u, *v = sdb_get (s, k, cas);
 	if (!v) {
@@ -31,7 +31,7 @@ SDB_API char *sdb_json_get(Sdb *s, const char *k, const char *p, ut32 *cas) {
 	return u;
 }
 
-SDB_API int sdb_json_num_inc(Sdb *s, const char *k, const char *p, int n, ut32 cas) {
+SDB_API int sdb_json_num_inc (Sdb *s, const char *k, const char *p, int n, ut32 cas) {
 	ut32 c;
 	int cur = sdb_json_num_get (s, k, p, &c);
 	if (cas && c != cas) {
@@ -41,7 +41,7 @@ SDB_API int sdb_json_num_inc(Sdb *s, const char *k, const char *p, int n, ut32 c
 	return cur + n;
 }
 
-SDB_API int sdb_json_num_dec(Sdb *s, const char *k, const char *p, int n, ut32 cas) {
+SDB_API int sdb_json_num_dec (Sdb *s, const char *k, const char *p, int n, ut32 cas) {
 	ut32 c;
 	int cur = sdb_json_num_get (s, k, p, &c);
 	if (cas && c != cas) {
@@ -62,7 +62,7 @@ SDB_API int sdb_json_num_get (Sdb *s, const char *k, const char *p, ut32 *cas) {
 	return 0;
 }
 
-static int findkey(Rangstr *rs) {
+static int findkey (Rangstr *rs) {
 	int i;
 	for (i = rs->f; i > 0; i--) {
 		// Find the quote after the key
@@ -78,7 +78,7 @@ static int findkey(Rangstr *rs) {
 	return -1;
 }
 
-static bool isstring(const char *s) {
+static bool isstring (const char *s) {
 	if (!strcmp (s, "true")) {
 		return false;
 	}
@@ -123,7 +123,7 @@ SDB_API bool sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, 
 		b = malloc (p_len + v_len + 8);
 		if (b) {
 			int is_str = isstring (v);
-			const char *q = is_str? "\"": "";
+			const char *q = is_str ? "\"" : "";
 			sprintf (b, "{\"%s\":%s%s%s}", p, q, v, q);
 #if 0
 			/* disabled because it memleaks */
@@ -255,21 +255,21 @@ SDB_API bool sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, 
 	return true;
 }
 
-SDB_API const char *sdb_json_format(SdbJsonString *s, const char *fmt, ...) {
+SDB_API const char *sdb_json_format (SdbJsonString *s, const char *fmt, ...) {
 	char *arg_s, *x, tmp[128];
 	ut64 arg_l;
 	int i, arg_i;
 	double arg_f;
 	va_list ap;
-#define JSONSTR_ALLOCATE(y)\
-	if (s->len + y > s->blen) {\
-		s->blen *= 2;\
-		x = realloc (s->buf, s->blen);\
-		if (!x) {\
-			va_end (ap);\
-			return NULL;\
-		}\
-		s->buf = x;\
+#define JSONSTR_ALLOCATE(y)                    \
+	if (s->len + y > s->blen) {            \
+		s->blen *= 2;                  \
+		x = realloc (s->buf, s->blen); \
+		if (!x) {                      \
+			va_end (ap);           \
+			return NULL;           \
+		}                              \
+		s->buf = x;                    \
 	}
 	if (!s) {
 		return NULL;
@@ -293,8 +293,8 @@ SDB_API const char *sdb_json_format(SdbJsonString *s, const char *fmt, ...) {
 			case 'b':
 				JSONSTR_ALLOCATE (32);
 				arg_i = va_arg (ap, int);
-				arg_i = arg_i? 4: 5;
-				memcpy (s->buf + s->len, (arg_i == 4)? "true": "false", 5);
+				arg_i = arg_i ? 4 : 5;
+				memcpy (s->buf + s->len, (arg_i == 4) ? "true" : "false", 5);
 				s->len += arg_i;
 				break;
 			case 'f':
@@ -307,7 +307,7 @@ SDB_API const char *sdb_json_format(SdbJsonString *s, const char *fmt, ...) {
 			case 'l':
 				JSONSTR_ALLOCATE (32);
 				arg_l = va_arg (ap, ut64);
-				snprintf (tmp, sizeof (tmp), "0x%"ULLFMT "x", arg_l);
+				snprintf (tmp, sizeof (tmp), "0x%" ULLFMT "x", arg_l);
 				memcpy (s->buf + s->len, tmp, strlen (tmp));
 				s->len += strlen (tmp);
 				break;

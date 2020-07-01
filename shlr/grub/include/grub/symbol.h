@@ -17,33 +17,32 @@
  */
 
 #ifndef GRUB_SYMBOL_HEADER
-#define GRUB_SYMBOL_HEADER	1
+#define GRUB_SYMBOL_HEADER 1
 
 /* Apple assembler requires local labels to start with a capital L */
-#define LOCAL(sym)	L_ ## sym
+#define LOCAL(sym) L_##sym
 
 /* Add an underscore to a C symbol in assembler code if needed. */
 #ifdef HAVE_ASM_USCORE
-# define EXT_C(sym)	_ ## sym
+#define EXT_C(sym) _##sym
 #else
-# define EXT_C(sym)	sym
+#define EXT_C(sym) sym
 #endif
 
-#define FUNCTION(x)	EXT_C(x): .globl EXT_C(x)
-#define VARIABLE(x)	EXT_C(x): .globl EXT_C(x)
+#define FUNCTION(x) EXT_C (x) :.globl EXT_C (x)
+#define VARIABLE(x) EXT_C (x) :.globl EXT_C (x)
 
 /* Mark an exported symbol.  */
 #ifndef GRUB_SYMBOL_GENERATOR
-# define EXPORT_FUNC(x)	x
-# define EXPORT_VAR(x)	x
+#define EXPORT_FUNC(x) x
+#define EXPORT_VAR(x) x
 #endif /* ! GRUB_SYMBOL_GENERATOR */
-
 
 #define GRUB_EXPORT_START
 
 #define GRUB_MODATTR(name, value)
 //#define GRUB_EXPORT(name)	.ascii "export:",#name,"\0"
-#define GRUB_EXPORT_END		.text
-#define GRUB_EXPORT(value)	
+#define GRUB_EXPORT_END .text
+#define GRUB_EXPORT(value)
 
 #endif /* ! GRUB_SYMBOL_HEADER */

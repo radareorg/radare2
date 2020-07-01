@@ -17,7 +17,7 @@
  */
 
 #ifndef GRUB_NET_HEADER
-#define GRUB_NET_HEADER	1
+#define GRUB_NET_HEADER 1
 
 #include <grub/symbol.h>
 #include <grub/err.h>
@@ -25,42 +25,40 @@
 
 struct grub_net;
 
-struct grub_net_dev
-{
-  /* The device name.  */
-  const char *name;
+struct grub_net_dev {
+	/* The device name.  */
+	const char *name;
 
-  /* FIXME: Just a template.  */
-  int (*probe) (struct grub_net *net, const void *addr);
-  void (*reset) (struct grub_net *net);
-  int (*poll) (struct grub_net *net);
-  void (*transmit) (struct grub_net *net, const void *destip,
-		    unsigned srcsock, unsigned destsock, const void *packet);
-  void (*disable) (struct grub_net *net);
+	/* FIXME: Just a template.  */
+	int (*probe) (struct grub_net *net, const void *addr);
+	void (*reset) (struct grub_net *net);
+	int (*poll) (struct grub_net *net);
+	void (*transmit) (struct grub_net *net, const void *destip,
+		unsigned srcsock, unsigned destsock, const void *packet);
+	void (*disable) (struct grub_net *net);
 
-  /* The next net device.  */
-  struct grub_net_dev *next;
+	/* The next net device.  */
+	struct grub_net_dev *next;
 };
 typedef struct grub_net_dev *grub_net_dev_t;
 
 struct grub_fs;
 
-struct grub_net
-{
-  /* The net name.  */
-  const char *name;
+struct grub_net {
+	/* The net name.  */
+	const char *name;
 
-  /* The underlying disk device.  */
-  grub_net_dev_t dev;
+	/* The underlying disk device.  */
+	grub_net_dev_t dev;
 
-  /* The binding filesystem.  */
-  struct grub_fs *fs;
+	/* The binding filesystem.  */
+	struct grub_fs *fs;
 
-  /* FIXME: More data would be required, such as an IP address, a mask,
+	/* FIXME: More data would be required, such as an IP address, a mask,
      a gateway, etc.  */
 
-  /* Device-specific data.  */
-  void *data;
+	/* Device-specific data.  */
+	void *data;
 };
 typedef struct grub_net *grub_net_t;
 

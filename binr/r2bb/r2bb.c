@@ -2,7 +2,7 @@
 
 #include <r_util.h>
 
-typedef char* (*CommandCallback)(const char *args);
+typedef char *(*CommandCallback) (const char *args);
 
 typedef struct {
 	const char *cmd;
@@ -15,7 +15,7 @@ static BbCommands bbcmds[] = {
 	NULL
 };
 
-static int run(int i, const char *arg) {
+static int run (int i, const char *arg) {
 	char *res = bbcmds[i].cb (arg);
 	if (res) {
 		printf ("%s", res);
@@ -25,18 +25,18 @@ static int run(int i, const char *arg) {
 	return 1;
 }
 
-int main(int argc, char **argv) {
+int main (int argc, char **argv) {
 	int i;
 	for (i = 0; bbcmds[i].cmd; i++) {
 		if (!strcmp (bbcmds[i].cmd, argv[0])) {
-			const char *arg = argc > 1? argv[1]: NULL;
+			const char *arg = argc > 1 ? argv[1] : NULL;
 			return run (i, arg);
 		}
 	}
 	if (argc > 1) {
 		for (i = 0; bbcmds[i].cmd; i++) {
 			if (!strcmp (bbcmds[i].cmd, argv[1])) {
-				const char *arg = argc > 2? argv[2]: NULL;
+				const char *arg = argc > 2 ? argv[2] : NULL;
 				return run (i, arg);
 			}
 		}

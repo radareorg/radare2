@@ -9,22 +9,22 @@
 #if __WINDOWS__
 #include <windows.h>
 
-static void *iob_pipe_open(const char *path) {
+static void *iob_pipe_open (const char *path) {
 	HANDLE hPipe;
 	LPTSTR path_ = r_sys_conv_utf8_to_win (path);
 
 	hPipe = CreateFile (path_, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
 	free (path_);
-	return hPipe != INVALID_HANDLE_VALUE? (void *)(HANDLE)hPipe : NULL;
+	return hPipe != INVALID_HANDLE_VALUE ? (void *)(HANDLE)hPipe : NULL;
 }
 
-static int iob_pipe_close(void *p) {
+static int iob_pipe_close (void *p) {
 	return CloseHandle (p);
 }
 
-static int iob_pipe_read(void *p, uint8_t *buf, const uint64_t count, const int timeout) {
+static int iob_pipe_read (void *p, uint8_t *buf, const uint64_t count, const int timeout) {
 	DWORD c = 0;
-	OVERLAPPED ov = {0};
+	OVERLAPPED ov = { 0 };
 	ov.hEvent = CreateEvent (NULL, FALSE, FALSE, NULL);
 	if (!ov.hEvent) {
 		return 0;
@@ -42,9 +42,9 @@ static int iob_pipe_read(void *p, uint8_t *buf, const uint64_t count, const int 
 	return c;
 }
 
-static int iob_pipe_write(void *p, const uint8_t *buf, const uint64_t count, const int timeout) {
+static int iob_pipe_write (void *p, const uint8_t *buf, const uint64_t count, const int timeout) {
 	DWORD cbWrited = 0;
-	OVERLAPPED ov = {0};
+	OVERLAPPED ov = { 0 };
 	if (!WriteFile (p, buf, count, NULL, &ov) &&
 		GetLastError () != ERROR_IO_PENDING) {
 		r_sys_perror ("WriteFile");
@@ -59,7 +59,7 @@ static int iob_pipe_write(void *p, const uint8_t *buf, const uint64_t count, con
 #include <sys/select.h>
 #include <sys/un.h>
 
-static void *iob_pipe_open(const char *path) {
+static void *iob_pipe_open (const char *path) {
 	int sock;
 	struct sockaddr_un sa;
 
@@ -72,24 +72,24 @@ static void *iob_pipe_open(const char *path) {
 	memset (&sa, 0, sizeof (struct sockaddr_un));
 
 	sa.sun_family = AF_UNIX;
-	strncpy (sa.sun_path, path, sizeof(sa.sun_path));
+	strncpy (sa.sun_path, path, sizeof (sa.sun_path));
 	sa.sun_path[sizeof (sa.sun_path) - 1] = 0;
-	if (connect (sock, (struct sockaddr *) &sa, sizeof(struct sockaddr_un)) == -1) {
+	if (connect (sock, (struct sockaddr *)&sa, sizeof (struct sockaddr_un)) == -1) {
 		perror ("connect");
 		close (sock);
 		return 0;
 	}
-	return (void *) (size_t) sock;
+	return (void *)(size_t)sock;
 }
 
-static int iob_pipe_close(void *p) {
-	return close ((int) (size_t) p);
+static int iob_pipe_close (void *p) {
+	return close ((int)(size_t)p);
 }
 
-static int iob_pipe_read(void *p, uint8_t *buf, const uint64_t count, const int timeout) {
+static int iob_pipe_read (void *p, uint8_t *buf, const uint64_t count, const int timeout) {
 	int result;
 	fd_set readset;
-	int fd = (int) (size_t) p;
+	int fd = (int)(size_t)p;
 	struct timeval tv;
 	tv.tv_sec = 0;
 	// Convert from ms
@@ -108,14 +108,14 @@ static int iob_pipe_read(void *p, uint8_t *buf, const uint64_t count, const int 
 			return -1;
 		}
 		if (FD_ISSET (fd, &readset)) {
-			return recv ((int) (size_t) p, buf, count, 0);
+			return recv ((int)(size_t)p, buf, count, 0);
 		}
 	}
 	return EINTR;
 }
 
-static int iob_pipe_write(void *p, const uint8_t *buf, const uint64_t count, const int timeout) {
-	int ret = send ((int) (size_t) p, buf, count, 0);
+static int iob_pipe_write (void *p, const uint8_t *buf, const uint64_t count, const int timeout) {
+	int ret = send ((int)(size_t)p, buf, count, 0);
 	if (ret < 1) {
 		r_sys_perror ("iob_pipe_write, send");
 		if (errno == EPIPE) {

@@ -14,9 +14,9 @@ struct des_state {
 	int i;
 };
 
-static struct des_state st = {{0}};
+static struct des_state st = { { 0 } };
 
-static ut32 be32(const ut8 *buf4) {
+static ut32 be32 (const ut8 *buf4) {
 	ut32 val = buf4[0] << 8;
 	val |= buf4[1];
 	val <<= 8;
@@ -26,7 +26,7 @@ static ut32 be32(const ut8 *buf4) {
 	return val;
 }
 
-static void wbe32(ut8 *buf4, ut32 val) {
+static void wbe32 (ut8 *buf4, ut32 val) {
 	buf4[0] = (val >> 24);
 	buf4[1] = (val >> 16) & 0xFF;
 	buf4[2] = (val >> 8) & 0xFF;
@@ -43,10 +43,10 @@ static int des_encrypt (struct des_state *st, const ut8 *input, ut8 *output) {
 	//first permutation
 	r_des_permute_block0 (&st->buflo, &st->bufhi);
 
- 	for (st->i = 0; st->i < 16; st->i++) {
-	   r_des_round (&st->buflo, &st->bufhi, &st->keylo[st->i], &st->keyhi[st->i]);
+	for (st->i = 0; st->i < 16; st->i++) {
+		r_des_round (&st->buflo, &st->bufhi, &st->keylo[st->i], &st->keyhi[st->i]);
 	}
- 	//last permutation
+	//last permutation
 	r_des_permute_block1 (&st->bufhi, &st->buflo);
 
 	//result
@@ -66,7 +66,7 @@ static int des_decrypt (struct des_state *st, const ut8 *input, ut8 *output) {
 	r_des_permute_block0 (&st->buflo, &st->bufhi);
 
 	for (st->i = 0; st->i < 16; st->i++) {
-	   r_des_round (&st->buflo, &st->bufhi, &st->keylo[15 - st->i], &st->keyhi[15 - st->i]);
+		r_des_round (&st->buflo, &st->bufhi, &st->keylo[15 - st->i], &st->keyhi[15 - st->i]);
 	}
 
 	//last permutation
@@ -131,11 +131,11 @@ static bool update (RCrypto *cry, const ut8 *buf, int len) {
 
 	memset (ibuf + len, 0, (size - len));
 	memcpy (ibuf, buf, len);
-// got it from AES, should be changed??
-// Padding should start like 100000...
-//	if (diff) {
-//		ibuf[len] = 8; //0b1000;
-//	}
+	// got it from AES, should be changed??
+	// Padding should start like 100000...
+	//	if (diff) {
+	//		ibuf[len] = 8; //0b1000;
+	//	}
 
 	int i;
 	if (cry->dir) {

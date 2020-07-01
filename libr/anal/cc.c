@@ -5,7 +5,7 @@
 #include <r_anal.h>
 #define DB anal->sdb_cc
 
-R_API void r_anal_cc_del(RAnal *anal, const char *name) {
+R_API void r_anal_cc_del (RAnal *anal, const char *name) {
 	int i;
 	sdb_unset (DB, sdb_fmt ("%s", name), 0);
 	sdb_unset (DB, sdb_fmt ("cc.%s.ret", name), 0);
@@ -15,7 +15,7 @@ R_API void r_anal_cc_del(RAnal *anal, const char *name) {
 	}
 }
 
-R_API void r_anal_cc_set(RAnal *anal, const char *expr) {
+R_API void r_anal_cc_set (RAnal *anal, const char *expr) {
 	char *e = strdup (expr);
 	char *p = strchr (e, '(');
 	if (p) {
@@ -51,7 +51,7 @@ R_API void r_anal_cc_set(RAnal *anal, const char *expr) {
 	free (args);
 }
 
-R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
+R_API char *r_anal_cc_get (RAnal *anal, const char *name) {
 	int i;
 	// get cc by name and print the expr
 	if (r_str_cmp (sdb_const_get (DB, name, 0), "cc", -1)) {
@@ -72,34 +72,33 @@ R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
 		if (!arg) {
 			break;
 		}
-		r_strbuf_appendf (sb, "%s%s", isFirst? "": ", ", arg);
+		r_strbuf_appendf (sb, "%s%s", isFirst ? "" : ", ", arg);
 		isFirst = false;
 	}
 	const char *argn = sdb_const_get (DB, sdb_fmt ("cc.%s.argn", name), 0);
 	if (argn) {
-		r_strbuf_appendf (sb, "%s%s", isFirst? "": ", ", argn);
+		r_strbuf_appendf (sb, "%s%s", isFirst ? "" : ", ", argn);
 	}
 	const char *self = r_anal_cc_self (anal, name);
 	if (self) {
-		r_strbuf_appendf (sb, "%s%s", isFirst? "": ", ", self);
+		r_strbuf_appendf (sb, "%s%s", isFirst ? "" : ", ", self);
 	}
 	const char *error = r_anal_cc_error (anal, name);
 	if (error) {
-		r_strbuf_appendf (sb, "%s%s", isFirst? "": ", ", error);
+		r_strbuf_appendf (sb, "%s%s", isFirst ? "" : ", ", error);
 	}
 
 	r_strbuf_appendf (sb, ");");
 	return r_strbuf_drain (sb);
 }
 
-
-R_API bool r_anal_cc_exist(RAnal *anal, const char *convention) {
+R_API bool r_anal_cc_exist (RAnal *anal, const char *convention) {
 	r_return_val_if_fail (anal && convention, false);
 	const char *x = sdb_const_get (DB, convention, 0);
 	return x && *x && !strcmp (x, "cc");
 }
 
-R_API const char *r_anal_cc_arg(RAnal *anal, const char *convention, int n) {
+R_API const char *r_anal_cc_arg (RAnal *anal, const char *convention, int n) {
 	r_return_val_if_fail (anal && convention, NULL);
 	if (n < 0) {
 		return NULL;
@@ -110,24 +109,24 @@ R_API const char *r_anal_cc_arg(RAnal *anal, const char *convention, int n) {
 		query = sdb_fmt ("cc.%s.argn", convention);
 		ret = sdb_const_get (DB, query, 0);
 	}
-	return ret? r_str_constpool_get (&anal->constpool, ret): NULL;
+	return ret ? r_str_constpool_get (&anal->constpool, ret) : NULL;
 }
 
-R_API const char *r_anal_cc_self(RAnal *anal, const char *convention) {
+R_API const char *r_anal_cc_self (RAnal *anal, const char *convention) {
 	r_return_val_if_fail (anal && convention, NULL);
 	const char *query = sdb_fmt ("cc.%s.self", convention);
 	const char *self = sdb_const_get (DB, query, 0);
-	return self? r_str_constpool_get (&anal->constpool, self): NULL;
+	return self ? r_str_constpool_get (&anal->constpool, self) : NULL;
 }
 
-R_API const char *r_anal_cc_error(RAnal *anal, const char *convention) {
+R_API const char *r_anal_cc_error (RAnal *anal, const char *convention) {
 	r_return_val_if_fail (anal && convention, NULL);
 	const char *query = sdb_fmt ("cc.%s.error", convention);
 	const char *error = sdb_const_get (DB, query, 0);
-	return error? r_str_constpool_get (&anal->constpool, error): NULL;
+	return error ? r_str_constpool_get (&anal->constpool, error) : NULL;
 }
 
-R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
+R_API int r_anal_cc_max_arg (RAnal *anal, const char *cc) {
 	int i = 0;
 	r_return_val_if_fail (anal && DB && cc, 0);
 	static void *oldDB = NULL;
@@ -150,18 +149,18 @@ R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
 	return i;
 }
 
-R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention) {
+R_API const char *r_anal_cc_ret (RAnal *anal, const char *convention) {
 	r_return_val_if_fail (anal && convention, NULL);
 	char *query = sdb_fmt ("cc.%s.ret", convention);
 	return sdb_const_get (DB, query, 0);
 }
 
-R_API const char *r_anal_cc_default(RAnal *anal) {
+R_API const char *r_anal_cc_default (RAnal *anal) {
 	r_return_val_if_fail (anal, NULL);
 	return sdb_const_get (DB, "default.cc", 0);
 }
 
-R_API const char *r_anal_cc_func(RAnal *anal, const char *func_name) {
+R_API const char *r_anal_cc_func (RAnal *anal, const char *func_name) {
 	r_return_val_if_fail (anal && func_name, NULL);
 	const char *query = sdb_fmt ("func.%s.cc", func_name);
 	const char *cc = sdb_const_get (anal->sdb_types, query, 0);

@@ -31,12 +31,8 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
-
 #define _ZIP_COMPILING_DEPRECATED
 #include "zipint.h"
-
-
 
 /*
   NOTE: Return type is signed so we can return -1 on error.
@@ -46,7 +42,6 @@
 */
 
 ZIP_EXTERN zip_int64_t
-zip_add(struct zip *za, const char *name, struct zip_source *source)
-{
-    return zip_file_add(za, name, source, 0);
+zip_add (struct zip *za, const char *name, struct zip_source *source) {
+	return zip_file_add (za, name, source, 0);
 }

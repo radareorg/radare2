@@ -36,13 +36,13 @@ bool test_r_io_pcache (void) {
 	r_io_map_add (io, fd, R_PERM_RW, 2, 6, 1); //D
 	io->p_cache = 2;
 	io->va = true;
-	r_io_fd_write_at (io, fd, 0, (const ut8*)"8=D", 3);
+	r_io_fd_write_at (io, fd, 0, (const ut8 *)"8=D", 3);
 	r_io_read_at (io, 0x0, buf, 8);
 	mu_assert_streq ((const char *)buf, "", "pcache read happened, but it shouldn't");
 	io->p_cache = 1;
 	r_io_read_at (io, 0x0, buf, 8);
 	mu_assert_streq ((const char *)buf, "8=====D", "expected an ascii-pn from pcache");
-	r_io_fd_write_at (io, fd, 0, (const ut8*)"XXX", 3);
+	r_io_fd_write_at (io, fd, 0, (const ut8 *)"XXX", 3);
 	r_io_read_at (io, 0x0, buf, 8);
 	mu_assert_streq ((const char *)buf, "8=====D", "expected an ascii-pn from pcache");
 	io->p_cache = 0;
@@ -62,7 +62,7 @@ bool test_r_io_desc_exchange (void) {
 	mu_end;
 }
 
-bool test_va_malloc_zero(void) {
+bool test_va_malloc_zero (void) {
 	RIO *io;
 	ut64 buf;
 	bool ret;
@@ -89,8 +89,8 @@ bool test_va_malloc_zero(void) {
 	mu_end;
 }
 
-bool test_r_io_priority(void) {
-	RIO *io = r_io_new();
+bool test_r_io_priority (void) {
+	RIO *io = r_io_new ();
 	ut32 map0, map1;
 	ut64 buf;
 	bool ret;
@@ -131,8 +131,8 @@ bool test_r_io_priority(void) {
 	mu_end;
 }
 
-bool test_r_io_priority2(void) {
-	RIO *io = r_io_new();
+bool test_r_io_priority2 (void) {
+	RIO *io = r_io_new ();
 	ut32 map0;
 	ut8 buf[2];
 	bool ret;
@@ -161,17 +161,17 @@ bool test_r_io_priority2(void) {
 	mu_end;
 }
 
-int all_tests() {
-	mu_run_test(test_r_io_mapsplit);
-	mu_run_test(test_r_io_mapsplit2);
-	mu_run_test(test_r_io_pcache);
-	mu_run_test(test_r_io_desc_exchange);
-	mu_run_test(test_r_io_priority);
-	mu_run_test(test_r_io_priority2);
-	mu_run_test(test_va_malloc_zero);
+int all_tests () {
+	mu_run_test (test_r_io_mapsplit);
+	mu_run_test (test_r_io_mapsplit2);
+	mu_run_test (test_r_io_pcache);
+	mu_run_test (test_r_io_desc_exchange);
+	mu_run_test (test_r_io_priority);
+	mu_run_test (test_r_io_priority2);
+	mu_run_test (test_va_malloc_zero);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
+int main (int argc, char **argv) {
+	return all_tests ();
 }

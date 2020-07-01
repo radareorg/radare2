@@ -7,7 +7,7 @@ static RDebugPlugin *debug_static_plugins[] = {
 	R_DEBUG_STATIC_PLUGINS
 };
 
-R_API void r_debug_plugin_init(RDebug *dbg) {
+R_API void r_debug_plugin_init (RDebug *dbg) {
 	int i;
 	dbg->plugins = r_list_newf (free);
 	for (i = 0; debug_static_plugins[i]; i++) {
@@ -15,7 +15,7 @@ R_API void r_debug_plugin_init(RDebug *dbg) {
 	}
 }
 
-R_API bool r_debug_use(RDebug *dbg, const char *str) {
+R_API bool r_debug_use (RDebug *dbg, const char *str) {
 	if (dbg && str) {
 		RDebugPlugin *h;
 		RListIter *iter;
@@ -50,7 +50,7 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 	return (dbg && dbg->h);
 }
 
-R_API int r_debug_plugin_list(RDebug *dbg, int mode) {
+R_API int r_debug_plugin_list (RDebug *dbg, int mode) {
 	char spaces[16];
 	int count = 0;
 	memset (spaces, ' ', 15);
@@ -61,19 +61,19 @@ R_API int r_debug_plugin_list(RDebug *dbg, int mode) {
 		dbg->cb_printf ("[");
 	}
 	r_list_foreach (dbg->plugins, iter, h) {
-		int sp = 8-strlen (h->name);
+		int sp = 8 - strlen (h->name);
 		spaces[sp] = 0;
 		if (mode == 'q') {
 			dbg->cb_printf ("%s\n", h->name);
 		} else if (mode == 'j') {
 			dbg->cb_printf ("%s{\"name\":\"%s\",\"license\":\"%s\"}",
-							(count ? "," : ""),
-							h->name,
-							h->license);
+				(count ? "," : ""),
+				h->name,
+				h->license);
 		} else {
 			dbg->cb_printf ("%d  %s  %s %s%s\n",
-					count, (h == dbg->h)? "dbg": "---",
-					h->name, spaces, h->license);
+				count, (h == dbg->h) ? "dbg" : "---",
+				h->name, spaces, h->license);
 		}
 		spaces[sp] = ' ';
 		count++;
@@ -84,7 +84,7 @@ R_API int r_debug_plugin_list(RDebug *dbg, int mode) {
 	return false;
 }
 
-R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *foo) {
+R_API bool r_debug_plugin_add (RDebug *dbg, RDebugPlugin *foo) {
 	if (!dbg || !foo || !foo->name) {
 		return false;
 	}
@@ -94,7 +94,7 @@ R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *foo) {
 	return true;
 }
 
-R_API bool r_debug_plugin_set_reg_profile(RDebug *dbg, const char *profile) {
+R_API bool r_debug_plugin_set_reg_profile (RDebug *dbg, const char *profile) {
 	char *str = r_file_slurp (profile, NULL);
 	if (!str) {
 		eprintf ("r_debug_plugin_set_reg_profile: Cannot find '%s'\n", profile);

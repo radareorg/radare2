@@ -31,14 +31,9 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
-
 #include "zipint.h"
 
-
-
 ZIP_EXTERN void
-zip_error_get(struct zip *za, int *zep, int *sep)
-{
-    _zip_error_get(&za->error, zep, sep);
+zip_error_get (struct zip *za, int *zep, int *sep) {
+	_zip_error_get (&za->error, zep, sep);
 }

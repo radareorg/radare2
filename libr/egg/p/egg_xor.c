@@ -39,9 +39,9 @@ static RBuffer *build (REgg *egg) {
 		return NULL;
 	}
 
-	for (i = 0; i<r_buf_size (sc); i++) {
+	for (i = 0; i < r_buf_size (sc); i++) {
 		// eprintf ("%02x -> %02x\n", sc->buf[i], sc->buf[i] ^nkey);
-		if ((r_buf_read8_at (sc, i) ^ nkey)==0) {
+		if ((r_buf_read8_at (sc, i) ^ nkey) == 0) {
 			eprintf ("This xor key generates null bytes. Try again.\n");
 			free (key);
 			return NULL;
@@ -54,7 +54,7 @@ static RBuffer *build (REgg *egg) {
 	// This is the x86-32/64 xor encoder
 	r_buf_append_buf (sc, egg->bin);
 	if (egg->arch == R_SYS_ARCH_X86) {
-		#define STUBLEN 18
+#define STUBLEN 18
 		ut8 stub[STUBLEN] =
 			"\xe8\xff\xff\xff\xff" // call $$+4
 			"\xc1" // ffc1 = inc ecx
@@ -76,7 +76,7 @@ static RBuffer *build (REgg *egg) {
 
 		r_buf_append_bytes (buf, stub, STUBLEN);
 
-		for (i = 0; i<r_buf_size (sc); i++) {
+		for (i = 0; i < r_buf_size (sc); i++) {
 			ut8 v = r_buf_read8_at (sc, i) ^ nkey;
 			r_buf_write_at (sc, i, &v, sizeof (v));
 		}

@@ -3,7 +3,7 @@
 
 #include "minunit.h"
 
-bool test_meta_set() {
+bool test_meta_set () {
 	RAnal *anal = r_anal_new ();
 
 	r_meta_set (anal, R_META_TYPE_DATA, 0x100, 4, NULL);
@@ -131,7 +131,7 @@ bool test_meta_set() {
 	mu_end;
 }
 
-bool test_meta_get_at() {
+bool test_meta_get_at () {
 	RAnal *anal = r_anal_new ();
 
 	r_meta_set (anal, R_META_TYPE_DATA, 0x100, 4, NULL);
@@ -169,7 +169,7 @@ bool test_meta_get_at() {
 	mu_end;
 }
 
-bool test_meta_get_in() {
+bool test_meta_get_in () {
 	RAnal *anal = r_anal_new ();
 
 	r_meta_set (anal, R_META_TYPE_DATA, 0x100, 4, NULL);
@@ -210,7 +210,7 @@ bool test_meta_get_in() {
 	mu_end;
 }
 
-bool test_meta_get_all_at() {
+bool test_meta_get_all_at () {
 	RAnal *anal = r_anal_new ();
 
 	r_meta_set (anal, R_META_TYPE_DATA, 0x100, 4, NULL);
@@ -250,7 +250,7 @@ bool test_meta_get_all_at() {
 	mu_end;
 }
 
-bool test_meta_get_all_in() {
+bool test_meta_get_all_in () {
 	RAnal *anal = r_anal_new ();
 
 	r_meta_set (anal, R_META_TYPE_DATA, 0x100, 4, NULL);
@@ -312,7 +312,7 @@ bool test_meta_get_all_in() {
 	mu_end;
 }
 
-bool test_meta_get_all_intersect() {
+bool test_meta_get_all_intersect () {
 	RAnal *anal = r_anal_new ();
 
 	r_meta_set (anal, R_META_TYPE_DATA, 0x100, 4, NULL);
@@ -376,7 +376,7 @@ bool test_meta_get_all_intersect() {
 	mu_end;
 }
 
-bool test_meta_del() {
+bool test_meta_del () {
 	RAnal *anal = r_anal_new ();
 
 	r_meta_set (anal, R_META_TYPE_DATA, 0x100, 4, NULL);
@@ -441,7 +441,7 @@ bool test_meta_del() {
 	mu_end;
 }
 
-bool test_meta_rebase() {
+bool test_meta_rebase () {
 	RAnal *anal = r_anal_new ();
 
 	r_meta_set (anal, R_META_TYPE_DATA, 0x200, 4, NULL);
@@ -491,7 +491,7 @@ bool test_meta_rebase() {
 	mu_end;
 }
 
-bool test_meta_spaces() {
+bool test_meta_spaces () {
 	RAnal *anal = r_anal_new ();
 
 	r_meta_set (anal, R_META_TYPE_DATA, 0x100, 4, NULL);
@@ -591,19 +591,19 @@ bool test_meta_spaces() {
 	mu_end;
 }
 
-bool all_tests() {
-	mu_run_test(test_meta_set);
-	mu_run_test(test_meta_get_at);
-	mu_run_test(test_meta_get_in);
-	mu_run_test(test_meta_get_all_at);
-	mu_run_test(test_meta_get_all_in);
-	mu_run_test(test_meta_get_all_intersect);
-	mu_run_test(test_meta_del);
-	mu_run_test(test_meta_rebase);
-	mu_run_test(test_meta_spaces);
+bool all_tests () {
+	mu_run_test (test_meta_set);
+	mu_run_test (test_meta_get_at);
+	mu_run_test (test_meta_get_in);
+	mu_run_test (test_meta_get_all_at);
+	mu_run_test (test_meta_get_all_in);
+	mu_run_test (test_meta_get_all_intersect);
+	mu_run_test (test_meta_del);
+	mu_run_test (test_meta_rebase);
+	mu_run_test (test_meta_spaces);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
+int main (int argc, char **argv) {
+	return all_tests ();
 }

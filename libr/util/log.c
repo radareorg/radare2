@@ -14,34 +14,34 @@ static bool cfg_logsrcinfo = false; // Print out debug source info with the outp
 static bool cfg_logcolors = false; // Output colored log text based on level
 static char cfg_logfile[LOG_CONFIGSTR_SIZE] = ""; // Output text to filename
 static const char *level_tags[] = { // Log level to tag string lookup array
-	[R_LOGLVL_SILLY]     = "SILLY",
-	[R_LOGLVL_VERBOSE]   = "VERBOSE",
-	[R_LOGLVL_DEBUG]     = "DEBUG",
-	[R_LOGLVL_INFO]      = "INFO",
-	[R_LOGLVL_WARN]      = "WARNING",
-	[R_LOGLVL_ERROR]     = "ERROR",
-	[R_LOGLVL_FATAL]     = "FATAL"
+	[R_LOGLVL_SILLY] = "SILLY",
+	[R_LOGLVL_VERBOSE] = "VERBOSE",
+	[R_LOGLVL_DEBUG] = "DEBUG",
+	[R_LOGLVL_INFO] = "INFO",
+	[R_LOGLVL_WARN] = "WARNING",
+	[R_LOGLVL_ERROR] = "ERROR",
+	[R_LOGLVL_FATAL] = "FATAL"
 };
 
 // cconfig.c configuration callback functions below
-R_API void r_log_set_level(RLogLevel level) {
+R_API void r_log_set_level (RLogLevel level) {
 	cfg_loglvl = level;
 }
 
-R_API void r_log_set_traplevel(RLogLevel level) {
+R_API void r_log_set_traplevel (RLogLevel level) {
 	cfg_logtraplvl = level;
 }
 
-R_API void r_log_set_file(const char *filename) {
+R_API void r_log_set_file (const char *filename) {
 	int value_len = r_str_nlen (filename, LOG_CONFIGSTR_SIZE) + 1;
 	strncpy (cfg_logfile, filename, value_len);
 }
 
-R_API void r_log_set_srcinfo(bool show_info) {
+R_API void r_log_set_srcinfo (bool show_info) {
 	cfg_logsrcinfo = show_info;
 }
 
-R_API void r_log_set_colors(bool show_info) {
+R_API void r_log_set_colors (bool show_info) {
 	cfg_logcolors = show_info;
 }
 
@@ -49,7 +49,7 @@ R_API void r_log_set_colors(bool show_info) {
  * \brief Add a logging callback
  * \param cbfunc RLogCallback style function to be called
  */
-R_API void r_log_add_callback(RLogCallback cbfunc) {
+R_API void r_log_add_callback (RLogCallback cbfunc) {
 	if (!log_cbs) {
 		log_cbs = r_list_new ();
 	}
@@ -62,13 +62,13 @@ R_API void r_log_add_callback(RLogCallback cbfunc) {
  * \brief Remove a logging callback
  * \param cbfunc RLogCallback style function to be called
  */
-R_API void r_log_del_callback(RLogCallback cbfunc) {
+R_API void r_log_del_callback (RLogCallback cbfunc) {
 	if (log_cbs) {
 		r_list_delete_data (log_cbs, cbfunc);
 	}
 }
 
-R_API void r_vlog(const char *funcname, const char *filename,
+R_API void r_vlog (const char *funcname, const char *filename,
 	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, va_list args) {
 	va_list args_copy;
 	va_copy (args_copy, args);
@@ -85,7 +85,7 @@ R_API void r_vlog(const char *funcname, const char *filename,
 	// Build output string with src info, and formatted output
 	char output_buf[LOG_OUTPUTBUF_SIZE] = ""; // Big buffer for building the output string
 	if (!tag) {
-		tag = R_BETWEEN (0, level, R_ARRAY_SIZE (level_tags) - 1)? level_tags[level]: "";
+		tag = R_BETWEEN (0, level, R_ARRAY_SIZE (level_tags) - 1) ? level_tags[level] : "";
 	}
 	int offset = snprintf (output_buf, LOG_OUTPUTBUF_SIZE, "%s: ", tag);
 	if (cfg_logsrcinfo) {
@@ -138,7 +138,7 @@ R_API void r_vlog(const char *funcname, const char *filename,
 
   This function is used by the R_LOG_* preprocessor macros for logging
 */
-R_API void r_log(const char *funcname, const char *filename,
+R_API void r_log (const char *funcname, const char *filename,
 	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) {
 	va_list args;
 

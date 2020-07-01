@@ -25,11 +25,11 @@ static int lang_lib_file_run (RLang *user, const char *file) {
 	if (!r_file_exists (libpath)) {
 		free (libpath);
 		return -1;
-	}	
-	
+	}
+
 	lib = r_lib_dl_open (libpath);
 	if (lib) {
-		void (*fcn)(RCore *);
+		void (*fcn) (RCore *);
 		fcn = r_lib_dl_sym (lib, "entry");
 		if (fcn) {
 			fcn (user->user);

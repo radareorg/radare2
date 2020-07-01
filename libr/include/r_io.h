@@ -8,9 +8,9 @@
 #include "r_socket.h"
 #include "r_vector.h"
 
-#define R_IO_SEEK_SET	0
-#define R_IO_SEEK_CUR	1
-#define R_IO_SEEK_END	2
+#define R_IO_SEEK_SET 0
+#define R_IO_SEEK_CUR 1
+#define R_IO_SEEK_END 2
 
 #define R_IO_UNDOS 64
 
@@ -26,12 +26,12 @@
 
 #if (defined(__GLIBC__) && defined(__linux__))
 typedef enum __ptrace_request r_ptrace_request_t;
-typedef void * r_ptrace_data_t;
+typedef void *r_ptrace_data_t;
 #define R_PTRACE_NODATA NULL
 #else
 #if __ANDROID__
 typedef int r_ptrace_request_t;
-typedef void * r_ptrace_data_t;
+typedef void *r_ptrace_data_t;
 #define R_PTRACE_NODATA NULL
 #else
 typedef int r_ptrace_request_t;
@@ -45,7 +45,7 @@ typedef int r_ptrace_data_t;
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER(r_io);
+R_LIB_VERSION_HEADER (r_io);
 
 typedef struct r_io_undos_t {
 	ut64 off;
@@ -69,16 +69,16 @@ typedef struct r_io_undo_t {
 typedef struct r_io_undo_w_t {
 	int set;
 	ut64 off;
-	ut8 *o;   /* old data */
-	ut8 *n;   /* new data */
-	int len;  /* length */
+	ut8 *o; /* old data */
+	ut8 *n; /* new data */
+	int len; /* length */
 } RIOUndoWrite;
 
 typedef struct r_io_t {
 	struct r_io_desc_t *desc; // XXX deprecate... we should use only the fd integer, not hold a weak pointer
 	ut64 off;
 	int bits;
-	int va;		//all of this config stuff must be in 1 int
+	int va; //all of this config stuff must be in 1 int
 	int ff;
 	int Oxff;
 	size_t addrbytes;
@@ -88,14 +88,14 @@ typedef struct r_io_t {
 	bool cachemode; // write in cache all the read operations (EXPERIMENTAL)
 	int p_cache;
 	int debug;
-//#warning remove debug from RIO
+	//#warning remove debug from RIO
 	RIDPool *map_ids;
 	RPVector maps; //from tail backwards maps with higher priority are found
 	RPVector map_skyline; // map parts that are not covered by others
 	RPVector map_skyline_shadow; // map parts that are not covered by others
 	RIDStorage *files;
 	RCache *buffer;
-	RList *cache;	//sdblist?
+	RList *cache; //sdblist?
 	RBNode cacheTree;
 	ut8 *write_mask;
 	int write_mask_len;
@@ -116,7 +116,7 @@ typedef struct r_io_t {
 typedef struct r_io_desc_t {
 	int fd;
 	int perm;
-	int obsz;	//optimal blocksize// do we really need this here?
+	int obsz; //optimal blocksize// do we really need this here?
 	char *uri;
 	char *name;
 	char *referer;
@@ -148,28 +148,28 @@ typedef struct r_io_plugin_t {
 	const char *license;
 	void *widget;
 	const char *uris;
-	int (*listener)(RIODesc *io);
-	int (*init)(void);
+	int (*listener) (RIODesc *io);
+	int (*init) (void);
 	RIOUndo undo;
 	bool isdbg;
 	// int (*is_file_opened)(RIO *io, RIODesc *fd, const char *);
-	char *(*system)(RIO *io, RIODesc *fd, const char *);
-	RIODesc* (*open)(RIO *io, const char *, int perm, int mode);
-	RList* /*RIODesc* */ (*open_many)(RIO *io, const char *, int perm, int mode);
-	int (*read)(RIO *io, RIODesc *fd, ut8 *buf, int count);
-	ut64 (*lseek)(RIO *io, RIODesc *fd, ut64 offset, int whence);
-	int (*write)(RIO *io, RIODesc *fd, const ut8 *buf, int count);
-	int (*close)(RIODesc *desc);
-	bool (*is_blockdevice)(RIODesc *desc);
-	bool (*is_chardevice)(RIODesc *desc);
-	int (*getpid)(RIODesc *desc);
-	int (*gettid)(RIODesc *desc);
-	bool (*getbase)(RIODesc *desc, ut64 *base);
-	bool (*resize)(RIO *io, RIODesc *fd, ut64 size);
-	int (*extend)(RIO *io, RIODesc *fd, ut64 size);
-	bool (*accept)(RIO *io, RIODesc *desc, int fd);
-	int (*create)(RIO *io, const char *file, int mode, int type);
-	bool (*check)(RIO *io, const char *, bool many);
+	char *(*system) (RIO *io, RIODesc *fd, const char *);
+	RIODesc *(*open) (RIO *io, const char *, int perm, int mode);
+	RList * /*RIODesc* */ (*open_many) (RIO *io, const char *, int perm, int mode);
+	int (*read) (RIO *io, RIODesc *fd, ut8 *buf, int count);
+	ut64 (*lseek) (RIO *io, RIODesc *fd, ut64 offset, int whence);
+	int (*write) (RIO *io, RIODesc *fd, const ut8 *buf, int count);
+	int (*close) (RIODesc *desc);
+	bool (*is_blockdevice) (RIODesc *desc);
+	bool (*is_chardevice) (RIODesc *desc);
+	int (*getpid) (RIODesc *desc);
+	int (*gettid) (RIODesc *desc);
+	bool (*getbase) (RIODesc *desc, ut64 *base);
+	bool (*resize) (RIO *io, RIODesc *fd, ut64 size);
+	int (*extend) (RIO *io, RIODesc *fd, ut64 size);
+	bool (*accept) (RIO *io, RIODesc *desc, int fd);
+	int (*create) (RIO *io, const char *file, int mode, int type);
+	bool (*check) (RIO *io, const char *, bool many);
 } RIOPlugin;
 
 typedef struct r_io_map_t {
@@ -193,7 +193,7 @@ typedef struct r_io_cache_t {
 	int written;
 } RIOCache;
 
-#define R_IO_DESC_CACHE_SIZE (sizeof(ut64) * 8)
+#define R_IO_DESC_CACHE_SIZE (sizeof (ut64) * 8)
 typedef struct r_io_desc_cache_t {
 	ut64 cached;
 	ut8 cdata[R_IO_DESC_CACHE_SIZE];
@@ -205,11 +205,11 @@ typedef bool (*RIODescUse) (RIO *io, int fd);
 typedef RIODesc *(*RIODescGet) (RIO *io, int fd);
 typedef ut64 (*RIODescSize) (RIODesc *desc);
 typedef RIODesc *(*RIOOpen) (RIO *io, const char *uri, int flags, int mode);
-typedef RIODesc *(*RIOOpenAt) (RIO *io, const  char *uri, int flags, int mode, ut64 at);
+typedef RIODesc *(*RIOOpenAt) (RIO *io, const char *uri, int flags, int mode, ut64 at);
 typedef bool (*RIOClose) (RIO *io, int fd);
 typedef bool (*RIOReadAt) (RIO *io, ut64 addr, ut8 *buf, int len);
 typedef bool (*RIOWriteAt) (RIO *io, ut64 addr, const ut8 *buf, int len);
-typedef char *(*RIOSystem) (RIO *io, const char* cmd);
+typedef char *(*RIOSystem) (RIO *io, const char *cmd);
 typedef int (*RIOFdOpen) (RIO *io, const char *uri, int flags, int mode);
 typedef bool (*RIOFdClose) (RIO *io, int fd);
 typedef ut64 (*RIOFdSeek) (RIO *io, int fd, ut64 addr, int whence);
@@ -232,7 +232,7 @@ typedef bool (*RIOAddrIsMapped) (RIO *io, ut64 addr);
 typedef RIOMap *(*RIOMapAdd) (RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
 #if HAVE_PTRACE
 typedef long (*RIOPtraceFn) (RIO *io, r_ptrace_request_t request, pid_t pid, void *addr, r_ptrace_data_t data);
-typedef void *(*RIOPtraceFuncFn) (RIO *io, void *(*func)(void *), void *user);
+typedef void *(*RIOPtraceFuncFn) (RIO *io, void *(*func) (void *), void *user);
 #endif
 
 typedef struct r_io_bind_t {
@@ -249,11 +249,11 @@ typedef struct r_io_bind_t {
 	RIOSystem system;
 	RIOFdOpen fd_open;
 	RIOFdClose fd_close;
-	RIOFdSeek fd_seek;	//needed for esil
+	RIOFdSeek fd_seek; //needed for esil
 	RIOFdSize fd_size;
 	RIOFdResize fd_resize;
-	RIOFdRead fd_read;	//needed for esil
-	RIOFdWrite fd_write;	//needed for esil
+	RIOFdRead fd_read; //needed for esil
+	RIOFdWrite fd_write; //needed for esil
 	RIOFdReadAt fd_read_at;
 	RIOFdWriteAt fd_write_at;
 	RIOFdIsDbg fd_is_dbg;
@@ -274,26 +274,26 @@ typedef struct r_io_bind_t {
 } RIOBind;
 
 //map.c
-R_API RIOMap *r_io_map_new(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
+R_API RIOMap *r_io_map_new (RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
 R_API void r_io_map_init (RIO *io);
 R_API bool r_io_map_remap (RIO *io, ut32 id, ut64 addr);
 R_API bool r_io_map_remap_fd (RIO *io, int fd, ut64 addr);
-R_API ut64 r_io_map_location(RIO *io, ut64 size);
+R_API ut64 r_io_map_location (RIO *io, ut64 size);
 R_API bool r_io_map_exists (RIO *io, RIOMap *map);
 R_API bool r_io_map_exists_for_id (RIO *io, ut32 id);
 R_API RIOMap *r_io_map_resolve (RIO *io, ut32 id);
-R_API RIOMap *r_io_map_add(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
+R_API RIOMap *r_io_map_add (RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
 // same as r_io_map_add but used when many maps need to be added. Call r_io_update when all maps have been added.
-R_API RIOMap *r_io_map_add_batch(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
-R_API RIOMap *r_io_map_get(RIO *io, ut64 addr);		//returns the map at vaddr with the highest priority
+R_API RIOMap *r_io_map_add_batch (RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
+R_API RIOMap *r_io_map_get (RIO *io, ut64 addr); //returns the map at vaddr with the highest priority
 // update the internal state of RIO after a series of _batch operations
-R_API void r_io_update(RIO *io);
-R_API bool r_io_map_is_mapped(RIO* io, ut64 addr);
-R_API RIOMap *r_io_map_get_paddr(RIO *io, ut64 paddr);		//returns the map at paddr with the highest priority
-R_API void r_io_map_reset(RIO* io);
-R_API bool r_io_map_del(RIO *io, ut32 id);
-R_API bool r_io_map_del_for_fd(RIO *io, int fd);
-R_API bool r_io_map_depriorize(RIO* io, ut32 id);
+R_API void r_io_update (RIO *io);
+R_API bool r_io_map_is_mapped (RIO *io, ut64 addr);
+R_API RIOMap *r_io_map_get_paddr (RIO *io, ut64 paddr); //returns the map at paddr with the highest priority
+R_API void r_io_map_reset (RIO *io);
+R_API bool r_io_map_del (RIO *io, ut32 id);
+R_API bool r_io_map_del_for_fd (RIO *io, int fd);
+R_API bool r_io_map_depriorize (RIO *io, ut32 id);
 R_API bool r_io_map_priorize (RIO *io, ut32 id);
 R_API bool r_io_map_priorize_for_fd (RIO *io, int fd);
 R_API void r_io_map_cleanup (RIO *io);
@@ -301,88 +301,88 @@ R_API void r_io_map_fini (RIO *io);
 R_API bool r_io_map_is_in_range (RIOMap *map, ut64 from, ut64 to);
 R_API void r_io_map_set_name (RIOMap *map, const char *name);
 R_API void r_io_map_del_name (RIOMap *map);
-R_API RList* r_io_map_get_for_fd(RIO *io, int fd);
-R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize);
+R_API RList *r_io_map_get_for_fd (RIO *io, int fd);
+R_API bool r_io_map_resize (RIO *io, ut32 id, ut64 newsize);
 
 // next free address to place a map.. maybe just unify
-R_API ut64 r_io_map_next_available(RIO* io, ut64 addr, ut64 size, ut64 load_align);
-R_API ut64 r_io_map_next_address(RIO* io, ut64 addr);
+R_API ut64 r_io_map_next_available (RIO *io, ut64 addr, ut64 size, ut64 load_align);
+R_API ut64 r_io_map_next_address (RIO *io, ut64 addr);
 
 // p2v/v2p
 
-R_API ut64 r_io_p2v(RIO *io, ut64 pa);
-R_API ut64 r_io_v2p(RIO *io, ut64 va);
+R_API ut64 r_io_p2v (RIO *io, ut64 pa);
+R_API ut64 r_io_v2p (RIO *io, ut64 va);
 
 //io.c
 R_API RIO *r_io_new (void);
 R_API RIO *r_io_init (RIO *io);
-R_API RIODesc *r_io_open_nomap (RIO *io, const char *uri, int flags, int mode);		//should return int
+R_API RIODesc *r_io_open_nomap (RIO *io, const char *uri, int flags, int mode); //should return int
 R_API RIODesc *r_io_open (RIO *io, const char *uri, int flags, int mode);
 R_API RIODesc *r_io_open_at (RIO *io, const char *uri, int flags, int mode, ut64 at);
 R_API RList *r_io_open_many (RIO *io, const char *uri, int flags, int mode);
-R_API RIODesc* r_io_open_buffer (RIO *io, RBuffer *b, int flags, int mode);
+R_API RIODesc *r_io_open_buffer (RIO *io, RBuffer *b, int flags, int mode);
 R_API bool r_io_close (RIO *io);
 R_API bool r_io_reopen (RIO *io, int fd, int flags, int mode);
 R_API int r_io_close_all (RIO *io);
 R_API int r_io_pread_at (RIO *io, ut64 paddr, ut8 *buf, int len);
 R_API int r_io_pwrite_at (RIO *io, ut64 paddr, const ut8 *buf, int len);
-R_API bool r_io_vread_at_mapped(RIO* io, ut64 vaddr, ut8* buf, int len);
+R_API bool r_io_vread_at_mapped (RIO *io, ut64 vaddr, ut8 *buf, int len);
 R_API bool r_io_read_at (RIO *io, ut64 addr, ut8 *buf, int len);
-R_API bool r_io_read_at_mapped(RIO *io, ut64 addr, ut8 *buf, int len);
+R_API bool r_io_read_at_mapped (RIO *io, ut64 addr, ut8 *buf, int len);
 R_API int r_io_nread_at (RIO *io, ut64 addr, ut8 *buf, int len);
-R_API void r_io_alprint(RList *ls);
+R_API void r_io_alprint (RList *ls);
 R_API bool r_io_write_at (RIO *io, ut64 addr, const ut8 *buf, int len);
 R_API bool r_io_read (RIO *io, ut8 *buf, int len);
 R_API bool r_io_write (RIO *io, ut8 *buf, int len);
 R_API ut64 r_io_size (RIO *io);
 R_API bool r_io_is_listener (RIO *io);
-R_API char *r_io_system (RIO *io, const char* cmd);
+R_API char *r_io_system (RIO *io, const char *cmd);
 R_API bool r_io_resize (RIO *io, ut64 newsize);
 R_API int r_io_extend_at (RIO *io, ut64 addr, ut64 size);
 R_API bool r_io_set_write_mask (RIO *io, const ut8 *mask, int len);
-R_API void r_io_bind(RIO *io, RIOBind *bnd);
+R_API void r_io_bind (RIO *io, RIOBind *bnd);
 R_API bool r_io_shift (RIO *io, ut64 start, ut64 end, st64 move);
 R_API ut64 r_io_seek (RIO *io, ut64 offset, int whence);
 R_API int r_io_fini (RIO *io);
 R_API void r_io_free (RIO *io);
-#define r_io_bind_init(x) memset(&x,0,sizeof(x))
+#define r_io_bind_init(x) memset (&x, 0, sizeof (x))
 
-R_API bool r_io_plugin_init(RIO *io);
-R_API int r_io_plugin_open(RIO *io, int fd, RIOPlugin *plugin);
-R_API int r_io_plugin_close(RIO *io, int fd, RIOPlugin *plugin);
-R_API int r_io_plugin_generate(RIO *io);
-R_API bool r_io_plugin_add(RIO *io, RIOPlugin *plugin);
-R_API int r_io_plugin_list(RIO *io);
-R_API int r_io_plugin_list_json(RIO *io);
-R_API int r_io_plugin_read(RIODesc *desc, ut8 *buf, int len);
-R_API int r_io_plugin_write(RIODesc *desc, const ut8 *buf, int len);
-R_API int r_io_plugin_read_at(RIODesc *desc, ut64 addr, ut8 *buf, int len);
-R_API int r_io_plugin_write_at(RIODesc *desc, ut64 addr, const ut8 *buf, int len);
-R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many);
-R_API RIOPlugin *r_io_plugin_resolve_fd(RIO *io, int fd);
-R_API RIOPlugin *r_io_plugin_get_default(RIO *io, const char *filename, bool many);
+R_API bool r_io_plugin_init (RIO *io);
+R_API int r_io_plugin_open (RIO *io, int fd, RIOPlugin *plugin);
+R_API int r_io_plugin_close (RIO *io, int fd, RIOPlugin *plugin);
+R_API int r_io_plugin_generate (RIO *io);
+R_API bool r_io_plugin_add (RIO *io, RIOPlugin *plugin);
+R_API int r_io_plugin_list (RIO *io);
+R_API int r_io_plugin_list_json (RIO *io);
+R_API int r_io_plugin_read (RIODesc *desc, ut8 *buf, int len);
+R_API int r_io_plugin_write (RIODesc *desc, const ut8 *buf, int len);
+R_API int r_io_plugin_read_at (RIODesc *desc, ut64 addr, ut8 *buf, int len);
+R_API int r_io_plugin_write_at (RIODesc *desc, ut64 addr, const ut8 *buf, int len);
+R_API RIOPlugin *r_io_plugin_resolve (RIO *io, const char *filename, bool many);
+R_API RIOPlugin *r_io_plugin_resolve_fd (RIO *io, int fd);
+R_API RIOPlugin *r_io_plugin_get_default (RIO *io, const char *filename, bool many);
 
 /* undo api */
 // track seeks and writes
 // TODO: needs cleanup..kinda big?
-R_API int r_io_undo_init(RIO *io);
-R_API void r_io_undo_enable(RIO *io, int seek, int write);
+R_API int r_io_undo_init (RIO *io);
+R_API void r_io_undo_enable (RIO *io, int seek, int write);
 /* seek undo */
-R_API RIOUndos *r_io_sundo(RIO *io, ut64 offset);
-R_API RIOUndos *r_io_sundo_redo(RIO *io);
-R_API void r_io_sundo_push(RIO *io, ut64 off, int cursor);
-R_API void r_io_sundo_reset(RIO *io);
-R_API RList *r_io_sundo_list(RIO *io, int mode);
+R_API RIOUndos *r_io_sundo (RIO *io, ut64 offset);
+R_API RIOUndos *r_io_sundo_redo (RIO *io);
+R_API void r_io_sundo_push (RIO *io, ut64 off, int cursor);
+R_API void r_io_sundo_reset (RIO *io);
+R_API RList *r_io_sundo_list (RIO *io, int mode);
 /* write undo */
-R_API void r_io_wundo_new(RIO *io, ut64 off, const ut8 *data, int len);
-R_API void r_io_wundo_apply_all(RIO *io, int set);
-R_API int r_io_wundo_apply(RIO *io, struct r_io_undo_w_t *u, int set);
-R_API void r_io_wundo_clear(RIO *io);
-R_API int r_io_wundo_size(RIO *io);
-R_API void r_io_wundo_list(RIO *io);
-R_API int r_io_wundo_set_t(RIO *io, RIOUndoWrite *u, int set) ;
-R_API void r_io_wundo_set_all(RIO *io, int set);
-R_API int r_io_wundo_set(RIO *io, int n, int set);
+R_API void r_io_wundo_new (RIO *io, ut64 off, const ut8 *data, int len);
+R_API void r_io_wundo_apply_all (RIO *io, int set);
+R_API int r_io_wundo_apply (RIO *io, struct r_io_undo_w_t *u, int set);
+R_API void r_io_wundo_clear (RIO *io);
+R_API int r_io_wundo_size (RIO *io);
+R_API void r_io_wundo_list (RIO *io);
+R_API int r_io_wundo_set_t (RIO *io, RIOUndoWrite *u, int set);
+R_API void r_io_wundo_set_all (RIO *io, int set);
+R_API int r_io_wundo_set (RIO *io, int n, int set);
 
 //desc.c
 R_API RIODesc *r_io_desc_new (RIO *io, RIOPlugin *plugin, const char *uri, int flags, int mode, void *data);
@@ -400,7 +400,7 @@ R_API bool r_io_desc_resize (RIODesc *desc, ut64 newsize);
 R_API ut64 r_io_desc_size (RIODesc *desc);
 R_API bool r_io_desc_is_blockdevice (RIODesc *desc);
 R_API bool r_io_desc_is_chardevice (RIODesc *desc);
-R_API bool r_io_desc_exchange (RIO *io, int fd, int fdx);	//this should get 2 descs
+R_API bool r_io_desc_exchange (RIO *io, int fd, int fdx); //this should get 2 descs
 R_API bool r_io_desc_is_dbg (RIODesc *desc);
 R_API int r_io_desc_get_pid (RIODesc *desc);
 R_API int r_io_desc_get_tid (RIODesc *desc);
@@ -413,15 +413,15 @@ R_IPI bool r_io_desc_init (RIO *io);
 R_IPI bool r_io_desc_fini (RIO *io);
 
 /* io/cache.c */
-R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to);
-R_API bool r_io_cache_at(RIO *io, ut64 addr);
-R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to);
-R_API void r_io_cache_init(RIO *io);
+R_API int r_io_cache_invalidate (RIO *io, ut64 from, ut64 to);
+R_API bool r_io_cache_at (RIO *io, ut64 addr);
+R_API void r_io_cache_commit (RIO *io, ut64 from, ut64 to);
+R_API void r_io_cache_init (RIO *io);
 R_API void r_io_cache_fini (RIO *io);
-R_API int r_io_cache_list(RIO *io, int rad);
-R_API void r_io_cache_reset(RIO *io, int set);
-R_API bool r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len);
-R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len);
+R_API int r_io_cache_list (RIO *io, int rad);
+R_API void r_io_cache_reset (RIO *io, int set);
+R_API bool r_io_cache_write (RIO *io, ut64 addr, const ut8 *buf, int len);
+R_API bool r_io_cache_read (RIO *io, ut64 addr, ut8 *buf, int len);
 
 /* io/p_cache.c */
 R_API bool r_io_desc_cache_init (RIODesc *desc);
@@ -432,12 +432,12 @@ R_API void r_io_desc_cache_cleanup (RIODesc *desc);
 R_API void r_io_desc_cache_fini (RIODesc *desc);
 R_API void r_io_desc_cache_fini_all (RIO *io);
 R_API RList *r_io_desc_cache_list (RIODesc *desc);
-R_API int r_io_desc_extend(RIODesc *desc, ut64 size);
+R_API int r_io_desc_extend (RIODesc *desc, ut64 size);
 
 /* io/buffer.c */
-R_API int r_io_buffer_read (RIO* io, ut64 addr, ut8* buf, int len);
-R_API int r_io_buffer_load (RIO* io, ut64 addr, int len);
-R_API void r_io_buffer_close (RIO* io);
+R_API int r_io_buffer_read (RIO *io, ut64 addr, ut8 *buf, int len);
+R_API int r_io_buffer_load (RIO *io, ut64 addr, int len);
+R_API void r_io_buffer_close (RIO *io);
 
 /* io/fd.c */
 R_API int r_io_fd_open (RIO *io, const char *uri, int flags, int mode);
@@ -456,23 +456,22 @@ R_API int r_io_fd_get_pid (RIO *io, int fd);
 R_API int r_io_fd_get_tid (RIO *io, int fd);
 R_API bool r_io_fd_get_base (RIO *io, int fd, ut64 *base);
 R_API const char *r_io_fd_get_name (RIO *io, int fd);
-R_API int r_io_fd_get_current(RIO *io);
+R_API int r_io_fd_get_current (RIO *io);
 R_API bool r_io_use_fd (RIO *io, int fd);
 
-
-#define r_io_range_new()	R_NEW0(RIORange)
-#define r_io_range_free(x)	free(x)
+#define r_io_range_new() R_NEW0 (RIORange)
+#define r_io_range_free(x) free (x)
 
 /* io/ioutils.c */
 R_API bool r_io_is_valid_offset (RIO *io, ut64 offset, int hasperm);
-R_API bool r_io_addr_is_mapped(RIO *io, ut64 vaddr);
-R_API bool r_io_read_i (RIO* io, ut64 addr, ut64 *val, int size, bool endian);
-R_API bool r_io_write_i (RIO* io, ut64 addr, ut64 *val, int size, bool endian);
+R_API bool r_io_addr_is_mapped (RIO *io, ut64 vaddr);
+R_API bool r_io_read_i (RIO *io, ut64 addr, ut64 *val, int size, bool endian);
+R_API bool r_io_write_i (RIO *io, ut64 addr, ut64 *val, int size, bool endian);
 
 #if HAVE_PTRACE
-R_API long r_io_ptrace(RIO *io, r_ptrace_request_t request, pid_t pid, void *addr, r_ptrace_data_t data);
-R_API pid_t r_io_ptrace_fork(RIO *io, void (*child_callback)(void *), void *child_callback_user);
-R_API void *r_io_ptrace_func(RIO *io, void *(*func)(void *), void *user);
+R_API long r_io_ptrace (RIO *io, r_ptrace_request_t request, pid_t pid, void *addr, r_ptrace_data_t data);
+R_API pid_t r_io_ptrace_fork (RIO *io, void (*child_callback) (void *), void *child_callback_user);
+R_API void *r_io_ptrace_func (RIO *io, void *(*func) (void *), void *user);
 #endif
 
 extern RIOPlugin r_io_plugin_procpid;

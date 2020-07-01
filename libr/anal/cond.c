@@ -2,7 +2,7 @@
 
 #include <r_anal.h>
 
-R_API const char *r_anal_cond_tostring(int cc) {
+R_API const char *r_anal_cond_tostring (int cc) {
 	switch (cc) {
 	case R_ANAL_COND_EQ: return "eq";
 	case R_ANAL_COND_NV: return "nv";
@@ -24,7 +24,7 @@ R_API const char *r_anal_cond_tostring(int cc) {
 	return "??";
 }
 
-R_API RAnalCond *r_anal_cond_new(void) {
+R_API RAnalCond *r_anal_cond_new (void) {
 	return R_NEW0 (RAnalCond);
 }
 
@@ -46,7 +46,7 @@ R_API void r_anal_cond_free (RAnalCond *c) {
 }
 
 // XXX?
-R_API RAnalCond *r_anal_cond_clone(RAnalCond *cond) {
+R_API RAnalCond *r_anal_cond_clone (RAnalCond *cond) {
 	RAnalCond *c = R_NEW (RAnalCond);
 	if (!c) {
 		return NULL;
@@ -55,7 +55,7 @@ R_API RAnalCond *r_anal_cond_clone(RAnalCond *cond) {
 	return c;
 }
 
-static inline const char *condstring(RAnalCond *cond) {
+static inline const char *condstring (RAnalCond *cond) {
 	const char *condstr_single[] = { "!", "", "0<", "0<=", "0>", "0>=" };
 	const char *condstr[] = { "==", "!=", ">=", ">", "<=", "<" };
 	if (cond) {
@@ -68,11 +68,11 @@ static inline const char *condstring(RAnalCond *cond) {
 	return "";
 }
 
-R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond) {
+R_API int r_anal_cond_eval (RAnal *anal, RAnalCond *cond) {
 	// XXX: sign issue here?
-	st64 arg0 = (st64) r_anal_value_to_ut64 (anal, cond->arg[0]);
+	st64 arg0 = (st64)r_anal_value_to_ut64 (anal, cond->arg[0]);
 	if (cond->arg[1]) {
-		st64 arg1 = (st64) r_anal_value_to_ut64 (anal, cond->arg[1]);
+		st64 arg1 = (st64)r_anal_value_to_ut64 (anal, cond->arg[1]);
 		switch (cond->type) {
 		case R_ANAL_COND_EQ: return arg0 == arg1;
 		case R_ANAL_COND_NE: return arg0 != arg1;
@@ -85,17 +85,17 @@ R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond) {
 		switch (cond->type) {
 		case R_ANAL_COND_EQ: return !arg0;
 		case R_ANAL_COND_NE: return arg0;
-		case R_ANAL_COND_GT: return arg0>0;
-		case R_ANAL_COND_GE: return arg0>=0;
-		case R_ANAL_COND_LT: return arg0<0;
-		case R_ANAL_COND_LE: return arg0<=0;
+		case R_ANAL_COND_GT: return arg0 > 0;
+		case R_ANAL_COND_GE: return arg0 >= 0;
+		case R_ANAL_COND_LT: return arg0 < 0;
+		case R_ANAL_COND_LE: return arg0 <= 0;
 		}
 	}
 	return false;
 }
 
 // XXX conflict naming with tostring()
-R_API char *r_anal_cond_to_string(RAnalCond *cond) {
+R_API char *r_anal_cond_to_string (RAnalCond *cond) {
 	char *val0, *val1, *out = NULL;
 	const char *cnd;
 	if (!cond) {
@@ -121,10 +121,10 @@ R_API char *r_anal_cond_to_string(RAnalCond *cond) {
 	}
 	free (val0);
 	free (val1);
-	return out? out: strdup ("?");
+	return out ? out : strdup ("?");
 }
 
-R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op) {
+R_API RAnalCond *r_anal_cond_new_from_op (RAnalOp *op) {
 	RAnalCond *cond;
 	if (!(cond = r_anal_cond_new ())) {
 		return NULL;
@@ -140,7 +140,7 @@ R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op) {
 	return cond;
 }
 
-R_API RAnalCond *r_anal_cond_new_from_string(const char *str) {
+R_API RAnalCond *r_anal_cond_new_from_string (const char *str) {
 	RAnalCond *cond = R_NEW (RAnalCond);
 	// TODO: find '<','=','>','!'...
 	return cond;

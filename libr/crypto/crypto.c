@@ -37,7 +37,7 @@ static const struct {
 	{ NULL, 0 }
 };
 
-R_API const char *r_crypto_name(const RCryptoSelector bit) {
+R_API const char *r_crypto_name (const RCryptoSelector bit) {
 	size_t i;
 	for (i = 1; crypto_name_bytes[i].bit; i++) {
 		if (bit & crypto_name_bytes[i].bit) {
@@ -47,7 +47,7 @@ R_API const char *r_crypto_name(const RCryptoSelector bit) {
 	return "";
 }
 
-R_API const char *r_crypto_codec_name(const RCryptoSelector bit) {
+R_API const char *r_crypto_codec_name (const RCryptoSelector bit) {
 	size_t i;
 	for (i = 1; codec_name_bytes[i].bit; i++) {
 		if (bit & codec_name_bytes[i].bit) {
@@ -61,7 +61,7 @@ static RCryptoPlugin *crypto_static_plugins[] = {
 	R_CRYPTO_STATIC_PLUGINS
 };
 
-R_API RCrypto *r_crypto_init(RCrypto *cry, int hard) {
+R_API RCrypto *r_crypto_init (RCrypto *cry, int hard) {
 	int i;
 	if (cry) {
 		cry->iv = NULL;
@@ -86,23 +86,23 @@ R_API RCrypto *r_crypto_init(RCrypto *cry, int hard) {
 	return cry;
 }
 
-R_API int r_crypto_add(RCrypto *cry, RCryptoPlugin *h) {
+R_API int r_crypto_add (RCrypto *cry, RCryptoPlugin *h) {
 	// add a check ?
 	r_list_append (cry->plugins, h);
 	return true;
 }
 
-R_API int r_crypto_del(RCrypto *cry, RCryptoPlugin *h) {
+R_API int r_crypto_del (RCrypto *cry, RCryptoPlugin *h) {
 	r_list_delete_data (cry->plugins, h);
 	return true;
 }
 
-R_API struct r_crypto_t *r_crypto_new(void) {
+R_API struct r_crypto_t *r_crypto_new (void) {
 	RCrypto *cry = R_NEW0 (RCrypto);
 	return r_crypto_init (cry, true);
 }
 
-R_API struct r_crypto_t *r_crypto_as_new(struct r_crypto_t *cry) {
+R_API struct r_crypto_t *r_crypto_as_new (struct r_crypto_t *cry) {
 	RCrypto *c = R_NEW0 (RCrypto);
 	if (c) {
 		r_crypto_init (c, false); // soft init
@@ -111,7 +111,7 @@ R_API struct r_crypto_t *r_crypto_as_new(struct r_crypto_t *cry) {
 	return c;
 }
 
-R_API struct r_crypto_t *r_crypto_free(RCrypto *cry) {
+R_API struct r_crypto_t *r_crypto_free (RCrypto *cry) {
 	// TODO: call the destructor function of the plugin to destroy the *user pointer if needed
 	r_list_free (cry->plugins);
 	free (cry->output);
@@ -121,7 +121,7 @@ R_API struct r_crypto_t *r_crypto_free(RCrypto *cry) {
 	return NULL;
 }
 
-R_API bool r_crypto_use(RCrypto *cry, const char *algo) {
+R_API bool r_crypto_use (RCrypto *cry, const char *algo) {
 	RListIter *iter;
 	RCryptoPlugin *h;
 	r_list_foreach (cry->plugins, iter, h) {
@@ -135,7 +135,7 @@ R_API bool r_crypto_use(RCrypto *cry, const char *algo) {
 	return false;
 }
 
-R_API bool r_crypto_set_key(RCrypto *cry, const ut8* key, int keylen, int mode, int direction) {
+R_API bool r_crypto_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	if (keylen < 0) {
 		keylen = strlen ((const char *)key);
 	}
@@ -145,33 +145,29 @@ R_API bool r_crypto_set_key(RCrypto *cry, const ut8* key, int keylen, int mode, 
 	return cry->h->set_key (cry, key, keylen, mode, direction);
 }
 
-R_API int r_crypto_get_key_size(RCrypto *cry) {
-	return (cry && cry->h && cry->h->get_key_size)?
-		cry->h->get_key_size (cry): 0;
+R_API int r_crypto_get_key_size (RCrypto *cry) {
+	return (cry && cry->h && cry->h->get_key_size) ? cry->h->get_key_size (cry) : 0;
 }
 
-R_API bool r_crypto_set_iv(RCrypto *cry, const ut8 *iv, int ivlen) {
-	return (cry && cry->h && cry->h->set_iv)?
-		cry->h->set_iv(cry, iv, ivlen): 0;
+R_API bool r_crypto_set_iv (RCrypto *cry, const ut8 *iv, int ivlen) {
+	return (cry && cry->h && cry->h->set_iv) ? cry->h->set_iv (cry, iv, ivlen) : 0;
 }
 
 // return the number of bytes written in the output buffer
-R_API int r_crypto_update(RCrypto *cry, const ut8 *buf, int len) {
-	return (cry && cry->h && cry->h->update)?
-		cry->h->update (cry, buf, len): 0;
+R_API int r_crypto_update (RCrypto *cry, const ut8 *buf, int len) {
+	return (cry && cry->h && cry->h->update) ? cry->h->update (cry, buf, len) : 0;
 }
 
-R_API int r_crypto_final(RCrypto *cry, const ut8 *buf, int len) {
-	return (cry && cry->h && cry->h->final)?
-		cry->h->final (cry, buf, len): 0;
+R_API int r_crypto_final (RCrypto *cry, const ut8 *buf, int len) {
+	return (cry && cry->h && cry->h->final) ? cry->h->final (cry, buf, len) : 0;
 }
 
 // TODO: internal api?? used from plugins? TODO: use r_buf here
-R_API int r_crypto_append(RCrypto *cry, const ut8 *buf, int len) {
+R_API int r_crypto_append (RCrypto *cry, const ut8 *buf, int len) {
 	if (!cry || !buf) {
 		return -1;
 	}
-	if (cry->output_len+len > cry->output_size) {
+	if (cry->output_len + len > cry->output_size) {
 		cry->output_size += 4096 + len;
 		cry->output = realloc (cry->output, cry->output_size);
 	}
@@ -180,7 +176,7 @@ R_API int r_crypto_append(RCrypto *cry, const ut8 *buf, int len) {
 	return cry->output_len;
 }
 
-R_API ut8 *r_crypto_get_output(RCrypto *cry, int *size) {
+R_API ut8 *r_crypto_get_output (RCrypto *cry, int *size) {
 	if (cry->output_size < 1) {
 		return NULL;
 	}

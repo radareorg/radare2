@@ -12,7 +12,7 @@
  * - command : is used to calculate the checksum needs to be null terminated
  * @returns : calculated checksum
  */
-uint8_t cmd_checksum(const char *command) {
+uint8_t cmd_checksum (const char *command) {
 	uint8_t sum = 0;
 	while (*command != '\0') {
 		sum += *command++;
@@ -23,7 +23,7 @@ uint8_t cmd_checksum(const char *command) {
 /**
  * Converts str to uint64_t
  */
-uint64_t unpack_uint64(char *buff, int len) {
+uint64_t unpack_uint64 (char *buff, int len) {
 	int nibble;
 	uint64_t retval = 0;
 	while (len) {
@@ -41,7 +41,7 @@ uint64_t unpack_uint64(char *buff, int len) {
  * Changed byte order and
  * converts the value into uint64_t
  */
-uint64_t unpack_uint64_co(char *buff, int len) {
+uint64_t unpack_uint64_co (char *buff, int len) {
 	uint64_t result = 0;
 	int i;
 	for (i = len - 2; i >= 0; i -= 2) {
@@ -57,7 +57,7 @@ uint64_t unpack_uint64_co(char *buff, int len) {
  * Converts a given hex character into its int value
  * @returns value of hex or -1 on error
  */
-int hex2int(int ch) {
+int hex2int (int ch) {
 	if (ch >= 'a' && ch <= 'f') {
 		return ch - 'a' + 10;
 	}
@@ -74,7 +74,7 @@ int hex2int(int ch) {
  * Converts a given nibble (4bit) into its hex representation
  * @returns hex char or -1 on error
  */
-int int2hex(int i) {
+int int2hex (int i) {
 	if (i >= 0 && i <= 9) {
 		return i + 48;
 	}
@@ -84,14 +84,14 @@ int int2hex(int i) {
 	return -1;
 }
 
-char hex2char(char *hex) {
-	uint8_t result = hex2int ((int) hex[0]);
+char hex2char (char *hex) {
+	uint8_t result = hex2int ((int)hex[0]);
 	result <<= 4;
 	result |= hex2int (hex[1]);
-	return (char) result;
+	return (char)result;
 }
 
-int unpack_hex(const char *src, ut64 len, char *dst) {
+int unpack_hex (const char *src, ut64 len, char *dst) {
 	int i = 0;
 	while (i < (len / 2)) {
 		int val = hex2int (src[(i * 2)]);
@@ -103,7 +103,7 @@ int unpack_hex(const char *src, ut64 len, char *dst) {
 	return len;
 }
 
-int pack_hex(const char *src, ut64 len, char *dst) {
+int pack_hex (const char *src, ut64 len, char *dst) {
 	int i = 0;
 	int x = 0;
 	while (i < (len * 2)) {
@@ -115,8 +115,8 @@ int pack_hex(const char *src, ut64 len, char *dst) {
 	return (len / 2);
 }
 
-void hexdump(void *ptr, ut64 len, ut64 offset) {
-	unsigned char *data = (unsigned char *) ptr;
+void hexdump (void *ptr, ut64 len, ut64 offset) {
+	unsigned char *data = (unsigned char *)ptr;
 	int x = 0;
 	char hex[49], *p;
 	char txt[17], *c;
@@ -128,15 +128,15 @@ void hexdump(void *ptr, ut64 len, ut64 offset) {
 
 		do {
 			p += sprintf (p, "%02x ", data[x]);
-			*c++ = (data[x] >= 32 && data[x] <= 127)? data[x]: '.';
+			*c++ = (data[x] >= 32 && data[x] <= 127) ? data[x] : '.';
 		} while (++x % 16 && x < len);
 
 		*c = '\0';
-		eprintf ("0x%016"PFMT64x ": %-48s- %s\n", (curr_offset), hex, txt);
+		eprintf ("0x%016" PFMT64x ": %-48s- %s\n", (curr_offset), hex, txt);
 	}
 }
 
-int write_thread_id(char *dest, int len, int pid, int tid, bool multiprocess) {
+int write_thread_id (char *dest, int len, int pid, int tid, bool multiprocess) {
 	if (!multiprocess) {
 		if (tid < 0) {
 			strncpy (dest, "-1", len);
@@ -153,7 +153,7 @@ int write_thread_id(char *dest, int len, int pid, int tid, bool multiprocess) {
 	return snprintf (dest, len, "p%x.%x", pid, tid);
 }
 
-int read_thread_id(const char *src, int *pid, int *tid, bool multiprocess) {
+int read_thread_id (const char *src, int *pid, int *tid, bool multiprocess) {
 	char *ptr1;
 	if (multiprocess && *src == 'p') {
 		src++;
@@ -172,15 +172,15 @@ int read_thread_id(const char *src, int *pid, int *tid, bool multiprocess) {
 			return -1;
 		}
 		if (r_str_startswith (ptr1, "-1")) {
-			*pid = (int) strtol (src, NULL, 16);
+			*pid = (int)strtol (src, NULL, 16);
 			*tid = -1;
 			return 0;
 		}
 		if (!isxdigit (*ptr1)) {
 			return -1;
 		}
-		*pid = (int) strtol (src, NULL, 16);
-		*tid = (int) strtol (ptr1, NULL, 16);
+		*pid = (int)strtol (src, NULL, 16);
+		*tid = (int)strtol (ptr1, NULL, 16);
 		return 0;
 	}
 	if (r_str_startswith (src, "-1")) {
@@ -190,6 +190,6 @@ int read_thread_id(const char *src, int *pid, int *tid, bool multiprocess) {
 	if (!isxdigit (*src)) {
 		return -1;
 	}
-	*pid = *tid = (int) strtol (src, NULL, 16);
+	*pid = *tid = (int)strtol (src, NULL, 16);
 	return 0;
 }

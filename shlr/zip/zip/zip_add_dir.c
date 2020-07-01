@@ -31,17 +31,12 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
-
 #define _ZIP_COMPILING_DEPRECATED
 #include "zipint.h"
-
-
 
 /* NOTE: Signed due to -1 on error.  See zip_add.c for more details. */
 
 ZIP_EXTERN zip_int64_t
-zip_add_dir(struct zip *za, const char *name)
-{
-    return zip_dir_add(za, name, 0);
+zip_add_dir (struct zip *za, const char *name) {
+	return zip_dir_add (za, name, 0);
 }

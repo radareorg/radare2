@@ -10,7 +10,7 @@ R_API ut64 r_debug_arg_get (RDebug *dbg, int cctype, int num) {
 	switch (cctype) {
 	case R_ANAL_CC_TYPE_SYSV:
 	case R_ANAL_CC_TYPE_FASTCALL:
-		snprintf (reg, sizeof (reg)-1, "A%d", num);
+		snprintf (reg, sizeof (reg) - 1, "A%d", num);
 		return r_debug_reg_get (dbg, reg);
 	case R_ANAL_CC_TYPE_STDCALL:
 	case R_ANAL_CC_TYPE_PASCAL:
@@ -18,18 +18,18 @@ R_API ut64 r_debug_arg_get (RDebug *dbg, int cctype, int num) {
 		if (dbg->bits == 64) {
 			sp += 8; // skip return address, assume we are inside the call
 			sp += 8 * num;
-			dbg->iob.read_at (dbg->iob.io, sp, (ut8*)&n64, sizeof(ut64));
+			dbg->iob.read_at (dbg->iob.io, sp, (ut8 *)&n64, sizeof (ut64));
 			// TODO: honor endianness of platform
 			return (ut64)n64;
 		} else {
 			sp += 4; // skip return address, assume we are inside the call
 			sp += 4 * num;
-			dbg->iob.read_at (dbg->iob.io, sp, (ut8*)&n32, sizeof(ut32));
+			dbg->iob.read_at (dbg->iob.io, sp, (ut8 *)&n32, sizeof (ut32));
 			// TODO: honor endianness of platform
 			return (ut64)n32;
 		}
 	}
-	snprintf (reg, sizeof (reg)-1, "A%d", num);
+	snprintf (reg, sizeof (reg) - 1, "A%d", num);
 	return r_debug_reg_get (dbg, reg);
 }
 

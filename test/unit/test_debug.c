@@ -4,12 +4,12 @@
 #include <sys/user.h>
 
 #ifndef offsetof
-#define offsetof(type, field) ((size_t) &((type *)0)->field)
+#define offsetof(type, field) ((size_t) & ((type *)0)->field)
 #endif
 
 #endif //__linux__
 
-bool test_r_debug_use(void) {
+bool test_r_debug_use (void) {
 	RDebug *dbg;
 	bool res;
 
@@ -23,7 +23,7 @@ bool test_r_debug_use(void) {
 	mu_end;
 }
 
-bool test_r_debug_reg_offset(void) {
+bool test_r_debug_reg_offset (void) {
 #if __linux__
 #ifdef __x86_64__
 #define FPREGS struct user_fpregs_struct
@@ -52,12 +52,12 @@ bool test_r_debug_reg_offset(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests () {
 	mu_run_test (test_r_debug_use);
 	mu_run_test (test_r_debug_reg_offset);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
+int main (int argc, char **argv) {
 	return all_tests ();
 }

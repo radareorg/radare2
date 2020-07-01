@@ -27,7 +27,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-
 /*---- Enumeration types and values ----*/
 
 /* 
@@ -39,7 +38,6 @@ enum qrcodegen_Ecc {
 	qrcodegen_Ecc_QUARTILE,
 	qrcodegen_Ecc_HIGH,
 };
-
 
 /* 
  * Represents the mask pattern used in a QR Code symbol.
@@ -56,24 +54,20 @@ enum qrcodegen_Mask {
 	qrcodegen_Mask_7,
 };
 
-
-
 /*---- Macro constants and functions ----*/
 
 // The minimum and maximum defined QR Code version numbers for Model 2.
-#define qrcodegen_VERSION_MIN  1
-#define qrcodegen_VERSION_MAX  40
+#define qrcodegen_VERSION_MIN 1
+#define qrcodegen_VERSION_MAX 40
 
 // Calculates the number of bytes needed to store any QR Code up to and including the given version number,
 // as a compile-time constant. For example, 'uint8_t buffer[qrcodegen_BUFFER_LEN_FOR_VERSION(25)];'
 // can store any single QR Code from version 1 to 25, inclusive.
-#define qrcodegen_BUFFER_LEN_FOR_VERSION(n)  ((((n) * 4 + 17) * ((n) * 4 + 17) + 7) / 8 + 1)
+#define qrcodegen_BUFFER_LEN_FOR_VERSION(n) ((((n)*4 + 17) * ((n)*4 + 17) + 7) / 8 + 1)
 
 // The worst-case number of bytes needed to store one QR Code, up to and including
 // version 40. This value equals 3918, which is just under 4 kilobytes.
-#define qrcodegen_BUFFER_LEN_MAX  qrcodegen_BUFFER_LEN_FOR_VERSION(qrcodegen_VERSION_MAX)
-
-
+#define qrcodegen_BUFFER_LEN_MAX qrcodegen_BUFFER_LEN_FOR_VERSION (qrcodegen_VERSION_MAX)
 
 /*---- Functions to generate QR Codes ----*/
 
@@ -96,9 +90,8 @@ enum qrcodegen_Mask {
  * - Please consult the QR Code specification for information on
  *   data capacities per version, ECC level, and text encoding mode.
  */
-R_API bool r_qrcode_text(const char *text, uint8_t tempBuffer[], uint8_t qrcode[],
+R_API bool r_qrcode_text (const char *text, uint8_t tempBuffer[], uint8_t qrcode[],
 	enum qrcodegen_Ecc ecl, int minVersion, int maxVersion, enum qrcodegen_Mask mask, bool boostEcl);
-
 
 /* 
  * Encodes the given binary data to a QR Code symbol, returning true if encoding succeeded.
@@ -118,8 +111,7 @@ R_API bool r_qrcode_text(const char *text, uint8_t tempBuffer[], uint8_t qrcode[
  * - Please consult the QR Code specification for information on
  *   data capacities per version, ECC level, and text encoding mode.
  */
-R_API bool r_qrcode_bin(uint8_t dataAndTemp[], int dataLen, uint8_t qrcode[],
+R_API bool r_qrcode_bin (uint8_t dataAndTemp[], int dataLen, uint8_t qrcode[],
 	enum qrcodegen_Ecc ecl, int minVersion, int maxVersion, enum qrcodegen_Mask mask, bool boostEcl);
 
-
-R_API char *r_qrcode_print(const ut8* qrcode);
+R_API char *r_qrcode_print (const ut8 *qrcode);

@@ -11,8 +11,7 @@
 
 #include "rsp_idec.h"
 
-
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	rsp_instruction r_instr;
 	int i;
 
@@ -36,28 +35,26 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			break;
 		case RSP_OPND_OFFSET:
 		case RSP_OPND_TARGET:
-			r_strbuf_appendf (&op->buf_asm, "0x%08"PFMT64x, r_instr.operands[i].u);
+			r_strbuf_appendf (&op->buf_asm, "0x%08" PFMT64x, r_instr.operands[i].u);
 			break;
-		case RSP_OPND_ZIMM:
-			{
+		case RSP_OPND_ZIMM: {
 			int shift = (r_instr.operands[i].u & ~0xffff) ? 16 : 0;
-			r_strbuf_appendf (&op->buf_asm, "0x%04"PFMT64x,
+			r_strbuf_appendf (&op->buf_asm, "0x%04" PFMT64x,
 				r_instr.operands[i].u >> shift);
-			}
-			break;
+		} break;
 		case RSP_OPND_SIMM:
-			r_strbuf_appendf (&op->buf_asm, "%s0x%04"PFMT64x,
-			(r_instr.operands[i].s<0)?"-":"",
-			(r_instr.operands[i].s<0)?-r_instr.operands[i].s:r_instr.operands[i].s);
+			r_strbuf_appendf (&op->buf_asm, "%s0x%04" PFMT64x,
+				(r_instr.operands[i].s < 0) ? "-" : "",
+				(r_instr.operands[i].s < 0) ? -r_instr.operands[i].s : r_instr.operands[i].s);
 			break;
 		case RSP_OPND_SHIFT_AMOUNT:
-			r_strbuf_appendf (&op->buf_asm, "%"PFMT64u, r_instr.operands[i].u);
+			r_strbuf_appendf (&op->buf_asm, "%" PFMT64u, r_instr.operands[i].u);
 			break;
 		case RSP_OPND_BASE_OFFSET:
 			r_strbuf_appendf (&op->buf_asm, "%s0x%04x(%s)",
-			(r_instr.operands[i].s<0)?"-":"",
-			(ut32)((r_instr.operands[i].s<0)?-r_instr.operands[i].s:r_instr.operands[i].s),
-			rsp_gp_reg_soft_names[r_instr.operands[i].u]);
+				(r_instr.operands[i].s < 0) ? "-" : "",
+				(ut32) ((r_instr.operands[i].s < 0) ? -r_instr.operands[i].s : r_instr.operands[i].s),
+				rsp_gp_reg_soft_names[r_instr.operands[i].u]);
 			break;
 		case RSP_OPND_C0_REG:
 			r_strbuf_append (&op->buf_asm, rsp_c0_reg_soft_names[r_instr.operands[i].u]);

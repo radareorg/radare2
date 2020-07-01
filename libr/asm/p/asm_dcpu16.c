@@ -11,18 +11,18 @@
 #include "../arch/dcpu16/dis.c"
 #include "../arch/dcpu16/asm.c"
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	char buf_asm[32];
 	if (len < 2) {
 		return -1; // at least 2 bytes!
 	}
-	op->size = dcpu16_disasm (buf_asm, (const ut16*)buf, len, NULL);
-	r_strbuf_set (&op->buf_asm, (op->size > 0) ? buf_asm: "(data)");
+	op->size = dcpu16_disasm (buf_asm, (const ut16 *)buf, len, NULL);
+	r_strbuf_set (&op->buf_asm, (op->size > 0) ? buf_asm : "(data)");
 	return op->size;
 }
 
-static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
-	int len = dcpu16_assemble ((ut8*)r_strbuf_get (&op->buf), buf);
+static int assemble (RAsm *a, RAsmOp *op, const char *buf) {
+	int len = dcpu16_assemble ((ut8 *)r_strbuf_get (&op->buf), buf);
 	op->buf.len = len;
 	return len;
 }

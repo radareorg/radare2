@@ -4,7 +4,7 @@
 #include "../i/private.h"
 #include "../format/ne/ne.h"
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	ut64 length = r_buf_size (b);
 	if (length <= 0x3d) {
 		return false;
@@ -23,7 +23,7 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	r_return_val_if_fail (bf && bin_obj && buf, false);
 	r_bin_ne_obj_t *res = r_bin_ne_new_buf (buf, bf->rbin->verbose);
 	if (res) {
@@ -37,7 +37,7 @@ static void destroy (RBinFile *bf) {
 	r_bin_ne_free (bf->o->bin_obj);
 }
 
-static void header(RBinFile *bf) {
+static void header (RBinFile *bf) {
 	struct r_bin_t *rbin = bf->rbin;
 	r_bin_ne_obj_t *ne = bf->o->bin_obj;
 	rbin->cb_printf ("Signature: NE\n");
@@ -74,7 +74,7 @@ static void header(RBinFile *bf) {
 	rbin->cb_printf ("winver: %d.%d\n", ne->ne_header->expctwinver[1], ne->ne_header->expctwinver[0]);
 }
 
-RBinInfo *info(RBinFile *bf) {
+RBinInfo *info (RBinFile *bf) {
 	r_bin_ne_obj_t *ne = bf->o->bin_obj;
 	RBinInfo *i = R_NEW0 (RBinInfo);
 	if (i) {
@@ -86,23 +86,23 @@ RBinInfo *info(RBinFile *bf) {
 	return i;
 }
 
-RList *entries(RBinFile *bf) {
+RList *entries (RBinFile *bf) {
 	return r_bin_ne_get_entrypoints (bf->o->bin_obj);
 }
 
-RList *symbols(RBinFile *bf) {
+RList *symbols (RBinFile *bf) {
 	return r_bin_ne_get_symbols (bf->o->bin_obj);
 }
 
-RList *imports(RBinFile *bf) {
+RList *imports (RBinFile *bf) {
 	return r_bin_ne_get_imports (bf->o->bin_obj);
 }
 
-RList *sections(RBinFile *bf) {
+RList *sections (RBinFile *bf) {
 	return r_bin_ne_get_segments (bf->o->bin_obj);
 }
 
-RList *relocs(RBinFile *bf) {
+RList *relocs (RBinFile *bf) {
 	return r_bin_ne_get_relocs (bf->o->bin_obj);
 }
 

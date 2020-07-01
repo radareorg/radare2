@@ -4,7 +4,7 @@
 
 /* locks/mutex/sems */
 
-R_API RThreadLock *r_th_lock_new(bool recursive) {
+R_API RThreadLock *r_th_lock_new (bool recursive) {
 	RThreadLock *thl = R_NEW0 (RThreadLock);
 	if (thl) {
 #if HAVE_PTHREAD
@@ -28,13 +28,13 @@ R_API RThreadLock *r_th_lock_new(bool recursive) {
 	return thl;
 }
 
-R_API int r_th_lock_wait(RThreadLock *thl) {
+R_API int r_th_lock_wait (RThreadLock *thl) {
 	r_th_lock_enter (thl); // locks here
 	r_th_lock_leave (thl); // releases previous mutex
 	return 0;
 }
 
-R_API int r_th_lock_enter(RThreadLock *thl) {
+R_API int r_th_lock_enter (RThreadLock *thl) {
 #if HAVE_PTHREAD
 	return pthread_mutex_lock (&thl->lock);
 #elif __WINDOWS__
@@ -43,7 +43,7 @@ R_API int r_th_lock_enter(RThreadLock *thl) {
 #endif
 }
 
-R_API int r_th_lock_tryenter(RThreadLock *thl) {
+R_API int r_th_lock_tryenter (RThreadLock *thl) {
 #if HAVE_PTHREAD
 	return !pthread_mutex_trylock (&thl->lock);
 #elif __WINDOWS__
@@ -51,7 +51,7 @@ R_API int r_th_lock_tryenter(RThreadLock *thl) {
 #endif
 }
 
-R_API int r_th_lock_leave(RThreadLock *thl) {
+R_API int r_th_lock_leave (RThreadLock *thl) {
 #if HAVE_PTHREAD
 	return pthread_mutex_unlock (&thl->lock);
 #elif __WINDOWS__
@@ -60,7 +60,7 @@ R_API int r_th_lock_leave(RThreadLock *thl) {
 #endif
 }
 
-R_API void *r_th_lock_free(RThreadLock *thl) {
+R_API void *r_th_lock_free (RThreadLock *thl) {
 	if (thl) {
 #if HAVE_PTHREAD
 		pthread_mutex_destroy (&thl->lock);

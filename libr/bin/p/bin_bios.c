@@ -6,7 +6,7 @@
 #include <r_bin.h>
 #include "../i/private.h"
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer (RBuffer *buf) {
 	r_return_val_if_fail (buf, false);
 
 	ut64 sz = r_buf_size (buf);
@@ -33,7 +33,7 @@ static bool check_buffer(RBuffer *buf) {
 	return bep == 0xea || bep == 0xe9;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	if (!check_buffer (buf)) {
 		return false;
 	}
@@ -41,26 +41,26 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return true;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy (RBinFile *bf) {
 	r_buf_free (bf->o->bin_obj);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr (RBinFile *bf) {
 	return 0;
 }
 
 /* accelerate binary load */
-static RList *strings(RBinFile *bf) {
+static RList *strings (RBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RBinInfo *info (RBinFile *bf) {
 	RBinInfo *ret = NULL;
 	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
 	}
 	ret->lang = NULL;
-	ret->file = bf->file? strdup (bf->file): NULL;
+	ret->file = bf->file ? strdup (bf->file) : NULL;
 	ret->type = strdup ("bios");
 	ret->bclass = strdup ("1.0");
 	ret->rclass = strdup ("bios");
@@ -75,12 +75,12 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
+static RList *sections (RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	RBuffer *obj = bf->o->bin_obj;
 
-	if (!(ret = r_list_newf ((RListFree) r_bin_section_free))) {
+	if (!(ret = r_list_newf ((RListFree)r_bin_section_free))) {
 		return NULL;
 	}
 	// program headers is another section
@@ -110,7 +110,7 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList *entries(RBinFile *bf) {
+static RList *entries (RBinFile *bf) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
 	if (!(ret = r_list_new ())) {

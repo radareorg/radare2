@@ -5,7 +5,7 @@
 #include <r_bin.h>
 
 /* XXX Implement r__bin_wr_scn_{   set, del   } instead */
-R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size) {
+R_API ut64 r_bin_wr_scn_resize (RBin *bin, const char *name, ut64 size) {
 	RBinFile *bf = r_bin_cur (bin);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 	if (plugin && plugin->write && plugin->write->scn_resize) {
@@ -14,7 +14,7 @@ R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size) {
 	return false;
 }
 
-R_API bool r_bin_wr_scn_perms(RBin *bin, const char *name, int perms) {
+R_API bool r_bin_wr_scn_perms (RBin *bin, const char *name, int perms) {
 	RBinFile *bf = r_bin_cur (bin);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 	if (plugin && plugin->write && plugin->write->scn_perms) {
@@ -23,7 +23,7 @@ R_API bool r_bin_wr_scn_perms(RBin *bin, const char *name, int perms) {
 	return false;
 }
 
-R_API bool r_bin_wr_rpath_del(RBin *bin) {
+R_API bool r_bin_wr_rpath_del (RBin *bin) {
 	RBinFile *bf = r_bin_cur (bin);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 	if (plugin && plugin->write && plugin->write->rpath_del) {
@@ -32,7 +32,7 @@ R_API bool r_bin_wr_rpath_del(RBin *bin) {
 	return false;
 }
 
-R_API bool r_bin_wr_output(RBin *bin, const char *filename) {
+R_API bool r_bin_wr_output (RBin *bin, const char *filename) {
 	r_return_val_if_fail (bin && filename, false);
 	RBinFile *bf = r_bin_cur (bin);
 	if (!bf || !bf->buf) {
@@ -43,7 +43,7 @@ R_API bool r_bin_wr_output(RBin *bin, const char *filename) {
 	return r_file_dump (filename, tmp, tmpsz, 0);
 }
 
-R_API bool r_bin_wr_entry(RBin *bin, ut64 addr) {
+R_API bool r_bin_wr_entry (RBin *bin, ut64 addr) {
 	RBinFile *bf = r_bin_cur (bin);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 	if (plugin && plugin->write && plugin->write->entry) {
@@ -52,7 +52,7 @@ R_API bool r_bin_wr_entry(RBin *bin, ut64 addr) {
 	return false;
 }
 
-R_API bool r_bin_wr_addlib(RBin *bin, const char *lib) {
+R_API bool r_bin_wr_addlib (RBin *bin, const char *lib) {
 	RBinFile *bf = r_bin_cur (bin);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 	if (plugin && plugin->write && plugin->write->addlib) {

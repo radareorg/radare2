@@ -3,7 +3,7 @@
 #include <r_core.h>
 #include <r_util.h>
 
-R_API RAnnotatedCode *r_annotated_code_new(char *code) {
+R_API RAnnotatedCode *r_annotated_code_new (char *code) {
 	RAnnotatedCode *r = R_NEW0 (RAnnotatedCode);
 	if (!r) {
 		return NULL;
@@ -13,7 +13,7 @@ R_API RAnnotatedCode *r_annotated_code_new(char *code) {
 	return r;
 }
 
-R_API void r_annotated_code_free(RAnnotatedCode *code) {
+R_API void r_annotated_code_free (RAnnotatedCode *code) {
 	if (!code) {
 		return;
 	}
@@ -22,11 +22,11 @@ R_API void r_annotated_code_free(RAnnotatedCode *code) {
 	r_free (code);
 }
 
-R_API void r_annotated_code_add_annotation(RAnnotatedCode *code, RCodeAnnotation *annotation) {
+R_API void r_annotated_code_add_annotation (RAnnotatedCode *code, RCodeAnnotation *annotation) {
 	r_vector_push (&code->annotations, annotation);
 }
 
-R_API RPVector *r_annotated_code_annotations_in(RAnnotatedCode *code, size_t offset) {
+R_API RPVector *r_annotated_code_annotations_in (RAnnotatedCode *code, size_t offset) {
 	RPVector *r = r_pvector_new (NULL);
 	if (!r) {
 		return NULL;
@@ -40,7 +40,7 @@ R_API RPVector *r_annotated_code_annotations_in(RAnnotatedCode *code, size_t off
 	return r;
 }
 
-R_API RPVector *r_annotated_code_annotations_range(RAnnotatedCode *code, size_t start, size_t end) {
+R_API RPVector *r_annotated_code_annotations_range (RAnnotatedCode *code, size_t start, size_t end) {
 	RPVector *r = r_pvector_new (NULL);
 	if (!r) {
 		return NULL;
@@ -55,7 +55,7 @@ R_API RPVector *r_annotated_code_annotations_range(RAnnotatedCode *code, size_t 
 	return r;
 }
 
-R_API RVector *r_annotated_code_line_offsets(RAnnotatedCode *code) {
+R_API RVector *r_annotated_code_line_offsets (RAnnotatedCode *code) {
 	RVector *r = r_vector_new (sizeof (ut64), NULL, NULL);
 	if (!r) {
 		return NULL;
@@ -64,7 +64,7 @@ R_API RVector *r_annotated_code_line_offsets(RAnnotatedCode *code) {
 	size_t len = strlen (code->code);
 	do {
 		char *next = strchr (code->code + cur, '\n');
-		size_t next_i = next? (next - code->code) + 1: len;
+		size_t next_i = next ? (next - code->code) + 1 : len;
 		RPVector *annotations = r_annotated_code_annotations_range (code, cur, next_i);
 		ut64 offset = UT64_MAX;
 		void **it;

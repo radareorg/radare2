@@ -10,46 +10,46 @@
 #include <r_anal.h>
 #include <r_parse.h>
 
-static int replace(int argc, const char *argv[], char *newstr) {
-	int i,j,k;
+static int replace (int argc, const char *argv[], char *newstr) {
+	int i, j, k;
 	struct {
 		char *op;
 		char *str;
 	} ops[] = {
-		{ "cmpl",  "cmp 2, 1"},
-		{ "testl", "test 2, 1"},
-		{ "leal",  "lea 2, 1"},
-		{ "movl",  "mov 2, 1"},
-		{ "xorl",  "xor 2, 1"},
-		{ "andl",  "and 2, 1"},
-		{ "orl",   "or 2, 1"},
-		{ "addl",  "add 2, 1"},
-		{ "incl",  "inc 1"},
-		{ "decl",  "dec 1"},
-		{ "subl",  "sub 2, 1"},
-		{ "mull",  "mul 2, 1"},
-		{ "divl",  "div 2, 1"},
-		{ "pushl", "push 1"},
-		{ "popl",  "pop 1"},
-		{ "ret",  "ret"},
+		{ "cmpl", "cmp 2, 1" },
+		{ "testl", "test 2, 1" },
+		{ "leal", "lea 2, 1" },
+		{ "movl", "mov 2, 1" },
+		{ "xorl", "xor 2, 1" },
+		{ "andl", "and 2, 1" },
+		{ "orl", "or 2, 1" },
+		{ "addl", "add 2, 1" },
+		{ "incl", "inc 1" },
+		{ "decl", "dec 1" },
+		{ "subl", "sub 2, 1" },
+		{ "mull", "mul 2, 1" },
+		{ "divl", "div 2, 1" },
+		{ "pushl", "push 1" },
+		{ "popl", "pop 1" },
+		{ "ret", "ret" },
 		{ NULL }
 	};
 
-	for (i=0; ops[i].op != NULL; i++) {
+	for (i = 0; ops[i].op != NULL; i++) {
 		if (!strcmp (ops[i].op, argv[0])) {
 			if (newstr != NULL) {
-				for (j=k=0;ops[i].str[j]!='\0';j++,k++) {
-					if (ops[i].str[j]>='0' && ops[i].str[j]<='9') {
-						const char *w = argv[ ops[i].str[j]-'0' ];
+				for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
+					if (ops[i].str[j] >= '0' && ops[i].str[j] <= '9') {
+						const char *w = argv[ops[i].str[j] - '0'];
 						if (w != NULL) {
-							strcpy(newstr+k, w);
-							k += strlen(w)-1;
+							strcpy (newstr + k, w);
+							k += strlen (w) - 1;
 						}
 					} else {
 						newstr[k] = ops[i].str[j];
 					}
 				}
-				newstr[k]='\0';
+				newstr[k] = '\0';
 			}
 			return true;
 		}
@@ -58,16 +58,16 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	/* TODO: this is slow */
 	if (newstr != NULL) {
 		newstr[0] = '\0';
-		for (i=0; i<argc; i++) {
+		for (i = 0; i < argc; i++) {
 			strcat (newstr, argv[i]);
-			strcat (newstr, (i == 0 || i== argc - 1)?" ":",");
+			strcat (newstr, (i == 0 || i == argc - 1) ? " " : ",");
 		}
 	}
 
 	return false;
 }
 
-static int parse(RParse *p, const char *data, char *str) {
+static int parse (RParse *p, const char *data, char *str) {
 	int i, n;
 	char w0[32];
 	char w1[32];
@@ -87,7 +87,7 @@ static int parse(RParse *p, const char *data, char *str) {
 		*ptr = 0;
 		r_str_trim (buf);
 	}
-	if (*buf == '.' || buf[strlen(buf)-1] == ':') {
+	if (*buf == '.' || buf[strlen (buf) - 1] == ':') {
 		free (buf);
 		strcpy (str, data);
 		return true;
@@ -100,17 +100,17 @@ static int parse(RParse *p, const char *data, char *str) {
 	ptr = strchr (buf, '[');
 	if (ptr) {
 		*ptr = 0;
-		num = (char*)r_str_lchr (buf, ' ');
+		num = (char *)r_str_lchr (buf, ' ');
 		if (!num) {
 			num = (char *)r_str_lchr (buf, ',');
 		}
 		if (num) {
-			n = atoi (num+1);
+			n = atoi (num + 1);
 			*ptr = '[';
-			memmove (num+1, ptr, strlen (ptr)+1);
-			ptr = (char*)r_str_lchr (buf, ']');
+			memmove (num + 1, ptr, strlen (ptr) + 1);
+			ptr = (char *)r_str_lchr (buf, ']');
 			if (n && ptr) {
-				char *rest = strdup (ptr+1);
+				char *rest = strdup (ptr + 1);
 				if (n > 0) {
 					sprintf (ptr, "+%d]%s", n, rest);
 				} else {
@@ -134,8 +134,8 @@ static int parse(RParse *p, const char *data, char *str) {
 			for (++ptr; *ptr == ' '; ptr++) {
 				;
 			}
-			strncpy (w0, buf, sizeof(w0) - 1);
-			strncpy (w1, ptr, sizeof(w1) - 1);
+			strncpy (w0, buf, sizeof (w0) - 1);
+			strncpy (w1, ptr, sizeof (w1) - 1);
 
 			optr = ptr;
 			ptr = strchr (ptr, ',');
@@ -144,23 +144,23 @@ static int parse(RParse *p, const char *data, char *str) {
 				for (++ptr; *ptr == ' '; ptr++) {
 					;
 				}
-				strncpy (w1, optr, sizeof(w1)-1);
-				strncpy (w2, ptr, sizeof(w2)-1);
+				strncpy (w1, optr, sizeof (w1) - 1);
+				strncpy (w2, ptr, sizeof (w2) - 1);
 				ptr = strchr (ptr, ',');
 				if (ptr) {
 					*ptr = '\0';
 					for (++ptr; *ptr == ' '; ptr++) {
 						;
 					}
-					strncpy (w2, optr, sizeof(w2)-1);
-					strncpy (w3, ptr, sizeof(w3)-1);
+					strncpy (w2, optr, sizeof (w2) - 1);
+					strncpy (w3, ptr, sizeof (w3) - 1);
 				}
 			}
 		}
 		{
 			const char *wa[] = { w0, w1, w2, w3 };
 			int nw = 0;
-			for (i=0; i<4; i++) {
+			for (i = 0; i < 4; i++) {
 				if (wa[i][0] != '\0') {
 					nw++;
 				}

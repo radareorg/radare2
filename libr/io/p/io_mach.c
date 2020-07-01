@@ -47,7 +47,7 @@ typedef struct {
 #define RIOMACH_TASK(x) (x ? ((RIOMach*)(x))->task : -1)
 */
 
-int RIOMACH_TASK(RIODescData *x) {
+int RIOMACH_TASK (RIODescData *x) {
 	// TODO
 	return -1;
 }
@@ -56,8 +56,8 @@ int RIOMACH_TASK(RIODescData *x) {
 #define R_IO_NFDS 2
 extern int errno;
 
-static task_t task_for_pid_workaround(int pid) {
-	host_t myhost = mach_host_self();
+static task_t task_for_pid_workaround (int pid) {
+	host_t myhost = mach_host_self ();
 	mach_port_t psDefault = 0;
 	mach_port_t psDefault_control = 0;
 	task_array_t tasks = NULL;
@@ -74,14 +74,14 @@ static task_t task_for_pid_workaround(int pid) {
 	}
 	kr = host_processor_set_priv (myhost, psDefault, &psDefault_control);
 	if (kr != KERN_SUCCESS) {
-//		eprintf ("host_processor_set_priv failed with error 0x%x\n", kr);
+		//		eprintf ("host_processor_set_priv failed with error 0x%x\n", kr);
 		//mach_error ("host_processor_set_priv",kr);
 		return MACH_PORT_NULL;
 	}
 	numTasks = 0;
 	kr = processor_set_tasks (psDefault_control, &tasks, &numTasks);
 	if (kr != KERN_SUCCESS) {
-//		eprintf ("processor_set_tasks failed with error %x\n", kr);
+		//		eprintf ("processor_set_tasks failed with error %x\n", kr);
 		return MACH_PORT_NULL;
 	}
 	if (pid == 0) {
@@ -98,19 +98,19 @@ static task_t task_for_pid_workaround(int pid) {
 	return MACH_PORT_NULL;
 }
 
-static task_t task_for_pid_ios9pangu(int pid) {
+static task_t task_for_pid_ios9pangu (int pid) {
 	task_t task = MACH_PORT_NULL;
 	host_get_special_port (mach_host_self (), HOST_LOCAL_NODE, 4, &task);
 	return task;
 }
 
-static task_t pid_to_task(RIODesc *fd, int pid) {
+static task_t pid_to_task (RIODesc *fd, int pid) {
 	task_t task = 0;
 	static task_t old_task = 0;
 	static int old_pid = -1;
 	kern_return_t kr;
 
-	RIODescData *iodd = fd? (RIODescData *)fd->data: NULL;
+	RIODescData *iodd = fd ? (RIODescData *)fd->data : NULL;
 	RIOMach *riom = NULL;
 	if (iodd) {
 		riom = iodd->data;
@@ -149,7 +149,7 @@ static task_t pid_to_task(RIODesc *fd, int pid) {
 	return task;
 }
 
-static bool task_is_dead(RIODesc *fd, int pid) {
+static bool task_is_dead (RIODesc *fd, int pid) {
 	unsigned int count = 0;
 	kern_return_t kr = mach_port_get_refs (mach_task_self (),
 		pid_to_task (fd, pid), MACH_PORT_RIGHT_SEND, &count);
@@ -158,11 +158,11 @@ static bool task_is_dead(RIODesc *fd, int pid) {
 
 static ut64 the_lower = UT64_MAX;
 
-static ut64 getNextValid(RIO *io, RIODesc *fd, ut64 addr) {
+static ut64 getNextValid (RIO *io, RIODesc *fd, ut64 addr) {
 	struct vm_region_submap_info_64 info;
 	vm_address_t address = MACH_VM_MIN_ADDRESS;
-	vm_size_t size = (vm_size_t) 0;
-	vm_size_t osize = (vm_size_t) 0;
+	vm_size_t size = (vm_size_t)0;
+	vm_size_t osize = (vm_size_t)0;
 	natural_t depth = 0;
 	kern_return_t kr;
 	int tid = __get_pid (fd);
@@ -182,7 +182,7 @@ static ut64 getNextValid(RIO *io, RIODesc *fd, ut64 addr) {
 		info_count = VM_REGION_SUBMAP_INFO_COUNT_64;
 		memset (&info, 0, sizeof (info));
 		kr = vm_region_recurse_64 (task, &address, &size,
-			&depth, (vm_region_recurse_info_t) &info, &info_count);
+			&depth, (vm_region_recurse_info_t)&info, &info_count);
 		if (kr != KERN_SUCCESS) {
 			break;
 		}
@@ -209,7 +209,7 @@ static ut64 getNextValid(RIO *io, RIODesc *fd, ut64 addr) {
 	return lower;
 }
 
-static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
+static int __read (RIO *io, RIODesc *desc, ut8 *buf, int len) {
 	vm_size_t size = 0;
 	int blen, err, copied = 0;
 	int blocksize = 32;
@@ -217,7 +217,7 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 	if (!io || !desc || !buf || !dd) {
 		return -1;
 	}
-	if (dd ->magic != r_str_hash ("mach")) {
+	if (dd->magic != r_str_hash ("mach")) {
 		return -1;
 	}
 	memset (buf, 0xff, len);
@@ -247,8 +247,8 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 			break;
 		case KERN_INVALID_ADDRESS:
 			if (blocksize == 1) {
-				memset (buf+copied, 0xff, len-copied);
-				return size+copied;
+				memset (buf + copied, 0xff, len - copied);
+				return size + copied;
 			}
 			blocksize = 1;
 			blen = 1;
@@ -272,7 +272,7 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 	return len;
 }
 
-static int tsk_getperm(RIO *io, task_t task, vm_address_t addr) {
+static int tsk_getperm (RIO *io, task_t task, vm_address_t addr) {
 	kern_return_t kr;
 	mach_port_t object;
 	vm_size_t vmsize;
@@ -283,22 +283,23 @@ static int tsk_getperm(RIO *io, task_t task, vm_address_t addr) {
 	return (kr != KERN_SUCCESS ? 0 : info.protection);
 }
 
-static int tsk_pagesize(RIODesc *desc) {
+static int tsk_pagesize (RIODesc *desc) {
 	int tid = __get_pid (desc);
 	task_t task = pid_to_task (desc, tid);
 	static vm_size_t pagesize = 0;
 	return pagesize
 		? pagesize
 		: (host_page_size (task, &pagesize) == KERN_SUCCESS)
-			? pagesize : 4096;
+			? pagesize
+			: 4096;
 }
 
-static vm_address_t tsk_getpagebase(RIODesc *desc, ut64 addr) {
+static vm_address_t tsk_getpagebase (RIODesc *desc, ut64 addr) {
 	vm_address_t pagesize = tsk_pagesize (desc);
 	return (addr & ~(pagesize - 1));
 }
 
-static bool tsk_setperm(RIO *io, task_t task, vm_address_t addr, int len, int perm) {
+static bool tsk_setperm (RIO *io, task_t task, vm_address_t addr, int len, int perm) {
 	kern_return_t kr;
 	kr = vm_protect (task, addr, len, 0, perm);
 	if (kr != KERN_SUCCESS) {
@@ -308,7 +309,7 @@ static bool tsk_setperm(RIO *io, task_t task, vm_address_t addr, int len, int pe
 	return true;
 }
 
-static bool tsk_write(task_t task, vm_address_t addr, const ut8 *buf, int len) {
+static bool tsk_write (task_t task, vm_address_t addr, const ut8 *buf, int len) {
 	kern_return_t kr = vm_write (task, addr, (vm_offset_t)buf, (mach_msg_type_number_t)len);
 	if (kr != KERN_SUCCESS) {
 		return false;
@@ -316,7 +317,7 @@ static bool tsk_write(task_t task, vm_address_t addr, const ut8 *buf, int len) {
 	return true;
 }
 
-static int mach_write_at(RIO *io, RIODesc *desc, const void *buf, int len, ut64 addr) {
+static int mach_write_at (RIO *io, RIODesc *desc, const void *buf, int len, ut64 addr) {
 	vm_address_t vaddr = addr;
 	vm_address_t pageaddr;
 	vm_size_t pagesize;
@@ -341,8 +342,7 @@ static int mach_write_at(RIO *io, RIODesc *desc, const void *buf, int len, ut64 
 	}
 	operms = tsk_getperm (io, task, pageaddr);
 	if (!tsk_setperm (io, task, pageaddr, total_size, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_COPY)) {
-		eprintf ("io.mach: Cannot set page perms for %d byte(s) at 0x%08"
-			PFMT64x"\n", (int)pagesize, (ut64)pageaddr);
+		eprintf ("io.mach: Cannot set page perms for %d byte(s) at 0x%08" PFMT64x "\n", (int)pagesize, (ut64)pageaddr);
 		return -1;
 	}
 	if (!tsk_write (task, vaddr, buf, len)) {
@@ -358,15 +358,15 @@ static int mach_write_at(RIO *io, RIODesc *desc, const void *buf, int len, ut64 
 	return len;
 }
 
-static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
+static int __write (RIO *io, RIODesc *fd, const ut8 *buf, int len) {
 	return mach_write_at (io, fd, buf, len, io->off);
 }
 
-static bool __plugin_open(RIO *io, const char *file, bool many) {
+static bool __plugin_open (RIO *io, const char *file, bool many) {
 	return (!strncmp (file, "attach://", 9) || !strncmp (file, "mach://", 7));
 }
 
-static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
+static RIODesc *__open (RIO *io, const char *file, int rw, int mode) {
 	RIODesc *ret = NULL;
 	RIOMach *riom = NULL;
 	const char *pidfile;
@@ -434,16 +434,16 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		: strdup ("kernel");
 	if (!strncmp (file, "smach://", 8)) {
 		ret = r_io_desc_new (io, &r_io_plugin_mach, &file[1],
-			       rw | R_PERM_X, mode, iodd);
+			rw | R_PERM_X, mode, iodd);
 	} else {
 		ret = r_io_desc_new (io, &r_io_plugin_mach, file,
-			       rw | R_PERM_X, mode, iodd);
+			rw | R_PERM_X, mode, iodd);
 	}
 	ret->name = pidpath;
 	return ret;
 }
 
-static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 __lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
 	case R_IO_SEEK_SET:
 		io->off = offset;
@@ -457,7 +457,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return io->off;
 }
 
-static int __close(RIODesc *fd) {
+static int __close (RIODesc *fd) {
 	if (!fd) {
 		return false;
 	}
@@ -478,7 +478,7 @@ static int __close(RIODesc *fd) {
 	return kr == KERN_SUCCESS;
 }
 
-static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
+static char *__system (RIO *io, RIODesc *fd, const char *cmd) {
 	if (!io || !fd || !cmd || !fd->data) {
 		return NULL;
 	}

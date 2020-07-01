@@ -5,7 +5,7 @@
 #include <r_cons.h>
 #include "pager_private.h"
 
-R_IPI void pager_color_line(const char *line, RStrpool *p, RList *ml) {
+R_IPI void pager_color_line (const char *line, RStrpool *p, RList *ml) {
 	int m_len, offset = 0;
 	char *m_addr;
 	RListIter *it;
@@ -39,13 +39,12 @@ R_IPI void pager_color_line(const char *line, RStrpool *p, RList *ml) {
 			offset = m->rm_eo;
 			free (m_addr);
 		}
-
 	}
 	/* append final part of string w/o matches */
 	r_strpool_append (p, line + offset);
 }
 
-R_IPI void pager_printpage(const char *line, int *index, RList **mla, int from, int to, int w) {
+R_IPI void pager_printpage (const char *line, int *index, RList **mla, int from, int to, int w) {
 	int i;
 
 	r_cons_clear00 ();
@@ -71,12 +70,12 @@ R_IPI void pager_printpage(const char *line, int *index, RList **mla, int from, 
 	r_cons_flush ();
 }
 
-R_IPI int pager_next_match(int from, RList **mla, int lcount) {
+R_IPI int pager_next_match (int from, RList **mla, int lcount) {
 	int l;
 	if (from > lcount - 2) {
 		return from;
 	}
-	for (l = from + 1; l < lcount; l++){
+	for (l = from + 1; l < lcount; l++) {
 		/* if there's at least one match on the line */
 		if (r_list_first (mla[l])) {
 			return l;
@@ -85,7 +84,7 @@ R_IPI int pager_next_match(int from, RList **mla, int lcount) {
 	return from;
 }
 
-R_IPI int pager_prev_match(int from, RList **mla) {
+R_IPI int pager_prev_match (int from, RList **mla) {
 	int l;
 	if (from < 1) {
 		return from;
@@ -98,7 +97,7 @@ R_IPI int pager_prev_match(int from, RList **mla) {
 	return from;
 }
 
-R_IPI bool pager_all_matches(const char *s, RRegex *rx, RList **mla, int *lines, int lcount) {
+R_IPI bool pager_all_matches (const char *s, RRegex *rx, RList **mla, int *lines, int lcount) {
 	bool res = false;
 	RRegexMatch m;
 	int l, slen;
@@ -133,7 +132,7 @@ R_IPI bool pager_all_matches(const char *s, RRegex *rx, RList **mla, int *lines,
 	return res;
 }
 
-R_IPI int *pager_splitlines(char *s, int *lines_count) {
+R_IPI int *pager_splitlines (char *s, int *lines_count) {
 	int lines_size = 128;
 	int *lines = NULL;
 	int i, row = 0;

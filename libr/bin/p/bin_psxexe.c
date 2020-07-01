@@ -7,7 +7,7 @@
 #include "../i/private.h"
 #include "psxexe/psxexe.h"
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	ut8 magic[PSXEXE_ID_LEN];
 	if (r_buf_read_at (b, 0, magic, sizeof (magic)) == PSXEXE_ID_LEN) {
 		return !memcmp (magic, PSXEXE_ID, PSXEXE_ID_LEN);
@@ -15,15 +15,15 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (b);
 }
 
-static RBinInfo* info(RBinFile* bf) {
-	RBinInfo* ret = NULL;
+static RBinInfo *info (RBinFile *bf) {
+	RBinInfo *ret = NULL;
 	psxexe_header psxheader;
 
-	if (r_buf_read_at (bf->buf, 0, (ut8*)&psxheader, sizeof(psxexe_header)) < sizeof(psxexe_header)) {
+	if (r_buf_read_at (bf->buf, 0, (ut8 *)&psxheader, sizeof (psxexe_header)) < sizeof (psxexe_header)) {
 		eprintf ("Truncated Header\n");
 		return NULL;
 	}
@@ -42,9 +42,9 @@ static RBinInfo* info(RBinFile* bf) {
 	return ret;
 }
 
-static RList* sections(RBinFile* bf) {
-	RList* ret = NULL;
-	RBinSection* sect = NULL;
+static RList *sections (RBinFile *bf) {
+	RList *ret = NULL;
+	RBinSection *sect = NULL;
 	psxexe_header psxheader;
 	ut64 sz = 0;
 
@@ -57,7 +57,7 @@ static RList* sections(RBinFile* bf) {
 		return NULL;
 	}
 
-	if (r_buf_fread_at (bf->buf, 0, (ut8*)&psxheader, "8c17i", 1) < sizeof (psxexe_header)) {
+	if (r_buf_fread_at (bf->buf, 0, (ut8 *)&psxheader, "8c17i", 1) < sizeof (psxexe_header)) {
 		eprintf ("Truncated Header\n");
 		free (sect);
 		r_list_free (ret);
@@ -79,9 +79,9 @@ static RList* sections(RBinFile* bf) {
 	return ret;
 }
 
-static RList* entries(RBinFile* bf) {
-	RList* ret = NULL;
-	RBinAddr* addr = NULL;
+static RList *entries (RBinFile *bf) {
+	RList *ret = NULL;
+	RBinAddr *addr = NULL;
 	psxexe_header psxheader;
 
 	if (!(ret = r_list_new ())) {
@@ -93,7 +93,7 @@ static RList* entries(RBinFile* bf) {
 		return NULL;
 	}
 
-	if (r_buf_fread_at (bf->buf, 0, (ut8*)&psxheader, "8c17i", 1) < sizeof (psxexe_header)) {
+	if (r_buf_fread_at (bf->buf, 0, (ut8 *)&psxheader, "8c17i", 1) < sizeof (psxexe_header)) {
 		eprintf ("PSXEXE Header truncated\n");
 		r_list_free (ret);
 		free (addr);
@@ -107,7 +107,7 @@ static RList* entries(RBinFile* bf) {
 	return ret;
 }
 
-static RList* strings(RBinFile* bf) {
+static RList *strings (RBinFile *bf) {
 	// hardcode minstrlen = 20
 	return r_bin_file_get_strings (bf, 20, 0, 2);
 }

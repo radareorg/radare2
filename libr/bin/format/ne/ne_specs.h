@@ -77,45 +77,45 @@ typedef struct _NAMEINFO {
 } NE_image_nameinfo_entry;
 
 typedef struct _TYPEINFO {
-	ut16        rtTypeID;
-	ut16        rtResourceCount;
-	ut32        rtReserved;
-	NE_image_nameinfo_entry    rtNameInfo[];
+	ut16 rtTypeID;
+	ut16 rtResourceCount;
+	ut32 rtReserved;
+	NE_image_nameinfo_entry rtNameInfo[];
 } NE_image_typeinfo_entry;
 
 typedef struct {
-	char sig[2];             // "NE"
-	ut8 MajLinkerVersion;    // The major linker version
-	ut8 MinLinkerVersion;    // The minor linker version
-	ut16 EntryTableOffset;   // Offset of entry table
-	ut16 EntryTableLength;   // Length of entry table in bytes
-	ut32 FileLoadCRC;        // 32-bit CRC of entire contents of file
-	ut8 ProgFlags;           // Program flags, bitmapped
-	ut8 ApplFlags;           // Application flags, bitmapped
-	ut8 AutoDataSegIndex;    // The automatic data segment index
-	ut16 InitHeapSize;       // The intial local heap size
-	ut16 InitStackSize;      // The inital stack size
-	ut16 ipEntryPoint;       // IP entry point offset
-	ut16 csEntryPoint;       // CS entrypoint index into segment table (Start at 1)
-	ut32 InitStack;          // SS:SP inital stack pointer, SS is index into segment table
-	ut16 SegCount;           // Number of segments in segment table
-	ut16 ModRefs;            // Number of module references (DLLs)
-	ut16 NoResNamesTabSiz;   // Size of non-resident names table, in bytes
-	ut16 SegTableOffset;     // Offset of Segment table
-	ut16 ResTableOffset;     // Offset of resources table
-	ut16 ResidNamTable;      // Offset of resident names table
-	ut16 ModRefTable;        // Offset of module reference table
-	ut16 ImportNameTable;    // Offset of imported names table (array of counted strings, terminated with string of length 00h)
-	ut32 OffStartNonResTab;  // Offset from start of file to non-resident names table
-	ut16 MovEntryCount;      // Count of moveable entry point listed in entry table
-	ut16 FileAlnSzShftCnt;   // File alligbment size shift count (0=9(default 512 byte pages))
-	ut16 nResTabEntries;     // Number of resource table entries
-	ut8 targOS;              // Target OS
-	ut8 OS2EXEFlags;         // Other OS/2 flags
-	ut16 retThunkOffset;     // Offset to return thunks or start of gangload area - what is gangload?
-	ut16 segrefthunksoff;    // Offset to segment reference thunks or size of gangload area
-	ut16 mincodeswap;        // Minimum code swap area size
-	ut8 expctwinver[2];      // Expected windows version (minor first)
+	char sig[2]; // "NE"
+	ut8 MajLinkerVersion; // The major linker version
+	ut8 MinLinkerVersion; // The minor linker version
+	ut16 EntryTableOffset; // Offset of entry table
+	ut16 EntryTableLength; // Length of entry table in bytes
+	ut32 FileLoadCRC; // 32-bit CRC of entire contents of file
+	ut8 ProgFlags; // Program flags, bitmapped
+	ut8 ApplFlags; // Application flags, bitmapped
+	ut8 AutoDataSegIndex; // The automatic data segment index
+	ut16 InitHeapSize; // The intial local heap size
+	ut16 InitStackSize; // The inital stack size
+	ut16 ipEntryPoint; // IP entry point offset
+	ut16 csEntryPoint; // CS entrypoint index into segment table (Start at 1)
+	ut32 InitStack; // SS:SP inital stack pointer, SS is index into segment table
+	ut16 SegCount; // Number of segments in segment table
+	ut16 ModRefs; // Number of module references (DLLs)
+	ut16 NoResNamesTabSiz; // Size of non-resident names table, in bytes
+	ut16 SegTableOffset; // Offset of Segment table
+	ut16 ResTableOffset; // Offset of resources table
+	ut16 ResidNamTable; // Offset of resident names table
+	ut16 ModRefTable; // Offset of module reference table
+	ut16 ImportNameTable; // Offset of imported names table (array of counted strings, terminated with string of length 00h)
+	ut32 OffStartNonResTab; // Offset from start of file to non-resident names table
+	ut16 MovEntryCount; // Count of moveable entry point listed in entry table
+	ut16 FileAlnSzShftCnt; // File alligbment size shift count (0=9(default 512 byte pages))
+	ut16 nResTabEntries; // Number of resource table entries
+	ut8 targOS; // Target OS
+	ut8 OS2EXEFlags; // Other OS/2 flags
+	ut16 retThunkOffset; // Offset to return thunks or start of gangload area - what is gangload?
+	ut16 segrefthunksoff; // Offset to segment reference thunks or size of gangload area
+	ut16 mincodeswap; // Minimum code swap area size
+	ut8 expctwinver[2]; // Expected windows version (minor first)
 } NE_image_header;
 
 #endif

@@ -12,7 +12,7 @@
 #define HOST_QNX_PROTOVER_MAJOR 0
 #define HOST_QNX_PROTOVER_MINOR 3
 
-ptid_t null_ptid = {0, 0};
+ptid_t null_ptid = { 0, 0 };
 
 void nto_send_init (libqnxr_t *g, ut32 cmd, ut32 subcmd, ut32 chan);
 
@@ -22,18 +22,18 @@ int nto_send_arg (libqnxr_t *g, const char *arg);
 int nto_send (libqnxr_t *g, ut32 len, int report_errors);
 
 static registers_t x86_32[] = {
-	{"eax", 0, 4},
-	{"ecx", 4, 4},
-	{"edx", 8, 4},
-	{"ebx", 12, 4},
-	{"esp", 16, 4},
-	{"ebp", 20, 4},
-	{"esi", 24, 4},
-	{"edi", 28, 4},
-	{"eip", 32, 4},
-	{"eflags", 36, 4},
-	{"cs", 40, 4},
-	{"ss", 44, 4},
+	{ "eax", 0, 4 },
+	{ "ecx", 4, 4 },
+	{ "edx", 8, 4 },
+	{ "ebx", 12, 4 },
+	{ "esp", 16, 4 },
+	{ "ebp", 20, 4 },
+	{ "esi", 24, 4 },
+	{ "edi", 28, 4 },
+	{ "eip", 32, 4 },
+	{ "eflags", 36, 4 },
+	{ "cs", 40, 4 },
+	{ "ss", 44, 4 },
 #if 0
 	{"ds",	48,	4},
 	{"es",	52,	4},
@@ -65,39 +65,42 @@ static registers_t x86_32[] = {
 	{"xmm7",	288,	16},
 	{"mxcsr",	304,	4},
 #endif
-	{"", 0, 0}};
+	{ "", 0, 0 }
+};
 
 static registers_t arm32[] = {
-	{"r0", 0, 4},
-	{"r1", 4, 4},
-	{"r2", 8, 4},
-	{"r3", 12, 4},
-	{"r4", 16, 4},
-	{"r5", 20, 4},
-	{"r6", 24, 4},
-	{"r7", 28, 4},
-	{"r8", 32, 4},
-	{"r9", 36, 4},
-	{"r10", 40, 4},
-	{"r11", 44, 4},
-	{"r12", 48, 4},
-	{"sp", 52, 4},
-	{"lr", 56, 4},
-	{"pc", 60, 4},
-	{"f0", 64, 12},
-	{"f1", 76, 12},
-	{"f2", 88, 12},
-	{"f3", 100, 12},
-	{"f4", 112, 12},
-	{"f5", 124, 12},
-	{"f6", 136, 12},
-	{"f7", 148, 12},
-	{"fps", 160, 12},
-	{"cpsr", 172, 4},
-	{"", 0, 0}};
+	{ "r0", 0, 4 },
+	{ "r1", 4, 4 },
+	{ "r2", 8, 4 },
+	{ "r3", 12, 4 },
+	{ "r4", 16, 4 },
+	{ "r5", 20, 4 },
+	{ "r6", 24, 4 },
+	{ "r7", 28, 4 },
+	{ "r8", 32, 4 },
+	{ "r9", 36, 4 },
+	{ "r10", 40, 4 },
+	{ "r11", 44, 4 },
+	{ "r12", 48, 4 },
+	{ "sp", 52, 4 },
+	{ "lr", 56, 4 },
+	{ "pc", 60, 4 },
+	{ "f0", 64, 12 },
+	{ "f1", 76, 12 },
+	{ "f2", 88, 12 },
+	{ "f3", 100, 12 },
+	{ "f4", 112, 12 },
+	{ "f5", 124, 12 },
+	{ "f6", 136, 12 },
+	{ "f7", 148, 12 },
+	{ "fps", 160, 12 },
+	{ "cpsr", 172, 4 },
+	{ "", 0, 0 }
+};
 
 int qnxr_init (libqnxr_t *g) {
-	if (!g) return -1;
+	if (!g)
+		return -1;
 	memset (g, 0, sizeof (libqnxr_t));
 	g->send_len = 0;
 	g->send_buff = (char *)calloc (DS_DATA_MAX_SIZE * 2, 1);
@@ -113,7 +116,8 @@ int qnxr_init (libqnxr_t *g) {
 }
 
 int qnxr_set_architecture (libqnxr_t *g, ut8 architecture) {
-	if (!g) return -1;
+	if (!g)
+		return -1;
 	g->architecture = architecture;
 	switch (architecture) {
 	case ARCH_X86_32:
@@ -129,7 +133,8 @@ int qnxr_set_architecture (libqnxr_t *g, ut8 architecture) {
 }
 
 int qnxr_cleanup (libqnxr_t *g) {
-	if (!g) return -1;
+	if (!g)
+		return -1;
 	free (g->send_buff);
 	g->send_len = 0;
 	free (g->read_buff);
@@ -139,7 +144,8 @@ int qnxr_cleanup (libqnxr_t *g) {
 int qnxr_connect (libqnxr_t *g, const char *host, int port) {
 	char tmp[255];
 	int ret;
-	if (!g || !host || g->connected) return -1;
+	if (!g || !host || g->connected)
+		return -1;
 
 	g->data_len = 0;
 	g->read_len = 0;
@@ -148,14 +154,15 @@ int qnxr_connect (libqnxr_t *g, const char *host, int port) {
 	g->connected = 0;
 	g->mid = 0;
 
-
 	memmove (g->host, host, strlen (host) + 1);
 	g->port = port;
 
 	ret = snprintf (tmp, sizeof (tmp) - 1, "%d", port);
-	if (!ret) return -1;
+	if (!ret)
+		return -1;
 	ret = r_socket_connect_tcp (g->sock, host, tmp, 200);
-	if (!ret) return -1;
+	if (!ret)
+		return -1;
 	g->connected = 1;
 
 	qnxr_send_ch_reset (g);
@@ -166,7 +173,7 @@ int qnxr_connect (libqnxr_t *g, const char *host, int port) {
 
 	if (g->recv.pkt.hdr.cmd == DSrMsg_err) {
 		eprintf ("%s: connection failed: %lld\n", __func__,
-			 EXTRACT_SIGNED_INTEGER (&g->recv.pkt.err.err, 4));
+			EXTRACT_SIGNED_INTEGER (&g->recv.pkt.err.err, 4));
 		return -1;
 	}
 
@@ -186,7 +193,7 @@ int qnxr_connect (libqnxr_t *g, const char *host, int port) {
 		g->target_proto_minor = g->target_proto_minor & DSMSG_PROTOVER_MINOR;
 	} else {
 		eprintf ("Connection failed (Protocol Version Query): %lld\n",
-			 EXTRACT_SIGNED_INTEGER (&g->recv.pkt.err.err, 4));
+			EXTRACT_SIGNED_INTEGER (&g->recv.pkt.err.err, 4));
 		return -1;
 	}
 
@@ -194,7 +201,8 @@ int qnxr_connect (libqnxr_t *g, const char *host, int port) {
 }
 
 int qnxr_disconnect (libqnxr_t *g) {
-	if (!g) return -1;
+	if (!g)
+		return -1;
 
 	if (g->connected) {
 		nto_send_init (g, DStMsg_disconnect, 0, SET_CHANNEL_DEBUG);
@@ -241,7 +249,8 @@ ptid_t qnxr_run (libqnxr_t *g, const char *file, char **args, char **env) {
 	char **argv, *p;
 	int errors = 0;
 
-	if (!g) return null_ptid;
+	if (!g)
+		return null_ptid;
 
 	nto_send_init (g, DStMsg_env, DSMSG_ENV_CLEARENV, SET_CHANNEL_DEBUG);
 	nto_send (g, sizeof (DStMsg_env_t), 1);
@@ -315,7 +324,8 @@ int qnxr_read_registers (libqnxr_t *g) {
 	ut32 off;
 	char buf[DS_DATA_MAX_SIZE];
 
-	if (!g) return -1;
+	if (!g)
+		return -1;
 
 	while (g->registers[i].size > 0) {
 		regset = i386nto_regset_id (i);
@@ -353,7 +363,8 @@ int qnxr_read_memory (libqnxr_t *g, ut64 address, ut8 *data, ut64 len) {
 	int rcv_len, tot_len, ask_len;
 	ut64 addr;
 
-	if (!g || !data) return -1;
+	if (!g || !data)
+		return -1;
 
 	tot_len = rcv_len = ask_len = 0;
 
@@ -361,14 +372,13 @@ int qnxr_read_memory (libqnxr_t *g, ut64 address, ut8 *data, ut64 len) {
 		nto_send_init (g, DStMsg_memrd, 0, SET_CHANNEL_DEBUG);
 		addr = address + tot_len;
 		g->tran.pkt.memrd.addr = EXTRACT_UNSIGNED_INTEGER (&addr, 8);
-		ask_len = ((len - tot_len) > DS_DATA_MAX_SIZE) ?
-				  DS_DATA_MAX_SIZE :
-				  (len - tot_len);
+		ask_len = ((len - tot_len) > DS_DATA_MAX_SIZE) ? DS_DATA_MAX_SIZE : (len - tot_len);
 
 		g->tran.pkt.memrd.size = EXTRACT_SIGNED_INTEGER (&ask_len, 2);
 		rcv_len = nto_send (g, sizeof (g->tran.pkt.memrd), 0) -
-			  sizeof (g->recv.pkt.hdr);
-		if (rcv_len <= 0) break;
+			sizeof (g->recv.pkt.hdr);
+		if (rcv_len <= 0)
+			break;
 		if (g->recv.pkt.hdr.cmd == DSrMsg_okdata) {
 			memcpy (data + tot_len, g->recv.pkt.okdata.data, rcv_len);
 			tot_len += rcv_len;
@@ -382,7 +392,8 @@ int qnxr_read_memory (libqnxr_t *g, ut64 address, ut8 *data, ut64 len) {
 int qnxr_write_memory (libqnxr_t *g, ut64 address, const ut8 *data, ut64 len) {
 	ut64 addr;
 
-	if (!g || !data) return -1;
+	if (!g || !data)
+		return -1;
 
 	nto_send_init (g, DStMsg_memwr, 0, SET_CHANNEL_DEBUG);
 	addr = address;
@@ -405,7 +416,8 @@ void qnxr_pidlist (libqnxr_t *g, void *ctx, pidlist_cb_t *cb) {
 	pid_t pid, start_tid;
 	char subcmd;
 
-	if (!g) return;
+	if (!g)
+		return;
 
 	start_tid = 1;
 	pid = 1;
@@ -428,7 +440,8 @@ void qnxr_pidlist (libqnxr_t *g, void *ctx, pidlist_cb_t *cb) {
 }
 
 int qnxr_select (libqnxr_t *g, pid_t pid, int tid) {
-	if (!g) return 0;
+	if (!g)
+		return 0;
 
 	/* TODO */
 	tid = 1;
@@ -459,7 +472,8 @@ int qnxr_write_register (libqnxr_t *g, int index, char *value, int len) {
 	int tdep_len, regset;
 	ut32 off;
 
-	if (!g) return -1;
+	if (!g)
+		return -1;
 
 	regset = i386nto_regset_id (index);
 	tdep_len = i386nto_register_area (index, regset, &off);
@@ -479,7 +493,8 @@ int qnxr_write_register (libqnxr_t *g, int index, char *value, int len) {
 int qnxr_write_reg (libqnxr_t *g, const char *name, char *value, int len) {
 	int i = 0;
 
-	if (!g) return -1;
+	if (!g)
+		return -1;
 
 	while (g->registers[i].size > 0) {
 		if (!strcmp (g->registers[i].name, name)) {
@@ -497,17 +512,19 @@ int qnxr_write_reg (libqnxr_t *g, const char *name, char *value, int len) {
 }
 
 int qnxr_send_vcont (libqnxr_t *g, int step, int thread_id) {
-	if (!g) return -1;
+	if (!g)
+		return -1;
 
 	nto_send_init (g, DStMsg_run, step ? DSMSG_RUN_COUNT : DSMSG_RUN,
-		       SET_CHANNEL_DEBUG);
+		SET_CHANNEL_DEBUG);
 	g->tran.pkt.run.step.count = 1;
 	nto_send (g, sizeof (g->tran.pkt.run), 1);
 	return 0;
 }
 
 int qnxr_stop (libqnxr_t *g) {
-	if (!g) return 0;
+	if (!g)
+		return 0;
 
 	eprintf ("%s: waiting for stop\n", __func__);
 	g->waiting_for_stop = 1;
@@ -538,7 +555,7 @@ ptid_t qnxr_wait (libqnxr_t *g, pid_t pid) {
 			if (rlen == -1) {
 				if (g->waiting_for_stop) {
 					eprintf ("%s: read eror while waiting for stop\n",
-						 __func__);
+						__func__);
 					continue;
 				} else {
 					eprintf ("%s: read packet error or NAK\n", __func__);
@@ -593,7 +610,8 @@ int qnxr_remove_hwbp (libqnxr_t *g, ut64 address) {
 }
 
 int _qnxr_set_bp (libqnxr_t *g, ut64 address, const char *conditions, enum Breakpoint type) {
-	if (!g) return -1;
+	if (!g)
+		return -1;
 
 	nto_send_init (g, DStMsg_brk, DSMSG_BRK_EXEC, SET_CHANNEL_DEBUG);
 	g->tran.pkt.brk.addr = EXTRACT_UNSIGNED_INTEGER (&address, 4);
@@ -606,7 +624,8 @@ int _qnxr_set_bp (libqnxr_t *g, ut64 address, const char *conditions, enum Break
 }
 
 int _qnxr_remove_bp (libqnxr_t *g, ut64 address, enum Breakpoint type) {
-	if (!g) return -1;
+	if (!g)
+		return -1;
 
 	nto_send_init (g, DStMsg_brk, DSMSG_BRK_EXEC, SET_CHANNEL_DEBUG);
 	g->tran.pkt.brk.addr = EXTRACT_UNSIGNED_INTEGER (&address, 4);
@@ -631,7 +650,8 @@ ptid_t nto_parse_notify (libqnxr_t *g) {
 	pid = EXTRACT_SIGNED_INTEGER (&g->recv.pkt.notify.pid, 4);
 	tid = EXTRACT_SIGNED_INTEGER (&g->recv.pkt.notify.tid, 4);
 
-	if (tid == 0) tid = 1;
+	if (tid == 0)
+		tid = 1;
 	eprintf ("%s: parse notify %d\n", __func__, g->recv.pkt.hdr.subcmd);
 
 	switch (g->recv.pkt.hdr.subcmd) {
@@ -666,7 +686,7 @@ ptid_t nto_parse_notify (libqnxr_t *g) {
 		break;
 	default:
 		eprintf ("%s: Unexpected notify type %d\n", __func__,
-			 g->recv.pkt.hdr.subcmd);
+			g->recv.pkt.hdr.subcmd);
 		g->notify_type = R_DEBUG_REASON_UNKNOWN;
 	}
 
@@ -677,18 +697,18 @@ int nto_send_env (libqnxr_t *g, const char *env) {
 	int len; /* Length including zero terminating char.  */
 	int totlen = 0;
 
-	if (!g) return 0;
+	if (!g)
+		return 0;
 
 	len = strlen (env) + 1;
 	if (g->target_proto_minor >= 2) {
 		while (len > DS_DATA_MAX_SIZE) {
 			nto_send_init (g, DStMsg_env, DSMSG_ENV_SETENV_MORE,
-				       SET_CHANNEL_DEBUG);
+				SET_CHANNEL_DEBUG);
 			memcpy (g->tran.pkt.env.data, env + totlen,
 				DS_DATA_MAX_SIZE);
-			if (!nto_send (g, offsetof (DStMsg_env_t, data) +
-						  DS_DATA_MAX_SIZE,
-				       1)) {
+			if (!nto_send (g, offsetof (DStMsg_env_t, data) + DS_DATA_MAX_SIZE,
+				    1)) {
 				/* An error occurred.  */
 				return 0;
 			}
@@ -698,7 +718,7 @@ int nto_send_env (libqnxr_t *g, const char *env) {
 	} else if (len > DS_DATA_MAX_SIZE) {
 		/* Not supported by this protocol version.  */
 		eprintf ("Protovers < 0.2 do not handle env vars longer than %d\n",
-			 DS_DATA_MAX_SIZE - 1);
+			DS_DATA_MAX_SIZE - 1);
 		return 0;
 	}
 	nto_send_init (g, DStMsg_env, DSMSG_ENV_SETENV, SET_CHANNEL_DEBUG);
@@ -709,7 +729,8 @@ int nto_send_env (libqnxr_t *g, const char *env) {
 int nto_send_arg (libqnxr_t *g, const char *arg) {
 	int len;
 
-	if (!g) return 0;
+	if (!g)
+		return 0;
 
 	len = strlen (arg) + 1;
 	if (len > DS_DATA_MAX_SIZE - 4) {
@@ -748,7 +769,7 @@ int nto_send (libqnxr_t *g, ut32 len, st32 report_errors) {
 		if ((rlen >= 0) && (g->recv.pkt.hdr.mid == g->tran.pkt.hdr.mid))
 			break;
 		eprintf ("%s: mid mismatch: %d/%d\n", __func__, g->recv.pkt.hdr.mid,
-			 g->tran.pkt.hdr.mid);
+			g->tran.pkt.hdr.mid);
 	}
 
 	switch (g->channelrd) {

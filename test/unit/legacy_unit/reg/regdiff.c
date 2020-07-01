@@ -2,7 +2,7 @@
 #include <r_util.h>
 #include <r_print.h>
 
-const char *reg_profile = 
+const char *reg_profile =
 	"gpr eax .32 0 0\n"
 	"gpr ecx .32 4 0\n"
 	"gpr edx .32 8 0\n"
@@ -49,37 +49,37 @@ const char *reg_profile =
 	"gpr xmm6 .128 272 0\n"
 	"gpr xmm7 .128 288 0\n"
 #endif
-	"gpr mxcsr .32 304 0\n"
-;
+	"gpr mxcsr .32 304 0\n";
 
-static void dumpregs(RReg *reg) {
+static void dumpregs (RReg *reg) {
 	int sz;
 	ut8 *buf = r_reg_get_bytes (reg, 0, &sz);
 	r_print_hexdump (NULL, 0, buf, sz, 16, 16);
 	free (buf);
 }
-int main() {
+int main () {
 	int sz, type = R_REG_TYPE_GPR;
-	RReg *reg = r_reg_new();
-	RReg *reg2 = r_reg_new();
+	RReg *reg = r_reg_new ();
+	RReg *reg2 = r_reg_new ();
 	r_reg_set_profile_string (reg, reg_profile);
 	r_reg_set_profile_string (reg2, reg_profile);
 	r_reg_setv (reg2, "ecx", 0xdeadbeef);
-	RRegItem* current = NULL;
+	RRegItem *current = NULL;
 
 	free (r_reg_get_bytes (reg, R_REG_TYPE_GPR, &sz));
 	eprintf ("arena: %d\n", sz);
 	if (sz != 308) {
 		eprintf ("ARENA SIZE IS WRONG\n");
 	}
-		dumpregs (reg);
-		dumpregs (reg2);
+	dumpregs (reg);
+	dumpregs (reg2);
 	for (;;) {
 		current = r_reg_next_diff (reg, type,
 			reg2->regset[type].arena->bytes,
 			sz, current, 32);
-		if (!current) break;
-		eprintf("Reg: <%s>\n", current->name);
+		if (!current)
+			break;
+		eprintf ("Reg: <%s>\n", current->name);
 	}
 	return 0;
 }

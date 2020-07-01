@@ -9,7 +9,7 @@
 #define O_BINARY 0
 #endif
 
-static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
+static int assemble (RAsm *a, RAsmOp *op, const char *buf) {
 	char *ipath, *opath;
 	const char *syntaxstr = "";
 	int len = 0;
@@ -35,11 +35,11 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	}
 
 	char *asm_buf = r_str_newf (
-			"%s.code%i\n" //.org 0x%"PFMT64x"\n"
-			".ascii \"BEGINMARK\"\n"
-			"%s\n"
-			".ascii \"ENDMARK\"\n",
-			syntaxstr, a->bits, buf); // a->pc ??
+		"%s.code%i\n" //.org 0x%"PFMT64x"\n"
+		".ascii \"BEGINMARK\"\n"
+		"%s\n"
+		".ascii \"ENDMARK\"\n",
+		syntaxstr, a->bits, buf); // a->pc ??
 	const size_t asm_buf_len = strlen (asm_buf);
 	const bool success = write (ifd, asm_buf, asm_buf_len) == asm_buf_len;
 	close (ifd);
@@ -51,22 +51,22 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	if (!r_sys_cmdf ("as %s -o %s", ipath, opath)) {
 		const ut8 *begin, *end;
 		close (ofd);
-// r_sys_cmdf ("cat %s", opath);
-		ofd = r_sandbox_open (opath, O_BINARY|O_RDONLY, 0644);
+		// r_sys_cmdf ("cat %s", opath);
+		ofd = r_sandbox_open (opath, O_BINARY | O_RDONLY, 0644);
 		if (ofd < 0) {
 			free (ipath);
 			free (opath);
 			return -1;
 		}
-		ut8 opbuf[512] = {0};
+		ut8 opbuf[512] = { 0 };
 		len = read (ofd, opbuf, sizeof (opbuf));
-		begin = r_mem_mem (opbuf, len, (const ut8*)"BEGINMARK", 9);
-		end = r_mem_mem (opbuf, len, (const ut8*)"ENDMARK", 7);
+		begin = r_mem_mem (opbuf, len, (const ut8 *)"BEGINMARK", 9);
+		end = r_mem_mem (opbuf, len, (const ut8 *)"ENDMARK", 7);
 		if (!begin || !end) {
 			eprintf ("Cannot find water marks\n");
 			len = 0;
 		} else {
-			len = (int)(size_t)(end - begin - 9);
+			len = (int)(size_t) (end - begin - 9);
 			if (len > 0) {
 				r_asm_op_set_buf (op, begin + 9, len);
 			} else {
@@ -95,7 +95,7 @@ RAsmPlugin r_asm_plugin_x86_as = {
 	.arch = "x86",
 	.license = "LGPL3",
 	// NOTE: 64bits is not supported on OSX's nasm :(
-	.bits = 16|32|64,
+	.bits = 16 | 32 | 64,
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.assemble = &assemble,
 };

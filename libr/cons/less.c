@@ -5,11 +5,11 @@
 #include <r_util.h>
 #include "pager_private.h"
 
-R_API int r_cons_less_str(const char *str, const char *exitkeys) {
+R_API int r_cons_less_str (const char *str, const char *exitkeys) {
 	r_return_val_if_fail (str && *str, 0);
 
 	static int in_help = false;
-	static const char *r_cons_less_help = \
+	static const char *r_cons_less_help =
 		" u/space  - page up/down\n"
 		" jk       - line down/up\n"
 		" gG       - begin/end buffer\n"
@@ -95,22 +95,23 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 			break;
 		case ' ': from += h; break;
 		case 'g': from = 0; break;
-		case 'G': from = lines_count-h; break;
+		case 'G': from = lines_count - h; break;
 		case -1: // EOF
 		case '\x03': // ^C
 		case 'q': ui = 0; break;
 		case '\r':
 		case '\n':
 		case 'j': from++; break;
-		case 'J': from+=h; break;
+		case 'J': from += h; break;
 		case 'k':
 			if (from > 0) {
 				from--;
 			}
 			break;
-		case 'K': from = (from>=h)? from-h: 0;
+		case 'K':
+			from = (from >= h) ? from - h : 0;
 			break;
-		case '/': 	/* search */
+		case '/': /* search */
 			r_cons_reset_colors ();
 			r_line_set_prompt ("/");
 			sreg = r_line_readline ();
@@ -133,14 +134,14 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 				from = pager_next_match (from, mla, lines_count);
 			}
 			break;
-		case 'n': 	/* next match */
+		case 'n': /* next match */
 			/* search already performed */
 			if (rx) {
 				from = pager_next_match (from, mla, lines_count);
 			}
 			break;
 		case 'N':
-		case 'p': 	/* previous match */
+		case 'p': /* previous match */
 			if (rx) {
 				from = pager_prev_match (from, mla);
 			}
@@ -161,7 +162,7 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 	return 0;
 }
 
-R_API void r_cons_less(void) {
+R_API void r_cons_less (void) {
 	(void)r_cons_less_str (r_cons_singleton ()->context->buffer, NULL);
 }
 

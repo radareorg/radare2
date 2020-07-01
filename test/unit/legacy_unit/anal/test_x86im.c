@@ -8,11 +8,11 @@ static int anal_op (char *buf, int bits) {
 	x86im_instr_object io;
 	ut8 data[1024];
 	int ret;
-	
+
 	r_hex_str2bin (buf, data);
 
 	if ((ret = x86im_dec (&io, bits == 32 ? X86IM_IO_MODE_32BIT : X86IM_IO_MODE_64BIT,
-			(unsigned char*)data)) == X86IM_STATUS_SUCCESS) {
+		     (unsigned char *)data)) == X86IM_STATUS_SUCCESS) {
 		printf ("X86IM io struct\n"
 			"---------------\n");
 		printf ("mode: 0x%lx\n", io.mode);
@@ -24,12 +24,12 @@ static int anal_op (char *buf, int bits) {
 		printf ("def_opsz: 0x%x\n", io.def_opsz);
 		printf ("def_adsz: 0x%x\n", io.def_adsz);
 		printf ("opcode: 0x%x 0x%x 0x%x\n",
-				io.opcode[0], io.opcode[1], io.opcode[2]);
+			io.opcode[0], io.opcode[1], io.opcode[2]);
 		printf ("opcode_count: 0x%x\n", io.opcode_count);
 		printf ("prefix: 0x%hx\n", io.prefix);
 		printf ("prefix_values: 0x%x 0x%x 0x%x 0x%x\n",
-				io.prefix_values[0], io.prefix_values[1],
-				io.prefix_values[2], io.prefix_values[3]);
+			io.prefix_values[0], io.prefix_values[1],
+			io.prefix_values[2], io.prefix_values[3]);
 		printf ("prefix_count: 0x%x\n", io.prefix_count);
 		printf ("prefix_order: 0x%lx\n", io.prefix_order);
 		printf ("rexp: 0x%x\n", io.rexp);
@@ -43,9 +43,9 @@ static int anal_op (char *buf, int bits) {
 		printf ("tttn_fld: 0x%x\n", io.tttn_fld);
 		printf ("selector: 0x%hx\n", io.selector);
 		printf ("imm_size: 0x%lx\n", io.imm_size);
-		printf ("imm: 0x%"PFMT64x"\n", io.imm);
+		printf ("imm: 0x%" PFMT64x "\n", io.imm);
 		printf ("disp_size: 0x%lx\n", io.disp_size);
-		printf ("disp: 0x%"PFMT64x"\n", io.disp);
+		printf ("disp: 0x%" PFMT64x "\n", io.disp);
 		printf ("mem_flags: 0x%x\n", io.mem_flags);
 		printf ("mem_am: 0x%hx\n", io.mem_am);
 		printf ("mem_size: 0x%hx\n", io.mem_size);
@@ -55,13 +55,14 @@ static int anal_op (char *buf, int bits) {
 		printf ("modrm: 0x%x\n", io.modrm);
 		printf ("sib: 0x%x\n", io.sib);
 		printf ("rop: 0x%lx 0x%lx 0x%lx 0x%lx \n",
-				io.rop[0], io.rop[1], io.rop[2], io.rop[3]);
+			io.rop[0], io.rop[1], io.rop[2], io.rop[3]);
 		printf ("rop_count: 0x%x\n", io.rop_count);
-	} else eprintf ("Error: Unknown opcode\n");
+	} else
+		eprintf ("Error: Unknown opcode\n");
 	return ret;
 }
 
-int main(int argc, char **argv) {
+int main (int argc, char **argv) {
 	int bits = 32;
 	if (argc < 2) {
 		eprintf ("Usage: %s opcode [bits]\n", argv[0]);

@@ -7,43 +7,42 @@
 
 #include "coff/coff.h"
 
-static Sdb* get_sdb(RBinFile *bf) {
+static Sdb *get_sdb (RBinFile *bf) {
 	RBinObject *o = bf->o;
 	if (!o) {
 		return NULL;
 	}
-	struct r_bin_coff_obj *bin = (struct r_bin_coff_obj *) o->bin_obj;
+	struct r_bin_coff_obj *bin = (struct r_bin_coff_obj *)o->bin_obj;
 	if (bin->kv) {
 		return bin->kv;
 	}
 	return NULL;
 }
 
-static bool r_coff_is_stripped(struct r_bin_coff_obj *obj) {
-	return !!(obj->hdr.f_flags & (COFF_FLAGS_TI_F_RELFLG | \
-		COFF_FLAGS_TI_F_LNNO | COFF_FLAGS_TI_F_LSYMS));
+static bool r_coff_is_stripped (struct r_bin_coff_obj *obj) {
+	return !!(obj->hdr.f_flags & (COFF_FLAGS_TI_F_RELFLG | COFF_FLAGS_TI_F_LNNO | COFF_FLAGS_TI_F_LSYMS));
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	*bin_obj = r_bin_coff_new_buf (buf, bf->rbin->verbose);
 	return *bin_obj != NULL;
 }
 
-static void destroy(RBinFile *bf) {
-	r_bin_coff_free ((struct r_bin_coff_obj*)bf->o->bin_obj);
+static void destroy (RBinFile *bf) {
+	r_bin_coff_free ((struct r_bin_coff_obj *)bf->o->bin_obj);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr (RBinFile *bf) {
 	return 0;
 }
 
-static RBinAddr *binsym(RBinFile *bf, int sym) {
+static RBinAddr *binsym (RBinFile *bf, int sym) {
 	return NULL;
 }
 
-#define DTYPE_IS_FUNCTION(type)	(COFF_SYM_GET_DTYPE (type) == COFF_SYM_DTYPE_FUNCTION)
+#define DTYPE_IS_FUNCTION(type) (COFF_SYM_GET_DTYPE (type) == COFF_SYM_DTYPE_FUNCTION)
 
-static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RBinSymbol **sym) {
+static bool _fill_bin_symbol (RBin *rbin, struct r_bin_coff_obj *bin, int idx, RBinSymbol **sym) {
 	RBinSymbol *ptr = *sym;
 	struct coff_symbol *s = NULL;
 	struct coff_scn_hdr *sc_hdr = NULL;
@@ -83,8 +82,7 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RB
 			ptr->is_imported = true;
 			ptr->paddr = UT64_MAX;
 			ptr->bind = "NONE";
-		}
-		else {
+		} else {
 			ptr->bind = R_BIN_BIND_GLOBAL_STR;
 		}
 		ptr->type = (DTYPE_IS_FUNCTION (s->n_type) || !strcmp (coffname, "main"))
@@ -118,7 +116,7 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RB
 	return true;
 }
 
-static RBinImport *_fill_bin_import(struct r_bin_coff_obj *bin, int idx) {
+static RBinImport *_fill_bin_import (struct r_bin_coff_obj *bin, int idx) {
 	RBinImport *ptr = R_NEW0 (RBinImport);
 	if (!ptr || idx < 0 || idx > bin->hdr.f_nsyms) {
 		free (ptr);
@@ -142,8 +140,8 @@ static RBinImport *_fill_bin_import(struct r_bin_coff_obj *bin, int idx) {
 	return ptr;
 }
 
-static RList *entries(RBinFile *bf) {
-	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->o->bin_obj;
+static RList *entries (RBinFile *bf) {
+	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj *)bf->o->bin_obj;
 	RList *ret;
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
@@ -155,11 +153,11 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
+static RList *sections (RBinFile *bf) {
 	char *tmp = NULL;
 	size_t i;
 	RBinSection *ptr = NULL;
-	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->o->bin_obj;
+	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj *)bf->o->bin_obj;
 
 	RList *ret = r_list_newf (free);
 	if (!ret) {
@@ -204,11 +202,11 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList *symbols(RBinFile *bf) {
+static RList *symbols (RBinFile *bf) {
 	int i;
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
-	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->o->bin_obj;
+	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj *)bf->o->bin_obj;
 	if (!(ret = r_list_new ())) {
 		return ret;
 	}
@@ -229,10 +227,10 @@ static RList *symbols(RBinFile *bf) {
 	return ret;
 }
 
-static RList *imports(RBinFile *bf) {
+static RList *imports (RBinFile *bf) {
 	int i;
 	RList *ret = NULL;
-	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->o->bin_obj;
+	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj *)bf->o->bin_obj;
 	if (!(ret = r_list_new ())) {
 		return ret;
 	}
@@ -251,12 +249,12 @@ static RList *imports(RBinFile *bf) {
 	return ret;
 }
 
-static RList *libs(RBinFile *bf) {
+static RList *libs (RBinFile *bf) {
 	return NULL;
 }
 
-static RList *relocs(RBinFile *bf) {
-	struct r_bin_coff_obj *bin = (struct r_bin_coff_obj*)bf->o->bin_obj;
+static RList *relocs (RBinFile *bf) {
+	struct r_bin_coff_obj *bin = (struct r_bin_coff_obj *)bf->o->bin_obj;
 	RBinReloc *reloc;
 	struct coff_reloc *rel;
 	int j, i = 0;
@@ -281,7 +279,7 @@ static RList *relocs(RBinFile *bf) {
 				free (rel);
 				return list_rel;
 			}
-			len = r_buf_read_at (bin->b, bin->scn_hdrs[i].s_relptr, (ut8*)rel, size);
+			len = r_buf_read_at (bin->b, bin->scn_hdrs[i].s_relptr, (ut8 *)rel, size);
 			if (len != size) {
 				free (rel);
 				return list_rel;
@@ -312,11 +310,11 @@ static RList *relocs(RBinFile *bf) {
 	return list_rel;
 }
 
-static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = R_NEW0(RBinInfo);
-	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->o->bin_obj;
+static RBinInfo *info (RBinFile *bf) {
+	RBinInfo *ret = R_NEW0 (RBinInfo);
+	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj *)bf->o->bin_obj;
 
-	ret->file = bf->file? strdup (bf->file): NULL;
+	ret->file = bf->file ? strdup (bf->file) : NULL;
 	ret->rclass = strdup ("coff");
 	ret->bclass = strdup ("coff");
 	ret->type = strdup ("COFF (Executable file)");
@@ -390,16 +388,15 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RList *fields(RBinFile *bf) {
+static RList *fields (RBinFile *bf) {
 	return NULL;
 }
 
-
-static ut64 size(RBinFile *bf) {
+static ut64 size (RBinFile *bf) {
 	return 0;
 }
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer (RBuffer *buf) {
 #if 0
 TODO: do more checks here to avoid false positives
 

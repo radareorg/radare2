@@ -19,7 +19,6 @@
    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
 
-
 /* Do system-dependent stuff, mainly driven by autoconf-detected info.
 
    Well, some generic common stuff is done here too, like including
@@ -63,11 +62,11 @@ extern char *stpcpy (char *__dest, const char *__src);
    saved.  */
 
 #if defined(HAVE_SIGSETJMP)
-#define OPCODES_SIGJMP_BUF		sigjmp_buf
-#define OPCODES_SIGSETJMP(buf)		sigsetjmp((buf), 0)
-#define OPCODES_SIGLONGJMP(buf,val)	siglongjmp((buf), (val))
+#define OPCODES_SIGJMP_BUF sigjmp_buf
+#define OPCODES_SIGSETJMP(buf) sigsetjmp ((buf), 0)
+#define OPCODES_SIGLONGJMP(buf, val) siglongjmp ((buf), (val))
 #else
-#define OPCODES_SIGJMP_BUF		jmp_buf
-#define OPCODES_SIGSETJMP(buf)		setjmp(buf)
-#define OPCODES_SIGLONGJMP(buf,val)	longjmp((buf), (val))
+#define OPCODES_SIGJMP_BUF jmp_buf
+#define OPCODES_SIGSETJMP(buf) setjmp (buf)
+#define OPCODES_SIGLONGJMP(buf, val) longjmp ((buf), (val))
 #endif

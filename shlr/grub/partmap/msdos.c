@@ -26,15 +26,13 @@
 #include <grubfs.h>
 
 struct grub_partition_map grub_msdos_partition_map;
-
 
 static grub_err_t
 pc_partition_map_iterate (grub_disk_t disk,
-			  int (*hook) (grub_disk_t disk,
-				       const grub_partition_t partition,
-				       void *closure),
-			  void *closure)
-{
+	int (*hook) (grub_disk_t disk,
+		const grub_partition_t partition,
+		void *closure),
+	void *closure) {
 	int i;
 	struct grub_msdos_partition_entry *e;
 	struct grub_partition p;
@@ -91,19 +89,17 @@ pc_partition_map_iterate (grub_disk_t disk,
 
 			p.msdostype = e->type;
 			grub_dprintf ("partition",
-					"partition %d: flag 0x%x, type 0x%x, start 0x%"PFMT64x", len 0x%"PFMT64x"\n",
-					p.index, e->flag, e->type,
-					(ut64) p.start,
-					(ut64) p.len);
+				"partition %d: flag 0x%x, type 0x%x, start 0x%" PFMT64x ", len 0x%" PFMT64x "\n",
+				p.index, e->flag, e->type,
+				(ut64)p.start,
+				(ut64)p.len);
 
 			/* If this is a GPT partition, this MBR is just a dummy.  */
 			if (e->type == GRUB_PC_PARTITION_TYPE_GPT_DISK && p.index == 0)
 				return grub_error (GRUB_ERR_BAD_PART_TABLE, "dummy mbr");
 
 			/* If this partition is a normal one, call the hook.  */
-			if (! grub_msdos_partition_is_empty (e->type)
-					&& ! grub_msdos_partition_is_extended (e->type))
-			{
+			if (!grub_msdos_partition_is_empty (e->type) && !grub_msdos_partition_is_extended (e->type)) {
 				p.number++;
 
 				if (hook (disk, &p, closure)) {
@@ -122,7 +118,7 @@ pc_partition_map_iterate (grub_disk_t disk,
 
 			if (grub_msdos_partition_is_extended (e->type)) {
 				p.offset = ext_offset + grub_le_to_cpu32 (e->start);
-				if (! ext_offset)
+				if (!ext_offset)
 					ext_offset = p.offset;
 				break;
 			}
@@ -136,11 +132,8 @@ finish:
 	return grub_errno;
 }
 
-
 /* Partition map type.  */
-struct grub_partition_map grub_msdos_partition_map =
-  {
-    .name = "msdos",
-    .iterate = pc_partition_map_iterate,
-  };
-
+struct grub_partition_map grub_msdos_partition_map = {
+	.name = "msdos",
+	.iterate = pc_partition_map_iterate,
+};

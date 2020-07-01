@@ -133,7 +133,7 @@ extern insn_extra_t extra_0x39[];
 extern insn_t or1k_insns[];
 extern size_t insns_count;
 
-insn_extra_t *find_extra_descriptor(insn_extra_t *extra_descr, ut32 insn);
+insn_extra_t *find_extra_descriptor (insn_extra_t *extra_descr, ut32 insn);
 
 /**
  * \brief Performs sign extension of number
@@ -146,29 +146,29 @@ insn_extra_t *find_extra_descriptor(insn_extra_t *extra_descr, ut32 insn);
  * If mask does not begin on the lsb, space on the right will also be filled with ones
  *
  */
-ut32 sign_extend(ut32 number, ut32 mask);
+ut32 sign_extend (ut32 number, ut32 mask);
 
-static inline ut32 get_operand_mask(insn_type_descr_t *type_descr, insn_oper_t operand) {
+static inline ut32 get_operand_mask (insn_type_descr_t *type_descr, insn_oper_t operand) {
 	return type_descr->operands[operand].mask;
 }
 
-static inline ut32 get_operand_shift(insn_type_descr_t *type_descr, insn_oper_t operand) {
+static inline ut32 get_operand_shift (insn_type_descr_t *type_descr, insn_oper_t operand) {
 	return type_descr->operands[operand].shift;
 }
 
-static inline ut32 get_operand_value(ut32 insn, insn_type_descr_t *type_descr, insn_oper_t operand) {
-	return (insn & get_operand_mask(type_descr, operand)) >> get_operand_shift(type_descr, operand);
+static inline ut32 get_operand_value (ut32 insn, insn_type_descr_t *type_descr, insn_oper_t operand) {
+	return (insn & get_operand_mask (type_descr, operand)) >> get_operand_shift (type_descr, operand);
 }
 
-static inline int has_type_descriptor(insn_type_t type) {
+static inline int has_type_descriptor (insn_type_t type) {
 	return types + types_count > &types[type];
 }
 
-static inline int is_type_descriptor_defined(insn_type_t type) {
+static inline int is_type_descriptor_defined (insn_type_t type) {
 	return types[type].type == type;
 }
 
-static inline insn_type_t type_of_opcode(insn_t *descr, insn_extra_t *extra_descr) {
+static inline insn_type_t type_of_opcode (insn_t *descr, insn_extra_t *extra_descr) {
 	r_return_val_if_fail (descr, INSN_END);
 
 	if (extra_descr == NULL) {

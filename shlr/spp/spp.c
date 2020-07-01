@@ -4,15 +4,16 @@
 #include "r_api.h"
 #include "config.h"
 
-S_API int spp_run(char *buf, Output *out) {
+S_API int spp_run (char *buf, Output *out) {
 	int i, ret = 0;
 	char *tok;
 
 	D fprintf (stderr, "SPP_RUN(%s)\n", buf);
 	if (proc->chop) {
-		for (; IS_SPACE (*buf); buf++);
+		for (; IS_SPACE (*buf); buf++)
+			;
 		int buflen = strlen (buf);
-		for (tok = buf + (buflen? buflen - 1: 0); IS_SPACE (*tok); tok--) {
+		for (tok = buf + (buflen ? buflen - 1 : 0); IS_SPACE (*tok); tok--) {
 			*tok = '\0';
 		}
 	}
@@ -51,7 +52,7 @@ S_API int spp_run(char *buf, Output *out) {
 	return ret;
 }
 
-static char *spp_run_str(char *buf, int *rv) {
+static char *spp_run_str (char *buf, int *rv) {
 	char *b;
 	Output tmp;
 	tmp.fout = NULL;
@@ -65,7 +66,7 @@ static char *spp_run_str(char *buf, int *rv) {
 	return b;
 }
 
-void lbuf_strcat(SppBuf *dst, char *src) {
+void lbuf_strcat (SppBuf *dst, char *src) {
 	int len = strlen (src);
 	char *nbuf;
 	if (!dst->lbuf || (len + dst->lbuf_n) > dst->lbuf_s) {
@@ -80,7 +81,7 @@ void lbuf_strcat(SppBuf *dst, char *src) {
 	dst->lbuf_n += len;
 }
 
-int do_fputs(Output *out, char *str) {
+int do_fputs (Output *out, char *str) {
 	int i;
 	int printed = 0;
 	for (i = 0; i <= proc->state.ifl; i++) {
@@ -101,7 +102,7 @@ int do_fputs(Output *out, char *str) {
 	return printed;
 }
 
-S_API void spp_eval(char *buf, Output *out) {
+S_API void spp_eval (char *buf, Output *out) {
 	char *ptr, *ptr2;
 	char *ptrr = NULL;
 	int delta;
@@ -135,7 +136,7 @@ retry:
 	delta = strlen (proc->tag_post);
 
 	/* (pre) tag */
-	ptr = proc->tag_pre? strstr (buf, proc->tag_pre): NULL;
+	ptr = proc->tag_pre ? strstr (buf, proc->tag_pre) : NULL;
 	if (ptr) {
 		D printf ("==> 0.0 (%s)\n", ptr);
 		if (!proc->tag_begin || (proc->tag_begin && ptr == buf)) {
@@ -178,7 +179,7 @@ retry:
 			}
 		}
 		if (proc->buf.lbuf && proc->buf.lbuf[0]) {
-			D printf("==> 1 (%s)\n", proc->buf.lbuf);
+			D printf ("==> 1 (%s)\n", proc->buf.lbuf);
 			if (ptr) {
 				lbuf_strcat (&proc->buf, buf);
 				if (do_fputs (out, buf)) {
@@ -191,7 +192,7 @@ retry:
 				spp_run (proc->buf.lbuf + delta, out);
 				D printf ("=(1)=> spp_run(%s)\n", proc->buf.lbuf);
 			}
-			proc->buf.lbuf[0]='\0';
+			proc->buf.lbuf[0] = '\0';
 			proc->buf.lbuf_n = 0;
 		} else {
 			D printf ("==> 2 (%s)\n", ptr);
@@ -220,7 +221,7 @@ retry:
 }
 
 /* TODO: detect nesting */
-S_API void spp_io(FILE *in, Output *out) {
+S_API void spp_io (FILE *in, Output *out) {
 	char buf[4096];
 	int lines;
 	if (!proc->buf.lbuf) {
@@ -237,7 +238,8 @@ S_API void spp_io(FILE *in, Output *out) {
 		if (!fgets (buf, sizeof (buf) - 1, in)) {
 			break;
 		}
-		if (feof (in)) break;
+		if (feof (in))
+			break;
 		lines = 1;
 		if (!memcmp (buf, "#!", 2)) {
 			if (!fgets (buf, sizeof (buf) - 1, in) || feof (in)) {
@@ -268,7 +270,7 @@ S_API void spp_io(FILE *in, Output *out) {
 	(void)do_fputs (out, proc->buf.lbuf);
 }
 
-S_API int spp_file(const char *file, Output *out) {
+S_API int spp_file (const char *file, Output *out) {
 	FILE *in = fopen (file, "r");
 	D fprintf (stderr, "SPP-FILE(%s)\n", file);
 	if (in) {
@@ -280,30 +282,30 @@ S_API int spp_file(const char *file, Output *out) {
 	return 0;
 }
 
-S_API void spp_proc_list_kw() {
+S_API void spp_proc_list_kw () {
 	int i;
 	for (i = 0; tags[i].name; i++) {
 		printf ("%s\n", tags[i].name);
 	}
 }
 
-S_API void spp_proc_list() {
+S_API void spp_proc_list () {
 	int i;
-	for (i=0; procs[i]; i++) {
+	for (i = 0; procs[i]; i++) {
 		printf ("%s\n", procs[i]->name);
 	}
 }
 
-S_API void spp_proc_set(struct Proc *p, char *arg, int fail) {
+S_API void spp_proc_set (struct Proc *p, char *arg, int fail) {
 	int i, j;
 	if (arg)
-	for (j = 0; procs[j]; j++) {
-		if (!strcmp (procs[j]->name, arg)) {
-			proc = procs[j];
-			D printf ("SET PROC:(%s)(%s)\n", arg, proc->name);
-			break;
+		for (j = 0; procs[j]; j++) {
+			if (!strcmp (procs[j]->name, arg)) {
+				proc = procs[j];
+				D printf ("SET PROC:(%s)(%s)\n", arg, proc->name);
+				break;
+			}
 		}
-	}
 	if (arg && *arg && !procs[j] && fail) {
 		fprintf (stderr, "Invalid preprocessor name '%s'\n", arg);
 		return;
@@ -318,11 +320,11 @@ S_API void spp_proc_set(struct Proc *p, char *arg, int fail) {
 			proc->state.echo[i] = proc->default_echo;
 		}
 		//args = (struct Arg*)proc->args;
-		tags = (struct Tag*)proc->tags;
+		tags = (struct Tag *)proc->tags;
 	}
 }
 
-void out_printf(Output *out, char *str, ...) {
+void out_printf (Output *out, char *str, ...) {
 	va_list ap;
 	va_start (ap, str);
 	if (out->fout) {

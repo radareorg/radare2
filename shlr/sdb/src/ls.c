@@ -3,7 +3,7 @@
 #include <string.h>
 #include "ls.h"
 
-SDB_API SdbList *ls_newf(SdbListFree freefn) {
+SDB_API SdbList *ls_newf (SdbListFree freefn) {
 	SdbList *list = ls_new ();
 	if (list) {
 		list->free = freefn;
@@ -11,7 +11,7 @@ SDB_API SdbList *ls_newf(SdbListFree freefn) {
 	return list;
 }
 
-SDB_API SdbList *ls_new() {
+SDB_API SdbList *ls_new () {
 	SdbList *list = R_NEW0 (SdbList);
 	if (!list) {
 		return NULL;
@@ -19,7 +19,7 @@ SDB_API SdbList *ls_new() {
 	return list;
 }
 
-static void ls_insertion_sort_iter(SdbListIter *iter, SdbListComparator cmp) {
+static void ls_insertion_sort_iter (SdbListIter *iter, SdbListComparator cmp) {
 	SdbListIter *it, *it2;
 	for (it = iter; it && it->data; it = it->n) {
 		for (it2 = it->n; it2 && it2->data; it2 = it2->n) {
@@ -32,11 +32,11 @@ static void ls_insertion_sort_iter(SdbListIter *iter, SdbListComparator cmp) {
 	}
 }
 
-static void ls_insertion_sort(SdbList *list, SdbListComparator cmp) {
+static void ls_insertion_sort (SdbList *list, SdbListComparator cmp) {
 	ls_insertion_sort_iter (list->head, cmp);
 }
 
-static SdbListIter *_merge(SdbListIter *first, SdbListIter *second, SdbListComparator cmp) {
+static SdbListIter *_merge (SdbListIter *first, SdbListIter *second, SdbListComparator cmp) {
 	SdbListIter *next = NULL, *result = NULL, *head = NULL;
 	while (first || second) {
 		if (!second) {
@@ -67,13 +67,13 @@ static SdbListIter *_merge(SdbListIter *first, SdbListIter *second, SdbListCompa
 	return head;
 }
 
-static SdbListIter * _sdb_list_split(SdbListIter *head) {
+static SdbListIter *_sdb_list_split (SdbListIter *head) {
 	SdbListIter *tmp;
 	SdbListIter *fast;
 	SdbListIter *slow;
 	if (!head || !head->n) {
 		return head;
-	} 
+	}
 	slow = head;
 	fast = head;
 	while (fast && fast->n && fast->n->n) {
@@ -85,7 +85,7 @@ static SdbListIter * _sdb_list_split(SdbListIter *head) {
 	return tmp;
 }
 
-static SdbListIter * _merge_sort(SdbListIter *head, SdbListComparator cmp) {
+static SdbListIter *_merge_sort (SdbListIter *head, SdbListComparator cmp) {
 	SdbListIter *second;
 	if (!head || !head->n) {
 		return head;
@@ -96,7 +96,7 @@ static SdbListIter * _merge_sort(SdbListIter *head, SdbListComparator cmp) {
 	return _merge (head, second, cmp);
 }
 
-SDB_API bool ls_merge_sort(SdbList *list, SdbListComparator cmp) {
+SDB_API bool ls_merge_sort (SdbList *list, SdbListComparator cmp) {
 	if (!cmp) {
 		return false;
 	}
@@ -114,7 +114,7 @@ SDB_API bool ls_merge_sort(SdbList *list, SdbListComparator cmp) {
 	return true;
 }
 
-SDB_API bool ls_sort(SdbList *list, SdbListComparator cmp) {
+SDB_API bool ls_sort (SdbList *list, SdbListComparator cmp) {
 	if (!cmp || list->cmp == cmp) {
 		return false;
 	}
@@ -128,7 +128,7 @@ SDB_API bool ls_sort(SdbList *list, SdbListComparator cmp) {
 	return true;
 }
 
-SDB_API void ls_delete(SdbList *list, SdbListIter *iter) {
+SDB_API void ls_delete (SdbList *list, SdbListIter *iter) {
 	if (!list || !iter) {
 		return;
 	}
@@ -140,7 +140,7 @@ SDB_API void ls_delete(SdbList *list, SdbListIter *iter) {
 	free (iter);
 }
 
-SDB_API bool ls_delete_data(SdbList *list, void *ptr) {
+SDB_API bool ls_delete_data (SdbList *list, void *ptr) {
 	void *kvp;
 	SdbListIter *iter;
 	ls_foreach (list, iter, kvp) {
@@ -152,7 +152,7 @@ SDB_API bool ls_delete_data(SdbList *list, void *ptr) {
 	return false;
 }
 
-SDB_API void ls_split_iter(SdbList *list, SdbListIter *iter) {
+SDB_API void ls_split_iter (SdbList *list, SdbListIter *iter) {
 	if (!list || !iter) {
 		return;
 	}
@@ -171,7 +171,7 @@ SDB_API void ls_split_iter(SdbList *list, SdbListIter *iter) {
 	list->length--;
 }
 
-SDB_API void ls_destroy(SdbList *list) {
+SDB_API void ls_destroy (SdbList *list) {
 	SdbListIter *it;
 	if (!list) {
 		return;
@@ -186,7 +186,7 @@ SDB_API void ls_destroy(SdbList *list) {
 	list->length = 0;
 }
 
-SDB_API void ls_free(SdbList *list) {
+SDB_API void ls_free (SdbList *list) {
 	if (!list) {
 		return;
 	}
@@ -195,7 +195,7 @@ SDB_API void ls_free(SdbList *list) {
 	free (list);
 }
 
-SDB_API SdbListIter *ls_append(SdbList *list, void *data) {
+SDB_API SdbListIter *ls_append (SdbList *list, void *data) {
 	SdbListIter *it;
 	if (!list) {
 		return NULL;
@@ -203,7 +203,7 @@ SDB_API SdbListIter *ls_append(SdbList *list, void *data) {
 	it = R_NEW (SdbListIter);
 	if (!it) {
 		return NULL;
-	}	
+	}
 	if (list->tail) {
 		list->tail->n = it;
 	}
@@ -219,7 +219,7 @@ SDB_API SdbListIter *ls_append(SdbList *list, void *data) {
 	return it;
 }
 
-SDB_API SdbListIter *ls_prepend(SdbList *list, void *data) {
+SDB_API SdbListIter *ls_prepend (SdbList *list, void *data) {
 	SdbListIter *it = R_NEW (SdbListIter);
 	if (!it) {
 		return NULL;
@@ -239,7 +239,7 @@ SDB_API SdbListIter *ls_prepend(SdbList *list, void *data) {
 	return it;
 }
 
-SDB_API void *ls_pop(SdbList *list) {
+SDB_API void *ls_pop (SdbList *list) {
 	void *data = NULL;
 	SdbListIter *iter;
 	if (list) {
@@ -260,8 +260,7 @@ SDB_API void *ls_pop(SdbList *list) {
 	return NULL;
 }
 
-
-SDB_API int ls_join(SdbList *list1, SdbList *list2) {
+SDB_API int ls_join (SdbList *list1, SdbList *list2) {
 	if (!list1 || !list2) {
 		return 0;
 	}
@@ -283,8 +282,7 @@ SDB_API int ls_join(SdbList *list1, SdbList *list2) {
 	return 1;
 }
 
-
-SDB_API SdbListIter *ls_insert(SdbList *list, int n, void *data) {
+SDB_API SdbListIter *ls_insert (SdbList *list, int n, void *data) {
 	SdbListIter *it, *item;
 	int i;
 	if (list) {
@@ -313,8 +311,7 @@ SDB_API SdbListIter *ls_insert(SdbList *list, int n, void *data) {
 	return ls_append (list, data);
 }
 
-
-SDB_API void *ls_pop_head(SdbList *list) {
+SDB_API void *ls_pop_head (SdbList *list) {
 	void *data = NULL;
 	SdbListIter *iter;
 	if (list) {
@@ -335,8 +332,7 @@ SDB_API void *ls_pop_head(SdbList *list) {
 	return NULL;
 }
 
-
-SDB_API int ls_del_n(SdbList *list, int n) {
+SDB_API int ls_del_n (SdbList *list, int n) {
 	SdbListIter *it;
 	int i;
 	if (!list) {

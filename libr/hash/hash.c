@@ -115,7 +115,7 @@ static const struct {
 };
 
 /* returns 0-100 */
-R_API int r_hash_pcprint(const ut8 *buffer, ut64 len) {
+R_API int r_hash_pcprint (const ut8 *buffer, ut64 len) {
 	const ut8 *end = buffer + len;
 	int n;
 	if (len < 1) {
@@ -129,7 +129,7 @@ R_API int r_hash_pcprint(const ut8 *buffer, ut64 len) {
 	return ((100 * n) / len);
 }
 
-R_API int r_hash_parity(const ut8 *buf, ut64 len) {
+R_API int r_hash_parity (const ut8 *buf, ut64 len) {
 	const ut8 *end = buf + len;
 	ut32 ones = 0;
 	for (; buf < end; buf++) {
@@ -142,7 +142,7 @@ R_API int r_hash_parity(const ut8 *buf, ut64 len) {
 
 /* These functions comes from 0xFFFF */
 /* fmi: nopcode.org/0xFFFF */
-R_API ut16 r_hash_xorpair(const ut8 *a, ut64 len) {
+R_API ut16 r_hash_xorpair (const ut8 *a, ut64 len) {
 	ut16 result = 0, *b = (ut16 *)a;
 	for (len >>= 1; len--; b++) {
 		result ^= *b;
@@ -150,7 +150,7 @@ R_API ut16 r_hash_xorpair(const ut8 *a, ut64 len) {
 	return result;
 }
 
-R_API ut8 r_hash_xor(const ut8 *b, ut64 len) {
+R_API ut8 r_hash_xor (const ut8 *b, ut64 len) {
 	ut8 res = 0;
 	for (; len--; b++) {
 		res ^= *b;
@@ -158,7 +158,7 @@ R_API ut8 r_hash_xor(const ut8 *b, ut64 len) {
 	return res;
 }
 
-R_API ut8 r_hash_mod255(const ut8 *b, ut64 len) {
+R_API ut8 r_hash_mod255 (const ut8 *b, ut64 len) {
 	int i, c = 0;
 	/* from gdb */
 	for (i = 0; i < len; i++) {
@@ -167,11 +167,11 @@ R_API ut8 r_hash_mod255(const ut8 *b, ut64 len) {
 	return c % 255;
 }
 
-R_API ut32 r_hash_xxhash(const ut8 *buf, ut64 len) {
+R_API ut32 r_hash_xxhash (const ut8 *buf, ut64 len) {
 	return XXH32 (buf, (size_t)len, 0);
 }
 
-R_API ut8 r_hash_deviation(const ut8 *b, ut64 len) {
+R_API ut8 r_hash_deviation (const ut8 *b, ut64 len) {
 	int i, c;
 	for (c = i = 0, len--; i < len; i++) {
 		c += R_ABS (b[i + 1] - b[i]);
@@ -179,7 +179,7 @@ R_API ut8 r_hash_deviation(const ut8 *b, ut64 len) {
 	return c;
 }
 
-R_API const char *r_hash_name(ut64 bit) {
+R_API const char *r_hash_name (ut64 bit) {
 	int i;
 	for (i = 1; hash_name_bytes[i].bit; i++) {
 		if (bit & hash_name_bytes[i].bit) {
@@ -189,10 +189,10 @@ R_API const char *r_hash_name(ut64 bit) {
 	return "";
 }
 
-R_API int r_hash_size(ut64 algo) {
-#define ALGOBIT(x)\
-	if (algo & R_HASH_##x) {\
-		return R_HASH_SIZE_##x;\
+R_API int r_hash_size (ut64 algo) {
+#define ALGOBIT(x)                      \
+	if (algo & R_HASH_##x) {        \
+		return R_HASH_SIZE_##x; \
 	}
 	ALGOBIT (FLETCHER8);
 	ALGOBIT (FLETCHER16);
@@ -290,7 +290,7 @@ R_API int r_hash_size(ut64 algo) {
 }
 
 /* Converts a comma separated list of names to the respective bit combination */
-R_API ut64 r_hash_name_to_bits(const char *name) {
+R_API ut64 r_hash_name_to_bits (const char *name) {
 	char tmp[128];
 	int i;
 	const char *ptr = name;
@@ -303,7 +303,7 @@ R_API ut64 r_hash_name_to_bits(const char *name) {
 	do {
 		/* Eat everything up to the comma */
 		for (i = 0; *ptr && *ptr != ',' && i < sizeof (tmp) - 1; i++) {
- 			tmp[i] = tolower ((ut8)*ptr++);
+			tmp[i] = tolower ((ut8)*ptr++);
 		}
 
 		/* Safety net */
@@ -325,7 +325,7 @@ R_API ut64 r_hash_name_to_bits(const char *name) {
 	return ret;
 }
 
-R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, RHashSeed *seed) {
+R_API void r_hash_do_spice (RHash *ctx, ut64 algo, int loops, RHashSeed *seed) {
 	ut8 buf[1024];
 	int i, len, hlen = r_hash_size (algo);
 	for (i = 0; i < loops; i++) {
@@ -346,7 +346,7 @@ R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, RHashSeed *seed) {
 	}
 }
 
-R_API char *r_hash_to_string(RHash *ctx, const char *name, const ut8 *data, int len) {
+R_API char *r_hash_to_string (RHash *ctx, const char *name, const ut8 *data, int len) {
 	ut64 algo = r_hash_name_to_bits (name);
 	char *digest_hex = NULL;
 	RHash *myctx = NULL;

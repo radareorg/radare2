@@ -6,8 +6,8 @@
 #include "objc/mach064_classes.h"
 #include "../format/mach0/mach064_is_kernelcache.c"
 
-static bool check_buffer(RBuffer *b) {
-	ut8 buf[4] = {0};
+static bool check_buffer (RBuffer *b) {
+	ut8 buf[4] = { 0 };
 	if (r_buf_size (b) > 4) {
 		r_buf_read_at (b, 0, buf, sizeof (buf));
 		if (!memcmp (buf, "\xfe\xed\xfa\xcf", 4)) {
@@ -20,7 +20,7 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
+static RBuffer *create (RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
 	const bool use_pagezero = true;
 	const bool use_main = true;
 	const bool use_dylinker = true;
@@ -28,29 +28,32 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	const bool use_linkedit = true;
 	ut64 filesize, codeva, datava;
 	ut32 ncmds, magiclen, headerlen;
-	ut64 p_codefsz=0, p_codeva=0, p_codesz=0, p_codepa=0;
-	ut64 p_datafsz=0, p_datava=0, p_datasz=0, p_datapa=0;
-	ut64 p_cmdsize=0, p_entry=0, p_tmp=0;
+	ut64 p_codefsz = 0, p_codeva = 0, p_codesz = 0, p_codepa = 0;
+	ut64 p_datafsz = 0, p_datava = 0, p_datasz = 0, p_datapa = 0;
+	ut64 p_cmdsize = 0, p_entry = 0, p_tmp = 0;
 	ut64 baddr = 0x100001000LL;
-// TODO: baddr must be overriden with -b
+	// TODO: baddr must be overriden with -b
 	RBuffer *buf = r_buf_new ();
 
-#define B(x,y) r_buf_append_bytes(buf,(const ut8*)(x),y)
-#define D(x) r_buf_append_ut32(buf,x)
-#define Q(x) r_buf_append_ut64(buf,x)
-#define Z(x) r_buf_append_nbytes(buf,x)
-#define W(x,y,z) r_buf_write_at(buf,x,(const ut8*)(y),z)
-#define WZ(x,y) p_tmp=r_buf_size (buf);Z(x);W(p_tmp,y,strlen(y))
+#define B(x, y) r_buf_append_bytes (buf, (const ut8 *)(x), y)
+#define D(x) r_buf_append_ut32 (buf, x)
+#define Q(x) r_buf_append_ut64 (buf, x)
+#define Z(x) r_buf_append_nbytes (buf, x)
+#define W(x, y, z) r_buf_write_at (buf, x, (const ut8 *)(y), z)
+#define WZ(x, y)                  \
+	p_tmp = r_buf_size (buf); \
+	Z (x);                    \
+	W (p_tmp, y, strlen (y))
 
 	/* MACH0 HEADER */
 	// 32bit B ("\xce\xfa\xed\xfe", 4); // header
 	B ("\xcf\xfa\xed\xfe", 4); // header
 	D (7 | 0x01000000); // cpu type (x86) | ABI64
 	//D (3); // subtype (i386-all)
-	D(0x80000003); // x86-64 subtype
+	D (0x80000003); // x86-64 subtype
 	D (2); // filetype (executable)
 
-	ncmds = (data && datalen>0)? 3: 2;
+	ncmds = (data && datalen > 0) ? 3 : 2;
 	if (use_pagezero) {
 		ncmds++;
 	}
@@ -68,14 +71,14 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	D (ncmds); // ncmds
 	p_cmdsize = r_buf_size (buf);
 	D (-1); // headsize // cmdsize?
-	D (0);//0x85); // flags
+	D (0); //0x85); // flags
 	D (0); // reserved -- only found in x86-64
 
 	magiclen = r_buf_size (buf);
 
 	if (use_pagezero) {
 		/* PAGEZERO */
-		D (0x19);   // cmd.LC_SEGMENT
+		D (0x19); // cmd.LC_SEGMENT
 		D (72); // sizeof (cmd)
 		WZ (16, "__PAGEZERO");
 		Q (0); // vmaddr
@@ -89,9 +92,9 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	}
 
 	/* TEXT SEGMENT */
-	D (0x19);   // cmd.LC_SEGMENT_64
+	D (0x19); // cmd.LC_SEGMENT_64
 	//D (124+16+8); // sizeof (cmd)
-	D (124+28); // sizeof (cmd)
+	D (124 + 28); // sizeof (cmd)
 	WZ (16, "__TEXT");
 	Q (baddr); // vmaddr
 	Q (0x1000); // vmsize XXX
@@ -122,8 +125,8 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 
 	if (data && datalen > 0) {
 		/* DATA SEGMENT */
-		D (0x19);   // cmd.LC_SEGMENT_64
-		D (124+28); // sizeof (cmd)
+		D (0x19); // cmd.LC_SEGMENT_64
+		D (124 + 28); // sizeof (cmd)
 		p_tmp = r_buf_size (buf);
 		Z (16);
 		W (p_tmp, "__TEXT", 6); // segment name
@@ -188,10 +191,10 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 
 		const char *dyld = "/usr/lib/dyld";
 		const int dyld_len = strlen (dyld) + 1;
-		D(0xe); /* LC_DYLINKER */
-		D((4 * 3) + dyld_len);
-		D(dyld_len - 2);
-		WZ(dyld_len, dyld); // path
+		D (0xe); /* LC_DYLINKER */
+		D ((4 * 3) + dyld_len);
+		D (dyld_len - 2);
+		WZ (dyld_len, dyld); // path
 
 		if (use_libsystem) {
 			/* add libSystem at least ... */
@@ -208,20 +211,20 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	}
 	if (use_main) {
 		/* LC_MAIN */
-		D (0x80000028);   // cmd.LC_MAIN
+		D (0x80000028); // cmd.LC_MAIN
 		D (24); // sizeof (cmd)
 		D (baddr); // entryoff
 		D (0); // stacksize
 		D (0); // ???
 		D (0); // ???
 	} else {
-#define STATESIZE (21*sizeof (ut64))
+#define STATESIZE (21 * sizeof (ut64))
 		/* THREAD STATE */
 		D (5); // LC_UNIXTHREAD
 		D (184); // sizeof (cmd)
 		D (4); // 1=i386, 4=x86_64
 		D (42); // thread-state-count
-		p_entry = r_buf_size (buf) + (16*sizeof (ut64));
+		p_entry = r_buf_size (buf) + (16 * sizeof (ut64));
 		Z (STATESIZE);
 	}
 
@@ -240,7 +243,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	filesize = magiclen + headerlen + codelen + datalen;
 	// TEXT SEGMENT //
 	W (p_codefsz, &filesize, 8);
-	W (p_codefsz-16, &filesize, 8); // vmsize = filesize
+	W (p_codefsz - 16, &filesize, 8); // vmsize = filesize
 	W (p_codeva, &codeva, 8);
 	{
 		ut64 clen = codelen;
@@ -251,7 +254,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 
 	B (code, codelen);
 
-	if (data && datalen>0) {
+	if (data && datalen > 0) {
 		/* append data */
 		W (p_datafsz, &filesize, 8);
 		W (p_datava, &datava, 8);
@@ -264,12 +267,12 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-static RBinAddr* binsym(RBinFile *bf, int sym) {
+static RBinAddr *binsym (RBinFile *bf, int sym) {
 	ut64 addr;
 	RBinAddr *ret = NULL;
 	switch (sym) {
 	case R_BIN_SYM_MAIN:
-		addr = MACH0_(get_main) (bf->o->bin_obj);
+		addr = MACH0_ (get_main) (bf->o->bin_obj);
 		if (!addr || !(ret = R_NEW0 (RBinAddr))) {
 			return NULL;
 		}
@@ -296,12 +299,12 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.imports = &imports,
 	.info = &info,
 	.libs = &libs,
-	.header = &MACH0_(mach_headerfields),
+	.header = &MACH0_ (mach_headerfields),
 	.relocs = &relocs,
 	.patch_relocs = &patch_relocs,
-	.fields = &MACH0_(mach_fields),
+	.fields = &MACH0_ (mach_fields),
 	.create = &create,
-	.classes = &MACH0_(parse_classes),
+	.classes = &MACH0_ (parse_classes),
 	.write = &r_bin_write_mach0,
 };
 

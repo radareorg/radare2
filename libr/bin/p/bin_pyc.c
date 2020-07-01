@@ -11,7 +11,7 @@ static struct pyc_version version;
 RList *interned_table = NULL;
 static RList *sections_cache = NULL;
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer (RBuffer *b) {
 	if (r_buf_size (b) > 4) {
 		ut32 buf;
 		r_buf_read_at (b, 0, (ut8 *)&buf, sizeof (buf));
@@ -21,11 +21,11 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (buf);
 }
 
-static ut64 get_entrypoint(RBuffer *buf) {
+static ut64 get_entrypoint (RBuffer *buf) {
 	ut8 b;
 	ut64 result;
 	int addr;
@@ -43,7 +43,7 @@ static ut64 get_entrypoint(RBuffer *buf) {
 	return 0;
 }
 
-static RBinInfo *info(RBinFile *arch) {
+static RBinInfo *info (RBinFile *arch) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
@@ -56,16 +56,16 @@ static RBinInfo *info(RBinFile *arch) {
 	ret->machine = r_str_newf ("Python %s VM (rev %s)", version.version,
 		version.revision);
 	ret->os = strdup ("any");
-	ret->bits = version2double (version.version) < 3.6? 16: 8;
+	ret->bits = version2double (version.version) < 3.6 ? 16 : 8;
 	ret->cpu = strdup (version.version); // pass version info in cpu, Asm plugin will get it
 	return ret;
 }
 
-static RList *sections(RBinFile *arch) {
+static RList *sections (RBinFile *arch) {
 	return sections_cache;
 }
 
-static RList *entries(RBinFile *arch) {
+static RList *entries (RBinFile *arch) {
 	RList *entries = r_list_newf ((RListFree)free);
 	if (!entries) {
 		return NULL;
@@ -83,11 +83,11 @@ static RList *entries(RBinFile *arch) {
 	return entries;
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr (RBinFile *bf) {
 	return 0;
 }
 
-static RList *symbols(RBinFile *arch) {
+static RList *symbols (RBinFile *arch) {
 	RList *shared = r_list_newf ((RListFree)r_list_free);
 	if (!shared) {
 		return NULL;

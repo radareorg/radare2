@@ -2,7 +2,7 @@
 
 #include <r_main.h>
 
-int main(int argc, char **argv) {
+int main (int argc, char **argv) {
 	int rc = 1;
 	RMain *m = r_main_new (argv[0]);
 	if (m) {

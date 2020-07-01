@@ -5,9 +5,9 @@
 #include <r_util.h>
 #include "pager_private.h"
 
-R_API int r_cons_more_str(const char *str, const char *exitkeys) {
+R_API int r_cons_more_str (const char *str, const char *exitkeys) {
 	static bool inHelp = false;
-	static const char *r_cons_more_help = \
+	static const char *r_cons_more_help =
 		" space    - page up\n"
 		" j        - line down\n"
 		" /        - search in buffer\n"
@@ -94,8 +94,8 @@ R_API int r_cons_more_str(const char *str, const char *exitkeys) {
 		case '\r':
 		case '\n':
 		case 'j': from++; break;
-		case 'J': from+=h; break;
-		case '/': 	/* search */
+		case 'J': from += h; break;
+		case '/': /* search */
 			r_cons_reset_colors ();
 			r_line_set_prompt ("/");
 			sreg = r_line_readline ();
@@ -118,7 +118,7 @@ R_API int r_cons_more_str(const char *str, const char *exitkeys) {
 				from = pager_next_match (from, mla, lines_count);
 			}
 			break;
-		case 'n': 	/* next match */
+		case 'n': /* next match */
 			/* search already performed */
 			if (rx) {
 				from = pager_next_match (from, mla, lines_count);
@@ -140,6 +140,6 @@ R_API int r_cons_more_str(const char *str, const char *exitkeys) {
 	return 0;
 }
 
-R_API void r_cons_more(void) {
+R_API void r_cons_more (void) {
 	(void)r_cons_more_str (r_cons_singleton ()->context->buffer, NULL);
 }

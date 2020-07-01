@@ -8,16 +8,16 @@
 
 #if __WINDOWS__
 #include "io_r2k_windows.h"
-#elif defined (__linux__) && !defined (__GNU__)
+#elif defined(__linux__) && !defined(__GNU__)
 #include "io_r2k_linux.h"
-struct io_r2k_linux r2k_struct;		//TODO: move this into desc->data
+struct io_r2k_linux r2k_struct; //TODO: move this into desc->data
 #endif
 
-int r2k__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
+int r2k__write (RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 #if __WINDOWS__
 	//eprintf("writing to: 0x%"PFMT64x" len: %x\n",io->off, count);
 	return WriteKernelMemory (io->off, buf, count);
-#elif defined (__linux__) && !defined (__GNU__)
+#elif defined(__linux__) && !defined(__GNU__)
 	switch (r2k_struct.beid) {
 	case 0:
 		return WriteMemory (io, fd, IOCTL_WRITE_KERNEL_MEMORY, r2k_struct.pid, io->off, buf, count);
@@ -35,10 +35,10 @@ int r2k__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 #endif
 }
 
-static int r2k__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
+static int r2k__read (RIO *io, RIODesc *fd, ut8 *buf, int count) {
 #if __WINDOWS__
 	return ReadKernelMemory (io->off, buf, count);
-#elif defined (__linux__) && !defined (__GNU__)
+#elif defined(__linux__) && !defined(__GNU__)
 	switch (r2k_struct.beid) {
 	case 0:
 		return ReadMemory (io, fd, IOCTL_READ_KERNEL_MEMORY, r2k_struct.pid, io->off, buf, count);
@@ -58,13 +58,13 @@ static int r2k__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 #endif
 }
 
-static int r2k__close(RIODesc *fd) {
+static int r2k__close (RIODesc *fd) {
 #if __WINDOWS__
 	if (gHandleDriver) {
 		CloseHandle (gHandleDriver);
-		StartStopService (TEXT ("r2k"),TRUE);
+		StartStopService (TEXT ("r2k"), TRUE);
 	}
-#elif defined (__linux__) && !defined (__GNU__)
+#elif defined(__linux__) && !defined(__GNU__)
 	if (fd) {
 		close ((int)(size_t)fd->data);
 	}
@@ -74,16 +74,15 @@ static int r2k__close(RIODesc *fd) {
 	return 0;
 }
 
-static ut64 r2k__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
-	return (!whence) ? offset : whence == 1
-		? io->off + offset : UT64_MAX;
+static ut64 r2k__lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
+	return (!whence) ? offset : whence == 1 ? io->off + offset : UT64_MAX;
 }
 
-static bool r2k__plugin_open(RIO *io, const char *pathname, bool many) {
+static bool r2k__plugin_open (RIO *io, const char *pathname, bool many) {
 	return (!strncmp (pathname, "r2k://", 6));
 }
 
-static char *r2k__system(RIO *io, RIODesc *fd, const char *cmd) {
+static char *r2k__system (RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strcmp (cmd, "")) {
 		return NULL;
 	}
@@ -92,7 +91,7 @@ static char *r2k__system(RIO *io, RIODesc *fd, const char *cmd) {
 		GetSystemModules (io);
 #endif
 	} else {
-#if defined (__linux__) && !defined (__GNU__)
+#if defined(__linux__) && !defined(__GNU__)
 		(void)run_ioctl_command (io, fd, cmd);
 		return NULL;
 #else
@@ -102,7 +101,7 @@ static char *r2k__system(RIO *io, RIODesc *fd, const char *cmd) {
 	return NULL;
 }
 
-static RIODesc *r2k__open(RIO *io, const char *pathname, int rw, int mode) {
+static RIODesc *r2k__open (RIO *io, const char *pathname, int rw, int mode) {
 	if (!strncmp (pathname, "r2k://", 6)) {
 		rw |= R_PERM_WX;
 #if __WINDOWS__
@@ -114,7 +113,7 @@ static RIODesc *r2k__open(RIO *io, const char *pathname, int rw, int mode) {
 		}
 		//return r_io_desc_new (&r_io_plugin_r2k, -1, pathname, rw, mode, w32);
 		return r_io_desc_new (io, &r_io_plugin_r2k, pathname, rw, mode, w32);
-#elif defined (__linux__) && !defined (__GNU__)
+#elif defined(__linux__) && !defined(__GNU__)
 		int fd = open ("/dev/r2k", O_RDONLY);
 		if (fd == -1) {
 			io->cb_printf ("r2k__open: Error in opening /dev/r2k.");
@@ -153,4 +152,3 @@ R_API RLibStruct radare_plugin = {
 	.version = R2_VERSION
 };
 #endif
-

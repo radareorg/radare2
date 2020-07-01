@@ -49,17 +49,17 @@
    an action failed.  Simply provides additional info on the reason for the
    error.  Sent in the DSrMsg_err_t.hdr.subcmd byte.  */
 
-#define PDEBUG_ENOERR 0     /* No error.  */
-#define PDEBUG_ENOPTY 1     /* No Pseudo Terminals found.  */
-#define PDEBUG_ETHREAD 2    /* Thread Create error.  */
-#define PDEBUG_ECONINV 3    /* Invalid Console number.  */
-#define PDEBUG_ESPAWN 4     /* Spawn error.  */
-#define PDEBUG_EPROCFS 5    /* NTO Proc File System error.  */
-#define PDEBUG_EPROCSTOP 6  /* NTO Process Stop error.  */
-#define PDEBUG_EQPSINFO 7   /* QNX4 PSINFO error.  */
+#define PDEBUG_ENOERR 0 /* No error.  */
+#define PDEBUG_ENOPTY 1 /* No Pseudo Terminals found.  */
+#define PDEBUG_ETHREAD 2 /* Thread Create error.  */
+#define PDEBUG_ECONINV 3 /* Invalid Console number.  */
+#define PDEBUG_ESPAWN 4 /* Spawn error.  */
+#define PDEBUG_EPROCFS 5 /* NTO Proc File System error.  */
+#define PDEBUG_EPROCSTOP 6 /* NTO Process Stop error.  */
+#define PDEBUG_EQPSINFO 7 /* QNX4 PSINFO error.  */
 #define PDEBUG_EQMEMMODEL 8 /* QNX4 - Flat Memory Model only supported.  */
-#define PDEBUG_EQPROXY 9    /* QNX4 Proxy error.  */
-#define PDEBUG_EQDBG 10     /* QNX4 qnx_debug_* error.  */
+#define PDEBUG_EQPROXY 9 /* QNX4 Proxy error.  */
+#define PDEBUG_EQDBG 10 /* QNX4 qnx_debug_* error.  */
 
 /* There is room for pdebugerrnos up to sizeof(ut8).
 
@@ -97,7 +97,7 @@
 
 #define DS_DATA_MAX_SIZE 1024
 #define DS_DATA_RCV_SIZE(msg, total) \
-	((total) - (sizeof(*(msg)) - DS_DATA_MAX_SIZE))
+	((total) - (sizeof (*(msg)) - DS_DATA_MAX_SIZE))
 #define DS_MSG_OKSTATUS_FLAG 0x20000000
 #define DS_MSG_OKDATA_FLAG 0x40000000
 #define DS_MSG_NO_RESPONSE 0x80000000
@@ -116,39 +116,39 @@ struct DShdr {
 
 /* Command types.  */
 enum {
-	DStMsg_connect,      /*  0  0x0 */
-	DStMsg_disconnect,   /*  1  0x1 */
-	DStMsg_select,       /*  2  0x2 */
-	DStMsg_mapinfo,      /*  3  0x3 */
-	DStMsg_load,	 /*  4  0x4 */
-	DStMsg_attach,       /*  5  0x5 */
-	DStMsg_detach,       /*  6  0x6 */
-	DStMsg_kill,	 /*  7  0x7 */
-	DStMsg_stop,	 /*  8  0x8 */
-	DStMsg_memrd,	/*  9  0x9 */
-	DStMsg_memwr,	/* 10  0xA */
-	DStMsg_regrd,	/* 11  0xB */
-	DStMsg_regwr,	/* 12  0xC */
-	DStMsg_run,	  /* 13  0xD */
-	DStMsg_brk,	  /* 14  0xE */
-	DStMsg_fileopen,     /* 15  0xF */
-	DStMsg_filerd,       /* 16  0x10 */
-	DStMsg_filewr,       /* 17  0x11 */
-	DStMsg_fileclose,    /* 18  0x12 */
-	DStMsg_pidlist,      /* 19  0x13 */
-	DStMsg_cwd,	  /* 20  0x14 */
-	DStMsg_env,	  /* 21  0x15 */
+	DStMsg_connect, /*  0  0x0 */
+	DStMsg_disconnect, /*  1  0x1 */
+	DStMsg_select, /*  2  0x2 */
+	DStMsg_mapinfo, /*  3  0x3 */
+	DStMsg_load, /*  4  0x4 */
+	DStMsg_attach, /*  5  0x5 */
+	DStMsg_detach, /*  6  0x6 */
+	DStMsg_kill, /*  7  0x7 */
+	DStMsg_stop, /*  8  0x8 */
+	DStMsg_memrd, /*  9  0x9 */
+	DStMsg_memwr, /* 10  0xA */
+	DStMsg_regrd, /* 11  0xB */
+	DStMsg_regwr, /* 12  0xC */
+	DStMsg_run, /* 13  0xD */
+	DStMsg_brk, /* 14  0xE */
+	DStMsg_fileopen, /* 15  0xF */
+	DStMsg_filerd, /* 16  0x10 */
+	DStMsg_filewr, /* 17  0x11 */
+	DStMsg_fileclose, /* 18  0x12 */
+	DStMsg_pidlist, /* 19  0x13 */
+	DStMsg_cwd, /* 20  0x14 */
+	DStMsg_env, /* 21  0x15 */
 	DStMsg_base_address, /* 22  0x16 */
-	DStMsg_protover,     /* 23  0x17 */
-	DStMsg_handlesig,    /* 24  0x18 */
-	DStMsg_cpuinfo,      /* 25  0x19 */
-	DStMsg_tidnames,     /* 26  0x1A */
-	DStMsg_procfsinfo,   /* 27  0x1B */
+	DStMsg_protover, /* 23  0x17 */
+	DStMsg_handlesig, /* 24  0x18 */
+	DStMsg_cpuinfo, /* 25  0x19 */
+	DStMsg_tidnames, /* 26  0x1A */
+	DStMsg_procfsinfo, /* 27  0x1B */
 	/* Room for new codes here.  */
 	DSrMsg_err = 32, /* 32  0x20 */
-	DSrMsg_ok,       /* 33  0x21 */
+	DSrMsg_ok, /* 33  0x21 */
 	DSrMsg_okstatus, /* 34  0x22 */
-	DSrMsg_okdata,   /* 35  0x23 */
+	DSrMsg_okdata, /* 35  0x23 */
 	/* Room for new codes here.  */
 	DShMsg_notify = 64 /* 64  0x40 */
 };
@@ -170,19 +170,19 @@ enum {
 };
 
 enum { DSMSG_STOP_PID,
-       DSMSG_STOP_PIDS };
+	DSMSG_STOP_PIDS };
 
 enum { DSMSG_SELECT_SET,
-       DSMSG_SELECT_QUERY };
+	DSMSG_SELECT_QUERY };
 
 enum { DSMSG_KILL_PIDTID,
-       DSMSG_KILL_PID,
-       DSMSG_KILL_PIDS };
+	DSMSG_KILL_PID,
+	DSMSG_KILL_PIDS };
 
 enum { DSMSG_MEM_VIRTUAL,
-       DSMSG_MEM_PHYSICAL,
-       DSMSG_MEM_IO,
-       DSMSG_MEM_BASEREL };
+	DSMSG_MEM_PHYSICAL,
+	DSMSG_MEM_IO,
+	DSMSG_MEM_BASEREL };
 
 enum {
 	DSMSG_REG_GENERAL,
@@ -203,7 +203,7 @@ enum {
 	DSMSG_PIDLIST_NEXT,
 	DSMSG_PIDLIST_SPECIFIC,
 	DSMSG_PIDLIST_SPECIFIC_TID, /* *_TID - send starting tid for the request, */
-};				    /* and the response will have total to be sent.  */
+}; /* and the response will have total to be sent.  */
 
 enum {
 	DSMSG_CWD_QUERY,
@@ -225,29 +225,29 @@ enum {
 };
 
 enum {
-	DSMSG_BRK_EXEC = 0x0001,   /* Execution breakpoint.  */
-	DSMSG_BRK_RD = 0x0002,     /* Read access (fail if not supported).  */
-	DSMSG_BRK_WR = 0x0004,     /* Write access (fail if not supported).  */
-	DSMSG_BRK_RW = 0x0006,     /* Read or write access (fail if not supported).  */
+	DSMSG_BRK_EXEC = 0x0001, /* Execution breakpoint.  */
+	DSMSG_BRK_RD = 0x0002, /* Read access (fail if not supported).  */
+	DSMSG_BRK_WR = 0x0004, /* Write access (fail if not supported).  */
+	DSMSG_BRK_RW = 0x0006, /* Read or write access (fail if not supported).  */
 	DSMSG_BRK_MODIFY = 0x0008, /* Memory modified.  */
-	DSMSG_BRK_RDM = 0x000a,    /* Read access if suported otherwise modified.  */
-	DSMSG_BRK_WRM = 0x000c,    /* Write access if suported otherwise modified.  */
+	DSMSG_BRK_RDM = 0x000a, /* Read access if suported otherwise modified.  */
+	DSMSG_BRK_WRM = 0x000c, /* Write access if suported otherwise modified.  */
 	DSMSG_BRK_RWM =
-		0x000e,	/* Read or write access if suported otherwise modified.  */
+		0x000e, /* Read or write access if suported otherwise modified.  */
 	DSMSG_BRK_HW = 0x0010, /* Only use hardware debugging (i.e. no singlestep). */
 };
 
 enum {
-	DSMSG_NOTIFY_PIDLOAD,   /* 0 */
-	DSMSG_NOTIFY_TIDLOAD,   /* 1 */
-	DSMSG_NOTIFY_DLLLOAD,   /* 2 */
+	DSMSG_NOTIFY_PIDLOAD, /* 0 */
+	DSMSG_NOTIFY_TIDLOAD, /* 1 */
+	DSMSG_NOTIFY_DLLLOAD, /* 2 */
 	DSMSG_NOTIFY_PIDUNLOAD, /* 3 */
 	DSMSG_NOTIFY_TIDUNLOAD, /* 4 */
 	DSMSG_NOTIFY_DLLUNLOAD, /* 5 */
-	DSMSG_NOTIFY_BRK,       /* 6 */
-	DSMSG_NOTIFY_STEP,      /* 7 */
-	DSMSG_NOTIFY_SIGEV,     /* 8 */
-	DSMSG_NOTIFY_STOPPED    /* 9 */
+	DSMSG_NOTIFY_BRK, /* 6 */
+	DSMSG_NOTIFY_STEP, /* 7 */
+	DSMSG_NOTIFY_SIGEV, /* 8 */
+	DSMSG_NOTIFY_STOPPED /* 9 */
 };
 
 /* Messages sent to the target. DStMsg_* (t - for target messages).  */
@@ -261,7 +261,9 @@ typedef struct {
 } DStMsg_connect_t;
 
 /* Disconnect from the agent running on the target. */
-typedef struct { struct DShdr hdr; } DStMsg_disconnect_t;
+typedef struct {
+	struct DShdr hdr;
+} DStMsg_disconnect_t;
 
 /* Select a pid, tid for subsequent messages or query their validity.  */
 typedef struct {
@@ -307,7 +309,9 @@ typedef struct {
 } DStMsg_kill_t;
 
 /* Stop one or more processes/threads.  */
-typedef struct { struct DShdr hdr; } DStMsg_stop_t;
+typedef struct {
+	struct DShdr hdr;
+} DStMsg_stop_t;
 
 /* Memory read request.  */
 typedef struct {
@@ -401,7 +405,9 @@ typedef struct {
 } DStMsg_env_t;
 
 /* Get the base address of a process.  */
-typedef struct { struct DShdr hdr; } DStMsg_baseaddr_t;
+typedef struct {
+	struct DShdr hdr;
+} DStMsg_baseaddr_t;
 
 /* Send pdebug protocol version info, get the same in response_ok_status.  */
 typedef struct {
@@ -433,7 +439,7 @@ typedef struct {
 
 /* Notify host that something happened it needs to know about.  */
 #define NOTIFY_HDR_SIZE offsetof (DShMsg_notify_t, un)
-#define NOTIFY_MEMBER_SIZE(member) sizeof(member)
+#define NOTIFY_MEMBER_SIZE(member) sizeof (member)
 
 typedef struct {
 	struct DShdr hdr;
@@ -482,7 +488,9 @@ typedef struct {
 } DSrMsg_err_t;
 
 /* Simple OK response.  */
-typedef struct { struct DShdr hdr; } DSrMsg_ok_t;
+typedef struct {
+	struct DShdr hdr;
+} DSrMsg_ok_t;
 
 /* Simple OK response with a result.  Used where limited data needs
    to be returned.  For example, if the number of bytes which were
@@ -522,7 +530,7 @@ struct dspidlist {
 		st16 tid;
 		ut8 state;
 		ut8 flags;
-	} tids[1];    /* Variable length terminated by tid==0.  */
+	} tids[1]; /* Variable length terminated by tid==0.  */
 	char name[1]; /* Variable length terminated by \0.  */
 };
 
@@ -591,11 +599,11 @@ typedef union {
 
 /* Command types.  */
 enum {
-	TSMsg_text,  /* 0 */
-	TSMsg_done,  /* 1 */
+	TSMsg_text, /* 0 */
+	TSMsg_done, /* 1 */
 	TSMsg_start, /* 2 */
-	TSMsg_stop,  /* 3 */
-	TSMsg_ack,   /* 4 */
+	TSMsg_stop, /* 3 */
+	TSMsg_ack, /* 4 */
 };
 
 struct TShdr {
@@ -614,12 +622,18 @@ typedef struct {
 } TSMsg_text_t;
 
 /* There is no longer a program connected to this console. */
-typedef struct { struct TShdr hdr; } TSMsg_done_t;
+typedef struct {
+	struct TShdr hdr;
+} TSMsg_done_t;
 
 /* TextStart or TextStop flow control. */
-typedef struct { struct TShdr hdr; } TSMsg_flowctl_t;
+typedef struct {
+	struct TShdr hdr;
+} TSMsg_flowctl_t;
 
 /* Ack a flowctl message. */
-typedef struct { struct TShdr hdr; } TSMsg_ack_t;
+typedef struct {
+	struct TShdr hdr;
+} TSMsg_ack_t;
 
 #endif

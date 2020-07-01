@@ -7,9 +7,9 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
-#define	AVR_SOFTCAST(x,y)	((x)+((y)*0x100))
+#define AVR_SOFTCAST(x, y) ((x) + ((y)*0x100))
 
-static bool set_reg_profile(RAnal *anal) {
+static bool set_reg_profile (RAnal *anal) {
 	const char *p =
 		"=PC	PC\n"
 		/* syntax not yet supported */
@@ -39,8 +39,7 @@ static bool set_reg_profile(RAnal *anal) {
 		/* stack */
 		"gpr	PC1	.64	34	0\n"
 		"gpr	PC2	.64	34	0\n"
-		"gpr	PC3	.64	34	0\n"
-		;
+		"gpr	PC3	.64	34	0\n";
 
 	return r_reg_set_profile_string (anal->reg, p);
 }
@@ -89,7 +88,7 @@ static const char *i4004_f[16] = {
 };
 
 static int i4004_get_ins_len (ut8 hex) {
-	ut8 high = (hex & 0xf0)>>4;
+	ut8 high = (hex & 0xf0) >> 4;
 	int ret = i4004_ins_len[high];
 	if (ret == 3) {
 		ret = (hex & 1) ? 1 : 2;
@@ -97,14 +96,14 @@ static int i4004_get_ins_len (ut8 hex) {
 	return ret;
 }
 
-static int i4004_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int i4004_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	char basm[128];
-	const size_t basz = sizeof (basm)-1;
+	const size_t basz = sizeof (basm) - 1;
 	int rlen = i4004_get_ins_len (*buf);
 	if (!op) {
 		return 2;
 	}
-	ut8 high = (*buf & 0xf0)>>4;
+	ut8 high = (*buf & 0xf0) >> 4;
 	ut8 low = (*buf & 0xf);
 	basm[0] = 0;
 
@@ -143,11 +142,11 @@ static int i4004_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case 4:
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = (ut16) (low<<8) | buf[1];
+		op->jump = (ut16) (low << 8) | buf[1];
 		break;
 	case 5: //snprintf (basm, basz, "jms 0x%03x", ((ut16)(low<<8) | buf[1])); break;
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = (ut16) (low<<8) | buf[1];
+		op->jump = (ut16) (low << 8) | buf[1];
 		op->fail = addr + rlen;
 		break;
 	case 6: //snprintf (basm, basz, "inc r%d", low); break;

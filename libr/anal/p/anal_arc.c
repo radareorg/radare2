@@ -14,9 +14,9 @@
 
 /* the CPU fields that we decode get stored in this struct */
 typedef struct arc_fields_t {
-	ut8 opcode;    /* major opcode */
+	ut8 opcode; /* major opcode */
 	ut8 subopcode; /* sub opcode */
-	ut8 format;    /* operand format */
+	ut8 format; /* operand format */
 	ut8 format2;
 	ut8 cond;
 	ut16 a; /* destination register */
@@ -26,11 +26,11 @@ typedef struct arc_fields_t {
 	ut8 mode_zz;
 	ut8 mode_m;
 	ut8 mode_n; /* Delay slot flag */
-	st64 imm;   /* data stored in the opcode */
-	st64 limm;  /* data stored immediately following the opcode */
+	st64 imm; /* data stored in the opcode */
+	st64 limm; /* data stored immediately following the opcode */
 } arc_fields;
 
-static void arccompact_dump_fields(ut64 addr, ut32 words[2], arc_fields *f) {
+static void arccompact_dump_fields (ut64 addr, ut32 words[2], arc_fields *f) {
 #if DEBUG
 	/* Quick and dirty debug print */
 	eprintf ("DEBUG: 0x%04llx: %08x op=0x%x subop=0x%x format=0x%x fields.a=0x%x fields.b=0x%x fields.c=0x%x imm=%i limm=%lli\n",
@@ -41,12 +41,12 @@ static void arccompact_dump_fields(ut64 addr, ut32 words[2], arc_fields *f) {
 /* For (arguably valid) reasons, the ARCompact CPU uses "middle endian"
 	encoding on Little-Endian systems
  */
-static inline ut32 r_read_me32_arc(const void *src) {
+static inline ut32 r_read_me32_arc (const void *src) {
 	const ut8 *s = src;
 	return (((ut32)s[1]) << 24) | (((ut32)s[0]) << 16) | (((ut32)s[3]) << 8) | (((ut32)s[2]) << 0);
 }
 
-static int sex(int bits, int imm) {
+static int sex (int bits, int imm) {
 	int maxsint = (1 << (bits - 1)) - 1;
 	int maxuint = (1 << (bits)) - 1;
 
@@ -66,7 +66,7 @@ static int sex(int bits, int imm) {
 #define SEX_S21(imm) sex (21, imm);
 #define SEX_S25(imm) sex (25, imm);
 
-static int map_cond2radare(ut8 cond) {
+static int map_cond2radare (ut8 cond) {
 	switch (cond) {
 	case 0: return R_ANAL_COND_AL;
 	case 1: return R_ANAL_COND_EQ;
@@ -95,22 +95,22 @@ static int map_cond2radare(ut8 cond) {
 	return -1;
 }
 
-static void arcompact_jump(RAnalOp *op, ut64 addr, ut64 jump, ut8 delay) {
+static void arcompact_jump (RAnalOp *op, ut64 addr, ut64 jump, ut8 delay) {
 	op->jump = jump;
 	op->fail = addr + op->size;
 	op->delay = delay;
 }
 
-static void arcompact_jump_cond(RAnalOp *op, ut64 addr, ut64 jump, ut8 delay, ut8 cond) {
+static void arcompact_jump_cond (RAnalOp *op, ut64 addr, ut64 jump, ut8 delay, ut8 cond) {
 	arcompact_jump (op, addr, jump, delay);
 	op->cond = map_cond2radare (cond);
 }
 
-static void arcompact_branch(RAnalOp *op, ut64 addr, st64 offset, ut8 delay) {
+static void arcompact_branch (RAnalOp *op, ut64 addr, st64 offset, ut8 delay) {
 	arcompact_jump (op, addr, (addr & ~3) + offset, delay);
 }
 
-static void map_zz2refptr(RAnalOp *op, ut8 mode_zz) {
+static void map_zz2refptr (RAnalOp *op, ut8 mode_zz) {
 	switch (mode_zz) {
 	case 0: op->refptr = 4; break;
 	case 1: op->refptr = 1; break;
@@ -121,7 +121,7 @@ static void map_zz2refptr(RAnalOp *op, ut8 mode_zz) {
 	}
 }
 
-static int arcompact_genops_jmp(RAnalOp *op, ut64 addr, arc_fields *f, ut64 basic_type) {
+static int arcompact_genops_jmp (RAnalOp *op, ut64 addr, arc_fields *f, ut64 basic_type) {
 	ut64 type_ujmp;
 	ut64 type_cjmp;
 	ut64 type_ucjmp;
@@ -200,8 +200,8 @@ static int arcompact_genops_jmp(RAnalOp *op, ut64 addr, arc_fields *f, ut64 basi
 	return 0;
 }
 
-static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
-	arc_fields fields = {0};
+static int arcompact_genops (RAnalOp *op, ut64 addr, ut32 words[2]) {
+	arc_fields fields = { 0 };
 
 	fields.format = (words[0] & 0x00c00000) >> 22;
 	fields.subopcode = (words[0] & 0x003f0000) >> 16;
@@ -445,7 +445,7 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 	return op->size;
 }
 
-static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int arcompact_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	ut32 words[2]; /* storage for the de-swizled opcode data */
 	arc_fields fields;
 
@@ -481,9 +481,9 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 
 	fields.opcode = (words[0] & 0xf8000000) >> 27;
 
-	op->size = (fields.opcode >= 0x0c)? 2: 4;
+	op->size = (fields.opcode >= 0x0c) ? 2 : 4;
 	op->nopcode = op->size;
-// eprintf ("%x\n", fields.opcode);
+	// eprintf ("%x\n", fields.opcode);
 
 	switch (fields.opcode) {
 	case 0:
@@ -800,9 +800,9 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		case 0xc:
 			op->type = R_ANAL_OP_TYPE_MUL;
 			break;
-		case 0xd:  /* Sign extend byte */
-		case 0xe:  /* Sign extend word */
-		case 0xf:  /* Zero extend byte */
+		case 0xd: /* Sign extend byte */
+		case 0xe: /* Sign extend word */
+		case 0xf: /* Zero extend byte */
 		case 0x10: /* Zero extend word */
 		case 0x13: /* Negate */
 			op->type = R_ANAL_OP_TYPE_CPL;
@@ -918,7 +918,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		case 6: /* POP Register from Stack, 0x18, [0x06, 0x00-0x1F] */
 			fields.c = (words[0] & 0x001f0000) >> 16;
 			switch (fields.c) {
-			case 1:    /* Pop register from stack */
+			case 1: /* Pop register from stack */
 			case 0x11: /* Pop blink from stack */
 				op->type = R_ANAL_OP_TYPE_POP;
 				break;
@@ -930,7 +930,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		case 7: /* PUSH Register to Stack, 0x18, [0x07, 0x00-0x1F] */
 			fields.c = (words[0] & 0x001f0000) >> 16;
 			switch (fields.c) {
-			case 1:    /* Push register to stack */
+			case 1: /* Push register to stack */
 			case 0x11: /* Push blink to stack */
 				op->type = R_ANAL_OP_TYPE_PUSH;
 				break;
@@ -1013,7 +1013,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 	return op->size;
 }
 
-static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static int arc_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	const ut8 *b = (ut8 *)data;
 
 	if (anal->bits == 16) {
@@ -1023,7 +1023,7 @@ static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len,
 	/* ARCtangent A4 */
 	op->size = 4;
 	op->fail = addr + 4;
-	ut8 basecode = (len > 3)? ((b[3] & 0xf8) >> 3): 0;
+	ut8 basecode = (len > 3) ? ((b[3] & 0xf8) >> 3) : 0;
 	switch (basecode) {
 	case 0x04: /* Branch */
 	case 0x05: /* Branch with Link */
@@ -1065,7 +1065,7 @@ static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len,
 	return op->size;
 }
 
-static int archinfo(RAnal *anal, int query) {
+static int archinfo (RAnal *anal, int query) {
 	if (anal->bits != 16) {
 		return -1;
 	}
@@ -1082,7 +1082,7 @@ static int archinfo(RAnal *anal, int query) {
 	}
 }
 
-static bool set_reg_profile(RAnal *anal) {
+static bool set_reg_profile (RAnal *anal) {
 	if (anal->bits != 16) {
 		return false;
 	}

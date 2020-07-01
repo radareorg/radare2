@@ -1,6 +1,6 @@
 /* Copyleft 2012 - sdb (aka SimpleDB) - pancake<nopcode.org> */
 
-int test_parse_json_path() {
+int test_parse_json_path () {
 	Rangstr rs = rangstr_new ("ping.board[\"pop\"][1][2][\"caca\"].panda");
 	json_path_first (&rs);
 	do {

@@ -5,11 +5,11 @@
 #include <r_util/r_rbtree.h>
 #include <r_util.h>
 
-static inline bool red(RBNode *x) {
+static inline bool red (RBNode *x) {
 	return x && x->red;
 }
 
-static inline RBNode *zag(RBNode *x, int dir, RBNodeSum sum) {
+static inline RBNode *zag (RBNode *x, int dir, RBNodeSum sum) {
 	RBNode *y = x->child[dir];
 	x->child[dir] = y->child[!dir];
 	y->child[!dir] = x;
@@ -21,7 +21,7 @@ static inline RBNode *zag(RBNode *x, int dir, RBNodeSum sum) {
 	return y;
 }
 
-static inline RBNode *zig_zag(RBNode *x, int dir, RBNodeSum sum) {
+static inline RBNode *zig_zag (RBNode *x, int dir, RBNodeSum sum) {
 	RBNode *y = x->child[dir], *z = y->child[!dir];
 	y->child[!dir] = z->child[dir];
 	z->child[dir] = y;
@@ -36,7 +36,7 @@ static inline RBNode *zig_zag(RBNode *x, int dir, RBNodeSum sum) {
 	return z;
 }
 
-static inline RBIter bound_iter(RBNode *x, void *data, RBComparator cmp, bool upper, void *user) {
+static inline RBIter bound_iter (RBNode *x, void *data, RBComparator cmp, bool upper, void *user) {
 	RBIter it;
 	it.len = 0;
 	while (x) {
@@ -86,7 +86,7 @@ static void _check(RBNode *x) {
 */
 
 // Returns true if a node with an equal key is deleted
-R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void *cmp_user, RBNodeFree freefn, void *free_user, RBNodeSum sum) {
+R_API bool r_rbtree_aug_delete (RBNode **root, void *data, RBComparator cmp, void *cmp_user, RBNodeFree freefn, void *free_user, RBNodeSum sum) {
 	RBNode head, *del = NULL, **del_link = NULL, *g = NULL, *p = NULL, *q = &head, *path[R_RBTREE_MAX_HEIGHT];
 	int d = 1, d2, dep = 0;
 	head.child[0] = NULL;
@@ -182,7 +182,7 @@ R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void
 }
 
 // Returns true if stuff got inserted, else false
-R_API bool r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBComparator cmp, void *cmp_user, RBNodeSum sum) {
+R_API bool r_rbtree_aug_insert (RBNode **root, void *data, RBNode *node, RBComparator cmp, void *cmp_user, RBNodeSum sum) {
 	node->child[0] = node->child[1] = NULL;
 	if (!*root) {
 		*root = node;
@@ -254,7 +254,7 @@ R_API bool r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBCompar
 }
 
 // returns true if the sum has been updated, false if node has not been found
-R_API bool r_rbtree_aug_update_sum(RBNode *root, void *data, RBNode *node, RBComparator cmp, void *cmp_user, RBNodeSum sum) {
+R_API bool r_rbtree_aug_update_sum (RBNode *root, void *data, RBNode *node, RBComparator cmp, void *cmp_user, RBNodeSum sum) {
 	size_t dep = 0;
 	RBNode *path[R_RBTREE_MAX_HEIGHT];
 	RBNode *cur = root;
@@ -272,7 +272,7 @@ R_API bool r_rbtree_aug_update_sum(RBNode *root, void *data, RBNode *node, RBCom
 			break;
 		}
 		int d = cmp (data, cur, cmp_user);
-		cur = cur->child[(d < 0)? 0: 1];
+		cur = cur->child[(d < 0) ? 0 : 1];
 	}
 
 	for (; dep > 0; dep--) {
@@ -281,11 +281,11 @@ R_API bool r_rbtree_aug_update_sum(RBNode *root, void *data, RBNode *node, RBCom
 	return true;
 }
 
-R_API bool r_rbtree_delete(RBNode **root, void *data, RBComparator cmp, void *cmp_user, RBNodeFree freefn, void *free_user) {
+R_API bool r_rbtree_delete (RBNode **root, void *data, RBComparator cmp, void *cmp_user, RBNodeFree freefn, void *free_user) {
 	return r_rbtree_aug_delete (root, data, cmp, cmp_user, freefn, free_user, NULL);
 }
 
-R_API RBNode *r_rbtree_find(RBNode *x, void *data, RBComparator cmp, void *user) {
+R_API RBNode *r_rbtree_find (RBNode *x, void *data, RBComparator cmp, void *user) {
 	while (x) {
 		int d = cmp (data, x, user);
 		if (d < 0) {
@@ -299,7 +299,7 @@ R_API RBNode *r_rbtree_find(RBNode *x, void *data, RBComparator cmp, void *user)
 	return NULL;
 }
 
-R_API void r_rbtree_free(RBNode *x, RBNodeFree freefn, void *user) {
+R_API void r_rbtree_free (RBNode *x, RBNodeFree freefn, void *user) {
 	if (x) {
 		r_rbtree_free (x->child[0], freefn, user);
 		r_rbtree_free (x->child[1], freefn, user);
@@ -307,11 +307,11 @@ R_API void r_rbtree_free(RBNode *x, RBNodeFree freefn, void *user) {
 	}
 }
 
-R_API void r_rbtree_insert(RBNode **root, void *data, RBNode *node, RBComparator cmp, void *user) {
+R_API void r_rbtree_insert (RBNode **root, void *data, RBNode *node, RBComparator cmp, void *user) {
 	r_rbtree_aug_insert (root, data, node, cmp, user, NULL);
 }
 
-R_API RBNode *r_rbtree_lower_bound(RBNode *x, void *data, RBComparator cmp, void *user) {
+R_API RBNode *r_rbtree_lower_bound (RBNode *x, void *data, RBComparator cmp, void *user) {
 	RBNode *ret = NULL;
 	while (x) {
 		int d = cmp (data, x, user);
@@ -325,11 +325,11 @@ R_API RBNode *r_rbtree_lower_bound(RBNode *x, void *data, RBComparator cmp, void
 	return ret;
 }
 
-R_API RBIter r_rbtree_lower_bound_forward(RBNode *root, void *data, RBComparator cmp, void *user) {
+R_API RBIter r_rbtree_lower_bound_forward (RBNode *root, void *data, RBComparator cmp, void *user) {
 	return bound_iter (root, data, cmp, false, user);
 }
 
-R_API RBNode *r_rbtree_upper_bound(RBNode *x, void *data, RBComparator cmp, void *user) {
+R_API RBNode *r_rbtree_upper_bound (RBNode *x, void *data, RBComparator cmp, void *user) {
 	void *ret = NULL;
 	while (x) {
 		int d = cmp (data, x, user);
@@ -343,11 +343,11 @@ R_API RBNode *r_rbtree_upper_bound(RBNode *x, void *data, RBComparator cmp, void
 	return ret;
 }
 
-R_API RBIter r_rbtree_upper_bound_backward(RBNode *root, void *data, RBComparator cmp, void *user) {
+R_API RBIter r_rbtree_upper_bound_backward (RBNode *root, void *data, RBComparator cmp, void *user) {
 	return bound_iter (root, data, cmp, true, user);
 }
 
-static RBIter _first(RBNode *x, int dir) {
+static RBIter _first (RBNode *x, int dir) {
 	RBIter it;
 	it.len = 0;
 	for (; x; x = x->child[dir]) {
@@ -356,34 +356,34 @@ static RBIter _first(RBNode *x, int dir) {
 	return it;
 }
 
-R_API RBIter r_rbtree_first(RBNode *tree) {
+R_API RBIter r_rbtree_first (RBNode *tree) {
 	return _first (tree, 0);
 }
 
-R_API RBIter r_rbtree_last(RBNode *tree) {
+R_API RBIter r_rbtree_last (RBNode *tree) {
 	return _first (tree, 1);
 }
 
-static inline void _next(RBIter *it, int dir) {
+static inline void _next (RBIter *it, int dir) {
 	RBNode *x = it->path[--it->len];
 	for (x = x->child[!dir]; x; x = x->child[dir]) {
 		it->path[it->len++] = x;
 	}
 }
 
-R_API void r_rbtree_iter_next(RBIter *it) {
+R_API void r_rbtree_iter_next (RBIter *it) {
 	_next (it, 0);
 }
 
-R_API void r_rbtree_iter_prev(RBIter *it) {
+R_API void r_rbtree_iter_prev (RBIter *it) {
 	_next (it, 1);
 }
 
-R_API RContRBTree *r_rbtree_cont_new(void) {
+R_API RContRBTree *r_rbtree_cont_new (void) {
 	return R_NEW0 (RContRBTree);
 }
 
-R_API RContRBTree *r_rbtree_cont_newf(RContRBFree f) {
+R_API RContRBTree *r_rbtree_cont_newf (RContRBFree f) {
 	RContRBTree *tree = r_rbtree_cont_new ();
 	if (tree) {
 		tree->free = f;
@@ -397,30 +397,30 @@ typedef struct rcrb_cmp_wrap_t {
 	void *user;
 } RCRBCmpWrap;
 
-static int cont_rbtree_cmp_wrapper(const void *incoming, const RBNode *in_tree, void *user) {
+static int cont_rbtree_cmp_wrapper (const void *incoming, const RBNode *in_tree, void *user) {
 	RCRBCmpWrap *cmp_wrap = (RCRBCmpWrap *)user;
 	RContRBNode *incoming_node = (RContRBNode *)incoming;
-	RContRBNode *in_tree_node = container_of ((RBNode*)in_tree, RContRBNode, node);
+	RContRBNode *in_tree_node = container_of ((RBNode *)in_tree, RContRBNode, node);
 	return cmp_wrap->cmp (incoming_node->data, in_tree_node->data, cmp_wrap->user);
 }
 
-static int cont_rbtree_search_cmp_wrapper(const void *incoming, const RBNode *in_tree, void *user) {
+static int cont_rbtree_search_cmp_wrapper (const void *incoming, const RBNode *in_tree, void *user) {
 	RCRBCmpWrap *cmp_wrap = (RCRBCmpWrap *)user;
-	RContRBNode *in_tree_node = container_of ((RBNode*)in_tree, RContRBNode, node);
+	RContRBNode *in_tree_node = container_of ((RBNode *)in_tree, RContRBNode, node);
 	return cmp_wrap->cmp ((void *)incoming, in_tree_node->data, cmp_wrap->user);
 }
 
-static int cont_rbtree_free_cmp_wrapper(const void *data, const RBNode *in_tree, void *user) {
+static int cont_rbtree_free_cmp_wrapper (const void *data, const RBNode *in_tree, void *user) {
 	RCRBCmpWrap *cmp_wrap = (RCRBCmpWrap *)user;
-	const int ret = cont_rbtree_cmp_wrapper ((void*)data, in_tree, user);
+	const int ret = cont_rbtree_cmp_wrapper ((void *)data, in_tree, user);
 	if (!ret && cmp_wrap->free) { //this is for deleting
-		RContRBNode *in_tree_node = container_of ((void*)in_tree, RContRBNode, node);
+		RContRBNode *in_tree_node = container_of ((void *)in_tree, RContRBNode, node);
 		cmp_wrap->free (in_tree_node->data);
 	}
 	return ret;
 }
 
-R_API bool r_rbtree_cont_insert(RContRBTree *tree, void *data, RContRBCmp cmp, void *user) {
+R_API bool r_rbtree_cont_insert (RContRBTree *tree, void *data, RContRBCmp cmp, void *user) {
 	r_return_val_if_fail (tree && cmp, false);
 	if (!tree->root) {
 		tree->root = R_NEW0 (RContRBNode);
@@ -452,7 +452,7 @@ R_API bool r_rbtree_cont_insert(RContRBTree *tree, void *data, RContRBCmp cmp, v
 	return ret;
 }
 
-static void cont_node_free(RBNode *node, void *user) {
+static void cont_node_free (RBNode *node, void *user) {
 	RContRBNode *contnode = container_of (node, RContRBNode, node);
 	if (user) {
 		((RContRBFree)user) (contnode->data);
@@ -460,7 +460,7 @@ static void cont_node_free(RBNode *node, void *user) {
 	free (contnode);
 }
 
-R_API bool r_rbtree_cont_delete(RContRBTree *tree, void *data, RContRBCmp cmp, void *user) {
+R_API bool r_rbtree_cont_delete (RContRBTree *tree, void *data, RContRBCmp cmp, void *user) {
 	if (!(tree && cmp && tree->root)) {
 		return false;
 	}
@@ -468,13 +468,13 @@ R_API bool r_rbtree_cont_delete(RContRBTree *tree, void *data, RContRBCmp cmp, v
 	RContRBNode data_wrap = { { { NULL, NULL }, false }, data };
 	RBNode *root_node = &tree->root->node;
 	const bool ret = r_rbtree_aug_delete (&root_node, &data_wrap, cont_rbtree_free_cmp_wrapper, &cmp_wrap, cont_node_free, NULL, NULL);
-	if (root_node != (&tree->root->node)) {	//can this crash?
+	if (root_node != (&tree->root->node)) { //can this crash?
 		tree->root = container_of (root_node, RContRBNode, node); //cursed augmentation garbage
 	}
 	return ret;
 }
 
-R_API void *r_rbtree_cont_find(RContRBTree *tree, void *data, RContRBCmp cmp, void *user) {
+R_API void *r_rbtree_cont_find (RContRBTree *tree, void *data, RContRBCmp cmp, void *user) {
 	r_return_val_if_fail (tree && cmp, NULL);
 	if (!tree->root) {
 		return NULL;
@@ -488,7 +488,7 @@ R_API void *r_rbtree_cont_find(RContRBTree *tree, void *data, RContRBCmp cmp, vo
 	return NULL;
 }
 
-R_API void r_rbtree_cont_free(RContRBTree *tree) {
+R_API void r_rbtree_cont_free (RContRBTree *tree) {
 	if (tree && tree->root) {
 		r_rbtree_free (&tree->root->node, cont_node_free, tree->free);
 	}

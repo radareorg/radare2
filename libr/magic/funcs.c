@@ -41,7 +41,7 @@
 #endif
 
 // copypasta to fix an OPENBSDBUG
-static int file_vprintf(RMagic *ms, const char *fmt, va_list ap) {
+static int file_vprintf (RMagic *ms, const char *fmt, va_list ap) {
 	va_list ap2;
 	char cbuf[4096];
 	char *buf, *newstr;
@@ -99,7 +99,7 @@ out:
 /*
  * Like printf, only we append to a buffer.
  */
-int file_printf(RMagic *ms, const char *fmt, ...) {
+int file_printf (RMagic *ms, const char *fmt, ...) {
 	va_list ap;
 	int ret;
 
@@ -113,18 +113,18 @@ int file_printf(RMagic *ms, const char *fmt, ...) {
  * error - print best error message possible
  */
 /*VARARGS*/
-static void file_error_core(RMagic *ms, int error, const char *f, va_list va, ut32 lineno) {
+static void file_error_core (RMagic *ms, int error, const char *f, va_list va, ut32 lineno) {
 	/* Only the first error is ok */
 	if (!ms || ms->haderr) {
 		return;
 	}
 	if (lineno != 0) {
-		free(ms->o.buf);
+		free (ms->o.buf);
 		ms->o.buf = NULL;
 		(void)file_printf (ms, "line %u: ", lineno);
 	}
 	// OPENBSDBUG
-        file_vprintf (ms, f, va);
+	file_vprintf (ms, f, va);
 	if (error > 0) {
 		(void)file_printf (ms, " (%s)", strerror (error));
 	}
@@ -133,7 +133,7 @@ static void file_error_core(RMagic *ms, int error, const char *f, va_list va, ut
 }
 
 /*VARARGS*/
-void file_error(RMagic *ms, int error, const char *f, ...) {
+void file_error (RMagic *ms, int error, const char *f, ...) {
 	va_list va;
 	va_start (va, f);
 	file_error_core (ms, error, f, va, 0);
@@ -144,26 +144,26 @@ void file_error(RMagic *ms, int error, const char *f, ...) {
  * Print an error with magic line number.
  */
 /*VARARGS*/
-void file_magerror(RMagic *ms, const char *f, ...) {
+void file_magerror (RMagic *ms, const char *f, ...) {
 	va_list va;
 	va_start (va, f);
 	file_error_core (ms, 0, f, va, ms->line);
 	va_end (va);
 }
 
-void file_oomem(RMagic *ms, size_t len) {
+void file_oomem (RMagic *ms, size_t len) {
 	file_error (ms, errno, "cannot allocate %zu bytes", len);
 }
 
-void file_badseek(RMagic *ms) {
+void file_badseek (RMagic *ms) {
 	file_error (ms, errno, "error seeking");
 }
 
-void file_badread(RMagic *ms) {
+void file_badread (RMagic *ms) {
 	file_error (ms, errno, "error reading");
 }
 
-int file_buffer(RMagic *ms, int fd, const char *inname, const void *buf, size_t nb) {
+int file_buffer (RMagic *ms, int fd, const char *inname, const void *buf, size_t nb) {
 	int mime, m = 0;
 	if (!ms) {
 		return -1;
@@ -188,32 +188,32 @@ int file_buffer(RMagic *ms, int fd, const char *inname, const void *buf, size_t 
 	if ((ms->flags & R_MAGIC_NO_CHECK_COMPRESS) != 0 ||
 	    (m = file_zmagic(ms, fd, inname, buf, nb)) == 0) {
 #endif
-	    /* Check if we have a tar file */
-	    if ((ms->flags & R_MAGIC_NO_CHECK_TAR) != 0 ||
-		(m = file_is_tar(ms, buf, nb)) == 0) {
+	/* Check if we have a tar file */
+	if ((ms->flags & R_MAGIC_NO_CHECK_TAR) != 0 ||
+		(m = file_is_tar (ms, buf, nb)) == 0) {
 		/* try tests in /etc/magic (or surrogate magic file) */
 		if ((ms->flags & R_MAGIC_NO_CHECK_SOFT) != 0 ||
-		    (m = file_softmagic(ms, buf, nb, BINTEST)) == 0) {
-		    /* try known keywords, check whether it is ASCII */
-		    if ((ms->flags & R_MAGIC_NO_CHECK_ASCII) != 0 ||
-			(m = file_ascmagic(ms, buf, nb)) == 0) {
-			/* abandon hope, all ye who remain here */
-			if ((!mime || (mime & R_MAGIC_MIME_TYPE))) {
-		//		if (mime)
+			(m = file_softmagic (ms, buf, nb, BINTEST)) == 0) {
+			/* try known keywords, check whether it is ASCII */
+			if ((ms->flags & R_MAGIC_NO_CHECK_ASCII) != 0 ||
+				(m = file_ascmagic (ms, buf, nb)) == 0) {
+				/* abandon hope, all ye who remain here */
+				if ((!mime || (mime & R_MAGIC_MIME_TYPE))) {
+					//		if (mime)
 					file_printf (ms, "application/octet-stream");
-				return -1;
+					return -1;
+				}
+				m = 1;
 			}
-			m = 1;
-		    }
 		}
-	    }
+	}
 #if 0
 	}
 #endif
 	return m;
 }
 
-int file_reset(RMagic *ms) {
+int file_reset (RMagic *ms) {
 	if (!ms) {
 		return 0;
 	}
@@ -228,15 +228,15 @@ int file_reset(RMagic *ms) {
 	return 0;
 }
 
-#define OCTALIFY(n, o)	\
-	/*LINTED*/ \
-	(void)(*(n)++ = '\\', \
-	*(n)++ = (((ut32)*(o) >> 6) & 3) + '0', \
-	*(n)++ = (((ut32)*(o) >> 3) & 7) + '0', \
-	*(n)++ = (((ut32)*(o) >> 0) & 7) + '0', \
-	(o)++)
+#define OCTALIFY(n, o)                                    \
+	/*LINTED*/                                        \
+	(void)(*(n)++ = '\\',                             \
+		*(n)++ = (((ut32) * (o) >> 6) & 3) + '0', \
+		*(n)++ = (((ut32) * (o) >> 3) & 7) + '0', \
+		*(n)++ = (((ut32) * (o) >> 0) & 7) + '0', \
+		(o)++)
 
-const char *file_getbuffer(RMagic *ms) {
+const char *file_getbuffer (RMagic *ms) {
 	char *pbuf, *op, *np;
 	size_t psize, len;
 
@@ -267,30 +267,30 @@ const char *file_getbuffer(RMagic *ms) {
 	ms->o.pbuf = pbuf;
 
 #if 1
-//defined(HAVE_WCHAR_H) && defined(HAVE_MBRTOWC) && defined(HAVE_WCWIDTH)
+	//defined(HAVE_WCHAR_H) && defined(HAVE_MBRTOWC) && defined(HAVE_WCWIDTH)
 	{
 		mbstate_t state;
 		wchar_t nextchar;
 		int mb_conv = 1;
 		size_t bytesconsumed;
 		char *eop;
-		(void)memset(&state, 0, sizeof(mbstate_t));
+		(void)memset (&state, 0, sizeof (mbstate_t));
 
 		np = ms->o.pbuf;
 		op = ms->o.buf;
 		eop = op + len;
 
 		while (op < eop) {
-			bytesconsumed = mbrtowc(&nextchar, op,
-			    (size_t)(eop - op), &state);
-			if (bytesconsumed == (size_t)(-1) ||
-			    bytesconsumed == (size_t)(-2)) {
+			bytesconsumed = mbrtowc (&nextchar, op,
+				(size_t) (eop - op), &state);
+			if (bytesconsumed == (size_t) (-1) ||
+				bytesconsumed == (size_t) (-2)) {
 				mb_conv = 0;
 				break;
 			}
 
-			if (iswprint(nextchar)) {
-				(void)memcpy(np, op, bytesconsumed);
+			if (iswprint (nextchar)) {
+				(void)memcpy (np, op, bytesconsumed);
 				op += bytesconsumed;
 				np += bytesconsumed;
 			} else {
@@ -309,7 +309,7 @@ const char *file_getbuffer(RMagic *ms) {
 #endif
 	for (np = ms->o.pbuf, op = ms->o.buf; *op; op++) {
 		if (isprint ((ut8)*op)) {
-			*np++ = *op;	
+			*np++ = *op;
 		} else {
 			OCTALIFY (np, op);
 		}
@@ -318,11 +318,10 @@ const char *file_getbuffer(RMagic *ms) {
 	return ms->o.pbuf;
 }
 
-int file_check_mem(RMagic *ms, unsigned int level) {
+int file_check_mem (RMagic *ms, unsigned int level) {
 	if (level >= ms->c.len) {
 		size_t len = (ms->c.len += 20) * sizeof (*ms->c.li);
-		ms->c.li = (!ms->c.li) ? malloc (len) :
-		    realloc (ms->c.li, len);
+		ms->c.li = (!ms->c.li) ? malloc (len) : realloc (ms->c.li, len);
 		if (!ms->c.li) {
 			file_oomem (ms, len);
 			return -1;

@@ -24,8 +24,8 @@ static csh cd = 0;
 
 #if CAPSTONE_HAS_TMS320C64X
 
-static int tms320c64x_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	cs_insn* insn;
+static int tms320c64x_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	cs_insn *insn;
 	int n = -1, ret = -1;
 	int mode = 0;
 	if (op) {
@@ -56,14 +56,14 @@ static int tms320c64x_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) 
 		goto beach;
 	}
 	op->size = insn->size;
-	char *buf_asm = sdb_fmt ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
+	char *buf_asm = sdb_fmt ("%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
 	r_str_replace_char (buf_asm, '%', 0);
 	r_str_case (buf_asm, false);
 	r_asm_op_set_asm (op, buf_asm);
 	cs_free (insn, n);
-	beach:
-	// cs_close (&cd);
-	fin:
+beach:
+// cs_close (&cd);
+fin:
 	return ret;
 }
 #endif
@@ -72,12 +72,12 @@ static int tms320c64x_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) 
 
 static tms320_dasm_t engine = { 0 };
 
-static int tms320_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int tms320_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (a->cpu && r_str_casecmp (a->cpu, "c54x") == 0) {
 		tms320_f_set_cpu (&engine, TMS320_F_CPU_C54X);
-	} else if (a->cpu && r_str_casecmp(a->cpu, "c55x+") == 0) {
+	} else if (a->cpu && r_str_casecmp (a->cpu, "c55x+") == 0) {
 		tms320_f_set_cpu (&engine, TMS320_F_CPU_C55X_PLUS);
-	} else if (a->cpu && r_str_casecmp(a->cpu, "c55x") == 0) {
+	} else if (a->cpu && r_str_casecmp (a->cpu, "c55x") == 0) {
 		tms320_f_set_cpu (&engine, TMS320_F_CPU_C55X);
 	} else {
 #if CAPSTONE_HAS_TMS320C64X
@@ -93,11 +93,11 @@ static int tms320_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static bool tms320_init(void * user) {
+static bool tms320_init (void *user) {
 	return tms320_dasm_init (&engine);
 }
 
-static bool tms320_fini(void * user) {
+static bool tms320_fini (void *user) {
 	return tms320_dasm_fini (&engine);
 }
 

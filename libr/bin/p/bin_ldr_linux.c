@@ -5,16 +5,15 @@
 #include <r_lib.h>
 #include <r_bin.h>
 
-static bool load(RBin *bin) {
+static bool load (RBin *bin) {
 	if (!bin || !bin->cur) {
-	    return false;
+		return false;
 	}
 	if (!bin->file) {
-	   	bin->file = bin->cur->file;
+		bin->file = bin->cur->file;
 	}
-	return bin->cur->xtr_obj? true : false;
+	return bin->cur->xtr_obj ? true : false;
 }
-
 
 RBinLdrPlugin r_bin_ldr_plugin_ldr_linux = {
 	.name = "ldr.linux",

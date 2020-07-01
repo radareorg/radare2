@@ -31,10 +31,7 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
-
 #include "zipint.h"
-
 
 /*
   NOTE: Return type is signed so we can return -1 on error.
@@ -44,12 +41,11 @@
 */
 
 ZIP_EXTERN zip_int64_t
-zip_file_add(struct zip *za, const char *name, struct zip_source *source, zip_flags_t flags)
-{
-    if (name == NULL || source == NULL) {
-	_zip_error_set(&za->error, ZIP_ER_INVAL, 0);
-	return -1;
-    }
-	
-    return _zip_file_replace(za, ZIP_UINT64_MAX, name, source, flags);
+zip_file_add (struct zip *za, const char *name, struct zip_source *source, zip_flags_t flags) {
+	if (name == NULL || source == NULL) {
+		_zip_error_set (&za->error, ZIP_ER_INVAL, 0);
+		return -1;
+	}
+
+	return _zip_file_replace (za, ZIP_UINT64_MAX, name, source, flags);
 }

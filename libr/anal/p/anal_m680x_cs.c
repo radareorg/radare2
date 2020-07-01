@@ -12,7 +12,7 @@
 
 #if !CAPSTONE_HAS_M680X
 #ifdef _MSC_VER
-#pragma message ("Cannot find support for m680x in capstone")
+#pragma message("Cannot find support for m680x in capstone")
 #else
 #warning Cannot find capstone-m680x support
 #endif
@@ -21,7 +21,7 @@
 #if CAPSTONE_HAS_M680X
 #include <capstone/m680x.h>
 
-static int m680xmode(const char *str) {
+static int m680xmode (const char *str) {
 	if (!str) {
 		return CS_MODE_M680X_6800;
 	}
@@ -40,7 +40,7 @@ static int m680xmode(const char *str) {
 	} else if (str && strstr (str, "6811")) {
 		return CS_MODE_M680X_6811;
 	}
-//
+	//
 	if (str && strstr (str, "cpu12")) {
 		return CS_MODE_M680X_CPU12;
 	}
@@ -59,12 +59,12 @@ static int m680xmode(const char *str) {
 #define IMM(x) insn->detail->m680x.operands[x].imm
 #define REL(x) insn->detail->m680x.operands[x].rel
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int analop (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	int n, ret, opsize = -1;
 	static csh handle = 0;
 	static int omode = -1;
 	static int obits = 32;
-	cs_insn* insn;
+	cs_insn *insn;
 
 	int mode = m680xmode (a->cpu);
 
@@ -82,7 +82,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		}
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
-	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
+	n = cs_disasm (handle, (ut8 *)buf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->size = 2;
@@ -157,7 +157,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		break;
 	case M680X_INS_BRA:
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = addr + op->size + REL(0).offset;
+		op->jump = addr + op->size + REL (0).offset;
 		op->fail = UT64_MAX;
 		break;
 	case M680X_INS_BEQ:
@@ -184,7 +184,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M680X_INS_BVC:
 	case M680X_INS_BVS:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = addr + op->size + REL(0).offset;
+		op->jump = addr + op->size + REL (0).offset;
 		op->fail = addr + op->size;
 		break;
 	case M680X_INS_CALL:
@@ -515,8 +515,8 @@ fin:
 }
 
 // XXX
-static bool set_reg_profile(RAnal *anal) {
-	const char *p = \
+static bool set_reg_profile (RAnal *anal) {
+	const char *p =
 		"=PC    pc\n"
 		"=SP    sp\n"
 		"=A0    a0\n"

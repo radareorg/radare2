@@ -60,41 +60,41 @@ typedef struct r_spaces_t {
 } RSpaces;
 
 // Create a new RSpaces with the given name
-R_API RSpaces *r_spaces_new(const char *name);
+R_API RSpaces *r_spaces_new (const char *name);
 // Initialize an existing RSpaces with the given name
-R_API bool r_spaces_init(RSpaces *sp, const char *name);
+R_API bool r_spaces_init (RSpaces *sp, const char *name);
 // Finalize an existing RSpaces
-R_API void r_spaces_fini(RSpaces *sp);
+R_API void r_spaces_fini (RSpaces *sp);
 // Finalize and free an existing RSpaces
-R_API void r_spaces_free(RSpaces *sp);
+R_API void r_spaces_free (RSpaces *sp);
 // Delete all spaces
-R_API void r_spaces_purge(RSpaces *sp);
+R_API void r_spaces_purge (RSpaces *sp);
 // Get the RSpace with the given name
-R_API RSpace *r_spaces_get(RSpaces *sp, const char *name);
+R_API RSpace *r_spaces_get (RSpaces *sp, const char *name);
 // Add a new RSpace if one does not already exist, otherwise return the existing one
-R_API RSpace *r_spaces_add(RSpaces *sp, const char *name);
+R_API RSpace *r_spaces_add (RSpaces *sp, const char *name);
 // Add and select a new RSpace if one does not already exist, otherwise return and select the existing one
-R_API RSpace *r_spaces_set(RSpaces *sp, const char *name);
+R_API RSpace *r_spaces_set (RSpaces *sp, const char *name);
 // Remove the RSpace with the given name or all of them if name is NULL
-R_API bool r_spaces_unset(RSpaces *sp, const char *name);
+R_API bool r_spaces_unset (RSpaces *sp, const char *name);
 // Change the name of RSpace with oname to nname
-R_API bool r_spaces_rename(RSpaces *sp, const char *oname, const char *nname);
+R_API bool r_spaces_rename (RSpaces *sp, const char *oname, const char *nname);
 // Count the elements that belong to the RSpace with the given name
-R_API int r_spaces_count(RSpaces *sp, const char *name);
+R_API int r_spaces_count (RSpaces *sp, const char *name);
 // Add/Select the RSpace with the given name and save the current one in the history
-R_API bool r_spaces_push(RSpaces *sp, const char *name);
+R_API bool r_spaces_push (RSpaces *sp, const char *name);
 // Select the RSpace that was set before the current one
-R_API bool r_spaces_pop(RSpaces *sp);
+R_API bool r_spaces_pop (RSpaces *sp);
 
-static inline RSpace *r_spaces_current(RSpaces *sp) {
+static inline RSpace *r_spaces_current (RSpaces *sp) {
 	return sp->current;
 }
 
-static inline const char *r_spaces_current_name(RSpaces *sp) {
-	return sp->current? sp->current->name: "*";
+static inline const char *r_spaces_current_name (RSpaces *sp) {
+	return sp->current ? sp->current->name : "*";
 }
 
-static inline bool r_spaces_is_empty(RSpaces *sp) {
+static inline bool r_spaces_is_empty (RSpaces *sp) {
 	RBIter it = r_rbtree_first (sp->spaces);
 	return it.len == 0;
 }

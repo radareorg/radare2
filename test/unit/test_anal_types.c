@@ -2,8 +2,7 @@
 #include <r_parse.h>
 #include "minunit.h"
 
-
-static void setup_sdb_for_struct(Sdb *res) {
+static void setup_sdb_for_struct (Sdb *res) {
 	// "td struct kappa {int bar;int cow;};"
 	sdb_set (res, "kappa", "struct", 0);
 	sdb_set (res, "struct.kappa", "bar,cow", 0);
@@ -11,7 +10,7 @@ static void setup_sdb_for_struct(Sdb *res) {
 	sdb_set (res, "struct.kappa.cow", "int32_t,4,0", 0);
 }
 
-static void setup_sdb_for_union(Sdb *res) {
+static void setup_sdb_for_union (Sdb *res) {
 	// "td union kappa {int bar;int cow;};"
 	sdb_set (res, "kappa", "union", 0);
 	sdb_set (res, "union.kappa", "bar,cow", 0);
@@ -19,7 +18,7 @@ static void setup_sdb_for_union(Sdb *res) {
 	sdb_set (res, "union.kappa.cow", "int32_t,0,0", 0);
 }
 
-static void setup_sdb_for_enum(Sdb *res) {
+static void setup_sdb_for_enum (Sdb *res) {
 	// "td enum foo { firstCase=1, secondCase=2,};"
 	sdb_set (res, "foo", "enum", 0);
 	sdb_set (res, "enum.foo", "firstCase,secondCase", 0);
@@ -27,7 +26,7 @@ static void setup_sdb_for_enum(Sdb *res) {
 	sdb_set (res, "enum.foo.secondCase", "0x2", 0);
 }
 
-static void setup_sdb_for_not_found(Sdb *res) {
+static void setup_sdb_for_not_found (Sdb *res) {
 	// malformed type states
 	sdb_set (res, "foo", "enum", 0);
 	sdb_set (res, "bar", "struct", 0);
@@ -42,7 +41,7 @@ static void setup_sdb_for_not_found(Sdb *res) {
 	sdb_set (res, "struct.omega.ff", "", 0);
 }
 
-static bool test_anal_get_base_type_struct(void) {
+static bool test_anal_get_base_type_struct (void) {
 	RAnal *anal = r_anal_new ();
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
@@ -72,7 +71,7 @@ static bool test_anal_get_base_type_struct(void) {
 	mu_end;
 }
 
-static bool test_anal_get_base_type_union(void) {
+static bool test_anal_get_base_type_union (void) {
 	RAnal *anal = r_anal_new ();
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
@@ -100,7 +99,7 @@ static bool test_anal_get_base_type_union(void) {
 	mu_end;
 }
 
-static bool test_anal_get_base_type_enum(void) {
+static bool test_anal_get_base_type_enum (void) {
 	RAnal *anal = r_anal_new ();
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
@@ -128,9 +127,9 @@ static bool test_anal_get_base_type_enum(void) {
 	mu_end;
 }
 
-static bool test_anal_get_base_type_not_found(void) {
+static bool test_anal_get_base_type_not_found (void) {
 	RAnal *anal = r_anal_new ();
-	setup_sdb_for_not_found(anal->sdb_types);
+	setup_sdb_for_not_found (anal->sdb_types);
 
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
@@ -151,7 +150,7 @@ static bool test_anal_get_base_type_not_found(void) {
 	mu_end;
 }
 
-int all_tests(void) {
+int all_tests (void) {
 	mu_run_test (test_anal_get_base_type_struct);
 	mu_run_test (test_anal_get_base_type_union);
 	mu_run_test (test_anal_get_base_type_enum);
@@ -159,6 +158,6 @@ int all_tests(void) {
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
+int main (int argc, char **argv) {
+	return all_tests ();
 }

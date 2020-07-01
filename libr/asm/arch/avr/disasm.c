@@ -43,7 +43,7 @@ static int avrdis (char *out, ut64 addr, cut8 *buf, int len) {
 }
 
 #if TEST
-int main() {
+int main () {
 	ut64 addr = 0;
 	int ret = 0;
 	char *code = "\x8a\xb7\x42\xac\x80\x1e";
@@ -51,11 +51,11 @@ int main() {
 	int delta = 0;
 	int len;
 	len = strlen (code);
-	for (;delta<len;){
-		ret = avrdis (opcode, addr+delta, code+delta, len-delta);
+	for (; delta < len;) {
+		ret = avrdis (opcode, addr + delta, code + delta, len - delta);
 		if (ret == -1)
 			break;
-//		printf ("0x%08"PFMT64x"  %s\n", addr+delta, opcode);
+		//		printf ("0x%08"PFMT64x"  %s\n", addr+delta, opcode);
 		delta += ret;
 	}
 	return 0;

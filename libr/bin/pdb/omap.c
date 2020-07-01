@@ -4,14 +4,14 @@
 #include "omap.h"
 #include "stream_file.h"
 
-static int parse_omap_entry(char *data, int data_size, int *read_bytes, SOmapEntry *omap_entry) {
+static int parse_omap_entry (char *data, int data_size, int *read_bytes, SOmapEntry *omap_entry) {
 	int curr_read_bytes = *read_bytes;
 	memcpy (omap_entry, data, sizeof (SOmapEntry));
 	*read_bytes += sizeof (SOmapEntry);
 	return (*read_bytes - curr_read_bytes);
 }
 
-void parse_omap_stream(void *stream, R_STREAM_FILE *stream_file) {
+void parse_omap_stream (void *stream, R_STREAM_FILE *stream_file) {
 	int data_size;
 	char *data = NULL, *ptmp = NULL;
 	int curr_read_bytes = 0, read_bytes = 0;
@@ -19,18 +19,18 @@ void parse_omap_stream(void *stream, R_STREAM_FILE *stream_file) {
 	SOmapStream *omap_stream = 0;
 
 	stream_file_get_size (stream_file, &data_size);
-	data = (char *) malloc (data_size);
+	data = (char *)malloc (data_size);
 	if (!data) {
 		return;
 	}
 	stream_file_get_data (stream_file, data);
 
-	omap_stream = (SOmapStream *) stream;
+	omap_stream = (SOmapStream *)stream;
 	omap_stream->froms = 0;
 	omap_stream->omap_entries = r_list_new ();
 	ptmp = data;
 	while (read_bytes < data_size) {
-		omap_entry = (SOmapEntry *) malloc (sizeof(SOmapEntry));
+		omap_entry = (SOmapEntry *)malloc (sizeof (SOmapEntry));
 		if (!omap_entry) {
 			break;
 		}
@@ -46,12 +46,12 @@ void parse_omap_stream(void *stream, R_STREAM_FILE *stream_file) {
 	free (data);
 }
 
-void free_omap_stream(void *stream) {
-	SOmapStream *omap_stream = (SOmapStream *) stream;
+void free_omap_stream (void *stream) {
+	SOmapStream *omap_stream = (SOmapStream *)stream;
 	SOmapEntry *omap_entry = NULL;
 	RListIter *it = r_list_iterator (omap_stream->omap_entries);
 	while (r_list_iter_next (it)) {
-		omap_entry = (SOmapEntry *) r_list_iter_get (it);
+		omap_entry = (SOmapEntry *)r_list_iter_get (it);
 		free (omap_entry);
 	}
 	r_list_free (omap_stream->omap_entries);
@@ -63,7 +63,7 @@ void free_omap_stream(void *stream) {
 //   imin unrestricted when using truncate toward minus infinity divide
 //     imid = (imin+imax)>>1; or
 //     imid = (int)floor((imin+imax)/2.0);
-static int binary_search(unsigned int *A, int key, int imin, int imax) {
+static int binary_search (unsigned int *A, int key, int imin, int imax) {
 	int imid;
 
 	// continually narrow search until just one element remains
@@ -86,8 +86,8 @@ static int binary_search(unsigned int *A, int key, int imin, int imax) {
 	return -1;
 }
 
-int omap_remap(void *stream, int address) {
-	SOmapStream *omap_stream = (SOmapStream *) stream;
+int omap_remap (void *stream, int address) {
+	SOmapStream *omap_stream = (SOmapStream *)stream;
 	SOmapEntry *omap_entry = 0;
 	RListIter *it = 0;
 	int i = 0;
@@ -101,13 +101,13 @@ int omap_remap(void *stream, int address) {
 	len = r_list_length (omap_stream->omap_entries);
 
 	if (omap_stream->froms == 0) {
-		omap_stream->froms = (unsigned int *) malloc (4 * len);
+		omap_stream->froms = (unsigned int *)malloc (4 * len);
 		if (!omap_stream->froms) {
 			return -1;
 		}
 		it = r_list_iterator (omap_stream->omap_entries);
 		while (r_list_iter_next (it)) {
-			omap_entry = (SOmapEntry *) r_list_iter_get (it);
+			omap_entry = (SOmapEntry *)r_list_iter_get (it);
 			omap_stream->froms[i] = omap_entry->from;
 			i++;
 		}
@@ -123,7 +123,7 @@ int omap_remap(void *stream, int address) {
 	if (omap_stream->froms[pos] != address) {
 		pos -= 1;
 	}
-	omap_entry = (SOmapEntry *) r_list_get_n (omap_stream->omap_entries, pos);
+	omap_entry = (SOmapEntry *)r_list_get_n (omap_stream->omap_entries, pos);
 	if (!omap_entry) {
 		return -1;
 	}
