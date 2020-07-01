@@ -4457,3 +4457,35 @@ CMDS=iqcq
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=auto entry (lib)
+FILE=bins/elf/libexploit.so
+CMDS=<<EOF
+ie
+EOF
+EXPECT=<<EOF
+[Entrypoints]
+vaddr=0x00000d28 paddr=0x00000d28 haddr=0x00000018 hvaddr=0x00000018 type=program
+
+1 entrypoints
+EOF
+EXPECT_ERR=<<EOF
+Dynamic tag 16 not handled
+WARNING: Entry point could not be determined from file, it was automatically set to 0xd28.
+EOF
+RUN
+
+NAME=auto entry (obj)
+FILE=bins/elf/analysis/test.obj
+CMDS=<<EOF
+ie
+EOF
+EXPECT=<<EOF
+[Entrypoints]
+
+0 entrypoints
+EOF
+EXPECT_ERR=<<EOF
+Warning: run r2 with -e io.cache=true to fix relocations in disassembly
+EOF
+RUN

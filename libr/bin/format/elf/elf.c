@@ -1766,19 +1766,11 @@ ut64 Elf_(r_bin_elf_get_fini_offset)(ELFOBJ *bin) {
 	return 0;
 }
 
-static bool isExecutable(ELFOBJ *bin) {
-	switch (bin->ehdr.e_type) {
-	case ET_EXEC: return true;
-	case ET_DYN:  return true;
-	}
-	return false;
-}
-
 ut64 Elf_(r_bin_elf_get_entry_offset)(ELFOBJ *bin) {
 	r_return_val_if_fail (bin, UT64_MAX);
 	ut64 entry = bin->ehdr.e_entry;
 	if (!entry) {
-		if (!isExecutable (bin)) {
+		if (!Elf_(r_bin_elf_is_executable) (bin)) {
 			return UT64_MAX;
 		}
 		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".init.text");
@@ -4020,4 +4012,12 @@ char *Elf_(r_bin_elf_compiler)(ELFOBJ *bin) {
 	char * res = r_str_escape (buf);
 	free (buf);
 	return res;
+}
+
+bool Elf_(r_bin_elf_is_executable)(ELFOBJ *bin) {
+	switch (bin->ehdr.e_type) {
+	case ET_EXEC: return true;
+	case ET_DYN: return true;
+	}
+	return false;
 }
