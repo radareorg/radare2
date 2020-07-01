@@ -31,6 +31,7 @@ typedef struct R_PDB {
 } R_PDB;
 
 R_API bool init_pdb_parser(R_PDB *pdb, const char *filename);
+R_API bool init_pdb_parser_with_buf(R_PDB *pdb, RBuffer *buf);
 
 #ifdef __cplusplus
 }

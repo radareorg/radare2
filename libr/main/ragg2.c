@@ -139,7 +139,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	const char *ofile = NULL;
 	int ofileauto = 0;
 	RBuffer *b;
-	int c, i;
+	int c, i, fd = -1;
 	REgg *egg = r_egg_new ();
 
 	RGetopt opt;
@@ -469,6 +469,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		if (len > 0) {
 			if (!r_egg_raw (egg, b, len)) {
 				eprintf ("Unknown '%s'\n", shellcode);
+				free (b);
 				goto fail;
 			}
 		} else {
@@ -481,7 +482,6 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 
 	/* set output (create output file if needed) */
 	if (ofileauto) {
-		int fd;
 		if (file) {
 			char *o, *q, *p = strdup (file);
 			if ((o = strchr (p, '.'))) {
@@ -501,9 +501,11 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			eprintf ("cannot open file '%s'\n", opt.arg);
 			goto fail;
 		}
+		close (fd);
 	}
 	if (ofile) {
-		if (openfile (ofile, ISEXEC) == -1) {
+		fd = openfile (ofile, ISEXEC);
+		if (fd == -1) {
 			eprintf ("cannot open file '%s'\n", ofile);
 			goto fail;
 		}
@@ -610,10 +612,16 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			r_print_free (p);
 		}
 	}
+	if (fd != -1) {
+		close (fd);
+	}
 	free (sequence);
 	r_egg_free (egg);
 	return 0;
 fail:
+	if (fd != -1) {
+		close (fd);
+	}
 	free (sequence);
 	r_egg_free (egg);
 	return 1;

@@ -3459,6 +3459,7 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 			const size_t str_len = strlen (str);
 			if (write (fd, str, str_len) != str_len) {
 				close (fd);
+				free (name);
 				return NULL;
 			}
 		}

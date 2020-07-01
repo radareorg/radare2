@@ -408,6 +408,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	r = r_core_new ();
 	if (!r) {
 		eprintf ("Cannot initialize RCore\n");
+		LISTS_FREE ();
 		return 1;
 	}
 	r->r_main_radare2 = r_main_radare2;
@@ -1485,8 +1486,8 @@ beach:
 	//r_core_file_close (r, fh);
 	r_core_free (r);
 	r_cons_set_raw (0);
-	free (file);
 	r_cons_free ();
 	LISTS_FREE ();
+	R_FREE (pfile);
 	return ret;
 }

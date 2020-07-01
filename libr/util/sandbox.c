@@ -326,9 +326,6 @@ R_API FILE *r_sandbox_fopen (const char *path, const char *mode) {
 	r_return_val_if_fail (path && mode, NULL);
 	FILE *ret = NULL;
 	char *epath = NULL;
-	if (!path) {
-		return NULL;
-	}
 	if (enabled) {
 		if (strchr (mode, 'w') || strchr (mode, 'a') || strchr (mode, '+')) {
 			return NULL;

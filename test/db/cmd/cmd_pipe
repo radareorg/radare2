@@ -5,3 +5,27 @@ EXPECT=<<EOF
 hello world
 EOF
 RUN
+
+NAME=r2pipe.py
+FILE=bins/elf/_Exit (42)
+CMDS=#!pipe python3 scripts/get-funcs.py
+EXPECT=<<EOF
+
+Function names:
+entry0
+sym.imp._Exit
+
+Disassembly of entry0:
+            ;-- section..text:
+            ;-- .text:
+            ;-- _start():
+/ 16: entry0 ();
+|           0x08049020      55             push ebp                    ; [10] -r-x section size 16 named .text
+|           0x08049021      89e5           mov ebp, esp
+|           0x08049023      83ec08         sub esp, 8
+|           0x08049026      83ec0c         sub esp, 0xc
+|           0x08049029      6a2a           push 0x2a                   ; '*' ; 42
+\           0x0804902b      e8e0ffffff     call sym.imp._Exit          ; void _Exit(int status)
+
+EOF
+RUN

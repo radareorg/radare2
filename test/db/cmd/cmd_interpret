@@ -17,3 +17,16 @@ EXPECT=<<EOF
 hello world
 EOF
 RUN
+
+NAME=.spp
+FILE=-
+CMDS=<<EOF
+. scripts/r2test.spp
+EOF
+EXPECT=<<EOF
+Test
+hello world
+Eron
+
+EOF
+RUN
