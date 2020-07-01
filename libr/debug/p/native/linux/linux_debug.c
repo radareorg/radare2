@@ -275,8 +275,7 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 int linux_step(RDebug *dbg) {
 	int ret = false;
 	int pid = dbg->tid;
-	ut64 addr = r_debug_reg_get (dbg, "PC");
-	ret = r_debug_ptrace (dbg, PTRACE_SINGLESTEP, pid, (void*)(size_t)addr, 0);
+	ret = r_debug_ptrace (dbg, PTRACE_SINGLESTEP, pid, 0, 0);
 	//XXX(jjd): why?? //linux_handle_signals (dbg);
 	if (ret == -1) {
 		perror ("native-singlestep");
@@ -392,8 +391,8 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int my_pid) {
 	// Ignore keyboard interrupt while waiting to avoid signaling the child process twice on
 	// break(SIGSTOP is sent by wait_break) which forced the user to continue an extra time
 	// to handle SIGINT
-	r_sys_signal (SIGINT, SIG_IGN);
-	r_cons_break_push ((RConsBreak)linux_dbg_wait_break, dbg);
+	// r_sys_signal (SIGINT, SIG_IGN);
+	// r_cons_break_push ((RConsBreakCallback) linux_dbg_wait_break, dbg);
 repeat:
 	for (;;) {
 		if (r_cons_is_breaked ()) {
@@ -478,8 +477,8 @@ repeat:
 			}
 		}
 	}
-	r_cons_break_pop ();
-	r_sys_signal (SIGINT, SIG_DFL);
+	// r_cons_break_pop ();
+	// r_sys_signal (SIGINT, SIG_DFL);
 	dbg->reason.tid = pid;
 	return reason;
 }

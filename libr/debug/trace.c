@@ -84,22 +84,28 @@ R_API int r_debug_trace_ins_before (RDebug *dbg) {
 	if (!dbg->iob.read_at (dbg->iob.io, pc, buf_pc, sizeof (buf_pc))) {
 		return false;
 	}
-	if (!r_anal_op (dbg->anal, &dbg->cur_op, pc, buf_pc, sizeof (buf_pc), R_ANAL_OP_MASK_VAL)) {
+	dbg->cur_op = R_NEW0 (RAnalOp);
+	if (!dbg->cur_op) {
+		return false;
+	}
+	if (!r_anal_op (dbg->anal, dbg->cur_op, pc, buf_pc, sizeof (buf_pc), R_ANAL_OP_MASK_VAL)) {
+		r_anal_op_free (dbg->cur_op);
+		dbg->cur_op = NULL;
 		return false;
 	}
 
 	// resolve mem write address
-	r_list_foreach_safe (dbg->cur_op.access, it, it_tmp, val) {
+	r_list_foreach_safe (dbg->cur_op->access, it, it_tmp, val) {
 		switch (val->type) {
 		case R_ANAL_VAL_REG:
 			if (!(val->access & R_ANAL_ACC_W)) {
-				r_list_delete (dbg->cur_op.access, it);
+				r_list_delete (dbg->cur_op->access, it);
 			}
 			break;
 		case R_ANAL_VAL_MEM:
 			if (val->memref > 32) {
 				eprintf ("Error: adding changes to %d bytes in memory.\n", val->memref);
-				r_list_delete (dbg->cur_op.access, it);
+				r_list_delete (dbg->cur_op->access, it);
 				break;
 			}
 
@@ -120,7 +126,7 @@ R_API int r_debug_trace_ins_before (RDebug *dbg) {
 				// resolve address into base for ins_after
 				val->base = addr;
 			} else {
-				r_list_delete (dbg->cur_op.access, it);
+				r_list_delete (dbg->cur_op->access, it);
 			}
 		default:
 			break;
@@ -135,7 +141,7 @@ R_API int r_debug_trace_ins_after (RDebug *dbg) {
 
 	// Add reg/mem write change
 	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, false);
-	r_list_foreach (dbg->cur_op.access, it, val) {
+	r_list_foreach (dbg->cur_op->access, it, val) {
 		if (!(val->access & R_ANAL_ACC_W)) {
 			continue;
 		}
@@ -152,10 +158,10 @@ R_API int r_debug_trace_ins_after (RDebug *dbg) {
 		}
 		case R_ANAL_VAL_MEM:
 		{
-			ut8 buf[32] = {0};
+			ut8 buf[32] = { 0 };
 			if (!dbg->iob.read_at (dbg->iob.io, val->base, buf, val->memref)) {
 				eprintf ("Error reading memory at 0x%"PFMT64x"\n", val->base);
-				return false;
+				break;
 			}
 
 			// add mem write
@@ -169,6 +175,8 @@ R_API int r_debug_trace_ins_after (RDebug *dbg) {
 			break;
 		}
 	}
+	r_anal_op_free (dbg->cur_op);
+	dbg->cur_op = NULL;
 	return true;
 }
 

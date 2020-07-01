@@ -427,6 +427,7 @@ R_API RDebug *r_debug_free(RDebug *dbg) {
 		free (dbg->btalgo);
 		r_debug_trace_free (dbg->trace);
 		r_debug_session_free (dbg->session);
+		r_anal_op_free (dbg->cur_op);
 		dbg->trace = NULL;
 		r_egg_free (dbg->egg);
 		free (dbg->arch);
@@ -910,7 +911,8 @@ R_API int r_debug_step_hard(RDebug *dbg) {
 		return false;
 	}
 	// Unset breakpoints before leaving
-	if (reason != R_DEBUG_REASON_BREAKPOINT && reason != R_DEBUG_REASON_COND &&
+	if (reason != R_DEBUG_REASON_BREAKPOINT &&
+		reason != R_DEBUG_REASON_COND &&
 		reason != R_DEBUG_REASON_TRACEPOINT) {
 		r_bp_restore (dbg->bp, false);
 	}
@@ -949,8 +951,9 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 		if (dbg->session && dbg->recoil_mode == R_DBG_RECOIL_NONE) {
 			dbg->cnum++;
 			dbg->maxcnum++;
-			eprintf ("trace_before %u\n", dbg->cnum);
-			r_debug_trace_ins_before (dbg);
+			if (!r_debug_trace_ins_before (dbg)) {
+				eprintf ("trace_ins_before: failed");
+			}
 		}
 
 		if (dbg->swstep) {
@@ -962,13 +965,16 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 			eprintf ("Stepping failed!\n");
 			return steps_taken;
 		}
-		dbg->steps++;
-		dbg->reason.type = R_DEBUG_REASON_STEP;
 
 		if (dbg->session && dbg->recoil_mode == R_DBG_RECOIL_NONE) {
-			eprintf ("trace_after %u\n", dbg->cnum);
-			r_debug_trace_ins_after (dbg);
+			if (!r_debug_trace_ins_after (dbg)) {
+				eprintf ("trace_ins_after: failed");
+			}
+			dbg->session->reasontype = dbg->reason.type;
 		}
+
+		dbg->steps++;
+		dbg->reason.type = R_DEBUG_REASON_STEP;
 	}
 
 	return steps_taken;
@@ -1001,8 +1007,16 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 
 	if (dbg->h && dbg->h->step_over) {
 		for (; steps_taken < steps; steps_taken++) {
+			if (dbg->session && dbg->recoil_mode == R_DBG_RECOIL_NONE) {
+				dbg->cnum++;
+				dbg->maxcnum++;
+				r_debug_trace_ins_before (dbg);
+			}
 			if (!dbg->h->step_over (dbg)) {
 				return steps_taken;
+			}
+			if (dbg->session && dbg->recoil_mode == R_DBG_RECOIL_NONE) {
+				r_debug_trace_ins_after (dbg);
 			}
 		}
 		return steps_taken;
@@ -1099,6 +1113,19 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 	if (!dbg) {
 		return 0;
 	}
+
+	if (dbg->session) {
+		r_cons_break_push (NULL, NULL);
+		while (!r_cons_is_breaked ()) {
+			r_debug_step (dbg, 1);
+			if (dbg->session->reasontype != R_DEBUG_REASON_STEP) {
+				break;
+			}
+		}
+		r_cons_break_pop ();
+		return dbg->tid;
+	}
+
 repeat:
 	if (r_debug_is_dead (dbg)) {
 		return 0;

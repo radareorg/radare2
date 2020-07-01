@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
+#include <signal.h>
 
 static void *th_run(ptrace_wrap_instance *inst);
 
@@ -78,6 +79,11 @@ static void wrap_func(ptrace_wrap_instance *inst) {
 }
 
 static void *th_run(ptrace_wrap_instance *inst) {
+	sigset_t set;
+	sigemptyset (&set);
+	sigaddset (&set, SIGINT);
+	pthread_sigmask (SIG_BLOCK, &set, NULL);
+
 	while (1) {
 		sem_wait (&inst->request_sem);
 		switch (inst->request.type) {

@@ -469,14 +469,8 @@ static const char *help_msg_dte[] = {
 static const char *help_msg_dts[] = {
 	"Usage:", "dts[*]", "",
 	"dts+", "", "Start trace session",
+	"dts-", "", "Stop trace session",
 	"dtsm", "", "List current memory map and hash",
-/*
-	"dts", "", "List all trace sessions",
-	"dts-", "id", "Delete trace session",
-	"dtsf", " [file] ", "Read trace sessions from disk",
-	"dtst", " [file] ", "Save trace sessions to disk",
-	"dtsC", " id comment", "Add comment for given trace session",
-*/
 	NULL
 };
 
@@ -4882,11 +4876,23 @@ static int cmd_debug(void *data, const char *input) {
 		case 's': // "dts"
 			switch (input[2]) {
 			case '+': // "dts+"
+				if (r_debug_is_dead (core->dbg)) {
+					eprintf ("Cannot start session, run ood?\n");
+					break;
+				}
 				if (core->dbg->session) {
 					eprintf ("Session already started\n");
 					break;
 				}
 				core->dbg->session = r_debug_session_new (core->dbg);
+				break;
+			case '-': // "dts-"
+				if (!core->dbg->session) {
+					eprintf ("No session started\n");
+					break;
+				}
+				r_debug_session_free (core->dbg->session);
+				core->dbg->session = NULL;
 				break;
 			case 'm': // "dtsm"
 				if (core->dbg->session) {

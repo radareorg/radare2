@@ -190,6 +190,7 @@ typedef struct r_debug_session_t {
 	RList *snaps; // <RDebugSnap>
 	HtUP *memory; /* RVector<RDebugChangeMem> */
 	HtUP *registers; /* RVector<RDebugChangeReg> */
+	int /*RDebugReasonType*/ reasontype;
 } RDebugSession;
 
 /* Session file format */
@@ -303,7 +304,7 @@ typedef struct r_debug_t {
 
 	ut32 cnum; //XXX move this into RDebugSession
 	ut32 maxcnum; //XXX move this into RDebugSession
-	RAnalOp cur_op;
+	RAnalOp *cur_op;
 	RDebugSession *session;
 
 	Sdb *sgnls;
