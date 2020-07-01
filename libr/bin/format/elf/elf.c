@@ -170,7 +170,7 @@ static bool init_ehdr(ELFOBJ *bin) {
 			" EM_INTEL208=208, EM_INTEL209=209, EM_KM32=210, EM_KMX32=211, EM_KMX16=212,"
 			" EM_KMX8=213, EM_KVARC=214, EM_CDP=215, EM_COGE=216, EM_COOL=217, EM_NORC=218,"
 			" EM_CSR_KALIMBA=219, EM_AMDGPU=224, EM_RISCV=243, EM_LANAI=244, EM_BPF=247,"
-			" EM_CSKY=252, EM_LOONGARCH=258}", 0);
+			" EM_CSKY=252, EM_KVX=256, EM_LOONGARCH=258}", 0);
 	sdb_set (bin->kv, "elf_class.cparse", "enum elf_class {ELFCLASSNONE=0, ELFCLASS32=1, ELFCLASS64=2};", 0);
 	sdb_set (bin->kv, "elf_data.cparse", "enum elf_data {ELFDATANONE=0, ELFDATA2LSB=1, ELFDATA2MSB=2};", 0);
 	sdb_set (bin->kv, "elf_hdr_version.cparse", "enum elf_hdr_version {EV_NONE=0, EV_CURRENT=1};", 0);
@@ -2177,6 +2177,8 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 		return strdup ("ia64");
 	case EM_S390:
 		return strdup ("s390");
+	case EM_KVX:
+		return strdup("kvx");
 	case EM_LOONGARCH:
 		return strdup ("loongarch");
 	default: return strdup ("x86");

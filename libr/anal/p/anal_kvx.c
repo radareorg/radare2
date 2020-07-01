@@ -262,9 +262,6 @@ static int kvx_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 		}
 	} else {
 		op->type = R_ANAL_OP_TYPE_UNK;
-		if (mask & R_ANAL_OP_MASK_DISASM) {
-			r_asm_op_set_asm (op, "unknown");
-		}
 	}
 
 	return op->size;
