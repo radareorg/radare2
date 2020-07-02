@@ -283,6 +283,7 @@ static const char *help_msg_visual[] = {
 	"?", "show visual help menu",
 	"??", "show this help",
 	"$", "set the program counter to the current offset + cursor",
+	"&", "rotate asm.bits between 8, 16, 32 and 64 applying hints",
 	"%", "in cursor mode finds matching pair, otherwise toggle autoblocksz",
 	"^", "seek to the beginning of the function",
 	"!", "enter into the visual panels mode",
@@ -391,7 +392,6 @@ static void printSnow(RCore *core) {
 
 static void rotateAsmBits(RCore *core) {
 	RAnalHint *hint = r_anal_hint_get (core->anal, core->offset);
-	// const char *arch = r_config_get_i (core->config, "asm.arch");
 	int bits = hint? hint->bits : r_config_get_i (core->config, "asm.bits");
 	int retries = 4;
 	while (retries > 0) {
@@ -3635,9 +3635,12 @@ R_API void r_core_visual_title(RCore *core, int color) {
 			oldpc = curpc;
 		}
 	}
-
-	RIODesc *desc = core->file? r_io_desc_get (core->io, core->file->fd): NULL;
+	RIOMap *map = r_io_map_get (core->io, core->offset);
+	RIODesc *desc = map
+		? r_io_desc_get (core->io, map->fd)
+		: core->file? r_io_desc_get (core->io, core->file->fd): NULL;
 	filename = desc? desc->name: "";
+
 	{ /* get flag with delta */
 		ut64 addr = core->offset + (core->print->cur_enabled? core->print->cur: 0);
 		/* TODO: we need a helper into r_flags to do that */
@@ -3682,15 +3685,14 @@ R_API void r_core_visual_title(RCore *core, int color) {
 	}
 	const char *cmd_visual = r_config_get (core->config, "cmd.visual");
 	if (cmd_visual && *cmd_visual) {
-		strncpy (bar, cmd_visual, sizeof (bar) - 1);
+		r_str_ncpy (bar, cmd_visual, sizeof (bar) - 1);
 		bar[10] = '.'; // chop cmdfmt
 		bar[11] = '.'; // chop cmdfmt
 		bar[12] = 0; // chop cmdfmt
 	} else {
 		const char *cmd = __core_visual_print_command (core);
 		if (cmd) {
-			strncpy (bar, cmd, sizeof (bar) - 1);
-			bar[sizeof (bar) - 1] = 0; // '\0'-terminate bar
+			r_str_ncpy (bar, cmd, sizeof (bar) - 1);
 			bar[10] = '.'; // chop cmdfmt
 			bar[11] = '.'; // chop cmdfmt
 			bar[12] = 0; // chop cmdfmt

@@ -1268,6 +1268,10 @@ static int cmd_interpret(void *data, const char *input) {
 	const char *host, *port, *cmd;
 	RCore *core = (RCore *)data;
 
+	if (!strcmp (input, "?")) {
+		r_core_cmd_help (core, help_msg_dot);
+		return 0;
+	}
 	switch (*input) {
 	case '\0': // "."
 		lastcmd_repeat (core, 0);
@@ -1352,9 +1356,6 @@ static int cmd_interpret(void *data, const char *input) {
 		break;
 	case '(': // ".("
 		r_cmd_macro_call (&core->rcmd->macro, input + 1);
-		break;
-	case '?': // ".?"
-		r_core_cmd_help (core, help_msg_dot);
 		break;
 	default:
 		if (*input >= 0 && *input <= 9) {
@@ -2623,9 +2624,25 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (!icmd || (cmd[0] == '#' && cmd[1] != '!' && cmd[1] != '?')) {
 		goto beach;
 	}
-	cmt = *icmd ? (char *)r_str_firstbut (icmd, '#', "\""): NULL;
-	if (cmt && (cmt[1] == ' ' || cmt[1] == '\t')) {
-		*cmt = 0;
+	if (*icmd && !strchr (icmd, '"')) {
+		char *hash = icmd;
+		cmt = NULL;
+		for (hash = icmd + 1; *hash; hash++) {
+			if (*hash == '\\') {
+				hash++;
+				if (*hash == '#') {
+					hash++;
+				}
+			}
+			if (*hash == '#') {
+				break;
+			}
+		}
+		if (hash && *hash) {
+			*hash = 0;
+			r_str_trim_tail (icmd);
+			cmt = hash + 1;
+		}
 	}
 	if (*cmd != '"') {
 		if (!strchr (cmd, '\'')) { // allow | awk '{foo;bar}' // ignore ; if there's a single quote

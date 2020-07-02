@@ -438,7 +438,7 @@ R_API void r_anal_var_set_access(RAnalVar *var, const char *reg, ut64 access_add
 		acc = r_vector_insert (&var->accesses, index, NULL);
 		acc->offset = offset;
 		acc->type = 0;
-		acc->reg = reg;
+		acc->reg = r_str_constpool_get (&var->fcn->anal->constpool, reg);
 	}
 
 	acc->type |= (ut8)access_type;

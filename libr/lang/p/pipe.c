@@ -16,29 +16,16 @@ static int lang_pipe_file(RLang *lang, const char *file) {
 }
 
 #if __WINDOWS__
-static HANDLE pipe = 0;
 static HANDLE myCreateChildProcess(const char * szCmdline) {
 	PROCESS_INFORMATION piProcInfo = {0};
 	STARTUPINFO siStartInfo = {0};
 	BOOL bSuccess = FALSE;
 	siStartInfo.cb = sizeof (STARTUPINFO);
 	siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
+	siStartInfo.hStdInput = GetStdHandle (STD_INPUT_HANDLE);
+	siStartInfo.hStdOutput = GetStdHandle (STD_OUTPUT_HANDLE);
+	siStartInfo.hStdError = GetStdHandle (STD_ERROR_HANDLE);
 
-	SECURITY_ATTRIBUTES saAttr;
-	saAttr.nLength = sizeof (SECURITY_ATTRIBUTES);
-	saAttr.bInheritHandle = TRUE;
-	saAttr.lpSecurityDescriptor = NULL;
-	LPTSTR pipeName = calloc (128, sizeof (TCHAR)); 
-	GetEnvironmentVariable (TEXT ("R2PIPE_PATH"), pipeName, 128);
-
-	pipe = CreateFile (pipeName,
-				GENERIC_READ | GENERIC_WRITE,
-				FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
-				&saAttr, OPEN_EXISTING, 0, NULL);
-
-	siStartInfo.hStdOutput = pipe;
-	siStartInfo.hStdInput = pipe;
-	siStartInfo.hStdError = pipe;
 	LPTSTR cmdline_ = r_sys_conv_utf8_to_win (szCmdline);
 	bSuccess = CreateProcess (NULL, cmdline_, NULL, NULL,
 		TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo);
@@ -53,6 +40,16 @@ static HANDLE hproc = NULL;
 
 static DWORD WINAPI WaitForProcThread(LPVOID lParam) {
 	WaitForSingleObject (hproc, INFINITE);
+
+	// Just in case the #!pipe target didn't actually connect to the pipe,
+	// we connect to the pipe here to satisfy the ConnectNamedPipe().
+	LPTSTR pipeName = calloc (128, sizeof (TCHAR));
+	GetEnvironmentVariable (TEXT ("R2PIPE_PATH"), pipeName, 128);
+	HANDLE pipe = CreateFile (pipeName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+	if (pipe != INVALID_HANDLE_VALUE) {
+		CloseHandle (pipe);
+	}
+
 	bStopPipeLoop = TRUE;
 	return 0;
 }
@@ -60,7 +57,7 @@ static void lang_pipe_run_win(RLang *lang) {
 	CHAR buf[PIPE_BUF_SIZE];
 	BOOL bSuccess = TRUE;
 	int i, res = 0;
-	DWORD dwRead = 0, dwWritten = 0, dwLeft = 1;
+	DWORD dwRead = 0, dwWritten = 0;
 	r_cons_break_push (NULL, NULL);
 	do {
 		if (r_cons_is_breaked ()) {
@@ -68,18 +65,14 @@ static void lang_pipe_run_win(RLang *lang) {
 			break;
 		}
 		memset (buf, 0, PIPE_BUF_SIZE);
-		while (bSuccess && (!dwLeft || !dwRead)) {
-			bSuccess = PeekNamedPipe (hPipeInOut, buf, PIPE_BUF_SIZE, &dwRead, NULL, &dwLeft);
-			if (bStopPipeLoop && (!dwLeft || !dwRead)) {
-				break;
-			}
-		}
-		if (bSuccess && (dwRead || dwLeft)) {
+		do {
+			bSuccess = PeekNamedPipe (hPipeInOut, buf, PIPE_BUF_SIZE, &dwRead, NULL, NULL);
+		} while (bSuccess && !bStopPipeLoop && !dwRead);
+		if (bSuccess && dwRead) {
 			bSuccess = ReadFile (hPipeInOut, buf, PIPE_BUF_SIZE, &dwRead, NULL);
 		}
 		if (bSuccess && dwRead > 0) {
 			buf[sizeof (buf) - 1] = 0;
-			r_cons_print (buf);
 			if (bStopPipeLoop) {
 				break;
 			}
@@ -223,10 +216,6 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	char *r2pipe_var = r_str_newf ("R2PIPE_IN%x", _getpid ());
 	char *r2pipe_paz = r_str_newf ("\\\\.\\pipe\\%s", r2pipe_var);
 	LPTSTR r2pipe_paz_ = r_sys_conv_utf8_to_win (r2pipe_paz);
-	SECURITY_ATTRIBUTES saAttr;
-	saAttr.nLength = sizeof (SECURITY_ATTRIBUTES);
-	saAttr.bInheritHandle = TRUE;
-	saAttr.lpSecurityDescriptor = NULL;
 
 	SetEnvironmentVariable (TEXT ("R2PIPE_PATH"), r2pipe_paz_);
 	hPipeInOut = CreateNamedPipe (r2pipe_paz_,
@@ -234,18 +223,26 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 			PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
 			PIPE_BUF_SIZE,
 			PIPE_BUF_SIZE,
-			0, &saAttr);
+			0, NULL);
+	if (hPipeInOut == INVALID_HANDLE_VALUE) {
+		eprintf ("CreateNamedPipe failed: %#x\n", (int)GetLastError ());
+		goto beach;
+	}
 	hproc = myCreateChildProcess (code);
+	bool connected = false;
 	if (hproc) {
 		/* a separate thread is created that sets bStopPipeLoop once hproc terminates. */
 		bStopPipeLoop = FALSE;
 		CloseHandle (CreateThread (NULL, 0, WaitForProcThread, NULL, 0, NULL));
+		connected = ConnectNamedPipe (hPipeInOut, NULL) ? true : (GetLastError () == ERROR_PIPE_CONNECTED);
+	}
+	if (hproc && connected) {
 		/* lang_pipe_run_win has to run in the command thread to prevent deadlock. */
 		lang_pipe_run_win (lang);
-		CloseHandle (pipe);
 	}
 	DeleteFile (r2pipe_paz_);
 	CloseHandle (hPipeInOut);
+beach:
 	free (r2pipe_var);
 	free (r2pipe_paz);
 	free (r2pipe_paz_);

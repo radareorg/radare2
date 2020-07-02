@@ -70,10 +70,16 @@ static RCore *opencore(const char *f) {
 		r_config_eval (c->config, e, false);
 	}
 	if (f) {
+		RCoreFile * rfile = NULL;
 #if __WINDOWS__
-		f = r_acp_to_utf8 (f);
+		char *winf = r_acp_to_utf8 (f);
+		rfile = r_core_file_open (c, winf, 0, 0);
+		free (winf);
+#else
+		rfile = r_core_file_open (c, f, 0, 0);
 #endif
-		if (!r_core_file_open (c, f, 0, 0)) {
+
+		if (!rfile) {
 			r_core_free (c);
 			return NULL;
 		}
@@ -1058,6 +1064,11 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 	}
 	file = (opt.ind < argc)? argv[opt.ind]: NULL;
 	file2 = (opt.ind + 1 < argc)? argv[opt.ind + 1]: NULL;
+
+	if (R_STR_ISEMPTY (file) || R_STR_ISEMPTY(file2)) {
+		eprintf ("Cannot open empty path\n");
+		return 1;
+	}
 
 	switch (mode) {
 	case MODE_GRAPH:

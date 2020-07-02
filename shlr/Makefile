@@ -32,7 +32,7 @@ TS_BRA=master
 TS_TIP=9a82dcc666d06617cbab3061467075019fae0b0d
 
 ifeq ($(CS_RELEASE),1)
-CS_VER=4.0.1
+CS_VER=4.0.2
 CS_TAR=https://codeload.github.com/aquynh/capstone/tar.gz/$(CS_VER)
 #CS_TAR=http://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
 CS_PATCHES=0

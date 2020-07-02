@@ -291,9 +291,7 @@ static bool tracelib(RDebug *dbg, const char *mode, PLIB_ITEM item) {
 		case 'u': needle = dbg->glob_unlibs; break;
 		}
 	}
-	//eprintf ("(%d) %sing library at %p (%s) %s\n", item->pid, mode,
-		//item->BaseOfDll, item->Path, item->Name);
-	r_cons_printf ("(%d) %sing library at %p (%s) %s\n", item->pid, mode,
+	r_cons_printf ("(%d) %sing library at 0x%p (%s) %s\n", item->pid, mode,
 		item->BaseOfDll, item->Path, item->Name);
 	r_cons_flush ();
 	if (needle && strlen (needle)) {

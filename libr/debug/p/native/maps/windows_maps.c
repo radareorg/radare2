@@ -75,12 +75,15 @@ R_API RList *r_w32_dbg_modules(RDebug *dbg) {
 		return NULL;
 	}
 	MODULEENTRY32 me;
-	RList *list = r_list_newf (free);
+	RList *list = r_list_newf ((RListFree)r_debug_map_free);
 	DWORD flags = TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32;
 	HANDLE h_mod_snap = w32_CreateToolhelp32Snapshot (flags, dbg->pid);
 
 	if (h_mod_snap == INVALID_HANDLE_VALUE) {
-		r_sys_perror ("r_w32_dbg_modules/CreateToolhelp32Snapshot");
+		// Suppress if process is still initializing
+		if (GetLastError () != ERROR_PARTIAL_COPY || r_list_length (dbg->threads) > 1) {
+			r_sys_perror ("r_w32_dbg_modules/CreateToolhelp32Snapshot");
+		}
 		goto err_w32_dbg_modules;
 	}
 	me.dwSize = sizeof (MODULEENTRY32);
@@ -101,7 +104,7 @@ R_API RList *r_w32_dbg_modules(RDebug *dbg) {
 		}
 	} while (Module32Next (h_mod_snap, &me));
 err_w32_dbg_modules:
-	if (h_mod_snap) {
+	if (h_mod_snap && h_mod_snap != INVALID_HANDLE_VALUE) {
 		CloseHandle (h_mod_snap);
 	}
 	return list;
@@ -245,7 +248,7 @@ R_API RList *r_w32_dbg_maps(RDebug *dbg) {
 	LPVOID cur_addr;
 	MEMORY_BASIC_INFORMATION mbi;
 	RWinModInfo mod_inf = {0};
-	RList *map_list = r_list_new (), *mod_list = NULL;
+	RList *map_list = r_list_newf ((RListFree)r_debug_map_free), *mod_list = NULL;
 	W32DbgWInst *wrap = dbg->user;
 
 	GetSystemInfo (&si);
