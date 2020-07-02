@@ -17,6 +17,7 @@ HAVE_LIB_GMP=@HAVE_LIB_GMP@
 USE_RPATH=@USE_RPATH@
 HAVE_JEMALLOC=@HAVE_JEMALLOC@
 HAVE_FORK=@HAVE_FORK@
+WANT_DYLINK=@WANT_DYLINK@
 WITH_LIBR=@WITH_LIBR@
 
 MKPLUGINS=mk/stat.mk mk/sloc.mk
@@ -46,10 +47,14 @@ OSTYPE=@USEROSTYPE@
 BUILD_OS=@BUILD_OS@
 HOST_OS=@HOST_OS@
 # hack: must be fixed in acr
+ifeq ($(WANT_DYLINK),1)
 ifneq ($(OSTYPE),darwin)
 DL_LIBS=@DL_LIBS@
 endif
 ifeq ($(OSTYPE),qnx)
+DL_LIBS=
+endif
+else
 DL_LIBS=
 endif
 
