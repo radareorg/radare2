@@ -177,7 +177,7 @@ R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
 	// just replace stderr with /dev/null temporarily and restore it just
 	// after.
 	int stderr_fd = dup (fileno (stderr));
-	stderr = freopen ("/dev/null", "rw", stderr);
+	freopen ("/dev/null", "rw", stderr);
 	r_core_bin_export_info_rad (core);
 	r_cons_filter ();
 	const char *s = r_cons_get_buffer ();
