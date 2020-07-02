@@ -406,7 +406,7 @@ static bool cb_asmvarsubmin(void *user, void *data) {
 	return true;
 }
 
-static bool cb_asmsubtail (void *user, void *data) {
+static bool cb_asmsubtail(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->parser->subtail = node->i_value;
