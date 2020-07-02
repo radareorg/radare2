@@ -203,7 +203,7 @@ r = run_command(py3_exe, 'sys/sdb_version.py', 'sdb/config.mk')
 if r.returncode() == 0
   sdb_version = r.stdout().strip().split('\n')[0]
 else
-  sdb_version = '0.0.1'
+  sdb_version = 'unknown'
 endif
 run_command(py3_exe, '-c', 'with open("sdb/src/sdb_version.h", "w") as f: f.write("#define SDB_VERSION \"' + sdb_version + '\"")')
 
