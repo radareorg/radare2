@@ -37,6 +37,7 @@ test:
 	done
 
 install:
+	mkdir -p ${BINDIR}
 	${INSTALL_BIN} ${BIN} ${BINDIR}
 
 uninstall:

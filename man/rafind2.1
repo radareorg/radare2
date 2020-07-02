@@ -1,4 +1,4 @@
-.Dd Oct 19, 2015
+.Dd Jun 24, 2020
 .Dt RAFIND2 1
 .Sh NAME
 .Nm rafind2
@@ -8,6 +8,7 @@
 .Op Fl ijzZXnrhqv
 .Op Fl b Ar size
 .Op Fl f Ar from
+.Op Fl F Ar file
 .Op Fl t Ar to
 .Op Fl [m|s|e] Ar str
 .Op Fl x Ar hex
@@ -39,6 +40,8 @@ Carve for known file-types using the r_magic signatures
 Set binary mask to be applied
 .It Fl f Ar from
 Specify the source adddress
+.It Fl F Ar file
+Read the keyword to search from the contents of the given file
 .It Fl t Ar to
 Specify the target adddress
 .It Fl X

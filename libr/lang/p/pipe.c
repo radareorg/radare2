@@ -73,7 +73,6 @@ static void lang_pipe_run_win(RLang *lang) {
 		}
 		if (bSuccess && dwRead > 0) {
 			buf[sizeof (buf) - 1] = 0;
-			r_cons_print (buf);
 			if (bStopPipeLoop) {
 				break;
 			}

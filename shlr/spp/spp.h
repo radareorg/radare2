@@ -119,19 +119,19 @@ typedef struct SppBuf {
 #define PUT_CALLBACK(x) int x (Output *out, char *buf)
 #define IS_SPACE(x) ((x==' ')||(x=='\t')||(x=='\r')||(x=='\n'))
 
-struct Tag {
+typedef struct Tag {
 	const char *name;
 	TAG_CALLBACK((*callback));
-};
+} SppTag;
 
-struct Arg {
+typedef struct Arg {
 	const char *flag;
 	const char *desc;
 	int has_arg;
 	ARG_CALLBACK((*callback));
-};
+} SppArg;
 
-struct Proc {
+typedef struct Proc {
 	const char *name;
 	struct Tag **tags;
 	struct Arg **args;
@@ -146,15 +146,16 @@ struct Proc {
 	int default_echo;
 	SppState state;
 	SppBuf buf;
-};
+} SppProc;
 
 S_API int spp_file(const char *file, Output *out);
 S_API int spp_run(char *buf, Output *out);
 S_API void spp_eval(char *buf, Output *out);
+S_API void spp_proc_eval(SppProc *p, char *buf, Output *out);
 S_API void spp_io(FILE *in, Output *out);
 S_API void spp_proc_list(void);
 S_API void spp_proc_list_kw(void);
-S_API void spp_proc_set(struct Proc *p, char *arg, int fail);
+S_API void spp_proc_set(SppProc *p, const char *arg, int fail);
 
 #if DEBUG
 #define D if (1)

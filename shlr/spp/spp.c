@@ -5,7 +5,8 @@
 #include "config.h"
 
 S_API int spp_run(char *buf, Output *out) {
-	int i, ret = 0;
+	size_t i;
+	int ret = 0;
 	char *tok;
 
 	D fprintf (stderr, "SPP_RUN(%s)\n", buf);
@@ -99,6 +100,13 @@ int do_fputs(Output *out, char *str) {
 		}
 	}
 	return printed;
+}
+
+S_API void spp_proc_eval(SppProc *p, char *buf, Output *out) {
+	SppProc *op = proc;
+	proc = p;
+	spp_eval (buf, out);
+	proc = op;
 }
 
 S_API void spp_eval(char *buf, Output *out) {
@@ -294,21 +302,24 @@ S_API void spp_proc_list() {
 	}
 }
 
-S_API void spp_proc_set(struct Proc *p, char *arg, int fail) {
-	int i, j;
-	if (arg)
-	for (j = 0; procs[j]; j++) {
-		if (!strcmp (procs[j]->name, arg)) {
-			proc = procs[j];
-			D printf ("SET PROC:(%s)(%s)\n", arg, proc->name);
-			break;
+S_API void spp_proc_set(SppProc *p, const char *arg, int fail) {
+	size_t i;
+	bool found = false;
+	if (arg) {
+		for (i = 0; procs[i]; i++) {
+			if (!strcmp (procs[i]->name, arg)) {
+				proc = procs[i];
+				found = true;
+				D printf ("SET PROC:(%s)(%s)\n", arg, proc->name);
+				break;
+			}
 		}
 	}
-	if (arg && *arg && !procs[j] && fail) {
+	if (arg && *arg && !procs[i] && fail) {
 		fprintf (stderr, "Invalid preprocessor name '%s'\n", arg);
 		return;
 	}
-	if (!proc) {
+	if (!found || !proc) {
 		proc = p;
 	}
 	if (proc) {
@@ -318,7 +329,7 @@ S_API void spp_proc_set(struct Proc *p, char *arg, int fail) {
 			proc->state.echo[i] = proc->default_echo;
 		}
 		//args = (struct Arg*)proc->args;
-		tags = (struct Tag*)proc->tags;
+		tags = (SppTag*)proc->tags;
 	}
 }
 

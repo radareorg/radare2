@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2019 - pancake */
+/* radare - LGPL - Copyright 2007-2020 - pancake */
 
 #include <errno.h>
 #include <r_io.h>
@@ -65,9 +65,6 @@ typedef struct {
 	ut64 winbase;
 } RIOW32;
 
-static ut64 winbase;	//HACK
-static int wintid;
-
 static int setup_tokens(void) {
 	HANDLE tok = NULL;
 	TOKEN_PRIVILEGES tp;
@@ -97,8 +94,8 @@ err_enable:
 }
 
 struct __createprocess_params {
-	char *appname;
-	char *cmdline;
+	LPCWSTR appname;
+	LPWSTR cmdline;
 	PROCESS_INFORMATION *pi;
 };
 
@@ -122,7 +119,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	}
 	setup_tokens ();
 	if (!io->w32dbg_wrap) {
-		io->w32dbg_wrap = w32dbg_wrap_new ();
+		io->w32dbg_wrap = (struct w32dbg_wrap_instance_t *)w32dbg_wrap_new ();
 	}
 	char *_cmd = io->args ? r_str_appendf (strdup (cmd), " %s", io->args) :
 		strdup (cmd);
@@ -140,7 +137,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	LPTSTR cmdline_ = r_sys_conv_utf8_to_win (cmdline);
 	free (cmdline);
 	struct __createprocess_params p = {appname_, cmdline_, &pi};
-	W32DbgWInst *wrap = io->w32dbg_wrap;
+	W32DbgWInst *wrap = (W32DbgWInst *)io->w32dbg_wrap;
 	wrap->params.type = W32_CALL_FUNC;
 	wrap->params.func.func = __createprocess_wrap;
 	wrap->params.func.user = &p;
@@ -173,15 +170,19 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		goto err_fork;
 	}
 
+	CloseHandle (de.u.CreateProcessInfo.hFile);
+
+	wrap->pi.hProcess = pi.hProcess;
+	wrap->pi.hThread = pi.hThread;
+	wrap->winbase = (ut64)de.u.CreateProcessInfo.lpBaseOfImage;
+
 	eprintf ("Spawned new process with pid %d, tid = %d\n", pid, tid);
-	winbase = (ut64)de.u.CreateProcessInfo.lpBaseOfImage;
-	wintid = tid;
 	return pid;
 
 err_fork:
 	eprintf ("ERRFORK\n");
 	TerminateProcess (pi.hProcess, 1);
-	w32dbg_wrap_fini (io->w32dbg_wrap);
+	w32dbg_wrap_fini ((W32DbgWInst *)io->w32dbg_wrap);
 	io->w32dbg_wrap = NULL;
 	CloseHandle (pi.hThread);
 	CloseHandle (pi.hProcess);
@@ -591,8 +592,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			if ((ret = _plugin->open (io, uri, rw, mode))) {
 				RCore *c = io->corebind.core;
 				W32DbgWInst *wrap = (W32DbgWInst *)ret->data;
-				wrap->winbase = winbase;
-				wrap->pi.dwThreadId = wintid;
 				c->dbg->user = wrap;
 			}
 #elif __APPLE__
