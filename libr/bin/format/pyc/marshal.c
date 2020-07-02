@@ -1046,10 +1046,16 @@ static pyc_object *get_object(RBuffer *buffer) {
 		break;
 	case TYPE_CODE_v0:
 		ret = get_code_object (buffer);
+		if (!ret) {
+			return NULL;
+		}
 		ret->type = TYPE_CODE_v0;
 		break;
 	case TYPE_CODE_v1:
 		ret = get_code_object (buffer);
+		if (!ret) {
+			return NULL;
+		}
 		ret->type = TYPE_CODE_v1;
 		break;
 	case TYPE_INT:
