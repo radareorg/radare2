@@ -1926,12 +1926,29 @@ R_API int r_core_anal_esil_fcn(RCore *core, ut64 at, ut64 from, int reftype, int
 	return 0;
 }
 
+static int find_sym_flag(void *a1, void *a2) {
+	RFlagItem *f = (RFlagItem *)a2;
+	return f->space && !strcmp (f->space->name, R_FLAGS_FS_SYMBOLS)? 0: 1;
+}
+
+static bool is_skippable_addr(RCore *core, ut64 addr) {
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+	if (!fcn) {
+		return false;
+	}
+	if (fcn->addr == addr) {
+		return true;
+	}
+	const RList *flags = r_flag_get_list (core->flags, addr);
+	return !(flags && r_list_find (flags, fcn, find_sym_flag));
+}
+
 // XXX: This function takes sometimes forever
 /* analyze a RAnalFunction at the address 'at'.
  * If the function has been already analyzed, it adds a
  * reference to that fcn */
 R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
-	if (from == UT64_MAX && r_anal_get_fcn_in (core->anal, at, 0)) {
+	if (from == UT64_MAX && is_skippable_addr (core, at)) {
 		if (core->anal->verbose) {
 			eprintf ("Message: Invalid address for function 0x%08"PFMT64x"\n", at);
 		}
