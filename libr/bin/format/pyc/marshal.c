@@ -1191,7 +1191,7 @@ static bool extract_sections_symbols(pyc_object *obj, RList *sections, RList *sy
 	if (!r_list_append (symbols, symbol)) {
 		goto fail;
 	}
-	if (cobj->consts->type != TYPE_TUPLE && cobj->consts->type != TYPE_SMALL_TUPLE) {
+	if (!cobj->consts || (cobj->consts->type != TYPE_TUPLE && cobj->consts->type != TYPE_SMALL_TUPLE)) {
 		goto fail;
 	}
 	r_list_foreach (((RList *)(cobj->consts->data)), i, obj)
