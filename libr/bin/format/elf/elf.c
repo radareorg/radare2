@@ -1430,7 +1430,7 @@ static ut64 get_import_addr_mips(ELFOBJ *bin, RBinElfReloc *rel) {
 	}
 
 	const ut8 *base = r_mem_mem_aligned (buf, sizeof (buf), (const ut8 *)"\x3c\x0f\x00", 3, 4);
-	plt_addr += base ? (int)(size_t) (base - buf) :  MIPS_PLT_OFFSET + 8; // HARDCODED HACK
+	plt_addr += base? (int)(size_t) (base - buf):  MIPS_PLT_OFFSET + 8; // HARDCODED HACK
 	plt_addr += pos * 16;
 
 	return plt_addr;
@@ -3785,15 +3785,15 @@ ut64 Elf_(r_bin_elf_p2v) (ELFOBJ *bin, ut64 paddr) {
 
 /* Deprecated temporarily. Use r_bin_elf_v2p_new in new code for now. */
 ut64 Elf_(r_bin_elf_v2p) (ELFOBJ *bin, ut64 vaddr) {
-	size_t i;
-
-	r_return_val_if_fail (bin, 0); // UT64_MAX or vaddr?
+	r_return_val_if_fail (bin, 0);
 	if (!bin->phdr) {
 		if (is_bin_etrel (bin)) {
 			return vaddr - bin->baddr;
 		}
 		return vaddr;
 	}
+
+	size_t i;
 	for (i = 0; i < bin->ehdr.e_phnum; i++) {
 		Elf_(Phdr) *p = &bin->phdr[i];
 		if (p->p_type == PT_LOAD && is_in_vphdr (p, vaddr)) {
