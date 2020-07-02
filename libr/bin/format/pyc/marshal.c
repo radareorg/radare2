@@ -183,7 +183,7 @@ static pyc_object *get_long_object(RBuffer *buffer) {
 
 	st32 ndigits = get_st32 (buffer, &error);
 	if (ndigits < -SIZE32_MAX) {
-		eprintf ("bad marshal data (long size out of range)");
+		eprintf ("bad marshal data (long size out of range)\n");
 		return NULL;
 	}
 	if (error) {
@@ -540,7 +540,7 @@ static pyc_object *get_tuple_object(RBuffer *buffer) {
 
 	n = get_ut32 (buffer, &error);
 	if (n > SIZE32_MAX) {
-		eprintf ("bad marshal data (tuple size out of range)");
+		eprintf ("bad marshal data (tuple size out of range)\n");
 		return NULL;
 	}
 	if (error) {
@@ -561,7 +561,7 @@ static pyc_object *get_list_object(RBuffer *buffer) {
 
 	n = get_ut32 (buffer, &error);
 	if (n > SIZE32_MAX) {
-		eprintf ("bad marshal data (list size out of range)");
+		eprintf ("bad marshal data (list size out of range)\n");
 		return NULL;
 	}
 	if (error) {
@@ -622,7 +622,7 @@ static pyc_object *get_set_object(RBuffer *buffer) {
 
 	n = get_ut32 (buffer, &error);
 	if (n > SIZE32_MAX) {
-		eprintf ("bad marshal data (set size out of range)");
+		eprintf ("bad marshal data (set size out of range)\n");
 		return NULL;
 	}
 	if (error) {
@@ -1188,10 +1188,10 @@ static bool extract_sections_symbols(pyc_object *obj, RList *sections, RList *sy
 	symbol->vaddr = cobj->start_offset;
 	symbol->paddr = cobj->start_offset;
 	symbol->ordinal = symbols_ordinal++;
-	if (!r_list_append (symbols, symbol)) {
+	if (!cobj->consts || (cobj->consts->type != TYPE_TUPLE && cobj->consts->type != TYPE_SMALL_TUPLE)) {
 		goto fail;
 	}
-	if (!cobj->consts || (cobj->consts->type != TYPE_TUPLE && cobj->consts->type != TYPE_SMALL_TUPLE)) {
+	if (!r_list_append (symbols, symbol)) {
 		goto fail;
 	}
 	r_list_foreach (((RList *)(cobj->consts->data)), i, obj)
