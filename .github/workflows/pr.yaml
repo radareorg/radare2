@@ -102,7 +102,7 @@ jobs:
         fi
         cd test
         radare2 -N -Qc 'e cfg.newshell' -
-        make && make fuzz-tests
+        make
       env:
         NEWSHELL: ${{ matrix.newshell }}
 
