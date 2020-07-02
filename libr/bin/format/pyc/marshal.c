@@ -1158,6 +1158,9 @@ static bool extract_sections_symbols(pyc_object *obj, RList *sections, RList *sy
 	if (!cobj->name->data) {
 		return false;
 	}
+	if (!cobj->consts) {
+		return false;
+	}
 	//add the cobj to objs list
 	if (!r_list_append (cobjs, cobj)) {
 		goto fail;
@@ -1188,7 +1191,7 @@ static bool extract_sections_symbols(pyc_object *obj, RList *sections, RList *sy
 	symbol->vaddr = cobj->start_offset;
 	symbol->paddr = cobj->start_offset;
 	symbol->ordinal = symbols_ordinal++;
-	if (!cobj->consts || (cobj->consts->type != TYPE_TUPLE && cobj->consts->type != TYPE_SMALL_TUPLE)) {
+	if (cobj->consts->type != TYPE_TUPLE && cobj->consts->type != TYPE_SMALL_TUPLE) {
 		goto fail;
 	}
 	if (!r_list_append (symbols, symbol)) {
