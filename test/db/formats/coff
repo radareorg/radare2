@@ -63,21 +63,21 @@ EXPECT=<<EOF
  1 fd: 3 +0x0000008b 0x0000008b - 0x000000a6 r-- fmap..data_1
 [Symbols]
 
-nth paddr       vaddr      bind   type size lib name
-----------------------------------------------------
-0    ---------- 0x00000000 NONE   UNK  4        imp.MessageBoxA
-0    ---------- 0x00000000 NONE   UNK  4        imp.ExitProcess
-0    0x00000064 0x00000064 LOCAL  SECT 4        .text
-0    0x00000064 0x00000064 GLOBAL FUNC 4        main
-0    0x0000008b 0x0000008b LOCAL  SECT 4        .data
+nth paddr       vaddr              bind   type size lib name
+------------------------------------------------------------
+0    ---------- 0xffffffffffffffff NONE   UNK  4        imp.MessageBoxA
+0    ---------- 0xffffffffffffffff NONE   UNK  4        imp.ExitProcess
+0    0x00000064 0x00000064         LOCAL  SECT 4        .text
+0    0x00000064 0x00000064         GLOBAL FUNC 4        main
+0    0x0000008b 0x0000008b         LOCAL  SECT 4        .data
 [Relocations]
 
-vaddr      paddr      type    name
-----------------------------------
-0x0000006d 0x0000006d UNKNOWN .data
-0x00000074 0x00000074 UNKNOWN .data
-0x00000080 0x00000080 UNKNOWN MessageBoxA
-0x00000087 0x00000087 UNKNOWN ExitProcess
+vaddr      paddr      type   name
+---------------------------------
+0x0000006d 0x0000006d ADD_32 .data
+0x00000074 0x00000074 ADD_32 .data
+0x00000080 0x00000080 ADD_32 MessageBoxA
+0x00000087 0x00000087 ADD_32 ExitProcess
 
 
 4 relocations
@@ -103,12 +103,33 @@ EXPECT=<<EOF
  3 fd: 3 +0x00000eec 0x00000eec - 0x00000fbf r-- fmap..debug_S_6
  2 fd: 3 +0x00000ff2 0x00000ff2 - 0x00000ff5 r-- fmap..rtc_IMZ_7
  1 fd: 3 +0x00001000 0x00001000 - 0x00001003 r-- fmap..rtc_TMZ_8
-0    0x00000d8f 0x00000d8f LOCAL  SECT 4        .text$mn
-0    0x00000ec2 0x00000ec2 LOCAL  SECT 4        .text$mn
+0    0x00000d8f 0x00000d8f         LOCAL  SECT 4        .text$mn
+0    0x00000ec2 0x00000ec2         LOCAL  SECT 4        .text$mn
             ;-- section..text_mn_5:
             ;-- .text$mn:
             ;-- ??1FooBar@@QAE@XZ:
             0x00000ec2      55             push ebp                    ; [05] -r-x section size 42 named .text_mn_5
             0x00000ec3      8bec           mov ebp, esp
+EOF
+RUN
+
+NAME=patched reloc x86
+ARGS=-e io.cache=1
+FILE=bins/coff/tif_dir.obj
+CMDS=<<EOF
+af @ sym._TIFFGetField
+pd 1 @ reloc._TIFFVGetField-1
+axt @ sym._TIFFVGetField
+pd 1 @ 0x0000b48a
+pd 1 @ 0x0001000d
+EOF
+EXPECT=<<EOF
+(reloc._TIFFVGetField)
+|           0x0000b469      e80e000000     call sym._TIFFVGetField     ; RELOC 32 _TIFFVGetField @ 0x0000b47c + 0x0
+sym._TIFFGetField 0xb469 [CALL] call sym._TIFFVGetField
+|           0x0000b48a      e87e4b0000     call _TIFFFindField
+            ; CALL XREF from sym._TIFFVGetField @ 0xb48a
+            ;-- reloc._TIFFFindField:
+            0x0001000d      .dword 0x00000000                          ; RELOC 32 _TIFFFindField
 EOF
 RUN
