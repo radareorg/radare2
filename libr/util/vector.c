@@ -19,9 +19,14 @@
 
 #define RESIZE_OR_RETURN_NULL(next_capacity) do { \
 		size_t new_capacity = next_capacity; \
-		void **new_a = realloc (vec->a, vec->elem_size * new_capacity); \
+		size_t new_capacity_size = vec->elem_size * new_capacity; \
+		void **new_a = realloc (vec->a, new_capacity_size); \
 		if (!new_a) { \
 			return NULL; \
+		} \
+		if (vec->capacity < new_capacity) { \
+			size_t old_capacity_size = vec->elem_size * vec->capacity; \
+			memset(&new_a[vec->capacity], 0, new_capacity_size - old_capacity_size); \
 		} \
 		vec->a = new_a; \
 		vec->capacity = new_capacity; \
