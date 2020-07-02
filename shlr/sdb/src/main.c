@@ -265,9 +265,13 @@ static int createdb(const char *f, const char **args, int nargs) {
 	insertkeys (s, args, nargs, '=');
 	sdb_config (s, options);
 	for (; (line = stdin_slurp (NULL));) {
-		if ((eq = strchr (line, '='))) {
+		size_t off = 0;
+		if (line[0] == '\xef' && line[1] == '\xbb' && line[2] == '\xbf') {
+			off = 3;
+		}
+		if ((eq = strchr (line + off, '='))) {
 			*eq++ = 0;
-			sdb_disk_insert (s, line, eq);
+			sdb_disk_insert (s, line + off, eq);
 		}
 		free (line);
 	}
