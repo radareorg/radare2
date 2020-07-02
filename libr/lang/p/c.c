@@ -42,7 +42,6 @@ static int lang_c_file(RLang *lang, const char *file) {
 		libpath = ".";
 		libname = name;
 	}
-	r_sys_setenv ("PKG_CONFIG_PATH", R2_LIBDIR"/pkgconfig");
 	p = strstr (name, ".c");
 	if (p) {
 		*p=0;
@@ -51,8 +50,9 @@ static int lang_c_file(RLang *lang, const char *file) {
 	if (!cc || !*cc) {
 		cc = strdup ("gcc");
 	}
-	char *buf = r_str_newf ("%s -fPIC -shared %s -o %s/lib%s."R_LIB_EXT
-		" $(pkg-config --cflags --libs r_core)", cc, file, libpath, libname);
+	char *buf = r_str_newf ("%s -fPIC -shared %s -o %s/lib%s." R_LIB_EXT
+		" $(PKG_CONFIG_PATH=%s pkg-config --cflags --libs r_core)",
+		cc, file, libpath, libname, R2_LIBDIR "/pkgconfig");
 	free (cc);
 	if (r_sandbox_system (buf, 1) != 0) {
 		free (buf);

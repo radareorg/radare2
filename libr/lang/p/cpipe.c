@@ -29,7 +29,6 @@ static int lang_cpipe_file(RLang *lang, const char *file) {
 		libpath = ".";
 		libname = name;
 	}
-	r_sys_setenv ("PKG_CONFIG_PATH", R2_LIBDIR"/pkgconfig");
 	p = strstr (name, ".c");
 	if (p) *p = 0;
 	cc = r_sys_getenv ("CC");
@@ -38,13 +37,17 @@ static int lang_cpipe_file(RLang *lang, const char *file) {
 		cc = strdup ("gcc");
 	}
 	char *buf = r_str_newf ("%s %s -o %s/bin%s"
-		" $(pkg-config --cflags --libs r_socket)",
-		cc, file, libpath, libname);
+		" $(PKG_CONFIG_PATH=%s pkg-config --cflags --libs r_socket)",
+		cc, file, libpath, libname, R2_LIBDIR "/pkgconfig");
 	free (cc);
 	if (r_sandbox_system (buf, 1) == 0) {
+		char *o_ld_path = r_sys_getenv ("LD_LIBRARY_PATH");
+		r_sys_setenv ("LD_LIBRARY_PATH", R2_LIBDIR);
 		char *binfile = r_str_newf ("%s/bin%s", libpath, libname);
 		lang_pipe_run (lang, binfile, -1);
 		r_file_rm (binfile);
+		free (o_ld_path);
+		r_sys_setenv ("LD_LIBRARY_PATH", o_ld_path);
 		free (binfile);
 	}
 	free (buf);
