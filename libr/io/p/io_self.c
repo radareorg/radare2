@@ -150,50 +150,58 @@ static int update_self_regions(RIO *io, int pid) {
 	}
 	return true;
 #elif __sun && defined _LP64
-	prmap_t *c, *map;
 	char path[PATH_MAX];
-	ssize_t rd;
-	size_t hint;
-	int fd;
+	snprintf (path, sizeof (path), "/proc/%d/map", getpid ());
+	size_t hint = (1 << 20);
+	int fd = open (path, O_RDONLY);
 
-	snprintf (path, sizeof (path), "/proc/%d/map", getpid());
-	hint = (1 << 20);
-	fd = open (path, O_RDONLY);
-	if (fd != -1) {
-		map = malloc (hint);
-
-		while ((rd = pread(fd, map, hint, 0)) == hint) {
-			hint <<= 1;
-			map = realloc (map, hint);
-		}
-
-		for (c = map; rd; c ++, rd -= sizeof (prmap_t)) {
-			if (c->pr_mapname[0] != '\0') {
-				int perm = 0;
-
-				if ((c->pr_mflags & MA_READ)) {
-					perm |= R_PERM_R;
-				}
-				if ((c->pr_mflags & MA_WRITE)) {
-					perm |= R_PERM_W;
-				}
-				if ((c->pr_mflags & MA_EXEC)) {
-					perm |= R_PERM_X;
-				}
-
-				self_sections[self_sections_count].from = (ut64)c->pr_vaddr;
-				self_sections[self_sections_count].to = (ut64)(c->pr_vaddr + c->pr_size);
-				self_sections[self_sections_count].name = strdup (c->pr_mapname);
-				self_sections[self_sections_count].perm = 0;
-				self_sections_count++;
-			}
-		}
-
-		free (map);
-		close (fd);
-		return true;
+	if (fd == -1) {
+		return false;
 	}
-	return false;
+
+	ssize_t rd;
+	prmap_t *c, *map = malloc (hint);
+
+	if (!map) {
+		return false;
+	}
+
+	while (hint > 0 && (rd = pread (fd, map, hint, 0)) == hint) {
+		hint <<= 1;
+		prmap_t *tmp = realloc (map, hint);
+		if (!tmp) {
+			free (map);
+			return false;
+		}
+
+		map = tmp;
+	}
+
+	for (c = map; rd > 0; c ++, rd -= sizeof (prmap_t)) {
+		if (c->pr_mapname[0] != '\0') {
+			int perm = 0;
+
+			if ((c->pr_mflags & MA_READ)) {
+				perm |= R_PERM_R;
+			}
+			if ((c->pr_mflags & MA_WRITE)) {
+				perm |= R_PERM_W;
+			}
+			if ((c->pr_mflags & MA_EXEC)) {
+				perm |= R_PERM_X;
+			}
+
+			self_sections[self_sections_count].from = (ut64)c->pr_vaddr;
+			self_sections[self_sections_count].to = (ut64)(c->pr_vaddr + c->pr_size);
+			self_sections[self_sections_count].name = strdup (c->pr_mapname);
+			self_sections[self_sections_count].perm = perm;
+			self_sections_count++;
+		}
+	}
+
+	free (map);
+	close (fd);
+	return true;
 #else
 #ifdef _MSC_VER
 	int perm;
