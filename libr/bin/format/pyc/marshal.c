@@ -5,6 +5,9 @@
 #include "marshal.h"
 #include "pyc_magic.h"
 
+// avoiding using r2 internals asserts
+#define if_true_return(cond,ret) if(cond){return(ret);}
+
 static ut32 magic_int;
 static ut32 symbols_ordinal = 0;
 
@@ -1137,22 +1140,15 @@ static bool extract_sections_symbols(pyc_object *obj, RList *sections, RList *sy
 	RListIter *i = NULL;
 
 	//each code object is a section
-	if (!obj || (obj->type != TYPE_CODE_v1 && obj->type != TYPE_CODE_v0)) {
-		return false;
-	}
+	if_true_return (!obj || (obj->type != TYPE_CODE_v1 && obj->type != TYPE_CODE_v0), false);
+
 	cobj = obj->data;
-	if (!cobj || !cobj->name) {
-		return false;
-	}
-	if (cobj->name->type != TYPE_ASCII && cobj->name->type != TYPE_STRING && cobj->name->type != TYPE_INTERNED) {
-		return false;
-	}
-	if (!cobj->name->data) {
-		return false;
-	}
-	if (!cobj->consts) {
-		return false;
-	}
+
+	if_true_return (!cobj || !cobj->name, false);
+	if_true_return (cobj->name->type != TYPE_ASCII && cobj->name->type != TYPE_STRING && cobj->name->type != TYPE_INTERNED, false);
+	if_true_return (!cobj->name->data, false);
+	if_true_return (!cobj->consts, false);
+
 	//add the cobj to objs list
 	if (!r_list_append (cobjs, cobj)) {
 		goto fail;
