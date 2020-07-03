@@ -19,14 +19,9 @@
 
 #define RESIZE_OR_RETURN_NULL(next_capacity) do { \
 		size_t new_capacity = next_capacity; \
-		size_t new_capacity_size = vec->elem_size * new_capacity; \
-		void **new_a = realloc (vec->a, new_capacity_size); \
+		void **new_a = realloc (vec->a, vec->elem_size * new_capacity); \
 		if (!new_a) { \
 			return NULL; \
-		} \
-		if (vec->capacity < new_capacity) { \
-			size_t old_capacity_size = vec->elem_size * vec->capacity; \
-			memset (&new_a[vec->capacity], 0, new_capacity_size - old_capacity_size); \
 		} \
 		vec->a = new_a; \
 		vec->capacity = new_capacity; \
@@ -235,6 +230,22 @@ R_API RPVector *r_pvector_new(RPVectorFree free) {
 		return NULL;
 	}
 	r_pvector_init (v, free);
+	return v;
+}
+
+R_API RPVector *r_pvector_new_with_len(RPVectorFree free, size_t length) {
+	RPVector *v = R_NEW (RPVector);
+	if (!v) {
+		return NULL;
+	}
+	r_pvector_init (v, free);
+	void** p = r_pvector_reserve (v, length);
+	if (!p) {
+		r_pvector_free (v);
+		return NULL;
+	}
+	memset (p, 0, v->v.elem_size * v->v.capacity);
+	v->v.len = length;
 	return v;
 }
 
