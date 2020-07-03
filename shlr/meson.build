@@ -217,8 +217,9 @@ sdb_exe = r'@0@'
 outfile = sys.argv[1]
 infiles = sys.argv[2:]
 if os.name == 'nt':
-    infiles = ','.join(infiles)
-    os.system('powershell -c "Get-Content {} | {} {} ="'.format(infiles, sdb_exe, outfile))
+    # DO NOT replace chr(92) with a backslash
+    infiles, sdb_exe, outfile = map(lambda x: x.replace('/', chr(92)), [' '.join(infiles), sdb_exe, outfile])
+    os.system('type {} | {} {} ='.format(infiles, sdb_exe, outfile))
 else:
     infiles = ' '.join(infiles)
     os.system('cat {} | {} {} ='.format(infiles, sdb_exe, outfile))
