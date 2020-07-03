@@ -5,8 +5,6 @@
 #include "marshal.h"
 #include "pyc_magic.h"
 
-#define SIZE32_MAX 0x7FFFFFFF
-
 static ut32 magic_int;
 static ut32 symbols_ordinal = 0;
 
@@ -182,7 +180,7 @@ static pyc_object *get_long_object(RBuffer *buffer) {
 	char digist2hex[] = "0123456789abcdef";
 
 	st32 ndigits = get_st32 (buffer, &error);
-	if (ndigits < -SIZE32_MAX) {
+	if (ndigits < -ST32_MAX) {
 		eprintf ("bad marshal data (long size out of range)\n");
 		return NULL;
 	}
@@ -413,7 +411,7 @@ static pyc_object *get_string_object(RBuffer *buffer) {
 	ut32 n = 0;
 
 	n = get_ut32 (buffer, &error);
-	if (n > SIZE32_MAX) {
+	if (n > ST32_MAX) {
 		eprintf ("bad marshal data (string size out of range)");
 		return NULL;
 	}
@@ -439,7 +437,7 @@ static pyc_object *get_unicode_object(RBuffer *buffer) {
 	ut32 n = 0;
 
 	n = get_ut32 (buffer, &error);
-	if (n > SIZE32_MAX) {
+	if (n > ST32_MAX) {
 		eprintf ("bad marshal data (unicode size out of range)");
 		return NULL;
 	}
@@ -462,7 +460,7 @@ static pyc_object *get_interned_object(RBuffer *buffer) {
 	ut32 n = 0;
 
 	n = get_ut32 (buffer, &error);
-	if (n > SIZE32_MAX) {
+	if (n > ST32_MAX) {
 		eprintf ("bad marshal data (string size out of range)");
 		return NULL;
 	}
@@ -539,7 +537,7 @@ static pyc_object *get_tuple_object(RBuffer *buffer) {
 	ut32 n = 0;
 
 	n = get_ut32 (buffer, &error);
-	if (n > SIZE32_MAX) {
+	if (n > ST32_MAX) {
 		eprintf ("bad marshal data (tuple size out of range)\n");
 		return NULL;
 	}
@@ -560,7 +558,7 @@ static pyc_object *get_list_object(RBuffer *buffer) {
 	ut32 n = 0;
 
 	n = get_ut32 (buffer, &error);
-	if (n > SIZE32_MAX) {
+	if (n > ST32_MAX) {
 		eprintf ("bad marshal data (list size out of range)\n");
 		return NULL;
 	}
@@ -621,7 +619,7 @@ static pyc_object *get_set_object(RBuffer *buffer) {
 	ut32 n = 0;
 
 	n = get_ut32 (buffer, &error);
-	if (n > SIZE32_MAX) {
+	if (n > ST32_MAX) {
 		eprintf ("bad marshal data (set size out of range)\n");
 		return NULL;
 	}
