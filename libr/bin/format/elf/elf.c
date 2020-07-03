@@ -3034,7 +3034,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 
 	addr_sym_table = Elf_(r_bin_elf_v2p) (bin, bin->dyn_info.dt_symtab);
 	sym_size = bin->dyn_info.dt_syment;
-	if (sym_size < 1) {
+	if (!sym_size) {
 		goto beach;
 	}
 
