@@ -51,7 +51,7 @@ static void add_reg_change(RDebugSession *session, int cnum, int arena, ut64 off
 				eprintf ("Error: creating a register vector.\n");
 				return;
 			}
-			ht_up_insert (session->registers, offset, vreg);
+			ht_up_insert (session->registers, offset | (arena << 16), vreg);
 	}
 	RDebugChangeReg reg = {cnum, data};
 	r_vector_push (vreg, &reg);
@@ -71,7 +71,7 @@ static void add_mem_change(RDebugSession *session, int cnum, ut64 addr, ut8 data
 	r_vector_push (vmem, &mem);
 }
 
-R_API int r_debug_trace_ins_before (RDebug *dbg) {
+R_API int r_debug_trace_ins_before(RDebug *dbg) {
 	RListIter *it, *it_tmp;
 	RAnalValue *val;
 	ut8 buf_pc[32];
@@ -135,7 +135,7 @@ R_API int r_debug_trace_ins_before (RDebug *dbg) {
 	return true;
 }
 
-R_API int r_debug_trace_ins_after (RDebug *dbg) {
+R_API int r_debug_trace_ins_after(RDebug *dbg) {
 	RListIter *it;
 	RAnalValue *val;
 
@@ -234,8 +234,6 @@ static int cmpaddr (const void *_a, const void *_b) {
 	return (r_itv_begin (a->pitv) > r_itv_begin (b->pitv))? 1:
 		 (r_itv_begin (a->pitv) < r_itv_begin (b->pitv))? -1: 0;
 }
-
-
 
 R_API void r_debug_trace_list (RDebug *dbg, int mode, ut64 offset) {
 	int tag = dbg->trace->tag;

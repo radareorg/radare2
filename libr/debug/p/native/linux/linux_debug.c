@@ -1177,7 +1177,12 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 			size = sizeof (R_DEBUG_REG_T);
 		}
 #endif
-		return (ret != 0) ? false : true;
+		if (ret == -1) {
+			r_sys_perror ("reg_write");
+			return false;
+		} else {
+			return true;
+		}
 	}
 	if (type == R_REG_TYPE_FPU) {
 #if __i386__ || __x86_64__

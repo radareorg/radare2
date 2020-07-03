@@ -1089,9 +1089,9 @@ R_API int r_debug_step_back(RDebug *dbg, int steps) {
 	if (steps > dbg->cnum) {
 		steps = dbg->cnum;
 	}
-
-	r_debug_goto_cnum (dbg, dbg->cnum - steps);
-
+	if (!r_debug_goto_cnum (dbg, dbg->cnum - steps)) {
+		return -1;
+	}
 	return steps;
 }
 

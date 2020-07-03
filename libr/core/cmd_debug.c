@@ -4619,8 +4619,8 @@ static int cmd_debug_step (RCore *core, const char *input) {
 		if (r_config_get_i (core->config, "cfg.debug")) {
 			if (!core->dbg->session) {
 				eprintf ("Session have not started\n");
-			} else if (!r_debug_step_back (core->dbg, times)) {
-				eprintf ("cannot step back\n");
+			} else if (r_debug_step_back (core->dbg, times) < 0) {
+				eprintf ("Error: stepping back failed\n");
 			}
 		} else {
 			if (r_core_esil_step_back (core)) {
