@@ -234,11 +234,10 @@ R_API RPVector *r_pvector_new(RPVectorFree free) {
 }
 
 R_API RPVector *r_pvector_new_with_len(RPVectorFree free, size_t length) {
-	RPVector *v = R_NEW (RPVector);
+	RPVector *v = r_pvector_new (free);
 	if (!v) {
 		return NULL;
 	}
-	r_pvector_init (v, free);
 	void** p = r_pvector_reserve (v, length);
 	if (!p) {
 		r_pvector_free (v);
