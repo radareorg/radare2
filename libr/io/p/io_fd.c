@@ -58,23 +58,23 @@ static bool __check(RIO *io, const char *pathname, bool many) {
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
-	if (__check (io, pathname, 0)) {
-		if (r_sandbox_enable (false)) {
-			eprintf ("Do not permit " FDURI " in sandbox mode.\n");
+	if (r_sandbox_enable (false)) {
+		eprintf ("Do not permit " FDURI " in sandbox mode.\n");
+		return NULL;
+	}
+	if (!__check (io, pathname, 0)) {
+		return NULL;
+	}
+	RIOFdata *fdd = R_NEW0 (RIOFdata);
+	if (fdd) {
+		fdd->fd = r_num_math (NULL, pathname + 5);
+		if (fdd->fd < 0) {
+			free (fdd);
+			eprintf ("Invalid filedescriptor.\n");
 			return NULL;
 		}
-		RIOFdata *fdd = R_NEW0 (RIOFdata);
-		if (fdd) {
-			fdd->fd = r_num_math (NULL, pathname + 5);
-			if (fdd->fd < 0) {
-				free (fdd);
-				eprintf ("Invalid filedescriptor.\n");
-				return NULL;
-			}
-		}
-		return r_io_desc_new (io, &r_io_plugin_fd, pathname, R_PERM_RW | rw, mode, fdd);
 	}
-	return NULL;
+	return r_io_desc_new (io, &r_io_plugin_fd, pathname, R_PERM_RW | rw, mode, fdd);
 }
 
 RIOPlugin r_io_plugin_fd = {
