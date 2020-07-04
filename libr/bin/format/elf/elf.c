@@ -4015,9 +4015,6 @@ char *Elf_(r_bin_elf_compiler)(ELFOBJ *bin) {
 }
 
 bool Elf_(r_bin_elf_is_executable)(ELFOBJ *bin) {
-	switch (bin->ehdr.e_type) {
-	case ET_EXEC: return true;
-	case ET_DYN: return true;
-	}
-	return false;
+	const int t = bin->ehdr.e_type;
+	return t == ET_EXEC || t == ET_DYN;
 }

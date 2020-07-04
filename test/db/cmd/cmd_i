@@ -4459,6 +4459,21 @@ EOF
 RUN
 
 NAME=auto entry (lib)
+FILE=bins/elf/libverifyPass.so
+CMDS=<<EOF
+ie
+EOF
+EXPECT=<<EOF
+[Entrypoints]
+vaddr=0x00000f50 paddr=0x00000f50 haddr=0x00000018 hvaddr=0x00000018 type=program
+
+1 entrypoints
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=auto entry (lib no e_entry)
 FILE=bins/elf/libexploit.so
 CMDS=<<EOF
 ie
@@ -4470,8 +4485,7 @@ vaddr=0x00000d28 paddr=0x00000d28 haddr=0x00000018 hvaddr=0x00000018 type=progra
 1 entrypoints
 EOF
 EXPECT_ERR=<<EOF
-Dynamic tag 16 not handled
-Entry point could not be determined from file, it was automatically set to 0xd28.
+Cannot determine entrypoint, using 0x00000d28.
 EOF
 RUN
 

@@ -408,7 +408,7 @@ static RList* entries(RBinFile *bf) {
 		ptr->hvaddr = UT64_MAX;
 
 		if (ptr->vaddr != (ut64)obj->ehdr.e_entry && Elf_(r_bin_elf_is_executable) (obj)) {
-			eprintf ("Entry point could not be determined from file, it was automatically set to 0x%" PFMT64x ".\n", ptr->vaddr);
+			eprintf ("Cannot determine entrypoint, using 0x%08" PFMT64x ".\n", ptr->vaddr);
 		}
 
 		if (bf->o->sections) {
