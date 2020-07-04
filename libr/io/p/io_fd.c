@@ -40,7 +40,7 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int count) {
 }
 
 static int __close(RIODesc *desc) {
-	// dont close, could be problematic in self://
+	R_FREE (desc->data);
 	return 0;
 }
 
