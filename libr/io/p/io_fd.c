@@ -9,11 +9,10 @@
 
 typedef struct {
 	int fd;
-	ut32 size;
-} RIOMalloc;
+} RIOFdata;
 
 static int __write(RIO *io, RIODesc *desc, const ut8 *buf, int count) {
-	RIOMalloc *mal = (RIOMalloc*)desc->data;
+	RIOFdata *mal = (RIOFdata*)desc->data;
 	if (mal) {
 		return write (mal->fd, buf, count);
 	}
@@ -21,7 +20,7 @@ static int __write(RIO *io, RIODesc *desc, const ut8 *buf, int count) {
 }
 
 static bool __resize(RIO *io, RIODesc *desc, ut64 count) {
-	RIOMalloc *mal = (RIOMalloc*)desc->data;
+	RIOFdata *mal = (RIOFdata*)desc->data;
 	if (mal) {
 		return ftruncate (mal->fd, count) == 0;
 	}
@@ -29,7 +28,7 @@ static bool __resize(RIO *io, RIODesc *desc, ut64 count) {
 }
 
 static int __read(RIO *io, RIODesc *desc, ut8 *buf, int count) {
-	RIOMalloc *mal = (RIOMalloc*)desc->data;
+	RIOFdata *mal = (RIOFdata*)desc->data;
 	if (mal) {
 		r_cons_break_push (NULL, NULL);
 		int res = read (mal->fd, buf, count);
@@ -45,7 +44,7 @@ static int __close(RIODesc *desc) {
 }
 
 static ut64 __lseek(RIO* io, RIODesc *desc, ut64 offset, int whence) {
-	RIOMalloc *mal = (RIOMalloc*)desc->data;
+	RIOFdata *mal = (RIOFdata*)desc->data;
 	if (mal) {
 		return lseek (mal->fd, offset, whence);
 	}
@@ -53,7 +52,7 @@ static ut64 __lseek(RIO* io, RIODesc *desc, ut64 offset, int whence) {
 }
 
 static bool __check(RIO *io, const char *pathname, bool many) {
-	return !strncmp (pathname, "fd://", 4);
+	return !strncmp (pathname, "fd://", 5);
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
@@ -62,9 +61,9 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			eprintf ("Do not permit fd:// in sandbox mode.\n");
 			return NULL;
 		}
-		RIOMalloc *mal = R_NEW0 (RIOMalloc);
+		RIOFdata *mal = R_NEW0 (RIOFdata);
 		if (mal) {
-			mal->fd = r_num_math (NULL, pathname + 4);
+			mal->fd = r_num_math (NULL, pathname + 5);
 			if (((int)mal->fd) < 0) {
 				free (mal);
 				eprintf ("Invalid filedescriptor.\n");
