@@ -742,7 +742,7 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 }
 
 // TODO: rename to r_core_project_save_script
-R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
+R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	return projectSaveScript (core, file, opts);
 }
 
