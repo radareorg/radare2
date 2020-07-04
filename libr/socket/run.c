@@ -9,6 +9,7 @@
 #include <r_socket.h>
 #include <r_util.h>
 #include <r_lib.h>
+#include <r_cons.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -33,7 +34,6 @@
 #if __UNIX__
 #include <sys/ioctl.h>
 #include <sys/resource.h>
-#include <termios.h>
 #include <grp.h>
 #include <errno.h>
 #if defined(__sun)

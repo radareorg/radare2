@@ -343,13 +343,6 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		file = argv[opt.ind];
 	}
 
-	if (R_STR_ISEMPTY (opt.arg)) {
-		eprintf ("Cannot open empty path\n");
-		free (sequence);
-		r_egg_free (egg);
-		return 1;
-	}
-
 	if (bits == 64) {
 		if (!strcmp (format, "mach0")) {
 			format = "mach064";
@@ -378,6 +371,10 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	// initialize egg
 	r_egg_setup (egg, arch, bits, 0, os);
 	if (file) {
+		if (R_STR_ISEMPTY (file)) {
+			eprintf ("Cannot open empty path\n");
+			goto fail;
+		}
 		if (!strcmp (file, "-")) {
 			char buf[1024];
 			for (;;) {
