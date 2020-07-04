@@ -66,7 +66,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		RIOFdata *fdd = R_NEW0 (RIOFdata);
 		if (fdd) {
 			fdd->fd = r_num_math (NULL, pathname + 5);
-			if (fdd->fd) < 0) {
+			if (fdd->fd < 0) {
 				free (fdd);
 				eprintf ("Invalid filedescriptor.\n");
 				return NULL;
