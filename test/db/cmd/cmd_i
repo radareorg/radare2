@@ -4049,10 +4049,6 @@ EXPECT=<<EOF
             0x08049efc      .dword 0x080485ce ; entry.fini3 ; sym.fini
             0x08049f00      .dword 0x080485e7 ; entry.fini4 ; sym.destructor
 EOF
-EXPECT_ERR=<<EOF
-Dynamic tag 32 not handled
-Dynamic tag 33 not handled
-EOF
 RUN
 
 NAME=iee elf Cd (64-bit)
