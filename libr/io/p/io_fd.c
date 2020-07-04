@@ -14,26 +14,26 @@ typedef struct {
 } RIOFdata;
 
 static int __write(RIO *io, RIODesc *desc, const ut8 *buf, int count) {
-	RIOFdata *mal = (RIOFdata*)desc->data;
-	if (mal) {
-		return write (mal->fd, buf, count);
+	RIOFdata *fdd = (RIOFdata*)desc->data;
+	if (fdd) {
+		return write (fdd->fd, buf, count);
 	}
 	return -1;
 }
 
 static bool __resize(RIO *io, RIODesc *desc, ut64 count) {
-	RIOFdata *mal = (RIOFdata*)desc->data;
-	if (mal) {
-		return ftruncate (mal->fd, count) == 0;
+	RIOFdata *fdd = (RIOFdata*)desc->data;
+	if (fdd) {
+		return ftruncate (fdd->fd, count) == 0;
 	}
 	return false;
 }
 
 static int __read(RIO *io, RIODesc *desc, ut8 *buf, int count) {
-	RIOFdata *mal = (RIOFdata*)desc->data;
-	if (mal) {
+	RIOFdata *fdd = (RIOFdata*)desc->data;
+	if (fdd) {
 		r_cons_break_push (NULL, NULL);
-		int res = read (mal->fd, buf, count);
+		int res = read (fdd->fd, buf, count);
 		r_cons_break_pop ();
 		return res;
 	}
@@ -46,9 +46,9 @@ static int __close(RIODesc *desc) {
 }
 
 static ut64 __lseek(RIO* io, RIODesc *desc, ut64 offset, int whence) {
-	RIOFdata *mal = (RIOFdata*)desc->data;
-	if (mal) {
-		return lseek (mal->fd, offset, whence);
+	RIOFdata *fdd = (RIOFdata*)desc->data;
+	if (fdd) {
+		return lseek (fdd->fd, offset, whence);
 	}
 	return 0;
 }
@@ -63,16 +63,16 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			eprintf ("Do not permit " FDURI " in sandbox mode.\n");
 			return NULL;
 		}
-		RIOFdata *mal = R_NEW0 (RIOFdata);
-		if (mal) {
-			mal->fd = r_num_math (NULL, pathname + 5);
-			if (((int)mal->fd) < 0) {
-				free (mal);
+		RIOFdata *fdd = R_NEW0 (RIOFdata);
+		if (fdd) {
+			fdd->fd = r_num_math (NULL, pathname + 5);
+			if (fdd->fd) < 0) {
+				free (fdd);
 				eprintf ("Invalid filedescriptor.\n");
 				return NULL;
 			}
 		}
-		return r_io_desc_new (io, &r_io_plugin_fd, pathname, R_PERM_RW | rw, mode, mal);
+		return r_io_desc_new (io, &r_io_plugin_fd, pathname, R_PERM_RW | rw, mode, fdd);
 	}
 	return NULL;
 }
