@@ -7,6 +7,8 @@
 #include <r_cons.h>
 #include <sys/types.h>
 
+#define FDURI "fd://"
+
 typedef struct {
 	int fd;
 } RIOFdata;
@@ -52,13 +54,13 @@ static ut64 __lseek(RIO* io, RIODesc *desc, ut64 offset, int whence) {
 }
 
 static bool __check(RIO *io, const char *pathname, bool many) {
-	return !strncmp (pathname, "fd://", 5);
+	return !strncmp (pathname, FDURI, strlen (FDURI));
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__check (io, pathname, 0)) {
 		if (r_sandbox_enable (false)) {
-			eprintf ("Do not permit fd:// in sandbox mode.\n");
+			eprintf ("Do not permit " FDURI " in sandbox mode.\n");
 			return NULL;
 		}
 		RIOFdata *mal = R_NEW0 (RIOFdata);
@@ -78,7 +80,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 RIOPlugin r_io_plugin_fd = {
 	.name = "fd",
 	.desc = "Local process filedescriptor IO",
-	.uris = "fd://",
+	.uris = FDURI,
 	.license = "LGPL3",
 	.open = __open,
 	.close = __close,
