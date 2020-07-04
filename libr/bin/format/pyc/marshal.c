@@ -183,10 +183,6 @@ static pyc_object *get_long_object(RBuffer *buffer) {
 	char digist2hex[] = "0123456789abcdef";
 
 	st32 ndigits = get_st32 (buffer, &error);
-	if (ndigits < -ST32_MAX) {
-		eprintf ("bad marshal data (long size out of range)\n");
-		return NULL;
-	}
 	if (error) {
 		return NULL;
 	}
@@ -1047,11 +1043,15 @@ static pyc_object *get_object(RBuffer *buffer) {
 		break;
 	case TYPE_CODE_v0:
 		ret = get_code_object (buffer);
-		if (ret) { ret->type = TYPE_CODE_v0; }
+		if (ret) {
+			ret->type = TYPE_CODE_v0;
+		}
 		break;
 	case TYPE_CODE_v1:
 		ret = get_code_object (buffer);
-		if (ret) { ret->type = TYPE_CODE_v1; }
+		if (ret) {
+			ret->type = TYPE_CODE_v1;
+		}
 		break;
 	case TYPE_INT:
 		ret = get_int_object (buffer);
