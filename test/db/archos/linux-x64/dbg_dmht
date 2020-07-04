@@ -1,0 +1,26 @@
+NAME=check tcache list
+FILE=bins/elf/tcache
+ARGS=-d
+CMDS=<<EOF
+db 0x004011d0
+dc
+dmht~?items : 6
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+
+NAME=check tcache list older versions
+FILE=bins/elf/tcache-2.27
+ARGS=-Rsetenv=LD_PRELOAD=bins/elf/libc-2.27.so -d
+CMDS=<<EOF
+db 0x004011d0
+dc
+dmht~?items : 6
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
