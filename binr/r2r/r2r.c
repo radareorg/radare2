@@ -557,10 +557,10 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 		char c = *line;
 		switch (c) {
 		case '+':
-			printf ("%s", diffchar ? Color_BBGGREEN Color_BLACK : Color_GREEN);
+			printf ("%s"Color_BGREEN, diffchar ? "\x1b[48;5;22m" : "");
 			break;
 		case '-':
-			printf ("%s", diffchar ? Color_BBGRED Color_BLACK : Color_RED);
+			printf ("%s"Color_BRED, diffchar ? "\x1b[48;5;52m" : "");
 			break;
 		case '~': // can't happen if !diffchar
 			printf ("\n");
