@@ -655,8 +655,6 @@ static void fill_dynamic_entries(ELFOBJ *bin, ut64 loaded_offset, ut64 dyn_size)
 		default:
 			if ((d.d_tag >= DT_VERSYM) && (d.d_tag <= DT_VERNEEDNUM)) {
 				bin->version_info[DT_VERSIONTAGIDX (d.d_tag)] = d.d_un.d_val;
-			} else {
-				eprintf("Dynamic tag %" PFMT64d " not handled\n", (ut64) d.d_tag);
 			}
 			break;
 		}
