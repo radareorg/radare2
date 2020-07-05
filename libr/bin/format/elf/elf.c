@@ -557,8 +557,8 @@ static void fill_dynamic_entries(ELFOBJ *bin, ut64 loaded_offset, ut64 dyn_size)
 	size_t number_of_entries = get_maximum_number_of_dynamic_entries(dyn_size);
 
 	for (i = 0; i < number_of_entries; i++) {
-		ut64 entry_offset = loaded_offset + i * sizeof(Elf_(Dyn));
-		if (!fill_dynamic_entry(bin, entry_offset, &d)) {
+		ut64 entry_offset = loaded_offset + i * sizeof (Elf_(Dyn));
+		if (!fill_dynamic_entry (bin, entry_offset, &d)) {
 			break;
 		}
 
@@ -629,7 +629,21 @@ static void fill_dynamic_entries(ELFOBJ *bin, ut64 loaded_offset, ut64 dyn_size)
 			bin->dyn_info.dt_runpath = d.d_un.d_val;
 			break;
 		case DT_NEEDED:
-			r_vector_push(&bin->dyn_info.dt_needed, &d.d_un.d_val);
+			r_vector_push (&bin->dyn_info.dt_needed, &d.d_un.d_val);
+			break;
+		case DT_INIT:
+		case DT_FINI:
+		case DT_DEBUG:
+		case DT_INIT_ARRAY:
+		case DT_FINI_ARRAY:
+		case DT_INIT_ARRAYSZ:
+		case DT_FINI_ARRAYSZ:
+		case DT_PREINIT_ARRAY:
+		case DT_PREINIT_ARRAYSZ:
+		case DT_SONAME:
+		case DT_GNU_HASH:
+			// common dynamic entries in ELF, but we don't need to
+			// do anything with them.
 			break;
 		default:
 			if ((d.d_tag >= DT_VERSYM) && (d.d_tag <= DT_VERNEEDNUM)) {

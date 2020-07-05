@@ -196,6 +196,8 @@ static int r_bin_coff_init(struct r_bin_coff_obj *obj, RBuffer *buf, bool verbos
 	obj->b = r_buf_ref (buf);
 	obj->size = r_buf_size (buf);
 	obj->verbose = verbose;
+	obj->sym_ht = ht_up_new0 ();
+	obj->imp_ht = ht_up_new0 ();
 	if (!r_bin_coff_init_hdr (obj)) {
 		bprintf ("Warning: failed to init hdr\n");
 		return false;
@@ -213,10 +215,12 @@ static int r_bin_coff_init(struct r_bin_coff_obj *obj, RBuffer *buf, bool verbos
 }
 
 void r_bin_coff_free(struct r_bin_coff_obj *obj) {
+	ht_up_free (obj->sym_ht);
+	ht_up_free (obj->imp_ht);
 	free (obj->scn_hdrs);
 	free (obj->symbols);
 	r_buf_free (obj->b);
-	R_FREE (obj);
+	free (obj);
 }
 
 struct r_bin_coff_obj* r_bin_coff_new_buf(RBuffer *buf, bool verbose) {

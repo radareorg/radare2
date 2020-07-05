@@ -199,7 +199,12 @@ sdb_dep = declare_dependency(
 )
 
 # Create sdb_version.h
-sdb_version = '1.5.0'
+r = run_command(py3_exe, 'sys/sdb_version.py', 'sdb/config.mk')
+if r.returncode() == 0
+  sdb_version = r.stdout().strip().split('\n')[0]
+else
+  sdb_version = 'unknown'
+endif
 run_command(py3_exe, '-c', 'with open("sdb/src/sdb_version.h", "w") as f: f.write("#define SDB_VERSION \"' + sdb_version + '\"")')
 
 sdb_exe = executable('sdb', ['sdb/src/main.c'] + sdb_files,
@@ -217,8 +222,9 @@ sdb_exe = r'@0@'
 outfile = sys.argv[1]
 infiles = sys.argv[2:]
 if os.name == 'nt':
-    infiles = ','.join(infiles)
-    os.system('powershell -c "Get-Content {} | {} {} ="'.format(infiles, sdb_exe, outfile))
+    # DO NOT replace chr(92) below with a backslash
+    infiles, sdb_exe, outfile = map(lambda x: x.replace('/', chr(92)), [' '.join(infiles), sdb_exe, outfile])
+    os.system('type {} | {} {} ='.format(infiles, sdb_exe, outfile))
 else:
     infiles = ' '.join(infiles)
     os.system('cat {} | {} {} ='.format(infiles, sdb_exe, outfile))
