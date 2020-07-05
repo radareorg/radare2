@@ -7,7 +7,11 @@
 #include <r_cons.h>
 #include <sys/types.h>
 
+#if __WINDOWS__
+#define FDURI "handle://"
+#else
 #define FDURI "fd://"
+#endif
 
 typedef struct {
 	int fd;
@@ -67,7 +71,10 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	}
 	RIOFdata *fdd = R_NEW0 (RIOFdata);
 	if (fdd) {
-		fdd->fd = r_num_math (NULL, pathname + 5);
+		fdd->fd = r_num_math (NULL, pathname + strlen (FDURI));
+#if __WINDOWS__
+		fdd->fd = _open_osfhandle (fdd->fd, 0);
+#endif
 		if (fdd->fd < 0) {
 			free (fdd);
 			eprintf ("Invalid filedescriptor.\n");
@@ -78,10 +85,15 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 }
 
 RIOPlugin r_io_plugin_fd = {
+#if __WINDOWS__
+	.name = "handle",
+	.desc = "Local process file handle IO",
+#else
 	.name = "fd",
 	.desc = "Local process filedescriptor IO",
+#endif
 	.uris = FDURI,
-	.license = "LGPL3",
+	.license = "MIT",
 	.open = __open,
 	.close = __close,
 	.read = __read,
