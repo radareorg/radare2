@@ -53,7 +53,7 @@ typedef struct r_code_annotation_t {
 		} syntax_highlight;
 
 		struct {
-			const char *name;
+			char *name;
 		} function_name;
 	};
 } RCodeAnnotation;
@@ -84,6 +84,8 @@ R_API RAnnotatedCode *r_annotated_code_new(char *code);
  * Return: Nothing.
  */
 R_API void r_annotated_code_free(RAnnotatedCode *code);
+
+R_API void r_annotation_free(void *e, void *user);
 /**
  * r_annotated_code_add_annotation() - Inserts *annotation in *code.
  * @code: Pointer to a RAnnotatedCode.
