@@ -595,6 +595,12 @@ static void fill_dynamic_entries(ELFOBJ *bin, ut64 loaded_offset, ut64 dyn_size)
 		case DT_SYMENT:
 			bin->dyn_info.dt_syment = d.d_un.d_val;
 			break;
+		case DT_INIT:
+			bin->dyn_info.dt_init = d.d_un.d_ptr;
+			break;
+		case DT_FINI:
+			bin->dyn_info.dt_fini = d.d_un.d_ptr;
+			break;
 		case DT_REL:
 			bin->dyn_info.dt_rel = d.d_un.d_ptr;
 			break;
@@ -607,6 +613,9 @@ static void fill_dynamic_entries(ELFOBJ *bin, ut64 loaded_offset, ut64 dyn_size)
 		case DT_PLTREL:
 			bin->dyn_info.dt_pltrel = d.d_un.d_val;
 			break;
+		case DT_DEBUG:
+			bin->dyn_info.dt_debug = d.d_un.d_ptr;
+			break;
 		case DT_JMPREL:
 			bin->dyn_info.dt_jmprel = d.d_un.d_ptr;
 			break;
@@ -615,6 +624,18 @@ static void fill_dynamic_entries(ELFOBJ *bin, ut64 loaded_offset, ut64 dyn_size)
 			break;
 		case DT_BIND_NOW:
 			bin->dyn_info.dt_bind_now = true;
+			break;
+		case DT_INIT_ARRAY:
+			bin->dyn_info.dt_init_array = d.d_un.d_ptr;
+			break;
+		case DT_FINI_ARRAY:
+			bin->dyn_info.dt_fini_array = d.d_un.d_ptr;
+			break;
+		case DT_INIT_ARRAYSZ:
+			bin->dyn_info.dt_init_arraysz = d.d_un.d_val;
+			break;
+		case DT_FINI_ARRAYSZ:
+			bin->dyn_info.dt_fini_arraysz = d.d_un.d_val;
 			break;
 		case DT_FLAGS:
 			bin->dyn_info.dt_flags = d.d_un.d_val;
