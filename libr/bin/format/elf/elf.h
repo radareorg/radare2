@@ -83,6 +83,7 @@ typedef struct Elf_(r_bin_elf_dynamic_info) {
 	Elf_(Xword) dt_relaent;
 	Elf_(Xword) dt_strsz;
 	Elf_(Xword) dt_syment;
+	Elf_(Addr) dt_fini;
 	Elf_(Addr) dt_rel;
 	Elf_(Xword) dt_relsz;
 	Elf_(Xword) dt_relent;

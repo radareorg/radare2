@@ -199,15 +199,20 @@ sdb_dep = declare_dependency(
 )
 
 # Create sdb_version.h
-sdb_version = '1.2.0'
+r = run_command(py3_exe, 'sys/sdb_version.py', 'sdb/config.mk')
+if r.returncode() == 0
+  sdb_version = r.stdout().strip().split('\n')[0]
+else
+  sdb_version = 'unknown'
+endif
 run_command(py3_exe, '-c', 'with open("sdb/src/sdb_version.h", "w") as f: f.write("#define SDB_VERSION \"' + sdb_version + '\"")')
 
-sdb_exe = executable('sdb', 'sdb/src/main.c',
+sdb_exe = executable('sdb', ['sdb/src/main.c'] + sdb_files,
   include_directories: [
     include_directories(['sdb/src'])
   ],
-  link_with: [libr2sdb],
-  implicit_include_directories: false
+  implicit_include_directories: false,
+  native: true,
 )
 
 sdb_gen_cmd_script = '''#script
