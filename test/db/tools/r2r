@@ -39,8 +39,5 @@ CMDS=i~^file
 EXPECT=<<EOF
 file     bins/elf/_Exit (42)
 EOF
-EXPECT_ERR=<<EOF
-Dynamic tag 1879047925 not handled
-Dynamic tag 21 not handled
-EOF
+EXPECT_ERR=
 RUN
