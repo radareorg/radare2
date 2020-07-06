@@ -1150,10 +1150,6 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 	if (!dex->trycatch_list) {
 		dex->trycatch_list = r_list_newf ((RListFree)r_bin_trycatch_free);
 	}
-	if (DM > 4096) {
-		eprintf ("This DEX is probably corrupted. Chopping DM from %d to 4KB\n", (int)DM);
-		DM = 4096;
-	}
 	size_t skip = 0;
 	ut64 bufsz = r_buf_size (bf->buf);
 	ut64 encoded_method_addr;
@@ -1165,9 +1161,17 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		// Needed because theres another rbufseek call inside this loop. must be fixed
 		encoded_method_addr = r_buf_tell (bf->buf);
 		MI = peek_uleb (bf->buf, &err, &skip);
+		if (err) {
+			eprintf ("Error\n");
+			break;
+		}
 		MI += omi;
 		omi = MI;
 		MA = peek_uleb (bf->buf, &err, &skip);
+		if (err) {
+			eprintf ("Error\n");
+			break;
+		}
 		MC = peek_uleb (bf->buf, &err, &skip);
 		if (err) {
 			eprintf ("Error\n");
@@ -1208,9 +1212,24 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				continue;
 			}
 			regsz = r_buf_read_le16_at (bf->buf, MC);
+			if (regsz == UT16_MAX) {
+				R_FREE (flag_name);
+				R_FREE (signature);
+				break;
+			}
 			ins_size = r_buf_read_le16_at (bf->buf, MC + 2);
+			if (ins_size == UT16_MAX) {
+				R_FREE (flag_name);
+				R_FREE (signature);
+				break;
+			}
 			outs_size = r_buf_read_le16_at (bf->buf, MC + 4);
 			tries_size = r_buf_read_le16_at (bf->buf, MC + 6);
+			if (tries_size == UT16_MAX) {
+				R_FREE (flag_name);
+				R_FREE (signature);
+				break;
+			}
 			debug_info_off = r_buf_read_le32_at (bf->buf, MC + 8);
 			insns_size = r_buf_read_le32_at (bf->buf, MC + 12);
 			int padd = 0;
@@ -1284,7 +1303,9 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 					}
 					// TODO: catch left instead of null
 					st64 size;
-					r_buf_seek (bf->buf, off, R_BUF_SET);
+					if (r_buf_seek (bf->buf, off, R_BUF_SET) == -1) {
+						break;
+					}
 					int r = r_buf_sleb128 (bf->buf, &size);
 					if (r <= 0) {
 						break;
