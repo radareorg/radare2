@@ -176,7 +176,7 @@ R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
 	r_core_bin_export_info_rad (core);
 	r_cons_filter ();
 	const char *s = r_cons_get_buffer ();
-	char *res = s? strdup (s): NULL;
+	char *res = R_STR_ISNOTEMPTY (s)? strdup (s): NULL;
 	int r = -1;
 	r_cons_pop ();
 	if (res) {
