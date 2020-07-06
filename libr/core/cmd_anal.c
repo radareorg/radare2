@@ -7080,7 +7080,7 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	bool asm_varsub = r_config_get_i (core->config, "asm.var.sub");
 	core->parser->pseudo = r_config_get_i (core->config, "asm.pseudo");
 	core->parser->subrel = r_config_get_i (core->config, "asm.sub.rel");
-	core->parser->localvar_only = r_config_get_i (core->config, "asm.var.subonly");
+	core->parser->localvar_only = r_config_get_i (core->config, "asm.sub.varonly");
 
 	if (core->parser->subrel) {
 		core->parser->subrel_addr = from;
