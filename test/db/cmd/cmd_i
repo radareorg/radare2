@@ -4049,18 +4049,6 @@ EXPECT=<<EOF
             0x08049efc      .dword 0x080485ce ; entry.fini3 ; sym.fini
             0x08049f00      .dword 0x080485e7 ; entry.fini4 ; sym.destructor
 EOF
-EXPECT_ERR=<<EOF
-Dynamic tag 12 not handled
-Dynamic tag 13 not handled
-Dynamic tag 32 not handled
-Dynamic tag 33 not handled
-Dynamic tag 25 not handled
-Dynamic tag 27 not handled
-Dynamic tag 26 not handled
-Dynamic tag 28 not handled
-Dynamic tag 1879047925 not handled
-Dynamic tag 21 not handled
-EOF
 RUN
 
 NAME=iee elf Cd (64-bit)
@@ -4084,14 +4072,6 @@ EXPECT=<<EOF
             0x0021bfb0      .qword 0x0000000000005ce0 ; entry.fini0    ; RELOC 64  ; [19] -rw- section size 8 named .fini_array
 EOF
 EXPECT_ERR=<<EOF
-Dynamic tag 12 not handled
-Dynamic tag 13 not handled
-Dynamic tag 25 not handled
-Dynamic tag 27 not handled
-Dynamic tag 26 not handled
-Dynamic tag 28 not handled
-Dynamic tag 1879047925 not handled
-Dynamic tag 21 not handled
 Cannot seek to unknown address 'section..preinit_array'
 EOF
 RUN

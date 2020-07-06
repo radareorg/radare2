@@ -142,6 +142,10 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 		// RUN is the only cmd without value
 		if (strcmp (line, "RUN") == 0) {
 			test->run_line = linenum;
+			if (!test->cmds.value) {
+				eprintf (LINEFMT "Error: Test without CMDS key\n", file, linenum);
+				goto fail;
+			}
 			r_pvector_push (ret, test);
 			test = r2r_cmd_test_new ();
 			if (!test) {

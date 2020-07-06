@@ -44,10 +44,10 @@ CS_ARCHIVE=https://$(CS_URL_BASE)/archive
 CS_UPD=20190515
 # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/meson.build
 ifeq ($(CS_NEXT),1)
-CS_TIP=0de88ed3fdc0ab1f1e2a6eada3cdd93e18057a0f
+CS_TIP=d956ceddabcbe544ee8f074ba75c86c6381b34e6
 CS_BRA=next
 else
-CS_TIP=c80b6aaf973c822d82565f25e9b2e2c0102626fa
+CS_TIP=2edae851d9fee511a57d4da32d5acecedd95d7ed
 CS_BRA=v4
 endif
 ifeq ($(CS_COMMIT_ARCHIVE),1)
