@@ -5222,6 +5222,13 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_seek_command) {
 	char *offset_string = ts_node_handle_arg (state, node, offset, 1);
 	ut64 offset_val = r_num_math (state->core->num, offset_string);
 	ut64 orig_offset = state->core->offset;
+	if (!offset_val && isalpha ((int)offset_string[0])) {
+		if (!r_flag_get (state->core->flags, offset_string)) {
+			eprintf ("Invalid address (%s)\n", offset_string);
+			free (offset_string);
+			return R_CMD_STATUS_INVALID;
+		}
+	}
 	if (offset_string[0] == '-' || offset_string[0] == '+') {
 		offset_val += state->core->offset;
 	}
