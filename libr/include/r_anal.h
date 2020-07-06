@@ -598,24 +598,22 @@ typedef struct r_anal_hint_cb_t {
 } RHintCb;
 
 typedef struct r_anal_t {
-	char *cpu;
-	char *os;
-	int bits;
-	int lineswidth; // wtf
-	int big_endian;
-	int sleep; // sleep some usecs before analyzing more (avoid 100% cpu usages)
-	RAnalCPPABI cpp_abi;
+	char *cpu;      // anal.cpu
+	char *os;       // asm.os
+	int bits;       // asm.bits
+	int lineswidth; // asm.lines.width
+	int big_endian; // cfg.bigendian
+	int sleep;      // anal.sleep, sleep some usecs before analyzing more (avoid 100% cpu usages)
+	RAnalCPPABI cpp_abi; // anal.cpp.abi
 	void *user;
-	ut64 gp; // global pointer. used for mips. but can be used by other arches too in the future
+	ut64 gp;        // anal.gp, global pointer. used for mips. but can be used by other arches too in the future
 	RBTree bb_tree; // all basic blocks by address. They can overlap each other, but must never start at the same address.
 	RList *fcns;
 	HtUP *ht_addr_fun; // address => function
 	HtPP *ht_name_fun; // name => function
-	RList *refs;
 	RReg *reg;
 	ut8 *last_disasm_reg;
 	RSyscall *syscall;
-	struct r_anal_op_t *queued;
 	int diff_ops;
 	double diff_thbb;
 	double diff_thfcn;
@@ -626,34 +624,26 @@ typedef struct r_anal_t {
 	RFlagSet flg_fcn_set;
 	RBinBind binb; // Set only from core when an analysis plugin is called.
 	RCoreBind coreb;
-	int maxreflines;
-	int trace;
-	int esil_goto_limit;
-	int pcalign;
-	int bitshift;
-	//struct r_anal_ctx_t *ctx;
+	int maxreflines; // asm.lines.maxref
+	int esil_goto_limit; // esil.gotolimit
+	int pcalign; // asm.pcalign
 	struct r_anal_esil_t *esil;
 	struct r_anal_plugin_t *cur;
-	RAnalRange *limit;
+	RAnalRange *limit; // anal.from, anal.to
 	RList *plugins;
 	Sdb *sdb_types;
 	Sdb *sdb_fmts;
 	Sdb *sdb_zigns;
 	HtUP *dict_refs;
 	HtUP *dict_xrefs;
-	bool recursive_noreturn;
+	bool recursive_noreturn; // anal.rnr
 	RSpaces zign_spaces;
-	char *zign_path;
+	char *zign_path; // dir.zigns
 	PrintfCallback cb_printf;
 	//moved from RAnalFcn
 	Sdb *sdb; // root
 	Sdb *sdb_fcns;
 	Sdb *sdb_pins;
-#define DEPRECATE 1
-#if DEPRECATE
-	Sdb *sdb_args;  //
-	Sdb *sdb_vars; // globals?
-#endif
 	HtUP/*<RVector<RAnalAddrHintRecord>>*/ *addr_hints; // all hints that correspond to a single address
 	RBTree/*<RAnalArchHintRecord>*/ arch_hints;
 	RBTree/*<RAnalArchBitsRecord>*/ bits_hints;
