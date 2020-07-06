@@ -116,5 +116,9 @@ static RLangPlugin r_lang_plugin_c = {
 	.set_argv = (void*)lang_c_set_argv,
 };
 #else
+#ifdef _MSC_VER
+#pragma message("Warning: C RLangPlugin is not implemented on this platform")
+#else
 #warning C RLangPlugin is not implemented on this platform
+#endif
 #endif

@@ -100,5 +100,9 @@ static RLangPlugin r_lang_plugin_cpipe = {
 	.run_file = (void*)lang_cpipe_file,
 };
 #else
+#ifdef _MSC_VER
+#pragma message("Warning: cpipe RLangPlugin is not implemented on this platform")
+#else
 #warning cpipe RLangPlugin is not implemented on this platform
+#endif
 #endif
