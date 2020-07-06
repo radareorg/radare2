@@ -6,6 +6,9 @@
 #include <r_io.h>
 #include <r_cons.h>
 #include <r_list.h>
+
+typedef struct r_bin_t RBin;
+
 #include <r_bin_dwarf.h>
 #include <r_pdb.h>
 
@@ -302,7 +305,7 @@ typedef struct r_bin_file_options_t {
 	// const char *xtrname;
 } RBinFileOptions;
 
-typedef struct r_bin_t {
+struct r_bin_t {
 	const char *file;
 	RBinFile *cur; // TODO: deprecate
 	int narch;
@@ -338,7 +341,7 @@ typedef struct r_bin_t {
 	bool use_xtr; // use extract plugins when loading a file?
 	bool use_ldr; // use loader plugins when loading a file?
 	RStrConstPool constpool;
-} RBin;
+};
 
 typedef struct r_bin_xtr_metadata_t {
 	char *arch;
