@@ -938,6 +938,7 @@ static void print_types(R_PDB *pdb, int mode) {
 			if (tf->get_val) {
 				tf->get_val (tf, &val);
 			}
+			RList *ptmp = NULL;
 			if (tf->get_members) {
 				tf->get_members (tf, &ptmp);
 			}

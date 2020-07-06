@@ -1067,44 +1067,50 @@ static void get_pointer_print_type(void *type, char **name) {
 }
 
 static void get_modifier_print_type(void *type, char **name) {
-	STypeInfo *ti = (STypeInfo *) type;
-	SType *t = 0;
-	char *tmp_name = NULL;
-	int name_len = 0;
+	STypeInfo *stype_info = type;
 	bool need_to_free = true;
-	int base_type = 0;
+	SType *stype = NULL;
+	char *tmp_name = NULL;
+	int base_type = stype_info->get_modified_type (stype_info, (void **)&type);
 
-	base_type = ti->get_modified_type (ti, (void **)&t);
-	if (!t) {
+	if (!stype) {
 		need_to_free = false;
 		print_base_type (base_type, &tmp_name);
 	} else {
-		ti = &t->type_data;
-		ti->get_print_type (ti, &tmp_name);
+		stype_info = &stype->type_data;
+		stype_info->get_print_type (stype_info, &tmp_name);
 	}
 
-	name_len = strlen ("modifier ");
+	SLF_MODIFIER *modifier = stype_info->type_info;
+	char *modifier_name = "modifier ";
+	if (modifier->umodifier.bits.const_) {
+		modifier_name = "const ";
+	} else if (modifier->umodifier.bits.volatile_) {
+		modifier_name = "volatile ";
+	} else if (modifier->umodifier.bits.unaligned) {
+		modifier_name = "unaligned ";
+	}
+	int name_len = strlen (modifier_name);
 	if (tmp_name) {
 		name_len += strlen (tmp_name);
 	}
-	*name = (char *) malloc (name_len + 1);
+	*name = malloc (name_len + 1); // Does this get freed?
 	if (!(*name)) {
-		if (need_to_free) {
-			free (tmp_name);
-		}
-		return;
+		goto cleanup;
 	}
-	// name[name_len] = '\0';
-	strcpy (*name, "modifier ");
+	strcpy (*name, modifier_name);
+
 	if (tmp_name) {
 		strcat (*name, tmp_name);
 	}
+cleanup:
 	if (need_to_free) {
 		free (tmp_name);
 	}
 }
 
 static void get_procedure_print_type(void *type, char **name) {
+	// TODO
 	const int name_len = strlen ("proc ");
 	*name = (char *) malloc (name_len + 1);
 	if (!(*name)) {
