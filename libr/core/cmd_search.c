@@ -15,7 +15,6 @@ static const char *help_msg_search_esil[] = {
 	"/E", " [esil-expr]", "search offsets matching a specific esil expression",
 	"/Ej", " [esil-expr]", "same as above but using the given magic file",
 	"/E?", " ", "show this help",
-	"/E?", " ", "show this help",
 	"\nExamples:", "", "",
 	"", "/E $$,0x100001060,-,!", "hit when address is 0x100001060",
 	NULL
