@@ -323,18 +323,6 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			value = input[2] ? input + 2 : NULL;
 		}
 		break;
-#if 0
-	case 'b': // "obb" // same as "ob $fd"
-		if (input[2] == ' ') {
-			ut32 id = r_num_math (core->num, input + 3);
-			if (!r_core_bin_raise (core, id)) {
-				eprintf ("Invalid RBinFile.id number.\n");
-			}
-		} else {
-			eprintf ("Usage: obb [bfid]\n");
-		}
-		break;
-#endif
 	case 'o': // "obo"
 		if (input[2] == ' ') {
 			ut32 fd = r_num_math (core->num, input + 3);
