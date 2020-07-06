@@ -3558,7 +3558,7 @@ struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) *bin) {
 	r_return_val_if_fail (bin, NULL);
 
 	ut64 ea = entry_to_vaddr (bin);
-	if (ea == 0 || ea == UT64_MAX) {
+	if (ea == 0 || ea == UT64_MAX) {
 		return NULL;
 	}
 	struct addr_t *entry = R_NEW0 (struct addr_t);
