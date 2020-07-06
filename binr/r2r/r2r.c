@@ -15,6 +15,11 @@
 #define WORKERS_DEFAULT_STR STR(WORKERS_DEFAULT)
 #define TIMEOUT_DEFAULT_STR STR(TIMEOUT_DEFAULT)
 
+#define Color_INSERT Color_BGREEN
+#define Color_DELETE Color_BRED
+#define Color_BGINSERT "\x1b[48;5;22m"
+#define Color_BGDELETE "\x1b[48;5;52m"
+
 typedef struct r2r_state_t {
 	R2RRunConfig run_config;
 	bool verbose;
@@ -557,10 +562,10 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 		char c = *line;
 		switch (c) {
 		case '+':
-			printf ("%s"Color_BGREEN, diffchar ? "\x1b[48;5;22m" : "");
+			printf ("%s"Color_INSERT, diffchar ? Color_BGINSERT : "");
 			break;
 		case '-':
-			printf ("%s"Color_BRED, diffchar ? "\x1b[48;5;52m" : "");
+			printf ("%s"Color_DELETE, diffchar ? Color_BGDELETE : "");
 			break;
 		case '~': // can't happen if !diffchar
 			printf ("\n");
