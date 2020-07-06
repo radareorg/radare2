@@ -176,10 +176,13 @@ R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
 	r_core_bin_export_info_rad (core);
 	r_cons_filter ();
 	const char *s = r_cons_get_buffer ();
-	char *res = strdup (s? s: "");
+	char *res = s? strdup (s): NULL;
+	int r = -1;
 	r_cons_pop ();
-	int r = r_core_cmd_lines (core, res);
-	free (res);
+	if (res) {
+		r = r_core_cmd_lines (core, res);
+		free (res);
+	}
 	r_bin_file_delete (core->bin, bf->id);
 	return r > 0;
 }
