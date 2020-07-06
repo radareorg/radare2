@@ -986,14 +986,14 @@ static void var_accesses_list(RAnalFunction *fcn, RAnalVar *var, PJ *pj, int acc
 		if (!(acc->type & access_type)) {
 			continue;
 		}
-		ut64 addr = (ut64)((st64)fcn->addr + acc->offset);
+		ut64 addr = fcn->addr + acc->offset;
 		if (pj && first) {
 			pj_o (pj);
 			pj_ks (pj, "name", name);
 			pj_ka (pj, "addrs");
 		}
 		if (pj) {
-			pj_s (pj, sdb_fmt ("%"PFMT64u, addr));
+			pj_n (pj, addr);
 		} else {
 			r_cons_printf ("%s0x%" PFMT64x, first ? "  " : ",", addr);
 		}
@@ -1090,7 +1090,9 @@ static void cmd_afvx(RCore *core, RAnalFunction *fcn, bool json) {
 		list_vars (core, fcn, pj, 'W', NULL);
 		if (json) {
 			pj_end (pj);
-			r_cons_printf ("%s\n", pj_drain (pj));
+			char *j = pj_drain (pj);
+			r_cons_printf ("%s\n", j);
+			free (j);
 		}
 	}
 }
@@ -1287,7 +1289,9 @@ static int var_cmd(RCore *core, const char *str) {
 			list_vars (core, fcn, pj, str[0], name);
 			if (str[1] == 'j') {
 				pj_end (pj);
-				r_cons_printf ("%s\n", pj_drain (pj));
+				char *j = pj_drain (pj);
+				r_cons_printf ("%s\n", j);
+				free (j);
 			} 
 			return true;
 		} else {
