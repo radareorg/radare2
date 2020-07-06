@@ -978,16 +978,18 @@ static void lookup_symbols(RBinFile *bf, RBinInfo *ret) {
 	bool is_rust = false;
 	if (symbols_list) {
 		r_list_foreach (symbols_list, iter, symbol) {
-			if (ret->has_canary == true && is_rust == true) {
+			if (ret->has_canary && is_rust) {
 				break;
 			}
 			if (!strcmp (symbol->name, "_NSConcreteGlobalBlock")) {
 				ret->lang = (ret->lang && !strcmp (ret->lang, "c++"))? "c++ blocks ext.": "c blocks ext.";
 			}
-			if (strstr (symbol->name, "__stack_chk_fail") || strstr (symbol->name, "__stack_smash_handler")) {
-				ret->has_canary = true;
+			if (!ret->has_canary) {
+				if (strstr (symbol->name, "__stack_chk_fail") || strstr (symbol->name, "__stack_smash_handler")) {
+					ret->has_canary = true;
+				}
 			}
-			if (!strcmp (symbol->name, "__rust_oom")) {
+			if (!is_rust && !strcmp (symbol->name, "__rust_oom")) {
 				is_rust = true;
 				ret->lang = "rust";
 			}

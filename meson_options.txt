@@ -1,5 +1,6 @@
 option('static_runtime', type: 'boolean', value: false)
 option('local', type: 'boolean', value: false, description: 'Adds support for local/side-by-side installation (sets rpath if needed)')
+option('blob', type: 'boolean', value: false, description: 'Compile just one binary which dispatch to the right handlers based on the name used to call it')
 
 # For Windows
 option('r2_libdir', type: 'string', value: '')

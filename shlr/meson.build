@@ -18,10 +18,10 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
     use_capstone5 = get_option('use_capstone5')
     if use_capstone5
-      CS_TIP = '0de88ed3fdc0ab1f1e2a6eada3cdd93e18057a0f'
+      CS_TIP = 'd956ceddabcbe544ee8f074ba75c86c6381b34e6'
       CS_BRA = 'next'
     else
-      CS_TIP = 'c80b6aaf973c822d82565f25e9b2e2c0102626fa'
+      CS_TIP = '2edae851d9fee511a57d4da32d5acecedd95d7ed'
       CS_BRA = 'v4'
     endif
 
@@ -199,15 +199,20 @@ sdb_dep = declare_dependency(
 )
 
 # Create sdb_version.h
-sdb_version = '1.2.0'
+r = run_command(py3_exe, 'sys/sdb_version.py', 'sdb/config.mk')
+if r.returncode() == 0
+  sdb_version = r.stdout().strip().split('\n')[0]
+else
+  sdb_version = 'unknown'
+endif
 run_command(py3_exe, '-c', 'with open("sdb/src/sdb_version.h", "w") as f: f.write("#define SDB_VERSION \"' + sdb_version + '\"")')
 
-sdb_exe = executable('sdb', 'sdb/src/main.c',
+sdb_exe = executable('sdb', ['sdb/src/main.c'] + sdb_files,
   include_directories: [
     include_directories(['sdb/src'])
   ],
-  link_with: [libr2sdb],
-  implicit_include_directories: false
+  implicit_include_directories: false,
+  native: true,
 )
 
 sdb_gen_cmd_script = '''#script
@@ -217,8 +222,9 @@ sdb_exe = r'@0@'
 outfile = sys.argv[1]
 infiles = sys.argv[2:]
 if os.name == 'nt':
-    infiles = ','.join(infiles)
-    os.system('powershell -c "Get-Content {} | {} {} ="'.format(infiles, sdb_exe, outfile))
+    # DO NOT replace chr(92) below with a backslash
+    infiles, sdb_exe, outfile = map(lambda x: x.replace('/', chr(92)), [' '.join(infiles), sdb_exe, outfile])
+    os.system('type {} | {} {} ='.format(infiles, sdb_exe, outfile))
 else:
     infiles = ' '.join(infiles)
     os.system('cat {} | {} {} ='.format(infiles, sdb_exe, outfile))
