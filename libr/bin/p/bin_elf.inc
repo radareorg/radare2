@@ -406,6 +406,11 @@ static RList* entries(RBinFile *bf) {
 		ptr->vaddr = Elf_(r_bin_elf_p2v) (obj, ptr->paddr);
 		ptr->hpaddr = 0x18;  // e_entry offset in ELF header
 		ptr->hvaddr = UT64_MAX;
+
+		if (ptr->vaddr != (ut64)obj->ehdr.e_entry && Elf_(r_bin_elf_is_executable) (obj)) {
+			eprintf ("Cannot determine entrypoint, using 0x%08" PFMT64x ".\n", ptr->vaddr);
+		}
+
 		if (bf->o->sections) {
 			RListIter *iter;
 			RBinSection *section;

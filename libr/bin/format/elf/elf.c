@@ -649,7 +649,7 @@ static void fill_dynamic_entries(ELFOBJ *bin, ut64 loaded_offset, ut64 dyn_size)
 			if ((d.d_tag >= DT_VERSYM) && (d.d_tag <= DT_VERNEEDNUM)) {
 				bin->version_info[DT_VERSIONTAGIDX (d.d_tag)] = d.d_un.d_val;
 			} else {
-				eprintf("Dynamic tag %" PFMT64d " not handled\n", (ut64) d.d_tag);
+				R_LOG_DEBUG ("Dynamic tag %" PFMT64d " not handled\n", (ut64) d.d_tag);
 			}
 			break;
 		}
@@ -1780,19 +1780,11 @@ ut64 Elf_(r_bin_elf_get_fini_offset)(ELFOBJ *bin) {
 	return 0;
 }
 
-static bool isExecutable(ELFOBJ *bin) {
-	switch (bin->ehdr.e_type) {
-	case ET_EXEC: return true;
-	case ET_DYN:  return true;
-	}
-	return false;
-}
-
 ut64 Elf_(r_bin_elf_get_entry_offset)(ELFOBJ *bin) {
 	r_return_val_if_fail (bin, UT64_MAX);
 	ut64 entry = bin->ehdr.e_entry;
 	if (!entry) {
-		if (!isExecutable (bin)) {
+		if (!Elf_(r_bin_elf_is_executable) (bin)) {
 			return UT64_MAX;
 		}
 		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".init.text");
@@ -4034,4 +4026,9 @@ char *Elf_(r_bin_elf_compiler)(ELFOBJ *bin) {
 	char * res = r_str_escape (buf);
 	free (buf);
 	return res;
+}
+
+bool Elf_(r_bin_elf_is_executable)(ELFOBJ *bin) {
+	const int t = bin->ehdr.e_type;
+	return t == ET_EXEC || t == ET_DYN;
 }
