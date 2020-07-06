@@ -6,6 +6,7 @@
 #include "r_core.h"
 #include "r_lang.h"
 
+#if __UNIX__
 static int ac = 0;
 static const char **av = NULL;
 
@@ -44,10 +45,10 @@ static int lang_c_file(RLang *lang, const char *file) {
 	}
 	p = strstr (name, ".c");
 	if (p) {
-		*p=0;
+		*p = 0;
 	}
 	cc = r_sys_getenv ("CC");
-	if (!cc || !*cc) {
+	if (R_STR_ISEMPTY (cc)) {
 		cc = strdup ("gcc");
 	}
 	char *buf = r_str_newf ("%s -fPIC -shared %s -o %s/lib%s." R_LIB_EXT
@@ -108,3 +109,6 @@ static RLangPlugin r_lang_plugin_c = {
 	.run_file = (void*)lang_c_file,
 	.set_argv = (void*)lang_c_set_argv,
 };
+#else
+#warning C RLangPlugin is not implemented on this platform
+#endif
