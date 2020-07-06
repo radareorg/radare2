@@ -39,9 +39,18 @@ jobs:
         path: radare2-src.tar.gz
 
   build-deb:
-    name: Build deb package
+    name: Build deb package for ${{ matrix.container }}
     runs-on: ubuntu-latest
-    container: debian:buster
+    container: ${{ matrix.container }}
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [debian-buster, ubuntu-1804]
+        include:
+          - name: debian-buster
+            container: debian:buster
+          - name: ubuntu-1804
+            container: ubuntu:18.04
     steps:
     - name: Install tools
       run: apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config xz-utils
@@ -51,7 +60,7 @@ jobs:
         cd radare2
         git fetch origin ${{ github.ref }}
         git checkout -b local_branch FETCH_HEAD
-    - name: Preparing the Debian package
+    - name: Preparing the deb package
       run: |
         sys/debian.sh
         mv radare2_*_amd64.deb radare2_amd64.deb
@@ -60,12 +69,12 @@ jobs:
     - name: Upload deb file
       uses: actions/upload-artifact@v2
       with:
-        name: radare2-deb
+        name: radare2-${{ matrix.name }}-deb
         path: radare2/radare2_amd64.deb
     - name: Upload -dev deb file
       uses: actions/upload-artifact@v2
       with:
-        name: radare2-dev-deb
+        name: radare2-dev-${{ matrix.name }}-deb
         path: radare2/radare2-dev_amd64.deb
 
   build-osx-pkg:
@@ -232,17 +241,26 @@ jobs:
   test-deb:
     runs-on: ubuntu-latest
     needs: [build-deb]
-    container: debian:buster
+    container: ${{ matrix.container }}
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [debian-buster, ubuntu-1804]
+        include:
+          - name: debian-buster
+            container: debian:buster
+          - name: ubuntu-1804
+            container: ubuntu:18.04
     steps:
     - name: Install tools
       run: apt-get update && apt-get install --yes gcc pkg-config
     - uses: actions/download-artifact@v2
       with:
-        name: radare2-deb
+        name: radare2-${{ matrix.name }}-deb
         path: ./
     - uses: actions/download-artifact@v2
       with:
-        name: radare2-dev-deb
+        name: radare2-dev-${{ matrix.name }}-deb
         path: ./
     - name: Install radare2 debs
       run: apt-get update && apt-get install ./radare2*.deb
@@ -341,23 +359,41 @@ jobs:
           asset_path: ./radare2-src/radare2-src.tar.gz
           asset_name: radare2-src-${{ steps.extract_version.outputs.branch }}.tar.gz
           asset_content_type: application/zip
-    - name: Upload radare2 deb package
+    - name: Upload radare2 debian:buster package
       uses: actions/upload-release-asset@v1
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./radare2-deb/radare2_amd64.deb
-          asset_name: radare2_${{ steps.extract_version.outputs.branch }}_amd64.deb
+          asset_path: ./radare2-debian-buster-deb/radare2_amd64.deb
+          asset_name: radare2-debian-buster_${{ steps.extract_version.outputs.branch }}_amd64.deb
           asset_content_type: application/zip
-    - name: Upload radare2 dev deb package
+    - name: Upload radare2-dev debian:buster package
       uses: actions/upload-release-asset@v1
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./radare2-dev-deb/radare2-dev_amd64.deb
-          asset_name: radare2-dev_${{ steps.extract_version.outputs.branch }}_amd64.deb
+          asset_path: ./radare2-dev-debian-buster-deb/radare2-dev_amd64.deb
+          asset_name: radare2-dev-debian-buster_${{ steps.extract_version.outputs.branch }}_amd64.deb
+          asset_content_type: application/zip
+    - name: Upload radare2 ubuntu:18.04 package
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2-ubuntu-1804-deb/radare2_amd64.deb
+          asset_name: radare2-ubuntu-1804_${{ steps.extract_version.outputs.branch }}_amd64.deb
+          asset_content_type: application/zip
+    - name: Upload radare2-dev ubuntu:18.04 package
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2-dev-ubuntu-1804-deb/radare2-dev_amd64.deb
+          asset_name: radare2-dev-ubuntu-1804_${{ steps.extract_version.outputs.branch }}_amd64.deb
           asset_content_type: application/zip
     - name: Upload radare2 android x86_64 tar.gz
       uses: actions/upload-release-asset@v1
@@ -401,8 +437,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./radare2-clang_cl-${{ steps.extract_version.outputs.branch }}.zip/radare2-clang_cl-${{ steps.extract_version.outputs.branch }}.zip
-          asset_name: radare2-windows-${{ steps.extract_version.outputs.branch }}.zip
+          asset_path: ./radare2-vs2019_static-${{ steps.extract_version.outputs.branch }}.zip/radare2-vs2019_static-${{ steps.extract_version.outputs.branch }}.zip
+          asset_name: radare2-windows-static-${{ steps.extract_version.outputs.branch }}.zip
           asset_content_type: application/zip
     - name: Upload radare2 windows installer
       uses: actions/upload-release-asset@v1
