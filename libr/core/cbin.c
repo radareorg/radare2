@@ -173,17 +173,10 @@ R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
 	r_bin_open (core->bin, file, &opt);
 	RBinFile *bf = r_bin_cur (core->bin);
 	r_cons_push ();
-	// NOTE: there seems to be no easy way to ignore stderr output, let's
-	// just replace stderr with /dev/null temporarily and restore it just
-	// after.
-	int stderr_fd = dup (fileno (stderr));
-	freopen ("/dev/null", "rw", stderr);
 	r_core_bin_export_info_rad (core);
 	r_cons_filter ();
 	const char *s = r_cons_get_buffer ();
 	char *res = strdup (s? s: "");
-	fclose (stderr);
-	dup2 (stderr_fd, STDERR_FILENO);
 	r_cons_pop ();
 	int r = r_core_cmd_lines (core, res);
 	free (res);
