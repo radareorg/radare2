@@ -1638,7 +1638,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	bool stats = r_config_get_i (core->config, "esil.stats");
 	bool be = core->print->big_endian;
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
+	core->parser->subrel = r_config_get_i (core->config, "asm.sub.rel");
 	int ret, i, j, idx, size;
 	const char *color = "";
 	const char *esilstr;
@@ -1739,7 +1739,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				strsub, sizeof (strsub));
 				ut64 killme = UT64_MAX;
 				if (r_io_read_i (core->io, op.ptr, &killme, op.refptr, be)) {
-					core->parser->relsub_addr = killme;
+					core->parser->subrel_addr = killme;
 				}
 			// 0x33->sym.xx
 			char *p = strdup (strsub);
@@ -1885,7 +1885,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			disasm, sizeof (disasm));
 		ut64 killme = UT64_MAX;
 		if (r_io_read_i (core->io, op.ptr, &killme, op.refptr, be)) {
-			core->parser->relsub_addr = killme;
+			core->parser->subrel_addr = killme;
 		}
 		char *p = strdup (disasm);
 		if (p) {
@@ -7079,11 +7079,11 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	char *buf_asm = NULL;
 	bool asm_varsub = r_config_get_i (core->config, "asm.var.sub");
 	core->parser->pseudo = r_config_get_i (core->config, "asm.pseudo");
-	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
-	core->parser->localvar_only = r_config_get_i (core->config, "asm.var.subonly");
+	core->parser->subrel = r_config_get_i (core->config, "asm.sub.rel");
+	core->parser->localvar_only = r_config_get_i (core->config, "asm.sub.varonly");
 
-	if (core->parser->relsub) {
-		core->parser->relsub_addr = from;
+	if (core->parser->subrel) {
+		core->parser->subrel_addr = from;
 	}
 	r_io_read_at (core->io, addr, buf, size);
 	r_asm_set_pc (core->rasm, addr);
