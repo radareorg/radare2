@@ -486,7 +486,7 @@ e asm.bytes=false
 e asm.offset=false
 f sym.callback=0x14
 pd 1
-e asm.var.submin=0
+e asm.sub.varmin=0
 pd 1
 EOF
 EXPECT=<<EOF
