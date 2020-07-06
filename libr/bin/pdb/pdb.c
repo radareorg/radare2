@@ -920,7 +920,7 @@ static void print_types(R_PDB *pdb, int mode) {
 		t = (SType *) r_list_iter_get (it);
 		tf = &t->type_data;
 		lt = tf->leaf_type;
-		if ((tf->leaf_type == eLF_STRUCTURE) || (tf->leaf_type == eLF_UNION) || (tf->leaf_type == eLF_ENUM)) {
+		if ((tf->leaf_type == eLF_STRUCTURE) || (tf->leaf_type == eLF_UNION) || (tf->leaf_type == eLF_ENUM || tf->leaf_type == eLF_CLASS)) {
 			if (tf->is_fwdref) {
 				tf->is_fwdref (tf, &val);
 				if (val == 1) {
