@@ -979,7 +979,11 @@ static void var_help(RCore *core, char ch) {
 static void var_accesses_list(RAnalFunction *fcn, RAnalVar *var, PJ *pj, int access_type, const char *name) {
 	RAnalVarAccess *acc;
 	bool first = true;
-	if (!pj) {
+	if (pj) {
+		pj_o (pj);
+		pj_ks (pj, "name", name);
+		pj_ka (pj, "addrs");
+	} else {
 		r_cons_printf ("%10s", name);
 	}
 	r_vector_foreach (&var->accesses, acc) {
@@ -987,11 +991,6 @@ static void var_accesses_list(RAnalFunction *fcn, RAnalVar *var, PJ *pj, int acc
 			continue;
 		}
 		ut64 addr = fcn->addr + acc->offset;
-		if (pj && first) {
-			pj_o (pj);
-			pj_ks (pj, "name", name);
-			pj_ka (pj, "addrs");
-		}
 		if (pj) {
 			pj_n (pj, addr);
 		} else {
@@ -999,10 +998,10 @@ static void var_accesses_list(RAnalFunction *fcn, RAnalVar *var, PJ *pj, int acc
 		}
 		first = false;
 	}
-	if (pj && !first) {
+	if (pj) {
 		pj_end (pj);
 		pj_end (pj);
-	} else if (!pj) {
+	} else {
 		r_cons_newline ();
 	}
 }
