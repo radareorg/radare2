@@ -154,6 +154,125 @@ R_API int r_core_bin_set_by_fd(RCore *core, ut64 bin_fd) {
 	return false;
 }
 
+R_API void r_core_bin_export_info(RCore *core, int mode) {
+	char *flagname = NULL, *offset = NULL;
+	RBinFile *bf = r_bin_cur (core->bin);
+	if (!bf) {
+		return;
+	}
+	Sdb *db = sdb_ns (bf->sdb, "info", 0);;
+	if (!db) {
+		return;
+	}
+	RSpace *fs = r_flag_space_cur (core->flags);
+	SdbListIter *iter;
+	SdbKv *kv;
+	if (IS_MODE_RAD (mode)) {
+		r_cons_printf ("fs format\n");
+	} else if (IS_MODE_SET (mode)) {
+		r_flag_space_set (core->flags, "format");
+	}
+	// iterate over all keys
+	SdbList *ls = sdb_foreach_list (db, false);
+	ls_foreach (ls, iter, kv) {
+		char *k = sdbkv_key (kv);
+		char *v = sdbkv_value (kv);
+		char *dup = strdup (k);
+		//printf ("?e (%s) (%s)\n", k, v);
+		if ((flagname = strstr (dup, ".offset"))) {
+			*flagname = 0;
+			flagname = dup;
+			if (IS_MODE_RAD (mode)) {
+				r_cons_printf ("f %s @ %s\n", flagname, v);
+			} else if (IS_MODE_SET (mode)) {
+				ut64 nv = r_num_math (core->num, v);
+				r_flag_set (core->flags, flagname, nv, 0);
+			}
+			free (offset);
+			offset = strdup (v);
+		}
+		if ((flagname = strstr (dup, ".cparse"))) {
+			if (IS_MODE_RAD (mode)) {
+				r_cons_printf ("\"td %s\"\n", v);
+			} else if (IS_MODE_SET (mode)) {
+				char *code = r_str_newf ("%s;", v);
+				char *error_msg = NULL;
+				char *out = r_parse_c_string (core->anal, code, &error_msg);
+				free (code);
+				if (error_msg) {
+					eprintf ("%s", error_msg);
+					free (error_msg);
+				}
+				if (out) {
+					r_anal_save_parsed_type (core->anal, out);
+					free (out);
+				}
+			}
+		}
+		free (dup);
+	}
+	R_FREE (offset);
+	ls_foreach (ls, iter, kv) {
+		char *k = sdbkv_key (kv);
+		char *v = sdbkv_value (kv);
+		char *dup = strdup (k);
+		if ((flagname = strstr (dup, ".format"))) {
+			*flagname = 0;
+			if (!offset) {
+				offset = strdup ("0");
+			}
+			flagname = dup;
+			if (IS_MODE_RAD (mode)) {
+				r_cons_printf ("pf.%s %s\n", flagname, v);
+			} else if (IS_MODE_SET (mode)) {
+				r_core_cmdf (core, "pf.%s %s\n", flagname, v);
+			}
+		}
+		free (dup);
+	}
+	ls_foreach (ls, iter, kv) {
+		char *k = sdbkv_key (kv);
+		char *v = sdbkv_value (kv);
+		char *dup = strdup (k);
+		if ((flagname = strstr (dup, ".format"))) {
+			*flagname = 0;
+			if (!offset) {
+				offset = strdup ("0");
+			}
+			flagname = dup;
+			int fmtsize = r_print_format_struct_size (core->print, v, 0, 0);
+			char *offset_key = r_str_newf ("%s.offset", flagname);
+			const char *off = sdb_const_get (db, offset_key, 0);
+			free (offset_key);
+			if (off) {
+				if (IS_MODE_RAD (mode)) {
+					r_cons_printf ("Cf %d %s @ %s\n", fmtsize, v, off);
+				} else if (IS_MODE_SET (mode)) {
+					r_core_cmdf (core, "Cf %d %s @ %s\n", fmtsize, v, off);
+				}
+			}
+		}
+		if ((flagname = strstr (dup, ".size"))) {
+			*flagname = 0;
+			flagname = dup;
+			if (IS_MODE_RAD (mode)) {
+				r_cons_printf ("fl %s %s\n", flagname, v);
+			} else if (IS_MODE_SET (mode)) {
+				RFlagItem *fi = r_flag_get (core->flags, flagname);
+				if (fi) {
+					fi->size = r_num_math (core->num, v);
+				} else {
+					eprintf ("Cannot find flag named '%s'\n", flagname);
+				}
+			}
+		}
+		free (dup);
+	}
+	free (offset);
+	r_flag_space_set (core->flags, (fs && fs->name)?  fs->name: NULL);
+}
+
+
 R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
 	if (!file) {
 		int fd = r_io_fd_get_current (core->io);
@@ -172,19 +291,9 @@ R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
 	RBinOptions opt = { 0 };
 	r_bin_open (core->bin, file, &opt);
 	RBinFile *bf = r_bin_cur (core->bin);
-	r_cons_push ();
-	r_core_bin_export_info_rad (core);
-	r_cons_filter ();
-	const char *s = r_cons_get_buffer ();
-	char *res = R_STR_ISNOTEMPTY (s)? strdup (s): NULL;
-	int r = -1;
-	r_cons_pop ();
-	if (res) {
-		r = r_core_cmd_lines (core, res);
-		free (res);
-	}
+	r_core_bin_export_info (core, R_MODE_SET);
 	r_bin_file_delete (core->bin, bf->id);
-	return r > 0;
+	return true;
 }
 
 R_API int r_core_bin_set_by_name(RCore *core, const char * name) {
@@ -3980,81 +4089,6 @@ static int bin_signature(RCore *r, int mode) {
 		return true;
 	}
 	return false;
-}
-
-R_API void r_core_bin_export_info_rad(RCore *core) {
-	Sdb *db = NULL;
-	char *flagname = NULL, *offset = NULL;
-	RBinFile *bf = r_bin_cur (core->bin);
-	if (!bf) {
-		return;
-	}
-	db = sdb_ns (bf->sdb, "info", 0);;
-	if (db) {
-		SdbListIter *iter;
-		SdbKv *kv;
-		r_cons_printf ("fs format\n");
-		// iterate over all keys
-		SdbList *ls = sdb_foreach_list (db, false);
-		ls_foreach (ls, iter, kv) {
-			char *k = sdbkv_key (kv);
-			char *v = sdbkv_value (kv);
-			char *dup = strdup (k);
-			//printf ("?e (%s) (%s)\n", k, v);
-			if ((flagname = strstr (dup, ".offset"))) {
-				*flagname = 0;
-				flagname = dup;
-				r_cons_printf ("f %s @ %s\n", flagname, v);
-				free (offset);
-				offset = strdup (v);
-			}
-			if ((flagname = strstr (dup, ".cparse"))) {
-				r_cons_printf ("\"td %s\"\n", v);
-			}
-			free (dup);
-		}
-		R_FREE (offset);
-		ls_foreach (ls, iter, kv) {
-			char *k = sdbkv_key (kv);
-			char *v = sdbkv_value (kv);
-			char *dup = strdup (k);
-			if ((flagname = strstr (dup, ".format"))) {
-				*flagname = 0;
-				if (!offset) {
-					offset = strdup ("0");
-				}
-				flagname = dup;
-				r_cons_printf ("pf.%s %s\n", flagname, v);
-			}
-			free (dup);
-		}
-		ls_foreach (ls, iter, kv) {
-			char *k = sdbkv_key (kv);
-			char *v = sdbkv_value (kv);
-			char *dup = strdup (k);
-			if ((flagname = strstr (dup, ".format"))) {
-				*flagname = 0;
-				if (!offset) {
-					offset = strdup ("0");
-				}
-				flagname = dup;
-				int fmtsize = r_print_format_struct_size (core->print, v, 0, 0);
-				char *offset_key = r_str_newf ("%s.offset", flagname);
-				const char *off = sdb_const_get (db, offset_key, 0);
-				free (offset_key);
-				if (off) {
-					r_cons_printf ("Cf %d %s @ %s\n", fmtsize, v, off);
-				}
-			}
-			if ((flagname = strstr (dup, ".size"))) {
-				*flagname = 0;
-				flagname = dup;
-				r_cons_printf ("fl %s %s\n", flagname, v);
-			}
-			free (dup);
-		}
-		free (offset);
-	}
 }
 
 static int bin_header(RCore *r, int mode) {
