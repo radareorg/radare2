@@ -525,6 +525,7 @@ static void set_default_value_dynamic_info(ELFOBJ *bin) {
 	bin->dyn_info.dt_pltrel = ELF_XWORD_MAX;
 	bin->dyn_info.dt_jmprel = ELF_ADDR_MAX;
 	bin->dyn_info.dt_pltgot = ELF_ADDR_MAX;
+	bin->dyn_info.dt_mips_pltgot = ELF_ADDR_MAX;
 	bin->dyn_info.dt_bind_now = false;
 	bin->dyn_info.dt_flags = ELF_XWORD_MAX;
 	bin->dyn_info.dt_flags_1 = ELF_XWORD_MAX;
@@ -2057,7 +2058,7 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 	case EM_ARC_A5:
 		return strdup ("arc");
 	case EM_AVR: return strdup ("avr");
-	case EM_BA2_NON_STANDARD: 
+	case EM_BA2_NON_STANDARD:
 	case EM_BA2: return strdup ("ba2");
 	case EM_CRIS: return strdup ("cris");
 	case EM_68K: return strdup ("m68k");
