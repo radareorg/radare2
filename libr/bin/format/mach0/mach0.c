@@ -2356,7 +2356,7 @@ struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
 }
 
 static bool parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol, int idx) {
-	int i, j, nsyms, stridx;
+	size_t i, j, nsyms, stridx;
 	const char *symstr;
 	if (idx < 0) {
 		return false;
@@ -2436,7 +2436,7 @@ static int inSymtab(HtPP *hash, const char *name, ut64 addr) {
 
 static char *get_name(struct MACH0_(obj_t) *mo, ut32 stridx, bool filter) {
 	int i = 0;
-	if (stridx >= mo->symstrlen) {
+	if (!mo->symstr || stridx >= mo->symstrlen) {
 		return NULL;
 	}
 	int len = mo->symstrlen - stridx;
@@ -2637,7 +2637,8 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 	static RList * cache = NULL; // XXX DONT COMMIT WITH THIS
 	struct symbol_t *symbols;
 	int j, s, stridx, symbols_size, symbols_count;
-	ut32 to, from, i;
+	ut32 to, from;
+	size_t i;
 
 	r_return_val_if_fail (bin, NULL);
 	if (cache) {
@@ -2767,7 +2768,6 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 
 	for (i = 0; i < bin->nsymtab; i++) {
 		struct MACH0_(nlist) *st = &bin->symtab[i];
-		stridx = st->n_strx;
 		// 0 is for imports
 		// 1 is for symbols
 		// 2 is for func.eh (exception handlers?)
@@ -2783,7 +2783,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			} else {
 				sym->type = "LOCAL";
 			}
-			char *sym_name = get_name (bin, stridx, false);
+			char *sym_name = get_name (bin, st->n_strx, false);
 			if (sym_name) {
 				sym->name = sym_name;
 				if (inSymtab (hash, sym->name, sym->vaddr)) {
@@ -2906,12 +2906,9 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 				symbols[j].size = 0; /* TODO: Is it anywhere? */
 				symbols[j].bits = bin->symtab[i].n_desc & N_ARM_THUMB_DEF ? 16 : bits;
 				symbols[j].is_imported = false;
-				if (bin->symtab[i].n_type & N_EXT) {
-					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
-				} else {
-					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
-				}
-
+				symbols[j].type = (bin->symtab[i].n_type & N_EXT)
+					? R_BIN_MACH0_SYMBOL_TYPE_EXT
+					: R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
 				stridx = bin->symtab[i].n_strx;
 				symbols[j].name = get_name (bin, stridx, false);
 				symbols[j].last = false;
@@ -2955,29 +2952,24 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 			// 1 is for symbols
 			// 2 is for func.eh (exception handlers?)
 			int section = st->n_sect;
-			if (section == 1 && j < symbols_count) { // text ??st->n_type == 1)
-			//if (j < symbols_count) { // text ??st->n_type == 1)
+			if (section == 1 && j < symbols_count) {
+				// check if symbol exists already
 				/* is symbol */
 				symbols[j].addr = st->n_value;
 				symbols[j].offset = addr_to_offset (bin, symbols[j].addr);
 				symbols[j].size = 0; /* find next symbol and crop */
-				if (st->n_type & N_EXT) {
-					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
-				} else {
-					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
-				}
-				stridx = st->n_strx;
-				char *sym_name = get_name (bin, stridx, false);
+				symbols[j].type = (st->n_type & N_EXT)
+					? R_BIN_MACH0_SYMBOL_TYPE_EXT
+					: R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
+				char *sym_name = get_name (bin, st->n_strx, false);
 				if (sym_name) {
 					symbols[j].name = sym_name;
 				} else {
 					symbols[j].name = r_str_newf ("entry%d", i);
-					//symbols[j].name[0] = 0;
 				}
 				symbols[j].last = 0;
 				if (inSymtab (hash, symbols[j].name, symbols[j].addr)) {
-					free (symbols[j].name);
-					symbols[j].name = NULL;
+					R_FREE (symbols[j].name);
 				} else {
 					j++;
 				}
