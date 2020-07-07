@@ -22,7 +22,7 @@ typedef struct R_PDB {
 	PrintfCallback cb_printf;
 	struct R_PDB7_ROOT_STREAM *root_stream;
 	void *stream_map;
-	RList *pdb_streams;
+	RList *pdb_streams; // What is the difference between those two?
 	RList *pdb_streams2;
 	RBuffer *buf; // mmap of file
 //	int curr;
