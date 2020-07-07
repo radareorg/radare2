@@ -831,25 +831,25 @@ typedef struct {
 } SLF_FIELDLIST;
 
 typedef struct {
-	st32 off;
-	st32 cb;
+	st32 offset;
+	ut32 buff_len;
 } SOffCb;
 
 typedef struct {
-	st16 sn;
-	st16 padding;
-	st32 hash_key;
+	ut16 hash_stream_idx;
+	ut16 hash_aux_stream_idx;
+	st32 hash_key_size;
 	st32 buckets;
-	SOffCb hash_vals;
-	SOffCb ti_off;
+	SOffCb hash_val;
+	SOffCb idx_off;
 	SOffCb hash_adj;
 } STPI;
 
 typedef struct {
 	ut32 version;
-	st32 hdr_size;
-	ut32 ti_min;
-	ut32 ti_max;
+	ut32 hdr_size; // should be ut32
+	ut32 idx_begin;
+	ut32 idx_end;
 	ut32 follow_size;
 	STPI tpi;
 } STPIHeader;

@@ -33,6 +33,49 @@ bool test_pdb_tpi(void) {
 	STpiStream *tpi_stream = r_list_get_n (plist, ePDB_STREAM_TPI);
 	mu_assert_notnull (tpi_stream, "TPIs stream not found in current PDB");
 	mu_assert_eq (tpi_stream->header.hdr_size + tpi_stream->header.follow_size, 158056, "Wrong TPI size");
+	mu_assert_eq (tpi_stream->header.idx_begin, 0x1000, "Wrong TPI size");
+
+	// tpi_stream->header.
+	mu_assert_eq (tpi_stream->types->length, 1792, "Incorrect number of types");
+	RListIter *it = r_list_iterator (tpi_stream->types);
+	SType *type;
+	while (r_list_iter_next (it)) {
+		type = r_list_iter_get (it);
+		if (type->tpi_idx == 0x1000) {
+			mu_assert_eq (type->type_data.leaf_type, eLF_ARGLIST, "Incorrect data type");
+		} else if (type->tpi_idx == 0x1002) {
+			mu_assert_eq (type->type_data.leaf_type, eLF_PROCEDURE, "Incorrect data type");
+		} else if (type->tpi_idx == 0x1099) {
+			mu_assert_eq (type->type_data.leaf_type, eLF_FIELDLIST, "Incorrect data type");
+		} else if (type->tpi_idx == 0x111b) {
+			mu_assert_eq (type->type_data.leaf_type, eLF_ARRAY, "Incorrect data type");
+		} else if (type->tpi_idx == 0x1330) {
+			mu_assert_eq (type->type_data.leaf_type, eLF_FIELDLIST, "Incorrect data type");
+			RList *members = r_list_new ();
+			type->type_data.get_members (&type->type_data, &members);
+			mu_assert_eq (members->length, 184, "Incorrect data type");
+			RListIter *it;
+			it = r_list_iterator (members);
+			while (r_list_iter_next (it)) {
+				STypeInfo *type_info = (STypeInfo *)r_list_iter_get (it);
+				mu_assert_eq (type_info->leaf_type, eLF_ENUMERATE, "Incorrect data type");
+			}
+		} else if (type->tpi_idx == 0x1002) {
+			mu_assert_eq (type->type_data.leaf_type, eLF_PROCEDURE, "Incorrect data type");
+		} else if (type->tpi_idx == 0x1002) {
+			mu_assert_eq (type->type_data.leaf_type, eLF_PROCEDURE, "Incorrect data type");
+		} else if (type->tpi_idx == 0x1002) {
+			mu_assert_eq (type->type_data.leaf_type, eLF_PROCEDURE, "Incorrect data type");
+		} else if (type->tpi_idx == 0x1002) {
+			mu_assert_eq (type->type_data.leaf_type, eLF_PROCEDURE, "Incorrect data type");
+		} else if (type->tpi_idx == 0x1002) {
+			mu_assert_eq (type->type_data.leaf_type, eLF_PROCEDURE, "Incorrect data type");
+		} else if (type->tpi_idx == 0x1002) {
+			mu_assert_eq (type->type_data.leaf_type, eLF_PROCEDURE, "Incorrect data type");
+		} else if (type->tpi_idx == 0x1002) {
+			mu_assert_eq (type->type_data.leaf_type, eLF_PROCEDURE, "Incorrect data type");
+		}
+	};
 	pdb.finish_pdb_parse (&pdb);
 	mu_end;
 }

@@ -881,6 +881,13 @@ int alloc_format_flag_and_member_fields(RList *ptmp, char **flags_format_field, 
 
 ///////////////////////////////////////////////////////////////////////////////
 // TODO: need refactor
+static bool is_printable_type (ELeafType type) {
+	return (type == eLF_STRUCTURE ||
+		type == eLF_UNION ||
+		type == eLF_ENUM ||
+		type == eLF_CLASS);
+}
+
 static void print_types(R_PDB *pdb, int mode) {
 	ELeafType lt = eLF_MAX;
 	char *command_field = 0;
@@ -920,7 +927,7 @@ static void print_types(R_PDB *pdb, int mode) {
 		t = (SType *) r_list_iter_get (it);
 		tf = &t->type_data;
 		lt = tf->leaf_type;
-		if ((tf->leaf_type == eLF_STRUCTURE) || (tf->leaf_type == eLF_UNION) || (tf->leaf_type == eLF_ENUM || tf->leaf_type == eLF_CLASS)) {
+		if (is_printable_type (lt)) {
 			if (tf->is_fwdref) {
 				tf->is_fwdref (tf, &val);
 				if (val == 1) {

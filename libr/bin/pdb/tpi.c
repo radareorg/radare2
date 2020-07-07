@@ -2362,9 +2362,9 @@ int parse_tpi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream) {
 
 	stream_file_read(stream, sizeof(STPIHeader), (char *)&tpi_stream->header);
 
-	base_idx = tpi_stream->header.ti_min;
+	base_idx = tpi_stream->header.idx_begin;
 
-	for (i = tpi_stream->header.ti_min; i < tpi_stream->header.ti_max; i++) {
+	for (i = tpi_stream->header.idx_begin; i < tpi_stream->header.idx_end; i++) {
 		type = (SType *) malloc (sizeof (SType));
 		if (!type) {
 			return 0;
