@@ -30,7 +30,7 @@ static const char *help_msg_o[] = {
 	"om","[?]","create, list, remove IO maps",
 	"on"," [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
 	"oo","[?+bcdnm]","reopen current file (see oo?) (reload in rw or debugger)",
-	"op"," [fd]", "select the given fd as current file (see also ob)",
+	"op","[r|n|p|fd]", "select priorized file by fd (see ob), opn/opp/opr = next/previous/rotate",
 	"oq","","list all open files",
 	"ox", " fd fdx", "exchange the descs of fd and fdx and keep the mapping",
 	NULL
@@ -41,6 +41,15 @@ static const char *help_msg_o_[] = {
 	"o-*","","close all opened files",
 	"o-!","","close all files except the current one",
 	"o-3","","close fd=3",
+	NULL
+};
+
+static const char *help_msg_op[] = {
+	"Usage:", "op[rnp] [fd]", "",
+	"opr", "", "open next file rotating",
+	"opn", "", "open next file",
+	"opp", "", "open previous file",
+	"op", " [fd]", "open priorizing fd",
 	NULL
 };
 
@@ -1209,6 +1218,76 @@ static bool desc_list_json_cb(void *user, void *data, ut32 id) {
 	return true;
 }
 
+typedef struct {
+	int fd; // input and output
+	int inc;
+	int prevfd;
+	bool picknext;
+	bool found;
+	RCore *core;
+} RCmdOpData;
+
+static bool try_next(void *_user, void *_data, ut32 id) {
+	RCmdOpData *data = _user;
+	if (data->picknext) {
+		data->fd = id;
+		goto pickme;
+	}
+	if (id == data->fd) {
+		if (data->inc > 0) {
+			// pick next
+			data->picknext = true;
+		} else if (data->inc < 0) {
+			// pick prevfd
+			data->fd = data->prevfd;
+			goto pickme;
+		}
+	}
+	data->prevfd = id;
+	return true;
+pickme:
+	data->picknext = false;
+	data->found = true;
+	return false;
+	
+}
+
+static bool cmd_op(RCore *core, char mode, int fd) {
+	int cur_fd = -2;
+	if (fd != -1) {
+		cur_fd = fd;
+	} else {
+		if (core->io && core->io->desc) {
+			cur_fd = r_io_fd_get_current (core->io);
+		}
+	}
+	const int inc = (mode == 'n')? 1: -1;
+
+	if (cur_fd != -2) {
+		RCmdOpData data = {
+			.fd = cur_fd,
+			.inc = inc,
+			.core = core,
+			.picknext = mode == 0
+		};
+		r_id_storage_foreach (core->io->files, try_next, &data);
+		if (data.found) {
+			int fdn = data.fd;
+			int myfd = r_io_fd_get_current (core->io);
+			if (fdn >= 0 && fdn != myfd && r_io_use_fd (core->io, fdn)) {
+				RBinFile *bf = r_bin_file_find_by_fd (core->bin, fdn);
+				if (bf && r_core_bin_raise (core, bf->id)) {
+					r_core_block_read (core);
+					return true;
+				} else {
+					eprintf ("Invalid RBinFile.id number.\n");
+				}
+			}
+		}
+	}
+	return false;
+}
+
 static int cmd_open(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	int perms = R_PERM_R;
@@ -1366,20 +1445,38 @@ static int cmd_open(void *data, const char *input) {
 	case 'p': // "op"
 		/* handle prioritize */
 		if (input[1]) {
-			int fd = r_num_math (core->num, input + 1);
-			if (fd >= 0 || input[1] == '0') {
-				RIODesc *desc = r_io_desc_get (core->io, fd);
-				if (desc) {
-					// only useful for io.va=0
-					// load bininfo for given fd
-					r_core_cmdf (core, "obo %d", fd);
-					core->io->desc = desc; // XXX we should use fd here, not *pointer
-					r_core_block_read (core);
-				} else {
-					eprintf ("Cannot find RBinFile associated with fd %d\n", fd);
+			switch (input[1]) {
+			case 'r': // "opr" - open next file + rotate if not found
+				if (!cmd_op (core, 'n', -1)) {
+					if (!cmd_op (core, 0, -1)) {
+						eprintf ("Cannot rotate over one or less files.\n");
+					}
 				}
-			} else {
-				eprintf ("Invalid fd number\n");
+				break;
+			case 'n': // "opn" - open next file
+				if (!cmd_op (core, input[1], -1)) {
+					eprintf ("Cannot find next file\n");
+				}
+				break;
+			case 'p': // "opp" - open previous file
+				if (!cmd_op (core, input[1], -1)) {
+					eprintf ("Cannot find previous file\n");
+				}
+				break;
+			case ' ':
+				{
+					int fd = r_num_math (core->num, input + 1);
+					if (fd >= 0 || input[1] == '0') {
+						cmd_op (core, 0, fd);
+					} else {
+						eprintf ("Invalid fd number\n");
+					}
+				}
+				break;
+			default:
+			// case '?': // "op?"
+				r_core_cmd_help (core, help_msg_op);
+				break;
 			}
 		} else {
 			if (core->io && core->io->desc) {
