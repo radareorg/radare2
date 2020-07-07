@@ -18,9 +18,9 @@ CMDS=<<EOF
 s
 o bins/mach0/mac-ls
 s
-obb 0
+obo 0
 s
-obb 1
+obo 1
 s
 EOF
 EXPECT=<<EOF
