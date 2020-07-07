@@ -6,15 +6,20 @@
 #define NPF 5
 #define PIDX (R_ABS (core->printidx % NPF))
 
+static void visual_refresh(RCore *core);
+
 static int obs = 0;
 static int blocksize = 0;
 static bool autoblocksize = true;
 static int disMode = 0;
 static int hexMode = 0;
 static int printMode = 0;
-static void visual_refresh(RCore *core);
 static bool snowMode = false;
 static RList *snows = NULL;
+static int color = 1;
+static int debug = 1;
+static int zoom = 0;
+
 
 typedef struct {
 	int x;
@@ -224,7 +229,7 @@ static const char *__core_visual_print_command(RCore *core) {
 	return printfmtSingle[PIDX];
 }
 
-static bool __core_visual_gogo (RCore *core, int ch) {
+static bool __core_visual_gogo(RCore *core, int ch) {
 	RIOMap *map;
 	int ret = -1;
 	switch (ch) {
@@ -474,10 +479,6 @@ static inline void nextPrintFormat(RCore *core) {
 static inline void prevPrintFormat(RCore *core) {
 	printFormat (core, -1);
 }
-
-static int color = 1;
-static int debug = 1;
-static int zoom = 0;
 
 R_API int r_core_visual_hud(RCore *core) {
 	const char *c = r_config_get (core->config, "hud.path");

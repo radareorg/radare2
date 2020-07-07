@@ -350,7 +350,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	bool do_list_io_plugins = false;
 	char *file = NULL;
 	char *pfile = NULL;
-	const char *debugbackend = "native";
+	char *debugbackend = strdup ("native");
 	const char *asmarch = NULL;
 	const char *asmos = NULL;
 	const char *forcebin = NULL;
@@ -496,7 +496,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 #endif
 		case 'D':
 			debug = 2;
-			debugbackend = opt.arg;
+			free (debugbackend);
+			debugbackend = strdup (opt.arg);
 			if (!strcmp (opt.arg, "?")) {
 				r_debug_plugin_list (r->dbg, 'q');
 				r_cons_flush();
@@ -663,6 +664,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		if (-1 == close (2)) {
 			eprintf ("Failed to close stderr");
 			LISTS_FREE ();
+			R_FREE (debugbackend);
 			return 1;
 		}
 		const char nul[] = R_SYS_DEVNULL;
@@ -670,17 +672,20 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		if (-1 == new_stderr) {
 			eprintf ("Failed to open %s", nul);
 			LISTS_FREE ();
+			R_FREE (debugbackend);
 			return 1;
 		}
 		if (2 != new_stderr) {
 			if (-1 == dup2 (new_stderr, 2)) {
 				eprintf ("Failed to dup2 stderr");
 				LISTS_FREE ();
+				R_FREE (debugbackend);
 				return 1;
 			}
 			if (-1 == close (new_stderr)) {
 				eprintf ("Failed to close %s", nul);
 				LISTS_FREE ();
+				R_FREE (debugbackend);
 				return 1;
 			}
 		}
@@ -732,12 +737,14 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		r_cons_flush ();
 		LISTS_FREE ();
 		free (pfile);
+		R_FREE (debugbackend);
 		return 0;
 	}
 
 	if (help > 0) {
 		LISTS_FREE ();
 		free (pfile);
+		R_FREE (debugbackend);
 		return main_help (help > 1? 2: 0);
 	}
 #if __WINDOWS__
@@ -757,6 +764,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		if (opt.ind >= argc && !haveRarunProfile) {
 			eprintf ("Missing argument for -d\n");
 			LISTS_FREE ();
+			R_FREE (debugbackend);
 			return 1;
 		}
 		const char *src = haveRarunProfile? pfile: argv[opt.ind];
@@ -768,14 +776,14 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					*p = 0;
 					// TODO: this must be specified by the io plugin, not hardcoded here
 					if (!strcmp (uri, "winedbg")) {
-						debugbackend = "io";
+						debugbackend = strdup ("io");
 					} else {
 						debugbackend = uri;
+						uri = NULL;
 					}
 					debug = 2;
-				} else {
-					free (uri);
 				}
+				free (uri);
 			}
 		}
 	}
@@ -805,6 +813,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		if (opt.ind >= argc) {
 			eprintf ("Missing URI for -C\n");
 			LISTS_FREE ();
+			R_FREE (debugbackend);
 			return 1;
 		}
 		if (strstr (uri, "://")) {
@@ -862,12 +871,14 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			eprintf ("Error: Cannot debug directories, yet.\n");
 			LISTS_FREE ();
 			free (pfile);
+			R_FREE (debugbackend);
 			return 1;
 		}
 		if (r_sys_chdir (argv[opt.ind])) {
 			eprintf ("[d] Cannot open directory\n");
 			LISTS_FREE ();
 			free (pfile);
+			R_FREE (debugbackend);
 			return 1;
 		}
 	} else if (argv[opt.ind] && !strcmp (argv[opt.ind], "=")) {
@@ -906,6 +917,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			// TODO: load rbin thing
 		} else {
 			eprintf ("Cannot slurp from stdin\n");
+			free (buf);
 			LISTS_FREE ();
 			return 1;
 		}
@@ -920,6 +932,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			if (opt.ind >= argc) {
 				eprintf ("No program given to -d\n");
 				LISTS_FREE ();
+				R_FREE (debugbackend);
 				return 1;
 			}
 			if (debug == 2) {
@@ -1043,6 +1056,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				if (R_STR_ISEMPTY (pfile)) {
 					eprintf ("Missing file to open\n");
 					ret = 1;
+					R_FREE (debugbackend);
 					goto beach;
 				}
 				fh = r_core_file_open (r, pfile, perms, mapaddr);
@@ -1207,13 +1221,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_config_eval (r->config, cmdn, false);
 			r_cons_flush ();
 		}
-#if 0
-// Do not autodetect utf8 terminals to avoid problems on initial
-// stdin buffer and some terminals that just hang (android/ios)
-		if (!quiet && r_cons_is_utf8 ()) {
-			r_config_set_i (r->config, "scr.utf8", true);
-		}
-#endif
 		if (asmarch) {
 			r_config_set (r->config, "asm.arch", asmarch);
 		}
@@ -1229,6 +1236,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		if (debug) {
 			r_core_setup_debugger (r, debugbackend, baddr == UT64_MAX);
 		}
+		R_FREE (debugbackend);
 		RBinObject *o = r_bin_cur_object (r->bin);
 		if (!debug && o && !o->regstate) {
 			RFlagItem *fi = r_flag_get (r->flags, "entry0");
