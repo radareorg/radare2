@@ -496,7 +496,6 @@ EXPECT=<<EOF
      shnum : 0x00000030 = 0
   shstrndx : 0x00000032 = 0
 EOF
-EXPECT_ERR=
 RUN
 
 NAME=pfc N# and n#
