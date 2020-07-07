@@ -11,12 +11,22 @@ static int cmd_search(void *data, const char *input);
 
 #define USE_EMULATION 0
 
+static const char *help_msg_search_esil[] = {
+	"/E", " [esil-expr]", "search offsets matching a specific esil expression",
+	"/Ej", " [esil-expr]", "same as above but using the given magic file",
+	"/E?", " ", "show this help",
+	"\nExamples:", "", "",
+	"", "/E $$,0x100001060,-,!", "hit when address is 0x100001060",
+	NULL
+};
+
 static const char *help_msg_slash_m[] = {
 	"/m", "", "search for known magic patterns",
 	"/m", " [file]", "same as above but using the given magic file",
 	"/me", " ", "like ?e similar to IRC's /me",
 	"/mm", " ", "search for known filesystems and mount them automatically",
 	"/mb", "", "search recognized RBin headers",
+	NULL
 };
 
 static const char *help_msg_slash[] = {
@@ -33,7 +43,7 @@ static const char *help_msg_slash[] = {
 	"/c", "[ar]", "search for crypto materials",
 	"/d", " 101112", "search for a deltified sequence of bytes",
 	"/e", " /E.F/i", "match regular expression",
-	"/E", " esil-expr", "offset matching given esil expressions %%= here",
+	"/E", " esil-expr", "offset matching given esil expressions $$ = here",
 	"/f", "", "search forwards, (command modifier)",
 	"/F", " file [off] [sz]", "search contents of file with offset and size",
 	// TODO: add subcommands to find paths between functions and filter only function names instead of offsets, etc
@@ -1600,8 +1610,18 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 	const bool cfgDebug = r_config_get_i (core->config, "cfg.debug");
 	RSearch *search = core->search;
 	RSearchKeyword kw = R_EMPTY;
-	if (input[0] == 'E' && input[1] != ' ') {
-		eprintf ("Usage: /E [esil-expr]\n");
+	if (input[0] != 'E') {
+		return;
+	}
+	PJ *pj = NULL;
+	if (input[1] == 'j') { // "/Ej"
+		// BUGGY and dupe not using pj, param->outmode = R_MODE_JSON;
+		pj = pj_new ();
+		pj_a (pj);
+		input++;
+	}
+	if (input[1] != ' ') { // "/E?"
+		r_core_cmd_help (core, help_msg_search_esil);
 		return;
 	}
 	if (!core->anal->esil) {
@@ -1618,8 +1638,8 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		const int iotrap = r_config_get_i (core->config, "esil.iotrap");
 		const int stacksize = r_config_get_i (core->config, "esil.stacksize");
 		int nonull = r_config_get_i (core->config, "esil.nonull");
-		int hit_happens = 0;
-		int hit_combo = 0;
+		bool hit_happens = false;
+		size_t hit_combo = 0;
 		char *res;
 		ut64 nres, addr;
 		ut64 from = map->itv.addr;
@@ -1671,17 +1691,19 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 					eprintf ("RES 0x%08"PFMT64x" %"PFMT64d"\n", addr, nres);
 				}
 				if (nres) {
-					if (!_cb_hit (&kw, param, addr)) {
-						free (res);
-						break;
-					}
-					// eprintf (" HIT AT 0x%"PFMT64x"\n", addr);
-					kw.type = 0; // R_SEARCH_TYPE_ESIL;
-					kw.kwidx = search->n_kws;
-					kw.count++;
 					eprintf ("hits: %d\r", kw.count);
-					kw.keyword_length = 0;
 					hit_happens = true;
+					if (!pj) {
+						if (!_cb_hit (&kw, param, addr)) {
+							free (res);
+							break;
+						}
+						// eprintf (" HIT AT 0x%"PFMT64x"\n", addr);
+						kw.type = 0; // R_SEARCH_TYPE_ESIL;
+						kw.kwidx = search->n_kws;
+						kw.count++;
+						kw.keyword_length = 0;
+					}
 				}
 			} else {
 				eprintf ("Cannot parse esil (%s)\n", input + 2);
@@ -1693,6 +1715,12 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 			free (res);
 
 			if (hit_happens) {
+				if (pj) {
+					pj_o (pj);
+					pj_kn (pj, "addr", addr);
+					pj_kn (pj, "value", nres);
+					pj_end (pj);
+				}
 				hit_combo++;
 				if (hit_combo > hit_combo_limit) {
 					eprintf ("Hit search.esilcombo reached (%d). Stopping search. Use f-\n", hit_combo_limit);
@@ -1706,6 +1734,12 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		r_cons_break_pop ();
 	}
 	r_cons_clear_line (1);
+	if (pj) {
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		r_cons_printf ("%s\n", s);
+		free (s);
+	}
 }
 
 #define MAXINSTR 8
