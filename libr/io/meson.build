@@ -9,6 +9,7 @@ r_io_sources = [
   'undo.c',
   'p_cache.c',
   'p/io_ar.c',
+  'p/io_fd.c',
   'p/io_bfdbg.c',
   'p/io_bochs.c',
   'p/io_debug.c',
