@@ -25,7 +25,7 @@ jobs:
       run: |
         curl -o python3.6.9.tgz https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz
         tar -zxvf python3.6.9.tgz
-        cd python4.6.9/
+        cd python3.6.9/
         ./configure
         make install
     - name: Checkout r2
