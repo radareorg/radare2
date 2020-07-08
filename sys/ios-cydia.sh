@@ -18,13 +18,9 @@ export BUILD=1
 
 if [ ! -d sys/ios-include/mach/vm_behavior.h  ]; then
 (
-	if [ ! -f sys/ios-include.tar.gz ]; then
-		set -e
-		cd sys && \
-		wget http://lolcathost.org/b/ios-include.tar.gz && \
-		set +e
-	fi
-	cd sys && tar xzvf ios-include.tar.gz
+	cd sys && \
+	wget -c https://lolcathost.org/b/ios-include.tar.gz && \
+	tar xzvf ios-include.tar.gz
 )
 fi
 
