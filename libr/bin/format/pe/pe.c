@@ -3904,12 +3904,14 @@ static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe
 							sections[j].name);
 				}
 			}
-			ut32 fa = bin->optional_header->FileAlignment;
-			if (fa && sections[j].paddr % fa) {
-				bprintf ("Warning: section %s not aligned to FileAlignment.\n", sections[j].name);
-				ut64 diff = sections[j].paddr % fa;
-				sections[j].paddr -= diff;
-				sections[j].size += diff;
+			const ut32 fa = bin->optional_header->FileAlignment;
+			if (fa) {
+				const ut64 diff = sections[j].paddr % fa;
+				if (diff) {
+					bprintf ("Warning: section %s not aligned to FileAlignment.\n", sections[j].name);
+					sections[j].paddr -= diff;
+					sections[j].size += diff;	
+				}
 			}
 		}
 		sections[j].perm = shdr[i].Characteristics;
