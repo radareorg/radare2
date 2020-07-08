@@ -429,3 +429,11 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=pe misaligned section paddr
+FILE=bins/pe/unaligned_sec_paddr.exe
+CMDS=iS~sect_0
+EXPECT=<<EOF
+0   0x00000200  0x205 0x00401000  0x1000 -rwx sect_0
+EOF
+RUN
