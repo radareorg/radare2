@@ -18,9 +18,10 @@ jobs:
 
     steps:
     - name: Install tools
-      run: apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config python3 libc6-i386
-    - name: Install python
-      run: apt-get --assume-yes install python3-wheel python3-setuptools python3-pip && pip3 install --upgrade setuptools
+      run: apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config libc6-i386 software-properties-common
+    - uses: deadsnakes/action@v1.0.0
+      with:
+          python-version: 3.6
     - name: Checkout r2
       run: |
         git clone https://github.com/${{ github.repository }}
