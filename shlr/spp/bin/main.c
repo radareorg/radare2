@@ -1,16 +1,16 @@
-/* MIT (C) pancake (at) nopcode (dot) org */
+/* MIT pancake <pancake@nopcode.org> (C) 2009-2020 */
 
-#include "spp.h"
-#include "r_api.h"
+#include "../spp.h"
+#include "../r_api.h"
 
 extern struct Proc *procs[];
 extern struct Proc *proc;
 extern struct Arg *args;
 
 static void spp_help(char *argv0) {
-	int i;
+	size_t i;
 	char supported[128] = "";
-	for( i = 0; procs[i]; ++i ) {
+	for (i = 0; procs[i]; ++i ) {
 		if (i) strcat (supported, ",");
 		strcat (supported, procs[i]->name);
 	}
@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
 				spp_proc_set (proc, arg, 1);
 			} else
 			if (!strcmp (argv[i],"-v")) {
-				printf ("spp-%s\n", VERSION);
+				printf ("%s\n", VERSION);
 				exit (1);
 			} else
 			if (!strcmp (argv[i],"-h")) {

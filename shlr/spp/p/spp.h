@@ -1,5 +1,8 @@
 /* Mini MCMS :: renamed to 'spp'? */
 
+#ifndef INCLUDE_P_SPP_H
+#define INCLUDE_P_SPP_H
+
 #if __UNIX__
 #include <unistd.h>
 #endif
@@ -459,3 +462,4 @@ DLL_LOCAL struct Proc spp_proc = {
 	.default_echo = 1,
 	.tag_begin = 0,
 };
+#endif
