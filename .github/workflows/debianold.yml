@@ -18,10 +18,9 @@ jobs:
 
     steps:
     - name: Install tools
-      run: apt-get update && apt-get install --yes sudo patch unzip git gcc make curl pkg-config libc6-i386 software-properties-common
-    - uses: deadsnakes/action@v1.0.0
-      with:
-          python-version: 3.6
+      run: apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config libc6-i386 software-properties-common
+    - name: Install Python from "deadsnakes" PPA
+      run: add-apt-repository ppa:deadsnakes/ppa && apt-get update && apt-get install --yes python3.6
     - name: Checkout r2
       run: |
         git clone https://github.com/${{ github.repository }}
