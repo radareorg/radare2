@@ -906,7 +906,7 @@ static void print_types(R_PDB *pdb, int mode) {
 	SType *t = 0;
 	STypeInfo *tf = 0;
 	RListIter *it = 0, *it2 = 0;
-	RList *plist = pdb->pdb_streams, *ptmp = NULL;
+	RList *plist = pdb->pdb_streams;
 	STpiStream *tpi_stream = r_list_get_n (plist, ePDB_STREAM_TPI);
 
 	if (!tpi_stream) {
@@ -967,6 +967,7 @@ static void print_types(R_PDB *pdb, int mode) {
 						"enum", name, "enums");
 					break;
 				case eLF_STRUCTURE:
+				case eLF_CLASS:
 				case eLF_UNION:
 					pdb->cb_printf ("{\"type\":\"%s\",\"name\":\"%s\",\"size\":%d,\"%s\":[",
 						"structure", name, val, "members");
