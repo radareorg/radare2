@@ -822,13 +822,25 @@ static int cmd_info(void *data, const char *input) {
 					break;
 				case 'd':
 					pdbopts.user_agent = (char*) r_config_get (core->config, "pdb.useragent");
-					pdbopts.symbol_server = (char*) r_config_get (core->config, "pdb.server");
 					pdbopts.extract = r_config_get_i (core->config, "pdb.extract");
 					pdbopts.symbol_store_path = (char*) r_config_get (core->config, "pdb.symstore");
-					int r = r_bin_pdb_download (core, 0, NULL, &pdbopts);
+					char *str = strdup (r_config_get (core->config, "pdb.server"));
+					RList *server_l = r_str_split_list (str, ";", 0);
+					RListIter *it;
+					char *server;
+					int r = 1;
+					r_list_foreach (server_l, it, server) {
+						pdbopts.symbol_server = server;
+						r = r_bin_pdb_download (core, 0, NULL, &pdbopts);
+						if (!r) {
+							break;
+						}
+					}
 					if (r > 0) {
 						eprintf ("Error while downloading pdb file\n");
 					}
+					free (str);
+					r_list_free (server_l);
 					input++;
 					break;
 				case 'i':
