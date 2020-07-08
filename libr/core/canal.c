@@ -1926,8 +1926,8 @@ R_API int r_core_anal_esil_fcn(RCore *core, ut64 at, ut64 from, int reftype, int
 	return 0;
 }
 
-static int find_sym_flag(void *a1, void *a2) {
-	RFlagItem *f = (RFlagItem *)a2;
+static int find_sym_flag(const void *a1, const void *a2) {
+	const RFlagItem *f = (const RFlagItem *)a2;
 	return f->space && !strcmp (f->space->name, R_FLAGS_FS_SYMBOLS)? 0: 1;
 }
 
