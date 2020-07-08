@@ -18,7 +18,16 @@ jobs:
 
     steps:
     - name: Install tools
-      run: apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config python3 libc6-i386
+      run: apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config libc6-i386 build-essential
+    - name: Install Python source build dependcies
+      run: apt-get install --yes checkinstall libbz2-dev libc6-dev libgdbm-dev libncursesw5-dev libreadline-gplv2-dev libssl-dev libsqlite3-dev tk-dev
+    - name: Install Python from source
+      run: |
+        curl -o Python-3.6.9.tgz https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz
+        tar -zxvf Python-3.6.9.tgz
+        cd Python-3.6.9/
+        ./configure
+        make install
     - name: Checkout r2
       run: |
         git clone https://github.com/${{ github.repository }}
@@ -36,6 +45,8 @@ jobs:
     - name: Install with make
       run: make install
       working-directory: radare2
+    - name: Install test dependencies
+      run: python3 -m pip install --user 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
     - name: Run tests
       run: cd test && make
       working-directory: radare2
