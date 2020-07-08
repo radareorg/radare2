@@ -525,6 +525,7 @@ static void set_default_value_dynamic_info(ELFOBJ *bin) {
 	bin->dyn_info.dt_pltrel = ELF_XWORD_MAX;
 	bin->dyn_info.dt_jmprel = ELF_ADDR_MAX;
 	bin->dyn_info.dt_pltgot = ELF_ADDR_MAX;
+	bin->dyn_info.dt_mips_pltgot = ELF_ADDR_MAX;
 	bin->dyn_info.dt_bind_now = false;
 	bin->dyn_info.dt_flags = ELF_XWORD_MAX;
 	bin->dyn_info.dt_flags_1 = ELF_XWORD_MAX;
@@ -649,7 +650,7 @@ static void fill_dynamic_entries(ELFOBJ *bin, ut64 loaded_offset, ut64 dyn_size)
 			if ((d.d_tag >= DT_VERSYM) && (d.d_tag <= DT_VERNEEDNUM)) {
 				bin->version_info[DT_VERSIONTAGIDX (d.d_tag)] = d.d_un.d_val;
 			} else {
-				eprintf("Dynamic tag %" PFMT64d " not handled\n", (ut64) d.d_tag);
+				R_LOG_DEBUG ("Dynamic tag %" PFMT64d " not handled\n", (ut64) d.d_tag);
 			}
 			break;
 		}
@@ -1780,19 +1781,11 @@ ut64 Elf_(r_bin_elf_get_fini_offset)(ELFOBJ *bin) {
 	return 0;
 }
 
-static bool isExecutable(ELFOBJ *bin) {
-	switch (bin->ehdr.e_type) {
-	case ET_EXEC: return true;
-	case ET_DYN:  return true;
-	}
-	return false;
-}
-
 ut64 Elf_(r_bin_elf_get_entry_offset)(ELFOBJ *bin) {
 	r_return_val_if_fail (bin, UT64_MAX);
 	ut64 entry = bin->ehdr.e_entry;
 	if (!entry) {
-		if (!isExecutable (bin)) {
+		if (!Elf_(r_bin_elf_is_executable) (bin)) {
 			return UT64_MAX;
 		}
 		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".init.text");
@@ -2065,7 +2058,7 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 	case EM_ARC_A5:
 		return strdup ("arc");
 	case EM_AVR: return strdup ("avr");
-	case EM_BA2_NON_STANDARD: 
+	case EM_BA2_NON_STANDARD:
 	case EM_BA2: return strdup ("ba2");
 	case EM_CRIS: return strdup ("cris");
 	case EM_68K: return strdup ("m68k");
@@ -3042,6 +3035,9 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 
 	addr_sym_table = Elf_(r_bin_elf_v2p) (bin, bin->dyn_info.dt_symtab);
 	sym_size = bin->dyn_info.dt_syment;
+	if (!sym_size) {
+		goto beach;
+	}
 
 	//since ELF doesn't specify the symbol table size we may read until the end of the buffer
 	nsym = (bin->size - addr_sym_table) / sym_size;
@@ -4034,4 +4030,9 @@ char *Elf_(r_bin_elf_compiler)(ELFOBJ *bin) {
 	char * res = r_str_escape (buf);
 	free (buf);
 	return res;
+}
+
+bool Elf_(r_bin_elf_is_executable)(ELFOBJ *bin) {
+	const int t = bin->ehdr.e_type;
+	return t == ET_EXEC || t == ET_DYN;
 }

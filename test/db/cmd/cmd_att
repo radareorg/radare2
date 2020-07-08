@@ -1,4 +1,4 @@
-NAME=att relsub
+NAME=att subrel
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
 e asm.syntax=att
@@ -100,7 +100,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=att varsub 2 with asm.var.subonly disabled
+NAME=att varsub 2 with asm.sub.varonly disabled
 FILE=bins/elf/varsub
 CMDS=<<EOF
 aa; s main
@@ -109,7 +109,7 @@ e asm.var=0
 e asm.lines.bb=0
 e asm.bytes=0
 e asm.comments=false
-e asm.var.subonly=false
+e asm.sub.varonly=false
 pdf
 EOF
 EXPECT=<<EOF

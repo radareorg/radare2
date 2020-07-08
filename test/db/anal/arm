@@ -458,7 +458,7 @@ jump: 0x00000020
 EOF
 RUN
 
-NAME=arm relsub >256
+NAME=arm subrel >256
 FILE=malloc://800
 CMDS=<<EOF
 wx 0d039fe5
@@ -475,7 +475,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=arm relsub <256
+NAME=arm subrel <256
 FILE=-
 CMDS=<<EOF
 wx 0c009fe5
@@ -486,7 +486,7 @@ e asm.bytes=false
 e asm.offset=false
 f sym.callback=0x14
 pd 1
-e asm.var.submin=0
+e asm.sub.varmin=0
 pd 1
 EOF
 EXPECT=<<EOF
@@ -495,7 +495,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=arm relsub
+NAME=arm subrel
 FILE=bins/elf/arm1.bin
 CMDS=<<EOF
 e asm.arch=arm
@@ -516,7 +516,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=arm relsub
+NAME=arm subrel
 FILE=bins/elf/analysis/arm-ls
 BROKEN=1
 CMDS=<<EOF

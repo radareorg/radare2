@@ -3282,10 +3282,8 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 						if (threaded_binds) {
 							r_pvector_free (threaded_binds);
 						}
-						threaded_binds = r_pvector_new ((RPVectorFree) &free);
+						threaded_binds = r_pvector_new_with_len ((RPVectorFree) &free, table_size);
 						if (threaded_binds) {
-							r_pvector_reserve (threaded_binds, table_size);
-							threaded_binds->v.len = table_size;
 							sym_ord = 0;
 						}
 						break;

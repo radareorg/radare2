@@ -165,6 +165,8 @@ R_API void r_pvector_fini(RPVector *vec);
 
 R_API RPVector *r_pvector_new(RPVectorFree free);
 
+R_API RPVector *r_pvector_new_with_len(RPVectorFree free, size_t length);
+
 // clear the vector and call vec->v.free on every element.
 R_API void r_pvector_clear(RPVector *vec);
 

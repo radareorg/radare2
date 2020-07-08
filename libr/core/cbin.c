@@ -169,10 +169,22 @@ R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
 		eprintf ("Invalid char found in filename\n");
 		return false;
 	}
-	// TODO use the RBin API, not cmdf()
-	// r_core_bin_export_info_rad (core);
-	r_core_cmdf (core, "\".!rabin2 -rk. %s\"", file);
-	return true;
+	RBinOptions opt = { 0 };
+	r_bin_open (core->bin, file, &opt);
+	RBinFile *bf = r_bin_cur (core->bin);
+	r_cons_push ();
+	r_core_bin_export_info_rad (core);
+	r_cons_filter ();
+	const char *s = r_cons_get_buffer ();
+	char *res = R_STR_ISNOTEMPTY (s)? strdup (s): NULL;
+	int r = -1;
+	r_cons_pop ();
+	if (res) {
+		r = r_core_cmd_lines (core, res);
+		free (res);
+	}
+	r_bin_file_delete (core->bin, bf->id);
+	return r > 0;
 }
 
 R_API int r_core_bin_set_by_name(RCore *core, const char * name) {

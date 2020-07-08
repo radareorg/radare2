@@ -352,7 +352,7 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 
 	bool att = strchr (data, '%');
 
-	if (p->relsub) {
+	if (p->subrel) {
 		if (att) {
 			char *rip = (char *) r_str_casestr (tstr, "(%rip)");
 			if (rip) {

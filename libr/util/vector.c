@@ -233,6 +233,21 @@ R_API RPVector *r_pvector_new(RPVectorFree free) {
 	return v;
 }
 
+R_API RPVector *r_pvector_new_with_len(RPVectorFree free, size_t length) {
+	RPVector *v = r_pvector_new (free);
+	if (!v) {
+		return NULL;
+	}
+	void** p = r_pvector_reserve (v, length);
+	if (!p) {
+		r_pvector_free (v);
+		return NULL;
+	}
+	memset (p, 0, v->v.elem_size * v->v.capacity);
+	v->v.len = length;
+	return v;
+}
+
 R_API void r_pvector_clear(RPVector *vec) {
 	r_return_if_fail (vec);
 	r_vector_clear (&vec->v);

@@ -893,13 +893,6 @@ NAME=rabin2 -D Unsupported
 FILE=bins/elf/libc.so.0
 CMDS=!rabin2 -D XXX LOLILOL
 EXPECT_ERR=<<EOF
-Dynamic tag 1879048193 not handled
-Dynamic tag 1879048197 not handled
-Dynamic tag 1879048198 not handled
-Dynamic tag 1879048202 not handled
-Dynamic tag 1879048209 not handled
-Dynamic tag 1879048210 not handled
-Dynamic tag 1879048211 not handled
 Unsupported demangler
 EOF
 RUN

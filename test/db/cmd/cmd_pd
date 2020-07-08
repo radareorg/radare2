@@ -8,7 +8,7 @@ e asm.var.sub=1
 pd 1
 f fin.dus=0x1000054d0
 pd 1
-e asm.relsub=0
+e asm.sub.rel=0
 pd 1
 EOF
 EXPECT=<<EOF
@@ -553,19 +553,19 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pd asm.relsub
+NAME=pd asm.sub.rel
 FILE=malloc://1024
 ARGS=-m 0x400000
 CMDS=<<EOF
 e io.va=true
-e asm.relsub=false
+e asm.sub.rel=false
 e asm.arch=x86
 e asm.bits=64
 wx 488d0502000000
 e asm.lines.bb=false
 e asm.comments=false
 pd 1
-e asm.relsub=true
+e asm.sub.rel=true
 pd 1
 EOF
 EXPECT=<<EOF
@@ -574,7 +574,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pd asm.var.subonly
+NAME=pd asm.sub.varonly
 FILE=malloc://1024
 CMDS=<<EOF
 e anal.vars.stackname=true
@@ -590,10 +590,10 @@ e scr.color=false
 wx 554889e583ec60488b44244089ec5dc3
 af
 afva
-e asm.var.subonly=true
+e asm.sub.varonly=true
 pd 1 @ 0~var
 pd 1 @ 7
-e asm.var.subonly=false
+e asm.sub.varonly=false
 pd 1 @ 0~var
 pd 1 @ 7
 EOF
@@ -1903,10 +1903,10 @@ pd 4 @ 0x0001045c
 ?e
 e asm.pseudo=true
 e asm.var.sub=true
-e asm.var.subonly=false
+e asm.sub.varonly=false
 pd 4 @ 0x0001045c
 ?e
-e asm.var.subonly=true
+e asm.sub.varonly=true
 s main
 afvn local2 var_ch
 afvn arg1 arg_8h
