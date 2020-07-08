@@ -60,7 +60,7 @@ KERNFILES+=partmap/bsdlabel.c
 KERNFILES+=partmap/sunpc.c
 
 KERNOBJS=$(subst .c,.o,${KERNFILES})
-CFLAGS+=-Iinclude
+CFLAGS+=-Iinclude -I../sdb/src/
 CFLAGS+=-I../../libr/include -DGRUB_TARGET_NO_MODULES
 CFLAGS+=-g
 

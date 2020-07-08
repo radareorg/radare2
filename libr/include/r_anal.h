@@ -15,7 +15,7 @@
 #include <r_util.h>
 #include <r_bind.h>
 #include <r_syscall.h>
-#include <sdb/set.h>
+#include <set.h>
 #include <r_flag.h>
 #include <r_bin.h>
 

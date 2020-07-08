@@ -8,6 +8,7 @@ LIBNAME=libbochs
 LIBFILE=$(LIBNAME).$(EXT_SO)
 CFLAGS+=-I$(LIBR)/include $(PIC_CFLAGS)
 CFLAGS+=-Iinclude -I${LIBR}/include
+CFLAGS+=-I../sdb/src/
 MAJOR=0
 MINOR=1
 LD=$(CC)

@@ -18,6 +18,7 @@ LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 ALL?=
 CFLAGS+=-I$(LIBR)
 CFLAGS+=-I$(LIBR)/include
+CFLAGS+=-I$(SHLR)/sdb/src/
 
 CFLAGS+=-fvisibility=hidden
 LDFLAGS+=-fvisibility=hidden

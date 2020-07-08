@@ -1,5 +1,6 @@
 NAME=rz
 LIBAR=librz.$(EXT_AR)
+CFLAGS+=-I../sdb/src/
 
 include ../../config-user.mk
 include ../../libr/config.mk

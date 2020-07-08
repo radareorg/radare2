@@ -28,7 +28,7 @@ CFLAGS+=-DMINGW32=1
 endif
 CFLAGS+=-g
 
-CFLAGS+=-I../../libr/include
+CFLAGS+=-I../../libr/include -I../sdb/src/
 LDFLAGS+=-L../../libr/util
 OBJS=code.o class.o ops.o dsojson.o
 

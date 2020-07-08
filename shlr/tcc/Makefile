@@ -7,7 +7,7 @@ CFLAGS+=${PIC_CFLAGS}
 
 LDFLAGS+=-L../../libr/util
 LIBS+=-lr_util
-CFLAGS+=-I../../libr/include
+CFLAGS+=-I../../libr/include -I../sdb/src/
 
 CFLAGS+=-fstrict-aliasing
 CFLAGS+=-I../../libr/include

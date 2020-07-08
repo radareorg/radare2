@@ -6,7 +6,7 @@
 #include "r_core.h"
 #include "r_util.h"
 #include "r_types.h"
-#include "sdb/sdb.h"
+#include <sdb.h>
 
 char *getcommapath(RCore *core);
 

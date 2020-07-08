@@ -21,7 +21,7 @@ extern "C" {
 #include <r_util/r_file.h>
 #include <r_vector.h>
 #include <sdb.h>
-#include <sdb/ht_up.h>
+#include <ht_up.h>
 
 #include <stdio.h>
 #include <sys/types.h>

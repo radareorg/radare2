@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2010-2019 - pancake */
 
-#include <sdb/ht_uu.h>
+#include <ht_uu.h>
 #include <r_core.h>
 #include <r_hash.h>
 #include "r_io.h"
