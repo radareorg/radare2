@@ -23,37 +23,53 @@ int pdb_info(const char *file, R_PDB *pdb) {
 
 bool test_pdb_tpi(void) {
 	R_PDB pdb = R_EMPTY;
-	mu_assert_true (pdb_info ("/home/hound/Projects/radare2/test/bins/pe/types.pdb", &pdb), "pdb parsing failed");
+	mu_assert_true (pdb_info ("../bins/pdb/Project1.pdb", &pdb), "pdb parsing failed");
 
 	RList *plist = pdb.pdb_streams;
 	mu_assert_notnull (plist, "PDB streams is NULL");
 
-	mu_assert_eq (pdb.root_stream->num_streams, 58, "Incorrect number of streams");
+	mu_assert_eq (pdb.root_stream->num_streams, 50, "Incorrect number of streams");
 
 	STpiStream *tpi_stream = r_list_get_n (plist, ePDB_STREAM_TPI);
 	mu_assert_notnull (tpi_stream, "TPIs stream not found in current PDB");
-	mu_assert_eq (tpi_stream->header.hdr_size + tpi_stream->header.follow_size, 158056, "Wrong TPI size");
-	mu_assert_eq (tpi_stream->header.idx_begin, 0x1000, "Wrong TPI size");
+	mu_assert_eq (tpi_stream->header.hdr_size + tpi_stream->header.follow_size, 117156, "Wrong TPI size");
+	mu_assert_eq (tpi_stream->header.idx_begin, 0x1000, "Wrong beginning index");
 
 	// tpi_stream->header.
-	mu_assert_eq (tpi_stream->types->length, 1792, "Incorrect number of types");
+	mu_assert_eq (tpi_stream->types->length, 1148, "Incorrect number of types");
 	RListIter *it = r_list_iterator (tpi_stream->types);
 	SType *type;
 	while (r_list_iter_next (it)) {
 		type = r_list_iter_get (it);
 		if (type->tpi_idx == 0x1000) {
-			mu_assert_eq (type->type_data.leaf_type, eLF_ARGLIST, "Incorrect data type");
-		} else if (type->tpi_idx == 0x1002) {
-			mu_assert_eq (type->type_data.leaf_type, eLF_PROCEDURE, "Incorrect data type");
-		} else if (type->tpi_idx == 0x1099) {
 			mu_assert_eq (type->type_data.leaf_type, eLF_FIELDLIST, "Incorrect data type");
-		} else if (type->tpi_idx == 0x111b) {
+		} else if (type->tpi_idx == 0x1028) {
+			mu_assert_eq (type->type_data.leaf_type, eLF_PROCEDURE, "Incorrect data type");
+		} else if (type->tpi_idx == 0x1161) {
+			mu_assert_eq (type->type_data.leaf_type, eLF_POINTER, "Incorrect data type");
+		} else if (type->tpi_idx == 0x113F) {
 			mu_assert_eq (type->type_data.leaf_type, eLF_ARRAY, "Incorrect data type");
-		} else if (type->tpi_idx == 0x1330) {
+		} else if (type->tpi_idx == 0x145A) {
+			mu_assert_eq (type->type_data.leaf_type, eLF_ENUM, "Incorrect data type");
+		} else if (type->tpi_idx == 0x1414) {
+			mu_assert_eq (type->type_data.leaf_type, eLF_VTSHAPE, "Incorrect data type");
+		} else if (type->tpi_idx == 0x1421) {
+			mu_assert_eq (type->type_data.leaf_type, eLF_MODIFIER, "Incorrect data type");
+		} else if (type->tpi_idx == 0x1003) {
+			mu_assert_eq (type->type_data.leaf_type, eLF_UNION, "Incorrect data type");
+		} else if (type->tpi_idx == 0x100B) {
+			mu_assert_eq (type->type_data.leaf_type, eLF_CLASS, "Incorrect data type");
+		} else if (type->tpi_idx == 0x1062) {
+			mu_assert_eq (type->type_data.leaf_type, eLF_BITFIELD, "Incorrect data type");
+		} else if (type->tpi_idx == 0x1258) {
+			mu_assert_eq (type->type_data.leaf_type, eLF_METHODLIST, "Incorrect data type");
+		} else if (type->tpi_idx == 0x107A) {
+			mu_assert_eq (type->type_data.leaf_type, eLF_MFUNCTION, "Incorrect data type");
+		} else if (type->tpi_idx == 0x113F) {
 			mu_assert_eq (type->type_data.leaf_type, eLF_FIELDLIST, "Incorrect data type");
 			RList *members = r_list_new ();
 			type->type_data.get_members (&type->type_data, &members);
-			mu_assert_eq (members->length, 184, "Incorrect data type");
+			mu_assert_eq (members->length, 2725, "Incorrect members length");
 			RListIter *it = r_list_iterator (members);
 			int i = 0;
 			while (r_list_iter_next (it)) {
@@ -62,35 +78,35 @@ bool test_pdb_tpi(void) {
 				if (i == 0) {
 					char *name = NULL;
 					type_info->get_name (type_info, &name);
-					mu_assert_streq (name, "CV_AMD64_YMM9D2", "Wrong enum name");
+					mu_assert_streq (name, "CV_ALLREG_ERR", "Wrong enum name");
 					int value = 0;
 					type_info->get_val (type_info, &value);
-					mu_assert_eq (value, 662, "Wrong enumerate value");
+					mu_assert_eq (value, 30000, "Wrong enumerate value");
 				}
-				if (i == 99) {
+				if (i == 2724) {
 					char *name = NULL;
 					type_info->get_name (type_info, &name);
-					mu_assert_streq (name, "CV_AMD64_K3", "Wrong enum name");
+					mu_assert_streq (name, "CV_AMD64_YMM15D3", "Wrong enum name");
 					int value = 0;
 					type_info->get_val (type_info, &value);
-					mu_assert_eq (value, 761, "Wrong enumerate value");
+					mu_assert_eq (value, 687, "Wrong enumerate value");
 				}
 				i++;
 			}
-		} else if (type->tpi_idx == 0x1330) {
-			mu_assert_eq (type->type_data.leaf_type, eLF_FIELDLIST, "Incorrect data type");
-		} else if (type->tpi_idx == 0x1014) {
+		} else if (type->tpi_idx == 0x1231) {
+			mu_assert_eq (type->type_data.leaf_type, eLF_ARGLIST, "Incorrect data type");
+		} else if (type->tpi_idx == 0x101A) {
 			mu_assert_eq (type->type_data.leaf_type, eLF_STRUCTURE, "Incorrect data type");
 			SType *return_type;
 			char *name;
 			int is_forward_ref;
 			type->type_data.get_name (&type->type_data, &name);
-			mu_assert_streq (name, "MyStruct", "Wrong name");
+			mu_assert_streq (name, "threadlocaleinfostruct", "Wrong name");
 			type->type_data.is_fwdref (&type->type_data, &is_forward_ref);
 			mu_assert_eq (is_forward_ref, false, "Wrong is_fwdref");
 			RList *members = r_list_new ();
 			type->type_data.get_members (&type->type_data, &members);
-			mu_assert_eq (members->length, 3, "Incorrect members count");
+			mu_assert_eq (members->length, 18, "Incorrect members count");
 			RListIter *it = r_list_iterator (members);
 			int i = 0;
 			while (r_list_iter_next (it)) {
@@ -99,28 +115,28 @@ bool test_pdb_tpi(void) {
 					mu_assert_eq (type_info->leaf_type, eLF_MEMBER, "Incorrect data type");
 					char *name = NULL;
 					type_info->get_name (type_info, &name);
-					mu_assert_streq (name, "a", "Wrong member name");
+					mu_assert_streq (name, "refcount", "Wrong member name");
 					char *type;
 					type_info->get_print_type (type_info, &type);
-					mu_assert_streq (type, "(member) pointer to const unsigned char", "Wrong member type");
+					mu_assert_streq (type, "(member) long", "Wrong member type");
 				}
 				if (i == 1) {
 					mu_assert_eq (type_info->leaf_type, eLF_MEMBER, "Incorrect data type");
 					char *name = NULL;
 					type_info->get_name (type_info, &name);
-					mu_assert_streq (name, "b", "Wrong member name");
+					mu_assert_streq (name, "lc_codepage", "Wrong member name");
 					char *type;
 					type_info->get_print_type (type_info, &type);
-					mu_assert_streq (type, "(member) pointer to volatile unsigned char", "Wrong member type");
+					mu_assert_streq (type, "(member) unsigned long", "Wrong member type");
 				}
-				if (i == 2) {
-					mu_assert_eq (type_info->leaf_type, eLF_METHOD, "Incorrect data type");
+				if (i == 17) {
+					mu_assert_eq (type_info->leaf_type, eLF_MEMBER, "Incorrect data type");
 					char *name = NULL;
 					type_info->get_name (type_info, &name);
-					mu_assert_streq (name, "MyStruct", "Wrong method name");
+					mu_assert_streq (name, "locale_name", "Wrong method name");
 					char *type;
 					type_info->get_print_type (type_info, &type);
-					mu_assert_streq (type, "method MyStruct", "Wrong method type");
+					mu_assert_streq (type, "(member) array: pointer to wchar", "Wrong method type");
 				}
 				i++;
 			}
