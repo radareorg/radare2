@@ -23,7 +23,7 @@ jobs:
       run: apt-get install --yes checkinstall libbz2-dev libc6-dev libgdbm-dev libncursesw5-dev libreadline-gplv2-dev libssl-dev libsqlite3-dev tk-dev
     - name: Install Python from source
       run: |
-        wget -O python3.6.9.tgz https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz
+        curl -o python3.6.9.tgz https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz
         tar -zxvf python3.6.9.tgz
         cd python4.6.9/
         ./configure
