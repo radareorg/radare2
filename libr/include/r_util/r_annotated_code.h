@@ -54,6 +54,7 @@ typedef struct r_code_annotation_t {
 
 		struct {
 			char *name;
+			ut64 offset; // offset of the function with the name specified
 		} function_name;
 	};
 } RCodeAnnotation;

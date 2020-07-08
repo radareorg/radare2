@@ -9,7 +9,7 @@ R_API RAnnotatedCode *r_annotated_code_new(char *code) {
 		return NULL;
 	}
 	r->code = code;
-	r_vector_init (&r->annotations, sizeof (RCodeAnnotation), r_annotation_free, NULL);
+	r_vector_init (&r->annotations, sizeof (RCodeAnnotation), NULL, NULL);
 	return r;
 }
 
