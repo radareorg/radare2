@@ -36,6 +36,8 @@ jobs:
     - name: Install with make
       run: make install
       working-directory: radare2
+    - name: Install test dependencies
+      run: pip3 install --user 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
     - name: Run tests
       run: cd test && make
       working-directory: radare2
