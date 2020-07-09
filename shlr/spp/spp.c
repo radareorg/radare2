@@ -1,8 +1,12 @@
-/* MIT (C) pancake (at) nopcode (dot) org - 2009-2019 */
+/* MIT pancake <pancake@nopcode.org> (C) 2009-2020 */
 
 #include "spp.h"
 #include "r_api.h"
 #include "config.h"
+
+#if !USE_R2
+#include "r_api.c"
+#endif
 
 S_API int spp_run(char *buf, Output *out) {
 	size_t i;
@@ -102,14 +106,11 @@ int do_fputs(Output *out, char *str) {
 	return printed;
 }
 
-S_API void spp_proc_eval(SppProc *p, char *buf, Output *out) {
-	SppProc *op = proc;
-	proc = p;
-	spp_eval (buf, out);
-	proc = op;
+S_API void spp_eval(char *buf, Output *out) {
+	spp_proc_eval (proc, buf, out);
 }
 
-S_API void spp_eval(char *buf, Output *out) {
+S_API void spp_proc_eval(SppProc *proc, char *buf, Output *out) {
 	char *ptr, *ptr2;
 	char *ptrr = NULL;
 	int delta;
@@ -296,8 +297,8 @@ S_API void spp_proc_list_kw() {
 }
 
 S_API void spp_proc_list() {
-	int i;
-	for (i=0; procs[i]; i++) {
+	size_t i;
+	for (i = 0; procs[i]; i++) {
 		printf ("%s\n", procs[i]->name);
 	}
 }
@@ -345,4 +346,29 @@ void out_printf(Output *out, char *str, ...) {
 		r_strbuf_append (out->cout, tmp);
 	}
 	va_end (ap);
+}
+
+static void spp_proc_init(SppProc *p) {
+	p->state.lineno = 1;
+	p->state.ifl = 0;
+	size_t i;
+	for (i = 0; i < MAXIFL; i++) {
+		p->state.echo[i] = p->default_echo;
+	}
+}
+
+S_API char *spp_eval_str(SppProc *p, const char *code) {
+	if (p) {
+		spp_proc_init (p);
+	}
+	Output out;
+	out.fout = NULL;
+	out.cout = r_strbuf_new (NULL);
+	r_strbuf_init (out.cout);
+	char *c = strdup (code);
+	if (c) {
+		spp_proc_eval (p, c, &out);
+		free (c);
+	}
+	return r_strbuf_drain (out.cout);
 }

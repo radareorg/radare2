@@ -116,6 +116,8 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		// Reset previous pid and tid
 		core->dbg->pid = -1;
 		core->dbg->tid = -1;
+		core->dbg->recoil_mode = R_DBG_RECOIL_NONE;
+		memset (&core->dbg->reason, 0, sizeof (core->dbg->reason));
 		// Reopen and attach
 		r_core_setup_debugger (core, "native", true);
 		r_debug_select (core->dbg, newpid, newtid);

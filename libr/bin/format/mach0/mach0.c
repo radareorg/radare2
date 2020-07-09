@@ -3555,11 +3555,15 @@ beach:
 struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) *bin) {
 	r_return_val_if_fail (bin, NULL);
 
+	ut64 ea = entry_to_vaddr (bin);
+	if (ea == 0 || ea == UT64_MAX) {
+		return NULL;
+	}
 	struct addr_t *entry = R_NEW0 (struct addr_t);
 	if (!entry) {
 		return NULL;
 	}
-	entry->addr = entry_to_vaddr (bin);
+	entry->addr = ea;
 	entry->offset = addr_to_offset (bin, entry->addr);
 	entry->haddr = sdb_num_get (bin->kv, "mach0.entry.offset", 0);
 	sdb_num_set (bin->kv, "mach0.entry.vaddr", entry->addr, 0);
