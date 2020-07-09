@@ -7,6 +7,7 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
+#include <sdb/ht_up.h>
 
 #define COFF_IS_BIG_ENDIAN 1
 #define COFF_IS_LITTLE_ENDIAN 0
@@ -26,6 +27,8 @@ struct r_bin_coff_obj {
 	ut8 endian;
 	Sdb *kv;
 	bool verbose;
+	HtUP *sym_ht;
+	HtUP *imp_ht;
 };
 
 bool r_coff_supported_arch(const ut8 *buf); /* Reads two bytes from buf. */

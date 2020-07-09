@@ -291,9 +291,7 @@ static bool tracelib(RDebug *dbg, const char *mode, PLIB_ITEM item) {
 		case 'u': needle = dbg->glob_unlibs; break;
 		}
 	}
-	//eprintf ("(%d) %sing library at %p (%s) %s\n", item->pid, mode,
-		//item->BaseOfDll, item->Path, item->Name);
-	r_cons_printf ("(%d) %sing library at %p (%s) %s\n", item->pid, mode,
+	r_cons_printf ("(%d) %sing library at 0x%p (%s) %s\n", item->pid, mode,
 		item->BaseOfDll, item->Path, item->Name);
 	r_cons_flush ();
 	if (needle && strlen (needle)) {
@@ -1455,13 +1453,11 @@ static int r_debug_native_bp(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 		return set
 			? drx_add (dbg, bp, b)
 			: drx_del (dbg, bp, b);
-#elif __arm64__ || __aarch64__
-#if __linux__
+#elif (__arm64__ || __aarch64__) && __linux__
 		return set
 			? arm64_hwbp_add (dbg, bp, b)
 			: arm64_hwbp_del (dbg, bp, b);
-#endif
-#elif __arm__
+#elif __arm__ && __linux__
 		return set
 			? arm32_hwbp_add (dbg, bp, b)
 			: arm32_hwbp_del (dbg, bp, b);

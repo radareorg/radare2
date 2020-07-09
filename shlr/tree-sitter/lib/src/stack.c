@@ -480,6 +480,7 @@ StackSliceArray ts_stack_pop_count(Stack *self, StackVersion version, uint32_t c
 }
 
 inline StackAction pop_pending_callback(void *payload, const StackIterator *iterator) {
+  (void)payload;
   if (iterator->subtree_count >= 1) {
     if (iterator->is_pending) {
       return StackActionPop | StackActionStop;
@@ -532,6 +533,7 @@ SubtreeArray ts_stack_pop_error(Stack *self, StackVersion version) {
 }
 
 inline StackAction pop_all_callback(void *payload, const StackIterator *iterator) {
+  (void)payload;
   return iterator->node->link_count == 0 ? StackActionPop : StackActionNone;
 }
 
@@ -569,7 +571,12 @@ void ts_stack_record_summary(Stack *self, StackVersion version, unsigned max_dep
   };
   array_init(session.summary);
   stack__iter(self, version, summarize_stack_callback, &session, -1);
-  self->heads.contents[version].summary = session.summary;
+  StackHead *head = &self->heads.contents[version];
+  if (head->summary) {
+    array_delete(head->summary);
+    ts_free(head->summary);
+  }
+  head->summary = session.summary;
 }
 
 StackSummary *ts_stack_get_summary(Stack *self, StackVersion version) {
@@ -740,6 +747,10 @@ bool ts_stack_print_dot_graph(Stack *self, const TSLanguage *language, FILE *f) 
       ts_stack_node_count_since_error(self, i),
       ts_stack_error_cost(self, i)
     );
+
+    if (head->summary) {
+      fprintf(f, "\nsummary_size: %u", head->summary->size);
+    }
 
     if (head->last_external_token.ptr) {
       const ExternalScannerState *state = &head->last_external_token.ptr->external_scanner_state;

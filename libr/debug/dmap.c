@@ -346,6 +346,7 @@ R_API RDebugMap *r_debug_map_get(RDebug *dbg, ut64 addr) {
 
 R_API void r_debug_map_free(RDebugMap *map) {
 	free (map->name);
+	free (map->file);
 	free (map);
 }
 

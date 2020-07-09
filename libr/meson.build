@@ -264,6 +264,7 @@ fs_plugins = [
 
 io_plugins = [
   'ar',
+  'fd',
   'bfdbg',
   'bochs',
   'debug',

@@ -13,6 +13,10 @@ static DWORD WINAPI __w32dbg_thread(LPVOID param) {
 			break;
 		case W32_WAIT:
 			params->ret = WaitForDebugEvent (params->wait.de, params->wait.wait_time);
+			if (params->ret) {
+				pi->dwProcessId = params->wait.de->dwProcessId;
+				pi->dwThreadId = params->wait.de->dwThreadId;
+			}
 			break;
 		case W32_CALL_FUNC:
 			params->ret = params->func.func (params->func.user);
@@ -20,7 +24,7 @@ static DWORD WINAPI __w32dbg_thread(LPVOID param) {
 		case W32_ATTACH:
 			params->ret = DebugActiveProcess (pi->dwProcessId);
 			break;
-		case W32_DETTACH:
+		case W32_DETACH:
 		case W32_STOP:
 			params->ret = DebugActiveProcessStop (pi->dwProcessId);
 			break;

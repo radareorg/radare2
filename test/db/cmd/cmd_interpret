@@ -7,3 +7,26 @@ EOF
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=.?e ?e
+FILE=--
+CMDS=<<EOF
+.?e ?e hello world
+EOF
+EXPECT=<<EOF
+hello world
+EOF
+RUN
+
+NAME=.spp
+FILE=-
+CMDS=<<EOF
+. scripts/r2test.spp
+EOF
+EXPECT=<<EOF
+Test
+hello world
+Eron
+
+EOF
+RUN

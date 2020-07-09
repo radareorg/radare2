@@ -5,7 +5,8 @@
 #include "marshal.h"
 #include "pyc_magic.h"
 
-#define SIZE32_MAX 0x7FFFFFFF
+// avoiding using r2 internals asserts
+#define if_true_return(cond,ret) if(cond){return(ret);}
 
 static ut32 magic_int;
 static ut32 symbols_ordinal = 0;
@@ -182,10 +183,6 @@ static pyc_object *get_long_object(RBuffer *buffer) {
 	char digist2hex[] = "0123456789abcdef";
 
 	st32 ndigits = get_st32 (buffer, &error);
-	if (ndigits < -SIZE32_MAX) {
-		eprintf ("bad marshal data (long size out of range)");
-		return NULL;
-	}
 	if (error) {
 		return NULL;
 	}
@@ -413,7 +410,7 @@ static pyc_object *get_string_object(RBuffer *buffer) {
 	ut32 n = 0;
 
 	n = get_ut32 (buffer, &error);
-	if (n > SIZE32_MAX) {
+	if (n > ST32_MAX) {
 		eprintf ("bad marshal data (string size out of range)");
 		return NULL;
 	}
@@ -439,7 +436,7 @@ static pyc_object *get_unicode_object(RBuffer *buffer) {
 	ut32 n = 0;
 
 	n = get_ut32 (buffer, &error);
-	if (n > SIZE32_MAX) {
+	if (n > ST32_MAX) {
 		eprintf ("bad marshal data (unicode size out of range)");
 		return NULL;
 	}
@@ -462,7 +459,7 @@ static pyc_object *get_interned_object(RBuffer *buffer) {
 	ut32 n = 0;
 
 	n = get_ut32 (buffer, &error);
-	if (n > SIZE32_MAX) {
+	if (n > ST32_MAX) {
 		eprintf ("bad marshal data (string size out of range)");
 		return NULL;
 	}
@@ -539,8 +536,8 @@ static pyc_object *get_tuple_object(RBuffer *buffer) {
 	ut32 n = 0;
 
 	n = get_ut32 (buffer, &error);
-	if (n > SIZE32_MAX) {
-		eprintf ("bad marshal data (tuple size out of range)");
+	if (n > ST32_MAX) {
+		eprintf ("bad marshal data (tuple size out of range)\n");
 		return NULL;
 	}
 	if (error) {
@@ -560,8 +557,8 @@ static pyc_object *get_list_object(RBuffer *buffer) {
 	ut32 n = 0;
 
 	n = get_ut32 (buffer, &error);
-	if (n > SIZE32_MAX) {
-		eprintf ("bad marshal data (list size out of range)");
+	if (n > ST32_MAX) {
+		eprintf ("bad marshal data (list size out of range)\n");
 		return NULL;
 	}
 	if (error) {
@@ -621,8 +618,8 @@ static pyc_object *get_set_object(RBuffer *buffer) {
 	ut32 n = 0;
 
 	n = get_ut32 (buffer, &error);
-	if (n > SIZE32_MAX) {
-		eprintf ("bad marshal data (set size out of range)");
+	if (n > ST32_MAX) {
+		eprintf ("bad marshal data (set size out of range)\n");
 		return NULL;
 	}
 	if (error) {
@@ -1046,11 +1043,15 @@ static pyc_object *get_object(RBuffer *buffer) {
 		break;
 	case TYPE_CODE_v0:
 		ret = get_code_object (buffer);
-		ret->type = TYPE_CODE_v0;
+		if (ret) {
+			ret->type = TYPE_CODE_v0;
+		}
 		break;
 	case TYPE_CODE_v1:
 		ret = get_code_object (buffer);
-		ret->type = TYPE_CODE_v1;
+		if (ret) {
+			ret->type = TYPE_CODE_v1;
+		}
 		break;
 	case TYPE_INT:
 		ret = get_int_object (buffer);
@@ -1139,19 +1140,15 @@ static bool extract_sections_symbols(pyc_object *obj, RList *sections, RList *sy
 	RListIter *i = NULL;
 
 	//each code object is a section
-	if (!obj || (obj->type != TYPE_CODE_v1 && obj->type != TYPE_CODE_v0)) {
-		return false;
-	}
+	if_true_return (!obj || (obj->type != TYPE_CODE_v1 && obj->type != TYPE_CODE_v0), false);
+
 	cobj = obj->data;
-	if (!cobj || !cobj->name) {
-		return false;
-	}
-	if (cobj->name->type != TYPE_ASCII && cobj->name->type != TYPE_STRING && cobj->name->type != TYPE_INTERNED) {
-		return false;
-	}
-	if (!cobj->name->data) {
-		return false;
-	}
+
+	if_true_return (!cobj || !cobj->name, false);
+	if_true_return (cobj->name->type != TYPE_ASCII && cobj->name->type != TYPE_STRING && cobj->name->type != TYPE_INTERNED, false);
+	if_true_return (!cobj->name->data, false);
+	if_true_return (!cobj->consts, false);
+
 	//add the cobj to objs list
 	if (!r_list_append (cobjs, cobj)) {
 		goto fail;
@@ -1182,10 +1179,10 @@ static bool extract_sections_symbols(pyc_object *obj, RList *sections, RList *sy
 	symbol->vaddr = cobj->start_offset;
 	symbol->paddr = cobj->start_offset;
 	symbol->ordinal = symbols_ordinal++;
-	if (!r_list_append (symbols, symbol)) {
+	if (cobj->consts->type != TYPE_TUPLE && cobj->consts->type != TYPE_SMALL_TUPLE) {
 		goto fail;
 	}
-	if (cobj->consts->type != TYPE_TUPLE && cobj->consts->type != TYPE_SMALL_TUPLE) {
+	if (!r_list_append (symbols, symbol)) {
 		goto fail;
 	}
 	r_list_foreach (((RList *)(cobj->consts->data)), i, obj)

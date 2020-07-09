@@ -83,7 +83,7 @@ r_util_sources = [
   'annotated_code.c'
 ]
 
-r_util_deps = [ldl, mth, pth, utl, sdb_dep, zlib_dep, platform_deps]
+r_util_deps = [ldl, mth, spp_dep, pth, utl, sdb_dep, zlib_dep, platform_deps]
 if host_machine.system().startswith('freebsd') or host_machine.system().startswith('netbsd')
   # backtrace_symbols_fd requires -lexecinfo
   r_util_deps += [cc.find_library('execinfo')]
@@ -106,7 +106,8 @@ r_util = library('r_util', r_util_sources,
 )
 
 r_util_dep = declare_dependency(link_with: r_util,
-                                include_directories: platform_inc)
+                                include_directories: platform_inc,
+                                dependencies: r_util_deps)
 
 pkgconfig_mod.generate(r_util,
   subdirs: 'libr',

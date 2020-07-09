@@ -129,7 +129,6 @@ R_API RAnal *r_anal_new(void) {
 	anal->stackptr = 0;
 	anal->lineswidth = 0;
 	anal->fcns = r_list_newf (r_anal_function_free);
-	anal->refs = r_anal_ref_list_new ();
 	anal->leaddrs = NULL;
 	r_anal_set_bits (anal, 32);
 	anal->plugins = r_list_newf ((RListFree) r_anal_plugin_free);
@@ -168,10 +167,8 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	r_spaces_fini (&a->meta_spaces);
 	r_spaces_fini (&a->zign_spaces);
 	r_anal_pin_fini (a);
-	r_list_free (a->refs);
 	r_syscall_free (a->syscall);
 	r_reg_free (a->reg);
-	r_anal_op_free (a->queued);
 	ht_up_free (a->dict_refs);
 	ht_up_free (a->dict_xrefs);
 	r_list_free (a->leaddrs);
@@ -450,8 +447,6 @@ R_API int r_anal_purge (RAnal *anal) {
 	sdb_reset (anal->sdb_classes_attrs);
 	r_list_free (anal->fcns);
 	anal->fcns = r_list_newf (r_anal_function_free);
-	r_list_free (anal->refs);
-	anal->refs = r_anal_ref_list_new ();
 	return 0;
 }
 

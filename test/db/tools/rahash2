@@ -963,3 +963,30 @@ EXPECT=<<EOF
 0x00000000-0x0000000a fletcher64: 49ff47dc88f79724
 EOF
 RUN
+
+NAME=rahash2 empty single path
+FILE=-
+CMDS=!rahash2 -a md5 ""
+EXPECT_ERR=<<EOF
+Cannot open empty path
+EOF
+RUN
+
+NAME=rahash2 empty second path
+FILE=-
+CMDS=!rahash2 -a md5 bins/elf/analysis/hello-linux-x86_64 ""
+EXPECT=<<EOF
+bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a35 md5: c957bd5bd6204470256bc15248ccafd4
+EOF
+EXPECT_ERR=<<EOF
+Cannot open empty path
+EOF
+RUN
+
+NAME=rahash2 empty first file
+FILE=-
+CMDS=!rahash2 -a md5 "" bins/elf/analysis/hello-linux-x86_64
+EXPECT_ERR=<<EOF
+Cannot open empty path
+EOF
+RUN

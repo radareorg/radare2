@@ -849,7 +849,7 @@ static const char *radare_argv[] = {
 	"=g?", "=g", "=g!", "=h?", "=h", "=h-", "=h--", "=h*", "=h&", "=H?", "=H", "=H&",
 	"<",
 	"/?", "/", "/j", "/j!", "/j!x", "/+", "//", "/a", "/a1", "/ab", "/ad", "/aa", "/as", "/asl", "/at", "/atl", "/af", "/afl", "/ae", "/aej", "/ai", "/aij",
-	"/c", "/ca", "/car", "/d", "/e", "/E", "/f", "/F", "/g", "/gg", "/h", "/ht", "/i", "/m", "/mb", "/mm",
+	"/c", "/ca", "/car", "/d", "/e", "/E", "/Ej", "/f", "/F", "/g", "/gg", "/h", "/ht", "/i", "/m", "/mb", "/mm",
 	"/o", "/O", "/p", "/P", "/s", "/s*", "/r?", "/r", "/ra", "/rc", "/re", "/rr", "/rw", "/rc",
 	"/R",
 	"/v?", "/v", "/v1", "/v2", "/v4", "/v8",
@@ -3459,6 +3459,7 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 			const size_t str_len = strlen (str);
 			if (write (fd, str, str_len) != str_len) {
 				close (fd);
+				free (name);
 				return NULL;
 			}
 		}

@@ -13,6 +13,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=RISC-V ESIL for arithmetic compressed instructions
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=riscv
+e asm.bits=32
+wx ad668d067d562206d18e1186158e
+aei
+7aes
+ar a2
+ar a3
+EOF
+EXPECT=<<EOF
+0x000000ed
+0xffffff03
+EOF
+RUN
+
 NAME=RISC-V ESIL for jump instructions
 FILE=malloc://1024
 CMDS=<<EOF

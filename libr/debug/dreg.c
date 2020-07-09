@@ -82,7 +82,7 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 	return true;
 }
 
-R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char *use_color) {
+R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char *use_color) {
 	int delta, cols, n = 0;
 	const char *fmt, *fmt2, *kwhites;
 	RPrint *pr = NULL;
@@ -92,6 +92,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 	RList *head;
 	ut64 diff;
 	char strvalue[256];
+	bool isJson = (rad == 'j' || rad == 'J');
 	if (!dbg || !dbg->reg) {
 		return false;
 	}
@@ -120,15 +121,26 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 	if (dbg->regcols) {
 		cols = dbg->regcols;
 	}
-	if (rad == 'j') {
-		dbg->cb_printf ("{");
+	PJ *pj;
+	if (isJson) {
+		pj = pj_new ();
+		if (!pj) {
+			return false;
+		}
+		if (rad == 'j') {
+			pj_o (pj);
+		}
 	}
 	// with the new field "arena" into reg items why need
 	// to get all arenas.
 
 	int itmidx = -1;
 	dbg->creg = NULL;
-	head = r_reg_get_list (dbg->reg, type);
+	if (type == R_REG_TYPE_ALL) {
+		head = dbg->reg->allregs;
+	} else {
+		head = r_reg_get_list (dbg->reg, type);
+	}
 	if (!head) {
 		return false;
 	}
@@ -171,9 +183,9 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 			r_reg_arena_swap (dbg->reg, false);
 			diff = r_reg_get_value (dbg->reg, item);
 			r_reg_arena_swap (dbg->reg, false);
-			delta = value-diff;
-			if (tolower ((ut8)rad) == 'j') {
-				snprintf (strvalue, sizeof (strvalue),"%"PFMT64u, value);
+			delta = value - diff;
+			if (isJson) {
+				pj_kn (pj, item->name, value);
 			} else {
 				if (pr && pr->wide_offsets && dbg->bits & R_SYS_BITS_64) {
 					snprintf (strvalue, sizeof (strvalue),"0x%016"PFMT64x, value);
@@ -200,16 +212,17 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 				default:
 					snprintf (strvalue, sizeof (strvalue), "ERROR");
 			}
+			if (isJson) {
+				pj_ks (pj, item->name, strvalue);
+			}
 			delta = 0; // TODO: calculate delta with big values.
 		}
 		itmidx++;
 
+		if (isJson) {
+			continue;
+		}
 		switch (rad) {
-			case 'J':
-			case 'j':
-				dbg->cb_printf ("%s\"%s\":%s",
-						n?",":"", item->name, strvalue);
-				break;
 			case '-':
 				dbg->cb_printf ("f-%s\n", item->name);
 				break;
@@ -276,14 +289,16 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 		n++;
 	}
 beach:
-	if (rad == 'j') {
-		dbg->cb_printf ("}\n");
-	} else if (rad == 'J') {
-		// do nothing
+	if (isJson) {
+		if (rad == 'j') {
+			pj_end (pj);
+		}
+		dbg->cb_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 	} else if (n > 0 && (rad == 2 || rad == '=') && ((n%cols))) {
 		dbg->cb_printf ("\n");
 	}
-	return n;
+	return n != 0;
 }
 
 R_API int r_debug_reg_set(struct r_debug_t *dbg, const char *name, ut64 num) {

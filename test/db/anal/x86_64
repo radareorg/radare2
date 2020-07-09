@@ -5,7 +5,7 @@ aap
 aflc
 EOF
 EXPECT=<<EOF
-439
+440
 EOF
 RUN
 
@@ -53,8 +53,8 @@ s main+98
 pd 3
 EOF
 EXPECT=<<EOF
-0x000048f4 0x00004901 01:2A37 13 j 0x000045b1 f 0x00004901
-0x00004901 0x0000491a 01:2A38 25 j 0x000045ba f 0x0000491a
+0x000048f4 0x00004901 01:2A12 13 j 0x000045b1 f 0x00004901
+0x00004901 0x0000491a 01:2A13 25 j 0x000045ba f 0x0000491a
 
 |           0x000039c2      mov dword [0x0021f558], 2                  ; [0x21f558:4]=1
 |           0x000039cc      call fcn.00015960
@@ -1062,7 +1062,7 @@ RUN
 NAME=reflines offset 2 (ascii)
 FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
-e asm.relsub=false
+e asm.sub.rel=false
 e asm.bytes=false
 e asm.leahints=false
 e scr.utf8=false
@@ -1111,7 +1111,7 @@ RUN
 NAME=reflines offset 3 (ascii)
 FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
-e asm.relsub=false
+e asm.sub.rel=false
 e asm.bytes=false
 e asm.leahints=false
 e scr.utf8=false
@@ -1153,7 +1153,7 @@ RUN
 NAME=reflines offset 3 (ascii + wide)
 FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
-e asm.relsub=false
+e asm.sub.rel=false
 e asm.bytes=false
 e asm.leahints=false
 e scr.utf8=false
@@ -1196,7 +1196,7 @@ RUN
 NAME=reflines offset 4 (ascii + wide)
 FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
-e asm.relsub=false
+e asm.sub.rel=false
 e asm.bytes=false
 e asm.leahints=false
 e scr.utf8=false
@@ -1238,7 +1238,7 @@ RUN
 NAME=reflines in noreturn
 FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
-e asm.relsub=false
+e asm.sub.rel=false
 e asm.bytes=false
 e asm.leahints=false
 e scr.utf8=false
@@ -1328,7 +1328,7 @@ RUN
 NAME=auto string memory reference (iopa)
 FILE=malloc://8096
 CMDS=<<EOF
-e asm.relsub=false
+e asm.sub.rel=false
 e asm.arch = x86
 e asm.bits=64
 e scr.color = false
@@ -1350,7 +1350,7 @@ RUN
 NAME=auto string memory reference (io.va)
 FILE=malloc://8096
 CMDS=<<EOF
-e asm.relsub=false
+e asm.sub.rel=false
 e asm.arch = x86
 e asm.bits=64
 e scr.color = false
@@ -2053,13 +2053,13 @@ fcn.08048542 0x80485ab [CALL] call sym.imp.exit
 EOF
 RUN
 
-NAME=axt respect relsub
+NAME=axt respect subrel
 FILE=bins/pe/ibknoreloc64.exe
 CMDS=<<EOF
 aaa
-e asm.relsub=false
+e asm.sub.rel=false
 axt @ sym.imp.msvcrt.dll_printf
-e asm.relsub=true
+e asm.sub.rel=true
 axt @ sym.imp.msvcrt.dll_printf
 EOF
 EXPECT=<<EOF
@@ -2272,11 +2272,11 @@ main 0x8048432 [STRING] lea eax, str.Hello_PIC
 EOF
 RUN
 
-NAME=strings xref issue without relsub
+NAME=strings xref issue without subrel
 FILE=bins/elf/redpill
 CMDS=<<EOF
 e anal.strings=true
-e asm.relsub=false
+e asm.sub.rel=false
 aa
 aae
 axt 0x00001d89
@@ -2298,11 +2298,11 @@ main 0x161d [STRING] lea eax, [esi - 0x21f7]
 EOF
 RUN
 
-NAME=reference PIC binary without relsub
+NAME=reference PIC binary without subrel
 FILE=bins/elf/analysis/xrefpic
 CMDS=<<EOF
 e anal.strings=true
-e asm.relsub=false
+e asm.sub.rel=false
 aa
 aae
 axt@0x80484e0

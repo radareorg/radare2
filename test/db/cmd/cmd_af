@@ -374,3 +374,17 @@ Invalid function name 'func' at 0x00001337
 Cannot add function (duplicated)
 EOF
 RUN
+
+NAME=af skips symbols
+FILE=bins/elf/analysis/guess-number-riscv64
+CMDS=<<EOF
+af @ sym.fstatat
+af @ sym.__syscall_error
+afl
+EOF
+EXPECT=<<EOF
+0x0001f8b8    2 20           sym.fstatat
+0x00021484    1 8            sym.__errno
+0x0001f7cc    1 48           sym.__syscall_error
+EOF
+RUN

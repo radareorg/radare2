@@ -1926,12 +1926,29 @@ R_API int r_core_anal_esil_fcn(RCore *core, ut64 at, ut64 from, int reftype, int
 	return 0;
 }
 
+static int find_sym_flag(const void *a1, const void *a2) {
+	const RFlagItem *f = (const RFlagItem *)a2;
+	return f->space && !strcmp (f->space->name, R_FLAGS_FS_SYMBOLS)? 0: 1;
+}
+
+static bool is_skippable_addr(RCore *core, ut64 addr) {
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+	if (!fcn) {
+		return false;
+	}
+	if (fcn->addr == addr) {
+		return true;
+	}
+	const RList *flags = r_flag_get_list (core->flags, addr);
+	return !(flags && r_list_find (flags, fcn, find_sym_flag));
+}
+
 // XXX: This function takes sometimes forever
 /* analyze a RAnalFunction at the address 'at'.
  * If the function has been already analyzed, it adds a
  * reference to that fcn */
 R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
-	if (from == UT64_MAX && r_anal_get_fcn_in (core->anal, at, 0)) {
+	if (from == UT64_MAX && is_skippable_addr (core, at)) {
 		if (core->anal->verbose) {
 			eprintf ("Message: Invalid address for function 0x%08"PFMT64x"\n", at);
 		}
@@ -3944,7 +3961,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	}
 	r_cons_break_push (NULL, NULL);
 	at = from;
-	st64 asm_var_submin = r_config_get_i (core->config, "asm.var.submin");
+	st64 asm_sub_varmin = r_config_get_i (core->config, "asm.sub.varmin");
 	while (at < to && !r_cons_is_breaked ()) {
 		int i = 0, ret = bsz;
 		if (!r_io_is_valid_offset (core->io, at, R_PERM_X)) {
@@ -3971,7 +3988,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 				break;
 			}
 			// find references
-			if ((st64)op.val > asm_var_submin && op.val != UT64_MAX && op.val != UT32_MAX) {
+			if ((st64)op.val > asm_sub_varmin && op.val != UT64_MAX && op.val != UT32_MAX) {
 				if (found_xref (core, op.addr, op.val, R_ANAL_REF_TYPE_DATA, count, rad, cfg_debug, cfg_anal_strings)) {
 					count++;
 				}

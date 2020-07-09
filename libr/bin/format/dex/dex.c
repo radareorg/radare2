@@ -15,10 +15,12 @@ char* r_bin_dex_get_version(RBinDexObj *bin) {
 }
 
 void r_bin_dex_free(RBinDexObj *dex) {
-	size_t i;
 	struct dex_header_t *dexhdr = &dex->header;
-	for (i = 0; i < dexhdr->strings_size; i++) {
-		free (dex->cal_strings[i]);
+	if (dex->cal_strings) {
+		size_t i;
+		for (i = 0; i < dexhdr->strings_size; i++) {
+			free (dex->cal_strings[i]);
+		}
 	}
 	free (dex->cal_strings);
 	free (dex);

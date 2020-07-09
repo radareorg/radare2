@@ -160,6 +160,7 @@ static int main_help(int line) {
 		" R2_NOPLUGINS do not load r2 shared plugins\n"
 		" R2_RCFILE    ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
 		" R2_RDATAHOME %s\n" // TODO: rename to RHOME R2HOME?
+		" R2_VERSION   contains the current version of r2\n" 
 		"Paths:\n"
 		" R2_PREFIX    "R2_PREFIX"\n"
 		" R2_INCDIR    "R2_INCDIR"\n"
@@ -191,9 +192,9 @@ static int main_print_var(const char *var_name) {
 		const char *name;
 		const char *value;
 	} r2_vars[] = {
+		{ "R2_VERSION", R2_VERSION },
 		{ "R2_PREFIX", R2_PREFIX },
 		{ "R2_MAGICPATH", magicpath },
-		{ "R2_PREFIX", R2_PREFIX },
 		{ "R2_INCDIR", incdir },
 		{ "R2_LIBDIR", libdir },
 		{ "R2_LIBEXT", R_LIB_EXT },
@@ -408,6 +409,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	r = r_core_new ();
 	if (!r) {
 		eprintf ("Cannot initialize RCore\n");
+		LISTS_FREE ();
 		return 1;
 	}
 	r->r_main_radare2 = r_main_radare2;
@@ -524,9 +526,19 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			LISTS_FREE ();
 			return 0;
 		case 'i':
+			if (R_STR_ISEMPTY (opt.arg)) {
+				eprintf ("Cannot open empty script path\n");
+				ret = 1;
+				goto beach;
+			}
 			r_list_append (files, (void*)opt.arg);
 			break;
 		case 'I':
+			if (R_STR_ISEMPTY (opt.arg)) {
+				eprintf ("Cannot open empty script path\n");
+				ret = 1;
+				goto beach;
+			}
 			r_list_append (prefiles, (void*)opt.arg);
 			break;
 		case 'k':
@@ -572,6 +584,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_config_set (r->config, "prj.name", opt.arg);
 			break;
 		case 'P':
+			if (R_STR_ISEMPTY (opt.arg)) {
+				eprintf ("Cannot open empty rapatch path\n");
+				ret = 1;
+				goto beach;
+			}
 			patchfile = opt.arg;
 			break;
 		case 'Q':
@@ -588,6 +605,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			quiet = true;
 			break;
 		case 'r':
+			if (R_STR_ISEMPTY (opt.arg)) {
+				eprintf ("Cannot open empty rarun2 profile path\n");
+				ret = 1;
+				goto beach;
+			}
 			haveRarunProfile = true;
 			r_config_set (r->config, "dbg.profile", opt.arg);
 			break;
@@ -690,6 +712,13 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			pfile = argv[opt.ind] ? strdup (argv[opt.ind]) : NULL;
 		}
 	}
+
+	if (pfile && !*pfile) {
+		eprintf ("Cannot open empty path\n");
+		ret = 1;
+		goto beach;
+	}
+
 	if (do_list_io_plugins) {
 		if (r_config_get_i (r->config, "cfg.plugins")) {
 			r_core_loadlibs (r, R_CORE_LOADLIBS_ALL, NULL);
@@ -870,7 +899,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			}
 			r_io_map_new (r->io, fh->fd, 7, 0LL, mapaddr,
 					r_io_fd_size (r->io, fh->fd));
-			r_io_write_at (r->io, mapaddr, buf, sz);
+			r_io_write_at (r->io, mapaddr, (const ut8 *)buf, sz);
 			r_core_block_read (r);
 			free (buf);
 			free (path);
@@ -1011,6 +1040,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		if (!debug || debug == 2) {
 			const char *dbg_profile = r_config_get (r->config, "dbg.profile");
 			if (opt.ind == argc && dbg_profile && *dbg_profile) {
+				if (R_STR_ISEMPTY (pfile)) {
+					eprintf ("Missing file to open\n");
+					ret = 1;
+					goto beach;
+				}
 				fh = r_core_file_open (r, pfile, perms, mapaddr);
 				if (fh) {
 					r_core_bin_load (r, pfile, baddr);
@@ -1453,8 +1487,8 @@ beach:
 	//r_core_file_close (r, fh);
 	r_core_free (r);
 	r_cons_set_raw (0);
-	free (file);
 	r_cons_free ();
 	LISTS_FREE ();
+	R_FREE (pfile);
 	return ret;
 }

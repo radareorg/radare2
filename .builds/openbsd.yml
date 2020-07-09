@@ -12,6 +12,9 @@ sources:
     - https://github.com/radareorg/radare2
     - https://github.com/radareorg/radare2-testbins
 tasks:
+    - r2pipe: |
+        /usr/local/bin/python3 -m ensurepip --user
+        /usr/local/bin/python3 -m pip install --user 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
     - build: |
         cd radare2
         ./configure --prefix=${HOME}
@@ -27,9 +30,9 @@ tasks:
         export PATH=${HOME}/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${PKG_CONFIG_PATH}
-        # OpenBSD does not have a "python" command by default
+        # OpenBSD does not have a "python3" command by default
         # but a test needs it.
-        ln -s /usr/local/bin/python3 ${HOME}/bin/python
+        ln -s /usr/local/bin/python3 ${HOME}/bin/python3
         # Workaround until the feature request is solved
         # https://todo.sr.ht/~sircmpwn/builds.sr.ht/274
         ln -s ${HOME}/radare2-testbins test/bins

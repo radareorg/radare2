@@ -1,11 +1,16 @@
-/* MIT (C) pancake (at) nopcode (dot) org - 2009-2019 */
+/* MIT pancake <pancake@nopcode.org> (C) 2009-2020 */
 
 #include "spp.h"
 #include "r_api.h"
 #include "config.h"
 
+#if !USE_R2
+#include "r_api.c"
+#endif
+
 S_API int spp_run(char *buf, Output *out) {
-	int i, ret = 0;
+	size_t i;
+	int ret = 0;
 	char *tok;
 
 	D fprintf (stderr, "SPP_RUN(%s)\n", buf);
@@ -102,6 +107,10 @@ int do_fputs(Output *out, char *str) {
 }
 
 S_API void spp_eval(char *buf, Output *out) {
+	spp_proc_eval (proc, buf, out);
+}
+
+S_API void spp_proc_eval(SppProc *proc, char *buf, Output *out) {
 	char *ptr, *ptr2;
 	char *ptrr = NULL;
 	int delta;
@@ -288,27 +297,30 @@ S_API void spp_proc_list_kw() {
 }
 
 S_API void spp_proc_list() {
-	int i;
-	for (i=0; procs[i]; i++) {
+	size_t i;
+	for (i = 0; procs[i]; i++) {
 		printf ("%s\n", procs[i]->name);
 	}
 }
 
-S_API void spp_proc_set(struct Proc *p, char *arg, int fail) {
-	int i, j;
-	if (arg)
-	for (j = 0; procs[j]; j++) {
-		if (!strcmp (procs[j]->name, arg)) {
-			proc = procs[j];
-			D printf ("SET PROC:(%s)(%s)\n", arg, proc->name);
-			break;
+S_API void spp_proc_set(SppProc *p, const char *arg, int fail) {
+	size_t i;
+	bool found = false;
+	if (arg) {
+		for (i = 0; procs[i]; i++) {
+			if (!strcmp (procs[i]->name, arg)) {
+				proc = procs[i];
+				found = true;
+				D printf ("SET PROC:(%s)(%s)\n", arg, proc->name);
+				break;
+			}
 		}
 	}
-	if (arg && *arg && !procs[j] && fail) {
+	if (arg && *arg && !procs[i] && fail) {
 		fprintf (stderr, "Invalid preprocessor name '%s'\n", arg);
 		return;
 	}
-	if (!proc) {
+	if (!found || !proc) {
 		proc = p;
 	}
 	if (proc) {
@@ -318,7 +330,7 @@ S_API void spp_proc_set(struct Proc *p, char *arg, int fail) {
 			proc->state.echo[i] = proc->default_echo;
 		}
 		//args = (struct Arg*)proc->args;
-		tags = (struct Tag*)proc->tags;
+		tags = (SppTag*)proc->tags;
 	}
 }
 
@@ -334,4 +346,29 @@ void out_printf(Output *out, char *str, ...) {
 		r_strbuf_append (out->cout, tmp);
 	}
 	va_end (ap);
+}
+
+static void spp_proc_init(SppProc *p) {
+	p->state.lineno = 1;
+	p->state.ifl = 0;
+	size_t i;
+	for (i = 0; i < MAXIFL; i++) {
+		p->state.echo[i] = p->default_echo;
+	}
+}
+
+S_API char *spp_eval_str(SppProc *p, const char *code) {
+	if (p) {
+		spp_proc_init (p);
+	}
+	Output out;
+	out.fout = NULL;
+	out.cout = r_strbuf_new (NULL);
+	r_strbuf_init (out.cout);
+	char *c = strdup (code);
+	if (c) {
+		spp_proc_eval (p, c, &out);
+		free (c);
+	}
+	return r_strbuf_drain (out.cout);
 }

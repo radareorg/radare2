@@ -3282,10 +3282,8 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 						if (threaded_binds) {
 							r_pvector_free (threaded_binds);
 						}
-						threaded_binds = r_pvector_new ((RPVectorFree) &free);
+						threaded_binds = r_pvector_new_with_len ((RPVectorFree) &free, table_size);
 						if (threaded_binds) {
-							r_pvector_reserve (threaded_binds, table_size);
-							threaded_binds->v.len = table_size;
 							sym_ord = 0;
 						}
 						break;
@@ -3557,11 +3555,15 @@ beach:
 struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) *bin) {
 	r_return_val_if_fail (bin, NULL);
 
+	ut64 ea = entry_to_vaddr (bin);
+	if (ea == 0 || ea == UT64_MAX) {
+		return NULL;
+	}
 	struct addr_t *entry = R_NEW0 (struct addr_t);
 	if (!entry) {
 		return NULL;
 	}
-	entry->addr = entry_to_vaddr (bin);
+	entry->addr = ea;
 	entry->offset = addr_to_offset (bin, entry->addr);
 	entry->haddr = sdb_num_get (bin->kv, "mach0.entry.offset", 0);
 	sdb_num_set (bin->kv, "mach0.entry.vaddr", entry->addr, 0);
@@ -4279,7 +4281,7 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 			for (i = 0; i < nsects && (addr + off) < length && off < lcSize; i++) {
 				const char *sname = is64? "mach0_section64": "mach0_section";
 				RBinField *f = r_bin_field_new (addr + off, addr + off, 1,
-					sdb_fmt ("section_%d", j++), sname, sname, true);
+					sdb_fmt ("section_%zu", j++), sname, sname, true);
 				r_list_append (ret, f);
 				off += is64? 80: 68;
 			}

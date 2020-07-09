@@ -53,14 +53,6 @@ CMDS=!rabin2 -k ${R2_FILE}
 EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
-Dynamic tag 12 not handled
-Dynamic tag 13 not handled
-Dynamic tag 25 not handled
-Dynamic tag 27 not handled
-Dynamic tag 26 not handled
-Dynamic tag 28 not handled
-Dynamic tag 1879047925 not handled
-Dynamic tag 21 not handled
 Missing file.
 EOF
 RUN
@@ -901,16 +893,6 @@ NAME=rabin2 -D Unsupported
 FILE=bins/elf/libc.so.0
 CMDS=!rabin2 -D XXX LOLILOL
 EXPECT_ERR=<<EOF
-Dynamic tag 14 not handled
-Dynamic tag 12 not handled
-Dynamic tag 21 not handled
-Dynamic tag 1879048193 not handled
-Dynamic tag 1879048197 not handled
-Dynamic tag 1879048198 not handled
-Dynamic tag 1879048202 not handled
-Dynamic tag 1879048209 not handled
-Dynamic tag 1879048210 not handled
-Dynamic tag 1879048211 not handled
 Unsupported demangler
 EOF
 RUN
@@ -1060,5 +1042,13 @@ FILE=bins/pdb/Project1.pdb
 CMDS=!rabin2 -P ${R2_FILE} | grep -c R2_TEST_UNION
 EXPECT=<<EOF
 1
+EOF
+RUN
+
+NAME=rabin2 -S ""
+FILE=-
+CMDS=!rabin2 -S ""
+EXPECT_ERR=<<EOF
+Cannot open empty path
 EOF
 RUN

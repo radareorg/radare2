@@ -102,5 +102,5 @@ R_API int r_search_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len
 			}
 		}
 	}
-	return 0;
+	return -1;
 }

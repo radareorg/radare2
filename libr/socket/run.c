@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2017 - pancake */
+/* radare - LGPL - Copyright 2014-2020 - pancake */
 
 /* this helper api is here because it depends on r_util and r_socket */
 /* we should find a better place for it. r_io? */
@@ -9,6 +9,7 @@
 #include <r_socket.h>
 #include <r_util.h>
 #include <r_lib.h>
+#include <r_cons.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -33,7 +34,6 @@
 #if __UNIX__
 #include <sys/ioctl.h>
 #include <sys/resource.h>
-#include <termios.h>
 #include <grp.h>
 #include <errno.h>
 #if defined(__sun)
@@ -56,7 +56,13 @@
 #include <process.h>  // to compile execv in msvc windows
 #endif
 
+#if EMSCRIPTEN
+#undef HAVE_PTY
+#define HAVE_PTY 0
+#else
 #define HAVE_PTY __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK && !__sun
+#endif
+
 
 #if HAVE_PTY
 static int (*dyn_openpty)(int *amaster, int *aslave, char *name, struct termios *termp, struct winsize *winp) = NULL;
@@ -76,29 +82,25 @@ static void dyn_init(void) {
 
 #endif
 
-#if EMSCRIPTEN
-#undef HAVE_PTY
-#define HAVE_PTY 0
-#endif
-
 R_API RRunProfile *r_run_new(const char *str) {
 	RRunProfile *p = R_NEW0 (RRunProfile);
 	if (p) {
 		r_run_reset (p);
-		r_run_parsefile (p, str);
+		if (str) {
+			r_run_parsefile (p, str);
+		}
 	}
 	return p;
 }
 
 R_API void r_run_reset(RRunProfile *p) {
+	r_return_if_fail (p);
 	memset (p, 0, sizeof (RRunProfile));
 	p->_aslr = -1;
 }
 
 R_API bool r_run_parse(RRunProfile *pf, const char *profile) {
-	if (!pf || !profile) {
-		return false;
-	}
+	r_return_val_if_fail (pf && profile, false);
 	char *p, *o, *str = strdup (profile);
 	if (!str) {
 		return false;
@@ -112,20 +114,22 @@ R_API bool r_run_parse(RRunProfile *pf, const char *profile) {
 	return true;
 }
 
-R_API void r_run_free (RRunProfile *r) {
-	free (r->_system);
-	free (r->_program);
-	free (r->_runlib);
-	free (r->_runlib_fcn);
-	free (r->_stdio);
-	free (r->_stdin);
-	free (r->_stdout);
-	free (r->_stderr);
-	free (r->_chgdir);
-	free (r->_chroot);
-	free (r->_libpath);
-	free (r->_preload);
-	free (r);
+R_API void r_run_free(RRunProfile *r) {
+	if (r) {
+		free (r->_system);
+		free (r->_program);
+		free (r->_runlib);
+		free (r->_runlib_fcn);
+		free (r->_stdio);
+		free (r->_stdin);
+		free (r->_stdout);
+		free (r->_stderr);
+		free (r->_chgdir);
+		free (r->_chroot);
+		free (r->_libpath);
+		free (r->_preload);
+		free (r);
+	}
 }
 
 #if __UNIX__
@@ -233,11 +237,6 @@ static char *getstr(const char *src) {
 		eprintf ("Invalid hexpair string\n");
 		free (ret);
 		return NULL;
-#if 0
-	// what is this for??
-	case '%':
-		return (char *) strtoul (src + 1, NULL, 0);
-#endif
 	}
 	r_str_unescape ((ret = strdup (src)));
 	return ret;
@@ -380,15 +379,15 @@ static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err)
 }
 
 static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
-	if (!cmd || !*cmd) {
-		return 0;
-	}
-
+	r_return_val_if_fail (cmd, 0);
 #if __APPLE__ && !__POWERPC__
 	//XXX handle this in other layer since things changes a little bit
 	//this seems like a really good place to refactor stuff
 	return 0;
-#endif
+#else
+	if (!*cmd) {
+		return 0;
+	}
 	if (cmd[0] == '"') {
 #if __UNIX__
 		if (in) {
@@ -418,7 +417,6 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 #warning quoted string redirection handle not yet done
 #endif
 #endif
-		return 0;
 	} else if (cmd[0] == '!') {
 		// redirection to a process
 		return handle_redirection_proc (cmd + 1, in, out, err);
@@ -449,14 +447,16 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 			DUP(2);
 		}
 		close (f);
-		return 0;
 	}
+	return 0;
+#endif
 }
 
-R_API int r_run_parsefile(RRunProfile *p, const char *b) {
+R_API bool r_run_parsefile(RRunProfile *p, const char *b) {
+	r_return_val_if_fail (p && b, false);
 	char *s = r_file_slurp (b, NULL);
 	if (s) {
-		int ret = r_run_parse (p, s);
+		bool ret = r_run_parse (p, s);
 		free (s);
 		return ret;
 	}
@@ -1050,6 +1050,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 	return 0;
 }
 
+// NOTE: return value is like in unix return code (0 = ok, 1 = not ok)
 R_API int r_run_start(RRunProfile *p) {
 #if LIBC_HAVE_FORK
 	if (p->_execve) {

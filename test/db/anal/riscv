@@ -25,3 +25,20 @@ EXPECT=<<EOF
         `-> 0x00000008      8146           li a3, 0
 EOF
 RUN
+
+NAME=branch with compress instruction
+FILE=-
+CMDS=<<EOF
+e asm.arch=riscv
+e asm.bits=32
+wx 11c182809d06f5fe
+pd 5
+EOF
+EXPECT=<<EOF
+        ,=< 0x00000000      11c1           beqz a0, 0x4
+       .--> 0x00000002      8280           ret
+       :`-> 0x00000004      9d06           addi a3, a3, 7
+       `==< 0x00000006      f5fe           bnez a3, 0x2
+            0x00000008      0000           illegal
+EOF
+RUN
