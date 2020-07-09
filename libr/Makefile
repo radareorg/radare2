@@ -183,7 +183,7 @@ install-includes:
 		done ; \
 	done)
 	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/sdb"
-	(cd include/sdb && for FILE in * ; do \
+	(cd ../shlr/sdb/src && for FILE in *.h ; do \
 		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/sdb/$$FILE" ; \
 	done)
 	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/r_util"
