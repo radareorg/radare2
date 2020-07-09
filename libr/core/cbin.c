@@ -1088,6 +1088,7 @@ R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
 	if (mode == 'j') {
 		r_cons_printf ("]");
 	}
+	parse_pdb_types (core->anal, &pdb);
 	pdb.finish_pdb_parse (&pdb);
 
 	return true;
