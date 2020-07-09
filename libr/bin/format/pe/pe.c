@@ -3891,6 +3891,7 @@ static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe
 		} else {
 			sections[j].vsize = shdr[i].SizeOfRawData;
 		}
+		sections[j].paddr = shdr[i].PointerToRawData;
 		if (bin->optional_header) {
 			ut32 sa = bin->optional_header->SectionAlignment;
 			if (sa) {
@@ -3903,8 +3904,16 @@ static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe
 							sections[j].name);
 				}
 			}
+			const ut32 fa = bin->optional_header->FileAlignment;
+			if (fa) {
+				const ut64 diff = sections[j].paddr % fa;
+				if (diff) {
+					bprintf ("Warning: section %s not aligned to FileAlignment.\n", sections[j].name);
+					sections[j].paddr -= diff;
+					sections[j].size += diff;	
+				}
+			}
 		}
-		sections[j].paddr = shdr[i].PointerToRawData;
 		sections[j].perm = shdr[i].Characteristics;
 		sections[j].last = 0;
 		j++;
