@@ -691,6 +691,9 @@ static RList* relocs(RBinFile *bf) {
 	ut64 got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got");
 	if (got_addr == UT64_MAX) {
 		got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got.plt");
+		if (got_addr == UT64_MAX) {
+			got_addr = 0;
+		}
 	}
 	if (got_addr < 1 && bin->ehdr.e_type == ET_REL) {
 		got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got.r2");
