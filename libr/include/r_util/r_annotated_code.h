@@ -85,7 +85,16 @@ R_API RAnnotatedCode *r_annotated_code_new(char *code);
  * Return: Nothing.
  */
 R_API void r_annotated_code_free(RAnnotatedCode *code);
-
+/**
+ * r_annotation_free() - Deallocates dynamically allocated memory for the specified annotation.
+ * @e: Pointer to the annotation
+ * @user: Always NULL for this function. Present here for this function to be of the type RVectorFree.
+ * 
+ * This function recongnizes the type of the specified annotation and
+ * frees memory that is dynamcally allocated for it.
+ * 
+ * Return: Nothing.
+ */
 R_API void r_annotation_free(void *e, void *user);
 /**
  * r_annotated_code_add_annotation() - Inserts *annotation in *code.
