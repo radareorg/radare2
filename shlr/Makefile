@@ -29,7 +29,7 @@ endif
 # NOTE: when you update TS_TIP or TS_BRA, also update them in shlr/meson.build
 TS_URL=https://github.com/tree-sitter/tree-sitter.git
 TS_BRA=master
-TS_TIP=9a82dcc666d06617cbab3061467075019fae0b0d
+TS_TIP=86a5dabbcbdac650c53a889183bf56d7e721e09e
 
 ifeq ($(CS_RELEASE),1)
 CS_VER=4.0.2
