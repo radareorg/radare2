@@ -698,8 +698,8 @@ static int init_dynamic_section(ELFOBJ *bin) {
 }
 
 static RBinElfSection* get_section_by_name(ELFOBJ *bin, const char *section_name) {
-	int i;
 	if (bin->g_sections) {
+		size_t i;
 		for (i = 0; !bin->g_sections[i].last; i++) {
 			if (!strncmp (bin->g_sections[i].name, section_name, ELF_STRING_LENGTH - 1)) {
 				return &bin->g_sections[i];
@@ -733,7 +733,7 @@ static char *get_ver_flags(ut32 flags) {
 }
 
 static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) {
-	int i;
+	size_t i;
 	const ut64 num_entries = sz / sizeof (Elf_(Versym));
 	const char *section_name = "";
 	const char *link_section_name = "";
@@ -781,13 +781,13 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	R_FREE (edata);
 	char *tmp_val = NULL;
 	for (i = 0; i < num_entries; i += 4) {
-		int j;
+		size_t j;
 		int check_def;
 		char key[32] = { 0 };
 
 		for (j = 0; (j < 4) && (i + j) < num_entries; j++) {
 			int k;
-			snprintf (key, sizeof (key), "entry%d", i + j);
+			snprintf (key, sizeof (key), "entry%zd", i + j);
 			switch (data[i + j]) {
 			case 0:
 				sdb_set (sdb, key, "0 (*local*)", 0);
@@ -1214,7 +1214,7 @@ static Sdb *store_versioninfo(ELFOBJ *bin) {
 	int num_verdef = 0;
 	int num_verneed = 0;
 	int num_versym = 0;
-	int i;
+	size_t i;
 
 	if (!bin || !bin->shdr) {
 		return NULL;
@@ -1440,10 +1440,10 @@ static size_t get_size_rel_mode(Elf_(Xword) rel_mode) {
 	return rel_mode == DT_RELA? sizeof (Elf_(Rela)): sizeof (Elf_(Rel));
 }
 
-static size_t get_num_relocs_dynamic_plt(ELFOBJ *bin) {
+static ut64 get_num_relocs_dynamic_plt(ELFOBJ *bin) {
 	if (bin->dyn_info.dt_pltrelsz) {
-		const size_t size = bin->dyn_info.dt_pltrelsz;
-		const size_t relsize = get_size_rel_mode (bin->dyn_info.dt_pltrel);
+		const ut64 size = bin->dyn_info.dt_pltrelsz;
+		const ut64 relsize = get_size_rel_mode (bin->dyn_info.dt_pltrel);
 		return size / relsize;
 	}
 	return 0;
@@ -1701,7 +1701,7 @@ ut64 Elf_(r_bin_elf_get_boffset)(ELFOBJ *bin) {
 		return 0;
 	}
 
-		size_t i;
+	size_t i;
 	for (i = 0; i < bin->ehdr.e_phnum; i++) {
 		if (bin->phdr[i].p_type == PT_LOAD) {
 			tmp = (ut64)bin->phdr[i].p_offset & ELF_PAGE_MASK;
