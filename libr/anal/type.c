@@ -3,7 +3,6 @@
 #include <r_anal.h>
 #include <string.h>
 #include "sdb/sdb.h"
-#include <r_cons.h> // TODO delete (for grep in dev debug output)
 
 static char *is_type(char *type) {
 	char *name = NULL;
@@ -386,33 +385,6 @@ R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
 	return base_type;
 }
 
-// // TODO eventually remove, just for dev purposes
-// static void print_struct(RAnalBaseType *base_type) {
-// 	r_return_if_fail (base_type && base_type->kind != R_ANAL_BASE_TYPE_KIND_ENUM);
-
-// 	RAnalStructMember *member;
-// 	if (base_type->struct_data.members.len == 0)
-// 		return;
-// 	r_cons_printf (" Members:\n");
-// 	r_vector_foreach (&base_type->struct_data.members, member) {
-// 		r_cons_printf ("  %s : %s; [offset: 0x%" PFMT64x ", byte size: %" PFMT64u "]\n",
-// 			member->type, member->name, member->offset, member->size);
-// 	}
-// }
-
-// // TODO eventually remove, just for dev purposes
-// static void print_enum(RAnalBaseType *base_type) {
-// 	r_return_if_fail (base_type && base_type->kind == R_ANAL_BASE_TYPE_KIND_ENUM);
-
-// 	RAnalEnumCase *cas;
-// 	if (base_type->struct_data.members.len == 0)
-// 		return;
-// 	r_cons_printf (" Cases:\n");
-// 	r_vector_foreach (&base_type->enum_data.cases, cas) {
-// 		r_cons_printf ("  %s : %d;\n", cas->name, cas->val);
-// 	}
-// }
-
 static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
 	r_return_if_fail (anal && type && type->name 
 		&& type->kind == R_ANAL_BASE_TYPE_KIND_STRUCT);
@@ -685,26 +657,18 @@ R_API void r_anal_save_base_type(const RAnal *anal, const RAnalBaseType *type) {
 
 	switch (type->kind) {
 	case R_ANAL_BASE_TYPE_KIND_STRUCT:
-		// r_cons_printf ("Structured type, name: %s, size: %"PFMT64u"\n", type->name, type->size);
 		save_struct (anal, type);
-		// print_struct (type);
 		break;
 	case R_ANAL_BASE_TYPE_KIND_ENUM:
-		// r_cons_printf ("Enum, name: %s, size: %"PFMT64u", type: %s\n", type->name, type->size, type->type);
 		save_enum (anal, type);
-		// print_enum (type);
 		break;
 	case R_ANAL_BASE_TYPE_KIND_UNION:
-		// r_cons_printf ("Union type, name: %s, size: %"PFMT64u"\n", type->name, type->size);
 		save_union (anal, type);
-		// print_struct (type);
 		break;
 	case R_ANAL_BASE_TYPE_KIND_TYPEDEF:
-		// r_cons_printf ("Typedef '%s' to '%s'\n", type->name, type->type);
 		save_typedef (anal, type);
 		break;
 	case R_ANAL_BASE_TYPE_KIND_ATOMIC:
-		// r_cons_printf ("type '%s', size: %"PFMT64u"\n", type->name, type->size);
 		save_atomic_type (anal, type);
 		break;
 	default:
