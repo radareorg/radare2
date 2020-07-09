@@ -188,17 +188,13 @@ sdb-sync sync-sdb:
 	git clone --depth 1 ${SDB_URL} sdb.vc
 	mkdir -p sdb
 	cp -rf ${SDB_SYNCFILES} sdb
-	rm -rf sdb.vc $I/sdb
-	mkdir -p $I/sdb
+	rm -rf sdb.vc
 	rm -f src/sdb_version.h
 	cd sdb ; $(MAKE) src/sdb_version.h
-	cp -f sdb/src/*.h $I/sdb
-	echo '#include <sdb/sdb.h>' > $I/sdb.h
 	mkdir -p sdb/test sdb/memcache
 	sed -e 's,HAVE_VALA=,HAVE_VALA=#,' sdb/config.mk > .t
 	mv .t sdb/config.mk
 	echo all clean mrproper: | tee sdb/test/Makefile > sdb/memcache/Makefile
-	git add $I/sdb*
 	git add sdb
 
 .PHONY: ptrace-wrap ptrace-wrap-sync sync-ptrace-wrap ptrace-wrap-clean clean-ptrace-wrap
