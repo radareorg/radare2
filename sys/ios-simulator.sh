@@ -46,7 +46,7 @@ PREFIX="/usr"
 if [ ! -d sys/ios-include ]; then
 (
 	cd sys && \
-	wget http://lolcathost.org/b/ios-include.tar.gz && \
+	wget -c https://lolcathost.org/b/ios-include.tar.gz && \
 	tar xzvf ios-include.tar.gz
 )
 fi

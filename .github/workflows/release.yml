@@ -1,0 +1,482 @@
+name: Release
+
+on:
+  push:
+    branches:
+    - 'release-*'
+
+jobs:
+  # TODO: add build check for capstone 3
+  # TODO: add build check for capstone 4
+  # TODO: add build check for capstone 5
+  # TODO: build r2-bindings
+
+  create-tarball:
+    name: Create source tarball
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Extract r2 version
+      shell: bash
+      run: echo "##[set-output name=branch;]$(python sys/version.py)"
+      id: extract_version
+    - name: Download capstone
+      run: |
+        ./configure
+        make -C shlr capstone
+        rm -rf shlr/capstone/.git
+        git clean -dxf .
+        rm -rf .git
+    - name: Create archive
+      run: |
+        cd ..
+        cp -r radare2 radare2-${{ steps.extract_version.outputs.branch}}
+        tar cvzf radare2-src.tar.gz radare2-${{ steps.extract_version.outputs.branch}}
+        mv radare2-src.tar.gz radare2/
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2-src
+        path: radare2-src.tar.gz
+
+  build-deb:
+    name: Build deb package for ${{ matrix.container }}
+    runs-on: ubuntu-latest
+    container: ${{ matrix.container }}
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [debian-buster, ubuntu-1804]
+        include:
+          - name: debian-buster
+            container: debian:buster
+          - name: ubuntu-1804
+            container: ubuntu:18.04
+    steps:
+    - name: Install tools
+      run: apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config xz-utils
+    - name: Checkout r2
+      run: |
+        git clone https://github.com/${{ github.repository }}
+        cd radare2
+        git fetch origin ${{ github.ref }}
+        git checkout -b local_branch FETCH_HEAD
+    - name: Preparing the deb package
+      run: |
+        sys/debian.sh
+        mv radare2_*_amd64.deb radare2_amd64.deb
+        mv radare2-dev_*_amd64.deb radare2-dev_amd64.deb
+      working-directory: radare2
+    - name: Upload deb file
+      uses: actions/upload-artifact@v2
+      with:
+        name: radare2-${{ matrix.name }}-deb
+        path: radare2/radare2_amd64.deb
+    - name: Upload -dev deb file
+      uses: actions/upload-artifact@v2
+      with:
+        name: radare2-dev-${{ matrix.name }}-deb
+        path: radare2/radare2-dev_amd64.deb
+
+  build-osx-pkg:
+    name: Build OSX package
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install pkg-config with Homebrew
+      run: brew install pkg-config
+    - name: Create OSX package
+      run: |
+        ./sys/osx-pkg.sh
+        mv sys/osx-pkg/radare2-*.pkg sys/osx-pkg/radare2.pkg
+    - name: Upload .pkg file
+      uses: actions/upload-artifact@v2
+      with:
+        name: radare2.pkg
+        path: sys/osx-pkg/radare2.pkg
+
+  build-windows:
+    name: Build Windows zip/installer ${{ matrix.name }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [vs2019_static, clang_cl]
+        include:
+          - name: vs2019_static
+            compiler: cl
+            meson_options: --default-library=static -Dstatic_runtime=true
+          - name: clang_cl
+            compiler: clang-cl
+            meson_options: --default-library=shared
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install meson ninja
+    - name: Extract r2 version
+      shell: pwsh
+      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
+      id: extract_version
+    - name: Build with meson + ninja
+      shell: pwsh
+      run: |
+        .github\vsdevenv.ps1
+        meson --buildtype=release --prefix=$PWD\radare2-install build ${{ matrix.meson_options }}
+        ninja -C build
+        ninja -C build install
+    - name: Create zip artifact
+      shell: pwsh
+      run: 7z a radare2-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip $PWD\radare2-install
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip
+        path: .\radare2-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip
+    - uses: actions/checkout@v2
+      with:
+        repository: radareorg/radare2-win-installer
+        path: ./radare2-win-installer
+    - name: Create installer
+      shell: pwsh
+      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2_installer-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}
+        path: radare2-win-installer\Output\radare2.exe
+
+  build-ios-cydia:
+    name: Build iOS Cydia packages
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Extract r2 version
+      shell: bash
+      run: echo "##[set-output name=branch;]$(python sys/version.py)"
+      id: extract_version
+    - name: Install pkg-config with Homebrew
+      run: brew install pkg-config
+    - name: Create cydia32 package
+      run: ./sys/ios-cydia32.sh
+    - name: List sys/cydia
+      run: ls -lahR ./sys/cydia
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm
+        path: ./sys/cydia/radare2/radare2-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
+    - name: Create cydia package
+      run: ./sys/ios-cydia.sh
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2_${{ steps.extract_version.outputs.branch }}_iphoneos-arm
+        path: ./sys/cydia/radare2/radare2_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
+
+  build-android:
+    name: Build Android ${{ matrix.name }} package
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [x86_64, arm, aarch64]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
+    - name: Compile with meson
+      run: |
+        export PATH=${HOME}/.local/bin:${PATH}
+        CFLAGS="-static" LDFLAGS="-static" meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dblob=true build --cross-file .github/meson-android-${{ matrix.name }}.ini
+        ninja -C build && ninja -C build install
+    - name: Create radare2-android-${{ matrix.name }}.tar.gz
+      run: |
+        cd /tmp
+        rm -rf android-dir/include android-dir/lib
+        tar --transform 's/android-dir/data\/data\/org.radareorg.radare2installer/g' -cvf radare2-android-${{ matrix.name }}.tar.gz android-dir/
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2-android-${{ matrix.name }}
+        path: /tmp/radare2-android-${{ matrix.name }}.tar.gz
+
+  build-extras:
+    name: Build radare2 extras and r2pipe
+    needs: [create-tarball]
+    runs-on: ubuntu-latest
+    env:
+      TESTS: 'armthumb baleful bcl ba2 blackfin blessr2 keystone-lib keystone lang-duktape mc6809 microblaze msil pcap ppcdisasm psosvm swf unicorn-lib unicorn vc4 x86udis x86bea x86tab x86olly x86zyan z80-nc'
+      R2PIPE_TESTS: 'r2pipe-go r2pipe-js r2pipe-py'
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: radare2-src
+        path: ./
+    - name: Extract source tarball
+      run: mkdir radare2 && tar -C radare2 --strip-components=1 -xvf radare2-src.tar.gz
+    - name: Install dependencies
+      run: sudo apt-get --assume-yes install wget unzip python3-wheel python3-setuptools build-essential python3-pip && sudo pip3 install meson ninja
+    - name: Install radare2
+      run: |
+        export PATH=$PATH:/usr/local/bin
+        meson --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
+        sudo ln -s radare2 /usr/bin/r2
+      working-directory: radare2
+    - name: Init r2pm
+      run: r2pm init && r2pm update
+    - name: Compile and install plugins
+      run: |
+        set -e
+        for p in $TESTS ; do
+          echo $p
+          r2pm -i $p
+        done
+        set +e
+    - name: Compile and install r2pipe
+      run: |
+        set -e
+        for p in $R2PIPE_TESTS ; do
+          echo $p
+          r2pm -i $p
+        done
+        set +e
+
+  test-deb:
+    runs-on: ubuntu-latest
+    needs: [build-deb]
+    container: ${{ matrix.container }}
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [debian-buster, ubuntu-1804]
+        include:
+          - name: debian-buster
+            container: debian:buster
+          - name: ubuntu-1804
+            container: ubuntu:18.04
+    steps:
+    - name: Install tools
+      run: apt-get update && apt-get install --yes gcc pkg-config
+    - uses: actions/download-artifact@v2
+      with:
+        name: radare2-${{ matrix.name }}-deb
+        path: ./
+    - uses: actions/download-artifact@v2
+      with:
+        name: radare2-dev-${{ matrix.name }}-deb
+        path: ./
+    - name: Install radare2 debs
+      run: apt-get update && apt-get install ./radare2*.deb
+    - name: Check that installed radare2 runs
+      run: radare2 -qcq /bin/ls
+    - name: Check that libraries can be used
+      shell: bash
+      run: |
+        echo -e "#include <r_util.h>\nint main(int argc, char **argv) { return r_str_newf (\"%s\", argv[0]) != NULL? 0: 1; }" > test.c
+        gcc -o test test.c $(pkg-config --libs --cflags r_util)
+        ./test
+
+  test-osx-pkg:
+    runs-on: macos-latest
+    needs: [build-osx-pkg]
+    steps:
+    - name: Install pkg-config with Homebrew
+      run: brew install pkg-config
+    - uses: actions/download-artifact@v2
+      with:
+        name: radare2.pkg
+        path: ./
+    - name: Install radare2.pkg
+      run: sudo installer -pkg ./radare2.pkg -target /
+    - name: Check that installed radare2 runs
+      run: radare2 -qcq /bin/ls
+    - name: Check that libraries can be used
+      run: |
+        echo -e "#include <r_util.h>\nint main(int argc, char **argv) { return r_str_newf (\"%s\", argv[0]) != NULL? 0: 1; }" > test.c
+        clang -o test test.c $(pkg-config --libs --cflags r_util)
+        ./test
+
+  test-windows-clang_cl:
+    runs-on: windows-latest
+    needs: [build-windows]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+    - name: Install pkg-config
+      shell: pwsh
+      run: choco install -y pkgconfiglite
+    - name: Extract r2 version
+      shell: pwsh
+      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
+      id: extract_version
+    - uses: actions/download-artifact@v2
+      with:
+        name: radare2_installer-clang_cl-${{ steps.extract_version.outputs.branch }}
+        path: ./
+    - name: Install radare.exe
+      shell: pwsh
+      run: Start-Process -Wait -FilePath .\radare2.exe -ArgumentList "/SP- /SILENT" -PassThru
+    - name: Check that installed radare2 runs
+      shell: pwsh
+      run: ~\AppData\Local\Programs\radare2\bin\radare2.exe -qcq .\radare2.exe
+    - name: Check that libraries can be used
+      shell: pwsh
+      run: |
+        .github\vsdevenv.ps1
+        $env:PATH = "$env:PATH;C:$env:HOMEPATH\AppData\Local\Programs\radare2\bin"
+        $env:PKG_CONFIG_PATH = "C:$env:HOMEPATH\AppData\Local\Programs\radare2\lib\pkgconfig"
+        $env:PKG_CONFIG_PATH
+        pkg-config --list-all
+        echo "#include <r_util.h>`nint main(int argc, char **argv) { return r_str_newf (`"%s`", argv[0]) != NULL? 0: 1; }" > test.c
+        cl -IC:$env:HOMEPATH\AppData\Local\Programs\radare2\include\libr /Fetest.exe test.c /link /libpath:C:$env:HOMEPATH\AppData\Local\Programs\radare2\lib r_util.lib
+        .\test.exe
+
+  create-release:
+    runs-on: ubuntu-latest
+    needs: [create-tarball, test-deb, build-android, test-osx-pkg, test-windows-clang_cl, build-ios-cydia, build-extras]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Extract r2 version
+      shell: bash
+      run: echo "##[set-output name=branch;]$(python sys/version.py)"
+      id: extract_version
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          tag_name: ${{ steps.extract_version.outputs.branch }}
+          release_name: Release ${{ steps.extract_version.outputs.branch }}
+          draft: true
+          prerelease: false
+    - uses: actions/download-artifact@v2
+    - name: Display structure of downloaded files
+      run: ls -R
+    - name: Upload radare2 src tarball
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2-src/radare2-src.tar.gz
+          asset_name: radare2-src-${{ steps.extract_version.outputs.branch }}.tar.gz
+          asset_content_type: application/zip
+    - name: Upload radare2 debian:buster package
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2-debian-buster-deb/radare2_amd64.deb
+          asset_name: radare2-debian-buster_${{ steps.extract_version.outputs.branch }}_amd64.deb
+          asset_content_type: application/zip
+    - name: Upload radare2-dev debian:buster package
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2-dev-debian-buster-deb/radare2-dev_amd64.deb
+          asset_name: radare2-dev-debian-buster_${{ steps.extract_version.outputs.branch }}_amd64.deb
+          asset_content_type: application/zip
+    - name: Upload radare2 ubuntu:18.04 package
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2-ubuntu-1804-deb/radare2_amd64.deb
+          asset_name: radare2-ubuntu-1804_${{ steps.extract_version.outputs.branch }}_amd64.deb
+          asset_content_type: application/zip
+    - name: Upload radare2-dev ubuntu:18.04 package
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2-dev-ubuntu-1804-deb/radare2-dev_amd64.deb
+          asset_name: radare2-dev-ubuntu-1804_${{ steps.extract_version.outputs.branch }}_amd64.deb
+          asset_content_type: application/zip
+    - name: Upload radare2 android x86_64 tar.gz
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2-android-x86_64/radare2-android-x86_64.tar.gz
+          asset_name: radare2-${{ steps.extract_version.outputs.branch }}-android-x86_64.tar.gz
+          asset_content_type: application/zip
+    - name: Upload radare2 android arm tar.gz
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2-android-arm/radare2-android-arm.tar.gz
+          asset_name: radare2-${{ steps.extract_version.outputs.branch }}-android-arm.tar.gz
+          asset_content_type: application/zip
+    - name: Upload radare2 android aarch64 tar.gz
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2-android-aarch64/radare2-android-aarch64.tar.gz
+          asset_name: radare2-${{ steps.extract_version.outputs.branch }}-android-aarch64.tar.gz
+          asset_content_type: application/zip
+    - name: Upload radare2 OSX pkg
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2.pkg/radare2.pkg
+          asset_name: radare2-macos-${{ steps.extract_version.outputs.branch }}.pkg
+          asset_content_type: application/zip
+    - name: Upload radare2 windows archive
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2-vs2019_static-${{ steps.extract_version.outputs.branch }}.zip/radare2-vs2019_static-${{ steps.extract_version.outputs.branch }}.zip
+          asset_name: radare2-windows-static-${{ steps.extract_version.outputs.branch }}.zip
+          asset_content_type: application/zip
+    - name: Upload radare2 windows installer
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2_installer-clang_cl-${{ steps.extract_version.outputs.branch }}/radare2.exe
+          asset_name: radare2_installer-${{ steps.extract_version.outputs.branch }}.exe
+          asset_content_type: application/zip
+    - name: Upload radare2 iOS arm32 cydia package
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm/radare2-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
+          asset_name: radare2-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
+          asset_content_type: application/zip
+    - name: Upload radare2 iOS aarch64 cydia package
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2_${{ steps.extract_version.outputs.branch }}_iphoneos-arm/radare2_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
+          asset_name: radare2-aarch64_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
+          asset_content_type: application/zip
+
+  publish-docker-image:
+    runs-on: ubuntu-latest
+    needs: [create-release]
+    steps:
+    - uses: actions/checkout@master
+    - name: Publish to Registry
+      uses: docker/build-push-action@v1
+      with:
+        repository: ${{ secrets.DOCKER_USERNAME }}/radare2
+        tag_with_ref:  true
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}

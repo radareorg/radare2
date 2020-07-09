@@ -115,6 +115,8 @@ E+=../shlr/ar/libr_ar.${EXT_AR}
 E+=../shlr/windbg/libr_windbg.${EXT_AR}
 E+=../shlr/qnx/lib/libqnxr.${EXT_AR}
 E+=../shlr/bochs/lib/libbochs.${EXT_AR}
+E+=../shlr/radare2-shell-parser/libshell-parser.${EXT_AR}
+E+=../shlr/tree-sitter/libtree-sitter.${EXT_AR}
 #ifeq ($(COMPILER),ios-sdk)
 #E+=../shlr/sdb/src/libsdb.${EXT_AR}
 #endif
