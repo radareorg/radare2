@@ -91,7 +91,7 @@ R_API void r_annotated_code_free(RAnnotatedCode *code);
  * @user: Always NULL for this function. Present here for this function to be of the type RVectorFree.
  * 
  * This function recongnizes the type of the specified annotation and
- * frees memory that is dynamcally allocated for it.
+ * frees memory that is dynamically allocated for it.
  * 
  * Return: Nothing.
  */
