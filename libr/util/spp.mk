@@ -1,5 +1,5 @@
 SPPPATH=../../shlr/spp/
-CFLAGS+=-DHAVE_FORK=$(HAVE_FORK)
+CFLAGS+=-DHAVE_FORK=$(HAVE_FORK) -DUSE_R2=1
 CFLAGS+=-I../../shlr
 SPP_OBJS=spp.o
 SPPOBJS=$(addprefix ${SPPPATH},${SPP_OBJS})

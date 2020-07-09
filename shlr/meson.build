@@ -410,7 +410,7 @@ spp_inc = [platform_inc, include_directories('spp')]
 
 libr2spp = static_library('r2spp', spp_files,
   include_directories: spp_inc,
-  c_args: ['-DHAVE_R_UTIL'],
+  c_args: ['-DHAVE_R_UTIL', '-DUSE_R2=1'],
   implicit_include_directories: false
 )
 
