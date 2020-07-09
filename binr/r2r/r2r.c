@@ -537,10 +537,80 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 #ifdef __WINDOWS__
 	d->diff_cmd = "git diff --no-index";
 #endif
+	size_t len_expected = strlen (expected);
+	size_t len_actual = strlen (actual);
 	if (diffchar) {
+		// Use Needleman–Wunsch to diffchar.
+		// This is an O(mn) algo in both space and time.
+		// Note that 64KB * 64KB * 2 = 8GB.
+		if (len_expected == len_actual) { // TODO Drop this condition
+			size_t dim = len_expected + 1;
+			st16 *align_table = malloc (dim * dim * sizeof (st16));
+			if (align_table) {
+				size_t row, col;
+				*align_table = 0;
+				for (row = 1; row < dim; row++) {
+					*(align_table + row) = *(align_table + row * dim) = -(st16)row;
+				}
+				// Fill table
+				const st16 match = 1;
+				const st16 mismatch = -1;
+				const st16 gap = -1;
+				for (row = 1; row < dim; row++) {
+					for (col = 1; col < dim; col++) {
+						st16 tl_score = *(align_table + (row - 1) * dim + col - 1)
+								+ (expected[col - 1] == actual[row - 1] ? match : mismatch);
+						st16 t_score = *(align_table + row * dim + col - 1) + gap;
+						st16 l_score = *(align_table + (row - 1) * dim + col) + gap;
+						st16 score;
+						if (tl_score >= t_score && tl_score >= l_score) {
+							score = tl_score;
+						} else if (t_score >= tl_score && t_score >= l_score) {
+							score = t_score;
+						} else {
+							score = l_score;
+						}
+						*(align_table + row * dim + col) = score;
+					}
+				}
+				// Print table (Debug)
+				char char_str[3] = { ' ' };
+				printf ("%4s ", char_str);
+				for (col = 0; col < dim; col++) {
+					if (col && expected[col - 1] == '\n') {
+						char_str[0] = '\\';
+						char_str[1] = 'n';
+					} else {
+						char_str[0] = !col ? ' ' : expected[col - 1];
+						char_str[1] = 0;
+					}
+					printf ("%4s ", char_str);
+				}
+				printf ("\n");
+				for (row = 0; row < dim; row++) {
+					if (row && actual[row - 1] == '\n') {
+						char_str[0] = '\\';
+						char_str[1] = 'n';
+					} else {
+						char_str[0] = !row ? ' ' : actual[row - 1];
+						char_str[1] = 0;
+					}
+					printf ("%4s ", char_str);
+					for (col = 0; col < dim; col++) {
+						printf ("%4d ", *(align_table + row * dim + col));
+					}
+					printf ("\n");
+				}
+				// TODO Do alignment
+				// -- TODO Keep on rolling
+				// TODO Print diff
+				free (align_table);
+			}
+			// return;
+		}
 		d->diff_cmd = "git diff --no-index --word-diff=porcelain --word-diff-regex=.";
 	}
-	char *uni = r_diff_buffers_to_string (d, (const ut8 *)expected, (int)strlen (expected), (const ut8 *)actual, (int)strlen (actual));
+	char *uni = r_diff_buffers_to_string (d, (const ut8 *)expected, (int)len_expected, (const ut8 *)actual, (int)len_actual);
 	r_diff_free (d);
 
 	RList *lines = r_str_split_duplist (uni, "\n", false);
