@@ -23,7 +23,7 @@ int pdb_info(const char *file, R_PDB *pdb) {
 
 bool test_pdb_tpi(void) {
 	R_PDB pdb = R_EMPTY;
-	mu_assert_true (pdb_info ("../bins/pdb/Project1.pdb", &pdb), "pdb parsing failed");
+	mu_assert_true (pdb_info ("bins/pdb/Project1.pdb", &pdb), "pdb parsing failed");
 
 	RList *plist = pdb.pdb_streams;
 	mu_assert_notnull (plist, "PDB streams is NULL");
@@ -41,34 +41,38 @@ bool test_pdb_tpi(void) {
 	SType *type;
 	while (r_list_iter_next (it)) {
 		type = r_list_iter_get (it);
-		if (type->tpi_idx == 0x1000) {
-			mu_assert_eq (type->type_data.leaf_type, eLF_FIELDLIST, "Incorrect data type");
-		} else if (type->tpi_idx == 0x1028) {
-			mu_assert_eq (type->type_data.leaf_type, eLF_PROCEDURE, "Incorrect data type");
+		STypeInfo *type_info = &type->type_data;
+		if (type->tpi_idx == 0x1028) {
+			mu_assert_eq (type_info->leaf_type, eLF_PROCEDURE, "Incorrect data type");
+			// Doesn't work properly, so no asserting
+			SType *arglist;
+			type_info->get_arglist (type_info, (void **)&arglist);
+			SType *return_type;
+			type_info->get_return_type (type_info, (void **)&return_type);
 		} else if (type->tpi_idx == 0x1161) {
-			mu_assert_eq (type->type_data.leaf_type, eLF_POINTER, "Incorrect data type");
+			mu_assert_eq (type_info->leaf_type, eLF_POINTER, "Incorrect data type");
 		} else if (type->tpi_idx == 0x113F) {
-			mu_assert_eq (type->type_data.leaf_type, eLF_ARRAY, "Incorrect data type");
+			mu_assert_eq (type_info->leaf_type, eLF_ARRAY, "Incorrect data type");
 		} else if (type->tpi_idx == 0x145A) {
-			mu_assert_eq (type->type_data.leaf_type, eLF_ENUM, "Incorrect data type");
+			mu_assert_eq (type_info->leaf_type, eLF_ENUM, "Incorrect data type");
 		} else if (type->tpi_idx == 0x1414) {
-			mu_assert_eq (type->type_data.leaf_type, eLF_VTSHAPE, "Incorrect data type");
+			mu_assert_eq (type_info->leaf_type, eLF_VTSHAPE, "Incorrect data type");
 		} else if (type->tpi_idx == 0x1421) {
-			mu_assert_eq (type->type_data.leaf_type, eLF_MODIFIER, "Incorrect data type");
+			mu_assert_eq (type_info->leaf_type, eLF_MODIFIER, "Incorrect data type");
 		} else if (type->tpi_idx == 0x1003) {
-			mu_assert_eq (type->type_data.leaf_type, eLF_UNION, "Incorrect data type");
+			mu_assert_eq (type_info->leaf_type, eLF_UNION, "Incorrect data type");
 		} else if (type->tpi_idx == 0x100B) {
-			mu_assert_eq (type->type_data.leaf_type, eLF_CLASS, "Incorrect data type");
+			mu_assert_eq (type_info->leaf_type, eLF_CLASS, "Incorrect data type");
 		} else if (type->tpi_idx == 0x1062) {
-			mu_assert_eq (type->type_data.leaf_type, eLF_BITFIELD, "Incorrect data type");
+			mu_assert_eq (type_info->leaf_type, eLF_BITFIELD, "Incorrect data type");
 		} else if (type->tpi_idx == 0x1258) {
-			mu_assert_eq (type->type_data.leaf_type, eLF_METHODLIST, "Incorrect data type");
+			mu_assert_eq (type_info->leaf_type, eLF_METHODLIST, "Incorrect data type");
 		} else if (type->tpi_idx == 0x107A) {
-			mu_assert_eq (type->type_data.leaf_type, eLF_MFUNCTION, "Incorrect data type");
+			mu_assert_eq (type_info->leaf_type, eLF_MFUNCTION, "Incorrect data type");
 		} else if (type->tpi_idx == 0x113F) {
-			mu_assert_eq (type->type_data.leaf_type, eLF_FIELDLIST, "Incorrect data type");
+			mu_assert_eq (type_info->leaf_type, eLF_FIELDLIST, "Incorrect data type");
 			RList *members = r_list_new ();
-			type->type_data.get_members (&type->type_data, &members);
+			type_info->get_members (&type->type_data, &members);
 			mu_assert_eq (members->length, 2725, "Incorrect members length");
 			RListIter *it = r_list_iterator (members);
 			int i = 0;
@@ -94,18 +98,18 @@ bool test_pdb_tpi(void) {
 				i++;
 			}
 		} else if (type->tpi_idx == 0x1231) {
-			mu_assert_eq (type->type_data.leaf_type, eLF_ARGLIST, "Incorrect data type");
+			mu_assert_eq (type_info->leaf_type, eLF_ARGLIST, "Incorrect data type");
 		} else if (type->tpi_idx == 0x101A) {
-			mu_assert_eq (type->type_data.leaf_type, eLF_STRUCTURE, "Incorrect data type");
+			mu_assert_eq (type_info->leaf_type, eLF_STRUCTURE, "Incorrect data type");
 			SType *return_type;
 			char *name;
 			int is_forward_ref;
-			type->type_data.get_name (&type->type_data, &name);
+			type_info->get_name (&type->type_data, &name);
 			mu_assert_streq (name, "threadlocaleinfostruct", "Wrong name");
-			type->type_data.is_fwdref (&type->type_data, &is_forward_ref);
+			type_info->is_fwdref (&type->type_data, &is_forward_ref);
 			mu_assert_eq (is_forward_ref, false, "Wrong is_fwdref");
 			RList *members = r_list_new ();
-			type->type_data.get_members (&type->type_data, &members);
+			type_info->get_members (&type->type_data, &members);
 			mu_assert_eq (members->length, 18, "Incorrect members count");
 			RListIter *it = r_list_iterator (members);
 			int i = 0;

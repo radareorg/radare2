@@ -31,7 +31,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 #define CAN_READ(curr_read_bytes, bytes_for_read, max_len) { \
-	if ((((curr_read_bytes) + (bytes_for_read)) >= (max_len))) { \
+	if ((((curr_read_bytes) + (bytes_for_read)) > (max_len))) { \
 		return 0; \
 	} \
 }
@@ -516,7 +516,7 @@ typedef union {
 
 R_PACKED(
 typedef struct {
-	ut32 return_type;
+	ut16 return_type;
 	ECV_CALL call_conv;
 	ut8 reserved;
 	ut16 parm_count;

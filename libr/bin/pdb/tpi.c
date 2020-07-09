@@ -403,6 +403,7 @@ static int get_pointer_utype(void *type, void **ret_type) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// Is wrong if the return type isn't an index into the table (isn't custom type)
 static int get_procedure_return_type(void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *) type;
 	SLF_PROCEDURE *lf = (SLF_PROCEDURE *) t->type_info;
@@ -2180,7 +2181,7 @@ static int parse_lf_mfunction(SLF_MFUNCTION *lf_mfunction, unsigned char *leaf_d
 
 static int parse_lf_procedure(SLF_PROCEDURE *lf_procedure, unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len) {
 	unsigned int tmp_before_read_bytes = *read_bytes;
-
+	
 	READ4(*read_bytes, len, lf_procedure->return_type, leaf_data, ut32);
 	READ1(*read_bytes, len, lf_procedure->call_conv, leaf_data, ut8);
 	READ1(*read_bytes, len, lf_procedure->reserved, leaf_data, ut8);
