@@ -227,6 +227,7 @@ static void is_struct_class_fwdref(void *type, int *is_fwdref) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// Also wrong for counting with any base types TODO
 static int get_array_element_type(void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *) type;
 	SLF_ARRAY *lf_array = (SLF_ARRAY *) t->type_info;
@@ -243,6 +244,7 @@ static int get_array_element_type(void *type, void **ret_type) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// Also wrong for counting with any base types TODO
 static int get_array_index_type(void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *) type;
 	SLF_ARRAY *lf_array = (SLF_ARRAY *) t->type_info;
@@ -259,6 +261,7 @@ static int get_array_index_type(void *type, void **ret_type) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// Again doesn't work for base types
 static int get_bitfield_base_type(void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *) type;
 	SLF_BITFIELD *lf = (SLF_BITFIELD *) t->type_info;
@@ -307,6 +310,7 @@ static int get_class_struct_vshape(void *type, void **ret_type) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// Is wrong if the return type isn't an index into the table (isn't custom type, when it's base_type)
 static int get_mfunction_return_type(void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *) type;
 	SLF_MFUNCTION *lf = (SLF_MFUNCTION *) t->type_info;
@@ -403,7 +407,7 @@ static int get_pointer_utype(void *type, void **ret_type) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Is wrong if the return type isn't an index into the table (isn't custom type)
+// Is wrong if the return type isn't an index into the table (isn't custom type, when it's base_type)
 static int get_procedure_return_type(void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *) type;
 	SLF_PROCEDURE *lf = (SLF_PROCEDURE *) t->type_info;
@@ -497,7 +501,7 @@ static int get_method_mlist(void *type, void **ret_type) {
 
 	return curr_idx;
 }
-
+// Again, doesn't work for base types, TODO
 static int get_enum_utype(void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *) type;
 	SLF_ENUM *lf = (SLF_ENUM *) t->type_info;
@@ -1072,14 +1076,16 @@ static void get_modifier_print_type(void *type, char **name) {
 	bool need_to_free = true;
 	SType *stype = NULL;
 	char *tmp_name = NULL;
-	int base_type = stype_info->get_modified_type (stype_info, (void **)&type);
+	// This is wrong
+	int base_type = stype_info->get_modified_type (stype_info, (void **)&stype);
 
 	if (!stype) {
 		need_to_free = false;
 		print_base_type (base_type, &tmp_name);
 	} else {
-		stype_info = &stype->type_data;
-		stype_info->get_print_type (stype_info, &tmp_name);
+		STypeInfo *refered_type_info = NULL;
+		refered_type_info = &stype->type_data;
+		refered_type_info->get_print_type (refered_type_info, &tmp_name);
 	}
 
 	SLF_MODIFIER *modifier = stype_info->type_info;
@@ -1286,7 +1292,7 @@ static void get_arglist_print_type(void *type, char **name) {
 //	if (need_to_free)
 //		free(tmp_name);
 }
-
+// TODO, nothing is really being parsed here
 static void get_mfunction_print_type(void *type, char **name) {
 	int name_len = 0;
 
@@ -1856,7 +1862,7 @@ static void init_stype_info(STypeInfo *type_info)
 		type_info->get_arglist = get_mfunction_arglist;
 		type_info->get_print_type = get_mfunction_print_type;
 		break;
-	case eLF_METHODLIST:
+	case eLF_METHODLIST: // TODO missing stuff
 		break;
 	case eLF_PROCEDURE:
 		type_info->get_return_type = get_procedure_return_type;
@@ -2181,7 +2187,7 @@ static int parse_lf_mfunction(SLF_MFUNCTION *lf_mfunction, unsigned char *leaf_d
 
 static int parse_lf_procedure(SLF_PROCEDURE *lf_procedure, unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len) {
 	unsigned int tmp_before_read_bytes = *read_bytes;
-	
+
 	READ4(*read_bytes, len, lf_procedure->return_type, leaf_data, ut32);
 	READ1(*read_bytes, len, lf_procedure->call_conv, leaf_data, ut8);
 	READ1(*read_bytes, len, lf_procedure->reserved, leaf_data, ut8);

@@ -44,31 +44,96 @@ bool test_pdb_tpi(void) {
 		STypeInfo *type_info = &type->type_data;
 		if (type->tpi_idx == 0x1028) {
 			mu_assert_eq (type_info->leaf_type, eLF_PROCEDURE, "Incorrect data type");
-			// Doesn't work properly, so no asserting
 			SType *arglist;
 			type_info->get_arglist (type_info, (void **)&arglist);
+			mu_assert_eq (arglist->tpi_idx, 0x1027, "Wrong type index");
 			SType *return_type;
+			// Doesn't work properly, so no asserting
 			type_info->get_return_type (type_info, (void **)&return_type);
 		} else if (type->tpi_idx == 0x1161) {
 			mu_assert_eq (type_info->leaf_type, eLF_POINTER, "Incorrect data type");
+			char *type;
+			type_info->get_print_type (type_info, &type);
+			mu_assert_streq (type, "pointer to struct _RTC_framedesc", "Wrong pointer print type");
 		} else if (type->tpi_idx == 0x113F) {
 			mu_assert_eq (type_info->leaf_type, eLF_ARRAY, "Incorrect data type");
+			char *type;
+			type_info->get_print_type (type_info, &type);
+			SType *dump;
+			// function doesn't work as supposed, not asserting TODO
+			type_info->get_index_type (type_info, (void **)&dump);
+			// same problem like ^, but in this case it works, so asserting
+			type_info->get_element_type (type_info, (void **)&dump);
+			mu_assert_eq (dump->tpi_idx, 0x113E, "Wrong element type index");
+			int size;
+			// Why is get_val for size returning...
+			type_info->get_val (type_info, &size);
+			mu_assert_eq (size, 20, "Wrong array size");
 		} else if (type->tpi_idx == 0x145A) {
 			mu_assert_eq (type_info->leaf_type, eLF_ENUM, "Incorrect data type");
+			SType *dump;
+			RList *members;
+			char *name;
+			type_info->get_name (type_info, &name);
+			mu_assert_streq (name, "EXCEPTION_DEBUGGER_ENUM", "wrong enum name");
+			// Doesn't work properly so not asserting
+			type_info->get_utype (type_info, (void **)&dump);
+			// mu_assert_eq (dump->tpi_idx, 0x0074, "wrong enum utype");
+			type_info->get_members (type_info, &members);
+			mu_assert_eq (members->length, 6, "wrong enum members length");
 		} else if (type->tpi_idx == 0x1414) {
 			mu_assert_eq (type_info->leaf_type, eLF_VTSHAPE, "Incorrect data type");
 		} else if (type->tpi_idx == 0x1421) {
 			mu_assert_eq (type_info->leaf_type, eLF_MODIFIER, "Incorrect data type");
+			SType *stype = NULL;
+			type_info->get_modified_type (type_info, (void **)&stype);
+			mu_assert_eq (stype->tpi_idx, 0x120F, "Incorrect modified type");
+			char *type;
+			type_info->get_print_type (type_info, &type);
+			mu_assert_streq (type, "const struct Stream", "Incorrect modifier print type");
 		} else if (type->tpi_idx == 0x1003) {
 			mu_assert_eq (type_info->leaf_type, eLF_UNION, "Incorrect data type");
+			char *name;
+			type_info->get_name (type_info, &name);
+			mu_assert_streq (name, "R2_TEST_UNION", "wrong union name");
+			RList *members;
+			type_info->get_members (type_info, &members);
+			mu_assert_eq (members->length, 2, "wrong union member count");
 		} else if (type->tpi_idx == 0x100B) {
 			mu_assert_eq (type_info->leaf_type, eLF_CLASS, "Incorrect data type");
+			char *name;
+			type_info->get_name (type_info, &name);
+			mu_assert_streq (name, "TEST_CLASS", "wrong class name");
+			RList *members;
+			type_info->get_members (type_info, &members);
+			mu_assert_eq (members->length, 2, "wrong class member count");
+			SType *stype = NULL;
+			int result = type_info->get_vshape (type_info, (void **)&stype);
+			mu_assert_eq (result || stype, 0, "wrong class vshape");
+			result = type_info->get_derived (type_info, (void **)&stype);
+			mu_assert_eq (result || stype, 0, "wrong class derived");
 		} else if (type->tpi_idx == 0x1062) {
 			mu_assert_eq (type_info->leaf_type, eLF_BITFIELD, "Incorrect data type");
+			SType *base_type = NULL;
+			type_info->get_base_type (type_info, (void **)&base_type);
+			char *type;
+			type_info->get_print_type (type_info, &type);
+			mu_assert_streq (type, "bitfield unsigned long : 1", "Incorrect bitfield print type");
 		} else if (type->tpi_idx == 0x1258) {
 			mu_assert_eq (type_info->leaf_type, eLF_METHODLIST, "Incorrect data type");
+			// Nothing from methodlist is currently being parsed
 		} else if (type->tpi_idx == 0x107A) {
 			mu_assert_eq (type_info->leaf_type, eLF_MFUNCTION, "Incorrect data type");
+			SType *type;
+			// not being parsed right (ignores base types), so not assertion now
+			type_info->get_return_type (type_info, (void **) &type);
+
+			type_info->get_class_type (type_info, (void **) &type);
+			mu_assert_eq (type->tpi_idx, 0x1079, "incorrect mfunction class type");
+			type_info->get_this_type (type_info, (void **) &type);
+			mu_assert_eq (type, 0, "incorrect mfunction this type");
+			type_info->get_arglist (type_info, (void **) &type);
+			mu_assert_eq (type->tpi_idx, 0x1027, "incorrect mfunction arglist");
 		} else if (type->tpi_idx == 0x113F) {
 			mu_assert_eq (type_info->leaf_type, eLF_FIELDLIST, "Incorrect data type");
 			RList *members = r_list_new ();
