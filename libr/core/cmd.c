@@ -2580,7 +2580,7 @@ static char *find_ch_after_macro(char *ptr, char ch) {
 static int r_core_cmd_subst(RCore *core, char *cmd) {
 	ut64 rep = strtoull (cmd, NULL, 10);
 	int ret = 0, orep;
-	char *cmt, *colon = NULL, *icmd = NULL;
+	char *colon = NULL, *icmd = NULL;
 	bool tmpseek = false;
 	bool original_tmpseek = core->tmpseek;
 
@@ -2626,7 +2626,6 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	}
 	if (*icmd && !strchr (icmd, '"')) {
 		char *hash = icmd;
-		cmt = NULL;
 		for (hash = icmd + 1; *hash; hash++) {
 			if (*hash == '\\') {
 				hash++;
@@ -2641,7 +2640,6 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		if (hash && *hash) {
 			*hash = 0;
 			r_str_trim_tail (icmd);
-			cmt = hash + 1;
 		}
 	}
 	if (*cmd != '"') {
