@@ -100,7 +100,6 @@ r_core_deps = [
   r_asm_dep,
   r_bp_dep,
   platform_deps,
-  spp_dep,
   gdb_dep,
   java_dep,
   shell_parser_dep

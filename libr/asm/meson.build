@@ -224,7 +224,6 @@ r_asm = library('r_asm', r_asm_sources,
     r_flag_dep,
     r_socket_dep,
     capstone_dep,
-    spp_dep,
     java_dep
   ],
   install: true,

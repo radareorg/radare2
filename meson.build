@@ -398,25 +398,6 @@ libr_pc = configure_file(
   install_dir: join_paths(get_option('libdir'), 'pkgconfig')
 )
 
-# handle spp dependency
-spp_files = [
-  'shlr/spp/spp.c'
-]
-
-spp_inc = [platform_inc, include_directories('shlr/spp')]
-
-libr2spp = static_library('r2spp', spp_files,
-  include_directories: spp_inc,
-  c_args: ['-DHAVE_R_UTIL', '-DUSE_R2=1'],
-  implicit_include_directories: false
-)
-
-spp_dep = declare_dependency(
-  link_with: libr2spp,
-  include_directories: spp_inc
-)
-
-
 # handle zlib dependency
 zlib_dep = dependency('zlib', required: false)
 if not zlib_dep.found() or not get_option('use_sys_zlib')
@@ -557,6 +538,26 @@ sdb_gen_cmd = [
   '@OUTPUT@',
   '@INPUT@'
 ]
+
+# handle spp dependency
+spp_files = [
+  'shlr/spp/spp.c'
+]
+
+spp_inc = [platform_inc, include_directories('shlr/spp')]
+
+libr2spp = static_library('r2spp', spp_files,
+  dependencies: sdb_dep,
+  include_directories: spp_inc,
+  c_args: ['-DHAVE_R_UTIL', '-DUSE_R2=1'],
+  implicit_include_directories: false
+)
+
+spp_dep = declare_dependency(
+  link_with: libr2spp,
+  include_directories: spp_inc
+)
+
 
 subdir('libr/util')
 subdir('libr/socket')
