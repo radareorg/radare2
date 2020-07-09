@@ -409,20 +409,22 @@ static RList *patch_relocs(RBin *b) {
 		}
 		i += bin->symbols[i].n_numaux;
 	}
-	ut64 size = nimports * BYTES_PER_IMP_RELOC;
-	char *muri = r_str_newf ("malloc://%" PFMT64u, size);
 	ut64 n_vaddr = bin->size;
-	RIODesc *desc = b->iob.open_at (io, muri, R_PERM_R, 0664, n_vaddr);
-	free (muri);
-	if (!desc) {
-		return NULL;
-	}
+	if (nimports) {
+		ut64 size = nimports * BYTES_PER_IMP_RELOC;
+		char *muri = r_str_newf ("malloc://%" PFMT64u, size);
+		RIODesc *desc = b->iob.open_at (io, muri, R_PERM_R, 0664, n_vaddr);
+		free (muri);
+		if (!desc) {
+			return NULL;
+		}
 
-	RIOMap *map = b->iob.map_get (io, n_vaddr);
-	if (!map) {
-		return NULL;
+		RIOMap *map = b->iob.map_get (io, n_vaddr);
+		if (!map) {
+			return NULL;
+		}
+		map->name = strdup (".imports.r2");
 	}
-	map->name = strdup (".imports.r2");
 
 	return _relocs_list (b, bin, true, n_vaddr);
 }
