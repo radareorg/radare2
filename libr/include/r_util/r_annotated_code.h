@@ -35,6 +35,7 @@ typedef enum r_syntax_highlight_type_t {
 typedef enum r_code_annotation_type_t {
 	R_CODE_ANNOTATION_TYPE_OFFSET,
 	R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT,
+	R_CODE_ANNOTATION_TYPE_FUNCTION_NAME
 	// ...
 } RCodeAnnotationType;
 
@@ -50,6 +51,11 @@ typedef struct r_code_annotation_t {
 		struct {
 			RSyntaxHighlightType type;
 		} syntax_highlight;
+
+		struct {
+			char *name;
+			ut64 offset; // offset of the function with the name specified
+		} function_name;
 	};
 } RCodeAnnotation;
 
@@ -79,6 +85,17 @@ R_API RAnnotatedCode *r_annotated_code_new(char *code);
  * Return: Nothing.
  */
 R_API void r_annotated_code_free(RAnnotatedCode *code);
+/**
+ * r_annotation_free() - Deallocates dynamically allocated memory for the specified annotation.
+ * @e: Pointer to the annotation
+ * @user: Always NULL for this function. Present here for this function to be of the type RVectorFree.
+ * 
+ * This function recongnizes the type of the specified annotation and
+ * frees memory that is dynamically allocated for it.
+ * 
+ * Return: Nothing.
+ */
+R_API void r_annotation_free(void *e, void *user);
 /**
  * r_annotated_code_add_annotation() - Inserts *annotation in *code.
  * @code: Pointer to a RAnnotatedCode.
