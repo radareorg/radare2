@@ -207,7 +207,7 @@ static void interrupt_process(RDebug *dbg) {
 
 static int r_debug_native_stop(RDebug *dbg) {
 #if __linux__
-	return linux_stop_threads (dbg, dbg->reason.tid);
+	return linux_stop_threads (dbg, dbg->pid);
 #else
 	return 0;
 #endif
@@ -240,26 +240,43 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 		r_cons_break_push ((RConsBreak)interrupt_process, dbg);
 	}
 
-	if (dbg->continue_all_threads && dbg->n_threads) {
-		RList *list = dbg->threads;
+	ret = r_debug_ptrace (dbg, PTRACE_CONT, tid, NULL, (r_ptrace_data_t)(size_t)contsig);
+	eprintf ("Continue: %d\n", tid);
+	if (ret == -1) {
+		r_sys_perror ("PTRACE_CONT");
+	}
+	// Continue threads that are stopped by the debugger to keep other signals
+	// by checking the siginfo.si_pid:
+	// - 0		= stopped by PTRACE_ATTACH
+	// - dbgpid = stopped by debugger
+	if (dbg->continue_all_threads && dbg->threads) {
 		RDebugPid *th;
 		RListIter *it;
-
-		if (list) {
-			r_list_foreach (list, it, th) {
-				if (th->pid) {
-					ret = r_debug_ptrace (dbg, PTRACE_CONT, th->pid, NULL, (r_ptrace_data_t)(size_t)contsig);
-					if (ret) {
-						perror ("PTRACE_CONT");
-					}
+		int dbgpid = getpid ();
+		r_list_foreach (dbg->threads, it, th) {
+			// Check if thread is already running
+			siginfo_t siginfo = { 0 };
+			ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, th->pid, 0, (r_ptrace_data_t)(size_t)&siginfo);
+			if (ret == -1) {
+				continue;
+			}
+			eprintf ("tid: %d si_signo: %d siginfo.si_pid: %d\n", th->pid, siginfo.si_signo, siginfo.si_pid);
+			if (siginfo.si_signo == SIGSTOP &&
+				(siginfo.si_pid == dbgpid || siginfo.si_pid == 0)) {
+				int status;
+				ret = waitpid (th->pid, &status, 0);
+				eprintf ("Consume: %d status %d\n", th->pid, WSTOPSIG (status));
+				if (ret != th->pid) {
+					eprintf ("Error: waitpid fails to consume SIGSTOP\n");
+					continue;
+				}
+				eprintf ("Continue: %d\n", th->pid);
+				ret = r_debug_ptrace (dbg, PTRACE_CONT, th->pid, 0, 0);
+				if (ret == -1) {
+					eprintf ("Error: %d is not traced or already running.\n", th->pid);
+					r_sys_perror ("PTRACE_CONT");
 				}
 			}
-		}
-	}
-	else {
-		ret = r_debug_ptrace (dbg, PTRACE_CONT, tid, NULL, (r_ptrace_data_t)(size_t)contsig);
-		if (ret) {
-			perror ("PTRACE_CONT");
 		}
 	}
 	//return ret >= 0 ? tid : false;
@@ -446,14 +463,6 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	}
 
 	reason = linux_dbg_wait (dbg, dbg->tid);
-	if (reason == R_DEBUG_REASON_EXIT_TID) {
-		RDebugInfo *r = r_debug_native_info (dbg, "");
-		if (r) {
-			eprintf ("(%d) Finished thread %d Exit code\n", r->pid, r->tid);
-			r_debug_info_free (r);
-		}
-	}
-
 	dbg->reason.type = reason;
 	return reason;
 }
