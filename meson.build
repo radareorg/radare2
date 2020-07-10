@@ -469,6 +469,15 @@ sdb_files = [
 
 sdb_inc = [platform_inc, include_directories('shlr/sdb/src')]
 
+# Create sdb_version.h
+r = run_command(py3_exe, 'sys/sdb_version.py', 'shlr/sdb/config.mk')
+if r.returncode() == 0
+  sdb_version = r.stdout().strip().split('\n')[0]
+else
+  sdb_version = 'unknown'
+endif
+run_command(py3_exe, '-c', 'with open("shlr/sdb/src/sdb_version.h", "w") as f: f.write("#define SDB_VERSION \"' + sdb_version + '\"")')
+
 sdb_inc_files = [
   'shlr/sdb/src/buffer.h',
   'shlr/sdb/src/cdb.h',
@@ -498,15 +507,6 @@ sdb_dep = declare_dependency(
   link_whole: libr2sdb,
   include_directories: sdb_inc
 )
-
-# Create sdb_version.h
-r = run_command(py3_exe, 'sys/sdb_version.py', 'shlr/sdb/config.mk')
-if r.returncode() == 0
-  sdb_version = r.stdout().strip().split('\n')[0]
-else
-  sdb_version = 'unknown'
-endif
-run_command(py3_exe, '-c', 'with open("shlr/sdb/src/sdb_version.h", "w") as f: f.write("#define SDB_VERSION \"' + sdb_version + '\"")')
 
 sdb_exe = executable('sdb', ['shlr/sdb/src/main.c'] + sdb_files,
   include_directories: [
