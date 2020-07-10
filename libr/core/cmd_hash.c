@@ -495,7 +495,7 @@ static int cmd_hash_bang (RCore *core, const char *input) {
 	int ac;
 	char **av = r_str_argv (input + 1, &ac);
 	if (ac > 0) {
-		RLangPlugin *p = r_lang_get_by_extension (core->lang, av[0]);
+		RLangPlugin *p = r_lang_get_by_name (core->lang, av[0]);
 		if (p) {
 			// I see no point in using r_lang_use here, as we already haz a ptr to the pluging in our handz
 			// Maybe add r_lang_use_plugin in r_lang api?
