@@ -28,6 +28,11 @@ R_API void r_core_annotated_code_print_json(RAnnotatedCode *code) {
 			pj_ks (pj, "type", "offset");
 			pj_kn (pj, "offset", annotation->offset.offset);
 			break;
+		case R_CODE_ANNOTATION_TYPE_FUNCTION_NAME:
+			pj_ks (pj, "type", "function_name");
+			pj_ks (pj, "name", annotation->function_name.name);
+			pj_kn (pj, "function_offset", annotation->function_name.offset);
+			break;
 		case R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT:
 			pj_ks (pj, "type", "syntax_highlight");
 			switch (annotation->syntax_highlight.type) {

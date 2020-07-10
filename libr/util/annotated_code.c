@@ -9,8 +9,16 @@ R_API RAnnotatedCode *r_annotated_code_new(char *code) {
 		return NULL;
 	}
 	r->code = code;
-	r_vector_init (&r->annotations, sizeof (RCodeAnnotation), NULL, NULL);
+	r_vector_init (&r->annotations, sizeof (RCodeAnnotation), r_annotation_free, NULL);
 	return r;
+}
+
+R_API void r_annotation_free(void *e, void *user) {
+	(void)user;
+	RCodeAnnotation *annotation = e;
+	if (annotation->type == R_CODE_ANNOTATION_TYPE_FUNCTION_NAME) {
+		free (annotation->function_name.name);
+	}
 }
 
 R_API void r_annotated_code_free(RAnnotatedCode *code) {
