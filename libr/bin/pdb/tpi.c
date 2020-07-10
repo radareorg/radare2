@@ -219,11 +219,17 @@ static void is_union_fwdref(void *type, int *is_fwdref) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// for some reason doesn't work for classes? so the class parsing is probably wrong TODO
 static void is_struct_class_fwdref(void *type, int *is_fwdref) {
 	STypeInfo *t = (STypeInfo *) type;
-	SLF_STRUCTURE *lf = (SLF_STRUCTURE *) t->type_info;
+	if (t->leaf_type == eLF_STRUCTURE) {
+		SLF_STRUCTURE *lf = (SLF_STRUCTURE *) t->type_info;
+		*is_fwdref = lf->prop.bits.fwdref;
+	} else { // eLF_CLASS
+		SLF_CLASS *lf = (SLF_CLASS *) t->type_info;
+		*is_fwdref = lf->prop.bits.fwdref;
+	}
 
-	*is_fwdref = lf->prop.bits.fwdref;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
