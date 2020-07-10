@@ -486,7 +486,7 @@ sdb_inc_files = [
   'shlr/sdb/src/sdb_version.h',
   'shlr/sdb/src/types.h'
 ]
-install_headers(sdb_files, install_dir: join_paths(r2_incdir, 'sdb'))
+install_headers(sdb_inc_files, install_dir: join_paths(r2_incdir, 'sdb'))
 
 libr2sdb = static_library('r2sdb', sdb_files,
   include_directories: sdb_inc,
