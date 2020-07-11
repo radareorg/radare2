@@ -133,7 +133,7 @@ static void parse_enum(const RAnal *anal, SType *type, RList *types) {
 	// would need restructuring to get the data out of it
 	char *type_name = NULL;
 	type_info->get_utype (type_info, &type);
-	if (type->type_data.type_info) {
+	if (type && type->type_data.type_info) {
 		SLF_BASE_TYPE *base_type = type->type_data.type_info;
 		type_name = base_type->type;
 	}

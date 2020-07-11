@@ -5,26 +5,18 @@
 static unsigned int base_idx = 0;
 static RList *p_types_list;
 
-static STypeInfo *create_type_info (ELeafType leaf_type, void *type_info) {
-	STypeInfo *type = R_NEW0 (STypeInfo);
-	if (!type) {
-		return NULL;
-	}
-	type->type_info = type_info;
-	type->leaf_type = leaf_type;
-	return type;
-}
 /**
  * @brief Parses base type if the idx represents one
  * 
  * @param idx 
- * @return STypeInfo* NULL if not a base_type
+ * @return STypeInfo, leaf_type = 0 -> error
  *  TODO add more types
  */
-static STypeInfo *parse_base_type(int idx) {
+static STypeInfo parse_base_type(int idx) {
+	STypeInfo type = { 0 };
 	SLF_BASE_TYPE *base_type = R_NEW0 (SLF_BASE_TYPE);
 	if (!base_type) {
-		return NULL;
+		return type;
 	}
 	switch (idx) {
 	case eT_NOTYPE: // uncharacterized type (no type)
@@ -127,9 +119,11 @@ static STypeInfo *parse_base_type(int idx) {
 		break;
 	default:
 		free (base_type);
-		return NULL;
+		return type;
 	}
-	return create_type_info (idx, base_type);
+	type.type_info = base_type;
+	type.leaf_type = idx;
+	return type;
 }
 
 static void print_base_type(EBASE_TYPES base_type, char **name) {
@@ -640,12 +634,17 @@ static int get_enum_utype(void *type, void **ret_type) {
 	SLF_ENUM *lf = (SLF_ENUM *) t->type_info;
 	int curr_idx = lf->utype;
 	// TODO, stopped here
-	STypeInfo *base_type = parse_base_type (curr_idx);
-	if (base_type) {
+	STypeInfo base_type = parse_base_type (curr_idx);
+	if (base_type.leaf_type) {
 		SType *base_ret_type = R_NEW0 (SType);
+		if (!base_ret_type) {
+			// TODO
+			*ret_type = 0;
+			return curr_idx;
+		}
 		base_ret_type->tpi_idx = 0;
 		base_ret_type->length = 0;
-		base_ret_type->type_data = *base_type;
+		base_ret_type->type_data = base_type;
 		*ret_type = base_ret_type;
 		return true; // check what are the return values used for
 	} else if (curr_idx < base_idx) {
