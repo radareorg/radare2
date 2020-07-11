@@ -142,7 +142,7 @@ static void parse_enum(const RAnal *anal, SType *type, RList *types) {
 		if (!enum_case) {
 			continue;
 			// TODO
-			goto cleanup;
+			// goto cleanup;
 		}
 		void *element = r_vector_push (&base_type->struct_data.members, enum_case);
 		if (!element) {
@@ -208,7 +208,7 @@ static void parse_structure(const RAnal *anal, SType *type, RList *types) {
 		if (!struct_member) {
 			continue;
 			// TODO
-			goto cleanup;
+			// goto cleanup;
 		}
 		void *element = r_vector_push (&base_type->struct_data.members, struct_member);
 		if (!element) {
