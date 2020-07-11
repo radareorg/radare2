@@ -5,6 +5,133 @@
 static unsigned int base_idx = 0;
 static RList *p_types_list;
 
+static STypeInfo *create_type_info (ELeafType leaf_type, void *type_info) {
+	STypeInfo *type = R_NEW0 (STypeInfo);
+	if (!type) {
+		return NULL;
+	}
+	type->type_info = type_info;
+	type->leaf_type = leaf_type;
+	return type;
+}
+/**
+ * @brief Parses base type if the idx represents one
+ * 
+ * @param idx 
+ * @return STypeInfo* NULL if not a base_type
+ *  TODO add more types
+ */
+static STypeInfo *parse_base_type(int idx) {
+	SLF_BASE_TYPE *base_type = R_NEW0 (SLF_BASE_TYPE);
+	if (!base_type) {
+		return NULL;
+	}
+	switch (idx) {
+	case eT_NOTYPE: // uncharacterized type (no type)
+	case eT_VOID: // void
+		break;
+	case eT_PVOID: // near ptr to void (2 bytes?)
+		base_type->size = 2;
+		base_type->type = strdup ("void *");
+		break;
+	case eT_PFVOID: // far ptr to void (4 bytes)
+	case eT_PHVOID: // huge ptr to void (4 bytes)
+	case eT_32PVOID:
+	case eT_32PFVOID:
+		base_type->size = 4;
+		base_type->type = strdup ("void *");
+		break;
+	case eT_64PVOID:
+		base_type->size = 8;
+		base_type->type = strdup ("void *");
+		break;
+
+	case eT_CHAR:
+		base_type->size = 1;
+		base_type->type = strdup ("char");
+		break;
+	case eT_PCHAR: // near
+		base_type->size = 2;
+		base_type->type = strdup ("char *");
+		break;
+	case eT_PFCHAR:
+	case eT_PHCHAR:
+	case eT_32PCHAR:
+	case eT_32PFCHAR:
+		base_type->size = 4;
+		base_type->type = strdup ("unsigned char *");
+		break;
+	case eT_64PCHAR:
+		base_type->size = 8;
+		base_type->type = strdup ("unsigned char *");
+		break;
+
+	case eT_UCHAR:
+		base_type->size = 1;
+		base_type->type = strdup ("unsigned char");
+		break;
+	case eT_PUCHAR:
+		base_type->size = 2;
+		base_type->type = strdup ("unsigned char *");
+		break;
+	case eT_PFUCHAR:
+	case eT_PHUCHAR:
+	case eT_32PUCHAR:
+	case eT_32PFUCHAR:
+		base_type->size = 4;
+		base_type->type = strdup ("unsigned char *");
+		break;
+	case eT_64PUCHAR:
+		base_type->size = 8;
+		base_type->type = strdup ("unsigned char *");
+		break;
+
+	case eT_LONG: 
+		base_type->size = 4;
+		base_type->type = strdup ("int32_t");
+		break;
+	case eT_PLONG: 
+		base_type->size = 2;
+		base_type->type = strdup ("int32_t *");
+		break;
+	case eT_PFLONG: 
+	case eT_PHLONG: 
+	case eT_32PLONG:
+	case eT_32PFLONG:
+		base_type->size = 4;
+		base_type->type = strdup ("int32_t *");
+		break;
+	case eT_64PLONG:
+		base_type->size = 8;
+		base_type->type = strdup ("int32_t *");
+		break;
+
+	case eT_ULONG:
+		base_type->size = 4;
+		base_type->type = strdup ("uint32_t");
+		break;
+	case eT_PULONG:
+		base_type->size = 2;
+		base_type->type = strdup ("uint32_t *");
+		break;
+	case eT_PFULONG:
+	case eT_PHULONG:
+	case eT_32PULONG:
+	case eT_32PFULONG:
+		base_type->size = 4;
+		base_type->type = strdup ("uint32_t *");
+		break;
+	case eT_64PULONG:
+		base_type->size = 8;
+		base_type->type = strdup ("uint32_t *");
+		break;
+	default:
+		free (base_type);
+		return NULL;
+	}
+	return create_type_info (idx, base_type);
+}
+
 static void print_base_type(EBASE_TYPES base_type, char **name) {
 	switch (base_type) {
 	case eT_32PINT4:
@@ -512,8 +639,16 @@ static int get_enum_utype(void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *) type;
 	SLF_ENUM *lf = (SLF_ENUM *) t->type_info;
 	int curr_idx = lf->utype;
-
-	if (curr_idx < base_idx) {
+	// TODO, stopped here
+	STypeInfo *base_type = parse_base_type (curr_idx);
+	if (base_type) {
+		SType *base_ret_type = R_NEW0 (SType);
+		base_ret_type->tpi_idx = 0;
+		base_ret_type->length = 0;
+		base_ret_type->type_data = *base_type;
+		*ret_type = base_ret_type;
+		return true; // check what are the return values used for
+	} else if (curr_idx < base_idx) {
 		*ret_type = 0;
 	} else {
 		curr_idx -= base_idx;

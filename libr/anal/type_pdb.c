@@ -24,7 +24,7 @@ static void enum_type_fini(void *e, void *user) {
 	free ((char *)cas->name);
 }
 // TODO delete
-static void debug_print_struct(const RAnalBaseType *base_type, const char *name) {
+static void debug_print_struct(const RAnalBaseType *base_type, const char *name, const int size) {
 	printf ("struct %s {\n", name);
 	RVector members = base_type->struct_data.members;
 	RAnalStructMember *member;
@@ -35,7 +35,7 @@ static void debug_print_struct(const RAnalBaseType *base_type, const char *name)
 }
 
 // TODO delete
-static void debug_print_union(const RAnalBaseType *base_type, const char *name) {
+static void debug_print_union(const RAnalBaseType *base_type, const char *name, const int size) {
 	printf ("union %s {\n", name);
 	RVector members = base_type->union_data.members;
 	RAnalUnionMember *member;
@@ -46,8 +46,8 @@ static void debug_print_union(const RAnalBaseType *base_type, const char *name) 
 }
 
 // TODO delete
-static void debug_print_enum(const RAnalBaseType *base_type, const char *name) {
-	printf ("enum %s {\n", name);
+static void debug_print_enum(const RAnalBaseType *base_type, const char *name, const char *type) {
+	printf ("enum %s { // type: %s\n", name, type);
 	RVector members = base_type->enum_data.cases;
 	RAnalEnumCase *enum_case;
 	r_vector_foreach (&members, enum_case) {
@@ -58,6 +58,8 @@ static void debug_print_enum(const RAnalBaseType *base_type, const char *name) {
 
 static RAnalStructMember *parse_member(STypeInfo *type_info, RList *types) {
 	r_return_val_if_fail (type_info && types, NULL);
+	r_return_val_if_fail (type_info->get_name && 
+	type_info->get_print_type, NULL);
 	// ignore LF_METHOD, LF_NESTTYPE, bitfields, etc for now
 	if (type_info->leaf_type != eLF_MEMBER) {
 		return NULL;
@@ -129,7 +131,12 @@ static void parse_enum(const RAnal *anal, SType *type, RList *types) {
 	// gets the underlying enum type, but the
 	// way the function is done is useless to use
 	// would need restructuring to get the data out of it
+	char *type_name = NULL;
 	type_info->get_utype (type_info, &type);
+	if (type->type_data.type_info) {
+		SLF_BASE_TYPE *base_type = type->type_data.type_info;
+		type_name = base_type->type;
+	}
 	type_info->get_members (type_info, &members);
 
 	r_vector_init (&base_type->enum_data.cases,
@@ -154,7 +161,7 @@ static void parse_enum(const RAnal *anal, SType *type, RList *types) {
 	// base_type->name = .....
 	// base_type->size = .....
 	// r_anal_save_base_type (base_type);
-	debug_print_enum (base_type, name);
+	debug_print_enum (base_type, name, type_name);
 cleanup:
 	// TODO
 	return;
@@ -217,10 +224,10 @@ static void parse_structure(const RAnal *anal, SType *type, RList *types) {
 	}
 	if (type_info->leaf_type == eLF_STRUCTURE || type_info == eLF_CLASS) {
 		base_type->kind = R_ANAL_BASE_TYPE_KIND_STRUCT;
-		debug_print_struct (base_type, name);
+		debug_print_struct (base_type, name, size);
 	} else { // union
 		base_type->kind = R_ANAL_BASE_TYPE_KIND_UNION;
-		debug_print_union (base_type, name);
+		debug_print_union (base_type, name, size);
 	}
 	// Waiting for DWARF PR merge to finish these
 	// base_type->name = .....

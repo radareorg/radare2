@@ -126,18 +126,18 @@ typedef get_value get_index_val;
 typedef get_value_name get_print_type_;
 
 typedef enum {
-	eT_NOTYPE =               0x00000000,
+	eT_NOTYPE =               0x00000000, // uncharacterized type (no type)
 	eT_ABS =                  0x00000001,
 	eT_SEGMENT =              0x00000002,
-	eT_VOID =                 0x00000003,
+	eT_VOID =                 0x00000003, // void
 
-	eT_HRESULT =              0x00000008,
+	eT_HRESULT =              0x00000008, // OLE/COM HRESULT
 	eT_32PHRESULT =           0x00000408,
 	eT_64PHRESULT =           0x00000608,
 
-	eT_PVOID =                0x00000103,
-	eT_PFVOID =               0x00000203,
-	eT_PHVOID =               0x00000303,
+	eT_PVOID =                0x00000103, // near ptr to void
+	eT_PFVOID =               0x00000203, // far ptr to void (4 bytes)
+	eT_PHVOID =               0x00000303, // huge ptr to void (4 bytes)
 	eT_32PVOID =              0x00000403,
 	eT_32PFVOID =             0x00000503,
 	eT_64PVOID =              0x00000603,
@@ -181,23 +181,23 @@ typedef enum {
 	eT_32PFWCHAR =            0x00000571,
 	eT_64PWCHAR =             0x00000671,
 
-	eT_INT1 =                 0x00000068,
-	eT_PINT1 =                0x00000168,
-	eT_PFINT1 =               0x00000268,
-	eT_PHINT1 =               0x00000368,
-	eT_32PINT1 =              0x00000468,
-	eT_32PFINT1 =             0x00000568,
-	eT_64PINT1 =              0x00000668,
+	eT_BYTE =                 0x00000068,
+	eT_PBYTE =                0x00000168,
+	eT_PFBYTE =               0x00000268,
+	eT_PHBYTE =               0x00000368,
+	eT_32PBYTE =              0x00000468,
+	eT_32PFBYTE =             0x00000568,
+	eT_64PBYTE =              0x00000668,
 
-	eT_UINT1 =                0x00000069,
-	eT_PUINT1 =               0x00000169,
-	eT_PFUINT1 =              0x00000269,
-	eT_PHUINT1 =              0x00000369,
-	eT_32PUINT1 =             0x00000469,
-	eT_32PFUINT1 =            0x00000569,
-	eT_64PUINT1 =             0x00000669,
+	eT_UBYTE =                0x00000069,
+	eT_PUBYTE =               0x00000169,
+	eT_PFUBYTE =              0x00000269,
+	eT_PHUBYTE =              0x00000369,
+	eT_32PUBYTE =             0x00000469,
+	eT_32PFUBYTE =            0x00000569,
+	eT_64PUBYTE =             0x00000669,
 
-	eT_SHORT =                0x00000011,
+	eT_SHORT =                0x00000011, // 16 bit short
 	eT_PSHORT =               0x00000111,
 	eT_PFSHORT =              0x00000211,
 	eT_PHSHORT =              0x00000311,
@@ -205,7 +205,7 @@ typedef enum {
 	eT_32PFSHORT =            0x00000511,
 	eT_64PSHORT =             0x00000611,
 
-	eT_USHORT =               0x00000021,
+	eT_USHORT =               0x00000021, // 16 bit short
 	eT_PUSHORT =              0x00000121,
 	eT_PFUSHORT =             0x00000221,
 	eT_PHUSHORT =             0x00000321,
@@ -213,23 +213,23 @@ typedef enum {
 	eT_32PFUSHORT =           0x00000521,
 	eT_64PUSHORT =            0x00000621,
 
-	eT_INT2 =                 0x00000072,
-	eT_PINT2 =                0x00000172,
-	eT_PFINT2 =               0x00000272,
-	eT_PHINT2 =               0x00000372,
-	eT_32PINT2 =              0x00000472,
-	eT_32PFINT2 =             0x00000572,
-	eT_64PINT2 =              0x00000672,
+	eT_INT16 =                 0x00000072, // 16 bit
+	eT_PINT16 =                0x00000172,
+	eT_PFINT16 =               0x00000272,
+	eT_PHINT16 =               0x00000372,
+	eT_32PINT16 =              0x00000472,
+	eT_32PFINT16 =             0x00000572,
+	eT_64PINT16 =              0x00000672,
 
-	eT_UINT2 =                0x00000073,
-	eT_PUINT2 =               0x00000173,
-	eT_PFUINT2 =              0x00000273,
-	eT_PHUINT2 =              0x00000373,
-	eT_32PUINT2 =             0x00000473,
-	eT_32PFUINT2 =            0x00000573,
-	eT_64PUINT2 =             0x00000673,
+	eT_UINT16 =                0x00000073, // 16 bit
+	eT_PUINT16 =               0x00000173,
+	eT_PFUINT16 =              0x00000273,
+	eT_PHUINT16 =              0x00000373,
+	eT_32PUINT16 =             0x00000473,
+	eT_32PFUINT16 =            0x00000573,
+	eT_64PUINT16 =             0x00000673,
 
-	eT_LONG =                 0x00000012,
+	eT_LONG =                 0x00000012, // 32 bit
 	eT_PLONG =                0x00000112,
 	eT_PFLONG =               0x00000212,
 	eT_PHLONG =               0x00000312,
@@ -309,21 +309,21 @@ typedef enum {
 	eT_32PFUOCT =             0x00000524,
 	eT_64PUOCT =              0x00000624,
 
-	eT_INT16 =                0x00000078,
-	eT_PINT16 =               0x00000178,
-	eT_PFINT16 =              0x00000278,
-	eT_PHINT16 =              0x00000378,
-	eT_32PINT16 =             0x00000478,
-	eT_32PFINT16 =            0x00000578,
-	eT_64PINT16 =             0x00000678,
+	eT_INT128 =                0x00000078,
+	eT_PINT128 =               0x00000178,
+	eT_PFINT128 =              0x00000278,
+	eT_PHINT128 =              0x00000378,
+	eT_32PINT128 =             0x00000478,
+	eT_32PFINT128 =            0x00000578,
+	eT_64PINT128 =             0x00000678,
 
-	eT_UINT16 =               0x00000079,
-	eT_PUINT16 =              0x00000179,
-	eT_PFUINT16 =             0x00000279,
-	eT_PHUINT16 =             0x00000379,
-	eT_32PUINT16 =            0x00000479,
-	eT_32PFUINT16 =           0x00000579,
-	eT_64PUINT16 =            0x00000679,
+	eT_UINT128 =               0x00000079,
+	eT_PUINT128 =              0x00000179,
+	eT_PFUINT128 =             0x00000279,
+	eT_PHUINT128 =             0x00000379,
+	eT_32PUINT128 =            0x00000479,
+	eT_32PFUINT128 =           0x00000579,
+	eT_64PUINT128 =            0x00000679,
 
 	eT_REAL32 =               0x00000040,
 	eT_PREAL32 =              0x00000140,
@@ -498,6 +498,12 @@ typedef enum {
 	eAccessMax
 } EACCESS;
 
+// Struct to represent base types
+typedef struct {
+	char *type;
+	ut32 size;
+	EBASE_TYPES base_type;
+} SLF_BASE_TYPE;
 //### CodeView bitfields and enums
 //# NOTE: Construct assumes big-endian
 //# ordering for BitStructs
