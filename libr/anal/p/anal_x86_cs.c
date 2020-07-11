@@ -1557,8 +1557,8 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 						esilprintf(op, "0xffffff00,eflags,&=,%s,%s,%%,eflags,|=,%s,%s,/,%s,=,0xff,eflags,&,%s,=,0xffffff00,eflags,&=,2,eflags,|=",
 							arg0, r_nume, arg0, r_nume, r_quot, r_rema);
 					} else {
-						esilprintf (op, "%s,%d,~,%d,%s,<<,%s,+,%%,%s,%d,~,%d,%s,<<,%s,+,/,%s,=,%s,=",
-								arg0, width*8, width*8, r_rema, r_nume, arg0, width*8, width*8, r_rema, r_nume, r_quot, r_rema);
+						esilprintf (op, "%d,%s,~,%d,%s,<<,%s,+,%%,%d,%s,~,%d,%s,<<,%s,+,/,%s,=,%s,=",
+								width*8, arg0, width*8, r_rema, r_nume, width*8, arg0, width*8, r_rema, r_nume, r_quot, r_rema);
 					}
 				}
 				else {
@@ -1567,7 +1567,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			} else {
 				// does this instruction even exist?
 				int width = INSOP(0).size;
-				esilprintf (op, "%s,%d,~,%s,%d,~,/,%s,=", arg2, width*8, arg1, width*8, arg0);
+				esilprintf (op, "%d,%s,~,%d,%s,~,/,%s,=", width*8, arg2, width*8, arg1, arg0);
 			}
 		}
 		break;
@@ -1597,10 +1597,10 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			int width = INSOP(0).size;
 			if (arg2) {
 				// flags and sign have been handled
-				esilprintf (op, "%s,%d,~,%s,%d,~,*,DUP,%s,=,%s,-,?{,1,1,}{,0,0,},cf,:=,of,:=", arg2, width*8, arg1, width*8, arg0, arg0);
+				esilprintf (op, "%d,%s,~,%d,%s,~,*,DUP,%s,=,%s,-,?{,1,1,}{,0,0,},cf,:=,of,:=", width*8, arg2, width*8, arg1, arg0, arg0);
 			} else {
 				if (arg1) {
-					esilprintf (op, "%s,%d,~,%s,%d,~,*,DUP,%s,=,%s,-,?{,1,1,}{,0,0,},cf,:=,of,:=", arg0, width*8, arg1, width*8, arg0, arg0);
+					esilprintf (op, "%d,%s,~,%d,%s,~,*,DUP,%s,=,%s,-,?{,1,1,}{,0,0,},cf,:=,of,:=", width*8, arg0, width*8, arg1, arg0, arg0);
 				} else {
 					if (arg0) {
 						const char *r_quot = (width==1)?"al": (width==2)?"ax": (width==4)?"eax":"rax";
@@ -1612,8 +1612,8 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 								arg0, r_nume, arg0, r_nume, r_quot, r_rema);
 						} else {
 							// this got a little bit crazy, 
-							esilprintf (op, "%d,%s,%d,~,%s,%d,~,*,>>,%s,=,%s,%s,*=,%d,%s,%d,~,>>,%s,-,?{,1,1,}{,0,0,},cf,:=,of,:=",
-									width*8, arg0, width*8, r_nume, width*8, r_rema, arg0, r_nume, width*8, r_nume, width*8, r_rema);
+							esilprintf (op, "%d,%d,%s,~,%d,%s,~,*,>>,%s,=,%s,%s,*=,%d,%d,%s,~,>>,%s,-,?{,1,1,}{,0,0,},cf,:=,of,:=",
+									width*8, width*8, arg0, width*8, r_nume, r_rema, arg0, r_nume, width*8, width*8, r_nume, r_rema);
 						}
 					}
 					else {
