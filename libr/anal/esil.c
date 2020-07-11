@@ -547,29 +547,27 @@ R_API int r_anal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, 
 // sign extension operator for use in idiv, imul, movsx* 
 // and other instructions involving signed values
 static bool esil_signext(RAnalEsil *esil) {
-	ut64 src_bit, dst;
+	ut64 src, dst;
 
-	char *p_src_bit = r_anal_esil_pop (esil);
-
-	if (!p_src_bit) {
+	char *p_src = r_anal_esil_pop (esil);
+	if (!p_src) {
 		return false;
 	}
 
 	if (r_anal_esil_get_parm_type (
-		esil, p_src_bit) != R_ANAL_ESIL_PARM_NUM) {
-		free (p_src_bit);
+		esil, p_src) != R_ANAL_ESIL_PARM_NUM) {
+		free (p_src);
 		return false;
 	}
 
-	if (!r_anal_esil_get_parm (esil, p_src_bit, &src_bit)) {
+	if (!r_anal_esil_get_parm (esil, p_src, &src)) {
 		ERR ("esil_of: empty stack");
-		free (p_src_bit);
+		free (p_src);
 		return false;
 	}
-	free (p_src_bit);
+	free (p_src);
 
 	char *p_dst = r_anal_esil_pop (esil);
-
 	if (!p_dst) {
 		return false;
 	}
@@ -581,11 +579,11 @@ static bool esil_signext(RAnalEsil *esil) {
 	}
 	free (p_dst);
 
-	ut64 m = 1U << (src_bit - 1);
+	ut64 m = 1U << (dst - 1);
 	// dst = (dst & ((1U << src_bit) - 1)); // clear upper bits
-	dst = ((dst ^ m) - m); // sign-extended
+	src = ((src ^ m) - m); // sign-extended
 
-	return r_anal_esil_pushnum (esil, dst);
+	return r_anal_esil_pushnum (esil, src);
 }
 
 static bool esil_zf(RAnalEsil *esil) {
