@@ -136,11 +136,7 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char
 
 	int itmidx = -1;
 	dbg->creg = NULL;
-	if (type == R_REG_TYPE_ALL) {
-		head = dbg->reg->allregs;
-	} else {
-		head = r_reg_get_list (dbg->reg, type);
-	}
+	head = r_reg_get_list (dbg->reg, type);
 	if (!head) {
 		return false;
 	}

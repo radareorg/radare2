@@ -107,6 +107,27 @@ orax
 EOF
 RUN
 
+NAME=drt flg
+FILE=bins/elf/sse2-add
+ARGS=-d
+CMDS=<<EOF
+drt flg~[0]
+EOF
+EXPECT=<<EOF
+rflags
+eflags
+cf
+pf
+af
+zf
+sf
+tf
+if
+df
+of
+EOF
+RUN
+
 NAME=drt all
 FILE=bins/elf/sse2-add
 ARGS=-d
