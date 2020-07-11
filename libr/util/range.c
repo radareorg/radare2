@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2020 pancake<nopcode.org> */
 
 #include <r_util.h>
 
@@ -8,7 +8,7 @@
 
 //void (*ranges_new_callback)(struct range_t *r) = NULL;
 
-R_API RRange *r_range_new() {
+R_API RRange *r_range_new(void) {
 	RRange *r = R_NEW0 (RRange);
 	if (r) {
 		r->count = r->changed = 0;

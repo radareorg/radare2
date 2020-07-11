@@ -86,7 +86,7 @@ static int read_ahead(RAnal *anal, ut64 addr, ut8 *buf, int len) {
 }
 #endif
 
-R_API void r_anal_fcn_invalidate_read_ahead_cache() {
+R_API void r_anal_fcn_invalidate_read_ahead_cache(void) {
 #if READ_AHEAD
 	cache_addr = UT64_MAX;
 #endif
@@ -344,11 +344,14 @@ static RAnalBlock *bbget(RAnal *anal, ut64 addr, bool jumpmid) {
 	return ret;
 }
 
-static bool fcn_takeover_block_recursive_cb(RAnalBlock *block, void *user) {
+static bool fcn_takeover_block_recursive_followthrough_cb(RAnalBlock *block, void *user) {
 	RAnalFunction *our_fcn = user;
 	r_anal_block_ref (block);
 	while (!r_list_empty (block->fcns)) {
 		RAnalFunction *other_fcn = r_list_first (block->fcns);
+		if (other_fcn->addr == block->addr) {
+			return false;
+		}
 		r_anal_function_remove_block (other_fcn, block);
 	}
 	r_anal_function_add_block (our_fcn, block);
@@ -358,7 +361,7 @@ static bool fcn_takeover_block_recursive_cb(RAnalBlock *block, void *user) {
 
 // Remove block and all of its recursive successors from all its functions and add them only to fcn
 static void fcn_takeover_block_recursive(RAnalFunction *fcn, RAnalBlock *start_block) {
-	r_anal_block_recurse (start_block, fcn_takeover_block_recursive_cb, fcn);
+	r_anal_block_recurse_followthrough (start_block, fcn_takeover_block_recursive_followthrough_cb, fcn);
 }
 
 static const char *retpoline_reg(RAnal *anal, ut64 addr) {
@@ -398,6 +401,15 @@ static void analyze_retpoline(RAnal *anal, RAnalOp *op) {
 	}
 }
 
+static inline bool op_is_set_bp(RAnalOp *op, const char *bp_reg, const char *sp_reg) {
+	bool has_dst_reg = op->dst && op->dst->reg && op->dst->reg->name;
+	bool has_src_reg = op->src[0] && op->src[0]->reg && op->src[0]->reg->name;
+	if (has_dst_reg && has_src_reg) {
+		return !strcmp (bp_reg, op->dst->reg->name) && !strcmp (sp_reg, op->src[0]->reg->name);
+	}
+	return false;
+}
+
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
 	const int continue_after_jump = anal->opt.afterjmp;
 	const int addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1;
@@ -421,6 +433,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		0
 	};
 	bool is_arm = anal->cur->arch && !strncmp (anal->cur->arch, "arm", 3);
+	bool is_riscv = anal->cur->arch && !strcmp (anal->cur->arch, "riscv");
 	char tmp_buf[MAX_FLG_NAME_SIZE + 5] = "skip";
 	bool is_x86 = is_arm ? false: anal->cur->arch && !strncmp (anal->cur->arch, "x86", 3);
 	bool is_amd64 = is_x86 ? fcn->cc && !strcmp (fcn->cc, "amd64") : false;
@@ -430,6 +443,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		variadic_reg = r_reg_get (anal->reg, "rax", R_REG_TYPE_GPR);
 	}
 	bool has_variadic_reg = !!variadic_reg;
+	const char *bp_reg = anal->reg->name[R_REG_NAME_BP];
+	const char *sp_reg = anal->reg->name[R_REG_NAME_SP];
+	bool has_stack_regs = bp_reg && sp_reg;
 
 	if (r_cons_is_breaked ()) {
 		return R_ANAL_RET_END;
@@ -720,9 +736,6 @@ repeat:
 		default:
 			break;
 		}
-		if (anal->opt.vars && !varset) {
-			r_anal_extract_vars (anal, fcn, &op);
-		}
 		if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
 			// swapped parameters wtf
 			r_anal_xrefs_set (anal, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA);
@@ -737,6 +750,9 @@ repeat:
 				if (!r_str_cmp (esil, "pc,lr,=", -1)) {
 					last_is_mov_lr_pc = true;
 				}
+			}
+			if (has_stack_regs && op_is_set_bp (&op, bp_reg, sp_reg)) {
+				fcn->bp_off = fcn->stack;
 			}
 			// Is this a mov of immediate value into a register?
 			if (op.dst && op.dst->reg && op.dst->reg->name && op.val > 0 && op.val != UT64_MAX) {
@@ -778,6 +794,9 @@ repeat:
 					pair->op_addr = op.addr;
 					pair->leaddr = op.ptr; // XXX movdisp is dupped but seems to be trashed sometimes(?), better track leaddr separately
 					r_list_append (anal->leaddrs, pair);
+				}
+				if (has_stack_regs && op_is_set_bp (&op, bp_reg, sp_reg)) {
+					fcn->bp_off = fcn->stack - op.src[0]->delta;
 				}
 				if (op.dst && op.dst->reg && op.dst->reg->name && op.ptr > 0 && op.ptr != UT64_MAX) {
 					free (last_reg_mov_lea_name);
@@ -1160,6 +1179,21 @@ analopfinish:
 				gotoBeach (R_ANAL_RET_END);
 			}
 			break;
+		}
+		if (has_stack_regs && (is_arm || is_riscv)) {
+			if (op_is_set_bp (&op, bp_reg, sp_reg) && op.src[1]) {
+				switch (op.type & R_ANAL_OP_TYPE_MASK) {
+				case R_ANAL_OP_TYPE_ADD:
+					fcn->bp_off = fcn->stack - op.src[1]->imm;
+					break;
+				case R_ANAL_OP_TYPE_SUB:
+					fcn->bp_off = fcn->stack + op.src[1]->imm;
+					break;
+				}
+			}
+		}
+		if (anal->opt.vars && !varset) {
+			r_anal_extract_vars (anal, fcn, &op);
 		}
 		if (op.type != R_ANAL_OP_TYPE_MOV && op.type != R_ANAL_OP_TYPE_CMOV && op.type != R_ANAL_OP_TYPE_LEA) {
 			last_is_reg_mov_lea = false;
@@ -1828,14 +1862,12 @@ static void __anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 			}
 			switch (op.type) {
 			case R_ANAL_OP_TYPE_MOV:
+			case R_ANAL_OP_TYPE_LEA:
 				if (can_affect_bp (anal, &op) && op.src[0] && op.src[0]->reg && op.src[0]->reg->name
 				&& strcmp (op.src[0]->reg->name, anal->reg->name[R_REG_NAME_SP])) {
 					fcn->bp_frame = false;
-				}
-				break;
-			case R_ANAL_OP_TYPE_LEA:
-				if (can_affect_bp (anal, &op)) {
-					fcn->bp_frame = false;
+					r_anal_op_fini (&op);
+					return;
 				}
 				break;
 			case R_ANAL_OP_TYPE_ADD:
@@ -1855,12 +1887,16 @@ static void __anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
  				pos = op.opex.ptr ? strstr (op.opex.ptr, str_to_find) : NULL;
 				if (pos && pos - op.opex.ptr < 60) {
 					fcn->bp_frame = false;
+					r_anal_op_fini (&op);
+					return;
 				}
 				break;
 			case R_ANAL_OP_TYPE_XCHG:
 				if (op.opex.ptr && strstr (op.opex.ptr, str_to_find)) {
 					fcn->bp_frame = false;
-    				}
+					r_anal_op_fini (&op);
+					return;
+    			}
 				break;
 			case R_ANAL_OP_TYPE_POP:
 				break;
@@ -1877,5 +1913,5 @@ static void __anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 
 R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
 	r_return_if_fail (fcn);
-	return __anal_fcn_check_bp_use (fcn->anal, fcn);
+	__anal_fcn_check_bp_use (fcn->anal, fcn);
 }

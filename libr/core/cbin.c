@@ -169,10 +169,22 @@ R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
 		eprintf ("Invalid char found in filename\n");
 		return false;
 	}
-	// TODO use the RBin API, not cmdf()
-	// r_core_bin_export_info_rad (core);
-	r_core_cmdf (core, "\".!rabin2 -rk. %s\"", file);
-	return true;
+	RBinOptions opt = { 0 };
+	r_bin_open (core->bin, file, &opt);
+	RBinFile *bf = r_bin_cur (core->bin);
+	r_cons_push ();
+	r_core_bin_export_info_rad (core);
+	r_cons_filter ();
+	const char *s = r_cons_get_buffer ();
+	char *res = R_STR_ISNOTEMPTY (s)? strdup (s): NULL;
+	int r = -1;
+	r_cons_pop ();
+	if (res) {
+		r = r_core_cmd_lines (core, res);
+		free (res);
+	}
+	r_bin_file_delete (core->bin, bf->id);
+	return r > 0;
 }
 
 R_API int r_core_bin_set_by_name(RCore *core, const char * name) {
@@ -896,11 +908,13 @@ static int bin_dwarf(RCore *core, int mode) {
 		// TODO: complete and speed-up support for dwarf
 		RBinDwarfDebugAbbrev *da = NULL;
 		da = r_bin_dwarf_parse_abbrev (core->bin, mode);
-		r_bin_dwarf_parse_info (da, core->bin, mode);
+		RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (da, core->bin, mode);
+		// dig types out of into and then free
+		r_bin_dwarf_free_debug_info (info);
+		
 		r_bin_dwarf_parse_aranges (core->bin, mode);
 		list = ownlist = r_bin_dwarf_parse_line (core->bin, mode);
 		r_bin_dwarf_free_debug_abbrev (da);
-		free (da);
 	}
 	if (!list) {
 		return false;
@@ -1313,10 +1327,10 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 static const char *bin_reloc_type_name(RBinReloc *reloc) {
 #define CASE(T) case R_BIN_RELOC_ ## T: return reloc->additive ? "ADD_" #T : "SET_" #T
 	switch (reloc->type) {
-		CASE(8);
-		CASE(16);
-		CASE(32);
-		CASE(64);
+	CASE(8);
+	CASE(16);
+	CASE(32);
+	CASE(64);
 	}
 	return "UNKNOWN";
 #undef CASE
@@ -1325,10 +1339,10 @@ static const char *bin_reloc_type_name(RBinReloc *reloc) {
 static ut8 bin_reloc_size(RBinReloc *reloc) {
 #define CASE(T) case R_BIN_RELOC_ ## T: return (T) / 8
 	switch (reloc->type) {
-		CASE(8);
-		CASE(16);
-		CASE(32);
-		CASE(64);
+	CASE(8);
+	CASE(16);
+	CASE(32);
+	CASE(64);
 	}
 	return 0;
 #undef CASE
@@ -2204,8 +2218,9 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 				free (fnp);
 			}
 			if (sn.demname) {
+				ut64 size = symbol->size? symbol->size: 1;
 				r_meta_set (r->anal, R_META_TYPE_COMMENT,
-							addr, symbol->size, sn.demname);
+							addr, size, sn.demname);
 			}
 			r_flag_space_pop (r->flags);
 		} else if (IS_MODE_JSON (mode)) {
@@ -2351,7 +2366,7 @@ next:
 
 static char *build_hash_string(int mode, const char *chksum, ut8 *data, ut32 datalen) {
 	char *chkstr = NULL, *aux, *ret = NULL;
-	RList *hashlist = r_str_split_duplist (chksum, ",");
+	RList *hashlist = r_str_split_duplist (chksum, ",", true);
 	RListIter *iter;
 	char *hashname;
 	r_list_foreach (hashlist, iter, hashname) {
@@ -2381,7 +2396,7 @@ static char *filter_hash_string(const char *chksum) {
 
 	char *aux, *ret = NULL;
 	bool isFirst = true;
-	RList *hashlist = r_str_split_duplist (chksum, ",");
+	RList *hashlist = r_str_split_duplist (chksum, ",", true);
 	RListIter *iter;
 	char *hashname;
 	r_list_foreach (hashlist, iter, hashname) {

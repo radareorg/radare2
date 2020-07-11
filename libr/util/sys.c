@@ -20,6 +20,10 @@
 #  define FREEBSD_WITH_BACKTRACE
 # endif
 #endif
+#if defined(__HAIKU__)
+# include <kernel/image.h>
+# include <sys/param.h>
+#endif
 #include <sys/types.h>
 #include <r_types.h>
 #include <r_util.h>
@@ -131,7 +135,7 @@ static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
     {NULL, 0}
 };
 
-R_API int r_sys_fork() {
+R_API int r_sys_fork(void) {
 #if HAVE_FORK
 #if __WINDOWS__
 	return -1;
@@ -660,6 +664,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 		}
 		// we should handle broken pipes somehow better
 		r_sys_signal (SIGPIPE, SIG_IGN);
+		size_t err_len = 0, out_len = 0;
 		for (;;) {
 			fd_set rfds, wfds;
 			int nfd;
@@ -680,20 +685,29 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 				break;
 			}
 			if (output && FD_ISSET (sh_out[0], &rfds)) {
-				if (!(bytes = read (sh_out[0], buffer, sizeof (buffer)-1))) {
+				if ((bytes = read (sh_out[0], buffer, sizeof (buffer))) < 1) {
 					break;
 				}
-				buffer[sizeof (buffer) - 1] = '\0';
-				if (len) {
-					*len += bytes;
+				char *tmp = realloc (outputptr, out_len + bytes + 1);
+				if (!tmp) {
+					R_FREE (outputptr);
+					break;
 				}
-				outputptr = r_str_append (outputptr, buffer);
+				outputptr = tmp;
+				memcpy (outputptr + out_len, buffer, bytes);
+				out_len += bytes;
 			} else if (FD_ISSET (sh_err[0], &rfds) && sterr) {
-				if (!read (sh_err[0], buffer, sizeof (buffer)-1)) {
+				if ((bytes = read (sh_err[0], buffer, sizeof (buffer))) < 1) {
 					break;
 				}
-				buffer[sizeof (buffer) - 1] = '\0';
-				*sterr = r_str_append (*sterr, buffer);
+				char *tmp = realloc (*sterr, err_len + bytes + 1);
+				if (!tmp) {
+					R_FREE (*sterr);
+					break;
+				}
+				*sterr = tmp;
+				memcpy (*sterr + err_len, buffer, bytes);
+				err_len += bytes;
 			} else if (FD_ISSET (sh_in[1], &wfds) && inputptr && *inputptr) {
 				int inputptr_len = strlen (inputptr);
 				bytes = write (sh_in[1], inputptr, inputptr_len);
@@ -727,6 +741,15 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 			ret = false;
 		}
 
+		if (len) {
+			*len = out_len;
+		}
+		if (*sterr) {
+			(*sterr)[err_len] = 0;
+		}
+		if (outputptr) {
+			outputptr[out_len] = 0;
+		}
 		if (output) {
 			*output = outputptr;
 		} else {
@@ -747,7 +770,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 }
 #endif
 
-R_API int r_sys_cmdf (const char *fmt, ...) {
+R_API int r_sys_cmdf(const char *fmt, ...) {
 	int ret;
 	char cmd[4096];
 	va_list ap;
@@ -829,7 +852,7 @@ R_API bool r_sys_mkdirp(const char *dir) {
 	{
 		char *p = strstr (ptr, ":\\");
 		if (p) {
-			ptr = p + 2;
+			ptr = p + 3;
 		}
 	}
 #endif
@@ -1156,6 +1179,22 @@ R_API char *r_sys_pid_to_path(int pid) {
 	if (ret != 0) {
 		return NULL;
 	}
+#elif __HAIKU__
+	char pathbuf[MAXPATHLEN];
+	int32_t group = 0;
+	image_info ii;
+
+	while (get_next_image_info (0, &group, &ii) == B_OK) {
+		if (ii.type == B_APP_IMAGE) {
+			break;
+		}
+	}
+
+	if (ii.type == B_APP_IMAGE) {
+		r_str_ncpy (pathbuf, ii.name, MAXPATHLEN);
+	} else {
+		pathbuf[0] = '\0';
+	}
 #else
 	char buf[128], pathbuf[1024];
 	snprintf (buf, sizeof (buf), "/proc/%d/exe", pid);
@@ -1170,7 +1209,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 }
 
 // TODO: rename to r_sys_env_init()
-R_API char **r_sys_get_environ () {
+R_API char **r_sys_get_environ (void) {
 #if __APPLE__ && !HAVE_ENVIRON
 	env = *_NSGetEnviron();
 #else
@@ -1198,7 +1237,7 @@ R_API char *r_sys_whoami (char *buf) {
 	return hasbuf? buf: strdup (buf);
 }
 
-R_API int r_sys_getpid() {
+R_API int r_sys_getpid(void) {
 #if __UNIX__
 	return getpid ();
 #elif __WINDOWS__

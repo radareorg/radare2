@@ -1,4 +1,4 @@
-/* Copyright (C) 2008-2018 - pancake, unlogic, emvivre */
+/* Copyright (C) 2008-2020 - pancake, unlogic, emvivre */
 
 #include <r_flag.h>
 #include <r_core.h>
@@ -644,6 +644,16 @@ static int opneg(RAsm *a, ut8 * data, const Opcode *op) {
         return l;
     }
     return -1;
+}
+
+static int endbr64(RAsm *a, ut8 * data, const Opcode *op) {
+	memcpy (data, "\xf3\x0f\x1e\xfa", 4);
+	return 4;
+}
+
+static int endbr32(RAsm *a, ut8 * data, const Opcode *op) {
+	memcpy (data, "\xf3\x0f\x1e\xfb", 4);
+	return 4;
 }
 
 static int opnot(RAsm *a, ut8 * data, const Opcode *op) {
@@ -4268,6 +4278,8 @@ LookupTable oplookup[] = {
 	{"dec", 0, &opdec, 0},
 	{"div", 0, &opdiv, 0},
 	{"emms", 0, NULL, 0x0f77, 2},
+	{"endbr32", 0, endbr32, 0},
+	{"endbr64", 0, endbr64, 0},
 	{"f2xm1", 0, NULL, 0xd9f0, 2},
 	{"fabs", 0, NULL, 0xd9e1, 2},
 	{"fadd", 0, &opfadd, 0},

@@ -16,7 +16,6 @@ r_util_sources = [
   'cache.c',
   'calc.c',
   'chmod.c',
-  'constr.c',
   'debruijn.c',
   'udiff.c',
   'event.c',
@@ -66,7 +65,6 @@ r_util_sources = [
   'thread_lock.c',
   'thread_cond.c',
   'thread_pipe.c',
-  'tinyrange.c',
   'tree.c',
   'pj.c',
   'ubase64.c',
@@ -81,10 +79,11 @@ r_util_sources = [
   'protobuf.c',
   'regex/regcomp.c',
   'regex/regexec.c',
-  'regex/regerror.c'
+  'regex/regerror.c',
+  'annotated_code.c'
 ]
 
-r_util_deps = [ldl, mth, pth, utl, sdb_dep, zlib_dep, platform_deps]
+r_util_deps = [ldl, mth, spp_dep, pth, utl, sdb_dep, zlib_dep, platform_deps]
 if host_machine.system().startswith('freebsd') or host_machine.system().startswith('netbsd')
   # backtrace_symbols_fd requires -lexecinfo
   r_util_deps += [cc.find_library('execinfo')]
@@ -107,7 +106,8 @@ r_util = library('r_util', r_util_sources,
 )
 
 r_util_dep = declare_dependency(link_with: r_util,
-                                include_directories: platform_inc)
+                                include_directories: platform_inc,
+                                dependencies: r_util_deps)
 
 pkgconfig_mod.generate(r_util,
   subdirs: 'libr',

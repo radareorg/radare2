@@ -1,10 +1,11 @@
 ifeq (${_INCLUDE_MK_GCC_},)
 _INCLUDE_MK_GCC_=1
 CC?=gcc
-OBJCOPY=objcopy
-RANLIB=ranlib
+OBJCOPY?=objcopy
+RANLIB?=ranlib
 ONELIB=0
-CC_AR=ar q ${LIBAR}
+AR?=ar
+CC_AR=${AR} q ${LIBAR}
 CFLAGS+=-MD
 CFLAGS_INCLUDE=-I
 LDFLAGS_LINK=-l

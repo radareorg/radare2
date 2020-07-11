@@ -282,7 +282,8 @@ typedef struct r_anal_function_t {
 	ut64 addr;
 	RPVector vars;
 	HtUP/*<st64, RPVector<RAnalVar *>>*/ *inst_vars; // offset of instructions => the variables they access
-	int stack; //stack frame size
+	st64 bp_off; // offset of bp inside owned stack frame
+	st64 stack;  // stack frame size
 	int maxstack;
 	int ninstr;
 	bool folded;
@@ -557,6 +558,7 @@ typedef struct r_anal_options_t {
 	int depth;
 	int graph_depth;
 	bool vars; //analyze local var and arguments
+	bool varname_stack; // name vars based on their offset in the stack
 	int cjmpref;
 	int jmpref;
 	int jmpabove;
@@ -596,24 +598,22 @@ typedef struct r_anal_hint_cb_t {
 } RHintCb;
 
 typedef struct r_anal_t {
-	char *cpu;
-	char *os;
-	int bits;
-	int lineswidth; // wtf
-	int big_endian;
-	int sleep; // sleep some usecs before analyzing more (avoid 100% cpu usages)
-	RAnalCPPABI cpp_abi;
+	char *cpu;      // anal.cpu
+	char *os;       // asm.os
+	int bits;       // asm.bits
+	int lineswidth; // asm.lines.width
+	int big_endian; // cfg.bigendian
+	int sleep;      // anal.sleep, sleep some usecs before analyzing more (avoid 100% cpu usages)
+	RAnalCPPABI cpp_abi; // anal.cpp.abi
 	void *user;
-	ut64 gp; // global pointer. used for mips. but can be used by other arches too in the future
+	ut64 gp;        // anal.gp, global pointer. used for mips. but can be used by other arches too in the future
 	RBTree bb_tree; // all basic blocks by address. They can overlap each other, but must never start at the same address.
 	RList *fcns;
 	HtUP *ht_addr_fun; // address => function
 	HtPP *ht_name_fun; // name => function
-	RList *refs;
 	RReg *reg;
 	ut8 *last_disasm_reg;
 	RSyscall *syscall;
-	struct r_anal_op_t *queued;
 	int diff_ops;
 	double diff_thbb;
 	double diff_thfcn;
@@ -624,34 +624,26 @@ typedef struct r_anal_t {
 	RFlagSet flg_fcn_set;
 	RBinBind binb; // Set only from core when an analysis plugin is called.
 	RCoreBind coreb;
-	int maxreflines;
-	int trace;
-	int esil_goto_limit;
-	int pcalign;
-	int bitshift;
-	//struct r_anal_ctx_t *ctx;
+	int maxreflines; // asm.lines.maxref
+	int esil_goto_limit; // esil.gotolimit
+	int pcalign; // asm.pcalign
 	struct r_anal_esil_t *esil;
 	struct r_anal_plugin_t *cur;
-	RAnalRange *limit;
+	RAnalRange *limit; // anal.from, anal.to
 	RList *plugins;
 	Sdb *sdb_types;
 	Sdb *sdb_fmts;
 	Sdb *sdb_zigns;
 	HtUP *dict_refs;
 	HtUP *dict_xrefs;
-	bool recursive_noreturn;
+	bool recursive_noreturn; // anal.rnr
 	RSpaces zign_spaces;
-	char *zign_path;
+	char *zign_path; // dir.zigns
 	PrintfCallback cb_printf;
 	//moved from RAnalFcn
 	Sdb *sdb; // root
 	Sdb *sdb_fcns;
 	Sdb *sdb_pins;
-#define DEPRECATE 1
-#if DEPRECATE
-	Sdb *sdb_args;  //
-	Sdb *sdb_vars; // globals?
-#endif
 	HtUP/*<RVector<RAnalAddrHintRecord>>*/ *addr_hints; // all hints that correspond to a single address
 	RBTree/*<RAnalArchHintRecord>*/ arch_hints;
 	RBTree/*<RAnalArchBitsRecord>*/ bits_hints;
@@ -768,8 +760,9 @@ typedef enum {
 } RAnalVarAccessType;
 
 typedef struct r_anal_var_access_t {
+	const char *reg; // register used for access
 	st64 offset; // relative to the function's entrypoint
-	st64 stackptr;
+	st64 stackptr; // delta added to register to get the var, e.g. [rbp - 0x10]
 	ut8 type; // RAnalVarAccessType bits
 } RAnalVarAccess;
 
@@ -1374,12 +1367,17 @@ R_API void r_anal_blocks_foreach_intersect(RAnal *anal, ut64 addr, ut64 size, RA
 R_API RList *r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size); // values from r_anal_blocks_foreach_intersect as a list
 
 // Call cb on every direct successor address of block
-// returns false iff the loop was breaked by cb
+// returns false if the loop was breaked by cb
 R_API bool r_anal_block_successor_addrs_foreach(RAnalBlock *block, RAnalAddrCb cb, void *user);
 
 // Call cb on block and every (recursive) successor of it
-// returns false iff the loop was breaked by cb
+// returns false if the loop was breaked by cb
 R_API bool r_anal_block_recurse(RAnalBlock *block, RAnalBlockCb cb, void *user);
+
+// Call cb on block and every (recursive) successor of it
+// If cb returns false, recursion stops only for that block
+// returns false if the loop was breaked by cb
+R_API bool r_anal_block_recurse_followthrough(RAnalBlock *block, RAnalBlockCb cb, void *user);
 
 // same as r_anal_block_recurse, but returns the blocks as a list
 R_API RList *r_anal_block_recurse_list(RAnalBlock *block);
@@ -1588,7 +1586,7 @@ R_API int r_anal_fcn_var_del_byindex (RAnal *a, ut64 fna, const char kind, int s
 R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type);
 
 /* vars // globals. not here  */
-R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *type);
+R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var);
 
 R_API int r_anal_function_complexity(RAnalFunction *fcn);
 R_API int r_anal_function_loops(RAnalFunction *fcn);
@@ -1635,6 +1633,7 @@ R_API void r_anal_function_delete_vars_by_kind(RAnalFunction *fcn, RAnalVarKind 
 R_API void r_anal_function_delete_all_vars(RAnalFunction *fcn);
 R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn);
 R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, st64 delta, ut64 addr);
+R_API const char *r_anal_function_get_var_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr);
 R_API R_BORROW RPVector *r_anal_function_get_vars_used_at(RAnalFunction *fcn, ut64 op_addr);
 
 // There could be multiple vars used in multiple functions. Use r_anal_get_functions_in()+r_anal_function_get_vars_used_at() instead.
@@ -1644,7 +1643,7 @@ R_API bool r_anal_var_rename(RAnalVar *var, const char *new_name, bool verbose);
 R_API void r_anal_var_set_type(RAnalVar *var, const char *type);
 R_API void r_anal_var_delete(RAnalVar *var);
 R_API ut64 r_anal_var_addr(RAnalVar *var);
-R_API void r_anal_var_set_access(RAnalVar *var, ut64 access_addr, int access_type, st64 stackptr);
+R_API void r_anal_var_set_access(RAnalVar *var, const char *reg, ut64 access_addr, int access_type, st64 stackptr);
 R_API void r_anal_var_clear_accesses(RAnalVar *var);
 
 // Get the access to var at exactly addr if there is one

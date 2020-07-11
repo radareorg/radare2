@@ -652,8 +652,12 @@ R_API st64 r_buf_uleb128(RBuffer *b, ut64 *v) {
 			return -1;
 		}
 		c = data & 0xff;
-		sum |= ((ut64) (c & 0x7f) << s);
-		s += 7;
+		if (s < 64) {
+			sum |= ((ut64) (c & 0x7f) << s);
+			s += 7;
+		} else {
+			sum = 0;
+		}
 		l++;
 	} while (c & 0x80);
 	if (v) {
@@ -672,8 +676,12 @@ R_API st64 r_buf_sleb128(RBuffer *b, st64 *v) {
 			return -1;
 		}
 		chunk = value & 0x7f;
-		result |= (chunk << offset);
-		offset += 7;
+		if (offset < 64) {
+			result |= (chunk << offset);
+			offset += 7;
+		} else {
+			result = 0;
+		}
 	} while (value & 0x80);
 
 	if ((value & 0x40) != 0) {

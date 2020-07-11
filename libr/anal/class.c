@@ -740,7 +740,7 @@ typedef struct {
 	const char *class_name;
 } DeleteClassCtx;
 
-static int r_anal_class_base_delete_class_cb(void *user, const char *k, const char *v) {
+static bool r_anal_class_base_delete_class_cb(void *user, const char *k, const char *v) {
 	(void)v;
 	DeleteClassCtx *ctx = user;
 	RVector *bases = r_anal_class_base_get_all (ctx->anal, k);
@@ -751,7 +751,7 @@ static int r_anal_class_base_delete_class_cb(void *user, const char *k, const ch
 		}
 	}
 	r_vector_free (bases);
-	return 1;
+	return true;
 }
 
 static void r_anal_class_base_delete_class(RAnal *anal, const char *class_name) {
@@ -765,7 +765,7 @@ typedef struct {
 	const char *class_name_new;
 } RenameClassCtx;
 
-static int r_anal_class_base_rename_class_cb(void *user, const char *k, const char *v) {
+static bool r_anal_class_base_rename_class_cb(void *user, const char *k, const char *v) {
 	(void)v;
 	RenameClassCtx *ctx = user;
 	RVector *bases = r_anal_class_base_get_all (ctx->anal, k);
@@ -1080,10 +1080,10 @@ typedef struct {
 	PJ *j;
 } ListJsonCtx;
 
-static int r_anal_class_list_json_cb(void *user, const char *k, const char *v) {
+static bool r_anal_class_list_json_cb(void *user, const char *k, const char *v) {
 	ListJsonCtx *ctx = user;
 	r_anal_class_json (ctx->anal, ctx->j, k);
-	return 1;
+	return true;
 }
 
 static void r_anal_class_list_json(RAnal *anal) {

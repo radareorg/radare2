@@ -196,3 +196,32 @@ EXPECT=<<EOF
 0x58f 250382
 EOF
 RUN
+
+NAME=rafind2 ""
+FILE=-
+CMDS=!rafind2 ""
+EXPECT_ERR=<<EOF
+Cannot open empty path
+EOF
+RUN
+
+NAME=rafind2 -F
+FILE=-
+CMDS=!rafind2 -F scripts/keyword bins/mach0/FileDP
+EXPECT=<<EOF
+0x4e9
+0x6f5
+0x6f9
+0x706
+0x729
+0x72d
+0x73b
+0x75d
+0x761
+0x76d
+0x3473
+0x348f
+0x34ab
+EOF
+RUN
+

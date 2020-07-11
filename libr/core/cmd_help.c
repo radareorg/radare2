@@ -262,7 +262,7 @@ static void cmd_help_percent(RCore *core) {
 	r_core_cmd_help (core, help_msg_env);
 }
 
-static void cmd_help_init(RCore *core) {
+static void cmd_help_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?, question);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?v, question_v);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?V, question_V);

@@ -38,7 +38,7 @@ PREFIX="/usr"
 if [ ! -f sys/ios-include/mach/mach_vm.h ]; then
 (
 	cd sys && \
-	wget http://lolcathost.org/b/ios-include.tar.gz && \
+	wget -c https://lolcathost.org/b/ios-include.tar.gz && \
 	tar xzvf ios-include.tar.gz
 )
 fi

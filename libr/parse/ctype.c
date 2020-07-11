@@ -25,7 +25,7 @@ static const char *lang =
 	"type       : <qualifier>? <identifier> (<pointer> | <array>)*;";
 
 
-R_API RParseCType *r_parse_ctype_new() {
+R_API RParseCType *r_parse_ctype_new(void) {
 	RParseCType *ctype = R_NEW (RParseCType);
 	if (!ctype) {
 		return NULL;

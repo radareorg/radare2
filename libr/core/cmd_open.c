@@ -160,7 +160,7 @@ static const char *help_msg_oonn[] = {
 	NULL
 };
 
-static void cmd_open_init(RCore *core) {
+static void cmd_open_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, o);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, o*, o_star);
 	DEFINE_CMD_DESCRIPTOR (core, oa);
@@ -388,7 +388,9 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			RTable *table = r_core_table (core);
 			r_table_visual_list (table, list, core->offset, core->blocksize,
 				r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
-			r_cons_printf ("\n%s\n", r_table_tostring (table));
+			char *table_text = r_table_tostring (table);
+			r_cons_printf ("\n%s\n", table_text);
+			r_free (table_text);
 			r_table_free (table);
 			r_list_free (list);
 		} break;

@@ -31,6 +31,7 @@ typedef struct r_list_range_t {
 	//RListComparator c;
 } RListRange;
 
+// RListComparator should return -1, 0, 1 to indicate "a<b", "a==b", "a>b".
 typedef int (*RListComparator)(const void *a, const void *b);
 
 #define ROFList_Parent RList

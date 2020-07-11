@@ -68,3 +68,30 @@ EXPECT=<<EOF
  1 fd: 4 +0x00000000 0x00000000 - 0x7ffffffffffffffe rwx 
 EOF
 RUN
+
+NAME=breakpoints after double doo
+FILE=bins/elf/analysis/x86-helloworld-gcc
+ARGS=
+CMDS=<<EOF
+db main
+db main+3
+doo > $_
+dc # should hit the first breakpoint
+.dr*
+?v eip-main
+doo > $_
+dc # should hit the first breakpoint
+.dr*
+?v eip-main
+dc # should hit the the second breakpoint
+.dr*
+?v eip-main
+EOF
+EXPECT=<<EOF
+0x0
+0x0
+0x3
+Hello world!
+EOF
+RUN
+

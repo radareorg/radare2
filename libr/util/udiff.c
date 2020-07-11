@@ -13,11 +13,12 @@ R_API RDiff *r_diff_new_from(ut64 off_a, ut64 off_b) {
 		d->user = NULL;
 		d->off_a = off_a;
 		d->off_b = off_b;
+		d->diff_cmd = "diff -u";
 	}
 	return d;
 }
 
-R_API RDiff *r_diff_new() {
+R_API RDiff *r_diff_new(void) {
 	return r_diff_new_from (0, 0);
 }
 
@@ -95,7 +96,7 @@ R_API char *r_diff_buffers_to_string(RDiff *d, const ut8 *a, int la, const ut8 *
 }
 #endif
 
-#define diffHit() {\
+#define diffHit(void) {\
 	const size_t i_hit = i - hit;\
 	int ra = la - i_hit;\
 	int rb = lb - i_hit;\
@@ -149,7 +150,11 @@ R_API char *r_diff_buffers_unified(RDiff *d, const ut8 *a, int la, const ut8 *b,
 	char* err = NULL;
 	char* out = NULL;
 	int out_len;
-	(void)r_sys_cmd_str_full ("diff -u .a .b", NULL, &out, &out_len, &err);
+	char* diff_cmdline = r_str_newf ("%s .a .b", d->diff_cmd);
+	if (diff_cmdline) {
+		(void)r_sys_cmd_str_full (diff_cmdline, NULL, &out, &out_len, &err);
+		free (diff_cmdline);
+	}
 	r_file_rm (".a");
 	r_file_rm (".b");
 	free (err);

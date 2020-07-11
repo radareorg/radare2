@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2008-2019 - pancake */
+/* radare - LGPL - Copyright 2008-2020 - pancake */
 
 #include <r_debug.h>
 
 // DO IT WITH SDB
 
-R_API RDebugTrace *r_debug_trace_new () {
+R_API RDebugTrace *r_debug_trace_new (void) {
 	RDebugTrace *t = R_NEW0 (RDebugTrace);
 	if (!t) {
 		return NULL;

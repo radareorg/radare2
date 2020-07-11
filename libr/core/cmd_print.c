@@ -589,7 +589,7 @@ static const ut32 colormap[256] = {
 	0x4c0032, 0x560039, 0x640042, 0x75004e, 0x87005a, 0x9b0067, 0xb00075, 0xc60084, 0xdd0093, 0xf500a3, 0xff0faf, 0xff28b7, 0xff43c0, 0xff5ec9, 0xff79d2, 0xffffff,
 };
 
-static void cmd_print_init(RCore *core) {
+static void cmd_print_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, &, amper);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, @, at);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, @@, at_at);
@@ -687,8 +687,13 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 				if (show_flags) {
 					RFlagItem *fi = r_flag_get_i (core->flags, core->offset + j);
 					if (fi) {
-						ch = fi->name[0];
-						ch2 = fi->name[1];
+						if (fi->name[1]) {
+							ch = fi->name[0];
+							ch2 = fi->name[1];
+						} else {
+							ch = ' ';
+							ch2 = fi->name[0];
+						}
 					} else {
 						ch2 = ch;
 					}
@@ -795,8 +800,13 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 				if (show_flags) {
 					RFlagItem *fi = r_flag_get_i (core->flags, core->offset + j);
 					if (fi) {
-						ch = fi->name[0];
-						ch2 = fi->name[1];
+						if (fi->name[1]) {
+							ch = fi->name[0];
+							ch2 = fi->name[1];
+						} else {
+							ch = ' ';
+							ch2 = fi->name[0];
+						}
 					} else {
 						ch2 = ch;
 					}

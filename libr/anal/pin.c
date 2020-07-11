@@ -71,7 +71,7 @@ R_API const char *r_anal_pin_call(RAnal *a, ut64 addr) {
 	return NULL;
 }
 
-static int cb_list(void *user, const char *k, const char *v) {
+static bool cb_list(void *user, const char *k, const char *v) {
 	RAnal *a = (RAnal*)user;
 	if (*k == '0') {
 		// bind

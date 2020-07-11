@@ -29,10 +29,10 @@ endif
 # NOTE: when you update TS_TIP or TS_BRA, also update them in shlr/meson.build
 TS_URL=https://github.com/tree-sitter/tree-sitter.git
 TS_BRA=master
-TS_TIP=f049ba350f3f6019ce9a1cbb0975ebd154ef7ad3
+TS_TIP=86a5dabbcbdac650c53a889183bf56d7e721e09e
 
 ifeq ($(CS_RELEASE),1)
-CS_VER=4.0.1
+CS_VER=4.0.2
 CS_TAR=https://codeload.github.com/aquynh/capstone/tar.gz/$(CS_VER)
 #CS_TAR=http://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
 CS_PATCHES=0
@@ -44,10 +44,10 @@ CS_ARCHIVE=https://$(CS_URL_BASE)/archive
 CS_UPD=20190515
 # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/meson.build
 ifeq ($(CS_NEXT),1)
-CS_TIP=0de88ed3fdc0ab1f1e2a6eada3cdd93e18057a0f
+CS_TIP=d956ceddabcbe544ee8f074ba75c86c6381b34e6
 CS_BRA=next
 else
-CS_TIP=c80b6aaf973c822d82565f25e9b2e2c0102626fa
+CS_TIP=2edae851d9fee511a57d4da32d5acecedd95d7ed
 CS_BRA=v4
 endif
 ifeq ($(CS_COMMIT_ARCHIVE),1)

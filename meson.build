@@ -112,7 +112,7 @@ endif
 platform_deps = []
 platform_inc = ['.', 'libr/include']
 if host_machine.system() == 'windows'
-  platform_deps = [cc.find_library('ws2_32'), cc.find_library('psapi')]
+  platform_deps = [cc.find_library('ws2_32'), cc.find_library('wininet'), cc.find_library('psapi')]
 endif
 platform_inc = include_directories(platform_inc)
 
@@ -140,7 +140,7 @@ library_cflags = ['-DR2_PLUGIN_INCORE=1']
 if host_machine.system() == 'windows'
   r2_prefix = '.'
   r2_libdir = 'lib'
-  r2_incdir = 'include'
+  r2_incdir = join_paths('include', 'libr')
   r2_datdir = 'share'
 
   opts1 = [
@@ -340,6 +340,7 @@ userconf.set('BINDINGS', r2_bindings)
 userconf.set10('HAVE_OPENSSL', use_sys_openssl)
 userconf.set10('HAVE_LIBUV', use_libuv)
 userconf.set10('HAVE_FORK', true)
+userconf.set10('WANT_DYLINK', true)
 userconf.set10('HAVE_PTRACE', have_ptrace)
 userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
 userconf.set10('WITH_GPL', true)
@@ -434,17 +435,21 @@ subdir('libr/main')
 
 if not meson.is_subproject()
   rpath = get_option('local') and get_option('default_library') == 'shared' ? '$ORIGIN/../' + get_option('libdir') : ''
-  subdir('binr/rahash2')
-  subdir('binr/rarun2')
-  subdir('binr/rasm2')
-  subdir('binr/rabin2')
-  subdir('binr/radare2')
-  subdir('binr/ragg2')
-  subdir('binr/r2agent')
-  subdir('binr/radiff2')
-  subdir('binr/rafind2')
-  subdir('binr/rasign2')
-  subdir('binr/rax2')
+  if get_option('blob')
+    subdir('binr/blob')
+  else
+    subdir('binr/rahash2')
+    subdir('binr/rarun2')
+    subdir('binr/rasm2')
+    subdir('binr/rabin2')
+    subdir('binr/radare2')
+    subdir('binr/ragg2')
+    subdir('binr/r2agent')
+    subdir('binr/radiff2')
+    subdir('binr/rafind2')
+    subdir('binr/rasign2')
+    subdir('binr/rax2')
+  endif
   subdir('binr/r2pm')
   subdir('binr/r2r')
 else

@@ -379,7 +379,7 @@ R_API void r_rbtree_iter_prev(RBIter *it) {
 	_next (it, 1);
 }
 
-R_API RContRBTree *r_rbtree_cont_new() {
+R_API RContRBTree *r_rbtree_cont_new(void) {
 	return R_NEW0 (RContRBTree);
 }
 

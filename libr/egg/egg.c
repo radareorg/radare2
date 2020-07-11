@@ -25,7 +25,7 @@ void egg_patch_free (void *p) {
 	free (ep);
 }
 
-R_API REgg *r_egg_new() {
+R_API REgg *r_egg_new(void) {
 	int i;
 	REgg *egg = R_NEW0 (REgg);
 	if (!egg) {

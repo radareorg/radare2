@@ -90,7 +90,7 @@ typedef struct {
 	bool pseudo;
 	int filter;
 	int interactive;
-	bool jmpsub;
+	bool subjmp;
 	bool varsub;
 	bool show_lines;
 	bool show_lines_bb;
@@ -631,11 +631,11 @@ static RDisasmState * ds_init(RCore *core) {
 	}
 	ds->filter = r_config_get_i (core->config, "asm.filter");
 	ds->interactive = r_cons_is_interactive ();
-	ds->jmpsub = r_config_get_i (core->config, "asm.jmpsub");
+	ds->subjmp = r_config_get_i (core->config, "asm.sub.jmp");
 	ds->varsub = r_config_get_i (core->config, "asm.var.sub");
-	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
-	core->parser->regsub = r_config_get_i (core->config, "asm.regsub");
-	core->parser->localvar_only = r_config_get_i (core->config, "asm.var.subonly");
+	core->parser->subrel = r_config_get_i (core->config, "asm.sub.rel");
+	core->parser->subreg = r_config_get_i (core->config, "asm.sub.reg");
+	core->parser->localvar_only = r_config_get_i (core->config, "asm.sub.varonly");
 	core->parser->retleave_asm = NULL;
 	ds->show_fcnsig = r_config_get_i (core->config, "asm.fcnsig");
 	ds->show_vars = r_config_get_i (core->config, "asm.var");
@@ -783,7 +783,7 @@ static RDisasmState * ds_init(RCore *core) {
 
 	ds->showpayloads = r_config_get_i (ds->core->config, "asm.payloads");
 	ds->showrelocs = r_config_get_i (core->config, "bin.relocs");
-	ds->min_ref_addr = r_config_get_i (core->config, "asm.var.submin");
+	ds->min_ref_addr = r_config_get_i (core->config, "asm.sub.varmin");
 
 	if (ds->show_flag_in_bytes) {
 		ds->show_flags = false;
@@ -975,8 +975,12 @@ static char *get_op_ireg (void *user, ut64 addr) {
 	return res;
 }
 
-static st64 get_ptr_at(void *user, RAnalFunction *fcn, st64 delta, ut64 addr) {
+static st64 get_ptr_at(RAnalFunction *fcn, st64 delta, ut64 addr) {
 	return r_anal_function_get_var_stackptr_at (fcn, delta, addr);
+}
+
+static const char *get_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr) {
+	return r_anal_function_get_var_reg_at (fcn, delta, addr);
 }
 
 static void ds_build_op_str(RDisasmState *ds, bool print_color) {
@@ -999,27 +1003,28 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		ds->opstr = strdup (r_asm_op_get_asm (&ds->asmop));
 	}
 	/* initialize */
-	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
-	core->parser->regsub = r_config_get_i (core->config, "asm.regsub");
-	core->parser->relsub_addr = 0;
-	if (core->parser->relsub
+	core->parser->subrel = r_config_get_i (core->config, "asm.sub.rel");
+	core->parser->subreg = r_config_get_i (core->config, "asm.sub.reg");
+	core->parser->subrel_addr = 0;
+	if (core->parser->subrel
 	    && (ds->analop.type == R_ANAL_OP_TYPE_LEA || ds->analop.type == R_ANAL_OP_TYPE_MOV
 	        || ds->analop.type == R_ANAL_OP_TYPE_CMP)
 	    && ds->analop.ptr != UT64_MAX) {
-		core->parser->relsub_addr = ds->analop.ptr;
+		core->parser->subrel_addr = ds->analop.ptr;
 	}
 	if (ds->varsub && ds->opstr) {
 		ut64 at = ds->vat;
 		RAnalFunction *f = fcnIn (ds, at, R_ANAL_FCN_TYPE_NULL);
 		core->parser->get_op_ireg = get_op_ireg;
 		core->parser->get_ptr_at = get_ptr_at;
+		core->parser->get_reg_at = get_reg_at;
 		r_parse_varsub (core->parser, f, at, ds->analop.size,
 			ds->opstr, ds->strsub, sizeof (ds->strsub));
 		if (*ds->strsub) {
 			free (ds->opstr);
 			ds->opstr = strdup (ds->strsub);
 		}
-		if (core->parser->relsub) {
+		if (core->parser->subrel) {
 			RList *list = r_anal_refs_get (core->anal, at);
 			RListIter *iter;
 			RAnalRef *ref;
@@ -1027,7 +1032,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 				if ((ref->type == R_ANAL_REF_TYPE_DATA
 					|| ref->type == R_ANAL_REF_TYPE_STRING)
 					&& ds->analop.type == R_ANAL_OP_TYPE_LEA) {
-					core->parser->relsub_addr = ref->addr;
+					core->parser->subrel_addr = ref->addr;
 					break;
 				}
 			}
@@ -1069,12 +1074,12 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 				core->parser->flagspace = NULL;
 			}
 		}
-		if (core->parser->relsub && ds->analop.refptr) {
-			if (core->parser->relsub_addr == 0) {
+		if (core->parser->subrel && ds->analop.refptr) {
+			if (core->parser->subrel_addr == 0) {
 				ut64 killme = UT64_MAX;
 				const int be = core->rasm->big_endian;
 				r_io_read_i (core->io, ds->analop.ptr, &killme, ds->analop.refptr, be);
-				core->parser->relsub_addr = killme;
+				core->parser->subrel_addr = killme;
 			}
 		}
 		char *asm_str = colorize_asm_string (core, ds, print_color);
@@ -1628,7 +1633,7 @@ static ut32 tmp_get_realsize (RAnalFunction *f) {
 }
 
 static void ds_show_functions_argvar(RDisasmState *ds, RAnalFunction *fcn, RAnalVar *var, const char *base, bool is_var, char sign) {
-	int delta = sign == '+' ? var->delta : -var->delta;
+	int delta = var->kind == 'b' ? R_ABS (var->delta + fcn->bp_off) : R_ABS (var->delta);
 	const char *pfx = is_var ? "var" : "arg", *constr = NULL;
 	RStrBuf *constr_buf = NULL;
 	bool cond = false;
@@ -1912,7 +1917,7 @@ static void ds_show_functions(RDisasmState *ds) {
 				r_cons_printf ("%s; ", COLOR_ARG (ds, color_func_var));
 				switch (var->kind) {
 				case R_ANAL_VAR_KIND_BPV: {
-					char sign = var->delta > 0 ? '+' : '-';
+					char sign = var->isarg || (-var->delta <= f->bp_off) ? '+' : '-';
 					bool is_var = !var->isarg;
 					ds_show_functions_argvar (ds, f, var,
 						anal->reg->name[R_REG_NAME_BP], is_var, sign);
@@ -3373,7 +3378,7 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 		return;
 	}
 	RAnalFunction *f = fcnIn (ds, ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
-	if (!f && ds->core->flags && (!ds->core->vmode || (!ds->jmpsub && !ds->filter))) {
+	if (!f && ds->core->flags && (!ds->core->vmode || (!ds->subjmp && !ds->filter))) {
 		const char *arch;
 		RFlagItem *flag = r_flag_get_by_spaces (ds->core->flags, ds->analop.jump,
 		                                        R_FLAGS_FS_CLASSES, R_FLAGS_FS_SYMBOLS, NULL);
@@ -3412,7 +3417,7 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 		} else if (delta < 0) {
 			ds_begin_comment (ds);
 			ds_comment (ds, true, "; %s-0x%x", f->name, -delta);
-		} else if ((!ds->core->vmode || (!ds->jmpsub && !ds->filter))
+		} else if ((!ds->core->vmode || (!ds->subjmp && !ds->filter))
 			   && (!ds->opstr || !strstr (ds->opstr, f->name))) {
 			RFlagItem *flag_sym;
 			if (ds->core->vmode && ds->asm_demangle
@@ -3926,9 +3931,9 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		if (((st64)p) > 0) {
 			f = r_flag_get_i (core->flags, p);
 			if (f) {
-				ut64 relsub_addr = core->parser->relsub_addr;
-				if (relsub_addr && relsub_addr != p) {
-					f2 = r_core_flag_get_by_spaces (core->flags, relsub_addr);
+				ut64 subrel_addr = core->parser->subrel_addr;
+				if (subrel_addr && subrel_addr != p) {
+					f2 = r_core_flag_get_by_spaces (core->flags, subrel_addr);
 					f2_in_opstr = f2 && ds->opstr && (strstr (ds->opstr, f2->name) || strstr (ds->opstr, f2->realname)) ;
 				}
 				refaddr = p;
@@ -5018,8 +5023,7 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 	RFlag *f = ds->core->flags;
 	const char *name = NULL;
 	const char *kw = "";
-
-	if (!ds->jmpsub || !anal) {
+	if (!ds->subjmp || !anal) {
 		return str;
 	}
 	int optype = ds->analop.type & 0xFFFF;
@@ -6017,7 +6021,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			ut64 killme = UT64_MAX;
 			bool be = core->print->big_endian;
 			if (r_io_read_i (core->io, ds->analop.ptr, &killme, ds->analop.refptr, be)) {
-				core->parser->relsub_addr = killme;
+				core->parser->subrel_addr = killme;
 			}
 		}
 		{

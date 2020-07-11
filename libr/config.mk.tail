@@ -25,15 +25,15 @@ CFLAGS+=${CPPFLAGS}
 
 ifeq (1,1)
 #$(WITHPIC),1)
-LINK+=$(subst r_,-L$(LIBR)/,$(DEPS))
-LINK+=$(subst r_,-lr_,$(DEPS))
+LINK+=$(subst r_,-L$(LIBR)/,$(R2DEPS))
+LINK+=$(subst r_,-lr_,$(R2DEPS))
 LINK+=$(subst r_,-L$(LIBR)/,$(BINDEPS))
 LINK+=$(subst r_,-lr_,$(BINDEPS))
 CFLAGS+=${PIC_CFLAGS}
 LINK+=${PIC_CFLAGS}
 else
-ifneq ($(DEPS),)
-LINK+=$(shell echo ${DEPS} | sed -e 's:r_\([^ ]\+\):$(LIBR)/\1/libr_\1.${EXT_AR}:g')
+ifneq ($(R2DEPS),)
+LINK+=$(shell echo ${R2DEPS} | sed -e 's:r_\([^ ]\+\):$(LIBR)/\1/libr_\1.${EXT_AR}:g')
 endif
 endif
 
@@ -50,6 +50,11 @@ CFLAGS+=-Wall
 ifeq (${HAVE_LIB_GMP},1)
 CFLAGS+=-DHAVE_LIB_GMP=1
 BN_LIBS=-lgmp
+endif
+
+# open-ssl
+ifeq (${HAVE_LIB_SSL},1)
+BN_LIBS=${SSL_LDFLAGS}
 endif
 
 #both of these need ssl includes

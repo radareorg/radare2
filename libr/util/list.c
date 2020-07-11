@@ -6,7 +6,7 @@
 #define _R_LIST_C_
 #include "r_util.h"
 
-inline RListIter *r_list_iter_new() {
+inline RListIter *r_list_iter_new(void) {
 	return calloc (1, sizeof (RListIter));
 }
 
@@ -165,7 +165,7 @@ R_API int r_list_join(RList *list1, RList *list2) {
 	return 1;
 }
 
-R_API RList *r_list_new() {
+R_API RList *r_list_new(void) {
 	RList *list = R_NEW0 (RList);
 	if (!list) {
 		return NULL;
@@ -363,13 +363,12 @@ R_API void r_list_reverse(RList *list) {
 }
 
 R_API RList *r_list_clone(const RList *list) {
-	RList *l = NULL;
 	RListIter *iter;
 	void *data;
 
 	r_return_val_if_fail (list, NULL);
 
-	l = r_list_new ();
+	RList *l = r_list_new ();
 	if (!l) {
 		return NULL;
 	}

@@ -20,20 +20,35 @@ RUN
 
 NAME=ELF: ppc relocs
 FILE=bins/elf/hello.ppc
-BROKEN=1
 CMDS=<<EOF
 ii
+ir
 s main
 af
 pdsf
 EOF
 EXPECT=<<EOF
 [Imports]
-   1 0x10020064  GLOBAL    FUNC printf
-   2 0x10020074    WEAK  NOTYPE __gmon_start__
-   3 0x10020084  GLOBAL    FUNC __libc_start_main
-;-- main:
+nth vaddr      bind   type   lib name
+-------------------------------------
+1   0x00000000 GLOBAL FUNC       printf
+2   0x00000000 WEAK   NOTYPE     __gmon_start__
+3   0x00000000 GLOBAL FUNC       __libc_start_main
+
+[Relocations]
+
+vaddr      paddr      type   name
+---------------------------------
+0x10020008 0x00010008 ADD_32 __gmon_start__
+0x10020064 0x10020064 ADD_32 printf
+0x10020064 0x10020064 ADD_32 printf
+0x1002006c 0x1002006c ADD_32 __gmon_start__
+0x1002006c 0x1002006c ADD_32 __gmon_start__
+0x10020074 0x10020074 ADD_32 __libc_start_main
+0x10020074 0x10020074 ADD_32 __libc_start_main
+
+
+7 relocations
 0x100004a0 str.Simple_PPC_program. str.Simple_PPC_program.
-0x100004a4 sym.imp.printf
 EOF
 RUN

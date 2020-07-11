@@ -1,5 +1,8 @@
 /* Mini MCMS :: renamed to 'spp'? */
 
+#ifndef INCLUDE_P_SPP_H
+#define INCLUDE_P_SPP_H
+
 #if __UNIX__
 #include <unistd.h>
 #endif
@@ -87,7 +90,7 @@ static TAG_CALLBACK(spp_getrandom) {
 		return 0;
 	}
 	// XXX srsly? this is pretty bad random
-	srandom (r_sys_getpid()); // TODO: change this to be portable
+	srandom (r_sys_getpid ()); // TODO: change this to be portable
 	max = atoi (buf);
 	if (max > 0) {
 		max = (int)(rand () % max);
@@ -459,3 +462,4 @@ DLL_LOCAL struct Proc spp_proc = {
 	.default_echo = 1,
 	.tag_begin = 0,
 };
+#endif

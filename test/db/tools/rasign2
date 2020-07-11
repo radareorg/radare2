@@ -91,6 +91,24 @@ NAME=rasign2 vars/args
 FILE=-
 CMDS=!!rasign2 -aarj bins/elf/hello_world~^za main v
 EXPECT=<<EOF
-za main v b-24 b-16 b-32 b-28 b-8
+za main v b-32 b-24 b-40 b-36 b-16
+EOF
+RUN
+
+NAME=rasign2 -f libc-v7.sig
+FILE=
+CMDS=!rasign2 -f bins/other/sigs/libc-v7.sig
+EXPECT=<<EOF
+41564155B8........4154554D89C4534889CD4D89CD4881EC900000004885C0:
+ 0. 16 D2A2 0298 0000:__libc_start_main
+EOF
+RUN
+
+NAME=rasign2 -f libc-v10.sig
+FILE=
+CMDS=!rasign2 -f bins/other/sigs/libc-v10.sig
+EXPECT=<<EOF
+41564155B8........4154554D89C4534889CD4D89CD4881EC900000004885C0:
+ 0. 16 D2A2 0298 0000:__libc_start_main
 EOF
 RUN

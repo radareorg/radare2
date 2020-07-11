@@ -40,6 +40,10 @@ static bool check_swift(RBinSymbol *sym) {
 	return false;
 }
 
+static bool check_golang(RBinSymbol *sym) {
+	return !strncmp (sym->name, "go.", 3);
+}
+
 static inline bool is_cxx_symbol (const char *name) {
 	r_return_val_if_fail (name, false);
 	if (!strncmp (name, "_Z", 2)) {
@@ -105,6 +109,10 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 				info->lang = "rust";
 				return R_BIN_NM_RUST;
 			}
+		}
+		if (check_golang (sym)) {
+			info->lang = "go";
+			return R_BIN_NM_GO;
 		}
 		if (!cantbe.swift) {
 			bool hasswift = false;
@@ -213,6 +221,8 @@ R_API const char *r_bin_lang_tostring(int lang) {
 	switch (lang & 0xffff) {
 	case R_BIN_NM_SWIFT:
 		return "swift";
+	case R_BIN_NM_GO:
+		return "go";
 	case R_BIN_NM_JAVA:
 		return "java";
 	case R_BIN_NM_KOTLIN:

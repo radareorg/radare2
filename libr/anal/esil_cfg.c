@@ -498,7 +498,7 @@ static RAnalEsilCFG *esil_cfg_gen(RAnalEsilCFG *cfg, RAnal *anal, RIDStorage *at
 	return cfg;
 }
 
-R_API RAnalEsilCFG *r_anal_esil_cfg_new() {
+R_API RAnalEsilCFG *r_anal_esil_cfg_new(void) {
 	RAnalEsilCFG *cf = R_NEW0 (RAnalEsilCFG);
 	if (cf) {
 		RAnalEsilBB *p = R_NEW0 (RAnalEsilBB);

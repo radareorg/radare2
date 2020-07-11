@@ -26,6 +26,7 @@ ARG_WITH CSNEXT capstone5 build next branch of the capstone repository ;
 (( useful for static builds . see sys/static.sh ))
 ARG_DISABLE LOADLIBS loadlibs disable loading plugins ;
 
+ARG_WITHOUT WANT_DYLINK dylink disable support for dynamic loading of plugins ;
 ARG_WITHOUT HAVE_FORK fork disable fork ;
 ARG_WITHOUT WANT_PTRACE_WRAP ptrace-wrap disable ptrace-wrap build ;
 
@@ -183,7 +184,10 @@ IFEQ USEROSTYPE auto ; {
 	}{
 	IFEQ HOST_OS darwin ; {
 		USEROSTYPE = darwin ;
-	} } } } } } } } } } }
+        }{
+	IFEQ HOST_OS haiku ; {
+		USEROSTYPE = haiku ;
+	} } } } } } } } } } } }
 }
 
 (( this hack is required for openbsd ports ))
@@ -218,9 +222,13 @@ IFEQ USEROSTYPE solaris ; {
 	HAVE_PTRACE = 0 ;
 	USE_PTRACE_WRAP = 0 ;
 }{
+IFEQ USEROSTYPE haiku ; {
+	HAVE_PTRACE = 0 ;
+	USE_PTRACE_WRAP = 0 ;
+}{
 	HAVE_PTRACE = 1 ;
 	USE_PTRACE_WRAP = 0 ;
-} } } } }
+} } } } } }
 
 IFNOT DEBUGGER {
 	HAVE_PTRACE = 0 ;
@@ -234,7 +242,7 @@ ARG_WITH R_CHECKS_LEVEL=2 checks-level value between 0 and 3 to enable different
 
 REPORT R_CHECKS_LEVEL PREFIX HAVE_LIB_GMP HAVE_OPENSSL HAVE_LIBUV USE_CAPSTONE HAVE_PTRACE USE_PTRACE_WRAP HAVE_FORK
 	VERSION USE_LIB_ZIP USE_LIB_MAGIC USE_LIB_XXHASH DEBUGGER CC USERCC HAVE_ARC4RANDOM_UNIFORM
-	HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET USEROSTYPE LIBVERSION BUILD HOST TARGET ;
+	HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET WANT_DYLINK USEROSTYPE LIBVERSION BUILD HOST TARGET ;
 
 (( TODO: Add the rest of .pc files here.. add a rule for acr? ))
 SUBDIRS ./config-user.mk
