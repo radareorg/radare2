@@ -73,6 +73,24 @@ R_API RIODesc* r_io_desc_get(RIO* io, int fd) {
 	return (RIODesc*) r_id_storage_get (io->files, fd);
 }
 
+R_API RIODesc *r_io_desc_get_next(RIO *io, RIODesc *desc) {
+	r_return_val_if_fail (desc && io && io->files, NULL);
+	const int next_fd = r_io_fd_get_next (io, desc->fd)
+	if (next_fd == -1) {
+		return NULL;
+	}
+	return (RIODesc*) r_id_storage_get (io->files, next_fd);
+}
+
+R_API RIODesc *r_io_desc_get_prev(RIO *io, RIODesc *desc) {
+	r_return_val_if_fail (desc && io && io->files, NULL);
+	const int prev_fd = r_io_fd_get_prev (io, desc->fd)
+	if (prev_fd == -1) {
+		return NULL;
+	}
+	return (RIODesc*) r_id_storage_get (io->files, prev_fd);
+}
+
 R_API RIODesc *r_io_desc_open(RIO *io, const char *uri, int perm, int mode) {
 	r_return_val_if_fail (io && uri, NULL);
 	RIOPlugin *plugin = r_io_plugin_resolve (io, uri, 0);
