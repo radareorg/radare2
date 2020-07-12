@@ -126,3 +126,21 @@ R_API int r_io_fd_get_current(RIO *io) {
 	}
 	return -1;
 }
+
+R_API int r_io_fd_get_next(RIO *io, int fd) {
+	r_return_val_if_fail (io, -1);
+	int ret = fd;
+	if (!r_id_storage_get_next (io->files, &ret)) {
+		return -1;
+	}
+	return ret;
+}
+
+R_API int r_io_fd_get_prev(RIO *io, int fd) {
+	r_return_val_if_fail (io, -1);
+	int ret = fd;
+	if (!r_id_storage_get_prev (io->files, &ret)) {
+		return -1;
+	}
+	return ret;
+}
