@@ -163,6 +163,35 @@ R_API void* r_id_storage_get(RIDStorage* storage, ut32 id) {
 	return storage->data[id];
 }
 
+// usually these shall not be used
+// id-storage doesn't provide sorting things in specific order
+// there are only a very few reasonable usecases, such as cycling through RIODescs
+R_API bool r_id_storage_get_next(RIDStorage *storage, ut32 *id) {
+	r_return_val_if_fail (id && storage && storage->data, false);
+	// it does not indicate a bug, if the passed id goes beyond the boundaries of the storage
+	// therefor no r_return_val_if_fail for this case
+	if (storage->id <= *id) {
+		return false;
+	}
+
+	do {
+		*id = (*id + 1) % storage->size;
+	} while (!storage->data[*id]);
+	return true;
+}
+
+R_API bool r_id_storage_get_prev(RIDStorage *storage, ut32 *id) {
+	r_return_val_if_fail (id && storage && storage->data, false);
+	if (storage->id <= *id) {
+		return false;
+	}
+
+	do {
+		*id = (*id + (storage->size - 1)) % storage->size;
+	} while (!storage->data[*id]);
+	return true;
+}
+
 R_API void r_id_storage_delete(RIDStorage* storage, ut32 id) {
 	if (!storage || !storage->data || (storage->size <= id)) {
 		return;
