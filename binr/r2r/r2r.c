@@ -642,6 +642,9 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 				// TODO Print alignment (Debug)
 				for (idx_align_expected++; idx_align_expected < 2 * len_expected; idx_align_expected++) {
 					ut8 ch = align_expected[idx_align_expected];
+					if (align_actual[idx_align_expected] == '\n' && ch != '\n') {
+						printf (ch ? " " : "-");
+					}
 					if (ch == 0) {
 						printf ("-");
 					} else if (ch == '\n') {
@@ -653,6 +656,9 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 				printf ("\n");
 				for (idx_align_actual++; idx_align_actual < 2 * len_actual; idx_align_actual++) {
 					ut8 ch = align_actual[idx_align_actual];
+					if (align_expected[idx_align_actual] == '\n' && ch != '\n') {
+						printf (ch ? " " : "-");
+					}
 					if (ch == 0) {
 						printf ("-");
 					} else if (ch == '\n') {
