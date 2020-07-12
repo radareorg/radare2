@@ -546,7 +546,9 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 		if (len_expected == len_actual) { // TODO Drop this condition
 			size_t dim = len_expected + 1;
 			st16 *align_table = malloc (dim * dim * sizeof (st16));
-			if (align_table) {
+			ut8 *align_expected = malloc (2 * len_expected);
+			ut8 *align_actual = malloc (2 * len_actual);
+			if (align_table && align_expected && align_actual) {
 				size_t row, col;
 				*align_table = 0;
 				for (row = 1; row < dim; row++) {
@@ -554,14 +556,15 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 				}
 				// Fill table
 				const st16 match = 1;
-				const st16 mismatch = -1;
+				const st16 mismatch = -2;
 				const st16 gap = -1;
 				for (row = 1; row < dim; row++) {
 					for (col = 1; col < dim; col++) {
+						// TODO Clamping
 						st16 tl_score = *(align_table + (row - 1) * dim + col - 1)
 								+ (expected[col - 1] == actual[row - 1] ? match : mismatch);
-						st16 t_score = *(align_table + row * dim + col - 1) + gap;
-						st16 l_score = *(align_table + (row - 1) * dim + col) + gap;
+						st16 t_score = *(align_table + (row - 1) * dim + col) + gap;
+						st16 l_score = *(align_table + row * dim + col - 1) + gap;
 						st16 score;
 						if (tl_score >= t_score && tl_score >= l_score) {
 							score = tl_score;
@@ -601,11 +604,69 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 					}
 					printf ("\n");
 				}
-				// TODO Do alignment
-				// -- TODO Keep on rolling
+				// Do alignment
+				size_t idx_expected = len_expected - 1;
+				size_t idx_actual = len_actual - 1;
+				size_t idx_align_expected = 2 * len_expected - 1;
+				size_t idx_align_actual = 2 * len_actual - 1;
+				size_t pos_row = dim - 1;
+				size_t pos_col = dim - 1;
+				while (pos_row != 0 || pos_col != 0) {
+					st16 tl_score = ST16_MIN;
+					st16 t_score = ST16_MIN;
+					st16 l_score = ST16_MIN;
+					if (pos_row > 0) {
+						t_score = *(align_table + (pos_row - 1) * dim + pos_col);
+					}
+					if (pos_col > 0) {
+						l_score = *(align_table + pos_row * dim + pos_col - 1);
+					}
+					if (pos_row > 0 && pos_col > 0) {
+						tl_score = *(align_table + (pos_row - 1) * dim + pos_col - 1);
+					}
+					if (t_score >= tl_score && t_score >= l_score) {
+						align_expected[idx_align_expected--] = 0;
+						align_actual[idx_align_actual--] = actual[idx_actual--];
+						pos_row--;
+					} else if (l_score >= tl_score && l_score >= t_score) {
+						align_expected[idx_align_expected--] = expected[idx_expected--];
+						align_actual[idx_align_actual--] = 0;
+						pos_col--;
+					} else {
+						align_expected[idx_align_expected--] = expected[idx_expected--];
+						align_actual[idx_align_actual--] = actual[idx_actual--];
+						pos_row--;
+						pos_col--;
+					}
+				}
+				// TODO Print alignment (Debug)
+				for (idx_align_expected++; idx_align_expected < 2 * len_expected; idx_align_expected++) {
+					ut8 ch = align_expected[idx_align_expected];
+					if (ch == 0) {
+						printf ("-");
+					} else if (ch == '\n') {
+						printf ("\\n");
+					} else {
+						printf ("%c", ch);
+					}
+				}
+				printf ("\n");
+				for (idx_align_actual++; idx_align_actual < 2 * len_actual; idx_align_actual++) {
+					ut8 ch = align_actual[idx_align_actual];
+					if (ch == 0) {
+						printf ("-");
+					} else if (ch == '\n') {
+						printf ("\\n");
+					} else {
+						printf ("%c", ch);
+					}
+				}
+				printf ("\n");
 				// TODO Print diff
-				free (align_table);
 			}
+			free (align_table);
+			free (align_expected);
+			free (align_actual);
 			// return;
 		}
 		d->diff_cmd = "git diff --no-index --word-diff=porcelain --word-diff-regex=.";
