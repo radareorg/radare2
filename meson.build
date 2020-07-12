@@ -574,10 +574,10 @@ endif
 
 subdir('libr/util')
 subdir('libr/socket')
-subdir('shlr')
-
 subdir('libr/hash')
 subdir('libr/crypto')
+subdir('shlr')
+
 subdir('libr/cons')
 subdir('shlr/gdb')
 subdir('libr/io')
