@@ -39,6 +39,212 @@ static bool check_features(RAsm *a, cs_insn *insn) {
 	return true;
 }
 
+static int hack_handle_dp_imm(ut32 insn, char **buf_asm) {
+	char *mnemonic;
+	ut8 op0 = (insn >> 23) & 0x7;
+
+	// Add/subtract (immediate, with tags)
+	if (op0 == 3) {
+		ut8 sf = (insn >> 31) & 0x1;
+		ut8 op = (insn >> 30) & 0x1;
+		ut8 S = (insn >> 29) & 0x1;
+		ut8 o2 = (insn >> 2) & 0x1;
+		if (sf == 1 && op == 0 && S == 0 && o2 == 0) {
+			mnemonic = sdb_fmt ("addg");
+		} else if (sf == 1 && op == 1 && S == 0 && o2 == 0) {
+			mnemonic = sdb_fmt ("subg");
+		} else {
+			return -1;
+		}
+		ut8 uimm6 = ((insn >> 16) & 0x3f) << 4;
+		ut8 uimm4 = (insn >> 10) & 0xf;
+		ut8 Xn = (insn >> 5) & 0x1f;
+		ut8 Xd = (insn >> 0) & 0x1f;
+		*buf_asm = sdb_fmt ("%s x%d, x%d, #0x%x, #0x%x",
+			mnemonic, Xn, Xd, uimm6, uimm4);
+		*buf_asm = r_str_replace (*buf_asm, "x31", "sp", 1);
+	} else {
+		return -1;
+	}
+	return 0;
+}
+
+static int hack_handle_dp_reg(ut32 insn, char **buf_asm) {
+	char *mnemonic;
+	ut8 op0 = (insn >> 30) & 0x1;
+	ut8 op1 = (insn >> 28) & 0x1;
+	ut8 op2 = (insn >> 21) & 0xf;
+
+	// Data-processing (2 source)
+	if (op0 == 0 && op1 == 1 && op2 == 0x6) {
+		ut8 sf = (insn >> 31) & 0x1;
+		ut8 S = (insn >> 29) & 0x1;
+		ut8 opcode = (insn >> 10) & 0x1f;
+		if (sf == 1 && S == 0 && opcode == 4) {
+			mnemonic = sdb_fmt ("irg");
+		} else if (sf == 1 && S == 0 && opcode == 0) {
+			mnemonic = sdb_fmt ("subp");
+		} else if (sf == 1 && S == 0 && opcode == 5) {
+			mnemonic = sdb_fmt ("gmi");
+		} else if (sf == 1 && S == 1 && opcode == 0) {
+			mnemonic = sdb_fmt ("subps");
+		} else {
+			return -1;
+		}
+		ut8 Xm = (insn >> 16) & 0x1f;
+		ut8 Xn = (insn >> 5) & 0x1f;
+		ut8 Xd = (insn >> 0) & 0x1f;
+		if (Xm == 31 && strcmp(mnemonic, "irg") == 0) {
+			*buf_asm = sdb_fmt ("%s x%d, x%d, xzr", mnemonic, Xd, Xn);
+		} else {
+			*buf_asm = sdb_fmt ("%s x%d, x%d, x%d", mnemonic, Xd, Xn, Xm);
+		}
+		*buf_asm = r_str_replace (*buf_asm, "x31", "sp", 1);
+	} else {
+		return -1;
+	}
+	return 0;
+}
+
+static int hack_handle_ldst(ut32 insn, char **buf_asm) {
+	char *mnemonic = NULL;
+	ut8 op0 = (insn >> 28) & 0xf;
+	ut8 op1 = (insn >> 26) & 0x1;
+	ut8 op2 = (insn >> 24) & 0x1;
+	ut8 op3 = (insn >> 21) & 0x1;
+
+	// Load/store memory tags
+	if (op0 == 13 && op1 == 0 && op2 == 1 && op3 == 1) {
+		ut8 opc = (insn >> 22) & 0x2;
+		ut16 imm9 = ((insn >> 12) & 0x1ff) << 4;
+		op2 = (insn >> 10) & 0x2;
+		ut8 Xn = (insn >> 5) & 0x1f;
+		ut8 Xt = (insn >> 0) & 0x1f;
+
+		if (op2 > 0) {
+			if (opc == 0) {
+				mnemonic = sdb_fmt ("stg");
+			} else if (opc == 1) {
+				mnemonic = sdb_fmt ("stzg");
+			} else if (opc == 2) {
+				mnemonic = sdb_fmt ("st2g");
+			} else {
+				mnemonic = sdb_fmt ("stz2g");
+			}
+
+			if (!imm9) {
+				*buf_asm = sdb_fmt ("%s x%d, [x%d]", mnemonic, Xt, Xn);
+			} else {
+				if (op2 == 1) {
+					*buf_asm = sdb_fmt ("%s x%d, [x%d], #0x%x",
+						mnemonic, Xt, Xn, imm9);
+				} else if (op2 == 2) {
+					*buf_asm = sdb_fmt ("%s x%d, [x%d, #0x%x]!",
+						mnemonic, Xt, Xn, imm9);
+				} else {
+					*buf_asm = sdb_fmt ("%s x%d, [x%d, #0x%x]",
+						mnemonic, Xt, Xn, imm9);
+				}
+			}
+		} else if (op2 == 0) {
+			if (opc == 0) {
+				mnemonic = sdb_fmt ("stzgm");
+			} else if (opc == 1) {
+				mnemonic = sdb_fmt ("ldg");
+			} else if (opc == 2) {
+				mnemonic = sdb_fmt ("stgm");
+			} else {
+				mnemonic = sdb_fmt ("ldgm");
+			}
+
+			if (!imm9) {
+				*buf_asm = sdb_fmt ("%s x%d, [x%d]", mnemonic, Xt, Xn);
+			} else {
+				*buf_asm = sdb_fmt ("%s x%d, [x%d, #0x%x]",
+					mnemonic, Xt, Xn, imm9);
+			}
+		} else {
+			return -1;
+		}
+	// Load/store register pair
+	} else if ((op0 & 0x2) == 2) {
+		ut8 opc = (insn >> 30) & 0x2;
+		ut8 V = (insn >> 26) & 0x1;
+		ut8 L = (insn >> 22) & 0x1;
+
+		if (opc == 1 && V == 0 && L == 0) {
+			ut8 imm7 = (insn >> 15) & 0x7f;
+			ut8 Xt2 = (insn >> 10) & 0x1f;
+			ut8 Xt = (insn >> 5) & 0x1f;
+			ut8 Xn = (insn >> 0) & 0x1f;
+			if (!imm7) {
+				*buf_asm = sdb_fmt ("stgp x%d, [x%d, #0x%x]",
+					Xt, Xt2, Xn, imm7);
+			} else {
+				if (op2 == 1) {
+					*buf_asm = sdb_fmt ("stgp x%d, x%d, [x%d], #0x%x",
+						Xt, Xt2, Xn, imm7);
+				} else if (op2 == 2) {
+					*buf_asm = sdb_fmt ("stgp x%d, [x%d, #0x%x]!",
+						Xt, Xt2, Xn, imm7);
+				} else {
+					*buf_asm = sdb_fmt ("stgp x%d, [x%d, #0x%x]",
+						Xt, Xt2, Xn, imm7);
+				}
+			}
+		} else {
+			return -1;
+		}
+	} else {
+		return -1;
+	}
+	*buf_asm = r_str_replace (*buf_asm, "x31", "sp", 1);
+	return 0;
+}
+
+static int hack_arm_asm(RAsm *a, RAsmOp *op, const ut8 *buf, bool disp_hash) {
+	int r = -1;
+	char *buf_asm;
+	ut32 *insn = (ut32 *)buf;
+	int insn_class = (*insn >> 25) & 0xf;
+
+	switch (insn_class) {
+	// Data Processing -- Register
+	case 5:
+	case 13:
+		// irg, subp, gmi, subps
+		r = hack_handle_dp_reg (*insn, &buf_asm);
+		break;
+	// Data Processing -- Immediate
+	case 8:
+	case 9:
+		// addg, subg
+		r = hack_handle_dp_imm (*insn, &buf_asm);
+		break;
+	// Loads and Stores
+	case 4:
+	case 6:
+	case 12:
+	case 14:
+		// stg, stzgm, ldg, stzg, st2g, stgm, stz2g, ldgm, stgp
+		r = hack_handle_ldst (*insn, &buf_asm);
+		break;
+	default:
+		break;
+	}
+
+	if (r < 0) {
+		return r;
+	}
+
+	op->size = 4;
+	if (!disp_hash) {
+		r_str_replace_char (buf_asm, '#', 0);
+	}
+	r_strbuf_set (&op->buf_asm, buf_asm);
+	return op->size;
+}
+
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int omode = -1;
 	static int obits = 32;
@@ -91,6 +297,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (!buf) {
 		goto beach;
 	}
+	int haa = hack_arm_asm (a, op, buf, disp_hash);
+	if (haa > 0) {
+		return haa;
+	}
+
 	n = cs_disasm (cd, buf, R_MIN (4, len), a->pc, 1, &insn);
 	if (n < 1 || insn->size < 1) {
 		ret = -1;
