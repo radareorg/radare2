@@ -5,14 +5,27 @@
 static unsigned int base_idx = 0;
 static RList *p_types_list;
 
+static bool is_base_type (int idx) {
+	ut32 value = (ut32) idx;
+	/*
+        .---------------------------.------.----------.
+        |           Unused          | Mode |   Kind   |
+        '---------------------------'------'----------'
+        |+32                        |+12   |+8        |+0
+	*/
+	return ((value & 0x00000000FFF00) <= 0x700 && (value & 0x00000000000FF) < 0x80);
+}
+
 /**
  * @brief Parses base type if the idx represents one
  * 
  * @param idx 
  * @return STypeInfo, leaf_type = 0 -> error
  *  TODO add more types
+ *  This can be made smarter by using the masks
+ *  and splitting it on 2 parts, 1 mode, 1 type
  */
-static STypeInfo parse_base_type(int idx) {
+static STypeInfo parse_base_type(ut32 idx) {
 	STypeInfo type = { 0 };
 	SLF_BASE_TYPE *base_type = R_NEW0 (SLF_BASE_TYPE);
 	if (!base_type) {
@@ -79,10 +92,12 @@ static STypeInfo parse_base_type(int idx) {
 		break;
 
 	case eT_LONG: 
+	case eT_INT4:
 		base_type->size = 4;
 		base_type->type = strdup ("int32_t");
 		break;
 	case eT_PLONG: 
+	case eT_PINT4: 
 		base_type->size = 2;
 		base_type->type = strdup ("int32_t *");
 		break;
@@ -90,19 +105,26 @@ static STypeInfo parse_base_type(int idx) {
 	case eT_PHLONG: 
 	case eT_32PLONG:
 	case eT_32PFLONG:
+	case eT_PFINT4:
+	case eT_PHINT4:
+	case eT_32PINT4:
+	case eT_32PFINT4:
 		base_type->size = 4;
 		base_type->type = strdup ("int32_t *");
 		break;
 	case eT_64PLONG:
+	case eT_64PINT4:
 		base_type->size = 8;
 		base_type->type = strdup ("int32_t *");
 		break;
 
 	case eT_ULONG:
+	case eT_UINT4:
 		base_type->size = 4;
 		base_type->type = strdup ("uint32_t");
 		break;
 	case eT_PULONG:
+	case eT_PUINT4:
 		base_type->size = 2;
 		base_type->type = strdup ("uint32_t *");
 		break;
@@ -110,106 +132,412 @@ static STypeInfo parse_base_type(int idx) {
 	case eT_PHULONG:
 	case eT_32PULONG:
 	case eT_32PFULONG:
+	case eT_PFUINT4:
+	case eT_PHUINT4:
+	case eT_32PUINT4:
+	case eT_32PFUINT4:
 		base_type->size = 4;
 		base_type->type = strdup ("uint32_t *");
 		break;
 	case eT_64PULONG:
+	case eT_64PUINT4:
 		base_type->size = 8;
 		base_type->type = strdup ("uint32_t *");
 		break;
-	default:
-		free (base_type);
-		return type;
-	}
-	type.type_info = base_type;
-	type.leaf_type = idx;
-	return type;
-}
 
-static void print_base_type(EBASE_TYPES base_type, char **name) {
-	switch (base_type) {
-	case eT_32PINT4:
-		*name = "pointer to long";
-		break;
-	case eT_32PRCHAR:
-		*name = "pointer to unsigned char";
-		break;
-	case eT_32PUCHAR:
-		*name = "pointer to unsigned char";
-		break;
-	case eT_32PULONG:
-		*name = "pointer to unsigned long";
-		break;
-	case eT_32PLONG:
-		*name = "pointer to long";
-		break;
-	case eT_32PUQUAD:
-		*name = "pointer to unsigned long long";
-		break;
-	case eT_32PUSHORT:
-		*name = "pointer to unsigned short";
-		break;
-	case eT_32PVOID:
-		*name = "pointer to void";
-		break;
-	case eT_64PVOID:
-		*name = "pointer64 to void";
-		break;
-	case eT_INT4:
-		*name = "long";
-		break;
 	case eT_INT8:
-		*name = "long long";
-		break;
-	case eT_LONG:
-		*name = "long";
-		break;
 	case eT_QUAD:
-		*name = "long long";
+		base_type->size = 8;
+		base_type->type = strdup ("int64_t");
 		break;
-	case eT_RCHAR:
-		*name = "unsigned char";
+	case eT_PQUAD:
+	case eT_PINT8:
+		base_type->size = 2;
+		base_type->type = strdup ("int64_t *");
+				break;
+	case eT_PFQUAD:
+	case eT_PHQUAD:
+	case eT_32PQUAD:
+	case eT_32PFQUAD:
+	case eT_PFINT8:
+	case eT_PHINT8:
+	case eT_32PINT8:
+	case eT_32PFINT8:
+		base_type->size = 4;
+		base_type->type = strdup ("int64_t *");
+				break;
+	case eT_64PQUAD:
+	case eT_64PINT8:
+		base_type->size = 8;
+		base_type->type = strdup ("int64_t *");
+				break;
+
+
+	case eT_UQUAD:
+	case eT_UINT8:
+		base_type->size = 8;
+		base_type->type = strdup ("uint64_t");
+				break;
+		
+	case eT_PUQUAD:
+	case eT_PUINT8:
+		base_type->size = 2;
+		base_type->type = strdup ("uint64_t *");
+				break;
+	case eT_PFUQUAD:
+	case eT_PHUQUAD:
+	case eT_32PUQUAD:
+	case eT_32PFUQUAD:
+	case eT_PFUINT8:
+	case eT_PHUINT8:
+	case eT_32PUINT8:
+	case eT_32PFUINT8:
+		base_type->size = 4;
+		base_type->type = strdup ("uint64_t *");
+				break;
+	case eT_64PUQUAD:
+	case eT_64PUINT8:
+		base_type->size = 8;
+		base_type->type = strdup ("uint64_t *");
+		break;
+	case eT_INT128:
+	case eT_OCT:
+		base_type->size = 16;
+		base_type->type = strdup ("int128_t");
+				break;
+	case eT_PINT128:
+	case eT_POCT:
+		base_type->size = 2;
+		base_type->type = strdup ("int128_t *");
+				break;
+	case eT_PFINT128:
+	case eT_PHINT128:
+	case eT_32PINT128:
+	case eT_32PFINT128:
+	case eT_PFOCT:
+	case eT_PHOCT:
+	case eT_32POCT:
+	case eT_32PFOCT:
+		base_type->size = 4;
+		base_type->type = strdup ("int128_t *");
+				break;
+	case eT_64PINT128:
+	case eT_64POCT:
+		base_type->size = 8;
+		base_type->type = strdup ("int128_t *");
+				break;
+
+	case eT_UINT128:
+	case eT_UOCT:
+		base_type->size = 16;
+		base_type->type = strdup ("uint128_t");
+				break;
+	case eT_PUINT128:
+	case eT_PUOCT:
+		base_type->size = 2;
+		base_type->type = strdup ("uint128_t *");
+				break;
+	case eT_PFUINT128:
+	case eT_PHUINT128:
+	case eT_32PUINT128:
+	case eT_32PFUINT128:
+	case eT_PFUOCT:
+	case eT_PHUOCT:
+	case eT_32PUOCT:
+	case eT_32PFUOCT:
+		base_type->size = 4;
+		base_type->type = strdup ("uint128_t *");
+		break;
+	case eT_64PUINT128:
+	case eT_64PUOCT:
+		base_type->size = 8;
+		base_type->type = strdup ("uint128_t *");
 		break;
 	case eT_REAL32:
-		*name = "float";
+		base_type->size = 4;
+		base_type->type = strdup ("float");
+		break;
+	case eT_PREAL32:
+		base_type->size = 2;
+		base_type->type = strdup ("float *");
+		break;
+	case eT_PFREAL32:
+	case eT_PHREAL32:
+	case eT_32PREAL32:
+	case eT_32PFREAL32:
+		base_type->size = 4;
+		base_type->type = strdup ("float *");
+		break;
+	case eT_64PREAL32:
+		base_type->size = 8;
+		base_type->type = strdup ("float *");
+		break;
+	case eT_REAL48:
+		base_type->size = 6;
+		base_type->type = strdup ("float");
+		break;
+	case eT_PREAL48:
+		base_type->size = 2;
+		base_type->type = strdup ("float *");
+		break;
+	case eT_PFREAL48:
+	case eT_PHREAL48:
+	case eT_32PREAL48:
+	case eT_32PFREAL48:
+		base_type->size = 4;
+		base_type->type = strdup ("float *");
+		break;
+	case eT_64PREAL48:
+		base_type->size = 8;
+		base_type->type = strdup ("float *");
 		break;
 	case eT_REAL64:
-		*name = "double";
+		base_type->size = 8;
+		base_type->type = strdup ("double");
 		break;
+	case eT_PREAL64:
+		base_type->size = 2;
+		base_type->type = strdup ("double *");
+		break;
+	case eT_PFREAL64:
+	case eT_PHREAL64:
+	case eT_32PREAL64:
+	case eT_32PFREAL64:
+		base_type->size = 4;
+		base_type->type = strdup ("long double *");
+		break;
+	case eT_64PREAL64:
+		base_type->size = 8;
+		base_type->type = strdup ("long double *");
+		break;
+
 	case eT_REAL80:
-		*name = "long double";
+		base_type->size = 10;
+		base_type->type = strdup ("long double");
 		break;
-	case eT_SHORT:
-		*name = "short";
+	case eT_PREAL80:
+		base_type->size = 2;
+		base_type->type = strdup ("long double *");
 		break;
-	case eT_UCHAR:
-		*name = "unsigned char";
+	case eT_PFREAL80:
+	case eT_PHREAL80:
+	case eT_32PREAL80:
+	case eT_32PFREAL80:
+		base_type->size = 4;
+		base_type->type = strdup ("long double *");
 		break;
-	case eT_UINT4:
-		*name = "unsigned long";
+	case eT_64PREAL80:
+		base_type->size = 8;
+		base_type->type = strdup ("long double *");
 		break;
-	case eT_ULONG:
-		*name = "unsigned long";
+
+	case eT_REAL128:
+		base_type->size = 16;
+		base_type->type = strdup ("long double");
 		break;
-	case eT_UQUAD:
-		*name = "unsigned long long";
+	case eT_PREAL128:
+		base_type->size = 2;
+		base_type->type = strdup ("long double *");
 		break;
-	case eT_USHORT:
-		*name = "unsigned short";
+	case eT_PFREAL128:
+	case eT_PHREAL128:
+	case eT_32PREAL128:
+	case eT_32PFREAL128:
+		base_type->size = 4;
+		base_type->type = strdup ("long double *");
 		break;
-	case eT_WCHAR:
-		*name = "wchar";
+	case eT_64PREAL128:
+		base_type->size = 8;
+		base_type->type = strdup ("long double *");
 		break;
-	case eT_VOID:
-		*name = "void";
+
+	case eT_CPLX32:
+		base_type->size = 4;
+		base_type->type = strdup ("float _Complex");
 		break;
-	case eT_32PWCHAR:
-		*name = "pointer to wchar";
+	case eT_PCPLX32:
+		base_type->size = 2;
+		base_type->type = strdup ("float _Complex *");
+		break;
+	case eT_PFCPLX32:
+	case eT_PHCPLX32:
+	case eT_32PCPLX32:
+	case eT_32PFCPLX32:
+		base_type->size = 4;
+		base_type->type = strdup ("float _Complex *");
+		break;
+	case eT_64PCPLX32:
+		base_type->size = 8;
+		base_type->type = strdup ("float _Complex *");
+		break;
+
+	case eT_CPLX64:
+		base_type->size = 8;
+		base_type->type = strdup ("double _Complex");
+		break;
+	case eT_PCPLX64:
+		base_type->size = 2;
+		base_type->type = strdup ("double _Complex *");
+		break;
+	case eT_PFCPLX64:
+	case eT_PHCPLX64:
+	case eT_32PCPLX64:
+	case eT_32PFCPLX64:
+		base_type->size = 4;
+		base_type->type = strdup ("double _Complex *");
+		break;
+	case eT_64PCPLX64:
+		base_type->size = 8;
+		base_type->type = strdup ("double _Complex *");
+		break;
+
+	case eT_CPLX80:
+		base_type->size = 10;
+		base_type->type = strdup ("long double _Complex");
+		break;
+	case eT_PCPLX80:
+		base_type->size = 2;
+		base_type->type = strdup ("long double _Complex *");
+		break;
+	case eT_PFCPLX80:
+	case eT_PHCPLX80:
+	case eT_32PCPLX80:
+	case eT_32PFCPLX80:
+		base_type->size = 4;
+		base_type->type = strdup ("long double _Complex *");
+		break;
+	case eT_64PCPLX80:
+		base_type->size = 8;
+		base_type->type = strdup ("long double _Complex *");
+		break;
+
+	case eT_CPLX128:
+		base_type->size = 16;
+		base_type->type = strdup ("long double _Complex");
+		break;
+	case eT_PCPLX128:
+		base_type->size = 2;
+		base_type->type = strdup ("long double _Complex *");
+		break;
+	case eT_PFCPLX128:
+	case eT_PHCPLX128:
+	case eT_32PCPLX128:
+	case eT_32PFCPLX128:
+		base_type->size = 4;
+		base_type->type = strdup ("long double _Complex *");
+		break;
+	case eT_64PCPLX128:
+		base_type->size = 8;
+		base_type->type = strdup ("long double _Complex *");
+		break;
+
+	case eT_BOOL08: // _Bool probably isn't ideal for bool > 08
+		base_type->size = 1;
+		base_type->type = strdup ("_Bool");
+		break;
+	case eT_PBOOL08:
+		base_type->size = 2;
+		base_type->type = strdup ("_Bool *");
+		break;
+	case eT_PFBOOL08:
+	case eT_PHBOOL08:
+	case eT_32PBOOL08:
+	case eT_32PFBOOL08:
+		base_type->size = 4;
+		base_type->type = strdup ("_Bool *");
+		break;
+	case eT_64PBOOL08:
+		base_type->size = 8;
+		base_type->type = strdup ("_Bool *");
+		break;
+
+	case eT_BOOL16:
+		base_type->size = 2;
+		base_type->type = strdup ("_Bool");
+		break;
+	case eT_PBOOL16:
+		base_type->size = 2;
+		base_type->type = strdup ("_Bool *");
+		break;
+	case eT_PFBOOL16:
+	case eT_PHBOOL16:
+	case eT_32PBOOL16:
+	case eT_32PFBOOL16:
+		base_type->size = 4;
+		base_type->type = strdup ("_Bool *");
+		break;
+	case eT_64PBOOL16:
+		base_type->size = 8;
+		base_type->type = strdup ("_Bool *");
+		break;
+
+	case eT_BOOL32:
+		base_type->size = 4;
+		base_type->type = strdup ("_Bool");
+		break;
+	case eT_PBOOL32:
+		base_type->size = 2;
+		base_type->type = strdup ("_Bool *");
+		break;
+	case eT_PFBOOL32:
+	case eT_PHBOOL32:
+	case eT_32PBOOL32:
+	case eT_32PFBOOL32:
+		base_type->size = 4;
+		base_type->type = strdup ("_Bool *");
+		break;
+	case eT_64PBOOL32:
+		base_type->size = 8;
+		base_type->type = strdup ("_Bool *");
+		break;
+
+	case eT_BOOL64:
+		base_type->size = 8;
+		base_type->type = strdup ("_Bool");
+		break;
+	case eT_PBOOL64:
+		base_type->size = 2;
+		base_type->type = strdup ("_Bool *");
+		break;
+	case eT_PFBOOL64:
+	case eT_PHBOOL64:
+	case eT_32PBOOL64:
+	case eT_32PFBOOL64:
+		base_type->size = 4;
+		base_type->type = strdup ("_Bool *");
+		break;
+	case eT_64PBOOL64:
+		base_type->size = 8;
+		base_type->type = strdup ("_Bool *");
+		break;
+
+	case eT_BOOL128:
+		base_type->size = 16;
+		base_type->type = strdup ("_Bool");
+		break;
+	case eT_PBOOL128:
+		base_type->size = 2;
+		base_type->type = strdup ("_Bool *");
+		break;
+	case eT_PFBOOL128:
+	case eT_PHBOOL128:
+	case eT_32PBOOL128:
+	case eT_32PFBOOL128:
+		base_type->size = 4;
+		base_type->type = strdup ("_Bool *");
+		break;
+	case eT_64PBOOL128:
+		base_type->size = 8;
+		base_type->type = strdup ("_Bool *");
 		break;
 	default:
-		*name = "unsupported base type";
+		base_type->size = 0;
+		base_type->type = strdup ("unknown_t");
 		break;
 	}
+	type.type_info = base_type;
+	type.leaf_type = eLF_BASE_TYPE;
+	return type;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -312,26 +640,6 @@ static void get_sval_name(SVal *val, char **name) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-//static void get_arglist_type(void *type, void **arglist_type)
-//{
-//	STypeInfo *t = (STypeInfo *) type;
-//	SLF_ARGLIST *lf_arglist = (SLF_ARGLIST *) t->type_info;
-//	RList *l = (RList *) *arglist_type;
-//	int i = 0;
-//	int tmp = 0;
-
-//	for (i = 0; i < lf_arglist->count; i++) {
-//		tmp = lf_arglist->arg_type[i];
-//		if (tmp < base_idx) {
-//			// 0 - means NO_TYPE
-//			r_list_append(l, 0);
-//		} else {
-//			r_list_append(l, r_list_get_n(p_types_list, (tmp - base_idx)));
-//		}
-//	}
-//}
-
-///////////////////////////////////////////////////////////////////////////////
 static void is_union_fwdref(void *type, int *is_fwdref) {
 	STypeInfo *t = (STypeInfo *) type;
 	SLF_UNION *lf = (SLF_UNION *) t->type_info;
@@ -360,8 +668,18 @@ static int get_array_element_type(void *type, void **ret_type) {
 	SLF_ARRAY *lf_array = (SLF_ARRAY *) t->type_info;
 	int curr_idx = lf_array->element_type;
 
-	if (curr_idx < base_idx) {
-		*ret_type = 0;
+	if (is_base_type (curr_idx)) {
+		STypeInfo base_type = parse_base_type (curr_idx);
+		SType *base_ret_type = R_NEW0 (SType);
+		if (!base_ret_type) {
+			*ret_type = 0;
+			return false;
+		}
+		base_ret_type->tpi_idx = 0;
+		base_ret_type->length = 0;
+		base_ret_type->type_data = base_type;
+		*ret_type = base_ret_type;
+		return true; // check what are the return values used for
 	} else {
 		curr_idx -= base_idx;
 		*ret_type = r_list_get_n(p_types_list, curr_idx);
@@ -377,8 +695,18 @@ static int get_array_index_type(void *type, void **ret_type) {
 	SLF_ARRAY *lf_array = (SLF_ARRAY *) t->type_info;
 	int curr_idx = lf_array->index_type;
 
-	if (curr_idx < base_idx) {
-		*ret_type = 0;
+	if (is_base_type (curr_idx)) {
+		STypeInfo base_type = parse_base_type (curr_idx);
+		SType *base_ret_type = R_NEW0 (SType);
+		if (!base_ret_type) {
+			*ret_type = 0;
+			return false;
+		}
+		base_ret_type->tpi_idx = 0;
+		base_ret_type->length = 0;
+		base_ret_type->type_data = base_type;
+		*ret_type = base_ret_type;
+		return true; // check what are the return values used for
 	} else {
 		curr_idx -= base_idx;
 		*ret_type = r_list_get_n(p_types_list, curr_idx);
@@ -394,8 +722,18 @@ static int get_bitfield_base_type(void *type, void **ret_type) {
 	SLF_BITFIELD *lf = (SLF_BITFIELD *) t->type_info;
 	int curr_idx = lf->base_type;
 
-	if (curr_idx < base_idx) {
-		*ret_type = 0;
+	if (is_base_type (curr_idx)) {
+		STypeInfo base_type = parse_base_type (curr_idx);
+		SType *base_ret_type = R_NEW0 (SType);
+		if (!base_ret_type) {
+			*ret_type = 0;
+			return false;
+		}
+		base_ret_type->tpi_idx = 0;
+		base_ret_type->length = 0;
+		base_ret_type->type_data = base_type;
+		*ret_type = base_ret_type;
+		return true; // check what are the return values used for
 	} else {
 		curr_idx -= base_idx;
 		*ret_type = r_list_get_n(p_types_list, curr_idx);
@@ -410,8 +748,18 @@ static int get_class_struct_derived(void *type, void **ret_type) {
 	SLF_STRUCTURE *lf = (SLF_STRUCTURE *) t->type_info;
 	int curr_idx = lf->derived;
 
-	if (curr_idx < base_idx) {
-		*ret_type = 0;
+	if (is_base_type (curr_idx)) {
+		STypeInfo base_type = parse_base_type (curr_idx);
+		SType *base_ret_type = R_NEW0 (SType);
+		if (!base_ret_type) {
+			*ret_type = 0;
+			return false;
+		}
+		base_ret_type->tpi_idx = 0;
+		base_ret_type->length = 0;
+		base_ret_type->type_data = base_type;
+		*ret_type = base_ret_type;
+		return true; // check what are the return values used for
 	} else {
 		curr_idx -= base_idx;
 		*ret_type = r_list_get_n(p_types_list, curr_idx);
@@ -426,8 +774,18 @@ static int get_class_struct_vshape(void *type, void **ret_type) {
 	SLF_STRUCTURE *lf = (SLF_STRUCTURE *) t->type_info;
 	int curr_idx = lf->vshape;
 
-	if (curr_idx < base_idx) {
-		*ret_type = 0;
+	if (is_base_type (curr_idx)) {
+		STypeInfo base_type = parse_base_type (curr_idx);
+		SType *base_ret_type = R_NEW0 (SType);
+		if (!base_ret_type) {
+			*ret_type = 0;
+			return false;
+		}
+		base_ret_type->tpi_idx = 0;
+		base_ret_type->length = 0;
+		base_ret_type->type_data = base_type;
+		*ret_type = base_ret_type;
+		return true; // check what are the return values used for
 	} else {
 		curr_idx -= base_idx;
 		*ret_type = r_list_get_n(p_types_list, curr_idx);
@@ -443,8 +801,18 @@ static int get_mfunction_return_type(void *type, void **ret_type) {
 	SLF_MFUNCTION *lf = (SLF_MFUNCTION *) t->type_info;
 	int curr_idx = lf->return_type;
 
-	if (curr_idx < base_idx) {
-		*ret_type = 0;
+	if (is_base_type (curr_idx)) {
+		STypeInfo base_type = parse_base_type (curr_idx);
+		SType *base_ret_type = R_NEW0 (SType);
+		if (!base_ret_type) {
+			*ret_type = 0;
+			return false;
+		}
+		base_ret_type->tpi_idx = 0;
+		base_ret_type->length = 0;
+		base_ret_type->type_data = base_type;
+		*ret_type = base_ret_type;
+		return true; // check what are the return values used for
 	} else {
 		curr_idx -= base_idx;
 		*ret_type = r_list_get_n(p_types_list, curr_idx);
@@ -459,8 +827,18 @@ static int get_mfunction_class_type(void *type, void **ret_type) {
 	SLF_MFUNCTION *lf = (SLF_MFUNCTION *) t->type_info;
 	int curr_idx = lf->class_type;
 
-	if (curr_idx < base_idx) {
-		*ret_type = 0;
+	if (is_base_type (curr_idx)) {
+		STypeInfo base_type = parse_base_type (curr_idx);
+		SType *base_ret_type = R_NEW0 (SType);
+		if (!base_ret_type) {
+			*ret_type = 0;
+			return false;
+		}
+		base_ret_type->tpi_idx = 0;
+		base_ret_type->length = 0;
+		base_ret_type->type_data = base_type;
+		*ret_type = base_ret_type;
+		return true; // check what are the return values used for
 	} else {
 		curr_idx -= base_idx;
 		*ret_type = r_list_get_n(p_types_list, curr_idx);
@@ -475,8 +853,18 @@ static int get_mfunction_this_type(void *type, void **ret_type) {
 	SLF_MFUNCTION *lf = (SLF_MFUNCTION *) t->type_info;
 	int curr_idx = lf->this_type;
 
-	if (curr_idx < base_idx) {
-		*ret_type = 0;
+	if (is_base_type (curr_idx)) {
+		STypeInfo base_type = parse_base_type (curr_idx);
+		SType *base_ret_type = R_NEW0 (SType);
+		if (!base_ret_type) {
+			*ret_type = 0;
+			return false;
+		}
+		base_ret_type->tpi_idx = 0;
+		base_ret_type->length = 0;
+		base_ret_type->type_data = base_type;
+		*ret_type = base_ret_type;
+		return true; // check what are the return values used for
 	} else {
 		curr_idx -= base_idx;
 		*ret_type = r_list_get_n(p_types_list, curr_idx);
@@ -491,8 +879,18 @@ static int get_mfunction_arglist(void *type, void **ret_type) {
 	SLF_MFUNCTION *lf = (SLF_MFUNCTION *) t->type_info;
 	int curr_idx = lf->arglist;
 
-	if (curr_idx < base_idx) {
-		*ret_type = 0;
+	if (is_base_type (curr_idx)) {
+		STypeInfo base_type = parse_base_type (curr_idx);
+		SType *base_ret_type = R_NEW0 (SType);
+		if (!base_ret_type) {
+			*ret_type = 0;
+			return false;
+		}
+		base_ret_type->tpi_idx = 0;
+		base_ret_type->length = 0;
+		base_ret_type->type_data = base_type;
+		*ret_type = base_ret_type;
+		return true; // check what are the return values used for
 	} else {
 		curr_idx -= base_idx;
 		*ret_type = r_list_get_n(p_types_list, curr_idx);
@@ -507,8 +905,18 @@ static int get_modifier_modified_type(void *type, void **ret_type) {
 	SLF_MODIFIER *lf = (SLF_MODIFIER *) t->type_info;
 	int curr_idx = lf->modified_type;
 
-	if (curr_idx < base_idx) {
-		*ret_type = 0;
+	if (is_base_type (curr_idx)) {
+		STypeInfo base_type = parse_base_type (curr_idx);
+		SType *base_ret_type = R_NEW0 (SType);
+		if (!base_ret_type) {
+			*ret_type = 0;
+			return false;
+		}
+		base_ret_type->tpi_idx = 0;
+		base_ret_type->length = 0;
+		base_ret_type->type_data = base_type;
+		*ret_type = base_ret_type;
+		return true; // check what are the return values used for
 	} else {
 		curr_idx -= base_idx;
 		*ret_type = r_list_get_n(p_types_list, curr_idx);
@@ -523,8 +931,18 @@ static int get_pointer_utype(void *type, void **ret_type) {
 	SLF_POINTER *lf = (SLF_POINTER *) t->type_info;
 	int curr_idx = lf->utype;
 
-	if (curr_idx < base_idx) {
-		*ret_type = 0;
+	if (is_base_type (curr_idx)) {
+		STypeInfo base_type = parse_base_type (curr_idx);
+		SType *base_ret_type = R_NEW0 (SType);
+		if (!base_ret_type) {
+			*ret_type = 0;
+			return false;
+		}
+		base_ret_type->tpi_idx = 0;
+		base_ret_type->length = 0;
+		base_ret_type->type_data = base_type;
+		*ret_type = base_ret_type;
+		return true; // check what are the return values used for
 	} else {
 		curr_idx -= base_idx;
 		*ret_type = r_list_get_n(p_types_list, curr_idx);
@@ -540,8 +958,18 @@ static int get_procedure_return_type(void *type, void **ret_type) {
 	SLF_PROCEDURE *lf = (SLF_PROCEDURE *) t->type_info;
 	int curr_idx = lf->return_type;
 
-	if (curr_idx < base_idx) {
-		*ret_type = 0;
+	if (is_base_type (curr_idx)) {
+		STypeInfo base_type = parse_base_type (curr_idx);
+		SType *base_ret_type = R_NEW0 (SType);
+		if (!base_ret_type) {
+			*ret_type = 0;
+			return false;
+		}
+		base_ret_type->tpi_idx = 0;
+		base_ret_type->length = 0;
+		base_ret_type->type_data = base_type;
+		*ret_type = base_ret_type;
+		return true; // check what are the return values used for
 	} else {
 		curr_idx -= base_idx;
 		*ret_type = r_list_get_n(p_types_list, curr_idx);
@@ -556,8 +984,18 @@ static int get_procedure_arglist(void *type, void **ret_type) {
 	SLF_PROCEDURE *lf = (SLF_PROCEDURE *) t->type_info;
 	int curr_idx = lf->arg_list;
 
-	if (curr_idx < base_idx) {
-		*ret_type = 0;
+	if (is_base_type (curr_idx)) {
+		STypeInfo base_type = parse_base_type (curr_idx);
+		SType *base_ret_type = R_NEW0 (SType);
+		if (!base_ret_type) {
+			*ret_type = 0;
+			return false;
+		}
+		base_ret_type->tpi_idx = 0;
+		base_ret_type->length = 0;
+		base_ret_type->type_data = base_type;
+		*ret_type = base_ret_type;
+		return true; // check what are the return values used for
 	} else {
 		curr_idx -= base_idx;
 		*ret_type = r_list_get_n(p_types_list, curr_idx);
@@ -572,8 +1010,18 @@ static int get_member_index(void *type, void **ret_type) {
 	SLF_MEMBER *lf = (SLF_MEMBER *) t->type_info;
 	int curr_idx = lf->index;
 
-	if (curr_idx < base_idx) {
-		*ret_type = 0;
+	if (is_base_type (curr_idx)) {
+		STypeInfo base_type = parse_base_type (curr_idx);
+		SType *base_ret_type = R_NEW0 (SType);
+		if (!base_ret_type) {
+			*ret_type = 0;
+			return false;
+		}
+		base_ret_type->tpi_idx = 0;
+		base_ret_type->length = 0;
+		base_ret_type->type_data = base_type;
+		*ret_type = base_ret_type;
+		return true; // check what are the return values used for
 	} else {
 		curr_idx -= base_idx;
 		*ret_type = r_list_get_n(p_types_list, curr_idx);
@@ -588,8 +1036,18 @@ static int get_nesttype_index(void *type, void **ret_type) {
 	SLF_NESTTYPE *lf = (SLF_NESTTYPE *) t->type_info;
 	int curr_idx = lf->index;
 
-	if (curr_idx < base_idx) {
-		*ret_type = 0;
+	if (is_base_type (curr_idx)) {
+		STypeInfo base_type = parse_base_type (curr_idx);
+		SType *base_ret_type = R_NEW0 (SType);
+		if (!base_ret_type) {
+			*ret_type = 0;
+			return false;
+		}
+		base_ret_type->tpi_idx = 0;
+		base_ret_type->length = 0;
+		base_ret_type->type_data = base_type;
+		*ret_type = base_ret_type;
+		return true; // check what are the return values used for
 	} else {
 		curr_idx -= base_idx;
 		*ret_type = r_list_get_n(p_types_list, curr_idx);
@@ -604,8 +1062,18 @@ static int get_onemethod_index(void *type, void **ret_type) {
 	SLF_ONEMETHOD *lf = (SLF_ONEMETHOD *) t->type_info;
 	int curr_idx = lf->index;
 
-	if (curr_idx < base_idx) {
-		*ret_type = 0;
+	if (is_base_type (curr_idx)) {
+		STypeInfo base_type = parse_base_type (curr_idx);
+		SType *base_ret_type = R_NEW0 (SType);
+		if (!base_ret_type) {
+			*ret_type = 0;
+			return false;
+		}
+		base_ret_type->tpi_idx = 0;
+		base_ret_type->length = 0;
+		base_ret_type->type_data = base_type;
+		*ret_type = base_ret_type;
+		return true; // check what are the return values used for
 	} else {
 		curr_idx -= base_idx;
 		*ret_type = r_list_get_n(p_types_list, curr_idx);
@@ -619,8 +1087,18 @@ static int get_method_mlist(void *type, void **ret_type) {
 	SLF_METHOD *lf = (SLF_METHOD *) t->type_info;
 	int curr_idx = lf->mlist;
 
-	if (curr_idx < base_idx) {
-		*ret_type = 0;
+	if (is_base_type (curr_idx)) {
+		STypeInfo base_type = parse_base_type (curr_idx);
+		SType *base_ret_type = R_NEW0 (SType);
+		if (!base_ret_type) {
+			*ret_type = 0;
+			return false;
+		}
+		base_ret_type->tpi_idx = 0;
+		base_ret_type->length = 0;
+		base_ret_type->type_data = base_type;
+		*ret_type = base_ret_type;
+		return true; // check what are the return values used for
 	} else {
 		curr_idx -= base_idx;
 		*ret_type = r_list_get_n(p_types_list, curr_idx);
@@ -633,22 +1111,19 @@ static int get_enum_utype(void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *) type;
 	SLF_ENUM *lf = (SLF_ENUM *) t->type_info;
 	int curr_idx = lf->utype;
-	// TODO, stopped here
-	STypeInfo base_type = parse_base_type (curr_idx);
-	if (base_type.leaf_type) {
+
+	if (is_base_type (curr_idx)) {
+		STypeInfo base_type = parse_base_type (curr_idx);
 		SType *base_ret_type = R_NEW0 (SType);
 		if (!base_ret_type) {
-			// TODO
 			*ret_type = 0;
-			return curr_idx;
+			return false;
 		}
 		base_ret_type->tpi_idx = 0;
 		base_ret_type->length = 0;
 		base_ret_type->type_data = base_type;
 		*ret_type = base_ret_type;
 		return true; // check what are the return values used for
-	} else if (curr_idx < base_idx) {
-		*ret_type = 0;
 	} else {
 		curr_idx -= base_idx;
 		*ret_type = r_list_get_n(p_types_list, curr_idx);
@@ -1142,12 +1617,12 @@ static void get_array_print_type(void *type, char **name) {
 	char *tmp_name = NULL;
 	int name_len = 0;
 	bool need_to_free = true;
-	int base_type = 0;
 
-	base_type = ti->get_element_type (ti, (void **)&t);
-	if (!t) {
+	ti->get_element_type (ti, (void **)&t);
+	if (t->type_data.leaf_type == eLF_BASE_TYPE) {
 		need_to_free = false;
-		print_base_type (base_type, &tmp_name);
+		SLF_BASE_TYPE *base_type = t->type_data.type_info;
+		tmp_name = base_type->type;
 	} else {
 		ti = &t->type_data;
 		ti->get_print_type (ti, &tmp_name);
@@ -1180,12 +1655,15 @@ static void get_pointer_print_type(void *type, char **name) {
 	char *tmp_name = NULL;
 	int name_len = 0;
 	int need_to_free = 1;
-	int base_type = 0;
 
-	base_type = ti->get_utype (ti, (void **)&t);
+	ti->get_utype (ti, (void **)&t);
 	if (!t) {
-		need_to_free = 0;
-		print_base_type (base_type, &tmp_name);
+		need_to_free = false;
+		tmp_name = "unknown_t";
+	} else if (t->type_data.leaf_type == eLF_BASE_TYPE) {
+		need_to_free = false;
+		SLF_BASE_TYPE *base_type = t->type_data.type_info;
+		tmp_name = base_type->type;
 	} else {
 		ti = &t->type_data;
 		ti->get_print_type (ti, &tmp_name);
@@ -1217,11 +1695,11 @@ static void get_modifier_print_type(void *type, char **name) {
 	SType *stype = NULL;
 	char *tmp_name = NULL;
 	// This is wrong
-	int base_type = stype_info->get_modified_type (stype_info, (void **)&stype);
-
-	if (!stype) {
+	stype_info->get_modified_type (stype_info, (void **)&stype);
+	if (stype && stype->type_data.leaf_type == eLF_BASE_TYPE) {
 		need_to_free = false;
-		print_base_type (base_type, &tmp_name);
+		SLF_BASE_TYPE *base_type = stype->type_data.type_info;
+		tmp_name = base_type->type;
 	} else {
 		STypeInfo *refered_type_info = NULL;
 		refered_type_info = &stype->type_data;
@@ -1273,13 +1751,13 @@ static void get_bitfield_print_type(void *type, char **name) {
 	char *tmp_name = 0;
 	int name_len = 0;
 	int need_to_free = 1;
-	int base_type = 0;
 	SLF_BITFIELD *bitfeild_info = (SLF_BITFIELD *)ti->type_info;
 
-	base_type = ti->get_base_type (ti, (void **)&t);
-	if (!t) {
-		need_to_free = 0;
-		print_base_type (base_type, &tmp_name);
+	ti->get_base_type (ti, (void **)&t);
+	if (t->type_data.leaf_type == eLF_BASE_TYPE) {
+		need_to_free = false;
+		SLF_BASE_TYPE *base_type = t->type_data.type_info;
+		tmp_name = base_type->type;
 	} else {
 		ti = &t->type_data;
 		ti->get_print_type (ti, &tmp_name);
@@ -1328,12 +1806,13 @@ static void get_enum_print_type(void *type, char **name) {
 	char *tmp_name = 0;
 	int name_len = 0;
 	int need_to_free = 1;
-	int base_type = 0;
 
-	base_type = ti->get_utype (ti, (void **)&t);
-	if (!t) {
+	ti->get_utype (ti, (void **)&t);
+	r_return_if_fail (t); // This shouldn't happen?, TODO explore this situation
+	if (t->type_data.leaf_type == eLF_BASE_TYPE) { // BaseType
 		need_to_free = 0;
-		print_base_type (base_type, &tmp_name);
+		SLF_BASE_TYPE *base_type = t->type_data.type_info;
+		tmp_name = base_type->type;
 	} else {
 		ti = &t->type_data;
 		ti->get_print_type (ti, &tmp_name);
@@ -1520,12 +1999,12 @@ static void get_nesttype_print_type(void *type, char **name) {
 	char *tmp_name = 0;
 	int name_len = 0;
 	int need_to_free = 1;
-	int base_type = 0;
 
-	base_type = ti->get_index (ti, (void **)&t);
-	if (!t) {
-		need_to_free = 0;
-		print_base_type (base_type, &tmp_name);
+	ti->get_index (ti, (void **)&t);
+	if (t->type_data.leaf_type == eLF_BASE_TYPE) {
+		need_to_free = false;
+		SLF_BASE_TYPE *base_type = t->type_data.type_info;
+		tmp_name = base_type->type;
 	} else {
 		ti = &t->type_data;
 		if (ti->get_print_type != NULL) {
@@ -1593,12 +2072,12 @@ static void get_member_print_type(void *type, char **name) {
 	char *tmp_name = 0;
 	int name_len = 0;
 	int need_to_free = 1;
-	int base_type = 0;
 
-	base_type = ti->get_index (ti, (void **) &t);
-	if (!t) {
-		need_to_free = 0;
-		print_base_type (base_type, &tmp_name);
+	ti->get_index (ti, (void **) &t);
+	if (t->type_data.leaf_type == eLF_BASE_TYPE) {
+		need_to_free = false;
+		SLF_BASE_TYPE *base_type = t->type_data.type_info;
+		tmp_name = base_type->type;
 	} else {
 		ti = &t->type_data;
 		ti->get_print_type (ti, &tmp_name);
@@ -1630,12 +2109,12 @@ static void get_onemethod_print_type(void *type, char **name) {
 	char *tmp_name = 0;
 	int name_len = 0;
 	int need_to_free = 1;
-	int base_type = 0;
 
-	base_type = ti->get_index (ti, (void **)&t);
-	if (!t) {
-		need_to_free = 0;
-		print_base_type (base_type, &tmp_name);
+	ti->get_index (ti, (void **)&t);
+	if (t->type_data.leaf_type == eLF_BASE_TYPE) {
+		need_to_free = false;
+		SLF_BASE_TYPE *base_type = t->type_data.type_info;
+		tmp_name = base_type->type;
 	} else {
 		ti = &t->type_data;
 		ti->get_print_type (ti, &tmp_name);

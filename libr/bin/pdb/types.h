@@ -261,7 +261,7 @@ typedef enum {
 	eT_32PFUINT4 =            0x00000575,
 	eT_64PUINT4 =             0x00000675,
 
-	eT_QUAD =                 0x00000013,
+	eT_QUAD =                 0x00000013, // 64 bit signed
 	eT_PQUAD =                0x00000113,
 	eT_PFQUAD =               0x00000213,
 	eT_PHQUAD =               0x00000313,
@@ -428,6 +428,14 @@ typedef enum {
 	eT_32PBOOL64 =            0x00000433,
 	eT_32PFBOOL64 =           0x00000533,
 	eT_64PBOOL64 =            0x00000633,
+
+	eT_BOOL128 =               0x00000034,
+	eT_PBOOL128 =              0x00000134,
+	eT_PFBOOL128 =             0x00000234,
+	eT_PHBOOL128 =             0x00000334,
+	eT_32PBOOL128 =            0x00000434,
+	eT_32PFBOOL128 =           0x00000534,
+	eT_64PBOOL128 =            0x00000634,
 
 	eT_NCVPTR =               0x000001F0,
 	eT_FCVPTR =               0x000002F0,
@@ -1015,6 +1023,7 @@ typedef enum {
 	eLF_PAD13                = 0x000000FD,
 	eLF_PAD14                = 0x000000FE,
 	eLF_PAD15                = 0x000000FF,
+	eLF_BASE_TYPE            = 0xEFFFFFFF, // Custom, hopefully it doesn't collide
 	eLF_MAX                  = 0xFFFFFFFF
 } ELeafType;
 
