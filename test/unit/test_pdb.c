@@ -187,7 +187,7 @@ bool test_pdb_tpi(void) {
 					mu_assert_streq (name, "refcount", "Wrong member name");
 					char *type;
 					type_info->get_print_type (type_info, &type);
-					mu_assert_streq (type, "(member) long", "Wrong member type");
+					mu_assert_streq (type, "int32_t", "Wrong member type");
 				}
 				if (i == 1) {
 					mu_assert_eq (type_info->leaf_type, eLF_MEMBER, "Incorrect data type");

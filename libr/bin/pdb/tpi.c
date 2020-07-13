@@ -7,13 +7,14 @@ static RList *p_types_list;
 
 static bool is_base_type (int idx) {
 	ut32 value = (ut32) idx;
-	/*
+	/*   https://llvm.org/docs/PDB/TpiStream.html#type-indices
         .---------------------------.------.----------.
         |           Unused          | Mode |   Kind   |
         '---------------------------'------'----------'
         |+32                        |+12   |+8        |+0
 	*/
-	return ((value & 0x00000000FFF00) <= 0x700 && (value & 0x00000000000FF) < 0x80);
+	return value < base_idx; 
+	// return ((value & 0x00000000FFF00) <= 0x700 && (value & 0x00000000000FF) < 0x80);
 }
 
 /**
@@ -89,6 +90,142 @@ static STypeInfo parse_base_type(ut32 idx) {
 	case eT_64PUCHAR:
 		base_type->size = 8;
 		base_type->type = strdup ("unsigned char *");
+		break;
+
+
+	case eT_RCHAR:
+		base_type->size = 1;
+		base_type->type = strdup ("char");
+		break;
+	case eT_PRCHAR:
+		base_type->size = 2;
+		base_type->type = strdup ("char *");
+		break;
+	case eT_PFRCHAR:
+	case eT_PHRCHAR:
+	case eT_32PRCHAR:
+	case eT_32PFRCHAR:
+		base_type->size = 4;
+		base_type->type = strdup ("char *");
+		break;
+	case eT_64PRCHAR:
+		base_type->size = 8;
+		base_type->type = strdup ("char *");
+		break;
+
+	case eT_WCHAR:
+		base_type->size = 4;
+		base_type->type = strdup ("wchar_t");
+		break;
+	case eT_PWCHAR:
+		base_type->size = 2;
+		base_type->type = strdup ("wchar_t *");
+		break;
+	case eT_PFWCHAR:
+	case eT_PHWCHAR:
+	case eT_32PWCHAR:
+	case eT_32PFWCHAR:
+		base_type->size = 4;
+		base_type->type = strdup ("wchar_t *");
+		break;
+	case eT_64PWCHAR:
+		base_type->size = 8;
+		base_type->type = strdup ("wchar_t *");
+		break;
+
+	case eT_BYTE:
+		base_type->size = 1;
+		base_type->type = strdup ("char");
+		break;
+	case eT_PBYTE:
+		base_type->size = 2;
+		base_type->type = strdup ("char *");
+		break;
+	case eT_PFBYTE:
+	case eT_PHBYTE:
+	case eT_32PBYTE:
+	case eT_32PFBYTE:
+		base_type->size = 4;
+		base_type->type = strdup ("char *");
+		break;
+	case eT_64PBYTE:
+		base_type->size = 8;
+		base_type->type = strdup ("char *");
+		break;
+
+	case eT_UBYTE:
+		base_type->size = 1;
+		base_type->type = strdup ("unsigned char");
+		break;
+	case eT_PUBYTE:
+		base_type->size = 2;
+		base_type->type = strdup ("unsigned char *");
+		break;
+	case eT_PFUBYTE:
+	case eT_PHUBYTE:
+	case eT_32PUBYTE:
+	case eT_32PFUBYTE:
+		base_type->size = 4;
+		base_type->type = strdup ("unsigned char *");
+		break;
+	case eT_64PUBYTE:
+		base_type->size = 8;
+		base_type->type = strdup ("unsigned char *");
+		break;
+		
+
+	case eT_INT16: // 16 bit
+	case eT_SHORT: // 16 bit short
+		base_type->size = 2;
+		base_type->type = strdup ("short");
+		break;
+	case eT_PINT16:
+	case eT_PSHORT:
+		base_type->size = 2;
+		base_type->type = strdup ("short *");
+		break;
+	case eT_PFSHORT:
+	case eT_PHSHORT:
+	case eT_32PSHORT:
+	case eT_32PFSHORT:
+	case eT_PFINT16:
+	case eT_PHINT16:
+	case eT_32PINT16:
+	case eT_32PFINT16:
+		base_type->size = 4;
+		base_type->type = strdup ("short *");
+		break;
+	case eT_64PINT16:
+	case eT_64PSHORT:
+		base_type->size = 8;
+		base_type->type = strdup ("short *");
+		break;
+
+	case eT_UINT16: // 16 bit
+	case eT_USHORT: // 16 bit short
+		base_type->size = 2;
+		base_type->type = strdup ("unsigned short");
+		break;
+	case eT_PUINT16:
+	case eT_PUSHORT:
+		base_type->size = 2;
+		base_type->type = strdup ("unsigned short *");
+		break;
+	case eT_PFUSHORT:
+	case eT_PHUSHORT:
+	case eT_32PUSHORT:
+	case eT_PFUINT16:
+	case eT_PHUINT16:
+	case eT_32PUINT16:
+	case eT_32PFUINT16:
+	case eT_32PFUSHORT:
+		base_type->size = 4;
+		base_type->type = strdup ("unsigned short *");
+		break;
+	case eT_64PUINT16:
+	case eT_64PUSHORT:
+		base_type->size =8;
+		base_type->type = strdup ("unsigned short *");
 		break;
 
 	case eT_LONG: 
@@ -748,21 +885,11 @@ static int get_class_struct_derived(void *type, void **ret_type) {
 	SLF_STRUCTURE *lf = (SLF_STRUCTURE *) t->type_info;
 	int curr_idx = lf->derived;
 
-	if (is_base_type (curr_idx)) {
-		STypeInfo base_type = parse_base_type (curr_idx);
-		SType *base_ret_type = R_NEW0 (SType);
-		if (!base_ret_type) {
-			*ret_type = 0;
-			return false;
-		}
-		base_ret_type->tpi_idx = 0;
-		base_ret_type->length = 0;
-		base_ret_type->type_data = base_type;
-		*ret_type = base_ret_type;
-		return true; // check what are the return values used for
-	} else {
+	if (curr_idx) {
 		curr_idx -= base_idx;
 		*ret_type = r_list_get_n(p_types_list, curr_idx);
+	} else {
+		*ret_type = NULL;
 	}
 
 	return curr_idx;
@@ -774,21 +901,11 @@ static int get_class_struct_vshape(void *type, void **ret_type) {
 	SLF_STRUCTURE *lf = (SLF_STRUCTURE *) t->type_info;
 	int curr_idx = lf->vshape;
 
-	if (is_base_type (curr_idx)) {
-		STypeInfo base_type = parse_base_type (curr_idx);
-		SType *base_ret_type = R_NEW0 (SType);
-		if (!base_ret_type) {
-			*ret_type = 0;
-			return false;
-		}
-		base_ret_type->tpi_idx = 0;
-		base_ret_type->length = 0;
-		base_ret_type->type_data = base_type;
-		*ret_type = base_ret_type;
-		return true; // check what are the return values used for
-	} else {
+	if (curr_idx) {
 		curr_idx -= base_idx;
 		*ret_type = r_list_get_n(p_types_list, curr_idx);
+	} else {
+		*ret_type = NULL;
 	}
 
 	return curr_idx;
@@ -1613,12 +1730,12 @@ static void free_tpi_stream(void *stream) {
 
 static void get_array_print_type(void *type, char **name) {
 	STypeInfo *ti = (STypeInfo *) type;
-	SType *t = 0;
 	char *tmp_name = NULL;
-	int name_len = 0;
 	bool need_to_free = true;
 
+	SType *t = 0;
 	ti->get_element_type (ti, (void **)&t);
+	r_return_if_fail (t); // t == NULL indicates malformed PDB ?
 	if (t->type_data.leaf_type == eLF_BASE_TYPE) {
 		need_to_free = false;
 		SLF_BASE_TYPE *base_type = t->type_data.type_info;
@@ -1627,23 +1744,18 @@ static void get_array_print_type(void *type, char **name) {
 		ti = &t->type_data;
 		ti->get_print_type (ti, &tmp_name);
 	}
-
-	name_len = strlen ("array: ");
+	int size = 0;
+	if (ti->get_val) {
+		ti->get_val (ti, &size);
+	}
+	RStrBuf buff;
+	r_strbuf_init (&buff);
 	if (tmp_name) {
-		name_len += strlen (tmp_name);
+		r_strbuf_append (&buff, tmp_name);
 	}
-	*name = (char *) malloc (name_len + 1);
-	if (!(*name)) {
-		if (need_to_free) {
-			R_FREE (tmp_name);
-		}
-		return;
-	}
-	// name[name_len] = '\0';
-	strcpy (*name, "array: ");
-	if (tmp_name) {
-		strcat (*name, tmp_name);
-	}
+	r_strbuf_appendf (&buff, "[%d]", size);
+	*name = r_strbuf_drain_nofree (&buff);
+	r_strbuf_fini (&buff);
 	if (need_to_free) {
 		R_FREE (tmp_name);
 	}
@@ -1653,14 +1765,11 @@ static void get_pointer_print_type(void *type, char **name) {
 	STypeInfo *ti = (STypeInfo *) type;
 	SType *t = 0;
 	char *tmp_name = NULL;
-	int name_len = 0;
 	int need_to_free = 1;
 
 	ti->get_utype (ti, (void **)&t);
-	if (!t) {
-		need_to_free = false;
-		tmp_name = "unknown_t";
-	} else if (t->type_data.leaf_type == eLF_BASE_TYPE) {
+	r_return_if_fail (t); // t == NULL indicates malformed PDB ?
+	if (t->type_data.leaf_type == eLF_BASE_TYPE) {
 		need_to_free = false;
 		SLF_BASE_TYPE *base_type = t->type_data.type_info;
 		tmp_name = base_type->type;
@@ -1669,20 +1778,14 @@ static void get_pointer_print_type(void *type, char **name) {
 		ti->get_print_type (ti, &tmp_name);
 	}
 
-	name_len = strlen ("pointer to ");
+	RStrBuf buff;
+	r_strbuf_init (&buff);
 	if (tmp_name) {
-		name_len += strlen (tmp_name);
+		r_strbuf_append (&buff, tmp_name);
 	}
-	*name = (char *) malloc (name_len + 1);
-	if (!(*name)) {
-	// 	free (tmp_name);
-		return;
-	}
-	// name[name_len] = '\0';
-	strcpy (*name, "pointer to ");
-	if (tmp_name) {
-		strcat (*name, tmp_name);
-	}
+	r_strbuf_append (&buff, "*");
+	*name = r_strbuf_drain_nofree (&buff);
+	r_strbuf_fini (&buff);
 	if (need_to_free) {
 		free (tmp_name);
 		tmp_name = 0;
@@ -1715,20 +1818,15 @@ static void get_modifier_print_type(void *type, char **name) {
 	} else if (modifier->umodifier.bits.unaligned) {
 		modifier_name = "unaligned ";
 	}
-	int name_len = strlen (modifier_name);
+	RStrBuf buff;
+	r_strbuf_init (&buff);
+	r_strbuf_append (&buff, modifier_name);
 	if (tmp_name) {
-		name_len += strlen (tmp_name);
+		r_strbuf_append (&buff, tmp_name);
 	}
-	*name = malloc (name_len + 1); // Does this get freed?
-	if (!(*name)) {
-		goto cleanup;
-	}
-	strcpy (*name, modifier_name);
+	*name = r_strbuf_drain_nofree (&buff);
+	r_strbuf_fini (&buff);
 
-	if (tmp_name) {
-		strcat (*name, tmp_name);
-	}
-cleanup:
 	if (need_to_free) {
 		free (tmp_name);
 	}
@@ -1804,7 +1902,6 @@ static void get_enum_print_type(void *type, char **name) {
 	STypeInfo *ti = (STypeInfo *) type;
 	SType *t = 0;
 	char *tmp_name = 0;
-	int name_len = 0;
 	int need_to_free = 1;
 
 	ti->get_utype (ti, (void **)&t);
@@ -1818,22 +1915,14 @@ static void get_enum_print_type(void *type, char **name) {
 		ti->get_print_type (ti, &tmp_name);
 	}
 
-	name_len = strlen ("enum ");
+	RStrBuf buff;
+	r_strbuf_init (&buff);
+	r_strbuf_append (&buff, "enum ");
 	if (tmp_name) {
-		name_len += strlen (tmp_name);
+		r_strbuf_append (&buff, tmp_name);
 	}
-	*name = (char *) malloc (name_len + 1);
-	if (!(*name)) {
-		if (need_to_free) {
-			free (tmp_name);
-		}
-		return;
-	}
-	// name[name_len] = '\0';
-	strcpy (*name, "enum ");
-	if (tmp_name) {
-		strcat (*name, tmp_name);
-	}
+	*name = r_strbuf_drain_nofree (&buff);
+	r_strbuf_fini (&buff);
 
 	if (need_to_free) {
 		free (tmp_name);

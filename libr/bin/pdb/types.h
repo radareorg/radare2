@@ -125,6 +125,8 @@ typedef get_arg_type_ get_modified_type_;
 typedef get_value get_index_val;
 typedef get_value_name get_print_type_;
 
+// https://llvm.org/docs/PDB/TpiStream.html#type-indices
+// This can be done smarter splitting it up on mode and kind
 typedef enum {
 	eT_NOTYPE =               0x00000000, // uncharacterized type (no type)
 	eT_ABS =                  0x00000001,
@@ -472,10 +474,24 @@ typedef enum {
 	eMAX_CV_CALL
 } ECV_CALL;
 
+// typedef union {
+// 	struct {
+// 		ut8 scoped : 1;
+// 		ut8 reserved : 7; // swapped
+// 		ut8 packed : 1;
+// 		ut8 ctor : 1;
+// 		ut8 ovlops : 1;
+// 		ut8 isnested : 1;
+// 		ut8 cnested : 1;
+// 		ut8 opassign : 1;
+// 		ut8 opcast : 1;
+// 		ut8 fwdref : 1;
+// 	} bits;
+// 	ut16 cv_property;
+// } UCV_PROPERTY;
+
 typedef union {
 	struct {
-		ut8 scoped : 1;
-		ut8 reserved : 7; // swapped
 		ut8 packed : 1;
 		ut8 ctor : 1;
 		ut8 ovlops : 1;
@@ -484,6 +500,12 @@ typedef union {
 		ut8 opassign : 1;
 		ut8 opcast : 1;
 		ut8 fwdref : 1;
+		ut8 scoped : 1;
+		ut8 hasuniquename : 1;
+		ut8 sealed : 1;
+		ut8 hfa : 1;
+		ut8 intrinsic : 1;
+		ut8 mocom : 1;
 	} bits;
 	ut16 cv_property;
 } UCV_PROPERTY;
@@ -522,8 +544,9 @@ typedef union {
 		ut8 pseudo : 1;
 		ut8 noinherit : 1;
 		ut8 noconstruct : 1;
-		ut8 padding : 7;
 		ut8 compgenx : 1;
+		ut8 sealed : 1;
+		ut8 unused : 6;
 	} bits;
 	ut16 fldattr;
 } UCV_fldattr;
@@ -744,10 +767,10 @@ typedef struct {
 R_PACKED(
 typedef struct {
 	ut16 count;
-	UCV_PROPERTY prop;
-	ut32 field_list;
-	ut32 derived;
-	ut32 vshape;
+	UCV_PROPERTY prop; // // property attribute field
+	ut32 field_list; // type index of LF_FIELD descriptor list
+	ut32 derived; // type index of derived from list if not zero
+	ut32 vshape; // type index of vshape table for this class
 	SVal size;
 	ut8 pad;
 }) SLF_STRUCTURE, SLF_CLASS;

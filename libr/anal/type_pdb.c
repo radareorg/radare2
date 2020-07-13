@@ -222,7 +222,7 @@ static void parse_structure(const RAnal *anal, SType *type, RList *types) {
 			goto cleanup;
 		}
 	}
-	if (type_info->leaf_type == eLF_STRUCTURE || type_info == eLF_CLASS) {
+	if (type_info->leaf_type == eLF_STRUCTURE || type_info->leaf_type == eLF_CLASS) {
 		base_type->kind = R_ANAL_BASE_TYPE_KIND_STRUCT;
 		debug_print_struct (base_type, name, size);
 	} else { // union
