@@ -770,6 +770,7 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 		return false;
 	}
 	fcn->cc = r_str_constpool_get (&core->anal->constpool, r_anal_cc_default (core->anal));
+	r_warn_if_fail (!core->anal->sdb_cc->path || fcn->cc);
 	hint = r_anal_hint_get (core->anal, at);
 	if (hint && hint->bits == 16) {
 		// expand 16bit for function
