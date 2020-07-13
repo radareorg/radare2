@@ -362,6 +362,7 @@ typedef enum {
 	R_ANAL_OP_FAMILY_VIRT,   /* virtualization instructions */
 	R_ANAL_OP_FAMILY_PAC,    /* pointer authentication instructions */
 	R_ANAL_OP_FAMILY_IO,     /* IO instructions (i.e. IN/OUT) */
+	R_ANAL_OP_FAMILY_MTE,    /* Memory Tagging Extension instructions */
 	R_ANAL_OP_FAMILY_LAST
 } RAnalOpFamily;
 

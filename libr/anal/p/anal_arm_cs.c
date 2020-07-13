@@ -3124,6 +3124,173 @@ static void op_fillval(RAnalOp *op , csh handle, cs_insn *insn, int bits) {
 	}
 }
 
+static int hack_handle_dp_reg(ut32 insn, RAnalOp *op) {
+	ut8 op0 = (insn >> 30) & 0x1;
+	ut8 op1 = (insn >> 28) & 0x1;
+	ut8 op2 = (insn >> 21) & 0xf;
+
+	// Data-processing (2 source)
+	if (op0 == 0 && op1 == 1 && op2 == 0x6) {
+		ut8 sf = (insn >> 31) & 0x1;
+		ut8 S = (insn >> 29) & 0x1;
+		ut8 opcode = (insn >> 10) & 0x1f;
+		if (sf == 1 && S == 0 && opcode == 4) {
+			// irg
+			op->type = R_ANAL_OP_TYPE_MOV;
+			return op->size = 4;
+		} else if (sf == 1 && S == 0 && opcode == 0) {
+			// subp
+			op->type = R_ANAL_OP_TYPE_SUB;
+			return op->size = 4;
+		} else if (sf == 1 && S == 0 && opcode == 5) {
+			// gmi
+			op->type = R_ANAL_OP_TYPE_MOV;
+			return op->size = 4;
+		} else if (sf == 1 && S == 1 && opcode == 0) {
+			// subps
+			op->type = R_ANAL_OP_TYPE_SUB;
+			return op->size = 4;
+		} else {
+			return -1;
+		}
+	} else {
+		return -1;
+	}
+	return -1;
+}
+
+static int hack_handle_ldst(ut32 insn, RAnalOp *op) {
+	ut8 op0 = (insn >> 28) & 0xf;
+	ut8 op1 = (insn >> 26) & 0x1;
+	ut8 op2 = (insn >> 24) & 0x1;
+	ut8 op3 = (insn >> 21) & 0x1;
+
+	// Load/store memory tags
+	if (op0 == 13 && op1 == 0 && op2 == 1 && op3 == 1) {
+		ut8 opc = (insn >> 22) & 0x2;
+		op2 = (insn >> 10) & 0x2;
+
+		if (op2 > 0) {
+			if (opc == 0) {
+				// stg
+				op->type = R_ANAL_OP_TYPE_STORE;
+				return op->size = 4;				
+			} else if (opc == 1) {
+				// stzg
+				op->type = R_ANAL_OP_TYPE_STORE;
+				return op->size = 4;
+			} else if (opc == 2) {
+				// st2g
+				op->type = R_ANAL_OP_TYPE_STORE;
+				return op->size = 4;
+			} else {
+				// stz2g
+				op->type = R_ANAL_OP_TYPE_STORE;
+				return op->size = 4;
+			}
+		} else if (op2 == 0) {
+			if (opc == 0) {
+				// stzgm
+				op->type = R_ANAL_OP_TYPE_STORE;
+				return op->size = 4;
+			} else if (opc == 1) {
+				// ldg
+				op->type = R_ANAL_OP_TYPE_LOAD;
+				return op->size = 4;
+			} else if (opc == 2) {
+				// stgm
+				op->type = R_ANAL_OP_TYPE_STORE;
+				return op->size = 4;
+			} else {
+				// ldgm
+				op->type = R_ANAL_OP_TYPE_LOAD;
+				return op->size = 4;
+			}
+		} else {
+			return -1;
+		}
+	// Load/store register pair
+	} else if ((op0 & 0x2) == 2) {
+		ut8 opc = (insn >> 30) & 0x2;
+		ut8 V = (insn >> 26) & 0x1;
+		ut8 L = (insn >> 22) & 0x1;
+
+		if (opc == 1 && V == 0 && L == 0) {
+			// stgp
+			op->type = R_ANAL_OP_TYPE_STORE;
+			return op->size = 4;			
+		} else {
+			return -1;
+		}
+	} else {
+		return -1;
+	}
+	return -1;
+}
+
+static int hack_handle_dp_imm(ut32 insn, RAnalOp *op) {
+	ut8 op0 = (insn >> 23) & 0x7;
+
+	// Add/subtract (immediate, with tags)
+	if (op0 == 3) {
+		ut8 sf = (insn >> 31) & 0x1;
+		ut8 op_ = (insn >> 30) & 0x1;
+		ut8 S = (insn >> 29) & 0x1;
+		ut8 o2 = (insn >> 2) & 0x1;
+		if (sf == 1 && op_ == 0 && S == 0 && o2 == 0) {
+			// addg
+			op->type = R_ANAL_OP_TYPE_ADD;
+			return op->size = 4;			
+		} else if (sf == 1 && op_ == 1 && S == 0 && o2 == 0) {
+			// subg
+			op->type = R_ANAL_OP_TYPE_SUB;
+			return op->size = 4;			
+		} else {
+			return -1;
+		}
+	} else {
+		return -1;
+	}
+	return -1;
+}
+
+static int hack_arm_anal(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
+	int r = -1;
+	ut32 *insn = (ut32 *)buf;
+	int insn_class = (*insn >> 25) & 0xf;
+
+	switch (insn_class) {
+	// Data Processing -- Register
+	case 5:
+	case 13:
+		// irg, subp, gmi, subps
+		r = hack_handle_dp_reg (*insn, op);
+		break;
+	// Data Processing -- Immediate
+	case 8:
+	case 9:
+		// addg, subg
+		r = hack_handle_dp_imm (*insn, op);
+		break;
+	// Loads and Stores
+	case 4:
+	case 6:
+	case 12:
+	case 14:
+		// stg, stzgm, ldg, stzg, st2g, stgm, stz2g, ldgm, stgp
+		r = hack_handle_ldst (*insn, op);
+		break;
+	default:
+		break;
+	}
+
+	if (r > 0) {
+		op->family = R_ANAL_OP_FAMILY_MTE;
+	}
+
+	return r;
+}
+
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	static csh handle = 0;
 	static int omode = -1;
@@ -3159,6 +3326,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		return haa;
 	}
 
+	int haa1 = hack_arm_anal(a, op, buf, len);
+	if (haa1 > 0) {
+		return haa1;
+	}
+	
 	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
