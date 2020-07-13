@@ -2663,7 +2663,7 @@ static int parse_lf_enum(SLF_ENUM *lf_enum, uint8_t *leaf_data, unsigned int *re
 	READ4(*read_bytes, len, lf_enum->utype, leaf_data, ut32);
 	READ4(*read_bytes, len, lf_enum->field_list, leaf_data, ut32);
 
-	lf_enum->prop.cv_property = SWAP_UINT16(lf_enum->prop.cv_property);
+	// lf_enum->prop.cv_property = SWAP_UINT16(lf_enum->prop.cv_property);
 	before_read_bytes = *read_bytes;
 	parse_sctring (&lf_enum->name, leaf_data, read_bytes, len);
 	leaf_data += (*read_bytes - before_read_bytes);
@@ -2741,7 +2741,7 @@ static int parse_lf_pointer(SLF_POINTER *lf_pointer, uint8_t *leaf_data, unsigne
 	READ4(*read_bytes, len, lf_pointer->utype, leaf_data, ut32);
 	READ4(*read_bytes, len, lf_pointer->ptr_attr.ptr_attr, leaf_data, ut32);
 
-	lf_pointer->ptr_attr.ptr_attr = SWAP_UINT32(lf_pointer->ptr_attr.ptr_attr);
+	// lf_pointer->ptr_attr.ptr_attr = SWAP_UINT32(lf_pointer->ptr_attr.ptr_attr);
 
 	PEEK_READ1(*read_bytes, len, lf_pointer->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_pointer->pad, *read_bytes, leaf_data, len);

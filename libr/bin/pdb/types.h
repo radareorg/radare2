@@ -610,15 +610,18 @@ typedef enum {
 R_PACKED(
 typedef union {
 	struct {
-		ut8 pad[2];
-		ut8 flat32 : 1;
-		ut8 volatile_ : 1;
-		ut8 const_ : 1;
-		ut8 unaligned : 1;
-		ut8 restrict_ : 1;
-		ut8 pad1 : 3;
-		ut8 type : 5;
-		ut8 mode : 3;
+		ut32 ptrtype : 5; // ordinal specifying pointer type
+		ut32 ptrmode : 3; // ordinal specifying pointer mode
+		ut32 flat32 : 1; // true if 0:32 pointer
+		ut32 volatile_ : 1; // TRUE if volatile pointer
+		ut32 const_ : 1; // TRUE if const pointer
+		ut32 unaligned : 1; // TRUE if unaligned pointer
+		ut32 restrict_ : 1; // TRUE if restricted pointer (allow agressive opts)
+		ut32 size : 6; // size of pointer (in bytes)
+		ut32 mocom : 1; // TRUE if it is a MoCOM pointer (^ or %)
+		ut32 lref : 1; // TRUE if it is this pointer of member function with & ref-qualifier
+		ut32 rref : 1; // TRUE if it is this pointer of member function with && ref-qualifier
+		ut32 unused : 10; // pad out to 32-bits for following cv_typ_t's
 	} bits;
 	ut32 ptr_attr;
 }) UPTR_ATTR;
