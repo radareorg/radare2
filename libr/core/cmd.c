@@ -1740,6 +1740,7 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 				return true;
 			}
 		}
+		free (input);
 		return false;
 	}
 	free (input);
