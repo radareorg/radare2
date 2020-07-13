@@ -630,10 +630,8 @@ static bool simpleProjectSaveScript(RCore *core, const char *file, int opts) {
 
 static bool projectSaveScript(RCore *core, const char *file, int opts) {
 	char *filename, *hl, *ohl = NULL;
-	char *binpath = r_file_abspath(core->bin->file);
-	char  *reopen = (char *) r_malloc(strlen(binpath) + 33);
+	char  *reopen = r_str_newf ("\"o %s\"\n", r_file_abspath(core->bin->file);
 	int fd, fdold;
-	sprintf(reopen, "\"o %s\"\n", binpath);
 
 	if (!file || *file == '\0') {
 		return false;
@@ -656,9 +654,8 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 	r_cons_singleton ()->fdout = fd;
 	r_cons_singleton ()->context->is_interactive = false;
 	r_str_write (fd, "# r2 rdb project file\n");
-	r_str_write(fd, reopen);
-	free(reopen);
-	free(binpath);
+	r_str_write (fd, reopen);
+	free (reopen);
 	// Set file.path and file.lastpath to empty string to signal
 	// new behaviour to project load routine (see io maps below).
 	r_config_set (core->config, "file.path", "");
