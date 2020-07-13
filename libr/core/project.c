@@ -656,7 +656,7 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 	r_cons_singleton ()->fdout = fd;
 	r_cons_singleton ()->context->is_interactive = false;
 	r_str_write (fd, "# r2 rdb project file\n");
-        r_str_write(fd, reopen);
+	r_str_write(fd, reopen);
 	free(reopen);
 	free(binpath);
 	// Set file.path and file.lastpath to empty string to signal
