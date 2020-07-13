@@ -248,7 +248,12 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 				if (IS_MODE_RAD (mode)) {
 					r_cons_printf ("Cf %d %s @ %s\n", fmtsize, v, off);
 				} else if (IS_MODE_SET (mode)) {
-					r_core_cmdf (core, "Cf %d %s @ %s\n", fmtsize, v, off);
+					ut64 addr = r_num_get (NULL, off);
+					int res = r_print_format (core->print, addr, core->block,
+							fmtsize, v, 0, NULL, NULL);
+					if (res < 0) {
+						eprintf ("Warning: Cannot register invalid format (%s)\n", v);
+					}
 				}
 			}
 		}
@@ -274,6 +279,7 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 
 
 R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
+	r_return_val_if_fail (core && core->io, false);
 	if (!file) {
 		int fd = r_io_fd_get_current (core->io);
 		RIODesc *desc = r_io_desc_get (core->io, fd);
