@@ -360,7 +360,11 @@ R_API char *r_file_slurp(const char *str, R_NULLABLE size_t *usz) {
 				buf = nbuf;
 				size_t r = fread (buf + size, 1, BS, fd);
 				size += r;
-			} while (!feof (fd));
+			} while (!feof (fd) && !ferror (fd));
+			if (ferror (fd)) {
+				size = 0;
+				R_FREE (buf);
+			}
 			if (usz) {
 				*usz = size;
 			}
