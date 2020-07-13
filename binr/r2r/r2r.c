@@ -19,6 +19,8 @@
 #define Color_DELETE Color_BRED
 #define Color_BGINSERT "\x1b[48;5;22m"
 #define Color_BGDELETE "\x1b[48;5;52m"
+#define Color_HLINSERT Color_BGINSERT Color_INSERT
+#define Color_HLDELETE Color_BGDELETE Color_DELETE
 
 typedef struct r2r_state_t {
 	R2RRunConfig run_config;
@@ -532,6 +534,14 @@ static RThreadFunctionRet worker_th(RThread *th) {
 	return R_TH_STOP;
 }
 
+typedef enum {
+	R2R_ALIGN_MATCH, R2R_ALIGN_MISMATCH, R2R_ALIGN_TOP_GAP, R2R_ALIGN_BOTTOM_GAP
+} R2RCharAlignment;
+
+typedef enum {
+	R2R_DIFF_MATCH, R2R_DIFF_DELETE, R2R_DIFF_INSERT
+} R2RPrintDiffMode;
+
 static void print_diff(const char *actual, const char *expected, bool diffchar) {
 	RDiff *d = r_diff_new ();
 #ifdef __WINDOWS__
@@ -552,15 +562,17 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 				size_t row, col;
 				*align_table = 0;
 				for (row = 1; row < dim; row++) {
+					// TODO Clamping [ST16_MIN + 1, .]
 					*(align_table + row) = *(align_table + row * dim) = -(st16)row;
 				}
 				// Fill table
+				// TODO Cost-based instead of score-based system?
 				const st16 match = 1;
 				const st16 mismatch = -2;
 				const st16 gap = -1;
 				for (row = 1; row < dim; row++) {
 					for (col = 1; col < dim; col++) {
-						// TODO Clamping
+						// TODO Clamping [ST16_MIN + 1, ST16_MAX]
 						st16 tl_score = *(align_table + (row - 1) * dim + col - 1)
 								+ (expected[col - 1] == actual[row - 1] ? match : mismatch);
 						st16 t_score = *(align_table + (row - 1) * dim + col) + gap;
@@ -607,8 +619,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 				// Do alignment
 				size_t idx_expected = len_expected - 1;
 				size_t idx_actual = len_actual - 1;
-				size_t idx_align_expected = 2 * len_expected - 1;
-				size_t idx_align_actual = 2 * len_actual - 1;
+				size_t idx_align = 2 * len_expected - 1;
 				size_t pos_row = dim - 1;
 				size_t pos_col = dim - 1;
 				while (pos_row != 0 || pos_col != 0) {
@@ -625,24 +636,29 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 						tl_score = *(align_table + (pos_row - 1) * dim + pos_col - 1);
 					}
 					if (t_score >= tl_score && t_score >= l_score) {
-						align_expected[idx_align_expected--] = 0;
-						align_actual[idx_align_actual--] = actual[idx_actual--];
+						align_expected[idx_align] = 0;
+						align_actual[idx_align] = actual[idx_actual--];
+						idx_align--;
 						pos_row--;
 					} else if (l_score >= tl_score && l_score >= t_score) {
-						align_expected[idx_align_expected--] = expected[idx_expected--];
-						align_actual[idx_align_actual--] = 0;
+						align_expected[idx_align] = expected[idx_expected--];
+						align_actual[idx_align] = 0;
+						idx_align--;
 						pos_col--;
 					} else {
-						align_expected[idx_align_expected--] = expected[idx_expected--];
-						align_actual[idx_align_actual--] = actual[idx_actual--];
+						align_expected[idx_align] = expected[idx_expected--];
+						align_actual[idx_align] = actual[idx_actual--];
+						idx_align--;
 						pos_row--;
 						pos_col--;
 					}
 				}
+				idx_align++;
+				size_t start_align = idx_align;
 				// TODO Print alignment (Debug)
-				for (idx_align_expected++; idx_align_expected < 2 * len_expected; idx_align_expected++) {
-					ut8 ch = align_expected[idx_align_expected];
-					if (align_actual[idx_align_expected] == '\n' && ch != '\n') {
+				for (; idx_align < 2 * len_expected; idx_align++) {
+					ut8 ch = align_expected[idx_align];
+					if (align_actual[idx_align] == '\n' && ch != '\n') {
 						printf (ch ? " " : "-");
 					}
 					if (ch == 0) {
@@ -654,9 +670,9 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 					}
 				}
 				printf ("\n");
-				for (idx_align_actual++; idx_align_actual < 2 * len_actual; idx_align_actual++) {
-					ut8 ch = align_actual[idx_align_actual];
-					if (align_expected[idx_align_actual] == '\n' && ch != '\n') {
+				for (idx_align = start_align; idx_align < 2 * len_actual; idx_align++) {
+					ut8 ch = align_actual[idx_align];
+					if (align_expected[idx_align] == '\n' && ch != '\n') {
 						printf (ch ? " " : "-");
 					}
 					if (ch == 0) {
@@ -668,7 +684,72 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 					}
 				}
 				printf ("\n");
-				// TODO Print diff
+				// Print diff
+				// TODO: Handle mismatches
+				int mismatch_pass = 0; // 0, 1 or 2
+				size_t start_mismatch = (size_t)-1;
+				size_t restart_match = (size_t)-1;
+				R2RPrintDiffMode cur_mode = R2R_DIFF_MATCH;
+				R2RCharAlignment cur_align;
+				idx_align = start_align;
+				while (idx_align < 2 * len_expected) {
+					ut8 expected_ch = align_expected[idx_align];
+					ut8 actual_ch = align_actual[idx_align];
+					if (expected_ch && !actual_ch) {
+						cur_align = R2R_ALIGN_BOTTOM_GAP;
+					} else if (!expected_ch && actual_ch) {
+						cur_align = R2R_ALIGN_TOP_GAP;
+					} else if (expected_ch != actual_ch) {
+						cur_align = R2R_ALIGN_MISMATCH;
+					} else {
+						cur_align = R2R_ALIGN_MATCH;
+					}
+					if (cur_mode == R2R_DIFF_MATCH) {
+						if (cur_align == R2R_ALIGN_MATCH) {
+							printf ("%c", expected_ch);
+						} else if (cur_align == R2R_ALIGN_BOTTOM_GAP) {
+							printf (expected_ch == '\n' ?
+							        "%c"Color_HLDELETE :
+							        Color_HLDELETE"%c", expected_ch);
+							cur_mode = R2R_DIFF_DELETE;
+						} else if (cur_align == R2R_ALIGN_TOP_GAP) {
+							printf (actual_ch == '\n' ?
+							        "%c"Color_HLINSERT :
+							        Color_HLINSERT"%c", actual_ch);
+							cur_mode = R2R_DIFF_INSERT;
+						}
+					} else if (cur_mode == R2R_DIFF_DELETE) {
+						if (cur_align == R2R_ALIGN_MATCH) {
+							printf (Color_RESET"%c", expected_ch);
+							cur_mode = R2R_DIFF_MATCH;
+						} else if (cur_align == R2R_ALIGN_BOTTOM_GAP) {
+							printf (expected_ch == '\n' ?
+							        Color_RESET"%c"Color_HLDELETE :
+							        "%c", expected_ch);
+						} else if (cur_align == R2R_ALIGN_TOP_GAP) {
+							printf (actual_ch == '\n' ?
+							        Color_RESET"%c"Color_HLINSERT :
+							        Color_HLINSERT"%c", actual_ch);
+							cur_mode = R2R_DIFF_INSERT;
+						}
+					} else if (cur_mode == R2R_DIFF_INSERT) {
+						if (cur_align == R2R_ALIGN_MATCH) {
+							printf (Color_RESET"%c", expected_ch);
+							cur_mode = R2R_DIFF_MATCH;
+						} else if (cur_align == R2R_ALIGN_BOTTOM_GAP) {
+							printf (expected_ch == '\n' ?
+							        Color_RESET"%c"Color_HLDELETE :
+							        Color_HLDELETE"%c", expected_ch);
+							cur_mode = R2R_DIFF_DELETE;
+						} else if (cur_align == R2R_ALIGN_TOP_GAP) {
+							printf (actual_ch == '\n' ?
+							        Color_RESET"%c"Color_HLINSERT :
+							        "%c", actual_ch);
+						}
+					}
+					idx_align++;
+				}
+				printf (Color_RESET"\n");
 			}
 			free (align_table);
 			free (align_expected);
