@@ -631,7 +631,7 @@ static bool simpleProjectSaveScript(RCore *core, const char *file, int opts) {
 static bool projectSaveScript(RCore *core, const char *file, int opts) {
 	char *filename, *hl, *ohl = NULL;
 	char *binpath = r_file_abspath(core->bin->file);
-	char  *reopen = (char *) r_malloc(strlen(binpath) + 32);
+	char  *reopen = (char *) r_malloc(strlen(binpath) + 33);
 	int fd, fdold;
 	sprintf(reopen, "\"o %s\"\n", binpath);
 
