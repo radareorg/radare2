@@ -54,7 +54,12 @@ bool test_pdb_tpi(void) {
 			mu_assert_eq (type_info->leaf_type, eLF_POINTER, "Incorrect data type");
 			char *type;
 			type_info->get_print_type (type_info, &type);
-			mu_assert_streq (type, "pointer to struct _RTC_framedesc", "Wrong pointer print type");
+			mu_assert_streq (type, "struct _RTC_framedesc*", "Wrong pointer print type");
+		} else if (type->tpi_idx == 0x1004) {
+			mu_assert_eq (type_info->leaf_type, eLF_STRUCTURE, "Incorrect data type");
+			int forward_ref = 0;
+			type->type_data.is_fwdref (type_info, &forward_ref);
+			mu_assert_eq (forward_ref, 1, "Wrong fwdref");
 		} else if (type->tpi_idx == 0x113F) {
 			mu_assert_eq (type_info->leaf_type, eLF_ARRAY, "Incorrect data type");
 			char *type;
@@ -118,7 +123,7 @@ bool test_pdb_tpi(void) {
 			type_info->get_base_type (type_info, (void **)&base_type);
 			char *type;
 			type_info->get_print_type (type_info, &type);
-			mu_assert_streq (type, "bitfield unsigned long : 1", "Incorrect bitfield print type");
+			mu_assert_streq (type, "bitfield uint32_t : 1", "Incorrect bitfield print type");
 		} else if (type->tpi_idx == 0x1258) {
 			mu_assert_eq (type_info->leaf_type, eLF_METHODLIST, "Incorrect data type");
 			// Nothing from methodlist is currently being parsed
@@ -196,7 +201,7 @@ bool test_pdb_tpi(void) {
 					mu_assert_streq (name, "lc_codepage", "Wrong member name");
 					char *type;
 					type_info->get_print_type (type_info, &type);
-					mu_assert_streq (type, "(member) unsigned long", "Wrong member type");
+					mu_assert_streq (type, "uint32_t", "Wrong member type");
 				}
 				if (i == 17) {
 					mu_assert_eq (type_info->leaf_type, eLF_MEMBER, "Incorrect data type");
@@ -205,7 +210,7 @@ bool test_pdb_tpi(void) {
 					mu_assert_streq (name, "locale_name", "Wrong method name");
 					char *type;
 					type_info->get_print_type (type_info, &type);
-					mu_assert_streq (type, "(member) array: pointer to wchar", "Wrong method type");
+					mu_assert_streq (type, "wchar_t *[24]", "Wrong method type");
 				}
 				i++;
 			}

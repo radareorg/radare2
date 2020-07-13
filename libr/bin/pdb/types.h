@@ -474,38 +474,22 @@ typedef enum {
 	eMAX_CV_CALL
 } ECV_CALL;
 
-// typedef union {
-// 	struct {
-// 		ut8 scoped : 1;
-// 		ut8 reserved : 7; // swapped
-// 		ut8 packed : 1;
-// 		ut8 ctor : 1;
-// 		ut8 ovlops : 1;
-// 		ut8 isnested : 1;
-// 		ut8 cnested : 1;
-// 		ut8 opassign : 1;
-// 		ut8 opcast : 1;
-// 		ut8 fwdref : 1;
-// 	} bits;
-// 	ut16 cv_property;
-// } UCV_PROPERTY;
-
 typedef union {
 	struct {
-		ut8 packed : 1;
-		ut8 ctor : 1;
-		ut8 ovlops : 1;
-		ut8 isnested : 1;
-		ut8 cnested : 1;
-		ut8 opassign : 1;
-		ut8 opcast : 1;
-		ut8 fwdref : 1;
-		ut8 scoped : 1;
-		ut8 hasuniquename : 1;
-		ut8 sealed : 1;
-		ut8 hfa : 1;
-		ut8 intrinsic : 1;
-		ut8 mocom : 1;
+		ut16 packed : 1; // true if structure is packed
+		ut16 ctor : 1; // true if constructors or destructors present
+		ut16 ovlops : 1; // true if overloaded operators present
+		ut16 isnested : 1; // true if this is a nested class
+		ut16 cnested : 1; // true if this class contains nested types
+		ut16 opassign : 1; // true if overloaded assignment (=)
+		ut16 opcast : 1; // true if casting methods
+		ut16 fwdref : 1; // true if forward reference (incomplete defn)
+		ut16 scoped : 1; // scoped definition
+		ut16 hasuniquename : 1; // true if there is a decorated name following the regular name
+		ut16 sealed : 1; // true if class cannot be used as a base class
+		ut16 hfa : 2; // CV_HFA_e
+		ut16 intrinsic : 1; // true if class is an intrinsic type (e.g. __m128d)
+		ut16 mocom : 2; // CV_MOCOM_UDT_e
 	} bits;
 	ut16 cv_property;
 } UCV_PROPERTY;
@@ -539,14 +523,14 @@ typedef struct {
 //# ordering for BitStructs
 typedef union {
 	struct {
-		ut8 access : 2;
-		ut8 mprop : 3;
-		ut8 pseudo : 1;
-		ut8 noinherit : 1;
-		ut8 noconstruct : 1;
-		ut8 compgenx : 1;
-		ut8 sealed : 1;
-		ut8 unused : 6;
+		ut16 access : 2; // access protection CV_access_t
+		ut16 mprop : 3; // method properties CV_methodprop_t
+		ut16 pseudo : 1; // compiler generated fcn and does not exist
+		ut16 noinherit : 1; // true if class cannot be inherited
+		ut16 noconstruct : 1; // true if class cannot be constructed
+		ut16 compgenx : 1; // compiler generated fcn and does exist
+		ut16 sealed : 1; // true if method cannot be overridden
+		ut16 unused : 6; // unused
 	} bits;
 	ut16 fldattr;
 } UCV_fldattr;
@@ -586,11 +570,10 @@ typedef struct {
 	ut32 modified_type;
 	union {
 		struct {
-			ut8 pad2 : 8;
-			ut8 const_ : 1;
-			ut8 volatile_ : 1;
-			ut8 unaligned : 1;
-			ut8 pad1 : 5;
+			ut16 const_ : 1;
+			ut16 volatile_ : 1;
+			ut16 unaligned : 1;
+			ut16 unused : 13;
 		} bits;
 		ut16 modifier;
 	} umodifier;
