@@ -112,7 +112,7 @@ FUNC_ATTR_USED static int z80Disass (RAsmOp *op, const ut8 *buf, int len) {
 			buf_asm = sdb_fmt (z_op[res].name, buf[2]+(buf[3]<<8));
 		}
 		if (z_op[res].type == (Z80_OP16^Z80_ARG8)) {
-			buf_asm = sdb_fmt (z_op[res].name, buf[2], buf[3]);
+			buf_asm = sdb_fmt (z_op[res].name, buf[2]);
 		}
 		if (z_op[res].type == (Z80_OP24 ^ Z80_ARG8)) {
 			cb_tab = (char **) z_op[res].op_moar;
