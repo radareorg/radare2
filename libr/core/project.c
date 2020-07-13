@@ -630,7 +630,7 @@ static bool simpleProjectSaveScript(RCore *core, const char *file, int opts) {
 
 static bool projectSaveScript(RCore *core, const char *file, int opts) {
 	char *filename, *hl, *ohl = NULL;
-	char  *reopen = r_str_newf ("\"o %s\"\n", r_file_abspath(core->bin->file);
+	char  *reopen = r_str_newf ("\"o %s\"\n", r_file_abspath(core->bin->file));
 	int fd, fdold;
 
 	if (!file || *file == '\0') {
