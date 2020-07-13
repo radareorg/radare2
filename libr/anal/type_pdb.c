@@ -161,7 +161,7 @@ static void parse_enum(const RAnal *anal, SType *type, RList *types) {
 	// base_type->name = .....
 	// base_type->size = .....
 	// r_anal_save_base_type (base_type);
-	debug_print_enum (base_type, name, type_name);
+	// debug_print_enum (base_type, name, type_name);
 cleanup:
 	// TODO
 	return;
@@ -224,10 +224,10 @@ static void parse_structure(const RAnal *anal, SType *type, RList *types) {
 	}
 	if (type_info->leaf_type == eLF_STRUCTURE || type_info->leaf_type == eLF_CLASS) {
 		base_type->kind = R_ANAL_BASE_TYPE_KIND_STRUCT;
-		debug_print_struct (base_type, name, size);
+		// debug_print_struct (base_type, name, size);
 	} else { // union
 		base_type->kind = R_ANAL_BASE_TYPE_KIND_UNION;
-		debug_print_union (base_type, name, size);
+		// debug_print_union (base_type, name, size);
 	}
 	// Waiting for DWARF PR merge to finish these
 	// base_type->name = .....
