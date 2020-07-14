@@ -1522,13 +1522,13 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			if (eq && !dot) {
 				*eq = ' ';
 				space = eq;
-				*space++ = 0;
 				eq = NULL;
 			}
 
 			/* store a new format */
 			if (space && (!eq || space < eq)) {
-				if (strchr (name, '.')) {// || (fields != NULL && strchr(fields, '.') != NULL)) // if anon struct, then field can have '.'
+				*space++ = 0;
+				if (strchr (name, '.')) {
 					eprintf ("Struct or fields name can not contain dot symbol (.)\n");
 				} else {
 					// pf.foo=xxx
