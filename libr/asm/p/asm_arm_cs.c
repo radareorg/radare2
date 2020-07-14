@@ -40,7 +40,7 @@ static bool check_features(RAsm *a, cs_insn *insn) {
 }
 
 static int hack_handle_dp_imm(ut32 insn, char **buf_asm) {
-	char *mnemonic;
+	char *mnemonic = NULL;
 	const ut8 op0 = (insn >> 23) & 0x7;
 
 	// Add/subtract (immediate, with tags)
@@ -69,7 +69,7 @@ static int hack_handle_dp_imm(ut32 insn, char **buf_asm) {
 }
 
 static int hack_handle_dp_reg(ut32 insn, char **buf_asm) {
-	char *mnemonic;
+	char *mnemonic = NULL;
 	const ut8 op0 = (insn >> 30) & 0x1;
 	const ut8 op1 = (insn >> 28) & 0x1;
 	const ut8 op2 = (insn >> 21) & 0xf;
@@ -254,12 +254,11 @@ static int hack_arm_asm(RAsm *a, RAsmOp *op, const ut8 *buf, bool disp_hash) {
 		return r;
 	}
 
-	op->size = 4;
 	if (!disp_hash) {
 		r_str_replace_char (buf_asm, '#', 0);
 	}
 	r_strbuf_set (&op->buf_asm, buf_asm);
-	return op->size;
+	return op->size = 4;
 }
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {

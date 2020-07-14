@@ -3314,7 +3314,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		return haa;
 	}
 
-	int haa1 = hack_arm_anal(a, op, buf, len);
+	int haa1 = hack_arm_anal (a, op, buf, len);
 	if (haa1 > 0) {
 		return haa1;
 	}
