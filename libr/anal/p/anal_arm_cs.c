@@ -3150,12 +3150,8 @@ static int hack_handle_dp_reg(ut32 insn, RAnalOp *op) {
 			// subps
 			op->type = R_ANAL_OP_TYPE_SUB;
 			return op->size = 4;
-		} else {
-			return -1;
 		}
-	} else {
-		return -1;
-	}
+	} 
 	return -1;
 }
 
@@ -3206,8 +3202,6 @@ static int hack_handle_ldst(ut32 insn, RAnalOp *op) {
 				op->type = R_ANAL_OP_TYPE_LOAD;
 				return op->size = 4;
 			}
-		} else {
-			return -1;
 		}
 	// Load/store register pair
 	} else if ((op0 & 0x2) == 2) {
@@ -3219,11 +3213,7 @@ static int hack_handle_ldst(ut32 insn, RAnalOp *op) {
 			// stgp
 			op->type = R_ANAL_OP_TYPE_STORE;
 			return op->size = 4;			
-		} else {
-			return -1;
 		}
-	} else {
-		return -1;
 	}
 	return -1;
 }
@@ -3245,11 +3235,7 @@ static int hack_handle_dp_imm(ut32 insn, RAnalOp *op) {
 			// subg
 			op->type = R_ANAL_OP_TYPE_SUB;
 			return op->size = 4;			
-		} else {
-			return -1;
 		}
-	} else {
-		return -1;
 	}
 	return -1;
 }

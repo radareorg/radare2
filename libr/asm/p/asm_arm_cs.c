@@ -63,10 +63,9 @@ static int hack_handle_dp_imm(ut32 insn, char **buf_asm) {
 		*buf_asm = sdb_fmt ("%s x%d, x%d, #0x%x, #0x%x",
 			mnemonic, Xn, Xd, uimm6, uimm4);
 		*buf_asm = r_str_replace (*buf_asm, "x31", "sp", 1);
-	} else {
-		return -1;
+		return 0;
 	}
-	return 0;
+	return -1;
 }
 
 static int hack_handle_dp_reg(ut32 insn, char **buf_asm) {
@@ -99,10 +98,9 @@ static int hack_handle_dp_reg(ut32 insn, char **buf_asm) {
 			*buf_asm = sdb_fmt ("%s x%d, x%d, x%d", mnemonic, Xd, Xn, Xm);
 		}
 		*buf_asm = r_str_replace (*buf_asm, "x31", "sp", 1);
-	} else {
-		return -1;
+		return 0;
 	}
-	return 0;
+	return -1;
 }
 
 static int hack_handle_ldst(ut32 insn, char **buf_asm) {
@@ -143,8 +141,11 @@ static int hack_handle_ldst(ut32 insn, char **buf_asm) {
 				} else {
 					*buf_asm = sdb_fmt ("%s x%d, [x%d, #0x%x]",
 						mnemonic, Xt, Xn, imm9);
-				}
+					break;
+				}			
 			}
+			*buf_asm = r_str_replace (*buf_asm, "x31", "sp", 1);
+			return 0;	
 		} else if (op2 == 0) {
 			if (opc == 0) {
 				mnemonic = sdb_fmt ("stzgm");
@@ -162,9 +163,9 @@ static int hack_handle_ldst(ut32 insn, char **buf_asm) {
 				*buf_asm = sdb_fmt ("%s x%d, [x%d, #0x%x]",
 					mnemonic, Xt, Xn, imm9);
 			}
-		} else {
-			return -1;
-		}
+			*buf_asm = r_str_replace (*buf_asm, "x31", "sp", 1);
+			return 0;	
+		} 
 	// Load/store register pair
 	} else if ((op0 & 0x2) == 2) {
 		const ut8 opc = (insn >> 30) & 0x2;
@@ -186,19 +187,18 @@ static int hack_handle_ldst(ut32 insn, char **buf_asm) {
 				} else if (op2 == 2) {
 					*buf_asm = sdb_fmt ("stgp x%d, [x%d, #0x%x]!",
 						Xt, Xt2, Xn, imm7);
-				} else {
+				} else if (op2 == 3) {
 					*buf_asm = sdb_fmt ("stgp x%d, [x%d, #0x%x]",
 						Xt, Xt2, Xn, imm7);
+				} else {
+					return -1;
 				}
 			}
-		} else {
-			return -1;
+			*buf_asm = r_str_replace (*buf_asm, "x31", "sp", 1);
+			return 0;			
 		}
-	} else {
-		return -1;
 	}
-	*buf_asm = r_str_replace (*buf_asm, "x31", "sp", 1);
-	return 0;
+	return -1;
 }
 
 static int hack_arm_asm(RAsm *a, RAsmOp *op, const ut8 *buf, bool disp_hash) {
