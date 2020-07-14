@@ -1056,3 +1056,16 @@ EXPECT=<<EOF
 0x0006506c CCu "switch table (13 cases) at 0x65074"
 EOF
 RUN
+
+NAME=misaligned arm string xref
+FILE=bins/mach0/misaligned_data-iOS-armv7
+CMDS=<<EOF
+aav
+aae
+af
+axt str.helloradareworld
+EOF
+EXPECT=<<EOF
+main 0xbf9c [DATA] add r0, pc
+EOF
+RUN
