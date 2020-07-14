@@ -886,8 +886,6 @@ int alloc_format_flag_and_member_fields(RList *ptmp, char **flags_format_field, 
 	return 1;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// TODO: need refactor
 static bool is_printable_type (ELeafType type) {
 	return (type == eLF_STRUCTURE ||
 		type == eLF_UNION ||
@@ -895,6 +893,141 @@ static bool is_printable_type (ELeafType type) {
 		type == eLF_CLASS);
 }
 
+static void print_struct(const char *name, const int size, RList *members, PrintfCallback printf) {
+	printf ("struct %s { // size 0x%x\n", name, size);
+
+	RListIter *member_iter = r_list_iterator (members);
+	while (r_list_iter_next (member_iter)) {
+		STypeInfo *type_info = r_list_iter_get (member_iter);
+		char *member_name = NULL;
+		if (type_info->get_name) {
+			type_info->get_name (type_info, &member_name);
+		}
+		int offset = 0;
+		if (type_info->get_val) {
+			type_info->get_val (type_info, &offset);
+		}
+		char *type_name = NULL;
+		if (type_info->get_print_type) {
+			type_info->get_print_type (type_info, &type_name);
+		}
+		printf ("  %s %s; // offset +0x%x\n", type_name, member_name, offset);
+
+		R_FREE (type_name);
+	}
+	printf ("};\n");
+}
+
+static void print_union(const char *name, const int size, RList *members, PrintfCallback printf) {
+	printf ("union %s { // size 0x%x\n", name, size);
+
+	RListIter *member_iter = r_list_iterator (members);
+	while (r_list_iter_next (member_iter)) {
+		STypeInfo *type_info = r_list_iter_get (member_iter);
+		char *member_name = NULL;
+		if (type_info->get_name) {
+			type_info->get_name (type_info, &member_name);
+		}
+		int offset = 0;
+		if (type_info->get_val) {
+			type_info->get_val (type_info, &offset);
+		}
+		char *type_name = NULL;
+		if (type_info->get_print_type) {
+			type_info->get_print_type (type_info, &type_name);
+		}
+		printf ("  %s %s; // offset +0x%x\n", type_name, member_name, offset);
+
+		R_FREE (type_name);
+	}
+	printf ("};\n");
+}
+
+static void print_enum(const char *name, const char *type, RList *members, PrintfCallback printf) {
+	printf ("enum %s { // type: %s\n", name, type);
+
+	RListIter *member_iter = r_list_iterator (members);
+	while (r_list_iter_next (member_iter)) {
+		STypeInfo *type_info = r_list_iter_get (member_iter);
+		char *member_name = NULL;
+		if (type_info->get_name) {
+			type_info->get_name (type_info, &member_name);
+		}
+		int value = 0;
+		if (type_info->get_val) {
+			type_info->get_val (type_info, &value);
+		}
+
+		printf ("  %s = %d;\n", member_name, value);
+	}
+	printf ("};\n");
+}
+
+static void print_types_regular(const R_PDB *pdb, const RList *types) {
+	RListIter *it = r_list_iterator (types);
+	while (r_list_iter_next (it)) {
+		SType *type = (SType *)r_list_iter_get (it);
+		STypeInfo *type_info = &type->type_data;
+		// skip unprintable types
+		if (!is_printable_type (type_info->leaf_type)) {
+			continue;
+		}
+		// skip forward references
+		if (type_info->is_fwdref) {
+			int is_fwdref = 0;
+			type_info->is_fwdref (type_info, &is_fwdref);
+			if (is_fwdref == 1) {
+				continue;
+			}
+		}
+		char *name = NULL;
+		if (type_info->get_name) {
+			type_info->get_name (type_info, &name);
+		}
+		int size = 0;
+		if (type_info->get_val) {
+			type_info->get_val (type_info, &size);
+		}
+		RList *members = NULL;
+		if (type_info->get_members) {
+			type_info->get_members (type_info, &members);
+		}
+
+		switch (type_info->leaf_type) {
+		case eLF_CLASS:
+		case eLF_STRUCTURE:
+			print_struct (name, size, members, pdb->cb_printf);
+			break;
+		case eLF_UNION:
+			print_union (name, size, members, pdb->cb_printf);
+			break;
+		case eLF_ENUM:;
+			char *base_type_name = NULL;
+			if (type_info->get_utype) {
+				SType *base_type = NULL;
+				type_info->get_utype (type_info, (void **)&base_type);
+				if (base_type && base_type->type_data.leaf_type == eLF_BASE_TYPE) {
+					SLF_BASE_TYPE *tmp = base_type->type_data.type_info;
+					base_type_name = tmp->type;
+				}
+			}
+			print_enum (name, base_type_name, members, pdb->cb_printf);
+			break;
+		default:
+			// Unimplemented printing of printable type
+			r_warn_if_reached ();
+		}
+	}
+}
+static void print_types_json() {
+
+}
+static void print_types_format() {
+
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// TODO: need refactor
 static void print_types(R_PDB *pdb, int mode) {
 	ELeafType lt = eLF_MAX;
 	char *command_field = 0;
@@ -920,7 +1053,10 @@ static void print_types(R_PDB *pdb, int mode) {
 		eprintf ("There is no tpi stream in current pdb\n");
 		return;
 	}
-
+	if (mode == 'd') {
+		print_types_regular (pdb, tpi_stream->types);
+		return;
+	}
 	if (mode == 'j') {
 		pdb->cb_printf ("{\"%s\":[", "types");
 	}
