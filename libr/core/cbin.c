@@ -279,7 +279,7 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 
 
 R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
-	r_return_val_if_fail (core && core->io, false);
+	r_return_val_if_fail (core && file && core->io, false);
 	if (!file) {
 		int fd = r_io_fd_get_current (core->io);
 		RIODesc *desc = r_io_desc_get (core->io, fd);
@@ -297,9 +297,13 @@ R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
 	RBinOptions opt = { 0 };
 	r_bin_open (core->bin, file, &opt);
 	RBinFile *bf = r_bin_cur (core->bin);
-	r_core_bin_export_info (core, R_MODE_SET);
-	r_bin_file_delete (core->bin, bf->id);
-	return true;
+	if (bf) {
+		r_core_bin_export_info (core, R_MODE_SET);
+		r_bin_file_delete (core->bin, bf->id);
+		return true;
+	}
+	eprintf ("Cannot open bin '%s'\n", file);
+	return false;
 }
 
 R_API int r_core_bin_set_by_name(RCore *core, const char * name) {

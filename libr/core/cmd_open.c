@@ -1679,22 +1679,24 @@ static int cmd_open(void *data, const char *input) {
 			}
 			break;
 		case 'n': // "oon"
-			if ('n' == input[2]) {
-				RIODesc *desc = r_io_desc_get (core->io, core->file->fd);
+			if ('n' == input[2]) { // "oonn"
 				if ('?' == input[3]) {
 					r_core_cmd_help (core, help_msg_oonn);
 					break;
 				}
+				RIODesc *desc = r_io_desc_get (core->io, core->file->fd);
 				perms = (input[3] == '+')? R_PERM_R|R_PERM_W: 0;
-				r_core_file_reopen (core, input + 4, perms, 0);
 				if (desc) {
-					r_core_bin_load_structs (core, desc->name);
+					char *fname = strdup (desc->name);
+					r_core_file_reopen (core, input + 4, perms, 0);
+					r_core_bin_load_structs (core, fname);
+					free (fname);
 				}
 			} else if ('?' == input[2]) {
 				r_core_cmd_help (core, help_msg_oon);
 				break;
 			}
-
+			// "oon"
 			perms = ('+' == input[2])? R_PERM_R | R_PERM_W: 0;
 			r_core_file_reopen (core, input + 3, perms, 0);
 			break;
