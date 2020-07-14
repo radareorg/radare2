@@ -1679,27 +1679,35 @@ static int cmd_open(void *data, const char *input) {
 			}
 			break;
 		case 'n': // "oon"
-			if ('n' == input[2]) { // "oonn"
-				if ('?' == input[3]) {
+			switch (input[2]) {
+			case 0: // "oon"
+				r_core_file_reopen (core, NULL, 0, 0);
+				break;
+			case ' ': //"oon file"
+				r_core_file_reopen (core, input + 3, perms, 0);
+				break;
+			case '+': // "oon+"
+				r_core_file_reopen (core, NULL, R_PERM_RW, 0);
+				break;
+			case 'n': // "oonn"
+				if ('?' == input[3] || !core->file) {
 					r_core_cmd_help (core, help_msg_oonn);
 					break;
 				}
 				RIODesc *desc = r_io_desc_get (core->io, core->file->fd);
-				perms = (input[3] == '+')? R_PERM_R|R_PERM_W: 0;
 				if (desc) {
 					char *fname = strdup (desc->name);
-					r_core_file_reopen (core, input + 4, perms, 0);
 					r_core_bin_load_structs (core, fname);
+					r_core_file_reopen (core, fname, perms, 0);
 					free (fname);
 					break;
 				}
-			} else if ('?' == input[2]) {
+				break;
+			case '?':
+			default:
 				r_core_cmd_help (core, help_msg_oon);
 				break;
 			}
-			// "oon"
-			perms = ('+' == input[2])? R_PERM_R | R_PERM_W: 0;
-			r_core_file_reopen (core, input + 3, perms, 0);
 			break;
 		case '+': // "oo+"
 			if ('?' == input[2]) {
