@@ -2,6 +2,8 @@
 
 #if __linux__
 #include <time.h>
+#elif __APPLE__ && !defined(MAC_OS_X_VERSION_10_12)
+#include <mach/mach_time.h>
 #endif
 
 #include <r_userconf.h>
@@ -231,6 +233,11 @@ R_API ut64 r_sys_now_mono(void) {
 	v.QuadPart *= 1000000;
 	v.QuadPart /= f.QuadPart;
 	return v.QuadPart;
+#elif __APPLE__ && !defined(MAC_OS_X_VERSION_10_12)
+	ut64 ticks = mach_absolute_time ();
+	static mach_timebase_info_data_t tb;
+	mach_timebase_info (&tb);
+	return ((ticks * tb.numer) / tb.denom) / R_NSEC_PER_USEC;
 #else
 	struct timespec now;
 	clock_gettime (CLOCK_MONOTONIC, &now);
