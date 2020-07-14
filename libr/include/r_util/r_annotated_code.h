@@ -35,7 +35,9 @@ typedef enum r_syntax_highlight_type_t {
 typedef enum r_code_annotation_type_t {
 	R_CODE_ANNOTATION_TYPE_OFFSET,
 	R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT,
-	R_CODE_ANNOTATION_TYPE_FUNCTION_NAME
+	R_CODE_ANNOTATION_TYPE_FUNCTION_NAME,
+	R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE,
+	R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE
 	// ...
 } RCodeAnnotationType;
 
@@ -56,6 +58,14 @@ typedef struct r_code_annotation_t {
 			char *name;
 			ut64 offset; // offset of the function with the name specified
 		} function_name;
+
+		struct {
+			ut64 offset;
+		} global_variable;
+
+		struct {
+			ut64 offset;
+		} constant_variable;
 	};
 } RCodeAnnotation;
 
