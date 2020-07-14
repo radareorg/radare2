@@ -1691,6 +1691,7 @@ static int cmd_open(void *data, const char *input) {
 					r_core_file_reopen (core, input + 4, perms, 0);
 					r_core_bin_load_structs (core, fname);
 					free (fname);
+					break;
 				}
 			} else if ('?' == input[2]) {
 				r_core_cmd_help (core, help_msg_oon);
