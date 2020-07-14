@@ -698,6 +698,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 					} else if (!expected_ch && actual_ch) {
 						cur_align = R2R_ALIGN_TOP_GAP;
 					} else if (expected_ch != actual_ch) {
+						eprintf ("Internal error: mismatch detected!\n");
 						cur_align = R2R_ALIGN_MISMATCH;
 					} else {
 						cur_align = R2R_ALIGN_MATCH;
