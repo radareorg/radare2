@@ -218,6 +218,27 @@ R_API ut64 r_sys_now(void) {
 	return ret;
 }
 
+R_API ut64 r_sys_now_mono(void) {
+#if __WINDOWS__
+	LARGE_INTEGER f;
+	if (!QueryPerformanceFrequency (&f)) {
+		return 0;
+	}
+	LARGE_INTEGER v;
+	if (!QueryPerformanceCounter (&v)) {
+		return 0;
+	}
+	v.QuadPart *= 1000000;
+	v.QuadPart /= f.QuadPart;
+	return v.QuadPart;
+#else
+	struct timespec now;
+	clock_gettime (CLOCK_MONOTONIC, &now);
+	return now.tv_sec * R_USEC_PER_SEC
+		+ now.tv_nsec / R_NSEC_PER_USEC;
+#endif
+}
+
 R_API int r_sys_truncate(const char *file, int sz) {
 #if __WINDOWS__
 	int fd = r_sandbox_open (file, O_RDWR, 0644);
