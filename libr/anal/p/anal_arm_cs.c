@@ -3167,37 +3167,39 @@ static int hack_handle_ldst(ut32 insn, RAnalOp *op) {
 		op2 = (insn >> 10) & 0x2;
 
 		if (op2 > 0) {
-			if (opc == 0) {
+			switch (opc) {
+			case 0:
 				// stg
 				op->type = R_ANAL_OP_TYPE_STORE;
-				return op->size = 4;				
-			} else if (opc == 1) {
+				return op->size = 4; 
+			case 1:
 				// stzg
 				op->type = R_ANAL_OP_TYPE_STORE;
 				return op->size = 4;
-			} else if (opc == 2) {
+			case 2:
 				// st2g
 				op->type = R_ANAL_OP_TYPE_STORE;
 				return op->size = 4;
-			} else {
+			case 3:
 				// stz2g
 				op->type = R_ANAL_OP_TYPE_STORE;
 				return op->size = 4;
 			}
 		} else if (op2 == 0) {
-			if (opc == 0) {
+			switch (opc) {
+			case 0:
 				// stzgm
 				op->type = R_ANAL_OP_TYPE_STORE;
 				return op->size = 4;
-			} else if (opc == 1) {
+			case 1:
 				// ldg
 				op->type = R_ANAL_OP_TYPE_LOAD;
 				return op->size = 4;
-			} else if (opc == 2) {
+			case 2:
 				// stgm
 				op->type = R_ANAL_OP_TYPE_STORE;
 				return op->size = 4;
-			} else {
+			case 3:
 				// ldgm
 				op->type = R_ANAL_OP_TYPE_LOAD;
 				return op->size = 4;

@@ -93,6 +93,7 @@ static int hack_handle_dp_reg(ut32 insn, char **buf_asm) {
 		const ut8 Xm = (insn >> 16) & 0x1f;
 		const ut8 Xn = (insn >> 5) & 0x1f;
 		const ut8 Xd = (insn >> 0) & 0x1f;
+		if (Xm == 31 && !strcmp (mnemonic, "irg")) {
 			*buf_asm = sdb_fmt ("%s x%d, x%d, xzr", mnemonic, Xd, Xn);
 		} else {
 			*buf_asm = sdb_fmt ("%s x%d, x%d, x%d", mnemonic, Xd, Xn, Xm);
@@ -119,26 +120,34 @@ static int hack_handle_ldst(ut32 insn, char **buf_asm) {
 		const ut8 Xt = (insn >> 0) & 0x1f;
 
 		if (op2 > 0) {
-			if (opc == 0) {
-				mnemonic = sdb_fmt ("stg");
-			} else if (opc == 1) {
-				mnemonic = sdb_fmt ("stzg");
-			} else if (opc == 2) {
-				mnemonic = sdb_fmt ("st2g");
-			} else {
-				mnemonic = sdb_fmt ("stz2g");
+			switch (opc) {
+			case 0:
+				mnemonic = "stg";
+				break;
+			case 1:
+				mnemonic = "stzg";
+				break;
+			case 2:
+				mnemonic = "st2g";
+				break;
+			case 3:
+				mnemonic = "stz2g";
+				break;
 			}
 
 			if (!imm9) {
 				*buf_asm = sdb_fmt ("%s x%d, [x%d]", mnemonic, Xt, Xn);
 			} else {
-				if (op2 == 1) {
+				switch (op2) {
+				case 1:
 					*buf_asm = sdb_fmt ("%s x%d, [x%d], #0x%x",
 						mnemonic, Xt, Xn, imm9);
-				} else if (op2 == 2) {
+					break;
+				case 2:
 					*buf_asm = sdb_fmt ("%s x%d, [x%d, #0x%x]!",
 						mnemonic, Xt, Xn, imm9);
-				} else {
+					break;
+				case 3:
 					*buf_asm = sdb_fmt ("%s x%d, [x%d, #0x%x]",
 						mnemonic, Xt, Xn, imm9);
 					break;
@@ -147,14 +156,19 @@ static int hack_handle_ldst(ut32 insn, char **buf_asm) {
 			*buf_asm = r_str_replace (*buf_asm, "x31", "sp", 1);
 			return 0;	
 		} else if (op2 == 0) {
-			if (opc == 0) {
-				mnemonic = sdb_fmt ("stzgm");
-			} else if (opc == 1) {
-				mnemonic = sdb_fmt ("ldg");
-			} else if (opc == 2) {
-				mnemonic = sdb_fmt ("stgm");
-			} else {
-				mnemonic = sdb_fmt ("ldgm");
+			switch (opc) {
+			case 0:
+				mnemonic = "stzgm";
+				break;
+			case 1:
+				mnemonic = "ldg";
+				break;
+			case 2:
+				mnemonic = "stgm";
+				break;
+			case 3:
+				mnemonic = "ldgm";
+				break;
 			}
 
 			if (!imm9) {
@@ -181,16 +195,20 @@ static int hack_handle_ldst(ut32 insn, char **buf_asm) {
 				*buf_asm = sdb_fmt ("stgp x%d, [x%d, #0x%x]",
 					Xt, Xt2, Xn, imm7);
 			} else {
-				if (op2 == 1) {
+				switch (op2) {
+				case 1:
 					*buf_asm = sdb_fmt ("stgp x%d, x%d, [x%d], #0x%x",
 						Xt, Xt2, Xn, imm7);
-				} else if (op2 == 2) {
+					break;
+				case 2:
 					*buf_asm = sdb_fmt ("stgp x%d, [x%d, #0x%x]!",
 						Xt, Xt2, Xn, imm7);
-				} else if (op2 == 3) {
+					break;
+				case 3:
 					*buf_asm = sdb_fmt ("stgp x%d, [x%d, #0x%x]",
 						Xt, Xt2, Xn, imm7);
-				} else {
+					break;
+				default:
 					return -1;
 				}
 			}
