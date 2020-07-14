@@ -164,13 +164,12 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 	if (!db) {
 		return;
 	}
-	RSpace *fs = r_flag_space_cur (core->flags);
 	SdbListIter *iter;
 	SdbKv *kv;
 	if (IS_MODE_RAD (mode)) {
 		r_cons_printf ("fs format\n");
 	} else if (IS_MODE_SET (mode)) {
-		r_flag_space_set (core->flags, "format");
+		r_flag_space_push (core->flags, "format");
 	}
 	// iterate over all keys
 	SdbList *ls = sdb_foreach_list (db, false);
@@ -274,7 +273,9 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 		free (dup);
 	}
 	free (offset);
-	r_flag_space_set (core->flags, (fs && fs->name)?  fs->name: NULL);
+	if (IS_MODE_SET (mode)) {
+		r_flag_space_pop (core->flags);
+	}
 }
 
 
