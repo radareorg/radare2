@@ -424,10 +424,9 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	RAnalVarField *bparg, *sparg;
 	r_list_foreach (spargs, spiter, sparg) {
 		char sign = '+';
-		st64 delta = ST64_MAX;
-		if (p->get_ptr_at) {
-			delta = p->get_ptr_at (f, sparg->delta, addr);
-		}
+		st64 delta = p->get_ptr_at
+			? p->get_ptr_at (f, sparg->delta, addr)
+			: ST64_MAX;
 		if (delta == ST64_MAX && sparg->field) {
 			delta = sparg->delta;
 		} else if (delta == ST64_MAX) {
@@ -472,10 +471,9 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	/* iterate over base pointer args/vars */
 	r_list_foreach (bpargs, bpargiter, bparg) {
 		char sign = '+';
-		st64 delta = ST64_MAX;
-		if (p->get_ptr_at) {
-			delta = p->get_ptr_at (f, bparg->delta, addr);
-		}
+		st64 delta = p->get_ptr_at
+			? p->get_ptr_at (f, bparg->delta, addr)
+			: ST64_MAX;
 		if (delta == ST64_MAX && bparg->field) {
 			delta = bparg->delta + f->bp_off;
 		} else if (delta == ST64_MAX) {

@@ -4660,7 +4660,7 @@ static void handle_var_stack_access(RAnalEsil *esil, ut64 addr, RAnalVarAccessTy
 				char *varname;
 				varname = ctx->fcn->anal->opt.varname_stack
 					? r_str_newf ("var_%xh", R_ABS (stack_off))
-					: r_anal_function_autoname_var (ctx->fcn, R_ANAL_VAR_KIND_SPV, "var", delta_for_access (ctx->op, type));
+					: r_anal_function_autoname_var (ctx->fcn, R_ANAL_VAR_KIND_BPV, "var", delta_for_access (ctx->op, type));
 				var = r_anal_function_set_var (ctx->fcn, stack_off, R_ANAL_VAR_KIND_BPV, NULL, len, false, varname);
 				free (varname);
 			}
@@ -4881,15 +4881,14 @@ static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 }
 
 typedef struct {
-	RAnalFunction *fcn;
-	RAnalBlock *cur_bb;
-	RList *bbl;
-	RList *path;
 	ut64 start_addr;
 	ut64 end_addr;
+	RAnalFunction *fcn;
+	RAnalBlock *cur_bb;
+	RList *bbl, *path, *switch_path;
 } IterCtx;
 
-static int find_bb(int *addr, RAnalBlock *bb) {
+static int find_bb(ut64 *addr, RAnalBlock *bb) {
 	return *addr != bb->addr;
 }
 
@@ -4899,6 +4898,7 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 	if (ctx->fcn) {
 		if (!ctx->cur_bb) {
 			ctx->path = r_list_new ();
+			ctx->switch_path = r_list_new ();
 			ctx->bbl = r_list_clone (ctx->fcn->bbs);
 			ctx->cur_bb = r_anal_get_block_at (ctx->fcn->anal, ctx->fcn->addr);
 			r_list_push (ctx->path, ctx->cur_bb);
@@ -4906,19 +4906,50 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 		RAnalBlock *bb = ctx->cur_bb;
 		if (cur_addr >= bb->addr + bb->size) {
 			r_reg_arena_push (ctx->fcn->anal->reg);
-			RListIter *bbit = r_list_find (ctx->bbl, &bb->jump, (RListComparator)find_bb);
-			if (!bbit && bb->fail != UT64_MAX) {
-				bbit = r_list_find (ctx->bbl, &bb->fail, (RListComparator)find_bb);
+			RListIter *bbit = NULL;
+			if (bb->switch_op) {
+				RAnalCaseOp *cop = r_list_first (bb->switch_op->cases);
+				bbit = r_list_find (ctx->bbl, &cop->jump, (RListComparator)find_bb);
+				if (bbit) {
+					r_list_push (ctx->switch_path, bb->switch_op->cases->head);
+				}
+			} else {
+				bbit = r_list_find (ctx->bbl, &bb->jump, (RListComparator)find_bb);
+				if (!bbit && bb->fail != UT64_MAX) {
+					bbit = r_list_find (ctx->bbl, &bb->fail, (RListComparator)find_bb);
+				}
 			}
 			if (!bbit) {
+				RListIter *cop_it = r_list_last (ctx->switch_path);
+				RAnalBlock *prev_bb = NULL;
 				do {
 					r_reg_arena_pop (ctx->fcn->anal->reg);
-					RAnalBlock *prev_bb = r_list_pop (ctx->path);
-					bbit = r_list_find (ctx->bbl, &prev_bb->fail, (RListComparator)find_bb);
+					prev_bb = r_list_pop (ctx->path);
+					if (prev_bb->fail != UT64_MAX) {
+						bbit = r_list_find (ctx->bbl, &prev_bb->fail, (RListComparator)find_bb);
+						if (bbit) {
+							r_list_push (ctx->path, prev_bb);
+						}
+					}
+					if (!bbit && cop_it) {
+						RAnalCaseOp *cop = cop_it->data;
+						if (cop->jump == prev_bb->addr && cop_it->n) {
+							cop = cop_it->n->data;
+							r_list_pop (ctx->switch_path);
+							r_list_push (ctx->switch_path, cop_it->n);
+							cop_it = cop_it->n;
+							bbit = r_list_find (ctx->bbl, &cop->jump, (RListComparator)find_bb);
+						}
+					}
+					if (cop_it && !cop_it->n) {
+						r_list_pop (ctx->switch_path);
+						cop_it = r_list_last (ctx->switch_path);
+					}
 				} while (!bbit && !r_list_empty (ctx->path));
 			}
 			if (!bbit) {
 				r_list_free (ctx->path);
+				r_list_free (ctx->switch_path);
 				r_list_free (ctx->bbl);
 				return false;
 			}
@@ -5071,7 +5102,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	}
 	r_reg_arena_push (core->anal->reg);
 
-	IterCtx ictx = { fcn, NULL, NULL, NULL, start, end };
+	IterCtx ictx = { start, end, fcn, NULL};
 	size_t i = addr - start;
 	do {
 		if (esil_anal_stop || r_cons_is_breaked ()) {

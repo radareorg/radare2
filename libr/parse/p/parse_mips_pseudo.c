@@ -265,10 +265,9 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	const bool ucase = IS_UPPER (*tstr);
 	RAnalVarField *var;
 	r_list_foreach (spargs, iter, var) {
-		st64 delta = ST64_MAX;
-		if (p->get_ptr_at) {
-			delta = p->get_ptr_at (f, var->delta, addr);
-		}
+		st64 delta = p->get_ptr_at
+			? p->get_ptr_at (f, var->delta, addr)
+			: ST64_MAX;
 		if (delta == ST64_MAX && var->field) {
 			delta = var->delta;
 		} else if (delta == ST64_MAX) {
@@ -312,10 +311,9 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	}
 	r_list_foreach (bpargs, iter, var) {
 		char *tmpf = NULL;
-		st64 delta = ST64_MAX;
-		if (p->get_ptr_at) {
-			delta = p->get_ptr_at (f, var->delta, addr);
-		}
+		st64 delta = p->get_ptr_at
+			? p->get_ptr_at (f, var->delta, addr)
+			: ST64_MAX;
 		if (delta == ST64_MAX && var->field) {
 			delta = var->delta + f->bp_off;
 		} else if (delta == ST64_MAX) {
