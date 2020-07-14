@@ -34,7 +34,7 @@ jobs:
             os: ubuntu-latest
             build_system: acr
             compiler: clang
-            run_tests: ${{ github.event_name == 'pull' }}
+            run_tests: ${{ github.event_name == 'push' }}
           - name: linux-meson-gcc
             os: ubuntu-latest
             build_system: meson
@@ -126,7 +126,7 @@ jobs:
   build-centos6:
     name: Build CentOS 6
     runs-on: ubuntu-latest
-    if: contains(github.event.pull_request.head.ref, 'centos') || contains(github.event.pull_request.head.ref, 'release-') || github.event_name == 'schedule'
+    if: contains(github.ref, 'centos') || contains(github.ref, 'release-') || github.event_name == 'schedule'
     container: centos:6
     steps:
     - name: Install tools
@@ -155,7 +155,7 @@ jobs:
   build-debian-jessie:
     name: Debian Jessie build
     runs-on: ubuntu-latest
-    if: contains(github.event.pull_request.head.ref, 'debian') || contains(github.event.pull_request.head.ref, 'release-') || github.event_name == 'schedule'
+    if: contains(github.ref, 'debian') || contains(github.ref, 'release-') || github.event_name == 'schedule'
     container: debian:jessie
 
     steps:
@@ -197,7 +197,7 @@ jobs:
 
   build-static:
     name: ubuntu-static-tests
-    if: contains(github.event.pull_request.head.ref, 'static') || contains(github.event.pull_request.head.ref, 'release-') || github.event_name == 'schedule'
+    if: contains(github.ref, 'static') || contains(github.ref, 'release-') || github.event_name == 'schedule'
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -217,7 +217,7 @@ jobs:
 
   create-tarball:
     name: Create source tarball
-    if: github.event_name == 'push' && contains(github.event.pull_request.head.ref, 'release-')
+    if: github.event_name == 'push' && contains(github.ref, 'release-')
     needs: [build-and-test, build-centos6, build-debian-jessie, build-static]
     runs-on: ubuntu-latest
     steps:
@@ -246,7 +246,7 @@ jobs:
 
   build-deb:
     name: Build deb package for ${{ matrix.container }}
-    if: github.event_name == 'push' && contains(github.event.pull_request.head.ref, 'release-')
+    if: github.event_name == 'push' && contains(github.ref, 'release-')
     needs: [build-and-test]
     runs-on: ubuntu-latest
     container: ${{ matrix.container }}
@@ -288,7 +288,7 @@ jobs:
   build-osx-pkg:
     name: Build OSX package
     runs-on: macos-latest
-    if: github.event_name == 'push' && contains(github.event.pull_request.head.ref, 'release-')
+    if: github.event_name == 'push' && contains(github.ref, 'release-')
     needs: [build-and-test]
     steps:
     - uses: actions/checkout@v2
@@ -307,7 +307,7 @@ jobs:
   build-windows:
     name: Build Windows zip/installer ${{ matrix.name }}
     runs-on: windows-latest
-    if: github.event_name == 'push' && contains(github.event.pull_request.head.ref, 'release-')
+    if: github.event_name == 'push' && contains(github.ref, 'release-')
     needs: [build-and-test]
     strategy:
       fail-fast: false
@@ -360,7 +360,7 @@ jobs:
   build-ios-cydia:
     name: Build iOS Cydia packages
     runs-on: macos-latest
-    if: github.event_name == 'push' && contains(github.event.pull_request.head.ref, 'release-')
+    if: github.event_name == 'push' && contains(github.ref, 'release-')
     needs: [build-and-test]
     steps:
     - uses: actions/checkout@v2
@@ -388,7 +388,7 @@ jobs:
   build-android:
     name: Build Android ${{ matrix.name }} package
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && contains(github.event.pull_request.head.ref, 'release-')
+    if: github.event_name == 'push' && contains(github.ref, 'release-')
     needs: [build-and-test]
     strategy:
       fail-fast: false
@@ -415,7 +415,7 @@ jobs:
 
   build-extras:
     name: Build radare2 extras and r2pipe
-    if: github.event_name == 'push' && contains(github.event.pull_request.head.ref, 'release-')
+    if: github.event_name == 'push' && contains(github.ref, 'release-')
     needs: [create-tarball]
     runs-on: ubuntu-latest
     env:
