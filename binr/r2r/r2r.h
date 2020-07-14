@@ -3,6 +3,7 @@
 #ifndef RADARE2_R2R_H
 #define RADARE2_R2R_H
 
+#include <r_types.h>
 #include <r_util.h>
 
 #if defined (__FreeBSD__) || defined (__FreeBSD_kernel__)
