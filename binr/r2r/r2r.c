@@ -553,6 +553,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 		// Use Needleman–Wunsch to diffchar.
 		// This is an O(mn) algo in both space and time.
 		// Note that 64KB * 64KB * 2 = 8GB.
+		// TODO Discard common prefix and suffix
 		if (len_expected == len_actual) { // TODO Drop this condition
 			size_t dim = len_expected + 1;
 			st16 *align_table = malloc (dim * dim * sizeof (st16));
@@ -635,12 +636,13 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 					if (pos_row > 0 && pos_col > 0) {
 						tl_score = *(align_table + (pos_row - 1) * dim + pos_col - 1);
 					}
-					if (t_score >= tl_score && t_score >= l_score) {
+					const bool match = expected[idx_expected] == actual[idx_actual];
+					if (t_score >= l_score && (!match || t_score >= tl_score)) {
 						align_expected[idx_align] = 0;
 						align_actual[idx_align] = actual[idx_actual--];
 						idx_align--;
 						pos_row--;
-					} else if (l_score >= tl_score && l_score >= t_score) {
+					} else if (l_score >= t_score && (!match || l_score >= tl_score)) {
 						align_expected[idx_align] = expected[idx_expected--];
 						align_actual[idx_align] = 0;
 						idx_align--;
@@ -655,7 +657,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 				}
 				idx_align++;
 				size_t start_align = idx_align;
-				// TODO Print alignment (Debug)
+				// Print alignment (Debug)
 				for (; idx_align < 2 * len_expected; idx_align++) {
 					ut8 ch = align_expected[idx_align];
 					if (align_actual[idx_align] == '\n' && ch != '\n') {
@@ -685,10 +687,6 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 				}
 				printf ("\n");
 				// Print diff
-				// TODO: Handle mismatches
-				int mismatch_pass = 0; // 0, 1 or 2
-				size_t start_mismatch = (size_t)-1;
-				size_t restart_match = (size_t)-1;
 				R2RPrintDiffMode cur_mode = R2R_DIFF_MATCH;
 				R2RCharAlignment cur_align;
 				idx_align = start_align;
