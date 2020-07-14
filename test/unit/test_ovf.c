@@ -30,6 +30,13 @@ int test_overflow_mul(void) {
 	mu_assert_false (UT8_MUL_OVFCHK (16, 2), "ut8-mul 2");
 	mu_assert_true (ST8_MUL_OVFCHK (16, 100), "st8-mul 3");
 	mu_assert_false (ST8_MUL_OVFCHK (16, 1), "st8-mul 4");
+	mu_assert_true (ST8_MUL_OVFCHK (-1, -2), "ut8-mul sign overflow");
+	mu_end;
+}
+
+int test_overflow_mul2(void) {
+	mu_assert_false (ST8_MUL_OVFCHK (-1, 0), "st8-mul2 -1 0");
+	mu_assert_false (ST8_MUL_OVFCHK (1, 0), "st8-mul2 -1 0");
 	mu_end;
 }
 
@@ -38,6 +45,7 @@ int all_tests() {
 	mu_run_test (test_underflow_add);
 	mu_run_test (test_underflow_sub);
 	mu_run_test (test_overflow_mul);
+	mu_run_test (test_overflow_mul2);
 	return tests_passed != tests_run;
 }
 
