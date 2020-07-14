@@ -3125,15 +3125,15 @@ static void op_fillval(RAnalOp *op , csh handle, cs_insn *insn, int bits) {
 }
 
 static int hack_handle_dp_reg(ut32 insn, RAnalOp *op) {
-	ut8 op0 = (insn >> 30) & 0x1;
-	ut8 op1 = (insn >> 28) & 0x1;
-	ut8 op2 = (insn >> 21) & 0xf;
+	const ut8 op0 = (insn >> 30) & 0x1;
+	const ut8 op1 = (insn >> 28) & 0x1;
+	const ut8 op2 = (insn >> 21) & 0xf;
 
 	// Data-processing (2 source)
 	if (op0 == 0 && op1 == 1 && op2 == 0x6) {
-		ut8 sf = (insn >> 31) & 0x1;
-		ut8 S = (insn >> 29) & 0x1;
-		ut8 opcode = (insn >> 10) & 0x1f;
+		const ut8 sf = (insn >> 31) & 0x1;
+		const ut8 S = (insn >> 29) & 0x1;
+		const ut8 opcode = (insn >> 10) & 0x1f;
 		if (sf == 1 && S == 0 && opcode == 4) {
 			// irg
 			op->type = R_ANAL_OP_TYPE_MOV;
@@ -3160,14 +3160,14 @@ static int hack_handle_dp_reg(ut32 insn, RAnalOp *op) {
 }
 
 static int hack_handle_ldst(ut32 insn, RAnalOp *op) {
-	ut8 op0 = (insn >> 28) & 0xf;
-	ut8 op1 = (insn >> 26) & 0x1;
-	ut8 op2 = (insn >> 24) & 0x1;
-	ut8 op3 = (insn >> 21) & 0x1;
+	const ut8 op0 = (insn >> 28) & 0xf;
+	const ut8 op1 = (insn >> 26) & 0x1;
+	ut8 op2 = (insn >> 24) & 0x2;
+	const ut8 op3 = (insn >> 21) & 0x1;
 
 	// Load/store memory tags
 	if (op0 == 13 && op1 == 0 && op2 == 1 && op3 == 1) {
-		ut8 opc = (insn >> 22) & 0x2;
+		const ut8 opc = (insn >> 22) & 0x2;
 		op2 = (insn >> 10) & 0x2;
 
 		if (op2 > 0) {
@@ -3211,9 +3211,9 @@ static int hack_handle_ldst(ut32 insn, RAnalOp *op) {
 		}
 	// Load/store register pair
 	} else if ((op0 & 0x2) == 2) {
-		ut8 opc = (insn >> 30) & 0x2;
-		ut8 V = (insn >> 26) & 0x1;
-		ut8 L = (insn >> 22) & 0x1;
+		const ut8 opc = (insn >> 30) & 0x2;
+		const ut8 V = (insn >> 26) & 0x1;
+		const ut8 L = (insn >> 22) & 0x1;
 
 		if (opc == 1 && V == 0 && L == 0) {
 			// stgp
@@ -3229,14 +3229,14 @@ static int hack_handle_ldst(ut32 insn, RAnalOp *op) {
 }
 
 static int hack_handle_dp_imm(ut32 insn, RAnalOp *op) {
-	ut8 op0 = (insn >> 23) & 0x7;
+	const ut8 op0 = (insn >> 23) & 0x7;
 
 	// Add/subtract (immediate, with tags)
 	if (op0 == 3) {
-		ut8 sf = (insn >> 31) & 0x1;
-		ut8 op_ = (insn >> 30) & 0x1;
-		ut8 S = (insn >> 29) & 0x1;
-		ut8 o2 = (insn >> 2) & 0x1;
+		const ut8 sf = (insn >> 31) & 0x1;
+		const ut8 op_ = (insn >> 30) & 0x1;
+		const ut8 S = (insn >> 29) & 0x1;
+		const ut8 o2 = (insn >> 2) & 0x1;
 		if (sf == 1 && op_ == 0 && S == 0 && o2 == 0) {
 			// addg
 			op->type = R_ANAL_OP_TYPE_ADD;

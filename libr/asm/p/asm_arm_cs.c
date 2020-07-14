@@ -41,14 +41,14 @@ static bool check_features(RAsm *a, cs_insn *insn) {
 
 static int hack_handle_dp_imm(ut32 insn, char **buf_asm) {
 	char *mnemonic;
-	ut8 op0 = (insn >> 23) & 0x7;
+	const ut8 op0 = (insn >> 23) & 0x7;
 
 	// Add/subtract (immediate, with tags)
 	if (op0 == 3) {
-		ut8 sf = (insn >> 31) & 0x1;
-		ut8 op = (insn >> 30) & 0x1;
-		ut8 S = (insn >> 29) & 0x1;
-		ut8 o2 = (insn >> 2) & 0x1;
+		const ut8 sf = (insn >> 31) & 0x1;
+		const ut8 op = (insn >> 30) & 0x1;
+		const ut8 S = (insn >> 29) & 0x1;
+		const ut8 o2 = (insn >> 2) & 0x1;
 		if (sf == 1 && op == 0 && S == 0 && o2 == 0) {
 			mnemonic = sdb_fmt ("addg");
 		} else if (sf == 1 && op == 1 && S == 0 && o2 == 0) {
@@ -56,10 +56,10 @@ static int hack_handle_dp_imm(ut32 insn, char **buf_asm) {
 		} else {
 			return -1;
 		}
-		ut8 uimm6 = ((insn >> 16) & 0x3f) << 4;
-		ut8 uimm4 = (insn >> 10) & 0xf;
-		ut8 Xn = (insn >> 5) & 0x1f;
-		ut8 Xd = (insn >> 0) & 0x1f;
+		const ut8 uimm6 = ((insn >> 16) & 0x3f) << 4;
+		const ut8 uimm4 = (insn >> 10) & 0xf;
+		const ut8 Xn = (insn >> 5) & 0x1f;
+		const ut8 Xd = (insn >> 0) & 0x1f;
 		*buf_asm = sdb_fmt ("%s x%d, x%d, #0x%x, #0x%x",
 			mnemonic, Xn, Xd, uimm6, uimm4);
 		*buf_asm = r_str_replace (*buf_asm, "x31", "sp", 1);
@@ -71,15 +71,15 @@ static int hack_handle_dp_imm(ut32 insn, char **buf_asm) {
 
 static int hack_handle_dp_reg(ut32 insn, char **buf_asm) {
 	char *mnemonic;
-	ut8 op0 = (insn >> 30) & 0x1;
-	ut8 op1 = (insn >> 28) & 0x1;
-	ut8 op2 = (insn >> 21) & 0xf;
+	const ut8 op0 = (insn >> 30) & 0x1;
+	const ut8 op1 = (insn >> 28) & 0x1;
+	const ut8 op2 = (insn >> 21) & 0xf;
 
 	// Data-processing (2 source)
 	if (op0 == 0 && op1 == 1 && op2 == 0x6) {
-		ut8 sf = (insn >> 31) & 0x1;
-		ut8 S = (insn >> 29) & 0x1;
-		ut8 opcode = (insn >> 10) & 0x1f;
+		const ut8 sf = (insn >> 31) & 0x1;
+		const ut8 S = (insn >> 29) & 0x1;
+		const ut8 opcode = (insn >> 10) & 0x1f;
 		if (sf == 1 && S == 0 && opcode == 4) {
 			mnemonic = sdb_fmt ("irg");
 		} else if (sf == 1 && S == 0 && opcode == 0) {
@@ -91,10 +91,9 @@ static int hack_handle_dp_reg(ut32 insn, char **buf_asm) {
 		} else {
 			return -1;
 		}
-		ut8 Xm = (insn >> 16) & 0x1f;
-		ut8 Xn = (insn >> 5) & 0x1f;
-		ut8 Xd = (insn >> 0) & 0x1f;
-		if (Xm == 31 && strcmp(mnemonic, "irg") == 0) {
+		const ut8 Xm = (insn >> 16) & 0x1f;
+		const ut8 Xn = (insn >> 5) & 0x1f;
+		const ut8 Xd = (insn >> 0) & 0x1f;
 			*buf_asm = sdb_fmt ("%s x%d, x%d, xzr", mnemonic, Xd, Xn);
 		} else {
 			*buf_asm = sdb_fmt ("%s x%d, x%d, x%d", mnemonic, Xd, Xn, Xm);
@@ -108,18 +107,18 @@ static int hack_handle_dp_reg(ut32 insn, char **buf_asm) {
 
 static int hack_handle_ldst(ut32 insn, char **buf_asm) {
 	char *mnemonic = NULL;
-	ut8 op0 = (insn >> 28) & 0xf;
-	ut8 op1 = (insn >> 26) & 0x1;
-	ut8 op2 = (insn >> 24) & 0x1;
-	ut8 op3 = (insn >> 21) & 0x1;
+	const ut8 op0 = (insn >> 28) & 0xf;
+	const ut8 op1 = (insn >> 26) & 0x1;
+	ut8 op2 = (insn >> 24) & 0x2;
+	const ut8 op3 = (insn >> 21) & 0x1;
 
 	// Load/store memory tags
 	if (op0 == 13 && op1 == 0 && op2 == 1 && op3 == 1) {
-		ut8 opc = (insn >> 22) & 0x2;
-		ut16 imm9 = ((insn >> 12) & 0x1ff) << 4;
+		const ut8 opc = (insn >> 22) & 0x2;
+		const ut16 imm9 = ((insn >> 12) & 0x1ff) << 4;
 		op2 = (insn >> 10) & 0x2;
-		ut8 Xn = (insn >> 5) & 0x1f;
-		ut8 Xt = (insn >> 0) & 0x1f;
+		const ut8 Xn = (insn >> 5) & 0x1f;
+		const ut8 Xt = (insn >> 0) & 0x1f;
 
 		if (op2 > 0) {
 			if (opc == 0) {
@@ -168,15 +167,15 @@ static int hack_handle_ldst(ut32 insn, char **buf_asm) {
 		}
 	// Load/store register pair
 	} else if ((op0 & 0x2) == 2) {
-		ut8 opc = (insn >> 30) & 0x2;
-		ut8 V = (insn >> 26) & 0x1;
-		ut8 L = (insn >> 22) & 0x1;
+		const ut8 opc = (insn >> 30) & 0x2;
+		const ut8 V = (insn >> 26) & 0x1;
+		const ut8 L = (insn >> 22) & 0x1;
 
 		if (opc == 1 && V == 0 && L == 0) {
-			ut8 imm7 = (insn >> 15) & 0x7f;
-			ut8 Xt2 = (insn >> 10) & 0x1f;
-			ut8 Xt = (insn >> 5) & 0x1f;
-			ut8 Xn = (insn >> 0) & 0x1f;
+			const ut8 imm7 = (insn >> 15) & 0x7f;
+			const ut8 Xt2 = (insn >> 10) & 0x1f;
+			const ut8 Xt = (insn >> 5) & 0x1f;
+			const ut8 Xn = (insn >> 0) & 0x1f;
 			if (!imm7) {
 				*buf_asm = sdb_fmt ("stgp x%d, [x%d, #0x%x]",
 					Xt, Xt2, Xn, imm7);
