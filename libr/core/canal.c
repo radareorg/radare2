@@ -5093,9 +5093,6 @@ repeat:
 				ut64 dst = ESIL->cur;
 				if ((target && dst == ntarget) || !target) {
 					if (CHECKREF (dst)) {
-						if ((dst & 1) && (core->anal->bits == 16)) {
-							dst &= ~1;
-						}
 						r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA);
 					}
 				}
