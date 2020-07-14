@@ -3158,11 +3158,11 @@ static int hack_handle_dp_reg(ut32 insn, RAnalOp *op) {
 static int hack_handle_ldst(ut32 insn, RAnalOp *op) {
 	const ut8 op0 = (insn >> 28) & 0xf;
 	const ut8 op1 = (insn >> 26) & 0x1;
-	ut8 op2 = (insn >> 24) & 0x2;
+	ut8 op2 = (insn >> 23) & 0x2;
 	const ut8 op3 = (insn >> 21) & 0x1;
 
 	// Load/store memory tags
-	if (op0 == 13 && op1 == 0 && op2 == 1 && op3 == 1) {
+	if (op0 == 13 && op1 == 0 && (op2 == 1 || op2 == 2) && op3 == 1) {
 		const ut8 opc = (insn >> 22) & 0x2;
 		op2 = (insn >> 10) & 0x2;
 
