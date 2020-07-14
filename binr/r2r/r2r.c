@@ -550,32 +550,45 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 	size_t len_expected = strlen (expected);
 	size_t len_actual = strlen (actual);
 	if (diffchar) {
+		const char *orig_expected = expected;
+		const char *orig_actual = actual;
 		// Use Needleman–Wunsch to diffchar.
 		// This is an O(mn) algo in both space and time.
 		// Note that 64KB * 64KB * 2 = 8GB.
 		// TODO Discard common prefix and suffix
-		if (len_expected == len_actual) { // TODO Drop this condition
-			size_t dim = len_expected + 1;
+		if (true) {
+			const size_t len_long = len_expected > len_actual ? len_expected : len_actual;
+			const size_t dim = len_long + 1;
+			ut8 *dup_expected = malloc (len_long);
+			ut8 *dup_actual = malloc (len_long);
 			st16 *align_table = malloc (dim * dim * sizeof (st16));
-			ut8 *align_expected = malloc (2 * len_expected);
-			ut8 *align_actual = malloc (2 * len_actual);
-			if (align_table && align_expected && align_actual) {
+			ut8 *align_expected = malloc (2 * len_long);
+			ut8 *align_actual = malloc (2 * len_long);
+			if (dup_expected && dup_actual && align_table && align_expected && align_actual) {
+				// Copy strings (note that strncpy does pad with nulls)
+				strncpy (dup_expected, expected, len_long);
+				expected = dup_expected;
+				strncpy (dup_actual, actual, len_long);
+				actual = dup_actual;
+				// Fill table
+				// TODO Cost-based instead of score-based system?
 				size_t row, col;
 				*align_table = 0;
 				for (row = 1; row < dim; row++) {
 					// TODO Clamping [ST16_MIN + 1, .]
 					*(align_table + row) = *(align_table + row * dim) = -(st16)row;
 				}
-				// Fill table
-				// TODO Cost-based instead of score-based system?
 				const st16 match = 1;
+				const st16 match_nl = 2;
 				const st16 mismatch = -2;
 				const st16 gap = -1;
 				for (row = 1; row < dim; row++) {
 					for (col = 1; col < dim; col++) {
 						// TODO Clamping [ST16_MIN + 1, ST16_MAX]
 						st16 tl_score = *(align_table + (row - 1) * dim + col - 1)
-								+ (expected[col - 1] == actual[row - 1] ? match : mismatch);
+								+ (expected[col - 1] == actual[row - 1] ?
+								   (expected[col - 1] == '\n' ? match_nl : match) :
+								   mismatch);
 						st16 t_score = *(align_table + (row - 1) * dim + col) + gap;
 						st16 l_score = *(align_table + row * dim + col - 1) + gap;
 						st16 score;
@@ -618,9 +631,9 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 					printf ("\n");
 				}
 				// Do alignment
-				size_t idx_expected = len_expected - 1;
-				size_t idx_actual = len_actual - 1;
-				size_t idx_align = 2 * len_expected - 1;
+				size_t idx_expected = len_long - 1;
+				size_t idx_actual = len_long - 1;
+				size_t idx_align = 2 * len_long - 1;
 				size_t pos_row = dim - 1;
 				size_t pos_col = dim - 1;
 				while (pos_row != 0 || pos_col != 0) {
@@ -658,7 +671,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 				idx_align++;
 				size_t start_align = idx_align;
 				// Print alignment (Debug)
-				for (; idx_align < 2 * len_expected; idx_align++) {
+				for (; idx_align < 2 * len_long; idx_align++) {
 					ut8 ch = align_expected[idx_align];
 					if (align_actual[idx_align] == '\n' && ch != '\n') {
 						printf (ch ? " " : "-");
@@ -672,7 +685,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 					}
 				}
 				printf ("\n");
-				for (idx_align = start_align; idx_align < 2 * len_actual; idx_align++) {
+				for (idx_align = start_align; idx_align < 2 * len_long; idx_align++) {
 					ut8 ch = align_actual[idx_align];
 					if (align_expected[idx_align] == '\n' && ch != '\n') {
 						printf (ch ? " " : "-");
@@ -690,7 +703,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 				R2RPrintDiffMode cur_mode = R2R_DIFF_MATCH;
 				R2RCharAlignment cur_align;
 				idx_align = start_align;
-				while (idx_align < 2 * len_expected) {
+				while (idx_align < 2 * len_long) {
 					ut8 expected_ch = align_expected[idx_align];
 					ut8 actual_ch = align_actual[idx_align];
 					if (expected_ch && !actual_ch) {
@@ -750,10 +763,14 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 				}
 				printf (Color_RESET"\n");
 			}
+			free (dup_expected);
+			free (dup_actual);
 			free (align_table);
 			free (align_expected);
 			free (align_actual);
 			// return;
+			expected = orig_expected;
+			actual = orig_actual;
 		}
 		d->diff_cmd = "git diff --no-index --word-diff=porcelain --word-diff-regex=.";
 	}
