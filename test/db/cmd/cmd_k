@@ -23,3 +23,16 @@ EXPECT=<<EOF
 0x80,4,2,
 EOF
 RUN
+
+NAME=3: test kj
+FILE=bins/elf/ioli/crackme0x03
+ARGS=-A
+CMDS=<<EOF
+kj~"spec"
+kj~"fcns"
+EOF
+EXPECT=<<EOF
+"spec" : ["gcc=spec","spec.gcc.c=char","spec.gcc.d=int","spec.gcc.f=float","spec.gcc.g=double","spec.gcc.ld=long int","spec.gcc.lf=double","spec.gcc.li=long int","spec.gcc.lld=long long int","spec.gcc.lli=long long int","spec.gcc.llu=unsigned long long int","spec.gcc.lu=unsigned long int","spec.gcc.p=void *","spec.gcc.s=const char *","spec.gcc.u=unsigned int",],
+"fcns" : ["fcn.0x00000000.arg.0=int32_t","fcn.0x00000000.arg.4=int32_t","fcn.0x00000000.arg.8=int32_t","fcn.0x0804846e.arg.0=int32_t","fcn.0x0804846e.arg.4=int32_t",],
+EOF
+RUN
