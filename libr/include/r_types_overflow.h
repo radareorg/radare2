@@ -11,9 +11,9 @@
 #define UT32_ADD_OVFCHK(x,y) ((UT32_MAX - (x)) < (y))
 #define ST32_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > ST32_MAX - (x))) || ((x) < 0 && (a) < ST32_MIN - (x)))
 #define UT16_ADD_OVFCHK(x,y) ((UT16_MAX - (x)) < (y))
-#define ST16_ADD_OVFCHK(a,x) ( \
-	|| (((x) > 0) && ((a) > ST16_MAX - (x))) \
-	|| (((x) < 0) && ((a) < -(x))) \
+#define ST16_ADD_OVFCHK(a,b) ( \
+	(((b) > 0) && ((a) > ST16_MAX - (b))) \
+	|| (((b) < 0) && ((a) < -(b))) \
 )
 #define UT8_ADD_OVFCHK(x,y) ((UT8_MAX - (x)) < (y))
 #define ST8_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > ST8_MAX - (x))) || ((x) < 0 && (a) < ST8_MIN - (x)))
