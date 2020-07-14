@@ -630,7 +630,7 @@ static EStates convert_to_state(char *cstate) {
 
 	if (strstr (cstate, "member")) {
 		state = eMemberState;
-	} else if (strstr (cstate, "pointer")) {
+	} else if (strstr (cstate, "*")) {
 		state = ePointerState;
 	} else if (strstr (cstate, "union")) {
 		state = eUnionState;
@@ -645,6 +645,12 @@ static EStates convert_to_state(char *cstate) {
 	} else if (strstr (cstate, "char")) {
 		state = eCharState;
 	} else if (strstr (cstate, "modifier")) {
+		state = eModifierState;
+	} else if (strstr (cstate, "const")) {
+		state = eModifierState;
+	} else if (strstr (cstate, "unaligned")) {
+		state = eModifierState;
+	} else if (strstr (cstate, "volatile")) {
 		state = eModifierState;
 	} else if (strstr (cstate, "enum")) {
 		state = eEnumState;
@@ -780,7 +786,7 @@ static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, 
 			    (!strcmp (tmp, "arglist"))) {
 				break;
 			} else {
-				//eprintf ("There is no support for type \"%s\" in PF structs\n", tmp);
+				eprintf ("There is no support for type \"%s\" in PF structs\n", tmp);
 				res_field[pos] = 'A';
 				return 0;
 			}
@@ -829,6 +835,7 @@ int build_flags_format_and_members_field(R_PDB *pdb, ELeafType lt, char *name, c
 					 int i, int *pos, int offset, char *format_flags_field, char **members_field) {
 	switch (lt) {
 	case eLF_STRUCTURE:
+	case eLF_CLASS:
 	case eLF_UNION:
 		members_field[i] = (char *) malloc (sizeof(char) * strlen (name) + 1);
 		if (!members_field[i]) {
