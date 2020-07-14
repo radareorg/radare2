@@ -50,9 +50,9 @@ static int hack_handle_dp_imm(ut32 insn, char **buf_asm) {
 		const ut8 S = (insn >> 29) & 0x1;
 		const ut8 o2 = (insn >> 2) & 0x1;
 		if (sf == 1 && op == 0 && S == 0 && o2 == 0) {
-			mnemonic = sdb_fmt ("addg");
+			mnemonic = "addg";
 		} else if (sf == 1 && op == 1 && S == 0 && o2 == 0) {
-			mnemonic = sdb_fmt ("subg");
+			mnemonic = "subg";
 		} else {
 			return -1;
 		}
@@ -80,13 +80,13 @@ static int hack_handle_dp_reg(ut32 insn, char **buf_asm) {
 		const ut8 S = (insn >> 29) & 0x1;
 		const ut8 opcode = (insn >> 10) & 0x1f;
 		if (sf == 1 && S == 0 && opcode == 4) {
-			mnemonic = sdb_fmt ("irg");
+			mnemonic = "irg";
 		} else if (sf == 1 && S == 0 && opcode == 0) {
-			mnemonic = sdb_fmt ("subp");
+			mnemonic = "subp";
 		} else if (sf == 1 && S == 0 && opcode == 5) {
-			mnemonic = sdb_fmt ("gmi");
+			mnemonic = "gmi";
 		} else if (sf == 1 && S == 1 && opcode == 0) {
-			mnemonic = sdb_fmt ("subps");
+			mnemonic = "subps";
 		} else {
 			return -1;
 		}
