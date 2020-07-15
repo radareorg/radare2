@@ -144,6 +144,48 @@ R_API int r_core_project_list(RCore *core, int mode) {
 	return 0;
 }
 
+static inline void rmPrjF(char * path) {
+		if (r_file_exists (path)) {
+			r_file_rm (path);
+			eprintf ("rm %s\n", path);
+		}
+}
+
+static inline void rmNotesF(char *prjDir) {
+		char *notes_txt = r_str_newf ("%s%s%s", prjDir, R_SYS_DIR, "notes.txt");
+		if (r_file_exists (notes_txt)) {
+			r_file_rm (notes_txt);
+			eprintf ("rm %s\n", notes_txt);
+		}
+		free(notes_txt);
+}
+
+static inline void rmROPd(char *prjDir) {
+		char *rop_d = r_str_newf ("%s%s%s", prjDir, R_SYS_DIR, "rop.d");
+
+		if (r_file_is_directory (rop_d)) {
+			char *f;
+			RListIter *iter;
+			RList *files = r_sys_dir (rop_d);
+			r_list_foreach (files, iter, f) {
+				char *filepath = r_str_append (strdup (rop_d), R_SYS_DIR);
+				filepath = r_str_append (filepath, f);
+				if (!r_file_is_directory (filepath)) {
+					eprintf ("rm %s\n", filepath);
+					r_file_rm (filepath);
+				}
+
+				free (filepath);
+			}
+
+			r_file_rm (rop_d);
+			eprintf ("rm %s\n", rop_d);
+			r_list_free (files);
+		}
+
+		free (rop_d);
+}
+
 R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 	if (r_sandbox_enable (0)) {
 		eprintf ("Cannot delete project in sandbox mode\n");
@@ -161,40 +203,9 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 			free (path);
 			return false;
 		}
-		// rm project file
-		if (r_file_exists (path)) {
-			r_file_rm (path);
-			eprintf ("rm %s\n", path);
-		}
-
-		//rm notes.txt file
-		char *notes_txt = r_str_newf ("%s%s%s", prjDir, R_SYS_DIR, "notes.txt");
-		if (r_file_exists (notes_txt)) {
-			r_file_rm (notes_txt);
-			eprintf ("rm %s\n", notes_txt);
-		}
-		free(notes_txt);
-
-		char *rop_d = r_str_newf ("%s%s%s", prjDir, R_SYS_DIR, "rop.d");
-
-		if (r_file_is_directory (rop_d)) {
-			char *f;
-			RListIter *iter;
-			RList *files = r_sys_dir (rop_d);
-			r_list_foreach (files, iter, f) {
-				char *filepath = r_str_append (strdup (rop_d), R_SYS_DIR);
-				filepath = r_str_append (filepath, f);
-				if (!r_file_is_directory (filepath)) {
-					eprintf ("rm %s\n", filepath);
-					r_file_rm (filepath);
-				}
-				free (filepath);
-			}
-			r_file_rm (rop_d);
-			eprintf ("rm %s\n", rop_d);
-			r_list_free (files);
-		}
-		free (rop_d);
+		rmPrjF(path);
+		rmNotesF(prjDir);
+		rmROPd(prjDir);
 		// remove directory only if it's empty
 		r_file_rm (prjDir);
 		free (prjDir);
