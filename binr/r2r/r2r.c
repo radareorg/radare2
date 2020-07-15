@@ -547,8 +547,8 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 #ifdef __WINDOWS__
 	d->diff_cmd = "git diff --no-index";
 #endif
-	size_t len_expected = strlen (expected);
-	size_t len_actual = strlen (actual);
+	const size_t len_expected = strlen (expected);
+	const size_t len_actual = strlen (actual);
 	if (diffchar) {
 		const char *orig_expected = expected;
 		const char *orig_actual = actual;
@@ -584,12 +584,14 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 				for (row = 1; row < dim; row++) {
 					for (col = 1; col < dim; col++) {
 						// TODO Clamping [ST16_MIN + 1, ST16_MAX]
-						st16 tl_score = *(align_table + (row - 1) * dim + col - 1)
-								+ (expected[col - 1] == actual[row - 1] ?
-								   (expected[col - 1] == '\n' ? match_nl : match) :
-								   mismatch);
-						st16 t_score = *(align_table + (row - 1) * dim + col) + gap;
-						st16 l_score = *(align_table + row * dim + col - 1) + gap;
+						const ut8 expected_ch = expected[col - 1];
+						const ut8 actual_ch = actual[row - 1];
+						const st16 tl_score = *(align_table + (row - 1) * dim + col - 1)
+								    + (expected_ch == actual_ch ?
+								       (expected_ch == '\n' ? match_nl : match) :
+								       mismatch);
+						const st16 t_score = *(align_table + (row - 1) * dim + col) + gap;
+						const st16 l_score = *(align_table + row * dim + col - 1) + gap;
 						st16 score;
 						if (tl_score >= t_score && tl_score >= l_score) {
 							score = tl_score;
@@ -636,18 +638,15 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 				size_t pos_row = dim - 1;
 				size_t pos_col = dim - 1;
 				while (pos_row || pos_col) {
-					st16 tl_score = ST16_MIN;
-					st16 t_score = ST16_MIN;
-					st16 l_score = ST16_MIN;
-					if (pos_row > 0) {
-						t_score = *(align_table + (pos_row - 1) * dim + pos_col);
-					}
-					if (pos_col > 0) {
-						l_score = *(align_table + pos_row * dim + pos_col - 1);
-					}
-					if (pos_row > 0 && pos_col > 0) {
-						tl_score = *(align_table + (pos_row - 1) * dim + pos_col - 1);
-					}
+					const st16 tl_score = (pos_row > 0 && pos_col > 0) ?
+							*(align_table + (pos_row - 1) * dim + pos_col - 1) :
+							ST16_MIN;
+					const st16 t_score = pos_row > 0 ?
+							*(align_table + (pos_row - 1) * dim + pos_col) :
+							ST16_MIN;
+					const st16 l_score = pos_col > 0 ?
+							*(align_table + pos_row * dim + pos_col - 1) :
+							ST16_MIN;
 					const bool match = expected[idx_expected] == actual[idx_actual];
 					if (t_score >= l_score && (!match || t_score >= tl_score)) {
 						align_expected[idx_align] = 0;
@@ -668,10 +667,10 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 					}
 				}
 				idx_align++;
-				size_t start_align = idx_align;
+				const size_t start_align = idx_align;
 				// Print alignment (Debug)
 				for (; idx_align < 2 * len_long; idx_align++) {
-					ut8 ch = align_expected[idx_align];
+					const ut8 ch = align_expected[idx_align];
 					if (align_actual[idx_align] == '\n' && ch != '\n') {
 						printf (ch ? " " : "-");
 					}
@@ -685,7 +684,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 				}
 				printf ("\n");
 				for (idx_align = start_align; idx_align < 2 * len_long; idx_align++) {
-					ut8 ch = align_actual[idx_align];
+					const ut8 ch = align_actual[idx_align];
 					if (align_expected[idx_align] == '\n' && ch != '\n') {
 						printf (ch ? " " : "-");
 					}
@@ -703,8 +702,8 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 				R2RCharAlignment cur_align;
 				idx_align = start_align;
 				while (idx_align < 2 * len_long) {
-					ut8 expected_ch = align_expected[idx_align];
-					ut8 actual_ch = align_actual[idx_align];
+					const ut8 expected_ch = align_expected[idx_align];
+					const ut8 actual_ch = align_actual[idx_align];
 					if (expected_ch && !actual_ch) {
 						cur_align = R2R_ALIGN_BOTTOM_GAP;
 					} else if (!expected_ch && actual_ch) {
