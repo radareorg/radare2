@@ -165,6 +165,7 @@ pkgconfig_mod.generate(r_bin,
   version: r2_version,
   name: 'r_bin',
   filebase: 'r_bin',
+  libraries: pkgcfg_sanitize_libs,
   requires: pkgconfig_magic_requires + [
     'r_util',
     'r_io',
