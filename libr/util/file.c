@@ -359,11 +359,17 @@ R_API char *r_file_slurp(const char *str, R_NULLABLE size_t *usz) {
 				}
 				buf = nbuf;
 				size_t r = fread (buf + size, 1, BS, fd);
+				if (ferror (fd)) {
+					R_FREE (buf);
+					goto regular_err;
+				}
 				size += r;
 			} while (!feof (fd));
 			if (usz) {
 				*usz = size;
 			}
+		regular_err:
+			fclose (fd);
 			return buf;
 		}
 		// try to read 64K
