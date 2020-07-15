@@ -571,7 +571,6 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 				strncpy (dup_actual, actual, len_long);
 				actual = dup_actual;
 				// Fill table
-				// TODO Cost-based instead of score-based system?
 				size_t row, col;
 				*align_table = 0;
 				for (row = 1; row < dim; row++) {
@@ -718,7 +717,9 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 					}
 					if (cur_mode == R2R_DIFF_MATCH) {
 						if (cur_align == R2R_ALIGN_MATCH) {
-							printf ("%c", expected_ch);
+							if (expected_ch) {
+								printf ("%c", expected_ch);
+							}
 						} else if (cur_align == R2R_ALIGN_BOTTOM_GAP) {
 							printf (expected_ch == '\n' ?
 							        "%c"Color_HLDELETE :
@@ -732,7 +733,10 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 						}
 					} else if (cur_mode == R2R_DIFF_DELETE) {
 						if (cur_align == R2R_ALIGN_MATCH) {
-							printf (Color_RESET"%c", expected_ch);
+							printf (Color_RESET);
+							if (expected_ch) {
+								printf ("%c", expected_ch);
+							}
 							cur_mode = R2R_DIFF_MATCH;
 						} else if (cur_align == R2R_ALIGN_BOTTOM_GAP) {
 							printf (expected_ch == '\n' ?
@@ -746,7 +750,10 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 						}
 					} else if (cur_mode == R2R_DIFF_INSERT) {
 						if (cur_align == R2R_ALIGN_MATCH) {
-							printf (Color_RESET"%c", expected_ch);
+							printf (Color_RESET);
+							if (expected_ch) {
+								printf ("%c", expected_ch);
+							}
 							cur_mode = R2R_DIFF_MATCH;
 						} else if (cur_align == R2R_ALIGN_BOTTOM_GAP) {
 							printf (expected_ch == '\n' ?
