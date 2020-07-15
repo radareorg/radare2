@@ -292,7 +292,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		free (tstr);
 		return false;
 	}
-	if (p->relsub) {
+	if (p->subrel) {
 		char *rip = (char *)r_str_casestr (tstr, "[pc, ");
 		if (!rip) {
 			rip = (char *)r_str_casestr (tstr, "[PC, ");

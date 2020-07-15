@@ -1123,6 +1123,7 @@ d "xor 0x00" ee00
 d "xor [hl]" ae
 d "xor [ix+0x00]" ddae00
 d "xor [iy+0x00]" fdae00
+d "xor [iy+0x1f]" fdae1f
 d "xor a" af
 d "xor b" a8
 d "xor c" a9

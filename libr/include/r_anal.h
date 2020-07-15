@@ -212,18 +212,23 @@ typedef struct r_anal_enum_case_t {
 typedef struct r_anal_struct_member_t {
 	char *name;
 	char *type;
-	int offset;
+	size_t offset; // in bytes
+	size_t size; // in bits?
 } RAnalStructMember;
 
 typedef struct r_anal_union_member_t {
 	char *name;
 	char *type;
+	size_t offset; // in bytes
+	size_t size; // in bits?
 } RAnalUnionMember;
 
 typedef enum {
 	R_ANAL_BASE_TYPE_KIND_STRUCT,
 	R_ANAL_BASE_TYPE_KIND_UNION,
 	R_ANAL_BASE_TYPE_KIND_ENUM,
+	R_ANAL_BASE_TYPE_KIND_TYPEDEF, // probably temporary addition, dev purposes
+	R_ANAL_BASE_TYPE_KIND_ATOMIC, // For real atomic base types
 } RAnalBaseTypeKind;
 
 typedef struct r_anal_base_type_struct_t {
@@ -239,6 +244,9 @@ typedef struct r_anal_base_type_enum_t {
 } RAnalBaseTypeEnum;
 
 typedef struct r_anal_base_type_t {
+	char *name;
+	char *type; // Used by typedef, atomic type
+	ut64 size; // size of the whole type in bits
 	RAnalBaseTypeKind kind;
 	union {
 		RAnalBaseTypeStruct struct_data;
@@ -598,24 +606,22 @@ typedef struct r_anal_hint_cb_t {
 } RHintCb;
 
 typedef struct r_anal_t {
-	char *cpu;
-	char *os;
-	int bits;
-	int lineswidth; // wtf
-	int big_endian;
-	int sleep; // sleep some usecs before analyzing more (avoid 100% cpu usages)
-	RAnalCPPABI cpp_abi;
+	char *cpu;      // anal.cpu
+	char *os;       // asm.os
+	int bits;       // asm.bits
+	int lineswidth; // asm.lines.width
+	int big_endian; // cfg.bigendian
+	int sleep;      // anal.sleep, sleep some usecs before analyzing more (avoid 100% cpu usages)
+	RAnalCPPABI cpp_abi; // anal.cpp.abi
 	void *user;
-	ut64 gp; // global pointer. used for mips. but can be used by other arches too in the future
+	ut64 gp;        // anal.gp, global pointer. used for mips. but can be used by other arches too in the future
 	RBTree bb_tree; // all basic blocks by address. They can overlap each other, but must never start at the same address.
 	RList *fcns;
 	HtUP *ht_addr_fun; // address => function
 	HtPP *ht_name_fun; // name => function
-	RList *refs;
 	RReg *reg;
 	ut8 *last_disasm_reg;
 	RSyscall *syscall;
-	struct r_anal_op_t *queued;
 	int diff_ops;
 	double diff_thbb;
 	double diff_thfcn;
@@ -626,34 +632,26 @@ typedef struct r_anal_t {
 	RFlagSet flg_fcn_set;
 	RBinBind binb; // Set only from core when an analysis plugin is called.
 	RCoreBind coreb;
-	int maxreflines;
-	int trace;
-	int esil_goto_limit;
-	int pcalign;
-	int bitshift;
-	//struct r_anal_ctx_t *ctx;
+	int maxreflines; // asm.lines.maxref
+	int esil_goto_limit; // esil.gotolimit
+	int pcalign; // asm.pcalign
 	struct r_anal_esil_t *esil;
 	struct r_anal_plugin_t *cur;
-	RAnalRange *limit;
+	RAnalRange *limit; // anal.from, anal.to
 	RList *plugins;
 	Sdb *sdb_types;
 	Sdb *sdb_fmts;
 	Sdb *sdb_zigns;
 	HtUP *dict_refs;
 	HtUP *dict_xrefs;
-	bool recursive_noreturn;
+	bool recursive_noreturn; // anal.rnr
 	RSpaces zign_spaces;
-	char *zign_path;
+	char *zign_path; // dir.zigns
 	PrintfCallback cb_printf;
 	//moved from RAnalFcn
 	Sdb *sdb; // root
 	Sdb *sdb_fcns;
 	Sdb *sdb_pins;
-#define DEPRECATE 1
-#if DEPRECATE
-	Sdb *sdb_args;  //
-	Sdb *sdb_vars; // globals?
-#endif
 	HtUP/*<RVector<RAnalAddrHintRecord>>*/ *addr_hints; // all hints that correspond to a single address
 	RBTree/*<RAnalArchHintRecord>*/ arch_hints;
 	RBTree/*<RAnalArchBitsRecord>*/ bits_hints;
@@ -2062,6 +2060,10 @@ R_API RStrBuf *r_anal_esil_dfg_filter_expr(RAnal *anal, const char *expr, const 
 R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn);
 R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name);
 R_API void parse_pdb_types(const RAnal *anal, const R_PDB *pdb);
+R_API void r_anal_save_base_type(const RAnal *anal, const RAnalBaseType *type);
+R_API void r_anal_free_base_type(RAnalBaseType *type);
+R_API RAnalBaseType *r_anal_new_base_type(RAnalBaseTypeKind kind);
+R_API void r_anal_parse_dwarf_types(const RAnal *anal, const RBinDwarfDebugInfo *info);
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
 extern RAnalPlugin r_anal_plugin_6502;

@@ -144,7 +144,7 @@ static ARG_CALLBACK(cpp_arg_i) {
 
 static ARG_CALLBACK(cpp_arg_d) {
 	// TODO: handle r_sys_setenv==-1
-	char *eq = strchr(arg, '=');
+	char *eq = strchr (arg, '=');
 	if (eq) {
 		*eq = '\0';
 		r_sys_setenv (arg, eq + 1);

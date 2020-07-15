@@ -399,17 +399,17 @@ static bool cb_analijmp(void *user, void *data) {
 	return true;
 }
 
-static bool cb_asmvarsubmin(void *user, void *data) {
+static bool cb_asmsubvarmin(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->parser->minval = node->i_value;
 	return true;
 }
 
-static bool cb_asmtailsub(void *user, void *data) {
+static bool cb_asmsubtail(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->parser->tailsub = node->i_value;
+	core->parser->subtail = node->i_value;
 	return true;
 }
 
@@ -461,7 +461,7 @@ static bool cb_asmpseudo (void *user, void *data) {
 	return true;
 }
 
-static bool cb_asmsecsub(void *user, void *data) {
+static bool cb_asmsubsec(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
@@ -2868,9 +2868,9 @@ R_API int r_core_config_init(RCore *core) {
         SETCB ("cmd.times", "", &cb_cmdtimes, "Run when a command is repeated (number prefix)");
 	/* pdb */
 	SETPREF ("pdb.useragent", "Microsoft-Symbol-Server/6.11.0001.402", "User agent for Microsoft symbol server");
-	SETPREF ("pdb.server", "https://msdl.microsoft.com/download/symbols", "Base URL for Microsoft symbol server");
+	SETPREF ("pdb.server", "https://msdl.microsoft.com/download/symbols", "Semi-colon separated list of base URLs for Microsoft symbol servers");
 	{
-		char *pdb_path = r_str_home(R2_HOME_PDB);
+		char *pdb_path = r_str_home (R2_HOME_PDB);
 		SETPREF ("pdb.symstore", pdb_path, "Path to downstream symbol store");
 		R_FREE(pdb_path);
 	}
@@ -2891,7 +2891,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("anal.to", -1, (RConfigCallback)&cb_anal_from, "Upper limit on the address range for analysis");
 	n = NODECB ("anal.in", "io.maps.x", &cb_searchin);
 	SETDESC (n, "Specify search boundaries for analysis");
-	SETOPTIONS (n, "raw", "block",
+	SETOPTIONS (n, "range", "block",
 		"bin.segment", "bin.segments", "bin.segments.x", "bin.segments.r", "bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x",
 		"io.map", "io.maps", "io.maps.rwx", "io.maps.r", "io.maps.rw", "io.maps.rx", "io.maps.wx", "io.maps.x",
 		"dbg.stack", "dbg.heap",
@@ -3010,7 +3010,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.calls", "true", "Show callee function related info as comments in disasm");
 	SETBPREF ("asm.comments", "true", "Show comments in disassembly view");
 	SETBPREF ("asm.usercomments", "false", "Show user comments even if asm.comments is false");
-	SETBPREF ("asm.jmpsub", "true", "Always substitute jump, call and branch targets in disassembly");
+	SETBPREF ("asm.sub.jmp", "true", "Always substitute jump, call and branch targets in disassembly");
 	SETBPREF ("asm.hints", "true", "Disable all asm.hint* if false");
 	SETBPREF ("asm.hint.jmp", "false", "Show jump hints [numbers] in disasm");
 	SETBPREF ("asm.hint.call", "true", "Show call hints [numbers] in disarm");
@@ -3073,8 +3073,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.lines.wide", "false", "Put a space between lines");
 	SETBPREF ("asm.fcnsig", "true", "Show function signature in disasm");
 	SETICB ("asm.lines.width", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
-	SETICB ("asm.var.submin", 0x100, &cb_asmvarsubmin, "Minimum value to substitute in instructions (asm.var.sub)");
-	SETCB ("asm.tailsub", "false", &cb_asmtailsub, "Replace addresses with prefix .. syntax");
+	SETICB ("asm.sub.varmin", 0x100, &cb_asmsubvarmin, "Minimum value to substitute in instructions (asm.var.sub)");
+	SETCB ("asm.sub.tail", "false", &cb_asmsubtail, "Replace addresses with prefix .. syntax");
 	SETBPREF ("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
 	SETBPREF ("asm.noisy", "true", "Show comments considered noisy but possibly useful");
 	SETBPREF ("asm.offset", "true", "Show offsets in disassembly");
@@ -3091,7 +3091,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.section.perm", "false", "Show section permissions in the disasm");
 	SETBPREF ("asm.section.name", "true", "Show section name in the disasm");
 	SETI ("asm.section.col", 20, "Columns width to show asm.section");
-	SETCB ("asm.section.sub", "false", &cb_asmsecsub, "Show offsets in disasm prefixed with section/map name");
+	SETCB ("asm.sub.section", "false", &cb_asmsubsec, "Show offsets in disasm prefixed with section/map name");
 	SETCB ("asm.pseudo", "false", &cb_asmpseudo, "Enable pseudo syntax");
 	SETBPREF ("asm.size", "false", "Show size of opcodes in disassembly (pd)");
 	SETBPREF ("asm.stackptr", "false", "Show stack pointer at disassembly");
@@ -3108,9 +3108,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.var.access", "false", "Show accesses of local variables");
 	SETBPREF ("asm.var.sub", "true", "Substitute variables in disassembly");
 	SETI ("asm.var.summary", 0, "Show variables summary instead of full list in disasm (0, 1, 2)");
-	SETBPREF ("asm.var.subonly", "true", "Substitute the entire variable expression with the local variable name (e.g. [local10h] instead of [ebp+local10h])");
-	SETBPREF ("asm.regsub", "false", "Substitute register names with their associated role name (drp~=)");
-	SETBPREF ("asm.relsub", "true", "Substitute pc relative expressions in disasm");
+	SETBPREF ("asm.sub.varonly", "true", "Substitute the entire variable expression with the local variable name (e.g. [local10h] instead of [ebp+local10h])");
+	SETBPREF ("asm.sub.reg", "false", "Substitute register names with their associated role name (drp~=)");
+	SETBPREF ("asm.sub.rel", "true", "Substitute pc relative expressions in disasm");
 	SETBPREF ("asm.cmt.fold", "false", "Fold comments, toggle with Vz");
 	SETBPREF ("asm.family", "false", "Show family name in disasm");
 	SETBPREF ("asm.symbol", "false", "Show symbol+delta instead of absolute offset");

@@ -2948,7 +2948,9 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 
 		for (i = 0; i < bin->nsymtab; i++) {
 			struct MACH0_(nlist) *st = &bin->symtab[i];
-			stridx = st->n_strx;
+			if (st->n_type & N_STAB) {
+				continue;
+			}
 			// 0 is for imports
 			// 1 is for symbols
 			// 2 is for func.eh (exception handlers?)
@@ -2964,11 +2966,12 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 				} else {
 					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
 				}
+				stridx = st->n_strx;
 				char *sym_name = get_name (bin, stridx, false);
 				if (sym_name) {
 					symbols[j].name = sym_name;
 				} else {
-					symbols[j].name = r_str_newf ("entry%d\n", i);
+					symbols[j].name = r_str_newf ("entry%d", i);
 					//symbols[j].name[0] = 0;
 				}
 				symbols[j].last = 0;
@@ -3282,10 +3285,8 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 						if (threaded_binds) {
 							r_pvector_free (threaded_binds);
 						}
-						threaded_binds = r_pvector_new ((RPVectorFree) &free);
+						threaded_binds = r_pvector_new_with_len ((RPVectorFree) &free, table_size);
 						if (threaded_binds) {
-							r_pvector_reserve (threaded_binds, table_size);
-							threaded_binds->v.len = table_size;
 							sym_ord = 0;
 						}
 						break;
@@ -3557,11 +3558,15 @@ beach:
 struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) *bin) {
 	r_return_val_if_fail (bin, NULL);
 
+	ut64 ea = entry_to_vaddr (bin);
+	if (ea == 0 || ea == UT64_MAX) {
+		return NULL;
+	}
 	struct addr_t *entry = R_NEW0 (struct addr_t);
 	if (!entry) {
 		return NULL;
 	}
-	entry->addr = entry_to_vaddr (bin);
+	entry->addr = ea;
 	entry->offset = addr_to_offset (bin, entry->addr);
 	entry->haddr = sdb_num_get (bin->kv, "mach0.entry.offset", 0);
 	sdb_num_set (bin->kv, "mach0.entry.vaddr", entry->addr, 0);

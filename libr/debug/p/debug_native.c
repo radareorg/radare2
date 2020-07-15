@@ -1453,13 +1453,11 @@ static int r_debug_native_bp(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 		return set
 			? drx_add (dbg, bp, b)
 			: drx_del (dbg, bp, b);
-#elif __arm64__ || __aarch64__
-#if __linux__
+#elif (__arm64__ || __aarch64__) && __linux__
 		return set
 			? arm64_hwbp_add (dbg, bp, b)
 			: arm64_hwbp_del (dbg, bp, b);
-#endif
-#elif __arm__
+#elif __arm__ && __linux__
 		return set
 			? arm32_hwbp_add (dbg, bp, b)
 			: arm32_hwbp_del (dbg, bp, b);

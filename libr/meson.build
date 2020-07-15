@@ -264,6 +264,7 @@ fs_plugins = [
 
 io_plugins = [
   'ar',
+  'fd',
   'bfdbg',
   'bochs',
   'debug',
@@ -302,13 +303,18 @@ if host_machine.system() == 'windows'
 endif
 
 lang_plugins = [
-  'c',
-  'cpipe',
   'lib',
   'pipe',
   'rust',
   'vala'
 ]
+
+if host_machine.system() != 'windows'
+  lang_plugins += [
+    'c',
+    'cpipe'
+  ]
+endif
 
 parse_plugins = [
   '6502_pseudo',

@@ -83,6 +83,7 @@ typedef struct Elf_(r_bin_elf_dynamic_info) {
 	Elf_(Xword) dt_relaent;
 	Elf_(Xword) dt_strsz;
 	Elf_(Xword) dt_syment;
+	Elf_(Addr) dt_fini;
 	Elf_(Addr) dt_rel;
 	Elf_(Xword) dt_relsz;
 	Elf_(Xword) dt_relent;
@@ -189,6 +190,7 @@ bool Elf_(r_bin_elf_section_perms)(RBinFile *bf, const char *name, int perms);
 bool Elf_(r_bin_elf_entry_write)(RBinFile *bf, ut64 addr);
 bool Elf_(r_bin_elf_del_rpath)(RBinFile *bf);
 
+bool Elf_(r_bin_elf_is_executable)(ELFOBJ *bin);
 int Elf_(r_bin_elf_has_relro)(struct Elf_(r_bin_elf_obj_t) *bin);
 int Elf_(r_bin_elf_has_nx)(struct Elf_(r_bin_elf_obj_t) *bin);
 ut8 *Elf_(r_bin_elf_grab_regstate)(struct Elf_(r_bin_elf_obj_t) *bin, int *len);

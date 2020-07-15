@@ -32,7 +32,7 @@ jobs:
       run: make install
       working-directory: radare2
     - name: Run tests
-      run: cd test/unit && make && make fuzz-tests
+      run: cd test/unit && make
       working-directory: radare2
       env:
         # `make install` installs, for some unknown reasons, pkgconfig files in

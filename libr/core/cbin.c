@@ -169,10 +169,22 @@ R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
 		eprintf ("Invalid char found in filename\n");
 		return false;
 	}
-	// TODO use the RBin API, not cmdf()
-	// r_core_bin_export_info_rad (core);
-	r_core_cmdf (core, "\".!rabin2 -rk. %s\"", file);
-	return true;
+	RBinOptions opt = { 0 };
+	r_bin_open (core->bin, file, &opt);
+	RBinFile *bf = r_bin_cur (core->bin);
+	r_cons_push ();
+	r_core_bin_export_info_rad (core);
+	r_cons_filter ();
+	const char *s = r_cons_get_buffer ();
+	char *res = R_STR_ISNOTEMPTY (s)? strdup (s): NULL;
+	int r = -1;
+	r_cons_pop ();
+	if (res) {
+		r = r_core_cmd_lines (core, res);
+		free (res);
+	}
+	r_bin_file_delete (core->bin, bf->id);
+	return r > 0;
 }
 
 R_API int r_core_bin_set_by_name(RCore *core, const char * name) {
@@ -897,7 +909,10 @@ static int bin_dwarf(RCore *core, int mode) {
 		RBinDwarfDebugAbbrev *da = NULL;
 		da = r_bin_dwarf_parse_abbrev (core->bin, mode);
 		RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (da, core->bin, mode);
-		// dig types out of into and then free
+		// I suppose there is no reason the parse it for a printing purposes
+		if (info && mode != R_MODE_PRINT) {
+			r_anal_parse_dwarf_types (core->anal, info);
+		}
 		r_bin_dwarf_free_debug_info (info);
 		
 		r_bin_dwarf_parse_aranges (core->bin, mode);
@@ -1311,10 +1326,10 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 static const char *bin_reloc_type_name(RBinReloc *reloc) {
 #define CASE(T) case R_BIN_RELOC_ ## T: return reloc->additive ? "ADD_" #T : "SET_" #T
 	switch (reloc->type) {
-		CASE(8);
-		CASE(16);
-		CASE(32);
-		CASE(64);
+	CASE(8);
+	CASE(16);
+	CASE(32);
+	CASE(64);
 	}
 	return "UNKNOWN";
 #undef CASE
@@ -1323,10 +1338,10 @@ static const char *bin_reloc_type_name(RBinReloc *reloc) {
 static ut8 bin_reloc_size(RBinReloc *reloc) {
 #define CASE(T) case R_BIN_RELOC_ ## T: return (T) / 8
 	switch (reloc->type) {
-		CASE(8);
-		CASE(16);
-		CASE(32);
-		CASE(64);
+	CASE(8);
+	CASE(16);
+	CASE(32);
+	CASE(64);
 	}
 	return 0;
 #undef CASE

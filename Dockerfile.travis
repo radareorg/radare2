@@ -34,5 +34,6 @@ RUN apt-get install -y \
 
 RUN pip3 install meson
 RUN pip3 install ninja
+RUN pip3 install 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
 
 CMD []

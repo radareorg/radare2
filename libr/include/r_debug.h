@@ -322,6 +322,7 @@ typedef struct r_debug_t {
 	REgg *egg;
 	bool verbose;
 	bool main_arena_resolved; /* is the main_arena resolved already? */
+	int glibc_version;
 } RDebug;
 
 typedef struct r_debug_desc_plugin_t {

@@ -976,21 +976,37 @@ static void var_help(RCore *core, char ch) {
 	}
 }
 
-static void var_accesses_list(RAnalFunction *fcn, RAnalVar *var, int access_type, const char *name) {
+static void var_accesses_list(RAnalFunction *fcn, RAnalVar *var, PJ *pj, int access_type, const char *name) {
 	RAnalVarAccess *acc;
 	bool first = true;
-	r_cons_printf ("%10s", name);
+	if (pj) {
+		pj_o (pj);
+		pj_ks (pj, "name", name);
+		pj_ka (pj, "addrs");
+	} else {
+		r_cons_printf ("%10s", name);
+	}
 	r_vector_foreach (&var->accesses, acc) {
 		if (!(acc->type & access_type)) {
 			continue;
 		}
-		r_cons_printf ("%s0x%"PFMT64x, first? "  ": ",", (ut64)((st64)fcn->addr + acc->offset));
+		ut64 addr = fcn->addr + acc->offset;
+		if (pj) {
+			pj_n (pj, addr);
+		} else {
+			r_cons_printf ("%s0x%" PFMT64x, first ? "  " : ",", addr);
+		}
 		first = false;
 	}
-	r_cons_newline ();
+	if (pj) {
+		pj_end (pj);
+		pj_end (pj);
+	} else {
+		r_cons_newline ();
+	}
 }
 
-static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *name) {
+static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const char *name) {
 	RAnalVar *var = NULL;
 	RListIter *iter;
 	RList *list = r_anal_var_all_list (core->anal, fcn);
@@ -1032,28 +1048,51 @@ static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *nam
 		return;
 	}
 	int access_type = type == 'R' ? R_ANAL_VAR_ACCESS_TYPE_READ : R_ANAL_VAR_ACCESS_TYPE_WRITE;
+	if (pj) {
+		pj_a (pj);
+	}
 	if (name && *name) {
 		var = r_anal_function_get_var_byname (fcn, name);
 		if (var) {
-			var_accesses_list (fcn, var, access_type, var->name);
+			var_accesses_list (fcn, var, pj, access_type, var->name);
 		}
 	} else {
 		r_list_foreach (list, iter, var) {
-			var_accesses_list (fcn, var, access_type, var->name);
+			var_accesses_list (fcn, var, pj, access_type, var->name);
 		}
+	}
+	if (pj) {
+		pj_end (pj);
 	}
 }
 
-static void cmd_afvx(RCore *core, RAnalFunction *fcn) {
+static void cmd_afvx(RCore *core, RAnalFunction *fcn, bool json) {
 	r_return_if_fail (core);
 	if (!fcn) {
 		fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_ANY);
 	}
 	if (fcn) {
-		r_cons_printf ("afvR\n");
-		list_vars (core, fcn, 'R', NULL);
-		r_cons_printf ("afvW\n");
-		list_vars (core, fcn, 'W', NULL);
+		PJ *pj = NULL;
+		if (json) {
+			pj = pj_new ();
+			pj_o (pj);
+			pj_k (pj, "reads");
+		} else {
+			r_cons_printf ("afvR\n");
+		}
+		list_vars (core, fcn, pj, 'R', NULL);
+		if (json) {
+			pj_k (pj, "writes");
+		} else {	
+			r_cons_printf ("afvW\n");
+		}
+		list_vars (core, fcn, pj, 'W', NULL);
+		if (json) {
+			pj_end (pj);
+			char *j = pj_drain (pj);
+			r_cons_printf ("%s\n", j);
+			free (j);
+		}
 	}
 }
 
@@ -1228,7 +1267,7 @@ static int var_cmd(RCore *core, const char *str) {
 		return true;
 	case 'x': // "afvx"
 		if (fcn) {
-			cmd_afvx (core, fcn);
+			cmd_afvx (core, fcn, str[1] == 'j');
 		} else {
 			eprintf ("Cannot find function in 0x%08"PFMT64x"\n", core->offset);
 		}
@@ -1242,7 +1281,17 @@ static int var_cmd(RCore *core, const char *str) {
 			if (name) {
 				name = r_str_trim_head_ro (name);
 			}
-			list_vars (core, fcn, str[0], name);
+			PJ *pj = NULL;
+			if (str[1] == 'j') {
+				pj = pj_new ();
+			} 
+			list_vars (core, fcn, pj, str[0], name);
+			if (str[1] == 'j') {
+				pj_end (pj);
+				char *j = pj_drain (pj);
+				r_cons_printf ("%s\n", j);
+				free (j);
+			} 
 			return true;
 		} else {
 			eprintf ("afv: Cannot find function in 0x%08"PFMT64x"\n", core->offset);
@@ -1638,7 +1687,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	bool stats = r_config_get_i (core->config, "esil.stats");
 	bool be = core->print->big_endian;
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
+	core->parser->subrel = r_config_get_i (core->config, "asm.sub.rel");
 	int ret, i, j, idx, size;
 	const char *color = "";
 	const char *esilstr;
@@ -1739,7 +1788,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				strsub, sizeof (strsub));
 				ut64 killme = UT64_MAX;
 				if (r_io_read_i (core->io, op.ptr, &killme, op.refptr, be)) {
-					core->parser->relsub_addr = killme;
+					core->parser->subrel_addr = killme;
 				}
 			// 0x33->sym.xx
 			char *p = strdup (strsub);
@@ -1885,7 +1934,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			disasm, sizeof (disasm));
 		ut64 killme = UT64_MAX;
 		if (r_io_read_i (core->io, op.ptr, &killme, op.refptr, be)) {
-			core->parser->relsub_addr = killme;
+			core->parser->subrel_addr = killme;
 		}
 		char *p = strdup (disasm);
 		if (p) {
@@ -7079,11 +7128,11 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	char *buf_asm = NULL;
 	bool asm_varsub = r_config_get_i (core->config, "asm.var.sub");
 	core->parser->pseudo = r_config_get_i (core->config, "asm.pseudo");
-	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
-	core->parser->localvar_only = r_config_get_i (core->config, "asm.var.subonly");
+	core->parser->subrel = r_config_get_i (core->config, "asm.sub.rel");
+	core->parser->localvar_only = r_config_get_i (core->config, "asm.sub.varonly");
 
-	if (core->parser->relsub) {
-		core->parser->relsub_addr = from;
+	if (core->parser->subrel) {
+		core->parser->subrel_addr = from;
 	}
 	r_io_read_at (core->io, addr, buf, size);
 	r_asm_set_pc (core->rasm, addr);
@@ -7217,7 +7266,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		free (ptr);
 	} break;
 	case 'v': // "axv"
-		cmd_afvx (core, NULL);
+		cmd_afvx (core, NULL, input[1] == 'j');
 		break;
 	case 't': { // "axt"
 		RList *list = NULL;
