@@ -15,7 +15,7 @@ static void apply_case(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 of
 	r_anal_hint_set_immbase (anal, case_addr_loc, 10);
 	r_anal_xrefs_set (anal, switch_addr, case_addr, R_ANAL_REF_TYPE_CODE);
 	if (block) {
-		r_anal_block_add_switch_case (block, switch_addr, case_addr);
+		r_anal_block_add_switch_case (block, switch_addr, id, case_addr);
 	}
 	if (anal->flb.set) {
 		char flagname[0x30];

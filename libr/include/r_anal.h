@@ -1397,7 +1397,7 @@ R_API R_NULLABLE RList/*<RAnalBlock *>*/ *r_anal_block_shortest_path(RAnalBlock 
 
 // Add a case to the block's switch_op.
 // If block->switch_op is NULL, it will be created with the given switch_addr.
-R_API void r_anal_block_add_switch_case(RAnalBlock *block, ut64 switch_addr, ut64 case_addr);
+R_API void r_anal_block_add_switch_case(RAnalBlock *block, ut64 switch_addr, ut64 case_value, ut64 case_addr);
 
 // Chop off the block at the specified address and remove all destinations.
 // Blocks that have become unreachable after this operation will be automatically removed from all functions of block.
