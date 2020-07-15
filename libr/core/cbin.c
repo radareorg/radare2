@@ -1059,9 +1059,6 @@ R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
 		pdb.finish_pdb_parse (&pdb);
 		return false;
 	}
-	if (mode == R_MODE_JSON) {
-		r_cons_printf ("[");
-	}
 
 	switch (mode) {
 	case R_MODE_SET:
@@ -1081,13 +1078,11 @@ R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
 	}
 
 	pdb.print_types (&pdb, mode);
+	// I have to keep this unless I want to pass PJ around all the functions
 	if (mode == 'j') {
 		r_cons_printf (",");
 	}
 	pdb.print_gvars (&pdb, baddr, mode);
-	if (mode == 'j') {
-		r_cons_printf ("]");
-	}
 	parse_pdb_types (core->anal, &pdb);
 	pdb.finish_pdb_parse (&pdb);
 

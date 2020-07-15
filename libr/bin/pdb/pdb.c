@@ -892,8 +892,16 @@ static bool is_printable_type (ELeafType type) {
 		type == eLF_ENUM ||
 		type == eLF_CLASS);
 }
-
+/**
+ * @brief Prints out structure and class leaf types
+ * 
+ * @param name Name of the structure/class
+ * @param size Size of the structure/class
+ * @param members List of members
+ * @param printf Print function
+ */
 static void print_struct(const char *name, const int size, RList *members, PrintfCallback printf) {
+	r_return_if_fail (name && printf);
 	printf ("struct %s { // size 0x%x\n", name, size);
 
 	RListIter *member_iter = r_list_iterator (members);
@@ -918,7 +926,16 @@ static void print_struct(const char *name, const int size, RList *members, Print
 	printf ("};\n");
 }
 
+/**
+ * @brief Prints out union leaf type
+ * 
+ * @param name Name of the union
+ * @param size Size of the union
+ * @param members List of members
+ * @param printf Print function
+ */
 static void print_union(const char *name, const int size, RList *members, PrintfCallback printf) {
+	r_return_if_fail (name && printf);
 	printf ("union %s { // size 0x%x\n", name, size);
 
 	RListIter *member_iter = r_list_iterator (members);
@@ -943,7 +960,16 @@ static void print_union(const char *name, const int size, RList *members, Printf
 	printf ("};\n");
 }
 
+/**
+ * @brief Prints out enum leaf type
+ * 
+ * @param name Name of the enum
+ * @param type type of the enum
+ * @param members List of cases
+ * @param printf Print function
+ */
 static void print_enum(const char *name, const char *type, RList *members, PrintfCallback printf) {
+	r_return_if_fail (name && printf);
 	printf ("enum %s { // type: %s\n", name, type);
 
 	RListIter *member_iter = r_list_iterator (members);
@@ -964,6 +990,7 @@ static void print_enum(const char *name, const char *type, RList *members, Print
 }
 
 static void print_types_regular(const R_PDB *pdb, const RList *types) {
+	r_return_if_fail (pdb && types);
 	RListIter *it = r_list_iterator (types);
 	while (r_list_iter_next (it)) {
 		SType *type = (SType *)r_list_iter_get (it);
@@ -1019,8 +1046,80 @@ static void print_types_regular(const R_PDB *pdb, const RList *types) {
 		}
 	}
 }
-static void print_types_json() {
 
+static void print_types_json(const R_PDB *pdb, const RList *types) {
+	r_return_if_fail (pdb && types);
+	RListIter *it = r_list_iterator (types);
+	PJ *pj = pj_new();
+	if (!pj) {
+		return;
+	}
+	pj_ka (pj, "types");
+	while (r_list_iter_next (it)) {
+		SType *type = (SType *)r_list_iter_get (it);
+		STypeInfo *type_info = &type->type_data;
+		// skip unprintable types
+		if (!is_printable_type (type_info->leaf_type)) {
+			continue;
+		}
+		// skip forward references
+		if (type_info->is_fwdref) {
+			int is_fwdref = 0;
+			type_info->is_fwdref (type_info, &is_fwdref);
+			if (is_fwdref == 1) {
+				continue;
+			}
+		}
+		char *name = NULL;
+		if (type_info->get_name) {
+			type_info->get_name (type_info, &name);
+		}
+		int size = 0;
+		if (type_info->get_val) {
+			type_info->get_val (type_info, &size);
+		}
+		RList *members = NULL;
+		if (type_info->get_members) {
+			type_info->get_members (type_info, &members);
+		}
+
+		switch (type_info->leaf_type) {
+		case eLF_CLASS:
+		case eLF_STRUCTURE:
+		case eLF_UNION:
+			pj_o (pj);
+			pj_ks (pj, "type", "structure");
+			pj_ks (pj, "name", name);
+			pj_kn (pj, "size", size);
+			pj_ka (pj, "members");
+			pj_end (pj);
+			pj_end (pj);
+			break;
+		case eLF_ENUM:;
+			char *base_type_name = NULL;
+			if (type_info->get_utype) {
+				SType *base_type = NULL;
+				type_info->get_utype (type_info, (void **)&base_type);
+				if (base_type && base_type->type_data.leaf_type == eLF_BASE_TYPE) {
+					SLF_BASE_TYPE *tmp = base_type->type_data.type_info;
+					base_type_name = tmp->type;
+				}
+			}
+			pj_o (pj);
+			pj_ks (pj, "type", "enum");
+			pj_ks (pj, "name", name);
+			pj_ks (pj, "base_type", base_type_name);
+			pj_ka (pj, "cases");
+			pj_end (pj);
+			pj_end (pj);
+			break;
+		default:
+			// Unimplemented printing of printable type
+			r_warn_if_reached ();
+		}
+	}
+	pj_end (pj);
+	pdb->cb_printf (pj_string (pj));
 }
 static void print_types_format() {
 
@@ -1032,7 +1131,7 @@ static void print_types(R_PDB *pdb, int mode) {
 	ELeafType lt = eLF_MAX;
 	char *command_field = 0;
 	char *name_field = 0;
-	char *flags_format_field = 0;	// format for struct
+	char *flags_format_field = 0; // format for struct
 	char **members_name_field = 0;
 	char *type = 0;
 	int members_amount = 0;
@@ -1056,9 +1155,10 @@ static void print_types(R_PDB *pdb, int mode) {
 	if (mode == 'd') {
 		print_types_regular (pdb, tpi_stream->types);
 		return;
-	}
-	if (mode == 'j') {
-		pdb->cb_printf ("{\"%s\":[", "types");
+	} else if (mode == 'j') {
+		// cmd_info when idpij already does "{}"
+		print_types_json (pdb, tpi_stream->types);
+		return;
 	}
 
 	it = r_list_iterator (tpi_stream->types);
@@ -1067,7 +1167,7 @@ static void print_types(R_PDB *pdb, int mode) {
 		i = 0;
 		members_amount = 0;
 		val = 0;
-		t = (SType *) r_list_iter_get (it);
+		t = (SType *)r_list_iter_get (it);
 		tf = &t->type_data;
 		lt = tf->leaf_type;
 		if (is_printable_type (lt)) {
@@ -1084,7 +1184,6 @@ static void print_types(R_PDB *pdb, int mode) {
 			if (tf->get_name) {
 				tf->get_name (tf, &name);
 			}
-			// val for STRUCT or UNION mean size
 			if (tf->get_val) {
 				tf->get_val (tf, &val);
 			}
@@ -1092,42 +1191,16 @@ static void print_types(R_PDB *pdb, int mode) {
 			if (tf->get_members) {
 				tf->get_members (tf, &ptmp);
 			}
-			// pdb->cb_printf ("%s: size 0x%x\n", name, val);
-			switch (mode) {
-			case 'd': pdb->cb_printf ("%s: size 0x%x\n", name, val); break;
-			case 'r':
-				build_command_field (lt, &command_field);
-				build_name_field (name, &name_field);
-				if (!alloc_format_flag_and_member_fields (ptmp, &flags_format_field,
-					    &members_amount, &members_name_field)) {
-					goto err;
-				}
-				break;
-			case 'j':
-				switch (lt) {
-				case eLF_ENUM:
-					pdb->cb_printf ("{\"type\":\"%s\", \"name\":\"%s\",\"%s\":[",
-						"enum", name, "enums");
-					break;
-				case eLF_STRUCTURE:
-				case eLF_CLASS:
-				case eLF_UNION:
-					pdb->cb_printf ("{\"type\":\"%s\",\"name\":\"%s\",\"size\":%d,\"%s\":[",
-						"structure", name, val, "members");
-					break;
-				default:
-					continue;
-				}
-
-				break;
+			build_command_field (lt, &command_field);
+			build_name_field (name, &name_field);
+			if (!alloc_format_flag_and_member_fields (ptmp, &flags_format_field,
+				    &members_amount, &members_name_field)) {
+				goto err;
 			}
 
 			it2 = r_list_iterator (ptmp);
 			while (r_list_iter_next (it2)) {
-				if ((mode == 'j') && (i)) {
-					pdb->cb_printf (",");
-				}
-				tf = (STypeInfo *) r_list_iter_get (it2);
+				tf = (STypeInfo *)r_list_iter_get (it2);
 				if (tf->get_name) {
 					tf->get_name (tf, &name);
 				}
@@ -1139,34 +1212,10 @@ static void print_types(R_PDB *pdb, int mode) {
 				if (tf->get_print_type) {
 					tf->get_print_type (tf, &type);
 				}
-				switch (mode) {
-				case 'd':
-					pdb->cb_printf ("  0x%x: %s type:", offset, name);
-					pdb->cb_printf ("%s\n", type);
-					break;
-				case 'r':
-					if (!build_flags_format_and_members_field (pdb, lt, name, type, i,
-						    &pos, offset, flags_format_field, members_name_field)) {
-						R_FREE (type);
-						goto err;
-					}
-					break;
-				case 'j':	// JSON
-					switch (lt) {
-					case eLF_ENUM:
-						pdb->cb_printf ("{\"%s\":\"%s\",\"%s\":%d}",
-							"enum_name", name, "enum_val", offset);
-						break;
-					case eLF_STRUCTURE:
-					case eLF_UNION:
-						pdb->cb_printf ("{\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":%d}",
-							"member_type", type + strlen ("(member)") + 1,
-							"member_name", name, "offset", offset);
-						break;
-					default:
-						break;
-					}
-					break;
+				if (!build_flags_format_and_members_field (pdb, lt, name, type, i,
+					    &pos, offset, flags_format_field, members_name_field)) {
+					R_FREE (type);
+					goto err;
 				}
 				R_FREE (type);
 				i++;
@@ -1180,7 +1229,7 @@ static void print_types(R_PDB *pdb, int mode) {
 				} else {
 					pdb->cb_printf ("%c ", '{');
 				}
-				sym = (lt == eLF_ENUM)? ',': ' ';
+				sym = (lt == eLF_ENUM) ? ',' : ' ';
 				for (i = 0; i < members_amount; i++) {
 					char *eq = (lt == eLF_ENUM) ? strchr (members_name_field[i], '=') : NULL;
 					r_name_filter2 (members_name_field[i]);
@@ -1198,10 +1247,7 @@ static void print_types(R_PDB *pdb, int mode) {
 					pdb->cb_printf ("\"\n");
 				}
 			}
-			if (mode == 'j') {
-				pdb->cb_printf ("]}");
-			}
-err:
+		err:
 			if (mode == 'r') {
 				R_FREE (command_field);
 				R_FREE (name_field);
@@ -1212,10 +1258,6 @@ err:
 				R_FREE (members_name_field);
 			}
 		}
-	}
-
-	if (mode == 'j') {
-		pdb->cb_printf ("]}");
 	}
 }
 
@@ -1257,7 +1299,7 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 		return;
 	}
 	if (format == 'j') {
-		pdb->cb_printf ("{\"%s\":[", "gvars");
+		pdb->cb_printf ("gvars:[");
 	}
 	gsym_data_stream = (SGDATAStream *) gsym->stream;
 	if ((omap != 0) && (sctns_orig != 0)) {
@@ -1319,7 +1361,7 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 		is_first = 0;
 	}
 	if (format == 'j') {
-		pdb->cb_printf ("]}");
+		pdb->cb_printf ("],");
 	}
 }
 
