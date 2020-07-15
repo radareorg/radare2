@@ -602,6 +602,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 					*(align_table + row * dim + col) = score;
 				}
 			}
+#if 0
 			// Print table (Debug)
 			char char_str[3] = { ' ' };
 			printf ("%4s ", char_str);
@@ -630,6 +631,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 				}
 				printf ("\n");
 			}
+#endif
 			// Do alignment
 			size_t idx_expected = len_long - 1;
 			size_t idx_actual = len_long - 1;
@@ -667,6 +669,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 			}
 			idx_align++;
 			const size_t start_align = idx_align;
+#if 0
 			// Print alignment (Debug)
 			for (; idx_align < 2 * len_long; idx_align++) {
 				const ut8 ch = align_expected[idx_align];
@@ -696,6 +699,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 				}
 			}
 			printf ("\n");
+#endif
 			// Print diff
 			R2RPrintDiffMode cur_mode = R2R_DIFF_MATCH;
 			R2RCharAlignment cur_align;
