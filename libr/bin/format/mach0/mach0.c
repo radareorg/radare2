@@ -34,6 +34,7 @@ typedef struct {
 // USE THIS: int ws = bf->o->info->big_endian;
 #define mach0_endian 1
 
+// TODO: Use the implementation from RUtil
 static ut64 read_uleb128(ulebr *r, ut8 *end) {
 	ut64 result = 0;
 	int bit = 0;
@@ -96,52 +97,41 @@ static ut64 entry_to_vaddr(struct MACH0_(obj_t) *bin) {
 }
 
 static ut64 addr_to_offset(struct MACH0_(obj_t) *bin, ut64 addr) {
-	ut64 segment_base, segment_size;
-	int i;
-
-	if (!bin->segs) {
-		return 0;
-	}
-	for (i = 0; i < bin->nsegs; i++) {
-		segment_base = (ut64)bin->segs[i].vmaddr;
-		segment_size = (ut64)bin->segs[i].vmsize;
-		if (addr >= segment_base && addr < segment_base + segment_size) {
-			return bin->segs[i].fileoff + (addr - segment_base);
+	if (bin->segs) {
+		size_t i;
+		for (i = 0; i < bin->nsegs; i++) {
+			const ut64 segment_base = (ut64)bin->segs[i].vmaddr;
+			const ut64 segment_size = (ut64)bin->segs[i].vmsize;
+			if (addr >= segment_base && addr < segment_base + segment_size) {
+				return bin->segs[i].fileoff + (addr - segment_base);
+			}
 		}
 	}
 	return 0;
 }
 
 static ut64 offset_to_vaddr(struct MACH0_(obj_t) *bin, ut64 offset) {
-	ut64 segment_base, segment_size;
-	int i;
-
-	if (!bin->segs) {
-		return 0;
-	}
-	for (i = 0; i < bin->nsegs; i++) {
-		segment_base = (ut64)bin->segs[i].fileoff;
-		segment_size = (ut64)bin->segs[i].filesize;
-		if (offset >= segment_base && offset < segment_base + segment_size) {
-			return bin->segs[i].vmaddr + (offset - segment_base);
+	if (bin->segs) {
+		size_t i;
+		for (i = 0; i < bin->nsegs; i++) {
+			ut64 segment_base = (ut64)bin->segs[i].fileoff;
+			ut64 segment_size = (ut64)bin->segs[i].filesize;
+			if (offset >= segment_base && offset < segment_base + segment_size) {
+				return bin->segs[i].vmaddr + (offset - segment_base);
+			}
 		}
 	}
 	return 0;
 }
 
 static ut64 pa2va(RBinFile *bf, ut64 offset) {
-	if (!bf || !bf->rbin) {
-		return offset;
-	}
+	r_return_val_if_fail (bf && bf->rbin, offset);
 	RIO *io = bf->rbin->iob.io;
-	if (!io->va) {
+	if (!io || !io->va) {
 		return offset;
 	}
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
-	if (!bin) {
-		return offset;
-	}
-	return offset_to_vaddr (bin, offset);
+	return bin? offset_to_vaddr (bin, offset): offset;
 }
 
 static void init_sdb_formats(struct MACH0_(obj_t) *bin) {
@@ -323,7 +313,7 @@ static bool init_hdr(struct MACH0_(obj_t) *bin) {
 }
 
 static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
-	int i, j, k, sect, len;
+	size_t i, j, k, sect, len;
 	ut32 size_sects;
 	ut8 segcom[sizeof (struct MACH0_(segment_command))] = {0};
 	ut8 sec[sizeof (struct MACH0_(section))] = {0};
@@ -485,12 +475,12 @@ static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
 	return true;
 }
 
-#define Error(x) errorMessage = x; goto error;
+#define Error(x) error_message = x; goto error;
 static bool parse_symtab(struct MACH0_(obj_t) *mo, ut64 off) {
 	struct symtab_command st;
 	ut32 size_sym;
-	int i;
-	const char *errorMessage = "";
+	size_t i;
+	const char *error_message = "";
 	ut8 symt[sizeof (struct symtab_command)] = {0};
 	ut8 nlst[sizeof (struct MACH0_(nlist))] = {0};
 	const bool be = mo->big_endian;
@@ -559,12 +549,12 @@ static bool parse_symtab(struct MACH0_(obj_t) *mo, ut64 off) {
 error:
 	R_FREE (mo->symstr);
 	R_FREE (mo->symtab);
-	Eprintf ("%s\n", errorMessage);
+	Eprintf ("%s\n", error_message);
 	return false;
 }
 
-static int parse_dysymtab(struct MACH0_(obj_t) *bin, ut64 off) {
-	int len, i;
+static bool parse_dysymtab(struct MACH0_(obj_t) *bin, ut64 off) {
+	size_t len, i;
 	ut32 size_tab;
 	ut8 dysym[sizeof (struct dysymtab_command)] = {0};
 	ut8 dytoc[sizeof (struct dylib_table_of_contents)] = {0};
@@ -2041,7 +2031,6 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 
 static bool init(struct MACH0_(obj_t) *mo) {
 	if (!init_hdr (mo)) {
-		Eprintf ("Warning: File is not MACH0\n");
 		return false;
 	}
 	if (!init_items (mo)) {
@@ -2095,16 +2084,9 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 }
 
 void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile *bf) {
-	if (!options) {
-		return;
-	}
-
+	r_return_if_fail (options && bf);
 	options->header_at = 0;
-	if (bf && bf->rbin) {
-		options->verbose = bf->rbin->verbose;
-	} else {
-		options->verbose = false;
-	}
+	options->verbose = bf && bf->rbin && bf->rbin->verbose;
 }
 
 static void *duplicate_ptr(void *p) {
@@ -2116,6 +2098,7 @@ static void free_only_key(HtPPKv *kv) {
 }
 
 static size_t ptr_size(void *c) {
+	// :D
 	return 8;
 }
 
@@ -2205,10 +2188,8 @@ static bool __isDataSection(RBinSection *sect) {
 
 RList *MACH0_(get_segments)(RBinFile *bf) {
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
-
 	RList *list = r_list_newf ((RListFree)r_bin_section_free);
-
-	int i, j;
+	size_t i, j;
 
 	/* for core files */
 	if (bin->nsegs > 0) {
@@ -2283,7 +2264,7 @@ RList *MACH0_(get_segments)(RBinFile *bf) {
 struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
 	struct section_t *sections;
 	char segname[32], sectname[32], raw_segname[17];
-	int i, j, to;
+	size_t i, j, to;
 
 	if (!bin) {
 		return NULL;
@@ -2336,7 +2317,7 @@ struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
 		// snprintf (segname, sizeof (segname), "%d", i); // wtf
 		memcpy (raw_segname, bin->sects[i].segname, 16);
 		raw_segname[16] = 0;
-		snprintf (segname, sizeof (segname), "%d.%s", i, raw_segname);
+		snprintf (segname, sizeof (segname), "%zd.%s", i, raw_segname);
 		for (j = 0; j < bin->nsegs; j++) {
 			if (sections[i].addr >= bin->segs[j].vmaddr &&
 				sections[i].addr < (bin->segs[j].vmaddr + bin->segs[j].vmsize)) {
@@ -2424,10 +2405,11 @@ static bool parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol
 }
 
 static int inSymtab(HtPP *hash, const char *name, ut64 addr) {
-	bool found;
-	const char *key = r_str_newf ("%"PFMT64x".%s", addr, name);
+	bool found = false;
+	char *key = r_str_newf ("%"PFMT64x".%s", addr, name);
 	ht_pp_find (hash, key, &found);
 	if (found) {
+		free (key);
 		return true;
 	}
 	ht_pp_insert (hash, key, "1");
@@ -2435,7 +2417,7 @@ static int inSymtab(HtPP *hash, const char *name, ut64 addr) {
 }
 
 static char *get_name(struct MACH0_(obj_t) *mo, ut32 stridx, bool filter) {
-	int i = 0;
+	size_t i = 0;
 	if (!mo->symstr || stridx >= mo->symstrlen) {
 		return NULL;
 	}
@@ -2464,7 +2446,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 		return 0;
 	}
 
-	int count = 0;
+	size_t count = 0;
 	ulebr ur = {NULL};
 	ut8 * trie = NULL;
 	RList * states = NULL;
@@ -2636,7 +2618,7 @@ static void fill_exports_list(struct MACH0_(obj_t) *bin, const char *name, ut64 
 const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 	static RList * cache = NULL; // XXX DONT COMMIT WITH THIS
 	struct symbol_t *symbols;
-	int j, s, stridx, symbols_size, symbols_count;
+	size_t j, s, symbols_size, symbols_count;
 	ut32 to, from;
 	size_t i;
 
