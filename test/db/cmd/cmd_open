@@ -11,16 +11,16 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=obb baddrs
+NAME=obo baddrs
 FILE=bins/mach0/mac-ls2
 ARGS=-B0x50000
 CMDS=<<EOF
 s
 o bins/mach0/mac-ls
 s
-obb 0
+obo 3
 s
-obb 1
+obo 4
 s
 EOF
 EXPECT=<<EOF
