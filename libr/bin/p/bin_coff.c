@@ -263,7 +263,7 @@ static RList *libs(RBinFile *bf) {
 
 #define BYTES_PER_IMP_RELOC		8
 
-static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch, ut64 impmap) {
+static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch, ut64 imp_map) {
 	r_return_val_if_fail (bin && bin->scn_hdrs, NULL);
 
 	RBinReloc *reloc;
@@ -273,8 +273,9 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch, u
 	if (!list_rel) {
 		return NULL;
 	}
-	HtUU *imp_vaddr_ht = patch? ht_uu_new0 (): NULL;
-	if (patch && !imp_vaddr_ht) {
+	const bool patch_imports = patch && (imp_map != UT64_MAX);
+	HtUU *imp_vaddr_ht = patch_imports? ht_uu_new0 (): NULL;
+	if (patch_imports && !imp_vaddr_ht) {
 		r_list_free (list_rel);
 		return NULL;
 	}
@@ -319,13 +320,13 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch, u
 			ut64 sym_vaddr = symbol->vaddr;
 			if (symbol->is_imported) {
 				reloc->import = (RBinImport *)ht_up_find (bin->sym_ht, (ut64)rel[j].r_symndx, NULL);
-				if (patch) {
+				if (patch_imports) {
 					bool found;
 					sym_vaddr = ht_uu_find (imp_vaddr_ht, (ut64)rel[j].r_symndx, &found);
 					if (!found) {
-						ht_uu_insert (imp_vaddr_ht, (ut64)rel[j].r_symndx, impmap);
-						sym_vaddr = impmap;
-						impmap += BYTES_PER_IMP_RELOC;
+						sym_vaddr = imp_map;
+						imp_map += BYTES_PER_IMP_RELOC;
+						ht_uu_insert (imp_vaddr_ht, (ut64)rel[j].r_symndx, sym_vaddr);
 					}
 				}
 			}
@@ -380,7 +381,7 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch, u
 
 static RList *relocs(RBinFile *bf) {
 	struct r_bin_coff_obj *bin = (struct r_bin_coff_obj*)bf->o->bin_obj;
-	return _relocs_list (bf->rbin, bin, false, 0);
+	return _relocs_list (bf->rbin, bin, false, UT64_MAX);
 }
 
 static RList *patch_relocs(RBin *b) {
@@ -409,22 +410,25 @@ static RList *patch_relocs(RBin *b) {
 		}
 		i += bin->symbols[i].n_numaux;
 	}
-	ut64 size = nimports * BYTES_PER_IMP_RELOC;
-	char *muri = r_str_newf ("malloc://%" PFMT64u, size);
-	ut64 n_vaddr = bin->size;
-	RIODesc *desc = b->iob.open_at (io, muri, R_PERM_R, 0664, n_vaddr);
-	free (muri);
-	if (!desc) {
-		return NULL;
+	ut64 m_vaddr = UT64_MAX;
+	if (nimports) {
+		m_vaddr = bin->size;
+		ut64 size = nimports * BYTES_PER_IMP_RELOC;
+		char *muri = r_str_newf ("malloc://%" PFMT64u, size);
+		RIODesc *desc = b->iob.open_at (io, muri, R_PERM_R, 0664, m_vaddr);
+		free (muri);
+		if (!desc) {
+			return NULL;
+		}
+
+		RIOMap *map = b->iob.map_get (io, m_vaddr);
+		if (!map) {
+			return NULL;
+		}
+		map->name = strdup (".imports.r2");
 	}
 
-	RIOMap *map = b->iob.map_get (io, n_vaddr);
-	if (!map) {
-		return NULL;
-	}
-	map->name = strdup (".imports.r2");
-
-	return _relocs_list (b, bin, true, n_vaddr);
+	return _relocs_list (b, bin, true, m_vaddr);
 }
 
 static RBinInfo *info(RBinFile *bf) {
