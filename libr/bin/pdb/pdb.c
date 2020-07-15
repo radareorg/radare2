@@ -799,35 +799,30 @@ static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, 
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void build_command_field(ELeafType lt, char **command_field) {
+void build_command_field(ELeafType lt, RStrBuf *command_field) {
+	r_return_if_fail (command_field);
 	switch (lt) {
 	case eLF_STRUCTURE:
+	case eLF_CLASS:
 	case eLF_UNION:
-		*command_field = (char *) malloc (strlen ("\"pf.") + 1);
-		if (!(*command_field)) {
-			break;
-		}
-		strcpy (*command_field, "\"pf.");
+		r_strbuf_append (command_field, "\"pf.");
 		break;
 	case eLF_ENUM:
-		*command_field = (char *) malloc (strlen ("\"td enum ") + 1);
-		if (!(*command_field)) {
-			break;
-		}
-		strcpy (*command_field, "\"td enum ");
+		r_strbuf_append (command_field, "\"td enum ");
 		break;
 	default:
+		// unimplemented printable type
+		r_warn_if_reached ();
 		break;
 	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void build_name_field(char *name, char **name_field) {
-	if (name_field) {
-		*name_field = name? strdup (name): NULL;
-		r_name_filter (*name_field, -1);
-		r_str_replace_char (*name_field, ':', '_');
-	}
+void build_name_field(char *name, RStrBuf *name_field) {
+	r_return_if_fail (name && name_field);
+	r_strbuf_append (name_field, name);
+	// r_name_filter (*name_field, -1);
+	// r_str_replace_char (*name_field, ':', '_');
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1177,12 +1172,115 @@ static void print_types_json(const R_PDB *pdb, const RList *types) {
 	pj_end (pj);
 	pdb->cb_printf (pj_string (pj));
 }
-static void print_types_format() {
 
+/**
+ * @brief 
+ * 
+ * @param pdb 
+ * @param types 
+ */
+static void print_types_format(const R_PDB *pdb, const RList *types) {
+	r_return_if_fail (pdb && types);
+	RListIter *it = r_list_iterator (types);
+
+	while (r_list_iter_next (it)) {
+		SType *type = (SType *)r_list_iter_get (it);
+		STypeInfo *type_info = &type->type_data;
+		// TODO remove
+		if (type_info->leaf_type != eLF_ENUM) {
+		// skip unprintable types
+		// if (!is_printable_type (type_info->leaf_type)) {
+			continue;
+		}
+		// skip forward references
+		if (type_info->is_fwdref) {
+			int is_fwdref = 0;
+			type_info->is_fwdref (type_info, &is_fwdref);
+			if (is_fwdref == 1) {
+				continue;
+			}
+		}
+		char *name = NULL;
+		if (type_info->get_name) {
+			type_info->get_name (type_info, &name);
+		}
+		int size = 0;
+		if (type_info->get_val) {
+			type_info->get_val (type_info, &size);
+		}
+		RList *members = NULL;
+		if (type_info->get_members) {
+			type_info->get_members (type_info, &members);
+		}
+		RStrBuf command;
+		r_strbuf_init (&command);
+		switch (type_info->leaf_type) {
+		case eLF_STRUCTURE:
+		case eLF_CLASS:
+		case eLF_UNION:
+			r_strbuf_append (&command, "\"pf.");
+			break;
+		case eLF_ENUM:
+			r_strbuf_append (&command, "\"td enum ");
+			break;
+		default:
+			// unimplemented printable type
+			r_warn_if_reached ();
+			break;
+		}
+		r_strbuf_append (&command, name);
+
+		RListIter *member_iter = r_list_iterator (members);
+		if (type_info->leaf_type == eLF_ENUM) { // "td" for enum, "pf" for others
+			r_strbuf_append (&command, "{");
+		}
+		while (r_list_iter_next (member_iter)) {
+			STypeInfo *member_info = r_list_iter_get (member_iter);
+			char *member_name = NULL;
+			if (member_info->get_name) {
+				member_info->get_name (member_info, &member_name);
+			}
+			int offset = 0;
+			if (member_info->get_val) {
+				member_info->get_val (member_info, &offset);
+			}
+			char *member_type = NULL;
+			if (member_info->get_print_type) {
+				member_info->get_print_type (member_info, &member_type);
+			}
+			switch (type_info->leaf_type) {
+			// case eLF_STRUCTURE:
+			// case eLF_CLASS:
+			// case eLF_UNION:
+			// 	members_field[i] = (char *)malloc (sizeof (char) * strlen (name) + 1);
+			// 	if (!members_field[i]) {
+			// 		return 0;
+			// 	}
+			// 	strcpy (members_field[i], name);
+			// 	if (build_format_flags (pdb, type, *pos, format_flags_field, &members_field[i]) == 0) {
+			// 		return 0;
+			// 	}
+			// 	*pos = *pos + 1;
+			// 	break;
+			case eLF_ENUM: // offset is value the case here
+			r_strbuf_appendf (&command, "%s=0x%" PFMT64x, member_name, offset);
+				break;
+			default:
+				return 0;
+			}
+			if (r_list_iter_next (member_iter)) {
+				r_strbuf_append (&command, ",");
+			}
+			R_FREE (member_type);
+		}
+		if (type_info->leaf_type == eLF_ENUM) { // "td" for enum, "pf" for others
+			r_strbuf_append (&command, "};\"\n");
+		}
+		pdb->cb_printf (r_strbuf_get (&command));
+		r_strbuf_fini (&command);
+	}
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// TODO: need refactor
 static void print_types(R_PDB *pdb, int mode) {
 	ELeafType lt = eLF_MAX;
 	char *command_field = 0;
@@ -1211,7 +1309,7 @@ static void print_types(R_PDB *pdb, int mode) {
 	switch (mode) {
 	case 'd': print_types_regular (pdb, tpi_stream->types); return;
 	case 'j': print_types_json (pdb, tpi_stream->types); return;
-	// case 'r': print_types_format (pdb, tpi_stream->types); return;
+	case 'r': print_types_format (pdb, tpi_stream->types); return;
 	}
 
 	it = r_list_iterator (tpi_stream->types);

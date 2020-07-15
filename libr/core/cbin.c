@@ -1076,7 +1076,7 @@ R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
 	}
 
 	switch (mode) {
-	case R_MODE_SET:
+	case R_MODE_SET: // what is this doing
 		mode = 's';
 		r_core_cmd0 (core, ".iP*");
 		return true;
