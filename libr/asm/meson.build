@@ -240,6 +240,7 @@ pkgconfig_mod.generate(r_asm,
   version: r2_version,
   name: 'r_asm',
   filebase: 'r_asm',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util',
     'r_syscall',

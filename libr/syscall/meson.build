@@ -22,6 +22,7 @@ pkgconfig_mod.generate(r_syscall,
   version: r2_version,
   name: 'r_syscall',
   filebase: 'r_syscall',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util'
   ],

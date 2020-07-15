@@ -398,6 +398,14 @@ libr_pc = configure_file(
   install_dir: join_paths(get_option('libdir'), 'pkgconfig')
 )
 
+pkgcfg_sanitize_libs = ''
+if get_option('b_sanitize').contains('address')
+  pkgcfg_sanitize_libs += ' -lasan'
+endif
+if get_option('b_sanitize').contains('undefined')
+  pkgcfg_sanitize_libs += ' -lubsan'
+endif
+
 subdir('shlr')
 
 subdir('libr/util')

@@ -25,6 +25,7 @@ pkgconfig_mod.generate(r_search,
   version: r2_version,
   name: 'r_search',
   filebase: 'r_search',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util'
   ],
