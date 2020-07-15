@@ -17,7 +17,7 @@ R_API void r_annotation_free(void *e, void *user) {
 	(void)user;
 	RCodeAnnotation *annotation = e;
 	if (annotation->type == R_CODE_ANNOTATION_TYPE_FUNCTION_NAME) {
-		free (annotation->function_name.name);
+		free (annotation->reference.name);
 	}
 }
 
