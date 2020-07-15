@@ -2387,7 +2387,7 @@ static bool parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol
 				symbol->addr = bin->sects[i].addr + delta;
 				symbol->size = 0;
 				stridx = bin->symtab[idx].n_strx;
-				if (stridx >= 0 && stridx < bin->symstrlen) {
+				if (stridx < bin->symstrlen) {
 					symstr = (char *)bin->symstr + stridx;
 				} else {
 					symstr = "???";
