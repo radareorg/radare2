@@ -150,12 +150,16 @@ static const char *help_msg_ood[] = {
 };
 
 static const char *help_msg_oon[] = {
-	"Usage:", "oon", " # reopen without loading rbin info",
+	"Usage:", "oon[+]", " # reopen without loading rbin info",
+	"oon", "", "reopen without loading rbin info",
+	"oon+", "", "reopen in read-write mode without loading rbin info",
 	NULL
 };
 
 static const char *help_msg_oonn[] = {
 	"Usage:", "oonn", " # reopen without loading rbin info, but with header flags",
+	"oonn", "", "reopen without loading rbin info, but with header flags",
+	"oonn+", "", "reopen in read-write mode without loading rbin info, but with",
 	NULL
 };
 
@@ -1683,9 +1687,6 @@ static int cmd_open(void *data, const char *input) {
 			case 0: // "oon"
 				r_core_file_reopen (core, NULL, 0, 0);
 				break;
-			case ' ': //"oon file"
-				r_core_file_reopen (core, input + 3, perms, 0);
-				break;
 			case '+': // "oon+"
 				r_core_file_reopen (core, NULL, R_PERM_RW, 0);
 				break;
@@ -1696,6 +1697,10 @@ static int cmd_open(void *data, const char *input) {
 				}
 				RIODesc *desc = r_io_desc_get (core->io, core->file->fd);
 				if (desc) {
+					perms = core->io->desc->perm;
+					if (input[3] == '+') {
+						perms |= R_PERM_RW;
+					}
 					char *fname = strdup (desc->name);
 					r_core_bin_load_structs (core, fname);
 					r_core_file_reopen (core, fname, perms, 0);
