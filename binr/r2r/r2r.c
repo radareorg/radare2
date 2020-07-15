@@ -550,8 +550,6 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 	const size_t len_expected = strlen (expected);
 	const size_t len_actual = strlen (actual);
 	if (diffchar) {
-		const char *orig_expected = expected;
-		const char *orig_actual = actual;
 		// Use Needleman–Wunsch to diffchar.
 		// This is an O(mn) algo in both space and time.
 		// Note that 64KB * 64KB * 2 = 8GB.
@@ -776,9 +774,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 			free (align_table);
 			free (align_expected);
 			free (align_actual);
-			// return;
-			expected = orig_expected;
-			actual = orig_actual;
+			return;
 		}
 		d->diff_cmd = "git diff --no-index --word-diff=porcelain --word-diff-regex=.";
 	}
