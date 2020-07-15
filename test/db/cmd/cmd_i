@@ -4483,3 +4483,15 @@ EXPECT_ERR=<<EOF
 Warning: run r2 with -e io.cache=true to fix relocations in disassembly
 EOF
 RUN
+
+NAME=macho-ghost-symbols
+FILE=bins/mach0/libr_flag.dylib
+CMDS=<<EOF
+is~?
+is~entry?
+EOF
+EXPECT=<<EOF
+247
+0
+EOF
+RUN
