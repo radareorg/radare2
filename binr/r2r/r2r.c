@@ -635,7 +635,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 				size_t idx_align = 2 * len_long - 1;
 				size_t pos_row = dim - 1;
 				size_t pos_col = dim - 1;
-				while (pos_row != 0 || pos_col != 0) {
+				while (pos_row || pos_col) {
 					st16 tl_score = ST16_MIN;
 					st16 t_score = ST16_MIN;
 					st16 l_score = ST16_MIN;
