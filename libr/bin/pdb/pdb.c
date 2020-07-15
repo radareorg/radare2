@@ -886,7 +886,7 @@ int alloc_format_flag_and_member_fields(RList *ptmp, char **flags_format_field, 
 	return 1;
 }
 
-static bool is_printable_type (ELeafType type) {
+static inline bool is_printable_type(ELeafType type) {
 	return (type == eLF_STRUCTURE ||
 		type == eLF_UNION ||
 		type == eLF_ENUM ||
@@ -953,7 +953,8 @@ static void print_union(const char *name, const int size, RList *members, Printf
 		if (type_info->get_print_type) {
 			type_info->get_print_type (type_info, &type_name);
 		}
-		printf ("  %s %s; // offset +0x%x\n", type_name, member_name, offset);
+		// offset is useless for union, so not printing one
+		printf ("  %s %s;\n", type_name, member_name);
 
 		R_FREE (type_name);
 	}
@@ -989,6 +990,12 @@ static void print_enum(const char *name, const char *type, RList *members, Print
 	printf ("};\n");
 }
 
+/**
+ * @brief Prints out types in a default format "idpi" command
+ * 
+ * @param pdb pdb structure for printing function
+ * @param types List of types
+ */
 static void print_types_regular(const R_PDB *pdb, const RList *types) {
 	r_return_if_fail (pdb && types);
 	RListIter *it = r_list_iterator (types);
@@ -1047,10 +1054,16 @@ static void print_types_regular(const R_PDB *pdb, const RList *types) {
 	}
 }
 
+/**
+ * @brief Prints out types in a json format - "idpij" command
+ * 
+ * @param pdb pdb structure for printing function
+ * @param types List of types
+ */
 static void print_types_json(const R_PDB *pdb, const RList *types) {
 	r_return_if_fail (pdb && types);
 	RListIter *it = r_list_iterator (types);
-	PJ *pj = pj_new();
+	PJ *pj = pj_new ();
 	if (!pj) {
 		return;
 	}
@@ -1083,6 +1096,7 @@ static void print_types_json(const R_PDB *pdb, const RList *types) {
 			type_info->get_members (type_info, &members);
 		}
 
+		// Maybe refactor these into their own functions aswell
 		switch (type_info->leaf_type) {
 		case eLF_CLASS:
 		case eLF_STRUCTURE:
@@ -1092,6 +1106,30 @@ static void print_types_json(const R_PDB *pdb, const RList *types) {
 			pj_ks (pj, "name", name);
 			pj_kn (pj, "size", size);
 			pj_ka (pj, "members");
+			if (members) {
+				RListIter *member_iter = r_list_iterator (members);
+				while (r_list_iter_next (member_iter)) {
+					pj_o (pj);
+					STypeInfo *type_info = r_list_iter_get (member_iter);
+					char *member_name = NULL;
+					if (type_info->get_name) {
+						type_info->get_name (type_info, &member_name);
+					}
+					int offset = 0;
+					if (type_info->get_val) {
+						type_info->get_val (type_info, &offset);
+					}
+					char *type_name = NULL;
+					if (type_info->get_print_type) {
+						type_info->get_print_type (type_info, &type_name);
+					}
+					pj_ks (pj, "member_type", type_name);
+					pj_ks (pj, "member_name", member_name);
+					pj_kN (pj, "offset", offset);
+					pj_end (pj);
+					R_FREE (type_name);
+				}
+			}
 			pj_end (pj);
 			pj_end (pj);
 			break;
@@ -1110,6 +1148,24 @@ static void print_types_json(const R_PDB *pdb, const RList *types) {
 			pj_ks (pj, "name", name);
 			pj_ks (pj, "base_type", base_type_name);
 			pj_ka (pj, "cases");
+			if (members) {
+				RListIter *member_iter = r_list_iterator (members);
+				while (r_list_iter_next (member_iter)) {
+					pj_o (pj);
+					STypeInfo *type_info = r_list_iter_get (member_iter);
+					char *member_name = NULL;
+					if (type_info->get_name) {
+						type_info->get_name (type_info, &member_name);
+					}
+					int value = 0;
+					if (type_info->get_val) {
+						type_info->get_val (type_info, &value);
+					}
+					pj_ks (pj, "enum_name", member_name);
+					pj_kn (pj, "enum_val", value);
+					pj_end (pj);
+				}
+			}
 			pj_end (pj);
 			pj_end (pj);
 			break;
@@ -1152,13 +1208,10 @@ static void print_types(R_PDB *pdb, int mode) {
 		eprintf ("There is no tpi stream in current pdb\n");
 		return;
 	}
-	if (mode == 'd') {
-		print_types_regular (pdb, tpi_stream->types);
-		return;
-	} else if (mode == 'j') {
-		// cmd_info when idpij already does "{}"
-		print_types_json (pdb, tpi_stream->types);
-		return;
+	switch (mode) {
+	case 'd': print_types_regular (pdb, tpi_stream->types); return;
+	case 'j': print_types_json (pdb, tpi_stream->types); return;
+	// case 'r': print_types_format (pdb, tpi_stream->types); return;
 	}
 
 	it = r_list_iterator (tpi_stream->types);
