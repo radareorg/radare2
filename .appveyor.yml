@@ -7,7 +7,7 @@ skip_tags: true
 # Branches to clone
 branches:
   only:
-    - master
+    - decompiler-refactoring
 
 # Environment variables
 environment:

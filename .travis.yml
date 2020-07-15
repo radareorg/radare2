@@ -12,6 +12,7 @@ branches:
   - master
   - /^release-.*$/
   - /^prerelease-.*$/
+  - decompiler-refactoring
 
 services:
   - docker
