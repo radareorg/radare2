@@ -620,7 +620,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 					char_str[0] = '\\';
 					char_str[1] = 'n';
 				} else {
-					char_str[0] = !row ? ' ' : actual[row - 1];
+					char_str[0] = row ? actual[row - 1] : ' ';
 					char_str[1] = 0;
 				}
 				printf ("%4s ", char_str);
