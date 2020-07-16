@@ -1446,8 +1446,10 @@ static int cmd_kuery(void *data, const char *input) {
 			r_cons_println ("No Output from sdb");
 			break;
 		}
-
-		r_cons_printf ("{\"anal\":{");
+		PJ * pj = pj_new ();
+		pj_o (pj);
+		pj_ko (pj, "anal");
+		pj_ka (pj, "cur_cmd");
 
 		while (*out) {
 			cur_pos = strchr (out, '\n');
@@ -1456,13 +1458,13 @@ static int cmd_kuery(void *data, const char *input) {
 			}
 			cur_cmd = r_str_ndup (out, cur_pos - out);
 
-			r_cons_printf ("\n\"%s\" : [", cur_cmd);
+			pj_s (pj, cur_cmd);
 
 			next_cmd = r_str_newf ("anal/%s/*", cur_cmd);
 			temp_storage = sdb_querys (s, NULL, 0, next_cmd);
 
 			if (!temp_storage) {
-				r_cons_printf ("EMPTY],");
+				pj_s (pj,"[]");
 				out += cur_pos - out + 1;
 				continue;
 			}
@@ -1472,20 +1474,22 @@ static int cmd_kuery(void *data, const char *input) {
 				if (!temp_pos) {
 					break;
 				}
-
 				temp_cmd = r_str_ndup (temp_storage, temp_pos - temp_storage);
-				r_cons_printf ("\"%s\",", temp_cmd);
+				pj_s(pj, temp_cmd);
 				temp_storage += temp_pos - temp_storage + 1;
 			}
-
-			r_cons_printf ("],");
 			out += cur_pos - out + 1;
 		}
 
-		r_cons_printf ("}}");
+		pj_end(pj);
+		pj_end(pj);
+		pj_end(pj);
+		char *s = pj_drain(pj);
+		r_cons_printf ("%s\" %c\\", s, 10);
+		free (s);
 		free (next_cmd);
 		free (temp_storage);
-		break;
+	break;
 
 	case ' ':
 		out = sdb_querys (s, NULL, 0, input + 1);
