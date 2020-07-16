@@ -203,9 +203,9 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 			free (path);
 			return false;
 		}
-		remove_project_file(path);
-		remove_notes_file(prjDir);
-		remove_rop_directory(prjDir);
+		remove_project_file (path);
+		remove_notes_file (prjDir);
+		remove_rop_directory (prjDir);
 		// remove directory only if it's empty
 		r_file_rm (prjDir);
 		free (prjDir);
