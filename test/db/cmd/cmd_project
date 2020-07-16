@@ -449,8 +449,9 @@ CC test
 Ps lapa > /dev/null
 Po lapa
 pd 1 ~test
+rm .tmp/
 EOF
 EXPECT=<<EOF
-│           0x00400506      55             push rbp                    ; test test
+│           0x00400506      55             push rbp                    ; test
 EOF
 RUN
