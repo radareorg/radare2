@@ -144,14 +144,14 @@ R_API int r_core_project_list(RCore *core, int mode) {
 	return 0;
 }
 
-static inline void rmPrjF(char * path) {
+static inline void remove_project_file(char * path) {
 		if (r_file_exists (path)) {
 			r_file_rm (path);
 			eprintf ("rm %s\n", path);
 		}
 }
 
-static inline void rmNotesF(char *prjDir) {
+static inline void remove_notes_file(char *prjDir) {
 		char *notes_txt = r_str_newf ("%s%s%s", prjDir, R_SYS_DIR, "notes.txt");
 		if (r_file_exists (notes_txt)) {
 			r_file_rm (notes_txt);
@@ -160,7 +160,7 @@ static inline void rmNotesF(char *prjDir) {
 		free(notes_txt);
 }
 
-static inline void rmROPd(char *prjDir) {
+static inline void remove_rop_directory(char *prjDir) {
 		char *rop_d = r_str_newf ("%s%s%s", prjDir, R_SYS_DIR, "rop.d");
 
 		if (r_file_is_directory (rop_d)) {
@@ -203,9 +203,9 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 			free (path);
 			return false;
 		}
-		rmPrjF(path);
-		rmNotesF(prjDir);
-		rmROPd(prjDir);
+		remove_project_file(path);
+		remove_notes_file(prjDir);
+		remove_rop_directory(prjDir);
 		// remove directory only if it's empty
 		r_file_rm (prjDir);
 		free (prjDir);
