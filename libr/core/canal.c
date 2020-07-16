@@ -253,7 +253,7 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 		types |= R_ANAL_ADDR_TYPE_FUNC;
 	}
 	// check registers
-	if (core->io && core->io->debug && core->dbg) { // TODO: if cfg.debug here
+	if (core->bin && core->bin->is_debugger && core->dbg) { // TODO: if cfg.debug here
 		RDebugMap *map;
 		RListIter *iter;
 		// use 'dm'
@@ -2290,7 +2290,7 @@ R_API void r_core_anal_importxrefs(RCore *core) {
 	RBinInfo *info = r_bin_get_info (core->bin);
 	RBinObject *obj = r_bin_cur_object (core->bin);
 	bool lit = info ? info->has_lit: false;
-	int va = core->io->va || core->io->debug;
+	bool va = core->io->va || core->bin->is_debugger;
 
 	RListIter *iter;
 	RBinImport *imp;
