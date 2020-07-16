@@ -720,6 +720,7 @@ static const char *help_msg_ax[] = {
 	"axF", " [flg-glob]", "find data/code references of flags",
 	"axm", " addr [at]", "copy data/code references pointing to addr to also point to curseek (or at)",
 	"axt", " [addr]", "find data/code references to this address",
+	"axtj"," [addr]", "find data/code references to this address and print in json format",
 	"axf", " [addr]", "find data/code references from this address",
 	"axv", " [addr]", "list local variables read-write-exec references",
 	"ax.", " [addr]", "find data/code references from and to this address",
