@@ -481,6 +481,7 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 					hdr->file_names[count].file_len = file_len;
 				}
 				free (comp_dir);
+				free (include_dir);
 				free (pinclude_dir);
 			}
 			count++;
