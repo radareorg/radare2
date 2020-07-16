@@ -200,6 +200,7 @@ symstall install-symlink:
 		"${DESTDIR}${LIBDIR}/pkgconfig" \
 		"${DESTDIR}${LIBDIR}/radare2/${VERSION}" ; \
 	rm -rf "${DESTDIR}${INCLUDEDIR}/libr" && ln -fs "${PWD}/include" "${DESTDIR}${INCLUDEDIR}/libr" ; \
+	rm -rf "${DESTDIR}${INCLUDEDIR}/libr/sdb" && ln -fs "${PWD}/../shlr/sdb/src" "${DESTDIR}${INCLUDEDIR}/libr/sdb" ; \
 	$(MAKE) install-pkgconfig-symlink ; \
 	$(foreach lib,${LIBS}, \
 	  ln -fs "${PWD}/$(lib)/libr_$(lib).${EXT_SO}" \
