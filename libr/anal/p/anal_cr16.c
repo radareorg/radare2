@@ -18,7 +18,7 @@ static int cr16_op(RAnal *anal, RAnalOp *op, ut64 addr,
 
 	memset(&cmd, 0, sizeof (cmd));
 
-	ret = op->size = cr16_decode_command(buf, &cmd);
+	ret = op->size = cr16_decode_command(buf, &cmd, len);
 
 	if (ret <= 0) {
 		return ret;
