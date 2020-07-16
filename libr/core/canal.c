@@ -4629,7 +4629,7 @@ static const char *reg_name_for_access(RAnalOp* op, RAnalVarAccessType type) {
 			return op->src[0]->reg->name;
 		}
 	} else if (op->dst && op->dst->reg) {
-			return op->dst->reg->name;
+		return op->dst->reg->name;
 	}
 	return NULL;
 }
@@ -4660,8 +4660,8 @@ static void handle_var_stack_access(RAnalEsil *esil, ut64 addr, RAnalVarAccessTy
 				char *varname;
 				varname = ctx->fcn->anal->opt.varname_stack
 					? r_str_newf ("var_%xh", R_ABS (stack_off))
-					: r_anal_function_autoname_var (ctx->fcn, R_ANAL_VAR_KIND_BPV, "var", delta_for_access (ctx->op, type));
-				var = r_anal_function_set_var (ctx->fcn, stack_off, R_ANAL_VAR_KIND_BPV, NULL, len, false, varname);
+					: r_anal_function_autoname_var (ctx->fcn, R_ANAL_VAR_KIND_SPV, "var", delta_for_access (ctx->op, type));
+				var = r_anal_function_set_var (ctx->fcn, stack_off, R_ANAL_VAR_KIND_SPV, NULL, len, false, varname);
 				free (varname);
 			}
 			if (var) {
