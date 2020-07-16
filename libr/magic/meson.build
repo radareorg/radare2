@@ -36,6 +36,7 @@ pkgconfig_mod.generate(r_magic,
   version: r2_version,
   name: 'r_magic',
   filebase: 'r_magic',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util'
   ],
