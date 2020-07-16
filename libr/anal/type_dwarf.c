@@ -652,23 +652,37 @@ static void parse_typedef(const RAnal *anal, const RBinDwarfDie *all_dies,
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
 			name = strdup (value->string.content);
+			if (!name) {
+				goto cleanup;
+			}
 			break;
 		case DW_AT_type:
 			parse_type (all_dies, count, value->reference, &strbuf, &size);
 			type = r_strbuf_drain_nofree (&strbuf);
+			if (!type) {
+				goto cleanup;
+			}
 			break;
 		default:
 			break;
 		}
 	}
+	if (!name) { // type has to have a name for now
+		goto cleanup;
+	}
 	RAnalBaseType *base_type = r_anal_new_base_type (R_ANAL_BASE_TYPE_KIND_TYPEDEF);
 	if (!base_type) {
-		return;
+		goto cleanup;
 	}
 	base_type->name = name;
 	base_type->type = type;
 	r_anal_save_base_type (anal, base_type);
 	r_anal_free_base_type (base_type);
+	r_strbuf_fini (&strbuf);
+	return;
+cleanup:
+	free (name);
+	free (type);
 	r_strbuf_fini (&strbuf);
 }
 
@@ -680,12 +694,15 @@ static void parse_atomic_type(const RAnal *anal, const RBinDwarfDie *all_dies,
 
 	char *name = NULL;
 	ut64 size = 0;
-
+	// TODO support endiannity and encoding in future?
 	for (size_t i = 0; i < die->count; i++) {
 		RBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
 			name = strdup (value->string.content);
+			if (!name) {
+				return;
+			}
 			break;
 		case DW_AT_byte_size:
 			size = value->data * CHAR_BIT;
@@ -697,6 +714,9 @@ static void parse_atomic_type(const RAnal *anal, const RBinDwarfDie *all_dies,
 		default:
 			break;
 		}
+	}
+	if (!name) { // type has to have a name for now
+		return;
 	}
 	RAnalBaseType *base_type = r_anal_new_base_type (R_ANAL_BASE_TYPE_KIND_ATOMIC);
 	if (!base_type) {
