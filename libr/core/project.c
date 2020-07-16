@@ -663,6 +663,11 @@ static bool project_save_script(RCore *core, const char *file, int opts) {
 	r_cons_singleton ()->fdout = fd;
 	r_cons_singleton ()->context->is_interactive = false;
 	r_str_write (fd, "# r2 rdb project file\n");
+	if (strcmp (r_config_get (core->config, "cfg.debug"), "false") != 0) {
+		char *reopen = r_str_newf ("\"o %s\"", r_file_abspath (core->bin->file));
+		r_str_write (fd, reopen);
+		free (reopen);
+	}
 	// Set file.path and file.lastpath to empty string to signal
 	// new behaviour to project load routine (see io maps below).
 	r_config_set (core->config, "file.path", "");

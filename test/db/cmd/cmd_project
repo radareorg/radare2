@@ -439,3 +439,19 @@ EXPECT=<<EOF
 5
 EOF
 RUN
+NAME=Reopening project with changes loading
+FILE=bins/elf/analysis/main
+BROKEN=1
+CMDS=<<EOF
+aaa > /dev/null
+e dir.projects = .tmp/
+s main > /dev/null
+CC test
+Ps lapa > /dev/null
+Po lapa
+pd 1 ~test
+EOF
+EXPECT=<<EOF
+│           0x00400506      55             push rbp                    ; test test
+EOF
+RUN
