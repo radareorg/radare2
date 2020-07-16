@@ -28,7 +28,7 @@ static bool is_base_type (int idx) {
  */
 static STypeInfo parse_base_type(ut32 idx) {
 	STypeInfo type = { 0 };
-	SLF_BASE_TYPE *base_type = R_NEW0 (SLF_BASE_TYPE);
+	SLF_SIMPLE_TYPE *base_type = R_NEW0 (SLF_SIMPLE_TYPE);
 	if (!base_type) {
 		return type;
 	}
@@ -673,7 +673,7 @@ static STypeInfo parse_base_type(ut32 idx) {
 		break;
 	}
 	type.type_info = base_type;
-	type.leaf_type = eLF_BASE_TYPE;
+	type.leaf_type = eLF_SIMPLE_TYPE;
 	return type;
 }
 
@@ -1080,6 +1080,7 @@ static int get_procedure_arglist(void *type, void **ret_type) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// dunno why it's name like this, but for member it returns type
 static int get_member_index(void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *) type;
 	SLF_MEMBER *lf = (SLF_MEMBER *) t->type_info;
@@ -1694,9 +1695,9 @@ static void get_array_print_type(void *type, char **name) {
 	SType *t = 0;
 	ti->get_element_type (ti, (void **)&t);
 	r_return_if_fail (t); // t == NULL indicates malformed PDB ?
-	if (t->type_data.leaf_type == eLF_BASE_TYPE) {
+	if (t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
 		need_to_free = false;
-		SLF_BASE_TYPE *base_type = t->type_data.type_info;
+		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
 		tmp_name = base_type->type;
 	} else {
 		ti = &t->type_data;
@@ -1727,9 +1728,9 @@ static void get_pointer_print_type(void *type, char **name) {
 
 	ti->get_utype (ti, (void **)&t);
 	r_return_if_fail (t); // t == NULL indicates malformed PDB ?
-	if (t->type_data.leaf_type == eLF_BASE_TYPE) {
+	if (t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
 		need_to_free = false;
-		SLF_BASE_TYPE *base_type = t->type_data.type_info;
+		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
 		tmp_name = base_type->type;
 	} else {
 		ti = &t->type_data;
@@ -1757,9 +1758,9 @@ static void get_modifier_print_type(void *type, char **name) {
 	char *tmp_name = NULL;
 	// This is wrong
 	stype_info->get_modified_type (stype_info, (void **)&stype);
-	if (stype && stype->type_data.leaf_type == eLF_BASE_TYPE) {
+	if (stype && stype->type_data.leaf_type == eLF_SIMPLE_TYPE) {
 		need_to_free = false;
-		SLF_BASE_TYPE *base_type = stype->type_data.type_info;
+		SLF_SIMPLE_TYPE *base_type = stype->type_data.type_info;
 		tmp_name = base_type->type;
 	} else {
 		STypeInfo *refered_type_info = NULL;
@@ -1810,9 +1811,9 @@ static void get_bitfield_print_type(void *type, char **name) {
 	SLF_BITFIELD *bitfeild_info = (SLF_BITFIELD *)ti->type_info;
 
 	ti->get_base_type (ti, (void **)&t);
-	if (t->type_data.leaf_type == eLF_BASE_TYPE) {
+	if (t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
 		need_to_free = false;
-		SLF_BASE_TYPE *base_type = t->type_data.type_info;
+		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
 		tmp_name = base_type->type;
 	} else {
 		ti = &t->type_data;
@@ -1864,9 +1865,9 @@ static void get_enum_print_type(void *type, char **name) {
 
 	ti->get_utype (ti, (void **)&t);
 	r_return_if_fail (t); // This shouldn't happen?, TODO explore this situation
-	if (t->type_data.leaf_type == eLF_BASE_TYPE) { // BaseType
+	if (t->type_data.leaf_type == eLF_SIMPLE_TYPE) { // BaseType
 		need_to_free = 0;
-		SLF_BASE_TYPE *base_type = t->type_data.type_info;
+		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
 		tmp_name = base_type->type;
 	} else {
 		ti = &t->type_data;
@@ -2048,9 +2049,9 @@ static void get_nesttype_print_type(void *type, char **name) {
 	int need_to_free = 1;
 
 	ti->get_index (ti, (void **)&t);
-	if (t->type_data.leaf_type == eLF_BASE_TYPE) {
+	if (t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
 		need_to_free = false;
-		SLF_BASE_TYPE *base_type = t->type_data.type_info;
+		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
 		tmp_name = base_type->type;
 	} else {
 		ti = &t->type_data;
@@ -2119,8 +2120,8 @@ static void get_member_print_type(void *type, char **name) {
 	char *tmp_name = 0;
 
 	ti->get_index (ti, (void **) &t);
-	if (t->type_data.leaf_type == eLF_BASE_TYPE) {
-		SLF_BASE_TYPE *base_type = t->type_data.type_info;
+	if (t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
+		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
 		tmp_name = base_type->type;
 	} else {
 		ti = &t->type_data;
@@ -2139,9 +2140,9 @@ static void get_onemethod_print_type(void *type, char **name) {
 	int need_to_free = 1;
 
 	ti->get_index (ti, (void **)&t);
-	if (t->type_data.leaf_type == eLF_BASE_TYPE) {
+	if (t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
 		need_to_free = false;
-		SLF_BASE_TYPE *base_type = t->type_data.type_info;
+		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
 		tmp_name = base_type->type;
 	} else {
 		ti = &t->type_data;

@@ -29,7 +29,7 @@ static void debug_print_struct(const RAnalBaseType *base_type, const char *name,
 	RVector members = base_type->struct_data.members;
 	RAnalStructMember *member;
 	r_vector_foreach (&members, member) {
-		printf ("\t%s %s; (+%"PFMT64x")\n", member->type, member->name, member->offset);
+		printf ("\t%s %s; (+%zx)\n", member->type, member->name, member->offset);
 	}
 	printf ("}\n");
 }
@@ -134,7 +134,7 @@ static void parse_enum(const RAnal *anal, SType *type, RList *types) {
 	type_info->get_utype (type_info, (void**)&type);
 	char *type_name = NULL;
 	if (type && type->type_data.type_info) {
-		SLF_BASE_TYPE *base_type = type->type_data.type_info;
+		SLF_SIMPLE_TYPE *base_type = type->type_data.type_info;
 		type_name = base_type->type;
 	}
 	type_info->get_members (type_info, &members);

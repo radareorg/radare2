@@ -669,133 +669,85 @@ static EStates convert_to_state(char *cstate) {
 	return state;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-/// TODO: rewrite this ?!
-static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, char **name_field) {
-	EStates curr_state;
-	char *tmp = 0;
-	char *name = 0;
-
-	tmp = strtok (type, " ");
-	while (tmp != NULL) {
-		curr_state = convert_to_state (tmp);
-		switch (curr_state) {
-		case eMemberState:
-			break;
-		case ePointerState:
-			if (res_field[pos] == 'p') {
-				return 1;
-			}
-			res_field[pos] = 'p';
-			break;
-		case eUnionState:
-		case eStructState:
-			res_field[pos] = '?';
-			tmp = strtok (NULL, " ");
-			name = (char *) malloc (strlen (tmp) + strlen (*name_field) + 1 + 2);
-			if (!name) {
-				return 0;
-			}
-			r_name_filter (tmp, -1);
-			r_name_filter (*name_field, -1);
-			strcpy (name, tmp);
-
-			sprintf (name, "(%s)%s", tmp, *name_field);
-			free (*name_field);
-			*name_field = name;
-
-			return 1;
-		case eUnsignedState:
-			if (res_field[pos] == 'p') {
-				return 1;
-			}
-			res_field[pos] = 'u';
-			break;
-		case eShortState:
-			// TODO: where is short??
-			// where is unsigned not in hex??
-			// w word (2 bytes unsigned short in hex)
-			if (res_field[pos] == 'p') {
-				return 1;
-			}
-			res_field[pos] = 'w';
-			return 1;
-		case eCharState:
-			if (res_field[pos] == 'p') {
-				return 1;
-			}
-			if (res_field[pos] == 'u') {
-				res_field[pos] = 'b';
-			} else {
-				res_field[pos] = 'c';
-			}
-			return 1;
-		case eLongState:
-			if (res_field[pos] == 'p') {
-				return 1;
-			}
-			res_field[pos] = 'i';
-			return 1;
-		case eModifierState:
-			if (res_field[pos] == 'p') {
-				return 1;
-			}
-			res_field[pos] = 'w';
-			break;
-		case eEnumState:
-			if (res_field[pos] == 'p') {
-				return 1;
-			}
-			res_field[pos] = 'E';
-			tmp = strtok (NULL, " ");
-			name = (char *) malloc (strlen (tmp) + strlen (*name_field) + 1 + 2);
-			if (!name) {
-				return 0;
-			}
-			strcpy (name, tmp);
-			sprintf (name, "(%s)%s", tmp, *name_field);
-			free (*name_field);
-			*name_field = name;
-			return 1;
-// case eDoubleState:
-//// TODO: what is the flag for double in pf??
-// res_field[pos] = 'q';
-// return 1;
-		case eBitfieldState:
-			res_field[pos] = 'B';
-			tmp = strtok (NULL, " ");
-			name = (char *) malloc (strlen (tmp) + strlen (*name_field) + 1 + 2);
-			if (!name) {
-				return 0;
-			}
-			strcpy (name, tmp);
-			sprintf (name, "(%s)%s", tmp, *name_field);
-			free (*name_field);
-			*name_field = name;
-			return 1;
-		case eVoidState:
-		case eArrayState:
-		case eOneMethodState:
-			res_field[pos] = 'p';
-			return 1;
-		default:
-			if (((!strcmp (tmp, "to"))) ||
-			    (!strcmp (tmp, "nesttype")) ||
-			    (!strcmp (tmp, "mfunction")) ||
-			    (!strcmp (tmp, "proc")) ||
-			    (!strcmp (tmp, "arglist"))) {
-				break;
-			} else {
-				eprintf ("There is no support for type \"%s\" in PF structs\n", tmp);
-				res_field[pos] = 'A';
-				return 0;
-			}
-		}
-
-		tmp = strtok (NULL, " ");
+/** modified r_str_sanitize_sdb_key so it sanitizes `:`
+ * @brief Sanitizes string so the "td" commands doesn't complain
+ * 
+ * @param s 
+ * @return char* 
+ */
+static char *sanitize_string(const char *s) {
+	if (!s || !*s) {
+		return NULL;
 	}
+	size_t len = strlen (s);
+	char *ret = malloc (len + 1);
+	if (!ret) {
+		return NULL;
+	}
+	char *cur = ret;
+	while (len > 0) {
+		char c = *s;
+		if (!(c >= 'a' && c <= 'z') && !(c >= 'A' && c <= 'Z') && !(c >= '0' && c <= '9')
+			&& c != '_') { 
+			c = '_';
+		}
+		*cur = c;
+		s++;
+		cur++;
+		len--;
+	}
+	*cur = '\0';
+	return ret;
+}
 
-	return 1;
+static SimpleTypeMode get_base_type_mode (PDB_SIMPLE_TYPES type) {
+	ut32 value = type; // cast to unsigned for defined bitwise operations
+	/*   https://llvm.org/docs/PDB/TpiStream.html#type-indices
+        .---------------------------.------.----------.
+        |           Unused          | Mode |   Kind   |
+        '---------------------------'------'----------'
+        |+32                        |+12   |+8        |+0
+	*/
+	return (value & 0x00000000FFF00);
+}
+
+static int build_member_format(STypeInfo *type_info, RStrBuf *format) {
+	r_return_val_if_fail (type_info && format && type_info->type_info, -1);
+	// we need to match the type
+	// splitting it on a mode and base would be helpful
+	// SType *member_type = NULL;
+	// member_info->get_index (member_info, (void **)&member_type);
+	// if (member_type == NULL) {
+	// 	return; // ?? TODO
+	// }
+	char member_format = '\0';
+	if (type_info->leaf_type == eLF_SIMPLE_TYPE) {
+		SLF_SIMPLE_TYPE *simple_type = type_info->type_info;
+		SimpleTypeMode mode = get_base_type_mode (simple_type->base_type);
+
+		switch (mode) {
+		case DIRECT:
+			// go futher to the type TODO
+			break;
+		case NEAR_POINTER:
+		case FAR_POINTER:
+		case HUGE_POINTER:
+		case NEAR_POINTER32:
+		case FAR_POINTER32:
+		case NEAR_POINTER64:
+		// case NEAR_POINTER128: // we don't have 128 bit format yet TODO
+			member_format = 'p';
+			break;
+		default:
+			// unknown mode
+			r_warn_if_reached ();
+			break;
+		}
+	} else if (type_info->leaf_type == eLF_POINTER) {
+		member_format = 'p';
+	}
+	r_strbuf_appendf (&format, "%c", member_format);
+	return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1035,8 +987,8 @@ static void print_types_regular(const R_PDB *pdb, const RList *types) {
 			if (type_info->get_utype) {
 				SType *base_type = NULL;
 				type_info->get_utype (type_info, (void **)&base_type);
-				if (base_type && base_type->type_data.leaf_type == eLF_BASE_TYPE) {
-					SLF_BASE_TYPE *tmp = base_type->type_data.type_info;
+				if (base_type && base_type->type_data.leaf_type == eLF_SIMPLE_TYPE) {
+					SLF_SIMPLE_TYPE *tmp = base_type->type_data.type_info;
 					base_type_name = tmp->type;
 				}
 			}
@@ -1133,8 +1085,8 @@ static void print_types_json(const R_PDB *pdb, const RList *types) {
 			if (type_info->get_utype) {
 				SType *base_type = NULL;
 				type_info->get_utype (type_info, (void **)&base_type);
-				if (base_type && base_type->type_data.leaf_type == eLF_BASE_TYPE) {
-					SLF_BASE_TYPE *tmp = base_type->type_data.type_info;
+				if (base_type && base_type->type_data.leaf_type == eLF_SIMPLE_TYPE) {
+					SLF_SIMPLE_TYPE *tmp = base_type->type_data.type_info;
 					base_type_name = tmp->type;
 				}
 			}
@@ -1173,36 +1125,6 @@ static void print_types_json(const R_PDB *pdb, const RList *types) {
 	pdb->cb_printf (pj_string (pj));
 }
 
-/** modified r_str_sanitize_sdb_key so it sanitizes `:`
- * @brief Sanitizes string so the "td" commands doesn't complain
- * 
- * @param s 
- * @return char* 
- */
-static char *sanitize_string(const char *s) {
-	if (!s || !*s) {
-		return NULL;
-	}
-	size_t len = strlen (s);
-	char *ret = malloc (len + 1);
-	if (!ret) {
-		return NULL;
-	}
-	char *cur = ret;
-	while (len > 0) {
-		char c = *s;
-		if (!(c >= 'a' && c <= 'z') && !(c >= 'A' && c <= 'Z') && !(c >= '0' && c <= '9')
-			&& c != '_') { 
-			c = '_';
-		}
-		*cur = c;
-		s++;
-		cur++;
-		len--;
-	}
-	*cur = '\0';
-	return ret;
-}
 /**
  * @brief 
  * 
@@ -1216,10 +1138,8 @@ static void print_types_format(const R_PDB *pdb, const RList *types) {
 	while (r_list_iter_next (it)) {
 		SType *type = (SType *)r_list_iter_get (it);
 		STypeInfo *type_info = &type->type_data;
-		// TODO remove
-		if (type_info->leaf_type != eLF_ENUM) {
-			// skip unprintable types
-			// if (!is_printable_type (type_info->leaf_type)) {
+			// skip unprintable types and enums
+		if (!is_printable_type (type_info->leaf_type) || type_info->leaf_type == eLF_ENUM) {
 			continue;
 		}
 		// skip forward references
@@ -1242,79 +1162,40 @@ static void print_types_format(const R_PDB *pdb, const RList *types) {
 		if (type_info->get_members) {
 			type_info->get_members (type_info, &members);
 		}
-		RStrBuf command;
-		r_strbuf_init (&command);
-		switch (type_info->leaf_type) {
-		case eLF_STRUCTURE:
-		case eLF_CLASS:
-		case eLF_UNION:
-			r_strbuf_append (&command, "\"pf.");
-			break;
-		case eLF_ENUM:
-			r_strbuf_append (&command, "\"td enum ");
-			break;
-		default:
-			// unimplemented printable type
-			r_warn_if_reached ();
-			break;
-		};
-		name = sanitize_string (name);
-		r_strbuf_append (&command, name);
-		R_FREE (name);
+		// pf.name <format chars> <member names>
+		RStrBuf format;
+		r_strbuf_init (&format);
+		RStrBuf member_names;
+		r_strbuf_init (&member_names);
+
 		RListIter *member_iter = r_list_iterator (members);
-		if (type_info->leaf_type == eLF_ENUM) { // "td" for enum, "pf" for others
-			r_strbuf_append (&command, "{");
-		}
-		// RStrBuf format;
-		// r_strbuf_init (&format);
-		// RStrBuf name;
-		// r_strbuf_init (&name);
 		while (r_list_iter_next (member_iter)) {
 			STypeInfo *member_info = r_list_iter_get (member_iter);
-			char *member_name = NULL;
+			char *member_name;
 			if (member_info->get_name) {
 				member_info->get_name (member_info, &member_name);
 			}
-			int offset = 0;
-			if (member_info->get_val) {
-				member_info->get_val (member_info, &offset);
-			}
-			char *member_type = NULL;
-			if (member_info->get_print_type) {
-				member_info->get_print_type (member_info, &member_type);
-			}
-			member_name = sanitize_string (member_name);
 			switch (type_info->leaf_type) {
 			case eLF_STRUCTURE:
 			case eLF_CLASS:
 			case eLF_UNION:
-			// 	members_field[i] = (char *)malloc (sizeof (char) * strlen (name) + 1);
-			// 	if (!members_field[i]) {
-			// 		return 0;
-			// 	}
-			// 	strcpy (members_field[i], name);
-			// 	if (build_format_flags (pdb, type, *pos, format_flags_field, &members_field[i]) == 0) {
-			// 		return 0;
-			// 	}
-			// 	*pos = *pos + 1;
-				break;
-			case eLF_ENUM: // offset is value the case here
-				r_strbuf_appendf (&command, "%s=0x%" PFMT64x, member_name, offset);
+				build_member_format (member_info, &format);
+				// case eLF_ENUM: // offset is value the case here
+				// we're not making "td" commands and there is no pf for enums
+				// r_strbuf_appendf (&command, "%s=0x%" PFMT64x, member_name, offset);
 				break;
 			default:
 				r_warn_if_reached ();
 			}
-			if (r_list_iter_next (member_iter)) {
-				r_strbuf_append (&command, ",");
-			}
-			R_FREE (member_type);
+			member_name = sanitize_string (member_name);
+			r_strbuf_appendf (&member_names, "%s ", member_name);
 			R_FREE (member_name);
 		}
-		if (type_info->leaf_type == eLF_ENUM) { // "td" for enum, "pf" for others
-			r_strbuf_append (&command, "};\"\n");
-		}
-		pdb->cb_printf (r_strbuf_get (&command));
-		r_strbuf_fini (&command);
+		name = sanitize_string (name);
+		pdb->cb_printf ("pf.%s %s %s\n", name, r_strbuf_get (&format), r_strbuf_get (&member_names));
+		R_FREE (name);
+		r_strbuf_fini (&format);
+		r_strbuf_fini (&member_names);
 	}
 }
 

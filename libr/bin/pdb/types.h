@@ -125,6 +125,17 @@ typedef get_arg_type_ get_modified_type_;
 typedef get_value get_index_val;
 typedef get_value_name get_print_type_;
 
+typedef enum {
+	DIRECT = 0, // Not a pointer
+	NEAR_POINTER = 1, // Near pointer
+	FAR_POINTER = 2, // Far pointer
+	HUGE_POINTER = 3, // Huge pointer
+	NEAR_POINTER32 = 4, // 32 bit near pointer
+	FAR_POINTER32 = 5, // 32 bit far pointer
+	NEAR_POINTER64 = 6, // 64 bit near pointer
+	NEAR_POINTER128 = 7 // 128 bit near pointer
+} SimpleTypeMode;
+
 // https://llvm.org/docs/PDB/TpiStream.html#type-indices
 // This can be done smarter splitting it up on mode and kind
 typedef enum {
@@ -445,7 +456,7 @@ typedef enum {
 	eT_32NCVPTR =             0x000004F0,
 	eT_32FCVPTR =             0x000005F0,
 	eT_64NCVPTR =             0x000006F0,
-} EBASE_TYPES;
+} PDB_SIMPLE_TYPES;
 
 typedef enum {
 	eNEAR_C          = 0x00000000,
@@ -516,8 +527,8 @@ typedef enum {
 typedef struct {
 	char *type;
 	ut32 size;
-	EBASE_TYPES base_type;
-} SLF_BASE_TYPE;
+	PDB_SIMPLE_TYPES base_type;
+} SLF_SIMPLE_TYPE;
 //### CodeView bitfields and enums
 //# NOTE: Construct assumes big-endian
 //# ordering for BitStructs
@@ -1032,7 +1043,7 @@ typedef enum {
 	eLF_PAD13                = 0x000000FD,
 	eLF_PAD14                = 0x000000FE,
 	eLF_PAD15                = 0x000000FF,
-	eLF_BASE_TYPE            = 0xEFFFFFFF, // Custom, hopefully it doesn't collide
+	eLF_SIMPLE_TYPE          = 0xEFFFFFFF, // Custom, hopefully it doesn't collide
 	eLF_MAX                  = 0xFFFFFFFF
 } ELeafType;
 
