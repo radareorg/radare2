@@ -277,12 +277,29 @@ static int parse(RParse *p, const char *data, char *str) {
 	return true;
 }
 
+static char *subs_var_string(RParse *p, RAnalVarField *var, char *tstr, const char *oldstr, const char *reg, int delta) {
+	char *newstr = p->localvar_only
+		? r_str_newf ("[%s]", var->name)
+		: r_str_newf ("[%s %c %s]", reg, delta > 0 ? '+' : '-', var->name);
+	if (IS_UPPER (*tstr)) {
+		char *space = strrchr (newstr, ' ');
+		if (space) {
+			*space = 0;
+			r_str_case (newstr, true);
+			*space = ' ';
+		}
+	}
+	char *ret = r_str_replace (tstr, oldstr, newstr, 1);
+	free (newstr);
+	return ret;
+}
+
 static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	RList *spargs = NULL;
 	RList *bpargs = NULL;
 	RListIter *iter;
 	RAnal *anal = p->analb.anal;
-	char *oldstr, *newstr;
+	char *oldstr;
 	char *tstr = strdup (data);
 	if (!tstr) {
 		return false;
@@ -366,22 +383,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 			}
 		}
 		if (strstr (tstr, oldstr)) {
-			if (p->localvar_only) {
-				newstr = r_str_newf ("[%s]", var->name);
-			} else {
-				newstr = r_str_newf ("[%s %c %s]",
-					reg, delta > 0 ? '+' : '-', var->name);
-			}
-			if (ucase) {
-				char *comma = strchr (newstr, ' ');
-				if (comma) {
-					*comma = 0;
-					r_str_case (newstr, true);
-					*comma = ' ';
-				}
-			}
-			tstr = r_str_replace (tstr, oldstr, newstr, 1);
-			free (newstr);
+			tstr = subs_var_string (p, var, tstr, oldstr, reg, delta);
 			free (oldstr);
 			break;
 		}
@@ -411,11 +413,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 			oldstr = r_str_newf ("[%s, -0x%x]", reg, -delta);
 		}
 		if (strstr (tstr, oldstr)) {
-			newstr = r_str_newf ("[%s %c %s]",
-				reg, delta > 0 ? '+' : '-',
-				var->name);
-			tstr = r_str_replace (tstr, oldstr, newstr, 1);
-			free (newstr);
+			tstr = subs_var_string (p, var, tstr, oldstr, reg, delta);
 			free (oldstr);
 			break;
 		}
@@ -433,13 +431,16 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 				reg,
 				-delta);
 		}
+		if (ucase) {
+			char *comma = strchr (oldstr, ',');
+			if (comma) {
+				*comma = 0;
+				r_str_case (oldstr, true);
+				*comma = ',';
+			}
+		}
 		if (strstr (tstr, oldstr)) {
-			newstr = r_str_newf ("[%s %c %s]",
-				reg,
-				delta > 0 ? '+' : '-',
-				var->name);
-			tstr = r_str_replace (tstr, oldstr, newstr, 1);
-			free (newstr);
+			tstr = subs_var_string (p, var, tstr, oldstr, reg, delta);
 			free (oldstr);
 			break;
 		}
