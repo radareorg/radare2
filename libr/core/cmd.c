@@ -1740,6 +1740,7 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 				return true;
 			}
 		}
+		free (input);
 		return false;
 	}
 	free (input);
@@ -2630,7 +2631,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			if (*hash == '\\') {
 				hash++;
 				if (*hash == '#') {
-					hash++;
+					continue;
 				}
 			}
 			if (*hash == '#') {

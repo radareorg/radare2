@@ -1155,11 +1155,10 @@ static bool cb_dirhome(void *user, void *data) {
 	return true;
 }
 
-static bool cb_dirtmp (void *user, void *data) {
-	RConfigNode *node = (RConfigNode*) data;
-	if (node->value) {
-		r_sys_setenv (R_SYS_TMP, node->value);
-	}
+static bool cb_dirtmp(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *)data;
+	char *value = R_STR_ISNOTEMPTY (node->value)? node->value: NULL;
+	r_sys_setenv (R_SYS_TMP, value);
 	return true;
 }
 
