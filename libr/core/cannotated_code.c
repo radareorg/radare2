@@ -28,24 +28,18 @@ R_API void r_core_annotated_code_print_json(RAnnotatedCode *code) {
 			pj_ks (pj, "type", "offset");
 			pj_kn (pj, "offset", annotation->offset.offset);
 			break;
-		case R_CODE_ANNOTATION_TYPE_REFERENCE:
-			pj_ks (pj, "type", "reference");
-			switch (annotation->reference.type)
-			{
-			case R_CODE_ANNOTATION_TYPE_FUNCTION_NAME:
-				pj_ks (pj, "reference_type", "function_name");
-				pj_ks (pj, "name", annotation->reference.name);
-				pj_kn (pj, "offset", annotation->reference.offset);
-				break;
-			case R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE:
-				pj_ks (pj, "reference_type", "global_variable");
-				pj_kn (pj, "offset", annotation->reference.offset);
-				break;
-			case R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE:
-				pj_ks (pj, "reference_type", "constant_variable");
-				pj_kn (pj, "offset", annotation->reference.offset);
-				break;
-			}
+		case R_CODE_ANNOTATION_TYPE_FUNCTION_NAME:
+			pj_ks (pj, "type", "function_name");
+			pj_ks (pj, "name", annotation->reference.name);
+			pj_kn (pj, "offset", annotation->reference.offset);
+			break;
+		case R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE:
+			pj_ks (pj, "type", "global_variable");
+			pj_kn (pj, "offset", annotation->reference.offset);
+			break;
+		case R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE:
+			pj_ks (pj, "type", "constant_variable");
+			pj_kn (pj, "offset", annotation->reference.offset);
 			break;
 		case R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT:
 			pj_ks (pj, "type", "syntax_highlight");

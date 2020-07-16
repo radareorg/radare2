@@ -56,7 +56,6 @@ typedef struct r_code_annotation_t {
 		} syntax_highlight;
 
 		struct {
-			RCodeAnnotationType type;
 			char *name;
 			ut64 offset; // address
 		} reference;
