@@ -127,6 +127,7 @@ pkgconfig_mod.generate(
   version: r2_version,
   name: 'r_core',
   filebase: 'r_core',
+  libraries: pkgcfg_sanitize_libs,
   requires: pkgconfig_magic_requires + [
     'r_util',
     'r_reg',

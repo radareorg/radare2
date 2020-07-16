@@ -558,6 +558,13 @@ spp_dep = declare_dependency(
   include_directories: spp_inc
 )
 
+pkgcfg_sanitize_libs = ''
+if get_option('b_sanitize').contains('address')
+  pkgcfg_sanitize_libs += ' -lasan'
+endif
+if get_option('b_sanitize').contains('undefined')
+  pkgcfg_sanitize_libs += ' -lubsan'
+endif
 
 subdir('libr/util')
 subdir('libr/socket')

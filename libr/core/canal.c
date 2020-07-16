@@ -770,6 +770,7 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 		return false;
 	}
 	fcn->cc = r_str_constpool_get (&core->anal->constpool, r_anal_cc_default (core->anal));
+	r_warn_if_fail (!core->anal->sdb_cc->path || fcn->cc);
 	hint = r_anal_hint_get (core->anal, at);
 	if (hint && hint->bits == 16) {
 		// expand 16bit for function
@@ -5093,9 +5094,6 @@ repeat:
 				ut64 dst = ESIL->cur;
 				if ((target && dst == ntarget) || !target) {
 					if (CHECKREF (dst)) {
-						if ((dst & 1) && (core->anal->bits == 16)) {
-							dst &= ~1;
-						}
 						r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA);
 					}
 				}

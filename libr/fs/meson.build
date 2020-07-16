@@ -46,6 +46,7 @@ pkgconfig_mod.generate(r_fs,
   version: r2_version,
   name: 'r_fs',
   filebase: 'r_fs',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util'
   ],

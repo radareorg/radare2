@@ -1155,11 +1155,10 @@ static bool cb_dirhome(void *user, void *data) {
 	return true;
 }
 
-static bool cb_dirtmp (void *user, void *data) {
-	RConfigNode *node = (RConfigNode*) data;
-	if (node->value) {
-		r_sys_setenv (R_SYS_TMP, node->value);
-	}
+static bool cb_dirtmp(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *)data;
+	char *value = R_STR_ISNOTEMPTY (node->value)? node->value: NULL;
+	r_sys_setenv (R_SYS_TMP, value);
 	return true;
 }
 
@@ -2891,7 +2890,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("anal.to", -1, (RConfigCallback)&cb_anal_from, "Upper limit on the address range for analysis");
 	n = NODECB ("anal.in", "io.maps.x", &cb_searchin);
 	SETDESC (n, "Specify search boundaries for analysis");
-	SETOPTIONS (n, "raw", "block",
+	SETOPTIONS (n, "range", "block",
 		"bin.segment", "bin.segments", "bin.segments.x", "bin.segments.r", "bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x",
 		"io.map", "io.maps", "io.maps.rwx", "io.maps.r", "io.maps.rw", "io.maps.rx", "io.maps.wx", "io.maps.x",
 		"dbg.stack", "dbg.heap",

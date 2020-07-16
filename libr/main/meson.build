@@ -56,6 +56,7 @@ pkgconfig_mod.generate(r_main,
   subdirs: 'libr',
   version: r2_version,
   name: 'r_main',
+  libraries: pkgcfg_sanitize_libs,
   filebase: 'r_main',
   requires: [
     'r_core',

@@ -384,3 +384,294 @@ R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
 	free (sname);
 	return base_type;
 }
+
+static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
+	r_return_if_fail (anal && type && type->name 
+		&& type->kind == R_ANAL_BASE_TYPE_KIND_STRUCT);
+	char *kind = "struct";
+	/*
+		C:
+		struct name {type param1; type param2; type paramN;};
+		Sdb:
+		name=struct
+		struct.name=param1,param2,paramN
+		struct.name.!size=96
+		struct.name.param1=type,0,0
+		struct.name.param2=type,4,0
+		struct.name.paramN=type,8,0
+	*/
+	char *sname = r_str_sanitize_sdb_key (type->name);
+	// name=struct
+	sdb_set (anal->sdb_types, sname, kind, 0);
+
+	RStrBuf arglist;
+	RStrBuf param_key;
+	RStrBuf param_val;
+	r_strbuf_init (&arglist);
+	r_strbuf_init (&param_key);
+	r_strbuf_init (&param_val);
+
+	int i = 0;
+	RAnalStructMember *member;
+	r_vector_foreach (&type->struct_data.members, member) {
+		// struct.name.param=type,offset,argsize
+		char *member_sname = r_str_sanitize_sdb_key (member->name);
+		r_strbuf_setf (&param_key, "%s.%s.%s", kind, sname, member_sname);
+		r_strbuf_setf (&param_val, "%s,%" PFMT64u ",%" PFMT64u "", member->type, member->offset, 0);
+		sdb_set (anal->sdb_types, r_strbuf_get (&param_key), r_strbuf_get (&param_val), 0);
+		free (member_sname);
+
+		r_strbuf_appendf (&arglist, (i++ == 0) ? "%s" : ",%s", member->name);
+	}
+	// struct.name=param1,param2,paramN
+	char *key = r_str_newf ("%s.%s", kind, sname);
+	sdb_set (anal->sdb_types, key, r_strbuf_get (&arglist), 0);
+	free (key);
+	// struct.name.!size=96
+	key = r_str_newf ("%s.%s.!size", kind, sname);
+	char *val = r_str_newf ("%" PFMT64u "", type->size);
+	sdb_set (anal->sdb_types, key, val, 0);
+	free (val);
+	free (key);
+
+	free (sname);
+
+	r_strbuf_fini (&arglist);
+	r_strbuf_fini (&param_key);
+	r_strbuf_fini (&param_val);
+}
+
+static void save_union(const RAnal *anal, const RAnalBaseType *type) {
+	r_return_if_fail (anal && type && type->name 
+		&& type->kind == R_ANAL_BASE_TYPE_KIND_UNION);
+	const char *kind = "union";
+	/*
+	C:
+	union name {type param1; type param2; type paramN;};
+	Sdb:
+	name=union
+	union.name=param1,param2,paramN
+	union.name.!size=32
+	union.name.param1=type,0,0
+	union.name.param2=type,0,0
+	union.name.paramN=type,0,0
+	*/
+	char *sname = r_str_sanitize_sdb_key (type->name);
+	// name=union
+	sdb_set (anal->sdb_types, sname, kind, 0);
+
+	RStrBuf arglist;
+	RStrBuf param_key;
+	RStrBuf param_val;
+	r_strbuf_init (&arglist);
+	r_strbuf_init (&param_key);
+	r_strbuf_init (&param_val);
+
+	int i = 0;
+	RAnalUnionMember *member;
+	r_vector_foreach (&type->union_data.members, member) {
+		// union.name.arg1=type,offset,argsize
+		char *member_sname = r_str_sanitize_sdb_key (member->name);
+		r_strbuf_setf (&param_key, "%s.%s.%s", kind, sname, member_sname);
+		r_strbuf_setf (&param_val, "%s,%" PFMT64u ",%" PFMT64u "", member->type, member->offset, 0);
+		sdb_set (anal->sdb_types, r_strbuf_get (&param_key), r_strbuf_get (&param_val), 0);
+		free (member_sname);
+
+		r_strbuf_appendf (&arglist, (i++ == 0) ? "%s" : ",%s", member->name);
+	}
+	// union.name=arg1,arg2,argN
+	char *key = r_str_newf ("%s.%s", kind, sname);
+	sdb_set (anal->sdb_types, key, r_strbuf_get (&arglist), 0);
+	free (key);
+
+	key = r_str_newf ("%s.%s.!size", kind, sname);
+	char *val = r_str_newf ("%" PFMT64u "", type->size);
+	sdb_set (anal->sdb_types, key, val, 0);
+	free (val);
+	free (key);
+
+	free (sname);
+
+	r_strbuf_fini (&arglist);
+	r_strbuf_fini (&param_key);
+	r_strbuf_fini (&param_val);
+}
+
+static void save_enum(const RAnal *anal, const RAnalBaseType *type) {
+	r_return_if_fail (anal && type && type->name 
+		&& type->kind == R_ANAL_BASE_TYPE_KIND_ENUM);
+	/*
+		C:
+			enum name {case1 = 1, case2 = 2, caseN = 3};
+		Sdb:
+		name=enum
+		enum.name=arg1,arg2,argN
+		enum.MyEnum.0x1=arg1
+		enum.MyEnum.0x3=arg2
+		enum.MyEnum.0x63=argN
+		enum.MyEnum.arg1=0x1
+		enum.MyEnum.arg2=0x63
+		enum.MyEnum.argN=0x3
+	*/
+	char *sname = r_str_sanitize_sdb_key (type->name);
+	sdb_set (anal->sdb_types, sname, "enum", 0);
+
+	RStrBuf arglist;
+	RStrBuf param_key;
+	RStrBuf param_val;
+	r_strbuf_init (&arglist);
+	r_strbuf_init (&param_key);
+	r_strbuf_init (&param_val);
+
+	int i = 0;
+	RAnalEnumCase *cas;
+	r_vector_foreach (&type->enum_data.cases, cas) {
+		// enum.name.arg1=type,offset,???
+		char *case_sname = r_str_sanitize_sdb_key (cas->name);
+		r_strbuf_setf (&param_key, "enum.%s.%s", sname, case_sname);
+		r_strbuf_setf (&param_val, "0x%" PFMT32x "", cas->val);
+		sdb_set (anal->sdb_types, r_strbuf_get (&param_key), r_strbuf_get (&param_val), 0);
+
+		r_strbuf_setf (&param_key, "enum.%s.0x%" PFMT32x "", sname, cas->val);
+		sdb_set (anal->sdb_types, r_strbuf_get (&param_key), case_sname, 0);
+		free (case_sname);
+
+		r_strbuf_appendf (&arglist, (i++ == 0) ? "%s" : ",%s", cas->name);
+	}
+	// enum.name=arg1,arg2,argN
+	char *key = r_str_newf ("enum.%s", sname);
+	sdb_set (anal->sdb_types, key, r_strbuf_get (&arglist), 0);
+	free (key);
+
+	key = r_str_newf ("enum.%s.!size", sname);
+	char *val = r_str_newf ("%" PFMT64u "", type->size);
+	sdb_set (anal->sdb_types, key, val, 0);
+	free (val);
+	free (key);
+
+	free (sname);
+
+	r_strbuf_fini (&arglist);
+	r_strbuf_fini (&param_key);
+	r_strbuf_fini (&param_val);
+}
+
+static void save_atomic_type(const RAnal *anal, const RAnalBaseType *type) {
+	r_return_if_fail (anal && type && type->name 
+		&& type->kind == R_ANAL_BASE_TYPE_KIND_ATOMIC);
+	/*
+		C: (cannot define a custom atomic type)
+		Sdb:
+		char=type
+		type.char=c
+		type.char.size=8
+	*/
+	char *sname = r_str_sanitize_sdb_key (type->name);
+	sdb_set (anal->sdb_types, sname, "type", 0);
+
+	RStrBuf key;
+	RStrBuf val;
+	r_strbuf_init (&key);
+	r_strbuf_init (&val);
+
+	r_strbuf_setf (&key, "type.%s.size", sname);
+	r_strbuf_setf (&val, "%" PFMT64u "", type->size);
+	sdb_set (anal->sdb_types, r_strbuf_get (&key), r_strbuf_get (&val), 0);
+
+	free (sname);
+
+	r_strbuf_fini (&key);
+	r_strbuf_fini (&val);
+}
+static void save_typedef(const RAnal *anal, const RAnalBaseType *type) {
+	r_return_if_fail (anal && type && type->name && type->kind == R_ANAL_BASE_TYPE_KIND_TYPEDEF);
+	/*
+		C:
+		typedef char byte;
+		Sdb:
+		byte=typedef
+		typedef.byte=char
+	*/
+	char *sname = r_str_sanitize_sdb_key (type->name);
+	sdb_set (anal->sdb_types, sname, "typedef", 0);
+
+	RStrBuf key;
+	RStrBuf val;
+	r_strbuf_init (&key);
+	r_strbuf_init (&val);
+
+	r_strbuf_setf (&key, "typedef.%s", sname);
+	r_strbuf_setf (&val, "%s", type->type);
+	sdb_set (anal->sdb_types, r_strbuf_get (&key), r_strbuf_get (&val), 0);
+
+	free (sname);
+
+	r_strbuf_fini (&key);
+	r_strbuf_fini (&val);
+}
+
+R_API void r_anal_free_base_type(RAnalBaseType *type) {
+	r_return_if_fail (type);
+	R_FREE (type->name);
+	R_FREE (type->type);
+
+	switch (type->kind) {
+	case R_ANAL_BASE_TYPE_KIND_STRUCT:
+		r_vector_fini (&type->struct_data.members);
+		break;
+	case R_ANAL_BASE_TYPE_KIND_UNION:
+		r_vector_fini (&type->union_data.members);
+		break;
+	case R_ANAL_BASE_TYPE_KIND_ENUM:
+		r_vector_fini (&type->enum_data.cases);
+		break;
+	case R_ANAL_BASE_TYPE_KIND_TYPEDEF:
+	case R_ANAL_BASE_TYPE_KIND_ATOMIC:
+		break;
+	default:
+		break;
+	}
+	R_FREE (type);
+}
+
+R_API RAnalBaseType *r_anal_new_base_type(RAnalBaseTypeKind kind) {
+	RAnalBaseType *type = R_NEW0 (RAnalBaseType);
+	if (!type) {
+		return NULL;
+	}
+	type->kind = kind;
+	return type;
+}
+
+/**
+ * @brief Saves RAnalBaseType into the SDB
+ * 
+ * @param anal 
+ * @param type RAnalBaseType to save
+ * @param name Name of the type
+ */
+R_API void r_anal_save_base_type(const RAnal *anal, const RAnalBaseType *type) {
+	r_return_if_fail (anal && type && type->name);
+
+	// TODO, solve collisions, if there are 2 types with the same name and kind
+
+	switch (type->kind) {
+	case R_ANAL_BASE_TYPE_KIND_STRUCT:
+		save_struct (anal, type);
+		break;
+	case R_ANAL_BASE_TYPE_KIND_ENUM:
+		save_enum (anal, type);
+		break;
+	case R_ANAL_BASE_TYPE_KIND_UNION:
+		save_union (anal, type);
+		break;
+	case R_ANAL_BASE_TYPE_KIND_TYPEDEF:
+		save_typedef (anal, type);
+		break;
+	case R_ANAL_BASE_TYPE_KIND_ATOMIC:
+		save_atomic_type (anal, type);
+		break;
+	default:
+		break;
+	}
+}

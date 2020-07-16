@@ -909,7 +909,10 @@ static int bin_dwarf(RCore *core, int mode) {
 		RBinDwarfDebugAbbrev *da = NULL;
 		da = r_bin_dwarf_parse_abbrev (core->bin, mode);
 		RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (da, core->bin, mode);
-		// dig types out of into and then free
+		// I suppose there is no reason the parse it for a printing purposes
+		if (info && mode != R_MODE_PRINT) {
+			r_anal_parse_dwarf_types (core->anal, info);
+		}
 		r_bin_dwarf_free_debug_info (info);
 		
 		r_bin_dwarf_parse_aranges (core->bin, mode);
@@ -1327,10 +1330,10 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 static const char *bin_reloc_type_name(RBinReloc *reloc) {
 #define CASE(T) case R_BIN_RELOC_ ## T: return reloc->additive ? "ADD_" #T : "SET_" #T
 	switch (reloc->type) {
-		CASE(8);
-		CASE(16);
-		CASE(32);
-		CASE(64);
+	CASE(8);
+	CASE(16);
+	CASE(32);
+	CASE(64);
 	}
 	return "UNKNOWN";
 #undef CASE
@@ -1339,10 +1342,10 @@ static const char *bin_reloc_type_name(RBinReloc *reloc) {
 static ut8 bin_reloc_size(RBinReloc *reloc) {
 #define CASE(T) case R_BIN_RELOC_ ## T: return (T) / 8
 	switch (reloc->type) {
-		CASE(8);
-		CASE(16);
-		CASE(32);
-		CASE(64);
+	CASE(8);
+	CASE(16);
+	CASE(32);
+	CASE(64);
 	}
 	return 0;
 #undef CASE

@@ -70,11 +70,10 @@ static const char *help_msg_ob[] = {
 	"oba", " [addr] [baddr]", "Open file and load bin info at given address",
 	"oba", " [addr] [filename]", "Open file and load bin info at given address",
 	"oba", " [addr]", "Open bin info from the given address",
-	"obb", " [bfid]", "Switch to open binfile by fd number (Same as op)",
 	"obf", " ([file])", "Load bininfo for current file (useful for r2 -n)",
 	"obj", "", "List opened binary files and objid (JSON format)",
 	"obn", " [name]", "Select binfile by name",
-	"obo", " [iofd]", "Switch to open binary file by objid (DEPRECATED)",
+	"obo", " [fd]", "Switch to open binfile by fd number",
 	"obr", " [baddr]", "Rebase current bin object",
 	NULL
 };
@@ -281,16 +280,6 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				break;
 			}
 			r_list_free (files);
-		}
-		break;
-	case 'b': // "obb"
-		if (input[2] == ' ') {
-			ut32 id = r_num_math (core->num, input + 3);
-			if (!r_core_bin_raise (core, id)) {
-				eprintf ("Invalid RBinFile.id number.\n");
-			}
-		} else {
-			eprintf ("Usage: obb [bfid]\n");
 		}
 		break;
 	case ' ': // "ob "

@@ -2948,7 +2948,9 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 
 		for (i = 0; i < bin->nsymtab; i++) {
 			struct MACH0_(nlist) *st = &bin->symtab[i];
-			stridx = st->n_strx;
+			if (st->n_type & N_STAB) {
+				continue;
+			}
 			// 0 is for imports
 			// 1 is for symbols
 			// 2 is for func.eh (exception handlers?)
@@ -2964,11 +2966,12 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 				} else {
 					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
 				}
+				stridx = st->n_strx;
 				char *sym_name = get_name (bin, stridx, false);
 				if (sym_name) {
 					symbols[j].name = sym_name;
 				} else {
-					symbols[j].name = r_str_newf ("entry%d\n", i);
+					symbols[j].name = r_str_newf ("entry%d", i);
 					//symbols[j].name[0] = 0;
 				}
 				symbols[j].last = 0;
