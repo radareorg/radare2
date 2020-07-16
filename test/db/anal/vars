@@ -186,26 +186,26 @@ pdf
 EOF
 EXPECT=<<EOF
 afvR
+   var_c0h  0x18
+   var_30h  0x21
    var_20h  0x29
    var_18h  0x2d
    var_10h  0x31
    var_a0h  0x1d
-   var_c0h  0x18
-   var_30h  0x21
 afvW
+   var_c0h  0x18
+   var_30h
    var_20h  0x3
    var_18h  0x7
    var_10h  0xb
    var_a0h
-   var_c0h  0x18
-   var_30h
 / 59: fcn.00000000 ();
-|           ; var int64_t var_a0h @ rbp-0xa0
-|           ; var int64_t var_20h @ rbp-0x20
-|           ; var int64_t var_18h @ rbp-0x18
-|           ; var int64_t var_10h @ rbp-0x10
 |           ; var int64_t var_c0h @ rsp+0x20
+|           ; var int64_t var_a0h @ rsp+0x40
 |           ; var int64_t var_30h @ rsp+0xb0
+|           ; var int64_t var_20h @ rsp+0xc0
+|           ; var int64_t var_18h @ rsp+0xc8
+|           ; var int64_t var_10h @ rsp+0xd0
 |           0x00000000      488bc4         mov rax, rsp
 |           0x00000003      48895808       mov qword [var_20h], rbx
 |           0x00000007      48897010       mov qword [var_18h], rsi
@@ -243,23 +243,23 @@ afvR
       arg1  0x6
       arg2  0x8
       arg3  0xc,0x24
+   var_10h  0x4,0x2c
     var_ch  0x18,0x22
     var_eh  0x16,0x1e
     var_fh  0x10
-   var_10h  0x4,0x2c
 afvW
       arg1
       arg2
       arg3
+   var_10h
     var_ch  0x6
     var_eh  0xa
     var_fh  0xe
-   var_10h
 / 50: fcn.00000000 (int16_t arg1, int16_t arg2, int16_t arg3);
-|           ; var int8_t var_fh @ fp-0xf
-|           ; var int16_t var_eh @ fp-0xe
-|           ; var int32_t var_ch @ fp-0xc
 |           ; var int16_t var_10h @ sp+0x0
+|           ; var int8_t var_fh @ sp+0x1
+|           ; var int16_t var_eh @ sp+0x2
+|           ; var int32_t var_ch @ sp+0x4
 |           ; arg int16_t arg1 @ r0
 |           ; arg int16_t arg2 @ r1
 |           ; arg int16_t arg3 @ r2
