@@ -772,8 +772,6 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 			}
 		}
 	}
-	eprintf ("r_debug_wait reason: %d %s\n", reason, r_debug_reason_to_string (reason));
-	eprintf ("pid: %d tid: %d\n", dbg->pid, dbg->tid);
 	return reason;
 }
 
@@ -910,7 +908,18 @@ R_API int r_debug_step_hard(RDebug *dbg, RBreakpointItem **pb) {
 	if (!dbg->h->step (dbg)) {
 		return false;
 	}
+
+#if __linux__
+	// Turn off continue_all_threads to make sure linux_dbg_wait
+	// only waits for one target for a single-step or breakpoint trap
+	bool prev_continue = dbg->continue_all_threads;
+	dbg->continue_all_threads = false;
+#endif
 	reason = r_debug_wait (dbg, pb);
+#if __linux__
+	dbg->continue_all_threads = prev_continue;
+#endif
+
 	if (reason == R_DEBUG_REASON_DEAD || r_debug_is_dead (dbg)) {
 		return false;
 	}
@@ -1288,7 +1297,6 @@ repeat:
 	// Stop all threads when there is no user interrupt caused by statc_debug_stop
 	// to prevent queueing duplicate SIGSTOP signals
 	if (!r_cons_is_breaked () && dbg->continue_all_threads) {
-		eprintf ("STOP AFTER CONTINUE\n");
 		r_debug_stop (dbg);
 	}
 #endif
