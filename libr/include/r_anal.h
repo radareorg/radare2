@@ -290,6 +290,7 @@ typedef struct r_anal_function_t {
 	ut64 addr;
 	RPVector vars;
 	HtUP/*<st64, RPVector<RAnalVar *>>*/ *inst_vars; // offset of instructions => the variables they access
+	ut64 reg_save_area; // size of stack area pre-reserved for saving registers 
 	st64 bp_off; // offset of bp inside owned stack frame
 	st64 stack;  // stack frame size
 	int maxstack;
@@ -794,6 +795,7 @@ typedef struct r_anal_var_t {
 R_DEPRECATE typedef struct r_anal_var_field_t {
 	char *name;
 	st64 delta;
+	bool field;
 } RAnalVarField;
 
 // mul*value+regbase+regidx+delta
@@ -1634,6 +1636,7 @@ R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name);
 R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed);
 
 /* var.c */
+R_API R_OWN char *r_anal_function_autoname_var(RAnalFunction *fcn, char kind, const char *pfx, int ptr);
 R_API R_BORROW RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, R_NULLABLE const char *type, int size, bool isarg, R_NONNULL const char *name);
 R_API R_BORROW RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, int delta);
 R_API R_BORROW RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name);
