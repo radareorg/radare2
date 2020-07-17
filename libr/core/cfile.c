@@ -438,7 +438,11 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 		return false;
 	}
 	binfile = r_bin_cur (r->bin);
-	r_core_bin_set_env (r, binfile);
+	if (r_core_bin_set_env (r, binfile)) {
+		if (!r->anal->sdb_cc->path) {
+			R_LOG_WARN ("No calling convention defined for this file, analysis may be inaccurate.\n");
+		}
+	}
 	plugin = r_bin_file_cur_plugin (binfile);
 	if (plugin && !strcmp (plugin->name, "any")) {
 		RBinObject *obj = r_bin_cur_object (r->bin);

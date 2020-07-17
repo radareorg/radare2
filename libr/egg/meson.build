@@ -36,6 +36,7 @@ pkgconfig_mod.generate(r_egg,
   version: r2_version,
   name: 'r_egg',
   filebase: 'r_egg',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util',
     'r_asm',

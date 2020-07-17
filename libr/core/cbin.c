@@ -909,7 +909,10 @@ static int bin_dwarf(RCore *core, int mode) {
 		RBinDwarfDebugAbbrev *da = NULL;
 		da = r_bin_dwarf_parse_abbrev (core->bin, mode);
 		RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (da, core->bin, mode);
-		// dig types out of into and then free
+		// I suppose there is no reason the parse it for a printing purposes
+		if (info && mode != R_MODE_PRINT) {
+			r_anal_parse_dwarf_types (core->anal, info);
+		}
 		r_bin_dwarf_free_debug_info (info);
 		
 		r_bin_dwarf_parse_aranges (core->bin, mode);

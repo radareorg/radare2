@@ -23,6 +23,7 @@ pkgconfig_mod.generate(r_flag,
   version: r2_version,
   name: 'r_flag',
   filebase: 'r_flag',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util'
   ],

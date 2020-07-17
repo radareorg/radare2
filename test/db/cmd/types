@@ -118,16 +118,16 @@ pdr~JNI?
 EOF
 EXPECT=<<EOF
 | ; var struct JNINativeInterface @ sp+0x12c
-| 0x00000f74      4b93           str r3, [sp + JNINativeInterface]
-| 0x00000f76      039b           ldr r3, [sp + var_128h]               ; JNINativeInterface.reserved0
+| 0x00000f74      4b93           str r3, [JNINativeInterface]
+| 0x00000f76      039b           ldr r3, [var_134h]                    ; JNINativeInterface.reserved0
 | 0x00000f7e      d358           ldr r3, [r2, r3]                      ; JNINativeInterface.GetStringUTFChars
-| 0x00000f82      019a           ldr r2, [sp + var_130h]               ; JNINativeInterface.reserved0
+| 0x00000f82      019a           ldr r2, [var_13ch]                    ; JNINativeInterface.reserved0
 | 0x0000100e      d358           ldr r3, [r2, r3]                      ; JNINativeInterface.GetStringLength
-| 0x00001012      019a           ldr r2, [sp + var_130h]               ; JNINativeInterface.reserved0
+| 0x00001012      019a           ldr r2, [var_13ch]                    ; JNINativeInterface.reserved0
 | 0x00001066      d258           ldr r2, [r2, r3]                      ; JNINativeInterface.NewStringUTF
 | 0x00001114      d258           ldr r2, [r2, r3]                      ; JNINativeInterface.NewStringUTF
 | 0x0000112e      d258           ldr r2, [r2, r3]                      ; JNINativeInterface.NewStringUTF
-| 0x00001144      4b9a           ldr r2, [sp + JNINativeInterface]
+| 0x00001144      4b9a           ldr r2, [JNINativeInterface]
 | 0x00001148      9a42           cmp r2, r3                            ; JNINativeInterface.reserved0
 12
 EOF

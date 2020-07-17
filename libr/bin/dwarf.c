@@ -192,7 +192,7 @@ static const char *dwarf_attr_encodings[] = {
 	[DW_AT_recursive] = "DW_AT_recursive",
 	[DW_AT_signature] = "DW_AT_signature",
 	[DW_AT_main_subprogram] = "DW_AT_main_subprogram",
-	[DW_AT_data_big_offset] = "DW_AT_data_big_offset",
+	[DW_AT_data_bit_offset] = "DW_AT_data_big_offset",
 	[DW_AT_const_expr] = "DW_AT_const_expr",
 	[DW_AT_enum_class] = "DW_AT_enum_class",
 	[DW_AT_linkage_name] = "DW_AT_linkage_name",
@@ -387,6 +387,7 @@ static void line_header_fini(RBinDwarfLineHeader *hdr) {
 		free (hdr->file_names);
 	}
 }
+
 // Parses source file header of DWARF version <= 4
 static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const ut8 *buf_end,
 	RBinDwarfLineHeader *hdr, Sdb *sdb, int mode, PrintfCallback print) {
@@ -479,8 +480,11 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 					hdr->file_names[count].mod_time = mod_time;
 					hdr->file_names[count].file_len = file_len;
 				}
-				free (comp_dir);
-				free (pinclude_dir);
+				if (comp_dir) {
+					R_FREE (include_dir);
+					R_FREE (comp_dir);
+				}
+				R_FREE (pinclude_dir);
 			}
 			count++;
 			if (mode == R_MODE_PRINT && i) {
@@ -1481,7 +1485,7 @@ static void print_debug_info(const RBinDwarfDebugInfo *inf, PrintfCallback print
 		dies = inf->comp_units[i].dies;
 
 		for (j = 0; j < inf->comp_units[i].count; j++) {
-			print ("    Abbrev Number: %-4" PFMT64u " ", dies[j].abbrev_code);
+			print ("<%"PFMT64x">: Abbrev Number: %-4" PFMT64u " ", dies[j].offset,dies[j].abbrev_code);
 
 			if (is_printable_tag (dies[j].tag)) {
 				print ("(%s)\n", dwarf_tag_name_encodings[dies[j].tag]);
@@ -1826,6 +1830,10 @@ static const ut8 *parse_comp_unit(Sdb *sdb, const ut8 *buf_start,
 			expand_cu (unit);
 		}
 		RBinDwarfDie *die = &unit->dies[unit->count];
+
+		// add header size to the offset;
+		die->offset = buf - buf_start + unit->hdr.header_size + unit->offset;
+		die->offset += unit->hdr.is_64bit ? 12 : 4;
 		// DIE starts with ULEB128 with the abbreviation code
 		ut64 abbr_code;
 		buf = r_uleb128 (buf, buf_end - buf, &abbr_code);
@@ -1854,6 +1862,7 @@ static const ut8 *parse_comp_unit(Sdb *sdb, const ut8 *buf_start,
 			return NULL; // error
 		}
 		die->tag = abbrev->tag;
+		die->has_children = abbrev->has_children;
 
 		buf = parse_die (buf, buf_end, abbrev, &unit->hdr, die, debug_str, debug_str_len, sdb);
 		if (!buf) {

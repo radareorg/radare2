@@ -2628,6 +2628,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->cycles = 1;
 		break;
 	case ARM_INS_POP:
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = -4LL * insn->detail->arm.op_count;
+		// fallthrough
 	case ARM_INS_FLDMDBX:
 	case ARM_INS_FLDMIAX:
 	case ARM_INS_LDMDA:
@@ -2788,6 +2791,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->type = R_ANAL_OP_TYPE_SAR;
 		break;
 	case ARM_INS_PUSH:
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = 4LL * insn->detail->arm.op_count;
+		// fallthrough
 	case ARM_INS_STM:
 	case ARM_INS_STMDA:
 	case ARM_INS_STMDB:

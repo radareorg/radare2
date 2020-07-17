@@ -43,6 +43,7 @@ pkgconfig_mod.generate(r_parse,
   version: r2_version,
   name: 'r_parse',
   filebase: 'r_parse',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util',
     'r_flag',

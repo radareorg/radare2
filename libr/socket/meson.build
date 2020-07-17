@@ -33,6 +33,7 @@ pkgconfig_mod.generate(r_socket,
   version: r2_version,
   name: 'r_socket',
   filebase: 'r_socket',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util'
   ],

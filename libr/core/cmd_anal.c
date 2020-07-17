@@ -7119,6 +7119,17 @@ static void cmd_anal_ucall_ref (RCore *core, ut64 addr) {
 	}
 }
 
+static char *get_op_ireg(void *user, ut64 addr) {
+	RCore *core = (RCore *)user;
+	char *res = NULL;
+	RAnalOp *op = r_core_anal_op (core, addr, 0);
+	if (op && op->ireg) {
+		res = strdup (op->ireg);
+	}
+	r_anal_op_free (op);
+	return res;
+}
+
 static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, bool color) {
 	int has_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	char str[512];
@@ -7141,6 +7152,9 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	char *ba = malloc (ba_len);
 	strcpy (ba, r_strbuf_get (&asmop.buf_asm));
 	if (asm_varsub) {
+		core->parser->get_ptr_at = r_anal_function_get_var_stackptr_at;
+		core->parser->get_reg_at = r_anal_function_get_var_reg_at;
+		core->parser->get_op_ireg = get_op_ireg;
 		r_parse_varsub (core->parser, fcn, addr, asmop.size,
 				ba, ba, sizeof (asmop.buf_asm));
 	}
@@ -9383,7 +9397,12 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 'e': // "aae"
 		if (input[1] == 'f') { // "aaef
-			r_core_cmd0 (core, "aef@@@F");
+			RListIter *it;
+			RAnalFunction *fcn;
+			r_list_foreach (core->anal->fcns, it, fcn) {
+				r_core_seek (core, fcn->addr, true);
+				r_core_anal_esil (core, "f", NULL);
+			}
 		} else if (input[1] == ' ') {
 			const char *len = (char *)input + 1;
 			char *addr = strchr (input + 2, ' ');

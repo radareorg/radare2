@@ -1337,7 +1337,9 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 	}
 	fcn->maxstack = 0;
 	if (fcn->cc && !strcmp (fcn->cc, "ms")) {
-		fcn->stack = fcn->maxstack = 0x28; // Shadow store for the first 4 args + Return addr
+		// Probably should put this on the cc sdb
+		const int shadow_store = 0x28; // First 4 args + retaddr
+		fcn->stack = fcn->maxstack = fcn->reg_save_area = shadow_store;
 	}
 	int ret = r_anal_fcn_bb (anal, fcn, addr, anal->opt.depth);
 	if (ret < 0) {
