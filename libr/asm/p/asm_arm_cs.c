@@ -215,46 +215,46 @@ static int hack_handle_ldst(ut32 insn, char **buf_asm) {
 	return -1;
 }
 
-static int hack_arm_asm(RAsm *a, RAsmOp *op, const ut8 *buf, bool disp_hash) {
+static int hack_arm_asm(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int r = -1;
 	char *buf_asm;
 	ut32 *insn = (ut32 *)buf;
 	int insn_class = (*insn >> 25) & 0xf;
+	if (a->bits == 64 && len >= 4) {
+		switch (insn_class) {
+		// Data Processing -- Register
+		case 5:
+		case 13:
+			// irg, subp, gmi, subps
+			r = hack_handle_dp_reg (*insn, &buf_asm);
+			break;
+		// Data Processing -- Immediate
+		case 8:
+		case 9:
+			// addg, subg
+			r = hack_handle_dp_imm (*insn, &buf_asm);
+			break;
+		// Loads and Stores
+		case 4:
+		case 6:
+		case 12:
+		case 14:
+			// stg, stzgm, ldg, stzg, st2g, stgm, stz2g, ldgm, stgp
+			r = hack_handle_ldst (*insn, &buf_asm);
+			break;
+		default:
+			break;
+		}
 
-	switch (insn_class) {
-	// Data Processing -- Register
-	case 5:
-	case 13:
-		// irg, subp, gmi, subps
-		r = hack_handle_dp_reg (*insn, &buf_asm);
-		break;
-	// Data Processing -- Immediate
-	case 8:
-	case 9:
-		// addg, subg
-		r = hack_handle_dp_imm (*insn, &buf_asm);
-		break;
-	// Loads and Stores
-	case 4:
-	case 6:
-	case 12:
-	case 14:
-		// stg, stzgm, ldg, stzg, st2g, stgm, stz2g, ldgm, stgp
-		r = hack_handle_ldst (*insn, &buf_asm);
-		break;
-	default:
-		break;
+		if (r == 0) {
+			if (!a->immdisp) {
+				r_str_replace_char (buf_asm, '#', 0);
+			}
+			r_strbuf_set (&op->buf_asm, buf_asm);
+			return op->size = 4;
+		}
 	}
-
-	if (r < 0) {
-		return r;
-	}
-
-	if (!disp_hash) {
-		r_str_replace_char (buf_asm, '#', 0);
-	}
-	r_strbuf_set (&op->buf_asm, buf_asm);
-	return op->size = 4;
+	return r;
 }
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
@@ -309,7 +309,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (!buf) {
 		goto beach;
 	}
-	int haa = hack_arm_asm (a, op, buf, disp_hash);
+	int haa = hack_arm_asm (a, op, buf, len);
 	if (haa > 0) {
 		return haa;
 	}

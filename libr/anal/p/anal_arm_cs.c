@@ -3246,36 +3246,36 @@ static int hack_arm_anal(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	int r = -1;
 	ut32 *insn = (ut32 *)buf;
 	int insn_class = (*insn >> 25) & 0xf;
+	if (a->bits == 64 && len >= 4) {
+		switch (insn_class) {
+		// Data Processing -- Register
+		case 5:
+		case 13:
+			// irg, subp, gmi, subps
+			r = hack_handle_dp_reg (*insn, op);
+			break;
+		// Data Processing -- Immediate
+		case 8:
+		case 9:
+			// addg, subg
+			r = hack_handle_dp_imm (*insn, op);
+			break;
+		// Loads and Stores
+		case 4:
+		case 6:
+		case 12:
+		case 14:
+			// stg, stzgm, ldg, stzg, st2g, stgm, stz2g, ldgm, stgp
+			r = hack_handle_ldst (*insn, op);
+			break;
+		default:
+			break;
+		}
 
-	switch (insn_class) {
-	// Data Processing -- Register
-	case 5:
-	case 13:
-		// irg, subp, gmi, subps
-		r = hack_handle_dp_reg (*insn, op);
-		break;
-	// Data Processing -- Immediate
-	case 8:
-	case 9:
-		// addg, subg
-		r = hack_handle_dp_imm (*insn, op);
-		break;
-	// Loads and Stores
-	case 4:
-	case 6:
-	case 12:
-	case 14:
-		// stg, stzgm, ldg, stzg, st2g, stgm, stz2g, ldgm, stgp
-		r = hack_handle_ldst (*insn, op);
-		break;
-	default:
-		break;
+		if (r > 0) {
+			op->family = R_ANAL_OP_FAMILY_MTE;
+		}
 	}
-
-	if (r > 0) {
-		op->family = R_ANAL_OP_FAMILY_MTE;
-	}
-
 	return r;
 }
 
