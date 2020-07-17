@@ -40,7 +40,7 @@ static const char *help_msg_slash[] = {
 	"//", "", "repeat last search",
 	"/a", "[?][1aoditfmsltf] jmp eax", "assemble opcode and search its bytes",
 	"/b", "", "search backwards, command modifier, followed by other command",
-	"/c", "[ar]", "search for crypto materials",
+	"/c", "[?][adr]", "search for crypto materials",
 	"/d", " 101112", "search for a deltified sequence of bytes",
 	"/e", " /E.F/i", "match regular expression",
 	"/E", " esil-expr", "offset matching given esil expressions $$ = here",
@@ -2355,7 +2355,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 	if (param->inverse) {
 		core->search->maxhits = 1;
 	}
-	if (core->search->n_kws > 0 || param->crypto_search) {
+	if (core->search->n_kws > 0) {
 		/* set callback */
 		/* TODO: handle last block of data */
 		/* TODO: handle ^C */
@@ -2427,6 +2427,10 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 					int t = 0;
 					if (param->aes_search) {
 						t = r_search_aes_update (core->search, at, buf, len);
+						// Adjuste length to search between blocks.
+						if (len == core->blocksize) {
+							len = len - 39;
+						}
 					} else if (param->privkey_search) {
 						t = r_search_privkey_update (core->search, at, buf, len);
 					}
@@ -3343,6 +3347,8 @@ reread:
 			{
 				RSearchKeyword *kw;
 				kw = r_search_keyword_new_hexmask ("00", NULL);
+				// AES search is at most 40 bytes.
+				kw->keyword_length = 40;
 				r_search_kw_add (search, kw);
 				r_search_begin (core->search);
 				param.aes_search = true;
