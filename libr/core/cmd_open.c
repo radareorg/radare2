@@ -1703,8 +1703,8 @@ static int cmd_open(void *data, const char *input) {
 					}
 					char *fname = strdup (desc->name);
 					if (fname) {
-						r_core_file_reopen (core, fname, perms, 0);
 						r_core_bin_load_structs (core, fname);
+						r_core_file_reopen (core, fname, perms, 0);
 						free (fname);
 					}
 					break;
