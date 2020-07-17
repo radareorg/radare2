@@ -480,8 +480,11 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 					hdr->file_names[count].mod_time = mod_time;
 					hdr->file_names[count].file_len = file_len;
 				}
-				free (comp_dir);
-				free (pinclude_dir);
+				if (comp_dir) {
+					R_FREE (include_dir);
+					R_FREE (comp_dir);
+				}
+				R_FREE (pinclude_dir);
 			}
 			count++;
 			if (mode == R_MODE_PRINT && i) {

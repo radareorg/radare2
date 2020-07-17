@@ -317,22 +317,30 @@ static st32 parse_type (const RBinDwarfDie *all_dies, const ut64 count,
 		break;
 	case DW_TAG_volatile_type:
 		type_idx = find_attr_idx (die, DW_AT_type);
-		parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size);
+		if (type_idx != -1) {
+			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size);
+		}
 		r_strbuf_append (strbuf, " volatile");
 		break;
 	case DW_TAG_restrict_type:
 		type_idx = find_attr_idx (die, DW_AT_type);
-		parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size);
+		if (type_idx != -1) {
+			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size);
+		}
 		r_strbuf_append (strbuf, " restrict");
 		break;
 	case DW_TAG_rvalue_reference_type:
 		type_idx = find_attr_idx (die, DW_AT_type);
-		parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size);
+		if (type_idx != -1) {
+			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size);
+		}
 		r_strbuf_append (strbuf, " &&");
 		break;
 	case DW_TAG_reference_type:
 		type_idx = find_attr_idx (die, DW_AT_type);
-		parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size);
+		if (type_idx != -1) {
+			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size);
+		}
 		r_strbuf_append (strbuf, " &");
 		break;
 	default:
