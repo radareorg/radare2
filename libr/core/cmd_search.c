@@ -31,7 +31,7 @@ static const char *help_msg_slash_m[] = {
 
 static const char *help_msg_slash[] = {
 	"Usage:", "/[!bf] [arg]", "Search stuff (see 'e??search' for options)\n"
-	"|Use io.va for searching in non virtual addressing spaces",
+				  "|Use io.va for searching in non virtual addressing spaces",
 	"/", " foo\\x00", "search for string 'foo\\0'",
 	"/j", " foo\\x00", "search for string 'foo\\0' (json output)",
 	"/!", " ff", "search for first occurrence not matching, command modifier",
@@ -40,7 +40,7 @@ static const char *help_msg_slash[] = {
 	"//", "", "repeat last search",
 	"/a", "[?][1aoditfmsltf] jmp eax", "assemble opcode and search its bytes",
 	"/b", "", "search backwards, command modifier, followed by other command",
-	"/c", "[ar]", "search for crypto materials",
+	"/c", "[?][adr]", "search for crypto materials",
 	"/d", " 101112", "search for a deltified sequence of bytes",
 	"/e", " /E.F/i", "match regular expression",
 	"/E", " esil-expr", "offset matching given esil expressions $$ = here",
@@ -2355,7 +2355,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 	if (param->inverse) {
 		core->search->maxhits = 1;
 	}
-	if (core->search->n_kws > 0 || param->crypto_search) {
+	if (core->search->n_kws > 0) {
 		/* set callback */
 		/* TODO: handle last block of data */
 		/* TODO: handle ^C */
@@ -2399,10 +2399,10 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 			}
 
 			const ut64 from = itv.addr, to = r_itv_end (itv),
-					from1 = search->bckwrds ? to : from,
-					to1 = search->bckwrds ? from : to;
+				   from1 = search->bckwrds? to: from,
+				   to1 = search->bckwrds? from: to;
 			ut64 len;
-			for (at = from1; at != to1; at = search->bckwrds ? at - len : at + len) {
+			for (at = from1; at != to1; at = search->bckwrds? at - len: at + len) {
 				print_search_progress (at, to1, search->nhits, param);
 				if (r_cons_is_breaked ()) {
 					eprintf ("\n\n");
@@ -2422,22 +2422,20 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 					}
 					(void)r_io_read_at (core->io, at, buf, len);
 				}
-				if (param->crypto_search) {
-					// TODO support backward search
-					int t = 0;
-					if (param->aes_search) {
-						t = r_search_aes_update (core->search, at, buf, len);
-					} else if (param->privkey_search) {
-						t = r_search_privkey_update (core->search, at, buf, len);
+				r_search_update (core->search, at, buf, len);
+				if (param->aes_search) {
+					// Adjust length to search between blocks.
+					if (len == core->blocksize) {
+						len = len - 39;
 					}
-					if (!t || t > 1) {
-						break;
+				} else if (param->privkey_search) {
+					// Adjust length to search between blocks.
+					if (len == core->blocksize) {
+						len = len - 10;
 					}
-				} else {
-					(void)r_search_update (core->search, at, buf, len);
-					if (core->search->maxhits > 0 && core->search->nhits >= core->search->maxhits) {
-						goto done;
-					}
+				}
+				if (core->search->maxhits > 0 && core->search->nhits >= core->search->maxhits) {
+					goto done;
 				}
 			}
 			print_search_progress (at, to1, search->nhits, param);
@@ -2447,7 +2445,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 				eprintf ("hits: %" PFMT64d "\n", search->nhits - saved_nhits);
 			}
 		}
-done:
+	done:
 		r_cons_break_pop ();
 		free (buf);
 	} else {
@@ -3343,6 +3341,9 @@ reread:
 			{
 				RSearchKeyword *kw;
 				kw = r_search_keyword_new_hexmask ("00", NULL);
+				// AES search is at most 40 bytes
+				kw->keyword_length = 40;
+				r_search_reset (core->search, R_SEARCH_AES);
 				r_search_kw_add (search, kw);
 				r_search_begin (core->search);
 				param.aes_search = true;
@@ -3352,6 +3353,9 @@ reread:
 			{
 				RSearchKeyword *kw;
 				kw = r_search_keyword_new_hexmask ("00", NULL);
+				// Private key search is at most 14 bytes
+				kw->keyword_length = 14;
+				r_search_reset (core->search, R_SEARCH_PRIV_KEY);
 				r_search_kw_add (search, kw);
 				r_search_begin (core->search);
 				param.privkey_search = true;

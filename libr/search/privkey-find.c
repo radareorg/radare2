@@ -60,9 +60,10 @@ static int check_fields(const ut8 *start) {
 // As defined in RFC 3447 for RSA, as defined in RFC 5915 for 
 // elliptic curves and as defined in 7 of RFC 8410 for SafeCurves
 R_API int r_search_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
-	int i, k, max, index;
+	int i, k, max, index, t;
 	RListIter *iter;
 	RSearchKeyword *kw;
+	const int old_nhits = s->nhits;
 	const ut8 rsa_versionmarker[] = { 0x02, 0x01, 0x00, 0x02 };
 	const ut8 ecc_versionmarker[] = { 0x02, 0x01, 0x01, 0x04 };
 	const ut8 safecurves_versionmarker[] = { 0x02, 0x01, 0x00, 0x30 };
@@ -71,10 +72,11 @@ R_API int r_search_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len
 		return -1;
 	}
 	r_list_foreach (s->kws, iter, kw) {
-		for (i = 2; i < len - sizeof (rsa_versionmarker); i++) {
-			if (memcmp (&buf[i], rsa_versionmarker, sizeof (rsa_versionmarker)) && 
-			memcmp (&buf[i], ecc_versionmarker, sizeof (ecc_versionmarker)) &&
-			memcmp (&buf[i], safecurves_versionmarker, sizeof (safecurves_versionmarker))) {
+		// Iteration until the remaining length is too small to contain a key.
+		for (i = 2; i < len - sizeof (rsa_versionmarker) - 4; i++) {
+			if (memcmp (&buf[i], rsa_versionmarker, sizeof (rsa_versionmarker)) &&
+				memcmp (&buf[i], ecc_versionmarker, sizeof (ecc_versionmarker)) &&
+				memcmp (&buf[i], safecurves_versionmarker, sizeof (safecurves_versionmarker))) {
 				continue;
 			}
 
@@ -98,7 +100,10 @@ R_API int r_search_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len
 
 			if (check_fields (buf + index)) {
 				parse_next_field(buf + index, &kw->keyword_length);
-				return r_search_hit_new (s, kw, from + index);
+				t = r_search_hit_new (s, kw, from + index);
+				if (t > 1) {
+					return s->nhits - old_nhits;
+				}
 			}
 		}
 	}
