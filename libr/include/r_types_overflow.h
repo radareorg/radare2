@@ -7,9 +7,9 @@
 // if ((x > 0) && (a > INT_MAX - x)) /* `a + x` would overflow */;
 // if ((x < 0) && (a < INT_MIN - x)) /* `a + x` would underflow */;
 #define SZT_ADD_OVFCHK(x,y) ((SIZE_MAX - (x)) < (y))
-#define SSZT_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > SSIZE_MAX - (x))) || ((x) < 0 && (a) < - (x)))
+#define SSZT_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > SSIZE_MAX - (x))) || (((x) < 0) && (a) < - (x)))
 #define UT64_ADD_OVFCHK(x,y) ((UT64_MAX - (x)) < (y))
-#define ST64_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > ST64_MAX - (x))) || ((x) < 0 && (a) < - (x)))
+#define ST64_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > ST64_MAX - (x))) || (((x) < 0) && (a) < - (x)))
 #define UT32_ADD_OVFCHK(x,y) ((UT32_MAX - (x)) < (y))
 #define ST32_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > ST32_MAX - (x))) || (((x) < 0) && (a) < - (x)))
 #define UT16_ADD_OVFCHK(x,y) ((UT16_MAX - (x)) < (y))
@@ -40,14 +40,14 @@
 //if (a > INT_MAX / x) /* `a * x` would overflow */;
 //if ((a < INT_MIN / x)) /* `a * x` would underflow */;
 #define SZT_MUL_OVFCHK(x,y) ((y) && (x) > (SIZE_MAX / (y)))
-#define SSZT_MUL_OVFCHK(x,y) ((y) && (x) > (SSIZE_MAX / (y)))
+#define SSZT_MUL_OVFCHK(x,y) (((y) && (x) > (SSIZE_MAX / (y))) || ((((x) == -1) && ((y) == (SSIZE_MAX + 1)))) || ((y) == -1 && (x) == (SSIZE_MAX + 1)))
 #define UT64_MUL_OVFCHK(x,y) ((y) && (x) > (UT64_MAX / (y)))
-#define ST64_MUL_OVFCHK(x,y) ((y) && (x) > (ST64_MAX / (y)))
+#define ST64_MUL_OVFCHK(x,y) (((y) && (x) > (ST64_MAX / (y))) || ((((x) == -1) && ((y) == LONG_MIN))) || ((y) == -1 && (x) == LONG_MIN))
 #define UT32_MUL_OVFCHK(x,y) ((y) && (x) > (UT32_MAX / (y)))
-#define ST32_MUL_OVFCHK(x,y) ((y) && (x) > (ST32_MAX / (y)))
+#define ST32_MUL_OVFCHK(x,y) (((y) && (x) > (ST32_MAX / (y))) || ((((x) == -1) && ((y) == INT_MIN))) || ((y) == -1 && (x) == INT_MIN))
 #define UT16_MUL_OVFCHK(x,y) ((y) && (x) > (UT16_MAX / (y)))
-#define ST16_MUL_OVFCHK(x,y) ((y) && (x) > (ST16_MAX / (y)))
+#define ST16_MUL_OVFCHK(x,y) (((y) && (x) > (ST16_MAX / (y))) || ((((x) == -1) && ((y) == SHRT_MIN))) || ((y) == -1 && (x) == SHRT_MIN))
 #define UT8_MUL_OVFCHK(x,y) ((y) && (x) > (UT8_MAX / (y)))
-#define ST8_MUL_OVFCHK(x,y) ((y) && (x) > (ST8_MAX / (y)))
+#define ST8_MUL_OVFCHK(x,y) (((y) && (x) > (ST8_MAX / (y))) || ((((x) == -1) && ((y) == CHAR_MIN))) || ((y) == -1 && (x) == CHAR_MIN))
 
 #endif
