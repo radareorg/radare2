@@ -185,7 +185,6 @@ static inline void remove_rop_directory(char *prjDir) {
 
 		free (rop_d);
 }
-
 R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 	if (r_sandbox_enable (0)) {
 		eprintf ("Cannot delete project in sandbox mode\n");
