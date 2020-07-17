@@ -1072,3 +1072,17 @@ EXPECT=<<EOF
 main 0xbf9c [DATA] add r0, pc
 EOF
 RUN
+
+NAME=thumb bx lr
+FILE=-
+CMDS=<<EOF
+wx 000090e50fe0a0e113ff2fe1000090e51eff2fe1
+e asm.arch=arm
+e asm.bits=32
+af
+afi~size
+EOF
+EXPECT=<<EOF
+size: 20
+EOF
+RUN
