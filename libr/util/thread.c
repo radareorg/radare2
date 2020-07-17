@@ -9,6 +9,10 @@
 #include <mach/thread_policy.h>
 #endif
 
+#if __sun
+#include <sys/pset.h>
+#endif
+
 #if __HAIKU__
 #include <kernel/scheduler.h>
 #endif
@@ -168,6 +172,19 @@ R_API bool r_th_setaffinity(RThread *th, int cpuid) {
 		eprintf ("Failed to set cpu affinity\n");
 		return false;
 	}
+#elif __sun
+	psetid_t c;
+
+	pset_create (&c);
+	pset_assign (c, cpuid, NULL);
+
+	if (pset_bind (c, P_PID, getpid (), NULL)) {
+		pset_destroy (c);
+		eprintf ("Failed to set cpu affinity\n");
+		return false;
+	}
+
+	pset_destroy (c);
 #else
 #pragma message("warning r_th_setaffinity not implemented")
 #endif
