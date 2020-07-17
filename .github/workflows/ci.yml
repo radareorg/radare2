@@ -127,7 +127,7 @@ jobs:
   build-centos6:
     name: Build CentOS 6
     runs-on: ubuntu-latest
-    if: contains(github.ref, 'centos') || contains(github.ref, 'release-') || github.event_name == 'schedule'
+    if: contains(github.ref, 'centos')
     container: centos:6
     steps:
     - name: Install tools
