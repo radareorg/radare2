@@ -2422,26 +2422,20 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 					}
 					(void)r_io_read_at (core->io, at, buf, len);
 				}
-				if (param->crypto_search) {
-					// TODO support backward search
-					int t = 0;
-					if (param->aes_search) {
-						t = r_search_aes_update (core->search, at, buf, len);
-						// Adjuste length to search between blocks.
-						if (len == core->blocksize) {
-							len = len - 39;
-						}
-					} else if (param->privkey_search) {
-						t = r_search_privkey_update (core->search, at, buf, len);
+				r_search_update (core->search, at, buf, len);
+				if (param->aes_search) {
+					// Adjust length to search between blocks.
+					if (len == core->blocksize) {
+						len = len - 39;
 					}
-					if (!t || t > 1) {
-						break;
+				} else if (param->privkey_search) {
+					// Adjust length to search between blocks.
+					if (len == core->blocksize) {
+							len = len - 14;
 					}
-				} else {
-					(void)r_search_update (core->search, at, buf, len);
-					if (core->search->maxhits > 0 && core->search->nhits >= core->search->maxhits) {
-						goto done;
-					}
+				}
+				if (core->search->maxhits > 0 && core->search->nhits >= core->search->maxhits) {
+					goto done;
 				}
 			}
 			print_search_progress (at, to1, search->nhits, param);
@@ -3347,8 +3341,9 @@ reread:
 			{
 				RSearchKeyword *kw;
 				kw = r_search_keyword_new_hexmask ("00", NULL);
-				// AES search is at most 40 bytes.
+				// AES search is at most 40 bytes
 				kw->keyword_length = 40;
+				r_search_reset (core->search, R_SEARCH_AES);
 				r_search_kw_add (search, kw);
 				r_search_begin (core->search);
 				param.aes_search = true;
@@ -3358,6 +3353,9 @@ reread:
 			{
 				RSearchKeyword *kw;
 				kw = r_search_keyword_new_hexmask ("00", NULL);
+				// Private key search is at most 14 bytes
+				kw->keyword_length = 14;
+				r_search_reset (core->search, R_SEARCH_PRIV_KEY);
 				r_search_kw_add (search, kw);
 				r_search_begin (core->search);
 				param.privkey_search = true;
