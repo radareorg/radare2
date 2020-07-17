@@ -18,14 +18,13 @@ jobs:
   # TODO: build r2-bindings
 
   build-and-test:
-    name: ${{ matrix.name }}
+    name: ${{ matrix.name }}-tests-${{ matrix.run_tests }}
     runs-on: ${{ matrix.os }}
-    if: true
     timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
-        name: [linux-acr-gcc-tests, linux-acr-clang-tests, linux-meson-gcc-tests, linux-meson-gcc-newshell-tests, macos-clang-tests]
+        name: [linux-acr-gcc, linux-acr-clang, linux-meson-gcc, linux-meson-gcc-newshell, macos-clang]
         include:
           - name: linux-acr-gcc
             os: ubuntu-latest
