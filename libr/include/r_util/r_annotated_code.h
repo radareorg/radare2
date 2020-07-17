@@ -35,7 +35,6 @@ typedef enum r_syntax_highlight_type_t {
 typedef enum r_code_annotation_type_t {
 	R_CODE_ANNOTATION_TYPE_OFFSET,
 	R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT,
-	R_CODE_ANNOTATION_TYPE_REFERENCE,
 	R_CODE_ANNOTATION_TYPE_FUNCTION_NAME,
 	R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE,
 	R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE
@@ -55,6 +54,10 @@ typedef struct r_code_annotation_t {
 			RSyntaxHighlightType type;
 		} syntax_highlight;
 
+		/** Information in annotations of type R_CODE_ANNOTATION_TYPE_FUNCTION_NAME,
+		 * R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE, and R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE
+		 * will be stored in the struct name reference in this union.
+		 */
 		struct {
 			char *name;
 			ut64 offset; // address
