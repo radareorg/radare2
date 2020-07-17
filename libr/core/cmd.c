@@ -1460,11 +1460,11 @@ static int cmd_kuery(void *data, const char *input) {
 
 			pj_s (pj, cur_cmd);
 
+			free (next_cmd);
 			next_cmd = r_str_newf ("anal/%s/*", cur_cmd);
 			temp_storage = sdb_querys (s, NULL, 0, next_cmd);
 
 			if (!temp_storage) {
-				pj_s (pj,"[]");
 				out += cur_pos - out + 1;
 				continue;
 			}
@@ -1475,17 +1475,17 @@ static int cmd_kuery(void *data, const char *input) {
 					break;
 				}
 				temp_cmd = r_str_ndup (temp_storage, temp_pos - temp_storage);
-				pj_s(pj, temp_cmd);
+				pj_s (pj, temp_cmd);
 				temp_storage += temp_pos - temp_storage + 1;
 			}
 			out += cur_pos - out + 1;
 		}
-
-		pj_end(pj);
-		pj_end(pj);
-		pj_end(pj);
-		char *s = pj_drain(pj);
-		r_cons_printf ("%s\" %c\\", s, 10);
+		pj_end (pj);
+		pj_end (pj);
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		r_cons_println (s);
+		R_FREE (next_cmd);
 		free (s);
 		free (next_cmd);
 		free (temp_storage);
