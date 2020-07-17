@@ -1,22 +1,24 @@
 #ifndef R_TYPES_OVERFLOW_H
 #define R_TYPES_OVERFLOW_H
 
+// TODO: Use CLANG/GCC builtins if available: __builtin_mul_overflow
+
 // ADD
 // if ((x > 0) && (a > INT_MAX - x)) /* `a + x` would overflow */;
 // if ((x < 0) && (a < INT_MIN - x)) /* `a + x` would underflow */;
 #define SZT_ADD_OVFCHK(x,y) ((SIZE_MAX - (x)) < (y))
-#define SSZT_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > SSIZE_MAX - (x))) || ((x) < 0 && (a) < SSIZE_MIN - (x)))
+#define SSZT_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > SSIZE_MAX - (x))) || ((x) < 0 && (a) < - (x)))
 #define UT64_ADD_OVFCHK(x,y) ((UT64_MAX - (x)) < (y))
-#define ST64_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > ST64_MAX - (x))) || ((x) < 0 && (a) < ST32_MIN - (x)))
+#define ST64_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > ST64_MAX - (x))) || ((x) < 0 && (a) < - (x)))
 #define UT32_ADD_OVFCHK(x,y) ((UT32_MAX - (x)) < (y))
-#define ST32_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > ST32_MAX - (x))) || ((x) < 0 && (a) < ST32_MIN - (x)))
+#define ST32_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > ST32_MAX - (x))) || (((x) < 0) && (a) < - (x)))
 #define UT16_ADD_OVFCHK(x,y) ((UT16_MAX - (x)) < (y))
 #define ST16_ADD_OVFCHK(a,b) ( \
 	   (((b) > 0) && ((a) > ST16_MAX - (b))) \
 	|| (((b) < 0) && ((a) < -(b))) \
 )
 #define UT8_ADD_OVFCHK(x,y) ((UT8_MAX - (x)) < (y))
-#define ST8_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > ST8_MAX - (x))) || ((x) < 0 && (a) < ST8_MIN - (x)))
+#define ST8_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > ST8_MAX - (x))) || ((x) < 0 && (a) < - (x)))
 
 // SUB
 // if ((x < 0) && (a > INT_MAX + x)) /* `a - x` would overflow */;
@@ -47,6 +49,5 @@
 #define ST16_MUL_OVFCHK(x,y) ((y) && (x) > (ST16_MAX / (y)))
 #define UT8_MUL_OVFCHK(x,y) ((y) && (x) > (UT8_MAX / (y)))
 #define ST8_MUL_OVFCHK(x,y) ((y) && (x) > (ST8_MAX / (y)))
-// #define ST8_MUL_OVFCHK(a,x) ((x>0) && (a)>(ST8_MIN / (x)))
 
 #endif
