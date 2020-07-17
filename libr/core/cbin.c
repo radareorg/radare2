@@ -248,10 +248,15 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 					r_cons_printf ("Cf %d %s @ %s\n", fmtsize, v, off);
 				} else if (IS_MODE_SET (mode)) {
 					ut64 addr = r_num_get (NULL, off);
-					int res = r_print_format (core->print, addr, core->block,
-							fmtsize, v, 0, NULL, NULL);
-					if (res < 0) {
-						eprintf ("Warning: Cannot register invalid format (%s)\n", v);
+					ut8 *buf = malloc (fmtsize);
+					if (buf) {
+						r_io_read_at (core->io, addr, buf, fmtsize);
+						int res = r_print_format (core->print, addr, buf,
+								fmtsize, v, 0, NULL, NULL);
+						free (buf);
+						if (res < 0) {
+							eprintf ("Warning: Cannot register invalid format (%s)\n", v);
+						}
 					}
 				}
 			}
