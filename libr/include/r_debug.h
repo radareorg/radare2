@@ -174,6 +174,7 @@ typedef struct r_debug_snap_t {
 
 #define CMP_CNUM_REG(x, y) ((x) >= ((RDebugChangeReg *)y)->cnum ? 1 : -1)
 #define CMP_CNUM_MEM(x, y) ((x) >= ((RDebugChangeMem *)y)->cnum ? 1 : -1)
+#define CMP_CNUM_CHKPT(x, y) ((x) >= ((RDebugCheckpoint *)y)->cnum ? 1 : -1)
 
 typedef struct {
 	int cnum;
@@ -185,9 +186,17 @@ typedef struct {
 	ut8 data;
 } RDebugChangeMem;
 
-typedef struct r_debug_session_t {
+typedef struct r_debug_checkpoint_t {
+	int cnum;
 	RListIter *reg[R_REG_TYPE_LAST];
 	RList *snaps; // <RDebugSnap>
+} RDebugCheckpoint;
+
+typedef struct r_debug_session_t {
+	ut32 cnum;
+	ut32 maxcnum;
+	RDebugCheckpoint *cur_chkpt;
+	RVector *checkpoints; /* RVector<RDebugCheckpoint> */
 	HtUP *memory; /* RVector<RDebugChangeMem> */
 	HtUP *registers; /* RVector<RDebugChangeReg> */
 	int /*RDebugReasonType*/ reasontype;
@@ -302,8 +311,7 @@ typedef struct r_debug_t {
 	RList *maps; // <RDebugMap>
 	RList *maps_user; // <RDebugMap>
 
-	ut32 cnum; //XXX move this into RDebugSession
-	ut32 maxcnum; //XXX move this into RDebugSession
+	bool trace_continue;
 	RAnalOp *cur_op;
 	RDebugSession *session;
 
@@ -571,11 +579,12 @@ R_API int r_debug_esil_watch_empty(RDebug *dbg);
 R_API void r_debug_esil_prestep (RDebug *d, int p);
 
 /* record & replay */
-R_API ut8 r_debug_get_byte(RDebug *dbg, ut32 cnum, ut64 addr);
-R_API void r_debug_session_restore_registers(RDebug *dbg, ut32 cnum);
-R_API void r_debug_session_restore_memory(RDebug *dbg, ut32 cnum);
+// R_API ut8 r_debug_get_byte(RDebug *dbg, ut32 cnum, ut64 addr);
+R_API bool r_debug_add_checkpoint(RDebug *dbg);
+R_API bool r_debug_session_add_reg_change(RDebugSession *session, int arena, ut64 offset, ut64 data);
+R_API bool r_debug_session_add_mem_change(RDebugSession *session, ut64 addr, ut8 data);
+R_API void r_debug_session_restore_reg_mem(RDebug *dbg, ut32 cnum);
 R_API void r_debug_session_list_memory(RDebug *dbg);
-R_API bool r_debug_session_verify_memory(RDebug *dbg);
 R_API int r_debug_trace_ins_before(RDebug *dbg);
 R_API int r_debug_trace_ins_after(RDebug *dbg);
 

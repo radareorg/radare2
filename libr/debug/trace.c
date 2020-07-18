@@ -43,34 +43,6 @@ R_API int r_debug_trace_tag (RDebug *dbg, int tag) {
 	return (dbg->trace->tag = (tag>0)? tag: UT32_MAX);
 }
 
-static void add_reg_change(RDebugSession *session, int cnum, int arena, ut64 offset, ut64 data) {
-	RVector *vreg = ht_up_find (session->registers, offset | (arena << 16), NULL);
-	if (!vreg) {
-			vreg = r_vector_new (sizeof (RDebugChangeReg), NULL, NULL);
-			if (!vreg) {
-				eprintf ("Error: creating a register vector.\n");
-				return;
-			}
-			ht_up_insert (session->registers, offset | (arena << 16), vreg);
-	}
-	RDebugChangeReg reg = {cnum, data};
-	r_vector_push (vreg, &reg);
-}
-
-static void add_mem_change(RDebugSession *session, int cnum, ut64 addr, ut8 data) {
-	RVector *vmem = ht_up_find (session->memory, addr, NULL);
-	if (!vmem) {
-		vmem = r_vector_new (sizeof (RDebugChangeMem), NULL, NULL);
-		if (!vmem) {
-			eprintf ("Error: creating a memory vector.\n");
-			return;
-		}
-		ht_up_insert (session->memory, addr, vmem);
-	}
-	RDebugChangeMem mem = {cnum, data};
-	r_vector_push (vmem, &mem);
-}
-
 R_API int r_debug_trace_ins_before(RDebug *dbg) {
 	RListIter *it, *it_tmp;
 	RAnalValue *val;
@@ -152,8 +124,7 @@ R_API int r_debug_trace_ins_after(RDebug *dbg) {
 			ut64 data = r_reg_get_value (dbg->reg, val->reg);
 
 			// add reg write
-			add_reg_change (dbg->session, dbg->cnum,
-							val->reg->arena, val->reg->offset, data);
+			r_debug_session_add_reg_change (dbg->session, val->reg->arena, val->reg->offset, data);
 			break;
 		}
 		case R_ANAL_VAL_MEM:
@@ -167,7 +138,7 @@ R_API int r_debug_trace_ins_after(RDebug *dbg) {
 			// add mem write
 			size_t i;
 			for (i = 0; i < val->memref; i++) {
-				add_mem_change (dbg->session, dbg->cnum, val->base + i, buf[i]);
+				r_debug_session_add_mem_change (dbg->session, val->base + i, buf[i]);
 			}
 			break;
 		}

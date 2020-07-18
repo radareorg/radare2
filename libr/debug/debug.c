@@ -373,7 +373,6 @@ R_API RDebug *r_debug_new(int hard) {
 	dbg->swstep = 0;
 	dbg->stop_all_threads = false;
 	dbg->trace = r_debug_trace_new ();
-	dbg->cnum = 0;
 	dbg->cb_printf = (void *)printf;
 	dbg->reg = r_reg_new ();
 	dbg->num = r_num_new (r_debug_num_callback, r_debug_str_callback, dbg);
@@ -942,15 +941,15 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 	dbg->reason.type = R_DEBUG_REASON_STEP;
 
 	if (dbg->session) {
-		if (dbg->cnum != dbg->maxcnum) {
+		if (dbg->session->cnum != dbg->session->maxcnum) {
 			steps_taken = r_debug_step_cnum (dbg, steps);
 		}
 	}
 
 	for (; steps_taken < steps; steps_taken++) {
 		if (dbg->session && dbg->recoil_mode == R_DBG_RECOIL_NONE) {
-			dbg->cnum++;
-			dbg->maxcnum++;
+			dbg->session->cnum++;
+			dbg->session->maxcnum++;
 			if (!r_debug_trace_ins_before (dbg)) {
 				eprintf ("trace_ins_before: failed");
 			}
@@ -1008,8 +1007,8 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 	if (dbg->h && dbg->h->step_over) {
 		for (; steps_taken < steps; steps_taken++) {
 			if (dbg->session && dbg->recoil_mode == R_DBG_RECOIL_NONE) {
-				dbg->cnum++;
-				dbg->maxcnum++;
+				dbg->session->cnum++;
+				dbg->session->maxcnum++;
 				r_debug_trace_ins_before (dbg);
 			}
 			if (!dbg->h->step_over (dbg)) {
@@ -1069,38 +1068,32 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 }
 
 R_API bool r_debug_goto_cnum(RDebug *dbg, ut32 cnum) {
-	if (cnum > dbg->maxcnum) {
+	if (cnum > dbg->session->maxcnum) {
 		eprintf ("Error: out of cnum range\n");
 		return false;
 	}
-	dbg->cnum = cnum;
-
-	// Restore registers
-	r_debug_session_restore_registers (dbg, cnum);
-	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, true);
-
-	// Restore memory
-	r_debug_session_restore_memory (dbg, cnum);
+	dbg->session->cnum = cnum;
+	r_debug_session_restore_reg_mem (dbg, cnum);
 
 	return true;
 }
 
 R_API int r_debug_step_back(RDebug *dbg, int steps) {
-	if (steps > dbg->cnum) {
-		steps = dbg->cnum;
+	if (steps > dbg->session->cnum) {
+		steps = dbg->session->cnum;
 	}
-	if (!r_debug_goto_cnum (dbg, dbg->cnum - steps)) {
+	if (!r_debug_goto_cnum (dbg, dbg->session->cnum - steps)) {
 		return -1;
 	}
 	return steps;
 }
 
 R_API int r_debug_step_cnum(RDebug *dbg, int steps) {
-	if (steps > dbg->maxcnum - dbg->cnum) {
-		steps = dbg->maxcnum - dbg->cnum;
+	if (steps > dbg->session->maxcnum - dbg->session->cnum) {
+		steps = dbg->session->maxcnum - dbg->session->cnum;
 	}
 
-	r_debug_goto_cnum (dbg, dbg->cnum + steps);
+	r_debug_goto_cnum (dbg, dbg->session->cnum + steps);
 
 	return steps;
 }
@@ -1115,15 +1108,41 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 	}
 
 	if (dbg->session) {
-		r_cons_break_push (NULL, NULL);
-		while (!r_cons_is_breaked ()) {
-			r_debug_step (dbg, 1);
-			if (dbg->session->reasontype != R_DEBUG_REASON_STEP) {
-				break;
+		// If the debugger is not at the end of the session
+		// Go to the end or the next breakpoint
+		if (dbg->session->cnum != dbg->session->maxcnum) {
+			bool has_bp = false;
+			RRegItem *ripc = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
+			RVector *vreg = ht_up_find (dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
+			RDebugChangeReg *reg;
+			r_vector_foreach_prev (vreg, reg) {
+				if (reg->cnum <= dbg->session->cnum) {
+					continue;
+				}
+				has_bp = r_bp_get_in (dbg->bp, reg->data, R_BP_PROT_EXEC) != NULL;
+				if (has_bp) {
+					eprintf ("hit breakpoint at: 0x%" PFMT64x " cnum: %d\n", reg->data, reg->cnum);
+					r_debug_goto_cnum (dbg, reg->cnum);
+					return dbg->tid;
+				}
 			}
+
+			r_debug_goto_cnum (dbg, dbg->session->maxcnum);
+			return dbg->tid;
 		}
-		r_cons_break_pop ();
-		return dbg->tid;
+
+		if (dbg->trace_continue) {
+			// Continuously stepping to trace each instruction until user interrupt ^C
+			r_cons_break_push (NULL, NULL);
+			while (!r_cons_is_breaked ()) {
+				r_debug_step (dbg, 1);
+				if (dbg->session->reasontype != R_DEBUG_REASON_STEP) {
+					break;
+				}
+			}
+			r_cons_break_pop ();
+			return dbg->tid;
+		}
 	}
 
 repeat:
@@ -1266,6 +1285,13 @@ repeat:
 	if (reason != R_DEBUG_REASON_BREAKPOINT) {
 		r_bp_restore (dbg->bp, false);
 	}
+
+	if (dbg->session && !dbg->trace_continue) {
+		dbg->session->cnum++;
+		dbg->session->maxcnum++;
+		r_debug_add_checkpoint (dbg);
+	}
+
 	return ret;
 }
 
@@ -1387,8 +1413,15 @@ R_API bool r_debug_continue_back(RDebug *dbg) {
 
 	RRegItem *ripc = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
 	RVector *vreg = ht_up_find (dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
+	if (!vreg) {
+		eprintf ("Error: cannot find PC change vector");
+		return false;
+	}
 	RDebugChangeReg *reg;
 	r_vector_foreach_prev (vreg, reg) {
+		if (reg->cnum >= dbg->session->cnum) {
+			continue;
+		}
 		has_bp = r_bp_get_in (dbg->bp, reg->data, R_BP_PROT_EXEC) != NULL;
 		if (has_bp) {
 			cnum = reg->cnum;
@@ -1400,8 +1433,8 @@ R_API bool r_debug_continue_back(RDebug *dbg) {
 	if (has_bp) {
 		r_debug_goto_cnum (dbg, cnum);
 	} else {
-		if (dbg->maxcnum > 0) {
-			r_debug_goto_cnum (dbg, 1);
+		if (dbg->session->maxcnum > 0) {
+			r_debug_goto_cnum (dbg, 0);
 		}
 	}
 

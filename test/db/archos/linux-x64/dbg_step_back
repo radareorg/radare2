@@ -1,12 +1,14 @@
 NAME=dbg.stepback
 FILE=bins/elf/analysis/ls-linux-x86_64-zlul
-ARGS=-d
+ARGS=-d -e dbg.trace_continue=false
 CMDS=<<EOF
 db main
 db 0x004028fe
+db 0x004028f9
 dc
 dts+
 dc
+ds
 dsb
 dr rip
 dk 9

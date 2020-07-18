@@ -4885,6 +4885,7 @@ static int cmd_debug(void *data, const char *input) {
 					break;
 				}
 				core->dbg->session = r_debug_session_new (core->dbg);
+				r_debug_add_checkpoint (core->dbg);
 				break;
 			case '-': // "dts-"
 				if (!core->dbg->session) {
