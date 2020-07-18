@@ -1049,7 +1049,7 @@ static int parse_line_raw(const RBin *a, const ut8 *obuf,
 			tmp_read = parse_opcodes (a, buf, buf_end - buf, &hdr, &regs, mode);
 			bytes_read += tmp_read;
 			buf += tmp_read; // Move in the buffer forward
-		} while (bytes_read < buf_size || tmp_read != 0); // if nothing is read -> error, exit
+		} while (bytes_read < buf_size && tmp_read != 0); // if nothing is read -> error, exit
 
 		line_header_fini (&hdr);
 	}
