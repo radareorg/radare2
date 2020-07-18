@@ -8,6 +8,7 @@ skip_tags: true
 branches:
   only:
     - master
+    - decompiler-refactoring
 
 # Environment variables
 environment:
