@@ -110,6 +110,7 @@ static int hack_handle_dp_reg(ut32 insn, char **buf_asm) {
 
 static int hack_handle_ldst(ut32 insn, char **buf_asm) {
 	char *mnemonic = NULL;
+	bool ignore_imm9 = false;
 	const ut8 op0 = (insn >> 28) & 0xf;
 	const ut8 op1 = (insn >> 26) & 0x1;
 	ut8 op2 = (insn >> 23) & 0x3;
@@ -159,19 +160,21 @@ static int hack_handle_ldst(ut32 insn, char **buf_asm) {
 			switch (opc) {
 			case 0:
 				mnemonic = "stzgm";
+				ignore_imm9 = true;
 				break;
 			case 1:
 				mnemonic = "ldg";
 				break;
 			case 2:
 				mnemonic = "stgm";
+				ignore_imm9 = true;
 				break;
 			case 3:
 				mnemonic = "ldgm";
+				ignore_imm9 = true;
 				break;
 			}
-			if (!strcmp (mnemonic, "stgm") || !strcmp (mnemonic, "stzgm") ||
-				!strcmp (mnemonic, "ldgm")) {
+			if (ignore_imm9) {
 				*buf_asm = r_str_newf ("%s x%d, [x%d]",
 					mnemonic, Xt, Xn);	
 			} else {
