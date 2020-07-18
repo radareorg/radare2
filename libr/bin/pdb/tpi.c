@@ -672,6 +672,7 @@ static STypeInfo parse_base_type(ut32 idx) {
 		base_type->type = strdup ("unknown_t");
 		break;
 	}
+	base_type->base_type = idx;
 	type.type_info = base_type;
 	type.leaf_type = eLF_SIMPLE_TYPE;
 	return type;
