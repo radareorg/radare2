@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2019 - pancake & Skia */
+/* radare - LGPL - Copyright 2007-2020 - pancake & Skia */
 
 #include "r_cons.h"
 #include "r_util.h"
@@ -57,17 +57,22 @@ static float updateAddr(const ut8 *buf, int len, int endian, ut64 *addr, ut64 *a
 
 static int r_get_size(RNum *num, ut8 *buf, int endian, const char *s) {
 	int size = 0, len = strlen (s);
-	ut64 addr;
-
 	if (s[0] == '*' && len >= 4) { // value pointed by the address
+		ut64 addr;
 		int offset = (int)r_num_math (num, s + 1);
 		(void)updateAddr (buf + offset, 999, endian, &addr, NULL);
 		return addr;
-	} else {
-		// flag handling doesnt seems to work here
-		size = r_num_math (num, s);
 	}
-	return size;
+	// flag handling doesnt seems to work here
+	return size = r_num_math (num, s);
+}
+
+static void r_print_format_u128(const RPrint* p, int endian, int mode,
+		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
+	ut64 low = r_read_ble64 (buf, endian);
+	ut64 hig = r_read_ble64 (buf + 8, endian);
+	p->cb_printf ("0x%016"PFMT64x"", hig);
+	p->cb_printf ("%016"PFMT64x"\n", low);
 }
 
 static void r_print_format_quadword(const RPrint* p, int endian, int mode,
@@ -1623,6 +1628,9 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 		case 'F':
 			size += tabsize * 8;
 			break;
+		case 'Q': // uint128
+			size += tabsize * 16;
+			break;
 		case 'z':
 		case 'Z':
 			size += tabsize;
@@ -1758,9 +1766,9 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 			}
 			i++;
 			break;
+		case 'u':
 		case 'D':
 		case 'T':
-		case 'u':
 			//TODO complete this.
 		default:
 			//idx--; //Does this makes sense?
@@ -1857,6 +1865,9 @@ static char *get_format_type(const char fmt, const char arg) {
 		break;
 	case 'u':
 		type = strdup ("uleb128_t");
+		break;
+	case 'Q':
+		type = strdup ("uint128_t");
 		break;
 	case 'w':
 		type = strdup ("uint16_t");
@@ -1985,10 +1996,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		}
 		for (i = 0; i < nargs; i++) {
 			const char *tmp = r_str_word_get0 (args, i);
-			const char *nm = NULL;
-			int len;
-			nm = r_str_rchr (tmp, NULL, ')');
-			len = strlen (nm ? nm + 1 : tmp);
+			const char *nm = r_str_rchr (tmp, NULL, ')');
+			int len = strlen (nm ? nm + 1 : tmp);
 			if (len > maxl) {
 				maxl = len;
 			}
@@ -2362,7 +2371,15 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					break;
 				case 'q':
 					r_print_format_quadword (p, endian, mode, setval, seeki, buf, i, size);
-					i += (size==-1) ? 8 : 8*size;
+					i += (size == -1) ? 8 : 8  * size;
+					break;
+				case 'Q':
+					if (i + 16 < len) {
+						r_print_format_u128 (p, endian, mode, setval, seeki, buf, i, size);
+					} else {
+						eprintf ("Warning: truncated uint128\n");
+					}
+					i += (size == -1) ? 16 : 16 * size;
 					break;
 				case 'b':
 					r_print_format_byte (p, endian, mode, setval, seeki, buf, i, size);

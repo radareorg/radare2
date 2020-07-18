@@ -376,6 +376,7 @@ static const char *help_detail_pf[] = {
 	" ", "o", "octal value (4 byte)",
 	" ", "p", "pointer reference (2, 4 or 8 bytes)",
 	" ", "q", "quadword (8 bytes)",
+	" ", "Q", "uint128_t (16 bytes)",
 	" ", "r", "CPU register `pf r (eax)plop`",
 	" ", "s", "32bit pointer to string (4 bytes)",
 	" ", "S", "64bit pointer to string (8 bytes)",
