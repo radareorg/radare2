@@ -729,6 +729,21 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format) {
 			case PDB_COMPLEX64:
 			case PDB_COMPLEX80:
 			case PDB_COMPLEX128:
+				// TODO these when formatting for them will exist
+				return -1;
+				break;
+			case PDB_FLOAT32:
+			case PDB_FLOAT32_PP:
+				member_format = "f";
+				break;
+			case PDB_FLOAT64:
+				member_format = "F";
+				break;
+			case PDB_FLOAT16:
+			case PDB_FLOAT48:
+			case PDB_FLOAT80:
+			case PDB_FLOAT128:
+				// TODO these when formatting for them will exist
 				return -1;
 				break;
 			default:
@@ -769,7 +784,9 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format) {
 	} else {
 		r_warn_if_reached (); // Unhandled type format
 	}
-
+	if (!member_format) {
+		return -1;
+	}
 	r_strbuf_appendf (format, "%s", member_format);
 	return 0;
 }
@@ -1067,10 +1084,10 @@ static void print_types_json(const R_PDB *pdb, const RList *types) {
 }
 
 /**
- * @brief Creates pf commands from PDB types
+ * @brief Creates pf commands from PDB types - "idpi*" command
  * 
- * @param pdb 
- * @param types 
+ * @param pdb pdb structure for printing function
+ * @param types List of types
  */
 static void print_types_format(const R_PDB *pdb, const RList *types) {
 	r_return_if_fail (pdb && types);
@@ -1120,7 +1137,10 @@ static void print_types_format(const R_PDB *pdb, const RList *types) {
 			case eLF_STRUCTURE:
 			case eLF_CLASS:
 			case eLF_UNION:
-				build_member_format (member_info, &format);
+				if (build_member_format (member_info, &format) == -1) { // if failed
+					// R_FREE (member_name);
+					// goto member_fail; // skip to the next one, we can't build format from this
+				}
 				break;
 			default:
 				r_warn_if_reached ();
@@ -1134,6 +1154,9 @@ static void print_types_format(const R_PDB *pdb, const RList *types) {
 		R_FREE (name);
 		r_strbuf_fini (&format);
 		r_strbuf_fini (&member_names);
+	// member_fail: // if we can't print whole type correctly, don't print at all
+	// 	r_strbuf_fini (&format);
+	// 	r_strbuf_fini (&member_names);
 	}
 }
 
