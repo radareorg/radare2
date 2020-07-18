@@ -890,8 +890,8 @@ static const ut8 *parse_std_opcode(
 		break;
 	case DW_LNS_const_add_pc:
 		adj_opcode = 255 - hdr->opcode_base;
-		if (hdr->line_range > 0) {
-			op_advance = adj_opcode / hdr->line_range;
+		if (hdr->line_range > 0) { // to dodge division by zero
+			op_advance = (adj_opcode / hdr->line_range) * hdr->min_inst_len;
 		} else {
 			op_advance = 0;
 		}
