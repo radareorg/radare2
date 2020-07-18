@@ -662,7 +662,7 @@ static bool project_save_script(RCore *core, const char *file, int opts) {
 	r_cons_singleton ()->fdout = fd;
 	r_cons_singleton ()->context->is_interactive = false;
 	r_str_write (fd, "# r2 rdb project file\n");
-	if (!core->bin->is_debugger && !r_config_get_i(core->config, "asm.emu")) {
+	if (!core->bin->is_debugger && !r_config_get_i (core->config, "asm.emu")) {
 		char *fpath = r_file_abspath (core->bin->file);
 		if (fpath != NULL){
 		char *reopen = r_str_newf ("\"o %s\"\n",fpath);
