@@ -786,7 +786,7 @@ static const ut8 *parse_spec_opcode(
 		// line line-range information. move away
 		return NULL;
 	}
-	advance_adr = adj_opcode / hdr->line_range;
+	advance_adr = (adj_opcode / hdr->line_range) * hdr->min_inst_len;
 	regs->address += advance_adr;
 	int line_increment =  hdr->line_base + (adj_opcode % hdr->line_range);
 	regs->line += line_increment;
@@ -1042,13 +1042,14 @@ static int parse_line_raw(const RBin *a, const ut8 *obuf,
 			line_header_fini (&hdr);
 			return false;
 		}
+		size_t tmp_read = 0;
 		// we read the whole compilation unit (that might be composed of more sequences)
 		do {
 			// reads one whole sequence
-			size_t tmp_read = parse_opcodes (a, buf, buf_size, &hdr, &regs, mode);
+			tmp_read = parse_opcodes (a, buf, buf_end - buf, &hdr, &regs, mode);
 			bytes_read += tmp_read;
 			buf += tmp_read; // Move in the buffer forward
-		} while (bytes_read < buf_size);
+		} while (bytes_read < buf_size || tmp_read != 0); // if nothing is read -> error, exit
 
 		line_header_fini (&hdr);
 	}
