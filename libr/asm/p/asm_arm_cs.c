@@ -60,7 +60,7 @@ static int hack_handle_dp_imm(ut32 insn, char **buf_asm) {
 		const ut8 uimm4 = (insn >> 10) & 0xf;
 		const ut8 Xn = (insn >> 5) & 0x1f;
 		const ut8 Xd = (insn >> 0) & 0x1f;
-		*buf_asm = sdb_fmt ("%s x%d, x%d, #0x%x, #0x%x",
+		*buf_asm = r_str_newf ("%s x%d, x%d, #0x%x, #0x%x",
 			mnemonic, Xd, Xn, uimm6, uimm4);
 		*buf_asm = r_str_replace (*buf_asm, "x31", "sp", 1);
 		return 0;
@@ -95,12 +95,12 @@ static int hack_handle_dp_reg(ut32 insn, char **buf_asm) {
 		const ut8 Xd = (insn >> 0) & 0x1f;
 		if (Xm == 31 && !strcmp (mnemonic, "irg")) {
 			// Xm is xzr, discard it
-			*buf_asm = sdb_fmt ("%s x%d, x%d", mnemonic, Xd, Xn);
+			*buf_asm = r_str_newf ("%s x%d, x%d", mnemonic, Xd, Xn);
 		} else if (!strcmp (mnemonic, "subps") && S == 1 && Xd == 0x1f) {
 			// ccmp is an alias for subps when S == '1' && Xd == '11111'
-			*buf_asm = sdb_fmt ("cmpp x%d, x%d", Xn, Xm);
+			*buf_asm = r_str_newf ("cmpp x%d, x%d", Xn, Xm);
 		} else {
-			*buf_asm = sdb_fmt ("%s x%d, x%d, x%d", mnemonic, Xd, Xn, Xm);
+			*buf_asm = r_str_newf ("%s x%d, x%d, x%d", mnemonic, Xd, Xn, Xm);
 		}
 		*buf_asm = r_str_replace (*buf_asm, "x31", "sp", 1);
 		return 0;
@@ -141,15 +141,15 @@ static int hack_handle_ldst(ut32 insn, char **buf_asm) {
 
 			switch (op2) {
 			case 1:
-				*buf_asm = sdb_fmt ("%s x%d, [x%d], #0x%x",
+				*buf_asm = r_str_newf ("%s x%d, [x%d], #0x%x",
 					mnemonic, Xt, Xn, imm9);
 				break;
 			case 2:
-				*buf_asm = sdb_fmt ("%s x%d, [x%d, #0x%x]",
+				*buf_asm = r_str_newf ("%s x%d, [x%d, #0x%x]",
 					mnemonic, Xt, Xn, imm9);
 				break;			
 			case 3:
-				*buf_asm = sdb_fmt ("%s x%d, [x%d, #0x%x]!",
+				*buf_asm = r_str_newf ("%s x%d, [x%d, #0x%x]!",
 					mnemonic, Xt, Xn, imm9);
 				break;			
 			}			
@@ -172,10 +172,10 @@ static int hack_handle_ldst(ut32 insn, char **buf_asm) {
 			}
 			if (!strcmp (mnemonic, "stgm") || !strcmp (mnemonic, "stzgm") ||
 				!strcmp (mnemonic, "ldgm")) {
-				*buf_asm = sdb_fmt ("%s x%d, [x%d]",
+				*buf_asm = r_str_newf ("%s x%d, [x%d]",
 					mnemonic, Xt, Xn);	
 			} else {
-				*buf_asm = sdb_fmt ("%s x%d, [x%d, #0x%x]",
+				*buf_asm = r_str_newf ("%s x%d, [x%d, #0x%x]",
 					mnemonic, Xt, Xn, imm9);
 			}
 			*buf_asm = r_str_replace (*buf_asm, "x31", "sp", 1);
@@ -194,15 +194,15 @@ static int hack_handle_ldst(ut32 insn, char **buf_asm) {
 			const ut8 Xt = (insn >> 0) & 0x1f;
 			switch (op2) {
 			case 1:
-				*buf_asm = sdb_fmt ("stgp x%d, x%d, [x%d], #0x%x",
+				*buf_asm = r_str_newf ("stgp x%d, x%d, [x%d], #0x%x",
 					Xt, Xt2, Xn, imm7);
 				break;
 			case 2:
-				*buf_asm = sdb_fmt ("stgp x%d, [x%d, #0x%x]",
+				*buf_asm = r_str_newf ("stgp x%d, [x%d, #0x%x]",
 					Xt, Xt2, Xn, imm7);
 				break;
 			case 3:
-				*buf_asm = sdb_fmt ("stgp x%d, [x%d, #0x%x]!",
+				*buf_asm = r_str_newf ("stgp x%d, [x%d, #0x%x]!",
 					Xt, Xt2, Xn, imm7);
 				break;
 			default:
@@ -217,7 +217,7 @@ static int hack_handle_ldst(ut32 insn, char **buf_asm) {
 
 static int hack_arm_asm(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int r = -1;
-	char *buf_asm;
+	char *buf_asm = NULL;
 	ut32 *insn = (ut32 *)buf;
 	int insn_class = (*insn >> 25) & 0xf;
 	if (a->bits == 64 && len >= 4) {
@@ -251,6 +251,7 @@ static int hack_arm_asm(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 				r_str_replace_char (buf_asm, '#', 0);
 			}
 			r_strbuf_set (&op->buf_asm, buf_asm);
+			free (buf_asm);
 			return op->size = 4;
 		}
 	}
