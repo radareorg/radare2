@@ -245,7 +245,7 @@ R_API R2Pipe *r2pipe_open(const char *cmd) {
 	}
 #if __WINDOWS__
 	w32_createPipe (r2p, cmd);
-	r2pipe->child = (int)(r2p->pipe);
+	r2p->child = (int)(r2p->pipe);
 #else
 	int r = pipe (r2p->input);
 	if (r != 0) {
