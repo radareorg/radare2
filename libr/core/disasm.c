@@ -4213,7 +4213,11 @@ static void ds_print_relocs(RDisasmState *ds) {
 					rel->type, demname ? demname : rel->symbol->name,
 					rel->symbol->vaddr);
 			if (rel->addend) {
-				r_cons_printf (" + 0x%" PFMT64x, rel->addend);
+				if (rel->addend > 0) {
+					r_cons_printf (" + 0x%" PFMT64x, rel->addend);
+				} else {
+					r_cons_printf (" - 0x%" PFMT64x, -rel->addend);
+				}
 			}
 		} else {
 			r_cons_printf ("; RELOC %d ", rel->type);
