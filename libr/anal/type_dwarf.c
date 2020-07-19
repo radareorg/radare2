@@ -24,19 +24,6 @@ static inline bool is_type_tag(ut64 tag_code) {
 		tag_code == DW_TAG_base_type ||
 		tag_code == DW_TAG_typedef);
 }
- 
-static void struct_type_fini(void *e, void *user) {
-	(void)user;
-	RAnalStructMember *member = e;
-	free ((char *)member->name);
-	free ((char *)member->type);
-}
-
-static void enum_type_fini(void *e, void *user) {
-	(void)user;
-	RAnalEnumCase *cas = e;
-	free ((char *)cas->name);
-}
 
 /**
  * @brief Finds index of a particular attribute of a DIE

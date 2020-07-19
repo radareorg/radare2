@@ -146,20 +146,38 @@ R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn) {
 	return uniq;
 }
 
-static void enum_type_fini(void *e, void *user) {
+/**
+ * @brief Function to free a RAnalBaseTypeEnum
+ * 
+ * @param e 
+ * @param user 
+ */
+R_API void enum_type_fini(void *e, void *user) {
 	(void)user;
 	RAnalEnumCase *cas = e;
 	free ((char *)cas->name);
 }
 
-static void struct_type_fini(void *e, void *user) {
+/**
+ * @brief Function to free a RAnalBaseTypeStruct
+ * 
+ * @param e 
+ * @param user 
+ */
+R_API void struct_type_fini(void *e, void *user) {
 	(void)user;
 	RAnalStructMember *member = e;
 	free ((char *)member->name);
 	free ((char *)member->type);
 }
 
-static void union_type_fini(void *e, void *user) {
+/**
+ * @brief Function to free a RAnalBaseTypeUnion
+ * 
+ * @param e 
+ * @param user 
+ */
+R_API void union_type_fini(void *e, void *user) {
 	(void)user;
 	RAnalUnionMember *member = e;
 	free ((char *)member->name);
