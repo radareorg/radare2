@@ -532,10 +532,10 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 	d->diff_cmd = "git diff --no-index";
 #endif
 	if (diffchar) {
-		RDiffChar *diffchar = r_diffchar_new ((const ut8 *)expected, (const ut8 *)actual);
-		if (diffchar) {
-			r_diffchar_print (diffchar);
-			r_diffchar_free (diffchar);
+		RDiffChar *diff = r_diffchar_new ((const ut8 *)expected, (const ut8 *)actual);
+		if (diff) {
+			r_diffchar_print (diff);
+			r_diffchar_free (diff);
 			return;
 		}
 		d->diff_cmd = "git diff --no-index --word-diff=porcelain --word-diff-regex=.";
