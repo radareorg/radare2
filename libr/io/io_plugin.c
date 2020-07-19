@@ -4,7 +4,7 @@
 #include "config.h"
 #include <stdio.h>
 
-static volatile RIOPlugin *DEFAULT = NULL;
+static volatile RIOPlugin *default_plugin = NULL;
 
 static RIOPlugin *io_static_plugins[] = {
 	R_IO_STATIC_PLUGINS
@@ -40,10 +40,10 @@ R_API bool r_io_plugin_init(RIO *io) {
 }
 
 R_API RIOPlugin *r_io_plugin_get_default(RIO *io, const char *filename, bool many) {
-	if (!DEFAULT || !DEFAULT->check || !DEFAULT->check (io, filename, many) ) {
+	if (!default_plugin || !default_plugin->check || !default_plugin->check (io, filename, many) ) {
 		return NULL;
 	}
-	return (RIOPlugin*) DEFAULT;
+	return (RIOPlugin*) default_plugin;
 }
 
 R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many) {
