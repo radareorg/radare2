@@ -308,7 +308,6 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch, u
 			}
 			reloc = R_NEW0 (RBinReloc);
 			if (!reloc) {
-				free (symbol);
 				continue;
 			}
 
