@@ -279,7 +279,7 @@ R_API R2Pipe *r2pipe_open(const char *cmd) {
 			r2pipe_close (r2p);
 			return NULL;
 		}
-		if (ch==-1) {
+		if (ch == -1) {
 			eprintf ("[+] r2pipeipe-io link failed. Expected two null bytes.\n");
 			r2pipe_close (r2p);
 			return NULL;
