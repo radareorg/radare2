@@ -272,14 +272,14 @@ R_API R2Pipe *r2pipe_open(const char *cmd) {
 	env ("R2PIPE_OUT", r2p->output[1]);
 
 	if (r2p->child) {
-		char ch = 1;
+		char ch = -1;
 		// eprintf ("[+] r2pipeipe child is %d\n", r2pipe->child);
 		if (read (r2p->output[0], &ch, 1) != 1) {
 			eprintf ("Failed to read 1 byte\n");
 			r2pipe_close (r2p);
 			return NULL;
 		}
-		if (ch) {
+		if (ch==-1) {
 			eprintf ("[+] r2pipeipe-io link failed. Expected two null bytes.\n");
 			r2pipe_close (r2p);
 			return NULL;
