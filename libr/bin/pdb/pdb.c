@@ -632,12 +632,18 @@ static SimpleTypeKind get_simple_type_kind (PDB_SIMPLE_TYPES type) {
  * 
  * @param type_info Information about the member type
  * @param format buffer for the formatting string
+ * @param names buffer for the member names
  * @return int -1 if it can't build the format
  */
-static int build_member_format(STypeInfo *type_info, RStrBuf *format) {
-	r_return_val_if_fail (type_info && format && type_info->type_info, -1);
+static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *names) {
+	r_return_val_if_fail (type_info && format && names && type_info->type_info, -1);
 	// THOUGHT: instead of not doing anything for unknown types I can just skip the bytes
 	// format is 2 chars tops + null terminator
+	char *name = "unnamed_tag";
+	if (type_info->get_name) {
+		type_info->get_name (type_info, &name);
+		// TODO deal with unnamed
+	}
 	SType *under_type = NULL;
 	if (type_info->leaf_type == eLF_MEMBER ||
 		type_info->leaf_type == eLF_NESTTYPE) {
@@ -766,21 +772,29 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format) {
 			r_warn_if_reached ();
 			break;
 		}
+		r_strbuf_append (names, name);
 	} else if (type_info->leaf_type == eLF_POINTER) { // TODO look at what it points to
 		member_format = "p";
+		r_strbuf_append (names, name);
 	} else if (type_info->leaf_type == eLF_STRUCTURE ||
 		type_info->leaf_type == eLF_UNION ||
 		type_info->leaf_type == eLF_CLASS) {
 		member_format = "?"; // TODO need to add () cast to the member name
-		// TODO
+		char *field_name = "unnamed_field_type";
+		if (type_info->get_name) {
+			type_info->get_name (type_info, &field_name);
+			// TODO deal with unnamed
+		}
+		r_strbuf_appendf (names, "(%s)%s", field_name, name);
 	} else if (type_info->leaf_type == eLF_BITFIELD) {
-		member_format = "B"; // TODO need to add () cast to the member name
-		// TODO
+		member_format = "B"; 
+		r_strbuf_appendf (names, "(uint)%s", name); // TODO complete the type with additional info
 	} else if (type_info->leaf_type == eLF_ENUM) {
-		member_format = "E"; // TODO need to add () cast to the member name
-		// TODO
+		member_format = "E";
+		r_strbuf_appendf (names, "(int)%s", name); // TODO complete the type with additional info
 	} else if (type_info->leaf_type == eLF_ARRAY) {
-		// TODO
+		member_format = "[]"; // TODO add additional array information, and array type
+		r_strbuf_append (names, name); // TODO complete the type with additional info
 	} else {
 		r_warn_if_reached (); // Unhandled type format
 	}
@@ -1126,18 +1140,18 @@ static void print_types_format(const R_PDB *pdb, const RList *types) {
 		RStrBuf member_names;
 		r_strbuf_init (&member_names);
 
+		if (type_info->leaf_type == eLF_UNION) {
+			r_strbuf_append (&format, "0");	 // every type start from the offset 0
+		}
+
 		RListIter *member_iter = r_list_iterator (members);
 		while (r_list_iter_next (member_iter)) {
 			STypeInfo *member_info = r_list_iter_get (member_iter);
-			char *member_name;
-			if (member_info->get_name) {
-				member_info->get_name (member_info, &member_name);
-			}
 			switch (type_info->leaf_type) {
 			case eLF_STRUCTURE:
 			case eLF_CLASS:
 			case eLF_UNION:
-				if (build_member_format (member_info, &format) == -1) { // if failed
+				if (build_member_format (member_info, &format, &member_names) == -1) { // if failed
 					// R_FREE (member_name);
 					// goto member_fail; // skip to the next one, we can't build format from this
 				}
@@ -1145,9 +1159,7 @@ static void print_types_format(const R_PDB *pdb, const RList *types) {
 			default:
 				r_warn_if_reached ();
 			}
-			member_name = r_str_sanitize_sdb_key (member_name);
-			r_strbuf_appendf (&member_names, "%s ", member_name);
-			R_FREE (member_name);
+			r_strbuf_append (&member_names, " ");
 		}
 		name = r_str_sanitize_sdb_key (name);
 		pdb->cb_printf ("pf.%s %s %s\n", name, r_strbuf_get (&format), r_strbuf_get (&member_names));
