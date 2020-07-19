@@ -652,11 +652,13 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *n
 	r_return_val_if_fail (type_info && format && names && type_info->type_info, -1);
 	// THOUGHT: instead of not doing anything for unknown types I can just skip the bytes
 	// format is 2 chars tops + null terminator
+
 	char *name = "unnamed_field";
 	if (type_info->get_name) {
 		type_info->get_name (type_info, &name);
 	}
 	name = r_str_sanitize_sdb_key (name);
+
 	SType *under_type = NULL;
 	if (type_info->leaf_type == eLF_MEMBER ||
 		type_info->leaf_type == eLF_NESTTYPE) {
@@ -673,7 +675,9 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *n
 		return -1;
 	}
 	type_info = &under_type->type_data;
+
 	char *member_format = NULL;
+	char tmp_format[5] = { 0 }; // used as writable format buffer
 	if (type_info->leaf_type == eLF_SIMPLE_TYPE) {
 		SLF_SIMPLE_TYPE *simple_type = type_info->type_info;
 		SimpleTypeMode mode = get_simple_type_mode (simple_type->base_type);
@@ -726,31 +730,44 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *n
 				break;
 			case PDB_INT64_QUAD:
 			case PDB_INT64:
-				member_format = "N4";
+				member_format = "n8";
 				break;
 			case PDB_UINT64_QUAD:
 			case PDB_UINT64:
 			case PDB_BOOL64:
 				member_format = "N8";
 				break;
+			// TODO these when formatting for them will exist
 			case PDB_INT128_OCT:
 			case PDB_UINT128_OCT:
 			case PDB_INT128:
 			case PDB_UINT128:
 			case PDB_BOOL128:
-				return -1;
-				// TODO these when formatting for them will exist
-				break;
+				member_format = "::::";
+				goto skip;
+////////////////////////////////////
+// TODO these when formatting for them will exist
+// I assume complex are made up by 2 floats
 			case PDB_COMPLEX16:
+				member_format = "..";
+				goto skip;
 			case PDB_COMPLEX32:
 			case PDB_COMPLEX32_PP:
+				member_format = ":";
+				goto skip;
 			case PDB_COMPLEX48:
+				member_format = ":.";
+				goto skip;
 			case PDB_COMPLEX64:
+				member_format = "::";
+				goto skip;
 			case PDB_COMPLEX80:
+				member_format = "::..";
+				goto skip;
 			case PDB_COMPLEX128:
-				// TODO these when formatting for them will exist
-				return -1;
-				break;
+				member_format = "::::";
+				goto skip;
+
 			case PDB_FLOAT32:
 			case PDB_FLOAT32_PP:
 				member_format = "f";
@@ -758,28 +775,45 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *n
 			case PDB_FLOAT64:
 				member_format = "F";
 				break;
+////////////////////////////////////
+// TODO these when formatting for them will exist
 			case PDB_FLOAT16:
+				member_format = "..";
+				goto skip;
 			case PDB_FLOAT48:
+				member_format = ":.";
+				goto skip;
 			case PDB_FLOAT80:
+				member_format = "::..";
+				goto skip;
 			case PDB_FLOAT128:
-				// TODO these when formatting for them will exist
-				return -1;
-				break;
+				member_format = "::::";
+				goto skip;
 			default:
 				r_warn_if_reached ();
 				break;
 			}
 		} break;
 		case NEAR_POINTER:
+			member_format = "p2";
+			break;
 		case FAR_POINTER:
+			member_format = "p4";
+			break;
 		case HUGE_POINTER:
+			member_format = "p4";
+			break;
 		case NEAR_POINTER32:
+			member_format = "p4";
+			break;
 		case FAR_POINTER32:
+			member_format = "p4";
+			break;
 		case NEAR_POINTER64:
-		case NEAR_POINTER128: // TODO p doesn't support 16 bytes
-			// pointers are from 2 to 16 bytes (2,4,8,16)
-			// how do you deal with the size?
-			member_format = "p";
+			member_format = "p8";
+			break;
+		case NEAR_POINTER128:
+			member_format = "p8::"; // TODO fix when support for 16 bytes
 			break;
 		default:
 			// unknown mode ??
@@ -787,14 +821,18 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *n
 			break;
 		}
 		r_strbuf_append (names, name);
-	// dealing with the size of the types, ensure that pf reads all the byte it has to
 	} else if (type_info->leaf_type == eLF_POINTER) { // TODO look at what it points to
-		member_format = "p";
-		r_strbuf_append (names, name);
+		int size = 4;
+		if (type_info->get_val) {
+			type_info->get_val (type_info, &size);
+		}
+		snprintf (tmp_format, 5, "p%d", size);
+		member_format = tmp_format;
+		r_strbuf_appendf (names, name);
 	} else if (type_info->leaf_type == eLF_STRUCTURE ||
 		type_info->leaf_type == eLF_UNION ||
 		type_info->leaf_type == eLF_CLASS) {
-		member_format = "?"; // TODO need to add () cast to the member name
+		member_format = "?";
 		char *field_name = NULL;
 		if (type_info->get_name) {
 			type_info->get_name (type_info, &field_name);
@@ -813,15 +851,24 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *n
 		member_format = "E";
 		r_strbuf_appendf (names, "(int)%s", name); // TODO complete the type with additional info
 	} else if (type_info->leaf_type == eLF_ARRAY) {
-		member_format = "[]"; // TODO add additional array information, and array type
+		int size = 0;
+		if (type_info->get_val) {
+			type_info->get_val (type_info, &size);
+		}
+		snprintf (tmp_format, 5, "[%d]", size);
+		member_format = tmp_format;
 		r_strbuf_append (names, name); // TODO complete the type with additional info
 	} else {
 		r_warn_if_reached (); // Unhandled type format
+		free (name);
+		return -1;
 	}
 	if (!member_format) {
+		r_warn_if_reached (); // Unhandled type format
 		return -1;
 	}
 	r_strbuf_appendf (format, "%s", member_format);
+skip: // shortcut for unknown types where we only skip the bytes
 	free (name);
 	return 0;
 }
@@ -1177,8 +1224,7 @@ static void print_types_format(const R_PDB *pdb, const RList *types) {
 			case eLF_CLASS:
 			case eLF_UNION:
 				if (build_member_format (member_info, &format, &member_names) == -1) { // if failed
-					// R_FREE (member_name);
-					// goto member_fail; // skip to the next one, we can't build format from this
+					goto fail; // skip to the next one, we can't build format from this
 				}
 				break;
 			default:
@@ -1186,25 +1232,25 @@ static void print_types_format(const R_PDB *pdb, const RList *types) {
 			}
 			r_strbuf_append (&member_names, " ");
 		}
-		if (format.len == 0) { // if it has no members
-			// how do you tell that its empty?
-			r_strbuf_append (&format, "empty_type");
+		if (format.len == 0) { // if it has no members, it's useless for us then?
+			goto fail;
 		}
 		char *sanitized_name = r_str_sanitize_sdb_key (name);
 		pdb->cb_printf ("pf.%s %s %s\n", sanitized_name, r_strbuf_get (&format), r_strbuf_get (&member_names));
 
-		if (to_free_name) {
+		if (to_free_name) { // name can be generated or part of the PDB data
 			R_FREE (name);
 		}
 		R_FREE (sanitized_name);
 		r_strbuf_fini (&format);
 		r_strbuf_fini (&member_names);
-		// member_fail: // if we can't print whole type correctly, don't print at all
-		// 	(to_free_name) {
-		// 		R_FREE (name);
-		//  }
-		// 	r_strbuf_fini (&format);
-		// 	r_strbuf_fini (&member_names);
+
+	fail: // if we can't print whole type correctly, don't print at all
+		if (to_free_name) {
+			R_FREE (name);
+		}
+		r_strbuf_fini (&format);
+		r_strbuf_fini (&member_names);
 	}
 }
 
