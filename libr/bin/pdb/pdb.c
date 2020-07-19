@@ -1174,7 +1174,7 @@ static void print_types_json(const R_PDB *pdb, const RList *types) {
 static void print_types_format(const R_PDB *pdb, const RList *types) {
 	r_return_if_fail (pdb && types);
 	RListIter *it = r_list_iterator (types);
-	bool to_free_name = true;
+	bool to_free_name = false;
 	while (r_list_iter_next (it)) {
 		SType *type = (SType *)r_list_iter_get (it);
 		STypeInfo *type_info = &type->type_data;
