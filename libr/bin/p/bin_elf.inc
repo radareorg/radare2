@@ -687,7 +687,7 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 	#undef ADD
 
 	free (r);
-	return 0;
+	return NULL;
 }
 
 static RList* relocs(RBinFile *bf) {
