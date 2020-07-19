@@ -336,17 +336,35 @@ static RAnalBlock *bbget(RAnal *anal, ut64 addr, bool jumpmid) {
 		if (((bb->addr >= eaddr && addr == bb->addr)
 		     || r_anal_block_contains (bb, addr))
 		    && (!jumpmid || r_anal_block_op_starts_at (bb, addr))) {
-			if (anal->opt.delay && bb->ninstr >= 3 && addr == (bb->addr + r_anal_bb_offset_inst (bb, bb->ninstr - 2))) {
-				RAnalOp op;
-				ut8 buf[32];
-				ut64 at = bb->addr + r_anal_bb_offset_inst (bb, bb->ninstr - 3);
-				anal->iob.read_at (anal->iob.io, at, buf, sizeof (buf));
-				int size = r_anal_op (anal, &op, at, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC);
-				if (size && op.delay) {
-					r_anal_op_fini (&op);
-					continue;
+			if (anal->opt.delay) {
+				ut8 *buf = malloc (bb->size);
+				if (anal->iob.read_at (anal->iob.io, bb->addr, buf, bb->size)) {
+					const int last_instr_idx = bb->ninstr - 1;
+					bool in_delay_slot = false;
+					int i;
+					for (i = last_instr_idx; i >= 0; i--) {
+						const ut64 off = r_anal_bb_offset_inst (bb, i);
+						const ut64 at = bb->addr + off;
+						if (addr <= at) {
+							continue;
+						}
+						RAnalOp op;
+						int size = r_anal_op (anal, &op, at, buf + off, bb->size, R_ANAL_OP_MASK_BASIC);
+						if (size > 0 && op.delay) {
+							if (op.delay >= last_instr_idx - i) {
+								in_delay_slot = true;
+							}
+							r_anal_op_fini (&op);
+							break;
+						}
+						r_anal_op_fini (&op);
+					}
+					if (in_delay_slot) {
+						free (buf);
+						continue;
+					}
 				}
-				r_anal_op_fini (&op);
+				free (buf);
 			}
 			ret = bb;
 			break;
