@@ -1,3 +1,20 @@
+NAME=pf QeQ
+FILE=-
+CMDS=<<EOF
+b 256
+woe 0x11
+e cfg.bigendian = false
+pf Q
+e cfg.bigendian = true
+pf QeQ
+EOF
+EXPECT=<<EOF
+0xffeeddccbbaa99887766554433221100
+0x00112233445566778899aabbccddeeff
+0xffeeddccbbaa99887766554433221100
+EOF
+RUN
+
 NAME=pf.-x
 FILE=-
 CMDS=<<EOF
