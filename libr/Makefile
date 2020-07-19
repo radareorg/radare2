@@ -100,7 +100,7 @@ _libr.${EXT_AR}: .libr
 		BN=`basename $$LIB` ; \
 		echo $$BN ; \
 		mkdir -p .libr2/$$BN ; \
-		echo .libr2/$$BN $$LIB; ${AR} ; \
+		echo .libr2/$$BN $$LIB; $${AR} ; \
 		( cd .libr2/$$BN ; pwd ; du -hs ../../$$LIB; ${AR} x ../../$$LIB ) ; \
 	done
 
