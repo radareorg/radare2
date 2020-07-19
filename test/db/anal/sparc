@@ -162,7 +162,7 @@ af
 afl
 EOF
 EXPECT=<<EOF
-0x00018c08  350 8388 -> 7116 main
+0x00018c08  350 8388 -> 7132 main
 EOF
 RUN
 
@@ -277,5 +277,29 @@ afi~name
 EOF
 EXPECT=<<EOF
 name: main
+EOF
+RUN
+
+NAME=Analyze bb with branch delay instruction head
+FILE=bins/elf/elf-solaris-sparc-ls
+CMDS=<<EOF
+s 0x0001bc04
+af
+afb
+EOF
+EXPECT=<<EOF
+0x0001bc04 0x0001bc1c 00:0000 24 j 0x0001bc38 f 0x0001bc1c
+0x0001bc1c 0x0001bc30 00:0000 20 j 0x0001bc98 f 0x0001bc30
+0x0001bc30 0x0001bc34 00:0000 4 j 0x0001bc34
+0x0001bc34 0x0001bc38 00:0000 4 j 0x0001bc38
+0x0001bc38 0x0001bc58 00:0000 32 j 0x0001bcc4 f 0x0001bc58
+0x0001bc58 0x0001bc70 00:0000 24 j 0x0001bcec f 0x0001bc70
+0x0001bc70 0x0001bc9c 00:0000 44 j 0x0001bcf8
+0x0001bc98 0x0001bca8 00:0000 16 j 0x0001bcf8 f 0x0001bca8
+0x0001bca8 0x0001bcbc 00:0000 20 j 0x0001bcf8 f 0x0001bcbc
+0x0001bcbc 0x0001bcc4 00:0000 8 j 0x0001bc34 f 0x0001bcc4
+0x0001bcc4 0x0001bcec 00:0000 40 j 0x0001bc70 f 0x0001bcec
+0x0001bcec 0x0001bcf8 00:0000 12 j 0x0001bc70 f 0x0001bcf8
+0x0001bcf8 0x0001bd00 00:0000 8
 EOF
 RUN
