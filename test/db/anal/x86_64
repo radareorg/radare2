@@ -3348,6 +3348,54 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=test_switch_indirect.exe switch/case flags
+FILE=bins/jmptbl/test_switch_indirect.exe
+CMDS=<<EOF
+s main
+af
+e asm.lines = false
+pdf~case
+EOF
+EXPECT=<<EOF
+0x140001012      0f871a010000   ja case.0x140001034.2
+0x140001034      ffe1           jmp rcx                                ; switch table (99 cases) at 0x140001148
+;-- case 0:                                                            ; from 0x140001034
+0x140001036      488d0dd31100.  lea rcx, str.case_1                    ; 0x140002210 ; "case 1"
+;-- case 1:                                                            ; from 0x140001034
+0x14000104b      488d0dc61100.  lea rcx, str.case_2                    ; 0x140002218 ; "case 2"
+;-- case 10:                                                           ; from 0x140001034
+0x140001060      488d0db91100.  lea rcx, str.case_11                   ; 0x140002220 ; "case 11"
+;-- case 12:                                                           ; from 0x140001034
+0x140001075      488d0dac1100.  lea rcx, str.case_13                   ; 0x140002228 ; "case 13"
+;-- case 14...15:                                                      ; from 0x140001034
+0x14000108a      488d0d9f1100.  lea rcx, str.case_15_and_16            ; 0x140002230 ; "case 15 and 16"
+;-- case 18:                                                           ; from 0x140001034
+0x14000109f      488d0d9a1100.  lea rcx, str.case_19                   ; 0x140002240 ; "case 19"
+;-- case 49:                                                           ; from 0x140001034
+0x1400010b4      488d0d8d1100.  lea rcx, str.case_50                   ; 0x140002248 ; "case 50"
+;-- case 29:                                                           ; from 0x140001034
+0x1400010c9      488d0d801100.  lea rcx, str.case_30                   ; 0x140002250 ; "case 30"
+;-- case 19:                                                           ; from 0x140001034
+0x1400010de      488d0d731100.  lea rcx, str.case_20                   ; 0x140002258 ; "case 20"
+;-- case 9:                                                            ; from 0x140001034
+0x1400010f3      488d0d661100.  lea rcx, str.case_10                   ; 0x140002260 ; "case 10"
+;-- case 98:                                                           ; from 0x140001034
+0x140001108      488d0d591100.  lea rcx, str.case_99                   ; 0x140002268 ; "case 99"
+;-- case 96:                                                           ; from 0x140001034
+0x14000111d      488d0d4c1100.  lea rcx, str.case_97                   ; 0x140002270 ; "case 97"
+;-- case 2...8:                                                        ; from 0x140001034
+;-- case 11:                                                           ; from 0x140001034
+;-- case 13:                                                           ; from 0x140001034
+;-- case 17:                                                           ; from 0x140001034
+;-- case 21...28:                                                      ; from 0x140001034
+;-- case 30:                                                           ; from 0x140001034
+;-- case 31...48:                                                      ; from 0x140001034
+;-- case 50:                                                           ; from 0x140001034
+;-- case 51...95:                                                      ; from 0x140001034
+;-- case 97:                                                           ; from 0x140001034
+EOF
+RUN
+
 NAME=msvc_1900_64 switch/case flags
 FILE=bins/jmptbl/test_msvc_1900_64.exe
 CMDS=<<EOF

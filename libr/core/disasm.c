@@ -2251,7 +2251,9 @@ static void ds_show_flags(RDisasmState *ds) {
 			}
 			if (case_current == case_prev + 1 && switch_addr == saddr) {
 				case_prev = case_current;
-				continue;
+				if (iter != uniqlist->tail) {
+					continue;	
+				}
 			}
 		}
 		if (printPre) {
@@ -2300,7 +2302,7 @@ static void ds_show_flags(RDisasmState *ds) {
 					nth = 0;
 				} else if (case_prev != case_start) {
 					r_cons_printf (FLAG_PREFIX "case %d...%d:", case_start, case_prev);
-					if (iter != uniqlist->head) {
+					if (iter != uniqlist->head && iter != uniqlist->tail) {
 						iter = iter->p;
 					}
 					case_start = case_current;

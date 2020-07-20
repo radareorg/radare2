@@ -5,6 +5,8 @@
 #include <r_util.h>
 #include <r_list.h>
 
+#define aprintf(format, ...) if (anal->verbose) eprintf (format, __VA_ARGS__)
+
 #define JMPTBL_MAXSZ 512
 
 static void apply_case(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 offset_sz, ut64 case_addr, ut64 id, ut64 case_addr_loc) {
@@ -13,7 +15,7 @@ static void apply_case(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 of
 	r_anal_hint_set_immbase (anal, case_addr_loc, 10);
 	r_anal_xrefs_set (anal, switch_addr, case_addr, R_ANAL_REF_TYPE_CODE);
 	if (block) {
-		r_anal_block_add_switch_case (block, switch_addr, case_addr);
+		r_anal_block_add_switch_case (block, switch_addr, id, case_addr);
 	}
 	if (anal->flb.set) {
 		char flagname[0x30];
@@ -30,6 +32,7 @@ static void apply_switch(RAnal *anal, ut64 switch_addr, ut64 jmptbl_addr, ut64 c
 		snprintf (tmp, sizeof (tmp), "switch.0x%08"PFMT64x, switch_addr);
 		anal->flb.set (anal->flb.f, tmp, switch_addr, 1);
 		if (default_case_addr != UT64_MAX) {
+			r_anal_xrefs_set (anal, switch_addr, default_case_addr, R_ANAL_REF_TYPE_CODE);
 			snprintf (tmp, sizeof (tmp), "case.default.0x%"PFMT64x, switch_addr);
 			anal->flb.set (anal->flb.f, tmp, default_case_addr, 1);
 		}
@@ -42,6 +45,88 @@ R_API bool r_anal_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut6
 	return try_walkthrough_jmptbl (anal, fcn, block, depth, jmpaddr, table, table, tablesize, tablesize, default_addr, false);
 }
 
+R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, ut64 ip, ut64 jmptbl_loc, ut64 casetbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0) {
+	bool ret = ret0;
+	if (jmptbl_size == 0) {
+		jmptbl_size = JMPTBL_MAXSZ;
+	}
+	if (jmptbl_loc == UT64_MAX) {
+		aprintf ("Warning: Invalid JumpTable location 0x%08" PFMT64x "\n", jmptbl_loc);
+		return false;
+	}
+	if (casetbl_loc == UT64_MAX) {
+		aprintf ("Warning: Invalid CaseTable location 0x%08" PFMT64x "\n", jmptbl_loc);
+		return false;
+	}
+	if (jmptbl_size < 1 || jmptbl_size > ST32_MAX) {
+		aprintf ("Warning: Invalid JumpTable size at 0x%08" PFMT64x "\n", ip);
+		return false;
+	}
+	ut64 jmpptr, case_idx, jmpptr_idx;
+	ut8 *jmptbl = calloc (jmptbl_size, sz);
+	if (!jmptbl) {
+		return false;
+	}
+	ut8 *casetbl = calloc (jmptbl_size, sizeof (ut8));
+	if (!casetbl) {
+		return false;
+	}
+	anal->iob.read_at (anal->iob.io, jmptbl_loc, jmptbl, jmptbl_size * sz);
+	anal->iob.read_at (anal->iob.io, casetbl_loc, casetbl, jmptbl_size);
+	ut64 case_count = 0;
+	for (case_idx = 0; case_idx < jmptbl_size; case_idx++) {
+		jmpptr_idx = casetbl[case_idx];
+
+		switch (sz) {
+		case 1:
+			jmpptr = r_read_le8 (jmptbl + jmpptr_idx);
+			break;
+		case 2:
+			jmpptr = r_read_le16 (jmptbl + jmpptr_idx * 2);
+			break;
+		case 4:
+			jmpptr = r_read_le32 (jmptbl + jmpptr_idx * 4);
+			break;
+		default:
+			jmpptr = r_read_le64 (jmptbl + jmpptr_idx * 8);
+			break;
+		}
+		if (jmpptr == 0 || jmpptr == UT32_MAX || jmpptr == UT64_MAX) {
+			break;
+		}
+		if (!anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0)) {
+			st32 jmpdelta = (st32)jmpptr;
+			// jump tables where sign extended movs are used
+			jmpptr = jmptbl_off + jmpdelta;
+			if (!anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0)) {
+				break;
+			}
+		}
+		if (anal->limit) {
+			if (jmpptr < anal->limit->from || jmpptr > anal->limit->to) {
+				break;
+			}
+		}
+
+		const ut64 jmpptr_idx_off = casetbl_loc + case_idx;
+		r_meta_set_data_at (anal, jmpptr_idx_off, 1);
+		r_anal_hint_set_immbase (anal, jmpptr_idx_off, 10);
+
+		apply_case (anal, block, ip, sz, jmpptr, case_idx, jmptbl_loc + jmpptr_idx * sz);
+		(void)r_anal_fcn_bb (anal, fcn, jmpptr, depth - 1);
+	}
+
+	if (case_idx > 0) {
+		if (default_case == 0) {
+			default_case = UT64_MAX;
+		}
+		apply_switch (anal, ip, jmptbl_loc, case_idx, default_case);
+	}
+
+	free (jmptbl);
+	return ret;
+}
+
 R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, ut64 ip, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0) {
 	bool ret = ret0;
 	// jmptbl_size can not always be determined
@@ -49,15 +134,11 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 		jmptbl_size = JMPTBL_MAXSZ;
 	}
 	if (jmptbl_loc == UT64_MAX) {
-		if (anal->verbose) {
-			eprintf ("Warning: Invalid JumpTable location 0x%08"PFMT64x"\n", jmptbl_loc);
-		}
+		aprintf ("Warning: Invalid JumpTable location 0x%08"PFMT64x"\n", jmptbl_loc);
 		return false;
 	}
 	if (jmptbl_size < 1 || jmptbl_size > ST32_MAX) {
-		if (anal->verbose) {
-			eprintf ("Warning: Invalid JumpTable size at 0x%08"PFMT64x"\n", ip);
-		}
+		aprintf ("Warning: Invalid JumpTable size at 0x%08"PFMT64x"\n", ip);
 		return false;
 	}
 	ut64 jmpptr, offs;
@@ -260,9 +341,7 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 	}
 	// predecessor must be a conditional jump
 	if (!prev_bb || !prev_bb->jump || !prev_bb->fail) {
-		if (anal->verbose) {
-			eprintf ("Warning: [anal.jmp.tbl] Missing predecesessor cjmp bb at 0x%08"PFMT64x"\n", addr);
-		}
+		aprintf ("Warning: [anal.jmp.tbl] Missing predecesessor cjmp bb at 0x%08"PFMT64x"\n", addr);
 		return false;
 	}
 
