@@ -26,10 +26,12 @@ endif
 endif
 endif
 
-CFLAGS+=-I../../libr/include -I../sdb/src/
+CFLAGS+=-I../../libr/include
 LIBAR=libr_ar.${EXT_AR}
 LDFLAGS+=-L../../libr/util
 LIBS=-lr_util
+
+include ../../shlr/sdb.mk
 
 OFILES=ar.o
 

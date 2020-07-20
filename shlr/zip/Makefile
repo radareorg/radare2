@@ -1,11 +1,11 @@
 NAME=rz
 LIBAR=librz.$(EXT_AR)
-CFLAGS+=-I../sdb/src/
 
 include ../../config-user.mk
 include ../../libr/config.mk
 include ../../mk/platform.mk
 include ../../mk/$(COMPILER).mk
+include ../../shlr/sdb.mk
 
 ifeq ($(USE_LIB_ZIP),1)
 all:

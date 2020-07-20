@@ -8,7 +8,6 @@ LIBNAME=libbochs
 LIBFILE=$(LIBNAME).$(EXT_SO)
 CFLAGS+=-I$(LIBR)/include $(PIC_CFLAGS)
 CFLAGS+=-Iinclude -I${LIBR}/include
-CFLAGS+=-I../sdb/src/
 MAJOR=0
 MINOR=1
 LD=$(CC)
@@ -27,6 +26,7 @@ endif
 #OSTYPE=windows
 include ../../libr/socket/deps.mk
 include ../../shlr/zip/deps.mk
+include ../../shlr/sdb.mk
 
 SRC_D=src
 SRC_C=$(wildcard $(SRC_D)/*.c)

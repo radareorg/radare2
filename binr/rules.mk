@@ -5,7 +5,9 @@ include ../../shlr/zip/deps.mk
 ifeq (,$(findstring tcc,${CC}))
 CFLAGS+=-pie
 endif
-CFLAGS+=-I$(LTOP)/include -I$(SHLR)/sdb/src/
+CFLAGS+=-I$(LTOP)/include
+
+include ../../shlr/sdb.mk
 
 ifeq (${COMPILER},emscripten)
 LINK+=$(SHLR)/libr_shlr.a

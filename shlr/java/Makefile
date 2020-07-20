@@ -28,9 +28,11 @@ CFLAGS+=-DMINGW32=1
 endif
 CFLAGS+=-g
 
-CFLAGS+=-I../../libr/include -I../sdb/src/
+CFLAGS+=-I../../libr/include
 LDFLAGS+=-L../../libr/util
 OBJS=code.o class.o ops.o dsojson.o
+
+include ../../shlr/sdb.mk
 
 all: libr_java.$(EXT_AR)
 

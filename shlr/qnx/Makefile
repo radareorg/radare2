@@ -8,7 +8,7 @@ RANLIB?=ranlib
 LIBNAME=libqnxr
 LIBFILE=$(LIBNAME).$(EXT_SO)
 CFLAGS+=-I$(LIBR)/include $(PIC_CFLAGS)
-CFLAGS+=-Iinclude -I${LIBR}/include -I../sdb/src/
+CFLAGS+=-Iinclude -I${LIBR}/include
 MAJOR=0
 MINOR=1
 LD=$(CC)
@@ -26,6 +26,7 @@ LDFLAGS_SHARED=-shared
 endif
 #OSTYPE=windows
 include ../../libr/socket/deps.mk
+include ../../shlr/sdb.mk
 
 # Test variables
 TEST_D= $(PWD)/test
