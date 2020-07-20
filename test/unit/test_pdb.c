@@ -7,6 +7,12 @@
 
 #define MODE 2
 
+#define check_kv(k, v)                                                         \
+	do {                                                                   \
+		char *value = sdb_get (anal->sdb_types, k, NULL);                    \
+		mu_assert_nullable_streq (value, v, "Wrong key - value pair"); \
+	} while (0)
+
 // copy from cbin.c modified to get pdb back
 int pdb_info(const char *file, R_PDB *pdb) {
 	pdb->cb_printf = r_cons_printf;
@@ -18,6 +24,21 @@ int pdb_info(const char *file, R_PDB *pdb) {
 		pdb->finish_pdb_parse (pdb);
 		return false;
 	}
+	return true;
+}
+
+int pdb_info_save_types(RAnal *anal, const char *file, R_PDB *pdb) {
+	pdb->cb_printf = r_cons_printf;
+	if (!init_pdb_parser (pdb, file)) {
+		return false;
+	}
+	if (!pdb->pdb_parse (pdb)) {
+		eprintf ("pdb was not parsed\n");
+		pdb->finish_pdb_parse (pdb);
+		return false;
+	}
+	parse_pdb_types (anal, pdb);
+	pdb->finish_pdb_parse (pdb);
 	return true;
 }
 
@@ -232,8 +253,51 @@ bool test_pdb_tpi(void) {
 	mu_end;
 }
 
+bool test_pdb_type_save(void) {
+	R_PDB pdb = R_EMPTY;
+	RAnal *anal = r_anal_new ();
+	mu_assert_true (pdb_info_save_types (anal, "bins/pdb/Project1.pdb", &pdb), "pdb parsing failed");
+	check_kv ("R2_TEST_ENUM", "enum");
+	check_kv ("enum.R2_TEST_ENUM", "eENUM1_R2,eENUM2_R2,eENUM_R2_MAX");
+	check_kv ("enum.R2_TEST_ENUM.0x10", "eENUM1_R2");
+	check_kv ("enum.R2_TEST_ENUM.eENUM1_R2", "0x10");
+
+	check_kv ("R2_TEST_UNION", "union");
+	check_kv ("union.R2_TEST_UNION", "r2_union_var_1,r2_union_var_2");
+	check_kv ("union.R2_TEST_UNION.r2_union_var_1", "int32_t,0,0");
+	check_kv ("union.R2_TEST_UNION.r2_union_var_2", "double,0,0");
+	check_kv ("union.R2_TEST_UNION.!size", "8");
+
+	check_kv ("__m64", "union");
+	check_kv ("union.__m64", "m64_u64,m64_f32,m64_i8,m64_i16,m64_i32,m64_i64,m64_u8,m64_u16,m64_u32");
+	check_kv ("union.__m64.m64_u64", "uint64_t,0,0");
+	check_kv ("union.__m64.m64_f32", "float[8],0,0");
+	check_kv ("union.__m64.m64_i8", "char[8],0,0");
+	check_kv ("union.__m64.m64_i16", " uint16_t[8],0,0");
+	check_kv ("union.__m64.m64_i32", "int32_t[8],0,0");
+	check_kv ("union.__m64.m64_i64", "int64_t,0,0");
+	check_kv ("union.__m64.m64_u8", "uint8_t[8],0,0");
+	check_kv ("union.__m64.m64_u16", "uint16_t[8],0,0");
+	check_kv ("union.__m64.m64_u32", "uint32_t[8],0,0");
+	check_kv ("union.__m64.!size", "8");
+
+	check_kv ("TEST_CLASS", "struct");
+	check_kv ("struct.TEST_CLASS", "class_var1,calss_var2");
+	check_kv ("struct.TEST_CLASS.class_var1", "int32_t,0,0");
+	check_kv ("struct.TEST_CLASS.calss_var2", "uint16_t,4,0");
+	check_kv ("union.__m64.!size", "8");
+
+	check_kv ("localeinfo_struct", "struct");
+	check_kv ("struct.localeinfo_struct", "locinfo,mbcinfo");
+	check_kv ("struct.localeinfo_struct.locinfo", "struct threadlocaleinfostruct*,0,0");
+	check_kv ("struct.localeinfo_struct.mbcinfo", "struct threadmbcinfostruct*,4,0");
+	check_kv ("union.__m64.!size", "8");
+	r_anal_free (anal);
+}
+
 bool all_tests() {
 	mu_run_test (test_pdb_tpi);
+	mu_run_test (test_pdb_type_save);
 	return tests_passed != tests_run;
 }
 
