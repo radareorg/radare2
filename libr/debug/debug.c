@@ -711,6 +711,15 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 			return R_DEBUG_REASON_DEAD;
 		}
 
+#if __linux__
+		// Letting other threads running after the debugger has breaked will cause
+		// ptrace commands to fail when writing the process memory to set/unset
+		// breakpoints and is problematic in Linux.
+		if (dbg->continue_all_threads) {
+			r_debug_stop (dbg);
+		}
+#endif
+
 		/* propagate errors from the plugin */
 		if (reason == R_DEBUG_REASON_ERROR) {
 			return R_DEBUG_REASON_ERROR;
@@ -1292,14 +1301,8 @@ repeat:
 	}
 #if __WINDOWS__
 	r_cons_break_pop ();
-#elif __linux__
-	// Letting threads continue after the debugger breaks is currently problematic in linux
-	// Stop all threads when there is no user interrupt caused by statc_debug_stop
-	// to prevent queueing duplicate SIGSTOP signals
-	if (!r_cons_is_breaked () && dbg->continue_all_threads) {
-		r_debug_stop (dbg);
-	}
 #endif
+
 	// Unset breakpoints before leaving
 	if (reason != R_DEBUG_REASON_BREAKPOINT) {
 		r_bp_restore (dbg->bp, false);
