@@ -11,24 +11,29 @@ int test_overflow_add(void) {
 	mu_assert_true (ST16_ADD_OVFCHK (UT16_MAX, 1), "st16-add 2");
 	mu_assert_true (ST16_ADD_OVFCHK (1, ST16_MAX), "st16-add 3");
 
-	mu_assert_true (ST16_ADD_OVFCHK (10, -20), "st16-add 3");
-	mu_assert_false (ST16_ADD_OVFCHK (-10, 20), "st16-add 3");
-	mu_assert_true (ST32_ADD_OVFCHK (10, -20), "st32-add 3");
-	mu_assert_false (ST32_ADD_OVFCHK (-10, 20), "st32-add 3");
-	mu_assert_true (ST64_ADD_OVFCHK (10, -20), "st64-add 3");
+	mu_assert_true (ST16_ADD_OVFCHK (ST16_MIN, -1), "st16-add (min, -1)");
+	mu_assert_true (UT16_ADD_OVFCHK (10, -20), "ut16-add (10, -20)");
+	mu_assert_false (ST16_ADD_OVFCHK (-10, 20), "st16-add (-10, 20)");
+	mu_assert_true (ST32_ADD_OVFCHK (ST32_MIN, -20), "st32-add (min, -20)");
+	mu_assert_false (ST32_ADD_OVFCHK (-10, 20), "st32-add (-10, 20)");
+	mu_assert_true (ST64_ADD_OVFCHK (ST64_MIN, -20), "st64-add (min, -20)");
 	mu_assert_false (ST64_ADD_OVFCHK (-10, 20), "st64-add 3");
 	mu_end;
 }
 
 int test_underflow_sub(void) {
-	mu_assert_true (ST16_SUB_OVFCHK (10, 210), "st16-sub-underflow");
+	mu_assert_false (ST16_SUB_OVFCHK (10, 210), "st16-sub-sign-underflow");
+	mu_assert_true (UT16_SUB_OVFCHK (10, 210), "ut16-sub-underflow");
+	mu_assert_true (ST16_SUB_OVFCHK (ST16_MIN, 210), "st16-sub-underflow");
 	mu_end;
 }
 
 int test_underflow_add(void) {
 	mu_assert_false (ST16_SUB_OVFCHK (10, -210), "st16-add");
 	mu_assert_false (ST16_SUB_OVFCHK (10, 10), "st16-add 10");
-	mu_assert_true (ST16_SUB_OVFCHK (10, 11), "st16-add 10-11");
+	mu_assert_true (ST16_SUB_OVFCHK (ST16_MIN, 11), "st16-add 10-11");
+	mu_assert_false (ST16_SUB_OVFCHK (10, 11), "st16-add 10-11");
+	mu_assert_true (UT16_SUB_OVFCHK (10, 11), "st16-add 10-11");
 	mu_end;
 }
 
