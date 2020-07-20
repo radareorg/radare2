@@ -71,6 +71,9 @@ static void r_print_format_u128(const RPrint* p, int endian, int mode,
 		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 low = r_read_ble64 (buf, endian);
 	ut64 hig = r_read_ble64 (buf + 8, endian);
+	if (!SEEVALUE && !ISQUIET) {
+		p->cb_printf ("0x%08"PFMT64x" = (uint128_t)", seeki);
+	}
 	if (endian) {
 		p->cb_printf ("0x%016"PFMT64x"", low);
 		p->cb_printf ("%016"PFMT64x, hig);
