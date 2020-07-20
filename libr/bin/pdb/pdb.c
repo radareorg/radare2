@@ -912,6 +912,29 @@ static inline bool is_printable_type(ELeafType type) {
 		type == eLF_ENUM ||
 		type == eLF_CLASS);
 }
+
+/**
+ * @brief Gets the name of the enum base type
+ * 
+ * @param type_info Enum TypeInfo
+ * @return char* name of the base type
+ */
+static char *get_enum_base_type_name(STypeInfo *type_info) {
+	char *base_type_name = NULL;
+	if (type_info->get_utype) {
+		SType *base_type = NULL;
+		type_info->get_utype (type_info, (void **)&base_type);
+		if (base_type && base_type->type_data.leaf_type == eLF_SIMPLE_TYPE) {
+			SLF_SIMPLE_TYPE *tmp = base_type->type_data.type_info;
+			base_type_name = tmp->type;
+		}
+	}
+	if (!base_type_name) {
+		base_type_name = "unknown_t";
+	}
+	return base_type_name;
+}
+
 /**
  * @brief Prints out structure and class leaf types
  * 
@@ -920,7 +943,7 @@ static inline bool is_printable_type(ELeafType type) {
  * @param members List of members
  * @param printf Print function
  */
-static void print_struct(const char *name, const int size, RList *members, PrintfCallback printf) {
+static void print_struct(const char *name, const int size, const RList *members, PrintfCallback printf) {
 	r_return_if_fail (name && printf);
 	printf ("struct %s { // size 0x%x\n", name, size);
 
@@ -940,7 +963,6 @@ static void print_struct(const char *name, const int size, RList *members, Print
 			type_info->get_print_type (type_info, &type_name);
 		}
 		printf ("  %s %s; // offset +0x%x\n", type_name, member_name, offset);
-
 		R_FREE (type_name);
 	}
 	printf ("};\n");
@@ -954,7 +976,7 @@ static void print_struct(const char *name, const int size, RList *members, Print
  * @param members List of members
  * @param printf Print function
  */
-static void print_union(const char *name, const int size, RList *members, PrintfCallback printf) {
+static void print_union(const char *name, const int size, const RList *members, PrintfCallback printf) {
 	r_return_if_fail (name && printf);
 	printf ("union %s { // size 0x%x\n", name, size);
 
@@ -973,9 +995,7 @@ static void print_union(const char *name, const int size, RList *members, Printf
 		if (type_info->get_print_type) {
 			type_info->get_print_type (type_info, &type_name);
 		}
-		// offset is useless for union, so not printing one
 		printf ("  %s %s;\n", type_name, member_name);
-
 		R_FREE (type_name);
 	}
 	printf ("};\n");
@@ -989,7 +1009,7 @@ static void print_union(const char *name, const int size, RList *members, Printf
  * @param members List of cases
  * @param printf Print function
  */
-static void print_enum(const char *name, const char *type, RList *members, PrintfCallback printf) {
+static void print_enum(const char *name, const char *type, const RList *members, PrintfCallback printf) {
 	r_return_if_fail (name && printf);
 	printf ("enum %s { // type: %s\n", name, type);
 
@@ -1004,7 +1024,6 @@ static void print_enum(const char *name, const char *type, RList *members, Print
 		if (type_info->get_val) {
 			type_info->get_val (type_info, &value);
 		}
-
 		printf ("  %s = %d,\n", member_name, value);
 	}
 	printf ("};\n");
@@ -1019,8 +1038,9 @@ static void print_enum(const char *name, const char *type, RList *members, Print
 static void print_types_regular(const R_PDB *pdb, const RList *types) {
 	r_return_if_fail (pdb && types);
 	RListIter *it = r_list_iterator (types);
+
 	while (r_list_iter_next (it)) {
-		SType *type = (SType *)r_list_iter_get (it);
+		SType *type = r_list_iter_get (it);
 		STypeInfo *type_info = &type->type_data;
 		// skip unprintable types
 		if (!is_printable_type (type_info->leaf_type)) {
@@ -1043,7 +1063,7 @@ static void print_types_regular(const R_PDB *pdb, const RList *types) {
 			type_info->get_val (type_info, &size);
 		}
 		RList *members = NULL;
-		if (type_info->get_members) {
+		if (type_info->get_members) { // do we wanna print empty types?
 			type_info->get_members (type_info, &members);
 		}
 
@@ -1056,20 +1076,12 @@ static void print_types_regular(const R_PDB *pdb, const RList *types) {
 			print_union (name, size, members, pdb->cb_printf);
 			break;
 		case eLF_ENUM:;
-			char *base_type_name = NULL;
-			if (type_info->get_utype) {
-				SType *base_type = NULL;
-				type_info->get_utype (type_info, (void **)&base_type);
-				if (base_type && base_type->type_data.leaf_type == eLF_SIMPLE_TYPE) {
-					SLF_SIMPLE_TYPE *tmp = base_type->type_data.type_info;
-					base_type_name = tmp->type;
-				}
-			}
-			print_enum (name, base_type_name, members, pdb->cb_printf);
+			print_enum (name, get_enum_base_type_name (type_info), members, pdb->cb_printf);
 			break;
 		default:
 			// Unimplemented printing of printable type
 			r_warn_if_reached ();
+			break;
 		}
 	}
 }
@@ -1082,14 +1094,16 @@ static void print_types_regular(const R_PDB *pdb, const RList *types) {
  */
 static void print_types_json(const R_PDB *pdb, const RList *types) {
 	r_return_if_fail (pdb && types);
+
 	RListIter *it = r_list_iterator (types);
 	PJ *pj = pj_new ();
 	if (!pj) {
 		return;
 	}
 	pj_ka (pj, "types");
+
 	while (r_list_iter_next (it)) {
-		SType *type = (SType *)r_list_iter_get (it);
+		SType *type = r_list_iter_get (it);
 		STypeInfo *type_info = &type->type_data;
 		// skip unprintable types
 		if (!is_printable_type (type_info->leaf_type)) {
@@ -1103,6 +1117,7 @@ static void print_types_json(const R_PDB *pdb, const RList *types) {
 				continue;
 			}
 		}
+		// get the necessary type information
 		char *name = NULL;
 		if (type_info->get_name) {
 			type_info->get_name (type_info, &name);
@@ -1111,7 +1126,7 @@ static void print_types_json(const R_PDB *pdb, const RList *types) {
 		if (type_info->get_val) {
 			type_info->get_val (type_info, &size);
 		}
-		RList *members = NULL;
+		RList *members = NULL; // Should we print empty structures/enums?
 		if (type_info->get_members) {
 			type_info->get_members (type_info, &members);
 		}
@@ -1120,12 +1135,13 @@ static void print_types_json(const R_PDB *pdb, const RList *types) {
 		switch (type_info->leaf_type) {
 		case eLF_CLASS:
 		case eLF_STRUCTURE:
-		case eLF_UNION:
+		case eLF_UNION: {
 			pj_o (pj);
 			pj_ks (pj, "type", "structure");
 			pj_ks (pj, "name", name);
 			pj_kn (pj, "size", size);
 			pj_ka (pj, "members");
+
 			if (members) {
 				RListIter *member_iter = r_list_iterator (members);
 				while (r_list_iter_next (member_iter)) {
@@ -1153,21 +1169,14 @@ static void print_types_json(const R_PDB *pdb, const RList *types) {
 			pj_end (pj);
 			pj_end (pj);
 			break;
-		case eLF_ENUM:;
-			char *base_type_name = NULL;
-			if (type_info->get_utype) {
-				SType *base_type = NULL;
-				type_info->get_utype (type_info, (void **)&base_type);
-				if (base_type && base_type->type_data.leaf_type == eLF_SIMPLE_TYPE) {
-					SLF_SIMPLE_TYPE *tmp = base_type->type_data.type_info;
-					base_type_name = tmp->type;
-				}
-			}
+		}
+		case eLF_ENUM: {
 			pj_o (pj);
 			pj_ks (pj, "type", "enum");
 			pj_ks (pj, "name", name);
-			pj_ks (pj, "base_type", base_type_name);
+			pj_ks (pj, "base_type", get_enum_base_type_name (type_info));
 			pj_ka (pj, "cases");
+
 			if (members) {
 				RListIter *member_iter = r_list_iterator (members);
 				while (r_list_iter_next (member_iter)) {
@@ -1189,9 +1198,11 @@ static void print_types_json(const R_PDB *pdb, const RList *types) {
 			pj_end (pj);
 			pj_end (pj);
 			break;
+		}
 		default:
 			// Unimplemented printing of printable type
 			r_warn_if_reached ();
+			break;
 		}
 	}
 	pj_end (pj);
@@ -1210,7 +1221,7 @@ static void print_types_format(const R_PDB *pdb, const RList *types) {
 	RListIter *it = r_list_iterator (types);
 	bool to_free_name = false;
 	while (r_list_iter_next (it)) {
-		SType *type = (SType *)r_list_iter_get (it);
+		SType *type = r_list_iter_get (it);
 		STypeInfo *type_info = &type->type_data;
 		// skip unprintable types and enums
 		if (!is_printable_type (type_info->leaf_type) || type_info->leaf_type == eLF_ENUM) {
@@ -1288,7 +1299,13 @@ static void print_types_format(const R_PDB *pdb, const RList *types) {
 	}
 }
 
-static void print_types(R_PDB *pdb, int mode) {
+/**
+ * @brief Prints out all the type information in regular,json or pf format
+ * 
+ * @param pdb PDB information
+ * @param mode printing mode
+ */
+static void print_types(const R_PDB *pdb, const int mode) {
 	RList *plist = pdb->pdb_streams;
 	STpiStream *tpi_stream = r_list_get_n (plist, ePDB_STREAM_TPI);
 

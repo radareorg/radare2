@@ -11,13 +11,12 @@ extern "C" {
 
 #define FILE_NAME_LEN 256
 
-struct R_PDB;
 struct R_PDB7_ROOT_STREAM;
 
 typedef struct R_PDB {
 	bool (*pdb_parse)(struct R_PDB *pdb);
 	void (*finish_pdb_parse)(struct R_PDB *pdb);
-	void (*print_types)(struct R_PDB *pdb, int mode);
+	void (*print_types)(const struct R_PDB *pdb, int mode);
 //	FILE *fp;
 	PrintfCallback cb_printf;
 	struct R_PDB7_ROOT_STREAM *root_stream;

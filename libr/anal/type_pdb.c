@@ -23,9 +23,15 @@ static char *create_type_name_from_offset(ut64 offset) {
 	return str;
 }
 
+/**
+ * @brief Parses class/struct/union member
+ * 
+ * @param type_info Current type info (member)
+ * @param types List of all types
+ * @return RAnalStructMember* parsed member, NULL if fail
+ */
 static RAnalStructMember *parse_member(STypeInfo *type_info, RList *types) {
 	r_return_val_if_fail (type_info && types, NULL);
-	// ignore LF_METHOD, LF_NESTTYPE, bitfields, etc for now TODO
 	if (type_info->leaf_type != eLF_MEMBER) {
 		return NULL;
 	}
@@ -51,6 +57,13 @@ cleanup:
 	return NULL;
 }
 
+/**
+ * @brief Parse enum case
+ * 
+ * @param type_info Current type info (enum case)
+ * @param types List of all types
+ * @return RAnalEnumCase* parsed enum case, NULL if fail 
+ */
 static RAnalEnumCase *parse_enumerate(STypeInfo *type_info, RList *types) {
 	r_return_val_if_fail (type_info && types && type_info->leaf_type == eLF_ENUMERATE, NULL);
 	r_return_val_if_fail (type_info->get_val && type_info->get_name, NULL);
@@ -72,6 +85,13 @@ cleanup:
 	return NULL;
 }
 
+/**
+ * @brief Parses enum into BaseType and saves it into SDB
+ * 
+ * @param anal 
+ * @param type Current type
+ * @param types List of all types 
+ */
 static void parse_enum(const RAnal *anal, SType *type, RList *types) {
 	r_return_if_fail (anal && type && types);
 	STypeInfo *type_info = &type->type_data;
@@ -132,7 +152,13 @@ cleanup:
 	return;
 }
 
-// parses classes, unions and structures for now
+/**
+ * @brief Parses classes, unions and structures into BaseType and saves them into SDB
+ * 
+ * @param anal 
+ * @param type Current type
+ * @param types List of all types
+ */
 static void parse_structure(const RAnal *anal, SType *type, RList *types) {
 	r_return_if_fail (anal && type && types);
 	STypeInfo *type_info = &type->type_data;
@@ -191,6 +217,13 @@ cleanup:
 	return;
 }
 
+/**
+ * @brief Delegate the type parsing to appropriate function
+ * 
+ * @param anal 
+ * @param type Current type
+ * @param types List of all types
+ */
 static void parse_type (const RAnal *anal, SType *type, RList *types) {
 	r_return_if_fail (anal && type && types);
 
@@ -211,6 +244,8 @@ static void parse_type (const RAnal *anal, SType *type, RList *types) {
 		parse_enum (anal, type, types);
 		break;
 	default:
+		// shouldn't happen, happens when someone modifies leafs that get here
+		// but not how they should be parsed
 		eprintf ("Unknown type record");
 		break;
 	}
@@ -219,8 +254,8 @@ static void parse_type (const RAnal *anal, SType *type, RList *types) {
 /**
  * @brief Saves PDB types from TPI stream into the SDB
  * 
- * @param anal 
- * @param pdb 
+ * @param anal
+ * @param pdb PDB information
  */
 R_API void parse_pdb_types(const RAnal *anal, const R_PDB *pdb) {
 	r_return_if_fail (anal && pdb);
