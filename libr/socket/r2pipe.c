@@ -238,7 +238,6 @@ R_API R2Pipe *r2pipe_open(const char *cmd) {
 	if (!r2p) {
 		return NULL;
 	}
-	// r2p->magic = R2P_MAGIC;
 	if (R_STR_ISEMPTY (cmd)) {
 		r2p->child = -1;
 		return r2p_open_spawn (r2p, cmd);
@@ -280,7 +279,7 @@ R_API R2Pipe *r2pipe_open(const char *cmd) {
 			return NULL;
 		}
 		if (ch == -1) {
-			eprintf ("[+] r2pipeipe-io link failed. Expected two null bytes.\n");
+			eprintf ("[+] r2pipe link error.\n");
 			r2pipe_close (r2p);
 			return NULL;
 		}

@@ -15,6 +15,7 @@ if get_option('enable_tests')
     'bitmap',
     'buf',
     'cmd',
+    'r2pipe',
     'cons',
     'contrbtree',
     'debruijn',
