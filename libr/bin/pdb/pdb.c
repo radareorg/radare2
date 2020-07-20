@@ -641,6 +641,156 @@ static SimpleTypeKind get_simple_type_kind (PDB_SIMPLE_TYPES type) {
 }
 
 /**
+ * @brief Maps simple type into a format string for `pf`
+ * 
+ * @param simple_type
+ * @param member_format pointer to assert member format to
+ * @return int -1 if it's unparsable, -2 if it should be skipped, 0 if all is correct
+ */
+static int simple_type_to_format (const SLF_SIMPLE_TYPE *simple_type, char **member_format) {
+	SimpleTypeMode mode = get_simple_type_mode (simple_type->base_type);
+	switch (mode) {
+	case DIRECT: {
+		// go futher to the type TODO
+		SimpleTypeKind kind = get_simple_type_kind (simple_type->base_type);
+		switch (kind) {
+		case PDB_NONE:
+		case PDB_VOID:
+		case PDB_NOT_TRANSLATED:
+		case PDB_HRESULT:
+			return -1;
+			break;
+		case PDB_SIGNED_CHAR:
+		case PDB_NARROW_CHAR:
+			*member_format = "c";
+			break;
+		case PDB_UNSIGNED_CHAR:
+			*member_format = "b";
+			break;
+		case PDB_SBYTE:
+			*member_format = "n1";
+			break;
+		case PDB_BOOL8:
+		case PDB_BYTE:
+			*member_format = "N1";
+			break;
+		case PDB_INT16_SHORT:
+		case PDB_INT16:
+			*member_format = "n2";
+			break;
+		case PDB_UINT16_SHORT:
+		case PDB_UINT16:
+		case PDB_WIDE_CHAR: // TODO what ideal format for wchar?
+		case PDB_CHAR16:
+		case PDB_BOOL16:
+			*member_format = "N2";
+			break;
+		case PDB_INT32_LONG:
+		case PDB_INT32:
+			*member_format = "n4";
+			break;
+		case PDB_UINT32_LONG:
+		case PDB_UINT32:
+		case PDB_CHAR32:
+		case PDB_BOOL32:
+			*member_format = "N4";
+			break;
+		case PDB_INT64_QUAD:
+		case PDB_INT64:
+			*member_format = "n8";
+			break;
+		case PDB_UINT64_QUAD:
+		case PDB_UINT64:
+		case PDB_BOOL64:
+			*member_format = "N8";
+			break;
+		// TODO these when formatting for them will exist
+		case PDB_INT128_OCT:
+		case PDB_UINT128_OCT:
+		case PDB_INT128:
+		case PDB_UINT128:
+		case PDB_BOOL128:
+			*member_format = "::::";
+			return -2;
+			////////////////////////////////////
+			// TODO these when formatting for them will exist
+			// I assume complex are made up by 2 floats
+		case PDB_COMPLEX16:
+			*member_format = "..";
+			return -2;
+		case PDB_COMPLEX32:
+		case PDB_COMPLEX32_PP:
+			*member_format = ":";
+			return -2;
+		case PDB_COMPLEX48:
+			*member_format = ":.";
+			return -2;
+		case PDB_COMPLEX64:
+			*member_format = "::";
+			return -2;
+		case PDB_COMPLEX80:
+			*member_format = "::..";
+			return -2;
+		case PDB_COMPLEX128:
+			*member_format = "::::";
+			return -2;
+
+		case PDB_FLOAT32:
+		case PDB_FLOAT32_PP:
+			*member_format = "f";
+			break;
+		case PDB_FLOAT64:
+			*member_format = "F";
+			break;
+			////////////////////////////////////
+			// TODO these when formatting for them will exist
+		case PDB_FLOAT16:
+			*member_format = "..";
+			return -2;
+		case PDB_FLOAT48:
+			*member_format = ":.";
+			return -2;
+		case PDB_FLOAT80:
+			*member_format = "::..";
+			return -2;
+		case PDB_FLOAT128:
+			*member_format = "::::";
+			return -2;
+		default:
+			r_warn_if_reached ();
+			break;
+		}
+	} break;
+	case NEAR_POINTER:
+		*member_format = "p2";
+		break;
+	case FAR_POINTER:
+		*member_format = "p4";
+		break;
+	case HUGE_POINTER:
+		*member_format = "p4";
+		break;
+	case NEAR_POINTER32:
+		*member_format = "p4";
+		break;
+	case FAR_POINTER32:
+		*member_format = "p4";
+		break;
+	case NEAR_POINTER64:
+		*member_format = "p8";
+		break;
+	case NEAR_POINTER128:
+		*member_format = "p8::"; // TODO fix when support for 16 bytes
+		break;
+	default:
+		// unknown mode ??
+		r_warn_if_reached ();
+		return -1;
+	}
+	return 0;
+}
+
+/**
  * @brief Creates the format string and puts it into format
  * 
  * @param type_info Information about the member type
@@ -678,150 +828,20 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *n
 
 	char *member_format = NULL;
 	char tmp_format[5] = { 0 }; // used as writable format buffer
-	if (type_info->leaf_type == eLF_SIMPLE_TYPE) {
-		SLF_SIMPLE_TYPE *simple_type = type_info->type_info;
-		SimpleTypeMode mode = get_simple_type_mode (simple_type->base_type);
 
-		switch (mode) {
-		case DIRECT: {
-			// go futher to the type TODO
-			SimpleTypeKind kind = get_simple_type_kind (simple_type->base_type);
-			switch (kind) {
-			case PDB_NONE:
-			case PDB_VOID:
-			case PDB_NOT_TRANSLATED:
-			case PDB_HRESULT:
-				return -1;
-				break;
-			case PDB_SIGNED_CHAR:
-			case PDB_NARROW_CHAR:
-				member_format = "c";
-				break;
-			case PDB_UNSIGNED_CHAR:
-				member_format = "b";
-				break;
-			case PDB_SBYTE:
-				member_format = "n1";
-				break;
-			case PDB_BOOL8:
-			case PDB_BYTE:
-				member_format = "N1";
-				break;
-			case PDB_INT16_SHORT:
-			case PDB_INT16:
-				member_format = "n2";
-				break;
-			case PDB_UINT16_SHORT:
-			case PDB_UINT16:
-			case PDB_WIDE_CHAR: // TODO what ideal format for wchar?
-			case PDB_CHAR16:
-			case PDB_BOOL16:
-				member_format = "N2";
-				break;
-			case PDB_INT32_LONG:
-			case PDB_INT32:
-				member_format = "n4";
-				break;
-			case PDB_UINT32_LONG:
-			case PDB_UINT32:
-			case PDB_CHAR32:
-			case PDB_BOOL32:
-				member_format = "N4";
-				break;
-			case PDB_INT64_QUAD:
-			case PDB_INT64:
-				member_format = "n8";
-				break;
-			case PDB_UINT64_QUAD:
-			case PDB_UINT64:
-			case PDB_BOOL64:
-				member_format = "N8";
-				break;
-			// TODO these when formatting for them will exist
-			case PDB_INT128_OCT:
-			case PDB_UINT128_OCT:
-			case PDB_INT128:
-			case PDB_UINT128:
-			case PDB_BOOL128:
-				member_format = "::::";
+	switch (type_info->leaf_type) {
+	case eLF_SIMPLE_TYPE: {
+		int map_result = 0;
+		if ((map_result = simple_type_to_format (type_info->type_info, &member_format)) != 0) {
+			if (map_result == -1) { // unparsable
+				goto error;
+			} else if (map_result == -2) { // skip
 				goto skip;
-////////////////////////////////////
-// TODO these when formatting for them will exist
-// I assume complex are made up by 2 floats
-			case PDB_COMPLEX16:
-				member_format = "..";
-				goto skip;
-			case PDB_COMPLEX32:
-			case PDB_COMPLEX32_PP:
-				member_format = ":";
-				goto skip;
-			case PDB_COMPLEX48:
-				member_format = ":.";
-				goto skip;
-			case PDB_COMPLEX64:
-				member_format = "::";
-				goto skip;
-			case PDB_COMPLEX80:
-				member_format = "::..";
-				goto skip;
-			case PDB_COMPLEX128:
-				member_format = "::::";
-				goto skip;
-
-			case PDB_FLOAT32:
-			case PDB_FLOAT32_PP:
-				member_format = "f";
-				break;
-			case PDB_FLOAT64:
-				member_format = "F";
-				break;
-////////////////////////////////////
-// TODO these when formatting for them will exist
-			case PDB_FLOAT16:
-				member_format = "..";
-				goto skip;
-			case PDB_FLOAT48:
-				member_format = ":.";
-				goto skip;
-			case PDB_FLOAT80:
-				member_format = "::..";
-				goto skip;
-			case PDB_FLOAT128:
-				member_format = "::::";
-				goto skip;
-			default:
-				r_warn_if_reached ();
-				break;
 			}
-		} break;
-		case NEAR_POINTER:
-			member_format = "p2";
-			break;
-		case FAR_POINTER:
-			member_format = "p4";
-			break;
-		case HUGE_POINTER:
-			member_format = "p4";
-			break;
-		case NEAR_POINTER32:
-			member_format = "p4";
-			break;
-		case FAR_POINTER32:
-			member_format = "p4";
-			break;
-		case NEAR_POINTER64:
-			member_format = "p8";
-			break;
-		case NEAR_POINTER128:
-			member_format = "p8::"; // TODO fix when support for 16 bytes
-			break;
-		default:
-			// unknown mode ??
-			r_warn_if_reached ();
-			break;
 		}
 		r_strbuf_append (names, name);
-	} else if (type_info->leaf_type == eLF_POINTER) { // TODO look at what it points to
+	} break;
+	case eLF_POINTER: {
 		int size = 4;
 		if (type_info->get_val) {
 			type_info->get_val (type_info, &size);
@@ -829,9 +849,10 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *n
 		snprintf (tmp_format, 5, "p%d", size);
 		member_format = tmp_format;
 		r_strbuf_appendf (names, name);
-	} else if (type_info->leaf_type == eLF_STRUCTURE ||
-		type_info->leaf_type == eLF_UNION ||
-		type_info->leaf_type == eLF_CLASS) {
+	} break;
+	case eLF_CLASS:
+	case eLF_UNION:
+	case eLF_STRUCTURE: {
 		member_format = "?";
 		char *field_name = NULL;
 		if (type_info->get_name) {
@@ -844,13 +865,18 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *n
 		}
 		r_strbuf_appendf (names, "(%s)%s", field_name, name);
 		free (field_name);
-	} else if (type_info->leaf_type == eLF_BITFIELD) {
+	} break;
+	// TODO complete the type with additional info
+	case eLF_BITFIELD: {
 		member_format = "B";
-		r_strbuf_appendf (names, "(uint)%s", name); // TODO complete the type with additional info
-	} else if (type_info->leaf_type == eLF_ENUM) {
+		r_strbuf_appendf (names, "(uint)%s", name);
+	} break;
+	 // TODO complete the type with additional info
+	case eLF_ENUM: {
 		member_format = "E";
-		r_strbuf_appendf (names, "(int)%s", name); // TODO complete the type with additional info
-	} else if (type_info->leaf_type == eLF_ARRAY) {
+		r_strbuf_appendf (names, "(int)%s", name);
+	} break;
+	case eLF_ARRAY: {
 		int size = 0;
 		if (type_info->get_val) {
 			type_info->get_val (type_info, &size);
@@ -858,19 +884,24 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *n
 		snprintf (tmp_format, 5, "[%d]", size);
 		member_format = tmp_format;
 		r_strbuf_append (names, name); // TODO complete the type with additional info
-	} else {
+	} break;
+
+	default:
 		r_warn_if_reached (); // Unhandled type format
-		free (name);
-		return -1;
+		goto error;
 	}
+
 	if (!member_format) {
 		r_warn_if_reached (); // Unhandled type format
-		return -1;
+		goto error;
 	}
 	r_strbuf_appendf (format, "%s", member_format);
 skip: // shortcut for unknown types where we only skip the bytes
 	free (name);
 	return 0;
+error:
+	free (name);
+	return -1;
 }
 
 static inline bool is_printable_type(ELeafType type) {

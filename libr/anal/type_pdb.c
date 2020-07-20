@@ -50,6 +50,7 @@ static RAnalStructMember *parse_member(STypeInfo *type_info, RList *types) {
 cleanup:
 	return NULL;
 }
+
 static RAnalEnumCase *parse_enumerate(STypeInfo *type_info, RList *types) {
 	r_return_val_if_fail (type_info && types && type_info->leaf_type == eLF_ENUMERATE, NULL);
 	r_return_val_if_fail (type_info->get_val && type_info->get_name, NULL);
