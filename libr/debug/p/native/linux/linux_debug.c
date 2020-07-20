@@ -371,9 +371,9 @@ bool linux_attach_new_process(RDebug *dbg, int pid) {
 }
 
 static void linux_dbg_wait_break(RDebug *dbg) {
-	// Stop the currently debugged thread
-	if (!linux_kill_thread (dbg->tid, SIGSTOP)) {
-		eprintf ("Could not stop pid (%d)\n", dbg->pid);
+	// Interrupt the currently debugged thread
+	if (!linux_kill_thread (dbg->tid, SIGINT)) {
+		eprintf ("Could not interrupt pid (%d)\n", dbg->pid);
 		return;
 	}
 }
@@ -388,11 +388,8 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int my_pid) {
 		flags |= WNOHANG;
 	}
 
-	// Ignore keyboard interrupt while waiting to avoid signaling the child process twice on
-	// break(SIGSTOP is sent by wait_break) which forced the user to continue an extra time
-	// to handle SIGINT
-	// r_sys_signal (SIGINT, SIG_IGN);
-	// r_cons_break_push ((RConsBreakCallback) linux_dbg_wait_break, dbg);
+	// Send SIGINT to the target thread when interrupted
+	r_cons_break_push ((RConsBreakCallback) linux_dbg_wait_break, dbg);
 repeat:
 	for (;;) {
 		if (r_cons_is_breaked ()) {
@@ -405,7 +402,7 @@ repeat:
 		r_cons_sleep_end (bed);
 
 		if (ret < 0) {
-			perror ("waitpid");
+			perror ("here waitpid");
 			break;
 		} else if (!ret) {
 			flags &= ~WNOHANG;
@@ -477,8 +474,7 @@ repeat:
 			}
 		}
 	}
-	// r_cons_break_pop ();
-	// r_sys_signal (SIGINT, SIG_DFL);
+	r_cons_break_pop ();
 	dbg->reason.tid = pid;
 	return reason;
 }
@@ -1180,9 +1176,8 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 		if (ret == -1) {
 			r_sys_perror ("reg_write");
 			return false;
-		} else {
-			return true;
 		}
+		return true;
 	}
 	if (type == R_REG_TYPE_FPU) {
 #if __i386__ || __x86_64__

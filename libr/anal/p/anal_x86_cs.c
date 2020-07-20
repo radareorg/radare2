@@ -1864,11 +1864,11 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	}
 }
 
-static RRegItem *cs_reg2reg(RReg *reg, csh *handle, int id) {
+static RRegItem *cs_reg2reg(RReg *reg, csh *h, int id) {
 	if (id == X86_REG_INVALID) {
 		return NULL;
 	}
-	return r_reg_get (reg, (char *)cs_reg_name (*handle, id), -1);
+	return r_reg_get (reg, (char *)cs_reg_name (*h, id), -1);
 }
 
 static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, int mode) {

@@ -177,7 +177,7 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 
 	/* inform the user of what happened */
 	if (dbg->hitinfo) {
-		eprintf ("hit %spoint at: %" PFMT64x "\n",
+		eprintf ("hit %spoint at: 0x%" PFMT64x "\n",
 			b->trace ? "trace" : "break", pc);
 	}
 
@@ -748,6 +748,9 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 				*bp = b;
 			}
 
+			if (b && reason == R_DEBUG_REASON_STEP) {
+				reason = R_DEBUG_REASON_BREAKPOINT;
+			}
 			/* if we hit a tracing breakpoint, we need to continue in
 			 * whatever mode the user desired. */
 			if (dbg->corebind.core && b && b->cond) {
@@ -880,7 +883,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	return ret;
 }
 
-R_API int r_debug_step_hard(RDebug *dbg) {
+R_API int r_debug_step_hard(RDebug *dbg, RBreakpointItem **pb) {
 	RDebugReasonType reason;
 
 	dbg->reason.type = R_DEBUG_REASON_STEP;
@@ -905,7 +908,7 @@ R_API int r_debug_step_hard(RDebug *dbg) {
 	if (!dbg->h->step (dbg)) {
 		return false;
 	}
-	reason = r_debug_wait (dbg, NULL);
+	reason = r_debug_wait (dbg, pb);
 	if (reason == R_DEBUG_REASON_DEAD || r_debug_is_dead (dbg)) {
 		return false;
 	}
@@ -923,6 +926,7 @@ R_API int r_debug_step_hard(RDebug *dbg) {
 }
 
 R_API int r_debug_step(RDebug *dbg, int steps) {
+	RBreakpointItem *bp = NULL;
 	int ret, steps_taken = 0;
 
 	/* who calls this without giving a positive number? */
@@ -950,6 +954,7 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 		if (dbg->session && dbg->recoil_mode == R_DBG_RECOIL_NONE) {
 			dbg->session->cnum++;
 			dbg->session->maxcnum++;
+			dbg->session->bp = 0;
 			if (!r_debug_trace_ins_before (dbg)) {
 				eprintf ("trace_ins_before: failed");
 			}
@@ -958,7 +963,7 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 		if (dbg->swstep) {
 			ret = r_debug_step_soft (dbg);
 		} else {
-			ret = r_debug_step_hard (dbg);
+			ret = r_debug_step_hard (dbg, &bp);
 		}
 		if (!ret) {
 			eprintf ("Stepping failed!\n");
@@ -970,6 +975,7 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 				eprintf ("trace_ins_after: failed");
 			}
 			dbg->session->reasontype = dbg->reason.type;
+			dbg->session->bp = bp;
 		}
 
 		dbg->steps++;
@@ -1107,49 +1113,45 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 		return 0;
 	}
 
-	if (dbg->session) {
-		// If the debugger is not at the end of the session
-		// Go to the end or the next breakpoint
-		if (dbg->session->cnum != dbg->session->maxcnum) {
-			bool has_bp = false;
-			RRegItem *ripc = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
-			RVector *vreg = ht_up_find (dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
-			RDebugChangeReg *reg;
-			r_vector_foreach_prev (vreg, reg) {
-				if (reg->cnum <= dbg->session->cnum) {
-					continue;
-				}
-				has_bp = r_bp_get_in (dbg->bp, reg->data, R_BP_PROT_EXEC) != NULL;
-				if (has_bp) {
-					eprintf ("hit breakpoint at: 0x%" PFMT64x " cnum: %d\n", reg->data, reg->cnum);
-					r_debug_goto_cnum (dbg, reg->cnum);
-					return dbg->tid;
-				}
+	// If the debugger is not at the end of the changes
+	// Go to the end or the next breakpoint in the changes
+	if (dbg->session && dbg->session->cnum != dbg->session->maxcnum) {
+		bool has_bp = false;
+		RRegItem *ripc = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
+		RVector *vreg = ht_up_find (dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
+		RDebugChangeReg *reg;
+		r_vector_foreach_prev (vreg, reg) {
+			if (reg->cnum <= dbg->session->cnum) {
+				continue;
 			}
-
-			r_debug_goto_cnum (dbg, dbg->session->maxcnum);
-			return dbg->tid;
+			has_bp = r_bp_get_in (dbg->bp, reg->data, R_BP_PROT_EXEC) != NULL;
+			if (has_bp) {
+				eprintf ("hit breakpoint at: 0x%" PFMT64x " cnum: %d\n", reg->data, reg->cnum);
+				r_debug_goto_cnum (dbg, reg->cnum);
+				return dbg->tid;
+			}
 		}
 
-		if (dbg->trace_continue) {
-			// Continuously stepping to trace each instruction until user interrupt ^C
-			r_cons_break_push (NULL, NULL);
-			while (!r_cons_is_breaked ()) {
-				r_debug_step (dbg, 1);
-				if (dbg->session->reasontype != R_DEBUG_REASON_STEP) {
-					break;
-				}
-			}
-			r_cons_break_pop ();
-			return dbg->tid;
-		}
+		r_debug_goto_cnum (dbg, dbg->session->maxcnum);
+		return dbg->tid;
 	}
 
 repeat:
 	if (r_debug_is_dead (dbg)) {
 		return 0;
 	}
-	if (dbg->h && dbg->h->cont) {
+	if (dbg->session && dbg->trace_continue) {
+		while (!r_cons_is_breaked ()) {
+			if (r_debug_step (dbg, 1) != 1) {
+				break;
+			}
+			if (dbg->session->reasontype != R_DEBUG_REASON_STEP) {
+				break;
+			}
+		}
+		reason = dbg->session->reasontype;
+		bp = dbg->session->bp;
+	} else if (dbg->h && dbg->h->cont) {
 		/* handle the stage-2 of breakpoints */
 		if (!r_debug_recoil (dbg, R_DBG_RECOIL_CONTINUE)) {
 			return 0;
@@ -1157,119 +1159,121 @@ repeat:
 		/* tell the inferior to go! */
 		ret = dbg->h->cont (dbg, dbg->pid, dbg->tid, sig);
 		//XXX(jjd): why? //dbg->reason.signum = 0;
-
 		reason = r_debug_wait (dbg, &bp);
-		if (dbg->corebind.core) {
-			RCore *core = (RCore *)dbg->corebind.core;
-			RNum *num = core->num;
-			if (reason == R_DEBUG_REASON_COND) {
-				if (bp && bp->cond && dbg->corebind.cmd) {
-					dbg->corebind.cmd (dbg->corebind.core, bp->cond);
-				}
-				if (num->value) {
-					goto repeat;
-				}
+	} else {
+		return 0;
+	}
+
+	if (dbg->corebind.core) {
+		RCore *core = (RCore *)dbg->corebind.core;
+		RNum *num = core->num;
+		if (reason == R_DEBUG_REASON_COND) {
+			if (bp && bp->cond && dbg->corebind.cmd) {
+				dbg->corebind.cmd (dbg->corebind.core, bp->cond);
+			}
+			if (num->value) {
+				goto repeat;
 			}
 		}
-		if (reason == R_DEBUG_REASON_BREAKPOINT &&
-		   ((bp && !bp->enabled) || (!bp && !r_cons_is_breaked () && dbg->corebind.core &&
-			   		    dbg->corebind.cfggeti (dbg->corebind.core, "dbg.bpsysign")))) {
-			goto repeat;
-		}
+	}
+	if (reason == R_DEBUG_REASON_BREAKPOINT &&
+	   ((bp && !bp->enabled) || (!bp && !r_cons_is_breaked () && dbg->corebind.core &&
+					dbg->corebind.cfggeti (dbg->corebind.core, "dbg.bpsysign")))) {
+		goto repeat;
+	}
 
 #if __linux__
-		if (reason == R_DEBUG_REASON_NEW_PID && dbg->follow_child) {
+	if (reason == R_DEBUG_REASON_NEW_PID && dbg->follow_child) {
 #if DEBUGGER
-			/// if the plugin is not compiled link fails, so better do runtime linking
-			/// until this code gets fixed
-			static bool (*linux_attach_new_process) (RDebug *dbg, int pid) = NULL;
-			if (!linux_attach_new_process) {
-				linux_attach_new_process = r_lib_dl_sym (NULL, "linux_attach_new_process");
-			}
-			if (linux_attach_new_process) {
-				linux_attach_new_process (dbg, dbg->forked_pid);
-			}
-#endif
-			goto repeat;
+		/// if the plugin is not compiled link fails, so better do runtime linking
+		/// until this code gets fixed
+		static bool (*linux_attach_new_process) (RDebug *dbg, int pid) = NULL;
+		if (!linux_attach_new_process) {
+			linux_attach_new_process = r_lib_dl_sym (NULL, "linux_attach_new_process");
 		}
+		if (linux_attach_new_process) {
+			linux_attach_new_process (dbg, dbg->forked_pid);
+		}
+#endif
+		goto repeat;
+	}
 
-		if (reason == R_DEBUG_REASON_NEW_TID) {
-			ret = dbg->tid;
-			if (!dbg->trace_clone) {
-				goto repeat;
-			}
+	if (reason == R_DEBUG_REASON_NEW_TID) {
+		ret = dbg->tid;
+		if (!dbg->trace_clone) {
+			goto repeat;
 		}
+	}
 
-		if (reason == R_DEBUG_REASON_EXIT_TID) {
-			goto repeat;
-		}
+	if (reason == R_DEBUG_REASON_EXIT_TID) {
+		goto repeat;
+	}
 #endif
-		if (reason != R_DEBUG_REASON_DEAD) {
-			ret = dbg->tid;
-		}
+	if (reason != R_DEBUG_REASON_DEAD) {
+		ret = dbg->tid;
+	}
 #if __WINDOWS__
-		if (reason == R_DEBUG_REASON_NEW_LIB ||
-			reason == R_DEBUG_REASON_EXIT_LIB ||
-			reason == R_DEBUG_REASON_NEW_TID ||
-			reason == R_DEBUG_REASON_NONE ||
-			reason == R_DEBUG_REASON_EXIT_TID ) {
-			goto repeat;
-		}
+	if (reason == R_DEBUG_REASON_NEW_LIB ||
+		reason == R_DEBUG_REASON_EXIT_LIB ||
+		reason == R_DEBUG_REASON_NEW_TID ||
+		reason == R_DEBUG_REASON_NONE ||
+		reason == R_DEBUG_REASON_EXIT_TID ) {
+		goto repeat;
+	}
 #endif
-		if (reason == R_DEBUG_REASON_EXIT_PID) {
+	if (reason == R_DEBUG_REASON_EXIT_PID) {
 #if __WINDOWS__
-			dbg->pid = -1;
+		dbg->pid = -1;
 #elif __linux__
-			r_debug_bp_update (dbg);
-			r_bp_restore (dbg->bp, false); // (vdf) there has got to be a better way
+		r_debug_bp_update (dbg);
+		r_bp_restore (dbg->bp, false); // (vdf) there has got to be a better way
 #endif
-		}
+	}
 
-		/* if continuing killed the inferior, we won't be able to get
-		 * the registers.. */
-		if (reason == R_DEBUG_REASON_DEAD || r_debug_is_dead (dbg)) {
-			return 0;
-		}
+	/* if continuing killed the inferior, we won't be able to get
+	 * the registers.. */
+	if (reason == R_DEBUG_REASON_DEAD || r_debug_is_dead (dbg)) {
+		return 0;
+	}
 
-		/* if we hit a tracing breakpoint, we need to continue in
-		 * whatever mode the user desired. */
-		if (reason == R_DEBUG_REASON_TRACEPOINT) {
-			r_debug_step (dbg, 1);
+	/* if we hit a tracing breakpoint, we need to continue in
+	 * whatever mode the user desired. */
+	if (reason == R_DEBUG_REASON_TRACEPOINT) {
+		r_debug_step (dbg, 1);
+		goto repeat;
+	}
+
+	/* choose the thread that was returned from the continue function */
+	// XXX(jjd): there must be a cleaner way to do this...
+	if (ret != dbg->tid) {
+		r_debug_select (dbg, dbg->pid, ret);
+	}
+	sig = 0; // clear continuation after signal if needed
+
+	/* handle general signals here based on the return from the wait
+	 * function */
+	if (dbg->reason.signum != -1) {
+		int what = r_debug_signal_what (dbg, dbg->reason.signum);
+		if (what & R_DBG_SIGNAL_CONT) {
+			sig = dbg->reason.signum;
+			eprintf ("Continue into the signal %d handler\n", sig);
 			goto repeat;
-		}
-
-		/* choose the thread that was returned from the continue function */
-		// XXX(jjd): there must be a cleaner way to do this...
-		if (ret != dbg->tid) {
-			r_debug_select (dbg, dbg->pid, ret);
-		}
-		sig = 0; // clear continuation after signal if needed
-
-		/* handle general signals here based on the return from the wait
-		 * function */
-		if (dbg->reason.signum != -1) {
-			int what = r_debug_signal_what (dbg, dbg->reason.signum);
-			if (what & R_DBG_SIGNAL_CONT) {
-				sig = dbg->reason.signum;
-				eprintf ("Continue into the signal %d handler\n", sig);
+		} else if (what & R_DBG_SIGNAL_SKIP) {
+			// skip signal. requires skipping one instruction
+			ut8 buf[64];
+			RAnalOp op = {0};
+			ut64 pc = r_debug_reg_get (dbg, "PC");
+			dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
+			r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC);
+			if (op.size > 0) {
+				const char *signame = r_signal_to_string (dbg->reason.signum);
+				r_debug_reg_set (dbg, "PC", pc+op.size);
+				eprintf ("Skip signal %d handler %s\n",
+					dbg->reason.signum, signame);
 				goto repeat;
-			} else if (what & R_DBG_SIGNAL_SKIP) {
-				// skip signal. requires skipping one instruction
-				ut8 buf[64];
-				RAnalOp op = {0};
+			} else {
 				ut64 pc = r_debug_reg_get (dbg, "PC");
-				dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
-				r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC);
-				if (op.size > 0) {
-					const char *signame = r_signal_to_string (dbg->reason.signum);
-					r_debug_reg_set (dbg, "PC", pc+op.size);
-					eprintf ("Skip signal %d handler %s\n",
-						dbg->reason.signum, signame);
-					goto repeat;
-				} else {
-					ut64 pc = r_debug_reg_get (dbg, "PC");
-					eprintf ("Stalled with an exception at 0x%08"PFMT64x"\n", pc);
-				}
+				eprintf ("Stalled with an exception at 0x%08"PFMT64x"\n", pc);
 			}
 		}
 	}
@@ -1286,6 +1290,7 @@ repeat:
 		r_bp_restore (dbg->bp, false);
 	}
 
+	// Add a checkpoint at stops
 	if (dbg->session && !dbg->trace_continue) {
 		dbg->session->cnum++;
 		dbg->session->maxcnum++;

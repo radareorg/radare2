@@ -43,7 +43,7 @@ R_API int r_debug_trace_tag (RDebug *dbg, int tag) {
 	return (dbg->trace->tag = (tag>0)? tag: UT32_MAX);
 }
 
-R_API int r_debug_trace_ins_before(RDebug *dbg) {
+R_API bool r_debug_trace_ins_before(RDebug *dbg) {
 	RListIter *it, *it_tmp;
 	RAnalValue *val;
 	ut8 buf_pc[32];
@@ -107,7 +107,7 @@ R_API int r_debug_trace_ins_before(RDebug *dbg) {
 	return true;
 }
 
-R_API int r_debug_trace_ins_after(RDebug *dbg) {
+R_API bool r_debug_trace_ins_after(RDebug *dbg) {
 	RListIter *it;
 	RAnalValue *val;
 

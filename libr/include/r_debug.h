@@ -200,6 +200,7 @@ typedef struct r_debug_session_t {
 	HtUP *memory; /* RVector<RDebugChangeMem> */
 	HtUP *registers; /* RVector<RDebugChangeReg> */
 	int /*RDebugReasonType*/ reasontype;
+	RBreakpointItem *bp;
 } RDebugSession;
 
 /* Session file format */
@@ -585,8 +586,8 @@ R_API bool r_debug_session_add_reg_change(RDebugSession *session, int arena, ut6
 R_API bool r_debug_session_add_mem_change(RDebugSession *session, ut64 addr, ut8 data);
 R_API void r_debug_session_restore_reg_mem(RDebug *dbg, ut32 cnum);
 R_API void r_debug_session_list_memory(RDebug *dbg);
-R_API int r_debug_trace_ins_before(RDebug *dbg);
-R_API int r_debug_trace_ins_after(RDebug *dbg);
+R_API bool r_debug_trace_ins_before(RDebug *dbg);
+R_API bool r_debug_trace_ins_after(RDebug *dbg);
 
 R_API RDebugSession *r_debug_session_new(RDebug *dbg);
 R_API void r_debug_session_free(RDebugSession *session);
