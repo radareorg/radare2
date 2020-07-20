@@ -1,5 +1,126 @@
+static int hack_handle_dp_reg(ut32 insn, RAnalOp *op) {
+	const ut8 op0 = (insn >> 30) & 0x1;
+	const ut8 op1 = (insn >> 28) & 0x1;
+	const ut8 op2 = (insn >> 21) & 0xf;
+
+	// Data-processing (2 source)
+	if (op0 == 0 && op1 == 1 && op2 == 0x6) {
+		const ut8 sf = (insn >> 31) & 0x1;
+		const ut8 S = (insn >> 29) & 0x1;
+		const ut8 opcode = (insn >> 10) & 0x1f;
+		if (sf == 1 && S == 0 && opcode == 4) {
+			// irg
+			op->type = R_ANAL_OP_TYPE_MOV;
+			return op->size = 4;
+		} else if (sf == 1 && S == 0 && opcode == 0) {
+			// subp
+			op->type = R_ANAL_OP_TYPE_SUB;
+			return op->size = 4;
+		} else if (sf == 1 && S == 0 && opcode == 5) {
+			// gmi
+			op->type = R_ANAL_OP_TYPE_MOV;
+			return op->size = 4;
+		} else if (sf == 1 && S == 1 && opcode == 0) {
+			// subps
+			op->type = R_ANAL_OP_TYPE_SUB;
+			return op->size = 4;
+		}
+	}
+	return -1;
+}
+
+static int hack_handle_ldst(ut32 insn, RAnalOp *op) {
+	const ut8 op0 = (insn >> 28) & 0xf;
+	const ut8 op1 = (insn >> 26) & 0x1;
+	ut8 op2 = (insn >> 23) & 0x3;
+	const ut8 op3 = (insn >> 21) & 0x1;
+
+	// Load/store memory tags
+	if (op0 == 13 && op1 == 0 && (op2 == 2 || op2 == 3) && op3 == 1) {
+		const ut8 opc = (insn >> 22) & 0x3;
+		op2 = (insn >> 10) & 0x3;
+
+		if (op2 > 0) {
+			switch (opc) {
+			case 0:
+				// stg
+				op->type = R_ANAL_OP_TYPE_STORE;
+				return op->size = 4;
+			case 1:
+				// stzg
+				op->type = R_ANAL_OP_TYPE_STORE;
+				return op->size = 4;
+			case 2:
+				// st2g
+				op->type = R_ANAL_OP_TYPE_STORE;
+				return op->size = 4;
+			case 3:
+				// stz2g
+				op->type = R_ANAL_OP_TYPE_STORE;
+				return op->size = 4;
+			}
+		} else if (op2 == 0) {
+			switch (opc) {
+			case 0:
+				// stzgm
+				op->type = R_ANAL_OP_TYPE_STORE;
+				return op->size = 4;
+			case 1:
+				// ldg
+				op->type = R_ANAL_OP_TYPE_LOAD;
+				return op->size = 4;
+			case 2:
+				// stgm
+				op->type = R_ANAL_OP_TYPE_STORE;
+				return op->size = 4;
+			case 3:
+				// ldgm
+				op->type = R_ANAL_OP_TYPE_LOAD;
+				return op->size = 4;
+			}
+		}
+	// Load/store register pair
+	} else if ((op0 & 0x3) == 2) {
+		const ut8 opc = (insn >> 30) & 0x3;
+		const ut8 V = (insn >> 26) & 0x1;
+		const ut8 L = (insn >> 22) & 0x1;
+
+		if (opc == 1 && V == 0 && L == 0) {
+			// stgp
+			op->type = R_ANAL_OP_TYPE_STORE;
+			return op->size = 4;
+		}
+	}
+	return -1;
+}
+
+static int hack_handle_dp_imm(ut32 insn, RAnalOp *op) {
+	const ut8 op0 = (insn >> 23) & 0x7;
+
+	// Add/subtract (immediate, with tags)
+	if (op0 == 3) {
+		const ut8 sf = (insn >> 31) & 0x1;
+		const ut8 op_ = (insn >> 30) & 0x1;
+		const ut8 S = (insn >> 29) & 0x1;
+		const ut8 o2 = (insn >> 2) & 0x1;
+		if (sf == 1 && op_ == 0 && S == 0 && o2 == 0) {
+			// addg
+			op->type = R_ANAL_OP_TYPE_ADD;
+			return op->size = 4;
+		} else if (sf == 1 && op_ == 1 && S == 0 && o2 == 0) {
+			// subg
+			op->type = R_ANAL_OP_TYPE_SUB;
+			return op->size = 4;
+		}
+	}
+	return -1;
+}
+
 static inline int hackyArmAnal(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
-	// Hacky support for ARMv8.3
+	int ret = -1;
+	ut32 *insn = (ut32 *)buf;
+	int insn_class = (*insn >> 25) & 0xf;
+	// Hacky support for ARMv8.3 and ARMv8.5
 	if (a->bits == 64 && len >= 4) {
 		// xpaci // e#43c1da
 		if (!memcmp (buf + 1, "\x43\xc1\xda", 3)) {
@@ -16,6 +137,36 @@ static inline int hackyArmAnal(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 			op->type = R_ANAL_OP_TYPE_RET;
 			return op->size = 4;
 		}
+
+		switch (insn_class) {
+		// Data Processing -- Register
+		case 5:
+		case 13:
+			// irg, subp, gmi, subps
+			ret = hack_handle_dp_reg (*insn, op);
+			break;
+		// Data Processing -- Immediate
+		case 8:
+		case 9:
+			// addg, subg
+			ret = hack_handle_dp_imm (*insn, op);
+			break;
+		// Loads and Stores
+		case 4:
+		case 6:
+		case 12:
+		case 14:
+			// stg, stzgm, ldg, stzg, st2g, stgm, stz2g, ldgm, stgp
+			ret = hack_handle_ldst (*insn, op);
+			break;
+		default:
+			break;
+		}
+
+		if (ret > 0) {
+			op->family = R_ANAL_OP_FAMILY_MTE;
+		}
+
 	}
-	return -1;
+	return ret;
 }
