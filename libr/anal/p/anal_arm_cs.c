@@ -3151,7 +3151,7 @@ static int hack_handle_dp_reg(ut32 insn, RAnalOp *op) {
 			op->type = R_ANAL_OP_TYPE_SUB;
 			return op->size = 4;
 		}
-	} 
+	}
 	return -1;
 }
 
@@ -3171,7 +3171,7 @@ static int hack_handle_ldst(ut32 insn, RAnalOp *op) {
 			case 0:
 				// stg
 				op->type = R_ANAL_OP_TYPE_STORE;
-				return op->size = 4; 
+				return op->size = 4;
 			case 1:
 				// stzg
 				op->type = R_ANAL_OP_TYPE_STORE;
@@ -3214,7 +3214,7 @@ static int hack_handle_ldst(ut32 insn, RAnalOp *op) {
 		if (opc == 1 && V == 0 && L == 0) {
 			// stgp
 			op->type = R_ANAL_OP_TYPE_STORE;
-			return op->size = 4;			
+			return op->size = 4;
 		}
 	}
 	return -1;
@@ -3232,11 +3232,11 @@ static int hack_handle_dp_imm(ut32 insn, RAnalOp *op) {
 		if (sf == 1 && op_ == 0 && S == 0 && o2 == 0) {
 			// addg
 			op->type = R_ANAL_OP_TYPE_ADD;
-			return op->size = 4;			
+			return op->size = 4;
 		} else if (sf == 1 && op_ == 1 && S == 0 && o2 == 0) {
 			// subg
 			op->type = R_ANAL_OP_TYPE_SUB;
-			return op->size = 4;			
+			return op->size = 4;
 		}
 	}
 	return -1;
@@ -3318,7 +3318,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	if (haa1 > 0) {
 		return haa1;
 	}
-	
+
 	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;

@@ -148,14 +148,14 @@ static int hack_handle_ldst(ut32 insn, char **buf_asm) {
 			case 2:
 				*buf_asm = r_str_newf ("%s x%d, [x%d, #0x%x]",
 					mnemonic, Xt, Xn, imm9);
-				break;			
+				break;
 			case 3:
 				*buf_asm = r_str_newf ("%s x%d, [x%d, #0x%x]!",
 					mnemonic, Xt, Xn, imm9);
-				break;			
-			}			
+				break;
+			}
 			*buf_asm = r_str_replace (*buf_asm, "x31", "sp", 1);
-			return 0;	
+			return 0;
 		} else if (op2 == 0) {
 			switch (opc) {
 			case 0:
@@ -176,14 +176,14 @@ static int hack_handle_ldst(ut32 insn, char **buf_asm) {
 			}
 			if (ignore_imm9) {
 				*buf_asm = r_str_newf ("%s x%d, [x%d]",
-					mnemonic, Xt, Xn);	
+					mnemonic, Xt, Xn);
 			} else {
 				*buf_asm = r_str_newf ("%s x%d, [x%d, #0x%x]",
 					mnemonic, Xt, Xn, imm9);
 			}
 			*buf_asm = r_str_replace (*buf_asm, "x31", "sp", 1);
-			return 0;	
-		} 
+			return 0;
+		}
 	// Load/store register pair
 	} else if ((op0 & 0x3) == 2) {
 		const ut8 opc = (insn >> 30) & 0x3;
@@ -212,7 +212,7 @@ static int hack_handle_ldst(ut32 insn, char **buf_asm) {
 				return -1;
 			}
 			*buf_asm = r_str_replace (*buf_asm, "x31", "sp", 1);
-			return 0;			
+			return 0;
 		}
 	}
 	return -1;
