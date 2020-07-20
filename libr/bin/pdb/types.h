@@ -582,7 +582,7 @@ typedef enum {
 typedef struct {
 	char *type;
 	ut32 size;
-	PDB_SIMPLE_TYPES base_type;
+	PDB_SIMPLE_TYPES simple_type;
 } SLF_SIMPLE_TYPE;
 //### CodeView bitfields and enums
 //# NOTE: Construct assumes big-endian

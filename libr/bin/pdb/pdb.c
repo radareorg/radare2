@@ -648,10 +648,10 @@ static SimpleTypeKind get_simple_type_kind (PDB_SIMPLE_TYPES type) {
  * @return int -1 if it's unparsable, -2 if it should be skipped, 0 if all is correct
  */
 static int simple_type_to_format (const SLF_SIMPLE_TYPE *simple_type, char **member_format) {
-	SimpleTypeMode mode = get_simple_type_mode (simple_type->base_type);
+	SimpleTypeMode mode = get_simple_type_mode (simple_type->simple_type);
 	switch (mode) {
 	case DIRECT: {
-		SimpleTypeKind kind = get_simple_type_kind (simple_type->base_type);
+		SimpleTypeKind kind = get_simple_type_kind (simple_type->simple_type);
 		switch (kind) {
 		case PDB_NONE:
 		case PDB_VOID:
