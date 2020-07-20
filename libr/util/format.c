@@ -2372,31 +2372,31 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					break;
 				case 't':
 					r_print_format_time (p, endian, mode, setval, seeki, buf, i, size);
-					i += (size==-1) ? 4 : 4*size;
+					i += (size==-1)? 4: 4 * size;
 					break;
 				case 'q':
 					r_print_format_quadword (p, endian, mode, setval, seeki, buf, i, size);
-					i += (size == -1) ? 8 : 8  * size;
+					i += (size == -1)? 8: 8 * size;
 					break;
 				case 'Q':
-					if (i + 16 < len) {
+					if (1||i + 16 < len) {
 						r_print_format_u128 (p, endian, mode, setval, seeki, buf, i, size);
 					} else {
 						eprintf ("Warning: truncated uint128\n");
 					}
-					i += (size == -1) ? 16 : 16 * size;
+					i += (size == -1)? 16: 16 * size;
 					break;
 				case 'b':
 					r_print_format_byte (p, endian, mode, setval, seeki, buf, i, size);
-					i += (size==-1) ? 1 : size;
+					i += (size==-1)? 1: size;
 					break;
 				case 'C':
 					r_print_format_decchar (p, endian, mode, setval, seeki, buf, i, size);
-					i += (size==-1) ? 1 : size;
+					i += (size==-1)? 1: size;
 					break;
 				case 'c':
 					r_print_format_char (p, endian, mode, setval, seeki, buf, i, size);
-					i += (size==-1) ? 1 : size;
+					i += (size==-1)? 1: size;
 					break;
 				case 'X':
 					size = r_print_format_hexpairs (p, endian, mode, setval, seeki, buf, i, size);
@@ -2405,24 +2405,24 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				case 'T':
 					if (r_print_format_10bytes (p, mode,
 						setval, seeki, addr, buf) == 0) {
-						i += (size==-1) ? 4 : 4*size;
+						i += (size == -1)? 4: 4 * size;
 					}
 					break;
 				case 'f':
 					r_print_format_float (p, endian, mode, setval, seeki, buf, i, size);
-					i += (size==-1) ? 4 : 4*size;
+					i += (size == -1)? 4: 4 * size;
 					break;
 				case 'F':
 					r_print_format_double (p, endian, mode, setval, seeki, buf, i, size);
-					i += (size==-1) ? 8 : 8*size;
+					i += (size == -1)? 8: 8 * size;
 					break;
 				case 'i':
 					r_print_format_int (p, endian, mode, setval, seeki, buf, i, size);
-					i+= (size==-1) ? 4 : 4*size;
+					i+= (size == -1)? 4: 4 * size;
 					break;
 				case 'd': //WHY?? help says: 0x%%08x hexadecimal value (4 bytes)
 					r_print_format_hex (p, endian, mode, setval, seeki, buf, i, size);
-					i+= (size==-1) ? 4 : 4*size;
+					i+= (size == -1)? 4: 4 * size;
 					break;
 				case 'D':
 					if (isptr) {
@@ -2437,29 +2437,29 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					break;
 				case 'o':
 					r_print_format_octal (p, endian, mode, setval, seeki, buf, i, size);
-					i += (size==-1) ? 4 : 4 * size;
+					i += (size == -1)? 4: 4 * size;
 					break;
 				case ';':
 					noline = true;
-					i -= (size==-1) ? 4 : 4 * size;
+					i -= (size == -1)? 4: 4 * size;
 					if (i < 0) {
 						i = 0;
 					}
 					break;
 				case ',':
 					noline = true;
-					i -= (size==-1) ? 1 : size;
+					i -= (size == -1)? 1: size;
 					if (i < 0) {
 						i = 0;
 					}
 					break;
 				case 'x':
 					r_print_format_hexflag (p, endian, mode, setval, seeki, buf, i, size);
-					i += (size==-1) ? 4 : 4*size;
+					i += (size == -1)? 4: 4*size;
 					break;
 				case 'w':
 					r_print_format_word (p, endian, mode, setval, seeki, buf, i, size);
-					i += (size==-1) ? 2 : 2*size;
+					i += (size == -1)? 2: 2 * size;
 					break;
 				case 'z': // zero terminated string
 					r_print_format_nulltermstring (p, len, endian, mode, setval, seeki, buf, i, size);
@@ -2496,14 +2496,14 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 						size %= ARRAYINDEX_COEF;
 					}
 					r_print_format_bitfield (p, seeki, fmtname, fieldname, addr, mode, size);
-					i+=(size==-1)?1:size;
+					i+=(size == -1)? 1: size;
 					break;
 				case 'E': // resolve enum
 					if (size >= ARRAYINDEX_COEF) {
 						size %= ARRAYINDEX_COEF;
 					}
 					r_print_format_enum (p, seeki, fmtname, fieldname, addr, mode, size);
-					i += (size==-1)? 1: size;
+					i += (size == -1)? 1: size;
 					break;
 				case 'r':
 					if (fmtname) {
@@ -2644,7 +2644,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 							//or goto beach;???
 						}
 						r_print_format_num (p, endian, mode, setval, seeki, buf, i, bytes, sign, size);
-						i += (size == -1) ? bytes : size * bytes;
+						i += (size == -1)? bytes: size * bytes;
 						arg++;
 						break;
 					}
