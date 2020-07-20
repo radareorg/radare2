@@ -1194,6 +1194,7 @@ static void print_types_json(const R_PDB *pdb, const RList *types) {
 	}
 	pj_end (pj);
 	pdb->cb_printf (pj_string (pj));
+	pj_free (pj);
 }
 
 /**
@@ -1310,7 +1311,6 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 	RListIter *it = 0;
 	RList *l = 0;
 	char *name;
-	int is_first = 1;
 
 	l = pdb->pdb_streams2;
 	it = r_list_iterator (l);
@@ -1337,15 +1337,20 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 		eprintf ("There is no global symbols in current PDB.\n");
 		return;
 	}
+	PJ *pj = NULL;
 	if (format == 'j') {
-		pdb->cb_printf ("gvars:[");
+		pj = pj_new ();
+		if (!pj) {
+			return;
+		}
+		pj_ka (pj, "gvars");
 	}
-	gsym_data_stream = (SGDATAStream *) gsym->stream;
+	gsym_data_stream = (SGDATAStream *)gsym->stream;
 	if ((omap != 0) && (sctns_orig != 0)) {
-		pe_stream = (SPEStream *) sctns_orig->stream;
+		pe_stream = (SPEStream *)sctns_orig->stream;
 	} else {
 		if (sctns) {
-			pe_stream = (SPEStream *) sctns->stream;
+			pe_stream = (SPEStream *)sctns->stream;
 		}
 	}
 	if (!pe_stream) {
@@ -1353,11 +1358,11 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 	}
 	it = r_list_iterator (gsym_data_stream->globals_list);
 	while (r_list_iter_next (it)) {
-		gdata = (SGlobal *) r_list_iter_get (it);
+		gdata = (SGlobal *)r_list_iter_get (it);
 		sctn_header = r_list_get_n (pe_stream->sections_hdrs, (gdata->segment - 1));
 		if (sctn_header) {
 			name = r_bin_demangle_msvc (gdata->name.name);
-			name = (name)? name: strdup (gdata->name.name);
+			name = (name) ? name : strdup (gdata->name.name);
 			if (name && format != 'd') {
 				char *_name = name;
 				name = r_name_filter2 (_name);
@@ -1365,42 +1370,39 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 			}
 			switch (format) {
 			case 2:
-			case 'j':	// JSON
-				if (!is_first) {
-					pdb->cb_printf (",");
-				}
-				pdb->cb_printf ("{\"%s\":%d,\"%s\":%d,\"%s\":\"%.*s\",\"%s\":\"%s\"}",
-					"address", (ut64) (img_base + omap_remap ((omap)? (omap->stream): 0, gdata->offset + sctn_header->virtual_address)),
-					"symtype", gdata->symtype,
-					"section_name", PDB_SIZEOF_SECTION_NAME, sctn_header->name,
-					"gdata_name", name);
+			case 'j': // JSON
+				pj_o (pj);
+				pj_kN (pj, "address", (img_base + omap_remap ((omap) ? (omap->stream) : 0, gdata->offset + sctn_header->virtual_address)));
+				pj_kN (pj, "symtype", gdata->symtype);
+				pj_ks (pj, "section_name", sctn_header->name);
+				pj_ks (pj, "gdata_name", name);
+				pj_end (pj);
 				break;
 			case 1:
 			case '*':
 			case 'r':
-				pdb->cb_printf ("f pdb.%s = 0x%"PFMT64x " # %d %.*s\n",
+				pdb->cb_printf ("f pdb.%s = 0x%" PFMT64x " # %d %.*s\n",
 					name,
-					(ut64) (img_base + omap_remap ((omap)? (omap->stream): 0,
-							gdata->offset + sctn_header->virtual_address)),
+					(ut64) (img_base + omap_remap ((omap) ? (omap->stream) : 0, gdata->offset + sctn_header->virtual_address)),
 					gdata->symtype, PDB_SIZEOF_SECTION_NAME, sctn_header->name);
 				break;
 			case 'd':
 			default:
-				pdb->cb_printf ("0x%08"PFMT64x "  %d  %.*s  %s\n",
-					(ut64) (img_base + omap_remap ((omap)? (omap->stream): 0,
-							gdata->offset + sctn_header->virtual_address)),
+				pdb->cb_printf ("0x%08" PFMT64x "  %d  %.*s  %s\n",
+					(ut64) (img_base + omap_remap ((omap) ? (omap->stream) : 0, gdata->offset + sctn_header->virtual_address)),
 					gdata->symtype, PDB_SIZEOF_SECTION_NAME, sctn_header->name, name);
 				break;
 			}
 			free (name);
 		} else {
 			//eprintf ("Skipping %s, segment %d does not exist\n",
-				//gdata->name.name, (gdata->segment - 1));
+			//gdata->name.name, (gdata->segment - 1));
 		}
-		is_first = 0;
 	}
 	if (format == 'j') {
-		pdb->cb_printf ("],");
+		pj_end (pj);
+		pdb->cb_printf ("%s", pj_string (pj)); // don't wanna make it literal because of security
+		pj_free (pj);
 	}
 }
 
