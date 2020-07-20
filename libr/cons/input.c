@@ -420,15 +420,17 @@ static int __cons_readchar_w32(ut32 usec) {
 	HANDLE h;
 	INPUT_RECORD irInBuf = { { 0 } };
 	CONSOLE_SCREEN_BUFFER_INFO info = { { 0 } };
-	bool resize = false;
+	bool mouse_enabled = I->mouse;
 	bool click_n_drag = false;
 	void *bed;
 	I->mouse_event = 0;
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
-	DWORD newmode = I->vtmode == 2 
-			? ENABLE_VIRTUAL_TERMINAL_INPUT
-			: ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT | ENABLE_EXTENDED_FLAGS;
+	DWORD newmode = ENABLE_WINDOW_INPUT;
+	if (I->vtmode == 2) {
+		newmode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
+	}
+	newmode |= mode;
 	SetConsoleMode (h, newmode);
 	do {
 		bed = r_cons_sleep_begin ();
@@ -438,14 +440,23 @@ static int __cons_readchar_w32(ut32 usec) {
 				return -1;
 			}
 		}
-		r_cons_enable_mouse (true);
 		if (I->term_xterm) {
 			ret = ReadFile (h, &ch, 1, &out, NULL);
+			if (ret) {
+				r_cons_sleep_end (bed);
+				return ch;
+			}
 		} else {
 			ret = ReadConsoleInput (h, &irInBuf, 1, &out);
 		}
 		r_cons_sleep_end (bed);
 		if (ret) {
+			if (irInBuf.EventType == MENU_EVENT || irInBuf.EventType == FOCUS_EVENT) {
+				continue;
+			}
+			if (mouse_enabled) {
+				r_cons_enable_mouse (true);
+			}
 			if (irInBuf.EventType == MOUSE_EVENT) {
 				if (irInBuf.Event.MouseEvent.dwEventFlags == MOUSE_MOVED) {
 					if (irInBuf.Event.MouseEvent.dwButtonState == FROM_LEFT_1ST_BUTTON_PRESSED) {
@@ -467,9 +478,6 @@ static int __cons_readchar_w32(ut32 usec) {
 					int rel_y = irInBuf.Event.MouseEvent.dwMousePosition.Y - info.srWindow.Top;
 					r_cons_set_click (irInBuf.Event.MouseEvent.dwMousePosition.X + 1, rel_y + 1);
 					ch = UT8_MAX;
-					break;
-				case RIGHTMOST_BUTTON_PRESSED:
-					r_cons_enable_mouse (false);
 					break;
 				} // TODO: Handle more buttons?
 			}
@@ -529,6 +537,10 @@ static int __cons_readchar_w32(ut32 usec) {
 							break;
 						case VK_F12:
 							ch = R_CONS_KEY_F12;
+						case VK_SHIFT:
+							if (mouse_enabled) {
+								r_cons_enable_mouse (false);
+							}
 							break;
 						default:
 							break;
@@ -537,11 +549,7 @@ static int __cons_readchar_w32(ut32 usec) {
 				}
 			}
 			if (irInBuf.EventType == WINDOW_BUFFER_SIZE_EVENT) {
-				resize = true;
-			}
-			if (resize) {
 				resizeWin ();
-				resize = false;
 			}
 		}
 		if (I->vtmode != 2 && !I->term_xterm) {

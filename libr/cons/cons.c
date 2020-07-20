@@ -491,16 +491,15 @@ R_API bool r_cons_enable_mouse(const bool enable) {
 		return enabled;
 #if __WINDOWS__
 	}
-	DWORD mode, mouse;
+	DWORD mode;
 	HANDLE h;
 	bool enabled = I.mouse;
-	if (enabled == enable) {
-		return enabled;
-	}
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
-	mouse = (ENABLE_MOUSE_INPUT | ENABLE_EXTENDED_FLAGS);
-	mode = enable ? (mode | mouse) & ~ENABLE_QUICK_EDIT_MODE : (mode & ~mouse) | ENABLE_QUICK_EDIT_MODE;
+	mode |= ENABLE_EXTENDED_FLAGS;
+	mode = enable 
+		? (mode | ENABLE_MOUSE_INPUT) & ~ENABLE_QUICK_EDIT_MODE
+		: (mode & ~ENABLE_MOUSE_INPUT) | ENABLE_QUICK_EDIT_MODE;
 	if (SetConsoleMode (h, mode)) {
 		I.mouse = enable;
 	}
