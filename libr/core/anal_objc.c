@@ -204,8 +204,10 @@ static RCoreObjc *core_objc_new(RCore *core) {
 }
 
 static void core_objc_free(RCoreObjc *o) {
-	ht_up_free (o->up);
-	free (o);
+	if (o) {
+		ht_up_free (o->up);
+		free (o);
+	}
 }
 
 static bool objc_find_refs(RCore *core) {
