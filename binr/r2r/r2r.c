@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2020 - thestr4ng3r */
 
 #include "r2r.h"
-#include <r_cons.h>
 #include <assert.h>
 
 #define WORKERS_DEFAULT        8
@@ -14,11 +13,6 @@
 #define STR(x) STRV(x)
 #define WORKERS_DEFAULT_STR STR(WORKERS_DEFAULT)
 #define TIMEOUT_DEFAULT_STR STR(TIMEOUT_DEFAULT)
-
-#define Color_INSERT Color_BGREEN
-#define Color_DELETE Color_BRED
-#define Color_BGINSERT "\x1b[48;5;22m"
-#define Color_BGDELETE "\x1b[48;5;52m"
 
 typedef struct r2r_state_t {
 	R2RRunConfig run_config;
@@ -538,9 +532,16 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 	d->diff_cmd = "git diff --no-index";
 #endif
 	if (diffchar) {
+		RDiffChar *diff = r_diffchar_new ((const ut8 *)expected, (const ut8 *)actual);
+		if (diff) {
+			r_diffchar_print (diff);
+			r_diffchar_free (diff);
+			return;
+		}
 		d->diff_cmd = "git diff --no-index --word-diff=porcelain --word-diff-regex=.";
 	}
-	char *uni = r_diff_buffers_to_string (d, (const ut8 *)expected, (int)strlen (expected), (const ut8 *)actual, (int)strlen (actual));
+	char *uni = r_diff_buffers_to_string (d, (const ut8 *)expected, (int)strlen (expected),
+	                                      (const ut8 *)actual, (int)strlen (actual));
 	r_diff_free (d);
 
 	RList *lines = r_str_split_duplist (uni, "\n", false);

@@ -170,22 +170,23 @@ static bool isSymbolNextInstruction(RAnal *anal, RAnalOp *op) {
 			|| strstr (fi->name, "entry") || strstr (fi->name, "main")));
 }
 
-static bool is_delta_pointer_table(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 lea_ptr, ut64 *jmptbl_addr, RAnalOp *jmp_aop) {
+static bool is_delta_pointer_table(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 lea_ptr, ut64 *jmptbl_addr, ut64 *casetbl_addr, RAnalOp *jmp_aop) {
 	int i;
 	ut64 dst;
 	st32 jmptbl[64] = {0};
 	/* check if current instruction is followed by an ujmp */
 	ut8 buf[JMPTBL_LEA_SEARCH_SZ];
 	RAnalOp *aop = jmp_aop;
-	RAnalOp mov_aop = {0};
+	RAnalOp omov_aop, mov_aop = { 0 };
 	RAnalOp add_aop = {0};
-
+	RRegItem *reg_src, *o_reg_dst = NULL;
+	RAnalValue cur_scr, cur_dst = { 0 };
 	read_ahead (anal, addr, (ut8*)buf, sizeof (buf));
 	bool isValid = false;
 	for (i = 0; i + 8 < JMPTBL_LEA_SEARCH_SZ; i++) {
 		ut64 at = addr + i;
 		int left = JMPTBL_LEA_SEARCH_SZ - i;
-		int len = r_anal_op (anal, aop, at, buf + i, left, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
+		int len = r_anal_op (anal, aop, at, buf + i, left, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT | R_ANAL_OP_MASK_VAL);
 		if (len < 1) {
 			len = 1;
 		}
@@ -194,7 +195,16 @@ static bool is_delta_pointer_table(RAnal *anal, RAnalFunction *fcn, ut64 addr, u
 			break;
 		}
 		if (aop->type == R_ANAL_OP_TYPE_MOV) {
+			omov_aop = mov_aop;
 			mov_aop = *aop;
+			o_reg_dst = cur_dst.reg;
+			if (mov_aop.dst) {
+				cur_dst = *mov_aop.dst;
+			}
+			if (mov_aop.src[0]) {
+				cur_scr = *mov_aop.src[0];
+				reg_src = cur_scr.regdelta;
+			}
 		}
 		if (aop->type == R_ANAL_OP_TYPE_ADD) {
 			add_aop = *aop;
@@ -208,13 +218,22 @@ static bool is_delta_pointer_table(RAnal *anal, RAnalFunction *fcn, ut64 addr, u
 
 	// check if we have a msvc 19xx style jump table using rva table entries
 	// lea reg1, [base_addr]
-	// mov reg2, sword [reg1 + tbl_off*4 + tbl_loc_off]
+	// mov reg2, dword [reg1 + tbl_off*4 + tbl_loc_off]
 	// add reg2, reg1
 	// jmp reg2
 	if (mov_aop.type && add_aop.type && mov_aop.addr < add_aop.addr && add_aop.addr < jmp_aop->addr
 	    && mov_aop.disp && mov_aop.disp != UT64_MAX) {
 		// disp in this case should be tbl_loc_off
 		*jmptbl_addr += mov_aop.disp;
+		if (o_reg_dst && reg_src && o_reg_dst->offset == reg_src->offset && omov_aop.disp != UT64_MAX) {
+			// Special case for indirection
+			// lea reg1, [base_addr]
+			// mov reg2, (sz)word [reg1 + tbl_off*sz + casetbl_loc_off]
+			// mov reg3, dword [reg1 + reg2*4 + tbl_loc_off]
+			// add reg3, reg1
+			// jmp reg3
+			*casetbl_addr += omov_aop.disp;
+		}
 	}
 #if 0
 	// required for the last jmptbl.. but seems to work without it and breaks other tests
@@ -336,6 +355,36 @@ static RAnalBlock *bbget(RAnal *anal, ut64 addr, bool jumpmid) {
 		if (((bb->addr >= eaddr && addr == bb->addr)
 		     || r_anal_block_contains (bb, addr))
 		    && (!jumpmid || r_anal_block_op_starts_at (bb, addr))) {
+			if (anal->opt.delay) {
+				ut8 *buf = malloc (bb->size);
+				if (anal->iob.read_at (anal->iob.io, bb->addr, buf, bb->size)) {
+					const int last_instr_idx = bb->ninstr - 1;
+					bool in_delay_slot = false;
+					int i;
+					for (i = last_instr_idx; i >= 0; i--) {
+						const ut64 off = r_anal_bb_offset_inst (bb, i);
+						const ut64 at = bb->addr + off;
+						if (addr <= at) {
+							continue;
+						}
+						RAnalOp op;
+						int size = r_anal_op (anal, &op, at, buf + off, bb->size, R_ANAL_OP_MASK_BASIC);
+						if (size > 0 && op.delay) {
+							if (op.delay >= last_instr_idx - i) {
+								in_delay_slot = true;
+							}
+							r_anal_op_fini (&op);
+							break;
+						}
+						r_anal_op_fini (&op);
+					}
+					if (in_delay_slot) {
+						free (buf);
+						continue;
+					}
+				}
+				free (buf);
+			}
 			ret = bb;
 			break;
 		}
@@ -820,7 +869,8 @@ repeat:
 			if (anal->opt.jmptbl) {
 				RAnalOp jmp_aop = {0};
 				ut64 jmptbl_addr = op.ptr;
-				if (is_delta_pointer_table (anal, fcn, op.addr, op.ptr, &jmptbl_addr, &jmp_aop)) {
+				ut64 casetbl_addr = op.ptr;
+				if (is_delta_pointer_table (anal, fcn, op.addr, op.ptr, &jmptbl_addr, &casetbl_addr, &jmp_aop)) {
 					ut64 table_size, default_case = 0;
 					// we require both checks here since try_get_jmptbl_info uses
 					// BB info of the final jmptbl jump, which is no present with
@@ -830,7 +880,9 @@ repeat:
 					// handled with try_get_jmptbl_info
 					if (try_get_jmptbl_info (anal, fcn, jmp_aop.addr, bb, &table_size, &default_case)
 						|| try_get_delta_jmptbl_info (anal, fcn, jmp_aop.addr, op.addr, &table_size, &default_case)) {
-						ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, jmp_aop.addr, jmptbl_addr, op.ptr, 4, table_size, default_case, 4);
+						ret = casetbl_addr == op.ptr
+							? try_walkthrough_jmptbl (anal, fcn, bb, depth, jmp_aop.addr, jmptbl_addr, op.ptr, 4, table_size, default_case, 4)
+							: try_walkthrough_casetbl (anal, fcn, bb, depth, jmp_aop.addr, jmptbl_addr, casetbl_addr, op.ptr, 4, table_size, default_case, 4);
 						if (ret) {
 							lea_jmptbl_ip = jmp_aop.addr;
 						}
@@ -1337,7 +1389,9 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 	}
 	fcn->maxstack = 0;
 	if (fcn->cc && !strcmp (fcn->cc, "ms")) {
-		fcn->stack = fcn->maxstack = 0x28; // Shadow store for the first 4 args + Return addr
+		// Probably should put this on the cc sdb
+		const int shadow_store = 0x28; // First 4 args + retaddr
+		fcn->stack = fcn->maxstack = fcn->reg_save_area = shadow_store;
 	}
 	int ret = r_anal_fcn_bb (anal, fcn, addr, anal->opt.depth);
 	if (ret < 0) {
