@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2020 - thestr4ng3r */
 
 #include "r2r.h"
-#include <r_cons.h>
 #include <assert.h>
 
 #define WORKERS_DEFAULT        8
@@ -14,13 +13,6 @@
 #define STR(x) STRV(x)
 #define WORKERS_DEFAULT_STR STR(WORKERS_DEFAULT)
 #define TIMEOUT_DEFAULT_STR STR(TIMEOUT_DEFAULT)
-
-#define Color_INSERT Color_BGREEN
-#define Color_DELETE Color_BRED
-#define Color_BGINSERT "\x1b[48;5;22m"
-#define Color_BGDELETE "\x1b[48;5;52m"
-#define Color_HLINSERT Color_BGINSERT Color_INSERT
-#define Color_HLDELETE Color_BGDELETE Color_DELETE
 
 typedef struct r2r_state_t {
 	R2RRunConfig run_config;
@@ -534,251 +526,22 @@ static RThreadFunctionRet worker_th(RThread *th) {
 	return R_TH_STOP;
 }
 
-typedef enum {
-	R2R_ALIGN_MATCH, R2R_ALIGN_MISMATCH, R2R_ALIGN_TOP_GAP, R2R_ALIGN_BOTTOM_GAP
-} R2RCharAlignment;
-
-typedef enum {
-	R2R_DIFF_MATCH, R2R_DIFF_DELETE, R2R_DIFF_INSERT
-} R2RPrintDiffMode;
-
 static void print_diff(const char *actual, const char *expected, bool diffchar) {
 	RDiff *d = r_diff_new ();
 #ifdef __WINDOWS__
 	d->diff_cmd = "git diff --no-index";
 #endif
-	const size_t len_expected = strlen (expected);
-	const size_t len_actual = strlen (actual);
 	if (diffchar) {
-		// Use Needleman–Wunsch to diffchar.
-		// This is an O(mn) algo in both space and time.
-		// Note that 64KB * 64KB * 2 = 8GB.
-		// TODO Discard common prefix and suffix
-		const size_t len_long = len_expected > len_actual ? len_expected : len_actual;
-		const size_t dim = len_long + 1;
-		ut8 *dup_expected = malloc (len_long);
-		ut8 *dup_actual = malloc (len_long);
-		st16 *align_table = malloc (dim * dim * sizeof (st16));
-		ut8 *align_expected = malloc (2 * len_long);
-		ut8 *align_actual = malloc (2 * len_long);
-		if (dup_expected && dup_actual && align_table && align_expected && align_actual) {
-			// Copy strings (note that strncpy does pad with nulls)
-			strncpy (dup_expected, expected, len_long);
-			expected = dup_expected;
-			strncpy (dup_actual, actual, len_long);
-			actual = dup_actual;
-			// Fill table
-			size_t row, col;
-			*align_table = 0;
-			for (row = 1; row < dim; row++) {
-				// TODO Clamping [ST16_MIN + 1, .]
-				*(align_table + row) = *(align_table + row * dim) = -(st16)row;
-			}
-			const st16 match = 1;
-			const st16 match_nl = 2;
-			const st16 mismatch = -2;
-			const st16 gap = -1;
-			for (row = 1; row < dim; row++) {
-				for (col = 1; col < dim; col++) {
-					// TODO Clamping [ST16_MIN + 1, ST16_MAX]
-					const ut8 expected_ch = expected[col - 1];
-					const ut8 actual_ch = actual[row - 1];
-					const st16 tl_score = *(align_table + (row - 1) * dim + col - 1)
-							    + (expected_ch == actual_ch ?
-							       (expected_ch == '\n' ? match_nl : match) :
-							       mismatch);
-					const st16 t_score = *(align_table + (row - 1) * dim + col) + gap;
-					const st16 l_score = *(align_table + row * dim + col - 1) + gap;
-					st16 score;
-					if (tl_score >= t_score && tl_score >= l_score) {
-						score = tl_score;
-					} else if (t_score >= tl_score && t_score >= l_score) {
-						score = t_score;
-					} else {
-						score = l_score;
-					}
-					*(align_table + row * dim + col) = score;
-				}
-			}
-#if 0
-			// Print table (Debug)
-			char char_str[3] = { ' ' };
-			printf ("%4s ", char_str);
-			for (col = 0; col < dim; col++) {
-				if (col && expected[col - 1] == '\n') {
-					char_str[0] = '\\';
-					char_str[1] = 'n';
-				} else {
-					char_str[0] = col ? expected[col - 1] : ' ';
-					char_str[1] = 0;
-				}
-				printf ("%4s ", char_str);
-			}
-			printf ("\n");
-			for (row = 0; row < dim; row++) {
-				if (row && actual[row - 1] == '\n') {
-					char_str[0] = '\\';
-					char_str[1] = 'n';
-				} else {
-					char_str[0] = row ? actual[row - 1] : ' ';
-					char_str[1] = 0;
-				}
-				printf ("%4s ", char_str);
-				for (col = 0; col < dim; col++) {
-					printf ("%4d ", *(align_table + row * dim + col));
-				}
-				printf ("\n");
-			}
-#endif
-			// Do alignment
-			size_t idx_expected = len_long - 1;
-			size_t idx_actual = len_long - 1;
-			size_t idx_align = 2 * len_long - 1;
-			size_t pos_row = dim - 1;
-			size_t pos_col = dim - 1;
-			while (pos_row || pos_col) {
-				const st16 tl_score = (pos_row > 0 && pos_col > 0) ?
-						*(align_table + (pos_row - 1) * dim + pos_col - 1) :
-						ST16_MIN;
-				const st16 t_score = pos_row > 0 ?
-						*(align_table + (pos_row - 1) * dim + pos_col) :
-						ST16_MIN;
-				const st16 l_score = pos_col > 0 ?
-						*(align_table + pos_row * dim + pos_col - 1) :
-						ST16_MIN;
-				const bool match = expected[idx_expected] == actual[idx_actual];
-				if (t_score >= l_score && (!match || t_score >= tl_score)) {
-					align_expected[idx_align] = 0;
-					align_actual[idx_align] = actual[idx_actual--];
-					idx_align--;
-					pos_row--;
-				} else if (l_score >= t_score && (!match || l_score >= tl_score)) {
-					align_expected[idx_align] = expected[idx_expected--];
-					align_actual[idx_align] = 0;
-					idx_align--;
-					pos_col--;
-				} else {
-					align_expected[idx_align] = expected[idx_expected--];
-					align_actual[idx_align] = actual[idx_actual--];
-					idx_align--;
-					pos_row--;
-					pos_col--;
-				}
-			}
-			idx_align++;
-			const size_t start_align = idx_align;
-#if 0
-			// Print alignment (Debug)
-			for (; idx_align < 2 * len_long; idx_align++) {
-				const ut8 ch = align_expected[idx_align];
-				if (align_actual[idx_align] == '\n' && ch != '\n') {
-					printf (ch ? " " : "-");
-				}
-				if (ch == 0) {
-					printf ("-");
-				} else if (ch == '\n') {
-					printf ("\\n");
-				} else {
-					printf ("%c", ch);
-				}
-			}
-			printf ("\n");
-			for (idx_align = start_align; idx_align < 2 * len_long; idx_align++) {
-				const ut8 ch = align_actual[idx_align];
-				if (align_expected[idx_align] == '\n' && ch != '\n') {
-					printf (ch ? " " : "-");
-				}
-				if (ch == 0) {
-					printf ("-");
-				} else if (ch == '\n') {
-					printf ("\\n");
-				} else {
-					printf ("%c", ch);
-				}
-			}
-			printf ("\n");
-#endif
-			// Print diff
-			R2RPrintDiffMode cur_mode = R2R_DIFF_MATCH;
-			R2RCharAlignment cur_align;
-			idx_align = start_align;
-			while (idx_align < 2 * len_long) {
-				const ut8 expected_ch = align_expected[idx_align];
-				const ut8 actual_ch = align_actual[idx_align];
-				if (expected_ch && !actual_ch) {
-					cur_align = R2R_ALIGN_BOTTOM_GAP;
-				} else if (!expected_ch && actual_ch) {
-					cur_align = R2R_ALIGN_TOP_GAP;
-				} else if (expected_ch != actual_ch) {
-					eprintf ("Internal error: mismatch detected!\n");
-					cur_align = R2R_ALIGN_MISMATCH;
-				} else {
-					cur_align = R2R_ALIGN_MATCH;
-				}
-				if (cur_mode == R2R_DIFF_MATCH) {
-					if (cur_align == R2R_ALIGN_MATCH) {
-						if (expected_ch) {
-							printf ("%c", expected_ch);
-						}
-					} else if (cur_align == R2R_ALIGN_BOTTOM_GAP) {
-						printf (expected_ch == '\n' ?
-						        "%c"Color_HLDELETE :
-						        Color_HLDELETE"%c", expected_ch);
-						cur_mode = R2R_DIFF_DELETE;
-					} else if (cur_align == R2R_ALIGN_TOP_GAP) {
-						printf (actual_ch == '\n' ?
-						        "%c"Color_HLINSERT :
-						        Color_HLINSERT"%c", actual_ch);
-						cur_mode = R2R_DIFF_INSERT;
-					}
-				} else if (cur_mode == R2R_DIFF_DELETE) {
-					if (cur_align == R2R_ALIGN_MATCH) {
-						printf (Color_RESET);
-						if (expected_ch) {
-							printf ("%c", expected_ch);
-						}
-						cur_mode = R2R_DIFF_MATCH;
-					} else if (cur_align == R2R_ALIGN_BOTTOM_GAP) {
-						printf (expected_ch == '\n' ?
-						        Color_RESET"%c"Color_HLDELETE :
-						        "%c", expected_ch);
-					} else if (cur_align == R2R_ALIGN_TOP_GAP) {
-						printf (actual_ch == '\n' ?
-						        Color_RESET"%c"Color_HLINSERT :
-						        Color_HLINSERT"%c", actual_ch);
-						cur_mode = R2R_DIFF_INSERT;
-					}
-				} else if (cur_mode == R2R_DIFF_INSERT) {
-					if (cur_align == R2R_ALIGN_MATCH) {
-						printf (Color_RESET);
-						if (expected_ch) {
-							printf ("%c", expected_ch);
-						}
-						cur_mode = R2R_DIFF_MATCH;
-					} else if (cur_align == R2R_ALIGN_BOTTOM_GAP) {
-						printf (expected_ch == '\n' ?
-						        Color_RESET"%c"Color_HLDELETE :
-						        Color_HLDELETE"%c", expected_ch);
-						cur_mode = R2R_DIFF_DELETE;
-					} else if (cur_align == R2R_ALIGN_TOP_GAP) {
-						printf (actual_ch == '\n' ?
-						        Color_RESET"%c"Color_HLINSERT :
-						        "%c", actual_ch);
-					}
-				}
-				idx_align++;
-			}
-			printf (Color_RESET"\n");
-			free (dup_expected);
-			free (dup_actual);
-			free (align_table);
-			free (align_expected);
-			free (align_actual);
+		RDiffChar *diff = r_diffchar_new ((const ut8 *)expected, (const ut8 *)actual);
+		if (diff) {
+			r_diffchar_print (diff);
+			r_diffchar_free (diff);
 			return;
 		}
 		d->diff_cmd = "git diff --no-index --word-diff=porcelain --word-diff-regex=.";
 	}
-	char *uni = r_diff_buffers_to_string (d, (const ut8 *)expected, (int)len_expected, (const ut8 *)actual, (int)len_actual);
+	char *uni = r_diff_buffers_to_string (d, (const ut8 *)expected, (int)strlen (expected),
+	                                      (const ut8 *)actual, (int)strlen (actual));
 	r_diff_free (d);
 
 	RList *lines = r_str_split_duplist (uni, "\n", false);

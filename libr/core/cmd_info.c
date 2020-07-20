@@ -454,7 +454,7 @@ static int cmd_info(void *data, const char *input) {
 	bool newline = r_cons_is_interactive ();
 	int fd = r_io_fd_get_current (core->io);
 	RIODesc *desc = r_io_desc_get (core->io, fd);
-	int i, va = core->io->va || core->io->debug;
+	int i, va = core->io->va || core->bin->is_debugger;
 	int mode = 0; //R_MODE_SIMPLE;
 	bool rdump = false;
 	int is_array = 0;
@@ -549,7 +549,7 @@ static int cmd_info(void *data, const char *input) {
 				}
 				break;
 			case '*':
-				r_core_bin_export_info_rad (core);
+				r_core_bin_export_info (core, R_MODE_RADARE);
 				break;
 			case '.':
 			case ' ':

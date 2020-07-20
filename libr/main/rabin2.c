@@ -1079,7 +1079,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	}
 	if (query) {
 		if (rad) {
-			r_core_bin_export_info_rad (&core);
+			r_core_bin_export_info (&core, R_MODE_RADARE);
 			r_cons_flush ();
 		} else {
 			if (!strcmp (query, "-")) {

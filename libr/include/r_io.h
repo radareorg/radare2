@@ -87,8 +87,6 @@ typedef struct r_io_t {
 	int cached;
 	bool cachemode; // write in cache all the read operations (EXPERIMENTAL)
 	int p_cache;
-	int debug;
-//#warning remove debug from RIO
 	RIDPool *map_ids;
 	RPVector maps; //from tail backwards maps with higher priority are found
 	RPVector map_skyline; // map parts that are not covered by others
