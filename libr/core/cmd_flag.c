@@ -769,10 +769,11 @@ rep:
 		case ' ':
 			{
 				const int ASCII_MAX = 127;
-				if (atoi (input+1) + ASCII_MAX + 1 < UT8_MAX) {
-					const char *arg = strchr (input+2, ' ');
+				int n = atoi (input + 1);
+				if (n + ASCII_MAX + 1 < UT8_MAX) {
+					const char *arg = strchr (input + 2, ' ');
 					ut64 addr = arg? r_num_math (core->num, arg): core->offset;
-					r_core_visual_mark_set (core, atoi (input+1) + ASCII_MAX + 1, addr);
+					r_core_visual_mark_set (core, n + ASCII_MAX + 1, addr);
 				}
 			}
 			break;
