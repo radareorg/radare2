@@ -549,7 +549,7 @@ static int cmd_info(void *data, const char *input) {
 				}
 				break;
 			case '*':
-				r_core_bin_export_info_rad (core);
+				r_core_bin_export_info (core, R_MODE_RADARE);
 				break;
 			case '.':
 			case ' ':
