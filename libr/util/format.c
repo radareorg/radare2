@@ -2382,11 +2382,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					i += (size == -1)? 8: 8 * size;
 					break;
 				case 'Q':
-					if (1||i + 16 < len) {
-						r_print_format_u128 (p, endian, mode, setval, seeki, buf, i, size);
-					} else {
-						eprintf ("Warning: truncated uint128\n");
-					}
+					r_print_format_u128 (p, endian, mode, setval, seeki, buf, i, size);
 					i += (size == -1)? 16: 16 * size;
 					break;
 				case 'b':
