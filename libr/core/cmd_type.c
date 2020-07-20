@@ -1379,7 +1379,7 @@ static int cmd_type(void *data, const char *input) {
 				free (out);
 			}
 			if (error_msg) {
-				fprintf (stderr, "%s", error_msg);
+				eprintf ("%s", error_msg);
 				free (error_msg);
 			}
 		} else {

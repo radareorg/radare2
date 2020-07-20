@@ -606,6 +606,10 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	int repeat = 1;
 	ut64 addr = core->offset;
 
+	if (!type) {
+		return 0;
+	}
+
 	switch (input[1]) {
 	case '?':
 		switch (input[0]) {

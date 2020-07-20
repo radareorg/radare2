@@ -1350,6 +1350,7 @@ RUN
 
 NAME=ARM function with jumpback
 FILE=bins/elf/libverifyPass.so
+BROKEN=1
 CMDS=<<EOF
 s 0x0000183c
 af

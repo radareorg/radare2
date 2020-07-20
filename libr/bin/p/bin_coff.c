@@ -261,6 +261,14 @@ static RList *libs(RBinFile *bf) {
 	return NULL;
 }
 
+static ut32 _read_le32(RBin *rbin, ut64 addr) {
+	ut8 data[4] = { 0 };
+	if (!rbin->iob.read_at (rbin->iob.io, addr, data, sizeof (data))) {
+		return UT32_MAX;
+	}
+	return r_read_le32 (data);
+}
+
 #define BYTES_PER_IMP_RELOC		8
 
 static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch, ut64 imp_map) {
@@ -344,7 +352,12 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch, u
 					case COFF_REL_I386_REL32:
 						reloc->type = R_BIN_RELOC_32;
 						reloc->additive = 1;
-						ut64 data = sym_vaddr - reloc->vaddr - 4;
+						ut64 data = _read_le32 (rbin, reloc->vaddr);
+						if (data == UT32_MAX) {
+							break;
+						}
+						reloc->addend = data;
+						data += sym_vaddr - reloc->vaddr - 4;
 						r_write_le32 (patch_buf, (st32)data);
 						plen = 4;
 						break;
@@ -355,7 +368,12 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch, u
 					case COFF_REL_AMD64_REL32:
 						reloc->type = R_BIN_RELOC_32;
 						reloc->additive = 1;
-						ut64 data = sym_vaddr - reloc->vaddr - 4;
+						ut64 data = _read_le32 (rbin, reloc->vaddr);
+						if (data == UT32_MAX) {
+							break;
+						}
+						reloc->addend = data;
+						data += sym_vaddr - reloc->vaddr - 4;
 						r_write_le32 (patch_buf, (st32)data);
 						plen = 4;
 						break;
