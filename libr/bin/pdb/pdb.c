@@ -651,7 +651,6 @@ static int simple_type_to_format (const SLF_SIMPLE_TYPE *simple_type, char **mem
 	SimpleTypeMode mode = get_simple_type_mode (simple_type->base_type);
 	switch (mode) {
 	case DIRECT: {
-		// go futher to the type TODO
 		SimpleTypeKind kind = get_simple_type_kind (simple_type->base_type);
 		switch (kind) {
 		case PDB_NONE:
@@ -803,9 +802,12 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *n
 	// THOUGHT: instead of not doing anything for unknown types I can just skip the bytes
 	// format is 2 chars tops + null terminator
 
-	char *name = "unnamed_field";
+	char *name = NULL;
 	if (type_info->get_name) {
 		type_info->get_name (type_info, &name);
+	}
+	if (!name) { // name should never be null, but malformed PDB exists
+		return -1;
 	}
 	name = r_str_sanitize_sdb_key (name);
 

@@ -1027,8 +1027,6 @@ static int get_pointer_utype(void *type, void **ret_type) {
 	return curr_idx;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Is wrong if the return type isn't an index into the table (isn't custom type, when it's base_type)
 static int get_procedure_return_type(void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *) type;
 	SLF_PROCEDURE *lf = (SLF_PROCEDURE *) t->type_info;
@@ -1054,7 +1052,6 @@ static int get_procedure_return_type(void *type, void **ret_type) {
 	return curr_idx;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int get_procedure_arglist(void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *) type;
 	SLF_PROCEDURE *lf = (SLF_PROCEDURE *) t->type_info;
@@ -1080,8 +1077,6 @@ static int get_procedure_arglist(void *type, void **ret_type) {
 	return curr_idx;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// dunno why it's name like this, but for member it returns type
 static int get_member_index(void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *) type;
 	SLF_MEMBER *lf = (SLF_MEMBER *) t->type_info;
@@ -1107,7 +1102,6 @@ static int get_member_index(void *type, void **ret_type) {
 	return curr_idx;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int get_nesttype_index(void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *) type;
 	SLF_NESTTYPE *lf = (SLF_NESTTYPE *) t->type_info;
@@ -1133,7 +1127,6 @@ static int get_nesttype_index(void *type, void **ret_type) {
 	return curr_idx;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int get_onemethod_index(void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *) type;
 	SLF_ONEMETHOD *lf = (SLF_ONEMETHOD *) t->type_info;
@@ -1183,7 +1176,7 @@ static int get_method_mlist(void *type, void **ret_type) {
 
 	return curr_idx;
 }
-// Again, doesn't work for base types, TODO
+
 static int get_enum_utype(void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *) type;
 	SLF_ENUM *lf = (SLF_ENUM *) t->type_info;
@@ -1499,26 +1492,6 @@ static void get_union_val(void *type, int *res) {
 	get_sval_val(&lf_union->size, res);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-//static void printf_sval_name(SVal *val)
-//{
-//	int len = 0;
-//	char *name = 0;
-
-//	get_sval_name_len(val, &len);
-//	name = (char *) malloc(len);
-//	get_sval_name(val, &name);
-//	printf("%s", name);
-
-//	free(name);
-//}
-
-//typedef struct {
-//	SParsedPDBStream *parsed_pdb_stream;
-//	SPDBInfoStreamD data;
-//} SPDBInfoStream;
-
-///////////////////////////////////////////////////////////////////////////////
 static void free_sval(SVal *val) {
 	if (val->value_or_type < eLF_CHAR) {
 		SCString *scstr;
@@ -1757,7 +1730,7 @@ static void get_modifier_print_type(void *type, char **name) {
 	bool need_to_free = true;
 	SType *stype = NULL;
 	char *tmp_name = NULL;
-	// This is wrong
+
 	stype_info->get_modified_type (stype_info, (void **)&stype);
 	if (stype && stype->type_data.leaf_type == eLF_SIMPLE_TYPE) {
 		need_to_free = false;
@@ -1960,6 +1933,7 @@ static void get_arglist_print_type(void *type, char **name) {
 //	if (need_to_free)
 //		free(tmp_name);
 }
+
 // TODO, nothing is really being parsed here
 static void get_mfunction_print_type(void *type, char **name) {
 	int name_len = 0;
