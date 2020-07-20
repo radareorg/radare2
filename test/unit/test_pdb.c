@@ -50,6 +50,10 @@ bool test_pdb_tpi(void) {
 			SType *return_type;
 			// Doesn't work properly, so no asserting
 			type_info->get_return_type (type_info, (void **)&return_type);
+			mu_assert_eq (return_type->type_data.leaf_type, eLF_SIMPLE_TYPE, "Incorrect return type");
+			SLF_SIMPLE_TYPE *simple_type = return_type->type_data.type_info;
+			mu_assert_eq (simple_type->size, 4, "Incorrect return type");
+			mu_assert_streq (simple_type->type, "int32_t", "Incorrect return type");
 		} else if (type->tpi_idx == 0x1161) {
 			mu_assert_eq (type_info->leaf_type, eLF_POINTER, "Incorrect data type");
 			char *type;
@@ -65,13 +69,15 @@ bool test_pdb_tpi(void) {
 			char *type;
 			type_info->get_print_type (type_info, &type);
 			SType *dump;
-			// function doesn't work as supposed, not asserting TODO
 			type_info->get_index_type (type_info, (void **)&dump);
-			// same problem like ^, but in this case it works, so asserting
+			mu_assert_eq (dump->type_data.leaf_type, eLF_SIMPLE_TYPE, "Incorrect return type");
+			SLF_SIMPLE_TYPE *simple_type = dump->type_data.type_info;
+			mu_assert_eq (simple_type->simple_type, eT_ULONG, "Incorrect return type");
+			mu_assert_eq (simple_type->size, 4, "Incorrect return type");
+			mu_assert_streq (simple_type->type, "uint32_t", "Incorrect return type");
 			type_info->get_element_type (type_info, (void **)&dump);
 			mu_assert_eq (dump->tpi_idx, 0x113E, "Wrong element type index");
 			int size;
-			// Why is get_val for size returning...
 			type_info->get_val (type_info, &size);
 			mu_assert_eq (size, 20, "Wrong array size");
 		} else if (type->tpi_idx == 0x145A) {
@@ -81,9 +87,12 @@ bool test_pdb_tpi(void) {
 			char *name;
 			type_info->get_name (type_info, &name);
 			mu_assert_streq (name, "EXCEPTION_DEBUGGER_ENUM", "wrong enum name");
-			// Doesn't work properly so not asserting
 			type_info->get_utype (type_info, (void **)&dump);
-			// mu_assert_eq (dump->tpi_idx, 0x0074, "wrong enum utype");
+			mu_assert_eq (dump->type_data.leaf_type, eLF_SIMPLE_TYPE, "Incorrect return type");
+			SLF_SIMPLE_TYPE *simple_type = dump->type_data.type_info;
+			mu_assert_eq (simple_type->simple_type, eT_INT4, "Incorrect return type");
+			mu_assert_eq (simple_type->size, 4, "Incorrect return type");
+			mu_assert_streq (simple_type->type, "int32_t", "Incorrect return type");
 			type_info->get_members (type_info, &members);
 			mu_assert_eq (members->length, 6, "wrong enum members length");
 		} else if (type->tpi_idx == 0x1414) {
@@ -130,14 +139,17 @@ bool test_pdb_tpi(void) {
 		} else if (type->tpi_idx == 0x107A) {
 			mu_assert_eq (type_info->leaf_type, eLF_MFUNCTION, "Incorrect data type");
 			SType *type;
-			// not being parsed right (ignores base types), so not assertion now
-			type_info->get_return_type (type_info, (void **) &type);
-
-			type_info->get_class_type (type_info, (void **) &type);
+			type_info->get_return_type (type_info, (void **)&type);
+			mu_assert_eq (type->type_data.leaf_type, eLF_SIMPLE_TYPE, "Incorrect return type");
+			SLF_SIMPLE_TYPE *simple_type = type->type_data.type_info;
+			mu_assert_eq (simple_type->simple_type, eT_BOOL08, "Incorrect return type");
+			mu_assert_eq (simple_type->size, 1, "Incorrect return type");
+			mu_assert_streq (simple_type->type, "_Bool", "Incorrect return type");
+			type_info->get_class_type (type_info, (void **)&type);
 			mu_assert_eq (type->tpi_idx, 0x1079, "incorrect mfunction class type");
-			type_info->get_this_type (type_info, (void **) &type);
+			type_info->get_this_type (type_info, (void **)&type);
 			mu_assert_eq (type, 0, "incorrect mfunction this type");
-			type_info->get_arglist (type_info, (void **) &type);
+			type_info->get_arglist (type_info, (void **)&type);
 			mu_assert_eq (type->tpi_idx, 0x1027, "incorrect mfunction arglist");
 		} else if (type->tpi_idx == 0x113F) {
 			mu_assert_eq (type_info->leaf_type, eLF_FIELDLIST, "Incorrect data type");
