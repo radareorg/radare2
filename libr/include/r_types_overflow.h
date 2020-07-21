@@ -34,7 +34,7 @@
 // MUL
 #define UNSIGNED_MUL_OVERFLOW_CHECK(overflow_name, type_base, type_min, type_max) \
 static inline bool overflow_name(type_base a, type_base b) { \
-	return (a > 0 && b > 0) ? (a > type_max / b): 0; \
+	return (a > 0 && b > 0 && a > type_max / b); \
 }
 
 #define SIGNED_MUL_OVERFLOW_CHECK(overflow_name, type_base, type_min, type_max) \

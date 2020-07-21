@@ -8,7 +8,7 @@ int test_overflow_add(void) {
 	mu_assert_false (UT8_ADD_OVFCHK (250, 2), "ut8-add 2");
 	mu_assert_false (UT16_ADD_OVFCHK (ST16_MAX, 2), "ut16-add 2");
 	mu_assert_true (ST16_ADD_OVFCHK (ST16_MAX, 2), "st16-add 2");
-	mu_assert_true (ST16_ADD_OVFCHK (UT16_MAX, 1), "st16-add 2");
+	mu_assert_true (ST16_ADD_OVFCHK (ST16_MAX - 2, 4), "st16-add 2");
 	mu_assert_true (ST16_ADD_OVFCHK (1, ST16_MAX), "st16-add 3");
 
 	mu_assert_true (ST16_ADD_OVFCHK (ST16_MIN, -1), "st16-add (min, -1)");
