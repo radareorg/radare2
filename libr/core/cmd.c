@@ -1492,8 +1492,9 @@ static int cmd_kuery(void *data, const char *input) {
 		R_FREE (next_cmd);
 		free (s);
 		free (next_cmd);
+		free (cur_cmd);
 		free (temp_storage);
-	break;
+		break;
 
 	case ' ':
 		out = sdb_querys (s, NULL, 0, input + 1);
@@ -1623,7 +1624,6 @@ static int cmd_kuery(void *data, const char *input) {
 		}
 		break;
 	case '?':
-	default:
 		r_core_cmd_help (core, help_msg_k);
 		break;
 	}
