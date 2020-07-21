@@ -9,9 +9,9 @@ static char *hack_handle_dp_imm(ut32 insn) {
 		const bool op = (insn >> 30) & 0x1;
 		const bool S = (insn >> 29) & 0x1;
 		const bool o2 = (insn >> 2) & 0x1;
-		if (sf == 1 && op == 0 && S == 0 && o2 == 0) {
+		if (sf && !op && !S && !o2 ) {
 			mnemonic = "addg";
-		} else if (sf == 1 && op == 1 && S == 0 && o2 == 0) {
+		} else if (sf && op && !S && !o2) {
 			mnemonic = "subg";
 		}
 		if (mnemonic) {
@@ -36,17 +36,17 @@ static char *hack_handle_dp_reg(ut32 insn) {
 	const ut8 op2 = (insn >> 21) & 0xf;
 
 	// Data-processing (2 source)
-	if (op0 == 0 && op1 == 1 && op2 == 0x6) {
+	if (!op0 && op1 && op2 == 6) {
 		const bool sf = (insn >> 31) & 0x1;
 		const bool S = (insn >> 29) & 0x1;
 		const ut8 opcode = (insn >> 10) & 0x1f;
-		if (sf == 1 && S == 0 && opcode == 4) {
+		if (sf && !S && opcode == 4) {
 			mnemonic = "irg";
-		} else if (sf == 1 && S == 0 && opcode == 0) {
+		} else if (sf && !S && opcode == 0) {
 			mnemonic = "subp";
-		} else if (sf == 1 && S == 0 && opcode == 5) {
+		} else if (sf && !S && opcode == 5) {
 			mnemonic = "gmi";
-		} else if (sf == 1 && S == 1 && opcode == 0) {
+		} else if (sf && S && opcode == 0) {
 			mnemonic = "subps";
 		}
 		if (mnemonic) {
@@ -79,7 +79,7 @@ static char *hack_handle_ldst(ut32 insn) {
 	const bool op3 = (insn >> 21) & 0x1;
 
 	// Load/store memory tags
-	if (op0 == 13 && op1 == 0 && (op2 == 2 || op2 == 3) && op3 == 1) {
+	if (op0 == 13 && !op1 && (op2 == 2 || op2 == 3) && op3) {
 		const ut8 opc = (insn >> 22) & 0x3;
 		const ut16 imm9 = ((insn >> 12) & 0x1ff) << 4;
 		op2 = (insn >> 10) & 0x3;
@@ -152,7 +152,7 @@ static char *hack_handle_ldst(ut32 insn) {
 		const bool V = (insn >> 26) & 0x1;
 		const bool L = (insn >> 22) & 0x1;
 
-		if (opc == 1 && V == 0 && L == 0) {
+		if (opc == 1 && !V && !L) {
 			const ut8 imm7 = ((insn >> 15) & 0x7f) << 4;
 			const ut8 Xt2 = (insn >> 10) & 0x1f;
 			const ut8 Xn = (insn >> 5) & 0x1f;
