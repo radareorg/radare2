@@ -1,7 +1,7 @@
 #include <r_util.h>
 #include "minunit.h"
 
-void topo_sorting(RGraphNode *n, RGraphVisitor *vis) {
+static void topo_sorting(RGraphNode *n, RGraphVisitor *vis) {
 	RList *order = (RList *)vis->data;
 	r_list_prepend (order, n);
 }
@@ -21,7 +21,7 @@ void topo_sorting(RGraphNode *n, RGraphVisitor *vis) {
 	mu_assert_false (ita || ite || diff, "(one list shorter or different)"); \
 } while (0)
 
-bool test_legacy_graph(void) {
+static bool test_legacy_graph(void) {
 	RGraph *g = r_graph_new ();
 
 	mu_assert_eq (g->n_nodes, 0, "n_nodes.start");
@@ -137,7 +137,7 @@ bool test_legacy_graph(void) {
 	mu_end;
 }
 
-int all_tests() {
+static int all_tests() {
 	mu_run_test (test_legacy_graph);
 	return tests_passed != tests_run;
 }
