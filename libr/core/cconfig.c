@@ -3411,8 +3411,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("hex.pairs", "true", &cb_hex_pairs, "Show bytes paired in 'px' hexdump");
 	SETCB ("hex.align", "false", &cb_hex_align, "Align hexdump with flag + flagsize");
 	SETCB ("hex.section", "false", &cb_hex_section, "Show section name before the offset");
-	SETCB ("io.unalloc", "false", &cb_io_unalloc, "Check each byte if it's allocated");
-	SETCB ("io.unalloc.ch", ".", &cb_io_unalloc_ch, "Char to display if byte is unallocated");
 	SETCB ("hex.compact", "false", &cb_hexcompact, "Show smallest 16 byte col hexdump (60 columns)");
 	SETCB ("cmd.hexcursor", "", &cb_cmd_hexcursor, "If set and cursor is enabled display given pf format string");
 	SETI ("hex.flagsz", 0, "If non zero, overrides the flag size in pxa");
@@ -3651,6 +3649,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("io.va", "true", &cb_iova, "Use virtual address layout");
 	SETCB ("io.pava", "false", &cb_io_pava, "Use EXPERIMENTAL paddr -> vaddr address mode");
 	SETCB ("io.autofd", "true", &cb_ioautofd, "Change fd when opening a new file");
+	SETCB ("io.unalloc", "false", &cb_io_unalloc, "Check each byte if it's allocated");
+	SETCB ("io.unalloc.ch", ".", &cb_io_unalloc_ch, "Char to display if byte is unallocated");
 
 	/* file */
 	SETPREF ("file.desc", "", "User defined file description (used by projects)");
