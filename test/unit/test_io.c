@@ -91,7 +91,7 @@ bool test_va_malloc_zero(void) {
 
 bool test_r_io_priority(void) {
 	RIO *io = r_io_new();
-	ut32 map0, map1;
+	ut32 map0, map1, map_big;
 	ut64 buf;
 	bool ret;
 
@@ -126,6 +126,32 @@ bool test_r_io_priority(void) {
 	r_io_map_priorize (io, map1);
 	r_io_read_at (io, 0, (ut8 *)&buf, 8);
 	mu_assert_memeq ((ut8 *)&buf, (ut8 *)"\x6f\x6f\xff\xff\x90\x90\x6f\x6f", 8, "map1 should have been prioritized");
+
+	r_io_open_at (io, "malloc://2", R_PERM_RW, 0644, 0x0);
+	r_io_read_at (io, 0, (ut8 *)&buf, 8);
+	mu_assert_memeq ((ut8 *)&buf, (ut8 *)"\x00\x00\xff\xff\x90\x90\x6f\x6f", 8, "0x00 from map2 at start should overlap");
+
+	r_io_map_remap (io, map1, 0x1);
+	r_io_read_at (io, 0, (ut8 *)&buf, 8);
+	mu_assert_memeq ((ut8 *)&buf, (ut8 *)"\x00\x00\xff\x6f\x90\x90\x6f\x6f", 8, "map1 should have been remapped and partialy hidden");
+
+	r_io_open_at (io, "malloc://2", R_PERM_RW, 0644, 0x4);
+	r_io_open_at (io, "malloc://2", R_PERM_RW, 0644, 0x6);
+	r_io_read_at (io, 0, (ut8 *)&buf, 8);
+	mu_assert_memeq ((ut8 *)&buf, (ut8 *)"\x00\x00\xff\x6f\x00\x00\x00\x00", 8, "Multiple maps opened");
+
+	buf = 0x9090909090909090;
+	r_io_open_at (io, "malloc://8", R_PERM_RW, 0644, 0x10);
+	map_big = r_io_map_get (io, 0x10)->id;
+	r_io_write_at (io, 0x10, (ut8 *)&buf, 8);
+	r_io_map_remap (io, map_big, 0x1);
+	r_io_read_at (io, 0, (ut8 *)&buf, 8);
+	mu_assert_memeq ((ut8 *)&buf, (ut8 *)"\x00\x90\x90\x90\x90\x90\x90\x90", 8, "map_big should cover everything from 0x1");
+
+	r_io_map_remap (io, map_big, 0x10);
+	r_io_map_remap (io, map_big, 0);
+	r_io_read_at (io, 0, (ut8 *)&buf, 8);
+	mu_assert_memeq ((ut8 *)&buf, (ut8 *)"\x90\x90\x90\x90\x90\x90\x90\x90", 8, "map_big should cover everything");
 
 	r_io_free (io);
 	mu_end;
