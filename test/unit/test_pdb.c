@@ -293,6 +293,7 @@ bool test_pdb_type_save(void) {
 	check_kv ("struct.localeinfo_struct.mbcinfo", "struct threadmbcinfostruct*,4,0");
 	check_kv ("union.__m64.!size", "8");
 	r_anal_free (anal);
+	mu_end;
 }
 
 bool all_tests() {
