@@ -1488,9 +1488,11 @@ static int cmd_kuery(void *data, const char *input) {
 		pj_end (pj);
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		r_cons_println (s);
+		if (s) {
+			r_cons_println (s);
+			free (s);
+		}
 		R_FREE (next_cmd);
-		free (s);
 		free (next_cmd);
 		free (cur_cmd);
 		free (temp_storage);
