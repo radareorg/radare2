@@ -4,10 +4,10 @@ static int hack_handle_dp_imm(ut32 insn, char **buf_asm) {
 
 	// Add/subtract (immediate, with tags)
 	if (op0 == 3) {
-		const ut8 sf = (insn >> 31) & 0x1;
-		const ut8 op = (insn >> 30) & 0x1;
-		const ut8 S = (insn >> 29) & 0x1;
-		const ut8 o2 = (insn >> 2) & 0x1;
+		const bool sf = (insn >> 31) & 0x1;
+		const bool op = (insn >> 30) & 0x1;
+		const bool S = (insn >> 29) & 0x1;
+		const bool o2 = (insn >> 2) & 0x1;
 		if (sf == 1 && op == 0 && S == 0 && o2 == 0) {
 			mnemonic = "addg";
 		} else if (sf == 1 && op == 1 && S == 0 && o2 == 0) {
@@ -29,14 +29,14 @@ static int hack_handle_dp_imm(ut32 insn, char **buf_asm) {
 
 static int hack_handle_dp_reg(ut32 insn, char **buf_asm) {
 	char *mnemonic = NULL;
-	const ut8 op0 = (insn >> 30) & 0x1;
-	const ut8 op1 = (insn >> 28) & 0x1;
+	const bool op0 = (insn >> 30) & 0x1;
+	const bool op1 = (insn >> 28) & 0x1;
 	const ut8 op2 = (insn >> 21) & 0xf;
 
 	// Data-processing (2 source)
 	if (op0 == 0 && op1 == 1 && op2 == 0x6) {
-		const ut8 sf = (insn >> 31) & 0x1;
-		const ut8 S = (insn >> 29) & 0x1;
+		const bool sf = (insn >> 31) & 0x1;
+		const bool S = (insn >> 29) & 0x1;
 		const ut8 opcode = (insn >> 10) & 0x1f;
 		if (sf == 1 && S == 0 && opcode == 4) {
 			mnemonic = "irg";
@@ -71,9 +71,9 @@ static int hack_handle_ldst(ut32 insn, char **buf_asm) {
 	char *mnemonic = NULL;
 	bool ignore_imm9 = false;
 	const ut8 op0 = (insn >> 28) & 0xf;
-	const ut8 op1 = (insn >> 26) & 0x1;
+	const bool op1 = (insn >> 26) & 0x1;
 	ut8 op2 = (insn >> 23) & 0x3;
-	const ut8 op3 = (insn >> 21) & 0x1;
+	const bool op3 = (insn >> 21) & 0x1;
 
 	// Load/store memory tags
 	if (op0 == 13 && op1 == 0 && (op2 == 2 || op2 == 3) && op3 == 1) {
@@ -146,8 +146,8 @@ static int hack_handle_ldst(ut32 insn, char **buf_asm) {
 	// Load/store register pair
 	} else if ((op0 & 0x3) == 2) {
 		const ut8 opc = (insn >> 30) & 0x3;
-		const ut8 V = (insn >> 26) & 0x1;
-		const ut8 L = (insn >> 22) & 0x1;
+		const bool V = (insn >> 26) & 0x1;
+		const bool L = (insn >> 22) & 0x1;
 
 		if (opc == 1 && V == 0 && L == 0) {
 			const ut8 imm7 = ((insn >> 15) & 0x7f) << 4;
