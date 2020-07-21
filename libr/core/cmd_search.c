@@ -2399,10 +2399,10 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 			}
 
 			const ut64 from = itv.addr, to = r_itv_end (itv),
-					from1 = search->bckwrds ? to : from,
-					to1 = search->bckwrds ? from : to;
+					from1 = search->bckwrds? to: from,
+					to1 = search->bckwrds? from: to;
 			ut64 len;
-			for (at = from1; at != to1; at = search->bckwrds ? at - len : at + len) {
+			for (at = from1; at != to1; at = search->bckwrds? at - len: at + len) {
 				print_search_progress (at, to1, search->nhits, param);
 				if (r_cons_is_breaked ()) {
 					eprintf ("\n\n");
@@ -2426,12 +2426,12 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 				if (param->aes_search) {
 					// Adjust length to search between blocks.
 					if (len == core->blocksize) {
-						len = len - 39;
+						len -= 39;
 					}
 				} else if (param->privkey_search) {
 					// Adjust length to search between blocks.
 					if (len == core->blocksize) {
-							len = len - 14;
+						len -= 10;
 					}
 				}
 				if (core->search->maxhits > 0 && core->search->nhits >= core->search->maxhits) {
@@ -2445,7 +2445,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 				eprintf ("hits: %" PFMT64d "\n", search->nhits - saved_nhits);
 			}
 		}
-done:
+	done:
 		r_cons_break_pop ();
 		free (buf);
 	} else {

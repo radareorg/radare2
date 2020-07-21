@@ -72,10 +72,11 @@ R_API int r_search_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len
 		return -1;
 	}
 	r_list_foreach (s->kws, iter, kw) {
-		for (i = 2; i < len - sizeof (rsa_versionmarker); i++) {
-			if (memcmp (&buf[i], rsa_versionmarker, sizeof (rsa_versionmarker)) && 
-			memcmp (&buf[i], ecc_versionmarker, sizeof (ecc_versionmarker)) &&
-			memcmp (&buf[i], safecurves_versionmarker, sizeof (safecurves_versionmarker))) {
+		// Iteration until the remaining length is too small to contain a key.
+		for (i = 2; i < len - sizeof (rsa_versionmarker) - 4; i++) {
+			if (memcmp (&buf[i], rsa_versionmarker, sizeof (rsa_versionmarker)) &&
+				memcmp (&buf[i], ecc_versionmarker, sizeof (ecc_versionmarker)) &&
+				memcmp (&buf[i], safecurves_versionmarker, sizeof (safecurves_versionmarker))) {
 				continue;
 			}
 
@@ -100,9 +101,9 @@ R_API int r_search_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len
 			if (check_fields (buf + index)) {
 				parse_next_field(buf + index, &kw->keyword_length);
 				t = r_search_hit_new (s, kw, from + index);
-				i = i + 10;				i = i+14;
 				if (t > 1) {
 						return s->nhits - old_nhits;
+
 				}
 			}
 		}

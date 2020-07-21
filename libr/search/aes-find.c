@@ -60,7 +60,7 @@ R_API int r_search_aes_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 				if (aes128_key_test (buf + i)) {
 					kw->keyword_length = 16;
 					t = r_search_hit_new (s, kw, from + i);
-					i = i + 24;
+					i += 24;
 					if (!t) {
 						return -1;
 					}
