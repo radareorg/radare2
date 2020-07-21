@@ -239,8 +239,8 @@ R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, c
 	stop = bLen;
 	// Preliminary tests
 
-	//Do we have both files a & b, with positives sizes?
-	if (!aBufPtr || !bBufPtr || aLen < 0 || bLen < 0) {
+	//Do we have both files a & b
+	if (!aBufPtr || !bBufPtr) {
 		return false;
 	}
 
