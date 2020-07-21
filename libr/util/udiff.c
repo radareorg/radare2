@@ -239,9 +239,20 @@ R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, c
 	stop = bLen;
 	// Preliminary tests
 
-	//Do we have both files a & b, and are they at least one byte?
-	if (!aBufPtr || !bBufPtr || aLen < 1 || bLen < 1) {
+	//Do we have both files a & b, with positives sizes?
+	if (!aBufPtr || !bBufPtr || aLen < 0 || bLen < 0) {
 		return false;
+	}
+
+	// one or both buffers empty?
+	if (aLen == 0 || bLen == 0) {
+		if (distance) {
+			*distance = R_MAX (aLen, bLen);
+		}
+		if (similarity) {
+			*similarity = aLen == bLen? 1.0: 0.0;
+		}
+		return true;
 	}
 
 	//IF the files are the same size and are identical, then we have matching files
