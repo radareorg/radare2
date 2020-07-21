@@ -1844,41 +1844,6 @@ static int cmd_write(void *data, const char *input) {
 	return 0;
 }
 
-static const RCmdDescExample wv_help_examples[] = {
-	{ .example = "wv 0xdeadbeef", .comment = "Write the value 0xdeadbeef at current offset" },
-	{ 0 },
-};
-
-static const RCmdDescHelp wv_help = {
-	.usage = "wv[size] [value]",
-	.summary = "Write value as 4 - bytes / 8 - bytes based on value",
-	.args_str = "[value]",
-	.description = "Write the number passed as argument at the current offset as a 4 - bytes value or 8 - bytes value if the input is bigger than UT32_MAX, respecting the cfg.bigendian variable",
-	.group_summary = "Write value of given size",
-	.examples = wv_help_examples,
-};
-
-static const RCmdDescHelp wv1_help = {
-	.summary = "Write value of 1 byte",
-	.args_str = "[value]",
-	.description = "Write the number passed as argument at the current offset as 1 - byte, respecting the cfg.bigendian variable",
-};
-static const RCmdDescHelp wv2_help = {
-	.summary = "Write value of 2 bytes",
-	.args_str = "[value]",
-	.description = "Write the number passed as argument at the current offset as 2 - bytes, respecting the cfg.bigendian variable",
-};
-static const RCmdDescHelp wv4_help = {
-	.summary = "Write value of 4 bytes",
-	.args_str = "[value]",
-	.description = "Write the number passed as argument at the current offset as 4 - bytes, respecting the cfg.bigendian variable",
-};
-static const RCmdDescHelp wv8_help = {
-	.summary = "Write value of 8 byte",
-	.args_str = "[value]",
-	.description = "Write the number passed as argument at the current offset as 8 - bytes, respecting the cfg.bigendian variable",
-};
-
 static void cmd_write_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, w);
 	DEFINE_CMD_DESCRIPTOR (core, wa);

@@ -1883,8 +1883,9 @@ R_API void r_cons_breakword(R_NULLABLE const char *s) {
 R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 	RCons *cons = r_cons_singleton ();
 	const char *pal_args_color = use_color ? cons->context->pal.args : "",
-			*pal_help_color = use_color ? cons->context->pal.help : "",
-			*pal_reset = use_color ? cons->context->pal.reset : "";
+		   *pal_help_color = use_color ? cons->context->pal.help : "",
+		   *pal_input_color = use_color ? cons->context->pal.input : "",
+		   *pal_reset = use_color ? cons->context->pal.reset : "";
 	int i, max_length = 0;
 	const char *usage_str = "Usage:";
 
@@ -1910,8 +1911,8 @@ R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 			// these are the normal lines
 			int str_length = strlen (help[i]) + strlen (help[i + 1]);
 			int padding = (str_length < max_length)? (max_length - str_length): 0;
-			r_cons_printf ("| %s%s%s%*s  %s%s%s\n",
-				help[i], pal_args_color, help[i + 1],
+			r_cons_printf ("| %s%s%s%s%*s  %s%s%s\n",
+				pal_input_color, help[i], pal_args_color, help[i + 1],
 				padding, "", pal_help_color, help[i + 2], pal_reset);
 		}
 	}

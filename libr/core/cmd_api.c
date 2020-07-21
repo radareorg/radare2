@@ -10,9 +10,12 @@
 static const RCmdDescHelp not_defined_help = {
 	.usage = "Usage not defined",
 	.summary = "Help summary not defined",
-	.args_str = "",
 	.description = "Help description not defined.",
-	.examples = NULL,
+};
+
+static const RCmdDescHelp root_help = {
+	.usage = "[.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...",
+	.description = "",
 };
 
 static int value = 0;
@@ -71,8 +74,7 @@ R_API RCmd *r_cmd_new(void) {
 	}
 	cmd->nullcallback = cmd->data = NULL;
 	cmd->ht_cmds = ht_pp_new0 ();
-	cmd->root_cmd_desc = create_cmd_desc (cmd, NULL, R_CMD_DESC_TYPE_ARGV, "", NULL);
-	cmd->root_cmd_desc->help = NULL;
+	cmd->root_cmd_desc = create_cmd_desc (cmd, NULL, R_CMD_DESC_TYPE_ARGV, "", &root_help);
 	r_core_plugin_init (cmd);
 	r_cmd_macro_init (&cmd->macro);
 	r_cmd_alias_init (cmd);
@@ -253,7 +255,6 @@ R_API int r_cmd_add(RCmd *c, const char *cmd, RCmdCb cb) {
 	}
 	strncpy (item->cmd, cmd, sizeof (item->cmd)-1);
 	item->callback = cb;
-	r_cmd_desc_oldinput_new (c, c->root_cmd_desc, cmd, cb, NULL);
 	return true;
 }
 
@@ -378,13 +379,15 @@ static void fill_usage_strbuf(RStrBuf *sb, RCmdDesc *cd, bool use_color) {
 	if (cd->help->usage) {
 		r_strbuf_appendf (sb, "%s%s%s", cd->help->usage, pal_args_color, pal_reset);
 	} else {
-		r_strbuf_appendf (sb, "%s %s%s%s", cd->name, pal_args_color, cd->help->args_str, pal_reset);
+		const char *cd_args_str = cd->help->args_str? cd->help->args_str: "";
+		r_strbuf_appendf (sb, "%s %s%s%s", cd->name, pal_args_color, cd_args_str, pal_reset);
 	}
 	if (cd->help->group_summary) {
-		r_strbuf_appendf (sb, "   %s# %s%s\n", pal_help_color, cd->help->group_summary, pal_reset);
-	} else {
-		r_strbuf_appendf (sb, "   %s# %s%s\n", pal_help_color, cd->help->summary, pal_reset);
+		r_strbuf_appendf (sb, "   %s# %s%s", pal_help_color, cd->help->group_summary, pal_reset);
+	} else if (cd->help->summary) {
+		r_strbuf_appendf (sb, "   %s# %s%s", pal_help_color, cd->help->summary, pal_reset);
 	}
+	r_strbuf_append (sb, "\n");
 }
 
 static size_t update_max_len(RCmdDesc *cd, size_t max_len) {
@@ -396,25 +399,29 @@ static size_t update_max_len(RCmdDesc *cd, size_t max_len) {
 	return max_len;
 }
 
-static void print_child_help(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use_color) {
+static void print_child_help_in(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use_color, bool has_children) {
 	size_t str_len = strlen (cd->name) + strlen0 (cd->help->args_str);
-	size_t padding = str_len < max_len? max_len - str_len: 0;
-	const char *cd_args_str = cd->help->args_str? cd->help->args_str: "";
-	const char *cd_summary = cd->help->summary? cd->help->summary: "";
+	size_t padding = str_len < max_len ? max_len - str_len : 0;
+	const char *cd_args_str = cd->help->args_str ? cd->help->args_str : "";
+	const char *cd_summary = cd->help->summary ? cd->help->summary : "";
 
 	RCons *cons = r_cons_singleton ();
-	const char *pal_args_color = use_color? cons->context->pal.args: "",
-		   *pal_help_color = use_color? cons->context->pal.help: "",
-		   *pal_reset = use_color? cons->context->pal.reset: "";
-	r_strbuf_appendf (sb, "| %s %s%s %*s%s# %s%s\n", cd->name, pal_args_color,
-		cd_args_str, padding, "", pal_help_color, cd_summary, pal_reset);
+	const char *pal_args_color = use_color ? cons->context->pal.args : "",
+		   *pal_help_color = use_color ? cons->context->pal.help : "",
+		   *pal_input_color = use_color ? cons->context->pal.input : "",
+		   *pal_reset = use_color ? cons->context->pal.reset : "";
+	char children_ch = has_children? '+': '|';
+	r_strbuf_appendf (sb, "%c %s%s %s%s %*s%s# %s%s\n", children_ch,
+		pal_input_color, cd->name, pal_args_color, cd_args_str,
+		padding, "", pal_help_color, cd_summary, pal_reset);
+}
+
+static void print_child_help(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use_color) {
+	bool has_children = !r_pvector_empty (&cd->children) && cd->type == R_CMD_DESC_TYPE_ARGV;
+	print_child_help_in (sb, cd, max_len, use_color, has_children);
 }
 
 static char *inner_get_help(RCmd *cmd, RCmdDesc *cd, bool use_color) {
-	if (!cd->help->args_str || !cd->help->summary) {
-		return NULL;
-	}
-
 	RStrBuf *sb = r_strbuf_new (NULL);
 	fill_usage_strbuf (sb, cd, use_color);
 
@@ -430,7 +437,7 @@ static char *inner_get_help(RCmd *cmd, RCmdDesc *cd, bool use_color) {
 	}
 
 	if (cd->d.argv_data.cb) {
-		print_child_help (sb, cd, max_len, use_color);
+		print_child_help_in (sb, cd, max_len, use_color, false);
 	}
 	r_cmd_desc_children_foreach (cd, it_cd) {
 		RCmdDesc *child = *(RCmdDesc **)it_cd;
@@ -440,10 +447,6 @@ static char *inner_get_help(RCmd *cmd, RCmdDesc *cd, bool use_color) {
 }
 
 static char *argv_get_help(RCmd *cmd, RCmdDesc *cd, RCmdParsedArgs *a, size_t detail, bool use_color) {
-	if (!cd->help->args_str || !cd->help->summary) {
-		return NULL;
-	}
-
 	RCons *cons = r_cons_singleton ();
 	const char *pal_help_color = use_color? cons->context->pal.help: "",
 		   *pal_input_color = use_color? cons->context->pal.input: "",
