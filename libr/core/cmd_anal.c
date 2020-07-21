@@ -109,7 +109,8 @@ static const char *help_msg_abt[] = {
 
 static const char *help_msg_ac[] = {
 	"Usage:", "ac", "anal classes commands",
-	"acl[lj*]", "", "list all classes",
+	"acl[j*]", "", "list all classes",
+	"acll", " (class_name)", "list all or single class detailed",
 	"ac", " [class name]", "add class",
 	"ac-", " [class name]", "delete class",
 	"acn", " [class name] [new class name]", "rename class",
@@ -9824,6 +9825,19 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 static void cmd_anal_classes(RCore *core, const char *input) {
 	switch (input[0]) {
 	case 'l': // "acl"
+		if (input[1] == 'l') { // "acll" (name)
+			const char *arg = r_str_trim_head_ro (input + 2);
+			if (*arg) { // if there is an argument
+				char *class_name = strdup (arg);
+				if (!class_name) {
+					break;
+				}
+				char *name_end = (char *)r_str_trim_head_wp (class_name);
+				*name_end = 0; // trim the whitespace around the name
+				r_anal_class_print (core->anal, class_name, true);
+				break;
+			}
+		}
 		r_anal_class_list (core->anal, input[1]);
 		break;
 	case ' ': // "ac"
