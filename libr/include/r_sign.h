@@ -89,8 +89,10 @@ typedef struct r_sign_options_t {
 } RSignOptions;
 
 typedef struct {
-	char *name;
 	double score;
+	double bscore;
+	double gscore;
+	RSignItem *item;
 } RSignCloseMatch;
 
 #ifdef R_API
