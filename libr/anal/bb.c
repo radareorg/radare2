@@ -112,24 +112,9 @@ R_API ut64 r_anal_bb_size_i(RAnalBlock *bb, int i) {
 	return idx_next != UT16_MAX? idx_next - idx_cur: bb->size - idx_cur;
 }
 
-static int __bb_cmp_contains(const void *in, const RBNode *tree_node, void *user) {
-	ut64 *ret = (ut64 *)user;
-	ut64 addr = *(ut64 *)in;
-	const RAnalBlock *bb = container_of (tree_node, const RAnalBlock, _rb);
-	if (addr < bb->addr) {
-		return -1;
-	}
-	if (addr >= bb->addr + bb->size) {
-		return 1;
-	}
-	*ret = bb->addr;
-	return 0;
-}
-
 /* returns the address of the basic block that contains addr or UT64_MAX if
  * there is no such basic block */
 R_API ut64 r_anal_get_bbaddr(RAnal *anal, ut64 addr) {
-	ut64 ret = UT64_MAX;
-	r_rbtree_find (anal->bb_tree, &addr, __bb_cmp_contains, &ret);
-	return ret;
+	RAnalBlock *bb = r_anal_bb_from_offset (anal, addr);
+	return bb? bb->addr: UT64_MAX
 }
