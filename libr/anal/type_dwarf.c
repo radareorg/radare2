@@ -1,5 +1,5 @@
 #include <r_anal.h>
-#include "sdb/sdb.h"
+#include <sdb.h>
 #include <string.h>
 #include <r_bin_dwarf.h>
 

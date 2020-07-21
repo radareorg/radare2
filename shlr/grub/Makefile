@@ -83,6 +83,8 @@ ifeq (${OSTYPE},darwin)
 CFLAGS+=-DAPPLE_CC
 endif
 
+include ../../shlr/sdb.mk
+
 BIN=test${EXT_EXE}
 
 all: ${KERNOBJS}

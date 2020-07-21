@@ -4,7 +4,7 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
-#include <sdb/ht_uu.h>
+#include <ht_uu.h>
 
 #include "coff/coff.h"
 

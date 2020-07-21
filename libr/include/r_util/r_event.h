@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-#include <sdb/ht_up.h>
+#include <ht_up.h>
 #include <r_vector.h>
 
 typedef struct r_event_t {
