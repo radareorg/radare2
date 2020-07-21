@@ -9059,6 +9059,16 @@ static bool is_unknown_file(RCore *core) {
 	return true;
 }
 
+static bool is_apple_target(RCore *core) {
+	const char *arch = r_config_get (core->config, "asm.arch");
+	if (!strstr (arch, "ppc") && !strstr (arch, "arm") && !strstr (arch, "x86")) {
+		return false;
+	}
+	RBinObject *bo = r_bin_cur_object (core->bin);
+	r_return_val_if_fail (!bo || (bo->plugin && bo->plugin->name), false);
+	return bo? strstr (bo->plugin->name, "mach"): false;
+}
+
 static int cmd_anal_all(RCore *core, const char *input) {
 	switch (*input) {
 	case '?':
@@ -9260,9 +9270,11 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
-				oldstr = r_print_rowlog (core->print, "Check for objc references");
-				r_print_rowlog_done (core->print, oldstr);
-				cmd_anal_objc (core, input + 1, true);
+				if (is_apple_target (core)) {
+					oldstr = r_print_rowlog (core->print, "Check for objc references");
+					r_print_rowlog_done (core->print, oldstr);
+					cmd_anal_objc (core, input + 1, true);
+				}
 				r_core_task_yield (&core->tasks);
 				oldstr = r_print_rowlog (core->print, "Check for vtables");
 				r_core_cmd0 (core, "avrr");
