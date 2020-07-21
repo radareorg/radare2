@@ -716,6 +716,9 @@ e io.unalloc=true
 e scr.color=0
 .(print)
 ?e
+e io.unalloc.ch=-
+.(print)
+?e
 e scr.color=3
 e io.unalloc.ch=
 .(print)
@@ -725,6 +728,11 @@ e io.unalloc.ch=?
 EOF
 EXPECT=<<EOF
 0x0000fffa ????????????se,,,,,,            
+0x0001000a                     ..      ..  
+0x0001001a             en....OO,,OO;;  ..  
+0x0001002a ..              
+
+0x0000fffa ------------se,,,,,,            
 0x0001000a                     ..      ..  
 0x0001001a             en....OO,,OO;;  ..  
 0x0001002a ..              
