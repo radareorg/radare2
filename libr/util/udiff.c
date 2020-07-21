@@ -530,9 +530,9 @@ R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b) {
 	}
 
 	// Copy strings (note that strncpy does pad with nulls)
-	strncpy (dup_a, a, len_long);
+	strncpy ((char *)dup_a, (const char *)a, len_long);
 	a = dup_a;
-	strncpy (dup_b, b, len_long);
+	strncpy ((char *)dup_b, (const char *)b, len_long);
 	b = dup_b;
 
 	// Fill table
@@ -764,8 +764,8 @@ R_API void r_diffchar_print(RDiffChar *diffchar) {
 
 R_API void r_diffchar_free(RDiffChar *diffchar) {
 	if (diffchar) {
-		free (diffchar->align_a);
-		free (diffchar->align_b);
+		free ((ut8 *)diffchar->align_a);
+		free ((ut8 *)diffchar->align_b);
 		free (diffchar);
 	}
 }
