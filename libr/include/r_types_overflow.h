@@ -13,10 +13,7 @@
 #define UT32_ADD_OVFCHK(x,y) ((UT32_MAX - (x)) < (y))
 #define ST32_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > ST32_MAX - (x))) || (((x) < 0) && (a) < ST32_MIN - (x)))
 #define UT16_ADD_OVFCHK(x,y) ((UT16_MAX - (x)) < (y))
-#define ST16_ADD_OVFCHK(a,b) ( \
-	   (((b) > 0) && ((a) > ST16_MAX - (b))) \
-	|| (((b) < 0) && ((a) < ST16_MIN - (b))) \
-)
+#define ST16_ADD_OVFCHK(a,b) ((((b) > 0) && ((a) > ST16_MAX - (b))) || (((b) < 0) && ((a) < ST16_MIN - (b))))
 #define UT8_ADD_OVFCHK(x,y) ((UT8_MAX - (x)) < (y))
 #define ST8_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > ST8_MAX - (x))) || ((x) < 0 && (a) < ST8_MIN - (x)))
 
@@ -35,19 +32,30 @@
 #define ST8_SUB_OVFCHK(a,b) ST8_ADD_OVFCHK(a,-(b))
 
 // MUL
-//if ((a == -1) && (x == INT_MIN)) /* `a * x` can overflow */
-//if ((x == -1) && (a == INT_MIN)) /* `a * x` (or `a / x`) can overflow */
-//if (a > INT_MAX / x) /* `a * x` would overflow */;
-//if ((a < INT_MIN / x)) /* `a * x` would underflow */;
-#define SZT_MUL_OVFCHK(x,y) ((y) && (x) > (SIZE_MAX / (y)))
-#define SSZT_MUL_OVFCHK(x,y) (((y) && (x) > (SSIZE_MAX / (y))) || ((((x) == -1) && ((y) == (SSIZE_MAX + 1)))) || ((y) == -1 && (x) == (SSIZE_MAX + 1)))
-#define UT64_MUL_OVFCHK(x,y) ((y) && (x) > (UT64_MAX / (y)))
-#define ST64_MUL_OVFCHK(x,y) (((y) && (x) > (ST64_MAX / (y))) || ((((x) == -1) && ((y) == LONG_MIN))) || ((y) == -1 && (x) == LONG_MIN))
-#define UT32_MUL_OVFCHK(x,y) ((y) && (x) > (UT32_MAX / (y)))
-#define ST32_MUL_OVFCHK(x,y) (((y) && (x) > (ST32_MAX / (y))) || ((((x) == -1) && ((y) == INT_MIN))) || ((y) == -1 && (x) == INT_MIN))
-#define UT16_MUL_OVFCHK(x,y) ((y) && (x) > (UT16_MAX / (y)))
-#define ST16_MUL_OVFCHK(x,y) (((y) && (x) > (ST16_MAX / (y))) || ((((x) == -1) && ((y) == SHRT_MIN))) || ((y) == -1 && (x) == SHRT_MIN))
-#define UT8_MUL_OVFCHK(x,y) ((y) && (x) > (UT8_MAX / (y)))
-#define ST8_MUL_OVFCHK(x,y) (((y) && (x) > (ST8_MAX / (y))) || ((((x) == -1) && ((y) == CHAR_MIN))) || ((y) == -1 && (x) == CHAR_MIN))
+#define UNSIGNED_MUL_OVERFLOW_CHECK(overflow_name, type_base, type_min, type_max) \
+static inline bool overflow_name(type_base a, type_base b) { \
+	return (a > 0 && b > 0) ? (a > type_max / b): 0; \
+}
 
+#define SIGNED_MUL_OVERFLOW_CHECK(overflow_name, type_base, type_min, type_max) \
+static inline bool overflow_name(type_base a, type_base b) { \
+	if (a > 0) { \
+		if (b > 0) { return a > type_max / b; } \
+		return b < type_min / a; \
+	} \
+	if (b > 0) { return a < type_min / b; } \
+	return a && b < type_max / a; \
+}
+
+
+SIGNED_MUL_OVERFLOW_CHECK(SSZT_MUL_OVFCHK, ssize_t, SSZT_MIN, SSZT_MAX);
+SIGNED_MUL_OVERFLOW_CHECK(ST8_MUL_OVFCHK, st8, ST8_MIN, ST8_MAX);
+SIGNED_MUL_OVERFLOW_CHECK(ST16_MUL_OVFCHK, st16, ST16_MIN, ST16_MAX);
+SIGNED_MUL_OVERFLOW_CHECK(ST32_MUL_OVFCHK, st32, ST32_MIN, ST32_MAX);
+SIGNED_MUL_OVERFLOW_CHECK(ST64_MUL_OVFCHK, st64, ST64_MIN, ST64_MAX);
+UNSIGNED_MUL_OVERFLOW_CHECK(SZT_MUL_OVFCHK, size_t, SZT_MIN, SZT_MAX);
+UNSIGNED_MUL_OVERFLOW_CHECK(UT8_MUL_OVFCHK, ut8, UT8_MIN, UT8_MAX);
+UNSIGNED_MUL_OVERFLOW_CHECK(UT16_MUL_OVFCHK, ut16, UT16_MIN, UT16_MAX);
+UNSIGNED_MUL_OVERFLOW_CHECK(UT32_MUL_OVFCHK, ut32, UT32_MIN, UT32_MAX);
+UNSIGNED_MUL_OVERFLOW_CHECK(UT64_MUL_OVFCHK, ut64, UT64_MIN, UT64_MAX);
 #endif

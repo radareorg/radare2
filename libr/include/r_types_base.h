@@ -2,6 +2,7 @@
 #define R2_TYPES_BASE_H
 
 #include <ctype.h>
+#include <sys/types.h>
 
 #define cut8 const unsigned char
 #define ut64 unsigned long long
@@ -50,7 +51,7 @@ typedef struct _ut256 {
 	ut128 Low;
 	ut128 High;
 } ut256;
-typedef struct _utX{
+typedef struct _utX {
 	ut80 v80;
 	ut96 v96;
 	ut128 v128;
@@ -97,12 +98,38 @@ typedef struct _utX{
 #define ASCII_MIN 32
 #define ASCII_MAX 127
 
+#if SSIZE_MAX == ST32_MAX
+#define SZT_MAX  UT32_MAX
+#define SZT_MIN  UT32_MIN
+#define SSZT_MAX  ST32_MAX
+#define SSZT_MIN  ST32_MIN
+#else
+#define SZT_MAX  UT64_MAX
+#define SZT_MIN  UT64_MIN
+#define SSZT_MAX  ST64_MAX
+#define SSZT_MIN  ST64_MIN
+#endif
+
 #define UT64_ALIGN(x) (x + (x - (x % sizeof (ut64))))
 #define UT32_ALIGN(x) (x + (x - (x % sizeof (ut32))))
 #define UT16_ALIGN(x) (x + (x - (x % sizeof (ut16))))
 
 #define UT32_LO(x) ((ut32)((x)&UT32_MAX))
 #define UT32_HI(x) ((ut32)(((ut64)(x))>>32)&UT32_MAX)
+
+#define R_BETWEEN(x,y,z) (((y)>=(x)) && ((y)<=(z)))
+#define R_ROUND(x,y) ((x)%(y))?(x)+((y)-((x)%(y))):(x)
+#define R_DIM(x,y,z) (((x)<(y))?(y):((x)>(z))?(z):(x))
+#ifndef R_MAX_DEFINED
+#define R_MAX(x,y) (((x)>(y))?(x):(y))
+#define R_MAX_DEFINED
+#endif
+#ifndef R_MIN_DEFINED
+#define R_MIN(x,y) (((x)>(y))?(y):(x))
+#define R_MIN_DEFINED
+#endif
+#define R_ABS(x) (((x)<0)?-(x):(x))
+#define R_BTW(x,y,z) (((x)>=(y))&&((y)<=(z)))?y:x
 
 #include "r_types_overflow.h"
 

@@ -29,11 +29,11 @@ int test_underflow_sub(void) {
 }
 
 int test_underflow_add(void) {
-	mu_assert_false (ST16_SUB_OVFCHK (10, -210), "st16-add");
-	mu_assert_false (ST16_SUB_OVFCHK (10, 10), "st16-add 10");
-	mu_assert_true (ST16_SUB_OVFCHK (ST16_MIN, 11), "st16-add 10-11");
-	mu_assert_false (ST16_SUB_OVFCHK (10, 11), "st16-add 10-11");
-	mu_assert_true (UT16_SUB_OVFCHK (10, 11), "st16-add 10-11");
+	mu_assert_false (ST16_SUB_OVFCHK (10, -210), "st16-sub");
+	mu_assert_false (ST16_SUB_OVFCHK (10, 10), "st16-sub 10");
+	mu_assert_true (ST16_SUB_OVFCHK (ST16_MIN, 11), "st16-sub 10-11");
+	mu_assert_false (ST16_SUB_OVFCHK (10, 11), "st16-sub 10-11");
+	mu_assert_true (UT16_SUB_OVFCHK (10, 11), "ut16-sub 10-11");
 	mu_end;
 }
 
@@ -42,7 +42,15 @@ int test_overflow_mul(void) {
 	mu_assert_false (UT8_MUL_OVFCHK (16, 2), "ut8-mul 2");
 	mu_assert_true (ST8_MUL_OVFCHK (16, 100), "st8-mul 3");
 	mu_assert_false (ST8_MUL_OVFCHK (16, 1), "st8-mul 4");
-	mu_assert_true (ST8_MUL_OVFCHK (-1, -2), "ut8-mul sign overflow");
+	mu_assert_false (ST8_MUL_OVFCHK (-2, 2), "st8-mul sign overflow");
+	mu_assert_false (ST8_MUL_OVFCHK (-1, 1), "st8-mul sign overflow");
+	mu_assert_false (ST8_MUL_OVFCHK (1, -1), "st8-mul sign overflow");
+	mu_assert_false (ST8_MUL_OVFCHK (2, -2), "st8-mul sign overflow");
+	mu_assert_false (ST8_MUL_OVFCHK (-1, -2), "st8-mul sign overflow");
+	mu_assert_false (ST8_MUL_OVFCHK (-2, -1), "st8-mul sign overflow");
+	mu_assert_true (ST8_MUL_OVFCHK (-16, 100), "st8-mul sign overflow");
+	mu_assert_true (ST8_MUL_OVFCHK (100, -16), "st8-mul sign overflow");
+	mu_assert_false (ST8_MUL_OVFCHK (3, -16), "st8-mul sign overflow");
 	mu_end;
 }
 
