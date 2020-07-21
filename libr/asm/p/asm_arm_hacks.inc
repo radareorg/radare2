@@ -9,10 +9,12 @@ static char *hack_handle_dp_imm(ut32 insn) {
 		const bool op = (insn >> 30) & 0x1;
 		const bool S = (insn >> 29) & 0x1;
 		const bool o2 = (insn >> 2) & 0x1;
-		if (sf && !op && !S && !o2 ) {
-			mnemonic = "addg";
-		} else if (sf && op && !S && !o2) {
-			mnemonic = "subg";
+		if (sf && !S && !o2) {
+			if (op) {
+				mnemonic = "subg";
+			} else {
+				mnemonic = "addg";
+			}
 		}
 		if (mnemonic) {
 			const ut8 uimm6 = ((insn >> 16) & 0x3f) << 4;
@@ -40,14 +42,18 @@ static char *hack_handle_dp_reg(ut32 insn) {
 		const bool sf = (insn >> 31) & 0x1;
 		const bool S = (insn >> 29) & 0x1;
 		const ut8 opcode = (insn >> 10) & 0x1f;
-		if (sf && !S && opcode == 4) {
-			mnemonic = "irg";
-		} else if (sf && !S && opcode == 0) {
-			mnemonic = "subp";
-		} else if (sf && !S && opcode == 5) {
-			mnemonic = "gmi";
-		} else if (sf && S && opcode == 0) {
-			mnemonic = "subps";
+		if (sf) {
+			if (!S) {
+				if (opcode == 4) {
+					mnemonic = "irg";
+				} else if (opcode == 0) {
+					mnemonic = "subp";
+				} else if (opcode == 5) {
+					mnemonic = "gmi";
+				}
+			} else if (S && opcode == 0) {
+				mnemonic = "subps";
+			}
 		}
 		if (mnemonic) {
 			const ut8 Xm = (insn >> 16) & 0x1f;

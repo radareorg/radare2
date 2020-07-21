@@ -8,22 +8,26 @@ static int hack_handle_dp_reg(ut32 insn, RAnalOp *op) {
 		const bool sf = (insn >> 31) & 0x1;
 		const bool S = (insn >> 29) & 0x1;
 		const ut8 opcode = (insn >> 10) & 0x1f;
-		if (sf && !S && opcode == 4) {
-			// irg
-			op->type = R_ANAL_OP_TYPE_MOV;
-			return op->size = 4;
-		} else if (sf && !S && opcode == 0) {
-			// subp
-			op->type = R_ANAL_OP_TYPE_SUB;
-			return op->size = 4;
-		} else if (sf && !S && opcode == 5) {
-			// gmi
-			op->type = R_ANAL_OP_TYPE_MOV;
-			return op->size = 4;
-		} else if (sf && S && opcode == 0) {
-			// subps
-			op->type = R_ANAL_OP_TYPE_SUB;
-			return op->size = 4;
+		if (sf) {
+			if (!S) {
+				if (opcode == 4) {
+					// irg
+					op->type = R_ANAL_OP_TYPE_MOV;
+					return op->size = 4;
+				} else if (opcode == 0) {
+					// subp
+					op->type = R_ANAL_OP_TYPE_SUB;
+					return op->size = 4;
+				} else if (opcode == 5) {
+					// gmi
+					op->type = R_ANAL_OP_TYPE_MOV;
+					return op->size = 4;
+				}
+			} else if (S && opcode == 0) {
+				// subps
+				op->type = R_ANAL_OP_TYPE_SUB;
+				return op->size = 4;
+			}
 		}
 	}
 	return -1;
@@ -83,7 +87,6 @@ static int hack_handle_ldst(ut32 insn, RAnalOp *op) {
 		const ut8 opc = (insn >> 30) & 0x3;
 		const bool V = (insn >> 26) & 0x1;
 		const bool L = (insn >> 22) & 0x1;
-
 		if (opc == 1 && !V && !L) {
 			// stgp
 			op->type = R_ANAL_OP_TYPE_STORE;
@@ -102,13 +105,14 @@ static int hack_handle_dp_imm(ut32 insn, RAnalOp *op) {
 		const bool op_ = (insn >> 30) & 0x1;
 		const bool S = (insn >> 29) & 0x1;
 		const bool o2 = (insn >> 2) & 0x1;
-		if (sf && !op_ && !S && !o2) {
+		if (sf && !S && !o2) {
+			if (op_ ) {
+				// subg
+				op->type = R_ANAL_OP_TYPE_SUB;
+				return op->size = 4;
+			}
 			// addg
 			op->type = R_ANAL_OP_TYPE_ADD;
-			return op->size = 4;
-		} else if (sf && op_ && !S && !o2) {
-			// subg
-			op->type = R_ANAL_OP_TYPE_SUB;
 			return op->size = 4;
 		}
 	}
