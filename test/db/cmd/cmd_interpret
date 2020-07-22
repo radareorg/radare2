@@ -30,3 +30,22 @@ Eron
 
 EOF
 RUN
+
+NAME=$foo=#!pipe
+FILE=-
+CMDS=<<EOF
+#!pipe echo hello
+$foo=#!pipe echo hello
+$foo
+$-*
+e cfg.newshell=true
+$foo=#!pipe echo hello
+$foo
+$-*
+EOF
+EXPECT=<<EOF
+hello
+hello
+hello
+EOF
+RUN
