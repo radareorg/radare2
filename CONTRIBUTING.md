@@ -79,7 +79,7 @@ rules to make the git history more readable and consistent:
 * Start the message capitalized (first letter in uppercase)
 * Be short and concise, the whole concept must fit one line
 * If a command is inlined, use backticks
-* Add a double-hashtag if the change matters for the changelog
+* Add a double-hashtag if the change matters for the changelog (e.g. new command, removal of commands, new vars, new API, new Asm plugin, etc.). Common hashtags are `##anal`, `##asm`, `##bin`, `##cons`, `##crypto`, `##debug`, `##search`, `##util`, `##command`, `##build`.
 * Search the changelog to known hashtags (see sys/release-notes.sh)
 * If the commit fixes a bug start with 'Fix #number - '
 * For extra details, add an empty line and use asterisk item list below
