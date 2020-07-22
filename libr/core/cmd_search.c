@@ -11,6 +11,12 @@ static int cmd_search(void *data, const char *input);
 
 #define USE_EMULATION 0
 
+// Size needed to search a AES key.
+#define AES_SEARCH_LENGTH 40
+
+// Size meeded to search a private key.
+#define PRIVATE_KEY_SEARCH_LENGTH 11
+
 static const char *help_msg_search_esil[] = {
 	"/E", " [esil-expr]", "search offsets matching a specific esil expression",
 	"/Ej", " [esil-expr]", "same as above but using the given magic file",
@@ -2426,12 +2432,12 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 				if (param->aes_search) {
 					// Adjust length to search between blocks.
 					if (len == core->blocksize) {
-						len -= 39;
+						len -= AES_SEARCH_LENGTH - 1;
 					}
 				} else if (param->privkey_search) {
 					// Adjust length to search between blocks.
 					if (len == core->blocksize) {
-						len -= 10;
+						len -= PRIVATE_KEY_SEARCH_LENGTH - 1;
 					}
 				}
 				if (core->search->maxhits > 0 && core->search->nhits >= core->search->maxhits) {

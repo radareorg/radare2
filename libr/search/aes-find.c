@@ -12,6 +12,10 @@
 #include <r_search.h>
 #include <r_crypto/r_aes.h>
 
+#define AES128_MIN_SEARCH_LENGTH 24
+#define AES192_MIN_SEARCH_LENGTH 32
+#define AES256_MIN_SEARCH_LENGTH 40
+
 static bool aes256_key_test(const unsigned char *buf) {
 	bool word1 = buf[32] == (buf[0] ^ Sbox[buf[29]] ^ 1) \
 		&& buf[33] == (buf[1] ^ Sbox[buf[30]]) \
@@ -49,18 +53,18 @@ static bool aes128_key_test(const unsigned char *buf) {
 }
 
 R_API int r_search_aes_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
-	int i, t, last = len - 23;
+	int i, t, last = len - AES128_MIN_SEARCH_LENGTH;
 	RListIter *iter;
 	RSearchKeyword *kw;
 	const int old_nhits = s->nhits;
 
 	r_list_foreach (s->kws, iter, kw) {
-		if (last > 0) {
+		if (last >= 0) {
 			for (i = 0; i < last; i++) {
 				if (aes128_key_test (buf + i)) {
 					kw->keyword_length = 16;
 					t = r_search_hit_new (s, kw, from + i);
-					i += 24;
+					i += AES128_MIN_SEARCH_LENGTH;
 					if (!t) {
 						return -1;
 					}
@@ -68,33 +72,31 @@ R_API int r_search_aes_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 						return s->nhits - old_nhits;
 					}
 				}
-				if (len - i - 31 > 0) {
-					if (aes192_key_test (buf + i)) {
-						kw->keyword_length = 24;
-						t = r_search_hit_new (s, kw, from + i);
-						i = i + 32;
-						if (!t) {
-							return -1;
-						}
-						if (t > 1) {
-							return s->nhits - old_nhits;
-						}
+				if (len - i - AES192_MIN_SEARCH_LENGTH >= 0 && aes192_key_test (buf + i)) {
+					kw->keyword_length = 24;
+					t = r_search_hit_new (s, kw, from + i);
+					i = i + AES192_MIN_SEARCH_LENGTH;
+					if (!t) {
+						return -1;
+					}
+					if (t > 1) {
+						return s->nhits - old_nhits;
 					}
 				}
-				if (len - i - 39 > 0) {
-					if (aes256_key_test (buf + i)) {
-						kw->keyword_length = 32;
-						t = r_search_hit_new (s, kw, from + i);
-						i = i + 40;
-						if (!t) {
-							return -1;
-						}
-						if (t > 1) {
-							return s->nhits - old_nhits;
-						}
+				if (len - i - AES256_MIN_SEARCH_LENGTH >= 0 && aes256_key_test (buf + i)) {
+					kw->keyword_length = 32;
+					t = r_search_hit_new (s, kw, from + i);
+					i = i + AES256_MIN_SEARCH_LENGTH;
+					if (!t) {
+						return -1;
+					}
+					if (t > 1) {
+						return s->nhits - old_nhits;
 					}
 				}
 			}
+		} else {
+			return -1;
 		}
 	}
 	return -1;
