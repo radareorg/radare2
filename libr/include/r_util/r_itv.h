@@ -44,7 +44,7 @@ static inline ut64 r_itv_end(RInterval itv) {
 }
 
 // Returns true if itv equals itv2
-static inline ut64 r_itv_eq(RInterval itv, RInterval itv2) {
+static inline bool r_itv_eq(RInterval itv, RInterval itv2) {
 	return itv.addr == itv2.addr && itv.size == itv2.size;
 }
 

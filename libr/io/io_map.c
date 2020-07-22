@@ -9,8 +9,6 @@
 
 #define END_OF_MAP_IDS UT32_MAX
 
-#define MAP_USE_HALF_CLOSED 0
-
 #define CMP_END_GTE(addr, itv) \
 	(((addr) < r_itv_end (*(RInterval *)(itv))) ? -1 : 1)
 
@@ -18,7 +16,7 @@
 	(((addr) < (r_itv_end (((RIOMapSkyline *)(part))->itv)) || !r_itv_end (((RIOMapSkyline *)(part))->itv)) ? -1 : 1)
 
 #define CMP_BEGIN_GTE_PART(addr, part) \
-	(((addr) < (r_itv_begin (((RIOMapSkyline *)(part))->itv))) ? -1 : 1)
+	(((addr) > (r_itv_begin (((RIOMapSkyline *)(part))->itv))) - ((addr) < (r_itv_begin (((RIOMapSkyline *)(part))->itv))))
 
 static bool add_map_to_skyline(RIO *io, RIOMap *map) {
 	size_t slot;
@@ -27,22 +25,20 @@ static bool add_map_to_skyline(RIO *io, RIOMap *map) {
 	RIOMapSkyline *new_part = R_NEW (RIOMapSkyline);
 	new_part->map = map;
 	new_part->itv = map->itv;
+	const ut64 new_part_end = r_itv_end (new_part->itv);
 
-	// `part` is the first RIOMapSkyline with part->itv.addr > new_part->itv.addr
+	// `part` is the first RIOMapSkyline with part->itv.addr >= new_part->itv.addr
 	r_pvector_lower_bound (skyline, new_part->itv.addr, slot, CMP_BEGIN_GTE_PART);
 	RIOMapSkyline *part = slot < r_pvector_len (skyline) ? r_pvector_at (skyline, slot) : NULL;
 	if (slot) {
 		RIOMapSkyline *prev_part = r_pvector_at (skyline, slot - 1);
-		if (r_itv_eq (new_part->itv, prev_part->itv)) {
-			// `new_part` == `prev_part`, just remove `prev_part`
-			r_pvector_remove_at (skyline, --slot);
-			part = NULL; // Skip other checks
-		} else if (r_itv_end (prev_part->itv) > r_itv_begin (new_part->itv)) {
-			if (r_itv_end (prev_part->itv) > r_itv_end (new_part->itv)) {
+		const ut64 prev_part_end = r_itv_end (prev_part->itv);
+		if (prev_part_end > r_itv_begin (new_part->itv)) {
+			if (prev_part_end > new_part_end) {
 				RIOMapSkyline *tail = R_NEW (RIOMapSkyline);
 				tail->map = prev_part->map;
-				tail->itv.addr = r_itv_end (new_part->itv);
-				tail->itv.size = r_itv_end (prev_part->itv) - r_itv_begin (tail->itv);
+				tail->itv.addr = new_part_end;
+				tail->itv.size = prev_part_end - r_itv_begin (tail->itv);
 				if (slot < r_pvector_len (skyline)) {
 					r_pvector_insert (skyline, slot, tail);
 				} else {
@@ -58,14 +54,14 @@ static bool add_map_to_skyline(RIO *io, RIOMap *map) {
 	}
 	if (part) {
 		while (part && r_itv_include (new_part->itv, part->itv)) {
-			// Remove `part` that fit in `new_part`
+			// Remove `part` that fits in `new_part`
 			r_pvector_remove_at (skyline, slot);
 			part = slot < r_pvector_len (skyline) ? r_pvector_at (skyline, slot) : NULL;
 		}
 		if (part && r_itv_overlap (new_part->itv, part->itv)) {
 			// Chop start of last `part` that intersects `new_part`
-			const size_t oaddr = r_itv_begin (part->itv);
-			part->itv.addr = r_itv_end (new_part->itv);
+			const ut64 oaddr = r_itv_begin (part->itv);
+			part->itv.addr = new_part_end;
 			part->itv.size -= r_itv_begin (part->itv) - oaddr;
 		}
 	}
@@ -289,10 +285,7 @@ R_API RIOMap *r_io_map_get(RIO* io, ut64 addr) {
 		return NULL;
 	}
 	const RIOMapSkyline *sky = r_pvector_at (skyline, i);
-	if (sky->itv.addr <= addr) {
-		return sky->map;
-	}
-	return NULL;
+	return sky->itv.addr <= addr ? sky->map : NULL;
 }
 
 R_API bool r_io_map_is_mapped(RIO* io, ut64 addr) {
@@ -304,10 +297,7 @@ R_API bool r_io_map_is_mapped(RIO* io, ut64 addr) {
 		return false;
 	}
 	const RInterval *itv = r_pvector_at (shadow, i);
-	if (itv->addr <= addr) {
-		return true;
-	}
-	return false;
+	return itv->addr <= addr;
 }
 
 R_API void r_io_map_reset(RIO* io) {
