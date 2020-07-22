@@ -45,11 +45,7 @@ static bool add_map_to_skyline(RIO *io, RIOMap *map) {
 					r_pvector_push (skyline, tail);
 				}
 			}
-			if (r_itv_begin (prev_part->itv) < r_itv_begin (new_part->itv)) {
-				prev_part->itv.size = r_itv_begin (new_part->itv) - r_itv_begin (prev_part->itv);
-			} else {
-				r_pvector_remove_at (skyline, --slot);
-			}
+			prev_part->itv.size = r_itv_begin (new_part->itv) - r_itv_begin (prev_part->itv);
 		}
 	}
 	if (part) {
