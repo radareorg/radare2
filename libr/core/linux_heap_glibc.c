@@ -87,8 +87,7 @@ static GHT GH(get_main_arena_with_symbol)(RCore *core, RDebugMap *map) {
 			RBinInfo *info = r_bin_get_info (core->bin);
 			if (!strcmp (info->arch, "x86")) {
 				main_arena = GH (align_address_to_size) (vaddr + base_addr + sizeof (GHT), 0x20);
-			}
-			if (!strcmp (info->arch, "arm")) {
+			} else if (!strcmp (info->arch, "arm")) {
 				main_arena = vaddr + base_addr - sizeof (GHT) * 2 - sizeof (MallocState);
 			}
 		}
