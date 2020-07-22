@@ -22,7 +22,6 @@ static bool is_simple_type (int idx) {
  * 
  * @param idx 
  * @return STypeInfo, leaf_type = 0 -> error
- *  TODO add more types
  *  This can be made smarter by using the masks
  *  and splitting it on 2 parts, 1 mode, 1 type
  */
@@ -34,7 +33,12 @@ static STypeInfo parse_simple_type(ut32 idx) {
 	}
 	switch (idx) {
 	case eT_NOTYPE: // uncharacterized type (no type)
+		simple_type->size = 0;
+		simple_type->type = strdup ("notype_t");
+		break;
 	case eT_VOID: // void
+		simple_type->size = 0;
+		simple_type->type = strdup ("void");
 		break;
 	case eT_PVOID: // near ptr to void (2 bytes?)
 		simple_type->size = 2;
@@ -1743,17 +1747,17 @@ static void get_modifier_print_type(void *type, char **name) {
 	}
 
 	SLF_MODIFIER *modifier = stype_info->type_info;
-	char *modifier_name = "modifier ";
-	if (modifier->umodifier.bits.const_) {
-		modifier_name = "const ";
-	} else if (modifier->umodifier.bits.volatile_) {
-		modifier_name = "volatile ";
-	} else if (modifier->umodifier.bits.unaligned) {
-		modifier_name = "unaligned ";
-	}
 	RStrBuf buff;
 	r_strbuf_init (&buff);
-	r_strbuf_append (&buff, modifier_name);
+	if (modifier->umodifier.bits.const_) {
+		r_strbuf_append (&buff, "const ");
+	} 
+	if (modifier->umodifier.bits.volatile_) {
+		r_strbuf_append (&buff, "volatile ");
+	}
+	if (modifier->umodifier.bits.unaligned) {
+		r_strbuf_append (&buff, "unaligned ");
+	}
 	if (tmp_name) {
 		r_strbuf_append (&buff, tmp_name);
 	}
