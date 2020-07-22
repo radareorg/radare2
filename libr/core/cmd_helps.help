@@ -193,6 +193,14 @@ static const RCmdDescHelp z_help = {
 	.summary = "zignatures management",
 };
 
+// w0 helps
+
+static const RCmdDescHelp w0_help = {
+	.summary = "Write 'len' bytes with value 0x00",
+	.args_str = "[len]",
+	.description = "Fill len bytes starting from the current offset with the value 0.",
+};
+
 // wB helps
 
 static const RCmdDescExample wB_help_examples[] = {

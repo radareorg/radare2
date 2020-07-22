@@ -884,6 +884,39 @@ static RCmdStatus wB_minus_handler(void *data, int argc, const char **argv) {
 	return R_CMD_STATUS_OK;
 }
 
+static int w0_handler_common(RCore *core, ut64 len) {
+	int res = 0;
+	if (len > 0) {
+		ut8 *buf = calloc (1, len);
+		if (buf) {
+			if (!r_io_write_at (core->io, core->offset, buf, len)) {
+				eprintf ("r_io_write_at failed at 0x%08" PFMT64x "\n", core->offset);
+				res = -1;
+			}
+			r_core_block_read (core);
+			free (buf);
+		} else {
+			eprintf ("Cannot allocate %d byte(s)\n", (int)len);
+			res = -1;
+		}
+	}
+	return res;
+}
+static int w0_handler_old(void *data, const char *input) {
+	RCore *core = (RCore *)data;
+	ut64 len = r_num_math (core->num, input);
+	return w0_handler_common (core, len);
+}
+
+static RCmdStatus w0_handler(void *data, int argc, const char **argv) {
+	RCore *core = (void *)data;
+	if (argc != 2) {
+		return R_CMD_STATUS_WRONG_ARGS;
+	}
+	ut64 len = r_num_math (core->num, argv[1]);
+	return r_cmd_int2status (w0_handler_common (core, len));
+}
+
 /* TODO: simplify using r_write */
 static int cmd_write (void *data, const char *input) {
 	int wseek, i, size, len;
@@ -909,19 +942,7 @@ static int cmd_write (void *data, const char *input) {
 		wB_handler_old (data, input + 1);
 		break;
 	case '0': // "w0"
-		{
-			ut64 len = r_num_math (core->num, input+1);
-			if (len>0) {
-				ut8 *buf = calloc (1, len);
-				if (buf) {
-					if (!r_io_write_at (core->io, core->offset, buf, len)) {
-						eprintf ("r_io_write_at failed at 0x%08"PFMT64x"\n", core->offset);
-					}
-					r_core_block_read (core);
-					free (buf);
-				} else eprintf ("Cannot allocate %d byte(s)\n", (int)len);
-			}
-		}
+		w0_handler_old (data, input + 1);
 		break;
 	case '1': // "w1"
 	case '2': // "w2"
@@ -1880,6 +1901,9 @@ static void cmd_write_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, wt);
 	DEFINE_CMD_DESCRIPTOR (core, wv);
 	DEFINE_CMD_DESCRIPTOR (core, wx);
+
+	RCmdDesc *w0_cd = r_cmd_desc_argv_new (core->rcmd, parent, "w0", w0_handler, &w0_help);
+	r_return_if_fail (w0_cd);
 
 	RCmdDesc *wB_cd = r_cmd_desc_argv_new (core->rcmd, parent, "wB", wB_handler, &wB_help);
 	r_return_if_fail (wB_cd);

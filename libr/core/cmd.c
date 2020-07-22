@@ -4667,30 +4667,6 @@ DEFINE_IS_TS_FCN_AND_SYMBOL(concatenation)
 DEFINE_IS_TS_FCN_AND_SYMBOL(grep_specifier)
 DEFINE_IS_TS_FCN_AND_SYMBOL(commands)
 
-static RCmdStatus int2cmdstatus(int v) {
-	if (v == R_CORE_CMD_EXIT) {
-		return R_CMD_STATUS_EXIT;
-	} else if (v < 0) {
-		return R_CMD_STATUS_ERROR;
-	} else {
-		return R_CMD_STATUS_OK;
-	}
-}
-
-static int cmdstatus2int(RCmdStatus s) {
-	switch (s) {
-	case R_CMD_STATUS_OK:
-		return 0;
-	case R_CMD_STATUS_ERROR:
-	case R_CMD_STATUS_WRONG_ARGS:
-	case R_CMD_STATUS_INVALID:
-		return -1;
-	case R_CMD_STATUS_EXIT:
-	default:
-		return R_CORE_CMD_EXIT;
-	}
-}
-
 static struct tsr2cmd_edit *create_cmd_edit(struct tsr2cmd_state *state, TSNode arg, char *new_text) {
 	struct tsr2cmd_edit *e = R_NEW0 (struct tsr2cmd_edit);
 	ut32 command_start = ts_node_start_byte (state->substitute_cmd);
@@ -5033,7 +5009,7 @@ err:
 }
 
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(legacy_quoted_command) {
-	return int2cmdstatus(run_cmd_depth (state->core, node_string));
+	return r_cmd_int2status(run_cmd_depth (state->core, node_string));
 }
 
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(repeat_command) {
@@ -6497,7 +6473,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(pipe_command) {
 	char *first_str = ts_node_sub_string (first_cmd, state->input);
 	char *second_str = ts_node_sub_string (second_cmd, state->input);
 	int value = state->core->num->value;
-	RCmdStatus res = int2cmdstatus (r_core_cmd_pipe (state->core, first_str, second_str));
+	RCmdStatus res = r_cmd_int2status (r_core_cmd_pipe (state->core, first_str, second_str));
 	state->core->num->value = value;
 	free (first_str);
 	free (second_str);
@@ -6726,7 +6702,7 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 
 R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	if (core->use_tree_sitter_r2cmd) {
-		return cmdstatus2int(core_cmd_tsr2cmd (core, cstr, false, log));
+		return r_cmd_status2int(core_cmd_tsr2cmd (core, cstr, false, log));
 	}
 
 	int ret = false, i;

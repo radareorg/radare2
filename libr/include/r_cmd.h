@@ -164,6 +164,30 @@ R_API RCmdDesc *r_cmd_get_root(RCmd *cmd);
 R_API RCmdDesc *r_cmd_get_desc(RCmd *cmd, const char *cmd_identifier);
 R_API char *r_cmd_get_help(RCmd *cmd, RCmdParsedArgs *args, bool use_color);
 
+static inline RCmdStatus r_cmd_int2status(int v) {
+	if (v == -2) {
+		return R_CMD_STATUS_EXIT;
+	} else if (v < 0) {
+		return R_CMD_STATUS_ERROR;
+	} else {
+		return R_CMD_STATUS_OK;
+	}
+}
+
+static inline int r_cmd_status2int(RCmdStatus s) {
+	switch (s) {
+	case R_CMD_STATUS_OK:
+		return 0;
+	case R_CMD_STATUS_ERROR:
+	case R_CMD_STATUS_WRONG_ARGS:
+	case R_CMD_STATUS_INVALID:
+		return -1;
+	case R_CMD_STATUS_EXIT:
+	default:
+		return -2;
+	}
+}
+
 /* RCmdDescriptor */
 R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb, const RCmdDescHelp *help);
 R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdCb cb, const RCmdDescHelp *help);
