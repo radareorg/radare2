@@ -71,6 +71,20 @@ When afraid to touch force and risk losing your work (do backups!..),
 try *merging master into your branch* instead of rebasing onto it.
 This is discouraged, as it produces ugly hard-to-maintain commit history.
 
+## Commit message rules
+
+When commiting your changes into the repository you may want to follow some
+rules to make the git history more readable and consistent:
+
+* Start the message capitalized (first letter in uppercase)
+* Be short and concise, the whole concept must fit one line
+* If a command is inlined, use backticks
+* Add a double-hashtag if the change matters for the changelog
+* Search the changelog to known hashtags (see sys/release-notes.sh)
+* If the commit fixes a bug start with 'Fix #number - '
+* For extra details, add an empty line and use asterisk item list below
+* Use present (Add vs Added, Fix vs Fixed/Fixes)
+* If the PR have multiple isolable changes squash/rebase them and inform it in the PR
 
 # Additional resources
 
