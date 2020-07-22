@@ -168,6 +168,7 @@ R_API int r_diff_buffers(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb)
 }
 
 R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
+	r_return_val_if_fail (a && b, false);
 	const bool verbose = d? d->verbose: false;
 	/*
 	More memory efficient version on Levenshtein Distance from:
@@ -238,11 +239,6 @@ R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, c
 	}
 	stop = bLen;
 	// Preliminary tests
-
-	//Do we have both files a & b
-	if (!aBufPtr || !bBufPtr) {
-		return false;
-	}
 
 	// one or both buffers empty?
 	if (aLen == 0 || bLen == 0) {
