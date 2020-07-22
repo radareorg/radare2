@@ -331,7 +331,6 @@ typedef struct r_core_t {
 	RList *ropchain;
 	bool use_tree_sitter_r2cmd;
 
-	/* maybe move this into RCore */
 	bool marks_init;
 	ut64 marks[UT8_MAX + 1];
 
