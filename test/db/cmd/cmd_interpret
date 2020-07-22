@@ -37,15 +37,23 @@ CMDS=<<EOF
 #!pipe echo hello
 $foo=#!pipe echo hello
 $foo
+?e --
+"$foo=#!pipe echo hello"
+$foo
+?e --
 $-*
 e cfg.newshell=true
-$foo=#!pipe echo hello
+$foo=\#!pipe echo hello
 $foo
+?e --
 $-*
 EOF
 EXPECT=<<EOF
 hello
+--
 hello
+--
 hello
+--
 EOF
 RUN
