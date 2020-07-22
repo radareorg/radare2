@@ -902,6 +902,7 @@ static int w0_handler_common(RCore *core, ut64 len) {
 	}
 	return res;
 }
+
 static int w0_handler_old(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	ut64 len = r_num_math (core->num, input);
@@ -917,6 +918,57 @@ static RCmdStatus w0_handler(void *data, int argc, const char **argv) {
 	return r_cmd_int2status (w0_handler_common (core, len));
 }
 
+static int w_incdec_handler_old(void *data, const char *input, int inc) {
+	RCore *core = (RCore *)data;
+	st64 num = 0;
+	if (input[0] && input[1]) {
+		if (input[0] == input[1]) {
+			num = 1;
+		} else
+			num = r_num_math (core->num, input + 1);
+	}
+	switch (input[1] ? input[0] : 0) {
+	case '+':
+		cmd_write_inc (core, inc, num);
+		break;
+	case '-':
+		cmd_write_inc (core, inc, -num);
+		break;
+	default:
+		eprintf ("Usage: w[1248][+-][num]   # inc/dec byte/word/..\n");
+	}
+	return 0;
+}
+
+static RCmdStatus w_incdec_handler(RCore *core, int argc, const char **argv, int inc_size) {
+	if (argc > 2) {
+		return R_CMD_STATUS_WRONG_ARGS;
+	}
+	st64 num = argc > 1? r_num_math (core->num, argv[1]): 1;
+	const char *command = argv[0];
+	if (command[strlen (command) - 1] == '-') {
+		num *= -1;
+	}
+	cmd_write_inc (core, inc_size, num);
+	return R_CMD_STATUS_OK;
+}
+
+static RCmdStatus w1_incdec_handler(void *data, int argc, const char **argv) {
+	return w_incdec_handler (data, argc, argv, 1);
+}
+
+static RCmdStatus w2_incdec_handler(void *data, int argc, const char **argv) {
+	return w_incdec_handler (data, argc, argv, 2);
+}
+
+static RCmdStatus w4_incdec_handler(void *data, int argc, const char **argv) {
+	return w_incdec_handler (data, argc, argv, 4);
+}
+
+static RCmdStatus w8_incdec_handler(void *data, int argc, const char **argv) {
+	return w_incdec_handler (data, argc, argv, 8);
+}
+
 /* TODO: simplify using r_write */
 static int cmd_write (void *data, const char *input) {
 	int wseek, i, size, len;
@@ -926,7 +978,6 @@ static int cmd_write (void *data, const char *input) {
 	char _fn[32];
 	ut64 off;
 	ut8 *buf;
-	st64 num = 0;
 
 	if (!input) {
 		return 0;
@@ -948,21 +999,7 @@ static int cmd_write (void *data, const char *input) {
 	case '2': // "w2"
 	case '4': // "w4"
 	case '8': // "w8"
-		if (input[1] && input[2]) {
-			if (input[1]==input[2]) {
-				num = 1;
-			} else num = r_num_math (core->num, input+2);
-		}
-		switch (input[2] ? input[1] : 0) {
-		case '+':
-			cmd_write_inc (core, *input-'0', num);
-			break;
-		case '-':
-			cmd_write_inc (core, *input-'0', -num);
-			break;
-		default:
-			eprintf ("Usage: w[1248][+-][num]   # inc/dec byte/word/..\n");
-		}
+		w_incdec_handler_old (data, input + 1, *input - '0');
 		break;
 	case '6': // "w6"
 		{
@@ -1904,6 +1941,17 @@ static void cmd_write_init(RCore *core, RCmdDesc *parent) {
 
 	RCmdDesc *w0_cd = r_cmd_desc_argv_new (core->rcmd, parent, "w0", w0_handler, &w0_help);
 	r_return_if_fail (w0_cd);
+
+	RCmdDesc *w_incdec_cd = r_cmd_desc_argv_new (core->rcmd, parent, "w[1248][+-]", NULL, &w_incdec_help);
+	r_return_if_fail (w_incdec_cd);
+	r_cmd_desc_argv_new (core->rcmd, w_incdec_cd, "w1+", w1_incdec_handler, &w_incdec_help);
+	r_cmd_desc_argv_new (core->rcmd, w_incdec_cd, "w1-", w1_incdec_handler, &w_incdec_help);
+	r_cmd_desc_argv_new (core->rcmd, w_incdec_cd, "w2+", w2_incdec_handler, &w_incdec_help);
+	r_cmd_desc_argv_new (core->rcmd, w_incdec_cd, "w2-", w2_incdec_handler, &w_incdec_help);
+	r_cmd_desc_argv_new (core->rcmd, w_incdec_cd, "w4+", w4_incdec_handler, &w_incdec_help);
+	r_cmd_desc_argv_new (core->rcmd, w_incdec_cd, "w4-", w4_incdec_handler, &w_incdec_help);
+	r_cmd_desc_argv_new (core->rcmd, w_incdec_cd, "w8+", w8_incdec_handler, &w_incdec_help);
+	r_cmd_desc_argv_new (core->rcmd, w_incdec_cd, "w8-", w8_incdec_handler, &w_incdec_help);
 
 	RCmdDesc *wB_cd = r_cmd_desc_argv_new (core->rcmd, parent, "wB", wB_handler, &wB_help);
 	r_return_if_fail (wB_cd);

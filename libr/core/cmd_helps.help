@@ -201,6 +201,24 @@ static const RCmdDescHelp w0_help = {
 	.description = "Fill len bytes starting from the current offset with the value 0.",
 };
 
+// w[1248][+-] helps
+
+static const RCmdDescExample w_incdec_help_examples[] = {
+	{ .example = "w1+", .comment = "Add 1 to the byte at the current offset." },
+	{ .example = "w2-", .comment = "Subtract 1 to the word at the current offset." },
+	{ .example = "w4+ 0xdeadbeef", .comment = "Add 0xdeadbeef to the dword at the current offset." },
+	{ .example = "w8- 10", .comment = "Subtract 10 to the qword at the current offset." },
+	{ 0 },
+};
+
+static const RCmdDescHelp w_incdec_help = {
+	.summary = "Increment/decrement a byte, word, dword, qword",
+	.usage = "w[1248][+-] [n]",
+	.args_str = "[n]",
+	.description = "Increment/decrement a byte/word/dword/qword at the current offset by 1 or n, if specified",
+	.examples = w_incdec_help_examples,
+};
+
 // wB helps
 
 static const RCmdDescExample wB_help_examples[] = {
