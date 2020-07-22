@@ -88,22 +88,27 @@ pkg-config \
   --define-variable="prefix=${PWD}/r2-static/usr" \
   --static --cflags --libs r_core
 `
-echo "${CC} .test.c ${PKG_CONFIG_FLAGS} -o r2-pkgcfg-static"
-${CC} .test.c ${PKG_CONFIG_FLAGS} -o r2-pkgcfg-static
 
+set -x
+${CC} .test.c ${PKG_CONFIG_FLAGS} -o r2-pkgcfg-static
+res=$?
+set +x
+if [ $res = 0 ]; then
+	echo SUCCESS
+	rm a.out
+else
+	echo FAILURE
+fi
 
 echo "[*] Static building with libr.a..."
-echo "${CC} .test.c \
-	${CFLAGS} \
-	-I ${PWD}/r2-static/usr/include/libr \
-	-I ${PWD}/r2-static/usr/include/libr/sdb \
-	r2-static/usr/lib/libr.a ${LDFLAGS}"
+set -x
 ${CC} .test.c \
 	${CFLAGS} \
 	-I ${PWD}/r2-static/usr/include/libr \
 	-I ${PWD}/r2-static/usr/include/libr/sdb \
 	r2-static/usr/lib/libr.a ${LDFLAGS}
 res=$?
+set +x
 if [ $res = 0 ]; then
 	echo SUCCESS
 	rm a.out
