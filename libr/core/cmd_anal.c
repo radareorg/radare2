@@ -9835,6 +9835,7 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 				char *name_end = (char *)r_str_trim_head_wp (class_name);
 				*name_end = 0; // trim the whitespace around the name
 				r_anal_class_print (core->anal, class_name, true);
+				free (class_name);
 				break;
 			}
 		}
