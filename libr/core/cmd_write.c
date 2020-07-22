@@ -850,8 +850,42 @@ static void cmd_write_pcache(RCore *core, const char *input) {
 	}
 }
 
+static int wB_handler_old(void *data, const char *input) {
+	RCore *core = (RCore *)data;
+	switch (input[0]) {
+	case ' ':
+		cmd_write_bits (core, 1, r_num_math (core->num, input + 1));
+		break;
+	case '-':
+		cmd_write_bits (core, 0, r_num_math (core->num, input + 1));
+		break;
+	default:
+		eprintf ("Usage: wB 0x2000  # or wB-0x2000\n");
+		break;
+	}
+	return 0;
+}
+
+static RCmdStatus wB_handler(void *data, int argc, const char **argv) {
+	RCore *core = (void *)data;
+	if (argc != 2) {
+		return R_CMD_STATUS_WRONG_ARGS;
+	}
+	cmd_write_bits (core, 1, r_num_math (core->num, argv[1]));
+	return R_CMD_STATUS_OK;
+}
+
+static RCmdStatus wB_minus_handler(void *data, int argc, const char **argv) {
+	RCore *core = (void *)data;
+	if (argc != 2) {
+		return R_CMD_STATUS_WRONG_ARGS;
+	}
+	cmd_write_bits (core, 0, r_num_math (core->num, argv[1]));
+	return R_CMD_STATUS_OK;
+}
+
 /* TODO: simplify using r_write */
-static int cmd_write(void *data, const char *input) {
+static int cmd_write (void *data, const char *input) {
 	int wseek, i, size, len;
 	RCore *core = (RCore *)data;
 	char *tmp, *str, *ostr;
@@ -872,17 +906,7 @@ static int cmd_write(void *data, const char *input) {
 
 	switch (*input) {
 	case 'B': // "wB"
-		switch (input[1]) {
-		case ' ':
-			cmd_write_bits (core, 1, r_num_math (core->num, input + 2));
-			break;
-		case '-':
-			cmd_write_bits (core, 0, r_num_math (core->num, input + 2));
-			break;
-		default:
-			eprintf ("Usage: wB 0x2000  # or wB-0x2000\n");
-			break;
-		}
+		wB_handler_old (data, input + 1);
 		break;
 	case '0': // "w0"
 		{
@@ -1856,6 +1880,11 @@ static void cmd_write_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, wt);
 	DEFINE_CMD_DESCRIPTOR (core, wv);
 	DEFINE_CMD_DESCRIPTOR (core, wx);
+
+	RCmdDesc *wB_cd = r_cmd_desc_argv_new (core->rcmd, parent, "wB", wB_handler, &wB_help);
+	r_return_if_fail (wB_cd);
+	RCmdDesc *wB_minus_cd = r_cmd_desc_argv_new (core->rcmd, wB_cd, "wB-", wB_minus_handler, &wB_minus_help);
+	r_return_if_fail (wB_minus_cd);
 
 	RCmdDesc *wv_cd = r_cmd_desc_argv_new (core->rcmd, parent, "wv", wv_handler, &wv_help);
 	r_return_if_fail (wv_cd);

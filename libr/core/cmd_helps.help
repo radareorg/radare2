@@ -193,6 +193,27 @@ static const RCmdDescHelp z_help = {
 	.summary = "zignatures management",
 };
 
+// wB helps
+
+static const RCmdDescExample wB_help_examples[] = {
+	{ .example = "wB 0x20", .comment = "Sets the 5th bit at current offset, leaving all other bits intact." },
+	{ 0 },
+};
+
+static const RCmdDescHelp wB_help = {
+	.summary = "Set bits with given value",
+	.args_str = "[value]",
+	.group_summary = "Set or unset bits with given value",
+	.description = "Set the bits that are set in the value passed as arguments. 0 bits in the value argument are ignored, while the others are set at the current offset",
+	.examples = wB_help_examples,
+};
+
+static const RCmdDescHelp wB_minus_help = {
+	.summary = "Unset bits with given value",
+	.args_str = "[value]",
+	.description = "Unset the bits that are set in the value passed as arguments. 0 bits in the value argument are ignored, while the others are unset at the current offset"
+};
+
 // wv helps
 
 static const RCmdDescExample wv_help_examples[] = {
