@@ -13,8 +13,16 @@ bool test_r2pipe(void) {
 	mu_end;
 }
 
+bool test_r2pipe_404(void) {
+	// R2Pipe *r = r2pipe_open ("/usr/local/bin/r2");
+	R2Pipe *r = r2pipe_open ("rodoro2 -q0 -");
+	mu_assert("r2pipe can spawn", !r);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_r2pipe);
+	mu_run_test(test_r2pipe_404);
 	return tests_passed != tests_run;
 }
 
