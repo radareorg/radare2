@@ -91,7 +91,7 @@ ifeq ($(OSTYPE),bsd)
 endif
 
 _libr.${EXT_AR}: .libr
-	-${AR} rs $@ .libr/*.o
+	-${AR} -rs $@ .libr/*.o
 
 .libr2: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 	rm -rf .libr2
@@ -101,11 +101,11 @@ _libr.${EXT_AR}: .libr
 		echo $$BN ; \
 		mkdir -p .libr2/$$BN ; \
 		echo .libr2/$$BN $$LIB; $${AR} ; \
-		( cd .libr2/$$BN ; pwd ; du -hs ../../$$LIB; ${AR} x ../../$$LIB ) ; \
+		( cd .libr2/$$BN ; pwd ; du -hs ../../$$LIB; ${AR} -x ../../$$LIB ) ; \
 	done
 
 libr.${EXT_AR}: .libr2
-	-${AR} rs $@ .libr2/*/*.o
+	-${AR} -rs $@ .libr2/*/*.o
 
 ifeq (1,$(WITH_GPL))
 E+=../shlr/grub/libgrubfs.${EXT_AR}
