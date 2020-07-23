@@ -670,8 +670,10 @@ static bool project_save_script(RCore *core, const char *file, int opts) {
 				r_str_write (fd, reopen);
 				free (reopen);
 				free (fpath);
-				}
 			}
+			
+		}
+		
 	}
 	// Set file.path and file.lastpath to empty string to signal
 	// new behaviour to project load routine (see io maps below).
