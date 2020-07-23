@@ -3370,59 +3370,71 @@ static RList *recurse_bb(RCore *core, ut64 addr, RAnalBlock *dest) {
 	return recurse (core, bb, dest);
 }
 
+typedef struct {
+	int count;
+	// self, error, arg
+	int reg_set[R_ANAL_CC_MAXARG + 2];
+	bool argonly;
+	RAnalFunction *fcn;
+	RCore *core;
+} BlockRecurseCtx;
+
+static bool anal_block_reg_access(RAnalBlock *bb, BlockRecurseCtx *ctx) {
+	if (r_cons_is_breaked ()) {
+		return false;
+	}
+	if (bb->size < 1) {
+		return true;
+	}
+	if (bb->size > ctx->core->anal->opt.bb_max_size) {
+		return true;
+	}
+	RCore *core = ctx->core;
+	RAnalFunction *fcn = ctx->fcn;
+	fcn->stack = bb->parent_stackptr;
+	ut64 pos = bb->addr;
+	while (pos < bb->addr + bb->size) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+		RAnalOp *op = r_core_anal_op (core, pos, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT);
+		if (!op) {
+			//eprintf ("Cannot get op\n");
+			break;
+		}
+		r_anal_extract_rarg (core->anal, op, fcn, ctx->reg_set, &ctx->count);
+		if (!ctx->argonly) {
+			if (op->stackop == R_ANAL_STACK_INC) {
+				fcn->stack += op->stackptr;
+			} else if (op->stackop == R_ANAL_STACK_RESET) {
+				fcn->stack = 0;
+			}
+			r_anal_extract_vars (core->anal, fcn, op);
+		}
+		int opsize = op->size;
+		int optype = op->type;
+		r_anal_op_free (op);
+		if (opsize < 1) { 
+			break;
+		}
+		if (optype == R_ANAL_OP_TYPE_CALL) {
+			return false;
+		}
+		pos += opsize;
+	}
+	return true;
+}
+
 // TODO: move this logic into the main anal loop
 R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
-	RListIter *tmp = NULL;
-	RAnalBlock *bb = NULL;
-	int count = 0;
-	// self, error, arg
-	int reg_set[R_ANAL_CC_MAXARG + 2] = {0};
-
 	r_return_if_fail (core && core->anal && fcn);
 	if (core->anal->opt.bb_max_size < 1) {
 		return;
 	}
-	const int max_bb_size = core->anal->opt.bb_max_size;
-	r_list_foreach (fcn->bbs, tmp, bb) {
-		if (r_cons_is_breaked ()) {
-			break;
-		}
-		if (bb->size < 1) {
-			continue;
-		}
-		if (bb->size > max_bb_size) {
-			continue;
-		}
-		int saved_stack = fcn->stack;
-		fcn->stack = bb->parent_stackptr;
-		ut64 pos = bb->addr;
-		while (pos < bb->addr + bb->size) {
-			if (r_cons_is_breaked ()) {
-				break;
-			}
-			RAnalOp *op = r_core_anal_op (core, pos, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT);
-			if (!op) {
-				//eprintf ("Cannot get op\n");
-				break;
-			}
-			r_anal_extract_rarg (core->anal, op, fcn, reg_set, &count);
-			if (!argonly) {
-				if (op->stackop == R_ANAL_STACK_INC) {
-					fcn->stack += op->stackptr;
-				} else if (op->stackop == R_ANAL_STACK_RESET) {
-					fcn->stack = 0;
-				}
-				r_anal_extract_vars (core->anal, fcn, op);
-			}
-			int opsize = op->size;
-			r_anal_op_free (op);
-			if (opsize < 1) {
-				break;
-			}
-			pos += opsize;
-		}
-		fcn->stack = saved_stack;
-	}
+	BlockRecurseCtx ctx = { 0, { 0 }, argonly, fcn, core };
+	int saved_stack = fcn->stack;
+	r_anal_block_recurse_followthrough (r_anal_get_block_at (fcn->anal, fcn->addr), (RAnalBlockCb)anal_block_reg_access, &ctx);
+	fcn->stack = saved_stack;
 }
 
 static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int depth, HtUP *state, HtUP *avoid) {
