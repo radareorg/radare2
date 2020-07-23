@@ -9297,8 +9297,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_task_yield (&core->tasks);
 					bool ioCache = r_config_get_i (core->config, "io.pcache");
 					r_config_set_i (core->config, "io.pcache", 1);
-					oldstr = r_print_rowlog (core->print, "Emulate code to find computed references (aae)");
-					r_core_cmd0 (core, "aae");
+					oldstr = r_print_rowlog (core->print, "Emulate functions to find computed references (aaef)");
+					r_core_cmd0 (core, "aaef");
 					r_print_rowlog_done (core->print, oldstr);
 					r_core_task_yield (&core->tasks);
 					if (!ioCache) {
