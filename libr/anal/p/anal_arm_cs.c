@@ -1680,11 +1680,9 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			4 * insn->detail->arm.op_count);
 		break;
 	case ARM_INS_LDM:
-		const char *comma = "";
-		for (i = 1; i < insn->detail->arm.op_count; i++) {
-			r_strbuf_appendf (&op->esil, "%s%s,%d,+,[4],%s,=",
-				comma, ARG (0), (i - 1) * 4, REG (i));
-			comma = ",";
+		r_strbuf_appendf (&op->esil, "%s,%d,+,[4],%s,=", ARG (0), 0, REG (1));
+		for (i = 2; i < insn->detail->arm.op_count; i++) {
+			r_strbuf_appendf (&op->esil, ",%s,%d,+,[4],%s,=", ARG (0), (i - 1) * 4, REG (i));
 		}
 		if (insn->detail->arm.writeback == true) { //writeback, reg should be incremented
 			r_strbuf_appendf (&op->esil, ",%d,%s,+=,",
