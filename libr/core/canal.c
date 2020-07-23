@@ -4941,6 +4941,7 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 					if (prev_bb->fail != UT64_MAX) {
 						bbit = r_list_find (ctx->bbl, &prev_bb->fail, (RListComparator)find_bb);
 						if (bbit) {
+							r_reg_arena_push (ctx->fcn->anal->reg);
 							r_list_push (ctx->path, prev_bb);
 						}
 					}
