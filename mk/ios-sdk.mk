@@ -1,4 +1,5 @@
 CROSS=ios-sdk-
+HOST_CC=gcc
 CC=${CROSS}gcc
 USERCC=${CROSS}gcc
 RANLIB=xcrun --sdk iphonesimulator ranlib

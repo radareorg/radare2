@@ -7,6 +7,8 @@ fromscratch=1 # 1
 onlymakedeb=0
 static=1
 
+
+export HOST_CC=gcc
 if [ -z "${CPU}" ]; then
 	export CPU=arm64
 	#export CPU=armv7
