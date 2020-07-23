@@ -1679,7 +1679,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		r_strbuf_appendf (&op->esil, "%d,sp,+=",
 			4 * insn->detail->arm.op_count);
 		break;
-	case ARM_INS_LDM: {
+	case ARM_INS_LDM:
 		const char *comma = "";
 		for (i = 1; i < insn->detail->arm.op_count; i++) {
 			r_strbuf_appendf (&op->esil, "%s%s,%d,+,[4],%s,=",
@@ -1690,7 +1690,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			r_strbuf_appendf (&op->esil, ",%d,%s,+=,",
 				(insn->detail->arm.op_count - 1) * 4, ARG (0));
 		}
-	} break;
+        break;
 	case ARM_INS_CMP:
 		r_strbuf_appendf (&op->esil, "%s,%s,==", ARG (1), ARG (0));
 		break;
