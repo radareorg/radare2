@@ -15,7 +15,7 @@
 #define st8 signed char
 #define boolt int
 #if __WINDOWS__
-#define ssize_t signed size_t
+#define ssize_t SSIZE_T
 #endif
 
 #if defined(_MSC_VER)
