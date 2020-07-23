@@ -167,8 +167,8 @@ R_API char *r_cmd_get_help(RCmd *cmd, RCmdParsedArgs *args, bool use_color);
 /* RCmdDescriptor */
 R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb, const RCmdDescHelp *help);
 R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdCb cb, const RCmdDescHelp *help);
-R_API void r_cmd_desc_free(RCmdDesc *cd);
 R_API RCmdDesc *r_cmd_desc_parent(RCmdDesc *cd);
+R_API bool r_cmd_desc_remove(RCmd *cmd, RCmdDesc *cd);
 
 #define r_cmd_desc_children_foreach(root, it_cd) r_pvector_foreach (&root->children, it_cd)
 
