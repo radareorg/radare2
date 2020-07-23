@@ -102,7 +102,7 @@ else
 		RV=$?
 	fi
 	if [ $RV = 0 ]; then
-		time make -j4 || exit 1
+		time make -j4 || exit 1
 		if [ "$static" = 1 ]; then
 			ls -l libr/util/libr_util.a || exit 1
 			ls -l libr/flag/libr_flag.a || exit 1
