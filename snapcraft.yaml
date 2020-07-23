@@ -1,6 +1,6 @@
 name: radare2
-base: core18
 version: '4.5.0'
+base: core18
 summary: Radare2 reverse engineering framework and tool
 description: |
   Radare2 (also known as r2) is a complete framework for reverse-engineering 
@@ -10,13 +10,15 @@ description: |
   assembly language source code from machine-executable code, 
   it supports a variety of executable formats for different processors 
   and operating systems.
-  . 
-  This is an unofficial snap package of radare2. Very soon 
-  there will be an official package at https://snapcraft.io/radare2
-  When an official snap is ready, this package will get unlisted.
 
-grade: stable # must be 'stable' to release into candidate/stable channels
-confinement: devmode # use 'strict' once you have the right plugs and slots
+grade: devel # Development version, can only publish to beta/candidate channels.
+confinement: devmode # Unrestricted access, only to beta/candidate channels.
+
+# radare2 requires in most cases privileged access to resources.
+# The following "plugs" are thus superfluous because the "devmode" confinement
+# gives full access to the system as if it were a DEB/RPM package.
+# With the following plugs though, and the "strict" confinement, radare2
+# would be able to do things like editing an executable file in the $HOME folder.
 
 apps:
   radare2:
@@ -52,6 +54,9 @@ apps:
   rax2:
     command: usr/bin/rax2
     plugs: [home]
+  rasign2:
+    command: usr/bin/rasign2
+    plugs: [home]
 
 parts:
   radare2:
@@ -72,28 +77,6 @@ parts:
       - libssl-dev
       - libbsd-dev
       - libcapstone-dev
-      - cmake
       - libuv1-dev
     stage-packages:
       - libuv1
-    after: [ninja, acr]
-  ninja:
-    source: https://github.com/ninja-build/ninja.git
-    source-tag: 'v1.8.2'
-    plugin: python
-    python-version: python2
-    override-build: |
-      pwd
-      python3 ./configure.py --bootstrap
-      cp ninja /usr/bin/
-      snapcraftctl build
-    build-packages:
-      - re2c
-  acr:
-    source: https://github.com/radare/acr.git
-    source-tag: '1.7.0'
-    plugin: make
-    override-build: |
-      ./configure --prefix=/usr
-      make install
-      snapcraftctl build
