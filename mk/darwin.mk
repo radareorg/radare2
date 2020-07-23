@@ -8,7 +8,6 @@ ifeq ($(COMPILER),ios-sdk)
 
 IOS_VERSION="10.0"
 IOS_SDK_VERSION="10.0"
-PARTIALLD+=-platform_version iphoneos $(IOS_VERSION) $(IOS_SDK_VERSION)
 
 else
 

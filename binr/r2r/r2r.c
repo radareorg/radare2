@@ -100,7 +100,7 @@ static bool r2r_chdir(const char *argv0) {
 }
 
 static bool r2r_test_run_unit(void) {
-	return system ("make -C unit all run") == 0;
+	return r_sandbox_system ("make -C unit all run") == 0;
 }
 
 static bool r2r_chdir_fromtest(const char *test_path) {
