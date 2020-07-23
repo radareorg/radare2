@@ -4,7 +4,6 @@
 set -x
 STOW=0
 fromscratch=1 # 1
-onlydebug=0
 onlymakedeb=0
 static=1
 
@@ -87,29 +86,25 @@ fi
 if [ $onlymakedeb = 1 ]; then
 	makeDeb
 else
+	RV=0
 	if [ $fromscratch = 1 ]; then
-		if [ $onlydebug = 1 ]; then
-			(cd libr/debug ; make clean)
-			RV=0
+		make clean
+		cp -f plugins.ios.cfg plugins.cfg
+		if [ "$static" = 1 ]; then
+			./configure --prefix="${PREFIX}" --with-ostype=darwin --without-libuv \
+			--with-compiler=ios-sdk --target=arm-unknown-darwin --with-libr
 		else
-			make clean
-			cp plugins.ios.cfg plugins.cfg
-			if [ "$static" = 1 ]; then
-				./configure --prefix="${PREFIX}" --with-ostype=darwin --without-libuv \
-				--with-compiler=ios-sdk --target=arm-unknown-darwin --with-libr
-			else
-				./configure --prefix="${PREFIX}" --with-ostype=darwin --without-libuv \
-				--with-compiler=ios-sdk --target=arm-unknown-darwin
-			fi
-			RV=$?
+			./configure --prefix="${PREFIX}" --with-ostype=darwin --without-libuv \
+			--with-compiler=ios-sdk --target=arm-unknown-darwin
 		fi
-	else
-		RV=0
+		RV=$?
 	fi
 	if [ $RV = 0 ]; then
 		time make -j4
+		time make -j4 -C libr
 		if [ "$static" = 1 ]; then
 			ls -l libr/util/libr_util.a || exit 1
+			ls -l libr/flag/libr_flag.a || exit 1
 			rm -f libr/*/*.dylib
 			(
 			cd binr ; make clean ; 
