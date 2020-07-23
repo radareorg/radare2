@@ -18,6 +18,30 @@ radare_emulation
 EOF
 RUN
 
+NAME=clz
+FILE=malloc://0x200
+CMDS=<<EOF
+e io.cache=true
+e asm.bits=16
+e asm.arch=arm
+wa clz r0, r1
+aer r1=0x80000000
+aes
+aer r0
+aer0
+aer r1=0x1
+aes
+aer r0
+aer0
+aes
+aer r0
+EOF
+EXPECT=<<EOF
+0x00000000
+0x0000001f
+0x00000020
+EOF
+RUN
 
 NAME=addw emulation
 FILE=malloc://0x200
@@ -140,7 +164,6 @@ RUN
 
 NAME=ldm r3!, {r1, r4, r5}
 FILE=malloc://0x200
-BROKEN=1
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
@@ -162,9 +185,26 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=stm r1!, {r5}
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+ar r1=4		# address
+ar r5=0xaabbccdd
+wx 20c1
+aes
+ar r1
+p8 4 @ 4
+EOF
+EXPECT=<<EOF
+0x00000008
+ddccbbaa
+EOF
+RUN
+
 NAME=stm r2!, {r1, r4, r5}
 FILE=malloc://0x200
-BROKEN=1
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
@@ -210,7 +250,7 @@ wx 08bf
 aoe
 EOF
 EXPECT=<<EOF
-0x0 zf,?{,4,pc,+=,}
+0x0 zf,?{,2,$$,+,pc,=,}
 EOF
 RUN
 
@@ -223,7 +263,7 @@ wx 18bf00000000
 aoe
 EOF
 EXPECT=<<EOF
-0x0 zf,!,?{,4,pc,+=,}
+0x0 zf,!,?{,2,$$,+,pc,=,}
 EOF
 RUN
 
@@ -236,7 +276,7 @@ wx 28bf00000000
 aoe
 EOF
 EXPECT=<<EOF
-0x0 cf,?{,4,pc,+=,}
+0x0 cf,?{,2,$$,+,pc,=,}
 EOF
 RUN
 
@@ -249,7 +289,7 @@ wx 38bf00000000
 aoe
 EOF
 EXPECT=<<EOF
-0x0 cf,!,?{,4,pc,+=,}
+0x0 cf,!,?{,2,$$,+,pc,=,}
 EOF
 RUN
 
@@ -262,7 +302,7 @@ wx 48bf00000000
 aoe
 EOF
 EXPECT=<<EOF
-0x0 nf,?{,4,pc,+=,}
+0x0 nf,?{,2,$$,+,pc,=,}
 EOF
 RUN
 
@@ -275,7 +315,7 @@ wx 58bf00000000
 aoe
 EOF
 EXPECT=<<EOF
-0x0 nf,!,?{,4,pc,+=,}
+0x0 nf,!,?{,2,$$,+,pc,=,}
 EOF
 RUN
 
@@ -288,7 +328,7 @@ wx 68bf00000000
 aoe
 EOF
 EXPECT=<<EOF
-0x0 vf,?{,4,pc,+=,}
+0x0 vf,?{,2,$$,+,pc,=,}
 EOF
 RUN
 
@@ -301,7 +341,7 @@ wx 78bf00000000
 aoe
 EOF
 EXPECT=<<EOF
-0x0 vf,!,?{,4,pc,+=,}
+0x0 vf,!,?{,2,$$,+,pc,=,}
 EOF
 RUN
 
@@ -314,7 +354,7 @@ wx e8bf00000000
 aoe
 EOF
 EXPECT=<<EOF
-0x0 4,pc,+=
+0x0 2,$$,+,pc,=
 EOF
 RUN
 
@@ -464,6 +504,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ldr immediate with post increment
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wa ldr r2, [r3], 10
+wx aabbccdd @ 10
+aer r3=10
+aes
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0xddccbbaa
+0x00000014
+EOF
+RUN
+
 NAME=add wrapping around
 FILE=malloc://0x200
 CMDS=<<EOF
@@ -498,9 +556,9 @@ ar cpsr
 EOF
 EXPECT=<<EOF
 0x10000000
-0x20000000
+0x30000000
 0x90000001
-0x00000000
+0x80000000
 EOF
 RUN
 
@@ -779,7 +837,7 @@ aer lr
 aer pc
 EOF
 EXPECT=<<EOF
-0x00000004
+0x00000005
 0x00000008
 EOF
 RUN
