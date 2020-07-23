@@ -4649,6 +4649,9 @@ static const char *reg_name_for_access(RAnalOp* op, RAnalVarAccessType type) {
 
 static ut64 delta_for_access(RAnalOp *op, RAnalVarAccessType type) {
 	if (type == R_ANAL_VAR_ACCESS_TYPE_READ) {
+		if (op->src[1] && op->src[1]->imm) {
+			return op->src[1]->imm;
+		}
 		if (op->src[0]) {
 			return op->src[0]->delta;
 		}
@@ -4663,7 +4666,7 @@ static void handle_var_stack_access(RAnalEsil *esil, ut64 addr, RAnalVarAccessTy
 	const char *regname = reg_name_for_access (ctx->op, type);
 	if (ctx->fcn && regname) {
 		ut64 spaddr = r_reg_getv (esil->anal->reg, ctx->spname);
-		if (addr > spaddr && addr <= ctx->initial_sp) {
+		if (addr >= spaddr && addr < ctx->initial_sp) {
 			int stack_off = addr - ctx->initial_sp;
 			RAnalVar *var = r_anal_function_get_var (ctx->fcn, R_ANAL_VAR_KIND_SPV, stack_off);
 			if (!var) {
@@ -4754,10 +4757,8 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	RAnal *anal = esil->anal;
 	EsilBreakCtx *ctx = esil->user;
 	RAnalOp *op = ctx->op;
-	if (op->type == R_ANAL_OP_TYPE_LEA) {
-		handle_var_stack_access (esil, *val, R_ANAL_VAR_ACCESS_TYPE_READ, esil->anal->bits / 8);
-	}
 	RCore *core = anal->coreb.core;
+	handle_var_stack_access (esil, *val, R_ANAL_VAR_ACCESS_TYPE_READ, esil->anal->bits / 8);
 	//specific case to handle blx/bx cases in arm through emulation
 	// XXX this thing creates a lot of false positives
 	ut64 at = *val;
