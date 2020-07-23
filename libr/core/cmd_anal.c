@@ -9826,7 +9826,13 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 	switch (input[0]) {
 	case 'l': // "acl"
 		if (input[1] == 'l') { // "acll" (name)
-			const char *arg = r_str_trim_head_ro (input + 2);
+			char mode = 0;
+			int arg_offset = 2;
+			if (input[2] == 'j') {
+				arg_offset++;
+				mode = 'j';
+			}
+			const char *arg = r_str_trim_head_ro (input + arg_offset);
 			if (*arg) { // if there is an argument
 				char *class_name = strdup (arg);
 				if (!class_name) {
@@ -9834,7 +9840,14 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 				}
 				char *name_end = (char *)r_str_trim_head_wp (class_name);
 				*name_end = 0; // trim the whitespace around the name
-				r_anal_class_print (core->anal, class_name, true);
+				if (mode == 'j') {
+					PJ *pj = pj_new ();
+					r_anal_class_json (core->anal, pj, class_name);
+					r_cons_printf ("%s\n", pj_string (pj));
+					pj_free (pj);
+				} else {
+					r_anal_class_print (core->anal, class_name, true);
+				}
 				free (class_name);
 				break;
 			}

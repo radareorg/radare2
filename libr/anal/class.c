@@ -1019,7 +1019,7 @@ static void r_anal_class_print_cmd(RAnal *anal, const char *class_name) {
 	}
 }
 
-static void r_anal_class_json(RAnal *anal, PJ *j, const char *class_name) {
+R_API void r_anal_class_json(RAnal *anal, PJ *j, const char *class_name) {
 	pj_o (j);
 	pj_ks (j, "name", class_name);
 
