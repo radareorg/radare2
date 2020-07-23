@@ -63,7 +63,7 @@ R_API int r_search_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len
 	int i, k, max, index, t;
 	RListIter *iter;
 	RSearchKeyword *kw;
-	const int old_nhits = s->nhits;
+	const size_t old_nhits = s->nhits;
 	const ut8 rsa_versionmarker[] = { 0x02, 0x01, 0x00, 0x02 };
 	const ut8 ecc_versionmarker[] = { 0x02, 0x01, 0x01, 0x04 };
 	const ut8 safecurves_versionmarker[] = { 0x02, 0x01, 0x00, 0x30 };
@@ -74,9 +74,9 @@ R_API int r_search_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len
 	r_list_foreach (s->kws, iter, kw) {
 		// Iteration until the remaining length is too small to contain a key.
 		for (i = 2; i < len - sizeof (rsa_versionmarker) - 4; i++) {
-			if (memcmp (&buf[i], rsa_versionmarker, sizeof (rsa_versionmarker)) &&
-				memcmp (&buf[i], ecc_versionmarker, sizeof (ecc_versionmarker)) &&
-				memcmp (&buf[i], safecurves_versionmarker, sizeof (safecurves_versionmarker))) {
+			if (memcmp (buf +i, rsa_versionmarker, sizeof (rsa_versionmarker)) &&
+				memcmp (buf +i, ecc_versionmarker, sizeof (ecc_versionmarker)) &&
+				memcmp (buf +i, safecurves_versionmarker, sizeof (safecurves_versionmarker))) {
 				continue;
 			}
 

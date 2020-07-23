@@ -11,10 +11,7 @@ static int cmd_search(void *data, const char *input);
 
 #define USE_EMULATION 0
 
-// Size needed to search a AES key.
 #define AES_SEARCH_LENGTH 40
-
-// Size meeded to search a private key.
 #define PRIVATE_KEY_SEARCH_LENGTH 11
 
 static const char *help_msg_search_esil[] = {
@@ -166,7 +163,6 @@ struct search_parameters {
 	const char *cmd_hit;
 	int outmode; // 0 or R_MODE_RADARE or R_MODE_JSON
 	bool inverse;
-	bool crypto_search;
 	bool aes_search;
 	bool privkey_search;
 };
@@ -2933,7 +2929,6 @@ static int cmd_search(void *data, const char *input) {
 		.cmd_hit = r_config_get (core->config, "cmd.hit"),
 		.outmode = 0,
 		.inverse = false,
-		.crypto_search = false,
 		.aes_search = false,
 		.privkey_search = false,
 	};
@@ -3275,7 +3270,6 @@ reread:
 		break;
 	case 'c': { // "/c"
 		dosearch = true;
-		param.crypto_search = true;
 		switch (input[1]) {
 		case 'c': // "/cc"
 			{
@@ -3330,7 +3324,6 @@ reread:
 			break;
 		case 'd': // "cd"
 			{
-				param.crypto_search = false;
 				RSearchKeyword *kw;
 				kw = r_search_keyword_new_hex ("308200003082", "ffff0000ffff", NULL);
 				if (kw) {
@@ -3347,8 +3340,8 @@ reread:
 			{
 				RSearchKeyword *kw;
 				kw = r_search_keyword_new_hexmask ("00", NULL);
-				// AES search is at most 40 bytes
-				kw->keyword_length = 40;
+				// AES search is done over 40 bytes
+				kw->keyword_length = AES_SEARCH_LENGTH;
 				r_search_reset (core->search, R_SEARCH_AES);
 				r_search_kw_add (search, kw);
 				r_search_begin (core->search);
@@ -3359,8 +3352,8 @@ reread:
 			{
 				RSearchKeyword *kw;
 				kw = r_search_keyword_new_hexmask ("00", NULL);
-				// Private key search is at most 14 bytes
-				kw->keyword_length = 14;
+				// Private key search is at least 11 bytes
+				kw->keyword_length = PRIVATE_KEY_SEARCH_LENGTH;
 				r_search_reset (core->search, R_SEARCH_PRIV_KEY);
 				r_search_kw_add (search, kw);
 				r_search_begin (core->search);
@@ -3369,7 +3362,6 @@ reread:
 			}
 		default: {
 			dosearch = false;
-			param.crypto_search = false;
 			r_core_cmd_help (core, help_msg_slash_c);
 		}
 		}

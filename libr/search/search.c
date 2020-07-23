@@ -124,7 +124,7 @@ R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
 		kw->count++;
 		s->nhits++;
 		// If callback returns 0 or larger than 1, forwards it; otherwise returns 2 if search.maxhits is reached
-		return !ret || ret > 1? ret : s->maxhits && s->nhits >= s->maxhits ? 2 : 1;
+		return !ret || ret > 1 ? ret : s->maxhits && s->nhits >= s->maxhits ? 2 : 1;
 	}
 	kw->count++;
 	s->nhits++;
