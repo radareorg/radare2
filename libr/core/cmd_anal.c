@@ -4757,6 +4757,13 @@ repeat:
 	// esil->verbose ?
 	// eprintf ("REPE 0x%llx %s => 0x%llx\n", addr, R_STRBUF_SAFEGET (&op.esil), r_reg_getv (core->anal->reg, "PC"));
 
+	ut64 pc = r_reg_getv (core->anal->reg, name);
+	if (core->anal->pcalign > 0) {
+		pc -= (pc % core->anal->pcalign);
+		r_reg_setv (core->anal->reg, name, pc);
+		r_reg_setv (core->dbg->reg, name, pc);
+	}
+
 	st64 follow = (st64)r_config_get_i (core->config, "dbg.follow");
 	if (follow > 0) {
 		ut64 pc = r_debug_reg_get (core->dbg, "PC");
@@ -4765,7 +4772,6 @@ repeat:
 		}
 	}
 	// check breakpoints
-	ut64 pc = r_reg_getv (core->anal->reg, name);
 	if (r_bp_get_at (core->dbg->bp, pc)) {
 		r_cons_printf ("[ESIL] hit breakpoint at 0x%"PFMT64x "\n", pc);
 		return_tail (0);
