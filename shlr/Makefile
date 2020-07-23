@@ -127,7 +127,9 @@ endif
 endif
 
 targets:
-	for TARGET in ${SDB_TARGETS} ; do ${MAKE} $$TARGET ; done
+	#for TARGET in ${SDB_TARGETS} ; do ${MAKE} $$TARGET ; done
+	$(MAKE) sdb-native-build
+	$(MAKE) sdb-target-build
 
 sdb/src/sdb_version.h:
 	@echo
@@ -151,6 +153,7 @@ sdb-native-build: sdb/src/sdb_version.h
 	$(MAKE) -C sdb/src CC=${HOST_CC} LDFLAGS='${HOST_LDFLAGS}' CPPFLAGS='' CFLAGS='${HOST_CFLAGS} ${PIC}' bin
 	cp -f sdb/src/sdb${BUILD_EXT_EXE} sdb/src/.sdb${BUILD_EXT_EXE}
 	cp -f sdb/src/sdb${BUILD_EXT_EXE} sdb/sdb$(BUILD_EXT_EXE)
+	-file sdb/sdb$(BUILD_EXT_EXE)
 
 sdb-target-build: sdb/src/sdb_version.h
 	@echo
