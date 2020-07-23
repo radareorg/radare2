@@ -5,6 +5,7 @@ BINDEPS+=r_lang r_asm r_syscall r_hash r_main
 BINDEPS+=r_magic r_socket r_flag r_egg r_crypto r_util
 
 include ../../config-user.mk
+include ../../shlr/sdb.mk
 
 # Apple Sign #
 CERTID?=org.radare.radare2

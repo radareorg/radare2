@@ -55,6 +55,7 @@ ifneq (${CONTROL_EXTRAS},)
 	cp ${CONTROL_EXTRAS} $@
 endif
 #       Make control file.
+	echo "Name: ${PACKAGE}" >> $@/control
 	echo "Package: ${PACKAGE}" > $@/control
 	echo "Version: ${VERSION}" >> $@/control
 	echo "Section: ${SECTION}" >> $@/control
