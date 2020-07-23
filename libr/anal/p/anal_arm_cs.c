@@ -3109,6 +3109,13 @@ static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x, int 
 		}
 		val->regdelta = &regdelta_regs[x];
 		break;
+	case ARM_OP_IMM:
+		if (bits == 64) {
+			val->imm = arm64op.imm;
+		} else {
+			val->imm = armop.imm;
+		}
+		break;
 	default:
 		break;
 	}
