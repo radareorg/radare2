@@ -3171,6 +3171,7 @@ static void op_fillval(RAnalOp *op , csh handle, cs_insn *insn, int bits) {
 	case R_ANAL_OP_TYPE_MUL:
 	case R_ANAL_OP_TYPE_CMP:
 	case R_ANAL_OP_TYPE_OR:
+	case R_ANAL_OP_TYPE_CAST:
 		set_src_dst (op->src[2], &handle, insn, 3, bits);
 		set_src_dst (op->src[1], &handle, insn, 2, bits);
 		set_src_dst (op->src[0], &handle, insn, 1, bits);
