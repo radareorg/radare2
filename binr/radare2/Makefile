@@ -5,7 +5,6 @@ BINDEPS+=r_lang r_asm r_syscall r_hash r_main
 BINDEPS+=r_magic r_socket r_flag r_egg r_crypto r_util
 
 include ../../config-user.mk
-include ../../shlr/sdb.mk
 
 # Apple Sign #
 CERTID?=org.radare.radare2
@@ -15,6 +14,9 @@ ENTITL=radare2.xcent
 #ENTITL=radare2_ios.xml
 #CFLAGS+=-flto
 #LDFLAGS+=-flto
+
+CFLAGS_INCLUDES+=-I$(SHLR)/sdb/src
+CFLAGS_INCLUDES+=-I$(LIBR)/include
 
 ifeq (${COMPILER},emscripten)
 # https://kripken.github.io/emscripten-site/docs/optimizing/Optimizing-Code.html
@@ -58,7 +60,7 @@ ios_sdk_sign:
 
 macos-sign macossign:
 	rm -f radare2
-	${CC} radare2.c ${CFLAGS} ${LDFLAGS} ${LINK} -o radare2 \
+	${CC} radare2.c ${CFLAGS_INCLUDES} ${CFLAGS} ${LDFLAGS} ${LINK} -o radare2 \
 		-sectcreate __TEXT __info_plist Info.plist \
 		-framework Security -framework CoreFoundation
 	#xcrun --sdk $(MACSDK) codesign -f -s ${CERTID} --entitlements radare2_macos.xml radare2
@@ -95,4 +97,5 @@ include ../../shlr/grub/deps.mk
 include ../../shlr/qnx/deps.mk
 include ../../shlr/ar/deps.mk
 include ../../shlr/yxml/deps.mk
+include ../../shlr/sdb.mk
 LDFLAGS+=$(LINK)

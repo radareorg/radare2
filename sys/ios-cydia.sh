@@ -1,5 +1,7 @@
 #!/bin/sh
 
+
+set -x
 STOW=0
 fromscratch=1 # 1
 onlydebug=0
@@ -40,9 +42,7 @@ makeDeb() {
 	rm -rf sys/cydia/radare2/root
 	mkdir -p sys/cydia/radare2/root
 	sudo tar xpzvf /tmp/r2ios-${CPU}.tar.gz -C sys/cydia/radare2/root
-	rm -f sys/cydia/radare2/root/${PREFIX}/lib/*.dSYM
-	rm -f sys/cydia/radare2/root/${PREFIX}/lib/*.a
-	rm -f sys/cydia/radare2/root/${PREFIX}/lib/*.dylib
+	rm -f sys/cydia/radare2/root/${PREFIX}/lib/*.{a,dylib,dSYM}
 	if [ "$static" = 1 ]; then
 	(
 		rm -f sys/cydia/radare2/root/${PREFIX}/bin/*
@@ -109,6 +109,7 @@ else
 	if [ $RV = 0 ]; then
 		time make -j4
 		if [ "$static" = 1 ]; then
+			ls -l libr/util/libr_util.a || exit 1
 			rm -f libr/*/*.dylib
 			(
 			cd binr ; make clean ; 

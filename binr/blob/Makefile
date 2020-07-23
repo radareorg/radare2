@@ -55,6 +55,7 @@ include ../../libr/config.mk
 include ../../libr/socket/deps.mk
 include ../../libr/magic/deps.mk
 include ../../libr/main/deps.mk
+include ../../shlr/sdb.mk
 include ../../shlr/zip/deps.mk
 include ../../shlr/gdb/deps.mk
 include ../../shlr/java/deps.mk
@@ -91,7 +92,7 @@ build:
 		rm -f _$${FILE} ; \
 	done
 	rm -f _*
-	${CC} -o radare2 ${SOURCES} ${CFLAGS} ${LDFLAGS}
+	${CC} -I$(SHLR)/sdb/src -o radare2 ${SOURCES} ${CFLAGS} ${LDFLAGS}
 	mv main.c main.k
 	rm -f *.[ch]
 	mv main.k main.c
