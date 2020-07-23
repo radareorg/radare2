@@ -9415,13 +9415,15 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		cmd_anal_objc (core, input + 1, false);
 		break;
 	case 'e': // "aae"
-		if (input[1] == 'f') { // "aaef
+		if (input[1] == 'f') { // "aaef"
 			RListIter *it;
 			RAnalFunction *fcn;
+			ut64 cur_seek = core->offset;
 			r_list_foreach (core->anal->fcns, it, fcn) {
 				r_core_seek (core, fcn->addr, true);
 				r_core_anal_esil (core, "f", NULL);
 			}
+			r_core_seek (core, cur_seek, true);
 		} else if (input[1] == ' ') {
 			const char *len = (char *)input + 1;
 			char *addr = strchr (input + 2, ' ');
