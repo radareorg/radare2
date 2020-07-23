@@ -14,9 +14,6 @@
 #define ut8 unsigned char
 #define st8 signed char
 #define boolt int
-#if __WINDOWS__
-#define ssize_t SSIZE_T
-#endif
 
 #if defined(_MSC_VER)
 # define R_ALIGNED(x) __declspec(align(x))
