@@ -3010,6 +3010,28 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->ptr = IMM(1) + addr + 4 - (addr%4);
 		op->refptr = 1;
 		break;
+	case ARM_INS_UXTAB:
+	case ARM_INS_UXTAB16:
+		op->type = R_ANAL_OP_TYPE_ADD;
+		op->ptr = 0LL;
+		op->ptrsize = 1;
+		break;
+	case ARM_INS_UXTAH:
+		op->type = R_ANAL_OP_TYPE_ADD;
+		op->ptr = 0LL;
+		op->ptrsize = 2;
+		break;
+	case ARM_INS_UXTB:
+	case ARM_INS_UXTB16:
+		op->type = R_ANAL_OP_TYPE_CAST;
+		op->ptr = 0LL;
+		op->ptrsize = 1;
+		break;
+	case ARM_INS_UXTH:
+		op->type = R_ANAL_OP_TYPE_CAST;
+		op->ptr = 0LL;
+		op->ptrsize = 2;
+		break;
 	default:
 		break;
 	}
