@@ -6,8 +6,8 @@ XCODE_VERSION_MAJOR=$(word 1, $(subst ., ,$(XCODE_VERSION)))
 
 ifeq ($(COMPILER),ios-sdk)
 
-IOS_VERSION="10.0"
-IOS_SDK_VERSION="10.0"
+IOS_VERSION="9.0"
+IOS_SDK_VERSION="9.0"
 
 else
 
