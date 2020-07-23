@@ -110,7 +110,7 @@ static const char *help_msg_abt[] = {
 static const char *help_msg_ac[] = {
 	"Usage:", "ac", "anal classes commands",
 	"acl[j*]", "", "list all classes",
-	"acll", " (class_name)", "list all or single class detailed",
+	"acll[j]", " (class_name)", "list all or single class detailed",
 	"ac", " [class name]", "add class",
 	"ac-", " [class name]", "delete class",
 	"acn", " [class name] [new class name]", "rename class",
