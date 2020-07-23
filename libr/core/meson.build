@@ -102,6 +102,7 @@ r_core_deps = [
   platform_deps,
   gdb_dep,
   java_dep,
+  lrt,
   shell_parser_dep
 ]
 
