@@ -279,8 +279,8 @@ static int parse(RParse *p, const char *data, char *str) {
 
 static char *subs_var_string(RParse *p, RAnalVarField *var, char *tstr, const char *oldstr, const char *reg, int delta) {
 	char *newstr = p->localvar_only
-		? r_str_newf ("[%s]", var->name)
-		: r_str_newf ("[%s %c %s]", reg, delta > 0 ? '+' : '-', var->name);
+		? r_str_newf ("%s", var->name)
+		: r_str_newf ("%s %c %s", reg, delta > 0 ? '+' : '-', var->name);
 	if (IS_UPPER (*tstr)) {
 		char *space = strrchr (newstr, ' ');
 		if (space) {
@@ -292,6 +292,37 @@ static char *subs_var_string(RParse *p, RAnalVarField *var, char *tstr, const ch
 	char *ret = r_str_replace (tstr, oldstr, newstr, 1);
 	free (newstr);
 	return ret;
+}
+
+static char *mount_oldstr(RParse* p, const char *reg, st64 delta, bool ucase) {
+	const char *tmplt;
+	char *oldstr;
+	if (delta > -10 && delta < 10) {
+		if (p->pseudo) {
+			char sign = '+';
+			if (delta < 0) {
+				sign = '-';
+			}
+			oldstr = r_str_newf ("%s %c %d", reg, sign, R_ABS (delta));
+		} else {
+			oldstr = r_str_newf ("%s, %d", reg, delta);
+		}
+	} else if (delta > 0) {
+		tmplt = p->pseudo ? "%s + 0x%x" : (ucase ? "%s, 0x%X" : "%s, 0x%x");
+		oldstr = r_str_newf (tmplt, reg, delta);
+	} else {
+		tmplt = p->pseudo ? "%s - 0x%x" : (ucase ? "%s, -0x%X" : "%s, -0x%x");
+		oldstr = r_str_newf (tmplt, reg, -delta);
+	}
+	if (ucase) {
+		char *comma = strchr (oldstr, ',');
+		if (comma) {
+			*comma = 0;
+			r_str_case (oldstr, true);
+			*comma = ',';
+		}
+	}
+	return oldstr;
 }
 
 static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
@@ -310,10 +341,16 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		return false;
 	}
 	if (p->subrel) {
-		char *rip = (char *)r_str_casestr (tstr, "[pc, ");
-		if (!rip) {
-			rip = (char *)r_str_casestr (tstr, "[PC, ");
+		char *rip;
+		if (p->pseudo) {
+			rip = (char *)r_str_casestr (tstr, "[pc +");
+			if (!rip) {
+				rip = (char *)r_str_casestr (tstr, "[pc -");
+			}
+		} else {
+			rip = (char *)r_str_casestr (tstr, "[pc, ");
 		}
+
 		if (rip && !strchr (rip + 4, ',')) {
 			rip += 4;
 			char *tstr_new, *ripend = strchr (rip, ']');
@@ -357,31 +394,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		if (!reg) {
 			reg = anal->reg->name[R_REG_NAME_BP];
 		}
-		if (delta > -10 && delta < 10) {
-			if (p->pseudo) {
-				char sign = '+';
-				if (delta < 0) {
-					sign = '-';
-				}
-				oldstr = r_str_newf ("[%s %c %d]", reg, sign, R_ABS (delta));
-			} else {
-				oldstr = r_str_newf ("[%s, %d]", reg, delta);
-			}
-		} else if (delta > 0) {
-			tmplt = p->pseudo ? "[%s + 0x%x]" : (ucase ? "[%s, 0x%X]" : "[%s, 0x%x]");
-			oldstr = r_str_newf (tmplt, reg, delta);
-		} else {
-			tmplt = p->pseudo ? "[%s - 0x%x]" : (ucase ? "[%s, -0x%X]" : "[%s, -0x%x]");
-			oldstr = r_str_newf (tmplt, reg, -delta);
-		}
-		if (ucase) {
-			char *comma = strchr (oldstr, ',');
-			if (comma) {
-				*comma = 0;
-				r_str_case (oldstr, true);
-				*comma = ',';
-			}
-		}
+		oldstr = mount_oldstr (p, reg, delta, ucase);
 		if (strstr (tstr, oldstr)) {
 			tstr = subs_var_string (p, var, tstr, oldstr, reg, delta);
 			free (oldstr);
@@ -405,40 +418,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		if (!reg) {
 			reg = anal->reg->name[R_REG_NAME_SP];
 		}
-		if (delta > -10 && delta < 10) {
-			oldstr = r_str_newf ("[%s, %d]", reg, delta);
-		} else if (delta > 0) {
-			oldstr = r_str_newf ("[%s, 0x%x]", reg, delta);
-		} else {
-			oldstr = r_str_newf ("[%s, -0x%x]", reg, -delta);
-		}
-		if (strstr (tstr, oldstr)) {
-			tstr = subs_var_string (p, var, tstr, oldstr, reg, delta);
-			free (oldstr);
-			break;
-		}
-		free (oldstr);
-		if (delta > -10 && delta < 10) {
-			oldstr = r_str_newf ("[%s, %d]",
-				reg,
-				delta);
-		} else if (delta > 0) {
-			oldstr = r_str_newf ("[%s, 0x%x]",
-				reg,
-				delta);
-		} else {
-			oldstr = r_str_newf ("[%s, -0x%x]",
-				reg,
-				-delta);
-		}
-		if (ucase) {
-			char *comma = strchr (oldstr, ',');
-			if (comma) {
-				*comma = 0;
-				r_str_case (oldstr, true);
-				*comma = ',';
-			}
-		}
+		oldstr = mount_oldstr (p, reg, delta, ucase);
 		if (strstr (tstr, oldstr)) {
 			tstr = subs_var_string (p, var, tstr, oldstr, reg, delta);
 			free (oldstr);
