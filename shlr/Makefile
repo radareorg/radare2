@@ -162,6 +162,8 @@ sdb-target-build: sdb/src/sdb_version.h
 	@echo "TARGET BUILD SDB"
 	@echo ">>>>>>>>>>>>>>>>"
 	@echo
+	$(MAKE) -C sdb clean ; rm -f sdb/src/*.o
+	$(MAKE) -C sdb/src sdb_version.h
 	cd sdb/src ; $(MAKE) ARCH=xxx RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED}" \
 		CC="${CC}" AR="${AR}" ARCH=undefined CFLAGS='${CFLAGS}' LDFLAGS='${LDFLAGS}' libsdb.a
 	${RANLIB} sdb/src/libsdb.a
