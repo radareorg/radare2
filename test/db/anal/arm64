@@ -54,3 +54,45 @@ nth paddr       vaddr      bind   type size lib name
 6    0x0000aa20 0x0000aa20 GLOBAL FUNC 1176     Java_o__003dc_e
 EOF
 RUN
+
+NAME=ao mte irg addg
+FILE=bins/mach0/hello-mte
+CMDS=<<EOF
+ao@0x100007f10
+?e --
+ao@0x100007f14
+EOF
+EXPECT=<<EOF
+address: 0x100007f10
+opcode: irg x8, sp, x8
+disasm: irg x8, sp, x8
+pseudo: irg x8,sp,x8 
+mnemonic: irg
+mask: ffffffff
+prefix: 0
+id: 0
+bytes: e813c89a
+refptr: 0
+size: 4
+sign: false
+type: mov
+cycles: 0
+family: mte
+--
+address: 0x100007f14
+opcode: addg x9, x8, 0x20, 0x0
+disasm: addg x9, x8, 0x20, 0x0
+pseudo: addg x9,x8,0x20, 0x0 
+mnemonic: addg
+mask: ffffffff
+prefix: 0
+id: 0
+bytes: 09018291
+refptr: 0
+size: 4
+sign: false
+type: add
+cycles: 0
+family: mte
+EOF
+RUN

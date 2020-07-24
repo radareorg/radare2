@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2016 - pancake */
+/* radare - LGPL - Copyright 2015-2020 - pancake */
 /*
 Usage Example:
 
@@ -167,8 +167,9 @@ static int w32_createPipe(R2Pipe *r2pipe, const char *cmd) {
 }
 #endif
 
-static R2Pipe* r2pipe_open_spawn(R2Pipe* r2pipe) {
-#if __UNIX__
+static R2Pipe* r2p_open_spawn(R2Pipe* r2p, const char *cmd) {
+	r_return_val_if_fail (r2p, NULL);
+#if __UNIX__ || defined(__CYGWIN__)
 	char *out = r_sys_getenv ("R2PIPE_IN");
 	char *in = r_sys_getenv ("R2PIPE_OUT");
 	int done = false;
@@ -176,18 +177,18 @@ static R2Pipe* r2pipe_open_spawn(R2Pipe* r2pipe) {
 		int i_in = atoi (in);
 		int i_out = atoi (out);
 		if (i_in >= 0 && i_out >= 0) {
-			r2pipe->input[0] = r2pipe->input[1] = i_in;
-			r2pipe->output[0] = r2pipe->output[1] = i_out;
+			r2p->input[0] = r2p->input[1] = i_in;
+			r2p->output[0] = r2p->output[1] = i_out;
 			done = true;
 		}
 	}
 	if (!done) {
 		eprintf ("Cannot find R2PIPE_IN or R2PIPE_OUT environment\n");
-		R_FREE (r2pipe);
+		R_FREE (r2p);
 	}
 	free (in);
 	free (out);
-	return r2pipe;
+	return r2p;
 #else
 	eprintf ("r2pipe_open(NULL) not supported on windows\n");
 	return NULL;
@@ -233,93 +234,100 @@ R_API R2Pipe *r2pipe_open_dl(const char *libr_path) {
 }
 
 R_API R2Pipe *r2pipe_open(const char *cmd) {
-	R2Pipe *r2pipe = r2pipe_new ();
-	if (!r2pipe) {
+	R2Pipe *r2p = r2pipe_new ();
+	if (!r2p) {
 		return NULL;
 	}
-	if (!cmd) {
-		r2pipe->child = -1;
-		return r2pipe_open_spawn (r2pipe);
+	if (R_STR_ISEMPTY (cmd)) {
+		r2p->child = -1;
+		return r2p_open_spawn (r2p, cmd);
 	}
 #if __WINDOWS__
-	w32_createPipe (r2pipe, cmd);
-	r2pipe->child = (int)(r2pipe->pipe);
+	w32_createPipe (r2p, cmd);
+	r2p->child = (int)(r2p->pipe);
 #else
-	int r = pipe (r2pipe->input);
+	int r = pipe (r2p->input);
 	if (r != 0) {
 		eprintf ("pipe failed on input\n");
-		r2pipe_close (r2pipe);
+		r2pipe_close (r2p);
 		return NULL;
 	}
-	r = pipe (r2pipe->output);
+	r = pipe (r2p->output);
 	if (r != 0) {
 		eprintf ("pipe failed on output\n");
-		r2pipe_close (r2pipe);
+		r2pipe_close (r2p);
 		return NULL;
 	}
 #if LIBC_HAVE_FORK
-	r2pipe->child = fork ();
+	r2p->child = fork ();
 #else
-	r2pipe->child = -1;
+	r2p->child = -1;
 #endif
-	if (r2pipe->child == -1) {
-		r2pipe_close (r2pipe);
+	if (r2p->child == -1) {
+		r2pipe_close (r2p);
 		return NULL;
 	}
-	env ("R2PIPE_IN", r2pipe->input[0]);
-	env ("R2PIPE_OUT", r2pipe->output[1]);
+	env ("R2PIPE_IN", r2p->input[0]);
+	env ("R2PIPE_OUT", r2p->output[1]);
 
-	if (r2pipe->child) {
-		char ch = 1;
+	if (r2p->child) {
+		char ch = -1;
 		// eprintf ("[+] r2pipeipe child is %d\n", r2pipe->child);
-		if (read (r2pipe->output[0], &ch, 1) != 1) {
+		if (read (r2p->output[0], &ch, 1) != 1) {
 			eprintf ("Failed to read 1 byte\n");
-			r2pipe_close (r2pipe);
+			r2pipe_close (r2p);
 			return NULL;
 		}
-		if (ch) {
-			eprintf ("[+] r2pipeipe-io link failed. Expected two null bytes.\n");
-			r2pipe_close (r2pipe);
+		if (ch == -1) {
+			eprintf ("[+] r2pipe link error.\n");
+			r2pipe_close (r2p);
 			return NULL;
 		}
 		// Close parent's end of pipes
-		close (r2pipe->input[0]);
-		close (r2pipe->output[1]);
-		r2pipe->input[0] = -1;
-		r2pipe->output[1] = -1;
+		close (r2p->input[0]);
+		close (r2p->output[1]);
+		r2p->input[0] = -1;
+		r2p->output[1] = -1;
 	} else {
 		int rc = 0;
 		if (cmd && *cmd) {
 			close (0);
 			close (1);
-			dup2 (r2pipe->input[0], 0);
-			dup2 (r2pipe->output[1], 1);
-			close (r2pipe->input[1]);
-			close (r2pipe->output[0]);
-			r2pipe->input[1] = -1;
-			r2pipe->output[0] = -1;
-			rc = r_sandbox_system (cmd, 0);
+			dup2 (r2p->input[0], 0);
+			dup2 (r2p->output[1], 1);
+			close (r2p->input[1]);
+			close (r2p->output[0]);
+			r2p->input[1] = -1;
+			r2p->output[0] = -1;
+			rc = r_sandbox_system (cmd, 1);
+			fprintf (stderr, "return code %d for %s\n", rc, cmd);
+			fflush (stderr);
+			// trigger the blocking read
+			write (1, "\xff", 1);
+			close (r2p->output[0]);
+			close (r2p->output[1]);
+			close (0);
+			close (1);
 		}
-		r2pipe_close (r2pipe);
+		r2p->child = -1;
+		r2pipe_close (r2p);
 		exit (rc);
 		return NULL;
 	}
 #endif
-	return r2pipe;
+	return r2p;
 }
 
-R_API char *r2pipe_cmd(R2Pipe *r2pipe, const char *str) {
-	if (r2pipe->coreb.core) {
-		return r2pipe->coreb.cmdstr (r2pipe->coreb.core, str);
-	}
-	if (!r2pipe_write (r2pipe, str)) {
+R_API char *r2pipe_cmd(R2Pipe *r2p, const char *str) {
+	r_return_val_if_fail (r2p && str, NULL);
+	if (!*str || !r2pipe_write (r2p, str)) {
 		perror ("r2pipe_write");
 		return NULL;
 	}
-	return r2pipe_read (r2pipe);
+	return r2pipe_read (r2p);
 }
 
-R_API char *r2pipe_cmdf(R2Pipe *r2pipe, const char *fmt, ...) {
+R_API char *r2pipe_cmdf(R2Pipe *r2p, const char *fmt, ...) {
 	int ret, ret2;
 	char *p, string[1024];
 	va_list ap, ap2;
@@ -340,10 +348,10 @@ R_API char *r2pipe_cmdf(R2Pipe *r2pipe, const char *fmt, ...) {
 			va_end (ap);
 			return NULL;
 		}
-		fmt = r2pipe_cmd (r2pipe, p);
+		fmt = r2pipe_cmd (r2p, p);
 		free (p);
 	} else {
-		fmt = r2pipe_cmd (r2pipe, string);
+		fmt = r2pipe_cmd (r2p, string);
 	}
 	va_end (ap2);
 	va_end (ap);

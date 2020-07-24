@@ -32,7 +32,7 @@
 static char** env = NULL;
 
 #if (__linux__ && __GNU_LIBRARY__) || defined(NETBSD_WITH_BACKTRACE) || \
-  defined(FREEBSD_WITH_BACKTRACE) || __DragonFly__ || __sun
+  defined(FREEBSD_WITH_BACKTRACE) || __DragonFly__ || __sun || __HAIKU__
 # include <execinfo.h>
 #endif
 #if __APPLE__
@@ -300,7 +300,7 @@ R_API char *r_sys_cmd_strf(const char *fmt, ...) {
 
 #if (__linux__ && __GNU_LIBRARY__) || (__APPLE__ && APPLE_WITH_BACKTRACE) || \
   defined(NETBSD_WITH_BACKTRACE) || defined(FREEBSD_WITH_BACKTRACE) || \
-  __DragonFly__ || __sun
+  __DragonFly__ || __sun || __HAIKU__
 #define HAVE_BACKTRACE 1
 #endif
 
@@ -371,14 +371,12 @@ R_API int r_sys_clearenv(void) {
 #if __APPLE__ && !HAVE_ENVIRON
 	/* do nothing */
 	if (!env) {
-		env = r_sys_get_environ ();
+		r_sys_env_init ();
 		return 0;
 	}
-	if (env) {
-		char **e = env;
-		while (*e) {
-			*e++ = NULL;
-		}
+	char **e = env;
+	while (*e) {
+		*e++ = NULL;
 	}
 #else
 	if (!environ) {
@@ -1208,8 +1206,14 @@ R_API char *r_sys_pid_to_path(int pid) {
 #endif
 }
 
-// TODO: rename to r_sys_env_init()
-R_API char **r_sys_get_environ (void) {
+R_API void r_sys_env_init(void) {
+	char **envp = r_sys_get_environ ();
+	if (envp) {
+		r_sys_set_environ (envp);
+	}
+}
+
+R_API char **r_sys_get_environ(void) {
 #if __APPLE__ && !HAVE_ENVIRON
 	env = *_NSGetEnviron();
 #else
@@ -1222,7 +1226,7 @@ R_API char **r_sys_get_environ (void) {
 	return env;
 }
 
-R_API void r_sys_set_environ (char **e) {
+R_API void r_sys_set_environ(char **e) {
 	env = e;
 }
 

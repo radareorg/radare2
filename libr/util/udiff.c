@@ -168,6 +168,7 @@ R_API int r_diff_buffers(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb)
 }
 
 R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
+	r_return_val_if_fail (a && b, false);
 	const bool verbose = d? d->verbose: false;
 	/*
 	More memory efficient version on Levenshtein Distance from:
@@ -239,9 +240,15 @@ R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, c
 	stop = bLen;
 	// Preliminary tests
 
-	//Do we have both files a & b, and are they at least one byte?
-	if (!aBufPtr || !bBufPtr || aLen < 1 || bLen < 1) {
-		return false;
+	// one or both buffers empty?
+	if (aLen == 0 || bLen == 0) {
+		if (distance) {
+			*distance = R_MAX (aLen, bLen);
+		}
+		if (similarity) {
+			*similarity = aLen == bLen? 1.0: 0.0;
+		}
+		return true;
 	}
 
 	//IF the files are the same size and are identical, then we have matching files
@@ -498,4 +505,274 @@ R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b
 		}
 	}
 	return r_diff_buffers_distance_original (d, a, la, b, lb, distance, similarity);
+}
+
+// Use Needleman–Wunsch to diffchar.
+// This is an O(mn) algo in both space and time.
+// Note that 64KB * 64KB * 2 = 8GB.
+// TODO Discard common prefix and suffix
+R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b) {
+	r_return_val_if_fail (a && b, NULL);
+	RDiffChar *diffchar = R_NEW0 (RDiffChar);
+	if (!diffchar) {
+		return NULL;
+	}
+
+	const size_t len_a = strlen ((const char *)a);
+	const size_t len_b = strlen ((const char *)b);
+	const size_t len_long = len_a > len_b ? len_a : len_b;
+	const size_t dim = len_long + 1;
+	ut8 *dup_a = malloc (len_long);
+	ut8 *dup_b = malloc (len_long);
+	st16 *align_table = malloc (dim * dim * sizeof (st16));
+	ut8 *align_a = malloc (2 * len_long);
+	ut8 *align_b = malloc (2 * len_long);
+	if (!(dup_a && dup_b && align_table && align_a && align_b)) {
+		free (dup_a);
+		free (dup_b);
+		free (align_table);
+		free (align_a);
+		free (align_b);
+		return NULL;
+	}
+
+	// Copy strings (note that strncpy does pad with nulls)
+	strncpy ((char *)dup_a, (const char *)a, len_long);
+	a = dup_a;
+	strncpy ((char *)dup_b, (const char *)b, len_long);
+	b = dup_b;
+
+	// Fill table
+	size_t row, col;
+	*align_table = 0;
+	for (row = 1; row < dim; row++) {
+		// TODO Clamping [ST16_MIN + 1, .]
+		*(align_table + row) = *(align_table + row * dim) = -(st16)row;
+	}
+	const st16 match = 1;
+	const st16 match_nl = 2;
+	const st16 mismatch = -2;
+	const st16 gap = -1;
+	for (row = 1; row < dim; row++) {
+		for (col = 1; col < dim; col++) {
+			// TODO Clamping [ST16_MIN + 1, ST16_MAX]
+			const ut8 a_ch = a[col - 1];
+			const ut8 b_ch = b[row - 1];
+			const st16 tl_score = *(align_table + (row - 1) * dim + col - 1)
+			                    + (a_ch == b_ch ?
+			                       (a_ch == '\n' ? match_nl : match) :
+			                       mismatch);
+			const st16 t_score = *(align_table + (row - 1) * dim + col) + gap;
+			const st16 l_score = *(align_table + row * dim + col - 1) + gap;
+			st16 score;
+			if (tl_score >= t_score && tl_score >= l_score) {
+				score = tl_score;
+			} else if (t_score >= tl_score && t_score >= l_score) {
+				score = t_score;
+			} else {
+				score = l_score;
+			}
+			*(align_table + row * dim + col) = score;
+		}
+	}
+
+#if 0
+	// Print table (Debug)
+	char char_str[3] = { ' ' };
+	printf ("%4s ", char_str);
+	for (col = 0; col < dim; col++) {
+		if (col && a[col - 1] == '\n') {
+			char_str[0] = '\\';
+			char_str[1] = 'n';
+		} else {
+			char_str[0] = col ? a[col - 1] : ' ';
+			char_str[1] = 0;
+		}
+		printf ("%4s ", char_str);
+	}
+	printf ("\n");
+	for (row = 0; row < dim; row++) {
+		if (row && b[row - 1] == '\n') {
+			char_str[0] = '\\';
+			char_str[1] = 'n';
+		} else {
+			char_str[0] = row ? b[row - 1] : ' ';
+			char_str[1] = 0;
+		}
+		printf ("%4s ", char_str);
+		for (col = 0; col < dim; col++) {
+			printf ("%4d ", *(align_table + row * dim + col));
+		}
+		printf ("\n");
+	}
+#endif
+
+	// Do alignment
+	size_t idx_a = len_long - 1;
+	size_t idx_b = len_long - 1;
+	size_t idx_align = 2 * len_long - 1;
+	size_t pos_row = dim - 1;
+	size_t pos_col = dim - 1;
+	while (pos_row || pos_col) {
+		const st16 tl_score = (pos_row > 0 && pos_col > 0) ?
+				*(align_table + (pos_row - 1) * dim + pos_col - 1) :
+				ST16_MIN;
+		const st16 t_score = pos_row > 0 ?
+				*(align_table + (pos_row - 1) * dim + pos_col) :
+				ST16_MIN;
+		const st16 l_score = pos_col > 0 ?
+				*(align_table + pos_row * dim + pos_col - 1) :
+				ST16_MIN;
+		const bool match = a[idx_a] == b[idx_b];
+		if (t_score >= l_score && (!match || t_score >= tl_score)) {
+			align_a[idx_align] = 0;
+			align_b[idx_align] = b[idx_b--];
+			idx_align--;
+			pos_row--;
+		} else if (l_score >= t_score && (!match || l_score >= tl_score)) {
+			align_a[idx_align] = a[idx_a--];
+			align_b[idx_align] = 0;
+			idx_align--;
+			pos_col--;
+		} else {
+			align_a[idx_align] = a[idx_a--];
+			align_b[idx_align] = b[idx_b--];
+			idx_align--;
+			pos_row--;
+			pos_col--;
+		}
+	}
+	idx_align++;
+	const size_t start_align = idx_align;
+
+#if 0
+	// Print alignment (Debug)
+	for (; idx_align < 2 * len_long; idx_align++) {
+		const ut8 ch = align_a[idx_align];
+		if (align_b[idx_align] == '\n' && ch != '\n') {
+			printf (ch ? " " : "-");
+		}
+		if (ch == 0) {
+			printf ("-");
+		} else if (ch == '\n') {
+			printf ("\\n");
+		} else {
+			printf ("%c", ch);
+		}
+	}
+	printf ("\n");
+	for (idx_align = start_align; idx_align < 2 * len_long; idx_align++) {
+		const ut8 ch = align_b[idx_align];
+		if (align_a[idx_align] == '\n' && ch != '\n') {
+			printf (ch ? " " : "-");
+		}
+		if (ch == 0) {
+			printf ("-");
+		} else if (ch == '\n') {
+			printf ("\\n");
+		} else {
+			printf ("%c", ch);
+		}
+	}
+	printf ("\n");
+#endif
+
+	diffchar->align_a = align_a;
+	diffchar->align_b = align_b;
+	diffchar->len_buf = len_long;
+	diffchar->start_align = start_align;
+	free (dup_a);
+	free (dup_b);
+	free (align_table);
+	return diffchar;
+}
+
+typedef enum {
+	R2R_ALIGN_MATCH, R2R_ALIGN_MISMATCH, R2R_ALIGN_TOP_GAP, R2R_ALIGN_BOTTOM_GAP
+} R2RCharAlignment;
+
+typedef enum {
+	R2R_DIFF_MATCH, R2R_DIFF_DELETE, R2R_DIFF_INSERT
+} R2RPrintDiffMode;
+
+R_API void r_diffchar_print(RDiffChar *diffchar) {
+	r_return_if_fail (diffchar);
+	R2RPrintDiffMode cur_mode = R2R_DIFF_MATCH;
+	R2RCharAlignment cur_align;
+	size_t idx_align = diffchar->start_align;
+	while (idx_align < 2 * diffchar->len_buf) {
+		const ut8 a_ch = diffchar->align_a[idx_align];
+		const ut8 b_ch = diffchar->align_b[idx_align];
+		if (a_ch && !b_ch) {
+			cur_align = R2R_ALIGN_BOTTOM_GAP;
+		} else if (!a_ch && b_ch) {
+			cur_align = R2R_ALIGN_TOP_GAP;
+		} else if (a_ch != b_ch) {
+			eprintf ("Internal error: mismatch detected!\n");
+			cur_align = R2R_ALIGN_MISMATCH;
+		} else {
+			cur_align = R2R_ALIGN_MATCH;
+		}
+		if (cur_mode == R2R_DIFF_MATCH) {
+			if (cur_align == R2R_ALIGN_MATCH) {
+				if (a_ch) {
+					printf ("%c", a_ch);
+				}
+			} else if (cur_align == R2R_ALIGN_BOTTOM_GAP) {
+				printf (a_ch == '\n' ?
+				        "%c"Color_HLDELETE :
+				        Color_HLDELETE"%c", a_ch);
+				cur_mode = R2R_DIFF_DELETE;
+			} else if (cur_align == R2R_ALIGN_TOP_GAP) {
+				printf (b_ch == '\n' ?
+				        "%c"Color_HLINSERT :
+				        Color_HLINSERT"%c", b_ch);
+				cur_mode = R2R_DIFF_INSERT;
+			}
+		} else if (cur_mode == R2R_DIFF_DELETE) {
+			if (cur_align == R2R_ALIGN_MATCH) {
+				printf (Color_RESET);
+				if (a_ch) {
+					printf ("%c", a_ch);
+				}
+				cur_mode = R2R_DIFF_MATCH;
+			} else if (cur_align == R2R_ALIGN_BOTTOM_GAP) {
+				printf (a_ch == '\n' ?
+				        Color_RESET"%c"Color_HLDELETE :
+				        "%c", a_ch);
+			} else if (cur_align == R2R_ALIGN_TOP_GAP) {
+				printf (b_ch == '\n' ?
+				        Color_RESET"%c"Color_HLINSERT :
+				        Color_HLINSERT"%c", b_ch);
+				cur_mode = R2R_DIFF_INSERT;
+			}
+		} else if (cur_mode == R2R_DIFF_INSERT) {
+			if (cur_align == R2R_ALIGN_MATCH) {
+				printf (Color_RESET);
+				if (a_ch) {
+					printf ("%c", a_ch);
+				}
+				cur_mode = R2R_DIFF_MATCH;
+			} else if (cur_align == R2R_ALIGN_BOTTOM_GAP) {
+				printf (a_ch == '\n' ?
+				        Color_RESET"%c"Color_HLDELETE :
+				        Color_HLDELETE"%c", a_ch);
+				cur_mode = R2R_DIFF_DELETE;
+			} else if (cur_align == R2R_ALIGN_TOP_GAP) {
+				printf (b_ch == '\n' ?
+				        Color_RESET"%c"Color_HLINSERT :
+				        "%c", b_ch);
+			}
+		}
+		idx_align++;
+	}
+	printf (Color_RESET"\n");
+}
+
+R_API void r_diffchar_free(RDiffChar *diffchar) {
+	if (diffchar) {
+		free ((ut8 *)diffchar->align_a);
+		free ((ut8 *)diffchar->align_b);
+		free (diffchar);
+	}
 }

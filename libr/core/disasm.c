@@ -1870,14 +1870,14 @@ static void ds_show_functions(RDisasmState *ds) {
 		}
 		r_cons_printf ("%d: ", r_anal_function_realsize (f));
 
-		// show function's realname in the signature if realnames are enabled 
+		// show function's realname in the signature if realnames are enabled
 		if (core->flags->realnames) {
 			RFlagItem *flag = r_flag_get (core->flags, fcn_name);
 			if (flag && flag->realname) {
 				fcn_name = flag->realname;
 			}
 		}
-	    
+
 		char *sig = r_anal_fcn_format_sig (core->anal, f, fcn_name, &vars_cache, COLOR (ds, color_fname), COLOR_RESET (ds));
 		if (sig) {
 			r_cons_print (sig);
@@ -2251,7 +2251,9 @@ static void ds_show_flags(RDisasmState *ds) {
 			}
 			if (case_current == case_prev + 1 && switch_addr == saddr) {
 				case_prev = case_current;
-				continue;
+				if (iter != uniqlist->tail) {
+					continue;	
+				}
 			}
 		}
 		if (printPre) {
@@ -2300,7 +2302,7 @@ static void ds_show_flags(RDisasmState *ds) {
 					nth = 0;
 				} else if (case_prev != case_start) {
 					r_cons_printf (FLAG_PREFIX "case %d...%d:", case_start, case_prev);
-					if (iter != uniqlist->head) {
+					if (iter != uniqlist->head && iter != uniqlist->tail) {
 						iter = iter->p;
 					}
 					case_start = case_current;
@@ -4074,7 +4076,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					ds_print_str (ds, msg, len, refaddr);
 					string_printed = true;
 				}
-			} else if (!flag_printed && (!ds->opstr || 
+			} else if (!flag_printed && (!ds->opstr ||
 						(!strstr (ds->opstr, f->name) && !strstr (ds->opstr, f->realname)))) {
 				ds_begin_nl_comment (ds);
 				ds_comment (ds, true, "; %s", f->name);
@@ -4209,9 +4211,16 @@ static void ds_print_relocs(RDisasmState *ds) {
 			if (demangle) {
 				demname = r_bin_demangle (core->bin->cur, lang, rel->symbol->name, rel->symbol->vaddr, keep_lib);
 			}
-			r_cons_printf ("; RELOC %d %s @ 0x%08" PFMT64x " + 0x%" PFMT64x,
+			r_cons_printf ("; RELOC %d %s @ 0x%08" PFMT64x,
 					rel->type, demname ? demname : rel->symbol->name,
-					rel->symbol->vaddr, rel->addend);
+					rel->symbol->vaddr);
+			if (rel->addend) {
+				if (rel->addend > 0) {
+					r_cons_printf (" + 0x%" PFMT64x, rel->addend);
+				} else {
+					r_cons_printf (" - 0x%" PFMT64x, -rel->addend);
+				}
+			}
 		} else {
 			r_cons_printf ("; RELOC %d ", rel->type);
 		}

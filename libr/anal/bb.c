@@ -115,6 +115,6 @@ R_API ut64 r_anal_bb_size_i(RAnalBlock *bb, int i) {
 /* returns the address of the basic block that contains addr or UT64_MAX if
  * there is no such basic block */
 R_API ut64 r_anal_get_bbaddr(RAnal *anal, ut64 addr) {
-	RAnalBlock *bb = r_anal_get_block_at (anal, addr);
+	RAnalBlock *bb = r_anal_bb_from_offset (anal, addr);
 	return bb? bb->addr: UT64_MAX;
 }

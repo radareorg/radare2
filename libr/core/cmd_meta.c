@@ -6,7 +6,7 @@
 #include "r_core.h"
 #include "r_util.h"
 #include "r_types.h"
-#include "sdb/sdb.h"
+#include <sdb.h>
 
 char *getcommapath(RCore *core);
 
@@ -605,6 +605,10 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	char *t = 0, *p, *p2, name[256];
 	int repeat = 1;
 	ut64 addr = core->offset;
+
+	if (!type) {
+		return 0;
+	}
 
 	switch (input[1]) {
 	case '?':
