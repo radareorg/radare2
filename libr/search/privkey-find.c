@@ -5,6 +5,11 @@
 
 #include <r_search.h>
 
+/* The minimal length to perform a search is the sizes of
+the sequence tag, the minimal length of the sequence,
+the version marker and the minimal key length. */
+#define PRIVKEY_SEARCH_MIN_LENGTH (1 + 1 + 4 + 1)
+
 /*Baby BER parser, just good enough for private keys.
 
 This is not robust to errors in the memory image, but if we added
@@ -68,15 +73,16 @@ R_API int r_search_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len
 	const ut8 ecc_versionmarker[] = { 0x02, 0x01, 0x01, 0x04 };
 	const ut8 safecurves_versionmarker[] = { 0x02, 0x01, 0x00, 0x30 };
 
-	if (len < sizeof (rsa_versionmarker)) {
+	if (len < PRIVKEY_SEARCH_MIN_LENGTH) {
 		return -1;
 	}
+
 	r_list_foreach (s->kws, iter, kw) {
 		// Iteration until the remaining length is too small to contain a key.
-		for (i = 2; i < len - sizeof (rsa_versionmarker) - 4; i++) {
-			if (memcmp (buf +i, rsa_versionmarker, sizeof (rsa_versionmarker)) &&
-				memcmp (buf +i, ecc_versionmarker, sizeof (ecc_versionmarker)) &&
-				memcmp (buf +i, safecurves_versionmarker, sizeof (safecurves_versionmarker))) {
+		for (i = 2; i < len - PRIVKEY_SEARCH_MIN_LENGTH; i++) {
+			if (memcmp (buf + i, rsa_versionmarker, sizeof (rsa_versionmarker)) &&
+				memcmp (buf + i, ecc_versionmarker, sizeof (ecc_versionmarker)) &&
+				memcmp (buf + i, safecurves_versionmarker, sizeof (safecurves_versionmarker))) {
 				continue;
 			}
 
