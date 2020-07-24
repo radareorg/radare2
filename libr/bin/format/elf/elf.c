@@ -2857,10 +2857,18 @@ static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 	}
 
 	size_t i = 0;
-	create_section_from_phdr (bin, ret, &i, ".rel.dyn", reldyn, reldynsz);
-	create_section_from_phdr (bin, ret, &i, ".rela.plt", relava, pltgotsz);
-	create_section_from_phdr (bin, ret, &i, ".rel.plt", relva, relasz);
-	create_section_from_phdr (bin, ret, &i, ".got.plt", pltgotva, pltgotsz);
+	if (i < num_sections) {
+		create_section_from_phdr (bin, ret, &i, ".rel.dyn", reldyn, reldynsz);
+	}
+	if (i < num_sections) {
+		create_section_from_phdr (bin, ret, &i, ".rela.plt", relava, pltgotsz);
+	}
+	if (i < num_sections) {
+		create_section_from_phdr (bin, ret, &i, ".rel.plt", relva, relasz);
+	}
+	if (i < num_sections) {
+		create_section_from_phdr (bin, ret, &i, ".got.plt", pltgotva, pltgotsz);
+	}
 	ret[i].last = 1;
 
 	return ret;
@@ -3197,7 +3205,7 @@ static RBinElfSymbol *Elf_(get_phdr_symbols)(ELFOBJ *bin, int type) {
 }
 
 static int Elf_(fix_symbols)(ELFOBJ *bin, int nsym, int type, RBinElfSymbol **sym) {
-	int count = 0;
+	size_t count = 0;
 	int result = -1;
 	RBinElfSymbol *ret = *sym;
 	RBinElfSymbol *phdr_symbols = Elf_(get_phdr_symbols) (bin, type);

@@ -960,18 +960,14 @@ static RList* patch_relocs(RBin *b) {
 			}
 		}
 		// TODO relocation types B, L
-		_patch_reloc (bin->ehdr.e_machine, &b->iob, &relcs[i], sym_addr != UT64_MAX? sym_addr: vaddr, 0, n_vaddr);
+		ut64 addr = sym_addr != UT64_MAX? sym_addr: vaddr;
+		_patch_reloc (bin->ehdr.e_machine, &b->iob, &relcs[i], addr, 0, n_vaddr);
 		if (!(ptr = reloc_convert (bin, &relcs[i], n_vaddr))) {
 			continue;
 		}
-
-		if (sym_addr != UT64_MAX) {
-			ptr->vaddr = sym_addr;
-		} else {
-			ptr->vaddr = vaddr;
-			ht_uu_insert (relocs_by_sym, relcs[i].sym, vaddr);
-			vaddr += cdsz;
-		}
+		ptr->vaddr = addr;
+		ht_uu_insert (relocs_by_sym, relcs[i].sym, vaddr);
+		vaddr += cdsz;
 		r_list_append (ret, ptr);
 	}
 	ht_uu_free (relocs_by_sym);
