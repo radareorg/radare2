@@ -147,38 +147,20 @@ R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn) {
 	return uniq;
 }
 
-/**
- * @brief Function to free a RAnalBaseTypeEnum
- * 
- * @param e 
- * @param user 
- */
-R_IPI void enum_type_fini(void *e, void *user) {
+R_IPI void enum_type_case_free(void *e, void *user) {
 	(void)user;
 	RAnalEnumCase *cas = e;
 	free ((char *)cas->name);
 }
 
-/**
- * @brief Function to free a RAnalBaseTypeStruct
- * 
- * @param e 
- * @param user 
- */
-R_IPI void struct_type_fini(void *e, void *user) {
+R_IPI void struct_type_member_free(void *e, void *user) {
 	(void)user;
 	RAnalStructMember *member = e;
 	free ((char *)member->name);
 	free ((char *)member->type);
 }
 
-/**
- * @brief Function to free a RAnalBaseTypeUnion
- * 
- * @param e 
- * @param user 
- */
-R_IPI void union_type_fini(void *e, void *user) {
+R_IPI void union_type_member_free(void *e, void *user) {
 	(void)user;
 	RAnalUnionMember *member = e;
 	free ((char *)member->name);
@@ -202,7 +184,7 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sname) {
 	}
 
 	RVector cases;
-	r_vector_init (&cases, sizeof (RAnalEnumCase), enum_type_fini, NULL);
+	r_vector_init (&cases, sizeof (RAnalEnumCase), enum_type_case_free, NULL);
 
 	if (!r_vector_reserve (&cases, (size_t)sdb_alen (members))) {
 		goto error;
@@ -260,7 +242,7 @@ static RAnalBaseType *get_struct_type(RAnal *anal, const char *sname) {
 	}
 
 	RVector members;
-	r_vector_init (&members, sizeof (RAnalStructMember), struct_type_fini, NULL);
+	r_vector_init (&members, sizeof (RAnalStructMember), struct_type_member_free, NULL);
 
 	if (!r_vector_reserve (&members, (size_t)sdb_alen (sdb_members))) {
 		goto error;
@@ -330,7 +312,7 @@ static RAnalBaseType *get_union_type(RAnal *anal, const char *sname) {
 	}
 
 	RVector members;
-	r_vector_init (&members, sizeof (RAnalUnionMember), union_type_fini, NULL);
+	r_vector_init (&members, sizeof (RAnalUnionMember), union_type_member_free, NULL);
 
 	if (!r_vector_reserve (&members, (size_t)sdb_alen (sdb_members))) {
 		goto error;

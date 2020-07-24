@@ -125,7 +125,7 @@ static void parse_enum(const RAnal *anal, SType *type, RList *types) {
 	type_info->get_members (type_info, &members);
 
 	r_vector_init (&base_type->enum_data.cases,
-		sizeof (RAnalEnumCase), enum_type_fini, NULL);
+		sizeof (RAnalEnumCase), enum_type_case_free, NULL);
 
 	RListIter *it = r_list_iterator (members);
 	while (r_list_iter_next (it)) {
@@ -174,7 +174,7 @@ static void parse_structure(const RAnal *anal, SType *type, RList *types) {
 		return;
 	}
 	r_vector_init (&base_type->struct_data.members,
-		sizeof (RAnalStructMember), struct_type_fini, NULL);
+		sizeof (RAnalStructMember), struct_type_member_free, NULL);
 
 	char *name = NULL;
 	type_info->get_name (type_info, &name);
@@ -258,7 +258,7 @@ static void parse_type (const RAnal *anal, SType *type, RList *types) {
  * @param anal
  * @param pdb PDB information
  */
-R_API void r_parse_pdb_types(const RAnal *anal, const R_PDB *pdb) {
+R_API void r_parse_pdb_types(const RAnal *anal, const RPdb *pdb) {
 	r_return_if_fail (anal && pdb);
 	RList *plist = pdb->pdb_streams;
 	// getting the TPI stream from the streams list

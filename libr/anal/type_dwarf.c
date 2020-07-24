@@ -508,7 +508,7 @@ static void parse_structure_type(const RAnal *anal, const RBinDwarfDie *all_dies
 	base_type->size = get_die_size (die);
 
 	r_vector_init (&base_type->struct_data.members,
-		sizeof (RAnalStructMember), struct_type_fini, NULL);
+		sizeof (RAnalStructMember), struct_type_member_free, NULL);
 	RAnalStructMember member = { 0 };
 	// Parse out all members, can this in someway be extracted to a function?
 	if (die->has_children) {
@@ -578,7 +578,7 @@ static void parse_enum_type(const RAnal *anal, const RBinDwarfDie *all_dies,
 	}
 
 	r_vector_init (&base_type->enum_data.cases,
-		sizeof (RAnalEnumCase), enum_type_fini, NULL);
+		sizeof (RAnalEnumCase), enum_type_case_free, NULL);
 	RAnalEnumCase cas;
 	if (die->has_children) {
 		int child_depth = 1; // Direct children of the node
@@ -593,7 +593,7 @@ static void parse_enum_type(const RAnal *anal, const RBinDwarfDie *all_dies,
 				} else {
 					void *element = r_vector_push (&base_type->enum_data.cases, &cas);
 					if (!element) {
-						enum_type_fini (result, NULL);
+						enum_type_case_free (result, NULL);
 						goto cleanup;
 					}
 				}

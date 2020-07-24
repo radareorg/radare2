@@ -7,9 +7,9 @@
 extern "C" {
 #endif
 
-R_IPI void enum_type_fini(void *e, void *user);
-R_IPI void struct_type_fini(void *e, void *user);
-R_IPI void union_type_fini(void *e, void *user);
+R_IPI void enum_type_case_free(void *e, void *user);
+R_IPI void struct_type_member_free(void *e, void *user);
+R_IPI void union_type_member_free(void *e, void *user);
 
 #ifdef __cplusplus
 }

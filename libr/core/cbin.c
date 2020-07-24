@@ -1063,7 +1063,7 @@ static int bin_dwarf(RCore *core, int mode) {
 }
 
 R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
-	R_PDB pdb = R_EMPTY;
+	RPdb pdb = R_EMPTY;
 
 	pdb.cb_printf = r_cons_printf;
 	if (!init_pdb_parser (&pdb, file)) {
