@@ -2179,6 +2179,12 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->family = R_ANAL_OP_FAMILY_CPU;
 	}
 
+	op->cond = cond_cs2r2 (insn->detail->arm64.cc);
+	if (op->cond == R_ANAL_COND_NV) {
+		op->type = R_ANAL_OP_TYPE_NOP;
+		return;
+	}
+
 	switch (insn->detail->arm64.cc) {
 	case ARM64_CC_GE:
 	case ARM64_CC_GT:
