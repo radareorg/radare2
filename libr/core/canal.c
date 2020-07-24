@@ -3370,16 +3370,22 @@ static RList *recurse_bb(RCore *core, ut64 addr, RAnalBlock *dest) {
 	return recurse (core, bb, dest);
 }
 
+#define REG_SET_SIZE R_ANAL_CC_MAXARG + 2
+
 typedef struct {
 	int count;
-	// self, error, arg
-	int reg_set[R_ANAL_CC_MAXARG + 2];
+	RPVector reg_set;
 	bool argonly;
 	RAnalFunction *fcn;
 	RCore *core;
 } BlockRecurseCtx;
 
-static bool anal_block_reg_access(RAnalBlock *bb, BlockRecurseCtx *ctx) {
+static bool anal_block_on_exit(RAnalBlock *bb, BlockRecurseCtx *ctx) {
+	r_pvector_pop (&ctx->reg_set);
+	return true;
+}
+
+static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 	if (r_cons_is_breaked ()) {
 		return false;
 	}
@@ -3389,6 +3395,10 @@ static bool anal_block_reg_access(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 	if (bb->size > ctx->core->anal->opt.bb_max_size) {
 		return true;
 	}
+	int *parent_reg_set = r_pvector_at (&ctx->reg_set, r_pvector_len (&ctx->reg_set) - 1);
+	int *reg_set = R_NEWS (int, REG_SET_SIZE);
+	memcpy (reg_set, parent_reg_set, REG_SET_SIZE * sizeof (int));
+	r_pvector_push (&ctx->reg_set, reg_set);
 	RCore *core = ctx->core;
 	RAnalFunction *fcn = ctx->fcn;
 	fcn->stack = bb->parent_stackptr;
@@ -3402,7 +3412,7 @@ static bool anal_block_reg_access(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 			//eprintf ("Cannot get op\n");
 			break;
 		}
-		r_anal_extract_rarg (core->anal, op, fcn, ctx->reg_set, &ctx->count);
+		r_anal_extract_rarg (core->anal, op, fcn, reg_set, &ctx->count);
 		if (!ctx->argonly) {
 			if (op->stackop == R_ANAL_STACK_INC) {
 				fcn->stack += op->stackptr;
@@ -3418,7 +3428,13 @@ static bool anal_block_reg_access(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 			break;
 		}
 		if (optype == R_ANAL_OP_TYPE_CALL) {
-			return false;
+			size_t i;
+			for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
+				reg_set[i] = 2;
+			}
+			if (ctx->argonly) {
+				return true;
+			}
 		}
 		pos += opsize;
 	}
@@ -3432,8 +3448,13 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 		return;
 	}
 	BlockRecurseCtx ctx = { 0, { 0 }, argonly, fcn, core };
+	r_pvector_init (&ctx.reg_set, free);
+	int *reg_set = R_NEWS0 (int, REG_SET_SIZE);
+	r_pvector_push (&ctx.reg_set, reg_set);
 	int saved_stack = fcn->stack;
-	r_anal_block_recurse_followthrough (r_anal_get_block_at (fcn->anal, fcn->addr), (RAnalBlockCb)anal_block_reg_access, &ctx);
+	RAnalBlock *first_bb = r_anal_get_block_at (fcn->anal, fcn->addr);
+	r_anal_block_recurse_depth_first (first_bb, (RAnalBlockCb)anal_block_cb, (RAnalBlockCb)anal_block_on_exit, &ctx);
+	r_pvector_fini (&ctx.reg_set);
 	fcn->stack = saved_stack;
 }
 
