@@ -8,8 +8,6 @@ CFLAGS+=-pie
 endif
 CFLAGS+=-I$(LTOP)/include
 
-include ../../shlr/sdb.mk
-
 ifeq (${COMPILER},emscripten)
 LINK+=$(SHLR)/libr_shlr.a
 LINK+=$(SHLR)/sdb/src/libsdb.a

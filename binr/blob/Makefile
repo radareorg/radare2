@@ -92,7 +92,7 @@ build:
 		rm -f _$${FILE} ; \
 	done
 	rm -f _*
-	${CC} -I$(SHLR)/sdb/src -o radare2 ${SOURCES} ${CFLAGS} ${LDFLAGS}
+	${CC} -o radare2 ${SOURCES} ${CFLAGS} ${LDFLAGS}
 	mv main.c main.k
 	rm -f *.[ch]
 	mv main.k main.c
