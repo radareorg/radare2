@@ -289,7 +289,7 @@ jobs:
   build-osx-pkg:
     name: Build OSX package
     runs-on: macos-latest
-    if: github.event_name == 'push' && contains(github.ref, 'release-')
+    if: contains(github.ref, 'osx') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     steps:
     - uses: actions/checkout@v2
@@ -361,7 +361,7 @@ jobs:
   build-ios-cydia:
     name: Build iOS Cydia packages
     runs-on: macos-latest
-    if: github.event_name == 'push' && contains(github.ref, 'release-')
+    if: contains(github.ref, 'ios') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     steps:
     - uses: actions/checkout@v2
@@ -389,7 +389,7 @@ jobs:
   build-android:
     name: Build Android ${{ matrix.name }} package
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && contains(github.ref, 'release-')
+    if: contains(github.ref, 'android') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     strategy:
       fail-fast: false
