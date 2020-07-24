@@ -937,7 +937,7 @@ R_API RAnalClassErr r_anal_class_vtable_delete(RAnal *anal, const char *class_na
 // ---- PRINT ----
 
 
-static void r_anal_class_print(RAnal *anal, const char *class_name, bool lng) {
+R_API void r_anal_class_print(RAnal *anal, const char *class_name, bool detailed) {
 	r_cons_print (class_name);
 
 	RVector *bases = r_anal_class_base_get_all (anal, class_name);
@@ -959,7 +959,7 @@ static void r_anal_class_print(RAnal *anal, const char *class_name, bool lng) {
 	r_cons_print ("\n");
 
 
-	if (lng) {
+	if (detailed) {
 		RVector *vtables = r_anal_class_vtable_get_all (anal, class_name);
 		if (vtables) {
 			RAnalVTable *vtable;
@@ -1019,7 +1019,7 @@ static void r_anal_class_print_cmd(RAnal *anal, const char *class_name) {
 	}
 }
 
-static void r_anal_class_json(RAnal *anal, PJ *j, const char *class_name) {
+R_API void r_anal_class_json(RAnal *anal, PJ *j, const char *class_name) {
 	pj_o (j);
 	pj_ks (j, "name", class_name);
 

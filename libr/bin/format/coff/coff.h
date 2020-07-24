@@ -7,7 +7,7 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
-#include <sdb/ht_up.h>
+#include <ht_up.h>
 
 #define COFF_IS_BIG_ENDIAN 1
 #define COFF_IS_LITTLE_ENDIAN 0

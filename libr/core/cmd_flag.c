@@ -768,11 +768,11 @@ rep:
 			break;
 		case ' ':
 			{
-				const int ASCII_MAX = 127;
-				if (atoi (input+1) + ASCII_MAX + 1 < UT8_MAX) {
-					const char *arg = strchr (input+2, ' ');
+				const int n = atoi (input + 1);
+				if (n + ST8_MAX + 1 < UT8_MAX) {
+					const char *arg = strchr (input + 2, ' ');
 					ut64 addr = arg? r_num_math (core->num, arg): core->offset;
-					r_core_visual_mark_set (core, atoi (input+1) + ASCII_MAX + 1, addr);
+					r_core_visual_mark_set (core, n + ST8_MAX + 1, addr);
 				}
 			}
 			break;
@@ -806,7 +806,7 @@ rep:
 				ut64 from, to, mask = 0xffff;
 				int ret;
 				if (p) {
-					char *q = strchr (p+1, ' ');
+					char *q = strchr (p + 1, ' ');
 					*p = 0;
 					if (q) {
 						*q = 0;

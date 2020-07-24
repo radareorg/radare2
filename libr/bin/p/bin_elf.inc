@@ -9,7 +9,7 @@
 #include <r_cons.h>
 #include "../i/private.h"
 #include "elf/elf.h"
-#include <sdb/ht_uu.h>
+#include <ht_uu.h>
 
 static RBinInfo* info(RBinFile *bf);
 
@@ -687,7 +687,7 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 	#undef ADD
 
 	free (r);
-	return 0;
+	return NULL;
 }
 
 static RList* relocs(RBinFile *bf) {

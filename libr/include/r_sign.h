@@ -97,6 +97,7 @@ typedef struct {
 R_API bool r_sign_add_bytes(RAnal *a, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask);
 R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *bytes, ut64 at);
 R_API bool r_sign_add_graph(RAnal *a, const char *name, RSignGraph graph);
+R_API bool r_sign_addto_item(RAnal *a, RSignItem *it, RAnalFunction *fcn, RSignType type);
 R_API bool r_sign_add_addr(RAnal *a, const char *name, ut64 addr);
 R_API bool r_sign_add_name(RAnal *a, const char *name, const char *realname);
 R_API bool r_sign_add_comment(RAnal *a, const char *name, const char *comment);
@@ -129,6 +130,7 @@ R_API bool r_sign_load(RAnal *a, const char *file);
 R_API bool r_sign_load_gz(RAnal *a, const char *filename);
 R_API char *r_sign_path(RAnal *a, const char *file);
 R_API bool r_sign_save(RAnal *a, const char *file);
+R_API bool r_sign_anal_additem(RAnal *a, RSignItem *it);
 
 R_API RSignItem *r_sign_item_new(void);
 R_API RSignItem *r_sign_item_dup(RSignItem *it);
@@ -144,7 +146,7 @@ R_API int r_sign_is_flirt(RBuffer *buf);
 R_API void r_sign_flirt_dump(const RAnal *anal, const char *flirt_file);
 R_API void r_sign_flirt_scan(RAnal *anal, const char *flirt_file);
 
-R_API RList *r_sign_find_closest_sig(RAnal *a, RAnalFunction *fcn, int count, double score_threshold);
+R_API RList *r_sign_find_closest_sig(RAnal *a, RSignItem *it, int count, double score_threshold);
 R_API void r_sign_close_match_free(RSignCloseMatch *match);
 R_API bool r_sign_diff(RAnal *a, RSignOptions *options, const char *other_space_name);
 R_API bool r_sign_diff_by_name(RAnal *a, RSignOptions *options, const char *other_space_name, bool not_matching);

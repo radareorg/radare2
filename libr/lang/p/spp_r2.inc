@@ -35,25 +35,24 @@ static TAG_CALLBACK(spp_r2_set) {
 }
 
 static TAG_CALLBACK(spp_r2_get) {
-	char *var;
 	if (!state->echo[state->ifl]) {
 		return 0;
 	}
-	var = spp_r2_var_get (buf);
+	char *var = spp_r2_var_get (buf);
 	if (var) {
 		r_cons_printf ("%s", var);
+		free (var);
 	}
 	return 0;
 }
 
 static TAG_CALLBACK(spp_r2_getrandom) {
-	int max;
 	if (!state->echo[state->ifl]) {
 		return 0;
 	}
 	// XXX srsly? this is pretty bad random
 	srandom (r_sys_getpid ()); // TODO: change this to be portable
-	max = atoi (buf);
+	int max = atoi (buf);
 	if (max > 0) {
 		max = (int)(rand () % max);
 	}
@@ -62,23 +61,24 @@ static TAG_CALLBACK(spp_r2_getrandom) {
 }
 
 static TAG_CALLBACK(spp_r2_add) {
-	char res[32];
-	char *var, *eq = strchr (buf, ' ');
+	char *eq = strchr (buf, ' ');
 	int ret = 0;
 	if (!state->echo[state->ifl]) {
 		return 0;
 	}
 	if (eq) {
 		*eq = '\0';
-		var = spp_r2_var_get (buf);
+		char *var = spp_r2_var_get (buf);
 		if (var) {
 			ret = atoi (var);
 		}
 		ret += atoi (eq + 1);
+		char res[32];
 		snprintf (res, sizeof (res), "%d", ret);
 		r_sys_setenv (buf, res);
+		free (var);
 	} else {
-		/* syntax error */
+		eprintf ("/* syntax error */\n");
 	}
 	return 0;
 }
@@ -182,6 +182,7 @@ static TAG_CALLBACK(spp_r2_include) {
 static TAG_CALLBACK(spp_r2_if) {
 	char *var = spp_r2_var_get (buf);
 	state->echo[state->ifl + 1] = (var && *var != '0' && *var != '\0') ? 1 : 0;
+	free (var);
 	return 1;
 }
 
@@ -197,6 +198,7 @@ static TAG_CALLBACK(spp_r2_ifeq) {
 		} else {
 			state->echo[state->ifl + 1] = 0;
 		}
+		free (value);
 	} else {
 		value = spp_r2_var_get (buf);
 		if (!value || !*value) {
@@ -204,6 +206,7 @@ static TAG_CALLBACK(spp_r2_ifeq) {
 		} else {
 			state->echo[state->ifl + 1] = 0;
 		}
+		free (value);
 	}
 	return 1;
 }
@@ -309,9 +312,10 @@ static char *spp_r2_switch_str = NULL;
 static TAG_CALLBACK(spp_r2_switch) {
 	char *var = spp_r2_var_get (buf);
 	if (var) {
-		spp_r2_switch_str = strdup (var);
+		spp_r2_switch_str = var;
 	} else {
 		spp_r2_switch_str = strdup ("");
+		free (var);
 	}
 	return 1;
 }

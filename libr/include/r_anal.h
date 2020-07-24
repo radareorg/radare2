@@ -15,7 +15,7 @@
 #include <r_util.h>
 #include <r_bind.h>
 #include <r_syscall.h>
-#include <sdb/set.h>
+#include <set.h>
 #include <r_flag.h>
 #include <r_bin.h>
 
@@ -290,6 +290,7 @@ typedef struct r_anal_function_t {
 	ut64 addr;
 	RPVector vars;
 	HtUP/*<st64, RPVector<RAnalVar *>>*/ *inst_vars; // offset of instructions => the variables they access
+	ut64 reg_save_area; // size of stack area pre-reserved for saving registers 
 	st64 bp_off; // offset of bp inside owned stack frame
 	st64 stack;  // stack frame size
 	int maxstack;
@@ -361,6 +362,7 @@ typedef enum {
 	R_ANAL_OP_FAMILY_VIRT,   /* virtualization instructions */
 	R_ANAL_OP_FAMILY_PAC,    /* pointer authentication instructions */
 	R_ANAL_OP_FAMILY_IO,     /* IO instructions (i.e. IN/OUT) */
+	R_ANAL_OP_FAMILY_MTE,    /* Memory Tagging Extension instructions */
 	R_ANAL_OP_FAMILY_LAST
 } RAnalOpFamily;
 
@@ -794,6 +796,7 @@ typedef struct r_anal_var_t {
 R_DEPRECATE typedef struct r_anal_var_field_t {
 	char *name;
 	st64 delta;
+	bool field;
 } RAnalVarField;
 
 // mul*value+regbase+regidx+delta
@@ -1395,7 +1398,7 @@ R_API R_NULLABLE RList/*<RAnalBlock *>*/ *r_anal_block_shortest_path(RAnalBlock 
 
 // Add a case to the block's switch_op.
 // If block->switch_op is NULL, it will be created with the given switch_addr.
-R_API void r_anal_block_add_switch_case(RAnalBlock *block, ut64 switch_addr, ut64 case_addr);
+R_API void r_anal_block_add_switch_case(RAnalBlock *block, ut64 switch_addr, ut64 case_value, ut64 case_addr);
 
 // Chop off the block at the specified address and remove all destinations.
 // Blocks that have become unreachable after this operation will be automatically removed from all functions of block.
@@ -1634,6 +1637,7 @@ R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name);
 R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed);
 
 /* var.c */
+R_API R_OWN char *r_anal_function_autoname_var(RAnalFunction *fcn, char kind, const char *pfx, int ptr);
 R_API R_BORROW RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, R_NULLABLE const char *type, int size, bool isarg, R_NONNULL const char *name);
 R_API R_BORROW RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, int delta);
 R_API R_BORROW RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name);
@@ -1721,6 +1725,7 @@ R_API bool r_anal_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut6
 // TODO: should be renamed
 R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_addr, ut64 lea_addr, ut64 *table_size, ut64 *default_case);
 R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, ut64 ip, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0);
+R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, ut64 ip, ut64 jmptbl_loc, ut64 casetbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0);
 R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnalBlock *my_bb, ut64 *table_size, ut64 *default_case);
 R_API int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, ut64 ip, ut64 jmptbl_loc, ut64 sz, ut64 jmptbl_size, ut64 default_case, int ret0);
 
@@ -2041,6 +2046,8 @@ R_API RVector/*<RAnalVTable>*/ *r_anal_class_vtable_get_all(RAnal *anal, const c
 R_API RAnalClassErr r_anal_class_vtable_set(RAnal *anal, const char *class_name, RAnalVTable *vtable);
 R_API RAnalClassErr r_anal_class_vtable_delete(RAnal *anal, const char *class_name, const char *vtable_id);
 
+R_API void r_anal_class_print(RAnal *anal, const char *class_name, bool detailed);
+R_API void r_anal_class_json(RAnal *anal, PJ *j, const char *class_name);
 R_API void r_anal_class_list(RAnal *anal, int mode);
 R_API void r_anal_class_list_bases(RAnal *anal, const char *class_name);
 R_API void r_anal_class_list_vtables(RAnal *anal, const char *class_name);

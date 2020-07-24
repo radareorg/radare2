@@ -788,27 +788,28 @@ aa
 afv~var
 EOF
 EXPECT=<<EOF
-var int16_t var_54h @ sp+0x0
-var int16_t var_50h @ sp+0x4
-var int16_t var_4ch @ sp+0x8
-var int16_t var_48h @ sp+0xc
-var int16_t var_44h @ sp+0x10
-var int16_t var_40h @ sp+0x14
-var int16_t var_3ch @ sp+0x18
-var int16_t var_38h @ sp+0x1c
-var int16_t var_34h @ sp+0x20
-var int16_t var_30h @ sp+0x24
-var int16_t var_2ch @ sp+0x28
-var int16_t var_28h @ sp+0x2c
-var int16_t var_24h @ sp+0x30
-var int16_t var_20h @ sp+0x34
-var int16_t var_1ch @ sp+0x38
-var int16_t var_18h @ sp+0x3c
-var int16_t var_14h @ sp+0x40
-var int16_t var_10h @ sp+0x44
-var int16_t var_ch @ sp+0x48
-var int16_t var_8h @ sp+0x4c
-var int16_t var_4h @ sp+0x50
+var int16_t var_74h @ sp+0x0
+var int16_t var_70h @ sp+0x4
+var int16_t var_6ch @ sp+0x8
+var int16_t var_68h @ sp+0xc
+var int16_t var_64h @ sp+0x10
+var int16_t var_60h @ sp+0x14
+var int16_t var_5ch @ sp+0x18
+var int16_t var_58h @ sp+0x1c
+var int16_t var_54h @ sp+0x20
+var int16_t var_50h @ sp+0x24
+var int16_t var_4ch @ sp+0x28
+var int16_t var_48h @ sp+0x2c
+var int16_t var_44h @ sp+0x30
+var int16_t var_40h @ sp+0x34
+var int16_t var_3ch @ sp+0x38
+var int16_t var_38h @ sp+0x3c
+var int16_t var_34h @ sp+0x40
+var int16_t var_30h @ sp+0x44
+var int16_t var_2ch @ sp+0x48
+var int16_t var_28h @ sp+0x4c
+var int16_t var_24h @ sp+0x50
+var int16_t var_8h @ sp+0x6c
 EOF
 RUN
 
@@ -919,6 +920,8 @@ type: push
 cycles: 1
 esil: 8,sp,-=,lr,r3,2,sp,=[*]
 family: cpu
+stackop: inc
+stackptr: 8
 --
 address: 0x50e
 opcode: add r7, sp, 0
@@ -1067,5 +1070,19 @@ axt str.helloradareworld
 EOF
 EXPECT=<<EOF
 main 0xbf9c [DATA] add r0, pc
+EOF
+RUN
+
+NAME=thumb bx lr
+FILE=-
+CMDS=<<EOF
+wx 000090e50fe0a0e113ff2fe1000090e51eff2fe1
+e asm.arch=arm
+e asm.bits=32
+af
+afi~size
+EOF
+EXPECT=<<EOF
+size: 20
 EOF
 RUN

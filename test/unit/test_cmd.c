@@ -385,6 +385,34 @@ bool test_cmd_oldinput_help(void) {
 	mu_end;
 }
 
+bool test_remove_cmd(void) {
+	RCmd *cmd = r_cmd_new ();
+	RCmdDesc *root = r_cmd_get_root (cmd);
+	RCmdDesc *x_cd = r_cmd_desc_argv_new (cmd, root, "x", NULL, NULL);
+	RCmdDesc *p_cd = r_cmd_desc_argv_new (cmd, root, "p", NULL, NULL);
+	RCmdDesc *pd_cd = r_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler, NULL);
+	r_cmd_desc_argv_new (cmd, p_cd, "px", pd_handler, NULL);
+
+	mu_assert_ptreq (r_cmd_get_desc (cmd, "x"), x_cd, "x is found");
+	mu_assert_ptreq (r_cmd_get_desc (cmd, "pd"), pd_cd, "pd is found");
+	mu_assert_eq (root->n_children, 2, "root has 2 commands as children");
+	r_cmd_desc_remove (cmd, p_cd);
+	mu_assert_eq (root->n_children, 1, "p was removed, now root has 1 command as children");
+	mu_assert_null (r_cmd_get_desc (cmd, "p"), "p should not be found anymore");
+	mu_assert_null (r_cmd_get_desc (cmd, "pd"), "pd should not be found anymore");
+	mu_assert_null (r_cmd_get_desc (cmd, "px"), "px should not be found anymore");
+
+	void **it_cd;
+	r_cmd_desc_children_foreach (root, it_cd) {
+		RCmdDesc *cd = *it_cd;
+		mu_assert_ptrneq (cd, p_cd, "p should not be found anymore");
+	}
+
+	r_cmd_free (cmd);
+	r_cons_free ();
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test (test_parsed_args_noargs);
 	mu_run_test (test_parsed_args_onearg);
@@ -401,6 +429,7 @@ int all_tests() {
 	mu_run_test (test_cmd_help);
 	mu_run_test (test_cmd_group_help);
 	mu_run_test (test_cmd_oldinput_help);
+	mu_run_test (test_remove_cmd);
 	return tests_passed != tests_run;
 }
 

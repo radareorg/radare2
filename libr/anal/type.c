@@ -2,7 +2,7 @@
 
 #include <r_anal.h>
 #include <string.h>
-#include "sdb/sdb.h"
+#include <sdb.h>
 #include "base_types.h"
 
 static char *is_type(char *type) {

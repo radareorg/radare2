@@ -1740,6 +1740,7 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 				return true;
 			}
 		}
+		free (input);
 		return false;
 	}
 	free (input);
@@ -2630,7 +2631,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			if (*hash == '\\') {
 				hash++;
 				if (*hash == '#') {
-					hash++;
+					continue;
 				}
 			}
 			if (*hash == '#') {
@@ -6494,7 +6495,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(pipe_command) {
 	char *first_str = ts_node_sub_string (first_cmd, state->input);
 	char *second_str = ts_node_sub_string (second_cmd, state->input);
 	int value = state->core->num->value;
-	RCmdStatus res = r_core_cmd_pipe (state->core, first_str, second_str);
+	RCmdStatus res = int2cmdstatus (r_core_cmd_pipe (state->core, first_str, second_str));
 	state->core->num->value = value;
 	free (first_str);
 	free (second_str);

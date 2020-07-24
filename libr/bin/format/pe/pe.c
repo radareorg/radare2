@@ -8,7 +8,7 @@
 #include <r_util.h>
 #include "pe.h"
 #include <time.h>
-#include <sdb/ht_uu.h>
+#include <ht_uu.h>
 
 #define PE_IMAGE_FILE_MACHINE_RPI2 452
 #define MAX_METADATA_STRING_LENGTH 256

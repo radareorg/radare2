@@ -109,7 +109,8 @@ static const char *help_msg_abt[] = {
 
 static const char *help_msg_ac[] = {
 	"Usage:", "ac", "anal classes commands",
-	"acl[lj*]", "", "list all classes",
+	"acl[j*]", "", "list all classes",
+	"acll[j]", " (class_name)", "list all or single class detailed",
 	"ac", " [class name]", "add class",
 	"ac-", " [class name]", "delete class",
 	"acn", " [class name] [new class name]", "rename class",
@@ -2404,7 +2405,7 @@ static bool anal_bb_edge (RCore *core, const char *input) {
 		ut64 case_addr = r_num_math (core->num, sp);
 		RList *blocks = r_anal_get_blocks_in (core->anal, switch_addr);
 		if (blocks && !r_list_empty (blocks)) {
-			r_anal_block_add_switch_case (r_list_first (blocks), switch_addr, case_addr);
+			r_anal_block_add_switch_case (r_list_first (blocks), switch_addr, 0, case_addr);
 			ret = true;
 		}
 		r_list_free (blocks);
@@ -7119,6 +7120,17 @@ static void cmd_anal_ucall_ref (RCore *core, ut64 addr) {
 	}
 }
 
+static char *get_op_ireg(void *user, ut64 addr) {
+	RCore *core = (RCore *)user;
+	char *res = NULL;
+	RAnalOp *op = r_core_anal_op (core, addr, 0);
+	if (op && op->ireg) {
+		res = strdup (op->ireg);
+	}
+	r_anal_op_free (op);
+	return res;
+}
+
 static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, bool color) {
 	int has_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	char str[512];
@@ -7141,6 +7153,9 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	char *ba = malloc (ba_len);
 	strcpy (ba, r_strbuf_get (&asmop.buf_asm));
 	if (asm_varsub) {
+		core->parser->get_ptr_at = r_anal_function_get_var_stackptr_at;
+		core->parser->get_reg_at = r_anal_function_get_var_reg_at;
+		core->parser->get_op_ireg = get_op_ireg;
 		r_parse_varsub (core->parser, fcn, addr, asmop.size,
 				ba, ba, sizeof (asmop.buf_asm));
 	}
@@ -9045,6 +9060,16 @@ static bool is_unknown_file(RCore *core) {
 	return true;
 }
 
+static bool is_apple_target(RCore *core) {
+	const char *arch = r_config_get (core->config, "asm.arch");
+	if (!strstr (arch, "ppc") && !strstr (arch, "arm") && !strstr (arch, "x86")) {
+		return false;
+	}
+	RBinObject *bo = r_bin_cur_object (core->bin);
+	r_return_val_if_fail (!bo || (bo->plugin && bo->plugin->name), false);
+	return bo? strstr (bo->plugin->name, "mach"): false;
+}
+
 static int cmd_anal_all(RCore *core, const char *input) {
 	switch (*input) {
 	case '?':
@@ -9246,9 +9271,11 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
-				oldstr = r_print_rowlog (core->print, "Check for objc references");
-				r_print_rowlog_done (core->print, oldstr);
-				cmd_anal_objc (core, input + 1, true);
+				if (is_apple_target (core)) {
+					oldstr = r_print_rowlog (core->print, "Check for objc references");
+					r_print_rowlog_done (core->print, oldstr);
+					cmd_anal_objc (core, input + 1, true);
+				}
 				r_core_task_yield (&core->tasks);
 				oldstr = r_print_rowlog (core->print, "Check for vtables");
 				r_core_cmd0 (core, "avrr");
@@ -9383,7 +9410,12 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 'e': // "aae"
 		if (input[1] == 'f') { // "aaef
-			r_core_cmd0 (core, "aef@@@F");
+			RListIter *it;
+			RAnalFunction *fcn;
+			r_list_foreach (core->anal->fcns, it, fcn) {
+				r_core_seek (core, fcn->addr, true);
+				r_core_anal_esil (core, "f", NULL);
+			}
 		} else if (input[1] == ' ') {
 			const char *len = (char *)input + 1;
 			char *addr = strchr (input + 2, ' ');
@@ -9793,6 +9825,33 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 static void cmd_anal_classes(RCore *core, const char *input) {
 	switch (input[0]) {
 	case 'l': // "acl"
+		if (input[1] == 'l') { // "acll" (name)
+			char mode = 0;
+			int arg_offset = 2;
+			if (input[2] == 'j') {
+				arg_offset++;
+				mode = 'j';
+			}
+			const char *arg = r_str_trim_head_ro (input + arg_offset);
+			if (*arg) { // if there is an argument
+				char *class_name = strdup (arg);
+				if (!class_name) {
+					break;
+				}
+				char *name_end = (char *)r_str_trim_head_wp (class_name);
+				*name_end = 0; // trim the whitespace around the name
+				if (mode == 'j') {
+					PJ *pj = pj_new ();
+					r_anal_class_json (core->anal, pj, class_name);
+					r_cons_printf ("%s\n", pj_string (pj));
+					pj_free (pj);
+				} else {
+					r_anal_class_print (core->anal, class_name, true);
+				}
+				free (class_name);
+				break;
+			}
+		}
 		r_anal_class_list (core->anal, input[1]);
 		break;
 	case ' ': // "ac"

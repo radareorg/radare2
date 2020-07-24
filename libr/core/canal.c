@@ -5,7 +5,7 @@
 #include <r_flag.h>
 #include <r_core.h>
 #include <r_bin.h>
-#include <sdb/ht_uu.h>
+#include <ht_uu.h>
 
 #include <string.h>
 
@@ -253,7 +253,7 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 		types |= R_ANAL_ADDR_TYPE_FUNC;
 	}
 	// check registers
-	if (core->io && core->io->debug && core->dbg) { // TODO: if cfg.debug here
+	if (core->bin && core->bin->is_debugger && core->dbg) { // TODO: if cfg.debug here
 		RDebugMap *map;
 		RListIter *iter;
 		// use 'dm'
@@ -770,6 +770,7 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 		return false;
 	}
 	fcn->cc = r_str_constpool_get (&core->anal->constpool, r_anal_cc_default (core->anal));
+	r_warn_if_fail (!core->anal->sdb_cc->path || fcn->cc);
 	hint = r_anal_hint_get (core->anal, at);
 	if (hint && hint->bits == 16) {
 		// expand 16bit for function
@@ -2289,7 +2290,7 @@ R_API void r_core_anal_importxrefs(RCore *core) {
 	RBinInfo *info = r_bin_get_info (core->bin);
 	RBinObject *obj = r_bin_cur_object (core->bin);
 	bool lit = info ? info->has_lit: false;
-	int va = core->io->va || core->io->debug;
+	bool va = core->io->va || core->bin->is_debugger;
 
 	RListIter *iter;
 	RBinImport *imp;
@@ -4616,8 +4617,63 @@ static bool myvalid(RIO *io, ut64 addr) {
 	return true;
 }
 
+typedef struct {
+	RAnalOp *op;
+	RAnalFunction *fcn;
+	const char *spname;
+	ut64 initial_sp;
+} EsilBreakCtx;
+
+static const char *reg_name_for_access(RAnalOp* op, RAnalVarAccessType type) {
+	if (type == R_ANAL_VAR_ACCESS_TYPE_READ) {
+		if (op->src[0] && op->src[0]->reg) {
+			return op->src[0]->reg->name;
+		}
+	} else if (op->dst && op->dst->reg) {
+		return op->dst->reg->name;
+	}
+	return NULL;
+}
+
+static ut64 delta_for_access(RAnalOp *op, RAnalVarAccessType type) {
+	if (type == R_ANAL_VAR_ACCESS_TYPE_READ) {
+		if (op->src[0]) {
+			return op->src[0]->delta;
+		}
+	} else if (op->dst) {
+		return op->dst->delta;
+	}
+	return 0;
+}
+
+static void handle_var_stack_access(RAnalEsil *esil, ut64 addr, RAnalVarAccessType type, int len) {
+	EsilBreakCtx *ctx = esil->user;
+	const char *regname = reg_name_for_access (ctx->op, type);
+	if (ctx->fcn && regname) {
+		ut64 spaddr = r_reg_getv (esil->anal->reg, ctx->spname);
+		if (addr > spaddr && addr <= ctx->initial_sp) {
+			int stack_off = addr - ctx->initial_sp;
+			RAnalVar *var = r_anal_function_get_var (ctx->fcn, R_ANAL_VAR_KIND_SPV, stack_off);
+			if (!var) {
+				var = r_anal_function_get_var (ctx->fcn, R_ANAL_VAR_KIND_BPV, stack_off);
+			}
+			if (!var && stack_off > -ctx->fcn->maxstack) {
+				char *varname;
+				varname = ctx->fcn->anal->opt.varname_stack
+					? r_str_newf ("var_%xh", R_ABS (stack_off))
+					: r_anal_function_autoname_var (ctx->fcn, R_ANAL_VAR_KIND_SPV, "var", delta_for_access (ctx->op, type));
+				var = r_anal_function_set_var (ctx->fcn, stack_off, R_ANAL_VAR_KIND_SPV, NULL, len, false, varname);
+				free (varname);
+			}
+			if (var) {
+				r_anal_var_set_access (var, regname, ctx->op->addr, type, delta_for_access (ctx->op, type));
+			}
+		}
+	}
+}
+
 static int esilbreak_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
-	/* do nothing */
+	handle_var_stack_access (esil, addr, R_ANAL_VAR_ACCESS_TYPE_WRITE, len);
 	return 1;
 }
 
@@ -4633,6 +4689,7 @@ static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	if (addr != UT64_MAX) {
 		esilbreak_last_read = addr;
 	}
+	handle_var_stack_access (esil, addr, R_ANAL_VAR_ACCESS_TYPE_READ, len);
 	if (myvalid (mycore->io, addr) && r_io_read_at (mycore->io, addr, (ut8*)buf, len)) {
 		ut64 refptr;
 		bool trace = true;
@@ -4683,7 +4740,11 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 		return 0;
 	}
 	RAnal *anal = esil->anal;
-	RAnalOp *op = esil->user;
+	EsilBreakCtx *ctx = esil->user;
+	RAnalOp *op = ctx->op;
+	if (op->type == R_ANAL_OP_TYPE_LEA) {
+		handle_var_stack_access (esil, *val, R_ANAL_VAR_ACCESS_TYPE_READ, esil->anal->bits / 8);
+	}
 	RCore *core = anal->coreb.core;
 	//specific case to handle blx/bx cases in arm through emulation
 	// XXX this thing creates a lot of false positives
@@ -4820,6 +4881,90 @@ static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 	free (buf);
 }
 
+typedef struct {
+	ut64 start_addr;
+	ut64 end_addr;
+	RAnalFunction *fcn;
+	RAnalBlock *cur_bb;
+	RList *bbl, *path, *switch_path;
+} IterCtx;
+
+static int find_bb(ut64 *addr, RAnalBlock *bb) {
+	return *addr != bb->addr;
+}
+
+static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
+	(*next_i)++;
+	ut64 cur_addr = *next_i + ctx->start_addr;
+	if (ctx->fcn) {
+		if (!ctx->cur_bb) {
+			ctx->path = r_list_new ();
+			ctx->switch_path = r_list_new ();
+			ctx->bbl = r_list_clone (ctx->fcn->bbs);
+			ctx->cur_bb = r_anal_get_block_at (ctx->fcn->anal, ctx->fcn->addr);
+			r_list_push (ctx->path, ctx->cur_bb);
+		}
+		RAnalBlock *bb = ctx->cur_bb;
+		if (cur_addr >= bb->addr + bb->size) {
+			r_reg_arena_push (ctx->fcn->anal->reg);
+			RListIter *bbit = NULL;
+			if (bb->switch_op) {
+				RAnalCaseOp *cop = r_list_first (bb->switch_op->cases);
+				bbit = r_list_find (ctx->bbl, &cop->jump, (RListComparator)find_bb);
+				if (bbit) {
+					r_list_push (ctx->switch_path, bb->switch_op->cases->head);
+				}
+			} else {
+				bbit = r_list_find (ctx->bbl, &bb->jump, (RListComparator)find_bb);
+				if (!bbit && bb->fail != UT64_MAX) {
+					bbit = r_list_find (ctx->bbl, &bb->fail, (RListComparator)find_bb);
+				}
+			}
+			if (!bbit) {
+				RListIter *cop_it = r_list_last (ctx->switch_path);
+				RAnalBlock *prev_bb = NULL;
+				do {
+					r_reg_arena_pop (ctx->fcn->anal->reg);
+					prev_bb = r_list_pop (ctx->path);
+					if (prev_bb->fail != UT64_MAX) {
+						bbit = r_list_find (ctx->bbl, &prev_bb->fail, (RListComparator)find_bb);
+						if (bbit) {
+							r_list_push (ctx->path, prev_bb);
+						}
+					}
+					if (!bbit && cop_it) {
+						RAnalCaseOp *cop = cop_it->data;
+						if (cop->jump == prev_bb->addr && cop_it->n) {
+							cop = cop_it->n->data;
+							r_list_pop (ctx->switch_path);
+							r_list_push (ctx->switch_path, cop_it->n);
+							cop_it = cop_it->n;
+							bbit = r_list_find (ctx->bbl, &cop->jump, (RListComparator)find_bb);
+						}
+					}
+					if (cop_it && !cop_it->n) {
+						r_list_pop (ctx->switch_path);
+						cop_it = r_list_last (ctx->switch_path);
+					}
+				} while (!bbit && !r_list_empty (ctx->path));
+			}
+			if (!bbit) {
+				r_list_free (ctx->path);
+				r_list_free (ctx->switch_path);
+				r_list_free (ctx->bbl);
+				return false;
+			}
+			ctx->cur_bb = bbit->data;
+			r_list_push (ctx->path, ctx->cur_bb);
+			r_list_delete (ctx->bbl, bbit);
+			*next_i = ctx->cur_bb->addr - ctx->start_addr;
+		}
+	} else if (cur_addr > ctx->end_addr) {
+		return false;
+	}
+	return true;
+}
+
 R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
 	bool emu_lazy = r_config_get_i (core->config, "emu.lazy");
@@ -4830,10 +4975,11 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	RAnalOp op = R_EMPTY;
 	ut8 *buf = NULL;
 	bool end_address_set = false;
-	int i, iend;
+	int iend;
 	int minopsize = 4; // XXX this depends on asm->mininstrsize
 	bool archIsArm = false;
 	ut64 addr = core->offset;
+	ut64 start = addr;
 	ut64 end = 0LL;
 	ut64 cur;
 
@@ -4861,9 +5007,11 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		ntarget = UT64_MAX;
 		refptr = 0LL;
 	}
+	RAnalFunction *fcn = NULL;
 	if (!strcmp (str, "f")) {
-		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+		fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 		if (fcn) {
+			start = r_anal_function_min_addr (fcn);
 			addr = fcn->addr;
 			end = r_anal_function_max_addr (fcn);
 			end_address_set = true;
@@ -4883,7 +5031,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		}
 	}
 
-	iend = end - addr;
+	iend = end - start;
 	if (iend < 0) {
 		return;
 	}
@@ -4891,13 +5039,13 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		eprintf ("Warning: Not going to analyze 0x%08"PFMT64x" bytes.\n", (ut64)iend);
 		return;
 	}
-	buf = malloc (iend + 2);
+	buf = malloc ((size_t)iend + 2);
 	if (!buf) {
 		perror ("malloc");
 		return;
 	}
 	esilbreak_last_read = UT64_MAX;
-	r_io_read_at (core->io, addr, buf, iend + 1);
+	r_io_read_at (core->io, start, buf, iend + 1);
 	if (!ESIL) {
 		r_core_cmd0 (core, "aei");
 		ESIL = core->anal->esil;
@@ -4905,12 +5053,23 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			eprintf ("ESIL not initialized\n");
 			return;
 		}
+		r_core_cmd0 (core, "aeim");
 	}
+	EsilBreakCtx ctx = {
+		&op,
+		fcn,
+		r_reg_get_name (core->anal->reg, R_REG_NAME_SP),
+		r_reg_getv (core->anal->reg, ctx.spname)
+	};
 	ESIL->cb.hook_reg_write = &esilbreak_reg_write;
 	//this is necessary for the hook to read the id of analop
-	ESIL->user = &op;
+	ESIL->user = &ctx;
 	ESIL->cb.hook_mem_read = &esilbreak_mem_read;
 	ESIL->cb.hook_mem_write = &esilbreak_mem_write;
+
+	if (fcn && fcn->reg_save_area) {
+		r_reg_setv (core->anal->reg, ctx.spname, ctx.initial_sp - fcn->reg_save_area);
+	}
 	//eprintf ("Analyzing ESIL refs from 0x%"PFMT64x" - 0x%"PFMT64x"\n", addr, end);
 	// TODO: backup/restore register state before/after analysis
 	pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
@@ -4942,18 +5101,15 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	if (!sn) {
 		eprintf ("Warning: No SN reg alias for current architecture.\n");
 	}
-	int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	r_reg_arena_push (core->anal->reg);
-	for (i = 0; i < iend; i++) {
-repeat:
-		// double check to avoid infinite loop from the goto repeat
-		if (i + mininstrsz >= iend) {
-			break;
-		}
+
+	IterCtx ictx = { start, end, fcn, NULL};
+	size_t i = addr - start;
+	do {
 		if (esil_anal_stop || r_cons_is_breaked ()) {
 			break;
 		}
-		cur = addr + i;
+		cur = start + i;
 		if (!r_io_is_valid_offset (core->io, cur, 0)) {
 			break;
 		}
@@ -5212,8 +5368,13 @@ repeat:
 			break;
 		}
 		r_anal_esil_stack_free (ESIL);
-	}
+repeat:;
+	} while (get_next_i (&ictx, &i));
 	free (buf);
+	ESIL->cb.hook_mem_read = NULL;
+	ESIL->cb.hook_mem_write = NULL;
+	ESIL->cb.hook_reg_write = NULL;
+	ESIL->user = NULL;
 	r_anal_op_fini (&op);
 	r_cons_break_pop ();
 	// restore register

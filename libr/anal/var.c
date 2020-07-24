@@ -522,6 +522,7 @@ static bool var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, RList *list
 			RAnalVarField *field = R_NEW0 (RAnalVarField);
 			field->name = new_name;
 			field->delta = av->delta + field_offset;
+			field->field = true;
 			r_list_append (list, field);
 			free (field_type);
 			free (field_key);
@@ -545,7 +546,7 @@ static const char *get_regname(RAnal *anal, RAnalValue *value) {
 	return name;
 }
 
-static char *get_varname(RAnalFunction *fcn, char kind, const char *pfx, int ptr) {
+R_API R_OWN char *r_anal_function_autoname_var(RAnalFunction *fcn, char kind, const char *pfx, int ptr) {
 	void **it;
 	const ut32 uptr = R_ABS (ptr);
 	char *varname = r_str_newf ("%s_%xh", pfx, uptr);
@@ -712,7 +713,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			if (anal->opt.varname_stack) {
 				varname = r_str_newf ("%s_%xh", pfx, R_ABS (frame_off));
 			} else {
-				varname = get_varname (fcn, type, pfx, ptr);
+				varname = r_anal_function_autoname_var (fcn, type, pfx, ptr);
 			}
 		}
 		if (varname) {
@@ -732,7 +733,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 		char *varname = anal->opt.varname_stack
 			? r_str_newf ("%s_%xh", VARPREFIX, R_ABS (frame_off))
-			: get_varname (fcn, type, VARPREFIX, -ptr);
+			: r_anal_function_autoname_var (fcn, type, VARPREFIX, -ptr);
 		if (varname) {
 			RAnalVar *var = r_anal_function_set_var (fcn, frame_off, type, NULL, anal->bits / 8, false, varname);
 			if (var) {

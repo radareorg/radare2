@@ -30,6 +30,34 @@ static bool cmd_desc_set_parent(RCmdDesc *cd, RCmdDesc *parent) {
 	return true;
 }
 
+static void cmd_desc_unset_parent(RCmdDesc *cd) {
+	r_return_if_fail (cd && cd->parent);
+	RCmdDesc *parent = cd->parent;
+	r_pvector_remove_data (&parent->children, cd);
+	parent->n_children--;
+	cd->parent = NULL;
+}
+
+static void cmd_desc_remove_from_ht_cmds(RCmd *cmd, RCmdDesc *cd) {
+	void **it_cd;
+	bool res = ht_pp_delete (cmd->ht_cmds, cd->name);
+	r_return_if_fail (res);
+	r_cmd_desc_children_foreach (cd, it_cd) {
+		RCmdDesc *child_cd = *it_cd;
+		cmd_desc_remove_from_ht_cmds (cmd, child_cd);
+	}
+}
+
+static void cmd_desc_free(RCmdDesc *cd) {
+	if (!cd) {
+		return;
+	}
+
+	r_pvector_clear (&cd->children);
+	free (cd->name);
+	free (cd);
+}
+
 static RCmdDesc *create_cmd_desc(RCmd *cmd, RCmdDesc *parent, RCmdDescType type, const char *name, const RCmdDescHelp *help) {
 	RCmdDesc *res = R_NEW0 (RCmdDesc);
 	if (!res) {
@@ -42,14 +70,14 @@ static RCmdDesc *create_cmd_desc(RCmd *cmd, RCmdDesc *parent, RCmdDescType type,
 	}
 	res->n_children = 0;
 	res->help = help? help: &not_defined_help;
-	r_pvector_init (&res->children, (RPVectorFree)r_cmd_desc_free);
+	r_pvector_init (&res->children, (RPVectorFree)cmd_desc_free);
 	if (!ht_pp_insert (cmd->ht_cmds, name, res)) {
 		goto err;
 	}
 	cmd_desc_set_parent (res, parent);
 	return res;
 err:
-	r_cmd_desc_free (res);
+	cmd_desc_free (res);
 	return NULL;
 }
 
@@ -97,7 +125,7 @@ R_API RCmd *r_cmd_free(RCmd *cmd) {
 			R_FREE (cmd->cmds[i]);
 		}
 	}
-	r_cmd_desc_free (cmd->root_cmd_desc);
+	cmd_desc_free (cmd->root_cmd_desc);
 	free (cmd);
 	return NULL;
 }
@@ -1132,17 +1160,17 @@ R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char 
 	return res;
 }
 
-R_API void r_cmd_desc_free(RCmdDesc *cd) {
-	if (!cd) {
-		return;
-	}
-
-	r_pvector_clear (&cd->children);
-	free (cd->name);
-	free (cd);
-}
-
 R_API RCmdDesc *r_cmd_desc_parent(RCmdDesc *cd) {
 	r_return_val_if_fail (cd, NULL);
 	return cd->parent;
+}
+
+R_API bool r_cmd_desc_remove(RCmd *cmd, RCmdDesc *cd) {
+	r_return_val_if_fail (cmd && cd, false);
+	if (cd->parent) {
+		cmd_desc_unset_parent (cd);
+	}
+	cmd_desc_remove_from_ht_cmds (cmd, cd);
+	cmd_desc_free (cd);
+	return true;
 }

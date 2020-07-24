@@ -1124,7 +1124,6 @@ static bool cb_cfgdebug(void *user, void *data) {
 	}
 	if (core->io) {
 		core->io->va = !node->i_value;
-		core->io->debug = node->i_value;
 	}
 	if (core->dbg && node->i_value) {
 		const char *dbgbackend = r_config_get (core->config, "dbg.backend");
@@ -1155,11 +1154,10 @@ static bool cb_dirhome(void *user, void *data) {
 	return true;
 }
 
-static bool cb_dirtmp (void *user, void *data) {
-	RConfigNode *node = (RConfigNode*) data;
-	if (node->value) {
-		r_sys_setenv (R_SYS_TMP, node->value);
-	}
+static bool cb_dirtmp(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *)data;
+	char *value = R_STR_ISNOTEMPTY (node->value)? node->value: NULL;
+	r_sys_setenv (R_SYS_TMP, value);
 	return true;
 }
 
@@ -1369,7 +1367,7 @@ static bool cb_dbg_forks(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->dbg->trace_forks = node->i_value;
-	if (core->io->debug) {
+	if (core->bin->is_debugger) {
 		r_debug_attach (core->dbg, core->dbg->pid);
 	}
 	return true;
@@ -1408,7 +1406,7 @@ static bool cb_dbg_execs(void *user, void *data) {
 #if __linux__
 	RCore *core = (RCore*) user;
 	core->dbg->trace_execs = node->i_value;
-	if (core->io->debug) {
+	if (core->bin->is_debugger) {
 		r_debug_attach (core->dbg, core->dbg->pid);
 	}
 #else
@@ -1423,7 +1421,7 @@ static bool cb_dbg_clone(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->dbg->trace_clone = node->i_value;
-	if (core->io->debug) {
+	if (core->bin->is_debugger) {
 		r_debug_attach (core->dbg, core->dbg->pid);
 	}
 	return true;
@@ -1440,7 +1438,7 @@ static bool cb_dbg_aftersc(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->dbg->trace_aftersyscall = node->i_value;
-	if (core->io->debug) {
+	if (core->bin->is_debugger) {
 		r_debug_attach (core->dbg, core->dbg->pid);
 	}
 	return true;
@@ -3413,8 +3411,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("hex.pairs", "true", &cb_hex_pairs, "Show bytes paired in 'px' hexdump");
 	SETCB ("hex.align", "false", &cb_hex_align, "Align hexdump with flag + flagsize");
 	SETCB ("hex.section", "false", &cb_hex_section, "Show section name before the offset");
-	SETCB ("io.unalloc", "false", &cb_io_unalloc, "Check each byte if it's allocated");
-	SETCB ("io.unalloc.ch", ".", &cb_io_unalloc_ch, "Hexdump char if byte is unallocated");
 	SETCB ("hex.compact", "false", &cb_hexcompact, "Show smallest 16 byte col hexdump (60 columns)");
 	SETCB ("cmd.hexcursor", "", &cb_cmd_hexcursor, "If set and cursor is enabled display given pf format string");
 	SETI ("hex.flagsz", 0, "If non zero, overrides the flag size in pxa");
@@ -3653,6 +3649,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("io.va", "true", &cb_iova, "Use virtual address layout");
 	SETCB ("io.pava", "false", &cb_io_pava, "Use EXPERIMENTAL paddr -> vaddr address mode");
 	SETCB ("io.autofd", "true", &cb_ioautofd, "Change fd when opening a new file");
+	SETCB ("io.unalloc", "false", &cb_io_unalloc, "Check each byte if it's allocated");
+	SETCB ("io.unalloc.ch", ".", &cb_io_unalloc_ch, "Char to display if byte is unallocated");
 
 	/* file */
 	SETPREF ("file.desc", "", "User defined file description (used by projects)");

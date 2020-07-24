@@ -196,6 +196,7 @@ pkgconfig_mod.generate(r_anal,
   version: r2_version,
   name: 'r_anal',
   filebase: 'r_anal',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util',
     'r_reg',

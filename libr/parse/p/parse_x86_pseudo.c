@@ -322,7 +322,9 @@ static inline void mk_reg_str(const char *regname, int delta, bool sign, bool at
 		if (ireg) {
 			r_strbuf_setf (sb, ", %%%s", ireg);
 		}
-		if (delta < 10) {
+		if (delta == 0) {
+			snprintf (dest, len - 1, "(%%%s%s)", regname, r_strbuf_get (sb));
+		} else if (delta < 10) {
 			snprintf (dest, len - 1, "%s%d(%%%s%s)", sign ? "" : "-", delta, regname, r_strbuf_get (sb));
 		} else {
 			snprintf (dest, len - 1, "%s0x%x(%%%s%s)", sign ? "" : "-", delta, regname, r_strbuf_get (sb));
@@ -331,7 +333,9 @@ static inline void mk_reg_str(const char *regname, int delta, bool sign, bool at
 		if (ireg) {
 			r_strbuf_setf (sb, " + %s", ireg);
 		}
-		if (delta < 10) {
+		if (delta == 0) {
+			snprintf (dest, len - 1, "%s%s", regname, r_strbuf_get (sb));
+		} else if (delta < 10) {
 			snprintf (dest, len - 1, "%s%s %c %d", regname, r_strbuf_get (sb), sign ? '+':'-', delta);
 		} else {
 			snprintf (dest, len - 1, "%s%s %c 0x%x", regname, r_strbuf_get (sb), sign ? '+':'-', delta);
@@ -340,7 +344,7 @@ static inline void mk_reg_str(const char *regname, int delta, bool sign, bool at
 	r_strbuf_free (sb);
 }
 
-static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	RList *bpargs, *spargs;
 	RAnal *anal = p->analb.anal;
 	RListIter *bpargiter, *spiter;
@@ -419,10 +423,18 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 	}
 	RAnalVarField *bparg, *sparg;
 	r_list_foreach (spargs, spiter, sparg) {
-		// assuming delta always positive?
-		int delta = sparg->delta;
-		if (p->get_ptr_at) {
-			delta = p->get_ptr_at (f, sparg->delta, addr);
+		char sign = '+';
+		st64 delta = p->get_ptr_at
+			? p->get_ptr_at (f, sparg->delta, addr)
+			: ST64_MAX;
+		if (delta == ST64_MAX && sparg->field) {
+			delta = sparg->delta;
+		} else if (delta == ST64_MAX) {
+			continue;
+		}
+		if (delta < 0) {
+			sign = '-';
+			delta = -delta;
 		}
 		const char *reg = NULL;
 		if (p->get_reg_at) {
@@ -431,14 +443,20 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 		if (!reg) {
 			reg = anal->reg->name[R_REG_NAME_SP];
 		}
-		mk_reg_str (reg, delta, true, att, ireg, oldstr, sizeof (oldstr));
+		mk_reg_str (reg, delta, sign == '+', att, ireg, oldstr, sizeof (oldstr));
 
 		if (ucase) {
 			r_str_case (oldstr, true);
 		}
-		parse_localvar (p, newstr, sizeof (newstr), sparg->name, reg, '+', ireg, att);
+		parse_localvar (p, newstr, sizeof (newstr), sparg->name, reg, sign, ireg, att);
 		char *ptr = strstr (tstr, oldstr);
 		if (ptr && (!att || *(ptr - 1) == ' ')) {
+			if (delta == 0) {
+				char *end = ptr + strlen (oldstr);
+				if (*end != ']' && *end != '\0') {
+					continue;
+				}
+			}
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);
 			break;
 		} else {
@@ -453,7 +471,14 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 	/* iterate over base pointer args/vars */
 	r_list_foreach (bpargs, bpargiter, bparg) {
 		char sign = '+';
-		int delta = bparg->delta + f->bp_off;
+		st64 delta = p->get_ptr_at
+			? p->get_ptr_at (f, bparg->delta, addr)
+			: ST64_MAX;
+		if (delta == ST64_MAX && bparg->field) {
+			delta = bparg->delta + f->bp_off;
+		} else if (delta == ST64_MAX) {
+			continue;
+		}
 		if (delta < 0) {
 			sign = '-';
 			delta = -delta;
@@ -465,13 +490,19 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 		if (!reg) {
 			reg = anal->reg->name[R_REG_NAME_BP];
 		}
-		mk_reg_str (reg, delta, sign=='+', att, ireg, oldstr, sizeof (oldstr));
+		mk_reg_str (reg, delta, sign == '+', att, ireg, oldstr, sizeof (oldstr));
 		if (ucase) {
 			r_str_case (oldstr, true);
 		}
 		parse_localvar (p, newstr, sizeof (newstr), bparg->name, reg, sign, ireg, att);
 		char *ptr = strstr (tstr, oldstr);
 		if (ptr && (!att || *(ptr - 1) == ' ')) {
+			if (delta == 0) {
+				char *end = ptr + strlen (oldstr);
+				if (*end != ']' && *end != '\0') {
+					continue;
+				}
+			}
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);
 			break;
 		} else {
@@ -483,7 +514,7 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 			}
 		}
 		// Try with no spaces
-		snprintf (oldstr, sizeof (oldstr) - 1, "[%s%c0x%x]", reg, sign, delta);
+		snprintf (oldstr, sizeof (oldstr) - 1, "[%s%c0x%x]", reg, sign, (int)delta);
 		if (strstr (tstr, oldstr) != NULL) {
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);
 			break;

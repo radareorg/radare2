@@ -115,6 +115,7 @@ pkgconfig_mod.generate(r_debug,
   version: r2_version,
   name: 'r_debug',
   filebase: 'r_debug',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util',
     'r_hash',
