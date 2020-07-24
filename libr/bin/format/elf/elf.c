@@ -671,7 +671,7 @@ static int init_dynamic_section(ELFOBJ *bin) {
 	}
 
 	dyn_size = dyn_phdr->p_filesz;
-	loaded_offset = Elf_(r_bin_elf_v2p_new) (bin, dyn_phdr->p_vaddr);
+	loaded_offset = Elf_(r_bin_elf_v2p) (bin, dyn_phdr->p_vaddr);
 	if (loaded_offset == UT64_MAX) {
 		return false;
 	}
@@ -683,7 +683,7 @@ static int init_dynamic_section(ELFOBJ *bin) {
 	fill_dynamic_entries (bin, loaded_offset, dyn_size);
 
 	if (bin->dyn_info.dt_strtab != ELF_ADDR_MAX) {
-		strtabaddr = Elf_(r_bin_elf_v2p_new) (bin, bin->dyn_info.dt_strtab);
+		strtabaddr = Elf_(r_bin_elf_v2p) (bin, bin->dyn_info.dt_strtab);
 	}
 
 	if (bin->dyn_info.dt_strsz > 0) {
@@ -1386,7 +1386,7 @@ static ut64 get_got_entry(ELFOBJ *bin, RBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
-	ut64 p_sym_got_addr = Elf_(r_bin_elf_v2p_new) (bin, rel->rva);
+	ut64 p_sym_got_addr = Elf_(r_bin_elf_v2p) (bin, rel->rva);
 	ut64 addr = BREADWORD (bin->b, p_sym_got_addr);
 
 	return (!addr || addr == WORD_MAX) ? UT64_MAX : addr;
@@ -1438,7 +1438,7 @@ static ut64 get_import_addr_mips(ELFOBJ *bin, RBinElfReloc *rel) {
 
 	ut8 buf[1024];
 	ut64 plt_addr = jmprel_addr + bin->dyn_info.dt_pltrelsz;
-	ut64 p_plt_addr = Elf_(r_bin_elf_v2p_new) (bin, plt_addr);
+	ut64 p_plt_addr = Elf_(r_bin_elf_v2p) (bin, plt_addr);
 	int res = r_buf_read_at (bin->b, p_plt_addr, buf, sizeof (buf));
 	if (res != sizeof (buf)) {
 		return UT64_MAX;
@@ -1494,7 +1494,7 @@ static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
 	if (plt_addr == ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
-	ut64 p_plt_addr = Elf_(r_bin_elf_v2p_new) (bin, plt_addr);
+	ut64 p_plt_addr = Elf_(r_bin_elf_v2p) (bin, plt_addr);
 	if (p_plt_addr == UT64_MAX) {
 		return UT64_MAX;
 	}
@@ -1524,7 +1524,7 @@ static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
-	ut64 got_offset = Elf_(r_bin_elf_v2p_new) (bin, got_addr);
+	ut64 got_offset = Elf_(r_bin_elf_v2p) (bin, got_addr);
 	if (got_offset == UT64_MAX) {
 		return UT64_MAX;
 	}
@@ -2565,7 +2565,7 @@ static void fix_rva_and_offset(ELFOBJ *bin, RBinElfReloc *r, size_t pos) {
 }
 
 static bool read_reloc(ELFOBJ *bin, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 vaddr) {
-	ut64 offset = Elf_(r_bin_elf_v2p_new) (bin, vaddr);
+	ut64 offset = Elf_(r_bin_elf_v2p) (bin, vaddr);
 	if (offset == UT64_MAX) {
 		return false;
 	}
@@ -2820,7 +2820,7 @@ static void create_section_from_phdr(ELFOBJ *bin, RBinElfSection *ret, size_t *i
 		return;
 	}
 
-	ret[*i].offset = Elf_(r_bin_elf_v2p_new) (bin, addr);
+	ret[*i].offset = Elf_(r_bin_elf_v2p) (bin, addr);
 	ret[*i].rva = addr;
 	ret[*i].size = sz;
 	strncpy (ret[*i].name, name, R_ARRAY_SIZE (ret[*i].name) - 1);
@@ -3111,7 +3111,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		    !strcmp (type2str (NULL, NULL, &sym[i]), R_BIN_TYPE_UNKNOWN_STR)) {
 			goto done;
 		}
-		tmp_offset = Elf_(r_bin_elf_v2p_new) (bin, toffset);
+		tmp_offset = Elf_(r_bin_elf_v2p) (bin, toffset);
 		if (tmp_offset == UT64_MAX) {
 			tmp_offset = toffset;
 			is_vaddr = true;
@@ -3356,7 +3356,7 @@ RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin,
 		vaddr = symbol->offset;
 	} else {
 		paddr = symbol->offset;
-		vaddr = Elf_(r_bin_elf_p2v_new) (bin, paddr);
+		vaddr = Elf_(r_bin_elf_p2v) (bin, paddr);
 	}
 
 	if (!(ptr = R_NEW0 (RBinSymbol))) {
@@ -3563,7 +3563,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 						ret[ret_ctr].offset = sym[k].st_value + bin->shdr[sym[k].st_shndx].sh_offset;
 					}
 				} else {
-					ret[ret_ctr].offset = Elf_(r_bin_elf_v2p_new) (bin, toffset);
+					ret[ret_ctr].offset = Elf_(r_bin_elf_v2p) (bin, toffset);
 					if (ret[ret_ctr].offset == UT64_MAX) {
 						ret[ret_ctr].offset = toffset;
 						is_vaddr = true;
@@ -3769,56 +3769,9 @@ static int is_in_vphdr(Elf_(Phdr) * p, ut64 addr) {
 	return addr >= p->p_vaddr && addr < p->p_vaddr + p->p_filesz;
 }
 
-/* Deprecated temporarily. Use r_bin_elf_p2v_new in new code for now. */
-ut64 Elf_(r_bin_elf_p2v) (ELFOBJ *bin, ut64 paddr) {
-	size_t i;
-
-	r_return_val_if_fail (bin, 0);
-	if (!bin->phdr) {
-		if (is_bin_etrel (bin)) {
-			return bin->baddr + paddr;
-		}
-		return paddr;
-	}
-	for (i = 0; i < bin->ehdr.e_phnum; i++) {
-		Elf_(Phdr) *p = &bin->phdr[i];
-		if (p->p_type == PT_LOAD && is_in_pphdr (p, paddr)) {
-			if (!p->p_vaddr && !p->p_offset) {
-				continue;
-			}
-			return p->p_vaddr + paddr - p->p_offset;
-		}
-	}
-
-	return paddr;
-}
-
-/* Deprecated temporarily. Use r_bin_elf_v2p_new in new code for now. */
-ut64 Elf_(r_bin_elf_v2p) (ELFOBJ *bin, ut64 vaddr) {
-	r_return_val_if_fail (bin, 0);
-	if (!bin->phdr) {
-		if (is_bin_etrel (bin)) {
-			return vaddr - bin->baddr;
-		}
-		return vaddr;
-	}
-
-	size_t i;
-	for (i = 0; i < bin->ehdr.e_phnum; i++) {
-		Elf_(Phdr) *p = &bin->phdr[i];
-		if (p->p_type == PT_LOAD && is_in_vphdr (p, vaddr)) {
-			if (!p->p_offset && !p->p_vaddr) {
-				continue;
-			}
-			return p->p_offset + vaddr - p->p_vaddr;
-		}
-	}
-	return vaddr;
-}
-
 /* converts a physical address to the virtual address, looking
  * at the program headers in the binary bin */
-ut64 Elf_(r_bin_elf_p2v_new) (ELFOBJ *bin, ut64 paddr) {
+ut64 Elf_(r_bin_elf_p2v) (ELFOBJ *bin, ut64 paddr) {
 	size_t i;
 
 	r_return_val_if_fail (bin, UT64_MAX);
@@ -3840,7 +3793,7 @@ ut64 Elf_(r_bin_elf_p2v_new) (ELFOBJ *bin, ut64 paddr) {
 
 /* converts a virtual address to the relative physical address, looking
  * at the program headers in the binary bin */
-ut64 Elf_(r_bin_elf_v2p_new) (ELFOBJ *bin, ut64 vaddr) {
+ut64 Elf_(r_bin_elf_v2p) (ELFOBJ *bin, ut64 vaddr) {
 	size_t i;
 
 	r_return_val_if_fail (bin, UT64_MAX);
