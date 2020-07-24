@@ -2084,9 +2084,9 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 }
 
 void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile *bf) {
-	r_return_if_fail (options && bf);
+	r_return_if_fail (options && bf && bf->rbin);
 	options->header_at = 0;
-	options->verbose = bf && bf->rbin && bf->rbin->verbose;
+	options->verbose = bf->rbin->verbose;
 }
 
 static void *duplicate_ptr(void *p) {
