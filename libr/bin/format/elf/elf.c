@@ -2825,50 +2825,41 @@ static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 		return NULL;
 	}
 
-	if (bin->dyn_info.dt_rel != ELF_ADDR_MAX) {
-		reldyn = bin->dyn_info.dt_rel;
-		num_sections++;
-	}
-	if (bin->dyn_info.dt_rela != ELF_ADDR_MAX) {
-		relva = bin->dyn_info.dt_rela;
-		num_sections++;
+	size_t i = 0;
+	ret = calloc (5, sizeof (RBinElfSection));
+	if (!ret) {
+		return NULL;
 	}
 	if (bin->dyn_info.dt_relsz) {
 		reldynsz = bin->dyn_info.dt_relsz;
 	}
-	if (bin->dyn_info.dt_relasz) {
-		relasz = bin->dyn_info.dt_relasz;
+	if (bin->dyn_info.dt_rel != ELF_ADDR_MAX) {
+		reldyn = bin->dyn_info.dt_rel;
+		num_sections++;
+		create_section_from_phdr (bin, ret, &i, ".rel.dyn", reldyn, reldynsz);
 	}
-	if (bin->dyn_info.dt_pltgot != ELF_ADDR_MAX) {
-		pltgotva = bin->dyn_info.dt_pltgot;
+	if (bin->dyn_info.dt_rela != ELF_ADDR_MAX) {
+		if (bin->dyn_info.dt_relasz) {
+			relasz = bin->dyn_info.dt_relasz;
+		}
+		relva = bin->dyn_info.dt_rela;
+		create_section_from_phdr (bin, ret, &i, ".rel.plt", relva, relasz);
 		num_sections++;
 	}
 	if (bin->dyn_info.dt_pltrelsz) {
 		pltgotsz = bin->dyn_info.dt_pltrelsz;
 	}
+	if (bin->dyn_info.dt_pltgot != ELF_ADDR_MAX) {
+		pltgotva = bin->dyn_info.dt_pltgot;
+		create_section_from_phdr (bin, ret, &i, ".got.plt", pltgotva, pltgotsz);
+		num_sections++;
+	}
 	if (bin->dyn_info.dt_jmprel != ELF_ADDR_MAX) {
 		relava = bin->dyn_info.dt_jmprel;
+		create_section_from_phdr (bin, ret, &i, ".rela.plt", relava, pltgotsz);
 		num_sections++;
 	}
 
-	ret = calloc (num_sections + 1, sizeof (RBinElfSection));
-	if (!ret) {
-		return NULL;
-	}
-
-	size_t i = 0;
-	if (i < num_sections) {
-		create_section_from_phdr (bin, ret, &i, ".rel.dyn", reldyn, reldynsz);
-	}
-	if (i < num_sections) {
-		create_section_from_phdr (bin, ret, &i, ".rela.plt", relava, pltgotsz);
-	}
-	if (i < num_sections) {
-		create_section_from_phdr (bin, ret, &i, ".rel.plt", relva, relasz);
-	}
-	if (i < num_sections) {
-		create_section_from_phdr (bin, ret, &i, ".got.plt", pltgotva, pltgotsz);
-	}
 	ret[i].last = 1;
 
 	return ret;
