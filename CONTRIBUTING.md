@@ -76,15 +76,35 @@ This is discouraged, as it produces ugly hard-to-maintain commit history.
 When commiting your changes into the repository you may want to follow some
 rules to make the git history more readable and consistent:
 
-* Start the message capitalized (first letter in uppercase)
+* Start the message capitalized (only the first character must be in uppercase)
 * Be short and concise, the whole concept must fit one line
 * If a command is inlined, use backticks
-* Add a double-hashtag if the change matters for the changelog (e.g. new command, removal of commands, new vars, new API, new Asm plugin, etc.). Common hashtags are `##anal`, `##asm`, `##bin`, `##cons`, `##crypto`, `##debug`, `##search`, `##util`, `##command`, `##build`.
+* Add a double-hashtag if the change matters for the changelog (See below)
 * Search the changelog to known hashtags (see sys/release-notes.sh)
 * If the commit fixes a bug start with 'Fix #number - '
 * For extra details, add an empty line and use asterisk item list below
-* Use present (Add vs Added, Fix vs Fixed/Fixes)
-* If the PR have multiple isolable changes squash/rebase them and inform it in the PR
+* Use present simple grammar tense (Add vs Added, Fix vs Fixed/Fixes)
+* Prefix with `WIP:` if it's not yet ready to be merged
+
+### Commit message hashtag list:
+
+* ##anal     - analysis related
+* ##asm      - assembler/disassembler
+* ##bin      - binary parsing
+* ##build    - build fixes/changes
+* ##cons     - console/terminal-related
+* ##crypto   - cryptography
+* ##debug    - debugger stuff
+* ##egg      - the `r_lang` compiler
+* ##io       - related to the `r_io` library
+* ##lang     - bindings
+* ##port     - portability (new OS/archs)
+* ##projects - saving/loading state
+* ##refactor - improve code quality
+* ##search   - rafind2, / command, ..
+* ##shell    - commandline, newshell, ..
+* ##signatures-searching/generating them
+* ##util     - core apis
 
 # Additional resources
 
