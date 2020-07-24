@@ -267,6 +267,11 @@ static ut64 try_get_cmpval_from_parents(RAnal * anal, RAnalFunction *fcn, RAnalB
 	r_list_foreach (fcn->bbs, iter, tmp_bb) {
 		if (tmp_bb->jump == my_bb->addr || tmp_bb->fail == my_bb->addr) {
 			if (tmp_bb->cmpreg == cmp_reg) {
+				if (tmp_bb->cond) {
+					if (tmp_bb->cond->type == R_ANAL_COND_HI || tmp_bb->cond->type == R_ANAL_COND_GT) {
+						return tmp_bb->cmpval + 1;
+					}
+				}
 				return tmp_bb->cmpval;
 			}
 		}
@@ -990,6 +995,7 @@ repeat:
 				cmpval = val;
 				bb->cmpval = cmpval;
 				bb->cmpreg = op.reg;
+				bb->cond = r_anal_cond_new_from_op (&op);
 			}
 		}
 			break;
@@ -1003,6 +1009,9 @@ repeat:
 			if (!overlapped) {
 				bb->jump = op.jump;
 				bb->fail = op.fail;
+			}
+			if (bb->cond) {
+				bb->cond->type = op.cond;
 			}
 			if (anal->opt.jmptbl) {
 				if (op.ptr != UT64_MAX) {
