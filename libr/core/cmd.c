@@ -6792,7 +6792,8 @@ beach:
 
 R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 	if (core->use_tree_sitter_r2cmd) {
-		return cmdstatus2int (core_cmd_tsr2cmd (core, lines, true, false));
+		RCmdStatus status = core_cmd_tsr2cmd (core, lines, true, false);
+		return status == R_CMD_STATUS_OK;
 	}
 	int r, ret = true;
 	char *nl, *data, *odata;
