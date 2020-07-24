@@ -16,7 +16,7 @@ struct R_PDB7_ROOT_STREAM;
 typedef struct r_pdb_t {
 	bool (*pdb_parse)(struct r_pdb_t *pdb);
 	void (*finish_pdb_parse)(struct r_pdb_t *pdb);
-	void (*print_types)(const struct r_pdb_t *pdb, int mode);
+	void (*print_types)(const struct r_pdb_t *pdb, PJ *pj, int mode);
 //	FILE *fp;
 	PrintfCallback cb_printf;
 	struct R_PDB7_ROOT_STREAM *root_stream;
@@ -26,7 +26,7 @@ typedef struct r_pdb_t {
 	RBuffer *buf; // mmap of file
 //	int curr;
 
-	void (*print_gvars)(struct r_pdb_t *pdb, ut64 img_base, int format);
+	void (*print_gvars)(struct r_pdb_t *pdb, ut64 img_base, PJ *pj, int format);
 } RPdb;
 
 R_API bool init_pdb_parser(RPdb *pdb, const char *filename);

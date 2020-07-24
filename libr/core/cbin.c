@@ -1091,16 +1091,18 @@ R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
 		mode = 'd'; // default
 		break;
 	}
+	PJ *pj = pj_new ();
 
-	pdb.print_types (&pdb, mode);
-	// I have to keep this unless I want to pass PJ around all the functions
-	if (mode == 'j') {
-		r_cons_printf (",");
-	}
-	pdb.print_gvars (&pdb, baddr, mode);
+	pdb.print_types (&pdb, pj, mode);
+	pdb.print_gvars (&pdb, baddr, pj, mode);
+	// Save compound types into SDB
 	r_parse_pdb_types (core->anal, &pdb);
 	pdb.finish_pdb_parse (&pdb);
 
+	if (mode == 'j') {
+		r_cons_printf ("%s\n", pj_string (pj));
+	}
+	pj_free (pj);
 	return true;
 }
 

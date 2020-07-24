@@ -1092,14 +1092,10 @@ static void print_types_regular(const RPdb *pdb, const RList *types) {
  * @param pdb pdb structure for printing function
  * @param types List of types
  */
-static void print_types_json(const RPdb *pdb, const RList *types) {
-	r_return_if_fail (pdb && types);
+static void print_types_json(const RPdb *pdb, PJ *pj, const RList *types) {
+	r_return_if_fail (pdb && types && pj);
 
 	RListIter *it = r_list_iterator (types);
-	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
 	pj_ka (pj, "types");
 
 	while (r_list_iter_next (it)) {
@@ -1206,8 +1202,6 @@ static void print_types_json(const RPdb *pdb, const RList *types) {
 		}
 	}
 	pj_end (pj);
-	pdb->cb_printf (pj_string (pj));
-	pj_free (pj);
 }
 
 /**
@@ -1305,7 +1299,7 @@ static void print_types_format(const RPdb *pdb, const RList *types) {
  * @param pdb PDB information
  * @param mode printing mode
  */
-static void print_types(const RPdb *pdb, const int mode) {
+static void print_types(const RPdb *pdb, PJ *pj, const int mode) {
 	RList *plist = pdb->pdb_streams;
 	STpiStream *tpi_stream = r_list_get_n (plist, ePDB_STREAM_TPI);
 
@@ -1315,13 +1309,13 @@ static void print_types(const RPdb *pdb, const int mode) {
 	}
 	switch (mode) {
 	case 'd': print_types_regular (pdb, tpi_stream->types); return;
-	case 'j': print_types_json (pdb, tpi_stream->types); return;
+	case 'j': print_types_json (pdb, pj, tpi_stream->types); return;
 	case 'r': print_types_format (pdb, tpi_stream->types); return;
 	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void print_gvars(RPdb *pdb, ut64 img_base, int format) {
+static void print_gvars(RPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	SStreamParseFunc *omap = 0, *sctns = 0, *sctns_orig = 0, *gsym = 0, *tmp = 0;
 	SIMAGE_SECTION_HEADER *sctn_header = 0;
 	SGDATAStream *gsym_data_stream = 0;
@@ -1356,12 +1350,8 @@ static void print_gvars(RPdb *pdb, ut64 img_base, int format) {
 		eprintf ("There is no global symbols in current PDB.\n");
 		return;
 	}
-	PJ *pj = NULL;
+
 	if (format == 'j') {
-		pj = pj_new ();
-		if (!pj) {
-			return;
-		}
 		pj_ka (pj, "gvars");
 	}
 	gsym_data_stream = (SGDATAStream *)gsym->stream;
@@ -1420,8 +1410,6 @@ static void print_gvars(RPdb *pdb, ut64 img_base, int format) {
 	}
 	if (format == 'j') {
 		pj_end (pj);
-		pdb->cb_printf ("%s", pj_string (pj)); // don't wanna make it literal because of security
-		pj_free (pj);
 	}
 }
 
