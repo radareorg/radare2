@@ -36,31 +36,8 @@ static HANDLE myCreateChildProcess(const char * szCmdline) {
 static volatile BOOL bStopPipeLoop = FALSE;
 static HANDLE hPipeInOut = NULL;
 static HANDLE hproc = NULL;
-static HANDLE hConnected = NULL;
 #define PIPE_BUF_SIZE 8192
 
-static DWORD WINAPI WaitForProcThread(LPVOID lParam) {
-	HANDLE hEvents[] = { hConnected, hproc };
-	DWORD dwEvent = WaitForMultipleObjects (R_ARRAY_SIZE (hEvents), hEvents, FALSE, INFINITE);
-
-	if (dwEvent == WAIT_OBJECT_0 + 1) {
-		// Just in case the #!pipe target didn't actually connect to the pipe,
-		// we connect to the pipe here to satisfy the ConnectNamedPipe().
-		LPTSTR pipeName = calloc (128, sizeof (TCHAR));
-		if (pipeName) {
-			GetEnvironmentVariable (TEXT ("R2PIPE_PATH"), pipeName, 128);
-			HANDLE pipe = CreateFile (pipeName, GENERIC_READ | GENERIC_WRITE, 0,
-			                          NULL, OPEN_EXISTING, 0, NULL);
-			if (pipe != INVALID_HANDLE_VALUE) {
-				CloseHandle (pipe);
-			}
-			free (pipeName);
-		}
-
-		bStopPipeLoop = TRUE;
-	}
-	return 0;
-}
 static void lang_pipe_run_win(RLang *lang) {
 	CHAR buf[PIPE_BUF_SIZE];
 	BOOL bSuccess = TRUE;
@@ -227,7 +204,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 
 	SetEnvironmentVariable (TEXT ("R2PIPE_PATH"), r2pipe_paz_);
 	hPipeInOut = CreateNamedPipe (r2pipe_paz_,
-			PIPE_ACCESS_DUPLEX,
+			PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
 			PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
 			PIPE_BUF_SIZE,
 			PIPE_BUF_SIZE,
@@ -236,30 +213,39 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 		eprintf ("CreateNamedPipe failed: %#x\n", (int)GetLastError ());
 		goto beach;
 	}
-	hConnected = CreateEvent (NULL, FALSE, FALSE, NULL);
+	HANDLE hConnected = CreateEvent (NULL, TRUE, FALSE, NULL);
 	if (!hConnected) {
 		eprintf ("CreateEvent failed: %#x\n", (int)GetLastError ());
 		goto pipe_cleanup;
 	}
+	OVERLAPPED oConnect = { 0 };
+	oConnect.hEvent = hConnected;
 	hproc = myCreateChildProcess (code);
-	bool connected = false;
+	BOOL connected = FALSE;
 	if (hproc) {
-		/* a separate thread is created that sets bStopPipeLoop once hproc terminates. */
 		bStopPipeLoop = FALSE;
-		HANDLE hConnectThread = CreateThread (NULL, 0, WaitForProcThread, NULL, 0, NULL);
-		connected = ConnectNamedPipe (hPipeInOut, NULL) ? true : (GetLastError () == ERROR_PIPE_CONNECTED);
-		if (connected) {
-			if (SetEvent (hConnected)) {
-				WaitForSingleObject (hConnectThread, INFINITE);
-				CloseHandle (CreateThread (NULL, 0, WaitForProcThread, NULL, 0, NULL));
-				/* lang_pipe_run_win has to run in the command thread to prevent deadlock. */
-				lang_pipe_run_win (lang);
-			} else {
-				eprintf ("SetEvent failed: %#x\n", (int)GetLastError ());
+		connected = ConnectNamedPipe (hPipeInOut, &oConnect);
+		DWORD err = GetLastError ();
+		if (!connected && err != ERROR_PIPE_CONNECTED) {
+			if (err == ERROR_IO_PENDING) {
+				HANDLE hEvents[] = { hConnected, hproc };
+				DWORD dwEvent = WaitForMultipleObjects (R_ARRAY_SIZE (hEvents), hEvents,
+				                                        FALSE, INFINITE);
+				if (dwEvent == WAIT_OBJECT_0 + 1) { // hproc
+					goto cleanup;
+				}
+				DWORD dummy;
+				connected = GetOverlappedResult (hPipeInOut, &oConnect, &dummy, TRUE);
+				err = GetLastError ();
+			}
+			if (!connected && err != ERROR_PIPE_CONNECTED) {
+				eprintf ("ConnectNamedPipe failed: %#x\n", (int)err);
+				goto cleanup;
 			}
 		}
-		CloseHandle (hConnectThread);
+		lang_pipe_run_win (lang);
 	}
+cleanup:
 	CloseHandle (hConnected);
 pipe_cleanup:
 	DeleteFile (r2pipe_paz_);

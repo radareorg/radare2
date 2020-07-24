@@ -28,4 +28,4 @@ Disassembly of entry0:
 \           0x0804902b      e8e0ffffff     call sym.imp._Exit          ; void _Exit(int status)
 
 EOF
-RUN
+#RUN
