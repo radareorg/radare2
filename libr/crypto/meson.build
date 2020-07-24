@@ -38,6 +38,7 @@ pkgconfig_mod.generate(r_crypto,
   version: r2_version,
   name: 'r_crypto',
   filebase: 'r_crypto',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util'
   ],

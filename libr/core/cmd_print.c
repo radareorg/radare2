@@ -403,11 +403,11 @@ static const char *help_detail2_pf[] = {
 	"pf", " 3xi foo bar", "3-array of struct, each with named fields: 'foo' as hex, and 'bar' as int",
 	"pf", " B (BitFldType)arg_name`", "bitfield type",
 	"pf", " E (EnumType)arg_name`", "enum type",
-	"pf.", "obj xxdz prev next size name", "Define the obj format as xxdz",
 	"pf", " obj=xxdz prev next size name", "Same as above",
 	"pf", " *z*i*w nb name blob", "Print the pointers with given labels",
 	"pf", " iwq foo bar troll", "Print the iwq format with foo, bar, troll as the respective names for the fields",
 	"pf", " 0iwq foo bar troll", "Same as above, but considered as a union (all fields at offset 0)",
+	"pf.", "obj xxdz prev next size name", "Define the obj format as xxdz",
 	"pf.", "plop ? (troll)mystruct", "Use structure troll previously defined",
 	"pfj.", "plop @ 0x14", "Apply format object at the given offset",
 	"pf", " 10xiz pointer length string", "Print a size 10 array of the xiz struct with its field names",
@@ -672,15 +672,15 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 			}
 			if (show_unalloc &&
 			    !core->print->iob.is_valid_offset (core->print->iob.io, core->offset + j, false)) {
+				ch = core->print->io_unalloc_ch;
 				if (show_color) {
 					free (color);
 					color = strdup (Color_RESET);
-					ch = core->print->io_unalloc_ch;
 					if (ch == ' ') {
 						ch = '.';
 					}
 				} else {
-					ch = '?'; // deliberately ignores io.unalloc.ch
+					ch = strchr (chars, ch) ? '?' : ch;
 				}
 			}
 			if (square) {
@@ -785,15 +785,15 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 			}
 			if (show_unalloc &&
 			    !core->print->iob.is_valid_offset (core->print->iob.io, core->offset + j, false)) {
+				ch = core->print->io_unalloc_ch;
 				if (show_color) {
 					free (color);
 					color = strdup (Color_RESET);
-					ch = core->print->io_unalloc_ch;
 					if (ch == ' ') {
 						ch = '.';
 					}
 				} else {
-					ch = '?'; // deliberately ignores io.unalloc.ch
+					ch = strchr (chars, ch) ? '?' : ch;
 				}
 			}
 			if (square) {
@@ -1482,12 +1482,11 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		}
 	}
 
-	int listFormats = 0;
+	bool listFormats = false;
 	if (input[1] == '.') {
-		listFormats = 1;
-	}
-	if (!strcmp (input, "*") && mode == R_PRINT_SEEFLAGS) {
-		listFormats = 1;
+		listFormats = true;
+	} else if (!strcmp (input, "*") && mode == R_PRINT_SEEFLAGS) {
+		listFormats = true;
 	}
 
 	core->print->reg = core->dbg->reg;
@@ -1499,7 +1498,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 	if (listFormats) {
 		core->print->num = core->num;
 		/* print all stored format */
-		if (!input[1] || !input[2]) {
+		if (!input[1] || !input[2]) { // "pf."
 			SdbListIter *iter;
 			SdbKv *kv;
 			SdbList *sdbls = sdb_foreach_list (core->print->formats, true);
@@ -1507,11 +1506,11 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				r_cons_printf ("pf.%s %s\n", sdbkv_key (kv), sdbkv_value (kv));
 			}
 			/* delete a format */
-		} else if (input[1] && input[2] == '-') {
-			if (input[3] == '*') {
+		} else if (input[1] && input[2] == '-') { // "pf-"
+			if (input[3] == '*') { // "pf-*"
 				sdb_free (core->print->formats);
 				core->print->formats = sdb_new0 ();
-			} else {
+			} else { // "pf-xxx"
 				sdb_unset (core->print->formats, input + 3, 0);
 			}
 		} else {
@@ -1528,12 +1527,11 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 
 			/* store a new format */
 			if (space && (!eq || space < eq)) {
-				// char *fields = NULL;
 				*space++ = 0;
-				// fields = strchr (space, ' ');
-				if (strchr (name, '.')) {// || (fields != NULL && strchr(fields, '.') != NULL)) // if anon struct, then field can have '.'
+				if (strchr (name, '.')) {
 					eprintf ("Struct or fields name can not contain dot symbol (.)\n");
 				} else {
+					// pf.foo=xxx
 					sdb_set (core->print->formats, name, space, 0);
 				}
 				free (name);

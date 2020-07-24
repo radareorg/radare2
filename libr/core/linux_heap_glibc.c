@@ -63,6 +63,39 @@ static GHT GH(get_va_symbol)(RCore *core, const char *path, const char *sym_name
 	return vaddr;
 }
 
+static inline GHT GH(align_address_to_size)(ut64 addr, ut64 align) {
+	return addr + ((align - (addr % align)) % align);
+}
+
+static GHT GH(get_main_arena_with_symbol)(RCore *core, RDebugMap *map) {
+	r_return_val_if_fail (core && map, GHT_MAX);
+	GHT base_addr = map->addr;
+	r_return_val_if_fail (base_addr != GHT_MAX, GHT_MAX);
+
+	GHT main_arena = GHT_MAX;
+	GHT vaddr = GHT_MAX;
+	char *path = strdup (map->name);
+	if (path && r_file_exists (path)) {
+		vaddr = GH (get_va_symbol) (core, path, "main_arena");
+		if (vaddr != GHT_MAX) {
+			main_arena = base_addr + vaddr;
+		} else {
+			vaddr = GH (get_va_symbol) (core, path, "__malloc_hook");
+			if (vaddr == GHT_MAX) {
+				return main_arena;
+			}
+			RBinInfo *info = r_bin_get_info (core->bin);
+			if (!strcmp (info->arch, "x86")) {
+				main_arena = GH (align_address_to_size) (vaddr + base_addr + sizeof (GHT), 0x20);
+			} else if (!strcmp (info->arch, "arm")) {
+				main_arena = vaddr + base_addr - sizeof (GHT) * 2 - sizeof (MallocState);
+			}
+		}
+	}
+	free (path);
+	return main_arena;
+}
+
 static bool GH(is_tcache)(RCore *core) {
 	char *fp = NULL;
 	double v = 0;
@@ -355,10 +388,9 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX;
 	GHT libc_addr_sta = GHT_MAX, libc_addr_end = 0;
 	GHT addr_srch = GHT_MAX, heap_sz = GHT_MAX;
-	const char *libc_path = NULL;
-	GHT libc_addr = GHT_MAX;
 	GHT main_arena_sym = GHT_MAX;
 	bool is_debugged = r_config_get_i (core->config, "cfg.debug");
+	bool first_libc = true;
 
 	if (is_debugged) {
 		RListIter *iter;
@@ -366,19 +398,9 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 		r_debug_map_sync (core->dbg);
 		r_list_foreach (core->dbg->maps, iter, map) {
 			/* Try to find the main arena address using the glibc's symbols. */
-			if (strstr (map->name, "/libc-") && map->perm == R_PERM_R && main_arena_sym == GHT_MAX) {
-				libc_path = map->name;
-				libc_addr = map->addr;
-				char *path = strdup (libc_path);
-				if (libc_addr != GHT_MAX) {
-					if (path && r_file_exists (path)) {
-						GHT vaddr = GH (get_va_symbol) (core, path, "main_arena");
-						if (vaddr != GHT_MAX) {
-							main_arena_sym = libc_addr + vaddr;
-						}
-					}
-				}
-				free (path);
+			if (strstr (map->name, "/libc-") && first_libc && main_arena_sym == GHT_MAX) {
+				first_libc = false;
+				main_arena_sym = GH (get_main_arena_with_symbol) (core, map);
 			}
 			if (strstr (map->name, "/libc-") && map->perm == R_PERM_RW) {
 				libc_addr_sta = map->addr;

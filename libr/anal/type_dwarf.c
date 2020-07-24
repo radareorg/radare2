@@ -1,5 +1,5 @@
 #include "base_types.h"
-#include "sdb/sdb.h"
+#include <sdb.h>
 #include <r_anal.h>
 #include <r_bin_dwarf.h>
 #include <string.h>
@@ -34,8 +34,9 @@ static inline bool is_type_tag(ut64 tag_code) {
  * @return st32 Index, -1 if nothing found
  */
 static st32 find_attr_idx(const RBinDwarfDie *die, st32 attr_name) {
+	st32 i;
 	r_return_val_if_fail (die, -1);
-	for (st32 i = 0; i < die->count; i++) {
+	for (i = 0; i < die->count; i++) {
 		if (die->attr_values[i].attr_name == attr_name) {
 			return i;
 		}
@@ -185,12 +186,14 @@ static st32 parse_array_type(const RBinDwarfDie *all_dies, ut64 count, ut64 idx,
 	if (die->has_children) {
 		int child_depth = 1;
 		const RBinDwarfDie *child_die = &all_dies[++idx];
-		for (size_t j = idx; child_depth > 0 && j < count; j++) {
+		size_t j;
+		for (j = idx; child_depth > 0 && j < count; j++) {
 			child_die = &all_dies[j];
 			// right now we skip non direct descendats of the structure
 			// can be also DW_TAG_suprogram for class methods or tag for templates
 			if (child_depth == 1 && child_die->tag == DW_TAG_subrange_type) {
-				for (size_t i = 0; i < child_die->count; i++) {
+				size_t i;
+				for (i = 0; i < child_die->count; i++) {
 					const RBinDwarfAttrValue *value = &child_die->attr_values[i];
 					switch (value->attr_name) {
 					case DW_AT_upper_bound:
@@ -305,22 +308,30 @@ static st32 parse_type (const RBinDwarfDie *all_dies, const ut64 count,
 		break;
 	case DW_TAG_volatile_type:
 		type_idx = find_attr_idx (die, DW_AT_type);
-		parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size);
+		if (type_idx != -1) {
+			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size);
+		}
 		r_strbuf_append (strbuf, " volatile");
 		break;
 	case DW_TAG_restrict_type:
 		type_idx = find_attr_idx (die, DW_AT_type);
-		parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size);
+		if (type_idx != -1) {
+			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size);
+		}
 		r_strbuf_append (strbuf, " restrict");
 		break;
 	case DW_TAG_rvalue_reference_type:
 		type_idx = find_attr_idx (die, DW_AT_type);
-		parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size);
+		if (type_idx != -1) {
+			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size);
+		}
 		r_strbuf_append (strbuf, " &&");
 		break;
 	case DW_TAG_reference_type:
 		type_idx = find_attr_idx (die, DW_AT_type);
-		parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size);
+		if (type_idx != -1) {
+			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size);
+		}
 		r_strbuf_append (strbuf, " &");
 		break;
 	default:
@@ -351,8 +362,8 @@ static RAnalStructMember *parse_struct_member (const RBinDwarfDie *all_dies,
 	ut64 size = 0;
 	RStrBuf strbuf;
 	r_strbuf_init (&strbuf);
-
-	for (size_t i = 0; i < die->count; i++) {
+	size_t i;
+	for (i = 0; i < die->count; i++) {
 		RBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
@@ -429,9 +440,10 @@ static RAnalEnumCase *parse_enumerator(const RBinDwarfDie *all_dies,
 
 	char *name = NULL;
 	int val = 0;
+	size_t i;
 
 	// Enumerator has DW_AT_name and DW_AT_const_value
-	for (size_t i = 0; i < die->count; i++) {
+	for (i = 0; i < die->count; i++) {
 		RBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
@@ -513,8 +525,9 @@ static void parse_structure_type(const RAnal *anal, const RBinDwarfDie *all_dies
 	// Parse out all members, can this in someway be extracted to a function?
 	if (die->has_children) {
 		int child_depth = 1; // Direct children of the node
+		size_t j;
 		idx++; // Move to the first children node
-		for (size_t j = idx; child_depth > 0 && j < count; j++) {
+		for (j = idx; child_depth > 0 && j < count; j++) {
 			const RBinDwarfDie *child_die = &all_dies[j];
 			// we take only direct descendats of the structure
 			// can be also DW_TAG_suprogram for class methods or tag for templates
@@ -582,8 +595,9 @@ static void parse_enum_type(const RAnal *anal, const RBinDwarfDie *all_dies,
 	RAnalEnumCase cas;
 	if (die->has_children) {
 		int child_depth = 1; // Direct children of the node
+		size_t j;
 		idx++; // Move to the first children node
-		for (size_t j = idx; child_depth > 0 && j < count; j++) {
+		for (j = idx; child_depth > 0 && j < count; j++) {
 			const RBinDwarfDie *child_die = &all_dies[j];
 			// we take only direct descendats of the structure
 			if (child_depth == 1 && child_die->tag == DW_TAG_enumerator) {
@@ -634,29 +648,44 @@ static void parse_typedef(const RAnal *anal, const RBinDwarfDie *all_dies,
 	ut64 size = 0;
 	RStrBuf strbuf;
 	r_strbuf_init (&strbuf);
+	size_t i;
 
-	for (size_t i = 0; i < die->count; i++) {
+	for (i = 0; i < die->count; i++) {
 		RBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
 			name = strdup (value->string.content);
+			if (!name) {
+				goto cleanup;
+			}
 			break;
 		case DW_AT_type:
 			parse_type (all_dies, count, value->reference, &strbuf, &size);
 			type = r_strbuf_drain_nofree (&strbuf);
+			if (!type) {
+				goto cleanup;
+			}
 			break;
 		default:
 			break;
 		}
 	}
+	if (!name) { // type has to have a name for now
+		goto cleanup;
+	}
 	RAnalBaseType *base_type = r_anal_new_base_type (R_ANAL_BASE_TYPE_KIND_TYPEDEF);
 	if (!base_type) {
-		return;
+		goto cleanup;
 	}
 	base_type->name = name;
 	base_type->type = type;
 	r_anal_save_base_type (anal, base_type);
 	r_anal_free_base_type (base_type);
+	r_strbuf_fini (&strbuf);
+	return;
+cleanup:
+	free (name);
+	free (type);
 	r_strbuf_fini (&strbuf);
 }
 
@@ -668,12 +697,16 @@ static void parse_atomic_type(const RAnal *anal, const RBinDwarfDie *all_dies,
 
 	char *name = NULL;
 	ut64 size = 0;
-
-	for (size_t i = 0; i < die->count; i++) {
+	size_t i;
+	// TODO support endiannity and encoding in future?
+	for (i = 0; i < die->count; i++) {
 		RBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
 			name = strdup (value->string.content);
+			if (!name) {
+				return;
+			}
 			break;
 		case DW_AT_byte_size:
 			size = value->data * CHAR_BIT;
@@ -685,6 +718,9 @@ static void parse_atomic_type(const RAnal *anal, const RBinDwarfDie *all_dies,
 		default:
 			break;
 		}
+	}
+	if (!name) { // type has to have a name for now
+		return;
 	}
 	RAnalBaseType *base_type = r_anal_new_base_type (R_ANAL_BASE_TYPE_KIND_ATOMIC);
 	if (!base_type) {
@@ -739,10 +775,11 @@ static void parse_type_entry(const RAnal *anal, const RBinDwarfDie *all_dies,
  * @param anal 
  */
 R_API void r_anal_parse_dwarf_types(const RAnal *anal, const RBinDwarfDebugInfo *info) {
+    size_t i, j;
 	r_return_if_fail (info && anal);
-	for (size_t i = 0; i < info->count; i++) {
+	for (i = 0; i < info->count; i++) {
 		RBinDwarfCompUnit *unit = &info->comp_units[i];
-		for (size_t j = 0; j < unit->count; j++) {
+		for (j = 0; j < unit->count; j++) {
 			RBinDwarfDie *curr_die = &unit->dies[j];
 			if (is_type_tag (curr_die->tag)) {
 				parse_type_entry (anal, unit->dies, unit->count, j);

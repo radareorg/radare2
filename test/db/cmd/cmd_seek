@@ -355,3 +355,17 @@ EXPECT=<<EOF
 0x20
 EOF
 RUN
+
+NAME=seek to bb start (sb)
+FILE=bins/elf/vim
+CMDS=<<EOF
+s 0x543a0
+af
+s+3
+sb
+?v $$
+EOF
+EXPECT=<<EOF
+0x543a0
+EOF
+RUN

@@ -39,6 +39,9 @@ static float updateAddr(const ut8 *buf, int len, int endian, ut64 *addr, ut64 *a
 	} else {
 		len = 999;
 	}
+	if (len < 1) {
+		return 0;
+	}
 	if (len >= sizeof (float)) {
 		r_mem_swaporcopy ((ut8*)&f, buf, sizeof (float), endian);
 	}

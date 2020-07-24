@@ -154,8 +154,8 @@ jobs:
       shell: bash
       run: echo "##[set-output name=branch;]$(python sys/version.py)"
       id: extract_version
-    - name: Install pkg-config with Homebrew
-      run: brew install pkg-config
+    - name: Install pkg-config/ldid2 with Homebrew
+      run: brew install pkg-config ldid
     - name: Create cydia32 package
       run: ./sys/ios-cydia32.sh
     - name: List sys/cydia

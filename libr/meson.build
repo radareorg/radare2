@@ -379,7 +379,6 @@ include_files =[
   'include/r_types.h',
   'include/r_util.h',
   'include/r_vector.h',
-  'include/sdb.h'
 ]
 install_headers(include_files, install_dir: r2_incdir)
 
@@ -444,25 +443,6 @@ r_crypto_files = [
   'include/r_crypto/r_des.h'
 ]
 install_headers(r_crypto_files, install_dir: join_paths(r2_incdir, 'r_crypto'))
-
-sdb_files = [
-  'include/sdb/buffer.h',
-  'include/sdb/cdb.h',
-  'include/sdb/set.h',
-  'include/sdb/cdb_make.h',
-  'include/sdb/config.h',
-  'include/sdb/dict.h',
-  'include/sdb/ht_inc.h',
-  'include/sdb/ht_pp.h',
-  'include/sdb/ht_up.h',
-  'include/sdb/ht_uu.h',
-  'include/sdb/ls.h',
-  'include/sdb/sdb.h',
-  'include/sdb/sdbht.h',
-  'include/sdb/sdb_version.h',
-  'include/sdb/types.h'
-]
-install_headers(sdb_files, install_dir: join_paths(r2_incdir, 'sdb'))
 
 sflib_common_files = [
   'include/sflib/common/sftypes.h',

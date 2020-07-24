@@ -90,10 +90,12 @@ typedef struct _utX{
 #define UT16_GT0 0x8000U
 #define UT16_MAX 0xFFFFU
 #define ST8_MAX  0x7F
-#define ST8_MIN  (-ST8_MAX-1)
+#define ST8_MIN  (-ST8_MAX - 1)
 #define UT8_GT0  0x80U
 #define UT8_MAX  0xFFU
 #define UT8_MIN  0x00U
+#define ASCII_MIN 32
+#define ASCII_MAX 127
 
 #define UT64_ALIGN(x) (x + (x - (x % sizeof (ut64))))
 #define UT32_ALIGN(x) (x + (x - (x % sizeof (ut32))))

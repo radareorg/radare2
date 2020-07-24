@@ -4,7 +4,7 @@
 #include "r_anal.h"
 #include "r_cons.h"
 #include "r_core.h"
-#include "sdb/sdb.h"
+#include <sdb.h>
 
 static const char *help_msg_t[] = {
 	"Usage: t", "", "# cparse types commands",
@@ -1379,7 +1379,7 @@ static int cmd_type(void *data, const char *input) {
 				free (out);
 			}
 			if (error_msg) {
-				fprintf (stderr, "%s", error_msg);
+				eprintf ("%s", error_msg);
 				free (error_msg);
 			}
 		} else {
