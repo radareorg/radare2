@@ -232,14 +232,14 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 		eprintf ("CreateNamedPipe failed: %#x\n", (int)GetLastError ());
 		goto beach;
 	}
+	hConnected = CreateEvent (NULL, FALSE, FALSE, NULL);
+	if (!hConnected) {
+		eprintf ("CreateEvent failed: %#x\n", (int)GetLastError ());
+		goto pipe_cleanup;
+	}
 	hproc = myCreateChildProcess (code);
 	bool connected = false;
 	if (hproc) {
-		hConnected = CreateEvent (NULL, FALSE, FALSE, NULL);
-		if (!hConnected) {
-			eprintf ("CreateEvent failed: %#x\n", (int)GetLastError ());
-			goto pipe_cleanup;
-		}
 		/* a separate thread is created that sets bStopPipeLoop once hproc terminates. */
 		bStopPipeLoop = FALSE;
 		HANDLE hConnectThread = CreateThread (NULL, 0, WaitForProcThread, NULL, 0, NULL);
@@ -255,8 +255,8 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 			}
 		}
 		CloseHandle (hConnectThread);
-		CloseHandle (hConnected);
 	}
+	CloseHandle (hConnected);
 pipe_cleanup:
 	DeleteFile (r2pipe_paz_);
 	CloseHandle (hPipeInOut);
