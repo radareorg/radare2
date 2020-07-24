@@ -2815,10 +2815,6 @@ static void create_section_from_phdr(ELFOBJ *bin, RBinElfSection *ret, size_t *i
 }
 
 static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
-	RBinElfSection *ret;
-	size_t num_sections = 0;
-	ut64 reldyn = 0, relava = 0, pltgotva = 0, relva = 0;
-	ut64 reldynsz = 0, relasz = 0, pltgotsz = 0;
 	r_return_val_if_fail (bin && bin->phdr, NULL);
 
 	if (!bin->ehdr.e_phnum) {
@@ -2826,42 +2822,30 @@ static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 	}
 
 	size_t i = 0;
-	ret = calloc (5, sizeof (RBinElfSection));
+	RBinElfSection *ret = calloc (5, sizeof (RBinElfSection));
 	if (!ret) {
 		return NULL;
 	}
-	if (bin->dyn_info.dt_relsz) {
-		reldynsz = bin->dyn_info.dt_relsz;
-	}
 	if (bin->dyn_info.dt_rel != ELF_ADDR_MAX) {
-		reldyn = bin->dyn_info.dt_rel;
-		num_sections++;
+		ut64 reldynsz = (bin->dyn_info.dt_relsz)?  bin->dyn_info.dt_relsz: 0;
+		ut64 reldyn = bin->dyn_info.dt_rel;
 		create_section_from_phdr (bin, ret, &i, ".rel.dyn", reldyn, reldynsz);
 	}
 	if (bin->dyn_info.dt_rela != ELF_ADDR_MAX) {
-		if (bin->dyn_info.dt_relasz) {
-			relasz = bin->dyn_info.dt_relasz;
-		}
-		relva = bin->dyn_info.dt_rela;
+		ut64 relasz = bin->dyn_info.dt_relasz;
+		ut64 relva = bin->dyn_info.dt_rela;
 		create_section_from_phdr (bin, ret, &i, ".rel.plt", relva, relasz);
-		num_sections++;
 	}
-	if (bin->dyn_info.dt_pltrelsz) {
-		pltgotsz = bin->dyn_info.dt_pltrelsz;
-	}
+	ut64 pltgotsz = bin->dyn_info.dt_pltrelsz;
 	if (bin->dyn_info.dt_pltgot != ELF_ADDR_MAX) {
-		pltgotva = bin->dyn_info.dt_pltgot;
+		ut64 pltgotva = bin->dyn_info.dt_pltgot;
 		create_section_from_phdr (bin, ret, &i, ".got.plt", pltgotva, pltgotsz);
-		num_sections++;
 	}
 	if (bin->dyn_info.dt_jmprel != ELF_ADDR_MAX) {
-		relava = bin->dyn_info.dt_jmprel;
+		ut64 relava = bin->dyn_info.dt_jmprel;
 		create_section_from_phdr (bin, ret, &i, ".rela.plt", relava, pltgotsz);
-		num_sections++;
 	}
-
-	ret[i].last = 1;
-
+	ret[i].last = true;
 	return ret;
 }
 
