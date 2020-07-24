@@ -1076,7 +1076,7 @@ R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
 	}
 
 	switch (mode) {
-	case R_MODE_SET: // what is this doing
+	case R_MODE_SET:
 		mode = 's';
 		r_core_cmd0 (core, ".iP*");
 		return true;
@@ -1098,7 +1098,7 @@ R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
 		r_cons_printf (",");
 	}
 	pdb.print_gvars (&pdb, baddr, mode);
-	parse_pdb_types (core->anal, &pdb);
+	r_parse_pdb_types (core->anal, &pdb);
 	pdb.finish_pdb_parse (&pdb);
 
 	return true;

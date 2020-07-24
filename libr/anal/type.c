@@ -3,6 +3,7 @@
 #include <r_anal.h>
 #include <string.h>
 #include "sdb/sdb.h"
+#include "base_types.h"
 
 static char *is_type(char *type) {
 	char *name = NULL;
@@ -152,7 +153,7 @@ R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn) {
  * @param e 
  * @param user 
  */
-R_API void enum_type_fini(void *e, void *user) {
+R_IPI void enum_type_fini(void *e, void *user) {
 	(void)user;
 	RAnalEnumCase *cas = e;
 	free ((char *)cas->name);
@@ -164,7 +165,7 @@ R_API void enum_type_fini(void *e, void *user) {
  * @param e 
  * @param user 
  */
-R_API void struct_type_fini(void *e, void *user) {
+R_IPI void struct_type_fini(void *e, void *user) {
 	(void)user;
 	RAnalStructMember *member = e;
 	free ((char *)member->name);
@@ -177,7 +178,7 @@ R_API void struct_type_fini(void *e, void *user) {
  * @param e 
  * @param user 
  */
-R_API void union_type_fini(void *e, void *user) {
+R_IPI void union_type_fini(void *e, void *user) {
 	(void)user;
 	RAnalUnionMember *member = e;
 	free ((char *)member->name);

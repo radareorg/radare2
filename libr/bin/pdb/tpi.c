@@ -5,7 +5,7 @@
 static unsigned int base_idx = 0;
 static RList *p_types_list;
 
-static bool is_simple_type (int idx) {
+static bool is_simple_type(int idx) {
 	ut32 value = (ut32) idx;
 	/*   https://llvm.org/docs/PDB/TpiStream.html#type-indices
         .---------------------------.------.----------.

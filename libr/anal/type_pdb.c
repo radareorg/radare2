@@ -2,8 +2,9 @@
 #include <r_core.h>
 #include <r_anal.h>
 #include "../bin/pdb/types.h"
+#include "base_types.h"
 
-static bool is_parsable_type (const ELeafType type) {
+static bool is_parsable_type(const ELeafType type) {
 	return (type == eLF_STRUCTURE ||
 		type == eLF_UNION ||
 		type == eLF_ENUM ||
@@ -257,7 +258,7 @@ static void parse_type (const RAnal *anal, SType *type, RList *types) {
  * @param anal
  * @param pdb PDB information
  */
-R_API void parse_pdb_types(const RAnal *anal, const R_PDB *pdb) {
+R_API void r_parse_pdb_types(const RAnal *anal, const R_PDB *pdb) {
 	r_return_if_fail (anal && pdb);
 	RList *plist = pdb->pdb_streams;
 	// getting the TPI stream from the streams list

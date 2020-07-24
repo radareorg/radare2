@@ -1,7 +1,8 @@
-#include <r_anal.h>
+#include "base_types.h"
 #include "sdb/sdb.h"
-#include <string.h>
+#include <r_anal.h>
 #include <r_bin_dwarf.h>
+#include <string.h>
 
 static int die_tag_cmp(const void *a, const void *b) {
 	const RBinDwarfDie *first = a;

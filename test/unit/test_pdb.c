@@ -37,7 +37,7 @@ int pdb_info_save_types(RAnal *anal, const char *file, R_PDB *pdb) {
 		pdb->finish_pdb_parse (pdb);
 		return false;
 	}
-	parse_pdb_types (anal, pdb);
+	r_parse_pdb_types (anal, pdb);
 	pdb->finish_pdb_parse (pdb);
 	return true;
 }
