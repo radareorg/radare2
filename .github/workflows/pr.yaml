@@ -99,6 +99,7 @@ jobs:
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         if [ "$NEWSHELL" == "true" ]; then
           export R2_CFG_NEWSHELL=1
+          cat /home/runner/share/radare2/4.6.0-git/flag/tags.r2
         fi
         cd test
         radare2 -N -Qc 'e cfg.newshell' -
