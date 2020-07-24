@@ -68,17 +68,17 @@ RUN
 
 NAME=member1 type of structure R2_TEST_STRUCT
 FILE=bins/pdb/Project1.pdb
-CMDS=!rabin2 -P ${R2_FILE} | grep r2_struct_var_1 | grep -ao long
+CMDS=!rabin2 -P ${R2_FILE} | grep r2_struct_var_1 | grep -ao int32_t
 EXPECT=<<EOF
-long
+int32_t
 EOF
 RUN
 
 NAME=member2 type of structure R2_TEST_STRUCT
 FILE=bins/pdb/Project1.pdb
-CMDS=!rabin2 -P ${R2_FILE} | grep r2_struct_var_2 | grep -ao short
+CMDS=!rabin2 -P ${R2_FILE} | grep r2_struct_var_2 | grep -ao uint16_t
 EXPECT=<<EOF
-short
+uint16_t
 EOF
 RUN
 
@@ -87,22 +87,6 @@ FILE=bins/pdb/Project1.pdb
 CMDS=!rabin2 -P ${R2_FILE} | grep R2_TEST_STRUCT | grep -ao 0x8
 EXPECT=<<EOF
 0x8
-EOF
-RUN
-
-NAME=member1 offset of union R2_TEST_UNION
-FILE=bins/pdb/Project1.pdb
-CMDS=!rabin2 -P ${R2_FILE} | grep r2_union_var_1 | grep -ao 0x0
-EXPECT=<<EOF
-0x0
-EOF
-RUN
-
-NAME=member2 offset of union R2_TEST_UNION
-FILE=bins/pdb/Project1.pdb
-CMDS=!rabin2 -P ${R2_FILE} | grep r2_union_var_2 | grep -ao 0x0
-EXPECT=<<EOF
-0x0
 EOF
 RUN
 
@@ -124,9 +108,9 @@ RUN
 
 NAME=member1 type of union R2_TEST_UNION
 FILE=bins/pdb/Project1.pdb
-CMDS=!rabin2 -P ${R2_FILE} | grep r2_union_var_1 | grep -ao long
+CMDS=!rabin2 -P ${R2_FILE} | grep r2_union_var_1 | grep -ao int32_t
 EXPECT=<<EOF
-long
+int32_t
 EOF
 RUN
 
@@ -143,97 +127,6 @@ FILE=bins/pdb/Project1.pdb
 CMDS=!rabin2 -P ${R2_FILE} | grep R2_TEST_UNION | grep -ao 0x8
 EXPECT=<<EOF
 0x8
-EOF
-RUN
-
-NAME=member1 value of enum R2_TEST_ENUM
-FILE=bins/pdb/Project1.pdb
-CMDS=!rabin2 -P ${R2_FILE} | grep eENUM1_R2 | grep -ao 0x10
-EXPECT=<<EOF
-0x10
-EOF
-RUN
-
-NAME=member2 value of enum R2_TEST_ENUM
-FILE=bins/pdb/Project1.pdb
-CMDS=!rabin2 -P ${R2_FILE} | grep eENUM2_R2 | grep -ao 0x20
-EXPECT=<<EOF
-0x20
-EOF
-RUN
-
-NAME=member3 vlue of enum R2_TEST_ENUM
-FILE=bins/pdb/Project1.pdb
-CMDS=!rabin2 -P ${R2_FILE} | grep eENUM_R2_MAX | grep -ao 0x21
-EXPECT=<<EOF
-0x21
-EOF
-RUN
-
-NAME=member1 name of enum R2_TEST_ENUM
-FILE=bins/pdb/Project1.pdb
-CMDS=!rabin2 -P ${R2_FILE} | grep -ao eENUM1_R2
-EXPECT=<<EOF
-eENUM1_R2
-eENUM1_R2
-EOF
-RUN
-
-NAME=member2 name of enum R2_TEST_ENUM
-FILE=bins/pdb/Project1.pdb
-CMDS=!rabin2 -P ${R2_FILE} | grep -ao eENUM2_R2
-EXPECT=<<EOF
-eENUM2_R2
-eENUM2_R2
-EOF
-RUN
-
-NAME=member3 name of enum R2_TEST_ENUM
-FILE=bins/pdb/Project1.pdb
-CMDS=!rabin2 -P ${R2_FILE} | grep -ao eENUM_R2_MAX
-EXPECT=<<EOF
-eENUM_R2_MAX
-eENUM_R2_MAX
-EOF
-RUN
-
-NAME=check size of union R2_TEST_ENUM
-FILE=bins/pdb/Project1.pdb
-CMDS=!rabin2 -P ${R2_FILE} | grep R2_TEST_ENUM | grep -ao 0x0
-EXPECT=<<EOF
-0x0
-EOF
-RUN
-
-NAME=enumerate export test
-FILE=bins/pdb/Project1.pdb
-CMDS=!rabin2 -Pr ${R2_FILE} | grep -ao R2_TEST_ENUM
-EXPECT=<<EOF
-R2_TEST_ENUM
-EOF
-RUN
-
-NAME=enumerate value1 export test
-FILE=bins/pdb/Project1.pdb
-CMDS=!rabin2 -Pr ${R2_FILE} | grep -ao eENUM1_R2=0x10
-EXPECT=<<EOF
-eENUM1_R2=0x10
-EOF
-RUN
-
-NAME=enumerate value2 export test
-FILE=bins/pdb/Project1.pdb
-CMDS=!rabin2 -Pr ${R2_FILE} | grep -ao eENUM2_R2=0x20
-EXPECT=<<EOF
-eENUM2_R2=0x20
-EOF
-RUN
-
-NAME=enumerate value3 export test
-FILE=bins/pdb/Project1.pdb
-CMDS=!rabin2 -Pr ${R2_FILE} | grep -ao eENUM_R2_MAX=0x21
-EXPECT=<<EOF
-eENUM_R2_MAX=0x21
 EOF
 RUN
 
@@ -263,9 +156,9 @@ RUN
 
 NAME=struct export types
 FILE=bins/pdb/Project1.pdb
-CMDS=!rabin2 -Pr ${R2_FILE} | grep R2_TEST_STRUCT | grep -ao iw
+CMDS=!rabin2 -Pr ${R2_FILE} | grep R2_TEST_STRUCT | grep -ao n4n2
 EXPECT=<<EOF
-iw
+n4n2
 EOF
 RUN
 

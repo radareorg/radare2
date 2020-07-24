@@ -245,7 +245,7 @@ typedef struct r_anal_base_type_enum_t {
 
 typedef struct r_anal_base_type_t {
 	char *name;
-	char *type; // Used by typedef, atomic type
+	char *type; // Used by typedef, atomic type, enum
 	ut64 size; // size of the whole type in bits
 	RAnalBaseTypeKind kind;
 	union {
@@ -2065,7 +2065,9 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *dfg, const c
 R_API RStrBuf *r_anal_esil_dfg_filter(RAnalEsilDFG *dfg, const char *reg);
 R_API RStrBuf *r_anal_esil_dfg_filter_expr(RAnal *anal, const char *expr, const char *reg);
 R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn);
+
 R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name);
+R_API void r_parse_pdb_types(const RAnal *anal, const RPdb *pdb);
 R_API void r_anal_save_base_type(const RAnal *anal, const RAnalBaseType *type);
 R_API void r_anal_free_base_type(RAnalBaseType *type);
 R_API RAnalBaseType *r_anal_new_base_type(RAnalBaseTypeKind kind);
