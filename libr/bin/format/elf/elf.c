@@ -2664,29 +2664,25 @@ static void populate_relocs_record_from_dynamic(ELFOBJ *bin, RBinElfReloc *reloc
 	size_t size = get_size_rel_mode (bin->dyn_info.dt_pltrel);
 	size_t p = *pos;
 
-	for (offset = 0; offset < bin->dyn_info.dt_pltrelsz && p < num_relocs; offset += size) {
+	for (offset = 0; offset < bin->dyn_info.dt_pltrelsz && p < num_relocs; offset += size, p++) {
 		if (!read_reloc (bin, relocs + pos, bin->dyn_info.dt_pltrel, bin->dyn_info.dt_jmprel + offset)) {
 			break;
 		}
 		fix_rva_and_offset_exec_file (bin, relocs + p);
-		i++;
-		p++;
 	}
 
-	for (offset = 0; offset < bin->dyn_info.dt_relasz && p < num_relocs; offset += bin->dyn_info.dt_relaent) {
+	for (offset = 0; offset < bin->dyn_info.dt_relasz && p < num_relocs; offset += bin->dyn_info.dt_relaent, p++) {
 		if (!read_reloc (bin, relocs + pos, DT_RELA, bin->dyn_info.dt_rela + offset)) {
 			break;
 		}
 		fix_rva_and_offset_exec_file (bin, relocs + p);
-		p++;
 	}
 
-	for (offset = 0; offset < bin->dyn_info.dt_relsz && p < num_relocs; offset += bin->dyn_info.dt_relent) {
+	for (offset = 0; offset < bin->dyn_info.dt_relsz && p < num_relocs; offset += bin->dyn_info.dt_relent, p++) {
 		if (!read_reloc (bin, relocs + pos, DT_REL, bin->dyn_info.dt_rel + offset)) {
 			break;
 		}
 		fix_rva_and_offset_exec_file (bin, relocs + p);
-		p++;
 	}
 	*pos = p;
 }
@@ -2730,27 +2726,8 @@ static void populate_relocs_record_from_section(ELFOBJ *bin, RBinElfReloc *reloc
 			continue;
 		}
 		size_t relsize = get_size_rel_mode (rel_mode);
-#if 0
-		size_t j, size;
-		size = get_size_rel_mode (rel_mode);
-
-		for (j = get_next_not_analysed_offset (bin, bin->g_sections[i].offset, 0, bin->baddr);
-				j < bin->g_sections[i].size && p < num_relocs;
-				j = get_next_not_analysed_offset (bin, bin->g_sections[i].offset, j + size, bin->baddr)) {
-			if (!j) {
-				break;
-			}
-			if (!read_reloc (bin, relocs + p, rel_mode, bin->g_sections[i].offset + j)) {
-				break;
-			}
-			fix_rva_and_offset (bin, relocs + p, i);
-			p++;
-		}
-#else
-		ut64 j = get_next_not_analysed_offset (bin, s->offset, 0, bin->baddr);
-		ut64 sa = s->rva;
-		ut64 eos = s->size;
-		while (j != UT64_MAX && p < num_relocs && j < sa) {
+		size_t j = get_next_not_analysed_offset (bin, s->offset, 0, bin->baddr);
+		while (p < num_relocs && j < s->size) {
 			if (!read_reloc (bin, relocs + p, rel_mode, s->offset + j)) {
 				break;
 			}
@@ -2758,7 +2735,6 @@ static void populate_relocs_record_from_section(ELFOBJ *bin, RBinElfReloc *reloc
 			j = get_next_not_analysed_offset (bin, s->offset, j + relsize, bin->baddr);
 			p++;
 		}
-#endif
 	}
 	*pos = p;
 }
