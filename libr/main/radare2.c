@@ -384,9 +384,17 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	r_signal_sigmask (SIG_BLOCK, &sigBlockMask, NULL);
 #endif
 
-	char **envp = r_sys_get_environ ();
-	if (envp) {
-		r_sys_set_environ (envp);
+	r_sys_env_init ();
+	// Create rarun2 profile with startup environ
+	char *envprofile = NULL;
+	char **e = r_sys_get_environ ();
+	if (e) {
+		RStrBuf *sb = r_strbuf_new (NULL);
+		while (e && *e) {
+			r_strbuf_appendf (sb, "setenv=%s\n", *e);
+			e++;
+		}
+		envprofile = r_strbuf_drain (sb);
 	}
 
 	if (r_sys_getenv_asbool ("R2_DEBUG")) {
@@ -419,6 +427,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	r->r_main_ragg2 = r_main_ragg2;
 	r->r_main_rasm2 = r_main_rasm2;
 	r->r_main_rax2 = r_main_rax2;
+
+	r->io->envprofile = envprofile;
 
 	r_core_task_sync_begin (&r->tasks);
 	if (argc == 2 && !strcmp (argv[1], "-p")) {

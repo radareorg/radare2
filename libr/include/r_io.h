@@ -100,6 +100,7 @@ typedef struct r_io_t {
 	RIOUndo undo;
 	SdbList *plugins;
 	char *runprofile;
+	char *envprofile;
 #if USE_PTRACE_WRAP
 	struct ptrace_wrap_instance_t *ptrace_wrap;
 #endif
