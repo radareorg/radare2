@@ -47,10 +47,14 @@ static DWORD WINAPI WaitForProcThread(LPVOID lParam) {
 		// Just in case the #!pipe target didn't actually connect to the pipe,
 		// we connect to the pipe here to satisfy the ConnectNamedPipe().
 		LPTSTR pipeName = calloc (128, sizeof (TCHAR));
-		GetEnvironmentVariable (TEXT ("R2PIPE_PATH"), pipeName, 128);
-		HANDLE pipe = CreateFile (pipeName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
-		if (pipe != INVALID_HANDLE_VALUE) {
-			CloseHandle (pipe);
+		if (pipeName) {
+			GetEnvironmentVariable (TEXT ("R2PIPE_PATH"), pipeName, 128);
+			HANDLE pipe = CreateFile (pipeName, GENERIC_READ | GENERIC_WRITE, 0,
+			                          NULL, OPEN_EXISTING, 0, NULL);
+			if (pipe != INVALID_HANDLE_VALUE) {
+				CloseHandle (pipe);
+			}
+			free (pipeName);
 		}
 
 		bStopPipeLoop = TRUE;
