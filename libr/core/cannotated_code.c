@@ -41,6 +41,14 @@ R_API void r_core_annotated_code_print_json(RAnnotatedCode *code) {
 			pj_ks (pj, "type", "constant_variable");
 			pj_kn (pj, "offset", annotation->reference.offset);
 			break;
+		case R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE:
+			pj_ks (pj, "type", "local_variable");
+			pj_ks (pj, "name", annotation->variable.name);
+			break;
+		case R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER:
+			pj_ks (pj, "type", "function_parameter");
+			pj_ks (pj, "name", annotation->variable.name);
+			break;
 		case R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT:
 			pj_ks (pj, "type", "syntax_highlight");
 			switch (annotation->syntax_highlight.type) {
