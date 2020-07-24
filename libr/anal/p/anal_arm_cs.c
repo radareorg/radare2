@@ -1680,12 +1680,11 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			4 * insn->detail->arm.op_count);
 		break;
 	case ARM_INS_LDM:
-		r_strbuf_appendf (&op->esil, "%s,%d,+,[4],%s,=", ARG (0), 0, REG (1));
-		for (i = 2; i < insn->detail->arm.op_count; i++) {
-			r_strbuf_appendf (&op->esil, ",%s,%d,+,[4],%s,=", ARG (0), (i - 1) * 4, REG (i));
+		for (i = 1; i < insn->detail->arm.op_count; i++) {
+			r_strbuf_appendf (&op->esil, "%s,%d,+,[4],%s,=,", ARG (0), (i - 1) * 4, REG (i));
 		}
 		if (insn->detail->arm.writeback == true) { //writeback, reg should be incremented
-			r_strbuf_appendf (&op->esil, ",%d,%s,+=,",
+			r_strbuf_appendf (&op->esil, "%d,%s,+=,",
 				(insn->detail->arm.op_count - 1) * 4, ARG (0));
 		}
         break;
@@ -1894,8 +1893,13 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				MEMBASE (1), MEMDISP (1), REG (0));
 		}
 		if (insn->detail->arm.writeback) {
-			r_strbuf_appendf (&op->esil, ",%s,%d,+,%s,=",
-				MEMBASE (1), MEMDISP (1), MEMBASE (1));
+			if (ISIMM(2)) {
+				r_strbuf_appendf (&op->esil, ",%s,%d,+,%s,=",
+					MEMBASE (1), IMM (2), MEMBASE (1));
+			} else {
+				r_strbuf_appendf (&op->esil, ",%s,%d,+,%s,=",
+					MEMBASE (1), MEMDISP (1), MEMBASE (1));
+			}
 		}
 		break;
 	case ARM_INS_SXTH:
@@ -1973,35 +1977,21 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			} else {
 				if (ISMEM(1) && LSHIFT2(1)) {
 					r_strbuf_appendf (&op->esil, "%s,%d,%s,<<,+,0xffffffff,&,[4],0x%x,&,%s,=",
-						MEMBASE(1), LSHIFT2(1), MEMINDEX(1), mask, REG(0));
+						MEMBASE (1), LSHIFT2 (1), MEMINDEX (1), mask, REG (0));
+				} else if (HASMEMINDEX(1)) {	// e.g. `ldr r2, [r3, r1]`
+					r_strbuf_appendf (&op->esil, "%s,%s,+,0xffffffff,&,[4],0x%x,&,%s,=",
+						MEMINDEX (1), MEMBASE (1), mask, REG (0));
 				} else {
-					if (ISREG(1)) {
-						r_strbuf_appendf (&op->esil, "%s,%s,+,0xffffffff,&,[4],0x%x,&,%s,=",
-							MEMBASE(1), MEMINDEX(1), mask, REG(0));
-					} else if (HASMEMINDEX(1)) {	// e.g. `ldr r2, [r3, r1]`
-						// TODO: handle shift of index register value
-						r_strbuf_appendf (&op->esil, "%s,%s,+,0xffffffff,&,[4],0x%x,&,%s,=",
-							MEMINDEX(1), MEMBASE(1), mask, REG(0));
-					} else if (ISIMM(2)) {	// e.g. `ldr r2, [r0], 4`
-						r_strbuf_appendf (&op->esil, "%s,[4],0x%x,&,%s,=,%d,%s,+,0xffffffff,&,%s,=",
-							MEMBASE (1), mask, REG (0), IMM (2), MEMBASE (1), MEMBASE (1));
+					r_strbuf_appendf (&op->esil, "%d,%s,+,0xffffffff,&,[4],0x%x,&,%s,=",
+						MEMDISP (1), MEMBASE (1), mask, REG (0));
+				}
+				if (insn->detail->arm.writeback) {
+					if (ISIMM (2)) {
+						r_strbuf_appendf (&op->esil, ",%s,%d,+,%s,=",
+							MEMBASE (1), IMM (2), MEMBASE (1));
 					} else {
-						int disp = MEMDISP(1);
-						if (disp < 0) {
-							r_strbuf_appendf (&op->esil, "%d,%s,-,0xffffffff,&,[4],0x%x,&,%s,=",
-								-disp, MEMBASE (1), mask, REG (0));
-							if (insn->detail->arm.writeback) {
-								r_strbuf_appendf (&op->esil, ",%d,%s,+,%s,=",
-									-disp, MEMBASE (1), MEMBASE (1));
-							}
-						} else {
-							r_strbuf_appendf (&op->esil, "%d,%s,+,0xffffffff,&,[4],0x%x,&,%s,=",
-								disp, MEMBASE (1), mask, REG (0));
-							if (insn->detail->arm.writeback) {
-								r_strbuf_appendf (&op->esil, ",%d,%s,+,%s,=",
-									disp, MEMBASE (1), MEMBASE (1));
-							}
-						}
+						r_strbuf_appendf (&op->esil, ",%s,%d,+,%s,=",
+							MEMBASE (1), MEMDISP (1), MEMBASE (1));
 					}
 				}
 			}
