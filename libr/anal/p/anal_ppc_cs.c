@@ -729,6 +729,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			op1 = ARG (1);
 			op1[strlen (op1) - 1] = 0;
 			esilprintf (op, "%s,%s,=[4],%s=", ARG (0), op1, op1);
+			if (strstr (op1, "r1")) {
+				op->stackop = R_ANAL_STACK_INC;
+				op->stackptr = -atoi (op1);
+			}
 			break;
 		case PPC_INS_STWBRX:
 			op->type = R_ANAL_OP_TYPE_STORE;
