@@ -68,6 +68,9 @@ static void lang_pipe_run_win(RLang *lang) {
 		                                  FALSE, INFINITE);
 		if (dwEvent == WAIT_OBJECT_0 + 1) { // hproc
 			break;
+		} else if (dwEvent == WAIT_FAILED) {
+			r_sys_perror ("lang_pipe_run_win/WaitForMultipleObjects read");
+			break;
 		}
 		bSuccess = GetOverlappedResult (hPipeInOut, &oRead, &dwRead, TRUE);
 		if (!bSuccess) {
@@ -92,6 +95,8 @@ static void lang_pipe_run_win(RLang *lang) {
 					                                  FALSE, INFINITE);
 					if (dwEvent == WAIT_OBJECT_0 + 1) { // hproc
 						break;
+					} else if (dwEvent == WAIT_FAILED) {
+						r_sys_perror ("lang_pipe_run_win/WaitForMultipleObjects write");
 					}
 					BOOL rc = GetOverlappedResult (hPipeInOut, &oWrite, &dwWritten, TRUE);
 					if (!rc) {
@@ -255,6 +260,9 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 				DWORD dwEvent = WaitForMultipleObjects (R_ARRAY_SIZE (hEvents), hEvents,
 				                                        FALSE, INFINITE);
 				if (dwEvent == WAIT_OBJECT_0 + 1) { // hproc
+					goto cleanup;
+				} else if (dwEvent == WAIT_FAILED) {
+					r_sys_perror ("lang_pipe_run/WaitForMultipleObjects connect");
 					goto cleanup;
 				}
 				DWORD dummy;
