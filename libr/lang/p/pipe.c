@@ -41,10 +41,16 @@ static void lang_pipe_run_win(RLang *lang) {
 	CHAR buf[PIPE_BUF_SIZE];
 	BOOL bSuccess = TRUE;
 	int i, res = 0;
-	DWORD dwRead = 0, dwWritten = 0;
+	DWORD dwRead = 0, dwWritten = 0, dwEvent;
 	HANDLE hRead = CreateEvent (NULL, TRUE, FALSE, NULL);
 	if (!hRead) {
 		eprintf ("hRead CreateEvent failed: %#x\n", (int)GetLastError ());
+		return;
+	}
+	HANDLE hWritten = CreateEvent (NULL, TRUE, FALSE, NULL);
+	if (!hWritten) {
+		eprintf ("hWritten CreateEvent failed: %#x\n", (int)GetLastError ());
+		CloseHandle (hRead);
 		return;
 	}
 	r_cons_break_push (NULL, NULL);
@@ -57,9 +63,9 @@ static void lang_pipe_run_win(RLang *lang) {
 		oRead.hEvent = hRead;
 		memset (buf, 0, PIPE_BUF_SIZE);
 		ReadFile (hPipeInOut, buf, PIPE_BUF_SIZE, NULL, &oRead);
-		HANDLE hEvents[] = { hRead, hproc };
-		DWORD dwEvent = WaitForMultipleObjects (R_ARRAY_SIZE (hEvents), hEvents,
-		                                        FALSE, INFINITE);
+		HANDLE hReadEvents[] = { hRead, hproc };
+		dwEvent = WaitForMultipleObjects (R_ARRAY_SIZE (hReadEvents), hReadEvents,
+		                                  FALSE, INFINITE);
 		if (dwEvent == WAIT_OBJECT_0 + 1) { // hproc
 			break;
 		}
@@ -70,6 +76,7 @@ static void lang_pipe_run_win(RLang *lang) {
 		if (bSuccess && dwRead > 0) {
 			buf[sizeof (buf) - 1] = 0;
 			OVERLAPPED oWrite = { 0 };
+			oWrite.hEvent = hWritten;
 			char *res = lang->cmd_str ((RCore*)lang->user, buf);
 			if (res) {
 				int res_len = strlen (res) + 1;
@@ -77,23 +84,27 @@ static void lang_pipe_run_win(RLang *lang) {
 					memset (buf, 0, PIPE_BUF_SIZE);
 					dwWritten = 0;
 					int writelen = res_len - i;
-					int rc = WriteFile (hPipeInOut, res + i,
-					                    writelen > PIPE_BUF_SIZE ? PIPE_BUF_SIZE : writelen,
-					                    &dwWritten, &oWrite);
-					if (!rc && GetLastError () != ERROR_IO_PENDING) {
+					WriteFile (hPipeInOut, res + i,
+					           writelen > PIPE_BUF_SIZE ? PIPE_BUF_SIZE : writelen,
+					           NULL, &oWrite);
+					HANDLE hWriteEvents[] = { hWritten, hproc };
+					dwEvent = WaitForMultipleObjects (R_ARRAY_SIZE (hWriteEvents), hWriteEvents,
+					                                  FALSE, INFINITE);
+					if (dwEvent == WAIT_OBJECT_0 + 1) { // hproc
+						break;
+					}
+					BOOL rc = GetOverlappedResult (hPipeInOut, &oWrite, &dwWritten, TRUE);
+					if (!rc) {
 						r_sys_perror ("lang_pipe_run_win/WriteFile");
 					}
-					i += writelen > PIPE_BUF_SIZE ? PIPE_BUF_SIZE : writelen; // TODO dwWritten
-					/*
 					if (dwWritten > 0) {
 						i += dwWritten - 1;
 					} else {
 						// send null termination // chop
-						eprintf ("w32-lang-pipe: 0x%x\n", (ut32)GetLastError ());
+						r_sys_perror ("lang_pipe_run_win/dwWritten");
 						//WriteFile (hPipeInOut, "", 1, &dwWritten, NULL);
 						//break;
 					}
-					*/
 				}
 				free (res);
 			} else {
@@ -102,6 +113,7 @@ static void lang_pipe_run_win(RLang *lang) {
 		}
 	} while (true);
 	r_cons_break_pop ();
+	CloseHandle (hWritten);
 	CloseHandle (hRead);
 }
 #else
