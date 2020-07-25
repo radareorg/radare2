@@ -2159,6 +2159,30 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	return 0;
 }
 
+static int cond_cs2r2(int cc) {
+	if (cc == ARM_CC_AL || cc < 0) {
+		cc = R_ANAL_COND_AL;
+	} else {
+		switch (cc) {
+		case ARM_CC_EQ: cc = R_ANAL_COND_EQ; break;
+		case ARM_CC_NE: cc = R_ANAL_COND_NE; break;
+		case ARM_CC_HS: cc = R_ANAL_COND_HS; break;
+		case ARM_CC_LO: cc = R_ANAL_COND_LO; break;
+		case ARM_CC_MI: cc = R_ANAL_COND_MI; break;
+		case ARM_CC_PL: cc = R_ANAL_COND_PL; break;
+		case ARM_CC_VS: cc = R_ANAL_COND_VS; break;
+		case ARM_CC_VC: cc = R_ANAL_COND_VC; break;
+		case ARM_CC_HI: cc = R_ANAL_COND_HI; break;
+		case ARM_CC_LS: cc = R_ANAL_COND_LS; break;
+		case ARM_CC_GE: cc = R_ANAL_COND_GE; break;
+		case ARM_CC_LT: cc = R_ANAL_COND_LT; break;
+		case ARM_CC_GT: cc = R_ANAL_COND_GT; break;
+		case ARM_CC_LE: cc = R_ANAL_COND_LE; break;
+		}
+	}
+	return cc;
+}
+
 static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	ut64 addr = op->addr;
 
@@ -2558,31 +2582,6 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		R_LOG_DEBUG ("ARM64 analysis: Op type %d at 0x%" PFMT64x " not handled\n", insn->id, op->addr);
 		break;
 	}
-}
-
-static int cond_cs2r2(int cc) {
-	if (cc == ARM_CC_AL || cc < 0) {
-		cc = R_ANAL_COND_AL;
-	} else {
-		switch (cc) {
-		case ARM_CC_EQ: cc = R_ANAL_COND_EQ; break;
-		case ARM_CC_NE: cc = R_ANAL_COND_NE; break;
-		case ARM_CC_HS: cc = R_ANAL_COND_HS; break;
-		case ARM_CC_LO: cc = R_ANAL_COND_LO; break;
-		case ARM_CC_MI: cc = R_ANAL_COND_MI; break;
-		case ARM_CC_PL: cc = R_ANAL_COND_PL; break;
-		case ARM_CC_VS: cc = R_ANAL_COND_VS; break;
-		case ARM_CC_VC: cc = R_ANAL_COND_VC; break;
-
-		case ARM_CC_HI: cc = R_ANAL_COND_HI; break;
-		case ARM_CC_LS: cc = R_ANAL_COND_LS; break;
-		case ARM_CC_GE: cc = R_ANAL_COND_GE; break;
-		case ARM_CC_LT: cc = R_ANAL_COND_LT; break;
-		case ARM_CC_GT: cc = R_ANAL_COND_GT; break;
-		case ARM_CC_LE: cc = R_ANAL_COND_LE; break;
-		}
-	}
-	return cc;
 }
 
 static ut64 lookahead(csh handle, const ut64 addr, const ut8 *buf, int len, int distance) {
