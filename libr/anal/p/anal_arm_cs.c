@@ -2322,6 +2322,11 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_BFXIL:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
+	case ARM64_INS_MRS:
+	case ARM64_INS_MSR:
+		op->type = R_ANAL_OP_TYPE_MOV;
+		op->family = R_ANAL_OP_FAMILY_PRIV;
+		break;
 	case ARM64_INS_MOVZ:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->ptr = 0LL;
