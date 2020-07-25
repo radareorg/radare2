@@ -3073,12 +3073,25 @@ static int parse_reg_name(RRegItem *reg_base, RRegItem *reg_delta, csh handle, c
 	default:
 		break;
 	}
+	if (reg_base->name && *reg_base->name == 'w') {
+		reg_base->name = reg_list[atoi (reg_base->name + 1)];
+	}
 	return 0;
 }
 
 static bool is_valid64 (arm64_reg reg) {
 	return reg != ARM64_REG_INVALID;
 }
+
+static char *reg_list[] = {
+	"x0", "x1", "x2", "x3", "x4",
+	"x5", "x6", "x7", "x8", "x9",
+	"x10", "x11", "x12", "x13", "x14",
+	"x15", "x16", "x17", "x18", "x19",
+	"x20", "x21", "x22", "x23", "x24",
+	"x25", "x26", "x27", "x28", "x29",
+	"x30"
+};
 
 static int parse_reg64_name(RRegItem *reg_base, RRegItem *reg_delta, csh handle, cs_insn *insn, int reg_num) {
 	cs_arm64_op armop = INSOP64 (reg_num);
