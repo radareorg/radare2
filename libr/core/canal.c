@@ -3440,9 +3440,6 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 			for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
 				reg_set[i] = 2;
 			}
-			if (ctx->argonly) {
-				return true;
-			}
 		}
 		pos += opsize;
 	}
