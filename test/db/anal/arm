@@ -891,7 +891,7 @@ af
 pds 1@0x2e~:1
 EOF
 EXPECT=<<EOF
-0x0000002e switch table (91 cases) at 0x32
+0x0000002e switch table (92 cases) at 0x32
 EOF
 RUN
 

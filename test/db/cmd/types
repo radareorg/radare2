@@ -1274,24 +1274,24 @@ afv
 EOF
 EXPECT=<<EOF
 var int32_t var_1454h @ sp+0x0
-var void * var_1440h @ fp-0x1440
+var void * var_1438h @ fp-0x1440
 var char * s1 @ fp-0x1040
 var int32_t wstatus @ fp-0x4c
-var int32_t var_48h @ fp-0x48
-var char * var_44h @ fp-0x44
-var int32_t var_40h @ fp-0x40
-var int32_t var_3ch @ fp-0x3c
-var int32_t var_38h @ fp-0x38
+var int32_t var_40h @ fp-0x48
+var char * var_3ch @ fp-0x44
+var int32_t var_38h @ fp-0x40
+var int32_t var_34h @ fp-0x3c
+var int32_t var_30h @ fp-0x38
 var pid_t pid @ fp-0x34
 var char * v2 @ fp-0x30
-var int32_t var_2ch @ fp-0x2c
+var int32_t var_24h @ fp-0x2c
 var char * src @ fp-0x28
-var int32_t var_24h @ fp-0x24
-var char * var_20h @ fp-0x20
+var int32_t var_1ch @ fp-0x24
+var char * var_18h @ fp-0x20
 var char * s @ fp-0x1c
-var char * var_18h @ fp-0x18
-var int32_t var_14h @ fp-0x14
-var int32_t var_10h @ fp-0x10
+var char * var_10h @ fp-0x18
+var int32_t var_ch @ fp-0x14
+var int32_t var_8h @ fp-0x10
 var char * option @ fp-0xc
 arg int argc @ r0
 arg char ** argv @ r1
