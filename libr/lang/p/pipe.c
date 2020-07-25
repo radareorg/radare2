@@ -44,12 +44,12 @@ static void lang_pipe_run_win(RLang *lang) {
 	DWORD dwRead = 0, dwWritten = 0, dwEvent;
 	HANDLE hRead = CreateEvent (NULL, TRUE, FALSE, NULL);
 	if (!hRead) {
-		eprintf ("hRead CreateEvent failed: %#x\n", (int)GetLastError ());
+		r_sys_perror ("lang_pipe_run_win/CreateEvent hRead");
 		return;
 	}
 	HANDLE hWritten = CreateEvent (NULL, TRUE, FALSE, NULL);
 	if (!hWritten) {
-		eprintf ("hWritten CreateEvent failed: %#x\n", (int)GetLastError ());
+		r_sys_perror ("lang_pipe_run_win/CreateEvent hWritten");
 		CloseHandle (hRead);
 		return;
 	}
@@ -234,12 +234,12 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 			PIPE_BUF_SIZE,
 			0, NULL);
 	if (hPipeInOut == INVALID_HANDLE_VALUE) {
-		eprintf ("CreateNamedPipe failed: %#x\n", (int)GetLastError ());
+		r_sys_perror ("lang_pipe_run/CreateNamedPipe");
 		goto beach;
 	}
 	HANDLE hConnected = CreateEvent (NULL, TRUE, FALSE, NULL);
 	if (!hConnected) {
-		eprintf ("hConnected CreateEvent failed: %#x\n", (int)GetLastError ());
+		r_sys_perror ("lang_pipe_run/CreateEvent hConnected");
 		goto pipe_cleanup;
 	}
 	OVERLAPPED oConnect = { 0 };
@@ -262,7 +262,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 				err = GetLastError ();
 			}
 			if (!connected && err != ERROR_PIPE_CONNECTED) {
-				eprintf ("ConnectNamedPipe failed: %#x\n", (int)err);
+				r_sys_perror ("lang_pipe_run/ConnectNamedPipe");
 				goto cleanup;
 			}
 		}
