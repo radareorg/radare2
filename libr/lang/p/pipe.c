@@ -100,7 +100,7 @@ static void lang_pipe_run_win(RLang *lang) {
 					}
 					BOOL rc = GetOverlappedResult (hPipeInOut, &oWrite, &dwWritten, TRUE);
 					if (!rc) {
-						r_sys_perror ("lang_pipe_run_win/WriteFile");
+						r_sys_perror ("lang_pipe_run_win/WriteFile res");
 					}
 					if (dwWritten > 0) {
 						i += dwWritten - 1;
@@ -114,6 +114,9 @@ static void lang_pipe_run_win(RLang *lang) {
 				free (res);
 			} else {
 				WriteFile (hPipeInOut, "", 1, NULL, &oWrite);
+				if (!GetOverlappedResult (hPipeInOut, &oWrite, &dwWritten, TRUE)) {
+					r_sys_perror ("lang_pipe_run_win/WriteFile nul");
+				}
 			}
 		}
 	} while (true);
