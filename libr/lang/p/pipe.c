@@ -33,7 +33,6 @@ static HANDLE myCreateChildProcess(const char * szCmdline) {
 	return bSuccess ? piProcInfo.hProcess : NULL;
 }
 
-static volatile BOOL bStopPipeLoop = FALSE;
 static HANDLE hPipeInOut = NULL;
 static HANDLE hproc = NULL;
 #define PIPE_BUF_SIZE 8192
@@ -43,24 +42,34 @@ static void lang_pipe_run_win(RLang *lang) {
 	BOOL bSuccess = TRUE;
 	int i, res = 0;
 	DWORD dwRead = 0, dwWritten = 0;
+	HANDLE hRead = CreateEvent (NULL, TRUE, FALSE, NULL);
+	if (!hRead) {
+		eprintf ("hRead CreateEvent failed: %#x\n", (int)GetLastError ());
+		return;
+	}
 	r_cons_break_push (NULL, NULL);
 	do {
 		if (r_cons_is_breaked ()) {
 			TerminateProcess (hproc, 0);
 			break;
 		}
+		OVERLAPPED oRead = { 0 };
+		oRead.hEvent = hRead;
 		memset (buf, 0, PIPE_BUF_SIZE);
-		do {
-			bSuccess = PeekNamedPipe (hPipeInOut, buf, PIPE_BUF_SIZE, &dwRead, NULL, NULL);
-		} while (bSuccess && !bStopPipeLoop && !dwRead);
-		if (bSuccess && dwRead) {
-			bSuccess = ReadFile (hPipeInOut, buf, PIPE_BUF_SIZE, &dwRead, NULL);
+		ReadFile (hPipeInOut, buf, PIPE_BUF_SIZE, NULL, &oRead);
+		HANDLE hEvents[] = { hRead, hproc };
+		DWORD dwEvent = WaitForMultipleObjects (R_ARRAY_SIZE (hEvents), hEvents,
+		                                        FALSE, INFINITE);
+		if (dwEvent == WAIT_OBJECT_0 + 1) { // hproc
+			break;
+		}
+		bSuccess = GetOverlappedResult (hPipeInOut, &oRead, &dwRead, TRUE);
+		if (!bSuccess) {
+			break;
 		}
 		if (bSuccess && dwRead > 0) {
 			buf[sizeof (buf) - 1] = 0;
-			if (bStopPipeLoop) {
-				break;
-			}
+			OVERLAPPED oWrite = { 0 };
 			char *res = lang->cmd_str ((RCore*)lang->user, buf);
 			if (res) {
 				int res_len = strlen (res) + 1;
@@ -68,29 +77,32 @@ static void lang_pipe_run_win(RLang *lang) {
 					memset (buf, 0, PIPE_BUF_SIZE);
 					dwWritten = 0;
 					int writelen = res_len - i;
-					int rc = WriteFile (hPipeInOut, res + i, writelen > PIPE_BUF_SIZE ? PIPE_BUF_SIZE : writelen, &dwWritten, 0);
-					if (bStopPipeLoop) {
-						break;
-					}
-					if (!rc) {
+					int rc = WriteFile (hPipeInOut, res + i,
+					                    writelen > PIPE_BUF_SIZE ? PIPE_BUF_SIZE : writelen,
+					                    &dwWritten, &oWrite);
+					if (!rc && GetLastError () != ERROR_IO_PENDING) {
 						r_sys_perror ("lang_pipe_run_win/WriteFile");
 					}
+					i += writelen > PIPE_BUF_SIZE ? PIPE_BUF_SIZE : writelen; // TODO dwWritten
+					/*
 					if (dwWritten > 0) {
 						i += dwWritten - 1;
 					} else {
-						/* send null termination // chop */
+						// send null termination // chop
 						eprintf ("w32-lang-pipe: 0x%x\n", (ut32)GetLastError ());
 						//WriteFile (hPipeInOut, "", 1, &dwWritten, NULL);
 						//break;
 					}
+					*/
 				}
 				free (res);
 			} else {
-				WriteFile (hPipeInOut, "", 1, &dwWritten, NULL);
+				WriteFile (hPipeInOut, "", 1, NULL, &oWrite);
 			}
 		}
-	} while (!bStopPipeLoop);
+	} while (true);
 	r_cons_break_pop ();
+	CloseHandle (hRead);
 }
 #else
 static void env(const char *s, int f) {
@@ -215,7 +227,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	}
 	HANDLE hConnected = CreateEvent (NULL, TRUE, FALSE, NULL);
 	if (!hConnected) {
-		eprintf ("CreateEvent failed: %#x\n", (int)GetLastError ());
+		eprintf ("hConnected CreateEvent failed: %#x\n", (int)GetLastError ());
 		goto pipe_cleanup;
 	}
 	OVERLAPPED oConnect = { 0 };
@@ -223,7 +235,6 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	hproc = myCreateChildProcess (code);
 	BOOL connected = FALSE;
 	if (hproc) {
-		bStopPipeLoop = FALSE;
 		connected = ConnectNamedPipe (hPipeInOut, &oConnect);
 		DWORD err = GetLastError ();
 		if (!connected && err != ERROR_PIPE_CONNECTED) {
