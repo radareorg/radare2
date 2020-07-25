@@ -491,7 +491,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		0
 	};
 	bool arch_destroys_dst = does_arch_destroys_dst (anal->cur->arch);
-	bool is_arm = anal->cur->arch && !strcmp (anal->cur->arch, "arm");
+	bool is_arm = anal->cur->arch && !strncmp (anal->cur->arch, "arm", 3);
 	char tmp_buf[MAX_FLG_NAME_SIZE + 5] = "skip";
 	bool is_x86 = is_arm ? false: anal->cur->arch && !strncmp (anal->cur->arch, "x86", 3);
 	bool is_amd64 = is_x86 ? fcn->cc && !strcmp (fcn->cc, "amd64") : false;
