@@ -464,6 +464,10 @@ static inline bool op_is_set_bp(RAnalOp *op, const char *bp_reg, const char *sp_
 	return false;
 }
 
+static inline does_arch_destroys_dst(const char *arch) {
+	return arch && (!strncmp (arch, "arm", 3) || !strcmp (arch, "riscv") || !strcmp (arch, "ppc"));
+}
+
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
 	const int continue_after_jump = anal->opt.afterjmp;
 	const int addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1;
@@ -486,8 +490,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	} delay = {
 		0
 	};
-	bool is_arm = anal->cur->arch && !strncmp (anal->cur->arch, "arm", 3);
-	bool is_riscv = anal->cur->arch && !strcmp (anal->cur->arch, "riscv");
+	bool arch_destroys_dst = does_arch_destroys_dst (anal->cur->arch);
+	bool is_arm = anal->cur->arch && !strcmp (anal->cur->arch, "arm");
 	char tmp_buf[MAX_FLG_NAME_SIZE + 5] = "skip";
 	bool is_x86 = is_arm ? false: anal->cur->arch && !strncmp (anal->cur->arch, "x86", 3);
 	bool is_amd64 = is_x86 ? fcn->cc && !strcmp (fcn->cc, "amd64") : false;
@@ -1241,7 +1245,7 @@ analopfinish:
 			}
 			break;
 		}
-		if (has_stack_regs && (is_arm || is_riscv)) {
+		if (has_stack_regs && arch_destroys_dst) {
 			if (op_is_set_bp (&op, bp_reg, sp_reg) && op.src[1]) {
 				switch (op.type & R_ANAL_OP_TYPE_MASK) {
 				case R_ANAL_OP_TYPE_ADD:

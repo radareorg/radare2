@@ -772,8 +772,13 @@ static inline bool op_affect_dst(RAnalOp* op) {
 	}
 }
 
+#define STR_EQUAL(s1, s2) (s1 && s2 && !strcmp (s1, s2))
+
+static inline bool arch_destroys_dst(const char *arch) {
+	return (STR_EQUAL (arch, "arm") || STR_EQUAL (arch, "riscv") || STR_EQUAL (arch, "ppc"));
+}
+
 static bool is_used_like_arg(const char *regname, const char *opsreg, const char *opdreg, RAnalOp *op, RAnal *anal) {
-	#define STR_EQUAL(s1, s2) (s1 && s2 && !strcmp (s1, s2))
 	RAnalValue *dst = op->dst;
 	RAnalValue *src = op->src[0];
 	switch (op->type) {
@@ -804,7 +809,7 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 		}
 		//fallthrough
 	default:
-		if (op_affect_dst (op) && (STR_EQUAL (anal->cur->arch, "arm") || STR_EQUAL (anal->cur->arch, "riscv"))) {
+		if (op_affect_dst (op) && arch_destroys_dst (anal->cur->arch)) {
 			if (is_reg_in_src (regname, anal, op)) {
 				return true;
 			}
