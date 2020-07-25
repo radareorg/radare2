@@ -422,7 +422,7 @@ static RList* entries(RBinFile *bf) {
 			}
 		}
 		if (ptr->hvaddr == UT64_MAX) {
-			Elf_(r_bin_elf_p2v_new) (obj, ptr->hpaddr);
+			Elf_(r_bin_elf_p2v) (obj, ptr->hpaddr);
 		}
 
 		if (obj->ehdr.e_machine == EM_ARM) {
