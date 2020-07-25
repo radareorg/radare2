@@ -3370,7 +3370,7 @@ static RList *recurse_bb(RCore *core, ut64 addr, RAnalBlock *dest) {
 	return recurse (core, bb, dest);
 }
 
-#define REG_SET_SIZE R_ANAL_CC_MAXARG + 2
+#define REG_SET_SIZE (R_ANAL_CC_MAXARG + 2)
 
 typedef struct {
 	int count;
