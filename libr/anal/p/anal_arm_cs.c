@@ -3175,15 +3175,25 @@ static void create_src_dst(RAnalOp *op) {
 static void op_fillval(RAnalOp *op , csh handle, cs_insn *insn, int bits) {
 	create_src_dst (op);
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
-	case R_ANAL_OP_TYPE_LOAD:
 	case R_ANAL_OP_TYPE_MOV:
-	case R_ANAL_OP_TYPE_SUB:
+	case R_ANAL_OP_TYPE_CMP:
 	case R_ANAL_OP_TYPE_ADD:
+	case R_ANAL_OP_TYPE_SUB:
+	case R_ANAL_OP_TYPE_MUL:
+	case R_ANAL_OP_TYPE_DIV:
+	case R_ANAL_OP_TYPE_SHR:
+	case R_ANAL_OP_TYPE_SHL:
+	case R_ANAL_OP_TYPE_SAL:
+	case R_ANAL_OP_TYPE_SAR:
+	case R_ANAL_OP_TYPE_OR:
 	case R_ANAL_OP_TYPE_AND:
 	case R_ANAL_OP_TYPE_XOR:
-	case R_ANAL_OP_TYPE_MUL:
-	case R_ANAL_OP_TYPE_CMP:
-	case R_ANAL_OP_TYPE_OR:
+	case R_ANAL_OP_TYPE_NOR:
+	case R_ANAL_OP_TYPE_NOT:
+	case R_ANAL_OP_TYPE_LOAD:
+	case R_ANAL_OP_TYPE_LEA:
+	case R_ANAL_OP_TYPE_ROR:
+	case R_ANAL_OP_TYPE_ROL:
 	case R_ANAL_OP_TYPE_CAST:
 		set_src_dst (op->src[2], &handle, insn, 3, bits);
 		set_src_dst (op->src[1], &handle, insn, 2, bits);
