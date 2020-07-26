@@ -116,6 +116,7 @@ rules to make the git history more readable and consistent:
 * ##shell    - commandline, newshell, ..
 * ##signatures-searching/generating them
 * ##test     - testing infrastructure fixes/changes
+* ##tools    - r2pm, rarun2, rax2 ... that don't fit in other categories
 * ##util     - core apis
 * ##visual   - visual ui, including panels
 
