@@ -4340,7 +4340,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 	case 'b': // "dcb"
 		{
 			if (!core->dbg->session) {
-				eprintf ("Error: Session have not started\n");
+				eprintf ("Error: Session has not started\n");
 				break;
 			}
 			if (!r_debug_continue_back (core->dbg)) {
@@ -4618,7 +4618,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 	case 'b': // "dsb"
 		if (r_config_get_i (core->config, "cfg.debug")) {
 			if (!core->dbg->session) {
-				eprintf ("Session have not started\n");
+				eprintf ("Session has not started\n");
 			} else if (r_debug_step_back (core->dbg, times) < 0) {
 				eprintf ("Error: stepping back failed\n");
 			}
@@ -4877,7 +4877,7 @@ static int cmd_debug(void *data, const char *input) {
 			switch (input[2]) {
 			case '+': // "dts+"
 				if (r_debug_is_dead (core->dbg)) {
-					eprintf ("Cannot start session, run ood?\n");
+					eprintf ("Cannot start session outside of debug mode, run ood?\n");
 					break;
 				}
 				if (core->dbg->session) {

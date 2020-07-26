@@ -90,7 +90,7 @@ R_API bool r_debug_snap_is_equal(RDebugSnap *a, RDebugSnap *b) {
 	r_hash_do_begin (ctx, algobit);
 	r_hash_calculate (ctx, algobit, b->data, b->size);
 	r_hash_do_end (ctx, algobit);
-	
+
 	ret = memcmp (temp, ctx->digest, R_HASH_SIZE_SHA256) == 0;
 	free (temp);
 	r_hash_free (ctx);

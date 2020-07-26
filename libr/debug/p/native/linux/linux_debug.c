@@ -402,7 +402,7 @@ repeat:
 		r_cons_sleep_end (bed);
 
 		if (ret < 0) {
-			perror ("here waitpid");
+			perror ("waitpid");
 			break;
 		} else if (!ret) {
 			flags &= ~WNOHANG;
