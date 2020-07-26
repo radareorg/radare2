@@ -93,6 +93,14 @@ static bool vtable_section_can_contain_vtables(RBinSection *section) {
 		r_str_endswith (section->name, "__const");
 }
 
+static bool section_can_contain_rtti(RBinSection *section) {
+	if (section->is_data) {
+		return true;
+	}
+	return !strcmp (section->name, ".data.rel.ro") ||
+		r_str_endswith (section->name, "__const");
+}
+
 static bool vtable_is_addr_vtable_start_itanium(RVTableContext *context, RBinSection *section, ut64 curAddress) {
 	ut64 value;
 	if (!curAddress || curAddress == UT64_MAX) {
@@ -104,7 +112,8 @@ static bool vtable_is_addr_vtable_start_itanium(RVTableContext *context, RBinSec
 	if (!context->read_addr (context->anal, curAddress - context->word_size, &value)) { // get the RTTI pointer
 		return false;
 	}
-	if (value && !section->is_data) { // RTTI ptr must point somewhere in the data section
+	RBinSection *rtti_section = context->anal->binb.get_vsect_at (context->anal->binb.bin, value);
+	if (value && !section_can_contain_rtti (rtti_section)) { // RTTI ptr must point somewhere in the data section
 		return false;
 	}
 	if (!context->read_addr (context->anal, curAddress - 2 * context->word_size, &value)) { // Offset to top
