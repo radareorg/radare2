@@ -90,6 +90,7 @@ static bool vtable_section_can_contain_vtables(RBinSection *section) {
 	return !strcmp (section->name, ".rodata") ||
 		!strcmp (section->name, ".rdata") ||
 		!strcmp (section->name, ".data.rel.ro") ||
+		!strcmp (section->name, ".data.rel.ro.local") ||
 		r_str_endswith (section->name, "__const");
 }
 
@@ -98,6 +99,7 @@ static bool section_can_contain_rtti(RBinSection *section) {
 		return true;
 	}
 	return !strcmp (section->name, ".data.rel.ro") ||
+		!strcmp (section->name, ".data.rel.ro.local") ||
 		r_str_endswith (section->name, "__const");
 }
 
