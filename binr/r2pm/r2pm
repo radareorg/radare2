@@ -584,8 +584,11 @@ case "$1" in
 			if [ -d "${R2PM_GITDIR}/$2" ]; then
 				echo "Cleaning up ${R2PM_GITDIR}/$2..."
 				rm -rf "${R2PM_GITDIR}/$2"
+			elif [ -d "${R2PM_GITDIR}/$2.git" ]; then
+				echo "Cleaning up ${R2PM_GITDIR}/$2.git..."
+				rm -rf "${R2PM_GITDIR}/$2.git"
 			else
-				echo "Cannot find $2 in ${R2PM_GITDIR}"
+				echo "Cannot find $2 or $2.git in ${R2PM_GITDIR}"
 				RC=1
 			fi
 			shift
