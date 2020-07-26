@@ -89,22 +89,35 @@ rules to make the git history more readable and consistent:
 ### Commit message hashtag list:
 
 * ##anal     - analysis related
-* ##asm      - assembler/disassembler
+* ##asm      - assembler
 * ##bin      - binary parsing
 * ##build    - build fixes/changes
+* ##config   - config var changes/additions/renamings
 * ##cons     - console/terminal-related
 * ##crypto   - cryptography
 * ##debug    - debugger stuff
+* ##diff     - diffing code, strings, basic blocks, ...
+* ##disasm   - disassembler
+* ##doc      - documentation
 * ##egg      - the `r_lang` compiler
+* ##emu      - emulation, including esil
+* ##graph    - basic block graph, callgraph, ...
 * ##io       - related to the `r_io` library
+* ##json     - json changes/fixes
 * ##lang     - bindings
+* ##meta     - metadata handling other than printing
+* ##optimization-space/time optimizations
 * ##port     - portability (new OS/archs)
+* ##print    - printing data, structures, strings, tables, types ..
 * ##projects - saving/loading state
 * ##refactor - improve code quality
+* ##remote   - r2 over tcp, http, rap, serial .. including collaboration
 * ##search   - rafind2, / command, ..
 * ##shell    - commandline, newshell, ..
 * ##signatures-searching/generating them
+* ##test     - testing infrastructure changes/fixes
 * ##util     - core apis
+* ##visual   - visual ui, including panels
 
 # Additional resources
 
