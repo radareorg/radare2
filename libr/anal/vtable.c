@@ -95,6 +95,9 @@ static bool vtable_section_can_contain_vtables(RBinSection *section) {
 }
 
 static bool section_can_contain_rtti(RBinSection *section) {
+	if (!section) {
+		return false;
+	}
 	if (section->is_data) {
 		return true;
 	}
