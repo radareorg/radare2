@@ -320,6 +320,20 @@ static void rtti_itanium_print_class_type_info_json(class_type_info *cti) {
 	pj_free (pj);
 }
 
+
+static char *vmi_flags_to_string(int flags) {
+	if  (flags == 0x0) {
+		return "class doesn't have non-diamond repeated inheritance and is not diamond shaped";
+	} else if (flags == 0x1) {
+		return "class has non-diamond repeated inheritance and class is not diamond shaped";
+	} else if (flags == 0x2) {
+		return "class doesn't have non-diamond repeated inheritance and class is diamond shaped";
+	} else if (flags == 0x3) {
+		return "class has non-diamond repeated inheritance and class is diamond shaped";
+	}
+	return "";
+}
+
 static void rtti_itanium_print_vmi_class_type_info(vmi_class_type_info *vmi_cti, const char *prefix) {
 	r_cons_printf ("%sType Info at 0x%08" PFMT64x ":\n"
 			"%s  Type Info type: %s\n"
@@ -328,8 +342,7 @@ static void rtti_itanium_print_vmi_class_type_info(vmi_class_type_info *vmi_cti,
 			"%s  Reference to type's name: 0x%08" PFMT32x "\n"
 			"%s  Type Name: %s\n"
 			"%s  Name unique: %s\n"
-			"%s  Flags: 0x%x"
-			"\n"
+			"%s  Flags (0x%x): %s\n"
 			"%s  Count of base classes: 0x%x"
 			"\n",
 			prefix, vmi_cti->typeinfo_addr,
@@ -339,7 +352,7 @@ static void rtti_itanium_print_vmi_class_type_info(vmi_class_type_info *vmi_cti,
 			prefix, vmi_cti->name_addr,
 			prefix, vmi_cti->name,
 			prefix, vmi_cti->name_unique ? "true" : "false",
-			prefix, vmi_cti->vmi_flags,
+			prefix, vmi_cti->vmi_flags, vmi_flags_to_string (vmi_cti->vmi_flags),
 			prefix, vmi_cti->vmi_base_count);
 
 	int i;
@@ -427,6 +440,7 @@ static RTypeInfoType rtti_itanium_type_info_type_from_flag(RVTableContext *conte
 	RCore *core = context->anal->coreb.core;
 	r_return_val_if_fail (core, R_TYPEINFO_TYPE_CLASS);
 
+	// get the reloc flags
 	const RList *flags = context->anal->flb.get_list (core->flags, atAddress);
 	if (!flags) {
 		return R_TYPEINFO_TYPE_UNKNOWN;
@@ -439,41 +453,52 @@ static RTypeInfoType rtti_itanium_type_info_type_from_flag(RVTableContext *conte
 			return R_TYPEINFO_TYPE_VMI_CLASS;
 		} else if (strstr (flag->name, SI_CLASS_TYPE_INFO_NAME)) {
 			return R_TYPEINFO_TYPE_SI_CLASS;
+		} else if (strstr (flag->name, CLASS_TYPE_INFO_NAME)) {
+			return R_TYPEINFO_TYPE_CLASS;
 		}
 	}
 
 	return R_TYPEINFO_TYPE_UNKNOWN;
 }
 
-static class_type_info *rtti_itanium_type_info_new(RVTableContext *context, ut64 atAddress) {
-	ut64 colRefAddr = atAddress - VT_WORD_SIZE (context); //Vtable: Type Info
-	ut64 colAddr; //Type Info
+static class_type_info *rtti_itanium_type_info_new(RVTableContext *context, ut64 vtable_addr) {
+	/*
+		vpointer - 2 words | offset to top |
+		                   |---------------|
+		vpointer - word    | RTTI pointer  |
+		                   |---------------|
+		vpointer   ----->  |  virt_func_0  |
+	*/
+	ut64 rtti_ptr = vtable_addr - VT_WORD_SIZE (context); // RTTI pointer
+	ut64 rtti_addr; // RTTI address
 
-	if (!context->read_addr (context->anal, colRefAddr, &colAddr)) {
+	if (!context->read_addr (context->anal, rtti_ptr, &rtti_addr)) {
 		return NULL;
 	}
 
-	RTypeInfoType type = rtti_itanium_type_info_type_from_flag (context, colAddr);
+	RTypeInfoType type = rtti_itanium_type_info_type_from_flag (context, rtti_addr);
+	// If there isn't flag telling us the type of TypeInfo
+	// try to find the flag in it's vtable
 	if (type == R_TYPEINFO_TYPE_UNKNOWN) {
 		ut64 follow;
-		if (!context->read_addr (context->anal, colAddr, &follow)) {
+		if (!context->read_addr (context->anal, rtti_addr, &follow)) {
 			return NULL;
 		}
 		follow -= 2 * context->word_size;
 		type = rtti_itanium_type_info_type_from_flag (context, follow);
 	}
-
+	// If nothing found, just assume the default one
 	if (type == R_TYPEINFO_TYPE_UNKNOWN) {
 		type = R_TYPEINFO_TYPE_CLASS;
 	}
 
 	switch (type) {
 	case R_TYPEINFO_TYPE_VMI_CLASS:
-		return (class_type_info *)rtti_itanium_vmi_class_type_info_new (context, colAddr, atAddress);
+		return (class_type_info *)rtti_itanium_vmi_class_type_info_new (context, rtti_addr, vtable_addr);
 	case R_TYPEINFO_TYPE_SI_CLASS:
-		return (class_type_info *)rtti_itanium_si_class_type_info_new (context, colAddr, atAddress);
+		return (class_type_info *)rtti_itanium_si_class_type_info_new (context, rtti_addr, vtable_addr);
 	case R_TYPEINFO_TYPE_CLASS:
-		return rtti_itanium_class_type_info_new (context, colAddr, atAddress);
+		return rtti_itanium_class_type_info_new (context, rtti_addr, vtable_addr);
 	default:
 		r_return_val_if_reached (NULL);
 	}
