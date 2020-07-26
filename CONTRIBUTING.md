@@ -103,7 +103,7 @@ rules to make the git history more readable and consistent:
 * ##emu      - emulation, including esil
 * ##graph    - basic block graph, callgraph, ...
 * ##io       - related to the `r_io` library
-* ##json     - json changes/fixes
+* ##json     - json fixes/changes
 * ##lang     - bindings
 * ##meta     - metadata handling other than printing
 * ##optimization-space/time optimizations
@@ -115,7 +115,7 @@ rules to make the git history more readable and consistent:
 * ##search   - rafind2, / command, ..
 * ##shell    - commandline, newshell, ..
 * ##signatures-searching/generating them
-* ##test     - testing infrastructure changes/fixes
+* ##test     - testing infrastructure fixes/changes
 * ##util     - core apis
 * ##visual   - visual ui, including panels
 
