@@ -347,15 +347,21 @@ userconf.set10('WITH_GPL', true)
 ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
 userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
 
+lrt = []
+if not cc.has_function('clock_gettime', prefix: '#include <time.h>') and cc.has_header_symbol('features.h', '__GLIBC__')
+  lrt = cc.find_library('rt', required: true)
+endif
+
 foreach item : [
-    ['arc4random_uniform', '#include <stdlib.h>'],
-    ['explicit_bzero', '#include <string.h>'],
-    ['explicit_memset', '#include <string.h>'],
-    ['clock_nanosleep', '#include <time.h>'],
-    ['sigaction', '#include <signal.h>']
+    ['arc4random_uniform', '#include <stdlib.h>', []],
+    ['explicit_bzero', '#include <string.h>', []],
+    ['explicit_memset', '#include <string.h>', []],
+    ['clock_nanosleep', '#include <time.h>', []],
+    ['clock_gettime', '#include <time.h>', [lrt]],
+    ['sigaction', '#include <signal.h>', []]
   ]
   func = item[0]
-  ok = cc.has_function(func, prefix: item[1])
+  ok = cc.has_function(func, prefix: item[1], dependencies: item[2])
   userconf.set10('HAVE_@0@'.format(func.to_upper()), ok)
 endforeach
 
