@@ -428,7 +428,7 @@ jobs:
 
   build-extras:
     name: Build radare2 extras and r2pipe
-    if: contains(github.ref, 'release-') || github.event_name == 'schedule'
+    if: contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.event_name == 'schedule'
     needs: [create-tarball]
     runs-on: ubuntu-latest
     env:
