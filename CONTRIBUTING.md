@@ -80,7 +80,6 @@ rules to make the git history more readable and consistent:
 * Be short and concise, the whole concept must fit one line
 * If a command is inlined, use backticks
 * Add a double-hashtag if the change matters for the changelog (See below)
-* Search the changelog to known hashtags (see sys/release-notes.sh)
 * If the commit fixes a bug start with 'Fix #number - '
 * For extra details, add an empty line and use asterisk item list below
 * Use present simple grammar tense (Add vs Added, Fix vs Fixed/Fixes)
