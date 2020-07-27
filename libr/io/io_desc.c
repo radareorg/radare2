@@ -91,6 +91,14 @@ R_API RIODesc *r_io_desc_get_prev(RIO *io, RIODesc *desc) {
 	return (RIODesc*) r_id_storage_get (io->files, prev_fd);
 }
 
+R_API RIODesc *r_io_desc_get_highest(RIO *io) {
+	return r_io_desc_get (io, r_io_fd_get_highest (io));
+}
+
+R_API RIODesc *r_io_desc_get_lowest(RIO *io) {
+	return r_io_desc_get (io, r_io_fd_get_lowest (io));
+}
+
 R_API RIODesc *r_io_desc_open(RIO *io, const char *uri, int perm, int mode) {
 	r_return_val_if_fail (io && uri, NULL);
 	RIOPlugin *plugin = r_io_plugin_resolve (io, uri, 0);

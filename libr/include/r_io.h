@@ -395,6 +395,8 @@ R_API bool r_io_desc_del (RIO *io, int fd);
 R_API RIODesc *r_io_desc_get (RIO *io, int fd);
 R_API RIODesc *r_io_desc_get_next (RIO *io, RIODesc *desc);
 R_API RIODesc *r_io_desc_get_prev (RIO *io, RIODesc *desc);
+R_API RIODesc *r_io_desc_get_highest (RIO *io);
+R_API RIODesc *r_io_desc_get_lowest (RIO *io);
 R_API ut64 r_io_desc_seek (RIODesc *desc, ut64 offset, int whence);
 R_API bool r_io_desc_resize (RIODesc *desc, ut64 newsize);
 R_API ut64 r_io_desc_size (RIODesc *desc);
