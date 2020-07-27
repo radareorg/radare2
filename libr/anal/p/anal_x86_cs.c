@@ -781,10 +781,10 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		case X86_OP_REG:
 		default:;
 			int width = INSOP(1).size;
-			char signext[16] = "";
+			/*char signext[16] = "";
 			if (insn->id == X86_INS_MOVSX || insn->id == X86_INS_MOVSXD) {
 				sprintf(signext, ",%d,~", width*8);
-			}
+			}*/
 			if (INSOP(0).type == X86_OP_MEM) {
 				op->direction = 1; // read
 			}
@@ -803,10 +803,21 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 					// Here it is still correct, because 'e** = X'
 					// turns into 'r** = X' (first one will keep higher bytes,
 					// second one will overwrite them with zeros).
-					esilprintf (op, "%s%s,%s,=", src, signext, dst64);
+					if (insn->id == X86_INS_MOVSX || insn->id == X86_INS_MOVSXD) {
+						esilprintf (op, "%d,%s,~,%s,=", width*8, src, dst64);
+					}
+					else {
+						esilprintf (op, "%s,%s,=", src, dst64);
+					}
+
 				} else {
-					esilprintf (op, "%s%s,%s,=", src, signext, dst);
-				}
+					if (insn->id == X86_INS_MOVSX || insn->id == X86_INS_MOVSXD) {
+						esilprintf (op, "%d,%s,~,%s,=", width*8, src, dst);
+					}
+					else {
+						esilprintf (op, "%s,%s,=", src, dst);
+					}
+				}				
 			}
 			break;
 		}
@@ -1537,11 +1548,12 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			arg0 = getarg (&gop, 0, 0, NULL, ARG0_AR, NULL);
 			arg1 = getarg (&gop, 1, 0, NULL, ARG1_AR, NULL);
 			arg2 = getarg (&gop, 2, 0, NULL, ARG2_AR, NULL);
-			// TODO handle signedness
+			// DONE handle signedness
 			// IDIV does not change flags
 			op->sign = true;
 			if (!arg2 && !arg1) {
 				// TODO: IDIV rbx not implemented. this is just a workaround
+				// 
 				// http://www.tptp.cc/mirrors/siyobik.info/instruction/IDIV.html
 				// Divides (signed) the value in the AX, DX:AX, or EDX:EAX registers (dividend) by the source operand (divisor) and stores the result in the AX (AH:AL), DX:AX, or EDX:EAX registers. The source operand can be a general-purpose register or a memory location. The action of this instruction depends on the operand size (dividend/divisor), as shown in the following table:
 				// IDIV RBX    ==   RDX:RAX /= RBX
@@ -1553,11 +1565,11 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 					const char *r_rema = (width==1)?"ah": (width==2)?"dx": (width==4)?"edx":"rdx";
 					const char *r_nume = (width==1)?"ax": r_quot;
 
-					if ( width == 1 ) {
+					if (0) { // ( width == 1 ) { // idk what this is, i think they are using eflags as a tmp to do signext stuff
 						esilprintf(op, "0xffffff00,eflags,&=,%s,%s,%%,eflags,|=,%s,%s,/,%s,=,0xff,eflags,&,%s,=,0xffffff00,eflags,&=,2,eflags,|=",
 							arg0, r_nume, arg0, r_nume, r_quot, r_rema);
 					} else {
-						esilprintf (op, "%d,%s,~,%d,%s,<<,%s,+,%%,%d,%s,~,%d,%s,<<,%s,+,/,%s,=,%s,=",
+						esilprintf (op, "%d,%s,~,%d,%s,<<,%s,+,~%%,%d,%s,~,%d,%s,<<,%s,+,~/,%s,=,%s,=",
 								width*8, arg0, width*8, r_rema, r_nume, width*8, arg0, width*8, r_rema, r_nume, r_quot, r_rema);
 					}
 				}
@@ -1567,7 +1579,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			} else {
 				// does this instruction even exist?
 				int width = INSOP(0).size;
-				esilprintf (op, "%d,%s,~,%d,%s,~,/,%s,=", width*8, arg2, width*8, arg1, arg0);
+				esilprintf (op, "%d,%s,~,%d,%s,~,~/,%s,=", width*8, arg2, width*8, arg1, arg0);
 			}
 		}
 		break;
