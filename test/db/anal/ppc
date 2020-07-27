@@ -471,7 +471,7 @@ EOF
 RUN
 
 NAME=ppc-detect-vtables
-FILE=bins/elf/ppc_vtables
+FILE=bins/elf/ppc_classes
 CMDS=<<EOF
 av
 EOF
