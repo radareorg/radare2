@@ -231,7 +231,7 @@ jobs:
   create-tarball:
     name: Create source tarball
     if: contains(github.head_ref, 'extras') || contains(github.ref, 'release-')
-    needs: [build-and-test, build-centos6, build-debian, build-static]
+    needs: [build-and-test]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -560,7 +560,7 @@ jobs:
 
   create-release:
     runs-on: ubuntu-latest
-    needs: [build-and-test, create-tarball, test-deb, build-android, test-osx-pkg, test-windows-clang_cl, build-ios-cydia, build-extras]
+    needs: [build-and-test, build-centos6, build-debian, build-static, test-deb, build-android, test-osx-pkg, test-windows-clang_cl, build-ios-cydia, build-extras]
     steps:
     - uses: actions/checkout@v2
     - name: Extract r2 version
