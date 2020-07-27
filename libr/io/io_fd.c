@@ -144,3 +144,24 @@ R_API int r_io_fd_get_prev(RIO *io, int fd) {
 	}
 	return ret;
 }
+
+R_API int r_io_fd_get_highest(RIO *io) {
+	r_return_val_if_fail (io, -1);
+	int fd = 0;
+	if (!r_id_storage_get_prev (io->files, (ut32 *)&fd)) {
+		return -1;
+	}
+	return fd;
+}
+
+R_API int r_io_fd_get_lowest(RIO *io) {
+	r_return_val_if_fail (io, -1);
+	int fd = 0;
+	if (!r_id_storage_get_prev (io->files, (ut32 *)&fd)) {
+		return -1;
+	}
+	if (!r_id_storage_get_next (io->files, (ut32 *)&fd)) {
+		return -1;
+	}
+	return fd;
+}

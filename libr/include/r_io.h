@@ -460,6 +460,8 @@ R_API int r_io_fd_get_current(RIO *io);
 R_API bool r_io_use_fd (RIO *io, int fd);
 R_API int r_io_fd_get_next (RIO *io, int fd);
 R_API int r_io_fd_get_prev (RIO *io, int fd);
+R_API int r_io_fd_get_highest (RIO *io);
+R_API int r_io_fd_get_lowest (RIO *io);
 
 
 #define r_io_range_new()	R_NEW0(RIORange)
