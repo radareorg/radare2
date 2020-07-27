@@ -1114,11 +1114,11 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_LDURB:
 	case ARM64_INS_LDURH:
 	case ARM64_INS_LDR:
-	case ARM64_INS_LDRSB:
-	case ARM64_INS_LDRSH:
+	//case ARM64_INS_LDRSB:
+	//case ARM64_INS_LDRSH:
 	case ARM64_INS_LDRB:
-	case ARM64_INS_LDRSW:
-	case ARM64_INS_LDURSW:
+	//case ARM64_INS_LDRSW:
+	//case ARM64_INS_LDURSW:
 	case ARM64_INS_LDXR:
 	case ARM64_INS_LDXRB:
 	case ARM64_INS_LDXRH:
@@ -1129,10 +1129,8 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_LDARB:
 	case ARM64_INS_LDARH:
 		{
-			// TODO handle the sign extended loads
 			int size = REGSIZE64 (0);
 			switch (insn->id) {
-			case ARM64_INS_LDRSB:
 			case ARM64_INS_LDRB:
 			case ARM64_INS_LDARB:
 			case ARM64_INS_LDAXRB:
@@ -1145,7 +1143,6 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			case ARM64_INS_LDXRH:
 			case ARM64_INS_LDAXRH:
 			case ARM64_INS_LDURH:
-			case ARM64_INS_LDRSH:
 				size = 2;
 				break;
 			case ARM64_INS_LDRSW:
@@ -1155,6 +1152,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			default:
 				break;
 			}
+
 		if (ISMEM64(1)) {
 			if (HASMEMINDEX64(1)) {
 				if (LSHIFT2_64(1)) {
@@ -1199,6 +1197,80 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			} else {
 				r_strbuf_setf (&op->esil, "%"PFMT64d",[%d],%s,=",
 					IMM64(1), size, REG64(0));
+			}
+		}
+		break;
+		}
+	case ARM64_INS_LDRSB:
+	case ARM64_INS_LDRSH:
+	case ARM64_INS_LDRSW:
+	case ARM64_INS_LDURSB:
+	case ARM64_INS_LDURSH:
+	case ARM64_INS_LDURSW:
+		{
+			// handle the sign extended instrs here
+			int size = REGSIZE64 (0);
+			switch (insn->id) {
+			case ARM64_INS_LDRSB:
+			case ARM64_INS_LDURSB:
+				size = 1;
+				break;
+			case ARM64_INS_LDRSH:
+			case ARM64_INS_LDURSH:
+				size = 2;
+				break;
+			case ARM64_INS_LDRSW:
+			case ARM64_INS_LDURSW:
+				size = 4;
+				break;
+			default:
+				break;
+			}
+
+		if (ISMEM64(1)) {
+			if (HASMEMINDEX64(1)) {
+				if (LSHIFT2_64(1)) {
+					r_strbuf_appendf (&op->esil, "%d,%s,%d,%s,%s,+,[%d],~,%s,=",
+							size*8, MEMBASE64(1), LSHIFT2_64(1), MEMINDEX64(1), DECODE_SHIFT64(1), size, REG64(0));
+				} else {
+					r_strbuf_appendf (&op->esil, "%d,%s,%s,+,[%d],~,%s,=",
+							size*8, MEMBASE64(1), MEMINDEX64(1), size, REG64(0));
+				}
+			} else {
+				if (LSHIFT2_64(1)) {
+					r_strbuf_appendf (&op->esil, "%d,%s,%d,%"PFMT64d",%s,+,[%d],~,%s,=",
+							size*8, MEMBASE64(1), LSHIFT2_64(1), MEMDISP64(1), DECODE_SHIFT64(1), size, REG64(0));
+				} else if ((int)MEMDISP64(1) < 0){
+					r_strbuf_appendf (&op->esil, "%d,%"PFMT64d",%s,-,DUP,tmp,=,[%d],~,%s,=,",
+							size*8, -(int)MEMDISP64(1), MEMBASE64(1), size, REG64(0));
+				} else {
+					r_strbuf_appendf (&op->esil, "%d,%"PFMT64d",%s,+,DUP,tmp,=,[%d],~,%s,=,",
+							size*8, MEMDISP64(1), MEMBASE64(1), size, REG64(0));
+				}
+			}
+			op->refptr = 4;
+		} else {
+			if (ISREG64(1)) {
+				if (OPCOUNT64() == 2) {
+					r_strbuf_setf (&op->esil, "%d,%s,[%d],~,%s,=",
+						size*8, REG64(1), size, REG64(0));
+				} else if (OPCOUNT64() == 3) {
+					/*
+						This seems like a capstone bug:
+						instructions like
+							ldr x16, [x13, x9]
+							ldrb w2, [x19, x23]
+						are not detected as ARM64_OP_MEM type and
+						fall in this case instead.
+					*/
+					if (ISREG64(2)) {
+						r_strbuf_setf (&op->esil, "%d,%s,%s,+,[%d],~,%s,=",
+							size*8, REG64(1), REG64(2), size, REG64(0));
+					}
+				}
+			} else {
+				r_strbuf_setf (&op->esil, "%d,%"PFMT64d",[%d],~,%s,=",
+					size*8, IMM64(1), size, REG64(0));
 			}
 		}
 		break;
