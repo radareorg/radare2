@@ -230,7 +230,7 @@ jobs:
 
   create-tarball:
     name: Create source tarball
-    if: github.event_name == 'push' && contains(github.ref, 'release-')
+    if: contains(github.head_ref, 'extras') || contains(github.ref, 'release-')
     needs: [build-and-test, build-centos6, build-debian, build-static]
     runs-on: ubuntu-latest
     steps:
