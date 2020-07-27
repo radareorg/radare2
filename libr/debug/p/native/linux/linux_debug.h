@@ -108,6 +108,13 @@ typedef ut64 mips64_regs_t [274];
 #endif
 #endif
 
+// SIGTRAP si_codes from <asm/siginfo.h>
+#define TRAP_BRKPT		1
+#define TRAP_TRACE		2
+#define TRAP_BRANCH		3
+#define TRAP_HWBKPT		4
+#define TRAP_UNK		5
+
 //API
 bool linux_set_options(RDebug *dbg, int pid);
 int linux_step(RDebug *dbg);

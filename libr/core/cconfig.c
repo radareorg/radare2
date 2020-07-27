@@ -1434,6 +1434,13 @@ static bool cb_dbg_follow_child(void *user, void *data) {
 	return true;
 }
 
+static bool cb_dbg_trace_continue(void *user, void *data) {
+	RCore *core = (RCore*)user;
+	RConfigNode *node = (RConfigNode*)data;
+	core->dbg->trace_continue = node->i_value;
+	return true;
+}
+
 static bool cb_dbg_aftersc(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -2755,16 +2762,6 @@ static bool cb_malloc(void *user, void *data) {
 	return true;
 }
 
-static bool cb_dbgsnap(void *user, void *data) {
-	RCore *core = (RCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
-
-	if (node->value){
-		r_debug_session_path (core->dbg, node->value);
-	}
-	return true;
-}
-
 static bool cb_log_config_level(void *coreptr, void *nodeptr) {
 	RConfigNode *node = (RConfigNode *)nodeptr;
 	r_log_set_level (node->i_value);
@@ -3275,7 +3272,6 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* dir */
 	SETI ("dir.depth", 10,  "Maximum depth when searching recursively for files");
-	SETCB ("dir.dbgsnap", ".", &cb_dbgsnap, "Path to session dump files");
 	{
 		char *path = r_str_newf (R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC), r_config_get (core->config, "dir.prefix"));
 		SETPREF ("dir.magic", path, "Path to r_magic files");
@@ -3324,6 +3320,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("dbg.profile", "", &cb_runprofile, "Path to RRunProfile file");
 	SETCB ("dbg.args", "", &cb_dbg_args, "Set the args of the program to debug");
 	SETCB ("dbg.follow.child", "false", &cb_dbg_follow_child, "Continue tracing the child process on fork. By default the parent process is traced");
+	SETCB ("dbg.trace_continue", "true", &cb_dbg_trace_continue, "Trace every instruction between the initial PC position and the PC position at the end of continue's execution");
 	/* debug */
 	SETCB ("dbg.status", "false", &cb_dbgstatus, "Set cmd.prompt to '.dr*' or '.dr*;drd;sr PC;pi 1;s-'");
 #if DEBUGGER

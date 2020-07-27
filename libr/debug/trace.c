@@ -43,6 +43,114 @@ R_API int r_debug_trace_tag (RDebug *dbg, int tag) {
 	return (dbg->trace->tag = (tag>0)? tag: UT32_MAX);
 }
 
+R_API bool r_debug_trace_ins_before(RDebug *dbg) {
+	RListIter *it, *it_tmp;
+	RAnalValue *val;
+	ut8 buf_pc[32];
+
+	// Analyze current instruction
+	ut64 pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+	if (!dbg->iob.read_at) {
+		return false;
+	}
+	if (!dbg->iob.read_at (dbg->iob.io, pc, buf_pc, sizeof (buf_pc))) {
+		return false;
+	}
+	dbg->cur_op = R_NEW0 (RAnalOp);
+	if (!dbg->cur_op) {
+		return false;
+	}
+	if (!r_anal_op (dbg->anal, dbg->cur_op, pc, buf_pc, sizeof (buf_pc), R_ANAL_OP_MASK_VAL)) {
+		r_anal_op_free (dbg->cur_op);
+		dbg->cur_op = NULL;
+		return false;
+	}
+
+	// resolve mem write address
+	r_list_foreach_safe (dbg->cur_op->access, it, it_tmp, val) {
+		switch (val->type) {
+		case R_ANAL_VAL_REG:
+			if (!(val->access & R_ANAL_ACC_W)) {
+				r_list_delete (dbg->cur_op->access, it);
+			}
+			break;
+		case R_ANAL_VAL_MEM:
+			if (val->memref > 32) {
+				eprintf ("Error: adding changes to %d bytes in memory.\n", val->memref);
+				r_list_delete (dbg->cur_op->access, it);
+				break;
+			}
+
+			if (val->access & R_ANAL_ACC_W) {
+				// resolve memory address
+				ut64 addr = 0;
+				addr += val->delta;
+				if (val->seg) {
+					addr += r_reg_get_value (dbg->reg, val->seg);
+				}
+				if (val->reg) {
+					addr += r_reg_get_value (dbg->reg, val->reg);
+				}
+				if (val->regdelta) {
+					int mul = val->mul ? val->mul : 1;
+					addr += mul * r_reg_get_value (dbg->reg, val->regdelta);
+				}
+				// resolve address into base for ins_after
+				val->base = addr;
+			} else {
+				r_list_delete (dbg->cur_op->access, it);
+			}
+		default:
+			break;
+		}
+	}
+	return true;
+}
+
+R_API bool r_debug_trace_ins_after(RDebug *dbg) {
+	RListIter *it;
+	RAnalValue *val;
+
+	// Add reg/mem write change
+	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, false);
+	r_list_foreach (dbg->cur_op->access, it, val) {
+		if (!(val->access & R_ANAL_ACC_W)) {
+			continue;
+		}
+
+		switch (val->type) {
+		case R_ANAL_VAL_REG:
+		{
+			ut64 data = r_reg_get_value (dbg->reg, val->reg);
+
+			// add reg write
+			r_debug_session_add_reg_change (dbg->session, val->reg->arena, val->reg->offset, data);
+			break;
+		}
+		case R_ANAL_VAL_MEM:
+		{
+			ut8 buf[32] = { 0 };
+			if (!dbg->iob.read_at (dbg->iob.io, val->base, buf, val->memref)) {
+				eprintf ("Error reading memory at 0x%"PFMT64x"\n", val->base);
+				break;
+			}
+
+			// add mem write
+			size_t i;
+			for (i = 0; i < val->memref; i++) {
+				r_debug_session_add_mem_change (dbg->session, val->base + i, buf[i]);
+			}
+			break;
+		}
+		default:
+			break;
+		}
+	}
+	r_anal_op_free (dbg->cur_op);
+	dbg->cur_op = NULL;
+	return true;
+}
+
 /*
  * something happened at the given pc that we need to trace
  */
@@ -97,8 +205,6 @@ static int cmpaddr (const void *_a, const void *_b) {
 	return (r_itv_begin (a->pitv) > r_itv_begin (b->pitv))? 1:
 		 (r_itv_begin (a->pitv) < r_itv_begin (b->pitv))? -1: 0;
 }
-
-
 
 R_API void r_debug_trace_list (RDebug *dbg, int mode, ut64 offset) {
 	int tag = dbg->trace->tag;

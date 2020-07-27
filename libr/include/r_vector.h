@@ -132,6 +132,10 @@ R_API void *r_vector_shrink(RVector *vec);
 	if (!r_vector_empty (vec)) \
 		for (it = (void *)(vec)->a; (char *)it != (char *)(vec)->a + ((vec)->len * (vec)->elem_size); it = (void *)((char *)it + (vec)->elem_size))
 
+#define r_vector_foreach_prev(vec, it) \
+	if (!r_vector_empty (vec)) \
+		for (it = (void *)((char *)(vec)->a + (((vec)->len - 1)* (vec)->elem_size)); (char *)it != (char *)(vec)->a; it = (void *)((char *)it - (vec)->elem_size))
+
 #define r_vector_enumerate(vec, it, i) \
 	if (!r_vector_empty (vec)) \
 		for (it = (void *)(vec)->a, i = 0; i < (vec)->len; it = (void *)((char *)it + (vec)->elem_size), i++)
@@ -154,6 +158,19 @@ R_API void *r_vector_shrink(RVector *vec);
 				i = m + 1; \
 			} else { \
 				h = m; \
+			} \
+		} \
+	} while (0) \
+
+#define r_vector_upper_bound(vec, x, i, cmp) \
+	do { \
+		size_t h = (vec)->len, m; \
+		for (i = 0; i < h; ) { \
+			m = i + ((h - i) >> 1); \
+			if ((cmp (x, ((char *)(vec)->a + (vec)->elem_size * m))) < 0) { \
+				h = m; \
+			} else { \
+				i = m + 1; \
 			} \
 		} \
 	} while (0) \

@@ -43,6 +43,8 @@ R_API bool r_anal_op_fini(RAnalOp *op) {
 	op->src[2] = NULL;
 	r_anal_value_free (op->dst);
 	op->dst = NULL;
+	r_list_free (op->access);
+	op->access = NULL;
 	r_strbuf_fini (&op->opex);
 	r_strbuf_fini (&op->esil);
 	r_anal_switch_op_free (op->switch_op);
@@ -155,6 +157,15 @@ R_API RAnalOp *r_anal_op_copy(RAnalOp *op) {
 	nop->src[1] = r_anal_value_copy (op->src[1]);
 	nop->src[2] = r_anal_value_copy (op->src[2]);
 	nop->dst = r_anal_value_copy (op->dst);
+	if (op->access) {
+		RListIter *it;
+		RAnalValue *val;
+		RList *naccess = r_list_newf ((RListFree)r_anal_value_free);
+		r_list_foreach (op->access, it, val) {
+			r_list_append (naccess, r_anal_value_copy (val));
+		}
+		nop->access = naccess;
+	}
 	r_strbuf_init (&nop->esil);
 	r_strbuf_copy (&nop->esil, &op->esil);
 	return nop;
