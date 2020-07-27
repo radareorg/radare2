@@ -3,6 +3,7 @@
 #include <r_anal.h>
 #include <r_vector.h>
 #include "../include/r_anal.h"
+#include "../include/r_agraph.h"
 
 static void r_anal_class_base_delete_class(RAnal *anal, const char *class_name);
 static void r_anal_class_method_delete_class(RAnal *anal, const char *class_name);
@@ -1217,4 +1218,42 @@ R_API void r_anal_class_list_vtable_offset_functions(RAnal *anal, const char *cl
 		}
 		ls_free (classes);
 	}
+}
+
+/**
+ * @brief Prints an ASCII graph from all classes and their inheritance information
+ * 
+ * @param anal 
+ * @return R_API 
+ */
+R_API void r_anal_class_print_inheritance_graph(RAnal *anal) {
+	RAGraph *class_graph = r_agraph_new (r_cons_canvas_new (1,1));
+	SdbList *classes = r_anal_class_get_all (anal, true);
+	HtPP/*<char *name, RANode *node>*/ *hashmap = ht_pp_new0 ();
+	SdbListIter *iter;
+	SdbKv *kv;
+	ls_foreach (classes, iter, kv) {
+		const char *name = sdbkv_key (kv);
+		RANode *curr_node = ht_pp_find (hashmap, name, NULL);
+		if (!curr_node) { // If not visited yet
+			curr_node = r_agraph_add_node (class_graph, name, NULL);
+			ht_pp_insert (hashmap, name, curr_node);
+		}
+		RVector *bases = r_anal_class_base_get_all (anal, name);
+		RAnalBaseClass *base;
+		r_vector_foreach (bases, base) {
+			bool base_found = 0;
+			RANode *base_node = ht_pp_find (hashmap, base->class_name, &base_found);
+			if (!base_found) {
+				// Speed it up and already add base classes if not visited yet
+				base_node = r_agraph_add_node (class_graph, base->class_name, NULL);
+				ht_pp_insert (hashmap, name, curr_node);
+			}
+			r_agraph_add_edge (class_graph, base_node, curr_node);
+		}
+		r_vector_free (bases);
+	}
+	ls_free (classes);
+	r_agraph_print (class_graph);
+	r_agraph_free (class_graph);
 }

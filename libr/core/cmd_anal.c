@@ -9902,6 +9902,9 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 	case 'm': // "acm"
 		cmd_anal_class_method (core, input + 1);
 		break;
+	case 'g': // "acg"
+		r_anal_class_print_inheritance_graph (core->anal);
+		break;
 	default: // "ac?"
 		r_core_cmd_help (core, help_msg_ac);
 		break;
