@@ -91,12 +91,15 @@ static bool rtti_itanium_read_type_name(RVTableContext *context, ut64 addr, clas
 }
 
 // Custom for the prototype now
-static char *rtti_itanium_read_type_name_custom(RVTableContext *context, ut64 addr) {
+static char *rtti_itanium_read_type_name_custom(RVTableContext *context, ut64 addr, ut64 *str_addr, bool *unique_name) {
 	ut64 at;
 	if (!context->read_addr (context->anal, addr, &at)) {
 		return NULL;
 	}
-	// ut64 unique_mask = 1ULL << (VT_WORD_SIZE (context) * 8 - 1);
+	ut64 unique_mask = 1ULL << (VT_WORD_SIZE (context) * 8 - 1);
+	*unique_name = (at & unique_mask) == 0;
+	at &= ~unique_mask;
+	*str_addr = at;
 	ut8 buf[NAME_BUF_SIZE];
 	if (!context->anal->iob.read_at (context->anal->iob.io, at, buf, sizeof (buf))) {
 		return NULL;
@@ -341,8 +344,8 @@ static void rtti_itanium_print_vmi_class_type_info(vmi_class_type_info *vmi_cti,
 	r_cons_printf ("%sType Info at 0x%08" PFMT64x ":\n"
 			"%s  Type Info type: %s\n"
 			"%s  Belongs to class vtable: 0x%08" PFMT64x "\n"
-			"%s  Reference to RTTI's type class: 0x%08" PFMT32x "\n"
-			"%s  Reference to type's name: 0x%08" PFMT32x "\n"
+			"%s  Reference to RTTI's type class: 0x%08" PFMT64x "\n"
+			"%s  Reference to type's name: 0x%08" PFMT64x "\n"
 			"%s  Type Name: %s\n"
 			"%s  Name unique: %s\n"
 			"%s  Flags 0x%x\n"
@@ -360,7 +363,7 @@ static void rtti_itanium_print_vmi_class_type_info(vmi_class_type_info *vmi_cti,
 
 	int i;
 	for (i = 0; i < vmi_cti->vmi_base_count; i++) {
-		r_cons_printf ("%s    Base class type descriptor address: 0x%08" PFMT32x "\n"
+		r_cons_printf ("%s    Base class type descriptor address: 0x%08" PFMT64x "\n"
 			       "%s    Base class flags: 0x%x"
 			       "\n",
 			prefix, vmi_cti->vmi_bases[i].base_class_addr,
@@ -477,7 +480,7 @@ static bool can_section_contain_rtti_vpointer(RBinSection *section) {
 		r_str_endswith (section->name, "__const");
 }
 
-static class_type_info *create_class_type(ut64 vtable_addr, char *name, bool unique_name, ut64 typeinfo_addr, ut64 source_vtable) {
+static class_type_info *create_class_type(ut64 vtable_addr, char *name, ut64 name_addr, bool unique_name, ut64 typeinfo_addr, ut64 source_vtable) {
 	class_type_info *result = R_NEW0 (class_type_info);
 	if (!result) {
 		return NULL;
@@ -485,14 +488,15 @@ static class_type_info *create_class_type(ut64 vtable_addr, char *name, bool uni
 	result->type = R_TYPEINFO_TYPE_CLASS;
 
 	result->vtable_addr = vtable_addr;
-	result->name_addr = (ut64)name;
-	result->name = strdup (name);
+	result->name_addr = name_addr;
+	result->name = name;
+	result->name_unique = unique_name;
 	result->typeinfo_addr = typeinfo_addr;
 	result->class_vtable_addr = source_vtable;
 	return result;
 }
 
-static si_class_type_info *create_si_class_type(ut64 vtable_addr, char *name, bool unique_name, ut64 basetype_addr, ut64 typeinfo_addr, ut64 source_vtable) {
+static si_class_type_info *create_si_class_type(ut64 vtable_addr, char *name, ut64 name_addr, bool unique_name, ut64 basetype_addr, ut64 typeinfo_addr, ut64 source_vtable) {
 	si_class_type_info *result = R_NEW0 (si_class_type_info);
 	if (!result) {
 		return NULL;
@@ -500,14 +504,15 @@ static si_class_type_info *create_si_class_type(ut64 vtable_addr, char *name, bo
 	result->type = R_TYPEINFO_TYPE_SI_CLASS;
 	result->base_class_addr = basetype_addr;
 	result->vtable_addr = vtable_addr;
-	result->name_addr = (ut64)name;
-	result->name = strdup (name);
+	result->name_addr = name_addr;
+	result->name = name;
+	result->name_unique = unique_name;
 	result->typeinfo_addr = typeinfo_addr;
 	result->class_vtable_addr = source_vtable;
 	return result;
 }
 
-static vmi_class_type_info *create_vmi_class_type(ut64 vtable_addr, char *name, bool unique_name, ut32 flags, ut32 base_count, base_class_type_info *bases, ut64 typeinfo_addr, ut64 source_vtable) {
+static vmi_class_type_info *create_vmi_class_type(ut64 vtable_addr, char *name, ut64 name_addr, bool unique_name, ut32 flags, ut32 base_count, base_class_type_info *bases, ut64 typeinfo_addr, ut64 source_vtable) {
 	vmi_class_type_info *result = R_NEW0 (vmi_class_type_info);
 	if (!result) {
 		return NULL;
@@ -517,8 +522,9 @@ static vmi_class_type_info *create_vmi_class_type(ut64 vtable_addr, char *name, 
 	result->vmi_base_count = base_count;
 	result->vmi_flags = flags;
 	result->vtable_addr = vtable_addr;
-	result->name_addr = (ut64)name;
-	result->name = strdup (name);
+	result->name_addr = name_addr;
+	result->name = name;
+	result->name_unique = unique_name;
 	result->typeinfo_addr = typeinfo_addr;
 	result->class_vtable_addr = source_vtable;
 	return result;
@@ -570,74 +576,76 @@ static class_type_info *rtti_itanium_type_info_new(RVTableContext *context, ut64
 		                   |--------- long __offset_flags --------| ----- enough for __vmi_class_type_info
 		*/
 		ut64 rtti_vptr = 0;
-		if (!context->read_addr (context->anal, rtti_addr, &rtti_vptr)) {
+		ut64 addr = rtti_addr;
+		if (!context->read_addr (context->anal, addr, &rtti_vptr)) {
 			return NULL;
 		}
 		RBinSection *rtti_section = context->anal->binb.get_vsect_at (context->anal->binb.bin, rtti_vptr);
 		if (rtti_vptr && !can_section_contain_rtti_vpointer (rtti_section)) {
 			;;; // Right now ignore, seems that some binaries have some weird values inside there....
 		}
-		rtti_addr += VT_WORD_SIZE (context); // Move to the next member
-		char *type_name = rtti_itanium_read_type_name_custom (context, rtti_addr);
+		addr += VT_WORD_SIZE (context); // Move to the next member
+
+		ut64 name_addr = 0;
+		bool name_unique = false;
+		char *type_name = rtti_itanium_read_type_name_custom (context, addr, &name_addr, &name_unique);
 		if (!type_name) {
 			return NULL;
 		}
-		ut64 unique_mask = 1ULL << (VT_WORD_SIZE (context) * 8 - 1);
-		bool name_unique = ((ut64)type_name & unique_mask) == 0;
 
-		rtti_addr += VT_WORD_SIZE (context); // Move to the next member
+		addr += VT_WORD_SIZE (context); // Move to the next member
 
 		// Right now we already have atleast __class_type_info;
 
 		ut64 base_type_rtti = 0;
-		if (!context->read_addr (context->anal, rtti_addr, &base_type_rtti)) {
-			return create_class_type (rtti_vptr, type_name, name_unique, rtti_addr, vtable_addr);
+		if (!context->read_addr (context->anal, addr, &base_type_rtti)) {
+			return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
 		}
 
 		RBinSection *base_type_rtti_section = context->anal->binb.get_vsect_at (context->anal->binb.bin, base_type_rtti);
 		if (can_section_contain_rtti_vpointer (base_type_rtti_section)) {
-			return (class_type_info *)create_si_class_type (rtti_vptr, type_name, name_unique, base_type_rtti, rtti_addr, vtable_addr);
+			return (class_type_info *)create_si_class_type (rtti_vptr, type_name, name_addr, name_unique, base_type_rtti, rtti_addr, vtable_addr);
 		}
 
 		// if it's not a valid base_type_rtti ptr, it might be flags for VMI
 		// assume uint are 32bit
 		ut64 integers = 0;
-		if (!context->read_addr (context->anal, rtti_addr, &integers)) {
-			return create_class_type (rtti_vptr, type_name, name_unique, rtti_addr, vtable_addr);
+		if (!context->read_addr (context->anal, addr, &integers)) {
+			return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
 		}
 		ut32 vmi_flags = integers & 0xffffffff;
-		rtti_addr += 0x4;
-		if (!context->read_addr (context->anal, rtti_addr, &integers)) {
-			return create_class_type (rtti_vptr, type_name, name_unique, rtti_addr, vtable_addr);
+		addr += 0x4;
+		if (!context->read_addr (context->anal, addr, &integers)) {
+			return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
 		}
 		integers = integers & 0xffffffff;
 		if (integers < 1 || integers > 0xfffff) {
-			return create_class_type (rtti_vptr, type_name, name_unique, rtti_addr, vtable_addr);
+			return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
 		}
 		ut32 vmi_base_count = integers;
 
 		base_class_type_info *vmi_bases = calloc (sizeof (base_class_type_info), vmi_base_count);
 		if (!vmi_bases) {
-			return create_class_type (rtti_vptr, type_name, name_unique, rtti_addr, vtable_addr);
+			return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
 		}
-		ut64 tmp_addr = rtti_addr + 0x4;
+		ut64 tmp_addr = addr + 0x4;
 
 		int i;
 		for (i = 0; i < vmi_base_count; i++) {
 			if (!context->read_addr (context->anal, tmp_addr, &integers)) {
 				free (vmi_bases);
-				return create_class_type (rtti_vptr, type_name, name_unique, rtti_addr, vtable_addr);
+				return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
 			}
 			vmi_bases[i].base_class_addr = integers;
 			tmp_addr += VT_WORD_SIZE (context);
 			if (!context->read_addr (context->anal, tmp_addr, &integers)) {
 				free (vmi_bases);
-				return create_class_type (rtti_vptr, type_name, name_unique, rtti_addr, vtable_addr);
+				return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
 			}
 			vmi_bases[i].flags = integers;
 			tmp_addr += VT_WORD_SIZE (context);
 		}
-		return (class_type_info *)create_vmi_class_type (rtti_vptr, type_name, name_unique, vmi_flags, vmi_base_count, vmi_bases, rtti_addr, vtable_addr);
+		return (class_type_info *)create_vmi_class_type (rtti_vptr, type_name, name_addr, name_unique, vmi_flags, vmi_base_count, vmi_bases, rtti_addr, vtable_addr);
 	}
 	switch (type) {
 	case R_TYPEINFO_TYPE_VMI_CLASS:
