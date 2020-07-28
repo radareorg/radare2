@@ -1261,8 +1261,7 @@ static bool closest_match_callback(void *a, const char *name, const char *value)
 			// bytes distance is slow. To avoid it, we can do quick maths to
 			// see if the highest possible score would be good enough to change
 			// results
-			double maxscore = maxscore = R_MIN (sizea, sizeb) /
-				R_MAX (sizea, sizeb);
+			double maxscore = R_MIN (sizea, sizeb) / R_MAX (sizea, sizeb);
 			if (div > 0) {
 				maxscore = (maxscore + score) / div;
 			}
