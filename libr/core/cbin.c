@@ -564,8 +564,10 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			r_table_query (table, r->table_query);
 		}
 		char *s = r_table_tostring (table);
-		r_cons_printf ("%s", s);
-		free (s);
+		if (s) {
+			r_cons_printf ("%s", s);
+			free (s);
+		}
 
 	}
 	r_table_free (table);
@@ -1188,7 +1190,7 @@ static int bin_dwarf(RCore *core, int mode) {
 }
 
 R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
-	R_PDB pdb = R_EMPTY;
+	RPdb pdb = R_EMPTY;
 
 	pdb.cb_printf = r_cons_printf;
 	if (!init_pdb_parser (&pdb, file)) {
@@ -1198,9 +1200,6 @@ R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
 		eprintf ("pdb was not parsed\n");
 		pdb.finish_pdb_parse (&pdb);
 		return false;
-	}
-	if (mode == R_MODE_JSON) {
-		r_cons_printf ("[");
 	}
 
 	switch (mode) {
@@ -1219,17 +1218,18 @@ R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
 		mode = 'd'; // default
 		break;
 	}
+	PJ *pj = pj_new ();
 
-	pdb.print_types (&pdb, mode);
-	if (mode == 'j') {
-		r_cons_printf (",");
-	}
-	pdb.print_gvars (&pdb, baddr, mode);
-	if (mode == 'j') {
-		r_cons_printf ("]");
-	}
+	pdb.print_types (&pdb, pj, mode);
+	pdb.print_gvars (&pdb, baddr, pj, mode);
+	// Save compound types into SDB
+	r_parse_pdb_types (core->anal, &pdb);
 	pdb.finish_pdb_parse (&pdb);
 
+	if (mode == 'j') {
+		r_cons_printf ("%s\n", pj_string (pj));
+	}
+	pj_free (pj);
 	return true;
 }
 

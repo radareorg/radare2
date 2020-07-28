@@ -32,9 +32,12 @@ static int lang_spp_run(RLang *lang, const char *code, int len) {
 static int lang_spp_file(RLang *lang, const char *file) {
 	size_t len;
 	char *code = r_file_slurp (file, &len);
-	int res = lang_spp_run (lang, code, len);
-	free (code);
-	return res;
+	if (code) {
+		int res = lang_spp_run (lang, code, len);
+		free (code);
+		return res;
+	}
+	return 0;
 }
 
 static RLangPlugin r_lang_plugin_spp = {

@@ -1739,7 +1739,8 @@ static bool dex_loadcode(RBinFile *bf) {
 				sym->paddr = sym->vaddr = bin->header.method_offset + (sizeof (struct dex_method_t) * i) ;
 				sym->ordinal = sym_count++;
 				r_list_append (bin->methods_list, sym);
-				sdb_num_set (mdb, sdb_fmt ("method.%d", i), sym->paddr, 0);
+				const char *mname = sdb_fmt ("method.%"PFMT64d, (ut64)i);
+				sdb_num_set (mdb, mname, sym->paddr, 0);
 			}
 			free (signature);
 			free (class_name);
@@ -2010,7 +2011,7 @@ static RList *sections(RBinFile *bf) {
 		add_section (ret, "header", s_head, R_PERM_R, NULL);
 	}
 	if (validate_section ("constpool", &s_head, &s_pool, &s_code, &s_file)) {
-		char *s_pool_format = r_str_newf ("Cd %d[%d]", 4, s_pool.size / 4);
+		char *s_pool_format = r_str_newf ("Cd %d[%"PFMT64d"]", 4, (ut64) s_pool.size / 4);
 		add_section (ret, "constpool", s_pool, R_PERM_R, s_pool_format);
 	}
 	if (validate_section ("code", &s_pool, &s_code, &s_data, &s_file)) {

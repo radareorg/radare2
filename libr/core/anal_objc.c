@@ -169,15 +169,15 @@ static bool objc_build_refs(RCoreObjc *objc) {
 }
 
 static RCoreObjc *core_objc_new(RCore *core) {
+	RList *sections = r_bin_get_sections (core->bin);
+	if (!sections) {
+		return false;
+	}
 	RCoreObjc *o = R_NEW0 (RCoreObjc);
 	o->core = core;
 	o->word_size = (core->rasm->bits == 64)? 8: 4;
 	if (o->word_size != 8) {
 		eprintf ("Warning: aao experimental on 32bit binaries\n");
-	}
-	RList *sections = r_bin_get_sections (core->bin);
-	if (!sections) {
-		return false;
 	}
 
 	RBinSection *s;
@@ -220,6 +220,7 @@ static bool objc_find_refs(RCore *core) {
 	}
 
 	if (!objc_build_refs (objc)) {
+		core_objc_free (objc);
 		return false;
 	}
 	const char *oldstr = r_print_rowlog (core->print, "Parsing metadata in ObjC to find hidden xrefs");
