@@ -3072,9 +3072,6 @@ static int parse_reg_name(RRegItem *reg_base, RRegItem *reg_delta, csh handle, c
 	default:
 		break;
 	}
-	if (reg_base->name && *reg_base->name == 'w') {
-		reg_base->name = reg_list[atoi (reg_base->name + 1)];
-	}
 	return 0;
 }
 
@@ -3110,6 +3107,9 @@ static int parse_reg64_name(RRegItem *reg_base, RRegItem *reg_delta, csh handle,
 		break;
 	default:
 		break;
+	}
+	if (reg_base->name && *reg_base->name == 'w') {
+		reg_base->name = reg_list[atoi (reg_base->name + 1)];
 	}
 	return 0;
 }
