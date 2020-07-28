@@ -337,20 +337,6 @@ static void rtti_itanium_print_class_type_info_json(class_type_info *cti) {
 	pj_free (pj);
 }
 
-
-static char *vmi_flags_to_string(int flags) {
-	if  (flags == 0x0) {
-		return "class doesn't have non-diamond repeated inheritance and is not diamond shaped";
-	} else if (flags == 0x1) {
-		return "class has non-diamond repeated inheritance and class is not diamond shaped";
-	} else if (flags == 0x2) {
-		return "class doesn't have non-diamond repeated inheritance and class is diamond shaped";
-	} else if (flags == 0x3) {
-		return "class has non-diamond repeated inheritance and class is diamond shaped";
-	}
-	return "";
-}
-
 static void rtti_itanium_print_vmi_class_type_info(vmi_class_type_info *vmi_cti, const char *prefix) {
 	r_cons_printf ("%sType Info at 0x%08" PFMT64x ":\n"
 			"%s  Type Info type: %s\n"
@@ -359,7 +345,7 @@ static void rtti_itanium_print_vmi_class_type_info(vmi_class_type_info *vmi_cti,
 			"%s  Reference to type's name: 0x%08" PFMT32x "\n"
 			"%s  Type Name: %s\n"
 			"%s  Name unique: %s\n"
-			"%s  Flags (0x%x): %s\n"
+			"%s  Flags 0x%x\n"
 			"%s  Count of base classes: 0x%x"
 			"\n",
 			prefix, vmi_cti->typeinfo_addr,
@@ -369,7 +355,7 @@ static void rtti_itanium_print_vmi_class_type_info(vmi_class_type_info *vmi_cti,
 			prefix, vmi_cti->name_addr,
 			prefix, vmi_cti->name,
 			prefix, vmi_cti->name_unique ? "true" : "false",
-			prefix, vmi_cti->vmi_flags, vmi_flags_to_string (vmi_cti->vmi_flags),
+			prefix, vmi_cti->vmi_flags,
 			prefix, vmi_cti->vmi_base_count);
 
 	int i;
@@ -526,7 +512,7 @@ static vmi_class_type_info *create_vmi_class_type(ut64 vtable_addr, char *name, 
 	if (!result) {
 		return NULL;
 	}
-	result->type = R_TYPEINFO_TYPE_SI_CLASS;
+	result->type = R_TYPEINFO_TYPE_VMI_CLASS;
 	result->vmi_bases = bases;
 	result->vmi_base_count = base_count;
 	result->vmi_flags = flags;
@@ -589,7 +575,7 @@ static class_type_info *rtti_itanium_type_info_new(RVTableContext *context, ut64
 		}
 		RBinSection *rtti_section = context->anal->binb.get_vsect_at (context->anal->binb.bin, rtti_vptr);
 		if (rtti_vptr && !can_section_contain_rtti_vpointer (rtti_section)) {
-			return NULL;
+			;;; // Right now ignore, seems that some binaries have some weird values inside there....
 		}
 		rtti_addr += VT_WORD_SIZE (context); // Move to the next member
 		char *type_name = rtti_itanium_read_type_name_custom (context, rtti_addr);
@@ -653,7 +639,6 @@ static class_type_info *rtti_itanium_type_info_new(RVTableContext *context, ut64
 		}
 		return (class_type_info *)create_vmi_class_type (rtti_vptr, type_name, name_unique, vmi_flags, vmi_base_count, vmi_bases, rtti_addr, vtable_addr);
 	}
-
 	switch (type) {
 	case R_TYPEINFO_TYPE_VMI_CLASS:
 		return (class_type_info *)rtti_itanium_vmi_class_type_info_new (context, rtti_addr, vtable_addr);
