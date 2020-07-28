@@ -71,61 +71,15 @@ static bool add_map_to_skyline(RIO *io, RIOMap *map) {
 
 // Store map parts that are not covered by others into io->map_skyline
 void io_map_calculate_skyline(RIO *io) {
-	bool *deleted = NULL;
 	r_pvector_clear (&io->map_skyline);
-	r_pvector_clear (&io->map_skyline_shadow);
-
-	int i = 0;
 	// Last map has highest priority (it shadows previous maps)
 	void **it;
 	r_pvector_foreach (&io->maps, it) {
 		add_map_to_skyline (io, (RIOMap *)*it);
 	}
-
-	const RPVector *skyline = &io->map_skyline;
-	RPVector *shadow = &io->map_skyline_shadow;
-	RInterval *cur_itv = NULL;
-
-	for (i = 0; i < r_pvector_len (skyline); i++) {
-		const RIOMapSkyline *part = r_pvector_at (skyline, i);
-		if (!part) {
-			continue;
-		}
-
-		ut64 part_from = part->itv.addr;
-		ut64 part_size = part->itv.size;
-
-		if (!cur_itv) {
-			cur_itv = r_itv_new (part_from, part_size);
-			if (!cur_itv) {
-				break;
-			}
-			continue;
-		}
-
-		if (part_from == r_itv_end (*cur_itv)) {
-			cur_itv->size += part_size;
-		} else {
-			if (!r_pvector_push (shadow, cur_itv)) {
-				R_FREE (cur_itv);
-				break;
-			}
-			cur_itv = r_itv_new (part_from, part_size);
-			if (!cur_itv) {
-				break;
-			}
-		}
-	}
-	if (cur_itv) {
-		if (!r_pvector_push (shadow, cur_itv)) {
-			R_FREE (cur_itv);
-		}
-	}
-out:
-	free (deleted);
 }
 
-RIOMap* io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size, bool do_skyline) {
+RIOMap* io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
 	if (!size || !io || !io->map_ids) {
 		return NULL;
 	}
@@ -138,7 +92,7 @@ RIOMap* io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size, 
 	map->delta = delta;
 	if ((UT64_MAX - size + 1) < addr) {
 		/// XXX: this is leaking a map!!!
-		io_map_new (io, fd, perm, delta - addr, 0LL, size + addr, do_skyline);
+		io_map_new (io, fd, perm, delta - addr, 0LL, size + addr);
 		size = -(st64)addr;
 	}
 	// RIOMap describes an interval of addresses (map->from; map->to)
@@ -147,19 +101,15 @@ RIOMap* io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size, 
 	map->delta = delta;
 	// new map lives on the top, being top the list's tail
 	r_pvector_push (&io->maps, map);
-	if (do_skyline) {
-		io_map_calculate_skyline (io);
-	} else {
-		add_map_to_skyline (io, map);
-	}
+	add_map_to_skyline (io, map);
 	return map;
 }
 
-R_API RIOMap *r_io_map_new (RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
-	return io_map_new (io, fd, perm, delta, addr, size, true);
+R_API RIOMap *r_io_map_new(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
+	return io_map_new (io, fd, perm, delta, addr, size);
 }
 
-R_API bool r_io_map_remap (RIO *io, ut32 id, ut64 addr) {
+R_API bool r_io_map_remap(RIO *io, ut32 id, ut64 addr) {
 	RIOMap *map = r_io_map_resolve (io, id);
 	if (map) {
 		ut64 size = map->itv.size;
@@ -167,7 +117,6 @@ R_API bool r_io_map_remap (RIO *io, ut32 id, ut64 addr) {
 		if (UT64_MAX - size + 1 < addr) {
 			map->itv.size = -addr;
 			r_io_map_new (io, map->fd, map->perm, map->delta - addr, 0, size + addr);
-			return true;
 		}
 		io_map_calculate_skyline (io);
 		return true;
@@ -175,7 +124,7 @@ R_API bool r_io_map_remap (RIO *io, ut32 id, ut64 addr) {
 	return false;
 }
 
-R_API bool r_io_map_remap_fd (RIO *io, int fd, ut64 addr) {
+R_API bool r_io_map_remap_fd(RIO *io, int fd, ut64 addr) {
 	RIOMap *map;
 	bool retval = false;
 	RList *maps = r_io_map_get_for_fd (io, fd);
@@ -236,23 +185,23 @@ R_API RIOMap* r_io_map_resolve(RIO *io, ut32 id) {
 	return NULL;
 }
 
-RIOMap* io_map_add(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size, bool do_skyline) {
+RIOMap* io_map_add(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
 	//check if desc exists
 	RIODesc* desc = r_io_desc_get (io, fd);
 	if (desc) {
 		//a map cannot have higher permissions than the desc belonging to it
 		return io_map_new (io, fd, (perm & desc->perm) | (perm & R_PERM_X),
-				delta, addr, size, do_skyline);
+				delta, addr, size);
 	}
 	return NULL;
 }
 
 R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
-	return io_map_add (io, fd, perm, delta, addr, size, true);
+	return io_map_add (io, fd, perm, delta, addr, size);
 }
 
 R_API RIOMap *r_io_map_add_batch(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
-	return io_map_add (io, fd, perm, delta, addr, size, false);
+	return io_map_add (io, fd, perm, delta, addr, size);
 }
 
 R_API void r_io_update(RIO *io) {
@@ -286,14 +235,7 @@ R_API RIOMap *r_io_map_get(RIO* io, ut64 addr) {
 
 R_API bool r_io_map_is_mapped(RIO* io, ut64 addr) {
 	r_return_val_if_fail (io, false);
-	const RPVector *shadow = &io->map_skyline_shadow;
-	size_t i, len = r_pvector_len (shadow);
-	r_pvector_lower_bound (shadow, addr, i, CMP_END_GTE);
-	if (i == len) {
-		return false;
-	}
-	const RInterval *itv = r_pvector_at (shadow, i);
-	return itv->addr <= addr;
+	return (bool)r_io_map_get (io, addr);
 }
 
 R_API void r_io_map_reset(RIO* io) {
@@ -438,7 +380,6 @@ R_API void r_io_map_fini(RIO* io) {
 	r_id_pool_free (io->map_ids);
 	io->map_ids = NULL;
 	r_pvector_clear (&io->map_skyline);
-	r_pvector_clear (&io->map_skyline_shadow);
 }
 
 R_API void r_io_map_set_name(RIOMap* map, const char* name) {
