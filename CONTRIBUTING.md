@@ -27,6 +27,7 @@ try to keep the codebase consistent and clean.
 
   and be sure to follow the CODINGSTYLE (more on this in [DEVELOPERS.md][]).
 * Submit the Pull Request(PR) on Github.
+* Prefix the PR title with `WIP:` if it's not yet ready to be merged
 * When relevant, write a test in [test/](test).
 
 ## Rebasing onto updated master
@@ -83,7 +84,6 @@ rules to make the git history more readable and consistent:
 * If the commit fixes a bug start with 'Fix #number - '
 * For extra details, add an empty line and use asterisk item list below
 * Use present simple grammar tense (Add vs Added, Fix vs Fixed/Fixes)
-* Prefix with `WIP:` if it's not yet ready to be merged
 
 ### Commit message hashtag list:
 
