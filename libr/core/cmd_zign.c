@@ -11,7 +11,7 @@ static const char *help_msg_z[] = {
 	"Usage:", "z[*j-aof/cs] [args] ", "# Manage zignatures",
 	"z", "", "show zignatures",
 	"z.", "", "find matching zignatures in current offset",
-	"zb", "[n=5]", "find n closest matching graph zignature at current offset",
+	"zb", "[n=5]", "find n closest matching zignatures to function at current offset",
 	"z*", "", "show zignatures in radare format",
 	"zq", "", "show zignatures in quiet mode",
 	"zj", "", "show zignatures in json format",

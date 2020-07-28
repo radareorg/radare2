@@ -1114,10 +1114,8 @@ R_API bool r_sign_delete(RAnal *a, const char *name) {
 }
 
 static ut8 * build_combined_bytes(RSignBytes *bsig) {
-	if (!bsig || !bsig->bytes || !bsig->mask) {
-		return NULL;
-	}
-	ut8 *buf = (ut8 *)malloc(bsig->size);
+	r_return_val_if_fail (bsig && bsig->bytes && bsig->mask, NULL);
+	ut8 *buf = (ut8 *)malloc (bsig->size);
 	if (!buf) {
 		return NULL;
 	}
@@ -1129,9 +1127,7 @@ static ut8 * build_combined_bytes(RSignBytes *bsig) {
 }
 
 static double cmp_bytesig_to_buff(RSignBytes *sig, ut8 *buf, int len) {
-	if (!sig || !buf || len < 0) {
-		return -1.0;
-	}
+	r_return_val_if_fail (sig && buf && len >= 0, (double)-1.0);
 	ut8 *sigbuf = build_combined_bytes (sig);
 	if (!sigbuf) {
 		return -1.0;
@@ -1320,22 +1316,15 @@ R_API void r_sign_close_match_free(RSignCloseMatch *match) {
 }
 
 R_API RList *r_sign_find_closest_sig(RAnal *a, RSignItem *it, int count, double score_threshold) {
-	r_return_val_if_fail (a && it && count > 0, NULL);
+	r_return_val_if_fail (a && it && count > 0 && score_threshold >= 0 && score_threshold <= 1, NULL);
 
 	// need at least one acceptable signature type
-	if (!it->bytes && !it->graph) {
-		return NULL;
-	}
+	r_return_val_if_fail (it->bytes || it->graph, NULL);
 
 	ClosestMatchData data;
 	RList *output = r_list_newf ((RListFree)r_sign_close_match_free);
 	if (!output) {
 		return NULL;
-	}
-
-	// impossible standard, return empty list
-	if (score_threshold > 1.0) {
-		return output;
 	}
 
 	data.output = output;
