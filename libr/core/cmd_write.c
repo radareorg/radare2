@@ -970,7 +970,7 @@ static RCmdStatus w8_incdec_handler(void *data, int argc, const char **argv) {
 }
 
 /* TODO: simplify using r_write */
-static int cmd_write (void *data, const char *input) {
+static int cmd_write(void *data, const char *input) {
 	int wseek, i, size, len;
 	RCore *core = (RCore *)data;
 	char *tmp, *str, *ostr;
