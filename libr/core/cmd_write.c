@@ -5,6 +5,7 @@
 #include "r_cons.h"
 #include "r_core.h"
 #include "r_io.h"
+#include "cmd_helps.h"
 
 static const char *help_msg_w[] = {
 	"Usage:","w[x] [str] [<file] [<<EOF] [@addr]","",

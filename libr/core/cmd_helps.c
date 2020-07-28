@@ -1,201 +1,201 @@
-#include <r_cmd.h>
+#include "cmd_helps.h"
 
 // root helps
 
-static const RCmdDescHelp system_help = {
+const RCmdDescHelp system_help = {
 	.summary = "run given command as in system(3)",
 };
-static const RCmdDescHelp underscore_help = {
+const RCmdDescHelp underscore_help = {
 	.summary = "Print last output",
 };
 
-static const RCmdDescHelp hash_help = {
+const RCmdDescHelp hash_help = {
 	.summary = "Hashbang to run an rlang script",
 };
 
-static const RCmdDescHelp alias_help = {
+const RCmdDescHelp alias_help = {
 	.summary = "Alias commands and strings",
 };
 
-static const RCmdDescHelp env_help = {
+const RCmdDescHelp env_help = {
 	.summary = "get/set environment variable",
 };
 
-static const RCmdDescHelp tasks_help = {
+const RCmdDescHelp tasks_help = {
 	.summary = "Manage tasks (WARNING: Experimental. Use with caution!)",
 };
 
-static const RCmdDescHelp macro_help = {
+const RCmdDescHelp macro_help = {
 	.summary = "manage scripting macros",
 };
 
-static const RCmdDescHelp pointer_help = {
+const RCmdDescHelp pointer_help = {
 	.summary = "alias for 'env' command",
 };
 
-static const RCmdDescHelp stdin_help = {
+const RCmdDescHelp stdin_help = {
 	.summary = "",
 };
 
-static const RCmdDescHelp interpret_help = {
+const RCmdDescHelp interpret_help = {
 	.summary = "Define macro or load r2, cparse or rlang file",
 };
 
-static const RCmdDescHelp search_help = {
+const RCmdDescHelp search_help = {
 	.summary = "search for bytes, regexps, patterns, ..",
 };
 
-static const RCmdDescHelp rap_help = {
+const RCmdDescHelp rap_help = {
 	.summary = "connect with other instances of r2",
 };
 
-static const RCmdDescHelp help_help = {
+const RCmdDescHelp help_help = {
 	.summary = "Help or evaluate math expression",
 };
 
-static const RCmdDescHelp rap_run_help = {
+const RCmdDescHelp rap_run_help = {
 	.summary = "alias for =!",
 };
 
-static const RCmdDescHelp zero_help = {
+const RCmdDescHelp zero_help = {
 	.summary = "alias for `s 0x...`",
 };
 
-static const RCmdDescHelp anal_help = {
+const RCmdDescHelp anal_help = {
 	.summary = "analysis commands",
 };
 
-static const RCmdDescHelp b_help = {
+const RCmdDescHelp b_help = {
 	.summary = "display or change the block size",
 };
 
-static const RCmdDescHelp c_help = {
+const RCmdDescHelp c_help = {
 	.summary = "compare block with given data",
 };
 
-static const RCmdDescHelp C_help = {
+const RCmdDescHelp C_help = {
 	.summary = "code metadata (comments, format, hints, ..)",
 };
 
-static const RCmdDescHelp d_help = {
+const RCmdDescHelp d_help = {
 	.summary = "debugger commands",
 };
 
-static const RCmdDescHelp e_help = {
+const RCmdDescHelp e_help = {
 	.summary = "list/get/set config evaluable vars",
 };
 
-static const RCmdDescHelp f_help = {
+const RCmdDescHelp f_help = {
 	.summary = "add flag at current address",
 };
 
-static const RCmdDescHelp g_help = {
+const RCmdDescHelp g_help = {
 	.summary = "generate shellcodes with r_egg",
 };
 
-static const RCmdDescHelp i_help = {
+const RCmdDescHelp i_help = {
 	.summary = "get info about opened file from r_bin",
 };
 
-static const RCmdDescHelp k_help = {
+const RCmdDescHelp k_help = {
 	.summary = "run sdb-query",
 };
 
-static const RCmdDescHelp l_help = {
+const RCmdDescHelp l_help = {
 	.summary = "list files and directories",
 };
 
-static const RCmdDescHelp j_help = {
+const RCmdDescHelp j_help = {
 	.summary = "join the contents of the two files",
 };
 
-static const RCmdDescHelp h_help = {
+const RCmdDescHelp h_help = {
 	.summary = "show the top n number of line in file",
 };
 
-static const RCmdDescHelp L_help = {
+const RCmdDescHelp L_help = {
 	.summary = "list, unload, load r2 plugins",
 };
 
-static const RCmdDescHelp m_help = {
+const RCmdDescHelp m_help = {
 	.summary = "mountpoints commands",
 };
 
-static const RCmdDescHelp o_help = {
+const RCmdDescHelp o_help = {
 	.summary = "open file at optional address",
 };
 
-static const RCmdDescHelp p_help = {
+const RCmdDescHelp p_help = {
 	.summary = "print commands",
 };
 
-static const RCmdDescHelp P_help = {
+const RCmdDescHelp P_help = {
 	.summary = "project management utilities",
 };
 
-static const RCmdDescHelp q_help = {
+const RCmdDescHelp q_help = {
 	.summary = "quit program with a return value",
 };
 
-static const RCmdDescHelp Q_help = {
+const RCmdDescHelp Q_help = {
 	.summary = "quick quit",
 };
 
-static const RCmdDescHelp colon_help = {
+const RCmdDescHelp colon_help = {
 	.summary = "long commands (experimental)",
 };
 
-static const RCmdDescHelp r_help = {
+const RCmdDescHelp r_help = {
 	.summary = "resize file",
 };
 
-static const RCmdDescHelp s_help = {
+const RCmdDescHelp s_help = {
 	.summary = "seek to address",
 };
 
-static const RCmdDescHelp t_help = {
+const RCmdDescHelp t_help = {
 	.summary = "types, noreturn, signatures, C parser and more",
 };
 
-static const RCmdDescHelp T_help = {
+const RCmdDescHelp T_help = {
 	.summary = "Text log utility (used to chat, sync, log, ...)",
 };
 
-static const RCmdDescHelp u_help = {
+const RCmdDescHelp u_help = {
 	.summary = "uname/undo seek/write",
 };
 
-static const RCmdDescHelp pipein_help = {
+const RCmdDescHelp pipein_help = {
 	.summary = "push escaped string into the RCons.readChar buffer",
 };
 
-static const RCmdDescHelp V_help = {
+const RCmdDescHelp V_help = {
 	.summary = "enter visual mode",
 };
 
-static const RCmdDescHelp v_help = {
+const RCmdDescHelp v_help = {
 	.summary = "enter visual panels mode",
 };
 
-static const RCmdDescHelp w_help = {
+const RCmdDescHelp w_help = {
 	.summary = "write commands",
 };
 
-static const RCmdDescHelp x_help = {
+const RCmdDescHelp x_help = {
 	.summary = "alias for 'px' (print hexadecimal)",
 };
 
-static const RCmdDescHelp y_help = {
+const RCmdDescHelp y_help = {
 	.summary = "Yank/paste bytes from/to memory",
 };
 
-static const RCmdDescHelp z_help = {
+const RCmdDescHelp z_help = {
 	.summary = "zignatures management",
 };
 
 // w0 helps
 
-static const RCmdDescHelp w0_help = {
+const RCmdDescHelp w0_help = {
 	.summary = "Write 'len' bytes with value 0x00",
 	.args_str = "[len]",
 	.description = "Fill len bytes starting from the current offset with the value 0.",
@@ -203,7 +203,7 @@ static const RCmdDescHelp w0_help = {
 
 // w[1248][+-] helps
 
-static const RCmdDescExample w_incdec_help_examples[] = {
+const RCmdDescExample w_incdec_help_examples[] = {
 	{ .example = "w1+", .comment = "Add 1 to the byte at the current offset." },
 	{ .example = "w2-", .comment = "Subtract 1 to the word at the current offset." },
 	{ .example = "w4+ 0xdeadbeef", .comment = "Add 0xdeadbeef to the dword at the current offset." },
@@ -211,7 +211,7 @@ static const RCmdDescExample w_incdec_help_examples[] = {
 	{ 0 },
 };
 
-static const RCmdDescHelp w_incdec_help = {
+const RCmdDescHelp w_incdec_help = {
 	.summary = "Increment/decrement a byte, word, dword, qword",
 	.usage = "w[1248][+-] [n]",
 	.args_str = "[n]",
@@ -221,12 +221,12 @@ static const RCmdDescHelp w_incdec_help = {
 
 // wB helps
 
-static const RCmdDescExample wB_help_examples[] = {
+const RCmdDescExample wB_help_examples[] = {
 	{ .example = "wB 0x20", .comment = "Sets the 5th bit at current offset, leaving all other bits intact." },
 	{ 0 },
 };
 
-static const RCmdDescHelp wB_help = {
+const RCmdDescHelp wB_help = {
 	.summary = "Set bits with given value",
 	.args_str = "[value]",
 	.group_summary = "Set or unset bits with given value",
@@ -234,7 +234,7 @@ static const RCmdDescHelp wB_help = {
 	.examples = wB_help_examples,
 };
 
-static const RCmdDescHelp wB_minus_help = {
+const RCmdDescHelp wB_minus_help = {
 	.summary = "Unset bits with given value",
 	.args_str = "[value]",
 	.description = "Unset the bits that are set in the value passed as arguments. 0 bits in the value argument are ignored, while the others are unset at the current offset"
@@ -242,12 +242,12 @@ static const RCmdDescHelp wB_minus_help = {
 
 // wv helps
 
-static const RCmdDescExample wv_help_examples[] = {
+const RCmdDescExample wv_help_examples[] = {
 	{ .example = "wv 0xdeadbeef", .comment = "Write the value 0xdeadbeef at current offset" },
 	{ 0 },
 };
 
-static const RCmdDescHelp wv_help = {
+const RCmdDescHelp wv_help = {
 	.usage = "wv[size] [value]",
 	.summary = "Write value as 4 - bytes / 8 - bytes based on value",
 	.args_str = "[value]",
@@ -256,22 +256,22 @@ static const RCmdDescHelp wv_help = {
 	.examples = wv_help_examples,
 };
 
-static const RCmdDescHelp wv1_help = {
+const RCmdDescHelp wv1_help = {
 	.summary = "Write value of 1 byte",
 	.args_str = "[value]",
 	.description = "Write the number passed as argument at the current offset as 1 - byte, respecting the cfg.bigendian variable",
 };
-static const RCmdDescHelp wv2_help = {
+const RCmdDescHelp wv2_help = {
 	.summary = "Write value of 2 bytes",
 	.args_str = "[value]",
 	.description = "Write the number passed as argument at the current offset as 2 - bytes, respecting the cfg.bigendian variable",
 };
-static const RCmdDescHelp wv4_help = {
+const RCmdDescHelp wv4_help = {
 	.summary = "Write value of 4 bytes",
 	.args_str = "[value]",
 	.description = "Write the number passed as argument at the current offset as 4 - bytes, respecting the cfg.bigendian variable",
 };
-static const RCmdDescHelp wv8_help = {
+const RCmdDescHelp wv8_help = {
 	.summary = "Write value of 8 byte",
 	.args_str = "[value]",
 	.description = "Write the number passed as argument at the current offset as 8 - bytes, respecting the cfg.bigendian variable",

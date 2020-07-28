@@ -23,6 +23,7 @@
 #include <sys/types.h>
 #include <ctype.h>
 #include <stdarg.h>
+#include "cmd_helps.h"
 #if __UNIX__
 #include <sys/utsname.h>
 #endif
@@ -96,7 +97,6 @@ static int bb_cmpaddr(const void *_a, const void *_b) {
 }
 
 static void cmd_debug_reg(RCore *core, const char *str);
-#include "cmd_helps.help"
 
 #include "cmd_quit.c"
 #include "cmd_hash.c"

@@ -1,0 +1,82 @@
+#ifndef R_CMD_HELPS_H_
+#define R_CMD_HELPS_H_
+
+#include <r_cmd.h>
+
+extern const RCmdDescHelp system_help;
+extern const RCmdDescHelp underscore_help;
+extern const RCmdDescHelp hash_help;
+extern const RCmdDescHelp alias_help;
+extern const RCmdDescHelp env_help;
+extern const RCmdDescHelp tasks_help;
+extern const RCmdDescHelp macro_help;
+extern const RCmdDescHelp pointer_help;
+extern const RCmdDescHelp stdin_help;
+extern const RCmdDescHelp interpret_help;
+extern const RCmdDescHelp search_help;
+extern const RCmdDescHelp rap_help;
+extern const RCmdDescHelp help_help;
+extern const RCmdDescHelp rap_run_help;
+extern const RCmdDescHelp zero_help;
+extern const RCmdDescHelp anal_help;
+extern const RCmdDescHelp b_help;
+extern const RCmdDescHelp c_help;
+extern const RCmdDescHelp C_help;
+extern const RCmdDescHelp d_help;
+extern const RCmdDescHelp e_help;
+extern const RCmdDescHelp f_help;
+extern const RCmdDescHelp g_help;
+extern const RCmdDescHelp i_help;
+extern const RCmdDescHelp k_help;
+extern const RCmdDescHelp l_help;
+extern const RCmdDescHelp j_help;
+extern const RCmdDescHelp h_help;
+extern const RCmdDescHelp L_help;
+extern const RCmdDescHelp m_help;
+extern const RCmdDescHelp o_help;
+extern const RCmdDescHelp p_help;
+extern const RCmdDescHelp P_help;
+extern const RCmdDescHelp q_help;
+extern const RCmdDescHelp Q_help;
+extern const RCmdDescHelp colon_help;
+extern const RCmdDescHelp r_help;
+extern const RCmdDescHelp s_help;
+extern const RCmdDescHelp t_help;
+extern const RCmdDescHelp T_help;
+extern const RCmdDescHelp u_help;
+extern const RCmdDescHelp pipein_help;
+extern const RCmdDescHelp V_help;
+extern const RCmdDescHelp v_help;
+extern const RCmdDescHelp w_help;
+extern const RCmdDescHelp x_help;
+extern const RCmdDescHelp y_help;
+extern const RCmdDescHelp z_help;
+
+// w0 helps
+
+extern const RCmdDescHelp w0_help;
+
+// w[1248][+-] helps
+
+extern const RCmdDescExample w_incdec_help_examples[];
+
+extern const RCmdDescHelp w_incdec_help;
+
+// wB helps
+
+extern const RCmdDescExample wB_help_examples[];
+
+extern const RCmdDescHelp wB_help;
+extern const RCmdDescHelp wB_minus_help;
+
+// wv helps
+
+extern const RCmdDescExample wv_help_examples[];
+
+extern const RCmdDescHelp wv_help;
+extern const RCmdDescHelp wv1_help;
+extern const RCmdDescHelp wv2_help;
+extern const RCmdDescHelp wv4_help;
+extern const RCmdDescHelp wv8_help;
+
+#endif
