@@ -12,6 +12,7 @@ if get_option('enable_tests')
     'annotated_code',
     'base64',
     'bin',
+    'binheap',
     'bitmap',
     'buf',
     'ovf',
