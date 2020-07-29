@@ -67,7 +67,7 @@ typedef struct r_code_annotation_t {
 
 		/** Information in annotations of type R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE
 		 * and R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER will be stored in the 
-		 * struct name variable in this union.
+		 * struct named variable in this union.
 		 */
 		struct {
 			char *name;

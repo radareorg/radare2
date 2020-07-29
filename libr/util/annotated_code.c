@@ -18,6 +18,8 @@ R_API void r_annotation_free(void *e, void *user) {
 	RCodeAnnotation *annotation = e;
 	if (annotation->type == R_CODE_ANNOTATION_TYPE_FUNCTION_NAME) {
 		free (annotation->reference.name);
+	} else if (annotation->type == R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE || annotation->type == R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER) {
+		free (annotation->variable.name);
 	}
 }
 
