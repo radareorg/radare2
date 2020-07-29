@@ -67,13 +67,13 @@ R_API int r_search_aes_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 				if (aes128_key_test (buf + i)) {
 					kw->keyword_length = AES128_KEY_LENGTH;
 					t = r_search_hit_new (s, kw, from + i);
-					i += AES128_SEARCH_LENGTH;
 					if (!t) {
 						return -1;
 					}
 					if (t > 1) {
 						return s->nhits - old_nhits;
 					}
+					i += AES128_SEARCH_LENGTH;
 				}
 				if (len - i - AES192_SEARCH_LENGTH >= 0 && aes192_key_test (buf + i)) {
 					kw->keyword_length = AES192_KEY_LENGTH;
