@@ -267,6 +267,11 @@ static ut64 try_get_cmpval_from_parents(RAnal * anal, RAnalFunction *fcn, RAnalB
 	r_list_foreach (fcn->bbs, iter, tmp_bb) {
 		if (tmp_bb->jump == my_bb->addr || tmp_bb->fail == my_bb->addr) {
 			if (tmp_bb->cmpreg == cmp_reg) {
+				if (tmp_bb->cond) {
+					if (tmp_bb->cond->type == R_ANAL_COND_HI || tmp_bb->cond->type == R_ANAL_COND_GT) {
+						return tmp_bb->cmpval + 1;
+					}
+				}
 				return tmp_bb->cmpval;
 			}
 		}
@@ -459,6 +464,10 @@ static inline bool op_is_set_bp(RAnalOp *op, const char *bp_reg, const char *sp_
 	return false;
 }
 
+static inline does_arch_destroys_dst(const char *arch) {
+	return arch && (!strncmp (arch, "arm", 3) || !strcmp (arch, "riscv") || !strcmp (arch, "ppc"));
+}
+
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
 	const int continue_after_jump = anal->opt.afterjmp;
 	const int addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1;
@@ -481,8 +490,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	} delay = {
 		0
 	};
+	bool arch_destroys_dst = does_arch_destroys_dst (anal->cur->arch);
 	bool is_arm = anal->cur->arch && !strncmp (anal->cur->arch, "arm", 3);
-	bool is_riscv = anal->cur->arch && !strcmp (anal->cur->arch, "riscv");
 	char tmp_buf[MAX_FLG_NAME_SIZE + 5] = "skip";
 	bool is_x86 = is_arm ? false: anal->cur->arch && !strncmp (anal->cur->arch, "x86", 3);
 	bool is_amd64 = is_x86 ? fcn->cc && !strcmp (fcn->cc, "amd64") : false;
@@ -990,6 +999,7 @@ repeat:
 				cmpval = val;
 				bb->cmpval = cmpval;
 				bb->cmpreg = op.reg;
+				bb->cond = r_anal_cond_new_from_op (&op);
 			}
 		}
 			break;
@@ -1003,6 +1013,9 @@ repeat:
 			if (!overlapped) {
 				bb->jump = op.jump;
 				bb->fail = op.fail;
+			}
+			if (bb->cond) {
+				bb->cond->type = op.cond;
 			}
 			if (anal->opt.jmptbl) {
 				if (op.ptr != UT64_MAX) {
@@ -1232,7 +1245,7 @@ analopfinish:
 			}
 			break;
 		}
-		if (has_stack_regs && (is_arm || is_riscv)) {
+		if (has_stack_regs && arch_destroys_dst) {
 			if (op_is_set_bp (&op, bp_reg, sp_reg) && op.src[1]) {
 				switch (op.type & R_ANAL_OP_TYPE_MASK) {
 				case R_ANAL_OP_TYPE_ADD:

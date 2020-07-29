@@ -746,10 +746,39 @@ beach:
 	free (esil_buf);
 }
 
-static bool is_reg_in_src (const char *regname, RAnal *anal, RAnalOp *op);
+static bool is_reg_in_src(const char *regname, RAnal *anal, RAnalOp *op);
+
+static inline bool op_affect_dst(RAnalOp* op) {
+	switch (op->type) {
+	case R_ANAL_OP_TYPE_ADD:
+	case R_ANAL_OP_TYPE_SUB:
+	case R_ANAL_OP_TYPE_MUL:
+	case R_ANAL_OP_TYPE_DIV:
+	case R_ANAL_OP_TYPE_SHR:
+	case R_ANAL_OP_TYPE_SHL:
+	case R_ANAL_OP_TYPE_SAL:
+	case R_ANAL_OP_TYPE_SAR:
+	case R_ANAL_OP_TYPE_OR:
+	case R_ANAL_OP_TYPE_AND:
+	case R_ANAL_OP_TYPE_XOR:
+	case R_ANAL_OP_TYPE_NOR:
+	case R_ANAL_OP_TYPE_NOT:
+	case R_ANAL_OP_TYPE_ROR:
+	case R_ANAL_OP_TYPE_ROL:
+	case R_ANAL_OP_TYPE_CAST:
+		return true;
+	default:
+		return false;
+	}
+}
+
+#define STR_EQUAL(s1, s2) (s1 && s2 && !strcmp (s1, s2))
+
+static inline bool arch_destroys_dst(const char *arch) {
+	return (STR_EQUAL (arch, "arm") || STR_EQUAL (arch, "riscv") || STR_EQUAL (arch, "ppc"));
+}
 
 static bool is_used_like_arg(const char *regname, const char *opsreg, const char *opdreg, RAnalOp *op, RAnal *anal) {
-	#define STR_EQUAL(s1, s2) (s1 && s2 && !strcmp (s1, s2))
 	RAnalValue *dst = op->dst;
 	RAnalValue *src = op->src[0];
 	switch (op->type) {
@@ -780,14 +809,11 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 		}
 		//fallthrough
 	default:
-		if ((op->type == R_ANAL_OP_TYPE_ADD || op->type == R_ANAL_OP_TYPE_SUB
-			|| op->type == R_ANAL_OP_TYPE_MUL || op->type == R_ANAL_OP_TYPE_DIV) &&
-			(STR_EQUAL (anal->cur->arch, "arm") || STR_EQUAL (anal->cur->arch, "riscv"))) {
+		if (op_affect_dst (op) && arch_destroys_dst (anal->cur->arch)) {
 			if (is_reg_in_src (regname, anal, op)) {
 				return true;
-			} else if (STR_EQUAL (opdreg, regname)) {
-				return false;
 			}
+			return false;
 		}
 		return ((STR_EQUAL (opdreg, regname)) || (is_reg_in_src (regname, anal, op)));
 	}

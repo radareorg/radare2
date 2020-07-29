@@ -3370,59 +3370,98 @@ static RList *recurse_bb(RCore *core, ut64 addr, RAnalBlock *dest) {
 	return recurse (core, bb, dest);
 }
 
+#define REG_SET_SIZE (R_ANAL_CC_MAXARG + 2)
+
+typedef struct {
+	int count;
+	RPVector reg_set;
+	bool argonly;
+	RAnalFunction *fcn;
+	RCore *core;
+} BlockRecurseCtx;
+
+static bool anal_block_on_exit(RAnalBlock *bb, BlockRecurseCtx *ctx) {
+	int *cur_regset = r_pvector_pop (&ctx->reg_set);
+	int *prev_regset = r_pvector_at (&ctx->reg_set, r_pvector_len (&ctx->reg_set) - 1);
+	size_t i;
+	for (i = 0; i < REG_SET_SIZE; i++) {
+		if (!prev_regset[i] && cur_regset[i] == 1) {
+			prev_regset[i] = 1;
+		}
+	}
+	free (cur_regset);
+	return true;
+}
+
+static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
+	if (r_cons_is_breaked ()) {
+		return false;
+	}
+	if (bb->size < 1) {
+		return true;
+	}
+	if (bb->size > ctx->core->anal->opt.bb_max_size) {
+		return true;
+	}
+	int *parent_reg_set = r_pvector_at (&ctx->reg_set, r_pvector_len (&ctx->reg_set) - 1);
+	int *reg_set = R_NEWS (int, REG_SET_SIZE);
+	memcpy (reg_set, parent_reg_set, REG_SET_SIZE * sizeof (int));
+	r_pvector_push (&ctx->reg_set, reg_set);
+	RCore *core = ctx->core;
+	RAnalFunction *fcn = ctx->fcn;
+	fcn->stack = bb->parent_stackptr;
+	ut64 pos = bb->addr;
+	while (pos < bb->addr + bb->size) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+		RAnalOp *op = r_core_anal_op (core, pos, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT);
+		if (!op) {
+			//eprintf ("Cannot get op\n");
+			break;
+		}
+		r_anal_extract_rarg (core->anal, op, fcn, reg_set, &ctx->count);
+		if (!ctx->argonly) {
+			if (op->stackop == R_ANAL_STACK_INC) {
+				fcn->stack += op->stackptr;
+			} else if (op->stackop == R_ANAL_STACK_RESET) {
+				fcn->stack = 0;
+			}
+			r_anal_extract_vars (core->anal, fcn, op);
+		}
+		int opsize = op->size;
+		int optype = op->type;
+		r_anal_op_free (op);
+		if (opsize < 1) { 
+			break;
+		}
+		if (optype == R_ANAL_OP_TYPE_CALL) {
+			size_t i;
+			int max_count = r_anal_cc_max_arg (core->anal, fcn->cc);
+			for (i = 0; i < max_count; i++) {
+				reg_set[i] = 2;
+			}
+		}
+		pos += opsize;
+	}
+	return true;
+}
+
 // TODO: move this logic into the main anal loop
 R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
-	RListIter *tmp = NULL;
-	RAnalBlock *bb = NULL;
-	int count = 0;
-	// self, error, arg
-	int reg_set[R_ANAL_CC_MAXARG + 2] = {0};
-
 	r_return_if_fail (core && core->anal && fcn);
 	if (core->anal->opt.bb_max_size < 1) {
 		return;
 	}
-	const int max_bb_size = core->anal->opt.bb_max_size;
-	r_list_foreach (fcn->bbs, tmp, bb) {
-		if (r_cons_is_breaked ()) {
-			break;
-		}
-		if (bb->size < 1) {
-			continue;
-		}
-		if (bb->size > max_bb_size) {
-			continue;
-		}
-		int saved_stack = fcn->stack;
-		fcn->stack = bb->parent_stackptr;
-		ut64 pos = bb->addr;
-		while (pos < bb->addr + bb->size) {
-			if (r_cons_is_breaked ()) {
-				break;
-			}
-			RAnalOp *op = r_core_anal_op (core, pos, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT);
-			if (!op) {
-				//eprintf ("Cannot get op\n");
-				break;
-			}
-			r_anal_extract_rarg (core->anal, op, fcn, reg_set, &count);
-			if (!argonly) {
-				if (op->stackop == R_ANAL_STACK_INC) {
-					fcn->stack += op->stackptr;
-				} else if (op->stackop == R_ANAL_STACK_RESET) {
-					fcn->stack = 0;
-				}
-				r_anal_extract_vars (core->anal, fcn, op);
-			}
-			int opsize = op->size;
-			r_anal_op_free (op);
-			if (opsize < 1) {
-				break;
-			}
-			pos += opsize;
-		}
-		fcn->stack = saved_stack;
-	}
+	BlockRecurseCtx ctx = { 0, { 0 }, argonly, fcn, core };
+	r_pvector_init (&ctx.reg_set, free);
+	int *reg_set = R_NEWS0 (int, REG_SET_SIZE);
+	r_pvector_push (&ctx.reg_set, reg_set);
+	int saved_stack = fcn->stack;
+	RAnalBlock *first_bb = r_anal_get_block_at (fcn->anal, fcn->addr);
+	r_anal_block_recurse_depth_first (first_bb, (RAnalBlockCb)anal_block_cb, (RAnalBlockCb)anal_block_on_exit, &ctx);
+	r_pvector_fini (&ctx.reg_set);
+	fcn->stack = saved_stack;
 }
 
 static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int depth, HtUP *state, HtUP *avoid) {
@@ -4637,6 +4676,9 @@ static const char *reg_name_for_access(RAnalOp* op, RAnalVarAccessType type) {
 
 static ut64 delta_for_access(RAnalOp *op, RAnalVarAccessType type) {
 	if (type == R_ANAL_VAR_ACCESS_TYPE_READ) {
+		if (op->src[1] && op->src[1]->imm) {
+			return op->src[1]->imm;
+		}
 		if (op->src[0]) {
 			return op->src[0]->delta;
 		}
@@ -4651,7 +4693,7 @@ static void handle_var_stack_access(RAnalEsil *esil, ut64 addr, RAnalVarAccessTy
 	const char *regname = reg_name_for_access (ctx->op, type);
 	if (ctx->fcn && regname) {
 		ut64 spaddr = r_reg_getv (esil->anal->reg, ctx->spname);
-		if (addr > spaddr && addr <= ctx->initial_sp) {
+		if (addr >= spaddr && addr < ctx->initial_sp) {
 			int stack_off = addr - ctx->initial_sp;
 			RAnalVar *var = r_anal_function_get_var (ctx->fcn, R_ANAL_VAR_KIND_SPV, stack_off);
 			if (!var) {
@@ -4742,10 +4784,8 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	RAnal *anal = esil->anal;
 	EsilBreakCtx *ctx = esil->user;
 	RAnalOp *op = ctx->op;
-	if (op->type == R_ANAL_OP_TYPE_LEA) {
-		handle_var_stack_access (esil, *val, R_ANAL_VAR_ACCESS_TYPE_READ, esil->anal->bits / 8);
-	}
 	RCore *core = anal->coreb.core;
+	handle_var_stack_access (esil, *val, R_ANAL_VAR_ACCESS_TYPE_READ, esil->anal->bits / 8);
 	//specific case to handle blx/bx cases in arm through emulation
 	// XXX this thing creates a lot of false positives
 	ut64 at = *val;
@@ -4929,6 +4969,7 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 					if (prev_bb->fail != UT64_MAX) {
 						bbit = r_list_find (ctx->bbl, &prev_bb->fail, (RListComparator)find_bb);
 						if (bbit) {
+							r_reg_arena_push (ctx->fcn->anal->reg);
 							r_list_push (ctx->path, prev_bb);
 						}
 					}
