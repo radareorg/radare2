@@ -245,7 +245,7 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 
 	ut64 timeout_us_abs = UT64_MAX;
 	if (timeout_ms != UT64_MAX) {
-		timeout_us_abs = r_sys_now_mono () + timeout_ms * USEC_PER_MSEC;
+		timeout_us_abs = r_sys_now_mono () + timeout_ms * R_USEC_PER_MSEC;
 	}
 
 	ut8 stdout_buf[0x500];
@@ -291,7 +291,7 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			if (now >= timeout_us_abs) {
 				return false;
 			}
-			timeout = (DWORD)((timeout_us_abs - now) / USEC_PER_MSEC);
+			timeout = (DWORD)((timeout_us_abs - now) / R_USEC_PER_MSEC);
 		}
 		DWORD signaled = WaitForMultipleObjects (handles.len, handles.a, FALSE, timeout);
 		if (!stdout_eof && signaled == stdout_index) {
