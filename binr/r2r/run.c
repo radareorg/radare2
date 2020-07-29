@@ -651,10 +651,11 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 		struct timeval timeout_s;
 		struct timeval *timeout = NULL;
 		if (timeout_ms != UT64_MAX) {
-			st64 usec_diff = timeout_abs - r_sys_now_mono ();
-			if (usec_diff <= 0) {
+			ut64 now = r_sys_now_mono ();
+			if (now >= timeout_abs) {
 				break;
 			}
+			ut64 usec_diff = timeout_abs - r_sys_now_mono ();
 			timeout_s.tv_sec = usec_diff / R_USEC_PER_SEC;
 			timeout_s.tv_usec = usec_diff % R_USEC_PER_SEC;
 			timeout = &timeout_s;
