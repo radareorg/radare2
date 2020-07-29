@@ -30,6 +30,37 @@ static char *hack_handle_dp_imm(ut32 insn) {
 	return NULL;
 }
 
+static char *hack_handle_br_exc_sys(ut32 insn) {
+	char *buf_asm = NULL;
+	const char *mnemonic = "bti";
+	const ut8 op0 = (insn >> 29) & 0x7;
+	const ut16 op1 = (insn >> 12) & 0x3fff;
+	ut8 op2 = insn & 0x1f;
+
+	// Hints
+	if (op0 == 6 && op1 == 4146 && op2 == 31) {
+		const ut8 CRm = (insn >> 8) & 0xf;
+		op2 = (insn >> 5) & 0x7;
+		if (CRm == 4 && (op2 & 1) == 0) {
+			switch (op2) {
+			case 0:
+				buf_asm = r_str_newf ("%s", mnemonic);
+				break;
+			case 2:
+				buf_asm = r_str_newf ("%s c", mnemonic);
+				break;
+			case 4:
+				buf_asm = r_str_newf ("%s j", mnemonic);
+				break;
+			case 6:
+				buf_asm = r_str_newf ("%s jc", mnemonic);
+				break;
+			}
+		}
+	}
+	return buf_asm;
+}
+
 static char *hack_handle_dp_reg(ut32 insn) {
 	char *buf_asm = NULL;
 	char *mnemonic = NULL;
@@ -204,6 +235,12 @@ static int hackyArmAsm(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		case 9:
 			// addg, subg
 			buf_asm = hack_handle_dp_imm (*insn);
+			break;
+		// Branches, Exception generating, and System instructions
+		case 10:
+		case 11:
+			// bti
+			buf_asm = hack_handle_br_exc_sys (*insn);
 			break;
 		// Loads and Stores
 		case 4:

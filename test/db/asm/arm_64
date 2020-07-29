@@ -288,3 +288,7 @@ d "stgm x0, [x1]" 2000a0d9
 d "stz2g sp, [sp], 0x50" ff57e0d9
 d "ldgm x10, [x0]" 0a00e0d9
 d "stgp x1, x3, [x3], 0x70" 618c8368
+d "bti" 1f2403d5
+d "bti c" 5f2403d5
+d "bti j" 9f2403d5
+d "bti jc" df2403d5
