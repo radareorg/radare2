@@ -5,10 +5,10 @@ bool test_r_io_mapsplit (void) {
 	RIO *io = r_io_new ();
 	io->va = true;
 	r_io_open_at (io, "null://2", R_PERM_R, 0LL, UT64_MAX);
-	mu_assert ("UT64_MAX not mapped", r_io_map_is_mapped (io, UT64_MAX));
-	mu_assert ("Found no map at UT64", r_io_map_get (io, UT64_MAX));
-	mu_assert ("0x0 not mapped", r_io_map_is_mapped (io, 0x0));
-	mu_assert ("Found no map at 0x0", r_io_map_get (io, 0x0));
+	mu_assert_true (r_io_map_is_mapped (io, 0x0), "0x0 not mapped");
+	mu_assert_true (r_io_map_is_mapped (io, UT64_MAX), "UT64_MAX not mapped");
+	mu_assert_notnull (r_io_map_get (io, 0x0), "Found no map at 0x0");
+	mu_assert_notnull (r_io_map_get (io, UT64_MAX), "Found no map at UT64_MAX");
 	r_io_free (io);
 	mu_end;
 }
@@ -17,14 +17,15 @@ bool test_r_io_mapsplit2 (void) {
 	RIO *io = r_io_new ();
 	io->va = true;
 	r_io_open_at (io, "null://2", R_PERM_R, 0LL, 0LL);
-	mu_assert ("0x0 not mapped", r_io_map_is_mapped (io, 0x0));
-	mu_assert ("0x1 not mapped", r_io_map_is_mapped (io, 0x1));
+	mu_assert_true (r_io_map_is_mapped (io, 0x0), "0x0 not mapped");
+	mu_assert_true (r_io_map_is_mapped (io, 0x1), "0x1 not mapped");
 	r_io_map_remap (io, r_io_map_get (io, 0LL)->id, UT64_MAX);
-	mu_assert ("0x0 not mapped", r_io_map_is_mapped (io, 0x0));
-	mu_assert ("0x1 mapped", !r_io_map_is_mapped (io, 0x1));
-	mu_assert ("UT64_MAX not mapped", r_io_map_is_mapped (io, UT64_MAX));
-	mu_assert ("Found no map at UT64_MAX", r_io_map_get (io, UT64_MAX));
-	mu_assert ("Found no map at 0x0", r_io_map_get (io, 0x0));
+	mu_assert_true (r_io_map_is_mapped (io, 0x0), "0x0 not mapped");
+	mu_assert_true (r_io_map_is_mapped (io, UT64_MAX), "UT64_MAX not mapped");
+	mu_assert_false (r_io_map_is_mapped (io, 0x1), "0x1 mapped");
+	mu_assert_notnull (r_io_map_get (io, 0x0), "Found no map at 0x0");
+	mu_assert_notnull (r_io_map_get (io, UT64_MAX), "Found no map at UT64_MAX");
+	mu_assert_null (r_io_map_get (io, 0x1), "Found map at 0x1");
 	r_io_free (io);
 	mu_end;
 }
@@ -33,15 +34,15 @@ bool test_r_io_mapsplit3 (void) {
 	RIO *io = r_io_new ();
 	io->va = true;
 	r_io_open_at (io, "null://2", R_PERM_R, 0LL, UT64_MAX - 1);
-	mu_assert ("UT64_MAX - 1 not mapped", r_io_map_is_mapped (io, UT64_MAX - 1));
-	mu_assert ("UT64_MAX not mapped", r_io_map_is_mapped (io, UT64_MAX));
+	mu_assert_true (r_io_map_is_mapped (io, UT64_MAX - 1), "UT64_MAX - 1 not mapped");
+	mu_assert_true (r_io_map_is_mapped (io, UT64_MAX), "UT64_MAX not mapped");
 	r_io_map_resize (io, r_io_map_get (io, UT64_MAX)->id, 3);
-	mu_assert ("UT64_MAX - 1 not mapped", r_io_map_is_mapped (io, UT64_MAX - 1));
-	mu_assert ("UT64_MAX not mapped", r_io_map_is_mapped (io, UT64_MAX));
-	mu_assert ("0x0 not mapped", r_io_map_is_mapped (io, 0x0));
-	mu_assert ("0x1 mapped", !r_io_map_is_mapped (io, 0x1));
-	mu_assert ("Found no map at UT64_MAX", r_io_map_get (io, UT64_MAX));
-	mu_assert ("Found no map at 0x0", r_io_map_get (io, 0x0));
+	mu_assert_true (r_io_map_is_mapped (io, UT64_MAX - 1), "UT64_MAX - 1 not mapped");
+	mu_assert_true (r_io_map_is_mapped (io, UT64_MAX), "UT64_MAX not mapped");
+	mu_assert_true (r_io_map_is_mapped (io, 0x0), "0x0 not mapped");
+	mu_assert_false (r_io_map_is_mapped (io, 0x1), "0x1 mapped");
+	mu_assert_notnull (r_io_map_get (io, UT64_MAX), "Found no map at UT64_MAX");
+	mu_assert_notnull (r_io_map_get (io, 0x0), "Found no map at 0x0");
 	r_io_free (io);
 	mu_end;
 }
