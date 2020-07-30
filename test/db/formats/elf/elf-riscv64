@@ -526,7 +526,7 @@ EXPECT=<<EOF
 |      ::   0x00010174      1385874f       addi a0, a5, 1272           ; const char *format
 |      ::   0x00010178      ef00c01f       jal ra, sym.printf
 |      ::   0x0001017c      930784fe       addi a5, s0, -24
-|      ::   0x00010180      93850700       mv a1, a5
+|      ::   0x00010180      93850700       mv a1, var_bp_18h
 |      ::   0x00010184      b7170200       lui a5, 0x21
 |      ::   0x00010188      13850751       addi a0, a5, 1296           ; const char *format
 |      ::   0x0001018c      ef00402f       jal ra, sym.scanf

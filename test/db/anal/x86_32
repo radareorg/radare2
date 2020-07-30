@@ -250,7 +250,7 @@ RUN
 
 NAME=x86: fastcall argument analysis
 FILE=bins/elf/analysis/fast
-CMDS=aa ; s sym.fastcaslled ; afc fastcall ; afva ; ?e ; pdf~arg,var
+CMDS=aa ; s sym.fastcaslled ; afc fastcall ; afva ; pdf~arg,var
 EXPECT=<<EOF
 / 59: sym.fastcaslled (int32_t arg1, int32_t arg2, int32_t arg_8h, int32_t arg_ch);
 |           ; var int32_t var_20h @ ebp-0x20

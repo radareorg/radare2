@@ -1915,7 +1915,7 @@ EOF
 EXPECT=<<EOF
 |           0x0001045c      STR R0, [var_8h]
 |           0x00010460      STR R1, [var_ch]
-|           0x00010464      LDR R0, [envp]
+|           0x00010464      LDR R0, [arg_8h]
 |           0x00010468      LDR R1, [arg_ch]
 
 |           0x0001045c      str r0, [fp, -8]
@@ -1925,12 +1925,12 @@ EXPECT=<<EOF
 
 |           0x0001045c      [fp - var_8h] = r0
 |           0x00010460      [fp - var_ch] = r1
-|           0x00010464      r0 = [fp + envp]
+|           0x00010464      r0 = [fp + arg_8h]
 |           0x00010468      r1 = [fp + arg_ch]
 
 |           0x0001045c      [var_8h] = r0
 |           0x00010460      [local2] = r1
-|           0x00010464      r0 = [envp]
+|           0x00010464      r0 = [arg1]
 |           0x00010468      r1 = [arg_ch]
 EOF
 RUN

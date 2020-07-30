@@ -512,26 +512,68 @@ static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num)
 	return 0;
 }
 
+static RRegItem base_regs[4];
+
+static void create_src_dst(RAnalOp *op) {
+	op->src[0] = r_anal_value_new ();
+	op->src[1] = r_anal_value_new ();
+	op->src[2] = r_anal_value_new ();
+	op->dst = r_anal_value_new ();
+	ZERO_FILL (base_regs[0]);
+	ZERO_FILL (base_regs[1]);
+	ZERO_FILL (base_regs[2]);
+	ZERO_FILL (base_regs[3]);
+}
+
+static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x) {
+	cs_ppc_op ppcop = INSOP (x);
+	parse_reg_name (&base_regs[x], *handle, insn, x);
+	switch (ppcop.type) {
+	case PPC_OP_REG:
+		break;
+	case PPC_OP_MEM:
+		val->delta = ppcop.mem.disp;
+		break;
+	case PPC_OP_IMM:
+		val->imm = ppcop.imm;
+		break;
+	default:
+		break;
+	}
+	val->reg = &base_regs[x];
+}
+
 static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
-	static RRegItem reg;
+	create_src_dst (op);
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
+	case R_ANAL_OP_TYPE_MOV:
+	case R_ANAL_OP_TYPE_CMP:
+	case R_ANAL_OP_TYPE_ADD:
+	case R_ANAL_OP_TYPE_SUB:
+	case R_ANAL_OP_TYPE_MUL:
+	case R_ANAL_OP_TYPE_DIV:
+	case R_ANAL_OP_TYPE_SHR:
+	case R_ANAL_OP_TYPE_SHL:
+	case R_ANAL_OP_TYPE_SAL:
+	case R_ANAL_OP_TYPE_SAR:
+	case R_ANAL_OP_TYPE_OR:
+	case R_ANAL_OP_TYPE_AND:
+	case R_ANAL_OP_TYPE_XOR:
+	case R_ANAL_OP_TYPE_NOR:
+	case R_ANAL_OP_TYPE_NOT:
 	case R_ANAL_OP_TYPE_LOAD:
-		if (INSOP(1).type == PPC_OP_MEM) {
-			ZERO_FILL (reg);
-			op->src[0] = r_anal_value_new ();
-			op->src[0]->reg = &reg;
-			parse_reg_name (op->src[0]->reg, handle, insn, 1);
-			op->src[0]->delta = INSOP(1).mem.disp;
-		}
+	case R_ANAL_OP_TYPE_LEA:
+	case R_ANAL_OP_TYPE_ROR:
+	case R_ANAL_OP_TYPE_ROL:
+	case R_ANAL_OP_TYPE_CAST:
+		set_src_dst (op->src[2], &handle, insn, 3);
+		set_src_dst (op->src[1], &handle, insn, 2);
+		set_src_dst (op->src[0], &handle, insn, 1);
+		set_src_dst (op->dst, &handle, insn, 0);
 		break;
 	case R_ANAL_OP_TYPE_STORE:
-		if (INSOP(1).type == PPC_OP_MEM) {
-			ZERO_FILL (reg);
-			op->dst = r_anal_value_new ();
-			op->dst->reg = &reg;
-			parse_reg_name (op->dst->reg, handle, insn, 1);
-			op->dst->delta = INSOP(1).mem.disp;
-		}
+		set_src_dst (op->dst, &handle, insn, 1);
+		set_src_dst (op->src[0], &handle, insn, 0);
 		break;
 	}
 }
@@ -687,6 +729,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			op1 = ARG (1);
 			op1[strlen (op1) - 1] = 0;
 			esilprintf (op, "%s,%s,=[4],%s=", ARG (0), op1, op1);
+			if (strstr (op1, "r1")) {
+				op->stackop = R_ANAL_STACK_INC;
+				op->stackptr = -atoi (op1);
+			}
 			break;
 		case PPC_INS_STWBRX:
 			op->type = R_ANAL_OP_TYPE_STORE;
