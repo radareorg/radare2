@@ -76,7 +76,8 @@ enum HeaderFileType {
 	MH_BUNDLE      = 0x8u,
 	MH_DYLIB_STUB  = 0x9u,
 	MH_DSYM        = 0xAu,
-	MH_KEXT_BUNDLE = 0xBu
+	MH_KEXT_BUNDLE = 0xBu,
+	MH_FILESET     = 0xCu
 };
 
 enum {
@@ -170,6 +171,7 @@ enum LoadCommandType {
 	LC_BUILD_VERSION        = 0x00000032u,
 	LC_DYLD_EXPORTS_TRIE    = 0x80000033u,
 	LC_DYLD_CHAINED_FIXUPS  = 0x80000034u,
+	LC_KEXT  = 0x80000035u, /* TODO: get the right name */
 /*
 Load command 9
        cmd LC_BUILD_VERSION
@@ -1437,6 +1439,17 @@ sizeof(struct x86_exception_state_t) / sizeof(uint32_t);
 #define EXPORT_SYMBOL_FLAGS_REEXPORT 0x08
 #define EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER 0x10
 
+struct dyld_chained_fixups_header
+{
+	uint32_t fixups_version;
+	uint32_t starts_offset;
+	uint32_t imports_offset;
+	uint32_t symbols_offset;
+	uint32_t imports_count;
+	uint32_t imports_format;
+	uint32_t symbols_format;
+};
+
 struct dyld_chained_starts_in_image {
 	uint32_t seg_count;
 };
@@ -1472,6 +1485,7 @@ enum {
 	DYLD_CHAINED_PTR_32          = 3,
 	DYLD_CHAINED_PTR_32_CACHE    = 4,
 	DYLD_CHAINED_PTR_32_FIRMWARE = 5,
+	DYLD_CHAINED_PTR_ARM64E_CACHE = 8, /* TODO: figure out the right name */
 };
 
 struct dyld_chained_ptr_arm64e_rebase {
@@ -1509,6 +1523,23 @@ struct dyld_chained_ptr_arm64e_auth_bind {
 		key : 2,
 		next : 11,
 		bind : 1, // == 1
+		auth : 1; // == 1
+};
+
+/* WARNING: this is guesswork based on trial and error */
+struct dyld_chained_ptr_arm64e_cache_rebase {
+	uint64_t target : 43,
+		high8 : 8,
+		next : 12,
+		auth : 1; // == 0
+};
+
+struct dyld_chained_ptr_arm64e_cache_auth_rebase {
+	uint64_t target : 32,
+		diversity : 16,
+		addrDiv : 1,
+		key : 2,
+		next : 12,
 		auth : 1; // == 1
 };
 

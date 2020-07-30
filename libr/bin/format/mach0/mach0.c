@@ -1516,6 +1516,66 @@ static size_t get_word_size(struct MACH0_(obj_t) *bin) {
 	return R_MAX (word_size, 4);
 }
 
+static bool parse_chained_fixups(struct MACH0_(obj_t) *bin, ut32 offset, ut32 size) {
+	struct dyld_chained_fixups_header header;
+	if (size < sizeof (header)) {
+		return false;
+	}
+	if (r_buf_fread_at (bin->b, offset, (ut8 *)&header, "7i", 1) != sizeof (header)) {
+		return false;
+	}
+	if (header.fixups_version > 0) {
+		eprintf ("Unsupported fixups version: %u\n", header.fixups_version);
+		return false;
+	}
+	ut64 starts_at = offset + header.starts_offset;
+	if (header.starts_offset > size) {
+		return false;
+	}
+	ut32 segs_count;
+	if ((segs_count = r_buf_read_le32_at (bin->b, starts_at)) == UT32_MAX) {
+		return false;
+	}
+	bin->chained_starts = R_NEWS0 (struct r_dyld_chained_starts_in_segment *, segs_count);
+	if (!bin->chained_starts) {
+		return false;
+	}
+	size_t i;
+	ut64 cursor = starts_at + sizeof (ut32);
+	for (i = 0; i < segs_count; i++) {
+		ut32 seg_off;
+		if ((seg_off = r_buf_read_le32_at (bin->b, cursor)) == UT32_MAX || !seg_off) {
+			cursor += sizeof (ut32);
+			continue;
+		}
+		if (i >= bin->nsegs) {
+			break;
+		}
+		struct r_dyld_chained_starts_in_segment *cur_seg = R_NEW0 (struct r_dyld_chained_starts_in_segment);
+		if (!cur_seg) {
+			return false;
+		}
+		bin->chained_starts[i] = cur_seg;
+		if (r_buf_fread_at (bin->b, starts_at + seg_off, (ut8 *)cur_seg, "isslis", 1) != 22) {
+			return false;
+		}
+		if (cur_seg->page_count > 0) {
+			ut16 *page_start = malloc (sizeof (ut16) * cur_seg->page_count);
+			if (!page_start) {
+				return false;
+			}
+			if (r_buf_fread_at (bin->b, starts_at + seg_off + 22, (ut8 *)page_start, "s", cur_seg->page_count)
+					!= cur_seg->page_count * 2) {
+				return false;
+			}
+			cur_seg->page_start = page_start;
+		}
+		cursor += sizeof (ut32);
+	}
+	/* TODO: handle also imports, symbols and multiple starts (32-bit only) */
+	return true;
+}
+
 static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
 	if (!bin->dyld_info) {
 		return false;
@@ -1951,6 +2011,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 			break;
 		}
 	}
+	bool has_chained_fixups = false;
 	for (i = 0, off = sizeof (struct MACH0_(mach_header)) + bin->header_at; \
 			i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
 		len = r_buf_read_at (bin->b, off, loadc, sizeof (struct load_command));
@@ -1988,10 +2049,11 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 				if (db) {
 					r_buf_read_at (bin->b, dataoff, db, datasize);
 					// TODO table of non-instructions regions in __text
-					for (i = 0; i < datasize; i += 8) {
-						ut32 dw = r_read_ble32 (db + i, bin->big_endian);
+					int j;
+					for (j = 0; j < datasize; j += 8) {
+						ut32 dw = r_read_ble32 (db + j, bin->big_endian);
 						// int kind = r_read_ble16 (db + i + 4 + 2, bin->big_endian);
-						int len = r_read_ble16 (db + i + 4, bin->big_endian);
+						int len = r_read_ble16 (db + j + 4, bin->big_endian);
 						ut64 va = offset_to_vaddr(bin, dw);
 					//	eprintf ("# 0x%d -> 0x%x\n", dw, va);
 					//	eprintf ("0x%x kind %d len %d\n", dw, kind, len);
@@ -2009,21 +2071,26 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 				eprintf ("exports trie at 0x%x size %d\n", dataoff, datasize);
 			}
 			break;
-		case LC_DYLD_CHAINED_FIXUPS:
-			// TODO: parse fixups
-			if (bin->verbose) {
+		case LC_DYLD_CHAINED_FIXUPS: {
 				ut8 buf[8];
-				r_buf_read_at (bin->b, off + 8, buf, sizeof (buf));
-				ut32 dataoff = r_read_ble32 (buf, bin->big_endian);
-				ut32 datasize= r_read_ble32 (buf + 4, bin->big_endian);
-				eprintf ("chained fixups at 0x%x size %d\n", dataoff, datasize);
+				if (r_buf_read_at (bin->b, off + 8, buf, sizeof (buf)) == sizeof (buf)) {
+					ut32 dataoff = r_read_ble32 (buf, bin->big_endian);
+					ut32 datasize= r_read_ble32 (buf + 4, bin->big_endian);
+					if (bin->verbose) {
+						eprintf ("chained fixups at 0x%x size %d\n", dataoff, datasize);
+					}
+					has_chained_fixups = parse_chained_fixups (bin, dataoff, datasize);
+				}
 			}
 			break;
 		}
 	}
 
-	if (bin->hdr.cputype == CPU_TYPE_ARM64 &&
-		bin->hdr.cpusubtype == CPU_SUBTYPE_ARM64E) {
+	if (!has_chained_fixups && bin->hdr.cputype == CPU_TYPE_ARM64 &&
+		(bin->hdr.cpusubtype & ~CPU_SUBTYPE_MASK) == CPU_SUBTYPE_ARM64E) {
+		if (bin->verbose) {
+			eprintf ("reconstructing chained fixups\n");
+		}
 		reconstruct_chained_fixup (bin);
 	}
 	return true;
@@ -3598,7 +3665,8 @@ struct lib_t *MACH0_(get_libs)(struct MACH0_(obj_t) *bin) {
 ut64 MACH0_(get_baddr)(struct MACH0_(obj_t) *bin) {
 	int i;
 
-	if (bin->hdr.filetype != MH_EXECUTE && bin->hdr.filetype != MH_DYLINKER) {
+	if (bin->hdr.filetype != MH_EXECUTE && bin->hdr.filetype != MH_DYLINKER &&
+			bin->hdr.filetype != MH_FILESET) {
 		return 0;
 	}
 	for (i = 0; i < bin->nsegs; i++) {
@@ -3905,6 +3973,8 @@ char *MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) *hdr) {
 	case MH_BUNDLE:     mhtype = "Dynamically bound bundle file"; break;
 	case MH_DYLIB_STUB: mhtype = "Shared library stub for static linking (no sections)"; break;
 	case MH_DSYM:       mhtype = "Companion file with only debug sections"; break;
+	case MH_KEXT_BUNDLE: mhtype = "Kernel extension bundle file"; break;
+	case MH_FILESET:    mhtype = "Kernel cache file"; break;
 	}
 	return strdup (mhtype);
 }
