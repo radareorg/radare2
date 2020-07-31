@@ -162,6 +162,37 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin) {
 			}
 		}
 	}
+
+	// MSVC 32bit debug 
+	// push ebp
+	// mov ebp, esp
+	// call xxxxxxxx
+	if (b[3] == 0xe8) {
+		const st32 call_dst = r_read_ble32 (b + 4, bin->big_endian);
+		entry->paddr += (5 + 3 + call_dst);
+		entry->vaddr += (5 + 3 + call_dst);
+		r_buf_read_at (bin->b, entry->paddr, b, sizeof (b));
+		if (b[8] == 0xe8) {
+			const st32 call_dst = r_read_ble32 (b + 9, bin->big_endian);
+			entry->paddr += (5 + 8 + call_dst);
+			entry->vaddr += (5 + 8 + call_dst);
+			r_buf_read_at (bin->b, entry->paddr, b, sizeof (b));
+			if (b[0x152] == 0xe8) {
+				const st32 call_dst = r_read_ble32 (b + 0x153, bin->big_endian);
+				entry->paddr += (5 + 0x152 + call_dst);
+				entry->vaddr += (5 + 0x152 + call_dst);
+				r_buf_read_at (bin->b, entry->paddr, b, sizeof (b));
+				if (b[0x2e] == 0xe8) {
+					const st32 call_dst = r_read_ble32 (b + 0x2f, bin->big_endian);
+					entry->paddr += (5 + 0x2e + call_dst);
+					entry->vaddr += (5 + 0x2e + call_dst);
+					follow_jump (entry, bin->b, b, sizeof (b), bin->big_endian);
+					return entry;
+				}
+			}
+		}
+	}
+
 	// MSVC AMD64
 	// 48 83 EC 28       sub     rsp, 0x28
 	// E8 xx xx xx xx    call    xxxxxxxx
