@@ -3623,6 +3623,12 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 	if (nsym == -1) {
 		goto beach;
 	}
+
+	// Elf_(fix_symbols) may find additional symbols, some of which could be
+	// imported symbols. Let's reserve additional space for them.
+	r_warn_if_fail (nsym >= ret_ctr);
+	import_ret_ctr += nsym - ret_ctr;
+
 	aux = ret;
 	while (!aux->last) {
 		if ((int)aux->ordinal > max) {
