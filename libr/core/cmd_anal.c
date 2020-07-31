@@ -4757,6 +4757,13 @@ repeat:
 	// esil->verbose ?
 	// eprintf ("REPE 0x%llx %s => 0x%llx\n", addr, R_STRBUF_SAFEGET (&op.esil), r_reg_getv (core->anal->reg, "PC"));
 
+	ut64 pc = r_reg_getv (core->anal->reg, name);
+	if (core->anal->pcalign > 0) {
+		pc -= (pc % core->anal->pcalign);
+		r_reg_setv (core->anal->reg, name, pc);
+		r_reg_setv (core->dbg->reg, name, pc);
+	}
+
 	st64 follow = (st64)r_config_get_i (core->config, "dbg.follow");
 	if (follow > 0) {
 		ut64 pc = r_debug_reg_get (core->dbg, "PC");
@@ -4765,7 +4772,6 @@ repeat:
 		}
 	}
 	// check breakpoints
-	ut64 pc = r_reg_getv (core->anal->reg, name);
 	if (r_bp_get_at (core->dbg->bp, pc)) {
 		r_cons_printf ("[ESIL] hit breakpoint at 0x%"PFMT64x "\n", pc);
 		return_tail (0);
@@ -9291,8 +9297,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_task_yield (&core->tasks);
 					bool ioCache = r_config_get_i (core->config, "io.pcache");
 					r_config_set_i (core->config, "io.pcache", 1);
-					oldstr = r_print_rowlog (core->print, "Emulate code to find computed references (aae)");
-					r_core_cmd0 (core, "aae");
+					oldstr = r_print_rowlog (core->print, "Emulate functions to find computed references (aaef)");
+					r_core_cmd0 (core, "aaef");
 					r_print_rowlog_done (core->print, oldstr);
 					r_core_task_yield (&core->tasks);
 					if (!ioCache) {
@@ -9409,13 +9415,15 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		cmd_anal_objc (core, input + 1, false);
 		break;
 	case 'e': // "aae"
-		if (input[1] == 'f') { // "aaef
+		if (input[1] == 'f') { // "aaef"
 			RListIter *it;
 			RAnalFunction *fcn;
+			ut64 cur_seek = core->offset;
 			r_list_foreach (core->anal->fcns, it, fcn) {
 				r_core_seek (core, fcn->addr, true);
 				r_core_anal_esil (core, "f", NULL);
 			}
+			r_core_seek (core, cur_seek, true);
 		} else if (input[1] == ' ') {
 			const char *len = (char *)input + 1;
 			char *addr = strchr (input + 2, ' ');

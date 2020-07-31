@@ -277,3 +277,22 @@ s $
     (args (arg (arg_identifier))))
   (arged_command (cmd_identifier)
     (args (arg (arg_identifier)))))
+
+
+==========
+Arg with /
+==========
+
+md /
+md /root
+md /root/
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier)))))

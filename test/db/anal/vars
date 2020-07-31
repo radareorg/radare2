@@ -187,7 +187,8 @@ EOF
 EXPECT=<<EOF
 afvR
    var_c0h  0x18
-   var_30h  0x21
+   var_30h  0x21,0x35
+   var_28h  0x0
    var_20h  0x29
    var_18h  0x2d
    var_10h  0x31
@@ -195,6 +196,7 @@ afvR
 afvW
    var_c0h  0x18
    var_30h
+   var_28h
    var_20h  0x3
    var_18h  0x7
    var_10h  0xb
@@ -203,10 +205,11 @@ afvW
 |           ; var int64_t var_c0h @ rsp+0x20
 |           ; var int64_t var_a0h @ rsp+0x40
 |           ; var int64_t var_30h @ rsp+0xb0
+|           ; var int64_t var_28h @ rsp+0xb8
 |           ; var int64_t var_20h @ rsp+0xc0
 |           ; var int64_t var_18h @ rsp+0xc8
 |           ; var int64_t var_10h @ rsp+0xd0
-|           0x00000000      488bc4         mov rax, rsp
+|           0x00000000      488bc4         mov rax, var_28h
 |           0x00000003      48895808       mov qword [var_20h], rbx
 |           0x00000007      48897010       mov qword [var_18h], rsi
 |           0x0000000b      48897818       mov qword [var_10h], rdi
@@ -218,7 +221,7 @@ afvW
 |           0x00000029      498b5b10       mov rbx, qword [var_20h]
 |           0x0000002d      498b7318       mov rsi, qword [var_18h]
 |           0x00000031      498b7b20       mov rdi, qword [var_10h]
-|           0x00000035      498be3         mov rsp, r11
+|           0x00000035      498be3         mov rsp, var_30h
 |           0x00000038      415f           pop r15
 \           0x0000003a      c3             ret
 EOF
@@ -242,11 +245,12 @@ EXPECT=<<EOF
 afvR
       arg1  0x6
       arg2  0x8
-      arg3  0xc,0x24
+      arg3  0xc
    var_10h  0x4,0x2c
     var_ch  0x18,0x22
     var_eh  0x16,0x1e
     var_fh  0x10
+    var_4h  0x2a,0x2c
 afvW
       arg1
       arg2
@@ -255,17 +259,19 @@ afvW
     var_ch  0x6
     var_eh  0xa
     var_fh  0xe
+    var_4h
 / 50: fcn.00000000 (int16_t arg1, int16_t arg2, int16_t arg3);
 |           ; var int16_t var_10h @ sp+0x0
 |           ; var int8_t var_fh @ sp+0x1
 |           ; var int16_t var_eh @ sp+0x2
 |           ; var int32_t var_ch @ sp+0x4
+|           ; var int16_t var_4h @ sp+0xc
 |           ; arg int16_t arg1 @ r0
 |           ; arg int16_t arg2 @ r1
 |           ; arg int16_t arg3 @ r2
 |           0x00000000      80b4           push {r7}
 |           0x00000002      83b0           sub sp, 0xc
-|           0x00000004      00af           add r7, sp, 0
+|           0x00000004      00af           add r7, var_10h
 |           0x00000006      7860           str r0, [var_ch]
 |           0x00000008      0b46           mov r3, r1
 |           0x0000000a      7b80           strh r3, [var_eh]

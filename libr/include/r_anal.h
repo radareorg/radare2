@@ -1404,6 +1404,11 @@ R_API bool r_anal_block_recurse(RAnalBlock *block, RAnalBlockCb cb, void *user);
 // returns false if the loop was breaked by cb
 R_API bool r_anal_block_recurse_followthrough(RAnalBlock *block, RAnalBlockCb cb, void *user);
 
+// Call cb on block and every (recursive) successor of it
+// Call on_exit on block that doesn't have non-visited successors
+// returns false if the loop was breaked by cb
+R_API bool r_anal_block_recurse_depth_first(RAnalBlock *block, RAnalBlockCb cb, R_NULLABLE RAnalBlockCb on_exit, void *user);
+
 // same as r_anal_block_recurse, but returns the blocks as a list
 R_API RList *r_anal_block_recurse_list(RAnalBlock *block);
 
