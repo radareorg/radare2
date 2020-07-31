@@ -24,14 +24,11 @@ R_API void r_annotation_free(void *e, void *user) {
 }
 
 R_API bool is_annotation_reference(RCodeAnnotation *annotation) {
-	return (annotation->type == R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE
-			|| annotation->type == R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE
-			|| annotation->type == R_CODE_ANNOTATION_TYPE_FUNCTION_NAME)
+	return (annotation->type == R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE || annotation->type == R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE || annotation->type == R_CODE_ANNOTATION_TYPE_FUNCTION_NAME);
 }
 
 R_API bool is_annotation_variable(RCodeAnnotation *annotation) {
-	return (annotation->type == R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE
-                            || annotation->type == R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER);
+	return (annotation->type == R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE || annotation->type == R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER);
 }
 
 R_API void r_annotated_code_free(RAnnotatedCode *code) {
@@ -42,8 +39,6 @@ R_API void r_annotated_code_free(RAnnotatedCode *code) {
 	r_free (code->code);
 	r_free (code);
 }
-
-
 
 R_API void r_annotated_code_add_annotation(RAnnotatedCode *code, RCodeAnnotation *annotation) {
 	r_vector_push (&code->annotations, annotation);
