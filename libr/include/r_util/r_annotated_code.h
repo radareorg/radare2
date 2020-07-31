@@ -112,6 +112,8 @@ R_API void r_annotated_code_free(RAnnotatedCode *code);
  * Return: Nothing.
  */
 R_API void r_annotation_free(void *e, void *user);
+R_API bool is_annotation_reference(RCodeAnnotation *annotation);
+R_API bool is_annotation_variable(RCodeAnnotation *annotation);
 /**
  * r_annotated_code_add_annotation() - Inserts *annotation in *code.
  * @code: Pointer to a RAnnotatedCode.
