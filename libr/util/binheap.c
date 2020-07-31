@@ -35,6 +35,11 @@ R_API void r_binheap_init(RBinHeap *h, RPVectorComparator cmp) {
 	h->cmp = cmp;
 }
 
+R_API void r_binheap_free(RBinHeap *h) {
+	r_binheap_clear (h);
+	free (h);
+}
+
 R_API RBinHeap *r_binheap_new(RPVectorComparator cmp) {
 	RBinHeap *h = R_NEW (RBinHeap);
 	if (!h) {

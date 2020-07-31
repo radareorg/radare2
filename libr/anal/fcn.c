@@ -464,7 +464,7 @@ static inline bool op_is_set_bp(RAnalOp *op, const char *bp_reg, const char *sp_
 	return false;
 }
 
-static inline does_arch_destroys_dst(const char *arch) {
+static inline bool does_arch_destroys_dst(const char *arch) {
 	return arch && (!strncmp (arch, "arm", 3) || !strcmp (arch, "riscv") || !strcmp (arch, "ppc"));
 }
 
