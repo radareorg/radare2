@@ -1446,8 +1446,14 @@ static int cmd_kuery(void *data, const char *input) {
 			r_cons_println ("No Output from sdb");
 			break;
 		}
-
-		r_cons_printf ("{\"anal\":{");
+		PJ * pj = pj_new ();
+		if (!pj) {
+  			free (out);
+  			break;
+		}
+		pj_o (pj);
+		pj_ko (pj, "anal");
+		pj_ka (pj, "cur_cmd");
 
 		while (*out) {
 			cur_pos = strchr (out, '\n');
@@ -1456,14 +1462,13 @@ static int cmd_kuery(void *data, const char *input) {
 			}
 			cur_cmd = r_str_ndup (out, cur_pos - out);
 
-			r_cons_printf ("\n\n\"%s\" : [", cur_cmd);
+			pj_s (pj, cur_cmd);
 
+			free (next_cmd);
 			next_cmd = r_str_newf ("anal/%s/*", cur_cmd);
 			temp_storage = sdb_querys (s, NULL, 0, next_cmd);
 
 			if (!temp_storage) {
-				r_cons_println ("\nEMPTY\n");
-				r_cons_printf ("],\n\n");
 				out += cur_pos - out + 1;
 				continue;
 			}
@@ -1473,18 +1478,23 @@ static int cmd_kuery(void *data, const char *input) {
 				if (!temp_pos) {
 					break;
 				}
-
 				temp_cmd = r_str_ndup (temp_storage, temp_pos - temp_storage);
-				r_cons_printf ("\"%s\",", temp_cmd);
+				pj_s (pj, temp_cmd);
 				temp_storage += temp_pos - temp_storage + 1;
 			}
-
-			r_cons_printf ("],\n\n");
 			out += cur_pos - out + 1;
 		}
-
-		r_cons_printf ("}}");
+		pj_end (pj);
+		pj_end (pj);
+		pj_end (pj);
+		char *a = pj_drain (pj);
+		if (a) {
+			r_cons_println (a);
+			free (a);
+		}
+		R_FREE (next_cmd);
 		free (next_cmd);
+		free (cur_cmd);
 		free (temp_storage);
 		break;
 
@@ -1552,7 +1562,7 @@ static int cmd_kuery(void *data, const char *input) {
 		}
 		r_line_set_hist_callback (core->cons->line, &r_line_hist_cmd_up, &r_line_hist_cmd_down);
 		break;
-	case 'o':
+	case 'o': // "ko"
 		if (r_sandbox_enable (0)) {
 			eprintf ("This command is disabled in sandbox mode\n");
 			return 0;
@@ -1590,7 +1600,7 @@ static int cmd_kuery(void *data, const char *input) {
 			eprintf ("Usage: ko [file] [namespace]\n");
 		}
 		break;
-	case 'd':
+	case 'd': // "kd"
 		if (r_sandbox_enable (0)) {
 			eprintf ("This command is disabled in sandbox mode\n");
 			return 0;
