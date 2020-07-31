@@ -73,7 +73,6 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 	}
 	anal->iob.read_at (anal->iob.io, jmptbl_loc, jmptbl, jmptbl_size * sz);
 	anal->iob.read_at (anal->iob.io, casetbl_loc, casetbl, jmptbl_size);
-	ut64 case_count = 0;
 	for (case_idx = 0; case_idx < jmptbl_size; case_idx++) {
 		jmpptr_idx = casetbl[case_idx];
 

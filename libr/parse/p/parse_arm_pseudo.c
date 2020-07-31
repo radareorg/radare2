@@ -378,7 +378,6 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	bool ucase = IS_UPPER (*tstr);
 	RAnalVarField *var;
 	r_list_foreach (bpargs, iter, var) {
-		char *tmplt = NULL;
 		st64 delta = p->get_ptr_at
 			? p->get_ptr_at (f, var->delta, addr)
 			: ST64_MAX;
