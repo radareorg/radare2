@@ -37,7 +37,9 @@ typedef enum r_code_annotation_type_t {
 	R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT,
 	R_CODE_ANNOTATION_TYPE_FUNCTION_NAME,
 	R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE,
-	R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE
+	R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE,
+	R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE,
+	R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER,
 	// ...
 } RCodeAnnotationType;
 
@@ -62,6 +64,14 @@ typedef struct r_code_annotation_t {
 			char *name;
 			ut64 offset; // address
 		} reference;
+
+		/** Information in annotations of type R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE
+		 * and R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER will be stored in the 
+		 * struct named variable in this union.
+		 */
+		struct {
+			char *name;
+		} variable;
 	};
 } RCodeAnnotation;
 
