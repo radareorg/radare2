@@ -720,12 +720,22 @@ static const char *help_msg_ax[] = {
 	"axj", "", "list refs in json format",
 	"axF", " [flg-glob]", "find data/code references of flags",
 	"axm", " addr [at]", "copy data/code references pointing to addr to also point to curseek (or at)",
-	"axt", " [addr]", "find data/code references to this address",
+	"axt", " [?] [addr]", "find data/code references to this address",
 	"axf", " [addr]", "find data/code references from this address",
 	"axv", " [addr]", "list local variables read-write-exec references",
 	"ax.", " [addr]", "find data/code references from and to this address",
 	"axff[j]", " [addr]", "find data/code references from this function",
 	"axs", " addr [at]", "add string ref",
+	NULL
+};
+
+static const char *help_msg_axt[]= {
+	"Usage:", "ax[?gq*]", "find data/code references",
+	"axtj", " [addr]", "find data/code references to this address and print in json format",
+	"axtg", " [addr]", "display commands to generate graphs according to the xrefs",
+	"axtq", " [addr]", "find and list the data/code references in quiet mode",
+	"axt*", " [addr]", "set flags on the corresponding xrefs",
+	"axt?", " ","Show this help",
 	NULL
 };
 
@@ -7448,6 +7458,9 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				pj_end (pj);
 				r_cons_println (pj_string (pj));
 				pj_free (pj);
+			}
+			else if (input[1] == '?') { // axt?
+				r_core_cmd_help (core, help_msg_axt);
 			}
 		}
 		r_list_free (list);
