@@ -473,6 +473,10 @@ R_API void r_cons_enable_highlight(const bool enable) {
 }
 
 R_API bool r_cons_enable_mouse(const bool enable) {
+	if ((I.mouse && enable)
+	    || (!I.mouse && !enable)) {
+		return I.mouse;
+	}
 #if __WINDOWS__
 	if (I.vtmode == 2) {
 #endif
