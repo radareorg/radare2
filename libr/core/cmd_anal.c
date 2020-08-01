@@ -730,7 +730,7 @@ static const char *help_msg_ax[] = {
 };
 
 static const char *help_msg_axt[]= {
-	"Usage:", "axt[?gq*]", "find data/code references",
+	"Usage:", "axt[?gq*]", "find data/code references to this address",
 	"axtj", " [addr]", "find data/code references to this address and print in json format",
 	"axtg", " [addr]", "display commands to generate graphs according to the xrefs",
 	"axtq", " [addr]", "find and list the data/code references in quiet mode",
