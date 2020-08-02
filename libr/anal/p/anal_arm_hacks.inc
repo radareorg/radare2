@@ -1,3 +1,4 @@
+#include "r_anal.h"
 static int hack_handle_dp_reg(ut32 insn, RAnalOp *op) {
 	const bool op0 = (insn >> 30) & 0x1;
 	const bool op1 = (insn >> 28) & 0x1;
@@ -167,7 +168,7 @@ static inline int hackyArmAnal(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 		}
 
 		if (ret > 0) {
-			op->family = R_ANAL_OP_FAMILY_MTE;
+			op->family = R_ANAL_OP_FAMILY_SECURITY;
 		}
 
 	}
