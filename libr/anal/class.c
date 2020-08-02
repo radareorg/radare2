@@ -1226,7 +1226,7 @@ R_API void r_anal_class_list_vtable_offset_functions(RAnal *anal, const char *cl
  * @param anal 
  * @return R_API 
  */
-R_API void r_anal_class_print_inheritance_graph(RAnal *anal) {
+R_API RAGraph *r_anal_class_print_inheritance_graph(RAnal *anal) {
 	RAGraph *class_graph = r_agraph_new (r_cons_canvas_new (1,1));
 	SdbList *classes = r_anal_class_get_all (anal, true);
 	HtPP/*<char *name, RANode *node>*/ *hashmap = ht_pp_new0 ();
@@ -1254,6 +1254,5 @@ R_API void r_anal_class_print_inheritance_graph(RAnal *anal) {
 		r_vector_free (bases);
 	}
 	ls_free (classes);
-	r_agraph_print (class_graph);
-	r_agraph_free (class_graph);
+	return class_graph;
 }

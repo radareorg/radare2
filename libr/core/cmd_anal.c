@@ -9903,8 +9903,11 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 		cmd_anal_class_method (core, input + 1);
 		break;
 	case 'g': // "acg"
-		r_anal_class_print_inheritance_graph (core->anal);
-		break;
+	{
+		RAGraph *graph = r_anal_class_print_inheritance_graph (core->anal);
+		r_agraph_print (graph);
+		r_agraph_free (graph);
+	} break;
 	default: // "ac?"
 		r_core_cmd_help (core, help_msg_ac);
 		break;
