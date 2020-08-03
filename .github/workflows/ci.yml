@@ -143,7 +143,7 @@ jobs:
       if: matrix.coverage == '1'
 
   build-centos6:
-    name: Build CentOS 6
+    name: Build on CentOS 6
     runs-on: ubuntu-latest
     if: contains(github.head_ref, 'centos') || contains(github.ref, 'release-') || github.event_name == 'schedule'
     container: centos:6
@@ -172,7 +172,7 @@ jobs:
         PKG_CONFIG_PATH: /usr/lib/pkgconfig
 
   build-debian:
-    name: Oldies Debian build
+    name: Build on old Debian ${{ matrix.container }}
     if: contains(github.head_ref, 'debian') || contains(github.ref, 'release-') || github.event_name == 'schedule'
     strategy:
         matrix:
@@ -227,7 +227,7 @@ jobs:
         PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
 
   build-static:
-    name: ubuntu-static-tests
+    name: Build static
     if: contains(github.head_ref, 'static') || contains(github.ref, 'release-') || github.event_name == 'schedule'
     runs-on: ubuntu-latest
     steps:
@@ -487,6 +487,7 @@ jobs:
         set +e
 
   test-deb:
+    name: Test deb packages for ${{ matrix.container }}
     runs-on: ubuntu-latest
     needs: [build-deb]
     container: ${{ matrix.container }}
@@ -522,6 +523,7 @@ jobs:
         ./test
 
   test-osx-pkg:
+    name: Test OSX pkg
     runs-on: macos-latest
     needs: [build-osx-pkg]
     steps:
@@ -542,6 +544,7 @@ jobs:
         ./test
 
   test-windows-clang_cl:
+    name: Test Windows installer built with clang_cl
     runs-on: windows-latest
     needs: [build-windows]
     steps:
@@ -577,6 +580,7 @@ jobs:
         .\test.exe
 
   create-release:
+    name: Create draft release and upload artifacts
     runs-on: ubuntu-latest
     needs: [
       build-and-test,
@@ -728,6 +732,7 @@ jobs:
           asset_content_type: application/zip
 
   publish-docker-image:
+    name: Publish Docker image on Docker Hub
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     steps:
