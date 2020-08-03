@@ -1028,9 +1028,7 @@ static bool bestmatch(void *data, const char *input) {
 		RSignBytes *b = item->bytes;
 		int minsz = r_config_get_i (core->config, "zign.minsz");
 		if (b && b->size < minsz) {
-			eprintf (
-				"[!!] Function signature to small (%d < %d (zign.minsz))\n",
-				b->size, minsz);
+			eprintf ("Warning: Function signature is too small (%d < %d) See e zign.minsz", b->size, minsz);
 			r_sign_item_free (item);
 			return false;
 		}
@@ -1050,7 +1048,7 @@ static bool bestmatch(void *data, const char *input) {
 		}
 		r_cons_break_pop ();
 	} else {
-		eprintf ("[!!] no signatures types available for testing\n");
+		eprintf ("Warning: no signatures types available for testing\n");
 	}
 
 	r_sign_item_free (item);

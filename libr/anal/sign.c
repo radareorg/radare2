@@ -1116,12 +1116,11 @@ R_API bool r_sign_delete(RAnal *a, const char *name) {
 static ut8 * build_combined_bytes(RSignBytes *bsig) {
 	r_return_val_if_fail (bsig && bsig->bytes && bsig->mask, NULL);
 	ut8 *buf = (ut8 *)malloc (bsig->size);
-	if (!buf) {
-		return NULL;
-	}
-	int i;
-	for (i = 0; i < bsig->size; i++) {
-		buf[i] = bsig->bytes[i] & bsig->mask[i];
+	if (buf) {
+		size_t i;
+		for (i = 0; i < bsig->size; i++) {
+			buf[i] = bsig->bytes[i] & bsig->mask[i];
+		}
 	}
 	return buf;
 }
@@ -1129,13 +1128,11 @@ static ut8 * build_combined_bytes(RSignBytes *bsig) {
 static double cmp_bytesig_to_buff(RSignBytes *sig, ut8 *buf, int len) {
 	r_return_val_if_fail (sig && buf && len >= 0, (double)-1.0);
 	ut8 *sigbuf = build_combined_bytes (sig);
-	if (!sigbuf) {
-		return -1.0;
-	}
-
 	double sim = -1.0;
-	r_diff_buffers_distance (NULL, sigbuf, sig->size, buf, len, NULL, &sim);
-	free (sigbuf);
+	if (sigbuf) {
+		r_diff_buffers_distance (NULL, sigbuf, sig->size, buf, len, NULL, &sim);
+		free (sigbuf);
+	}
 	return sim;
 }
 
