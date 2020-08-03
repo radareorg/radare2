@@ -18,38 +18,53 @@ jobs:
   # TODO: build r2-bindings
 
   build-and-test:
-    name: ${{ matrix.name }}-tests-${{ matrix.run_tests }}
+    name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
+    if: matrix.enabled
     timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
-        name: [linux-acr-gcc, linux-acr-clang, linux-meson-gcc, linux-meson-gcc-newshell, macos-clang]
+        name: [linux-acr-gcc-tests, linux-acr-clang-notests, linux-acr-clang-tests, linux-meson-gcc-notests, linux-meson-gcc-tests, linux-meson-gcc-newshell-tests, macos-clang-tests]
         include:
-          - name: linux-acr-gcc
+          - name: linux-acr-gcc-tests
             os: ubuntu-latest
             build_system: acr
             compiler: gcc
             run_tests: true
-          - name: linux-acr-clang
+          - name: linux-acr-clang-tests
             os: ubuntu-latest
             build_system: acr
             compiler: clang
-            run_tests: ${{ github.event_name == 'push' }}
-          - name: linux-meson-gcc
+            run_tests: true
+            enabled: ${{ github.event_name != 'pull_request' }}
+          - name: linux-meson-gcc-tests
             os: ubuntu-latest
             build_system: meson
             compiler: gcc
             meson_options: -Db_coverage=true
-            coverage: ${{ github.event_name == 'push' }}
-            run_tests: ${{ github.event_name == 'push' }}
-          - name: linux-meson-gcc-newshell
+            coverage: true
+            run_tests: true
+            enabled: ${{ github.event_name != 'pull_request' }}
+          - name: linux-acr-clang-notests
+            os: ubuntu-latest
+            build_system: acr
+            compiler: clang
+            enabled: ${{ github.event_name == 'pull_request' }}
+          - name: linux-meson-gcc-notests
+            os: ubuntu-latest
+            build_system: meson
+            compiler: gcc
+            meson_options: -Db_coverage=true
+            coverage: true
+            enabled: ${{ github.event_name == 'pull_request' }}
+          - name: linux-meson-gcc-newshell-tests
             os: ubuntu-latest
             build_system: meson
             compiler: gcc
             newshell: true
             run_tests: true
-          - name: macos-clang
+          - name: macos-clang-tests
             os: macos-latest
             build_system: acr
             compiler: clang
