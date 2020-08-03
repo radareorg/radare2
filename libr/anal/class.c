@@ -1224,20 +1224,32 @@ static void free_class_node_info(void *ptr) {
 	RAnalClassNodeInfo *info = ptr;
 	free (info->body);
 	free (info->title);
+	free (info);
 }
 
 /**
- * @brief Creates RGraph of inheritence information where 
+ * @brief Creates RGraph of inheritance information where 
  *        each node has RAnalClassNodeInfo as generic data
  * 
  * @param anal 
  * @return RGraph* Inheritance graph, null if error
  */
 R_API RGraph *r_anal_class_get_inheritance_graph(RAnal *anal) {
+	r_return_val_if_fail (anal, NULL);
 	// TODO add null checking and handling
 	RGraph *class_graph = r_graph_new ();
+	if (!class_graph) {
+		return NULL;
+	}
 	SdbList *classes = r_anal_class_get_all (anal, true);
+	if (!classes) {
+		r_graph_free (class_graph);
+	}
 	HtPP /*<char *name, RGraphNode *node>*/ *hashmap = ht_pp_new0 ();
+	if (!hashmap) {
+		r_graph_free (class_graph);
+		ls_free (classes);
+	}
 	SdbListIter *iter;
 	SdbKv *kv;
 	ls_foreach (classes, iter, kv) {
@@ -1245,10 +1257,16 @@ R_API RGraph *r_anal_class_get_inheritance_graph(RAnal *anal) {
 		RGraphNode *curr_node = ht_pp_find (hashmap, name, NULL);
 		if (!curr_node) { // If not visited yet
 			RAnalClassNodeInfo *data = R_NEW0 (RAnalClassNodeInfo);
+			if (!data) {
+				goto failure;
+			}
 			data->body = NULL;
 			data->offset = 0;
 			data->title = strdup (name);
 			curr_node = r_graph_add_node (class_graph, data);
+			if (!curr_node) {
+				goto failure;
+			}
 			curr_node->free = free_class_node_info;
 			ht_pp_insert (hashmap, name, curr_node);
 		}
@@ -1260,10 +1278,16 @@ R_API RGraph *r_anal_class_get_inheritance_graph(RAnal *anal) {
 			if (!base_found) {
 				// Speed it up and already add base classes if not visited yet
 				RAnalClassNodeInfo *data = R_NEW0 (RAnalClassNodeInfo);
+				if (!data) {
+					goto failure;
+				}
 				data->body = NULL;
 				data->offset = 0;
 				data->title = strdup (base->class_name);
 				base_node = r_graph_add_node (class_graph, data);
+				if (!base_node) {
+					goto failure;
+				}
 				base_node->free = free_class_node_info;
 				ht_pp_insert (hashmap, base->class_name, base_node);
 			}
@@ -1274,4 +1298,10 @@ R_API RGraph *r_anal_class_get_inheritance_graph(RAnal *anal) {
 	ls_free (classes);
 	ht_pp_free (hashmap);
 	return class_graph;
+
+failure:
+	ls_free (classes);
+	ht_pp_free (hashmap);
+	r_graph_free (class_graph);
+	return NULL;
 }
