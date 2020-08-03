@@ -75,7 +75,7 @@ jobs:
             enabled: true
 
     steps:
-    - if: !matrix.enabled
+    - if: matrix.enabled == false
       run: exit 1
     - uses: actions/checkout@v2
     - name: Install pkg-config with Homebrew
