@@ -23,6 +23,14 @@ R_API void r_annotation_free(void *e, void *user) {
 	}
 }
 
+R_API bool r_annotation_is_reference(RCodeAnnotation *annotation) {
+	return (annotation->type == R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE || annotation->type == R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE || annotation->type == R_CODE_ANNOTATION_TYPE_FUNCTION_NAME);
+}
+
+R_API bool r_annotation_is_variable(RCodeAnnotation *annotation) {
+	return (annotation->type == R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE || annotation->type == R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER);
+}
+
 R_API void r_annotated_code_free(RAnnotatedCode *code) {
 	if (!code) {
 		return;

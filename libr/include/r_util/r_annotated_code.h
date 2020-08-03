@@ -106,12 +106,34 @@ R_API void r_annotated_code_free(RAnnotatedCode *code);
  * @e: Pointer to the annotation
  * @user: Always NULL for this function. Present here for this function to be of the type RVectorFree.
  * 
- * This function recongnizes the type of the specified annotation and
+ * This function recognizes the type of the specified annotation and
  * frees memory that is dynamically allocated for it.
  * 
  * Return: Nothing.
  */
 R_API void r_annotation_free(void *e, void *user);
+/**
+ * r_annotation_is_reference() - Checks if the specified annotation is a reference.
+ * @annotation: Pointer to an annotation.
+ * 
+ * This function recognizes the type of the specified annotation and returns true if its
+ * type is any of the following three: R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE,
+ * R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE, R_CODE_ANNOTATION_TYPE_FUNCTION_NAME
+ * 
+ * Return: Returns true if the specified annotation is a reference.
+ */
+R_API bool r_annotation_is_reference(RCodeAnnotation *annotation);
+/**
+ * r_annotation_is_variable() - Checks if the specified annotation is a function variable.
+ * @annotation: Pointer to an annotation.
+ * 
+ * This function recognizes the type of the specified annotation and returns true if its
+ * type is any of the following two: R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE,
+ * R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER
+ * 
+ * Return: Returns true if the specified annotation is a function variable.
+ */
+R_API bool r_annotation_is_variable(RCodeAnnotation *annotation);
 /**
  * r_annotated_code_add_annotation() - Inserts *annotation in *code.
  * @code: Pointer to a RAnnotatedCode.
