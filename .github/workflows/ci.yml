@@ -20,7 +20,7 @@ jobs:
   build-and-test:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
-    if: matrix.enabled
+    if: ${{ matrix.enabled }}
     timeout-minutes: 35
     strategy:
       fail-fast: false
