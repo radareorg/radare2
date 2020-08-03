@@ -38,7 +38,7 @@ jobs:
             compiler: clang
             run_tests: true
             enabled: ${{ github.event_name != 'pull_request' }}
-            if: ${{ github.event_name != 'pull_request' }}
+            continue-on-error: ${{ github.event_name != 'pull_request' }}
           - name: linux-meson-gcc-tests
             os: ubuntu-latest
             build_system: meson
@@ -47,7 +47,7 @@ jobs:
             coverage: true
             run_tests: true
             enabled: ${{ github.event_name != 'pull_request' }}
-            if: ${{ github.event_name != 'pull_request' }}
+            continue-on-error: ${{ github.event_name != 'pull_request' }}
           - name: linux-acr-clang-build
             os: ubuntu-latest
             build_system: acr
@@ -77,7 +77,7 @@ jobs:
     steps:
     - if: matrix.enabled == false
       name: Skip job if not enabled
-      run: exit 0
+      run: exit 78
     - uses: actions/checkout@v2
     - name: Install pkg-config with Homebrew
       if: matrix.os == 'macos-latest'
