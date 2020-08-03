@@ -40,6 +40,7 @@ bool bsd_proc_vmmaps(RIO *io, int pid);
 #if defined __sun && defined _LP64
 #define _STRUCTURED_PROC 1 // to access newer proc data with additional fields
 #include <sys/procfs.h>
+#include <libproc.h>
 #endif
 #ifdef _MSC_VER
 #include <process.h>  // to compile getpid for msvc windows
@@ -151,7 +152,15 @@ static int update_self_regions(RIO *io, int pid) {
 	return true;
 #elif __sun && defined _LP64
 	char path[PATH_MAX];
-	snprintf (path, sizeof (path), "/proc/%d/map", getpid ());
+	int err;
+	pid_t self = getpid ();
+	struct ps_prochandle *Pself = Pgrab(self, PGRAB_RDONLY, &err);
+
+	if (!Pself) {
+		return false;
+	}
+
+	snprintf (path, sizeof (path), "/proc/%d/map",  self);
 	size_t hint = (1 << 20);
 	int fd = open (path, O_RDONLY);
 
@@ -178,25 +187,31 @@ static int update_self_regions(RIO *io, int pid) {
 	}
 
 	for (c = map; rd > 0; c ++, rd -= sizeof (prmap_t)) {
-		if (c->pr_mapname[0] != '\0') {
-			int perm = 0;
+		char name[PATH_MAX];
+		Pobjname (Pself, c->pr_vaddr, name, sizeof (name));
 
-			if ((c->pr_mflags & MA_READ)) {
-				perm |= R_PERM_R;
-			}
-			if ((c->pr_mflags & MA_WRITE)) {
-				perm |= R_PERM_W;
-			}
-			if ((c->pr_mflags & MA_EXEC)) {
-				perm |= R_PERM_X;
-			}
-
-			self_sections[self_sections_count].from = (ut64)c->pr_vaddr;
-			self_sections[self_sections_count].to = (ut64)(c->pr_vaddr + c->pr_size);
-			self_sections[self_sections_count].name = strdup (c->pr_mapname);
-			self_sections[self_sections_count].perm = perm;
-			self_sections_count++;
+		if (name[0] == '\0') {
+			// If no name, it is an anonymous map
+			strcpy (name, "[anon]");
 		}
+
+		int perm = 0;
+
+		if ((c->pr_mflags & MA_READ)) {
+			perm |= R_PERM_R;
+		}
+		if ((c->pr_mflags & MA_WRITE)) {
+			perm |= R_PERM_W;
+		}
+		if ((c->pr_mflags & MA_EXEC)) {
+			perm |= R_PERM_X;
+		}
+
+		self_sections[self_sections_count].from = (ut64)c->pr_vaddr;
+		self_sections[self_sections_count].to = (ut64)(c->pr_vaddr + c->pr_size);
+		self_sections[self_sections_count].name = strdup (name);
+		self_sections[self_sections_count].perm = perm;
+		self_sections_count++;
 	}
 
 	free (map);

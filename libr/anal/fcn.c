@@ -228,7 +228,7 @@ static bool is_delta_pointer_table(RAnal *anal, RAnalFunction *fcn, ut64 addr, u
 		if (o_reg_dst && reg_src && o_reg_dst->offset == reg_src->offset && omov_aop.disp != UT64_MAX) {
 			// Special case for indirection
 			// lea reg1, [base_addr]
-			// mov reg2, (sz)word [reg1 + tbl_off*sz + casetbl_loc_off]
+			// movzx reg2, byte [reg1 + tbl_off + casetbl_loc_off]
 			// mov reg3, dword [reg1 + reg2*4 + tbl_loc_off]
 			// add reg3, reg1
 			// jmp reg3
@@ -464,7 +464,7 @@ static inline bool op_is_set_bp(RAnalOp *op, const char *bp_reg, const char *sp_
 	return false;
 }
 
-static inline does_arch_destroys_dst(const char *arch) {
+static inline bool does_arch_destroys_dst(const char *arch) {
 	return arch && (!strncmp (arch, "arm", 3) || !strcmp (arch, "riscv") || !strcmp (arch, "ppc"));
 }
 
@@ -1116,7 +1116,26 @@ repeat:
 				if (op.ptr != UT64_MAX && op.ireg) { // direct jump
 					ut64 table_size, default_case;
 					if (try_get_jmptbl_info (anal, fcn, op.addr, bb, &table_size, &default_case)) {
-						ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op.addr, op.ptr, op.ptr, anal->bits >> 3, table_size, default_case, ret);
+						bool case_table = false;
+						RAnalOp prev_op;
+						ut8 b[32];
+						anal->iob.read_at (anal->iob.io, op.addr - op.size, buf, sizeof (buf));
+						if (r_anal_op (anal, &prev_op, op.addr - op.size, buf, sizeof (buf), R_ANAL_OP_MASK_VAL) > 0) {
+							bool prev_op_has_dst_name = prev_op.dst && prev_op.dst->reg && prev_op.dst->reg->name;
+							bool op_has_src_name = op.src[0] && op.src[0]->reg && op.src[0]->reg->name;
+							bool same_reg = (op.ireg && prev_op_has_dst_name && !strcmp (op.ireg, prev_op.dst->reg->name))
+								|| (op_has_src_name && prev_op_has_dst_name && !strcmp (op.src[0]->reg->name, prev_op.dst->reg->name));
+							if (prev_op.type == R_ANAL_OP_TYPE_MOV && prev_op.disp && prev_op.disp != UT64_MAX && same_reg) {
+								//	movzx reg, byte [reg + case_table]
+								//	jmp dword [reg*4 + jump_table]
+								case_table = true;
+								ret = try_walkthrough_casetbl (anal, fcn, bb, depth, op.addr, op.ptr, prev_op.disp, op.ptr, anal->bits >> 3, table_size, default_case, ret);
+							}
+						}
+						r_anal_op_fini (&prev_op);
+						if (!case_table) {
+							ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op.addr, op.ptr, op.ptr, anal->bits >> 3, table_size, default_case, ret);
+						}
 					}
 				} else if (op.ptr != UT64_MAX && op.reg) { // direct jump
 					ut64 table_size, default_case;

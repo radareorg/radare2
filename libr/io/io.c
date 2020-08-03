@@ -107,7 +107,6 @@ R_API RIO* r_io_init(RIO* io) {
 	io->addrbytes = 1;
 	r_io_desc_init (io);
 	r_pvector_init (&io->map_skyline, free);
-	r_pvector_init (&io->map_skyline_shadow, free);
 	r_io_map_init (io);
 	r_io_cache_init (io);
 	r_io_plugin_init (io);
