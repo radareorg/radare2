@@ -1270,12 +1270,15 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, int mode) {
 		break;
 	}
 	PJ *pj = r_core_pj_new (core);
+	pj_a (pj);
 
 	pdb.print_types (&pdb, pj, mode);
 	pdb.print_gvars (&pdb, baddr, pj, mode);
 	// Save compound types into SDB
 	r_parse_pdb_types (core->anal, &pdb);
 	pdb.finish_pdb_parse (&pdb);
+
+	pj_end (pj);
 
 	if (mode == 'j') {
 		r_cons_printf ("%s\n", pj_string (pj));
