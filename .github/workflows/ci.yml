@@ -25,13 +25,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        name: [linux-acr-gcc-tests, linux-acr-clang-notests, linux-acr-clang-tests, linux-meson-gcc-notests, linux-meson-gcc-tests, linux-meson-gcc-newshell-tests, macos-clang-tests]
+        name: [linux-acr-gcc-tests, linux-acr-clang-build, linux-acr-clang-tests, linux-meson-gcc-build, linux-meson-gcc-tests, linux-meson-gcc-newshell-tests, macos-clang-tests]
         include:
           - name: linux-acr-gcc-tests
             os: ubuntu-latest
             build_system: acr
             compiler: gcc
             run_tests: true
+            enabled: true
           - name: linux-acr-clang-tests
             os: ubuntu-latest
             build_system: acr
@@ -46,12 +47,12 @@ jobs:
             coverage: true
             run_tests: true
             enabled: ${{ github.event_name != 'pull_request' }}
-          - name: linux-acr-clang-notests
+          - name: linux-acr-clang-build
             os: ubuntu-latest
             build_system: acr
             compiler: clang
             enabled: ${{ github.event_name == 'pull_request' }}
-          - name: linux-meson-gcc-notests
+          - name: linux-meson-gcc-build
             os: ubuntu-latest
             build_system: meson
             compiler: gcc
@@ -64,11 +65,13 @@ jobs:
             compiler: gcc
             newshell: true
             run_tests: true
+            enabled: true
           - name: macos-clang-tests
             os: macos-latest
             build_system: acr
             compiler: clang
             run_tests: true
+            enabled: true
 
     steps:
     - uses: actions/checkout@v2
