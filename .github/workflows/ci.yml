@@ -38,6 +38,7 @@ jobs:
             compiler: clang
             run_tests: true
             enabled: ${{ github.event_name != 'pull_request' }}
+            continue-on-error: ${{ github.event_name != 'pull_request' }}
           - name: linux-meson-gcc-tests
             os: ubuntu-latest
             build_system: meson
@@ -46,6 +47,7 @@ jobs:
             coverage: true
             run_tests: true
             enabled: ${{ github.event_name != 'pull_request' }}
+            continue-on-error: ${{ github.event_name != 'pull_request' }}
           - name: linux-acr-clang-build
             os: ubuntu-latest
             build_system: acr
@@ -73,42 +75,43 @@ jobs:
             enabled: true
 
     steps:
+    - if: !matrix.enabled
+      run: exit 1
     - uses: actions/checkout@v2
     - name: Install pkg-config with Homebrew
-      if: matrix.os == 'macos-latest' && matrix.enabled
+      if: matrix.os == 'macos-latest'
       run: brew install pkg-config
     - name: Install python
-      if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-latest' && matrix.enabled
+      if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-latest'
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools
     - name: Install meson and ninja
-      if: matrix.build_system == 'meson' && matrix.enabled
+      if: matrix.build_system == 'meson'
       run: pip3 install --user meson==0.52.0 ninja==1.10.0
     - name: Install test dependencies
-      if: matrix.run_tests && matrix.enabled
+      if: matrix.run_tests
       run: pip3 install --user 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
     - name: Install clang
-      if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest' && matrix.enabled
+      if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest'
       run: sudo apt-get --assume-yes install clang
     - name: Checkout our Testsuite Binaries
-      if: matrix.enabled
       uses: actions/checkout@v2
       with:
           repository: radareorg/radare2-testbins
           path: test/bins
     - name: Configure with ACR and build
-      if: matrix.build_system == 'acr' && matrix.enabled
+      if: matrix.build_system == 'acr'
       run: ./configure --prefix=${HOME} && make
       env:
         CC: ${{ matrix.compiler }}
     - name: Build with Meson
-      if: matrix.build_system == 'meson' && matrix.enabled
+      if: matrix.build_system == 'meson'
       run: |
         export PATH=${HOME}/.local/bin:${PATH}
         meson --prefix=${HOME} build && ninja -C build
       env:
         CC: ${{ matrix.compiler }}
     - name: Install with make
-      if: matrix.build_system == 'acr' && matrix.enabled
+      if: matrix.build_system == 'acr'
       run: |
         # Install the radare2
         export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
@@ -116,7 +119,7 @@ jobs:
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         make install
     - name: Install with meson
-      if: matrix.build_system == 'meson' && matrix.enabled
+      if: matrix.build_system == 'meson'
       run: |
         # Install the radare2
         export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
@@ -124,7 +127,7 @@ jobs:
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         ninja -C build install
     - name: Run tests
-      if: matrix.run_tests && matrix.enabled
+      if: matrix.run_tests
       run: |
         # Running the test suite
         export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
@@ -140,7 +143,7 @@ jobs:
         NEWSHELL: ${{ matrix.newshell }}
     - name: Upload coverage info
       uses: codecov/codecov-action@v1
-      if: matrix.coverage == '1' && matrix.enabled
+      if: matrix.coverage == '1'
 
   build-centos6:
     name: Build on CentOS 6
