@@ -9822,6 +9822,39 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 	}
 }
 
+static RAGraph *create_inheritence_agraph(const RGraph *graph) {
+	RAGraph *inherit_graph = r_agraph_new (r_cons_canvas_new (1,1));
+	// Cache lookup to build edges
+	HtPP /*<RGraphNode *node, RANode *anode>*/ *table = ht_pp_new0 ();
+	// List of the new RANodes
+	RListIter *iter;
+	RGraphNode *node;
+	// Traverse the list, create new ANode for each Node
+	r_list_foreach (graph->nodes, iter, node) {
+		RAnalClassNodeInfo *info = node->data;
+		RANode *a_node = r_agraph_add_node (inherit_graph, info->title, info->body);
+		ht_pp_insert (table, node, a_node);
+	}
+
+	// Traverse the nodes again, now build up the edges
+	r_list_foreach (graph->nodes, iter, node) {
+		RANode *a_node = ht_pp_find (table, node, NULL);
+		if (!a_node) {
+			r_warn_if_reached ();
+		}
+
+		RListIter *neighbour_iter;
+		RGraphNode *neighbour;
+		r_list_foreach (node->in_nodes, neighbour_iter, neighbour) {
+			RANode *a_neighbour = ht_pp_find (table, neighbour, NULL);
+			r_agraph_add_edge (inherit_graph, a_neighbour, a_node);
+		}
+	}
+
+	ht_pp_free (table);
+	return inherit_graph;
+}
+
 static void cmd_anal_classes(RCore *core, const char *input) {
 	switch (input[0]) {
 	case 'l': // "acl"
@@ -9902,11 +9935,11 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 	case 'm': // "acm"
 		cmd_anal_class_method (core, input + 1);
 		break;
-	case 'g': // "acg"
-	{
-		RAGraph *graph = r_anal_class_print_inheritance_graph (core->anal);
-		r_agraph_print (graph);
-		r_agraph_free (graph);
+	case 'g': { // "acg"
+		RGraph *graph = r_anal_class_get_inheritance_graph (core->anal);
+		RAGraph *agraph = create_inheritence_agraph (graph);
+		r_agraph_print (agraph);
+		r_graph_free (graph);
 	} break;
 	default: // "ac?"
 		r_core_cmd_help (core, help_msg_ac);

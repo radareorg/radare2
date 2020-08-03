@@ -206,8 +206,7 @@ pkgconfig_mod.generate(r_anal,
     'r_syscall',
     'r_search',
     'r_cons',
-    'r_flag',
-    'r_agraph'
+    'r_flag'
   ],
   description: 'radare foundation libraries'
 )
