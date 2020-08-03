@@ -983,7 +983,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 }
 
 static bool is_end_gadget(const RAnalOp *aop, const ut8 crop) {
-	if (aop->family == R_ANAL_OP_FAMILY_PAC) {
+	if (aop->family == R_ANAL_OP_FAMILY_SECURITY) {
 		return false;
 	}
 	switch (aop->type) {

@@ -2255,7 +2255,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_XPACI:
 	case ARM64_INS_XPACLRI:
 		op->type = R_ANAL_OP_TYPE_CMP;
-		op->family = R_ANAL_OP_FAMILY_PAC;
+		op->family = R_ANAL_OP_FAMILY_SECURITY;
 		break;
 #endif
 	case ARM64_INS_SVC:
@@ -2509,26 +2509,26 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_BLRAAZ:
 	case ARM64_INS_BLRAB:
 	case ARM64_INS_BLRABZ:
-		op->family = R_ANAL_OP_FAMILY_PAC;
+		op->family = R_ANAL_OP_FAMILY_SECURITY;
 		op->type = R_ANAL_OP_TYPE_RCALL;
 		break;
 	case ARM64_INS_BRAA:
 	case ARM64_INS_BRAAZ:
 	case ARM64_INS_BRAB:
 	case ARM64_INS_BRABZ:
-		op->family = R_ANAL_OP_FAMILY_PAC;
+		op->family = R_ANAL_OP_FAMILY_SECURITY;
 		op->type = R_ANAL_OP_TYPE_RJMP;
 		break;
 	case ARM64_INS_LDRAA:
 	case ARM64_INS_LDRAB:
-		op->family = R_ANAL_OP_FAMILY_PAC;
+		op->family = R_ANAL_OP_FAMILY_SECURITY;
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		break;
 	case ARM64_INS_RETAA:
 	case ARM64_INS_RETAB:
 	case ARM64_INS_ERETAA:
 	case ARM64_INS_ERETAB:
-		op->family = R_ANAL_OP_FAMILY_PAC;
+		op->family = R_ANAL_OP_FAMILY_SECURITY;
 		op->type = R_ANAL_OP_TYPE_RET;
 		break;
 #endif
