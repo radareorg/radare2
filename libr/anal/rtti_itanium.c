@@ -582,8 +582,12 @@ static void recovery_apply_vtable(RVTableContext *context, const char *class_nam
 	}
 }
 
-static char *read_rtti_name();
-
+/**
+ * @brief Add any base class information about the type into anal/classes
+ * 
+ * @param context 
+ * @param cti 
+ */
 static void add_class_bases(RVTableContext *context, const class_type_info *cti) {
 	class_type_info base_info;
 
