@@ -1229,12 +1229,11 @@ static void free_class_node_info(void *ptr) {
 
 static RAnalClassNodeInfo *create_class_node_info(char *title, char *body, ut64 offset) {
 	RAnalClassNodeInfo *data = R_NEW0 (RAnalClassNodeInfo);
-	if (!data) {
-		return NULL;
+	if (data) {
+		data->title = title;
+		data->body = body;
+		data->offset = offset;
 	}
-	data->title = title;
-	data->body = body;
-	data->offset = offset;
 	return data;
 }
 
@@ -1254,6 +1253,7 @@ R_API RGraph *r_anal_class_get_inheritance_graph(RAnal *anal) {
 	SdbList *classes = r_anal_class_get_all (anal, true);
 	if (!classes) {
 		r_graph_free (class_graph);
+		return NULL;
 	}
 	// O(1) lookup cache for processed nodes
 	// to lookup parents to create edges
@@ -1285,7 +1285,7 @@ R_API RGraph *r_anal_class_get_inheritance_graph(RAnal *anal) {
 		RVector *bases = r_anal_class_base_get_all (anal, name);
 		RAnalBaseClass *base;
 		r_vector_foreach (bases, base) {
-			bool base_found = 0;
+			bool base_found = false;
 			RGraphNode *base_node = ht_pp_find (hashmap, base->class_name, &base_found);
 			// If base isn't processed, do it now
 			if (!base_found) {
