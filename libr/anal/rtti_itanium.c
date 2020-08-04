@@ -348,7 +348,7 @@ static void rtti_itanium_print_vmi_class_type_info(vmi_class_type_info *vmi_cti,
 			"%s  Reference to type's name: 0x%08" PFMT64x "\n"
 			"%s  Type Name: %s\n"
 			"%s  Name unique: %s\n"
-			"%s  Flags 0x%x\n"
+			"%s  Flags: 0x%x\n"
 			"%s  Count of base classes: 0x%x"
 			"\n",
 			prefix, vmi_cti->typeinfo_addr,
@@ -530,34 +530,15 @@ static vmi_class_type_info *create_vmi_class_type(ut64 vtable_addr, char *name, 
 	return result;
 }
 
-static class_type_info *rtti_itanium_type_info_new(RVTableContext *context, ut64 vtable_addr) {
-	/*
-		vpointer - 2 words | offset to top |
-		                   |---------------|
-		vpointer - word    | RTTI pointer  |
-		                   |---------------|
-		vpointer   ----->  |  virt_func_0  |
-	*/
-	ut64 rtti_ptr = vtable_addr - VT_WORD_SIZE (context); // RTTI pointer
-	ut64 rtti_addr; // RTTI address
-
-	if (!context->read_addr (context->anal, rtti_ptr, &rtti_addr)) {
-		return NULL;
-	}
-
-	RTypeInfoType type = rtti_itanium_type_info_type_from_flag (context, rtti_addr);
-	// If there isn't flag telling us the type of TypeInfo
-	// try to find the flag in it's vtable
-	if (type == R_TYPEINFO_TYPE_UNKNOWN) {
-		ut64 follow;
-		if (!context->read_addr (context->anal, rtti_addr, &follow)) {
-			return NULL;
-		}
-		follow -= 2 * context->word_size;
-		type = rtti_itanium_type_info_type_from_flag (context, follow);
-	}
-
-	if (type == R_TYPEINFO_TYPE_UNKNOWN) {
+/**
+ * @brief Try to parse as much valid looking RTTI as you can
+ * 
+ * @param context 
+ * @param vtable_addr 
+ * @param rtti_addr 
+ * @return class_type_info* NULL if not even default class RTTI could be parsed or error
+ */
+static class_type_info *raw_rtti_parse(RVTableContext *context, ut64 vtable_addr, ut64 rtti_addr) {
 		/* RTTI
 		rtti_ptr   ----->  |                  vptr                |
 		                   |--------------------------------------|
@@ -646,6 +627,37 @@ static class_type_info *rtti_itanium_type_info_new(RVTableContext *context, ut64
 			tmp_addr += VT_WORD_SIZE (context);
 		}
 		return (class_type_info *)create_vmi_class_type (rtti_vptr, type_name, name_addr, name_unique, vmi_flags, vmi_base_count, vmi_bases, rtti_addr, vtable_addr);
+}
+
+static class_type_info *rtti_itanium_type_info_new(RVTableContext *context, ut64 vtable_addr) {
+	/*
+		vpointer - 2 words | offset to top |
+		                   |---------------|
+		vpointer - word    | RTTI pointer  |
+		                   |---------------|
+		vpointer   ----->  |  virt_func_0  |
+	*/
+	ut64 rtti_ptr = vtable_addr - VT_WORD_SIZE (context); // RTTI pointer
+	ut64 rtti_addr; // RTTI address
+
+	if (!context->read_addr (context->anal, rtti_ptr, &rtti_addr)) {
+		return NULL;
+	}
+
+	RTypeInfoType type = rtti_itanium_type_info_type_from_flag (context, rtti_addr);
+	// If there isn't flag telling us the type of TypeInfo
+	// try to find the flag in it's vtable
+	if (type == R_TYPEINFO_TYPE_UNKNOWN) {
+		ut64 follow;
+		if (!context->read_addr (context->anal, rtti_addr, &follow)) {
+			return NULL;
+		}
+		follow -= 2 * context->word_size;
+		type = rtti_itanium_type_info_type_from_flag (context, follow);
+	}
+
+	if (type == R_TYPEINFO_TYPE_UNKNOWN) {
+		return raw_rtti_parse (context, vtable_addr, rtti_addr);
 	}
 	switch (type) {
 	case R_TYPEINFO_TYPE_VMI_CLASS:
