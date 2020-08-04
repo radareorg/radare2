@@ -46,7 +46,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 	/* prepare disassembler */
 	memset (&disasm_obj,'\0', sizeof (struct disassemble_info));
 	mips_mode = a->bits;
-	disasm_obj.arch = CPU_LOONGSON_2F;
+	disasm_obj.arch = CPU_MIPS32;
 	disasm_obj.buffer = bytes;
 	disasm_obj.read_memory_func = &mips_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
