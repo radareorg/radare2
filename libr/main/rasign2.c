@@ -6,6 +6,7 @@ static void rasign_show_help(void) {
 	printf ("Usage: rasign2 [options] [file]\n"
 		" -a [-a]          add extra 'a' to analysis command\n"
 		" -o sigs.sdb      add signatures to file, create if it does not exist\n"
+		" -s signspace     save all signatures under this signspace\n"
 		" -r               show output in radare commands\n"
 		" -j               show signatures in json\n"
 		" -q               quiet mode\n"
@@ -58,6 +59,7 @@ static void find_functions(RCore *core, size_t count) {
 
 R_API int r_main_rasign2(int argc, const char **argv) {
 	const char *ofile = NULL;
+	const char *space = NULL;
 	int c;
 	size_t a_cnt = 0;
 	bool rad = false;
@@ -66,7 +68,7 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 	bool flirt = false;
 	RGetopt opt;
 
-	r_getopt_init (&opt, argc, argv, "ao:rjqfvh");
+	r_getopt_init (&opt, argc, argv, "ao:s:rjqfvh");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -74,6 +76,9 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 			break;
 		case 'o':
 			ofile = opt.arg;
+			break;
+		case 's':
+			space = opt.arg;
 			break;
 		case 'r':
 			rad = true;
@@ -137,6 +142,10 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 		r_config_set (core->config, "scr.interactive", "false");
 		r_config_set (core->config, "scr.prompt", "false");
 		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
+	}
+
+	if (space) {
+		r_core_cmdf (core, "\"zs %s\"", space);
 	}
 
 	// run analysis to find functions

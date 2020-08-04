@@ -95,6 +95,15 @@ za main v b-32 b-24 b-40 b-36 b-16
 EOF
 RUN
 
+
+NAME=rasign2 spaces check
+FILE=-
+CMDS=!!rasign2 -s spacename -ar bins/elf/hello_world~spacename:sym.imp.puts n sym.imp.puts
+EXPECT=<<EOF
+za spacename:sym.imp.puts n sym.imp.puts
+EOF
+RUN
+
 NAME=rasign2 -f libc-v7.sig
 FILE=
 CMDS=!rasign2 -f bins/other/sigs/libc-v7.sig
