@@ -21,25 +21,15 @@ typedef enum r_syntax_highlight_type_t {
 	R_SYNTAX_HIGHLIGHT_TYPE_GLOBAL_VARIABLE,
 } RSyntaxHighlightType;
 
-/**
- * enum r_code_annotation_type_t - typedefed as RCodeAnnotationType and this gives types of annotation
- *
- * There are two kinds of RCodeAnnotation. One for offset, which of the type 
- * R_CODE_ANNOTATION_TYPE_OFFSET and other one is for syntax highlight, which is
- * of the type R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT.
- * R_CODE_ANNOTATION_TYPE_OFFSET is for representing annotations that gives an offset for 
- * a range while R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT is for representing the
- * kind of data the range represents. Here, range refers to the range of annotation.
- */
-
+//! Represents the type of annnotation.
 typedef enum r_code_annotation_type_t {
-	R_CODE_ANNOTATION_TYPE_OFFSET,
-	R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT,
-	R_CODE_ANNOTATION_TYPE_FUNCTION_NAME,
-	R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE,
-	R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE,
-	R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE,
-	R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER,
+	R_CODE_ANNOTATION_TYPE_OFFSET, /*!< Gives the offset of the specified range in annotation. */ 
+	R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, /*!< Represents the kind of data the specified range represents for highlighting purposes. */ 
+	R_CODE_ANNOTATION_TYPE_FUNCTION_NAME, /*!< Specified range in annotation represents a function name. */ 
+	R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE, /*!< Specified range in annotation represents a global variable. */ 
+	R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE, /*!< Specified range in annotation represents a constant variable with an address. */ 
+	R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, /*!< Specified range in annotation represents a local variable. */ 
+	R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER, /*!< Specified range in annotation represents a function parameter. */ 
 	// ...
 } RCodeAnnotationType;
 
