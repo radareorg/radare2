@@ -33,22 +33,33 @@ typedef enum r_code_annotation_type_t {
 	// ...
 } RCodeAnnotationType;
 
+/**
+ * \struct r_code_annotation_t r_annotated_code.h libr/include/r_util/r_annotated_code.h
+ * 
+ * \brief Annotations for the decompiled code are represented using this structure.
+ */
 typedef struct r_code_annotation_t {
-	size_t start;
-	size_t end;
-	RCodeAnnotationType type;
+	size_t start; /**< Start of the range in the annotation(inclusive). */ 
+	size_t end; /**< End of the range in the annotation(exclusive). */ 
+	RCodeAnnotationType type; /**< Type of the annotation. */
 	union {
+		/** If the annotation is of type R_CODE_ANNOTATION_TYPE_OFFSET,
+		 * offset should be stored in the struct named offset in this union.
+		 */
 		struct {
 			ut64 offset;
 		} offset;
-
+		/** If the annotation is of type R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT,
+		 * type of the syntax highlight will be stored in the struct named syntax_highlight
+		 * in this union.
+		 */
 		struct {
 			RSyntaxHighlightType type;
 		} syntax_highlight;
 
 		/** Information in annotations of type R_CODE_ANNOTATION_TYPE_FUNCTION_NAME,
 		 * R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE, and R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE
-		 * will be stored in the struct name reference in this union.
+		 * will be stored in the struct named reference in this union.
 		 */
 		struct {
 			char *name;
@@ -64,10 +75,14 @@ typedef struct r_code_annotation_t {
 		} variable;
 	};
 } RCodeAnnotation;
-
+/**
+ * \struct r_annotated_code_t r_annotated_code.h libr/include/r_util/r_annotated_code.h
+ * 
+ * \brief This structure contains the decompiled code and all the annotations for the decompiled code.
+ */
 typedef struct r_annotated_code_t {
-	char *code; // owned
-	RVector /*<RCodeAnnotation>*/ annotations;
+	char *code; /**< Decompiled code. RAnnotatedCode owns this string and it must free it. */ 
+	RVector /*<RCodeAnnotation>*/ annotations; /**< RVector<RCodeAnnotation> contains the list of annotations for the decompiled code. */ 
 } RAnnotatedCode;
 /**
  * This functions creates a new RAnnotatedCode structure.
