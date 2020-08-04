@@ -34,8 +34,6 @@ typedef enum r_code_annotation_type_t {
 } RCodeAnnotationType;
 
 /**
- * \struct r_code_annotation_t r_annotated_code.h libr/include/r_util/r_annotated_code.h
- * 
  * \brief Annotations for the decompiled code are represented using this structure.
  */
 typedef struct r_code_annotation_t {
@@ -76,8 +74,6 @@ typedef struct r_code_annotation_t {
 	};
 } RCodeAnnotation;
 /**
- * \struct r_annotated_code_t r_annotated_code.h libr/include/r_util/r_annotated_code.h
- * 
  * \brief This structure contains the decompiled code and all the annotations for the decompiled code.
  */
 typedef struct r_annotated_code_t {
