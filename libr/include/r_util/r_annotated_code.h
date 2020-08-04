@@ -84,20 +84,21 @@ typedef struct r_annotated_code_t {
 	char *code; /**< Decompiled code. RAnnotatedCode owns this string and it must free it. */ 
 	RVector /*<RCodeAnnotation>*/ annotations; /**< RVector<RCodeAnnotation> contains the list of annotations for the decompiled code. */ 
 } RAnnotatedCode;
+
 /**
- * This functions creates a new RAnnotatedCode structure.
- * RAnnotatedCode.code will be initialized as the character array passed.
- * Here, code must be a string that can be deallocated.
+ * This function creates and initializes a new RAnnotatedCode
+ * structure with the specified decompiled code that's passed
+ * as an argument. Here, the argument code must be a string that can be deallocated.
  * This will initialize RVector<RCodeAnnotation> annotations as well.
- * @brief Creates a new RAnnotatedCode structure and returns its pointer.
  * 
- * @param code Literal code for which the RAnnotatedCode structure will be created.
+ * @brief Create and initialize a RAnnotatedCode structure and returns its pointer.
+ * 
+ * @param code A deallocatable character array.
  * @return Pointer to the new RAnnotatedCode structure created.
  */
 R_API RAnnotatedCode *r_annotated_code_new(char *code);
 /**
- * This functions deallocates memory allocated for *code.
- * @brief Deallocates *code.
+ * @brief Deallocates the dynamically allocated memory for the specified RAnnotatedCode.
  * 
  * @param code Pointer to a RAnnotatedCode.
  */
@@ -132,17 +133,14 @@ R_API bool r_annotation_is_reference(RCodeAnnotation *annotation);
  */
 R_API bool r_annotation_is_variable(RCodeAnnotation *annotation);
 /**
- * This functions inserts the annotation represented by the pointer 'annotation' to the vector
- * of annotations in the RAnnotatedCode represented by 'code'. To be more precise,
- * annotation will be added to code->annotations, which is a RVector<RCodeAnnotation> annotations.
- * @brief Inserts *annotation in *code.
+ * @brief Inserts the specified annotation into the list of annotations in the specified RAnnotatedCode.
  * 
  * @param code Pointer to a RAnnotatedCode.
  * @param annotation Pointer to an annotation.
  */
 R_API void r_annotated_code_add_annotation(RAnnotatedCode *code, RCodeAnnotation *annotation);
 /**
- * Creates an RPVector and inserts the pointers to all annotations in which 
+ * Creates a RPVector<RCodeAnnotation> and inserts the pointers to all annotations in which 
  * annotation->start <= offset < annotation->end.
  * @brief Returns all annotations with range that contains the given offset.
  * 
@@ -152,21 +150,21 @@ R_API void r_annotated_code_add_annotation(RAnnotatedCode *code, RCodeAnnotation
  */
 R_API RPVector *r_annotated_code_annotations_in(RAnnotatedCode *code, size_t offset);
 /**
- * Creates an RPVector and inserts the pointers to all annotations whose 
- * range overlap with range [start, end-1] (both inclusive).
- * @brief Returns all annotations with range that overlap with the given range.
+ * Creates an RPVector<RCodeAnnotation> and inserts the pointers to all annotations whose 
+ * range overlap with range specified.
+ * @brief Returns all annotations with range that overlap with the specified range.
  * 
  * @param code Pointer to a RAnnotatedCode.
  * @param start Start of the range(inclusive).
  * @param end End of the range(exclusive).
- * @return Pointer to the RPVecrtor created.
+ * @return Pointer to the RPVector created.
  */
 R_API RPVector *r_annotated_code_annotations_range(RAnnotatedCode *code, size_t start, size_t end);
 /**
- * Creates an RVector and inserts the offsets for every seperate line of decompiled code in
- * code->code (code->code is a character array).
+ * Creates an RVector<ut64> and inserts the offsets for every seperate line of decompiled code in
+ * the specified RAnnotatedCode.
  * If a line of decompiled code doesn't have a unique offset, UT64_MAX is inserted as its offset.
- * @brief Returns the offset for every line of decompiled code in RAnnotatedCode *code.
+ * @brief Returns the offset for every line of decompiled code in the specified RAnnotatedCode.
  * 
  * @param code Pointer to a RAnnotatedCode.
  * @return Pointer to the RVector created.
