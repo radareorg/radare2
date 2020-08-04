@@ -27,12 +27,7 @@ static RCodeAnnotation make_variable_annotation(int st, int en, RCodeAnnotationT
 	annotation.start = st;
 	annotation.end = en;
 	annotation.type = typec;
-	if (annotation.type == R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE) {
-		annotation.variable.name = strdup (name);
-	}
-	if (annotation.type == R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER) {
-		annotation.variable.name = strdup (name);
-	}
+	annotation.variable.name = strdup (name);
 	return annotation;
 }
 
