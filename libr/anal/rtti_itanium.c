@@ -564,10 +564,7 @@ static void recovery_apply_vtable(RVTableContext *context, const char *class_nam
 		return;
 	}
 
-	RAnalVTable vtable;
-	vtable.id = NULL;
-	vtable.offset = 0;
-	vtable.addr = vtable_info->saddr;
+	RAnalVTable vtable = { .id = NULL, .offset = 0, .size = 0, .addr = vtable_info->saddr};
 	r_anal_class_vtable_set (context->anal, class_name, &vtable);
 	r_anal_class_vtable_fini (&vtable);
 
