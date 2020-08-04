@@ -34,7 +34,7 @@ static RCodeAnnotation make_variable_annotation(int st, int en, RCodeAnnotationT
 		annotation.variable.name = strdup (name);
 	}
 	return annotation;
-} 
+}
 
 static RCodeAnnotation make_reference_annotation(int st, int en, RCodeAnnotationType typec,
 	ut64 offset, const char *name) {
@@ -49,7 +49,7 @@ static RCodeAnnotation make_reference_annotation(int st, int en, RCodeAnnotation
 		annotation.reference.name = NULL;
 	}
 	return annotation;
-} 
+}
 
 static RVector *get_some_code_annotation_for_add(void) {
 	RVector *test_annotations = r_vector_new (sizeof (RCodeAnnotation), NULL, NULL);
@@ -130,11 +130,11 @@ static RAnnotatedCode *get_hello_world(void) {
 static RAnnotatedCode *get_all_context_annotated_code(void) {
 	char *test_string = strdup ("\nfunc-name\nconst-var\n   global-var(\"Hello, local-var\");\n    function-param\n}\n");
 	RAnnotatedCode *code = r_annotated_code_new (test_string);
-	RCodeAnnotation function_name = make_reference_annotation(1, 10, R_CODE_ANNOTATION_TYPE_FUNCTION_NAME, 1234, "func-name");
-	RCodeAnnotation constant_variable = make_reference_annotation(10, 19, R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE, 12345, NULL);
-	RCodeAnnotation global_variable = make_reference_annotation(23, 33, R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE, 123456, NULL);
-	RCodeAnnotation local_variable = make_variable_annotation(42, 51, R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, "local-var");
-	RCodeAnnotation function_parameter = make_variable_annotation(59, 73, R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER, "function-param");
+	RCodeAnnotation function_name = make_reference_annotation (1, 10, R_CODE_ANNOTATION_TYPE_FUNCTION_NAME, 1234, "func-name");
+	RCodeAnnotation constant_variable = make_reference_annotation (10, 19, R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE, 12345, NULL);
+	RCodeAnnotation global_variable = make_reference_annotation (23, 33, R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE, 123456, NULL);
+	RCodeAnnotation local_variable = make_variable_annotation (42, 51, R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, "local-var");
+	RCodeAnnotation function_parameter = make_variable_annotation (59, 73, R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER, "function-param");
 	r_annotated_code_add_annotation (code, &function_name);
 	r_annotated_code_add_annotation (code, &constant_variable);
 	r_annotated_code_add_annotation (code, &global_variable);
@@ -413,7 +413,7 @@ static bool test_r_annotation_free_and_is_annotation_type_functions(void) {
 	error_message = "r_annotation_is_reference() result doesn't match with the expected output";
 	mu_assert_true (r_annotation_is_reference (&function_name), error_message);
 	mu_assert_true (r_annotation_is_reference (&global_variable), error_message);
-	mu_assert_true (r_annotation_is_reference (&constant_variable),error_message);
+	mu_assert_true (r_annotation_is_reference (&constant_variable), error_message);
 	mu_assert_false (r_annotation_is_reference (&local_variable), error_message);
 	mu_assert_false (r_annotation_is_reference (&function_parameter), error_message);
 	mu_assert_false (r_annotation_is_reference (&offset), error_message);
