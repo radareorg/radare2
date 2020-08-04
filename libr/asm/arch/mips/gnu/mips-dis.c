@@ -430,6 +430,16 @@ const struct mips_arch_choice mips_arch_choices[] =
     mips_cp0sel_names_sb1, ARRAY_SIZE (mips_cp0sel_names_sb1),
     mips_hwr_names_numeric },
 
+  { "loongson2e", 1, bfd_mach_mips_loongson_2e, CPU_LOONGSON_2E,
+    ISA_MIPS3 | INSN_LOONGSON_2E, 
+    mips_cp0_names_numeric, 
+    NULL, 0, mips_hwr_names_numeric },
+
+  { "loongson2f", 1, bfd_mach_mips_loongson_2f, CPU_LOONGSON_2F,
+    ISA_MIPS64 | INSN_LOONGSON_2F, 
+    mips_cp0_names_numeric,
+    NULL, 0, mips_hwr_names_numeric },
+
   /* This entry, mips16, is here only for ISA/processor selection; do
      not print its name.  */
   { "",		1, bfd_mach_mips16, CPU_MIPS16, ISA_MIPS3 | INSN_MIPS16,
