@@ -11,7 +11,7 @@ static const char *help_msg_z[] = {
 	"Usage:", "z[*j-aof/cs] [args] ", "# Manage zignatures",
 	"z", "", "show zignatures",
 	"z.", "", "find matching zignatures in current offset",
-	"zb", "[n=5]", "find n closest matching graph zignature at current offset",
+	"zb", "[n=5]", "find n closest matching zignatures to function at current offset",
 	"z*", "", "show zignatures in radare format",
 	"zq", "", "show zignatures in quiet mode",
 	"zj", "", "show zignatures in json format",
@@ -983,43 +983,72 @@ TODO: add useXRefs, useName
 	return retval;
 }
 
+static void print_possible_matches(RList *list) {
+	RListIter *itr;
+	RSignCloseMatch *row;
+	r_list_foreach (list, itr, row) {
+		// total score
+		if (row->bscore > 0.0 && row->gscore > 0.0) {
+			r_cons_printf ("%02.5lf  ", row->score);
+		}
+		if (row->bscore > 0.0) {
+			r_cons_printf ("%02.5lf B  ", row->bscore);
+		}
+		if (row->gscore > 0.0) {
+			r_cons_printf ("%02.5lf G  ", row->gscore);
+		}
+		r_cons_printf (" %s\n", row->item->name);
+	}
+}
+
 static bool bestmatch(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	bool found = false;
 	int count = 5;
 
 	if (!R_STR_ISEMPTY (input)) {
 		count = atoi (input);
 		if (count <= 0) {
 			eprintf ("[!!] invalid number %s\n", input);
-			return found;
+			return false;
 		}
 	}
 
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+	if (!fcn) {
+		eprintf ("No function at 0x%08" PFMT64x "\n", core->offset);
+		return false;
+	}
 	RSignItem *item = r_sign_item_new ();
 	if (!item) {
-		return NULL;
+		return false;
 	}
 
-	if (!r_sign_addto_item (core->anal, item, fcn, R_SIGN_GRAPH)) {
-		r_sign_item_free (item);
-		return NULL;
+	if (r_config_get_i (core->config, "zign.bytes")) {
+		r_sign_addto_item (core->anal, item, fcn, R_SIGN_BYTES);
+		RSignBytes *b = item->bytes;
+		int minsz = r_config_get_i (core->config, "zign.minsz");
+		if (b && b->size < minsz) {
+			eprintf ("Warning: Function signature is too small (%d < %d) See e zign.minsz", b->size, minsz);
+			r_sign_item_free (item);
+			return false;
+		}
+	}
+	if (r_config_get_i (core->config, "zign.graph")) {
+		r_sign_addto_item (core->anal, item, fcn, R_SIGN_GRAPH);
 	}
 
-	if (item->graph) {
+	bool found = false;
+	if (item->graph || item->bytes) {
 		r_cons_break_push (NULL, NULL);
 		RList *list = r_sign_find_closest_sig (core->anal, item, count, 0);
 		if (list) {
 			found = true;
-			RListIter *itr;
-			RSignCloseMatch *row;
-			r_list_foreach (list, itr, row) {
-				r_cons_printf ("%02.5lf %s\n", row->score, row->name);
-			}
+			print_possible_matches (list);
 			r_list_free (list);
 		}
 		r_cons_break_pop ();
+	} else {
+		eprintf ("Warning: no signatures types available for testing\n");
 	}
 
 	r_sign_item_free (item);
