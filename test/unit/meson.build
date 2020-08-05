@@ -9,6 +9,7 @@ if get_option('enable_tests')
     'anal_meta',
     'anal_var',
     'anal_xrefs',
+    'anal_class_graph',
     'annotated_code',
     'base64',
     'bin',
