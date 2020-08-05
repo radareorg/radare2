@@ -93,6 +93,9 @@ bool test_graph_to_agraph() {
 			break;
 		}
 	}
+	r_core_free (core);
+	r_graph_free (graph);
+	r_agraph_free (agraph);
 	mu_end;
 }
 

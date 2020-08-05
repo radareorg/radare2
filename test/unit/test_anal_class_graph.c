@@ -87,6 +87,8 @@ bool test_inherit_graph_creation() {
 			break;
 		}
 	}
+	r_core_free (core);
+	r_graph_free (graph);
 	mu_end;
 }
 
