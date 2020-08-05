@@ -944,7 +944,7 @@ R_API void r_core_annotated_code_print_json(RAnnotatedCode *code);
  * This function will print the output in console using the function r_cons_printf();
  * 
  * @param code Pointer to a RAnnotatedCode.
- * @param line_offsets Pointer to a RVector that contains offsets for the decompiled code.
+ * @param line_offsets Pointer to a @ref RVector that contains offsets for the decompiled code.
  */
 R_API void r_core_annotated_code_print(RAnnotatedCode *code, RVector *line_offsets);
 /**

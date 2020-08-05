@@ -78,7 +78,7 @@ typedef struct r_code_annotation_t {
  */
 typedef struct r_annotated_code_t {
 	char *code; /**< Decompiled code. RAnnotatedCode owns this string and it must free it. */ 
-	RVector /*<RCodeAnnotation>*/ annotations; /**< RVector<RCodeAnnotation> contains the list of annotations for the decompiled code. */ 
+	RVector /*<RCodeAnnotation>*/ annotations; /**< RVector <RCodeAnnotation> contains the list of annotations for the decompiled code. */ 
 } RAnnotatedCode;
 
 /**
@@ -87,7 +87,7 @@ typedef struct r_annotated_code_t {
  * This function creates and initializes a new RAnnotatedCode
  * structure with the specified decompiled code that's passed
  * as an argument. Here, the argument code must be a string that can be deallocated.
- * This will initialize RVector<RCodeAnnotation> annotations as well.
+ * This will initialize @ref RVector <RCodeAnnotation> annotations as well.
  * 
  * @param code A deallocatable character array.
  * @return Pointer to the new RAnnotatedCode structure created.
@@ -106,7 +106,7 @@ R_API void r_annotated_code_free(RAnnotatedCode *code);
  * frees memory that is dynamically allocated for it.
  * 
  * @param e Pointer to the annotation.
- * @param user Always NULL for this function. Present here for this function to be of the type RVectorFree.
+ * @param user Always NULL for this function. Present here for this function to be of the type @ref RVectorFree.
  */
 R_API void r_annotation_free(void *e, void *user);
 /**
@@ -141,35 +141,35 @@ R_API void r_annotated_code_add_annotation(RAnnotatedCode *code, RCodeAnnotation
 /**
  * @brief Returns all annotations with range that contains the given offset.
  * 
- * Creates a RPVector<RCodeAnnotation> and inserts the pointers to all annotations in which 
+ * Creates a @ref RPVector <RCodeAnnotation> and inserts the pointers to all annotations in which 
  * annotation->start <= offset < annotation->end.
  * 
  * @param code Pointer to a RAnnotatedCode.
  * @param offset Offset.
- * @return Pointer to the RPVector created.
+ * @return Pointer to the @ref RPVector created.
  */
 R_API RPVector *r_annotated_code_annotations_in(RAnnotatedCode *code, size_t offset);
 /**
  * @brief Returns all annotations with range that overlap with the specified range.
  * 
- * Creates an RPVector<RCodeAnnotation> and inserts the pointers to all annotations whose 
+ * Creates an @ref RPVector <RCodeAnnotation> and inserts the pointers to all annotations whose 
  * range overlap with range specified.
  * 
  * @param code Pointer to a RAnnotatedCode.
  * @param start Start of the range(inclusive).
  * @param end End of the range(exclusive).
- * @return Pointer to the RPVector created.
+ * @return Pointer to the @ref RPVector created.
  */
 R_API RPVector *r_annotated_code_annotations_range(RAnnotatedCode *code, size_t start, size_t end);
 /**
  * @brief Returns the offset for every line of decompiled code in the specified RAnnotatedCode.
  * 
- * Creates an RVector<ut64> and inserts the offsets for every seperate line of decompiled code in
+ * Creates an @ref RVector <ut64> and inserts the offsets for every seperate line of decompiled code in
  * the specified RAnnotatedCode.
  * If a line of decompiled code doesn't have a unique offset, UT64_MAX is inserted as its offset.
  * 
  * @param code Pointer to a RAnnotatedCode.
- * @return Pointer to the RVector created.
+ * @return Pointer to the @ref RVector created.
  */
 R_API RVector *r_annotated_code_line_offsets(RAnnotatedCode *code);
 
