@@ -637,11 +637,13 @@ static bool edf_consume_2_push_1(RAnalEsil *esil) {
 	eop_node->type = R_ANAL_ESIL_DFG_BLOCK_RESULT | R_ANAL_ESIL_DFG_BLOCK_GENERATIVE;
 	RGraphNode *op_node = r_graph_add_node (edf->flow, eop_node);
 	RGraphNode *src_node[2];
+	bool const_result = true;
 	ut32 i;
 	for (i = 0; i < 2; i++) {
 		const int src_type = r_anal_esil_get_parm_type (esil, src[i]);
 		if (src_type == R_ANAL_ESIL_PARM_REG) {
 			src_node[i] = _edf_reg_get (edf, src[i]);
+			const_result = false;
 		} else if (src_type == R_ANAL_ESIL_PARM_NUM) {
 			RGraphNode *n_value = r_graph_add_node (edf->flow, r_anal_esil_dfg_node_new (edf, src[i]));
 			RAnalEsilDFGNode *ec_node = r_anal_esil_dfg_node_new (edf, src[i]);
@@ -649,8 +651,12 @@ static bool edf_consume_2_push_1(RAnalEsil *esil) {
 			r_strbuf_appendf (ec_node->content, ":const_%d", edf->idx++);
 			src_node[i] = r_graph_add_node (edf->flow, ec_node);
 			r_graph_add_edge (edf->flow, n_value, src_node[i]);
+			// todo: check op_type, not relevant for now since this is always OP_MATH atm
+			const_result &= true;
 		} else {
 			src_node[i] = _edf_var_get (edf, src[i]);
+			RAnalEsilDFGNode *ec_node = (RAnalEsilDFGNode *)src_node[i]->data;
+			const_result &= !!(ec_node->type & R_ANAL_ESIL_DFG_BLOCK_CONST);
 		}
 		r_graph_add_edge (edf->flow, src_node[i], op_node);
 	}
@@ -660,6 +666,9 @@ static bool edf_consume_2_push_1(RAnalEsil *esil) {
 
 	RAnalEsilDFGNode *result = r_anal_esil_dfg_node_new (edf, "result_");
 	result->type = R_ANAL_ESIL_DFG_BLOCK_RESULT;
+	if (const_result) {
+		result->type |= R_ANAL_ESIL_DFG_BLOCK_CONST;
+	}
 	r_strbuf_appendf (result->content, "%d", edf->idx++);
 	RGraphNode *result_node = r_graph_add_node (edf->flow, result);
 	r_graph_add_edge (edf->flow, op_node, result_node);
@@ -678,9 +687,17 @@ static bool edf_consume_1_push_1(RAnalEsil *esil) {
 	RAnalEsilDFGNode *eop_node = r_anal_esil_dfg_node_new (edf, src);
 	r_strbuf_appendf (eop_node->content, ",%s", op_string);
 	eop_node->type = R_ANAL_ESIL_DFG_BLOCK_RESULT | R_ANAL_ESIL_DFG_BLOCK_GENERATIVE;
+	// esil operation node
 	RGraphNode *op_node = r_graph_add_node (edf->flow, eop_node);
+	// operation node, but in the rgraph
 	const int src_type = r_anal_esil_get_parm_type (esil, src);
 	RGraphNode *src_node = NULL;
+	bool const_result = false;
+	// is the result a const value?
+	// e.g.: 42,!,!,! => 0,!,! => 1,! => 0 => const_result
+	// 0xaabbccdd,[1] => not const result, bc memory read
+	const ut32 eop_type = ((RAnalEsilOp *)ht_pp_find (esil->ops, op_string, NULL))->type;
+	// no need to check pointer here, bc this cannot fail if this function got called
 	if (src_type == R_ANAL_ESIL_PARM_REG) {
 		src_node = _edf_reg_get (edf, src);
 	} else if (src_type == R_ANAL_ESIL_PARM_NUM) {
@@ -690,8 +707,12 @@ static bool edf_consume_1_push_1(RAnalEsil *esil) {
 		r_strbuf_appendf (ec_node->content, ":const_%d", edf->idx++);
 		src_node = r_graph_add_node (edf->flow, ec_node);
 		r_graph_add_edge (edf->flow, n_value, src_node);
+		const_result = (eop_type == R_ANAL_ESIL_OP_TYPE_MATH);
 	} else {
 		src_node = _edf_var_get (edf, src);
+		// cannot fail, bc src cannot be NULL
+		RAnalEsilDFGNode *ec_node = (RAnalEsilDFGNode *)src_node->data;
+		const_result = (eop->type == R_ANAL_ESIL_OP_TYPE_MATH) & !!(ec_node->type & R_ANAL_ESIL_DFG_BLOCK_CONST);
 	}
 
 	free (src);
@@ -699,7 +720,10 @@ static bool edf_consume_1_push_1(RAnalEsil *esil) {
 	r_graph_add_edge (edf->flow, src_node, op_node);
 
 	RAnalEsilDFGNode *result = r_anal_esil_dfg_node_new (edf, "result_");
-	result->type = R_ANAL_ESIL_DFG_BLOCK_RESULT; //TODO: propgate type from src here
+	result->type = R_ANAL_ESIL_DFG_BLOCK_RESULT;
+	if (const_result) {
+		result->type |= R_ANAL_ESIL_DFG_BLOCK_CONST;
+	}
 	r_strbuf_appendf (result->content, "%d", edf->idx++);
 	RGraphNode *result_node = r_graph_add_node (edf->flow, result);
 	r_graph_add_edge (edf->flow, op_node, result_node);
