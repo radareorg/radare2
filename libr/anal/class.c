@@ -1220,15 +1220,15 @@ R_API void r_anal_class_list_vtable_offset_functions(RAnal *anal, const char *cl
 	}
 }
 
-static void free_class_node_info(void *ptr) {
-	RAnalClassNodeInfo *info = ptr;
+static void free_node_info(void *ptr) {
+	RGraphNodeInfo *info = ptr;
 	free (info->body);
 	free (info->title);
 	free (info);
 }
 
-static RAnalClassNodeInfo *create_class_node_info(char *title, char *body, ut64 offset) {
-	RAnalClassNodeInfo *data = R_NEW0 (RAnalClassNodeInfo);
+static RGraphNodeInfo *create_node_info(char *title, char *body, ut64 offset) {
+	RGraphNodeInfo *data = R_NEW0 (RGraphNodeInfo);
 	if (data) {
 		data->title = title;
 		data->body = body;
@@ -1239,7 +1239,7 @@ static RAnalClassNodeInfo *create_class_node_info(char *title, char *body, ut64 
 
 /**
  * @brief Creates RGraph from class inheritance information where 
- *        each node has RAnalClassNodeInfo as generic data
+ *        each node has RGraphNodeInfo as generic data
  * 
  * @param anal 
  * @return RGraph* NULL if failure
@@ -1270,7 +1270,7 @@ R_API RGraph *r_anal_class_get_inheritance_graph(RAnal *anal) {
 		// If already in the cache
 		RGraphNode *curr_node = ht_pp_find (hashmap, name, NULL);
 		if (!curr_node) { // If not visited yet
-			RAnalClassNodeInfo *data = create_class_node_info (strdup (name), NULL, 0);
+			RGraphNodeInfo *data = create_node_info (strdup (name), NULL, 0);
 			if (!data) {
 				goto failure;
 			}
@@ -1278,7 +1278,7 @@ R_API RGraph *r_anal_class_get_inheritance_graph(RAnal *anal) {
 			if (!curr_node) {
 				goto failure;
 			}
-			curr_node->free = free_class_node_info;
+			curr_node->free = free_node_info;
 			ht_pp_insert (hashmap, name, curr_node);
 		}
 		// Travel all bases to create edges between parents and child
@@ -1290,7 +1290,7 @@ R_API RGraph *r_anal_class_get_inheritance_graph(RAnal *anal) {
 			// If base isn't processed, do it now
 			if (!base_found) {
 				// Speed it up and already add base classes if not visited yet
-				RAnalClassNodeInfo *data = create_class_node_info (strdup (base->class_name), NULL, 0);
+				RGraphNodeInfo *data = create_node_info (strdup (base->class_name), NULL, 0);
 				if (!data) {
 					goto failure;
 				}
@@ -1298,7 +1298,7 @@ R_API RGraph *r_anal_class_get_inheritance_graph(RAnal *anal) {
 				if (!base_node) {
 					goto failure;
 				}
-				base_node->free = free_class_node_info;
+				base_node->free = free_node_info;
 				ht_pp_insert (hashmap, base->class_name, base_node);
 			}
 			r_graph_add_edge (class_graph, base_node, curr_node);

@@ -7,6 +7,15 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Generic graph node info
+ */
+typedef struct r_anal_graph_node_info_t {
+	char *title;
+	char *body;
+	ut64 offset;
+} RGraphNodeInfo;
+
 typedef struct r_graph_node_t {
 	unsigned int idx;
 	void *data;

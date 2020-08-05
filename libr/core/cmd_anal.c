@@ -9822,64 +9822,6 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 	}
 }
 
-/**
- * @brief Create RAGraph from generic RGraph with RAnalClassNodeInfo as node data
- * 
- * @param graph 
- * @return RAGraph* NULL if failure
- */
-static RAGraph *create_inheritence_agraph(const RGraph/*<RAnalClassNodeInfo>*/ *graph) {
-	r_return_val_if_fail (graph, NULL);
-
-	RAGraph *inherit_graph = r_agraph_new (r_cons_canvas_new (1, 1));
-	if (!inherit_graph) {
-		return NULL;
-	}
-	// Cache lookup to build edges
-	HtPP /*<RGraphNode *node, RANode *anode>*/ *hashmap = ht_pp_new0 ();
-	if (!hashmap) {
-		r_agraph_free (inherit_graph);
-		return NULL;
-	}
-	// List of the new RANodes
-	RListIter *iter;
-	RGraphNode *node;
-	// Traverse the list, create new ANode for each Node
-	r_list_foreach (graph->nodes, iter, node) {
-		RAnalClassNodeInfo *info = node->data;
-		RANode *a_node = r_agraph_add_node (inherit_graph, info->title, info->body);
-		if (!a_node) {
-			goto failure;
-		}
-		ht_pp_insert (hashmap, node, a_node);
-	}
-
-	// Traverse the nodes again, now build up the edges
-	r_list_foreach (graph->nodes, iter, node) {
-		RANode *a_node = ht_pp_find (hashmap, node, NULL);
-		if (!a_node) {
-			goto failure; // shouldn't happen in correct graph state
-		}
-
-		RListIter *neighbour_iter;
-		RGraphNode *neighbour;
-		r_list_foreach (node->in_nodes, neighbour_iter, neighbour) {
-			RANode *a_neighbour = ht_pp_find (hashmap, neighbour, NULL);
-			if (!a_neighbour) {
-				goto failure;
-			}
-			r_agraph_add_edge (inherit_graph, a_neighbour, a_node);
-		}
-	}
-
-	ht_pp_free (hashmap);
-	return inherit_graph;
-failure:
-	ht_pp_free (hashmap);
-	r_agraph_free (inherit_graph);
-	return NULL;
-}
-
 static void cmd_anal_classes(RCore *core, const char *input) {
 	switch (input[0]) {
 	case 'l': // "acl"
@@ -9966,7 +9908,7 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 			eprintf ("Couldn't create graph");
 			break;
 		}
-		RAGraph *agraph = create_inheritence_agraph (graph);
+		RAGraph *agraph = create_agraph_from_graph (graph);
 		if (!agraph) {
 			eprintf ("Couldn't create graph");
 			break;
