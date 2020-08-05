@@ -1,9 +1,10 @@
 #include <r_core.h>
 #include <r_anal.h>
+#include <r_agraph.h>
 #include <r_util.h>
 #include "minunit.h"
 
-bool test_inherit_graph_creation() {
+bool test_graph_to_agraph() {
 	RCore *core = r_core_new ();
 	r_core_cmd0 (core, "ac A");
 	r_core_cmd0 (core, "ac B");
@@ -13,15 +14,20 @@ bool test_inherit_graph_creation() {
 	r_core_cmd0 (core, "acb C A");
 	r_core_cmd0 (core, "acb D B");
 	r_core_cmd0 (core, "acb D C");
+
 	RGraph *graph = r_anal_class_get_inheritance_graph (core->anal);
 	mu_assert_notnull (graph, "Couldn't create the graph");
 	mu_assert_eq (graph->nodes->length, 4, "Wrong node count");
 
+	RAGraph *agraph = create_agraph_from_graph (graph);
+	mu_assert_notnull (agraph, "Couldn't create the graph");
+	mu_assert_eq (agraph->graph->nodes->length, 4, "Wrong node count");
+
 	RListIter *iter;
 	RGraphNode *node;
 	int i = 0;
-	ls_foreach (graph->nodes, iter, node) {
-		RGraphNodeInfo *info = node->data;
+	ls_foreach (agraph->graph->nodes, iter, node) {
+		RANode *info = node->data;
 		switch (i++) {
 		case 0:
 			mu_assert_streq (info->title, "A", "Wrong node name");
@@ -31,7 +37,7 @@ bool test_inherit_graph_creation() {
 				RGraphNode *out_node;
 				int i = 0;
 				ls_foreach (node->out_nodes, iter, out_node) {
-					RGraphNodeInfo *info = out_node->data;
+					RANode *info = out_node->data;
 					switch (i++) {
 					case 0:
 						mu_assert_streq (info->title, "B", "Wrong node name");
@@ -52,7 +58,7 @@ bool test_inherit_graph_creation() {
 				RGraphNode *out_node;
 				int i = 0;
 				ls_foreach (node->out_nodes, iter, out_node) {
-					RGraphNodeInfo *info = out_node->data;
+					RANode *info = out_node->data;
 					switch (i++) {
 					case 0:
 						mu_assert_streq (info->title, "D", "Wrong node name");
@@ -70,7 +76,7 @@ bool test_inherit_graph_creation() {
 				RGraphNode *out_node;
 				int i = 0;
 				ls_foreach (node->out_nodes, iter, out_node) {
-					RGraphNodeInfo *info = out_node->data;
+					RANode *info = out_node->data;
 					switch (i++) {
 					case 0:
 						mu_assert_streq (info->title, "D", "Wrong node name");
@@ -91,7 +97,7 @@ bool test_inherit_graph_creation() {
 }
 
 int all_tests() {
-	mu_run_test (test_inherit_graph_creation);
+	mu_run_test (test_graph_to_agraph);
 	return tests_passed != tests_run;
 }
 
