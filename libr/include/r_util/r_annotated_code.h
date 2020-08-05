@@ -78,7 +78,7 @@ typedef struct r_code_annotation_t {
  */
 typedef struct r_annotated_code_t {
 	char *code; /**< Decompiled code. RAnnotatedCode owns this string and it must free it. */ 
-	RVector /*<RCodeAnnotation>*/ annotations; /**< RVector <RCodeAnnotation> contains the list of annotations for the decompiled code. */ 
+	RVector annotations; /**< @ref RVector <RCodeAnnotation> contains the list of annotations for the decompiled code. */ 
 } RAnnotatedCode;
 
 /**
