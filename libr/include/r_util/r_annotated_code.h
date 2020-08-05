@@ -82,12 +82,12 @@ typedef struct r_annotated_code_t {
 } RAnnotatedCode;
 
 /**
+ * @brief Create and initialize a RAnnotatedCode structure and returns its pointer.
+ * 
  * This function creates and initializes a new RAnnotatedCode
  * structure with the specified decompiled code that's passed
  * as an argument. Here, the argument code must be a string that can be deallocated.
  * This will initialize RVector<RCodeAnnotation> annotations as well.
- * 
- * @brief Create and initialize a RAnnotatedCode structure and returns its pointer.
  * 
  * @param code A deallocatable character array.
  * @return Pointer to the new RAnnotatedCode structure created.
@@ -100,29 +100,32 @@ R_API RAnnotatedCode *r_annotated_code_new(char *code);
  */
 R_API void r_annotated_code_free(RAnnotatedCode *code);
 /**
+ * @brief Deallocates dynamically allocated memory for the specified annotation.
+ * 
  * This function recognizes the type of the specified annotation and
  * frees memory that is dynamically allocated for it.
- * @brief Deallocates dynamically allocated memory for the specified annotation.
  * 
  * @param e Pointer to the annotation.
  * @param user Always NULL for this function. Present here for this function to be of the type RVectorFree.
  */
 R_API void r_annotation_free(void *e, void *user);
 /**
+ * @brief Checks if the specified annotation is a reference.
+ * 
  * This function recognizes the type of the specified annotation and returns true if its
  * type is any of the following three: R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE,
  * R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE, R_CODE_ANNOTATION_TYPE_FUNCTION_NAME
- * @brief Checks if the specified annotation is a reference.
  * 
  * @param annotation Pointer to an annotation.
  * @return Returns true if the specified annotation is a reference.
  */
 R_API bool r_annotation_is_reference(RCodeAnnotation *annotation);
 /**
+ * @brief Checks if the specified annotation is a function variable.
+ * 
  * This function recognizes the type of the specified annotation and returns true if its
  * type is any of the following two: R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE,
  * R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER
- * @brief Checks if the specified annotation is a function variable.
  * 
  * @param annotation Pointer to an annotation.
  * @return Returns true if the specified annotation is a function variable.
@@ -136,9 +139,10 @@ R_API bool r_annotation_is_variable(RCodeAnnotation *annotation);
  */
 R_API void r_annotated_code_add_annotation(RAnnotatedCode *code, RCodeAnnotation *annotation);
 /**
+ * @brief Returns all annotations with range that contains the given offset.
+ * 
  * Creates a RPVector<RCodeAnnotation> and inserts the pointers to all annotations in which 
  * annotation->start <= offset < annotation->end.
- * @brief Returns all annotations with range that contains the given offset.
  * 
  * @param code Pointer to a RAnnotatedCode.
  * @param offset Offset.
@@ -146,9 +150,10 @@ R_API void r_annotated_code_add_annotation(RAnnotatedCode *code, RCodeAnnotation
  */
 R_API RPVector *r_annotated_code_annotations_in(RAnnotatedCode *code, size_t offset);
 /**
+ * @brief Returns all annotations with range that overlap with the specified range.
+ * 
  * Creates an RPVector<RCodeAnnotation> and inserts the pointers to all annotations whose 
  * range overlap with range specified.
- * @brief Returns all annotations with range that overlap with the specified range.
  * 
  * @param code Pointer to a RAnnotatedCode.
  * @param start Start of the range(inclusive).
@@ -157,10 +162,11 @@ R_API RPVector *r_annotated_code_annotations_in(RAnnotatedCode *code, size_t off
  */
 R_API RPVector *r_annotated_code_annotations_range(RAnnotatedCode *code, size_t start, size_t end);
 /**
+ * @brief Returns the offset for every line of decompiled code in the specified RAnnotatedCode.
+ * 
  * Creates an RVector<ut64> and inserts the offsets for every seperate line of decompiled code in
  * the specified RAnnotatedCode.
  * If a line of decompiled code doesn't have a unique offset, UT64_MAX is inserted as its offset.
- * @brief Returns the offset for every line of decompiled code in the specified RAnnotatedCode.
  * 
  * @param code Pointer to a RAnnotatedCode.
  * @return Pointer to the RVector created.

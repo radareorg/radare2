@@ -927,28 +927,31 @@ extern RCorePlugin r_core_plugin_a2f;
 
 /* DECOMPILER PRINTING FUNCTIONS */
 /**
- * The function will print the output in console using the function r_cons_printf();
  * @brief Prints the data contained in the specified RAnnotatedCode in JSON format.
+ * 
+ * The function will print the output in console using the function r_cons_printf();
  * 
  * @param code Pointer to a RAnnotatedCode.
  */
 R_API void r_core_annotated_code_print_json(RAnnotatedCode *code);
 /**
+ * @brief Prints the decompiled code from the specified RAnnotatedCode.
+ * 
  * This function is used for printing the output of commands pdg and pdgo.
  * It can print the decompiled code with or without offsets. If line_offsets is a null pointer,
  * the output will be printed without offsets (pdg), otherwise, the output will be
  * printed with offsets.
  * This function will print the output in console using the function r_cons_printf();
- * @brief Prints the decompiled code from the specified RAnnotatedCode.
  * 
  * @param code Pointer to a RAnnotatedCode.
  * @param line_offsets Pointer to a RVector that contains offsets for the decompiled code.
  */
 R_API void r_core_annotated_code_print(RAnnotatedCode *code, RVector *line_offsets);
 /**
+ * @brief  Prints the decompiled code as comments
+ * 
  * This function is used for the output of command pdg*
  * Output will be printed in console using the function r_cons_printf();
- * @brief  Prints the decompiled code as comments
  * 
  * @param code Pointer to a RAnnotatedCode.
  */
