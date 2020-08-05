@@ -21,7 +21,7 @@ typedef enum r_syntax_highlight_type_t {
 	R_SYNTAX_HIGHLIGHT_TYPE_GLOBAL_VARIABLE,
 } RSyntaxHighlightType;
 
-//! Represents the type of annnotation.
+/** Represents the type of annnotation. */
 typedef enum r_code_annotation_type_t {
 	R_CODE_ANNOTATION_TYPE_OFFSET, /*!< Gives the offset of the specified range in annotation. */ 
 	R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, /*!< Represents the kind of data the specified range represents for highlighting purposes. */ 
