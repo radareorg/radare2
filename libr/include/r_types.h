@@ -110,6 +110,12 @@
 #define LIBC_HAVE_PLEDGE 0
 #endif
 
+#if __sun
+#define LIBC_HAVE_PRIV_SET 1
+#else
+#define LIBC_HAVE_PRIV_SET 0
+#endif
+
 #ifdef __GNUC__
 #  define UNUSED_FUNCTION(x) __attribute__((__unused__)) UNUSED_ ## x
 #else
