@@ -39,7 +39,7 @@ typedef enum r_code_annotation_type_t {
 typedef struct r_code_annotation_t {
 	size_t start; /**< Start of the range in the annotation(inclusive). */ 
 	size_t end; /**< End of the range in the annotation(exclusive). */ 
-	RCodeAnnotationType type; /**< Type of the annotation. */
+	RCodeAnnotationType type;
 	union {
 		/** If the annotation is of type R_CODE_ANNOTATION_TYPE_OFFSET,
 		 * offset should be stored in the struct named offset in this union.
@@ -61,7 +61,7 @@ typedef struct r_code_annotation_t {
 		 */
 		struct {
 			char *name;
-			ut64 offset; // address
+			ut64 offset;
 		} reference;
 
 		/** Information in annotations of type R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE
