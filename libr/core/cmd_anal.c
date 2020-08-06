@@ -735,7 +735,6 @@ static const char *help_msg_axt[]= {
 	"axtg", " [addr]", "display commands to generate graphs according to the xrefs",
 	"axtq", " [addr]", "find and list the data/code references in quiet mode",
 	"axt*", " [addr]", "same as axt, but prints as r2 commands",
-	"axt?", " ","Show this help",
 	NULL
 };
 
@@ -7300,6 +7299,10 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		cmd_afvx (core, NULL, input[1] == 'j');
 		break;
 	case 't': { // "axt"
+		if (input[1] == '?') { // axt?
+			r_core_cmd_help (core, help_msg_axt);
+			break;
+		}
 		RList *list = NULL;
 		RAnalFunction *fcn;
 		RAnalRef *ref;
@@ -7458,9 +7461,6 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				pj_end (pj);
 				r_cons_println (pj_string (pj));
 				pj_free (pj);
-			}
-			else if (input[1] == '?') { // axt?
-				r_core_cmd_help (core, help_msg_axt);
 			}
 		}
 		r_list_free (list);
