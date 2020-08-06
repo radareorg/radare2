@@ -1651,7 +1651,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 			value->string.content =
 				strdup ((const char *)(debug_str + value->string.offset));
 		} else {
-			value->string.content = NULL;
+			value->string.content = NULL; // Means malformed DWARF, should we print error message?
 		}
 		break;
 	// offset in .debug_info
