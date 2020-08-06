@@ -573,9 +573,11 @@ case "$1" in
 			if [ -f "${FILE}" ]; then
 				NAME="$2"
 				ACTION=clean
+				DONE=0
 				export PATH="${R2PM_HOMEBINDIR}:${PATH}"
 				. "${FILE}"
 				echo $FILE TGZ=$R2PM_TGZ
+				[ "${DONE}" = 1 ] && exit 0
 			else
 				echo "Cannot find $FILE"
 				RC=1
