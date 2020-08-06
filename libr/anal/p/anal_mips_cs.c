@@ -773,7 +773,8 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case MIPS_INS_LWL:
 	case MIPS_INS_LWR:
 	case MIPS_INS_LWXC1:
-		op->refptr = 4;
+		if(!op->refptr)
+			op->refptr = 4;
 	case MIPS_INS_LD:
 	case MIPS_INS_LDC1:
 	case MIPS_INS_LDC2:
