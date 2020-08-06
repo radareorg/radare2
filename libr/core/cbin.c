@@ -1199,7 +1199,7 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, int mode) {
 		eprintf ("Warning: Cannot find base address, flags will probably be misplaced\n");
 	}
 
-	R_PDB pdb = R_EMPTY;
+	RPdb pdb = R_EMPTY;
 
 	pdb.cb_printf = r_cons_printf;
 	if (!init_pdb_parser (&pdb, file)) {
