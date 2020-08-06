@@ -784,6 +784,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		if(!op->refptr)
 			op->refptr = 8;
+			
 		switch (OPERAND(1).type) {
 		case MIPS_OP_MEM:
 			if (OPERAND(1).mem.base == MIPS_REG_GP) {
