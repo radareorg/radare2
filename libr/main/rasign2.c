@@ -145,7 +145,7 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 	}
 
 	if (space) {
-		r_core_cmdf (core, "\"zs %s\"", space);
+		r_spaces_set (&core->anal->zign_spaces, space);
 	}
 
 	// run analysis to find functions
