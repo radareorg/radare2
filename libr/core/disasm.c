@@ -6583,3 +6583,186 @@ toro:
 	r_core_seek (core, old_offset, true);
 	return err;
 }
+
+R_API bool r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
+	PJ *pj = NULL;
+	if (mode == R_MODE_JSON) {
+		pj = pj_new ();
+		if (!pj) {
+			return false;
+		}
+		pj_a (pj);
+	}
+	if (!core->anal->esil) {
+		r_core_cmd0 (core, "aei");
+		if (!r_config_get_i (core->config, "cfg.debug")) {
+			r_core_cmd0 (core, "aeim");
+		}
+	}
+	const ut64 ocoffset = core->offset;
+	const ut64 ocbsize = core->blocksize;
+	RAnalEsil *esil = core->anal->esil;
+	RReg *reg = core->anal->reg;
+	RList *ocache = core->io->cache;
+	RCache *ocacheb = core->io->buffer;
+	const int ocached = core->io->cached;
+	const bool ocachec = r_config_get_i (core->config, "io.cache");
+	const bool ojmp_lines = r_config_get_i (core->config, "asm.lines");
+	const bool hide_branches = r_config_get_i (core->config, "asm.followcf.hide");
+	if (ocacheb && ocache) {
+		RCache *c = R_NEW0 (RCache);
+		c->base = ocacheb->base;
+		if (ocacheb->len) {
+			ut8 *buf = malloc (ocacheb->len);
+			if (!buf) {
+				pj_free (pj);
+				r_cache_free (c);
+				return false;
+			}
+			memcpy (buf, ocacheb->buf, ocacheb->len);
+			c->buf = buf;
+			c->len = ocacheb->len;
+		}
+		core->io->buffer = c;
+		core->io->cache = r_list_clone (ocache);
+	} else {
+		r_io_cache_init (core->io);
+	}
+	r_reg_arena_push (reg);
+	r_config_set_i (core->config, "io.cache", 1);
+	r_config_set_i (core->config, "asm.lines", 0);
+	const ut64 read_len = 32;
+	size_t buf_sz = 0x100, block_sz = 0, block_instr = 0;
+	RRegItem *pc = r_reg_get (reg, "PC", R_REG_TYPE_ALL);
+	ut64 block_start = r_reg_get_value (reg, pc);
+	ut8 *buf = malloc (buf_sz);
+	int i;
+	for (i = 0; i < nb_opcodes; i++) {
+		const ut64 op_addr = r_reg_get_value (reg, pc);
+		if (block_sz + read_len > buf_sz) {
+			buf_sz *= 2;
+			ut8 *tmp = realloc (buf, buf_sz);
+			if (!tmp) {
+				break;
+			}
+			buf = tmp;
+		}
+		if (!r_io_read_at_mapped (core->io, op_addr, buf + block_sz, read_len)) {
+			break;
+		}
+		RAnalOp op;
+		int ret = r_anal_op (core->anal, &op, op_addr, buf + block_sz, read_len, R_ANAL_OP_MASK_ESIL);
+		const bool invalid_instr = ret < 1 || op.size < 1;
+		bool end_of_block = false;
+		switch (op.type & R_ANAL_OP_TYPE_MASK & ~R_ANAL_OP_HINT_MASK) {
+		case R_ANAL_OP_TYPE_JMP:
+		case R_ANAL_OP_TYPE_UJMP:
+		case R_ANAL_OP_TYPE_CALL:
+		case R_ANAL_OP_TYPE_UCALL:
+		case R_ANAL_OP_TYPE_RET:
+			end_of_block = true;
+			if (hide_branches) {
+				i--;
+			} else {
+				block_instr++;
+				block_sz += op.size;
+			}
+			break;
+		default:
+			if (i + 1 >= nb_opcodes || invalid_instr) {
+				end_of_block = true;
+			}
+			block_instr++;
+			block_sz += op.size;
+			break;
+		}
+		if (end_of_block) {
+		print_delay_slots:
+			if (block_instr) {
+				switch (mode) {
+				case R_MODE_JSON:
+					r_core_print_disasm_json (core, block_start, buf, block_sz, block_instr, pj);
+					break;
+				case R_MODE_SIMPLE:
+					r_core_seek (core, block_start, true);
+					r_core_disasm_pdi (core, block_instr, block_sz, 0);
+					break;
+				case R_MODE_SIMPLEST:
+					r_core_seek (core, block_start, true);
+					r_core_print_disasm_instructions (core, block_sz, block_instr);
+					break;
+				default:
+					r_core_print_disasm (core->print, core, block_start, buf, block_sz, block_instr, 0, block_sz, false, NULL, NULL);
+					break;
+				}
+			}
+			if (op.delay) {
+				block_instr = R_MIN (op.delay, nb_opcodes - (i + 1));
+				if (!block_instr) {
+					break;
+				}
+				block_sz = block_instr * read_len;
+				if (block_sz > buf_sz) {
+					buf_sz *= 2;
+					ut8 *tmp = realloc (buf, buf_sz);
+					if (!tmp) {
+						break;
+					}
+					buf = tmp;
+				}
+				if (!r_io_read_at_mapped (core->io, op.addr + op.size, buf, block_sz)) {
+					break;
+				}
+				block_start = op.addr + op.size;
+				i += block_instr;
+				op.delay = 0;
+				goto print_delay_slots;
+			}
+			block_sz = 0;
+			block_instr = 0;
+		}
+		if (invalid_instr) {
+			break;
+		}
+		r_anal_esil_set_pc (core->anal->esil, op_addr);
+		r_reg_set_value (reg, pc, op_addr + op.size);
+		const char *e = r_strbuf_get (&op.esil);
+		if (R_STR_ISNOTEMPTY (e)) {
+			r_anal_esil_parse (esil, e);
+		}
+		r_anal_op_fini (&op);
+
+		if (end_of_block) {
+			block_start = r_reg_get_value (reg, pc);
+			r_core_seek_arch_bits (core, block_start);
+		}
+	}
+	if (mode == R_MODE_JSON) {
+		pj_end (pj);
+		r_cons_print (pj_string (pj));
+		pj_free (pj);
+	}
+	free (buf);
+	r_reg_arena_pop (reg);
+	int len = r_list_length (ocache);
+	if (r_list_length (core->io->cache) > len) {
+		while (len) {
+			(void)r_list_pop_head (core->io->cache);
+			len--;
+		}
+		core->io->cache->free = ocache->free;
+	}
+	r_io_cache_fini (core->io);
+	core->io->cache = ocache;
+	core->io->buffer = ocacheb;
+	core->io->cached = ocached;
+	if (core->blocksize != ocbsize) {
+		r_core_seek_size (core, ocoffset, ocbsize);
+	} else {
+		r_core_seek (core, ocoffset, true);
+	}
+	r_core_seek_arch_bits (core, ocoffset);
+	r_config_set_i (core->config, "io.cache", ocachec);
+	r_config_set_i (core->config, "asm.lines", ojmp_lines);
+	return true;
+}

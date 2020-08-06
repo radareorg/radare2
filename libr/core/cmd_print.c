@@ -315,6 +315,7 @@ static const char *help_msg_pd[] = {
 	"pdb", "", "disassemble basic block",
 	"pdc", "", "pseudo disassembler output in C-like syntax",
 	"pdC", "", "show comments found in N instructions",
+	"pde", "[q|qq|j] [N]", "disassemble N instructions following execution flow from current PC",
 	"pdf", "", "disassemble function",
 	"pdi", "", "like 'pi', with offset and bytes",
 	"pdj", "", "disassemble to json",
@@ -5130,6 +5131,24 @@ static int cmd_print(void *data, const char *input) {
 		case 'a': // "pda"
 			processed_cmd = true;
 			r_core_print_disasm_all (core, core->offset, l, len, input[2]);
+			pd_result = true;
+			break;
+		case 'e': // "pde"
+			processed_cmd = true;
+			if (!core->fixedblock && !sp) {
+				l /= 4;
+			}
+			int mode = R_MODE_PRINT;
+			if (input[2] == 'j') {
+				mode = R_MODE_JSON;
+			} else if (input[2] == 'q') {
+				if (input[3] == 'q') {
+					mode = R_MODE_SIMPLEST; // Like pi
+				} else {
+					mode = R_MODE_SIMPLE; // Like pdi
+				}
+			}
+			r_core_disasm_pde (core, l, mode);
 			pd_result = true;
 			break;
 		case 'R': // "pdR"

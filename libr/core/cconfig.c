@@ -3147,6 +3147,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.cmt.patch", "false", "Show patch comments in disasm");
 	SETBPREF ("asm.cmt.off", "nodup", "Show offset comment in disasm (true, false, nodup)");
 	SETBPREF ("asm.payloads", "false", "Show payload bytes in disasm");
+	SETBPREF ("asm.followcf.hide", "false", "Hide call/jump/return instructions (pde)");
 
 	/* bin */
 	SETPREF ("bin.hashlimit", "10M", "Only compute hash when opening a file if smaller than this size");
