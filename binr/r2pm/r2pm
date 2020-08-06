@@ -317,7 +317,7 @@ R2PM_DOC() {
 }
 
 R2PM_GIT() {
-	[ -z "${NAME}" ] && return
+	[ -z "${NAME}" -o "$ACTION" = clean ] && return
 	URL="$1"
 	if [ -z "$2" ]; then
 		DIR="`basename $1`"
