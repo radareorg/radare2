@@ -573,25 +573,26 @@ case "$1" in
 			if [ -f "${FILE}" ]; then
 				NAME="$2"
 				ACTION=clean
-				DONE=0
 				export PATH="${R2PM_HOMEBINDIR}:${PATH}"
 				. "${FILE}"
+				SKIP_GITCLEAN=$?
 				echo $FILE TGZ=$R2PM_TGZ
-				[ "${DONE}" = 1 ] && exit 0
 			else
 				echo "Cannot find $FILE"
 				RC=1
 			fi
 
-			if [ -d "${R2PM_GITDIR}/$2" ]; then
-				echo "Cleaning up ${R2PM_GITDIR}/$2..."
-				rm -rf "${R2PM_GITDIR}/$2"
-			elif [ -d "${R2PM_GITDIR}/$2.git" ]; then
-				echo "Cleaning up ${R2PM_GITDIR}/$2.git..."
-				rm -rf "${R2PM_GITDIR}/$2.git"
-			else
-				echo "Cannot find $2 or $2.git in ${R2PM_GITDIR}"
-				RC=1
+			if [ "${SKIP_GITCLEAN}" = 0 ]; then
+				if [ -d "${R2PM_GITDIR}/$2" ]; then
+					echo "Cleaning up ${R2PM_GITDIR}/$2..."
+					rm -rf "${R2PM_GITDIR}/$2"
+				elif [ -d "${R2PM_GITDIR}/$2.git" ]; then
+					echo "Cleaning up ${R2PM_GITDIR}/$2.git..."
+					rm -rf "${R2PM_GITDIR}/$2.git"
+				else
+					echo "Cannot find $2 or $2.git in ${R2PM_GITDIR}"
+					RC=1
+				fi
 			fi
 			shift
 		done
