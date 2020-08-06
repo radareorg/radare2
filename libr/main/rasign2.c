@@ -5,14 +5,14 @@
 static void rasign_show_help(void) {
 	printf ("Usage: rasign2 [options] [file]\n"
 		" -a [-a]          add extra 'a' to analysis command\n"
-		" -o sigs.sdb      add signatures to file, create if it does not exist\n"
-		" -s signspace     save all signatures under this signspace\n"
-		" -r               show output in radare commands\n"
-		" -j               show signatures in json\n"
-		" -q               quiet mode\n"
 		" -f               interpret the file as a FLIRT .sig file and dump signatures\n"
-		" -v               show version information\n"
 		" -h               help menu\n"
+		" -j               show signatures in json\n"
+		" -o sigs.sdb      add signatures to file, create if it does not exist\n"
+		" -q               quiet mode\n"
+		" -r               show output in radare commands\n"
+		" -s signspace     save all signatures under this signspace\n"
+		" -v               show version information\n"
 		"Examples:\n"
 		"  rasign2 -o libc.sdb libc.so.6\n");
 }
@@ -68,7 +68,7 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 	bool flirt = false;
 	RGetopt opt;
 
-	r_getopt_init (&opt, argc, argv, "ao:s:rjqfvh");
+	r_getopt_init (&opt, argc, argv, "afhjo:qrs:v");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
