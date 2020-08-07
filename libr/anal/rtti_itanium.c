@@ -579,18 +579,75 @@ static void recovery_apply_vtable(RVTableContext *context, const char *class_nam
 	}
 }
 
+/**
+ * @brief Add any base class information about the type into anal/classes
+ * 
+ * @param context 
+ * @param cti 
+ */
+static void add_class_bases(RVTableContext *context, const class_type_info *cti) {
+	class_type_info base_info;
+
+	switch (cti->type) {
+	case R_TYPEINFO_TYPE_SI_CLASS: {
+		si_class_type_info *si_class = (void *)cti;
+		ut64 base_addr = si_class->base_class_addr;
+		base_addr += VT_WORD_SIZE (context); // offset to name
+		if (rtti_itanium_read_type_name (context, base_addr, &base_info)) {
+			// TODO in future, store the RTTI offset from vtable and use it
+			RAnalBaseClass base = { .class_name = base_info.name, .offset = 0 };
+			r_anal_class_base_set (context->anal, cti->name, &base);
+			r_anal_class_base_fini (&base);
+		}
+	} break;
+	case R_TYPEINFO_TYPE_VMI_CLASS: {
+		vmi_class_type_info *vmi_class = (void *)cti;
+		for (int i = 0; i < vmi_class->vmi_base_count; i++) {
+			base_class_type_info *base_class_info = vmi_class->vmi_bases + i;
+			ut64 base_addr = base_class_info->base_class_addr + VT_WORD_SIZE (context); // offset to name
+			if (rtti_itanium_read_type_name (context, base_addr, &base_info)) {
+				// TODO in future, store the RTTI offset from vtable and use it
+				RAnalBaseClass base = { .class_name = base_info.name, .offset = 0 };
+				r_anal_class_base_set (context->anal, cti->name, &base);
+				r_anal_class_base_fini (&base);
+			}
+		}
+	} break;
+	}
+}
+
 R_API void r_anal_rtti_itanium_recover_all(RVTableContext *context, RList *vtables) {
-	RListIter *vtableIter;
+	RList /*<class_type_info>*/ *rtti_list = r_list_new ();
+	rtti_list->free = rtti_itanium_type_info_free;
+	// to escape multiple same infos from multiple inheritance
+	SetU *unique_rttis = set_u_new ();
+
+	RListIter *iter;
 	RVTableInfo *vtable;
-	r_list_foreach (vtables, vtableIter, vtable) {
+	r_list_foreach (vtables, iter, vtable) {
 		class_type_info *cti = rtti_itanium_type_info_new (context, vtable->saddr);
 		if (!cti) {
 			continue;
 		}
 
 		r_anal_class_create (context->anal, cti->name);
+		// can't we name virtual functions virtual even without RTTI?
 		recovery_apply_vtable (context, cti->name, vtable);
 
-		rtti_itanium_type_info_free (cti);
+		// we only need one of a kind
+		if (set_u_contains (unique_rttis, cti->typeinfo_addr)) {
+			rtti_itanium_type_info_free (cti);
+		} else {
+			set_u_add (unique_rttis, cti->typeinfo_addr);
+			r_list_append (rtti_list, cti);
+		}
 	}
+
+	class_type_info *cti;
+	r_list_foreach (rtti_list, iter, cti) {
+		add_class_bases (context, cti);
+	}
+
+	set_u_free (unique_rttis);
+	r_list_free (rtti_list);
 }
