@@ -9910,6 +9910,21 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 	case 'm': // "acm"
 		cmd_anal_class_method (core, input + 1);
 		break;
+	case 'g': { // "acg"
+		RGraph *graph = r_anal_class_get_inheritance_graph (core->anal);
+		if (!graph) {
+			eprintf ("Couldn't create graph");
+			break;
+		}
+		RAGraph *agraph = create_agraph_from_graph (graph);
+		if (!agraph) {
+			eprintf ("Couldn't create graph");
+			break;
+		}
+		r_agraph_print (agraph);
+		r_graph_free (graph);
+		r_agraph_free (agraph);
+	} break;
 	default: // "ac?"
 		r_core_cmd_help (core, help_msg_ac);
 		break;

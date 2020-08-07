@@ -3,6 +3,7 @@
 #include <r_anal.h>
 #include <r_vector.h>
 #include "../include/r_anal.h"
+#include "../include/r_util/r_graph.h"
 
 static void r_anal_class_base_delete_class(RAnal *anal, const char *class_name);
 static void r_anal_class_method_delete_class(RAnal *anal, const char *class_name);
@@ -1217,4 +1218,83 @@ R_API void r_anal_class_list_vtable_offset_functions(RAnal *anal, const char *cl
 		}
 		ls_free (classes);
 	}
+}
+
+/**
+ * @brief Creates RGraph from class inheritance information where 
+ *        each node has RGraphNodeInfo as generic data
+ * 
+ * @param anal 
+ * @return RGraph* NULL if failure
+ */
+R_API RGraph *r_anal_class_get_inheritance_graph(RAnal *anal) {
+	r_return_val_if_fail (anal, NULL);
+	RGraph *class_graph = r_graph_new ();
+	if (!class_graph) {
+		return NULL;
+	}
+	SdbList *classes = r_anal_class_get_all (anal, true);
+	if (!classes) {
+		r_graph_free (class_graph);
+		return NULL;
+	}
+	// O(1) lookup cache for processed nodes
+	// to lookup parents to create edges
+	HtPP /*<char *name, RGraphNode *node>*/ *hashmap = ht_pp_new0 ();
+	if (!hashmap) {
+		r_graph_free (class_graph);
+		ls_free (classes);
+	}
+	SdbListIter *iter;
+	SdbKv *kv;
+	// Traverse each class and create a node and edges
+	ls_foreach (classes, iter, kv) {
+		const char *name = sdbkv_key (kv);
+		// If already in the cache
+		RGraphNode *curr_node = ht_pp_find (hashmap, name, NULL);
+		if (!curr_node) { // If not visited yet
+			RGraphNodeInfo *data = r_graph_create_node_info (strdup (name), NULL, 0);
+			if (!data) {
+				goto failure;
+			}
+			curr_node = r_graph_add_node (class_graph, data);
+			if (!curr_node) {
+				goto failure;
+			}
+			curr_node->free = r_graph_free_node_info;
+			ht_pp_insert (hashmap, name, curr_node);
+		}
+		// Travel all bases to create edges between parents and child
+		RVector *bases = r_anal_class_base_get_all (anal, name);
+		RAnalBaseClass *base;
+		r_vector_foreach (bases, base) {
+			bool base_found = false;
+			RGraphNode *base_node = ht_pp_find (hashmap, base->class_name, &base_found);
+			// If base isn't processed, do it now
+			if (!base_found) {
+				// Speed it up and already add base classes if not visited yet
+				RGraphNodeInfo *data = r_graph_create_node_info (strdup (base->class_name), NULL, 0);
+				if (!data) {
+					goto failure;
+				}
+				base_node = r_graph_add_node (class_graph, data);
+				if (!base_node) {
+					goto failure;
+				}
+				base_node->free = r_graph_free_node_info;
+				ht_pp_insert (hashmap, base->class_name, base_node);
+			}
+			r_graph_add_edge (class_graph, base_node, curr_node);
+		}
+		r_vector_free (bases);
+	}
+	ls_free (classes);
+	ht_pp_free (hashmap);
+	return class_graph;
+
+failure:
+	ls_free (classes);
+	ht_pp_free (hashmap);
+	r_graph_free (class_graph);
+	return NULL;
 }
