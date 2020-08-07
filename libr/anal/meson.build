@@ -33,6 +33,7 @@ r_anal_sources = [
   'sign.c',
   'switch.c',
   'type.c',
+  'type_pdb.c',
   'type_dwarf.c',
   'value.c',
   'var.c',

@@ -1189,8 +1189,17 @@ static int bin_dwarf(RCore *core, int mode) {
 	return true;
 }
 
-R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
-	R_PDB pdb = R_EMPTY;
+R_API bool r_core_pdb_info(RCore *core, const char *file, int mode) {
+	r_return_val_if_fail (core && file, false);
+
+	ut64 baddr = r_config_get_i (core->config, "bin.baddr");
+	if (core->bin->cur && core->bin->cur->o && core->bin->cur->o->baddr) {
+		baddr = core->bin->cur->o->baddr;
+	} else {
+		eprintf ("Warning: Cannot find base address, flags will probably be misplaced\n");
+	}
+
+	RPdb pdb = R_EMPTY;
 
 	pdb.cb_printf = r_cons_printf;
 	if (!init_pdb_parser (&pdb, file)) {
@@ -1200,9 +1209,6 @@ R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
 		eprintf ("pdb was not parsed\n");
 		pdb.finish_pdb_parse (&pdb);
 		return false;
-	}
-	if (mode == R_MODE_JSON) {
-		r_cons_printf ("[");
 	}
 
 	switch (mode) {
@@ -1221,23 +1227,19 @@ R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
 		mode = 'd'; // default
 		break;
 	}
+	PJ *pj = pj_new ();
 
-	pdb.print_types (&pdb, mode);
-	if (mode == 'j') {
-		r_cons_printf (",");
-	}
-	pdb.print_gvars (&pdb, baddr, mode);
-	if (mode == 'j') {
-		r_cons_printf ("]");
-	}
+	pdb.print_types (&pdb, pj, mode);
+	pdb.print_gvars (&pdb, baddr, pj, mode);
+	// Save compound types into SDB
+	r_parse_pdb_types (core->anal, &pdb);
 	pdb.finish_pdb_parse (&pdb);
 
+	if (mode == 'j') {
+		r_cons_printf ("%s\n", pj_string (pj));
+	}
+	pj_free (pj);
 	return true;
-}
-
-static int bin_pdb(RCore *core, int mode) {
-	ut64 baddr = r_bin_get_baddr (core->bin);
-	return r_core_pdb_info (core, core->bin->file, baddr, mode);
 }
 
 static int srclineCmp(const void *a, const void *b) {
@@ -4152,7 +4154,7 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 		ret &= bin_dwarf (core, mode);
 	}
 	if ((action & R_CORE_BIN_ACC_PDB)) {
-		ret &= bin_pdb (core, mode);
+		ret &= r_core_pdb_info (core, core->bin->file, mode);
 	}
 	if ((action & R_CORE_BIN_ACC_SOURCE)) {
 		ret &= bin_source (core, mode);

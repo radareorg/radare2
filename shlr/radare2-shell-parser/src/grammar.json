@@ -2580,10 +2580,6 @@
                 {
                   "type": "PATTERN",
                   "value": "\\\\."
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "\\/[^\\*]"
                 }
               ]
             }
@@ -2658,10 +2654,6 @@
                 {
                   "type": "PATTERN",
                   "value": "\\\\."
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "\\/[^\\*]"
                 }
               ]
             }
@@ -3666,10 +3658,6 @@
             {
               "type": "PATTERN",
               "value": "\\\\."
-            },
-            {
-              "type": "PATTERN",
-              "value": "\\/[^\\*]"
             }
           ]
         }
@@ -3712,10 +3700,6 @@
             {
               "type": "PATTERN",
               "value": "\\\\."
-            },
-            {
-              "type": "PATTERN",
-              "value": "\\/[^\\*]"
             }
           ]
         }

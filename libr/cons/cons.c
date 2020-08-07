@@ -473,6 +473,10 @@ R_API void r_cons_enable_highlight(const bool enable) {
 }
 
 R_API bool r_cons_enable_mouse(const bool enable) {
+	if ((I.mouse && enable)
+	    || (!I.mouse && !enable)) {
+		return I.mouse;
+	}
 #if __WINDOWS__
 	if (I.vtmode == 2) {
 #endif
@@ -1167,7 +1171,7 @@ R_API int r_cons_get_column(void) {
 
 /* final entrypoint for adding stuff in the buffer screen */
 R_API int r_cons_memcat(const char *str, int len) {
-	if (len < 0 || (I.context->buffer_len + len) < 0) {
+	if (len < 0) {
 		return -1;
 	}
 	if (I.echo) {

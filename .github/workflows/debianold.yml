@@ -1,4 +1,4 @@
-name: Debian OLD (Jessie) test
+name: Debian OLD
 
 on:
   push:
@@ -12,11 +12,25 @@ on:
 
 jobs:
   build:
-    name: debian-8-build
+    name: debian-oldies-build
+    strategy:
+        matrix:
+            container:
+                - debian:wheezy
+                - debian:jessie
+
     runs-on: ubuntu-latest
-    container: debian:jessie
+    container: ${{ matrix.container }}
 
     steps:
+    - name: Fix containers (Wheezy)
+      if: matrix.container == 'debian:wheezy'
+      run: |
+          sed -i '/deb http:\/\/deb.debian.org\/debian wheezy-updates main/d' /etc/apt/sources.list
+          echo "deb http://archive.debian.org/debian wheezy main" > /etc/apt/sources.list
+          echo "deb http://archive.debian.org/debian-security wheezy/updates main" >> /etc/apt/sources.list
+          echo "Acquire::Check-Valid-Until no;" > /etc/apt/apt.conf.d/99no-check-valid-until
+
     - name: Install tools
       run: apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config libc6-i386 build-essential
     - name: Install Python source build dependcies
@@ -35,10 +49,7 @@ jobs:
         git fetch origin ${{ github.ref }}
         git checkout -b local_branch FETCH_HEAD
     - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v2
-      with:
-          repository: radareorg/radare2-testbins
-          path: test/bins
+      run: git clone https://github.com/radareorg/radare2-testbins test/bins
     - name: Configure with ACR and build
       run: ./configure --prefix=/usr && make
       working-directory: radare2

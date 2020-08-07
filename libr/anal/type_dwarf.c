@@ -1,7 +1,8 @@
-#include <r_anal.h>
+#include "base_types.h"
 #include <sdb.h>
-#include <string.h>
+#include <r_anal.h>
 #include <r_bin_dwarf.h>
+#include <string.h>
 
 static int die_tag_cmp(const void *a, const void *b) {
 	const RBinDwarfDie *first = a;
@@ -23,19 +24,6 @@ static inline bool is_type_tag(ut64 tag_code) {
 		tag_code == DW_TAG_union_type ||
 		tag_code == DW_TAG_base_type ||
 		tag_code == DW_TAG_typedef);
-}
- 
-static void struct_type_fini(void *e, void *user) {
-	(void)user;
-	RAnalStructMember *member = e;
-	free ((char *)member->name);
-	free ((char *)member->type);
-}
-
-static void enum_type_fini(void *e, void *user) {
-	(void)user;
-	RAnalEnumCase *cas = e;
-	free ((char *)cas->name);
 }
 
 /**
@@ -129,7 +117,7 @@ static bool strbuf_rev_append_char(RStrBuf *sb, const char *s, const char *needl
 }
 
 /**
- * @brief Create a type name from offset
+ * @brief Create a type name from it's unique offset
  * 
  * @param offset 
  * @return char* Name or NULL if error
@@ -142,16 +130,16 @@ static char *create_type_name_from_offset(ut64 offset) {
 }
 
 /**
- * @brief Get the DIE name
+ * @brief Get the DIE name or create unique one from it's offset
  * 
  * @param die 
- * @return char* DIEs name or NULL if not found
+ * @return char* DIEs name or NULL if error
  */
 static char *get_die_name(const RBinDwarfDie *die) {
 	char *name = NULL;
 	st32 name_attr_idx = find_attr_idx (die, DW_AT_name);
 
-	if (name_attr_idx != -1) {
+	if (name_attr_idx != -1 && die->attr_values[name_attr_idx].string.content) {
 		name = strdup (die->attr_values[name_attr_idx].string.content);
 	} else {
 		name = create_type_name_from_offset (die->offset);
@@ -379,7 +367,7 @@ static RAnalStructMember *parse_struct_member (const RBinDwarfDie *all_dies,
 		RBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
-			name = strdup (value->string.content);
+			name = get_die_name (die);
 			if (!name) {
 				goto cleanup;
 			}
@@ -459,7 +447,7 @@ static RAnalEnumCase *parse_enumerator(const RBinDwarfDie *all_dies,
 		RBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
-			name = strdup (value->string.content);
+			name = get_die_name (die);
 			if (!name) {
 				goto cleanup;
 			}
@@ -532,7 +520,7 @@ static void parse_structure_type(const RAnal *anal, const RBinDwarfDie *all_dies
 	base_type->size = get_die_size (die);
 
 	r_vector_init (&base_type->struct_data.members,
-		sizeof (RAnalStructMember), struct_type_fini, NULL);
+		sizeof (RAnalStructMember), struct_type_member_free, NULL);
 	RAnalStructMember member = { 0 };
 	// Parse out all members, can this in someway be extracted to a function?
 	if (die->has_children) {
@@ -603,7 +591,7 @@ static void parse_enum_type(const RAnal *anal, const RBinDwarfDie *all_dies,
 	}
 
 	r_vector_init (&base_type->enum_data.cases,
-		sizeof (RAnalEnumCase), enum_type_fini, NULL);
+		sizeof (RAnalEnumCase), enum_type_case_free, NULL);
 	RAnalEnumCase cas;
 	if (die->has_children) {
 		int child_depth = 1; // Direct children of the node
@@ -619,7 +607,7 @@ static void parse_enum_type(const RAnal *anal, const RBinDwarfDie *all_dies,
 				} else {
 					void *element = r_vector_push (&base_type->enum_data.cases, &cas);
 					if (!element) {
-						enum_type_fini (result, NULL);
+						enum_type_case_free (result, NULL);
 						goto cleanup;
 					}
 				}
@@ -666,7 +654,7 @@ static void parse_typedef(const RAnal *anal, const RBinDwarfDie *all_dies,
 		RBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
-			name = strdup (value->string.content);
+			name = get_die_name (die);
 			if (!name) {
 				goto cleanup;
 			}
@@ -715,7 +703,11 @@ static void parse_atomic_type(const RAnal *anal, const RBinDwarfDie *all_dies,
 		RBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
-			name = strdup (value->string.content);
+			if (!value->string.content) {
+				name = create_type_name_from_offset (die->offset);
+			} else {
+				name = strdup (value->string.content);
+			}
 			if (!name) {
 				return;
 			}

@@ -1486,7 +1486,7 @@ static void print_debug_info(const RBinDwarfDebugInfo *inf, PrintfCallback print
 		dies = inf->comp_units[i].dies;
 
 		for (j = 0; j < inf->comp_units[i].count; j++) {
-			print ("<%"PFMT64x">: Abbrev Number: %-4" PFMT64u " ", dies[j].offset,dies[j].abbrev_code);
+			print ("<0x%"PFMT64x">: Abbrev Number: %-4" PFMT64u " ", dies[j].offset,dies[j].abbrev_code);
 
 			if (is_printable_tag (dies[j].tag)) {
 				print ("(%s)\n", dwarf_tag_name_encodings[dies[j].tag]);
@@ -1651,7 +1651,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 			value->string.content =
 				strdup ((const char *)(debug_str + value->string.offset));
 		} else {
-			value->string.content = NULL;
+			value->string.content = NULL; // Means malformed DWARF, should we print error message?
 		}
 		break;
 	// offset in .debug_info

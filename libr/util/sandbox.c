@@ -11,6 +11,10 @@
 #include <sys/capsicum.h>
 #endif
 
+#if LIBC_HAVE_PRIV_SET
+#include <priv.h>
+#endif
+
 static bool enabled = false;
 static bool disabled = false;
 
@@ -101,6 +105,12 @@ R_API bool r_sandbox_disable (bool e) {
 			return enabled;
 		}
 #endif
+#if LIBC_HAVE_PRIV_SET
+		if (enabled) {
+			eprintf ("sandbox mode couldn't be disabled in priv mode\n");
+			return enabled;
+		}
+#endif
 		disabled = enabled;
 		enabled = false;
 	} else {
@@ -159,6 +169,36 @@ R_API bool r_sandbox_enable (bool e) {
 			eprintf ("sandbox: call_enter failed\n");
 			return false;
 		}
+	}
+#endif
+#if LIBC_HAVE_PRIV_SET
+	if (enabled) {
+		priv_set_t *priv = priv_allocset();
+		const char *const privrules[] = {
+			PRIV_PROC_INFO,
+			PRIV_PROC_SESSION,
+			PRIV_PROC_ZONE,
+			PRIV_NET_OBSERVABILITY
+		};
+
+		size_t i, privrulescnt = sizeof (privrules) / sizeof (privrules[0]);
+		
+		if (!priv) {
+			eprintf ("sandbox: priv_allocset failed\n");
+			return false;
+		}
+		priv_basicset(priv);
+		
+		for (i = 0; i < privrulescnt; i ++) {
+			if (priv_delset (priv, privrules[i]) != 0) {
+				priv_emptyset (priv);
+				priv_freeset (priv);
+				eprintf ("sandbox: priv_delset failed\n");
+				return false;
+			}
+		}
+
+		priv_freeset (priv);
 	}
 #endif
 	return enabled;

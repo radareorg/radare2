@@ -1113,6 +1113,29 @@ R_API bool r_sign_delete(RAnal *a, const char *name) {
 	return sdb_remove (a->sdb_zigns, k, 0);
 }
 
+static ut8 * build_combined_bytes(RSignBytes *bsig) {
+	r_return_val_if_fail (bsig && bsig->bytes && bsig->mask, NULL);
+	ut8 *buf = (ut8 *)malloc (bsig->size);
+	if (buf) {
+		size_t i;
+		for (i = 0; i < bsig->size; i++) {
+			buf[i] = bsig->bytes[i] & bsig->mask[i];
+		}
+	}
+	return buf;
+}
+
+static double cmp_bytesig_to_buff(RSignBytes *sig, ut8 *buf, int len) {
+	r_return_val_if_fail (sig && buf && len >= 0, (double)-1.0);
+	ut8 *sigbuf = build_combined_bytes (sig);
+	double sim = -1.0;
+	if (sigbuf) {
+		r_diff_buffers_distance (NULL, sigbuf, sig->size, buf, len, NULL, &sim);
+		free (sigbuf);
+	}
+	return sim;
+}
+
 static double matchBytes(RSignItem *a, RSignItem *b) {
 	double result = 0.0;
 
@@ -1120,14 +1143,14 @@ static double matchBytes(RSignItem *a, RSignItem *b) {
 		return result;
 	}
 
-	size_t min_size = R_MIN ((size_t) a->bytes->size, (size_t) b->bytes->size);
+	size_t min_size = R_MIN ((size_t)a->bytes->size, (size_t)b->bytes->size);
 	if (!min_size) {
 		return result;
 	}
 
 	ut8 *combined_mask = NULL;
 	if (a->bytes->mask || b->bytes->mask) {
-		combined_mask = (ut8*) malloc (min_size);
+		combined_mask = (ut8*)malloc (min_size);
 		if (!combined_mask) {
 			return result;
 		}
@@ -1142,7 +1165,7 @@ static double matchBytes(RSignItem *a, RSignItem *b) {
 
 	if ((combined_mask && !r_mem_cmp_mask (a->bytes->bytes, b->bytes->bytes, combined_mask, min_size)) ||
 		(!combined_mask && !memcmp (a->bytes->bytes, b->bytes->bytes, min_size))) {
-		result = (double) min_size / (double) R_MAX (a->bytes->size, b->bytes->size);
+		result = (double)min_size / (double)R_MAX (a->bytes->size, b->bytes->size);
 	}
 
 	free (combined_mask);
@@ -1150,8 +1173,8 @@ static double matchBytes(RSignItem *a, RSignItem *b) {
 	return result;
 }
 
-#define SIMILARITY(a,b) \
-	((a) == (b) ? 1.0 : (R_MAX ((a),(b)) == 0.0 ? 0.0 : (double) R_MIN ((a), (b)) / (double) R_MAX ((a), (b))))
+#define SIMILARITY(a, b) \
+	((a) == (b)? 1.0: (R_MAX ((a), (b)) == 0.0? 0.0: (double)R_MIN ((a), (b)) / (double)R_MAX ((a), (b))))
 
 static double matchGraph(RSignItem *a, RSignItem *b) {
 	if (!a->graph || !b->graph) {
@@ -1187,6 +1210,7 @@ typedef struct {
 	RList *output;
 	size_t count;
 	double score_threshold;
+	ut8 *bytes_combined;
 
 	// greatest lower bound. Thanks lattice theory for helping name variables
 	double infimum;
@@ -1205,25 +1229,56 @@ static bool closest_match_callback(void *a, const char *name, const char *value)
 		return false;
 	}
 
-	double score = matchGraph (it, data->test);
+	// quantify how close the signature matches
+	int div = 0;
+	double score = 0.0;
+	double gscore = -1.0;
+	if (it->graph && data->test->graph) {
+		gscore = matchGraph (it, data->test);
+		score += gscore;
+		div++;
+	}
+	double bscore = -1.0;
+	bool list_full = (r_list_length (data->output) == data->count);
+
+	// value to beat to enter the list
+	double pivot = data->score_threshold;
+	if (list_full) {
+		pivot = R_MAX (pivot, data->infimum);
+	}
+
+	if (it->bytes && data->bytes_combined) {
+		int sizea = it->bytes->size;
+		int sizeb = data->test->bytes->size;
+		if (pivot > 0.0) {
+			// bytes distance is slow. To avoid it, we can do quick maths to
+			// see if the highest possible score would be good enough to change
+			// results
+			double maxscore = R_MIN (sizea, sizeb) / R_MAX (sizea, sizeb);
+			if (div > 0) {
+				maxscore = (maxscore + score) / div;
+			}
+			if (maxscore < pivot) {
+				r_sign_item_free (it);
+				return true;
+			}
+		}
+
+		// get true byte score
+		bscore = cmp_bytesig_to_buff (it->bytes, data->bytes_combined, sizeb);
+		score += bscore;
+		div++;
+	}
+	if (div == 0) {
+		r_sign_item_free (it);
+		return true;
+	}
+	score /= div;
 
 	// score is too low, don't bother doing any more work
-	if (score < data->score_threshold) {
+	if (score < pivot) {
 		r_sign_item_free (it);
 		return true;
-	}
-
-	RList *output = data->output;
-
-	// return early if the list does not need to be changed
-	if (score < data->infimum && r_list_length (output) >= data->count) {
-		r_sign_item_free (it);
-		return true;
-	}
-
-	// remove an element if list is full
-	if (r_list_length (output) >= data->count) {
-		r_sign_close_match_free (r_list_pop (output));
 	}
 
 	// add new element
@@ -1232,41 +1287,53 @@ static bool closest_match_callback(void *a, const char *name, const char *value)
 		r_sign_item_free (it);
 		return false;
 	}
-	row->name = strdup (it->name);
-	if (!row->name) {
-		r_sign_item_free (it);
-		free (row);
-		return false;
-	}
 	row->score = score;
-	r_list_add_sorted (output, (void *)row, &score_cmpr);
+	row->gscore = gscore;
+	row->bscore = bscore;
+	row->item = it;
+	r_list_add_sorted (data->output, (void *)row, &score_cmpr);
 
-	// get new infimum
-	row = r_list_get_top (output);
-	data->infimum = row->score;
+	if (list_full) {
+		// remove smallest element
+		r_sign_close_match_free (r_list_pop (data->output));
 
-	r_sign_item_free (it);
+		// get new infimum
+		row = r_list_get_top (data->output);
+		data->infimum = row->score;
+	}
+
 	return true;
 }
 
 R_API void r_sign_close_match_free(RSignCloseMatch *match) {
-	free (match->name);
-	free (match);
+	if (match) {
+		r_sign_item_free (match->item);
+		free (match);
+	}
 }
 
 R_API RList *r_sign_find_closest_sig(RAnal *a, RSignItem *it, int count, double score_threshold) {
-	r_return_val_if_fail (a && it && count > 0 && score_threshold <= 1 && score_threshold >= 0, false);
+	r_return_val_if_fail (a && it && count > 0 && score_threshold >= 0 && score_threshold <= 1, NULL);
+
+	// need at least one acceptable signature type
+	r_return_val_if_fail (it->bytes || it->graph, NULL);
 
 	ClosestMatchData data;
 	RList *output = r_list_newf ((RListFree)r_sign_close_match_free);
 	if (!output) {
 		return NULL;
 	}
+
 	data.output = output;
 	data.count = count;
 	data.score_threshold = score_threshold;
 	data.infimum = 0.0;
 	data.test = it;
+	if (it->bytes) {
+		data.bytes_combined = build_combined_bytes (it->bytes);
+	} else {
+		data.bytes_combined = NULL;
+	}
 
 	// TODO: handle sign spaces
 	if (!sdb_foreach (a->sdb_zigns, &closest_match_callback, (void *)&data)) {
@@ -1274,6 +1341,7 @@ R_API RList *r_sign_find_closest_sig(RAnal *a, RSignItem *it, int count, double 
 		output = NULL;
 	}
 
+	free (data.bytes_combined);
 	return output;
 }
 
@@ -2480,7 +2548,7 @@ R_API void r_sign_item_free(RSignItem *item) {
 		return;
 	}
 	free (item->name);
-	bytes_sig_free(item->bytes);
+	bytes_sig_free (item->bytes);
 	if (item->hash) {
 		free (item->hash->bbhash);
 		free (item->hash);

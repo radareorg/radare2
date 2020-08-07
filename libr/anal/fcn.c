@@ -228,7 +228,7 @@ static bool is_delta_pointer_table(RAnal *anal, RAnalFunction *fcn, ut64 addr, u
 		if (o_reg_dst && reg_src && o_reg_dst->offset == reg_src->offset && omov_aop.disp != UT64_MAX) {
 			// Special case for indirection
 			// lea reg1, [base_addr]
-			// mov reg2, (sz)word [reg1 + tbl_off*sz + casetbl_loc_off]
+			// movzx reg2, byte [reg1 + tbl_off + casetbl_loc_off]
 			// mov reg3, dword [reg1 + reg2*4 + tbl_loc_off]
 			// add reg3, reg1
 			// jmp reg3
@@ -267,6 +267,11 @@ static ut64 try_get_cmpval_from_parents(RAnal * anal, RAnalFunction *fcn, RAnalB
 	r_list_foreach (fcn->bbs, iter, tmp_bb) {
 		if (tmp_bb->jump == my_bb->addr || tmp_bb->fail == my_bb->addr) {
 			if (tmp_bb->cmpreg == cmp_reg) {
+				if (tmp_bb->cond) {
+					if (tmp_bb->cond->type == R_ANAL_COND_HI || tmp_bb->cond->type == R_ANAL_COND_GT) {
+						return tmp_bb->cmpval + 1;
+					}
+				}
 				return tmp_bb->cmpval;
 			}
 		}
@@ -459,6 +464,10 @@ static inline bool op_is_set_bp(RAnalOp *op, const char *bp_reg, const char *sp_
 	return false;
 }
 
+static inline bool does_arch_destroys_dst(const char *arch) {
+	return arch && (!strncmp (arch, "arm", 3) || !strcmp (arch, "riscv") || !strcmp (arch, "ppc"));
+}
+
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
 	const int continue_after_jump = anal->opt.afterjmp;
 	const int addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1;
@@ -481,8 +490,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	} delay = {
 		0
 	};
+	bool arch_destroys_dst = does_arch_destroys_dst (anal->cur->arch);
 	bool is_arm = anal->cur->arch && !strncmp (anal->cur->arch, "arm", 3);
-	bool is_riscv = anal->cur->arch && !strcmp (anal->cur->arch, "riscv");
 	char tmp_buf[MAX_FLG_NAME_SIZE + 5] = "skip";
 	bool is_x86 = is_arm ? false: anal->cur->arch && !strncmp (anal->cur->arch, "x86", 3);
 	bool is_amd64 = is_x86 ? fcn->cc && !strcmp (fcn->cc, "amd64") : false;
@@ -990,6 +999,7 @@ repeat:
 				cmpval = val;
 				bb->cmpval = cmpval;
 				bb->cmpreg = op.reg;
+				bb->cond = r_anal_cond_new_from_op (&op);
 			}
 		}
 			break;
@@ -1003,6 +1013,9 @@ repeat:
 			if (!overlapped) {
 				bb->jump = op.jump;
 				bb->fail = op.fail;
+			}
+			if (bb->cond) {
+				bb->cond->type = op.cond;
 			}
 			if (anal->opt.jmptbl) {
 				if (op.ptr != UT64_MAX) {
@@ -1103,7 +1116,26 @@ repeat:
 				if (op.ptr != UT64_MAX && op.ireg) { // direct jump
 					ut64 table_size, default_case;
 					if (try_get_jmptbl_info (anal, fcn, op.addr, bb, &table_size, &default_case)) {
-						ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op.addr, op.ptr, op.ptr, anal->bits >> 3, table_size, default_case, ret);
+						bool case_table = false;
+						RAnalOp prev_op;
+						ut8 b[32];
+						anal->iob.read_at (anal->iob.io, op.addr - op.size, buf, sizeof (buf));
+						if (r_anal_op (anal, &prev_op, op.addr - op.size, buf, sizeof (buf), R_ANAL_OP_MASK_VAL) > 0) {
+							bool prev_op_has_dst_name = prev_op.dst && prev_op.dst->reg && prev_op.dst->reg->name;
+							bool op_has_src_name = op.src[0] && op.src[0]->reg && op.src[0]->reg->name;
+							bool same_reg = (op.ireg && prev_op_has_dst_name && !strcmp (op.ireg, prev_op.dst->reg->name))
+								|| (op_has_src_name && prev_op_has_dst_name && !strcmp (op.src[0]->reg->name, prev_op.dst->reg->name));
+							if (prev_op.type == R_ANAL_OP_TYPE_MOV && prev_op.disp && prev_op.disp != UT64_MAX && same_reg) {
+								//	movzx reg, byte [reg + case_table]
+								//	jmp dword [reg*4 + jump_table]
+								case_table = true;
+								ret = try_walkthrough_casetbl (anal, fcn, bb, depth, op.addr, op.ptr, prev_op.disp, op.ptr, anal->bits >> 3, table_size, default_case, ret);
+							}
+						}
+						r_anal_op_fini (&prev_op);
+						if (!case_table) {
+							ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op.addr, op.ptr, op.ptr, anal->bits >> 3, table_size, default_case, ret);
+						}
 					}
 				} else if (op.ptr != UT64_MAX && op.reg) { // direct jump
 					ut64 table_size, default_case;
@@ -1232,7 +1264,7 @@ analopfinish:
 			}
 			break;
 		}
-		if (has_stack_regs && (is_arm || is_riscv)) {
+		if (has_stack_regs && arch_destroys_dst) {
 			if (op_is_set_bp (&op, bp_reg, sp_reg) && op.src[1]) {
 				switch (op.type & R_ANAL_OP_TYPE_MASK) {
 				case R_ANAL_OP_TYPE_ADD:

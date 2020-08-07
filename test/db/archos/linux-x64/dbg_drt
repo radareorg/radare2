@@ -229,12 +229,12 @@ dr3
 dr2
 dr1
 dr0
-gs
-fs
-es
-ds
 gs_base
 fs_base
+es
+ds
+gs
+fs
 ss
 orax
 of

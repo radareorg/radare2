@@ -11,13 +11,12 @@ extern "C" {
 
 #define FILE_NAME_LEN 256
 
-struct R_PDB;
 struct R_PDB7_ROOT_STREAM;
 
-typedef struct R_PDB {
-	bool (*pdb_parse)(struct R_PDB *pdb);
-	void (*finish_pdb_parse)(struct R_PDB *pdb);
-	void (*print_types)(struct R_PDB *pdb, int mode);
+typedef struct r_pdb_t {
+	bool (*pdb_parse)(struct r_pdb_t *pdb);
+	void (*finish_pdb_parse)(struct r_pdb_t *pdb);
+	void (*print_types)(const struct r_pdb_t *pdb, PJ *pj, int mode);
 //	FILE *fp;
 	PrintfCallback cb_printf;
 	struct R_PDB7_ROOT_STREAM *root_stream;
@@ -27,11 +26,11 @@ typedef struct R_PDB {
 	RBuffer *buf; // mmap of file
 //	int curr;
 
-	void (*print_gvars)(struct R_PDB *pdb, ut64 img_base, int format);
-} R_PDB;
+	void (*print_gvars)(struct r_pdb_t *pdb, ut64 img_base, PJ *pj, int format);
+} RPdb;
 
-R_API bool init_pdb_parser(R_PDB *pdb, const char *filename);
-R_API bool init_pdb_parser_with_buf(R_PDB *pdb, RBuffer *buf);
+R_API bool init_pdb_parser(RPdb *pdb, const char *filename);
+R_API bool init_pdb_parser_with_buf(RPdb *pdb, RBuffer *buf);
 
 #ifdef __cplusplus
 }

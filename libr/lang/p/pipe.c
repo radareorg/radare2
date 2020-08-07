@@ -33,49 +33,53 @@ static HANDLE myCreateChildProcess(const char * szCmdline) {
 	return bSuccess ? piProcInfo.hProcess : NULL;
 }
 
-static volatile BOOL bStopPipeLoop = FALSE;
 static HANDLE hPipeInOut = NULL;
 static HANDLE hproc = NULL;
 #define PIPE_BUF_SIZE 8192
 
-static DWORD WINAPI WaitForProcThread(LPVOID lParam) {
-	WaitForSingleObject (hproc, INFINITE);
-
-	// Just in case the #!pipe target didn't actually connect to the pipe,
-	// we connect to the pipe here to satisfy the ConnectNamedPipe().
-	LPTSTR pipeName = calloc (128, sizeof (TCHAR));
-	GetEnvironmentVariable (TEXT ("R2PIPE_PATH"), pipeName, 128);
-	HANDLE pipe = CreateFile (pipeName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
-	if (pipe != INVALID_HANDLE_VALUE) {
-		CloseHandle (pipe);
-	}
-
-	bStopPipeLoop = TRUE;
-	return 0;
-}
 static void lang_pipe_run_win(RLang *lang) {
 	CHAR buf[PIPE_BUF_SIZE];
 	BOOL bSuccess = TRUE;
 	int i, res = 0;
-	DWORD dwRead = 0, dwWritten = 0;
+	DWORD dwRead = 0, dwWritten = 0, dwEvent;
+	HANDLE hRead = CreateEvent (NULL, TRUE, FALSE, NULL);
+	if (!hRead) {
+		r_sys_perror ("lang_pipe_run_win/CreateEvent hRead");
+		return;
+	}
+	HANDLE hWritten = CreateEvent (NULL, TRUE, FALSE, NULL);
+	if (!hWritten) {
+		r_sys_perror ("lang_pipe_run_win/CreateEvent hWritten");
+		CloseHandle (hRead);
+		return;
+	}
 	r_cons_break_push (NULL, NULL);
 	do {
 		if (r_cons_is_breaked ()) {
 			TerminateProcess (hproc, 0);
 			break;
 		}
+		OVERLAPPED oRead = { 0 };
+		oRead.hEvent = hRead;
 		memset (buf, 0, PIPE_BUF_SIZE);
-		do {
-			bSuccess = PeekNamedPipe (hPipeInOut, buf, PIPE_BUF_SIZE, &dwRead, NULL, NULL);
-		} while (bSuccess && !bStopPipeLoop && !dwRead);
-		if (bSuccess && dwRead) {
-			bSuccess = ReadFile (hPipeInOut, buf, PIPE_BUF_SIZE, &dwRead, NULL);
+		ReadFile (hPipeInOut, buf, PIPE_BUF_SIZE, NULL, &oRead);
+		HANDLE hReadEvents[] = { hRead, hproc };
+		dwEvent = WaitForMultipleObjects (R_ARRAY_SIZE (hReadEvents), hReadEvents,
+		                                  FALSE, INFINITE);
+		if (dwEvent == WAIT_OBJECT_0 + 1) { // hproc
+			break;
+		} else if (dwEvent == WAIT_FAILED) {
+			r_sys_perror ("lang_pipe_run_win/WaitForMultipleObjects read");
+			break;
+		}
+		bSuccess = GetOverlappedResult (hPipeInOut, &oRead, &dwRead, TRUE);
+		if (!bSuccess) {
+			break;
 		}
 		if (bSuccess && dwRead > 0) {
 			buf[sizeof (buf) - 1] = 0;
-			if (bStopPipeLoop) {
-				break;
-			}
+			OVERLAPPED oWrite = { 0 };
+			oWrite.hEvent = hWritten;
 			char *res = lang->cmd_str ((RCore*)lang->user, buf);
 			if (res) {
 				int res_len = strlen (res) + 1;
@@ -83,29 +87,42 @@ static void lang_pipe_run_win(RLang *lang) {
 					memset (buf, 0, PIPE_BUF_SIZE);
 					dwWritten = 0;
 					int writelen = res_len - i;
-					int rc = WriteFile (hPipeInOut, res + i, writelen > PIPE_BUF_SIZE ? PIPE_BUF_SIZE : writelen, &dwWritten, 0);
-					if (bStopPipeLoop) {
+					WriteFile (hPipeInOut, res + i,
+					           writelen > PIPE_BUF_SIZE ? PIPE_BUF_SIZE : writelen,
+					           NULL, &oWrite);
+					HANDLE hWriteEvents[] = { hWritten, hproc };
+					dwEvent = WaitForMultipleObjects (R_ARRAY_SIZE (hWriteEvents), hWriteEvents,
+					                                  FALSE, INFINITE);
+					if (dwEvent == WAIT_OBJECT_0 + 1) { // hproc
 						break;
+					} else if (dwEvent == WAIT_FAILED) {
+						r_sys_perror ("lang_pipe_run_win/WaitForMultipleObjects write");
 					}
+					BOOL rc = GetOverlappedResult (hPipeInOut, &oWrite, &dwWritten, TRUE);
 					if (!rc) {
-						r_sys_perror ("lang_pipe_run_win/WriteFile");
+						r_sys_perror ("lang_pipe_run_win/WriteFile res");
 					}
 					if (dwWritten > 0) {
 						i += dwWritten - 1;
 					} else {
-						/* send null termination // chop */
-						eprintf ("w32-lang-pipe: 0x%x\n", (ut32)GetLastError ());
+						// send null termination // chop
+						r_sys_perror ("lang_pipe_run_win/dwWritten");
 						//WriteFile (hPipeInOut, "", 1, &dwWritten, NULL);
 						//break;
 					}
 				}
 				free (res);
 			} else {
-				WriteFile (hPipeInOut, "", 1, &dwWritten, NULL);
+				WriteFile (hPipeInOut, "", 1, NULL, &oWrite);
+				if (!GetOverlappedResult (hPipeInOut, &oWrite, &dwWritten, TRUE)) {
+					r_sys_perror ("lang_pipe_run_win/WriteFile nul");
+				}
 			}
 		}
-	} while (!bStopPipeLoop);
+	} while (true);
 	r_cons_break_pop ();
+	CloseHandle (hWritten);
+	CloseHandle (hRead);
 }
 #else
 static void env(const char *s, int f) {
@@ -219,27 +236,52 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 
 	SetEnvironmentVariable (TEXT ("R2PIPE_PATH"), r2pipe_paz_);
 	hPipeInOut = CreateNamedPipe (r2pipe_paz_,
-			PIPE_ACCESS_DUPLEX,
+			PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
 			PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
 			PIPE_BUF_SIZE,
 			PIPE_BUF_SIZE,
 			0, NULL);
 	if (hPipeInOut == INVALID_HANDLE_VALUE) {
-		eprintf ("CreateNamedPipe failed: %#x\n", (int)GetLastError ());
+		r_sys_perror ("lang_pipe_run/CreateNamedPipe");
 		goto beach;
 	}
-	hproc = myCreateChildProcess (code);
-	bool connected = false;
-	if (hproc) {
-		/* a separate thread is created that sets bStopPipeLoop once hproc terminates. */
-		bStopPipeLoop = FALSE;
-		CloseHandle (CreateThread (NULL, 0, WaitForProcThread, NULL, 0, NULL));
-		connected = ConnectNamedPipe (hPipeInOut, NULL) ? true : (GetLastError () == ERROR_PIPE_CONNECTED);
+	HANDLE hConnected = CreateEvent (NULL, TRUE, FALSE, NULL);
+	if (!hConnected) {
+		r_sys_perror ("lang_pipe_run/CreateEvent hConnected");
+		goto pipe_cleanup;
 	}
-	if (hproc && connected) {
-		/* lang_pipe_run_win has to run in the command thread to prevent deadlock. */
+	OVERLAPPED oConnect = { 0 };
+	oConnect.hEvent = hConnected;
+	hproc = myCreateChildProcess (code);
+	BOOL connected = FALSE;
+	if (hproc) {
+		connected = ConnectNamedPipe (hPipeInOut, &oConnect);
+		DWORD err = GetLastError ();
+		if (!connected && err != ERROR_PIPE_CONNECTED) {
+			if (err == ERROR_IO_PENDING) {
+				HANDLE hEvents[] = { hConnected, hproc };
+				DWORD dwEvent = WaitForMultipleObjects (R_ARRAY_SIZE (hEvents), hEvents,
+				                                        FALSE, INFINITE);
+				if (dwEvent == WAIT_OBJECT_0 + 1) { // hproc
+					goto cleanup;
+				} else if (dwEvent == WAIT_FAILED) {
+					r_sys_perror ("lang_pipe_run/WaitForMultipleObjects connect");
+					goto cleanup;
+				}
+				DWORD dummy;
+				connected = GetOverlappedResult (hPipeInOut, &oConnect, &dummy, TRUE);
+				err = GetLastError ();
+			}
+			if (!connected && err != ERROR_PIPE_CONNECTED) {
+				r_sys_perror ("lang_pipe_run/ConnectNamedPipe");
+				goto cleanup;
+			}
+		}
 		lang_pipe_run_win (lang);
 	}
+cleanup:
+	CloseHandle (hConnected);
+pipe_cleanup:
 	DeleteFile (r2pipe_paz_);
 	CloseHandle (hPipeInOut);
 beach:

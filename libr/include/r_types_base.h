@@ -2,6 +2,7 @@
 #define R2_TYPES_BASE_H
 
 #include <ctype.h>
+#include <sys/types.h>
 
 #define cut8 const unsigned char
 #define ut64 unsigned long long
@@ -50,7 +51,7 @@ typedef struct _ut256 {
 	ut128 Low;
 	ut128 High;
 } ut256;
-typedef struct _utX{
+typedef struct _utX {
 	ut80 v80;
 	ut96 v96;
 	ut128 v128;
@@ -69,8 +70,8 @@ typedef struct _utX{
 #undef UT64_MIN
 #undef UT32_MAX
 #undef UT32_MIN
-#define ST64_MAX 0x7FFFFFFFFFFFFFFFULL
-#define ST64_MIN (-ST64_MAX-1)
+#define ST64_MAX ((st64)0x7FFFFFFFFFFFFFFFULL)
+#define ST64_MIN ((st64)(-ST64_MAX-1))
 #define UT64_MAX 0xFFFFFFFFFFFFFFFFULL
 #define UT64_GT0 0x8000000000000000ULL
 #define UT64_LT0 0x7FFFFFFFFFFFFFFFULL
@@ -97,6 +98,18 @@ typedef struct _utX{
 #define ASCII_MIN 32
 #define ASCII_MAX 127
 
+#if SSIZE_MAX == ST32_MAX
+#define SZT_MAX  UT32_MAX
+#define SZT_MIN  UT32_MIN
+#define SSZT_MAX  ST32_MAX
+#define SSZT_MIN  ST32_MIN
+#else
+#define SZT_MAX  UT64_MAX
+#define SZT_MIN  UT64_MIN
+#define SSZT_MAX  ST64_MAX
+#define SSZT_MIN  ST64_MIN
+#endif
+
 #define UT64_ALIGN(x) (x + (x - (x % sizeof (ut64))))
 #define UT32_ALIGN(x) (x + (x - (x % sizeof (ut32))))
 #define UT16_ALIGN(x) (x + (x - (x % sizeof (ut16))))
@@ -104,22 +117,29 @@ typedef struct _utX{
 #define UT32_LO(x) ((ut32)((x)&UT32_MAX))
 #define UT32_HI(x) ((ut32)(((ut64)(x))>>32)&UT32_MAX)
 
-/* preventive math overflow checks */
-#if !defined(SZT_ADD_OVFCHK)
-#define SZT_ADD_OVFCHK(x,y) ((SIZE_MAX - (x)) < (y))
+#define R_BETWEEN(x,y,z) (((y)>=(x)) && ((y)<=(z)))
+#define R_ROUND(x,y) ((x)%(y))?(x)+((y)-((x)%(y))):(x)
+#define R_DIM(x,y,z) (((x)<(y))?(y):((x)>(z))?(z):(x))
+#ifndef R_MAX_DEFINED
+#define R_MAX(x,y) (((x)>(y))?(x):(y))
+#define R_MAX_DEFINED
 #endif
-#define UT64_ADD_OVFCHK(x,y) ((UT64_MAX - (x)) < (y))
-#define UT32_ADD_OVFCHK(x,y) ((UT32_MAX - (x)) < (y))
-#define UT16_ADD_OVFCHK(x,y) ((UT16_MAX - (x)) < (y))
-#define UT8_ADD_OVFCHK(x,y) ((UT8_MAX - (x)) < (y))
+#ifndef R_MIN_DEFINED
+#define R_MIN(x,y) (((x)>(y))?(y):(x))
+#define R_MIN_DEFINED
+#endif
+#define R_ABS(x) (((x)<0)?-(x):(x))
+#define R_BTW(x,y,z) (((x)>=(y))&&((y)<=(z)))?y:x
+
+#include "r_types_overflow.h"
 
 /* copied from bithacks.h */
-#define B_IS_SET(x, n)   (((x) & (1ULL<<(n)))?1:0)
-#define B_SET(x, n)      ((x) |= (1ULL<<(n)))
-#define B_EVEN(x)        (((x)&1)==0)
+#define B_IS_SET(x, n)   (((x) & (1ULL << (n)))? 1: 0)
+#define B_SET(x, n)      ((x) |= (1ULL << (n)))
+#define B_EVEN(x)        (((x) & 1) == 0)
 #define B_ODD(x)         (!B_EVEN((x)))
-#define B_UNSET(x, n)    ((x) &= ~(1ULL<<(n)))
-#define B_TOGGLE(x, n)   ((x) ^= (1ULL<<(n)))
+#define B_UNSET(x, n)    ((x) &= ~(1ULL << (n)))
+#define B_TOGGLE(x, n)   ((x) ^= (1ULL << (n)))
 
 #define B1111 15
 #define B1110 14

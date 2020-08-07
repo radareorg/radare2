@@ -267,6 +267,12 @@ static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 		if (strstr (io->runprofile, R_SYS_DIR ".rarun2.")) {
 			(void)r_file_rm (io->runprofile);
 		}
+	} else if (io->envprofile) {
+		if (!r_run_parse (rp, io->envprofile)) {
+			eprintf ("Can't parse default rarun2 profile\n");
+			r_run_free (rp);
+			return NULL;
+		}
 	}
 	if (bits == 64) {
 		r_run_parseline (rp, expr=strdup ("bits=64"));
@@ -299,7 +305,6 @@ static void handle_posix_redirection(RRunProfile *rp, posix_spawn_file_actions_t
 
 // __UNIX__ (not windows)
 static int fork_and_ptraceme_for_mac(RIO *io, int bits, const char *cmd) {
-	bool runprofile = io->runprofile && *(io->runprofile);
 	pid_t p = -1;
 	char **argv;
 	posix_spawn_file_actions_t fileActions;
@@ -324,51 +329,6 @@ static int fork_and_ptraceme_for_mac(RIO *io, int bits, const char *cmd) {
 	ps_flags |= POSIX_SPAWN_CLOEXEC_DEFAULT;
 	ps_flags |= POSIX_SPAWN_START_SUSPENDED;
 #define _POSIX_SPAWN_DISABLE_ASLR 0x0100
-	if (!runprofile) {
-		int ret, useASLR = io->aslr;
-		char *_cmd = io->args
-			? r_str_appendf (strdup (cmd), " %s", io->args)
-			: strdup (cmd);
-		argv = r_str_argv (_cmd, NULL);
-		if (!argv) {
-			free (_cmd);
-			return -1;
-		}
-		if (!*argv) {
-			r_str_argv_free (argv);
-			free (_cmd);
-			eprintf ("Invalid execvp\n");
-			return -1;
-		}
-		if (useASLR != -1) {
-			if (!useASLR) {
-				ps_flags |= _POSIX_SPAWN_DISABLE_ASLR;
-			}
-		}
-		(void)posix_spawnattr_setflags (&attr, ps_flags);
-#if __x86_64__
-		if (bits == 32) {
-			cpu = CPU_TYPE_I386;
-			// cpu |= CPU_ARCH_ABI64;
-		}
-#endif
-		posix_spawnattr_setbinpref_np (&attr, 1, &cpu, &copied);
-		{
-			char *dst = r_file_readlink (argv[0]);
-			if (dst) {
-				argv[0] = dst;
-			}
-		}
-		// XXX: this is a workaround to fix spawning programs with spaces in path
-		r_str_arg_unescape (argv[0]);
-
-		ret = posix_spawnp (&p, argv[0], &fileActions, &attr, argv, NULL);
-		handle_posix_error (ret);
-		posix_spawn_file_actions_destroy (&fileActions);
-		r_str_argv_free (argv);
-		free (_cmd);
-		return p;
-	}
 	int ret;
 	argv = r_str_argv (cmd, NULL);
 	if (!argv) {
@@ -407,65 +367,34 @@ static int fork_and_ptraceme_for_mac(RIO *io, int bits, const char *cmd) {
 typedef struct fork_child_data_t {
 	RIO *io;
 	int bits;
-	bool runprofile;
 	const char *cmd;
 } fork_child_data;
 
 static void fork_child_callback(void *user) {
 	fork_child_data *data = user;
-	if (data->runprofile) {
-		char **argv = r_str_argv (data->cmd, NULL);
-		if (!argv) {
-			exit (1);
-		}
-		RRunProfile *rp = _get_run_profile (data->io, data->bits, argv);
-		if (!rp) {
-			r_str_argv_free (argv);
-			exit (1);
-		}
-		trace_me ();
-		r_run_start (rp);
-		r_run_free (rp);
+	char **argv = r_str_argv (data->cmd, NULL);
+	if (!argv) {
+		exit (1);
+	}
+	r_sys_clearenv ();
+	RRunProfile *rp = _get_run_profile (data->io, data->bits, argv);
+	if (!rp) {
 		r_str_argv_free (argv);
 		exit (1);
-	} else {
-		char *_cmd = data->io->args ?
-					 r_str_appendf (strdup (data->cmd), " %s", data->io->args) :
-					 strdup (data->cmd);
-		trace_me ();
-		char **argv = r_str_argv (_cmd, NULL);
-		if (!argv) {
-			free (_cmd);
-			return;
-		}
-		if (argv && *argv) {
-			int i;
-			for (i = 3; i < 1024; i++) {
-				(void)close (i);
-			}
-			for (i = 0; argv[i]; i++) {
-				r_str_arg_unescape (argv[i]);
-			}
-			if (execvp (argv[0], argv) == -1) {
-				eprintf ("Could not execvp: %s\n", strerror (errno));
-				exit (MAGIC_EXIT);
-			}
-		} else {
-			eprintf ("Invalid execvp\n");
-		}
-		r_str_argv_free (argv);
-		free (_cmd);
 	}
+	trace_me ();
+	r_run_start (rp);
+	r_run_free (rp);
+	r_str_argv_free (argv);
+	exit (1);
 }
 
 static int fork_and_ptraceme_for_unix(RIO *io, int bits, const char *cmd) {
 	int ret, status, child_pid;
-	bool runprofile = io->runprofile && *(io->runprofile);
 	void *bed = NULL;
 	fork_child_data child_data;
 	child_data.io = io;
 	child_data.bits = bits;
-	child_data.runprofile = runprofile;
 	child_data.cmd = cmd;
 	child_pid = r_io_ptrace_fork (io, fork_child_callback, &child_data);
 	switch (child_pid) {

@@ -41,6 +41,19 @@ static void free_pdb_stream(void *stream) {
 	}
 }
 
+/**
+ * @brief Create a type name from offset
+ * 
+ * @param offset 
+ * @return char* Name or NULL if error
+ */
+static char *create_type_name_from_offset(ut64 offset) {
+	int offset_length = snprintf (NULL, 0, "type_0x%" PFMT64x, offset);
+	char *str = malloc (offset_length + 1);
+	snprintf (str, offset_length + 1, "type_0x%" PFMT64x, offset);
+	return str;
+}
+
 // static void pdb_stream_get_data(R_PDB_STREAM *pdb_stream, char *data)
 // {
 // int pos = stream_file_tell(&pdb_stream->stream_file);
@@ -72,7 +85,7 @@ static int init_r_pdb_stream(R_PDB_STREAM *pdb_stream, RBuffer *buf /*FILE *fp*/
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static int read_int_var(char *var_name, int *var, R_PDB *pdb) {
+static int read_int_var(char *var_name, int *var, RPdb *pdb) {
 	if (var) {
 		*var = 0;
 	}
@@ -97,7 +110,7 @@ static int count_pages(int length, int page_size) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amount,
+static int init_pdb7_root_stream(RPdb *pdb, int *root_page_list, int pages_amount,
 				 EStream indx, int root_size, int page_size) {
 	R_PDB_STREAM *pdb_stream = 0;
 	int tmp_data_max_size = 0;
@@ -320,7 +333,7 @@ static void find_indx_in_list(RList *l, int index, SStreamParseFunc **res) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static int pdb_read_root(R_PDB *pdb) {
+static int pdb_read_root(RPdb *pdb) {
 	int i = 0;
 	RList *pList = pdb->pdb_streams;
 	R_PDB7_ROOT_STREAM *root_stream = pdb->root_stream;
@@ -406,7 +419,7 @@ static int pdb_read_root(R_PDB *pdb) {
 	return 1;
 }
 
-static bool pdb7_parse(R_PDB *pdb) {
+static bool pdb7_parse(RPdb *pdb) {
 	char signature[PDB7_SIGNATURE_LEN + 1];
 	int num_root_index_pages = 0;
 	int *root_index_pages = 0;
@@ -511,7 +524,7 @@ error:
 	return false;
 }
 
-static void finish_pdb_parse(R_PDB *pdb) {
+static void finish_pdb_parse(RPdb *pdb) {
 	R_PDB7_ROOT_STREAM *p = pdb->root_stream;
 	RListIter *it;
 	SPage *page = 0;
@@ -604,471 +617,705 @@ static void finish_pdb_parse(R_PDB *pdb) {
 // printf("finish_pdb_parse()\n");
 }
 
-typedef enum EStates {
-	ePointerState,
-	eUnionState,
-	eStructState,
-	eMemberState,
-	eUnsignedState,
-	eTypeNameState,
-	eShortState,
-	eLongState,
-	eCharState,
-	eModifierState,
-	eEnumState,
-	eArrayState,
-	eOneMethodState,
-	eVoidState,
-	eDoubleState,
-	eBitfieldState,
-	eStateMax
-} EStates;
-
-///////////////////////////////////////////////////////////////////////////////
-static EStates convert_to_state(char *cstate) {
-	EStates state = eStateMax;
-
-	if (strstr (cstate, "member")) {
-		state = eMemberState;
-	} else if (strstr (cstate, "pointer")) {
-		state = ePointerState;
-	} else if (strstr (cstate, "union")) {
-		state = eUnionState;
-	} else if (strstr (cstate, "struct")) {
-		state = eStructState;
-	} else if (strstr (cstate, "unsigned")) {
-		state = eUnsignedState;
-	} else if (strstr (cstate, "short")) {
-		state = eShortState;
-	} else if (strstr (cstate, "long")) {
-		state = eLongState;
-	} else if (strstr (cstate, "char")) {
-		state = eCharState;
-	} else if (strstr (cstate, "modifier")) {
-		state = eModifierState;
-	} else if (strstr (cstate, "enum")) {
-		state = eEnumState;
-	} else if (strstr (cstate, "array")) {
-		state = eArrayState;
-	} else if (strstr (cstate, "onemethod")) {
-		state = eOneMethodState;
-	} else if (strstr (cstate, "void")) {
-		state = eVoidState;
-	} else if (strstr (cstate, "double")) {
-		state = eDoubleState;
-	} else if (strstr (cstate, "bitfield")) {
-		state = eBitfieldState;
-	}
-
-	return state;
+static SimpleTypeMode get_simple_type_mode (PDB_SIMPLE_TYPES type) {
+	ut32 value = type; // cast to unsigned for defined bitwise operations
+	/*   https://llvm.org/docs/PDB/TpiStream.html#type-indices
+        .---------------------------.------.----------.
+        |           Unused          | Mode |   Kind   |
+        '---------------------------'------'----------'
+        |+32                        |+12   |+8        |+0
+	*/
+	// because mode is only number between 0-7, 1 byte is enough
+	return (value & 0x00000000F0000);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-/// TODO: rewrite this ?!
-static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, char **name_field) {
-	EStates curr_state;
-	char *tmp = 0;
-	char *name = 0;
+static SimpleTypeKind get_simple_type_kind (PDB_SIMPLE_TYPES type) {
+	ut32 value = type; // cast to unsigned for defined bitwise operations
+	/*   https://llvm.org/docs/PDB/TpiStream.html#type-indices
+        .---------------------------.------.----------.
+        |           Unused          | Mode |   Kind   |
+        '---------------------------'------'----------'
+        |+32                        |+12   |+8        |+0
+	*/
+	return (value & 0x00000000000FF);
+}
 
-	tmp = strtok (type, " ");
-	while (tmp != NULL) {
-		curr_state = convert_to_state (tmp);
-		switch (curr_state) {
-		case eMemberState:
+/**
+ * @brief Maps simple type into a format string for `pf`
+ * 
+ * @param simple_type
+ * @param member_format pointer to assert member format to
+ * @return int -1 if it's unparsable, -2 if it should be skipped, 0 if all is correct
+ */
+static int simple_type_to_format (const SLF_SIMPLE_TYPE *simple_type, char **member_format) {
+	SimpleTypeMode mode = get_simple_type_mode (simple_type->simple_type);
+	switch (mode) {
+	case DIRECT: {
+		SimpleTypeKind kind = get_simple_type_kind (simple_type->simple_type);
+		switch (kind) {
+		case PDB_NONE:
+		case PDB_VOID:
+		case PDB_NOT_TRANSLATED:
+		case PDB_HRESULT:
+			return -1;
 			break;
-		case ePointerState:
-			if (res_field[pos] == 'p') {
-				return 1;
-			}
-			res_field[pos] = 'p';
+		case PDB_SIGNED_CHAR:
+		case PDB_NARROW_CHAR:
+			*member_format = "c";
 			break;
-		case eUnionState:
-		case eStructState:
-			res_field[pos] = '?';
-			tmp = strtok (NULL, " ");
-			name = (char *) malloc (strlen (tmp) + strlen (*name_field) + 1 + 2);
-			if (!name) {
-				return 0;
-			}
-			r_name_filter (tmp, -1);
-			r_name_filter (*name_field, -1);
-			strcpy (name, tmp);
+		case PDB_UNSIGNED_CHAR:
+			*member_format = "b";
+			break;
+		case PDB_SBYTE:
+			*member_format = "n1";
+			break;
+		case PDB_BOOL8:
+		case PDB_BYTE:
+			*member_format = "N1";
+			break;
+		case PDB_INT16_SHORT:
+		case PDB_INT16:
+			*member_format = "n2";
+			break;
+		case PDB_UINT16_SHORT:
+		case PDB_UINT16:
+		case PDB_WIDE_CHAR: // TODO what ideal format for wchar?
+		case PDB_CHAR16:
+		case PDB_BOOL16:
+			*member_format = "N2";
+			break;
+		case PDB_INT32_LONG:
+		case PDB_INT32:
+			*member_format = "n4";
+			break;
+		case PDB_UINT32_LONG:
+		case PDB_UINT32:
+		case PDB_CHAR32:
+		case PDB_BOOL32:
+			*member_format = "N4";
+			break;
+		case PDB_INT64_QUAD:
+		case PDB_INT64:
+			*member_format = "n8";
+			break;
+		case PDB_UINT64_QUAD:
+		case PDB_UINT64:
+		case PDB_BOOL64:
+			*member_format = "N8";
+			break;
+		// TODO these when formatting for them will exist
+		case PDB_INT128_OCT:
+		case PDB_UINT128_OCT:
+		case PDB_INT128:
+		case PDB_UINT128:
+		case PDB_BOOL128:
+			*member_format = "::::";
+			return -2;
+			////////////////////////////////////
+			// TODO these when formatting for them will exist
+			// I assume complex are made up by 2 floats
+		case PDB_COMPLEX16:
+			*member_format = "..";
+			return -2;
+		case PDB_COMPLEX32:
+		case PDB_COMPLEX32_PP:
+			*member_format = ":";
+			return -2;
+		case PDB_COMPLEX48:
+			*member_format = ":.";
+			return -2;
+		case PDB_COMPLEX64:
+			*member_format = "::";
+			return -2;
+		case PDB_COMPLEX80:
+			*member_format = "::..";
+			return -2;
+		case PDB_COMPLEX128:
+			*member_format = "::::";
+			return -2;
 
-			sprintf (name, "(%s)%s", tmp, *name_field);
-			free (*name_field);
-			*name_field = name;
-
-			return 1;
-		case eUnsignedState:
-			if (res_field[pos] == 'p') {
-				return 1;
-			}
-			res_field[pos] = 'u';
+		case PDB_FLOAT32:
+		case PDB_FLOAT32_PP:
+			*member_format = "f";
 			break;
-		case eShortState:
-			// TODO: where is short??
-			// where is unsigned not in hex??
-			// w word (2 bytes unsigned short in hex)
-			if (res_field[pos] == 'p') {
-				return 1;
-			}
-			res_field[pos] = 'w';
-			return 1;
-		case eCharState:
-			if (res_field[pos] == 'p') {
-				return 1;
-			}
-			if (res_field[pos] == 'u') {
-				res_field[pos] = 'b';
-			} else {
-				res_field[pos] = 'c';
-			}
-			return 1;
-		case eLongState:
-			if (res_field[pos] == 'p') {
-				return 1;
-			}
-			res_field[pos] = 'i';
-			return 1;
-		case eModifierState:
-			if (res_field[pos] == 'p') {
-				return 1;
-			}
-			res_field[pos] = 'w';
+		case PDB_FLOAT64:
+			*member_format = "F";
 			break;
-		case eEnumState:
-			if (res_field[pos] == 'p') {
-				return 1;
-			}
-			res_field[pos] = 'E';
-			tmp = strtok (NULL, " ");
-			name = (char *) malloc (strlen (tmp) + strlen (*name_field) + 1 + 2);
-			if (!name) {
-				return 0;
-			}
-			strcpy (name, tmp);
-			sprintf (name, "(%s)%s", tmp, *name_field);
-			free (*name_field);
-			*name_field = name;
-			return 1;
-// case eDoubleState:
-//// TODO: what is the flag for double in pf??
-// res_field[pos] = 'q';
-// return 1;
-		case eBitfieldState:
-			res_field[pos] = 'B';
-			tmp = strtok (NULL, " ");
-			name = (char *) malloc (strlen (tmp) + strlen (*name_field) + 1 + 2);
-			if (!name) {
-				return 0;
-			}
-			strcpy (name, tmp);
-			sprintf (name, "(%s)%s", tmp, *name_field);
-			free (*name_field);
-			*name_field = name;
-			return 1;
-		case eVoidState:
-		case eArrayState:
-		case eOneMethodState:
-			res_field[pos] = 'p';
-			return 1;
+			////////////////////////////////////
+			// TODO these when formatting for them will exist
+		case PDB_FLOAT16:
+			*member_format = "..";
+			return -2;
+		case PDB_FLOAT48:
+			*member_format = ":.";
+			return -2;
+		case PDB_FLOAT80:
+			*member_format = "::..";
+			return -2;
+		case PDB_FLOAT128:
+			*member_format = "::::";
+			return -2;
 		default:
-			if (((!strcmp (tmp, "to"))) ||
-			    (!strcmp (tmp, "nesttype")) ||
-			    (!strcmp (tmp, "mfunction")) ||
-			    (!strcmp (tmp, "proc")) ||
-			    (!strcmp (tmp, "arglist"))) {
-				break;
-			} else {
-				//eprintf ("There is no support for type \"%s\" in PF structs\n", tmp);
-				res_field[pos] = 'A';
-				return 0;
+			r_warn_if_reached ();
+			break;
+		}
+	} break;
+	case NEAR_POINTER:
+		*member_format = "p2";
+		break;
+	case FAR_POINTER:
+		*member_format = "p4";
+		break;
+	case HUGE_POINTER:
+		*member_format = "p4";
+		break;
+	case NEAR_POINTER32:
+		*member_format = "p4";
+		break;
+	case FAR_POINTER32:
+		*member_format = "p4";
+		break;
+	case NEAR_POINTER64:
+		*member_format = "p8";
+		break;
+	case NEAR_POINTER128:
+		*member_format = "p8::"; // TODO fix when support for 16 bytes
+		break;
+	default:
+		// unknown mode ??
+		r_warn_if_reached ();
+		return -1;
+	}
+	return 0;
+}
+
+/**
+ * @brief Creates the format string and puts it into format
+ * 
+ * @param type_info Information about the member type
+ * @param format buffer for the formatting string
+ * @param names buffer for the member names
+ * @return int -1 if it can't build the format
+ */
+static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *names) {
+	r_return_val_if_fail (type_info && format && names && type_info->type_info, -1);
+	// THOUGHT: instead of not doing anything for unknown types I can just skip the bytes
+	// format is 2 chars tops + null terminator
+
+	char *name = NULL;
+	if (type_info->get_name) {
+		type_info->get_name (type_info, &name);
+	}
+	if (!name) { // name should never be null, but malformed PDB exists
+		return -1;
+	}
+	name = r_str_sanitize_sdb_key (name);
+
+	SType *under_type = NULL;
+	if (type_info->leaf_type == eLF_MEMBER ||
+		type_info->leaf_type == eLF_NESTTYPE) {
+		if (type_info->get_index) {
+			type_info->get_index (type_info, (void **)&under_type);
+		} else {
+			r_warn_if_reached ();
+		}
+	} else if (type_info->leaf_type == eLF_METHOD ||
+		type_info->leaf_type == eLF_ONEMETHOD) {
+		return 0; // skip method member
+	} else {
+		r_warn_if_reached ();
+		return -1;
+	}
+	type_info = &under_type->type_data;
+
+	char *member_format = NULL;
+	char tmp_format[5] = { 0 }; // used as writable format buffer
+
+	switch (type_info->leaf_type) {
+	case eLF_SIMPLE_TYPE: {
+		int map_result = 0;
+		if ((map_result = simple_type_to_format (type_info->type_info, &member_format)) != 0) {
+			if (map_result == -1) { // unparsable
+				goto error;
+			} else if (map_result == -2) { // skip
+				goto skip;
 			}
 		}
+		r_strbuf_append (names, name);
+	} break;
+	case eLF_POINTER: {
+		int size = 4;
+		if (type_info->get_val) {
+			type_info->get_val (type_info, &size);
+		}
+		snprintf (tmp_format, 5, "p%d", size);
+		member_format = tmp_format;
+		r_strbuf_appendf (names, name);
+	} break;
+	case eLF_CLASS:
+	case eLF_UNION:
+	case eLF_STRUCTURE: {
+		member_format = "?";
+		char *field_name = NULL;
+		if (type_info->get_name) {
+			type_info->get_name (type_info, &field_name);
+		}
+		if (!field_name) {
+			field_name = create_type_name_from_offset (under_type->tpi_idx);
+		} else {
+			field_name = r_str_sanitize_sdb_key (field_name);
+		}
+		r_strbuf_appendf (names, "(%s)%s", field_name, name);
+		free (field_name);
+	} break;
+	// TODO complete the type with additional info
+	case eLF_BITFIELD: {
+		member_format = "B";
+		r_strbuf_appendf (names, "(uint)%s", name);
+	} break;
+	 // TODO complete the type with additional info
+	case eLF_ENUM: {
+		member_format = "E";
+		r_strbuf_appendf (names, "(int)%s", name);
+	} break;
+	case eLF_ARRAY: {
+		int size = 0;
+		if (type_info->get_val) {
+			type_info->get_val (type_info, &size);
+		}
+		snprintf (tmp_format, 5, "[%d]", size);
+		member_format = tmp_format;
+		r_strbuf_append (names, name); // TODO complete the type with additional info
+	} break;
 
-		tmp = strtok (NULL, " ");
+	default:
+		r_warn_if_reached (); // Unhandled type format
+		goto error;
 	}
 
-	return 1;
+	if (!member_format) {
+		r_warn_if_reached (); // Unhandled type format
+		goto error;
+	}
+	r_strbuf_appendf (format, "%s", member_format);
+skip: // shortcut for unknown types where we only skip the bytes
+	free (name);
+	return 0;
+error:
+	free (name);
+	return -1;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-void build_command_field(ELeafType lt, char **command_field) {
-	switch (lt) {
-	case eLF_STRUCTURE:
-	case eLF_UNION:
-		*command_field = (char *) malloc (strlen ("\"pf.") + 1);
-		if (!(*command_field)) {
+static inline bool is_printable_type(ELeafType type) {
+	return (type == eLF_STRUCTURE ||
+		type == eLF_UNION ||
+		type == eLF_ENUM ||
+		type == eLF_CLASS);
+}
+
+/**
+ * @brief Gets the name of the enum base type
+ * 
+ * @param type_info Enum TypeInfo
+ * @return char* name of the base type
+ */
+static char *get_enum_base_type_name(STypeInfo *type_info) {
+	char *base_type_name = NULL;
+	if (type_info->get_utype) {
+		SType *base_type = NULL;
+		type_info->get_utype (type_info, (void **)&base_type);
+		if (base_type && base_type->type_data.leaf_type == eLF_SIMPLE_TYPE) {
+			SLF_SIMPLE_TYPE *tmp = base_type->type_data.type_info;
+			base_type_name = tmp->type;
+		}
+	}
+	if (!base_type_name) {
+		base_type_name = "unknown_t";
+	}
+	return base_type_name;
+}
+
+/**
+ * @brief Prints out structure and class leaf types
+ * 
+ * @param name Name of the structure/class
+ * @param size Size of the structure/class
+ * @param members List of members
+ * @param printf Print function
+ */
+static void print_struct(const char *name, const int size, const RList *members, PrintfCallback printf) {
+	r_return_if_fail (name && printf);
+	printf ("struct %s { // size 0x%x\n", name, size);
+
+	RListIter *member_iter = r_list_iterator (members);
+	while (r_list_iter_next (member_iter)) {
+		STypeInfo *type_info = r_list_iter_get (member_iter);
+		char *member_name = NULL;
+		if (type_info->get_name) {
+			type_info->get_name (type_info, &member_name);
+		}
+		int offset = 0;
+		if (type_info->get_val) {
+			type_info->get_val (type_info, &offset);
+		}
+		char *type_name = NULL;
+		if (type_info->get_print_type) {
+			type_info->get_print_type (type_info, &type_name);
+		}
+		printf ("  %s %s; // offset +0x%x\n", type_name, member_name, offset);
+		R_FREE (type_name);
+	}
+	printf ("};\n");
+}
+
+/**
+ * @brief Prints out union leaf type
+ * 
+ * @param name Name of the union
+ * @param size Size of the union
+ * @param members List of members
+ * @param printf Print function
+ */
+static void print_union(const char *name, const int size, const RList *members, PrintfCallback printf) {
+	r_return_if_fail (name && printf);
+	printf ("union %s { // size 0x%x\n", name, size);
+
+	RListIter *member_iter = r_list_iterator (members);
+	while (r_list_iter_next (member_iter)) {
+		STypeInfo *type_info = r_list_iter_get (member_iter);
+		char *member_name = NULL;
+		if (type_info->get_name) {
+			type_info->get_name (type_info, &member_name);
+		}
+		int offset = 0;
+		if (type_info->get_val) {
+			type_info->get_val (type_info, &offset);
+		}
+		char *type_name = NULL;
+		if (type_info->get_print_type) {
+			type_info->get_print_type (type_info, &type_name);
+		}
+		printf ("  %s %s;\n", type_name, member_name);
+		R_FREE (type_name);
+	}
+	printf ("};\n");
+}
+
+/**
+ * @brief Prints out enum leaf type
+ * 
+ * @param name Name of the enum
+ * @param type type of the enum
+ * @param members List of cases
+ * @param printf Print function
+ */
+static void print_enum(const char *name, const char *type, const RList *members, PrintfCallback printf) {
+	r_return_if_fail (name && printf);
+	printf ("enum %s { // type: %s\n", name, type);
+
+	RListIter *member_iter = r_list_iterator (members);
+	while (r_list_iter_next (member_iter)) {
+		STypeInfo *type_info = r_list_iter_get (member_iter);
+		char *member_name = NULL;
+		if (type_info->get_name) {
+			type_info->get_name (type_info, &member_name);
+		}
+		int value = 0;
+		if (type_info->get_val) {
+			type_info->get_val (type_info, &value);
+		}
+		printf ("  %s = %d,\n", member_name, value);
+	}
+	printf ("};\n");
+}
+
+/**
+ * @brief Prints out types in a default format "idpi" command
+ * 
+ * @param pdb pdb structure for printing function
+ * @param types List of types
+ */
+static void print_types_regular(const RPdb *pdb, const RList *types) {
+	r_return_if_fail (pdb && types);
+	RListIter *it = r_list_iterator (types);
+
+	while (r_list_iter_next (it)) {
+		SType *type = r_list_iter_get (it);
+		STypeInfo *type_info = &type->type_data;
+		// skip unprintable types
+		if (!is_printable_type (type_info->leaf_type)) {
+			continue;
+		}
+		// skip forward references
+		if (type_info->is_fwdref) {
+			int is_fwdref = 0;
+			type_info->is_fwdref (type_info, &is_fwdref);
+			if (is_fwdref == 1) {
+				continue;
+			}
+		}
+		char *name = NULL;
+		if (type_info->get_name) {
+			type_info->get_name (type_info, &name);
+		}
+		int size = 0;
+		if (type_info->get_val) {
+			type_info->get_val (type_info, &size);
+		}
+		RList *members = NULL;
+		if (type_info->get_members) { // do we wanna print empty types?
+			type_info->get_members (type_info, &members);
+		}
+
+		switch (type_info->leaf_type) {
+		case eLF_CLASS:
+		case eLF_STRUCTURE:
+			print_struct (name, size, members, pdb->cb_printf);
+			break;
+		case eLF_UNION:
+			print_union (name, size, members, pdb->cb_printf);
+			break;
+		case eLF_ENUM:;
+			print_enum (name, get_enum_base_type_name (type_info), members, pdb->cb_printf);
+			break;
+		default:
+			// Unimplemented printing of printable type
+			r_warn_if_reached ();
 			break;
 		}
-		strcpy (*command_field, "\"pf.");
-		break;
-	case eLF_ENUM:
-		*command_field = (char *) malloc (strlen ("\"td enum ") + 1);
-		if (!(*command_field)) {
+	}
+}
+
+/**
+ * @brief Prints out types in a json format - "idpij" command
+ * 
+ * @param pdb pdb structure for printing function
+ * @param types List of types
+ */
+static void print_types_json(const RPdb *pdb, PJ *pj, const RList *types) {
+	r_return_if_fail (pdb && types && pj);
+
+	RListIter *it = r_list_iterator (types);
+	pj_ka (pj, "types");
+
+	while (r_list_iter_next (it)) {
+		SType *type = r_list_iter_get (it);
+		STypeInfo *type_info = &type->type_data;
+		// skip unprintable types
+		if (!is_printable_type (type_info->leaf_type)) {
+			continue;
+		}
+		// skip forward references
+		if (type_info->is_fwdref) {
+			int is_fwdref = 0;
+			type_info->is_fwdref (type_info, &is_fwdref);
+			if (is_fwdref == 1) {
+				continue;
+			}
+		}
+		// get the necessary type information
+		char *name = NULL;
+		if (type_info->get_name) {
+			type_info->get_name (type_info, &name);
+		}
+		int size = 0;
+		if (type_info->get_val) {
+			type_info->get_val (type_info, &size);
+		}
+		RList *members = NULL; // Should we print empty structures/enums?
+		if (type_info->get_members) {
+			type_info->get_members (type_info, &members);
+		}
+
+		// Maybe refactor these into their own functions aswell
+		switch (type_info->leaf_type) {
+		case eLF_CLASS:
+		case eLF_STRUCTURE:
+		case eLF_UNION: {
+			pj_o (pj);
+			pj_ks (pj, "type", "structure");
+			pj_ks (pj, "name", name);
+			pj_kn (pj, "size", size);
+			pj_ka (pj, "members");
+
+			if (members) {
+				RListIter *member_iter = r_list_iterator (members);
+				while (r_list_iter_next (member_iter)) {
+					pj_o (pj);
+					STypeInfo *type_info = r_list_iter_get (member_iter);
+					char *member_name = NULL;
+					if (type_info->get_name) {
+						type_info->get_name (type_info, &member_name);
+					}
+					int offset = 0;
+					if (type_info->get_val) {
+						type_info->get_val (type_info, &offset);
+					}
+					char *type_name = NULL;
+					if (type_info->get_print_type) {
+						type_info->get_print_type (type_info, &type_name);
+					}
+					pj_ks (pj, "member_type", type_name);
+					pj_ks (pj, "member_name", member_name);
+					pj_kN (pj, "offset", offset);
+					pj_end (pj);
+					R_FREE (type_name);
+				}
+			}
+			pj_end (pj);
+			pj_end (pj);
 			break;
 		}
-		strcpy (*command_field, "\"td enum ");
-		break;
-	default:
-		break;
-	}
-}
+		case eLF_ENUM: {
+			pj_o (pj);
+			pj_ks (pj, "type", "enum");
+			pj_ks (pj, "name", name);
+			pj_ks (pj, "base_type", get_enum_base_type_name (type_info));
+			pj_ka (pj, "cases");
 
-///////////////////////////////////////////////////////////////////////////////
-void build_name_field(char *name, char **name_field) {
-	if (name_field) {
-		*name_field = name? strdup (name): NULL;
-		r_name_filter (*name_field, -1);
-		r_str_replace_char (*name_field, ':', '_');
-	}
-}
-
-///////////////////////////////////////////////////////////////////////////////
-int build_flags_format_and_members_field(R_PDB *pdb, ELeafType lt, char *name, char *type,
-					 int i, int *pos, int offset, char *format_flags_field, char **members_field) {
-	switch (lt) {
-	case eLF_STRUCTURE:
-	case eLF_UNION:
-		members_field[i] = (char *) malloc (sizeof(char) * strlen (name) + 1);
-		if (!members_field[i]) {
-			return 0;
+			if (members) {
+				RListIter *member_iter = r_list_iterator (members);
+				while (r_list_iter_next (member_iter)) {
+					pj_o (pj);
+					STypeInfo *type_info = r_list_iter_get (member_iter);
+					char *member_name = NULL;
+					if (type_info->get_name) {
+						type_info->get_name (type_info, &member_name);
+					}
+					int value = 0;
+					if (type_info->get_val) {
+						type_info->get_val (type_info, &value);
+					}
+					pj_ks (pj, "enum_name", member_name);
+					pj_kn (pj, "enum_val", value);
+					pj_end (pj);
+				}
+			}
+			pj_end (pj);
+			pj_end (pj);
+			break;
 		}
-		strcpy (members_field[i], name);
-		if (build_format_flags (pdb, type, *pos, format_flags_field, &members_field[i]) == 0) {
-			return 0;
+		default:
+			// Unimplemented printing of printable type
+			r_warn_if_reached ();
+			break;
 		}
-		*pos = *pos + 1;
-		break;
-	case eLF_ENUM:
-		members_field[i] = r_str_newf ("%s=0x%"PFMT64x, name, offset);
-#if 0
-		members_field[i] = (char *) malloc (sizeof(char) * strlen (name) + 8 + 1 + 1);	// 8 - hex int, 1 - =
-		if (!members_field[i]) {
-			return 0;
-		}
-		sprintf (members_field[i], "%s=%08X", name, offset);
-#endif
-		break;
-	default:
-		return 0;
 	}
-
-	return 1;
+	pj_end (pj);
 }
 
-int alloc_format_flag_and_member_fields(RList *ptmp, char **flags_format_field, int *members_amount, char ***members_name_field) {
-	int i = 0, size = 0;
+/**
+ * @brief Creates pf commands from PDB types - "idpi*" command
+ * 
+ * @param pdb pdb structure for printing function
+ * @param types List of types
+ */
+static void print_types_format(const RPdb *pdb, const RList *types) {
+	r_return_if_fail (pdb && types);
+	RListIter *it = r_list_iterator (types);
+	bool to_free_name = false;
+	while (r_list_iter_next (it)) {
+		SType *type = r_list_iter_get (it);
+		STypeInfo *type_info = &type->type_data;
+		// skip unprintable types and enums
+		if (!is_printable_type (type_info->leaf_type) || type_info->leaf_type == eLF_ENUM) {
+			continue;
+		}
+		// skip forward references
+		if (type_info->is_fwdref) {
+			int is_fwdref = 0;
+			type_info->is_fwdref (type_info, &is_fwdref);
+			if (is_fwdref == 1) {
+				continue;
+			}
+		}
+		char *name = NULL;
+		if (type_info->get_name) {
+			type_info->get_name (type_info, &name);
+		}
+		if (!name) {
+			name = create_type_name_from_offset (type->tpi_idx);
+			to_free_name = true;
+		}
+		int size = 0;
+		if (type_info->get_val) {
+			type_info->get_val (type_info, &size);
+		}
+		RList *members = NULL;
+		if (type_info->get_members) {
+			type_info->get_members (type_info, &members);
+		}
+		// pf.name <format chars> <member names>
+		RStrBuf format;
+		r_strbuf_init (&format);
+		RStrBuf member_names;
+		r_strbuf_init (&member_names);
 
-	RListIter *it2 = r_list_iterator (ptmp);
-	while (r_list_iter_next (it2)) {
-		(void) r_list_iter_get (it2);
-		*members_amount = *members_amount + 1;
-	}
-	if (!*members_amount) {
-		return 0;
-	}
-	*flags_format_field = (char *) malloc (*members_amount + 1);
-	memset (*flags_format_field, 0, *members_amount + 1);
+		if (type_info->leaf_type == eLF_UNION) {
+			r_strbuf_append (&format, "0");	 // every type start from the offset 0
+		}
 
-	size = sizeof *members_name_field * (*members_amount);
-	*members_name_field = (char **) malloc (size);
-	for (i = 0; i < *members_amount; i++) {
-		(*members_name_field)[i] = 0;
+		RListIter *member_iter = r_list_iterator (members);
+		while (r_list_iter_next (member_iter)) {
+			STypeInfo *member_info = r_list_iter_get (member_iter);
+			switch (type_info->leaf_type) {
+			case eLF_STRUCTURE:
+			case eLF_CLASS:
+			case eLF_UNION:
+				if (build_member_format (member_info, &format, &member_names) == -1) { // if failed
+					goto fail; // skip to the next one, we can't build format from this
+				}
+				break;
+			default:
+				r_warn_if_reached ();
+			}
+			r_strbuf_append (&member_names, " ");
+		}
+		if (format.len == 0) { // if it has no members, it's useless for us then?
+			goto fail;
+		}
+		char *sanitized_name = r_str_sanitize_sdb_key (name);
+		pdb->cb_printf ("pf.%s %s %s\n", sanitized_name, r_strbuf_get (&format), r_strbuf_get (&member_names));
+
+		if (to_free_name) { // name can be generated or part of the PDB data
+			R_FREE (name);
+		}
+		R_FREE (sanitized_name);
+		r_strbuf_fini (&format);
+		r_strbuf_fini (&member_names);
+
+	fail: // if we can't print whole type correctly, don't print at all
+		if (to_free_name) {
+			R_FREE (name);
+		}
+		r_strbuf_fini (&format);
+		r_strbuf_fini (&member_names);
 	}
-	return 1;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// TODO: need refactor
-static void print_types(R_PDB *pdb, int mode) {
-	ELeafType lt = eLF_MAX;
-	char *command_field = 0;
-	char *name_field = 0;
-	char *flags_format_field = 0;	// format for struct
-	char **members_name_field = 0;
-	char *type = 0;
-	int members_amount = 0;
-	int i = 0;
-	int pos = 0;
-	char sym = ' ';
-	int is_first = 1;
-	char *name = NULL;
-	int val = 0;
-	int offset = 0;
-	SType *t = 0;
-	STypeInfo *tf = 0;
-	RListIter *it = 0, *it2 = 0;
-	RList *plist = pdb->pdb_streams, *ptmp = NULL;
+/**
+ * @brief Prints out all the type information in regular,json or pf format
+ * 
+ * @param pdb PDB information
+ * @param mode printing mode
+ */
+static void print_types(const RPdb *pdb, PJ *pj, const int mode) {
+	RList *plist = pdb->pdb_streams;
 	STpiStream *tpi_stream = r_list_get_n (plist, ePDB_STREAM_TPI);
 
 	if (!tpi_stream) {
 		eprintf ("There is no tpi stream in current pdb\n");
 		return;
 	}
-
-	if (mode == 'j') {
-		pdb->cb_printf ("{\"%s\":[", "types");
-	}
-
-	it = r_list_iterator (tpi_stream->types);
-	while (r_list_iter_next (it)) {
-		pos = 0;
-		i = 0;
-		members_amount = 0;
-		val = 0;
-		t = (SType *) r_list_iter_get (it);
-		tf = &t->type_data;
-		lt = tf->leaf_type;
-		if ((tf->leaf_type == eLF_STRUCTURE) || (tf->leaf_type == eLF_UNION) || (tf->leaf_type == eLF_ENUM)) {
-			if (tf->is_fwdref) {
-				tf->is_fwdref (tf, &val);
-				if (val == 1) {
-					continue;
-				}
-			}
-			if ((mode == 'j') && (is_first == 0)) {
-				pdb->cb_printf (",");
-			}
-			is_first = 0;
-			if (tf->get_name) {
-				tf->get_name (tf, &name);
-			}
-			// val for STRUCT or UNION mean size
-			if (tf->get_val) {
-				tf->get_val (tf, &val);
-			}
-			if (tf->get_members) {
-				tf->get_members (tf, &ptmp);
-			}
-			// pdb->cb_printf ("%s: size 0x%x\n", name, val);
-			switch (mode) {
-			case 'd': pdb->cb_printf ("%s: size 0x%x\n", name, val); break;
-			case 'r':
-				build_command_field (lt, &command_field);
-				build_name_field (name, &name_field);
-				if (!alloc_format_flag_and_member_fields (ptmp, &flags_format_field,
-					    &members_amount, &members_name_field)) {
-					goto err;
-				}
-				break;
-			case 'j':
-				switch (lt) {
-				case eLF_ENUM:
-					pdb->cb_printf ("{\"type\":\"%s\", \"name\":\"%s\",\"%s\":[",
-						"enum", name, "enums");
-					break;
-				case eLF_STRUCTURE:
-				case eLF_UNION:
-					pdb->cb_printf ("{\"type\":\"%s\",\"name\":\"%s\",\"size\":%d,\"%s\":[",
-						"structure", name, val, "members");
-					break;
-				default:
-					continue;
-				}
-
-				break;
-			}
-
-			it2 = r_list_iterator (ptmp);
-			while (r_list_iter_next (it2)) {
-				if ((mode == 'j') && (i)) {
-					pdb->cb_printf (",");
-				}
-				tf = (STypeInfo *) r_list_iter_get (it2);
-				if (tf->get_name) {
-					tf->get_name (tf, &name);
-				}
-				if (tf->get_val) {
-					tf->get_val (tf, &offset);
-				} else {
-					offset = 0;
-				}
-				if (tf->get_print_type) {
-					tf->get_print_type (tf, &type);
-				}
-				switch (mode) {
-				case 'd':
-					pdb->cb_printf ("  0x%x: %s type:", offset, name);
-					pdb->cb_printf ("%s\n", type);
-					break;
-				case 'r':
-					if (!build_flags_format_and_members_field (pdb, lt, name, type, i,
-						    &pos, offset, flags_format_field, members_name_field)) {
-						R_FREE (type);
-						goto err;
-					}
-					break;
-				case 'j':	// JSON
-					switch (lt) {
-					case eLF_ENUM:
-						pdb->cb_printf ("{\"%s\":\"%s\",\"%s\":%d}",
-							"enum_name", name, "enum_val", offset);
-						break;
-					case eLF_STRUCTURE:
-					case eLF_UNION:
-						pdb->cb_printf ("{\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":%d}",
-							"member_type", type + strlen ("(member)") + 1,
-							"member_name", name, "offset", offset);
-						break;
-					default:
-						break;
-					}
-					break;
-				}
-				R_FREE (type);
-				i++;
-			}
-
-			if (mode == 'r') {
-				r_name_filter (name_field, -1);
-				pdb->cb_printf ("%s%s ", command_field, name_field);
-				if (lt != eLF_ENUM) {
-					pdb->cb_printf ("%s ", flags_format_field);
-				} else {
-					pdb->cb_printf ("%c ", '{');
-				}
-				sym = (lt == eLF_ENUM)? ',': ' ';
-				for (i = 0; i < members_amount; i++) {
-					char *eq = (lt == eLF_ENUM) ? strchr (members_name_field[i], '=') : NULL;
-					r_name_filter2 (members_name_field[i]);
-					if (eq) {
-						*eq = '=';
-					}
-					pdb->cb_printf ("%s", members_name_field[i]);
-					if ((i + 1) != members_amount) {
-						pdb->cb_printf ("%c", sym);
-					}
-				}
-				if (lt == eLF_ENUM) {
-					pdb->cb_printf (" };\"\n");
-				} else {
-					pdb->cb_printf ("\"\n");
-				}
-			}
-			if (mode == 'j') {
-				pdb->cb_printf ("]}");
-			}
-err:
-			if (mode == 'r') {
-				R_FREE (command_field);
-				R_FREE (name_field);
-				R_FREE (flags_format_field);
-				for (i = 0; i < members_amount; i++) {
-					R_FREE (members_name_field[i]);
-				}
-				R_FREE (members_name_field);
-			}
-		}
-	}
-
-	if (mode == 'j') {
-		pdb->cb_printf ("]}");
+	switch (mode) {
+	case 'd': print_types_regular (pdb, tpi_stream->types); return;
+	case 'j': print_types_json (pdb, pj, tpi_stream->types); return;
+	case 'r': print_types_format (pdb, tpi_stream->types); return;
 	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
+static void print_gvars(RPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	SStreamParseFunc *omap = 0, *sctns = 0, *sctns_orig = 0, *gsym = 0, *tmp = 0;
 	SIMAGE_SECTION_HEADER *sctn_header = 0;
 	SGDATAStream *gsym_data_stream = 0;
@@ -1077,7 +1324,6 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 	RListIter *it = 0;
 	RList *l = 0;
 	char *name;
-	int is_first = 1;
 
 	l = pdb->pdb_streams2;
 	it = r_list_iterator (l);
@@ -1104,15 +1350,16 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 		eprintf ("There is no global symbols in current PDB.\n");
 		return;
 	}
+
 	if (format == 'j') {
-		pdb->cb_printf ("{\"%s\":[", "gvars");
+		pj_ka (pj, "gvars");
 	}
-	gsym_data_stream = (SGDATAStream *) gsym->stream;
+	gsym_data_stream = (SGDATAStream *)gsym->stream;
 	if ((omap != 0) && (sctns_orig != 0)) {
-		pe_stream = (SPEStream *) sctns_orig->stream;
+		pe_stream = (SPEStream *)sctns_orig->stream;
 	} else {
 		if (sctns) {
-			pe_stream = (SPEStream *) sctns->stream;
+			pe_stream = (SPEStream *)sctns->stream;
 		}
 	}
 	if (!pe_stream) {
@@ -1120,11 +1367,11 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 	}
 	it = r_list_iterator (gsym_data_stream->globals_list);
 	while (r_list_iter_next (it)) {
-		gdata = (SGlobal *) r_list_iter_get (it);
+		gdata = (SGlobal *)r_list_iter_get (it);
 		sctn_header = r_list_get_n (pe_stream->sections_hdrs, (gdata->segment - 1));
 		if (sctn_header) {
 			name = r_bin_demangle_msvc (gdata->name.name);
-			name = (name)? name: strdup (gdata->name.name);
+			name = (name) ? name : strdup (gdata->name.name);
 			if (name && format != 'd') {
 				char *_name = name;
 				name = r_name_filter2 (_name);
@@ -1132,47 +1379,42 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 			}
 			switch (format) {
 			case 2:
-			case 'j':	// JSON
-				if (!is_first) {
-					pdb->cb_printf (",");
-				}
-				pdb->cb_printf ("{\"%s\":%d,\"%s\":%d,\"%s\":\"%.*s\",\"%s\":\"%s\"}",
-					"address", (ut64) (img_base + omap_remap ((omap)? (omap->stream): 0, gdata->offset + sctn_header->virtual_address)),
-					"symtype", gdata->symtype,
-					"section_name", PDB_SIZEOF_SECTION_NAME, sctn_header->name,
-					"gdata_name", name);
+			case 'j': // JSON
+				pj_o (pj);
+				pj_kN (pj, "address", (img_base + omap_remap ((omap) ? (omap->stream) : 0, gdata->offset + sctn_header->virtual_address)));
+				pj_kN (pj, "symtype", gdata->symtype);
+				pj_ks (pj, "section_name", sctn_header->name);
+				pj_ks (pj, "gdata_name", name);
+				pj_end (pj);
 				break;
 			case 1:
 			case '*':
 			case 'r':
-				pdb->cb_printf ("f pdb.%s = 0x%"PFMT64x " # %d %.*s\n",
+				pdb->cb_printf ("f pdb.%s = 0x%" PFMT64x " # %d %.*s\n",
 					name,
-					(ut64) (img_base + omap_remap ((omap)? (omap->stream): 0,
-							gdata->offset + sctn_header->virtual_address)),
+					(ut64) (img_base + omap_remap ((omap) ? (omap->stream) : 0, gdata->offset + sctn_header->virtual_address)),
 					gdata->symtype, PDB_SIZEOF_SECTION_NAME, sctn_header->name);
 				break;
 			case 'd':
 			default:
-				pdb->cb_printf ("0x%08"PFMT64x "  %d  %.*s  %s\n",
-					(ut64) (img_base + omap_remap ((omap)? (omap->stream): 0,
-							gdata->offset + sctn_header->virtual_address)),
+				pdb->cb_printf ("0x%08" PFMT64x "  %d  %.*s  %s\n",
+					(ut64) (img_base + omap_remap ((omap) ? (omap->stream) : 0, gdata->offset + sctn_header->virtual_address)),
 					gdata->symtype, PDB_SIZEOF_SECTION_NAME, sctn_header->name, name);
 				break;
 			}
 			free (name);
 		} else {
 			//eprintf ("Skipping %s, segment %d does not exist\n",
-				//gdata->name.name, (gdata->segment - 1));
+			//gdata->name.name, (gdata->segment - 1));
 		}
-		is_first = 0;
 	}
 	if (format == 'j') {
-		pdb->cb_printf ("]}");
+		pj_end (pj);
 	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-R_API bool init_pdb_parser_with_buf(R_PDB *pdb, RBuffer* buf) {
+R_API bool init_pdb_parser_with_buf(RPdb *pdb, RBuffer* buf) {
 	char *signature = NULL;
 	int bytes_read = 0;
 
@@ -1222,7 +1464,7 @@ error:
 	return false;
 }
 
-R_API bool init_pdb_parser(R_PDB *pdb, const char *filename) {
+R_API bool init_pdb_parser(RPdb *pdb, const char *filename) {
 	RBuffer *buf = r_buf_new_slurp (filename);
 	if (!buf) {
 		eprintf ("%s: Error reading file \"%s\"\n", __func__, filename);

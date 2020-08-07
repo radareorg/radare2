@@ -1,3 +1,4 @@
+#include "r_anal.h"
 static int hack_handle_dp_reg(ut32 insn, RAnalOp *op) {
 	const bool op0 = (insn >> 30) & 0x1;
 	const bool op1 = (insn >> 28) & 0x1;
@@ -119,6 +120,29 @@ static int hack_handle_dp_imm(ut32 insn, RAnalOp *op) {
 	return -1;
 }
 
+static int hack_handle_br_exc_sys(ut32 insn, RAnalOp *op) {
+	const ut8 op0 = (insn >> 29) & 0x7;
+	const ut16 op1 = (insn >> 12) & 0x3fff;
+	ut8 op2 = insn & 0x1f;
+
+	// Hints
+	if (op0 == 6 && op1 == 4146 && op2 == 31) {
+		const ut8 CRm = (insn >> 8) & 0xf;
+		op2 = (insn >> 5) & 0x7;
+		if (CRm == 4 && (op2 & 1) == 0) {
+			switch (op2) {
+			case 0:
+			case 2:
+			case 4:
+			case 6:
+				op->type = R_ANAL_OP_TYPE_CMP;
+				return op->size = 4;
+			}
+		}
+	}
+	return -1;
+}
+
 static inline int hackyArmAnal(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	int ret = -1;
 	ut32 *insn = (ut32 *)buf;
@@ -154,6 +178,11 @@ static inline int hackyArmAnal(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 			// addg, subg
 			ret = hack_handle_dp_imm (*insn, op);
 			break;
+		case 10:
+		case 11:
+			// bti
+			ret = hack_handle_br_exc_sys (*insn, op);
+			break;
 		// Loads and Stores
 		case 4:
 		case 6:
@@ -167,7 +196,7 @@ static inline int hackyArmAnal(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 		}
 
 		if (ret > 0) {
-			op->family = R_ANAL_OP_FAMILY_MTE;
+			op->family = R_ANAL_OP_FAMILY_SECURITY;
 		}
 
 	}

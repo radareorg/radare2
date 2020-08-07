@@ -110,6 +110,12 @@
 #define LIBC_HAVE_PLEDGE 0
 #endif
 
+#if __sun
+#define LIBC_HAVE_PRIV_SET 1
+#else
+#define LIBC_HAVE_PRIV_SET 0
+#endif
+
 #ifdef __GNUC__
 #  define UNUSED_FUNCTION(x) __attribute__((__unused__)) UNUSED_ ## x
 #else
@@ -380,19 +386,6 @@ static inline void *r_new_copy(int size, void *data) {
 #endif
 #endif
 
-#define R_BETWEEN(x,y,z) (((y)>=(x)) && ((y)<=(z)))
-#define R_ROUND(x,y) ((x)%(y))?(x)+((y)-((x)%(y))):(x)
-#define R_DIM(x,y,z) (((x)<(y))?(y):((x)>(z))?(z):(x))
-#ifndef R_MAX_DEFINED
-#define R_MAX(x,y) (((x)>(y))?(x):(y))
-#define R_MAX_DEFINED
-#endif
-#ifndef R_MIN_DEFINED
-#define R_MIN(x,y) (((x)>(y))?(y):(x))
-#define R_MIN_DEFINED
-#endif
-#define R_ABS(x) (((x)<0)?-(x):(x))
-#define R_BTW(x,y,z) (((x)>=(y))&&((y)<=(z)))?y:x
 
 #define R_FREE(x) { free((void *)x); x = NULL; }
 
