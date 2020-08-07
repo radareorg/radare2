@@ -539,14 +539,14 @@ static vmi_class_type_info *create_vmi_class_type(ut64 vtable_addr, char *name, 
  * @return class_type_info* NULL if not even default class RTTI could be parsed or error
  */
 static class_type_info *raw_rtti_parse(RVTableContext *context, ut64 vtable_addr, ut64 rtti_addr) {
-		/* RTTI
+		/*
 		rtti_ptr   ----->  |                  vptr                |
 		                   |--------------------------------------|
 		                   |               type_name              |
-		                   |--------------------------------------| ----- enough for __class_type_info
-		                   |  __class_type_info *base_type        | ----- enough for __si_class_type_info
-		                   |--------------------------------------|
-		                   |              uint flags              | // must be atleast 16bits, it's 32 bit for 64-bit Itanium ABI
+		                   |--------------------------------------| --- enough for __class_type_info
+		                   |  __class_type_info *base_type        | 
+		                   |--------------------------------------| --- enough for __si_class_type_info
+		                   |              uint flags              | --- must be atleast 16bits, it's 32 bit for 64-bit Itanium ABI
 		                   |--------------------------------------|
 		                   |           uint base_count            |
 		                   |--------------------------------------|
