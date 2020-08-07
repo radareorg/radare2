@@ -32,8 +32,8 @@ avra~vmi:0
 EOF
 EXPECT=<<EOF
 A
-B
-C
+B: A
+C: A
 D: B, C
   virtual_0 @ 0xa235 (vtable + 0x0)
   virtual_4 @ 0xa24f (vtable + 0x4)
@@ -71,8 +71,8 @@ avra~vmi:0
 EOF
 EXPECT=<<EOF
 A
-B
-C
+B: A
+C: A
 D: B, C
   virtual_0 @ 0x100005f1c (vtable + 0x0)
   virtual_8 @ 0x100005f44 (vtable + 0x8)
@@ -110,8 +110,8 @@ avra~vmi:0
 EOF
 EXPECT=<<EOF
 A
-B
-C
+B: A
+C: A
 D: B, C
   virtual_0 @ 0x100005f50 (vtable + 0x0)
   virtual_8 @ 0x100005f7c (vtable + 0x8)
