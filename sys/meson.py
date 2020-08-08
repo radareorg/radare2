@@ -259,6 +259,8 @@ def main():
         sys.exit(1)
     if not args.prefix:
         args.prefix = os.path.join(ROOT, args.dir, 'priv_install_dir')
+    else:
+        args.prefix = os.path.abspath(args.prefix)
     for option in args.options:
         if '=' not in option:
             log.error('Invalid option: %s', option)
