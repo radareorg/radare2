@@ -64,10 +64,12 @@ def set_global_variables():
     log.debug('Meson: %s', MESON)
     log.debug('Version: %s', version)
 
-def meson(command, builddir=None, prefix=None, backend=None,
+def meson(command, rootdir=None, builddir=None, prefix=None, backend=None,
           release=False, shared=None, *, options=[]):
     """[R_API] Invoke meson"""
     cmd = MESON + [command]
+    if rootdir:
+        cmd.append(rootdir)
     if builddir:
         cmd.append(builddir)
     if prefix:
