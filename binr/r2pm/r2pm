@@ -98,7 +98,7 @@ R2PM_ETCD="${R2CONFIGHOME}/radare2rc.d"
 
 # TODO. support system plugin installs R2PM_PLUGDIR="${R2PM_SYSLIBDIR}/radare2/last"
 if [ -z "${R2PM_GITDIR}" ]; then
-	R2PM_GITDIR="${R2PM_USRDIR}/git/"
+	R2PM_GITDIR="${R2PM_USRDIR}/git"
 fi
 if [ -z "${R2PM_DBDIR}" ]; then
 	if [ -d "${R2DATAHOME}/r2pm/db" ]; then
@@ -570,7 +570,6 @@ case "$1" in
 		while [ -n "$2" ]; do
 			echo "Cleaning $2..."
 			FILE="$(pkgFilePath "$2")"
-			R2PM_CLEAN_GITDIR=1
 			if [ -f "${FILE}" ]; then
 				NAME="$2"
 				ACTION=clean
@@ -582,17 +581,13 @@ case "$1" in
 				RC=1
 			fi
 
-			if [ "${R2PM_CLEAN_GITDIR}" = 1 ]; then
-				if [ -d "${R2PM_GITDIR}/$2" ]; then
-					echo "Cleaning up ${R2PM_GITDIR}/$2..."
-					rm -rf "${R2PM_GITDIR}/$2"
-				elif [ -d "${R2PM_GITDIR}/$2.git" ]; then
-					echo "Cleaning up ${R2PM_GITDIR}/$2.git..."
-					rm -rf "${R2PM_GITDIR}/$2.git"
-				else
-					echo "Cannot find $2 or $2.git in ${R2PM_GITDIR}"
-					RC=1
-				fi
+			[ -z "${R2PM_CLEAN_GITDIR}" ] && R2PM_CLEAN_GITDIR="$2"
+			if [ -d "${R2PM_GITDIR}/${R2PM_CLEAN_GITDIR}" ]; then
+				echo "Cleaning up ${R2PM_GITDIR}/${R2PM_CLEAN_GITDIR}..."
+				rm -rf "${R2PM_GITDIR}/${R2PM_CLEAN_GITDIR}"
+			else
+				echo "Cannot find ${R2PM_CLEAN_GITDIR} in ${R2PM_GITDIR}"
+				RC=1
 			fi
 			shift
 		done
