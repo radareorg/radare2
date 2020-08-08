@@ -257,10 +257,7 @@ def main():
     if args.xp and args.backend in 'vs2019':
         log.error('--xp is not compatible with --backend vs2019')
         sys.exit(1)
-    if os.name == 'nt' and args.install and os.path.exists(args.install):
-        log.error('%s already exists', args.install)
-        sys.exit(1)
-    if os.name == 'nt' and not args.prefix:
+    if not args.prefix:
         args.prefix = os.path.join(ROOT, args.dir, 'priv_install_dir')
     for option in args.options:
         if '=' not in option:
