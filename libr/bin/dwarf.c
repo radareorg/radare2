@@ -192,7 +192,7 @@ static const char *dwarf_attr_encodings[] = {
 	[DW_AT_recursive] = "DW_AT_recursive",
 	[DW_AT_signature] = "DW_AT_signature",
 	[DW_AT_main_subprogram] = "DW_AT_main_subprogram",
-	[DW_AT_data_big_offset] = "DW_AT_data_big_offset",
+	[DW_AT_data_bit_offset] = "DW_AT_data_big_offset",
 	[DW_AT_const_expr] = "DW_AT_const_expr",
 	[DW_AT_enum_class] = "DW_AT_enum_class",
 	[DW_AT_linkage_name] = "DW_AT_linkage_name",
@@ -387,6 +387,7 @@ static void line_header_fini(RBinDwarfLineHeader *hdr) {
 		free (hdr->file_names);
 	}
 }
+
 // Parses source file header of DWARF version <= 4
 static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const ut8 *buf_end,
 	RBinDwarfLineHeader *hdr, Sdb *sdb, int mode, PrintfCallback print) {
@@ -479,8 +480,11 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 					hdr->file_names[count].mod_time = mod_time;
 					hdr->file_names[count].file_len = file_len;
 				}
-				free (comp_dir);
-				free (pinclude_dir);
+				if (comp_dir) {
+					R_FREE (include_dir);
+					R_FREE (comp_dir);
+				}
+				R_FREE (pinclude_dir);
 			}
 			count++;
 			if (mode == R_MODE_PRINT && i) {
@@ -782,7 +786,7 @@ static const ut8 *parse_spec_opcode(
 		// line line-range information. move away
 		return NULL;
 	}
-	advance_adr = adj_opcode / hdr->line_range;
+	advance_adr = (adj_opcode / hdr->line_range) * hdr->min_inst_len;
 	regs->address += advance_adr;
 	int line_increment =  hdr->line_base + (adj_opcode % hdr->line_range);
 	regs->line += line_increment;
@@ -886,8 +890,8 @@ static const ut8 *parse_std_opcode(
 		break;
 	case DW_LNS_const_add_pc:
 		adj_opcode = 255 - hdr->opcode_base;
-		if (hdr->line_range > 0) {
-			op_advance = adj_opcode / hdr->line_range;
+		if (hdr->line_range > 0) { // to dodge division by zero
+			op_advance = (adj_opcode / hdr->line_range) * hdr->min_inst_len;
 		} else {
 			op_advance = 0;
 		}
@@ -1038,13 +1042,14 @@ static int parse_line_raw(const RBin *a, const ut8 *obuf,
 			line_header_fini (&hdr);
 			return false;
 		}
+		size_t tmp_read = 0;
 		// we read the whole compilation unit (that might be composed of more sequences)
 		do {
 			// reads one whole sequence
-			size_t tmp_read = parse_opcodes (a, buf, buf_size, &hdr, &regs, mode);
+			tmp_read = parse_opcodes (a, buf, buf_end - buf, &hdr, &regs, mode);
 			bytes_read += tmp_read;
 			buf += tmp_read; // Move in the buffer forward
-		} while (bytes_read < buf_size);
+		} while (bytes_read < buf_size && tmp_read != 0); // if nothing is read -> error, exit
 
 		line_header_fini (&hdr);
 	}
@@ -1481,7 +1486,7 @@ static void print_debug_info(const RBinDwarfDebugInfo *inf, PrintfCallback print
 		dies = inf->comp_units[i].dies;
 
 		for (j = 0; j < inf->comp_units[i].count; j++) {
-			print ("    Abbrev Number: %-4" PFMT64u " ", dies[j].abbrev_code);
+			print ("<0x%"PFMT64x">: Abbrev Number: %-4" PFMT64u " ", dies[j].offset,dies[j].abbrev_code);
 
 			if (is_printable_tag (dies[j].tag)) {
 				print ("(%s)\n", dwarf_tag_name_encodings[dies[j].tag]);
@@ -1646,7 +1651,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 			value->string.content =
 				strdup ((const char *)(debug_str + value->string.offset));
 		} else {
-			value->string.content = NULL;
+			value->string.content = NULL; // Means malformed DWARF, should we print error message?
 		}
 		break;
 	// offset in .debug_info
@@ -1826,6 +1831,10 @@ static const ut8 *parse_comp_unit(Sdb *sdb, const ut8 *buf_start,
 			expand_cu (unit);
 		}
 		RBinDwarfDie *die = &unit->dies[unit->count];
+
+		// add header size to the offset;
+		die->offset = buf - buf_start + unit->hdr.header_size + unit->offset;
+		die->offset += unit->hdr.is_64bit ? 12 : 4;
 		// DIE starts with ULEB128 with the abbreviation code
 		ut64 abbr_code;
 		buf = r_uleb128 (buf, buf_end - buf, &abbr_code);
@@ -1854,6 +1863,7 @@ static const ut8 *parse_comp_unit(Sdb *sdb, const ut8 *buf_start,
 			return NULL; // error
 		}
 		die->tag = abbrev->tag;
+		die->has_children = abbrev->has_children;
 
 		buf = parse_die (buf, buf_end, abbrev, &unit->hdr, die, debug_str, debug_str_len, sdb);
 		if (!buf) {

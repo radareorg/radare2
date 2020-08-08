@@ -1,6 +1,6 @@
 NAME=dbg.stepback
 FILE=bins/elf/analysis/ls-linux-x86_64-zlul
-ARGS=-d
+ARGS=-d -e dbg.bpsysign=true
 CMDS=<<EOF
 db main
 db 0x004028fe
@@ -8,10 +8,15 @@ dc
 dts+
 dc
 dsb
-dr rip
+dsb
+dr rbx,rcx,rdx,r12,rip
 dk 9
 EOF
 EXPECT=<<EOF
+0x00000001
+0x00000001
+0x00000001
+0x00404870
 0x004028f9
 EOF
 RUN
@@ -19,26 +24,37 @@ RUN
 NAME=debug stepback from callee
 FILE=bins/elf/analysis/calls_x64
 ARGS=-d
-BROKEN=1
 CMDS=<<EOF
 db main
 db 0x0040052f
 dc
 dts+
 dc
+dr rax,rbx,rcx,r10,rbp,rip
 dsb
-dr rip
+dsb
+dr rax,rbx,rcx,r10,rbp,rip
 dk 9
 EOF
 EXPECT=<<EOF
+0x00400574
+0x00000000
+0x00400590
+0x00000003
+0x00400590
+0x0040052f
+0x00400574
+0x00000000
+0x00400590
+0x00000003
+0x00400590
 0x00400575
 EOF
 RUN
 
 NAME=debug stepback from caller
 FILE=bins/elf/analysis/calls_x64
-ARGS=-d
-BROKEN=1
+ARGS=-d -e dbg.bpsysign=true
 CMDS=<<EOF
 db main
 db 0x0040057c
@@ -46,10 +62,10 @@ dc
 dts+
 dc
 dsb
+dsb
 dr rip
 EOF
 EXPECT=<<EOF
 0x0040053b
-Hello world
 EOF
 RUN

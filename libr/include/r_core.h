@@ -331,6 +331,9 @@ typedef struct r_core_t {
 	RList *ropchain;
 	bool use_tree_sitter_r2cmd;
 
+	bool marks_init;
+	ut64 marks[UT8_MAX + 1];
+
 	RMainCallback r_main_radare2;
 	// int (*r_main_radare2)(int argc, char **argv);
 	int (*r_main_rafind2)(int argc, const char **argv);
@@ -658,7 +661,7 @@ R_API int r_core_bin_set_by_name (RCore *core, const char *name);
 R_API int r_core_bin_reload(RCore *core, const char *file, ut64 baseaddr);
 R_API bool r_core_bin_load(RCore *core, const char *file, ut64 baseaddr);
 R_API int r_core_bin_rebase(RCore *core, ut64 baddr);
-R_API void r_core_bin_export_info_rad(RCore *core);
+R_API void r_core_bin_export_info(RCore *core, int mode);
 R_API int r_core_bin_list(RCore *core, int mode);
 R_API bool r_core_bin_delete (RCore *core, ut32 binfile_idx);
 R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name);
@@ -739,7 +742,7 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 R_API int r_core_bin_set_arch_bits (RCore *r, const char *name, const char * arch, ut16 bits);
 R_API int r_core_bin_update_arch_bits (RCore *r);
 R_API char *r_core_bin_method_flags_str(ut64 flags, int mode);
-R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode);
+R_API bool r_core_pdb_info(RCore *core, const char *file, int mode);
 
 /* rtr */
 R_API int r_core_rtr_cmds (RCore *core, const char *port);

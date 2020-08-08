@@ -106,9 +106,13 @@ R_API bool r_run_parse(RRunProfile *pf, const char *profile) {
 		return false;
 	}
 	r_str_replace_char (str, '\r',0);
-	for (p = str; (o = strchr (p, '\n')); p = o) {
-		*o++ = 0;
+	p = str;
+	while (p) {
+		if ((o = strchr (p, '\n'))) {
+			*o++ = 0;
+		}
 		r_run_parseline (pf, p);
+		p = o;
 	}
 	free (str);
 	return true;
@@ -379,13 +383,12 @@ static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err)
 }
 
 static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
-	r_return_val_if_fail (cmd, 0);
 #if __APPLE__ && !__POWERPC__
 	//XXX handle this in other layer since things changes a little bit
 	//this seems like a really good place to refactor stuff
 	return 0;
 #else
-	if (!*cmd) {
+	if (!cmd || !*cmd) {
 		return 0;
 	}
 	if (cmd[0] == '"') {
@@ -1125,7 +1128,7 @@ R_API int r_run_start(RRunProfile *p) {
 #if __UNIX__
 		// XXX HACK close all non-tty fds
 		{ int i;
-			for (i = 3; i < 10; i++) {
+			for (i = 3; i < 1024; i++) {
 				close (i);
 			}
 		}

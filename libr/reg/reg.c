@@ -332,9 +332,12 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 }
 
 R_API RList *r_reg_get_list(RReg *reg, int type) {
+	if (type == R_REG_TYPE_ALL) {
+		return reg->allregs;
+	}
+
 	RList *regs;
 	int i, mask;
-
 	if (type < 0 || type > (R_REG_TYPE_LAST - 1)) {
 		return NULL;
 	}

@@ -4,6 +4,7 @@
 #include <r_lib.h>
 #include <capstone/capstone.h>
 #include "../arch/arm/asm-arm.h"
+#include "./asm_arm_hacks.inc"
 
 bool arm64ass(const char *str, ut64 addr, ut32 *op);
 static csh cd = 0;
@@ -91,6 +92,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (!buf) {
 		goto beach;
 	}
+	int haa = hackyArmAsm (a, op, buf, len);
+	if (haa > 0) {
+		return haa;
+	}
+
 	n = cs_disasm (cd, buf, R_MIN (4, len), a->pc, 1, &insn);
 	if (n < 1 || insn->size < 1) {
 		ret = -1;

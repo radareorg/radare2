@@ -78,11 +78,37 @@ cat .test.c
 if [ -z "${CC}" ]; then
 	CC=gcc
 fi
+
+# static pkg-config linking test
+echo "[*] Static building with pkg-config..."
+PKG_CONFIG_FLAGS=`
+PKG_CONFIG_PATH="${PWD}/r2-static/usr/lib/pkgconfig" \
+pkg-config \
+  --define-variable="libdir=${PWD}/r2-static/usr/lib" \
+  --define-variable="prefix=${PWD}/r2-static/usr" \
+  --static --cflags --libs r_core
+`
+
+set -x
+${CC} .test.c ${PKG_CONFIG_FLAGS} -o r2-pkgcfg-static
+res=$?
+set +x
+if [ $res = 0 ]; then
+	echo SUCCESS
+	rm a.out
+else
+	echo FAILURE
+fi
+
+echo "[*] Static building with libr.a..."
+set -x
 ${CC} .test.c \
 	${CFLAGS} \
-	-I r2-static/usr/include/libr \
+	-I ${PWD}/r2-static/usr/include/libr \
+	-I ${PWD}/r2-static/usr/include/libr/sdb \
 	r2-static/usr/lib/libr.a ${LDFLAGS}
 res=$?
+set +x
 if [ $res = 0 ]; then
 	echo SUCCESS
 	rm a.out

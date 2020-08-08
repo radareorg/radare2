@@ -6,7 +6,7 @@
 #include "r_core.h"
 #include "r_util.h"
 #include "r_types.h"
-#include "sdb/sdb.h"
+#include <sdb.h>
 
 char *getcommapath(RCore *core);
 
@@ -20,7 +20,7 @@ static const char *help_msg_C[] = {
 	"CC!", " [@addr]", "edit comment with $EDITOR",
 	"CC", "[?] [-] [comment-text] [@addr]", "add/remove comment",
 	"CC.", "[addr]", "show comment in current address",
-	"CCa", "[-at]|[at] [text] [@addr]", "add/remove comment at given address",
+	"CCa", "[+-] [addr] [text]", "add/remove comment at given address",
 	"CCu", " [comment-text] [@addr]", "add unique comment",
 	"CF", "[sz] [fcn-sign..] [@addr]", "function signature",
 	"CL", "[-][*] [file:line] [addr]", "show or add 'code line' information (bininfo)",
@@ -605,6 +605,10 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	char *t = 0, *p, *p2, name[256];
 	int repeat = 1;
 	ut64 addr = core->offset;
+
+	if (!type) {
+		return 0;
+	}
 
 	switch (input[1]) {
 	case '?':

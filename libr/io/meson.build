@@ -94,6 +94,7 @@ pkgconfig_mod.generate(r_io,
   version: r2_version,
   name: 'r_io',
   filebase: 'r_io',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util',
     'r_socket'

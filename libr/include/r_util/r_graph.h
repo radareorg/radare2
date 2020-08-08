@@ -7,6 +7,15 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Generic graph node info
+ */
+typedef struct r_anal_graph_node_info_t {
+	char *title;
+	char *body;
+	ut64 offset;
+} RGraphNodeInfo;
+
 typedef struct r_graph_node_t {
 	unsigned int idx;
 	void *data;
@@ -64,6 +73,8 @@ R_API bool r_graph_adjacent(const RGraph *g, const RGraphNode *from, const RGrap
 R_API void r_graph_dfs_node(RGraph *g, RGraphNode *n, RGraphVisitor *vis);
 R_API void r_graph_dfs_node_reverse(RGraph *g, RGraphNode *n, RGraphVisitor *vis);
 R_API void r_graph_dfs(RGraph *g, RGraphVisitor *vis);
+R_API void r_graph_free_node_info(void *ptr);
+R_API RGraphNodeInfo *r_graph_create_node_info(char *title, char *body, ut64 offset);
 
 #ifdef __cplusplus
 }

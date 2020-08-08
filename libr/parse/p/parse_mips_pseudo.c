@@ -265,34 +265,43 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	const bool ucase = IS_UPPER (*tstr);
 	RAnalVarField *var;
 	r_list_foreach (spargs, iter, var) {
-		if (p->get_ptr_at) {
-			st64 delta = p->get_ptr_at (f, var->delta, addr);
-			if (delta != ST64_MAX) {
-				var->delta = delta;
-			}
+		st64 delta = p->get_ptr_at
+			? p->get_ptr_at (f, var->delta, addr)
+			: ST64_MAX;
+		if (delta == ST64_MAX && var->field) {
+			delta = var->delta;
+		} else if (delta == ST64_MAX) {
+			continue;
+		}
+		const char *reg = NULL;
+		if (p->get_reg_at) {
+			reg = p->get_reg_at (f, var->delta, addr);
+		}
+		if (!reg) {
+			reg = anal->reg->name[R_REG_NAME_SP];
 		}
 		char *tmpf;
 		//TODO: honor asm pseudo
-		if (var->delta < 10) {
+		if (R_ABS (delta) < 10) {
 			tmpf = "%d(%s)";
-		} else if (var->delta > 0) {
+		} else if (delta > 0) {
 			tmpf = "0x%x(%s)";
 		} else {
 			tmpf = "-0x%x(%s)";
 		}
-		oldstr = r_str_newf (tmpf, r_num_abs(var->delta), anal->reg->name[R_REG_NAME_SP]);
+		oldstr = r_str_newf (tmpf, R_ABS (delta), reg);
 		if (ucase) {
 			char *comma = strchr (oldstr, ',');
-                        if (comma) {
-                                *comma = 0;
-                                r_str_case (oldstr, true);
-                                *comma = ',';
-                        }
-                }
+			if (comma) {
+				*comma = 0;
+				r_str_case (oldstr, true);
+				*comma = ',';
+			}
+		}
 		if (strstr (tstr, oldstr)) {
-			char *newstr = (p->localvar_only) ? r_str_newf ("(%s)", var->name):
-				r_str_newf ("%s%s(%s)", var->delta > 0 ? "" : "-",
-						var->name, anal->reg->name[R_REG_NAME_SP]);
+			char *newstr = (p->localvar_only)
+				? r_str_newf ("(%s)", var->name)
+				: r_str_newf ("%s%s(%s)", delta > 0 ? "" : "-", var->name, reg);
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);
 			free (newstr);
 			free (oldstr);
@@ -301,34 +310,48 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		free (oldstr);
 	}
 	r_list_foreach (bpargs, iter, var) {
-                char *tmpf = NULL;
-                if (var->delta < 10) {
-                        tmpf = "%d(%s)";
-                } else if (var->delta > 0) {
-                        tmpf = "0x%x(%s)";
-                } else {
-                        tmpf = "-0x%x(%s)";
-                }
-                oldstr = r_str_newf (tmpf, r_num_abs (var->delta),
-			anal->reg->name[R_REG_NAME_BP]);
-                if (ucase) {
-                        char *comma = strchr (oldstr, ',');
-                        if (comma) {
-                                *comma = 0;
-                                r_str_case (oldstr, true);
-                                *comma = ',';
-                        }
-                }
-                if (strstr (tstr, oldstr)) {
-                        char *newstr = (p->localvar_only) ? r_str_newf ("(%s)", var->name):
-				r_str_newf ("%s%s(%s)", var->delta > 0 ? "" : "-",
-						var->name, anal->reg->name[R_REG_NAME_SP]);
-                        tstr = r_str_replace (tstr, oldstr, newstr, 1);
-                        free (newstr);
-                        free (oldstr);
-                        break;
-                }
-                free (oldstr);
+		char *tmpf = NULL;
+		st64 delta = p->get_ptr_at
+			? p->get_ptr_at (f, var->delta, addr)
+			: ST64_MAX;
+		if (delta == ST64_MAX && var->field) {
+			delta = var->delta + f->bp_off;
+		} else if (delta == ST64_MAX) {
+			continue;
+		}
+		const char *reg = NULL;
+		if (p->get_reg_at) {
+			reg = p->get_reg_at (f, var->delta, addr);
+		}
+		if (!reg) {
+			reg = anal->reg->name[R_REG_NAME_BP];
+		}
+		if (R_ABS (delta) < 10) {
+			tmpf = "%d(%s)";
+		} else if (delta > 0) {
+			tmpf = "0x%x(%s)";
+		} else {
+			tmpf = "-0x%x(%s)";
+		}
+		oldstr = r_str_newf (tmpf, R_ABS (delta), reg);
+		if (ucase) {
+			char *comma = strchr (oldstr, ',');
+			if (comma) {
+				*comma = 0;
+				r_str_case (oldstr, true);
+				*comma = ',';
+			}
+		}
+		if (strstr (tstr, oldstr)) {
+			char *newstr = (p->localvar_only)
+				? r_str_newf ("(%s)", var->name)
+				: r_str_newf ("%s%s(%s)", delta > 0 ? "" : "-", var->name, reg);
+			tstr = r_str_replace (tstr, oldstr, newstr, 1);
+			free (newstr);
+			free (oldstr);
+			break;
+		}
+		free (oldstr);
 	}
 	bool ret = true;
 	if (len > strlen (tstr)) {

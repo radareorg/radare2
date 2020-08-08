@@ -522,6 +522,7 @@ static bool var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, RList *list
 			RAnalVarField *field = R_NEW0 (RAnalVarField);
 			field->name = new_name;
 			field->delta = av->delta + field_offset;
+			field->field = true;
 			r_list_append (list, field);
 			free (field_type);
 			free (field_key);
@@ -545,7 +546,7 @@ static const char *get_regname(RAnal *anal, RAnalValue *value) {
 	return name;
 }
 
-static char *get_varname(RAnalFunction *fcn, char kind, const char *pfx, int ptr) {
+R_API R_OWN char *r_anal_function_autoname_var(RAnalFunction *fcn, char kind, const char *pfx, int ptr) {
 	void **it;
 	const ut32 uptr = R_ABS (ptr);
 	char *varname = r_str_newf ("%s_%xh", pfx, uptr);
@@ -712,7 +713,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			if (anal->opt.varname_stack) {
 				varname = r_str_newf ("%s_%xh", pfx, R_ABS (frame_off));
 			} else {
-				varname = get_varname (fcn, type, pfx, ptr);
+				varname = r_anal_function_autoname_var (fcn, type, pfx, ptr);
 			}
 		}
 		if (varname) {
@@ -732,7 +733,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 		char *varname = anal->opt.varname_stack
 			? r_str_newf ("%s_%xh", VARPREFIX, R_ABS (frame_off))
-			: get_varname (fcn, type, VARPREFIX, -ptr);
+			: r_anal_function_autoname_var (fcn, type, VARPREFIX, -ptr);
 		if (varname) {
 			RAnalVar *var = r_anal_function_set_var (fcn, frame_off, type, NULL, anal->bits / 8, false, varname);
 			if (var) {
@@ -745,10 +746,39 @@ beach:
 	free (esil_buf);
 }
 
-static bool is_reg_in_src (const char *regname, RAnal *anal, RAnalOp *op);
+static bool is_reg_in_src(const char *regname, RAnal *anal, RAnalOp *op);
+
+static inline bool op_affect_dst(RAnalOp* op) {
+	switch (op->type) {
+	case R_ANAL_OP_TYPE_ADD:
+	case R_ANAL_OP_TYPE_SUB:
+	case R_ANAL_OP_TYPE_MUL:
+	case R_ANAL_OP_TYPE_DIV:
+	case R_ANAL_OP_TYPE_SHR:
+	case R_ANAL_OP_TYPE_SHL:
+	case R_ANAL_OP_TYPE_SAL:
+	case R_ANAL_OP_TYPE_SAR:
+	case R_ANAL_OP_TYPE_OR:
+	case R_ANAL_OP_TYPE_AND:
+	case R_ANAL_OP_TYPE_XOR:
+	case R_ANAL_OP_TYPE_NOR:
+	case R_ANAL_OP_TYPE_NOT:
+	case R_ANAL_OP_TYPE_ROR:
+	case R_ANAL_OP_TYPE_ROL:
+	case R_ANAL_OP_TYPE_CAST:
+		return true;
+	default:
+		return false;
+	}
+}
+
+#define STR_EQUAL(s1, s2) (s1 && s2 && !strcmp (s1, s2))
+
+static inline bool arch_destroys_dst(const char *arch) {
+	return (STR_EQUAL (arch, "arm") || STR_EQUAL (arch, "riscv") || STR_EQUAL (arch, "ppc"));
+}
 
 static bool is_used_like_arg(const char *regname, const char *opsreg, const char *opdreg, RAnalOp *op, RAnal *anal) {
-	#define STR_EQUAL(s1, s2) (s1 && s2 && !strcmp (s1, s2))
 	RAnalValue *dst = op->dst;
 	RAnalValue *src = op->src[0];
 	switch (op->type) {
@@ -779,14 +809,11 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 		}
 		//fallthrough
 	default:
-		if ((op->type == R_ANAL_OP_TYPE_ADD || op->type == R_ANAL_OP_TYPE_SUB
-			|| op->type == R_ANAL_OP_TYPE_MUL || op->type == R_ANAL_OP_TYPE_DIV) &&
-			(STR_EQUAL (anal->cur->arch, "arm") || STR_EQUAL (anal->cur->arch, "riscv"))) {
+		if (op_affect_dst (op) && arch_destroys_dst (anal->cur->arch)) {
 			if (is_reg_in_src (regname, anal, op)) {
 				return true;
-			} else if (STR_EQUAL (opdreg, regname)) {
-				return false;
 			}
+			return false;
 		}
 		return ((STR_EQUAL (opdreg, regname)) || (is_reg_in_src (regname, anal, op)));
 	}

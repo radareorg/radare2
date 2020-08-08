@@ -2,511 +2,232 @@
 
 #include <r_debug.h>
 
-R_API void r_debug_session_free(void *p) {
-	RDebugSession *session = (RDebugSession *) p;
-	free (session->comment);
-	free (session);
-}
-
-static int r_debug_session_lastid(RDebug *dbg) {
-	return r_list_length (dbg->sessions);
-}
-
-R_API void r_debug_session_list(RDebug *dbg) {
-	ut32 count = 0;
-	RListIter *iterse, *itersn, *iterpg;
-	RDebugSnap *snap;
-	RDebugSnapDiff *diff;
-	RDebugSession *session;
-	RPageData *page;
-
-	r_list_foreach (dbg->sessions, iterse, session) {
-		count = 0;
-		dbg->cb_printf ("session:%2d   at:0x%08"PFMT64x "   \"%s\"\n", session->key.id, session->key.addr, session->comment);
-		r_list_foreach (session->memlist, itersn, diff) {
-			snap = diff->base;
-			dbg->cb_printf ("  - %d 0x%08"PFMT64x " - 0x%08"PFMT64x " size: %d ",
-				count, snap->addr, snap->addr_end, snap->size);
-			dbg->cb_printf ("(pages: ");
-			r_list_foreach (diff->pages, iterpg, page) {
-				dbg->cb_printf ("%d ", page->page_off);
-			}
-			dbg->cb_printf (")\n");
-			count++;
-		}
+R_API void r_debug_session_free(RDebugSession *session) {
+	if (session) {
+		r_vector_free (session->checkpoints);
+		ht_up_free (session->registers);
+		ht_up_free (session->memory);
+		R_FREE (session);
 	}
 }
 
-R_API RDebugSession *r_debug_session_add(RDebug *dbg, RListIter **tail) {
-	RDebugSession *session;
-	RDebugSnapDiff *diff;
-	RListIter *iter;
-	RDebugMap *map;
-	ut64 addr;
-	int i, perms = R_PERM_RW;
+static void r_debug_checkpoint_fini(void *element, void *user) {
+	RDebugCheckpoint *checkpoint = element;
+	r_list_free (checkpoint->snaps);
+}
 
-	addr = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-	/* Session has already existed at this addr? */
-	r_list_foreach (dbg->sessions, iter, session) {
-		if (session->key.addr == addr) {
-			if (tail) {
-				*tail = iter;
-			}
-			return session;
-		}
-	}
+static void htup_vector_free(HtUPKv *kv) {
+	r_vector_free (kv->value);
+}
 
-	session = R_NEW0 (RDebugSession);
+R_API RDebugSession *r_debug_session_new(RDebug *dbg) {
+	RDebugSession *session = R_NEW0 (RDebugSession);
 	if (!session) {
 		return NULL;
 	}
 
-	session->key = (RDebugKey) {
-		addr, r_debug_session_lastid (dbg)
-	};
-	session->comment = r_str_new ("");
-
-	/* save current registers */
-	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 0);
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		session->reg[i] = r_list_tail (dbg->reg->regset[i].pool);
+	session->checkpoints = r_vector_new (sizeof (RDebugCheckpoint), r_debug_checkpoint_fini, NULL);
+	if (!session->checkpoints) {
+		r_debug_session_free (session);
+		return NULL;
 	}
-	r_reg_arena_push (dbg->reg);
-
-	/* save memory snapshots */
-	session->memlist = r_list_newf ((RListFree)r_debug_diff_free);
-
-	r_debug_map_sync (dbg);
-	r_list_foreach (dbg->maps, iter, map) {
-		if (!perms || (map->perm & perms) == perms) {
-			diff = r_debug_snap_map (dbg, map);
-			if (diff) {
-				/* Add diff history */
-				r_list_append (session->memlist, diff);
-			}
-		}
+	session->registers = ht_up_new (NULL, htup_vector_free, NULL);
+	if (!session->registers) {
+		r_debug_session_free (session);
+		return NULL;
+	}
+	session->memory = ht_up_new (NULL, htup_vector_free, NULL);
+	if (!session->memory) {
+		r_debug_session_free (session);
+		return NULL;
 	}
 
-	r_list_append (dbg->sessions, session);
-	if (tail) {
-		*tail = dbg->sessions->tail;
-	}
 	return session;
 }
 
-R_API bool r_debug_session_delete(RDebug *dbg, int idx) {
-	RListIter *iter;
-	RDebugSession *session;
-	if (idx == -1) {
-		r_list_free (dbg->sessions);
-		dbg->sessions = r_list_newf ((RListFree)r_debug_session_free);
-		return true;
-	}
-	r_list_foreach (dbg->sessions, iter, session) {
-		if (session->key.id == idx) {
-			r_list_delete (dbg->sessions, iter);
-			return true;
-		}
-	}
-	return false;
-}
+R_API bool r_debug_add_checkpoint(RDebug *dbg) {
+	r_return_val_if_fail (dbg->session, false);
+	size_t i;
+	RDebugCheckpoint checkpoint = { 0 };
 
-R_API bool r_debug_session_comment(RDebug *dbg, int idx, const char *msg) {
-	RDebugSession *session;
-	RListIter *iter;
-	ut32 count = 0;
-	if (!dbg || idx < 0 || !msg || !*msg) {
+	// Save current registers arena iter
+	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 0);
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		checkpoint.reg[i] = r_list_tail (dbg->reg->regset[i].pool);
+	}
+	r_reg_arena_push (dbg->reg);
+
+	// Save current memory maps
+	checkpoint.snaps = r_list_newf ((RListFree)r_debug_snap_free);
+	if (!checkpoint.snaps) {
 		return false;
 	}
-	r_list_foreach (dbg->sessions, iter, session) {
-		if (count == idx) {
-			if (session->comment) {
-				free (session->comment);
+	RListIter *iter;
+	RDebugMap *map;
+	r_debug_map_sync (dbg);
+	r_list_foreach (dbg->maps, iter, map) {
+		if ((map->perm & R_PERM_RW) == R_PERM_RW) {
+			RDebugSnap *snap = r_debug_snap_map (dbg, map);
+			if (snap) {
+				r_list_append (checkpoint.snaps, snap);
 			}
-			session->comment = strdup (r_str_trim_head_ro (msg));
-			break;
 		}
-		count++;
 	}
+
+	checkpoint.cnum = dbg->session->cnum;
+	r_vector_push (dbg->session->checkpoints, &checkpoint);
+
+	// Add PC register change so we can check for breakpoints when continue [back]
+	RRegItem *ripc = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
+	ut64 data = r_reg_get_value (dbg->reg, ripc);
+	r_debug_session_add_reg_change (dbg->session, ripc->arena, ripc->offset, data);
+
 	return true;
 }
 
-static void r_debug_session_set_registers(RDebug *dbg, RDebugSession *session) {
-	RRegArena *arena;
-	RListIter *iterr;
-	int i;
-	/* Restore all register values from the stack area pointed by session */
-	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 0);
+static void _set_initial_registers(RDebug *dbg) {
+	size_t i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		iterr = session->reg[i];
-		arena = iterr->data;
+		RListIter *iter = dbg->session->cur_chkpt->reg[i];
+		RRegArena *arena = iter->data;
 		if (dbg->reg->regset[i].arena->bytes) {
 			memcpy (dbg->reg->regset[i].arena->bytes, arena->bytes, arena->size);
 		}
 	}
-	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 1);
 }
 
-static void r_debug_session_set_diff(RDebug *dbg, RDebugSession *session) {
-	RListIter *iter;
-	RDebugSnapDiff *diff;
-	r_debug_session_set_registers (dbg, session);
-	/* Restore all memory values from memory (diff) snapshots */
-	r_list_foreach (session->memlist, iter, diff) {
-		r_debug_diff_set (dbg, diff);
+static void _set_register(RDebug *dbg, RRegItem *ri, ut32 cnum) {
+	RVector *vreg = ht_up_find (dbg->session->registers, ri->offset | (ri->arena << 16), NULL);
+	if (!vreg) {
+		return;
+	}
+	size_t index;
+	r_vector_upper_bound (vreg, cnum, index, CMP_CNUM_REG);
+	if (index > 0 && index <= vreg->len) {
+		RDebugChangeReg *reg = r_vector_index_ptr (vreg, index - 1);
+		if (reg->cnum > dbg->session->cur_chkpt->cnum) {
+			r_reg_set_value (dbg->reg, ri, reg->data);
+		}
 	}
 }
 
-static void r_debug_session_set_base(RDebug *dbg, RDebugSession *before) {
+R_API void _restore_registers(RDebug *dbg, ut32 cnum) {
+	RListIter *iter;
+	RRegItem *ri;
+	_set_initial_registers (dbg);
+	r_list_foreach (dbg->reg->allregs, iter, ri) {
+		_set_register (dbg, ri, cnum);
+	}
+}
+
+static void _set_initial_memory(RDebug *dbg) {
 	RListIter *iter;
 	RDebugSnap *snap;
-	r_debug_session_set_registers (dbg, before);
-	/* Restore all memory values from base memory snapshots */
-	r_list_foreach (dbg->snaps, iter, snap) {
-		r_debug_diff_set_base (dbg, snap);
+	r_list_foreach (dbg->session->cur_chkpt->snaps, iter, snap) {
+		dbg->iob.write_at (dbg->iob.io, snap->addr, snap->data, snap->size);
 	}
 }
 
-R_API void r_debug_session_set(RDebug *dbg, RDebugSession *before) {
-	if (!r_list_length (before->memlist)) {
-		/* Diff list is empty. (i.e. Before session is base snapshot) *
-		         So set base memory snapshot */
-		r_debug_session_set_base (dbg, before);
-	} else {
-		r_debug_session_set_diff (dbg, before);
+static bool _restore_memory_cb(void *user, const ut64 key, const void *value) {
+	size_t index;
+	RDebug *dbg = user;
+	RVector *vmem = (RVector *)value;
+
+	r_vector_upper_bound (vmem, dbg->session->cnum, index, CMP_CNUM_MEM);
+	if (index > 0 && index <= vmem->len) {
+		RDebugChangeMem *mem = r_vector_index_ptr (vmem, index - 1);
+		if (mem->cnum > dbg->session->cur_chkpt->cnum) {
+			dbg->iob.write_at (dbg->iob.io, key, &mem->data, 1);
+		}
 	}
+	return true;
 }
 
-R_API bool r_debug_session_set_idx(RDebug *dbg, int idx) {
-	RDebugSession *session;
+static void _restore_memory(RDebug *dbg, ut32 cnum) {
+	_set_initial_memory (dbg);
+	ht_up_foreach (dbg->session->memory, _restore_memory_cb, dbg);
+}
+
+static RDebugCheckpoint *_get_checkpoint_before(RDebugSession *session, ut32 cnum) {
+	RDebugCheckpoint *checkpoint = NULL;
+	size_t index;
+	r_vector_upper_bound (session->checkpoints, cnum, index, CMP_CNUM_CHKPT);
+	if (index > 0 && index <= session->checkpoints->len) {
+		checkpoint = r_vector_index_ptr (session->checkpoints, index - 1);
+	}
+	return checkpoint;
+}
+
+R_API void r_debug_session_restore_reg_mem(RDebug *dbg, ut32 cnum) {
+	// Set checkpoint for initial registers and memory
+	dbg->session->cur_chkpt = _get_checkpoint_before (dbg->session, cnum);
+
+	// Restore registers
+	_restore_registers (dbg, cnum);
+	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, true);
+
+	// Restore memory
+	_restore_memory (dbg, cnum);
+}
+
+R_API void r_debug_session_list_memory(RDebug *dbg) {
 	RListIter *iter;
-	ut32 count = 0;
+	RDebugMap *map;
+	r_debug_map_sync (dbg);
+	r_list_foreach (dbg->maps, iter, map) {
+		if ((map->perm & R_PERM_RW) == R_PERM_RW) {
+			RDebugSnap *snap = r_debug_snap_map (dbg, map);
+			if (!snap) {
+				return;
+			}
 
-	if (!dbg || idx < 0) {
-		return false;
-	}
-	r_list_foreach (dbg->sessions, iter, session) {
-		if (session->key.id == idx) {
-			r_debug_session_set (dbg, session);
-			return true;
+			ut8 *hash = r_debug_snap_get_hash (snap);
+			if (!hash) {
+				r_debug_snap_free (snap);
+				return;
+			}
+
+			char *hexstr = r_hex_bin2strdup (hash, R_HASH_SIZE_SHA256);
+			if (!hexstr) {
+				free (hash);
+				r_debug_snap_free (snap);
+				return;
+			}
+			dbg->cb_printf ("%s: %s\n", snap->name, hexstr);
+
+			free (hexstr);
+			free (hash);
+			r_debug_snap_free (snap);
 		}
-		count++;
 	}
-	return false;
 }
 
-/* Get most recent used session at the time */
-R_API RDebugSession *r_debug_session_get(RDebug *dbg, RListIter *tail) {
-	RDebugSession *session;
-	if (!tail) {
-		return NULL;
+R_API bool r_debug_session_add_reg_change(RDebugSession *session, int arena, ut64 offset, ut64 data) {
+	RVector *vreg = ht_up_find (session->registers, offset | (arena << 16), NULL);
+	if (!vreg) {
+		vreg = r_vector_new (sizeof (RDebugChangeReg), NULL, NULL);
+		if (!vreg) {
+			eprintf ("Error: creating a register vector.\n");
+			return false;
+		}
+		ht_up_insert (session->registers, offset | (arena << 16), vreg);
 	}
-	session = (RDebugSession *) tail->data;
-	return session;
+	RDebugChangeReg reg = { session->cnum, data };
+	r_vector_push (vreg, &reg);
+	return true;
 }
 
-/* XXX: bit ugly... :( )*/
-static ut32 r_snap_to_idx(RDebug *dbg, RDebugSnap *snap) {
-	RListIter *iter;
-	RDebugSnap *s;
-	ut32 base_idx = 0;
-	r_list_foreach (dbg->snaps, iter, s) {
-		if (snap == s) {
-			break;
+R_API bool r_debug_session_add_mem_change(RDebugSession *session, ut64 addr, ut8 data) {
+	RVector *vmem = ht_up_find (session->memory, addr, NULL);
+	if (!vmem) {
+		vmem = r_vector_new (sizeof (RDebugChangeMem), NULL, NULL);
+		if (!vmem) {
+			eprintf ("Error: creating a memory vector.\n");
+			return false;
 		}
-		base_idx++;
+		ht_up_insert (session->memory, addr, vmem);
 	}
-	return base_idx;
-}
-
-static RDebugSnap *r_idx_to_snap(RDebug *dbg, ut32 idx) {
-	RListIter *iter;
-	RDebugSnap *s;
-	ut32 base_idx = 0;
-	r_list_foreach (dbg->snaps, iter, s) {
-		if (base_idx == idx) {
-			return s;
-		}
-		base_idx++;
-	}
-	return NULL;
-}
-
-R_API void r_debug_session_path(RDebug *dbg, const char *path) {
-	R_FREE (dbg->snap_path);
-	dbg->snap_path =  r_file_abspath (path);
-}
-
-R_API void r_debug_session_save(RDebug *dbg, const char *file) {
-	RListIter *iter, *iter2, *iter3;
-	RDebugSession *session;
-	RDebugSnap *base;
-	RDebugSnapDiff *snapdiff;
-	RPageData *page;
-
-	RSessionHeader header;
-	RDiffEntry diffentry;
-	RSnapEntry snapentry;
-
-	ut32 i;
-	const char *path = dbg->snap_path;
-	if (!r_file_is_directory (path)) {
-		eprintf ("%s is not correct path\n", path);
-		return;
-	}
-	char *base_file = r_str_newf ("%s/%s.dump", path, file);
-	char *diff_file = r_str_newf ("%s/%s.session", path, file);
-
-	if (!base_file) {
-		free (diff_file);
-		return;
-	}
-
-	if (!diff_file) {
-		free (base_file);
-		return;
-	}
-
-	/* dump all base snapshots */
-	r_list_foreach (dbg->snaps, iter, base) {
-		snapentry.addr = base->addr;
-		snapentry.size = base->size;
-		snapentry.timestamp = base->timestamp;
-		snapentry.perm = base->perm;
-		r_file_dump (base_file, (const ut8 *) &snapentry, sizeof (RSnapEntry), 1);
-		r_file_dump (base_file, (const ut8 *) base->data, base->size, 1);
-		/* dump all hashes */
-		for (i = 0; i < base->page_num; i++) {
-			r_file_dump (base_file, (const ut8 *) base->hashes[i], 128, 1);
-		}
-	}
-
-	/* dump all sessions */
-	r_list_foreach (dbg->sessions, iter, session) {
-		/* dump session header */
-		header.id = session->key.id;
-		header.addr = session->key.addr;
-		header.difflist_len = r_list_length (session->memlist);
-		r_file_dump (diff_file, (ut8 *) &header, sizeof (RSessionHeader), 1);
-
-		/* dump registers */
-		r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 0);
-		for (i = 0; i < R_REG_TYPE_LAST; i++) {
-			RRegArena *arena = session->reg[i]->data;
-			r_file_dump (diff_file, (const ut8 *) &arena->size, sizeof (int), 1);
-			r_file_dump (diff_file, (const ut8 *) arena->bytes, arena->size, 1);
-			// eprintf ("arena[%d] size=%d\n", i, arena->size);
-		}
-		if (!header.difflist_len) {
-			continue;
-		}
-		// eprintf ("#### Session ####\n");
-		// eprintf ("Saved all registers off=0x%"PFMT64x"\n", curp);
-
-		/* Dump all diff entries */
-		r_list_foreach (session->memlist, iter2, snapdiff) {
-			/* Dump diff header */
-			diffentry.pages_len = r_list_length (snapdiff->pages);
-			diffentry.base_idx = r_snap_to_idx (dbg, snapdiff->base);
-			r_file_dump (diff_file, (const ut8 *) &diffentry, sizeof (RDiffEntry), 1);
-
-			/* Dump page entries */
-			r_list_foreach (snapdiff->pages, iter3, page) {
-				r_file_dump (diff_file, (const ut8 *) &page->page_off, sizeof (ut32), 1);
-				r_file_dump (diff_file, (const ut8 *) page->data, SNAP_PAGE_SIZE, 1);
-				r_file_dump (diff_file, (const ut8 *) page->hash, 128, 1);
-			}
-		}
-	}
-	eprintf ("Session saved in %s and dump in %s\n", diff_file, base_file);
-	free (base_file);
-	free (diff_file);
-}
-
-R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
-	RDebugSnap *base = NULL;
-	RDebugSnapDiff *snapdiff;
-	RPageData *page;
-	RSessionHeader header;
-	RDiffEntry diffentry;
-	RSnapEntry snapentry;
-	ut32 i;
-
-	RReg *reg = dbg->reg;
-	const char *path = dbg->snap_path;
-	if (!r_file_is_directory (path)) {
-		eprintf ("%s is not correct path\n", path);
-		return;
-	}
-	char *base_file = r_str_newf ("%s/%s.dump", path, file);
-	char *diff_file = r_str_newf ("%s/%s.session", path, file);
-
-	if (!base_file || !diff_file) {
-		free (base_file);
-		free (diff_file);
-		return;
-	}
-
-	FILE *fd = r_sandbox_fopen (base_file, "rb");
-	if (!fd) {
-		free (base_file);
-		free (diff_file);
-		return;
-	}
-
-	/* Clear current sessions to be replaced */
-	r_list_purge (dbg->snaps);
-
-	/* Restore base snapshots */
-	while (true) {
-		base = r_debug_snap_new ();
-		memset (&snapentry, 0, sizeof (RSnapEntry));
-		if (fread (&snapentry, sizeof (RSnapEntry), 1, fd) != 1) {
-			break;
-		}
-		base->addr = snapentry.addr;
-		base->size = snapentry.size;
-		base->addr_end = base->addr + base->size;
-		base->page_num = base->size / SNAP_PAGE_SIZE;
-		base->timestamp = snapentry.timestamp;
-		base->perm = snapentry.perm;
-		base->data = calloc (base->size, 1);
-		if (!base->data) {
-			R_FREE (base);
-			break;
-		}
-		if (fread (base->data, base->size, 1, fd) != 1) {
-			free (base->data);
-			R_FREE (base);
-			break;
-		}
-		/* restore all hashes */
-		base->hashes = R_NEWS0 (ut8 *, base->page_num);
-		for (i = 0; i < base->page_num; i++) {
-			base->hashes[i] = calloc (1, 128);
-			if (fread (base->hashes[i], 128, 1, fd) != 1) {
-				break;
-			}
-		}
-		r_list_append (dbg->snaps, base);
-	}
-	fclose (fd);
-	R_FREE (base_file);
-
-	/* Restore trace sessions */
-	fd = r_sandbox_fopen (diff_file, "rb");
-	R_FREE (diff_file);
-	if (!fd) {
-		if (base) {
-			free (base->data);
-			free (base);
-		}
-		return;
-	}
-
-	/* Clear current sessions to be replaced */
-	r_list_purge (dbg->sessions);
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		r_list_purge (reg->regset[i].pool);
-	}
-
-	while (true) {
-		/* Restore session header */
-		if (fread (&header, sizeof (RSessionHeader), 1, fd) != 1) {
-			break;
-		}
-		RDebugSession *session = R_NEW0 (RDebugSession);
-		if (!session) {
-			break;
-		}
-		session->memlist = r_list_newf ((RListFree)r_debug_diff_free);
-		session->key.id = header.id;
-		session->key.addr = header.addr;
-		r_list_append (dbg->sessions, session);
-		eprintf ("session: %d, 0x%"PFMT64x " diffs: %d\n", header.id, header.addr, header.difflist_len);
-		/* Restore registers */
-		for (i = 0; i < R_REG_TYPE_LAST; i++) {
-			/* Resotre RReagArena from raw dump */
-			int arena_size;
-			if (fread (&arena_size, sizeof (int), 1, fd) != 1) {
-				break;
-			}
-			if (arena_size < 1 || arena_size > 1024*1024) {
-				eprintf ("Invalid arena size?\n");
-				break;
-			}
-			ut8 *arena_raw = calloc (arena_size, 1);
-			if (!arena_raw) {
-				break;
-			}
-			if (fread (arena_raw, arena_size, 1, fd) != 1) {
-				free (arena_raw);
-				break;
-			}
-			RRegArena *arena = R_NEW0 (RRegArena);
-			if (!arena) {
-				free (arena_raw);
-				break;
-			}
-			arena->bytes = arena_raw;
-			arena->size = arena_size;
-			/* Push RRegArena to regset.pool */
-			r_list_push (reg->regset[i].pool, arena);
-			reg->regset[i].arena = arena;
-			reg->regset[i].cur = reg->regset[i].pool->tail;
-		}
-		if (!header.difflist_len) {
-			continue;
-		}
-		/* Restore diff entries */
-		for (i = 0; i < header.difflist_len; i++) {
-			if (fread (&diffentry, sizeof (RDiffEntry), 1, fd) != 1) {
-				break;
-			}
-			// eprintf ("diffentry base=%d pages=%d\n", diffentry.base_idx, diffentry.pages_len);
-			snapdiff = R_NEW0 (RDebugSnapDiff);
-			if (!snapdiff) {
-				break;
-			}
-			/* Restore diff->base */
-			base = r_idx_to_snap (dbg, diffentry.base_idx);
-			snapdiff->base = base;
-			snapdiff->pages = r_list_newf ((RListFree)r_page_data_free);
-			snapdiff->last_changes = R_NEWS0 (RPageData *, base->page_num);
-
-			if (r_list_length (base->history)) {
-				/* Inherit last changes from previous SnapDiff */
-				RDebugSnapDiff *prev_diff = (RDebugSnapDiff *) r_list_tail (base->history)->data;
-				memcpy (snapdiff->last_changes, prev_diff->last_changes, sizeof (RPageData *) * base->page_num);
-			}
-			/* Restore pages */
-			ut32 p;
-			ut32 clust_page = R_MIN (SNAP_PAGE_SIZE, base->size);
-			for (p = 0; p < diffentry.pages_len; p++) {
-				page = R_NEW0 (RPageData);
-				if (!page) {
-					break;
-				}
-				page->data = calloc (1, clust_page);
-				if (!page->data) {
-					free (page);
-					break;
-				}
-				if (1 != fread (&page->page_off, sizeof (ut32), 1, fd)
-				 || 1 != fread (page->data, SNAP_PAGE_SIZE, 1, fd)
-				 || 1 != fread (page->hash, 128, 1, fd)) {
-					break;
-				}
-				snapdiff->last_changes[page->page_off] = page;
-				r_list_append (snapdiff->pages, page);
-			}
-			r_list_append (base->history, snapdiff);
-			r_list_append (session->memlist, snapdiff);
-		}
-	}
-	/* After restoring all sessions, now sync register */
-	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 1);
-
-	fclose (fd);
-	// #endif
+	RDebugChangeMem mem = { session->cnum, data };
+	r_vector_push (vmem, &mem);
+	return true;
 }

@@ -154,7 +154,138 @@ R_API int r_core_bin_set_by_fd(RCore *core, ut64 bin_fd) {
 	return false;
 }
 
+R_API void r_core_bin_export_info(RCore *core, int mode) {
+	char *flagname = NULL, *offset = NULL;
+	RBinFile *bf = r_bin_cur (core->bin);
+	if (!bf) {
+		return;
+	}
+	Sdb *db = sdb_ns (bf->sdb, "info", 0);;
+	if (!db) {
+		return;
+	}
+	SdbListIter *iter;
+	SdbKv *kv;
+	if (IS_MODE_RAD (mode)) {
+		r_cons_printf ("fs format\n");
+	} else if (IS_MODE_SET (mode)) {
+		r_flag_space_push (core->flags, "format");
+	}
+	// iterate over all keys
+	SdbList *ls = sdb_foreach_list (db, false);
+	ls_foreach (ls, iter, kv) {
+		char *k = sdbkv_key (kv);
+		char *v = sdbkv_value (kv);
+		char *dup = strdup (k);
+		//printf ("?e (%s) (%s)\n", k, v);
+		if ((flagname = strstr (dup, ".offset"))) {
+			*flagname = 0;
+			flagname = dup;
+			if (IS_MODE_RAD (mode)) {
+				r_cons_printf ("f %s @ %s\n", flagname, v);
+			} else if (IS_MODE_SET (mode)) {
+				ut64 nv = r_num_math (core->num, v);
+				r_flag_set (core->flags, flagname, nv, 0);
+			}
+			free (offset);
+			offset = strdup (v);
+		}
+		if ((flagname = strstr (dup, ".cparse"))) {
+			if (IS_MODE_RAD (mode)) {
+				r_cons_printf ("\"td %s\"\n", v);
+			} else if (IS_MODE_SET (mode)) {
+				char *code = r_str_newf ("%s;", v);
+				char *error_msg = NULL;
+				char *out = r_parse_c_string (core->anal, code, &error_msg);
+				free (code);
+				if (error_msg) {
+					eprintf ("%s", error_msg);
+					free (error_msg);
+				}
+				if (out) {
+					r_anal_save_parsed_type (core->anal, out);
+					free (out);
+				}
+			}
+		}
+		free (dup);
+	}
+	R_FREE (offset);
+	ls_foreach (ls, iter, kv) {
+		char *k = sdbkv_key (kv);
+		char *v = sdbkv_value (kv);
+		char *dup = strdup (k);
+		if ((flagname = strstr (dup, ".format"))) {
+			*flagname = 0;
+			if (!offset) {
+				offset = strdup ("0");
+			}
+			flagname = dup;
+			if (IS_MODE_RAD (mode)) {
+				r_cons_printf ("pf.%s %s\n", flagname, v);
+			} else if (IS_MODE_SET (mode)) {
+				sdb_set (core->print->formats, flagname, v, 0);
+			}
+		}
+		free (dup);
+	}
+	ls_foreach (ls, iter, kv) {
+		char *k = sdbkv_key (kv);
+		char *v = sdbkv_value (kv);
+		char *dup = strdup (k);
+		if ((flagname = strstr (dup, ".format"))) {
+			*flagname = 0;
+			if (!offset) {
+				offset = strdup ("0");
+			}
+			flagname = dup;
+			int fmtsize = r_print_format_struct_size (core->print, v, 0, 0);
+			char *offset_key = r_str_newf ("%s.offset", flagname);
+			const char *off = sdb_const_get (db, offset_key, 0);
+			free (offset_key);
+			if (off) {
+				if (IS_MODE_RAD (mode)) {
+					r_cons_printf ("Cf %d %s @ %s\n", fmtsize, v, off);
+				} else if (IS_MODE_SET (mode)) {
+					ut64 addr = r_num_get (NULL, off);
+					ut8 *buf = malloc (fmtsize);
+					if (buf) {
+						r_io_read_at (core->io, addr, buf, fmtsize);
+						int res = r_print_format (core->print, addr, buf,
+								fmtsize, v, 0, NULL, NULL);
+						free (buf);
+						if (res < 0) {
+							eprintf ("Warning: Cannot register invalid format (%s)\n", v);
+						}
+					}
+				}
+			}
+		}
+		if ((flagname = strstr (dup, ".size"))) {
+			*flagname = 0;
+			flagname = dup;
+			if (IS_MODE_RAD (mode)) {
+				r_cons_printf ("fl %s %s\n", flagname, v);
+			} else if (IS_MODE_SET (mode)) {
+				RFlagItem *fi = r_flag_get (core->flags, flagname);
+				if (fi) {
+					fi->size = r_num_math (core->num, v);
+				} else {
+					eprintf ("Cannot find flag named '%s'\n", flagname);
+				}
+			}
+		}
+		free (dup);
+	}
+	free (offset);
+	if (IS_MODE_SET (mode)) {
+		r_flag_space_pop (core->flags);
+	}
+}
+
+
 R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
+	r_return_val_if_fail (core && file && core->io, false);
 	if (!file) {
 		int fd = r_io_fd_get_current (core->io);
 		RIODesc *desc = r_io_desc_get (core->io, fd);
@@ -172,19 +303,13 @@ R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
 	RBinOptions opt = { 0 };
 	r_bin_open (core->bin, file, &opt);
 	RBinFile *bf = r_bin_cur (core->bin);
-	r_cons_push ();
-	r_core_bin_export_info_rad (core);
-	r_cons_filter ();
-	const char *s = r_cons_get_buffer ();
-	char *res = R_STR_ISNOTEMPTY (s)? strdup (s): NULL;
-	int r = -1;
-	r_cons_pop ();
-	if (res) {
-		r = r_core_cmd_lines (core, res);
-		free (res);
+	if (bf) {
+		r_core_bin_export_info (core, R_MODE_SET);
+		r_bin_file_delete (core->bin, bf->id);
+		return true;
 	}
-	r_bin_file_delete (core->bin, bf->id);
-	return r > 0;
+	eprintf ("Cannot open bin '%s'\n", file);
+	return false;
 }
 
 R_API int r_core_bin_set_by_name(RCore *core, const char * name) {
@@ -439,8 +564,10 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			r_table_query (table, r->table_query);
 		}
 		char *s = r_table_tostring (table);
-		r_cons_printf ("%s", s);
-		free (s);
+		if (s) {
+			r_cons_printf ("%s", s);
+			free (s);
+		}
 
 	}
 	r_table_free (table);
@@ -909,7 +1036,10 @@ static int bin_dwarf(RCore *core, int mode) {
 		RBinDwarfDebugAbbrev *da = NULL;
 		da = r_bin_dwarf_parse_abbrev (core->bin, mode);
 		RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (da, core->bin, mode);
-		// dig types out of into and then free
+		// I suppose there is no reason the parse it for a printing purposes
+		if (info && mode != R_MODE_PRINT) {
+			r_anal_parse_dwarf_types (core->anal, info);
+		}
 		r_bin_dwarf_free_debug_info (info);
 		
 		r_bin_dwarf_parse_aranges (core->bin, mode);
@@ -1059,8 +1189,17 @@ static int bin_dwarf(RCore *core, int mode) {
 	return true;
 }
 
-R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
-	R_PDB pdb = R_EMPTY;
+R_API bool r_core_pdb_info(RCore *core, const char *file, int mode) {
+	r_return_val_if_fail (core && file, false);
+
+	ut64 baddr = r_config_get_i (core->config, "bin.baddr");
+	if (core->bin->cur && core->bin->cur->o && core->bin->cur->o->baddr) {
+		baddr = core->bin->cur->o->baddr;
+	} else {
+		eprintf ("Warning: Cannot find base address, flags will probably be misplaced\n");
+	}
+
+	RPdb pdb = R_EMPTY;
 
 	pdb.cb_printf = r_cons_printf;
 	if (!init_pdb_parser (&pdb, file)) {
@@ -1070,9 +1209,6 @@ R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
 		eprintf ("pdb was not parsed\n");
 		pdb.finish_pdb_parse (&pdb);
 		return false;
-	}
-	if (mode == R_MODE_JSON) {
-		r_cons_printf ("[");
 	}
 
 	switch (mode) {
@@ -1091,23 +1227,19 @@ R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
 		mode = 'd'; // default
 		break;
 	}
+	PJ *pj = pj_new ();
 
-	pdb.print_types (&pdb, mode);
-	if (mode == 'j') {
-		r_cons_printf (",");
-	}
-	pdb.print_gvars (&pdb, baddr, mode);
-	if (mode == 'j') {
-		r_cons_printf ("]");
-	}
+	pdb.print_types (&pdb, pj, mode);
+	pdb.print_gvars (&pdb, baddr, pj, mode);
+	// Save compound types into SDB
+	r_parse_pdb_types (core->anal, &pdb);
 	pdb.finish_pdb_parse (&pdb);
 
+	if (mode == 'j') {
+		r_cons_printf ("%s\n", pj_string (pj));
+	}
+	pj_free (pj);
 	return true;
-}
-
-static int bin_pdb(RCore *core, int mode) {
-	ut64 baddr = r_bin_get_baddr (core->bin);
-	return r_core_pdb_info (core, core->bin->file, baddr, mode);
 }
 
 static int srclineCmp(const void *a, const void *b) {
@@ -3979,81 +4111,6 @@ static int bin_signature(RCore *r, int mode) {
 	return false;
 }
 
-R_API void r_core_bin_export_info_rad(RCore *core) {
-	Sdb *db = NULL;
-	char *flagname = NULL, *offset = NULL;
-	RBinFile *bf = r_bin_cur (core->bin);
-	if (!bf) {
-		return;
-	}
-	db = sdb_ns (bf->sdb, "info", 0);;
-	if (db) {
-		SdbListIter *iter;
-		SdbKv *kv;
-		r_cons_printf ("fs format\n");
-		// iterate over all keys
-		SdbList *ls = sdb_foreach_list (db, false);
-		ls_foreach (ls, iter, kv) {
-			char *k = sdbkv_key (kv);
-			char *v = sdbkv_value (kv);
-			char *dup = strdup (k);
-			//printf ("?e (%s) (%s)\n", k, v);
-			if ((flagname = strstr (dup, ".offset"))) {
-				*flagname = 0;
-				flagname = dup;
-				r_cons_printf ("f %s @ %s\n", flagname, v);
-				free (offset);
-				offset = strdup (v);
-			}
-			if ((flagname = strstr (dup, ".cparse"))) {
-				r_cons_printf ("\"td %s\"\n", v);
-			}
-			free (dup);
-		}
-		R_FREE (offset);
-		ls_foreach (ls, iter, kv) {
-			char *k = sdbkv_key (kv);
-			char *v = sdbkv_value (kv);
-			char *dup = strdup (k);
-			if ((flagname = strstr (dup, ".format"))) {
-				*flagname = 0;
-				if (!offset) {
-					offset = strdup ("0");
-				}
-				flagname = dup;
-				r_cons_printf ("pf.%s %s\n", flagname, v);
-			}
-			free (dup);
-		}
-		ls_foreach (ls, iter, kv) {
-			char *k = sdbkv_key (kv);
-			char *v = sdbkv_value (kv);
-			char *dup = strdup (k);
-			if ((flagname = strstr (dup, ".format"))) {
-				*flagname = 0;
-				if (!offset) {
-					offset = strdup ("0");
-				}
-				flagname = dup;
-				int fmtsize = r_print_format_struct_size (core->print, v, 0, 0);
-				char *offset_key = r_str_newf ("%s.offset", flagname);
-				const char *off = sdb_const_get (db, offset_key, 0);
-				free (offset_key);
-				if (off) {
-					r_cons_printf ("Cf %d %s @ %s\n", fmtsize, v, off);
-				}
-			}
-			if ((flagname = strstr (dup, ".size"))) {
-				*flagname = 0;
-				flagname = dup;
-				r_cons_printf ("fl %s %s\n", flagname, v);
-			}
-			free (dup);
-		}
-		free (offset);
-	}
-}
-
 static int bin_header(RCore *r, int mode) {
 	RBinFile *cur = r_bin_cur (r->bin);
 	RBinPlugin *plg = r_bin_file_cur_plugin (cur);
@@ -4097,7 +4154,7 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 		ret &= bin_dwarf (core, mode);
 	}
 	if ((action & R_CORE_BIN_ACC_PDB)) {
-		ret &= bin_pdb (core, mode);
+		ret &= r_core_pdb_info (core, core->bin->file, mode);
 	}
 	if ((action & R_CORE_BIN_ACC_SOURCE)) {
 		ret &= bin_source (core, mode);
