@@ -21,6 +21,7 @@ static inline bool is_type_tag(ut64 tag_code) {
 	return (tag_code == DW_TAG_structure_type ||
 		tag_code == DW_TAG_enumeration_type ||
 		tag_code == DW_TAG_class_type ||
+		tag_code == DW_TAG_subprogram ||
 		tag_code == DW_TAG_union_type ||
 		tag_code == DW_TAG_base_type ||
 		tag_code == DW_TAG_typedef);
@@ -737,6 +738,70 @@ static void parse_atomic_type(const RAnal *anal, const RBinDwarfDie *all_dies,
 }
 
 /**
+ * @brief Get the function name from specification entry
+ * 
+ * @param die 
+ * @return char* DIEs name or NULL if error, don't free
+ */
+static char *get_specification_die_name(const RBinDwarfDie *die) {
+	char *name = NULL;
+	st32 linkage_name_attr_idx = find_attr_idx (die, DW_AT_linkage_name);
+	if (linkage_name_attr_idx != -1 && die->attr_values[linkage_name_attr_idx].string.content) {
+		return die->attr_values[linkage_name_attr_idx].string.content;
+	}
+	st32 name_attr_idx = find_attr_idx (die, DW_AT_name);
+	if (name_attr_idx != -1 && die->attr_values[name_attr_idx].string.content) {
+		return die->attr_values[name_attr_idx].string.content;
+	}
+	return NULL;
+}
+
+static void parse_function(const RAnal *anal, const RBinDwarfDie *all_dies, 
+	const ut64 count, ut64 idx, Sdb *sdb) {
+
+	r_return_if_fail (all_dies);
+	const RBinDwarfDie *die = &all_dies[idx];
+
+	char *name = NULL;
+	ut64 faddr = 0;
+
+	size_t i;
+	for (i = 0; i < die->count; i++) {
+		RBinDwarfAttrValue *value = &die->attr_values[i];
+		switch (die->attr_values[i].attr_name) {
+		case DW_AT_name:
+		case DW_AT_linkage_name:
+			name = value->string.content;
+			break;
+		case DW_AT_low_pc:
+			faddr = value->address;
+			break;
+		case DW_AT_declaration:
+			goto cleanup;
+		case DW_AT_specification: // redirect to DIE with more info
+		{
+			RBinDwarfDie key = { .offset = value->reference };
+			RBinDwarfDie *die = bsearch (&key, all_dies, count, sizeof (key), die_tag_cmp);
+			name = get_specification_die_name (die);
+		} break;
+		default:
+			break;
+		}
+	}
+	if (!name || !faddr) { // we need a name, faddr
+		return;
+	}
+
+	sdb_set (sdb, name, "func", 0);
+	char *tmp = sdb_fmt ("func.%s.addr", name);
+	char *addr_str = sdb_fmt ("%"PFMT64x"", faddr);
+	sdb_set (sdb, tmp, addr_str, 0);
+cleanup:
+	return;
+}
+
+
+/**
  * @brief Delegates DIE to it's proper parsing method
  * 
  * @param anal 
@@ -765,7 +830,8 @@ static void parse_type_entry(const RAnal *anal, const RBinDwarfDie *all_dies,
 	case DW_TAG_base_type:
 		parse_atomic_type (anal, all_dies, count, idx);
 		break;
-	case DW_TAG_subroutine_type: // one day TODO ?
+	case DW_TAG_subprogram:
+		parse_function (anal, all_dies, count, idx, sdb_ns (anal->sdb, "dwarf", 1));
 	default:
 		break;
 	}
@@ -791,3 +857,18 @@ R_API void r_anal_parse_dwarf_types(const RAnal *anal, const RBinDwarfDebugInfo 
 		}
 	}
 }
+
+bool filter_sdb_function_names(void *user, const char *k, const char *v) {
+	return !strcmp (v, "func");
+}
+
+R_API void r_anal_analyze_dwarf_functions(RAnal *anal, Sdb *dwarf_sdb) {
+	r_return_if_fail (anal && dwarf_sdb);
+
+	SdbList *sdb_list = sdb_foreach_list_filter (dwarf_sdb, filter_sdb_function_names, false);
+	SdbListIter *it;
+	SdbKv *kv;
+	ls_foreach (sdb_list, it, kv) {
+		;
+	}
+} 
