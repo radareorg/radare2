@@ -184,7 +184,7 @@ def build(args):
 
 def install(args):
     """ Install radare2 """
-    meson('install', options=[['-C', '{}'.format(args.dir)], '--no-rebuild'])
+    meson('install', options=['-C', '{}'.format(args.dir), '--no-rebuild'])
 
 def main():
     # Create logger and get applications paths
