@@ -1128,8 +1128,9 @@ repeat:
 							if (prev_op.type == R_ANAL_OP_TYPE_MOV && prev_op.disp && prev_op.disp != UT64_MAX && same_reg) {
 								//	movzx reg, byte [reg + case_table]
 								//	jmp dword [reg*4 + jump_table]
-								case_table = true;
-								ret = try_walkthrough_casetbl (anal, fcn, bb, depth, op.addr, op.ptr, prev_op.disp, op.ptr, anal->bits >> 3, table_size, default_case, ret);
+								if (try_walkthrough_casetbl (anal, fcn, bb, depth, op.addr, op.ptr, prev_op.disp, op.ptr, anal->bits >> 3, table_size, default_case, ret)) {
+									ret = case_table = true;
+								}
 							}
 						}
 						r_anal_op_fini (&prev_op);
