@@ -7,7 +7,6 @@ on:
     - 'pre-release*'
     - 'prerelease*'
     - 'release*'
-    - 'decompiler-refactoring'
 
 jobs:
   build:

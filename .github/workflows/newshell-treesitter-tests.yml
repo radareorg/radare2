@@ -10,7 +10,6 @@ on:
       - 'shlr/radare2-shell-parser/**/*'
     branches:
       - master
-      - decompiler-refactoring
 
 jobs:
   build:
