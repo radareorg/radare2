@@ -1158,14 +1158,14 @@ static int init_debug_info(RBinDwarfDebugInfo *inf) {
 	}
 	inf->comp_units = calloc (sizeof (RBinDwarfCompUnit), DEBUG_INFO_CAPACITY);
 
-	// XXX - should we be using error codes?
+	inf->lookup_table = ht_up_new0 ();
+
 	if (!inf->comp_units) {
-		return -ENOMEM;
+		return -1;
 	}
 
 	inf->capacity = DEBUG_INFO_CAPACITY;
 	inf->count = 0;
-
 	return true;
 }
 
@@ -1389,7 +1389,8 @@ R_API void r_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf) {
 	for (i = 0; i < inf->count; i++) {
 		free_comp_unit (&inf->comp_units[i]);
 	}
-	R_FREE (inf->comp_units);
+	ht_up_free (inf->lookup_table);
+	free (inf->comp_units);
 	free(inf);
 }
 
@@ -1837,7 +1838,7 @@ static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevD
  * 
  * @return const ut8* Update buffer
  */
-static const ut8 *parse_comp_unit(Sdb *sdb, const ut8 *buf_start,
+static const ut8 *parse_comp_unit(RBinDwarfDebugInfo *info, Sdb *sdb, const ut8 *buf_start,
 		RBinDwarfCompUnit *unit, const RBinDwarfDebugAbbrev *abbrevs,
 		size_t first_abbr_idx, const ut8 *debug_str, size_t debug_str_len) {
 
@@ -1849,10 +1850,10 @@ static const ut8 *parse_comp_unit(Sdb *sdb, const ut8 *buf_start,
 			expand_cu (unit);
 		}
 		RBinDwarfDie *die = &unit->dies[unit->count];
-
 		// add header size to the offset;
 		die->offset = buf - buf_start + unit->hdr.header_size + unit->offset;
 		die->offset += unit->hdr.is_64bit ? 12 : 4;
+
 		// DIE starts with ULEB128 with the abbreviation code
 		ut64 abbr_code;
 		buf = r_uleb128 (buf, buf_end - buf, &abbr_code);
@@ -2007,7 +2008,8 @@ static RBinDwarfDebugInfo *parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
 		r_warn_if_fail (da->count <= da->capacity);
 
 		// find abbrev start for current comp unit
-		// we could also do naive, ((char *)da->decls) + abbrev_offset?
+		// we could also do naive, ((char *)da->decls) + abbrev_offset, 
+		// but this is more bulletproof to invalid DWARF
 		RBinDwarfAbbrevDecl key = { .offset = unit->hdr.abbrev_offset };
 		RBinDwarfAbbrevDecl *abbrev_start = bsearch (&key, da->decls, da->count, sizeof (key), abbrev_cmp);
 		if (!abbrev_start) {
@@ -2016,7 +2018,7 @@ static RBinDwarfDebugInfo *parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
 		// They point to the same array object, so should be def. behaviour
 		size_t first_abbr_idx = abbrev_start - da->decls;
 
-		buf = parse_comp_unit (sdb, buf, unit, da, first_abbr_idx, debug_str, debug_str_len);
+		buf = parse_comp_unit (info, sdb, buf, unit, da, first_abbr_idx, debug_str, debug_str_len);
 
 		if (!buf) {
 			goto cleanup;
@@ -2160,7 +2162,16 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin 
 		if (mode == R_MODE_PRINT && info) {
 			print_debug_info (info, bin->cb_printf);
 		}
-
+		if (info) {
+			size_t i, j;
+			for (i = 0; i < info->count; i++) {
+				RBinDwarfCompUnit *unit = &info->comp_units[i];
+				for (j = 0; j < unit->count; j++) {
+					RBinDwarfDie *die = &unit->dies[j];
+					ht_up_insert (info->lookup_table, die->offset, die); // optimization for further processing}
+				}
+			}
+		}
 		free (debug_str_buf);
 		free (buf);
 		return info;
