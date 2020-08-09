@@ -227,7 +227,23 @@ static const char *dwarf_attr_encodings[] = {
 	[DW_AT_loclists_base] = "DW_AT_loclists_base",
 
 	[DW_AT_lo_user] = "DW_AT_lo_user",
+	[DW_AT_MIPS_linkage_name] = "DW_AT_MIPS_linkage_name",
+	[DW_AT_GNU_call_site_value] = "DW_AT_GNU_call_site_value",
+	[DW_AT_GNU_call_site_data_value] = "DW_AT_GNU_call_site_data_value",
+	[DW_AT_GNU_call_site_target] = "DW_AT_GNU_call_site_target",
+	[DW_AT_GNU_call_site_target_clobbered] = "DW_AT_GNU_call_site_target_clobbered",
+	[DW_AT_GNU_tail_call] = "DW_AT_GNU_tail_call",
 	[DW_AT_GNU_all_tail_call_sites] = "DW_AT_GNU_all_tail_call_sites",
+	[DW_AT_GNU_all_call_sites] = "DW_AT_GNU_all_call_sites",
+	[DW_AT_GNU_all_source_call_sites] = "DW_AT_GNU_all_source_call_sites",
+	[DW_AT_GNU_macros] = "DW_AT_GNU_macros",
+	[DW_AT_GNU_deleted] = "DW_AT_GNU_deleted",
+	[DW_AT_GNU_dwo_name] = "DW_AT_GNU_dwo_name",
+	[DW_AT_GNU_dwo_id] = "DW_AT_GNU_dwo_id",
+	[DW_AT_GNU_ranges_base] = "DW_AT_GNU_ranges_base",
+	[DW_AT_GNU_addr_base] = "DW_AT_GNU_addr_base",
+	[DW_AT_GNU_pubnames] = "DW_AT_GNU_pubnames",
+	[DW_AT_GNU_pubtypes] = "DW_AT_GNU_pubtypes",
 	[DW_AT_hi_user] = "DW_AT_hi_user",
 };
 
@@ -334,7 +350,9 @@ static int abbrev_cmp(const void *a, const void *b) {
 
 static inline bool is_printable_attr(ut64 attr_code) {
 	return (attr_code >= DW_AT_sibling && attr_code <= DW_AT_loclists_base) || 
-			attr_code == DW_AT_GNU_all_tail_call_sites;
+			attr_code == DW_AT_MIPS_linkage_name || 
+			(attr_code >= DW_AT_GNU_call_site_value && attr_code <= DW_AT_GNU_deleted) ||
+			(attr_code >= DW_AT_GNU_dwo_name && attr_code <= DW_AT_GNU_pubtypes);
 }
 
 static inline bool is_printable_form(ut64 form_code) {

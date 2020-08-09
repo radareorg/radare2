@@ -255,8 +255,23 @@ extern "C" {
 /* <_lo_user ; _hi_user> Interval is reserved for vendor extensions */
 #define DW_AT_lo_user                   0x2000
 // extensions:
+#define DW_AT_MIPS_linkage_name         0x2007 // Same as DWARF4 DW_AT_linkage_name
+#define DW_AT_GNU_call_site_value       0x2111
+#define DW_AT_GNU_call_site_data_value  0x2112
+#define DW_AT_GNU_call_site_target      0x2113
+#define DW_AT_GNU_call_site_target_clobbered   0x2114
+#define DW_AT_GNU_tail_call             0x2115
 #define DW_AT_GNU_all_tail_call_sites   0x2116
-
+#define DW_AT_GNU_all_call_sites        0x2117
+#define DW_AT_GNU_all_source_call_sites 0x2118
+#define DW_AT_GNU_macros                0x2119
+#define DW_AT_GNU_deleted               0x211a
+#define DW_AT_GNU_dwo_name              0x2130
+#define DW_AT_GNU_dwo_id                0x2131
+#define DW_AT_GNU_ranges_base           0x2132
+#define DW_AT_GNU_addr_base             0x2133
+#define DW_AT_GNU_pubnames              0x2134
+#define DW_AT_GNU_pubtypes              0x2135
 #define DW_AT_hi_user                   0x3fff
 
 #define DW_FORM_addr                    0x01
