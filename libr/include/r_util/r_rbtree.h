@@ -110,6 +110,7 @@ R_API RContRBTree *r_rbtree_cont_newf(RContRBFree f);
 R_API bool r_rbtree_cont_insert(RContRBTree *tree, void *data, RContRBCmp cmp, void *user);
 R_API bool r_rbtree_cont_delete(RContRBTree *tree, void *data, RContRBCmp cmp, void *user);
 R_API void *r_rbtree_cont_find(RContRBTree *tree, void *data, RContRBCmp cmp, void *user);
+R_API void *r_rbtree_cont_first(RContRBTree *tree);
 
 #define r_rbtree_cont_foreach(tree, it, dat) \
 	for ((it) = r_rbtree_first (&tree->root->node); r_rbtree_iter_has(&it) && (dat = r_rbtree_iter_get (&it, RContRBNode, node)->data); r_rbtree_iter_next (&(it)))
