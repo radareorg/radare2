@@ -479,7 +479,8 @@ static class_type_info *rtti_itanium_type_info_new(RVTableContext *context, ut64
 	}
 }
 
-static void rtti_itanium_type_info_free(class_type_info *cti) {
+static void rtti_itanium_type_info_free(void *info) {
+	class_type_info *cti = info;
 	if (!cti) {
 		return;
 	}
@@ -614,6 +615,8 @@ static void add_class_bases(RVTableContext *context, const class_type_info *cti)
 			}
 		}
 	} break;
+	default: // other types have no parent classes
+		break;
 	}
 }
 
