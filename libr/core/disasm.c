@@ -6584,10 +6584,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	return ret;
 }
 
-static bool read_ahead(RIO *io, ut8 **buf, size_t *buf_sz, ut64 address, size_t offset_into_buf, size_t *bytes_read, size_t bytes_to_read) {
-	if (*bytes_read > offset_into_buf + bytes_to_read) {
-		return true;
-	}
+static bool read_ahead(RIO *io, ut8 **buf, size_t *buf_sz, ut64 address, size_t offset_into_buf, size_t bytes_to_read) {
 	if (offset_into_buf + bytes_to_read > *buf_sz) {
 		*buf_sz *= 2;
 		ut8 *tmp = realloc (*buf, *buf_sz);
@@ -6596,7 +6593,6 @@ static bool read_ahead(RIO *io, ut8 **buf, size_t *buf_sz, ut64 address, size_t 
 		}
 		*buf = tmp;
 	}
-	*bytes_read += bytes_to_read;
 	return r_io_read_at_mapped (io, address, *buf + offset_into_buf, bytes_to_read);
 }
 
@@ -6645,13 +6641,13 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	int min_op_size = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	min_op_size = min_op_size > 0 ? min_op_size : 1;
 	const ut64 read_len = max_op_size > 0 ? max_op_size : 32;
-	size_t buf_sz = 0x100, block_sz = 0, block_instr = 0, bytes_read = 0;
+	size_t buf_sz = 0x100, block_sz = 0, block_instr = 0;
 	ut64 block_start = r_reg_get_value (reg, pc);
 	ut8 *buf = malloc (buf_sz);
 	size_t i;
 	for (i = 0; i < nb_opcodes; i++) {
 		const ut64 op_addr = r_reg_get_value (reg, pc);
-		if (!read_ahead (core->io, &buf, &buf_sz, op_addr, block_sz, &bytes_read, read_len)) {
+		if (!read_ahead (core->io, &buf, &buf_sz, op_addr, block_sz, read_len)) {
 			break;
 		}
 		RAnalOp op;
@@ -6684,7 +6680,7 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 			if (op.delay) {
 				const ut64 ops_to_read = R_MIN (op.delay, nb_opcodes - (i + 1));
 				const ut64 bytes_to_read = ops_to_read * read_len;
-				if (!read_ahead (core->io, &buf, &buf_sz, op_addr + op.size, block_sz, &bytes_read, bytes_to_read)) {
+				if (!read_ahead (core->io, &buf, &buf_sz, op_addr + op.size, block_sz, bytes_to_read)) {
 					break;
 				}
 				block_instr += ops_to_read;
@@ -6709,7 +6705,6 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 			}
 			block_sz = 0;
 			block_instr = 0;
-			bytes_read = 0;
 		}
 		if (invalid_instr) {
 			break;
