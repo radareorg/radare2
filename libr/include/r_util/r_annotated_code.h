@@ -23,13 +23,13 @@ typedef enum r_syntax_highlight_type_t {
 
 /** Represents the type of annnotation. */
 typedef enum r_code_annotation_type_t {
-	R_CODE_ANNOTATION_TYPE_OFFSET, /*!< Gives the offset of the specified range in annotation. */ 
-	R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, /*!< Represents the kind of data the specified range represents for highlighting purposes. */ 
-	R_CODE_ANNOTATION_TYPE_FUNCTION_NAME, /*!< Specified range in annotation represents a function name. */ 
-	R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE, /*!< Specified range in annotation represents a global variable. */ 
-	R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE, /*!< Specified range in annotation represents a constant variable with an address. */ 
-	R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, /*!< Specified range in annotation represents a local variable. */ 
-	R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER, /*!< Specified range in annotation represents a function parameter. */ 
+	R_CODE_ANNOTATION_TYPE_OFFSET, /*!< Gives the offset of the specified range in annotation. */
+	R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, /*!< Represents the kind of data the specified range represents for highlighting purposes. */
+	R_CODE_ANNOTATION_TYPE_FUNCTION_NAME, /*!< Specified range in annotation represents a function name. */
+	R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE, /*!< Specified range in annotation represents a global variable. */
+	R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE, /*!< Specified range in annotation represents a constant variable with an address. */
+	R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, /*!< Specified range in annotation represents a local variable. */
+	R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER, /*!< Specified range in annotation represents a function parameter. */
 	// ...
 } RCodeAnnotationType;
 
@@ -37,8 +37,8 @@ typedef enum r_code_annotation_type_t {
  * \brief Annotations for the decompiled code are represented using this structure.
  */
 typedef struct r_code_annotation_t {
-	size_t start; /**< Start of the range in the annotation(inclusive). */ 
-	size_t end; /**< End of the range in the annotation(exclusive). */ 
+	size_t start; /**< Start of the range in the annotation(inclusive). */
+	size_t end; /**< End of the range in the annotation(exclusive). */
 	RCodeAnnotationType type;
 	union {
 		/** If the annotation is of type R_CODE_ANNOTATION_TYPE_OFFSET,
@@ -77,8 +77,8 @@ typedef struct r_code_annotation_t {
  * \brief This structure contains the decompiled code and all the annotations for the decompiled code.
  */
 typedef struct r_annotated_code_t {
-	char *code; /**< Decompiled code. RAnnotatedCode owns this string and it must free it. */ 
-	RVector annotations; /**< @ref RVector <RCodeAnnotation> contains the list of annotations for the decompiled code. */ 
+	char *code; /**< Decompiled code. RAnnotatedCode owns this string and it must free it. */
+	RVector annotations; /**< @ref RVector <RCodeAnnotation> contains the list of annotations for the decompiled code. */
 } RAnnotatedCode;
 
 /**
