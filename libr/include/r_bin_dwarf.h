@@ -751,7 +751,7 @@ typedef struct {
 	size_t count;
 	size_t capacity;
 	RBinDwarfCompUnit *comp_units;
-	HtUP *lookup_table; // offset -> DwarfDie
+	HtUP/*<ut64 offset, DwarfDie *die>*/ *lookup_table;
 } RBinDwarfDebugInfo;
 
 #define	ABBREV_DECL_CAP		8

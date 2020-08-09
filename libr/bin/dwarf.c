@@ -2162,6 +2162,7 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin 
 		if (mode == R_MODE_PRINT && info) {
 			print_debug_info (info, bin->cb_printf);
 		}
+		// build hashtable after whole parsing because of possible relocations
 		if (info) {
 			size_t i, j;
 			for (i = 0; i < info->count; i++) {
