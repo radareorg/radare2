@@ -162,7 +162,7 @@ mov byte [eax], 0x20
 mov byte [eax + 0x40], 0
 mov cl, byte [eax + 0x40]
 cmp cl, cl
-jne 0xcdcd1010
+jne 0x1010
 mov al, byte [0x30]
 jmp eax
 invalid
