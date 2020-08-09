@@ -145,6 +145,11 @@ static int hack_handle_br_exc_sys(ut32 insn, RAnalOp *op) {
 
 static inline int hackyArmAnal(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	int ret = -1;
+
+	// TODO: Handle this case properly
+	if (len < sizeof (ut32)) {
+		return -1;
+	}
 	ut32 *insn = (ut32 *)buf;
 	int insn_class = (*insn >> 25) & 0xf;
 	// Hacky support for ARMv8.3 and ARMv8.5
