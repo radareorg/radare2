@@ -784,7 +784,6 @@ static void parse_abstract_origin_parameter(const RBinDwarfDie *all_dies, ut64 c
 
 
 static st32 parse_function_args(const RBinDwarfDie *all_dies, ut64 count, ut64 idx, RStrBuf *args) {
-
 	r_return_val_if_fail (all_dies && args, -1);
 	const RBinDwarfDie *die = &all_dies[idx];
 
@@ -839,7 +838,16 @@ static st32 parse_function_args(const RBinDwarfDie *all_dies, ut64 count, ut64 i
 	return 0;
 }
 
-
+/**
+ * @brief Parse function,it's arguments and
+ *        save the information into the Sdb
+ * 
+ * @param anal 
+ * @param all_dies 
+ * @param count 
+ * @param idx 
+ * @param sdb 
+ */
 static void parse_function(const RAnal *anal, const RBinDwarfDie *all_dies, 
 	const ut64 count, ut64 idx, Sdb *sdb) {
 
@@ -910,9 +918,10 @@ cleanup:
 static void parse_type_entry(const RAnal *anal, const RBinDwarfDie *all_dies,
 	const ut64 count, ut64 idx) {
 
-	r_return_if_fail (all_dies);
-	const RBinDwarfDie *die = &all_dies[idx];
+	r_return_if_fail (anal && all_dies);
+	Sdb *dwarf_sdb =  sdb_ns (anal->sdb, "dwarf", 1);
 
+	const RBinDwarfDie *die = &all_dies[idx];
 	switch (die->tag) {
 	case DW_TAG_structure_type:
 	case DW_TAG_union_type:
@@ -929,7 +938,7 @@ static void parse_type_entry(const RAnal *anal, const RBinDwarfDie *all_dies,
 		parse_atomic_type (anal, all_dies, count, idx);
 		break;
 	case DW_TAG_subprogram:
-		parse_function (anal, all_dies, count, idx, sdb_ns (anal->sdb, "dwarf", 1));
+		parse_function (anal, all_dies, count, idx, dwarf_sdb);
 	default:
 		break;
 	}
@@ -960,6 +969,13 @@ bool filter_sdb_function_names(void *user, const char *k, const char *v) {
 	return !strcmp (v, "func");
 }
 
+/**
+ * @brief Use parsed DWARF function info from Sdb in the anal functions
+ * 
+ * @param anal 
+ * @param dwarf_sdb 
+ * @return R_API 
+ */
 R_API void r_anal_analyze_dwarf_functions(RAnal *anal, Sdb *dwarf_sdb) {
 	r_return_if_fail (anal && dwarf_sdb);
 
@@ -968,14 +984,18 @@ R_API void r_anal_analyze_dwarf_functions(RAnal *anal, Sdb *dwarf_sdb) {
 	SdbKv *kv;
 	ls_foreach (sdb_list, it, kv) {
 		char *func_name = kv->base.key;
-		char *tmp = sdb_fmt ("func.%s.addr", func_name);
+		r_str_newf ("func.%s.addr", func_name);
+		char *tmp = r_str_newf ("func.%s.addr", func_name);
 		ut64 faddr = sdb_num_get (dwarf_sdb, tmp, 0);
+		R_FREE (tmp);
+		// if the function is analyzed so we can edit
 		RAnalFunction *func = r_anal_get_function_at (anal, faddr);
 		if (func) {
 			r_anal_function_rename (func, func_name);
-			tmp = sdb_fmt ("func.%s.sig", func_name);
-			char *fcnstr = sdb_get (dwarf_sdb, tmp, 0);
-			r_anal_str_to_fcn (anal, func, fcnstr);
+			// TODO find way to change signature
+			// tmp = sdb_fmt ("func.%s.sig", func_name);
+			// char *fcnstr = sdb_get (dwarf_sdb, tmp, 0);
+			// r_anal_str_to_fcn (anal, func, fcnstr);
 		}
 
 	}
