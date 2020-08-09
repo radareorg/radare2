@@ -757,7 +757,6 @@ static void get_specification_die_type(const RBinDwarfDie *all_dies, ut64 count,
 		ut64 size = 0;
 		parse_type (all_dies, count, die->attr_values[attr_idx].reference, ret_type, &size);
 	}
-	return NULL;
 }
 
 static void parse_abstract_origin_parameter(const RBinDwarfDie *all_dies, ut64 count, ut64 offset, RStrBuf *type, char **name) {
