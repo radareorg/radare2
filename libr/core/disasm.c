@@ -6623,7 +6623,7 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	RList *ocache = core->io->cache;
 	RCache *ocacheb = core->io->buffer;
 	const int ocached = core->io->cached;
-	if (ocacheb && ocache) {
+	if (ocacheb && ocacheb->len && ocache) {
 		RCache *c = r_cache_new ();
 		r_cache_set (c, ocacheb->base, ocacheb->buf, ocacheb->len);
 		core->io->buffer = c;
