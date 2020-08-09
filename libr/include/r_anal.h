@@ -2091,7 +2091,7 @@ R_API void r_anal_save_base_type(const RAnal *anal, const RAnalBaseType *type);
 R_API void r_anal_free_base_type(RAnalBaseType *type);
 R_API RAnalBaseType *r_anal_new_base_type(RAnalBaseTypeKind kind);
 R_API void r_anal_parse_dwarf_types(const RAnal *anal, const RBinDwarfDebugInfo *info);
-R_API void r_anal_analyze_dwarf_functions(RAnal *anal);
+R_API void r_anal_analyze_dwarf_functions(RAnal *anal, Sdb *dwarf_sdb);
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
 extern RAnalPlugin r_anal_plugin_6502;

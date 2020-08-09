@@ -9353,9 +9353,10 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				r_core_task_yield (&core->tasks);
 
 				// apply dwarf function information
-				if (sdb_ns (core->anal->sdb, "dwarf", 0)) {
+				Sdb *dwarf_sdb = sdb_ns (core->anal->sdb, "dwarf", 0);
+				if (dwarf_sdb) {
 					oldstr = r_print_rowlog (core->print, "Analyze dwarf function information.");
-
+					r_anal_analyze_dwarf_functions (core->anal, dwarf_sdb);
 					r_print_rowlog_done (core->print, oldstr);
 				}
 

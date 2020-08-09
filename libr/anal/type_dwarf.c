@@ -737,12 +737,6 @@ static void parse_atomic_type(const RAnal *anal, const RBinDwarfDie *all_dies,
 	r_anal_free_base_type (base_type);
 }
 
-/**
- * @brief Get the function name from specification entry
- * 
- * @param die 
- * @return char* DIEs name or NULL if error, don't free
- */
 static char *get_specification_die_name(const RBinDwarfDie *die) {
 	char *name = NULL;
 	st32 linkage_name_attr_idx = find_attr_idx (die, DW_AT_linkage_name);
@@ -756,6 +750,96 @@ static char *get_specification_die_name(const RBinDwarfDie *die) {
 	return NULL;
 }
 
+static void get_specification_die_type(const RBinDwarfDie *all_dies, ut64 count, RBinDwarfDie *die, RStrBuf *ret_type) {
+	char *name = NULL;
+	st32 attr_idx = find_attr_idx (die, DW_AT_type);
+	if (attr_idx != -1) {
+		ut64 size = 0;
+		parse_type (all_dies, count, die->attr_values[attr_idx].reference, ret_type, &size);
+	}
+	return NULL;
+}
+
+static void parse_abstract_origin_parameter(const RBinDwarfDie *all_dies, ut64 count, ut64 offset, RStrBuf *type, char **name) {
+
+	RBinDwarfDie key = { .offset = offset };
+	RBinDwarfDie *die = bsearch (&key, all_dies, count, sizeof (key), die_tag_cmp);
+
+	size_t i;
+	ut64 size = 0;
+	for (i = 0; i < die->count; i++) {
+		const RBinDwarfAttrValue *value = &die->attr_values[i];
+		switch (value->attr_name) {
+		case DW_AT_name:
+			*name = value->string.content;
+			break;
+		case DW_AT_type:
+			parse_type (all_dies, count, value->reference, type, &size);
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+
+static st32 parse_function_args(const RBinDwarfDie *all_dies, ut64 count, ut64 idx, RStrBuf *args) {
+
+	r_return_val_if_fail (all_dies && args, -1);
+	const RBinDwarfDie *die = &all_dies[idx];
+
+	if (die->has_children) {
+		int child_depth = 1;
+		const RBinDwarfDie *child_die = &all_dies[++idx];
+		size_t j;
+		ut64 size = 0;
+		char *name = NULL;
+		for (j = idx; child_depth > 0 && j < count; j++) {
+			child_die = &all_dies[j];
+			RStrBuf type;
+			r_strbuf_init (&type);
+			// right now we skip non direct descendats of the structure
+			// can be also DW_TAG_suprogram for class methods or tag for templates
+			if (child_depth == 1 && child_die->tag == DW_TAG_formal_parameter) {
+				size_t i;
+				for (i = 0; i < child_die->count; i++) {
+					const RBinDwarfAttrValue *value = &child_die->attr_values[i];
+					switch (value->attr_name) {
+					case DW_AT_name:
+						name = value->string.content;
+						break;
+					case DW_AT_type:
+						parse_type (all_dies, count, value->reference, &type, &size);
+						break;
+					// abstract origin is supposed to have omitted information
+					case DW_AT_abstract_origin:
+						parse_abstract_origin_parameter (all_dies, count, value->reference, &type, &name);
+						break;
+					default:
+						break;
+					}
+				}
+				r_warn_if_fail (type.len && name);
+				r_strbuf_appendf (args, "%s %s,", r_strbuf_get (&type), name);
+				r_strbuf_fini (&type);
+			}
+			if (child_die->has_children) {
+				child_depth++;
+			}
+			// sibling list is terminated by null entry
+			if (child_die->abbrev_code == 0) {
+				child_depth--;
+			}
+		}
+		// if no params
+		if (args->len > 0) {
+			r_strbuf_slice (args, 0, args->len - 1);
+		}
+	}
+	return 0;
+}
+
+
 static void parse_function(const RAnal *anal, const RBinDwarfDie *all_dies, 
 	const ut64 count, ut64 idx, Sdb *sdb) {
 
@@ -764,7 +848,10 @@ static void parse_function(const RAnal *anal, const RBinDwarfDie *all_dies,
 
 	char *name = NULL;
 	ut64 faddr = 0;
-
+	// we need to create a signature
+	RStrBuf ret_type;
+	r_strbuf_init (&ret_type);
+	ut64 size = 0;
 	size_t i;
 	for (i = 0; i < die->count; i++) {
 		RBinDwarfAttrValue *value = &die->attr_values[i];
@@ -774,6 +861,7 @@ static void parse_function(const RAnal *anal, const RBinDwarfDie *all_dies,
 			name = value->string.content;
 			break;
 		case DW_AT_low_pc:
+		case DW_AT_entry_pc:
 			faddr = value->address;
 			break;
 		case DW_AT_declaration:
@@ -781,21 +869,31 @@ static void parse_function(const RAnal *anal, const RBinDwarfDie *all_dies,
 		case DW_AT_specification: // redirect to DIE with more info
 		{
 			RBinDwarfDie key = { .offset = value->reference };
-			RBinDwarfDie *die = bsearch (&key, all_dies, count, sizeof (key), die_tag_cmp);
-			name = get_specification_die_name (die);
+			RBinDwarfDie *x_die = bsearch (&key, all_dies, count, sizeof (key), die_tag_cmp);
+			name = get_specification_die_name (x_die);
+			get_specification_die_type (all_dies, count, x_die, &ret_type);
 		} break;
-		default:
+		case DW_AT_type:
+			parse_type (all_dies, count, value->reference, &ret_type, &size);
 			break;
 		}
 	}
 	if (!name || !faddr) { // we need a name, faddr
 		return;
 	}
-
+	RStrBuf arguments;
+	r_strbuf_init (&arguments);
+	parse_function_args (all_dies, count, idx, &arguments);
+	if (ret_type.len == 0) {
+		r_strbuf_append (&ret_type, "void");
+	}
 	sdb_set (sdb, name, "func", 0);
 	char *tmp = sdb_fmt ("func.%s.addr", name);
-	char *addr_str = sdb_fmt ("%"PFMT64x"", faddr);
+	char *addr_str = sdb_fmt ("0x%" PFMT64x "", faddr);
 	sdb_set (sdb, tmp, addr_str, 0);
+	char *signature = sdb_fmt ("%s (%s);", r_strbuf_get (&ret_type), r_strbuf_get (&arguments));
+	tmp = sdb_fmt ("func.%s.sig", name);
+	sdb_set (sdb, tmp, signature, 0);
 cleanup:
 	return;
 }
@@ -869,6 +967,16 @@ R_API void r_anal_analyze_dwarf_functions(RAnal *anal, Sdb *dwarf_sdb) {
 	SdbListIter *it;
 	SdbKv *kv;
 	ls_foreach (sdb_list, it, kv) {
-		;
+		char *func_name = kv->base.key;
+		char *tmp = sdb_fmt ("func.%s.addr", func_name);
+		ut64 faddr = sdb_num_get (dwarf_sdb, tmp, 0);
+		RAnalFunction *func = r_anal_get_function_at (anal, faddr);
+		if (func) {
+			r_anal_function_rename (func, func_name);
+			tmp = sdb_fmt ("func.%s.sig", func_name);
+			char *fcnstr = sdb_get (dwarf_sdb, tmp, 0);
+			r_anal_str_to_fcn (anal, func, fcnstr);
+		}
+
 	}
 } 
