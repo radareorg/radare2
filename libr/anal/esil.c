@@ -554,12 +554,6 @@ static bool esil_signext(RAnalEsil *esil) {
 		return false;
 	}
 
-	if (r_anal_esil_get_parm_type (
-		esil, p_src) != R_ANAL_ESIL_PARM_NUM) {
-		free (p_src);
-		return false;
-	}
-
 	if (!r_anal_esil_get_parm (esil, p_src, &src)) {
 		ERR ("esil_of: empty stack");
 		free (p_src);
