@@ -6,7 +6,7 @@
 #include "r_core.h"
 #include "r_util.h"
 #include "r_types.h"
-#include "sdb/sdb.h"
+#include <sdb.h>
 
 char *getcommapath(RCore *core);
 
@@ -20,7 +20,7 @@ static const char *help_msg_C[] = {
 	"CC!", " [@addr]", "edit comment with $EDITOR",
 	"CC", "[?] [-] [comment-text] [@addr]", "add/remove comment",
 	"CC.", "[addr]", "show comment in current address",
-	"CCa", "[-at]|[at] [text] [@addr]", "add/remove comment at given address",
+	"CCa", "[+-] [addr] [text]", "add/remove comment at given address",
 	"CCu", " [comment-text] [@addr]", "add unique comment",
 	"CF", "[sz] [fcn-sign..] [@addr]", "function signature",
 	"CL", "[-][*] [file:line] [addr]", "show or add 'code line' information (bininfo)",
@@ -134,7 +134,7 @@ static const char *help_msg_Cvs[] = {
 	NULL
 };
 
-static void cmd_meta_init(RCore *core) {
+static void cmd_meta_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, C);
 	DEFINE_CMD_DESCRIPTOR (core, CC);
 	DEFINE_CMD_DESCRIPTOR (core, CS);
@@ -200,7 +200,7 @@ static ut64 filter_offset = UT64_MAX;
 static int filter_format = 0;
 static size_t filter_count = 0;
 
-static int print_addrinfo (void *user, const char *k, const char *v) {
+static bool print_addrinfo (void *user, const char *k, const char *v) {
 	ut64 offset = sdb_atoi (k);
 	if (!offset || offset == UT64_MAX) {
 		return true;
@@ -606,6 +606,10 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	int repeat = 1;
 	ut64 addr = core->offset;
 
+	if (!type) {
+		return 0;
+	}
+
 	switch (input[1]) {
 	case '?':
 		switch (input[0]) {
@@ -897,7 +901,7 @@ void r_comment_vars(RCore *core, const char *input) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 	char *oname = NULL, *name = NULL;
 
-	if (input[1] == '?' || (input[0] != 'b' && input[0] != 'r' && input[0] != 's') ) {
+	if (!input[0] || input[1] == '?' || (input[0] != 'b' && input[0] != 'r' && input[0] != 's')) {
 		r_comment_var_help (core, input[0]);
 		return;
 	}
@@ -905,10 +909,7 @@ void r_comment_vars(RCore *core, const char *input) {
 		eprintf ("Can't find function here\n");
 		return;
 	}
-	oname = name = strdup (input + 2);
-	while (*name == ' ') {
-		name++;
-	}
+	oname = name = r_str_trim_dup (input + 1);
 	switch (input[1]) {
 	case '*': // "Cv*"
 	case '\0': { // "Cv"
@@ -967,6 +968,8 @@ void r_comment_vars(RCore *core, const char *input) {
 		}
 		break;
 	case '-': { // "Cv-"
+		name++;
+		r_str_trim (name);
 		RAnalVar *var = r_anal_function_get_var_byname (fcn, name);
 		if (!var) {
 			int idx = (int)strtol (name, NULL, 0);
@@ -982,9 +985,11 @@ void r_comment_vars(RCore *core, const char *input) {
 	}
 	case '!': { // "Cv!"
 		char *comment;
+		name++;
+		r_str_trim (name);
 		RAnalVar *var = r_anal_function_get_var_byname (fcn, name);
 		if (!var) {
-			eprintf ("can't find variable named `%s`\n",name);
+			eprintf ("can't find variable named `%s`\n", name);
 			break;
 		}
 		comment = r_core_editor (core, NULL, var->comment);

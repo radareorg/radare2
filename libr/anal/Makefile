@@ -5,7 +5,7 @@ EXTRA_CLEAN=doclean
 CFLAGS+=-I..
 
 NAME=r_anal
-DEPS=r_util r_reg r_syscall r_search r_cons r_flag r_hash r_crypto r_parse
+R2DEPS=r_util r_reg r_syscall r_search r_cons r_flag r_hash r_crypto r_parse
 CFLAGS+=-DR2_PLUGIN_INCORE -Iarch -I$(TOP)/shlr
 CFLAGS+=-I$(LTOP)/asm/arch/include
 
@@ -29,7 +29,7 @@ include ${STATIC_ANAL_PLUGINS}
 
 STATIC_OBJS=$(addprefix $(LTOP)/anal/p/,$(STATIC_OBJ))
 OBJLIBS=meta.o reflines.o op.o fcn.o bb.o var.o block.o
-OBJLIBS+=cond.o value.o cc.o class.o diff.o type.o
+OBJLIBS+=cond.o value.o cc.o class.o diff.o type.o type_pdb.o type_dwarf.o
 OBJLIBS+=hint.o anal.o data.o xrefs.o esil.o sign.o
 OBJLIBS+=switch.o cycles.o esil_dfg.o
 OBJLIBS+=esil_sources.o esil_interrupt.o esil_cfg.o

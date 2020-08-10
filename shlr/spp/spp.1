@@ -1,0 +1,42 @@
+.Dd Jun 16, 2020
+.Dt SPP 1
+.Sh NAME
+.Nm spp
+.Nd simple pre-processor
+.Sh SYNOPSIS
+.Nm spp
+.Op Fl h
+.Op Fl o Ar file
+.Op Fl t Ar type
+.Op Fl e Ar evalstr
+.Op Fl s Ar prefixstr
+.Op Fl l
+.Op Fl L
+.Op Fl n
+.Op Fl v
+.Op [test-(dir|file) ...]
+.Sh DESCRIPTION
+Simple preprocessor tool similar to PHP or CPP but focusing on simplicity,
+ease to be embedded and used from the commandline or the API.
+.Pp
+TODO: this manpage is work-in-progress
+.Pp
+You need radare2 to be available in $PATH.
+.Sh OPTIONS
+.Bl -tag -width Fl
+.It Fl h
+Show the help/usage message
+.El
+.Sh USAGE
+.Pp
+Use the -n flag to dont run any test. Just load them.
+.Pp
+  $ echo 'Hello <{system darwin}>' | spp
+  Hello Darwin
+.Pp
+.Sh SEE ALSO
+.Pp
+.Xr cat(1)
+.Sh AUTHORS
+.Pp
+Written by pancake <pancake@nopcode.org>.

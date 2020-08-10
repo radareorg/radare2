@@ -1,16 +1,16 @@
-/* radare - LGPL - Copyright 2010-2019 - pancake, nibble */
+/* radare - LGPL - Copyright 2010-2020 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
 #include <r_list.h>
 
-R_API RAnalOp *r_anal_op_new() {
+R_API RAnalOp *r_anal_op_new(void) {
 	RAnalOp *op = R_NEW (RAnalOp);
 	r_anal_op_init (op);
 	return op;
 }
 
-R_API RList *r_anal_op_list_new() {
+R_API RList *r_anal_op_list_new(void) {
 	RList *list = r_list_new ();
 	if (list) {
 		list->free = &r_anal_op_free;
@@ -43,6 +43,8 @@ R_API bool r_anal_op_fini(RAnalOp *op) {
 	op->src[2] = NULL;
 	r_anal_value_free (op->dst);
 	op->dst = NULL;
+	r_list_free (op->access);
+	op->access = NULL;
 	r_strbuf_fini (&op->opex);
 	r_strbuf_fini (&op->esil);
 	r_anal_switch_op_free (op->switch_op);
@@ -155,6 +157,15 @@ R_API RAnalOp *r_anal_op_copy(RAnalOp *op) {
 	nop->src[1] = r_anal_value_copy (op->src[1]);
 	nop->src[2] = r_anal_value_copy (op->src[2]);
 	nop->dst = r_anal_value_copy (op->dst);
+	if (op->access) {
+		RListIter *it;
+		RAnalValue *val;
+		RList *naccess = r_list_newf ((RListFree)r_anal_value_free);
+		r_list_foreach (op->access, it, val) {
+			r_list_append (naccess, r_anal_value_copy (val));
+		}
+		nop->access = naccess;
+	}
 	r_strbuf_init (&nop->esil);
 	r_strbuf_copy (&nop->esil, &op->esil);
 	return nop;
@@ -572,7 +583,7 @@ R_API const char *r_anal_op_family_to_string(int n) {
 	switch (n) {
 	case R_ANAL_OP_FAMILY_UNKNOWN: return "unk";
 	case R_ANAL_OP_FAMILY_CPU: return "cpu";
-	case R_ANAL_OP_FAMILY_PAC: return "pac";
+	case R_ANAL_OP_FAMILY_SECURITY: return "sec";
 	case R_ANAL_OP_FAMILY_FPU: return "fpu";
 	case R_ANAL_OP_FAMILY_MMX: return "mmx";
 	case R_ANAL_OP_FAMILY_SSE: return "sse";
@@ -599,7 +610,7 @@ R_API int r_anal_op_family_from_string(const char *f) {
 		{"virt", R_ANAL_OP_FAMILY_VIRT},
 		{"crpt", R_ANAL_OP_FAMILY_CRYPTO},
 		{"io", R_ANAL_OP_FAMILY_IO},
-		{"pac", R_ANAL_OP_FAMILY_PAC},
+		{"sec", R_ANAL_OP_FAMILY_SECURITY},
 		{"thread", R_ANAL_OP_FAMILY_THREAD},
 	};
 

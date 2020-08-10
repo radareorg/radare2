@@ -6,15 +6,20 @@
 #define NPF 5
 #define PIDX (R_ABS (core->printidx % NPF))
 
+static void visual_refresh(RCore *core);
+
 static int obs = 0;
 static int blocksize = 0;
 static bool autoblocksize = true;
 static int disMode = 0;
 static int hexMode = 0;
 static int printMode = 0;
-static void visual_refresh(RCore *core);
 static bool snowMode = false;
 static RList *snows = NULL;
+static int color = 1;
+static int debug = 1;
+static int zoom = 0;
+
 
 typedef struct {
 	int x;
@@ -224,7 +229,7 @@ static const char *__core_visual_print_command(RCore *core) {
 	return printfmtSingle[PIDX];
 }
 
-static bool __core_visual_gogo (RCore *core, int ch) {
+static bool __core_visual_gogo(RCore *core, int ch) {
 	RIOMap *map;
 	int ret = -1;
 	switch (ch) {
@@ -283,6 +288,7 @@ static const char *help_msg_visual[] = {
 	"?", "show visual help menu",
 	"??", "show this help",
 	"$", "set the program counter to the current offset + cursor",
+	"&", "rotate asm.bits between 8, 16, 32 and 64 applying hints",
 	"%", "in cursor mode finds matching pair, otherwise toggle autoblocksz",
 	"^", "seek to the beginning of the function",
 	"!", "enter into the visual panels mode",
@@ -391,7 +397,6 @@ static void printSnow(RCore *core) {
 
 static void rotateAsmBits(RCore *core) {
 	RAnalHint *hint = r_anal_hint_get (core->anal, core->offset);
-	// const char *arch = r_config_get_i (core->config, "asm.arch");
 	int bits = hint? hint->bits : r_config_get_i (core->config, "asm.bits");
 	int retries = 4;
 	while (retries > 0) {
@@ -474,10 +479,6 @@ static inline void nextPrintFormat(RCore *core) {
 static inline void prevPrintFormat(RCore *core) {
 	printFormat (core, -1);
 }
-
-static int color = 1;
-static int debug = 1;
-static int zoom = 0;
 
 R_API int r_core_visual_hud(RCore *core) {
 	const char *c = r_config_get (core->config, "hud.path");
@@ -2273,7 +2274,7 @@ static void numbuf_append(int ch) {
 	numbuf[numbuf_i] = 0;
 }
 
-static int numbuf_pull() {
+static int numbuf_pull(void) {
 	int distance = 1;
 	if (numbuf_i) {
 		numbuf[numbuf_i] = 0;
@@ -3635,9 +3636,12 @@ R_API void r_core_visual_title(RCore *core, int color) {
 			oldpc = curpc;
 		}
 	}
-
-	RIODesc *desc = core->file? r_io_desc_get (core->io, core->file->fd): NULL;
+	RIOMap *map = r_io_map_get (core->io, core->offset);
+	RIODesc *desc = map
+		? r_io_desc_get (core->io, map->fd)
+		: core->file? r_io_desc_get (core->io, core->file->fd): NULL;
 	filename = desc? desc->name: "";
+
 	{ /* get flag with delta */
 		ut64 addr = core->offset + (core->print->cur_enabled? core->print->cur: 0);
 		/* TODO: we need a helper into r_flags to do that */
@@ -3682,15 +3686,14 @@ R_API void r_core_visual_title(RCore *core, int color) {
 	}
 	const char *cmd_visual = r_config_get (core->config, "cmd.visual");
 	if (cmd_visual && *cmd_visual) {
-		strncpy (bar, cmd_visual, sizeof (bar) - 1);
+		r_str_ncpy (bar, cmd_visual, sizeof (bar) - 1);
 		bar[10] = '.'; // chop cmdfmt
 		bar[11] = '.'; // chop cmdfmt
 		bar[12] = 0; // chop cmdfmt
 	} else {
 		const char *cmd = __core_visual_print_command (core);
 		if (cmd) {
-			strncpy (bar, cmd, sizeof (bar) - 1);
-			bar[sizeof (bar) - 1] = 0; // '\0'-terminate bar
+			r_str_ncpy (bar, cmd, sizeof (bar) - 1);
 			bar[10] = '.'; // chop cmdfmt
 			bar[11] = '.'; // chop cmdfmt
 			bar[12] = 0; // chop cmdfmt
@@ -4141,6 +4144,28 @@ R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols) {
 	}
 }
 
+#ifdef __WINDOWS__
+
+static bool is_mintty(RCons *cons) {
+	return cons->term_xterm;
+}
+
+static void flush_stdin(void) {
+	while (r_cons_readchar_timeout (1) != -1) ;
+}
+
+#else
+
+static bool is_mintty(RCons *cons) {
+	return false;
+}
+
+static void flush_stdin(void) {
+	tcflush (STDIN_FILENO, TCIFLUSH);
+}
+
+#endif
+
 R_API int r_core_visual(RCore *core, const char *input) {
 	const char *teefile;
 	ut64 scrseek;
@@ -4262,28 +4287,31 @@ dodo:
 			} else {
 				ch = r_cons_readchar ();
 			}
+			if (I->vtmode == 2 && !is_mintty (core->cons)) {
+				// Prevent runaway scrolling
+				if (IS_PRINTABLE (ch) || ch == '\t' || ch == '\n') {
+					flush_stdin ();
+				} else if (ch == 0x1b) {
+					char chrs[2];
+					int chrs_read = 1;
+					chrs[0] = r_cons_readchar ();
+					if (chrs[0] == '[') {
+						chrs[1] = r_cons_readchar ();
+						chrs_read++;
+						if (chrs[1] >= 'A' && chrs[1] <= 'D') { // arrow keys
+							flush_stdin ();
 #ifndef __WINDOWS__
-			if (IS_PRINTABLE (ch) || ch == '\t' || ch == '\n') {
-				tcflush (STDIN_FILENO, TCIFLUSH);
-			} else if (ch == 0x1b) {
-				char chrs[2];
-				int chrs_read = 1;
-				chrs[0] = r_cons_readchar ();
-				if (chrs[0] == '[') {
-					chrs[1] = r_cons_readchar ();
-					chrs_read++;
-					if (chrs[1] >= 'A' && chrs[1] <= 'D') { // arrow keys
-						tcflush (STDIN_FILENO, TCIFLUSH);
-						// Following seems to fix an issue where scrolling slows
-						// down to a crawl after some time mashing the up and down
-						// arrow keys
-						r_cons_set_raw (false);
-						r_cons_set_raw (true);
-					}
-				}
-				(void)r_cons_readpush (chrs, chrs_read);
-			}
+							// Following seems to fix an issue where scrolling slows
+							// down to a crawl for some terminals after some time
+							// mashing the up and down arrow keys
+							r_cons_set_raw (false);
+							r_cons_set_raw (true);
 #endif
+						}
+					}
+					(void)r_cons_readpush (chrs, chrs_read);
+				}
+			}
 			if (r_cons_is_breaked()) {
 				break;
 			}

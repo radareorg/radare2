@@ -8,7 +8,7 @@
 #include <r_util.h>
 #include "pe.h"
 #include <time.h>
-#include <sdb/ht_uu.h>
+#include <ht_uu.h>
 
 #define PE_IMAGE_FILE_MACHINE_RPI2 452
 #define MAX_METADATA_STRING_LENGTH 256
@@ -55,20 +55,31 @@ static inline int is_arm(struct PE_(r_bin_pe_obj_t)* bin) {
 	return 0;
 }
 
+static inline void follow_jump(struct r_bin_pe_addr_t *entry, RBuffer *buf, ut8 *b, int len, bool big_endian) {
+	r_buf_read_at (buf, entry->paddr, b, len);
+	if (b[0] != 0xe9) {
+		return;
+	}
+	const st32 jmp_dst = r_read_ble32 (b + 1, big_endian);
+	entry->paddr += (5 + jmp_dst);
+	entry->vaddr += (5 + jmp_dst);
+	r_buf_read_at (buf, entry->paddr, b, len);
+}
+
 struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin) {
-	struct r_bin_pe_addr_t* entry;
+	r_return_val_if_fail (bin && bin->b, NULL);
 	ut8 b[512];
 	int n = 0;
-	if (!bin || !bin->b) {
-		return 0LL;
-	}
-	entry = PE_(r_bin_pe_get_entrypoint) (bin);
+	struct r_bin_pe_addr_t* entry = PE_(r_bin_pe_get_entrypoint) (bin);
 	ZERO_FILL (b);
 	if (r_buf_read_at (bin->b, entry->paddr, b, sizeof (b)) < 0) {
 		bprintf ("Warning: Cannot read entry at 0x%08"PFMT64x "\n", entry->paddr);
 		free (entry);
 		return NULL;
 	}
+
+	follow_jump (entry, bin->b, b, sizeof (b), bin->big_endian);
+
 	// MSVC SEH
 	// E8 13 09 00 00  call    0x44C388
 	// E9 05 00 00 00  jmp     0x44BA7F
@@ -88,6 +99,7 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin) {
 					const st32 call_dst = r_read_ble32 (b + n + 6, bin->big_endian);
 					entry->paddr += (n + 5 + 5 + call_dst);
 					entry->vaddr += (n + 5 + 5 + call_dst);
+					follow_jump (entry, bin->b, b, sizeof (b), bin->big_endian);
 					return entry;
 				}
 			}
@@ -102,6 +114,7 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin) {
 					const st32 call_dst = r_read_ble32 (b + n + 6, bin->big_endian);
 					entry->paddr += (n + 5 + 5 + call_dst);
 					entry->vaddr += (n + 5 + 5 + call_dst);
+					follow_jump (entry, bin->b, b, sizeof (b), bin->big_endian);
 					return entry;
 				}
 			}
@@ -115,6 +128,7 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin) {
 					const st32 call_dst = r_read_ble32 (b + n + 14, bin->big_endian);
 					entry->paddr += (n + 5 + 13 + call_dst);
 					entry->vaddr += (n + 5 + 13 + call_dst);
+					follow_jump (entry, bin->b, b, sizeof (b), bin->big_endian);
 					return entry;
 				}
 			}
@@ -128,33 +142,131 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin) {
 					const st32 call_dst = r_read_ble32 (b + n + 5, bin->big_endian);
 					entry->paddr += (n + 5 + 4 + call_dst);
 					entry->vaddr += (n + 5 + 4 + call_dst);
+					follow_jump (entry, bin->b, b, sizeof (b), bin->big_endian);
 					return entry;
 				}
 			}
-
+			//case5:
+			//57                                        push    edi
+			//56                                        push    esi
+			//FF 36                                     push    dword ptr[eax]
+			//E8 D9 FD FF FF                            call    _main
+			for (n = 0; n < sizeof (b) - 5; n++) {
+				if (b[n] == 0x57 && b[n + 1] == 0x56 && b[n + 2] == 0xff && b[n + 4] == 0xe8) {
+					const st32 call_dst = r_read_ble32 (b + n + 5, bin->big_endian);
+					entry->paddr += (n + 5 + 4 + call_dst);
+					entry->vaddr += (n + 5 + 4 + call_dst);
+					follow_jump (entry, bin->b, b, sizeof (b), bin->big_endian);
+					return entry;
+				}
+			}
 		}
 	}
+
+	// MSVC 32bit debug 
+	if (b[3] == 0xe8) {
+		// 55                    push ebp
+		// 8B EC                 mov ebp, esp
+		// E8 xx xx xx xx        call xxxxxxxx
+		// 5D                    pop ebp
+		// C3                    ret
+		const st32 call_dst = r_read_ble32 (b + 4, bin->big_endian);
+		entry->paddr += (5 + 3 + call_dst);
+		entry->vaddr += (5 + 3 + call_dst);
+		r_buf_read_at (bin->b, entry->paddr, b, sizeof (b));
+		if (b[8] == 0xe8) {
+			// 55                    push ebp
+			// 8B EC                 mov ebp, esp
+			// E8 xx xx xx xx        call xxxxxxxx
+			// E8 xx xx xx xx        call xxxxxxxx <- Follow this
+			// 5D                    pop ebp
+			// C3                    ret
+			const st32 call_dst = r_read_ble32 (b + 9, bin->big_endian);
+			entry->paddr += (5 + 8 + call_dst);
+			entry->vaddr += (5 + 8 + call_dst);
+			r_buf_read_at (bin->b, entry->paddr, b, sizeof (b));
+			if (b[0x152] == 0xe8) {
+				// E8 xx xx xx xx        call xxxxxxxx
+				const st32 call_dst = r_read_ble32 (b + 0x153, bin->big_endian);
+				entry->paddr += (5 + 0x152 + call_dst);
+				entry->vaddr += (5 + 0x152 + call_dst);
+				r_buf_read_at (bin->b, entry->paddr, b, sizeof (b));
+				if (b[0x2e] == 0xe8) {
+					// E8 xx xx xx xx        call xxxxxxxx
+					const st32 call_dst = r_read_ble32 (b + 0x2f, bin->big_endian);
+					entry->paddr += (5 + 0x2e + call_dst);
+					entry->vaddr += (5 + 0x2e + call_dst);
+					follow_jump (entry, bin->b, b, sizeof (b), bin->big_endian);
+					return entry;
+				}
+			}
+		}
+	}
+
 	// MSVC AMD64
-	// 48 83 EC 28       sub     rsp, 0x28
-	// E8 xx xx xx xx    call    xxxxxxxx
-	// 48 83 C4 28       add     rsp, 0x28
-	// E9 xx xx xx xx    jmp     xxxxxxxx
-	if (b[4] == 0xe8 && b[13] == 0xe9) {
-		//const st32 jmp_dst = b[14] | (b[15] << 8) | (b[16] << 16) | (b[17] << 24);
-		const st32 jmp_dst = r_read_ble32 (b + 14, bin->big_endian);
-		entry->paddr += (5 + 13 + jmp_dst);
-		entry->vaddr += (5 + 13 + jmp_dst);
-		if (r_buf_read_at (bin->b, entry->paddr, b, sizeof (b)) > 0) {
+	if (b[4] == 0xe8) {
+		bool found_caller = false;
+		if (b[13] == 0xe9) {
+			// 48 83 EC 28       sub     rsp, 0x28
+			// E8 xx xx xx xx    call    xxxxxxxx
+			// 48 83 C4 28       add     rsp, 0x28
+			// E9 xx xx xx xx    jmp     xxxxxxxx <- Follow this
+			const st32 jmp_dst = r_read_ble32 (b + 14, bin->big_endian);
+			entry->paddr += (5 + 13 + jmp_dst);
+			entry->vaddr += (5 + 13 + jmp_dst);
+			found_caller = r_buf_read_at (bin->b, entry->paddr, b, sizeof (b)) > 0;
+		} else {
+			// Debug
+			// 48 83 EC 28       sub     rsp, 0x28
+			// E8 xx xx xx xx    call    xxxxxxxx
+			// 48 83 C4 28       add     rsp, 0x28
+			// C3                ret
+			const st32 call_dst = r_read_ble32 (b + 5, bin->big_endian);
+			entry->paddr += (5 + 4 + call_dst);
+			entry->vaddr += (5 + 4 + call_dst);
+			r_buf_read_at (bin->b, entry->paddr, b, sizeof (b));
+			if (b[9] == 0xe8) {
+				// 48 83 EC 28       sub     rsp, 0x28
+				// E8 xx xx xx xx    call    xxxxxxxx
+				// E8 xx xx xx xx    call    xxxxxxxx <- Follow this
+				// 48 83 C4 28       add     rsp, 0x28
+				// C3                ret
+				const st32 call_dst = r_read_ble32 (b + 10, bin->big_endian);
+				entry->paddr += (5 + 9 + call_dst);
+				entry->vaddr += (5 + 9 + call_dst);
+				r_buf_read_at (bin->b, entry->paddr, b, sizeof (b));
+				if (b[0x129] == 0xe8) {
+					// E8 xx xx xx xx        call xxxxxxxx
+					const st32 call_dst = r_read_ble32 (b + 0x12a, bin->big_endian);
+					entry->paddr += (5 + 0x129 + call_dst);
+					entry->vaddr += (5 + 0x129 + call_dst);
+					found_caller = r_buf_read_at (bin->b, entry->paddr, b, sizeof (b)) > 0;
+				}
+			}
+		}
+		if (found_caller) {
 			// from des address of jmp, search for 4C ... 48 ... 8B ... E8
 			// 4C 8B C0                    mov     r8, rax
 			// 48 8B 17                    mov     rdx, qword [rdi]
 			// 8B 0B                       mov     ecx, dword [rbx]
+			// E8 xx xx xx xx              call    main
+			// or
+			// 4C 8B 44 24 28              mov r8, qword [rsp + 0x28]
+			// 48 8B 54 24 30              mov rdx, qword [rsp + 0x30]
+			// 8B 4C 24 20                 mov ecx, dword [rsp + 0x20]
 			// E8 xx xx xx xx              call    main
 			for (n = 0; n < sizeof (b) - 13; n++) {
 				if (b[n] == 0x4c && b[n + 3] == 0x48 && b[n + 6] == 0x8b && b[n + 8] == 0xe8) {
 					const st32 call_dst = r_read_ble32 (b + n + 9, bin->big_endian);
 					entry->paddr += (n + 5 + 8 + call_dst);
 					entry->vaddr += (n + 5 + 8 + call_dst);
+					follow_jump (entry, bin->b, b, sizeof (b), bin->big_endian);
+					return entry;
+				} else if (b[n] == 0x4c && b [n + 5] == 0x48 && b[n + 10] == 0x8b && b[n + 14] == 0xe8) {
+					const st32 call_dst = r_read_ble32 (b + n + 15, bin->big_endian);
+					entry->paddr += (n + 5 + 14 + call_dst);
+					entry->vaddr += (n + 5 + 14 + call_dst);
+					follow_jump (entry, bin->b, b, sizeof (b), bin->big_endian);
 					return entry;
 				}
 			}
@@ -3073,8 +3185,9 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 }
 
 struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* bin) {
+	r_return_val_if_fail (bin, NULL);
 	struct r_bin_pe_export_t* exp, * exports = NULL;
-	PE_Word function_ordinal;
+	PE_Word function_ordinal = 0;
 	PE_VWord functions_paddr, names_paddr, ordinals_paddr, function_rva, name_vaddr, name_paddr;
 	char function_name[PE_NAME_LENGTH + 1], forwarder_name[PE_NAME_LENGTH + 1];
 	char dll_name[PE_NAME_LENGTH + 1];
@@ -3083,12 +3196,14 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 	int n,i, export_dir_size;
 	st64 exports_sz = 0;
 
-	if (!bin || !bin->data_directory) {
+	if (!bin->data_directory) {
 		return NULL;
 	}
 	data_dir_export = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
 	export_dir_rva = data_dir_export->VirtualAddress;
 	export_dir_size = data_dir_export->Size;
+	PE_VWord *func_rvas = NULL;
+	PE_Word *ordinals = NULL;
 	if (bin->export_directory) {
 		if (bin->export_directory->NumberOfFunctions + 1 <
 		bin->export_directory->NumberOfFunctions) {
@@ -3115,27 +3230,31 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 
 		const size_t names_sz = bin->export_directory->NumberOfNames * sizeof (PE_Word);
 		const size_t funcs_sz = bin->export_directory->NumberOfFunctions * sizeof (PE_VWord);
-		PE_Word *ordinals = malloc (names_sz);
-		PE_VWord *func_rvas = malloc (funcs_sz);
+		ordinals = malloc (names_sz);
+		func_rvas = malloc (funcs_sz);
 		if (!ordinals || !func_rvas) {
-			free (exports);
-			free (ordinals);
-			free (func_rvas);
-			return NULL;
+			goto beach;
 		}
-		r_buf_read_at (bin->b, ordinals_paddr, (ut8 *)ordinals, names_sz);
-		r_buf_read_at (bin->b, functions_paddr, (ut8 *)func_rvas, funcs_sz);
+		int r = r_buf_read_at (bin->b, ordinals_paddr, (ut8 *)ordinals, names_sz);
+		if (r != names_sz) {
+			goto beach;
+		}
+		r = r_buf_read_at (bin->b, functions_paddr, (ut8 *)func_rvas, funcs_sz);
+		if (r != funcs_sz) {
+			goto beach;
+		}
 		for (i = 0; i < bin->export_directory->NumberOfFunctions; i++) {
 			// get vaddr from AddressOfFunctions array
 			function_rva = r_read_at_ble32 ((ut8 *)func_rvas, i * sizeof (PE_VWord), bin->endian);
 			// have exports by name?
-			if (bin->export_directory->NumberOfNames != 0) {
+			if (bin->export_directory->NumberOfNames > 0) {
 				// search for value of i into AddressOfOrdinals
 				name_vaddr = 0;
 				for (n = 0; n < bin->export_directory->NumberOfNames; n++) {
-					function_ordinal = r_read_at_ble16 ((ut8 *)ordinals, n * sizeof (PE_Word), bin->endian);
+					PE_Word fo = r_read_at_ble16 ((ut8 *)ordinals, n * sizeof (PE_Word), bin->endian);
 					// if exist this index into AddressOfOrdinals
-					if (i == function_ordinal) {
+					if (i == fo) {
+						function_ordinal = fo;
 						// get the VA of export name  from AddressOfNames
 						r_buf_read_at (bin->b, names_paddr + n * sizeof (PE_VWord), (ut8*) &name_vaddr, sizeof (PE_VWord));
 						break;
@@ -3189,6 +3308,11 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 		exports = exp;
 	}
 	return exports;
+beach:
+	free (exports);
+	free (ordinals);
+	free (func_rvas);
+	return NULL;
 }
 
 static void free_rsdr_hdr(SCV_RSDS_HEADER* rsds_hdr) {
@@ -3882,6 +4006,7 @@ static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe
 		} else {
 			sections[j].vsize = shdr[i].SizeOfRawData;
 		}
+		sections[j].paddr = shdr[i].PointerToRawData;
 		if (bin->optional_header) {
 			ut32 sa = bin->optional_header->SectionAlignment;
 			if (sa) {
@@ -3894,8 +4019,16 @@ static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe
 							sections[j].name);
 				}
 			}
+			const ut32 fa = bin->optional_header->FileAlignment;
+			if (fa) {
+				const ut64 diff = sections[j].paddr % fa;
+				if (diff) {
+					bprintf ("Warning: section %s not aligned to FileAlignment.\n", sections[j].name);
+					sections[j].paddr -= diff;
+					sections[j].size += diff;	
+				}
+			}
 		}
-		sections[j].paddr = shdr[i].PointerToRawData;
 		sections[j].perm = shdr[i].Characteristics;
 		sections[j].last = 0;
 		j++;

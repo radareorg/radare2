@@ -67,7 +67,7 @@ void sprint_mem(char *out, const ut8 *buf, size_t len) {
 #define mu_sysfail(message) do { perror(message); mu_fail(message); } while(0)
 
 #define mu_assert_true(actual, message) do { \
-		__typeof__ (actual) act__ = (actual); \
+		bool act__ = (actual); \
 		if (!(act__)) { \
 			char _meqstr[2048]; \
 			sprintf (_meqstr, "%s: expected true, got false", (message)); \
@@ -77,7 +77,7 @@ void sprint_mem(char *out, const ut8 *buf, size_t len) {
 
 #define mu_assert_false(actual, message) \
 	do { \
-		__typeof__ (actual) act__ = (actual); \
+		bool act__ = (actual); \
 		if ((act__)) { \
 			char _meqstr[2048]; \
 			sprintf (_meqstr, "%s: expected false, got true", (message)); \
@@ -86,8 +86,8 @@ void sprint_mem(char *out, const ut8 *buf, size_t len) {
 	} while (0)
 
 #define mu_assert_eq(actual, expected, message) do { \
-		__typeof__(actual) act__ = (actual); \
-		__typeof__(expected) exp__ = (expected); \
+		ut64 act__ = (ut64)(actual); \
+		ut64 exp__ = (ut64)(expected); \
 		if ((exp__) != (act__)) { \
 			char _meqstr[2048]; \
 			sprintf(_meqstr, "%s: expected %" PFMT64d ", got %" PFMT64d ".", (message), (ut64)(exp__), (ut64)(act__)); \
@@ -97,8 +97,8 @@ void sprint_mem(char *out, const ut8 *buf, size_t len) {
 
 #define mu_assert_neq(actual, expected, message) do { \
 		char _meqstr[2048]; \
-		__typeof__(actual) act__ = (actual); \
-		__typeof__(expected) exp__ = (expected); \
+		ut64 act__ = (ut64)(actual); \
+		ut64 exp__ = (ut64)(expected); \
 		sprintf(_meqstr, "%s: expected not %" PFMT64d ", got %" PFMT64d ".", (message), (exp__), (act__)); \
 		mu_assert(_meqstr, (exp__) != (act__)); \
 	} while(0)
@@ -134,8 +134,8 @@ void sprint_mem(char *out, const ut8 *buf, size_t len) {
 	} while(0)
 
 #define mu_assert_eq_fmt(actual, expected, message, fmt) do { \
-		__typeof__(actual) act__ = (actual); \
-		__typeof__(expected) exp__ = (expected); \
+		ut64 act__ = (ut64)(actual); \
+		ut64 exp__ = (ut64)(expected); \
 		if ((exp__) != (act__)) { \
 			char _meqstr[2048]; \
 			sprintf(_meqstr, "%s: expected "fmt", got "fmt".", (message), (exp__), (act__)); \

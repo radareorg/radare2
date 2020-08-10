@@ -40,6 +40,12 @@ RebuildIOSDebug() {
 	fi
 }
 
+RebuildSpp() {
+	Rebuild shlr/spp
+	Rebuild libr/util
+	Rebuild libr/lang
+}
+
 RebuildJava() {
 	Rebuild shlr/java
 	Rebuild libr/asm

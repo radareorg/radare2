@@ -295,7 +295,7 @@ static int do_help(int line) {
 	return 0;
 }
 
-static void algolist() {
+static void algolist(void) {
 	ut64 bits;
 	ut64 i;
 	for (i = 0; i < R_HASH_NBITS; i++) {
@@ -353,7 +353,9 @@ static int encrypt_or_decrypt(const char *algo, int direction, const char *hashs
 				int result_size = 0;
 				ut8 *result = r_crypto_get_output (cry, &result_size);
 				if (result) {
-					write (1, result, result_size);
+					if (write (1, result, result_size) != result_size) {
+						eprintf ("Warning: cannot write result\n");
+					}
 					free (result);
 				}
 			} else {
@@ -402,7 +404,7 @@ static int encrypt_or_decrypt_file(const char *algo, int direction, const char *
 				int result_size = 0;
 				ut8 *result = r_crypto_get_output (cry, &result_size);
 				if (result) {
-					write (1, result, result_size);
+					(void)write (1, result, result_size);
 					free (result);
 				}
 				free (buf);
@@ -423,6 +425,7 @@ static int encrypt_or_decrypt_file(const char *algo, int direction, const char *
 R_API int r_main_rahash2(int argc, const char **argv) {
 	ut64 i;
 	int ret, c, rad = 0, bsize = 0, numblocks = 0, ule = 0;
+	const char *file = NULL;
 	const char *algo = "sha256"; /* default hashing algorithm */
 	const char *seed = NULL;
 	const char *decrypt = NULL;
@@ -671,6 +674,13 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 
 	io = r_io_new ();
 	for (ret = 0, i = opt.ind; i < argc; i++) {
+		file = argv[i];
+
+		if (file && !*file) {
+			eprintf ("Cannot open empty path\n");
+			return 1;
+		}
+
 		if (encrypt) {// for encrytion when files are provided
 			int rt = encrypt_or_decrypt_file (encrypt, 0, argv[i], iv, ivlen, 0);
 			if (rt == -1) {

@@ -29,6 +29,7 @@ pkgconfig_mod.generate(r_bp,
   version: r2_version,
   name: 'r_bp',
   filebase: 'r_bp',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util'
   ],

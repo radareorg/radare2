@@ -165,12 +165,12 @@ EXPECT=<<EOF
      phoff : 0x0804801c = 0x00000034
      shoff : 0x08048020 = 0x00000000
      flags : 0x08048024 = 0x00000000
-    ehsize : 0x08048028 = 0x0034
- phentsize : 0x0804802a = 0x0020
-     phnum : 0x0804802c = 0x0001
- shentsize : 0x0804802e = 0x0000
-     shnum : 0x08048030 = 0x0000
-  shstrndx : 0x08048032 = 0x0000
+    ehsize : 0x08048028 = 52
+ phentsize : 0x0804802a = 32
+     phnum : 0x0804802c = 1
+ shentsize : 0x0804802e = 0
+     shnum : 0x08048030 = 0
+  shstrndx : 0x08048032 = 0
 EOF
 RUN
 
@@ -194,12 +194,12 @@ EXPECT=<<EOF
      phoff : 0x00400020 = (qword)0x0000000000000040
      shoff : 0x00400028 = (qword)0x00000000000000a8
      flags : 0x00400030 = 0x00000000
-    ehsize : 0x00400034 = 0x0040
- phentsize : 0x00400036 = 0x0038
-     phnum : 0x00400038 = 0x0001
- shentsize : 0x0040003a = 0x0040
-     shnum : 0x0040003c = 0x0003
-  shstrndx : 0x0040003e = 0x0002
+    ehsize : 0x00400034 = 64
+ phentsize : 0x00400036 = 56
+     phnum : 0x00400038 = 1
+ shentsize : 0x0040003a = 64
+     shnum : 0x0040003c = 3
+  shstrndx : 0x0040003e = 2
 EOF
 RUN
 
@@ -226,12 +226,12 @@ EXPECT=<<EOF
      phoff : 0x0000001c = 0x00000034
      shoff : 0x00000020 = 0x00000000
      flags : 0x00000024 = 0x00000000
-    ehsize : 0x00000028 = 0x0034
- phentsize : 0x0000002a = 0x0020
-     phnum : 0x0000002c = 0x0001
- shentsize : 0x0000002e = 0x0000
-     shnum : 0x00000030 = 0x0000
-  shstrndx : 0x00000032 = 0x0000
+    ehsize : 0x00000028 = 52
+ phentsize : 0x0000002a = 32
+     phnum : 0x0000002c = 1
+ shentsize : 0x0000002e = 0
+     shnum : 0x00000030 = 0
+  shstrndx : 0x00000032 = 0
 
 [
   {
@@ -321,37 +321,37 @@ EXPECT=<<EOF
   },
   {
     "name": "ehsize",
-    "type": "w",
+    "type": "N2",
     "offset": 40,
     "value": 52
   },
   {
     "name": "phentsize",
-    "type": "w",
+    "type": "N2",
     "offset": 42,
     "value": 32
   },
   {
     "name": "phnum",
-    "type": "w",
+    "type": "N2",
     "offset": 44,
     "value": 1
   },
   {
     "name": "shentsize",
-    "type": "w",
+    "type": "N2",
     "offset": 46,
     "value": 0
   },
   {
     "name": "shnum",
-    "type": "w",
+    "type": "N2",
     "offset": 48,
     "value": 0
   },
   {
     "name": "shstrndx",
-    "type": "w",
+    "type": "N2",
     "offset": 50,
     "value": 0
   }
@@ -380,12 +380,12 @@ EXPECT=<<EOF
      phoff : 0x00000020 = (qword)0x0000000000000040
      shoff : 0x00000028 = (qword)0x00000000000000a8
      flags : 0x00000030 = 0x00000000
-    ehsize : 0x00000034 = 0x0040
- phentsize : 0x00000036 = 0x0038
-     phnum : 0x00000038 = 0x0001
- shentsize : 0x0000003a = 0x0040
-     shnum : 0x0000003c = 0x0003
-  shstrndx : 0x0000003e = 0x0002
+    ehsize : 0x00000034 = 64
+ phentsize : 0x00000036 = 56
+     phnum : 0x00000038 = 1
+ shentsize : 0x0000003a = 64
+     shnum : 0x0000003c = 3
+  shstrndx : 0x0000003e = 2
 EOF
 RUN
 
@@ -403,13 +403,71 @@ wz `pf? elf_header`
 .(pfelf 2)
 EOF
 EXPECT=<<EOF
-?[2]E[2]E[4]Exxxxwwwwww (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
+?[2]E[2]E[4]ExxxxN2N2N2N2N2N2 (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
 52
 
-{1}?[2]E[2]E[4]Exxxxwwwwww (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
+{1}?[2]E[2]E[4]ExxxxN2N2N2N2N2N2 (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
 52
 
-{2}?[2]E[2]E[4]Exxxxwwwwww (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
+{2}?[2]E[2]E[4]ExxxxN2N2N2N2N2N2 (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
 104
+EOF
+RUN
+
+NAME=32: normal elf header
+FILE=bins/elf/hello_world32
+CMDS=<<EOF
+pfo elf32
+pf.elf_header @ segment.ehdr
+EOF
+EXPECT=<<EOF
+     ident : 
+                struct<elf_ident>
+           magic : 0x00000000 = "\x7fELF"
+           class : 0x00000004 = class (enum elf_class) = 0x1 ; ELFCLASS32
+            data : 0x00000005 = data (enum elf_data) = 0x1 ; ELFDATA2LSB
+         version : 0x00000006 = version (enum elf_hdr_version) = 0x1 ; EV_CURRENT
+      type : 0x00000010 = type (enum elf_type) = 0x3 ; ET_DYN
+   machine : 0x00000012 = machine (enum elf_machine) = 0x3 ; EM_386
+   version : 0x00000014 = version (enum elf_obj_version) = 0x1 ; EV_CURRENT
+     entry : 0x00000018 = 0x000004d0
+     phoff : 0x0000001c = 0x00000034
+     shoff : 0x00000020 = 0x0000182c
+     flags : 0x00000024 = 0x00000000
+    ehsize : 0x00000028 = 52
+ phentsize : 0x0000002a = 32
+     phnum : 0x0000002c = 9
+ shentsize : 0x0000002e = 40
+     shnum : 0x00000030 = 29
+  shstrndx : 0x00000032 = 28
+EOF
+RUN
+
+NAME=64: normal elf header
+FILE=bins/elf/hello_world
+CMDS=<<EOF
+pfo elf64
+pf.elf_header @ segment.ehdr
+EOF
+EXPECT=<<EOF
+     ident : 
+                struct<elf_ident>
+           magic : 0x00000000 = "\x7fELF"
+           class : 0x00000004 = class (enum elf_class) = 0x2 ; ELFCLASS64
+            data : 0x00000005 = data (enum elf_data) = 0x1 ; ELFDATA2LSB
+         version : 0x00000006 = version (enum elf_hdr_version) = 0x1 ; EV_CURRENT
+      type : 0x00000010 = type (enum elf_type) = 0x3 ; ET_DYN
+   machine : 0x00000012 = machine (enum elf_machine) = 0x3e ; EM_X86_64
+   version : 0x00000014 = version (enum elf_obj_version) = 0x1 ; EV_CURRENT
+     entry : 0x00000018 = (qword)0x00000000000006a0
+     phoff : 0x00000020 = (qword)0x0000000000000040
+     shoff : 0x00000028 = (qword)0x0000000000001a08
+     flags : 0x00000030 = 0x00000000
+    ehsize : 0x00000034 = 64
+ phentsize : 0x00000036 = 56
+     phnum : 0x00000038 = 9
+ shentsize : 0x0000003a = 64
+     shnum : 0x0000003c = 29
+  shstrndx : 0x0000003e = 28
 EOF
 RUN

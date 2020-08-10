@@ -67,7 +67,7 @@ static const char *help_msg_eco[] = {
 static char *curtheme = "default";
 static bool getNext = false;
 
-static void cmd_eval_init(RCore *core) {
+static void cmd_eval_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, e);
 	DEFINE_CMD_DESCRIPTOR (core, ec);
 }
@@ -169,7 +169,7 @@ static void list_themes_in_path(RList *list, const char *path) {
 	r_list_free (files);
 }
 
-R_API char *r_core_get_theme () {
+R_API char *r_core_get_theme (void) {
 	return curtheme;
 }
 

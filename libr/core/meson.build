@@ -65,6 +65,7 @@ r_core_sources = [
   'yank.c',
   'p/core_a2f.c',
   'p/core_java.c',
+  'cannotated_code.c'
 ]
 
 r_core_inc = []
@@ -99,9 +100,9 @@ r_core_deps = [
   r_asm_dep,
   r_bp_dep,
   platform_deps,
-  spp_dep,
   gdb_dep,
   java_dep,
+  lrt,
   shell_parser_dep
 ]
 
@@ -127,6 +128,7 @@ pkgconfig_mod.generate(
   version: r2_version,
   name: 'r_core',
   filebase: 'r_core',
+  libraries: pkgcfg_sanitize_libs,
   requires: pkgconfig_magic_requires + [
     'r_util',
     'r_reg',

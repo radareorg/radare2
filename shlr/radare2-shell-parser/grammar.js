@@ -29,7 +29,6 @@ const ARG_IDENTIFIER_BASE = choice(
     /\$[^\s@|#"'>;`~\\({) ]/,
     /\${[^\r\n $}]+}/,
     /\\./,
-    /\/[^\*]/,
 );
 const ARG_IDENTIFIER_BRACE = choice(
     repeat1(noneOf(...SPECIAL_CHARACTERS_BRACE)),
@@ -39,7 +38,6 @@ const ARG_IDENTIFIER_BRACE = choice(
     /\$[^\s@|#"'>;`~\\({) ]/,
     /\${[^\r\n $}]+}/,
     /\\./,
-    /\/[^\*]/,
 );
 const PF_DOT_ARG_IDENTIFIER_BASE = choice(
     repeat1(noneOf(...PF_DOT_SPECIAL_CHARACTERS)),
@@ -49,7 +47,6 @@ const PF_DOT_ARG_IDENTIFIER_BASE = choice(
     /\$[^\s@|#"'>;`~\\({) ]/,
     /\${[^\r\n $}]+}/,
     /\\./,
-    /\/[^\*]/,
 );
 const PF_ARG_IDENTIFIER_BASE = choice(
     repeat1(noneOf(...PF_SPECIAL_CHARACTERS)),
@@ -59,7 +56,6 @@ const PF_ARG_IDENTIFIER_BASE = choice(
     /\$[^\s@|#"'>;`~\\({) ]/,
     /\${[^\r\n $}]+}/,
     /\\./,
-    /\/[^\*]/,
 );
 
 module.exports = grammar({
@@ -643,7 +639,7 @@ module.exports = grammar({
 	double_quoted_arg: $ => seq(
 	    '"',
 	    repeat(choice(
-		/[^\\"\n$`]+/,
+		token.immediate(prec(1, /[^\\"\n$`]+/)),
 		/\$[^("]?/,
 		/\\[\\"\n$`]?/,
 		$.cmd_substitution_arg,
@@ -653,7 +649,7 @@ module.exports = grammar({
 	single_quoted_arg: $ => seq(
 	    '\'',
 	    repeat(choice(
-		/[^\\'\n]+/,
+		token.immediate(prec(1, /[^\\'\n]+/)),
 		/\\[\\'\n]?/,
 	    )),
 	    '\'',

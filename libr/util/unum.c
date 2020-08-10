@@ -29,7 +29,7 @@ static int r_rand(int mod) {
 #endif
 }
 
-R_API void r_num_irand() {
+R_API void r_num_irand(void) {
 	r_srand (r_sys_now ());
 }
 

@@ -9,6 +9,7 @@ r_io_sources = [
   'undo.c',
   'p_cache.c',
   'p/io_ar.c',
+  'p/io_fd.c',
   'p/io_bfdbg.c',
   'p/io_bochs.c',
   'p/io_debug.c',
@@ -64,7 +65,7 @@ if host_machine.system() == 'windows'
   r_io_deps += w32dbg_wrap_dep
 endif
 
-if host_machine.system() == 'linux'
+if host_machine.system() == 'linux' or host_machine.system() == 'android'
   r_io_sources += [
     'p/io_r2k_linux.c',
   ]
@@ -93,6 +94,7 @@ pkgconfig_mod.generate(r_io,
   version: r2_version,
   name: 'r_io',
   filebase: 'r_io',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util',
     'r_socket'

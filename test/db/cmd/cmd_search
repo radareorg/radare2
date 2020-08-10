@@ -1,9 +1,42 @@
+NAME=trailing comment
+FILE=-
+ARGS=-n
+CMDS=<<EOF
+/ #
+EOF
+EXPECT=
+RUN
+
+NAME=search esil
+FILE=bins/elf/ioli/crackme0x00
+CMDS=<<EOF
+/E $$,[1],0xe1,-,!
+s@hit0_0
+EOF
+EXPECT=<<EOF
+hit0_0
+0x8048364
+EOF
+RUN
+
+NAME=search esil json
+FILE=bins/elf/ioli/crackme0x00
+CMDS=<<EOF
+/Ej $$,[1],0xe1,-,!
+s@hit0_0
+EOF
+EXPECT=<<EOF
+[{"addr":134513508,"value":1}]
+
+EOF
+RUN
+
 NAME=pm olf
 FILE=bins/elf/ioli/crackme0x00
 ARGS=-n
 CMDS=pm bins/src/olf.magic
 EXPECT=<<EOF
-0x00000000 1 OLF 32-bit
+0x00000000 1 OLF 32-bit LSB
 EOF
 RUN
 

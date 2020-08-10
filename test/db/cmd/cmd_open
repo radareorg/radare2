@@ -1,3 +1,29 @@
+NAME=oon
+FILE=bins/mach0/mac-ls2
+CMDS=<<EOF
+oon
+o
+EOF
+EXPECT=<<EOF
+ 4 * r-- 0x00009730 bins/mach0/mac-ls2
+EOF
+RUN
+
+NAME=oonn
+FILE=bins/mach0/mac-ls2
+CMDS=<<EOF
+pf.~?
+oonn
+pf.~?
+o~?
+EOF
+EXPECT=<<EOF
+0
+58
+1
+EOF
+RUN
+
 NAME=om=
 FILE=bins/mach0/mac-ls2
 BROKEN=1
@@ -11,16 +37,16 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=obb baddrs
+NAME=obo baddrs
 FILE=bins/mach0/mac-ls2
 ARGS=-B0x50000
 CMDS=<<EOF
 s
 o bins/mach0/mac-ls
 s
-obb 0
+obo 3
 s
-obb 1
+obo 4
 s
 EOF
 EXPECT=<<EOF

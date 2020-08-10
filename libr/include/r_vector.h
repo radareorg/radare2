@@ -77,7 +77,10 @@ static inline bool r_vector_empty(const RVector *vec) {
 R_API void r_vector_clear(RVector *vec);
 
 // returns a pointer to the offset inside the array where the element of the index lies.
-R_API void *r_vector_index_ptr(RVector *vec, size_t index);
+static inline void *r_vector_index_ptr(RVector *vec, size_t index) {
+	r_return_val_if_fail (vec && index < vec->capacity, NULL);
+	return (char *)vec->a + vec->elem_size * index;
+}
 
 // helper function to assign an element of size vec->elem_size from elem to p.
 // elem is a pointer to the actual data to assign!
@@ -129,6 +132,10 @@ R_API void *r_vector_shrink(RVector *vec);
 	if (!r_vector_empty (vec)) \
 		for (it = (void *)(vec)->a; (char *)it != (char *)(vec)->a + ((vec)->len * (vec)->elem_size); it = (void *)((char *)it + (vec)->elem_size))
 
+#define r_vector_foreach_prev(vec, it) \
+	if (!r_vector_empty (vec)) \
+		for (it = (void *)((char *)(vec)->a + (((vec)->len - 1)* (vec)->elem_size)); (char *)it != (char *)(vec)->a; it = (void *)((char *)it - (vec)->elem_size))
+
 #define r_vector_enumerate(vec, it, i) \
 	if (!r_vector_empty (vec)) \
 		for (it = (void *)(vec)->a, i = 0; i < (vec)->len; it = (void *)((char *)it + (vec)->elem_size), i++)
@@ -155,12 +162,27 @@ R_API void *r_vector_shrink(RVector *vec);
 		} \
 	} while (0) \
 
+#define r_vector_upper_bound(vec, x, i, cmp) \
+	do { \
+		size_t h = (vec)->len, m; \
+		for (i = 0; i < h; ) { \
+			m = i + ((h - i) >> 1); \
+			if ((cmp (x, ((char *)(vec)->a + (vec)->elem_size * m))) < 0) { \
+				h = m; \
+			} else { \
+				i = m + 1; \
+			} \
+		} \
+	} while (0) \
+
 // RPVector
 
 R_API void r_pvector_init(RPVector *vec, RPVectorFree free);
 R_API void r_pvector_fini(RPVector *vec);
 
 R_API RPVector *r_pvector_new(RPVectorFree free);
+
+R_API RPVector *r_pvector_new_with_len(RPVectorFree free, size_t length);
 
 // clear the vector and call vec->v.free on every element.
 R_API void r_pvector_clear(RPVector *vec);
@@ -169,14 +191,17 @@ R_API void r_pvector_clear(RPVector *vec);
 R_API void r_pvector_free(RPVector *vec);
 
 static inline size_t r_pvector_len(const RPVector *vec) {
+	r_return_val_if_fail (vec, 0);
 	return vec->v.len;
 }
 
 static inline void *r_pvector_at(const RPVector *vec, size_t index) {
+	r_return_val_if_fail (vec && index < vec->v.len, NULL);
 	return ((void **)vec->v.a)[index];
 }
 
 static inline void r_pvector_set(RPVector *vec, size_t index, void *e) {
+	r_return_if_fail (vec && index < vec->v.len);
 	((void **)vec->v.a)[index] = e;
 }
 
@@ -186,11 +211,13 @@ static inline bool r_pvector_empty(RPVector *vec) {
 
 // returns a pointer to the offset inside the array where the element of the index lies.
 static inline void **r_pvector_index_ptr(RPVector *vec, size_t index) {
+	r_return_val_if_fail (vec && index < vec->v.capacity, NULL);
 	return ((void **)vec->v.a) + index;
 }
 
 // same as r_pvector_index_ptr(<vec>, 0)
 static inline void **r_pvector_data(RPVector *vec) {
+	r_return_val_if_fail (vec, NULL);
 	return (void **)vec->v.a;
 }
 
@@ -271,7 +298,7 @@ static inline void **r_pvector_shrink(RPVector *vec) {
 		size_t h = (vec)->v.len, m; \
 		for (i = 0; i < h; ) { \
 			m = i + ((h - i) >> 1); \
-			if ((cmp (x, ((void **)(vec)->v.a)[m])) > 0) { \
+			if ((cmp ((x), ((void **)(vec)->v.a)[m])) > 0) { \
 				i = m + 1; \
 			} else { \
 				h = m; \

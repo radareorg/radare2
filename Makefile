@@ -149,7 +149,7 @@ windist:
 	mkdir -p "${WINDIST}/include/libr/sdb"
 	mkdir -p "${WINDIST}/include/libr/r_util"
 	@echo "${C}[WINDIST] Copying development files${R}"
-	cp -f libr/include/sdb/*.h "${WINDIST}/include/libr/sdb/"
+	cp -f shlr/sdb/src/*.h "${WINDIST}/include/libr/sdb/"
 	cp -f libr/include/r_util/*.h "${WINDIST}/include/libr/r_util/"
 	cp -f libr/include/*.h "${WINDIST}/include/libr"
 	#mkdir -p "${WINDIST}/include/libr/sflib"

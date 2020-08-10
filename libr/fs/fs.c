@@ -18,7 +18,7 @@ static RFSPlugin* fs_static_plugins[] = {
 	R_FS_STATIC_PLUGINS
 };
 
-R_API RFS* r_fs_new() {
+R_API RFS* r_fs_new(void) {
 	int i;
 	RFSPlugin* static_plugin;
 	RFS* fs = R_NEW0 (RFS);
@@ -574,7 +574,7 @@ R_API const char* r_fs_partition_type_get(int n) {
 	return partitions[n].name;
 }
 
-R_API int r_fs_partition_get_size() {
+R_API int r_fs_partition_get_size(void) {
 	return R_FS_PARTITIONS_LENGTH;
 }
 

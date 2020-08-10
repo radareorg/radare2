@@ -8,10 +8,13 @@ r_lang_sources = [
   #'p/rust.c',
   #'p/vala.c'
   #'p/zig.c',
+  #'p/spp.c',
 ]
 
+spp_inc = [platform_inc, include_directories('../../shlr/spp')]
+
 r_lang = library('r_lang', r_lang_sources,
-  include_directories: [platform_inc],
+  include_directories: [platform_inc, spp_inc],
   c_args: library_cflags,
   dependencies: [r_util_dep, r_cons_dep],
   install: true,
@@ -27,6 +30,7 @@ pkgconfig_mod.generate(r_lang,
   version: r2_version,
   name: 'r_lang',
   filebase: 'r_lang',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util',
     'r_cons'

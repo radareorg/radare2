@@ -1,4 +1,4 @@
-name: centos6 test
+name: CentOS 6 test
 
 on:
   push:
@@ -7,6 +7,8 @@ on:
     - 'prerelease*'
     - 'release-*'
     - 'centos*'
+  schedule:
+    - cron: '0 18 * * 1,3,5' # Three-weekly at 18:00 UTC on Monday, Wednesday, and Friday
 
 jobs:
   build:
@@ -32,3 +34,8 @@ jobs:
     - name: Run tests
       run: cd test/unit && make
       working-directory: radare2
+      env:
+        # `make install` installs, for some unknown reasons, pkgconfig files in
+        # /usr/lib and not in /usr/lib64, thus pkg-config cannot find the right
+        # .pc files if the right path is not specified
+        PKG_CONFIG_PATH: /usr/lib/pkgconfig

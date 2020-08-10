@@ -10,7 +10,7 @@ EXPECT=<<EOF
             ; DATA XREF from entry0 @ 0x40045d
 / 44: int main (int argc, char **argv, char **envp);
 |           ; var int64_t var_4h @ rbp-0x4
-|           0x0040052d      55             push rbp                    ; /tmp/r2-regressions/.//dwarftest.c:4
+|           0x0040052d      55             push rbp                    ; dwarftest.c:4
 EOF
 RUN
 
@@ -20,7 +20,7 @@ CMDS=<<EOF
 CL 0x0000a24e
 EOF
 EXPECT=<<EOF
-file: TestRTTI/TestRTTI.cpp
+file: /Users/ftamagni/src/TestRTTI/TestRTTI//TestRTTI.cpp
 line: 18
 EOF
 RUN

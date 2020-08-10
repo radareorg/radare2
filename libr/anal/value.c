@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2010-2011 - pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2010-2020 - pancake */
 
 #include <r_anal.h>
 
-R_API RAnalValue *r_anal_value_new() {			//macro for this ?
+R_API RAnalValue *r_anal_value_new(void) { //macro for this ?
 	return R_NEW0 (RAnalValue);
 }
 
@@ -12,10 +12,13 @@ R_API RAnalValue *r_anal_value_new_from_string(const char *str) {
 }
 
 R_API RAnalValue *r_anal_value_copy(RAnalValue *ov) {
+	r_return_val_if_fail (ov, NULL);
+
 	RAnalValue *v = R_NEW0 (RAnalValue);
 	if (!v) {
 		return NULL;
 	}
+
 	memcpy (v, ov, sizeof (RAnalValue));
 	// reference to reg and regdelta should be kept
 	return v;

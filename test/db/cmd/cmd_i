@@ -3560,6 +3560,28 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=bin.str.enc string reset
+FILE=--
+CMDS=<<EOF
+mkdir .tmp
+cp bins/elf/analysis/x86-helloworld-gcc .tmp/strenc-bin
+o+ .tmp/strenc-bin
+iz~:3..
+s 0x080484b0
+wz k\0i\0abcdefgh
+(izenc enc; e bin.str.enc=$0; iz~:3..)
+.(izenc guess)
+.(izenc utf8)
+o-*
+rm .tmp/strenc-bin
+EOF
+EXPECT=<<EOF
+0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+0   0x000004b0 0x080484b0 6   13   .rodata utf16le ki扡摣晥桧 blocks=Basic Latin,CJK Unified Ideographs
+0   0x000004b4 0x080484b4 8   9    .rodata ascii abcdefgh
+EOF
+RUN
+
 NAME=ik-relro
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=ik info/elf.relro
@@ -4061,6 +4083,7 @@ EXPECT=<<EOF
 [Source file]
 /home/landley/work/ab7/build/temp-armv6l/gcc-core/gcc/config/arm/ieee754-df.S
 /home/landley/work/ab7/build/temp-armv6l/gcc-core/gcc/config/arm/lib1funcs.asm
+/home/landley/work/ab7/build/temp-armv6l/build-gcc/gcc
 EOF
 RUN
 
@@ -4412,5 +4435,63 @@ BROKEN=1
 FILE=bins/elf/ls
 CMDS=iqcq
 EXPECT=<<EOF
+EOF
+RUN
+
+NAME=auto entry (lib)
+FILE=bins/elf/libverifyPass.so
+CMDS=<<EOF
+ie
+EOF
+EXPECT=<<EOF
+[Entrypoints]
+vaddr=0x00000f50 paddr=0x00000f50 haddr=0x00000018 hvaddr=0x00000018 type=program
+
+1 entrypoints
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=auto entry (lib no e_entry)
+FILE=bins/elf/libexploit.so
+CMDS=<<EOF
+ie
+EOF
+EXPECT=<<EOF
+[Entrypoints]
+vaddr=0x00000d28 paddr=0x00000d28 haddr=0x00000018 hvaddr=0x00000018 type=program
+
+1 entrypoints
+EOF
+EXPECT_ERR=<<EOF
+Cannot determine entrypoint, using 0x00000d28.
+EOF
+RUN
+
+NAME=auto entry (obj)
+FILE=bins/elf/analysis/test.obj
+CMDS=<<EOF
+ie
+EOF
+EXPECT=<<EOF
+[Entrypoints]
+
+0 entrypoints
+EOF
+EXPECT_ERR=<<EOF
+Warning: run r2 with -e io.cache=true to fix relocations in disassembly
+EOF
+RUN
+
+NAME=macho-ghost-symbols
+FILE=bins/mach0/libr_flag.dylib
+CMDS=<<EOF
+is~?
+is~entry?
+EOF
+EXPECT=<<EOF
+247
+0
 EOF
 RUN

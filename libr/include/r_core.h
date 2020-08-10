@@ -30,6 +30,7 @@
 #include "r_util/r_print.h"
 #include "r_crypto.h"
 #include "r_bind.h"
+#include "r_util/r_annotated_code.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -330,6 +331,9 @@ typedef struct r_core_t {
 	RList *ropchain;
 	bool use_tree_sitter_r2cmd;
 
+	bool marks_init;
+	ut64 marks[UT8_MAX + 1];
+
 	RMainCallback r_main_radare2;
 	// int (*r_main_radare2)(int argc, char **argv);
 	int (*r_main_rafind2)(int argc, const char **argv);
@@ -466,7 +470,7 @@ R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr);
 R_API void r_core_anal_type_init(RCore *core);
 R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn);
 R_API void r_core_anal_inflags (RCore *core, const char *glob);
-R_API int cmd_anal_objc (RCore *core, const char *input, bool auto_anal);
+R_API bool cmd_anal_objc (RCore *core, const char *input, bool auto_anal);
 R_API void r_core_anal_cc_init(RCore *core);
 R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, int followDepth, bool is_json);
 R_API void r_core_anal_esil_graph(RCore *core, const char *expr);
@@ -657,7 +661,7 @@ R_API int r_core_bin_set_by_name (RCore *core, const char *name);
 R_API int r_core_bin_reload(RCore *core, const char *file, ut64 baseaddr);
 R_API bool r_core_bin_load(RCore *core, const char *file, ut64 baseaddr);
 R_API int r_core_bin_rebase(RCore *core, ut64 baddr);
-R_API void r_core_bin_export_info_rad(RCore *core);
+R_API void r_core_bin_export_info(RCore *core, int mode);
 R_API int r_core_bin_list(RCore *core, int mode);
 R_API bool r_core_bin_delete (RCore *core, ut32 binfile_idx);
 R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name);
@@ -675,7 +679,7 @@ R_API bool r_core_project_open(RCore *core, const char *file, bool thready);
 R_API int r_core_project_cat(RCore *core, const char *name);
 R_API int r_core_project_delete(RCore *core, const char *prjfile);
 R_API int r_core_project_list(RCore *core, int mode);
-R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts);
+R_API bool r_core_project_save_script(RCore *core, const char *file, int opts);
 R_API bool r_core_project_save(RCore *core, const char *file);
 R_API char *r_core_project_info(RCore *core, const char *file);
 R_API char *r_core_project_notes_file (RCore *core, const char *file);
@@ -738,7 +742,7 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 R_API int r_core_bin_set_arch_bits (RCore *r, const char *name, const char * arch, ut16 bits);
 R_API int r_core_bin_update_arch_bits (RCore *r);
 R_API char *r_core_bin_method_flags_str(ut64 flags, int mode);
-R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode);
+R_API bool r_core_pdb_info(RCore *core, const char *file, int mode);
 
 /* rtr */
 R_API int r_core_rtr_cmds (RCore *core, const char *port);
@@ -923,6 +927,43 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr);
 /* PLUGINS */
 extern RCorePlugin r_core_plugin_java;
 extern RCorePlugin r_core_plugin_a2f;
+
+/* DECOMPILER PRINTING FUNCTIONS */
+/**
+* r_core_annotated_code_print_json() - Prints the data contained in RAnnotatedCode *code in JSON format.
+* @code: Pointer to a RAnnotatedCode
+*
+* Prints the data contained in RAnnotatedCode represented by the pointer 'code' in JSON format. 
+* The function will print the output in console using the function r_cons_printf();
+* 	
+* Return: Nothing
+*/
+R_API void r_core_annotated_code_print_json(RAnnotatedCode *code);
+/**
+* r_core_annotated_code_print() - Prints the decompiled code in the passed argument 'code'.
+* @code: Pointer to a RAnnotatedCode
+* @line_offsets: Pointer to a RVector that containes offsets for the decompiled code
+*
+* This function is used for printing the output of commands pdg and pdgo.
+* It can print the decompiled code with or without offsets. If line_offsets is a null pointer,
+* the output will be printed without offsets (pdg), otherwise, the output will be
+* printed with offsets.
+* This function will print the output in console using the function r_cons_printf();
+* 
+* Return: Nothing
+*/
+R_API void r_core_annotated_code_print(RAnnotatedCode *code, RVector *line_offsets);
+/**
+* r_core_annotated_code_print_comment_cmds() - Prints the decompiled code as comments
+* @code: Pointer to a RAnnotatedCode
+*
+* This functions prints the decompiled code as comment.
+* This function is used for the output of command pdg*
+* Output will be printed in console using the function r_cons_printf();
+* 	
+* Return: Nothing
+*/
+R_API void r_core_annotated_code_print_comment_cmds(RAnnotatedCode *code);
 
 #endif
 

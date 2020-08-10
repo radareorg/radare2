@@ -24,7 +24,7 @@ LDFLAGS+=-L$(LTOP)/reg -lr_reg
 LDFLAGS+=-L$(LTOP)/bp -lr_bp
 LDFLAGS+=-L$(LTOP)/io -lr_io
 
-OBJ_QNX=debug_qnx.o 
+OBJ_QNX=debug_qnx.o
 
 STATIC_OBJ+=${OBJ_QNX}
 TARGET_QNX=debug_qnx.${EXT_SO}

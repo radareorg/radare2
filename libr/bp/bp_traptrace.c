@@ -12,7 +12,7 @@ R_API void r_bp_traptrace_free(void *ptr) {
 	free (trace);
 }
 
-R_API RList *r_bp_traptrace_new() {
+R_API RList *r_bp_traptrace_new(void) {
 	RList *list = r_list_new ();
 	if (!list) {
 		return NULL;

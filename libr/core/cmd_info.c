@@ -77,7 +77,7 @@ static const char *help_msg_id[] = {
 	NULL
 };
 
-static void cmd_info_init(RCore *core) {
+static void cmd_info_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, i);
 	DEFINE_CMD_DESCRIPTOR (core, id);
 }
@@ -454,7 +454,7 @@ static int cmd_info(void *data, const char *input) {
 	bool newline = r_cons_is_interactive ();
 	int fd = r_io_fd_get_current (core->io);
 	RIODesc *desc = r_io_desc_get (core->io, fd);
-	int i, va = core->io->va || core->io->debug;
+	int i, va = core->io->va || core->bin->is_debugger;
 	int mode = 0; //R_MODE_SIMPLE;
 	bool rdump = false;
 	int is_array = 0;
@@ -549,7 +549,7 @@ static int cmd_info(void *data, const char *input) {
 				}
 				break;
 			case '*':
-				r_core_bin_export_info_rad (core);
+				r_core_bin_export_info (core, R_MODE_RADARE);
 				break;
 			case '.':
 			case ' ':
@@ -813,25 +813,39 @@ static int cmd_info(void *data, const char *input) {
 				char *filename;
 
 				switch (input[2]) {
-				case ' ':
+				case ' ': // "idp file.pdb"
 					r_core_cmdf (core, ".idpi* %s", input + 3);
-					while (input[2]) input++;
+					while (input[2]) {
+						input++;
+					}
 					break;
-				case '\0':
+				case '\0': // "idp"
 					r_core_cmd0 (core, ".idpi*");
 					break;
-				case 'd':
+				case 'd': // "idpd"
 					pdbopts.user_agent = (char*) r_config_get (core->config, "pdb.useragent");
-					pdbopts.symbol_server = (char*) r_config_get (core->config, "pdb.server");
 					pdbopts.extract = r_config_get_i (core->config, "pdb.extract");
 					pdbopts.symbol_store_path = (char*) r_config_get (core->config, "pdb.symstore");
-					int r = r_bin_pdb_download (core, 0, NULL, &pdbopts);
+					char *str = strdup (r_config_get (core->config, "pdb.server"));
+					RList *server_l = r_str_split_list (str, ";", 0);
+					RListIter *it;
+					char *server;
+					int r = 1;
+					r_list_foreach (server_l, it, server) {
+						pdbopts.symbol_server = server;
+						r = r_bin_pdb_download (core, 0, NULL, &pdbopts);
+						if (!r) {
+							break;
+						}
+					}
 					if (r > 0) {
 						eprintf ("Error while downloading pdb file\n");
 					}
+					free (str);
+					r_list_free (server_l);
 					input++;
 					break;
-				case 'i':
+				case 'i': // "idpi"
 					info = r_bin_get_info (core->bin);
 					filename = strchr (input, ' ');
 					while (input[2]) input++;
@@ -866,9 +880,9 @@ static int cmd_info(void *data, const char *input) {
 						// Last chance: Check if file is in downstream symbol store
 						if (!file_found) {
 							const char* symstore_path = r_config_get (core->config, "pdb.symstore");
+							const char *base_file = r_file_basename (info->debug_file_name);
 							char* pdb_path = r_str_newf ("%s" R_SYS_DIR "%s" R_SYS_DIR "%s" R_SYS_DIR "%s",
-										     symstore_path, r_file_basename (info->debug_file_name),
-										     info->guid, r_file_basename (info->debug_file_name));
+										     symstore_path, base_file, info->guid, base_file);
 							file_found = r_file_exists (pdb_path);
 							if (file_found) {
 								filename = pdb_path;
@@ -879,17 +893,16 @@ static int cmd_info(void *data, const char *input) {
 					}
 
 					if (!file_found) {
-						eprintf ("File '%s' not found in file directory or symbol store\n", r_file_basename (info->debug_file_name));
+						if (info->debug_file_name) {
+							const char *fn = r_file_basename (info->debug_file_name);
+							eprintf ("File '%s' not found in file directory or symbol store\n", fn);
+						} else {
+							eprintf ("Cannot open file\n");
+						}
 						free (filename);
 						break;
 					}
-					ut64 baddr = 0;
-					if (core->bin->cur && core->bin->cur->o) {
-						baddr = core->bin->cur->o->baddr;
-					} else {
-						eprintf ("Warning: Cannot find base address, flags will probably be misplaced\n");
-					}
-					r_core_pdb_info (core, filename, baddr, mode);
+					r_core_pdb_info (core, filename, mode);
 					free (filename);
 					break;
 				case '?':

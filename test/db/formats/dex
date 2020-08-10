@@ -5,6 +5,7 @@ om
 s
 EOF
 EXPECT=<<EOF
+ 2 fd: 3 +0x0000035d 0x0000035d - 0x00000368 r-x fmap.code
  1 fd: 3 +0x00000000 0x00000000 - 0x0000041b r-- fmap.file
 0x35d
 EOF
@@ -178,6 +179,7 @@ EXPECT=<<EOF
 0x000002f4 1 method.public.constructor.LWorld.LWorld.method._init___V
 0x00000318 68 sym.LWorld.method.foo_I_V
 0x00000318 1 method.public.LWorld.LWorld.method.foo_I_V
+0x0000035c 600 section.data
 0x00000372 6 str.init
 0x0000037a 6 str.Findus
 0x00000382 10 str.Hello.java
@@ -193,7 +195,6 @@ EXPECT=<<EOF
 0x000004a1 8 str.world
 0x000004ab 8 str.worldVar
 0x000004b5 9 str.worldVar2
-0x000004bc 248 section.data
 EOF
 RUN
 
@@ -419,6 +420,15 @@ Class #1            -
         0x0000 - 0x0022 reg=3 this LWorld;
   source_file_idx   : 17 (World.java)
 
+EOF
+RUN
+
+NAME=DEX radare2installer.dex classes (is getProper)
+FILE=bins/dex/org.radare.radare2installer.dex
+CMDS=is~getProper
+EXPECT=<<EOF
+1649  0x00006a20 0x00006a20 NONE   FUNC   0        imp.Ljava/lang/System.method.getProperty(Ljava/lang/String;)Ljava/lang/String;
+1650  0x00006a28 0x00006a28 NONE   FUNC   0        imp.Ljava/lang/System.method.getProperty(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 EOF
 RUN
 

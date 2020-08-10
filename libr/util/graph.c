@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2019 - pancake, ret2libc */
+/* radare - LGPL - Copyright 2007-2020 - pancake, ret2libc */
 
 #include <r_util.h>
 
@@ -103,7 +103,7 @@ static void dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis, int color[],
 	r_stack_free (s);
 }
 
-R_API RGraph *r_graph_new() {
+R_API RGraph *r_graph_new(void) {
 	RGraph *t = R_NEW0 (RGraph);
 	if (!t) {
 		return NULL;
@@ -301,4 +301,21 @@ R_API void r_graph_dfs(RGraph *g, RGraphVisitor *vis) {
 		}
 		free (color);
 	}
+}
+
+R_API void r_graph_free_node_info(void *ptr) {
+	RGraphNodeInfo *info = ptr;
+	free (info->body);
+	free (info->title);
+	free (info);
+}
+
+R_API RGraphNodeInfo *r_graph_create_node_info(char *title, char *body, ut64 offset) {
+	RGraphNodeInfo *data = R_NEW0 (RGraphNodeInfo);
+	if (data) {
+		data->title = title;
+		data->body = body;
+		data->offset = offset;
+	}
+	return data;
 }

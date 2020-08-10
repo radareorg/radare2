@@ -317,7 +317,7 @@ R2PM_DOC() {
 }
 
 R2PM_GIT() {
-	[ -z "${NAME}" ] && return
+	[ -z "${NAME}" -o "$ACTION" = clean ] && return
 	URL="$1"
 	if [ -z "$2" ]; then
 		DIR="`basename $1`"
@@ -327,11 +327,16 @@ R2PM_GIT() {
 	cd "${R2PM_GITDIR}"
 	if [ -d "${DIR}" ]; then
 		cd "${DIR}"
+		git checkout master
 		git pull
 	else
 		git clone --depth 1 --recursive "${URL}" "${DIR}" || R2PM_FAIL "Oops"
 		cd "${DIR}" || R2PM_FAIL "Oops"
 	fi
+	r2 -qv | grep -q git || { # r2 >= 4.5
+		git checkout "r2-${R2_VERSION}"
+		git pull
+	}
 }
 
 R2PM_SVN() {
@@ -565,6 +570,7 @@ case "$1" in
 		while [ -n "$2" ]; do
 			echo "Cleaning $2..."
 			FILE="$(pkgFilePath "$2")"
+			R2PM_CLEAN_GITDIR=1
 			if [ -f "${FILE}" ]; then
 				NAME="$2"
 				ACTION=clean
@@ -576,12 +582,17 @@ case "$1" in
 				RC=1
 			fi
 
-			if [ -d "${R2PM_GITDIR}/$2" ]; then
-				echo "Cleaning up ${R2PM_GITDIR}/$2..."
-				rm -rf "${R2PM_GITDIR}/$2"
-			else
-				echo "Cannot find $2 in ${R2PM_GITDIR}"
-				RC=1
+			if [ "${R2PM_CLEAN_GITDIR}" = 1 ]; then
+				if [ -d "${R2PM_GITDIR}/$2" ]; then
+					echo "Cleaning up ${R2PM_GITDIR}/$2..."
+					rm -rf "${R2PM_GITDIR}/$2"
+				elif [ -d "${R2PM_GITDIR}/$2.git" ]; then
+					echo "Cleaning up ${R2PM_GITDIR}/$2.git..."
+					rm -rf "${R2PM_GITDIR}/$2.git"
+				else
+					echo "Cannot find $2 or $2.git in ${R2PM_GITDIR}"
+					RC=1
+				fi
 			fi
 			shift
 		done

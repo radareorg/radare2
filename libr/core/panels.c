@@ -469,7 +469,7 @@ static void __delete_almighty(RCore *core, RModal *modal, Sdb *menu_db);
 static void __create_almighty(RCore *core, RPanel *panel, Sdb *menu_db);
 static void __update_modal(RCore *core, Sdb *menu_db, RModal *modal);
 static bool __draw_modal(RCore *core, RModal *modal, int range_end, int start, const char *name);
-static RModal *__init_modal();
+static RModal *__init_modal(void);
 static void __free_modal(RModal **modal);
 
 /* menu callback */
@@ -575,7 +575,7 @@ static int cmpstr(const void *_a, const void *_b);
 static RList *__sorted_list(RCore *core, char *menu[], int count);
 
 /* config */
-static char *__get_panels_config_dir_path();
+static char *__get_panels_config_dir_path(void);
 static char *__create_panels_config_path(const char *file);
 static void __load_config_menu(RCore *core);
 static char *__parse_panels_config(const char *cfg, int len);
@@ -1016,7 +1016,7 @@ void __panel_print(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
 	if (can->w <= panel->view->pos.x || can->h <= panel->view->pos.y) {
 		return;
 	}
-	panel->view->refresh = false;
+	panel->view->refresh = panel->model->type == PANEL_TYPE_MENU;
 	r_cons_canvas_fill (can, panel->view->pos.x, panel->view->pos.y, panel->view->pos.w, panel->view->pos.h, ' ');
 	if (panel->model->type == PANEL_TYPE_MENU) {
 		__menu_panel_print (can, panel, panel->view->sx, panel->view->sy, panel->view->pos.w, panel->view->pos.h);
@@ -1331,7 +1331,7 @@ void __layout_equal_hor(RPanels *panels) {
 	int i, cw = 0;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = __get_panel (panels, i);
-		__set_geometry(&p->view->pos, cw, 1, pw, h - 2);
+		__set_geometry(&p->view->pos, cw, 1, pw, h - 1);
 		cw += pw - 1;
 		if (i == panels->n_panels - 2) {
 			pw = w - cw;
@@ -2497,7 +2497,7 @@ beach:
 void __move_panel_to_dir(RCore *core, RPanel *panel, int src) {
 	RPanels *panels = core->panels;
 	__dismantle_panel (panels, panel);
-	int key = __show_status (core, "Move the current panel to direction (h/l): ");
+	int key = __show_status (core, "Move the current panel to direction (h/j/k/l): ");
 	key = r_cons_arrow_to_hjkl (key);
 	__set_refresh_all (core, false, true);
 	switch (key) {
@@ -2585,12 +2585,12 @@ void __move_panel_to_down(RCore *core, RPanel *panel, int src) {
 	int h, w = r_cons_get_size (&h);
 	int p_h = h / 2;
 	int new_h = h - p_h;
-	__set_geometry (&panel->view->pos, 0, p_h - 1, w, p_h - 1);
-	int i = 0;
+	__set_geometry (&panel->view->pos, 0, new_h, w, p_h);
+	size_t i = 0;
 	for (; i < panels->n_panels - 1; i++) {
 		RPanel *tmp = __get_panel (panels, i);
-		int t_y = ((double)tmp->view->pos.y / (double)h) * (double)new_h + 1;
-		int t_h = ((double)tmp->view->pos.h / (double)h) * (double)new_h + 1;
+		const size_t t_y = (tmp->view->pos.y * new_h / h)  + 1;
+		const size_t t_h = (tmp->view->edge & (1 << PANEL_EDGE_BOTTOM)) ?  new_h - t_y : (tmp->view->pos.h * new_h / h) ;
 		__set_geometry (&tmp->view->pos, tmp->view->pos.x, t_y, tmp->view->pos.w, t_h);
 	}
 	__fix_layout (core);
@@ -3332,6 +3332,7 @@ int __clear_layout_cb(void *user) {
 	char *dir_path = __get_panels_config_dir_path ();
 	RList *dir = r_sys_dir ((const char *)dir_path);
 	if (!dir) {
+		free (dir_path);
 		return 0;
 	}
 	RListIter *it;
@@ -3396,7 +3397,7 @@ int __settings_colors_cb(void *user) {
 	for (i = 1; i < menu->depth; i++) {
 		RPanel *p = menu->history[i]->p;
 		p->view->refresh = true;
-		menu->refreshPanels[menu->n_refresh++] = p;
+		menu->refreshPanels[i - 1] = p;
 	}
 	__update_menu(core, "Settings.Colors", __init_menu_color_settings_layout);
 	return 0;
@@ -3417,7 +3418,7 @@ int __config_toggle_cb(void *user) {
 	for (i = 1; i < menu->depth; i++) {
 		RPanel *p = menu->history[i]->p;
 		p->view->refresh = true;
-		menu->refreshPanels[menu->n_refresh++] = p;
+		menu->refreshPanels[i - 1] = p;
 	}
 	if (!strcmp (parent->name, "asm")) {
 		__update_menu(core, "Settings.Disassembly.asm", __init_menu_disasm_asm_settings_layout);
@@ -3444,7 +3445,7 @@ int __config_value_cb(void *user) {
 	for (i = 1; i < menu->depth; i++) {
 		RPanel *p = menu->history[i]->p;
 		p->view->refresh = true;
-		menu->refreshPanels[menu->n_refresh++] = p;
+		menu->refreshPanels[i - 1] = p;
 	}
 	if (!strcmp (parent->name, "asm")) {
 		__update_menu(core, "Settings.Disassembly.asm", __init_menu_disasm_asm_settings_layout);
@@ -4463,7 +4464,7 @@ void __update_menu_contents(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *par
 	p->view->pos.h += 4;
 	p->model->type = PANEL_TYPE_MENU;
 	p->view->refresh = true;
-	menu->refreshPanels[menu->n_refresh++] = p;
+	menu->refreshPanels[menu->n_refresh - 1] = p;
 }
 
 void __init_menu_saved_layout (void *_core, const char *parent) {
@@ -4884,7 +4885,7 @@ bool __init_panels(RCore *core, RPanels *panels) {
 	return true;
 }
 
-RModal *__init_modal() {
+RModal *__init_modal(void) {
 	RModal *modal = R_NEW0 (RModal);
 	if (!modal) {
 		return NULL;
@@ -5019,7 +5020,6 @@ void __panels_refresh(RCore *core) {
 	for (i = 0; i < panels->panels_menu->n_refresh; i++) {
 		__panel_print (core, can, panels->panels_menu->refreshPanels[i], 1);
 	}
-	panels->panels_menu->n_refresh = 0;
 	(void) r_cons_canvas_gotoxy (can, -can->sx, -can->sy);
 	r_cons_canvas_fill (can, -can->sx, -can->sy, w, 1, ' ');
 	const char *color = core->cons->context->pal.graph_box2;
@@ -5445,6 +5445,7 @@ void __handle_menu(RCore *core, const int key) {
 	switch (key) {
 	case 'h':
 		if (menu->depth <= 2) {
+			menu->n_refresh = 0;
 			if (menu->root->selectedIndex > 0) {
 				menu->root->selectedIndex--;
 			} else {
@@ -5492,6 +5493,7 @@ void __handle_menu(RCore *core, const int key) {
 			if (parent->sub[parent->selectedIndex]->sub) {
 				(void)(parent->sub[parent->selectedIndex]->cb (core));
 			} else {
+				menu->n_refresh = 0;
 				menu->root->selectedIndex++;
 				menu->root->selectedIndex %= menu->root->n_sub;
 				menu->depth = 1;
@@ -5506,6 +5508,7 @@ void __handle_menu(RCore *core, const int key) {
 		if (panels->panels_menu->depth > 1) {
 			__del_menu (core);
 		} else {
+			menu->n_refresh = 0;
 			__set_mode (core, PANEL_MODE_DEFAULT);
 			__get_cur_panel (panels)->view->refresh = true;
 		}
@@ -5519,17 +5522,23 @@ void __handle_menu(RCore *core, const int key) {
 		(void)(child->cb (core));
 		break;
 	case 9:
+		menu->n_refresh = 0;
 		__handle_tab_key (core, false);
 		break;
 	case 'Z':
+		menu->n_refresh = 0;
 		__handle_tab_key (core, true);
 		break;
 	case ':':
+		menu->n_refresh = 0;
 		__handlePrompt (core, panels);
 		break;
 	case '?':
+		menu->n_refresh = 0;
 		__toggle_help (core);
+		break;
 	case '"':
+		menu->n_refresh = 0;
 		__create_almighty (core, __get_panel (panels, 0), panels->almighty_db);
 		__set_mode (core, PANEL_MODE_DEFAULT);
 		break;
@@ -5611,7 +5620,7 @@ void __restore_panel_pos(RPanel* panel) {
 			panel->view->prevPos.w, panel->view->prevPos.h);
 }
 
-char *__get_panels_config_dir_path() {
+char *__get_panels_config_dir_path(void) {
 	return r_str_home (R_JOIN_2_PATHS (R2_HOME_DATADIR, ".r2panels"));
 }
 

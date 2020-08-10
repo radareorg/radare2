@@ -2580,10 +2580,6 @@
                 {
                   "type": "PATTERN",
                   "value": "\\\\."
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "\\/[^\\*]"
                 }
               ]
             }
@@ -2658,10 +2654,6 @@
                 {
                   "type": "PATTERN",
                   "value": "\\\\."
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "\\/[^\\*]"
                 }
               ]
             }
@@ -3666,10 +3658,6 @@
             {
               "type": "PATTERN",
               "value": "\\\\."
-            },
-            {
-              "type": "PATTERN",
-              "value": "\\/[^\\*]"
             }
           ]
         }
@@ -3712,10 +3700,6 @@
             {
               "type": "PATTERN",
               "value": "\\\\."
-            },
-            {
-              "type": "PATTERN",
-              "value": "\\/[^\\*]"
             }
           ]
         }
@@ -3734,8 +3718,15 @@
             "type": "CHOICE",
             "members": [
               {
-                "type": "PATTERN",
-                "value": "[^\\\\\"\\n$`]+"
+                "type": "IMMEDIATE_TOKEN",
+                "content": {
+                  "type": "PREC",
+                  "value": 1,
+                  "content": {
+                    "type": "PATTERN",
+                    "value": "[^\\\\\"\\n$`]+"
+                  }
+                }
               },
               {
                 "type": "PATTERN",
@@ -3771,8 +3762,15 @@
             "type": "CHOICE",
             "members": [
               {
-                "type": "PATTERN",
-                "value": "[^\\\\'\\n]+"
+                "type": "IMMEDIATE_TOKEN",
+                "content": {
+                  "type": "PREC",
+                  "value": 1,
+                  "content": {
+                    "type": "PATTERN",
+                    "value": "[^\\\\'\\n]+"
+                  }
+                }
               },
               {
                 "type": "PATTERN",

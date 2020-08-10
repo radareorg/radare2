@@ -1,5 +1,5 @@
 NAME=r_fs
-DEPS=r_util r_io
+R2DEPS=r_util r_io
 CFLAGS+=-DR2_PLUGIN_INCORE -Iarch/include -Iarch
 
 SHLR=../../shlr/

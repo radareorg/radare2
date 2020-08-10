@@ -29,10 +29,10 @@ endif
 # NOTE: when you update TS_TIP or TS_BRA, also update them in shlr/meson.build
 TS_URL=https://github.com/tree-sitter/tree-sitter.git
 TS_BRA=master
-TS_TIP=f049ba350f3f6019ce9a1cbb0975ebd154ef7ad3
+TS_TIP=86a5dabbcbdac650c53a889183bf56d7e721e09e
 
 ifeq ($(CS_RELEASE),1)
-CS_VER=4.0.1
+CS_VER=4.0.2
 CS_TAR=https://codeload.github.com/aquynh/capstone/tar.gz/$(CS_VER)
 #CS_TAR=http://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
 CS_PATCHES=0
@@ -44,10 +44,10 @@ CS_ARCHIVE=https://$(CS_URL_BASE)/archive
 CS_UPD=20190515
 # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/meson.build
 ifeq ($(CS_NEXT),1)
-CS_TIP=0de88ed3fdc0ab1f1e2a6eada3cdd93e18057a0f
+CS_TIP=d956ceddabcbe544ee8f074ba75c86c6381b34e6
 CS_BRA=next
 else
-CS_TIP=c80b6aaf973c822d82565f25e9b2e2c0102626fa
+CS_TIP=2edae851d9fee511a57d4da32d5acecedd95d7ed
 CS_BRA=v4
 endif
 ifeq ($(CS_COMMIT_ARCHIVE),1)
@@ -129,7 +129,7 @@ endif
 targets:
 	for TARGET in ${SDB_TARGETS} ; do ${MAKE} $$TARGET ; done
 
-${SDB_TARGETS}:
+sdb/src/sdb_version.h:
 	@echo
 	@echo BUILD SUMARY
 	@echo ============
@@ -139,32 +139,36 @@ ${SDB_TARGETS}:
 	@echo HOST_OS ${HOST_OS}
 	@echo BUILD_OS ${BUILD_OS}
 	@echo ============
+	$(MAKE) -C sdb clean
+	$(MAKE) -C sdb src/sdb_version.h
+
+sdb-native-build: sdb/src/sdb_version.h
 	@echo
 	@echo ">>>>>>>>>>>>>>>>"
 	@echo "NATIVE BUILD SDB"
 	@echo ">>>>>>>>>>>>>>>>"
 	@echo
-	$(MAKE) -C sdb clean
-	$(MAKE) -C sdb src/sdb_version.h
 	$(MAKE) -C sdb/src CC=${HOST_CC} LDFLAGS='${HOST_LDFLAGS}' CPPFLAGS='' CFLAGS='${HOST_CFLAGS} ${PIC}' bin
 	cp -f sdb/src/sdb${BUILD_EXT_EXE} sdb/src/.sdb${BUILD_EXT_EXE}
+
+sdb-target-build: sdb/src/sdb_version.h
 	@echo
 	@echo ">>>>>>>>>>>>>>>>"
 	@echo "TARGET BUILD SDB"
 	@echo ">>>>>>>>>>>>>>>>"
 	@echo
-	$(MAKE) -C sdb clean
-	cd sdb ; $(MAKE) src/sdb_version.h
 	cd sdb/src ; $(MAKE) ARCH=xxx RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED}" \
 		CC="${CC}" AR="${AR}" CFLAGS='${CFLAGS}' LDFLAGS='${LDFLAGS}' libsdb.a
 	${RANLIB} sdb/src/libsdb.a
+
+${SDB_TARGETS}: sdb-native-build sdb-target-build
 ifneq (${EXT_AR},a)
 	-cp -f sdb/src/libsdb.a sdb/src/libsdb.${EXT_AR}
 endif
 	rm -f $@
 	cp -f sdb/src/.sdb${BUILD_EXT_EXE} $@
 
-.PHONY: sdb-sync sync-sdb sdbclean
+.PHONY: sdb-sync sync-sdb sdbclean sdb-native-build sdb-target-build
 SDB_F=README.md config.mk src Makefile meson.build
 SDB_SYNCFILES=$(addprefix sdb.vc/,${SDB_F})
 I=../libr/include
@@ -188,17 +192,13 @@ sdb-sync sync-sdb:
 	git clone --depth 1 ${SDB_URL} sdb.vc
 	mkdir -p sdb
 	cp -rf ${SDB_SYNCFILES} sdb
-	rm -rf sdb.vc $I/sdb
-	mkdir -p $I/sdb
+	rm -rf sdb.vc
 	rm -f src/sdb_version.h
 	cd sdb ; $(MAKE) src/sdb_version.h
-	cp -f sdb/src/*.h $I/sdb
-	echo '#include <sdb/sdb.h>' > $I/sdb.h
 	mkdir -p sdb/test sdb/memcache
 	sed -e 's,HAVE_VALA=,HAVE_VALA=#,' sdb/config.mk > .t
 	mv .t sdb/config.mk
 	echo all clean mrproper: | tee sdb/test/Makefile > sdb/memcache/Makefile
-	git add $I/sdb*
 	git add sdb
 
 .PHONY: ptrace-wrap ptrace-wrap-sync sync-ptrace-wrap ptrace-wrap-clean clean-ptrace-wrap

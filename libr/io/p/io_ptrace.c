@@ -31,6 +31,15 @@ static void open_pidmem (RIOPtrace *iop);
 extern int errno;
 #endif
 
+// PTRACE_GETSIGINFO is defined only since glibc 2.4 but appeared much
+// earlier in linux kernel - since 2.3.99-pre6
+// So we define it manually
+#if __linux__ && defined(__GLIBC__)
+#ifndef PTRACE_GETSIGINFO
+#define PTRACE_GETSIGINFO 0x4202
+#endif
+#endif
+
 #if 0
 procpidmem is buggy.. running this sometimes results in ffff
 

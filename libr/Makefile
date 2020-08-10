@@ -115,6 +115,8 @@ E+=../shlr/ar/libr_ar.${EXT_AR}
 E+=../shlr/windbg/libr_windbg.${EXT_AR}
 E+=../shlr/qnx/lib/libqnxr.${EXT_AR}
 E+=../shlr/bochs/lib/libbochs.${EXT_AR}
+E+=../shlr/radare2-shell-parser/libshell-parser.${EXT_AR}
+E+=../shlr/tree-sitter/libtree-sitter.${EXT_AR}
 #ifeq ($(COMPILER),ios-sdk)
 #E+=../shlr/sdb/src/libsdb.${EXT_AR}
 #endif
@@ -159,7 +161,7 @@ $(LIBS):
 
 pkgcfg:
 	@for lib in ${LIBS}; do $(MAKE) -C $${lib} pkgcfg; done
-	$(MAKE) -C asm pkgcfg NAME=libr DEPS="r_`echo ${LIBS}|sed -e 's, , r_,g'`"
+	$(MAKE) -C asm pkgcfg NAME=libr R2DEPS="r_`echo ${LIBS}|sed -e 's, , r_,g'`"
 	# TODO: Magically generate libr.pc.acr here using LIBS and so :)
 
 install-pkgconfig:
@@ -181,7 +183,7 @@ install-includes:
 		done ; \
 	done)
 	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/sdb"
-	(cd include/sdb && for FILE in * ; do \
+	(cd ../shlr/sdb/src && for FILE in *.h ; do \
 		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/sdb/$$FILE" ; \
 	done)
 	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/r_util"
@@ -198,6 +200,7 @@ symstall install-symlink:
 		"${DESTDIR}${LIBDIR}/pkgconfig" \
 		"${DESTDIR}${LIBDIR}/radare2/${VERSION}" ; \
 	rm -rf "${DESTDIR}${INCLUDEDIR}/libr" && ln -fs "${PWD}/include" "${DESTDIR}${INCLUDEDIR}/libr" ; \
+	rm -rf "${DESTDIR}${INCLUDEDIR}/libr/sdb" && ln -fs "${PWD}/../shlr/sdb/src" "${DESTDIR}${INCLUDEDIR}/libr/sdb" ; \
 	$(MAKE) install-pkgconfig-symlink ; \
 	$(foreach lib,${LIBS}, \
 	  ln -fs "${PWD}/$(lib)/libr_$(lib).${EXT_SO}" \

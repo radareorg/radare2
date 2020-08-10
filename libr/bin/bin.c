@@ -764,9 +764,6 @@ R_API RList *r_bin_reset_strings(RBin *bin) {
 		bf->o->strings = NULL;
 	}
 
-	if (bin->minstrlen <= 0) {
-		return NULL;
-	}
 	bf->rawstr = bin->rawstr;
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 
@@ -832,7 +829,7 @@ R_API int r_bin_is_static(RBin *bin) {
 	return true;
 }
 
-R_API RBin *r_bin_new() {
+R_API RBin *r_bin_new(void) {
 	int i;
 	RBinXtrPlugin *static_xtr_plugin;
 	RBinLdrPlugin *static_ldr_plugin;
@@ -999,7 +996,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 
 	int i = 0;
 	char unk[128];
-	char archline[128];
+	char archline[256];
 	RBinFile *binfile = r_bin_cur (bin);
 	RTable *table = r_table_new ();
 	const char *name = binfile? binfile->file: NULL;

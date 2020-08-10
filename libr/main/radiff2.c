@@ -1,10 +1,8 @@
 /* radare - LGPL - Copyright 2009-2020 - pancake */
 
-#include <r_diff.h>
 #include <r_core.h>
-#include <r_hash.h>
-#include <limits.h>
 #include <r_main.h>
+
 #ifdef _MSC_VER
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -72,10 +70,16 @@ static RCore *opencore(const char *f) {
 		r_config_eval (c->config, e, false);
 	}
 	if (f) {
+		RCoreFile * rfile = NULL;
 #if __WINDOWS__
-		f = r_acp_to_utf8 (f);
+		char *winf = r_acp_to_utf8 (f);
+		rfile = r_core_file_open (c, winf, 0, 0);
+		free (winf);
+#else
+		rfile = r_core_file_open (c, f, 0, 0);
 #endif
-		if (!r_core_file_open (c, f, 0, 0)) {
+
+		if (!rfile) {
 			r_core_free (c);
 			return NULL;
 		}
@@ -302,7 +306,9 @@ void print_bytes(const void *p, size_t len, bool big_endian) {
 	size_t i;
 	for (i = 0; i < len; i++) {
 		ut8 ch = ((ut8*) p)[big_endian ? (len - i - 1) : i];
-		write (1, &ch, 1);
+		if (write (1, &ch, 1) != 1) {
+			break;
+		}
 	}
 }
 
@@ -383,15 +389,15 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 	// we append data
 	if (op->b_len <= 246) {
 		ut8 data = op->b_len;
-		write (1, &data, 1);
+		(void) write (1, &data, 1);
 	} else if (op->b_len <= USHRT_MAX) {
 		USLen = (ut16) op->b_len;
 		ut8 data = 247;
-		write (1, &data, 1);
+		(void) write (1, &data, 1);
 		print_bytes (&USLen, sizeof (USLen), true);
 	} else if (op->b_len <= INT_MAX) {
 		ut8 data = 248;
-		write (1, &data, 1);
+		(void) write (1, &data, 1);
 		ILen = (int) op->b_len;
 		print_bytes (&ILen, sizeof (ILen), true);
 	} else {
@@ -399,9 +405,11 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 		int times = op->b_len / INT_MAX;
 		int max = INT_MAX;
 		size_t i;
-		for(i = 0;i < times; i++) {
+		for (i = 0; i < times; i++) {
 			ut8 data = 248;
-			write (1, &data, 1);
+			if (write (1, &data, 1) != 1) {
+				break;
+			}
 			print_bytes (&max, sizeof (max), true);
 			print_bytes (op->b_buf, max, false);
 			op->b_buf += max;
@@ -917,7 +925,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 	RDiff *d;
 	ut8 *bufa = NULL, *bufb = NULL;
 	int o, /*diffmode = 0,*/ delta = 0;
-	ut64 sza, szb;
+	ut64 sza = 0, szb = 0;
 	int mode = MODE_DIFF;
 	int gmode = GRAPH_DEFAULT_MODE;
 	int diffops = 0;
@@ -1056,6 +1064,11 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 	}
 	file = (opt.ind < argc)? argv[opt.ind]: NULL;
 	file2 = (opt.ind + 1 < argc)? argv[opt.ind + 1]: NULL;
+
+	if (R_STR_ISEMPTY (file) || R_STR_ISEMPTY(file2)) {
+		eprintf ("Cannot open empty path\n");
+		return 1;
+	}
 
 	switch (mode) {
 	case MODE_GRAPH:
@@ -1216,17 +1229,18 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			printf ("\"changes\":[");
 		}
 		if (diffmode == 'B') {
-			write (1, "\xd1\xff\xd1\xff", 4);
-			write (1, "\x04", 1);
+			(void) write (1, "\xd1\xff\xd1\xff\x04", 5);
 		}
 		if (diffmode == 'U') {
-			char * res = r_diff_buffers_unified (d, bufa, (int)sza, bufb, (int)szb);
-			printf ("%s", res);
-			free (res);
+			char *res = r_diff_buffers_unified (d, bufa, (int)sza, bufb, (int)szb);
+			if (res) {
+				printf ("%s", res);
+				free (res);
+			}
 		} else if (diffmode == 'B') {
 			r_diff_set_callback (d, &bcb, 0);
 			r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
-			write (1, "\x00", 1);
+			(void) write (1, "\x00", 1);
 		} else {
 			r_diff_set_callback (d, &cb, 0); // (void *)(size_t)diffmode);
 			r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);

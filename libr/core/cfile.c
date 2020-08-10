@@ -76,7 +76,9 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 
 	if (isdebug) {
 		r_debug_kill (core->dbg, core->dbg->pid, core->dbg->tid, 9); // SIGKILL
-		r_debug_continue (core->dbg);
+		do {
+			r_debug_continue (core->dbg);
+		} while (!r_debug_is_dead (core->dbg));
 		r_debug_detach (core->dbg, core->dbg->pid);
 		perm = 7;
 	} else {
@@ -114,6 +116,8 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		// Reset previous pid and tid
 		core->dbg->pid = -1;
 		core->dbg->tid = -1;
+		core->dbg->recoil_mode = R_DBG_RECOIL_NONE;
+		memset (&core->dbg->reason, 0, sizeof (core->dbg->reason));
 		// Reopen and attach
 		r_core_setup_debugger (core, "native", true);
 		r_debug_select (core->dbg, newpid, newtid);
@@ -434,7 +438,11 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 		return false;
 	}
 	binfile = r_bin_cur (r->bin);
-	r_core_bin_set_env (r, binfile);
+	if (r_core_bin_set_env (r, binfile)) {
+		if (!r->anal->sdb_cc->path) {
+			R_LOG_WARN ("No calling convention defined for this file, analysis may be inaccurate.\n");
+		}
+	}
 	plugin = r_bin_file_cur_plugin (binfile);
 	if (plugin && !strcmp (plugin->name, "any")) {
 		RBinObject *obj = r_bin_cur_object (r->bin);

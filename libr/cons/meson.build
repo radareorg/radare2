@@ -16,7 +16,7 @@ r_cons_sources = [
   'output.c',
   'pager.c',
   'pal.c',
-  'pipe.c',
+  'cpipe.c',
   'rgb.c',
   'cutf8.c'
 ]
@@ -38,6 +38,7 @@ pkgconfig_mod.generate(r_cons,
   version: r2_version,
   name: 'r_cons',
   filebase: 'r_cons',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util'
   ],

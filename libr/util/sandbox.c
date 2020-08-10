@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2017 - pancake */
+/* radare - LGPL - Copyright 2012-2020 - pancake */
 
 #include <r_util.h>
 #include <signal.h>
@@ -11,10 +11,15 @@
 #include <sys/capsicum.h>
 #endif
 
+#if LIBC_HAVE_PRIV_SET
+#include <priv.h>
+#endif
+
 static bool enabled = false;
 static bool disabled = false;
 
 static bool inHomeWww(const char *path) {
+	r_return_val_if_fail (path, false);
 	bool ret = false;
 	char *homeWww = r_str_home (R2_HOME_WWWROOT R_SYS_DIR);
 	if (homeWww) {
@@ -33,13 +38,10 @@ static bool inHomeWww(const char *path) {
  * path are ok.
  */
 R_API bool r_sandbox_check_path (const char *path) {
+	r_return_val_if_fail (path, false);
 	size_t root_len;
 	char *p;
 	/* XXX: the sandbox can be bypassed if a directory is symlink */
-
-	if (!path) {
-		return false;
-	}
 	root_len = strlen (R2_LIBDIR"/radare2");
 	if (!strncmp (path, R2_LIBDIR"/radare2", root_len)) {
 		return true;
@@ -103,6 +105,12 @@ R_API bool r_sandbox_disable (bool e) {
 			return enabled;
 		}
 #endif
+#if LIBC_HAVE_PRIV_SET
+		if (enabled) {
+			eprintf ("sandbox mode couldn't be disabled in priv mode\n");
+			return enabled;
+		}
+#endif
 		disabled = enabled;
 		enabled = false;
 	} else {
@@ -163,10 +171,41 @@ R_API bool r_sandbox_enable (bool e) {
 		}
 	}
 #endif
+#if LIBC_HAVE_PRIV_SET
+	if (enabled) {
+		priv_set_t *priv = priv_allocset();
+		const char *const privrules[] = {
+			PRIV_PROC_INFO,
+			PRIV_PROC_SESSION,
+			PRIV_PROC_ZONE,
+			PRIV_NET_OBSERVABILITY
+		};
+
+		size_t i, privrulescnt = sizeof (privrules) / sizeof (privrules[0]);
+		
+		if (!priv) {
+			eprintf ("sandbox: priv_allocset failed\n");
+			return false;
+		}
+		priv_basicset(priv);
+		
+		for (i = 0; i < privrulescnt; i ++) {
+			if (priv_delset (priv, privrules[i]) != 0) {
+				priv_emptyset (priv);
+				priv_freeset (priv);
+				eprintf ("sandbox: priv_delset failed\n");
+				return false;
+			}
+		}
+
+		priv_freeset (priv);
+	}
+#endif
 	return enabled;
 }
 
-R_API int r_sandbox_system (const char *x, int n) {
+R_API int r_sandbox_system(const char *x, int n) {
+	r_return_val_if_fail (x, -1);
 	if (enabled) {
 		eprintf ("sandbox: system call disabled\n");
 		return -1;
@@ -219,12 +258,16 @@ R_API int r_sandbox_system (const char *x, int n) {
 		eprintf ("Error parsing command arguments\n");
 		return -1;
 	}
-	int child = fork();
-	if (child == -1) return -1;
+	int child = fork ();
+	if (child == -1) {
+		return -1;
+	}
 	if (child) {
 		return waitpid (child, NULL, 0);
 	}
-	execl ("/bin/sh", "sh", "-c", x, (const char*)NULL);
+	if (execl ("/bin/sh", "sh", "-c", x, (const char*)NULL) == -1) {
+		perror ("execl");
+	}
 	exit (1);
 #endif
 #endif
@@ -249,11 +292,8 @@ R_API bool r_sandbox_creat (const char *path, int mode) {
 	return false;
 }
 
-static char *expand_home(const char *p) {
-	if (*p == '~') {
-		return r_str_home (p);
-	}
-	return strdup (p);
+static inline char *expand_home(const char *p) {
+	return (*p == '~')? r_str_home (p): strdup (p);
 }
 
 R_API int r_sandbox_lseek(int fd, ut64 addr, int whence) {
@@ -288,9 +328,7 @@ R_API int r_sandbox_close(int fd) {
 
 /* perm <-> mode */
 R_API int r_sandbox_open(const char *path, int perm, int mode) {
-	if (!path) {
-		return -1;
-	}
+	r_return_val_if_fail (path, -1);
 	char *epath = expand_home (path);
 	int ret = -1;
 #if __WINDOWS__
@@ -325,11 +363,9 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 }
 
 R_API FILE *r_sandbox_fopen (const char *path, const char *mode) {
+	r_return_val_if_fail (path && mode, NULL);
 	FILE *ret = NULL;
 	char *epath = NULL;
-	if (!path) {
-		return NULL;
-	}
 	if (enabled) {
 		if (strchr (mode, 'w') || strchr (mode, 'a') || strchr (mode, '+')) {
 			return NULL;
@@ -367,7 +403,8 @@ R_API FILE *r_sandbox_fopen (const char *path, const char *mode) {
 	return ret;
 }
 
-R_API int r_sandbox_chdir (const char *path) {
+R_API int r_sandbox_chdir(const char *path) {
+	r_return_val_if_fail (path, -1);
 	if (enabled) {
 		// TODO: check path
 		if (strstr (path, "../")) {
@@ -382,6 +419,7 @@ R_API int r_sandbox_chdir (const char *path) {
 }
 
 R_API int r_sandbox_kill(int pid, int sig) {
+	r_return_val_if_fail (pid != -1, -1);
 	// XXX: fine-tune. maybe we want to enable kill for child?
 	if (enabled) {
 		return -1;
@@ -393,11 +431,9 @@ R_API int r_sandbox_kill(int pid, int sig) {
 }
 #if __WINDOWS__
 R_API HANDLE r_sandbox_opendir (const char *path, WIN32_FIND_DATAW *entry) {
+	r_return_val_if_fail (path, NULL);
 	wchar_t dir[MAX_PATH];
 	wchar_t *wcpath = 0;
-	if (!path) {
-		return NULL;
-	}
 	if (r_sandbox_enable (0)) {
 		if (path && !r_sandbox_check_path (path)) {
 			return NULL;
@@ -412,9 +448,7 @@ R_API HANDLE r_sandbox_opendir (const char *path, WIN32_FIND_DATAW *entry) {
 }
 #else
 R_API DIR* r_sandbox_opendir (const char *path) {
-	if (!path) {
-		return NULL;
-	}
+	r_return_val_if_fail (path, NULL);
 	if (r_sandbox_enable (0)) {
 		if (path && !r_sandbox_check_path (path)) {
 			return NULL;
@@ -423,7 +457,7 @@ R_API DIR* r_sandbox_opendir (const char *path) {
 	return opendir (path);
 }
 #endif
-R_API bool r_sys_stop () {
+R_API bool r_sys_stop (void) {
 	if (enabled) {
 		return false;
 	}

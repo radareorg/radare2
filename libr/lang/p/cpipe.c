@@ -6,15 +6,19 @@
 #include "r_core.h"
 #include "r_lang.h"
 
+#if __UNIX__
 static int lang_cpipe_file(RLang *lang, const char *file) {
 	char *a, *cc, *p, name[512];
 	const char *libpath, *libname;
 
-	if (strlen (file) > (sizeof (name)-10))
+	if (strlen (file) > (sizeof (name)-10)) {
 		return false;
-	if (!strstr (file, ".c"))
+	}
+	if (!strstr (file, ".c")) {
 		sprintf (name, "%s.c", file);
-	else strcpy (name, file);
+	} else {
+		strcpy (name, file);
+	}
 	if (!r_file_exists (name)) {
 		eprintf ("file not found (%s)\n", name);
 		return false;
@@ -29,22 +33,33 @@ static int lang_cpipe_file(RLang *lang, const char *file) {
 		libpath = ".";
 		libname = name;
 	}
-	r_sys_setenv ("PKG_CONFIG_PATH", R2_LIBDIR"/pkgconfig");
 	p = strstr (name, ".c");
-	if (p) *p = 0;
+	if (p) {
+		*p = 0;
+	}
 	cc = r_sys_getenv ("CC");
-	if (!cc || !*cc) {
+	if (R_STR_ISEMPTY (cc)) {
 		free (cc);
 		cc = strdup ("gcc");
 	}
-	char *buf = r_str_newf ("%s %s -o %s/bin%s"
-		" $(pkg-config --cflags --libs r_socket)",
-		cc, file, libpath, libname);
+	char *file_esc = r_str_escape_sh (file);
+	char *libpath_esc = r_str_escape_sh (libpath);
+	char *libname_esc = r_str_escape_sh (libname);
+	char *buf = r_str_newf ("%s \"%s\" -o \"%s/bin%s\""
+		" $(PKG_CONFIG_PATH=%s pkg-config --cflags --libs r_socket)",
+		cc, file_esc, libpath_esc, libname_esc, R2_LIBDIR "/pkgconfig");
+	free (libname_esc);
+	free (libpath_esc);
+	free (file_esc);
 	free (cc);
 	if (r_sandbox_system (buf, 1) == 0) {
+		char *o_ld_path = r_sys_getenv ("LD_LIBRARY_PATH");
+		r_sys_setenv ("LD_LIBRARY_PATH", R2_LIBDIR);
 		char *binfile = r_str_newf ("%s/bin%s", libpath, libname);
 		lang_pipe_run (lang, binfile, -1);
 		r_file_rm (binfile);
+		r_sys_setenv ("LD_LIBRARY_PATH", o_ld_path);
+		free (o_ld_path);
 		free (binfile);
 	}
 	free (buf);
@@ -84,3 +99,10 @@ static RLangPlugin r_lang_plugin_cpipe = {
 	.fini = NULL,
 	.run_file = (void*)lang_cpipe_file,
 };
+#else
+#ifdef _MSC_VER
+#pragma message("Warning: cpipe RLangPlugin is not implemented on this platform")
+#else
+#warning cpipe RLangPlugin is not implemented on this platform
+#endif
+#endif

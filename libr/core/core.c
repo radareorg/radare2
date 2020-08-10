@@ -823,7 +823,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	return ret;
 }
 
-R_API RCore *r_core_new() {
+R_API RCore *r_core_new(void) {
 	RCore *c = R_NEW0 (RCore);
 	if (c) {
 		r_core_init (c);
@@ -849,7 +849,7 @@ static const char *radare_argv[] = {
 	"=g?", "=g", "=g!", "=h?", "=h", "=h-", "=h--", "=h*", "=h&", "=H?", "=H", "=H&",
 	"<",
 	"/?", "/", "/j", "/j!", "/j!x", "/+", "//", "/a", "/a1", "/ab", "/ad", "/aa", "/as", "/asl", "/at", "/atl", "/af", "/afl", "/ae", "/aej", "/ai", "/aij",
-	"/c", "/ca", "/car", "/d", "/e", "/E", "/f", "/F", "/g", "/gg", "/h", "/ht", "/i", "/m", "/mb", "/mm",
+	"/c", "/ca", "/car", "/d", "/e", "/E", "/Ej", "/f", "/F", "/g", "/gg", "/h", "/ht", "/i", "/m", "/mb", "/mm",
 	"/o", "/O", "/p", "/P", "/s", "/s*", "/r?", "/r", "/ra", "/rc", "/re", "/rr", "/rw", "/rc",
 	"/R",
 	"/v?", "/v", "/v1", "/v2", "/v4", "/v8",
@@ -955,7 +955,7 @@ static const char *radare_argv[] = {
 	"L?", "L", "L-", "Ll", "LL", "La", "Lc", "Ld", "Lh", "Li", "Lo",
 	"m?", "m", "m*", "ml", "m-", "md", "mf?", "mf", "mg", "mo", "mi", "mp", "ms", "my",
 	"o?", "o", "o-", "o--", "o+", "oa", "oa-", "oq", "o*", "o.", "o=",
-	"ob?", "ob", "ob*", "obo", "obb", "oba", "obf", "obj", "obr", "ob-", "ob-*",
+	"ob?", "ob", "ob*", "obo", "oba", "obf", "obj", "obr", "ob-", "ob-*",
 	"oc", "of", "oi", "oj", "oL", "om", "on",
 	"oo?", "oo", "oo+", "oob", "ood", "oom", "oon", "oon+", "oonn", "oonn+",
 	"op",  "ox",
@@ -1493,16 +1493,18 @@ static void autocomplete_functions (RCore *core, RLineCompletion *completion, co
 }
 
 static void autocomplete_macro(RCore *core, RLineCompletion *completion, const char *str) {
-	r_return_if_fail (str);
+	r_return_if_fail (core && core->rcmd && completion && str);
 	RCmdMacroItem *item;
 	RListIter *iter;
-	char buf[1024];
-	int n = strlen(str);
+	size_t n = strlen (str);
 	r_list_foreach (core->rcmd->macro.macros, iter, item) {
 		char *p = item->name;
 		if (!*str || !strncmp (str, p, n)) {
-			snprintf (buf, sizeof (buf), "%s%s)", str, p);
-			r_line_completion_push (completion, buf);
+			char *buf = r_str_newf ("%s%s)", str, p);
+			if (buf) {
+				r_line_completion_push (completion, buf);
+				free (buf);
+			}
 		}
 	}
 }
@@ -3454,7 +3456,12 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 		eprintf ("Opening in read-only\n");
 	} else {
 		if (str) {
-			write (fd, str, strlen (str));
+			const size_t str_len = strlen (str);
+			if (write (fd, str, str_len) != str_len) {
+				close (fd);
+				free (name);
+				return NULL;
+			}
 		}
 	}
 	close (fd);

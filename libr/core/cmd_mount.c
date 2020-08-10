@@ -24,7 +24,7 @@ static const char *help_msg_m[] = {
 	NULL
 };
 
-static void cmd_mount_init(RCore *core) {
+static void cmd_mount_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, m);
 }
 
@@ -406,8 +406,8 @@ static int cmd_mount(void *data, const char *_input) {
 				r_fs_write (core->fs, f, 0, (const ut8 *)data, strlen (data));
 				r_fs_close (core->fs, f);
 				r_fs_file_free (f);
-				free (args);
 			}
+			free (args);
 		} else {
 			eprintf ("Usage: mw [file] ([data])\n");
 		}

@@ -5,7 +5,7 @@
 #include <getopt.h>
 
 ///////////////////////////////////////////////////////////////////////////////
-static void print_usage() {
+static void print_usage(void) {
 	printf("pdb_parser -f pdb_file [option]\n");
 	printf("\t -f, --pdb_file : set pdb file to parse\n");
 	printf("[option]:\n");
@@ -15,7 +15,7 @@ static void print_usage() {
 
 ///////////////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv) {
-	R_PDB pdb;
+	RPdb pdb;
 
 	static struct option long_options[] =
 	{

@@ -158,7 +158,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 	replaceWords (ptr, "dword ", src);
 	replaceWords (ptr, "qword ", src);
 #endif
-	if (p->regsub) {
+	if (p->subreg) {
 		__replaceRegisters (p->analb.anal->reg, ptr, false);
 		if (x86) {
 			__replaceRegisters (p->analb.anal->reg, ptr, true);
@@ -207,9 +207,9 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 				         && (data[3] == ' ' || data[3] == 0x1b);
 				bool remove_brackets = false;
 				flag = p->flag_get (f, off);
-				if ((!flag || arm) && p->relsub_addr) {
-					remove_brackets = lea || (arm && p->relsub_addr);
-					flag2 = p->flag_get (f, p->relsub_addr);
+				if ((!flag || arm) && p->subrel_addr) {
+					remove_brackets = lea || (arm && p->subrel_addr);
+					flag2 = p->flag_get (f, p->subrel_addr);
 					if (!flag || arm) {
 						flag = flag2;
 					}
@@ -289,7 +289,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 							banned = true;
 						}
 					}
-					if (p->relsub_addr && !banned && lea) {  // TODO: use remove_brackets
+					if (p->subrel_addr && !banned && lea) {  // TODO: use remove_brackets
 						int flag_len = strlen (flag->name);
 						char *ptr_end = str + strlen (data) + flag_len - 1;
 						char *ptr_right = ptr_end + 1, *ptr_left, *ptr_esc;
@@ -348,7 +348,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 					}
 					return true;
 				}
-				if (p->tailsub) { //  && off > UT32_MAX && addr > UT32_MAX)
+				if (p->subtail) { //  && off > UT32_MAX && addr > UT32_MAX)
 					if (off != UT64_MAX) {
 						if (off == addr) {
 							insert (ptr, "$$");
@@ -479,7 +479,26 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 				snprintf (num, sizeof (num), "0%o", (int)off);
 				break;
 			case 10:
-				snprintf (num, sizeof (num), "%" PFMT64d, (st64)off);
+				{
+					RList *regs = r_reg_get_list (p->analb.anal->reg, R_REG_TYPE_GPR);
+					RRegItem *reg;
+					RListIter *iter;
+					bool imm32 = false;
+					r_list_foreach (regs, iter, reg) {
+						if (reg->size == 32 && r_str_casestr (data, reg->name)) {
+							imm32 = true;
+							break;
+						}
+					}
+					if (imm32) {
+						snprintf (num, sizeof (num), "%"PFMT32d, (st32)off);
+						break;
+					}
+					snprintf (num, sizeof (num), "%"PFMT64d, (st64)off);
+				}
+				break;
+			case 11:
+				snprintf (num, sizeof (num), "%"PFMT64u, off);
 				break;
 			case 32:
 				{

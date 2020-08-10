@@ -377,7 +377,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=subs triggers zf
+NAME=subs triggers zf and cf
 FILE=-
 CMDS=<<EOF
 e esil.debug=true
@@ -390,11 +390,11 @@ aes
 aer?cpsr
 EOF
 EXPECT=<<EOF
-0x40000000
+0x60000000
 EOF
 RUN
 
-NAME=subs triggers zf off
+NAME=subs triggers cf and zf off
 FILE=-
 CMDS=<<EOF
 e esil.debug=true
@@ -407,7 +407,7 @@ aes
 aer?cpsr
 EOF
 EXPECT=<<EOF
-0x00000000
+0x20000000
 EOF
 RUN
 
@@ -591,6 +591,23 @@ ar r2
 EOF
 EXPECT=<<EOF
 0xffeeddcc
+EOF
+RUN
+
+NAME=ldrb r1, [r3, r2, lsl 2]
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r3=4
+ar r2=1
+wx 0211d3e7
+wx aabbccdd @ 8
+aes
+ar r1
+EOF
+EXPECT=<<EOF
+0x000000aa
 EOF
 RUN
 
@@ -1568,7 +1585,7 @@ ar r5
 ar r6
 EOF
 EXPECT=<<EOF
-efbeadde
+ccddeeff
 0xdeadbeef
 0x00000001
 EOF
@@ -1590,7 +1607,7 @@ ar r5
 ar r6
 EOF
 EXPECT=<<EOF
-ccddeeff
+efbeadde
 0xdeadbeef
 0x00000001
 EOF
@@ -2293,6 +2310,23 @@ ar r0
 EOF
 EXPECT=<<EOF
 0x00000028
+EOF
+RUN
+
+NAME=lsl reg same destination and source
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+aer r3=0xffffffaa
+wx 0331a0e1
+aes
+ar r3
+ar cpsr
+EOF
+EXPECT=<<EOF
+0xfffffea8
+0x00000000
 EOF
 RUN
 

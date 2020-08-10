@@ -1,8 +1,8 @@
 include ../../global.mk
 
 NAME=r_asm
-DEPS=r_syscall r_lang r_util r_parse
-DEPS+=r_flag r_cons r_reg
+R2DEPS=r_syscall r_lang r_util r_parse
+R2DEPS+=r_flag r_cons r_reg
 CFLAGS+=-DR2_PLUGIN_INCORE -Iarch/include -Iarch -I../../shlr
 CURDIR=p/
 
@@ -31,7 +31,6 @@ plugins: ${LIBSO} ${LIBAR}
 include ${STATIC_ASM_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst asm_,p/asm_,$(STATIC_OBJ)))
 OBJS=${STATIC_OBJS} asm.o acode.o aop.o
-# hack to b
 OBJS+=${SHARED2_OBJ}
 
 include $(TOP)/libr/rules.mk

@@ -4,7 +4,10 @@ on:
   pull_request:
     paths:
       - 'shlr/tree-sitter/*'
+      - 'shlr/tree-sitter/lib/*'
+      - 'shlr/tree-sitter/lib/**/*'
       - 'shlr/radare2-shell-parser/*'
+      - 'shlr/radare2-shell-parser/**/*'
     branches:
       - master
 

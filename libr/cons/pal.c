@@ -266,7 +266,7 @@ R_API void r_cons_pal_copy(RConsContext *dst, RConsContext *src) {
 	__cons_pal_update_event (dst);
 }
 
-R_API void r_cons_pal_random() {
+R_API void r_cons_pal_random(void) {
 	int i;
 	RColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
@@ -417,7 +417,7 @@ R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
 	return (*out && !outcol) ? strdup (out) : NULL;
 }
 
-static void r_cons_pal_show_gs() {
+static void r_cons_pal_show_gs(void) {
 	int i, n;
 	r_cons_print ("\nGreyscale:\n");
 	RColor rcolor = RColor_BLACK;
@@ -442,7 +442,7 @@ static void r_cons_pal_show_gs() {
 	}
 }
 
-static void r_cons_pal_show_256() {
+static void r_cons_pal_show_256(void) {
 	RColor rc = RColor_BLACK;
 	r_cons_print ("\n\nXTerm colors:\n");
 	int r = 0;
@@ -474,7 +474,7 @@ static void r_cons_pal_show_256() {
 	}
 }
 
-static void r_cons_pal_show_rgb() {
+static void r_cons_pal_show_rgb(void) {
 	const int inc = 3;
 	int i, j, k, n = 0;
 	RColor rc = RColor_BLACK;
@@ -500,7 +500,7 @@ static void r_cons_pal_show_rgb() {
 	}
 }
 
-R_API void r_cons_pal_show() {
+R_API void r_cons_pal_show(void) {
 	int i;
 	for (i = 0; colors[i].name; i++) {
 		r_cons_printf ("%s%s__"Color_RESET" %s\n",
@@ -648,11 +648,11 @@ R_API const char *r_cons_pal_get_name(int index) {
 	return (index >= 0 && index < keys_len) ? keys[index].name : NULL;
 }
 
-R_API int r_cons_pal_len() {
+R_API int r_cons_pal_len(void) {
 	return keys_len;
 }
 
-R_API void r_cons_pal_update_event() {
+R_API void r_cons_pal_update_event(void) {
 	__cons_pal_update_event (r_cons_singleton ()->context);
 }
 

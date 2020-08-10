@@ -1,0 +1,24 @@
+PKGNAME spp
+VERSION 1.2.0
+CONTACT pancake ; pancake@nopcode.org
+
+ARG_WITHOUT HAVE_FORK fork build without depending on fork syscall ;
+ARG_ENABLE WANT_R2 r2 compile against r2 r_util ;
+
+CHKPRG PKGCONFIG pkg-config
+
+PKGCFG R2_CFLAGS R2_LDFLAGS r_util
+
+USE_R2 = 0 ;
+
+IF WANT_R2 {
+	IFNOTNULL R2_CFLAGS {
+		USE_R2 = 1 ;
+	}{
+		DIENOW Cannot find -lr_util using pkg-config ;
+	}
+}
+
+SUBDIRS ./config.mk ;
+
+REPORT HAVE_FORK USE_R2 PREFIX ;

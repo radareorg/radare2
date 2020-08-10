@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2019-2020 - pancake, thestr4ng3r */
 
 #include <r_anal.h>
-#include <sdb/ht_uu.h>
+#include <ht_uu.h>
 
 #include <assert.h>
 
@@ -437,6 +437,102 @@ beach:
 	return !breaked;
 }
 
+R_API bool r_anal_block_recurse_followthrough(RAnalBlock *block, RAnalBlockCb cb, void *user) {
+	bool breaked = false;
+	RAnalBlockRecurseContext ctx;
+	ctx.anal = block->anal;
+	r_pvector_init (&ctx.to_visit, NULL);
+	ctx.visited = ht_up_new0 ();
+	if (!ctx.visited) {
+		goto beach;
+	}
+
+	ht_up_insert (ctx.visited, block->addr, NULL);
+	r_pvector_push (&ctx.to_visit, block);
+
+	while (!r_pvector_empty (&ctx.to_visit)) {
+		RAnalBlock *cur = r_pvector_pop (&ctx.to_visit);
+		bool b = !cb (cur, user);
+		if (b) {
+			breaked = true;
+		} else {
+			r_anal_block_successor_addrs_foreach (cur, block_recurse_successor_cb, &ctx);
+		}
+	}
+
+beach:
+	ht_up_free (ctx.visited);
+	r_pvector_clear (&ctx.to_visit);
+	return !breaked;
+}
+
+typedef struct {
+	RAnalBlock *bb;
+	RListIter *switch_it;
+} RecurseDepthFirstCtx;
+
+R_API bool r_anal_block_recurse_depth_first(RAnalBlock *block, RAnalBlockCb cb, R_NULLABLE RAnalBlockCb on_exit, void *user) {
+	bool breaked = false;
+	HtUP *visited = ht_up_new0 ();
+	if (!visited) {
+		goto beach;
+	}
+	RAnal *anal = block->anal;
+	RVector path;
+	r_vector_init (&path, sizeof (RecurseDepthFirstCtx), NULL, NULL);
+	RAnalBlock *cur_bb = block;
+	RecurseDepthFirstCtx ctx = { cur_bb, NULL };
+	r_vector_push (&path, &ctx);
+	ht_up_insert (visited, cur_bb->addr, NULL);
+	breaked = !cb (cur_bb, user);
+	if (breaked) {
+		goto beach;
+	}
+	do {
+		RecurseDepthFirstCtx *cur_ctx = r_vector_index_ptr (&path, path.len - 1);
+		cur_bb = cur_ctx->bb;
+		if (cur_bb->jump != UT64_MAX && !ht_up_find_kv (visited, cur_bb->jump, NULL)) {
+			cur_bb = r_anal_get_block_at (anal, cur_bb->jump);
+		} else if (cur_bb->fail != UT64_MAX && !ht_up_find_kv (visited, cur_bb->fail, NULL)) {
+			cur_bb = r_anal_get_block_at (anal, cur_bb->fail);
+		} else {
+			RAnalCaseOp *cop = NULL;
+			if (cur_bb->switch_op && !cur_ctx->switch_it) {
+				cur_ctx->switch_it = cur_bb->switch_op->cases->head;
+				cop = r_list_first (cur_bb->switch_op->cases);
+			} else if (cur_ctx->switch_it) {
+				while ((cur_ctx->switch_it = r_list_iter_get_next (cur_ctx->switch_it))) {
+					cop = r_list_iter_get_data (cur_ctx->switch_it);
+					if (!ht_up_find_kv (visited, cop->jump, NULL)) {
+						break;
+					}
+					cop = NULL;
+				}
+			}
+			cur_bb = cop ? r_anal_get_block_at (anal, cop->jump) : NULL;
+		}
+		if (cur_bb) {
+			RecurseDepthFirstCtx ctx = { cur_bb, NULL };
+			r_vector_push (&path, &ctx);
+			ht_up_insert (visited, cur_bb->addr, NULL);
+			bool breaked = !cb (cur_bb, user);
+			if (breaked) {
+				break;
+			}
+		} else {
+			if (on_exit) {
+				on_exit (cur_ctx->bb, user);
+			}
+			r_vector_pop (&path, NULL);
+		}
+	} while (!r_vector_empty (&path));
+
+beach:
+	ht_up_free (visited);
+	r_vector_clear (&path);
+	return !breaked;
+}
+
 static bool recurse_list_cb(RAnalBlock *block, void *user) {
 	RList *list = user;
 	r_anal_block_ref (block);
@@ -452,11 +548,11 @@ R_API RList *r_anal_block_recurse_list(RAnalBlock *block) {
 	return ret;
 }
 
-R_API void r_anal_block_add_switch_case(RAnalBlock *block, ut64 switch_addr, ut64 case_addr) {
+R_API void r_anal_block_add_switch_case(RAnalBlock *block, ut64 switch_addr, ut64 case_value, ut64 case_addr) {
 	if (!block->switch_op) {
 		block->switch_op = r_anal_switch_op_new (switch_addr, 0, 0, 0);
 	}
-	r_anal_switch_op_add_case (block->switch_op, case_addr, 0, case_addr);
+	r_anal_switch_op_add_case (block->switch_op, case_addr, case_value, case_addr);
 }
 
 R_API bool r_anal_block_op_starts_at(RAnalBlock *bb, ut64 addr) {
@@ -634,13 +730,16 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 	// Now, for each fcn, check which of our successors are still reachable in the function remove and the ones that are not.
 	RListIter *it;
 	RAnalFunction *fcn;
-	r_list_foreach (block->fcns, it, fcn) {
+	// We need to clone the list because block->fcns will get modified in the loop
+	RList *fcns_cpy = r_list_clone (block->fcns);
+	r_list_foreach (fcns_cpy, it, fcn) {
 		RAnalBlock *entry = r_anal_get_block_at (block->anal, fcn->addr);
 		if (entry && r_list_contains (entry->fcns, fcn)) {
 			r_anal_block_recurse (entry, noreturn_successors_reachable_cb, succs);
 		}
 		ht_up_foreach (succs, noreturn_remove_unreachable_cb, fcn);
 	}
+	r_list_free (fcns_cpy);
 
 	// This last step isn't really critical, but nice to have.
 	// Prepare to merge blocks with their predecessors if possible
