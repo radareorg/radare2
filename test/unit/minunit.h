@@ -176,9 +176,9 @@ void sprint_mem(char *out, const ut8 *buf, size_t len) {
 		mu_assert(_meqstr, memcmp((exp__), (act__), (len)) == 0); \
 } while(0)
 
-#define mu_run_test(test) do { int result; \
+#define mu_run_test(test, ...) do { int result; \
 		printf(TBOLD #test TRESET " "); \
-		result = test(); \
+		result = test(__VA_ARGS__); \
 		tests_run++; \
 		tests_passed += result; \
 } while (0)
