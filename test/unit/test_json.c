@@ -25,7 +25,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "nxjson.h"
+#include <r_util/r_json.h>
 
 #define ERROR(msg, p) fprintf(stderr, "ERROR: " msg " %s\n", (p));
 
@@ -67,7 +67,7 @@ static int save_file(const char *filepath, const char *text) {
 	return 0;
 }
 
-static void dump(const nx_json *json, char *out, char **end, int indent) {
+static void dump(const RJson *json, char *out, char **end, int indent) {
 	if (!json) {
 		*end = out;
 		return;
@@ -80,15 +80,15 @@ static void dump(const nx_json *json, char *out, char **end, int indent) {
 		*out++ = ':';
 	}
 	switch (json->type) {
-	case NX_JSON_NULL:
+	case R_JSON_NULL:
 		strcpy (out, "null");
 		out += 4;
 		break;
-	case NX_JSON_OBJECT:
+	case R_JSON_OBJECT:
 		*out++ = '{';
 		*out++ = '\n';
 		{
-			nx_json *js = json->children.first;
+			RJson *js = json->children.first;
 			for (js = json->children.first; js; js = js->next) {
 				dump (js, out, &out, indent + 2);
 			}
@@ -96,11 +96,11 @@ static void dump(const nx_json *json, char *out, char **end, int indent) {
 		for (i = 0; i < indent; i++) *out++ = ' ';
 		*out++ = '}';
 		break;
-	case NX_JSON_ARRAY:
+	case R_JSON_ARRAY:
 		*out++ = '[';
 		*out++ = '\n';
 		{
-			nx_json *js = json->children.first;
+			RJson *js = json->children.first;
 			for (js = json->children.first; js; js = js->next) {
 				dump (js, out, &out, indent + 2);
 			}
@@ -108,19 +108,19 @@ static void dump(const nx_json *json, char *out, char **end, int indent) {
 		for (i = 0; i < indent; i++) *out++ = ' ';
 		*out++ = ']';
 		break;
-	case NX_JSON_STRING:
+	case R_JSON_STRING:
 		*out++ = '"';
 		strcpy (out, json->text_value);
 		out += strlen (json->text_value);
 		*out++ = '"';
 		break;
-	case NX_JSON_INTEGER:
+	case R_JSON_INTEGER:
 		out += sprintf (out, "%lld", (long long) json->num.s_value);
 		break;
-	case NX_JSON_DOUBLE:
+	case R_JSON_DOUBLE:
 		out += sprintf (out, "%le", json->num.dbl_value);
 		break;
-	case NX_JSON_BOOL:
+	case R_JSON_BOOL:
 		*out++ = json->num.s_value ? 'T' : 'F';
 		break;
 	default:
@@ -137,7 +137,7 @@ static void dump(const nx_json *json, char *out, char **end, int indent) {
 
 static int run_test(int test_number, char *input, const char *expected_output) {
 	int input_length = strlen (input);
-	const nx_json *json = nx_json_parse_utf8 (input);
+	const RJson *json = nx_json_parse_utf8 (input);
 	if (!json) {
 		if (!expected_output) {
 			printf (FMT_PASSED, test_number);

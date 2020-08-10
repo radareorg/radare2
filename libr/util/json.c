@@ -10,7 +10,7 @@
 
 // redefine R_JSON_REPORT_ERROR to use custom error reporting
 #ifndef R_JSON_REPORT_ERROR
-#define R_JSON_REPORT_ERROR (msg, p) fprintf(stderr, "NXJSON PARSE ERROR (%d): " msg " at %s\n", __LINE__, p)
+#define R_JSON_REPORT_ERROR(msg, p) fprintf(stderr, "NXJSON PARSE ERROR (%d): " msg " at %s\n", __LINE__, p)
 #endif
 
 // TODO: use IS_WHITECHAR from r2
@@ -38,7 +38,7 @@ static RJson *create_json(RJsonType type, const char *key, RJson *parent) {
 	return js;
 }
 
-void nx_json_free(const RJson *js) {
+R_API void nx_json_free(const RJson *js) {
 	if (!js) {
 		return;
 	}
@@ -218,7 +218,7 @@ static char *parse_key(const char **key, char *p, nx_json_unicode_encoder encode
 	return 0; // error
 }
 
-static char *parse_value(nx_json *parent, const char *key, char *p, nx_json_unicode_encoder encoder) {
+static char *parse_value(RJson *parent, const char *key, char *p, nx_json_unicode_encoder encoder) {
 	RJson *js;
 	while (1) {
 		switch (*p) {
@@ -274,9 +274,9 @@ static char *parse_value(nx_json *parent, const char *key, char *p, nx_json_unic
 			js = create_json (R_JSON_INTEGER, key, parent);
 			char *pe;
 			if (*p == '-') {
-				js->num.s_value = (nxjson_s64) strtoll (p, &pe, 0);
+				js->num.s_value = (st64)strtoll (p, &pe, 0);
 			} else {
-				js->num.u_value = (nxjson_u64) strtoull (p, &pe, 0);
+				js->num.u_value = (ut64)strtoull (p, &pe, 0);
 			}
 			if (pe == p || errno == ERANGE) {
 				R_JSON_REPORT_ERROR ("invalid number", p);
@@ -345,11 +345,11 @@ static char *parse_value(nx_json *parent, const char *key, char *p, nx_json_unic
 	}
 }
 
-const RJson *nx_json_parse_utf8(char *text) {
+R_API const RJson *nx_json_parse_utf8(char *text) {
 	return nx_json_parse (text, unicode_to_utf8);
 }
 
-const RJson *nx_json_parse(char *text, nx_json_unicode_encoder encoder) {
+R_API const RJson *nx_json_parse(char *text, nx_json_unicode_encoder encoder) {
 	RJson js = {0};
 	if (!parse_value (&js, 0, text, encoder)) {
 		if (js.children.first) nx_json_free (js.children.first);
@@ -358,7 +358,7 @@ const RJson *nx_json_parse(char *text, nx_json_unicode_encoder encoder) {
 	return js.children.first;
 }
 
-const RJson *nx_json_get(const RJson *json, const char *key) {
+R_API const RJson *nx_json_get(const RJson *json, const char *key) {
 	RJson *js;
 	for (js = json->children.first; js; js = js->next) {
 		if (js->key && !strcmp (js->key, key)) return js;
@@ -366,7 +366,7 @@ const RJson *nx_json_get(const RJson *json, const char *key) {
 	return NULL;
 }
 
-const RJson *nx_json_item(const RJson *json, int idx) {
+R_API const RJson *nx_json_item(const RJson *json, int idx) {
 	RJson *js;
 	for (js = json->children.first; js; js = js->next) {
 		if (!idx--) return js;
