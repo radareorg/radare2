@@ -630,7 +630,7 @@ static bool esil_bf(RAnalEsil *esil) {
 	//	you cannot borrow from bit 0, bc bit -1 cannot not exist
 	//
 	//implements (bit - 1) mod 64
-	const ut64 mask = genmask (bit & 0x3f);
+	const ut64 mask = genmask ((bit + 0x3f) & 0x3f);
 	return r_anal_esil_pushnum (esil, (esil->old & mask) < (esil->cur & mask));
 }
 
