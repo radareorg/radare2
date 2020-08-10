@@ -752,7 +752,7 @@ static const char *get_specification_die_name(const RBinDwarfDie *die) {
  * @param die 
  * @param ret_type 
  */
-static void get_specification_die_type(const RBinDwarfDie *all_dies, ut64 count, RBinDwarfDie *die, RStrBuf *ret_type, HtUP *die_map) {
+static void get_spec_die_type(const RBinDwarfDie *all_dies, ut64 count, RBinDwarfDie *die, RStrBuf *ret_type, HtUP *die_map) {
 	st32 attr_idx = find_attr_idx (die, DW_AT_type);
 	if (attr_idx != -1) {
 		ut64 size = 0;
@@ -760,7 +760,7 @@ static void get_specification_die_type(const RBinDwarfDie *all_dies, ut64 count,
 	}
 }
 
-static void parse_abstract_origin_parameter(const RBinDwarfDie *all_dies, ut64 count, ut64 offset, RStrBuf *type, const char **name, HtUP *die_map) {
+static void parse_abstract_origin(const RBinDwarfDie *all_dies, ut64 count, ut64 offset, RStrBuf *type, const char **name, HtUP *die_map) {
 	RBinDwarfDie *die = ht_up_find (die_map, offset, NULL);
 	if (die) {
 		size_t i;
@@ -812,7 +812,7 @@ static st32 parse_function_args(const RBinDwarfDie *all_dies, ut64 count,
 						break;
 					// abstract origin is supposed to have omitted information
 					case DW_AT_abstract_origin:
-						parse_abstract_origin_parameter (all_dies, count, value->reference, &type, &name, die_map);
+						parse_abstract_origin (all_dies, count, value->reference, &type, &name, die_map);
 						break;
 					default:
 						break;
@@ -865,14 +865,13 @@ static void sdb_save_dwarf_function(DwarfFunction *fcn, Sdb *sdb) {
 static void parse_function(const RAnal *anal, const RBinDwarfDie *all_dies, 
 	const ut64 count, ut64 idx, Sdb *sdb, HtUP *die_map) {
 
-	r_return_if_fail (all_dies && sdb);
+	r_return_if_fail (all_dies && sdb && die_map);
 	const RBinDwarfDie *die = &all_dies[idx];
 
-	DwarfFunction fcn = {};
+	DwarfFunction fcn = { 0 };
+	bool has_linkage_name = false;
 	RStrBuf ret_type;
 	r_strbuf_init (&ret_type);
-
-	bool has_linkage_name = false;
 
 	size_t i;
 	for (i = 0; i < die->count; i++) {
@@ -900,7 +899,7 @@ static void parse_function(const RAnal *anal, const RBinDwarfDie *all_dies,
 			RBinDwarfDie *spec_die = ht_up_find (die_map, val->reference, NULL);
 			if (spec_die) {
 				fcn.name = get_specification_die_name (spec_die); // I assume that if specification has a name, this DIE hasn't
-				get_specification_die_type (all_dies, count, spec_die, &ret_type, die_map);
+				get_spec_die_type (all_dies, count, spec_die, &ret_type, die_map);
 			}
 		} break;
 		case DW_AT_type:
@@ -911,15 +910,15 @@ static void parse_function(const RAnal *anal, const RBinDwarfDie *all_dies,
 			fcn.is_virtual = true;
 			break;
 		case DW_AT_object_pointer:
-			fcn.is_method = true; // method specific attr
+			fcn.is_method = true;
 			break;
 		case DW_AT_vtable_elem_location:
-			fcn.is_method = true; // method specific attr
+			fcn.is_method = true;
 			fcn.vtable_addr = 0; // TODO, how this location description work
 			break;
 		case DW_AT_accessibility:
-			fcn.is_method = true; // method specific attr
-			fcn.access = (ut8) val->constant; // method specific attr
+			fcn.is_method = true;
+			fcn.access = (ut8) val->constant;
 			break;
 		case DW_AT_external:
 			fcn.is_external = true;
@@ -927,14 +926,14 @@ static void parse_function(const RAnal *anal, const RBinDwarfDie *all_dies,
 		case DW_AT_trampoline:
 			fcn.is_trampoline = true;
 			break;
-		case DW_AT_ranges: // TODO
+		case DW_AT_ranges: // TODO, might be useful info
 		case DW_AT_high_pc:
 		default:
 			break;
 		}
 	}
 	if (!fcn.name || !fcn.addr) { // we need a name, faddr
-		return;
+		goto cleanup;
 	}
 	RStrBuf args;
 	r_strbuf_init (&args);
@@ -944,11 +943,13 @@ static void parse_function(const RAnal *anal, const RBinDwarfDie *all_dies,
 		r_strbuf_append (&ret_type, "void");
 	}
 	fcn.signature = r_str_newf ("%s (%s);", r_strbuf_get (&ret_type), r_strbuf_get (&args));
+	// XXX function can have a mangled name, appears demangled in afl or pdf
 	sdb_save_dwarf_function (&fcn, sdb);
 
 	free ((char *)fcn.signature);
-	r_strbuf_fini (&ret_type);
 	r_strbuf_fini (&args);
+cleanup:
+	r_strbuf_fini (&ret_type);
 }
 
 
@@ -961,10 +962,9 @@ static void parse_function(const RAnal *anal, const RBinDwarfDie *all_dies,
  * @param idx index of the current entry
  */
 static void parse_type_entry(const RAnal *anal, const RBinDwarfDie *all_dies,
-	const ut64 count, ut64 idx, HtUP *die_map) {
+	const ut64 count, ut64 idx, HtUP *die_map, Sdb *dwarf_sdb) {
 
 	r_return_if_fail (anal && all_dies);
-	Sdb *dwarf_sdb =  sdb_ns (anal->sdb, "dwarf", 1);
 
 	const RBinDwarfDie *die = &all_dies[idx];
 	switch (die->tag) {
@@ -991,27 +991,30 @@ static void parse_type_entry(const RAnal *anal, const RBinDwarfDie *all_dies,
 }
 
 /**
- * @brief Parses type information out of DWARF entries
- *        and stores them to the sdb
+ * @brief Parses type and function information out of DWARF entries
+ *        and stores them to the sdb for further use
  * 
  * @param info 
  * @param anal 
  */
-R_API void r_anal_parse_dwarf_types(const RAnal *anal, const RBinDwarfDebugInfo *info) {
-    size_t i, j;
+R_API void r_anal_process_dwarf_info(const RAnal *anal, const RBinDwarfDebugInfo *info) {
 	r_return_if_fail (info && anal);
+	Sdb *dwarf_sdb =  sdb_ns (anal->sdb, "dwarf", 1);
+    size_t i, j;
 	for (i = 0; i < info->count; i++) {
 		RBinDwarfCompUnit *unit = &info->comp_units[i];
 		for (j = 0; j < unit->count; j++) {
 			RBinDwarfDie *curr_die = &unit->dies[j];
 			if (is_type_tag (curr_die->tag)) {
-				parse_type_entry (anal, unit->dies, unit->count, j, info->lookup_table);
+				parse_type_entry (anal, unit->dies, unit->count, j, info->lookup_table, dwarf_sdb);
 			}
 		}
 	}
 }
 
 bool filter_sdb_function_names(void *user, const char *k, const char *v) {
+	(void) user;
+	(void) k;
 	return !strcmp (v, "func");
 }
 
@@ -1022,12 +1025,14 @@ bool filter_sdb_function_names(void *user, const char *k, const char *v) {
  * @param dwarf_sdb 
  * @return R_API 
  */
-R_API void r_anal_analyze_dwarf_functions(RAnal *anal, Sdb *dwarf_sdb) {
+R_API void r_anal_integrate_dwarf_functions(RAnal *anal, Sdb *dwarf_sdb) {
 	r_return_if_fail (anal && dwarf_sdb);
 
+	// get all entries with value == func
 	SdbList *sdb_list = sdb_foreach_list_filter (dwarf_sdb, filter_sdb_function_names, false);
 	SdbListIter *it;
 	SdbKv *kv;
+	// iterate all function entries
 	ls_foreach (sdb_list, it, kv) {
 		char *func_name = kv->base.key;
 		char *addr_key = r_str_newf ("func.%s.addr", func_name);

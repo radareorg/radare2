@@ -1038,10 +1038,9 @@ static int bin_dwarf(RCore *core, int mode) {
 		RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (da, core->bin, mode);
 		// I suppose there is no reason the parse it for a printing purposes
 		if (info && mode != R_MODE_PRINT) {
-			r_anal_parse_dwarf_types (core->anal, info);
+			r_anal_process_dwarf_info (core->anal, info);
 		}
 		r_bin_dwarf_free_debug_info (info);
-		
 		r_bin_dwarf_parse_aranges (core->bin, mode);
 		list = ownlist = r_bin_dwarf_parse_line (core->bin, mode);
 		r_bin_dwarf_free_debug_abbrev (da);

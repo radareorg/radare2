@@ -6,7 +6,7 @@
 
 #define check_kv(k, v)                                                         \
 	do {                                                                   \
-		value = sdb_get (anal->sdb_types, k, NULL);                    \
+		value = sdb_get (sdb, k, NULL);                    \
 		mu_assert_nullable_streq (value, v, "Wrong key - value pair"); \
 	} while (0)
 
@@ -28,11 +28,11 @@ static bool test_parse_dwarf_types_version2(void) {
 	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (abbrevs, bin, MODE);
 	mu_assert_notnull (info, "Couldn't parse debug_info section");
 	// black box
-	r_anal_parse_dwarf_types (anal, info);
+	r_anal_process_dwarf_info (anal, info);
 	// Now we expect certain information to be set in the sdb
 	char * value = NULL;
 	char *object_name = "_cairo_status";
-	
+	Sdb *sdb = anal->sdb_types;
 	check_kv ("_cairo_status", "enum");
 	check_kv ("enum._cairo_status.!size", "32");
 	check_kv ("enum._cairo_status.0x0", "CAIRO_STATUS_SUCCESS");
@@ -72,8 +72,47 @@ static bool test_parse_dwarf_types_version2(void) {
 	mu_end;
 }
 
+static bool test_dwarf_function_parsing(void) {
+	RBin *bin = r_bin_new ();
+	mu_assert_notnull (bin, "Couldn't create new RBin");
+	RIO *io = r_io_new ();
+	mu_assert_notnull (io, "Couldn't create new RIO");
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+	r_io_bind (io, &bin->iob);
+
+	RBinOptions opt = { 0 };
+	bool res = r_bin_open (bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
+	mu_assert ("elf/dwarf4_many_comp_units.elf binary could not be opened", res);
+	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
+	RBinDwarfDebugAbbrev *abbrevs = r_bin_dwarf_parse_abbrev (bin, MODE);
+	mu_assert_notnull (abbrevs, "Couldn't parse Abbreviations");
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (abbrevs, bin, MODE);
+	mu_assert_notnull (info, "Couldn't parse debug_info section");
+	// black box
+	r_anal_process_dwarf_info (anal, info);
+	Sdb *sdb = sdb_ns (anal->sdb, "dwarf", 0);
+	mu_assert_notnull (sdb, "No dwarf function information in db");
+	char * value = NULL;
+	check_kv ("Mammal", "func");
+	check_kv ("func.Mammal.addr", "0x401300");
+	check_kv ("func.Mammal.sig", "void (Mammal * this);");
+	check_kv ("func._ZN3Dog4walkEv.addr", "0x401380");
+	check_kv ("func._ZN3Dog4walkEv.sig", "int (Dog * this);");
+	check_kv ("main", "func");
+	check_kv ("func.main.addr", "0x401160");
+	check_kv ("func.main.sig", "int ();");
+	// Now we expect certain information to be set in the sdb
+
+	r_anal_free (anal);
+	r_bin_free (bin);
+	r_io_free (io);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_parse_dwarf_types_version2);
+	mu_run_test (test_dwarf_function_parsing);
 	return tests_passed != tests_run;
 }
 

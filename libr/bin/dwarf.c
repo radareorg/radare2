@@ -1419,10 +1419,6 @@ static void print_attr_value(const RBinDwarfAttrValue *val, PrintfCallback print
 			print ("   (%s)", dwarf_langs[val->data]);
 		}
 		break;
-	case DW_FORM_strp:
-		print ("(indirect string, offset: 0x%"PFMT64x"): ",
-				val->string.offset);
-		break;
 	case DW_FORM_string:
 		if (val->string.content) {
 			print ("%s", val->string.content);
@@ -1461,8 +1457,9 @@ static void print_attr_value(const RBinDwarfAttrValue *val, PrintfCallback print
 	case DW_FORM_strx4:
 	case DW_FORM_line_ptr:
 	case DW_FORM_strp_sup:
-		print ("(indirect string, offset: 0x%"PFMT64x"): ",
-			val->string.offset);
+	case DW_FORM_strp:
+		print ("(indirect string, offset: 0x%"PFMT64x"): %s",
+			val->string.offset, val->string.content);
 		break;
 	case DW_FORM_addr:
 	case DW_FORM_addrx:
