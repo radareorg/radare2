@@ -40,7 +40,7 @@ static RJson *create_json(RJsonType type, const char *key, RJson *parent) {
 	return js;
 }
 
-R_API void nx_json_free(const RJson *js) {
+R_API void nx_json_free(RJson *js) {
 	if (!js) {
 		return;
 	}
@@ -349,11 +349,11 @@ static char *parse_value(RJson *parent, const char *key, char *p, nx_json_unicod
 	}
 }
 
-R_API const RJson *nx_json_parse_utf8(char *text) {
+R_API RJson *nx_json_parse_utf8(char *text) {
 	return nx_json_parse (text, unicode_to_utf8);
 }
 
-R_API const RJson *nx_json_parse(char *text, nx_json_unicode_encoder encoder) {
+R_API RJson *nx_json_parse(char *text, nx_json_unicode_encoder encoder) {
 	RJson js = {0};
 	if (!parse_value (&js, 0, text, encoder)) {
 		if (js.children.first) nx_json_free (js.children.first);

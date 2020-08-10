@@ -57,11 +57,10 @@ typedef int (*nx_json_unicode_encoder)(unsigned int codepoint, char *p, char **e
 
 extern nx_json_unicode_encoder nx_json_unicode_to_utf8;
 
-R_API const RJson *nx_json_parse(char *text, nx_json_unicode_encoder encoder);
+R_API RJson *nx_json_parse(char *text, nx_json_unicode_encoder encoder);
+R_API RJson *nx_json_parse_utf8(char *text);
 
-R_API const RJson *nx_json_parse_utf8(char *text);
-
-R_API void nx_json_free(const RJson *js);
+R_API void nx_json_free(RJson *js);
 
 R_API const RJson *nx_json_get(const RJson *json, const char *key); // get object's property by key
 R_API const RJson *nx_json_item(const RJson *json, int idx); // get array element by index
