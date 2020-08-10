@@ -403,6 +403,7 @@ r_util_files = [
   'include/r_util/r_hex.h',
   'include/r_util/r_idpool.h',
   'include/r_util/r_itv.h',
+  'include/r_util/r_json.h',
   'include/r_util/r_log.h',
   'include/r_util/r_mem.h',
   'include/r_util/r_name.h',
