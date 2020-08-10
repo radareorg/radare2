@@ -13,7 +13,7 @@
 #define R_JSON_REPORT_ERROR(msg, p) do { (void)(msg); (void)(p); } while (0)
 #endif
 
-static RJson *json_new() {
+static RJson *json_new(void) {
 	return R_NEW0 (RJson);
 }
 
