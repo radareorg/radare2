@@ -272,6 +272,7 @@ static char *parse_value(RJson *parent, const char *key, char *p, nx_json_unicod
 		case '8':
 		case '9': {
 			js = create_json (R_JSON_INTEGER, key, parent);
+			errno = 0;
 			char *pe;
 			if (*p == '-') {
 				js->num.s_value = (st64)strtoll (p, &pe, 0);
@@ -284,9 +285,10 @@ static char *parse_value(RJson *parent, const char *key, char *p, nx_json_unicod
 			}
 			if (*pe == '.' || *pe == 'e' || *pe == 'E') { // double value
 				js->type = R_JSON_DOUBLE;
+				errno = 0;
 				js->num.dbl_value = strtod (p, &pe);
 				if (pe == p || errno == ERANGE) {
-					R_JSON_REPORT_ERROR ("invalid number", p);
+					R_JSON_REPORT_ERROR ("invalid fractional number", p);
 					return 0; // error
 				}
 			} else {
