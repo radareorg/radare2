@@ -53,17 +53,17 @@ typedef struct r_json_t {
 	struct r_json_t *next;    // points to next child
 } RJson;
 
-typedef int (*nx_json_unicode_encoder)(unsigned int codepoint, char *p, char **endp);
+typedef int (*r_json_unicode_encoder)(unsigned int codepoint, char *p, char **endp);
 
-extern nx_json_unicode_encoder nx_json_unicode_to_utf8;
+extern r_json_unicode_encoder r_json_unicode_to_utf8;
 
-R_API RJson *nx_json_parse(char *text, nx_json_unicode_encoder encoder);
-R_API RJson *nx_json_parse_utf8(char *text);
+R_API RJson *r_json_parse(char *text, r_json_unicode_encoder encoder);
+R_API RJson *r_json_parse_utf8(char *text);
 
-R_API void nx_json_free(RJson *js);
+R_API void r_json_free(RJson *js);
 
-R_API const RJson *nx_json_get(const RJson *json, const char *key); // get object's property by key
-R_API const RJson *nx_json_item(const RJson *json, int idx); // get array element by index
+R_API const RJson *r_json_get(const RJson *json, const char *key); // get object's property by key
+R_API const RJson *r_json_item(const RJson *json, int idx); // get array element by index
 
 
 #ifdef  __cplusplus

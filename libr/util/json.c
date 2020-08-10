@@ -10,7 +10,7 @@
 
 #if 0
 // optional error printing
-#define R_JSON_REPORT_ERROR(msg, p) fprintf(stderr, "NXJSON PARSE ERROR (%d): " msg " at %s\n", __LINE__, p)
+#define R_JSON_REPORT_ERROR(msg, p) fprintf(stderr, "R_JSON PARSE ERROR (%d): " msg " at %s\n", __LINE__, p)
 #else
 #define R_JSON_REPORT_ERROR(msg, p) do { (void)(msg); (void)(p); } while (0)
 #endif
@@ -40,7 +40,7 @@ static RJson *create_json(RJsonType type, const char *key, RJson *parent) {
 	return js;
 }
 
-R_API void nx_json_free(RJson *js) {
+R_API void r_json_free(RJson *js) {
 	if (!js) {
 		return;
 	}
@@ -49,7 +49,7 @@ R_API void nx_json_free(RJson *js) {
 		RJson *p1;
 		while (p) {
 			p1 = p->next;
-			nx_json_free (p);
+			r_json_free (p);
 			p = p1;
 		}
 	}
@@ -71,7 +71,7 @@ static int unicode_to_utf8(unsigned int codepoint, char *p, char **endp) {
 	return 1;
 }
 
-nx_json_unicode_encoder nx_json_unicode_to_utf8 = unicode_to_utf8;
+r_json_unicode_encoder r_json_unicode_to_utf8 = unicode_to_utf8;
 
 static inline int hex_val(char c) {
 	if (c >= '0' && c <= '9') return c - '0';
@@ -80,7 +80,7 @@ static inline int hex_val(char c) {
 	return -1;
 }
 
-static char *unescape_string(char *s, char **end, nx_json_unicode_encoder encoder) {
+static char *unescape_string(char *s, char **end, r_json_unicode_encoder encoder) {
 	char *p = s;
 	char *d = s;
 	char c;
@@ -180,7 +180,7 @@ static char *skip_block_comment(char *p) {
 	return p + 1;
 }
 
-static char *parse_key(const char **key, char *p, nx_json_unicode_encoder encoder) {
+static char *parse_key(const char **key, char *p, r_json_unicode_encoder encoder) {
 	// on '}' return with *p=='}'
 	char c;
 	while ((c = *p++)) {
@@ -220,7 +220,7 @@ static char *parse_key(const char **key, char *p, nx_json_unicode_encoder encode
 	return 0; // error
 }
 
-static char *parse_value(RJson *parent, const char *key, char *p, nx_json_unicode_encoder encoder) {
+static char *parse_value(RJson *parent, const char *key, char *p, r_json_unicode_encoder encoder) {
 	RJson *js;
 	while (1) {
 		switch (*p) {
@@ -349,20 +349,20 @@ static char *parse_value(RJson *parent, const char *key, char *p, nx_json_unicod
 	}
 }
 
-R_API RJson *nx_json_parse_utf8(char *text) {
-	return nx_json_parse (text, unicode_to_utf8);
+R_API RJson *r_json_parse_utf8(char *text) {
+	return r_json_parse (text, unicode_to_utf8);
 }
 
-R_API RJson *nx_json_parse(char *text, nx_json_unicode_encoder encoder) {
+R_API RJson *r_json_parse(char *text, r_json_unicode_encoder encoder) {
 	RJson js = {0};
 	if (!parse_value (&js, 0, text, encoder)) {
-		if (js.children.first) nx_json_free (js.children.first);
+		if (js.children.first) r_json_free (js.children.first);
 		return 0;
 	}
 	return js.children.first;
 }
 
-R_API const RJson *nx_json_get(const RJson *json, const char *key) {
+R_API const RJson *r_json_get(const RJson *json, const char *key) {
 	RJson *js;
 	for (js = json->children.first; js; js = js->next) {
 		if (js->key && !strcmp (js->key, key)) return js;
@@ -370,7 +370,7 @@ R_API const RJson *nx_json_get(const RJson *json, const char *key) {
 	return NULL;
 }
 
-R_API const RJson *nx_json_item(const RJson *json, int idx) {
+R_API const RJson *r_json_item(const RJson *json, int idx) {
 	RJson *js;
 	for (js = json->children.first; js; js = js->next) {
 		if (!idx--) return js;

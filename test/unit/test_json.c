@@ -309,12 +309,9 @@ static void dump(const RJson *json, char *out, char **end, int indent) {
 	*end = out;
 }
 
-#define FMT_PASSED "\x1b[32m[%03d] PASSED\x1b[0m\n"
-#define FMT_FAILED "\x1b[31m[%03d] FAILED\x1b[0m\n"
-
 static int json_test(int test_number, char *input, const char *expected_output) {
 	int input_length = strlen (input);
-	RJson *json = nx_json_parse_utf8 (input);
+	RJson *json = r_json_parse_utf8 (input);
 	if (!expected_output) {
 		mu_assert_null (json, "parse failure expected");
 	} else {
@@ -322,7 +319,7 @@ static int json_test(int test_number, char *input, const char *expected_output) 
 		char *buf = malloc (input_length * 32 + 4000000); // hope this will be large enough; depends on nesting & indenting
 		char *p = buf;
 		dump (json, p, &p, 0);
-		nx_json_free (json);
+		r_json_free (json);
 		*p = '\0';
 		mu_assert_streq (buf, expected_output, "dump");
 		free (buf);
