@@ -2114,7 +2114,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	case ARM_INS_STRB:
 	case ARM_INS_STRD:
 	//case ARM_INS_STLXRB: // capstone has no STLXR?
-		switch(insn->id) {
+		switch (insn->id) {
 		case ARM_INS_STRD:
 			str_ldr_bytes = 8; // just an indication, won't be used in esil code
 			break;
