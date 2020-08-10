@@ -2,6 +2,7 @@
 /* r_json based on nxjson by Yaroslav Stavnichiy */
 
 #include <r_util/r_json.h>
+#include <r_util/r_strbuf.h>
 #include "minunit.h"
 
 typedef struct json_test_t {
@@ -244,85 +245,78 @@ JsonTest tests[] = {
 	}
 };
 
-static void dump(const RJson *json, char *out, char **end, int indent) {
+static void dump(const RJson *json, RStrBuf *out, int indent) {
 	if (!json) {
-		*end = out;
 		return;
 	}
 	int i;
-	for (i = 0; i < indent; i++) *out++ = ' ';
+	for (i = 0; i < indent; i++) {
+		r_strbuf_append (out, " ");
+	}
 	if (json->key) {
-		strcpy (out, json->key);
-		out += strlen (json->key);
-		*out++ = ':';
+		r_strbuf_appendf (out, "%s:", json->key);
 	}
 	switch (json->type) {
 	case R_JSON_NULL:
-		strcpy (out, "null");
-		out += 4;
+		r_strbuf_append (out, "null");
 		break;
 	case R_JSON_OBJECT:
-		*out++ = '{';
-		*out++ = '\n';
+		r_strbuf_append (out, "{\n");
 		{
 			RJson *js = json->children.first;
 			for (js = json->children.first; js; js = js->next) {
-				dump (js, out, &out, indent + 2);
+				dump (js, out, indent + 2);
 			}
 		}
-		for (i = 0; i < indent; i++) *out++ = ' ';
-		*out++ = '}';
+		for (i = 0; i < indent; i++) {
+			r_strbuf_append (out, " ");
+		}
+		r_strbuf_append (out, "}");
 		break;
 	case R_JSON_ARRAY:
-		*out++ = '[';
-		*out++ = '\n';
+		r_strbuf_append (out, "[\n");
 		{
 			RJson *js = json->children.first;
 			for (js = json->children.first; js; js = js->next) {
-				dump (js, out, &out, indent + 2);
+				dump (js, out, indent + 2);
 			}
 		}
-		for (i = 0; i < indent; i++) *out++ = ' ';
-		*out++ = ']';
+		for (i = 0; i < indent; i++) {
+			r_strbuf_append (out, " ");
+		}
+		r_strbuf_append (out, "]");
 		break;
 	case R_JSON_STRING:
-		*out++ = '"';
-		strcpy (out, json->text_value);
-		out += strlen (json->text_value);
-		*out++ = '"';
+		r_strbuf_appendf (out, "\"%s\"", json->text_value);
 		break;
 	case R_JSON_INTEGER:
-		out += sprintf (out, "%lld", (long long) json->num.s_value);
+		r_strbuf_appendf (out, "%"PFMT64d, json->num.s_value);
 		break;
 	case R_JSON_DOUBLE:
-		out += sprintf (out, "%le", json->num.dbl_value);
+		r_strbuf_appendf (out, "%le", json->num.dbl_value);
 		break;
 	case R_JSON_BOOL:
-		*out++ = json->num.s_value ? 'T' : 'F';
+		r_strbuf_append (out, json->num.s_value ? "T" : "F");
 		break;
 	default:
-		strcpy (out, "????");
-		out += 4;
+		r_strbuf_append (out, "????");
 		break;
 	}
-	*out++ = '\n';
-	*end = out;
+	r_strbuf_append (out, "\n");
 }
 
 static int json_test(int test_number, char *input, const char *expected_output) {
-	int input_length = strlen (input);
 	RJson *json = r_json_parse (input);
 	if (!expected_output) {
 		mu_assert_null (json, "parse failure expected");
 	} else {
 		mu_assert_notnull (json, "parse failed");
-		char *buf = malloc (input_length * 32 + 4000000); // hope this will be large enough; depends on nesting & indenting
-		char *p = buf;
-		dump (json, p, &p, 0);
+		RStrBuf buf;
+		r_strbuf_init (&buf);
+		dump (json, &buf, 0);
 		r_json_free (json);
-		*p = '\0';
-		mu_assert_streq (buf, expected_output, "dump");
-		free (buf);
+		mu_assert_streq (r_strbuf_get (&buf), expected_output, "dump");
+		r_strbuf_fini (&buf);
 	}
 	mu_end;
 }
