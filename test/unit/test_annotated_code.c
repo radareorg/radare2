@@ -21,6 +21,31 @@ static RCodeAnnotation make_code_annotation(int st, int en, RCodeAnnotationType 
 	return annotation;
 }
 
+static RCodeAnnotation make_variable_annotation(int st, int en, RCodeAnnotationType typec,
+	const char *name) {
+	RCodeAnnotation annotation = { 0 };
+	annotation.start = st;
+	annotation.end = en;
+	annotation.type = typec;
+	annotation.variable.name = strdup (name);
+	return annotation;
+}
+
+static RCodeAnnotation make_reference_annotation(int st, int en, RCodeAnnotationType typec,
+	ut64 offset, const char *name) {
+	RCodeAnnotation annotation = { 0 };
+	annotation.start = st;
+	annotation.end = en;
+	annotation.type = typec;
+	annotation.reference.offset = offset;
+	if (annotation.type == R_CODE_ANNOTATION_TYPE_FUNCTION_NAME) {
+		annotation.reference.name = strdup (name);
+	} else {
+		annotation.reference.name = NULL;
+	}
+	return annotation;
+}
+
 static RVector *get_some_code_annotation_for_add(void) {
 	RVector *test_annotations = r_vector_new (sizeof (RCodeAnnotation), NULL, NULL);
 	RCodeAnnotation annotation;
@@ -94,6 +119,22 @@ static RAnnotatedCode *get_hello_world(void) {
 	}
 
 	r_vector_free (test_annotations);
+	return code;
+}
+
+static RAnnotatedCode *get_all_context_annotated_code(void) {
+	char *test_string = strdup ("\nfunc-name\nconst-var\n   global-var(\"Hello, local-var\");\n    function-param\n}\n");
+	RAnnotatedCode *code = r_annotated_code_new (test_string);
+	RCodeAnnotation function_name = make_reference_annotation (1, 10, R_CODE_ANNOTATION_TYPE_FUNCTION_NAME, 1234, "func-name");
+	RCodeAnnotation constant_variable = make_reference_annotation (10, 19, R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE, 12345, NULL);
+	RCodeAnnotation global_variable = make_reference_annotation (23, 33, R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE, 123456, NULL);
+	RCodeAnnotation local_variable = make_variable_annotation (42, 51, R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, "local-var");
+	RCodeAnnotation function_parameter = make_variable_annotation (59, 73, R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER, "function-param");
+	r_annotated_code_add_annotation (code, &function_name);
+	r_annotated_code_add_annotation (code, &constant_variable);
+	r_annotated_code_add_annotation (code, &global_variable);
+	r_annotated_code_add_annotation (code, &local_variable);
+	r_annotated_code_add_annotation (code, &function_parameter);
 	return code;
 }
 
@@ -267,6 +308,23 @@ static bool test_r_core_annotated_code_print_json(void) {
 	mu_end;
 }
 
+/**
+ * @brief Tests JSON output for all context related annotations
+ */
+static bool test_r_core_annotated_code_print_json_context_annotations(void) {
+	RAnnotatedCode *code = get_all_context_annotated_code ();
+	char *expected = "{\"code\":\"\\nfunc-name\\nconst-var\\n   global-var(\\\"Hello, local-var\\\");\\n    function-param\\n}\\n\",\"annotations\":[{\"start\":1,\"end\":10,\"type\":\"function_name\",\"name\":\"func-name\",\"offset\":1234},{\"start\":10,\"end\":19,\"type\":\"constant_variable\",\"offset\":12345},{\"start\":23,\"end\":33,\"type\":\"global_variable\",\"offset\":123456},{\"start\":42,\"end\":51,\"type\":\"local_variable\",\"name\":\"local-var\"},{\"start\":59,\"end\":73,\"type\":\"function_parameter\",\"name\":\"function-param\"}]}\n";
+	r_cons_new ();
+	r_cons_push ();
+	r_core_annotated_code_print_json (code);
+	char *actual = strdup (r_cons_get_buffer ());
+	r_cons_pop ();
+	mu_assert_streq (actual, expected, "r_core_annotated_code_print_json() output doesn't match with the expected output");
+	free (actual);
+	r_annotated_code_free (code);
+	mu_end;
+}
+
 static bool test_r_core_annotated_code_print(void) {
 	RAnnotatedCode *code = get_hello_world ();
 	char *actual;
@@ -325,6 +383,46 @@ static bool test_r_core_annotated_code_print_comment_cmds(void) {
 	mu_end;
 }
 
+/**
+ * @brief Tests functions r_annotation_is_variable(), r_annotation_is_reference(), and r_annotation_free()
+ */
+static bool test_r_annotation_free_and_is_annotation_type_functions(void) {
+	// Making all types of annotations
+	RCodeAnnotation offset = make_code_annotation (58, 64, R_CODE_ANNOTATION_TYPE_OFFSET, 4447, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
+	RCodeAnnotation syntax_highlight = make_code_annotation (1, 5, R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, R_SYNTAX_HIGHLIGHT_TYPE_DATATYPE);
+	RCodeAnnotation local_variable = make_variable_annotation (1, 2, R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, "RADARE2");
+	RCodeAnnotation function_parameter = make_variable_annotation (4, 10, R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, "Cutter");
+	RCodeAnnotation function_name = make_reference_annotation (10, 12, R_CODE_ANNOTATION_TYPE_FUNCTION_NAME, 123513, "test_function");
+	RCodeAnnotation global_variable = make_reference_annotation (10, 12, R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE, 1234234, NULL);
+	RCodeAnnotation constant_variable = make_reference_annotation (21, 200, R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE, 12342314, NULL);
+	// Test r_annotation_is_variable()
+	char *error_message = "r_annotation_is_variable() result doesn't match with the expected output";
+	mu_assert_true (r_annotation_is_variable (&local_variable), error_message);
+	mu_assert_true (r_annotation_is_variable (&function_parameter), error_message);
+	mu_assert_false (r_annotation_is_variable (&function_name), error_message);
+	mu_assert_false (r_annotation_is_variable (&global_variable), error_message);
+	mu_assert_false (r_annotation_is_variable (&constant_variable), error_message);
+	mu_assert_false (r_annotation_is_variable (&offset), error_message);
+	mu_assert_false (r_annotation_is_variable (&syntax_highlight), error_message);
+	// Test r_annotation_is_reference()
+	error_message = "r_annotation_is_reference() result doesn't match with the expected output";
+	mu_assert_true (r_annotation_is_reference (&function_name), error_message);
+	mu_assert_true (r_annotation_is_reference (&global_variable), error_message);
+	mu_assert_true (r_annotation_is_reference (&constant_variable), error_message);
+	mu_assert_false (r_annotation_is_reference (&local_variable), error_message);
+	mu_assert_false (r_annotation_is_reference (&function_parameter), error_message);
+	mu_assert_false (r_annotation_is_reference (&offset), error_message);
+	mu_assert_false (r_annotation_is_reference (&syntax_highlight), error_message);
+	// Free dynamically allocated memory for annotations.
+	// This is also supposed to be a test of r_annotation_free() for run errors.
+	r_annotation_free (&local_variable, NULL);
+	r_annotation_free (&function_parameter, NULL);
+	r_annotation_free (&function_name, NULL);
+	r_annotation_free (&global_variable, NULL);
+	r_annotation_free (&constant_variable, NULL);
+	mu_end;
+}
+
 static int all_tests(void) {
 	mu_run_test (test_r_annotated_code_new);
 	mu_run_test (test_r_annotated_code_free);
@@ -333,8 +431,10 @@ static int all_tests(void) {
 	mu_run_test (test_r_annotated_code_annotations_range);
 	mu_run_test (test_r_annotated_code_line_offsets);
 	mu_run_test (test_r_core_annotated_code_print_json);
+	mu_run_test (test_r_core_annotated_code_print_json_context_annotations);
 	mu_run_test (test_r_core_annotated_code_print);
 	mu_run_test (test_r_core_annotated_code_print_comment_cmds);
+	mu_run_test (test_r_annotation_free_and_is_annotation_type_functions);
 	return tests_passed != tests_run;
 }
 
