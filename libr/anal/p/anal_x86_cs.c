@@ -776,12 +776,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			}
 			break;
 		case X86_OP_REG:
-		default:;
-			int width = INSOP(1).size;
-			/*char signext[16] = "";
-			if (insn->id == X86_INS_MOVSX || insn->id == X86_INS_MOVSXD) {
-				sprintf(signext, ",%d,~", width*8);
-			}*/
+		default:
 			if (INSOP(0).type == X86_OP_MEM) {
 				op->direction = 1; // read
 			}
@@ -792,6 +787,8 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				op->scale = INSOP(1).mem.scale;
 			}
 			{
+				int width = INSOP(1).size;
+
 				src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
 				// dst is name of register from instruction.
 				dst = getarg (&gop, 0, 0, NULL, DST_AR, NULL);
