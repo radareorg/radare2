@@ -8,9 +8,11 @@
 
 #include <r_util/r_json.h>
 
-// redefine R_JSON_REPORT_ERROR to use custom error reporting
-#ifndef R_JSON_REPORT_ERROR
+#if 0
+// optional error printing
 #define R_JSON_REPORT_ERROR(msg, p) fprintf(stderr, "NXJSON PARSE ERROR (%d): " msg " at %s\n", __LINE__, p)
+#else
+#define R_JSON_REPORT_ERROR(msg, p) do { (void)(msg); (void)(p); } while (0)
 #endif
 
 // TODO: use IS_WHITECHAR from r2
