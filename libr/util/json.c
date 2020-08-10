@@ -71,8 +71,6 @@ static int unicode_to_utf8(unsigned int codepoint, char *p, char **endp) {
 	return 1;
 }
 
-r_json_unicode_encoder r_json_unicode_to_utf8 = unicode_to_utf8;
-
 static inline int hex_val(char c) {
 	if (c >= '0' && c <= '9') return c - '0';
 	if (c >= 'a' && c <= 'f') return c - 'a' + 10;
@@ -80,7 +78,7 @@ static inline int hex_val(char c) {
 	return -1;
 }
 
-static char *unescape_string(char *s, char **end, r_json_unicode_encoder encoder) {
+static char *unescape_string(char *s, char **end) {
 	char *p = s;
 	char *d = s;
 	char c;
@@ -116,12 +114,7 @@ static char *unescape_string(char *s, char **end, r_json_unicode_encoder encoder
 				*d++ = '\t';
 				p++;
 				break;
-			case 'u': // unicode
-				if (!encoder) {
-					// leave untouched
-					*d++ = c;
-					break;
-				}
+			case 'u': { // unicode
 				char *ps = p - 1;
 				int h1, h2, h3, h4;
 				if ((h1 = hex_val (p[1])) < 0 || (h2 = hex_val (p[2])) < 0 || (h3 = hex_val (p[3])) < 0 ||
@@ -144,12 +137,13 @@ static char *unescape_string(char *s, char **end, r_json_unicode_encoder encoder
 					}
 					codepoint = 0x10000 + ((codepoint - 0xd800) << 10) + (codepoint2 - 0xdc00);
 				}
-				if (!encoder (codepoint, d, &d)) {
+				if (!unicode_to_utf8 (codepoint, d, &d)) {
 					R_JSON_REPORT_ERROR ("invalid codepoint", ps);
 					return 0;
 				}
 				p += 5;
 				break;
+			}
 			default:
 				// leave untouched
 				*d++ = c;
@@ -180,12 +174,12 @@ static char *skip_block_comment(char *p) {
 	return p + 1;
 }
 
-static char *parse_key(const char **key, char *p, r_json_unicode_encoder encoder) {
+static char *parse_key(const char **key, char *p) {
 	// on '}' return with *p=='}'
 	char c;
 	while ((c = *p++)) {
 		if (c == '"') {
-			*key = unescape_string (p, &p, encoder);
+			*key = unescape_string (p, &p);
 			if (!*key) return 0; // propagate error
 			while (*p && IS_WHITESPACE(*p)) p++;
 			if (*p == ':') return p + 1;
@@ -220,7 +214,7 @@ static char *parse_key(const char **key, char *p, r_json_unicode_encoder encoder
 	return 0; // error
 }
 
-static char *parse_value(RJson *parent, const char *key, char *p, r_json_unicode_encoder encoder) {
+static char *parse_value(RJson *parent, const char *key, char *p) {
 	RJson *js;
 	while (1) {
 		switch (*p) {
@@ -240,17 +234,17 @@ static char *parse_value(RJson *parent, const char *key, char *p, r_json_unicode
 			p++;
 			while (1) {
 				const char *new_key;
-				p = parse_key (&new_key, p, encoder);
+				p = parse_key (&new_key, p);
 				if (!p) return 0; // error
 				if (*p == '}') return p + 1; // end of object
-				p = parse_value (js, new_key, p, encoder);
+				p = parse_value (js, new_key, p);
 				if (!p) return 0; // error
 			}
 		case '[':
 			js = create_json (R_JSON_ARRAY, key, parent);
 			p++;
 			while (1) {
-				p = parse_value (js, 0, p, encoder);
+				p = parse_value (js, 0, p);
 				if (!p) return 0; // error
 				if (*p == ']') return p + 1; // end of array
 			}
@@ -259,7 +253,7 @@ static char *parse_value(RJson *parent, const char *key, char *p, r_json_unicode
 		case '"':
 			p++;
 			js = create_json (R_JSON_STRING, key, parent);
-			js->text_value = unescape_string (p, &p, encoder);
+			js->text_value = unescape_string (p, &p);
 			if (!js->text_value) return 0; // propagate error
 			return p;
 		case '-':
@@ -349,13 +343,9 @@ static char *parse_value(RJson *parent, const char *key, char *p, r_json_unicode
 	}
 }
 
-R_API RJson *r_json_parse_utf8(char *text) {
-	return r_json_parse (text, unicode_to_utf8);
-}
-
-R_API RJson *r_json_parse(char *text, r_json_unicode_encoder encoder) {
+R_API RJson *r_json_parse(char *text) {
 	RJson js = {0};
-	if (!parse_value (&js, 0, text, encoder)) {
+	if (!parse_value (&js, 0, text)) {
 		if (js.children.first) r_json_free (js.children.first);
 		return 0;
 	}

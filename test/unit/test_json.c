@@ -311,7 +311,7 @@ static void dump(const RJson *json, char *out, char **end, int indent) {
 
 static int json_test(int test_number, char *input, const char *expected_output) {
 	int input_length = strlen (input);
-	RJson *json = r_json_parse_utf8 (input);
+	RJson *json = r_json_parse (input);
 	if (!expected_output) {
 		mu_assert_null (json, "parse failure expected");
 	} else {
