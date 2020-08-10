@@ -46,8 +46,8 @@ typedef struct r_json_t {
 		} num;
 		struct {                // children of OBJECT or ARRAY
 			int length;
-			struct nx_json *first;
-			struct nx_json *last;
+			struct r_json_t *first;
+			struct r_json_t *last;
 		} children;
 	};
 	struct r_json_t *next;    // points to next child

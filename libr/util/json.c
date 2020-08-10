@@ -8,9 +8,9 @@
 
 #include <r_util/r_json.h>
 
-// redefine NX_JSON_REPORT_ERROR to use custom error reporting
-#ifndef NX_JSON_REPORT_ERROR
-#define NX_JSON_REPORT_ERROR(msg, p) fprintf(stderr, "NXJSON PARSE ERROR (%d): " msg " at %s\n", __LINE__, p)
+// redefine R_JSON_REPORT_ERROR to use custom error reporting
+#ifndef R_JSON_REPORT_ERROR
+#define R_JSON_REPORT_ERROR (msg, p) fprintf(stderr, "NXJSON PARSE ERROR (%d): " msg " at %s\n", __LINE__, p)
 #endif
 
 // TODO: use IS_WHITECHAR from r2
@@ -22,7 +22,7 @@ static RJson *json_new() {
 }
 
 static RJson *create_json(RJsonType type, const char *key, RJson *parent) {
-	nx_json *js = json_new();
+	RJson *js = json_new();
 	if (!js) {
 		return NULL;
 	}
@@ -42,16 +42,16 @@ void nx_json_free(const RJson *js) {
 	if (!js) {
 		return;
 	}
-	if (js->type == NX_JSON_OBJECT || js->type == NX_JSON_ARRAY) {
-		nx_json *p = js->children.first;
-		nx_json *p1;
+	if (js->type == R_JSON_OBJECT || js->type == R_JSON_ARRAY) {
+		RJson *p = js->children.first;
+		RJson *p1;
 		while (p) {
 			p1 = p->next;
 			nx_json_free (p);
 			p = p1;
 		}
 	}
-	NX_JSON_FREE(js);
+	free (js);
 }
 
 static int unicode_to_utf8(unsigned int codepoint, char *p, char **endp) {
@@ -124,7 +124,7 @@ static char *unescape_string(char *s, char **end, nx_json_unicode_encoder encode
 				int h1, h2, h3, h4;
 				if ((h1 = hex_val (p[1])) < 0 || (h2 = hex_val (p[2])) < 0 || (h3 = hex_val (p[3])) < 0 ||
 					(h4 = hex_val (p[4])) < 0) {
-					NX_JSON_REPORT_ERROR("invalid unicode escape", p - 1);
+					R_JSON_REPORT_ERROR ("invalid unicode escape", p - 1);
 					return 0;
 				}
 				unsigned int codepoint = h1 << 12 | h2 << 8 | h3 << 4 | h4;
@@ -132,18 +132,18 @@ static char *unescape_string(char *s, char **end, nx_json_unicode_encoder encode
 					p += 6;
 					if (p[-1] != '\\' || *p != 'u' || (h1 = hex_val (p[1])) < 0 || (h2 = hex_val (p[2])) < 0 ||
 						(h3 = hex_val (p[3])) < 0 || (h4 = hex_val (p[4])) < 0) {
-						NX_JSON_REPORT_ERROR("invalid unicode surrogate", ps);
+						R_JSON_REPORT_ERROR ("invalid unicode surrogate", ps);
 						return 0;
 					}
 					unsigned int codepoint2 = h1 << 12 | h2 << 8 | h3 << 4 | h4;
 					if ((codepoint2 & 0xfc00) != 0xdc00) {
-						NX_JSON_REPORT_ERROR("invalid unicode surrogate", ps);
+						R_JSON_REPORT_ERROR ("invalid unicode surrogate", ps);
 						return 0;
 					}
 					codepoint = 0x10000 + ((codepoint - 0xd800) << 10) + (codepoint2 - 0xdc00);
 				}
 				if (!encoder (codepoint, d, &d)) {
-					NX_JSON_REPORT_ERROR("invalid codepoint", ps);
+					R_JSON_REPORT_ERROR ("invalid codepoint", ps);
 					return 0;
 				}
 				p += 5;
@@ -157,7 +157,7 @@ static char *unescape_string(char *s, char **end, nx_json_unicode_encoder encode
 			*d++ = c;
 		}
 	}
-	NX_JSON_REPORT_ERROR("no closing quote for string", s);
+	R_JSON_REPORT_ERROR ("no closing quote for string", s);
 	return 0;
 }
 
@@ -165,13 +165,13 @@ static char *skip_block_comment(char *p) {
 	// assume p[-2]=='/' && p[-1]=='*'
 	char *ps = p - 2;
 	if (!*p) {
-		NX_JSON_REPORT_ERROR("endless comment", ps);
+		R_JSON_REPORT_ERROR ("endless comment", ps);
 		return 0;
 	}
 	REPEAT:
 	p = strchr (p + 1, '/');
 	if (!p) {
-		NX_JSON_REPORT_ERROR("endless comment", ps);
+		R_JSON_REPORT_ERROR ("endless comment", ps);
 		return 0;
 	}
 	if (p[-1] != '*') goto REPEAT;
@@ -187,7 +187,7 @@ static char *parse_key(const char **key, char *p, nx_json_unicode_encoder encode
 			if (!*key) return 0; // propagate error
 			while (*p && IS_WHITESPACE(*p)) p++;
 			if (*p == ':') return p + 1;
-			NX_JSON_REPORT_ERROR("unexpected chars", p);
+			R_JSON_REPORT_ERROR ("unexpected chars", p);
 			return 0;
 		} else if (IS_WHITESPACE(c) || c == ',') {
 			// continue
@@ -198,7 +198,7 @@ static char *parse_key(const char **key, char *p, nx_json_unicode_encoder encode
 				char *ps = p - 1;
 				p = strchr (p + 1, '\n');
 				if (!p) {
-					NX_JSON_REPORT_ERROR("endless comment", ps);
+					R_JSON_REPORT_ERROR ("endless comment", ps);
 					return 0; // error
 				}
 				p++;
@@ -206,24 +206,24 @@ static char *parse_key(const char **key, char *p, nx_json_unicode_encoder encode
 				p = skip_block_comment (p + 1);
 				if (!p) return 0;
 			} else {
-				NX_JSON_REPORT_ERROR("unexpected chars", p - 1);
+				R_JSON_REPORT_ERROR ("unexpected chars", p - 1);
 				return 0; // error
 			}
 		} else {
-			NX_JSON_REPORT_ERROR("unexpected chars", p - 1);
+			R_JSON_REPORT_ERROR ("unexpected chars", p - 1);
 			return 0; // error
 		}
 	}
-	NX_JSON_REPORT_ERROR("unexpected chars", p - 1);
+	R_JSON_REPORT_ERROR ("unexpected chars", p - 1);
 	return 0; // error
 }
 
 static char *parse_value(nx_json *parent, const char *key, char *p, nx_json_unicode_encoder encoder) {
-	nx_json *js;
+	RJson *js;
 	while (1) {
 		switch (*p) {
 		case '\0':
-			NX_JSON_REPORT_ERROR("unexpected end of text", p);
+			R_JSON_REPORT_ERROR ("unexpected end of text", p);
 			return 0; // error
 		case ' ':
 		case '\t':
@@ -234,7 +234,7 @@ static char *parse_value(nx_json *parent, const char *key, char *p, nx_json_unic
 			p++;
 			break;
 		case '{':
-			js = create_json (NX_JSON_OBJECT, key, parent);
+			js = create_json (R_JSON_OBJECT, key, parent);
 			p++;
 			while (1) {
 				const char *new_key;
@@ -245,7 +245,7 @@ static char *parse_value(nx_json *parent, const char *key, char *p, nx_json_unic
 				if (!p) return 0; // error
 			}
 		case '[':
-			js = create_json (NX_JSON_ARRAY, key, parent);
+			js = create_json (R_JSON_ARRAY, key, parent);
 			p++;
 			while (1) {
 				p = parse_value (js, 0, p, encoder);
@@ -256,7 +256,7 @@ static char *parse_value(nx_json *parent, const char *key, char *p, nx_json_unic
 			return p;
 		case '"':
 			p++;
-			js = create_json (NX_JSON_STRING, key, parent);
+			js = create_json (R_JSON_STRING, key, parent);
 			js->text_value = unescape_string (p, &p, encoder);
 			if (!js->text_value) return 0; // propagate error
 			return p;
@@ -271,7 +271,7 @@ static char *parse_value(nx_json *parent, const char *key, char *p, nx_json_unic
 		case '7':
 		case '8':
 		case '9': {
-			js = create_json (NX_JSON_INTEGER, key, parent);
+			js = create_json (R_JSON_INTEGER, key, parent);
 			char *pe;
 			if (*p == '-') {
 				js->num.s_value = (nxjson_s64) strtoll (p, &pe, 0);
@@ -279,14 +279,14 @@ static char *parse_value(nx_json *parent, const char *key, char *p, nx_json_unic
 				js->num.u_value = (nxjson_u64) strtoull (p, &pe, 0);
 			}
 			if (pe == p || errno == ERANGE) {
-				NX_JSON_REPORT_ERROR("invalid number", p);
+				R_JSON_REPORT_ERROR ("invalid number", p);
 				return 0; // error
 			}
 			if (*pe == '.' || *pe == 'e' || *pe == 'E') { // double value
-				js->type = NX_JSON_DOUBLE;
+				js->type = R_JSON_DOUBLE;
 				js->num.dbl_value = strtod (p, &pe);
 				if (pe == p || errno == ERANGE) {
-					NX_JSON_REPORT_ERROR("invalid number", p);
+					R_JSON_REPORT_ERROR ("invalid number", p);
 					return 0; // error
 				}
 			} else {
@@ -300,33 +300,33 @@ static char *parse_value(nx_json *parent, const char *key, char *p, nx_json_unic
 		}
 		case 't':
 			if (!strncmp (p, "true", 4)) {
-				js = create_json (NX_JSON_BOOL, key, parent);
+				js = create_json (R_JSON_BOOL, key, parent);
 				js->num.u_value = 1;
 				return p + 4;
 			}
-			NX_JSON_REPORT_ERROR("unexpected chars", p);
+			R_JSON_REPORT_ERROR ("unexpected chars", p);
 			return 0; // error
 		case 'f':
 			if (!strncmp (p, "false", 5)) {
-				js = create_json (NX_JSON_BOOL, key, parent);
+				js = create_json (R_JSON_BOOL, key, parent);
 				js->num.u_value = 0;
 				return p + 5;
 			}
-			NX_JSON_REPORT_ERROR("unexpected chars", p);
+			R_JSON_REPORT_ERROR ("unexpected chars", p);
 			return 0; // error
 		case 'n':
 			if (!strncmp (p, "null", 4)) {
-				create_json (NX_JSON_NULL, key, parent);
+				create_json (R_JSON_NULL, key, parent);
 				return p + 4;
 			}
-			NX_JSON_REPORT_ERROR("unexpected chars", p);
+			R_JSON_REPORT_ERROR ("unexpected chars", p);
 			return 0; // error
 		case '/': // comment
 			if (p[1] == '/') { // line comment
 				char *ps = p;
 				p = strchr (p + 2, '\n');
 				if (!p) {
-					NX_JSON_REPORT_ERROR("endless comment", ps);
+					R_JSON_REPORT_ERROR ("endless comment", ps);
 					return 0; // error
 				}
 				p++;
@@ -334,12 +334,12 @@ static char *parse_value(nx_json *parent, const char *key, char *p, nx_json_unic
 				p = skip_block_comment (p + 2);
 				if (!p) return 0;
 			} else {
-				NX_JSON_REPORT_ERROR("unexpected chars", p);
+				R_JSON_REPORT_ERROR ("unexpected chars", p);
 				return 0; // error
 			}
 			break;
 		default:
-			NX_JSON_REPORT_ERROR("unexpected chars", p);
+			R_JSON_REPORT_ERROR ("unexpected chars", p);
 			return 0; // error
 		}
 	}
@@ -350,7 +350,7 @@ const RJson *nx_json_parse_utf8(char *text) {
 }
 
 const RJson *nx_json_parse(char *text, nx_json_unicode_encoder encoder) {
-	nx_json js = {0};
+	RJson js = {0};
 	if (!parse_value (&js, 0, text, encoder)) {
 		if (js.children.first) nx_json_free (js.children.first);
 		return 0;
@@ -359,7 +359,7 @@ const RJson *nx_json_parse(char *text, nx_json_unicode_encoder encoder) {
 }
 
 const RJson *nx_json_get(const RJson *json, const char *key) {
-	nx_json *js;
+	RJson *js;
 	for (js = json->children.first; js; js = js->next) {
 		if (js->key && !strcmp (js->key, key)) return js;
 	}
@@ -367,7 +367,7 @@ const RJson *nx_json_get(const RJson *json, const char *key) {
 }
 
 const RJson *nx_json_item(const RJson *json, int idx) {
-	nx_json *js;
+	RJson *js;
 	for (js = json->children.first; js; js = js->next) {
 		if (!idx--) return js;
 	}
