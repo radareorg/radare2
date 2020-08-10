@@ -685,13 +685,25 @@ typedef struct {
 } RBinDwarfAttrDef;
 
 typedef struct {
-	ut64	length;
-	ut8	*data;
+	ut64 length;
+	ut8 *data;
 } RBinDwarfBlock;
 
-typedef struct {
+typedef enum {
+	DW_AT_KIND_ADDRESS,
+	DW_AT_KIND_BLOCK,
+	DW_AT_KIND_CONSTANT,
+	DW_AT_KIND_FLAG,
+	DW_AT_KIND_DATA,
+	DW_AT_KIND_SDATA,
+	DW_AT_KIND_REFERENCE,
+	DW_AT_KIND_STRING,
+} RBinDwarfAttrKind;
+
+typedef struct dwarf_attr_kind {
 	ut64 attr_name;
 	ut64 attr_form;
+	RBinDwarfAttrKind kind;
 	union {
 		ut64 address;
 		RBinDwarfBlock block;
@@ -700,7 +712,6 @@ typedef struct {
 		ut64 data;
 		st64 sdata;
 		ut64 reference;
-		// ut64	offset; // I'll use it for all the new offset forms in DWARF 5
 		struct {
 			const char *content;
 			ut64 offset;

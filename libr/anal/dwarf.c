@@ -886,11 +886,11 @@ static void parse_function(const RAnal *anal, const RBinDwarfDie *all_dies,
 			return;
 		case DW_AT_specification: // redirect to DIE with more info,
 		{
-			// These bsearches are becomming too common, in future maybe have debug info a hashtable?
-			RBinDwarfDie key = { .offset = value->reference };
-			RBinDwarfDie *x_die = bsearch (&key, all_dies, count, sizeof (key), die_tag_cmp);
-			name = get_specification_die_name (x_die);
-			get_specification_die_type (all_dies, count, x_die, &ret_type, die_lookup_table);
+			RBinDwarfDie *x_die = ht_up_find (die_lookup_table, value->reference, NULL);
+			if (x_die) {
+				name = get_specification_die_name (x_die);
+				get_specification_die_type (all_dies, count, x_die, &ret_type, die_lookup_table);
+			}
 		} break;
 		case DW_AT_type:
 			parse_type (all_dies, count, value->reference, &ret_type, &size, die_lookup_table);
@@ -990,7 +990,7 @@ bool filter_sdb_function_names(void *user, const char *k, const char *v) {
 
 /**
  * @brief Use parsed DWARF function info from Sdb in the anal functions
- * 
+ *  XXX right now we only save parsed name, we can't use signature now
  * @param anal 
  * @param dwarf_sdb 
  * @return R_API 
