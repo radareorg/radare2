@@ -4,18 +4,18 @@
 #include <r_bin_dwarf.h>
 #include <string.h>
 
-static int die_tag_cmp(const void *a, const void *b) {
-	const RBinDwarfDie *first = a;
-	const RBinDwarfDie *second = b;
-
-	if (first->offset > second->offset) {
-		return 1;
-	} else if (first->offset < second->offset) {
-		return -1;
-	} else {
-		return 0;
-	}
-}
+typedef struct dwarf_function_t {
+	ut64 addr;
+	const char *name;
+	const char *signature;
+	bool is_external;
+	bool is_method;
+	bool is_virtual;
+	bool is_trampoline; // intermediary in making call to another func
+	ut8 access; // public = 1, protected = 2, private = 3, if not set assume private
+	ut64 vtable_addr; // location description
+	ut64 call_conv; // normal || program || nocall
+} DwarfFunction;
 
 static inline bool is_type_tag(ut64 tag_code) {
 	return (tag_code == DW_TAG_structure_type ||
@@ -231,10 +231,10 @@ static st32 parse_array_type(const RBinDwarfDie *all_dies, ut64 count, ut64 idx,
  * @return st32 -1 if error else DW_TAG of the entry
  */
 static st32 parse_type (const RBinDwarfDie *all_dies, const ut64 count,
-	const ut64 offset, RStrBuf *strbuf, ut64 *size, HtUP *die_lookup_table) {
+	const ut64 offset, RStrBuf *strbuf, ut64 *size, HtUP *die_map) {
 
-	r_return_val_if_fail (all_dies && strbuf, -1);
-	RBinDwarfDie *die = ht_up_find (die_lookup_table, offset, NULL);
+	r_return_val_if_fail (all_dies && strbuf && die_map, -1);
+	RBinDwarfDie *die = ht_up_find (die_map, offset, NULL);
 	if (!die) {
 		return -1;
 	}
@@ -243,7 +243,7 @@ static st32 parse_type (const RBinDwarfDie *all_dies, const ut64 count,
 	st32 tag;
 	char *name = NULL;
 	// get size of first type DIE that has size
-	if (*size == 0) {
+	if (size && *size == 0) {
 		*size = get_die_size (die);
 	}
 	switch (die->tag) {
@@ -254,7 +254,7 @@ static st32 parse_type (const RBinDwarfDie *all_dies, const ut64 count,
 			r_strbuf_append (strbuf, "void");
 			r_strbuf_append (strbuf, " *");
 		} else {
-			tag = parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size, die_lookup_table);
+			tag = parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size, die_map);
 			if (tag == DW_TAG_subroutine_type) {
 				strbuf_rev_prepend_char (strbuf, "(*)", '(');
 			} else if (tag == DW_TAG_pointer_type) {
@@ -283,7 +283,7 @@ static st32 parse_type (const RBinDwarfDie *all_dies, const ut64 count,
 		if (type_idx == -1) {
 			r_strbuf_append (strbuf, "void");
 		} else {
-			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size, die_lookup_table);
+			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size, die_map);
 		}
 		r_strbuf_append (strbuf, " (");
 		if (die->has_children) { // has parameters
@@ -293,42 +293,42 @@ static st32 parse_type (const RBinDwarfDie *all_dies, const ut64 count,
 	case DW_TAG_array_type:
 		type_idx = find_attr_idx (die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size, die_lookup_table);
+			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size, die_map);
 		}
 		parse_array_type (all_dies, count, die - all_dies, strbuf);
 		break;
 	case DW_TAG_const_type:
 		type_idx = find_attr_idx (die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size, die_lookup_table);
+			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size, die_map);
 		}
 		r_strbuf_append (strbuf, " const");
 		break;
 	case DW_TAG_volatile_type:
 		type_idx = find_attr_idx (die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size, die_lookup_table);
+			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size, die_map);
 		}
 		r_strbuf_append (strbuf, " volatile");
 		break;
 	case DW_TAG_restrict_type:
 		type_idx = find_attr_idx (die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size, die_lookup_table);
+			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size, die_map);
 		}
 		r_strbuf_append (strbuf, " restrict");
 		break;
 	case DW_TAG_rvalue_reference_type:
 		type_idx = find_attr_idx (die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size, die_lookup_table);
+			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size, die_map);
 		}
 		r_strbuf_append (strbuf, " &&");
 		break;
 	case DW_TAG_reference_type:
 		type_idx = find_attr_idx (die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size, die_lookup_table);
+			parse_type (all_dies, count, die->attr_values[type_idx].reference, strbuf, size, die_map);
 		}
 		r_strbuf_append (strbuf, " &");
 		break;
@@ -349,7 +349,7 @@ static st32 parse_type (const RBinDwarfDie *all_dies, const ut64 count,
  * @return RAnalStructMember* ptr to parsed Member
  */
 static RAnalStructMember *parse_struct_member (const RBinDwarfDie *all_dies,
-	const ut64 all_dies_count, ut64 curr_die_idx, RAnalStructMember *result, HtUP *die_lookup_table) {
+	const ut64 all_dies_count, ut64 curr_die_idx, RAnalStructMember *result, HtUP *die_map) {
 
 	r_return_val_if_fail (all_dies && result, NULL);
 	const RBinDwarfDie *die = &all_dies[curr_die_idx];
@@ -371,7 +371,7 @@ static RAnalStructMember *parse_struct_member (const RBinDwarfDie *all_dies,
 			}
 			break;
 		case DW_AT_type:
-			parse_type (all_dies, all_dies_count, value->reference, &strbuf, &size, die_lookup_table);
+			parse_type (all_dies, all_dies_count, value->reference, &strbuf, &size, die_map);
 			type = r_strbuf_drain_nofree (&strbuf);
 			if (!type || !*type) {
 				goto cleanup;
@@ -477,7 +477,7 @@ cleanup:
  */
 // http://www.dwarfstd.org/doc/DWARF4.pdf#page=102&zoom=100,0,0
 static void parse_structure_type(const RAnal *anal, const RBinDwarfDie *all_dies, 
-	const ut64 count, ut64 idx, HtUP *die_lookup_table) {
+	const ut64 count, ut64 idx, HtUP *die_map) {
 
 	r_return_if_fail (all_dies && anal);
 	const RBinDwarfDie *die = &all_dies[idx];
@@ -502,7 +502,7 @@ static void parse_structure_type(const RAnal *anal, const RBinDwarfDie *all_dies
 	// if it is definition of previous declaration (TODO Fix, big ugly hotfix addition)
 	st32 spec_attr_idx = find_attr_idx (die, DW_AT_specification);
 	if (spec_attr_idx != -1) {
-		RBinDwarfDie *decl_die = ht_up_find (die_lookup_table, die->attr_values[spec_attr_idx].reference, NULL);
+		RBinDwarfDie *decl_die = ht_up_find (die_map, die->attr_values[spec_attr_idx].reference, NULL);
 		if (!decl_die) {
 			goto cleanup;
 		}
@@ -528,7 +528,7 @@ static void parse_structure_type(const RAnal *anal, const RBinDwarfDie *all_dies
 			// we take only direct descendats of the structure
 			// can be also DW_TAG_suprogram for class methods or tag for templates
 			if (child_depth == 1 && child_die->tag == DW_TAG_member) {
-				RAnalStructMember *result = parse_struct_member (all_dies, count, j, &member, die_lookup_table);
+				RAnalStructMember *result = parse_struct_member (all_dies, count, j, &member, die_map);
 				if (!result) {
 					goto cleanup;
 				} else {
@@ -561,7 +561,7 @@ cleanup:
  * @param idx index of the current entry
  */
 static void parse_enum_type(const RAnal *anal, const RBinDwarfDie *all_dies,
-	const ut64 count, ut64 idx, HtUP *die_lookup_table) {
+	const ut64 count, ut64 idx, HtUP *die_map) {
 
 	r_return_if_fail (all_dies);
 	const RBinDwarfDie *die = &all_dies[idx];
@@ -582,7 +582,7 @@ static void parse_enum_type(const RAnal *anal, const RBinDwarfDie *all_dies,
 		RStrBuf strbuf;
 		r_strbuf_init (&strbuf);
 		parse_type (all_dies, count,
-			die->attr_values[type_attr_idx].reference, &strbuf, &base_type->size, die_lookup_table);
+			die->attr_values[type_attr_idx].reference, &strbuf, &base_type->size, die_map);
 		base_type->type = r_strbuf_drain_nofree (&strbuf);
 	}
 
@@ -634,7 +634,7 @@ cleanup:
  * @param idx index of the current entry
  */
 static void parse_typedef(const RAnal *anal, const RBinDwarfDie *all_dies, 
-	const ut64 count, ut64 idx, HtUP *die_lookup_table) {
+	const ut64 count, ut64 idx, HtUP *die_map) {
 
 	r_return_if_fail (all_dies);
 	const RBinDwarfDie *die = &all_dies[idx];
@@ -656,7 +656,7 @@ static void parse_typedef(const RAnal *anal, const RBinDwarfDie *all_dies,
 			}
 			break;
 		case DW_AT_type:
-			parse_type (all_dies, count, value->reference, &strbuf, &size, die_lookup_table);
+			parse_type (all_dies, count, value->reference, &strbuf, &size, die_map);
 			type = r_strbuf_drain_nofree (&strbuf);
 			if (!type) {
 				goto cleanup;
@@ -752,16 +752,16 @@ static const char *get_specification_die_name(const RBinDwarfDie *die) {
  * @param die 
  * @param ret_type 
  */
-static void get_specification_die_type(const RBinDwarfDie *all_dies, ut64 count, RBinDwarfDie *die, RStrBuf *ret_type, HtUP *die_lookup_table) {
+static void get_specification_die_type(const RBinDwarfDie *all_dies, ut64 count, RBinDwarfDie *die, RStrBuf *ret_type, HtUP *die_map) {
 	st32 attr_idx = find_attr_idx (die, DW_AT_type);
 	if (attr_idx != -1) {
 		ut64 size = 0;
-		parse_type (all_dies, count, die->attr_values[attr_idx].reference, ret_type, &size, die_lookup_table);
+		parse_type (all_dies, count, die->attr_values[attr_idx].reference, ret_type, &size, die_map);
 	}
 }
 
-static void parse_abstract_origin_parameter(const RBinDwarfDie *all_dies, ut64 count, ut64 offset, RStrBuf *type, const char **name, HtUP *die_lookup_table) {
-	RBinDwarfDie *die = ht_up_find (die_lookup_table, offset, NULL);
+static void parse_abstract_origin_parameter(const RBinDwarfDie *all_dies, ut64 count, ut64 offset, RStrBuf *type, const char **name, HtUP *die_map) {
+	RBinDwarfDie *die = ht_up_find (die_map, offset, NULL);
 	if (die) {
 		size_t i;
 		ut64 size = 0;
@@ -772,7 +772,7 @@ static void parse_abstract_origin_parameter(const RBinDwarfDie *all_dies, ut64 c
 				*name = value->string.content;
 				break;
 			case DW_AT_type:
-				parse_type (all_dies, count, value->reference, type, &size, die_lookup_table);
+				parse_type (all_dies, count, value->reference, type, &size, die_map);
 				break;
 			default:
 				break;
@@ -783,7 +783,7 @@ static void parse_abstract_origin_parameter(const RBinDwarfDie *all_dies, ut64 c
 
 
 static st32 parse_function_args(const RBinDwarfDie *all_dies, ut64 count, 
-	ut64 idx, RStrBuf *args, HtUP *die_lookup_table) {
+	ut64 idx, RStrBuf *args, HtUP *die_map) {
 
 	r_return_val_if_fail (all_dies && args, -1);
 	const RBinDwarfDie *die = &all_dies[idx];
@@ -792,14 +792,13 @@ static st32 parse_function_args(const RBinDwarfDie *all_dies, ut64 count,
 		int child_depth = 1;
 		const RBinDwarfDie *child_die = &all_dies[++idx];
 		size_t j;
-		ut64 size = 0;
 		const char *name = NULL;
 		for (j = idx; child_depth > 0 && j < count; j++) {
 			child_die = &all_dies[j];
 			RStrBuf type;
 			r_strbuf_init (&type);
-			// right now we skip non direct descendats of the structure
-			// can be also DW_TAG_suprogram for class methods or tag for templates
+			// right now we skip non direct descendants of the structure
+			// TODO maybe add parsing of possible thrown exception DW_TAG_thrown_type
 			if (child_depth == 1 && child_die->tag == DW_TAG_formal_parameter) {
 				size_t i;
 				for (i = 0; i < child_die->count; i++) {
@@ -809,11 +808,11 @@ static st32 parse_function_args(const RBinDwarfDie *all_dies, ut64 count,
 						name = value->string.content;
 						break;
 					case DW_AT_type:
-						parse_type (all_dies, count, value->reference, &type, &size, die_lookup_table);
+						parse_type (all_dies, count, value->reference, &type, NULL, die_map);
 						break;
 					// abstract origin is supposed to have omitted information
 					case DW_AT_abstract_origin:
-						parse_abstract_origin_parameter (all_dies, count, value->reference, &type, &name, die_lookup_table);
+						parse_abstract_origin_parameter (all_dies, count, value->reference, &type, &name, die_map);
 						break;
 					default:
 						break;
@@ -822,6 +821,8 @@ static st32 parse_function_args(const RBinDwarfDie *all_dies, ut64 count,
 				r_warn_if_fail (type.len && name);
 				r_strbuf_appendf (args, "%s %s,", r_strbuf_get (&type), name);
 				r_strbuf_fini (&type);
+			} else if (child_depth == 1 && child_die->tag == DW_TAG_unspecified_parameters) {
+				r_strbuf_appendf (args, "va_args ...,");
 			}
 			if (child_die->has_children) {
 				child_depth++;
@@ -839,6 +840,18 @@ static st32 parse_function_args(const RBinDwarfDie *all_dies, ut64 count,
 	return 0;
 }
 
+static void sdb_save_dwarf_function(DwarfFunction *fcn, Sdb *sdb) {
+	sdb_set (sdb, fcn->name, "func", 0);
+	char *addr_key = r_str_newf ("func.%s.addr", fcn->name);
+	char *addr_val = r_str_newf ("0x%" PFMT64x "", fcn->addr);
+	sdb_set (sdb, addr_key, addr_val, 0);
+	char *sig_key = r_str_newf ("func.%s.sig", fcn->name);
+	sdb_set (sdb, sig_key, fcn->signature, 0);
+	free (addr_key);
+	free (addr_val);
+	free (sig_key);
+}
+
 /**
  * @brief Parse function,it's arguments and
  *        save the information into the Sdb
@@ -850,78 +863,92 @@ static st32 parse_function_args(const RBinDwarfDie *all_dies, ut64 count,
  * @param sdb 
  */
 static void parse_function(const RAnal *anal, const RBinDwarfDie *all_dies, 
-	const ut64 count, ut64 idx, Sdb *sdb, HtUP *die_lookup_table) {
+	const ut64 count, ut64 idx, Sdb *sdb, HtUP *die_map) {
 
 	r_return_if_fail (all_dies && sdb);
 	const RBinDwarfDie *die = &all_dies[idx];
 
-	const char *name = NULL;
-	ut64 faddr = 0;
+	DwarfFunction fcn = {};
 	RStrBuf ret_type;
 	r_strbuf_init (&ret_type);
 
-	ut64 size = 0;
+	bool has_linkage_name = false;
+
 	size_t i;
-	bool is_linkage_name = false;
-	// !!! We only store the strings into Sdb, we don't need to strdup them
 	for (i = 0; i < die->count; i++) {
-		RBinDwarfAttrValue *value = &die->attr_values[i];
+		RBinDwarfAttrValue *val = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
+		case DW_AT_declaration: // just a declaration, skip
+			return;
 		// Prefer the linkage name
 		case DW_AT_name:
-			if (!is_linkage_name) {
-				name = value->string.content;
+			if (!has_linkage_name) {
+				fcn.name = val->string.content;
 			}
 			break;
 		case DW_AT_linkage_name:
 		case DW_AT_MIPS_linkage_name:
-			name = value->string.content;
-			is_linkage_name = true;
+			fcn.name = val->string.content;
+			has_linkage_name = true;
 			break;
 		case DW_AT_low_pc:
 		case DW_AT_entry_pc:
-			faddr = value->address;
+			fcn.addr  = val->address;
 			break;
-		case DW_AT_declaration: // just a declaration, skip
-			return;
-		case DW_AT_specification: // redirect to DIE with more info,
+		case DW_AT_specification: // reference to declaration DIE with more info
 		{
-			RBinDwarfDie *x_die = ht_up_find (die_lookup_table, value->reference, NULL);
-			if (x_die) {
-				name = get_specification_die_name (x_die);
-				get_specification_die_type (all_dies, count, x_die, &ret_type, die_lookup_table);
+			RBinDwarfDie *spec_die = ht_up_find (die_map, val->reference, NULL);
+			if (spec_die) {
+				fcn.name = get_specification_die_name (spec_die); // I assume that if specification has a name, this DIE hasn't
+				get_specification_die_type (all_dies, count, spec_die, &ret_type, die_map);
 			}
 		} break;
 		case DW_AT_type:
-			parse_type (all_dies, count, value->reference, &ret_type, &size, die_lookup_table);
+			parse_type (all_dies, count, val->reference, &ret_type, NULL, die_map);
+			break;
+		case DW_AT_virtuality:
+			fcn.is_method = true; // method specific attr
+			fcn.is_virtual = true;
+			break;
+		case DW_AT_object_pointer:
+			fcn.is_method = true; // method specific attr
+			break;
+		case DW_AT_vtable_elem_location:
+			fcn.is_method = true; // method specific attr
+			fcn.vtable_addr = 0; // TODO, how this location description work
+			break;
+		case DW_AT_accessibility:
+			fcn.is_method = true; // method specific attr
+			fcn.access = (ut8) val->constant; // method specific attr
+			break;
+		case DW_AT_external:
+			fcn.is_external = true;
+			break;
+		case DW_AT_trampoline:
+			fcn.is_trampoline = true;
+			break;
+		case DW_AT_ranges: // TODO
+		case DW_AT_high_pc:
+		default:
 			break;
 		}
 	}
-	if (!name || !faddr) { // we need a name, faddr
+	if (!fcn.name || !fcn.addr) { // we need a name, faddr
 		return;
 	}
-	RStrBuf arguments;
-	r_strbuf_init (&arguments);
-	parse_function_args (all_dies, count, idx, &arguments, die_lookup_table);
+	RStrBuf args;
+	r_strbuf_init (&args);
+	parse_function_args (all_dies, count, idx, &args, die_map);
 
-	// DW_AT_type is omitted in case of `void` ret type
-	if (ret_type.len == 0) {
+	if (ret_type.len == 0) { // DW_AT_type is omitted in case of `void` ret type
 		r_strbuf_append (&ret_type, "void");
 	}
+	fcn.signature = r_str_newf ("%s (%s);", r_strbuf_get (&ret_type), r_strbuf_get (&args));
+	sdb_save_dwarf_function (&fcn, sdb);
 
-	sdb_set (sdb, name, "func", 0);
-	char *addr_key = r_str_newf ("func.%s.addr", name);
-	char *addr_val = r_str_newf ("0x%" PFMT64x "", faddr);
-	sdb_set (sdb, addr_key, addr_val, 0);
-	char *sig_key = r_str_newf ("func.%s.sig", name);
-	char *sig_val = r_str_newf ("%s (%s);", r_strbuf_get (&ret_type), r_strbuf_get (&arguments));
-	sdb_set (sdb, sig_key, sig_val, 0);
-	free (addr_key);
-	free (addr_val);
-	free (sig_key);
-	free (sig_val);
+	free ((char *)fcn.signature);
 	r_strbuf_fini (&ret_type);
-	r_strbuf_fini (&arguments);
+	r_strbuf_fini (&args);
 }
 
 
@@ -934,7 +961,7 @@ static void parse_function(const RAnal *anal, const RBinDwarfDie *all_dies,
  * @param idx index of the current entry
  */
 static void parse_type_entry(const RAnal *anal, const RBinDwarfDie *all_dies,
-	const ut64 count, ut64 idx, HtUP *die_lookup_table) {
+	const ut64 count, ut64 idx, HtUP *die_map) {
 
 	r_return_if_fail (anal && all_dies);
 	Sdb *dwarf_sdb =  sdb_ns (anal->sdb, "dwarf", 1);
@@ -944,19 +971,19 @@ static void parse_type_entry(const RAnal *anal, const RBinDwarfDie *all_dies,
 	case DW_TAG_structure_type:
 	case DW_TAG_union_type:
 	case DW_TAG_class_type:
-		parse_structure_type (anal, all_dies, count, idx, die_lookup_table);
+		parse_structure_type (anal, all_dies, count, idx, die_map);
 		break;
 	case DW_TAG_enumeration_type:
-		parse_enum_type (anal, all_dies, count, idx, die_lookup_table);
+		parse_enum_type (anal, all_dies, count, idx, die_map);
 		break;
 	case DW_TAG_typedef:
-		parse_typedef (anal, all_dies, count, idx, die_lookup_table);
+		parse_typedef (anal, all_dies, count, idx, die_map);
 		break;
 	case DW_TAG_base_type:
 		parse_atomic_type (anal, all_dies, count, idx);
 		break;
 	case DW_TAG_subprogram:
-		parse_function (anal, all_dies, count, idx, dwarf_sdb, die_lookup_table);
+		parse_function (anal, all_dies, count, idx, dwarf_sdb, die_map);
 		break;
 	default:
 		break;
@@ -1011,7 +1038,7 @@ R_API void r_anal_analyze_dwarf_functions(RAnal *anal, Sdb *dwarf_sdb) {
 		RAnalFunction *func = r_anal_get_function_at (anal, faddr);
 		if (func) {
 			r_anal_function_rename (func, func_name);
-			// TODO find way to change signature
+			// TODO apply signatures when r2 will use tree-sitter parser
 			// tmp = sdb_fmt ("func.%s.sig", func_name);
 			// char *fcnstr = sdb_get (dwarf_sdb, tmp, 0);
 			// r_anal_str_to_fcn (anal, func, fcnstr);
