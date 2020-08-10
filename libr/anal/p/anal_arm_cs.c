@@ -633,7 +633,7 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 	r_strbuf_append (buf, "}");
 }
 
-static const int decode_sign_ext(arm64_extender extender) {
+static int decode_sign_ext(arm64_extender extender) {
 	switch (extender) {
 	case ARM64_EXT_UXTB:
 	case ARM64_EXT_UXTH:
