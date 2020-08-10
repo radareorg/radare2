@@ -77,7 +77,7 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 	for (case_idx = 0; case_idx < jmptbl_size; case_idx++) {
 		jmpptr_idx = casetbl[case_idx];
 
-		if (jmpptr_idx > jmptbl_size) {
+		if (jmpptr_idx >= jmptbl_size) {
 			ret = false;
 			break;
 		}
