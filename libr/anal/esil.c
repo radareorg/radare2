@@ -3318,7 +3318,7 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("--=[2]", esil_mem_deceq2, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("--=[4]", esil_mem_deceq4, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("--=[8]", esil_mem_deceq8, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
-    OP ("<<=[]", esil_mem_lsleq, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	OP ("<<=[]", esil_mem_lsleq, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("<<=[1]", esil_mem_lsleq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("<<=[2]", esil_mem_lsleq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("<<=[4]", esil_mem_lsleq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
