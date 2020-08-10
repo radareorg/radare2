@@ -1,11 +1,9 @@
 /* radare - LGPL - Copyright 2020 - thestr4ng3r, Yaroslav Stavnichiy */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
 #include <errno.h>
 
+#include <r_util/r_utf8.h>
+#include <r_util/r_hex.h>
 #include <r_util/r_json.h>
 
 #if 0
@@ -14,10 +12,6 @@
 #else
 #define R_JSON_REPORT_ERROR(msg, p) do { (void)(msg); (void)(p); } while (0)
 #endif
-
-// TODO: use IS_WHITECHAR from r2
-#undef IS_WHITESPACE
-#define IS_WHITESPACE(c) ((unsigned char)(c)<=(unsigned char)' ')
 
 static RJson *json_new() {
 	return R_NEW0 (RJson);
@@ -54,28 +48,6 @@ R_API void r_json_free(RJson *js) {
 		}
 	}
 	free (js);
-}
-
-static int unicode_to_utf8(unsigned int codepoint, char *p, char **endp) {
-	// code from http://stackoverflow.com/a/4609989/697313
-	if (codepoint < 0x80) *p++ = codepoint;
-	else if (codepoint < 0x800) *p++ = 192 + codepoint / 64, *p++ = 128 + codepoint % 64;
-	else if (codepoint - 0xd800u < 0x800) return 0; // surrogate must have been treated earlier
-	else if (codepoint < 0x10000)
-		*p++ = 224 + codepoint / 4096, *p++ = 128 + codepoint / 64 % 64, *p++ = 128 + codepoint % 64;
-	else if (codepoint < 0x110000)
-		*p++ = 240 + codepoint / 262144, *p++ = 128 + codepoint / 4096 % 64, *p++ = 128 + codepoint / 64 % 64, *p++ =
-				128 + codepoint % 64;
-	else return 0; // error
-	*endp = p;
-	return 1;
-}
-
-static inline int hex_val(char c) {
-	if (c >= '0' && c <= '9') return c - '0';
-	if (c >= 'a' && c <= 'f') return c - 'a' + 10;
-	if (c >= 'A' && c <= 'F') return c - 'A' + 10;
-	return -1;
 }
 
 static char *unescape_string(char *s, char **end) {
@@ -116,31 +88,35 @@ static char *unescape_string(char *s, char **end) {
 				break;
 			case 'u': { // unicode
 				char *ps = p - 1;
-				int h1, h2, h3, h4;
-				if ((h1 = hex_val (p[1])) < 0 || (h2 = hex_val (p[2])) < 0 || (h3 = hex_val (p[3])) < 0 ||
-					(h4 = hex_val (p[4])) < 0) {
+				ut8 high = 0, low = 0;
+				if (r_hex_to_byte (&high, p[1]) || r_hex_to_byte (&high, p[2])
+						|| r_hex_to_byte (&low, p[3]) || r_hex_to_byte (&low, p[4])) {
 					R_JSON_REPORT_ERROR ("invalid unicode escape", p - 1);
 					return 0;
 				}
-				unsigned int codepoint = h1 << 12 | h2 << 8 | h3 << 4 | h4;
+				RRune codepoint = (RRune)high << 8 | (RRune)low;
 				if ((codepoint & 0xfc00) == 0xd800) { // high surrogate; need one more unicode to succeed
 					p += 6;
-					if (p[-1] != '\\' || *p != 'u' || (h1 = hex_val (p[1])) < 0 || (h2 = hex_val (p[2])) < 0 ||
-						(h3 = hex_val (p[3])) < 0 || (h4 = hex_val (p[4])) < 0) {
+					high = low = 0;
+					if (p[-1] != '\\' || *p != 'u'
+							|| r_hex_to_byte (&high, p[1]) || r_hex_to_byte (&high, p[2])
+							|| r_hex_to_byte (&low, p[3]) || r_hex_to_byte (&low, p[4])) {
 						R_JSON_REPORT_ERROR ("invalid unicode surrogate", ps);
 						return 0;
 					}
-					unsigned int codepoint2 = h1 << 12 | h2 << 8 | h3 << 4 | h4;
+					RRune codepoint2 = (RRune)high << 8 | (RRune)low;
 					if ((codepoint2 & 0xfc00) != 0xdc00) {
 						R_JSON_REPORT_ERROR ("invalid unicode surrogate", ps);
 						return 0;
 					}
 					codepoint = 0x10000 + ((codepoint - 0xd800) << 10) + (codepoint2 - 0xdc00);
 				}
-				if (!unicode_to_utf8 (codepoint, d, &d)) {
+				int s = r_utf8_encode ((ut8 *)d, codepoint);
+				if (!s) {
 					R_JSON_REPORT_ERROR ("invalid codepoint", ps);
 					return 0;
 				}
+				d += s;
 				p += 5;
 				break;
 			}
@@ -181,11 +157,11 @@ static char *parse_key(const char **key, char *p) {
 		if (c == '"') {
 			*key = unescape_string (p, &p);
 			if (!*key) return 0; // propagate error
-			while (*p && IS_WHITESPACE(*p)) p++;
+			while (*p && IS_WHITECHAR(*p)) p++;
 			if (*p == ':') return p + 1;
 			R_JSON_REPORT_ERROR ("unexpected chars", p);
 			return 0;
-		} else if (IS_WHITESPACE(c) || c == ',') {
+		} else if (IS_WHITECHAR(c) || c == ',') {
 			// continue
 		} else if (c == '}') {
 			return p - 1;
