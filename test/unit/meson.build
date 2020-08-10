@@ -25,6 +25,7 @@ if get_option('enable_tests')
     'diff',
     'dwarf',
     'dwarf_info',
+    'dwarf_integration',
     'esil_dfg_filter',
     'event',
     'flags',

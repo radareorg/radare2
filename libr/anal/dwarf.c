@@ -765,14 +765,22 @@ static void parse_abstract_origin(const RBinDwarfDie *all_dies, ut64 count, ut64
 	if (die) {
 		size_t i;
 		ut64 size = 0;
+		bool has_linkage_name = false;
 		for (i = 0; i < die->count; i++) {
-			const RBinDwarfAttrValue *value = &die->attr_values[i];
-			switch (value->attr_name) {
+			const RBinDwarfAttrValue *val = &die->attr_values[i];
+			switch (val->attr_name) {
 			case DW_AT_name:
-				*name = value->string.content;
+				if (!has_linkage_name) {
+					*name = val->string.content;
+				}
+				break;
+			case DW_AT_linkage_name:
+			case DW_AT_MIPS_linkage_name:
+				*name = val->string.content;
+				has_linkage_name = true;
 				break;
 			case DW_AT_type:
-				parse_type (all_dies, count, value->reference, type, &size, die_map);
+				parse_type (all_dies, count, val->reference, type, &size, die_map);
 				break;
 			default:
 				break;

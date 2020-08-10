@@ -10,7 +10,7 @@
 		mu_assert_nullable_streq (value, v, "Wrong key - value pair"); \
 	} while (0)
 
-static bool test_parse_dwarf_types_version2(void) {
+static bool test_parse_dwarf_types(void) {
 	RBin *bin = r_bin_new ();
 	mu_assert_notnull (bin, "Couldn't create new RBin");
 	RIO *io = r_io_new ();
@@ -111,7 +111,7 @@ static bool test_dwarf_function_parsing(void) {
 }
 
 int all_tests(void) {
-	mu_run_test (test_parse_dwarf_types_version2);
+	mu_run_test (test_parse_dwarf_types);
 	mu_run_test (test_dwarf_function_parsing);
 	return tests_passed != tests_run;
 }
