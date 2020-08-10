@@ -853,7 +853,7 @@ static const char *arg(RAnal *a, csh *handle, cs_insn *insn, char *buf, int n) {
 
 #define SHIFTED_REG64_APPEND(sb, n) shifted_reg64_append(sb, handle, insn, n)
 
-// do the sign extension here as well, but honestly this whole thing should be redesigned
+// do the sign extension here as well, but honestly this whole thing should maybe be redesigned
 static void shifted_reg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n) {
 	int signext = EXT64(n);
 	char *rn;
@@ -1070,7 +1070,6 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_EON:
 		OPCALL_NEG("^");
 		break;
-	// TODO fix lsr, lsl, asr to use the remainder as the shift
 	case ARM64_INS_LSR:
 	{
 		const char *r0 = REG64(0);
@@ -1255,6 +1254,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 							MEMBASE64(1), MEMINDEX64(1), size, REG64(0));
 				}
 			} else {
+				// I really don't like the DUP / tmp approach but its better than doubling the calculation
 				if (LSHIFT2_64(1)) {
 					r_strbuf_appendf (&op->esil, "%s,%d,%"PFMT64d",%s,+,DUP,tmp,=,[%d],%s,=",
 							MEMBASE64(1), LSHIFT2_64(1), MEMDISP64(1), DECODE_SHIFT64(1), size, REG64(0));
