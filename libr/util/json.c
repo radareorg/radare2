@@ -111,12 +111,12 @@ static char *unescape_string(char *s, char **end) {
 					}
 					codepoint = 0x10000 + ((codepoint - 0xd800) << 10) + (codepoint2 - 0xdc00);
 				}
-				int s = r_utf8_encode ((ut8 *)d, codepoint);
+				int sz = r_utf8_encode ((ut8 *)d, codepoint);
 				if (!s) {
 					R_JSON_REPORT_ERROR ("invalid codepoint", ps);
 					return 0;
 				}
-				d += s;
+				d += sz;
 				p += 5;
 				break;
 			}
