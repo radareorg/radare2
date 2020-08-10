@@ -720,12 +720,21 @@ static const char *help_msg_ax[] = {
 	"axj", "", "list refs in json format",
 	"axF", " [flg-glob]", "find data/code references of flags",
 	"axm", " addr [at]", "copy data/code references pointing to addr to also point to curseek (or at)",
-	"axt", " [addr]", "find data/code references to this address",
+	"axt", "[?] [addr]", "find data/code references to this address",
 	"axf", " [addr]", "find data/code references from this address",
 	"axv", " [addr]", "list local variables read-write-exec references",
 	"ax.", " [addr]", "find data/code references from and to this address",
 	"axff[j]", " [addr]", "find data/code references from this function",
 	"axs", " addr [at]", "add string ref",
+	NULL
+};
+
+static const char *help_msg_axt[]= {
+	"Usage:", "axt[?gq*]", "find data/code references to this address",
+	"axtj", " [addr]", "find data/code references to this address and print in json format",
+	"axtg", " [addr]", "display commands to generate graphs according to the xrefs",
+	"axtq", " [addr]", "find and list the data/code references in quiet mode",
+	"axt*", " [addr]", "same as axt, but prints as r2 commands",
 	NULL
 };
 
@@ -7290,6 +7299,10 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		cmd_afvx (core, NULL, input[1] == 'j');
 		break;
 	case 't': { // "axt"
+		if (input[1] == '?') { // axt?
+			r_core_cmd_help (core, help_msg_axt);
+			break;
+		}
 		RList *list = NULL;
 		RAnalFunction *fcn;
 		RAnalRef *ref;
@@ -8785,7 +8798,7 @@ static void r_core_anal_info (RCore *core, const char *input) {
 	int covr = compute_coverage (core);
 	int call = compute_calls (core);
 	int xrfs = r_anal_xrefs_count (core->anal);
-	int cvpc = (code > 0)? (covr * 100 / code): 0;
+	int cvpc = (code > 0)? (covr * 100.0 / code): 0;
 	if (*input == 'j') {
 		PJ *pj = pj_new ();
 		if (!pj) {
@@ -9910,6 +9923,21 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 	case 'm': // "acm"
 		cmd_anal_class_method (core, input + 1);
 		break;
+	case 'g': { // "acg"
+		RGraph *graph = r_anal_class_get_inheritance_graph (core->anal);
+		if (!graph) {
+			eprintf ("Couldn't create graph");
+			break;
+		}
+		RAGraph *agraph = create_agraph_from_graph (graph);
+		if (!agraph) {
+			eprintf ("Couldn't create graph");
+			break;
+		}
+		r_agraph_print (agraph);
+		r_graph_free (graph);
+		r_agraph_free (agraph);
+	} break;
 	default: // "ac?"
 		r_core_cmd_help (core, help_msg_ac);
 		break;

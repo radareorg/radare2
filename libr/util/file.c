@@ -42,7 +42,7 @@ static int file_stat (const char *file, struct stat* const pStat) {
 #endif // __WINDOWS__
 }
 
-R_API bool r_file_truncate (const char *filename, ut64 newsize) {
+R_API bool r_file_truncate(const char *filename, ut64 newsize) {
 	r_return_val_if_fail (filename, false);
 	int fd;
 	if (r_file_is_directory (filename)) {
@@ -78,7 +78,7 @@ Example:
 	str = r_file_basename ("home/inisider/Downloads/user32.dll");
 	// str == user32.dll
 */
-R_API const char *r_file_basename (const char *path) {
+R_API const char *r_file_basename(const char *path) {
 	r_return_val_if_fail (path, NULL);
 	const char *ptr = r_str_rchr (path, NULL, '/');
 	if (ptr) {
@@ -97,7 +97,7 @@ Example:
 	// str == "home/inisider/Downloads"
 	free (str);
 */
-R_API char *r_file_dirname (const char *path) {
+R_API char *r_file_dirname(const char *path) {
 	r_return_val_if_fail (path, NULL);
 	char *newpath = strdup (path);
 	char *ptr = (char*)r_str_rchr (newpath, NULL, '/');
@@ -1093,7 +1093,19 @@ err_r_file_mkstemp:
 	char *name = r_str_newf ("%s/r2.%s.XXXXXX%s", path, prefix, suffix);
 	mode_t mask = umask (S_IWGRP | S_IWOTH);
 	if (suffix && *suffix) {
+#if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && 2 <= __GLIBC__ && 19 <= __GLIBC__MINOR__
 		h = mkstemps (name, strlen (suffix));
+#else
+		char *const xpos = strrchr (name, 'X');
+		const char c = (char)(NULL != xpos ? *(xpos + 1) : 0);
+		if (0 != c) {
+			xpos[1] = 0;
+			h = mkstemp (name);
+			xpos[1] = c;
+		} else {
+			h = -1;
+		}
+#endif
 	} else {
 		h = mkstemp (name);
 	}
