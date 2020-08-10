@@ -1,34 +1,8 @@
-/*
- * Copyright (c) 2013 Yaroslav Stavnichiy <yarosla@gmail.com>
- *
- * This file is part of NXJSON.
- *
- * NXJSON is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License
- * as published by the Free Software Foundation, either version 3
- * of the License, or (at your option) any later version.
- *
- * NXJSON is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with NXJSON. If not, see <http://www.gnu.org/licenses/>.
- */
-
-//#include <stdlib.h>
-//#include <stdio.h>
-//#include <string.h>
-//#include <assert.h>
-//#include <sys/stat.h>
-//#include <unistd.h>
-//#include <fcntl.h>
+/* radare - LGPL - Copyright 2020 - thestr4ng3r, Yaroslav Stavnichiy */
+/* r_json based on nxjson by Yaroslav Stavnichiy */
 
 #include <r_util/r_json.h>
 #include "minunit.h"
-
-#define ERROR(msg, p) fprintf(stderr, "ERROR: " msg " %s\n", (p));
 
 typedef struct json_test_t {
 	const char *json;
@@ -246,9 +220,9 @@ JsonTest tests[] = {
 	}, { // 45
 		"[\"\\u0414\\u0430\",\n \"\\u041c\\u0443\",\n \"\\u0415\\u0431\\u0430\""
 		",\n \"\\u041c\\u0430\\u0439\\u043a\\u0430\\u0442\\u0430\"]\n",
-		"[\n  \"\xd0\x94\xd0\xb0\"\n  \"\xd0\x9c\xd1\x83\"\n  \"\xd0\x95\xd0\xb"
-		"1\xd0\xb0\"\n  \"\xd0\x9c\xd0\xb0\xd0\xb9\xd0\xba\xd0\xb0\xd1\x82\xd0"
-		"\xb0\"\n]\n"
+		"[\n  \"\xd0\x94\xd0\xb0\"\n  \"\xd0\x9c\xd1\x83\"\n  \"\xd0\x95\xd0"
+		"\xb1\xd0\xb0\"\n  \"\xd0\x9c\xd0\xb0\xd0\xb9\xd0\xba\xd0\xb0\xd1\x82"
+		"\xd0\xb0\"\n]\n"
 	}, { // 46
 		"\"\\u0066\\u006f\\u006f\\u0062\\u0061\\u0072\"\n",
 		"\"foobar\"\n"
@@ -338,8 +312,7 @@ static void dump(const RJson *json, char *out, char **end, int indent) {
 #define FMT_PASSED "\x1b[32m[%03d] PASSED\x1b[0m\n"
 #define FMT_FAILED "\x1b[31m[%03d] FAILED\x1b[0m\n"
 
-static int run_test(int test_number, char *input, const char *expected_output) {
-	printf("------------ test %d\n", test_number);
+static int json_test(int test_number, char *input, const char *expected_output) {
 	int input_length = strlen (input);
 	const RJson *json = nx_json_parse_utf8 (input);
 	if (!expected_output) {
@@ -361,7 +334,9 @@ static int all_tests() {
 	size_t i;
 	for (i = 1; i < sizeof (tests) / sizeof (tests[0]); i++) {
 		char *input = strdup (tests[i].json);
-		mu_run_test (run_test, i, input, tests[i].expected);
+		char testname[256];
+		snprintf (testname, sizeof(testname), "json_test (%u)", (unsigned int)i);
+		mu_run_test_named (json_test, testname, i, input, tests[i].expected);
 		free (input);
 	}
 	return tests_passed != tests_run;
