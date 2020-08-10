@@ -156,9 +156,15 @@ static char *parse_key(const char **key, char *p) {
 	while ((c = *p++)) {
 		if (c == '"') {
 			*key = unescape_string (p, &p);
-			if (!*key) return 0; // propagate error
-			while (*p && IS_WHITECHAR(*p)) p++;
-			if (*p == ':') return p + 1;
+			if (!*key) {
+				return 0; // propagate error
+			}
+			while (*p && IS_WHITECHAR(*p)) {
+				p++;
+			}
+			if (*p == ':') {
+				return p + 1;
+			}
 			R_JSON_REPORT_ERROR ("unexpected chars", p);
 			return 0;
 		} else if (IS_WHITECHAR(c) || c == ',') {
@@ -176,7 +182,9 @@ static char *parse_key(const char **key, char *p) {
 				p++;
 			} else if (*p == '*') { // block comment
 				p = skip_block_comment (p + 1);
-				if (!p) return 0;
+				if (!p) {
+					return 0;
+				}
 			} else {
 				R_JSON_REPORT_ERROR ("unexpected chars", p - 1);
 				return 0; // error
@@ -211,26 +219,38 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 			while (1) {
 				const char *new_key;
 				p = parse_key (&new_key, p);
-				if (!p) return 0; // error
-				if (*p == '}') return p + 1; // end of object
+				if (!p) {
+					return 0; // error
+				}
+				if (*p == '}') {
+					return p + 1; // end of object
+				}
 				p = parse_value (js, new_key, p);
-				if (!p) return 0; // error
+				if (!p) {
+					return 0; // error
+				}
 			}
 		case '[':
 			js = create_json (R_JSON_ARRAY, key, parent);
 			p++;
 			while (1) {
 				p = parse_value (js, 0, p);
-				if (!p) return 0; // error
-				if (*p == ']') return p + 1; // end of array
+				if (!p) {
+					return 0; // error
+				}
+				if (*p == ']') {
+					return p + 1; // end of array
+				}
 			}
 		case ']':
 			return p;
 		case '"':
 			p++;
 			js = create_json (R_JSON_STRING, key, parent);
-			js->text_value = unescape_string (p, &p);
-			if (!js->text_value) return 0; // propagate error
+			js->str_value = unescape_string (p, &p);
+			if (!js->str_value) {
+				return 0; // propagate error
+			}
 			return p;
 		case '-':
 		case '0':
@@ -306,7 +326,9 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 				p++;
 			} else if (p[1] == '*') { // block comment
 				p = skip_block_comment (p + 2);
-				if (!p) return 0;
+				if (!p) {
+					return 0;
+				}
 			} else {
 				R_JSON_REPORT_ERROR ("unexpected chars", p);
 				return 0; // error
@@ -322,7 +344,9 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 R_API RJson *r_json_parse(char *text) {
 	RJson js = {0};
 	if (!parse_value (&js, 0, text)) {
-		if (js.children.first) r_json_free (js.children.first);
+		if (js.children.first) {
+			r_json_free (js.children.first);
+		}
 		return 0;
 	}
 	return js.children.first;
@@ -331,7 +355,9 @@ R_API RJson *r_json_parse(char *text) {
 R_API const RJson *r_json_get(const RJson *json, const char *key) {
 	RJson *js;
 	for (js = json->children.first; js; js = js->next) {
-		if (js->key && !strcmp (js->key, key)) return js;
+		if (js->key && !strcmp (js->key, key)) {
+			return js;
+		}
 	}
 	return NULL;
 }
@@ -339,7 +365,9 @@ R_API const RJson *r_json_get(const RJson *json, const char *key) {
 R_API const RJson *r_json_item(const RJson *json, int idx) {
 	RJson *js;
 	for (js = json->children.first; js; js = js->next) {
-		if (!idx--) return js;
+		if (!idx--) {
+			return js;
+		}
 	}
 	return NULL;
 }

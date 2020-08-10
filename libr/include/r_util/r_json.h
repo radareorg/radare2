@@ -26,17 +26,17 @@ typedef enum r_json_type_t {
 	R_JSON_NULL,
 	R_JSON_OBJECT,  // properties can be found in child nodes
 	R_JSON_ARRAY,   // items can be found in child nodes
-	R_JSON_STRING,  // value can be found in str_value field
-	R_JSON_INTEGER, // value can be found in num.u_value/num.s_value field
-	R_JSON_DOUBLE,  // value can be found in num.dbl_value field
-	R_JSON_BOOL     // value can be found in num.u_value field
+	R_JSON_STRING,  // value can be found in the str_value field
+	R_JSON_INTEGER, // value can be found in the num.u_value/num.s_value fields
+	R_JSON_DOUBLE,  // value can be found in the num.dbl_value field
+	R_JSON_BOOL     // value can be found in the num.u_value field
 } RJsonType;
 
 typedef struct r_json_t {
 	RJsonType type;             // type of json node, see above
 	const char *key;            // key of the property; for object's children only
 	union {
-		const char *text_value; // text value of STRING node
+		const char *str_value;  // text value of STRING node
 		struct {
 			union {
 				ut64 u_value;   // the value of INTEGER or BOOL node

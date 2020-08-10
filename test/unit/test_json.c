@@ -287,7 +287,7 @@ static void dump(const RJson *json, RStrBuf *out, int indent) {
 		r_strbuf_append (out, "]");
 		break;
 	case R_JSON_STRING:
-		r_strbuf_appendf (out, "\"%s\"", json->text_value);
+		r_strbuf_appendf (out, "\"%s\"", json->str_value);
 		break;
 	case R_JSON_INTEGER:
 		r_strbuf_appendf (out, "%"PFMT64d, json->num.s_value);
