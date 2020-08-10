@@ -1518,3 +1518,119 @@ EXPECT=<<EOF
 za sym._vfprintf_r b ff0314d1fd7b00a9fd030091f35301a9f30302aaf55b02a9f76303a9f70300aaf80303aaf96b04a9fa0301aafb7305a9e827066d6a170094000040f9e06700f989efff97e05700f9020180d2e0a3059101008052a4ecff97b70000b4e052:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000fcffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 EOF
 RUN
+
+NAME=zbr bad count
+FILE=bins/elf/static-glibc-2.27
+CMDS=<<EOF
+aa
+e zign.maxsz = 32
+za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+zbr sym.exact NOTNUMBER
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=zbr negative count
+FILE=bins/elf/static-glibc-2.27
+CMDS=<<EOF
+aa
+e zign.maxsz = 32
+za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+zbr sym.exact -3
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=zbr zero count
+FILE=bins/elf/static-glibc-2.27
+CMDS=<<EOF
+aa
+e zign.maxsz = 32
+za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+zbr sym.exact 0
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=zbr single match
+FILE=bins/elf/static-glibc-2.27
+CMDS=<<EOF
+aa
+e zign.maxsz = 32
+za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+zbr sym.exact 1~[5]
+EOF
+EXPECT=<<EOF
+fcn.00410210
+EOF
+RUN
+
+NAME=zbr exact match
+FILE=bins/elf/static-glibc-2.27
+CMDS=<<EOF
+aa
+e zign.maxsz = 32
+za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+zbr sym.exact 1
+EOF
+EXPECT=<<EOF
+1.00000  1.00000 B  1.00000 G   fcn.00410210
+EOF
+RUN
+
+NAME=zbr try match 5 but only 4
+FILE=bins/elf/static-glibc-2.27
+CMDS=<<EOF
+aa
+e zign.maxsz = 32
+za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+zbr sym.exact ~[5]
+EOF
+EXPECT=<<EOF
+fcn.00410210
+main
+entry0
+fcn.00400de0
+EOF
+RUN
+
+NAME=zbr match 5 by default
+FILE=bins/elf/ls
+CMDS=<<EOF
+aa
+e zign.maxsz = 32
+za main b 41574156415541545589fd534889f34883ec58488b3e64488b04252800000048
+za main g cc=429 nbbs=300 edges=437 ebbs=8 bbsum=6739
+zbr main ~[5]
+EOF
+EXPECT=<<EOF
+main
+sym._obstack_newchunk
+sym._obstack_free
+sym._obstack_begin
+sym._obstack_begin_1
+EOF
+RUN
+
+NAME=zbr ignore masked bytes
+FILE=bins/elf/static-glibc-2.27
+CMDS=<<EOF
+aa
+e zign.maxsz = 32
+za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.exact b 415541544989fc55534883ec08e8aaaaaaaa488baaaaaaaaaa4889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+zbr sym.exact 1
+EOF
+EXPECT=<<EOF
+1.00000  1.00000 B  1.00000 G   fcn.00410210
+EOF
+RUN
