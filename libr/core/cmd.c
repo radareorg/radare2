@@ -1821,6 +1821,16 @@ static int cmd_resize(void *data, const char *input) {
 			}
 		}
 		return true;
+	case 'j': // "rj"
+		if (core->file) {
+			PJ * pj = pj_new ();
+			pj_o (pj);
+			if (oldsize != -1) {
+				pj_n(pj, oldsize);
+			}
+			pj_end (pj);
+			pj_free (pj);
+		}
 	case 'h':
 		if (core->file) {
 			if (oldsize != -1) {
