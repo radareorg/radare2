@@ -87,9 +87,8 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 	}
 
 	if (siginfo.si_signo > 0) {
-		// Switch the target thread to the signaled thread to allow access
-		// to its registers later.
-		dbg->tid = tid;
+		// Select the signaled thread to allow access to its info later.
+		r_debug_select (dbg, dbg->pid, tid);
 
 		//siginfo_t newsiginfo = {0};
 		//ptrace (PTRACE_SETSIGINFO, dbg->pid, 0, &siginfo);
@@ -98,7 +97,7 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 		dbg->stopaddr = (ut64)siginfo.si_addr;
 		//dbg->errno = siginfo.si_errno;
 		// siginfo.si_code -> HWBKPT, USER, KERNEL or WHAT
-		// TODO: DO MORE RDEBUGREASON HERE
+// TODO: DO MORE RDEBUGREASON HERE
 		switch (dbg->reason.signum) {
 		case SIGTRAP:
 		{
@@ -150,11 +149,12 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 		default:
 			break;
 		}
-		if (dbg->reason.signum != SIGTRAP) {
-			eprintf ("[+] Child stopped with SIGNAL %d errno=%d addr=0x%08"PFMT64x
+		if (dbg->reason.signum != SIGTRAP &&
+			(dbg->reason.signum != SIGINT || !r_cons_is_breaked ())) {
+			eprintf ("[+] SIGNAL %d errno=%d addr=0x%08"PFMT64x
 				" code=%d si_pid=%d ret=%d\n",
 				siginfo.si_signo, siginfo.si_errno,
-				(ut64)(size_t)siginfo.si_addr, siginfo.si_code, siginfo.si_pid, ret);
+				(ut64) (size_t)siginfo.si_addr, siginfo.si_code, siginfo.si_pid, ret);
 		}
 		return true;
 	}
@@ -177,6 +177,7 @@ static void linux_remove_fork_bps(RDebug *dbg) {
 	// Set dbg tid to the new child temporarily
 	dbg->pid = dbg->forked_pid;
 	dbg->tid = dbg->forked_pid;
+	r_debug_select (dbg, dbg->forked_pid, dbg->forked_pid);
 
 	// Unset all hw breakpoints in the child process
 	r_debug_reg_sync (dbg, R_REG_TYPE_DRX, false);
@@ -192,6 +193,7 @@ static void linux_remove_fork_bps(RDebug *dbg) {
 	// Return to the parent
 	dbg->pid = prev_pid;
 	dbg->tid = prev_tid;
+	r_debug_select (dbg, dbg->pid, dbg->pid);
 
 	// Restore sw breakpoints in the parent
 	r_bp_restore (dbg->bp, true);
@@ -216,7 +218,7 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int ptid, int status, bool dow
 	ut32 data;
 #endif
 	/* we only handle stops with SIGTRAP here */
-	if (!WIFSTOPPED(status) || WSTOPSIG(status) != SIGTRAP) {
+	if (!WIFSTOPPED (status) || WSTOPSIG (status) != SIGTRAP) {
 		return R_DEBUG_REASON_UNKNOWN;
 	}
 
@@ -389,7 +391,7 @@ bool linux_set_options(RDebug *dbg, int pid) {
 	/* SIGTRAP | 0x80 on signal handler .. not supported on all archs */
 	traceflags |= PTRACE_O_TRACESYSGOOD;
 
-	// PTRACE_SETOPTIONS sometimes fails because of the ptrace asynchronous nature
+	// PTRACE_SETOPTIONS can fail because of the asynchronous nature of ptrace
 	// If the target is traced, the loop will always end with success
 	while (r_debug_ptrace (dbg, PTRACE_SETOPTIONS, pid, 0, (r_ptrace_data_t)(size_t)traceflags) == -1) {
 		void *bed = r_cons_sleep_begin ();
@@ -472,10 +474,10 @@ static void linux_dbg_wait_break(RDebug *dbg) {
 		return;
 	}
 
-	// If the debuggee process is created by the debugger, they are in the same process group
-	// and, hence, SIGINT are already sent to both the debugger and debuggee processes.
-	// If they are not in the same process group when the debuggee is attached by the debugger,
-	// send SIGINT to the debuggee process.
+	// If the debuggee process is created by the debugger, SIGINT is already
+	// sent to both the debugger and debuggee in the same process group.
+	// If the debuggee is attached by the debugger, send SIGINT to the debuggee
+	// in another process group.
 	if (dpgid != tpgid) {
 		if (!linux_kill_thread (dbg->pid, SIGINT)) {
 			eprintf ("Could not interrupt pid (%d)\n", dbg->pid);
@@ -493,8 +495,7 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 		flags |= WNOHANG;
 	}
 
-	// Setup callback to stop the process and break out from waitpid when
-	// the debugger is interrupted.
+	// Send SIGINT to the target thread when interrupted
 	r_cons_break_push ((RConsBreak)linux_dbg_wait_break, dbg);
 	for (;;) {
 		void *bed = r_cons_sleep_begin ();
@@ -506,6 +507,10 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 		r_cons_sleep_end (bed);
 
 		if (ret < 0) {
+			// Continue when interrupted by user;
+			if (errno == EINTR) {
+				continue;
+			}
 			perror ("waitpid");
 			break;
 		} else if (ret == 0) {
@@ -614,9 +619,11 @@ static bool linux_kill_thread(int tid, int signo) {
 static bool linux_stop_thread(RDebug *dbg, int tid) {
 	int status;
 	siginfo_t siginfo = { 0 };
-	int ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, tid, 0, (r_ptrace_data_t)(intptr_t)&siginfo);
+	int ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, tid, 0,
+		(r_ptrace_data_t)(intptr_t)&siginfo);
 
-	// Return if the thread is already stopped to prevent queueing an additional SIGSTOP
+	// Return if the thread is already stopped to prevent queueing an
+	// additional SIGSTOP
 	if (ret == 0) {
 		return true;
 	}
@@ -624,15 +631,17 @@ static bool linux_stop_thread(RDebug *dbg, int tid) {
 		return false;
 	}
 
-	// Check the current signal and consume it only if it is SIGSTOP because
-	// other signals can be sent between PTRACE_GETSIGINFO and linux_kill_thread calls.
-	ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, tid, 0, (r_ptrace_data_t)(intptr_t)&siginfo);
-	// PTRACE_GETSIGINFO can fail if SIGSTOP has not been received and the thread is running.
+	// Check the current signal and consume it if it is SIGSTOP because
+	// signals can be sent between PTRACE_GETSIGINFO and linux_kill_thread calls.
+	ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, tid, 0,
+		(r_ptrace_data_t)(intptr_t)&siginfo);
+	// PTRACE_GETSIGINFO can fail if SIGSTOP has not been received yet.
 	while (ret == -1) {
 		void *bed = r_cons_sleep_begin ();
 		usleep (1000);
 		r_cons_sleep_end (bed);
-		ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, tid, 0, (r_ptrace_data_t)(intptr_t)&siginfo);
+		ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, tid, 0,
+			(r_ptrace_data_t)(intptr_t)&siginfo);
 	}
 	if (siginfo.si_signo == SIGSTOP) {
 		ret = waitpid (tid, &status, 0);
@@ -661,7 +670,6 @@ bool linux_stop_threads(RDebug *dbg, int except) {
 }
 
 static bool linux_attach_single_pid(RDebug *dbg, int ptid) {
-	int ret, status;
 	siginfo_t sig = { 0 };
 
 	if (ptid < 0) {
@@ -679,19 +687,8 @@ static bool linux_attach_single_pid(RDebug *dbg, int ptid) {
 			return false;
 		}
 
-		// The SIGSTOP sent by PTRACE_ATTACH has the same siginfo.si_pid (0) as
-		// the SIGSTOP in the newly creeated  tasks. To differentiate between them
-		// and keep the SIGSTOP in newly created tasks when continuing the debuggee,
-		// continue the recently attached tracee and stop it again, so the SIGSTOP
-		// is sent with the debugger si_pid.
-		ret = waitpid (ptid, &status, 0);
-		if (ret != ptid) {
-			eprintf ("Error: waitpid fails to consume SIGSTOP\n");
-			return false;
-		}
-		if (r_debug_ptrace (dbg, PTRACE_CONT, ptid, 0, 0) == -1) {
-			r_sys_perror ("PTRACE_CONT");
-		}
+		// Make sure SIGSTOP is delivered and wait for it since we can't affect the pid
+		// until it hits SIGSTOP.
 		if (!linux_stop_thread (dbg, ptid)) {
 			eprintf ("Could not stop pid (%d)\n", ptid);
 			return false;
@@ -723,17 +720,6 @@ int linux_attach(RDebug *dbg, int pid) {
 		// So check if the requested thread is being traced already. If not, attach it
 		if (!r_list_find (dbg->threads, &pid, &match_pid)) {
 			linux_attach_single_pid (dbg, pid);
-		}
-
-		// When switching to another thread, set the si_signo in the previous thread to SIGSTOP
-		// which forces the debugger to continue the thread when continuing in future.
-		if (pid != -1 && pid != dbg->tid) {
-			siginfo_t siginfo = { 0 };
-			siginfo.si_signo = SIGSTOP;
-			siginfo.si_pid = getpid ();
-			if (r_debug_ptrace (dbg, PTRACE_SETSIGINFO, dbg->tid, NULL, &siginfo)) {
-				r_sys_perror ("PTRACE_SETSIGINFO");
-			}
 		}
 	}
 	return pid;
@@ -1213,7 +1199,7 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			// ret = ptrace (PTRACE_GETREGSET, pid, (void*)(size_t)(NT_PRSTATUS), NULL); // &io);
 			if (ret != 0) {
 				r_sys_perror("PTRACE_GETREGSET");
-				return false
+				return false;
 			}
 #elif __BSD__ && (__POWERPC__ || __sparc__)
 			ret = r_debug_ptrace (dbg, PTRACE_GETREGS, pid, &regs, NULL);
@@ -1231,8 +1217,9 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 				r_sys_perror ("PTRACE_GETREGS");
 				return false;
 			}
-			memcpy (buf, &regs, sizeof (regs));
-			return sizeof (regs);
+			size = R_MIN (sizeof (regs), size);
+			memcpy (buf, &regs, size);
+			return size;
 		}
 		break;
 	case R_REG_TYPE_YMM:

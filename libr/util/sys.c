@@ -153,7 +153,6 @@ R_API int r_sys_sigaction(int *sig, void (*handler) (int)) {
 	}
 
 	sigact.sa_handler = handler;
-	sigact.sa_flags = SA_RESTART;
 	sigemptyset (&sigact.sa_mask);
 
 	for (i = 0; sig[i] != 0; i++) {
