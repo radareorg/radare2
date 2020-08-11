@@ -36,7 +36,19 @@ R_API int r_sys_sigaction(int *sig, void (*handler) (int));
 R_API int r_sys_signal(int sig, void (*handler) (int));
 R_API char **r_sys_get_environ(void);
 R_API void r_sys_set_environ(char **e);
+
+#define R_NSEC_PER_SEC  1000000000
+#define R_NSEC_PER_MSEC 1000000
+#define R_USEC_PER_SEC  1000000
+#define R_NSEC_PER_USEC 1000
+#define R_USEC_PER_MSEC 1000
+
+// wall clock time in microseconds
 R_API ut64 r_sys_now(void);
+
+// monotonic time in microseconds
+R_API ut64 r_sys_now_mono(void);
+
 R_API const char *r_time_to_string (ut64 ts);
 R_API int r_sys_fork(void);
 // nocleanup = false => exit(); true => _exit()
