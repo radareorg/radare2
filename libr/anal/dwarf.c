@@ -937,7 +937,7 @@ static void parse_function(DwContext *ctx, ut64 idx) {
 			break;
 		case DW_AT_low_pc:
 		case DW_AT_entry_pc:
-			fcn.addr  = val->address;
+			fcn.addr = val->address;
 			break;
 		case DW_AT_specification: // reference to declaration DIE with more info
 		{
@@ -959,11 +959,11 @@ static void parse_function(DwContext *ctx, ut64 idx) {
 			break;
 		case DW_AT_vtable_elem_location:
 			fcn.is_method = true;
-			fcn.vtable_addr = 0; // TODO, how this location description work
+			fcn.vtable_addr = 0;
 			break;
 		case DW_AT_accessibility:
 			fcn.is_method = true;
-			fcn.access = (ut8) val->uconstant;
+			fcn.access = (ut8)val->uconstant;
 			break;
 		case DW_AT_external:
 			fcn.is_external = true;
@@ -971,7 +971,7 @@ static void parse_function(DwContext *ctx, ut64 idx) {
 		case DW_AT_trampoline:
 			fcn.is_trampoline = true;
 			break;
-		case DW_AT_ranges: // TODO, might be useful info
+		case DW_AT_ranges:
 		case DW_AT_high_pc:
 		default:
 			break;
@@ -989,10 +989,13 @@ static void parse_function(DwContext *ctx, ut64 idx) {
 	}
 	fcn.signature = r_str_newf ("%s (%s);", r_strbuf_get (&ret_type), r_strbuf_get (&args));
 	r_warn_if_fail (ctx->lang);
-	fcn.name = ctx->anal->binb.demangle (NULL, ctx->lang, fcn.name, fcn.addr, false);
+	char *new_name = ctx->anal->binb.demangle (NULL, ctx->lang, fcn.name, fcn.addr, false);
+	fcn.name = r_str_newf ("dwf.%s", new_name ? new_name : fcn.name);
+	free (new_name);
 	sdb_save_dwarf_function (&fcn, ctx->sdb);
 
 	free ((char *)fcn.signature);
+	free ((char *)fcn.name);
 	r_strbuf_fini (&args);
 cleanup:
 	r_strbuf_fini (&ret_type);
@@ -1116,7 +1119,6 @@ R_API void r_anal_process_dwarf_info(const RAnal *anal, const RBinDwarfDebugInfo
 			.lang = NULL
 		};
 		for (j = 0; j < unit->count; j++) {
-			RBinDwarfDie *curr_die = &unit->dies[j];
 			parse_type_entry (&dw_context, j);
 		}
 	}
