@@ -13,10 +13,8 @@ R_API ut64 r_time_now(void) {
 	ut64 ret;
 	struct timeval now;
 	gettimeofday (&now, NULL);
-	ret = now.tv_sec;
-	ret <<= 20;
-	ret |= now.tv_usec;
-	//(sizeof (now.tv_sec) == 4
+	ret = now.tv_sec * R_USEC_PER_SEC;
+	ret += now.tv_usec;
 	return ret;
 }
 
