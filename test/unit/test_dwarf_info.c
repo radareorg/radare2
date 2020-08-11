@@ -19,7 +19,7 @@
 	mu_assert_eq (cu.dies[i].attr_values[attr_idx].attr_form, expect_form, "Wrong attribute name")
 	
 #define check_attr_data(attr_idx, expect_data) \
-	mu_assert_eq (cu.dies[i].attr_values[attr_idx].data, expect_data, "Wrong attribute data")
+	mu_assert_eq (cu.dies[i].attr_values[attr_idx].uconstant, expect_data, "Wrong attribute data")
 
 #define check_attr_block_length(attr_idx, expect_len) \
 	mu_assert_eq (cu.dies[i].attr_values[attr_idx].block.length, expect_len, "Wrong attribute block length")
