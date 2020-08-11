@@ -332,14 +332,12 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 	char *epath = expand_home (path);
 	int ret = -1;
 #if __WINDOWS__
-	perm |= O_BINARY;
 	if (!strcmp (path, "/dev/null")) {
 		path = "NUL";
 	}
 #endif
 	if (enabled) {
-		if ((mode & O_CREAT)
-			|| (mode & O_RDWR)
+		if ((perm & O_CREAT) || (perm & O_RDWR)
 			|| (!r_sandbox_check_path (epath))) {
 			free (epath);
 			return -1;
@@ -347,12 +345,58 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 	}
 #if __WINDOWS__
 	{
+		DWORD flags = 0;
+		if (perm & O_RANDOM) {
+			flags = FILE_FLAG_RANDOM_ACCESS;
+		} else if (perm & O_SEQUENTIAL) {
+			flags = FILE_FLAG_SEQUENTIAL_SCAN;
+		}
+		if (perm & O_TEMPORARY) {
+			flags |= FILE_FLAG_DELETE_ON_CLOSE | FILE_ATTRIBUTE_TEMPORARY;
+		} else if (perm & _O_SHORT_LIVED) {
+			flags |= FILE_ATTRIBUTE_TEMPORARY;
+		} else {
+			flags |= FILE_ATTRIBUTE_NORMAL;
+		}
+		DWORD creation = 0;
+		bool read_only = false;
+		if (perm & O_CREAT) {
+			if (perm & O_EXCL) {
+				creation = CREATE_NEW;
+			} else {
+				creation = CREATE_ALWAYS;
+			}
+			if (mode & S_IREAD && !(mode & S_IWRITE)) {
+				flags = FILE_ATTRIBUTE_READONLY;
+				read_only = true;
+			}
+		}
+		if (perm & O_TRUNC) {
+			creation |= TRUNCATE_EXISTING;
+		}
+		if (!creation) {
+			creation = OPEN_EXISTING;
+		}
+		DWORD permission = 0;
+		if (perm & O_WRONLY) {
+			permission = GENERIC_WRITE;
+		} else if (O_RDWR) {
+			permission = GENERIC_WRITE | GENERIC_READ;
+		} else {
+			permission = GENERIC_READ;
+		}
+
 		wchar_t *wepath = r_utf8_to_utf16 (epath);
 		if (!wepath) {
 			free (epath);
 			return -1;
 		}
-		ret = _wopen (wepath, perm, mode);
+		HANDLE h = CreateFileW (wepath, permission, FILE_SHARE_READ | (read_only ? 0 : FILE_SHARE_WRITE), NULL, creation, flags, NULL);
+		if (h != INVALID_HANDLE_VALUE) {
+			ret = _open_osfhandle ((intptr_t)h, 0);
+		} else {
+			r_sys_perror ("CreateFileW");
+		}
 		free (wepath);
 	}
 #else // __WINDOWS__
