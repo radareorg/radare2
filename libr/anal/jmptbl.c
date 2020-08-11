@@ -64,17 +64,23 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 	}
 	ut64 jmpptr, case_idx, jmpptr_idx;
 	ut8 *jmptbl = calloc (jmptbl_size, sz);
-	if (!jmptbl) {
+	if (!jmptbl || !anal->iob.read_at (anal->iob.io, jmptbl_loc, jmptbl, jmptbl_size * sz)) {
+		free (jmptbl);
 		return false;
 	}
 	ut8 *casetbl = calloc (jmptbl_size, sizeof (ut8));
-	if (!casetbl) {
+	if (!casetbl || !anal->iob.read_at (anal->iob.io, casetbl_loc, casetbl, jmptbl_size)) {
+		free (jmptbl);
+		free (casetbl);
 		return false;
 	}
-	anal->iob.read_at (anal->iob.io, jmptbl_loc, jmptbl, jmptbl_size * sz);
-	anal->iob.read_at (anal->iob.io, casetbl_loc, casetbl, jmptbl_size);
 	for (case_idx = 0; case_idx < jmptbl_size; case_idx++) {
 		jmpptr_idx = casetbl[case_idx];
+
+		if (jmpptr_idx >= jmptbl_size) {
+			ret = false;
+			break;
+		}
 
 		switch (sz) {
 		case 1:
@@ -123,6 +129,7 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 	}
 
 	free (jmptbl);
+	free (casetbl);
 	return ret;
 }
 
