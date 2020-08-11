@@ -370,9 +370,8 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 				flags = FILE_ATTRIBUTE_READONLY;
 				read_only = true;
 			}
-		}
-		if (perm & O_TRUNC) {
-			creation |= TRUNCATE_EXISTING;
+		} else if (perm & O_TRUNC) {
+			creation = TRUNCATE_EXISTING;
 		}
 		if (!creation || !strcasecmp ("NUL", path)) {
 			creation = OPEN_EXISTING;
