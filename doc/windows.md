@@ -16,7 +16,7 @@ You will need:
 First, call `vcvarsall.bat` with your architecture (x86, x64, arm) to setup the compilation environment.
 
 	cd radare2	
-	python3 sys\meson.py --release --backend vs2019 --shared --install="%cd%\radare2_dist" --webui
+	python3 sys\meson.py --release --backend vs2019 --shared --install --prefix="%cd%\radare2_dist" --webui
 
 You can change `--backend` to your VS version (`vs2015`, `vs2017`), `ninja` buildsystem is also supported.
 
