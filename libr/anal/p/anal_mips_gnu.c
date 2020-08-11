@@ -23,7 +23,7 @@ static const char* mips_reg_decode(unsigned reg_num) {
 
 static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
 	ut32 opcode;
-	ut8 buf[4];
+	const ut8 *buf;
 	// WIP char buf[10]; int reg; int family;
 	int optype, oplen = (anal->bits==16)?2:4;
 
@@ -44,10 +44,8 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		return oplen;
 	}
 
-	buf[0] = opcode>>24; 
-	buf[1] = (opcode>>16)&0xff;
-	buf[2] = (opcode>>8)&0xff;
-	buf[3] = opcode&0xff;
+	opcode = r_swap_ut32(opcode);
+	buf = (ut8 *)&opcode;
 
 	optype = (buf[0]>>2);
 
