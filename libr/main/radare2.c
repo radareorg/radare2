@@ -395,7 +395,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			char *v = strchr (k, '=');
 			if (v) {
 				*v++ = 0;
-				r_strbuf_appendf (sb, "setenv=%s='%s'\n", k, v);
+				v = r_str_escape (v);
+				if (v) {
+					r_strbuf_appendf (sb, "setenv=%s=\"%s\"\n", k, v);
+					free (v);
+				}
 			}
 			free (k);
 			e++;
