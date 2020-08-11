@@ -8,7 +8,10 @@ onlymakedeb=0
 static=1
 
 
-export HOST_CC=gcc
+gcc -v 2> /dev/null
+if [ $? = 0 ]; then
+	export HOST_CC=gcc
+fi
 if [ -z "${CPU}" ]; then
 	export CPU=arm64
 	#export CPU=armv7
