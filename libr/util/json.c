@@ -297,7 +297,7 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 		}
 		case 't':
 			if (!strncmp (p, "true", 4)) {
-				js = create_json (R_JSON_BOOL, key, parent);
+				js = create_json (R_JSON_BOOLEAN, key, parent);
 				js->num.u_value = 1;
 				return p + 4;
 			}
@@ -305,7 +305,7 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 			return 0; // error
 		case 'f':
 			if (!strncmp (p, "false", 5)) {
-				js = create_json (R_JSON_BOOL, key, parent);
+				js = create_json (R_JSON_BOOLEAN, key, parent);
 				js->num.u_value = 0;
 				return p + 5;
 			}

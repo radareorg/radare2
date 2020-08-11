@@ -29,7 +29,7 @@ typedef enum r_json_type_t {
 	R_JSON_STRING,  // value can be found in the str_value field
 	R_JSON_INTEGER, // value can be found in the num.u_value/num.s_value fields
 	R_JSON_DOUBLE,  // value can be found in the num.dbl_value field
-	R_JSON_BOOL     // value can be found in the num.u_value field
+	R_JSON_BOOLEAN  // value can be found in the num.u_value field
 } RJsonType;
 
 typedef struct r_json_t {
@@ -39,7 +39,7 @@ typedef struct r_json_t {
 		const char *str_value;  // text value of STRING node
 		struct {
 			union {
-				ut64 u_value;   // the value of INTEGER or BOOL node
+				ut64 u_value;   // the value of INTEGER or BOOLEAN node
 				st64 s_value;
 			};
 			double dbl_value;   // the value of DOUBLE node

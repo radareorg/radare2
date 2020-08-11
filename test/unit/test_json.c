@@ -295,7 +295,7 @@ static void dump(const RJson *json, RStrBuf *out, int indent) {
 	case R_JSON_DOUBLE:
 		r_strbuf_appendf (out, "%le", json->num.dbl_value);
 		break;
-	case R_JSON_BOOL:
+	case R_JSON_BOOLEAN:
 		r_strbuf_append (out, json->num.s_value ? "T" : "F");
 		break;
 	default:
