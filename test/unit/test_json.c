@@ -305,7 +305,7 @@ static void dump(const RJson *json, RStrBuf *out, int indent) {
 	r_strbuf_append (out, "\n");
 }
 
-static int json_test(int test_number, char *input, const char *expected_output) {
+static int test_json(int test_number, char *input, const char *expected_output) {
 	RJson *json = r_json_parse (input);
 	if (!expected_output) {
 		mu_assert_null (json, "parse failure expected");
@@ -321,18 +321,18 @@ static int json_test(int test_number, char *input, const char *expected_output) 
 	mu_end;
 }
 
-static int all_tests() {
+static int all_tests(void) {
 	size_t i;
 	for (i = 1; i < sizeof (tests) / sizeof (tests[0]); i++) {
 		char *input = strdup (tests[i].json);
 		char testname[256];
-		snprintf (testname, sizeof(testname), "json_test (%u)", (unsigned int)i);
-		mu_run_test_named (json_test, testname, i, input, tests[i].expected);
+		snprintf (testname, sizeof(testname), "test_json (%u)", (unsigned int)i);
+		mu_run_test_named (test_json, testname, i, input, tests[i].expected);
 		free (input);
 	}
 	return tests_passed != tests_run;
 }
 
-int main() {
-	return all_tests();
+int main(void) {
+	return all_tests ();
 }

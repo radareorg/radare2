@@ -18,7 +18,7 @@ static RJson *json_new(void) {
 }
 
 static RJson *create_json(RJsonType type, const char *key, RJson *parent) {
-	RJson *js = json_new();
+	RJson *js = json_new ();
 	if (!js) {
 		return NULL;
 	}
@@ -133,9 +133,10 @@ static char *unescape_string(char *s, char **end) {
 	return 0;
 }
 
-static char *skip_block_comment(char *p) {
-	// assume p[-2]=='/' && p[-1]=='*'
-	char *ps = p - 2;
+static char *skip_block_comment(char *ps) {
+	// ps is at "/* ..."
+	// caller must ensure that ps[0], ps[1] and ps[2] are valid.
+	char *p = ps + 2;
 	if (!*p) {
 		R_JSON_REPORT_ERROR ("endless comment", ps);
 		return 0;
@@ -146,7 +147,9 @@ static char *skip_block_comment(char *p) {
 		R_JSON_REPORT_ERROR ("endless comment", ps);
 		return 0;
 	}
-	if (p[-1] != '*') goto REPEAT;
+	if (p[-1] != '*') {
+		goto REPEAT;
+	}
 	return p + 1;
 }
 
@@ -181,7 +184,7 @@ static char *parse_key(const char **key, char *p) {
 				}
 				p++;
 			} else if (*p == '*') { // block comment
-				p = skip_block_comment (p + 1);
+				p = skip_block_comment (p - 1);
 				if (!p) {
 					return 0;
 				}
@@ -325,7 +328,7 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 				}
 				p++;
 			} else if (p[1] == '*') { // block comment
-				p = skip_block_comment (p + 2);
+				p = skip_block_comment (p);
 				if (!p) {
 					return 0;
 				}
