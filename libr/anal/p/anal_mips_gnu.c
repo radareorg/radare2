@@ -43,12 +43,12 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		op->type = R_ANAL_OP_TYPE_NOP;
 		return oplen;
 	}
-
+	
 	buf[0] = opcode>>24; 
 	buf[1] = (opcode>>16)&0xff;
 	buf[2] = (opcode>>8)&0xff;
 	buf[3] = opcode&0xff;
-
+	
 	optype = (buf[0]>>2);
 
 	if (optype == 0) {
