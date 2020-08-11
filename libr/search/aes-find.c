@@ -12,6 +12,13 @@
 #include <r_search.h>
 #include <r_crypto/r_aes.h>
 
+#define AES128_SEARCH_LENGTH 24
+#define AES192_SEARCH_LENGTH 32
+#define AES256_SEARCH_LENGTH 40
+#define AES128_KEY_LENGTH 16
+#define AES192_KEY_LENGTH 24
+#define AES256_KEY_LENGTH 32
+
 static bool aes256_key_test(const unsigned char *buf) {
 	bool word1 = buf[32] == (buf[0] ^ Sbox[buf[29]] ^ 1) \
 		&& buf[33] == (buf[1] ^ Sbox[buf[30]]) \
@@ -49,28 +56,46 @@ static bool aes128_key_test(const unsigned char *buf) {
 }
 
 R_API int r_search_aes_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
-	int i, last = len - 20;
+	int i, t, last = len - AES128_SEARCH_LENGTH;
 	RListIter *iter;
 	RSearchKeyword *kw;
+	const int old_nhits = s->nhits;
 
 	r_list_foreach (s->kws, iter, kw) {
-		if (last > 0) {
+		if (last >= 0) {
 			for (i = 0; i < last; i++) {
 				if (aes128_key_test (buf + i)) {
-					kw->keyword_length = 16;
-					return r_search_hit_new (s, kw, from + i);
-				}
-				if (len - i - 28 > 0) {
-					if (aes192_key_test (buf + i)) {
-						kw->keyword_length = 24;
-						return r_search_hit_new (s, kw, from + i);
+					kw->keyword_length = AES128_KEY_LENGTH;
+					t = r_search_hit_new (s, kw, from + i);
+					if (!t) {
+						return -1;
 					}
-				}
-				if (len - i - 36 > 0) {
-					if (aes256_key_test (buf + i)) {
-						kw->keyword_length = 32;
-						return r_search_hit_new (s, kw, from + i);
+					if (t > 1) {
+						return s->nhits - old_nhits;
 					}
+					i += AES128_SEARCH_LENGTH;
+				}
+				if (len - i - AES192_SEARCH_LENGTH >= 0 && aes192_key_test (buf + i)) {
+					kw->keyword_length = AES192_KEY_LENGTH;
+					t = r_search_hit_new (s, kw, from + i);
+					if (!t) {
+						return -1;
+					}
+					if (t > 1) {
+						return s->nhits - old_nhits;
+					}
+					i = i + AES192_SEARCH_LENGTH;
+				}
+				if (len - i - AES256_SEARCH_LENGTH >= 0 && aes256_key_test (buf + i)) {
+					kw->keyword_length = AES256_KEY_LENGTH;
+					t = r_search_hit_new (s, kw, from + i);
+					if (!t) {
+						return -1;
+					}
+					if (t > 1) {
+						return s->nhits - old_nhits;
+					}
+					i = i + AES256_SEARCH_LENGTH;
 				}
 			}
 		}

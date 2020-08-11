@@ -11,6 +11,9 @@ static int cmd_search(void *data, const char *input);
 
 #define USE_EMULATION 0
 
+#define AES_SEARCH_LENGTH 40
+#define PRIVATE_KEY_SEARCH_LENGTH 11
+
 static const char *help_msg_search_esil[] = {
 	"/E", " [esil-expr]", "search offsets matching a specific esil expression",
 	"/Ej", " [esil-expr]", "same as above but using the given magic file",
@@ -40,7 +43,7 @@ static const char *help_msg_slash[] = {
 	"//", "", "repeat last search",
 	"/a", "[?][1aoditfmsltf] jmp eax", "assemble opcode and search its bytes",
 	"/b", "", "search backwards, command modifier, followed by other command",
-	"/c", "[ar]", "search for crypto materials",
+	"/c", "[?][adr]", "search for crypto materials",
 	"/d", " 101112", "search for a deltified sequence of bytes",
 	"/e", " /E.F/i", "match regular expression",
 	"/E", " esil-expr", "offset matching given esil expressions $$ = here",
@@ -160,7 +163,6 @@ struct search_parameters {
 	const char *cmd_hit;
 	int outmode; // 0 or R_MODE_RADARE or R_MODE_JSON
 	bool inverse;
-	bool crypto_search;
 	bool aes_search;
 	bool privkey_search;
 };
@@ -2355,7 +2357,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 	if (param->inverse) {
 		core->search->maxhits = 1;
 	}
-	if (core->search->n_kws > 0 || param->crypto_search) {
+	if (core->search->n_kws > 0) {
 		/* set callback */
 		/* TODO: handle last block of data */
 		/* TODO: handle ^C */
@@ -2399,10 +2401,10 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 			}
 
 			const ut64 from = itv.addr, to = r_itv_end (itv),
-					from1 = search->bckwrds ? to : from,
-					to1 = search->bckwrds ? from : to;
+					from1 = search->bckwrds? to: from,
+					to1 = search->bckwrds? from: to;
 			ut64 len;
-			for (at = from1; at != to1; at = search->bckwrds ? at - len : at + len) {
+			for (at = from1; at != to1; at = search->bckwrds? at - len: at + len) {
 				print_search_progress (at, to1, search->nhits, param);
 				if (r_cons_is_breaked ()) {
 					eprintf ("\n\n");
@@ -2422,22 +2424,20 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 					}
 					(void)r_io_read_at (core->io, at, buf, len);
 				}
-				if (param->crypto_search) {
-					// TODO support backward search
-					int t = 0;
-					if (param->aes_search) {
-						t = r_search_aes_update (core->search, at, buf, len);
-					} else if (param->privkey_search) {
-						t = r_search_privkey_update (core->search, at, buf, len);
+				r_search_update (core->search, at, buf, len);
+				if (param->aes_search) {
+					// Adjust length to search between blocks.
+					if (len == core->blocksize) {
+						len -= AES_SEARCH_LENGTH - 1;
 					}
-					if (!t || t > 1) {
-						break;
+				} else if (param->privkey_search) {
+					// Adjust length to search between blocks.
+					if (len == core->blocksize) {
+						len -= PRIVATE_KEY_SEARCH_LENGTH - 1;
 					}
-				} else {
-					(void)r_search_update (core->search, at, buf, len);
-					if (core->search->maxhits > 0 && core->search->nhits >= core->search->maxhits) {
-						goto done;
-					}
+				}
+				if (core->search->maxhits > 0 && core->search->nhits >= core->search->maxhits) {
+					goto done;
 				}
 			}
 			print_search_progress (at, to1, search->nhits, param);
@@ -2447,7 +2447,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 				eprintf ("hits: %" PFMT64d "\n", search->nhits - saved_nhits);
 			}
 		}
-done:
+	done:
 		r_cons_break_pop ();
 		free (buf);
 	} else {
@@ -2929,7 +2929,6 @@ static int cmd_search(void *data, const char *input) {
 		.cmd_hit = r_config_get (core->config, "cmd.hit"),
 		.outmode = 0,
 		.inverse = false,
-		.crypto_search = false,
 		.aes_search = false,
 		.privkey_search = false,
 	};
@@ -3271,7 +3270,6 @@ reread:
 		break;
 	case 'c': { // "/c"
 		dosearch = true;
-		param.crypto_search = true;
 		switch (input[1]) {
 		case 'c': // "/cc"
 			{
@@ -3326,7 +3324,6 @@ reread:
 			break;
 		case 'd': // "cd"
 			{
-				param.crypto_search = false;
 				RSearchKeyword *kw;
 				kw = r_search_keyword_new_hex ("308200003082", "ffff0000ffff", NULL);
 				if (kw) {
@@ -3343,6 +3340,9 @@ reread:
 			{
 				RSearchKeyword *kw;
 				kw = r_search_keyword_new_hexmask ("00", NULL);
+				// AES search is done over 40 bytes
+				kw->keyword_length = AES_SEARCH_LENGTH;
+				r_search_reset (core->search, R_SEARCH_AES);
 				r_search_kw_add (search, kw);
 				r_search_begin (core->search);
 				param.aes_search = true;
@@ -3352,6 +3352,9 @@ reread:
 			{
 				RSearchKeyword *kw;
 				kw = r_search_keyword_new_hexmask ("00", NULL);
+				// Private key search is at least 11 bytes
+				kw->keyword_length = PRIVATE_KEY_SEARCH_LENGTH;
+				r_search_reset (core->search, R_SEARCH_PRIV_KEY);
 				r_search_kw_add (search, kw);
 				r_search_begin (core->search);
 				param.privkey_search = true;
@@ -3359,7 +3362,6 @@ reread:
 			}
 		default: {
 			dosearch = false;
-			param.crypto_search = false;
 			r_core_cmd_help (core, help_msg_slash_c);
 		}
 		}
