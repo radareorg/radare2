@@ -2809,12 +2809,12 @@ static void search_collisions(RCore *core, const char *hashName, const ut8 *hash
 		return;
 	}
 	r_cons_break_push (NULL, NULL);
-	ut64 prev = r_sys_now ();
+	ut64 prev = r_time_now_mono ();
 	ut64 inc = 0;
 	int amount = 0;
 	int mount = 0;
 	while (!r_cons_is_breaked ()) {
-		ut64 now = r_sys_now ();
+		ut64 now = r_time_now_mono ();
 		if (now < (prev + 1000000)) {
 			amount++;
 		} else {

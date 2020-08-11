@@ -281,7 +281,7 @@ R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size) {
 	if (!tp) {
 		return NULL;
 	}
-	tp->stamp = r_sys_now ();
+	tp->stamp = r_time_now ();
 	tp->addr = addr;
 	tp->tags = tag;
 	tp->size = size;

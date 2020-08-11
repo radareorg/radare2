@@ -4593,7 +4593,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	ut64 startTime;
 
 	if (esiltimeout > 0) {
-		startTime = r_sys_now ();
+		startTime = r_time_now_mono ();
 	}
 	r_cons_break_push (NULL, NULL);
 repeat:
@@ -4603,7 +4603,7 @@ repeat:
 	}
 	//Break if we have exceeded esil.timeout
 	if (esiltimeout > 0) {
-		ut64 elapsedTime = r_sys_now () - startTime;
+		ut64 elapsedTime = r_time_now_mono () - startTime;
 		elapsedTime >>= 20;
 		if (elapsedTime >= esiltimeout) {
 			eprintf ("[ESIL] Timeout exceeded.\n");

@@ -535,7 +535,7 @@ typedef struct r_cons_t {
 	int pagesize;
 	char *break_word;
 	int break_word_len;
-	ut64 timeout;
+	ut64 timeout; // must come from r_time_now_mono()
 	bool grep_color;
 	bool grep_highlight;
 	bool use_tts;

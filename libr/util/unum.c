@@ -30,7 +30,7 @@ static int r_rand(int mod) {
 }
 
 R_API void r_num_irand(void) {
-	r_srand (r_sys_now ());
+	r_srand (r_time_now ());
 }
 
 R_API int r_num_rand(int max) {
