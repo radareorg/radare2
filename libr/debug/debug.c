@@ -712,9 +712,9 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 		}
 
 #if __linux__
-		// Letting other threads running after the debugger has breaked will cause
-		// ptrace commands to fail when writing the process memory to set/unset
-		// breakpoints and is problematic in Linux.
+		// Letting other threads running will cause ptrace commands to fail
+		// when writing to the same process memory to set/unset breakpoints
+		// and is problematic in Linux.
 		if (dbg->continue_all_threads) {
 			r_debug_stop (dbg);
 		}
