@@ -391,7 +391,13 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	if (e) {
 		RStrBuf *sb = r_strbuf_new (NULL);
 		while (e && *e) {
-			r_strbuf_appendf (sb, "setenv=%s\n", *e);
+			char *k = strdup (*e);
+			char *v = strchr (k, '=');
+			if (v) {
+				*v++ = 0;
+				r_strbuf_appendf (sb, "setenv=%s='%s'\n", k, v);
+			}
+			free (k);
 			e++;
 		}
 		envprofile = r_strbuf_drain (sb);
