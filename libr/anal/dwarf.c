@@ -17,6 +17,16 @@ typedef struct dwarf_function_t {
 	ut64 call_conv; // normal || program || nocall
 } DwarfFunction;
 
+typedef enum dwarf_location_kind {
+	UNKNOWN = 0,
+	GLOBAL = 1,
+	STACK = 2,
+	REGISTER = 3,
+} DwarfVarLocationKind;
+typedef struct dwarf_var_location_t {
+	DwarfVarLocationKind kind;
+} DwarfVarLocation;
+
 static inline bool is_type_tag(ut64 tag_code) {
 	return (tag_code == DW_TAG_structure_type ||
 		tag_code == DW_TAG_enumeration_type ||
@@ -789,6 +799,13 @@ static void parse_abstract_origin(const RBinDwarfDie *all_dies, ut64 count, ut64
 	}
 }
 
+static void parse_dwarf_location (const RBinDwarfAttrValue *val) {
+	// reg5 - val is in register 5
+	// fbreg <leb> - offset from frame base
+	// regx <leb> - contents is in register X
+	// addr <addr> - contents is in at addr
+	// breg <addr> - contents is in at addr
+}
 
 static st32 parse_function_args(const RBinDwarfDie *all_dies, ut64 count, 
 	ut64 idx, RStrBuf *args, HtUP *die_map) {
@@ -801,6 +818,7 @@ static st32 parse_function_args(const RBinDwarfDie *all_dies, ut64 count,
 		const RBinDwarfDie *child_die = &all_dies[++idx];
 		size_t j;
 		const char *name = NULL;
+		bool has_linkage_name = false;
 		for (j = idx; child_depth > 0 && j < count; j++) {
 			child_die = &all_dies[j];
 			RStrBuf type;
@@ -810,17 +828,24 @@ static st32 parse_function_args(const RBinDwarfDie *all_dies, ut64 count,
 			if (child_depth == 1 && child_die->tag == DW_TAG_formal_parameter) {
 				size_t i;
 				for (i = 0; i < child_die->count; i++) {
-					const RBinDwarfAttrValue *value = &child_die->attr_values[i];
-					switch (value->attr_name) {
+					const RBinDwarfAttrValue *val = &child_die->attr_values[i];
+					switch (val->attr_name) {
 					case DW_AT_name:
-						name = value->string.content;
+						if (!has_linkage_name) {
+							name = val->string.content;
+						}
+						break;
+					case DW_AT_linkage_name:
+					case DW_AT_MIPS_linkage_name:
+						name = val->string.content;
+						has_linkage_name = true;
 						break;
 					case DW_AT_type:
-						parse_type (all_dies, count, value->reference, &type, NULL, die_map);
+						parse_type (all_dies, count, val->reference, &type, NULL, die_map);
 						break;
 					// abstract origin is supposed to have omitted information
 					case DW_AT_abstract_origin:
-						parse_abstract_origin (all_dies, count, value->reference, &type, &name, die_map);
+						parse_abstract_origin (all_dies, count, val->reference, &type, &name, die_map);
 						break;
 					default:
 						break;
@@ -831,6 +856,37 @@ static st32 parse_function_args(const RBinDwarfDie *all_dies, ut64 count,
 				r_strbuf_fini (&type);
 			} else if (child_depth == 1 && child_die->tag == DW_TAG_unspecified_parameters) {
 				r_strbuf_appendf (args, "va_args ...,");
+			} else if (child_depth == 1 && child_die->tag == DW_TAG_variable) {
+				size_t i;
+				for (i = 0; i < child_die->count; i++) {
+					const RBinDwarfAttrValue *val = &child_die->attr_values[i];
+					switch (val->attr_name) {
+					case DW_AT_name:
+						if (!has_linkage_name) {
+							name = val->string.content;
+						}
+						break;
+					case DW_AT_linkage_name:
+					case DW_AT_MIPS_linkage_name:
+						name = val->string.content;
+						has_linkage_name = true;
+						break;
+					case DW_AT_type:
+						parse_type (all_dies, count, val->reference, &type, NULL, die_map);
+						break;
+					// abstract origin is supposed to have omitted information
+					case DW_AT_abstract_origin:
+						parse_abstract_origin (all_dies, count, val->reference, &type, &name, die_map);
+						break;
+					case DW_AT_location:
+						if (val->kind == DW_AT_KIND_BLOCK) {
+							parse_dwarf_location (val);
+						}
+						break;
+					default:
+						break;
+					}
+				}
 			}
 			if (child_die->has_children) {
 				child_depth++;
