@@ -82,10 +82,16 @@ R_API RList *r_sign_fcn_types(RAnal *a, RAnalFunction *fcn) {
 	}
 
 	char *scratch = r_str_newf ("func.%s.args", fcn->name);
+	if (!scratch) {
+		return NULL;
+	}
 	const char *fcntypes = sdb_const_get (a->sdb_types, scratch, 0);
 	free (scratch);
 
 	scratch = r_str_newf ("func.%s.ret", fcn->name);
+	if (!scratch) {
+		return NULL;
+	}
 	const char *ret_type = sdb_const_get (a->sdb_types, scratch, 0);
 	free (scratch);
 
