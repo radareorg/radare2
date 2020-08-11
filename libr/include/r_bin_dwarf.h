@@ -689,13 +689,17 @@ typedef struct {
 	ut8 *data;
 } RBinDwarfBlock;
 
+// http://www.dwarfstd.org/doc/DWARF4.pdf#page=29&zoom=100,0,0
 typedef enum {
 	DW_AT_KIND_ADDRESS,
 	DW_AT_KIND_BLOCK,
 	DW_AT_KIND_CONSTANT,
+	DW_AT_KIND_EXPRLOC,
 	DW_AT_KIND_FLAG,
-	DW_AT_KIND_DATA,
-	DW_AT_KIND_SDATA,
+	DW_AT_KIND_LINEPTR,
+	DW_AT_KIND_LOCLISTPTR,
+	DW_AT_KIND_MACPTR,
+	DW_AT_KIND_RANGELISTPTR,
 	DW_AT_KIND_REFERENCE,
 	DW_AT_KIND_STRING,
 } RBinDwarfAttrKind;
@@ -704,13 +708,15 @@ typedef struct dwarf_attr_kind {
 	ut64 attr_name;
 	ut64 attr_form;
 	RBinDwarfAttrKind kind;
-	union {
+	/* This is subideal, as dw_form_data can be anything 
+	   we could lose information example: encoding signed 
+	   2 byte int into ut64 and then interpreting it as st64 TODO*/
+	union { 
 		ut64 address;
 		RBinDwarfBlock block;
-		ut64 constant;
+		ut64 uconstant;
+		st64 sconstant;
 		ut8 flag;
-		ut64 data;
-		st64 sdata;
 		ut64 reference;
 		struct {
 			const char *content;

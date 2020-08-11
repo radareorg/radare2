@@ -1414,9 +1414,9 @@ static void print_attr_value(const RBinDwarfAttrValue *val, PrintfCallback print
 	case DW_FORM_data4:
 	case DW_FORM_data8:
 	case DW_FORM_data16:
-		print ("%"PFMT64u"", val->data);
+		print ("%"PFMT64u"", val->uconstant);
 		if (val->attr_name == DW_AT_language) {
-			print ("   (%s)", dwarf_langs[val->data]);
+			print ("   (%s)", dwarf_langs[val->uconstant]);
 		}
 		break;
 	case DW_FORM_string:
@@ -1430,10 +1430,10 @@ static void print_attr_value(const RBinDwarfAttrValue *val, PrintfCallback print
 		print ("%u", val->flag);
 		break;
 	case DW_FORM_sdata:
-		print ("%"PFMT64d"", val->sdata);
+		print ("%"PFMT64d"", val->sconstant);
 		break;
 	case DW_FORM_udata:
-		print ("%"PFMT64u"", val->data);
+		print ("%"PFMT64u"", val->uconstant);
 		break;
 	case DW_FORM_ref_addr:
 	case DW_FORM_ref1:
@@ -1472,7 +1472,7 @@ static void print_attr_value(const RBinDwarfAttrValue *val, PrintfCallback print
 		print ("0x%"PFMT64x"", val->address);
 		break;
 	case DW_FORM_implicit_const:
-		print ("0x%"PFMT64d"", val->sdata);
+		print ("0x%"PFMT64d"", val->uconstant);
 		break;
 	default:
 		print ("Unknown attr value form %"PFMT64d"\n", val->attr_form);
@@ -1562,6 +1562,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 	value->string.content = NULL;
 	value->string.offset = 0;
 
+	// http://www.dwarfstd.org/doc/DWARF4.pdf#page=161&zoom=100,0,560
 	switch (def->attr_form) {
 	case DW_FORM_addr:
 		value->kind = DW_AT_KIND_ADDRESS;
@@ -1584,33 +1585,33 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		}
 		break;
 	case DW_FORM_data1:
-		value->kind = DW_AT_KIND_DATA;
-		value->data = READ8 (buf);
+		value->kind = DW_AT_KIND_CONSTANT;
+		value->uconstant = READ8 (buf);
 		break;
 	case DW_FORM_data2:
-		value->kind = DW_AT_KIND_DATA;
-		value->data = READ16 (buf);
+		value->kind = DW_AT_KIND_CONSTANT;
+		value->uconstant = READ16 (buf);
 		break;
 	case DW_FORM_data4:
-		value->kind = DW_AT_KIND_DATA;
-		value->data = READ32 (buf);
+		value->kind = DW_AT_KIND_CONSTANT;
+		value->uconstant = READ32 (buf);
 		break;
 	case DW_FORM_data8:
-		value->kind = DW_AT_KIND_DATA;
-		value->data = READ64 (buf);
+		value->kind = DW_AT_KIND_CONSTANT;
+		value->uconstant = READ64 (buf);
 		break;
 	case DW_FORM_data16: // TODO Fix this, right now I just read the data, but I need to make storage for it
-		value->kind = DW_AT_KIND_DATA;
-		value->data = READ64 (buf);
-		value->data = READ64 (buf);
+		value->kind = DW_AT_KIND_CONSTANT;
+		value->uconstant = READ64 (buf);
+		value->uconstant = READ64 (buf);
 		break;
 	case DW_FORM_sdata:
-		value->kind = DW_AT_KIND_SDATA;
-		buf = r_leb128 (buf, buf_end - buf, &value->sdata);
+		value->kind = DW_AT_KIND_CONSTANT;
+		buf = r_leb128 (buf, buf_end - buf, &value->sconstant);
 		break;
 	case DW_FORM_udata:
-		value->kind = DW_AT_KIND_DATA;
-		buf = r_uleb128 (buf, buf_end - buf, &value->data);
+		value->kind = DW_AT_KIND_CONSTANT;
+		buf = r_uleb128 (buf, buf_end - buf, &value->uconstant);
 		break;
 	case DW_FORM_string:
 		value->kind = DW_AT_KIND_STRING;
@@ -1772,8 +1773,8 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->string.offset = READ32 (buf);
 		break;
 	case DW_FORM_implicit_const:
-		value->kind = DW_AT_KIND_SDATA;
-		value->sdata = def->special;
+		value->kind = DW_AT_KIND_CONSTANT;
+		value->uconstant = def->special;
 		break;
 	/*  addrx* forms : The index is relative to the value of the
 		DW_AT_addr_base attribute of the associated compilation unit. 
@@ -1828,7 +1829,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		break;
 	default:
 		eprintf ("Unknown DW_FORM 0x%02" PFMT64x "\n", def->attr_form);
-		value->data = 0;
+		value->uconstant = 0;
 		return NULL;
 	}
 	return buf;
