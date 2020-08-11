@@ -374,13 +374,13 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 		if (perm & O_TRUNC) {
 			creation |= TRUNCATE_EXISTING;
 		}
-		if (!creation) {
+		if (!creation || !strcasecmp ("NUL", path)) {
 			creation = OPEN_EXISTING;
 		}
 		DWORD permission = 0;
 		if (perm & O_WRONLY) {
 			permission = GENERIC_WRITE;
-		} else if (O_RDWR) {
+		} else if (perm & O_RDWR) {
 			permission = GENERIC_WRITE | GENERIC_READ;
 		} else {
 			permission = GENERIC_READ;
@@ -394,8 +394,6 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 		HANDLE h = CreateFileW (wepath, permission, FILE_SHARE_READ | (read_only ? 0 : FILE_SHARE_WRITE), NULL, creation, flags, NULL);
 		if (h != INVALID_HANDLE_VALUE) {
 			ret = _open_osfhandle ((intptr_t)h, 0);
-		} else {
-			r_sys_perror ("CreateFileW");
 		}
 		free (wepath);
 	}
