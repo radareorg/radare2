@@ -93,14 +93,15 @@ endif
 _libr.${EXT_AR}: .libr
 	-${AR} -rs $@ .libr/*.o
 
+# this code should be in do-ar-sh not inlined here..
+
 .libr2: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 	rm -rf .libr2
 	mkdir -p .libr2
 	-for LIB in $^ ; do \
 		BN=`basename $$LIB` ; \
-		echo $$BN ; \
 		mkdir -p .libr2/$$BN ; \
-		echo .libr2/$$BN $$LIB; $${AR} ; \
+		echo "( cd .libr2/$$BN ; pwd ; du -hs ../../$$LIB; ${AR} -x ../../$$LIB )" ; \
 		( cd .libr2/$$BN ; pwd ; du -hs ../../$$LIB; ${AR} -x ../../$$LIB ) ; \
 	done
 
