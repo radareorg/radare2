@@ -1684,7 +1684,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		ut64 shifted_imm = IMM64(1) << shift;
 		ut64 mask = ~(0xffffLL << shift);
 
-		r_strbuf_setf (&op->esil, "%"PFMT64u",%s,&,%"PFMT64u",|,%s,=",
+		r_strbuf_setf (&op->esil, "%"PFMT64x",%s,&,%"PFMT64u",|,%s,=",
 			mask,
 			REG64(0),
 			shifted_imm,
@@ -1721,38 +1721,23 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	}
 	case ARM64_INS_SXTB:
 		if (arm64_reg_width(REGID64(0)) == 32) {
-			/*r_strbuf_setf (&op->esil, "%s,%s,=,8,%s,>>,%s,%s,=,%s,%s,&=,31,$c,?{,0xffffff00,%s,|=,}",
-				REG64(1), REG64(0), REG64(1), REG64(1), REG64(0),
-				"0xff", REG64(0), REG64(0));*/
 			r_strbuf_setf (&op->esil, "0xffffffff,8,0xff,%s,&,~,&,%s,=",
 				REG64(1), REG64(0));
 		} else {
-			/*r_strbuf_setf (&op->esil, "%s,%s,=,8,%s,>>,%s,%s,=,%s,%s,&=,63,$c,?{,0xffffffffffffff00,%s,|=,}",
-				REG64(1), REG64(0), REG64(1), REG64(1), REG64(0),
-				"0xff", REG64(0), REG64(0));*/
 			r_strbuf_setf (&op->esil, "8,0xff,%s,&,~,%s,=",
 				REG64(1), REG64(0));
 		}
 		break;
 	case ARM64_INS_SXTH: /* halfword */
 		if (arm64_reg_width(REGID64(0)) == 32) {
-			/*r_strbuf_setf (&op->esil, "%s,%s,=,16,%s,>>,%s,%s,=,%s,%s,&=,31,$c,?{,0xffff0000,%s,|=,}",
-				REG64(1), REG64(0), REG64(1), REG64(1), REG64(0),
-				"0xffff", REG64(0), REG64(0));*/
 			r_strbuf_setf (&op->esil, "0xffffffff,16,0xffff,%s,&,~,&,%s,=",
 				REG64(1), REG64(0));	
 		} else {
-			/*r_strbuf_setf (&op->esil, "%s,%s,=,16,%s,>>,%s,%s,=,%s,%s,&=,63,$c,?{,0xffffffffffffff00,%s,|=,}",
-				REG64(1), REG64(0), REG64(1), REG64(1), REG64(0),
-				"0xffff", REG64(0), REG64(0));*/
 			r_strbuf_setf (&op->esil, "16,0xffff,%s,&,~,%s,=",
 				REG64(1), REG64(0));	
 		}
 		break;
 	case ARM64_INS_SXTW: /* word */
-		/*r_strbuf_setf (&op->esil, "%s,%s,=,32,%s,>>,%s,%s,=,%s,%s,&=,63,$c,?{,0xffffffffffffff00,%s,|=,}",
-				REG64(1), REG64(0), REG64(1), REG64(1), REG64(0),
-				"0xffffffff", REG64(0), REG64(0));*/
 		r_strbuf_setf (&op->esil, "32,0xffffffff,%s,&,~,%s,=",
 				REG64(1), REG64(0));	
 		break;

@@ -545,7 +545,7 @@ R_API int r_anal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, 
 }
 
 // sign extension operator for use in idiv, imul, movsx* 
-// and other instructions involving signed values
+// and other instructions involving signed values, extends n bit value to 64 bit value
 // example : >"ae 8,0x81,~" ( <src bit width>,<value>,~ )
 // output  : 0xffffffffffffff81
 static bool esil_signext(RAnalEsil *esil) {

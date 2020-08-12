@@ -8,7 +8,7 @@ e asm.bits=64
 EOF
 EXPECT=<<EOF
 imul r9
-0x00000000 64,r9,rax,*,>>,rdx,=,r9,rax,*=
+0x00000000 64,64,r9,~,64,rax,~,*,>>,rdx,=,r9,rax,*=,64,64,rax,~,>>,rdx,-,?{,1,1,}{,0,0,},cf,:=,of,:=
 EOF
 RUN
 
@@ -22,7 +22,7 @@ e asm.bits=64
 EOF
 EXPECT=<<EOF
 imul eax, ecx
-0x00000000 ecx,eax,*=
+0x00000000 32,eax,~,32,ecx,~,*,DUP,eax,=,eax,-,?{,1,1,}{,0,0,},cf,:=,of,:=
 EOF
 RUN
 
@@ -36,7 +36,7 @@ e asm.bits=64
 EOF
 EXPECT=<<EOF
 imul rax, r11, 0x33666667
-0x00000000 862348903,r11,*,rax,=
+0x00000000 64,862348903,~,64,r11,~,*,DUP,rax,=,rax,-,?{,1,1,}{,0,0,},cf,:=,of,:=
 EOF
 RUN
 
@@ -111,7 +111,7 @@ ao~opcode,esil
 EOF
 EXPECT=<<EOF
 opcode: imul eax, ebx, 0x89
-esil: 137,ebx,*,eax,=
+esil: 32,137,~,32,ebx,~,*,DUP,eax,=,eax,-,?{,1,1,}{,0,0,},cf,:=,of,:=
 EOF
 RUN
 
@@ -310,7 +310,7 @@ e asm.bits=64
 ao~esil
 EOF
 EXPECT=<<EOF
-esil: rax,4,*,rdx,+,[4],rax,=
+esil: 32,rax,4,*,rdx,+,[4],~,rax,=
 EOF
 RUN
 
