@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define UPDATE_TIME(a) (r->times->file_open_time = r_sys_now () - (a))
+#define UPDATE_TIME(a) (r->times->file_open_time = r_time_now_mono () - (a))
 
 static int r_core_file_do_load_for_debug(RCore *r, ut64 loadaddr, const char *filenameuri);
 static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr);
@@ -873,7 +873,7 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int perm, ut6
 /* loadaddr is r2 -m (mapaddr) */
 R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 loadaddr) {
 	r_return_val_if_fail (r && file, NULL);
-	ut64 prev = r_sys_now ();
+	ut64 prev = r_time_now_mono ();
 	const bool openmany = r_config_get_i (r->config, "file.openmany");
 	RCoreFile *fh = NULL;
 
@@ -962,7 +962,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 	}
 	r_core_cmd0 (r, "=!");
 beach:
-	r->times->file_open_time = r_sys_now () - prev;
+	r->times->file_open_time = r_time_now_mono () - prev;
 	return fh;
 }
 

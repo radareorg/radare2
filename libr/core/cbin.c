@@ -1668,7 +1668,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	char *sdb_module = NULL;
 	int i = 0;
 
-	R_TIME_BEGIN;
+	R_TIME_PROFILE_BEGIN;
 
 	va = VA_TRUE; // XXX relocs always vaddr?
 	//this has been created for reloc object files
@@ -1822,7 +1822,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	sdb_free (db);
 	db = NULL;
 
-	R_TIME_END;
+	R_TIME_PROFILE_END;
 	if (IS_MODE_JSON (mode) && relocs == NULL) {
 		return true;
 	}

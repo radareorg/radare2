@@ -2839,7 +2839,7 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 		}
 		/* Compare compileTimeStamp to resource timestamp to figure out if DOS date or POSIX date */
 		if (r_time_stamp_is_dos_format ((ut32) sdb_num_get (bin->kv, "image_file_header.TimeDateStamp", 0), dir->TimeDateStamp)) {
-			rs->timestr = r_time_stamp_to_str ( r_dos_time_stamp_to_posix (dir->TimeDateStamp));
+			rs->timestr = r_time_stamp_to_str ( r_time_dos_time_stamp_to_posix (dir->TimeDateStamp));
 		} else {
 			rs->timestr = r_time_stamp_to_str (dir->TimeDateStamp);
 		}

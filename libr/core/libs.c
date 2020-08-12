@@ -92,7 +92,7 @@ static void __loadSystemPlugins(RCore *core, int where, const char *path) {
 }
 
 R_API void r_core_loadlibs_init(RCore *core) {
-	ut64 prev = r_sys_now ();
+	ut64 prev = r_time_now_mono ();
 #define DF(x, y, z) r_lib_add_handler (core->lib, R_LIB_TYPE_ ## x, y, &__lib_ ## z ## _cb, &__lib_ ## z ## _dt, core);
 	core->lib = r_lib_new (NULL, NULL);
 	DF (IO, "io plugins", io);
@@ -106,7 +106,7 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	DF (BIN, "bin plugins", bin);
 	DF (EGG, "egg plugins", egg);
 	DF (FS, "fs plugins", fs);
-	core->times->loadlibs_init_time = r_sys_now () - prev;
+	core->times->loadlibs_init_time = r_time_now_mono () - prev;
 }
 
 static bool __isScriptFilename(const char *name) {
@@ -123,7 +123,7 @@ static bool __isScriptFilename(const char *name) {
 }
 
 R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
-	ut64 prev = r_sys_now ();
+	ut64 prev = r_time_now_mono ();
 	__loadSystemPlugins (core, where, path);
 	/* TODO: all those default plugin paths should be defined in r_lib */
 	if (!r_config_get_i (core->config, "cfg.plugins")) {
@@ -142,7 +142,7 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 	}
 	
 	free (homeplugindir);
-	core->times->loadlibs_time = r_sys_now () - prev;
+	core->times->loadlibs_time = r_time_now_mono () - prev;
 	r_list_free (files);
 	return true;
 }

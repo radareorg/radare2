@@ -1040,7 +1040,7 @@ R_API char *r_file_temp (const char *prefix) {
 		prefix = "";
 	}
 	char *path = r_file_tmpdir ();
-	char *res = r_str_newf ("%s/%s.%"PFMT64x, path, prefix, r_sys_now ());
+	char *res = r_str_newf ("%s/%s.%"PFMT64x, path, prefix, r_time_now ());
 	free (path);
 	return res;
 }

@@ -1084,7 +1084,7 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 					dbg->reason.type = exception_to_reason (de.u.Exception.ExceptionRecord.ExceptionCode);
 					dbg->reason.tid = de.dwThreadId;
 					dbg->reason.addr = (size_t)de.u.Exception.ExceptionRecord.ExceptionAddress;
-					dbg->reason.timestamp = r_sys_now ();
+					dbg->reason.timestamp = r_time_now ();
 					ret = dbg->reason.type;
 				} else {
 					w32_continue (dbg, pid, tid, DBG_EXCEPTION_NOT_HANDLED);
