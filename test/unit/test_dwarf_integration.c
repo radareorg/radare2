@@ -28,7 +28,7 @@ static bool test_parse_dwarf_types(void) {
 	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (abbrevs, bin, MODE);
 	mu_assert_notnull (info, "Couldn't parse debug_info section");
 	// black box
-	r_anal_process_dwarf_info (anal, info);
+	r_anal_dwarf_process_info (anal, info);
 	// Now we expect certain information to be set in the sdb
 	char * value = NULL;
 	char *object_name = "_cairo_status";
@@ -90,7 +90,7 @@ static bool test_dwarf_function_parsing(void) {
 	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (abbrevs, bin, MODE);
 	mu_assert_notnull (info, "Couldn't parse debug_info section");
 	// black box
-	r_anal_process_dwarf_info (anal, info);
+	r_anal_dwarf_process_info (anal, info);
 	Sdb *sdb = sdb_ns (anal->sdb, "dwarf", 0);
 	mu_assert_notnull (sdb, "No dwarf function information in db");
 	char * value = NULL;

@@ -939,7 +939,8 @@ static void sdb_save_dwarf_function(DwFunction *dwarf_fcn, RList/*<DwfVariable*>
 	DwfVariable *var;
 	r_list_foreach (variables, iter, var) {
 		/* now only works for BP based arguments */
-		if (var->location->kind == LOCATION_STACK) {
+		/* NULL location probably means optimized out, maybe put a comment there */
+		if (var->location && var->location->kind == LOCATION_STACK) {
 			r_strbuf_appendf (&vars, "%s,", var->name);
 			char *key = r_str_newf ("func.%s.var.%s", dwarf_fcn->name, var->name);
 			/* value = "type, storage, additional info based on storage (offset)" */
@@ -1162,7 +1163,7 @@ static void parse_type_entry(DwContext *ctx, ut64 idx) {
  * @param info 
  * @param anal 
  */
-R_API void r_anal_process_dwarf_info(const RAnal *anal, const RBinDwarfDebugInfo *info) {
+R_API void r_anal_dwarf_process_info(const RAnal *anal, const RBinDwarfDebugInfo *info) {
 	r_return_if_fail (info && anal);
 	Sdb *dwarf_sdb =  sdb_ns (anal->sdb, "dwarf", 1); // dwf flagspace
 	size_t i, j;
@@ -1195,7 +1196,7 @@ bool filter_sdb_function_names(void *user, const char *k, const char *v) {
  * @param dwarf_sdb 
  * @return R_API 
  */
-R_API void r_anal_integrate_dwarf_functions(RAnal *anal, Sdb *dwarf_sdb) {
+R_API void r_anal_dwarf_integrate_functions(RAnal *anal, Sdb *dwarf_sdb) {
 	r_return_if_fail (anal && dwarf_sdb);
 
 	/* get all entries with value == func */
