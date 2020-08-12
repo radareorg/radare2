@@ -73,6 +73,9 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, RSocketHTTPOptions *
 				hr->host = strdup (buf + 6);
 			} else if (!strncmp (buf, "Content-Length: ", 16)) {
 				content_length = atoi (buf + 16);
+				if (content_length > 5000) {
+					content_length = 5000;
+				}
 			} else if (so->httpauth && !strncmp (buf, "Authorization: Basic ", 21)) {
 				char *authtoken = buf + 21;
 				size_t authlen = strlen (authtoken);
