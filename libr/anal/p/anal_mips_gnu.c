@@ -44,7 +44,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		return oplen;
 	}
 
-	opcode = r_swap_ut32(opcode);
+	opcode = r_swap_ut32 (opcode);
 	buf = (ut8 *) & opcode;
 	optype = (buf[0] >> 2);
 	
