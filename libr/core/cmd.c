@@ -266,6 +266,7 @@ static const char *help_msg_k[] = {
 static const char *help_msg_r[] = {
 	"Usage:", "r[+-][ size]", "Resize file",
 	"r", "", "display file size",
+	"rj", "", "display the file size in JSON format",
 	"r", " size", "expand or truncate file to given size",
 	"r-", "num", "remove num bytes, move following data down",
 	"r+", "num", "insert num bytes, move following data up",
@@ -1821,15 +1822,17 @@ static int cmd_resize(void *data, const char *input) {
 			}
 		}
 		return true;
-	case 'j': // "rj"
-		if (core->file) {
+	case 'j': { // "rj"
 			PJ * pj = pj_new ();
 			pj_o (pj);
 			if (oldsize != -1) {
-				pj_n(pj, oldsize);
+				pj_n (pj, oldsize);
 			}
 			pj_end (pj);
-			pj_free (pj);
+			char *s = pj_drain (pj);
+			r_cons_printf ("%s\n", s);
+			free (s);
+			break;
 		}
 	case 'h':
 		if (core->file) {
