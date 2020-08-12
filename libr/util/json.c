@@ -380,7 +380,7 @@ R_API const RJson *r_json_get(const RJson *json, const char *key) {
 	return NULL;
 }
 
-R_API const RJson *r_json_item(const RJson *json, int idx) {
+R_API const RJson *r_json_item(const RJson *json, size_t idx) {
 	RJson *js;
 	for (js = json->children.first; js; js = js->next) {
 		if (!idx--) {

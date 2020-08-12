@@ -58,7 +58,7 @@ R_API RJson *r_json_parse(char *text);
 R_API void r_json_free(RJson *js);
 
 R_API const RJson *r_json_get(const RJson *json, const char *key); // get object's property by key
-R_API const RJson *r_json_item(const RJson *json, int idx); // get array element by index
+R_API const RJson *r_json_item(const RJson *json, size_t idx); // get array element by index
 
 #ifdef  __cplusplus
 }

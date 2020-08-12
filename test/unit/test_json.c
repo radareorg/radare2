@@ -258,7 +258,7 @@ static void dump(const RJson *json, RStrBuf *out, int indent) {
 	if (!json) {
 		return;
 	}
-	int i;
+	size_t i;
 	for (i = 0; i < indent; i++) {
 		r_strbuf_append (out, " ");
 	}
