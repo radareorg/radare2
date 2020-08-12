@@ -3154,7 +3154,7 @@ reaccept:
 				}
 				goto out_of_function;
 			}
-			switch ((ut8)cmd) {
+			switch (cmd) {
 			case RAP_PACKET_OPEN:
 				r_socket_read_block (c, &flg, 1); // flags
 				eprintf ("open (%d): ", cmd);
