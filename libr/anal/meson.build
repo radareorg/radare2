@@ -34,7 +34,7 @@ r_anal_sources = [
   'switch.c',
   'type.c',
   'type_pdb.c',
-  'dwarf.c',
+  'dwarf_anal.c',
   'value.c',
   'var.c',
   'vtable.c',

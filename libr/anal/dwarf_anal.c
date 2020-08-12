@@ -31,10 +31,19 @@ typedef enum dwarf_location_kind {
 	LOCATION_GLOBAL = 1,
 	LOCATION_STACK = 2,
 	LOCATION_REGISTER = 3,
-} DwVarLocationKind;
+} DwfVariableLocationKind;
 typedef struct dwarf_var_location_t {
-	DwVarLocationKind kind;
-} DwVarLocation;
+	DwfVariableLocationKind kind;
+	st64 offset;
+} DwfVariableLocation;
+
+typedef struct dwarf_variable_t {
+	DwfVariableLocation *location;
+	const char *name;
+	char *type;
+} DwfVariable;
+
+
 
 static inline bool is_type_tag(ut64 tag_code) {
 	return (tag_code == DW_TAG_structure_type ||
@@ -786,15 +795,31 @@ static void parse_abstract_origin(DwContext *ctx, ut64 offset, RStrBuf *type, co
 	}
 }
 
-static void parse_dwarf_location (const RBinDwarfAttrValue *val) {
+static DwfVariableLocation *parse_dwarf_location (const RBinDwarfAttrValue *val) {
 	// reg5 - val is in register 5
 	// fbreg <leb> - offset from frame base
 	// regx <leb> - contents is in register X
 	// addr <addr> - contents is in at addr
 	// breg <addr> - contents is in at addr
+	// register 31 == stack pointer
+	DwfVariableLocation *location = R_NEW0 (DwfVariableLocation);
+	size_t i;
+	for (i = 0; i < val->block.length; i++) {
+		switch (val->block.data[i]) {
+		case DW_OP_fbreg: {
+			const ut8 *dump = &val->block.data[i+1];
+			st64 offset = r_sleb128 (&dump, &val->block.data[val->block.length]);
+			location->kind = LOCATION_STACK;
+			location->offset = offset + 8;
+		} break;
+		default:
+			break;
+		}
+	}
+	return location;
 }
 
-static st32 parse_function_args(DwContext *ctx, ut64 idx, RStrBuf *args) {
+static st32 parse_function_args_and_vars(DwContext *ctx, ut64 idx, RStrBuf *args, RList/*<DwfVariable*>*/ *variables) {
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
 
 	if (die->has_children) {
@@ -841,22 +866,25 @@ static st32 parse_function_args(DwContext *ctx, ut64 idx, RStrBuf *args) {
 			} else if (child_depth == 1 && child_die->tag == DW_TAG_unspecified_parameters) {
 				r_strbuf_appendf (args, "va_args ...,");
 			} else if (child_depth == 1 && child_die->tag == DW_TAG_variable) {
+				DwfVariable *var = R_NEW0 (DwfVariable);
+				RStrBuf var_type;
+				r_strbuf_init (&var_type);
 				size_t i;
 				for (i = 0; i < child_die->count; i++) {
 					const RBinDwarfAttrValue *val = &child_die->attr_values[i];
 					switch (val->attr_name) {
 					case DW_AT_name:
 						if (!has_linkage_name) {
-							name = val->string.content;
+							var->name = val->string.content;
 						}
 						break;
 					case DW_AT_linkage_name:
 					case DW_AT_MIPS_linkage_name:
-						name = val->string.content;
+						var->name = val->string.content;
 						has_linkage_name = true;
 						break;
 					case DW_AT_type:
-						parse_type (ctx, val->reference, &type, NULL);
+						parse_type (ctx, val->reference, &var_type, NULL);
 						break;
 					// abstract origin is supposed to have omitted information
 					case DW_AT_abstract_origin:
@@ -864,13 +892,18 @@ static st32 parse_function_args(DwContext *ctx, ut64 idx, RStrBuf *args) {
 						break;
 					case DW_AT_location:
 						if (val->kind == DW_AT_KIND_BLOCK) {
-							parse_dwarf_location (val);
+							var->location = parse_dwarf_location (val);
 						}
 						break;
 					default:
 						break;
 					}
 				}
+				var->name = strdup (var->name);
+				var->type = strdup (r_strbuf_get (&var_type));
+				r_strbuf_fini  (&var_type);
+
+				r_list_append (variables, var);
 			}
 			if (child_die->has_children) {
 				child_depth++;
@@ -888,16 +921,38 @@ static st32 parse_function_args(DwContext *ctx, ut64 idx, RStrBuf *args) {
 	return 0;
 }
 
-static void sdb_save_dwarf_function(DwFunction *fcn, Sdb *sdb) {
-	sdb_set (sdb, fcn->name, "func", 0);
-	char *addr_key = r_str_newf ("func.%s.addr", fcn->name);
-	char *addr_val = r_str_newf ("0x%" PFMT64x "", fcn->addr);
+static void sdb_save_dwarf_function(DwFunction *dwarf_fcn, RList/*<DwfVariable*>*/ *variables, Sdb *sdb) {
+	sdb_set (sdb, dwarf_fcn->name, "func", 0);
+	char *addr_key = r_str_newf ("func.%s.addr", dwarf_fcn->name);
+	char *addr_val = r_str_newf ("0x%" PFMT64x "", dwarf_fcn->addr);
 	sdb_set (sdb, addr_key, addr_val, 0);
-	char *sig_key = r_str_newf ("func.%s.sig", fcn->name);
-	sdb_set (sdb, sig_key, fcn->signature, 0);
+	char *sig_key = r_str_newf ("func.%s.sig", dwarf_fcn->name);
+	sdb_set (sdb, sig_key, dwarf_fcn->signature, 0);
 	free (addr_key);
 	free (addr_val);
 	free (sig_key);
+
+	RStrBuf vars;
+	r_strbuf_init (&vars);
+
+	RListIter *iter;
+	DwfVariable *var;
+	r_list_foreach (variables, iter, var) {
+		/* now only works for BP based arguments */
+		if (var->location->kind == LOCATION_STACK) {
+			r_strbuf_appendf (&vars, "%s,", var->name);
+			char *key = r_str_newf ("func.%s.var.%s", dwarf_fcn->name, var->name);
+			/* value = "type, storage, additional info based on storage (offset)" */
+			char *val = r_str_newf ("%s,%s,%"PFMT64d"", var->type, "b", var->location->offset);
+			sdb_set (sdb, key, val, 0);
+		}
+	}
+	if (vars.len > 0) { /* remove the extra , */
+		r_strbuf_slice (&vars, 0, vars.len - 1);
+	}
+	char *vars_key = r_str_newf ("func.%s.vars", dwarf_fcn->name);
+	char *vars_val = r_str_newf ("%s", r_strbuf_get (&vars));
+	sdb_set (sdb, vars_key, vars_val, 0);
 }
 
 /**
@@ -917,15 +972,14 @@ static void parse_function(DwContext *ctx, ut64 idx) {
 	bool has_linkage_name = false;
 	RStrBuf ret_type;
 	r_strbuf_init (&ret_type);
-
+	if (find_attr_idx (die, DW_AT_declaration) != -1) {
+		return; /* just declaration skip */
+	}
 	size_t i;
 	for (i = 0; i < die->count; i++) {
 		RBinDwarfAttrValue *val = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
-		case DW_AT_declaration: // just a declaration, skip
-			return;
-		// Prefer the linkage name
-		case DW_AT_name:
+		case DW_AT_name: /* Prefer the linkage name */
 			if (!has_linkage_name) {
 				fcn.name = val->string.content;
 			}
@@ -939,11 +993,11 @@ static void parse_function(DwContext *ctx, ut64 idx) {
 		case DW_AT_entry_pc:
 			fcn.addr = val->address;
 			break;
-		case DW_AT_specification: // reference to declaration DIE with more info
+		case DW_AT_specification: /* reference to declaration DIE with more info */
 		{
 			RBinDwarfDie *spec_die = ht_up_find (ctx->die_map, val->reference, NULL);
 			if (spec_die) {
-				fcn.name = get_specification_die_name (spec_die); // I assume that if specification has a name, this DIE hasn't
+				fcn.name = get_specification_die_name (spec_die); /* I assume that if specification has a name, this DIE hasn't */
 				get_spec_die_type (ctx, spec_die, &ret_type);
 			}
 		} break;
@@ -951,7 +1005,7 @@ static void parse_function(DwContext *ctx, ut64 idx) {
 			parse_type (ctx, val->reference, &ret_type, NULL);
 			break;
 		case DW_AT_virtuality:
-			fcn.is_method = true; // method specific attr
+			fcn.is_method = true; /* method specific attr */
 			fcn.is_virtual = true;
 			break;
 		case DW_AT_object_pointer:
@@ -959,7 +1013,7 @@ static void parse_function(DwContext *ctx, ut64 idx) {
 			break;
 		case DW_AT_vtable_elem_location:
 			fcn.is_method = true;
-			fcn.vtable_addr = 0;
+			fcn.vtable_addr = 0; /* TODO we might use this information */
 			break;
 		case DW_AT_accessibility:
 			fcn.is_method = true;
@@ -977,14 +1031,16 @@ static void parse_function(DwContext *ctx, ut64 idx) {
 			break;
 		}
 	}
-	if (!fcn.name || !fcn.addr) { // we need a name, faddr
+	if (!fcn.name || !fcn.addr) { /* we need a name, faddr */
 		goto cleanup;
 	}
 	RStrBuf args;
 	r_strbuf_init (&args);
-	parse_function_args (ctx, idx, &args);
+	/* TODO do the same for arguments in future so we can use their location */
+	RList/*<DwfVariable*>*/  *variables = r_list_new ();
+	parse_function_args_and_vars (ctx, idx, &args, variables);
 
-	if (ret_type.len == 0) { // DW_AT_type is omitted in case of `void` ret type
+	if (ret_type.len == 0) { /* DW_AT_type is omitted in case of `void` ret type */
 		r_strbuf_append (&ret_type, "void");
 	}
 	fcn.signature = r_str_newf ("%s (%s);", r_strbuf_get (&ret_type), r_strbuf_get (&args));
@@ -992,10 +1048,11 @@ static void parse_function(DwContext *ctx, ut64 idx) {
 	char *new_name = ctx->anal->binb.demangle (NULL, ctx->lang, fcn.name, fcn.addr, false);
 	fcn.name = r_str_newf ("dwf.%s", new_name ? new_name : fcn.name);
 	free (new_name);
-	sdb_save_dwarf_function (&fcn, ctx->sdb);
+	sdb_save_dwarf_function (&fcn, variables, ctx->sdb);
 
 	free ((char *)fcn.signature);
 	free ((char *)fcn.name);
+	r_list_free (variables);
 	r_strbuf_fini (&args);
 cleanup:
 	r_strbuf_fini (&ret_type);
@@ -1014,7 +1071,7 @@ static char *parse_comp_unit_lang(const RBinDwarfDie *die) {
 	int idx = find_attr_idx (die, DW_AT_language);
 	char *lang = "cxx"; // default fallback
 	if (idx == -1) {
-		// What to do now, it should have  one?, just assume C++
+		/* What to do now, it should have  one?, just assume C++ */
 		return lang;
 	}
 	const RBinDwarfAttrValue *val = &die->attr_values[idx];
@@ -1025,6 +1082,7 @@ static char *parse_comp_unit_lang(const RBinDwarfDie *die) {
 	case DW_LANG_Java:
 		return "java"; 
 	case DW_LANG_ObjC:
+	/* subideal, TODO research if dwarf gives me enough info to properly separate C++ and ObjC mangling */
 	case DW_LANG_ObjC_plus_plus:
 		return "objc";
 	case DW_LANG_D:
@@ -1033,7 +1091,7 @@ static char *parse_comp_unit_lang(const RBinDwarfDie *die) {
 		return "rust";
 	case DW_LANG_C_plus_plus:
 	case DW_LANG_C_plus_plus_14:
-	// no demangling available
+	/* no demangling available */
 	case DW_LANG_Ada83:
 	case DW_LANG_Cobol74:
 	case DW_LANG_Cobol85:
@@ -1132,7 +1190,7 @@ bool filter_sdb_function_names(void *user, const char *k, const char *v) {
 
 /**
  * @brief Use parsed DWARF function info from Sdb in the anal functions
- *  XXX right now we only save parsed name, we can't use signature now
+ *  XXX right now we only save parsed name and variables, we can't use signature now
  * @param anal 
  * @param dwarf_sdb 
  * @return R_API 
@@ -1140,26 +1198,41 @@ bool filter_sdb_function_names(void *user, const char *k, const char *v) {
 R_API void r_anal_integrate_dwarf_functions(RAnal *anal, Sdb *dwarf_sdb) {
 	r_return_if_fail (anal && dwarf_sdb);
 
-	// get all entries with value == func
+	/* get all entries with value == func */
 	SdbList *sdb_list = sdb_foreach_list_filter (dwarf_sdb, filter_sdb_function_names, false);
 	SdbListIter *it;
 	SdbKv *kv;
-	// iterate all function entries
+	/* iterate all function entries */
 	ls_foreach (sdb_list, it, kv) {
 		char *func_name = kv->base.key;
 		char *addr_key = r_str_newf ("func.%s.addr", func_name);
 		ut64 faddr = sdb_num_get (dwarf_sdb, addr_key, 0);
 		R_FREE (addr_key);
 
-		// if the function is analyzed so we can edit
-		RAnalFunction *func = r_anal_get_function_at (anal, faddr);
-		if (func) {
-			r_anal_function_rename (func, func_name);
-			// TODO apply signatures when r2 will use tree-sitter parser
-			// tmp = sdb_fmt ("func.%s.sig", func_name);
-			// char *fcnstr = sdb_get (dwarf_sdb, tmp, 0);
-			// r_anal_str_to_fcn (anal, func, fcnstr);
+		/* if the function is analyzed so we can edit */
+		RAnalFunction *fcn = r_anal_get_function_at (anal, faddr);
+		if (fcn) {
+			r_anal_function_rename (fcn, func_name);
+			/* TODO apply signatures when r2 will use tree-sitter parser
+			   tmp = sdb_fmt ("func.%s.sig", func_name);
+			   char *fcnstr = sdb_get (dwarf_sdb, tmp, 0);
+			   r_anal_str_to_fcn (anal, func, fcnstr); */
+		}
+		char *var_names_key = r_str_newf ("func.%s.vars", func_name);
+		char *vars = sdb_get (dwarf_sdb, var_names_key, NULL);
+		char *var_name;
+		sdb_aforeach (var_name, vars) {
+			char *var_key = r_str_newf ("func.%s.var.%s", func_name, var_name);
+			char *var_data = sdb_get (dwarf_sdb, var_key, NULL);
+			char *kind = NULL;
+			char *offset_str = NULL;
+			char *type = sdb_anext (var_data, &kind);
+			kind = sdb_anext (kind, &offset_str);
+			st64 offset = strtol (offset_str, NULL, 10);
+			r_anal_function_set_var (fcn, offset,
+				*kind, type, 4, false, var_name);
+			sdb_aforeach_next (var_name);
 		}
 	}
 	ls_free (sdb_list);
-} 
+}
