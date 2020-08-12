@@ -35,6 +35,7 @@ typedef enum dwarf_location_kind {
 typedef struct dwarf_var_location_t {
 	DwfVariableLocationKind kind;
 	st64 offset;
+	ut64 address;
 } DwfVariableLocation;
 
 typedef struct dwarf_variable_t {
@@ -795,26 +796,115 @@ static void parse_abstract_origin(DwContext *ctx, ut64 offset, RStrBuf *type, co
 	}
 }
 
-static DwfVariableLocation *parse_dwarf_location (const RBinDwarfAttrValue *val) {
+static DwfVariableLocation *parse_dwarf_location (DwContext *ctx, const RBinDwarfAttrValue *val) {
 	// reg5 - val is in register 5
 	// fbreg <leb> - offset from frame base
 	// regx <leb> - contents is in register X
 	// addr <addr> - contents is in at addr
-	// breg <addr> - contents is in at addr
+	// bregXX <leb> - contents is at offset from specified register
 	// register 31 == stack pointer
-	DwfVariableLocation *location = R_NEW0 (DwfVariableLocation);
+	DwfVariableLocationKind kind;
+	st64 offset = 0;
+	ut64 address = 0;
 	size_t i;
 	for (i = 0; i < val->block.length; i++) {
 		switch (val->block.data[i]) {
+		/* The DW_OP_fbreg operation provides a signed LEB128 offset from the address specified by
+			the location description in the DW_AT_frame_base attribute of the current function. (This is
+			typically a “stack pointer” register plus or minus some offset. On more sophisticated systems
+			it might be a location list that adjusts the offset according to changes in the stack pointer as
+			the PC changes.)  */
 		case DW_OP_fbreg: {
-			const ut8 *dump = &val->block.data[i+1];
-			st64 offset = r_sleb128 (&dump, &val->block.data[val->block.length]);
-			location->kind = LOCATION_STACK;
-			location->offset = offset + 8;
+			const ut8 *dump = &val->block.data[++i];
+			offset = r_sleb128 (&dump, &val->block.data[val->block.length]);
+			kind = LOCATION_STACK;
+			/* +8 is just assumption, to calculate real offset, we need to parse CFA */
+			offset = offset + 8;
+		} break;
+		case DW_OP_breg0:
+		case DW_OP_breg1:
+		case DW_OP_breg2:
+		case DW_OP_breg3:
+		case DW_OP_breg4:
+		case DW_OP_breg5:
+		case DW_OP_breg6:
+		case DW_OP_breg7:
+		case DW_OP_breg8:
+		case DW_OP_breg9:
+		case DW_OP_breg10:
+		case DW_OP_breg11:
+		case DW_OP_breg12:
+		case DW_OP_breg13:
+		case DW_OP_breg14:
+		case DW_OP_breg15:
+		case DW_OP_breg16:
+		case DW_OP_breg17:
+		case DW_OP_breg18:
+		case DW_OP_breg19:
+		case DW_OP_breg20:
+		case DW_OP_breg21:
+		case DW_OP_breg22:
+		case DW_OP_breg23:
+		case DW_OP_breg24:
+		case DW_OP_breg25:
+		case DW_OP_breg26:
+		case DW_OP_breg27:
+		case DW_OP_breg28:
+		case DW_OP_breg29:
+		case DW_OP_breg30:
+		case DW_OP_breg31: {
+			/* The single operand of the DW_OP_bregn operations provides 
+			signed LEB128 offset from the specified register.  */
+			// const ut8 *dump = &val->block.data[i + 1];
+			// st64 offset = r_sleb128 (&dump, &val->block.data[val->block.length]);
+			// kind = LOCATION_STACK;
+			// offset = offset + 8;
+		} break;
+		case DW_OP_bregx: {
+			/* The DW_OP_bregx operation has two operands: a register which is specified by an unsigned
+			LEB128 number, followed by a signed LEB128 offset.  */
+			// const ut8 *dump = &val->block.data[i + 1];
+			// st64 offset = r_sleb128 (&dump, &val->block.data[val->block.length]);
+			// kind = LOCATION_STACK;
+			// offset = offset + 8;
+		} break;
+		case DW_OP_addr: {
+			/* The DW_OP_addr operation has a single operand that encodes a machine address and whose
+			size is the size of an address on the target machine.  */
+			const int addr_size = ctx->anal->bits / 8;
+			const ut8 *dump = &val->block.data[++i];
+			/* malformed, not enough bytes to represent address */
+			if (val->block.length - i < addr_size) {
+				return NULL;
+			}
+			switch (addr_size) {
+			case 1:
+				address = r_read_ble8 (dump);
+				break;
+			case 2:
+				address = r_read_ble16 (dump, ctx->anal->big_endian);
+				break;
+			case 4:
+				address = r_read_ble32 (dump, ctx->anal->big_endian);
+				break;
+			case 8:
+				address = r_read_ble64 (dump, ctx->anal->big_endian);
+				break;
+			default:
+				r_warn_if_reached (); /* weird addr_size */
+				return NULL;
+			}
+			kind = LOCATION_GLOBAL; // address
 		} break;
 		default:
 			break;
 		}
+	}
+	DwfVariableLocation *location = R_NEW0 (DwfVariableLocation);
+	if (location) {
+		location->kind = kind;
+		location->offset = offset;
+		location->address = address;
 	}
 	return location;
 }
@@ -892,7 +982,7 @@ static st32 parse_function_args_and_vars(DwContext *ctx, ut64 idx, RStrBuf *args
 						break;
 					case DW_AT_location:
 						if (val->kind == DW_AT_KIND_BLOCK) {
-							var->location = parse_dwarf_location (val);
+							var->location = parse_dwarf_location (ctx, val);
 						}
 						break;
 					default:
@@ -945,6 +1035,12 @@ static void sdb_save_dwarf_function(DwFunction *dwarf_fcn, RList/*<DwfVariable*>
 			char *key = r_str_newf ("func.%s.var.%s", dwarf_fcn->name, var->name);
 			/* value = "type, storage, additional info based on storage (offset)" */
 			char *val = r_str_newf ("%s,%s,%"PFMT64d"", var->type, "b", var->location->offset);
+			sdb_set (sdb, key, val, 0);
+		} else if (var->location && var->location->kind == LOCATION_GLOBAL) {
+			r_strbuf_appendf (&vars, "%s,", var->name);
+			char *key = r_str_newf ("func.%s.var.%s", dwarf_fcn->name, var->name);
+			/* value = "type, storage, additional info based on storage (address)" */
+			char *val = r_str_newf ("%s,%s,%"PFMT64x"", var->type, "g", var->location->address);
 			sdb_set (sdb, key, val, 0);
 		}
 	}
@@ -1225,15 +1321,22 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, Sdb *dwarf_sdb) {
 		sdb_aforeach (var_name, vars) {
 			char *var_key = r_str_newf ("func.%s.var.%s", func_name, var_name);
 			char *var_data = sdb_get (dwarf_sdb, var_key, NULL);
+
 			char *kind = NULL;
 			char *offset_str = NULL;
 			char *type = sdb_anext (var_data, &kind);
 			kind = sdb_anext (kind, &offset_str);
 			st64 offset = strtol (offset_str, NULL, 10);
-			r_anal_function_set_var (fcn, offset,
-				*kind, type, 4, false, var_name);
+			/* No way to handle var at fixed addr yet */
+			if (*kind != 'g') {
+				r_anal_function_set_var (fcn, offset, *kind, type, 4, false, var_name);
+			}
+			free (var_key);
+			free (var_data);
 			sdb_aforeach_next (var_name);
 		}
+		free (var_names_key);
+		free (vars);
 	}
 	ls_free (sdb_list);
 }

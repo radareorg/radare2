@@ -21,6 +21,7 @@
 #define STANDARD_OPERAND_COUNT_DWARF3 12
 #define R_BIN_DWARF_INFO 1
 
+// endianness setting global
 static bool big_end = false;
 
 #define READ(buf, type)                                             \
