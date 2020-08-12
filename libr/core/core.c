@@ -3154,6 +3154,10 @@ reaccept:
 				}
 				goto out_of_function;
 			}
+			// prevent overflow in uncontrolled allocation size
+			if (cmd > 255) {
+				cmd = 255;
+			}
 			switch (cmd) {
 			case RAP_PACKET_OPEN:
 				r_socket_read_block (c, &flg, 1); // flags
@@ -3161,7 +3165,6 @@ reaccept:
 				r_socket_read_block (c, &cmd, 1); // len
 				pipefd = -1;
 				ptr = malloc (cmd + 1);
-				//XXX cmd is ut8..so <256 if (cmd<RAP_PACKET_MAX)
 				if (!ptr) {
 					eprintf ("Cannot malloc in rmt-open len = %d\n", cmd);
 				} else {
