@@ -85,7 +85,7 @@ int main() {
 EOF
 cat .test.c
 if [ -z "${CC}" ]; then
-	CC=gcc
+	gcc -v > /dev/null 2>&1 && CC=gcc
 fi
 
 # static pkg-config linking test
