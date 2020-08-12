@@ -50,6 +50,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=mips ld(load doubleword) instruction 
+FILE=bins/elf/analysis/mips64r2-busybox
+CMDS=<<EOF
+s 0x120004460
+pd 1
+EOF
+EXPECT=<<EOF
+            0x120004460      208084df       ld a0, -main(gp)           ;# [0x1200ee290:8]=0x120005074 sym.main
+EOF
+RUN
+
 NAME=gp-based ref
 FILE=bins/elf/analysis/mips-hello
 CMDS=<<EOF
