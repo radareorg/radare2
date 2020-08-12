@@ -114,7 +114,12 @@ R_API int r_print_date_dos(RPrint *p, const ut8 *buf, int len) {
 	}
 
 	ut32 dt = buf[3] << 24 | buf[2] << 16 | buf[1] << 8 | buf[0];
-	p->cb_printf ("%s\n", r_time_stamp_to_str ( r_time_dos_time_stamp_to_posix (dt)));
+	char *s = r_time_stamp_to_str (r_time_dos_time_stamp_to_posix (dt));
+	if (!s) {
+		return 0;
+	}
+	p->cb_printf ("%s\n", s);
+	free (s);
 	return 4;
 }
 
