@@ -59,7 +59,8 @@ static char *unescape_string(char *s, char **end) {
 			*d = '\0';
 			*end = p;
 			return s;
-		} else if (c == '\\') {
+		}
+		if (c == '\\') {
 			switch (*p) {
 			case '\\':
 			case '/':
@@ -202,12 +203,12 @@ static char *parse_key(const char **key, char *p) {
 			}
 			R_JSON_REPORT_ERROR ("unexpected chars", p);
 			return NULL;
-		} else if (c == '}') {
-			return p - 1;
-		} else {
-			R_JSON_REPORT_ERROR ("unexpected chars", p - 1);
-			return NULL; // error
 		}
+		if (c == '}') {
+			return p - 1;
+		}
+		R_JSON_REPORT_ERROR ("unexpected chars", p - 1);
+		return NULL; // error
 	}
 	R_JSON_REPORT_ERROR ("unexpected chars", p - 1);
 	return NULL; // error
