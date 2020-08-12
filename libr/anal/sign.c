@@ -77,26 +77,37 @@ R_API RList *r_sign_fcn_types(RAnal *a, RAnalFunction *fcn) {
 	r_return_val_if_fail (a && fcn, NULL);
 
 	RList *ret = r_list_newf ((RListFree) free);
-	const char *arg = NULL;
-	char *args_expr = r_str_newf ("func.%s.args", fcn->name);
-	const char *ret_type = sdb_const_get (a->sdb_types, r_str_newf ("func.%s.ret", fcn->name), 0);
-	const char *fcntypes = sdb_const_get (a->sdb_types, args_expr, 0);
-	int argc = 0;
-	int i;
+	if (!ret) {
+		return NULL;
+	}
+
+	char *scratch = r_str_newf ("func.%s.args", fcn->name);
+	if (!scratch) {
+		return NULL;
+	}
+	const char *fcntypes = sdb_const_get (a->sdb_types, scratch, 0);
+	free (scratch);
+
+	scratch = r_str_newf ("func.%s.ret", fcn->name);
+	if (!scratch) {
+		return NULL;
+	}
+	const char *ret_type = sdb_const_get (a->sdb_types, scratch, 0);
+	free (scratch);
 
 	if (fcntypes) {
 		if (ret_type) {
 			r_list_append (ret, r_str_newf ("func.%s.ret=%s", fcn->name, ret_type));
 		}
-		argc = atoi (fcntypes);
+		int argc = atoi (fcntypes);
 		r_list_append (ret, r_str_newf ("func.%s.args=%d", fcn->name, argc));
+		int i;
 		for (i = 0; i < argc; i++) {
-			arg = sdb_const_get (a->sdb_types, r_str_newf ("func.%s.arg.%d", fcn->name, i), 0);
+			const char *arg = sdb_const_get (a->sdb_types, r_str_newf ("func.%s.arg.%d", fcn->name, i), 0);
 			r_list_append (ret, r_str_newf ("func.%s.arg.%d=\"%s\"", fcn->name, i, arg));
 		}
 	}
 
-	free (args_expr);
 	return ret;
 }
 
@@ -152,28 +163,28 @@ R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn) {
 	return ret;
 }
 
-static RList *zign_types_to_list(RAnal *a, char *types) {
-	RList *ret = r_list_newf ((RListFree) free);
+static RList *zign_types_to_list(RAnal *a, const char *types) {
+	RList *ret = r_list_newf ((RListFree)free);
+	if (!ret) {
+		return NULL;
+	}
+
 	unsigned int i = 0, prev = 0, len = strlen (types);
 	bool quoted = false;
 	char *token = NULL;
-
 	for (i = 0; i <= len; i++) {
 		if (types[i] == '"') {
 			quoted = !quoted;
-		}
-		else if ((types[i] == ',' && !quoted) || types[i] == '\0') {
+		} else if ((types[i] == ',' && !quoted) || types[i] == '\0') {
 			token = r_str_ndup (types + prev, i - prev);
 			if (token) {
 				prev = i + 1;
-				r_list_append (ret, strdup (token));
-				free (token);
+				r_list_append (ret, token);
 				token = NULL;
 			}
 		}
 	}
 
-	free (token);
 	return ret;
 }
 
@@ -185,42 +196,57 @@ static void bytes_sig_free(RSignBytes *bytes) {
 	}
 }
 
-R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
-	char *refs = NULL;
-	char *vars = NULL;
-	char *types = NULL;
-	const char *token = NULL;
-	int i = 0, n = 0, nrefs = 0, nvars = 0, size = 0, w = 0;
+static RList *do_reflike_sig(const char *token) {
+	RList *list = NULL;
+	char *scratch = r_str_new (token);
+	int cnt = r_str_split (scratch, ',');
+	if (cnt > 0 && (list = r_list_newf ((RListFree)free))) {
+		int i;
+		for (i = 0; i < cnt; i++) {
+			r_list_append (list, r_str_new (r_str_word_get0 (scratch, i)));
+		}
+	}
+	free (scratch);
+	return list;
+}
 
+#define DBL_VAL_FAIL(x,y) \
+	if (x) { \
+		eprintf ("Warning: Skipping signature with multiple %c signatures (%s)\n", y, k); \
+		success = false; \
+		goto out; \
+	}
+R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 	r_return_val_if_fail (a && it && k && v, false);
 
+	bool success = true;
 	char *k2 = r_str_new (k);
 	char *v2 = r_str_new (v);
 	if (!k2 || !v2) {
-		free (k2);
-		free (v2);
-		return false;
+		success = false;
+		goto out;
 	}
 
 	// Deserialize key: zign|space|name
-	n = r_str_split (k2, '|');
+	int n = r_str_split (k2, '|');
 	if (n != 3) {
+		eprintf ("Warning: Skipping signature with invalid key (%s)\n", k);
+		success = false;
 		goto out;
 	}
 	if (strcmp (r_str_word_get0 (k2, 0), "zign")) {
-		eprintf ("Invalid entry in the zigns database\n");
+		eprintf ("Warning: Skipping signature with invalid value (%s)\n", k);
+		success = false;
 		goto out;
 	}
 
-	// space (1)
 	it->space = r_spaces_add (&a->zign_spaces, r_str_word_get0 (k2, 1));
-
-	// name (2)
 	it->name = r_str_new (r_str_word_get0 (k2, 2));
-//	it->space = r_spaces_current (&a->zign_spaces);
 
 	// Deserialize value: |k:v|k:v|k:v|...
 	n = r_str_split (v2, '|');
+	const char *token = NULL;
+	int w, size;
 	for (w = 0; w < n; w++) {
 		const char *word = r_str_word_get0 (v2, w);
 		if (!word) {
@@ -234,8 +260,9 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			continue;
 		}
 		if (strlen (word) < 3 || word[1] != ':') {
-			eprintf ("Corrupted zignatures database (%s)\n", word);
-			break;
+			eprintf ("Warning: Skipping signature with corrupted serialization (%s:%s)\n", k, word);
+			success = false;
+			goto out;
 		}
 		RSignType st = (RSignType)*word;
 		switch (st) {
@@ -243,57 +270,53 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			eprintf ("Unsupported\n");
 			break;
 		case R_SIGN_NAME:
+			DBL_VAL_FAIL (it->realname, R_SIGN_NAME);
 			it->realname = strdup (token);
 			break;
 		case R_SIGN_COMMENT:
+			DBL_VAL_FAIL (it->comment, R_SIGN_COMMENT);
 			it->comment = strdup (token);
 			break;
 		case R_SIGN_GRAPH:
+			DBL_VAL_FAIL (it->graph, R_SIGN_GRAPH);
 			if (strlen (token) == 2 * sizeof (RSignGraph)) {
 				it->graph = R_NEW0 (RSignGraph);
 				if (it->graph) {
-					r_hex_str2bin (token, (ut8 *) it->graph);
+					r_hex_str2bin (token, (ut8 *)it->graph);
 				}
 			}
 			break;
 		case R_SIGN_OFFSET:
+			DBL_VAL_FAIL ((it->addr != UT64_MAX), R_SIGN_OFFSET);
 			it->addr = atoll (token);
 			break;
 		case R_SIGN_REFS:
-			refs = r_str_new (token);
-			nrefs = r_str_split (refs, ',');
-			if (nrefs > 0) {
-				it->refs = r_list_newf ((RListFree) free);
-				for (i = 0; i < nrefs; i++) {
-					r_list_append (it->refs, r_str_newf (r_str_word_get0 (refs, i)));
-				}
+			DBL_VAL_FAIL (it->refs, R_SIGN_REFS);
+			if (!(it->refs = do_reflike_sig (token))) {
+				success = false;
+				goto out;
 			}
 			break;
 		case R_SIGN_XREFS:
-			refs = r_str_new (token);
-			nrefs = r_str_split (refs, ',');
-			if (nrefs > 0) {
-				it->xrefs = r_list_newf ((RListFree) free);
-				for (i = 0; i < nrefs; i++) {
-					r_list_append (it->xrefs, r_str_newf (r_str_word_get0 (refs, i)));
-				}
+			DBL_VAL_FAIL (it->xrefs, R_SIGN_XREFS);
+			if (!(it->xrefs = do_reflike_sig (token))) {
+				success = false;
+				goto out;
 			}
 			break;
 		case R_SIGN_VARS:
-			vars = r_str_new (token);
-			nvars = r_str_split (vars, ',');
-			if (nvars > 0) {
-				it->vars = r_list_newf ((RListFree) free);
-				for (i = 0; i < nvars; i++) {
-					r_list_append (it->vars, r_str_newf (r_str_word_get0 (vars, i)));
-				}
+			DBL_VAL_FAIL (it->vars, R_SIGN_VARS);
+			if (!(it->vars = do_reflike_sig (token))) {
+				success = false;
+				goto out;
 			}
 			break;
 		case R_SIGN_TYPES:
-			types = r_str_new (token);
-			it->types = zign_types_to_list (a, types);
+			DBL_VAL_FAIL (it->types, R_SIGN_TYPES);
+			it->types = zign_types_to_list (a, token);
 			break;
 		case R_SIGN_BBHASH:
+			DBL_VAL_FAIL (it->hash, R_SIGN_BBHASH);
 			if (token[0] != 0) {
 				it->hash = R_NEW0 (RSignHash);
 				if (it->hash) {
@@ -302,27 +325,36 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			}
 			break;
 		case R_SIGN_BYTES:
+			// following two errors are not due to double entries
 			if (!it->bytes) {
-				eprintf ("Missing bytes-size command before bytes\n");
-				break;
-			}
-			if (strlen (token) != 2 * it->bytes->size) {
+				eprintf ("Warning: Skipping signature with no bytes size (%s)\n", k);
+				success = false;
 				goto out;
 			}
+			if (strlen (token) != 2 * it->bytes->size) {
+				eprintf ("Warning: Skipping signature with invalid size (%s)\n", k);
+				success = false;
+				goto out;
+			}
+			DBL_VAL_FAIL (it->bytes->bytes, R_SIGN_BYTES);
 			it->bytes->bytes = malloc (it->bytes->size);
 			if (it->bytes->bytes) {
 				r_hex_str2bin (token, it->bytes->bytes);
 			}
 			break;
 		case R_SIGN_BYTES_MASK:
+			// following two errors are not due to double entries
 			if (!it->bytes) {
-				eprintf ("Missing bytes-size command before bytes-mask\n");
-				break;
-			}
-			if (strlen (token) != 2 * it->bytes->size) {
+				eprintf ("Warning: Skipping signature with no mask size (%s)\n", k);
+				success = false;
 				goto out;
 			}
-			free (it->bytes->mask);
+			if (strlen (token) != 2 * it->bytes->size) {
+				eprintf ("Warning: Skipping signature invalid mask size (%s)\n", k);
+				success = false;
+				goto out;
+			}
+			DBL_VAL_FAIL (it->bytes->mask, R_SIGN_BYTES);
 			it->bytes->mask = malloc (it->bytes->size);
 			if (!it->bytes->mask) {
 				goto out;
@@ -333,7 +365,7 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			// allocate
 			size = atoi (token);
 			if (size > 0) {
-				bytes_sig_free (it->bytes);
+				DBL_VAL_FAIL (it->bytes, R_SIGN_BYTES_SIZE);
 				it->bytes = R_NEW0 (RSignBytes);
 				if (!it->bytes) {
 					goto out;
@@ -349,11 +381,9 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 out:
 	free (k2);
 	free (v2);
-	free (refs);
-	free (vars);
-	free (types);
-	return (w == n);
+	return success;
 }
+#undef DBL_VAL_FAIL
 
 static void serializeKey(RAnal *a, const RSpace *space, const char* name, char *k) {
 	snprintf (k, R_SIGN_KEY_MAXSZ, "zign|%s|%s", space? space->name: "*", name);
@@ -2558,6 +2588,8 @@ R_API void r_sign_item_free(RSignItem *item) {
 	free (item->realname);
 	r_list_free (item->refs);
 	r_list_free (item->vars);
+	r_list_free (item->xrefs);
+	r_list_free (item->types);
 	free (item);
 }
 
