@@ -1684,7 +1684,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		ut64 shifted_imm = IMM64(1) << shift;
 		ut64 mask = ~(0xffffLL << shift);
 
-		r_strbuf_setf (&op->esil, "%"PFMT64u",%s,&,%"PFMT64u",|,%s,=",
+		r_strbuf_setf (&op->esil, "0x%"PFMT64x",%s,&,%"PFMT64u",|,%s,=",
 			mask,
 			REG64(0),
 			shifted_imm,

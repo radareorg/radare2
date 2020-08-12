@@ -577,7 +577,11 @@ static bool esil_signext(RAnalEsil *esil) {
 		free (p_dst);
 	}
 
-	ut64 m = (ut64)1 << (dst - 1);
+	ut64 m = 0;
+	if (dst < 64) {
+		m = (ut64)1 << (dst - 1);
+	}
+
 	// dst = (dst & ((1U << src_bit) - 1)); // clear upper bits
 	return r_anal_esil_pushnum (esil, ((src ^ m) - m));
 }
