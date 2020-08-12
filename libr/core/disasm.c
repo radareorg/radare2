@@ -6586,11 +6586,12 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 
 static bool read_ahead(RIO *io, ut8 **buf, size_t *buf_sz, ut64 address, size_t offset_into_buf, size_t bytes_to_read) {
 	if (offset_into_buf + bytes_to_read > *buf_sz) {
-		*buf_sz *= 2;
-		ut8 *tmp = realloc (*buf, *buf_sz);
+		const size_t new_sz = *buf_sz * 2;
+		ut8 *tmp = realloc (*buf, new_sz);
 		if (!tmp) {
 			return false;
 		}
+		*buf_sz = new_sz;
 		*buf = tmp;
 	}
 	return r_io_read_at_mapped (io, address, *buf + offset_into_buf, bytes_to_read);
