@@ -799,16 +799,14 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 					// second one will overwrite them with zeros).
 					if (insn->id == X86_INS_MOVSX || insn->id == X86_INS_MOVSXD) {
 						esilprintf (op, "%d,%s,~,%s,=", width*8, src, dst64);
-					}
-					else {
+					} else {
 						esilprintf (op, "%s,%s,=", src, dst64);
 					}
 
 				} else {
 					if (insn->id == X86_INS_MOVSX || insn->id == X86_INS_MOVSXD) {
 						esilprintf (op, "%d,%s,~,%s,=", width*8, src, dst);
-					}
-					else {
+					} else {
 						esilprintf (op, "%s,%s,=", src, dst);
 					}
 				}				
@@ -982,8 +980,8 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 					src, dst, bitsize - 1);
 			} else {
 				esilprintf (op,
-					"%s,%s,==,$z,zf,:=,%d,$b,cf,:=,$p,pf,:=,%d,$s,sf,:=,%s,%u,-,!,%d,$o,^,of,:=,3,$b,af,:=",
-					src, dst, bitsize, bitsize - 1, src, (1U << (bitsize - 1)), bitsize - 1);
+					"%s,%s,==,$z,zf,:=,%d,$b,cf,:=,$p,pf,:=,%d,$s,sf,:=,%s,%"PFMT64u",-,!,%d,$o,^,of,:=,3,$b,af,:=",
+					src, dst, bitsize, bitsize - 1, src, ((ut64)1 << (bitsize - 1)), bitsize - 1);
 			}
 		}
 		break;
@@ -1475,8 +1473,8 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			// Set OF, SF, ZF, AF, PF, and CF flags.
 			// We use $b rather than $c here as the carry flag really
 			// represents a "borrow"
-			esilprintf (op, "%s,%s,%s,%u,-,!,%d,$o,^,of,:=,%d,$s,sf,:=,$z,zf,:=,$p,pf,:=,%d,$b,cf,:=,3,$b,af,:=",
-				src, dst, src, (1U << (bitsize - 1)), bitsize - 1, bitsize - 1, bitsize);
+			esilprintf (op, "%s,%s,%s,%"PFMT64u",-,!,%d,$o,^,of,:=,%d,$s,sf,:=,$z,zf,:=,$p,pf,:=,%d,$b,cf,:=,3,$b,af,:=",
+				src, dst, src, ((ut64)1 << (bitsize - 1)), bitsize - 1, bitsize - 1, bitsize);
 		}
 		break;
 	case X86_INS_SBB:
@@ -1559,13 +1557,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 					const char *r_rema = (width==1)?"ah": (width==2)?"dx": (width==4)?"edx":"rdx";
 					const char *r_nume = (width==1)?"ax": r_quot;
 
-					if (0) { // ( width == 1 ) { // idk what this is, i think they are using eflags as a tmp to do signext stuff
-						esilprintf(op, "0xffffff00,eflags,&=,%s,%s,%%,eflags,|=,%s,%s,/,%s,=,0xff,eflags,&,%s,=,0xffffff00,eflags,&=,2,eflags,|=",
-							arg0, r_nume, arg0, r_nume, r_quot, r_rema);
-					} else {
-						esilprintf (op, "%d,%s,~,%d,%s,<<,%s,+,~%%,%d,%s,~,%d,%s,<<,%s,+,~/,%s,=,%s,=",
-								width*8, arg0, width*8, r_rema, r_nume, width*8, arg0, width*8, r_rema, r_nume, r_quot, r_rema);
-					}
+
+					esilprintf (op, "%d,%s,~,%d,%s,<<,%s,+,~%%,%d,%s,~,%d,%s,<<,%s,+,~/,%s,=,%s,=",
+							width*8, arg0, width*8, r_rema, r_nume, width*8, arg0, width*8, r_rema, r_nume, r_quot, r_rema);
 				}
 				else {
 					/* should never happen */
@@ -1585,13 +1579,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			const char *r_rema = (width==1)?"ah": (width==2)?"dx": (width==4)?"edx":"rdx";
 			const char *r_nume = (width==1)?"ax": r_quot;
 			// DIV does not change flags and is unsigned
-			if ( width == 1 ) {
-				esilprintf(op, "0xffffff00,eflags,&=,%s,%s,%%,eflags,|=,%s,%s,/,%s,=,0xff,eflags,&,%s,=,0xffffff00,eflags,&=,2,eflags,|=",
-					   dst, r_nume, dst, r_nume, r_quot, r_rema);
-			} else {
-				esilprintf (op, "%s,%d,%s,<<,%s,+,%%,%s,%d,%s,<<,%s,+,/,%s,=,%s,=",
-					    dst, width*8, r_rema, r_nume, dst, width*8, r_rema, r_nume, r_quot, r_rema);
-			}
+
+			esilprintf (op, "%s,%d,%s,<<,%s,+,%%,%s,%d,%s,<<,%s,+,/,%s,=,%s,=",
+					dst, width*8, r_rema, r_nume, dst, width*8, r_rema, r_nume, r_quot, r_rema);
 		}
 		break;
 	case X86_INS_IMUL:

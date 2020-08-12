@@ -560,8 +560,9 @@ static bool esil_signext(RAnalEsil *esil) {
 		ERR ("esil_of: empty stack");
 		free (p_src);
 		return false;
+	} else {
+		free (p_src);
 	}
-	free (p_src);
 
 	char *p_dst = r_anal_esil_pop (esil);
 	if (!p_dst) {
@@ -572,14 +573,13 @@ static bool esil_signext(RAnalEsil *esil) {
 		ERR ("esil_of: empty stack");
 		free (p_dst);
 		return false;
+	} else {
+		free (p_dst);
 	}
-	free (p_dst);
 
-	ut64 m = 1U << (dst - 1);
+	ut64 m = (ut64)1 << (dst - 1);
 	// dst = (dst & ((1U << src_bit) - 1)); // clear upper bits
-	src = ((src ^ m) - m); // sign-extended
-
-	return r_anal_esil_pushnum (esil, src);
+	return r_anal_esil_pushnum (esil, ((src ^ m) - m));
 }
 
 static bool esil_zf(RAnalEsil *esil) {
