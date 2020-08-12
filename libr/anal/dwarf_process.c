@@ -989,11 +989,13 @@ static st32 parse_function_args_and_vars(DwContext *ctx, ut64 idx, RStrBuf *args
 						break;
 					}
 				}
-				var->name = strdup (var->name);
-				var->type = strdup (r_strbuf_get (&var_type));
+				if (name && var_type.len > 0) {
+					var->name = strdup (var->name);
+					var->type = strdup (r_strbuf_get (&var_type));
+					r_list_append (variables, var);
+				} /* else just ignore the variable */
 				r_strbuf_fini  (&var_type);
 
-				r_list_append (variables, var);
 			}
 			if (child_die->has_children) {
 				child_depth++;
