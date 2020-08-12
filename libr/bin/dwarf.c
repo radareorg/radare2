@@ -21,21 +21,23 @@
 #define STANDARD_OPERAND_COUNT_DWARF3 12
 #define R_BIN_DWARF_INFO 1
 
-#define READ(x, y)                                        \
-	(((x) + sizeof (y) < buf_end) ? *((y *)(x)) : 0); \
-	(x) += sizeof (y)
-#define READ8(x)                                              \
-	(((x) + sizeof (ut8) < buf_end) ? ((ut8 *)x)[0] : 0); \
-	(x) += sizeof (ut8)
-#define READ16(x)                                                    \
-	(((x) + sizeof (ut16) < buf_end) ? r_read_ble16 (x, 0) : 0); \
-	(x) += sizeof (ut16)
-#define READ32(x)                                                    \
-	(((x) + sizeof (ut32) < buf_end) ? r_read_ble32 (x, 0) : 0); \
-	(x) += sizeof (ut32)
-#define READ64(x)                                                    \
-	(((x) + sizeof (ut64) < buf_end) ? r_read_ble64 (x, 0) : 0); \
-	(x) += sizeof (ut64)
+static bool big_end = false;
+
+#define READ(buf, type)                                             \
+	(((buf) + sizeof (type) < buf_end) ? *((type *)(buf)) : 0); \
+	(buf) += sizeof (type)
+#define READ8(buf)                                                \
+	(((buf) + sizeof (ut8) < buf_end) ? ((ut8 *)buf)[0] : 0); \
+	(buf) += sizeof (ut8)
+#define READ16(buf)                                                            \
+	(((buf) + sizeof (ut16) < buf_end) ? r_read_ble16 (buf, big_end) : 0); \
+	(buf) += sizeof (ut16)
+#define READ32(buf)                                                            \
+	(((buf) + sizeof (ut32) < buf_end) ? r_read_ble32 (buf, big_end) : 0); \
+	(buf) += sizeof (ut32)
+#define READ64(buf)                                                            \
+	(((buf) + sizeof (ut64) < buf_end) ? r_read_ble64 (buf, big_end) : 0); \
+	(buf) += sizeof (ut64)
 
 static const char *dwarf_tag_name_encodings[] = {
 	[DW_TAG_null_entry] = "DW_TAG_null_entry",
@@ -101,7 +103,7 @@ static const char *dwarf_tag_name_encodings[] = {
 	[DW_TAG_type_unit] = "DW_TAG_type_unit",
 	[DW_TAG_rvalue_reference_type] = "DW_TAG_rvalue_reference_type",
 	[DW_TAG_template_alias] = "DW_TAG_template_alias",
-	[DW_TAG_LAST] = "DW_TAG_LAST", 
+	[DW_TAG_LAST] = "DW_TAG_LAST",
 };
 
 static const char *dwarf_attr_encodings[] = {
@@ -2206,6 +2208,8 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin 
 			free (buf);
 			goto cleanup;
 		}
+		/* set the endianity global [HOTFIX] */
+		big_end = r_bin_is_big_endian (bin);
 		info = parse_info_raw (binfile->sdb_addrinfo, da, buf, len,
 			debug_str_buf, debug_str_len);
 
