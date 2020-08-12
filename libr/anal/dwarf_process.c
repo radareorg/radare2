@@ -803,7 +803,7 @@ static DwfVariableLocation *parse_dwarf_location (DwContext *ctx, const RBinDwar
 	// addr <addr> - contents is in at addr
 	// bregXX <leb> - contents is at offset from specified register
 	// register 31 == stack pointer
-	DwfVariableLocationKind kind;
+	DwfVariableLocationKind kind = LOCATION_UNKNOWN;
 	st64 offset = 0;
 	ut64 address = 0;
 	size_t i;
@@ -915,9 +915,12 @@ static st32 parse_function_args_and_vars(DwContext *ctx, ut64 idx, RStrBuf *args
 	if (die->has_children) {
 		int child_depth = 1;
 		const RBinDwarfDie *child_die = &ctx->all_dies[++idx];
-		size_t j;
+
 		const char *name = NULL;
 		bool has_linkage_name = false;
+		int argNumber = 1;
+
+		size_t j;
 		for (j = idx; child_depth > 0 && j < ctx->count; j++) {
 			child_die = &ctx->all_dies[j];
 			RStrBuf type;
@@ -950,8 +953,15 @@ static st32 parse_function_args_and_vars(DwContext *ctx, ut64 idx, RStrBuf *args
 						break;
 					}
 				}
-				r_warn_if_fail (type.len && name);
-				r_strbuf_appendf (args, "%s %s,", r_strbuf_get (&type), name);
+				/* arguments sometimes have only type, create generic argX */
+				if (type.len) {
+					if (!name) {
+						r_strbuf_appendf (args, "%s arg%d,", r_strbuf_get (&type), argNumber);
+					} else {
+						r_strbuf_appendf (args, "%s %s,", r_strbuf_get (&type), name);
+					}
+				}
+				argNumber++;
 				r_strbuf_fini (&type);
 			} else if (child_depth == 1 && child_die->tag == DW_TAG_unspecified_parameters) {
 				r_strbuf_appendf (args, "va_args ...,");
@@ -995,7 +1005,6 @@ static st32 parse_function_args_and_vars(DwContext *ctx, ut64 idx, RStrBuf *args
 					r_list_append (variables, var);
 				} /* else just ignore the variable */
 				r_strbuf_fini  (&var_type);
-
 			}
 			if (child_die->has_children) {
 				child_depth++;
@@ -1145,8 +1154,7 @@ static void parse_function(DwContext *ctx, ut64 idx) {
 	fcn.signature = r_str_newf ("%s (%s);", r_strbuf_get (&ret_type), r_strbuf_get (&args));
 	r_warn_if_fail (ctx->lang);
 	char *new_name = ctx->anal->binb.demangle (NULL, ctx->lang, fcn.name, fcn.addr, false);
-	fcn.name = r_str_newf ("dwf.%s", new_name ? new_name : fcn.name);
-	free (new_name);
+	fcn.name = new_name ? new_name : strdup (fcn.name);
 	sdb_save_dwarf_function (&fcn, variables, ctx->sdb);
 
 	free ((char *)fcn.signature);
@@ -1263,7 +1271,7 @@ static void parse_type_entry(DwContext *ctx, ut64 idx) {
  */
 R_API void r_anal_dwarf_process_info(const RAnal *anal, const RBinDwarfDebugInfo *info) {
 	r_return_if_fail (info && anal);
-	Sdb *dwarf_sdb =  sdb_ns (anal->sdb, "dwarf", 1); // dwf flagspace
+	Sdb *dwarf_sdb =  sdb_ns (anal->sdb, "dwarf", 1);
 	size_t i, j;
 	for (i = 0; i < info->count; i++) {
 		RBinDwarfCompUnit *unit = &info->comp_units[i];
@@ -1311,7 +1319,10 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, Sdb *dwarf_sdb) {
 		/* if the function is analyzed so we can edit */
 		RAnalFunction *fcn = r_anal_get_function_at (anal, faddr);
 		if (fcn) {
-			r_anal_function_rename (fcn, func_name);
+			/* prepend dwarf debug info stuff with dwf. */
+			char *dwf_name = r_str_newf ("dwf.%s", func_name); 
+			r_anal_function_rename (fcn, dwf_name);
+			free (dwf_name);
 			/* TODO apply signatures when r2 will use tree-sitter parser
 			   tmp = sdb_fmt ("func.%s.sig", func_name);
 			   char *fcnstr = sdb_get (dwarf_sdb, tmp, 0);
