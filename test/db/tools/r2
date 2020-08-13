@@ -77,36 +77,51 @@ EOF
 RUN
 
 NAME=r2 -V
-BROKEN=1 # Only on Windows
 FILE=-
-CMDS=!!r2 -V~r_anal?
+CMDS=<<EOF
+e cfg.newshell=false
+?q `!!r2 -V~r_anal?`
+?+ ?vi $?
+?! !!r2.bat -V~r_anal?
 EXPECT=<<EOF
 1
 EOF
 RUN
 
 NAME=r2 -h
-BROKEN=1 # Only on Windows
 FILE=-
-CMDS=!!r2 -h~Usage?
+CMDS=<<EOF
+e cfg.newshell=false
+?q `!!r2 -h~Usage?`
+?+ ?vi $?
+?! !!r2.bat -h~Usage?
+EOF
 EXPECT=<<EOF
 1
 EOF
 RUN
 
 NAME=r2 -hh
-BROKEN=1 # Only on Windows
 FILE=-
-CMDS=!!r2 -hh~R2_USER_PLUGINS?
+CMDS=<<EOF
+e cfg.newshell=false
+?q `!!r2 -hh~R2_USER_PLUGINS?`
+?+ ?vi $?
+?! !!r2.bat -hh~R2_USER_PLUGINS?
+EOF
 EXPECT=<<EOF
 1
 EOF
 RUN
 
 NAME=r2 -L
-BROKEN=1 # Only on Windows
 FILE=-
-CMDS=!!r2 -L~default?
+CMDS=<<EOF
+e cfg.newshell=false
+?q `!!r2 -L~default?`
+?+ ?vi $?
+?! !!r2.bat -L~default?
+EOF
 EXPECT=<<EOF
 1
 EOF
