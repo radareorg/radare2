@@ -687,9 +687,8 @@ R_API SpcIndirectDataContent *r_pkcs7_parse_spcinfo(RCMS *cms) {
 	RASN1Object *object = r_asn1_create_object (content->binary, content->length, content->binary);
 	if (!object || object->list.length < 2 || !object->list.objects ||
 		!object->list.objects[0] || !object->list.objects[1]) {
-		r_asn1_free_object (object);
-		free (spcinfo);
-		return NULL;
+		R_FREE (spcinfo);
+		goto beach;
 	}
 	if (object->list.objects[0]) {
 		if (!r_pkcs7_parse_spcdata (&spcinfo->data, object->list.objects[0])) {
