@@ -2164,13 +2164,28 @@ RBinSection *getsection(RBin *a, const char *sn) {
 	return NULL;
 }
 
+static ut8 *get_section_bytes(RBin *bin, const char *sect_name, size_t *len) {
+	RBinSection *section = getsection (bin, sect_name);
+	RBinFile *binfile = bin ? bin->cur: NULL;
+	if (!section || !binfile) {
+		return NULL;
+	}
+	if (section->size > binfile->size) {
+		return NULL;
+	}
+	*len = section->size;
+	ut8 *buf = calloc (1,*len);
+	r_buf_read_at (binfile->buf, section->paddr, buf, *len);
+	return buf;
+}
+
 /**
- * @brief Prepares sections and parses .debug_info
+ * @brief Parses .debug_info section
  * 
  * @param da Parsed abbreviations
- * @param a 
- * @param mode 
- * @return RBinDwarfDebugInfo* Parsed information
+ * @param bin
+ * @param mode R_MODE_PRINT to print
+ * @return RBinDwarfDebugInfo* Parsed information, NULL if error
  */
 R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *bin, int mode) {
 	RBinDwarfDebugInfo *info = NULL;
@@ -2275,7 +2290,7 @@ R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 			free (buf);
 			return NULL;
 		}
-		list = r_list_newf (row_free); // always return empty list wtf
+		list = r_list_newf (row_free);
 		if (!list) {
 			free (buf);
 			return NULL;
@@ -2342,25 +2357,38 @@ R_API RList *r_bin_dwarf_parse_aranges(RBin *bin, int mode) {
 }
 
 R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *bin, int mode) {
-	ut8 *buf;
-	size_t len;
-	RBinSection *section = getsection (bin, "debug_abbrev");
-	RBinDwarfDebugAbbrev *da = NULL;
-	RBinFile *binfile = bin ? bin->cur: NULL;
-	if (!section || !binfile) {
+	size_t len = 0;
+	ut8 *buf = get_section_bytes (bin, "debug_abbrev", &len);
+	if (!buf) {
 		return NULL;
 	}
-	if (section->size > binfile->size) {
-		return NULL;
-	}
-	len = section->size;
-	buf = calloc (1,len);
-	r_buf_read_at (binfile->buf, section->paddr, buf, len);
-	da = parse_abbrev_raw (buf, len);
+	RBinDwarfDebugAbbrev *abbrevs = parse_abbrev_raw (buf, len);
 
-	if (mode == R_MODE_PRINT && da) {
-		print_abbrev_section (da, bin->cb_printf);
-	}
+	if (mode == R_MODE_PRINT && abbrevs) {
+		print_abbrev_section (abbrevs, bin->cb_printf);
+	} 
 	free (buf);
-	return da;
+	return abbrevs;
 }
+
+// static RBinDwarfCfa *parse_call_frame_raw(ut8 *buf, size_t len, int mode) {
+// 	// it's full of CIE and FDE entries
+// 	/*
+// 	parse_entry ()
+// 	if (cie) {
+
+// 	} else if (fde) {
+
+// 	}
+
+
+// 	*/
+// }
+
+// R_API RBinDwarfCfa *r_bin_dwarf_parse_call_frame(RBin *bin, int mode) {
+// 	/* The standard says the section is .debug_frame
+// 	   but in reality binaries that I see from clang or 
+// 	   gcc use eh_frame, not sure why is that */
+// 	size_t len = 0;
+// 	ut8 *buf = get_section_bytes (bin, "eh_frame", &len);
+// }

@@ -834,6 +834,10 @@ typedef struct {
 	size_t file_names_count;
 } RBinDwarfLineHeader;
 
+typedef struct r_bin_dwarf_cfa_t {
+	int x;
+} RBinDwarfCfa;
+
 #define r_bin_dwarf_line_new(o,a,f,l) o->address=a, o->file = strdup (f?f:""), o->line = l, o->column =0,o
 
 R_API RList *r_bin_dwarf_parse_aranges(RBin *a, int mode);
