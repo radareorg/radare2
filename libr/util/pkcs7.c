@@ -644,6 +644,9 @@ static bool r_pkcs7_parse_spcdata(SpcAttributeTypeAndOptionalValue *data, RASN1O
 		return false;
 	}
 	data->type = r_asn1_stringify_oid (object->list.objects[0]->sector, object->list.objects[0]->length);
+	if (!data->type) {
+		return false;
+	}
 	RASN1Object *obj1 = object->list.objects[1];
 	if (object->list.length > 1) {
 		if (obj1) {
@@ -689,7 +692,10 @@ R_API SpcIndirectDataContent *r_pkcs7_parse_spcinfo(RCMS *cms) {
 		return NULL;
 	}
 	if (object->list.objects[0]) {
-		r_pkcs7_parse_spcdata (&spcinfo->data, object->list.objects[0]);
+		if (!r_pkcs7_parse_spcdata (&spcinfo->data, object->list.objects[0])) {
+			R_FREE (spcinfo);
+			goto beach;
+		}
 	}
 	if (object->list.objects[1]) {
 		if (!r_pkcs7_parse_spcmessagedigest (&spcinfo->messageDigest, object->list.objects[1])) {
