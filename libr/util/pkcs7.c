@@ -670,7 +670,8 @@ static bool r_pkcs7_parse_spcmessagedigest(SpcDigestInfo *messageDigest, RASN1Ob
 }
 
 R_API SpcIndirectDataContent *r_pkcs7_parse_spcinfo(RCMS *cms) {
-	if (!cms) {
+	if (!cms || r_str_cmp (cms->signedData.contentInfo.contentType->string,
+				   		   "spcIndirectDataContext", -1)) {
 		return NULL;
 	}
 
