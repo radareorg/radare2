@@ -304,9 +304,9 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 		errno = 0;
 		char *pe;
 		if (*p == '-') {
-			js->num.s_value = (st64)strtoll (p, &pe, 0);
+			js->num.s_value = (st64)strtoll (p, &pe, 10);
 		} else {
-			js->num.u_value = (ut64)strtoull (p, &pe, 0);
+			js->num.u_value = (ut64)strtoull (p, &pe, 10);
 		}
 		if (pe == p || errno == ERANGE) {
 			R_JSON_REPORT_ERROR ("invalid number", p);
