@@ -35,8 +35,10 @@ typedef enum dwarf_location_kind {
 } VariableLocationKind;
 typedef struct dwarf_var_location_t {
 	VariableLocationKind kind;
-	st64 offset;
 	ut64 address;
+	ut64 reg_num;
+	st64 offset;
+	const char *reg_name; /* string literal */
 } VariableLocation;
 
 typedef struct dwarf_variable_t {
@@ -803,38 +805,114 @@ static void parse_abstract_origin(Context *ctx, ut64 offset, RStrBuf *type, cons
 	}
 }
 
+/* https://software.intel.com/sites/default/files/article/402129/mpx-linux64-abi.pdf */
+static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num, VariableLocationKind *kind) {
+	*kind = LOCATION_REGISTER;
+	switch (reg_num) {
+		case 0:
+			return "rax";
+		case 1:
+			return "rdx";
+		case 2:
+			return "rcx";
+		case 3:
+			return "rbx";
+		case 4:
+			return "rsi";
+		case 5:
+			return "rdi";
+		case 6:
+			*kind = LOCATION_BP;
+			return "rbp";
+		case 7:
+			*kind = LOCATION_SP;
+			return "rsp";
+		case 8:
+			return "r8";
+		case 9:
+			return "r9";
+		case 10:
+			return "r10";
+		case 11:
+			return "r11";
+		case 12:
+			return "r12";
+		case 13:
+			return "r13";
+		case 14:
+			return "r14";
+		case 15:
+			return "r15";
+		case 17:
+			return "xmm0";
+		case 18:
+			return "xmm1";
+		case 19:
+			return "xmm2";
+		case 20:
+			return "xmm3";
+		case 21:
+			return "xmm4";
+		case 22:
+			return "xmm5";
+		case 23:
+			return "xmm6";
+		case 24:
+			return "xmm7";
+		default:
+			r_warn_if_reached ();
+			*kind = LOCATION_UNKNOWN;
+			return "unsupported_reg";
+	}
+}
+
+/* returns string literal register name! 
+   TODO add more arches                 */
+static const char *get_dwarf_reg_name(char *arch, int reg_num, VariableLocationKind *kind) {
+	if (!strcmp (arch, "x86")) {
+		return map_dwarf_reg_to_x86_reg (reg_num, kind);
+	}
+	*kind = LOCATION_UNKNOWN;
+	return "unsupported_reg";
+}
+
 static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttrValue *loc, const RBinDwarfAttrValue *frame_base) {
-	// reg5 - val is in register 5
-	// fbreg <leb> - offset from frame base
-	// regx <leb> - contents is in register X
-	// addr <addr> - contents is in at addr
-	// bregXX <leb> - contents is at offset from specified register
-	// register 31 == stack pointer
+	/* reg5 - val is in register 5
+	fbreg <leb> - offset from frame base
+	regx <leb> - contents is in register X
+	addr <addr> - contents is in at addr
+	bregXX <leb> - contents is at offset from specified register
+	- we now support 3 options: SP, BP and register based arguments */
+	// TODO, research and support loclists?
+	/* We can't parse loclists */
+	if (loc->kind != DW_AT_KIND_BLOCK) {
+		return NULL;
+	}
+
 	VariableLocationKind kind = LOCATION_UNKNOWN;
 	st64 offset = 0;
 	ut64 address = 0;
-	ut64 regNum = 0;
+	ut64 reg_num = -1;
+	const char *reg_name = NULL; /* literal */
 	size_t i;
 	for (i = 0; i < loc->block.length; i++) {
 		switch (loc->block.data[i]) {
-
-		/* we need to parse CFA, needed often
+		/* TODO we need to parse CFA, needed often
 		   just an offset involving framebase */
 		case DW_OP_fbreg: {
 			const ut8 *dump = &loc->block.data[++i];
 			offset = r_sleb128 (&dump, &loc->block.data[loc->block.length]);
 			if (frame_base) {
-				VariableLocation *loc = parse_dwarf_location (ctx, frame_base, NULL);
-				if (loc) {
-					loc->offset = offset;
-					return loc;
+				VariableLocation *location = parse_dwarf_location (ctx, frame_base, NULL);
+				if (location) {
+					location->offset += offset;
+					return location;
 				}
 				return NULL;
 			} else {
 				/* Might happen if frame_base has a frame_base reference? I don't think it can tho */
 				return NULL;
 			}
-			// kind = LOCATION_BP;
 		} break;
 		case DW_OP_reg0:
 		case DW_OP_reg1:
@@ -870,13 +948,9 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 		case DW_OP_reg31: {
 			/* Will mostly be used for SP based arguments */
 			/* TODO I need to find binaries that uses this so I can test it out*/
-			int regNum = loc->block.data[i] - DW_OP_reg0; // get the reg number
-			const char *cpu = ctx->anal->cpu;
-			if (!strcmp (cpu, "x86") && regNum == 7) { /* RSP*/
-				kind = LOCATION_SP;
-			}
+			reg_num = loc->block.data[i] - DW_OP_reg0; // get the reg number
+			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind);
 		} break;
-			break;
 		case DW_OP_breg0:
 		case DW_OP_breg1:
 		case DW_OP_breg2:
@@ -915,17 +989,19 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 			// st64 offset = r_sleb128 (&dump, &val->block.data[val->block.length]);
 			// kind = LOCATION_SP;
 			// offset = offset + 8;
+			reg_num = loc->block.data[i] - DW_OP_breg0; // get the reg number
+			const ut8 *buffer = &loc->block.data[++i];
+			offset = r_sleb128 (&buffer, &loc->block.data[loc->block.length]);
+			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind);
 		} break;
 		case DW_OP_bregx: {
-			/* Will mostly be used for SP based arguments */
+			/* 2 operands, reg_number, offset*/
 			/* TODO I need to find binaries that uses this so I can test it out*/
-			const char *cpu = ctx->anal->cpu;
-			const ut8 *dump = &loc->block.data[++i];
-			dump = r_uleb128 (dump, &loc->block.data[loc->block.length] - dump, &regNum);
-			offset = r_sleb128 (&dump, &loc->block.data[loc->block.length]);
-			if (!strcmp (cpu, "x86") && regNum == 7) { /* stack pointer */
-				kind = LOCATION_SP;
-			}
+			const ut8 *buffer = &loc->block.data[++i];
+			const ut8 *buf_end = &loc->block.data[loc->block.length];
+			buffer = r_uleb128 (buffer, buf_end - buffer, &reg_num);
+			offset = r_sleb128 (&buffer, buf_end);
+			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind);
 		} break;
 		case DW_OP_addr: {
 			/* The DW_OP_addr operation has a single operand that encodes a machine address and whose
@@ -955,6 +1031,11 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 			}
 			kind = LOCATION_GLOBAL; // address
 		} break;
+		case DW_OP_call_frame_cfa: {
+			// REMOVE XXX
+			kind = LOCATION_BP;
+			offset += 8;
+		} break;
 		default:
 			break;
 		}
@@ -964,6 +1045,8 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 	}
 	VariableLocation *location = R_NEW0 (VariableLocation);
 	if (location) {
+		location->reg_name = reg_name;
+		location->reg_num = reg_num;
 		location->kind = kind;
 		location->offset = offset;
 		location->address = address;
@@ -1413,8 +1496,8 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, Sdb *dwarf_sdb) {
 				/* Probably create a flag TODO */
 			} else if (*kind == 's'){
 				r_anal_function_set_var (fcn, offset - fcn->maxstack , *kind, type, 4, false, var_name);
-			} else {
-				r_anal_function_set_var (fcn, offset, *kind, type, 4, false, var_name);
+			} else { /* kind == 'b' */
+				r_anal_function_set_var (fcn, offset - fcn->bp_off, *kind, type, 4, false, var_name);
 			}
 			free (var_key);
 			free (var_data);
