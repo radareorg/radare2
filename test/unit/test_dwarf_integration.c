@@ -1,5 +1,5 @@
 #include <r_anal.h>
-#include <r_bin_dwarf.h>
+#include <r_bin.h>
 #include "minunit.h"
 
 #define MODE 2
@@ -18,7 +18,7 @@ static bool test_parse_dwarf_types(void) {
 	RAnal *anal = r_anal_new ();
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
 	r_io_bind (io, &bin->iob);
-
+	anal->binb.demangle = r_bin_demangle;
 	RBinOptions opt = { 0 };
 	bool res = r_bin_open (bin, "bins/pe/vista-glass.exe", &opt);
 	mu_assert ("pe/vista-glass.exe binary could not be opened", res);
@@ -80,6 +80,7 @@ static bool test_dwarf_function_parsing(void) {
 	RAnal *anal = r_anal_new ();
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
 	r_io_bind (io, &bin->iob);
+	anal->binb.demangle = r_bin_demangle;
 
 	RBinOptions opt = { 0 };
 	bool res = r_bin_open (bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
@@ -97,8 +98,8 @@ static bool test_dwarf_function_parsing(void) {
 	check_kv ("Mammal", "func");
 	check_kv ("func.Mammal.addr", "0x401300");
 	check_kv ("func.Mammal.sig", "void (Mammal * this);");
-	check_kv ("func._ZN3Dog4walkEv.addr", "0x401380");
-	check_kv ("func._ZN3Dog4walkEv.sig", "int (Dog * this);");
+	check_kv ("func.Dog::walk().addr", "0x401380");
+	check_kv ("func.Dog::walk().sig", "int (Dog * this);");
 	check_kv ("main", "func");
 	check_kv ("func.main.addr", "0x401160");
 	check_kv ("func.main.sig", "int ();");
