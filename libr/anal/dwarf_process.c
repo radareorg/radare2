@@ -29,8 +29,9 @@ typedef struct dwarf_function_t {
 typedef enum dwarf_location_kind {
 	LOCATION_UNKNOWN = 0,
 	LOCATION_GLOBAL = 1,
-	LOCATION_STACK = 2,
-	LOCATION_REGISTER = 3,
+	LOCATION_BASE = 2, /* base ptr */
+	LOCATION_STACK = 3, /* stack ptr */
+	LOCATION_REGISTER = 4,
 } DwfVariableLocationKind;
 typedef struct dwarf_var_location_t {
 	DwfVariableLocationKind kind;
@@ -806,6 +807,7 @@ static DwfVariableLocation *parse_dwarf_location (DwContext *ctx, const RBinDwar
 	DwfVariableLocationKind kind = LOCATION_UNKNOWN;
 	st64 offset = 0;
 	ut64 address = 0;
+	ut64 regNum = 0;
 	size_t i;
 	for (i = 0; i < val->block.length; i++) {
 		switch (val->block.data[i]) {
@@ -817,7 +819,7 @@ static DwfVariableLocation *parse_dwarf_location (DwContext *ctx, const RBinDwar
 		case DW_OP_fbreg: {
 			const ut8 *dump = &val->block.data[++i];
 			offset = r_sleb128 (&dump, &val->block.data[val->block.length]);
-			kind = LOCATION_STACK;
+			kind = LOCATION_BASE;
 			/* +8 is just assumption, to calculate real offset, we need to parse CFA */
 			offset = offset + 8;
 		} break;
@@ -861,6 +863,14 @@ static DwfVariableLocation *parse_dwarf_location (DwContext *ctx, const RBinDwar
 			// offset = offset + 8;
 		} break;
 		case DW_OP_bregx: {
+			/* Will mostly be used for SP based arguments */
+			char *cpu = ctx->anal->cpu;
+			const ut8 *dump = &val->block.data[++i];
+			dump = r_uleb128 (dump, &val->block.data[val->block.length] - dump, &regNum);
+			offset = r_sleb128 (&dump, &val->block.data[val->block.length]);
+			if (!strcmp (cpu, "x86") && regNum == 7) { /* stack pointer */
+				kind = LOCATION_STACK;
+			}
 			/* The DW_OP_bregx operation has two operands: a register which is specified by an unsigned
 			LEB128 number, followed by a signed LEB128 offset.  */
 			// const ut8 *dump = &val->block.data[i + 1];
@@ -899,6 +909,9 @@ static DwfVariableLocation *parse_dwarf_location (DwContext *ctx, const RBinDwar
 		default:
 			break;
 		}
+	}
+	if (kind == LOCATION_UNKNOWN) {
+		return NULL;
 	}
 	DwfVariableLocation *location = R_NEW0 (DwfVariableLocation);
 	if (location) {
@@ -999,7 +1012,7 @@ static st32 parse_function_args_and_vars(DwContext *ctx, ut64 idx, RStrBuf *args
 						break;
 					}
 				}
-				if (name && var_type.len > 0) {
+				if (var->name && var_type.len > 0) {
 					var->name = strdup (var->name);
 					var->type = strdup (r_strbuf_get (&var_type));
 					r_list_append (variables, var);
@@ -1041,17 +1054,23 @@ static void sdb_save_dwarf_function(DwFunction *dwarf_fcn, RList/*<DwfVariable*>
 	r_list_foreach (variables, iter, var) {
 		/* now only works for BP based arguments */
 		/* NULL location probably means optimized out, maybe put a comment there */
-		if (var->location && var->location->kind == LOCATION_STACK) {
+		if (var->location && var->location->kind == LOCATION_BASE) {
 			r_strbuf_appendf (&vars, "%s,", var->name);
 			char *key = r_str_newf ("func.%s.var.%s", dwarf_fcn->name, var->name);
 			/* value = "type, storage, additional info based on storage (offset)" */
-			char *val = r_str_newf ("%s,%s,%"PFMT64d"", var->type, "b", var->location->offset);
+			char *val = r_str_newf ("%s,%s,%" PFMT64d "", var->type, "b", var->location->offset);
+			sdb_set (sdb, key, val, 0);
+		} else if (var->location && var->location->kind == LOCATION_STACK) {
+			r_strbuf_appendf (&vars, "%s,", var->name);
+			char *key = r_str_newf ("func.%s.var.%s", dwarf_fcn->name, var->name);
+			/* value = "type, storage, additional info based on storage (offset)" */
+			char *val = r_str_newf ("%s,%s,%" PFMT64d "", var->type, "s", var->location->offset);
 			sdb_set (sdb, key, val, 0);
 		} else if (var->location && var->location->kind == LOCATION_GLOBAL) {
 			r_strbuf_appendf (&vars, "%s,", var->name);
 			char *key = r_str_newf ("func.%s.var.%s", dwarf_fcn->name, var->name);
 			/* value = "type, storage, additional info based on storage (address)" */
-			char *val = r_str_newf ("%s,%s,%"PFMT64x"", var->type, "g", var->location->address);
+			char *val = r_str_newf ("%s,%s,0x%" PFMT64x "", var->type, "g", var->location->address);
 			sdb_set (sdb, key, val, 0);
 		}
 	}
@@ -1340,8 +1359,10 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, Sdb *dwarf_sdb) {
 			char *type = sdb_anext (var_data, &kind);
 			kind = sdb_anext (kind, &offset_str);
 			st64 offset = strtol (offset_str, NULL, 10);
-			/* No way to handle var at fixed addr yet */
-			if (*kind != 'g') {
+			/* No way to handle var at fixed addr yet, TODO set flag */
+			if (*kind == 'g') { /* global, fixed addr */
+				/* Probably create a flag TODO */
+			} else {
 				r_anal_function_set_var (fcn, offset, *kind, type, 4, false, var_name);
 			}
 			free (var_key);
