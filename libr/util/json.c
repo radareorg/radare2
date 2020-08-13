@@ -30,7 +30,7 @@ static RJson *create_json(RJsonType type, const char *key, RJson *parent) {
 		parent->children.last->next = js;
 		parent->children.last = js;
 	}
-	parent->children.length++;
+	parent->children.count++;
 	return js;
 }
 

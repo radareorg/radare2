@@ -45,7 +45,7 @@ typedef struct r_json_t {
 			double dbl_value;   // the value of DOUBLE node
 		} num;
 		struct {                // children of OBJECT or ARRAY
-			int length;
+			size_t count;
 			struct r_json_t *first;
 			struct r_json_t *last;
 		} children;
