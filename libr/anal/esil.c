@@ -579,7 +579,7 @@ static bool esil_signext(RAnalEsil *esil) {
 
 	ut64 m = 0;
 	if (dst < 64) {
-		m = (ut64)1 << (dst - 1);
+		m = 1ULL << (dst - 1);
 	}
 
 	// dst = (dst & ((1U << src_bit) - 1)); // clear upper bits
