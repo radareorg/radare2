@@ -1411,6 +1411,8 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, Sdb *dwarf_sdb) {
 			/* No way to handle var at fixed addr yet, TODO set flag */
 			if (*kind == 'g') { /* global, fixed addr */
 				/* Probably create a flag TODO */
+			} else if (*kind == 's'){
+				r_anal_function_set_var (fcn, offset - fcn->maxstack , *kind, type, 4, false, var_name);
 			} else {
 				r_anal_function_set_var (fcn, offset, *kind, type, 4, false, var_name);
 			}
