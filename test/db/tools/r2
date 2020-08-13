@@ -82,7 +82,7 @@ CMDS=<<EOF
 e cfg.newshell=false
 ?q `!!r2 -V~r_anal?`
 ?+ ?vi $?
-?! !!r2.bat -V~r_anal?
+?! ?e `!!r2.bat -V~r_anal?`
 EOF
 EXPECT=<<EOF
 1
@@ -95,7 +95,7 @@ CMDS=<<EOF
 e cfg.newshell=false
 ?q `!!r2 -h~Usage?`
 ?+ ?vi $?
-?! !!r2.bat -h~Usage?
+?! ?e `!!r2.bat -h~Usage?`
 EOF
 EXPECT=<<EOF
 1
@@ -108,7 +108,7 @@ CMDS=<<EOF
 e cfg.newshell=false
 ?q `!!r2 -hh~R2_USER_PLUGINS?`
 ?+ ?vi $?
-?! !!r2.bat -hh~R2_USER_PLUGINS?
+?! ?e `!!r2.bat -hh~R2_USER_PLUGINS?`
 EOF
 EXPECT=<<EOF
 1
@@ -121,7 +121,7 @@ CMDS=<<EOF
 e cfg.newshell=false
 ?q `!!r2 -L~default?`
 ?+ ?vi $?
-?! !!r2.bat -L~default?
+?! ?e `!!r2.bat -L~default?`
 EOF
 EXPECT=<<EOF
 1
