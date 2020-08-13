@@ -707,3 +707,7 @@ install_data(
   'doc/zsh/_rax2',
   install_dir: r2_zsh_compdir
 )
+
+if host_machine.system() == 'windows'
+  meson.add_install_script('sys/create_r2.bat')
+endif
