@@ -730,6 +730,7 @@ R_API bool r_anal_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 add
 	}
 		return true;
 	default:
+		rtti_itanium_class_type_info_free (cti);
 		r_return_val_if_reached (false);
 	}
 }
