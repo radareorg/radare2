@@ -324,6 +324,10 @@ R_API RCMS *r_pkcs7_parse_cms(const ut8 *buffer, ut32 length) {
 	}
 	if (object->list.objects[0]) {
 		container->contentType = r_asn1_stringify_oid (object->list.objects[0]->sector, object->list.objects[0]->length);
+		if (!container->contentType) {
+			r_asn1_free_object (object);
+			return NULL;
+		}
 	}
 	if (object->list.objects[1]) {
 		r_pkcs7_parse_signeddata (&container->signedData, object->list.objects[1]->list.objects[0]);
