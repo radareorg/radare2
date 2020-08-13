@@ -654,7 +654,9 @@ static bool r_pkcs7_parse_spcmessagedigest(SpcDigestInfo *messageDigest, RASN1Ob
 		!object->list.objects[0] || !object->list.objects[1]) {
 		return false;
 	}
-	r_x509_parse_algorithmidentifier (&messageDigest->digestAlgorithm, object->list.objects[0]);
+	if (!r_x509_parse_algorithmidentifier (&messageDigest->digestAlgorithm, object->list.objects[0])) {
+		return false;
+	}
 	RASN1Object *obj1 = object->list.objects[1];
 	messageDigest->digest = r_asn1_create_binary (obj1->sector, obj1->length);
 	return true;
@@ -686,8 +688,12 @@ R_API SpcIndirectDataContent *r_pkcs7_parse_spcinfo(RCMS *cms) {
 		r_pkcs7_parse_spcdata (&spcinfo->data, object->list.objects[0]);
 	}
 	if (object->list.objects[1]) {
-		r_pkcs7_parse_spcmessagedigest (&spcinfo->messageDigest, object->list.objects[1]);
+		if (!r_pkcs7_parse_spcmessagedigest (&spcinfo->messageDigest, object->list.objects[1])) {
+			R_FREE (spcinfo);
+			goto beach;
+		}
 	}
+beach:
 	r_asn1_free_object (object);
 	return spcinfo;
 }
