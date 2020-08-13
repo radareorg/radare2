@@ -224,7 +224,7 @@ R_API int r_sandbox_system(const char *x, int n) {
 			int r = posix_spawn (&pid, argv0, NULL, NULL, argv, NULL);
 			int status;
 			int s = waitpid (pid, &status, 0);
-			return WEXITSTATUS(s);
+			return WEXITSTATUS (s);
 		}
 #else
 		return system (x);

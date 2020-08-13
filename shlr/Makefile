@@ -62,7 +62,9 @@ endif
 
 .PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwindbg bochs tree-sitter-sync
 
+ifeq ($(shell gcc -v > /dev/null 2>&1 && echo works),works)
 HOST_CC?=gcc
+endif
 SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
@@ -128,7 +130,7 @@ endif
 
 targets:
 	#for TARGET in ${SDB_TARGETS} ; do ${MAKE} $$TARGET ; done
-	$(MAKE) sdb-native-build HOST_CC=gcc CC=gcc
+	$(MAKE) sdb-native-build HOST_CC=$(HOST_CC) CC=$(HOST_CC)
 	$(MAKE) sdb-target-build
 
 sdb/src/sdb_version.h:
