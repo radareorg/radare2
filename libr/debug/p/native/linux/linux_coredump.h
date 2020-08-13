@@ -10,7 +10,7 @@
 /*Macros for XSAVE/XRESTORE*/
 /*
         From: http://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developers-manual.pdf
-        Bit 00: x87 state. 
+        Bit 00: x87 state.
         Bit 01: SSE state.
         Bit 02: AVX state.
         Bits 04 - 03: MPX state. (https://software.intel.com/sites/default/files/managed/9d/f6/Intel_MPX_EnablingGuide.pdf)
@@ -24,7 +24,7 @@
 #define BNDREGS_BIT             (1ULL << 3)
 #define BNDCSR_BIT              (1ULL << 4)
 /* From Intel MPX: "The OS should set both bits to ONE to enable Intel MPX; otherwise the processor would interpret Intel MPX instructions as NOPs" */
-#define MPX_BIT			(BNDREGS_BIT | BNDCSR_BIT) 
+#define MPX_BIT			(BNDREGS_BIT | BNDCSR_BIT)
 /* https://software.intel.com/sites/default/files/managed/b4/3a/319433-024.pdf - Page 66
 "Execute XGETBV and verify that XCR0[7:5] = ‘111b’ (OPMASK state, upper 256-bit of ZMM0-ZMM15 and ZMM16-ZMM31 state are enabled by OS) and that XCR0[2:1] = ‘11b’ (XMM state and YMM state are enabled by OS)" */
 #define AVX512_k_BIT            (1ULL << 5)
@@ -60,7 +60,7 @@
 #define R_DEBUG_REG_T	struct user_regs_struct
 
 #define SIZE_NT_FILE_DESCSZ	sizeof(unsigned long) * 3   /* start_address * end_address * offset_address */
-/* 
+/*
 NT_FILE layout:
 	[number of mappings]
 	[page size]
@@ -196,7 +196,7 @@ typedef struct elf_note_types {
 	int size_roundedup;
 	int size_name;
 	char name[8];
-} note_info_t;		
+} note_info_t;
 
 typedef enum {
 	ADDR,
