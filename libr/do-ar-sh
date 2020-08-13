@@ -30,14 +30,14 @@ for a in ${LIBS} ; do
 			mkdir -p "$TMP/$a/$b"
 			ORIG="$PWD/$a.$b"
 			lipo -thin $b -output $a.$b $a
-			echo "cd $TMP/$a/$b : ar x $ORIG"
-			( cd $TMP/$a/$b ; ar x $ORIG )
+			echo "cd $TMP/$a/$b : ${AR} -x $ORIG"
+			( cd $TMP/$a/$b ; ${AR} -x $ORIG )
 			rm -f $a.$b
 		done
 	else
 		mkdir -p "${TMP}/${a}"
 		ORIG="$PWD/$a"
-		( cd $TMP/$a ; ar x $ORIG )
+		( cd $TMP/$a ; ${AR} -x $ORIG )
 		echo $a
 	fi
 done
@@ -51,6 +51,6 @@ if [ -z "${OBJS}" ]; then
 	exit 1
 else
 	rm -f "${LIB}"
-	${AR} qv "${LIB}" ${OBJS}
+	${AR} -qv "${LIB}" ${OBJS}
 	${RANLIB} "${LIB}"
 fi

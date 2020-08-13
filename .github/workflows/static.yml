@@ -11,7 +11,7 @@ on:
 jobs:
   build:
     name: ubuntu-static-tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
       if: github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'static')
@@ -31,3 +31,5 @@ jobs:
       run: |
         r2 -v
         r2r -v
+        cd test
+        make

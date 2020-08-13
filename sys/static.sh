@@ -5,6 +5,15 @@
 case "$(uname)" in
 Linux)
 	LDFLAGS="${LDFLAGS} -lpthread -ldl -lutil -lm"
+	CFLAGS="${CFLAGS} -flto"
+	LDFLAGS="${LDFLAGS} -flto"
+	if [ -n "`gcc -v 2>&1 | grep gcc`" ]; then
+		export AR=gcc-ar
+	fi
+	;;
+Darwin)
+	CFLAGS="${CFLAGS} -flto"
+	LDFLAGS="${LDFLAGS} -flto"
 	;;
 OpenBSD)
 	LDFLAGS="${LDFLAGS} -lpthread -lkvm -lutil -lm"
@@ -76,7 +85,7 @@ int main() {
 EOF
 cat .test.c
 if [ -z "${CC}" ]; then
-	CC=gcc
+	gcc -v > /dev/null 2>&1 && CC=gcc
 fi
 
 # static pkg-config linking test
