@@ -4017,7 +4017,6 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	r14	.32	56	0\n"
 		"gpr	r15	.32	60	0\n"
 		"flg	cpsr	.32	64	0\n"
-		"gpr	blank	.32	68	0\n" // Hack, the bit fields below don't work on the last register??
 
 		  // CPSR bit fields:
 		  // 576-580 Mode fields (and register sets associated to each field):
