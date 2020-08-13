@@ -198,6 +198,9 @@ static char *parse_key(const char **key, char *p) {
 				return NULL; // propagate error
 			}
 			p = skip_whitespace (p);
+			if (!p) {
+				return NULL;
+			}
 			if (*p == ':') {
 				return p + 1;
 			}
@@ -240,10 +243,16 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 				}
 			}
 			p = skip_whitespace (p);
+			if (!p) {
+				return NULL;
+			}
 			if (*p == ',') {
 				char *commapos = p;
 				p++;
 				p = skip_whitespace (p);
+				if (!p) {
+					return NULL;
+				}
 				if (*p == '}') {
 					R_JSON_REPORT_ERROR ("trailing comma", commapos);
 					return NULL;
@@ -264,10 +273,16 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 				return NULL; // error
 			}
 			p = skip_whitespace (p);
+			if (!p) {
+				return NULL;
+			}
 			if (*p == ',') {
 				char *commapos = p;
 				p++;
 				p = skip_whitespace (p);
+				if (!p) {
+					return NULL;
+				}
 				if (*p == ']') {
 					R_JSON_REPORT_ERROR ("trailing comma", commapos);
 					return NULL;
