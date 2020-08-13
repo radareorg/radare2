@@ -31,3 +31,5 @@ jobs:
       run: |
         r2 -v
         r2r -v
+        cd test
+        make
