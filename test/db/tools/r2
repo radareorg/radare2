@@ -83,6 +83,7 @@ e cfg.newshell=false
 ?q `!!r2 -V~r_anal?`
 ?+ ?vi $?
 ?! !!r2.bat -V~r_anal?
+EOF
 EXPECT=<<EOF
 1
 EOF
