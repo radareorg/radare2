@@ -91,21 +91,22 @@ ifeq ($(OSTYPE),bsd)
 endif
 
 _libr.${EXT_AR}: .libr
-	-${AR} crs $@ .libr/*.o
+	-${AR} -rs $@ .libr/*.o
+
+# this code should be in do-ar-sh not inlined here..
 
 .libr2: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 	rm -rf .libr2
 	mkdir -p .libr2
 	-for LIB in $^ ; do \
 		BN=`basename $$LIB` ; \
-		echo $$BN ; \
 		mkdir -p .libr2/$$BN ; \
-		echo .libr2/$$BN $$LIB; ${AR} ; \
-		( cd .libr2/$$BN ; pwd ; du -hs ../../$$LIB; ${AR} x ../../$$LIB ) ; \
+		echo "( cd .libr2/$$BN ; pwd ; du -hs ../../$$LIB; ${AR} -x ../../$$LIB )" ; \
+		( cd .libr2/$$BN ; pwd ; du -hs ../../$$LIB; ${AR} -x ../../$$LIB ) ; \
 	done
 
 libr.${EXT_AR}: .libr2
-	-${AR} crs $@ .libr2/*/*.o
+	-${AR} -rs $@ .libr2/*/*.o
 
 ifeq (1,$(WITH_GPL))
 E+=../shlr/grub/libgrubfs.${EXT_AR}
@@ -130,11 +131,17 @@ else
 E+=../shlr/capstone/libcapstone.${EXT_AR}
 endif
 
+ifeq ($(OSTYPE),darwin)
+libr_LDFLAGS=-dynamiclib -shared
+else
+libr_LDFLAGS=-shared
+endif
+
 libr.${EXT_SO}: .libr2
 ifeq (${COMPILER},emscripten)
 	echo nothing to do here
 else
-	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -shared -dynamiclib -o libr.${EXT_SO}  \
+	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} $(libr_LDFLAGS) -o libr.${EXT_SO}  \
 		.libr2/*/*.o \
 		../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
 		../shlr/libr_shlr.${EXT_AR} ../shlr/mpc/libmpc.${EXT_AR} $(E) \
