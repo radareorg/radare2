@@ -1108,11 +1108,11 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 	if (die->has_children) {
 		int child_depth = 1;
 		const RBinDwarfDie *child_die = &ctx->all_dies[++idx];
-
+		 Variable *var = R_NEW0 (Variable);
 		const char *name = NULL;
 		bool has_linkage_name = false;
 		int argNumber = 1;
-
+		/* TODO deal with lexical block ?? */
 		size_t j;
 		for (j = idx; child_depth > 0 && j < ctx->count; j++) {
 			child_die = &ctx->all_dies[j];
@@ -1142,17 +1142,30 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 					case DW_AT_abstract_origin:
 						parse_abstract_origin (ctx, val->reference, &type, &name);
 						break;
+					case DW_AT_location:
+						if (val->kind == DW_AT_KIND_BLOCK) {
+							var->location = parse_dwarf_location (ctx, val, find_attr (die, DW_AT_frame_base));
+						}
+						break;
 					default:
 						break;
 					}
 				}
 				/* arguments sometimes have only type, create generic argX */
 				if (type.len) {
+					bool free_name = false;
 					if (!name) {
-						r_strbuf_appendf (args, "%s arg%d,", r_strbuf_get (&type), argNumber);
-					} else {
-						r_strbuf_appendf (args, "%s %s,", r_strbuf_get (&type), name);
+						name = r_str_newf ("arg%d", argNumber);
+						free_name = true;
 					}
+					r_strbuf_appendf (args, "%s %s,", r_strbuf_get (&type), name);
+					if (free_name) {
+						var->name = name;
+					} else {
+						var->name = strdup (name);
+					}
+					var->type = strdup (r_strbuf_get (&type));
+					r_list_append (variables, var);
 				}
 				argNumber++;
 				r_strbuf_fini (&type);
@@ -1184,15 +1197,13 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 						parse_abstract_origin (ctx, val->reference, &type, &name);
 						break;
 					case DW_AT_location:
-						if (val->kind == DW_AT_KIND_BLOCK) {
-							var->location = parse_dwarf_location (ctx, val, find_attr (die, DW_AT_frame_base));
-						}
+						var->location = parse_dwarf_location (ctx, val, find_attr (die, DW_AT_frame_base));
 						break;
 					default:
 						break;
 					}
 				}
-				if (var->name && var_type.len > 0) {
+				if (var->name && var_type.len) {
 					var->name = strdup (var->name);
 					var->type = strdup (r_strbuf_get (&var_type));
 					r_list_append (variables, var);

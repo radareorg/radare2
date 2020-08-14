@@ -21,6 +21,9 @@ static bool test_parse_dwarf_types(void) {
 	anal->binb.demangle = r_bin_demangle;
 	RBinOptions opt = { 0 };
 	bool res = r_bin_open (bin, "bins/pe/vista-glass.exe", &opt);
+	// TODO fix, how to correctly promote binary info to the RAnal in unit tests?
+	anal->cpu = strdup ("x86");
+	anal->bits = 32;
 	mu_assert ("pe/vista-glass.exe binary could not be opened", res);
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
 	RBinDwarfDebugAbbrev *abbrevs = r_bin_dwarf_parse_abbrev (bin, MODE);
@@ -65,7 +68,8 @@ static bool test_parse_dwarf_types(void) {
 	check_kv ("union.unaligned", "ptr,u2,u4,u8,s2,s4,s8");
 	check_kv ("union.unaligned.u2", "short unsigned int,0,0");
 	check_kv ("union.unaligned.s8", "long long int,0,0");
-
+	r_bin_dwarf_free_debug_info (info);
+	r_bin_dwarf_free_debug_abbrev (abbrevs);
 	r_anal_free (anal);
 	r_bin_free (bin);
 	r_io_free (io);
@@ -84,6 +88,9 @@ static bool test_dwarf_function_parsing(void) {
 
 	RBinOptions opt = { 0 };
 	bool res = r_bin_open (bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
+	// TODO fix, how to correctly promote binary info to the RAnal in unit tests?
+	anal->cpu = strdup ("x86");
+	anal->bits = 64;
 	mu_assert ("elf/dwarf4_many_comp_units.elf binary could not be opened", res);
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
 	RBinDwarfDebugAbbrev *abbrevs = r_bin_dwarf_parse_abbrev (bin, MODE);
@@ -104,7 +111,8 @@ static bool test_dwarf_function_parsing(void) {
 	check_kv ("func.main.addr", "0x401160");
 	check_kv ("func.main.sig", "int ();");
 	// Now we expect certain information to be set in the sdb
-
+	r_bin_dwarf_free_debug_info (info);
+	r_bin_dwarf_free_debug_abbrev (abbrevs);
 	r_anal_free (anal);
 	r_bin_free (bin);
 	r_io_free (io);
