@@ -62,7 +62,9 @@ endif
 
 .PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwindbg bochs tree-sitter-sync
 
+ifeq ($(shell gcc -v > /dev/null 2>&1 && echo works),works)
 HOST_CC?=gcc
+endif
 SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
@@ -92,7 +94,7 @@ all:
 	exit 1
 endif
 
-preall: targets libwindbg capstone-build tree-sitter-build radare2-shell-parser-build bochs
+preall: libwindbg capstone-build tree-sitter-build radare2-shell-parser-build bochs
 	@for MOD in ${MODS} ; do \
 		echo $(MAKE) -C $$MOD ; \
 		$(MAKE) -C $$MOD HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
@@ -127,7 +129,9 @@ endif
 endif
 
 targets:
-	for TARGET in ${SDB_TARGETS} ; do ${MAKE} $$TARGET ; done
+	#for TARGET in ${SDB_TARGETS} ; do ${MAKE} $$TARGET ; done
+	$(MAKE) sdb-native-build HOST_CC=$(HOST_CC) CC=$(HOST_CC)
+	$(MAKE) sdb-target-build
 
 ${SDB_TARGETS}:
 	@echo
@@ -144,25 +148,31 @@ ${SDB_TARGETS}:
 	@echo "NATIVE BUILD SDB"
 	@echo ">>>>>>>>>>>>>>>>"
 	@echo
-	$(MAKE) -C sdb clean
-	$(MAKE) -C sdb src/sdb_version.h
-	$(MAKE) -C sdb/src CC=${HOST_CC} LDFLAGS='${HOST_LDFLAGS}' CPPFLAGS='' CFLAGS='${HOST_CFLAGS} ${PIC}' bin
+	$(MAKE) -C sdb clean ; rm -f sdb/src/*.o sdb/src/sdb_version.h
+	$(MAKE) -C sdb/src "CC=${HOST_CC}" LDFLAGS='${HOST_LDFLAGS}' CPPFLAGS='' CFLAGS='${HOST_CFLAGS} ${PIC}' bin
 	cp -f sdb/src/sdb${BUILD_EXT_EXE} sdb/src/.sdb${BUILD_EXT_EXE}
+	cp -f sdb/src/sdb${BUILD_EXT_EXE} sdb/sdb$(BUILD_EXT_EXE)
+	-file sdb/sdb$(BUILD_EXT_EXE)
+
+sdb-target-build: sdb/src/sdb_version.h
 	@echo
 	@echo ">>>>>>>>>>>>>>>>"
 	@echo "TARGET BUILD SDB"
 	@echo ">>>>>>>>>>>>>>>>"
 	@echo
-	$(MAKE) -C sdb clean
-	cd sdb ; $(MAKE) src/sdb_version.h
-	cd sdb/src ; $(MAKE) ARCH=xxx RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED}" \
-		CC="${CC}" AR="${AR}" CFLAGS='${CFLAGS}' LDFLAGS='${LDFLAGS}' libsdb.a
+	$(MAKE) -C sdb clean ; rm -f sdb/src/*.o sdb/src/sdb_version.h
+	$(MAKE) -C sdb/src sdb_version.h
+	$(MAKE) -C sdb/src ARCH=xxx RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED}" \
+		CC="${CC}" AR="${AR}" ARCH=undefined CFLAGS='${CFLAGS}' LDFLAGS='${LDFLAGS}' libsdb.a
 	${RANLIB} sdb/src/libsdb.a
+
+${SDB_TARGETS}:
 ifneq (${EXT_AR},a)
 	-cp -f sdb/src/libsdb.a sdb/src/libsdb.${EXT_AR}
 endif
 	rm -f $@
 	cp -f sdb/src/.sdb${BUILD_EXT_EXE} $@
+	$(MAKE) targets
 
 .PHONY: sdb-sync sync-sdb sdbclean
 SDB_F=README.md config.mk src Makefile meson.build

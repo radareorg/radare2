@@ -174,13 +174,18 @@ R_API int r_sandbox_system(const char *x, int n) {
 #if LIBC_HAVE_SYSTEM
 	if (n) {
 #if APPLE_SDK_IPHONEOS
-#include <dlfcn.h>
-		int (*__system)(const char *cmd)
-			= dlsym (NULL, "system");
-		if (__system) {
-			return __system (x);
+#include <spawn.h>
+		int argc;
+		char *cmd = strdup (x);
+		char **argv = r_str_argv (cmd, &argc);
+		if (argv) {
+			char *argv0 = r_file_path (argv[0]);
+			pid_t pid = 0;
+			int r = posix_spawn (&pid, argv0, NULL, NULL, argv, NULL);
+			int status;
+			int s = waitpid (pid, &status, 0);
+			return WEXITSTATUS (s);
 		}
-		return -1;
 #else
 		return system (x);
 #endif
