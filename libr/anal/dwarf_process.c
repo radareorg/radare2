@@ -1228,11 +1228,11 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 
 static void sdb_save_dwarf_function(Function *dwarf_fcn, RList/*<Variable*>*/ *variables, Sdb *sdb) {
 	char *sname = r_str_sanitize_sdb_key (dwarf_fcn->name);
-	sdb_set (sdb, sname, "func", 0);
-	char *addr_key = r_str_newf ("func.%s.addr", sname);
+	sdb_set (sdb, sname, "fcn", 0);
+	char *addr_key = r_str_newf ("fcn.%s.addr", sname);
 	char *addr_val = r_str_newf ("0x%" PFMT64x "", dwarf_fcn->addr);
 	sdb_set (sdb, addr_key, addr_val, 0);
-	char *sig_key = r_str_newf ("func.%s.sig", sname);
+	char *sig_key = r_str_newf ("fcn.%s.sig", sname);
 	sdb_set (sdb, sig_key, dwarf_fcn->signature, 0);
 	free (addr_key);
 	free (addr_val);
@@ -1247,25 +1247,25 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RList/*<Variable*>*/ *v
 		/* NULL location probably means optimized out, maybe put a comment there */
 		if (var->location && var->location->kind == LOCATION_BP) {
 			r_strbuf_appendf (&vars, "%s,", var->name);
-			char *key = r_str_newf ("func.%s.var.%s", sname, var->name);
+			char *key = r_str_newf ("fcn.%s.var.%s", sname, var->name);
 			/* value = "type, storage, additional info based on storage (offset)" */
 			char *val = r_str_newf ("%s,%" PFMT64d ",%s", "b", var->location->offset, var->type);
 			sdb_set (sdb, key, val, 0);
 		} else if (var->location && var->location->kind == LOCATION_SP) {
 			r_strbuf_appendf (&vars, "%s,", var->name);
-			char *key = r_str_newf ("func.%s.var.%s", sname, var->name);
+			char *key = r_str_newf ("fcn.%s.var.%s", sname, var->name);
 			/* value = "type, storage, additional info based on storage (offset)" */
 			char *val = r_str_newf ("%s,%" PFMT64d ",%s", "s", var->location->offset, var->type);
 			sdb_set (sdb, key, val, 0);
 		} else if (var->location && var->location->kind == LOCATION_GLOBAL) {
 			r_strbuf_appendf (&vars, "%s,", var->name);
-			char *key = r_str_newf ("func.%s.var.%s", sname, var->name);
+			char *key = r_str_newf ("fcn.%s.var.%s", sname, var->name);
 			/* value = "type, storage, additional info based on storage (address)" */
 			char *val = r_str_newf ("%s,%" PFMT64x ",%s", "g", var->location->address, var->type);
 			sdb_set (sdb, key, val, 0);
 		} else if (var->location && var->location->kind == LOCATION_REGISTER) {
 			r_strbuf_appendf (&vars, "%s,", var->name);
-			char *key = r_str_newf ("func.%s.var.%s", sname, var->name);
+			char *key = r_str_newf ("fcn.%s.var.%s", sname, var->name);
 			/* value = "type, storage, additional info based on storage (register name)" */
 			char *val = r_str_newf ("%s,%s,%s", "r", var->location->reg_name, var->type);
 			sdb_set (sdb, key, val, 0);
@@ -1474,6 +1474,7 @@ static void parse_type_entry(Context *ctx, ut64 idx) {
 		parse_function (ctx, idx);
 		break;
 	case DW_TAG_compile_unit:
+		/* used for name demangling */
 		ctx->lang = parse_comp_unit_lang (die);
 	default:
 		break;
@@ -1510,12 +1511,13 @@ R_API void r_anal_dwarf_process_info(const RAnal *anal, const RBinDwarfDebugInfo
 bool filter_sdb_function_names(void *user, const char *k, const char *v) {
 	(void) user;
 	(void) k;
-	return !strcmp (v, "func");
+	return !strcmp (v, "fcn");
 }
 
 /**
  * @brief Use parsed DWARF function info from Sdb in the anal functions
  *  XXX right now we only save parsed name and variables, we can't use signature now
+ *  XXX refactor to be more readable
  * @param anal 
  * @param dwarf_sdb 
  * @return R_API 
@@ -1530,15 +1532,15 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, Sdb *dwarf_sdb) {
 	/* iterate all function entries */
 	ls_foreach (sdb_list, it, kv) {
 		char *func_name = kv->base.key;
-		char *addr_key = r_str_newf ("func.%s.addr", func_name);
+		char *addr_key = r_str_newf ("fcn.%s.addr", func_name);
 		ut64 faddr = sdb_num_get (dwarf_sdb, addr_key, 0);
 		R_FREE (addr_key);
 
 		/* if the function is analyzed so we can edit */
 		RAnalFunction *fcn = r_anal_get_function_at (anal, faddr);
 		if (fcn) {
-			/* prepend dwarf debug info stuff with dwf. */
-			char *dwf_name = r_str_newf ("dwf.%s", func_name); 
+			/* prepend dwarf debug info stuff with dbg. */
+			char *dwf_name = r_str_newf ("dbg.%s", func_name); 
 			r_anal_function_rename (fcn, dwf_name);
 			free (dwf_name);
 			/* TODO apply signatures when r2 will use tree-sitter parser
@@ -1546,11 +1548,11 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, Sdb *dwarf_sdb) {
 			   char *fcnstr = sdb_get (dwarf_sdb, tmp, 0);
 			   r_anal_str_to_fcn (anal, func, fcnstr); */
 		}
-		char *var_names_key = r_str_newf ("func.%s.vars", func_name);
+		char *var_names_key = r_str_newf ("fcn.%s.vars", func_name);
 		char *vars = sdb_get (dwarf_sdb, var_names_key, NULL);
 		char *var_name;
 		sdb_aforeach (var_name, vars) {
-			char *var_key = r_str_newf ("func.%s.var.%s", func_name, var_name);
+			char *var_key = r_str_newf ("fcn.%s.var.%s", func_name, var_name);
 			char *var_data = sdb_get (dwarf_sdb, var_key, NULL);
 			if (!var_data) {
 				goto loop_end;

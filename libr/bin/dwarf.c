@@ -24,6 +24,7 @@
 // endianness setting global
 static bool big_end = false;
 
+/* This macro seems bad regarding to endianess XXX, use only for single byte */
 #define READ(buf, type)                                             \
 	(((buf) + sizeof (type) < buf_end) ? *((type *)(buf)) : 0); \
 	(buf) += sizeof (type)
@@ -375,10 +376,10 @@ static inline bool is_printable_unit_type(ut64 unit_type) {
  * 
  * @param is_64bit Format of the comp unit
  * @param buf Pointer to the buffer to read from, to update after read
- * @param buf_end To check the boundary
+ * @param buf_end To check the boundary /for READ macro/
  * @return ut64 Read value
  */
-static ut64 dwarf_read_piece(bool is_64bit, const ut8 **buf, const ut8 *buf_end) {
+static inline ut64 dwarf_read_offset(bool is_64bit, const ut8 **buf, const ut8 *buf_end) {
 	ut64 result;
 	if (is_64bit) {
 		result = READ64 (*buf);
@@ -388,6 +389,23 @@ static ut64 dwarf_read_piece(bool is_64bit, const ut8 **buf, const ut8 *buf_end)
 	return result;
 }
 
+static inline ut64 dwarf_read_address(size_t size, const ut8 **buf, const ut8 *buf_end) {
+	ut64 result;
+	switch (size) {
+		case 2:
+		result = READ16 (*buf); break;
+		case 4:
+		result = READ32 (*buf); break;
+		case 8:
+		result = READ64 (*buf); break;
+		default:
+		result = 0;
+		*buf += size;
+		eprintf ("Weird dwarf address size: %lu.", size);
+
+	}
+	return result;
+}
 
 static int add_sdb_include_dir(Sdb *s, const char *incl, int idx) {
 	if (!s || !incl) {
@@ -580,7 +598,7 @@ static const ut8 *parse_line_header (
 		hdr->segment_selector_size = READ8 (buf);
 	}
 
-	hdr->header_length = dwarf_read_piece(hdr->is_64bit, &buf, buf_end);
+	hdr->header_length = dwarf_read_offset(hdr->is_64bit, &buf, buf_end);
 
 	const ut8 *tmp_buf = buf; // So I can skip parsing DWARF 5 headers for now
 
@@ -1681,7 +1699,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 	// offset in .debug_str
 	case DW_FORM_strp:
 		value->kind = DW_AT_KIND_STRING;
-		value->string.offset = dwarf_read_piece(hdr->is_64bit, &buf, buf_end);
+		value->string.offset = dwarf_read_offset(hdr->is_64bit, &buf, buf_end);
 		if (debug_str && value->string.offset < debug_str_len) {
 			value->string.content =
 				strdup ((const char *)(debug_str + value->string.offset));
@@ -1692,7 +1710,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 	// offset in .debug_info
 	case DW_FORM_ref_addr:
 		value->kind = DW_AT_KIND_REFERENCE;
-		value->reference = dwarf_read_piece(hdr->is_64bit, &buf, buf_end);
+		value->reference = dwarf_read_offset(hdr->is_64bit, &buf, buf_end);
 		break;
 	// This type of reference is an offset from the first byte of the compilation
 	// header for the compilation unit containing the reference
@@ -1721,7 +1739,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 	// offset in a section other than .debug_info or .debug_str
 	case DW_FORM_sec_offset:
 		value->kind = DW_AT_KIND_REFERENCE;
-		value->reference = dwarf_read_piece(hdr->is_64bit, &buf, buf_end);
+		value->reference = dwarf_read_offset(hdr->is_64bit, &buf, buf_end);
 		break;
 	case DW_FORM_exprloc:
 		value->kind = DW_AT_KIND_BLOCK;
@@ -1740,7 +1758,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		}
 		break;
 	// this means that the flag is present, nothing is read
-	case DW_FORM_flag_present: 
+	case DW_FORM_flag_present:
 		value->kind = DW_AT_KIND_FLAG;
 		value->flag = true;
 		break;
@@ -1751,7 +1769,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 	// offset into .debug_line_str section, can't parse the section now, so we just skip
 	case DW_FORM_strx:
 		value->kind = DW_AT_KIND_STRING;
-		// value->string.offset = dwarf_read_piece (hdr->is_64bit, &buf, buf_end);
+		// value->string.offset = dwarf_read_offset (hdr->is_64bit, &buf, buf_end);
 		// if (debug_str && value->string.offset < debug_line_str_len) {
 		// 	value->string.content =
 		// 		strdup ((const char *)(debug_str + value->string.offset));
@@ -1795,7 +1813,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->address = READ16 (buf);
 		break;
 	case DW_FORM_addrx3:
-	// I need to add 3byte endianess free read here TODO
+		// I need to add 3byte endianess free read here TODO
 		value->kind = DW_AT_KIND_ADDRESS;
 		buf += 3;
 		break;
@@ -1806,13 +1824,10 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 	case DW_FORM_line_ptr: // offset in a section .debug_line_str
 	case DW_FORM_strp_sup: // offset in a section .debug_line_str
 		value->kind = DW_AT_KIND_STRING;
-		value->string.offset = dwarf_read_piece(hdr->is_64bit, &buf, buf_end);
+		value->string.offset = dwarf_read_offset (hdr->is_64bit, &buf, buf_end);
 		// if (debug_str && value->string.offset < debug_line_str_len) {
 		// 	value->string.content =
-		// 		strdup ((const char *)(debug_str + value->string.offset));
-		// } else {
-		// 	value->string.content = NULL; // Means malformed DWARF, should we print error message?
-		// }
+		// 		strdupsts
 		break;
 	// offset in the supplementary object file
 	case DW_FORM_ref_sup4:
@@ -1823,8 +1838,11 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->kind = DW_AT_KIND_REFERENCE;
 		value->reference = READ64 (buf);
 		break;
-	// An index into the .debug_loclists
+	// An index into the .debug_loc
 	case DW_FORM_loclistx:
+		value->kind = DW_AT_KIND_LOCLISTPTR;
+		value->reference = dwarf_read_offset (hdr->is_64bit, &buf, buf_end);
+		break;
 	 // An index into the .debug_rnglists
 	case DW_FORM_rnglistx:
 		value->kind = DW_AT_KIND_ADDRESS;
@@ -1968,16 +1986,16 @@ static const ut8 *info_comp_unit_read_hdr(const ut8 *buf, const ut8 *buf_end, RB
 	if (hdr->version == 5) {
 		hdr->unit_type = READ8 (buf);
 		hdr->address_size = READ8 (buf);
-		hdr->abbrev_offset = dwarf_read_piece (hdr->is_64bit, &buf, buf_end);
+		hdr->abbrev_offset = dwarf_read_offset (hdr->is_64bit, &buf, buf_end);
 
 		if (hdr->unit_type == DW_UT_skeleton || hdr->unit_type == DW_UT_split_compile) {
 			hdr->dwo_id = READ8 (buf);
 		} else if (hdr->unit_type == DW_UT_type || hdr->unit_type == DW_UT_split_type) {
 			hdr->type_sig = READ64 (buf);
-			hdr->type_offset = dwarf_read_piece (hdr->is_64bit, &buf, buf_end);
+			hdr->type_offset = dwarf_read_offset (hdr->is_64bit, &buf, buf_end);
 		}
 	} else {
-		hdr->abbrev_offset = dwarf_read_piece (hdr->is_64bit, &buf, buf_end);
+		hdr->abbrev_offset = dwarf_read_offset (hdr->is_64bit, &buf, buf_end);
 		hdr->address_size = READ8 (buf);
 	}
 	hdr->header_size = buf - tmp; // header size excluding length field
@@ -2392,3 +2410,74 @@ R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *bin, int mode) {
 // 	size_t len = 0;
 // 	ut8 *buf = get_section_bytes (bin, "eh_frame", &len);
 // }
+
+static bool is_dwf_expression(ut8 byte) {
+	if (byte == DW_OP_addr ||
+		byte == DW_OP_deref ||
+		(byte <= DW_OP_const1u && byte >= DW_OP_stack_value)) {
+		return true;
+	}
+	return false;
+}
+
+static ut64 get_max_offset(size_t addr_size) {
+	switch (addr_size) {
+		case 2:
+		return UT16_MAX;
+		case 4:
+		return UT32_MAX;
+		case 8:
+		return UT64_MAX;
+	}
+	return 0;
+}
+
+static void *parse_loc_raw(const ut8 *buf, size_t len, size_t addr_size) {
+	/* Each entry in a location list is either a location list entry, 
+	   a base address selection entry, or an end of list entry.  
+	   
+	   location list entry: Address, Address, expression
+	   base address entry: Address, Address
+	   end of list entry: 0, 0
+	   */
+	const ut8 * const buf_start = buf;
+	const ut8 *buf_end = buf + len;
+	ut64 start_addr = 0;
+	ut64 end_addr = 0;
+	ut64 offset = 0;
+	ut64 max_offset = get_max_offset (addr_size);
+	ut64 address_base = 0;
+	printf ("Offset   Begin            End              Expression\n");
+	while (buf && buf < buf_end) {
+		offset = buf - buf_start;
+		start_addr = dwarf_read_address (addr_size, &buf, buf_end);
+		end_addr = dwarf_read_address (addr_size, &buf, buf_end);
+		if (!start_addr && !end_addr) { /* end of list entry: 0, 0 */
+			printf("0x%llx <end of list>\n", offset);
+			address_base = 0;
+			continue;
+		}
+		/* peek one byte, check if it is an expression */
+		if (start_addr == max_offset) { /* location list entry: */
+			printf("0x%llx 0x%"PFMT64x" 0x%"PFMT64x" (base_address)\n", offset, start_addr, end_addr);
+			address_base = end_addr;
+		} else {
+			ut16 block_length = READ16 (buf);
+			ut8 byte = READ8 (buf);
+			buf += block_length -1; // can't parse larger blocks yet, TODO			
+			printf("0x%llx 0x%"PFMT64x" 0x%"PFMT64x" 0x%hhu\n", offset, address_base + start_addr, address_base + end_addr, byte);
+		}
+	}
+}
+
+R_API RBinDwarfCfa *r_bin_dwarf_parse_loc(RBin *bin, size_t addr_size, int mode) {
+	/* The standard says the section is .debug_frame
+	   but in reality binaries that I see from clang or 
+	   gcc use eh_frame, not sure why is that */
+	size_t len = 0;
+	ut8 *buf = get_section_bytes (bin, "debug_loc", &len);
+	/* set the endianity global [HOTFIX] */
+	big_end = r_bin_is_big_endian (bin);
+	parse_loc_raw (buf, len, addr_size);
+	// bin->
+}

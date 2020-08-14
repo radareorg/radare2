@@ -844,6 +844,7 @@ R_API RList *r_bin_dwarf_parse_aranges(RBin *a, int mode);
 R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode);
 R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *a, int mode);
 R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode);
+R_API RBinDwarfCfa *r_bin_dwarf_parse_loc(RBin *bin, size_t addr_size, int mode);
 R_API void r_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf);
 R_API void r_bin_dwarf_free_debug_abbrev(RBinDwarfDebugAbbrev *da);
 
