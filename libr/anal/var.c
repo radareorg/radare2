@@ -1255,7 +1255,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 			{
 				int delta = fcn->maxstack + var->delta;
 				if (!var->isarg) {
-					char sign = (-var->delta <= fcn->bp_off) ? '+' : '-';
+					char sign = (-var->delta <= fcn->maxstack) ? '+' : '-';
 					anal->cb_printf ("var %s %s @ %s%c0x%x\n",
 						var->type, var->name,
 						anal->reg->name[R_REG_NAME_SP],
