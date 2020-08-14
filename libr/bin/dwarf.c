@@ -2411,15 +2411,6 @@ R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *bin, int mode) {
 // 	ut8 *buf = get_section_bytes (bin, "eh_frame", &len);
 // }
 
-static bool is_dwf_expression(ut8 byte) {
-	if (byte == DW_OP_addr ||
-		byte == DW_OP_deref ||
-		(byte <= DW_OP_const1u && byte >= DW_OP_stack_value)) {
-		return true;
-	}
-	return false;
-}
-
 static ut64 get_max_offset(size_t addr_size) {
 	switch (addr_size) {
 		case 2:
@@ -2432,7 +2423,26 @@ static ut64 get_max_offset(size_t addr_size) {
 	return 0;
 }
 
-static void *parse_loc_raw(const ut8 *buf, size_t len, size_t addr_size) {
+static RBinDwarfLocList *create_loc_list(ut64 offset) {
+	RBinDwarfLocList *list = R_NEW0 (RBinDwarfLocList);
+	if (list) {
+		list->list = r_list_new ();
+		list->offset = offset;
+	}
+	return list;
+}
+
+static RBinDwarfLocRange *create_loc_range(ut64 start, ut64 end, ut64 expr_size) {
+	RBinDwarfLocRange *range = R_NEW0 (RBinDwarfLocRange);
+	if (range) {
+		range->start = start;
+		range->end = end;
+		range->expr_size = expr_size;
+	}
+	return range;
+}
+
+static HtUP *parse_loc_raw(HtUP/*<offset, List *<LocListEntry>*/ *loc_table, const ut8 *buf, size_t len, size_t addr_size) {
 	/* Each entry in a location list is either a location list entry, 
 	   a base address selection entry, or an end of list entry.  
 	   
@@ -2446,31 +2456,45 @@ static void *parse_loc_raw(const ut8 *buf, size_t len, size_t addr_size) {
 	ut64 end_addr = 0;
 	ut64 offset = 0;
 	ut64 max_offset = get_max_offset (addr_size);
-	ut64 address_base = 0;
-	printf ("Offset   Begin            End              Expression\n");
+	ut64 address_base = 0; /* remember base of the loclist */
+	RBinDwarfLocList *loc_list = NULL;;
+	RBinDwarfLocRange *range = NULL;
 	while (buf && buf < buf_end) {
 		offset = buf - buf_start;
 		start_addr = dwarf_read_address (addr_size, &buf, buf_end);
 		end_addr = dwarf_read_address (addr_size, &buf, buf_end);
 		if (!start_addr && !end_addr) { /* end of list entry: 0, 0 */
-			printf("0x%llx <end of list>\n", offset);
+			if (loc_list) {
+				ht_up_insert (loc_table, loc_list->offset, loc_list);
+				loc_list = NULL;
+			}
 			address_base = 0;
 			continue;
-		}
-		/* peek one byte, check if it is an expression */
-		if (start_addr == max_offset) { /* location list entry: */
-			printf("0x%llx 0x%"PFMT64x" 0x%"PFMT64x" (base_address)\n", offset, start_addr, end_addr);
+		} else if (start_addr == max_offset) {
+			/* base address, starts the loclist, DWARF2 doesn't have this type of entry */
 			address_base = end_addr;
-		} else {
+			loc_list = create_loc_list (offset);
+			range = create_loc_range (start_addr, end_addr, 0);
+			r_list_append (loc_list->list, range);
+			range = NULL;
+		} else { /* location list entry: */
+			/* parse the expression */
+			if (!loc_list) {
+				loc_list = create_loc_list (offset);
+			}
 			ut16 block_length = READ16 (buf);
 			ut8 byte = READ8 (buf);
-			buf += block_length -1; // can't parse larger blocks yet, TODO			
-			printf("0x%llx 0x%"PFMT64x" 0x%"PFMT64x" 0x%hhu\n", offset, address_base + start_addr, address_base + end_addr, byte);
+			buf += block_length - 1; // can't parse larger blocks yet, TODO
+			range = create_loc_range (start_addr + address_base, end_addr + address_base, block_length);
+			r_list_append (loc_list->list, range);
+			range = NULL;
 		}
 	}
+	return loc_table;
 }
 
-R_API RBinDwarfCfa *r_bin_dwarf_parse_loc(RBin *bin, size_t addr_size, int mode) {
+
+R_API HtUP/*<offset, List *<LocListEntry>*/ *r_bin_dwarf_parse_loc(RBin *bin, size_t addr_size, int mode) {
 	/* The standard says the section is .debug_frame
 	   but in reality binaries that I see from clang or 
 	   gcc use eh_frame, not sure why is that */
@@ -2478,6 +2502,57 @@ R_API RBinDwarfCfa *r_bin_dwarf_parse_loc(RBin *bin, size_t addr_size, int mode)
 	ut8 *buf = get_section_bytes (bin, "debug_loc", &len);
 	/* set the endianity global [HOTFIX] */
 	big_end = r_bin_is_big_endian (bin);
-	parse_loc_raw (buf, len, addr_size);
-	// bin->
+	HtUP/*<offset, List *<LocListEntry>*/ *loc_table = ht_up_new0 ();
+	if (!loc_table || !buf) {
+		return NULL;
+	}
+	return parse_loc_raw (loc_table, buf, len, addr_size);
+}
+
+// RListComparator should return -1, 0, 1 to indicate "a<b", "a==b", "a>b".
+int offset_comp(const void *a, const void *b) {
+	const RBinDwarfLocList *f = a;
+	const RBinDwarfLocList *s = b;
+	ut64 first = f->offset;
+	ut64 second = s->offset;
+	if (first < second) {
+		return -1;
+	}
+	if (first > second) {
+		return 1;
+	}
+	return 0;
+}
+
+bool sort_loclists(void *user, const ut64 key, const void *value) {
+	RBinDwarfLocList *loc_list = (RBinDwarfLocList *)value;
+	RList *sort_list = user;
+	r_list_add_sorted (sort_list, loc_list, offset_comp);
+	return true;
+}
+
+R_API void r_bin_dwarf_print_loc(HtUP /*<offset, RList *<LocListEntry>*/ *loc_table, int addr_size, PrintfCallback print) {
+	print ("\nContents of the .debug_loc section:\n");
+	if (loc_table) { /* NULL means the section doesn't exist */
+		RList /*<RBinDwarfLocList *>*/ *sort_list = r_list_new ();
+		/* sort the table contents by offset and print sorted 
+		   a bit ugly, but I wanted to decouple the parsing and printing */
+		ht_up_foreach (loc_table, sort_loclists, sort_list);
+		RListIter *i;
+		RBinDwarfLocList *loc_list;
+		r_list_foreach (sort_list, i, loc_list) {
+			RListIter *j;
+			RBinDwarfLocRange *range;
+			ut64 base_offset = loc_list->offset;
+			r_list_foreach (loc_list->list, j, range) {
+				print ("0x%" PFMT64x" 0x%" PFMT64x " 0x%" PFMT64x "\n", base_offset, range->start, range->end);
+				base_offset += addr_size * 2 + range->expr_size;
+				if (range->expr_size) {
+					base_offset += 2; /* 2 bytes for expr length */
+				}
+			}
+			print ("0x%" PFMT64x" <End of list>\n", base_offset);
+		}
+	}
+	print ("\n");
 }
