@@ -805,8 +805,8 @@ static void parse_abstract_origin(Context *ctx, ut64 offset, RStrBuf *type, cons
 	}
 }
 
-/* https://software.intel.com/sites/default/files/article/402129/mpx-linux64-abi.pdf */
-static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num, VariableLocationKind *kind) {
+/* x86_64 https://software.intel.com/sites/default/files/article/402129/mpx-linux64-abi.pdf */
+static const char *map_dwarf_reg_to_x86_64_reg(ut64 reg_num, VariableLocationKind *kind) {
 	*kind = LOCATION_REGISTER;
 	switch (reg_num) {
 		case 0:
@@ -866,11 +866,60 @@ static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num, VariableLocationKind *
 	}
 }
 
+/* x86 https://01.org/sites/default/files/file_attach/intel386-psabi-1.0.pdf */
+static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num, VariableLocationKind *kind) {
+	*kind = LOCATION_REGISTER;
+	switch (reg_num) {
+		case 0:
+			return "eax";
+		case 1:
+			return "edx";
+		case 2:
+			return "ecx";
+		case 3:
+			return "ebx";
+		case 4:
+			*kind = LOCATION_SP;
+			return "esp";
+		case 5:
+			*kind = LOCATION_BP;
+			return "ebp";
+		case 6:
+			return "esi";
+		case 7:
+			return "edi";
+		case 21:
+			return "xmm0";
+		case 22:
+			return "xmm1";
+		case 23:
+			return "xmm2";
+		case 24:
+			return "xmm3";
+		case 25:
+			return "xmm4";
+		case 26:
+			return "xmm5";
+		case 27:
+			return "xmm6";
+		case 28:
+			return "xmm7";
+		default:
+			r_warn_if_reached ();
+			*kind = LOCATION_UNKNOWN;
+			return "unsupported_reg";
+	}
+}
+
 /* returns string literal register name! 
    TODO add more arches                 */
-static const char *get_dwarf_reg_name(char *arch, int reg_num, VariableLocationKind *kind) {
+static const char *get_dwarf_reg_name(char *arch, int reg_num, VariableLocationKind *kind, int bits) {
 	if (!strcmp (arch, "x86")) {
-		return map_dwarf_reg_to_x86_reg (reg_num, kind);
+		if (bits == 64) {
+			return map_dwarf_reg_to_x86_64_reg (reg_num, kind);
+		} else {
+			return map_dwarf_reg_to_x86_reg (reg_num, kind);
+		}
 	}
 	*kind = LOCATION_UNKNOWN;
 	return "unsupported_reg";
@@ -888,7 +937,6 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 	if (loc->kind != DW_AT_KIND_BLOCK) {
 		return NULL;
 	}
-
 	VariableLocationKind kind = LOCATION_UNKNOWN;
 	st64 offset = 0;
 	ut64 address = 0;
@@ -949,7 +997,7 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 			/* Will mostly be used for SP based arguments */
 			/* TODO I need to find binaries that uses this so I can test it out*/
 			reg_num = loc->block.data[i] - DW_OP_reg0; // get the reg number
-			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind);
+			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind, ctx->anal->bits);
 		} break;
 		case DW_OP_breg0:
 		case DW_OP_breg1:
@@ -992,7 +1040,7 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 			reg_num = loc->block.data[i] - DW_OP_breg0; // get the reg number
 			const ut8 *buffer = &loc->block.data[++i];
 			offset = r_sleb128 (&buffer, &loc->block.data[loc->block.length]);
-			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind);
+			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind, ctx->anal->bits);
 		} break;
 		case DW_OP_bregx: {
 			/* 2 operands, reg_number, offset*/
@@ -1001,7 +1049,7 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 			const ut8 *buf_end = &loc->block.data[loc->block.length];
 			buffer = r_uleb128 (buffer, buf_end - buffer, &reg_num);
 			offset = r_sleb128 (&buffer, buf_end);
-			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind);
+			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind, ctx->anal->bits);
 		} break;
 		case DW_OP_addr: {
 			/* The DW_OP_addr operation has a single operand that encodes a machine address and whose
