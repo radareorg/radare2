@@ -34,8 +34,8 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 	int esc = 0;
 	int len = 0;
 	bool inv = false;
-	char text_color[16] = {};
-	char background_color[16] = {};
+	char text_color[16] = {0};
+	char background_color[16] = {0};
 	bool has_set = false;
 	bool need_to_set = false;
 	bool need_to_clear = false;
