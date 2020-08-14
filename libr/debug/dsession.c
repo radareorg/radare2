@@ -28,7 +28,7 @@ static void htup_vector_free(HtUPKv *kv) {
 	r_vector_free (kv->value);
 }
 
-R_API RDebugSession *r_debug_session_new() {
+R_API RDebugSession *r_debug_session_new(void) {
 	RDebugSession *session = R_NEW0 (RDebugSession);
 	if (!session) {
 		return NULL;
@@ -269,7 +269,7 @@ static bool serialize_register_cb(void *db, const ut64 k, const void *v) {
 	return true;
 }
 
-static bool serialize_registers(Sdb *db, HtUP *registers) {
+static void serialize_registers(Sdb *db, HtUP *registers) {
 	ht_up_foreach (registers, serialize_register_cb, db);
 }
 

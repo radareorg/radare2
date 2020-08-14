@@ -589,7 +589,7 @@ R_API bool r_debug_session_load(RDebug *dbg, const char *file);
 R_API bool r_debug_trace_ins_before(RDebug *dbg);
 R_API bool r_debug_trace_ins_after(RDebug *dbg);
 
-R_API RDebugSession *r_debug_session_new();
+R_API RDebugSession *r_debug_session_new(void);
 R_API void r_debug_session_free(RDebugSession *session);
 
 R_API RDebugSnap *r_debug_snap_map(RDebug *dbg, RDebugMap *map);
