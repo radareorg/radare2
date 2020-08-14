@@ -15,6 +15,9 @@ Darwin)
 	CFLAGS="${CFLAGS} -flto"
 	LDFLAGS="${LDFLAGS} -flto"
 	;;
+DragonFly)
+	LDFLAGS="${LDFLAGS} -lpthread -lkvm -lutil -lm"
+	;;
 OpenBSD)
 	LDFLAGS="${LDFLAGS} -lpthread -lkvm -lutil -lm"
 	;;
