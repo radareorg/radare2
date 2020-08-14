@@ -23,6 +23,7 @@ static const char* mips_reg_decode(unsigned reg_num) {
 
 static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
 	ut32 opcode;
+	const ut8 *buf;
 	// WIP char buf[10]; int reg; int family;
 	int optype, oplen = (anal->bits==16)?2:4;
 
@@ -37,14 +38,16 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 	// Be endian aware
 	opcode = r_read_ble32 (b, anal->big_endian);
 
-	// eprintf ("MIPS: %02x %02x %02x %02x (after endian: big=%d)\n", b[0], b[1], b[2], b[3], anal->big_endian);
+	// eprintf ("MIPS: %02x %02x %02x %02x (after endian: big=%d)\n", buf[0], buf[1], buf[2], buf[3], anal->big_endian);
 	if (opcode == 0) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 		return oplen;
 	}
 
-	optype = (b[0]>>2);
-
+	opcode = r_swap_ut32 (opcode);
+	buf = (ut8 *) & opcode;
+	optype = (buf[0] >> 2);
+	
 	if (optype == 0) {
 /*
 	R-TYPE
@@ -60,17 +63,17 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		 1111 1111  1111 1111  1111 1111  1111 1111
 		 \_op__/\_rs__/\_rt_/  \_rd_/\_sa__/\_fun_/
 		   |      |      |       |      |      |
-		 b[0]>>2  |  (b[1]&31)   |      |   b[3]&63
-		          |          (b[2]>>3)  |
-		  (b[0]&3)<<3)+(b[1]>>5)   (b[2]&7)+(b[3]>>6)
+		 buf[0]>>2  |  (buf[1]&31)   |      |   buf[3]&63
+		          |          (buf[2]>>3)  |
+		  (buf[0]&3)<<3)+(buf[1]>>5)   (buf[2]&7)+(buf[3]>>6)
 */
 #if WIP
-		int rs = ((b[0]&3)<<3) + (b[1]>>5);
-		int rt = b[1]&31;
-		int rd = b[2]>>3;
-		int sa = (b[2]&7)+(b[3]>>6);
+		int rs = ((buf[0]&3)<<3) + (buf[1]>>5);
+		int rt = buf[1]&31;
+		int rd = buf[2]>>3;
+		int sa = (buf[2]&7)+(buf[3]>>6);
 #endif
-		int fun = b[3]&63;
+		int fun = buf[3]&63;
 		switch (fun) {
 		case 0: // sll
 			break;
@@ -87,7 +90,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		case 8: // jr
 			//eprintf ("%llx jr\n", addr);
 			// TODO: check return value or gtfo
-			if (((b[0]&3)<<3) + (b[1]>>5) == 31) {
+			if (((buf[0]&3)<<3) + (buf[1]>>5) == 31) {
 				op->type = R_ANAL_OP_TYPE_RET;
 			} else {
 				op->type = R_ANAL_OP_TYPE_JMP;
@@ -153,7 +156,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		 1111 1111  1111 1111  1111 1111  1111 1111
 		 \_op__/\______address____________________/
                    |             |
-               (b[0]>>2)  ((b[0]&3)<<24)+(b[1]<<16)+(b[2]<<8)+b[3]
+               (buf[0]>>2)  ((buf[0]&3)<<24)+(buf[1]<<16)+(buf[2]<<8)+buf[3]
 */
 		// FIXME: what happens when addr is using a virtual map?
 		// ANS: address will be E 0x000000..0x0ffffffc
@@ -173,7 +176,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		// Maybe better solution: use a cfg. variable to do
 		// the offset... but I dont yet know how to get to that
 		// from this static function
-		int address = (((b[0]&3)<<24)+(b[1]<<16)+(b[2]<<8)+b[3]) << 2;
+		int address = (((buf[0]&3)<<24)+(buf[1]<<16)+(buf[2]<<8)+buf[3]) << 2;
 		ut64 page_hack = addr & 0xf0000000;
 		switch (optype) {
 		case 2: // j
@@ -201,17 +204,17 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		 1111 1111  1111 1111  1111 1111  1111 1111
 		 \_op__/\_fmt_/\_ft_/  \_fs_/\_fd__/\_fun_/
 		   |      |      |       |      |      |
-		 b[0]>>2  |  (b[1]&31)   |      |   b[3]&63
-		          |          (b[2]>>3)  |
-		  (b[0]&3)<<3)+(b[1]>>5)   (b[2]&7)+(b[3]>>6)
+		 buf[0]>>2  |  (buf[1]&31)   |      |   buf[3]&63
+		          |          (buf[2]>>3)  |
+		  (buf[0]&3)<<3)+(buf[1]>>5)   (buf[2]&7)+(buf[3]>>6)
 */
 #if WIP
-		int fmt = ((b[0]&3)<<3) + (b[1]>>5);
-		int ft = (b[1]&31);
-		int fs = (b[2]>>3);
-		int fd = (b[2]&7)+(b[3]>>6);
+		int fmt = ((buf[0]&3)<<3) + (buf[1]>>5);
+		int ft = (buf[1]&31);
+		int fs = (buf[2]>>3);
+		int fd = (buf[2]&7)+(buf[3]>>6);
 #endif
-		int fun = (b[3]&63);
+		int fun = (buf[3]&63);
 		//family = 'C';
 		switch (fun) {
 		case 0: // mtc1
@@ -235,13 +238,13 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		 1111 1111  1111 1111  1111 1111  1111 1111
 		 \_op__/\_rs__/\_rt_/  \_______imm________/
 		   |      |      |              |
-		 b[0]>>2  |  (b[1]&31)          |
+		 buf[0]>>2  |  (buf[1]&31)          |
 		          |                     |
-		 ((b[0]&3)<<3)+(b[1]>>5)   (b[2]<<8)+b[3]
+		 ((buf[0]&3)<<3)+(buf[1]>>5)   (buf[2]<<8)+buf[3]
 */
-		int rs = ((b[0]&3)<<3)+(b[1]>>5);
-		int rt = b[1]&31;
-		int imm = (b[2]<<8)+b[3];
+		int rs = ((buf[0]&3)<<3)+(buf[1]>>5);
+		int rt = buf[1]&31;
+		int imm = (buf[2]<<8)+buf[3];
 		if (((optype >> 2) ^ 0x3) && (imm & 0x8000)) {
 			imm = 0 - (0x10000 - imm);
 		}
@@ -306,7 +309,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			break;
 		case 29: // jalx
 			op->type = R_ANAL_OP_TYPE_CALL;
-			op->jump = addr + 4*((b[3] | b[2]<<8 | b[1]<<16));
+			op->jump = addr + 4*((buf[3] | buf[2]<<8 | buf[1]<<16));
 			op->fail = addr + 8;
 			op->delay = 1;
 			break;

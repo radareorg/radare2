@@ -219,10 +219,10 @@ static char *hack_handle_ldst(ut32 insn) {
 
 static int hackyArmAsm(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	char *buf_asm = NULL;
-	ut32 *insn = (ut32 *)buf;
-	int insn_class = (*insn >> 25) & 0xf;
     // Hacky support for ARMv8.5
 	if (a->bits == 64 && len >= 4) {
+		ut32 *insn = (ut32 *)buf;
+		int insn_class = (*insn >> 25) & 0xf;
 		switch (insn_class) {
 		// Data Processing -- Register
 		case 5:

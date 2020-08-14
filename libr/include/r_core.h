@@ -645,9 +645,12 @@ R_API RList *r_core_asm_back_disassemble_byte (RCore *core, ut64 addr, int len, 
 R_API ut32 r_core_asm_bwdis_len (RCore* core, int* len, ut64* start_addr, ut32 l);
 R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int lines, int invbreak, int nbytes, bool json, PJ *pj, RAnalFunction *pdf);
 R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len, int lines, PJ *pj);
-R_API int r_core_print_disasm_instructions (RCore *core, int len, int l);
-R_API int r_core_print_disasm_all (RCore *core, ut64 addr, int l, int len, int mode);
+R_API int r_core_print_disasm_instructions_with_buf(RCore *core, ut64 address, ut8 *buf, int nb_bytes, int nb_opcodes);
+R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opcodes);
+R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mode);
+R_API int r_core_disasm_pdi_with_buf(RCore *core, ut64 address, ut8 *buf, ut32 nb_opcodes, ut32 nb_bytes, int fmt);
 R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt);
+R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode);
 R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int invbreak, int cbytes);
 R_API int r_core_get_prc_cols(RCore *core);
 R_API int r_core_flag_in_middle(RCore *core, ut64 at, int oplen, int *midflags);
@@ -930,39 +933,34 @@ extern RCorePlugin r_core_plugin_a2f;
 
 /* DECOMPILER PRINTING FUNCTIONS */
 /**
-* r_core_annotated_code_print_json() - Prints the data contained in RAnnotatedCode *code in JSON format.
-* @code: Pointer to a RAnnotatedCode
-*
-* Prints the data contained in RAnnotatedCode represented by the pointer 'code' in JSON format. 
-* The function will print the output in console using the function r_cons_printf();
-* 	
-* Return: Nothing
-*/
+ * @brief Prints the data contained in the specified RAnnotatedCode in JSON format.
+ * 
+ * The function will print the output in console using the function r_cons_printf();
+ * 
+ * @param code Pointer to a RAnnotatedCode.
+ */
 R_API void r_core_annotated_code_print_json(RAnnotatedCode *code);
 /**
-* r_core_annotated_code_print() - Prints the decompiled code in the passed argument 'code'.
-* @code: Pointer to a RAnnotatedCode
-* @line_offsets: Pointer to a RVector that containes offsets for the decompiled code
-*
-* This function is used for printing the output of commands pdg and pdgo.
-* It can print the decompiled code with or without offsets. If line_offsets is a null pointer,
-* the output will be printed without offsets (pdg), otherwise, the output will be
-* printed with offsets.
-* This function will print the output in console using the function r_cons_printf();
-* 
-* Return: Nothing
-*/
+ * @brief Prints the decompiled code from the specified RAnnotatedCode.
+ * 
+ * This function is used for printing the output of commands pdg and pdgo.
+ * It can print the decompiled code with or without offsets. If line_offsets is a null pointer,
+ * the output will be printed without offsets (pdg), otherwise, the output will be
+ * printed with offsets.
+ * This function will print the output in console using the function r_cons_printf();
+ * 
+ * @param code Pointer to a RAnnotatedCode.
+ * @param line_offsets Pointer to a @ref RVector that contains offsets for the decompiled code.
+ */
 R_API void r_core_annotated_code_print(RAnnotatedCode *code, RVector *line_offsets);
 /**
-* r_core_annotated_code_print_comment_cmds() - Prints the decompiled code as comments
-* @code: Pointer to a RAnnotatedCode
-*
-* This functions prints the decompiled code as comment.
-* This function is used for the output of command pdg*
-* Output will be printed in console using the function r_cons_printf();
-* 	
-* Return: Nothing
-*/
+ * @brief  Prints the decompiled code as comments
+ * 
+ * This function is used for the output of command pdg*
+ * Output will be printed in console using the function r_cons_printf();
+ * 
+ * @param code Pointer to a RAnnotatedCode.
+ */
 R_API void r_core_annotated_code_print_comment_cmds(RAnnotatedCode *code);
 
 #endif

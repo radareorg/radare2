@@ -1,8 +1,48 @@
-/* radare - LGPL - Copyright 2007-2018 - pancake */
+/* radare - LGPL - Copyright 2007-2020 - pancake, thestr4ng3r */
 
-#include "r_util.h"
-#include "r_util/r_print.h"
-#include "r_util/r_date.h"
+#include <r_util.h>
+#include <r_util/r_print.h>
+
+#if __linux__
+#include <time.h>
+#elif __APPLE__ && !defined(MAC_OS_X_VERSION_10_12)
+#include <mach/mach_time.h>
+#endif
+
+R_API ut64 r_time_now(void) {
+	ut64 ret;
+	struct timeval now;
+	gettimeofday (&now, NULL);
+	ret = now.tv_sec * R_USEC_PER_SEC;
+	ret += now.tv_usec;
+	return ret;
+}
+
+R_API ut64 r_time_now_mono(void) {
+#if __WINDOWS__
+	LARGE_INTEGER f;
+	if (!QueryPerformanceFrequency (&f)) {
+		return 0;
+	}
+	LARGE_INTEGER v;
+	if (!QueryPerformanceCounter (&v)) {
+		return 0;
+	}
+	v.QuadPart *= 1000000;
+	v.QuadPart /= f.QuadPart;
+	return v.QuadPart;
+#elif __APPLE__ && !defined(MAC_OS_X_VERSION_10_12)
+	ut64 ticks = mach_absolute_time ();
+	static mach_timebase_info_data_t tb;
+	mach_timebase_info (&tb);
+	return ((ticks * tb.numer) / tb.denom) / R_NSEC_PER_USEC;
+#else
+	struct timespec now;
+	clock_gettime (CLOCK_MONOTONIC, &now);
+	return now.tv_sec * R_USEC_PER_SEC
+		+ now.tv_nsec / R_NSEC_PER_USEC;
+#endif
+}
 
 R_API char *r_time_stamp_to_str(ut32 timeStamp) {
 #ifdef _MSC_VER
@@ -31,19 +71,19 @@ R_API char *r_time_stamp_to_str(ut32 timeStamp) {
 #endif
 }
 
-R_API ut32 r_dos_time_stamp_to_posix(ut32 timeStamp) {
-        ut16 date = timeStamp >> 16; 
-        ut16 time = timeStamp & 0xFFFF;
-
-        /* Date */
-        ut32 year = ((date & 0xfe00) >> 9) + 1980;
-        ut32 month = (date & 0x01e0) >> 5;
-        ut32 day = date & 0x001f;
-
-        /* Time */
-        ut32 hour = (time & 0xf800) >> 11; 
-        ut32 minutes = (time & 0x07e0) >> 5;
-        ut32 seconds = (time & 0x001f) << 1;
+R_API ut32 r_time_dos_time_stamp_to_posix(ut32 timeStamp) {
+	ut16 date = timeStamp >> 16; 
+	ut16 time = timeStamp & 0xFFFF;
+	
+	/* Date */
+	ut32 year = ((date & 0xfe00) >> 9) + 1980;
+	ut32 month = (date & 0x01e0) >> 5;
+	ut32 day = date & 0x001f;
+	
+	/* Time */
+	ut32 hour = (time & 0xf800) >> 11; 
+	ut32 minutes = (time & 0x07e0) >> 5;
+	ut32 seconds = (time & 0x001f) << 1;
 
 	/* Convert to epoch */
 	struct tm t = {0};
@@ -74,7 +114,12 @@ R_API int r_print_date_dos(RPrint *p, const ut8 *buf, int len) {
 	}
 
 	ut32 dt = buf[3] << 24 | buf[2] << 16 | buf[1] << 8 | buf[0];
-	p->cb_printf ("%s\n", r_time_stamp_to_str ( r_dos_time_stamp_to_posix (dt)));
+	char *s = r_time_stamp_to_str (r_time_dos_time_stamp_to_posix (dt));
+	if (!s) {
+		return 0;
+	}
+	p->cb_printf ("%s\n", s);
+	free (s);
 	return 4;
 }
 

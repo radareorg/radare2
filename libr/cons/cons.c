@@ -352,7 +352,7 @@ R_API bool r_cons_is_breaked(void) {
 		I.cb_break (I.user);
 	}
 	if (I.timeout) {
-		if (r_sys_now () > I.timeout) {
+		if (r_time_now_mono () > I.timeout) {
 			I.context->breaked = true;
 			eprintf ("\nTimeout!\n");
 			I.timeout = 0;
@@ -395,7 +395,7 @@ R_API int r_cons_get_cur_line(void) {
 
 R_API void r_cons_break_timeout(int timeout) {
 	I.timeout = (timeout && !I.timeout) 
-		? r_sys_now () + ((ut64) timeout << 20) : 0;
+		? r_time_now_mono () + ((ut64) timeout << 20) : 0;
 }
 
 R_API void r_cons_break_end(void) {
@@ -1002,10 +1002,10 @@ R_API void r_cons_visual_flush(void) {
 
 R_API void r_cons_print_fps (int col) {
 	int fps = 0, w = r_cons_get_size (NULL);
-	static ut64 prev = 0LL; //r_sys_now ();
+	static ut64 prev = 0LL; //r_time_now_mono ();
 	fps = 0;
 	if (prev) {
-		ut64 now = r_sys_now ();
+		ut64 now = r_time_now_mono ();
 		st64 diff = (st64)(now - prev);
 		if (diff < 0) {
 			fps = 0;
@@ -1014,7 +1014,7 @@ R_API void r_cons_print_fps (int col) {
 		}
 		prev = now;
 	} else {
-		prev = r_sys_now ();
+		prev = r_time_now_mono ();
 	}
 	if (col < 1) {
 		col = 12;

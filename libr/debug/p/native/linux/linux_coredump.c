@@ -9,6 +9,7 @@
 #include <sys/ptrace.h>
 #include <asm/ptrace.h>
 #include "linux_coredump.h"
+#include "linux_ptrace.h"
 
 /* For compatibility */
 #if __x86_64__ || __arm64__

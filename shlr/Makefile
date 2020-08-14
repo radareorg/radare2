@@ -407,13 +407,13 @@ ifeq ($(CC),emcc)
 	for LIB in ${SHLRS} ; do \
 		if [ -f "$${LIB}" ]; then emcc -emit-llvm -nostdlib -Wl,--whole-archive -o .libr/$$(basename $${LIB}.a).o $${LIB} ; fi ; \
 	done
-	${AR} crs $@ .libr/*.o
+	${AR} rs $@ .libr/*.o
 	$(RANLIB) $@
 else
 	for LIB in ${SHLRS} ; do \
 		if [ -f "$${LIB}" ]; then ${PARTIALLD} -o .libr/$$(basename $${LIB}.a).o $${LIB} ; fi ; \
 	done
-	${AR} crs $@ .libr/*.o
+	${AR} rs $@ .libr/*.o
 	$(RANLIB) $@
 endif
 

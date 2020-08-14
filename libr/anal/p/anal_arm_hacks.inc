@@ -145,10 +145,10 @@ static int hack_handle_br_exc_sys(ut32 insn, RAnalOp *op) {
 
 static inline int hackyArmAnal(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	int ret = -1;
-	ut32 *insn = (ut32 *)buf;
-	int insn_class = (*insn >> 25) & 0xf;
 	// Hacky support for ARMv8.3 and ARMv8.5
 	if (a->bits == 64 && len >= 4) {
+		ut32 *insn = (ut32 *)buf;
+		int insn_class = (*insn >> 25) & 0xf;
 		// xpaci // e#43c1da
 		if (!memcmp (buf + 1, "\x43\xc1\xda", 3)) {
 			op->type = R_ANAL_OP_TYPE_MOV;

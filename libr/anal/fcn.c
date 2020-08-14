@@ -1118,7 +1118,6 @@ repeat:
 					if (try_get_jmptbl_info (anal, fcn, op.addr, bb, &table_size, &default_case)) {
 						bool case_table = false;
 						RAnalOp prev_op;
-						ut8 b[32];
 						anal->iob.read_at (anal->iob.io, op.addr - op.size, buf, sizeof (buf));
 						if (r_anal_op (anal, &prev_op, op.addr - op.size, buf, sizeof (buf), R_ANAL_OP_MASK_VAL) > 0) {
 							bool prev_op_has_dst_name = prev_op.dst && prev_op.dst->reg && prev_op.dst->reg->name;
@@ -1128,8 +1127,9 @@ repeat:
 							if (prev_op.type == R_ANAL_OP_TYPE_MOV && prev_op.disp && prev_op.disp != UT64_MAX && same_reg) {
 								//	movzx reg, byte [reg + case_table]
 								//	jmp dword [reg*4 + jump_table]
-								case_table = true;
-								ret = try_walkthrough_casetbl (anal, fcn, bb, depth, op.addr, op.ptr, prev_op.disp, op.ptr, anal->bits >> 3, table_size, default_case, ret);
+								if (try_walkthrough_casetbl (anal, fcn, bb, depth, op.addr, op.ptr, prev_op.disp, op.ptr, anal->bits >> 3, table_size, default_case, ret)) {
+									ret = case_table = true;
+								}
 							}
 						}
 						r_anal_op_fini (&prev_op);

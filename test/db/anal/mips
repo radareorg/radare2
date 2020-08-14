@@ -46,7 +46,19 @@ axt str.busybox
 EOF
 EXPECT=<<EOF
             0x00406228      fcc38424       addiu a0, a0, -0x3c04       ; 0x44c3fc ; "busybox" ; str.busybox
-(nofunc); str.busybox 0x406228 [DATA] addiu a0, a0, -0x3c04
+(nofunc); str.busybox 0x406228 [DATA] addiu a0, a0, -str.busybox
+EOF
+RUN
+
+NAME=mips ld(load doubleword) instruction 
+FILE=bins/elf/analysis/mips64r2-busybox
+CMDS=<<EOF
+s 0x120004460
+f--
+pd 1
+EOF
+EXPECT=<<EOF
+            0x120004460      208084df       ld a0, -0x7fe0(gp)         ; [0x1200ee290:8]=0x120005074
 EOF
 RUN
 
@@ -686,14 +698,14 @@ s 0x00402088
 pd 10
 EOF
 EXPECT=<<EOF
-            0x00402088      8f84814c       lw a0, -0x7eb4(gp)          ; [0x43522c:4]=0x402558 sym.main
+            0x00402088      8f84814c       lw a0, -main(gp)            ; [0x43522c:4]=0x402558 sym.main
             0x0040208c      8fa50000       lw a1, (sp)
             0x00402090      27a60004       addiu a2, sp, 4
             0x00402094      2401fff8       addiu at, zero, -8
             0x00402098      03a1e824       and sp, sp, at
             0x0040209c      27bdffe0       addiu sp, sp, -0x20
-            0x004020a0      8f878230       lw a3, -0x7dd0(gp)          ; [0x435310:4]=0x401ff4 sym._init
-            0x004020a4      8f888114       lw t0, -0x7eec(gp)          ; [0x4351f4:4]=0x41eca0 sym._fini
+            0x004020a0      8f878230       lw a3, -sym._init(gp)       ; [0x435310:4]=0x401ff4 sym._init
+            0x004020a4      8f888114       lw t0, -sym._fini(gp)       ; [0x4351f4:4]=0x41eca0 sym._fini
             0x004020a8      afa80010       sw t0, 0x10(sp)
             0x004020ac      afa20014       sw v0, 0x14(sp)
 EOF

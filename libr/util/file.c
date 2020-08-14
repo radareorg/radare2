@@ -901,12 +901,12 @@ static RMmap *r_file_mmap_unix (RMmap *m, int fd) {
 	return m;
 }
 #elif __WINDOWS__
-static RMmap *r_file_mmap_windows (RMmap *m, const char *file) {
+static RMmap *r_file_mmap_windows(RMmap *m, const char *file) {
 	LPTSTR file_ = r_sys_conv_utf8_to_win (file);
 	bool success = false;
 
-	m->fh = CreateFile (file_, GENERIC_READ | (m->rw?GENERIC_WRITE:0),
-		FILE_SHARE_READ|(m->rw?FILE_SHARE_WRITE:0), NULL,
+	m->fh = CreateFile (file_, GENERIC_READ | (m->rw ? GENERIC_WRITE : 0),
+		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
 		OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	if (m->fh == INVALID_HANDLE_VALUE) {
 		r_sys_perror ("CreateFile");
@@ -1040,7 +1040,7 @@ R_API char *r_file_temp (const char *prefix) {
 		prefix = "";
 	}
 	char *path = r_file_tmpdir ();
-	char *res = r_str_newf ("%s/%s.%"PFMT64x, path, prefix, r_sys_now ());
+	char *res = r_str_newf ("%s/%s.%"PFMT64x, path, prefix, r_time_now ());
 	free (path);
 	return res;
 }

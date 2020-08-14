@@ -5659,84 +5659,48 @@ toro:
 	return addrbytes * idx; //-ds->lastfail;
 }
 
-/* Disassemble either `nb_opcodes` instructions, or
- * `nb_bytes` bytes; both can be negative.
- * Set to 0 the parameter you don't use */
-R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opcodes) {
+static inline bool check_end(int nb_opcodes, int nb_bytes, int i, int j) {
+	if (nb_opcodes > 0) {
+		if (nb_bytes > 0) {
+			return j < nb_opcodes && i < nb_bytes;
+		}
+		return j < nb_opcodes;
+	}
+	return i < nb_bytes;
+}
+
+R_API int r_core_print_disasm_instructions_with_buf(RCore *core, ut64 address, ut8 *buf, int nb_bytes, int nb_opcodes) {
 	RDisasmState *ds = NULL;
 	int i, j, ret, len = 0;
 	char *tmpopstr;
 	const ut64 old_offset = core->offset;
 	bool hasanal = false;
-	int nbytes = 0;
-	const int addrbytes = core->io->addrbytes;
+	const size_t addrbytes = buf ? 1 : core->io->addrbytes;
 	int skip_bytes_flag = 0, skip_bytes_bb = 0;
 
-	r_reg_arena_push (core->anal->reg);
-	if (!nb_bytes) {
-		nb_bytes = core->blocksize;
-		if (nb_opcodes < 0) {
-			/* Backward disassembly or nb_opcodes opcodes
-			 * - We compute the new starting offset
-			 * - Read at the new offset */
-			nb_opcodes = -nb_opcodes;
-
-			// We have some anal_info.
-			if (r_core_prevop_addr (core, core->offset, nb_opcodes, &core->offset)) {
-				nbytes = old_offset - core->offset;
-			} else {
-				// core->offset is modified by r_core_prevop_addr
-				core->offset = old_offset;
-				r_core_asm_bwdis_len (core, &nbytes, &core->offset, nb_opcodes);
-			}
-			if (nbytes > core->blocksize) {
-				r_core_block_size (core, nbytes);
-			}
-			r_io_read_at (core->io, core->offset, core->block, nbytes);
-		}
-	} else {
-		if (nb_bytes < 0) { // Disassemble backward `nb_bytes` bytes
-			nb_bytes = -nb_bytes;
-			core->offset -= nb_bytes;
-			if (nb_bytes > core->blocksize) {
-				ut64 obsz = core->blocksize;
-				r_core_block_size (core, nb_bytes);
-				if (core->blocksize == nb_bytes) {
-					r_io_read_at (core->io, core->offset, core->block, nb_bytes);
-				} else {
-					eprintf ("Cannot read that much!\n");
-					r_core_block_size (core, obsz);
-					len = -1;
-					goto err_offset;
-				}
-				r_core_block_size (core, obsz);
-			} else {
-				r_io_read_at (core->io, core->offset, core->block, nb_bytes);
-			}
-		} else {
-			if (nb_bytes > core->blocksize) {
-				r_core_block_size (core, nb_bytes);
-				r_io_read_at (core->io, core->offset, core->block, nb_bytes);
-			}
-		}
+	if (nb_bytes < 1 && nb_opcodes < 1) {
+		return 0;
 	}
+
+	r_reg_arena_push (core->anal->reg);
 
 	ds = ds_init (core);
 	ds->l = nb_opcodes;
 	ds->len = nb_opcodes * 8;
 
-	if (ds->len > core->blocksize) {
-		r_core_block_size (core, ds->len);
-		r_core_block_read (core);
+	if (!buf) {
+		r_core_seek (core, address, true);
+		buf = core->block;
 	}
-	if (!ds->l) {
-		ds->l = ds->len;
-	}
+
+	core->offset = address;
+
 	r_cons_break_push (NULL, NULL);
 	//build ranges to map addr with bits
-#define isNotTheEnd (nb_opcodes ? j < nb_opcodes: addrbytes * i < nb_bytes)
-	for (i = j = 0; isNotTheEnd; i += ret, j++) {
-		ds->at = core->offset + i;
+	j = 0;
+toro:
+	for (i = 0; check_end (nb_opcodes, nb_bytes, addrbytes * i, j); i += ret, j++) {
+		ds->at = address + i;
 		ds->vat = r_core_pava (core, ds->at);
 		hasanal = false;
 		r_core_seek_arch_bits (core, ds->at);
@@ -5749,7 +5713,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 		// XXX copypasta from main disassembler function
 		// r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		ret = r_asm_disassemble (core->rasm, &ds->asmop,
-			core->block + addrbytes * i, core->blocksize - addrbytes * i);
+			buf + addrbytes * i, nb_bytes - addrbytes * i);
 		ds->oplen = ret;
 		if (ds->midflags) {
 			skip_bytes_flag = handleMidFlags (core, ds, true);
@@ -5766,7 +5730,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 		r_anal_op_fini (&ds->analop);
 		if (!hasanal) {
 			// XXX we probably don't need MASK_ALL
-			r_anal_op (core->anal, &ds->analop, ds->at, core->block + addrbytes * i, core->blocksize - addrbytes * i, R_ANAL_OP_MASK_ALL);
+			r_anal_op (core->anal, &ds->analop, ds->at, buf + addrbytes * i, nb_bytes - addrbytes * i, R_ANAL_OP_MASK_ALL);
 			hasanal = true;
 		}
 		if (ds_must_strip (ds)) {
@@ -5791,7 +5755,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 			if (ds->decode && !ds->immtrim) {
 				R_FREE (ds->opstr);
 				if (!hasanal) {
-					r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i, R_ANAL_OP_MASK_ALL);
+					r_anal_op (core->anal, &ds->analop, ds->at, buf + i, nb_bytes - i, R_ANAL_OP_MASK_ALL);
 					hasanal = true;
 				}
 				tmpopstr = r_anal_op_to_string (core->anal, &ds->analop);
@@ -5803,8 +5767,8 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 			} else if (ds->use_esil) {
 				if (!hasanal) {
 					r_anal_op (core->anal, &ds->analop,
-						ds->at, core->block + i,
-						core->blocksize - i, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
+						ds->at, buf + i,
+						nb_bytes - i, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 					hasanal = true;
 				}
 				if (*R_STRBUF_SAFEGET (&ds->analop.esil)) {
@@ -5859,13 +5823,86 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 			ds->hint = NULL;
 		}
 	}
+	if (buf == core->block && nb_opcodes > 0 && j < nb_opcodes) {
+		r_core_seek (core, core->offset + i, true);
+		i = 0;
+		goto toro;
+	}
 	r_cons_break_pop ();
 	ds_free (ds);
- err_offset:
 	core->offset = old_offset;
 	r_reg_arena_pop (core->anal->reg);
 
 	return len;
+}
+
+static bool handle_backwards_disasm(RCore *core, int *nb_opcodes, int *nb_bytes) {
+	if (!*nb_opcodes && !*nb_bytes) {
+		return false;
+	}
+	if (!*nb_bytes) {
+		*nb_bytes = core->blocksize;
+		if (*nb_opcodes < 0) {
+			/* Backward disassembly of nb_opcodes opcodes
+			 * - We compute the new starting offset
+			 * - Read at the new offset */
+			*nb_opcodes = -*nb_opcodes;
+
+			const ut64 old_offset = core->offset;
+			int nbytes = 0;
+
+			// We have some anal_info.
+			if (r_core_prevop_addr (core, core->offset, *nb_opcodes, &core->offset)) {
+				nbytes = old_offset - core->offset;
+			} else {
+				// core->offset is modified by r_core_prevop_addr
+				core->offset = old_offset;
+				r_core_asm_bwdis_len (core, &nbytes, &core->offset, *nb_opcodes);
+			}
+			if (nbytes > core->blocksize) {
+				r_core_block_size (core, nbytes);
+			}
+			r_io_read_at (core->io, core->offset, core->block, nbytes);
+		}
+	} else {
+		if (*nb_bytes < 0) { // Disassemble backward `nb_bytes` bytes
+			*nb_bytes = -*nb_bytes;
+			core->offset -= *nb_bytes;
+			if (*nb_bytes > core->blocksize) {
+				ut64 obsz = core->blocksize;
+				r_core_block_size (core, *nb_bytes);
+				if (core->blocksize == *nb_bytes) {
+					r_io_read_at (core->io, core->offset, core->block, *nb_bytes);
+				} else {
+					eprintf ("Cannot read that much!\n");
+					r_core_block_size (core, obsz);
+					return false;
+				}
+				r_core_block_size (core, obsz);
+			} else {
+				r_io_read_at (core->io, core->offset, core->block, *nb_bytes);
+			}
+		} else {
+			if (*nb_bytes > core->blocksize) {
+				r_core_block_size (core, *nb_bytes);
+				r_io_read_at (core->io, core->offset, core->block, *nb_bytes);
+			}
+		}
+	}
+	return true;
+}
+
+/* Disassemble either `nb_opcodes` instructions, or
+ * `nb_bytes` bytes; both can be negative.
+ * Set to 0 the parameter you don't use */
+R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opcodes) {
+	const ut64 ocore_offset = core->offset;
+	int ret = -1;
+	if (handle_backwards_disasm (core, &nb_opcodes, &nb_bytes)) {
+		ret = r_core_print_disasm_instructions_with_buf (core, core->offset, NULL, nb_bytes, nb_opcodes);
+	}
+	r_core_seek (core, ocore_offset, true);
+	return ret;
 }
 
 R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, PJ *pj) {
@@ -6295,17 +6332,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 	return count;
 }
 
-static inline bool pdi_check_end(int nb_opcodes, int nb_bytes, int i, int j) {
-	if (nb_opcodes > 0) {
-		if (nb_bytes > 0) {
-			return j < nb_opcodes && i < nb_bytes;
-		}
-		return j < nb_opcodes;
-	}
-	return i < nb_bytes;
-}
-
-R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
+R_API int r_core_disasm_pdi_with_buf(RCore *core, ut64 address, ut8 *buf, ut32 nb_opcodes, ut32 nb_bytes, int fmt) {
 	bool show_offset = r_config_get_i (core->config, "asm.offset");
 	bool show_bytes = r_config_get_i (core->config, "asm.bytes");
 	int decode = r_config_get_i (core->config, "asm.decode");
@@ -6321,56 +6348,24 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	RAsmOp asmop;
 	const char *color_reg = R_CONS_COLOR_DEF (reg, Color_YELLOW);
 	const char *color_num = R_CONS_COLOR_DEF (num, Color_CYAN);
-	const int addrbytes = core->io->addrbytes;
+	const size_t addrbytes = buf ? 1 : core->io->addrbytes;
 
 	if (fmt == 'e') {
 		show_bytes = false;
 		decode = 1;
 	}
-	if (!nb_opcodes && !nb_bytes) {
+
+	if (nb_opcodes < 1 && nb_bytes < 1) {
 		return 0;
 	}
-	if (!nb_opcodes) {
-		nb_opcodes = -1;
-		if (nb_bytes < 0) {
-			// Backward disasm `nb_bytes` bytes
-			nb_bytes = -nb_bytes;
-			core->offset -= nb_bytes;
-			r_io_read_at (core->io, core->offset, core->block, nb_bytes);
-		}
-	} else if (!nb_bytes) {
-		if (nb_opcodes < 0) {
-			ut64 start;
-			/* Backward disassembly of `ilen` opcodes
-			* - We compute the new starting offset
-			* - Read at the new offset */
-			nb_opcodes = -nb_opcodes;
-			if (r_core_prevop_addr (core, core->offset, nb_opcodes, &start)) {
-				// We have some anal_info.
-				nb_bytes = core->offset - start;
-			} else {
-				// anal ignorance.
-				r_core_asm_bwdis_len (core, &nb_bytes, &core->offset,
-					nb_opcodes);
-			}
-			nb_bytes *= core->io->addrbytes;
-			if (nb_bytes > core->blocksize) {
-				r_core_block_size (core, nb_bytes);
-			}
-			r_io_read_at (core->io, core->offset, core->block, nb_bytes);
-		} else {
-			// workaround for the `for` loop below
-			nb_bytes = core->blocksize;
-		}
+
+	if (!buf) {
+		r_core_seek (core, address, true);
+		buf = core->block;
 	}
 
-	int len = (nb_opcodes + nb_bytes) * 5;
-	if (len > core->blocksize) {
-		r_core_block_size (core, len);
-		r_core_block_read (core);
-	}
 	r_cons_break_push (NULL, NULL);
-
+	r_core_seek (core, address, false);
 	int midflags = r_config_get_i (core->config, "asm.flags.middle");
 	int midbb = r_config_get_i (core->config, "asm.bb.middle");
 	bool asmmarks = r_config_get_i (core->config, "asm.marks");
@@ -6379,7 +6374,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	j = 0;
 	RAnalMetaItem *meta = NULL;
 toro:
-	for (; pdi_check_end (nb_opcodes, nb_bytes, addrbytes * i, j); j++) {
+	for (; check_end (nb_opcodes, nb_bytes, addrbytes * i, j); j++) {
 		if (r_cons_is_breaked ()) {
 			err = 1;
 			break;
@@ -6405,7 +6400,7 @@ toro:
 			unsigned int seggrn = r_config_get_i (core->config, "asm.seggrn");
 			r_print_offset_sg (core->print, at, 0, show_offseg, seggrn, show_offdec, 0, NULL);
 		}
-		ut64 meta_start = core->offset + i;
+		ut64 meta_start = at;
 		ut64 meta_size;
 		meta = r_meta_get_at (core->anal, meta_start, R_META_TYPE_ANY, &meta_size);
 		if (meta) {
@@ -6416,7 +6411,7 @@ toro:
 				{
 					int idx = i;
 					ut64 at = core->offset + i;
-					int hexlen = len - idx;
+					int hexlen = nb_bytes - idx;
 					int delta = at - meta_start;
 					if (meta_size < hexlen) {
 						hexlen = meta_size;
@@ -6425,19 +6420,14 @@ toro:
 					core->print->flags &= ~R_PRINT_FLAGS_HEADER;
 					// TODO do not pass a copy in parameter buf that is possibly to small for this
 					// print operation
-					int size = R_MIN (meta_size, len - idx);
-					ut8 *buf = calloc (size, 1);
-					if (buf) {
-						r_io_read_at (core->io, at, buf, size);
-						RDisasmState ds = {0};
-						ds.core = core;
-						if (!ds_print_data_type (&ds, buf, 0, size)) {
-							r_cons_printf ("hex length=%" PFMT64d " delta=%d\n", size , delta);
-							r_print_hexdump (core->print, at, buf+idx, hexlen-delta, 16, 1, 1);
-						} else {
-							r_cons_newline ();
-						}
-						free (buf);
+					int size = R_MIN (meta_size, nb_bytes - idx);
+					RDisasmState ds = {0};
+					ds.core = core;
+					if (!ds_print_data_type (&ds, buf + i, 0, size)) {
+						r_cons_printf ("hex length=%" PFMT64d " delta=%d\n", size, delta);
+						r_print_hexdump (core->print, at, buf + idx, hexlen - delta, 16, 1, 1);
+					} else {
+						r_cons_newline ();
 					}
 					ret = true;
 				}
@@ -6462,8 +6452,8 @@ toro:
 			}
 		}
 		r_asm_set_pc (core->rasm, core->offset + i);
-		ret = r_asm_disassemble (core->rasm, &asmop, core->block + addrbytes * i,
-			core->blocksize - addrbytes * i);
+		ret = r_asm_disassemble (core->rasm, &asmop, buf + addrbytes * i,
+			nb_bytes - addrbytes * i);
 		if (midflags || midbb) {
 			RDisasmState ds = {
 				.oplen = ret,
@@ -6487,7 +6477,7 @@ toro:
 		if (fmt == 'C') {
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, core->offset + i);
 			if (comment) {
-				r_cons_printf ("0x%08"PFMT64x " %s\n", core->offset + i, comment);
+				r_cons_printf ("0x%08" PFMT64x " %s\n", core->offset + i, comment);
 			}
 			i += ret;
 			continue;
@@ -6500,7 +6490,7 @@ toro:
 				ret = 1;
 			}
 			if (show_bytes) {
-				r_cons_printf ("%18s%02x  ", "", core->block[i]);
+				r_cons_printf ("%18s%02x  ", "", buf[i]);
 			}
 			r_cons_println ("invalid"); // ???");
 		} else {
@@ -6518,7 +6508,7 @@ toro:
 				};
 				char *tmpopstr, *opstr = NULL;
 				r_anal_op (core->anal, &analop, core->offset + i,
-					core->block + addrbytes * i, core->blocksize - addrbytes * i, R_ANAL_OP_MASK_ALL);
+					buf + addrbytes * i, nb_bytes - addrbytes * i, R_ANAL_OP_MASK_ALL);
 				tmpopstr = r_anal_op_to_string (core->anal, &analop);
 				if (fmt == 'e') { // pie
 					char *esil = (R_STRBUF_SAFEGET (&analop.esil));
@@ -6559,7 +6549,7 @@ toro:
 					};
 					RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset + i, R_ANAL_FCN_TYPE_NULL);
 					r_anal_op (core->anal, &aop, core->offset + i,
-						core->block + addrbytes * i, core->blocksize - addrbytes * i, R_ANAL_OP_MASK_BASIC);
+						buf + addrbytes * i, nb_bytes - addrbytes * i, R_ANAL_OP_MASK_BASIC);
 					asm_str = r_print_colorize_opcode (core->print, asm_str, color_reg, color_num, false, f ? f->addr : 0);
 					r_cons_printf ("%s%s"Color_RESET "\n",
 						r_print_color_op_type (core->print, aop.type),
@@ -6573,7 +6563,7 @@ toro:
 		}
 		i += ret;
 	}
-	if (nb_opcodes > 0 && j < nb_opcodes) {
+	if (buf == core->block && nb_opcodes > 0 && j < nb_opcodes) {
 		r_core_seek (core, core->offset + i, true);
 		i = 0;
 		goto toro;
@@ -6582,4 +6572,180 @@ toro:
 	r_cons_break_pop ();
 	r_core_seek (core, old_offset, true);
 	return err;
+}
+
+R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
+	const ut64 ocore_offset = core->offset;
+	int ret = -1;
+	if (handle_backwards_disasm(core, &nb_opcodes, &nb_bytes)) {
+		ret = r_core_disasm_pdi_with_buf (core, core->offset, NULL, nb_opcodes, nb_bytes, fmt);
+	}
+	r_core_seek (core, ocore_offset, true);
+	return ret;
+}
+
+static bool read_ahead(RIO *io, ut8 **buf, size_t *buf_sz, ut64 address, size_t offset_into_buf, size_t bytes_to_read) {
+	if (offset_into_buf + bytes_to_read > *buf_sz) {
+		const size_t new_sz = *buf_sz * 2;
+		ut8 *tmp = realloc (*buf, new_sz);
+		if (!tmp) {
+			return false;
+		}
+		*buf_sz = new_sz;
+		*buf = tmp;
+	}
+	return r_io_read_at_mapped (io, address, *buf + offset_into_buf, bytes_to_read);
+}
+
+R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
+	if (nb_opcodes < 1) {
+		return 0;
+	}
+	RReg *reg = core->anal->reg;
+	RRegItem *pc = r_reg_get (reg, "PC", R_REG_TYPE_ALL);
+	if (!pc) {
+		return -1;
+	}
+	PJ *pj = NULL;
+	if (mode == R_MODE_JSON) {
+		pj = pj_new ();
+		if (!pj) {
+			return -1;
+		}
+		pj_a (pj);
+	}
+	if (!core->anal->esil) {
+		r_core_cmd0 (core, "aei");
+		if (!r_config_get_i (core->config, "cfg.debug")) {
+			r_core_cmd0 (core, "aeim");
+		}
+	}
+	RAnalEsil *esil = core->anal->esil;
+	RList *ocache = core->io->cache;
+	RCache *ocacheb = core->io->buffer;
+	const int ocached = core->io->cached;
+	if (ocache) {
+		if (ocacheb && ocacheb->len) {
+			RCache *c = r_cache_new ();
+			r_cache_set (c, ocacheb->base, ocacheb->buf, ocacheb->len);
+			core->io->buffer = c;
+		}
+		core->io->cache = r_list_clone (ocache);
+	} else {
+		r_io_cache_init (core->io);
+	}
+	r_reg_arena_push (reg);
+	RConfigHold *chold = r_config_hold_new (core->config);
+	r_config_hold_i (chold, "io.cache", "asm.lines", NULL);
+	r_config_set_i (core->config, "io.cache", true);
+	r_config_set_i (core->config, "asm.lines", false);
+	const char *strip = r_config_get (core->config, "asm.strip");
+	const int max_op_size = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+	int min_op_size = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	min_op_size = min_op_size > 0 ? min_op_size : 1;
+	const ut64 read_len = max_op_size > 0 ? max_op_size : 32;
+	size_t buf_sz = 0x100, block_sz = 0, block_instr = 0;
+	ut64 block_start = r_reg_get_value (reg, pc);
+	ut8 *buf = malloc (buf_sz);
+	size_t i;
+	for (i = 0; i < nb_opcodes; i++) {
+		const ut64 op_addr = r_reg_get_value (reg, pc);
+		if (!read_ahead (core->io, &buf, &buf_sz, op_addr, block_sz, read_len)) {
+			break;
+		}
+		RAnalOp op;
+		int ret = r_anal_op (core->anal, &op, op_addr, buf + block_sz, read_len, R_ANAL_OP_MASK_ESIL);
+		const bool invalid_instr = ret < 1 || op.size < 1 || op.type == R_ANAL_OP_TYPE_ILL;
+		bool end_of_block = false;
+		switch (op.type & R_ANAL_OP_TYPE_MASK & ~R_ANAL_OP_HINT_MASK) {
+		case R_ANAL_OP_TYPE_JMP:
+		case R_ANAL_OP_TYPE_UJMP:
+		case R_ANAL_OP_TYPE_CALL:
+		case R_ANAL_OP_TYPE_UCALL:
+		case R_ANAL_OP_TYPE_RET:
+			end_of_block = true;
+			break;
+		}
+		if (R_STR_ISNOTEMPTY (strip) && strstr (strip, r_anal_optype_to_string (op.type))) {
+			i--;
+		} else {
+			if (invalid_instr) {
+				block_sz += min_op_size;
+			} else {
+				block_sz += op.size;
+			}
+			if (invalid_instr || (i + 1 >= nb_opcodes)) {
+				end_of_block = true;
+			}
+			block_instr++;
+		}
+		if (end_of_block) {
+			if (op.delay) {
+				const ut64 ops_to_read = R_MIN (op.delay, nb_opcodes - (i + 1));
+				const ut64 bytes_to_read = ops_to_read * read_len;
+				if (!read_ahead (core->io, &buf, &buf_sz, op_addr + op.size, block_sz, bytes_to_read)) {
+					break;
+				}
+				block_instr += ops_to_read;
+				block_sz += bytes_to_read;
+				i += ops_to_read;
+			}
+			if (block_instr) {
+				switch (mode) {
+				case R_MODE_JSON:
+					r_core_print_disasm_json (core, block_start, buf, block_sz, block_instr, pj);
+					break;
+				case R_MODE_SIMPLE:
+					r_core_disasm_pdi_with_buf (core, block_start, buf, block_instr, block_sz, 0);
+					break;
+				case R_MODE_SIMPLEST:
+					r_core_print_disasm_instructions_with_buf (core, block_start, buf, block_sz, block_instr);
+					break;
+				default:
+					r_core_print_disasm (core->print, core, block_start, buf, block_sz, block_instr, 0, 0, false, NULL, NULL);
+					break;
+				}
+			}
+			block_sz = 0;
+			block_instr = 0;
+		}
+		if (invalid_instr) {
+			break;
+		}
+		r_anal_esil_set_pc (core->anal->esil, op_addr);
+		r_reg_set_value (reg, pc, op_addr + op.size);
+		const char *e = r_strbuf_get (&op.esil);
+		if (R_STR_ISNOTEMPTY (e)) {
+			r_anal_esil_parse (esil, e);
+		}
+		r_anal_op_fini (&op);
+
+		if (end_of_block) {
+			block_start = r_reg_get_value (reg, pc);
+			r_core_seek_arch_bits (core, block_start);
+		}
+	}
+	if (mode == R_MODE_JSON) {
+		pj_end (pj);
+		r_cons_print (pj_string (pj));
+		pj_free (pj);
+	}
+	free (buf);
+	r_reg_arena_pop (reg);
+	int len = r_list_length (ocache);
+	if (r_list_length (core->io->cache) > len) {
+		// TODO: Implement push/pop for IO.cache
+		while (len > 0) {
+			(void)r_list_pop_head (core->io->cache);
+			len--;
+		}
+		core->io->cache->free = ocache->free;
+	}
+	r_io_cache_fini (core->io);
+	core->io->cache = ocache;
+	core->io->buffer = ocacheb;
+	core->io->cached = ocached;
+	r_config_hold_restore (chold);
+	r_config_hold_free (chold);
+	return i;
 }
