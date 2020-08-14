@@ -472,8 +472,8 @@ static const char *help_msg_dts[] = {
 	"Usage:", "dts[*]", "",
 	"dts+", "", "Start trace session",
 	"dts-", "", "Stop trace session",
-	"dtst", " [file] ", "Save trace sessions to disk",
-	"dtsf", " [file] ", "Read trace sessions from disk",
+	"dtst", " [dir] ", "Save trace sessions to disk",
+	"dtsf", " [dir] ", "Read trace sessions from disk",
 	"dtsm", "", "List current memory map and hash",
 	NULL
 };
@@ -4888,7 +4888,7 @@ static int cmd_debug(void *data, const char *input) {
 					eprintf ("Session already started\n");
 					break;
 				}
-				core->dbg->session = r_debug_session_new (core->dbg);
+				core->dbg->session = r_debug_session_new ();
 				r_debug_add_checkpoint (core->dbg);
 				break;
 			case '-': // "dts-"
@@ -4911,7 +4911,7 @@ static int cmd_debug(void *data, const char *input) {
 					r_debug_session_free (core->dbg->session);
 					core->dbg->session = NULL;
 				}
-				core->dbg->session = r_debug_session_new (core->dbg);
+				core->dbg->session = r_debug_session_new ();
 				r_debug_session_load (core->dbg, input + 4);
 				break;
 			case 'm': // "dtsm"

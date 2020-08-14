@@ -5,21 +5,17 @@ CMDS=<<EOF
 dcu main
 dts+
 ds 200
-dm~?
-ara~?
-dtst dump
-dtsf dump
-dm~?
-ara~?
+dtst ./
+dtsf ./
 dr rip
 ds 10
 dr rip
+rm ./session.sdb
+rm ./registers.sdb
+rm ./memory.sdb
+rm ./checkpoints.sdb
 EOF
 EXPECT=<<EOF
-16
-24
-16
-32
 0x00400574
 0x00400565
 EOF

@@ -17,6 +17,10 @@ R_API void r_debug_session_free(RDebugSession *session) {
 
 static void r_debug_checkpoint_fini(void *element, void *user) {
 	RDebugCheckpoint *checkpoint = element;
+	size_t i;
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		r_reg_arena_free (checkpoint->arena[i]);
+	}
 	r_list_free (checkpoint->snaps);
 }
 
@@ -24,7 +28,7 @@ static void htup_vector_free(HtUPKv *kv) {
 	r_vector_free (kv->value);
 }
 
-R_API RDebugSession *r_debug_session_new(RDebug *dbg) {
+R_API RDebugSession *r_debug_session_new() {
 	RDebugSession *session = R_NEW0 (RDebugSession);
 	if (!session) {
 		return NULL;
@@ -57,9 +61,11 @@ R_API bool r_debug_add_checkpoint(RDebug *dbg) {
 	// Save current registers arena iter
 	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 0);
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		checkpoint.reg[i] = r_list_tail (dbg->reg->regset[i].pool);
+		RRegArena *a = dbg->reg->regset[i].arena;
+		RRegArena *b = r_reg_arena_new (a->size);
+		memcpy (b->bytes, a->bytes, b->size);
+		checkpoint.arena[i] = b;
 	}
-	r_reg_arena_push (dbg->reg);
 
 	// Save current memory maps
 	checkpoint.snaps = r_list_newf ((RListFree)r_debug_snap_free);
@@ -92,10 +98,9 @@ R_API bool r_debug_add_checkpoint(RDebug *dbg) {
 static void _set_initial_registers(RDebug *dbg) {
 	size_t i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		RListIter *iter = dbg->session->cur_chkpt->reg[i];
-		RRegArena *arena = iter->data;
+		RRegArena *a = dbg->session->cur_chkpt->arena[i];
 		if (dbg->reg->regset[i].arena->bytes) {
-			memcpy (dbg->reg->regset[i].arena->bytes, arena->bytes, arena->size);
+			memcpy (dbg->reg->regset[i].arena->bytes, a->bytes, a->size);
 		}
 	}
 }
@@ -236,11 +241,18 @@ R_API bool r_debug_session_add_mem_change(RDebugSession *session, ut64 addr, ut8
 	return true;
 }
 
-// {"<addr>": {"size":<size_t>, "a":[<RDebugChangeReg>]}},
-static bool save_register_cb(void *j, const ut64 k, const void *v) {
-	RVector *vreg = (RVector *)v;
+/* Save and Load Session */
+
+// 0x<addr>={"size":<size_t>, "a":[<RDebugChangeReg>]},
+static bool serialize_register_cb(void *db, const ut64 k, const void *v) {
 	RDebugChangeReg *reg;
-	pj_ko (j, sdb_fmt ("0x%"PFMT64x, k));
+	RVector *vreg = (RVector *)v;
+	PJ *j = pj_new ();
+	if (!j) {
+		return false;
+	}
+	pj_o (j);
+
 	pj_kn (j, "size", vreg->len);
 	pj_ka (j, "a");
 	r_vector_foreach (vreg, reg) {
@@ -250,36 +262,27 @@ static bool save_register_cb(void *j, const ut64 k, const void *v) {
 		pj_end (j);
 	}
 	pj_end (j);
+
 	pj_end (j);
+	sdb_set (db, sdb_fmt ("0x%"PFMT64x, k), pj_string (j), 0);
+	pj_free (j);
 	return true;
 }
 
-// reglist=<addr>,<addr>,...
-static bool save_reglist(void *db, const ut64 k, const void *v) {
-	sdb_array_add (db, "reglist", sdb_fmt ("0x%"PFMT64x, k), 0);
-	return true;
+static bool serialize_registers(Sdb *db, HtUP *registers) {
+	ht_up_foreach (registers, serialize_register_cb, db);
 }
 
-static bool save_registers(Sdb *db, HtUP *registers) {
+// 0x<addr>={"size":<size_t>, "a":[<RDebugChangeMem>]}},
+static bool serialize_memory_cb(void *db, const ut64 k, const void *v) {
+	RDebugChangeMem *mem;
+	RVector *vmem = (RVector *)v;
 	PJ *j = pj_new ();
 	if (!j) {
 		return false;
 	}
 	pj_o (j);
-	ht_up_foreach (registers, save_register_cb, j);
-	pj_end (j);
-	sdb_set (db, "registers", pj_string (j), 0);
-	pj_free (j);
 
-	ht_up_foreach (registers, save_reglist, db);
-	return true;
-}
-
-// {"<addr>": {"size":<size_t>, "a":[<RDebugChangeMem>]}},
-static bool save_memory_cb(void *j, const ut64 k, const void *v) {
-	RVector *vmem = (RVector *)v;
-	RDebugChangeMem *mem;
-	pj_ko (j, sdb_fmt ("0x%"PFMT64x, k));
 	pj_kn (j, "size", vmem->len);
 	pj_ka (j, "a");
 	r_vector_foreach (vmem, mem) {
@@ -289,55 +292,39 @@ static bool save_memory_cb(void *j, const ut64 k, const void *v) {
 		pj_end (j);
 	}
 	pj_end (j);
-	pj_end (j);
-	return true;
-}
 
-// memorylist=<addr>,<addr>,...
-static bool save_memorylist(void *db, const ut64 k, const void *v) {
-	sdb_array_add (db, "memorylist", sdb_fmt ("0x%"PFMT64x, k), 0);
-	return true;
-}
-
-static bool save_memory(Sdb *db, HtUP *memory) {
-	PJ *j = pj_new ();
-	if (!j) {
-		return false;
-	}
-	pj_o (j);
-	ht_up_foreach (memory, save_memory_cb, j);
 	pj_end (j);
-	sdb_set (db, "memory", pj_string (j), 0);
+	sdb_set (db, sdb_fmt ("0x%"PFMT64x, k), pj_string (j), 0);
 	pj_free (j);
-
-	ht_up_foreach (memory, save_memorylist, db);
 	return true;
 }
 
-static bool save_checkpoints(Sdb *db, RVector *checkpoints) {
+static void serialize_memory(Sdb *db, HtUP *memory) {
+	ht_up_foreach (memory, serialize_memory_cb, db);
+}
+
+static void serialize_checkpoints(Sdb *db, RVector *checkpoints) {
 	size_t i;
 	RDebugCheckpoint *chkpt;
 	RDebugSnap *snap;
 	RListIter *iter;
-	PJ *j = pj_new ();
-	if (!j) {
-		return false;
-	}
 
-	pj_o (j);
 	r_vector_foreach (checkpoints, chkpt) {
-		// Append cnum to chkptlist sdb_array
-		// chkptlist=<cnum>,<cnum>,...
-		sdb_array_add (db, "chkptlist", sdb_fmt ("0x%"PFMT64x, chkpt->cnum), 0);
+		// 0x<cnum>={
+		//   registers:{"<RRegisterType>":<RRegArena>, ...},
+		//   snaps:{"size":<size_t>, "a":[<RDebugSnap>]}
+		// }
+		PJ *j = pj_new ();
+		if (!j) {
+			return;
+		}
+		pj_o (j);
 
-		pj_ko (j, sdb_fmt ("0x%"PFMT64x, chkpt->cnum));
-
-		// Serialize RRegArena to json
-		// registers: {"<RRegisterType>": <RRegArena>, ...}
+		// Serialize RRegArena to "registers"
+		// {"size":<int>, "bytes":"<base64>"}
 		pj_ko (j, "registers");
 		for (i = 0; i < R_REG_TYPE_LAST; i++) {
-			iter = chkpt->reg[i];
-			RRegArena *arena = iter->data;
+			RRegArena *arena = chkpt->arena[i];
 			pj_ko (j, sdb_fmt ("%d", i));
 			if (arena->bytes) {
 				char *ebytes = sdb_encode ((const void *)arena->bytes, arena->size);
@@ -351,8 +338,9 @@ static bool save_checkpoints(Sdb *db, RVector *checkpoints) {
 		}
 		pj_end (j);
 
-		// Serialize RDebugSnap to json
-		// snaps: {"size":<size_t>, "a":[<RDebugSnap>]},
+		// Serialize RDebugSnap to "snaps"
+		// {"name":<str>, "addr":<ut64>, "addr_end":<ut64>, "size":<ut64>,
+		//  "data":"<base64>", "perm":<int>, "user":<int>, "shared":<bool>}
 		pj_ko (j, "snaps");
 		pj_kn (j, "size", r_list_length (chkpt->snaps));
 		pj_ka (j, "a");
@@ -363,6 +351,10 @@ static bool save_checkpoints(Sdb *db, RVector *checkpoints) {
 			pj_kn (j, "addr_end", snap->addr_end);
 			pj_kn (j, "size", snap->size);
 			char *edata = sdb_encode ((const void *)snap->data, snap->size);
+			if (!edata) {
+				pj_free (j);
+				return;
+			}
 			pj_ks (j, "data", edata);
 			free (edata);
 			pj_kn (j, "perm", snap->perm);
@@ -372,12 +364,11 @@ static bool save_checkpoints(Sdb *db, RVector *checkpoints) {
 		}
 		pj_end (j);
 		pj_end (j);
+
 		pj_end (j);
+		sdb_set (db, sdb_fmt ("0x%"PFMT64x, chkpt->cnum), pj_string (j), 0);
+		pj_free(j);
 	}
-	pj_end (j);
-	sdb_set (db, "checkpoints", pj_string (j), 0);
-	pj_free (j);
-	return true;
 }
 
 /*
@@ -386,20 +377,17 @@ static bool save_checkpoints(Sdb *db, RVector *checkpoints) {
  * /
  *   maxcnum=<maxcnum>
  *
- *   reglist=<addr>,<addr>,...
- *   registers={"<addr>": {"size":<size_t>, "a":[<RDebugChangeReg>]}, ...}
+ *   /registers
+ *     0x<addr>={"size":<size_t>, "a":[<RDebugChangeReg>]}
  *
- *   memorylist=<addr>,<addr>,...
- *   memory={"<addr>": {"size":<size_t>, "a":[<RDebugChangeMem>]}, ...}
+ *   /memory
+ *     0x<addr>={"size":<size_t>, "a":[<RDebugChangeMem>]}
  *
- *   chkptlist=<cnum>,<cnum>,...
- *   checkpoints={
- *     "<cnum>": {
- *       registers: {"<RRegisterType>": <RRegArena>, ...},
- *       snaps: {"size":<size_t>, "a":[<RDebugSnap>]},
- *     },
- *     ...
- *   }
+ *   /checkpoints
+ *     0x<cnum>={
+ *       registers:{"<RRegisterType>":<RRegArena>, ...},
+ *       snaps:{"size":<size_t>, "a":[<RDebugSnap>]}
+ *     }
  *
  * RDebugChangeReg JSON:
  * {"cnum":<int>, "data":<ut64>}
@@ -416,47 +404,71 @@ static bool save_checkpoints(Sdb *db, RVector *checkpoints) {
  *
  * Notes:
  * - This mostly follows r2db-style serialization and uses sdb_json as the parser.
- * - Use keys in reglist, memorylist, chkptlist to iterate over their corresponding dicts.
  */
-R_API bool r_debug_session_save(RDebugSession *session, const char *file) {
-	bool ret = false;
+R_API void r_debug_session_serialize(RDebugSession *session, Sdb *db) {
+	sdb_num_set (db, "maxcnum", session->maxcnum, 0);
+	serialize_registers (sdb_ns (db, "registers", true), session->registers);
+	serialize_memory (sdb_ns (db, "memory", true), session->memory);
+	serialize_checkpoints (sdb_ns (db, "checkpoints", true), session->checkpoints);
+}
+
+static bool session_sdb_save(Sdb *db, const char *path) {
+	char *filename;
+	if (!r_file_is_directory (path)) {
+		eprintf ("Error: %s is not a directory\n", path);
+		return false;
+	}
+
+	filename = r_str_newf ("%s%ssession.sdb", path, R_SYS_DIR);
+	sdb_file (db, filename);
+	if (!sdb_sync (db)) {
+		eprintf ("Failed to sync session to %s\n", filename);
+		free (filename);
+		sdb_close (db);
+		return false;
+	}
+	free (filename);
+	sdb_close (db);
+
+	SdbListIter *it;
+	SdbNs *ns;
+	ls_foreach (db->ns, it, ns) {
+		char *filename = r_str_newf ("%s%s%s.sdb", path, R_SYS_DIR, ns->name);
+		sdb_file (ns->sdb, filename);
+		if (!sdb_sync (ns->sdb)) {
+			eprintf ("Failed to sync %s to %s\n", ns->name, filename);
+			free (filename);
+			sdb_close (ns->sdb);
+			return false;
+		}
+		free (filename);
+		sdb_close (ns->sdb);
+	}
+
+	return true;
+}
+
+R_API bool r_debug_session_save(RDebugSession *session, const char *path) {
 	Sdb *db = sdb_new0 ();
 	if (!db) {
 		return false;
 	}
+	r_debug_session_serialize (session, db);
 
-	sdb_num_set (db, "maxcnum", session->maxcnum, 0);
-	if (!save_registers (db, session->registers)) {
-		eprintf ("Error: failed to save registers to sdb\n");
-		goto end;
+	if (!session_sdb_save (db, path)) {
+		sdb_free (db);
+		return false;
 	}
-	if (!save_memory (db, session->memory)) {
-		eprintf ("Error: failed to save memory to sdb\n");
-		goto end;
-	}
-	if (!save_checkpoints (db, session->checkpoints)) {
-		eprintf ("Error: failed to save checkpoints to sdb\n");
-		goto end;
-	}
-
-	sdb_file (db, file);
-	if (!sdb_sync (db)) {
-		eprintf ("Failed to sync session to %s\n", file);
-		goto end;
-	}
-	ret = true;
-end:
-	sdb_close (db);
 	sdb_free (db);
-	return ret;
+	return true;
 }
 
-#define CNUM(x) sdb_fmt ("%s.a[%u].cnum", addr, x)
-#define DATA(x) sdb_fmt ("%s.a[%u].data", addr, x)
+#define CNUM(x) sdb_fmt ("a[%u].cnum", x)
+#define DATA(x) sdb_fmt ("a[%u].data", x)
 
 // Extract ut64 value from sdb_json str
-static ut64 _json_num_get(Sdb *db, const char *k, const char *p, ut32 *cas) {
-	char *vstr = sdb_json_get (db, k, p, cas);
+static ut64 _json_num_get(const char *json, const char *path) {
+	char *vstr = sdb_json_get_str (json, path);
 	if (vstr) {
 		ut64 v = sdb_atoi (vstr);
 		free (vstr);
@@ -465,145 +477,179 @@ static ut64 _json_num_get(Sdb *db, const char *k, const char *p, ut32 *cas) {
 	return 0;
 }
 
-static bool load_memory(Sdb *db, HtUP *memory) {
-	size_t i, size;
-	char *addr;
-	// Iterate over "memory" items
-	char *a = sdb_get (db, "memorylist", 0);
-	sdb_aforeach (addr, a) {
-		// Insert a new vector into `memory` HtUP at `addr`
-		RVector *vmem = r_vector_new (sizeof (RDebugChangeMem), NULL, NULL);
-		if (!vmem) {
-			eprintf ("Error: failed to allocate RVector vmem.\n");
+static bool deserialize_memory_cb(void *user, const char *addr, const char *v) {
+	size_t i;
+	HtUP *memory = user;
+	// Insert a new vector into `memory` HtUP at `addr`
+	RVector *vmem = r_vector_new (sizeof (RDebugChangeMem), NULL, NULL);
+	if (!vmem) {
+		eprintf ("Error: failed to allocate RVector vmem.\n");
+		return false;
+	}
+	ht_up_insert (memory, sdb_atoi (addr), vmem);
+
+	// Extract <RDebugChangeMem>'s into the new vector
+	ut64 size = _json_num_get (v, "size");
+	for (i = 0; i < size; i++) {
+		int cnum = _json_num_get (v, CNUM (i));
+		ut8 data = _json_num_get (v, DATA (i));
+		RDebugChangeMem mem = { cnum, data };
+		r_vector_push (vmem, &mem);
+	}
+	return true;
+}
+
+static void deserialize_memory(Sdb *db, HtUP *memory) {
+	sdb_foreach (db, deserialize_memory_cb, memory);
+}
+
+static bool deserialize_registers_cb(void *user, const char *addr, const char *v) {
+	size_t i;
+	HtUP *registers = user;
+	// Insert a new vector into `registers` HtUP at `addr`
+	RVector *vreg = r_vector_new (sizeof (RDebugChangeReg), NULL, NULL);
+	if (!vreg) {
+		eprintf ("Error: failed to allocate RVector vreg.\n");
+		return false;
+	}
+	ht_up_insert (registers, sdb_atoi (addr), vreg);
+
+	// Extract <RDebugChangeReg>'s into the new vector
+	ut64 size = _json_num_get (v, "size");
+	for (i = 0; i < size; i++) {
+		int cnum = _json_num_get (v, CNUM (i));
+		ut64 data = _json_num_get (v, DATA (i));
+		RDebugChangeReg reg = { cnum, data };
+		r_vector_push (vreg, &reg);
+	}
+	return true;
+}
+
+static void deserialize_registers(Sdb *db, HtUP *registers) {
+	sdb_foreach (db, deserialize_registers_cb, registers);
+}
+
+#define SNAPATTR(ATTR) sdb_fmt ("snaps.a[%u]." ATTR, i)
+#define REGATTR(ATTR) sdb_fmt ("registers.%d." ATTR, i)
+
+static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char *v) {
+	size_t i;
+	RVector *checkpoints = user;
+	RDebugCheckpoint checkpoint = { 0 };
+	checkpoint.cnum = (int)sdb_atoi (cnum);
+
+	// Extract RRegArena's from "registers"
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		int size = _json_num_get (v, REGATTR ("size"));
+		if (size == 0) {
+			continue;
+		}
+		char *edata = sdb_json_get_str (v, REGATTR ("bytes"));
+		ut8 *bytes = sdb_decode (edata, NULL);
+		RRegArena *a = r_reg_arena_new (size);
+		memcpy (a->bytes, bytes, a->size);
+		checkpoint.arena[i] = a;
+		free (bytes);
+		free (edata);
+	}
+
+	// Extract RDebugSnap's from "snaps"
+	checkpoint.snaps = r_list_newf ((RListFree)r_debug_snap_free);
+	ut64 size = _json_num_get (v, "snaps.size");
+	for (i = 0; i < size; i++) {
+		RDebugSnap *snap = R_NEW0 (RDebugSnap);
+		if (!snap) {
+			eprintf ("Error: failed to allocate RDebugSnap snap");
 			return false;
 		}
-		ht_up_insert (memory, sdb_atoi (addr), vmem);
 
-		// Extract <RDebugChangeMem>'s into the new vector
-		size = _json_num_get (db, "memory", sdb_fmt ("%s.size", addr, i), 0);
-		for (i = 0; i < size; i++) {
-			int cnum = _json_num_get (db, "memory", CNUM (i), 0);
-			ut8 data = _json_num_get (db, "memory", DATA (i), 0);
-			RDebugChangeMem mem = { cnum, data };
-			r_vector_push (vmem, &mem);
-		}
-		sdb_aforeach_next (addr);
+		snap->name = sdb_json_get_str (v, SNAPATTR ("name"));
+		snap->size = _json_num_get (v, SNAPATTR ("size"));
+		snap->addr = _json_num_get (v, SNAPATTR ("addr"));
+		snap->addr_end = _json_num_get (v, SNAPATTR ("addr_end"));
+		snap->perm = _json_num_get (v, SNAPATTR ("perm"));
+		snap->user = _json_num_get (v, SNAPATTR ("user"));
+		snap->shared = sdb_json_get_bool (v, SNAPATTR ("shared"));
+
+		char *edata = sdb_json_get_str (v, SNAPATTR ("data"));
+		snap->data = sdb_decode (edata, NULL);
+		free (edata);
+		r_list_append (checkpoint.snaps, snap);
 	}
+	r_vector_push (checkpoints, &checkpoint);
 	return true;
 }
 
-static bool load_registers(Sdb *db, HtUP *registers) {
-	size_t i, size;
-	char *addr;
-	// Iterate over "registers" items
-	char *a = sdb_get (db, "reglist", 0);
-	sdb_aforeach (addr, a) {
-		// Insert a new vector into `registers` HtUP at `addr`
-		RVector *vreg = r_vector_new (sizeof (RDebugChangeReg), NULL, NULL);
-		if (!vreg) {
-			eprintf ("Error: failed to allocate RVector vreg.\n");
-			return false;
-		}
-		ht_up_insert (registers, sdb_atoi (addr), vreg);
+static void deserialize_checkpoints(Sdb *db, RVector *checkpoints) {
+	sdb_foreach (db, deserialize_checkpoints_cb, checkpoints);
+}
 
-		// Extract <RDebugChangeReg>'s into the new vector
-		size = _json_num_get (db, "registers", sdb_fmt ("%s.size", addr, i), 0);
-		for (i = 0; i < size; i++) {
-			int cnum = _json_num_get (db, "registers", CNUM (i), 0);
-			ut64 data = _json_num_get (db, "registers", DATA (i), 0);
-			RDebugChangeReg reg = { cnum, data };
-			r_vector_push (vreg, &reg);
-		}
-		sdb_aforeach_next (addr);
+static bool session_sdb_load_ns(Sdb *db, const char *nspath, const char *filename) {
+	Sdb *tmpdb = sdb_new0 ();
+	if (sdb_open (tmpdb, filename) == -1) {
+		eprintf ("Error: failed to load %s into sdb\n", filename);
+		sdb_free (tmpdb);
+		return false;
 	}
+	Sdb *ns = sdb_ns_path (db, nspath, true);
+	sdb_copy (tmpdb, ns);
+	sdb_free (tmpdb);
 	return true;
 }
 
-#define SNAPATTR(ATTR) sdb_fmt ("%s.snaps.a[%u]." #ATTR, cnum, i)
-#define REGATTR(ATTR) sdb_fmt ("%s.registers.%d." #ATTR, cnum, i)
-
-static bool load_checkpoints(Sdb *db, RDebug *dbg, RVector *checkpoints) {
-	size_t i, size;
-	char *cnum;
-	// Iterate over "checkpoints" items
-	char *a = sdb_get (db, "chkptlist", 0);
-	sdb_aforeach (cnum, a) {
-		RDebugCheckpoint checkpoint = { 0 };
-		checkpoint.cnum = (int)sdb_atoi (cnum);
-
-		// Extract RRegArena's from "registers"
-		for (i = 0; i < R_REG_TYPE_LAST; i++) {
-			int size = _json_num_get (db, "checkpoints", REGATTR (size), 0);
-			if (size == 0) {
-				continue;
-			}
-			char *edata = sdb_json_get (db, "checkpoints", REGATTR (bytes), 0);
-			ut8 *bytes = sdb_decode (edata, NULL);
-			r_reg_set_bytes (dbg->reg, i, bytes, size);
-			free (bytes);
-			free (edata);
-			checkpoint.reg[i] = r_list_tail (dbg->reg->regset[i].pool);
-		}
-		r_reg_arena_push (dbg->reg);
-
-		// Extract RDebugSnap's from "snaps"
-		checkpoint.snaps = r_list_newf ((RListFree)r_debug_snap_free);
-		size = sdb_json_num_get (db, "checkpoints", sdb_fmt ("%s.snaps.size", cnum, i), 0);
-		for (i = 0; i < size; i++) {
-			RDebugSnap *snap = R_NEW0 (RDebugSnap);
-			if (!snap) {
-				eprintf ("Error: failed to allocate RDebugSnap snap");
-				return false;
-			}
-
-			snap->name = sdb_json_get (db, "checkpoints", SNAPATTR (name), 0);
-			snap->size = _json_num_get (db, "checkpoints", SNAPATTR (size), 0);
-			snap->addr = _json_num_get (db, "checkpoints", SNAPATTR (addr), 0);
-			snap->addr_end = _json_num_get (db, "checkpoints", SNAPATTR (addr_end), 0);
-			snap->perm = _json_num_get (db, "checkpoints", SNAPATTR (perm), 0);
-			snap->user = _json_num_get (db, "checkpoints", SNAPATTR (user), 0);
-			char *sharedstr = sdb_json_get (db, "checkpoints", SNAPATTR (shared), 0);
-			snap->shared = (strlen (sharedstr) == 4 && !strncmp (sharedstr, "true", 4));
-			free (sharedstr);
-
-			char *edata = sdb_json_get (db, "checkpoints", SNAPATTR (data), 0);
-			snap->data = sdb_decode (edata, NULL);
-			free (edata);
-			r_list_append (checkpoint.snaps, snap);
-		}
-
-		r_vector_push (checkpoints, &checkpoint);
-		sdb_aforeach_next (cnum);
+static Sdb *session_sdb_load(const char *path) {
+	char *filename;
+	Sdb *db = sdb_new0 ();
+	if (!db) {
+		return NULL;
 	}
-	return true;
+
+#define SDB_LOAD(fn, ns) do { \
+		filename = r_str_newf ("%s%s" fn ".sdb", path, R_SYS_DIR); \
+		if (!session_sdb_load_ns (db, ns, filename)) { \
+			free (filename); \
+			goto error; \
+		} \
+		free (filename); \
+	} while (0)
+
+	SDB_LOAD ("session", "");
+	SDB_LOAD ("registers", "registers");
+	SDB_LOAD ("memory", "memory");
+	SDB_LOAD ("checkpoints", "checkpoints");
+	return db;
+error:
+	sdb_free (db);
+	return NULL;
 }
 
-R_API bool r_debug_session_load(RDebug *dbg, const char *file) {
-	bool ret = false;
-	Sdb *db = sdb_new (NULL, file, 0);
+R_API void r_debug_session_deserialize(RDebugSession *session, Sdb *db) {
+	Sdb *subdb;
+
+	session->maxcnum = sdb_num_get (db, "maxcnum", 0);
+
+#define DESERIALIZE(ns, func) do { \
+		subdb = sdb_ns (db, ns, false); \
+		if (!subdb) { \
+			eprintf ("Error: missing " ns " namespace\n"); \
+			return; \
+		} \
+		func; \
+	} while (0)
+
+	DESERIALIZE ("memory", deserialize_memory (subdb, session->memory));
+	DESERIALIZE ("registers", deserialize_registers (subdb, session->registers));
+	DESERIALIZE ("checkpoints", deserialize_checkpoints (subdb, session->checkpoints));
+}
+
+R_API bool r_debug_session_load(RDebug *dbg, const char *path) {
+	Sdb *db = session_sdb_load (path);
 	if (!db) {
 		return false;
 	}
-
-	dbg->session->maxcnum = sdb_num_get (db, "maxcnum", 0);
-	if (!load_memory (db, dbg->session->memory)) {
-		eprintf ("Error: failed to load memory from %s sdb\n", file);
-		goto end;
-	}
-	if (!load_registers (db, dbg->session->registers)) {
-		eprintf ("Error: failed to load registers from %s sdb\n", file);
-		goto end;
-	}
-	if (!load_checkpoints (db, dbg, dbg->session->checkpoints)) {
-		eprintf ("Error: failed to load checkpoints from %s sdb\n", file);
-		goto end;
-	}
-
-	// Restore debugger to cnum 0
+	r_debug_session_deserialize (dbg->session, db);
+	// Restore debugger to the beginning of the session
 	r_debug_session_restore_reg_mem (dbg, 0);
-	ret = true;
-end:
-	sdb_close (db);
 	sdb_free (db);
-	return ret;
+	return true;
 }
