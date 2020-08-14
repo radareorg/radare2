@@ -41,8 +41,12 @@ static inline bool is_oid_object (RASN1Object *object) {
 }
 
 bool r_x509_parse_algorithmidentifier (RX509AlgorithmIdentifier *ai, RASN1Object *object) {
-	r_return_val_if_fail (ai && object && object->list.length >= 1 &&
-		object->list.objects && is_oid_object (object), false);
+	r_return_val_if_fail (ai && object, false);
+
+	if (object->list.length < 1 || !object->list.objects || !is_oid_object (object)) {
+			return false;
+	}
+
 	ai->algorithm = r_asn1_stringify_oid (object->list.objects[0]->sector, object->list.objects[0]->length);
 	ai->parameters = NULL; // TODO
 	//ai->parameters = asn1_stringify_sector (object->list.objects[1]);
