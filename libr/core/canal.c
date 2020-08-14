@@ -3432,7 +3432,7 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 		int opsize = op->size;
 		int optype = op->type;
 		r_anal_op_free (op);
-		if (opsize < 1) { 
+		if (opsize < 1) {
 			break;
 		}
 		if (optype == R_ANAL_OP_TYPE_CALL) {
@@ -3453,7 +3453,7 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 	if (core->anal->opt.bb_max_size < 1) {
 		return;
 	}
-	BlockRecurseCtx ctx = { 0, { 0 }, argonly, fcn, core };
+	BlockRecurseCtx ctx = { 0, {{ 0 }}, argonly, fcn, core };
 	r_pvector_init (&ctx.reg_set, free);
 	int *reg_set = R_NEWS0 (int, REG_SET_SIZE);
 	r_pvector_push (&ctx.reg_set, reg_set);
