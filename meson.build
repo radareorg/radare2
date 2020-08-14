@@ -708,6 +708,4 @@ install_data(
   install_dir: r2_zsh_compdir
 )
 
-if host_machine.system() == 'windows'
-  meson.add_install_script('sys/create_r2.bat')
-endif
+meson.add_install_script(host_machine.system() == 'windows' ? 'sys/create_r2.bat' : 'sys/create_r2.sh')
