@@ -1082,7 +1082,7 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 		case DW_OP_call_frame_cfa: {
 			// REMOVE XXX
 			kind = LOCATION_BP;
-			offset += 8;
+			offset += 16;
 		} break;
 		default:
 			break;
@@ -1227,11 +1227,12 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 }
 
 static void sdb_save_dwarf_function(Function *dwarf_fcn, RList/*<Variable*>*/ *variables, Sdb *sdb) {
-	sdb_set (sdb, dwarf_fcn->name, "func", 0);
-	char *addr_key = r_str_newf ("func.%s.addr", dwarf_fcn->name);
+	char *sname = r_str_sanitize_sdb_key (dwarf_fcn->name);
+	sdb_set (sdb, sname, "func", 0);
+	char *addr_key = r_str_newf ("func.%s.addr", sname);
 	char *addr_val = r_str_newf ("0x%" PFMT64x "", dwarf_fcn->addr);
 	sdb_set (sdb, addr_key, addr_val, 0);
-	char *sig_key = r_str_newf ("func.%s.sig", dwarf_fcn->name);
+	char *sig_key = r_str_newf ("func.%s.sig", sname);
 	sdb_set (sdb, sig_key, dwarf_fcn->signature, 0);
 	free (addr_key);
 	free (addr_val);
@@ -1239,7 +1240,6 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RList/*<Variable*>*/ *v
 
 	RStrBuf vars;
 	r_strbuf_init (&vars);
-
 	RListIter *iter;
 	Variable *var;
 	r_list_foreach (variables, iter, var) {
@@ -1247,30 +1247,38 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RList/*<Variable*>*/ *v
 		/* NULL location probably means optimized out, maybe put a comment there */
 		if (var->location && var->location->kind == LOCATION_BP) {
 			r_strbuf_appendf (&vars, "%s,", var->name);
-			char *key = r_str_newf ("func.%s.var.%s", dwarf_fcn->name, var->name);
+			char *key = r_str_newf ("func.%s.var.%s", sname, var->name);
 			/* value = "type, storage, additional info based on storage (offset)" */
-			char *val = r_str_newf ("%s,%s,%" PFMT64d "", var->type, "b", var->location->offset);
+			char *val = r_str_newf ("%s,%" PFMT64d ",%s", "b", var->location->offset, var->type);
 			sdb_set (sdb, key, val, 0);
 		} else if (var->location && var->location->kind == LOCATION_SP) {
 			r_strbuf_appendf (&vars, "%s,", var->name);
-			char *key = r_str_newf ("func.%s.var.%s", dwarf_fcn->name, var->name);
+			char *key = r_str_newf ("func.%s.var.%s", sname, var->name);
 			/* value = "type, storage, additional info based on storage (offset)" */
-			char *val = r_str_newf ("%s,%s,%" PFMT64d "", var->type, "s", var->location->offset);
+			char *val = r_str_newf ("%s,%" PFMT64d ",%s", "s", var->location->offset, var->type);
 			sdb_set (sdb, key, val, 0);
 		} else if (var->location && var->location->kind == LOCATION_GLOBAL) {
 			r_strbuf_appendf (&vars, "%s,", var->name);
-			char *key = r_str_newf ("func.%s.var.%s", dwarf_fcn->name, var->name);
+			char *key = r_str_newf ("func.%s.var.%s", sname, var->name);
 			/* value = "type, storage, additional info based on storage (address)" */
-			char *val = r_str_newf ("%s,%s,0x%" PFMT64x "", var->type, "g", var->location->address);
+			char *val = r_str_newf ("%s,%" PFMT64x ",%s", "g", var->location->address, var->type);
+			sdb_set (sdb, key, val, 0);
+		} else if (var->location && var->location->kind == LOCATION_REGISTER) {
+			r_strbuf_appendf (&vars, "%s,", var->name);
+			char *key = r_str_newf ("func.%s.var.%s", sname, var->name);
+			/* value = "type, storage, additional info based on storage (register name)" */
+			char *val = r_str_newf ("%s,%s,%s", "r", var->location->reg_name, var->type);
 			sdb_set (sdb, key, val, 0);
 		}
 	}
 	if (vars.len > 0) { /* remove the extra , */
 		r_strbuf_slice (&vars, 0, vars.len - 1);
 	}
-	char *vars_key = r_str_newf ("func.%s.vars", dwarf_fcn->name);
+	char *vars_key = r_str_newf ("func.%s.vars", sname);
 	char *vars_val = r_str_newf ("%s", r_strbuf_get (&vars));
 	sdb_set (sdb, vars_key, vars_val, 0);
+
+	free (sname);
 }
 
 /**
@@ -1544,22 +1552,34 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, Sdb *dwarf_sdb) {
 		sdb_aforeach (var_name, vars) {
 			char *var_key = r_str_newf ("func.%s.var.%s", func_name, var_name);
 			char *var_data = sdb_get (dwarf_sdb, var_key, NULL);
-
-			char *kind = NULL;
-			char *offset_str = NULL;
-			char *type = sdb_anext (var_data, &kind);
-			kind = sdb_anext (kind, &offset_str);
-			st64 offset = strtol (offset_str, NULL, 10);
+			if (!var_data) {
+				goto loop_end;
+			}
+			char *extra = NULL;
+			char *kind = sdb_anext (var_data, &extra);
+			char *type = NULL;
+			extra = sdb_anext (extra, &type);
+			st64 offset = 0;
+			if (*kind != 'r') {
+				offset = strtol (extra, NULL, 10);
+			}
 			/* No way to handle var at fixed addr yet, TODO set flag */
 			if (*kind == 'g') { /* global, fixed addr */
 				/* Probably create a flag TODO */
-			} else if (*kind == 's'){
-				r_anal_function_set_var (fcn, offset - fcn->maxstack , *kind, type, 4, false, var_name);
+			} else if (*kind == 's') {
+				r_anal_function_set_var (fcn, offset - fcn->maxstack, *kind, type, 4, false, var_name);
+			} else if (*kind == 'r') {
+				RRegItem *i = r_reg_get (anal->reg, extra, -1);
+				if (!i) {
+					goto loop_end;
+				}
+				r_anal_function_set_var (fcn, i->index, *kind, type, 4, false, var_name);
 			} else { /* kind == 'b' */
 				r_anal_function_set_var (fcn, offset - fcn->bp_off, *kind, type, 4, false, var_name);
 			}
 			free (var_key);
 			free (var_data);
+		loop_end:
 			sdb_aforeach_next (var_name);
 		}
 		free (var_names_key);
