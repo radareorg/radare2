@@ -33,6 +33,7 @@ if get_option('enable_tests')
     'hex',
     'intervaltree',
     'io',
+    'json',
     'list',
     'parse_ctype',
     'pj',
