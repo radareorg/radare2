@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2017 - rkx1209 */
 
 #include <r_debug.h>
+#include <r_util/r_json.h>
 
 #define CMP_CNUM_REG(x, y) ((x) >= ((RDebugChangeReg *)y)->cnum ? 1 : -1)
 #define CMP_CNUM_MEM(x, y) ((x) >= ((RDebugChangeMem *)y)->cnum ? 1 : -1)
@@ -99,8 +100,9 @@ static void _set_initial_registers(RDebug *dbg) {
 	size_t i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		RRegArena *a = dbg->session->cur_chkpt->arena[i];
-		if (dbg->reg->regset[i].arena->bytes) {
-			memcpy (dbg->reg->regset[i].arena->bytes, a->bytes, a->size);
+		RRegArena *b = dbg->reg->regset[i].arena;
+		if (a && b && a->bytes && b->bytes) {
+			memcpy (b->bytes, a->bytes, a->size);
 		}
 	}
 }
@@ -243,7 +245,7 @@ R_API bool r_debug_session_add_mem_change(RDebugSession *session, ut64 addr, ut8
 
 /* Save and Load Session */
 
-// 0x<addr>={"size":<size_t>, "a":[<RDebugChangeReg>]},
+// 0x<addr>=[<RDebugChangeReg>]
 static bool serialize_register_cb(void *db, const ut64 k, const void *v) {
 	RDebugChangeReg *reg;
 	RVector *vreg = (RVector *)v;
@@ -251,17 +253,14 @@ static bool serialize_register_cb(void *db, const ut64 k, const void *v) {
 	if (!j) {
 		return false;
 	}
-	pj_o (j);
+	pj_a (j);
 
-	pj_kn (j, "size", vreg->len);
-	pj_ka (j, "a");
 	r_vector_foreach (vreg, reg) {
 		pj_o (j);
 		pj_kN (j, "cnum", reg->cnum);
 		pj_kn (j, "data", reg->data);
 		pj_end (j);
 	}
-	pj_end (j);
 
 	pj_end (j);
 	sdb_set (db, sdb_fmt ("0x%"PFMT64x, k), pj_string (j), 0);
@@ -281,17 +280,14 @@ static bool serialize_memory_cb(void *db, const ut64 k, const void *v) {
 	if (!j) {
 		return false;
 	}
-	pj_o (j);
+	pj_a (j);
 
-	pj_kn (j, "size", vmem->len);
-	pj_ka (j, "a");
 	r_vector_foreach (vmem, mem) {
 		pj_o (j);
 		pj_kN (j, "cnum", mem->cnum);
 		pj_kn (j, "data", mem->data);
 		pj_end (j);
 	}
-	pj_end (j);
 
 	pj_end (j);
 	sdb_set (db, sdb_fmt ("0x%"PFMT64x, k), pj_string (j), 0);
@@ -322,28 +318,25 @@ static void serialize_checkpoints(Sdb *db, RVector *checkpoints) {
 
 		// Serialize RRegArena to "registers"
 		// {"size":<int>, "bytes":"<base64>"}
-		pj_ko (j, "registers");
+		pj_ka (j, "registers");
 		for (i = 0; i < R_REG_TYPE_LAST; i++) {
 			RRegArena *arena = chkpt->arena[i];
-			pj_ko (j, sdb_fmt ("%d", i));
 			if (arena->bytes) {
+				pj_o (j);
+				pj_kn (j, "arena", i);
 				char *ebytes = sdb_encode ((const void *)arena->bytes, arena->size);
 				pj_ks (j, "bytes", ebytes);
 				free (ebytes);
 				pj_kn (j, "size", arena->size);
-			} else {
-				pj_kn (j, "size", 0);
+				pj_end (j);
 			}
-			pj_end (j);
 		}
 		pj_end (j);
 
 		// Serialize RDebugSnap to "snaps"
 		// {"name":<str>, "addr":<ut64>, "addr_end":<ut64>, "size":<ut64>,
 		//  "data":"<base64>", "perm":<int>, "user":<int>, "shared":<bool>}
-		pj_ko (j, "snaps");
-		pj_kn (j, "size", r_list_length (chkpt->snaps));
-		pj_ka (j, "a");
+		pj_ka (j, "snaps");
 		r_list_foreach (chkpt->snaps, iter, snap) {
 			pj_o (j);
 			pj_ks (j, "name", snap->name);
@@ -363,11 +356,10 @@ static void serialize_checkpoints(Sdb *db, RVector *checkpoints) {
 			pj_end (j);
 		}
 		pj_end (j);
-		pj_end (j);
 
 		pj_end (j);
 		sdb_set (db, sdb_fmt ("0x%"PFMT64x, chkpt->cnum), pj_string (j), 0);
-		pj_free(j);
+		pj_free (j);
 	}
 }
 
@@ -463,22 +455,23 @@ R_API bool r_debug_session_save(RDebugSession *session, const char *path) {
 	return true;
 }
 
-#define CNUM(x) sdb_fmt ("a[%u].cnum", x)
-#define DATA(x) sdb_fmt ("a[%u].data", x)
 
-// Extract ut64 value from sdb_json str
-static ut64 _json_num_get(const char *json, const char *path) {
-	char *vstr = sdb_json_get_str (json, path);
-	if (vstr) {
-		ut64 v = sdb_atoi (vstr);
-		free (vstr);
-		return v;
-	}
-	return 0;
-}
+#define CHECK_TYPE(v,t) \
+	if (!v || v->type != t) \
+		continue
 
 static bool deserialize_memory_cb(void *user, const char *addr, const char *v) {
-	size_t i;
+	RJson *child;
+	char *json_str = strdup (v);
+	if (!json_str) {
+		return true;
+	}
+	RJson *reg_json = r_json_parse (json_str);
+	if (!reg_json || reg_json->type != R_JSON_ARRAY) {
+		free (json_str);
+		return true;
+	}
+
 	HtUP *memory = user;
 	// Insert a new vector into `memory` HtUP at `addr`
 	RVector *vmem = r_vector_new (sizeof (RDebugChangeMem), NULL, NULL);
@@ -489,13 +482,22 @@ static bool deserialize_memory_cb(void *user, const char *addr, const char *v) {
 	ht_up_insert (memory, sdb_atoi (addr), vmem);
 
 	// Extract <RDebugChangeMem>'s into the new vector
-	ut64 size = _json_num_get (v, "size");
-	for (i = 0; i < size; i++) {
-		int cnum = _json_num_get (v, CNUM (i));
-		ut8 data = _json_num_get (v, DATA (i));
+	for (child = reg_json->children.first; child; child = child->next) {
+		if (child->type != R_JSON_OBJECT) {
+			continue;
+		}
+		const RJson *baby = r_json_get (child, "cnum");
+		CHECK_TYPE (baby, R_JSON_INTEGER);
+		int cnum = baby->num.s_value;
+
+		baby = r_json_get (child, "data");
+		CHECK_TYPE (baby, R_JSON_INTEGER);
+		ut64 data = baby->num.u_value;
+
 		RDebugChangeMem mem = { cnum, data };
 		r_vector_push (vmem, &mem);
 	}
+
 	return true;
 }
 
@@ -504,24 +506,47 @@ static void deserialize_memory(Sdb *db, HtUP *memory) {
 }
 
 static bool deserialize_registers_cb(void *user, const char *addr, const char *v) {
-	size_t i;
-	HtUP *registers = user;
+	RJson *child;
+	char *json_str = strdup (v);
+	if (!json_str) {
+		return true;
+	}
+	RJson *reg_json = r_json_parse (json_str);
+	if (!reg_json || reg_json->type != R_JSON_ARRAY) {
+		free (json_str);
+		return true;
+	}
+
 	// Insert a new vector into `registers` HtUP at `addr`
+	HtUP *registers = user;
 	RVector *vreg = r_vector_new (sizeof (RDebugChangeReg), NULL, NULL);
 	if (!vreg) {
 		eprintf ("Error: failed to allocate RVector vreg.\n");
-		return false;
+		r_json_free (reg_json);
+		free (json_str);
+		return true;
 	}
 	ht_up_insert (registers, sdb_atoi (addr), vreg);
 
 	// Extract <RDebugChangeReg>'s into the new vector
-	ut64 size = _json_num_get (v, "size");
-	for (i = 0; i < size; i++) {
-		int cnum = _json_num_get (v, CNUM (i));
-		ut64 data = _json_num_get (v, DATA (i));
+	for (child = reg_json->children.first; child; child = child->next) {
+		if (child->type != R_JSON_OBJECT) {
+			continue;
+		}
+		const RJson *baby = r_json_get (child, "cnum");
+		CHECK_TYPE (baby, R_JSON_INTEGER);
+		int cnum = baby->num.s_value;
+
+		baby = r_json_get (child, "data");
+		CHECK_TYPE (baby, R_JSON_INTEGER);
+		ut64 data = baby->num.u_value;
+
 		RDebugChangeReg reg = { cnum, data };
 		r_vector_push (vreg, &reg);
 	}
+
+	r_json_free (reg_json);
+	free (json_str);
 	return true;
 }
 
@@ -533,49 +558,95 @@ static void deserialize_registers(Sdb *db, HtUP *registers) {
 #define REGATTR(ATTR) sdb_fmt ("registers.%d." ATTR, i)
 
 static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char *v) {
-	size_t i;
+	const RJson *child;
+	char *json_str = strdup (v);
+	if (!json_str) {
+		return true;
+	}
+	RJson *chkpt_json = r_json_parse (json_str);
+	if (!chkpt_json || chkpt_json->type != R_JSON_OBJECT) {
+		free (json_str);
+		return true;
+	}
+
 	RVector *checkpoints = user;
 	RDebugCheckpoint checkpoint = { 0 };
 	checkpoint.cnum = (int)sdb_atoi (cnum);
 
 	// Extract RRegArena's from "registers"
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		int size = _json_num_get (v, REGATTR ("size"));
-		if (size == 0) {
+	const RJson *regs_json = r_json_get (chkpt_json, "registers");
+	if (!regs_json || regs_json->type != R_JSON_ARRAY) {
+		return true;
+	}
+	for (child = regs_json->children.first; child; child = child->next) {
+		const RJson *baby;
+		baby = r_json_get (child, "arena");
+		CHECK_TYPE (baby, R_JSON_INTEGER);
+		int arena = baby->num.s_value;
+		if (arena < R_REG_TYPE_GPR || arena > R_REG_TYPE_SEG) {
 			continue;
 		}
-		char *edata = sdb_json_get_str (v, REGATTR ("bytes"));
-		ut8 *bytes = sdb_decode (edata, NULL);
+		baby = r_json_get (child, "size");
+		CHECK_TYPE (baby, R_JSON_INTEGER);
+		int size = baby->num.s_value;
+		if (size < 0) {
+			continue;
+		}
+		baby = r_json_get (child, "bytes");
+		CHECK_TYPE (baby, R_JSON_STRING);
+		ut8 *bytes = sdb_decode (baby->str_value, NULL);
+
 		RRegArena *a = r_reg_arena_new (size);
+		if (!a) {
+			free (bytes);
+			continue;
+		}
 		memcpy (a->bytes, bytes, a->size);
-		checkpoint.arena[i] = a;
+		checkpoint.arena[arena] = a;
 		free (bytes);
-		free (edata);
 	}
 
 	// Extract RDebugSnap's from "snaps"
 	checkpoint.snaps = r_list_newf ((RListFree)r_debug_snap_free);
-	ut64 size = _json_num_get (v, "snaps.size");
-	for (i = 0; i < size; i++) {
+	const RJson *snaps_json = r_json_get (chkpt_json, "snaps");
+	if (!snaps_json || snaps_json->type != R_JSON_ARRAY) {
+		goto end;
+	}
+	for (child = snaps_json->children.first; child; child = child->next) {
+		const RJson *namej = r_json_get (child, "name");
+		CHECK_TYPE (namej, R_JSON_STRING);
+		const RJson *dataj = r_json_get (child, "data");
+		CHECK_TYPE (dataj, R_JSON_STRING);
+		const RJson *sizej = r_json_get (child, "size");
+		CHECK_TYPE (sizej, R_JSON_INTEGER);
+		const RJson *addrj = r_json_get (child, "addr");
+		CHECK_TYPE (addrj, R_JSON_INTEGER);
+		const RJson *addr_endj = r_json_get (child, "addr_end");
+		CHECK_TYPE (addr_endj, R_JSON_INTEGER);
+		const RJson *permj = r_json_get (child, "perm");
+		CHECK_TYPE (permj, R_JSON_INTEGER);
+		const RJson *userj = r_json_get (child, "user");
+		CHECK_TYPE (userj, R_JSON_INTEGER);
+		const RJson *sharedj = r_json_get (child, "shared");
+		CHECK_TYPE (sharedj, R_JSON_BOOLEAN);
+
 		RDebugSnap *snap = R_NEW0 (RDebugSnap);
 		if (!snap) {
 			eprintf ("Error: failed to allocate RDebugSnap snap");
-			return false;
+			continue;
 		}
+		snap->name = strdup (namej->str_value);
+		snap->addr = addrj->num.u_value;
+		snap->addr_end = addr_endj->num.u_value;
+		snap->size = sizej->num.u_value;
+		snap->data = sdb_decode (dataj->str_value, NULL);
+		snap->perm = permj->num.s_value;
+		snap->user = userj->num.s_value;
+		snap->shared = sharedj->num.u_value;
 
-		snap->name = sdb_json_get_str (v, SNAPATTR ("name"));
-		snap->size = _json_num_get (v, SNAPATTR ("size"));
-		snap->addr = _json_num_get (v, SNAPATTR ("addr"));
-		snap->addr_end = _json_num_get (v, SNAPATTR ("addr_end"));
-		snap->perm = _json_num_get (v, SNAPATTR ("perm"));
-		snap->user = _json_num_get (v, SNAPATTR ("user"));
-		snap->shared = sdb_json_get_bool (v, SNAPATTR ("shared"));
-
-		char *edata = sdb_json_get_str (v, SNAPATTR ("data"));
-		snap->data = sdb_decode (edata, NULL);
-		free (edata);
 		r_list_append (checkpoint.snaps, snap);
 	}
+end:
 	r_vector_push (checkpoints, &checkpoint);
 	return true;
 }
