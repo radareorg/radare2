@@ -2450,14 +2450,14 @@ static HtUP *parse_loc_raw(HtUP/*<offset, List *<LocListEntry>*/ *loc_table, con
 	   base address entry: Address, Address
 	   end of list entry: 0, 0
 	   */
-	const ut8 * const buf_start = buf;
+	const ut8 *const buf_start = buf;
 	const ut8 *buf_end = buf + len;
 	ut64 start_addr = 0;
 	ut64 end_addr = 0;
 	ut64 offset = 0;
 	ut64 max_offset = get_max_offset (addr_size);
 	ut64 address_base = 0; /* remember base of the loclist */
-	RBinDwarfLocList *loc_list = NULL;;
+	RBinDwarfLocList *loc_list = NULL;
 	RBinDwarfLocRange *range = NULL;
 	while (buf && buf < buf_end) {
 		offset = buf - buf_start;
@@ -2473,7 +2473,9 @@ static HtUP *parse_loc_raw(HtUP/*<offset, List *<LocListEntry>*/ *loc_table, con
 		} else if (start_addr == max_offset) {
 			/* base address, starts the loclist, DWARF2 doesn't have this type of entry */
 			address_base = end_addr;
-			loc_list = create_loc_list (offset);
+			if (!loc_list) {
+				loc_list = create_loc_list (offset);
+			}
 			range = create_loc_range (start_addr, end_addr, 0);
 			r_list_append (loc_list->list, range);
 			range = NULL;
@@ -2494,19 +2496,20 @@ static HtUP *parse_loc_raw(HtUP/*<offset, List *<LocListEntry>*/ *loc_table, con
 }
 
 
-R_API HtUP/*<offset, List *<LocListEntry>*/ *r_bin_dwarf_parse_loc(RBin *bin, size_t addr_size, int mode) {
-	/* The standard says the section is .debug_frame
-	   but in reality binaries that I see from clang or 
-	   gcc use eh_frame, not sure why is that */
+R_API HtUP/*<offset, RBinDwarfLocList*/ *r_bin_dwarf_parse_loc(RBin *bin, int addr_size, int mode) {
+	r_return_val_if_fail  (bin, NULL);
+	/* The standarparse_loc_raw_frame, not sure why is that */
 	size_t len = 0;
 	ut8 *buf = get_section_bytes (bin, "debug_loc", &len);
 	/* set the endianity global [HOTFIX] */
 	big_end = r_bin_is_big_endian (bin);
-	HtUP/*<offset, List *<LocListEntry>*/ *loc_table = ht_up_new0 ();
+	HtUP/*<offset, RBinDwarfLocList*/ *loc_table = ht_up_new0 ();
 	if (!loc_table || !buf) {
 		return NULL;
 	}
-	return parse_loc_raw (loc_table, buf, len, addr_size);
+	loc_table = parse_loc_raw (loc_table, buf, len, addr_size);
+	free (buf);
+	return loc_table;
 }
 
 // RListComparator should return -1, 0, 1 to indicate "a<b", "a==b", "a>b".
@@ -2531,28 +2534,41 @@ bool sort_loclists(void *user, const ut64 key, const void *value) {
 	return true;
 }
 
-R_API void r_bin_dwarf_print_loc(HtUP /*<offset, RList *<LocListEntry>*/ *loc_table, int addr_size, PrintfCallback print) {
+R_API void r_bin_dwarf_print_loc(HtUP /*<offset, RBinDwarfLocList*/ *loc_table, int addr_size, PrintfCallback print) {
+	r_return_if_fail (loc_table && print);
 	print ("\nContents of the .debug_loc section:\n");
-	if (loc_table) { /* NULL means the section doesn't exist */
-		RList /*<RBinDwarfLocList *>*/ *sort_list = r_list_new ();
-		/* sort the table contents by offset and print sorted 
+	RList /*<RBinDwarfLocList *>*/ *sort_list = r_list_new ();
+	/* sort the table contents by offset and print sorted 
 		   a bit ugly, but I wanted to decouple the parsing and printing */
-		ht_up_foreach (loc_table, sort_loclists, sort_list);
-		RListIter *i;
-		RBinDwarfLocList *loc_list;
-		r_list_foreach (sort_list, i, loc_list) {
-			RListIter *j;
-			RBinDwarfLocRange *range;
-			ut64 base_offset = loc_list->offset;
-			r_list_foreach (loc_list->list, j, range) {
-				print ("0x%" PFMT64x" 0x%" PFMT64x " 0x%" PFMT64x "\n", base_offset, range->start, range->end);
-				base_offset += addr_size * 2 + range->expr_size;
-				if (range->expr_size) {
-					base_offset += 2; /* 2 bytes for expr length */
-				}
+	ht_up_foreach (loc_table, sort_loclists, sort_list);
+	RListIter *i;
+	RBinDwarfLocList *loc_list;
+	r_list_foreach (sort_list, i, loc_list) {
+		RListIter *j;
+		RBinDwarfLocRange *range;
+		ut64 base_offset = loc_list->offset;
+		r_list_foreach (loc_list->list, j, range) {
+			print ("0x%" PFMT64x " 0x%" PFMT64x " 0x%" PFMT64x "\n", base_offset, range->start, range->end);
+			base_offset += addr_size * 2 + range->expr_size;
+			if (range->expr_size) {
+				base_offset += 2; /* 2 bytes for expr length */
 			}
-			print ("0x%" PFMT64x" <End of list>\n", base_offset);
 		}
+		print ("0x%" PFMT64x " <End of list>\n", base_offset);
 	}
 	print ("\n");
+}
+
+
+static void free_loc_table_entry(HtUPKv *kv) {
+	RBinDwarfLocList *loc_list = kv->value;
+	loc_list->list->free = free;
+	r_list_free (loc_list->list);
+	free (loc_list);
+}
+
+R_API void r_bin_dwarf_free_loc(HtUP /*<offset, RBinDwarfLocList>*/ *loc_table) {
+	r_return_if_fail (loc_table);
+	loc_table->opt.freefn = free_loc_table_entry;
+	ht_up_free (loc_table);
 }

@@ -860,7 +860,6 @@ static const char *map_dwarf_reg_to_x86_64_reg(ut64 reg_num, VariableLocationKin
 		case 24:
 			return "xmm7";
 		default:
-			r_warn_if_reached ();
 			*kind = LOCATION_UNKNOWN;
 			return "unsupported_reg";
 	}
@@ -1243,38 +1242,42 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RList/*<Variable*>*/ *v
 	RListIter *iter;
 	Variable *var;
 	r_list_foreach (variables, iter, var) {
+		if (!var->location) {
+			/* NULL location probably means optimized out, maybe put a comment there */
+			continue; 
+		}
 		/* now only works for BP based arguments */
-		/* NULL location probably means optimized out, maybe put a comment there */
-		if (var->location && var->location->kind == LOCATION_BP) {
+		if (var->location->kind == LOCATION_BP) {
 			r_strbuf_appendf (&vars, "%s,", var->name);
 			char *key = r_str_newf ("fcn.%s.var.%s", sname, var->name);
 			/* value = "type, storage, additional info based on storage (offset)" */
 			char *val = r_str_newf ("%s,%" PFMT64d ",%s", "b", var->location->offset, var->type);
 			sdb_set (sdb, key, val, 0);
-		} else if (var->location && var->location->kind == LOCATION_SP) {
+		} else if (var->location->kind == LOCATION_SP) {
 			r_strbuf_appendf (&vars, "%s,", var->name);
 			char *key = r_str_newf ("fcn.%s.var.%s", sname, var->name);
 			/* value = "type, storage, additional info based on storage (offset)" */
 			char *val = r_str_newf ("%s,%" PFMT64d ",%s", "s", var->location->offset, var->type);
 			sdb_set (sdb, key, val, 0);
-		} else if (var->location && var->location->kind == LOCATION_GLOBAL) {
+		} else if (var->location->kind == LOCATION_GLOBAL) {
 			r_strbuf_appendf (&vars, "%s,", var->name);
 			char *key = r_str_newf ("fcn.%s.var.%s", sname, var->name);
 			/* value = "type, storage, additional info based on storage (address)" */
 			char *val = r_str_newf ("%s,%" PFMT64x ",%s", "g", var->location->address, var->type);
 			sdb_set (sdb, key, val, 0);
-		} else if (var->location && var->location->kind == LOCATION_REGISTER) {
+		} else if (var->location->kind == LOCATION_REGISTER) {
 			r_strbuf_appendf (&vars, "%s,", var->name);
 			char *key = r_str_newf ("fcn.%s.var.%s", sname, var->name);
 			/* value = "type, storage, additional info based on storage (register name)" */
 			char *val = r_str_newf ("%s,%s,%s", "r", var->location->reg_name, var->type);
 			sdb_set (sdb, key, val, 0);
-		}
+		} 
+		/* else location is unknown, skip the var */
 	}
 	if (vars.len > 0) { /* remove the extra , */
 		r_strbuf_slice (&vars, 0, vars.len - 1);
 	}
-	char *vars_key = r_str_newf ("func.%s.vars", sname);
+	char *vars_key = r_str_newf ("fcn.%s.vars", sname);
 	char *vars_val = r_str_newf ("%s", r_strbuf_get (&vars));
 	sdb_set (sdb, vars_key, vars_val, 0);
 
@@ -1544,7 +1547,7 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, Sdb *dwarf_sdb) {
 			r_anal_function_rename (fcn, dwf_name);
 			free (dwf_name);
 			/* TODO apply signatures when r2 will use tree-sitter parser
-			   tmp = sdb_fmt ("func.%s.sig", func_name);
+			   tmp = sdb_fmt ("fcn.%s.sig", func_name);
 			   char *fcnstr = sdb_get (dwarf_sdb, tmp, 0);
 			   r_anal_str_to_fcn (anal, func, fcnstr); */
 		}

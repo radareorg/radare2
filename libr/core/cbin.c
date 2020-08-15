@@ -1036,18 +1036,23 @@ static int bin_dwarf(RCore *core, int mode) {
 		RBinDwarfDebugAbbrev *da = NULL;
 		da = r_bin_dwarf_parse_abbrev (core->bin, mode);
 		RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (da, core->bin, mode);
-		HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (core->bin, core->anal->bits / 8, 0);
-		if (mode == R_MODE_PRINT) {
-			r_bin_dwarf_print_loc (loc_table, core->anal->bits / 8, r_cons_printf);
-		}
 		// I suppose there is no reason the parse it for a printing purposes
 		if (info && mode != R_MODE_PRINT) {
+			/* Should we do this by default? */
 			r_anal_dwarf_process_info (core->anal, info);
 		}
 		r_bin_dwarf_free_debug_info (info);
 		r_bin_dwarf_parse_aranges (core->bin, mode);
 		list = ownlist = r_bin_dwarf_parse_line (core->bin, mode);
 		r_bin_dwarf_free_debug_abbrev (da);
+
+		HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (core->bin, core->anal->bits / 8, 0);
+		if (loc_table) {
+			if (mode == R_MODE_PRINT) {
+				r_bin_dwarf_print_loc (loc_table, core->anal->bits / 8, r_cons_printf);
+			}
+			r_bin_dwarf_free_loc (loc_table);
+		}
 	}
 	if (!list) {
 		return false;
