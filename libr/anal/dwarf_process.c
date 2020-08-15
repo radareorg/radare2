@@ -9,7 +9,8 @@ typedef struct dwarf_parse_context_t {
 	const RBinDwarfDie *all_dies;
 	const ut64 count;
 	Sdb *sdb;
-	HtUP *die_map;
+	HtUP/*<ut64 offset, DwarfDie *die>*/ *die_map;
+	HtUP/*<offset, RBinDwarfLocList*>*/  *locations;
 	char *lang; // for demangling
 } Context;
 
@@ -933,8 +934,19 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 	- we now support 3 options: SP, BP and register based arguments */
 	// TODO, research and support loclists?
 	/* We can't parse loclists */
-	if (loc->kind != DW_AT_KIND_BLOCK) {
+	if (loc->kind != DW_AT_KIND_BLOCK && loc->kind != DW_AT_KIND_LOCLISTPTR && loc->kind != DW_AT_KIND_REFERENCE) {
 		return NULL;
+	}
+	RBinDwarfBlock block;
+	if (loc->kind == DW_AT_KIND_LOCLISTPTR || loc->kind == DW_AT_KIND_REFERENCE) {
+		ut64 offset = loc->reference;
+		RBinDwarfLocList *range_list = ht_up_find (ctx->locations, offset, NULL);
+		RBinDwarfLocRange *range = r_list_first (range_list->list);
+		/* Very rough and sloppy, refactor this hacked up stuff */
+		block = *range->expression;
+		// range->expression... etc
+	} else {
+		block = loc->block;
 	}
 	VariableLocationKind kind = LOCATION_UNKNOWN;
 	st64 offset = 0;
@@ -942,13 +954,13 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 	ut64 reg_num = -1;
 	const char *reg_name = NULL; /* literal */
 	size_t i;
-	for (i = 0; i < loc->block.length; i++) {
-		switch (loc->block.data[i]) {
+	for (i = 0; i < block.length; i++) {
+		switch (block.data[i]) {
 		/* TODO we need to parse CFA, needed often
 		   just an offset involving framebase */
 		case DW_OP_fbreg: {
-			const ut8 *dump = &loc->block.data[++i];
-			offset = r_sleb128 (&dump, &loc->block.data[loc->block.length]);
+			const ut8 *dump = &block.data[++i];
+			offset = r_sleb128 (&dump, &block.data[loc->block.length]);
 			if (frame_base) {
 				VariableLocation *location = parse_dwarf_location (ctx, frame_base, NULL);
 				if (location) {
@@ -995,7 +1007,7 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 		case DW_OP_reg31: {
 			/* Will mostly be used for SP based arguments */
 			/* TODO I need to find binaries that uses this so I can test it out*/
-			reg_num = loc->block.data[i] - DW_OP_reg0; // get the reg number
+			reg_num = block.data[i] - DW_OP_reg0; // get the reg number
 			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind, ctx->anal->bits);
 		} break;
 		case DW_OP_breg0:
@@ -1036,16 +1048,16 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 			// st64 offset = r_sleb128 (&dump, &val->block.data[val->block.length]);
 			// kind = LOCATION_SP;
 			// offset = offset + 8;
-			reg_num = loc->block.data[i] - DW_OP_breg0; // get the reg number
-			const ut8 *buffer = &loc->block.data[++i];
-			offset = r_sleb128 (&buffer, &loc->block.data[loc->block.length]);
+			reg_num = block.data[i] - DW_OP_breg0; // get the reg number
+			const ut8 *buffer = &block.data[++i];
+			offset = r_sleb128 (&buffer, &block.data[block.length]);
 			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind, ctx->anal->bits);
 		} break;
 		case DW_OP_bregx: {
 			/* 2 operands, reg_number, offset*/
 			/* TODO I need to find binaries that uses this so I can test it out*/
-			const ut8 *buffer = &loc->block.data[++i];
-			const ut8 *buf_end = &loc->block.data[loc->block.length];
+			const ut8 *buffer = &block.data[++i];
+			const ut8 *buf_end = &block.data[block.length];
 			buffer = r_uleb128 (buffer, buf_end - buffer, &reg_num);
 			offset = r_sleb128 (&buffer, buf_end);
 			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind, ctx->anal->bits);
@@ -1054,9 +1066,9 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 			/* The DW_OP_addr operation has a single operand that encodes a machine address and whose
 			size is the size of an address on the target machine.  */
 			const int addr_size = ctx->anal->bits / 8;
-			const ut8 *dump = &loc->block.data[++i];
+			const ut8 *dump = &block.data[++i];
 			/* malformed, not enough bytes to represent address */
-			if (loc->block.length - i < addr_size) {
+			if (block.length - i < addr_size) {
 				return NULL;
 			}
 			switch (addr_size) {
@@ -1112,6 +1124,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 		bool has_linkage_name = false;
 		int argNumber = 1;
 		/* TODO deal with lexical block ?? */
+		/* TODO merge the formal_parameter and variable parts */
 		size_t j;
 		for (j = idx; child_depth > 0 && j < ctx->count; j++) {
 			child_die = &ctx->all_dies[j];
@@ -1491,10 +1504,11 @@ static void parse_type_entry(Context *ctx, ut64 idx) {
  * @param info 
  * @param anal 
  */
-R_API void r_anal_dwarf_process_info(const RAnal *anal, const RBinDwarfDebugInfo *info) {
-	r_return_if_fail (info && anal);
+R_API void r_anal_dwarf_process_info(const RAnal *anal, RAnalDwarfContext *ctx) {
+	r_return_if_fail (ctx && anal);
 	Sdb *dwarf_sdb =  sdb_ns (anal->sdb, "dwarf", 1);
 	size_t i, j;
+	const RBinDwarfDebugInfo *info = ctx->info;
 	for (i = 0; i < info->count; i++) {
 		RBinDwarfCompUnit *unit = &info->comp_units[i];
 		Context dw_context = { // context per unit?
@@ -1503,6 +1517,7 @@ R_API void r_anal_dwarf_process_info(const RAnal *anal, const RBinDwarfDebugInfo
 			.count = unit->count,
 			.die_map = info->lookup_table,
 			.sdb = dwarf_sdb,
+			.locations = ctx->loc,
 			.lang = NULL
 		};
 		for (j = 0; j < unit->count; j++) {

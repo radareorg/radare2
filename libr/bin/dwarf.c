@@ -1551,6 +1551,22 @@ static void print_debug_info(const RBinDwarfDebugInfo *inf, PrintfCallback print
 		}
 	}
 }
+
+static const ut8 *fill_block_data(const ut8 *buf, const ut8 *buf_end, RBinDwarfBlock *block) {
+	block->data = calloc (sizeof (ut8), block->length);
+	if (!block->data) {
+		return NULL;
+	}
+	/* Maybe unroll this as an optimization in future? */
+	if (block->data) {
+		size_t j = 0;
+		for (j = 0; j < block->length; j++) {
+			block->data[j] = READ (buf, ut8);
+		}
+	}
+	return buf;
+}
+
 /**
  * This function is quite incomplete and requires lot of work
  * With parsing various new FORM values
@@ -1642,15 +1658,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 	case DW_FORM_block1:
 		value->kind = DW_AT_KIND_BLOCK;
 		value->block.length = READ8 (buf);
-		value->block.data = calloc (sizeof (ut8), value->block.length + 1);
-		if (!value->block.data) {
-			return NULL;
-		}
-		if (value->block.data) {
-			for (j = 0; j < value->block.length; j++) {
-				value->block.data[j] = READ (buf, ut8);
-			}
-		}
+		buf = fill_block_data (buf, buf_end, &value->block);
 		break;
 	case DW_FORM_block2:
 		value->kind = DW_AT_KIND_BLOCK;
@@ -1668,16 +1676,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 	case DW_FORM_block4:
 		value->kind = DW_AT_KIND_BLOCK;
 		value->block.length = READ32 (buf);
-		if (value->block.length > 0) {
-			ut8 *data = calloc (sizeof (ut8), value->block.length);
-			if (!data) {
-				return NULL;
-			}
-			for (j = 0; j < value->block.length; j++) {
-				data[j] = READ (buf, ut8);
-			}
-			value->block.data = data;
-		}
+		buf = fill_block_data (buf, buf_end, &value->block);
 		break;
 	case DW_FORM_block: // variable length ULEB128
 		value->kind = DW_AT_KIND_BLOCK;
@@ -1685,12 +1684,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		if (!buf || buf >= buf_end) {
 			return NULL;
 		}
-		value->block.data = calloc (sizeof (ut8), value->block.length);
-		if (value->block.data) {
-			for (j = 0; j < value->block.length; j++) {
-				value->block.data[j] = READ (buf, ut8);
-			}
-		}
+		buf = fill_block_data (buf, buf_end, &value->block);
 		break;
 	case DW_FORM_flag:
 		value->kind = DW_AT_KIND_FLAG;
@@ -1747,15 +1741,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		if (!buf || buf >= buf_end) {
 			return NULL;
 		}
-		value->block.data = calloc (sizeof (ut8), value->block.length);
-		if (!value->block.data) {
-			return NULL;
-		}
-		if (value->block.data) {
-			for (j = 0; j < value->block.length; j++) {
-				value->block.data[j] = READ (buf, ut8);
-			}
-		}
+		buf = fill_block_data (buf, buf_end, &value->block);
 		break;
 	// this means that the flag is present, nothing is read
 	case DW_FORM_flag_present:
@@ -2432,12 +2418,12 @@ static RBinDwarfLocList *create_loc_list(ut64 offset) {
 	return list;
 }
 
-static RBinDwarfLocRange *create_loc_range(ut64 start, ut64 end, ut64 expr_size) {
+static RBinDwarfLocRange *create_loc_range(ut64 start, ut64 end, RBinDwarfBlock *block) {
 	RBinDwarfLocRange *range = R_NEW0 (RBinDwarfLocRange);
 	if (range) {
 		range->start = start;
 		range->end = end;
-		range->expr_size = expr_size;
+		range->expression = block;
 	}
 	return range;
 }
@@ -2455,6 +2441,7 @@ static HtUP *parse_loc_raw(HtUP/*<offset, List *<LocListEntry>*/ *loc_table, con
 	ut64 start_addr = 0;
 	ut64 end_addr = 0;
 	ut64 offset = 0;
+	/* for recognizing Base address entry */
 	ut64 max_offset = get_max_offset (addr_size);
 	ut64 address_base = 0; /* remember base of the loclist */
 	RBinDwarfLocList *loc_list = NULL;
@@ -2471,23 +2458,23 @@ static HtUP *parse_loc_raw(HtUP/*<offset, List *<LocListEntry>*/ *loc_table, con
 			address_base = 0;
 			continue;
 		} else if (start_addr == max_offset) {
-			/* base address, starts the loclist, DWARF2 doesn't have this type of entry */
-			address_base = end_addr;
+			/* base address, starts the loclist, DWARF2 doesn't have this type of entry 
+			   these entries shouldn't be in the list, they are just informational entries
+			   for further parsing (address_base)                                        */
 			if (!loc_list) {
 				loc_list = create_loc_list (offset);
 			}
-			range = create_loc_range (start_addr, end_addr, 0);
-			r_list_append (loc_list->list, range);
-			range = NULL;
+			address_base = end_addr;
 		} else { /* location list entry: */
 			/* parse the expression */
 			if (!loc_list) {
 				loc_list = create_loc_list (offset);
 			}
-			ut16 block_length = READ16 (buf);
-			ut8 byte = READ8 (buf);
-			buf += block_length - 1; // can't parse larger blocks yet, TODO
-			range = create_loc_range (start_addr + address_base, end_addr + address_base, block_length);
+			// TODO in future parse expressions to better structure in dwarf.c and not in dwarf_process.c
+			RBinDwarfBlock *block = R_NEW0 (RBinDwarfBlock);
+			block->length = READ16 (buf);
+			buf = fill_block_data (buf, buf_end, block);
+			range = create_loc_range (start_addr + address_base, end_addr + address_base, block);
 			r_list_append (loc_list->list, range);
 			range = NULL;
 		}
@@ -2539,7 +2526,7 @@ R_API void r_bin_dwarf_print_loc(HtUP /*<offset, RBinDwarfLocList*/ *loc_table, 
 	print ("\nContents of the .debug_loc section:\n");
 	RList /*<RBinDwarfLocList *>*/ *sort_list = r_list_new ();
 	/* sort the table contents by offset and print sorted 
-		   a bit ugly, but I wanted to decouple the parsing and printing */
+	   a bit ugly, but I wanted to decouple the parsing and printing */
 	ht_up_foreach (loc_table, sort_loclists, sort_list);
 	RListIter *i;
 	RBinDwarfLocList *loc_list;
@@ -2549,9 +2536,9 @@ R_API void r_bin_dwarf_print_loc(HtUP /*<offset, RBinDwarfLocList*/ *loc_table, 
 		ut64 base_offset = loc_list->offset;
 		r_list_foreach (loc_list->list, j, range) {
 			print ("0x%" PFMT64x " 0x%" PFMT64x " 0x%" PFMT64x "\n", base_offset, range->start, range->end);
-			base_offset += addr_size * 2 + range->expr_size;
-			if (range->expr_size) {
-				base_offset += 2; /* 2 bytes for expr length */
+			base_offset += addr_size * 2;
+			if (range->expression) {
+				base_offset += 2 + range->expression->length; /* 2 bytes for expr length */
 			}
 		}
 		print ("0x%" PFMT64x " <End of list>\n", base_offset);
@@ -2567,7 +2554,7 @@ static void free_loc_table_entry(HtUPKv *kv) {
 	free (loc_list);
 }
 
-R_API void r_bin_dwarf_free_loc(HtUP /*<offset, RBinDwarfLocList>*/ *loc_table) {
+R_API void r_bin_dwarf_free_loc(HtUP /*<offset, RBinDwarfLocList*>*/ *loc_table) {
 	r_return_if_fail (loc_table);
 	loc_table->opt.freefn = free_loc_table_entry;
 	ht_up_free (loc_table);
