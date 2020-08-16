@@ -2433,44 +2433,37 @@ static HtUP *parse_loc_raw(HtUP/*<offset, List *<LocListEntry>*/ *loc_table, con
 	   a base address selection entry, or an end of list entry.  
 	   
 	   location list entry: Address, Address, expression
-	   base address entry: Address, Address
-	   end of list entry: 0, 0
-	   */
+	   base address entry: Address, Address (not in DWARF 2)
+	   end of list entry: 0, 0  */
 	const ut8 *const buf_start = buf;
 	const ut8 *buf_end = buf + len;
-	ut64 start_addr = 0;
-	ut64 end_addr = 0;
-	ut64 offset = 0;
 	/* for recognizing Base address entry */
 	ut64 max_offset = get_max_offset (addr_size);
 	ut64 address_base = 0; /* remember base of the loclist */
+	ut64 list_offset = 0;
 	RBinDwarfLocList *loc_list = NULL;
 	RBinDwarfLocRange *range = NULL;
 	while (buf && buf < buf_end) {
-		offset = buf - buf_start;
-		start_addr = dwarf_read_address (addr_size, &buf, buf_end);
-		end_addr = dwarf_read_address (addr_size, &buf, buf_end);
+		ut64 start_addr = dwarf_read_address (addr_size, &buf, buf_end);
+		ut64 end_addr = dwarf_read_address (addr_size, &buf, buf_end);
 		if (!start_addr && !end_addr) { /* end of list entry: 0, 0 */
 			if (loc_list) {
 				ht_up_insert (loc_table, loc_list->offset, loc_list);
+				list_offset = buf - buf_start;
 				loc_list = NULL;
 			}
 			address_base = 0;
 			continue;
 		} else if (start_addr == max_offset) {
-			/* base address, starts the loclist, DWARF2 doesn't have this type of entry 
+			/* base address, DWARF2 doesn't have this type of entry 
 			   these entries shouldn't be in the list, they are just informational entries
 			   for further parsing (address_base)                                        */
-			if (!loc_list) {
-				loc_list = create_loc_list (offset);
-			}
 			address_base = end_addr;
 		} else { /* location list entry: */
-			/* parse the expression */
 			if (!loc_list) {
-				loc_list = create_loc_list (offset);
+				loc_list = create_loc_list (list_offset);
 			}
-			// TODO in future parse expressions to better structure in dwarf.c and not in dwarf_process.c
+			/* TODO in future parse expressions to better structure in dwarf.c and not in dwarf_process.c */
 			RBinDwarfBlock *block = R_NEW0 (RBinDwarfBlock);
 			block->length = READ16 (buf);
 			buf = fill_block_data (buf, buf_end, block);
@@ -2482,8 +2475,15 @@ static HtUP *parse_loc_raw(HtUP/*<offset, List *<LocListEntry>*/ *loc_table, con
 	return loc_table;
 }
 
-
-R_API HtUP/*<offset, RBinDwarfLocList*/ *r_bin_dwarf_parse_loc(RBin *bin, int addr_size, int mode) {
+/**
+ * @brief Parses out the .debug_loc section into a table that maps each list as
+ *        offset of a list -> LocationList
+ * 
+ * @param bin 
+ * @param addr_size machine address size used in executable (necessary for parsing)
+ * @return R_API* 
+ */
+R_API HtUP/*<offset, RBinDwarfLocList*/ *r_bin_dwarf_parse_loc(RBin *bin, int addr_size) {
 	r_return_val_if_fail  (bin, NULL);
 	/* The standarparse_loc_raw_frame, not sure why is that */
 	size_t len = 0;
@@ -2499,8 +2499,7 @@ R_API HtUP/*<offset, RBinDwarfLocList*/ *r_bin_dwarf_parse_loc(RBin *bin, int ad
 	return loc_table;
 }
 
-// RListComparator should return -1, 0, 1 to indicate "a<b", "a==b", "a>b".
-int offset_comp(const void *a, const void *b) {
+static int offset_comp(const void *a, const void *b) {
 	const RBinDwarfLocList *f = a;
 	const RBinDwarfLocList *s = b;
 	ut64 first = f->offset;
@@ -2514,7 +2513,7 @@ int offset_comp(const void *a, const void *b) {
 	return 0;
 }
 
-bool sort_loclists(void *user, const ut64 key, const void *value) {
+static bool sort_loclists(void *user, const ut64 key, const void *value) {
 	RBinDwarfLocList *loc_list = (RBinDwarfLocList *)value;
 	RList *sort_list = user;
 	r_list_add_sorted (sort_list, loc_list, offset_comp);

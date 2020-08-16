@@ -1036,7 +1036,7 @@ static int bin_dwarf(RCore *core, int mode) {
 		RBinDwarfDebugAbbrev *da = NULL;
 		da = r_bin_dwarf_parse_abbrev (core->bin, mode);
 		RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (da, core->bin, mode);
-		HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (core->bin, core->anal->bits / 8, 0);
+		HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (core->bin, core->anal->bits / 8);
 		// I suppose there is no reason the parse it for a printing purposes
 		if (info && mode != R_MODE_PRINT) {
 			/* Should we do this by default? */
