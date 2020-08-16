@@ -834,10 +834,6 @@ typedef struct {
 	size_t file_names_count;
 } RBinDwarfLineHeader;
 
-typedef struct r_bin_dwarf_expression {
-	
-} RBinDwarfExpression;
-
 typedef struct r_bin_dwarf_loc_entry_t {
 	ut64 start;
 	ut64 end;
