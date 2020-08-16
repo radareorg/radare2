@@ -53,7 +53,7 @@ endif
 endif
 
 all: plugins.cfg libr/include/r_version.h
-	${MAKE} -C shlr targets
+	${MAKE} -C shlr sdbs
 	${MAKE} -C shlr/zip
 	${MAKE} -C libr/util
 	${MAKE} -C libr/socket

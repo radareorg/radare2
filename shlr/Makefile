@@ -60,7 +60,7 @@ CS_REV=
 CS_PATCHES=1
 endif
 
-.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwindbg bochs tree-sitter-sync
+.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwindbg bochs tree-sitter-sync sdbs
 
 ifeq ($(shell gcc -v > /dev/null 2>&1 && echo works),works)
 HOST_CC?=gcc
@@ -113,23 +113,12 @@ else
 BUILD_EXT_EXE=
 endif
 
-SDB_TARGETS=$(SDBLIB)
-ifneq (${EXT_EXE},)
-SDB_TARGETS+=sdb/sdb${EXT_EXE}
-else
-SDB_TARGETS+=sdb/sdb
-endif
-
 PIC=
 ifneq ($(CC),cccl)
 PIC=-fPIC
-ifeq ($(filter sdb/sdb${BUILD_EXT_EXE},$(SDB_TARGETS)),)
-SDB_TARGETS+=sdb/sdb${BUILD_EXT_EXE}
-endif
 endif
 
-targets:
-	#for TARGET in ${SDB_TARGETS} ; do ${MAKE} $$TARGET ; done
+sdbs:
 	$(MAKE) sdb-native-build HOST_CC=$(HOST_CC) CC=$(HOST_CC)
 	$(MAKE) sdb-target-build
 
@@ -157,6 +146,7 @@ sdb-native-build: sdb/src/sdb_version.h
 	cp -f sdb/src/sdb${BUILD_EXT_EXE} sdb/src/.sdb${BUILD_EXT_EXE}
 	cp -f sdb/src/sdb${BUILD_EXT_EXE} sdb/sdb$(BUILD_EXT_EXE)
 	-file sdb/sdb$(BUILD_EXT_EXE)
+	cp -f sdb/src/.sdb${BUILD_EXT_EXE} $@
 
 sdb-target-build: sdb/src/sdb_version.h
 	@echo
@@ -169,14 +159,6 @@ sdb-target-build: sdb/src/sdb_version.h
 	$(MAKE) -C sdb/src ARCH=xxx RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED}" \
 		CC="${CC}" AR="${AR}" ARCH=undefined CFLAGS='${CFLAGS}' LDFLAGS='${LDFLAGS}' libsdb.a
 	${RANLIB} sdb/src/libsdb.a
-
-${SDB_TARGETS}:
-ifneq (${EXT_AR},a)
-	-cp -f sdb/src/libsdb.a sdb/src/libsdb.${EXT_AR}
-endif
-	rm -f $@
-	cp -f sdb/src/.sdb${BUILD_EXT_EXE} $@
-	$(MAKE) targets
 
 .PHONY: sdb-sync sync-sdb sdbclean sdb-native-build sdb-target-build
 SDB_F=README.md config.mk src Makefile meson.build
