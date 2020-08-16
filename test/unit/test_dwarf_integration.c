@@ -30,8 +30,13 @@ static bool test_parse_dwarf_types(void) {
 	mu_assert_notnull (abbrevs, "Couldn't parse Abbreviations");
 	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (abbrevs, bin, MODE);
 	mu_assert_notnull (info, "Couldn't parse debug_info section");
-	// black box
-	r_anal_dwarf_process_info (anal, info);
+
+	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (bin, 4);
+	RAnalDwarfContext ctx = {
+		.info = info,
+		.loc = loc_table
+	};
+	r_anal_dwarf_process_info (anal, &ctx);
 	// Now we expect certain information to be set in the sdb
 	char * value = NULL;
 	char *object_name = "_cairo_status";
@@ -97,19 +102,34 @@ static bool test_dwarf_function_parsing(void) {
 	mu_assert_notnull (abbrevs, "Couldn't parse Abbreviations");
 	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (abbrevs, bin, MODE);
 	mu_assert_notnull (info, "Couldn't parse debug_info section");
-	// black box
-	r_anal_dwarf_process_info (anal, info);
+	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (bin, 8);
+	// I suppose there is no reason the parse it for a printing purposes
+	/* Should we do this by default? */
+	RAnalDwarfContext ctx = {
+		.info = info,
+		.loc = loc_table
+	};
+	r_anal_dwarf_process_info (anal, &ctx);
+
 	Sdb *sdb = sdb_ns (anal->sdb, "dwarf", 0);
 	mu_assert_notnull (sdb, "No dwarf function information in db");
-	char * value = NULL;
-	check_kv ("Mammal", "func");
-	check_kv ("func.Mammal.addr", "0x401300");
-	check_kv ("func.Mammal.sig", "void (Mammal * this);");
-	check_kv ("func.Dog::walk().addr", "0x401380");
-	check_kv ("func.Dog::walk().sig", "int (Dog * this);");
-	check_kv ("main", "func");
-	check_kv ("func.main.addr", "0x401160");
-	check_kv ("func.main.sig", "int ();");
+	char *value = NULL;
+	check_kv ("Mammal", "fcn");
+	check_kv ("fcn.Mammal.addr", "0x401300");
+	check_kv ("fcn.Mammal.sig", "void (Mammal * this);");
+	check_kv ("fcn.Dog::walk__.addr", "0x401380");
+	check_kv ("fcn.Dog::walk__.sig", "int (Dog * this);");
+	check_kv ("fcn.Dog::walk__.name", "Dog::walk()");
+	// fcn.Mammal::walk__.var.this=b,-8,Mammal *
+	// fcn.Mammal::walk__.vars=this
+	check_kv ("fcn.Mammal::walk__.vars", "this");
+	check_kv ("fcn.Mammal::walk__.var.this", "b,-8,Mammal *");
+
+	check_kv ("main", "fcn");
+	check_kv ("fcn.main.addr", "0x401160");
+	check_kv ("fcn.main.sig", "int ();");
+	check_kv ("fcn.main.vars", "b,m,output");
+	check_kv ("fcn.main.var.output", "b,-40,int");
 	// Now we expect certain information to be set in the sdb
 	r_bin_dwarf_free_debug_info (info);
 	r_bin_dwarf_free_debug_abbrev (abbrevs);
@@ -117,7 +137,7 @@ static bool test_dwarf_function_parsing(void) {
 	r_bin_free (bin);
 	r_io_free (io);
 	mu_end;
-}
+	}
 
 int all_tests(void) {
 	mu_run_test (test_parse_dwarf_types);
