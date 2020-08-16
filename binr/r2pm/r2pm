@@ -568,7 +568,7 @@ case "$1" in
 	if [ -n "$2" ]; then
 		RC=0
 		while [ -n "$2" ]; do
-			echo "Cleaning $2..." >&2
+			echo "Cleaning $2..."
 			FILE="$(pkgFilePath "$2")"
 			if [ -f "${FILE}" ]; then
 				NAME="$2"
@@ -582,7 +582,7 @@ case "$1" in
 			fi
 
 			if [ -d "${R2PM_GITDIR}/$2" ]; then
-				echo "Cleaning up ${R2PM_GITDIR}/$2..." >&2
+				echo "Cleaning up ${R2PM_GITDIR}/$2..."
 				rm -rf "${R2PM_GITDIR}/$2"
 			else
 				echo "Cannot find $2 in ${R2PM_GITDIR}" >&2
