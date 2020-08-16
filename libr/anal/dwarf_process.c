@@ -93,8 +93,6 @@ static RBinDwarfAttrValue *find_attr(const RBinDwarfDie *die, st32 attr_name) {
  * @param sb 
  * @param s 
  * @param c 
- * @return true Success
- * @return false Failure
  */
 static bool strbuf_rev_prepend_char(RStrBuf *sb, const char *s, int c) {
 	r_return_val_if_fail (sb && s, false);
@@ -128,9 +126,7 @@ static bool strbuf_rev_prepend_char(RStrBuf *sb, const char *s, int c) {
  * 	      Used to replicate proper C declaration for function pointers
  * @param sb 
  * @param s 
- * @param c 
- * @return true Success
- * @return false Failure
+ * @param needle 
  */
 static bool strbuf_rev_append_char(RStrBuf *sb, const char *s, const char *needle) {
 	r_return_val_if_fail (sb && s, false);

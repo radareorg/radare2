@@ -837,9 +837,6 @@ typedef struct {
 typedef struct r_bin_dwarf_expression {
 	
 } RBinDwarfExpression;
-typedef struct r_bin_dwarf_cfa_t {
-	int x;
-} RBinDwarfCfa;
 
 typedef struct r_bin_dwarf_loc_entry_t {
 	ut64 start;

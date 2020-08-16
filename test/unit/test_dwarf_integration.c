@@ -133,6 +133,7 @@ static bool test_dwarf_function_parsing(void) {
 	// Now we expect certain information to be set in the sdb
 	r_bin_dwarf_free_debug_info (info);
 	r_bin_dwarf_free_debug_abbrev (abbrevs);
+	r_bin_dwarf_free_loc (loc_table);
 	r_anal_free (anal);
 	r_bin_free (bin);
 	r_io_free (io);

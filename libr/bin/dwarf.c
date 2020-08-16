@@ -2375,28 +2375,6 @@ R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *bin, int mode) {
 	return abbrevs;
 }
 
-// static RBinDwarfCfa *parse_call_frame_raw(ut8 *buf, size_t len, int mode) {
-// 	// it's full of CIE and FDE entries
-// 	/*
-// 	parse_entry ()
-// 	if (cie) {
-
-// 	} else if (fde) {
-
-// 	}
-
-
-// 	*/
-// }
-
-// R_API RBinDwarfCfa *r_bin_dwarf_parse_call_frame(RBin *bin, int mode) {
-// 	/* The standard says the section is .debug_frame
-// 	   but in reality binaries that I see from clang or 
-// 	   gcc use eh_frame, not sure why is that */
-// 	size_t len = 0;
-// 	ut8 *buf = get_section_bytes (bin, "eh_frame", &len);
-// }
-
 static ut64 get_max_offset(size_t addr_size) {
 	switch (addr_size) {
 		case 2:
