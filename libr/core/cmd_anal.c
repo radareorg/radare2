@@ -9369,7 +9369,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				Sdb *dwarf_sdb = sdb_ns (core->anal->sdb, "dwarf", 0);
 				if (dwarf_sdb) {
 					oldstr = r_print_rowlog (core->print, "Integrate dwarf function information.");
-					r_anal_dwarf_integrate_functions (core->anal, dwarf_sdb);
+					r_anal_dwarf_integrate_functions (core->anal, core->flags, dwarf_sdb);
 					r_print_rowlog_done (core->print, oldstr);
 				}
 

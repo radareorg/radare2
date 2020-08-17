@@ -775,12 +775,12 @@ static void parse_abstract_origin(Context *ctx, ut64 offset, RStrBuf *type, cons
 			switch (val->attr_name) {
 			case DW_AT_name:
 				if (!get_linkage_name || !has_linkage_name) {
-					name = val->string.content;
+					*name = val->string.content;
 				}
 				break;
 			case DW_AT_linkage_name:
 			case DW_AT_MIPS_linkage_name:
-				name = val->string.content;
+				*name = val->string.content;
 				has_linkage_name = true;
 				break;
 			case DW_AT_type:
@@ -1126,7 +1126,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 		int child_depth = 1;
 		const RBinDwarfDie *child_die = &ctx->all_dies[++idx];
 		Variable *var = R_NEW0 (Variable);
-		const char *name = NULL;
+
 		bool get_linkage_name = prefer_linkage_name (ctx->lang);
 		bool has_linkage_name = false;
 		int argNumber = 1;
@@ -1137,6 +1137,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 			child_die = &ctx->all_dies[j];
 			RStrBuf type;
 			r_strbuf_init (&type);
+			const char *name = NULL;
 			// right now we skip non direct descendants of the structure
 			// TODO maybe add parsing of possible thrown exception DW_TAG_thrown_type
 			if (child_depth == 1 && child_die->tag == DW_TAG_formal_parameter) {
@@ -1200,12 +1201,12 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 					switch (val->attr_name) {
 					case DW_AT_name:
 						if (!get_linkage_name || !has_linkage_name) {
-							name = val->string.content;
+							var->name = val->string.content;
 						}
 						break;
 					case DW_AT_linkage_name:
 					case DW_AT_MIPS_linkage_name:
-						name = val->string.content;
+						var->name = val->string.content;
 						has_linkage_name = true;
 						break;
 					case DW_AT_type:
@@ -1297,7 +1298,7 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RList/*<Variable*>*/ *v
 
 			r_strbuf_appendf (&vars, "%s,", var->name);
 			char *key = r_str_newf ("fcn.%s.var.%s", sname, var->name);
-			char *val = r_str_newf ("%s,%" PFMT64x ",%s", "g", var->location->address, var->type);
+			char *val = r_str_newf ("%s,%" PFMT64u ",%s", "g", var->location->address, var->type);
 			sdb_set (sdb, key, val, 0);
 		} break;
 		case LOCATION_REGISTER: {
@@ -1563,7 +1564,7 @@ bool filter_sdb_function_names(void *user, const char *k, const char *v) {
  * @param anal 
  * @param dwarf_sdb 
  */
-R_API void r_anal_dwarf_integrate_functions(RAnal *anal, Sdb *dwarf_sdb) {
+R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwarf_sdb) {
 	r_return_if_fail (anal && dwarf_sdb);
 
 	/* get all entries with value == func */
@@ -1613,9 +1614,11 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, Sdb *dwarf_sdb) {
 			if (*kind != 'r') {
 				offset = strtol (extra, NULL, 10);
 			}
-			/* No way to handle var at fixed addr yet, TODO set flag */
-			if (*kind == 'g') { /* global, fixed addr */
-				/* Probably create a flag TODO */
+			if (*kind == 'g') { /* global, fixed addr TODO add size to variables? */
+				char *global_name = r_str_newf ("global_%s", var_name);
+				r_flag_unset_off (flags, offset);
+				r_flag_set_next (flags, global_name, offset, 4);
+				free (global_name);
 			} else if (*kind == 's') {
 				r_anal_function_set_var (fcn, offset - fcn->maxstack, *kind, type, 4, false, var_name);
 			} else if (*kind == 'r') {
