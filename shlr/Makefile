@@ -146,7 +146,6 @@ sdb-native-build: sdb/src/sdb_version.h
 	cp -f sdb/src/sdb${BUILD_EXT_EXE} sdb/src/.sdb${BUILD_EXT_EXE}
 	cp -f sdb/src/sdb${BUILD_EXT_EXE} sdb/sdb$(BUILD_EXT_EXE)
 	-file sdb/sdb$(BUILD_EXT_EXE)
-	cp -f sdb/src/.sdb${BUILD_EXT_EXE} $@
 
 sdb-target-build: sdb/src/sdb_version.h
 	@echo
