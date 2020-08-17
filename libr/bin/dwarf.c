@@ -2524,6 +2524,12 @@ R_API void r_bin_dwarf_print_loc(HtUP /*<offset, RBinDwarfLocList*/ *loc_table, 
 static void free_loc_table_entry(HtUPKv *kv) {
 	RBinDwarfLocList *loc_list = kv->value;
 	loc_list->list->free = free;
+	RListIter *iter;
+	RBinDwarfLocRange *range;
+	r_list_foreach (loc_list->list, iter, range) {
+		free (range->expression->data);
+		free (range->expression);
+	}
 	r_list_free (loc_list->list);
 	free (loc_list);
 }

@@ -1125,7 +1125,6 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 	if (die->has_children) {
 		int child_depth = 1;
 		const RBinDwarfDie *child_die = &ctx->all_dies[++idx];
-		Variable *var = R_NEW0 (Variable);
 
 		bool get_linkage_name = prefer_linkage_name (ctx->lang);
 		bool has_linkage_name = false;
@@ -1141,6 +1140,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 			// right now we skip non direct descendants of the structure
 			// TODO maybe add parsing of possible thrown exception DW_TAG_thrown_type
 			if (child_depth == 1 && child_die->tag == DW_TAG_formal_parameter) {
+				Variable *var = R_NEW0 (Variable);
 				size_t i;
 				for (i = 0; i < child_die->count; i++) {
 					const RBinDwarfAttrValue *val = &child_die->attr_values[i];
@@ -1276,37 +1276,39 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RList/*<Variable*>*/ *v
 			/* NULL location probably means optimized out, maybe put a comment there */
 			continue;
 		}
+		char *key = NULL;
+		char *val = NULL;
 		switch (var->location->kind) {
 		case LOCATION_BP: {
 			/* value = "type, storage, additional info based on storage (offset)" */
 
 			r_strbuf_appendf (&vars, "%s,", var->name);
-			char *key = r_str_newf ("fcn.%s.var.%s", sname, var->name);
-			char *val = r_str_newf ("%s,%" PFMT64d ",%s", "b", var->location->offset, var->type);
+			key = r_str_newf ("fcn.%s.var.%s", sname, var->name);
+			val = r_str_newf ("%s,%" PFMT64d ",%s", "b", var->location->offset, var->type);
 			sdb_set (sdb, key, val, 0);
 		} break;
 		case LOCATION_SP: {
 			/* value = "type, storage, additional info based on storage (offset)" */
 
 			r_strbuf_appendf (&vars, "%s,", var->name);
-			char *key = r_str_newf ("fcn.%s.var.%s", sname, var->name);
-			char *val = r_str_newf ("%s,%" PFMT64d ",%s", "s", var->location->offset, var->type);
+			key = r_str_newf ("fcn.%s.var.%s", sname, var->name);
+			val = r_str_newf ("%s,%" PFMT64d ",%s", "s", var->location->offset, var->type);
 			sdb_set (sdb, key, val, 0);
 		} break;
 		case LOCATION_GLOBAL: {
 			/* value = "type, storage, additional info based on storage (address)" */
 
 			r_strbuf_appendf (&vars, "%s,", var->name);
-			char *key = r_str_newf ("fcn.%s.var.%s", sname, var->name);
-			char *val = r_str_newf ("%s,%" PFMT64u ",%s", "g", var->location->address, var->type);
+			key = r_str_newf ("fcn.%s.var.%s", sname, var->name);
+			val = r_str_newf ("%s,%" PFMT64u ",%s", "g", var->location->address, var->type);
 			sdb_set (sdb, key, val, 0);
 		} break;
 		case LOCATION_REGISTER: {
 			/* value = "type, storage, additional info based on storage (register name)" */
 
 			r_strbuf_appendf (&vars, "%s,", var->name);
-			char *key = r_str_newf ("fcn.%s.var.%s", sname, var->name);
-			char *val = r_str_newf ("%s,%s,%s", "r", var->location->reg_name, var->type);
+			key = r_str_newf ("fcn.%s.var.%s", sname, var->name);
+			val = r_str_newf ("%s,%s,%s", "r", var->location->reg_name, var->type);
 			sdb_set (sdb, key, val, 0);
 		} break;
 
@@ -1314,14 +1316,18 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RList/*<Variable*>*/ *v
 			/* else location is unknown (optimized out), skip the var */
 			break;
 		}
+		free (key);
+		free (val);
 	}
 	if (vars.len > 0) { /* remove the extra , */
-		r_strbuf_slice (&vars, 0, vars.len - 1);
+		r_strbuf_slice (&vars, 0, vars.len - 1); /* leaks? */
 	}
 	char *vars_key = r_str_newf ("fcn.%s.vars", sname);
 	char *vars_val = r_str_newf ("%s", r_strbuf_get (&vars));
 	sdb_set (sdb, vars_key, vars_val, 0);
-
+	free (vars_key);
+	free (vars_val);
+	r_strbuf_fini (&vars);
 	free (sname);
 }
 
@@ -1420,6 +1426,15 @@ static void parse_function(Context *ctx, ut64 idx) {
 
 	free ((char *)fcn.signature);
 	free ((char *)fcn.name);
+
+	RListIter *iter;
+	Variable *var;
+	r_list_foreach (variables, iter, var) {
+		free (var->name);
+		free (var->type);
+		free (var->location);
+		free (var);
+	}
 	r_list_free (variables);
 	r_strbuf_fini (&args);
 cleanup:
