@@ -20,7 +20,7 @@ cp -f "${R2_PLUGINS_CFG}" plugins.cfg
 #./configure-plugins
 ./configure --prefix="$PREFIX" --with-libr --without-libuv --without-gpl || exit 1
 #--disable-loadlibs || exit 1
-make -j8 || exit 1
+make -j1 || exit 1
 rm -rf "${SDKDIR}"
 mkdir -p "${SDKDIR}"/lib
 rm -f libr/libr.a
