@@ -51,7 +51,7 @@ EOF
 RUN
 
 NAME=mips ld(load doubleword) instruction 
-FILE=bins/elf/analysis/mips64r2-busybox
+FILE=bins/elf/analysis/mips64r2-busybox-loongson
 CMDS=<<EOF
 s 0x120004460
 f--
