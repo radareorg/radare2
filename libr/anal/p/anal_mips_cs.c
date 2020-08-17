@@ -408,6 +408,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_DADD:
 	case MIPS_INS_DADDI:
 	/** unsigned */
+	case MIPS_INS_DADDU:
 	case MIPS_INS_ADDU:
 	case MIPS_INS_ADDIU:
 	case MIPS_INS_DADDIU:
