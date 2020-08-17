@@ -243,6 +243,8 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 	it->space = r_spaces_add (&a->zign_spaces, r_str_word_get0 (k2, 1));
 	it->name = r_str_new (r_str_word_get0 (k2, 2));
 
+	// remove newline at end
+	strtok (v2, "\n");
 	// Deserialize value: |k:v|k:v|k:v|...
 	n = r_str_split (v2, '|');
 	const char *token = NULL;
@@ -1246,19 +1248,7 @@ typedef struct {
 	double infimum;
 } ClosestMatchData;
 
-static bool closest_match_callback(void *a, const char *name, const char *value) {
-	ClosestMatchData *data = (ClosestMatchData *)a;
-
-	// get signature in usable format
-	RSignItem *it = r_sign_item_new ();
-	if (!it) {
-		return false;
-	}
-	if (!r_sign_deserialize (a, it, name, value)) {
-		r_sign_item_free (it);
-		return false;
-	}
-
+static bool closest_match_update(ClosestMatchData *data, RSignItem *it) {
 	// quantify how close the signature matches
 	int div = 0;
 	double score = 0.0;
@@ -1331,8 +1321,23 @@ static bool closest_match_callback(void *a, const char *name, const char *value)
 		row = r_list_get_top (data->output);
 		data->infimum = row->score;
 	}
-
 	return true;
+}
+
+static bool closest_match_callback(void *a, const char *name, const char *value) {
+	ClosestMatchData *data = (ClosestMatchData *)a;
+
+	// get signature in usable format
+	RSignItem *it = r_sign_item_new ();
+	if (!it) {
+		return false;
+	}
+	if (!r_sign_deserialize (a, it, name, value)) {
+		r_sign_item_free (it);
+		return false;
+	}
+
+	return closest_match_update (data, it);
 }
 
 R_API void r_sign_close_match_free(RSignCloseMatch *match) {
@@ -1372,6 +1377,83 @@ R_API RList *r_sign_find_closest_sig(RAnal *a, RSignItem *it, int count, double 
 	}
 
 	free (data.bytes_combined);
+	return output;
+}
+
+static RSignItem *item_frm_signame(RAnal *a, const char *signame) {
+	// example zign|*|sym.unlink_blk
+	char k[R_SIGN_KEY_MAXSZ];
+
+	serializeKey (a, r_spaces_current (&a->zign_spaces), signame, k);
+	char *value = sdb_querys (a->sdb_zigns, NULL, 0, k);
+	if (!value) {
+		return NULL;
+	}
+
+	RSignItem *it = r_sign_item_new ();
+	if (!it) {
+		free (value);
+		return NULL;
+	}
+
+	if (!r_sign_deserialize (a, it, k, value)) {
+		r_sign_item_free (it);
+		it = NULL;
+	}
+	free (value);
+	return it;
+}
+
+R_API RList *r_sign_find_closest_fcn(RAnal *a, char *signame, int count, double score_threshold) {
+	r_return_val_if_fail (a && signame && count > 0 && score_threshold >= 0 && score_threshold <= 1, NULL);
+	RSignItem *it = item_frm_signame (a, signame);
+	if (!it) {
+		eprintf ("Couldn't get signature for %s\n", signame);
+		return NULL;
+	}
+
+	RList *output = r_list_newf ((RListFree)r_sign_close_match_free);
+	if (!output) {
+		r_sign_item_free (it);
+		return NULL;
+	}
+
+	ClosestMatchData data;
+	data.output = output;
+	data.count = count;
+	data.score_threshold = score_threshold;
+	data.infimum = 0.0;
+	data.test = it;
+	if (it->bytes) {
+		data.bytes_combined = build_combined_bytes (it->bytes);
+	} else {
+		data.bytes_combined = NULL;
+	}
+
+	RAnalFunction *fcn;
+	RListIter *iter;
+	r_list_foreach (a->fcns, iter, fcn) {
+		// turn function into signature item
+		RSignItem *fsig = r_sign_item_new ();
+		if (!fsig) {
+			r_sign_item_free (it);
+			r_list_free (output);
+			return NULL;
+		}
+		if (data.bytes_combined) {
+			r_sign_addto_item (a, fsig, fcn, R_SIGN_BYTES);
+		}
+		if (it->graph) {
+			r_sign_addto_item (a, fsig, fcn, R_SIGN_GRAPH);
+		}
+		r_sign_addto_item (a, fsig, fcn, R_SIGN_OFFSET);
+		fsig->name = r_str_new (fcn->name);
+
+		// maybe add signature item to output list
+		closest_match_update (&data, fsig);
+	}
+	free (data.bytes_combined);
+	r_sign_item_free (it);
 	return output;
 }
 

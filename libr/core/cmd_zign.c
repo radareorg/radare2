@@ -11,7 +11,7 @@ static const char *help_msg_z[] = {
 	"Usage:", "z[*j-aof/cs] [args] ", "# Manage zignatures",
 	"z", "", "show zignatures",
 	"z.", "", "find matching zignatures in current offset",
-	"zb", "[n=5]", "find n closest matching zignatures to function at current offset",
+	"zb", "[?][n=5]", "search for best match",
 	"z*", "", "show zignatures in radare format",
 	"zq", "", "show zignatures in quiet mode",
 	"zj", "", "show zignatures in json format",
@@ -26,6 +26,13 @@ static const char *help_msg_z[] = {
 	"zc", "[?]", "compare current zignspace zignatures with another one",
 	"zs", "[?]", "manage zignspaces",
 	"zi", "", "show zignatures matching information",
+	NULL
+};
+
+static const char *help_msg_zb[] = {
+	"Usage:", "zb[r?] [args]", "# search for closest matching signatures",
+	"zb ", "[n]", "find n closest matching zignatures to function at current offset",
+	"zbr ", "zigname [n]", "search for n most similar functions to zigname",
 	NULL
 };
 
@@ -85,6 +92,7 @@ static const char *help_msg_zc[] = {
 
 static void cmd_zign_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, z);
+	DEFINE_CMD_DESCRIPTOR (core, zb);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, z/, z_slash);
 	DEFINE_CMD_DESCRIPTOR (core, za);
 	DEFINE_CMD_DESCRIPTOR (core, zf);
@@ -1001,10 +1009,44 @@ static void print_possible_matches(RList *list) {
 	}
 }
 
-static bool bestmatch(void *data, const char *input) {
-	RCore *core = (RCore *)data;
-	int count = 5;
+static bool bestmatch_fcn(RCore *core,  const char *input) {
+	r_return_val_if_fail (input && core, false);
 
+	char *argv = r_str_new (input);
+	if (!argv) {
+		return false;
+	}
+
+	int count = 5;
+	char *zigname = strtok (argv, " ");
+	char *cs = strtok (NULL, " ");
+	if (cs) {
+		if ((count = atoi (cs)) <= 0) {
+			free (argv);
+			eprintf ("Invalid count\n");
+			return false;
+		}
+		if (strtok (NULL, " ")) {
+			free (argv);
+			eprintf ("Too many parameters\n");
+			return false;
+		}
+	}
+
+	RList *list = r_sign_find_closest_fcn (core->anal, zigname, count, 0);
+	free (argv);
+
+	if (list) {
+		print_possible_matches (list);
+		r_list_free (list);
+		return true;
+	}
+	return false;
+}
+
+static bool bestmatch_sig(RCore *core, const char *input) {
+	r_return_val_if_fail (input && core, false);
+	int count = 5;
 	if (!R_STR_ISEMPTY (input)) {
 		count = atoi (input);
 		if (count <= 0) {
@@ -1018,6 +1060,7 @@ static bool bestmatch(void *data, const char *input) {
 		eprintf ("No function at 0x%08" PFMT64x "\n", core->offset);
 		return false;
 	}
+
 	RSignItem *item = r_sign_item_new ();
 	if (!item) {
 		return false;
@@ -1053,6 +1096,26 @@ static bool bestmatch(void *data, const char *input) {
 
 	r_sign_item_free (item);
 	return found;
+}
+
+static bool bestmatch(void *data, const char *input) {
+	r_return_val_if_fail (data && input, false);
+	RCore *core = (RCore *)data;
+	switch (input[0]) {
+	case 'r':
+		input++;
+		return bestmatch_fcn (core, input);
+		break;
+	case ' ':
+		input++;
+	case '\x00':
+		return bestmatch_sig (core, input);
+		break;
+	case '?':
+	default:
+		r_core_cmd_help (core, help_msg_zb);
+		return false;
+	}
 }
 
 static int cmdCompare(void *data, const char *input) {
