@@ -119,27 +119,14 @@ PIC=-fPIC
 endif
 
 sdbs:
-	$(MAKE) sdb-native-build HOST_CC=$(HOST_CC) CC=$(HOST_CC)
-	$(MAKE) sdb-target-build
+	$(MAKE) sdb-host HOST_CC=$(HOST_CC) CC=$(HOST_CC)
+	$(MAKE) sdb-target
 
-sdb/src/sdb_version.h:
+sdb-host:
 	@echo
-	@echo BUILD SUMARY
-	@echo ============
-	@echo COMPILER ${COMPILER}
-	@echo CC ${CC}
-	@echo HOST_CC ${HOST_CC}
-	@echo HOST_OS ${HOST_OS}
-	@echo BUILD_OS ${BUILD_OS}
-	@echo ============
-	$(MAKE) -C sdb clean
-	$(MAKE) -C sdb src/sdb_version.h
-
-sdb-native-build: sdb/src/sdb_version.h
-	@echo
-	@echo ">>>>>>>>>>>>>>>>"
-	@echo "NATIVE BUILD SDB"
-	@echo ">>>>>>>>>>>>>>>>"
+	@echo ">>>>>>>>"
+	@echo "HOST SDB"
+	@echo ">>>>>>>>"
 	@echo
 	$(MAKE) -C sdb clean ; rm -f sdb/src/*.o sdb/src/sdb_version.h
 	$(MAKE) -C sdb/src "CC=${HOST_CC}" LDFLAGS='${HOST_LDFLAGS}' CPPFLAGS='' CFLAGS='${HOST_CFLAGS} ${PIC}' bin
@@ -147,11 +134,11 @@ sdb-native-build: sdb/src/sdb_version.h
 	cp -f sdb/src/sdb${BUILD_EXT_EXE} sdb/sdb$(BUILD_EXT_EXE)
 	-file sdb/sdb$(BUILD_EXT_EXE)
 
-sdb-target-build: sdb/src/sdb_version.h
+sdb-target:
 	@echo
-	@echo ">>>>>>>>>>>>>>>>"
-	@echo "TARGET BUILD SDB"
-	@echo ">>>>>>>>>>>>>>>>"
+	@echo ">>>>>>>>>>"
+	@echo "TARGET SDB"
+	@echo ">>>>>>>>>>"
 	@echo
 	$(MAKE) -C sdb clean ; rm -f sdb/src/*.o sdb/src/sdb_version.h
 	$(MAKE) -C sdb/src sdb_version.h
@@ -159,7 +146,7 @@ sdb-target-build: sdb/src/sdb_version.h
 		CC="${CC}" AR="${AR}" ARCH=undefined CFLAGS='${CFLAGS}' LDFLAGS='${LDFLAGS}' libsdb.a
 	${RANLIB} sdb/src/libsdb.a
 
-.PHONY: sdb-sync sync-sdb sdbclean sdb-native-build sdb-target-build
+.PHONY: sdb-sync sync-sdb sdbclean sdb-native sdb-target
 SDB_F=README.md config.mk src Makefile meson.build
 SDB_SYNCFILES=$(addprefix sdb.vc/,${SDB_F})
 I=../libr/include
@@ -185,7 +172,7 @@ sdb-sync sync-sdb:
 	cp -rf ${SDB_SYNCFILES} sdb
 	rm -rf sdb.vc
 	rm -f src/sdb_version.h
-	cd sdb ; $(MAKE) src/sdb_version.h
+	$(MAKE) -C sdb src/sdb_version.h
 	mkdir -p sdb/test sdb/memcache
 	sed -e 's,HAVE_VALA=,HAVE_VALA=#,' sdb/config.mk > .t
 	mv .t sdb/config.mk
