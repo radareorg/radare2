@@ -754,23 +754,33 @@ static void get_spec_die_type(Context *ctx, RBinDwarfDie *die, RStrBuf *ret_type
 	}
 }
 
+/* For some languages linkage name is more informative like C++,
+   but for Rust it's rubbish and the normal name is fine */
+static bool prefer_linkage_name(char *lang) {
+	if (!strcmp (lang, "rust")) {
+		return false;
+	}
+	return true;
+}
+
 static void parse_abstract_origin(Context *ctx, ut64 offset, RStrBuf *type, const char **name) {
 	RBinDwarfDie *die = ht_up_find (ctx->die_map, offset, NULL);
 	if (die) {
 		size_t i;
 		ut64 size = 0;
 		bool has_linkage_name = false;
+		bool get_linkage_name = prefer_linkage_name (ctx->lang);
 		for (i = 0; i < die->count; i++) {
 			const RBinDwarfAttrValue *val = &die->attr_values[i];
 			switch (val->attr_name) {
 			case DW_AT_name:
-				if (!has_linkage_name) {
-					*name = val->string.content;
+				if (!get_linkage_name || !has_linkage_name) {
+					name = val->string.content;
 				}
 				break;
 			case DW_AT_linkage_name:
 			case DW_AT_MIPS_linkage_name:
-				*name = val->string.content;
+				name = val->string.content;
 				has_linkage_name = true;
 				break;
 			case DW_AT_type:
@@ -1115,8 +1125,9 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 	if (die->has_children) {
 		int child_depth = 1;
 		const RBinDwarfDie *child_die = &ctx->all_dies[++idx];
-		 Variable *var = R_NEW0 (Variable);
+		Variable *var = R_NEW0 (Variable);
 		const char *name = NULL;
+		bool get_linkage_name = prefer_linkage_name (ctx->lang);
 		bool has_linkage_name = false;
 		int argNumber = 1;
 		/* TODO deal with lexical block ?? */
@@ -1134,7 +1145,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 					const RBinDwarfAttrValue *val = &child_die->attr_values[i];
 					switch (val->attr_name) {
 					case DW_AT_name:
-						if (!has_linkage_name) {
+						if (!get_linkage_name || !has_linkage_name) {
 							name = val->string.content;
 						}
 						break;
@@ -1188,13 +1199,13 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 					const RBinDwarfAttrValue *val = &child_die->attr_values[i];
 					switch (val->attr_name) {
 					case DW_AT_name:
-						if (!has_linkage_name) {
-							var->name = val->string.content;
+						if (!get_linkage_name || !has_linkage_name) {
+							name = val->string.content;
 						}
 						break;
 					case DW_AT_linkage_name:
 					case DW_AT_MIPS_linkage_name:
-						var->name = val->string.content;
+						name = val->string.content;
 						has_linkage_name = true;
 						break;
 					case DW_AT_type:
@@ -1325,17 +1336,19 @@ static void parse_function(Context *ctx, ut64 idx) {
 
 	Function fcn = { 0 };
 	bool has_linkage_name = false;
+	bool get_linkage_name = prefer_linkage_name (ctx->lang);
 	RStrBuf ret_type;
 	r_strbuf_init (&ret_type);
 	if (find_attr_idx (die, DW_AT_declaration) != -1) {
 		return; /* just declaration skip */
 	}
 	size_t i;
+	/* For rust binaries prefer regular name not linkage TODO */
 	for (i = 0; i < die->count; i++) {
 		RBinDwarfAttrValue *val = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
-		case DW_AT_name: /* Prefer the linkage name */
-			if (!has_linkage_name) {
+		case DW_AT_name:
+			if (!get_linkage_name || !has_linkage_name) {
 				fcn.name = val->string.content;
 			}
 			break;
