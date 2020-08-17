@@ -409,21 +409,6 @@ R2PM_DEPS() {
 	done
 }
 
-R2PM_CLEAN_GITDIR() {
-	[ -z "$1" ] && R2PM_FAIL "R2PM_CLEAN_GITDIR: Missing dir"
-	if [ -d "${R2PM_GITDIR}/$1" ]; then
-		echo "Cleaning up ${R2PM_GITDIR}/$1..."
-		rm -rf "${R2PM_GITDIR}/$1"
-	elif [ -d "${R2PM_GITDIR}/$1.git" ]; then
-		echo "Cleaning up ${R2PM_GITDIR}/$1.git..."
-		rm -rf "${R2PM_GITDIR}/$1.git"
-	else
-		echo "Cannot find $1 or $1.git in ${R2PM_GITDIR}"
-		return 1
-	fi
-	return 0
-}
-
 pkgFilePath() {
 	for a in "${R2PM_DBDIR}" "${R2PM_USRDIR}"/db2/*/db ; do
 		if [ -f "$a/$1" ]; then
@@ -585,7 +570,6 @@ case "$1" in
 		while [ -n "$2" ]; do
 			echo "Cleaning $2..."
 			FILE="$(pkgFilePath "$2")"
-			R2PM_AUTOCLEAN_GITDIR=1
 			if [ -f "${FILE}" ]; then
 				NAME="$2"
 				ACTION=clean
@@ -593,13 +577,16 @@ case "$1" in
 				. "${FILE}"
 				echo $FILE TGZ=$R2PM_TGZ
 			else
-				echo "Cannot find $FILE"
+				echo "Cannot find $FILE" >&2
 				RC=1
 			fi
 
-			if [ "${R2PM_AUTOCLEAN_GITDIR}" = 1 ]; then
-				R2PM_CLEAN_GITDIR "$2"
-				RC=$?
+			if [ -d "${R2PM_GITDIR}/$2" ]; then
+				echo "Cleaning up ${R2PM_GITDIR}/$2..."
+				rm -rf "${R2PM_GITDIR}/$2"
+			else
+				echo "Cannot find $2 in ${R2PM_GITDIR}" >&2
+				RC=1
 			fi
 			shift
 		done
