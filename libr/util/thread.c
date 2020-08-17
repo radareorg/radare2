@@ -79,7 +79,7 @@ R_API bool r_th_setname(RThread *th, const char *name) {
 	if (pthread_setname_np (th->tid, name) != 0) {
 		eprintf ("Failed to set thread name\n");
 		return false;
-	}	
+	}
 #elif __APPLE__
 	if (pthread_setname_np (name) != 0) {
 		eprintf ("Failed to set thread name\n");
@@ -91,7 +91,7 @@ R_API bool r_th_setname(RThread *th, const char *name) {
 	if (pthread_setname_np (th->tid, "%s", (void *)name) != 0) {
 		eprintf ("Failed to set thread name\n");
 		return false;
-	}	
+	}
 #elif __HAIKU__
 	if (rename_thread ((thread_id)th->tid, name) != B_OK) {
 		eprintf ("Failed to set thread name\n");
