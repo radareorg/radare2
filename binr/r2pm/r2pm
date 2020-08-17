@@ -98,7 +98,7 @@ R2PM_ETCD="${R2CONFIGHOME}/radare2rc.d"
 
 # TODO. support system plugin installs R2PM_PLUGDIR="${R2PM_SYSLIBDIR}/radare2/last"
 if [ -z "${R2PM_GITDIR}" ]; then
-	R2PM_GITDIR="${R2PM_USRDIR}/git/"
+	R2PM_GITDIR="${R2PM_USRDIR}/git"
 fi
 if [ -z "${R2PM_DBDIR}" ]; then
 	if [ -d "${R2DATAHOME}/r2pm/db" ]; then
