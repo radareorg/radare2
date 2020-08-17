@@ -70,6 +70,7 @@ static void linux_remove_thread(RDebug *dbg, int pid);
 static void linux_add_new_thread(RDebug *dbg, int tid);
 static bool linux_stop_thread(RDebug *dbg, int tid);
 static bool linux_kill_thread(int tid, int signo);
+static void linux_dbg_wait_break_main(RDebug *dbg);
 static void linux_dbg_wait_break(RDebug *dbg);
 static RDebugReasonType linux_handle_new_task(RDebug *dbg, int tid);
 
@@ -87,9 +88,6 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 	}
 
 	if (siginfo.si_signo > 0) {
-		// Select the signaled thread to allow access to its info later.
-		r_debug_select (dbg, dbg->pid, tid);
-
 		//siginfo_t newsiginfo = {0};
 		//ptrace (PTRACE_SETSIGINFO, dbg->pid, 0, &siginfo);
 		dbg->reason.type = R_DEBUG_REASON_SIGNAL;
@@ -97,7 +95,7 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 		dbg->stopaddr = (ut64)siginfo.si_addr;
 		//dbg->errno = siginfo.si_errno;
 		// siginfo.si_code -> HWBKPT, USER, KERNEL or WHAT
-// TODO: DO MORE RDEBUGREASON HERE
+		// TODO: DO MORE RDEBUGREASON HERE
 		switch (dbg->reason.signum) {
 		case SIGTRAP:
 		{
@@ -131,6 +129,9 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 				} else {
 					dbg->reason.bp_addr = (ut64)(size_t)siginfo.si_addr;
 					dbg->reason.type = R_DEBUG_REASON_BREAKPOINT;
+					// Switch to the thread that hit the breakpoint
+					r_debug_select (dbg, dbg->pid, tid);
+					dbg->tid = tid;
 				}
 			}
 		} break;
@@ -240,24 +241,12 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int ptid, int status, bool dow
 				perror ("waitpid");
 			}
 		}
-		linux_add_new_thread (dbg, (int)data);
-		eprintf ("(%d) Created thread %d\n", ptid, (int)data);
 
-		// The parent and the new child threads are currently stopped.
-		// Continue one of them and keep another stopped to avoid breaking two times.
+		linux_add_new_thread (dbg, (int)data);
 		if (dbg->trace_clone) {
-			dbg->tid = (int)data;
-			// Continue the parent thread stopped by SIGTRAP
-			if (r_debug_ptrace (dbg, PTRACE_CONT, ptid, 0, 0) == -1) {
-				r_sys_perror ("PTRACE_CONT");
-			}
-		} else {
-			dbg->tid = ptid;
-			// Continue the child thread stopped by SIGSTOP
-			if (r_debug_ptrace (dbg, PTRACE_CONT, (int)data, 0, 0) == -1) {
-				r_sys_perror ("PTRACE_CONT");
-			}
+			r_debug_select (dbg, dbg->pid, (int)data);
 		}
+		eprintf ("(%d) Created thread %d\n", ptid, (int)data);
 		return R_DEBUG_REASON_NEW_TID;
 	case PTRACE_EVENT_VFORK:
 	case PTRACE_EVENT_FORK:
@@ -275,20 +264,13 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int ptid, int status, bool dow
 			}
 		}
 		eprintf ("(%d) Created process %d\n", ptid, (int)data);
-		if (dbg->trace_forks) {
-			r_debug_select (dbg, data, data);
-			// Continue the parent process stopped by SIGTRAP
-			if (r_debug_ptrace (dbg, PTRACE_CONT, ptid, 0, 0) == -1) {
-				r_sys_perror ("PTRACE_CONT");
-			}
-		} else {
+		if (!dbg->trace_forks) {
 			// We need to do this even if the new process will be detached since the
 			// breakpoints are inherited from the parent
 			linux_remove_fork_bps (dbg);
 			if (r_debug_ptrace (dbg, PTRACE_DETACH, dbg->forked_pid, NULL, (r_ptrace_data_t)(size_t)NULL) == -1) {
 				perror ("PTRACE_DETACH");
 			}
-			dbg->tid = ptid;
 		}
 		return R_DEBUG_REASON_NEW_PID;
 	case PTRACE_EVENT_EXIT:
@@ -297,16 +279,12 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int ptid, int status, bool dow
 			r_sys_perror ("ptrace GETEVENTMSG");
 			return R_DEBUG_REASON_ERROR;
 		}
-		//XXX TODO Check other processes exit if dbg->trace_forks is on
+		//TODO: Check other processes exit if dbg->trace_forks is on
 		if (ptid != dbg->pid) {
 			eprintf ("(%d) Thread exited with status=0x%"PFMT64x"\n", ptid, (ut64)data);
-			dbg->tid = ptid;
-			linux_remove_thread (dbg, ptid);
 			return R_DEBUG_REASON_EXIT_TID;
 		} else {
 			eprintf ("(%d) Process exited with status=0x%"PFMT64x"\n", ptid, (ut64)data);
-			dbg->tid = dbg->pid;
-			linux_remove_thread (dbg, dbg->pid);
 			return R_DEBUG_REASON_EXIT_PID;
 		}
 	default:
@@ -461,7 +439,7 @@ bool linux_attach_new_process(RDebug *dbg, int pid) {
 	return true;
 }
 
-static void linux_dbg_wait_break(RDebug *dbg) {
+static void linux_dbg_wait_break_main(RDebug *dbg) {
 	// Get the debugger and debuggee process group ID
 	pid_t dpgid = getpgid (0);
 	if (dpgid == -1) {
@@ -474,14 +452,22 @@ static void linux_dbg_wait_break(RDebug *dbg) {
 		return;
 	}
 
-	// If the debuggee process is created by the debugger, SIGINT is already
-	// sent to both the debugger and debuggee in the same process group.
+	// If the debuggee process is created by the debugger, do nothing because
+	// SIGINT is already sent to both the debugger and debuggee in the same
+	// process group.
+
 	// If the debuggee is attached by the debugger, send SIGINT to the debuggee
 	// in another process group.
 	if (dpgid != tpgid) {
 		if (!linux_kill_thread (dbg->pid, SIGINT)) {
 			eprintf ("Could not interrupt pid (%d)\n", dbg->pid);
 		}
+	}
+}
+
+static void linux_dbg_wait_break(RDebug *dbg) {
+	if (!linux_kill_thread (dbg->pid, SIGINT)) {
+		eprintf ("Could not interrupt pid (%d)\n", dbg->pid);
 	}
 }
 
@@ -495,9 +481,15 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 		flags |= WNOHANG;
 	}
 
-	// Send SIGINT to the target thread when interrupted
-	r_cons_break_push ((RConsBreak)linux_dbg_wait_break, dbg);
 	for (;;) {
+		// In the main context, SIGINT is propagated to the debuggee if it is
+		// in the same process group. Otherwise, the task is running in
+		// background and SIGINT will not be propagated to the debuggee.
+		if (r_cons_context_is_main ()) {
+			r_cons_break_push ((RConsBreak)linux_dbg_wait_break_main, dbg);
+		} else {
+			r_cons_break_push ((RConsBreak)linux_dbg_wait_break, dbg);
+		}
 		void *bed = r_cons_sleep_begin ();
 		if (dbg->continue_all_threads) {
 			ret = waitpid (-1, &status, flags);
@@ -505,6 +497,7 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 			ret = waitpid (pid, &status, flags);
 		}
 		r_cons_sleep_end (bed);
+		r_cons_break_pop ();
 
 		if (ret < 0) {
 			// Continue when interrupted by user;
@@ -534,6 +527,7 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 					break;
 				} else {
 					eprintf ("(%d) Child terminated with status %d\n", tid, WEXITSTATUS (status));
+					linux_remove_thread (dbg, tid);
 					continue;
 				}
 			} else if (WIFSIGNALED (status)) {
@@ -579,7 +573,6 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 			}
 		}
 	}
-	r_cons_break_pop ();
 	dbg->reason.tid = tid;
 	return reason;
 }
@@ -617,40 +610,23 @@ static bool linux_kill_thread(int tid, int signo) {
 }
 
 static bool linux_stop_thread(RDebug *dbg, int tid) {
-	int status;
+	int status, ret;
 	siginfo_t siginfo = { 0 };
-	int ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, tid, 0,
-		(r_ptrace_data_t)(intptr_t)&siginfo);
 
-	// Return if the thread is already stopped to prevent queueing an
-	// additional SIGSTOP
+	// Return if the thread is already stopped
+	ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, tid, 0,
+		(r_ptrace_data_t) (intptr_t)&siginfo);
 	if (ret == 0) {
 		return true;
 	}
-	if (!linux_kill_thread (tid, SIGSTOP)) {
-		return false;
-	}
 
-	// Check the current signal and consume it if it is SIGSTOP because
-	// signals can be sent between PTRACE_GETSIGINFO and linux_kill_thread calls.
-	ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, tid, 0,
-		(r_ptrace_data_t)(intptr_t)&siginfo);
-	// PTRACE_GETSIGINFO can fail if SIGSTOP has not been received yet.
-	while (ret == -1) {
-		void *bed = r_cons_sleep_begin ();
-		usleep (1000);
-		r_cons_sleep_end (bed);
-		ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, tid, 0,
-			(r_ptrace_data_t)(intptr_t)&siginfo);
-	}
-	if (siginfo.si_signo == SIGSTOP) {
-		ret = waitpid (tid, &status, 0);
-		if (ret != tid) {
-			eprintf ("Error: waitpid failed to consume SIGSTOP\n");
-			return false;
+	if (linux_kill_thread (tid, SIGSTOP)) {
+		if ((ret = waitpid (tid, &status, 0)) == -1) {
+			perror ("waitpid");
 		}
+		return ret == tid;
 	}
-	return true;
+	return false;
 }
 
 bool linux_stop_threads(RDebug *dbg, int except) {

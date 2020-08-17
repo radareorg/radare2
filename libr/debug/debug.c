@@ -1203,18 +1203,16 @@ repeat:
 	}
 
 #if __linux__
-	if (reason == R_DEBUG_REASON_NEW_PID) {
+	if (reason == R_DEBUG_REASON_NEW_PID && dbg->follow_child) {
 #if DEBUGGER
-		if (dbg->follow_child) {
-			/// if the plugin is not compiled link fails, so better do runtime linking
-			/// until this code gets fixed
-			static bool (*linux_attach_new_process) (RDebug *dbg, int pid) = NULL;
-			if (!linux_attach_new_process) {
-				linux_attach_new_process = r_lib_dl_sym (NULL, "linux_attach_new_process");
-			}
-			if (linux_attach_new_process) {
-				linux_attach_new_process (dbg, dbg->forked_pid);
-			}
+		/// if the plugin is not compiled link fails, so better do runtime linking
+		/// until this code gets fixed
+		static bool (*linux_attach_new_process) (RDebug *dbg, int pid) = NULL;
+		if (!linux_attach_new_process) {
+			linux_attach_new_process = r_lib_dl_sym (NULL, "linux_attach_new_process");
+		}
+		if (linux_attach_new_process) {
+			linux_attach_new_process (dbg, dbg->forked_pid);
 		}
 #endif
 		goto repeat;
