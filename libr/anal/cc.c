@@ -131,10 +131,13 @@ R_API const char *r_anal_cc_error(RAnal *anal, const char *convention) {
 
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
 	int i = 0;
-	r_return_val_if_fail (anal && DB && cc, 0);
+	r_return_val_if_fail (anal && DB, 0);
 	static void *oldDB = NULL;
 	static char *oldCC = NULL;
 	static int oldArg = 0;
+	if (!cc) {
+		return 0;
+	}
 	if (oldDB == DB && !strcmp (cc, oldCC)) {
 		return oldArg;
 	}
