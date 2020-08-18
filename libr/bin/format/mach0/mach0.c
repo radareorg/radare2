@@ -10,10 +10,6 @@
 #define bprintf if (bin->verbose) eprintf
 #define Eprintf if (mo->verbose) eprintf
 
-typedef struct _ulebr {
-	ut8 *p;
-} ulebr;
-
 typedef struct {
 	struct symbol_t *symbols;
 	int j;
@@ -34,17 +30,14 @@ typedef struct {
 // USE THIS: int ws = bf->o->info->big_endian;
 #define mach0_endian 1
 
-static ut64 read_uleb128(ulebr *r, ut8 *end) {
-	int datalen = end - r->p;
+static ut64 read_uleb128(ut8 **p, ut8 *end) {
 	ut64 v;
-	r->p = (ut8 *)r_uleb128 (r->p, datalen, &v);
+	*p = (ut8 *)r_uleb128 (*p, end - *p, &v);
 	return v;
 }
 
-static st64 read_sleb128(ulebr *r, ut8 *end) {
-	const ut8 *t = r->p;
-	st64 result = r_sleb128 (&t, end);
-	r->p = (ut8 *)t;
+static st64 read_sleb128(ut8 **p, ut8 *end) {
+	st64 result = r_sleb128 ((const ut8 **)p, end);
 	return result;
 }
 
@@ -1552,7 +1545,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
 		return false;
 	}
 	size_t wordsize = get_word_size (bin);
-	ulebr ur = {NULL};
+	ut8 *p = NULL;
 	size_t j, count, skip, bind_size;
 	int seg_idx = 0;
 	ut64 seg_off = 0;
@@ -1579,9 +1572,9 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
 	size_t cur_seg_idx = 0;
 	ut8 *end;
 	bool done = false;
-	for (ur.p = opcodes, end = opcodes + bind_size; !done && ur.p < end;) {
-		ut8 imm = *ur.p & BIND_IMMEDIATE_MASK, op = *ur.p & BIND_OPCODE_MASK;
-		ur.p++;
+	for (p = opcodes, end = opcodes + bind_size; !done && p < end;) {
+		ut8 imm = *p & BIND_IMMEDIATE_MASK, op = *p & BIND_OPCODE_MASK;
+		p++;
 		switch (op) {
 		case BIND_OPCODE_DONE:
 			done = true;
@@ -1589,7 +1582,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
 		case BIND_OPCODE_THREADED: {
 			switch (imm) {
 			case BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB: {
-				read_uleb128 (&ur, end);
+				read_uleb128 (&p, end);
 				break;
 			}
 			case BIND_SUBOPCODE_THREADED_APPLY: {
@@ -1634,15 +1627,15 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
 		case BIND_OPCODE_SET_TYPE_IMM:
 			break;
 		case BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB:
-			read_uleb128 (&ur, end);
+			read_uleb128 (&p, end);
 			break;
 		case BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM:
-			while (*ur.p++ && ur.p < end) {
+			while (*p++ && p < end) {
 				/* empty loop */
 			}
 			break;
 		case BIND_OPCODE_SET_ADDEND_SLEB:
-			read_sleb128 (&ur, end);
+			read_sleb128 (&p, end);
 			break;
 		case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
 			seg_idx = imm;
@@ -1652,29 +1645,29 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
 				R_FREE (opcodes);
 				return false;
 			} else {
-				seg_off = read_uleb128 (&ur, end);
+				seg_off = read_uleb128 (&p, end);
 			}
 			break;
 		case BIND_OPCODE_ADD_ADDR_ULEB:
-			seg_off += read_uleb128 (&ur, end);
+			seg_off += read_uleb128 (&p, end);
 			break;
 		case BIND_OPCODE_DO_BIND:
 			break;
 		case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
-			seg_off += read_uleb128 (&ur, end) + wordsize;
+			seg_off += read_uleb128 (&p, end) + wordsize;
 			break;
 		case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
 			seg_off += (ut64)imm * (ut64)wordsize + wordsize;
 			break;
 		case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
-			count = read_uleb128 (&ur, end);
-			skip = read_uleb128 (&ur, end);
+			count = read_uleb128 (&p, end);
+			skip = read_uleb128 (&p, end);
 			for (j = 0; j < count; j++) {
 				seg_off += skip + wordsize;
 			}
 			break;
 		default:
-			bprintf ("Error: unknown bind opcode 0x%02x in dyld_info\n", *ur.p);
+			bprintf ("Error: unknown bind opcode 0x%02x in dyld_info\n", *p);
 			R_FREE (opcodes);
 			return false;
 		}
@@ -2471,14 +2464,14 @@ static char *get_name(struct MACH0_(obj_t) *mo, ut32 stridx, bool filter) {
 }
 
 static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, void * ctx) {
-#define ULEB(at) read_uleb128 (&ur, end)
+#define ULEB(at) read_uleb128 (&p, end)
 	r_return_val_if_fail (bin, 0);
 	if (!bin->dyld_info) {
 		return 0;
 	}
 
 	size_t count = 0;
-	ulebr ur = {NULL};
+	ut8 *p = NULL;
 	ut8 * trie = NULL;
 	RList * states = NULL;
 	ut64 size = bin->dyld_info->export_size;
@@ -2511,7 +2504,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 
 	do {
 		RTrieState * state = r_list_get_top (states);
-		ur.p = state->node;
+		p = state->node;
 		ut64 len = ULEB ();
 		if (len == UT64_MAX) {
 			break;
@@ -2535,7 +2528,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 				}
 				resolver = res + bin->header_at;
 			} else if (isReexport) {
-				ur.p += strlen ((char*) ur.p) + 1;
+				p += strlen ((char*) p) + 1;
 				// TODO: handle this
 			}
 			if (!isReexport) {
@@ -2581,17 +2574,17 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 			continue;
 		}
 		if (!state->next_child) {
-			state->next_child = ur.p;
+			state->next_child = p;
 		} else {
-			ur.p = state->next_child;
+			p = state->next_child;
 		}
 		RTrieState * next = R_NEW0 (RTrieState);
 		if (!next) {
 			goto beach;
 		}
-		next->label = (char *) ur.p;
-		ur.p += strlen (next->label) + 1;
-		if (ur.p >= end) {
+		next->label = (char *) p;
+		p += strlen (next->label) + 1;
+		if (p >= end) {
 			eprintf ("malformed export trie\n");
 			R_FREE (next);
 			goto beach;
@@ -2620,7 +2613,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 		}
 		next->i = 0;
 		state->i++;
-		state->next_child = ur.p;
+		state->next_child = p;
 		r_list_push (states, next);
 	} while (r_list_length (states));
 #undef ULEB
@@ -3262,16 +3255,16 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 			ut64 addr = bin->segs[0].vmaddr;
 			ut64 segment_end_addr = addr + bin->segs[0].vmsize;
 
-			ulebr ur = {opcodes + opcodes_offset};
-			ut8 *end = ur.p + partition_size;
+			ut8 *p = opcodes + opcodes_offset;
+			ut8 *end = p + partition_size;
 			bool done = false;
-			while (!done && ur.p < end) {
-				ut8 imm = *ur.p & BIND_IMMEDIATE_MASK;
-				ut8 op = *ur.p & BIND_OPCODE_MASK;
-				ur.p++;
+			while (!done && p < end) {
+				ut8 imm = *p & BIND_IMMEDIATE_MASK;
+				ut8 op = *p & BIND_OPCODE_MASK;
+				p++;
 				switch (op) {
-#define ULEB() read_uleb128 (&ur, end)
-#define SLEB() read_sleb128 (&ur, end)
+#define ULEB() read_uleb128 (&p, end)
+#define SLEB() read_sleb128 (&p, end)
 				case BIND_OPCODE_DONE: {
 					bool in_lazy_binds = pidx == 1;
 					if (!in_lazy_binds) {
@@ -3378,8 +3371,8 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 					lib_ord = imm? (st8)(BIND_OPCODE_MASK | imm) : 0;
 					break;
 				case BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM: {
-					sym_name = (char*)ur.p;
-					while (*ur.p++ && ur.p < end) {
+					sym_name = (char*)p;
+					while (*p++ && p < end) {
 						/* empty loop */
 					}
 					if (threaded_binds) {
@@ -3505,7 +3498,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 #undef ULEB
 #undef SLEB
 				default:
-					bprintf ("Error: unknown bind opcode 0x%02x in dyld_info\n", *ur.p);
+					bprintf ("Error: unknown bind opcode 0x%02x in dyld_info\n", *p);
 					R_FREE (opcodes);
 					r_pvector_free (threaded_binds);
 					return relocs;
