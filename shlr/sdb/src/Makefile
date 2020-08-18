@@ -53,7 +53,10 @@ ifneq ($(SILENT),)
 endif
 	$(CC) ${CFLAGS} ${LDFLAGS} $(LDFLAGS_SHARED) -o $@ ${SOBJ}
 
-bin $(BIN): sdb_version.h libsdb.a main.o
+bin_deps: sdb_version.h
+	$(MAKE) libsdb.a main.o
+
+bin $(BIN): bin_deps
 ifneq ($(SILENT),)
 	@echo BIN ${BIN}
 endif
