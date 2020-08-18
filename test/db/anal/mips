@@ -50,7 +50,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=mips ld(load doubleword) instruction 
+NAME=Calculate GP 
 FILE=bins/elf/analysis/mips64r2-ld-2.28.so
 CMDS=<<EOF
 s 0x000023f0
@@ -61,7 +61,6 @@ EOF
 EXPECT=<<EOF
             0x000023f0      208084df       ld a0, -0x7fe0(gp)          ; [0x37020:8]=0x10a0 segment.DYNAMIC
             0x00002494      488099df       ld t9, -0x7fb8(gp)          ; [0x37048:8]=0x134f0
-
 EOF
 RUN
 
