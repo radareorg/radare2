@@ -1,12 +1,11 @@
 NAME=rop search with maxhits
 FILE=bins/elf/varsub
-ARGS=-n
 CMDS=<<EOF
 e search.maxhits=1
 /Rq pop r15
 EOF
 EXPECT=<<EOF
-0x0000052c: pop r12; pop r13; pop r14; pop r15; ret;
+0x0040052c: pop r12; pop r13; pop r14; pop r15; ret;
 EOF
 RUN
 
