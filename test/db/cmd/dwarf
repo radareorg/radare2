@@ -39,7 +39,7 @@ EXPECT=<<EOF
 |           ; var int output @ rbp-0x24
 |           ; var Bird *b @ rbp-0x20
 |           ; var Mammal *m @ rbp-0x18
-|           0x0000123b      f30f1efa       endbr64
+|           0x0000123b      f30f1efa       endbr64                     ; int main();
 |           0x0000123f      55             push rbp
 |           0x00001240      4889e5         mov rbp, rsp
 |           0x00001243      53             push rbx
@@ -122,7 +122,7 @@ EXPECT=<<EOF
 |           ; var int64_t var_220h @ rsp+0x220
 |           ; var int64_t var_228h @ rsp+0x228
 |           ; var &str[6] *arg0 @ rsp+0x230
-|           0x00005750      4881ec380200.  sub rsp, 0x238              ; rust::main::h523dcf5432fcfd88
+|           0x00005750      4881ec380200.  sub rsp, 0x238              ; void main();
 |           0x00005757      c78424800000.  mov dword [numbers], 8
 |           0x00005762      c78424840000.  mov dword [var_84h], 7
 |           0x0000576d      c78424880000.  mov dword [var_88h], 1
@@ -237,7 +237,7 @@ EXPECT=<<EOF
 |           ; var usize i @ rsp+0xb0
 |           ; arg int64_t arg1 @ rdi
 |           ; arg int64_t arg2 @ rsi
-|           0x00005270      4881ecb80000.  sub rsp, 0xb8               ; rust::bubble_sort::h0777bc845caabc60
+|           0x00005270      4881ecb80000.  sub rsp, 0xb8               ; void bubble_sort<i32>(&mut [i32] values);
 |           0x00005277      4889bc249000.  mov qword [values], rdi     ; arg1
 |           0x0000527f      4889b4249800.  mov qword [var_98h], rsi    ; arg2
 |           0x00005287      48897c2448     mov qword [var_48h], rdi    ; arg1
