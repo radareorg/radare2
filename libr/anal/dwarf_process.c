@@ -18,7 +18,7 @@ typedef struct dwarf_parse_context_t {
 
 typedef struct dwarf_function_t {
 	ut64 addr;
-	const char *name;
+	char *name;
 	const char *signature;
 	bool is_external;
 	bool is_method;
@@ -1284,6 +1284,7 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RList/*<Variable*>*/ *v
 
 			r_strbuf_appendf (&vars, "%s,", var->name);
 			key = r_str_newf ("fcn.%s.var.%s", sname, var->name);
+			eprintf ("signed offset: %" PFMT64d , var->location->offset);
 			val = r_str_newf ("%s,%" PFMT64d ",%s", "b", var->location->offset, var->type);
 			sdb_set (sdb, key, val, 0);
 		} break;
@@ -1430,7 +1431,7 @@ static void parse_function(Context *ctx, ut64 idx) {
 	RListIter *iter;
 	Variable *var;
 	r_list_foreach (variables, iter, var) {
-		free (var->name);
+		free ((char *)var->name);
 		free (var->type);
 		free (var->location);
 		free (var);
