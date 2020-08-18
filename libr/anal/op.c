@@ -115,7 +115,6 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			/* Always conditional. */
 			op->cond = 0;
 			op->type &= ~R_ANAL_OP_TYPE_COND;
-			op->fail = 0;
 		} else if (op->cond == R_ANAL_COND_NV) {
 			/* Never conditional. */
 			op->cond = 0;
