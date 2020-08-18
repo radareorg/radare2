@@ -2387,7 +2387,7 @@ static inline ut64 get_max_offset(size_t addr_size) {
 	return 0;
 }
 
-static RBinDwarfLocList *create_loc_list(ut64 offset) {
+static inline RBinDwarfLocList *create_loc_list(ut64 offset) {
 	RBinDwarfLocList *list = R_NEW0 (RBinDwarfLocList);
 	if (list) {
 		list->list = r_list_new ();
@@ -2396,7 +2396,7 @@ static RBinDwarfLocList *create_loc_list(ut64 offset) {
 	return list;
 }
 
-static RBinDwarfLocRange *create_loc_range(ut64 start, ut64 end, RBinDwarfBlock *block) {
+static inline RBinDwarfLocRange *create_loc_range(ut64 start, ut64 end, RBinDwarfBlock *block) {
 	RBinDwarfLocRange *range = R_NEW0 (RBinDwarfLocRange);
 	if (range) {
 		range->start = start;
@@ -2518,17 +2518,18 @@ R_API void r_bin_dwarf_print_loc(HtUP /*<offset, RBinDwarfLocList*/ *loc_table, 
 		print ("0x%" PFMT64x " <End of list>\n", base_offset);
 	}
 	print ("\n");
+	r_list_free (sort_list);
 }
 
 
 static void free_loc_table_entry(HtUPKv *kv) {
 	RBinDwarfLocList *loc_list = kv->value;
-	loc_list->list->free = free;
 	RListIter *iter;
 	RBinDwarfLocRange *range;
 	r_list_foreach (loc_list->list, iter, range) {
 		free (range->expression->data);
 		free (range->expression);
+		free (range);
 	}
 	r_list_free (loc_list->list);
 	free (loc_list);

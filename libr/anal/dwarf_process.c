@@ -1191,7 +1191,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 				r_strbuf_fini (&type);
 			} else if (child_depth == 1 && child_die->tag == DW_TAG_unspecified_parameters) {
 				r_strbuf_appendf (args, "va_args ...,");
-			} else if (child_depth == 1 && child_die->tag == DW_TAG_variable) {
+			} else if (child_die->tag == DW_TAG_variable) { /* child_depth == 1 &&  */
 				Variable *var = R_NEW0 (Variable);
 				RStrBuf var_type;
 				r_strbuf_init (&var_type);
