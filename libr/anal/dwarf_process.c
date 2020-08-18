@@ -18,7 +18,7 @@ typedef struct dwarf_parse_context_t {
 
 typedef struct dwarf_function_t {
 	ut64 addr;
-	char *name;
+	const char *name;
 	const char *signature;
 	bool is_external;
 	bool is_method;
@@ -1418,10 +1418,10 @@ static void parse_function(Context *ctx, ut64 idx) {
 	if (ret_type.len == 0) { /* DW_AT_type is omitted in case of `void` ret type */
 		r_strbuf_append (&ret_type, "void");
 	}
-	fcn.signature = r_str_newf ("%s (%s);", r_strbuf_get (&ret_type), r_strbuf_get (&args));
 	r_warn_if_fail (ctx->lang);
 	char *new_name = ctx->anal->binb.demangle (NULL, ctx->lang, fcn.name, fcn.addr, false);
 	fcn.name = new_name ? new_name : strdup (fcn.name);
+	fcn.signature = r_str_newf ("%s %s(%s);", r_strbuf_get (&ret_type), fcn.name, r_strbuf_get (&args));
 	sdb_save_dwarf_function (&fcn, variables, ctx->sdb);
 
 	free ((char *)fcn.signature);
@@ -1607,10 +1607,13 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwar
 
 			r_anal_function_rename (fcn, dwf_name);
 			free (dwf_name);
-			/* TODO apply signatures when r2 will use tree-sitter parser
-			   tmp = sdb_fmt ("fcn.%s.sig", func_sname);
-			   char *fcnstr = sdb_get (dwarf_sdb, tmp, 0);
-			   r_anal_str_to_fcn (anal, func, fcnstr); */
+
+			char *tmp = r_str_newf ("fcn.%s.sig", func_sname);
+			char *fcnstr = sdb_get (dwarf_sdb, tmp, 0);
+			free (tmp);
+			/* Apply signature as a comment at a function address */
+			r_meta_set_string (anal, R_META_TYPE_COMMENT, faddr, fcnstr);
+			free (fcnstr);
 		}
 		char *var_names_key = r_str_newf ("fcn.%s.vars", func_sname);
 		char *vars = sdb_get (dwarf_sdb, var_names_key, NULL);

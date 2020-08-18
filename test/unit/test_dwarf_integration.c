@@ -115,16 +115,16 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	char *value = NULL;
 	check_kv ("Mammal", "fcn");
 	check_kv ("fcn.Mammal.addr", "0x401300");
-	check_kv ("fcn.Mammal.sig", "void (Mammal * this);");
+	check_kv ("fcn.Mammal.sig", "void Mammal(Mammal * this);");
 	check_kv ("fcn.Dog::walk__.addr", "0x401380");
-	check_kv ("fcn.Dog::walk__.sig", "int (Dog * this);");
+	check_kv ("fcn.Dog::walk__.sig", "int Dog::walk()(Dog * this);");
 	check_kv ("fcn.Dog::walk__.name", "Dog::walk()");
 	check_kv ("fcn.Mammal::walk__.vars", "this");
 	check_kv ("fcn.Mammal::walk__.var.this", "b,-8,Mammal *");
 
 	check_kv ("main", "fcn");
 	check_kv ("fcn.main.addr", "0x401160");
-	check_kv ("fcn.main.sig", "int ();");
+	check_kv ("fcn.main.sig", "int main();");
 	check_kv ("fcn.main.vars", "b,m,output");
 	check_kv ("fcn.main.var.output", "b,-40,int");
 
@@ -177,7 +177,7 @@ static bool test_dwarf_function_parsing_go(void) {
 	check_kv ("main_tree_iterInorder", "fcn");
 	check_kv ("fcn.main_tree_iterInorder.name", "main.tree.iterInorder");
 	check_kv ("fcn.main_tree_iterInorder.addr", "0x491d90");
-	check_kv ("fcn.main_tree_iterInorder.sig", "void (main.tree t,func(int) visit);");
+	check_kv ("fcn.main_tree_iterInorder.sig", "void main.tree.iterInorder(main.tree t,func(int) visit);");
 
 	/* We do not parse variable information from .debug_frame that is this Go binary using, so
 	   don't check variable information and add it in the future */
@@ -229,7 +229,7 @@ static bool test_dwarf_function_parsing_rust(void) {
 	check_kv ("fcn.main.var.numbers", "s,128,i32[11]");
 	check_kv ("fcn.main.var.strings", "s,312,&str[6]");
 	// check_kv ("fcn.main.vars", "numbers,arg0,arg0,strings,arg0,arg0"); Fix these collision by unique renaming in future
-	check_kv ("fcn.lang_start_internal.sig", "isize (&Fn<()> main,isize argc,u8 ** argv);");
+	check_kv ("fcn.lang_start_internal.sig", "isize lang_start_internal(&Fn<()> main,isize argc,u8 ** argv);");
 
 	check_kv ("bubble_sort__str_", "fcn");
 	check_kv ("bubble_sort_i32_", "fcn");
