@@ -1284,7 +1284,6 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RList/*<Variable*>*/ *v
 
 			r_strbuf_appendf (&vars, "%s,", var->name);
 			key = r_str_newf ("fcn.%s.var.%s", sname, var->name);
-			eprintf ("signed offset: %" PFMT64d , var->location->offset);
 			val = r_str_newf ("%s,%" PFMT64d ",%s", "b", var->location->offset, var->type);
 			sdb_set (sdb, key, val, 0);
 		} break;

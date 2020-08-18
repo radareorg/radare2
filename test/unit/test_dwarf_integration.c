@@ -224,7 +224,20 @@ static bool test_dwarf_function_parsing_rust(void) {
 	mu_assert_notnull (sdb, "No dwarf function information in db");
 	char *value = NULL;
 
-	// check_kv ();
+	check_kv ("fcn.main.addr", "0x5750");
+	check_kv ("fcn.main.name", "main");
+	check_kv ("fcn.main.var.numbers", "s,128,i32[11]");
+	check_kv ("fcn.main.var.strings", "s,312,&str[6]");
+	// check_kv ("fcn.main.vars", "numbers,arg0,arg0,strings,arg0,arg0"); Fix these collision by unique renaming in future
+	check_kv ("fcn.lang_start_internal.sig", "isize (&Fn<()> main,isize argc,u8 ** argv);");
+
+	check_kv ("bubble_sort__str_", "fcn");
+	check_kv ("bubble_sort_i32_", "fcn");
+	check_kv ("fcn.bubble_sort_i32_.vars", "values,n,swapped,iter,__next,val,i");
+	check_kv ("fcn.bubble_sort_i32_.var.iter", "s,112,Range<usize>");
+	check_kv ("fcn.bubble_sort_i32_.var.i", "s,176,usize");
+	check_kv ("fcn.bubble_sort_i32_.name", "bubble_sort<i32>");
+	check_kv ("fcn.bubble_sort_i32_.addr", "0x5270");
 
 	r_bin_dwarf_free_debug_info (info);
 	r_bin_dwarf_free_debug_abbrev (abbrevs);
