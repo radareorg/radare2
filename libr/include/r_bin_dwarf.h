@@ -255,8 +255,23 @@ extern "C" {
 /* <_lo_user ; _hi_user> Interval is reserved for vendor extensions */
 #define DW_AT_lo_user                   0x2000
 // extensions:
+#define DW_AT_MIPS_linkage_name         0x2007 // Same as DWARF4 DW_AT_linkage_name
+#define DW_AT_GNU_call_site_value       0x2111
+#define DW_AT_GNU_call_site_data_value  0x2112
+#define DW_AT_GNU_call_site_target      0x2113
+#define DW_AT_GNU_call_site_target_clobbered   0x2114
+#define DW_AT_GNU_tail_call             0x2115
 #define DW_AT_GNU_all_tail_call_sites   0x2116
-
+#define DW_AT_GNU_all_call_sites        0x2117
+#define DW_AT_GNU_all_source_call_sites 0x2118
+#define DW_AT_GNU_macros                0x2119
+#define DW_AT_GNU_deleted               0x211a
+#define DW_AT_GNU_dwo_name              0x2130
+#define DW_AT_GNU_dwo_id                0x2131
+#define DW_AT_GNU_ranges_base           0x2132
+#define DW_AT_GNU_addr_base             0x2133
+#define DW_AT_GNU_pubnames              0x2134
+#define DW_AT_GNU_pubtypes              0x2135
 #define DW_AT_hi_user                   0x3fff
 
 #define DW_FORM_addr                    0x01
@@ -670,22 +685,39 @@ typedef struct {
 } RBinDwarfAttrDef;
 
 typedef struct {
-	ut64	length;
-	ut8	*data;
+	ut64 length;
+	ut8 *data;
 } RBinDwarfBlock;
 
-typedef struct {
+// http://www.dwarfstd.org/doc/DWARF4.pdf#page=29&zoom=100,0,0
+typedef enum {
+	DW_AT_KIND_ADDRESS,
+	DW_AT_KIND_BLOCK,
+	DW_AT_KIND_CONSTANT,
+	DW_AT_KIND_EXPRLOC,
+	DW_AT_KIND_FLAG,
+	DW_AT_KIND_LINEPTR,
+	DW_AT_KIND_LOCLISTPTR,
+	DW_AT_KIND_MACPTR,
+	DW_AT_KIND_RANGELISTPTR,
+	DW_AT_KIND_REFERENCE,
+	DW_AT_KIND_STRING,
+} RBinDwarfAttrKind;
+
+typedef struct dwarf_attr_kind {
 	ut64 attr_name;
 	ut64 attr_form;
-	union {
+	RBinDwarfAttrKind kind;
+	/* This is subideal, as dw_form_data can be anything 
+	   we could lose information example: encoding signed 
+	   2 byte int into ut64 and then interpreting it as st64 TODO*/
+	union { 
 		ut64 address;
 		RBinDwarfBlock block;
-		ut64 constant;
+		ut64 uconstant;
+		st64 sconstant;
 		ut8 flag;
-		ut64 data;
-		st64 sdata;
 		ut64 reference;
-		// ut64	offset; // I'll use it for all the new offset forms in DWARF 5
 		struct {
 			const char *content;
 			ut64 offset;
@@ -736,6 +768,7 @@ typedef struct {
 	size_t count;
 	size_t capacity;
 	RBinDwarfCompUnit *comp_units;
+	HtUP/*<ut64 offset, DwarfDie *die>*/ *lookup_table;
 } RBinDwarfDebugInfo;
 
 #define	ABBREV_DECL_CAP		8
@@ -801,12 +834,26 @@ typedef struct {
 	size_t file_names_count;
 } RBinDwarfLineHeader;
 
+typedef struct r_bin_dwarf_loc_entry_t {
+	ut64 start;
+	ut64 end;
+	RBinDwarfBlock *expression;
+} RBinDwarfLocRange;
+
+typedef struct r_bin_dwarf_loc_list_t {
+	RList/*<RBinDwarfLocRange>*/  *list;
+	ut64 offset;
+} RBinDwarfLocList;
+
 #define r_bin_dwarf_line_new(o,a,f,l) o->address=a, o->file = strdup (f?f:""), o->line = l, o->column =0,o
 
 R_API RList *r_bin_dwarf_parse_aranges(RBin *a, int mode);
 R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode);
 R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *a, int mode);
 R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode);
+R_API HtUP/*<offset, RBinDwarfLocList*>*/  *r_bin_dwarf_parse_loc(RBin *bin, int addr_size);
+R_API void r_bin_dwarf_print_loc(HtUP /*<offset, RBinDwarfLocList*>*/  *loc_table, int addr_size, PrintfCallback print);
+R_API void r_bin_dwarf_free_loc(HtUP /*<offset, RBinDwarfLocList*>*/  *loc_table);
 R_API void r_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf);
 R_API void r_bin_dwarf_free_debug_abbrev(RBinDwarfDebugAbbrev *da);
 

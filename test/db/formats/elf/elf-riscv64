@@ -524,18 +524,18 @@ EXPECT=<<EOF
 |           ; CODE XREFS from main @ 0x101c8, 0x101d8
 |      ..-> 0x00010170      b7170200       lui a5, 0x21
 |      ::   0x00010174      1385874f       addi a0, a5, 1272           ; const char *format
-|      ::   0x00010178      ef00c01f       jal ra, sym.printf
+|      ::   0x00010178      ef00c01f       jal ra, dbg.printf
 |      ::   0x0001017c      930784fe       addi a5, s0, -24
 |      ::   0x00010180      93850700       mv a1, var_bp_18h
 |      ::   0x00010184      b7170200       lui a5, 0x21
 |      ::   0x00010188      13850751       addi a0, a5, 1296           ; const char *format
-|      ::   0x0001018c      ef00402f       jal ra, sym.scanf
+|      ::   0x0001018c      ef00402f       jal ra, dbg.scanf
 |      ::   0x00010190      032784fe       lw a4, -24(s0)
 |      ::   0x00010194      8327c4fe       lw a5, -20(s0)
 |     ,===< 0x00010198      631cf700       bne a4, a5, 0x101b0
 |     |::   0x0001019c      b7170200       lui a5, 0x21
 |     |::   0x000101a0      13858751       addi a0, a5, 1304           ; const char *s
-|     |::   0x000101a4      ef00002d       jal ra, sym.puts
+|     |::   0x000101a4      ef00002d       jal ra, dbg.puts
 |     |::   0x000101a8      93070000       li a5, 0
 |    ,====< 0x000101ac      6f000003       j 0x101dc
 |    ||::   ; CODE XREF from main @ 0x10198
@@ -544,12 +544,12 @@ EXPECT=<<EOF
 |    |,===< 0x000101b8      635af700       ble a5, a4, 0x101cc
 |    ||::   0x000101bc      b7170200       lui a5, 0x21
 |    ||::   0x000101c0      13858752       addi a0, a5, 1320           ; const char *s
-|    ||::   0x000101c4      ef00002b       jal ra, sym.puts
+|    ||::   0x000101c4      ef00002b       jal ra, dbg.puts
 |    ||`==< 0x000101c8      6ff09ffa       j 0x10170
 |    || :   ; CODE XREF from main @ 0x101b8
 |    |`---> 0x000101cc      b7170200       lui a5, 0x21
 |    |  :   0x000101d0      13858753       addi a0, a5, 1336           ; const char *s
-|    |  :   0x000101d4      ef00002a       jal ra, sym.puts
+|    |  :   0x000101d4      ef00002a       jal ra, dbg.puts
 |    |  `=< 0x000101d8      6ff09ff9       j 0x10170
 |    |      ; CODE XREF from main @ 0x101ac
 |    `----> 0x000101dc      13850700       mv a0, a5

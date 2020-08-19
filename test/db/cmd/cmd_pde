@@ -109,15 +109,15 @@ EXPECT=<<EOF
 ;-- .text:
 ;-- _start:
 ;-- pc:
-0x10000308      mr r9, r1
-0x1000030c      rlwinm r1, r1, 0, 0, 0x1b
-0x10000310      li r0, 0
-0x10000314      stwu r1, -0x10(r1)
-0x10000318      mtlr r0
-0x1000031c      stw r0, 0(r1)
-0x10000320      lis r8, 0x1000
-0x10000324      lwzu r13, 0x62c(r8)
-0x10000328      b __libc_start_main
+0x10000308      mr r9, r1                                              ; start.S:62
+0x1000030c      rlwinm r1, r1, 0, 0, 0x1b                              ; start.S:64
+0x10000310      li r0, 0                                               ; start.S:69
+0x10000314      stwu r1, -0x10(r1)                                     ; start.S:71
+0x10000318      mtlr r0                                                ; start.S:72
+0x1000031c      stw r0, 0(r1)                                          ; start.S:73
+0x10000320      lis r8, 0x1000                                         ; start.S:83
+0x10000324      lwzu r13, 0x62c(r8)                                    ; start.S:84
+0x10000328      b __libc_start_main                                    ; start.S:87
 ;-- reloc.__libc_start_main:
 0x10020074      invalid
 EOF
