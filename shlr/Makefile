@@ -60,7 +60,7 @@ CS_REV=
 CS_PATCHES=1
 endif
 
-.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwindbg bochs tree-sitter-sync
+.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwindbg bochs tree-sitter-sync sdbs
 
 ifeq ($(shell gcc -v > /dev/null 2>&1 && echo works),works)
 HOST_CC?=gcc
@@ -113,44 +113,20 @@ else
 BUILD_EXT_EXE=
 endif
 
-SDB_TARGETS=$(SDBLIB)
-ifneq (${EXT_EXE},)
-SDB_TARGETS+=sdb/sdb${EXT_EXE}
-else
-SDB_TARGETS+=sdb/sdb
-endif
-
 PIC=
 ifneq ($(CC),cccl)
 PIC=-fPIC
-ifeq ($(filter sdb/sdb${BUILD_EXT_EXE},$(SDB_TARGETS)),)
-SDB_TARGETS+=sdb/sdb${BUILD_EXT_EXE}
-endif
 endif
 
-targets:
-	#for TARGET in ${SDB_TARGETS} ; do ${MAKE} $$TARGET ; done
-	$(MAKE) sdb-native-build HOST_CC=$(HOST_CC) CC=$(HOST_CC)
-	$(MAKE) sdb-target-build
+sdbs:
+	$(MAKE) sdb-host HOST_CC=$(HOST_CC) CC=$(HOST_CC)
+	$(MAKE) sdb-target
 
-sdb/src/sdb_version.h:
+sdb-host:
 	@echo
-	@echo BUILD SUMARY
-	@echo ============
-	@echo COMPILER ${COMPILER}
-	@echo CC ${CC}
-	@echo HOST_CC ${HOST_CC}
-	@echo HOST_OS ${HOST_OS}
-	@echo BUILD_OS ${BUILD_OS}
-	@echo ============
-	$(MAKE) -C sdb clean
-	$(MAKE) -C sdb src/sdb_version.h
-
-sdb-native-build: sdb/src/sdb_version.h
-	@echo
-	@echo ">>>>>>>>>>>>>>>>"
-	@echo "NATIVE BUILD SDB"
-	@echo ">>>>>>>>>>>>>>>>"
+	@echo ">>>>>>>>"
+	@echo "HOST SDB"
+	@echo ">>>>>>>>"
 	@echo
 	$(MAKE) -C sdb clean ; rm -f sdb/src/*.o sdb/src/sdb_version.h
 	$(MAKE) -C sdb/src "CC=${HOST_CC}" LDFLAGS='${HOST_LDFLAGS}' CPPFLAGS='' CFLAGS='${HOST_CFLAGS} ${PIC}' bin
@@ -158,11 +134,11 @@ sdb-native-build: sdb/src/sdb_version.h
 	cp -f sdb/src/sdb${BUILD_EXT_EXE} sdb/sdb$(BUILD_EXT_EXE)
 	-file sdb/sdb$(BUILD_EXT_EXE)
 
-sdb-target-build: sdb/src/sdb_version.h
+sdb-target:
 	@echo
-	@echo ">>>>>>>>>>>>>>>>"
-	@echo "TARGET BUILD SDB"
-	@echo ">>>>>>>>>>>>>>>>"
+	@echo ">>>>>>>>>>"
+	@echo "TARGET SDB"
+	@echo ">>>>>>>>>>"
 	@echo
 	$(MAKE) -C sdb clean ; rm -f sdb/src/*.o sdb/src/sdb_version.h
 	$(MAKE) -C sdb/src sdb_version.h
@@ -170,15 +146,7 @@ sdb-target-build: sdb/src/sdb_version.h
 		CC="${CC}" AR="${AR}" ARCH=undefined CFLAGS='${CFLAGS}' LDFLAGS='${LDFLAGS}' libsdb.a
 	${RANLIB} sdb/src/libsdb.a
 
-${SDB_TARGETS}:
-ifneq (${EXT_AR},a)
-	-cp -f sdb/src/libsdb.a sdb/src/libsdb.${EXT_AR}
-endif
-	rm -f $@
-	cp -f sdb/src/.sdb${BUILD_EXT_EXE} $@
-	$(MAKE) targets
-
-.PHONY: sdb-sync sync-sdb sdbclean sdb-native-build sdb-target-build
+.PHONY: sdb-sync sync-sdb sdbclean sdb-native sdb-target
 SDB_F=README.md config.mk src Makefile meson.build
 SDB_SYNCFILES=$(addprefix sdb.vc/,${SDB_F})
 I=../libr/include
@@ -204,7 +172,7 @@ sdb-sync sync-sdb:
 	cp -rf ${SDB_SYNCFILES} sdb
 	rm -rf sdb.vc
 	rm -f src/sdb_version.h
-	cd sdb ; $(MAKE) src/sdb_version.h
+	$(MAKE) -C sdb src/sdb_version.h
 	mkdir -p sdb/test sdb/memcache
 	sed -e 's,HAVE_VALA=,HAVE_VALA=#,' sdb/config.mk > .t
 	mv .t sdb/config.mk

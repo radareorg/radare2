@@ -6,7 +6,7 @@ INCDIR=${PREFIX}/include
 VAPIDIR=${DATADIR}/vala/vapi/
 MANDIR=${DATADIR}/man/man1
 
-SDBVER=1.4.1
+SDBVER=1.5.1-git
 
 BUILD_MEMCACHE=0
 
