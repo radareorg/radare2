@@ -45,7 +45,7 @@ static SdbListIter *_merge(SdbListIter *first, SdbListIter *second, SdbListCompa
 		} else if (!first) {
 			next = second;
 			second = second->n;
-		} else if (cmp (first->data, second->data) < 0) {
+		} else if (cmp (first->data, second->data) <= 0) {
 			next = first;
 			first = first->n;
 		} else {
