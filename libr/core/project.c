@@ -658,11 +658,23 @@ static bool project_save_script(RCore *core, const char *file, int opts) {
 		ohl = strdup (hl);
 		r_cons_highlight (NULL);
 	}
-
 	fdold = r_cons_singleton ()->fdout;
 	r_cons_singleton ()->fdout = fd;
 	r_cons_singleton ()->context->is_interactive = false;
 	r_str_write (fd, "# r2 rdb project file\n");
+	if (!core->bin->is_debugger && !r_config_get_i (core->config, "asm.emu")) {
+		char *fpath = r_file_abspath (core->bin->file);
+		if (fpath) {
+			char *reopen = r_str_newf ("\"o %s\"\n",fpath);
+			if (reopen) {
+				r_str_write (fd, reopen);
+				free (reopen);
+				free (fpath);
+			}
+			
+		}
+		
+	}
 	// Set file.path and file.lastpath to empty string to signal
 	// new behaviour to project load routine (see io maps below).
 	r_config_set (core->config, "file.path", "");
