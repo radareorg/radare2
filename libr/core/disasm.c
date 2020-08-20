@@ -3581,7 +3581,12 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 			gotShortcut = true;
 		}
 		break;
+	case R_ANAL_OP_TYPE_RJMP:
 	case R_ANAL_OP_TYPE_RCALL:
+		if (ds->analop.jump != UT64_MAX && ds->analop.jump != UT32_MAX) {
+				getPtr (ds, ds->analop.jump, pos);
+				gotShortcut = true;
+		}
 		break;
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_CJMP:
