@@ -51,7 +51,7 @@ jobs:
       os: linux
       name: Debian
       dist: stretch
-      env: COMPILER_NAME=gcc DEBPKG=1 CC=gcc CFLAGS="-O2 -DR2_ASSERT_STDOUT=1 -fno-lto" LDFLAGS="-fno-lto"
+      env: COMPILER_NAME=gcc DEBPKG=1 CC=gcc CFLAGS="-O2 -DR2_ASSERT_STDOUT=1"
     # Run Fuzzing Sanity Test on every push
     # XXX its broken it complains about invalid key
     #- os: linux
