@@ -324,10 +324,90 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 	mu_end;
 }
 
+bool test_dwarf3_big_endian(void) {
+	RBin *bin = r_bin_new ();
+	RIO *io = r_io_new ();
+	r_io_bind (io, &bin->iob);
+
+	RBinOptions opt = { 0 };
+	bool res = r_bin_open (bin, "bins/elf/s390x_sudoku_dwarf", &opt);
+	mu_assert ("dwarf4_many_comp_units.elf binary could not be opened", res);
+
+	RBinDwarfDebugAbbrev *da = r_bin_dwarf_parse_abbrev (bin, MODE);
+	mu_assert_eq (da->count, 117, "Incorrect number of abbreviation");
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (da, bin, MODE);
+	mu_assert_notnull (info, "Failed parsing of debug_info");
+	mu_assert_eq (info->count, 1, "Incorrect number of info compilation units");
+
+	// check header
+	RBinDwarfCompUnit cu = info->comp_units[0];
+	RBinDwarfCompUnitHdr hdr = cu.hdr;
+	check_basic_unit_header (3, 0x38be, false, 8, 0x0);
+
+	int i = 0;
+	check_die_abbr_code (1);
+	check_die_length (7);
+	check_die_tag (DW_TAG_compile_unit);
+
+	check_attr_name (0, DW_AT_producer);
+	check_attr_string (0, "GNU C++14 9.3.0 -mtune=generic -march=x86-64 -gdwarf-3 -fasynchronous-unwind-tables -fstack-protector-strong -fstack-clash-protection -fcf-protection");
+	check_attr_name (4, DW_AT_low_pc);
+	check_attr_reference (4, 0x126a);
+	check_attr_name (5, DW_AT_high_pc);
+	check_attr_reference (5, 0x1ff0);
+	check_attr_name (6, DW_AT_stmt_list);
+	check_attr_reference (6, 0x0);
+
+	i+=2;
+	check_die_abbr_code (3);
+	check_die_tag (DW_TAG_namespace);
+	check_attr_name (0, DW_AT_name);
+	check_attr_string (0, "__cxx11");
+	check_attr_name (1, DW_AT_decl_file);
+	check_attr_name (2, DW_AT_decl_line);
+	check_attr_name (2, DW_AT_decl_line);
+	i++; check_die_abbr_code (4);
+	i++; check_die_abbr_code (5);
+	i++; check_die_abbr_code (5);
+	i++; check_die_abbr_code (5);
+	i++;
+	// i == 7
+	check_die_abbr_code (5);
+	check_die_tag (DW_TAG_imported_declaration);
+	check_attr_name (0, DW_AT_decl_file);
+	check_attr_name (1, DW_AT_decl_line);
+	check_attr_name (2, DW_AT_decl_column);
+	check_attr_name (3, DW_AT_import);
+
+	i = 1615 - 4 -1;
+	check_die_abbr_code (107);
+	check_die_tag (DW_TAG_variable);
+	check_attr_name (0, DW_AT_name);
+	check_attr_string (0, "j");
+
+	check_attr_name (1, DW_AT_decl_file);
+	check_attr_name (2, DW_AT_decl_line);
+	check_attr_name (3, DW_AT_decl_column);
+
+	check_attr_name (4, DW_AT_type);
+	check_attr_reference (4, 0x15d6);
+
+	check_attr_name (5, DW_AT_location);
+	check_attr_block_length (5,2);
+	check_attr_block_data (5,0,0x91);
+	check_attr_block_data (5,1,0x6c);
+
+	r_bin_dwarf_free_debug_info (info);
+	r_bin_dwarf_free_debug_abbrev (da);
+	r_bin_free (bin);
+	r_io_free (io);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test (test_dwarf3_c);
 	mu_run_test (test_dwarf4_cpp_multiple_modules);
-	// mu_run_test (test_dwarf4_big_endian);
+	mu_run_test (test_dwarf3_big_endian);
 	return tests_passed != tests_run;
 }
 

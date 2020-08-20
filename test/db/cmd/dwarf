@@ -285,3 +285,36 @@ EXPECT=<<EOF
 |     | ,=< 0x00005335      0f857f010000   jne 0x54ba
 EOF
 RUN
+
+NAME="variable info integration 2 rust"
+FILE=bins/elf/s390x_sudoku_dwarf 
+CMDS=<<EOF
+e asm.dwarf=false
+aaa
+pd 15 @  dbg.main
+EOF
+EXPECT=<<EOF
+            ; DATA XREF from entry0 @ 0x11a1
+            ;-- main:
+/ 310: int dbg.main (int argc, char **argv, char **envp);
+|           ; var char key @ rbp-0x161
+|           ; var Grid sugrid @ rbp-0x160
+|           ; var int64_t canary @ rbp-0x8
+|           0x00001e54      f30f1efa       endbr64                     ; int main();
+|           0x00001e58      55             push rbp
+|           0x00001e59      4889e5         mov rbp, rsp
+|           0x00001e5c      4881ec700100.  sub rsp, 0x170
+|           0x00001e63      64488b042528.  mov rax, qword fs:[0x28]
+|           0x00001e6c      488945f8       mov qword [canary], rax
+|           0x00001e70      31c0           xor eax, eax
+|           0x00001e72      488d85a0feff.  lea rax, [sugrid.grid]
+|           0x00001e79      4889c7         mov rdi, rax                ; int64_t arg1
+|           0x00001e7c      e871f6ffff     call method Grid::init()    ; dbg.init
+|           0x00001e81      488d85a0feff.  lea rax, [sugrid.grid]
+|           0x00001e88      4889c7         mov rdi, rax                ; signed int64_t arg1
+|           0x00001e8b      e8daf3ffff     call method Grid::print()   ; dbg.print
+|           ; CODE XREF from dbg.main @ 0x1f6a
+|           0x00001e90      e8abf2ffff     call sym.imp.getchar        ; int getchar(void)
+|           0x00001e95      88859ffeffff   mov byte [key], al
+EOF
+RUN
