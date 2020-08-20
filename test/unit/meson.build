@@ -22,6 +22,7 @@ if get_option('enable_tests')
     'cons',
     'contrbtree',
     'debruijn',
+    'debug_session',
     'diff',
     'dwarf',
     'dwarf_info',
