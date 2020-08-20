@@ -327,6 +327,7 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 bool all_tests() {
 	mu_run_test (test_dwarf3_c);
 	mu_run_test (test_dwarf4_cpp_multiple_modules);
+	// mu_run_test (test_dwarf4_big_endian);
 	return tests_passed != tests_run;
 }
 
