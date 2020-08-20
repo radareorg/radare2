@@ -105,4 +105,11 @@ jobs:
         make
       env:
         NEWSHELL: ${{ matrix.newshell }}
-
+    - name: Run fuzz tests
+      if: matrix.run_tests && contains(github.event.pull_request.head.ref, 'fuzz')
+      run: |
+        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+        cd test
+        make fuzz-tests
