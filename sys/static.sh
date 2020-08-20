@@ -5,8 +5,8 @@
 case "$(uname)" in
 Linux)
 	LDFLAGS="${LDFLAGS} -lpthread -ldl -lutil -lm"
-	CFLAGS="${CFLAGS} -flto"
-	LDFLAGS="${LDFLAGS} -flto"
+	CFLAGS="-flto ${CFLAGS}"
+	LDFLAGS="-flto ${LDFLAGS}"
 	if [ -n "`gcc -v 2>&1 | grep gcc`" ]; then
 		export AR=gcc-ar
 	fi
