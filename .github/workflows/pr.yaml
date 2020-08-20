@@ -107,4 +107,4 @@ jobs:
         NEWSHELL: ${{ matrix.newshell }}
     - name: Run fuzz tests
       if: matrix.run_tests && contains(github.event.pull_request.head.ref, 'fuzz')
-      run: make fuzz-tests
+      run: cd test && make fuzz-tests
