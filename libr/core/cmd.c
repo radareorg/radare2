@@ -1188,6 +1188,22 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 			eprintf ("Usage: less [file]\n");
 		}
 		break;
+	case 'j': { // "lj"
+		PJ * pj = pj_new();
+		pj_a (pj);
+		pj_o (pj);
+		char * res = r_syscmd_ls (arg);
+		pj_s (pj, res);
+		pj_end (pj);
+		pj_end (pj);
+		char * j = pj_drain (pj);
+		if (j) {
+			r_cons_printf ("%s \n", j);
+			free (j);
+		}
+		free (res);
+		break;
+		}
 	default: // "ls"
 		if (!arg) {
 			arg = "";
