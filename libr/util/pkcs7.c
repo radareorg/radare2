@@ -672,8 +672,8 @@ static bool r_pkcs7_parse_spcmessagedigest(SpcDigestInfo *messageDigest, RASN1Ob
 R_API SpcIndirectDataContent *r_pkcs7_parse_spcinfo(RCMS *cms) {
 	r_return_val_if_fail (cms, NULL);
 
-	if (strcmp (cms->signedData.contentInfo.contentType->string,
-		"spcIndirectDataContext")) {
+	RASN1String *type = cms->signedData.contentInfo.contentType;
+	if (type && strcmp (type->string, "spcIndirectDataContext")) {
 		return NULL;
 	}
 
