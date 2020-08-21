@@ -337,7 +337,7 @@ FILE=bins/efi/freepascal_test_dwarf
 CMDS=<<EOF
 e asm.dwarf=false
 aaa
-pdf @  dbg.palya
+pd 20 @  dbg.palya
 EOF
 EXPECT=<<EOF
             ; CALL XREFS from sym.main @ +0x1a87, +0x1c7d, +0x23f3, +0x3679
