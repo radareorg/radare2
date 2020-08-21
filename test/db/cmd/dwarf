@@ -286,35 +286,37 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME="variable info integration 2 rust"
-FILE=bins/elf/s390x_sudoku_dwarf 
+
+NAME="big endian variable info"
+FILE=bins/elf/ppc64_sudoku_dwarf 
 CMDS=<<EOF
 e asm.dwarf=false
 aaa
-pd 15 @  dbg.main
+pdf @  dbg.init
 EOF
 EXPECT=<<EOF
-            ; DATA XREF from entry0 @ 0x11a1
-            ;-- main:
-/ 310: int dbg.main (int argc, char **argv, char **envp);
-|           ; var char key @ rbp-0x161
-|           ; var Grid sugrid @ rbp-0x160
-|           ; var int64_t canary @ rbp-0x8
-|           0x00001e54      f30f1efa       endbr64                     ; int main();
-|           0x00001e58      55             push rbp
-|           0x00001e59      4889e5         mov rbp, rsp
-|           0x00001e5c      4881ec700100.  sub rsp, 0x170
-|           0x00001e63      64488b042528.  mov rax, qword fs:[0x28]
-|           0x00001e6c      488945f8       mov qword [canary], rax
-|           0x00001e70      31c0           xor eax, eax
-|           0x00001e72      488d85a0feff.  lea rax, [sugrid.grid]
-|           0x00001e79      4889c7         mov rdi, rax                ; int64_t arg1
-|           0x00001e7c      e871f6ffff     call method Grid::init()    ; dbg.init
-|           0x00001e81      488d85a0feff.  lea rax, [sugrid.grid]
-|           0x00001e88      4889c7         mov rdi, rax                ; signed int64_t arg1
-|           0x00001e8b      e8daf3ffff     call method Grid::print()   ; dbg.print
-|           ; CODE XREF from dbg.main @ 0x1f6a
-|           0x00001e90      e8abf2ffff     call sym.imp.getchar        ; int getchar(void)
-|           0x00001e95      88859ffeffff   mov byte [key], al
+            ; CALL XREF from dbg.main @ 0x10001ae8
+            ;-- Grid::init():
+            ;-- method.Grid.init:
+/ 64: dbg.init (Grid * const this);
+|           ; arg Grid * const this @ r3
+|           0x100012bc      39030144       addi r8, r3, 0x144          ; arg1 ; void init(Grid * const this);
+|           0x100012c0      38e30168       addi r7, r3, 0x168          ; arg1
+|           0x100012c4      39400000       li r10, 0
+|           ; CODE XREF from Grid::init() @ 0x100012e8
+|       .-> 0x100012c8      3928febc       addi r9, r8, 0xfebc
+|       :   0x100012cc      38c00009       li r6, 9
+|       :   0x100012d0      7cc903a6       mtctr r6
+|       :   ; CODE XREF from Grid::init() @ 0x100012dc
+|      .--> 0x100012d4      91490000       stw r10, 0(r9)
+|      ::   0x100012d8      39290024       addi r9, r9, 0x24
+|      `==< 0x100012dc      4200fff8       bdnz 0x100012d4
+|       :   0x100012e0      39080004       addi r8, r8, 4
+|       :   0x100012e4      7c283840       cmpld r8, r7
+|       `=< 0x100012e8      4082ffe0       bne 0x100012c8
+|           0x100012ec      39200000       li r9, 0
+|           0x100012f0      91230144       stw r9, 0x144(r3)           ; arg1
+|           0x100012f4      91230148       stw r9, 0x148(r3)           ; arg1
+\           0x100012f8      4e800020       blr
 EOF
 RUN
