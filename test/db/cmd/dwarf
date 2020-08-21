@@ -333,7 +333,7 @@ EOF
 RUN
 
 NAME="function info integration freepascal"
-FILE=bins/elf/freepascal_test_dwarf 
+FILE=bins/efi/freepascal_test_dwarf 
 CMDS=<<EOF
 e asm.dwarf=false
 aaa
