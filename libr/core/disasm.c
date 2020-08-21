@@ -4709,6 +4709,9 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 			const char *fcn_name = NULL;
 			char *key = NULL;
 			ut64 pcv = ds->analop.jump;
+			if (ds->analop.type == R_ANAL_OP_TYPE_RCALL) {
+				pcv = UT64_MAX;
+			}
 			if (pcv == UT64_MAX) {
 				pcv = ds->analop.ptr; // call [reloc-addr] // windows style
 				if (pcv == UT64_MAX || !pcv) {
