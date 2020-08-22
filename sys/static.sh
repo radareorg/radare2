@@ -5,10 +5,8 @@
 case "$(uname)" in
 Linux)
 	LDFLAGS="${LDFLAGS} -lpthread -ldl -lutil -lm"
-	if [ "${DEBPKG}" != 1 ]; then
-		CFLAGS="${CFLAGS} -flto"
-		LDFLAGS="${LDFLAGS} -flto"
-	fi
+	CFLAGS="${CFLAGS} -flto"
+	LDFLAGS="${LDFLAGS} -flto"
 	if [ -n "`gcc -v 2>&1 | grep gcc`" ]; then
 		export AR=gcc-ar
 	fi
