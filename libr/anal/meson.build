@@ -29,7 +29,6 @@ r_anal_sources = [
   'rtti.c',
   'rtti_msvc.c',
   'rtti_itanium.c',
-  'session.c',
   'sign.c',
   'switch.c',
   'type.c',

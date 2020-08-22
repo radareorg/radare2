@@ -165,7 +165,6 @@ static const char *help_msg_ae[] = {
 	"aep", "[?] [addr]", "manage esil pin hooks",
 	"aepc", " [addr]", "change esil PC to this address",
 	"aer", " [..]", "handle ESIL registers like 'ar' or 'dr' does",
-	"aets", "[?]", "ESIL Trace session",
 	"aes", "", "perform emulated debugger step",
 	"aesp", " [X] [N]", "evaluate N instr from offset X",
 	"aesb", "", "step back",
@@ -291,13 +290,6 @@ static const char *help_msg_aep[] = {
 	"aep", "-[addr]", "remove pin",
 	"aep", " [name] @ [addr]", "set pin",
 	"aep", "", "list pins",
-	NULL
-};
-
-static const char *help_msg_aets[] = {
-	"Usage:", "aets ", " [...]",
-	"aets", "", "List all ESIL trace sessions",
-	"aets+", "", "Add ESIL trace session",
 	NULL
 };
 
@@ -885,6 +877,9 @@ static bool cmd_anal_aaft(RCore *core) {
 	r_reg_arena_push (core->anal->reg);
 	r_reg_arena_zero (core->anal->reg);
 	r_core_cmd0 (core, "aei;aeim");
+	RAnalEsilTrace *old_trace = core->anal->esil->trace;
+	RAnalEsilTrace *trace = r_anal_esil_trace_new (core->anal->esil);
+	core->anal->esil->trace = trace;
 	ut8 *saved_arena = r_reg_arena_peek (core->anal->reg);
 	// Iterating Reverse so that we get function in top-bottom call order
 	r_list_foreach_prev (core->anal->fcns, it, fcn) {
@@ -901,6 +896,8 @@ static bool cmd_anal_aaft(RCore *core) {
 		__add_vars_sdb (core, fcn);
 	}
 	r_core_seek (core, seek, true);
+	core->anal->esil->trace = old_trace;
+	r_anal_esil_trace_free (trace);
 	r_reg_arena_pop (core->anal->reg);
 	r_config_set_i (core->config, io_cache_key, io_cache);
 	free (saved_arena);
@@ -4815,30 +4812,13 @@ tail_return:
 }
 
 R_API int r_core_esil_step_back(RCore *core) {
+	r_return_val_if_fail (core->anal->esil && core->anal->esil->trace, -1);
 	RAnalEsil *esil = core->anal->esil;
-	RListIter *tail;
-	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	ut64 prev = 0;
-	ut64 end = r_reg_getv (core->anal->reg, name);
-
-	if (!esil || !(tail = r_list_tail (esil->sessions))) {
-		return 0;
+	if (esil->trace->idx > 0) {
+		r_anal_esil_trace_restore (esil, esil->trace->idx - 1);
+		return 1;
 	}
-	RAnalEsilSession *before = (RAnalEsilSession *) tail->data;
-	if (!before) {
-		eprintf ("Cannot find any previous state here\n");
-		return 0;
-	}
-	eprintf ("NOTE: step back in esil is setting an initial state and stepping into pc is the same.\n");
-	eprintf ("NOTE: this is extremely wrong and poorly efficient. so don't use this feature unless\n");
-	eprintf ("NOTE: you are going to fix it by making it consistent with dts, which is also broken as hell\n");
-	eprintf ("Execute until 0x%08"PFMT64x"\n", end);
-	r_anal_esil_session_set (esil, before);
-	r_core_esil_step (core, end, NULL, &prev, false);
-	eprintf ("Before 0x%08"PFMT64x"\n", prev);
-	r_anal_esil_session_set (esil, before);
-	r_core_esil_step (core, prev, NULL, NULL, false);
-	return 1;
+	return -1;
 }
 
 static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
@@ -6224,19 +6204,6 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			r_anal_esil_free (esil);
 			break;
 		}
-		case 's': // "aets"
-			switch (input[2]) {
-			case 0:
-				r_anal_esil_session_list (esil);
-				break;
-			case '+':
-				r_anal_esil_session_add (esil);
-				break;
-			default:
-				r_core_cmd_help (core, help_msg_aets);
-				break;
-			}
-			break;
 		default:
 			eprintf ("Unknown command. Use `aetr`.\n");
 			break;

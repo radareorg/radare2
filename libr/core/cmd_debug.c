@@ -4844,15 +4844,15 @@ static int cmd_debug(void *data, const char *input) {
 				}
 				RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_ESIL);
 				if (op) {
-					r_anal_esil_trace (core->anal->esil, op);
+					r_anal_esil_trace_op (core->anal->esil, op);
 				}
 				r_anal_op_free (op);
 			} break;
 			case '-': // "dte-"
 				if (!strcmp (input + 3, "*")) {
 					if (core->anal->esil) {
-						sdb_free (core->anal->esil->db_trace);
-						core->anal->esil->db_trace = sdb_new0 ();
+						sdb_free (core->anal->esil->trace->db);
+						core->anal->esil->trace->db = sdb_new0 ();
 					}
 				} else {
 					eprintf ("TODO: dte- cannot delete specific logs. Use dte-*\n");
@@ -4865,7 +4865,7 @@ static int cmd_debug(void *data, const char *input) {
 			} break;
 			case 'k': // "dtek"
 				if (input[3] == ' ') {
-					char *s = sdb_querys (core->anal->esil->db_trace,
+					char *s = sdb_querys (core->anal->esil->trace->db,
 							NULL, 0, input + 4);
 					r_cons_println (s);
 					free (s);

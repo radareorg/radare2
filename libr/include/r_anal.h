@@ -1106,13 +1106,28 @@ typedef struct r_anal_esil_interrupt_t {
 	ut32 src_id;
 } RAnalEsilInterrupt;
 
-typedef struct r_anal_esil_session_t {
-	ut64 key;
-	ut64 addr;
-	ut64 size;
-	ut8 *data;
-	RListIter *reg[R_REG_TYPE_LAST];
-} RAnalEsilSession;
+typedef struct r_anal_esil_change_reg_t {
+	int idx;
+	ut64 data;
+} RAnalEsilRegChange;
+
+typedef struct r_anal_esil_change_mem_t {
+	int idx;
+	ut8 data;
+} RAnalEsilMemChange;
+
+typedef struct r_anal_esil_trace_t {
+	int idx;
+	int end_idx;
+	HtUP *registers;
+	HtUP *memory;
+	RRegArena *arena[R_REG_TYPE_LAST];
+	ut64 stack_addr;
+	ut64 stack_size;
+	ut8 *stack_data;
+	//TODO remove `db` and reuse info above
+	Sdb *db;
+} RAnalEsilTrace;
 
 typedef int (*RAnalEsilHookRegWriteCB)(ESIL *esil, const char *name, ut64 *val);
 
@@ -1168,8 +1183,7 @@ typedef struct r_anal_esil_t {
 	RAnalEsilInterrupt *intr0;
 	/* deep esil parsing fills this */
 	Sdb *stats;
-	Sdb *db_trace;
-	int trace_idx;
+	RAnalEsilTrace *trace;
 	RAnalEsilCallbacks cb;
 	RAnalReil *Reil;
 	// this is so cursed, can we please remove external commands from esil internals.
@@ -1185,7 +1199,6 @@ typedef struct r_anal_esil_t {
 	bool (*cmd)(ESIL *esil, const char *name, ut64 a0, ut64 a1);
 	void *user;
 	int stack_fd;	// ahem, let's not do this
-	RList *sessions; // <RAnalEsilSession*>
 } RAnalEsil;
 
 #undef ESIL
@@ -1543,9 +1556,6 @@ R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *hexstr);
 R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op);
 
 R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap, unsigned int addrsize);
-R_API void r_anal_esil_trace(RAnalEsil *esil, RAnalOp *op);
-R_API void r_anal_esil_trace_list(RAnalEsil *esil);
-R_API void r_anal_esil_trace_show(RAnalEsil *esil, int idx);
 R_API bool r_anal_esil_set_pc(RAnalEsil *esil, ut64 addr);
 R_API bool r_anal_esil_setup(RAnalEsil *esil, RAnal *anal, int romem, int stats, int nonull);
 R_API void r_anal_esil_free(RAnalEsil *esil);
@@ -1578,11 +1588,13 @@ R_API void r_anal_esil_interrupts_fini(RAnalEsil *esil);
 R_API void r_anal_esil_mem_ro(RAnalEsil *esil, int mem_readonly);
 R_API void r_anal_esil_stats(RAnalEsil *esil, int enable);
 
-/* session */
-R_API void r_anal_esil_session_list(RAnalEsil *esil);
-R_API RAnalEsilSession *r_anal_esil_session_add(RAnalEsil *esil);
-R_API void r_anal_esil_session_set(RAnalEsil *esil, RAnalEsilSession *session);
-R_API void r_anal_esil_session_free(void *p);
+/* trace */
+R_API RAnalEsilTrace *r_anal_esil_trace_new(RAnalEsil *esil);
+R_API void r_anal_esil_trace_free(RAnalEsilTrace *trace);
+R_API void r_anal_esil_trace_op(RAnalEsil *esil, RAnalOp *op);
+R_API void r_anal_esil_trace_list(RAnalEsil *esil);
+R_API void r_anal_esil_trace_show(RAnalEsil *esil, int idx);
+R_API void r_anal_esil_trace_restore(RAnalEsil *esil, int idx);
 
 /* pin */
 R_API void r_anal_pin_init(RAnal *a);

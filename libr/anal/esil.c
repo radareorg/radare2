@@ -99,7 +99,6 @@ R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap, unsigned int addrsiz
 	esil->iotrap = iotrap;
 	r_anal_esil_sources_init (esil);
 	r_anal_esil_interrupts_init (esil);
-	esil->sessions = r_list_newf (r_anal_esil_session_free);
 	esil->addrmask = genmask (addrsize - 1);
 	return esil;
 }
@@ -170,14 +169,13 @@ R_API void r_anal_esil_free(RAnalEsil *esil) {
 	r_anal_esil_sources_fini (esil);
 	sdb_free (esil->stats);
 	esil->stats = NULL;
-	sdb_free (esil->db_trace);
-	esil->db_trace = NULL;
 	r_anal_esil_stack_free (esil);
 	free (esil->stack);
 	if (esil->anal && esil->anal->cur && esil->anal->cur->esil_fini) {
 		esil->anal->cur->esil_fini (esil);
 	}
-	r_list_free (esil->sessions);
+	r_anal_esil_trace_free (esil->trace);
+	esil->trace = NULL;
 	free (esil->cmd_intr);
 	free (esil->cmd_trap);
 	free (esil->cmd_mdev);

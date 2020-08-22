@@ -298,7 +298,7 @@ static RList *parse_format(RCore *core, char *fmt) {
 
 static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const char* cc,
 		int prev_idx, bool userfnc, ut64 caddr) {
-	Sdb *trace = core->anal->esil->db_trace;
+	Sdb *trace = core->anal->esil->trace->db;
 	Sdb *TDB = core->anal->sdb_types;
 	RAnal *anal = core->anal;
 	RList *types = NULL;
@@ -487,7 +487,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	int ret, bsize = R_MAX (64, core->blocksize);
 	const int mininstrsz = r_anal_archinfo (anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
-	int cur_idx , prev_idx = anal->esil->trace_idx;
+	int cur_idx , prev_idx = 0;
 	RConfigHold *hc = r_config_hold_new (core->config);
 	if (!hc) {
 		return;
@@ -501,6 +501,13 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 		r_anal_emul_restore (core, hc);
 		return;
 	}
+	RAnalEsilTrace *old_trace = core->anal->esil->trace;
+	RAnalEsilTrace *trace = r_anal_esil_trace_new (core->anal->esil);
+	if (!trace) {
+		return;
+		r_anal_emul_restore (core, hc);
+	}
+	core->anal->esil->trace = trace;
 	char *fcn_name = NULL;
 	char *ret_type = NULL;
 	bool str_flag = false;
@@ -544,19 +551,19 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 				r_anal_op_fini (&aop);
 				continue;
 			}
-			int loop_count = sdb_num_get (anal->esil->db_trace, sdb_fmt ("0x%"PFMT64x".count", addr), 0);
+			int loop_count = sdb_num_get (anal->esil->trace->db, sdb_fmt ("0x%"PFMT64x".count", addr), 0);
 			if (loop_count > LOOP_MAX || aop.type == R_ANAL_OP_TYPE_RET) {
 				r_anal_op_fini (&aop);
 				break;
 			}
-			sdb_num_set (anal->esil->db_trace, sdb_fmt ("0x%"PFMT64x".count", addr), loop_count + 1, 0);
+			sdb_num_set (anal->esil->trace->db, sdb_fmt ("0x%"PFMT64x".count", addr), loop_count + 1, 0);
 			if (r_anal_op_nonlinear (aop.type)) {   // skip the instr
 				r_reg_set_value (core->dbg->reg, r, addr + ret);
 			} else {
 				r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 			}
 			bool userfnc = false;
-			Sdb *trace = anal->esil->db_trace;
+			Sdb *trace = anal->esil->trace->db;
 			cur_idx = sdb_num_get (trace, "idx", 0);
 			RAnalVar *var = r_anal_get_used_function_var (anal, aop.addr);
 			RAnalOp *next_op = r_core_anal_op (core, addr + ret, R_ANAL_OP_MASK_BASIC); // | _VAL ?
@@ -820,5 +827,6 @@ out_function:
 	free (buf);
 	r_cons_break_pop();
 	r_anal_emul_restore (core, hc);
-	sdb_reset (anal->esil->db_trace);
+	r_anal_esil_trace_free (trace);
+	core->anal->esil->trace = old_trace;
 }
