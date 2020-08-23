@@ -104,7 +104,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		cs_insn *ITinsn = NULL;
 		int s = cs_disasm (cd, buf-8, len+8, a->pc-8, 5, &ITinsn);
 		for (int i = 0; i < s; i++) {
-			if(insn->address == ITinsn[i].address){
+			if(insn->address == ITinsn[i].address) {
 				memcpy(insn->mnemonic, ITinsn[i].mnemonic, sizeof(insn->mnemonic));
 			}
 		}

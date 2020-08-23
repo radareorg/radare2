@@ -2649,10 +2649,8 @@ jmp $$ + 4 + ( [delta] * 2 )
 		}
 		break;
 	case ARM_INS_IT:
-	{
 		op->cycles = 2;
 		break;
-	}
 	case ARM_INS_BKPT:
 		op->type = R_ANAL_OP_TYPE_TRAP;
 		op->cycles = 4;
@@ -3279,21 +3277,21 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				int ITcounter = 0;
 				int s = cs_disasm (handle, buf-8, len+8, addr-8, 5, &ITinsn);
 				for (int i = 0; i < s; i++) {
-					if(ITinsn[i].id == ARM_INS_IT){
+					if(ITinsn[i].id == ARM_INS_IT) {
 						ITcounter = r_str_nlen (ITinsn[i].mnemonic, 5);
 					}
 					if(ITcounter > 0) {
-						if(insn->address == ITinsn[i].address){
-						op->mnemonic = r_str_newf ("%s%s%s",ITinsn[i].mnemonic,ITinsn[i].op_str[0]?" ":"",ITinsn[i].op_str);
-						op->cond = ITinsn[i].detail->arm.cc;
-						insn->detail->arm.cc = ITinsn[i].detail->arm.cc;
-						insn->detail->arm.update_flags = ITinsn[i].detail->arm.update_flags;
-						memcpy(insn->mnemonic, ITinsn[i].mnemonic, sizeof(insn->mnemonic));
+						if(insn->address == ITinsn[i].address) {
+							op->mnemonic = r_str_newf ("%s%s%s",ITinsn[i].mnemonic,ITinsn[i].op_str[0]?" ":"",ITinsn[i].op_str);
+							op->cond = ITinsn[i].detail->arm.cc;
+							insn->detail->arm.cc = ITinsn[i].detail->arm.cc;
+							insn->detail->arm.update_flags = ITinsn[i].detail->arm.update_flags;
+							memcpy(insn->mnemonic, ITinsn[i].mnemonic, sizeof(insn->mnemonic));
 						}
 						ITcounter--;
 					}
 				}
-				cs_free(ITinsn,s);
+				cs_free(ITinsn, s);
 			}
 
 			anop32 (a, handle, op, insn, thumb, (ut8*)buf, len);
