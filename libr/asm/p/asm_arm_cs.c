@@ -98,6 +98,19 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 
 	n = cs_disasm (cd, buf, R_MIN (4, len), a->pc, 1, &insn);
+
+	if (a->bits == 16) {
+		//patch disassembly if insn in IT block
+		cs_insn *ITinsn = NULL;
+		int s = cs_disasm (cd, buf-8, len+8, a->pc-8, 5, &ITinsn);
+		for (int i = 0; i < s; i++) {
+			if(insn->address == ITinsn[i].address){
+				memcpy(insn->mnemonic, ITinsn[i].mnemonic, sizeof(insn->mnemonic));
+			}
+		}
+		cs_free(ITinsn,s);
+	}
+
 	if (n < 1 || insn->size < 1) {
 		ret = -1;
 		goto beach;

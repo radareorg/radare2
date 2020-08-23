@@ -2584,17 +2584,6 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	}
 }
 
-static ut64 lookahead(csh handle, const ut64 addr, const ut8 *buf, int len, int distance) {
-	cs_insn *insn = NULL;
-	int n = cs_disasm (handle, buf, len, addr, distance, &insn);
-	if (n < 1) {
-		return UT64_MAX;
-	}
-	ut64 result = insn[n - 1].address;
-	cs_free (insn, n);
-	return result;
-}
-
 static void anop32(RAnal *a, csh handle, RAnalOp *op, cs_insn *insn, bool thumb, const ut8 *buf, int len) {
 	const ut64 addr = op->addr;
 	const int pcdelta = thumb? 4 : 8;
@@ -2661,11 +2650,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		break;
 	case ARM_INS_IT:
 	{
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = addr + insn->size;
-		int distance = r_str_nlen (insn->mnemonic, 5);
 		op->cycles = 2;
-		op->fail = lookahead (handle, addr + insn->size, buf + insn->size, len - insn->size, distance);
 		break;
 	}
 	case ARM_INS_BKPT:
@@ -3288,6 +3273,29 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				analop64_esil (a, op, addr, buf, len, &handle, insn);
 			}
 		} else {
+			if (a->bits == 16) {
+				//patch analysis if insn in IT block
+				cs_insn *ITinsn = NULL;
+				int ITcounter = 0;
+				int s = cs_disasm (handle, buf-8, len+8, addr-8, 5, &ITinsn);
+				for (int i = 0; i < s; i++) {
+					if(ITinsn[i].id == ARM_INS_IT){
+						ITcounter = r_str_nlen (ITinsn[i].mnemonic, 5);
+					}
+					if(ITcounter > 0) {
+						if(insn->address == ITinsn[i].address){
+						op->mnemonic = r_str_newf ("%s%s%s",ITinsn[i].mnemonic,ITinsn[i].op_str[0]?" ":"",ITinsn[i].op_str);
+						op->cond = ITinsn[i].detail->arm.cc;
+						insn->detail->arm.cc = ITinsn[i].detail->arm.cc;
+						insn->detail->arm.update_flags = ITinsn[i].detail->arm.update_flags;
+						memcpy(insn->mnemonic, ITinsn[i].mnemonic, sizeof(insn->mnemonic));
+						}
+						ITcounter--;
+					}
+				}
+				cs_free(ITinsn,s);
+			}
+
 			anop32 (a, handle, op, insn, thumb, (ut8*)buf, len);
 			if (mask & R_ANAL_OP_MASK_OPEX) {
 				opex (&op->opex, handle, insn);
