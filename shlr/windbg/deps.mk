@@ -1,1 +1,1 @@
-LINK+=$(STOP)/windbg/libr_windbg.${EXT_AR}
+LINK+=$(STOP)/winkd/libr_winkd.${EXT_AR}

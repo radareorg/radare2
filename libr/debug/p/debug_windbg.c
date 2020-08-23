@@ -15,17 +15,17 @@
 
 #include <r_asm.h>
 #include <r_debug.h>
-#include <windbg.h>
+#include <winkd.h>
 #include <kd.h>
 
 static WindCtx *wctx = NULL;
 
-static int r_debug_windbg_step(RDebug *dbg) {
+static int r_debug_winkd_step(RDebug *dbg) {
 	return true;
 }
 
-static int r_debug_windbg_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
-	int ret = windbg_read_reg(wctx, buf, size);
+static int r_debug_winkd_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
+	int ret = winkd_read_reg(wctx, buf, size);
 	if (!ret || size != ret) {
 		return -1;
 	}
@@ -34,7 +34,7 @@ static int r_debug_windbg_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	return 0;
 }
 
-static int r_debug_windbg_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
+static int r_debug_winkd_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	if (!dbg->reg) {
 		return false;
 	}
@@ -44,23 +44,23 @@ static int r_debug_windbg_reg_write(RDebug *dbg, int type, const ut8 *buf, int s
 		eprintf ("Could not retrieve the register arena!\n");
 		return false;
 	}
-	int ret = windbg_write_reg (wctx, arena, arena_size);
+	int ret = winkd_write_reg (wctx, arena, arena_size);
 	free (arena);
 	return ret;
 }
 
-static int r_debug_windbg_continue(RDebug *dbg, int pid, int tid, int sig) {
-	return windbg_continue(wctx);
+static int r_debug_winkd_continue(RDebug *dbg, int pid, int tid, int sig) {
+	return winkd_continue(wctx);
 }
 
-static RDebugReasonType r_debug_windbg_wait(RDebug *dbg, int pid) {
+static RDebugReasonType r_debug_winkd_wait(RDebug *dbg, int pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
 	kd_packet_t *pkt = NULL;
 	kd_stc_64 *stc;
-	windbg_lock_enter (wctx);
+	winkd_lock_enter (wctx);
 	for (;;) {
 		void *bed = r_cons_sleep_begin ();
-		int ret = windbg_wait_packet (wctx, KD_PACKET_TYPE_STATE_CHANGE64, &pkt);
+		int ret = winkd_wait_packet (wctx, KD_PACKET_TYPE_STATE_CHANGE64, &pkt);
 		r_cons_sleep_end (bed);
 		if (ret != KD_E_OK || !pkt) {
 			reason = R_DEBUG_REASON_ERROR;
@@ -70,7 +70,7 @@ static RDebugReasonType r_debug_windbg_wait(RDebug *dbg, int pid) {
 		dbg->reason.addr = stc->pc;
 		dbg->reason.tid = stc->kthread;
 		dbg->reason.signum = stc->state;
-		windbg_set_cpu (wctx, stc->cpu);
+		winkd_set_cpu (wctx, stc->cpu);
 		if (stc->state == DbgKdExceptionStateChange) {
 			dbg->reason.type = R_DEBUG_REASON_INT;
 			reason = R_DEBUG_REASON_INT;
@@ -82,18 +82,18 @@ static RDebugReasonType r_debug_windbg_wait(RDebug *dbg, int pid) {
 		}
 		R_FREE (pkt);
 	}
-	windbg_lock_leave (wctx);
+	winkd_lock_leave (wctx);
 	free (pkt);
 	return reason;
 }
 
-static int r_debug_windbg_attach(RDebug *dbg, int pid) {
+static int r_debug_winkd_attach(RDebug *dbg, int pid) {
 	RIODesc *desc = dbg->iob.io->desc;
 
 	if (!desc || !desc->plugin || !desc->plugin->name || !desc->data) {
 		return false;
 	}
-	if (strncmp (desc->plugin->name, "windbg", 6)) {
+	if (strncmp (desc->plugin->name, "winkd", 6)) {
 		return false;
 	}
 	if (dbg->arch && strcmp (dbg->arch, "x86")) {
@@ -102,34 +102,34 @@ static int r_debug_windbg_attach(RDebug *dbg, int pid) {
 	wctx = (WindCtx *)desc->data;
 
 	// Handshake
-	if (!windbg_sync (wctx)) {
-		eprintf ("Could not connect to windbg\n");
-		windbg_ctx_free ((WindCtx **)&desc->data);
+	if (!winkd_sync (wctx)) {
+		eprintf ("Could not connect to winkd\n");
+		winkd_ctx_free ((WindCtx **)&desc->data);
 		return false;
 	}
-	if (!windbg_read_ver (wctx)) {
-		windbg_ctx_free ((WindCtx **)&desc->data);
+	if (!winkd_read_ver (wctx)) {
+		winkd_ctx_free ((WindCtx **)&desc->data);
 		return false;
 	}
-	dbg->bits = windbg_get_bits (wctx);
+	dbg->bits = winkd_get_bits (wctx);
 	// Make r_debug_is_dead happy
 	dbg->pid = 0;
 	return true;
 }
 
-static int r_debug_windbg_detach(RDebug *dbg, int pid) {
+static int r_debug_winkd_detach(RDebug *dbg, int pid) {
 	eprintf ("Detaching...\n");
 	return true;
 }
 
-static char *r_debug_windbg_reg_profile(RDebug *dbg) {
+static char *r_debug_winkd_reg_profile(RDebug *dbg) {
 	if (!dbg) {
 		return NULL;
 	}
 	if (dbg->arch && strcmp (dbg->arch, "x86")) {
 		return NULL;
 	}
-	r_debug_windbg_attach (dbg, 0);
+	r_debug_winkd_attach (dbg, 0);
 	if (dbg->bits == R_SYS_BITS_32) {
 #include "native/reg/windows-x86.h"
 	} else if (dbg->bits == R_SYS_BITS_64) {
@@ -138,7 +138,7 @@ static char *r_debug_windbg_reg_profile(RDebug *dbg) {
 	return NULL;
 }
 
-static int r_debug_windbg_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
+static int r_debug_winkd_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	int *tag;
 	if (!b) {
 		return false;
@@ -151,14 +151,14 @@ static int r_debug_windbg_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool s
 		}
 	}
 	tag = (int *)b->data;
-	return windbg_bkpt (wctx, b->addr, set, b->hw, tag);
+	return winkd_bkpt (wctx, b->addr, set, b->hw, tag);
 }
 
-static int r_debug_windbg_init(RDebug *dbg) {
+static int r_debug_winkd_init(RDebug *dbg) {
 	return true;
 }
 
-static RList *r_debug_windbg_pids(RDebug *dbg, int pid) {
+static RList *r_debug_winkd_pids(RDebug *dbg, int pid) {
 	RListIter *it;
 	WindProc *p;
 
@@ -167,7 +167,7 @@ static RList *r_debug_windbg_pids(RDebug *dbg, int pid) {
 		return NULL;
 	}
 
-	RList *pids = windbg_list_process(wctx);
+	RList *pids = winkd_list_process(wctx);
 	if (!pids) {
 		return ret;
 	}
@@ -187,22 +187,22 @@ static RList *r_debug_windbg_pids(RDebug *dbg, int pid) {
 	return ret;
 }
 
-static int r_debug_windbg_select(RDebug *dbg, int pid, int tid) {
-	ut32 old = windbg_get_target (wctx);
-	int ret = windbg_set_target (wctx, pid);
+static int r_debug_winkd_select(RDebug *dbg, int pid, int tid) {
+	ut32 old = winkd_get_target (wctx);
+	int ret = winkd_set_target (wctx, pid);
 	if (!ret) {
 		return false;
 	}
-	ut64 base = windbg_get_target_base (wctx);
+	ut64 base = winkd_get_target_base (wctx);
 	if (!base) {
-		windbg_set_target (wctx, old);
+		winkd_set_target (wctx, old);
 		return false;
 	}
 	eprintf ("Process base is 0x%"PFMT64x"\n", base);
 	return true;
 }
 
-static RList *r_debug_windbg_threads(RDebug *dbg, int pid) {
+static RList *r_debug_winkd_threads(RDebug *dbg, int pid) {
 	RListIter *it;
 	WindThread *t;
 
@@ -211,7 +211,7 @@ static RList *r_debug_windbg_threads(RDebug *dbg, int pid) {
 		return NULL;
 	}
 
-	RList *threads = windbg_list_threads (wctx);
+	RList *threads = winkd_list_threads (wctx);
 	if (!threads) {
 		r_list_free (ret);
 		return NULL;
@@ -232,7 +232,7 @@ static RList *r_debug_windbg_threads(RDebug *dbg, int pid) {
 	return ret;
 }
 
-static RList *r_debug_windbg_modules(RDebug *dbg) {
+static RList *r_debug_winkd_modules(RDebug *dbg) {
 	RListIter *it;
 	WindModule *m;
 
@@ -241,7 +241,7 @@ static RList *r_debug_windbg_modules(RDebug *dbg) {
 		return NULL;
 	}
 
-	RList *modules = windbg_list_modules (wctx);
+	RList *modules = winkd_list_modules (wctx);
 	if (!modules) {
 		r_list_free (ret);
 		return NULL;
@@ -265,31 +265,31 @@ static RList *r_debug_windbg_modules(RDebug *dbg) {
 	return ret;
 }
 
-RDebugPlugin r_debug_plugin_windbg = {
-	.name = "windbg",
+RDebugPlugin r_debug_plugin_winkd = {
+	.name = "winkd",
 	.license = "LGPL3",
 	.arch = "x86",
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
-	.init = &r_debug_windbg_init,
-	.step = &r_debug_windbg_step,
-	.cont = &r_debug_windbg_continue,
-	.attach = &r_debug_windbg_attach,
-	.detach = &r_debug_windbg_detach,
-	.pids = &r_debug_windbg_pids,
-	.wait = &r_debug_windbg_wait,
-	.select = &r_debug_windbg_select,
-	.breakpoint = r_debug_windbg_breakpoint,
-	.reg_read = &r_debug_windbg_reg_read,
-	.reg_write = &r_debug_windbg_reg_write,
-	.reg_profile = &r_debug_windbg_reg_profile,
-	.threads = &r_debug_windbg_threads,
-	.modules_get = &r_debug_windbg_modules
+	.init = &r_debug_winkd_init,
+	.step = &r_debug_winkd_step,
+	.cont = &r_debug_winkd_continue,
+	.attach = &r_debug_winkd_attach,
+	.detach = &r_debug_winkd_detach,
+	.pids = &r_debug_winkd_pids,
+	.wait = &r_debug_winkd_wait,
+	.select = &r_debug_winkd_select,
+	.breakpoint = r_debug_winkd_breakpoint,
+	.reg_read = &r_debug_winkd_reg_read,
+	.reg_write = &r_debug_winkd_reg_write,
+	.reg_profile = &r_debug_winkd_reg_profile,
+	.threads = &r_debug_winkd_threads,
+	.modules_get = &r_debug_winkd_modules
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
-	.data = &r_debug_plugin_windbg,
+	.data = &r_debug_plugin_winkd,
 	.version = R2_VERSION
 };
 #endif

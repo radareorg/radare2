@@ -1,5 +1,5 @@
-CFLAGS+=-I$(SHLR)/windbg/
-LIB_PATH=$(SHLR)/windbg/
+CFLAGS+=-I$(SHLR)/winkd/
+LIB_PATH=$(SHLR)/winkd/
 
 -include ../../global.mk
 -include ../../../global.mk
@@ -11,14 +11,14 @@ LDFLAGS+=-L$(LTOP)/reg -lr_reg
 LDFLAGS+=-L$(LTOP)/bp -lr_bp
 LDFLAGS+=-L$(LTOP)/io -lr_io
 
-include $(STOP)/windbg/deps.mk
+include $(STOP)/winkd/deps.mk
 
-OBJ_WINDBG=debug_windbg.o
+OBJ_WINKD=debug_winkd.o
 
-STATIC_OBJ+=${OBJ_WINDBG}
-TARGET_WINDBG=debug_windbg.${EXT_SO}
+STATIC_OBJ+=${OBJ_WINKD}
+TARGET_WINKD=debug_winkd.${EXT_SO}
 
-ALL_TARGETS+=${TARGET_WINDBG}
+ALL_TARGETS+=${TARGET_WINKD}
 
-${TARGET_WINDBG}: ${OBJ_WINDBG}
-	${CC} $(call libname,debug_windbg) ${OBJ_WINDBG} ${CFLAGS} ${LDFLAGS}
+${TARGET_WINKD}: ${OBJ_WINKD}
+	${CC} $(call libname,debug_winkd) ${OBJ_WINKD} ${CFLAGS} ${LDFLAGS}

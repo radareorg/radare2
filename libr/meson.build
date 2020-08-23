@@ -230,7 +230,7 @@ debug_plugins = [
   'null',
   'qnx',
   'rap',
-  'windbg'
+  'winkd'
 ]
 
 egg_plugins = [
@@ -290,7 +290,7 @@ io_plugins = [
   'shm',
   'sparse',
   'tcp',
-  'windbg',
+  'winkd',
   'winedbg',
   'zip'
 ]

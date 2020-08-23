@@ -1,12 +1,12 @@
-OBJ_WINDBG=io_windbg.o
+OBJ_WINKD=io_winkd.o
 
-STATIC_OBJ+=${OBJ_WINDBG}
-TARGET_WINDBG=io_windbg.${EXT_SO}
-ALL_TARGETS+=${TARGET_WINDBG}
+STATIC_OBJ+=${OBJ_WINKD}
+TARGET_WINKD=io_winkd.${EXT_SO}
+ALL_TARGETS+=${TARGET_WINKD}
 
-LIB_PATH=$(SHLR)/windbg
-CFLAGS+=-I$(SHLR)/windbg
-LDFLAGS+=$(SHLR)/windbg/libr_windbg.$(EXT_AR)
+LIB_PATH=$(SHLR)/winkd
+CFLAGS+=-I$(SHLR)/winkd
+LDFLAGS+=$(SHLR)/winkd/libr_winkd.$(EXT_AR)
 
 ifeq (${WITHPIC},0)
 LINKFLAGS+=../../util/libr_util.a
@@ -16,6 +16,6 @@ LINKFLAGS+=-L../../util -lr_util
 LINKFLAGS+=-L.. -lr_io
 endif
 
-${TARGET_WINDBG}: ${OBJ_WINDBG}
-	${CC} $(call libname,io_windbg) ${OBJ_WINDBG} ${CFLAGS} \
+${TARGET_WINKD}: ${OBJ_WINKD}
+	${CC} $(call libname,io_winkd) ${OBJ_WINKD} ${CFLAGS} \
 		${LINKFLAGS} ${LDFLAGS_LIB} $(LDFLAGS)

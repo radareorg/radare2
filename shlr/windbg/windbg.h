@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library.
 
-#ifndef _windbg_H_
-#define _windbg_H_
+#ifndef _winkd_H_
+#define _winkd_H_
 
 #include <stdint.h>
 #include "kd.h"
@@ -77,37 +77,37 @@ typedef struct {
 	int f[O_Max];
 } Profile;
 
-// grep -e "^windbg_" shlr/wind/wind.c | sed -e 's/ {$/;/' -e 's/^/int /'
-int windbg_get_bits(WindCtx *ctx);
-ut64 windbg_get_target_base(WindCtx *ctx);
-ut32 windbg_get_target(WindCtx *ctx);
-bool windbg_set_target(WindCtx *ctx, ut32 pid);
-RList *windbg_list_process(WindCtx *ctx);
-RList *windbg_list_threads(WindCtx *ctx);
-RList *windbg_list_modules(WindCtx *ctx);
-int windbg_get_cpus(WindCtx *ctx);
-bool windbg_set_cpu(WindCtx *ctx, int cpu);
-int windbg_get_cpu(WindCtx *ctx);
-WindCtx * windbg_ctx_new(void *io_ptr);
-void windbg_ctx_free(WindCtx **ctx);
-int windbg_wait_packet(WindCtx *ctx, const ut32 type, kd_packet_t **p);
-int windbg_sync(WindCtx *ctx);
-bool windbg_read_ver(WindCtx *ctx);
-int windbg_continue(WindCtx *ctx);
-bool windbg_write_reg(WindCtx *ctx, const uint8_t *buf, int size);
-int windbg_read_reg(WindCtx *ctx, uint8_t *buf, int size);
-int windbg_query_mem(WindCtx *ctx, const ut64 addr, int *address_space, int *flags);
-int windbg_bkpt(WindCtx *ctx, const ut64 addr, const int set, const int hw, int *handle);
-int windbg_read_at(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int count);
-int windbg_read_at_uva(WindCtx *ctx, uint8_t *buf, ut64 offset, int count);
-int windbg_read_at_phys(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int count);
-int windbg_write_at(WindCtx *ctx, const uint8_t *buf, const ut64 offset, const int count);
-int windbg_write_at_uva(WindCtx *ctx, const uint8_t *buf, ut64 offset, int count);
-int windbg_write_at_phys(WindCtx *ctx, const uint8_t *buf, const ut64 offset, const int count);
-bool windbg_va_to_pa(WindCtx *ctx, ut64 va, ut64 *pa);
-void windbg_break(void *ctx);
-int windbg_break_read(WindCtx *ctx);
-bool windbg_lock_enter(WindCtx *ctx);
-bool windbg_lock_leave(WindCtx *ctx);
-bool windbg_lock_tryenter(WindCtx *ctx);
+// grep -e "^winkd_" shlr/wind/wind.c | sed -e 's/ {$/;/' -e 's/^/int /'
+int winkd_get_bits(WindCtx *ctx);
+ut64 winkd_get_target_base(WindCtx *ctx);
+ut32 winkd_get_target(WindCtx *ctx);
+bool winkd_set_target(WindCtx *ctx, ut32 pid);
+RList *winkd_list_process(WindCtx *ctx);
+RList *winkd_list_threads(WindCtx *ctx);
+RList *winkd_list_modules(WindCtx *ctx);
+int winkd_get_cpus(WindCtx *ctx);
+bool winkd_set_cpu(WindCtx *ctx, int cpu);
+int winkd_get_cpu(WindCtx *ctx);
+WindCtx * winkd_ctx_new(void *io_ptr);
+void winkd_ctx_free(WindCtx **ctx);
+int winkd_wait_packet(WindCtx *ctx, const ut32 type, kd_packet_t **p);
+int winkd_sync(WindCtx *ctx);
+bool winkd_read_ver(WindCtx *ctx);
+int winkd_continue(WindCtx *ctx);
+bool winkd_write_reg(WindCtx *ctx, const uint8_t *buf, int size);
+int winkd_read_reg(WindCtx *ctx, uint8_t *buf, int size);
+int winkd_query_mem(WindCtx *ctx, const ut64 addr, int *address_space, int *flags);
+int winkd_bkpt(WindCtx *ctx, const ut64 addr, const int set, const int hw, int *handle);
+int winkd_read_at(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int count);
+int winkd_read_at_uva(WindCtx *ctx, uint8_t *buf, ut64 offset, int count);
+int winkd_read_at_phys(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int count);
+int winkd_write_at(WindCtx *ctx, const uint8_t *buf, const ut64 offset, const int count);
+int winkd_write_at_uva(WindCtx *ctx, const uint8_t *buf, ut64 offset, int count);
+int winkd_write_at_phys(WindCtx *ctx, const uint8_t *buf, const ut64 offset, const int count);
+bool winkd_va_to_pa(WindCtx *ctx, ut64 va, ut64 *pa);
+void winkd_break(void *ctx);
+int winkd_break_read(WindCtx *ctx);
+bool winkd_lock_enter(WindCtx *ctx);
+bool winkd_lock_leave(WindCtx *ctx);
+bool winkd_lock_tryenter(WindCtx *ctx);
 #endif
