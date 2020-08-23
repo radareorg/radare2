@@ -478,6 +478,7 @@ extern RIOPlugin r_io_plugin_malloc;
 extern RIOPlugin r_io_plugin_sparse;
 extern RIOPlugin r_io_plugin_ptrace;
 extern RIOPlugin r_io_plugin_w32dbg;
+extern RIOPlugin r_io_plugin_windbg;
 extern RIOPlugin r_io_plugin_mach;
 extern RIOPlugin r_io_plugin_debug;
 extern RIOPlugin r_io_plugin_shm;

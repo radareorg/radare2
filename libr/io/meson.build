@@ -43,6 +43,7 @@ r_io_sources = [
 if host_machine.system() == 'windows'
   r_io_sources += [
     'p/io_r2k_windows.c',
+    'p/io_windbg.c',
     'p/io_w32.c',
     'p/io_w32dbg.c',
   ]

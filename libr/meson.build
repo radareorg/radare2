@@ -297,9 +297,11 @@ io_plugins = [
 
 if host_machine.system() == 'windows'
   io_plugins += [
+    'windbg',
     'w32dbg',
     'w32',
   ]
+  debug_plugins += 'windbg'
 endif
 
 lang_plugins = [
