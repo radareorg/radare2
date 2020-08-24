@@ -109,7 +109,6 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 				ITcounter = r_str_nlen (ITinsn[i].mnemonic, 5);
 			}
 			if(ITcounter > 0) {
-				printf("insn->mnemonic %s", insn->mnemonic);
 				if(insn->address == ITinsn[i].address) {
 					memcpy(insn->mnemonic, ITinsn[i].mnemonic, sizeof(insn->mnemonic));
 				}
