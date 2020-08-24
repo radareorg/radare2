@@ -221,6 +221,8 @@ beach:
 	r2r_cmd_test_free (test);
 	return ret;
 fail:
+	r2r_cmd_test_free (test);
+	test = NULL;
 	r_pvector_free (ret);
 	ret = NULL;
 	goto beach;
