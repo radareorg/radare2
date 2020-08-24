@@ -1593,7 +1593,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 					buf[1] = r_cons_readchar_timeout (50);
 					if (buf[1] == -1) {
 						r_cons_break_pop ();
-						return NULL;
+						return I.buffer.data;
 					}
 				}
 				if (buf[0] == 0x5b) {	// [
