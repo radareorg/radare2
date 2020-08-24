@@ -263,8 +263,8 @@ int winkd_wait_packet(WindCtx *ctx, const uint32_t type, kd_packet_t **p) {
 		if (ret != KD_E_OK || !pkt) {
 			break;
 		}
-
 		if (pkt->type == KD_PACKET_TYPE_UNUSED) {
+			retries++;
 			continue;
 		}
 
@@ -831,6 +831,16 @@ int winkd_sync(WindCtx *ctx) {
 
 	winkd_lock_enter (ctx);
 
+	if (ctx->desc->iob->type == KD_IO_NET) {
+		// Read a KD packet to initialize KDNet interface
+		// The first packet will always be type of KD_PACKET_TYPE_UNUSED
+		ret = kd_read_packet (ctx->desc, &s);
+		if (ret != KD_E_OK) {
+			ret = 0;
+			goto end;
+		}
+	}
+
 	// Send the breakin packet
 	if (iob_write (ctx->desc, (const uint8_t *)"b", 1) != 1) {
 		ret = 0;
@@ -854,7 +864,11 @@ int winkd_sync(WindCtx *ctx) {
 	}
 
 	// Syncronize with the first KD_PACKET_TYPE_STATE_CHANGE64 packet
-	winkd_wait_packet (ctx, KD_PACKET_TYPE_STATE_CHANGE64, &s);
+	ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_STATE_CHANGE64, &s);
+	if (ret != KD_E_OK) {
+		ret = 0;
+		goto end;
+	}
 
 	// Reset the sequence id
 	ctx->seq_id = 0x80800001;

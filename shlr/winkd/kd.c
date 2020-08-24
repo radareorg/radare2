@@ -129,8 +129,8 @@ int kd_read_packet(io_desc_t *desc, kd_packet_t **p) {
 		return KD_E_MALFORMED;
 	}
 
-	if (desc->iob->type == KD_IO_PIPE) {
-		if (pkt.leader == KD_PACKET_DATA) {
+	if (pkt.leader == KD_PACKET_DATA) {
+		if (desc->iob->type == KD_IO_PIPE) {
 			uint8_t trailer;
 			iob_read (desc, (uint8_t *)&trailer, 1);
 
@@ -139,24 +139,8 @@ int kd_read_packet(io_desc_t *desc, kd_packet_t **p) {
 				free (buf);
 				return KD_E_MALFORMED;
 			}
-
-			kd_send_ctrl_packet (desc, KD_PACKET_TYPE_ACKNOWLEDGE, ((kd_packet_t *)buf)->id & ~(0x800));
 		}
-	}
-
-	if (desc->iob->type == KD_IO_NET) {
-		if (pkt.type != KD_PACKET_TYPE_UNUSED) {
-			if (pkt.checksum != kd_data_checksum (buf + sizeof(kd_packet_t), pkt.length)) {
-				KD_DBG eprintf ("Checksum mismatch!\n");
-				free (buf);
-				return KD_E_MALFORMED;
-			}
-		}
-
-		if (pkt.type != KD_PACKET_TYPE_UNUSED &&
-			pkt.type != KD_PACKET_TYPE_ACKNOWLEDGE) {
-			kd_send_ctrl_packet (desc, KD_PACKET_TYPE_ACKNOWLEDGE, ((kd_packet_t *)buf)->id & ~(0x800));
-		}
+		kd_send_ctrl_packet (desc, KD_PACKET_TYPE_ACKNOWLEDGE, ((kd_packet_t *)buf)->id & ~(0x800));
 	}
 
 	*p = (kd_packet_t *) buf;
