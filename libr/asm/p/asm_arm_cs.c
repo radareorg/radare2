@@ -102,10 +102,17 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (a->bits == 16) {
 		//patch disassembly if insn in IT block
 		cs_insn *ITinsn = NULL;
+		int ITcounter = 0;
 		int s = cs_disasm (cd, buf-8, len+8, a->pc-8, 5, &ITinsn);
 		for (int i = 0; i < s; i++) {
-			if(insn->address == ITinsn[i].address) {
-				memcpy(insn->mnemonic, ITinsn[i].mnemonic, sizeof(insn->mnemonic));
+			if(ITinsn[i].id == ARM_INS_IT) {
+				ITcounter = r_str_nlen (ITinsn[i].mnemonic, 5);
+			}
+			if(ITcounter > 0) {
+				printf("insn->mnemonic %s", insn->mnemonic);
+				if(insn->address == ITinsn[i].address) {
+					memcpy(insn->mnemonic, ITinsn[i].mnemonic, sizeof(insn->mnemonic));
+				}
 			}
 		}
 		cs_free(ITinsn,s);
