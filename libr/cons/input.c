@@ -143,6 +143,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 	}
 	switch (ch) {
 	case 0x1b:
+eprintf ("thats a quit\n");
 		ch = 'q'; // XXX: must be 0x1b (R_CONS_KEY_ESC)
 		break;
 	case 0x4f: // function keys from f1 to f4
@@ -164,6 +165,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 	case '[': // function keys (2)
 		ch = r_cons_readchar ();
 #endif
+eprintf ("rechDOWN\n");
 		switch (ch) {
 		case '<':
 			{
@@ -246,6 +248,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 		case '3':
 			// handle mouse down /up events (35 vs 32)
 			__parseMouseEvent();
+eprintf ("MOUSE DOWN\n");
 			return 0;
 			break;
 		case '2':
