@@ -2584,6 +2584,32 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	}
 }
 
+static void anal_ITblock(csh handle, RAnalOp *op, cs_insn *insn, const ut64 addr, const ut8 *buf, int len) {	
+	//patch analysis if insn in IT block
+	cs_insn *ITinsn = NULL;
+	int ITcounter = 0;
+	int s = cs_disasm (handle, buf-8, len+8, addr-8, 5, &ITinsn);
+	for (int i = 0; i < s; i++) {
+		if(ITinsn[i].id == ARM_INS_IT) {
+			ITcounter = r_str_nlen (ITinsn[i].mnemonic, 5);
+		}
+		if(ITcounter > 0) {
+			if(insn->address == ITinsn[i].address) {
+				op->mnemonic = r_str_newf ("%s%s%s",
+					ITinsn[i].mnemonic,
+					ITinsn[i].op_str[0]?" ":"",
+					ITinsn[i].op_str);
+				op->cond = ITinsn[i].detail->arm.cc;
+				insn->detail->arm.cc = ITinsn[i].detail->arm.cc;
+				insn->detail->arm.update_flags = ITinsn[i].detail->arm.update_flags;
+				memcpy (insn->mnemonic, ITinsn[i].mnemonic, sizeof(insn->mnemonic));
+			}
+			ITcounter--;
+		}
+	}
+	cs_free (ITinsn, s);
+}
+
 static void anop32(RAnal *a, csh handle, RAnalOp *op, cs_insn *insn, bool thumb, const ut8 *buf, int len) {
 	const ut64 addr = op->addr;
 	const int pcdelta = thumb? 4 : 8;
@@ -3272,26 +3298,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			}
 		} else {
 			if (a->bits == 16) {
-				//patch analysis if insn in IT block
-				cs_insn *ITinsn = NULL;
-				int ITcounter = 0;
-				int s = cs_disasm (handle, buf-8, len+8, addr-8, 5, &ITinsn);
-				for (int i = 0; i < s; i++) {
-					if(ITinsn[i].id == ARM_INS_IT) {
-						ITcounter = r_str_nlen (ITinsn[i].mnemonic, 5);
-					}
-					if(ITcounter > 0) {
-						if(insn->address == ITinsn[i].address) {
-							op->mnemonic = r_str_newf ("%s%s%s",ITinsn[i].mnemonic,ITinsn[i].op_str[0]?" ":"",ITinsn[i].op_str);
-							op->cond = ITinsn[i].detail->arm.cc;
-							insn->detail->arm.cc = ITinsn[i].detail->arm.cc;
-							insn->detail->arm.update_flags = ITinsn[i].detail->arm.update_flags;
-							memcpy(insn->mnemonic, ITinsn[i].mnemonic, sizeof(insn->mnemonic));
-						}
-						ITcounter--;
-					}
-				}
-				cs_free(ITinsn, s);
+				anal_ITblock(handle, op, insn, addr, buf, len);
 			}
 
 			anop32 (a, handle, op, insn, thumb, (ut8*)buf, len);
