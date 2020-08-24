@@ -1,0 +1,14 @@
+NAME=r2 http://example.org
+FILE=http://example.org
+CMDS=<<EOF
+r
+b 64
+ps
+EOF
+EXPECT=<<EOF
+1256
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-type"
+EOF
+RUN
+
