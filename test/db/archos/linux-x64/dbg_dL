@@ -11,6 +11,6 @@ EXPECT=<<EOF
 6  ---  null     MIT
 7  ---  qnx      LGPL3
 8  ---  rap      LGPL3
-9  ---  windbg   LGPL3
+9  ---  winkd    LGPL3
 EOF
 RUN

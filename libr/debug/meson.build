@@ -21,7 +21,7 @@ r_debug_sources = [
   'p/debug_null.c',
   'p/debug_qnx.c',
   'p/debug_rap.c',
-  'p/debug_windbg.c',
+  'p/debug_winkd.c',
   #'p/native/arm.c',
   #'p/native/bt/fuzzy-all.c',
   #'p/native/bt/generic-x64.c',
@@ -45,7 +45,7 @@ r_debug_deps = [
   r_cons_dep,
   r_lang_dep,
   r_egg_dep,
-  windbg_dep,
+  winkd_dep,
   qnx_dep,
   gdb_dep,
   bochs_dep,
@@ -61,6 +61,7 @@ endif
 
 if host_machine.system() == 'windows'
   r_debug_sources += [
+    'p/debug_windbg.c',
     'p/native/maps/windows_maps.c',
     'p/native/windows/windows_debug.c',
     'p/native/windows/windows_message.c',
