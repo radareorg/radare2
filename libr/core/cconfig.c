@@ -51,28 +51,42 @@ static void print_node_options(RConfigNode *node) {
 }
 
 static int compareName(const RAnalFunction *a, const RAnalFunction *b) {
-	return a && b && a->name && b->name && strcmp (a->name, b->name);
+	return (a && b && a->name && b->name ?  strcmp (a->name, b->name) : 0);
 }
 
 static int compareNameLen(const RAnalFunction *a, const RAnalFunction *b) {
-	return a && b && a->name && b->name && strlen (a->name) > strlen (b->name);
+	size_t la, lb;
+	if (!a || !b || !a->name || !b->name) {
+		return 0;
+	}
+	la = strlen (a->name);
+	lb = strlen (a->name);
+	return (la > lb) - (la < lb);
 }
 
 static int compareAddress(const RAnalFunction *a, const RAnalFunction *b) {
-	return a && b && a->addr && b->addr && a->addr > b->addr;
+	return (a && b && a->addr && b->addr ? (a->addr > b->addr) - (a->addr < b->addr) : 0);
 }
 
 static int compareType(const RAnalFunction *a, const RAnalFunction *b) {
-	return a && b && a->diff->type && b->diff->type && a->diff->type > b->diff->type;
+	return (a && b && a->diff->type && b->diff->type ?
+			(a->diff->type > b->diff->type) - (a->diff->type < b->diff->type) : 0);
 }
 
 static int compareSize(const RAnalFunction *a, const RAnalFunction *b) {
+	ut64 sa, sb;
 	// return a && b && a->_size < b->_size;
-	return a && b && r_anal_function_realsize (a) > r_anal_function_realsize (b);
+	if (!a || !b) {
+		return 0;
+	}
+	sa = r_anal_function_realsize (a);
+	sb = r_anal_function_realsize (b);
+	return (sa > sb) - (sa < sb);
 }
 
 static int compareDist(const RAnalFunction *a, const RAnalFunction *b) {
-	return a && b && a->diff->dist && b->diff->dist && a->diff->dist > b->diff->dist;
+	return (a && b && a->diff->dist && b->diff->dist ?
+			(a->diff->dist > b->diff->dist) - (a->diff->dist < b->diff->dist) : 0);
 }
 
 static bool cb_diff_sort(void *_core, void *_node) {
