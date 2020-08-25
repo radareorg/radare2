@@ -151,8 +151,8 @@ afv
 EOF
 EXPECT=<<EOF
 arg int64_t arg3 @ r8
-arg int64_t arg2 @ rdx
 arg const char * s @ rcx
+arg int64_t arg2 @ rdx
 EOF
 RUN
 
