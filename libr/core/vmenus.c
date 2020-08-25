@@ -3811,7 +3811,7 @@ onemoretime:
 	wordsize = 4;
 	switch (ch) {
 	case 'N':
-		r_core_cmd0 (core, "afs!");
+		r_core_cmdf (core, "afs! @ 0x%08"PFMT64x, off);
 		break;
 	case 'F':
 		{
