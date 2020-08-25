@@ -88,7 +88,7 @@ R_API void r_reg_item_free(RRegItem *item) {
 }
 
 R_API int r_reg_get_name_idx(const char *type) {
-	if (type)
+	if (type && *type && type[1] && !type[2])
 	switch (*type | (type[1] << 8)) {
 	/* flags */
 	case 'Z' + ('F' << 8): return R_REG_NAME_ZF;
