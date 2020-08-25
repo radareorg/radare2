@@ -88,7 +88,7 @@ R_API void r_reg_item_free(RRegItem *item) {
 }
 
 R_API int r_reg_get_name_idx(const char *type) {
-        r_return_val_if_fail (R_STR_ISNOTEMPTY (type), -1);
+	r_return_val_if_fail (R_STR_ISNOTEMPTY (type), -1);
 	if (type[1] && !type[2])
 	switch (*type | (type[1] << 8)) {
 	/* flags */
