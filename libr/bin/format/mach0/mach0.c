@@ -36,11 +36,6 @@ static ut64 read_uleb128(ut8 **p, ut8 *end) {
 	return v;
 }
 
-static st64 read_sleb128(ut8 **p, ut8 *end) {
-	st64 result = r_sleb128 ((const ut8 **)p, end);
-	return result;
-}
-
 static ut64 entry_to_vaddr(struct MACH0_(obj_t) *bin) {
 	switch (bin->main_cmd.cmd) {
 	case LC_MAIN:
@@ -1635,7 +1630,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
 			}
 			break;
 		case BIND_OPCODE_SET_ADDEND_SLEB:
-			read_sleb128 (&p, end);
+			r_sleb128 (&p, end);
 			break;
 		case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
 			seg_idx = imm;
@@ -3264,7 +3259,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 				p++;
 				switch (op) {
 #define ULEB() read_uleb128 (&p, end)
-#define SLEB() read_sleb128 (&p, end)
+#define SLEB() r_sleb128 (&p, end)
 				case BIND_OPCODE_DONE: {
 					bool in_lazy_binds = pidx == 1;
 					if (!in_lazy_binds) {
