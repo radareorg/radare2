@@ -1040,7 +1040,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 	ut64 obj_size = obj->obj_size;
 	const char *arch = info? info->arch: NULL;
 	const char *machine = info? info->machine: "unknown_machine";
-
+	const char *h_flag = info? info->head_flag:" ";
 	i++;
 	if (!arch) {
 		snprintf (unk, sizeof (unk), "unk_%d", i);
@@ -1060,13 +1060,16 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 			pj_ki (pj, "bits", bits);
 			pj_kn (pj, "offset", boffset);
 			pj_kn (pj, "size", obj_size);
+			if (!strcmp(arch, "mips")) {
+				pj_ks (pj, "isa", h_flag);
+			}
 			if (machine) {
 				pj_ks (pj, "machine", machine);
 			}
 			pj_end (pj);
 			break;
 		default:
-			r_table_add_rowf (table, "nXnss", i, boffset, obj_size, sdb_fmt ("%s_%i", arch, bits), machine);
+			r_table_add_rowf (table, "nXnss", i, boffset, obj_size, sdb_fmt ("%s_%i %s", arch, bits, h_flag), machine);
 			bin->cb_printf ("%s\n", r_table_tostring(table));
 		}
 		snprintf (archline, sizeof (archline) - 1,
@@ -1086,13 +1089,16 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 				pj_ki (pj, "bits", bits);
 				pj_kn (pj, "offset", boffset);
 				pj_kn (pj, "size", obj_size);
+				if (!strcmp(arch, "mips")) {
+					pj_ks (pj, "isa", h_flag);
+				}
 				if (machine) {
-					pj_ks (pj, "machine", machine);
+						pj_ks (pj, "machine", machine);
 				}
 				pj_end (pj);
 				break;
 			default:
-				r_table_add_rowf (table, "nsnss", i, sdb_fmt ("0x%08" PFMT64x , boffset), obj_size, sdb_fmt("%s_%i", arch, bits), "");
+				r_table_add_rowf (table, "nsnss", i, sdb_fmt ("0x%08" PFMT64x , boffset), obj_size, sdb_fmt("%s_%i %s", arch, bits, h_flag), "");
 				bin->cb_printf ("%s\n", r_table_tostring(table));
 			}
 			snprintf (archline, sizeof (archline),
