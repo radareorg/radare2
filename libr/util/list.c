@@ -479,7 +479,7 @@ static RListIter *_merge(RListIter *first, RListIter *second, RListComparator cm
 		} else if (!first) {
 			next = second;
 			second = second->n;
-		} else if (cmp (first->data, second->data) < 0) {
+		} else if (cmp (first->data, second->data) <= 0) {
 			next = first;
 			first = first->n;
 		} else {
