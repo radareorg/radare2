@@ -759,6 +759,8 @@ static void get_spec_die_type(Context *ctx, RBinDwarfDie *die, RStrBuf *ret_type
 static bool prefer_linkage_name(char *lang) {
 	if (!strcmp (lang, "rust")) {
 		return false;
+	} else if (!strcmp (lang, "ada")) {
+		return false;
 	}
 	return true;
 }

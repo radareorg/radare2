@@ -25,7 +25,7 @@ line: 18
 EOF
 RUN
 
-NAME="variable info integration c++"
+NAME="function info integration c++"
 FILE=bins/elf/dwarf3_many_comp_units.elf 
 CMDS=<<EOF
 e asm.dwarf=false
@@ -56,7 +56,7 @@ EOF
 RUN
 
 
-NAME="variable info integration 1 rust"
+NAME="function info integration 1 rust"
 FILE=bins/elf/dwarf_rust_bubble 
 CMDS=<<EOF
 e asm.dwarf=false
@@ -201,7 +201,7 @@ EOF
 RUN
 
 
-NAME="variable info integration 2 rust"
+NAME="function info integration 2 rust"
 FILE=bins/elf/dwarf_rust_bubble 
 CMDS=<<EOF
 e asm.dwarf=false
@@ -283,5 +283,91 @@ EXPECT=<<EOF
 |     |     0x0000532d      f6c101         test cl, 1
 |     |     0x00005330      4889442428     mov qword [var_28h], rax
 |     | ,=< 0x00005335      0f857f010000   jne 0x54ba
+EOF
+RUN
+
+NAME="function info integration ada"
+FILE=bins/elf/ada_test_dwarf 
+CMDS=<<EOF
+e asm.dwarf=false
+aaa
+pdf @  dbg.main
+EOF
+EXPECT=<<EOF
+            ; DATA XREF from entry0 @ 0x2271
+            ;-- main:
+/ 101: int dbg.main (int argc, char **argv, char **envp);
+|           ; var char **var_28h @ rbp-0x28
+|           ; var char **var_20h @ rbp-0x20
+|           ; var int64_t var_14h @ rbp-0x14
+|           ; var system__address volatile ensure_reference @ rbp-0x10
+|           ; var ada_main__main__seh___PAD seh @ rbp-0x8
+|           ; arg int argc @ rdi
+|           ; arg char **argv @ rsi
+|           ; arg char **envp @ rdx
+|           0x00002742      55             push rbp                    ; integer main(integer const argc,void * const argv,void * const envp);
+|           0x00002743      4889e5         mov rbp, rsp
+|           0x00002746      4883ec30       sub rsp, 0x30
+|           0x0000274a      897dec         mov dword [var_14h], edi    ; argc
+|           0x0000274d      488975e0       mov qword [var_20h], rsi    ; argv
+|           0x00002751      488955d8       mov qword [var_28h], rdx    ; envp
+|           0x00002755      488d05dc0800.  lea rax, obj.__gnat_ada_main_program_name ; 0x3038 ; "_ada_ada_test"
+|           0x0000275c      488945f0       mov qword [ensure_reference], rax
+|           0x00002760      8b45ec         mov eax, dword [var_14h]
+|           0x00002763      8905572a0000   mov dword [obj.gnat_argc], eax ; [0x51c0:4]=0
+|           0x00002769      488b45e0       mov rax, qword [var_20h]
+|           0x0000276d      488905b42900.  mov qword [obj.gnat_argv], rax ; [0x5128:8]=0
+|           0x00002774      488b45d8       mov rax, qword [var_28h]
+|           0x00002778      488905112900.  mov qword [obj.gnat_envp], rax ; [0x5090:8]=0
+|           0x0000277f      488d45f8       lea rax, [seh.F]
+|           0x00002783      4889c7         mov rdi, rax
+|           0x00002786      e875f9ffff     call sym.imp.__gnat_initialize
+|           0x0000278b      e8e8fcffff     call dbg.adainit
+|           0x00002790      e847000000     call dbg._ada_ada_test
+|           0x00002795      e8b6fcffff     call dbg.adafinal
+|           0x0000279a      e8d1f8ffff     call sym.imp.__gnat_finalize
+|           0x0000279f      8b054b290000   mov eax, dword [obj.gnat_exit_status] ; [0x50f0:4]=0
+|           0x000027a5      c9             leave
+\           0x000027a6      c3             ret
+EOF
+RUN
+
+NAME="function info integration freepascal"
+FILE=bins/efi/freepascal_test_dwarf 
+CMDS=<<EOF
+e asm.dwarf=false
+aaa
+pd 20 @  dbg.palya
+EOF
+EXPECT=<<EOF
+            ; CALL XREFS from sym.main @ +0x1a87, +0x1c7d, +0x23f3, +0x3679
+            ;-- P$MOZGKIGYO_$$_PALYA$SMALLINT$SMALLINT:
+/ 439: dbg.palya ();
+|           ; var int64_t var_28h @ rbp-0x28
+|           ; var int64_t var_20h @ rbp-0x20
+|           ; var SmallInt i @ rbp-0x14
+|           ; var SmallInt szel @ rbp-0x10
+|           ; var SmallInt mag @ rbp-0x8
+|           0x00401980      55             push rbp                    ; void palya(SmallInt mag,SmallInt szel);
+|           0x00401981      4889e5         mov rbp, rsp
+|           0x00401984      488d6424d0     lea rsp, [rsp - 0x30]
+|           0x00401989      48895dd8       mov qword [var_28h], rbx
+|           0x0040198d      4c8965e0       mov qword [var_20h], r12
+|           0x00401991      66897df8       mov word [mag], di
+|           0x00401995      668975f0       mov word [szel], si
+|           0x00401999      b801000000     mov eax, 1
+|           0x0040199e      bf01000000     mov edi, 1
+|           0x004019a3      89c6           mov esi, eax
+|           0x004019a5      e8b6a10200     call sym.CRT____GOTOXY_TCRTCOORD_TCRTCOORD
+|           0x004019aa      66448b65f0     mov r12w, word [szel]
+|           0x004019af      66c745ec0100   mov word [i], 1
+|           0x004019b5      66443b65ec     cmp r12w, word [i]
+|       ,=< 0x004019ba      7c45           jl 0x401a01
+|       |   0x004019bc      66816dec0100   sub word [i], 1
+|       |   0x004019c2      66666690       nop
+|       |   0x004019c6      6690           nop
+|       |   ; CODE XREF from dbg.palya @ 0x4019ff
+|       |   0x004019c8      668145ec0100   add word [i], 1
+|       |   0x004019ce      e82d280200     call sym.fpc_get_output
 EOF
 RUN
