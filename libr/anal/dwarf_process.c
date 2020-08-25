@@ -1188,9 +1188,11 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 					}
 					var->type = strdup (r_strbuf_get (&type));
 					r_list_append (variables, var);
+				} else {
+					free (var->location);
+					free (var);
 				}
 				argNumber++;
-				r_strbuf_fini (&type);
 			} else if (child_depth == 1 && child_die->tag == DW_TAG_unspecified_parameters) {
 				r_strbuf_appendf (args, "va_args ...,");
 			} else if (child_die->tag == DW_TAG_variable) { /* child_depth == 1 &&  */
@@ -1216,7 +1218,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 						break;
 					// abstract origin is supposed to have omitted information
 					case DW_AT_abstract_origin:
-						parse_abstract_origin (ctx, val->reference, &type, &name);
+						parse_abstract_origin (ctx, val->reference, &var_type, &name);
 						break;
 					case DW_AT_location:
 						var->location = parse_dwarf_location (ctx, val, find_attr (die, DW_AT_frame_base));
@@ -1229,7 +1231,10 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 					var->name = strdup (var->name);
 					var->type = strdup (r_strbuf_get (&var_type));
 					r_list_append (variables, var);
-				} /* else just ignore the variable */
+				} else {
+					free (var->location);
+					free (var);
+				}
 				r_strbuf_fini  (&var_type);
 			}
 			if (child_die->has_children) {
@@ -1239,6 +1244,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 			if (child_die->abbrev_code == 0) {
 				child_depth--;
 			}
+			r_strbuf_fini (&type);
 		}
 		// if no params
 		if (args->len > 0) {
