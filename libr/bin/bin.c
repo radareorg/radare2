@@ -1093,7 +1093,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 					pj_ks (pj, "isa", h_flag);
 				}
 				if (machine) {
-						pj_ks (pj, "machine", machine);
+					pj_ks (pj, "machine", machine);
 				}
 				pj_end (pj);
 				break;

@@ -2115,7 +2115,7 @@ char* Elf_(r_bin_elf_get_head_flag)(ELFOBJ *bin){
                   case EF_MIPS_ARCH_64:   return strdup ("MIPS-64");
                   case EF_MIPS_ARCH_32R2: return strdup("MIPS-32r2");
                   case EF_MIPS_ARCH_64R2: return strdup("MIPS-64r2");
-                  default :               return strdup (" Unknown mips arch");
+                  default :               return strdup (" Unknown mips ISA");
                   }
           }
   
