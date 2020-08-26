@@ -88,7 +88,7 @@ RList *winkd_list_modules(WindCtx *ctx);
 int winkd_get_cpus(WindCtx *ctx);
 bool winkd_set_cpu(WindCtx *ctx, int cpu);
 int winkd_get_cpu(WindCtx *ctx);
-WindCtx * winkd_ctx_new(void *io_ptr);
+WindCtx * winkd_ctx_new(io_desc_t *desc);
 void winkd_ctx_free(WindCtx **ctx);
 int winkd_wait_packet(WindCtx *ctx, const ut32 type, kd_packet_t **p);
 int winkd_sync(WindCtx *ctx);

@@ -18,7 +18,7 @@ static void *iob_pipe_open(const char *path) {
 	return hPipe != INVALID_HANDLE_VALUE? (void *)(HANDLE)hPipe : NULL;
 }
 
-static int iob_pipe_close(void *p) {
+static bool iob_pipe_close(void *p) {
 	return CloseHandle (p);
 }
 
@@ -82,8 +82,8 @@ static void *iob_pipe_open(const char *path) {
 	return (void *) (size_t) sock;
 }
 
-static int iob_pipe_close(void *p) {
-	return close ((int) (size_t) p);
+static bool iob_pipe_close(void *p) {
+	return close ((int)(size_t)p) == 0;
 }
 
 static int iob_pipe_read(void *p, uint8_t *buf, const uint64_t count, const int timeout) {
@@ -128,6 +128,7 @@ static int iob_pipe_write(void *p, const uint8_t *buf, const uint64_t count, con
 
 io_backend_t iob_pipe = {
 	.name = "pipe",
+	.type = KD_IO_PIPE,
 	.init = NULL,
 	.deinit = NULL,
 	.config = NULL,

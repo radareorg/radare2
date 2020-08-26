@@ -526,10 +526,10 @@ grub_dep = declare_dependency(
   include_directories: grub_inc
 )
 
-
 # handle winkd dependency
 winkd_files = [
   'winkd/iob_pipe.c',
+  'winkd/iob_net.c',
   'winkd/kd.c',
   'winkd/transport.c',
   'winkd/winkd.c',
@@ -538,7 +538,7 @@ winkd_files = [
 winkd_inc = [platform_inc, include_directories('winkd')]
 
 libr2winkd = static_library('r2winkd', winkd_files,
-  dependencies: [r_util_dep],
+  dependencies: [r_hash_dep, r_crypto_dep, r_socket_dep, r_util_dep],
   include_directories: winkd_inc,
   implicit_include_directories: false
 )
