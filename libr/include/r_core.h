@@ -412,7 +412,7 @@ R_API int r_core_cmd0(RCore *core, const char *cmd);
 R_API void r_core_cmd_init(RCore *core);
 R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd);
 R_API char *r_core_cmd_str(RCore *core, const char *cmd);
-R_API char *r_core_cmd_strf(RCore *core, const char *fmt, ...);
+R_API char *r_core_cmd_strf(RCore *core, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd);
 R_API int r_core_cmd_file(RCore *core, const char *file);
 R_API int r_core_cmd_lines(RCore *core, const char *lines);
@@ -632,7 +632,7 @@ typedef struct r_core_asm_hit {
 } RCoreAsmHit;
 
 R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args);
-R_API RBuffer *r_core_syscallf (RCore *core, const char *name, const char *fmt, ...);
+R_API RBuffer *r_core_syscallf (RCore *core, const char *name, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
 R_API RCoreAsmHit *r_core_asm_hit_new(void);
 R_API RList *r_core_asm_hit_list_new(void);
 R_API void r_core_asm_hit_free(void *_hit);
