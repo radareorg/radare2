@@ -973,7 +973,7 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 				return NULL;
 			}
 			const ut8 *dump = &block.data[++i];
-			offset = r_sleb128 (&dump, &block.data[block.length]);
+			offset = r_sleb128 (&dump, &block.data[loc->block.length]);
 			if (frame_base) {
 				/* recursive parsing, but frame_base should be only one, but someone
 				   could make malicious resource exhaustion attack, so a depth counter might be cool? */
