@@ -1061,7 +1061,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 			pj_ki (pj, "bits", bits);
 			pj_kn (pj, "offset", boffset);
 			pj_kn (pj, "size", obj_size);
-			if (!strcmp(arch, "mips")) {
+			if ( !strcmp(arch, "mips") ) {
 				pj_ks (pj, "isa", h_flag);
 			}
 			if (machine) {
@@ -1070,8 +1070,8 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 			pj_end (pj);
 			break;
 		default:
-			str_fmt = strcmp(h_flag, "unknown_flag")? sdb_fmt ("%s_%i %s", arch, bits, h_flag)
-					  :sdb_fmt ("%s_%i", arch, bits);
+			str_fmt = strcmp (h_flag, "unknown_flag")? sdb_fmt ("%s_%i %s", arch, bits, h_flag) \
+					  : sdb_fmt ("%s_%i", arch, bits);
 			r_table_add_rowf (table, "nXnss", i, boffset, obj_size, str_fmt , machine);
 			bin->cb_printf ("%s\n", r_table_tostring(table));
 		}
@@ -1101,8 +1101,8 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 				pj_end (pj);
 				break;
 			default:
-				str_fmt = strcmp(h_flag, "unknown_flag")? sdb_fmt ("%s_%i %s", arch, bits, h_flag)\
-						  :sdb_fmt ("%s_%i", arch, bits);
+				str_fmt = strcmp(h_flag, "unknown_flag")? sdb_fmt ("%s_%i %s", arch, bits, h_flag) \
+						  : sdb_fmt ("%s_%i", arch, bits);
 				r_table_add_rowf (table, "nsnss", i, sdb_fmt ("0x%08" PFMT64x , boffset), obj_size, str_fmt, "");
 				bin->cb_printf ("%s\n", r_table_tostring(table));
 			}
