@@ -57,7 +57,7 @@ static bool test_r_id_pool_id_end_of_pool(void) {
 	r_id_pool_grab_id (pool, &grabbed);
 	const bool result = r_id_pool_grab_id (pool, &grabbed);
 	r_id_pool_free (pool);
-	mu_assert_eq (result, false, "id_end_of_pool");
+	mu_assert_false (result, "id_end_of_pool");
 	mu_end;
 }
 
