@@ -894,7 +894,7 @@ R_API void r_cons_set_utf8(bool b);
 R_API void r_cons_grep(const char *grep);
 
 /* output */
-R_API int r_cons_printf(const char *format, ...);
+R_API int r_cons_printf(const char *format, ...) R_PRINTF_CHECK(1, 2);
 R_API void r_cons_printf_list(const char *format, va_list ap);
 R_API void r_cons_strcat(const char *str);
 R_API void r_cons_strcat_at(const char *str, int x, char y, int w, int h);
@@ -980,7 +980,7 @@ R_API void r_cons_color(int fg, int r, int g, int b);
 
 R_API RColor r_cons_color_random(ut8 alpha);
 R_API void r_cons_invert(int set, int color);
-R_API bool r_cons_yesno(int def, const char *fmt, ...);
+R_API bool r_cons_yesno(int def, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API char *r_cons_input(const char *msg);
 R_API char *r_cons_password(const char *msg);
 R_API bool r_cons_set_cup(bool enable);
