@@ -363,7 +363,6 @@ struct r_bin_pe_addr_t *PE_(check_unknow)(struct PE_(r_bin_pe_obj_t) *bin) {
 		}
 	}
 	free (entry);
-	free (b);
 	return NULL;
 }
 
