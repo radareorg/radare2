@@ -146,6 +146,11 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 				eprintf (LINEFMT "Error: Test without CMDS key\n", file, linenum);
 				goto fail;
 			}
+			if (!(test->expect.value || test->expect_err.value)) {
+				eprintf (LINEFMT "Error: Test without EXPECT or EXPECT_ERR key"
+				         " (did you forget an EOF?)\n", file, linenum);
+				goto fail;
+			}
 			r_pvector_push (ret, test);
 			test = r2r_cmd_test_new ();
 			if (!test) {
@@ -216,6 +221,8 @@ beach:
 	r2r_cmd_test_free (test);
 	return ret;
 fail:
+	r2r_cmd_test_free (test);
+	test = NULL;
 	r_pvector_free (ret);
 	ret = NULL;
 	goto beach;

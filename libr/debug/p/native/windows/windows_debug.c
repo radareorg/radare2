@@ -37,14 +37,10 @@ int w32_init(RDebug *dbg) {
 	W32DbgWInst *wrap = dbg->user;
 	if (!wrap) {
 		if (dbg->iob.io->w32dbg_wrap) {
-			wrap = (W32DbgWInst *)dbg->iob.io->w32dbg_wrap;
+			dbg->user = (W32DbgWInst *)dbg->iob.io->w32dbg_wrap;
 		} else {
-			wrap = w32dbg_wrap_new ();
-			dbg->iob.io->w32dbg_wrap = (struct w32dbg_wrap_instance_t *)wrap;
-			wrap->pi.dwProcessId = dbg->pid;
-			wrap->pi.dwThreadId = dbg->tid;
+			return 0;
 		}
-		dbg->user = wrap;
 	}
 	// escalate privs (required for win7/vista)
 	setup_debug_privileges (true);
@@ -1084,7 +1080,7 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 					dbg->reason.type = exception_to_reason (de.u.Exception.ExceptionRecord.ExceptionCode);
 					dbg->reason.tid = de.dwThreadId;
 					dbg->reason.addr = (size_t)de.u.Exception.ExceptionRecord.ExceptionAddress;
-					dbg->reason.timestamp = r_sys_now ();
+					dbg->reason.timestamp = r_time_now ();
 					ret = dbg->reason.type;
 				} else {
 					w32_continue (dbg, pid, tid, DBG_EXCEPTION_NOT_HANDLED);

@@ -6,7 +6,7 @@
 #define OR1K_DISAS_H
 
 /** Default mask for opcode */
-#define INSN_OPCODE_MASK (0b111111ULL * 0x4000000)
+#define INSN_OPCODE_MASK (0x3fULL * 0x4000000)
 #define INSN_OPCODE_SHIFT 26
 
 /** Empty mask for unused operands */
@@ -14,39 +14,39 @@
 #define INSN_EMPTY_MASK 0
 
 /** Mask for N operand */
-#define INSN_N_MASK 0b11111111111111111111111111
+#define INSN_N_MASK 0x3ffffff
 
 /** Shift for D operand */
 #define INSN_D_SHIFT 21
 /** Mask for D operand */
-#define INSN_D_MASK (0b11111 * 0x200000)
+#define INSN_D_MASK (0x1f * 0x200000)
 
 /** Mask for K operand */
-#define INSN_K_MASK 0b1111111111111111
+#define INSN_K_MASK 0xffff
 
 /** Shift for B operand */
 #define INSN_B_SHIFT 11
 /** Mask for B operand */
-#define INSN_B_MASK (0b11111 * 0x800)
+#define INSN_B_MASK (0x1f * 0x800)
 
 /** Shift for A operand */
 #define INSN_A_SHIFT 16
 /** Mask for A operand */
-#define INSN_A_MASK (0b11111 * 0x10000)
+#define INSN_A_MASK (0x1f * 0x10000)
 
 /** Mask for I operand */
-#define INSN_I_MASK 0b1111111111111111
+#define INSN_I_MASK 0xffff
 
 /** Mask for L operand */
-#define INSN_L_MASK 0b111111
+#define INSN_L_MASK 0x3f
 
 /** Shift for first K operand */
 #define INSN_K1_SHIFT 21
 /** Mask for first K operand */
-#define INSN_K1_MASK (0b11111 * 0x200000)
+#define INSN_K1_MASK (0x1f * 0x200000)
 
 /** Mask for second K operand */
-#define INSN_K2_MASK 0b11111111111
+#define INSN_K2_MASK 0x7ff
 
 typedef enum insn_type {
 	INSN_END = 0, /**< end of array indicator */

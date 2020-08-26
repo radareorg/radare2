@@ -11,6 +11,10 @@
 #include <sys/capsicum.h>
 #endif
 
+#if LIBC_HAVE_PRIV_SET
+#include <priv.h>
+#endif
+
 static bool enabled = false;
 static bool disabled = false;
 
@@ -101,6 +105,12 @@ R_API bool r_sandbox_disable (bool e) {
 			return enabled;
 		}
 #endif
+#if LIBC_HAVE_PRIV_SET
+		if (enabled) {
+			eprintf ("sandbox mode couldn't be disabled in priv mode\n");
+			return enabled;
+		}
+#endif
 		disabled = enabled;
 		enabled = false;
 	} else {
@@ -161,6 +171,36 @@ R_API bool r_sandbox_enable (bool e) {
 		}
 	}
 #endif
+#if LIBC_HAVE_PRIV_SET
+	if (enabled) {
+		priv_set_t *priv = priv_allocset();
+		const char *const privrules[] = {
+			PRIV_PROC_INFO,
+			PRIV_PROC_SESSION,
+			PRIV_PROC_ZONE,
+			PRIV_NET_OBSERVABILITY
+		};
+
+		size_t i, privrulescnt = sizeof (privrules) / sizeof (privrules[0]);
+		
+		if (!priv) {
+			eprintf ("sandbox: priv_allocset failed\n");
+			return false;
+		}
+		priv_basicset(priv);
+		
+		for (i = 0; i < privrulescnt; i ++) {
+			if (priv_delset (priv, privrules[i]) != 0) {
+				priv_emptyset (priv);
+				priv_freeset (priv);
+				eprintf ("sandbox: priv_delset failed\n");
+				return false;
+			}
+		}
+
+		priv_freeset (priv);
+	}
+#endif
 	return enabled;
 }
 
@@ -174,13 +214,18 @@ R_API int r_sandbox_system(const char *x, int n) {
 #if LIBC_HAVE_SYSTEM
 	if (n) {
 #if APPLE_SDK_IPHONEOS
-#include <dlfcn.h>
-		int (*__system)(const char *cmd)
-			= dlsym (NULL, "system");
-		if (__system) {
-			return __system (x);
+#include <spawn.h>
+		int argc;
+		char *cmd = strdup (x);
+		char **argv = r_str_argv (cmd, &argc);
+		if (argv) {
+			char *argv0 = r_file_path (argv[0]);
+			pid_t pid = 0;
+			int r = posix_spawn (&pid, argv0, NULL, NULL, argv, NULL);
+			int status;
+			int s = waitpid (pid, &status, 0);
+			return WEXITSTATUS (s);
 		}
-		return -1;
 #else
 		return system (x);
 #endif
@@ -292,14 +337,12 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 	char *epath = expand_home (path);
 	int ret = -1;
 #if __WINDOWS__
-	perm |= O_BINARY;
 	if (!strcmp (path, "/dev/null")) {
 		path = "NUL";
 	}
 #endif
 	if (enabled) {
-		if ((mode & O_CREAT)
-			|| (mode & O_RDWR)
+		if ((perm & O_CREAT) || (perm & O_RDWR)
 			|| (!r_sandbox_check_path (epath))) {
 			free (epath);
 			return -1;
@@ -307,12 +350,55 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 	}
 #if __WINDOWS__
 	{
+		DWORD flags = 0;
+		if (perm & O_RANDOM) {
+			flags = FILE_FLAG_RANDOM_ACCESS;
+		} else if (perm & O_SEQUENTIAL) {
+			flags = FILE_FLAG_SEQUENTIAL_SCAN;
+		}
+		if (perm & O_TEMPORARY) {
+			flags |= FILE_FLAG_DELETE_ON_CLOSE | FILE_ATTRIBUTE_TEMPORARY;
+		} else if (perm & _O_SHORT_LIVED) {
+			flags |= FILE_ATTRIBUTE_TEMPORARY;
+		} else {
+			flags |= FILE_ATTRIBUTE_NORMAL;
+		}
+		DWORD creation = 0;
+		bool read_only = false;
+		if (perm & O_CREAT) {
+			if (perm & O_EXCL) {
+				creation = CREATE_NEW;
+			} else {
+				creation = CREATE_ALWAYS;
+			}
+			if (mode & S_IREAD && !(mode & S_IWRITE)) {
+				flags = FILE_ATTRIBUTE_READONLY;
+				read_only = true;
+			}
+		} else if (perm & O_TRUNC) {
+			creation = TRUNCATE_EXISTING;
+		}
+		if (!creation || !strcasecmp ("NUL", path)) {
+			creation = OPEN_EXISTING;
+		}
+		DWORD permission = 0;
+		if (perm & O_WRONLY) {
+			permission = GENERIC_WRITE;
+		} else if (perm & O_RDWR) {
+			permission = GENERIC_WRITE | GENERIC_READ;
+		} else {
+			permission = GENERIC_READ;
+		}
+
 		wchar_t *wepath = r_utf8_to_utf16 (epath);
 		if (!wepath) {
 			free (epath);
 			return -1;
 		}
-		ret = _wopen (wepath, perm, mode);
+		HANDLE h = CreateFileW (wepath, permission, FILE_SHARE_READ | (read_only ? 0 : FILE_SHARE_WRITE), NULL, creation, flags, NULL);
+		if (h != INVALID_HANDLE_VALUE) {
+			ret = _open_osfhandle ((intptr_t)h, 0);
+		}
 		free (wepath);
 	}
 #else // __WINDOWS__

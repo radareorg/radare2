@@ -152,6 +152,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=cmd.hit for /ca
+FILE=bins/other/aes_192.dump
+CMDS=/ca
+EXPECT=<<EOF
+0x000000fa hit0_0 000102030405060708090a0b0c0d0e0f1011121314151617
+EOF
+RUN
+
 NAME=cmd.hit for /cr
 FILE=bins/other/rsa-private-4096.key
 CMDS=/cr

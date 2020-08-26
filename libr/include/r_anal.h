@@ -27,6 +27,13 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_anal);
 
+/* dwarf processing context */
+typedef struct r_anal_dwarf_context {
+	const RBinDwarfDebugInfo *info;
+	HtUP/*<offset, RBinDwarfLocList*>*/  *loc;
+	// const RBinDwarfCfa *cfa; TODO
+} RAnalDwarfContext;
+
 // TODO: save memory2 : fingerprints must be pointers to a buffer
 // containing a dupped file in memory
 
@@ -2070,6 +2077,7 @@ R_API void r_anal_class_list(RAnal *anal, int mode);
 R_API void r_anal_class_list_bases(RAnal *anal, const char *class_name);
 R_API void r_anal_class_list_vtables(RAnal *anal, const char *class_name);
 R_API void r_anal_class_list_vtable_offset_functions(RAnal *anal, const char *class_name, ut64 offset);
+R_API RGraph/*<RGraphNodeInfo>*/ *r_anal_class_get_inheritance_graph(RAnal *anal);
 
 R_API RAnalEsilCFG *r_anal_esil_cfg_expr(RAnalEsilCFG *cfg, RAnal *anal, const ut64 off, char *expr);
 R_API RAnalEsilCFG *r_anal_esil_cfg_op(RAnalEsilCFG *cfg, RAnal *anal, RAnalOp *op);
@@ -2089,7 +2097,8 @@ R_API void r_parse_pdb_types(const RAnal *anal, const RPdb *pdb);
 R_API void r_anal_save_base_type(const RAnal *anal, const RAnalBaseType *type);
 R_API void r_anal_free_base_type(RAnalBaseType *type);
 R_API RAnalBaseType *r_anal_new_base_type(RAnalBaseTypeKind kind);
-R_API void r_anal_parse_dwarf_types(const RAnal *anal, const RBinDwarfDebugInfo *info);
+R_API void r_anal_dwarf_process_info(const RAnal *anal, RAnalDwarfContext *ctx);
+R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwarf_sdb);
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
 extern RAnalPlugin r_anal_plugin_6502;

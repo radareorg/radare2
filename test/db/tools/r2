@@ -76,37 +76,46 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=r2 -V
-BROKEN=1 # Only on Windows
+NAME=radare2 -V
 FILE=-
-CMDS=!!r2 -V~r_anal?
+CMDS=!!radare2 -V~r_anal?
 EXPECT=<<EOF
 1
 EOF
 RUN
 
-NAME=r2 -h
-BROKEN=1 # Only on Windows
+NAME=radare2 -h
 FILE=-
-CMDS=!!r2 -h~Usage?
+CMDS=!!radare2 -h~Usage?
 EXPECT=<<EOF
 1
 EOF
 RUN
 
-NAME=r2 -hh
-BROKEN=1 # Only on Windows
+NAME=radare2 -hh
 FILE=-
-CMDS=!!r2 -hh~R2_USER_PLUGINS?
+CMDS=!!radare2 -hh~R2_USER_PLUGINS?
 EXPECT=<<EOF
 1
 EOF
 RUN
 
-NAME=r2 -L
-BROKEN=1 # Only on Windows
+NAME=radare2 -L
 FILE=-
-CMDS=!!r2 -L~default?
+CMDS=!!radare2 -L~default?
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=r2 shortcut
+FILE=-
+ARGS=-e cfg.newshell=false
+CMDS=<<EOF
+?q `!!r2 -h~Usage?`
+?+ ?vi $?
+?! ?e `!!r2.bat -h~Usage?`
+EOF
 EXPECT=<<EOF
 1
 EOF

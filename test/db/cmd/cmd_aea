@@ -93,8 +93,8 @@ EOF
 EXPECT=<<EOF
 0x0000000a
 0x00007a62
-lw a0, -0x7fc4(gp)
-lw t9, -0x7fbc(gp)
+lw a0, -segment.LOAD0(gp)
+lw t9, -sym.imp.printf(gp)
 EOF
 RUN
 
@@ -112,7 +112,7 @@ EOF
 EXPECT=<<EOF
 0x0000000a
 0x00007a62
-lw a0, -0x7fc4(gp)
-lw t9, -0x7fbc(gp)
+lw a0, -segment.LOAD0(gp)
+lw t9, -sym.imp.printf(gp)
 EOF
 RUN

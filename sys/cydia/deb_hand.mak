@@ -24,16 +24,16 @@
 # preinst, postinst, prerm, postrm - optional control shell scripts
 
 # These fields are used to build the control file:
-# PACKAGE = 
-# VERSION = 
-# ARCH = 
-# SECTION = 
-# PRIORITY = 
-# MAINTAINER = 
-# DEPENDS = 
+# PACKAGE =
+# VERSION =
+# ARCH =
+# SECTION =
+# PRIORITY =
+# MAINTAINER =
+# DEPENDS =
 #
 # SOURCE_DIR =
-# ICON_SOURCE = 
+# ICON_SOURCE =
 # (ICON_SOURCE is optional)
 
 # *** NO USER CHANGES REQUIRED BEYOND THIS POINT ***
@@ -55,7 +55,8 @@ ifneq (${CONTROL_EXTRAS},)
 	cp ${CONTROL_EXTRAS} $@
 endif
 #       Make control file.
-	echo "Package: ${PACKAGE}" > $@/control
+	echo "Name: ${PACKAGE}" > $@/control
+	echo "Package: ${PACKAGE}" >> $@/control
 	echo "Version: ${VERSION}" >> $@/control
 	echo "Section: ${SECTION}" >> $@/control
 	echo "Priority: ${PRIORITY}" >> $@/control
@@ -97,7 +98,7 @@ ${PACKAGE_DIR}/build: ${PACKAGE_DIR}/debian-binary ${PACKAGE_DIR}/control \
 # Convert GNU ar to BSD ar that debian requires.
 # Note: Order of files within ar archive is important!
 ${PACKAGE_DIR}/${PACKAGE}_${VERSION}_${ARCH}.deb: ${PACKAGE_DIR}/build
-	ar -rc $@ $</debian-binary $</control.tar.gz $</data.tar.gz
+	${AR} -rc $@ $</debian-binary $</control.tar.gz $</data.tar.gz
 	#sed -e 's|^\([^/]\+\)/ \(.*\)|\1  \2|g' $@tmp > $@fail
 	#rm -f $@tmp
 	#mv $@fail $@

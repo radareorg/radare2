@@ -146,7 +146,7 @@ R_API st64 r_sleb128(const ut8 **data, const ut8 *end) {
 	} while (cond = *p & 0x80 && p + 1 < end, p++, cond);
 
 	if ((value & 0x40) != 0) {
-		result |= ~0UL << offset;
+		result |= ~0ULL << offset;
 	}
 	*data = p;
 	return result;

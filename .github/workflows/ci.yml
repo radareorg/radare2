@@ -139,6 +139,19 @@ jobs:
         make
       env:
         NEWSHELL: ${{ matrix.newshell }}
+    - name: Run fuzz tests
+      if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
+      run: |
+        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+        if [ "$NEWSHELL" == "true" ]; then
+          export R2_CFG_NEWSHELL=1
+        fi
+        cd test
+        make fuzz-tests
+      env:
+        NEWSHELL: ${{ matrix.newshell }}
     - name: Upload coverage info
       uses: codecov/codecov-action@v1
       if: matrix.coverage == '1' && matrix.enabled
@@ -230,7 +243,7 @@ jobs:
   build-static:
     name: Build static
     if: contains(github.head_ref, 'static') || contains(github.ref, 'release-') || github.event_name == 'schedule'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
     - name: Checkout our Testsuite Binaries
@@ -246,6 +259,8 @@ jobs:
       run: |
         r2 -v
         r2r -v
+        cd test
+        make
 
   create-tarball:
     name: Create source tarball

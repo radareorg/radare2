@@ -31,6 +31,15 @@ static void open_pidmem (RIOPtrace *iop);
 extern int errno;
 #endif
 
+// PTRACE_GETSIGINFO is defined only since glibc 2.4 but appeared much
+// earlier in linux kernel - since 2.3.99-pre6
+// So we define it manually
+#if __linux__ && defined(__GLIBC__)
+#ifndef PTRACE_GETSIGINFO
+#define PTRACE_GETSIGINFO 0x4202
+#endif
+#endif
+
 #if 0
 procpidmem is buggy.. running this sometimes results in ffff
 
@@ -45,7 +54,7 @@ static int __waitpid(int pid) {
 
 #define debug_read_raw(io,x,y) r_io_ptrace((io), PTRACE_PEEKTEXT, (x), (void *)(y), R_PTRACE_NODATA)
 #define debug_write_raw(io,x,y,z) r_io_ptrace((io), PTRACE_POKEDATA, (x), (void *)(y), (r_ptrace_data_t)(z))
-#if __OpenBSD__ || __KFBSD__
+#if __OpenBSD__ || __NetBSD__ || __KFBSD__
 typedef int ptrace_word;   // int ptrace(int request, pid_t pid, caddr_t addr, int data);
 #else
 typedef size_t ptrace_word; // long ptrace(enum __ptrace_request request, pid_t pid, void *addr, void *data);
@@ -186,7 +195,7 @@ static inline bool is_pid_already_attached(RIO *io, int pid) {
 	struct ptrace_lwpinfo info = { 0 };
 	int len = (int)sizeof (info);
 	return r_io_ptrace (io, PT_LWPINFO, pid, &info, len) != -1;
-#elif __OpenBSD__
+#elif defined(__OpenBSD__) || defined(__NetBSD__)
 	ptrace_state_t state = { 0 };
 	int len = (int)sizeof (state);
 	return r_io_ptrace (io, PT_GET_PROCESS_STATE, pid, &state, len) != -1;

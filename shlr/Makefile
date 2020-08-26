@@ -60,9 +60,11 @@ CS_REV=
 CS_PATCHES=1
 endif
 
-.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwindbg bochs tree-sitter-sync
+.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwinkd bochs tree-sitter-sync sdbs
 
+ifeq ($(shell gcc -v > /dev/null 2>&1 && echo works),works)
 HOST_CC?=gcc
+endif
 SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
@@ -92,14 +94,14 @@ all:
 	exit 1
 endif
 
-preall: targets libwindbg capstone-build tree-sitter-build radare2-shell-parser-build bochs
+preall: libwinkd capstone-build tree-sitter-build radare2-shell-parser-build bochs
 	@for MOD in ${MODS} ; do \
 		echo $(MAKE) -C $$MOD ; \
 		$(MAKE) -C $$MOD HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
 	done
 
 SDBFILES=sdb/src/.sdb${EXT_EXE} sdb/sdb${EXT_EXE} sdb/src/.sdb sdb/sdb
-PREMODS=capstone gdb windbg sdb bochs ar
+PREMODS=capstone gdb winkd sdb bochs ar
 
 clean mrproper:
 	rm -f ${SDBFILES}
@@ -111,64 +113,40 @@ else
 BUILD_EXT_EXE=
 endif
 
-SDB_TARGETS=$(SDBLIB)
-ifneq (${EXT_EXE},)
-SDB_TARGETS+=sdb/sdb${EXT_EXE}
-else
-SDB_TARGETS+=sdb/sdb
-endif
-
 PIC=
 ifneq ($(CC),cccl)
 PIC=-fPIC
-ifeq ($(filter sdb/sdb${BUILD_EXT_EXE},$(SDB_TARGETS)),)
-SDB_TARGETS+=sdb/sdb${BUILD_EXT_EXE}
-endif
 endif
 
-targets:
-	for TARGET in ${SDB_TARGETS} ; do ${MAKE} $$TARGET ; done
+sdbs:
+	$(MAKE) sdb-host HOST_CC=$(HOST_CC) CC=$(HOST_CC)
+	$(MAKE) sdb-target
 
-sdb/src/sdb_version.h:
+sdb-host:
 	@echo
-	@echo BUILD SUMARY
-	@echo ============
-	@echo COMPILER ${COMPILER}
-	@echo CC ${CC}
-	@echo HOST_CC ${HOST_CC}
-	@echo HOST_OS ${HOST_OS}
-	@echo BUILD_OS ${BUILD_OS}
-	@echo ============
-	$(MAKE) -C sdb clean
-	$(MAKE) -C sdb src/sdb_version.h
-
-sdb-native-build: sdb/src/sdb_version.h
+	@echo ">>>>>>>>"
+	@echo "HOST SDB"
+	@echo ">>>>>>>>"
 	@echo
-	@echo ">>>>>>>>>>>>>>>>"
-	@echo "NATIVE BUILD SDB"
-	@echo ">>>>>>>>>>>>>>>>"
-	@echo
-	$(MAKE) -C sdb/src CC=${HOST_CC} LDFLAGS='${HOST_LDFLAGS}' CPPFLAGS='' CFLAGS='${HOST_CFLAGS} ${PIC}' bin
+	$(MAKE) -C sdb clean ; rm -f sdb/src/*.o sdb/src/sdb_version.h
+	$(MAKE) -C sdb/src "CC=${HOST_CC}" LDFLAGS='${HOST_LDFLAGS}' CPPFLAGS='' CFLAGS='${HOST_CFLAGS} ${PIC}' bin
 	cp -f sdb/src/sdb${BUILD_EXT_EXE} sdb/src/.sdb${BUILD_EXT_EXE}
+	cp -f sdb/src/sdb${BUILD_EXT_EXE} sdb/sdb$(BUILD_EXT_EXE)
+	-file sdb/sdb$(BUILD_EXT_EXE)
 
-sdb-target-build: sdb/src/sdb_version.h
+sdb-target:
 	@echo
-	@echo ">>>>>>>>>>>>>>>>"
-	@echo "TARGET BUILD SDB"
-	@echo ">>>>>>>>>>>>>>>>"
+	@echo ">>>>>>>>>>"
+	@echo "TARGET SDB"
+	@echo ">>>>>>>>>>"
 	@echo
-	cd sdb/src ; $(MAKE) ARCH=xxx RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED}" \
-		CC="${CC}" AR="${AR}" CFLAGS='${CFLAGS}' LDFLAGS='${LDFLAGS}' libsdb.a
+	$(MAKE) -C sdb clean ; rm -f sdb/src/*.o sdb/src/sdb_version.h
+	$(MAKE) -C sdb/src sdb_version.h
+	$(MAKE) -C sdb/src ARCH=xxx RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED}" \
+		CC="${CC}" AR="${AR}" ARCH=undefined CFLAGS='${CFLAGS}' LDFLAGS='${LDFLAGS}' libsdb.a
 	${RANLIB} sdb/src/libsdb.a
 
-${SDB_TARGETS}: sdb-native-build sdb-target-build
-ifneq (${EXT_AR},a)
-	-cp -f sdb/src/libsdb.a sdb/src/libsdb.${EXT_AR}
-endif
-	rm -f $@
-	cp -f sdb/src/.sdb${BUILD_EXT_EXE} $@
-
-.PHONY: sdb-sync sync-sdb sdbclean sdb-native-build sdb-target-build
+.PHONY: sdb-sync sync-sdb sdbclean sdb-native sdb-target
 SDB_F=README.md config.mk src Makefile meson.build
 SDB_SYNCFILES=$(addprefix sdb.vc/,${SDB_F})
 I=../libr/include
@@ -176,8 +154,8 @@ I=../libr/include
 libgdbr:
 	$(MAKE) -C gdb all
 
-libwindbg:
-	$(MAKE) -C windbg all
+libwinkd:
+	$(MAKE) -C winkd all
 
 bochs:
 	$(MAKE) -C bochs all
@@ -194,7 +172,7 @@ sdb-sync sync-sdb:
 	cp -rf ${SDB_SYNCFILES} sdb
 	rm -rf sdb.vc
 	rm -f src/sdb_version.h
-	cd sdb ; $(MAKE) src/sdb_version.h
+	$(MAKE) -C sdb src/sdb_version.h
 	mkdir -p sdb/test sdb/memcache
 	sed -e 's,HAVE_VALA=,HAVE_VALA=#,' sdb/config.mk > .t
 	mv .t sdb/config.mk
@@ -397,7 +375,7 @@ SHLRS+=java/libr_java.a
 SHLRS+=lz4/liblz4.a
 SHLRS+=qnx/lib/libqnxr.a
 SHLRS+=yxml/libyxml.a
-SHLRS+=windbg/libr_windbg.a
+SHLRS+=winkd/libr_winkd.a
 SHLRS+=zip/librz.a
 
 libr_shlr.${EXT_AR}:
@@ -407,13 +385,13 @@ ifeq ($(CC),emcc)
 	for LIB in ${SHLRS} ; do \
 		if [ -f "$${LIB}" ]; then emcc -emit-llvm -nostdlib -Wl,--whole-archive -o .libr/$$(basename $${LIB}.a).o $${LIB} ; fi ; \
 	done
-	${AR} crs $@ .libr/*.o
+	${AR} rs $@ .libr/*.o
 	$(RANLIB) $@
 else
 	for LIB in ${SHLRS} ; do \
 		if [ -f "$${LIB}" ]; then ${PARTIALLD} -o .libr/$$(basename $${LIB}.a).o $${LIB} ; fi ; \
 	done
-	${AR} crs $@ .libr/*.o
+	${AR} rs $@ .libr/*.o
 	$(RANLIB) $@
 endif
 

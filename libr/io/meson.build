@@ -35,7 +35,7 @@ r_io_sources = [
   'p/io_shm.c',
   'p/io_sparse.c',
   'p/io_tcp.c',
-  'p/io_windbg.c',
+  'p/io_winkd.c',
   'p/io_winedbg.c',
   'p/io_zip.c',
 ]
@@ -43,6 +43,7 @@ r_io_sources = [
 if host_machine.system() == 'windows'
   r_io_sources += [
     'p/io_r2k_windows.c',
+    'p/io_windbg.c',
     'p/io_w32.c',
     'p/io_w32dbg.c',
   ]
@@ -54,7 +55,7 @@ r_io_deps = [
   r_socket_dep,
   bochs_dep,
   gdb_dep,
-  windbg_dep,
+  winkd_dep,
   qnx_dep,
   zip_dep,
   ar_dep,

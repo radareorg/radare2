@@ -1,9 +1,5 @@
 /* radare - LGPL - Copyright 2009-2020 - pancake */
 
-#if __linux__
-#include <time.h>
-#endif
-
 #include <r_userconf.h>
 #include <stdlib.h>
 #include <string.h>
@@ -203,19 +199,6 @@ R_API void r_sys_exit(int status, bool nocleanup) {
 	} else {
 		exit (status);
 	}
-}
-
-/* TODO: import stuff from bininfo/p/bininfo_addr2line */
-/* TODO: check endianness issues here */
-R_API ut64 r_sys_now(void) {
-	ut64 ret;
-	struct timeval now;
-	gettimeofday (&now, NULL);
-	ret = now.tv_sec;
-	ret <<= 20;
-	ret |= now.tv_usec;
-	//(sizeof (now.tv_sec) == 4
-	return ret;
 }
 
 R_API int r_sys_truncate(const char *file, int sz) {

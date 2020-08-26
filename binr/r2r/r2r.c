@@ -100,7 +100,7 @@ static bool r2r_chdir(const char *argv0) {
 }
 
 static bool r2r_test_run_unit(void) {
-	return system ("make -C unit all run") == 0;
+	return r_sandbox_system ("make -C unit all run", 1) == 0;
 }
 
 static bool r2r_chdir_fromtest(const char *test_path) {
@@ -282,7 +282,7 @@ int main(int argc, char **argv) {
 	}
 	atexit (r2r_subprocess_fini);
 
-	ut64 time_start = r_sys_now ();
+	ut64 time_start = r_time_now_mono ();
 	R2RState state = {{0}};
 	state.run_config.r2_cmd = radare2_cmd ? radare2_cmd : RADARE2_CMD_DEFAULT;
 	state.run_config.rasm2_cmd = rasm2_cmd ? rasm2_cmd : RASM2_CMD_DEFAULT;
@@ -444,7 +444,7 @@ int main(int argc, char **argv) {
 	}
 	r_pvector_clear (&workers);
 
-	ut64 seconds = (r_sys_now () - time_start) / 1000000;
+	ut64 seconds = (r_time_now_mono () - time_start) / 1000000;
 	printf ("Finished in");
 	if (seconds > 60) {
 		ut64 minutes = seconds / 60;
