@@ -406,14 +406,14 @@ f sym @ 6
 f sym. @ 7
 f sym.b @ 8
 e asm.flags.real=0
-af@@*
+af @@ *
 afl
 ?e --
-af-@@*
+af- @@ *
 afl
 ?e --
 e asm.flags.real=1
-af@@*
+af @@ *
 afl
 EOF
 EXPECT=<<EOF
