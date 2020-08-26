@@ -1076,6 +1076,9 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 			const ut8 *buffer = &block.data[++i];
 			const ut8 *buf_end = &block.data[block.length];
 			buffer = r_uleb128 (buffer, buf_end - buffer, &reg_num);
+			if (buffer == buf_end) {
+				return NULL;
+			}
 			offset = r_sleb128 (&buffer, buf_end);
 			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind, ctx->anal->bits);
 		} break;
