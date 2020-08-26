@@ -1083,9 +1083,6 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind, ctx->anal->bits);
 		} break;
 		case DW_OP_addr: {
-			if (i == block.length - 1) {
-				return NULL;
-			}
 			/* The DW_OP_addr operation has a single operand that encodes a machine address and whose
 			size is the size of an address on the target machine.  */
 			const int addr_size = ctx->anal->bits / 8;
