@@ -969,10 +969,13 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 		case DW_OP_fbreg: {
 		/* TODO sometimes CFA is referenced, but we don't parse that yet
 		   just an offset involving framebase of a function*/
+			if (i == block.length - 1) {
+				return NULL;
+			}
 			const ut8 *dump = &block.data[++i];
 			offset = r_sleb128 (&dump, &block.data[loc->block.length]);
 			if (frame_base) {
-				/* recursive parsing, but frame_base should be only one, but someone 
+				/* recursive parsing, but frame_base should be only one, but someone
 				   could make malicious resource exhaustion attack, so a depth counter might be cool? */
 				VariableLocation *location = parse_dwarf_location (ctx, frame_base, NULL);
 				if (location) {
@@ -1054,6 +1057,9 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 		case DW_OP_breg29:
 		case DW_OP_breg30:
 		case DW_OP_breg31: {
+			if (i == block.length - 1) {
+				return NULL;
+			}
 			/* The single operand of the DW_OP_bregn operations provides 
 			signed LEB128 offset from the specified register.  */
 			reg_num = block.data[i] - DW_OP_breg0; // get the reg number
@@ -1062,11 +1068,17 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind, ctx->anal->bits);
 		} break;
 		case DW_OP_bregx: {
+			if (i == block.length - 1) {
+				return NULL;
+			}
 			/* 2 operands, reg_number, offset*/
 			/* I need to find binaries that uses this so I can test it out*/
 			const ut8 *buffer = &block.data[++i];
 			const ut8 *buf_end = &block.data[block.length];
 			buffer = r_uleb128 (buffer, buf_end - buffer, &reg_num);
+			if (buffer == buf_end) {
+				return NULL;
+			}
 			offset = r_sleb128 (&buffer, buf_end);
 			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind, ctx->anal->bits);
 		} break;
