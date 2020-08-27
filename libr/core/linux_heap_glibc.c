@@ -747,7 +747,7 @@ static void GH(print_heap_bin)(RCore *core, GHT m_arena, MallocState *main_arena
 	}
 }
 
-static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena, GHT m_arena, GHT offset, GHT bin_num) {
+static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena, GHT m_arena, GHT offset, GHT bin_num, bool mangling) {
 	if (!core || !core->dbg || !core->dbg->maps) {
 		return -1;
 	}
@@ -799,7 +799,12 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
 			}
 		}
 		r_io_read_at (core->io, next, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
-		next = cnk->fd;
+		if (!mangling) {
+			next = cnk->fd;
+		} else {
+			printf("yoo");
+			next = PROTECT_PTR(next, cnk->fd);
+		}
 		PRINTF_BA ("%s", next ? "->fd = " : "");
 		if (cnk->prev_size > size || ((cnk->size >> 3) << 3) > size) {
 			PRINTF_RA (" 0x%"PFMT64x, (ut64)next);
@@ -832,7 +837,7 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
 	return 0;
 }
 
-void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, const char *input) {
+void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, const char *input, bool mangling) {
 	int i;
 	GHT num_bin = GHT_MAX, offset = sizeof (int) * 2;
 	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
@@ -842,6 +847,7 @@ void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, G
 		offset = 16;
 	}
 
+	printf("mm: %s", input);
 	switch (input[0]) {
 	case '\0': // dmhf
 		if (core->offset != core->prompt_offset) {
@@ -854,7 +860,7 @@ void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, G
 			} else {
 				PRINTF_RA (" Fastbin %02d\n", i);
 			}
-			if (GH(print_single_linked_list_bin) (core, main_arena, m_arena, offset, i - 1)) {
+			if (GH(print_single_linked_list_bin) (core, main_arena, m_arena, offset, i - 1, mangling)) {
 				PRINT_GA ("  Empty bin");
 				PRINT_BA ("  0x0\n");
 			}
@@ -867,7 +873,7 @@ void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, G
 			eprintf ("Error: 0 < bin <= %d\n", NFASTBINS);
 			break;
 		}
-		if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, num_bin)) {
+		if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, num_bin, true)) {
 			PRINT_GA (" Empty bin");
 			PRINT_BA (" 0x0\n");
 		}
@@ -1599,7 +1605,14 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		break;
 	case 'f': // "dmhf"
 		if (GH(r_resolve_main_arena) (core, &m_arena)) {
-			char *m_state_str, *dup = strdup (input + 1);
+			bool mangling = false;
+			char *m_state_str, *dup;
+			if (input[1] == 'm') { // "dmhfm"
+				mangling = true;
+				dup = strdup (input + 2);
+			} else {
+				dup = strdup (input + 1);
+			}
 			if (*dup) {
 				strtok (dup, ":");
 				m_state_str = strtok (NULL, ":");
@@ -1619,7 +1632,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 					free (dup);
 					break;
 				}
-				GH(print_heap_fastbin) (core, m_state, main_arena, global_max_fast, dup);
+				GH(print_heap_fastbin) (core, m_state, main_arena, global_max_fast, dup, mangling);
 			} else {
 				PRINT_RA ("This address is not part of the arenas\n");
 				free (dup);
