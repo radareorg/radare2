@@ -22,6 +22,7 @@ if get_option('enable_tests')
     'cons',
     'contrbtree',
     'debruijn',
+    'debug_session',
     'diff',
     'dwarf',
     'dwarf_info',
@@ -53,7 +54,8 @@ if get_option('enable_tests')
     'unum',
     'util',
     'vector',
-    'big'
+    'big',
+    'idpool'
   ]
 
   foreach test : tests

@@ -113,7 +113,7 @@ E+=../shlr/grub/libgrubfs.${EXT_AR}
 endif
 E+=../shlr/yxml/libyxml.${EXT_AR}
 E+=../shlr/ar/libr_ar.${EXT_AR}
-E+=../shlr/windbg/libr_windbg.${EXT_AR}
+E+=../shlr/winkd/libr_winkd.${EXT_AR}
 E+=../shlr/qnx/lib/libqnxr.${EXT_AR}
 E+=../shlr/bochs/lib/libbochs.${EXT_AR}
 E+=../shlr/radare2-shell-parser/libshell-parser.${EXT_AR}
