@@ -6955,31 +6955,6 @@ R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 	if (!p && *cmd != '!' && *cmd != '.') {
 		return r_core_cmd_str (core, cmd);
 	}
-#if 0
-	char *p = (*cmd != '"')? strchr (cmd, '|'): NULL;
-	if (p) {
-		// This code works but its pretty ugly as its a workaround to
-		// make the webserver work as expected, this was broken some
-		// weeks. let's use this hackaround for now
-		char *c = strdup (cmd);
-		c[p - cmd] = 0;
-		if (!strcmp (p + 1, "H")) {
-			char *res = r_core_cmd_str (core, c);
-			free (c);
-			char *hres = r_cons_html_filter (res, NULL);
-			free (res);
-			return hres;
-		} else {
-			int sh = r_config_get_i (core->config, "scr.color");
-			r_config_set_i (core->config, "scr.color", 0);
-			char *ret = r_core_cmd_str (core, c);
-			r_config_set_i (core->config, "scr.color", sh);
-			free (c);
-			return ret;
-		}
-	}
-	return r_core_cmd_str (core, cmd);
-#else
 	r_cons_reset ();
 	r_sandbox_disable (true);
 	if (r_file_mkstemp ("cmd", &tmp) != -1) {
@@ -6991,7 +6966,11 @@ R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 			return r_core_cmd_str (core, cmd);
 		}
 		char *_cmd = strdup (cmd);
-		r_core_cmd_subst (core, _cmd);
+		if (core->use_tree_sitter_r2cmd) {
+			r_core_cmd (core, _cmd, 0);
+		} else {
+			r_core_cmd_subst (core, _cmd);
+		}
 		r_cons_flush ();
 		r_cons_pipe_close (pipefd);
 		if (r_file_exists (tmp)) {
@@ -7011,7 +6990,6 @@ R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 	}
 	r_sandbox_disable (0);
 	return NULL;
-#endif
 }
 
 R_API char *r_core_cmd_strf(RCore *core, const char *fmt, ...) {
