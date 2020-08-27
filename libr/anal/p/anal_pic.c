@@ -834,7 +834,7 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 	case 0xe: //movlw
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		op->cycles = 1;
-		r_strbuf_setf (&op->esil, "0x%x,wreg,=,");
+		r_strbuf_setf (&op->esil, "0x%x,wreg,=,", *(ut16* )buf & 0xff);
 		return op->size;
 	case 0xd: //mullw
 		op->type = R_ANAL_OP_TYPE_MUL;

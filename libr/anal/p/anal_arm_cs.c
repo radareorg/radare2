@@ -308,7 +308,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			case ARM_SFT_ROR_REG:
 			case ARM_SFT_RRX_REG:
 				r_strbuf_appendf (buf, "\"type\":\"%s\"", shift_type_name (op->shift.type));
-				r_strbuf_appendf (buf, ",\"value\":\"%d\"", cs_reg_name (handle, op->shift.value));
+				r_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->shift.value));
 				break;
 			default:
 				break;
@@ -1599,7 +1599,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			// "stp x4, x5, [x8], 0x10"
 			// "x4,x8,=[],x5,x8,8,+,=[],16,x8,+="
 			r_strbuf_setf(&op->esil,
-					"%s,%s,=[%d],%s,%s,%d,+,=[%d],%d,%s,%c=",
+					"%s,%s,=[%d],%s,%s,%d,+,=[%d],%" PFMT64d ",%s,%c=",
 					REG64(0), MEMBASE64(2), size,
 					REG64(1), MEMBASE64(2), size, size,
 					abs, MEMBASE64(2), sign);
@@ -1641,7 +1641,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			r_strbuf_setf (&op->esil,
 					"%s,[%d],%s,=,"
 					"%s,%d,+,[%d],%s,=,"
-					"%d,%s,%c=",
+					"%" PFMT64d ",%s,%c=",
 					MEMBASE64(2), size, REG64(0),
 					MEMBASE64(2), size, size, REG64(1),
 					abs, MEMBASE64(2), sign);
