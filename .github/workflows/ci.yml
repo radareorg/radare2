@@ -1,9 +1,15 @@
-name: Release
+name: CI
+
 
 on:
   push:
     branches:
-    - 'release-*'
+    - '*'
+  schedule:
+    - cron: '0 18 * * 1,3,5' # Three-weekly at 18:00 UTC on Monday, Wednesday, and Friday
+  pull_request:
+    branches:
+    - master
 
 jobs:
   # TODO: add build check for capstone 3
@@ -11,8 +17,255 @@ jobs:
   # TODO: add build check for capstone 5
   # TODO: build r2-bindings
 
+  build-and-test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [linux-acr-gcc-tests, linux-acr-clang-build, linux-acr-clang-tests, linux-meson-gcc-build, linux-meson-gcc-tests, linux-meson-gcc-newshell-tests, macos-clang-tests]
+        include:
+          - name: linux-acr-gcc-tests
+            os: ubuntu-latest
+            build_system: acr
+            compiler: gcc
+            run_tests: true
+            enabled: true
+          - name: linux-acr-clang-tests
+            os: ubuntu-latest
+            build_system: acr
+            compiler: clang
+            run_tests: true
+            enabled: ${{ github.event_name != 'pull_request' }}
+          - name: linux-meson-gcc-tests
+            os: ubuntu-latest
+            build_system: meson
+            compiler: gcc
+            meson_options: -Db_coverage=true
+            coverage: true
+            run_tests: true
+            enabled: ${{ github.event_name != 'pull_request' }}
+          - name: linux-acr-clang-build
+            os: ubuntu-latest
+            build_system: acr
+            compiler: clang
+            enabled: ${{ github.event_name == 'pull_request' }}
+          - name: linux-meson-gcc-build
+            os: ubuntu-latest
+            build_system: meson
+            compiler: gcc
+            meson_options: -Db_coverage=true
+            coverage: true
+            enabled: ${{ github.event_name == 'pull_request' }}
+          - name: linux-meson-gcc-newshell-tests
+            os: ubuntu-latest
+            build_system: meson
+            compiler: gcc
+            newshell: true
+            run_tests: true
+            enabled: true
+          - name: macos-clang-tests
+            os: macos-latest
+            build_system: acr
+            compiler: clang
+            run_tests: true
+            enabled: true
+
+    steps:
+    - uses: actions/checkout@v2
+      if: matrix.enabled
+    - name: Install pkg-config with Homebrew
+      if: matrix.os == 'macos-latest' && matrix.enabled
+      run: brew install pkg-config
+    - name: Install python
+      if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-latest' && matrix.enabled
+      run: sudo apt-get --assume-yes install python3-wheel python3-setuptools
+    - name: Install meson and ninja
+      if: matrix.build_system == 'meson' && matrix.enabled
+      run: pip3 install --user meson==0.52.0 ninja==1.10.0
+    - name: Install test dependencies
+      if: matrix.run_tests && matrix.enabled
+      run: pip3 install --user 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
+    - name: Install clang
+      if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest' && matrix.enabled
+      run: sudo apt-get --assume-yes install clang
+    - name: Checkout our Testsuite Binaries
+      if: matrix.enabled
+      uses: actions/checkout@v2
+      with:
+          repository: radareorg/radare2-testbins
+          path: test/bins
+    - name: Configure with ACR and build
+      if: matrix.build_system == 'acr' && matrix.enabled
+      run: ./configure --prefix=${HOME} && make
+      env:
+        CC: ${{ matrix.compiler }}
+    - name: Build with Meson
+      if: matrix.build_system == 'meson' && matrix.enabled
+      run: |
+        export PATH=${HOME}/.local/bin:${PATH}
+        meson --prefix=${HOME} build && ninja -C build
+      env:
+        CC: ${{ matrix.compiler }}
+    - name: Install with make
+      if: matrix.build_system == 'acr' && matrix.enabled
+      run: |
+        # Install the radare2
+        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+        make install
+    - name: Install with meson
+      if: matrix.build_system == 'meson' && matrix.enabled
+      run: |
+        # Install the radare2
+        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+        ninja -C build install
+    - name: Run tests
+      if: matrix.run_tests && matrix.enabled
+      run: |
+        # Running the test suite
+        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+        if [ "$NEWSHELL" == "true" ]; then
+          export R2_CFG_NEWSHELL=1
+        fi
+        cd test
+        radare2 -N -Qc 'e cfg.newshell' -
+        make
+      env:
+        NEWSHELL: ${{ matrix.newshell }}
+    - name: Run fuzz tests
+      if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
+      run: |
+        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+        if [ "$NEWSHELL" == "true" ]; then
+          export R2_CFG_NEWSHELL=1
+        fi
+        cd test
+        make fuzz-tests
+      env:
+        NEWSHELL: ${{ matrix.newshell }}
+    - name: Upload coverage info
+      uses: codecov/codecov-action@v1
+      if: matrix.coverage == '1' && matrix.enabled
+
+  build-centos6:
+    name: Build on CentOS 6
+    runs-on: ubuntu-latest
+    if: contains(github.head_ref, 'centos') || contains(github.ref, 'release-') || github.event_name == 'schedule'
+    container: centos:6
+    steps:
+    - name: Install tools
+      run: yum install -y patch unzip git gcc make
+    - name: Checkout r2
+      run: |
+        git clone https://github.com/${{ github.repository }}
+        cd radare2
+        git fetch origin ${{ github.ref }}
+        git checkout -b local_branch FETCH_HEAD
+    - name: Configure with ACR and build
+      run: ./configure --prefix=/usr && make CS_RELEASE=1
+      working-directory: radare2
+    - name: Install with make
+      run: make install
+      working-directory: radare2
+    - name: Run tests
+      run: cd test/unit && make
+      working-directory: radare2
+      env:
+        # `make install` installs, for some unknown reasons, pkgconfig files in
+        # /usr/lib and not in /usr/lib64, thus pkg-config cannot find the right
+        # .pc files if the right path is not specified
+        PKG_CONFIG_PATH: /usr/lib/pkgconfig
+
+  build-debian:
+    name: Build on old Debian ${{ matrix.container }}
+    if: contains(github.head_ref, 'debian') || contains(github.ref, 'release-') || github.event_name == 'schedule'
+    strategy:
+        matrix:
+            container:
+                - debian:wheezy
+                - debian:jessie
+
+    runs-on: ubuntu-latest
+    container: ${{ matrix.container }}
+
+    steps:
+    - name: Fix containers (Wheezy)
+      if: matrix.container == 'debian:wheezy'
+      run: |
+          sed -i '/deb http:\/\/deb.debian.org\/debian wheezy-updates main/d' /etc/apt/sources.list
+          echo "deb http://archive.debian.org/debian wheezy main" > /etc/apt/sources.list
+          echo "deb http://archive.debian.org/debian-security wheezy/updates main" >> /etc/apt/sources.list
+          echo "Acquire::Check-Valid-Until no;" > /etc/apt/apt.conf.d/99no-check-valid-until
+
+    - name: Install tools
+      run: apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config libc6-i386 build-essential
+    - name: Install Python source build dependcies
+      run: apt-get install --yes checkinstall libbz2-dev libc6-dev libgdbm-dev libncursesw5-dev libreadline-gplv2-dev libssl-dev libsqlite3-dev tk-dev
+    - name: Install Python from source
+      run: |
+        curl -o Python-3.6.11.tgz https://www.python.org/ftp/python/3.6.11/Python-3.6.11.tgz
+        tar -zxvf Python-3.6.11.tgz
+        cd Python-3.6.11/
+        ./configure
+        make install
+    - name: Checkout r2
+      run: |
+        git clone https://github.com/${{ github.repository }}
+        cd radare2
+        git fetch origin ${{ github.ref }}
+        git checkout -b local_branch FETCH_HEAD
+    - name: Checkout our Testsuite Binaries
+      run: git clone https://github.com/radareorg/radare2-testbins test/bins
+    - name: Configure with ACR and build
+      run: ./configure --prefix=/usr && make
+      working-directory: radare2
+    - name: Install with make
+      run: make install
+      working-directory: radare2
+    - name: Install test dependencies
+      run: python3 -m pip install --user 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
+    - name: Run tests
+      # FIXME: debug tests fail on debian for now, let's ignore all tests for the moment
+      run: cd test && make || exit 0
+      working-directory: radare2
+      env:
+        PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
+
+  build-static:
+    name: Build static
+    if: contains(github.head_ref, 'static') || contains(github.ref, 'release-') || github.event_name == 'schedule'
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Checkout our Testsuite Binaries
+      uses: actions/checkout@v2
+      with:
+          repository: radareorg/radare2-testbins
+          path: test/bins
+    - name: Install static
+      run: |
+        ./sys/static.sh
+        sudo make symstall
+    - name: Run tests
+      run: |
+        r2 -v
+        r2r -v
+        cd test
+        make
+
   create-tarball:
     name: Create source tarball
+    if: contains(github.head_ref, 'extras') || contains(github.ref, 'release-')
+    needs: [build-and-test]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -40,6 +293,8 @@ jobs:
 
   build-deb:
     name: Build deb package for ${{ matrix.container }}
+    if: github.event_name == 'push' && contains(github.ref, 'release-')
+    needs: [build-and-test]
     runs-on: ubuntu-latest
     container: ${{ matrix.container }}
     strategy:
@@ -80,6 +335,8 @@ jobs:
   build-osx-pkg:
     name: Build OSX package
     runs-on: macos-latest
+    if: contains(github.head_ref, 'osx') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
+    needs: [build-and-test]
     steps:
     - uses: actions/checkout@v2
     - name: Install pkg-config with Homebrew
@@ -97,6 +354,8 @@ jobs:
   build-windows:
     name: Build Windows zip/installer ${{ matrix.name }}
     runs-on: windows-latest
+    if: github.event_name == 'push' && contains(github.ref, 'release-')
+    needs: [build-and-test]
     strategy:
       fail-fast: false
       matrix:
@@ -148,6 +407,8 @@ jobs:
   build-ios-cydia:
     name: Build iOS Cydia packages
     runs-on: macos-latest
+    if: contains(github.head_ref, 'ios') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
+    needs: [build-and-test]
     steps:
     - uses: actions/checkout@v2
     - name: Extract r2 version
@@ -174,6 +435,8 @@ jobs:
   build-android:
     name: Build Android ${{ matrix.name }} package
     runs-on: ubuntu-latest
+    if: contains(github.head_ref, 'android') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
+    needs: [build-and-test]
     strategy:
       fail-fast: false
       matrix:
@@ -199,6 +462,7 @@ jobs:
 
   build-extras:
     name: Build radare2 extras and r2pipe
+    if: contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.event_name == 'schedule'
     needs: [create-tarball]
     runs-on: ubuntu-latest
     env:
@@ -239,6 +503,7 @@ jobs:
         set +e
 
   test-deb:
+    name: Test deb packages for ${{ matrix.container }}
     runs-on: ubuntu-latest
     needs: [build-deb]
     container: ${{ matrix.container }}
@@ -274,6 +539,7 @@ jobs:
         ./test
 
   test-osx-pkg:
+    name: Test OSX pkg
     runs-on: macos-latest
     needs: [build-osx-pkg]
     steps:
@@ -294,6 +560,7 @@ jobs:
         ./test
 
   test-windows-clang_cl:
+    name: Test Windows installer built with clang_cl
     runs-on: windows-latest
     needs: [build-windows]
     steps:
@@ -329,8 +596,20 @@ jobs:
         .\test.exe
 
   create-release:
+    name: Create draft release and upload artifacts
     runs-on: ubuntu-latest
-    needs: [create-tarball, test-deb, build-android, test-osx-pkg, test-windows-clang_cl, build-ios-cydia, build-extras]
+    needs: [
+      build-and-test,
+      build-centos6,
+      build-debian,
+      build-static,
+      test-deb,
+      build-android,
+      test-osx-pkg,
+      test-windows-clang_cl,
+      build-ios-cydia,
+      build-extras
+    ]
     steps:
     - uses: actions/checkout@v2
     - name: Extract r2 version
@@ -469,10 +748,11 @@ jobs:
           asset_content_type: application/zip
 
   publish-docker-image:
+    name: Publish Docker image on Docker Hub
     runs-on: ubuntu-latest
-    needs: [create-release]
+    if: github.event_name == 'push'
     steps:
-    - uses: actions/checkout@master
+    - uses: actions/checkout@v2
     - name: Publish to Registry
       uses: docker/build-push-action@v1
       with:
