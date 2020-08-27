@@ -1,10 +1,11 @@
 CROSS=ios-sdk-
+HOST_CC=gcc
 CC=${CROSS}gcc
 USERCC=${CROSS}gcc
-RANLIB=xcrun --sdk iphonesimulator ranlib
+RANLIB=xcrun --sdk iphoneos ranlib
 ONELIB=0
 OSTYPE=darwin
-AR=xcrun --sdk iphonesimulator ar
+AR=xcrun --sdk iphoneos ar
 CC_AR=${AR} -r ${LIBAR}
 PARTIALLD=${CROSS}ld -r -all_load
 PICFLAGS=

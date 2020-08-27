@@ -1,11 +1,17 @@
 #!/bin/sh
 
+
+set -x
 STOW=0
 fromscratch=1 # 1
-onlydebug=0
 onlymakedeb=0
 static=1
 
+
+gcc -v 2> /dev/null
+if [ $? = 0 ]; then
+	export HOST_CC=gcc
+fi
 if [ -z "${CPU}" ]; then
 	export CPU=arm64
 	#export CPU=armv7
@@ -40,9 +46,7 @@ makeDeb() {
 	rm -rf sys/cydia/radare2/root
 	mkdir -p sys/cydia/radare2/root
 	sudo tar xpzvf /tmp/r2ios-${CPU}.tar.gz -C sys/cydia/radare2/root
-	rm -f sys/cydia/radare2/root/${PREFIX}/lib/*.dSYM
-	rm -f sys/cydia/radare2/root/${PREFIX}/lib/*.a
-	rm -f sys/cydia/radare2/root/${PREFIX}/lib/*.dylib
+	rm -f sys/cydia/radare2/root/${PREFIX}/lib/*.{a,dylib,dSYM}
 	if [ "$static" = 1 ]; then
 	(
 		rm -f sys/cydia/radare2/root/${PREFIX}/bin/*
@@ -87,28 +91,24 @@ fi
 if [ $onlymakedeb = 1 ]; then
 	makeDeb
 else
+	RV=0
 	if [ $fromscratch = 1 ]; then
-		if [ $onlydebug = 1 ]; then
-			(cd libr/debug ; make clean)
-			RV=0
+		make clean
+		cp -f plugins.ios.cfg plugins.cfg
+		if [ "$static" = 1 ]; then
+			./configure --prefix="${PREFIX}" --with-ostype=darwin --without-libuv \
+			--with-compiler=ios-sdk --target=arm-unknown-darwin --with-libr
 		else
-			make clean
-			cp plugins.ios.cfg plugins.cfg
-			if [ "$static" = 1 ]; then
-				./configure --prefix="${PREFIX}" --with-ostype=darwin --without-libuv \
-				--with-compiler=ios-sdk --target=arm-unknown-darwin --with-libr
-			else
-				./configure --prefix="${PREFIX}" --with-ostype=darwin --without-libuv \
-				--with-compiler=ios-sdk --target=arm-unknown-darwin
-			fi
-			RV=$?
+			./configure --prefix="${PREFIX}" --with-ostype=darwin --without-libuv \
+			--with-compiler=ios-sdk --target=arm-unknown-darwin
 		fi
-	else
-		RV=0
+		RV=$?
 	fi
 	if [ $RV = 0 ]; then
-		time make -j4
+		time make -j4 || exit 1
 		if [ "$static" = 1 ]; then
+			ls -l libr/util/libr_util.a || exit 1
+			ls -l libr/flag/libr_flag.a || exit 1
 			rm -f libr/*/*.dylib
 			(
 			cd binr ; make clean ; 
