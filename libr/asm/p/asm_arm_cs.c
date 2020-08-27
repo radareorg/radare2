@@ -46,23 +46,25 @@ static void disass_itblock(RAsm *a, csh handle, RAsmOp *op, cs_insn *insn) {
 	size_t itcounter = 0;
 	cs_insn *itinsn = NULL;
 	ut8 tmp[10];
-	addr = ((a->pc) < 10) ? 0 : a->pc - 8;
-	a->binb.bin->iob.read_at (a->binb.bin->iob.io, addr, tmp, 10);
-	int s = cs_disasm (cd, tmp, 10, addr, 5, &itinsn);
-	size_t i;
-	for (i = 0; i < s; i++) {
-		if (itinsn[i].id == ARM_INS_IT) {
-			itcounter = r_str_nlen (itinsn[i].mnemonic, 5);
-		}
-		if (itcounter > 0) {
-			if (itinsn[i].address == a->pc) {
-				r_str_ncpy (insn->mnemonic, itinsn[i].mnemonic, sizeof (insn->mnemonic));
-				break;
+	if (a->binb.bin && a->binb.bin->iob.io) {
+		addr = ((a->pc) < 10) ? 0 : a->pc - 8;
+		a->binb.bin->iob.read_at (a->binb.bin->iob.io, addr, tmp, 10);
+		int s = cs_disasm (cd, tmp, 10, addr, 5, &itinsn);
+		size_t i;
+		for (i = 0; i < s; i++) {
+			if (itinsn[i].id == ARM_INS_IT) {
+				itcounter = r_str_nlen (itinsn[i].mnemonic, 5);
 			}
-			itcounter--;
+			if (itcounter > 0) {
+				if (itinsn[i].address == a->pc) {
+					r_str_ncpy (insn->mnemonic, itinsn[i].mnemonic, sizeof (insn->mnemonic));
+					break;
+				}
+				itcounter--;
+			}
 		}
+		cs_free (itinsn, s);
 	}
-	cs_free (itinsn, s);
 }
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {

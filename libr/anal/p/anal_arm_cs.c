@@ -2590,30 +2590,32 @@ static void anal_itblock(RAnal *a, csh handle, RAnalOp *op, cs_insn *insn) {
 	size_t itcounter = 0;
 	cs_insn *itinsn = NULL;
 	ut8 tmp[10];
-	addr = ((insn->address) < 10) ? 0 : insn->address - 8;
-	a->iob.read_at (a->iob.io, addr, tmp, 10);
-	int s = cs_disasm (handle, tmp, 10, addr, 5, &itinsn);
-	size_t i;
-	for (i = 0; i < s; i++) {
-		if (itinsn[i].id == ARM_INS_IT) {
-			itcounter = r_str_nlen (itinsn[i].mnemonic, 5);
-		}
-		if (itcounter > 0) {
-			if (itinsn[i].address == insn->address) {
-				op->mnemonic = r_str_newf ("%s%s%s",
-					itinsn[i].mnemonic,
-					itinsn[i].op_str[0]?" ":"",
-					itinsn[i].op_str);
-				op->cond = itinsn[i].detail->arm.cc;
-				insn->detail->arm.cc = itinsn[i].detail->arm.cc;
-				insn->detail->arm.update_flags = itinsn[i].detail->arm.update_flags;
-				memcpy (insn->mnemonic, itinsn[i].mnemonic, sizeof (insn->mnemonic));
-				break;
+	if (a->iob.io) {
+		addr = ((insn->address) < 10) ? 0 : insn->address - 8;
+		a->iob.read_at (a->iob.io, addr, tmp, 10);
+		int s = cs_disasm (handle, tmp, 10, addr, 5, &itinsn);
+		size_t i;
+		for (i = 0; i < s; i++) {
+			if (itinsn[i].id == ARM_INS_IT) {
+				itcounter = r_str_nlen (itinsn[i].mnemonic, 5);
 			}
-			itcounter--;
+			if (itcounter > 0) {
+				if (itinsn[i].address == insn->address) {
+					op->mnemonic = r_str_newf ("%s%s%s",
+						itinsn[i].mnemonic,
+						itinsn[i].op_str[0]?" ":"",
+						itinsn[i].op_str);
+					op->cond = itinsn[i].detail->arm.cc;
+					insn->detail->arm.cc = itinsn[i].detail->arm.cc;
+					insn->detail->arm.update_flags = itinsn[i].detail->arm.update_flags;
+					memcpy (insn->mnemonic, itinsn[i].mnemonic, sizeof (insn->mnemonic));
+					break;
+				}
+				itcounter--;
+			}
 		}
+		cs_free (itinsn, s);
 	}
-	cs_free (itinsn, s);
 }
 
 static void anop32(RAnal *a, csh handle, RAnalOp *op, cs_insn *insn, bool thumb, const ut8 *buf, int len) {
