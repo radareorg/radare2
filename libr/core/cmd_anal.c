@@ -123,6 +123,7 @@ static const char *help_msg_ac[] = {
 	"acm", " [class name] [method name] [offset] ([vtable offset])", "add/edit method",
 	"acm-", " [class name] [method name]", "delete method",
 	"acmn", " [class name] [method name] [new name]", "rename method",
+	"acg", "", "print inheritance ascii graph",
 	"ac?", "", "show this help",
 	NULL
 };
