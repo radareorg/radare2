@@ -109,13 +109,7 @@ static char *getFunctionName(RCore *core, ut64 addr) {
 			break;
 		}
 	}
-	if (name) {
-		if (r_config_get_i (core->config, "asm.flags.real")) {
-			name += 4;
-		}
-		return strdup (name);
-	}
-	return NULL;
+	return name ? strdup (name) : NULL;
 }
 
 static RCore *mycore = NULL;
