@@ -10,6 +10,7 @@ on:
   pull_request:
     branches:
     - master
+    - 'release-*'
 
 jobs:
   # TODO: add build check for capstone 3
