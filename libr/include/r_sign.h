@@ -138,6 +138,7 @@ R_API RSignItem *r_sign_item_new(void);
 R_API RSignItem *r_sign_item_dup(RSignItem *it);
 R_API void r_sign_item_free(RSignItem *item);
 R_API void r_sign_graph_free(RSignGraph *graph);
+R_API void r_sign_bytes_free(RSignBytes *bytes);
 
 R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn);
 R_API RList *r_sign_fcn_xrefs(RAnal *a, RAnalFunction *fcn);
@@ -149,7 +150,7 @@ R_API void r_sign_flirt_dump(const RAnal *anal, const char *flirt_file);
 R_API void r_sign_flirt_scan(RAnal *anal, const char *flirt_file);
 
 R_API RList *r_sign_find_closest_sig(RAnal *a, RSignItem *it, int count, double score_threshold);
-R_API RList *r_sign_find_closest_fcn(RAnal *a, char *signame, int count, double score_threshold);
+R_API RList *r_sign_find_closest_fcn(RAnal *a, RSignItem *it, int count, double score_threshold);
 R_API void r_sign_close_match_free(RSignCloseMatch *match);
 R_API bool r_sign_diff(RAnal *a, RSignOptions *options, const char *other_space_name);
 R_API bool r_sign_diff_by_name(RAnal *a, RSignOptions *options, const char *other_space_name, bool not_matching);
