@@ -802,7 +802,7 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
 		if (!mangling) {
 			next = cnk->fd;
 		} else {
-			next = PROTECT_PTR(next, cnk->fd);
+			next = PROTECT_PTR (next, cnk->fd);
 		}
 		PRINTF_BA ("%s", next ? "->fd = " : "");
 		if (cnk->prev_size > size || ((cnk->size >> 3) << 3) > size) {
@@ -950,7 +950,7 @@ static void GH (tcache_print) (RCore *core, GH (RTcache)* tcache, bool mangling)
 					if (!mangling) {
 						tcache_tmp = read_le (&tcache_tmp);
 					} else {
-						tcache_tmp = PROTECT_PTR(tcache_fd, read_le (&tcache_tmp));
+						tcache_tmp = PROTECT_PTR (tcache_fd, read_le (&tcache_tmp));
 					}
 					PRINTF_BA ("->0x%"PFMT64x, tcache_tmp - TC_HDR_SZ);
 					tcache_fd = tcache_tmp;
