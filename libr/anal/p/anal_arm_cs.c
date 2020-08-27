@@ -2584,30 +2584,36 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	}
 }
 
-static void anal_ITblock(csh handle, RAnalOp *op, cs_insn *insn, const ut64 addr, const ut8 *buf, int len) {	
+static void anal_itblock(RAnal *a, csh handle, RAnalOp *op, cs_insn *insn) {
 	//patch analysis if insn in IT block
-	cs_insn *ITinsn = NULL;
-	int ITcounter = 0;
-	int s = cs_disasm (handle, buf-8, len+8, addr-8, 5, &ITinsn);
-	for (int i = 0; i < s; i++) {
-		if(ITinsn[i].id == ARM_INS_IT) {
-			ITcounter = r_str_nlen (ITinsn[i].mnemonic, 5);
+	unsigned long long addr;
+	size_t itcounter = 0;
+	cs_insn *itinsn = NULL;
+	ut8 tmp[10];
+	addr = ((insn->address) < 10) ? 0 : insn->address - 8;
+	a->iob.read_at (a->iob.io, addr, tmp, 10);
+	int s = cs_disasm (handle, tmp, 10, addr, 5, &itinsn);
+	size_t i;
+	for (i = 0; i < s; i++) {
+		if (itinsn[i].id == ARM_INS_IT) {
+			itcounter = r_str_nlen (itinsn[i].mnemonic, 5);
 		}
-		if(ITcounter > 0) {
-			if(insn->address == ITinsn[i].address) {
+		if (itcounter > 0) {
+			if (itinsn[i].address == insn->address) {
 				op->mnemonic = r_str_newf ("%s%s%s",
-					ITinsn[i].mnemonic,
-					ITinsn[i].op_str[0]?" ":"",
-					ITinsn[i].op_str);
-				op->cond = ITinsn[i].detail->arm.cc;
-				insn->detail->arm.cc = ITinsn[i].detail->arm.cc;
-				insn->detail->arm.update_flags = ITinsn[i].detail->arm.update_flags;
-				memcpy (insn->mnemonic, ITinsn[i].mnemonic, sizeof(insn->mnemonic));
+					itinsn[i].mnemonic,
+					itinsn[i].op_str[0]?" ":"",
+					itinsn[i].op_str);
+				op->cond = itinsn[i].detail->arm.cc;
+				insn->detail->arm.cc = itinsn[i].detail->arm.cc;
+				insn->detail->arm.update_flags = itinsn[i].detail->arm.update_flags;
+				memcpy (insn->mnemonic, itinsn[i].mnemonic, sizeof (insn->mnemonic));
+				break;
 			}
-			ITcounter--;
+			itcounter--;
 		}
 	}
-	cs_free (ITinsn, s);
+	cs_free (itinsn, s);
 }
 
 static void anop32(RAnal *a, csh handle, RAnalOp *op, cs_insn *insn, bool thumb, const ut8 *buf, int len) {
@@ -3298,9 +3304,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			}
 		} else {
 			if (a->bits == 16) {
-				anal_ITblock(handle, op, insn, addr, buf, len);
+				anal_itblock (a, handle, op, insn);
 			}
-
 			anop32 (a, handle, op, insn, thumb, (ut8*)buf, len);
 			if (mask & R_ANAL_OP_MASK_OPEX) {
 				opex (&op->opex, handle, insn);

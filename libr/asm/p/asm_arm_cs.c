@@ -40,6 +40,31 @@ static bool check_features(RAsm *a, cs_insn *insn) {
 	return true;
 }
 
+static void disass_itblock(RAsm *a, csh handle, RAsmOp *op, cs_insn *insn) {
+	//patch analysis if insn in IT block
+	unsigned long long addr;
+	size_t itcounter = 0;
+	cs_insn *itinsn = NULL;
+	ut8 tmp[10];
+	addr = ((a->pc) < 10) ? 0 : a->pc - 8;
+	a->binb.bin->iob.read_at (a->binb.bin->iob.io, addr, tmp, 10);
+	int s = cs_disasm (cd, tmp, 10, addr, 5, &itinsn);
+	size_t i;
+	for (i = 0; i < s; i++) {
+		if (itinsn[i].id == ARM_INS_IT) {
+			itcounter = r_str_nlen (itinsn[i].mnemonic, 5);
+		}
+		if (itcounter > 0) {
+			if (itinsn[i].address == a->pc) {
+				r_str_ncpy (insn->mnemonic, itinsn[i].mnemonic, sizeof (insn->mnemonic));
+				break;
+			}
+			itcounter--;
+		}
+	}
+	cs_free (itinsn, s);
+}
+
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int omode = -1;
 	static int obits = 32;
@@ -100,21 +125,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	n = cs_disasm (cd, buf, R_MIN (4, len), a->pc, 1, &insn);
 
 	if (a->bits == 16) {
-		//patch disassembly if insn in IT block
-		cs_insn *ITinsn = NULL;
-		int ITcounter = 0;
-		int s = cs_disasm (cd, buf-8, len+8, a->pc-8, 5, &ITinsn);
-		for (int i = 0; i < s; i++) {
-			if(ITinsn[i].id == ARM_INS_IT) {
-				ITcounter = r_str_nlen (ITinsn[i].mnemonic, 5);
-			}
-			if(ITcounter > 0) {
-				if(insn->address == ITinsn[i].address) {
-					memcpy(insn->mnemonic, ITinsn[i].mnemonic, sizeof(insn->mnemonic));
-				}
-			}
-		}
-		cs_free(ITinsn,s);
+		disass_itblock (a, cd, op, insn);
 	}
 
 	if (n < 1 || insn->size < 1) {
