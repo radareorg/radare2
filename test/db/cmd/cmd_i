@@ -363,8 +363,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-
-
 NAME=iA (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iA
