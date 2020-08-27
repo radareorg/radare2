@@ -116,7 +116,7 @@ static bool GH(is_tcache)(RCore *core) {
 	}
 	if (fp) {
 		v = r_num_get_float (NULL, fp + 5);
-		core->dbg->glibc_version = (int) (v * 100);
+		core->dbg->glibc_version = (int) round((v * 100));
 	}
 	return (v > 2.25);
 }
@@ -802,7 +802,6 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
 		if (!mangling) {
 			next = cnk->fd;
 		} else {
-			printf("yoo");
 			next = PROTECT_PTR(next, cnk->fd);
 		}
 		PRINTF_BA ("%s", next ? "->fd = " : "");
@@ -1181,6 +1180,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 			int i = (size_tmp / (SZ * 2)) - 2;
 			GHT idx = (GHT)main_arena->GH(fastbinsY)[i];
 			(void)r_io_read_at (core->io, idx, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
+			// TODO: Fix pointer mangling
 			GHT next = cnk->fd;
 			if (prev_chunk == idx && idx && !next) {
 				is_free = true;
@@ -1208,6 +1208,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 					}
 				}
 				(void)r_io_read_at (core->io, next, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
+				// TODO: Fix pointer mangling
 				next = cnk->fd;
 			}
 			if (double_free) {
@@ -1247,7 +1248,11 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 							if (!r) {
 								break;
 							}
-							tcache_tmp = read_le (&tcache_tmp);
+							if (core->dbg->glibc_version < 232) {
+								tcache_tmp = read_le (&tcache_tmp);
+							} else {
+								tcache_tmp = PROTECT_PTR (tcache_fd, read_le (&tcache_tmp));
+							}
 							if (tcache_tmp - SZ * 2 == prev_chunk) {
 								is_free = true;
 								prev_chunk_size = ((i + 1) * TC_HDR_SZ + GH(TC_SZ));
