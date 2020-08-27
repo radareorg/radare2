@@ -4758,13 +4758,13 @@ void free_tsr2cmd_edit(struct tsr2cmd_edit *edit) {
 
 static char *do_handle_substitution_cmd(struct tsr2cmd_state *state, TSNode inn_cmd) {
 	RCore *core = state->core;
+	int value = core->num->value;
 	char *inn_str = ts_node_sub_parent_string (state->substitute_cmd, inn_cmd, state->input);
 
 	// save current color and disable it
 	int ocolor = r_config_get_i (core->config, "scr.color");
 	r_config_set_i (core->config, "scr.color", 0);
 	core->cmd_in_backticks = true;
-	int value = core->num->value;
 
 	// execute the sub command
 	char *o_out = inn_str[0] == '!'?
