@@ -1,7 +1,6 @@
 BINR_PROGRAM=1
 include ../../libr/config.mk
 include ../../shlr/zip/deps.mk
-include ../../shlr/sdb.mk
 
 ifeq (,$(findstring tcc,${CC}))
 CFLAGS+=-pie
