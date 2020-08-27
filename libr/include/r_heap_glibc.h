@@ -47,6 +47,10 @@ R_LIB_VERSION_HEADER(r_heap_glibc);
 #define TC_SZ_32 0x0
 #define TC_SZ_64 0x10
 
+// Introduced with glibc 2.32
+#define PROTECT_PTR(pos, ptr) \
+	((__typeof (ptr)) ((((size_t) pos) >> 12) ^ ((size_t) ptr)))
+
 #define largebin_index_32(size)				       \
 (((((ut32)(size)) >>  6) <= 38)?  56 + (((ut32)(size)) >>  6): \
  ((((ut32)(size)) >>  9) <= 20)?  91 + (((ut32)(size)) >>  9): \

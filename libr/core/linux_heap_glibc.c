@@ -917,7 +917,7 @@ static GHT GH (tcache_get_entry) (GH (RTcache)* tcache, int index) {
 		: tcache->RHeapTcache.heap_tcache_pre_230->entries[index];
 }
 
-static void GH (tcache_print) (RCore *core, GH (RTcache)* tcache) {
+static void GH (tcache_print) (RCore *core, GH (RTcache)* tcache, bool mangling) {
 	r_return_if_fail (core && tcache);
 	GHT tcache_fd = GHT_MAX;
 	GHT tcache_tmp = GHT_MAX;
@@ -942,7 +942,11 @@ static void GH (tcache_print) (RCore *core, GH (RTcache)* tcache) {
 					if (!r) {
 						break;
 					}
-					tcache_tmp = read_le (&tcache_tmp);
+					if (!mangling) {
+						tcache_tmp = read_le (&tcache_tmp);
+					} else {
+						tcache_tmp = PROTECT_PTR(tcache_fd, read_le (&tcache_tmp));
+					}
 					PRINTF_BA ("->0x%"PFMT64x, tcache_tmp - TC_HDR_SZ);
 					tcache_fd = tcache_tmp;
 				}
@@ -952,7 +956,7 @@ static void GH (tcache_print) (RCore *core, GH (RTcache)* tcache) {
 	}
 }
 
-static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *main_arena) {
+static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *main_arena, bool mangling) {
 	r_return_if_fail (core && core->dbg && core->dbg->maps);
 
 	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
@@ -982,7 +986,7 @@ static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *ma
 
 	PRINT_GA("Tcache main arena @");
 	PRINTF_BA (" 0x%"PFMT64x"\n", (ut64)m_arena);
-	GH (tcache_print) (core, r_tcache);
+	GH (tcache_print) (core, r_tcache, mangling);
 
 	if (main_arena->GH (next) != m_arena) {
 		GHT mmap_start = GHT_MAX, tcache_start = GHT_MAX;
@@ -1008,7 +1012,7 @@ static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *ma
 			if (ta->attached_threads) {
 				PRINT_BA ("\n");
 				GH (tcache_read) (core, tcache_start, r_tcache);
-				GH (tcache_print) (core, r_tcache);
+				GH (tcache_print) (core, r_tcache, mangling);
 			} else {
 				PRINT_GA (" free\n");
 			}
@@ -1666,7 +1670,11 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 			if (!GH(update_main_arena) (core, m_arena, main_arena)) {
 				break;
 			}
-			GH(print_tcache_instance) (core, m_arena, main_arena);
+			if (input[1] == 'm') {
+				GH(print_tcache_instance) (core, m_arena, main_arena, true);
+			} else {
+				GH(print_tcache_instance) (core, m_arena, main_arena, false);
+			}
 		}
 		break;
 	case '?':
