@@ -51,7 +51,7 @@ typedef struct dwarf_variable_t {
 } Variable;
 
 static void variable_free(Variable *var) {
-	free (var->name);
+	free ((char *) var->name);
 	free (var->location);
 	free (var->type);
 	free (var);
