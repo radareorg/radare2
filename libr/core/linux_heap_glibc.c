@@ -67,12 +67,8 @@ static inline GHT GH(align_address_to_size)(ut64 addr, ut64 align) {
 	return addr + ((align - (addr % align)) % align);
 }
 
-static inline GHT GH(get_next_pointer)(RCore *core, GHT pos, GH(RHeapChunk) *cnk_next) {
-	if (core->dbg->glibc_version < 232) {
-		return cnk_next->fd;
-	} else {
-		return PROTECT_PTR (pos, cnk_next->fd);
-	}
+static inline GHT GH(get_next_pointer)(RCore *core, GHT pos, GHT next) {
+	return (core->dbg->glibc_version < 232) ? next : PROTECT_PTR (pos, next);
 }
 
 static GHT GH(get_main_arena_with_symbol)(RCore *core, RDebugMap *map) {
@@ -1189,7 +1185,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 			int i = (size_tmp / (SZ * 2)) - 2;
 			GHT idx = (GHT)main_arena->GH(fastbinsY)[i];
 			(void)r_io_read_at (core->io, idx, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
-			GHT next = GH (get_next_pointer) (core, idx, cnk);
+			GHT next = GH (get_next_pointer) (core, idx, cnk->fd);
 			if (prev_chunk == idx && idx && !next) {
 				is_free = true;
 			}
@@ -1201,7 +1197,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 						break;
 					}
 					(void)r_io_read_at (core->io, next, (ut8 *)cnk_next, sizeof (GH(RHeapChunk)));
-					GHT next_node = GH (get_next_pointer) (core, next, cnk_next);
+					GHT next_node = GH (get_next_pointer) (core, next, cnk_next->fd);
 					// avoid triple while?
 					while (next_node && next_node >= brk_start && next_node < main_arena->GH(top)) {
 						if (prev_chunk == next_node) {
@@ -1209,14 +1205,14 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 							break;
 						}
 						(void)r_io_read_at (core->io, next_node, (ut8 *)cnk_next, sizeof (GH(RHeapChunk)));
-						next_node = GH (get_next_pointer) (core, next_node, cnk_next);
+						next_node = GH (get_next_pointer) (core, next_node, cnk_next->fd);
 					}
 					if (double_free) {
 						break;
 					}
 				}
 				(void)r_io_read_at (core->io, next, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
-				next = GH (get_next_pointer) (core, next, cnk);
+				next = GH (get_next_pointer) (core, next, cnk->fd);
 			}
 			if (double_free) {
 				PRINT_RA (" Double free in simple-linked list detected ");
@@ -1255,11 +1251,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 							if (!r) {
 								break;
 							}
-							if (core->dbg->glibc_version < 232) {
-								tcache_tmp = read_le (&tcache_tmp);
-							} else {
-								tcache_tmp = PROTECT_PTR (tcache_fd, read_le (&tcache_tmp));
-							}
+							tcache_tmp = GH (get_next_pointer) (core, tcache_fd, read_le (&tcache_tmp));
 							if (tcache_tmp - SZ * 2 == prev_chunk) {
 								is_free = true;
 								prev_chunk_size = ((i + 1) * TC_HDR_SZ + GH(TC_SZ));
