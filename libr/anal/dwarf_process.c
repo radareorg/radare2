@@ -50,7 +50,12 @@ typedef struct dwarf_variable_t {
 	char *type;
 } Variable;
 
-
+static void variable_free(Variable *var) {
+	free (var->name);
+	free (var->location);
+	free (var->type);
+	free (var);
+}
 
 static inline bool is_parsable_tag(ut64 tag_code) {
 	return (tag_code == DW_TAG_structure_type ||
@@ -1189,8 +1194,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 					var->type = strdup (r_strbuf_get (&type));
 					r_list_append (variables, var);
 				} else {
-					free (var->location);
-					free (var);
+					variable_free (var);
 				}
 				argNumber++;
 			} else if (child_depth == 1 && child_die->tag == DW_TAG_unspecified_parameters) {
@@ -1232,8 +1236,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 					var->type = strdup (r_strbuf_get (&var_type));
 					r_list_append (variables, var);
 				} else {
-					free (var->location);
-					free (var);
+					variable_free (var);
 				}
 				r_strbuf_fini  (&var_type);
 			}
@@ -1438,10 +1441,7 @@ static void parse_function(Context *ctx, ut64 idx) {
 	RListIter *iter;
 	Variable *var;
 	r_list_foreach (variables, iter, var) {
-		free ((char *)var->name);
-		free (var->type);
-		free (var->location);
-		free (var);
+		variable_free (var);
 	}
 	r_list_free (variables);
 	r_strbuf_fini (&args);

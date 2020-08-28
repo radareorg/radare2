@@ -2406,8 +2406,7 @@ static inline RBinDwarfLocRange *create_loc_range(ut64 start, ut64 end, RBinDwar
 	return range;
 }
 
-static void free_loc_table_entry(HtUPKv *kv) {
-	RBinDwarfLocList *loc_list = kv->value;
+static void free_loc_table_list(RBinDwarfLocList *loc_list) {
 	RListIter *iter;
 	RBinDwarfLocRange *range;
 	r_list_foreach (loc_list->list, iter, range) {
@@ -2461,9 +2460,8 @@ static HtUP *parse_loc_raw(HtUP/*<offset, List *<LocListEntry>*/ *loc_table, con
 		}
 	}
 	/* if for some reason end of list is missing, then loc_list would leak */
-	if (loc_list) { /* looks ugly, recycling existing function so I don't dupe code */
-		HtUPKv kv = {.value = loc_list};
-		free_loc_table_entry (&kv);
+	if (loc_list) {
+		free_loc_table_list (loc_list);
 	}
 	return loc_table;
 }
@@ -2541,6 +2539,12 @@ R_API void r_bin_dwarf_print_loc(HtUP /*<offset, RBinDwarfLocList*/ *loc_table, 
 	}
 	print ("\n");
 	r_list_free (sort_list);
+}
+
+static void free_loc_table_entry(HtUPKv *kv) {
+	if (kv) {
+		free_loc_table_list (kv->value);
+	}
 }
 
 R_API void r_bin_dwarf_free_loc(HtUP /*<offset, RBinDwarfLocList*>*/ *loc_table) {
