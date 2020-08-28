@@ -2968,6 +2968,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("dbg.glibc.ma_offset", 0x1bb000, "Main_arena offset from his symbol");
 	SETI ("dbg.glibc.fc_offset", 0x148, "First chunk offset from brk_start");
 #endif
+	SETBPREF ("dbg.glibc.demangle", "false", "Demangle linked-lists pointers");
 	SETPREF ("dbg.libc.dbglib", "", "Set libc debug library file");
 
 	SETBPREF ("esil.prestep", "true", "Step before esil evaluation in `de` commands");

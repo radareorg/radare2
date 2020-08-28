@@ -1603,8 +1603,9 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		break;
 	case 'f': // "dmhf"
 		if (GH(r_resolve_main_arena) (core, &m_arena)) {
-			bool mangling = (input[1] == 'm');
-			char *m_state_str, *dup = strdup (input + (mangling ? 2 : 1));
+			bool demangle = (input[1] == 'm') ? true : false;
+			char *m_state_str, *dup = strdup (input + (demangle ? 2 : 1));
+			demangle = (!demangle) ? r_config_get_i (core->config, "dbg.glibc.demangle") : demangle;
 			if (*dup) {
 				strtok (dup, ":");
 				m_state_str = strtok (NULL, ":");
@@ -1624,7 +1625,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 					free (dup);
 					break;
 				}
-				GH(print_heap_fastbin) (core, m_state, main_arena, global_max_fast, dup, mangling);
+				GH(print_heap_fastbin) (core, m_state, main_arena, global_max_fast, dup, demangle);
 			} else {
 				PRINT_RA ("This address is not part of the arenas\n");
 				free (dup);
@@ -1675,11 +1676,9 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 			if (!GH(update_main_arena) (core, m_arena, main_arena)) {
 				break;
 			}
-			if (input[1] == 'm') {
-				GH(print_tcache_instance) (core, m_arena, main_arena, true);
-			} else {
-				GH(print_tcache_instance) (core, m_arena, main_arena, false);
-			}
+			bool demangle = r_config_get_i (core->config, "dbg.glibc.demangle");
+			demangle = (input[1] == 'm') ? true : demangle;
+			GH(print_tcache_instance) (core, m_arena, main_arena, demangle);
 		}
 		break;
 	case '?':
