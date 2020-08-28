@@ -1651,15 +1651,15 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwar
 				r_flag_unset_off (flags, offset);
 				r_flag_set_next (flags, global_name, offset, 4);
 				free (global_name);
-			} else if (*kind == 's') {
+			} else if (*kind == 's' && fcn) {
 				r_anal_function_set_var (fcn, offset - fcn->maxstack, *kind, type, 4, false, var_name);
-			} else if (*kind == 'r') {
+			} else if (*kind == 'r' && fcn) {
 				RRegItem *i = r_reg_get (anal->reg, extra, -1);
 				if (!i) {
 					goto loop_end;
 				}
 				r_anal_function_set_var (fcn, i->index, *kind, type, 4, false, var_name);
-			} else { /* kind == 'b' */
+			} else if (fcn) { /* kind == 'b' */
 				r_anal_function_set_var (fcn, offset - fcn->bp_off, *kind, type, 4, false, var_name);
 			}
 			free (var_key);
