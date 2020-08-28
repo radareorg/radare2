@@ -3500,6 +3500,20 @@ static void getPtr(RDisasmState *ds, ut64 addr, int pos) {
 		ds_print_shortcut (ds, n32, pos);
 	}
 }
+static ut64 get_ptr_ble(RDisasmState *ds, ut64 addr, int pos) {
+	ut8 buf[sizeof (ut64)] = {0};
+	int endian = ds->core->rasm->big_endian;
+	ut64 n64_32;
+	r_io_read_at (ds->core->io, addr, buf, sizeof (buf));
+	if (ds->core->rasm->bits == 64) {
+		n64_32 = r_read_ble64 (buf, endian);
+		ds_print_shortcut (ds, n64_32, pos);
+	} else {
+		n64_32 = r_read_ble32 (buf, endian);
+		ds_print_shortcut (ds, n64_32, pos);
+	}
+	return n64_32;
+}
 
 static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 	RCore *core = ds->core;
@@ -3582,7 +3596,12 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 			gotShortcut = true;
 		}
 		break;
+	case R_ANAL_OP_TYPE_RJMP:
 	case R_ANAL_OP_TYPE_RCALL:
+		if (ds->analop.jump != UT64_MAX && ds->analop.jump != UT32_MAX) {
+				ds->analop.jump = get_ptr_ble (ds, ds->analop.jump, pos);
+				gotShortcut = true;
+		}
 		break;
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_CJMP:
@@ -4691,6 +4710,9 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 			const char *fcn_name = NULL;
 			char *key = NULL;
 			ut64 pcv = ds->analop.jump;
+			if (ds->analop.type == R_ANAL_OP_TYPE_RCALL) {
+				pcv = UT64_MAX;
+			}
 			if (pcv == UT64_MAX) {
 				pcv = ds->analop.ptr; // call [reloc-addr] // windows style
 				if (pcv == UT64_MAX || !pcv) {
