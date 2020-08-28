@@ -72,16 +72,16 @@ R_API char *r_time_stamp_to_str(ut32 timeStamp) {
 }
 
 R_API ut32 r_time_dos_time_stamp_to_posix(ut32 timeStamp) {
-	ut16 date = timeStamp >> 16; 
+	ut16 date = timeStamp >> 16;
 	ut16 time = timeStamp & 0xFFFF;
-	
+
 	/* Date */
 	ut32 year = ((date & 0xfe00) >> 9) + 1980;
 	ut32 month = (date & 0x01e0) >> 5;
 	ut32 day = date & 0x001f;
-	
+
 	/* Time */
-	ut32 hour = (time & 0xf800) >> 11; 
+	ut32 hour = (time & 0xf800) >> 11;
 	ut32 minutes = (time & 0x07e0) >> 5;
 	ut32 seconds = (time & 0x001f) << 1;
 
