@@ -793,7 +793,8 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
 		PRINTF_BA ("0x%"PFMT64x, (ut64)next);
 		while (double_free == GHT_MAX && next_tmp && next_tmp >= brk_start && next_tmp <= main_arena->GH(top)) {
 			r_io_read_at (core->io, next_tmp, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
-			next_tmp = cnk->fd;
+			next_tmp = (!mangling) ? cnk->fd : PROTECT_PTR (next_tmp, cnk->fd);
+			// next_tmp = cnk->fd;
 			if (cnk->prev_size > size || ((cnk->size >> 3) << 3) > size) {
 				break;
 			}
@@ -803,11 +804,7 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
 			}
 		}
 		r_io_read_at (core->io, next, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
-		if (!mangling) {
-			next = cnk->fd;
-		} else {
-			next = PROTECT_PTR (next, cnk->fd);
-		}
+		next = (!mangling) ? cnk->fd : PROTECT_PTR (next, cnk->fd);
 		PRINTF_BA ("%s", next ? "->fd = " : "");
 		if (cnk->prev_size > size || ((cnk->size >> 3) << 3) > size) {
 			PRINTF_RA (" 0x%"PFMT64x, (ut64)next);
@@ -850,7 +847,6 @@ void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, G
 		offset = 16;
 	}
 
-	printf("mm: %s", input);
 	switch (input[0]) {
 	case '\0': // dmhf
 		if (core->offset != core->prompt_offset) {
@@ -951,11 +947,9 @@ static void GH (tcache_print) (RCore *core, GH (RTcache)* tcache, bool mangling)
 					if (!r) {
 						break;
 					}
-					if (!mangling) {
-						tcache_tmp = read_le (&tcache_tmp);
-					} else {
-						tcache_tmp = PROTECT_PTR (tcache_fd, read_le (&tcache_tmp));
-					}
+					tcache_tmp = (!mangling)
+						? read_le (&tcache_tmp)
+						: PROTECT_PTR (tcache_fd, read_le (&tcache_tmp));
 					PRINTF_BA ("->0x%"PFMT64x, tcache_tmp - TC_HDR_SZ);
 					tcache_fd = tcache_tmp;
 				}
@@ -1609,14 +1603,8 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		break;
 	case 'f': // "dmhf"
 		if (GH(r_resolve_main_arena) (core, &m_arena)) {
-			bool mangling = false;
-			char *m_state_str, *dup;
-			if (input[1] == 'm') { // "dmhfm"
-				mangling = true;
-				dup = strdup (input + 2);
-			} else {
-				dup = strdup (input + 1);
-			}
+			bool mangling = (input[1] == 'm');
+			char *m_state_str, *dup = strdup (input + (mangling ? 2 : 1));
 			if (*dup) {
 				strtok (dup, ":");
 				m_state_str = strtok (NULL, ":");
