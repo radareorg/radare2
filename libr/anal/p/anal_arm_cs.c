@@ -3667,7 +3667,6 @@ static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	ret = malloc (size);
 	memset (ret, 0xff, size);
 
-	r_cons_printf("\nNEWSTART\n");
 	while (idx < size) {
 		hint = r_anal_hint_get (anal, at + idx);
 		if (hint) {
