@@ -2,12 +2,14 @@
 
 #include <r_asm.h>
 #include <r_lib.h>
+#include <ht_uu.h>
 #include <capstone/capstone.h>
 #include "../arch/arm/asm-arm.h"
 #include "./asm_arm_hacks.inc"
 
 bool arm64ass(const char *str, ut64 addr, ut32 *op);
 static csh cd = 0;
+static HtUU *ht_it;
 
 #include "cs_mnemonics.c"
 
@@ -40,30 +42,61 @@ static bool check_features(RAsm *a, cs_insn *insn) {
 	return true;
 }
 
-static void disass_itblock(RAsm *a, csh handle, RAsmOp *op, cs_insn *insn) {
-	//patch analysis if insn in IT block
-	unsigned long long addr;
-	size_t itcounter = 0;
-	cs_insn *itinsn = NULL;
-	ut8 tmp[10];
-	if (a->binb.bin && a->binb.bin->iob.io) {
-		addr = ((a->pc) < 10) ? 0 : a->pc - 8;
-		a->binb.bin->iob.read_at (a->binb.bin->iob.io, addr, tmp, 10);
-		int s = cs_disasm (cd, tmp, 10, addr, 5, &itinsn);
-		size_t i;
-		for (i = 0; i < s; i++) {
-			if (itinsn[i].id == ARM_INS_IT) {
-				itcounter = r_str_nlen (itinsn[i].mnemonic, 5);
+static const char *cc_name(arm_cc cc) {
+	switch (cc) {
+	case ARM_CC_EQ: // Equal                      Equal
+		return "eq";
+	case ARM_CC_NE: // Not equal                  Not equal, or unordered
+		return "ne";
+	case ARM_CC_HS: // Carry set                  >, ==, or unordered
+		return "hs";
+	case ARM_CC_LO: // Carry clear                Less than
+		return "lo";
+	case ARM_CC_MI: // Minus, negative            Less than
+		return "mi";
+	case ARM_CC_PL: // Plus, positive or zero     >, ==, or unordered
+		return "pl";
+	case ARM_CC_VS: // Overflow                   Unordered
+		return "vs";
+	case ARM_CC_VC: // No overflow                Not unordered
+		return "vc";
+	case ARM_CC_HI: // Unsigned higher            Greater than, or unordered
+		return "hi";
+	case ARM_CC_LS: // Unsigned lower or same     Less than or equal
+		return "ls";
+	case ARM_CC_GE: // Greater than or equal      Greater than or equal
+		return "ge";
+	case ARM_CC_LT: // Less than                  Less than, or unordered
+		return "lt";
+	case ARM_CC_GT: // Greater than               Greater than
+		return "gt";
+	case ARM_CC_LE: // Less than or equal         <, ==, or unordered
+		return "le";
+	default:
+		return "";
+	}
+}
+
+static void disass_itblock(RAsm *a, cs_insn *insn) {
+	if (!ht_it) {
+		ht_it = ht_uu_new0 ();
+	}
+	size_t i;
+	for (i = 1; i < 5; i++) {
+		switch (insn->mnemonic[i]) {
+		case 0x74: //'t'
+			if (!ht_uu_insert (ht_it, a->pc + (i * insn->size), insn->detail->arm.cc)) {
+				ht_uu_update (ht_it, a->pc + (i * insn->size), insn->detail->arm.cc);
 			}
-			if (itcounter > 0) {
-				if (itinsn[i].address == a->pc) {
-					r_str_ncpy (insn->mnemonic, itinsn[i].mnemonic, sizeof (insn->mnemonic));
-					break;
-				}
-				itcounter--;
+			break;
+		case 0x65: //'e'
+			if (!ht_uu_insert (ht_it, a->pc + (i * insn->size), (insn->detail->arm.cc % 2)?insn->detail->arm.cc + 1:insn->detail->arm.cc - 1)) {
+				ht_uu_update (ht_it, a->pc + (i * insn->size), (insn->detail->arm.cc % 2)?insn->detail->arm.cc + 1:insn->detail->arm.cc - 1);
 			}
+			break;
+		default:
+			break;
 		}
-		cs_free (itinsn, s);
 	}
 }
 
@@ -74,6 +107,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	cs_insn* insn = NULL;
 	cs_mode mode = 0;
 	int ret, n = 0;
+	bool found = 0;
 	mode |= (a->bits == 16)? CS_MODE_THUMB: CS_MODE_ARM;
 	mode |= (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	if (mode != omode || a->bits != obits) {
@@ -116,6 +150,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			: CS_OPT_SYNTAX_DEFAULT);
 	cs_option (cd, CS_OPT_DETAIL, (a->features && *a->features)
 		? CS_OPT_ON: CS_OPT_OFF);
+	cs_option (cd, CS_OPT_DETAIL, CS_OPT_ON);
 	if (!buf) {
 		goto beach;
 	}
@@ -125,11 +160,6 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 
 	n = cs_disasm (cd, buf, R_MIN (4, len), a->pc, 1, &insn);
-
-	if (a->bits == 16) {
-		disass_itblock (a, cd, op, insn);
-	}
-
 	if (n < 1 || insn->size < 1) {
 		ret = -1;
 		goto beach;
@@ -145,7 +175,21 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	if (op && !op->size) {
 		op->size = insn->size;
-		char *buf_asm = sdb_fmt ("%s%s%s",
+		if (insn->id == ARM_INS_IT) {
+			disass_itblock (a, insn);
+		}
+		char *buf_asm;
+		ut64 itcond;
+		itcond = ht_uu_find (ht_it,  a->pc, &found);
+		if (found){
+			insn->detail->arm.cc = itcond;
+			insn->detail->arm.update_flags = 0;
+			r_str_cpy(insn->mnemonic, 
+				r_str_newf ("%s%s",
+					cs_insn_name (cd, insn->id),
+					cc_name (itcond)));
+		}
+		buf_asm = sdb_fmt ("%s%s%s",
 			insn->mnemonic,
 			insn->op_str[0]?" ":"",
 			insn->op_str);
