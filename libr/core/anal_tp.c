@@ -504,6 +504,19 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 		anal_emul_restore (core, hc, dt, et);
 		return;
 	}
+
+	// Reserve bigger ht to avoid rehashing
+	Sdb *etracedb = core->anal->esil->trace->db;
+	HtPPOptions opt = etracedb->ht->opt;
+	ht_pp_free (etracedb->ht);
+	etracedb->ht = ht_pp_new_size (fcn->ninstr * 0xf, opt.dupvalue, opt.freefn, opt.calcsizeV);
+	etracedb->ht->opt = opt;
+	RDebugTrace *dtrace = core->dbg->trace;
+	opt = dtrace->ht->opt;
+	ht_pp_free (dtrace->ht);
+	dtrace->ht = ht_pp_new_size (fcn->ninstr, opt.dupvalue, opt.freefn, opt.calcsizeV);
+	dtrace->ht->opt = opt;
+
 	char *fcn_name = NULL;
 	char *ret_type = NULL;
 	bool str_flag = false;
