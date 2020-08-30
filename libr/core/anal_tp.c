@@ -6,20 +6,17 @@
 #include <r_core.h>
 #define LOOP_MAX 10
 
-enum {
-	ROMEM = 0,
-	ASM_TRACE,
-	ANAL_TRACE,
-	DBG_TRACE,
-	NONULL,
-	STATES_SIZE
-};
-
-static bool r_anal_emul_init(RCore *core, RConfigHold *hc) {
-	r_config_hold_i (hc, "esil.romem", "asm.trace", "dbg.trace",
+static bool anal_emul_init(RCore *core, RConfigHold *hc, RDebugTrace **dt, RAnalEsilTrace **et) {
+	if (!core->anal->esil) {
+		return false;
+	}
+	*dt = core->dbg->trace;
+	*et = core->anal->esil->trace;
+	core->dbg->trace = r_debug_trace_new ();
+	core->anal->esil->trace = r_anal_esil_trace_new (core->anal->esil);
+	r_config_hold_i (hc, "esil.romem", "dbg.trace",
 			"esil.nonull", "dbg.follow", NULL);
 	r_config_set (core->config, "esil.romem", "true");
-	r_config_set (core->config, "asm.trace", "true");
 	r_config_set (core->config, "dbg.trace", "true");
 	r_config_set (core->config, "esil.nonull", "true");
 	r_config_set_i (core->config, "dbg.follow", false);
@@ -30,12 +27,16 @@ static bool r_anal_emul_init(RCore *core, RConfigHold *hc) {
 		eprintf ("Try running aei and aeim commands before aft for default stack initialization\n");
 		return false;
 	}
-	return (core->anal->esil != NULL);
+	return (core->dbg->trace && core->anal->esil->trace);
 }
 
-static void r_anal_emul_restore(RCore *core, RConfigHold *hc) {
+static void anal_emul_restore(RCore *core, RConfigHold *hc, RDebugTrace *dt, RAnalEsilTrace *et) {
 	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
+	r_debug_trace_free (core->dbg->trace);
+	r_anal_esil_trace_free (core->anal->esil->trace);
+	core->anal->esil->trace = et;
+	core->dbg->trace = dt;
 }
 
 #define SDB_CONTAINS(i,s) sdb_array_contains (trace, sdb_fmt ("%d.reg.write", i), s, 0)
@@ -492,22 +493,17 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	if (!hc) {
 		return;
 	}
-	if (!r_anal_emul_init (core, hc) || !fcn) {
-		r_anal_emul_restore (core, hc);
+	RDebugTrace *dt;
+	RAnalEsilTrace *et;
+	if (!anal_emul_init (core, hc, &dt, &et) || !fcn) {
+		anal_emul_restore (core, hc, dt, et);
 		return;
 	}
 	ut8 *buf = malloc (bsize);
 	if (!buf) {
-		r_anal_emul_restore (core, hc);
+		anal_emul_restore (core, hc, dt, et);
 		return;
 	}
-	RAnalEsilTrace *old_trace = core->anal->esil->trace;
-	RAnalEsilTrace *trace = r_anal_esil_trace_new (core->anal->esil);
-	if (!trace) {
-		return;
-		r_anal_emul_restore (core, hc);
-	}
-	core->anal->esil->trace = trace;
 	char *fcn_name = NULL;
 	char *ret_type = NULL;
 	bool str_flag = false;
@@ -826,7 +822,5 @@ out_function:
 	R_FREE (ret_type);
 	free (buf);
 	r_cons_break_pop();
-	r_anal_emul_restore (core, hc);
-	r_anal_esil_trace_free (trace);
-	core->anal->esil->trace = old_trace;
+	anal_emul_restore (core, hc, dt, et);
 }
