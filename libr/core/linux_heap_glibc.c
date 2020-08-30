@@ -751,7 +751,7 @@ static void GH(print_heap_bin)(RCore *core, GHT m_arena, MallocState *main_arena
 	}
 }
 
-static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena, GHT m_arena, GHT offset, GHT bin_num, bool mangling) {
+static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena, GHT m_arena, GHT offset, GHT bin_num, bool demangle) {
 	if (!core || !core->dbg || !core->dbg->maps) {
 		return -1;
 	}
@@ -793,8 +793,7 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
 		PRINTF_BA ("0x%"PFMT64x, (ut64)next);
 		while (double_free == GHT_MAX && next_tmp && next_tmp >= brk_start && next_tmp <= main_arena->GH(top)) {
 			r_io_read_at (core->io, next_tmp, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
-			next_tmp = (!mangling) ? cnk->fd : PROTECT_PTR (next_tmp, cnk->fd);
-			// next_tmp = cnk->fd;
+			next_tmp = (!demangle) ? cnk->fd : PROTECT_PTR (next_tmp, cnk->fd);
 			if (cnk->prev_size > size || ((cnk->size >> 3) << 3) > size) {
 				break;
 			}
@@ -804,7 +803,7 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
 			}
 		}
 		r_io_read_at (core->io, next, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
-		next = (!mangling) ? cnk->fd : PROTECT_PTR (next, cnk->fd);
+		next = (!demangle) ? cnk->fd : PROTECT_PTR (next, cnk->fd);
 		PRINTF_BA ("%s", next ? "->fd = " : "");
 		if (cnk->prev_size > size || ((cnk->size >> 3) << 3) > size) {
 			PRINTF_RA (" 0x%"PFMT64x, (ut64)next);
@@ -837,7 +836,7 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
 	return 0;
 }
 
-void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, const char *input, bool mangling) {
+void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, const char *input, bool demangle) {
 	int i;
 	GHT num_bin = GHT_MAX, offset = sizeof (int) * 2;
 	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
@@ -859,7 +858,7 @@ void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, G
 			} else {
 				PRINTF_RA (" Fastbin %02d\n", i);
 			}
-			if (GH(print_single_linked_list_bin) (core, main_arena, m_arena, offset, i - 1, mangling)) {
+			if (GH(print_single_linked_list_bin) (core, main_arena, m_arena, offset, i - 1, demangle)) {
 				PRINT_GA ("  Empty bin");
 				PRINT_BA ("  0x0\n");
 			}
@@ -872,7 +871,7 @@ void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, G
 			eprintf ("Error: 0 < bin <= %d\n", NFASTBINS);
 			break;
 		}
-		if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, num_bin, mangling)) {
+		if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, num_bin, demangle)) {
 			PRINT_GA (" Empty bin");
 			PRINT_BA (" 0x0\n");
 		}
@@ -922,7 +921,7 @@ static GHT GH (tcache_get_entry) (GH (RTcache)* tcache, int index) {
 		: tcache->RHeapTcache.heap_tcache_pre_230->entries[index];
 }
 
-static void GH (tcache_print) (RCore *core, GH (RTcache)* tcache, bool mangling) {
+static void GH (tcache_print) (RCore *core, GH (RTcache)* tcache, bool demangle) {
 	r_return_if_fail (core && tcache);
 	GHT tcache_fd = GHT_MAX;
 	GHT tcache_tmp = GHT_MAX;
@@ -947,7 +946,7 @@ static void GH (tcache_print) (RCore *core, GH (RTcache)* tcache, bool mangling)
 					if (!r) {
 						break;
 					}
-					tcache_tmp = (!mangling)
+					tcache_tmp = (!demangle)
 						? read_le (&tcache_tmp)
 						: PROTECT_PTR (tcache_fd, read_le (&tcache_tmp));
 					PRINTF_BA ("->0x%"PFMT64x, tcache_tmp - TC_HDR_SZ);
@@ -959,7 +958,7 @@ static void GH (tcache_print) (RCore *core, GH (RTcache)* tcache, bool mangling)
 	}
 }
 
-static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *main_arena, bool mangling) {
+static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *main_arena, bool demangle) {
 	r_return_if_fail (core && core->dbg && core->dbg->maps);
 
 	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
@@ -989,7 +988,7 @@ static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *ma
 
 	PRINT_GA("Tcache main arena @");
 	PRINTF_BA (" 0x%"PFMT64x"\n", (ut64)m_arena);
-	GH (tcache_print) (core, r_tcache, mangling);
+	GH (tcache_print) (core, r_tcache, demangle);
 
 	if (main_arena->GH (next) != m_arena) {
 		GHT mmap_start = GHT_MAX, tcache_start = GHT_MAX;
@@ -1015,7 +1014,7 @@ static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *ma
 			if (ta->attached_threads) {
 				PRINT_BA ("\n");
 				GH (tcache_read) (core, tcache_start, r_tcache);
-				GH (tcache_print) (core, r_tcache, mangling);
+				GH (tcache_print) (core, r_tcache, demangle);
 			} else {
 				PRINT_GA (" free\n");
 			}
@@ -1039,7 +1038,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
 	const int offset = r_config_get_i (core->config, "dbg.glibc.fc_offset");
 	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
-	bool is_main_arena = true;
+	int glibc_version = core->dbg->glibc_version;
 
 	if (m_arena == m_state) {
 		GH(get_brks) (core, &brk_start, &brk_end);
@@ -1053,7 +1052,6 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 			initial_brk = (brk_start >> 12) << 12;
 		}
 	} else {
-		is_main_arena = false;
 		brk_start = ((m_state >> 16) << 16) ;
 		brk_end = brk_start + main_arena->GH(system_mem);
 		if (tcache) {
@@ -1175,7 +1173,6 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 
 		bool fastbin = size_tmp >= SZ * 4 && size_tmp <= global_max_fast;
 		bool is_free = false, double_free = false;
-		int glibc_version = core->dbg->glibc_version;
 
 		if (fastbin) {
 			int i = (size_tmp / (SZ * 2)) - 2;
