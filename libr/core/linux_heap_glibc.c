@@ -1044,9 +1044,11 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 	if (m_arena == m_state) {
 		GH(get_brks) (core, &brk_start, &brk_end);
 		if (tcache) {
-			//tcache_initial_brk = ((brk_start >> 12) << 12) + GH(HDR_SZ);
-			GHT fc_offset = GH(tcache_chunk_size) (core, brk_start);
-			initial_brk = ((brk_start >> 12) << 12) + fc_offset;
+			tcache_initial_brk = ((brk_start >> 12) << 12) + GH(HDR_SZ);
+			initial_brk = tcache_initial_brk;
+			initial_brk += (glibc_version < 230)
+				? sizeof (GH (RHeapTcachePre230))
+				: sizeof (GH (RHeapTcache));
 		} else {
 			initial_brk = (brk_start >> 12) << 12;
 		}
@@ -1255,9 +1257,6 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 						}
 					}
 				}
-			}
-			if (is_main_arena) {
-				tcache_initial_brk = brk_start + 0x10;
 			}
 			GH (tcache_free) (tcache_heap);
 		}
