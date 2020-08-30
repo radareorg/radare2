@@ -1599,9 +1599,8 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		break;
 	case 'f': // "dmhf"
 		if (GH(r_resolve_main_arena) (core, &m_arena)) {
-			bool demangle = (input[1] == 'm') ? true : false;
-			char *m_state_str, *dup = strdup (input + (demangle ? 2 : 1));
-			demangle = (!demangle) ? r_config_get_i (core->config, "dbg.glibc.demangle") : demangle;
+			bool demangle = r_config_get_i (core->config, "dbg.glibc.demangle");
+			char *m_state_str, *dup = strdup (input + 1);
 			if (*dup) {
 				strtok (dup, ":");
 				m_state_str = strtok (NULL, ":");
@@ -1673,7 +1672,6 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 				break;
 			}
 			bool demangle = r_config_get_i (core->config, "dbg.glibc.demangle");
-			demangle = (input[1] == 'm') ? true : demangle;
 			GH(print_tcache_instance) (core, m_arena, main_arena, demangle);
 		}
 		break;
