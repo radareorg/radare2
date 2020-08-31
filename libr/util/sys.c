@@ -371,12 +371,14 @@ R_API int r_sys_clearenv(void) {
 #if __APPLE__ && !HAVE_ENVIRON
 	/* do nothing */
 	if (!env) {
-		r_sys_env_init ();
+		env = r_sys_get_environ ();
 		return 0;
 	}
-	char **e = env;
-	while (*e) {
-		*e++ = NULL;
+	if (env) {
+		char **e = env;
+		while (*e) {
+			*e++ = NULL;
+		}
 	}
 #else
 	if (!environ) {
@@ -1206,14 +1208,8 @@ R_API char *r_sys_pid_to_path(int pid) {
 #endif
 }
 
-R_API void r_sys_env_init(void) {
-	char **envp = r_sys_get_environ ();
-	if (envp) {
-		r_sys_set_environ (envp);
-	}
-}
-
-R_API char **r_sys_get_environ(void) {
+// TODO: rename to r_sys_env_init()
+R_API char **r_sys_get_environ (void) {
 #if __APPLE__ && !HAVE_ENVIRON
 	env = *_NSGetEnviron();
 #else
@@ -1226,7 +1222,7 @@ R_API char **r_sys_get_environ(void) {
 	return env;
 }
 
-R_API void r_sys_set_environ(char **e) {
+R_API void r_sys_set_environ (char **e) {
 	env = e;
 }
 
