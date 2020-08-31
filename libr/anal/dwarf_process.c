@@ -1154,7 +1154,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 			RStrBuf type;
 			r_strbuf_init (&type);
 			const char *name = NULL;
-			if (child_depth == 1 && (child_die->tag == DW_TAG_formal_parameter || child_die->tag == DW_TAG_variable)) {
+			if (child_die->tag == DW_TAG_formal_parameter || child_die->tag == DW_TAG_variable) {
 				Variable *var = R_NEW0 (Variable);
 				size_t i;
 				for (i = 0; i < child_die->count; i++) {
@@ -1178,9 +1178,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 						parse_abstract_origin (ctx, val->reference, &type, &name);
 						break;
 					case DW_AT_location:
-						if (val->kind == DW_AT_KIND_BLOCK) {
-							var->location = parse_dwarf_location (ctx, val, find_attr (die, DW_AT_frame_base));
-						}
+						var->location = parse_dwarf_location (ctx, val, find_attr (die, DW_AT_frame_base));
 						break;
 					default:
 						break;
