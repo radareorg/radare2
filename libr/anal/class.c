@@ -1238,20 +1238,21 @@ R_API RGraph *r_anal_class_get_inheritance_graph(RAnal *anal) {
 		r_graph_free (class_graph);
 		return NULL;
 	}
+	// O(1) lookup cache for processed nodes
+	// to lookup parents to create edges
 	HtPP /*<char *name, RGraphNode *node>*/ *hashmap = ht_pp_new0 ();
 	if (!hashmap) {
 		r_graph_free (class_graph);
 		ls_free (classes);
-		return NULL;
 	}
 	SdbListIter *iter;
 	SdbKv *kv;
 	// Traverse each class and create a node and edges
 	ls_foreach (classes, iter, kv) {
 		const char *name = sdbkv_key (kv);
-		// create nodes
+		// If already in the cache
 		RGraphNode *curr_node = ht_pp_find (hashmap, name, NULL);
-		if (!curr_node) {
+		if (!curr_node) { // If not visited yet
 			RGraphNodeInfo *data = r_graph_create_node_info (strdup (name), NULL, 0);
 			if (!data) {
 				goto failure;
@@ -1263,7 +1264,7 @@ R_API RGraph *r_anal_class_get_inheritance_graph(RAnal *anal) {
 			curr_node->free = r_graph_free_node_info;
 			ht_pp_insert (hashmap, name, curr_node);
 		}
-		// create edges between node and it's parents
+		// Travel all bases to create edges between parents and child
 		RVector *bases = r_anal_class_base_get_all (anal, name);
 		RAnalBaseClass *base;
 		r_vector_foreach (bases, base) {
@@ -1271,6 +1272,7 @@ R_API RGraph *r_anal_class_get_inheritance_graph(RAnal *anal) {
 			RGraphNode *base_node = ht_pp_find (hashmap, base->class_name, &base_found);
 			// If base isn't processed, do it now
 			if (!base_found) {
+				// Speed it up and already add base classes if not visited yet
 				RGraphNodeInfo *data = r_graph_create_node_info (strdup (base->class_name), NULL, 0);
 				if (!data) {
 					goto failure;

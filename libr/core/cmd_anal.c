@@ -9931,7 +9931,6 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 		}
 		RAGraph *agraph = create_agraph_from_graph (graph);
 		if (!agraph) {
-			r_graph_free (graph);
 			eprintf ("Couldn't create graph");
 			break;
 		}
