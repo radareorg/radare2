@@ -207,8 +207,9 @@ static void interrupt_process(RDebug *dbg) {
 
 static int r_debug_native_stop(RDebug *dbg) {
 #if __linux__
-	// Stop all running threads except the thread reported by waitpid
-	return linux_stop_threads (dbg, dbg->reason.tid);
+	// Stop all running threads except the current thread
+	// which is already stopped by linux_dbg_wait_break
+	return linux_stop_threads (dbg, dbg->tid);
 #else
 	return 0;
 #endif
@@ -241,21 +242,35 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 		r_cons_break_push ((RConsBreak)interrupt_process, dbg);
 	}
 
+	ret = r_debug_ptrace (dbg, PTRACE_CONT, tid, NULL, (r_ptrace_data_t)(size_t)contsig);
+	if (ret == -1) {
+		r_sys_perror ("PTRACE_CONT");
+	}
 
-	if (dbg->continue_all_threads && dbg->n_threads && dbg->threads) {
+	// Continue all threads that are stopped by the debugger only
+	// to keep other signals in the queue for the next waitpid
+	// by checking for SIGSTOP signals sent by the debugger
+	if (dbg->continue_all_threads && dbg->threads) {
 		RDebugPid *th;
 		RListIter *it;
+		pid_t dbgpid = getpid ();
 		r_list_foreach (dbg->threads, it, th) {
-			ret = r_debug_ptrace (dbg, PTRACE_CONT, th->pid, 0, 0);
-			if (ret == -1) {
-				eprintf ("Error: (%d) is already running.\n", th->pid);
-				r_sys_perror ("PTRACE_CONT");
+			if (th->pid == tid) {
+				continue;
 			}
-		}
-	} else {
-		ret = r_debug_ptrace (dbg, PTRACE_CONT, tid, NULL, (r_ptrace_data_t)(size_t)contsig);
-		if (ret) {
-			r_sys_perror ("PTRACE_CONT");
+			siginfo_t siginfo = { 0 };
+			ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, th->pid, 0, (r_ptrace_data_t)(size_t)&siginfo);
+			// Skip if the thread is already running to prevent error
+			if (ret == -1) {
+				continue;
+			}
+			if (siginfo.si_signo == SIGSTOP && siginfo.si_pid == dbgpid) {
+				ret = r_debug_ptrace (dbg, PTRACE_CONT, th->pid, 0, 0);
+				if (ret == -1) {
+					eprintf ("Error: %d is not traced or already running.\n", th->pid);
+					r_sys_perror ("PTRACE_CONT");
+				}
+			}
 		}
 	}
 	//return ret >= 0 ? tid : false;
