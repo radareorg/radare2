@@ -720,21 +720,12 @@ static const char *help_msg_ax[] = {
 	"axj", "", "list refs in json format",
 	"axF", " [flg-glob]", "find data/code references of flags",
 	"axm", " addr [at]", "copy data/code references pointing to addr to also point to curseek (or at)",
-	"axt", "[?] [addr]", "find data/code references to this address",
+	"axt", " [addr]", "find data/code references to this address",
 	"axf", " [addr]", "find data/code references from this address",
 	"axv", " [addr]", "list local variables read-write-exec references",
 	"ax.", " [addr]", "find data/code references from and to this address",
 	"axff[j]", " [addr]", "find data/code references from this function",
 	"axs", " addr [at]", "add string ref",
-	NULL
-};
-
-static const char *help_msg_axt[]= {
-	"Usage:", "axt[?gq*]", "find data/code references to this address",
-	"axtj", " [addr]", "find data/code references to this address and print in json format",
-	"axtg", " [addr]", "display commands to generate graphs according to the xrefs",
-	"axtq", " [addr]", "find and list the data/code references in quiet mode",
-	"axt*", " [addr]", "same as axt, but prints as r2 commands",
 	NULL
 };
 
@@ -7299,10 +7290,6 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		cmd_afvx (core, NULL, input[1] == 'j');
 		break;
 	case 't': { // "axt"
-		if (input[1] == '?') { // axt?
-			r_core_cmd_help (core, help_msg_axt);
-			break;
-		}
 		RList *list = NULL;
 		RAnalFunction *fcn;
 		RAnalRef *ref;
