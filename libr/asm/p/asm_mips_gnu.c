@@ -57,6 +57,16 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 	disasm_obj.endian = !a->big_endian;
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = stdout;
+	
+	if (a->cpu && r_str_casecmp (a->cpu, "mips64r2") == 0) {
+		disasm_obj.mach = bfd_mach_mipsisa64r2; 
+	} else if (a->cpu && r_str_casecmp (a->cpu, "mips32r2") == 0) {
+		disasm_obj.mach = bfd_mach_mipsisa32r2; 
+	} else if (a->cpu && r_str_casecmp (a->cpu, "mips64") == 0) {
+		disasm_obj.mach = bfd_mach_mipsisa64; 
+	} else if (a->cpu && r_str_casecmp (a->cpu, "mips32") == 0) {
+		disasm_obj.mach = bfd_mach_mipsisa32; 
+	} 
 
 	op->size = (disasm_obj.endian == BFD_ENDIAN_LITTLE)
 		? print_insn_little_mips ((bfd_vma)Offset, &disasm_obj)
