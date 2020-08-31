@@ -1043,7 +1043,6 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 	const int offset = r_config_get_i (core->config, "dbg.glibc.fc_offset");
 	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
 	int glibc_version = core->dbg->glibc_version;
-	bool is_main_arena = true;
 
 	if (m_arena == m_state) {
 		GH(get_brks) (core, &brk_start, &brk_end);
@@ -1059,7 +1058,6 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 			initial_brk = (brk_start >> 12) << 12;
 		}
 	} else {
-		is_main_arena = false;
 		brk_start = ((m_state >> 16) << 16) ;
 		brk_end = brk_start + main_arena->GH(system_mem);
 		if (tcache) {
