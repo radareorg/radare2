@@ -25,7 +25,6 @@ if get_option('enable_tests')
     'event',
     'flags',
     'glob',
-    'graph',
     'hex',
     'intervaltree',
     'io',
