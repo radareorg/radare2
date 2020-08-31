@@ -78,21 +78,14 @@ static const char *cc_name(arm_cc cc) {
 }
 
 static void disass_itblock(RAsm *a, cs_insn *insn) {
-	if (!ht_it) {
-		ht_it = ht_uu_new0 ();
-	}
 	size_t i;
-	for (i = 1; i < 5; i++) {
+	for (i = 1; i < r_str_nlen (insn->mnemonic, 5); i++) {
 		switch (insn->mnemonic[i]) {
 		case 0x74: //'t'
-			if (!ht_uu_insert (ht_it, a->pc + (i * insn->size), insn->detail->arm.cc)) {
-				ht_uu_update (ht_it, a->pc + (i * insn->size), insn->detail->arm.cc);
-			}
+			ht_uu_update (ht_it, a->pc + (i * insn->size), insn->detail->arm.cc);
 			break;
 		case 0x65: //'e'
-			if (!ht_uu_insert (ht_it, a->pc + (i * insn->size), (insn->detail->arm.cc % 2)?insn->detail->arm.cc + 1:insn->detail->arm.cc - 1)) {
-				ht_uu_update (ht_it, a->pc + (i * insn->size), (insn->detail->arm.cc % 2)?insn->detail->arm.cc + 1:insn->detail->arm.cc - 1);
-			}
+			ht_uu_update (ht_it, a->pc + (i * insn->size), (insn->detail->arm.cc % 2)?insn->detail->arm.cc + 1:insn->detail->arm.cc - 1);
 			break;
 		default:
 			break;
@@ -108,6 +101,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	cs_mode mode = 0;
 	int ret, n = 0;
 	bool found = 0;
+	ut64 itcond;
 	mode |= (a->bits == 16)? CS_MODE_THUMB: CS_MODE_ARM;
 	mode |= (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	if (mode != omode || a->bits != obits) {
@@ -178,8 +172,6 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		if (insn->id == ARM_INS_IT) {
 			disass_itblock (a, insn);
 		}
-		char *buf_asm;
-		ut64 itcond;
 		itcond = ht_uu_find (ht_it,  a->pc, &found);
 		if (found){
 			insn->detail->arm.cc = itcond;
@@ -189,7 +181,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 					cs_insn_name (cd, insn->id),
 					cc_name (itcond)));
 		}
-		buf_asm = sdb_fmt ("%s%s%s",
+		char *buf_asm = sdb_fmt ("%s%s%s",
 			insn->mnemonic,
 			insn->op_str[0]?" ":"",
 			insn->op_str);
@@ -259,6 +251,19 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	return opsize;
 }
 
+static bool init (void* user) {
+	if (!ht_it) {
+		ht_it = ht_uu_new0 ();
+	}
+	return 0;
+}
+
+static bool fini (void* user) {
+	free(ht_it);
+	ht_it = NULL;
+	return 0;
+}
+
 RAsmPlugin r_asm_plugin_arm_cs = {
 	.name = "arm",
 	.desc = "Capstone ARM disassembler",
@@ -271,6 +276,8 @@ RAsmPlugin r_asm_plugin_arm_cs = {
 	.disassemble = &disassemble,
 	.mnemonics = mnemonics,
 	.assemble = &assemble,
+	.init = &init,
+	.fini = &fini,
 #if 0
 	// arm32 and arm64
 	"crypto,databarrier,divide,fparmv8,multpro,neon,t2extractpack,"

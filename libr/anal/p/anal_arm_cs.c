@@ -2592,17 +2592,13 @@ static void anal_itblock(RAnal *a, cs_insn *insn) {
 		ht_it = ht_uu_new0 ();
 	}
 	size_t i;
-	for (i = 1; i < 5; i++) {
+	for (i = 1; i < r_str_nlen (insn->mnemonic, 5); i++) {
 		switch (insn->mnemonic[i]) {
 		case 0x74: //'t'
-			if (!ht_uu_insert (ht_it, insn->address + (i * insn->size), insn->detail->arm.cc)) {
-				ht_uu_update (ht_it, insn->address + (i * insn->size), insn->detail->arm.cc);
-			}
+			ht_uu_update (ht_it, insn->address + (i * insn->size), insn->detail->arm.cc);
 			break;
 		case 0x65: //'e'
-			if (!ht_uu_insert (ht_it, insn->address + (i * insn->size), (insn->detail->arm.cc % 2)? insn->detail->arm.cc + 1: insn->detail->arm.cc - 1)) {
-				ht_uu_update (ht_it, insn->address + (i * insn->size), (insn->detail->arm.cc % 2)? insn->detail->arm.cc + 1: insn->detail->arm.cc - 1);
-			}
+			ht_uu_update (ht_it, insn->address + (i * insn->size), (insn->detail->arm.cc % 2)? insn->detail->arm.cc + 1: insn->detail->arm.cc - 1);
 			break;
 		default:
 			break;
@@ -3799,6 +3795,19 @@ static RList *anal_preludes(RAnal *anal) {
 	return l;
 }
 
+static int init (void* user) {
+	if (!ht_it) {
+		ht_it = ht_uu_new0 ();
+	}
+	return 0;
+}
+
+static int fini (void* user) {
+	free(ht_it);
+	ht_it = NULL;
+	return 0;
+}
+
 RAnalPlugin r_anal_plugin_arm_cs = {
 	.name = "arm",
 	.desc = "Capstone ARM analyzer",
@@ -3811,6 +3820,8 @@ RAnalPlugin r_anal_plugin_arm_cs = {
 	.preludes = anal_preludes,
 	.bits = 16 | 32 | 64,
 	.op = &analop,
+	.init = &init,
+	.fini = &fini,
 };
 
 #ifndef R2_PLUGIN_INCORE
