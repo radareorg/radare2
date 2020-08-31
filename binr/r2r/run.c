@@ -245,7 +245,7 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 
 	ut64 timeout_us_abs = UT64_MAX;
 	if (timeout_ms != UT64_MAX) {
-		timeout_us_abs = r_time_now_mono () + timeout_ms * R_USEC_PER_MSEC;
+		timeout_us_abs = r_sys_now_mono () + timeout_ms * R_USEC_PER_MSEC;
 	}
 
 	ut8 stdout_buf[0x500];
@@ -287,7 +287,7 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 		
 		DWORD timeout = INFINITE;
 		if (timeout_us_abs != UT64_MAX) {
-			ut64 now = r_time_now_mono ();
+			ut64 now = r_sys_now_mono ();
 			if (now >= timeout_us_abs) {
 				return false;
 			}
@@ -617,7 +617,7 @@ error:
 R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 	ut64 timeout_abs;
 	if (timeout_ms != UT64_MAX) {
-		timeout_abs = r_time_now_mono () + timeout_ms * R_USEC_PER_MSEC;
+		timeout_abs = r_sys_now_mono () + timeout_ms * R_USEC_PER_MSEC;
 	}
 
 	int r = 0;
@@ -651,11 +651,11 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 		struct timeval timeout_s;
 		struct timeval *timeout = NULL;
 		if (timeout_ms != UT64_MAX) {
-			ut64 now = r_time_now_mono ();
+			ut64 now = r_sys_now_mono ();
 			if (now >= timeout_abs) {
 				break;
 			}
-			ut64 usec_diff = timeout_abs - r_time_now_mono ();
+			ut64 usec_diff = timeout_abs - r_sys_now_mono ();
 			timeout_s.tv_sec = usec_diff / R_USEC_PER_SEC;
 			timeout_s.tv_usec = usec_diff % R_USEC_PER_SEC;
 			timeout = &timeout_s;

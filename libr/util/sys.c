@@ -1,5 +1,11 @@
 /* radare - LGPL - Copyright 2009-2020 - pancake */
 
+#if __linux__
+#include <time.h>
+#elif __APPLE__ && !defined(MAC_OS_X_VERSION_10_12)
+#include <mach/mach_time.h>
+#endif
+
 #include <r_userconf.h>
 #include <stdlib.h>
 #include <string.h>
@@ -199,6 +205,45 @@ R_API void r_sys_exit(int status, bool nocleanup) {
 	} else {
 		exit (status);
 	}
+}
+
+/* TODO: import stuff from bininfo/p/bininfo_addr2line */
+/* TODO: check endianness issues here */
+R_API ut64 r_sys_now(void) {
+	ut64 ret;
+	struct timeval now;
+	gettimeofday (&now, NULL);
+	ret = now.tv_sec;
+	ret <<= 20;
+	ret |= now.tv_usec;
+	//(sizeof (now.tv_sec) == 4
+	return ret;
+}
+
+R_API ut64 r_sys_now_mono(void) {
+#if __WINDOWS__
+	LARGE_INTEGER f;
+	if (!QueryPerformanceFrequency (&f)) {
+		return 0;
+	}
+	LARGE_INTEGER v;
+	if (!QueryPerformanceCounter (&v)) {
+		return 0;
+	}
+	v.QuadPart *= 1000000;
+	v.QuadPart /= f.QuadPart;
+	return v.QuadPart;
+#elif __APPLE__ && !defined(MAC_OS_X_VERSION_10_12)
+	ut64 ticks = mach_absolute_time ();
+	static mach_timebase_info_data_t tb;
+	mach_timebase_info (&tb);
+	return ((ticks * tb.numer) / tb.denom) / R_NSEC_PER_USEC;
+#else
+	struct timespec now;
+	clock_gettime (CLOCK_MONOTONIC, &now);
+	return now.tv_sec * R_USEC_PER_SEC
+		+ now.tv_nsec / R_NSEC_PER_USEC;
+#endif
 }
 
 R_API int r_sys_truncate(const char *file, int sz) {
