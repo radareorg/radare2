@@ -54,8 +54,7 @@ if get_option('enable_tests')
     'unum',
     'util',
     'vector',
-    'big',
-    'idpool'
+    'big'
   ]
 
   foreach test : tests
