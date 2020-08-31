@@ -823,7 +823,7 @@ static int bb_sort_by_addr(const void *x, const void *y) {
 }
 
 static RSignBytes *r_sign_fcn_bytes(RAnal *a, RAnalFunction *fcn) {
-	r_return_val_if_fail (a && fcn && fcn->bbs && fcn->bbs->head, false);
+	r_return_val_if_fail (a && fcn, false);
 
 	// get size
 	RCore *core = a->coreb.core;
