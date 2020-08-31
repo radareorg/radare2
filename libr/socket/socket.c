@@ -301,44 +301,16 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 				perror ("socket");
 				continue;
 			}
-
-			switch (proto) {
-			case R_SOCKET_PROTO_TCP:
-				ret = setsockopt (s->fd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof (flag));
-				if (ret < 0) {
-					perror ("setsockopt");
-					close (s->fd);
-					s->fd = -1;
-					continue;
-				}
-				r_socket_block_time (s, 0, 0, 0);
-				ret = connect (s->fd, rp->ai_addr, rp->ai_addrlen);
-				break;
-			case R_SOCKET_PROTO_UDP:
-				memset (&s->sa, 0, sizeof (s->sa));
-				s->sa.sin_family = AF_INET;
-				s->sa.sin_addr.s_addr = htonl (s->local? INADDR_LOOPBACK: INADDR_ANY);
-				s->port = r_socket_port_by_name (port);
-				if (s->port < 1) {
-					continue;
-				}
-				s->sa.sin_port = htons (s->port);
-				if (bind (s->fd, (struct sockaddr *)&s->sa, sizeof (s->sa)) < 0) {
-					r_sys_perror ("bind");
-#ifdef __WINDOWS__
-					closesocket (s->fd);
-#else
-					close (s->fd);
-#endif
-					continue;
-				}
-				ret = connect (s->fd, rp->ai_addr, rp->ai_addrlen);
-				break;
-			default:
-				r_socket_block_time (s, 0, 0, 0);
-				ret = connect (s->fd, rp->ai_addr, rp->ai_addrlen);
-				break;
+			ret = setsockopt (s->fd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof (flag));
+			if (ret < 0) {
+				perror ("setsockopt");
+				close (s->fd);
+				s->fd = -1;
+				continue;
 			}
+
+			r_socket_block_time (s, 0, 0, 0);
+			ret = connect (s->fd, rp->ai_addr, rp->ai_addrlen);
 
 			if (ret == 0) {
 				freeaddrinfo (res);
@@ -497,20 +469,8 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 		return false;
 	}
 #endif
-
-	switch (s->proto) {
-	case R_SOCKET_PROTO_TCP:
-		if ((s->fd = socket (AF_INET, SOCK_STREAM, R_SOCKET_PROTO_TCP)) == R_INVALID_SOCKET) {
-			return false;
-		}
-		break;
-	case R_SOCKET_PROTO_UDP:
-		if ((s->fd = socket (AF_INET, SOCK_DGRAM, R_SOCKET_PROTO_UDP)) == R_INVALID_SOCKET) {
-			return false;
-		}
-		break;
-	default:
-		break;
+	if ((s->fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP)) == R_INVALID_SOCKET) {
+		return false;
 	}
 
 	linger.l_onoff = 1;
@@ -551,15 +511,13 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 #if __UNIX__
 	r_sys_signal (SIGPIPE, SIG_IGN);
 #endif
-	if (s->proto == R_SOCKET_PROTO_TCP) {
-		if (listen (s->fd, 32) < 0) {
+	if (listen (s->fd, 32) < 0) {
 #ifdef _MSC_VER
-			closesocket (s->fd);
+		closesocket (s->fd);
 #else
-			close (s->fd);
+		close (s->fd);
 #endif
-			return false;
-		}
+		return false;
 	}
 #if HAVE_LIB_SSL
 	if (s->is_ssl) {

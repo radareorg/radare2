@@ -29,34 +29,19 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 
-	// net  - host:ip:key
-	// pipe - \\.\pipe\com_1 /tmp/windbg.pipe
-	io_backend_t *iob = NULL;
-	if (strchr (file + 8, ':')) {
-		iob = &iob_net;
-	} else {
-		iob = &iob_pipe;
-	}
-
-	if (!iob) {
-		eprintf ("Error: Invalid WinDBG path\n");
+	if (!iob_select ("pipe")) {
+		eprintf("Could not initialize the IO backend\n");
 		return NULL;
 	}
 
-	void *io_ctx = iob->open (file + 8);
+	void *io_ctx = iob_open (file + 9);
 	if (!io_ctx) {
-		eprintf ("Error: Could not open the %s\n", iob->name);
+		eprintf ("Could not open the pipe\n");
 		return NULL;
 	}
-	eprintf ("Opened %s %s with fd %p\n", iob->name, file + 8, io_ctx);
+	eprintf ("Opened pipe %s with fd %p\n", file + 9, io_ctx);
 
-	io_desc_t *desc = io_desc_new (iob, io_ctx);
-	if (!desc) {
-		eprintf ("Error: Could not create io_desc_t\n");
-		return NULL;
-	}
-
-	WindCtx *ctx = winkd_ctx_new (desc);
+	WindCtx *ctx = winkd_ctx_new (io_ctx);
 	if (!ctx) {
 		eprintf ("Failed to initialize winkd context\n");
 		return NULL;

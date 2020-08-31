@@ -40,7 +40,6 @@ Profile *p_table[] = {
 	&WIN2003_SP2_X64,
 	&WIN10_RS1_X64, // Windows 10 (Anniversary Update)
 	&WIN10_RS4_X64, // Windows 10 (April 2018 Update)
-	&WIN10_19H1_X64, // Windows 10 (May 2019 Update)
 	NULL,
 };
 
@@ -70,7 +69,7 @@ Profile *winkd_get_profile(int bits, int build, int sp) {
 }
 
 struct _WindCtx {
-	io_desc_t *desc;
+	void *io_ptr;
 	uint32_t seq_id;
 	int syncd;
 	int cpu_count;
@@ -149,7 +148,7 @@ bool winkd_set_target(WindCtx *ctx, uint32_t pid) {
 }
 
 uint32_t winkd_get_target(WindCtx *ctx) {
-	if (!ctx || !ctx->desc || !ctx->syncd) {
+	if (!ctx || !ctx->io_ptr || !ctx->syncd) {
 		return 0;
 	}
 	return ctx->target? ctx->target->uniqueid: 0;
@@ -158,7 +157,7 @@ uint32_t winkd_get_target(WindCtx *ctx) {
 ut64 winkd_get_target_base(WindCtx *ctx) {
 	ut64 base = 0;
 
-	if (!ctx || !ctx->desc || !ctx->syncd || !ctx->target) {
+	if (!ctx || !ctx->io_ptr || !ctx->syncd || !ctx->target) {
 		return 0;
 	}
 
@@ -170,13 +169,13 @@ ut64 winkd_get_target_base(WindCtx *ctx) {
 	return base;
 }
 
-WindCtx *winkd_ctx_new(io_desc_t *desc) {
+WindCtx *winkd_ctx_new(void *io_ptr) {
 	WindCtx *ctx = calloc (1, sizeof(WindCtx));
 	if (!ctx) {
 		return NULL;
 	}
 	ctx->dontmix = r_th_lock_new (true);
-	ctx->desc = desc;
+	ctx->io_ptr = io_ptr;
 	return ctx;
 }
 
@@ -186,9 +185,7 @@ void winkd_ctx_free(WindCtx **ctx) {
 	}
 	r_list_free ((*ctx)->plist_cache);
 	r_list_free ((*ctx)->tlist_cache);
-	io_desc_t *desc = (*ctx)->desc;
-	desc->iob->close (desc->fp);
-	R_FREE (desc);
+	iob_close ((*ctx)->io_ptr);
 	r_th_lock_free ((*ctx)->dontmix);
 	R_FREE (*ctx);
 }
@@ -229,8 +226,8 @@ static int do_io_reply(WindCtx *ctx, kd_packet_t *pkt) {
 	ioc.ret = KD_RET_ENOENT;
 	winkd_lock_enter (ctx);
 	id = pkt->id;
-	ret = kd_send_data_packet (ctx->desc, KD_PACKET_TYPE_FILE_IO,
-		(ctx->seq_id ^= 1), (uint8_t *)&ioc, sizeof (kd_ioc_t), NULL, 0);
+	ret = kd_send_data_packet (ctx->io_ptr, KD_PACKET_TYPE_FILE_IO,
+		(ctx->seq_id ^= 1), (uint8_t *) &ioc, sizeof (kd_ioc_t), NULL, 0);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
@@ -259,13 +256,9 @@ int winkd_wait_packet(WindCtx *ctx, const uint32_t type, kd_packet_t **p) {
 			R_FREE (pkt);
 		}
 		// Try to read a whole packet
-		ret = kd_read_packet (ctx->desc, &pkt);
+		ret = kd_read_packet (ctx->io_ptr, &pkt);
 		if (ret != KD_E_OK || !pkt) {
 			break;
-		}
-		if (pkt->type == KD_PACKET_TYPE_UNUSED) {
-			retries++;
-			continue;
 		}
 
 		// eprintf ("Received %08x\n", pkt->type);
@@ -353,7 +346,7 @@ RList *winkd_list_process(WindCtx *ctx) {
 	RList *ret;
 	ut64 ptr, base;
 
-	if (!ctx || !ctx->desc || !ctx->syncd) {
+	if (!ctx || !ctx->io_ptr || !ctx->syncd) {
 		return NULL;
 	}
 
@@ -372,10 +365,6 @@ RList *winkd_list_process(WindCtx *ctx) {
 	// Walk the LIST_ENTRY
 	winkd_read_at (ctx, (uint8_t *) &ptr, ptr, 4 << ctx->is_x64);
 
-	// Check for empty list
-	if (ptr == 0) {
-		return NULL;
-	}
 	ret = r_list_newf (free);
 
 	do {
@@ -464,7 +453,7 @@ RList *winkd_list_modules(WindCtx *ctx) {
 	RList *ret;
 	ut64 ptr, base;
 
-	if (!ctx || !ctx->desc || !ctx->syncd) {
+	if (!ctx || !ctx->io_ptr || !ctx->syncd) {
 		return NULL;
 	}
 
@@ -553,7 +542,7 @@ RList *winkd_list_threads(WindCtx *ctx) {
 	RList *ret;
 	ut64 ptr, base;
 
-	if (!ctx || !ctx->desc || !ctx->syncd) {
+	if (!ctx || !ctx->io_ptr || !ctx->syncd) {
 		return NULL;
 	}
 
@@ -724,7 +713,7 @@ bool winkd_read_ver(WindCtx *ctx) {
 	kd_packet_t *pkt;
 	int ret;
 
-	if (!ctx || !ctx->desc || !ctx->syncd) {
+	if (!ctx || !ctx->io_ptr || !ctx->syncd) {
 		return false;
 	}
 
@@ -733,8 +722,8 @@ bool winkd_read_ver(WindCtx *ctx) {
 
 	winkd_lock_enter (ctx);
 
-	ret = kd_send_data_packet (ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
-		(ctx->seq_id ^= 1), (uint8_t *)&req, sizeof (kd_req_t), NULL, 0);
+	ret = kd_send_data_packet (ctx->io_ptr, KD_PACKET_TYPE_STATE_MANIPULATE,
+		(ctx->seq_id ^= 1), (uint8_t *) &req, sizeof(kd_req_t), NULL, 0);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
@@ -821,7 +810,7 @@ int winkd_sync(WindCtx *ctx) {
 	int ret = -1;
 	kd_packet_t *s;
 
-	if (!ctx || !ctx->desc) {
+	if (!ctx || !ctx->io_ptr) {
 		return 0;
 	}
 
@@ -831,44 +820,28 @@ int winkd_sync(WindCtx *ctx) {
 
 	winkd_lock_enter (ctx);
 
-	if (ctx->desc->iob->type == KD_IO_NET) {
-		// Read a KD packet to initialize KDNet interface
-		// The first packet will always be type of KD_PACKET_TYPE_UNUSED
-		ret = kd_read_packet (ctx->desc, &s);
-		if (ret != KD_E_OK) {
-			ret = 0;
-			goto end;
-		}
-	}
-
 	// Send the breakin packet
-	if (iob_write (ctx->desc, (const uint8_t *)"b", 1) != 1) {
+	if (iob_write (ctx->io_ptr, (const uint8_t *) "b", 1) != 1) {
 		ret = 0;
 		goto end;
 	}
 
-	if (ctx->desc->iob->type == KD_IO_PIPE) {
-		// Reset the host
-		ret = kd_send_ctrl_packet (ctx->desc, KD_PACKET_TYPE_RESET, 0);
-		if (ret != KD_E_OK) {
-			ret = 0;
-			goto end;
-		}
-
-		// Wait for the response
-		ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_RESET, NULL);
-		if (ret != KD_E_OK) {
-			ret = 0;
-			goto end;
-		}
-	}
-
-	// Syncronize with the first KD_PACKET_TYPE_STATE_CHANGE64 packet
-	ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_STATE_CHANGE64, &s);
+	// Reset the host
+	ret = kd_send_ctrl_packet (ctx->io_ptr, KD_PACKET_TYPE_RESET, 0);
 	if (ret != KD_E_OK) {
 		ret = 0;
 		goto end;
 	}
+
+	// Wait for the response
+	ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_RESET, NULL);
+	if (ret != KD_E_OK) {
+		ret = 0;
+		goto end;
+	}
+
+	// Syncronize with the first KD_PACKET_TYPE_STATE_CHANGE64 packet
+	winkd_wait_packet (ctx, KD_PACKET_TYPE_STATE_CHANGE64, &s);
 
 	// Reset the sequence id
 	ctx->seq_id = 0x80800001;
@@ -900,7 +873,7 @@ int winkd_continue(WindCtx *ctx) {
 	};
 	int ret;
 
-	if (!ctx || !ctx->desc || !ctx->syncd) {
+	if (!ctx || !ctx->io_ptr || !ctx->syncd) {
 		return 0;
 	}
 	req.req = DbgKdContinueApi;
@@ -912,8 +885,8 @@ int winkd_continue(WindCtx *ctx) {
 
 	winkd_lock_enter (ctx);
 
-	ret = kd_send_data_packet (ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
-		(ctx->seq_id ^= 1), (uint8_t *)&req, sizeof (kd_req_t), NULL, 0);
+	ret = kd_send_data_packet (ctx->io_ptr, KD_PACKET_TYPE_STATE_MANIPULATE,
+		(ctx->seq_id ^= 1), (uint8_t *) &req, sizeof (kd_req_t), NULL, 0);
 	if (ret == KD_E_OK) {
 		ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 		if (ret == KD_E_OK) {
@@ -937,7 +910,7 @@ bool winkd_write_reg(WindCtx *ctx, const uint8_t *buf, int size) {
 	};
 	int ret;
 
-	if (!ctx || !ctx->desc || !ctx->syncd) {
+	if (!ctx || !ctx->io_ptr || !ctx->syncd) {
 		return false;
 	}
 	req.req = DbgKdSetContextApi;
@@ -948,8 +921,8 @@ bool winkd_write_reg(WindCtx *ctx, const uint8_t *buf, int size) {
 
 	winkd_lock_enter (ctx);
 
-	ret = kd_send_data_packet (ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
-		(ctx->seq_id ^= 1), (uint8_t *)&req, sizeof (kd_req_t), buf, size);
+	ret = kd_send_data_packet (ctx->io_ptr, KD_PACKET_TYPE_STATE_MANIPULATE,
+		(ctx->seq_id ^= 1), (uint8_t *) &req, sizeof(kd_req_t), buf, size);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
@@ -987,7 +960,7 @@ int winkd_read_reg(WindCtx *ctx, uint8_t *buf, int size) {
 	kd_packet_t *pkt = NULL;
 	int ret;
 
-	if (!ctx || !ctx->desc || !ctx->syncd) {
+	if (!ctx || !ctx->io_ptr || !ctx->syncd) {
 		return 0;
 	}
 
@@ -1004,8 +977,8 @@ int winkd_read_reg(WindCtx *ctx, uint8_t *buf, int size) {
 		goto error;
 	}
 
-	ret = kd_send_data_packet (ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE, (ctx->seq_id ^= 1), (uint8_t *)&req,
-		sizeof (kd_req_t), NULL, 0);
+	ret = kd_send_data_packet (ctx->io_ptr, KD_PACKET_TYPE_STATE_MANIPULATE, (ctx->seq_id ^= 1), (uint8_t *) &req,
+		sizeof(kd_req_t), NULL, 0);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
@@ -1045,7 +1018,7 @@ int winkd_query_mem(WindCtx *ctx, const ut64 addr, int *address_space, int *flag
 	kd_packet_t *pkt;
 	int ret;
 
-	if (!ctx || !ctx->desc || !ctx->syncd) {
+	if (!ctx || !ctx->io_ptr || !ctx->syncd) {
 		return 0;
 	}
 
@@ -1059,8 +1032,8 @@ int winkd_query_mem(WindCtx *ctx, const ut64 addr, int *address_space, int *flag
 
 	winkd_lock_enter (ctx);
 
-	ret = kd_send_data_packet (ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE, (ctx->seq_id ^= 1), (uint8_t *)&req,
-		sizeof (kd_req_t), NULL, 0);
+	ret = kd_send_data_packet (ctx->io_ptr, KD_PACKET_TYPE_STATE_MANIPULATE, (ctx->seq_id ^= 1), (uint8_t *) &req,
+		sizeof(kd_req_t), NULL, 0);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
@@ -1107,7 +1080,7 @@ int winkd_bkpt(WindCtx *ctx, const ut64 addr, const int set, const int hw, int *
 	kd_packet_t *pkt;
 	int ret;
 
-	if (!ctx || !ctx->desc || !ctx->syncd) {
+	if (!ctx || !ctx->io_ptr || !ctx->syncd) {
 		return 0;
 	}
 
@@ -1122,8 +1095,8 @@ int winkd_bkpt(WindCtx *ctx, const ut64 addr, const int set, const int hw, int *
 
 	winkd_lock_enter (ctx);
 
-	ret = kd_send_data_packet (ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE, (ctx->seq_id ^= 1), (uint8_t *)&req,
-		sizeof (kd_req_t), NULL, 0);
+	ret = kd_send_data_packet (ctx->io_ptr, KD_PACKET_TYPE_STATE_MANIPULATE, (ctx->seq_id ^= 1), (uint8_t *) &req,
+		sizeof(kd_req_t), NULL, 0);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
@@ -1162,7 +1135,7 @@ int winkd_read_at_phys(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int 
 	kd_packet_t *pkt;
 	int ret;
 
-	if (!ctx || !ctx->desc || !ctx->syncd) {
+	if (!ctx || !ctx->io_ptr || !ctx->syncd) {
 		return 0;
 	}
 	req.req = DbgKdReadPhysicalMemoryApi;
@@ -1177,8 +1150,8 @@ int winkd_read_at_phys(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int 
 		goto error;
 	}
 
-	ret = kd_send_data_packet (ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE, (ctx->seq_id ^= 1),
-		(uint8_t *)&req, sizeof (kd_req_t), NULL, 0);
+	ret = kd_send_data_packet (ctx->io_ptr, KD_PACKET_TYPE_STATE_MANIPULATE, (ctx->seq_id ^= 1),
+		(uint8_t *) &req, sizeof(kd_req_t), NULL, 0);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
@@ -1218,7 +1191,7 @@ int winkd_read_at(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int count
 	kd_packet_t *pkt;
 	int ret;
 
-	if (!ctx || !ctx->desc || !ctx->syncd) {
+	if (!ctx || !ctx->io_ptr || !ctx->syncd) {
 		return 0;
 	}
 	req.req = DbgKdReadVirtualMemoryApi;
@@ -1233,8 +1206,8 @@ int winkd_read_at(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int count
 		goto error;
 	}
 
-	ret = kd_send_data_packet (ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
-		(ctx->seq_id ^= 1), (uint8_t *)&req, sizeof (kd_req_t), NULL, 0);
+	ret = kd_send_data_packet (ctx->io_ptr, KD_PACKET_TYPE_STATE_MANIPULATE,
+		(ctx->seq_id ^= 1), (uint8_t *) &req, sizeof(kd_req_t), NULL, 0);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
@@ -1273,7 +1246,7 @@ int winkd_write_at(WindCtx *ctx, const uint8_t *buf, const ut64 offset, const in
 	}, *rr;
 	int payload, ret;
 
-	if (!ctx || !ctx->desc || !ctx->syncd) {
+	if (!ctx || !ctx->io_ptr || !ctx->syncd) {
 		return 0;
 	}
 
@@ -1285,9 +1258,9 @@ int winkd_write_at(WindCtx *ctx, const uint8_t *buf, const ut64 offset, const in
 
 	winkd_lock_enter (ctx);
 
-	ret = kd_send_data_packet (ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
-		(ctx->seq_id ^= 1), (uint8_t *)&req,
-		sizeof (kd_req_t), buf, payload);
+	ret = kd_send_data_packet (ctx->io_ptr, KD_PACKET_TYPE_STATE_MANIPULATE,
+		(ctx->seq_id ^= 1), (uint8_t *) &req,
+		sizeof(kd_req_t), buf, payload);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
@@ -1325,7 +1298,7 @@ int winkd_write_at_phys(WindCtx *ctx, const uint8_t *buf, const ut64 offset, con
 	int ret;
 	int payload;
 
-	if (!ctx || !ctx->desc || !ctx->syncd) {
+	if (!ctx || !ctx->io_ptr || !ctx->syncd) {
 		return 0;
 	}
 
@@ -1342,8 +1315,8 @@ int winkd_write_at_phys(WindCtx *ctx, const uint8_t *buf, const ut64 offset, con
 
 	winkd_lock_enter (ctx);
 
-	ret = kd_send_data_packet (ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
-		(ctx->seq_id ^= 1), (uint8_t *)&req, sizeof (kd_req_t), buf, payload);
+	ret = kd_send_data_packet (ctx->io_ptr, KD_PACKET_TYPE_STATE_MANIPULATE,
+		(ctx->seq_id ^= 1), (uint8_t *) &req, sizeof(kd_req_t), buf, payload);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
@@ -1378,7 +1351,7 @@ void winkd_break(void *arg) {
 	// This command shouldn't be wrapped by locks since it can always be sent and we don't
 	// want break queued up after another background task
 	WindCtx *ctx = (WindCtx *)arg;
-	(void)iob_write (ctx->desc, (const uint8_t *)"b", 1);
+	(void)iob_write (ctx->io_ptr, (const uint8_t *)"b", 1);
 }
 
 int winkd_break_read(WindCtx *ctx) {
@@ -1390,7 +1363,7 @@ int winkd_break_read(WindCtx *ctx) {
 			"CancelIoEx");
 	}
 	if (w32_CancelIoEx) {
-		w32_CancelIoEx (ctx->desc, NULL);
+		w32_CancelIoEx (ctx->io_ptr, NULL);
 	}
 #endif
 	return 1;
