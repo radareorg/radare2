@@ -34,7 +34,6 @@ typedef struct {
 // USE THIS: int ws = bf->o->info->big_endian;
 #define mach0_endian 1
 
-// TODO: Use the implementation from RUtil
 static ut64 read_uleb128(ulebr *r, ut8 *end) {
 	ut64 result = 0;
 	int bit = 0;
@@ -97,41 +96,52 @@ static ut64 entry_to_vaddr(struct MACH0_(obj_t) *bin) {
 }
 
 static ut64 addr_to_offset(struct MACH0_(obj_t) *bin, ut64 addr) {
-	if (bin->segs) {
-		size_t i;
-		for (i = 0; i < bin->nsegs; i++) {
-			const ut64 segment_base = (ut64)bin->segs[i].vmaddr;
-			const ut64 segment_size = (ut64)bin->segs[i].vmsize;
-			if (addr >= segment_base && addr < segment_base + segment_size) {
-				return bin->segs[i].fileoff + (addr - segment_base);
-			}
+	ut64 segment_base, segment_size;
+	int i;
+
+	if (!bin->segs) {
+		return 0;
+	}
+	for (i = 0; i < bin->nsegs; i++) {
+		segment_base = (ut64)bin->segs[i].vmaddr;
+		segment_size = (ut64)bin->segs[i].vmsize;
+		if (addr >= segment_base && addr < segment_base + segment_size) {
+			return bin->segs[i].fileoff + (addr - segment_base);
 		}
 	}
 	return 0;
 }
 
 static ut64 offset_to_vaddr(struct MACH0_(obj_t) *bin, ut64 offset) {
-	if (bin->segs) {
-		size_t i;
-		for (i = 0; i < bin->nsegs; i++) {
-			ut64 segment_base = (ut64)bin->segs[i].fileoff;
-			ut64 segment_size = (ut64)bin->segs[i].filesize;
-			if (offset >= segment_base && offset < segment_base + segment_size) {
-				return bin->segs[i].vmaddr + (offset - segment_base);
-			}
+	ut64 segment_base, segment_size;
+	int i;
+
+	if (!bin->segs) {
+		return 0;
+	}
+	for (i = 0; i < bin->nsegs; i++) {
+		segment_base = (ut64)bin->segs[i].fileoff;
+		segment_size = (ut64)bin->segs[i].filesize;
+		if (offset >= segment_base && offset < segment_base + segment_size) {
+			return bin->segs[i].vmaddr + (offset - segment_base);
 		}
 	}
 	return 0;
 }
 
 static ut64 pa2va(RBinFile *bf, ut64 offset) {
-	r_return_val_if_fail (bf && bf->rbin, offset);
+	if (!bf || !bf->rbin) {
+		return offset;
+	}
 	RIO *io = bf->rbin->iob.io;
-	if (!io || !io->va) {
+	if (!io->va) {
 		return offset;
 	}
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
-	return bin? offset_to_vaddr (bin, offset): offset;
+	if (!bin) {
+		return offset;
+	}
+	return offset_to_vaddr (bin, offset);
 }
 
 static void init_sdb_formats(struct MACH0_(obj_t) *bin) {
@@ -313,7 +323,7 @@ static bool init_hdr(struct MACH0_(obj_t) *bin) {
 }
 
 static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
-	size_t i, j, k, sect, len;
+	int i, j, k, sect, len;
 	ut32 size_sects;
 	ut8 segcom[sizeof (struct MACH0_(segment_command))] = {0};
 	ut8 sec[sizeof (struct MACH0_(section))] = {0};
@@ -475,12 +485,12 @@ static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
 	return true;
 }
 
-#define Error(x) error_message = x; goto error;
+#define Error(x) errorMessage = x; goto error;
 static bool parse_symtab(struct MACH0_(obj_t) *mo, ut64 off) {
 	struct symtab_command st;
 	ut32 size_sym;
-	size_t i;
-	const char *error_message = "";
+	int i;
+	const char *errorMessage = "";
 	ut8 symt[sizeof (struct symtab_command)] = {0};
 	ut8 nlst[sizeof (struct MACH0_(nlist))] = {0};
 	const bool be = mo->big_endian;
@@ -549,12 +559,12 @@ static bool parse_symtab(struct MACH0_(obj_t) *mo, ut64 off) {
 error:
 	R_FREE (mo->symstr);
 	R_FREE (mo->symtab);
-	Eprintf ("%s\n", error_message);
+	Eprintf ("%s\n", errorMessage);
 	return false;
 }
 
-static bool parse_dysymtab(struct MACH0_(obj_t) *bin, ut64 off) {
-	size_t len, i;
+static int parse_dysymtab(struct MACH0_(obj_t) *bin, ut64 off) {
+	int len, i;
 	ut32 size_tab;
 	ut8 dysym[sizeof (struct dysymtab_command)] = {0};
 	ut8 dytoc[sizeof (struct dylib_table_of_contents)] = {0};
@@ -2031,6 +2041,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 
 static bool init(struct MACH0_(obj_t) *mo) {
 	if (!init_hdr (mo)) {
+		Eprintf ("Warning: File is not MACH0\n");
 		return false;
 	}
 	if (!init_items (mo)) {
@@ -2084,9 +2095,16 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 }
 
 void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile *bf) {
-	r_return_if_fail (options && bf && bf->rbin);
+	if (!options) {
+		return;
+	}
+
 	options->header_at = 0;
-	options->verbose = bf->rbin->verbose;
+	if (bf && bf->rbin) {
+		options->verbose = bf->rbin->verbose;
+	} else {
+		options->verbose = false;
+	}
 }
 
 static void *duplicate_ptr(void *p) {
@@ -2098,7 +2116,6 @@ static void free_only_key(HtPPKv *kv) {
 }
 
 static size_t ptr_size(void *c) {
-	// :D
 	return 8;
 }
 
@@ -2188,8 +2205,10 @@ static bool __isDataSection(RBinSection *sect) {
 
 RList *MACH0_(get_segments)(RBinFile *bf) {
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
+
 	RList *list = r_list_newf ((RListFree)r_bin_section_free);
-	size_t i, j;
+
+	int i, j;
 
 	/* for core files */
 	if (bin->nsegs > 0) {
@@ -2264,7 +2283,7 @@ RList *MACH0_(get_segments)(RBinFile *bf) {
 struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
 	struct section_t *sections;
 	char segname[32], sectname[32], raw_segname[17];
-	size_t i, j, to;
+	int i, j, to;
 
 	if (!bin) {
 		return NULL;
@@ -2317,7 +2336,7 @@ struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
 		// snprintf (segname, sizeof (segname), "%d", i); // wtf
 		memcpy (raw_segname, bin->sects[i].segname, 16);
 		raw_segname[16] = 0;
-		snprintf (segname, sizeof (segname), "%zd.%s", i, raw_segname);
+		snprintf (segname, sizeof (segname), "%d.%s", i, raw_segname);
 		for (j = 0; j < bin->nsegs; j++) {
 			if (sections[i].addr >= bin->segs[j].vmaddr &&
 				sections[i].addr < (bin->segs[j].vmaddr + bin->segs[j].vmsize)) {
@@ -2337,7 +2356,7 @@ struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
 }
 
 static bool parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol, int idx) {
-	size_t i, j, nsyms, stridx;
+	int i, j, nsyms, stridx;
 	const char *symstr;
 	if (idx < 0) {
 		return false;
@@ -2387,7 +2406,7 @@ static bool parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol
 				symbol->addr = bin->sects[i].addr + delta;
 				symbol->size = 0;
 				stridx = bin->symtab[idx].n_strx;
-				if (stridx < bin->symstrlen) {
+				if (stridx >= 0 && stridx < bin->symstrlen) {
 					symstr = (char *)bin->symstr + stridx;
 				} else {
 					symstr = "???";
@@ -2405,11 +2424,10 @@ static bool parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol
 }
 
 static int inSymtab(HtPP *hash, const char *name, ut64 addr) {
-	bool found = false;
-	char *key = r_str_newf ("%"PFMT64x".%s", addr, name);
+	bool found;
+	const char *key = r_str_newf ("%"PFMT64x".%s", addr, name);
 	ht_pp_find (hash, key, &found);
 	if (found) {
-		free (key);
 		return true;
 	}
 	ht_pp_insert (hash, key, "1");
@@ -2417,8 +2435,8 @@ static int inSymtab(HtPP *hash, const char *name, ut64 addr) {
 }
 
 static char *get_name(struct MACH0_(obj_t) *mo, ut32 stridx, bool filter) {
-	size_t i = 0;
-	if (!mo->symstr || stridx >= mo->symstrlen) {
+	int i = 0;
+	if (stridx >= mo->symstrlen) {
 		return NULL;
 	}
 	int len = mo->symstrlen - stridx;
@@ -2446,7 +2464,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 		return 0;
 	}
 
-	size_t count = 0;
+	int count = 0;
 	ulebr ur = {NULL};
 	ut8 * trie = NULL;
 	RList * states = NULL;
@@ -2618,9 +2636,8 @@ static void fill_exports_list(struct MACH0_(obj_t) *bin, const char *name, ut64 
 const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 	static RList * cache = NULL; // XXX DONT COMMIT WITH THIS
 	struct symbol_t *symbols;
-	size_t j, s, symbols_size, symbols_count;
-	ut32 to, from;
-	size_t i;
+	int j, s, stridx, symbols_size, symbols_count;
+	ut32 to, from, i;
 
 	r_return_val_if_fail (bin, NULL);
 	if (cache) {
@@ -2750,6 +2767,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 
 	for (i = 0; i < bin->nsymtab; i++) {
 		struct MACH0_(nlist) *st = &bin->symtab[i];
+		stridx = st->n_strx;
 		// 0 is for imports
 		// 1 is for symbols
 		// 2 is for func.eh (exception handlers?)
@@ -2765,7 +2783,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			} else {
 				sym->type = "LOCAL";
 			}
-			char *sym_name = get_name (bin, st->n_strx, false);
+			char *sym_name = get_name (bin, stridx, false);
 			if (sym_name) {
 				sym->name = sym_name;
 				if (inSymtab (hash, sym->name, sym->vaddr)) {
@@ -2888,9 +2906,12 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 				symbols[j].size = 0; /* TODO: Is it anywhere? */
 				symbols[j].bits = bin->symtab[i].n_desc & N_ARM_THUMB_DEF ? 16 : bits;
 				symbols[j].is_imported = false;
-				symbols[j].type = (bin->symtab[i].n_type & N_EXT)
-					? R_BIN_MACH0_SYMBOL_TYPE_EXT
-					: R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
+				if (bin->symtab[i].n_type & N_EXT) {
+					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
+				} else {
+					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
+				}
+
 				stridx = bin->symtab[i].n_strx;
 				symbols[j].name = get_name (bin, stridx, false);
 				symbols[j].last = false;
@@ -2934,24 +2955,29 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 			// 1 is for symbols
 			// 2 is for func.eh (exception handlers?)
 			int section = st->n_sect;
-			if (section == 1 && j < symbols_count) {
-				// check if symbol exists already
+			if (section == 1 && j < symbols_count) { // text ??st->n_type == 1)
+			//if (j < symbols_count) { // text ??st->n_type == 1)
 				/* is symbol */
 				symbols[j].addr = st->n_value;
 				symbols[j].offset = addr_to_offset (bin, symbols[j].addr);
 				symbols[j].size = 0; /* find next symbol and crop */
-				symbols[j].type = (st->n_type & N_EXT)
-					? R_BIN_MACH0_SYMBOL_TYPE_EXT
-					: R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
-				char *sym_name = get_name (bin, st->n_strx, false);
+				if (st->n_type & N_EXT) {
+					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
+				} else {
+					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
+				}
+				stridx = st->n_strx;
+				char *sym_name = get_name (bin, stridx, false);
 				if (sym_name) {
 					symbols[j].name = sym_name;
 				} else {
 					symbols[j].name = r_str_newf ("entry%d", i);
+					//symbols[j].name[0] = 0;
 				}
 				symbols[j].last = 0;
 				if (inSymtab (hash, symbols[j].name, symbols[j].addr)) {
-					R_FREE (symbols[j].name);
+					free (symbols[j].name);
+					symbols[j].name = NULL;
 				} else {
 					j++;
 				}
