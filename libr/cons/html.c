@@ -2,17 +2,17 @@
 
 #include <r_cons.h>
 
-static bool gethtmlrgb(const char *str, char *buf) {
+static const char *gethtmlrgb(const char *str) {
 	ut8 r = 0, g = 0, b = 0;
 	if (r_cons_rgb_parse (str, &r, &g, &b, 0)) {
+		static char buf[32];
 		sprintf (buf, "#%02x%02x%02x", r, g, b);
-		return true;
+		return buf;
 	}
-	buf[0] = '\0';
-	return false;
+	return "";
 }
 
-static const char *gethtmlcolor(const char ptrch) {
+static const char *gethtmlcolor(const char ptrch, const char *def) {
 	switch (ptrch) {
 	case '0': return "#000"; // BLACK
 	case '1': return "#f00"; // RED
@@ -23,9 +23,9 @@ static const char *gethtmlcolor(const char ptrch) {
 	case '6': return "#aaf"; // TURQOISE
 	case '7': return "#fff"; // WHITE
 	case '8': return "#777"; // GREY
-	case '9': break; // default
+	case '9': break; // ???
 	}
-	return "";
+	return def;
 }
 
 // TODO: move into r_util/str
@@ -33,14 +33,9 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 	const char *str = ptr;
 	int esc = 0;
 	int len = 0;
-	bool inv = false;
-	char text_color[16] = {0};
-	char background_color[16] = {0};
-	bool has_set = false;
-	bool need_to_set = false;
-	bool need_to_clear = false;
-	bool first_style;
+	int inv = 0;
 	int tmp;
+	bool tag_font = false;
 	if (!ptr) {
 		return NULL;
 	}
@@ -49,33 +44,6 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 		return NULL;
 	}
 	for (; ptr[0]; ptr = ptr + 1) {
-		if (esc == 0 && ptr[0] != 0x1b && need_to_set) {
-			if (has_set) {
-				r_strbuf_append (res, "</font>");
-				has_set = false;
-			}
-			if (!need_to_clear) {
-				first_style = true;
-				r_strbuf_append (res, "<font");
-				if (text_color[0]) {
-					r_strbuf_appendf (res, " color='%s'", text_color);
-				}
-				if (background_color[0]) {
-					r_strbuf_append (res, first_style? " style='": ";");
-					r_strbuf_appendf (res, "background-color:%s", background_color);
-					first_style = false;
-				}
-				if (inv) {
-					r_strbuf_append (res, first_style? " style='": ";");
-					r_strbuf_append (res, "text-decoration:underline overline");
-					first_style = false;
-				}
-				r_strbuf_append (res, first_style? ">": "'>");
-				has_set = true;
-			}
-			need_to_clear = false;
-			need_to_set = false;
-		}
 		if (ptr[0] == '\n') {
 			tmp = (int) (size_t) (ptr - str);
 			r_strbuf_append_n (res, str, tmp);
@@ -88,13 +56,13 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 			str = ptr + 1;
 			continue;
 		} else if (ptr[0] == '<') {
-			tmp = (int)(size_t) (ptr - str);
+			tmp = (int) (size_t) (ptr - str);
 			r_strbuf_append_n (res, str, tmp);
 			r_strbuf_append (res, "&lt;");
 			str = ptr + 1;
 			continue;
 		} else if (ptr[0] == '>') {
-			tmp = (int)(size_t) (ptr - str);
+			tmp = (int) (size_t) (ptr - str);
 			r_strbuf_append_n (res, str, tmp);
 			r_strbuf_append (res, "&gt;");
 			str = ptr + 1;
@@ -108,8 +76,12 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 		}
 		if (ptr[0] == 0x1b) {
 			esc = 1;
-			tmp = (int)(size_t) (ptr - str);
+			tmp = (int) (size_t) (ptr - str);
 			r_strbuf_append_n (res, str, tmp);
+			if (tag_font) {
+				r_strbuf_append (res, "</font>");
+				tag_font = false;
+			}
 			str = ptr + 1;
 			continue;
 		}
@@ -142,15 +114,15 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 				continue;
 			} else if (!strncmp (ptr, "48;5;", 5) || !strncmp (ptr, "48;2;", 5)) {
 				char *end = strchr (ptr, 'm');
-				gethtmlrgb (ptr, background_color);
-				need_to_set = true;
+				r_strbuf_appendf (res, "<font style='background-color:%s'>", gethtmlrgb (ptr));
+				tag_font = true;
 				ptr = end;
 				str = ptr + 1;
 				esc = 0;
 			} else if (!strncmp (ptr, "38;5;", 5) || !strncmp (ptr, "38;2;", 5)) {
 				char *end = strchr (ptr, 'm');
-				gethtmlrgb (ptr, text_color);
-				need_to_set = true;
+				r_strbuf_appendf (res, "<font color='%s'>", gethtmlrgb (ptr));
+				tag_font = true;
 				ptr = end;
 				str = ptr + 1;
 				esc = 0;
@@ -163,56 +135,43 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 				continue;
 			} else if (ptr[0] == '0' && ptr[1] == 'm') {
 				str = (++ptr) + 1;
-				esc = 0;
-				inv = false;
-				text_color[0] = '\0';
-				background_color[0] = '\0';
-				need_to_set = need_to_clear = true;
+				esc = inv = 0;
 				continue;
 				// reset color
-			} else if (!strncmp (ptr, "27m", 3)) {
-				inv = false;
-				need_to_set = true;
-				ptr = ptr + 2;
-				str = ptr + 1;
-				esc = 0;
-				continue;
-				// reset invert color
 			} else if (ptr[0] == '7' && ptr[1] == 'm') {
 				str = (++ptr) + 1;
-				inv = true;
-				need_to_set = true;
+				inv = 128;
 				esc = 0;
 				continue;
-				// invert color
+				// reset color
 			} else if (ptr[0] == '3' && ptr[2] == 'm') {
-				const char *htmlColor = gethtmlcolor (ptr[1]);
+				const char *htmlColor = gethtmlcolor (ptr[1], inv? "#fff":NULL);
 				if (htmlColor) {
-					r_str_ncpy (text_color, htmlColor, sizeof (text_color));
+					r_strbuf_appendf (res, "<font color='%s'>", htmlColor);
 				}
-				need_to_set = true;
-				ptr = ptr + 2;
-				str = ptr + 1;
+				tag_font = true;
+				ptr = ptr + 1;
+				str = ptr + 2;
 				esc = 0;
 				continue;
 			} else if (ptr[0] == '4' && ptr[2] == 'm') {
-				const char *htmlColor = gethtmlcolor (ptr[1]);
+				const char *htmlColor = gethtmlcolor (ptr[1], inv? "#000":NULL);
 				if (htmlColor) {
-					r_str_ncpy (background_color, htmlColor, sizeof (background_color));
+					r_strbuf_appendf (res, "<font style='background-color:%s'>", htmlColor);
 				}
-				need_to_set = true;
-				ptr = ptr + 2;
-				str = ptr + 1;
+				tag_font = true;
+				ptr = ptr + 1;
+				str = ptr + 2;
 				esc = 0;
 				continue;
 			}
 		}
 		len++;
 	}
-	r_strbuf_append_n (res, str, ptr - str);
-	if (has_set) {
+	if (tag_font) {
 		r_strbuf_append (res, "</font>");
 	}
+	r_strbuf_append_n (res, str, ptr - str);
 	if (newlen) {
 		*newlen = res->len;
 	}
