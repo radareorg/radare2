@@ -59,10 +59,6 @@ ifeq (${OSTYPE},haiku)
 LINK+=-lnetwork
 endif
 
-ifeq (${OSTYPE},solaris)
-LINK+=-lproc
-endif
-
 ifneq ($(EXTRA_PRE),)
 all: $(EXTRA_PRE)
 	$(MAKE) all2
