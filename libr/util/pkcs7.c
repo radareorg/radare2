@@ -324,10 +324,6 @@ R_API RCMS *r_pkcs7_parse_cms(const ut8 *buffer, ut32 length) {
 	}
 	if (object->list.objects[0]) {
 		container->contentType = r_asn1_stringify_oid (object->list.objects[0]->sector, object->list.objects[0]->length);
-		if (!container->contentType) {
-			r_asn1_free_object (object);
-			return NULL;
-		}
 	}
 	if (object->list.objects[1]) {
 		r_pkcs7_parse_signeddata (&container->signedData, object->list.objects[1]->list.objects[0]);
@@ -644,9 +640,6 @@ static bool r_pkcs7_parse_spcdata(SpcAttributeTypeAndOptionalValue *data, RASN1O
 		return false;
 	}
 	data->type = r_asn1_stringify_oid (object->list.objects[0]->sector, object->list.objects[0]->length);
-	if (!data->type) {
-		return false;
-	}
 	RASN1Object *obj1 = object->list.objects[1];
 	if (object->list.length > 1) {
 		if (obj1) {
@@ -661,19 +654,14 @@ static bool r_pkcs7_parse_spcmessagedigest(SpcDigestInfo *messageDigest, RASN1Ob
 		!object->list.objects[0] || !object->list.objects[1]) {
 		return false;
 	}
-	if (!r_x509_parse_algorithmidentifier (&messageDigest->digestAlgorithm, object->list.objects[0])) {
-		return false;
-	}
+	r_x509_parse_algorithmidentifier (&messageDigest->digestAlgorithm, object->list.objects[0]);
 	RASN1Object *obj1 = object->list.objects[1];
 	messageDigest->digest = r_asn1_create_binary (obj1->sector, obj1->length);
 	return true;
 }
 
 R_API SpcIndirectDataContent *r_pkcs7_parse_spcinfo(RCMS *cms) {
-	r_return_val_if_fail (cms, NULL);
-
-	if (strcmp (cms->signedData.contentInfo.contentType->string,
-		"spcIndirectDataContext")) {
+	if (!cms) {
 		return NULL;
 	}
 
@@ -690,22 +678,16 @@ R_API SpcIndirectDataContent *r_pkcs7_parse_spcinfo(RCMS *cms) {
 	RASN1Object *object = r_asn1_create_object (content->binary, content->length, content->binary);
 	if (!object || object->list.length < 2 || !object->list.objects ||
 		!object->list.objects[0] || !object->list.objects[1]) {
-		R_FREE (spcinfo);
-		goto beach;
+		r_asn1_free_object (object);
+		free (spcinfo);
+		return NULL;
 	}
 	if (object->list.objects[0]) {
-		if (!r_pkcs7_parse_spcdata (&spcinfo->data, object->list.objects[0])) {
-			R_FREE (spcinfo);
-			goto beach;
-		}
+		r_pkcs7_parse_spcdata (&spcinfo->data, object->list.objects[0]);
 	}
 	if (object->list.objects[1]) {
-		if (!r_pkcs7_parse_spcmessagedigest (&spcinfo->messageDigest, object->list.objects[1])) {
-			R_FREE (spcinfo);
-			goto beach;
-		}
+		r_pkcs7_parse_spcmessagedigest (&spcinfo->messageDigest, object->list.objects[1]);
 	}
-beach:
 	r_asn1_free_object (object);
 	return spcinfo;
 }
