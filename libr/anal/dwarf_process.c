@@ -46,12 +46,12 @@ typedef struct dwarf_var_location_t {
 
 typedef struct dwarf_variable_t {
 	VariableLocation *location;
-	const char *name;
+	char *name;
 	char *type;
 } Variable;
 
 static void variable_free(Variable *var) {
-	free ((char *) var->name);
+	free (var->name);
 	free (var->location);
 	free (var->type);
 	free (var);
@@ -1189,17 +1189,12 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 				if (child_die->tag == DW_TAG_formal_parameter) {
 					/* arguments sometimes have only type, create generic argX */
 					if (type.len) {
-						bool free_name = false;
 						if (!name) {
-							name = r_str_newf ("arg%d", argNumber);
-							free_name = true;
-						}
-						r_strbuf_appendf (args, "%s %s,", r_strbuf_get (&type), name);
-						if (free_name) {
-							var->name = name;
+							var->name = r_str_newf ("arg%d", argNumber);
 						} else {
 							var->name = strdup (name);
 						}
+						r_strbuf_appendf (args, "%s %s,", r_strbuf_get (&type), var->name);
 						var->type = strdup (r_strbuf_get (&type));
 						r_list_append (variables, var);
 					} else {
