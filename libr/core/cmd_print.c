@@ -672,15 +672,15 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 			}
 			if (show_unalloc &&
 			    !core->print->iob.is_valid_offset (core->print->iob.io, core->offset + j, false)) {
-				ch = core->print->io_unalloc_ch;
 				if (show_color) {
 					free (color);
 					color = strdup (Color_RESET);
+					ch = core->print->io_unalloc_ch;
 					if (ch == ' ') {
 						ch = '.';
 					}
 				} else {
-					ch = strchr (chars, ch) ? '?' : ch;
+					ch = '?'; // deliberately ignores io.unalloc.ch
 				}
 			}
 			if (square) {
@@ -785,15 +785,15 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 			}
 			if (show_unalloc &&
 			    !core->print->iob.is_valid_offset (core->print->iob.io, core->offset + j, false)) {
-				ch = core->print->io_unalloc_ch;
 				if (show_color) {
 					free (color);
 					color = strdup (Color_RESET);
+					ch = core->print->io_unalloc_ch;
 					if (ch == ' ') {
 						ch = '.';
 					}
 				} else {
-					ch = strchr (chars, ch) ? '?' : ch;
+					ch = '?'; // deliberately ignores io.unalloc.ch
 				}
 			}
 			if (square) {
