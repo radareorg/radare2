@@ -772,8 +772,6 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 			}
 		}
 	}
-	eprintf ("r_debug_wait reason: %d %s\n", reason, r_debug_reason_to_string (reason));
-	eprintf ("pid: %d tid: %d\n", dbg->pid, dbg->tid);
 	return reason;
 }
 
@@ -1185,18 +1183,16 @@ repeat:
 	}
 
 #if __linux__
-	if (reason == R_DEBUG_REASON_NEW_PID) {
+	if (reason == R_DEBUG_REASON_NEW_PID && dbg->follow_child) {
 #if DEBUGGER
-		if (dbg->follow_child) {
-			/// if the plugin is not compiled link fails, so better do runtime linking
-			/// until this code gets fixed
-			static bool (*linux_attach_new_process) (RDebug *dbg, int pid) = NULL;
-			if (!linux_attach_new_process) {
-				linux_attach_new_process = r_lib_dl_sym (NULL, "linux_attach_new_process");
-			}
-			if (linux_attach_new_process) {
-				linux_attach_new_process (dbg, dbg->forked_pid);
-			}
+		/// if the plugin is not compiled link fails, so better do runtime linking
+		/// until this code gets fixed
+		static bool (*linux_attach_new_process) (RDebug *dbg, int pid) = NULL;
+		if (!linux_attach_new_process) {
+			linux_attach_new_process = r_lib_dl_sym (NULL, "linux_attach_new_process");
+		}
+		if (linux_attach_new_process) {
+			linux_attach_new_process (dbg, dbg->forked_pid);
 		}
 #endif
 		goto repeat;
@@ -1285,10 +1281,7 @@ repeat:
 	r_cons_break_pop ();
 #elif __linux__
 	// Letting threads continue after the debugger breaks is currently problematic in linux
-	// Stop all threads when there is no user interrupt caused by statc_debug_stop
-	// to prevent queueing duplicate SIGSTOP signals
-	if (!r_cons_is_breaked () && dbg->continue_all_threads) {
-		eprintf ("STOP AFTER CONTINUE\n");
+	if (dbg->continue_all_threads) {
 		r_debug_stop (dbg);
 	}
 #endif
