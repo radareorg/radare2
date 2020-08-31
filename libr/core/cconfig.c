@@ -3164,6 +3164,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("bin.lang", "", "Language for bin.demangle");
 	SETBPREF ("bin.demangle", "true", "Import demangled symbols from RBin");
 	SETBPREF ("bin.demangle.libs", "false", "Show library name on demangled symbols names");
+	SETCB ("bin.demanglecmd", "false", &cb_bdc, "run xcrun swift-demangle and similar if available (SLOW)");
 	SETI ("bin.baddr", -1, "Base address of the binary");
 	SETI ("bin.laddr", 0, "Base address for loading library ('*.so')");
 	SETCB ("bin.dbginfo", "true", &cb_bindbginfo, "Load debug information at startup if available");
@@ -3363,7 +3364,6 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* cmd */
 	SETPREF ("cmd.xterm", "xterm -bg black -fg gray -e", "xterm command to spawn with V@");
-	SETCB ("cmd.demangle", "false", &cb_bdc, "run xcrun swift-demangle and similar if available (SLOW)");
 	SETICB ("cmd.depth", 10, &cb_cmddepth, "Maximum command depth");
 	SETPREF ("cmd.bp", "", "Run when a breakpoint is hit");
 	SETPREF ("cmd.onsyscall", "", "Run when a syscall is hit");
