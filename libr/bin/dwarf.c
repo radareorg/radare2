@@ -798,8 +798,8 @@ static const ut8 *parse_ext_opcode(const RBin *bin, const ut8 *obuf,
 	default:
 		if (mode == R_MODE_PRINT) {
 			print ("Unexpected ext opcode %d\n", opcode);
-			buf = NULL;
 		}
+		buf = NULL;
 		break;
 	}
 
@@ -1021,6 +1021,9 @@ static size_t parse_opcodes(const RBin *bin, const ut8 *obuf,
 	if (mode == R_MODE_PRINT) {
 		bin->cb_printf ("\n"); // formatting of the output
 	}
+	if (!buf) {
+		return 0;
+	}
 	return (size_t) (buf - obuf); // number of bytes we've moved by
 }
 
@@ -1091,6 +1094,9 @@ static int parse_line_raw(const RBin *a, const ut8 *obuf,
 		} while (bytes_read < buf_size && tmp_read != 0); // if nothing is read -> error, exit
 
 		line_header_fini (&hdr);
+		if (!tmp_read) {
+			return false;
+		}
 	}
 	return true;
 }
