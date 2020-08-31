@@ -188,6 +188,14 @@ static RList *zign_types_to_list(RAnal *a, const char *types) {
 	return ret;
 }
 
+static void bytes_sig_free(RSignBytes *bytes) {
+	if (bytes) {
+		free (bytes->bytes);
+		free (bytes->mask);
+		free (bytes);
+	}
+}
+
 static RList *do_reflike_sig(const char *token) {
 	RList *list = NULL;
 	char *scratch = r_str_new (token);
@@ -549,7 +557,7 @@ static void mergeItem(RSignItem *dst, RSignItem *src) {
 	char *ref, *var, *type;
 
 	if (src->bytes) {
-		r_sign_bytes_free (dst->bytes);
+		bytes_sig_free (dst->bytes);
 		dst->bytes = R_NEW0 (RSignBytes);
 		if (!dst->bytes) {
 			return;
@@ -558,13 +566,13 @@ static void mergeItem(RSignItem *dst, RSignItem *src) {
 		dst->bytes->size = src->bytes->size;
 		dst->bytes->bytes = malloc (src->bytes->size);
 		if (!dst->bytes->bytes) {
-			r_sign_bytes_free (dst->bytes);
+			bytes_sig_free (dst->bytes);
 			return;
 		}
 		memcpy (dst->bytes->bytes, src->bytes->bytes, src->bytes->size);
 		dst->bytes->mask = malloc (src->bytes->size);
 		if (!dst->bytes->mask) {
-			r_sign_bytes_free (dst->bytes);
+			bytes_sig_free (dst->bytes);
 			return;
 		}
 		memcpy (dst->bytes->mask, src->bytes->mask, src->bytes->size);
@@ -749,7 +757,7 @@ static bool addBytes(RAnal *a, const char *name, ut64 size, const ut8 *bytes, co
 fail:
 	if (it) {
 		free (it->name);
-		r_sign_bytes_free (it->bytes);
+		bytes_sig_free (it->bytes);
 	}
 	free (it);
 	return false;
@@ -871,7 +879,7 @@ static RSignBytes *r_sign_fcn_bytes(RAnal *a, RAnalFunction *fcn) {
 
 	return sig;
 bytes_failed:
-	r_sign_bytes_free (sig);
+	bytes_sig_free (sig);
 	return NULL;
 }
 
@@ -1372,12 +1380,41 @@ R_API RList *r_sign_find_closest_sig(RAnal *a, RSignItem *it, int count, double 
 	return output;
 }
 
-R_API RList *r_sign_find_closest_fcn(RAnal *a, RSignItem *it, int count, double score_threshold) {
-	r_return_val_if_fail (a && it && count > 0 && score_threshold >= 0 && score_threshold <= 1, NULL);
-	r_return_val_if_fail (it->bytes || it->graph, NULL);
+static RSignItem *item_frm_signame(RAnal *a, const char *signame) {
+	// example zign|*|sym.unlink_blk
+	char k[R_SIGN_KEY_MAXSZ];
+
+	serializeKey (a, r_spaces_current (&a->zign_spaces), signame, k);
+	char *value = sdb_querys (a->sdb_zigns, NULL, 0, k);
+	if (!value) {
+		return NULL;
+	}
+
+	RSignItem *it = r_sign_item_new ();
+	if (!it) {
+		free (value);
+		return NULL;
+	}
+
+	if (!r_sign_deserialize (a, it, k, value)) {
+		r_sign_item_free (it);
+		it = NULL;
+	}
+	free (value);
+	return it;
+}
+
+R_API RList *r_sign_find_closest_fcn(RAnal *a, char *signame, int count, double score_threshold) {
+	r_return_val_if_fail (a && signame && count > 0 && score_threshold >= 0 && score_threshold <= 1, NULL);
+	RSignItem *it = item_frm_signame (a, signame);
+	if (!it) {
+		eprintf ("Couldn't get signature for %s\n", signame);
+		return NULL;
+	}
 
 	RList *output = r_list_newf ((RListFree)r_sign_close_match_free);
 	if (!output) {
+		r_sign_item_free (it);
 		return NULL;
 	}
 
@@ -1399,6 +1436,7 @@ R_API RList *r_sign_find_closest_fcn(RAnal *a, RSignItem *it, int count, double 
 		// turn function into signature item
 		RSignItem *fsig = r_sign_item_new ();
 		if (!fsig) {
+			r_sign_item_free (it);
 			r_list_free (output);
 			return NULL;
 		}
@@ -1415,6 +1453,7 @@ R_API RList *r_sign_find_closest_fcn(RAnal *a, RSignItem *it, int count, double 
 		closest_match_update (&data, fsig);
 	}
 	free (data.bytes_combined);
+	r_sign_item_free (it);
 	return output;
 }
 
@@ -2621,7 +2660,7 @@ R_API void r_sign_item_free(RSignItem *item) {
 		return;
 	}
 	free (item->name);
-	r_sign_bytes_free (item->bytes);
+	bytes_sig_free (item->bytes);
 	if (item->hash) {
 		free (item->hash->bbhash);
 		free (item->hash);
@@ -2638,14 +2677,6 @@ R_API void r_sign_item_free(RSignItem *item) {
 
 R_API void r_sign_graph_free(RSignGraph *graph) {
 	free (graph);
-}
-
-R_API void r_sign_bytes_free(RSignBytes *bytes) {
-	if (bytes) {
-		free (bytes->bytes);
-		free (bytes->mask);
-		free (bytes);
-	}
 }
 
 static bool loadCB(void *user, const char *k, const char *v) {
