@@ -3803,7 +3803,7 @@ static int init (void* user) {
 }
 
 static int fini (void* user) {
-	free(ht_it);
+	ht_uu_free (ht_it);
 	ht_it = NULL;
 	return 0;
 }

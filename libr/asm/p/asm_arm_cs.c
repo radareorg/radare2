@@ -259,7 +259,7 @@ static bool init (void* user) {
 }
 
 static bool fini (void* user) {
-	free(ht_it);
+	ht_uu_free (ht_it);
 	ht_it = NULL;
 	return 0;
 }
