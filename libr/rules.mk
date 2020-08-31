@@ -19,8 +19,6 @@ ALL?=
 CFLAGS+=-I$(LIBR)
 CFLAGS+=-I$(LIBR)/include
 
--include $(SHLR)/sdb.mk
-
 CFLAGS+=-fvisibility=hidden
 LDFLAGS+=-fvisibility=hidden
 LINK+=-fvisibility=hidden

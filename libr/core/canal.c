@@ -5,7 +5,7 @@
 #include <r_flag.h>
 #include <r_core.h>
 #include <r_bin.h>
-#include <ht_uu.h>
+#include <sdb/ht_uu.h>
 
 #include <string.h>
 

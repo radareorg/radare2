@@ -26,7 +26,6 @@ endif
 #OSTYPE=windows
 include ../../libr/socket/deps.mk
 include ../../shlr/zip/deps.mk
-include ../../shlr/sdb.mk
 
 SRC_D=src
 SRC_C=$(wildcard $(SRC_D)/*.c)

@@ -32,7 +32,7 @@ SDBOBJS=$(addprefix ${SDBPATH},${SDB_OBJS})
 
 OBJS+=$(SDBOBJS)
 
-CFLAGS+=-I$(SDBPATH)
+CFLAGS+=-I$(SDBPATH)/src
 
 sdb_version:
 	$(MAKE) -C "$(SDBPATH)" sdb_version.h

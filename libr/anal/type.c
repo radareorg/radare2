@@ -2,7 +2,7 @@
 
 #include <r_anal.h>
 #include <string.h>
-#include <sdb.h>
+#include "sdb/sdb.h"
 
 static char *is_type(char *type) {
 	char *name = NULL;

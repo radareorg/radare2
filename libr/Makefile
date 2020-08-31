@@ -183,7 +183,7 @@ install-includes:
 		done ; \
 	done)
 	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/sdb"
-	(cd ../shlr/sdb/src && for FILE in *.h ; do \
+	(cd include/sdb && for FILE in * ; do \
 		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/sdb/$$FILE" ; \
 	done)
 	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/r_util"
@@ -200,7 +200,6 @@ symstall install-symlink:
 		"${DESTDIR}${LIBDIR}/pkgconfig" \
 		"${DESTDIR}${LIBDIR}/radare2/${VERSION}" ; \
 	rm -rf "${DESTDIR}${INCLUDEDIR}/libr" && ln -fs "${PWD}/include" "${DESTDIR}${INCLUDEDIR}/libr" ; \
-	rm -rf "${DESTDIR}${INCLUDEDIR}/libr/sdb" && ln -fs "${PWD}/../shlr/sdb/src" "${DESTDIR}${INCLUDEDIR}/libr/sdb" ; \
 	$(MAKE) install-pkgconfig-symlink ; \
 	$(foreach lib,${LIBS}, \
 	  ln -fs "${PWD}/$(lib)/libr_$(lib).${EXT_SO}" \

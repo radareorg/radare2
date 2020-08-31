@@ -1,4 +1,3 @@
-include ../../libr/config.mk
 include ../../config-user.mk
 include ../../mk/platform.mk
 include ../../mk/${COMPILER}.mk
@@ -26,8 +25,6 @@ SOEXT?=so
 endif
 endif
 LIBNAME=libr_tcc.${SOEXT}
-
-include ../../shlr/sdb.mk
 
 all: ${LIBNAME} libr_tcc.$(EXT_AR)
 

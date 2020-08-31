@@ -10,8 +10,6 @@ LIBAR=libr_windbg.${EXT_AR}
 LDFLAGS+=-L../../libr/util
 LIBS=-lr_util
 
-include ../../shlr/sdb.mk
-
 OFILES=transport.o kd.o windbg.o iob_pipe.o
 
 all: ${LIBAR}
