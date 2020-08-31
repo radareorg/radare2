@@ -24,7 +24,6 @@ r_util_sources = [
   'graph.c',
   'hex.c',
   'idpool.c',
-  'json.c',
   'json_indent.c',
   'lib.c',
   'list.c',
