@@ -340,13 +340,7 @@ R_API int r_sys_usleep(int usecs) {
 	rqtp.tv_nsec = (usecs - (rqtp.tv_sec * 1000000)) * 1000;
 	return clock_nanosleep (CLOCK_MONOTONIC, 0, &rqtp, NULL);
 #elif __UNIX__
-#if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && (__GLIBC__ <= 2) && (__GLIBC_MINOR__ <= 2)
-	// Old versions of GNU libc return void for usleep
-	usleep (usecs);
-	return 0;
-#else
 	return usleep (usecs);
-#endif
 #else
 	// w32 api uses milliseconds
 	usecs /= 1000;
