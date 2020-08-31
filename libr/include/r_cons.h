@@ -447,8 +447,8 @@ typedef struct r_cons_context_t {
 	RConsGrep grep;
 	RStack *cons_stack;
 	char *buffer;
-	size_t buffer_len;
-	size_t buffer_sz;
+	int buffer_len;
+	int buffer_sz;
 
 	bool breaked;
 	RStack *break_stack;
