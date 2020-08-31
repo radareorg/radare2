@@ -207,8 +207,7 @@ static void interrupt_process(RDebug *dbg) {
 
 static int r_debug_native_stop(RDebug *dbg) {
 #if __linux__
-	// Stop all running threads in the current process
-	return linux_stop_threads (dbg);
+	return linux_stop_threads (dbg, dbg->pid);
 #else
 	return 0;
 #endif
@@ -242,27 +241,36 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	}
 
 	ret = r_debug_ptrace (dbg, PTRACE_CONT, tid, NULL, (r_ptrace_data_t)(size_t)contsig);
+	eprintf ("Continue: %d\n", tid);
 	if (ret == -1) {
 		r_sys_perror ("PTRACE_CONT");
 	}
-
-	// Continue all threads that are stopped by the debugger only to keep other signals
-	// for the next waitpid by checking the siginfo.si_pid:
-	// - 0		= stopped by PTRACE_ATTACH or newly created tasks
+	// Continue threads that are stopped by the debugger to keep other signals
+	// by checking the siginfo.si_pid:
+	// - 0		= stopped by PTRACE_ATTACH
 	// - dbgpid = stopped by debugger
 	if (dbg->continue_all_threads && dbg->threads) {
 		RDebugPid *th;
 		RListIter *it;
-		pid_t dbgpid = getpid ();
+		int dbgpid = getpid ();
 		r_list_foreach (dbg->threads, it, th) {
-			// Check if the thread is already running
+			// Check if thread is already running
 			siginfo_t siginfo = { 0 };
 			ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, th->pid, 0, (r_ptrace_data_t)(size_t)&siginfo);
 			if (ret == -1) {
 				continue;
 			}
+			eprintf ("tid: %d si_signo: %d siginfo.si_pid: %d\n", th->pid, siginfo.si_signo, siginfo.si_pid);
 			if (siginfo.si_signo == SIGSTOP &&
 				(siginfo.si_pid == dbgpid || siginfo.si_pid == 0)) {
+				int status;
+				ret = waitpid (th->pid, &status, 0);
+				eprintf ("Consume: %d status %d\n", th->pid, WSTOPSIG (status));
+				if (ret != th->pid) {
+					eprintf ("Error: waitpid fails to consume SIGSTOP\n");
+					continue;
+				}
+				eprintf ("Continue: %d\n", th->pid);
 				ret = r_debug_ptrace (dbg, PTRACE_CONT, th->pid, 0, 0);
 				if (ret == -1) {
 					eprintf ("Error: %d is not traced or already running.\n", th->pid);
@@ -514,7 +522,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	// TODO: switch status and handle reasons here
 	// FIXME: Remove linux handling from this function?
 #if __linux__ && defined(PT_GETEVENTMSG)
-	reason = linux_ptrace_event (dbg, pid, status, true);
+	reason = linux_ptrace_event (dbg, pid, status);
 #endif // __linux__
 
 	/* propagate errors */
