@@ -1093,19 +1093,7 @@ err_r_file_mkstemp:
 	char *name = r_str_newf ("%s/r2.%s.XXXXXX%s", path, prefix, suffix);
 	mode_t mask = umask (S_IWGRP | S_IWOTH);
 	if (suffix && *suffix) {
-#if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && 2 <= __GLIBC__ && 19 <= __GLIBC__MINOR__
 		h = mkstemps (name, strlen (suffix));
-#else
-		char *const xpos = strrchr (name, 'X');
-		const char c = (char)(NULL != xpos ? *(xpos + 1) : 0);
-		if (0 != c) {
-			xpos[1] = 0;
-			h = mkstemp (name);
-			xpos[1] = c;
-		} else {
-			h = -1;
-		}
-#endif
 	} else {
 		h = mkstemp (name);
 	}
