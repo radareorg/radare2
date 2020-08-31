@@ -1947,10 +1947,9 @@ static void ds_show_functions(RDisasmState *ds) {
 					bool is_var = !var->isarg;
 					int saved_delta = var->delta;
 					var->delta = f->maxstack + var->delta;
-					char sign = var->isarg || (-var->delta <= f->maxstack) ? '+' : '-';
 					ds_show_functions_argvar (ds, f, var,
 						anal->reg->name[R_REG_NAME_SP],
-						is_var, sign);
+						is_var, '+');
 					var->delta = saved_delta;
 					}
 					break;
