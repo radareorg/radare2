@@ -241,13 +241,15 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 		r_cons_break_push ((RConsBreak)interrupt_process, dbg);
 	}
 
+
 	if (dbg->continue_all_threads && dbg->n_threads && dbg->threads) {
 		RDebugPid *th;
 		RListIter *it;
 		r_list_foreach (dbg->threads, it, th) {
 			ret = r_debug_ptrace (dbg, PTRACE_CONT, th->pid, 0, 0);
-			if (ret) {
-				eprintf ("Error: (%d) is running or dead.\n", th->pid);
+			if (ret == -1) {
+				eprintf ("Error: (%d) is already running.\n", th->pid);
+				r_sys_perror ("PTRACE_CONT");
 			}
 		}
 	} else {
