@@ -117,7 +117,7 @@ static bool strbuf_rev_append_char(RStrBuf *sb, const char *s, const char *needl
 }
 
 /**
- * @brief Create a type name from it's unique offset
+ * @brief Create a type name from offset
  * 
  * @param offset 
  * @return char* Name or NULL if error
@@ -130,16 +130,16 @@ static char *create_type_name_from_offset(ut64 offset) {
 }
 
 /**
- * @brief Get the DIE name or create unique one from it's offset
+ * @brief Get the DIE name
  * 
  * @param die 
- * @return char* DIEs name or NULL if error
+ * @return char* DIEs name or NULL if not found
  */
 static char *get_die_name(const RBinDwarfDie *die) {
 	char *name = NULL;
 	st32 name_attr_idx = find_attr_idx (die, DW_AT_name);
 
-	if (name_attr_idx != -1 && die->attr_values[name_attr_idx].string.content) {
+	if (name_attr_idx != -1) {
 		name = strdup (die->attr_values[name_attr_idx].string.content);
 	} else {
 		name = create_type_name_from_offset (die->offset);
@@ -367,7 +367,7 @@ static RAnalStructMember *parse_struct_member (const RBinDwarfDie *all_dies,
 		RBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
-			name = get_die_name (die);
+			name = strdup (value->string.content);
 			if (!name) {
 				goto cleanup;
 			}
@@ -447,7 +447,7 @@ static RAnalEnumCase *parse_enumerator(const RBinDwarfDie *all_dies,
 		RBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
-			name = get_die_name (die);
+			name = strdup (value->string.content);
 			if (!name) {
 				goto cleanup;
 			}
@@ -654,7 +654,7 @@ static void parse_typedef(const RAnal *anal, const RBinDwarfDie *all_dies,
 		RBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
-			name = get_die_name (die);
+			name = strdup (value->string.content);
 			if (!name) {
 				goto cleanup;
 			}
@@ -703,11 +703,7 @@ static void parse_atomic_type(const RAnal *anal, const RBinDwarfDie *all_dies,
 		RBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
-			if (!value->string.content) {
-				name = create_type_name_from_offset (die->offset);
-			} else {
-				name = strdup (value->string.content);
-			}
+			name = strdup (value->string.content);
 			if (!name) {
 				return;
 			}
