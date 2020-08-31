@@ -7,10 +7,18 @@ dc
 dmht~?0xffffffffffff
 e dbg.glibc.demangle = true
 dmht~?0xffffffffffff
+dmht~?items : 7
+dc
+dmht~?items : 6
+dc
+dmht~?items : 5
 EOF
 EXPECT=<<EOF
 1
 0
+1
+1
+1
 EOF
 RUN
 
@@ -21,8 +29,14 @@ CMDS=<<EOF
 db 0x004011fa
 dc
 dmht~?items : 7
+dc
+dmht~?items : 6
+dc
+dmht~?items : 5
 EOF
 EXPECT=<<EOF
+1
+1
 1
 EOF
 RUN
@@ -34,8 +48,14 @@ CMDS=<<EOF
 db 0x004011fa
 dc
 dmht~?items : 7
+dc
+dmht~?items : 6
+dc
+dmht~?items : 5
 EOF
 EXPECT=<<EOF
+1
+1
 1
 EOF
 RUN

@@ -2,6 +2,7 @@
 
 #ifndef INCLUDE_HEAP_GLIBC_C
 #define INCLUDE_HEAP_GLIBC_C
+#include "r_config.h"
 #define HEAP32 1
 #include "linux_heap_glibc.c"
 #undef HEAP32
@@ -1042,12 +1043,15 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 	const int offset = r_config_get_i (core->config, "dbg.glibc.fc_offset");
 	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
 	int glibc_version = core->dbg->glibc_version;
+	bool is_main_arena = true;
 
 	if (m_arena == m_state) {
 		GH(get_brks) (core, &brk_start, &brk_end);
 		if (tcache) {
-			tcache_initial_brk = ((brk_start >> 12) << 12) + GH(HDR_SZ);
-			initial_brk = tcache_initial_brk;
+			initial_brk = ((brk_start >> 12) << 12) + GH(HDR_SZ);
+			if (r_config_get_i (core->config, "cfg.debug")) {
+				tcache_initial_brk = initial_brk;
+			}
 			initial_brk += (glibc_version < 230)
 				? sizeof (GH (RHeapTcachePre230))
 				: sizeof (GH (RHeapTcache));
@@ -1055,6 +1059,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 			initial_brk = (brk_start >> 12) << 12;
 		}
 	} else {
+		is_main_arena = false;
 		brk_start = ((m_state >> 16) << 16) ;
 		brk_end = brk_start + main_arena->GH(system_mem);
 		if (tcache) {
