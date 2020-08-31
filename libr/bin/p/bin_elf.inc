@@ -1099,9 +1099,9 @@ static RBinInfo* info(RBinFile *bf) {
 	}
 	ret->arch = str;
 	
-    if (!strcmp (ret->arch, "mips")) {   
-        ret->cpu = ret->head_flag;         
-    }
+	if (!strcmp (ret->arch, "mips")) {   
+		ret->cpu = ret->head_flag;         
+	}
 	
 	ret->rclass = strdup ("elf");
 	ret->bits = Elf_(r_bin_elf_get_bits) (obj);
