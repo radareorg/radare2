@@ -14,7 +14,6 @@ if get_option('enable_tests')
     'bin',
     'bitmap',
     'buf',
-    'ovf',
     'cmd',
     'r2pipe',
     'cons',
