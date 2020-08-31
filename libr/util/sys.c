@@ -901,8 +901,7 @@ R_API void r_sys_perror_str(const char *fun) {
 			0, NULL )) {
 		char *err = r_sys_conv_win_to_utf8 (lpMsgBuf);
 		if (err) {
-			eprintf ("%s: (%#x) %s%s", fun, dw, err,
-			         r_str_endswith (err, "\n") ? "" : "\n");
+			eprintf ("%s: (%#x) %s\n", fun, dw, err);
 			free (err);
 		}
 		LocalFree (lpMsgBuf);
