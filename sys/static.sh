@@ -15,7 +15,7 @@ Darwin)
 	CFLAGS="${CFLAGS} -flto"
 	LDFLAGS="${LDFLAGS} -flto"
 	;;
-DragonFly|OpenBSD)
+OpenBSD)
 	LDFLAGS="${LDFLAGS} -lpthread -lkvm -lutil -lm"
 	;;
 esac
