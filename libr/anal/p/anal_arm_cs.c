@@ -2159,30 +2159,6 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	return 0;
 }
 
-static int cond_cs2r2(int cc) {
-	if (cc == ARM_CC_AL || cc < 0) {
-		cc = R_ANAL_COND_AL;
-	} else {
-		switch (cc) {
-		case ARM_CC_EQ: cc = R_ANAL_COND_EQ; break;
-		case ARM_CC_NE: cc = R_ANAL_COND_NE; break;
-		case ARM_CC_HS: cc = R_ANAL_COND_HS; break;
-		case ARM_CC_LO: cc = R_ANAL_COND_LO; break;
-		case ARM_CC_MI: cc = R_ANAL_COND_MI; break;
-		case ARM_CC_PL: cc = R_ANAL_COND_PL; break;
-		case ARM_CC_VS: cc = R_ANAL_COND_VS; break;
-		case ARM_CC_VC: cc = R_ANAL_COND_VC; break;
-		case ARM_CC_HI: cc = R_ANAL_COND_HI; break;
-		case ARM_CC_LS: cc = R_ANAL_COND_LS; break;
-		case ARM_CC_GE: cc = R_ANAL_COND_GE; break;
-		case ARM_CC_LT: cc = R_ANAL_COND_LT; break;
-		case ARM_CC_GT: cc = R_ANAL_COND_GT; break;
-		case ARM_CC_LE: cc = R_ANAL_COND_LE; break;
-		}
-	}
-	return cc;
-}
-
 static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	ut64 addr = op->addr;
 
@@ -2201,12 +2177,6 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->family = R_ANAL_OP_FAMILY_FPU;
 	} else {
 		op->family = R_ANAL_OP_FAMILY_CPU;
-	}
-
-	op->cond = cond_cs2r2 (insn->detail->arm64.cc);
-	if (op->cond == R_ANAL_COND_NV) {
-		op->type = R_ANAL_OP_TYPE_NOP;
-		return;
 	}
 
 	switch (insn->detail->arm64.cc) {
@@ -2345,11 +2315,6 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_BFI:
 	case ARM64_INS_BFXIL:
 		op->type = R_ANAL_OP_TYPE_MOV;
-		break;
-	case ARM64_INS_MRS:
-	case ARM64_INS_MSR:
-		op->type = R_ANAL_OP_TYPE_MOV;
-		op->family = R_ANAL_OP_FAMILY_PRIV;
 		break;
 	case ARM64_INS_MOVZ:
 		op->type = R_ANAL_OP_TYPE_MOV;
@@ -2579,9 +2544,33 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		}
 		break;
 	default:
-		R_LOG_DEBUG ("ARM64 analysis: Op type %d at 0x%" PFMT64x " not handled\n", insn->id, op->addr);
 		break;
 	}
+}
+
+static int cond_cs2r2(int cc) {
+	if (cc == ARM_CC_AL || cc < 0) {
+		cc = R_ANAL_COND_AL;
+	} else {
+		switch (cc) {
+		case ARM_CC_EQ: cc = R_ANAL_COND_EQ; break;
+		case ARM_CC_NE: cc = R_ANAL_COND_NE; break;
+		case ARM_CC_HS: cc = R_ANAL_COND_HS; break;
+		case ARM_CC_LO: cc = R_ANAL_COND_LO; break;
+		case ARM_CC_MI: cc = R_ANAL_COND_MI; break;
+		case ARM_CC_PL: cc = R_ANAL_COND_PL; break;
+		case ARM_CC_VS: cc = R_ANAL_COND_VS; break;
+		case ARM_CC_VC: cc = R_ANAL_COND_VC; break;
+
+		case ARM_CC_HI: cc = R_ANAL_COND_HI; break;
+		case ARM_CC_LS: cc = R_ANAL_COND_LS; break;
+		case ARM_CC_GE: cc = R_ANAL_COND_GE; break;
+		case ARM_CC_LT: cc = R_ANAL_COND_LT; break;
+		case ARM_CC_GT: cc = R_ANAL_COND_GT; break;
+		case ARM_CC_LE: cc = R_ANAL_COND_LE; break;
+		}
+	}
+	return cc;
 }
 
 static ut64 lookahead(csh handle, const ut64 addr, const ut8 *buf, int len, int distance) {
@@ -3021,30 +3010,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->ptr = IMM(1) + addr + 4 - (addr%4);
 		op->refptr = 1;
 		break;
-	case ARM_INS_UXTAB:
-	case ARM_INS_UXTAB16:
-		op->type = R_ANAL_OP_TYPE_ADD;
-		op->ptr = 0LL;
-		op->ptrsize = 1;
-		break;
-	case ARM_INS_UXTAH:
-		op->type = R_ANAL_OP_TYPE_ADD;
-		op->ptr = 0LL;
-		op->ptrsize = 2;
-		break;
-	case ARM_INS_UXTB:
-	case ARM_INS_UXTB16:
-		op->type = R_ANAL_OP_TYPE_CAST;
-		op->ptr = 0LL;
-		op->ptrsize = 1;
-		break;
-	case ARM_INS_UXTH:
-		op->type = R_ANAL_OP_TYPE_CAST;
-		op->ptr = 0LL;
-		op->ptrsize = 2;
-		break;
 	default:
-		R_LOG_DEBUG ("ARM analysis: Op type %d at 0x%" PFMT64x " not handled\n", insn->id, op->addr);
 		break;
 	}
 }
@@ -3079,16 +3045,6 @@ static bool is_valid64 (arm64_reg reg) {
 	return reg != ARM64_REG_INVALID;
 }
 
-static char *reg_list[] = {
-	"x0", "x1", "x2", "x3", "x4",
-	"x5", "x6", "x7", "x8", "x9",
-	"x10", "x11", "x12", "x13", "x14",
-	"x15", "x16", "x17", "x18", "x19",
-	"x20", "x21", "x22", "x23", "x24",
-	"x25", "x26", "x27", "x28", "x29",
-	"x30"
-};
-
 static int parse_reg64_name(RRegItem *reg_base, RRegItem *reg_delta, csh handle, cs_insn *insn, int reg_num) {
 	cs_arm64_op armop = INSOP64 (reg_num);
 	switch (armop.type) {
@@ -3107,9 +3063,6 @@ static int parse_reg64_name(RRegItem *reg_base, RRegItem *reg_delta, csh handle,
 		break;
 	default:
 		break;
-	}
-	if (reg_base->name && *reg_base->name == 'w') {
-		reg_base->name = reg_list[atoi (reg_base->name + 1)];
 	}
 	return 0;
 }
@@ -3156,13 +3109,6 @@ static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x, int 
 		}
 		val->regdelta = &regdelta_regs[x];
 		break;
-	case ARM_OP_IMM:
-		if (bits == 64) {
-			val->imm = arm64op.imm;
-		} else {
-			val->imm = armop.imm;
-		}
-		break;
 	default:
 		break;
 	}
@@ -3187,26 +3133,15 @@ static void create_src_dst(RAnalOp *op) {
 static void op_fillval(RAnalOp *op , csh handle, cs_insn *insn, int bits) {
 	create_src_dst (op);
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
+	case R_ANAL_OP_TYPE_LOAD:
 	case R_ANAL_OP_TYPE_MOV:
-	case R_ANAL_OP_TYPE_CMP:
-	case R_ANAL_OP_TYPE_ADD:
 	case R_ANAL_OP_TYPE_SUB:
-	case R_ANAL_OP_TYPE_MUL:
-	case R_ANAL_OP_TYPE_DIV:
-	case R_ANAL_OP_TYPE_SHR:
-	case R_ANAL_OP_TYPE_SHL:
-	case R_ANAL_OP_TYPE_SAL:
-	case R_ANAL_OP_TYPE_SAR:
-	case R_ANAL_OP_TYPE_OR:
+	case R_ANAL_OP_TYPE_ADD:
 	case R_ANAL_OP_TYPE_AND:
 	case R_ANAL_OP_TYPE_XOR:
-	case R_ANAL_OP_TYPE_NOR:
-	case R_ANAL_OP_TYPE_NOT:
-	case R_ANAL_OP_TYPE_LOAD:
-	case R_ANAL_OP_TYPE_LEA:
-	case R_ANAL_OP_TYPE_ROR:
-	case R_ANAL_OP_TYPE_ROL:
-	case R_ANAL_OP_TYPE_CAST:
+	case R_ANAL_OP_TYPE_MUL:
+	case R_ANAL_OP_TYPE_CMP:
+	case R_ANAL_OP_TYPE_OR:
 		set_src_dst (op->src[2], &handle, insn, 3, bits);
 		set_src_dst (op->src[1], &handle, insn, 2, bits);
 		set_src_dst (op->src[0], &handle, insn, 1, bits);
