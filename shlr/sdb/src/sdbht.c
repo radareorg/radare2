@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2011-2020 - pancake */
+/* sdb - MIT - Copyright 2011-2018 - pancake */
 
 #include "sdbht.h"
 
@@ -7,7 +7,7 @@ void sdbkv_fini(SdbKv *kv) {
 	free (kv->base.value);
 }
 
-SDB_API HtPP* sdb_ht_new(void) {
+SDB_API HtPP* sdb_ht_new() {
 	HtPP *ht = ht_pp_new ((HtPPDupValue)strdup, (HtPPKvFreeFunc)sdbkv_fini, (HtPPCalcSizeV)strlen);
 	if (ht) {
 		ht->opt.elem_size = sizeof (SdbKv);
@@ -15,7 +15,8 @@ SDB_API HtPP* sdb_ht_new(void) {
 	return ht;
 }
 
-static bool sdb_ht_internal_insert(HtPP* ht, const char* key, const char* value, bool update) {
+static bool sdb_ht_internal_insert(HtPP* ht, const char* key,
+				    const char* value, bool update) {
 	if (!ht || !key || !value) {
 		return false;
 	}

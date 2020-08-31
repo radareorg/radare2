@@ -64,6 +64,7 @@ ifeq (${BUILD_OS},haiku)
   LDFLAGS+=-lexecinfo
 endif
 
+EXTRA_PRE+=sdb_version
 EXTRA_PRE+=spp_config
 
 include ../rules.mk

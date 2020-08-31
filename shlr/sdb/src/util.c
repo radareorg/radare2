@@ -273,7 +273,7 @@ SDB_API const char *sdb_const_anext(const char *str) {
 	return p ? p + 1 : NULL;
 }
 
-SDB_API ut64 sdb_now (void) {
+SDB_API ut64 sdb_now () {
 #if USE_MONOTONIC_CLOCK
 	struct timespec ts;
 	if (!clock_gettime (CLOCK_MONOTONIC, &ts)) {
@@ -288,7 +288,7 @@ SDB_API ut64 sdb_now (void) {
 	return 0LL;
 }
 
-SDB_API ut64 sdb_unow (void) {
+SDB_API ut64 sdb_unow () {
 	ut64 x = 0LL;
 #if USE_MONOTONIC_CLOCK
 	struct timespec ts;

@@ -11,7 +11,7 @@ SDB_API SdbList *ls_newf(SdbListFree freefn) {
 	return list;
 }
 
-SDB_API SdbList *ls_new(void) {
+SDB_API SdbList *ls_new() {
 	SdbList *list = R_NEW0 (SdbList);
 	if (!list) {
 		return NULL;

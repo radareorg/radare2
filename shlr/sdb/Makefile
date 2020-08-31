@@ -14,14 +14,13 @@ endif
 
 vala:
 ifneq (${HAVE_VALA},)
-	$(MAKE) -C $(VALADIR)
-	$(MAKE) -C $(VALADIR)/types
+	cd ${VALADIR} && ${MAKE}
+	cd ${VALADIR}/types && ${MAKE}
 else
 	@echo Nothing to do.
 endif
 
-.PHONY: test sdb.js pkgconfig dist w32dista asan
-
+.PHONY: test sdb.js pkgconfig
 test:
 	${MAKE} -C test
 
@@ -39,17 +38,16 @@ CFILES=cdb.c buffer.c cdb_make.c ls.c ht.c sdb.c num.c base64.c
 CFILES+=json.c ns.c lock.c util.c disk.c query.c array.c fmt.c main.c
 EMCCFLAGS=-O2 -s EXPORTED_FUNCTIONS="['_sdb_querys','_sdb_new0']"
 #EMCCFLAGS+=--embed-file sdb.data
-
 sdb.js: src/sdb_version.h
 	cd src ; emcc ${EMCCFLAGS} -I. -o ../sdb.js ${CFILES}
 
 clean:
 	rm -f src/sdb_version.h
-	$(MAKE) -C src clean
-	$(MAKE) -C memcache clean
-	$(MAKE) -C test clean
+	cd src && ${MAKE} clean
+	cd memcache && ${MAKE} clean
+	cd test && ${MAKE} clean
 ifneq (${HAVE_VALA},)
-	${MAKE} -C $(VALADIR) clean
+	cd ${VALADIR} && ${MAKE} clean
 endif
 
 dist:
