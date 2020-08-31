@@ -1030,10 +1030,8 @@ NAME=zb bad count
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 s 0x00410210
-e zign.maxsz = 32
 af
 za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
-za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 zb NOTANUMBER
 EOF
 EXPECT=<<EOF
@@ -1044,10 +1042,8 @@ NAME=zb negative count
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 s 0x00410210
-e zign.maxsz = 32
 af
 za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
-za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 zb -1
 EOF
 EXPECT=<<EOF
@@ -1058,14 +1054,12 @@ NAME=zb single exact match
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 s 0x00410210
-e zign.maxsz = 32
 af
 za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
-za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 zb
 EOF
 EXPECT=<<EOF
-1.00000  1.00000 B  1.00000 G   sym.exact
+1.00000 sym.exact
 EOF
 RUN
 
@@ -1073,28 +1067,21 @@ NAME=zb match 5 by default
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 s 0x00410210
-e zign.maxsz = 32
 af
 za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
-za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 za sym.second g cc=16 nbbs=29 edges=44 ebbs=1 bbsum=407
-za sym.second b ff5541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 za sym.third g cc=16 nbbs=28 edges=44 ebbs=1 bbsum=407
-za sym.third b ffff41544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 za sym.fourth g cc=16 nbbs=28 edges=43 ebbs=1 bbsum=407
-za sym.fourth b ffffff544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 za sym.fith g cc=16 nbbs=28 edges=43 ebbs=1 bbsum=401
-za sym.fith b ffffffff4989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 za sym.not_shown g cc=15 nbbs=28 edges=43 ebbs=1 bbsum=395
-za sym.not_shown b ffffffffff89fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
-zb ~[5]
+zb
 EOF
 EXPECT=<<EOF
-sym.exact
-sym.second
-sym.third
-sym.fourth
-sym.fith
+1.00000 sym.exact
+0.98824 sym.second
+0.98134 sym.third
+0.97679 sym.fourth
+0.97384 sym.fith
 EOF
 RUN
 
@@ -1102,45 +1089,22 @@ NAME=zb match 6 of 6 with 100 count
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 s 0x00410210
-e zign.maxsz = 32
 af
 za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
-za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 za sym.second g cc=16 nbbs=29 edges=44 ebbs=1 bbsum=407
-za sym.second b ff5541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 za sym.third g cc=16 nbbs=28 edges=44 ebbs=1 bbsum=407
-za sym.third b ffff41544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 za sym.fourth g cc=16 nbbs=28 edges=43 ebbs=1 bbsum=407
-za sym.fourth b ffffff544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 za sym.fith g cc=16 nbbs=28 edges=43 ebbs=1 bbsum=401
-za sym.fith b ffffffff4989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 za sym.sixth g cc=15 nbbs=28 edges=43 ebbs=1 bbsum=395
-za sym.sixth b ffffffffff89fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
-zb 100~[5]
+zb 100
 EOF
 EXPECT=<<EOF
-sym.exact
-sym.second
-sym.third
-sym.fourth
-sym.fith
-sym.sixth
-EOF
-RUN
-
-NAME=zb ignore masked bytes
-FILE=bins/elf/static-glibc-2.27
-CMDS=<<EOF
-s 0x00410210
-e zign.maxsz = 32
-af
-za sym.perf1 b 415541544989fc55534883ec08e800000000488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
-za sym.perf2 b 415541544989fc55534883ec08e8ffffffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
-zb ~[0]
-EOF
-EXPECT=<<EOF
-1.00000
-1.00000
+1.00000 sym.exact
+0.98824 sym.second
+0.98134 sym.third
+0.97679 sym.fourth
+0.97384 sym.fith
+0.95913 sym.sixth
 EOF
 RUN
 
@@ -1148,20 +1112,15 @@ NAME=zb count 1
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 s 0x00410210
-e zign.maxsz = 32
 af
 za sym.right g cc=16 nbbs=28 edges=44 ebbs=1 bbsum=407
-za sym.right b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 za sym.wrong g cc=16 nbbs=28 edges=43 ebbs=1 bbsum=407
-za sym.wrong b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 za sym.nope g cc=16 nbbs=28 edges=43 ebbs=1 bbsum=401
-za sym.nope b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 za sym.bad g cc=15 nbbs=28 edges=43 ebbs=1 bbsum=395
-za sym.bad b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
-zb 1 ~?
+zb 1
 EOF
 EXPECT=<<EOF
-1
+0.98134 sym.right
 EOF
 RUN
 
@@ -1171,20 +1130,13 @@ CMDS=<<EOF
 s 0x00410210
 af
 za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
-za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 za sym.duplicate1 g cc=16 nbbs=29 edges=44 ebbs=1 bbsum=407
-za sym.duplicate1 b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 za sym.duplicate2 g cc=16 nbbs=29 edges=44 ebbs=1 bbsum=407
-za sym.duplicate2 b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 za sym.duplicate3 g cc=16 nbbs=29 edges=44 ebbs=1 bbsum=407
-za sym.duplicate3 b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 za sym.duplicate4 g cc=16 nbbs=29 edges=44 ebbs=1 bbsum=407
-za sym.duplicate4 b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 za sym.duplicate5 g cc=16 nbbs=29 edges=44 ebbs=1 bbsum=407
-za sym.duplicate5 b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 za sym.duplicate6 g cc=16 nbbs=29 edges=44 ebbs=1 bbsum=407
-za sym.duplicate6 b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
-zb ~sym.duplicate?
+zb~dup?
 EOF
 EXPECT=<<EOF
 4
