@@ -1,8 +1,7 @@
-#include "base_types.h"
-#include <sdb.h>
 #include <r_anal.h>
-#include <r_bin_dwarf.h>
+#include <sdb.h>
 #include <string.h>
+#include <r_bin_dwarf.h>
 
 static int die_tag_cmp(const void *a, const void *b) {
 	const RBinDwarfDie *first = a;
@@ -24,6 +23,19 @@ static inline bool is_type_tag(ut64 tag_code) {
 		tag_code == DW_TAG_union_type ||
 		tag_code == DW_TAG_base_type ||
 		tag_code == DW_TAG_typedef);
+}
+ 
+static void struct_type_fini(void *e, void *user) {
+	(void)user;
+	RAnalStructMember *member = e;
+	free ((char *)member->name);
+	free ((char *)member->type);
+}
+
+static void enum_type_fini(void *e, void *user) {
+	(void)user;
+	RAnalEnumCase *cas = e;
+	free ((char *)cas->name);
 }
 
 /**
@@ -520,7 +532,7 @@ static void parse_structure_type(const RAnal *anal, const RBinDwarfDie *all_dies
 	base_type->size = get_die_size (die);
 
 	r_vector_init (&base_type->struct_data.members,
-		sizeof (RAnalStructMember), struct_type_member_free, NULL);
+		sizeof (RAnalStructMember), struct_type_fini, NULL);
 	RAnalStructMember member = { 0 };
 	// Parse out all members, can this in someway be extracted to a function?
 	if (die->has_children) {
@@ -591,7 +603,7 @@ static void parse_enum_type(const RAnal *anal, const RBinDwarfDie *all_dies,
 	}
 
 	r_vector_init (&base_type->enum_data.cases,
-		sizeof (RAnalEnumCase), enum_type_case_free, NULL);
+		sizeof (RAnalEnumCase), enum_type_fini, NULL);
 	RAnalEnumCase cas;
 	if (die->has_children) {
 		int child_depth = 1; // Direct children of the node
@@ -607,7 +619,7 @@ static void parse_enum_type(const RAnal *anal, const RBinDwarfDie *all_dies,
 				} else {
 					void *element = r_vector_push (&base_type->enum_data.cases, &cas);
 					if (!element) {
-						enum_type_case_free (result, NULL);
+						enum_type_fini (result, NULL);
 						goto cleanup;
 					}
 				}

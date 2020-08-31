@@ -15,7 +15,7 @@ static void print_usage(void) {
 
 ///////////////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv) {
-	RPdb pdb;
+	R_PDB pdb;
 
 	static struct option long_options[] =
 	{
