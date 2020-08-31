@@ -108,9 +108,12 @@ static bool GH(is_tcache)(RCore *core) {
 		RListIter *iter;
 		r_debug_map_sync (core->dbg);
 		r_list_foreach (core->dbg->maps, iter, map) {
-			fp = strstr (map->name, "libc-");
-			if (fp) {
-				break;
+			// In case the binary is named *libc-*
+			if (strncmp (map->name, core->bin->file, strlen(map->name)) != 0) {
+				fp = strstr (map->name, "libc-");
+				if (fp) {
+					break;
+				}
 			}
 		}
 	} else {
