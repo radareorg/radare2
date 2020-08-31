@@ -73,9 +73,6 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, RSocketHTTPOptions *
 				hr->host = strdup (buf + 6);
 			} else if (!strncmp (buf, "Content-Length: ", 16)) {
 				content_length = atoi (buf + 16);
-				if (content_length > 5000) {
-					content_length = 5000;
-				}
 			} else if (so->httpauth && !strncmp (buf, "Authorization: Basic ", 21)) {
 				char *authtoken = buf + 21;
 				size_t authlen = strlen (authtoken);
@@ -108,6 +105,11 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, RSocketHTTPOptions *
 	}
 	if (content_length>0) {
 		r_socket_read_block (hr->s, (ut8*)buf, 1); // one missing byte wtf
+		if (content_length > INT_MAX - 1) {
+			r_socket_http_close (hr);
+			eprintf ("Could not allocate hr data\n");
+			return NULL;
+		}
 		hr->data = malloc (content_length+1);
 		hr->data_length = content_length;
 		r_socket_read_block (hr->s, hr->data, hr->data_length);
