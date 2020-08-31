@@ -65,7 +65,9 @@ foreach file : sdb_files
     command: sdb_gen_cmd,
     depends: sdb_exe,
     build_by_default: true,
-    install: true,
-    install_dir: join_paths(r2_sdb, 'syscall')
+    install: false
   )
 endforeach
+
+meson.add_install_script('../../../sys/copy_sdb_files' + (host_machine.system() == 'windows' ? '.bat' : '.sh'),
+                         meson.current_build_dir(), join_paths(r2_sdb, 'syscall'))
