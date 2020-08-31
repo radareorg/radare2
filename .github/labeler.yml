@@ -138,8 +138,8 @@ java:
   - shlr/java/**/*
 
 WinDbg:
-  - shlr/winkd/**/*
-  - libr/io/p/io_winkd.c
+  - shlr/windbg/**/*
+  - libr/io/p/io_windbg.c
 
 webui:
   - shlr/www/**/*

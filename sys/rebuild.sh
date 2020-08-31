@@ -84,8 +84,8 @@ RebuildGdb() {
 	Rebuild libr/debug
 }
 
-RebuildWinkd() {
-	Rebuild shlr/winkd
+RebuildWindbg() {
+	Rebuild shlr/windbg
 	Rebuild libr/io
 	Rebuild libr/debug
 }
@@ -104,7 +104,7 @@ case "$1" in
 grub|fs)RebuildFs; ;;
 bin)    RebuildBin ; ;;
 gdb)    RebuildGdb ; ;;
-winkd)  RebuildWinkd ; ;;
+windbg) RebuildWindbg ; ;;
 sdb)    RebuildSdb ; ;;
 spp)    RebuildSpp ; ;;
 tcc)    RebuildTcc ; ;;

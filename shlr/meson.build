@@ -527,25 +527,25 @@ grub_dep = declare_dependency(
 )
 
 
-# handle winkd dependency
-winkd_files = [
-  'winkd/iob_pipe.c',
-  'winkd/kd.c',
-  'winkd/transport.c',
-  'winkd/winkd.c',
+# handle windbg dependency
+windbg_files = [
+  'windbg/iob_pipe.c',
+  'windbg/kd.c',
+  'windbg/transport.c',
+  'windbg/windbg.c',
 ]
 
-winkd_inc = [platform_inc, include_directories('winkd')]
+windbg_inc = [platform_inc, include_directories('windbg')]
 
-libr2winkd = static_library('r2winkd', winkd_files,
+libr2windbg = static_library('r2windbg', windbg_files,
   dependencies: [r_util_dep],
-  include_directories: winkd_inc,
+  include_directories: windbg_inc,
   implicit_include_directories: false
 )
 
-winkd_dep = declare_dependency(
-  link_with: libr2winkd,
-  include_directories: winkd_inc
+windbg_dep = declare_dependency(
+  link_with: libr2windbg,
+  include_directories: windbg_inc
 )
 
 

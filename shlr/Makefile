@@ -60,7 +60,7 @@ CS_REV=
 CS_PATCHES=1
 endif
 
-.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwinkd bochs tree-sitter-sync sdbs
+.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwindbg bochs tree-sitter-sync sdbs
 
 ifeq ($(shell gcc -v > /dev/null 2>&1 && echo works),works)
 HOST_CC?=gcc
@@ -94,14 +94,14 @@ all:
 	exit 1
 endif
 
-preall: libwinkd capstone-build tree-sitter-build radare2-shell-parser-build bochs
+preall: libwindbg capstone-build tree-sitter-build radare2-shell-parser-build bochs
 	@for MOD in ${MODS} ; do \
 		echo $(MAKE) -C $$MOD ; \
 		$(MAKE) -C $$MOD HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
 	done
 
 SDBFILES=sdb/src/.sdb${EXT_EXE} sdb/sdb${EXT_EXE} sdb/src/.sdb sdb/sdb
-PREMODS=capstone gdb winkd sdb bochs ar
+PREMODS=capstone gdb windbg sdb bochs ar
 
 clean mrproper:
 	rm -f ${SDBFILES}
@@ -154,8 +154,8 @@ I=../libr/include
 libgdbr:
 	$(MAKE) -C gdb all
 
-libwinkd:
-	$(MAKE) -C winkd all
+libwindbg:
+	$(MAKE) -C windbg all
 
 bochs:
 	$(MAKE) -C bochs all
@@ -375,7 +375,7 @@ SHLRS+=java/libr_java.a
 SHLRS+=lz4/liblz4.a
 SHLRS+=qnx/lib/libqnxr.a
 SHLRS+=yxml/libyxml.a
-SHLRS+=winkd/libr_winkd.a
+SHLRS+=windbg/libr_windbg.a
 SHLRS+=zip/librz.a
 
 libr_shlr.${EXT_AR}:

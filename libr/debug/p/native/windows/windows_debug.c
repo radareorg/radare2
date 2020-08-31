@@ -37,10 +37,14 @@ int w32_init(RDebug *dbg) {
 	W32DbgWInst *wrap = dbg->user;
 	if (!wrap) {
 		if (dbg->iob.io->w32dbg_wrap) {
-			dbg->user = (W32DbgWInst *)dbg->iob.io->w32dbg_wrap;
+			wrap = (W32DbgWInst *)dbg->iob.io->w32dbg_wrap;
 		} else {
-			return 0;
+			wrap = w32dbg_wrap_new ();
+			dbg->iob.io->w32dbg_wrap = (struct w32dbg_wrap_instance_t *)wrap;
+			wrap->pi.dwProcessId = dbg->pid;
+			wrap->pi.dwThreadId = dbg->tid;
 		}
+		dbg->user = wrap;
 	}
 	// escalate privs (required for win7/vista)
 	setup_debug_privileges (true);
