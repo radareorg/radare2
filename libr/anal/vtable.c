@@ -83,48 +83,34 @@ static bool vtable_is_value_in_text_section(RVTableContext *context, ut64 curAdd
 	return ret;
 }
 
-static bool vtable_section_can_contain_vtables(RBinSection *section) {
+static bool vtable_section_can_contain_vtables(RVTableContext *context, RBinSection *section) {
 	if (section->is_segment) {
 		return false;
 	}
 	return !strcmp (section->name, ".rodata") ||
 		!strcmp (section->name, ".rdata") ||
 		!strcmp (section->name, ".data.rel.ro") ||
-		!strcmp (section->name, ".data.rel.ro.local") ||
 		r_str_endswith (section->name, "__const");
 }
 
-static bool section_can_contain_rtti(RBinSection *section) {
-	if (!section) {
-		return false;
-	}
-	if (section->is_data) {
-		return true;
-	}
-	return !strcmp (section->name, ".data.rel.ro") ||
-		!strcmp (section->name, ".data.rel.ro.local") ||
-		r_str_endswith (section->name, "__const");
-}
-
-static bool vtable_is_addr_vtable_start_itanium(RVTableContext *context, RBinSection *section, ut64 curAddress) {
+static bool vtable_is_addr_vtable_start_itanium(RVTableContext *context, ut64 curAddress, ut64 data_section_start, ut64 data_section_end) {
 	ut64 value;
 	if (!curAddress || curAddress == UT64_MAX) {
 		return false;
 	}
-	if (curAddress && !vtable_is_value_in_text_section (context, curAddress, NULL)) { // Vtable beginning referenced from the code
+	if (curAddress && !vtable_is_value_in_text_section (context, curAddress, NULL)) {
 		return false;
 	}
-	if (!context->read_addr (context->anal, curAddress - context->word_size, &value)) { // get the RTTI pointer
+	if (!context->read_addr (context->anal, curAddress - context->word_size, &value)) {
 		return false;
 	}
-	RBinSection *rtti_section = context->anal->binb.get_vsect_at (context->anal->binb.bin, value);
-	if (value && !section_can_contain_rtti (rtti_section)) { // RTTI ptr must point somewhere in the data section
+	if (value && (value < data_section_start || value >= data_section_end)) {
 		return false;
 	}
-	if (!context->read_addr (context->anal, curAddress - 2 * context->word_size, &value)) { // Offset to top
+	if (!context->read_addr (context->anal, curAddress - 2 * context->word_size, &value)) {
 		return false;
 	}
-	if ((st32)value > 0) { // Offset to top has to be negative
+	if ((st32)value > 0) {
 		return false;
 	}
 	return true;
@@ -169,12 +155,12 @@ static bool vtable_is_addr_vtable_start_msvc(RVTableContext *context, ut64 curAd
 	return false;
 }
 
-static bool vtable_is_addr_vtable_start(RVTableContext *context, RBinSection *section, ut64 curAddress) {
+static bool vtable_is_addr_vtable_start(RVTableContext *context, ut64 curAddress, ut64 data_section_start, ut64 data_section_end) {
 	if (context->abi == R_ANAL_CPP_ABI_MSVC) {
 		return vtable_is_addr_vtable_start_msvc (context, curAddress);
 	}
 	if (context->abi == R_ANAL_CPP_ABI_ITANIUM) {
-		return vtable_is_addr_vtable_start_itanium (context, section, curAddress);
+		return vtable_is_addr_vtable_start_itanium (context, curAddress, data_section_start, data_section_end);
 	}
 	r_return_val_if_reached (false);
 }
@@ -240,7 +226,7 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 			break;
 		}
 
-		if (!vtable_section_can_contain_vtables (section)) {
+		if (!vtable_section_can_contain_vtables (context, section)) {
 			continue;
 		}
 
@@ -258,7 +244,7 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 				break;
 			}
 
-			if (vtable_is_addr_vtable_start (context, section, startAddress)) {
+			if (vtable_is_addr_vtable_start (context, startAddress, section->vaddr, endAddress)) {
 				RVTableInfo *vtable = r_anal_vtable_parse_at (context, startAddress);
 				if (vtable) {
 					r_list_append (vtables, vtable);
