@@ -18,8 +18,6 @@
 #include <unistd.h>
 #include <elf.h>
 
-#include "linux_ptrace.h"
-
 #ifdef __GLIBC__
 #define HAVE_YMM 1
 #else
