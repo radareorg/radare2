@@ -322,14 +322,3 @@ EXPECT=<<EOF
 ;World
 EOF
 RUN
-
-NAME=multi-command single-line grep
-ARGS=-ecfg.newshell=true
-CMDS=<<EOF
-?e Hello World; ?e 4e2420~4e2420
-EOF
-EXPECT=<<EOF
-Hello World
-4e2420
-EOF
-RUN
