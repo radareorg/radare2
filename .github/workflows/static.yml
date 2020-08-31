@@ -14,20 +14,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-      if: github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'static')
     - name: Checkout our Testsuite Binaries
-      if: github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'static')
       uses: actions/checkout@v2
       with:
           repository: radareorg/radare2-testbins
           path: test/bins
     - name: Install static
-      if: github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'static')
       run: |
         ./sys/static.sh
         sudo make symstall
     - name: Run tests
-      if: github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'static')
       run: |
         r2 -v
         r2r -v
