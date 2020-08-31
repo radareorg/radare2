@@ -111,25 +111,19 @@ int linux_handle_signals (RDebug *dbg, int tid) {
 							}
 							b->data = r_str_appendf (b->data, ";ps@r:%s", name);
 							dbg->reason.type = R_DEBUG_REASON_NEW_LIB;
-							break;
 						} else if (r_str_startswith (p, "dbg.unlibs")) {
 							dbg->reason.type = R_DEBUG_REASON_EXIT_LIB;
-							break;
 						}
 					}
 				}
 			}
 			if (dbg->reason.type != R_DEBUG_REASON_NEW_LIB &&
 				dbg->reason.type != R_DEBUG_REASON_EXIT_LIB) {
-				if (siginfo.si_code == TRAP_TRACE) {
-					dbg->reason.type = R_DEBUG_REASON_STEP;
-				} else {
-					dbg->reason.bp_addr = (ut64)(size_t)siginfo.si_addr;
-					dbg->reason.type = R_DEBUG_REASON_BREAKPOINT;
-					// Switch to the thread that hit the breakpoint
-					r_debug_select (dbg, dbg->pid, tid);
-					dbg->tid = tid;
-				}
+				dbg->reason.bp_addr = (ut64)(size_t)siginfo.si_addr;
+				dbg->reason.type = R_DEBUG_REASON_BREAKPOINT;
+				// Switch to the thread that hit the breakpoint
+				r_debug_select (dbg, dbg->pid, tid);
+				dbg->tid = tid;
 			}
 		}
 			break;
@@ -275,7 +269,8 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 int linux_step(RDebug *dbg) {
 	int ret = false;
 	int pid = dbg->tid;
-	ret = r_debug_ptrace (dbg, PTRACE_SINGLESTEP, pid, 0, 0);
+	ut64 addr = r_debug_reg_get (dbg, "PC");
+	ret = r_debug_ptrace (dbg, PTRACE_SINGLESTEP, pid, (void*)(size_t)addr, 0);
 	//XXX(jjd): why?? //linux_handle_signals (dbg);
 	if (ret == -1) {
 		perror ("native-singlestep");
@@ -371,9 +366,9 @@ bool linux_attach_new_process(RDebug *dbg, int pid) {
 }
 
 static void linux_dbg_wait_break(RDebug *dbg) {
-	// Interrupt the currently debugged thread
-	if (!linux_kill_thread (dbg->tid, SIGINT)) {
-		eprintf ("Could not interrupt pid (%d)\n", dbg->pid);
+	// Stop the currently debugged thread
+	if (!linux_kill_thread (dbg->tid, SIGSTOP)) {
+		eprintf ("Could not stop pid (%d)\n", dbg->pid);
 		return;
 	}
 }
@@ -388,8 +383,11 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int my_pid) {
 		flags |= WNOHANG;
 	}
 
-	// Send SIGINT to the target thread when interrupted
-	r_cons_break_push ((RConsBreakCallback) linux_dbg_wait_break, dbg);
+	// Ignore keyboard interrupt while waiting to avoid signaling the child process twice on
+	// break(SIGSTOP is sent by wait_break) which forced the user to continue an extra time
+	// to handle SIGINT
+	r_sys_signal (SIGINT, SIG_IGN);
+	r_cons_break_push ((RConsBreak)linux_dbg_wait_break, dbg);
 repeat:
 	for (;;) {
 		if (r_cons_is_breaked ()) {
@@ -475,6 +473,7 @@ repeat:
 		}
 	}
 	r_cons_break_pop ();
+	r_sys_signal (SIGINT, SIG_DFL);
 	dbg->reason.tid = pid;
 	return reason;
 }
@@ -1173,11 +1172,7 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 			size = sizeof (R_DEBUG_REG_T);
 		}
 #endif
-		if (ret == -1) {
-			r_sys_perror ("reg_write");
-			return false;
-		}
-		return true;
+		return (ret != 0) ? false : true;
 	}
 	if (type == R_REG_TYPE_FPU) {
 #if __i386__ || __x86_64__

@@ -1,13 +1,12 @@
 NAME=debug continue back from callee
 FILE=bins/elf/analysis/calls_x64
-ARGS=-d -e dbg.bpsysign=true
+ARGS=-d
 CMDS=<<EOF
 db main
 db 0x0040052f
 dc
 dts+
 dc
-dcb
 dcb
 dr rip
 dk 9
@@ -37,7 +36,7 @@ RUN
 
 NAME=dbg.manycontback
 FILE=bins/elf/analysis/ls-linux-x86_64-zlul
-ARGS=-d -e dbg.bpsysign=true
+ARGS=-d
 CMDS=<<EOF
 db main
 db 0x004028ca
@@ -50,16 +49,12 @@ dc
 dc
 dc
 dc
-dsb
 dcb
 dr rip
-dsb
 dcb
 dr rip
-dsb
 dcb
 dr rip
-dsb
 dcb
 dr rip
 dk 9

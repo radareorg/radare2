@@ -799,29 +799,16 @@ R_DEPRECATE typedef struct r_anal_var_field_t {
 	bool field;
 } RAnalVarField;
 
-typedef enum {
-	R_ANAL_ACC_R = (1 << 0),
-	R_ANAL_ACC_W = (1 << 1),
-} RAnalValueAccess;
-
-typedef enum {
-	R_ANAL_VAL_REG,
-	R_ANAL_VAL_MEM,
-	R_ANAL_VAL_IMM,
-} RAnalValueType;
-
-// base+reg+regdelta*mul+delta
+// mul*value+regbase+regidx+delta
 typedef struct r_anal_value_t {
-	RAnalValueType type;
-	RAnalValueAccess access;
 	int absolute; // if true, unsigned cast is used
 	int memref; // is memory reference? which size? 1, 2 ,4, 8
 	ut64 base ; // numeric address
 	st64 delta; // numeric delta
 	st64 imm; // immediate value
 	int mul; // multiplier (reg*4+base)
-	RRegItem *seg; // segment selector register
-	RRegItem *reg; // register / register base used (-1 if no reg)
+	ut16 sel; // segment selector
+	RRegItem *reg; // register index used (-1 if no reg)
 	RRegItem *regdelta; // register index used (-1 if no reg)
 } RAnalValue;
 
@@ -873,7 +860,6 @@ typedef struct r_anal_op_t {
 	int refptr;     /* if (0) ptr = "reference" else ptr = "load memory of refptr bytes" */
 	RAnalValue *src[3];
 	RAnalValue *dst;
-	RList *access; /* RAnalValue access information */
 	RStrBuf esil;
 	RStrBuf opex;
 	const char *reg; /* destination register */
