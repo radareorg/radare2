@@ -505,6 +505,7 @@ e asm.comments=false
 e asm.var=false
 aac
 pdr @ 0x00487350
+afvx @ 0x0040f710
 EOF
 EXPECT=<<EOF
 / 114: fcn.00487350 ();
@@ -538,6 +539,18 @@ EXPECT=<<EOF
 | 0x004873c0      400fb6f6       movzx esi, sil
 \ 0x004873c4      e937f1ffff     jmp fcn.00486500
 | ----------- true: 0x00486500
+afvR
+var_bp_38h  0x40f790,0x40f839
+   var_28h
+var_bp_30h  0x40f78c
+   var_3ch  0x40f86e
+    var_fh  0x40f7a6
+afvW
+var_bp_38h  0x40f728
+   var_28h  0x40f735
+var_bp_30h  0x40f79b,0x40f843
+   var_3ch  0x40f866
+    var_fh
 EOF
 RUN
 

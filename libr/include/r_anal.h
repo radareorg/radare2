@@ -1680,6 +1680,7 @@ R_API R_BORROW RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, 
 R_API R_BORROW RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name);
 R_API void r_anal_function_delete_vars_by_kind(RAnalFunction *fcn, RAnalVarKind kind);
 R_API void r_anal_function_delete_all_vars(RAnalFunction *fcn);
+R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var);
 R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn);
 R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, st64 delta, ut64 addr);
 R_API const char *r_anal_function_get_var_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr);
@@ -1693,6 +1694,7 @@ R_API void r_anal_var_set_type(RAnalVar *var, const char *type);
 R_API void r_anal_var_delete(RAnalVar *var);
 R_API ut64 r_anal_var_addr(RAnalVar *var);
 R_API void r_anal_var_set_access(RAnalVar *var, const char *reg, ut64 access_addr, int access_type, st64 stackptr);
+R_API void r_anal_var_remove_access_at(RAnalVar *var, ut64 address);
 R_API void r_anal_var_clear_accesses(RAnalVar *var);
 
 // Get the access to var at exactly addr if there is one
