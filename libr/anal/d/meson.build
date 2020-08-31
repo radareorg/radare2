@@ -81,9 +81,12 @@ foreach file : sdb_files
     command: sdb_gen_cmd,
     depends: sdb_exe,
     build_by_default: true,
-    install: false
+    install: host_machine.system() == 'windows' ? false : true,
+    install_dir: join_paths(r2_sdb, 'fcnsign')
   )
 endforeach
 
-meson.add_install_script('../../../sys/copy_sdb_files' + (host_machine.system() == 'windows' ? '.bat' : '.sh'),
-                         meson.current_build_dir(), join_paths(r2_sdb, 'fcnsign'))
+if host_machine.system() == 'windows'
+  meson.add_install_script('../../../sys/copy_sdb_files.bat',
+                           meson.current_build_dir(), join_paths(r2_sdb, 'fcnsign'))
+endif
