@@ -1184,7 +1184,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 						break;
 					}
 				}
-				if (child_die->tag == DW_TAG_formal_parameter) {
+				if (child_die->tag == DW_TAG_formal_parameter && child_depth == 1) {
 					/* arguments sometimes have only type, create generic argX */
 					if (type.len) {
 						if (!name) {
