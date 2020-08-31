@@ -331,9 +331,6 @@ typedef struct r_core_t {
 	RList *ropchain;
 	bool use_tree_sitter_r2cmd;
 
-	bool marks_init;
-	ut64 marks[UT8_MAX + 1];
-
 	RMainCallback r_main_radare2;
 	// int (*r_main_radare2)(int argc, char **argv);
 	int (*r_main_rafind2)(int argc, const char **argv);

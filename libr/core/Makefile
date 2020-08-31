@@ -24,6 +24,7 @@ LDFLAGS+=-lpthread
 endif
 
 ifeq ($(USE_LIB_MAGIC),1)
+#LDFLAGS+=-lmagic
 LDFLAGS+=${LIBMAGIC}
 endif
 
@@ -39,9 +40,14 @@ include ${STATIC_CORE_PLUGINS}
 STATIC_OBJS=$(addprefix $(LTOP)/core/p/,$(STATIC_OBJ))
 OBJS+=$(STATIC_OBJS)
 
+#STATIC_OBJS=$(subst ..,p/..,$(subst core_,p/core_,$(STATIC_OBJ)))
+
 include $(TOP)/shlr/gdb/deps.mk
 include $(TOP)/shlr/radare2-shell-parser-deps.mk
 include $(LTOP)/rules.mk
+
+# include plugins
+#include ${STATIC_CORE_PLUGINS}
 
 cmd.o: cmd_hash.c cmd_debug.c cmd_zign.c cmd_project.c \
 	cmd_open.c cmd_meta.c cmd_macro.c cmd_magic.c cmd_mount.c cmd_eval.c \

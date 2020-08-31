@@ -564,10 +564,8 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			r_table_query (table, r->table_query);
 		}
 		char *s = r_table_tostring (table);
-		if (s) {
-			r_cons_printf ("%s", s);
-			free (s);
-		}
+		r_cons_printf ("%s", s);
+		free (s);
 
 	}
 	r_table_free (table);

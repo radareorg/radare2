@@ -1,47 +1,52 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_core.h>
 
+#define ASCII_MAX 127
+
+/* maybe move this into RCore */
+static bool marks_init = false;
+static ut64 marks[UT8_MAX + 1];
 
 R_API void r_core_visual_mark_reset(RCore *core) {
-	size_t i;
+	int i;
+	marks_init = true;
 	for (i = 0; i < UT8_MAX; i++) {
-		core->marks[i] = UT64_MAX;
+		marks[i] = UT64_MAX;
 	}
-	core->marks_init = true;
 }
 
 R_API bool r_core_visual_mark_dump(RCore *core) {
-	size_t i;
-	if (!core->marks_init) {
-		return false;
+	int i;
+	bool out = false;
+	if (!marks_init) {
+		return out;
 	}
-	bool res = false;
 	for (i = 0; i < UT8_MAX; i++) {
-		if (core->marks[i] != UT64_MAX) {
+		if (marks[i] != UT64_MAX) {
 			if (i > ASCII_MAX) {
-				r_cons_printf ("fV %d 0x%"PFMT64x"\n", i - ASCII_MAX - 1, core->marks[i]);
+				r_cons_printf ("fV %d 0x%"PFMT64x"\n", i - ASCII_MAX - 1, marks[i]);
 			} else {
-				r_cons_printf ("fV %c 0x%"PFMT64x"\n", i, core->marks[i]);
+				r_cons_printf ("fV %c 0x%"PFMT64x"\n", i, marks[i]);
 			}
-			res = true;
+			out = true;
 		}
 	}
-	return res;
+	return out;
 }
 
 R_API void r_core_visual_mark_set(RCore *core, ut8 ch, ut64 addr) {
-	if (!core->marks_init) {
+	if (!marks_init) {
 		r_core_visual_mark_reset (core);
 	}
-	core->marks[ch] = addr;
+	marks[ch] = addr;
 }
 
 R_API void r_core_visual_mark_del(RCore *core, ut8 ch) {
-	if (!core->marks_init) {
+	if (!marks_init) {
 		return;
 	}
-	core->marks[ch] = UT64_MAX;
+	marks[ch] = UT64_MAX;
 }
 
 R_API void r_core_visual_mark(RCore *core, ut8 ch) {
@@ -52,7 +57,7 @@ R_API void r_core_visual_mark(RCore *core, ut8 ch) {
 }
 
 R_API void r_core_visual_mark_seek(RCore *core, ut8 ch) {
-	if (core->marks_init && core->marks[ch] != UT64_MAX) {
-		r_core_seek (core, core->marks[ch], true);
+	if (marks_init && marks[ch] != UT64_MAX) {
+		r_core_seek (core, marks[ch], true);
 	}
 }
