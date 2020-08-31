@@ -255,12 +255,9 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 		RListIter *it;
 		pid_t dbgpid = getpid ();
 		r_list_foreach (dbg->threads, it, th) {
-			if (th->pid == tid) {
-				continue;
-			}
 			siginfo_t siginfo = { 0 };
 			ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, th->pid, 0, (r_ptrace_data_t)(size_t)&siginfo);
-			// Skip if the thread is already running to prevent error
+			// Skip if the thread is already running
 			if (ret == -1) {
 				continue;
 			}

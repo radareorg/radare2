@@ -177,6 +177,7 @@ static void linux_remove_fork_bps(RDebug *dbg) {
 	// Set dbg tid to the new child temporarily
 	dbg->pid = dbg->forked_pid;
 	dbg->tid = dbg->forked_pid;
+	// r_debug_select (dbg, dbg->forked_pid, dbg->forked_pid);
 
 	// Unset all hw breakpoints in the child process
 	r_debug_reg_sync (dbg, R_REG_TYPE_DRX, false);
@@ -192,6 +193,7 @@ static void linux_remove_fork_bps(RDebug *dbg) {
 	// Return to the parent
 	dbg->pid = prev_pid;
 	dbg->tid = prev_tid;
+	// r_debug_select (dbg, dbg->pid, dbg->pid);
 
 	// Restore sw breakpoints in the parent
 	r_bp_restore (dbg->bp, true);
@@ -720,20 +722,9 @@ int linux_attach(RDebug *dbg, int pid) {
 		dbg->threads = get_pid_thread_list (dbg, pid);
 	} else {
 		// This means we did a first run, so we probably attached to all possible threads already.
-		// So check if the requested thread is being traced already. If not, attach it
+		// So check if the requested thread is being traced already. If no: attach it
 		if (!r_list_find (dbg->threads, &pid, &match_pid)) {
 			linux_attach_single_pid (dbg, pid);
-		}
-
-		// When switching to another thread, set the si_signo in the previous thread to SIGSTOP
-		// which forces the debugger to continue the thread when continuing in future.
-		if (pid != -1 && pid != dbg->tid) {
-			siginfo_t siginfo = { 0 };
-			siginfo.si_signo = SIGSTOP;
-			siginfo.si_pid = getpid ();
-			if (r_debug_ptrace (dbg, PTRACE_SETSIGINFO, dbg->tid, NULL, &siginfo)) {
-				r_sys_perror ("PTRACE_SETSIGINFO");
-			}
 		}
 	}
 	return pid;
