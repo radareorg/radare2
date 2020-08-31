@@ -1031,7 +1031,7 @@ static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const c
 				}
 				r_cons_printf ("R 0x%"PFMT64x"  ", fcn->addr + acc->offset);
 				r_core_seek (core, fcn->addr + acc->offset, 1);
-				r_core_print_disasm_instructions (core, 0, 1);
+				r_core_print_disasm_instructions (core, 1, 0);
 			}
 			r_vector_foreach (&var->accesses, acc) {
 				if (!(acc->type & R_ANAL_VAR_ACCESS_TYPE_WRITE)) {
@@ -1039,7 +1039,7 @@ static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const c
 				}
 				r_cons_printf ("W 0x%"PFMT64x"  ", fcn->addr + acc->offset);
 				r_core_seek (core, fcn->addr + acc->offset, 1);
-				r_core_print_disasm_instructions (core, 0, 1);
+				r_core_print_disasm_instructions (core, 1, 0);
 			}
 		}
 		r_core_seek (core, oaddr, 0);
@@ -3897,7 +3897,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 							case R_ANAL_REF_TYPE_DATA:
 								r_cons_printf ("0x%08" PFMT64x " ", ref->addr);
 								r_core_seek (core, ref->at, 1);
-								r_core_print_disasm_instructions (core, 0, 1);
+								r_core_print_disasm_instructions (core, 1, 0);
 								break;
 							case R_ANAL_REF_TYPE_STRING:
 								{

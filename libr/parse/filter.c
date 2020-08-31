@@ -102,13 +102,8 @@ static char *findNextNumber(char *op) {
 					}
 				}
 			}
-			if (isSpace) {
-				if (IS_DIGIT (*p)) {
-					return p;
-				}
-				if ((*p == '-') && IS_DIGIT (p[1])) {
-					return p + 1;
-				}
+			if (isSpace && IS_DIGIT (*p)) {
+				return p;
 			}
 			o = p++;
 		}
