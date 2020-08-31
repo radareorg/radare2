@@ -181,12 +181,9 @@ NAME=t-enum
 FILE=-
 CMDS=<<EOF
 td enum pe_machine { IMAGE_FILE_MACHINE_IA64=0x200, IMAGE_FILE_MACHINE_I386=0x14c };
-te~?pe_machine
 t-pe_machine
-te~?pe_machine
-EOF
+t~?pe_machine'
 EXPECT=<<EOF
-1
 0
 EOF
 RUN
