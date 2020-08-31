@@ -205,7 +205,6 @@ install-man-symlink:
 		ln -fs "${PWD}/man/$$FILE" "${DESTDIR}${MANDIR}/man7/$$FILE" ; done
 
 install-doc:
-	mkdir -p "${DESTDIR}${DOCDIR}"
 	${INSTALL_DIR} "${DESTDIR}${DOCDIR}"
 	@echo ${DOCDIR}
 	for FILE in doc/* ; do \
@@ -213,7 +212,6 @@ install-doc:
 	done
 
 install-doc-symlink:
-	mkdir -p "${DESTDIR}${DOCDIR}"
 	${INSTALL_DIR} "${DESTDIR}${DOCDIR}"
 	for FILE in $(shell cd doc ; ls) ; do \
 		ln -fs "$(PWD)/doc/$$FILE" "${DESTDIR}${DOCDIR}" ; done
@@ -256,7 +254,6 @@ install-pkgconfig pkgconfig-install:
 		cp -f "$(PWD)/pkgcfg/$$FILE" "${DESTDIR}${LIBDIR}/pkgconfig/$$FILE" ; done
 
 install-pkgconfig-symlink pkgconfig-symstall symstall-pkgconfig:
-	mkdir -p "${DESTDIR}${LIBDIR}/pkgconfig"
 	@${INSTALL_DIR} "${DESTDIR}${LIBDIR}/pkgconfig"
 	for FILE in $(shell cd pkgcfg ; ls *.pc) ; do \
 		ln -fs "$(PWD)/pkgcfg/$$FILE" "${DESTDIR}${LIBDIR}/pkgconfig/$$FILE" ; done
