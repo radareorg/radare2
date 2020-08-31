@@ -131,7 +131,7 @@ RDebugPid *fill_pid_info(const char *info, const char *path, int tid);
 int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size);
 int linux_reg_write(RDebug *dbg, int type, const ut8 *buf, int size);
 RList *linux_desc_list(int pid);
-bool linux_stop_threads(RDebug *dbg, int except);
+bool linux_stop_threads(RDebug *dbg);
 int linux_handle_signals(RDebug *dbg, int tid);
 int linux_dbg_wait(RDebug *dbg, int pid);
 char *linux_reg_profile(RDebug *dbg);
