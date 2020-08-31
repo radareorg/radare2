@@ -105,7 +105,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, RSocketHTTPOptions *
 	}
 	if (content_length>0) {
 		r_socket_read_block (hr->s, (ut8*)buf, 1); // one missing byte wtf
-		if (content_length > INT_MAX - 1) {
+		if (ST32_ADD_OVFCHK (content_length, 1)) {
 			r_socket_http_close (hr);
 			eprintf ("Could not allocate hr data\n");
 			return NULL;
