@@ -3160,7 +3160,10 @@ reaccept:
 				eprintf ("open (%d): ", cmd);
 				r_socket_read_block (c, &cmd, 1); // len
 				pipefd = -1;
-				ptr = malloc ((int)cmd + 1);
+				if (UT8_ADD_OVFCHK (cmd, 1)) {
+					goto out_of_function;
+				}
+				ptr = malloc (cmd + 1);
 				if (!ptr) {
 					eprintf ("Cannot malloc in rmt-open len = %d\n", cmd);
 				} else {
