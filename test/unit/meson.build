@@ -77,8 +77,7 @@ if get_option('enable_tests')
         r_search_dep,
         r_hash_dep,
         r_crypto_dep,
-        r_magic_dep,
-        lrt,
+        r_magic_dep
       ],
       install: false,
       install_rpath: rpath,
