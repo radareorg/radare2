@@ -587,7 +587,6 @@ static void recovery_apply_vtable(RVTableContext *context, const char *class_nam
  */
 static void add_class_bases(RVTableContext *context, const class_type_info *cti) {
 	class_type_info base_info;
-	int i;
 
 	switch (cti->type) {
 	case R_TYPEINFO_TYPE_SI_CLASS: {
@@ -603,7 +602,7 @@ static void add_class_bases(RVTableContext *context, const class_type_info *cti)
 	} break;
 	case R_TYPEINFO_TYPE_VMI_CLASS: {
 		vmi_class_type_info *vmi_class = (void *)cti;
-		for (i = 0; i < vmi_class->vmi_base_count; i++) {
+		for (int i = 0; i < vmi_class->vmi_base_count; i++) {
 			base_class_type_info *base_class_info = vmi_class->vmi_bases + i;
 			ut64 base_addr = base_class_info->base_class_addr + VT_WORD_SIZE (context); // offset to name
 			if (rtti_itanium_read_type_name (context, base_addr, &base_info)) {
