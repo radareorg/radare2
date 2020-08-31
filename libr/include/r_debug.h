@@ -172,6 +172,10 @@ typedef struct r_debug_snap_t {
 	bool shared;
 } RDebugSnap;
 
+#define CMP_CNUM_REG(x, y) ((x) >= ((RDebugChangeReg *)y)->cnum ? 1 : -1)
+#define CMP_CNUM_MEM(x, y) ((x) >= ((RDebugChangeMem *)y)->cnum ? 1 : -1)
+#define CMP_CNUM_CHKPT(x, y) ((x) >= ((RDebugCheckpoint *)y)->cnum ? 1 : -1)
+
 typedef struct {
 	int cnum;
 	ut64 data;
@@ -184,7 +188,7 @@ typedef struct {
 
 typedef struct r_debug_checkpoint_t {
 	int cnum;
-	RRegArena *arena[R_REG_TYPE_LAST];
+	RListIter *reg[R_REG_TYPE_LAST];
 	RList *snaps; // <RDebugSnap>
 } RDebugCheckpoint;
 
@@ -195,7 +199,7 @@ typedef struct r_debug_session_t {
 	RVector *checkpoints; /* RVector<RDebugCheckpoint> */
 	HtUP *memory; /* RVector<RDebugChangeMem> */
 	HtUP *registers; /* RVector<RDebugChangeReg> */
-	int reasontype /*RDebugReasonType*/;
+	int /*RDebugReasonType*/ reasontype;
 	RBreakpointItem *bp;
 } RDebugSession;
 
@@ -582,14 +586,10 @@ R_API bool r_debug_session_add_reg_change(RDebugSession *session, int arena, ut6
 R_API bool r_debug_session_add_mem_change(RDebugSession *session, ut64 addr, ut8 data);
 R_API void r_debug_session_restore_reg_mem(RDebug *dbg, ut32 cnum);
 R_API void r_debug_session_list_memory(RDebug *dbg);
-R_API void r_debug_session_serialize(RDebugSession *session, Sdb *db);
-R_API void r_debug_session_deserialize(RDebugSession *session, Sdb *db);
-R_API bool r_debug_session_save(RDebugSession *session, const char *file);
-R_API bool r_debug_session_load(RDebug *dbg, const char *file);
 R_API bool r_debug_trace_ins_before(RDebug *dbg);
 R_API bool r_debug_trace_ins_after(RDebug *dbg);
 
-R_API RDebugSession *r_debug_session_new(void);
+R_API RDebugSession *r_debug_session_new(RDebug *dbg);
 R_API void r_debug_session_free(RDebugSession *session);
 
 R_API RDebugSnap *r_debug_snap_map(RDebug *dbg, RDebugMap *map);
