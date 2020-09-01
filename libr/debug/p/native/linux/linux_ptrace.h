@@ -18,8 +18,8 @@
 // Sadly, there is no reliable and portable way to check the linux kernel
 // version from headers, so we assume it's supported.
 #if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && (__GLIBC__ <= 2) && (__GLIBC_MINOR__ <= 3)
-#if !defined(PTRACE_GETEVENTMSG) && !defined(PTRACE_GETEVENTMSG)
-#define PTRACE_SETOPTIONS 0x4201
+#if !defined(PT_GETEVENTMSG) && !defined(PTRACE_GETEVENTMSG)
+#define PTRACE_GETEVENTMSG 0x4201
 #define PT_GETEVENTMSG PTRACE_GETEVENTMSG
 #endif
 #endif
