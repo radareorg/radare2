@@ -61,6 +61,17 @@ static bool test_r_id_pool_id_end_of_pool(void) {
 	mu_end;
 }
 
+static bool test_r_id_pool_initial_pattern(void) {
+	RIDPool *pool = r_id_pool_new (3, 42);
+	ut32 grabbed[3];
+	r_id_pool_grab_id (pool, &grabbed[0]);
+	r_id_pool_grab_id (pool, &grabbed[1]);
+	r_id_pool_grab_id (pool, &grabbed[2]);
+	r_id_pool_free (pool);
+	mu_assert (grabbed[0] < grabbed[1] && grabbed[1] < grabbed[2], "initial_pattern");
+	mu_end;
+}
+
 static int all_tests(void) {
 	mu_run_test (test_r_id_pool_broken_parameters);
 	mu_run_test (test_r_id_pool_start_id);
@@ -68,6 +79,7 @@ static int all_tests(void) {
 	mu_run_test (test_r_id_pool_id_reuse1);
 	mu_run_test (test_r_id_pool_id_unique);
 	mu_run_test (test_r_id_pool_id_end_of_pool);
+	mu_run_test (test_r_id_pool_initial_pattern);
 	return tests_passed != tests_run;
 }
 

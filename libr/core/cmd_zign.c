@@ -1009,7 +1009,33 @@ static void print_possible_matches(RList *list) {
 	}
 }
 
-static bool bestmatch_fcn(RCore *core,  const char *input) {
+static RSignItem *item_frm_signame(RAnal *a, const char *signame) {
+	// example zign|*|sym.unlink_blk
+	const RSpace *space = r_spaces_current (&a->zign_spaces);
+	char *k = r_str_newf ("zign|%s|%s", space? space->name: "*", signame);
+	char *value = sdb_querys (a->sdb_zigns, NULL, 0, k);
+	if (!value) {
+		free (k);
+		return NULL;
+	}
+
+	RSignItem *it = r_sign_item_new ();
+	if (!it) {
+		free (k);
+		free (value);
+		return NULL;
+	}
+
+	if (!r_sign_deserialize (a, it, k, value)) {
+		r_sign_item_free (it);
+		it = NULL;
+	}
+	free (k);
+	free (value);
+	return it;
+}
+
+static bool bestmatch_fcn(RCore *core, const char *input) {
 	r_return_val_if_fail (input && core, false);
 
 	char *argv = r_str_new (input);
@@ -1019,6 +1045,11 @@ static bool bestmatch_fcn(RCore *core,  const char *input) {
 
 	int count = 5;
 	char *zigname = strtok (argv, " ");
+	if (!zigname) {
+		eprintf ("Need a signature\n");
+		free (argv);
+		return false;
+	}
 	char *cs = strtok (NULL, " ");
 	if (cs) {
 		if ((count = atoi (cs)) <= 0) {
@@ -1032,9 +1063,25 @@ static bool bestmatch_fcn(RCore *core,  const char *input) {
 			return false;
 		}
 	}
-
-	RList *list = r_sign_find_closest_fcn (core->anal, zigname, count, 0);
+	RSignItem *it = item_frm_signame (core->anal, zigname);
+	if (!it) {
+		eprintf ("Couldn't get signature for %s\n", zigname);
+		free (argv);
+		return false;
+	}
 	free (argv);
+
+	if (!r_config_get_i (core->config, "zign.bytes")) {
+		r_sign_bytes_free (it->bytes);
+		it->bytes = NULL;
+	}
+	if (!r_config_get_i (core->config, "zign.graph")) {
+		r_sign_graph_free (it->graph);
+		it->graph = NULL;
+	}
+
+	RList *list = r_sign_find_closest_fcn (core->anal, it, count, 0);
+	r_sign_item_free (it);
 
 	if (list) {
 		print_possible_matches (list);

@@ -3431,7 +3431,7 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 		}
 		if (optype == R_ANAL_OP_TYPE_CALL) {
 			size_t i;
-			int max_count = r_anal_cc_max_arg (core->anal, fcn->cc);
+			int max_count = fcn->cc ? r_anal_cc_max_arg (core->anal, fcn->cc) : 0;
 			for (i = 0; i < max_count; i++) {
 				reg_set[i] = 2;
 			}

@@ -337,6 +337,32 @@ va       true
 EOF
 RUN
 
+NAME=iA (file mips I)
+FILE=bins/elf/mips-mozi
+CMDS=<<EOF
+iA
+iAj
+EOF
+EXPECT=<<EOF
+0   0x00000000 266108 mips_32 mips1 
+
+{"bins":[{"arch":"mips","bits":32,"offset":0,"size":266108,"isa":"mips1","machine":"MIPS R3000"}]}
+EOF
+RUN
+
+NAME=iA (file mips 64r2)
+FILE=bins/elf/analysis/mips64r2-busybox-loongson
+CMDS=<<EOF
+iA
+iAj
+EOF
+EXPECT=<<EOF
+0   0x00000000 1039368 mips_64 mips64r2 
+
+{"bins":[{"arch":"mips","bits":64,"offset":0,"size":1039368,"isa":"mips64r2","machine":"MIPS R3000"}]}
+EOF
+RUN
+
 NAME=iA (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iA

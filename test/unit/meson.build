@@ -55,7 +55,8 @@ if get_option('enable_tests')
     'util',
     'vector',
     'big',
-    'idpool'
+    'idpool',
+    'idstorage'
   ]
 
   foreach test : tests

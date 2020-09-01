@@ -676,7 +676,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 		char *varname = NULL, *vartype = NULL;
 		if (isarg) {
-			const char *place = r_anal_cc_arg (anal, fcn->cc, ST32_MAX);
+			const char *place = fcn->cc ? r_anal_cc_arg (anal, fcn->cc, ST32_MAX) : NULL;
 			bool stack_rev = place ? !strcmp (place, "stack_rev") : false;
 			char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
 			if (fname) {
@@ -685,9 +685,9 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 				if (stack_rev) {
 					const size_t cnt = r_type_func_args_count (anal->sdb_types, fname);
 					from = cnt ? cnt - 1 : cnt;
-					to = r_anal_cc_max_arg (anal, fcn->cc);
+					to = fcn->cc ? r_anal_cc_max_arg (anal, fcn->cc) : 0;
 				} else {
-					from = r_anal_cc_max_arg (anal, fcn->cc);
+					from = fcn->cc ? r_anal_cc_max_arg (anal, fcn->cc) : 0;
 					to = r_type_func_args_count (anal->sdb_types, fname);
 				}
 				const int bytes = (fcn->bits ? fcn->bits : anal->bits) / 8;

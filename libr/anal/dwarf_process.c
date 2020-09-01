@@ -46,11 +46,16 @@ typedef struct dwarf_var_location_t {
 
 typedef struct dwarf_variable_t {
 	VariableLocation *location;
-	const char *name;
+	char *name;
 	char *type;
 } Variable;
 
-
+static void variable_free(Variable *var) {
+	free (var->name);
+	free (var->location);
+	free (var->type);
+	free (var);
+}
 
 static inline bool is_parsable_tag(ut64 tag_code) {
 	return (tag_code == DW_TAG_structure_type ||
@@ -1160,17 +1165,13 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 		bool get_linkage_name = prefer_linkage_name (ctx->lang);
 		bool has_linkage_name = false;
 		int argNumber = 1;
-		/* TODO deal with lexical block ?? */
-		/* TODO merge the formal_parameter and variable parts */
 		size_t j;
 		for (j = idx; child_depth > 0 && j < ctx->count; j++) {
 			child_die = &ctx->all_dies[j];
 			RStrBuf type;
 			r_strbuf_init (&type);
 			const char *name = NULL;
-			// right now we skip non direct descendants of the structure
-			// TODO maybe add parsing of possible thrown exception DW_TAG_thrown_type
-			if (child_depth == 1 && child_die->tag == DW_TAG_formal_parameter) {
+			if (child_die->tag == DW_TAG_formal_parameter || child_die->tag == DW_TAG_variable) {
 				Variable *var = R_NEW0 (Variable);
 				size_t i;
 				for (i = 0; i < child_die->count; i++) {
@@ -1194,82 +1195,48 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 						parse_abstract_origin (ctx, val->reference, &type, &name);
 						break;
 					case DW_AT_location:
-						if (val->kind == DW_AT_KIND_BLOCK) {
-							var->location = parse_dwarf_location (ctx, val, find_attr (die, DW_AT_frame_base));
-						}
-						break;
-					default:
-						break;
-					}
-				}
-				/* arguments sometimes have only type, create generic argX */
-				if (type.len) {
-					bool free_name = false;
-					if (!name) {
-						name = r_str_newf ("arg%d", argNumber);
-						free_name = true;
-					}
-					r_strbuf_appendf (args, "%s %s,", r_strbuf_get (&type), name);
-					if (free_name) {
-						var->name = name;
-					} else {
-						var->name = strdup (name);
-					}
-					var->type = strdup (r_strbuf_get (&type));
-					r_list_append (variables, var);
-				}
-				argNumber++;
-				r_strbuf_fini (&type);
-			} else if (child_depth == 1 && child_die->tag == DW_TAG_unspecified_parameters) {
-				r_strbuf_appendf (args, "va_args ...,");
-			} else if (child_die->tag == DW_TAG_variable) { /* child_depth == 1 &&  */
-				Variable *var = R_NEW0 (Variable);
-				RStrBuf var_type;
-				r_strbuf_init (&var_type);
-				size_t i;
-				for (i = 0; i < child_die->count; i++) {
-					const RBinDwarfAttrValue *val = &child_die->attr_values[i];
-					switch (val->attr_name) {
-					case DW_AT_name:
-						if (!get_linkage_name || !has_linkage_name) {
-							var->name = val->string.content;
-						}
-						break;
-					case DW_AT_linkage_name:
-					case DW_AT_MIPS_linkage_name:
-						var->name = val->string.content;
-						has_linkage_name = true;
-						break;
-					case DW_AT_type:
-						parse_type (ctx, val->reference, &var_type, NULL);
-						break;
-					// abstract origin is supposed to have omitted information
-					case DW_AT_abstract_origin:
-						parse_abstract_origin (ctx, val->reference, &type, &name);
-						break;
-					case DW_AT_location:
 						var->location = parse_dwarf_location (ctx, val, find_attr (die, DW_AT_frame_base));
 						break;
 					default:
 						break;
 					}
 				}
-				if (var->name && var_type.len) {
-					var->name = strdup (var->name);
-					var->type = strdup (r_strbuf_get (&var_type));
-					r_list_append (variables, var);
-				} /* else just ignore the variable */
-				r_strbuf_fini  (&var_type);
+				if (child_die->tag == DW_TAG_formal_parameter && child_depth == 1) {
+					/* arguments sometimes have only type, create generic argX */
+					if (type.len) {
+						if (!name) {
+							var->name = r_str_newf ("arg%d", argNumber);
+						} else {
+							var->name = strdup (name);
+						}
+						r_strbuf_appendf (args, "%s %s,", r_strbuf_get (&type), var->name);
+						var->type = strdup (r_strbuf_get (&type));
+						r_list_append (variables, var);
+					} else {
+						variable_free (var);
+					}
+					argNumber++;
+				} else { /* DW_TAG_variable */
+					if (name && type.len) {
+						var->name = strdup (name);
+						var->type = strdup (r_strbuf_get (&type));
+						r_list_append (variables, var);
+					} else {
+						variable_free (var);
+					}
+					r_strbuf_fini (&type);
+				}
+			} else if (child_depth == 1 && child_die->tag == DW_TAG_unspecified_parameters) {
+				r_strbuf_appendf (args, "va_args ...,");
 			}
 			if (child_die->has_children) {
 				child_depth++;
 			}
-			// sibling list is terminated by null entry
-			if (child_die->abbrev_code == 0) {
+			if (child_die->abbrev_code == 0) { /* sibling list is terminated by null entry */
 				child_depth--;
 			}
+			r_strbuf_fini (&type);
 		}
-		// if no params
 		if (args->len > 0) {
 			r_strbuf_slice (args, 0, args->len - 1);
 		}
@@ -1461,10 +1428,7 @@ static void parse_function(Context *ctx, ut64 idx) {
 	RListIter *iter;
 	Variable *var;
 	r_list_foreach (variables, iter, var) {
-		free ((char *)var->name);
-		free (var->type);
-		free (var->location);
-		free (var);
+		variable_free (var);
 	}
 	r_list_free (variables);
 	r_strbuf_fini (&args);
@@ -1668,15 +1632,15 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwar
 				r_flag_unset_off (flags, offset);
 				r_flag_set_next (flags, global_name, offset, 4);
 				free (global_name);
-			} else if (*kind == 's') {
+			} else if (*kind == 's' && fcn) {
 				r_anal_function_set_var (fcn, offset - fcn->maxstack, *kind, type, 4, false, var_name);
-			} else if (*kind == 'r') {
+			} else if (*kind == 'r' && fcn) {
 				RRegItem *i = r_reg_get (anal->reg, extra, -1);
 				if (!i) {
 					goto loop_end;
 				}
 				r_anal_function_set_var (fcn, i->index, *kind, type, 4, false, var_name);
-			} else { /* kind == 'b' */
+			} else if (fcn) { /* kind == 'b' */
 				r_anal_function_set_var (fcn, offset - fcn->bp_off, *kind, type, 4, false, var_name);
 			}
 			free (var_key);

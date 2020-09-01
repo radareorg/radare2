@@ -132,6 +132,10 @@ R_API bool r_th_getname(RThread *th, char *name, size_t len) {
 
 R_API bool r_th_setaffinity(RThread *th, int cpuid) {
 #if __linux__
+#if defined(__GLIBC__) && defined (__GLIBC_MINOR__) && (__GLIBC__ <= 2) && (__GLIBC_MINOR__ <= 2)
+	// Old versions of GNU libc don't have this feature
+#pragma message("warning r_th_setaffinity not implemented")
+#else
 	cpu_set_t c;
 	CPU_ZERO(&c);
 	CPU_SET(cpuid, &c);
@@ -140,6 +144,7 @@ R_API bool r_th_setaffinity(RThread *th, int cpuid) {
 		eprintf ("Failed to set cpu affinity\n");
 		return false;
 	}
+#endif
 #elif __FreeBSD__ || __DragonFly__
 	cpuset_t c;
 	CPU_ZERO(&c);
