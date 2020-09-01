@@ -8,7 +8,7 @@ bool test_r_id_storage_add0(void) {
 	bool success = r_id_storage_add (ids, str, &id);
 	void *ptr = r_id_storage_get (ids, id);
 	r_id_storage_free (ids);
-	mu_assert (success && (ptr == str), "id_storage_add 0");
+	mu_assert ("id_storage_add 0", success && (ptr == str));
 	mu_end;
 }
 
@@ -22,7 +22,7 @@ bool test_r_id_storage_add1(void) {
 	r_id_storage_add (ids, str, &id);
 	bool success = r_id_storage_add (ids, str, &id);
 	r_id_storage_free (ids);
-	mu_assert (!success, "id_storage_add 1");
+	mu_assert ("id_storage_add 1", !success);
 	mu_end;
 }
 
