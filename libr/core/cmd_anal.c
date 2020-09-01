@@ -175,6 +175,7 @@ static const char *help_msg_ae[] = {
 	"aesue", " [esil]", "step until esil expression match",
 	"aesuo", " [optype]", "step until given opcode type",
 	"aetr", "[esil]", "Convert an ESIL Expression to REIL",
+	"aets", "[?]", "ESIL Trace session",
 	"aex", " [hex]", "evaluate opcode expression",
 	NULL
 };
@@ -290,6 +291,13 @@ static const char *help_msg_aep[] = {
 	"aep", "-[addr]", "remove pin",
 	"aep", " [name] @ [addr]", "set pin",
 	"aep", "", "list pins",
+	NULL
+};
+
+static const char *help_msg_aets[] = {
+	"Usage:", "aets ", " [...]",
+	"aets+", "", "Start ESIL trace session",
+	"aets-", "", "Stop ESIL trace session",
 	NULL
 };
 
@@ -877,9 +885,6 @@ static bool cmd_anal_aaft(RCore *core) {
 	r_reg_arena_push (core->anal->reg);
 	r_reg_arena_zero (core->anal->reg);
 	r_core_cmd0 (core, "aei;aeim");
-	RAnalEsilTrace *old_trace = core->anal->esil->trace;
-	RAnalEsilTrace *trace = r_anal_esil_trace_new (core->anal->esil);
-	core->anal->esil->trace = trace;
 	ut8 *saved_arena = r_reg_arena_peek (core->anal->reg);
 	// Iterating Reverse so that we get function in top-bottom call order
 	r_list_foreach_prev (core->anal->fcns, it, fcn) {
@@ -896,8 +901,6 @@ static bool cmd_anal_aaft(RCore *core) {
 		__add_vars_sdb (core, fcn);
 	}
 	r_core_seek (core, seek, true);
-	core->anal->esil->trace = old_trace;
-	r_anal_esil_trace_free (trace);
 	r_reg_arena_pop (core->anal->reg);
 	r_config_set_i (core->config, io_cache_key, io_cache);
 	free (saved_arena);
@@ -6204,6 +6207,41 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			r_anal_esil_free (esil);
 			break;
 		}
+		case 's': // "aets"
+			switch (input[2]) {
+			case '+': // "aets+"
+				if (!esil) {
+					eprintf ("Error: ESIL is not initialized. Use `aeim` first.\n");
+					break;
+				}
+				if (esil->trace) {
+					eprintf ("ESIL trace already started\n");
+					break;
+				}
+				esil->trace = r_anal_esil_trace_new (esil);
+				if (!esil->trace) {
+					break;
+				}
+				r_config_set_i (core->config, "dbg.trace", true);
+				break;
+			case '-': // "aets-"
+				if (!esil) {
+					eprintf ("Error: ESIL is not initialized. Use `aeim` first.\n");
+					break;
+				}
+				if (!esil->trace) {
+					eprintf ("No ESIL trace started\n");
+					break;
+				}
+				r_anal_esil_trace_free (esil->trace);
+				esil->trace = NULL;
+				r_config_set_i (core->config, "dbg.trace", false);
+				break;
+			default:
+				r_core_cmd_help (core, help_msg_aets);
+				break;
+			}
+			break;
 		default:
 			eprintf ("Unknown command. Use `aetr`.\n");
 			break;
