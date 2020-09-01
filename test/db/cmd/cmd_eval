@@ -29,7 +29,9 @@ RUN
 NAME=e anal.gp(mips)
 FILE=bins/elf/analysis/mips64r2-cc1
 CMDS=e anal.gp
-EXPECT=0x1213a5940
+EXPECT=<<EOF
+0x1213a5940
+EOF
 RUN
 
 NAME=e asm.os
