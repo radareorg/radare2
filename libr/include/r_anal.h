@@ -806,6 +806,7 @@ R_DEPRECATE typedef struct r_anal_var_field_t {
 } RAnalVarField;
 
 typedef enum {
+	R_ANAL_ACC_UNKNOWN = 0,
 	R_ANAL_ACC_R = (1 << 0),
 	R_ANAL_ACC_W = (1 << 1),
 } RAnalValueAccess;

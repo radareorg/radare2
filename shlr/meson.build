@@ -9,6 +9,14 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     capstone_path = 'capstone'
   endif
 
+  capstone_version = get_option('use_capstone_version')
+
+  use_capstone5 = get_option('use_capstone5')
+  if use_capstone5
+    warning('use_capstone5 is deprecated. Use -Duse_capstone_version=v5 instead.')
+    capstone_version = 'v5'
+  endif
+
   res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("@0@"))'.format(capstone_path))
   if res.returncode() == 0
     if not git_exe.found()
@@ -16,13 +24,17 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     endif
 
     # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
-    use_capstone5 = get_option('use_capstone5')
-    if use_capstone5
+    if capstone_version == 'v5'
       CS_TIP = 'd956ceddabcbe544ee8f074ba75c86c6381b34e6'
       CS_BRA = 'next'
-    else
+    elif capstone_version == 'v3'
+      CS_TIP = '61bf71c771680033651f16cff832446e421847b1'
+      CS_BRA = 'v3'
+    elif capstone_version == 'v4'
       CS_TIP = '2edae851d9fee511a57d4da32d5acecedd95d7ed'
       CS_BRA = 'v4'
+    else
+      error('Wrong capstone version selected. Please use one of the supported versions.')
     endif
 
     capstone_git_user = 'aquynh'
@@ -68,12 +80,6 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     'arch/ARM/ARMInstPrinter.c',
     'arch/ARM/ARMMapping.c',
     'arch/ARM/ARMModule.c',
-    'arch/M680X/M680XDisassembler.c',
-    'arch/M680X/M680XInstPrinter.c',
-    'arch/M680X/M680XModule.c',
-    'arch/M68K/M68KDisassembler.c',
-    'arch/M68K/M68KInstPrinter.c',
-    'arch/M68K/M68KModule.c',
     'arch/Mips/MipsDisassembler.c',
     'arch/Mips/MipsInstPrinter.c',
     'arch/Mips/MipsMapping.c',
@@ -91,10 +97,6 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     'arch/SystemZ/SystemZMapping.c',
     'arch/SystemZ/SystemZMCTargetDesc.c',
     'arch/SystemZ/SystemZModule.c',
-    'arch/TMS320C64x/TMS320C64xDisassembler.c',
-    'arch/TMS320C64x/TMS320C64xInstPrinter.c',
-    'arch/TMS320C64x/TMS320C64xMapping.c',
-    'arch/TMS320C64x/TMS320C64xModule.c',
     'arch/X86/X86ATTInstPrinter.c',
     'arch/X86/X86Disassembler.c',
     'arch/X86/X86DisassemblerDecoder.c',
@@ -112,16 +114,41 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     'SStream.c',
     'utils.c',
   ]
+  rel_cs4_files = [
+    'arch/M680X/M680XDisassembler.c',
+    'arch/M680X/M680XInstPrinter.c',
+    'arch/M680X/M680XModule.c',
+    'arch/M68K/M68KDisassembler.c',
+    'arch/M68K/M68KInstPrinter.c',
+    'arch/M68K/M68KModule.c',
+    'arch/TMS320C64x/TMS320C64xDisassembler.c',
+    'arch/TMS320C64x/TMS320C64xInstPrinter.c',
+    'arch/TMS320C64x/TMS320C64xMapping.c',
+    'arch/TMS320C64x/TMS320C64xModule.c',
+  ]
+  rel_cs5_files = [
+    'arch/X86/X86InstPrinterCommon.c',
+  ]
 
   cs_files = []
   foreach rel_cs_file : rel_cs_files
     cs_files += [join_paths(capstone_path, rel_cs_file)]
   endforeach
-  if get_option('use_capstone5')
-    cs_files += [join_paths(capstone_path, 'arch/X86/X86InstPrinterCommon.c')]
+  if capstone_version == 'v4' or capstone_version == 'v5'
+    foreach rel_cs_file : rel_cs4_files
+      cs_files += [join_paths(capstone_path, rel_cs_file)]
+    endforeach
+  endif
+  if capstone_version == 'v5'
+    foreach rel_cs_file : rel_cs5_files
+      cs_files += [join_paths(capstone_path, rel_cs_file)]
+    endforeach
   endif
 
   capstone_includes = [platform_inc, include_directories('capstone/include')]
+  if capstone_version == 'v4' or capstone_version == 'v5'
+    capstone_includes += [include_directories('capstone/include/capstone')]
+  endif
 
   libr2capstone = static_library('r2capstone', cs_files,
     c_args: [
