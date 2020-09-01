@@ -1172,7 +1172,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 	int32_t group = 0;
 	image_info ii;
 
-	while (get_next_image_info (0, &group, &ii) == B_OK) {
+	while (get_next_image_info ((team_id)pid, &group, &ii) == B_OK) {
 		if (ii.type == B_APP_IMAGE) {
 			break;
 		}
