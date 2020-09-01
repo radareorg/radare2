@@ -638,6 +638,7 @@ jobs:
   create-release:
     name: Create draft release and upload artifacts
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && contains(github.ref, 'release-')
     needs: [
       build-and-test,
       build-centos6,
