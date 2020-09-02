@@ -856,7 +856,7 @@ static const char *arg(RAnal *a, csh *handle, cs_insn *insn, char *buf, int n) {
 // do the sign extension here as well, but honestly this whole thing should maybe be redesigned
 static void shifted_reg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n) {
 	int signext = EXT64(n);
-	char *rn;
+	const char *rn;
 
 	if (HASMEMINDEX64(n)) {
 		rn = MEMINDEX64(n);
@@ -1172,8 +1172,8 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			return n
 		*/
 
-		char *r0 = REG64 (0);
-		char *r1 = REG64 (1);
+		const char *r0 = REG64 (0);
+		const char *r1 = REG64 (1);
 
 		if (size == 32) {
 			r_strbuf_setf (&op->esil, 

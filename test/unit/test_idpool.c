@@ -68,7 +68,7 @@ static bool test_r_id_pool_initial_pattern(void) {
 	r_id_pool_grab_id (pool, &grabbed[1]);
 	r_id_pool_grab_id (pool, &grabbed[2]);
 	r_id_pool_free (pool);
-	mu_assert (grabbed[0] < grabbed[1] && grabbed[1] < grabbed[2], "initial_pattern");
+	mu_assert_true (grabbed[0] < grabbed[1] && grabbed[1] < grabbed[2], "initial_pattern");
 	mu_end;
 }
 

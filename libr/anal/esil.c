@@ -1542,8 +1542,8 @@ static bool esil_signed_mod(RAnalEsil *esil) {
 	st64 s, d;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_get_parm (esil, src, &s)) {
-		if (dst && r_anal_esil_get_parm (esil, dst, &d)) {
+	if (src && r_anal_esil_get_parm (esil, src, (ut64 *)&s)) {
+		if (dst && r_anal_esil_get_parm (esil, dst, (ut64 *)&d)) {
 			if (s == 0) {
 				if (esil->verbose > 0) {
 					eprintf ("0x%08"PFMT64x" esil_mod: Division by zero!\n", esil->address);
@@ -1621,8 +1621,8 @@ static bool esil_signed_div(RAnalEsil *esil) {
 	st64 s, d;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_get_parm (esil, src, &s)) {
-		if (dst && r_anal_esil_get_parm (esil, dst, &d)) {
+	if (src && r_anal_esil_get_parm (esil, src, (ut64 *)&s)) {
+		if (dst && r_anal_esil_get_parm (esil, dst, (ut64 *)&d)) {
 			if (s == 0) {
 				ERR ("esil_div: Division by zero!");
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
