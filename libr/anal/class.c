@@ -727,8 +727,20 @@ R_API RAnalClassErr r_anal_class_base_set(RAnal *anal, const char *class_name, R
 		free (base_class_name_sanitized);
 		return R_ANAL_CLASS_ERR_NONEXISTENT_CLASS;
 	}
+	RVector /*<RAnalBaseClass>*/ *bases = r_anal_class_base_get_all (anal, class_name);
+	if (bases) {
+		RAnalBaseClass *existing_base;
+		r_vector_foreach (bases, existing_base) {
+			if (!strcmp (existing_base->class_name, base->class_name)) {
+				free (base_class_name_sanitized);
+				r_vector_free (bases);
+				return R_ANAL_CLASS_ERR_OTHER;
+			}
+		}
+	}
 	RAnalClassErr err = r_anal_class_base_set_raw (anal, class_name, base, base_class_name_sanitized);
 	free (base_class_name_sanitized);
+	r_vector_free (bases);
 	return err;
 }
 
