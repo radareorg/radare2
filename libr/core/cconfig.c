@@ -3261,7 +3261,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("zign.autoload", "false", "Autoload all zignatures located in " R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS));
 	SETPREF ("zign.diff.bthresh", "1.0", "Threshold for diffing zign bytes [0, 1] (see zc?)");
 	SETPREF ("zign.diff.gthresh", "1.0", "Threshold for diffing zign graphs [0, 1] (see zc?)");
-	SETPREF ("zign.bestthresh", "0.0", "Threshold for zb commands");
+	SETPREF ("zign.threshold", "0.0", "Minimum similarity required for inclusion in zb output");
 
 	/* diff */
 	SETCB ("diff.sort", "addr", &cb_diff_sort, "Specify function diff sorting column see (e diff.sort=?)");
