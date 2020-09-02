@@ -1105,11 +1105,11 @@ static int parse_line_raw(const RBin *a, const ut8 *obuf,
 	(x)=*(y*)buf; idx+=sizeof(y);buf+=sizeof(y)
 
 #define READ_BUF64(x) if (idx+sizeof(ut64)>=len) { return false;} \
-	(x)=r_read_ble64(buf, 0); idx+=sizeof(ut64);buf+=sizeof(ut64)
+	(x)=r_read_ble64(buf, big_end); idx+=sizeof(ut64);buf+=sizeof(ut64)
 #define READ_BUF32(x) if (idx+sizeof(ut32)>=len) { return false;} \
-	(x)=r_read_ble32(buf, 0); idx+=sizeof(ut32);buf+=sizeof(ut32)
+	(x)=r_read_ble32(buf, big_end); idx+=sizeof(ut32);buf+=sizeof(ut32)
 #define READ_BUF16(x) if (idx+sizeof(ut16)>=len) { return false;} \
-	(x)=r_read_ble16(buf, 0); idx+=sizeof(ut16);buf+=sizeof(ut16)
+	(x)=r_read_ble16(buf, big_end); idx+=sizeof(ut16);buf+=sizeof(ut16)
 
 static int parse_aranges_raw(const ut8 *obuf, int len, int mode, PrintfCallback print) {
 	ut32 length, offset;
@@ -2305,6 +2305,8 @@ R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 			free (buf);
 			return NULL;
 		}
+		/* set the endianity global [HOTFIX] */
+		big_end = r_bin_is_big_endian (bin);
 		// Actually parse the section
 		parse_line_raw (bin, buf, len, mode);
 		// k bin/cur/addrinfo/*
@@ -2359,6 +2361,8 @@ R_API RList *r_bin_dwarf_parse_aranges(RBin *bin, int mode) {
 			free (buf);
 			return NULL;
 		}
+		/* set the endianity global [HOTFIX] */
+		big_end = r_bin_is_big_endian (bin);
 		parse_aranges_raw (buf, len, mode, bin->cb_printf);
 
 		free (buf);
