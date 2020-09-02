@@ -4598,6 +4598,39 @@ static x86newTokenType getToken(const char *str, size_t *begin, size_t *end) {
 	}
 }
 
+static bool is_xmm_register(const char *token) {
+	// check xmm0..xmm15
+	if (!r_str_ncasecmp ("xmm", token, 3)) {
+		int n = atoi (token + 3);
+		return (n >= 0 && n <= 15);
+	}
+	return false;
+}
+
+static bool is_mm_register(const char *token) {
+	if (!r_str_ncasecmp ("mm", token, 2)) {
+		if (isdigit (token[2]) && !token[3]) {
+			int n = token[2];
+			if (n >= '0' && n <= '7') {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+static bool is_st_register(const char *token) {
+	if (!r_str_ncasecmp ("st", token, 2)) {
+		if (isdigit (token[2]) && !token[3]) {
+			int n = token[2];
+			if (n >= '0' && n <= '7') {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 /**
  * Get the register at position pos in str. Increase pos afterwards.
  */
@@ -4698,15 +4731,15 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 		}
 	}
 	// Extended registers
-	if (!r_str_ncasecmp ("st", token, 2)) {
+	if (is_st_register (token)) {
 		*type = (OT_FPUREG & ~OT_REGALL);
 		*pos = 2;
 	}
-	if (!r_str_ncasecmp ("mm", token, 2)) {
+	if (is_mm_register (token)) {
 		*type = (OT_MMXREG & ~OT_REGALL);
 		*pos = 2;
 	}
-	if (!r_str_ncasecmp ("xmm", token, 3)) {
+	if (is_xmm_register (token)) {
 		*type = (OT_XMMREG & ~OT_REGALL);
 		*pos = 3;
 	}
