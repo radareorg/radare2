@@ -1627,7 +1627,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=zb zign.bestthresh
+NAME=zb zign.threshold
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 s 0x00410210
@@ -1643,13 +1643,13 @@ za sym.4 g cc=12 nbbs=17 edges=30 ebbs=1 bbsum=307
 za sym.4 b 4883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffff00000000ff000000000000ffffffffffffff
 za sym.5 g cc=10 nbbs=14 edges=22 ebbs=1 bbsum=284
 za sym.5 b 08e89e02ffff488b2d77952a004889c38b450048:ffff00000000ff000000000000ffffffffffffff
-e zign.bestthresh = .99
+e zign.threshold = .99
 zb ~[5]
-e zign.bestthresh = .9
+e zign.threshold = .9
 zb ~[5]
-e zign.bestthresh = .8
+e zign.threshold = .8
 zb ~[5]
-e zign.bestthresh = .7
+e zign.threshold = .7
 zb ~[5]
 EOF
 EXPECT=<<EOF
@@ -1666,20 +1666,20 @@ sym.4
 EOF
 RUN
 
-NAME=zbr zign.bestthresh
+NAME=zbr zign.threshold
 FILE=bins/elf/ls
 CMDS=<<EOF
 aa
 e zign.maxsz = 32
 za main b 41574156415541545589fd534889f34883ec58488b3e64488b04252800000048
 za main g cc=429 nbbs=300 edges=437 ebbs=8 bbsum=6739
-e zign.bestthresh = 1.0
+e zign.threshold = 1.0
 zbr main~[5]
-e zign.bestthresh = 0.5
+e zign.threshold = 0.5
 zbr main~[5]
-e zign.bestthresh = 0.3
+e zign.threshold = 0.3
 zbr main~[5]
-e zign.bestthresh = 0.12
+e zign.threshold = 0.12
 zbr main 30~[5]
 EOF
 EXPECT=<<EOF
@@ -1691,12 +1691,12 @@ sym._obstack_newchunk
 EOF
 RUN
 
-NAME=zbr invalid bestthresh
+NAME=zbr invalid threshold
 FILE=bins/elf/ls
 CMDS=<<EOF
 aa
 e zign.maxsz = 32
-e zign.bestthresh = 99.0
+e zign.threshold = 99.0
 za main b 41574156415541545589fd534889f34883ec58488b3e64488b04252800000048
 za main g cc=429 nbbs=300 edges=437 ebbs=8 bbsum=6739
 zbr main ~[5]
@@ -1710,11 +1710,11 @@ sym._obstack_begin_1
 EOF
 RUN
 
-NAME=zb invalid bestthresh
+NAME=zb invalid threshold
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 s 0x00410210
-e zign.bestthresh = 99.0
+e zign.threshold = 99.0
 e zign.maxsz = 32
 af
 za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
