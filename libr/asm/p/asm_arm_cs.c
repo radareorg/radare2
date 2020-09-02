@@ -9,6 +9,7 @@
 
 bool arm64ass(const char *str, ut64 addr, ut32 *op);
 static csh cd = 0;
+static HtUU *ht_itblock;
 static HtUU *ht_it;
 
 #include "cs_mnemonics.c"
@@ -79,6 +80,7 @@ static const char *cc_name(arm_cc cc) {
 
 static void disass_itblock(RAsm *a, cs_insn *insn) {
 	size_t i;
+	ht_uu_update (ht_itblock, a->pc,  r_str_nlen (insn->mnemonic, 5));
 	for (i = 1; i < r_str_nlen (insn->mnemonic, 5); i++) {
 		switch (insn->mnemonic[i]) {
 		case 0x74: //'t'
@@ -93,6 +95,19 @@ static void disass_itblock(RAsm *a, cs_insn *insn) {
 	}
 }
 
+static void check_itblock(RAsm *a, cs_insn *insn) {
+	size_t x;
+	ut64 itlen;
+	bool found;
+	itlen = ht_uu_find (ht_itblock, a->pc, &found);
+	if (found) {
+		for (x = 1; x < itlen; x++) {
+			ht_uu_delete (ht_it, a->pc + (x*insn->size));
+		}
+		ht_uu_delete (ht_itblock, a->pc);
+	}
+}
+
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int omode = -1;
 	static int obits = 32;
@@ -103,6 +118,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	bool found = 0;
 	ut64 itcond;
 	char *tmpstr;
+
 	mode |= (a->bits == 16)? CS_MODE_THUMB: CS_MODE_ARM;
 	mode |= (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	if (mode != omode || a->bits != obits) {
@@ -172,6 +188,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		op->size = insn->size;
 		if (insn->id == ARM_INS_IT) {
 			disass_itblock (a, insn);
+		} else {
+			check_itblock (a, insn);
 		}
 		itcond = ht_uu_find (ht_it,  a->pc, &found);
 		if (found) {
@@ -256,12 +274,17 @@ static bool init (void* user) {
 	if (!ht_it) {
 		ht_it = ht_uu_new0 ();
 	}
+	if (!ht_itblock) {
+		ht_itblock = ht_uu_new0 ();
+	}
 	return 0;
 }
 
 static bool fini (void* user) {
 	ht_uu_free (ht_it);
+	ht_uu_free (ht_itblock);
 	ht_it = NULL;
+	ht_itblock = NULL;
 	return 0;
 }
 

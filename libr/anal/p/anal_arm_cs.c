@@ -62,6 +62,7 @@
 
 static RRegItem base_regs[4];
 static RRegItem regdelta_regs[4];
+static HtUU *ht_itblock;
 static HtUU *ht_it;
 
 static const ut64 bitmask_by_width[] = {
@@ -2587,11 +2588,9 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	}
 }
 
-static void anal_itblock(RAnal *a, cs_insn *insn) {
-	if (!ht_it) {
-		ht_it = ht_uu_new0 ();
-	}
+static void anal_itblock(cs_insn *insn) {
 	size_t i;
+	ht_uu_update (ht_itblock, insn->address,  r_str_nlen (insn->mnemonic, 5));
 	for (i = 1; i < r_str_nlen (insn->mnemonic, 5); i++) {
 		switch (insn->mnemonic[i]) {
 		case 0x74: //'t'
@@ -2603,6 +2602,19 @@ static void anal_itblock(RAnal *a, cs_insn *insn) {
 		default:
 			break;
 		}
+	}
+}
+
+static void check_itblock(cs_insn *insn) {
+	size_t x;
+	ut64 itlen;
+	bool found;
+	itlen = ht_uu_find (ht_itblock, insn->address, &found);
+	if (found) {
+		for (x = 1; x < itlen; x++) {
+			ht_uu_delete (ht_it, insn->address + (x*insn->size));
+		}
+		ht_uu_delete (ht_itblock, insn->address);
 	}
 }
 
@@ -2639,6 +2651,11 @@ static void anop32(RAnal *a, csh handle, RAnalOp *op, cs_insn *insn, bool thumb,
 	} else {
 		op->family = R_ANAL_OP_FAMILY_CPU;
 	}
+
+	if (insn->id != ARM_INS_IT) {
+		check_itblock(insn);
+	}
+
 	switch (insn->id) {
 #if 0
 
@@ -2674,7 +2691,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		}
 		break;
 	case ARM_INS_IT:
-		anal_itblock (a, insn);
+		anal_itblock (insn);
 		op->cycles = 2;
 		break;
 	case ARM_INS_BKPT:
@@ -3799,11 +3816,16 @@ static int init (void* user) {
 	if (!ht_it) {
 		ht_it = ht_uu_new0 ();
 	}
+	if (!ht_itblock) {
+		ht_itblock = ht_uu_new0 ();
+	}
 	return 0;
 }
 
 static int fini (void* user) {
+	ht_uu_free (ht_itblock);
 	ht_uu_free (ht_it);
+	ht_itblock = NULL;
 	ht_it = NULL;
 	return 0;
 }
