@@ -426,7 +426,9 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RAnalBlock *block, voi
 			void **it;
 			r_pvector_foreach (cloned_vars_used, it) {
 				RAnalVar *other_var = *it;
-				const int actual_delta = other_var->delta + ctx->stack_diff;
+				const int actual_delta = other_var->kind == R_ANAL_VAR_KIND_SPV
+					? other_var->delta + ctx->stack_diff
+					: other_var->delta + (other_fcn->bp_off - our_fcn->bp_off);
 				RAnalVar *our_var = r_anal_function_get_var (our_fcn, other_var->kind, actual_delta);
 				if (!our_var) {
 					our_var = r_anal_function_set_var (our_fcn, actual_delta, other_var->kind, other_var->type, 0, other_var->isarg, other_var->name);
