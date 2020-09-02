@@ -1035,7 +1035,7 @@ static RSignItem *item_frm_signame(RAnal *a, const char *signame) {
 	return it;
 }
 
-double get_zb_threshold(RCore *core) {
+static double get_zb_threshold(RCore *core) {
 	const char *th = r_config_get (core->config, "zign.bestthresh");
 	double thresh = r_num_get_float (NULL, th);
 	if (thresh < 0.0 || thresh > 1.0) {
