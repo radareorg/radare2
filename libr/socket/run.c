@@ -1228,3 +1228,25 @@ R_API int r_run_start(RRunProfile *p) {
 	}
 	return 0;
 }
+
+R_API char *r_run_get_environ_profile(char **env) {
+	if (!env) {
+		return NULL;
+	}
+	RStrBuf *sb = r_strbuf_new (NULL);
+	while (*env) {
+		char *k = strdup (*env);
+		char *v = strchr (k, '=');
+		if (v) {
+			*v++ = 0;
+			v = r_str_escape_latin1 (v, false, true, true);
+			if (v) {
+				r_strbuf_appendf (sb, "setenv=%s=\"%s\"\n", k, v);
+				free (v);
+			}
+		}
+		free (k);
+		env++;
+	}
+	return r_strbuf_drain (sb);
+}
