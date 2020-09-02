@@ -281,6 +281,8 @@ jobs:
 
   build-static:
     name: Build static
+    # FIXME: ignore error until all tests properly pass
+    continue-on-error: true
     if: contains(github.head_ref, 'static') || contains(github.ref, 'release-') || github.event_name == 'schedule'
     runs-on: ubuntu-20.04
     steps:
@@ -298,9 +300,8 @@ jobs:
       run: |
         r2 -v
         r2r -v
-        # NOTE: disabled until all tests properly pass
-        # cd test
-        # make
+        cd test
+        make
 
   create-tarball:
     name: Create source tarball
