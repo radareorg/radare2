@@ -17,6 +17,7 @@ static int mips_mode = 0;
 static unsigned long Offset = 0;
 static RStrBuf *buf_global = NULL;
 static unsigned char bytes[4];
+static char * pre_cpu = NULL;
 
 static int mips_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
 	memcpy (myaddr, bytes, length);
@@ -57,17 +58,30 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 	disasm_obj.endian = !a->big_endian;
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = stdout;
-	
-	if (a->cpu && r_str_casecmp (a->cpu, "mips64r2") == 0) {
-		disasm_obj.mach = bfd_mach_mipsisa64r2; 
-	} else if (a->cpu && r_str_casecmp (a->cpu, "mips32r2") == 0) {
-		disasm_obj.mach = bfd_mach_mipsisa32r2; 
-	} else if (a->cpu && r_str_casecmp (a->cpu, "mips64") == 0) {
-		disasm_obj.mach = bfd_mach_mipsisa64; 
-	} else if (a->cpu && r_str_casecmp (a->cpu, "mips32") == 0) {
-		disasm_obj.mach = bfd_mach_mipsisa32; 
-	} 
 
+	if(a->cpu && a->cpu != pre_cpu) {
+		if (r_str_casecmp (a->cpu, "mips64r2") == 0) {
+			disasm_obj.mach = bfd_mach_mipsisa64r2; 
+		} else if (r_str_casecmp (a->cpu, "mips32r2") == 0) {
+			disasm_obj.mach = bfd_mach_mipsisa32r2; 
+		} else if (r_str_casecmp (a->cpu, "mips64") == 0) {
+			disasm_obj.mach = bfd_mach_mipsisa64; 
+		} else if (r_str_casecmp (a->cpu, "mips32") == 0) {
+			disasm_obj.mach = bfd_mach_mipsisa32; 
+		}
+
+		if (a->features) {
+			disasm_obj.disassembler_options = r_str_new("");
+			if(strstr (a->features, "n64")) {
+				r_str_append (disasm_obj.disassembler_options, "abi=n64,");
+			} else if (strstr (a->features, "n32")) {
+				r_str_append (disasm_obj.disassembler_options, "abi=n32,");
+			} else if (strstr (a->features, "o32")) {
+				r_str_append (disasm_obj.disassembler_options, "abi=o32,");
+			}
+		}
+		pre_cpu = a->cpu;
+	}
 	op->size = (disasm_obj.endian == BFD_ENDIAN_LITTLE)
 		? print_insn_little_mips ((bfd_vma)Offset, &disasm_obj)
 		: print_insn_big_mips ((bfd_vma)Offset, &disasm_obj);

@@ -620,6 +620,16 @@ parse_mips_dis_option (const char *option, unsigned int len)
   val = option + (optionlen + 1);
   vallen = len - (optionlen + 1);
 
+	if (strncmp ("abi", option, optionlen) == 0
+				&& strlen ("abi") == optionlen) {
+		chosen_abi = choose_abi_by_name (val, vallen);
+		if (chosen_abi != NULL) {
+			mips_gpr_names = chosen_abi->gpr_names;
+			mips_fpr_names = chosen_abi->fpr_names;
+		}
+		return;
+	}
+
   if (strncmp ("gpr-names", option, optionlen) == 0
       && strlen ("gpr-names") == optionlen)
     {
