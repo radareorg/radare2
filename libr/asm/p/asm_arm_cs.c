@@ -102,6 +102,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int ret, n = 0;
 	bool found = 0;
 	ut64 itcond;
+	char *tmpstr;
 	mode |= (a->bits == 16)? CS_MODE_THUMB: CS_MODE_ARM;
 	mode |= (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	if (mode != omode || a->bits != obits) {
@@ -173,13 +174,13 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			disass_itblock (a, insn);
 		}
 		itcond = ht_uu_find (ht_it,  a->pc, &found);
-		if (found){
+		if (found) {
 			insn->detail->arm.cc = itcond;
 			insn->detail->arm.update_flags = 0;
-			r_str_cpy(insn->mnemonic, 
-				r_str_newf ("%s%s",
-					cs_insn_name (cd, insn->id),
-					cc_name (itcond)));
+			tmpstr = r_str_newf ("%s%s",
+				cs_insn_name (cd, insn->id),
+				cc_name (itcond));
+			r_str_cpy (insn->mnemonic, tmpstr);
 		}
 		char *buf_asm = sdb_fmt ("%s%s%s",
 			insn->mnemonic,
