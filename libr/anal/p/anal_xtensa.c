@@ -635,9 +635,9 @@ static inline void sign_extend(st32 *value, ut8 bit) {
 }
 
 static inline void sign_extend2(st32 *value, ut8 bit1, ut8 bit2, ut8 shift) {
-	ut8 bit = ((*value >> bit1) & 1) & ((*value >> bit2) & 1);
-	if(bit)
-		*value |= 0xFFFFFFFF << (31 - shift);
+	if (((*value >> bit1) & 1) && ((*value >> bit2) & 1)) {
+		*value |= UT32_MAX << (32 - shift);
+	}
 }
 
 static void xtensa_check_stack_op(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
