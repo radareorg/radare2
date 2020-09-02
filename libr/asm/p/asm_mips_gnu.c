@@ -44,22 +44,10 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 	Offset = a->pc;
 	memcpy (bytes, buf, 4); // TODO handle thumb
 
+	
 	/* prepare disassembler */
-	memset (&disasm_obj,'\0', sizeof (struct disassemble_info));
-	mips_mode = a->bits;
-	disasm_obj.arch = CPU_LOONGSON_2F;
-	disasm_obj.buffer = bytes;
-	disasm_obj.read_memory_func = &mips_buffer_read_memory;
-	disasm_obj.symbol_at_address_func = &symbol_at_address;
-	disasm_obj.memory_error_func = &memory_error_func;
-	disasm_obj.print_address_func = &generic_print_address_func;
-	disasm_obj.buffer_vma = Offset;
-	disasm_obj.buffer_length = 4;
-	disasm_obj.endian = !a->big_endian;
-	disasm_obj.fprintf_func = &generic_fprintf_func;
-	disasm_obj.stream = stdout;
-
 	if(a->cpu && a->cpu != pre_cpu) {
+		memset (&disasm_obj,'\0', sizeof (struct disassemble_info));
 		if (r_str_casecmp (a->cpu, "mips64r2") == 0) {
 			disasm_obj.mach = bfd_mach_mipsisa64r2; 
 		} else if (r_str_casecmp (a->cpu, "mips32r2") == 0) {
@@ -82,6 +70,18 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 		}
 		pre_cpu = a->cpu;
 	}
+	mips_mode = a->bits;
+	disasm_obj.arch = CPU_LOONGSON_2F;
+	disasm_obj.buffer = bytes;
+	disasm_obj.read_memory_func = &mips_buffer_read_memory;
+	disasm_obj.symbol_at_address_func = &symbol_at_address;
+	disasm_obj.memory_error_func = &memory_error_func;
+	disasm_obj.print_address_func = &generic_print_address_func;
+	disasm_obj.buffer_vma = Offset;
+	disasm_obj.buffer_length = 4;
+	disasm_obj.endian = !a->big_endian;
+	disasm_obj.fprintf_func = &generic_fprintf_func;
+	disasm_obj.stream = stdout;
 	op->size = (disasm_obj.endian == BFD_ENDIAN_LITTLE)
 		? print_insn_little_mips ((bfd_vma)Offset, &disasm_obj)
 		: print_insn_big_mips ((bfd_vma)Offset, &disasm_obj);
