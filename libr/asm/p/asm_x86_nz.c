@@ -4609,7 +4609,7 @@ static bool is_xmm_register(const char *token) {
 
 static bool is_mm_register(const char *token) {
 	if (!r_str_ncasecmp ("mm", token, 2)) {
-		if (isdigit (token[2]) && !token[3]) {
+		if (isdigit (token[2]) && !isdigit(token[3])) {
 			int n = token[2];
 			if (n >= '0' && n <= '7') {
 				return true;
@@ -4621,7 +4621,7 @@ static bool is_mm_register(const char *token) {
 
 static bool is_st_register(const char *token) {
 	if (!r_str_ncasecmp ("st", token, 2)) {
-		if (isdigit (token[2]) && !token[3]) {
+		if (isdigit (token[2]) && !isdigit(token[3])) {
 			int n = token[2];
 			if (n >= '0' && n <= '7') {
 				return true;
