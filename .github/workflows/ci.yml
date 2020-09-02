@@ -594,7 +594,7 @@ jobs:
         $env:PKG_CONFIG_PATH
         pkg-config --list-all
         echo "#include <r_util.h>`nint main(int argc, char **argv) { return r_str_newf (`"%s`", argv[0]) != NULL? 0: 1; }" > test.c
-        cl -IC:$env:HOMEPATH\AppData\Local\Programs\radare2\include\libr /Fetest.exe test.c /link /libpath:C:$env:HOMEPATH\AppData\Local\Programs\radare2\lib r_util.lib
+        cl -IC:$env:HOMEPATH\AppData\Local\Programs\radare2\include\libr -IC:$env:HOMEPATH\AppData\Local\Programs\radare2\include\libr\sdb /Fetest.exe test.c /link /libpath:C:$env:HOMEPATH\AppData\Local\Programs\radare2\lib r_util.lib
         .\test.exe
 
   create-release:
