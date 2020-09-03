@@ -238,7 +238,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		case MIPS_INS_SHRA_R:
 		case MIPS_INS_SRA:
 			r_strbuf_appendf (&op->esil,
-				"%s,%s,>>,31,%s,>>,?{,%s,32,-,0xffffffff,<<,0xffffffff,&,}{,0,},|,0xffffffff,&,%s,=",
+				"0xffffffff,%s,%s,>>,&,31,%s,>>,?{,%s,32,-,0xffffffff,<<,0xffffffff,&,}{,0,},|,%s,=",
 				ARG (2), ARG (1), ARG (1), ARG (2), ARG (0));
 			break;
 		case MIPS_INS_SHRL:
