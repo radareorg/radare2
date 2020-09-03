@@ -3163,7 +3163,7 @@ reaccept:
 				if (UT8_ADD_OVFCHK (cmd, 1)) {
 					goto out_of_function;
 				}
-				ptr = malloc (cmd + 1);
+				ptr = malloc ((size_t)cmd + 1);
 				if (!ptr) {
 					eprintf ("Cannot malloc in rmt-open len = %d\n", cmd);
 				} else {
