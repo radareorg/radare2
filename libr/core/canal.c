@@ -4994,7 +4994,7 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 			r_list_delete (ctx->bbl, bbit);
 			*next_i = ctx->cur_bb->addr - ctx->start_addr;
 		}
-	} else if (cur_addr > ctx->end_addr) {
+	} else if (cur_addr >= ctx->end_addr) {
 		return false;
 	}
 	return true;
@@ -5404,7 +5404,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		}
 		r_anal_esil_stack_free (ESIL);
 repeat:;
-	} while (get_next_i (&ictx, &i) && i < iend);
+	} while (get_next_i (&ictx, &i));
 	free (buf);
 	ESIL->cb.hook_mem_read = NULL;
 	ESIL->cb.hook_mem_write = NULL;
