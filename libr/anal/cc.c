@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2019 - pancake, Oddcoder */
+/* radare - LGPL - Copyright 2011-2020 - pancake, Oddcoder */
 
 /* Universal calling convention implementation based on sdb */
 
@@ -136,6 +136,9 @@ R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
 	static char *oldCC = NULL;
 	static int oldArg = 0;
 	if (!cc) {
+		if (anal->verbose) {
+			eprintf ("Warning: r_anal_cc_max_arg: cc == NULL\n");
+		}
 		return 0;
 	}
 	if (oldDB == DB && !strcmp (cc, oldCC)) {
