@@ -1434,22 +1434,14 @@ RUN
 
 NAME=ARM function with jumpback
 FILE=bins/elf/libverifyPass.so
-BROKEN=1
 CMDS=<<EOF
 s 0x0000183c
 af
 zaf
-z*
+z* ~sym.__aeabi_unwind_cpp_pr0 b
 EOF
 EXPECT=<<EOF
-zs *
 za sym.__aeabi_unwind_cpp_pr0 b 0030a0e3d4feffea
-za sym.__aeabi_unwind_cpp_pr0 g cc=27 nbbs=50 edges=75 ebbs=1 bbsum=1176
-za sym.__aeabi_unwind_cpp_pr0 o 0x0000183c
-za sym.__aeabi_unwind_cpp_pr0 r sym._Unwind_VRS_Get sym._Unwind_VRS_Get sym._Unwind_VRS_Set sym._Unwind_VRS_Get sym._Unwind_VRS_Get sym._Unwind_VRS_Set sym.__gnu_unwind_execute sym._Unwind_VRS_Get sym._Unwind_VRS_Set sym._Unwind_VRS_Set
-za sym.__aeabi_unwind_cpp_pr0 v s-48 s-20 s-36 s-24 s-16 s-15 s-12 s-68 s-8 s-44 s-40 s-52 s-56 s-4 s-32 r1 r0
-za sym.__aeabi_unwind_cpp_pr0 t func.sym.__aeabi_unwind_cpp_pr0.args=2 func.sym.__aeabi_unwind_cpp_pr0.arg.0="int32_t,arg1" func.sym.__aeabi_unwind_cpp_pr0.arg.1="int32_t,arg2"
-za sym.__aeabi_unwind_cpp_pr0 h 1d6b2ca1aa1e08761e43859262a1d8f989251159b6fbd2baed6056b1f122d768
 EOF
 RUN
 
@@ -1632,5 +1624,118 @@ zbr sym.exact 1
 EOF
 EXPECT=<<EOF
 1.00000  1.00000 B  1.00000 G   fcn.00410210
+EOF
+RUN
+
+NAME=zb zign.threshold
+FILE=bins/elf/static-glibc-2.27
+CMDS=<<EOF
+s 0x00410210
+e zign.maxsz = 32
+af
+za sym.1 g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.1 b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+za sym.2 g cc=16 nbbs=25 edges=40 ebbs=1 bbsum=377
+za sym.2 b 41544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+za sym.3 g cc=14 nbbs=21 edges=35 ebbs=1 bbsum=347
+za sym.3 b fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffff00000000ff000000000000ffffffffffffff
+za sym.4 g cc=12 nbbs=17 edges=30 ebbs=1 bbsum=307
+za sym.4 b 4883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffff00000000ff000000000000ffffffffffffff
+za sym.5 g cc=10 nbbs=14 edges=22 ebbs=1 bbsum=284
+za sym.5 b 08e89e02ffff488b2d77952a004889c38b450048:ffff00000000ff000000000000ffffffffffffff
+e zign.threshold = .99
+zb ~[5]
+e zign.threshold = .9
+zb ~[5]
+e zign.threshold = .8
+zb ~[5]
+e zign.threshold = .7
+zb ~[5]
+EOF
+EXPECT=<<EOF
+sym.1
+sym.1
+sym.2
+sym.1
+sym.2
+sym.3
+sym.1
+sym.2
+sym.3
+sym.4
+EOF
+RUN
+
+NAME=zbr zign.threshold
+FILE=bins/elf/ls
+CMDS=<<EOF
+aa
+e zign.maxsz = 32
+za main b 41574156415541545589fd534889f34883ec58488b3e64488b04252800000048
+za main g cc=429 nbbs=300 edges=437 ebbs=8 bbsum=6739
+e zign.threshold = 1.0
+zbr main~[5]
+e zign.threshold = 0.5
+zbr main~[5]
+e zign.threshold = 0.3
+zbr main~[5]
+e zign.threshold = 0.12
+zbr main 30~[5]
+EOF
+EXPECT=<<EOF
+main
+main
+main
+main
+sym._obstack_newchunk
+EOF
+RUN
+
+NAME=zbr invalid threshold
+FILE=bins/elf/ls
+CMDS=<<EOF
+aa
+e zign.maxsz = 32
+e zign.threshold = 99.0
+za main b 41574156415541545589fd534889f34883ec58488b3e64488b04252800000048
+za main g cc=429 nbbs=300 edges=437 ebbs=8 bbsum=6739
+zbr main ~[5]
+EOF
+EXPECT=<<EOF
+main
+sym._obstack_newchunk
+sym._obstack_free
+sym._obstack_begin
+sym._obstack_begin_1
+EOF
+RUN
+
+NAME=zb invalid threshold
+FILE=bins/elf/static-glibc-2.27
+CMDS=<<EOF
+s 0x00410210
+e zign.threshold = 99.0
+e zign.maxsz = 32
+af
+za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+za sym.second g cc=16 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.second b ff5541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+za sym.third g cc=16 nbbs=28 edges=44 ebbs=1 bbsum=407
+za sym.third b ffff41544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+za sym.fourth g cc=16 nbbs=28 edges=43 ebbs=1 bbsum=407
+za sym.fourth b ffffff544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+za sym.fith g cc=16 nbbs=28 edges=43 ebbs=1 bbsum=401
+za sym.fith b ffffffff4989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+za sym.not_shown g cc=15 nbbs=28 edges=43 ebbs=1 bbsum=395
+za sym.not_shown b ffffffffff89fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+zb ~[5]
+EOF
+EXPECT=<<EOF
+sym.exact
+sym.second
+sym.third
+sym.fourth
+sym.fith
 EOF
 RUN

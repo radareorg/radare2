@@ -1035,6 +1035,16 @@ static RSignItem *item_frm_signame(RAnal *a, const char *signame) {
 	return it;
 }
 
+static double get_zb_threshold(RCore *core) {
+	const char *th = r_config_get (core->config, "zign.threshold");
+	double thresh = r_num_get_float (NULL, th);
+	if (thresh < 0.0 || thresh > 1.0) {
+		eprintf ("Invalid zign.threshold %s, using 0.0\n", th);
+		thresh = 0.0;
+	}
+	return thresh;
+}
+
 static bool bestmatch_fcn(RCore *core, const char *input) {
 	r_return_val_if_fail (input && core, false);
 
@@ -1080,7 +1090,8 @@ static bool bestmatch_fcn(RCore *core, const char *input) {
 		it->graph = NULL;
 	}
 
-	RList *list = r_sign_find_closest_fcn (core->anal, it, count, 0);
+	double thresh = get_zb_threshold (core);
+	RList *list = r_sign_find_closest_fcn (core->anal, it, count, thresh);
 	r_sign_item_free (it);
 
 	if (list) {
@@ -1127,10 +1138,11 @@ static bool bestmatch_sig(RCore *core, const char *input) {
 		r_sign_addto_item (core->anal, item, fcn, R_SIGN_GRAPH);
 	}
 
+	double th = get_zb_threshold (core);
 	bool found = false;
 	if (item->graph || item->bytes) {
 		r_cons_break_push (NULL, NULL);
-		RList *list = r_sign_find_closest_sig (core->anal, item, count, 0);
+		RList *list = r_sign_find_closest_sig (core->anal, item, count, th);
 		if (list) {
 			found = true;
 			print_possible_matches (list);
