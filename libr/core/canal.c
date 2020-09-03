@@ -5404,7 +5404,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		}
 		r_anal_esil_stack_free (ESIL);
 repeat:;
-	} while (get_next_i (&ictx, &i));
+	} while (get_next_i (&ictx, &i) && i < iend);
 	free (buf);
 	ESIL->cb.hook_mem_read = NULL;
 	ESIL->cb.hook_mem_write = NULL;
