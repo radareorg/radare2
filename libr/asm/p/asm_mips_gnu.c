@@ -18,6 +18,7 @@ static unsigned long Offset = 0;
 static RStrBuf *buf_global = NULL;
 static unsigned char bytes[4];
 static char * pre_cpu = NULL;
+static char * pre_features = NULL;
 
 static int mips_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
 	memcpy (myaddr, bytes, length);
@@ -44,10 +45,12 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 	Offset = a->pc;
 	memcpy (bytes, buf, 4); // TODO handle thumb
 
-	
-	/* prepare disassembler */
-	if(a->cpu && a->cpu != pre_cpu) {
+	if ((a->cpu != pre_cpu) && (a->features != pre_features)) {
 		memset (&disasm_obj,'\0', sizeof (struct disassemble_info));
+	}	
+
+	/* prepare disassembler */
+	if (a->cpu && a->cpu != pre_cpu) {
 		if (r_str_casecmp (a->cpu, "mips64r2") == 0) {
 			disasm_obj.mach = bfd_mach_mipsisa64r2; 
 		} else if (r_str_casecmp (a->cpu, "mips32r2") == 0) {
@@ -57,19 +60,21 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 		} else if (r_str_casecmp (a->cpu, "mips32") == 0) {
 			disasm_obj.mach = bfd_mach_mipsisa32; 
 		}
-
-		if (a->features) {
-			disasm_obj.disassembler_options = r_str_new("");
-			if(strstr (a->features, "n64")) {
-				r_str_append (disasm_obj.disassembler_options, "abi=n64,");
-			} else if (strstr (a->features, "n32")) {
-				r_str_append (disasm_obj.disassembler_options, "abi=n32,");
-			} else if (strstr (a->features, "o32")) {
-				r_str_append (disasm_obj.disassembler_options, "abi=o32,");
-			}
-		}
 		pre_cpu = a->cpu;
 	}
+
+	if (a->features && a->features != pre_features) {
+		disasm_obj.disassembler_options = r_str_new("");
+		if (strstr (a->features, "n64")) {
+			r_str_append (disasm_obj.disassembler_options, "abi=n64,");
+		} else if (strstr (a->features, "n32")) {
+			r_str_append (disasm_obj.disassembler_options, "abi=n32,");
+		} else if (strstr (a->features, "o32")) {
+			r_str_append (disasm_obj.disassembler_options, "abi=o32,");
+		}
+		pre_features = a->features;
+	}
+
 	mips_mode = a->bits;
 	disasm_obj.arch = CPU_LOONGSON_2F;
 	disasm_obj.buffer = bytes;
