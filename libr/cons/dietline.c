@@ -1591,9 +1591,10 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			default:
 				if (I.vtmode == 2) {
 					buf[1] = r_cons_readchar_timeout (50);
-					if (buf[1] == -1) {
+					if (buf[1] == -1) { // alt+e
 						r_cons_break_pop ();
-						return NULL;
+						__print_prompt ();
+						continue;
 					}
 				}
 				if (buf[0] == 0x5b) {	// [
