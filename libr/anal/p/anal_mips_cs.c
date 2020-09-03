@@ -227,13 +227,19 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		case MIPS_INS_CMPI:
 			r_strbuf_appendf (&op->esil, "%s,%s,==", ARG (1), ARG (0));
 			break;
+		case MIPS_INS_DSRA:
+			r_strbuf_appendf (&op->esil,
+				"%s,%s,>>,31,%s,>>,?{,32,%s,32,-,0xffffffff,<<,0xffffffff,&,<<,}{,0,},|,%s,=",
+				ARG (2), ARG (1), ARG (1), ARG (2), ARG (0));
+			break;
 		case MIPS_INS_SHRAV:
 		case MIPS_INS_SHRAV_R:
 		case MIPS_INS_SHRA:
 		case MIPS_INS_SHRA_R:
 		case MIPS_INS_SRA:
-			r_strbuf_appendf (&op->esil, "%s,%s,>>,31,%s,>>,?{,32,%s,-,%s,1,<<,1,-,<<,}{,0,},|,%s,=,",
-				ARG (2), ARG (1), ARG (1), ARG (2), ARG (2), ARG (0));
+			r_strbuf_appendf (&op->esil,
+				"0xffffffff,%s,%s,>>,&,31,%s,>>,?{,%s,32,-,0xffffffff,<<,0xffffffff,&,}{,0,},|,%s,=",
+				ARG (2), ARG (1), ARG (1), ARG (2), ARG (0));
 			break;
 		case MIPS_INS_SHRL:
 			// suffix 'S' forces conditional flag to be updated
