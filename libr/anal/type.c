@@ -356,7 +356,7 @@ R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
 }
 
 static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
-	r_return_if_fail (anal && type && type->name 
+	r_return_if_fail (anal && type && type->name
 		&& type->kind == R_ANAL_BASE_TYPE_KIND_STRUCT);
 	char *kind = "struct";
 	/*
@@ -405,7 +405,7 @@ static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
 }
 
 static void save_union(const RAnal *anal, const RAnalBaseType *type) {
-	r_return_if_fail (anal && type && type->name 
+	r_return_if_fail (anal && type && type->name
 		&& type->kind == R_ANAL_BASE_TYPE_KIND_UNION);
 	const char *kind = "union";
 	/*
@@ -454,7 +454,7 @@ static void save_union(const RAnal *anal, const RAnalBaseType *type) {
 }
 
 static void save_enum(const RAnal *anal, const RAnalBaseType *type) {
-	r_return_if_fail (anal && type && type->name 
+	r_return_if_fail (anal && type && type->name
 		&& type->kind == R_ANAL_BASE_TYPE_KIND_ENUM);
 	/*
 		C:
@@ -508,7 +508,7 @@ static void save_enum(const RAnal *anal, const RAnalBaseType *type) {
 }
 
 static void save_atomic_type(const RAnal *anal, const RAnalBaseType *type) {
-	r_return_if_fail (anal && type && type->name 
+	r_return_if_fail (anal && type && type->name
 		&& type->kind == R_ANAL_BASE_TYPE_KIND_ATOMIC);
 	/*
 		C: (cannot define a custom atomic type)
@@ -614,8 +614,8 @@ R_API RAnalBaseType *r_anal_base_type_new(RAnalBaseTypeKind kind) {
 
 /**
  * @brief Saves RAnalBaseType into the SDB
- * 
- * @param anal 
+ *
+ * @param anal
  * @param type RAnalBaseType to save
  * @param name Name of the type
  */
