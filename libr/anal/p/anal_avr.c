@@ -500,7 +500,7 @@ INST_HANDLER (cbi) {	// CBI A, b
 
 	// read port a and clear bit b
 	io_port = __generic_io_dest (a, 0, cpu);
-	ESIL_A ("0xff,%d,1,<<,^,%s,&,", b, io_port);
+	ESIL_A ("0xff,%d,1,<<,^,%s,&,", b, r_strbuf_get (io_port));
 	r_strbuf_free (io_port);
 
 	// write result to port a
@@ -1043,7 +1043,7 @@ INST_HANDLER (neg) {	// NEG Rd
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
 	ESIL_A ("r%d,0x00,-,0xff,&,", d);			// 0: (0-Rd)
 	ESIL_A ("DUP,r%d,0xff,^,|,0x08,&,!,!,hf,=,", d);	// H
-	ESIL_A ("DUP,0x80,-,!,vf,=,", d);			// V
+	ESIL_A ("DUP,0x80,-,!,vf,=,");			// V
 	ESIL_A ("DUP,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("DUP,!,zf,=,");					// Z
 	ESIL_A ("DUP,!,!,cf,=,");				// C
@@ -1275,7 +1275,7 @@ INST_HANDLER (sbi) {	// SBI A, b
 
 	// read port a and clear bit b
 	io_port = __generic_io_dest (a, 0, cpu);
-	ESIL_A ("0xff,%d,1,<<,|,%s,&,", b, io_port);
+	ESIL_A ("0xff,%d,1,<<,|,%s,&,", b, r_strbuf_get (io_port));
 	r_strbuf_free (io_port);
 
 	// write result to port a
@@ -1318,7 +1318,7 @@ INST_HANDLER (sbix) {	// SBIC A, b
 
 	// read port a and clear bit b
 	io_port = __generic_io_dest (a, 0, cpu);
-	ESIL_A ("%d,1,<<,%s,&,", b, io_port);		// IO(A,b)
+	ESIL_A ("%d,1,<<,%s,&,", b, r_strbuf_get (io_port));		// IO(A,b)
 	ESIL_A ((buf[1] & 0xe) == 0xc
 			? "!,"				// SBIC => branch if 0
 			: "!,!,");			// SBIS => branch if 1
@@ -1497,7 +1497,7 @@ INST_HANDLER (swap) {	// SWAP Rd
 	int d = ((buf[1] & 0x1) << 4) | ((buf[0] >> 4) & 0xf);
 	ESIL_A ("4,r%d,>>,0x0f,&,", d);		// (Rd >> 4) & 0xf
 	ESIL_A ("4,r%d,<<,0xf0,&,", d);		// (Rd >> 4) & 0xf
-	ESIL_A ("|,", d);			// S[0] | S[1]
+	ESIL_A ("|,");			// S[0] | S[1]
 	ESIL_A ("r%d,=,", d);			// Rd = result
 }
 
@@ -1619,7 +1619,7 @@ static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut
 			op->addr = addr;
 
 			// start void esil expression
-			r_strbuf_setf (&op->esil, "");
+			r_strbuf_setf (&op->esil, "%s", "");
 
 			// handle opcode
 			opcode_desc->handler (anal, op, buf, len, &fail, cpu);

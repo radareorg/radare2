@@ -792,7 +792,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 		if (!varname) {
 			if (anal->opt.varname_stack) {
-				varname = r_str_newf ("%s_%xh", pfx, R_ABS (frame_off));
+				varname = r_str_newf ("%s_%" PFMT64x "h", pfx, R_ABS (frame_off));
 			} else {
 				varname = r_anal_function_autoname_var (fcn, type, pfx, ptr);
 			}
@@ -813,7 +813,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			goto beach;
 		}
 		char *varname = anal->opt.varname_stack
-			? r_str_newf ("%s_%xh", VARPREFIX, R_ABS (frame_off))
+			? r_str_newf ("%s_%" PFMT64x "h", VARPREFIX, R_ABS (frame_off))
 			: r_anal_function_autoname_var (fcn, type, VARPREFIX, -ptr);
 		if (varname) {
 			RAnalVar *var = r_anal_function_set_var (fcn, frame_off, type, NULL, anal->bits / 8, false, varname);

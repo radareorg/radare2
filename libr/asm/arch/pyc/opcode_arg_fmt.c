@@ -1,7 +1,7 @@
 #include "opcode.h"
 
 const char *format_extended_arg(ut32 oparg) {
-	return r_str_newf ("%lu", oparg * (1 << 16));
+	return r_str_newf ("%u", oparg * (1 << 16));
 }
 
 const char *format_CALL_FUNCTION_pos_name_encoded(ut32 oparg) {
@@ -64,5 +64,5 @@ const char *format_value_flags_36(ut32 oparg) {
 }
 
 const char *format_extended_arg_36(ut32 oparg) {
-	return r_str_newf ("%lu", oparg * (1 << 8));
+	return r_str_newf ("%u", oparg * (1 << 8));
 }

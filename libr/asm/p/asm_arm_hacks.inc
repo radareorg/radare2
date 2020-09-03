@@ -200,11 +200,11 @@ static char *hack_handle_ldst(ut32 insn) {
 					Xt, Xt2, Xn, imm7);
 				break;
 			case 2:
-				buf_asm = r_str_newf ("stgp x%d, [x%d, #0x%x]",
+				buf_asm = r_str_newf ("stgp x%d, x%d, [x%d, #0x%x]",
 					Xt, Xt2, Xn, imm7);
 				break;
 			case 3:
-				buf_asm = r_str_newf ("stgp x%d, [x%d, #0x%x]!",
+				buf_asm = r_str_newf ("stgp x%d, x%d, [x%d, #0x%x]!",
 					Xt, Xt2, Xn, imm7);
 				break;
 			default:

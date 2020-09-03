@@ -227,7 +227,7 @@ static RASN1String* r_asn1_print_hexdump_padded (RASN1Object *object, ut32 depth
 		pad = "                                        : ";
 	} else {
 		pad = r_str_pad (' ', depth * 2);
-		r_strbuf_appendf (sb, "  ", pad);
+		r_strbuf_appendf (sb, "  ");
 	}
 
 	for (i = 0, j = 0; i < object->length; i++, j++) {

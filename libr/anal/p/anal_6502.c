@@ -743,7 +743,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		// JSR pushes the address-1 of the next operation on to the stack before transferring program
 		// control to the following address
 		// stack is on page one and sp is an 8-bit reg: operations must be done like: sp + 0x100
-		r_strbuf_setf (&op->esil, "1,pc,-,0xff,sp,+,=[2],0x04" PFMT64x ",pc,=,2,sp,-=", op->jump);
+		r_strbuf_setf (&op->esil, "1,pc,-,0xff,sp,+,=[2],0x%04" PFMT64x ",pc,=,2,sp,-=", op->jump);
 		break;
 	// JMP
 	case 0x4c: // jmp $ffff

@@ -90,7 +90,7 @@ static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RL
 		case TYPE_CODE_v0:
 		case TYPE_CODE_v1:
 			tmp_cobj = t->data;
-			arg = r_str_newf ("CodeObject(%s) from %s", tmp_cobj->name->data, tmp_cobj->filename->data);
+			arg = r_str_newf ("CodeObject(%s) from %s", (char *)tmp_cobj->name->data, (char *)tmp_cobj->filename->data);
 			break;
 		case TYPE_TUPLE:
 		case TYPE_SET:
@@ -102,7 +102,7 @@ static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RL
 		case TYPE_STRING:
 		case TYPE_INTERNED:
 		case TYPE_STRINGREF:
-			arg = r_str_newf ("'%s'", t->data);
+			arg = r_str_newf ("'%s'", (char *)t->data);
 			break;
 		default:
 			arg = r_str_new (t->data);

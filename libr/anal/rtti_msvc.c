@@ -317,7 +317,7 @@ static void rtti_msvc_print_type_descriptor(rtti_type_descriptor *td, ut64 addr,
 }
 
 static void rtti_msvc_print_type_descriptor_json(rtti_type_descriptor *td) {
-	r_cons_printf ("{\"vtable_addr\":%"PFMT32u",\"spare\":%"PFMT32u",\"name\":\"%s\"}",
+	r_cons_printf ("{\"vtable_addr\":%"PFMT64u",\"spare\":%"PFMT64u",\"name\":\"%s\"}",
 				   td->vtable_addr, td->spare, td->name);
 }
 
@@ -808,7 +808,7 @@ static void recovery_apply_vtable(RAnal *anal, const char *class_name, RVTableIn
 		RAnalMethod meth;
 		meth.addr = vmeth->addr;
 		meth.vtable_offset = vmeth->vtable_offset;
-		meth.name = r_str_newf ("virtual_%d", meth.vtable_offset);
+		meth.name = r_str_newf ("virtual_%" PFMT64d, meth.vtable_offset);
 		r_anal_class_method_set (anal, class_name, &meth);
 		r_anal_class_method_fini (&meth);
 	}
