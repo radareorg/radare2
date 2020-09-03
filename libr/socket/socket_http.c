@@ -34,7 +34,7 @@ static char *socket_http_answer(RSocket *s, int *code, int *rlen, ut32 redirecti
 	r_return_val_if_fail (s, NULL);
 	const char *p;
 	int ret, len = 0, delta = 0;
-	char *dn;
+	char *dn = NULL;
 	RBuffer *b = r_buf_new ();
 	if (!b) {
 		return NULL;
@@ -47,11 +47,21 @@ static char *socket_http_answer(RSocket *s, int *code, int *rlen, ut32 redirecti
 	}
 	r_buf_read_at (b, 0, (ut8 *)buf, olen);
 	buf[olen] = 0;
-	if ((dn = (char*)r_str_casestr (buf, "\n\n"))) {
-		delta += 2;
-	} else if ((dn = (char*)r_str_casestr (buf, "\r\n\r\n"))) {
-		delta += 4;
+	char *dnn = (char *)r_str_casestr (buf, "\n\n");
+	char *drn = (char *)r_str_casestr (buf, "\r\n\r\n");
+	if (dnn) {
+		if (drn && (drn < dnn)) {
+			dn = drn;
+			delta = 4;
+		} else {
+			dn = dnn;
+			delta = 2;
+		}
 	} else {
+		dn = drn;
+		delta = 4;
+	}
+	if (!dn) {
 		goto exit;
 	}
 

@@ -7,8 +7,11 @@ ps
 EOF
 EXPECT=<<EOF
 1256
-    <meta charset="utf-8" />
-    <meta http-equiv="Content-type"
+<!doctype html>
+<html>
+<head>
+    <title>Example Domain</title>
+
 EOF
 RUN
 
