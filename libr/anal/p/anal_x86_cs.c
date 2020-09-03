@@ -114,7 +114,7 @@ static void opex(RStrBuf *buf, cs_insn *insn, int mode) {
 	if (x->op_count == 0) {
 		hidden_op (insn, x, mode);
 	}
-	r_strbuf_appendf (buf, "\"operands\":[", x->op_count);
+	r_strbuf_appendf (buf, "\"operands\":[");
 	for (i = 0; i < x->op_count; i++) {
 		cs_x86_op *op = &x->operands[i];
 		if (i > 0) {
@@ -131,7 +131,7 @@ static void opex(RStrBuf *buf, cs_insn *insn, int mode) {
 			break;
 		case X86_OP_IMM:
 			r_strbuf_appendf (buf, ",\"type\":\"imm\"");
-			r_strbuf_appendf (buf, ",\"value\":%"PFMT64u, op->imm);
+			r_strbuf_appendf (buf, ",\"value\":%ld", op->imm);
 			break;
 		case X86_OP_MEM:
 			r_strbuf_appendf (buf, ",\"type\":\"mem\"");
@@ -145,7 +145,7 @@ static void opex(RStrBuf *buf, cs_insn *insn, int mode) {
 				r_strbuf_appendf (buf, ",\"index\":\"%s\"", cs_reg_name (handle, op->mem.index));
 			}
 			r_strbuf_appendf (buf, ",\"scale\":%d", op->mem.scale);
-			r_strbuf_appendf (buf, ",\"disp\":%"PFMT64u"", op->mem.disp);
+			r_strbuf_appendf (buf, ",\"disp\":%lu", op->mem.disp);
 			break;
 		default:
 			r_strbuf_appendf (buf, ",\"type\":\"invalid\"");
@@ -164,7 +164,7 @@ static void opex(RStrBuf *buf, cs_insn *insn, int mode) {
 		r_strbuf_appendf (buf, ",\"sib\":%d", x->sib);
 	}
 	if (x->disp) {
-		r_strbuf_appendf (buf, ",\"disp\":%d", x->disp);
+		r_strbuf_appendf (buf, ",\"disp\":%ld", x->disp);
 	}
 	if (x->sib_index) {
 		r_strbuf_appendf (buf, ",\"sib_index\":\"%s\"",
@@ -1265,7 +1265,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 						sp, sp, rs, sp, pc, sp, arg0, arg1, pc);
 			} else {
 				esilprintf (op,
-						"%d,%s,-=,%d,%s,=[],"	// push IP/EIP
+						"%s,%s,-=,%d,%s,=[],"	// push IP/EIP
 						"%s,%s,=",		// set IP/EIP
 						sp, sp, rs, sp, arg0, pc);
 			}
@@ -1310,13 +1310,13 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 							: INSOP(0).mem.segment == X86_REG_GS ? "gs"
 							: INSOP(0).mem.segment == X86_REG_SS ? "ss"
 							: "unknown_segment_register",
-							INSOP(0).mem.disp,
+							(ut64)INSOP(0).mem.disp,
 							pc);
 					} else {
 						esilprintf (
 							op,
 							"0x%"PFMT64x",[],%s,=",
-							INSOP(0).mem.disp, pc);
+							(ut64)INSOP(0).mem.disp, pc);
 					}
 				}
 			}

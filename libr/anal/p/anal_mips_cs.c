@@ -298,7 +298,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			break;
 		case MIPS_INS_JRADDIUSP:
 			// increment stackpointer in X and jump to %ra
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%d,sp,+=," ES_J ("ra"), ARG (0));
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%s,sp,+=," ES_J ("ra"), ARG (0));
 			break;
 		case MIPS_INS_JR:
 		case MIPS_INS_JRC:
