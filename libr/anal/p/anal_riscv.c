@@ -488,7 +488,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		} else if (!strcmp (name, "jr") || !strcmp (name, "j")) {
 			esilprintf (op, "%s,pc,=", ARG (0));
 		} else if (!strcmp (name, "ecall") || !strcmp (name, "ebreak")) {
-			esilprintf (op, "TRAP", ARG (0));
+			esilprintf (op, "TRAP");
 		}
 		// Branches & cmps
 		else if (!strcmp (name, "beq")) {
