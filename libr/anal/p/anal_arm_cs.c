@@ -62,8 +62,8 @@
 
 static RRegItem base_regs[4];
 static RRegItem regdelta_regs[4];
-static HtUU *ht_itblock;
-static HtUU *ht_it;
+static HtUU *ht_itblock = NULL;
+static HtUU *ht_it = NULL;
 
 static const ut64 bitmask_by_width[] = {
 	0x1, 0x3, 0x7, 0xf, 0x1f, 0x3f, 0x7f, 0xff, 0x1ff, 0x3ff, 0x7ff,
@@ -2589,15 +2589,17 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 }
 
 static void anal_itblock(cs_insn *insn) {
-	size_t i;
-	ht_uu_update (ht_itblock, insn->address,  r_str_nlen (insn->mnemonic, 5));
-	for (i = 1; i < r_str_nlen (insn->mnemonic, 5); i++) {
+	size_t i, size;
+	size =  r_str_nlen (insn->mnemonic, 5);
+	ht_uu_update (ht_itblock, insn->address,  size);
+	for (i = 1; i < size; i++) {
 		switch (insn->mnemonic[i]) {
 		case 0x74: //'t'
 			ht_uu_update (ht_it, insn->address + (i * insn->size), insn->detail->arm.cc);
 			break;
 		case 0x65: //'e'
-			ht_uu_update (ht_it, insn->address + (i * insn->size), (insn->detail->arm.cc % 2)? insn->detail->arm.cc + 1: insn->detail->arm.cc - 1);
+			ht_uu_update (ht_it, insn->address + (i * insn->size), (insn->detail->arm.cc % 2)?
+				insn->detail->arm.cc + 1: insn->detail->arm.cc - 1);
 			break;
 		default:
 			break;
@@ -2607,9 +2609,8 @@ static void anal_itblock(cs_insn *insn) {
 
 static void check_itblock(cs_insn *insn) {
 	size_t x;
-	ut64 itlen;
 	bool found;
-	itlen = ht_uu_find (ht_itblock, insn->address, &found);
+	ut64 itlen = ht_uu_find (ht_itblock, insn->address, &found);
 	if (found) {
 		for (x = 1; x < itlen; x++) {
 			ht_uu_delete (ht_it, insn->address + (x*insn->size));
@@ -2653,7 +2654,7 @@ static void anop32(RAnal *a, csh handle, RAnalOp *op, cs_insn *insn, bool thumb,
 	}
 
 	if (insn->id != ARM_INS_IT) {
-		check_itblock(insn);
+		check_itblock (insn);
 	}
 
 	switch (insn->id) {
@@ -3812,7 +3813,7 @@ static RList *anal_preludes(RAnal *anal) {
 	return l;
 }
 
-static int init (void* user) {
+static int init(void* user) {
 	if (!ht_it) {
 		ht_it = ht_uu_new0 ();
 	}
@@ -3822,7 +3823,7 @@ static int init (void* user) {
 	return 0;
 }
 
-static int fini (void* user) {
+static int fini(void* user) {
 	ht_uu_free (ht_itblock);
 	ht_uu_free (ht_it);
 	ht_itblock = NULL;

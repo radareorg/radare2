@@ -9,8 +9,8 @@
 
 bool arm64ass(const char *str, ut64 addr, ut32 *op);
 static csh cd = 0;
-static HtUU *ht_itblock;
-static HtUU *ht_it;
+static HtUU *ht_itblock = NULL;
+static HtUU *ht_it = NULL;
 
 #include "cs_mnemonics.c"
 
@@ -79,15 +79,17 @@ static const char *cc_name(arm_cc cc) {
 }
 
 static void disass_itblock(RAsm *a, cs_insn *insn) {
-	size_t i;
-	ht_uu_update (ht_itblock, a->pc,  r_str_nlen (insn->mnemonic, 5));
-	for (i = 1; i < r_str_nlen (insn->mnemonic, 5); i++) {
+	size_t i, size;
+	size = r_str_nlen (insn->mnemonic, 5);
+	ht_uu_update (ht_itblock, a->pc, size);
+	for (i = 1; i < size; i++) {
 		switch (insn->mnemonic[i]) {
 		case 0x74: //'t'
 			ht_uu_update (ht_it, a->pc + (i * insn->size), insn->detail->arm.cc);
 			break;
 		case 0x65: //'e'
-			ht_uu_update (ht_it, a->pc + (i * insn->size), (insn->detail->arm.cc % 2)?insn->detail->arm.cc + 1:insn->detail->arm.cc - 1);
+			ht_uu_update (ht_it, a->pc + (i * insn->size), (insn->detail->arm.cc % 2)?
+				insn->detail->arm.cc + 1:insn->detail->arm.cc - 1);
 			break;
 		default:
 			break;
@@ -97,9 +99,8 @@ static void disass_itblock(RAsm *a, cs_insn *insn) {
 
 static void check_itblock(RAsm *a, cs_insn *insn) {
 	size_t x;
-	ut64 itlen;
 	bool found;
-	itlen = ht_uu_find (ht_itblock, a->pc, &found);
+	ut64 itlen = ht_uu_find (ht_itblock, a->pc, &found);
 	if (found) {
 		for (x = 1; x < itlen; x++) {
 			ht_uu_delete (ht_it, a->pc + (x*insn->size));
@@ -115,9 +116,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	cs_insn* insn = NULL;
 	cs_mode mode = 0;
 	int ret, n = 0;
-	bool found = 0;
+	bool found = false;
 	ut64 itcond;
-	char *tmpstr;
 
 	mode |= (a->bits == 16)? CS_MODE_THUMB: CS_MODE_ARM;
 	mode |= (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
@@ -195,10 +195,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		if (found) {
 			insn->detail->arm.cc = itcond;
 			insn->detail->arm.update_flags = 0;
-			tmpstr = r_str_newf ("%s%s",
+			char *tmpstr = r_str_newf ("%s%s",
 				cs_insn_name (cd, insn->id),
 				cc_name (itcond));
 			r_str_cpy (insn->mnemonic, tmpstr);
+			free (tmpstr);
 		}
 		char *buf_asm = sdb_fmt ("%s%s%s",
 			insn->mnemonic,
@@ -270,7 +271,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	return opsize;
 }
 
-static bool init (void* user) {
+static bool init(void* user) {
 	if (!ht_it) {
 		ht_it = ht_uu_new0 ();
 	}
@@ -280,7 +281,7 @@ static bool init (void* user) {
 	return 0;
 }
 
-static bool fini (void* user) {
+static bool fini(void* user) {
 	ht_uu_free (ht_it);
 	ht_uu_free (ht_itblock);
 	ht_it = NULL;
