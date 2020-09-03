@@ -920,7 +920,7 @@ static void shifted_reg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n)
 #define OPCALL(opchar) arm64math(a, op, addr, buf, len, handle, insn, opchar, 0)
 #define OPCALL_NEG(opchar) arm64math(a, op, addr, buf, len, handle, insn, opchar, 1)
 
-// got rid of the opchar= pattern here because it caused missing operators to fail silently 
+// got rid of the opchar= pattern here because it caused missing operators to fail silently
 // and makes things more complicated with very little benefit
 static void arm64math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, const char *opchar, int negate) {
 	const char *r0 = REG64(0);
@@ -948,7 +948,7 @@ static void arm64math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		} else {
 			r_strbuf_setf (&op->esil, "%"PFMT64d",%s,%s,%s,=", i2, r1, opchar, r0);
 		}
-		
+
 	}
 }
 
@@ -1175,7 +1175,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		int size = 8*REGSIZE64(0);
 
 		// expression is much more concise with GOTO, but GOTOs should be minimized
-		// r_strbuf_setf (&op->esil, "%s,%s,=,0,DUP,%d,1,<<,%s,&,%d,>,&,?{,%s,=,}{,1,%s,<<=,1,+,4,GOTO,}", 
+		// r_strbuf_setf (&op->esil, "%s,%s,=,0,DUP,%d,1,<<,%s,&,%d,>,&,?{,%s,=,}{,1,%s,<<=,1,+,4,GOTO,}",
 		//	REG64 (1), REG64 (0), size*8 - 1, REG64 (0), REG64 (0), REG64 (0));
 
 		/*
@@ -1195,7 +1195,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		const char *r1 = REG64 (1);
 
 		if (size == 32) {
-			r_strbuf_setf (&op->esil, 
+			r_strbuf_setf (&op->esil,
 			"%s,tmp,=,0,"
 			"tmp,0xffff0000,&,!,?{,16,tmp,<<=,16,+,},"
 			"tmp,0xff000000,&,!,?{,8,tmp,<<=,8,+,},"
@@ -1206,7 +1206,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			r1, r1, r0, r0);
 		}
 		else {
-			r_strbuf_setf (&op->esil, 
+			r_strbuf_setf (&op->esil,
 			"%s,tmp,=,0,"
 			"tmp,0xffffffff00000000,&,!,?{,32,tmp,<<=,32,+,},"
 			"tmp,0xffff000000000000,&,!,?{,16,tmp,<<=,16,+,},"
@@ -1285,7 +1285,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 							MEMDISP64(1), MEMBASE64(1), size, REG64(0));
 				}
 
-				// I assume the DUPs here previously were to handle preindexing 
+				// I assume the DUPs here previously were to handle preindexing
 				// but it was never finished?
 				if (ISPREINDEX32()) {
 					r_strbuf_appendf (&op->esil, ",tmp,%s,=", REG64(1));
@@ -1374,7 +1374,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 							size*8, MEMDISP64(1), MEMBASE64(1), size, REG64(0));
 				}
 
-				// I assume the DUPs here previously were to handle preindexing 
+				// I assume the DUPs here previously were to handle preindexing
 				// but it was never finished?
 				if (ISPREINDEX32()) {
 					r_strbuf_appendf (&op->esil, ",tmp,%s,=", REG64(1));
@@ -1499,7 +1499,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 							REG64(0), MEMDISP64(1), MEMBASE64(1), size);
 				}
 
-				// I assume the DUPs here previously were to handle preindexing 
+				// I assume the DUPs here previously were to handle preindexing
 				// but it was never finished?
 				if (ISPREINDEX32()) {
 					r_strbuf_appendf (&op->esil, ",tmp,%s,=", REG64(1));
@@ -1679,9 +1679,9 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			IMM64(3), REG64(2), IMM64(3), REG64(1), REG64(0));
 		break;
 	case ARM64_INS_RBIT:
-		// this expression reverses the bits. it does. do not scroll right. 
-		// Derived from VEX 
-		r_strbuf_setf (&op->esil, "0xffffffff00000000,0x20,0xffff0000ffff0000,0x10,0xff00ff00ff00ff00,0x8,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,<<,&,0x8,0xff00ff00ff00ff00,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,&,>>,|,<<,&,0x10,0xffff0000ffff0000,0xff00ff00ff00ff00,0x8,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,<<,&,0x8,0xff00ff00ff00ff00,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,&,>>,|,&,>>,|,<<,&,0x20,0xffffffff00000000,0xffff0000ffff0000,0x10,0xff00ff00ff00ff00,0x8,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,<<,&,0x8,0xff00ff00ff00ff00,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,&,>>,|,<<,&,0x10,0xffff0000ffff0000,0xff00ff00ff00ff00,0x8,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,<<,&,0x8,0xff00ff00ff00ff00,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,&,>>,|,&,>>,|,&,>>,|,%2$s,=", 
+		// this expression reverses the bits. it does. do not scroll right.
+		// Derived from VEX
+		r_strbuf_setf (&op->esil, "0xffffffff00000000,0x20,0xffff0000ffff0000,0x10,0xff00ff00ff00ff00,0x8,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,<<,&,0x8,0xff00ff00ff00ff00,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,&,>>,|,<<,&,0x10,0xffff0000ffff0000,0xff00ff00ff00ff00,0x8,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,<<,&,0x8,0xff00ff00ff00ff00,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,&,>>,|,&,>>,|,<<,&,0x20,0xffffffff00000000,0xffff0000ffff0000,0x10,0xff00ff00ff00ff00,0x8,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,<<,&,0x8,0xff00ff00ff00ff00,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,&,>>,|,<<,&,0x10,0xffff0000ffff0000,0xff00ff00ff00ff00,0x8,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,<<,&,0x8,0xff00ff00ff00ff00,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,&,>>,|,&,>>,|,&,>>,|,%2$s,=",
 			REG64(1), REG64(0));
 		break;
 	case ARM64_INS_MVN:
@@ -1750,15 +1750,15 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_SXTH: /* halfword */
 		if (arm64_reg_width(REGID64(0)) == 32) {
 			r_strbuf_setf (&op->esil, "0xffffffff,16,0xffff,%s,&,~,&,%s,=",
-				REG64(1), REG64(0));	
+				REG64(1), REG64(0));
 		} else {
 			r_strbuf_setf (&op->esil, "16,0xffff,%s,&,~,%s,=",
-				REG64(1), REG64(0));	
+				REG64(1), REG64(0));
 		}
 		break;
 	case ARM64_INS_SXTW: /* word */
 		r_strbuf_setf (&op->esil, "32,0xffffffff,%s,&,~,%s,=",
-				REG64(1), REG64(0));	
+				REG64(1), REG64(0));
 		break;
 	case ARM64_INS_UXTB:
 		r_strbuf_setf (&op->esil, "%s,0xff,&,%s,=", REG64(1), REG64(0));
