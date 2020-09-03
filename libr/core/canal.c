@@ -4994,7 +4994,7 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 			r_list_delete (ctx->bbl, bbit);
 			*next_i = ctx->cur_bb->addr - ctx->start_addr;
 		}
-	} else if (cur_addr > ctx->end_addr) {
+	} else if (cur_addr >= ctx->end_addr) {
 		return false;
 	}
 	return true;
