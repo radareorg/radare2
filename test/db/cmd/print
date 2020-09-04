@@ -73,7 +73,7 @@ EOF
 RUN
 
 NAME=MIPS new abi
-FILE=bin/elf/analysis/mips64r2-busybox
+FILE=bin/elf/analysis/mips64r2-busybox-loongson
 CMDS=<<EOF
 e asm.arch=mips.gnu
 s 0x120005978
