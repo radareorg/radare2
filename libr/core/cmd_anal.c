@@ -1684,6 +1684,30 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 	return r_str_appendf (res, ")");
 }
 
+static int mw(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+	int *ec = (int*)esil->user;
+	*ec += (len * 2);
+	return 1;
+}
+
+static int mr(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+	int *ec = (int*)esil->user;
+	*ec += len;
+	return 1;
+}
+
+static int esil_cost(RCore *core, ut64 addr, const char *expr) {
+	int ec = 0;
+	RAnalEsil *e = r_anal_esil_new (256, 0, 0);
+	r_anal_esil_setup (e, core->anal, false, false, false);
+	e->user = &ec;
+	e->cb.mem_read = mr;
+	e->cb.mem_write = mw;
+	r_anal_esil_parse (e, expr);
+	r_anal_esil_free (e);
+	return ec;
+}
+
 static void cmd_syscall_do(RCore *core, st64 n, ut64 addr) {
 	char *msg = cmd_syscall_dostr (core, n, addr);
 	if (msg) {
@@ -1791,6 +1815,8 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 		} else if (fmt == 's') {
 			totalsize += op.size;
+		} else if (fmt == '*') {
+			// TODO: ao* useful for wat? wx [bytes] ?
 		} else if (fmt == 'j') {
 			char strsub[128] = { 0 };
 			// pc+33
@@ -1902,6 +1928,10 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				}
 
 			}
+			if (esilstr) {
+				int ec = esil_cost (core, addr, esilstr);
+				pj_ki (pj, "esilcost", ec);
+			}
 			if (op.reg) {
 				pj_ks (pj, "reg", op.reg);
 			}
@@ -1973,6 +2003,10 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 					r_parse_varsub (core->parser, fcn, addr, asmop.size,
 							disasm, disasm, sizeof (disasm));
 				}
+			}
+			if (esilstr) {
+				int ec = esil_cost (core, addr, esilstr);
+				printline ("esilcost", "%d\n", ec);
 			}
 			printline ("disasm", "%s\n", disasm);
 			{
