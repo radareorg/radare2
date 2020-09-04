@@ -77,7 +77,7 @@ size: 4
 sign: false
 type: mov
 cycles: 0
-family: mte
+family: sec
 --
 address: 0x100007f14
 opcode: addg x9, x8, 0x20, 0x0
@@ -93,6 +93,6 @@ size: 4
 sign: false
 type: add
 cycles: 0
-family: mte
+family: sec
 EOF
 RUN

@@ -59,6 +59,9 @@ bool cdb_init(struct cdb *c, int fd) {
 			eprintf ("Cannot mmap %d\n", (int)st.st_size);
 			return false;
 		}
+		if (c->map) {
+			munmap (c->map, c->size);
+		}
 #else
 		char *x = calloc (1, st.st_size);
 		if (!x) {
@@ -69,12 +72,6 @@ bool cdb_init(struct cdb *c, int fd) {
 		if (read (fd, x, st.st_size) != st.st_size) {
 			/* handle read error */
 		}
-#endif
-#if USE_MMAN
-		if (c->map) {
-			munmap (c->map, c->size);
-		}
-#else
 		free (c->map);
 #endif
 		c->map = x;

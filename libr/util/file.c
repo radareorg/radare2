@@ -42,7 +42,7 @@ static int file_stat (const char *file, struct stat* const pStat) {
 #endif // __WINDOWS__
 }
 
-R_API bool r_file_truncate (const char *filename, ut64 newsize) {
+R_API bool r_file_truncate(const char *filename, ut64 newsize) {
 	r_return_val_if_fail (filename, false);
 	int fd;
 	if (r_file_is_directory (filename)) {
@@ -78,7 +78,7 @@ Example:
 	str = r_file_basename ("home/inisider/Downloads/user32.dll");
 	// str == user32.dll
 */
-R_API const char *r_file_basename (const char *path) {
+R_API const char *r_file_basename(const char *path) {
 	r_return_val_if_fail (path, NULL);
 	const char *ptr = r_str_rchr (path, NULL, '/');
 	if (ptr) {
@@ -97,7 +97,7 @@ Example:
 	// str == "home/inisider/Downloads"
 	free (str);
 */
-R_API char *r_file_dirname (const char *path) {
+R_API char *r_file_dirname(const char *path) {
 	r_return_val_if_fail (path, NULL);
 	char *newpath = strdup (path);
 	char *ptr = (char*)r_str_rchr (newpath, NULL, '/');
@@ -365,6 +365,13 @@ R_API char *r_file_slurp(const char *str, R_NULLABLE size_t *usz) {
 				}
 				size += r;
 			} while (!feof (fd));
+			char *nbuf = realloc (buf, size + 1);
+			if (!nbuf) {
+				free (buf);
+				return NULL;
+			}
+			buf = nbuf;
+			buf[size] = '\0';
 			if (usz) {
 				*usz = size;
 			}
@@ -901,12 +908,12 @@ static RMmap *r_file_mmap_unix (RMmap *m, int fd) {
 	return m;
 }
 #elif __WINDOWS__
-static RMmap *r_file_mmap_windows (RMmap *m, const char *file) {
+static RMmap *r_file_mmap_windows(RMmap *m, const char *file) {
 	LPTSTR file_ = r_sys_conv_utf8_to_win (file);
 	bool success = false;
 
-	m->fh = CreateFile (file_, GENERIC_READ | (m->rw?GENERIC_WRITE:0),
-		FILE_SHARE_READ|(m->rw?FILE_SHARE_WRITE:0), NULL,
+	m->fh = CreateFile (file_, GENERIC_READ | (m->rw ? GENERIC_WRITE : 0),
+		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
 		OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	if (m->fh == INVALID_HANDLE_VALUE) {
 		r_sys_perror ("CreateFile");
@@ -1040,7 +1047,7 @@ R_API char *r_file_temp (const char *prefix) {
 		prefix = "";
 	}
 	char *path = r_file_tmpdir ();
-	char *res = r_str_newf ("%s/%s.%"PFMT64x, path, prefix, r_sys_now ());
+	char *res = r_str_newf ("%s/%s.%"PFMT64x, path, prefix, r_time_now ());
 	free (path);
 	return res;
 }
@@ -1093,7 +1100,19 @@ err_r_file_mkstemp:
 	char *name = r_str_newf ("%s/r2.%s.XXXXXX%s", path, prefix, suffix);
 	mode_t mask = umask (S_IWGRP | S_IWOTH);
 	if (suffix && *suffix) {
+#if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && 2 <= __GLIBC__ && 19 <= __GLIBC__MINOR__
 		h = mkstemps (name, strlen (suffix));
+#else
+		char *const xpos = strrchr (name, 'X');
+		const char c = (char)(NULL != xpos ? *(xpos + 1) : 0);
+		if (0 != c) {
+			xpos[1] = 0;
+			h = mkstemp (name);
+			xpos[1] = c;
+		} else {
+			h = -1;
+		}
+#endif
 	} else {
 		h = mkstemp (name);
 	}

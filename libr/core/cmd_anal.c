@@ -123,6 +123,7 @@ static const char *help_msg_ac[] = {
 	"acm", " [class name] [method name] [offset] ([vtable offset])", "add/edit method",
 	"acm-", " [class name] [method name]", "delete method",
 	"acmn", " [class name] [method name] [new name]", "rename method",
+	"acg", "", "print inheritance ascii graph",
 	"ac?", "", "show this help",
 	NULL
 };
@@ -165,7 +166,6 @@ static const char *help_msg_ae[] = {
 	"aep", "[?] [addr]", "manage esil pin hooks",
 	"aepc", " [addr]", "change esil PC to this address",
 	"aer", " [..]", "handle ESIL registers like 'ar' or 'dr' does",
-	"aets", "[?]", "ESIL Trace session",
 	"aes", "", "perform emulated debugger step",
 	"aesp", " [X] [N]", "evaluate N instr from offset X",
 	"aesb", "", "step back",
@@ -176,6 +176,7 @@ static const char *help_msg_ae[] = {
 	"aesue", " [esil]", "step until esil expression match",
 	"aesuo", " [optype]", "step until given opcode type",
 	"aetr", "[esil]", "Convert an ESIL Expression to REIL",
+	"aets", "[?]", "ESIL Trace session",
 	"aex", " [hex]", "evaluate opcode expression",
 	NULL
 };
@@ -296,8 +297,8 @@ static const char *help_msg_aep[] = {
 
 static const char *help_msg_aets[] = {
 	"Usage:", "aets ", " [...]",
-	"aets", "", "List all ESIL trace sessions",
-	"aets+", "", "Add ESIL trace session",
+	"aets+", "", "Start ESIL trace session",
+	"aets-", "", "Stop ESIL trace session",
 	NULL
 };
 
@@ -720,12 +721,21 @@ static const char *help_msg_ax[] = {
 	"axj", "", "list refs in json format",
 	"axF", " [flg-glob]", "find data/code references of flags",
 	"axm", " addr [at]", "copy data/code references pointing to addr to also point to curseek (or at)",
-	"axt", " [addr]", "find data/code references to this address",
+	"axt", "[?] [addr]", "find data/code references to this address",
 	"axf", " [addr]", "find data/code references from this address",
 	"axv", " [addr]", "list local variables read-write-exec references",
 	"ax.", " [addr]", "find data/code references from and to this address",
 	"axff[j]", " [addr]", "find data/code references from this function",
 	"axs", " addr [at]", "add string ref",
+	NULL
+};
+
+static const char *help_msg_axt[]= {
+	"Usage:", "axt[?gq*]", "find data/code references to this address",
+	"axtj", " [addr]", "find data/code references to this address and print in json format",
+	"axtg", " [addr]", "display commands to generate graphs according to the xrefs",
+	"axtq", " [addr]", "find and list the data/code references in quiet mode",
+	"axt*", " [addr]", "same as axt, but prints as r2 commands",
 	NULL
 };
 
@@ -1022,7 +1032,7 @@ static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const c
 				}
 				r_cons_printf ("R 0x%"PFMT64x"  ", fcn->addr + acc->offset);
 				r_core_seek (core, fcn->addr + acc->offset, 1);
-				r_core_print_disasm_instructions (core, 1, 0);
+				r_core_print_disasm_instructions (core, 0, 1);
 			}
 			r_vector_foreach (&var->accesses, acc) {
 				if (!(acc->type & R_ANAL_VAR_ACCESS_TYPE_WRITE)) {
@@ -1030,7 +1040,7 @@ static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const c
 				}
 				r_cons_printf ("W 0x%"PFMT64x"  ", fcn->addr + acc->offset);
 				r_core_seek (core, fcn->addr + acc->offset, 1);
-				r_core_print_disasm_instructions (core, 1, 0);
+				r_core_print_disasm_instructions (core, 0, 1);
 			}
 		}
 		r_core_seek (core, oaddr, 0);
@@ -3888,7 +3898,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 							case R_ANAL_REF_TYPE_DATA:
 								r_cons_printf ("0x%08" PFMT64x " ", ref->addr);
 								r_core_seek (core, ref->at, 1);
-								r_core_print_disasm_instructions (core, 1, 0);
+								r_core_print_disasm_instructions (core, 0, 1);
 								break;
 							case R_ANAL_REF_TYPE_STRING:
 								{
@@ -4559,7 +4569,7 @@ static ut64 initializeEsil(RCore *core) {
 	RBinAddr *entry = NULL;
 	RBinInfo *info = NULL;
 	if (entries && !r_list_empty (entries)) {
-		entry = (RBinAddr *)r_list_pop (entries);
+		entry = (RBinAddr *)r_list_pop_head (entries);
 		info = r_bin_get_info (core->bin);
 		addr = info->has_va? entry->vaddr: entry->paddr;
 		r_list_push (entries, entry);
@@ -4584,7 +4594,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	ut64 startTime;
 
 	if (esiltimeout > 0) {
-		startTime = r_sys_now ();
+		startTime = r_time_now_mono ();
 	}
 	r_cons_break_push (NULL, NULL);
 repeat:
@@ -4594,7 +4604,7 @@ repeat:
 	}
 	//Break if we have exceeded esil.timeout
 	if (esiltimeout > 0) {
-		ut64 elapsedTime = r_sys_now () - startTime;
+		ut64 elapsedTime = r_time_now_mono () - startTime;
 		elapsedTime >>= 20;
 		if (elapsedTime >= esiltimeout) {
 			eprintf ("[ESIL] Timeout exceeded.\n");
@@ -4757,6 +4767,13 @@ repeat:
 	// esil->verbose ?
 	// eprintf ("REPE 0x%llx %s => 0x%llx\n", addr, R_STRBUF_SAFEGET (&op.esil), r_reg_getv (core->anal->reg, "PC"));
 
+	ut64 pc = r_reg_getv (core->anal->reg, name);
+	if (core->anal->pcalign > 0) {
+		pc -= (pc % core->anal->pcalign);
+		r_reg_setv (core->anal->reg, name, pc);
+		r_reg_setv (core->dbg->reg, name, pc);
+	}
+
 	st64 follow = (st64)r_config_get_i (core->config, "dbg.follow");
 	if (follow > 0) {
 		ut64 pc = r_debug_reg_get (core->dbg, "PC");
@@ -4765,7 +4782,6 @@ repeat:
 		}
 	}
 	// check breakpoints
-	ut64 pc = r_reg_getv (core->anal->reg, name);
 	if (r_bp_get_at (core->dbg->bp, pc)) {
 		r_cons_printf ("[ESIL] hit breakpoint at 0x%"PFMT64x "\n", pc);
 		return_tail (0);
@@ -4800,30 +4816,13 @@ tail_return:
 }
 
 R_API int r_core_esil_step_back(RCore *core) {
+	r_return_val_if_fail (core->anal->esil && core->anal->esil->trace, -1);
 	RAnalEsil *esil = core->anal->esil;
-	RListIter *tail;
-	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	ut64 prev = 0;
-	ut64 end = r_reg_getv (core->anal->reg, name);
-
-	if (!esil || !(tail = r_list_tail (esil->sessions))) {
-		return 0;
+	if (esil->trace->idx > 0) {
+		r_anal_esil_trace_restore (esil, esil->trace->idx - 1);
+		return 1;
 	}
-	RAnalEsilSession *before = (RAnalEsilSession *) tail->data;
-	if (!before) {
-		eprintf ("Cannot find any previous state here\n");
-		return 0;
-	}
-	eprintf ("NOTE: step back in esil is setting an initial state and stepping into pc is the same.\n");
-	eprintf ("NOTE: this is extremely wrong and poorly efficient. so don't use this feature unless\n");
-	eprintf ("NOTE: you are going to fix it by making it consistent with dts, which is also broken as hell\n");
-	eprintf ("Execute until 0x%08"PFMT64x"\n", end);
-	r_anal_esil_session_set (esil, before);
-	r_core_esil_step (core, end, NULL, &prev, false);
-	eprintf ("Before 0x%08"PFMT64x"\n", prev);
-	r_anal_esil_session_set (esil, before);
-	r_core_esil_step (core, prev, NULL, NULL, false);
-	return 1;
+	return -1;
 }
 
 static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
@@ -6211,11 +6210,33 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		}
 		case 's': // "aets"
 			switch (input[2]) {
-			case 0:
-				r_anal_esil_session_list (esil);
+			case '+': // "aets+"
+				if (!esil) {
+					eprintf ("Error: ESIL is not initialized. Use `aeim` first.\n");
+					break;
+				}
+				if (esil->trace) {
+					eprintf ("ESIL trace already started\n");
+					break;
+				}
+				esil->trace = r_anal_esil_trace_new (esil);
+				if (!esil->trace) {
+					break;
+				}
+				r_config_set_i (core->config, "dbg.trace", true);
 				break;
-			case '+':
-				r_anal_esil_session_add (esil);
+			case '-': // "aets-"
+				if (!esil) {
+					eprintf ("Error: ESIL is not initialized. Use `aeim` first.\n");
+					break;
+				}
+				if (!esil->trace) {
+					eprintf ("No ESIL trace started\n");
+					break;
+				}
+				r_anal_esil_trace_free (esil->trace);
+				esil->trace = NULL;
+				r_config_set_i (core->config, "dbg.trace", false);
 				break;
 			default:
 				r_core_cmd_help (core, help_msg_aets);
@@ -7284,6 +7305,10 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		cmd_afvx (core, NULL, input[1] == 'j');
 		break;
 	case 't': { // "axt"
+		if (input[1] == '?') { // axt?
+			r_core_cmd_help (core, help_msg_axt);
+			break;
+		}
 		RList *list = NULL;
 		RAnalFunction *fcn;
 		RAnalRef *ref;
@@ -8779,7 +8804,7 @@ static void r_core_anal_info (RCore *core, const char *input) {
 	int covr = compute_coverage (core);
 	int call = compute_calls (core);
 	int xrfs = r_anal_xrefs_count (core->anal);
-	int cvpc = (code > 0)? (covr * 100 / code): 0;
+	int cvpc = (code > 0)? (covr * 100.0 / code): 0;
 	if (*input == 'j') {
 		PJ *pj = pj_new ();
 		if (!pj) {
@@ -9291,8 +9316,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_task_yield (&core->tasks);
 					bool ioCache = r_config_get_i (core->config, "io.pcache");
 					r_config_set_i (core->config, "io.pcache", 1);
-					oldstr = r_print_rowlog (core->print, "Emulate code to find computed references (aae)");
-					r_core_cmd0 (core, "aae");
+					oldstr = r_print_rowlog (core->print, "Emulate functions to find computed references (aaef)");
+					r_core_cmd0 (core, "aaef");
 					r_print_rowlog_done (core->print, oldstr);
 					r_core_task_yield (&core->tasks);
 					if (!ioCache) {
@@ -9345,6 +9370,14 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				r_core_anal_propagate_noreturn (core, UT64_MAX);
 				r_print_rowlog_done (core->print, oldstr);
 				r_core_task_yield (&core->tasks);
+
+				// apply dwarf function information
+				Sdb *dwarf_sdb = sdb_ns (core->anal->sdb, "dwarf", 0);
+				if (dwarf_sdb) {
+					oldstr = r_print_rowlog (core->print, "Integrate dwarf function information.");
+					r_anal_dwarf_integrate_functions (core->anal, core->flags, dwarf_sdb);
+					r_print_rowlog_done (core->print, oldstr);
+				}
 
 				oldstr = r_print_rowlog (core->print, "Use -AA or aaaa to perform additional experimental analysis.");
 				r_print_rowlog_done (core->print, oldstr);
@@ -9409,13 +9442,15 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		cmd_anal_objc (core, input + 1, false);
 		break;
 	case 'e': // "aae"
-		if (input[1] == 'f') { // "aaef
+		if (input[1] == 'f') { // "aaef"
 			RListIter *it;
 			RAnalFunction *fcn;
+			ut64 cur_seek = core->offset;
 			r_list_foreach (core->anal->fcns, it, fcn) {
 				r_core_seek (core, fcn->addr, true);
 				r_core_anal_esil (core, "f", NULL);
 			}
+			r_core_seek (core, cur_seek, true);
 		} else if (input[1] == ' ') {
 			const char *len = (char *)input + 1;
 			char *addr = strchr (input + 2, ' ');
@@ -9902,6 +9937,22 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 	case 'm': // "acm"
 		cmd_anal_class_method (core, input + 1);
 		break;
+	case 'g': { // "acg"
+		RGraph *graph = r_anal_class_get_inheritance_graph (core->anal);
+		if (!graph) {
+			eprintf ("Couldn't create graph");
+			break;
+		}
+		RAGraph *agraph = create_agraph_from_graph (graph);
+		if (!agraph) {
+			r_graph_free (graph);
+			eprintf ("Couldn't create graph");
+			break;
+		}
+		r_agraph_print (agraph);
+		r_graph_free (graph);
+		r_agraph_free (agraph);
+	} break;
 	default: // "ac?"
 		r_core_cmd_help (core, help_msg_ac);
 		break;

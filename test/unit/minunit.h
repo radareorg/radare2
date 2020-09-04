@@ -176,12 +176,14 @@ void sprint_mem(char *out, const ut8 *buf, size_t len) {
 		mu_assert(_meqstr, memcmp((exp__), (act__), (len)) == 0); \
 } while(0)
 
-#define mu_run_test(test) do { int result; \
-		printf(TBOLD #test TRESET " "); \
-		result = test(); \
+#define mu_run_test_named(test, name, ...) do { int result; \
+		printf(TBOLD "%s" TRESET " ", name); \
+		result = test(__VA_ARGS__); \
 		tests_run++; \
 		tests_passed += result; \
 } while (0)
+
+#define mu_run_test(test, ...) mu_run_test_named (test, #test, __VA_ARGS__)
 
 #define mu_cleanup_fail(label, message) do { mu_perror(message); retval = MU_ERR; goto label; } while(0)
 #define mu_cleanup_sysfail(label, message) do { mu_psyserror(message); retval = MU_ERR; goto label; } while(0)

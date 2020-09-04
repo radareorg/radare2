@@ -1036,12 +1036,23 @@ static int bin_dwarf(RCore *core, int mode) {
 		RBinDwarfDebugAbbrev *da = NULL;
 		da = r_bin_dwarf_parse_abbrev (core->bin, mode);
 		RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (da, core->bin, mode);
+		HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (core->bin, core->anal->bits / 8);
 		// I suppose there is no reason the parse it for a printing purposes
 		if (info && mode != R_MODE_PRINT) {
-			r_anal_parse_dwarf_types (core->anal, info);
+			/* Should we do this by default? */
+			RAnalDwarfContext ctx = {
+				.info = info,
+				.loc = loc_table
+			};
+			r_anal_dwarf_process_info (core->anal, &ctx);
+		}
+		if (loc_table) {
+			if (mode == R_MODE_PRINT) {
+				r_bin_dwarf_print_loc (loc_table, core->anal->bits / 8, r_cons_printf);
+			}
+			r_bin_dwarf_free_loc (loc_table);
 		}
 		r_bin_dwarf_free_debug_info (info);
-		
 		r_bin_dwarf_parse_aranges (core->bin, mode);
 		list = ownlist = r_bin_dwarf_parse_line (core->bin, mode);
 		r_bin_dwarf_free_debug_abbrev (da);
@@ -1189,7 +1200,16 @@ static int bin_dwarf(RCore *core, int mode) {
 	return true;
 }
 
-R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
+R_API bool r_core_pdb_info(RCore *core, const char *file, int mode) {
+	r_return_val_if_fail (core && file, false);
+
+	ut64 baddr = r_config_get_i (core->config, "bin.baddr");
+	if (core->bin->cur && core->bin->cur->o && core->bin->cur->o->baddr) {
+		baddr = core->bin->cur->o->baddr;
+	} else {
+		eprintf ("Warning: Cannot find base address, flags will probably be misplaced\n");
+	}
+
 	RPdb pdb = R_EMPTY;
 
 	pdb.cb_printf = r_cons_printf;
@@ -1231,11 +1251,6 @@ R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
 	}
 	pj_free (pj);
 	return true;
-}
-
-static int bin_pdb(RCore *core, int mode) {
-	ut64 baddr = r_bin_get_baddr (core->bin);
-	return r_core_pdb_info (core, core->bin->file, baddr, mode);
 }
 
 static int srclineCmp(const void *a, const void *b) {
@@ -1664,7 +1679,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	char *sdb_module = NULL;
 	int i = 0;
 
-	R_TIME_BEGIN;
+	R_TIME_PROFILE_BEGIN;
 
 	va = VA_TRUE; // XXX relocs always vaddr?
 	//this has been created for reloc object files
@@ -1818,7 +1833,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	sdb_free (db);
 	db = NULL;
 
-	R_TIME_END;
+	R_TIME_PROFILE_END;
 	if (IS_MODE_JSON (mode) && relocs == NULL) {
 		return true;
 	}
@@ -4150,7 +4165,7 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 		ret &= bin_dwarf (core, mode);
 	}
 	if ((action & R_CORE_BIN_ACC_PDB)) {
-		ret &= bin_pdb (core, mode);
+		ret &= r_core_pdb_info (core, core->bin->file, mode);
 	}
 	if ((action & R_CORE_BIN_ACC_SOURCE)) {
 		ret &= bin_source (core, mode);

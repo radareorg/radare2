@@ -14,4 +14,4 @@ R_IPI void union_type_member_free(void *e, void *user);
 #ifdef __cplusplus
 }
 #endif
-#endif R_BASE_TYPES_H
+#endif

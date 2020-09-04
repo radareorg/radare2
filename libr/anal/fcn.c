@@ -140,6 +140,7 @@ static RAnalBlock *fcn_append_basic_block(RAnal *anal, RAnalFunction *fcn, ut64 
 		return NULL;
 	}
 	r_anal_function_add_block (fcn, bb);
+	bb->stackptr = fcn->stack;
 	bb->parent_stackptr = fcn->stack;
 	return bb;
 }
@@ -228,7 +229,7 @@ static bool is_delta_pointer_table(RAnal *anal, RAnalFunction *fcn, ut64 addr, u
 		if (o_reg_dst && reg_src && o_reg_dst->offset == reg_src->offset && omov_aop.disp != UT64_MAX) {
 			// Special case for indirection
 			// lea reg1, [base_addr]
-			// mov reg2, (sz)word [reg1 + tbl_off*sz + casetbl_loc_off]
+			// movzx reg2, byte [reg1 + tbl_off + casetbl_loc_off]
 			// mov reg3, dword [reg1 + reg2*4 + tbl_loc_off]
 			// add reg3, reg1
 			// jmp reg3
@@ -267,6 +268,11 @@ static ut64 try_get_cmpval_from_parents(RAnal * anal, RAnalFunction *fcn, RAnalB
 	r_list_foreach (fcn->bbs, iter, tmp_bb) {
 		if (tmp_bb->jump == my_bb->addr || tmp_bb->fail == my_bb->addr) {
 			if (tmp_bb->cmpreg == cmp_reg) {
+				if (tmp_bb->cond) {
+					if (tmp_bb->cond->type == R_ANAL_COND_HI || tmp_bb->cond->type == R_ANAL_COND_GT) {
+						return tmp_bb->cmpval + 1;
+					}
+				}
 				return tmp_bb->cmpval;
 			}
 		}
@@ -393,16 +399,56 @@ static RAnalBlock *bbget(RAnal *anal, ut64 addr, bool jumpmid) {
 	return ret;
 }
 
+typedef struct {
+	RAnalFunction *fcn;
+	const int stack_diff;
+} BlockTakeoverCtx;
+
 static bool fcn_takeover_block_recursive_followthrough_cb(RAnalBlock *block, void *user) {
-	RAnalFunction *our_fcn = user;
+	BlockTakeoverCtx *ctx = user;
+	RAnalFunction *our_fcn = ctx->fcn;
 	r_anal_block_ref (block);
 	while (!r_list_empty (block->fcns)) {
 		RAnalFunction *other_fcn = r_list_first (block->fcns);
 		if (other_fcn->addr == block->addr) {
 			return false;
 		}
+		// Steal vars from this block
+		size_t i;
+		for (i = 0; i + 1 < block->ninstr; i++) {
+			const ut64 addr = r_anal_bb_opaddr_i (block, i);
+			RPVector *vars_used = r_anal_function_get_vars_used_at (other_fcn, addr);
+			if (!vars_used) {
+				continue;
+			}
+			// vars_used will get modified if r_anal_var_remove_access_at gets called
+			RPVector *cloned_vars_used = (RPVector *)r_vector_clone ((RVector *)vars_used);
+			void **it;
+			r_pvector_foreach (cloned_vars_used, it) {
+				RAnalVar *other_var = *it;
+				const int actual_delta = other_var->kind == R_ANAL_VAR_KIND_SPV
+					? other_var->delta + ctx->stack_diff
+					: other_var->delta + (other_fcn->bp_off - our_fcn->bp_off);
+				RAnalVar *our_var = r_anal_function_get_var (our_fcn, other_var->kind, actual_delta);
+				if (!our_var) {
+					our_var = r_anal_function_set_var (our_fcn, actual_delta, other_var->kind, other_var->type, 0, other_var->isarg, other_var->name);
+				}
+				if (our_var) {
+					RAnalVarAccess *acc = r_anal_var_get_access_at (other_var, addr);
+					r_anal_var_set_access (our_var, acc->reg, addr, acc->type, acc->stackptr);
+				}
+				r_anal_var_remove_access_at (other_var, addr);
+				if (r_vector_empty (&other_var->accesses)) {
+					r_anal_function_delete_var (other_fcn, other_var);
+				}
+			}
+			r_pvector_free (cloned_vars_used);
+		}
+
 		r_anal_function_remove_block (other_fcn, block);
 	}
+	block->stackptr -= ctx->stack_diff;
+	block->parent_stackptr -= ctx->stack_diff;
 	r_anal_function_add_block (our_fcn, block);
 	r_anal_block_unref (block);
 	return true;
@@ -410,7 +456,8 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RAnalBlock *block, voi
 
 // Remove block and all of its recursive successors from all its functions and add them only to fcn
 static void fcn_takeover_block_recursive(RAnalFunction *fcn, RAnalBlock *start_block) {
-	r_anal_block_recurse_followthrough (start_block, fcn_takeover_block_recursive_followthrough_cb, fcn);
+	BlockTakeoverCtx ctx = { fcn, start_block->parent_stackptr - fcn->stack};
+	r_anal_block_recurse_followthrough (start_block, fcn_takeover_block_recursive_followthrough_cb, &ctx);
 }
 
 static const char *retpoline_reg(RAnal *anal, ut64 addr) {
@@ -459,6 +506,10 @@ static inline bool op_is_set_bp(RAnalOp *op, const char *bp_reg, const char *sp_
 	return false;
 }
 
+static inline bool does_arch_destroys_dst(const char *arch) {
+	return arch && (!strncmp (arch, "arm", 3) || !strcmp (arch, "riscv") || !strcmp (arch, "ppc"));
+}
+
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
 	const int continue_after_jump = anal->opt.afterjmp;
 	const int addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1;
@@ -481,8 +532,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	} delay = {
 		0
 	};
+	bool arch_destroys_dst = does_arch_destroys_dst (anal->cur->arch);
 	bool is_arm = anal->cur->arch && !strncmp (anal->cur->arch, "arm", 3);
-	bool is_riscv = anal->cur->arch && !strcmp (anal->cur->arch, "riscv");
 	char tmp_buf[MAX_FLG_NAME_SIZE + 5] = "skip";
 	bool is_x86 = is_arm ? false: anal->cur->arch && !strncmp (anal->cur->arch, "x86", 3);
 	bool is_amd64 = is_x86 ? fcn->cc && !strcmp (fcn->cc, "amd64") : false;
@@ -492,9 +543,6 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		variadic_reg = r_reg_get (anal->reg, "rax", R_REG_TYPE_GPR);
 	}
 	bool has_variadic_reg = !!variadic_reg;
-	const char *bp_reg = anal->reg->name[R_REG_NAME_BP];
-	const char *sp_reg = anal->reg->name[R_REG_NAME_SP];
-	bool has_stack_regs = bp_reg && sp_reg;
 
 	if (r_cons_is_breaked ()) {
 		return R_ANAL_RET_END;
@@ -636,6 +684,10 @@ repeat:
 			// RET_END causes infinite loops somehow
 			gotoBeach (R_ANAL_RET_END);
 		}
+		const char *bp_reg = anal->reg->name[R_REG_NAME_BP];
+		const char *sp_reg = anal->reg->name[R_REG_NAME_SP];
+		bool has_stack_regs = bp_reg && sp_reg;
+
 		if (anal->opt.nopskip && fcn->addr == at) {
 			RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
 			if (!fi || strncmp (fi->name, "sym.", 4)) {
@@ -990,6 +1042,7 @@ repeat:
 				cmpval = val;
 				bb->cmpval = cmpval;
 				bb->cmpreg = op.reg;
+				bb->cond = r_anal_cond_new_from_op (&op);
 			}
 		}
 			break;
@@ -1003,6 +1056,9 @@ repeat:
 			if (!overlapped) {
 				bb->jump = op.jump;
 				bb->fail = op.fail;
+			}
+			if (bb->cond) {
+				bb->cond->type = op.cond;
 			}
 			if (anal->opt.jmptbl) {
 				if (op.ptr != UT64_MAX) {
@@ -1103,7 +1159,26 @@ repeat:
 				if (op.ptr != UT64_MAX && op.ireg) { // direct jump
 					ut64 table_size, default_case;
 					if (try_get_jmptbl_info (anal, fcn, op.addr, bb, &table_size, &default_case)) {
-						ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op.addr, op.ptr, op.ptr, anal->bits >> 3, table_size, default_case, ret);
+						bool case_table = false;
+						RAnalOp prev_op;
+						anal->iob.read_at (anal->iob.io, op.addr - op.size, buf, sizeof (buf));
+						if (r_anal_op (anal, &prev_op, op.addr - op.size, buf, sizeof (buf), R_ANAL_OP_MASK_VAL) > 0) {
+							bool prev_op_has_dst_name = prev_op.dst && prev_op.dst->reg && prev_op.dst->reg->name;
+							bool op_has_src_name = op.src[0] && op.src[0]->reg && op.src[0]->reg->name;
+							bool same_reg = (op.ireg && prev_op_has_dst_name && !strcmp (op.ireg, prev_op.dst->reg->name))
+								|| (op_has_src_name && prev_op_has_dst_name && !strcmp (op.src[0]->reg->name, prev_op.dst->reg->name));
+							if (prev_op.type == R_ANAL_OP_TYPE_MOV && prev_op.disp && prev_op.disp != UT64_MAX && same_reg) {
+								//	movzx reg, byte [reg + case_table]
+								//	jmp dword [reg*4 + jump_table]
+								if (try_walkthrough_casetbl (anal, fcn, bb, depth, op.addr, op.ptr, prev_op.disp, op.ptr, anal->bits >> 3, table_size, default_case, ret)) {
+									ret = case_table = true;
+								}
+							}
+						}
+						r_anal_op_fini (&prev_op);
+						if (!case_table) {
+							ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op.addr, op.ptr, op.ptr, anal->bits >> 3, table_size, default_case, ret);
+						}
 					}
 				} else if (op.ptr != UT64_MAX && op.reg) { // direct jump
 					ut64 table_size, default_case;
@@ -1232,7 +1307,7 @@ analopfinish:
 			}
 			break;
 		}
-		if (has_stack_regs && (is_arm || is_riscv)) {
+		if (has_stack_regs && arch_destroys_dst) {
 			if (op_is_set_bp (&op, bp_reg, sp_reg) && op.src[1]) {
 				switch (op.type & R_ANAL_OP_TYPE_MASK) {
 				case R_ANAL_OP_TYPE_ADD:
@@ -1257,7 +1332,9 @@ analopfinish:
 			last_is_mov_lr_pc = false;
 		}
 		if (has_variadic_reg && !fcn->is_variadic) {
-			bool dst_is_variadic = op.dst && op.dst->reg && op.dst->reg->offset == variadic_reg->offset;
+			variadic_reg = r_reg_get (anal->reg, "rax", R_REG_TYPE_GPR);
+			bool dst_is_variadic = op.dst && op.dst->reg
+					&& variadic_reg && op.dst->reg->offset == variadic_reg->offset;
 			bool op_is_cmp = (op.type == R_ANAL_OP_TYPE_CMP) || op.type == R_ANAL_OP_TYPE_ACMP;
 			if (dst_is_variadic && !op_is_cmp) {
 				has_variadic_reg = false;

@@ -865,7 +865,7 @@ static const char *radare_argv[] = {
 	"ae?", "ae??", "ae", "aea", "aeA", "aeaf", "aeAf", "aeC", "aec?", "aec", "aecs", "aecc", "aecu", "aecue",
 	"aef", "aefa",
 	"aei", "aeim", "aeip", "aek", "aek-", "aeli", "aelir", "aep?", "aep", "aep-", "aepc",
-	"aer", "aets?", "aets", "aets+", "aes", "aesp", "aesb", "aeso", "aesou", "aess", "aesu", "aesue", "aetr", "aex",
+	"aer", "aets?", "aets+", "aets-", "aes", "aesp", "aesb", "aeso", "aesou", "aess", "aesu", "aesue", "aetr", "aex",
 	"af?", "af", "afr", "af+", "af-",
 	"afa", "afan",
 	"afb?", "afb", "afb.", "afb+", "afbb", "afbr", "afbi", "afbj", "afbe", "afB", "afbc", "afb=",
@@ -3154,14 +3154,16 @@ reaccept:
 				}
 				goto out_of_function;
 			}
-			switch ((ut8)cmd) {
+			switch (cmd) {
 			case RAP_PACKET_OPEN:
 				r_socket_read_block (c, &flg, 1); // flags
 				eprintf ("open (%d): ", cmd);
 				r_socket_read_block (c, &cmd, 1); // len
 				pipefd = -1;
-				ptr = malloc (cmd + 1);
-				//XXX cmd is ut8..so <256 if (cmd<RAP_PACKET_MAX)
+				if (UT8_ADD_OVFCHK (cmd, 1)) {
+					goto out_of_function;
+				}
+				ptr = malloc ((size_t)cmd + 1);
 				if (!ptr) {
 					eprintf ("Cannot malloc in rmt-open len = %d\n", cmd);
 				} else {

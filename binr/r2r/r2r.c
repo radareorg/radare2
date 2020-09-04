@@ -50,7 +50,7 @@ static int help(bool verbose) {
 		" -V           verbose\n"
 		" -i           interactive mode\n"
 		" -n           do nothing (don't run any test, just load/parse them)\n"
-		" -L           log mode (better printing for CI, logfiles, etc.)"
+		" -L           log mode (better printing for CI, logfiles, etc.)\n"
 		" -F [dir]     run fuzz tests (open and default analysis) on all files in the given dir\n"
 		" -j [threads] how many threads to use for running tests concurrently (default is "WORKERS_DEFAULT_STR")\n"
 		" -r [radare2] path to radare2 executable (default is "RADARE2_CMD_DEFAULT")\n"
@@ -100,7 +100,7 @@ static bool r2r_chdir(const char *argv0) {
 }
 
 static bool r2r_test_run_unit(void) {
-	return system ("make -C unit all run") == 0;
+	return r_sandbox_system ("make -C unit all run", 1) == 0;
 }
 
 static bool r2r_chdir_fromtest(const char *test_path) {
@@ -282,7 +282,7 @@ int main(int argc, char **argv) {
 	}
 	atexit (r2r_subprocess_fini);
 
-	ut64 time_start = r_sys_now ();
+	ut64 time_start = r_time_now_mono ();
 	R2RState state = {{0}};
 	state.run_config.r2_cmd = radare2_cmd ? radare2_cmd : RADARE2_CMD_DEFAULT;
 	state.run_config.rasm2_cmd = rasm2_cmd ? rasm2_cmd : RASM2_CMD_DEFAULT;
@@ -444,7 +444,7 @@ int main(int argc, char **argv) {
 	}
 	r_pvector_clear (&workers);
 
-	ut64 seconds = (r_sys_now () - time_start) / 1000000;
+	ut64 seconds = (r_time_now_mono () - time_start) / 1000000;
 	printf ("Finished in");
 	if (seconds > 60) {
 		ut64 minutes = seconds / 60;
@@ -590,7 +590,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 }
 
 static R2RProcessOutput *print_runner(const char *file, const char *args[], size_t args_size,
-		const char *envvars[], const char *envvals[], size_t env_size, void *user) {
+	const char *envvars[], const char *envvals[], size_t env_size, ut64 timeout_ms, void *user) {
 	size_t i;
 	for (i = 0; i < env_size; i++) {
 		printf ("%s=%s ", envvars[i], envvals[i]);
@@ -877,9 +877,15 @@ static void fixup_tests(RPVector *results, const char *edited_file, ut64 start_l
 			test->field.line += delta; \
 		}
 
-		R2R_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, DO_KEY_BOOL)
+#define DO_KEY_NUM(key, field) \
+		if (test->field.set && test->field.line >= start_line) { \
+			test->field.line += delta; \
+		}
+
+		R2R_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, DO_KEY_BOOL, DO_KEY_NUM)
 #undef DO_KEY_STR
 #undef DO_KEY_BOOL
+#undef DO_KEY_NUM
 	}
 }
 

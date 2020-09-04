@@ -233,7 +233,6 @@ RUN
 
 NAME=/a search from/to (seek 0)
 FILE=bins/elf/ioli/crackme0x00
-ARGS=-n
 CMDS=<<EOF
 e io.va = false
 s 0
@@ -249,14 +248,12 @@ RUN
 
 NAME=/a search from/to (seek 0)
 FILE=bins/elf/ioli/crackme0x00
-ARGS=-n
 CMDS=<<EOF
 e io.va = false
 s 0
 e search.from = 0
 e search.to = 0x50
-# /a xor al, 0x80
-/x 3480
+/a xor al, 0x80
 EOF
 EXPECT=<<EOF
 0x0000003c hit0_0 3480

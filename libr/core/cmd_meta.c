@@ -20,7 +20,7 @@ static const char *help_msg_C[] = {
 	"CC!", " [@addr]", "edit comment with $EDITOR",
 	"CC", "[?] [-] [comment-text] [@addr]", "add/remove comment",
 	"CC.", "[addr]", "show comment in current address",
-	"CCa", "[-at]|[at] [text] [@addr]", "add/remove comment at given address",
+	"CCa", "[+-] [addr] [text]", "add/remove comment at given address",
 	"CCu", " [comment-text] [@addr]", "add unique comment",
 	"CF", "[sz] [fcn-sign..] [@addr]", "function signature",
 	"CL", "[-][*] [file:line] [addr]", "show or add 'code line' information (bininfo)",

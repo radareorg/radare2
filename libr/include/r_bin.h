@@ -208,6 +208,7 @@ typedef struct r_bin_info_t {
 	char *arch;
 	char *cpu;
 	char *machine;
+	char *head_flag;
 	char *os;
 	char *subsystem;
 	char *rpath;

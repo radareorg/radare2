@@ -574,10 +574,10 @@ endif
 
 subdir('libr/util')
 subdir('libr/socket')
-subdir('shlr')
-
 subdir('libr/hash')
 subdir('libr/crypto')
+subdir('shlr')
+
 subdir('libr/cons')
 subdir('shlr/gdb')
 subdir('libr/io')
@@ -707,3 +707,5 @@ install_data(
   'doc/zsh/_rax2',
   install_dir: r2_zsh_compdir
 )
+
+meson.add_install_script(host_machine.system() == 'windows' ? 'sys/create_r2.bat' : 'sys/create_r2.sh')

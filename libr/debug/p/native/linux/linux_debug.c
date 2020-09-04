@@ -18,6 +18,8 @@
 #include <unistd.h>
 #include <elf.h>
 
+#include "linux_ptrace.h"
+
 #ifdef __GLIBC__
 #define HAVE_YMM 1
 #else
@@ -61,17 +63,18 @@ char *linux_reg_profile (RDebug *dbg) {
 #endif
 }
 
-static void linux_detach_all (RDebug *dbg);
-static char *read_link (int pid, const char *file);
-static bool linux_attach_single_pid (RDebug *dbg, int ptid);
-static void linux_attach_all (RDebug *dbg);
-static void linux_remove_thread (RDebug *dbg, int pid);
-static void linux_add_and_attach_new_thread (RDebug *dbg, int tid);
-static bool linux_stop_thread (int tid);
-static bool linux_kill_thread (int tid, int signo);
-static void linux_dbg_wait_break (RDebug *dbg);
+static void linux_detach_all(RDebug *dbg);
+static char *read_link(int pid, const char *file);
+static bool linux_attach_single_pid(RDebug *dbg, int ptid);
+static void linux_remove_thread(RDebug *dbg, int pid);
+static void linux_add_new_thread(RDebug *dbg, int tid);
+static bool linux_stop_thread(RDebug *dbg, int tid);
+static bool linux_kill_thread(int tid, int signo);
+static void linux_dbg_wait_break_main(RDebug *dbg);
+static void linux_dbg_wait_break(RDebug *dbg);
+static RDebugReasonType linux_handle_new_task(RDebug *dbg, int tid);
 
-int linux_handle_signals (RDebug *dbg, int tid) {
+int linux_handle_signals(RDebug *dbg, int tid) {
 	siginfo_t siginfo = { 0 };
 	int ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, tid, 0, (r_ptrace_data_t)(size_t)&siginfo);
 	if (ret == -1) {
@@ -92,7 +95,7 @@ int linux_handle_signals (RDebug *dbg, int tid) {
 		dbg->stopaddr = (ut64)siginfo.si_addr;
 		//dbg->errno = siginfo.si_errno;
 		// siginfo.si_code -> HWBKPT, USER, KERNEL or WHAT
-// TODO: DO MORE RDEBUGREASON HERE
+		// TODO: DO MORE RDEBUGREASON HERE
 		switch (dbg->reason.signum) {
 		case SIGTRAP:
 		{
@@ -131,7 +134,9 @@ int linux_handle_signals (RDebug *dbg, int tid) {
 					dbg->tid = tid;
 				}
 			}
-		}
+		} break;
+		case SIGINT:
+			dbg->reason.type = R_DEBUG_REASON_USERSUSP;
 			break;
 		case SIGABRT: // 6 / SIGIOT // SIGABRT
 			dbg->reason.type = R_DEBUG_REASON_ABORT;
@@ -145,11 +150,12 @@ int linux_handle_signals (RDebug *dbg, int tid) {
 		default:
 			break;
 		}
-		if (dbg->reason.signum != SIGTRAP) {
+		if (dbg->reason.signum != SIGTRAP &&
+			(dbg->reason.signum != SIGINT || !r_cons_is_breaked ())) {
 			eprintf ("[+] SIGNAL %d errno=%d addr=0x%08"PFMT64x
-				" code=%d ret=%d\n",
+				" code=%d si_pid=%d ret=%d\n",
 				siginfo.si_signo, siginfo.si_errno,
-				(ut64)(size_t)siginfo.si_addr, siginfo.si_code, ret);
+				(ut64) (size_t)siginfo.si_addr, siginfo.si_code, siginfo.si_pid, ret);
 		}
 		return true;
 	}
@@ -196,18 +202,16 @@ static void linux_remove_fork_bps(RDebug *dbg) {
 
 #ifdef PT_GETEVENTMSG
 /*
- * Handle PTRACE_EVENT_*
+ * @brief Handle PTRACE_EVENT_* when receiving SIGTRAP
  *
- * Returns R_DEBUG_REASON_*
- *
- * If it's not something we handled, we return ..._UNKNOWN to
- * tell the caller to keep trying to figure out what to do.
- *
- * If something went horribly wrong, we return ..._ERROR;
+ * @param dowait Do waitpid to consume any signal in the newly created task
+ * @return RDebugReasonType,
+ * - R_DEBUG_REASON_UNKNOWN if the ptrace_event cannot be handled,
+ * - R_DEBUG_REASON_ERROR if a ptrace command failed.
  *
  * NOTE: This API was added in Linux 2.5.46
  */
-RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
+RDebugReasonType linux_ptrace_event (RDebug *dbg, int ptid, int status, bool dowait) {
 	ut32 pt_evt;
 #if __powerpc64__ || __arm64__ || __aarch64__ || __x86_64__
 	ut64 data;
@@ -215,7 +219,7 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 	ut32 data;
 #endif
 	/* we only handle stops with SIGTRAP here */
-	if (!WIFSTOPPED(status) || WSTOPSIG(status) != SIGTRAP) {
+	if (!WIFSTOPPED (status) || WSTOPSIG (status) != SIGTRAP) {
 		return R_DEBUG_REASON_UNKNOWN;
 	}
 
@@ -225,30 +229,42 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 		/* NOTE: this case is handled by linux_handle_signals */
 		break;
 	case PTRACE_EVENT_CLONE:
-		if (r_debug_ptrace (dbg, PTRACE_GETEVENTMSG, pid, 0, (r_ptrace_data_t)(size_t)&data) == -1) {
+		// Get the tid of the new thread
+		if (r_debug_ptrace (dbg, PTRACE_GETEVENTMSG, ptid, 0, (r_ptrace_data_t)(size_t)&data) == -1) {
 			r_sys_perror ("ptrace GETEVENTMSG");
 			return R_DEBUG_REASON_ERROR;
 		}
-		linux_add_and_attach_new_thread (dbg, (int)data);
+		if (dowait) {
+			// The new child has a pending SIGSTOP.  We can't affect it until it
+			// hits the SIGSTOP, but we're already attached.  */
+			if (waitpid ((int)data, &status, 0) == -1) {
+				perror ("waitpid");
+			}
+		}
+
+		linux_add_new_thread (dbg, (int)data);
 		if (dbg->trace_clone) {
 			r_debug_select (dbg, dbg->pid, (int)data);
 		}
-		eprintf ("(%d) Created thread %d\n", dbg->pid, (int)data);
+		eprintf ("(%d) Created thread %d\n", ptid, (int)data);
 		return R_DEBUG_REASON_NEW_TID;
 	case PTRACE_EVENT_VFORK:
 	case PTRACE_EVENT_FORK:
-		if (r_debug_ptrace (dbg, PTRACE_GETEVENTMSG, pid, 0, (r_ptrace_data_t)(size_t)&data) == -1) {
+		// Get the pid of the new process
+		if (r_debug_ptrace (dbg, PTRACE_GETEVENTMSG, ptid, 0, (r_ptrace_data_t)(size_t)&data) == -1) {
 			r_sys_perror ("ptrace GETEVENTMSG");
 			return R_DEBUG_REASON_ERROR;
 		}
-
 		dbg->forked_pid = data;
-		if (!dbg->trace_forks) {
-			// The new child has a pending SIGSTOP.  We can't affect it until it
+		if (dowait) {
+			// The new child has a pending SIGSTOP. We can't affect it until it
 			// hits the SIGSTOP, but we're already attached.  */
-			if (waitpid (dbg->forked_pid, &status, __WALL) == -1) {
+			if (waitpid (dbg->forked_pid, &status, 0) == -1) {
 				perror ("waitpid");
 			}
+		}
+		eprintf ("(%d) Created process %d\n", ptid, (int)data);
+		if (!dbg->trace_forks) {
 			// We need to do this even if the new process will be detached since the
 			// breakpoints are inherited from the parent
 			linux_remove_fork_bps (dbg);
@@ -258,12 +274,19 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 		}
 		return R_DEBUG_REASON_NEW_PID;
 	case PTRACE_EVENT_EXIT:
-		if (r_debug_ptrace (dbg, PTRACE_GETEVENTMSG, pid, 0, (r_ptrace_data_t)(size_t)&data) == -1) {
+		// Get the exit status of the exiting task
+		if (r_debug_ptrace (dbg, PTRACE_GETEVENTMSG, ptid, 0, (r_ptrace_data_t)(size_t)&data) == -1) {
 			r_sys_perror ("ptrace GETEVENTMSG");
 			return R_DEBUG_REASON_ERROR;
 		}
-		//eprintf ("PTRACE_EVENT_EXIT pid=%d, status=0x%"PFMT64x"\n", pid, (ut64)data);
-		return pid != dbg->pid ? R_DEBUG_REASON_EXIT_TID : R_DEBUG_REASON_EXIT_PID;
+		//TODO: Check other processes exit if dbg->trace_forks is on
+		if (ptid != dbg->pid) {
+			eprintf ("(%d) Thread exited with status=0x%"PFMT64x"\n", ptid, (ut64)data);
+			return R_DEBUG_REASON_EXIT_TID;
+		} else {
+			eprintf ("(%d) Process exited with status=0x%"PFMT64x"\n", ptid, (ut64)data);
+			return R_DEBUG_REASON_EXIT_PID;
+		}
 	default:
 		eprintf ("Unknown PTRACE_EVENT encountered: %d\n", pt_evt);
 		break;
@@ -271,6 +294,52 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 	return R_DEBUG_REASON_UNKNOWN;
 }
 #endif
+
+/*
+ * @brief Search for the parent of the newly created task and
+ * handle the pending SIGTRAP with PTRACE_EVENT_*
+ *
+ * @param tid, TID of the new task
+ * @return RDebugReasonType, Debug reason
+ */
+static RDebugReasonType linux_handle_new_task(RDebug *dbg, int tid) {
+	int ret, status;
+	if (dbg->threads) {
+		RDebugPid *th;
+		RListIter *it;
+		// Search for SIGTRAP with PTRACE_EVENT_* in other threads.
+		r_list_foreach (dbg->threads, it, th) {
+			if (th->pid == tid) {
+				continue;
+			}
+			// Retrieve the signal without consuming it with PTRACE_GETSIGINFO
+			siginfo_t siginfo = { 0 };
+			ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, th->pid, 0, (r_ptrace_data_t)(size_t)&siginfo);
+			// Skip if PTRACE_GETSIGINFO fails when the thread is running.
+			if (ret == -1) {
+				continue;
+			}
+#ifdef PT_GETEVENTMSG
+			// NOTE: This API was added in Linux 2.5.46
+			if (siginfo.si_signo == SIGTRAP) {
+				// si_code = (SIGTRAP | PTRACE_EVENT_* << 8)
+				int pt_evt = siginfo.si_code >> 8;
+				// Handle PTRACE_EVENT_* that creates a new task (fork/clone)
+				switch (pt_evt) {
+				case PTRACE_EVENT_CLONE:
+				case PTRACE_EVENT_VFORK:
+				case PTRACE_EVENT_FORK:
+					ret = waitpid (th->pid, &status, 0);
+					return linux_ptrace_event (dbg, ret, status, false);
+				default:
+					break;
+				}
+			}
+#endif
+		}
+	}
+	return R_DEBUG_REASON_UNKNOWN;
+}
 
 int linux_step(RDebug *dbg) {
 	int ret = false;
@@ -302,9 +371,13 @@ bool linux_set_options(RDebug *dbg, int pid) {
 	}
 	/* SIGTRAP | 0x80 on signal handler .. not supported on all archs */
 	traceflags |= PTRACE_O_TRACESYSGOOD;
-	if (r_debug_ptrace (dbg, PTRACE_SETOPTIONS, pid, 0, (r_ptrace_data_t)(size_t)traceflags) == -1) {
-		perror ("ptrace (PT_SETOPTIONS)");
-		return false;
+
+	// PTRACE_SETOPTIONS can fail because of the asynchronous nature of ptrace
+	// If the target is traced, the loop will always end with success
+	while (r_debug_ptrace (dbg, PTRACE_SETOPTIONS, pid, 0, (r_ptrace_data_t)(size_t)traceflags) == -1) {
+		void *bed = r_cons_sleep_begin ();
+		usleep (1000);
+		r_cons_sleep_end (bed);
 	}
 	return true;
 }
@@ -329,16 +402,15 @@ static void linux_detach_all(RDebug *dbg) {
 	}
 }
 
-static void linux_remove_thread (RDebug *dbg, int pid) {
-	RList *th_list = dbg->threads;
-
-	if (th_list) {
+static void linux_remove_thread(RDebug *dbg, int tid) {
+	if (dbg->threads) {
 		RDebugPid *th;
 		RListIter *it;
-		r_list_foreach (th_list, it, th) {
-			if (th->pid == pid) {
-				r_list_delete_data (th_list, th);
+		r_list_foreach (dbg->threads, it, th) {
+			if (th->pid == tid) {
+				r_list_delete (dbg->threads, it);
 				dbg->n_threads--;
+				break;
 			}
 		}
 	}
@@ -370,17 +442,41 @@ bool linux_attach_new_process(RDebug *dbg, int pid) {
 	return true;
 }
 
-static void linux_dbg_wait_break(RDebug *dbg) {
-	// Interrupt the currently debugged thread
-	if (!linux_kill_thread (dbg->tid, SIGINT)) {
-		eprintf ("Could not interrupt pid (%d)\n", dbg->pid);
+static void linux_dbg_wait_break_main(RDebug *dbg) {
+	// Get the debugger and debuggee process group ID
+	pid_t dpgid = getpgid (0);
+	if (dpgid == -1) {
+		r_sys_perror ("getpgid");
 		return;
+	}
+	pid_t tpgid = getpgid (dbg->pid);
+	if (tpgid == -1) {
+		r_sys_perror ("getpgid");
+		return;
+	}
+
+	// If the debuggee process is created by the debugger, do nothing because
+	// SIGINT is already sent to both the debugger and debuggee in the same
+	// process group.
+
+	// If the debuggee is attached by the debugger, send SIGINT to the debuggee
+	// in another process group.
+	if (dpgid != tpgid) {
+		if (!linux_kill_thread (dbg->pid, SIGINT)) {
+			eprintf ("Could not interrupt pid (%d)\n", dbg->pid);
+		}
 	}
 }
 
-RDebugReasonType linux_dbg_wait(RDebug *dbg, int my_pid) {
+static void linux_dbg_wait_break(RDebug *dbg) {
+	if (!linux_kill_thread (dbg->pid, SIGINT)) {
+		eprintf ("Could not interrupt pid (%d)\n", dbg->pid);
+	}
+}
+
+RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
-	int pid = dbg->tid;
+	int tid;
 	int status, flags = __WALL;
 	int ret = -1;
 
@@ -388,69 +484,75 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int my_pid) {
 		flags |= WNOHANG;
 	}
 
-	// Send SIGINT to the target thread when interrupted
-	r_cons_break_push ((RConsBreakCallback) linux_dbg_wait_break, dbg);
-repeat:
 	for (;;) {
-		if (r_cons_is_breaked ()) {
-			reason = R_DEBUG_REASON_USERSUSP;
-			break;
+		// In the main context, SIGINT is propagated to the debuggee if it is
+		// in the same process group. Otherwise, the task is running in
+		// background and SIGINT will not be propagated to the debuggee.
+		if (r_cons_context_is_main ()) {
+			r_cons_break_push ((RConsBreak)linux_dbg_wait_break_main, dbg);
+		} else {
+			r_cons_break_push ((RConsBreak)linux_dbg_wait_break, dbg);
 		}
-
 		void *bed = r_cons_sleep_begin ();
-		ret = waitpid (-1, &status, flags);
+		if (dbg->continue_all_threads) {
+			ret = waitpid (-1, &status, flags);
+		} else {
+			ret = waitpid (pid, &status, flags);
+		}
 		r_cons_sleep_end (bed);
+		r_cons_break_pop ();
 
 		if (ret < 0) {
+			// Continue when interrupted by user;
+			if (errno == EINTR) {
+				continue;
+			}
 			perror ("waitpid");
 			break;
-		} else if (!ret) {
+		} else if (ret == 0) {
+			// Unset WNOHANG to call next waitpid in blocking mode.
 			flags &= ~WNOHANG;
 		} else {
-			pid = ret;
-			reason = linux_ptrace_event (dbg, pid, status);
+			tid = ret;
 
-			if (reason == R_DEBUG_REASON_NEW_PID) {
-				break;
-			}
-
-			if (reason == R_DEBUG_REASON_EXIT_TID) {
-				r_debug_ptrace (dbg, PTRACE_CONT, pid, NULL, 0);
-				goto repeat;
-			}
-
+			// Handle SIGTRAP with PTRACE_EVENT_*
+			reason = linux_ptrace_event (dbg, tid, status, true);
 			if (reason != R_DEBUG_REASON_UNKNOWN) {
 				break;
 			}
 
 			if (WIFEXITED (status)) {
-				eprintf ("child exited with status %d\n", WEXITSTATUS (status));
-				if (pid == dbg->main_pid) {
+				if (tid == dbg->main_pid) {
 					r_list_free (dbg->threads);
 					dbg->threads = NULL;
 					reason = R_DEBUG_REASON_DEAD;
+					eprintf ("(%d) Process terminated with status %d\n", tid, WEXITSTATUS (status));
+					break;
 				} else {
-					reason = R_DEBUG_REASON_EXIT_TID;
-					linux_remove_thread (dbg, pid);
+					eprintf ("(%d) Child terminated with status %d\n", tid, WEXITSTATUS (status));
+					linux_remove_thread (dbg, tid);
+					continue;
 				}
 			} else if (WIFSIGNALED (status)) {
 				eprintf ("child received signal %d\n", WTERMSIG (status));
 				reason = R_DEBUG_REASON_SIGNAL;
 			} else if (WIFSTOPPED (status)) {
-				if (WSTOPSIG (status) != SIGTRAP &&
-					WSTOPSIG (status) != SIGSTOP) {
-					if (WSTOPSIG (status) == SIGINT) {
-						reason = R_DEBUG_REASON_USERSUSP;
+				// If tid is not in the thread list and stopped by SIGSTOP,
+				// handle it as a new task.
+				if (!r_list_find (dbg->threads, &tid, &match_pid) &&
+					WSTOPSIG (status) == SIGSTOP) {
+					reason = linux_handle_new_task (dbg, tid);
+					if (reason != R_DEBUG_REASON_UNKNOWN) {
 						break;
 					}
-					eprintf ("child stopped with signal %d\n", WSTOPSIG (status));
-					reason = R_DEBUG_REASON_DEAD;
 				}
-				if (!linux_handle_signals (dbg, pid)) {
+
+				if (linux_handle_signals (dbg, tid)) {
+					reason = dbg->reason.type;
+				} else {
 					eprintf ("can't handle signals\n");
 					return R_DEBUG_REASON_ERROR;
 				}
-				reason = dbg->reason.type;
 #ifdef WIFCONTINUED
 			} else if (WIFCONTINUED (status)) {
 				eprintf ("child continued...\n");
@@ -463,7 +565,7 @@ repeat:
 				eprintf ("STATUS=0?!?!?!?\n");
 				reason = R_DEBUG_REASON_DEAD;
 			} else {
-				if (ret != pid) {
+				if (ret != tid) {
 					reason = R_DEBUG_REASON_NEW_PID;
 				} else {
 					eprintf ("CRAP. returning from wait without knowing why...\n");
@@ -474,18 +576,17 @@ repeat:
 			}
 		}
 	}
-	r_cons_break_pop ();
-	dbg->reason.tid = pid;
+	dbg->reason.tid = tid;
 	return reason;
 }
 
 int match_pid(const void *pid_o, const void *th_o) {
 	int pid = *(int *)pid_o;
-	RDebug *th = (RDebug *)th_o;
-	return pid == th->pid;
+	RDebugPid *th = (RDebugPid *)th_o;
+	return (pid == th->pid)? 0 : 1;
 }
 
-static void linux_add_and_attach_new_thread(RDebug *dbg, int tid) {
+static void linux_add_new_thread(RDebug *dbg, int tid) {
 	int uid = getuid(); // XXX
 	char info[1024] = {0};
 	RDebugPid *tid_info;
@@ -495,7 +596,7 @@ static void linux_add_and_attach_new_thread(RDebug *dbg, int tid) {
 	} else {
 		tid_info = r_debug_pid_new ("new_path", tid, uid, 's', 0);
 	}
-	(void) linux_attach_single_pid (dbg, tid);
+	linux_set_options (dbg, tid);
 	r_list_append (dbg->threads, tid_info);
 	dbg->n_threads++;
 }
@@ -511,30 +612,34 @@ static bool linux_kill_thread(int tid, int signo) {
 	return true;
 }
 
-static bool linux_stop_thread(int tid) {
-	int status;
-	int ret = -1;
+static bool linux_stop_thread(RDebug *dbg, int tid) {
+	int status, ret;
+	siginfo_t siginfo = { 0 };
 
-	if (linux_kill_thread (tid, SIGSTOP)) {
-		if ((ret = waitpid (tid, &status, WUNTRACED)) == -1) {
-			perror("waitpid");
-		}
+	// Return if the thread is already stopped
+	ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, tid, 0,
+		(r_ptrace_data_t) (intptr_t)&siginfo);
+	if (ret == 0) {
+		return true;
 	}
 
-	return ret == tid;
+	if (linux_kill_thread (tid, SIGSTOP)) {
+		if ((ret = waitpid (tid, &status, 0)) == -1) {
+			perror ("waitpid");
+		}
+		return ret == tid;
+	}
+	return false;
 }
 
 bool linux_stop_threads(RDebug *dbg, int except) {
-	// Stop all currently debugged threads
-	RList *list = dbg->threads;
 	bool ret = true;
-	if (list) {
+	if (dbg->threads) {
 		RDebugPid *th;
 		RListIter *it;
-		r_list_foreach (list, it, th) {
+		r_list_foreach (dbg->threads, it, th) {
 			if (th->pid && th->pid != except) {
-				if (!linux_stop_thread (th->pid)) {
-					eprintf ("Could not stop pid (%d)\n", th->pid);
+				if (!linux_stop_thread (dbg, th->pid)) {
 					ret = false;
 				}
 			}
@@ -556,16 +661,16 @@ static bool linux_attach_single_pid(RDebug *dbg, int ptid) {
 	// GETSIGINFO can be called multiple times and would fail without attachment.
 	if (r_debug_ptrace (dbg, PTRACE_GETSIGINFO, ptid, NULL,
 		(r_ptrace_data_t)&sig) == -1) {
-		if (r_debug_ptrace (dbg, PTRACE_ATTACH, ptid, NULL,
-			(r_ptrace_data_t)NULL) == -1) {
+		if (r_debug_ptrace (dbg, PTRACE_ATTACH, ptid, NULL, NULL) == -1) {
 			perror ("ptrace (PT_ATTACH)");
 			return false;
 		}
 
 		// Make sure SIGSTOP is delivered and wait for it since we can't affect the pid
 		// until it hits SIGSTOP.
-		if (!linux_stop_thread (ptid)) {
+		if (!linux_stop_thread (dbg, ptid)) {
 			eprintf ("Could not stop pid (%d)\n", ptid);
+			return false;
 		}
 	}
 
@@ -585,37 +690,17 @@ static RList *get_pid_thread_list(RDebug *dbg, int main_pid) {
 	return list;
 }
 
-static void linux_attach_all(RDebug *dbg) {
-	linux_attach_single_pid (dbg, dbg->main_pid);
-
-	RList *list = dbg->threads;
-	if (list) {
-		RDebugPid *th;
-		RListIter *it;
-		r_list_foreach (list, it, th) {
-			if (th->pid && th->pid != dbg->main_pid) {
-				if (!linux_attach_single_pid (dbg, th->pid)) {
-					eprintf ("PID %d\n", th->pid);
-				}
-			}
-		}
-	}
-}
-
 int linux_attach(RDebug *dbg, int pid) {
 	// First time we run: We try to attach to all "possible" threads and to the main pid
 	if (!dbg->threads) {
 		dbg->threads = get_pid_thread_list (dbg, pid);
-		linux_attach_all (dbg);
 	} else {
 		// This means we did a first run, so we probably attached to all possible threads already.
-		// So check if the requested thread is being traced already. If yes: skip
-		if (dbg->threads && !r_list_find (dbg->threads, &pid, &match_pid)) {
-			goto out;
+		// So check if the requested thread is being traced already. If not, attach it
+		if (!r_list_find (dbg->threads, &pid, &match_pid)) {
+			linux_attach_single_pid (dbg, pid);
 		}
-		linux_attach_single_pid (dbg, pid);
 	}
-out:
 	return pid;
 }
 
@@ -821,6 +906,7 @@ RList *linux_thread_list(RDebug *dbg, int pid, RList *list) {
 				pid_info = r_debug_pid_new (NULL, tid, uid, 's', pc);
 			}
 			r_list_append (list, pid_info);
+			dbg->n_threads++;
 		}
 		closedir (dh);
 		// Return to the original thread
@@ -976,7 +1062,7 @@ static void print_fpu(void *f){
 int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	bool showfpu = false;
 	int pid = dbg->tid;
-	int ret;
+	int ret = 0;
 	if (type < -1) {
 		showfpu = true;
 		type = -type;
@@ -1018,46 +1104,56 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		return false;
 #elif __x86_64__ || __i386__
 		{
-		int ret1 = 0;
 		struct user_fpregs_struct fpregs;
 		if (type == R_REG_TYPE_FPU) {
 #if __x86_64__
-			ret1 = r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
+			ret = r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
+			if (ret != 0) {
+				r_sys_perror ("PTRACE_GETFPREGS");
+				return false;
+			}
 			if (showfpu) {
 				print_fpu ((void *)&fpregs);
 			}
-			if (ret1 != 0) {
-				return false;
-			}
-			if (sizeof (fpregs) < size) {
-				size = sizeof (fpregs);
-			}
+			size = R_MIN (sizeof (fpregs), size);
 			memcpy (buf, &fpregs, size);
-			return sizeof(fpregs);
+			return size;
 #elif __i386__
 #if !__ANDROID__
 			struct user_fpxregs_struct fpxregs;
-			ret1 = r_debug_ptrace (dbg, PTRACE_GETFPXREGS, pid, NULL, &fpxregs);
-			if (ret1 == 0) {
-				if (showfpu) print_fpu ((void *)&fpxregs);
-				if (sizeof(fpxregs) < size) size = sizeof(fpxregs);
+			ret = r_debug_ptrace (dbg, PTRACE_GETFPXREGS, pid, NULL, &fpxregs);
+			if (ret == 0) {
+				if (showfpu) {
+					print_fpu ((void *)&fpxregs);
+				}
+				size = R_MIN (sizeof (fpxregs), size);
 				memcpy (buf, &fpxregs, size);
-				return sizeof(fpxregs);
+				return size;
 			} else {
-				ret1 = r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
-				if (showfpu) print_fpu ((void *)&fpregs);
-				if (ret1 != 0) return false;
-				if (sizeof(fpregs) < size) size = sizeof(fpregs);
+				ret = r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
+				if (showfpu) {
+					print_fpu ((void *)&fpregs);
+				}
+				if (ret != 0) {
+					r_sys_perror ("PTRACE_GETFPREGS");
+					return false;
+				}
+				size = R_MIN (sizeof (fpregs), size);
 				memcpy (buf, &fpregs, size);
-				return sizeof(fpregs);
+				return size;
 			}
 #else
-			ret1 = r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
-			if (showfpu) print_fpu ((void *)&fpregs);
-			if (ret1 != 0) return false;
-			if (sizeof (fpregs) < size) size = sizeof(fpregs);
+			ret = r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
+			if (showfpu) {
+				print_fpu ((void *)&fpregs);
+			}
+			if (ret != 0) {
+				r_sys_perror ("PTRACE_GETFPREGS");
+				return false;
+			}
+			size = R_MIN (sizeof (fpregs), size);
 			memcpy (buf, &fpregs, size);
-			return sizeof(fpregs);
+			return size;
 #endif // !__ANDROID__
 #endif // __i386__
 		}
@@ -1081,7 +1177,8 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			ret = r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, 1, &io);
 			// ret = ptrace (PTRACE_GETREGSET, pid, (void*)(size_t)(NT_PRSTATUS), NULL); // &io);
 			if (ret != 0) {
-				perror("ptrace");
+				r_sys_perror("PTRACE_GETREGSET");
+				return false;
 			}
 #elif __BSD__ && (__POWERPC__ || __sparc__)
 			ret = r_debug_ptrace (dbg, PTRACE_GETREGS, pid, &regs, NULL);
@@ -1096,10 +1193,12 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			 * more ptrace queries.
 			 */
 			if (ret != 0) {
+				r_sys_perror ("PTRACE_GETREGS");
 				return false;
 			}
-			memcpy (buf, &regs, R_MIN (sizeof (regs), size));
-			return sizeof (regs);
+			size = R_MIN (sizeof (regs), size);
+			memcpy (buf, &regs, size);
+			return size;
 		}
 		break;
 	case R_REG_TYPE_YMM:
@@ -1112,6 +1211,7 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		iov.iov_len = sizeof(struct _xstate);
 		ret = r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, (void*)NT_X86_XSTATE, &iov);
 		if (ret != 0) {
+			r_sys_perror ("PTRACE_GETREGSET");
 			return false;
 		}
 		// stitch together xstate.fpstate._xmm and xstate.ymmh assuming LE
@@ -1124,8 +1224,9 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 				ymm_space[ri*8+(rj+4)] = xstate.ymmh.ymmh_space[ri*4+rj];
 			}
 		}
-		memcpy (buf, &ymm_space, sizeof (ymm_space));
-		return sizeof (ymm_space);
+		size = R_MIN (sizeof (ymm_space), size);
+		memcpy (buf, &ymm_space, size);
+		return size;
 #endif
 		return false;
 		}

@@ -583,7 +583,7 @@ R_API const char *r_anal_op_family_to_string(int n) {
 	switch (n) {
 	case R_ANAL_OP_FAMILY_UNKNOWN: return "unk";
 	case R_ANAL_OP_FAMILY_CPU: return "cpu";
-	case R_ANAL_OP_FAMILY_PAC: return "pac";
+	case R_ANAL_OP_FAMILY_SECURITY: return "sec";
 	case R_ANAL_OP_FAMILY_FPU: return "fpu";
 	case R_ANAL_OP_FAMILY_MMX: return "mmx";
 	case R_ANAL_OP_FAMILY_SSE: return "sse";
@@ -592,7 +592,6 @@ R_API const char *r_anal_op_family_to_string(int n) {
 	case R_ANAL_OP_FAMILY_CRYPTO: return "crpt";
 	case R_ANAL_OP_FAMILY_IO: return "io";
 	case R_ANAL_OP_FAMILY_VIRT: return "virt";
-	case R_ANAL_OP_FAMILY_MTE: return "mte";
 	}
 	return NULL;
 }
@@ -611,9 +610,8 @@ R_API int r_anal_op_family_from_string(const char *f) {
 		{"virt", R_ANAL_OP_FAMILY_VIRT},
 		{"crpt", R_ANAL_OP_FAMILY_CRYPTO},
 		{"io", R_ANAL_OP_FAMILY_IO},
-		{"pac", R_ANAL_OP_FAMILY_PAC},
+		{"sec", R_ANAL_OP_FAMILY_SECURITY},
 		{"thread", R_ANAL_OP_FAMILY_THREAD},
-		{"mte", R_ANAL_OP_FAMILY_MTE},
 	};
 
 	int i;

@@ -9,9 +9,11 @@ if get_option('enable_tests')
     'anal_meta',
     'anal_var',
     'anal_xrefs',
+    'anal_class_graph',
     'annotated_code',
     'base64',
     'bin',
+    'binheap',
     'bitmap',
     'buf',
     'ovf',
@@ -20,9 +22,11 @@ if get_option('enable_tests')
     'cons',
     'contrbtree',
     'debruijn',
+    'debug_session',
     'diff',
     'dwarf',
     'dwarf_info',
+    'dwarf_integration',
     'esil_dfg_filter',
     'event',
     'flags',
@@ -31,6 +35,7 @@ if get_option('enable_tests')
     'hex',
     'intervaltree',
     'io',
+    'json',
     'list',
     'parse_ctype',
     'pj',
@@ -49,7 +54,9 @@ if get_option('enable_tests')
     'unum',
     'util',
     'vector',
-    'big'
+    'big',
+    'idpool',
+    'idstorage'
   ]
 
   foreach test : tests

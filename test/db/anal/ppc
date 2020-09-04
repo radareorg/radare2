@@ -469,3 +469,60 @@ EXPECT=<<EOF
 0x1001010a
 EOF
 RUN
+
+NAME=ppc-detect-vtables
+FILE=bins/elf/ppc_classes
+CMDS=<<EOF
+av
+EOF
+EXPECT=<<EOF
+
+Vtable Found at 0x100016d4
+0x100016d4 : No Name found
+0x100016d8 : No Name found
+0x100016dc : No Name found
+
+
+Vtable Found at 0x100016e8
+0x100016e8 : No Name found
+0x100016ec : No Name found
+0x100016f0 : No Name found
+
+
+Vtable Found at 0x100016fc
+0x100016fc : No Name found
+0x10001700 : No Name found
+0x10001704 : No Name found
+
+
+Vtable Found at 0x10001710
+0x10001710 : No Name found
+0x10001714 : No Name found
+0x10001718 : No Name found
+0x1000171c : No Name found
+0x10001720 : No Name found
+
+
+Vtable Found at 0x1000172c
+0x1000172c : No Name found
+0x10001730 : No Name found
+0x10001734 : No Name found
+0x10001738 : No Name found
+0x1000173c : No Name found
+
+
+Vtable Found at 0x10001748
+0x10001748 : No Name found
+0x1000174c : No Name found
+0x10001750 : No Name found
+0x10001754 : No Name found
+0x10001758 : No Name found
+
+
+Vtable Found at 0x10001764
+0x10001764 : No Name found
+0x10001768 : No Name found
+0x1000176c : No Name found
+
+EOF
+RUN

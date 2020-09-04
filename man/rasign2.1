@@ -1,0 +1,45 @@
+.Dd Aug 6, 2020
+.Dt RASIGN2 1
+.Sh NAME
+.Nm RASIGN2
+.Nd radare2 zignature utility
+.Sh SYNOPSIS
+.Nm rasign2
+.Op Fl afhjqrv
+.Op Fl s Ar space
+.Op Fl o Ar outfile
+.Ar file
+.Sh DESCRIPTION
+radiff2 implements many binary diffing algorithms for data and code.
+.Pp
+.Bl -tag -width Fl
+.It Fl a
+Analyze binary after loading it with RCore and use -AA to run aaaa instead of aaa.
+.It Fl f
+Interpret the input file as a flirt database and dump the signatures.
+.It Fl h
+Show usage help message.
+.It Fl j
+Show output in JSON.
+.It Fl o Ar file.sdb
+Add signatures to file, create if it does not exist.
+.It Fl q
+Enable quiet mode.
+.It Fl r
+Show output in radare commands.
+.It Fl s Ar space
+Add signatures save all signatures under this signspace.
+.It Fl v
+Show version information.
+.El
+.Sh SEE ALSO
+.Pp
+.Xr radare2(1) ,
+.Xr rafind2(1) ,
+.Xr rahash2(1) ,
+.Xr rabin2(1) ,
+.Xr rasm2(1) ,
+.Xr ragg2(1) ,
+.Xr rarun2(1) ,
+.Xr rax2(1) ,
+.Xr radiff2(1) ,

@@ -711,6 +711,15 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 			return R_DEBUG_REASON_DEAD;
 		}
 
+#if __linux__
+		// Letting other threads running will cause ptrace commands to fail
+		// when writing to the same process memory to set/unset breakpoints
+		// and is problematic in Linux.
+		if (dbg->continue_all_threads) {
+			r_debug_stop (dbg);
+		}
+#endif
+
 		/* propagate errors from the plugin */
 		if (reason == R_DEBUG_REASON_ERROR) {
 			return R_DEBUG_REASON_ERROR;
@@ -908,7 +917,18 @@ R_API int r_debug_step_hard(RDebug *dbg, RBreakpointItem **pb) {
 	if (!dbg->h->step (dbg)) {
 		return false;
 	}
+
+#if __linux__
+	// Turn off continue_all_threads to make sure linux_dbg_wait
+	// only waits for one target for a single-step or breakpoint trap
+	bool prev_continue = dbg->continue_all_threads;
+	dbg->continue_all_threads = false;
+#endif
 	reason = r_debug_wait (dbg, pb);
+#if __linux__
+	dbg->continue_all_threads = prev_continue;
+#endif
+
 	if (reason == R_DEBUG_REASON_DEAD || r_debug_is_dead (dbg)) {
 		return false;
 	}
@@ -1279,12 +1299,8 @@ repeat:
 	}
 #if __WINDOWS__
 	r_cons_break_pop ();
-#elif __linux__
-	// Letting threads continue after the debugger breaks is currently problematic in linux
-	if (dbg->continue_all_threads) {
-		r_debug_stop (dbg);
-	}
 #endif
+
 	// Unset breakpoints before leaving
 	if (reason != R_DEBUG_REASON_BREAKPOINT) {
 		r_bp_restore (dbg->bp, false);

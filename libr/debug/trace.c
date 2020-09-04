@@ -175,7 +175,7 @@ R_API void r_debug_trace_op(RDebug *dbg, RAnalOp *op) {
 	static ut64 oldpc = UT64_MAX; // Must trace the previously traced instruction
 	if (dbg->trace->enabled) {
 		if (dbg->anal->esil) {
-			r_anal_esil_trace (dbg->anal->esil, op);
+			r_anal_esil_trace_op (dbg->anal->esil, op);
 		} else {
 			if (dbg->verbose) {
 				eprintf ("Run aeim to get dbg->anal->esil initialized\n");
@@ -281,7 +281,7 @@ R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size) {
 	if (!tp) {
 		return NULL;
 	}
-	tp->stamp = r_sys_now ();
+	tp->stamp = r_time_now ();
 	tp->addr = addr;
 	tp->tags = tag;
 	tp->size = size;

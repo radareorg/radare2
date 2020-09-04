@@ -106,7 +106,7 @@ EXPECT=<<EOF
   },
   {
     "offset": 3,
-    "esil": "al,rax,+=[1],7,$o,of,:=,7,$s,sf,:=,$z,zf,:=,7,$c,cf,:=,$p,pf,:=",
+    "esil": "al,rax,+=[1],7,$o,of,:=,7,$s,sf,:=,$z,zf,:=,7,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
     "refptr": true,
     "fcn_addr": 0,
     "fcn_last": 17,
@@ -269,7 +269,7 @@ jmp 3
   },
   {
     "offset": 3,
-    "esil": "al,rax,+=[1],7,$o,of,:=,7,$s,sf,:=,$z,zf,:=,7,$c,cf,:=,$p,pf,:=",
+    "esil": "al,rax,+=[1],7,$o,of,:=,7,$s,sf,:=,$z,zf,:=,7,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
     "refptr": true,
     "fcn_addr": 0,
     "fcn_last": 17,

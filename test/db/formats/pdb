@@ -9,6 +9,33 @@ PDB "user32.pdb" download success
 EOF
 RUN
 
+NAME=idp 404
+FILE=-
+CMDS=<<EOF
+idp 404.pdb
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+Cannot open file
+EOF
+RUN
+
+NAME=idp and baddr
+FILE=-
+CMDS=<<EOF
+e bin.baddr=0
+idp bins/pdb/Project1.pdb
+f~pdb:1
+e bin.baddr=0x800000
+idp bins/pdb/Project1.pdb
+f~pdb:1
+EOF
+EXPECT=<<EOF
+0x00011000 0 pdb.__enc_textbss_end
+0x00811000 0 pdb.__enc_textbss_end
+EOF
+RUN
+
 NAME=find structure R2_TEST_STRUCT
 FILE=bins/pdb/Project1.pdb
 CMDS=!rabin2 -P ${R2_FILE} | grep -ao R2_TEST_STRUCT

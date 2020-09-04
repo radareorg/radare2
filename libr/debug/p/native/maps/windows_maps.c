@@ -201,7 +201,7 @@ static void proc_mem_img(HANDLE h_proc, RList *map_list, RList *mod_list, RWinMo
 				sect_found = 2;
 			}
 			if (sect_found) {
-				char *map_name = r_str_newf ("%s | %s", mod->map->name, sect_hdr->Name);
+				char *map_name = r_str_newf ("%s | %.8s", mod->map->name, sect_hdr->Name);
 				if (!map_name) {
 					perror ("r_str_newf");
 					return;

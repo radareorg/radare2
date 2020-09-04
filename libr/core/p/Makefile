@@ -18,7 +18,7 @@ LDFLAGS+=$(STOP)/sdb/src/libsdb.a
 
 include $(STOP)/java/deps.mk
 include $(STOP)/gdb/deps.mk
-include $(STOP)/windbg/deps.mk
+include $(STOP)/winkd/deps.mk
 
 LDFLAGS+=${LINK}
 

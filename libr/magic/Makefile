@@ -13,8 +13,8 @@ include $(LTOP)/rules.mk
 
 libfile.a:
 	${CC} -c ${CFLAGS} ${SRC}
-	ar q libfile.a *.o
-	ranlib libfile.a
+	${AR} q libfile.a *.o
+	${RANLIB} libfile.a
 
 BIN=file${EXT_EXE}
 ${BIN}:

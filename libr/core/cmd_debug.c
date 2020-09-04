@@ -472,6 +472,8 @@ static const char *help_msg_dts[] = {
 	"Usage:", "dts[*]", "",
 	"dts+", "", "Start trace session",
 	"dts-", "", "Stop trace session",
+	"dtst", " [dir] ", "Save trace sessions to disk",
+	"dtsf", " [dir] ", "Read trace sessions from disk",
 	"dtsm", "", "List current memory map and hash",
 	NULL
 };
@@ -4842,15 +4844,15 @@ static int cmd_debug(void *data, const char *input) {
 				}
 				RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_ESIL);
 				if (op) {
-					r_anal_esil_trace (core->anal->esil, op);
+					r_anal_esil_trace_op (core->anal->esil, op);
 				}
 				r_anal_op_free (op);
 			} break;
 			case '-': // "dte-"
 				if (!strcmp (input + 3, "*")) {
 					if (core->anal->esil) {
-						sdb_free (core->anal->esil->db_trace);
-						core->anal->esil->db_trace = sdb_new0 ();
+						sdb_free (core->anal->esil->trace->db);
+						core->anal->esil->trace->db = sdb_new0 ();
 					}
 				} else {
 					eprintf ("TODO: dte- cannot delete specific logs. Use dte-*\n");
@@ -4863,7 +4865,7 @@ static int cmd_debug(void *data, const char *input) {
 			} break;
 			case 'k': // "dtek"
 				if (input[3] == ' ') {
-					char *s = sdb_querys (core->anal->esil->db_trace,
+					char *s = sdb_querys (core->anal->esil->trace->db,
 							NULL, 0, input + 4);
 					r_cons_println (s);
 					free (s);
@@ -4886,7 +4888,7 @@ static int cmd_debug(void *data, const char *input) {
 					eprintf ("Session already started\n");
 					break;
 				}
-				core->dbg->session = r_debug_session_new (core->dbg);
+				core->dbg->session = r_debug_session_new ();
 				r_debug_add_checkpoint (core->dbg);
 				break;
 			case '-': // "dts-"
@@ -4896,6 +4898,21 @@ static int cmd_debug(void *data, const char *input) {
 				}
 				r_debug_session_free (core->dbg->session);
 				core->dbg->session = NULL;
+				break;
+			case 't': // "dtst"
+				if (!core->dbg->session) {
+					eprintf ("No session started\n");
+					break;
+				}
+				r_debug_session_save (core->dbg->session, input + 4);
+				break;
+			case 'f': // "dtsf"
+				if (core->dbg->session) {
+					r_debug_session_free (core->dbg->session);
+					core->dbg->session = NULL;
+				}
+				core->dbg->session = r_debug_session_new ();
+				r_debug_session_load (core->dbg, input + 4);
 				break;
 			case 'm': // "dtsm"
 				if (core->dbg->session) {

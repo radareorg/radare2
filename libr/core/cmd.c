@@ -1448,8 +1448,14 @@ static int cmd_kuery(void *data, const char *input) {
 			r_cons_println ("No Output from sdb");
 			break;
 		}
-
-		r_cons_printf ("{\"anal\":{");
+		PJ * pj = pj_new ();
+		if (!pj) {
+  			free (out);
+  			break;
+		}
+		pj_o (pj);
+		pj_ko (pj, "anal");
+		pj_ka (pj, "cur_cmd");
 
 		while (*out) {
 			cur_pos = strchr (out, '\n');
@@ -1458,14 +1464,13 @@ static int cmd_kuery(void *data, const char *input) {
 			}
 			cur_cmd = r_str_ndup (out, cur_pos - out);
 
-			r_cons_printf ("\n\n\"%s\" : [", cur_cmd);
+			pj_s (pj, cur_cmd);
 
+			free (next_cmd);
 			next_cmd = r_str_newf ("anal/%s/*", cur_cmd);
 			temp_storage = sdb_querys (s, NULL, 0, next_cmd);
 
 			if (!temp_storage) {
-				r_cons_println ("\nEMPTY\n");
-				r_cons_printf ("],\n\n");
 				out += cur_pos - out + 1;
 				continue;
 			}
@@ -1475,18 +1480,23 @@ static int cmd_kuery(void *data, const char *input) {
 				if (!temp_pos) {
 					break;
 				}
-
 				temp_cmd = r_str_ndup (temp_storage, temp_pos - temp_storage);
-				r_cons_printf ("\"%s\",", temp_cmd);
+				pj_s (pj, temp_cmd);
 				temp_storage += temp_pos - temp_storage + 1;
 			}
-
-			r_cons_printf ("],\n\n");
 			out += cur_pos - out + 1;
 		}
-
-		r_cons_printf ("}}");
+		pj_end (pj);
+		pj_end (pj);
+		pj_end (pj);
+		char *a = pj_drain (pj);
+		if (a) {
+			r_cons_println (a);
+			free (a);
+		}
+		R_FREE (next_cmd);
 		free (next_cmd);
+		free (cur_cmd);
 		free (temp_storage);
 		break;
 
@@ -1554,7 +1564,7 @@ static int cmd_kuery(void *data, const char *input) {
 		}
 		r_line_set_hist_callback (core->cons->line, &r_line_hist_cmd_up, &r_line_hist_cmd_down);
 		break;
-	case 'o':
+	case 'o': // "ko"
 		if (r_sandbox_enable (0)) {
 			eprintf ("This command is disabled in sandbox mode\n");
 			return 0;
@@ -1592,7 +1602,7 @@ static int cmd_kuery(void *data, const char *input) {
 			eprintf ("Usage: ko [file] [namespace]\n");
 		}
 		break;
-	case 'd':
+	case 'd': // "kd"
 		if (r_sandbox_enable (0)) {
 			eprintf ("This command is disabled in sandbox mode\n");
 			return 0;
@@ -4726,17 +4736,17 @@ void free_tsr2cmd_edit(struct tsr2cmd_edit *edit) {
 
 static char *do_handle_substitution_cmd(struct tsr2cmd_state *state, TSNode inn_cmd) {
 	RCore *core = state->core;
+	int value = core->num->value;
 	char *inn_str = ts_node_sub_parent_string (state->substitute_cmd, inn_cmd, state->input);
 
 	// save current color and disable it
 	int ocolor = r_config_get_i (core->config, "scr.color");
 	r_config_set_i (core->config, "scr.color", 0);
 	core->cmd_in_backticks = true;
-	int value = core->num->value;
 
 	// execute the sub command
 	char *o_out = inn_str[0] == '!'?
-		r_core_cmd_str_pipe (core, inn_str + 1):
+		r_core_cmd_str_pipe (core, inn_str):
 		r_core_cmd_str (core, inn_str);
 
 	// restore color and cmd_in_backticks
@@ -6769,11 +6779,10 @@ beach:
 }
 
 R_API int r_core_cmd_lines(RCore *core, const char *lines) {
-	// FIXME: when cfg.newshell=true, just use core_cmd_tsr2cmd, which is
-	// able to work on a full script and does not need to split lines. For
-	// now, we avoid it because some commands still don't work with the new
-	// parser and if a script contains even a single invalid line, it is not
-	// parsed at all.
+	if (core->use_tree_sitter_r2cmd) {
+		RCmdStatus status = core_cmd_tsr2cmd (core, lines, true, false);
+		return status == R_CMD_STATUS_OK;
+	}
 	int r, ret = true;
 	char *nl, *data, *odata;
 
@@ -6924,31 +6933,6 @@ R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 	if (!p && *cmd != '!' && *cmd != '.') {
 		return r_core_cmd_str (core, cmd);
 	}
-#if 0
-	char *p = (*cmd != '"')? strchr (cmd, '|'): NULL;
-	if (p) {
-		// This code works but its pretty ugly as its a workaround to
-		// make the webserver work as expected, this was broken some
-		// weeks. let's use this hackaround for now
-		char *c = strdup (cmd);
-		c[p - cmd] = 0;
-		if (!strcmp (p + 1, "H")) {
-			char *res = r_core_cmd_str (core, c);
-			free (c);
-			char *hres = r_cons_html_filter (res, NULL);
-			free (res);
-			return hres;
-		} else {
-			int sh = r_config_get_i (core->config, "scr.color");
-			r_config_set_i (core->config, "scr.color", 0);
-			char *ret = r_core_cmd_str (core, c);
-			r_config_set_i (core->config, "scr.color", sh);
-			free (c);
-			return ret;
-		}
-	}
-	return r_core_cmd_str (core, cmd);
-#else
 	r_cons_reset ();
 	r_sandbox_disable (true);
 	if (r_file_mkstemp ("cmd", &tmp) != -1) {
@@ -6960,7 +6944,11 @@ R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 			return r_core_cmd_str (core, cmd);
 		}
 		char *_cmd = strdup (cmd);
-		r_core_cmd_subst (core, _cmd);
+		if (core->use_tree_sitter_r2cmd) {
+			r_core_cmd (core, _cmd, 0);
+		} else {
+			r_core_cmd_subst (core, _cmd);
+		}
 		r_cons_flush ();
 		r_cons_pipe_close (pipefd);
 		if (r_file_exists (tmp)) {
@@ -6980,7 +6968,6 @@ R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 	}
 	r_sandbox_disable (0);
 	return NULL;
-#endif
 }
 
 R_API char *r_core_cmd_strf(RCore *core, const char *fmt, ...) {

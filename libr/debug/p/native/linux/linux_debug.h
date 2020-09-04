@@ -97,7 +97,7 @@ struct powerpc_regs_t {
 
 // typedef ut64 riscv64_regs_t [65];
 // #define R_DEBUG_REG_T riscv64_regs_t
-#define R_DEBUG_REG_T struct user_regs_struct 
+#define R_DEBUG_REG_T struct user_regs_struct
 // #define R_DEBUG_REG_T mcontext_t 77 784 in size (coz the fpu regs)
 
 #elif __mips__
@@ -109,16 +109,18 @@ typedef ut64 mips64_regs_t [274];
 #endif
 
 // SIGTRAP si_codes from <asm/siginfo.h>
+#if !defined(TRAP_BRKPT) && !defined(TRAP_TRACE)
 #define TRAP_BRKPT		1
 #define TRAP_TRACE		2
 #define TRAP_BRANCH		3
 #define TRAP_HWBKPT		4
 #define TRAP_UNK		5
+#endif
 
 //API
 bool linux_set_options(RDebug *dbg, int pid);
 int linux_step(RDebug *dbg);
-RDebugReasonType linux_ptrace_event(RDebug *dbg, int pid, int status);
+RDebugReasonType linux_ptrace_event(RDebug *dbg, int pid, int status, bool dowait);
 int linux_attach(RDebug *dbg, int pid);
 bool linux_attach_new_process(RDebug *dbg, int pid);
 RDebugInfo *linux_info(RDebug *dbg, const char *arg);

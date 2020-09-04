@@ -34,13 +34,20 @@ static bool r_x509_parse_validity(RX509Validity *validity, RASN1Object *object) 
 	return true;
 }
 
+static inline bool is_oid_object (RASN1Object *object) {
+	return object->list.objects[0] &&
+		object->list.objects[0]->klass == CLASS_UNIVERSAL &&
+		object->list.objects[0]->tag == TAG_OID;
+}
+
 bool r_x509_parse_algorithmidentifier (RX509AlgorithmIdentifier *ai, RASN1Object *object) {
-	if (!ai || !object || object->list.length < 1 || !object->list.objects) {
-		return false;
+	r_return_val_if_fail (ai && object, false);
+
+	if (object->list.length < 1 || !object->list.objects || !is_oid_object (object)) {
+			return false;
 	}
-	if (object->list.objects[0] && object->list.objects[0]->klass == CLASS_UNIVERSAL && object->list.objects[0]->tag == TAG_OID) {
-		ai->algorithm = r_asn1_stringify_oid (object->list.objects[0]->sector, object->list.objects[0]->length);
-	}
+
+	ai->algorithm = r_asn1_stringify_oid (object->list.objects[0]->sector, object->list.objects[0]->length);
 	ai->parameters = NULL; // TODO
 	//ai->parameters = asn1_stringify_sector (object->list.objects[1]);
 	return true;

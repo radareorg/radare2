@@ -90,7 +90,6 @@ typedef struct r_io_t {
 	RIDPool *map_ids;
 	RPVector maps; //from tail backwards maps with higher priority are found
 	RPVector map_skyline; // map parts that are not covered by others
-	RPVector map_skyline_shadow; // map parts that are not covered by others
 	RIDStorage *files;
 	RCache *buffer;
 	RList *cache;	//sdblist?
@@ -479,6 +478,7 @@ extern RIOPlugin r_io_plugin_malloc;
 extern RIOPlugin r_io_plugin_sparse;
 extern RIOPlugin r_io_plugin_ptrace;
 extern RIOPlugin r_io_plugin_w32dbg;
+extern RIOPlugin r_io_plugin_windbg;
 extern RIOPlugin r_io_plugin_mach;
 extern RIOPlugin r_io_plugin_debug;
 extern RIOPlugin r_io_plugin_shm;
@@ -493,7 +493,7 @@ extern RIOPlugin r_io_plugin_default;
 extern RIOPlugin r_io_plugin_ihex;
 extern RIOPlugin r_io_plugin_self;
 extern RIOPlugin r_io_plugin_gzip;
-extern RIOPlugin r_io_plugin_windbg;
+extern RIOPlugin r_io_plugin_winkd;
 extern RIOPlugin r_io_plugin_r2pipe;
 extern RIOPlugin r_io_plugin_r2web;
 extern RIOPlugin r_io_plugin_qnx;

@@ -98,7 +98,7 @@ R2PM_ETCD="${R2CONFIGHOME}/radare2rc.d"
 
 # TODO. support system plugin installs R2PM_PLUGDIR="${R2PM_SYSLIBDIR}/radare2/last"
 if [ -z "${R2PM_GITDIR}" ]; then
-	R2PM_GITDIR="${R2PM_USRDIR}/git/"
+	R2PM_GITDIR="${R2PM_USRDIR}/git"
 fi
 if [ -z "${R2PM_DBDIR}" ]; then
 	if [ -d "${R2DATAHOME}/r2pm/db" ]; then
@@ -317,7 +317,7 @@ R2PM_DOC() {
 }
 
 R2PM_GIT() {
-	[ -z "${NAME}" ] && return
+	[ -z "${NAME}" -o "$ACTION" = clean ] && return
 	URL="$1"
 	if [ -z "$2" ]; then
 		DIR="`basename $1`"
@@ -577,18 +577,15 @@ case "$1" in
 				. "${FILE}"
 				echo $FILE TGZ=$R2PM_TGZ
 			else
-				echo "Cannot find $FILE"
+				echo "Cannot find $FILE" >&2
 				RC=1
 			fi
 
 			if [ -d "${R2PM_GITDIR}/$2" ]; then
 				echo "Cleaning up ${R2PM_GITDIR}/$2..."
 				rm -rf "${R2PM_GITDIR}/$2"
-			elif [ -d "${R2PM_GITDIR}/$2.git" ]; then
-				echo "Cleaning up ${R2PM_GITDIR}/$2.git..."
-				rm -rf "${R2PM_GITDIR}/$2.git"
 			else
-				echo "Cannot find $2 or $2.git in ${R2PM_GITDIR}"
+				echo "Cannot find $2 in ${R2PM_GITDIR}" >&2
 				RC=1
 			fi
 			shift

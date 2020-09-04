@@ -466,6 +466,73 @@ beach:
 	return !breaked;
 }
 
+typedef struct {
+	RAnalBlock *bb;
+	RListIter *switch_it;
+} RecurseDepthFirstCtx;
+
+R_API bool r_anal_block_recurse_depth_first(RAnalBlock *block, RAnalBlockCb cb, R_NULLABLE RAnalBlockCb on_exit, void *user) {
+	bool breaked = false;
+	HtUP *visited = ht_up_new0 ();
+	if (!visited) {
+		goto beach;
+	}
+	RAnal *anal = block->anal;
+	RVector path;
+	r_vector_init (&path, sizeof (RecurseDepthFirstCtx), NULL, NULL);
+	RAnalBlock *cur_bb = block;
+	RecurseDepthFirstCtx ctx = { cur_bb, NULL };
+	r_vector_push (&path, &ctx);
+	ht_up_insert (visited, cur_bb->addr, NULL);
+	breaked = !cb (cur_bb, user);
+	if (breaked) {
+		goto beach;
+	}
+	do {
+		RecurseDepthFirstCtx *cur_ctx = r_vector_index_ptr (&path, path.len - 1);
+		cur_bb = cur_ctx->bb;
+		if (cur_bb->jump != UT64_MAX && !ht_up_find_kv (visited, cur_bb->jump, NULL)) {
+			cur_bb = r_anal_get_block_at (anal, cur_bb->jump);
+		} else if (cur_bb->fail != UT64_MAX && !ht_up_find_kv (visited, cur_bb->fail, NULL)) {
+			cur_bb = r_anal_get_block_at (anal, cur_bb->fail);
+		} else {
+			RAnalCaseOp *cop = NULL;
+			if (cur_bb->switch_op && !cur_ctx->switch_it) {
+				cur_ctx->switch_it = cur_bb->switch_op->cases->head;
+				cop = r_list_first (cur_bb->switch_op->cases);
+			} else if (cur_ctx->switch_it) {
+				while ((cur_ctx->switch_it = r_list_iter_get_next (cur_ctx->switch_it))) {
+					cop = r_list_iter_get_data (cur_ctx->switch_it);
+					if (!ht_up_find_kv (visited, cop->jump, NULL)) {
+						break;
+					}
+					cop = NULL;
+				}
+			}
+			cur_bb = cop ? r_anal_get_block_at (anal, cop->jump) : NULL;
+		}
+		if (cur_bb) {
+			RecurseDepthFirstCtx ctx = { cur_bb, NULL };
+			r_vector_push (&path, &ctx);
+			ht_up_insert (visited, cur_bb->addr, NULL);
+			bool breaked = !cb (cur_bb, user);
+			if (breaked) {
+				break;
+			}
+		} else {
+			if (on_exit) {
+				on_exit (cur_ctx->bb, user);
+			}
+			r_vector_pop (&path, NULL);
+		}
+	} while (!r_vector_empty (&path));
+
+beach:
+	ht_up_free (visited);
+	r_vector_clear (&path);
+	return !breaked;
+}
+
 static bool recurse_list_cb(RAnalBlock *block, void *user) {
 	RList *list = user;
 	r_anal_block_ref (block);

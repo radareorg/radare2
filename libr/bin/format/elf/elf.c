@@ -2102,6 +2102,26 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 	}
 }
 
+char* Elf_(r_bin_elf_get_head_flag)(ELFOBJ *bin) {
+	if (bin->phdr && bin->ehdr.e_machine == EM_MIPS) {
+		const ut32 mipsType = bin->ehdr.e_flags & EF_MIPS_ARCH;
+		switch (mipsType) {
+		case EF_MIPS_ARCH_1:        return strdup ("mips1");
+		case EF_MIPS_ARCH_2:        return strdup ("mips2");
+		case EF_MIPS_ARCH_3:        return strdup ("mips3");
+		case EF_MIPS_ARCH_4:        return strdup ("mips4");
+		case EF_MIPS_ARCH_5:        return strdup ("mips5");
+		case EF_MIPS_ARCH_32:       return strdup ("mips32");
+		case EF_MIPS_ARCH_64:       return strdup ("mips64");
+		case EF_MIPS_ARCH_32R2:     return strdup ("mips32r2");
+		case EF_MIPS_ARCH_64R2:     return strdup ("mips64r2");
+		default :                   return strdup (" Unknown mips ISA");
+		}
+	}
+	//TODO: Fill other arch 
+	return strdup("unknown_flag");
+}
+
 // http://www.sco.com/developers/gabi/latest/ch4.eheader.html
 
 char* Elf_(r_bin_elf_get_machine_name)(ELFOBJ *bin) {
@@ -3623,6 +3643,12 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 	if (nsym == -1) {
 		goto beach;
 	}
+
+	// Elf_(fix_symbols) may find additional symbols, some of which could be
+	// imported symbols. Let's reserve additional space for them.
+	r_warn_if_fail (nsym >= ret_ctr);
+	import_ret_ctr += nsym - ret_ctr;
+
 	aux = ret;
 	while (!aux->last) {
 		if ((int)aux->ordinal > max) {

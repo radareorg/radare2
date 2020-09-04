@@ -27,6 +27,13 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_anal);
 
+/* dwarf processing context */
+typedef struct r_anal_dwarf_context {
+	const RBinDwarfDebugInfo *info;
+	HtUP/*<offset, RBinDwarfLocList*>*/  *loc;
+	// const RBinDwarfCfa *cfa; TODO
+} RAnalDwarfContext;
+
 // TODO: save memory2 : fingerprints must be pointers to a buffer
 // containing a dupped file in memory
 
@@ -352,17 +359,16 @@ typedef struct r_anal_meta_item_t {
 // anal
 typedef enum {
 	R_ANAL_OP_FAMILY_UNKNOWN = -1,
-	R_ANAL_OP_FAMILY_CPU = 0,/* normal cpu instruction */
-	R_ANAL_OP_FAMILY_FPU,    /* fpu (floating point) */
-	R_ANAL_OP_FAMILY_MMX,    /* multimedia instruction (packed data) */
-	R_ANAL_OP_FAMILY_SSE,    /* extended multimedia instruction (packed data) */
-	R_ANAL_OP_FAMILY_PRIV,   /* privileged instruction */
-	R_ANAL_OP_FAMILY_CRYPTO, /* cryptographic instructions */
-	R_ANAL_OP_FAMILY_THREAD, /* thread/lock/sync instructions */
-	R_ANAL_OP_FAMILY_VIRT,   /* virtualization instructions */
-	R_ANAL_OP_FAMILY_PAC,    /* pointer authentication instructions */
-	R_ANAL_OP_FAMILY_IO,     /* IO instructions (i.e. IN/OUT) */
-	R_ANAL_OP_FAMILY_MTE,    /* Memory Tagging Extension instructions */
+	R_ANAL_OP_FAMILY_CPU = 0,	/* normal cpu instruction */
+	R_ANAL_OP_FAMILY_FPU,    	/* fpu (floating point) */
+	R_ANAL_OP_FAMILY_MMX,    	/* multimedia instruction (packed data) */
+	R_ANAL_OP_FAMILY_SSE,    	/* extended multimedia instruction (packed data) */
+	R_ANAL_OP_FAMILY_PRIV,   	/* privileged instruction */
+	R_ANAL_OP_FAMILY_CRYPTO, 	/* cryptographic instructions */
+	R_ANAL_OP_FAMILY_THREAD, 	/* thread/lock/sync instructions */
+	R_ANAL_OP_FAMILY_VIRT,   	/* virtualization instructions */
+	R_ANAL_OP_FAMILY_SECURITY,	/* security instructions */
+	R_ANAL_OP_FAMILY_IO,     	/* IO instructions (i.e. IN/OUT) */
 	R_ANAL_OP_FAMILY_LAST
 } RAnalOpFamily;
 
@@ -1100,13 +1106,28 @@ typedef struct r_anal_esil_interrupt_t {
 	ut32 src_id;
 } RAnalEsilInterrupt;
 
-typedef struct r_anal_esil_session_t {
-	ut64 key;
-	ut64 addr;
-	ut64 size;
-	ut8 *data;
-	RListIter *reg[R_REG_TYPE_LAST];
-} RAnalEsilSession;
+typedef struct r_anal_esil_change_reg_t {
+	int idx;
+	ut64 data;
+} RAnalEsilRegChange;
+
+typedef struct r_anal_esil_change_mem_t {
+	int idx;
+	ut8 data;
+} RAnalEsilMemChange;
+
+typedef struct r_anal_esil_trace_t {
+	int idx;
+	int end_idx;
+	HtUP *registers;
+	HtUP *memory;
+	RRegArena *arena[R_REG_TYPE_LAST];
+	ut64 stack_addr;
+	ut64 stack_size;
+	ut8 *stack_data;
+	//TODO remove `db` and reuse info above
+	Sdb *db;
+} RAnalEsilTrace;
 
 typedef int (*RAnalEsilHookRegWriteCB)(ESIL *esil, const char *name, ut64 *val);
 
@@ -1162,8 +1183,7 @@ typedef struct r_anal_esil_t {
 	RAnalEsilInterrupt *intr0;
 	/* deep esil parsing fills this */
 	Sdb *stats;
-	Sdb *db_trace;
-	int trace_idx;
+	RAnalEsilTrace *trace;
 	RAnalEsilCallbacks cb;
 	RAnalReil *Reil;
 	// this is so cursed, can we please remove external commands from esil internals.
@@ -1179,7 +1199,6 @@ typedef struct r_anal_esil_t {
 	bool (*cmd)(ESIL *esil, const char *name, ut64 a0, ut64 a1);
 	void *user;
 	int stack_fd;	// ahem, let's not do this
-	RList *sessions; // <RAnalEsilSession*>
 } RAnalEsil;
 
 #undef ESIL
@@ -1404,6 +1423,11 @@ R_API bool r_anal_block_recurse(RAnalBlock *block, RAnalBlockCb cb, void *user);
 // returns false if the loop was breaked by cb
 R_API bool r_anal_block_recurse_followthrough(RAnalBlock *block, RAnalBlockCb cb, void *user);
 
+// Call cb on block and every (recursive) successor of it
+// Call on_exit on block that doesn't have non-visited successors
+// returns false if the loop was breaked by cb
+R_API bool r_anal_block_recurse_depth_first(RAnalBlock *block, RAnalBlockCb cb, R_NULLABLE RAnalBlockCb on_exit, void *user);
+
 // same as r_anal_block_recurse, but returns the blocks as a list
 R_API RList *r_anal_block_recurse_list(RAnalBlock *block);
 
@@ -1532,9 +1556,6 @@ R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *hexstr);
 R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op);
 
 R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap, unsigned int addrsize);
-R_API void r_anal_esil_trace(RAnalEsil *esil, RAnalOp *op);
-R_API void r_anal_esil_trace_list(RAnalEsil *esil);
-R_API void r_anal_esil_trace_show(RAnalEsil *esil, int idx);
 R_API bool r_anal_esil_set_pc(RAnalEsil *esil, ut64 addr);
 R_API bool r_anal_esil_setup(RAnalEsil *esil, RAnal *anal, int romem, int stats, int nonull);
 R_API void r_anal_esil_free(RAnalEsil *esil);
@@ -1567,11 +1588,13 @@ R_API void r_anal_esil_interrupts_fini(RAnalEsil *esil);
 R_API void r_anal_esil_mem_ro(RAnalEsil *esil, int mem_readonly);
 R_API void r_anal_esil_stats(RAnalEsil *esil, int enable);
 
-/* session */
-R_API void r_anal_esil_session_list(RAnalEsil *esil);
-R_API RAnalEsilSession *r_anal_esil_session_add(RAnalEsil *esil);
-R_API void r_anal_esil_session_set(RAnalEsil *esil, RAnalEsilSession *session);
-R_API void r_anal_esil_session_free(void *p);
+/* trace */
+R_API RAnalEsilTrace *r_anal_esil_trace_new(RAnalEsil *esil);
+R_API void r_anal_esil_trace_free(RAnalEsilTrace *trace);
+R_API void r_anal_esil_trace_op(RAnalEsil *esil, RAnalOp *op);
+R_API void r_anal_esil_trace_list(RAnalEsil *esil);
+R_API void r_anal_esil_trace_show(RAnalEsil *esil, int idx);
+R_API void r_anal_esil_trace_restore(RAnalEsil *esil, int idx);
 
 /* pin */
 R_API void r_anal_pin_init(RAnal *a);
@@ -1657,6 +1680,7 @@ R_API R_BORROW RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, 
 R_API R_BORROW RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name);
 R_API void r_anal_function_delete_vars_by_kind(RAnalFunction *fcn, RAnalVarKind kind);
 R_API void r_anal_function_delete_all_vars(RAnalFunction *fcn);
+R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var);
 R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn);
 R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, st64 delta, ut64 addr);
 R_API const char *r_anal_function_get_var_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr);
@@ -1670,6 +1694,7 @@ R_API void r_anal_var_set_type(RAnalVar *var, const char *type);
 R_API void r_anal_var_delete(RAnalVar *var);
 R_API ut64 r_anal_var_addr(RAnalVar *var);
 R_API void r_anal_var_set_access(RAnalVar *var, const char *reg, ut64 access_addr, int access_type, st64 stackptr);
+R_API void r_anal_var_remove_access_at(RAnalVar *var, ut64 address);
 R_API void r_anal_var_clear_accesses(RAnalVar *var);
 
 // Get the access to var at exactly addr if there is one
@@ -2066,6 +2091,7 @@ R_API void r_anal_class_list(RAnal *anal, int mode);
 R_API void r_anal_class_list_bases(RAnal *anal, const char *class_name);
 R_API void r_anal_class_list_vtables(RAnal *anal, const char *class_name);
 R_API void r_anal_class_list_vtable_offset_functions(RAnal *anal, const char *class_name, ut64 offset);
+R_API RGraph/*<RGraphNodeInfo>*/ *r_anal_class_get_inheritance_graph(RAnal *anal);
 
 R_API RAnalEsilCFG *r_anal_esil_cfg_expr(RAnalEsilCFG *cfg, RAnal *anal, const ut64 off, char *expr);
 R_API RAnalEsilCFG *r_anal_esil_cfg_op(RAnalEsilCFG *cfg, RAnal *anal, RAnalOp *op);
@@ -2085,7 +2111,8 @@ R_API void r_parse_pdb_types(const RAnal *anal, const RPdb *pdb);
 R_API void r_anal_save_base_type(const RAnal *anal, const RAnalBaseType *type);
 R_API void r_anal_free_base_type(RAnalBaseType *type);
 R_API RAnalBaseType *r_anal_new_base_type(RAnalBaseTypeKind kind);
-R_API void r_anal_parse_dwarf_types(const RAnal *anal, const RBinDwarfDebugInfo *info);
+R_API void r_anal_dwarf_process_info(const RAnal *anal, RAnalDwarfContext *ctx);
+R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwarf_sdb);
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
 extern RAnalPlugin r_anal_plugin_6502;

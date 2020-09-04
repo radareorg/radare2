@@ -1,9 +1,5 @@
 /* radare - LGPL - Copyright 2009-2020 - pancake */
 
-#if __linux__
-#include <time.h>
-#endif
-
 #include <r_userconf.h>
 #include <stdlib.h>
 #include <string.h>
@@ -205,19 +201,6 @@ R_API void r_sys_exit(int status, bool nocleanup) {
 	}
 }
 
-/* TODO: import stuff from bininfo/p/bininfo_addr2line */
-/* TODO: check endianness issues here */
-R_API ut64 r_sys_now(void) {
-	ut64 ret;
-	struct timeval now;
-	gettimeofday (&now, NULL);
-	ret = now.tv_sec;
-	ret <<= 20;
-	ret |= now.tv_usec;
-	//(sizeof (now.tv_sec) == 4
-	return ret;
-}
-
 R_API int r_sys_truncate(const char *file, int sz) {
 #if __WINDOWS__
 	int fd = r_sandbox_open (file, O_RDWR, 0644);
@@ -357,7 +340,13 @@ R_API int r_sys_usleep(int usecs) {
 	rqtp.tv_nsec = (usecs - (rqtp.tv_sec * 1000000)) * 1000;
 	return clock_nanosleep (CLOCK_MONOTONIC, 0, &rqtp, NULL);
 #elif __UNIX__
+#if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && (__GLIBC__ <= 2) && (__GLIBC_MINOR__ <= 2)
+	// Old versions of GNU libc return void for usleep
+	usleep (usecs);
+	return 0;
+#else
 	return usleep (usecs);
+#endif
 #else
 	// w32 api uses milliseconds
 	usecs /= 1000;
@@ -901,7 +890,8 @@ R_API void r_sys_perror_str(const char *fun) {
 			0, NULL )) {
 		char *err = r_sys_conv_win_to_utf8 (lpMsgBuf);
 		if (err) {
-			eprintf ("%s: %s\n", fun, err);
+			eprintf ("%s: (%#x) %s%s", fun, dw, err,
+			         r_str_endswith (err, "\n") ? "" : "\n");
 			free (err);
 		}
 		LocalFree (lpMsgBuf);
@@ -1182,7 +1172,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 	int32_t group = 0;
 	image_info ii;
 
-	while (get_next_image_info (0, &group, &ii) == B_OK) {
+	while (get_next_image_info ((team_id)pid, &group, &ii) == B_OK) {
 		if (ii.type == B_APP_IMAGE) {
 			break;
 		}
