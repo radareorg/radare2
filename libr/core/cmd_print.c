@@ -2438,7 +2438,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *input) {
 		i += opsz;
 		r_anal_op_fini (&op);
 	}
-	r_cons_printf ("  %d\n", i - oi);
+	r_cons_printf ("  %" PFMT64d "\n", i - oi);
 	if (bgcolor_in_heap) {
 		free (bgcolor);
 	}
@@ -3007,13 +3007,13 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 				ut8 *b = block + (i * n);
 				  switch (n) {
 				  case 1:
-					  r_cons_printf ("f pval.0x%08"PFMT64x"=%"PFMT64d"\n", at, r_read_ble8 (b));
+					  r_cons_printf ("f pval.0x%08"PFMT64x"=%d\n", at, r_read_ble8 (b));
 					  break;
 				  case 2:
-					  r_cons_printf ("f pval.0x%08"PFMT64x"=%"PFMT64d"\n", at, r_read_ble16 (b, be));
+					  r_cons_printf ("f pval.0x%08"PFMT64x"=%d\n", at, r_read_ble16 (b, be));
 					  break;
 				  case 4:
-					  r_cons_printf ("f pval.0x%08"PFMT64x"=%"PFMT64d"\n", at, r_read_ble32 (b, be));
+					  r_cons_printf ("f pval.0x%08"PFMT64x"=%d\n", at, r_read_ble32 (b, be));
 					  break;
 				  case 8:
 				default:
@@ -3673,7 +3673,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				ut64 word64 = word[i] + ST16_MAX;
 				r_cons_printf ("0x%08"PFMT64x" %8d  ", core->offset + (i *2), word[i]);
 				r_print_progressbar (core->print, word64 * 100 / UT16_MAX, 60);
-				r_cons_printf (" %d", word64 - oldword);
+				r_cons_printf (" %" PFMT64d, word64 - oldword);
 				oldword = word64;
 				r_cons_newline ();
 				i += step;
@@ -3986,7 +3986,7 @@ static void __printPattern(RCore *core, const char *_input) {
 		{
 			int min = (core->offset & 0xff);
 			for (i = 0; i < len; i++) {
-				r_cons_printf ("%02x", i + min);
+				r_cons_printf ("%02zx", i + min);
 			}
 			r_cons_newline ();
 		}
@@ -3997,7 +3997,7 @@ static void __printPattern(RCore *core, const char *_input) {
 			// TODO: honor cfg.bigendian
 			int min = (core->offset & 0xffff);
 			for (i = 0; i < len; i++) {
-				r_cons_printf ("%04x", i + min);
+				r_cons_printf ("%04zx", i + min);
 			}
 			r_cons_newline ();
 		}
@@ -4008,7 +4008,7 @@ static void __printPattern(RCore *core, const char *_input) {
 			// TODO: honor cfg.bigendian
 			int min = (core->offset & UT32_MAX);
 			for (i = 0; i < len; i++) {
-				r_cons_printf ("%08x", i + min);
+				r_cons_printf ("%08zx", i + min);
 			}
 			r_cons_newline ();
 		}
@@ -6171,7 +6171,7 @@ l = use_blocksize;
 							if (v == f->offset) {
 								fn = strdup (f->name);
 							} else {
-								fn = r_str_newf ("%s+%d",
+								fn = r_str_newf ("%s+%" PFMT64d,
 									f->name, v - f->offset);
 							}
 						}
@@ -6335,7 +6335,7 @@ l = use_blocksize;
 							if (v == f->offset) {
 								fn = strdup (f->name);
 							} else {
-								fn = r_str_newf ("%s+%d", f->name, v - f->offset);
+								fn = r_str_newf ("%s+%" PFMT64d, f->name, v - f->offset);
 							}
 						}
 					}

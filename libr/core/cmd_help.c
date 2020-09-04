@@ -905,7 +905,7 @@ static int cmd_help(void *data, const char *input) {
 		} else {
 			for (input++; input[0] == ' '; input++);
 			core->num->value = strlen (input);
-			r_cons_printf ("%d\n", core->num->value);
+			r_cons_printf ("%" PFMT64d "\n", core->num->value);
 		}
 		break;
 	case 'X': // "?X"
