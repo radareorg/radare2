@@ -110,8 +110,6 @@ static int getreloc_tree(const void *user, const RBNode *n, void *user2) {
         return 0;
 }
 
-// TODO: Use sdb in rbin to accelerate this
-// we shuold use aligned reloc addresses instead of iterating all of them
 R_API RBinReloc *r_core_getreloc(RCore *core, ut64 addr, int size) {
         if (size < 1 || addr == UT64_MAX) {
                 return NULL;

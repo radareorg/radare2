@@ -898,7 +898,7 @@ static RList* patch_relocs(RBin *b) {
 	}
 	if (!io->cached) {
 	   	eprintf ("Warning: run r2 with -e io.cache=true to fix relocations in disassembly\n");
-		return relocs (r_bin_cur (b));
+		return NULL;
 	}
 
 	info = obj ? obj->info: NULL;

@@ -1512,13 +1512,6 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 			} else if (!strncmp (fi->name, "str.", 4)) {
 				ds->midflags = R_MIDFLAGS_REALIGN;
 			} else if (!strncmp (fi->name, "reloc.", 6)) {
-				if (print) {
-					ds_begin_line (ds);
-					// this reloc is displayed already as a flag comment
-					// this is unnecessary imho
-					r_cons_printf ("(%s)", fi->name);
-					ds_newline (ds);
-				}
 				continue;
 			} else if (ds->midflags == R_MIDFLAGS_SYMALIGN) {
 				if (strncmp (fi->name, "sym.", 4)) {
@@ -5075,8 +5068,10 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 			name = fcn->name;
 		}
 	} else if (f) {
-		RBinReloc *rel;
-		rel = r_core_getreloc (ds->core, ds->analop.addr, ds->analop.size);
+		RBinReloc *rel = NULL;
+		if (!ds->core->bin->is_reloc_patched) {
+			rel = r_core_getreloc (ds->core, ds->analop.addr, ds->analop.size);
+		}
 		if (!rel) {
 			rel = r_core_getreloc (ds->core, addr, ds->analop.size);
 		}

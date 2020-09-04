@@ -446,6 +446,7 @@ R_IPI RBNode *r_bin_object_patch_relocs(RBin *bin, RBinObject *o) {
 		REBASE_PADDR (o, tmp, RBinReloc);
 		o->relocs = list2rbtree (tmp);
 		first = false;
+		bin->is_reloc_patched = true;
 	}
 	return o->relocs;
 }
