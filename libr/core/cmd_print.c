@@ -4475,7 +4475,7 @@ static void r_core_disasm_table(RCore * core, int l, const char *input) {
 
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *) data;
-	ssize_t l;
+	st64 l;
 	int i, len, ret;
 	ut8* block;
 	ut32 tbs = core->blocksize;
