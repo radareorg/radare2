@@ -2212,7 +2212,7 @@ char* Elf_(r_bin_elf_get_head_flag)(ELFOBJ *bin) {
 		r_str_append(head_flag, str);
 	}
 	
-	if (! *head_flag) {
+	if (!*head_flag) {
 		r_str_append(head_flag, "unknown_flag");
 	}
 	return head_flag;
