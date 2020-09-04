@@ -27,7 +27,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, RSocketHTTPOptions *
 		return NULL;
 	}
 	if (so->timeout > 0) {
-		r_socket_block_time (hr->s, 1, so->timeout, 0);
+		r_socket_block_time (hr->s, true, so->timeout, 0);
 	}
 	hr->auth = !so->httpauth;
 	for (;;) {

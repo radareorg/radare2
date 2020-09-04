@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2019 - pancake */
+/* radare - LGPL - Copyright 2006-2020 - pancake */
 
 /* must be included first because of winsock2.h and windows.h */
 #include <r_socket.h>
@@ -19,31 +19,31 @@ R_LIB_VERSION(r_socket);
 
 #if NETWORK_DISABLED
 /* no network */
-R_API RSocket *r_socket_new (bool is_ssl) {
+R_API RSocket *r_socket_new(bool is_ssl) {
 	return NULL;
 }
-R_API bool r_socket_is_connected (RSocket *s) {
+R_API bool r_socket_is_connected(RSocket *s) {
 	return false;
 }
-R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int proto, unsigned int timeout) {
+R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int proto, unsigned int timeout) {
 	return false;
 }
-R_API bool r_socket_spawn (RSocket *s, const char *cmd, unsigned int timeout) {
+R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 	return -1;
 }
-R_API int r_socket_close_fd (RSocket *s) {
+R_API int r_socket_close_fd(RSocket *s) {
 	return -1;
 }
-R_API int r_socket_close (RSocket *s) {
+R_API int r_socket_close(RSocket *s) {
 	return -1;
 }
-R_API int r_socket_free (RSocket *s) {
+R_API int r_socket_free(RSocket *s) {
 	return -1;
 }
 R_API int r_socket_port_by_name(const char *name) {
 	return -1;
 }
-R_API bool r_socket_listen (RSocket *s, const char *port, const char *certfile) {
+R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 	return false;
 }
 R_API RSocket *r_socket_accept(RSocket *s) {
@@ -52,8 +52,8 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 R_API RSocket *r_socket_accept_timeout(RSocket *s, unsigned int timeout) {
 	return NULL;
 }
-R_API int r_socket_block_time (RSocket *s, int block, int sec, int usec) {
-	return -1;
+R_API bool r_socket_block_time(RSocket *s, bool block, int sec, int usec) {
+	return false;
 }
 R_API int r_socket_flush(RSocket *s) {
 	return -1;
@@ -101,13 +101,13 @@ WSACleanup: closes all network connections
 R_API bool r_socket_is_connected(RSocket *s) {
 #if __WINDOWS__
 	char buf[2];
-	r_socket_block_time (s, 0, 0, 0);
+	r_socket_block_time (s, false, 0, 0);
 #ifdef _MSC_VER
 	int ret = recv (s->fd, (char*)&buf, 1, MSG_PEEK);
 #else
 	ssize_t ret = recv (s->fd, (char*)&buf, 1, MSG_PEEK);
 #endif
-	r_socket_block_time (s, 1, 0, 0);
+	r_socket_block_time (s, true, 0, 0);
 	return ret == 1;
 #else
 	int error = 0;
@@ -117,10 +117,7 @@ R_API bool r_socket_is_connected(RSocket *s) {
 		perror ("getsockopt");
 		return false;
 	}
-	if (error != 0) {
-		return false;
-	}
-	return true;
+	return (error == 0);
 #endif
 }
 
@@ -311,7 +308,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 					s->fd = -1;
 					continue;
 				}
-				r_socket_block_time (s, 0, 0, 0);
+				r_socket_block_time (s, true, 1, 0);
 				ret = connect (s->fd, rp->ai_addr, rp->ai_addrlen);
 				break;
 			case R_SOCKET_PROTO_UDP:
@@ -335,7 +332,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 				ret = connect (s->fd, rp->ai_addr, rp->ai_addrlen);
 				break;
 			default:
-				r_socket_block_time (s, 0, 0, 0);
+				r_socket_block_time (s, true, 1, 0);
 				ret = connect (s->fd, rp->ai_addr, rp->ai_addrlen);
 				break;
 			}
@@ -649,7 +646,7 @@ R_API RSocket *r_socket_accept_timeout(RSocket *s, unsigned int timeout) {
 }
 
 // Only applies to read in UNIX
-R_API int r_socket_block_time(RSocket *s, int block, int sec, int usec) {
+R_API bool r_socket_block_time(RSocket *s, bool block, int sec, int usec) {
 #if __UNIX__
 	int ret, flags;
 #endif
@@ -772,7 +769,7 @@ R_API void r_socket_printf(RSocket *s, const char *fmt, ...) {
 	if (s->fd != R_INVALID_SOCKET) {
 		va_start (ap, fmt);
 		vsnprintf (buf, BUFFER_SIZE, fmt, ap);
-		r_socket_write (s, buf, strlen (buf));
+		(void) r_socket_write (s, buf, strlen (buf));
 		va_end (ap);
 	}
 }

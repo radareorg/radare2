@@ -20,7 +20,7 @@ static void r_rap_packet_fill(ut8 *buf, const ut8* src, int len) {
 }
 
 R_API int r_socket_rap_client_open(RSocket *s, const char *file, int rw) {
-	r_socket_block_time (s, 1, 1, 0);
+	r_socket_block_time (s, true, 1, 0);
 	size_t file_len0 = strlen (file) + 1;
 	if (file_len0 > 255) {
 		eprintf ("Filename too long\n");
