@@ -70,7 +70,10 @@ static int windbg_step_over(RDebug *dbg) {
 	DbgEngContext *idbg = dbg->user;
 	r_return_val_if_fail (idbg && idbg->initialized, 0);
 	idbg->lastExecutionStatus = DEBUG_STATUS_STEP_OVER;
-	return SUCCEEDED (ITHISCALL (dbgCtrl, SetExecutionStatus, DEBUG_STATUS_STEP_OVER));
+	if (SUCCEEDED (ITHISCALL (dbgCtrl, SetExecutionStatus, DEBUG_STATUS_STEP_OVER))) {
+		return windbg_wait (dbg, dbg->pid) != R_DEBUG_REASON_ERROR;
+	}
+	return 0;
 }
 
 static int windbg_select(RDebug *dbg, int pid, int tid) {
