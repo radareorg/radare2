@@ -193,7 +193,7 @@ R_API RListIter *r_list_item_new(void *data) {
 R_API RListIter *r_list_append(RList *list, void *data) {
 	RListIter *item = NULL;
 
-	r_return_val_if_fail (list && data, NULL);
+	r_return_val_if_fail (list, NULL);
 
 	item = R_NEW (RListIter);
 	if (!item) {
