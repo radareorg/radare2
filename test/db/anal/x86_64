@@ -1026,7 +1026,8 @@ ahe test
 ao~esil
 EOF
 EXPECT=<<EOF
-17
+18
+esilcost: 0
 esil: test
 EOF
 RUN
@@ -1038,6 +1039,7 @@ ahe test
 ao~^esil
 EOF
 EXPECT=<<EOF
+esilcost: 0
 esil: test
 EOF
 RUN
@@ -2217,6 +2219,7 @@ EXPECT=<<EOF
     "bytes": "669c",
     "size": 2,
     "type": "upush",
+    "esilcost": 24,
     "scale": 0,
     "refptr": 0,
     "cycles": 2,
@@ -2976,6 +2979,7 @@ EOF
 EXPECT=<<EOF
 address: 0x0
 opcode: push rbp
+esilcost: 24
 disasm: push rbp
 pseudo: push rbp
 mnemonic: push
