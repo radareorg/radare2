@@ -576,7 +576,7 @@ static bool esil_signext(RAnalEsil *esil) {
 	}
 	
 	//Make sure the other bits are 0
-	src &= 0xffffffffffffffffLL >> (64 - dst); 
+	src &= UT64_MAX >> (64 - dst); 
 
 	ut64 m = 0;
 	if (dst < 64) {
