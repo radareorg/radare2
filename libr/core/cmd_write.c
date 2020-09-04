@@ -915,14 +915,11 @@ static RCmdStatus w0_handler(void *data, int argc, const char **argv) {
 
 static int w_incdec_handler_old(void *data, const char *input, int inc) {
 	RCore *core = (RCore *)data;
-	st64 num = 0;
+	st64 num = 1;
 	if (input[0] && input[1]) {
-		if (input[0] == input[1]) {
-			num = 1;
-		} else
-			num = r_num_math (core->num, input + 1);
+		num = r_num_math (core->num, input + 1);
 	}
-	switch (input[1] ? input[0] : 0) {
+	switch (input[0]) {
 	case '+':
 		cmd_write_inc (core, inc, num);
 		break;
@@ -962,50 +959,6 @@ static RCmdStatus w4_incdec_handler(void *data, int argc, const char **argv) {
 
 static RCmdStatus w8_incdec_handler(void *data, int argc, const char **argv) {
 	return w_incdec_handler (data, argc, argv, 8);
-}
-
-static int w0_handler_common(RCore *core, ut64 len) {
-	int res = 0;
-	if (len > 0) {
-		ut8 *buf = calloc (1, len);
-		if (buf) {
-			if (!r_io_write_at (core->io, core->offset, buf, len)) {
-				eprintf ("r_io_write_at failed at 0x%08" PFMT64x "\n", core->offset);
-				res = -1;
-			}
-			r_core_block_read (core);
-			free (buf);
-		} else {
-			eprintf ("Cannot allocate %d byte(s)\n", (int)len);
-			res = -1;
-		}
-	}
-	return res;
-}
-
-static int w0_handler_old(void *data, const char *input) {
-	RCore *core = (RCore *)data;
-	ut64 len = r_num_math (core->num, input);
-	return w0_handler_common (core, len);
-}
-
-static int w_incdec_handler_old(void *data, const char *input, int inc) {
-	RCore *core = (RCore *)data;
-	st64 num = 1;
-	if (input[0] && input[1]) {
-		num = r_num_math (core->num, input + 1);
-	}
-	switch (input[0]) {
-	case '+':
-		cmd_write_inc (core, inc, num);
-		break;
-	case '-':
-		cmd_write_inc (core, inc, -num);
-		break;
-	default:
-		eprintf ("Usage: w[1248][+-][num]   # inc/dec byte/word/..\n");
-	}
-	return 0;
 }
 
 static int w6_handler_old(void *data, const char *input) {
