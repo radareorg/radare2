@@ -761,13 +761,12 @@ R_API void r2r_process_output_free(R2RProcessOutput *out) {
 }
 
 static R2RProcessOutput *subprocess_runner(const char *file, const char *args[], size_t args_size,
-		const char *envvars[], const char *envvals[], size_t env_size, void *user) {
-	R2RRunConfig *config = user;
+	const char *envvars[], const char *envvals[], size_t env_size, ut64 timeout_ms, void *user) {
 	R2RSubprocess *proc = r2r_subprocess_start (file, args, args_size, envvars, envvals, env_size);
 	if (!proc) {
 		return NULL;
 	}
-	bool timeout = !r2r_subprocess_wait (proc, config->timeout_ms);
+	bool timeout = !r2r_subprocess_wait (proc, timeout_ms);
 	if (timeout) {
 		r2r_subprocess_kill (proc);
 	}
@@ -845,7 +844,7 @@ static char *convert_win_cmds(const char *cmds) {
 }
 #endif
 
-static R2RProcessOutput *run_r2_test(R2RRunConfig *config, const char *cmds, RList *files, RList *extra_args, bool load_plugins, R2RCmdRunner runner, void *user) {
+static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, const char *cmds, RList *files, RList *extra_args, bool load_plugins, R2RCmdRunner runner, void *user) {
 	RPVector args;
 	r_pvector_init (&args, NULL);
 	r_pvector_push (&args, "-escr.utf8=0");
@@ -885,7 +884,7 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, const char *cmds, RLi
 #else
 	size_t env_size = load_plugins ? 0 : 1;
 #endif
-	R2RProcessOutput *out = runner (config->r2_cmd, args.v.a, r_pvector_len (&args), envvars, envvals, env_size, user);
+	R2RProcessOutput *out = runner (config->r2_cmd, args.v.a, r_pvector_len (&args), envvars, envvals, env_size, timeout_ms, user);
 	r_pvector_clear (&args);
 #if __WINDOWS__
 	free (wcmds);
@@ -917,7 +916,8 @@ R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test,
 		}
 		r_list_push (files, "-");
 	}
-	R2RProcessOutput *out = run_r2_test (config, test->cmds.value, files, extra_args, test->load_plugins, runner, user);
+	ut64 timeout_ms = test->timeout.set? test->timeout.value * 1000: config->timeout_ms;
+	R2RProcessOutput *out = run_r2_test (config, timeout_ms, test->cmds.value, files, extra_args, test->load_plugins, runner, user);
 	r_list_free (extra_args);
 	r_list_free (files);
 	return out;
@@ -966,7 +966,7 @@ R_API bool r2r_check_jq_available(void) {
 R_API R2RProcessOutput *r2r_run_json_test(R2RRunConfig *config, R2RJsonTest *test, R2RCmdRunner runner, void *user) {
 	RList *files = r_list_new ();
 	r_list_push (files, (void *)config->json_test_file);
-	R2RProcessOutput *ret = run_r2_test (config, test->cmd, files, NULL, test->load_plugins, runner, user);
+	R2RProcessOutput *ret = run_r2_test (config, config->timeout_ms, test->cmd, files, NULL, test->load_plugins, runner, user);
 	r_list_free (files);
 	return ret;
 }
@@ -1118,7 +1118,7 @@ R_API void r2r_asm_test_output_free(R2RAsmTestOutput *out) {
 R_API R2RProcessOutput *r2r_run_fuzz_test(R2RRunConfig *config, R2RFuzzTest *test, R2RCmdRunner runner, void *user) {
 	RList *files = r_list_new ();
 	r_list_push (files, test->file);
-	R2RProcessOutput *ret = run_r2_test (config, "aaa", files, NULL, false, runner, user);
+	R2RProcessOutput *ret = run_r2_test (config, config->timeout_ms, "aaa", files, NULL, false, runner, user);
 	r_list_free (files);
 	return ret;
 }
@@ -1168,7 +1168,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 	switch (test->type) {
 	case R2R_TEST_TYPE_CMD: {
 		R2RCmdTest *cmd_test = test->cmd_test;
-		R2RProcessOutput *out = r2r_run_cmd_test (config, cmd_test, subprocess_runner, config);
+		R2RProcessOutput *out = r2r_run_cmd_test (config, cmd_test, subprocess_runner, NULL);
 		success = r2r_check_cmd_test (out, cmd_test);
 		ret->proc_out = out;
 		ret->timeout = out && out->timeout;
@@ -1186,7 +1186,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 	}
 	case R2R_TEST_TYPE_JSON: {
 		R2RJsonTest *json_test = test->json_test;
-		R2RProcessOutput *out = r2r_run_json_test (config, json_test, subprocess_runner, config);
+		R2RProcessOutput *out = r2r_run_json_test (config, json_test, subprocess_runner, NULL);
 		success = r2r_check_json_test (out, json_test);
 		ret->proc_out = out;
 		ret->timeout = out->timeout;
@@ -1195,7 +1195,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 	}
 	case R2R_TEST_TYPE_FUZZ: {
 		R2RFuzzTest *fuzz_test = test->fuzz_test;
-		R2RProcessOutput *out = r2r_run_fuzz_test (config, fuzz_test, subprocess_runner, config);
+		R2RProcessOutput *out = r2r_run_fuzz_test (config, fuzz_test, subprocess_runner, NULL);
 		success = r2r_check_fuzz_test (out);
 		ret->proc_out = out;
 		ret->timeout = out->timeout;
