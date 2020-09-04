@@ -79,4 +79,23 @@ extern const RCmdDescHelp wv2_help;
 extern const RCmdDescHelp wv4_help;
 extern const RCmdDescHelp wv8_help;
 
+extern const RCmdDescHelp w6_help;
+extern const RCmdDescHelp wh_help;
+extern const RCmdDescHelp we_help;
+extern const RCmdDescHelp wp_help;
+extern const RCmdDescHelp wu_help;
+extern const RCmdDescHelp wr_help;
+extern const RCmdDescHelp wA_help;
+extern const RCmdDescHelp wc_help;
+extern const RCmdDescHelp wz_help;
+extern const RCmdDescHelp wt_help;
+extern const RCmdDescHelp wf_help;
+extern const RCmdDescHelp ww_help;
+extern const RCmdDescHelp wx_help;
+extern const RCmdDescHelp wa_help;
+extern const RCmdDescHelp wb_help;
+extern const RCmdDescHelp wm_help;
+extern const RCmdDescHelp wo_help;
+extern const RCmdDescHelp wd_help;
+extern const RCmdDescHelp ws_help;
 #endif

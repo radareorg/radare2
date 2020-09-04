@@ -197,7 +197,7 @@ const RCmdDescHelp z_help = {
 
 const RCmdDescHelp w0_help = {
 	.summary = "Write 'len' bytes with value 0x00",
-	.args_str = "[len]",
+	.args_str = " [len]",
 	.description = "Fill len bytes starting from the current offset with the value 0.",
 };
 
@@ -214,7 +214,7 @@ const RCmdDescExample w_incdec_help_examples[] = {
 const RCmdDescHelp w_incdec_help = {
 	.summary = "Increment/decrement a byte, word, dword, qword",
 	.usage = "w[1248][+-] [n]",
-	.args_str = "[n]",
+	.args_str = " [n]",
 	.description = "Increment/decrement a byte/word/dword/qword at the current offset by 1 or n, if specified",
 	.examples = w_incdec_help_examples,
 };
@@ -228,7 +228,7 @@ const RCmdDescExample wB_help_examples[] = {
 
 const RCmdDescHelp wB_help = {
 	.summary = "Set bits with given value",
-	.args_str = "[value]",
+	.args_str = "[-] [value]",
 	.group_summary = "Set or unset bits with given value",
 	.description = "Set the bits that are set in the value passed as arguments. 0 bits in the value argument are ignored, while the others are set at the current offset",
 	.examples = wB_help_examples,
@@ -236,7 +236,7 @@ const RCmdDescHelp wB_help = {
 
 const RCmdDescHelp wB_minus_help = {
 	.summary = "Unset bits with given value",
-	.args_str = "[value]",
+	.args_str = " [value]",
 	.description = "Unset the bits that are set in the value passed as arguments. 0 bits in the value argument are ignored, while the others are unset at the current offset"
 };
 
@@ -250,7 +250,7 @@ const RCmdDescExample wv_help_examples[] = {
 const RCmdDescHelp wv_help = {
 	.usage = "wv[size] [value]",
 	.summary = "Write value as 4 - bytes / 8 - bytes based on value",
-	.args_str = "[value]",
+	.args_str = " [value]",
 	.description = "Write the number passed as argument at the current offset as a 4 - bytes value or 8 - bytes value if the input is bigger than UT32_MAX, respecting the cfg.bigendian variable",
 	.group_summary = "Write value of given size",
 	.examples = wv_help_examples,
@@ -258,21 +258,107 @@ const RCmdDescHelp wv_help = {
 
 const RCmdDescHelp wv1_help = {
 	.summary = "Write value of 1 byte",
-	.args_str = "[value]",
+	.args_str = " [value]",
 	.description = "Write the number passed as argument at the current offset as 1 - byte, respecting the cfg.bigendian variable",
 };
 const RCmdDescHelp wv2_help = {
 	.summary = "Write value of 2 bytes",
-	.args_str = "[value]",
+	.args_str = " [value]",
 	.description = "Write the number passed as argument at the current offset as 2 - bytes, respecting the cfg.bigendian variable",
 };
 const RCmdDescHelp wv4_help = {
 	.summary = "Write value of 4 bytes",
-	.args_str = "[value]",
+	.args_str = " [value]",
 	.description = "Write the number passed as argument at the current offset as 4 - bytes, respecting the cfg.bigendian variable",
 };
 const RCmdDescHelp wv8_help = {
 	.summary = "Write value of 8 byte",
-	.args_str = "[value]",
+	.args_str = " [value]",
 	.description = "Write the number passed as argument at the current offset as 8 - bytes, respecting the cfg.bigendian variable",
+};
+
+const RCmdDescHelp w6_help = {
+	.args_str = "[de] <base64>|<hexstring>",
+	.summary = "write base64 [d]ecoded or [e]ncoded string",
+};
+
+const RCmdDescHelp wh_help = {
+	.args_str = " <command>",
+	.summary = "whereis/which shell command",
+};
+
+const RCmdDescHelp we_help = {
+	.summary = "extend write operations (insert bytes instead of replacing)",
+};
+
+const RCmdDescHelp wp_help = {
+	.args_str = " -|<file>",
+	.summary = "apply radare patch file. See wp? fmi",
+};
+
+const RCmdDescHelp wu_help = {
+	.summary = "Apply unified hex patch (see output of cu)",
+};
+
+const RCmdDescHelp wr_help = {
+	.args_str = " <num>",
+	.summary = "write <num> random bytes",
+};
+
+const RCmdDescHelp wA_help = {
+	.args_str = " <type> <value>",
+	.summary = "alter/modify opcode at current seek (see wA?)",
+};
+
+const RCmdDescHelp wc_help = {
+	.summary = "write cache commands",
+};
+
+const RCmdDescHelp wz_help = {
+	.args_str = " <string>",
+	.summary = "write zero terminated string (like w + \x00)",
+};
+
+const RCmdDescHelp wt_help = {
+	.summary = "write to file (from current seek, blocksize or sz bytes)",
+};
+
+const RCmdDescHelp wf_help = {
+	.summary = "write data from file, socket, offset",
+};
+
+const RCmdDescHelp ww_help = {
+	.args_str = " <string>",
+	.summary = "write wide string",
+};
+
+const RCmdDescHelp wx_help = {
+	.args_str = " <hexstring>",
+	.summary = "write two intel nops (from wxfile or wxseek)",
+};
+
+const RCmdDescHelp wa_help = {
+	.summary = "write opcode, separated by ';' (use '\"' around the command)",
+};
+
+const RCmdDescHelp wb_help = {
+	.args_str = " <hexstring>",
+	.summary = "fill current block with cyclic hexstring",
+};
+
+const RCmdDescHelp wm_help = {
+	.args_str = " <hexstring>",
+	.summary = "set binary mask hexpair to be used as cyclic write mask",
+};
+
+const RCmdDescHelp wo_help = {
+	.summary = "write in block with operation. 'wo?' fmi",
+};
+
+const RCmdDescHelp wd_help = {
+	.summary = "duplicate N bytes from offset at current seek (memcpy) (see y?)",
+};
+
+const RCmdDescHelp ws_help = {
+	.summary = "write 1 byte for length and then the string",
 };

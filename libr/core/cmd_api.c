@@ -439,7 +439,7 @@ static void print_child_help_in(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool 
 		   *pal_input_color = use_color ? cons->context->pal.input : "",
 		   *pal_reset = use_color ? cons->context->pal.reset : "";
 	char children_ch = has_children? '+': '|';
-	r_strbuf_appendf (sb, "%c %s%s %s%s %*s%s# %s%s\n", children_ch,
+	r_strbuf_appendf (sb, "%c %s%s%s%s %*s%s# %s%s\n", children_ch,
 		pal_input_color, cd->name, pal_args_color, cd_args_str,
 		padding, "", pal_help_color, cd_summary, pal_reset);
 }

@@ -300,7 +300,8 @@ static void cmd_write_inc(RCore *core, int size, st64 num) {
 	}
 }
 
-static void cmd_write_op (RCore *core, const char *input) {
+static int wo_handler_old(void *data, const char *input) {
+	RCore *core = (RCore *)data;
 	ut8 *buf;
 	int len;
 	int value;
@@ -308,7 +309,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 	case 'e':
 		if (input[1]!=' ') {
 			r_cons_printf ("Usage: 'woe from-to step'\n");
-			return;
+			return -1;
 		}
 		/* fallthru */
 	case 'a':
@@ -447,6 +448,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_wo);
 		break;
 	}
+	return 0;
 }
 
 #define WSEEK(x,y) if (wseek)r_core_seek_delta (x,y)
@@ -750,14 +752,15 @@ static bool cmd_wfs(RCore *core, const char *input) {
 	return true;
 }
 
-static bool cmd_wf(RCore *core, const char *input) {
+static int wf_handler_old(void *data, const char *input) {
+	RCore *core = (RCore *)data;
 	if (!core || !*input) {
-		return false;
+		return -1;
 	}
 	if (input[0] == '?') {
 		eprintf ("Usage: wf [file] ([size] ([offset]))\n");
 		r_core_cmd_help (core, help_msg_wf);
-		return false;
+		return -1;
 	}
 	if (input[0] == 's') { // "wfs"
 		return cmd_wfs (core, input + 1);
@@ -779,7 +782,7 @@ static bool cmd_wf(RCore *core, const char *input) {
 	ioMemcpy (core, core->offset, addr, len);
 	free (args);
 	r_core_block_read (core);
-	return true;
+	return 0;
 }
 
 static void cmd_write_pcache(RCore *core, const char *input) {
@@ -2015,7 +2018,7 @@ static int cmd_write(void *data, const char *input) {
 		wt_handler_old (core, input + 1);
 		break;
 	case 'f': // "wf"
-		cmd_wf (core, input + 1);
+		wf_handler_old (core, input + 1);
 		break;
 	case 'w': // "ww"
 		ww_handler_old (core, input + 1);
@@ -2036,7 +2039,7 @@ static int cmd_write(void *data, const char *input) {
 		cmd_write_value (core, input + 1);
 		break;
 	case 'o': // "wo"
-		cmd_write_op (core, input + 1);
+		wo_handler_old (core, input + 1);
 		break;
 	case 'd': // "wd"
 		wd_handler_old (core, input + 1);
@@ -2065,37 +2068,48 @@ static void cmd_write_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, wv);
 	DEFINE_CMD_DESCRIPTOR (core, wx);
 
-	RCmdDesc *w0_cd = r_cmd_desc_argv_new (core->rcmd, parent, "w0", w0_handler, &w0_help);
-	r_return_if_fail (w0_cd);
+	DEFINE_CMD_ARGV_DESC (core, wB, parent);
+	DEFINE_CMD_ARGV_DESC_SPECIAL (core, wB-, wB_minus, wB_cd);
 
-	RCmdDesc *w_incdec_cd = r_cmd_desc_argv_new (core->rcmd, parent, "w[1248][+-]", NULL, &w_incdec_help);
-	r_return_if_fail (w_incdec_cd);
-	r_cmd_desc_argv_new (core->rcmd, w_incdec_cd, "w1+", w1_incdec_handler, &w_incdec_help);
-	r_cmd_desc_argv_new (core->rcmd, w_incdec_cd, "w1-", w1_incdec_handler, &w_incdec_help);
-	r_cmd_desc_argv_new (core->rcmd, w_incdec_cd, "w2+", w2_incdec_handler, &w_incdec_help);
-	r_cmd_desc_argv_new (core->rcmd, w_incdec_cd, "w2-", w2_incdec_handler, &w_incdec_help);
-	r_cmd_desc_argv_new (core->rcmd, w_incdec_cd, "w4+", w4_incdec_handler, &w_incdec_help);
-	r_cmd_desc_argv_new (core->rcmd, w_incdec_cd, "w4-", w4_incdec_handler, &w_incdec_help);
-	r_cmd_desc_argv_new (core->rcmd, w_incdec_cd, "w8+", w8_incdec_handler, &w_incdec_help);
-	r_cmd_desc_argv_new (core->rcmd, w_incdec_cd, "w8-", w8_incdec_handler, &w_incdec_help);
+	DEFINE_CMD_ARGV_DESC (core, wv, parent);
+	DEFINE_CMD_ARGV_DESC (core, wv1, wv_cd);
+	DEFINE_CMD_ARGV_DESC (core, wv2, wv_cd);
+	DEFINE_CMD_ARGV_DESC (core, wv4, wv_cd);
+	DEFINE_CMD_ARGV_DESC (core, wv8, wv_cd);
 
-	RCmdDesc *wB_cd = r_cmd_desc_argv_new (core->rcmd, parent, "wB", wB_handler, &wB_help);
-	r_return_if_fail (wB_cd);
-	RCmdDesc *wB_minus_cd = r_cmd_desc_argv_new (core->rcmd, wB_cd, "wB-", wB_minus_handler, &wB_minus_help);
-	r_return_if_fail (wB_minus_cd);
+	DEFINE_CMD_ARGV_DESC (core, w0, parent);
 
-	RCmdDesc *wv_cd = r_cmd_desc_argv_new (core->rcmd, parent, "wv", wv_handler, &wv_help);
-	r_return_if_fail (wv_cd);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w[1248][+-], w_incdec, parent, NULL, w_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1, w1, w_incdec_cd, NULL, w_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1+, w1_inc, w_incdec_cd, w1_incdec_handler, w_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1-, w1_dec, w_incdec_cd, w1_incdec_handler, w_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w2, w2, w_incdec_cd, NULL, w_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w2+, w2_inc, w_incdec_cd, w2_incdec_handler, w_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w2-, w2_dec, w_incdec_cd, w2_incdec_handler, w_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w4, w4, w_incdec_cd, NULL, w_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w4+, w4_inc, w_incdec_cd, w4_incdec_handler, w_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w4-, w4_dec, w_incdec_cd, w4_incdec_handler, w_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8, w8, w_incdec_cd, NULL, w_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8+, w8_inc, w_incdec_cd, w8_incdec_handler, w_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8-, w8_dec, w_incdec_cd, w8_incdec_handler, w_incdec_help);
 
-	RCmdDesc *wv1_cd = r_cmd_desc_argv_new (core->rcmd, wv_cd, "wv1", wv1_handler, &wv1_help);
-	r_return_if_fail (wv1_cd);
-
-	RCmdDesc *wv2_cd = r_cmd_desc_argv_new (core->rcmd, wv_cd, "wv2", wv2_handler, &wv2_help);
-	r_return_if_fail (wv2_cd);
-
-	RCmdDesc *wv4_cd = r_cmd_desc_argv_new (core->rcmd, wv_cd, "wv4", wv4_handler, &wv4_help);
-	r_return_if_fail (wv4_cd);
-
-	RCmdDesc *wv8_cd = r_cmd_desc_argv_new (core->rcmd, wv_cd, "wv8", wv8_handler, &wv8_help);
-	r_return_if_fail (wv8_cd);
+	DEFINE_CMD_OLDINPUT_DESC (core, w6, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wh, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, we, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wp, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wu, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wr, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wA, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wc, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wz, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wt, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wf, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, ww, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wx, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wa, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wb, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wm, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wo, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wd, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, ws, parent);
 }
