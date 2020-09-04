@@ -957,6 +957,7 @@ static RList* patch_relocs(RBin *b) {
 				}
 			} else if (relcs[i].sym < bin->symbols_by_ord_size && bin->symbols_by_ord[relcs[i].sym]) {
 				sym_addr = bin->symbols_by_ord[relcs[i].sym]->vaddr;
+				plt_entry_addr = sym_addr;
 			}
 		}
 		// TODO relocation types B, L

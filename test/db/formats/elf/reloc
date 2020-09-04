@@ -72,13 +72,14 @@ ARGS=-e io.cache=true
 CMDS=<<EOF
 e asm.comments=false
 e asm.lines=false
+e asm.flags=false
 pd 1 @ 0x0800007c
 pd 1 @ 0x0800008c
 pd 1 @ 0x0800009f
 EOF
 EXPECT=<<EOF
 0x0800007c      e882040000     call __fentry__
-0x0800008c      e87a040000     call printk
-0x0800009f      e867040000     call printk
+0x0800008c      e8860a0000     call printk
+0x0800009f      e8730a0000     call printk
 EOF
 RUN
