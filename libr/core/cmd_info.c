@@ -456,6 +456,7 @@ static int cmd_info(void *data, const char *input) {
 	bool rdump = false;
 	int is_array = 0;
 	bool is_izzzj = false;
+	bool is_idpij = false;
 	Sdb *db;
 
 	for (i = 0; input[i] && input[i] != ' '; i++)
@@ -479,8 +480,11 @@ static int cmd_info(void *data, const char *input) {
 		if (!strncmp (input, "zzz", 3)) {
 			is_izzzj = true;
 		}
+		if (!strncmp(input, "dpi", 3)) {
+			is_idpij = true;
+		}
 	}
-	if (is_array && !is_izzzj) {
+	if (is_array && !is_izzzj && !is_idpij) {
 		r_cons_printf ("{");
 	}
 	if (!*input) {
@@ -1244,7 +1248,7 @@ static int cmd_info(void *data, const char *input) {
 		}
 	}
 done:
-	if (is_array && !is_izzzj) {
+	if (is_array && !is_izzzj && !is_idpij) {
 		r_cons_printf ("}\n");
 	} else if (newline) {
 		r_cons_newline ();
