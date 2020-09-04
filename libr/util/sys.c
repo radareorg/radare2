@@ -5,6 +5,7 @@
 #include <string.h>
 #if defined(__NetBSD__)
 # include <sys/param.h>
+# include <sys/sysctl.h>
 # if __NetBSD_Prereq__(7,0,0)
 #  define NETBSD_WITH_BACKTRACE
 # endif
@@ -553,6 +554,12 @@ R_API bool r_sys_aslr(int val) {
 		ret = false;
 	}
 #endif
+#elif __NetBSD__
+	size_t vlen = sizeof (val);
+	if (sysctlbyname ("security.pax.aslr.enabled", NULL, 0, &val, vlen) == -1) {
+		eprintf ("Failed to set RVA\n");
+		ret = false;
+	}
 #endif
 	return ret;
 }
