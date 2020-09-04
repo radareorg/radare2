@@ -3255,7 +3255,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("zign.mincc", 10, "Minimum cyclomatic complexity for matching");
 	SETBPREF ("zign.graph", "true", "Use graph metrics for matching");
 	SETBPREF ("zign.bytes", "true", "Use bytes patterns for matching");
-	SETBPREF ("zign.offset", "true", "Use original offset for matching");
+	SETBPREF ("zign.offset", "false", "Use original offset for matching");
 	SETBPREF ("zign.refs", "true", "Use references for matching");
 	SETBPREF ("zign.hash", "true", "Use Hash for matching");
 	SETBPREF ("zign.types", "true", "Use types for matching");
