@@ -39,7 +39,7 @@ typedef struct r2r_cmd_test_bool_record {
 
 typedef struct r2r_cmd_test_num_record {
 	ut64 value;
-	ut64 line; // bools are always oneliners (e.g. TIMEOUT=10)
+	ut64 line; // nums are always oneliners (e.g. TIMEOUT=10)
 	bool set;
 } R2RCmdTestNumRecord;
 
