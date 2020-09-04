@@ -326,9 +326,9 @@ struct mips_abi_choice
 struct mips_abi_choice mips_abi_choices[] =
 {
   { "numeric", mips_gpr_names_numeric, mips_fpr_names_numeric },
-  { "32", mips_gpr_names_oldabi, mips_fpr_names_32 },
+  { "o32", mips_gpr_names_oldabi, mips_fpr_names_32 },
   { "n32", mips_gpr_names_newabi, mips_fpr_names_n32 },
-  { "64", mips_gpr_names_newabi, mips_fpr_names_64 },
+  { "n64", mips_gpr_names_newabi, mips_fpr_names_64 },
 };
 
 struct mips_arch_choice

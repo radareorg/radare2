@@ -169,6 +169,8 @@ char* Elf_(r_bin_elf_get_data_encoding)(struct Elf_(r_bin_elf_obj_t) *bin);
 char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin);
 char* Elf_(r_bin_elf_get_machine_name)(struct Elf_(r_bin_elf_obj_t) *bin);
 char* Elf_(r_bin_elf_get_head_flag)(struct Elf_(r_bin_elf_obj_t) *bin); //yin
+char* Elf_(r_bin_elf_get_features)(ELFOBJ *bin);
+char* Elf_(r_bin_elf_get_cpu)(struct Elf_(r_bin_elf_obj_t) *bin); 
 char* Elf_(r_bin_elf_get_file_type)(struct Elf_(r_bin_elf_obj_t) *bin);
 char* Elf_(r_bin_elf_get_elf_class)(struct Elf_(r_bin_elf_obj_t) *bin);
 int Elf_(r_bin_elf_get_bits)(struct Elf_(r_bin_elf_obj_t) *bin);

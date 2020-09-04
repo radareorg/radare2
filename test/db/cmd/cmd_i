@@ -346,7 +346,7 @@ EOF
 EXPECT=<<EOF
 0   0x00000000 266108 mips_32 mips1 
 
-{"bins":[{"arch":"mips","bits":32,"offset":0,"size":266108,"isa":"mips1","machine":"MIPS R3000"}]}
+{"bins":[{"arch":"mips","bits":32,"offset":0,"size":266108,"isa":"mips1","features":"o32","machine":"MIPS R3000"}]}
 EOF
 RUN
 
@@ -359,7 +359,7 @@ EOF
 EXPECT=<<EOF
 0   0x00000000 1039368 mips_64 mips64r2 
 
-{"bins":[{"arch":"mips","bits":64,"offset":0,"size":1039368,"isa":"mips64r2","machine":"MIPS R3000"}]}
+{"bins":[{"arch":"mips","bits":64,"offset":0,"size":1039368,"isa":"mips64r2","features":"n64","machine":"MIPS R3000"}]}
 EOF
 RUN
 
