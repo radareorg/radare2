@@ -946,16 +946,21 @@ static RList* patch_relocs(RBin *b) {
 	size_t i;
 	for (i = 0; !relcs[i].last; i++) {
 		ut64 sym_addr = 0;
+		ut64 plt_entry_addr = vaddr;
 
 		if (relcs[i].sym) {
 			if (relcs[i].sym < bin->imports_by_ord_size && bin->imports_by_ord[relcs[i].sym]) {
-				sym_addr = ht_uu_find (relocs_by_sym, relcs[i].sym, NULL);
+				bool found;
+				sym_addr = ht_uu_find (relocs_by_sym, relcs[i].sym, &found);
+				if (found) {
+					plt_entry_addr = sym_addr;
+				}
 			} else if (relcs[i].sym < bin->symbols_by_ord_size && bin->symbols_by_ord[relcs[i].sym]) {
 				sym_addr = bin->symbols_by_ord[relcs[i].sym]->vaddr;
 			}
 		}
 		// TODO relocation types B, L
-		_patch_reloc (bin->ehdr.e_machine, &b->iob, &relcs[i], sym_addr? sym_addr: vaddr, 0, n_vaddr);
+		_patch_reloc (bin->ehdr.e_machine, &b->iob, &relcs[i], sym_addr? sym_addr: vaddr, 0, plt_entry_addr);
 		if (!(ptr = reloc_convert (bin, &relcs[i], n_vaddr))) {
 			continue;
 		}
