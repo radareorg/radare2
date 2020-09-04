@@ -278,7 +278,7 @@ static void setASLR(RRunProfile *r, int enabled) {
 	// for osxver>=10.7
 	// "unset the MH_PIE bit in an already linked executable" with --no-pie flag of the script
 	// the right way is to disable the aslr bit in the spawn call
-#elif __FreeBSD__
+#elif __FreeBSD__ || __NetBSD__
 	r_sys_aslr (enabled);
 #else
 	// not supported for this platform
