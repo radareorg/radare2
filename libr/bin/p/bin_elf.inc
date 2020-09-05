@@ -1099,13 +1099,11 @@ static RBinInfo* info(RBinFile *bf) {
 	}
 	ret->arch = str;
 	
-	if (!strcmp (ret->arch, "mips")) {   
-		if ((str = Elf_(r_bin_elf_get_cpu) (obj))) {
-			ret->cpu = str;         
-		}
-		if ((str = Elf_(r_bin_elf_get_features) (obj))) {
-			ret->features = str;
-		}
+	if ((str = Elf_(r_bin_elf_get_cpu) (obj))) {
+		ret->cpu = str;         
+	}
+	if ((str = Elf_(r_bin_elf_get_features) (obj))) {
+		ret->features = str;
 	}
 	
 	ret->rclass = strdup ("elf");

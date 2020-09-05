@@ -75,66 +75,61 @@ static inline int UTX_MUL(ut64 *r, ut64 a, ut64 b) {
 
 #define round_up(a) ((((a) + (4) - (1)) / (4)) * (4))
 
-#define EF_MIPS_ABI_O32     0x00001000  /* O32 ABI.  */
-#define EF_MIPS_ABI_O64     0x00002000  /* O32 extended for 64 bit.  */
+#define EF_MIPS_ABI_O32		0x00001000  /* O32 ABI.  */
+#define EF_MIPS_ABI_O64		0x00002000  /* O32 extended for 64 bit.  */
 #define EF_MIPS_ABI			0x0000f000
-#define mips_elf_check_machine(x) ((x)->e_machine == EM_MIPS)
 
 /*
- * Return non-zero if HDR identifies an n64 ELF binary.
+ * Return non-zero if HDR identifies an MIPS n64 ELF binary.
  */
-#define elfn64_check_arch(hdr)                      \
-({                                  \
-   int __res = 1;                          \
-   Elf_(Ehdr) *__h = (hdr);                 \
-                                      \
-    if (!mips_elf_check_machine(__h))               \
-        __res = 0;                      \
-    if (__h->e_ident[EI_CLASS] != ELFCLASS64)           \
-        __res = 0;                      \
-                                     \
-    __res;                              \
-})
+static int  elfn64_check_arch(Elf_(Ehdr) *__h)
+{
+	int __res = 1;
+
+	if (__h->e_ident[EI_CLASS] != ELFCLASS64){
+		__res = 0;
+	}
+	return __res;
+}
 
 /*
- * Return non-zero if HDR identifies an o32 ELF binary.
+ * Return non-zero if HDR identifies an MIPS o32 ELF binary.
  */
-#define elfo32_check_arch(hdr)                      \
-({                                  \
-    int __res = 1;                          \
-    Elf_(Ehdr) *__h = (hdr);                 \
-                                    \
-    if (!mips_elf_check_machine(__h))               \
-        __res = 0;                      \
-    if (__h->e_ident[EI_CLASS] != ELFCLASS32)           \
-        __res = 0;                      \
-    if ((__h->e_flags & EF_MIPS_ABI2) != 0)             \
-        __res = 0;                      \
-    if (((__h->e_flags & EF_MIPS_ABI) != 0) &&          \
-        ((__h->e_flags & EF_MIPS_ABI) != EF_MIPS_ABI_O32))      \
-        __res = 0;                      \
-                                      \
-    __res;                              \
-})
+static int elfo32_check_arch(Elf_(Ehdr) *__h)
+{
+	int __res = 1;
+
+	if (__h->e_ident[EI_CLASS] != ELFCLASS32) {
+		__res = 0;
+	}
+	if ((__h->e_flags & EF_MIPS_ABI2) != 0) {
+		__res = 0;
+	}
+	if (((__h->e_flags & EF_MIPS_ABI) != 0) &&
+		((__h->e_flags & EF_MIPS_ABI) != EF_MIPS_ABI_O32)) {
+		__res = 0;
+	}
+
+	return __res;
+}
 
 /*
- * Return non-zero if HDR identifies an n32 ELF binary.
+ * Return non-zero if HDR identifies an MIPS n32 ELF binary.
  */
-#define elfn32_check_arch(hdr)                      \
-({                                  \
-    int __res = 1;                          \
-    Elf_(Ehdr) *__h = (hdr);                 \
-                                      \
-    if (!mips_elf_check_machine(__h))               \
-        __res = 0;                      \
-    if (__h->e_ident[EI_CLASS] != ELFCLASS32)           \
-        __res = 0;                      \
-    if (((__h->e_flags & EF_MIPS_ABI2) == 0) ||         \
-        ((__h->e_flags & EF_MIPS_ABI) != 0))            \
-        __res = 0;                      \
-                                    \
-    __res;                              \
-})
+static int elfn32_check_arch(Elf_(Ehdr) *__h)
+{
+    int __res = 1;
+
+	if (__h->e_ident[EI_CLASS] != ELFCLASS32) {
+		__res = 0;
+	}
+	if (((__h->e_flags & EF_MIPS_ABI2) == 0) ||
+		((__h->e_flags & EF_MIPS_ABI) != 0)) {
+		__res = 0;
+	}
+
+	return __res;
+}
 
 enum {
 	X86,
@@ -2163,19 +2158,20 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 	}
 }
 char* Elf_(r_bin_elf_get_features)(ELFOBJ *bin) {
-
 	Elf_(Ehdr)* ehdr =(Elf_(Ehdr) *) &bin->ehdr;
 
-	if (elfn64_check_arch(ehdr)) {
-		return strdup("n64");
-	}
+	if (ehdr->e_machine == EM_MIPS){
+		if (elfn64_check_arch(ehdr)) {
+			return strdup("n64");
+		}
 
-	if (elfn32_check_arch(ehdr)) {
-		return strdup("n32");
-	}
+		if (elfn32_check_arch(ehdr)) {
+			return strdup("n32");
+		}
 
-	if (elfo32_check_arch(ehdr)) {
-		return strdup("o32");
+		if (elfo32_check_arch(ehdr)) {
+			return strdup("o32");
+		}
 	}
 	return NULL;
 }
