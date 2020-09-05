@@ -82,11 +82,20 @@ static ut64 t9_pre = UT64_MAX;
 #define ES_J(addr) addr",pc,="
 #endif
 
+#define ES_B(x) "0xff,"x",&"
+#define ES_H(x) "0xffff,"x",&"
+#define ES_W(x) "0xffffffff,"x",&"
+
 // sign extend 32 -> 64
-#define ES_SIGN_EXT64(arg) \
-	arg",0x80000000,&,0,<,?{,"\
-		"0xffffffff00000000,"arg",|=,"\
-	"}"
+
+#define ES_SIGN_n_64(arg, n_bit)  do{if (a->bits == 64) \
+		{r_strbuf_appendf (&op->esil, ",%d,%s,~,%s,=", n_bit, arg, arg);}}while(0)
+#define ES_SIGN32_64(arg)	ES_SIGN_n_64(arg, 32)
+#define ES_SIGN16_64(arg)	ES_SIGN_n_64(arg, 16)
+
+#define ES_ADD_CK_OVERF(x, y,z,bit) do{uint64_t mask = 1ULL<<(bit-1);\
+		r_strbuf_appendf (&op->esil,"%d,0x%lx,%s,%s,^,&,>>,%d,0x%lx,%s,%s,+,&,>>,|,1,==,$z,?{,$$,1,TRAP,}{,%s,%s,+,%s,=,}",\
+							bit-2,mask,x,y,bit-1,mask,x,y,x,y,z);} while(0)
 
 #define PROTECT_ZERO() \
 	if (REG(0)[0]=='z'){\
@@ -396,24 +405,19 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		/** signed -- sets overflow flag */
 		case MIPS_INS_ADD: {
 			PROTECT_ZERO () {
-				r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=",
-					ARG (1), ARG (2), ARG (0));
-#if 0
-			r_strbuf_appendf (&op->esil,
-				"0,32,%s,%s,+,>>,>,?{,1,TRAP,}{,%s,%s,+,%s,=,}",
-				ARG(2), ARG(1), ARG(2), ARG(1), ARG(0));
-#endif
+				ES_ADD_CK_OVERF(ARG(1), ARG(2), ARG(0), 32);
 		}
 		}
 		break;
 	case MIPS_INS_ADDI:
 		PROTECT_ZERO () {
-			r_strbuf_appendf (&op->esil, "30,0x80000000,%s,%s,^,&,>>,31,0x80000000,%s,&,0x80000000,%s,%s,+,&,^,>>,|,1,==,$z,?{,$$,1,TRAP,}{,%s,%s,+,%s,=,}",
-				ARG(2), ARG(1), ARG(2), ARG(2), ARG(1), ARG(2), ARG(1), ARG(0));
+			ES_ADD_CK_OVERF(ARG(1), ARG(2), ARG(0), 32);
 		}
 		break;
 	case MIPS_INS_DADD:
 	case MIPS_INS_DADDI:
+		ES_ADD_CK_OVERF(ARG(1), ARG(2), ARG(0), 64);
+		break;
 	/** unsigned */
 	case MIPS_INS_DADDU:
 	case MIPS_INS_ADDU:
@@ -533,31 +537,21 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_SLTU:
 	case MIPS_INS_SLTIU:
 		if (OPCOUNT () < 3) {
-			r_strbuf_appendf (&op->esil, "%s,0xffffffff,&,%s,0xffffffff,&,<,t,=",
-				ARG (1), ARG (0));
+			r_strbuf_appendf (&op->esil, "%s,%s,<,t,=", ARG(1), ARG(0));
 		} else {
-			r_strbuf_appendf (&op->esil, "%s,0xffffffff,&,%s,0xffffffff,&,<,%s,=",
-				ARG (2), ARG (1), ARG (0));
+			r_strbuf_appendf (&op->esil, "%s,%s,<,%s,=", ARG(2), ARG(1), ARG(0));
 		}
 		break;
 	case MIPS_INS_MUL:
-		r_strbuf_appendf (&op->esil,
-			"%s,%s,*,0xffffffff,&,lo,=,"
-			ES_SIGN_EXT64 ("lo")
-			",32,%s,%s,*,>>,0xffffffff,&,hi,=,"
-			ES_SIGN_EXT64 ("hi")
-			",lo,%s,=",
-			ARG (1), ARG (2), ARG (1), ARG (2), REG (0));
+		r_strbuf_appendf (&op->esil, ES_W("%s,%s,*")",%s,=", ARG(1), ARG(2), ARG(0));
+		ES_SIGN32_64 (ARG(0));
 		break;
 	case MIPS_INS_MULT:
 	case MIPS_INS_MULTU:
-		r_strbuf_appendf (&op->esil,
-			"%s,%s,*,0xffffffff,&,lo,=,"
-			ES_SIGN_EXT64 ("lo")
-			",32,%s,%s,*,>>,0xffffffff,&,hi,=,"
-			ES_SIGN_EXT64 ("hi"),
-
-			ARG (0), ARG (1), ARG (0), ARG (1));
+		r_strbuf_appendf (&op->esil, ES_W("%s,%s,*")",lo,=", ARG (0), ARG (1));
+		ES_SIGN32_64 ("lo");
+		r_strbuf_appendf (&op->esil,ES_W("32,%s,%s,*,>>")",hi,=", ARG (0), ARG (1));
+		ES_SIGN32_64 ("hi");
 		break;
 	case MIPS_INS_MFLO:
 		PROTECT_ZERO () {
@@ -570,10 +564,12 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		}
 		break;
 	case MIPS_INS_MTLO:
-		r_strbuf_appendf (&op->esil, "%s,lo,=,"ES_SIGN_EXT64 ("lo"), REG (0));
+		r_strbuf_appendf (&op->esil, "%s,lo,=", REG (0));
+		ES_SIGN32_64("lo");
 		break;
 	case MIPS_INS_MTHI:
-		r_strbuf_appendf (&op->esil, "%s,hi,=,"ES_SIGN_EXT64 ("hi"), REG (0));
+		r_strbuf_appendf (&op->esil, "%s,hi,=", REG (0));
+		ES_SIGN32_64("lo");
 		break;
 #if 0
 	// could not test div
