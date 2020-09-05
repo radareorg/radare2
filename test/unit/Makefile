@@ -10,7 +10,7 @@ $(BINDIR)/%: %.c
 	$(CC) $< -o $@ $(CFLAGS) $(LDFLAGS)
 
 run:
-	r=0 ; cd .. ; for a in $(BINS) ; do ./unit/$$a || r=1; done ; echo unit$$r ; exit $$r
+	r=0 ; cd .. ; for a in $(BINS) ; do LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5 ./unit/$$a || r=1; done ; echo unit$$r ; exit $$r
 
 clean:
 	rm -f $(BINS)
