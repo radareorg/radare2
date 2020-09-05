@@ -1014,15 +1014,11 @@ ar v0=0x00112233
 aeip
 aes
 ar s0
-ar hi
-ar lo
 EOF
 EXPECT=<<EOF
 0x000000fc
 0x00000000
 0x000000fc
-0xc28637b5
-0x000492cc
 0xc28637b5
 EOF
 RUN
