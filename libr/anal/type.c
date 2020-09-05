@@ -279,35 +279,81 @@ error:
 	return NULL;
 }
 
+static RAnalBaseType *get_typedef_type(RAnal *anal, const char *sname) {
+	r_return_val_if_fail (anal && sname, NULL);
+
+	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_TYPEDEF);
+	if (!base_type) {
+		return NULL;
+	}
+
+	base_type->type = get_type_data (anal->sdb_types, "typedef", sname);
+	if (!base_type->type) {
+		goto error;
+	}
+	return base_type;
+
+error:
+	r_anal_base_type_free (base_type);
+	return NULL;
+}
+
+static RAnalBaseType *get_atomic_type(RAnal *anal, const char *sname) {
+	r_return_val_if_fail (anal && sname, NULL);
+
+	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ATOMIC);
+	if (!base_type) {
+		return NULL;
+	}
+
+	base_type->type = get_type_data (anal->sdb_types, "type", sname);
+	if (!base_type->type) {
+		goto error;
+	}
+
+	RStrBuf key;
+	r_strbuf_init (&key);
+	r_strbuf_setf (&key, "type.%s.size", sname);
+	base_type->size = sdb_num_get (anal->sdb_types, r_strbuf_get (&key), 0);
+	r_strbuf_fini (&key);
+
+	return base_type;
+
+error:
+	r_anal_base_type_free (base_type);
+	return NULL;
+}
+
 // returns NULL if name is not found or any failure happened
 R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
 	r_return_val_if_fail (anal && name, NULL);
 
 	char *sname = r_str_sanitize_sdb_key (name);
 	const char *type = sdb_const_get (anal->sdb_types, sname, NULL);
-
-	// Right now just types: struct, enum, union are supported
-	if (!type || !(strcmp (type, "enum") || strcmp (type, "struct") || strcmp (type, "union"))) {
+	if (!type) {
 		free (sname);
 		return NULL;
 	}
-	// Taking advantage that all 3 types start with distinct letter
-	// because the strcmp condition guarantees that only those will get to this flow
-	RAnalBaseType *base_type = NULL;
 
-	switch (type[0]) {
-	case 's': // struct
+	RAnalBaseType *base_type = NULL;
+	if (!strcmp (type, "struct")) {
 		base_type = get_struct_type (anal, sname);
-		break;
-	case 'e': // enum
+	} else if (!strcmp (type, "enum")) {
 		base_type = get_enum_type (anal, sname);
-		break;
-	case 'u': // union
+	} else if (!strcmp (type, "union")) {
 		base_type = get_union_type (anal, sname);
-		break;
+	} else if (!strcmp (type, "typedef")) {
+		base_type = get_typedef_type (anal, sname);
+	} else if (!strcmp (type, "type")) {
+		base_type = get_atomic_type (anal, sname);
 	}
 
-	free (sname);
+	if (base_type) {
+		base_type->name = sname;
+	} else {
+		free (sname);
+	}
+
 	return base_type;
 }
 
@@ -482,6 +528,10 @@ static void save_atomic_type(const RAnal *anal, const RAnalBaseType *type) {
 
 	r_strbuf_setf (&key, "type.%s.size", sname);
 	r_strbuf_setf (&val, "%" PFMT64u "", type->size);
+	sdb_set (anal->sdb_types, r_strbuf_get (&key), r_strbuf_get (&val), 0);
+
+	r_strbuf_setf (&key, "type.%s", sname);
+	r_strbuf_setf (&val, "%s", type->type);
 	sdb_set (anal->sdb_types, r_strbuf_get (&key), r_strbuf_get (&val), 0);
 
 	free (sname);
