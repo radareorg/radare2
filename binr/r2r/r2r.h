@@ -23,7 +23,8 @@
 #define R2R_ARCH "unknown"
 #endif
 
-#define R2R_ARCH_OS R2R_OS"-"R2R_ARCH
+// #define R2R_ARCH_OS R2R_OS"-"R2R_ARCH
+#define R2R_ARCH_OS "unknown-unknown"
 
 typedef struct r2r_cmd_test_string_record {
 	char *value;
