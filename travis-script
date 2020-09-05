@@ -106,9 +106,6 @@ fi
 
 if [ "${R2_TESTS_DISABLE}" != "1" ] ; then
     export NOREPORT=1
-    if [ "${ASAN}" == "1" ] ; then
-        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
-    fi
     cd test
     VERBOSE=1 make -k all || exit 1
 
