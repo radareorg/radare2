@@ -66,7 +66,7 @@ static bool test_anal_get_base_type_struct(void) {
 	mu_assert_streq (member->type, "int32_t", "Incorrect type for struct member");
 	mu_assert_streq (member->name, "cow", "Incorrect name for struct member");
 
-	r_anal_free_base_type (base);
+	r_anal_base_type_free (base);
 	r_anal_free (anal);
 	mu_end;
 }
@@ -93,7 +93,7 @@ static bool test_anal_get_base_type_union(void) {
 	mu_assert_streq (member->type, "int32_t", "Incorrect type for union member");
 	mu_assert_streq (member->name, "cow", "Incorrect name for union member");
 
-	r_anal_free_base_type (base);
+	r_anal_base_type_free (base);
 	r_anal_free (anal);
 	mu_end;
 }
@@ -120,7 +120,7 @@ static bool test_anal_get_base_type_enum(void) {
 	mu_assert_eq (cas->val, 2, "Incorrect value for enum case");
 	mu_assert_streq (cas->name, "secondCase", "Incorrect name for enum case");
 
-	r_anal_free_base_type (base);
+	r_anal_base_type_free (base);
 	r_anal_free (anal);
 	mu_end;
 }

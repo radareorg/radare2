@@ -170,7 +170,7 @@ R_IPI void union_type_member_free(void *e, void *user) {
 static RAnalBaseType *get_enum_type(RAnal *anal, const char *sname) {
 	r_return_val_if_fail (anal && sname, NULL);
 
-	RAnalBaseType *base_type = r_anal_new_base_type (R_ANAL_BASE_TYPE_KIND_ENUM);
+	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ENUM);
 	if (!base_type) {
 		return NULL;
 	}
@@ -213,14 +213,14 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sname) {
 
 error:
 	free (members);
-	r_anal_free_base_type (base_type);
+	r_anal_base_type_free (base_type);
 	return NULL;
 }
 
 static RAnalBaseType *get_struct_type(RAnal *anal, const char *sname) {
 	r_return_val_if_fail (anal && sname, NULL);
 
-	RAnalBaseType *base_type = r_anal_new_base_type (R_ANAL_BASE_TYPE_KIND_STRUCT);
+	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
 	if (!base_type) {
 		return NULL;
 	}
@@ -274,7 +274,7 @@ static RAnalBaseType *get_struct_type(RAnal *anal, const char *sname) {
 	return base_type;
 
 error:
-	r_anal_free_base_type (base_type);
+	r_anal_base_type_free (base_type);
 	free (sdb_members);
 	return NULL;
 }
@@ -282,7 +282,7 @@ error:
 static RAnalBaseType *get_union_type(RAnal *anal, const char *sname) {
 	r_return_val_if_fail (anal && sname, NULL);
 
-	RAnalBaseType *base_type = r_anal_new_base_type (R_ANAL_BASE_TYPE_KIND_UNION);
+	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_UNION);
 	if (!base_type) {
 		return NULL;
 	}
@@ -325,7 +325,7 @@ static RAnalBaseType *get_union_type(RAnal *anal, const char *sname) {
 	return base_type;
 
 error:
-	r_anal_free_base_type (base_type);
+	r_anal_base_type_free (base_type);
 	free (sdb_members);
 	return NULL;
 }
@@ -587,7 +587,7 @@ static void save_typedef(const RAnal *anal, const RAnalBaseType *type) {
 	r_strbuf_fini (&val);
 }
 
-R_API void r_anal_free_base_type(RAnalBaseType *type) {
+R_API void r_anal_base_type_free(RAnalBaseType *type) {
 	r_return_if_fail (type);
 	R_FREE (type->name);
 	R_FREE (type->type);
@@ -611,7 +611,7 @@ R_API void r_anal_free_base_type(RAnalBaseType *type) {
 	R_FREE (type);
 }
 
-R_API RAnalBaseType *r_anal_new_base_type(RAnalBaseTypeKind kind) {
+R_API RAnalBaseType *r_anal_base_type_new(RAnalBaseTypeKind kind) {
 	RAnalBaseType *type = R_NEW0 (RAnalBaseType);
 	if (!type) {
 		return NULL;
