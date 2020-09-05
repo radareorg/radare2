@@ -89,7 +89,7 @@ static ut64 t9_pre = UT64_MAX;
 // sign extend 32 -> 64
 
 #define ES_SIGN_n_64(arg, n_bit)  do{if (a->bits == 64) \
-		{r_strbuf_appendf (&op->esil, ",%d,%s,~,%s,=,", n_bit, arg, arg);}}while(0)
+		{r_strbuf_appendf (&op->esil, ",%d,%s,~,%s,=,", n_bit, arg, arg);}else{r_strbuf_append(&op->esil,",");}}while(0)
 #define ES_SIGN32_64(arg)	ES_SIGN_n_64(arg, 32)
 #define ES_SIGN16_64(arg)	ES_SIGN_n_64(arg, 16)
 
