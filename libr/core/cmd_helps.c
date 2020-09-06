@@ -178,7 +178,9 @@ const RCmdDescHelp v_help = {
 };
 
 const RCmdDescHelp w_help = {
-	.summary = "write commands",
+	.args_str = " <string>",
+	.summary = "write string",
+	.group_summary = "write commands",
 };
 
 const RCmdDescHelp x_help = {
@@ -211,11 +213,35 @@ const RCmdDescExample w_incdec_help_examples[] = {
 	{ 0 },
 };
 
-const RCmdDescHelp w_incdec_help = {
-	.summary = "Increment/decrement a byte, word, dword, qword",
-	.usage = "w[1248][+-] [n]",
+const RCmdDescHelp w1_incdec_help = {
+	.summary = "Increment/decrement a byte",
+	.usage = "w1[+-] [n]",
 	.args_str = " [n]",
-	.description = "Increment/decrement a byte/word/dword/qword at the current offset by 1 or n, if specified",
+	.description = "Increment/decrement a byte at the current offset by 1 or n, if specified",
+	.examples = w_incdec_help_examples,
+};
+
+const RCmdDescHelp w2_incdec_help = {
+	.summary = "Increment/decrement a word",
+	.usage = "w2[+-] [n]",
+	.args_str = " [n]",
+	.description = "Increment/decrement a word at the current offset by 1 or n, if specified",
+	.examples = w_incdec_help_examples,
+};
+
+const RCmdDescHelp w4_incdec_help = {
+	.summary = "Increment/decrement a dword",
+	.usage = "w4[+-] [n]",
+	.args_str = " [n]",
+	.description = "Increment/decrement a dword at the current offset by 1 or n, if specified",
+	.examples = w_incdec_help_examples,
+};
+
+const RCmdDescHelp w8_incdec_help = {
+	.summary = "Increment/decrement a qword",
+	.usage = "w8[+-] [n]",
+	.args_str = " [n]",
+	.description = "Increment/decrement a qword at the current offset by 1 or n, if specified",
 	.examples = w_incdec_help_examples,
 };
 

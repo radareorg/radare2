@@ -1402,8 +1402,7 @@ static int wc_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int w_handler_old(void *data, const char *input) {
-	RCore *core = (RCore *)data;
+static void w_handler_common(RCore *core, const char *input) {
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	char *str = strdup (input);
 	/* write string */
@@ -1411,13 +1410,23 @@ static int w_handler_old(void *data, const char *input) {
 	if (!r_core_write_at (core, core->offset, (const ut8 *)str, len)) {
 		cmd_write_fail (core);
 	}
-#if 0
-		r_io_use_desc (core->io, core->file->desc);
-		r_io_write_at (core->io, core->offset, (const ut8*)str, len);
-#endif
 	WSEEK (core, len);
 	r_core_block_read (core);
+}
+
+static int w_handler_old(void *data, const char *input) {
+	RCore *core = (RCore *)data;
+	w_handler_common (core, input);
 	return 0;
+}
+
+static RCmdStatus w_handler(void *data, int argc, const char **argv) {
+	RCore *core = (void *)data;
+	if (argc != 2) {
+		return R_CMD_STATUS_WRONG_ARGS;
+	}
+	w_handler_common (core, argv[1]);
+	return R_CMD_STATUS_OK;
 }
 
 static int wz_handler_old(void *data, const char *input) {
@@ -2079,19 +2088,19 @@ static void cmd_write_init(RCore *core, RCmdDesc *parent) {
 
 	DEFINE_CMD_ARGV_DESC (core, w0, parent);
 
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w[1248][+-], w_incdec, parent, NULL, w_incdec_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1, w1, w_incdec_cd, NULL, w_incdec_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1+, w1_inc, w_incdec_cd, w1_incdec_handler, w_incdec_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1-, w1_dec, w_incdec_cd, w1_incdec_handler, w_incdec_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w2, w2, w_incdec_cd, NULL, w_incdec_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w2+, w2_inc, w_incdec_cd, w2_incdec_handler, w_incdec_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w2-, w2_dec, w_incdec_cd, w2_incdec_handler, w_incdec_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w4, w4, w_incdec_cd, NULL, w_incdec_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w4+, w4_inc, w_incdec_cd, w4_incdec_handler, w_incdec_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w4-, w4_dec, w_incdec_cd, w4_incdec_handler, w_incdec_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8, w8, w_incdec_cd, NULL, w_incdec_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8+, w8_inc, w_incdec_cd, w8_incdec_handler, w_incdec_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8-, w8_dec, w_incdec_cd, w8_incdec_handler, w_incdec_help);
+	DEFINE_CMD_ARGV_DESC_GROUP (core, w[1248][+-], w_incdec, parent);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1, w1, w_incdec_cd, NULL, &w1_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1+, w1_inc, w1_cd, w1_incdec_handler, &w1_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1-, w1_dec, w1_cd, w1_incdec_handler, &w1_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w2, w2, w_incdec_cd, NULL, &w2_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w2+, w2_inc, w2_cd, w2_incdec_handler, &w2_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w2-, w2_dec, w2_cd, w2_incdec_handler, &w2_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w4, w4, w_incdec_cd, NULL, &w4_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w4+, w4_inc, w4_cd, w4_incdec_handler, &w4_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w4-, w4_dec, w4_cd, w4_incdec_handler, &w4_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8, w8, w_incdec_cd, NULL, &w8_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8+, w8_inc, w8_cd, w8_incdec_handler, &w8_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8-, w8_dec, w8_cd, w8_incdec_handler, &w8_incdec_help);
 
 	DEFINE_CMD_OLDINPUT_DESC (core, w6, parent);
 	DEFINE_CMD_OLDINPUT_DESC (core, wh, parent);

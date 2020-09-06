@@ -148,10 +148,12 @@ typedef struct r_core_plugin_t {
 } RCorePlugin;
 
 #define DEFINE_CMD_ARGV_DESC_DETAIL(core, name, c_name, parent, handler, help) \
-	RCmdDesc *c_name##_cd = r_cmd_desc_argv_new (core->rcmd, parent, #name, handler, &help); \
+	RCmdDesc *c_name##_cd = r_cmd_desc_argv_new (core->rcmd, parent, #name, handler, help); \
 	r_return_if_fail (c_name##_cd)
 #define DEFINE_CMD_ARGV_DESC_SPECIAL(core, name, c_name, parent) \
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, name, c_name, parent, c_name##_handler, c_name##_help)
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, name, c_name, parent, c_name##_handler, &c_name##_help)
+#define DEFINE_CMD_ARGV_DESC_GROUP(core, name, c_name, parent)	\
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, name, c_name, parent, NULL, NULL)
 #define DEFINE_CMD_ARGV_DESC(core, name, parent) \
 	DEFINE_CMD_ARGV_DESC_SPECIAL (core, name, name, parent)
 #define DEFINE_CMD_OLDINPUT_DESC(core, name, parent)                                                            \

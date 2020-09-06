@@ -60,7 +60,10 @@ extern const RCmdDescHelp w0_help;
 
 extern const RCmdDescExample w_incdec_help_examples[];
 
-extern const RCmdDescHelp w_incdec_help;
+extern const RCmdDescHelp w1_incdec_help;
+extern const RCmdDescHelp w2_incdec_help;
+extern const RCmdDescHelp w4_incdec_help;
+extern const RCmdDescHelp w8_incdec_help;
 
 // wB helps
 

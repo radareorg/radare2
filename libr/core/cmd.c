@@ -7061,6 +7061,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		void (*descriptor_init)(RCore *core, RCmdDesc *parent);
 		const RCmdDescHelp *help;
 		RCmdDescType type;
+		RCmdArgvCb argv_cb;
 	} cmds[] = {
 		{"!",        "run system command", cmd_system, NULL, &system_help},
 		{"_",        "print last output", cmd_last, NULL, &underscore_help},
@@ -7107,7 +7108,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"<",        "pipe into RCons.readChar", cmd_pipein, NULL, &pipein_help},
 		{"V",   "enter visual mode", cmd_visual, NULL, &V_help},
 		{"v",   "enter visual mode", cmd_panels, NULL, &v_help},
-		{"w",    "write bytes", cmd_write, cmd_write_init, &w_help, R_CMD_DESC_TYPE_ARGV},
+		{"w",    "write bytes", cmd_write, cmd_write_init, &w_help, R_CMD_DESC_TYPE_ARGV, w_handler},
 		{"x",        "alias for px", cmd_hexdump, NULL, &x_help},
 		{"y",     "yank bytes", cmd_yank, NULL, &y_help},
 		{"z",     "zignatures", cmd_zign, cmd_zign_init, &z_help},
@@ -7133,7 +7134,7 @@ R_API void r_core_cmd_init(RCore *core) {
 			cd = r_cmd_desc_oldinput_new (core->rcmd, root, cmds[i].cmd, cmds[i].cb, cmds[i].help);
 			break;
 		case R_CMD_DESC_TYPE_ARGV:
-			cd = r_cmd_desc_argv_new (core->rcmd, root, cmds[i].cmd, NULL, cmds[i].help);
+			cd = r_cmd_desc_argv_new (core->rcmd, root, cmds[i].cmd, cmds[i].argv_cb, cmds[i].help);
 			break;
 		}
 		if (cmds[i].descriptor_init) {
