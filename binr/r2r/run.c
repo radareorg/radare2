@@ -1203,6 +1203,19 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 	}
 	}
 	bool broken = r2r_test_broken (test);
+#if ASAN
+# if !R2_ASSERT_STDOUT
+# error R2_ASSERT_STDOUT undefined or 0
+# endif
+	R2RProcessOutput *out = ret->proc_out;
+	if (!success && test->type == R2R_TEST_TYPE_CMD && strstr (test->path, "/dbg")
+	    && (!out->out ||
+	        (!strstr (out->out, "WARNING:") && !strstr (out->out, "ERROR:") && !strstr (out->out, "FATAL:")))
+	    && (!out->err ||
+	        (!strstr (out->err, "Sanitizer") && !strstr (out->err, "runtime error:")))) {
+		broken = true;
+	}
+#endif
 	if (!success) {
 		ret->result = broken ? R2R_TEST_RESULT_BROKEN : R2R_TEST_RESULT_FAILED;
 	} else {
