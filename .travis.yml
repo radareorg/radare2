@@ -65,6 +65,7 @@ jobs:
         apt:
           packages:
             - g++-10
+            - g++-10-multilib
       install:
         - pip install meson ninja
         - pip install 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
