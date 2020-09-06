@@ -621,7 +621,7 @@ static const char *help_msg_ao[] = {
 	"Usage:", "ao[e?] [len]", "Analyze Opcodes",
 	"aoj", " N", "display opcode analysis information in JSON for N opcodes",
 	"aoe", " N", "display esil form for N opcodes",
-	"aof", " expr", "filter esil expression by filtering given output",
+	"aoef", " expr", "filter esil expression of opcode by given output",
 	"aor", " N", "display reil form for N opcodes",
 	"aos", " N", "display size of N opcodes",
 	"aom", " [id]", "list current or all mnemonics for current arch",
@@ -6547,7 +6547,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 				RStrBuf *b = r_anal_esil_dfg_filter_expr (core->anal, expr, arg);
 				if (b) {
 					char *s = r_strbuf_drain (b);
-					eprintf ("%s\n", s);
+					r_cons_printf ("%s\n", s);
 					free (s);
 				}
 			} else {

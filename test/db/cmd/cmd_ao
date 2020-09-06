@@ -19,5 +19,8 @@ wx 55
 aof rsp
 aof rbp
 EOF
-EXPECT=
+EXPECT=<<EOF
+8,rsp,-=
+
+EOF
 RUN
