@@ -569,3 +569,11 @@ EXPECT=<<EOF
 public: bool __cdecl ABC<char, struct DEF>::operator bool(void)const __ptr64
 EOF
 RUN
+
+NAME=Template with ref to mangled symbol
+FILE=-
+CMDS="!rabin2 -D msvc .?AV?\$Template@UUnnamedStruct@@\$1?StructName1@@3UStructType1@@B\$1?StructName2@@3U3@B\$00\$0A@VChildClass@Class@@@Class@@"
+EXPECT=<<EOF
+class Class::Template<struct UnnamedStruct, &struct StructType1 const StructName1, &struct StructType1 const StructName2, 1, 0, class Class::ChildClass>
+EOF
+RUN
