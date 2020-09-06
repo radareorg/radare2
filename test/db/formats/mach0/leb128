@@ -1,0 +1,9 @@
+NAME=macho trie malformed uleb128
+FILE=bins/mach0/macho-trie-bad-export-info-malformed-uleb128
+CMDS=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+malformed uleb128
+malformed uleb128
+EOF
+RUN
