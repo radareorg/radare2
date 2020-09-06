@@ -107,9 +107,6 @@ fi
 if [ "${R2_TESTS_DISABLE}" != "1" ] ; then
     export NOREPORT=1
     cd test
-    whoami
-    ls -l /bin/ls
-    ls -l bins/elf/analysis/elf-nx
     VERBOSE=1 make -k all || exit 1
 
     if [ "${COVERAGE}" == "1" ] ; then

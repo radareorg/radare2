@@ -2,6 +2,9 @@ all: r2r-tests unit_tests
 
 bins:
 	git clone --depth 1 https://github.com/radareorg/radare2-testbins bins
+	whoami
+	ls -l /bin/ls
+	ls -l bins/elf/analysis/elf-nx
 
 fuzz/targets:
 	git clone --depth 1 https://github.com/radareorg/radare2-fuzztargets fuzz/targets
