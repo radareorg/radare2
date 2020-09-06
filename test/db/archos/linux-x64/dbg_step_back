@@ -1,25 +1,25 @@
-NAME=dbg.stepback
-FILE=bins/elf/analysis/ls-linux-x86_64-zlul
-ARGS=-d -e dbg.bpsysign=true
-CMDS=<<EOF
-db main
-db 0x004028fe
-dc
-dts+
-dc
-dsb
-dsb
-dr rbx,rcx,rdx,r12,rip
-dk 9
-EOF
-EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000001
-0x00404870
-0x004028f9
-EOF
-RUN
+# NAME=dbg.stepback
+# FILE=bins/elf/analysis/ls-linux-x86_64-zlul
+# ARGS=-d -e dbg.bpsysign=true
+# CMDS=<<EOF
+# db main
+# db 0x004028fe
+# dc
+# dts+
+# dc
+# dsb
+# dsb
+# dr rbx,rcx,rdx,r12,rip
+# dk 9
+# EOF
+# EXPECT=<<EOF
+# 0x00000001
+# 0x00000001
+# 0x00000001
+# 0x00404870
+# 0x004028f9
+# EOF
+# RUN
 
 NAME=debug stepback from callee
 FILE=bins/elf/analysis/calls_x64
