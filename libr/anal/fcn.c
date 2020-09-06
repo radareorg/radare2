@@ -543,9 +543,6 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		variadic_reg = r_reg_get (anal->reg, "rax", R_REG_TYPE_GPR);
 	}
 	bool has_variadic_reg = !!variadic_reg;
-	const char *bp_reg = anal->reg->name[R_REG_NAME_BP];
-	const char *sp_reg = anal->reg->name[R_REG_NAME_SP];
-	bool has_stack_regs = bp_reg && sp_reg;
 
 	if (r_cons_is_breaked ()) {
 		return R_ANAL_RET_END;
@@ -687,6 +684,10 @@ repeat:
 			// RET_END causes infinite loops somehow
 			gotoBeach (R_ANAL_RET_END);
 		}
+		const char *bp_reg = anal->reg->name[R_REG_NAME_BP];
+		const char *sp_reg = anal->reg->name[R_REG_NAME_SP];
+		bool has_stack_regs = bp_reg && sp_reg;
+
 		if (anal->opt.nopskip && fcn->addr == at) {
 			RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
 			if (!fi || strncmp (fi->name, "sym.", 4)) {
@@ -1331,7 +1332,9 @@ analopfinish:
 			last_is_mov_lr_pc = false;
 		}
 		if (has_variadic_reg && !fcn->is_variadic) {
-			bool dst_is_variadic = op.dst && op.dst->reg && op.dst->reg->offset == variadic_reg->offset;
+			variadic_reg = r_reg_get (anal->reg, "rax", R_REG_TYPE_GPR);
+			bool dst_is_variadic = op.dst && op.dst->reg
+					&& variadic_reg && op.dst->reg->offset == variadic_reg->offset;
 			bool op_is_cmp = (op.type == R_ANAL_OP_TYPE_CMP) || op.type == R_ANAL_OP_TYPE_ACMP;
 			if (dst_is_variadic && !op_is_cmp) {
 				has_variadic_reg = false;
