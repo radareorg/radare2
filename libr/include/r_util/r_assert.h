@@ -9,7 +9,7 @@
 	case (x):;\
 	}
 
-R_API void r_assert_log(RLogLevel level, const char *fmt, ...);
+R_API void r_assert_log(RLogLevel level, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 
 #if defined (__GNUC__) && defined (__cplusplus)
 #define R_FUNCTION ((const char*) (__PRETTY_FUNCTION__))
