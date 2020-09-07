@@ -441,17 +441,8 @@ static int print_struct_union_list_json(Sdb *TDB, SdbForeachCallback filter) {
 			continue;
 		}
 		pj_o (pj); // {
-		char *sizecmd = r_str_newf ("%s.%s.!size", sdbkv_value (kv), k);
-		if (!sizecmd) {
-			break;
-		}
-		char *size_s = sdb_querys (TDB, NULL, -1, sizecmd);
 		pj_ks (pj, "type", k); // key value pair of string and string
-		pj_ki (pj, "size", size_s ? atoi (size_s) : 0); // key value pair of string and int
 		pj_end (pj); // }
-
-		free (sizecmd);
-		free (size_s);
 	}
 	pj_end (pj); // ]
 

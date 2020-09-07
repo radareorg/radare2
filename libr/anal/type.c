@@ -18,56 +18,6 @@ static char *is_type(char *type) {
 	return NULL;
 }
 
-/*!
- * \brief Save the size of the given datatype in sdb
- * \param sdb_types pointer to the sdb for types
- * \param name the datatype whose size if to be stored
- */
-static void save_type_size(Sdb *sdb_types, char *name) {
-	const char *type = NULL;
-	r_return_if_fail (sdb_types && name);
-	if (!sdb_exists (sdb_types, name) || !(type = sdb_const_get (sdb_types, name, 0))) {
-		return;
-	}
-	char *type_name_size = r_str_newf ("%s.%s.%s", type, name, "!size");
-	r_return_if_fail (type_name_size);
-	int size = r_type_get_bitsize (sdb_types, name);
-	sdb_set (sdb_types, type_name_size, sdb_fmt ("%d", size), 0);
-	free (type_name_size);
-}
-
-/*!
- * \brief Save the sizes of the datatypes which have been parsed
- * \param core pointer to radare2 core
- * \param parsed the parsed c string in sdb format
- */
-static void __save_parsed_type_size(RAnal *anal, const char *parsed) {
-	r_return_if_fail (anal && parsed);
-	char *str = strdup (parsed);
-	if (str) {
-		char *ptr = NULL;
-		int offset = 0;
-		while ((ptr = strstr (str + offset, "=struct\n")) ||
-			(ptr = strstr (str + offset, "=union\n"))) {
-			*ptr = 0;
-			if (str + offset == ptr) {
-				break;
-			}
-			char *name = ptr - 1;
-			while (name > str && *name != '\n') {
-				name--;
-			}
-			if (*name == '\n') {
-				name++;
-			}
-			save_type_size (anal->sdb_types, name);
-			*ptr = '=';
-			offset = ptr + 1 - str;
-		}
-		free (str);
-	}
-}
-
 static char *get_type_data(Sdb *sdb_types, const char *type, const char *sname) {
 	char *key = r_str_newf ("%s.%s", type, sname);
 	if (!key) {
@@ -127,7 +77,6 @@ R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed) {
 
 	// Now add the type to sdb.
 	sdb_query_lines (anal->sdb_types, parsed);
-	__save_parsed_type_size (anal, parsed);
 }
 
 static int typecmp(const void *a, const void *b) {
@@ -372,7 +321,6 @@ static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
 		Sdb:
 		name=struct
 		struct.name=param1,param2,paramN
-		struct.name.!size=96
 		struct.name.param1=type,0,0
 		struct.name.param2=type,4,0
 		struct.name.paramN=type,8,0
@@ -404,12 +352,6 @@ static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
 	char *key = r_str_newf ("%s.%s", kind, sname);
 	sdb_set (anal->sdb_types, key, r_strbuf_get (&arglist), 0);
 	free (key);
-	// struct.name.!size=96
-	key = r_str_newf ("%s.%s.!size", kind, sname);
-	char *val = r_str_newf ("%" PFMT64u "", type->size);
-	sdb_set (anal->sdb_types, key, val, 0);
-	free (val);
-	free (key);
 
 	free (sname);
 
@@ -428,7 +370,6 @@ static void save_union(const RAnal *anal, const RAnalBaseType *type) {
 	Sdb:
 	name=union
 	union.name=param1,param2,paramN
-	union.name.!size=32
 	union.name.param1=type,0,0
 	union.name.param2=type,0,0
 	union.name.paramN=type,0,0
@@ -459,12 +400,6 @@ static void save_union(const RAnal *anal, const RAnalBaseType *type) {
 	// union.name=arg1,arg2,argN
 	char *key = r_str_newf ("%s.%s", kind, sname);
 	sdb_set (anal->sdb_types, key, r_strbuf_get (&arglist), 0);
-	free (key);
-
-	key = r_str_newf ("%s.%s.!size", kind, sname);
-	char *val = r_str_newf ("%" PFMT64u "", type->size);
-	sdb_set (anal->sdb_types, key, val, 0);
-	free (val);
 	free (key);
 
 	free (sname);
@@ -518,12 +453,6 @@ static void save_enum(const RAnal *anal, const RAnalBaseType *type) {
 	// enum.name=arg1,arg2,argN
 	char *key = r_str_newf ("enum.%s", sname);
 	sdb_set (anal->sdb_types, key, r_strbuf_get (&arglist), 0);
-	free (key);
-
-	key = r_str_newf ("enum.%s.!size", sname);
-	char *val = r_str_newf ("%" PFMT64u "", type->size);
-	sdb_set (anal->sdb_types, key, val, 0);
-	free (val);
 	free (key);
 
 	free (sname);
