@@ -1189,18 +1189,24 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 		}
 		break;
 	case 'j': { // "lj"
-		PJ * pj = pj_new();
-		pj_a (pj);
-		pj_o (pj);
-		char * res = r_syscmd_ls (arg);
-		pj_s (pj, res);
-		pj_end (pj);
-		pj_end (pj);
-		char * j = pj_drain (pj);
-		if (j) {
-			r_cons_printf ("%s \n", j);
-			free (j);
+		if (!arg) {
+			arg = "";
 		}
+		if (r_fs_check (core->fs, arg)) {
+			r_core_cmdf (core, "md %s", arg);
+		} else {
+			PJ * pj = pj_new ();
+			pj_a (pj);
+			pj_o (pj);
+			RList *res = r_sys_dir (arg);
+			pj_s (pj, res);
+			pj_end (pj);
+			pj_end (pj);
+			char * j = pj_drain (pj);
+			if (j) {
+				r_cons_println (j);
+				free (j);
+			}
 		free (res);
 		break;
 		}
