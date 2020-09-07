@@ -1006,8 +1006,6 @@ ar a0=21
 ar v0=12
 aes
 ar s0
-ar hi
-ar lo
 ar > /dev/null
 ar a0=0x44556677
 ar v0=0x00112233
@@ -1016,8 +1014,6 @@ aes
 ar s0
 EOF
 EXPECT=<<EOF
-0x000000fc
-0x00000000
 0x000000fc
 0xc28637b5
 EOF
