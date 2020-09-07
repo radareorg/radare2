@@ -46,7 +46,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 	memcpy (bytes, buf, 4); // TODO handle thumb
 
 	if ((a->cpu != pre_cpu) && (a->features != pre_features)) {
-		free(disasm_obj.disassembler_options);
+		free (disasm_obj.disassembler_options);
 		memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
 	}	
 
@@ -65,7 +65,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 	}
 
 	if (a->features && a->features != pre_features) {
-		disasm_obj.disassembler_options = r_str_new("");
+		disasm_obj.disassembler_options = r_str_new ("");
 		if (strstr (a->features, "n64")) {
 			r_str_append (disasm_obj.disassembler_options, "abi=n64,");
 		} else if (strstr (a->features, "n32")) {
