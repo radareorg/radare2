@@ -82,53 +82,53 @@ static inline int UTX_MUL(ut64 *r, ut64 a, ut64 b) {
 /*
  * Return non-zero if HDR identifies an MIPS n64 ELF binary.
  */
-static int  elfn64_check_arch(Elf_(Ehdr) *__h)
+static int  elfn64_check_arch(Elf_(Ehdr) *h)
 {
-	int __res = 1;
+	int res = 1;
 
-	if (__h->e_ident[EI_CLASS] != ELFCLASS64){
-		__res = 0;
+	if (h->e_ident[EI_CLASS] != ELFCLASS64){
+		res = 0;
 	}
-	return __res;
+	return res;
 }
 
 /*
  * Return non-zero if HDR identifies an MIPS o32 ELF binary.
  */
-static int elfo32_check_arch(Elf_(Ehdr) *__h)
+static int elfo32_check_arch(Elf_(Ehdr) *h)
 {
-	int __res = 1;
+	int res = 1;
 
-	if (__h->e_ident[EI_CLASS] != ELFCLASS32) {
-		__res = 0;
+	if (h->e_ident[EI_CLASS] != ELFCLASS32) {
+		res = 0;
 	}
-	if ((__h->e_flags & EF_MIPS_ABI2) != 0) {
-		__res = 0;
+	if ((h->e_flags & EF_MIPS_ABI2) != 0) {
+		res = 0;
 	}
-	if (((__h->e_flags & EF_MIPS_ABI) != 0) &&
-		((__h->e_flags & EF_MIPS_ABI) != EF_MIPS_ABI_O32)) {
-		__res = 0;
+	if (((h->e_flags & EF_MIPS_ABI) != 0) &&
+		((h->e_flags & EF_MIPS_ABI) != EF_MIPS_ABI_O32)) {
+		res = 0;
 	}
 
-	return __res;
+	return res;
 }
 
 /*
  * Return non-zero if HDR identifies an MIPS n32 ELF binary.
  */
-static int elfn32_check_arch(Elf_(Ehdr) *__h)
+static int elfn32_check_arch(Elf_(Ehdr) *h)
 {
-    int __res = 1;
+    int res = 1;
 
-	if (__h->e_ident[EI_CLASS] != ELFCLASS32) {
-		__res = 0;
+	if (h->e_ident[EI_CLASS] != ELFCLASS32) {
+		res = 0;
 	}
-	if (((__h->e_flags & EF_MIPS_ABI2) == 0) ||
-		((__h->e_flags & EF_MIPS_ABI) != 0)) {
-		__res = 0;
+	if (((h->e_flags & EF_MIPS_ABI2) == 0) ||
+		((h->e_flags & EF_MIPS_ABI) != 0)) {
+		res = 0;
 	}
 
-	return __res;
+	return res;
 }
 
 enum {
