@@ -149,6 +149,28 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 	return ret;
 }
 
+static bool is_wordable_section(const char *name) {
+	if (!strcmp (name, ".init_array")) {
+		return true;
+	}
+	if (!strcmp (name, ".fini_array")) {
+		return true;
+	}
+	if (!strcmp (name, ".data.rel.ro")) {
+		return true;
+	}
+	if (!strcmp (name, ".dynamic")) {
+		return true;
+	}
+	if (!strcmp (name, ".got")) {
+		return true;
+	}
+	if (strstr (name, ".rela.")) {
+		return true;
+	}
+	return false;
+}
+
 static RList* sections(RBinFile *bf) {
 	struct Elf_(r_bin_elf_obj_t)* obj = (bf && bf->o)? bf->o->bin_obj : NULL;
 	struct r_bin_elf_section_t *section = NULL;
@@ -161,6 +183,11 @@ static RList* sections(RBinFile *bf) {
 		return NULL;
 	}
 
+#if R_BIN_ELF64
+	int wordsize = 8;
+#else
+	int wordsize = 4;
+#endif
 	//there is not leak in section since they are cached by elf.c
 	//and freed within Elf_(r_bin_elf_free)
 	if ((section = Elf_(r_bin_elf_get_sections) (obj))) {
@@ -174,19 +201,7 @@ static RList* sections(RBinFile *bf) {
 			} else if (!strcmp (ptr->name, "C")) {
 				ptr->is_data = true;
 			}
-			if (strstr (ptr->name, ".got")) {
-#if R_BIN_ELF64
-				int wordsize = 8;
-#else
-				int wordsize = 4;
-#endif
-				ptr->format = r_str_newf ("Cd %d[%"PFMT64d"]", wordsize, section[i].size / wordsize);
-			} else if (strstr (ptr->name, ".rela.")) {
-#if R_BIN_ELF64
-				int wordsize = 8;
-#else
-				int wordsize = 4;
-#endif
+			if (is_wordable_section (ptr->name)) {
 				ptr->format = r_str_newf ("Cd %d[%"PFMT64d"]", wordsize, section[i].size / wordsize);
 			}
 			ptr->size = section[i].type != SHT_NOBITS ? section[i].size : 0;
