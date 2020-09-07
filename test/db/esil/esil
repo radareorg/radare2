@@ -324,3 +324,11 @@ EXPECT=<<EOF
 0xffffffffffffff80
 EOF
 RUN
+
+NAME=signext ex 
+FILE=-
+CMDS="ae 32,0xffffffffffffff12,~"
+EXPECT=<<EOF
+0xffffffffffffff12
+EOF
+RUN
