@@ -96,9 +96,9 @@ R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE ou
 R_API int r_sys_truncate(const char *file, int sz);
 R_API int r_sys_cmd(const char *cmd);
 R_API int r_sys_cmdbg(const char *cmd);
-R_API int r_sys_cmdf(const char *fmt, ...);
+R_API int r_sys_cmdf(const char *fmt, ...) R_PRINTF_CHECK(1, 2);
 R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len);
-R_API char *r_sys_cmd_strf(const char *cmd, ...);
+R_API char *r_sys_cmd_strf(const char *cmd, ...) R_PRINTF_CHECK(1, 2);
 //#define r_sys_cmd_str(cmd, input, len) r_sys_cmd_str_full(cmd, input, len, 0)
 R_API void r_sys_backtrace(void);
 R_API bool r_sys_tts(const char *txt, bool bg);
