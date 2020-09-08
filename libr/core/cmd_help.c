@@ -127,7 +127,7 @@ static const char *help_msg_question[] = {
 	"?+", " [cmd]", "run cmd if $? > 0",
 	"?-", " [cmd]", "run cmd if $? < 0",
 	"?=", " eip-0x804800", "hex and dec result for this math expr",
-	"?==", "x86==`e asm.arch`", "strcmp two strings separated by ==",
+	"?==", "x86 `e asm.arch`", "strcmp two strings separated by ==",
 	"??", " [cmd]", "run cmd if $? != 0",
 	"??", "", "show value of operation",
 	"?_", " hudfile", "load hud menu with given file",
@@ -748,13 +748,12 @@ static int cmd_help(void *data, const char *input) {
 	case '=': // "?=" set num->value
 		if (input[1] == '=') { // ?==
 			char *s = strdup (input + 2);
-			char *e = strstr (s, "==");
+			char *e = strchr (s, ' ');
 			if (e) {
-				*e = 0;
-				e += 2;
+				*e++ = 0;
 				core->num->value = strcmp (s, e);
 			} else {
-				eprintf ("Missing == in expression\n");
+				eprintf ("Missing secondary word in expression to compare\n");
 			}
 			free (s);
 		} else {
