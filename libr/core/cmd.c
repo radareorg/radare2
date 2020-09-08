@@ -1826,7 +1826,7 @@ static int cmd_resize(void *data, const char *input) {
 			PJ * pj = pj_new ();
 			pj_o (pj);
 			if (oldsize != -1) {
-				pj_n (pj, oldsize);
+				pj_kn (pj, "size", oldsize);
 			}
 			pj_end (pj);
 			char *s = pj_drain (pj);
