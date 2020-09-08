@@ -20,6 +20,7 @@ static const RCmdDescHelp root_help = {
 
 static int value = 0;
 
+#define MAX_SHOW_NCHILDREN 7
 #define NCMDS (sizeof (cmd->cmds)/sizeof(*cmd->cmds))
 R_LIB_VERSION (r_cmd);
 
@@ -427,7 +428,7 @@ static size_t update_max_len(RCmdDesc *cd, size_t max_len) {
 	return max_len;
 }
 
-static void print_child_help_in(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use_color, bool has_children) {
+static void print_child_help_in(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use_color) {
 	size_t str_len = strlen (cd->name) + strlen0 (cd->help->args_str);
 	size_t padding = str_len < max_len ? max_len - str_len : 0;
 	const char *cd_args_str = cd->help->args_str ? cd->help->args_str : "";
@@ -438,15 +439,37 @@ static void print_child_help_in(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool 
 		   *pal_help_color = use_color ? cons->context->pal.help : "",
 		   *pal_input_color = use_color ? cons->context->pal.input : "",
 		   *pal_reset = use_color ? cons->context->pal.reset : "";
-	char children_ch = has_children? '+': '|';
-	r_strbuf_appendf (sb, "%c %s%s%s%s %*s%s# %s%s\n", children_ch,
-		pal_input_color, cd->name, pal_args_color, cd_args_str,
+
+	r_strbuf_appendf (sb, "| %s%s", pal_input_color, cd->name);
+
+	// Show all the sub-commands between [...] if just a few, otherwise show [?]
+	r_strbuf_appendf (sb, "%s", pal_args_color);
+	if (cd->n_children >= MAX_SHOW_NCHILDREN || cd->type == R_CMD_DESC_TYPE_OLDINPUT) {
+		r_strbuf_append (sb, "[?]");
+	} else if (cd->n_children > 0){
+		bool has_common_prefix = false;
+		RStrBuf *options = r_strbuf_new (NULL);
+		void **it_cd;
+		r_cmd_desc_children_foreach (cd, it_cd) {
+			RCmdDesc *child = *(RCmdDesc **)it_cd;
+			if (r_str_startswith (child->name, cd->name)) {
+				r_strbuf_appendf (options, "%c", child->name[strlen (cd->name)]);
+				has_common_prefix = true;
+			}
+		}
+		if (has_common_prefix) {
+			char *options_str = r_strbuf_drain (options);
+			r_strbuf_appendf (sb, "[%s]", options_str);
+			free (options_str);
+		}
+	}
+
+	r_strbuf_appendf (sb, "%s %*s%s# %s%s\n", cd_args_str,
 		padding, "", pal_help_color, cd_summary, pal_reset);
 }
 
 static void print_child_help(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use_color) {
-	bool has_children = !r_pvector_empty (&cd->children) && cd->type == R_CMD_DESC_TYPE_ARGV;
-	print_child_help_in (sb, cd, max_len, use_color, has_children);
+	print_child_help_in (sb, cd, max_len, use_color);
 }
 
 static char *inner_get_help(RCmd *cmd, RCmdDesc *cd, bool use_color) {
@@ -465,7 +488,7 @@ static char *inner_get_help(RCmd *cmd, RCmdDesc *cd, bool use_color) {
 	}
 
 	if (cd->d.argv_data.cb) {
-		print_child_help_in (sb, cd, max_len, use_color, false);
+		print_child_help_in (sb, cd, max_len, use_color);
 	}
 	r_cmd_desc_children_foreach (cd, it_cd) {
 		RCmdDesc *child = *(RCmdDesc **)it_cd;

@@ -254,7 +254,7 @@ const RCmdDescExample wB_help_examples[] = {
 
 const RCmdDescHelp wB_help = {
 	.summary = "Set bits with given value",
-	.args_str = "[-] [value]",
+	.args_str = " [value]",
 	.group_summary = "Set or unset bits with given value",
 	.description = "Set the bits that are set in the value passed as arguments. 0 bits in the value argument are ignored, while the others are set at the current offset",
 	.examples = wB_help_examples,
@@ -304,7 +304,7 @@ const RCmdDescHelp wv8_help = {
 };
 
 const RCmdDescHelp w6_help = {
-	.args_str = "[de] <base64>|<hexstring>",
+	.args_str = " <base64>|<hexstring>",
 	.summary = "write base64 [d]ecoded or [e]ncoded string",
 };
 
