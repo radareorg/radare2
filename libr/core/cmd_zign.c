@@ -722,7 +722,7 @@ static bool apply_types(RCore *core, RAnalFunction *fcn,  RSignItem *it) {
 			return false;
 		}
 	}
-	r_str_remove_char (alltypes, "\"");
+	r_str_remove_char (alltypes, '"');
 	r_anal_save_parsed_type (core->anal, alltypes);
 	free (start);
 	free (alltypes);
