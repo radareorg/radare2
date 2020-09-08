@@ -1102,7 +1102,7 @@ static RBinInfo* info(RBinFile *bf) {
 	if ((str = Elf_(r_bin_elf_get_cpu) (obj))) {
 		ret->cpu = str;         
 	}
-	if ((str = Elf_(r_bin_elf_get_features) (obj))) {
+	if ((str = Elf_(r_bin_elf_get_abi) (obj))) {
 		ret->features = str;
 	}
 	

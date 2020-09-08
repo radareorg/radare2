@@ -82,53 +82,50 @@ static inline int UTX_MUL(ut64 *r, ut64 a, ut64 b) {
 /*
  * Return non-zero if HDR identifies an MIPS n64 ELF binary.
  */
-static int  elfn64_check_arch(Elf_(Ehdr) *h)
+static bool  elfn64_check_arch(Elf_(Ehdr) *h)
 {
-	int res = 1;
-
-	if (h->e_ident[EI_CLASS] != ELFCLASS64){
-		res = 0;
+	if (h->e_ident[EI_CLASS] == ELFCLASS64) {
+		return true;
 	}
-	return res;
+	return false;
 }
 
 /*
  * Return non-zero if HDR identifies an MIPS o32 ELF binary.
  */
-static int elfo32_check_arch(Elf_(Ehdr) *h)
+static bool elfo32_check_arch(Elf_(Ehdr) *h)
 {
-	int res = 1;
 
 	if (h->e_ident[EI_CLASS] != ELFCLASS32) {
-		res = 0;
+		return false;
 	}
 	if ((h->e_flags & EF_MIPS_ABI2) != 0) {
-		res = 0;
+		return false;
 	}
 	if (((h->e_flags & EF_MIPS_ABI) != 0) &&
 		((h->e_flags & EF_MIPS_ABI) != EF_MIPS_ABI_O32)) {
-		res = 0;
+		return false;
 	}
 
-	return res;
+	return true;
 }
 
 /*
  * Return non-zero if HDR identifies an MIPS n32 ELF binary.
  */
-static int elfn32_check_arch(Elf_(Ehdr) *h)
+static bool elfn32_check_arch(Elf_(Ehdr) *h)
 {
     int res = 1;
 
 	if (h->e_ident[EI_CLASS] != ELFCLASS32) {
-		res = 0;
+		return false;
 	}
 	if (((h->e_flags & EF_MIPS_ABI2) == 0) ||
 		((h->e_flags & EF_MIPS_ABI) != 0)) {
-		res = 0;
+		return false;
 	}
 
-	return res;
+	return true;
 }
 
 enum {
@@ -2157,20 +2154,18 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 	default: return strdup ("x86");
 	}
 }
-char* Elf_(r_bin_elf_get_features)(ELFOBJ *bin) {
+char* Elf_(r_bin_elf_get_abi)(ELFOBJ *bin) {
 	Elf_(Ehdr)* ehdr =(Elf_(Ehdr) *) &bin->ehdr;
 
 	if (ehdr->e_machine == EM_MIPS){
-		if (elfn64_check_arch(ehdr)) {
-			return strdup("n64");
+		if (elfn64_check_arch (ehdr)) {
+			return strdup ("n64");
 		}
-
-		if (elfn32_check_arch(ehdr)) {
-			return strdup("n32");
+		if (elfn32_check_arch (ehdr)) {
+			return strdup ("n32");
 		}
-
-		if (elfo32_check_arch(ehdr)) {
-			return strdup("o32");
+		if (elfo32_check_arch (ehdr)) {
+			return strdup ("o32");
 		}
 	}
 	return NULL;
@@ -2196,20 +2191,20 @@ char* Elf_(r_bin_elf_get_cpu)(ELFOBJ *bin) {
 }
 
 char* Elf_(r_bin_elf_get_head_flag)(ELFOBJ *bin) {
-	char *head_flag = r_str_new("");
+	char *head_flag = r_str_new ("");
 	char *str = NULL;
-	str = Elf_(r_bin_elf_get_cpu)(bin);
+	str = Elf_(r_bin_elf_get_cpu) (bin);
 	if (str) {
-		r_str_append(head_flag, str);
+		r_str_append (head_flag, str);
 	}
-	str = Elf_(r_bin_elf_get_features)(bin);
+	str = Elf_(r_bin_elf_get_abi) (bin);
 	if (str) {
-		r_str_append(head_flag, " ");
-		r_str_append(head_flag, str);
+		r_str_append (head_flag, " ");
+		r_str_append (head_flag, str);
 	}
 	
 	if (!*head_flag) {
-		r_str_append(head_flag, "unknown_flag");
+		r_str_append (head_flag, "unknown_flag");
 	}
 	return head_flag;
 }
