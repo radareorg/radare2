@@ -51,7 +51,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	if (user_ass) {
 		x86as = user_ass;
 	}
-	if (!*x86as) {
+	if (R_STR_ISEMPTY (x86as)) {
 		eprintf ("Please set R2_X86AS env to define an x86 assembler program");
 		return 1;
 	}
