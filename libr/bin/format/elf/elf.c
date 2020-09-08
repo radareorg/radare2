@@ -1411,16 +1411,38 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
-	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x3);
+	ut64 pos = COMPUTE_PLTGOT_POSITION (rel, got_addr, 0x3);
 
 	switch (rel->type) {
-	case R_ARM_JUMP_SLOT: {
+	case R_ARM_JUMP_SLOT:
 		plt_addr += pos * 12 + 20;
 		if (is_thumb_symbol (plt_addr)) {
 			plt_addr--;
 		}
 		return plt_addr;
-	}
+	case R_AARCH64_RELATIVE:
+		eprintf ("Unsupported relocation type for imports %d\n", rel->type);
+#if 0
+// TODO
+	 if (rela->r_addend >= start)
+> +	{
+> +	  if (read_uneclass (dso, rela->r_offset) == rela->r_addend)
+> +	    write_neclass (dso, rela->r_offset, rela->r_addend + adjust);
+> +	  rela->r_addend += adjust;
+> +	}
+		if (rel->addend > plt_addr) { // start
+			return (plt_addr + pos * 16 + 32) + rel->addend;
+		}
+		// same as fallback to JUMP_SLOT
+		return plt_addr + pos * 16 + 32;
+#endif
+		return UT64_MAX;
+	case R_AARCH64_IRELATIVE:
+		if (rel->addend > plt_addr) { // start
+			return (plt_addr + pos * 16 + 32) + rel->addend;
+		}
+		// same as fallback to JUMP_SLOT
+		return plt_addr + pos * 16 + 32;
 	case R_AARCH64_JUMP_SLOT:
 		return plt_addr + pos * 16 + 32;
 	default:
@@ -1586,10 +1608,9 @@ static ut64 get_import_addr_x86(ELFOBJ *bin, RBinElfReloc *rel) {
 	}
 
 	RBinElfSection *pltsec_section = get_section_by_name (bin, ".plt.sec");
-
 	if (pltsec_section) {
 		ut64 got_addr = bin->dyn_info.dt_pltgot;
-		ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x3);
+		ut64 pos = COMPUTE_PLTGOT_POSITION (rel, got_addr, 0x3);
 		return pltsec_section->rva + pos * X86_PLT_ENTRY_SIZE;
 	}
 
@@ -1607,7 +1628,6 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 
 	// lookup the right rel/rela entry
 	RBinElfReloc *rel = ht_up_find (bin->rel_cache, sym, NULL);
-
 	if (!rel) {
 		return UT64_MAX;
 	}
