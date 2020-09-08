@@ -127,6 +127,7 @@ static const char *help_msg_question[] = {
 	"?+", " [cmd]", "run cmd if $? > 0",
 	"?-", " [cmd]", "run cmd if $? < 0",
 	"?=", " eip-0x804800", "hex and dec result for this math expr",
+	"?==", "x86==`e asm.arch`", "strcmp two strings separated by ==",
 	"??", " [cmd]", "run cmd if $? != 0",
 	"??", "", "show value of operation",
 	"?_", " hudfile", "load hud menu with given file",
@@ -745,10 +746,23 @@ static int cmd_help(void *data, const char *input) {
 		core->num->value = n; // redundant
 		break;
 	case '=': // "?=" set num->value
-		if (input[1]) {
-			r_num_math (core->num, input+1);
+		if (input[1] == '=') { // ?==
+			char *s = strdup (input + 2);
+			char *e = strstr (s, "==");
+			if (e) {
+				*e = 0;
+				e += 2;
+				core->num->value = strcmp (s, e);
+			} else {
+				eprintf ("Missing == in expression\n");
+			}
+			free (s);
 		} else {
-			r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
+			if (input[1]) { // ?=
+				r_num_math (core->num, input+1);
+			} else {
+				r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
+			}
 		}
 		break;
 	case '+': // "?+"
@@ -777,9 +791,8 @@ static int cmd_help(void *data, const char *input) {
 				if (input[1] == '?') {
 					cmd_help_exclamation (core);
 					return 0;
-				} else {
-					return core->num->value = r_core_cmd (core, input+1, 0);
 				}
+				return core->num->value = r_core_cmd (core, input+1, 0);
 			}
 		} else {
 			r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
