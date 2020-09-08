@@ -547,13 +547,11 @@ static void r_print_format_time(const RPrint* p, int endian, int mode,
 		}
 		free (timestr);
 	} else if (MUSTSEEJSON || MUSTSEESTRUCT) {
-
 		char *timestr = malloc (ASCTIME_BUF_MINLEN);
 		if (!timestr) {
 			return;
 		}
 		asctime_r (gmtime_r ((time_t*)&addr, &timestruct), timestr);
-
 		*(timestr+24) = '\0';
 		if (size==-1) {
 			p->cb_printf ("\"%s\"", timestr);
@@ -561,9 +559,7 @@ static void r_print_format_time(const RPrint* p, int endian, int mode,
 			p->cb_printf ("[ ");
 			while (size--) {
 				updateAddr (buf + i, size - i, endian, &addr, NULL);
-
 				asctime_r (gmtime_r ((time_t*)&addr, &timestruct), timestr);
-
 				*(timestr+24) = '\0';
 				if (elem == -1 || elem == 0) {
 					p->cb_printf ("\"%s\"", timestr);
