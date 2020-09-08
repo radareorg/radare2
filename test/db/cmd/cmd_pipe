@@ -1,6 +1,9 @@
 NAME=pipe args
 FILE=-
-CMDS=#!pipe echo hello world
+CMDS=<<EOF
+env LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.6
+#!pipe python3 scripts/get-funcs.py
+EOF
 EXPECT=<<EOF
 hello world
 EOF

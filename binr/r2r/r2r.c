@@ -491,13 +491,6 @@ static RThreadFunctionRet worker_th(RThread *th) {
 			break;
 		}
 		R2RTest *test = r_pvector_pop (&state->queue);
-#if ASAN
-		if (test->type == R2R_TEST_TYPE_CMD
-		    && (strstr (test->path, "/dbg_cont_back") || strstr (test->path, "/dbg_dts")
-		        || strstr (test->path, "/dbg_step_back"))) {
-			eprintf ("Starting test \"%s\" of testfile %s\n", test->cmd_test->name.value, test->path); // DBG
-		}
-#endif
 		r_th_lock_leave (state->lock);
 
 		R2RTestResultInfo *result = r2r_run_test (&state->run_config, test);
@@ -518,13 +511,6 @@ static RThreadFunctionRet worker_th(RThread *th) {
 			state->fx_count++;
 			break;
 		}
-#if ASAN
-		if (test->type == R2R_TEST_TYPE_CMD
-		    && (strstr (test->path, "/dbg_cont_back") || strstr (test->path, "/dbg_dts")
-		        || strstr (test->path, "/dbg_step_back"))) {
-			eprintf ("Completed test \"%s\" of testfile %s\n", test->cmd_test->name.value, test->path); // DBG
-		}
-#endif
 		if (state->path_left) {
 			ut64 *count = ht_pp_find (state->path_left, test->path, NULL);
 			if (count) {
