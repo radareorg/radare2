@@ -12,6 +12,9 @@
 #define FAST_DATA_MASK 0xfffffffcUL
 #endif
 
+#define METHOD_LIST_FLAG_IS_SMALL 0x80000000
+#define METHOD_LIST_FLAG_IS_PREOPT 0x3
+
 #define RO_DATA_PTR(x) ((x) & FAST_DATA_MASK)
 
 struct MACH0_(SMethodList) {
@@ -532,7 +535,6 @@ error:
 ///////////////////////////////////////////////////////////////////////////////
 static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinClass *klass, bool is_static) {
 	struct MACH0_(SMethodList) ml;
-	struct MACH0_(SMethod) m;
 	mach0_ut r;
 	ut32 offset, left, i;
 	char *name = NULL;
@@ -576,8 +578,15 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 	ml.entsize = r_read_ble (&sml[0], bigendian, 32);
 	ml.count = r_read_ble (&sml[4], bigendian, 32);
 
+	bool is_small = (ml.entsize & METHOD_LIST_FLAG_IS_SMALL) != 0;
+	ut8 mlflags = ml.entsize & 0x3;
+
 	p += sizeof (struct MACH0_(SMethodList));
 	offset += sizeof (struct MACH0_(SMethodList));
+
+	size_t read_size = is_small ? 3 * sizeof (ut32) :
+			sizeof (struct MACH0_(SMethod));
+
 	for (i = 0; i < ml.count; i++) {
 		r = va2pa (p, &offset, &left, bf);
 		if (!r) {
@@ -589,29 +598,52 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 			// eprintf ("RBinClass allocation error\n");
 			return;
 		}
+		struct MACH0_(SMethod) m;
 		memset (&m, '\0', sizeof (struct MACH0_(SMethod)));
-		if (r + left < r || r + sizeof (struct MACH0_(SMethod)) < r) {
+		if (r + left < r || r + read_size < r) {
 			goto error;
 		}
 		if (r > bf->size) {
 			goto error;
 		}
-		if (r + sizeof (struct MACH0_(SMethod)) > bf->size) {
+		if (r + read_size > bf->size) {
 			goto error;
 		}
-		if (left < sizeof (struct MACH0_(SMethod))) {
+		if (left < read_size) {
 			if (r_buf_read_at (bf->buf, r, sm, left) != left) {
 				goto error;
 			}
 		} else {
-			len = r_buf_read_at (bf->buf, r, sm, sizeof (struct MACH0_(SMethod)));
-			if (len != sizeof (struct MACH0_(SMethod))) {
+			len = r_buf_read_at (bf->buf, r, sm, read_size);
+			if (len != read_size) {
 				goto error;
 			}
 		}
-		m.name = r_read_ble (&sm[0], bigendian, 8 * sizeof (mach0_ut));
-		m.types = r_read_ble (&sm[sizeof (mach0_ut)], bigendian, 8 * sizeof (mach0_ut));
-		m.imp = r_read_ble (&sm[2 * sizeof (mach0_ut)], bigendian, 8 * sizeof (mach0_ut));
+		if (!is_small) {
+			m.name = r_read_ble (&sm[0], bigendian, 8 * sizeof (mach0_ut));
+			m.types = r_read_ble (&sm[sizeof (mach0_ut)], bigendian, 8 * sizeof (mach0_ut));
+			m.imp = r_read_ble (&sm[2 * sizeof (mach0_ut)], bigendian, 8 * sizeof (mach0_ut));
+		} else {
+			st64 name_offset = (st32) r_read_ble (&sm[0], bigendian, 8 * sizeof (ut32));
+			mach0_ut name = p + name_offset;
+			if (mlflags != METHOD_LIST_FLAG_IS_PREOPT) {
+				r = va2pa (name, &offset, &left, bf);
+				if (!r) {
+					goto error;
+				}
+				ut8 tmp[8];
+				if (r_buf_read_at (bf->buf, r, tmp, sizeof (mach0_ut)) != sizeof (mach0_ut)) {
+					goto error;
+				}
+				m.name = r_read_ble (tmp, bigendian, 8 * sizeof (mach0_ut));
+			} else {
+				m.name = name;
+			}
+			st64 types_offset = (st32) r_read_ble (&sm[sizeof (ut32)], bigendian, 8 * sizeof (ut32));
+			m.types = p + types_offset + 4;
+			st64 imp_offset = (st32) r_read_ble (&sm[2 * sizeof (ut32)], bigendian, 8 * sizeof (ut32));
+			m.imp = p + imp_offset + 8;
+		}
 
 		r = va2pa (m.name, NULL, &left, bf);
 		if (r) {
@@ -684,8 +716,8 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 		}
 		r_list_append (klass->methods, method);
 next:
-		p += sizeof (struct MACH0_(SMethod));
-		offset += sizeof (struct MACH0_(SMethod));
+		p += read_size;
+		offset += read_size;
 	}
 	return;
 error:
