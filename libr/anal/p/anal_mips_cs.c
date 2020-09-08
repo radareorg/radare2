@@ -89,13 +89,16 @@ static ut64 t9_pre = UT64_MAX;
 // sign extend 32 -> 64
 
 #define ES_SIGN_n_64(arg, n_bit)  do{if (a->bits == 64) \
-		{r_strbuf_appendf (&op->esil, ",%d,%s,~,%s,=,", n_bit, arg, arg);}else{r_strbuf_append(&op->esil,",");}}while(0)
-#define ES_SIGN32_64(arg)	ES_SIGN_n_64(arg, 32)
-#define ES_SIGN16_64(arg)	ES_SIGN_n_64(arg, 16)
+		{r_strbuf_appendf (&op->esil, ",%d,%s,~,%s,=,", n_bit, arg, arg);}\
+		else{r_strbuf_append(&op->esil,",");}}while(0)
 
-#define ES_ADD_CK_OVERF(x, y,z,bit) do{uint64_t mask = 1ULL<<(bit-1);\
-		r_strbuf_appendf (&op->esil,"%d,0x%lx,%s,%s,^,&,>>,%d,0x%lx,%s,%s,+,&,>>,|,1,==,$z,?{,$$,1,TRAP,}{,%s,%s,+,%s,=,}",\
-							bit-2,mask,x,y,bit-1,mask,x,y,x,y,z);} while(0)
+#define ES_SIGN32_64(arg)	ES_SIGN_n_64 (arg, 32)
+#define ES_SIGN16_64(arg)	ES_SIGN_n_64 (arg, 16)
+
+#define ES_ADD_CK_OVERF(x, y,z,bit) do{ut64 mask = 1ULL << (bit-1);\
+		r_strbuf_appendf (&op->esil,"%d,0x%lx,%s,%s,^,&,>>,%d,0x%lx,%s,%s,+,&,>>,|,1,==,$z,?\
+			{,$$,1,TRAP,}{,%s,%s,+,%s,=,}",\
+			bit-2, mask, x, y, bit-1, mask, x, y, x, y, z);} while(0)
 
 #define PROTECT_ZERO() \
 	if (REG(0)[0]=='z'){\
@@ -405,18 +408,18 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		/** signed -- sets overflow flag */
 		case MIPS_INS_ADD: {
 			PROTECT_ZERO () {
-				ES_ADD_CK_OVERF(ARG(1), ARG(2), ARG(0), 32);
+				ES_ADD_CK_OVERF (ARG(1), ARG(2), ARG(0), 32);
 		}
 		}
 		break;
 	case MIPS_INS_ADDI:
 		PROTECT_ZERO () {
-			ES_ADD_CK_OVERF(ARG(1), ARG(2), ARG(0), 32);
+			ES_ADD_CK_OVERF (ARG(1), ARG(2), ARG(0), 32);
 		}
 		break;
 	case MIPS_INS_DADD:
 	case MIPS_INS_DADDI:
-		ES_ADD_CK_OVERF(ARG(1), ARG(2), ARG(0), 64);
+		ES_ADD_CK_OVERF (ARG(1), ARG(2), ARG(0), 64);
 		break;
 	/** unsigned */
 	case MIPS_INS_DADDU:
@@ -567,11 +570,11 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case MIPS_INS_MTLO:
 		r_strbuf_appendf (&op->esil, "%s,lo,=", REG (0));
-		ES_SIGN32_64("lo");
+		ES_SIGN32_64 ("lo");
 		break;
 	case MIPS_INS_MTHI:
 		r_strbuf_appendf (&op->esil, "%s,hi,=", REG (0));
-		ES_SIGN32_64("lo");
+		ES_SIGN32_64 ("lo");
 		break;
 #if 0
 	// could not test div
