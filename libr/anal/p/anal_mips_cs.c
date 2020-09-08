@@ -87,18 +87,28 @@ static ut64 t9_pre = UT64_MAX;
 #define ES_W(x) "0xffffffff,"x",&"
 
 // sign extend 32 -> 64
+#define ES_SIGN32_64(arg)	es_sign_n_64 (a, op, arg, 32)
+#define ES_SIGN16_64(arg)	es_sign_n_64 (a, op, arg, 16)
 
-#define ES_SIGN_n_64(arg, n_bit)  do{if (a->bits == 64) \
-		{r_strbuf_appendf (&op->esil, ",%d,%s,~,%s,=,", n_bit, arg, arg);}\
-		else{r_strbuf_append(&op->esil,",");}}while(0)
+#define ES_ADD_CK32_OVERF(x, y, z) es_add_ck (op, x, y, z, 32)
+#define ES_ADD_CK64_OVERF(x, y, z) es_add_ck (op, x, y, z, 64)
 
-#define ES_SIGN32_64(arg)	ES_SIGN_n_64 (arg, 32)
-#define ES_SIGN16_64(arg)	ES_SIGN_n_64 (arg, 16)
+static inline void es_sign_n_64(RAnal *a, RAnalOp *op, char *arg, int bit)
+{
+	if (a->bits == 64) {
+		r_strbuf_appendf (&op->esil, ",%d,%s,~,%s,=,", bit, arg, arg);
+	} else {
+		r_strbuf_append (&op->esil,",");
+	}
+}
 
-#define ES_ADD_CK_OVERF(x, y,z,bit) do{ut64 mask = 1ULL << (bit-1);\
-		r_strbuf_appendf (&op->esil,"%d,0x%lx,%s,%s,^,&,>>,%d,0x%lx,%s,%s,+,&,>>,|,1,==,$z,?\
-			{,$$,1,TRAP,}{,%s,%s,+,%s,=,}",\
-			bit-2, mask, x, y, bit-1, mask, x, y, x, y, z);} while(0)
+static inline void es_add_ck(RAnalOp *op, char *a1, char *a2, char *re, int bit)
+{
+	ut64 mask = 1ULL << (bit-1);
+	r_strbuf_appendf (&op->esil,
+		"%d,0x%lx,%s,%s,^,&,>>,%d,0x%lx,%s,%s,+,&,>>,|,1,==,$z,?{,$$,1,TRAP,}{,%s,%s,+,%s,=,}",
+		bit-2, mask, a1, a2, bit-1, mask, a1, a2, a1, a2, re);
+}
 
 #define PROTECT_ZERO() \
 	if (REG(0)[0]=='z'){\
@@ -408,18 +418,18 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		/** signed -- sets overflow flag */
 		case MIPS_INS_ADD: {
 			PROTECT_ZERO () {
-				ES_ADD_CK_OVERF (ARG(1), ARG(2), ARG(0), 32);
+				ES_ADD_CK32_OVERF (ARG(1), ARG(2), ARG(0));
 		}
 		}
 		break;
 	case MIPS_INS_ADDI:
 		PROTECT_ZERO () {
-			ES_ADD_CK_OVERF (ARG(1), ARG(2), ARG(0), 32);
+			ES_ADD_CK32_OVERF (ARG(1), ARG(2), ARG(0));
 		}
 		break;
 	case MIPS_INS_DADD:
 	case MIPS_INS_DADDI:
-		ES_ADD_CK_OVERF (ARG(1), ARG(2), ARG(0), 64);
+		ES_ADD_CK64_OVERF (ARG(1), ARG(2), ARG(0));
 		break;
 	/** unsigned */
 	case MIPS_INS_DADDU:
