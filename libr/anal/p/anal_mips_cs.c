@@ -584,7 +584,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case MIPS_INS_MTHI:
 		r_strbuf_appendf (&op->esil, "%s,hi,=", REG (0));
-		ES_SIGN32_64 ("lo");
+		ES_SIGN32_64 ("hi");
 		break;
 #if 0
 	// could not test div
