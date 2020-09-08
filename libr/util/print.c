@@ -1682,7 +1682,7 @@ static inline void printHistBlock (RPrint *p, int k, int cols) {
 		}
 	} else {
 		if (p->histblock) {
-			p->cb_printf ("%s%s%s", Color_BGGRAY, block, Color_RESET);
+			p->cb_printf ("%s", block);
 		} else {
 			p->cb_printf ("%s", h_line);
 		}
