@@ -5,7 +5,6 @@
 #include <string.h>
 
 #include <r_lib.h>
-#include <r_util.h>
 #include <r_flag.h>
 #include <r_anal.h>
 #include <r_parse.h>
@@ -92,8 +91,8 @@ static int parse(RParse *p, const char *data, char *str) {
 			for (++ptr; *ptr == ' '; ptr++) {
 				;
 			}
-			strncpy (w0, buf, sizeof(w0) - 1);
-			strncpy (w1, ptr, sizeof(w1) - 1);
+			strncpy (w0, buf, sizeof (w0) - 1);
+			strncpy (w1, ptr, sizeof (w1) - 1);
 			optr = ptr;
 			ptr = strchr (ptr, ',');
 			if (ptr) {
@@ -101,7 +100,7 @@ static int parse(RParse *p, const char *data, char *str) {
 				for (++ptr; *ptr == ' '; ptr++) {
 					;
 				}
-				strncpy (w1, optr, sizeof(w1) - 1);
+				strncpy (w1, optr, sizeof (w1) - 1);
 				char *ptr2 = strchr (ptr, ',');
 				if (ptr2) {
 					*ptr2 = 0;
@@ -110,10 +109,10 @@ static int parse(RParse *p, const char *data, char *str) {
 					}
 					strncpy (w3, ptr2 + 1, sizeof (w3) - 1);
 				}
-				strncpy (w2, ptr, sizeof(w2) - 1);
+				strncpy (w2, ptr, sizeof (w2) - 1);
 			}
 		} else {
-			strncpy (w0, buf, sizeof(w0) - 1);
+			strncpy (w0, buf, sizeof (w0) - 1);
 		}
 
 		const char *wa[] = {w0, w1, w2, w3};
