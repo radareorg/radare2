@@ -303,6 +303,27 @@ R_API void r_graph_dfs(RGraph *g, RGraphVisitor *vis) {
 	}
 }
 
+
+void r_graph_foreach(RGraph *g, RGNodeCallback callback, void *user)  {
+	RListIter *it;
+	RGraphNode *node;
+	r_list_foreach (g->nodes, it, node) {
+		callback (node, user);
+	}
+}
+
+R_API void r_graph_foreach_edge(RGraph *g, RGEdgeCallback callback, void *user) {
+	RListIter *it;
+	RListIter *edge_it;
+	RGraphNode *node;
+	RGraphNode *target;
+	r_list_foreach (g->nodes, it, node) {
+		r_list_foreach (node->out_nodes, edge_it, target) {
+			callback (node, target, user);
+		}
+	}
+}
+
 R_API void r_graph_free_node_info(void *ptr) {
 	RGraphNodeInfo *info = ptr;
 	free (info->body);

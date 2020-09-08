@@ -8313,6 +8313,221 @@ R_API void r_core_agraph_print (RCore *core, int use_utf, const char *input) {
 	}
 }
 
+
+static void print_graph_json(RGraph/*RGraphNodeInfo*/ *graph, PJ *pj, bool use_offset) {
+	RList *nodes = graph->nodes, *neighbours = NULL;
+	RListIter *it, *itt;
+	RGraphNode *node = NULL, *neighbour = NULL;
+	if (!pj) {
+		return;
+	}
+	pj_o (pj);
+	pj_k (pj, "nodes");
+	pj_a (pj);
+	
+	r_list_foreach (nodes, it, node) {
+		RGraphNodeInfo *print_node = (RGraphNodeInfo *) node->data;
+		pj_o (pj);
+		pj_ki (pj, "id", node->idx);
+		pj_ks (pj, "title", print_node->title);
+		pj_ks (pj, "body", print_node->body);
+		if (use_offset) {
+			pj_kn (pj, "offset", print_node->offset);
+		}
+		pj_k (pj, "out_nodes");
+		pj_a (pj);
+		neighbours = node->out_nodes;
+		r_list_foreach (neighbours, itt, neighbour) {
+			pj_i (pj, neighbour->idx);
+		}
+		pj_end (pj);
+		pj_end (pj);
+	}
+	pj_end (pj);
+	pj_end (pj);
+}
+
+static void print_graph_agg(RGraph/*RGraphNodeInfo*/ *graph) {
+	RGraphNodeInfo *print_node;
+	RGraphNode *node, *target;
+	RListIter *it, *edge_it;
+	r_list_foreach (graph->nodes, it, node) {
+			char *encbody, *cmd;
+			int len;
+			print_node = node->data;
+			if (print_node->body) {
+				len = strlen (print_node->body);
+
+				if (len > 0 && print_node->body[len - 1] == '\n') {
+					len--;
+				}
+				encbody = r_base64_encode_dyn (print_node->body, len);
+			} else {
+				encbody = r_base64_encode_dyn ("", 0);
+			}
+			
+			r_cons_printf ("agn \"%s\" base64:%s\n", print_node->title, encbody);
+			free (encbody);
+	}
+	r_list_foreach (graph->nodes, it, node) {
+		print_node = node->data;
+		r_list_foreach (node->out_nodes, edge_it, target) {
+			RGraphNodeInfo *to = target->data;
+			r_cons_printf ("age \"%s\" \"%s\"", print_node->title, to->title);
+		}
+	}
+}
+
+static void r_core_graph_print (RCore *core, RGraph/*<RGraphNodeInfo>*/ *graph, int use_utf, bool use_offset, const char *input) {
+	RAGraph *agraph = NULL;
+	RListIter *it;
+	RListIter *edge_it;
+	RGraphNode *graphNode, *target;
+	RGraphNodeInfo *print_node;
+	if (use_utf != -1) {
+		r_config_set_i (core->config, "scr.utf8", use_utf);
+	}
+	switch (*input) {
+	case 0:
+	case 't':
+	case 'k':
+	case 'v':
+	case 'i':
+	{
+		agraph = create_agraph_from_graph(graph);
+		switch(*input)
+		{
+		case 0:
+			agraph->can->linemode = r_config_get_i (core->config, "graph.linemode");
+			agraph->can->color = r_config_get_i (core->config, "scr.color");
+			r_agraph_set_title (agraph,
+				r_config_get (core->config, "graph.title"));
+			r_agraph_print (agraph);
+			break;
+		case 't':{ // "aggt" - tiny graph
+			agraph->is_tiny = true;
+			int e = r_config_get_i (core->config, "graph.edges");
+			r_config_set_i (core->config, "graph.edges", 0);
+			r_core_visual_graph (core, agraph, NULL, false);
+			r_config_set_i (core->config, "graph.edges", e);
+			break;
+			}
+		case 'k': // "aggk"
+		{
+			Sdb *db = r_agraph_get_sdb (agraph);
+			char *o = sdb_querys (db, "null", 0, "*");
+			r_cons_print (o);
+			free (o);
+			break;
+		}
+		case 'v': // "aggv"
+		case 'i': // "aggi" - open current core->graph in interactive mode
+		{
+			RANode *ran = r_agraph_get_first_node (agraph);
+			if (ran) {
+				ut64 oseek = core->offset;
+				r_agraph_set_title (agraph, r_config_get (core->config, "graph.title"));
+				r_agraph_set_curnode (agraph, ran);
+				agraph->force_update_seek = true;
+				agraph->need_set_layout = true;
+				agraph->layout = r_config_get_i (core->config, "graph.layout");
+				int ov = r_cons_is_interactive ();
+				agraph->need_update_dim = true;
+				int update_seek = r_core_visual_graph (core, agraph, NULL, true);
+				r_config_set_i (core->config, "scr.interactive", ov);
+				r_cons_show_cursor (true);
+				r_cons_enable_mouse (false);
+				if (update_seek != -1) {
+					r_core_seek (core, oseek, false);
+				}
+			} else {
+				eprintf ("This graph contains no nodes\n");
+			}
+			break;
+		}
+		}
+		break;
+	}
+	case 'd': { // "aggd" - dot format
+		const char *font = r_config_get (core->config, "graph.font");
+		r_cons_printf ("digraph code {\nrankdir=LR;\noutputorder=edgesfirst\ngraph [bgcolor=azure];\n"
+			"edge [arrowhead=normal, color=\"#3030c0\" style=bold weight=2];\n"
+			"node [fillcolor=white, style=filled shape=box "
+			"fontname=\"%s\" fontsize=\"8\"];\n", font);
+		r_list_foreach (graph->nodes, it, graphNode) {
+			print_node = graphNode->data;
+			const char *body = print_node->body;
+			if (!body || !*body) {
+				r_cons_printf ("\"%s\" [URL=\"%s\", color=\"lightgray\", label=\"%s\"]\n",
+						print_node->title, print_node->title, print_node->title);
+			} else {
+				r_cons_printf ("\"%s\" [URL=\"%s\", color=\"lightgray\", label=\"%s\\n%s\"]\n",
+						print_node->title, print_node->title, print_node->title, body);
+			}
+			r_list_foreach (graphNode->out_nodes, edge_it, target) {
+				RGraphNodeInfo *to = target->data;
+				r_cons_printf ("\"%s\" -> \"%s\"\n", print_node->title, to->title);
+			}
+		}
+		r_cons_printf ("}\n");
+		break;
+		}
+	case '*': // "agg*" -
+		print_graph_agg(graph);
+		break;
+	case 'J':
+	case 'j': {
+		PJ *pj = pj_new ();
+		if (!pj) {
+			return;
+		}
+		print_graph_json (graph, pj, use_offset);
+		r_cons_println (pj_string (pj));
+		pj_free (pj);
+	} break;
+	case 'g':
+		r_cons_printf ("graph\n[\n" "hierarchic 1\n" "label \"\"\n" "directed 1\n");
+		r_list_foreach (graph->nodes, it, graphNode) {
+			print_node = graphNode->data;
+			r_cons_printf ("  node [\n"
+				"    id  %d\n"
+				"    label  \"%s\"\n"
+				"  ]\n", graphNode->idx, print_node->title);
+		}
+		r_list_foreach (graph->nodes, it, graphNode) {
+			print_node = graphNode->data;
+			r_list_foreach (graphNode->out_nodes, edge_it, target) {
+				r_cons_printf ("  edge [\n"
+				"    source  %d\n"
+				"    target  %d\n"
+				"  ]\n", graphNode->idx, target->idx
+				);
+			}
+		}
+		r_cons_print ("]\n");
+		break;
+	/*case 'w':{ // "aggw"
+		if (r_config_get_i (core->config, "graph.web")) {
+			r_core_cmd0 (core, "=H /graph/");
+		} else {
+			const char *filename = r_str_trim_head_ro (input + 1);
+			char *cmd = graph_cmd (core, "aggd", filename);
+			if (cmd && *cmd) {
+				if (input[1] == ' ') {
+					r_cons_printf ("Saving to file '%s'...\n", filename);
+					r_cons_flush ();
+				}
+				r_core_cmd0 (core, cmd);
+			}
+			free (cmd);
+		}
+		break;
+	}*/
+	default:
+		eprintf ("Usage: see ag?\n");
+	}
+}
+
 static void cmd_anal_graph(RCore *core, const char *input) {
 	core->graph->show_node_titles = r_config_get_i (core->config, "graph.ntitles");
 	r_cons_enable_highlight (false);
@@ -9964,15 +10179,8 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 			eprintf ("Couldn't create graph");
 			break;
 		}
-		RAGraph *agraph = create_agraph_from_graph (graph);
-		if (!agraph) {
-			r_graph_free (graph);
-			eprintf ("Couldn't create graph");
-			break;
-		}
-		r_agraph_print (agraph);
+		r_core_graph_print (core, graph, -1, false, input + 1);
 		r_graph_free (graph);
-		r_agraph_free (agraph);
 	} break;
 	default: // "ac?"
 		r_core_cmd_help (core, help_msg_ac);
