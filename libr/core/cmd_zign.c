@@ -734,7 +734,7 @@ static void apply_flag(RCore *core, RSignItem *it, ut64 addr, int size, int coun
 	char *name = r_str_newf ("%s.%s.%s_%d", zign_prefix, prefix, it->name, count);
 	if (name) {
 		if (rad) {
-			char tmp = r_name_filter2 (name);
+			char *tmp = r_name_filter2 (name);
 			if (tmp) {
 				r_cons_printf ("f %s %d @ 0x%08" PFMT64x "\n", tmp, size, addr);
 				free (tmp);
