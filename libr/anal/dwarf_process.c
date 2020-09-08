@@ -57,6 +57,7 @@ static void variable_free(Variable *var) {
 	free (var);
 }
 
+#if 0
 static inline bool is_parsable_tag(ut64 tag_code) {
 	return (tag_code == DW_TAG_structure_type ||
 		tag_code == DW_TAG_enumeration_type ||
@@ -66,6 +67,7 @@ static inline bool is_parsable_tag(ut64 tag_code) {
 		tag_code == DW_TAG_base_type ||
 		tag_code == DW_TAG_typedef);
 }
+#endif
 
 /* return -1 if attr isn't found */
 static inline st32 find_attr_idx(const RBinDwarfDie *die, st32 attr_name) {

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2019 - pancake, Oddcoder */
+/* radare - LGPL - Copyright 2011-2020 - pancake, Oddcoder */
 
 /* Universal calling convention implementation based on sdb */
 
@@ -13,6 +13,39 @@ R_API void r_anal_cc_del(RAnal *anal, const char *name) {
 	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
 		sdb_unset (DB, sdb_fmt ("cc.%s.arg%d", name, i), 0);
 	}
+}
+
+static const char *getreg(RAnal *anal, const char *alias) {
+	int n = r_reg_get_name_idx (alias);
+	if (n != -1) {
+		const char *nname = r_reg_get_name (anal->reg, n);
+		return nname;
+	}
+	return NULL;
+}
+
+R_API char *r_anal_cc_from_regprofile(RAnal *anal) {
+	const char *r0 = getreg (anal, "R0");
+	const char *a0 = getreg (anal, "A0");
+	const char *a1 = getreg (anal, "A1");
+	const char *a2 = getreg (anal, "A2");
+	const char *a3 = getreg (anal, "A3");
+	if (!r0) {
+		r0 = a0;
+	}
+	if (!a0) {
+		return NULL;
+	}
+	if (a3 && a2 && a1) {
+		return r_str_newf ("%s reg(%s, %s, %s, %s)", r0, a0, a1, a2, a3);
+	}
+	if (a2 && a1) {
+		return r_str_newf ("%s reg(%s, %s, %s)", r0, a0, a1, a2);
+	}
+	if (a1) {
+		return r_str_newf ("%s reg(%s, %s)", r0, a0, a1);
+	}
+	return r_str_newf ("%s reg(%s)", r0, a0);
 }
 
 R_API void r_anal_cc_set(RAnal *anal, const char *expr) {
