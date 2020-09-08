@@ -48,6 +48,7 @@ anal_plugins = [
   'wasm',
   'ws',
   'x86_cs',
+  'tms320_cs',
   'xap',
   'xcore_cs',
   'xtensa',
