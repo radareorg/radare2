@@ -621,6 +621,7 @@ static const char *help_msg_ao[] = {
 	"Usage:", "ao[e?] [len]", "Analyze Opcodes",
 	"aoj", " N", "display opcode analysis information in JSON for N opcodes",
 	"aoe", " N", "display esil form for N opcodes",
+	"aoef", " expr", "filter esil expression of opcode by given output",
 	"aor", " N", "display reil form for N opcodes",
 	"aos", " N", "display size of N opcodes",
 	"aom", " [id]", "list current or all mnemonics for current arch",
@@ -6532,6 +6533,26 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 				count = 1;
 			}
 			core_anal_bytes (core, core->block, len, count, 0);
+		}
+		break;
+	case 'f':
+		{
+			RAnalOp aop = R_EMPTY;
+			ut8 data[32];
+			r_io_read_at (core->io, core->offset, data, sizeof (data));
+			int ret = r_anal_op (core->anal, &aop, core->offset, data, sizeof (data), R_ANAL_OP_MASK_ESIL);
+			if (ret > 0) {
+				const char *arg = input + 2;
+				const char *expr = R_STRBUF_SAFEGET (&aop.esil);
+				RStrBuf *b = r_anal_esil_dfg_filter_expr (core->anal, expr, arg);
+				if (b) {
+					char *s = r_strbuf_drain (b);
+					r_cons_printf ("%s\n", s);
+					free (s);
+				}
+			} else {
+				eprintf ("Warning: Unable to analyze instruction\n");
+			}
 		}
 		break;
 	default:

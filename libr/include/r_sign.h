@@ -135,7 +135,6 @@ R_API bool r_sign_save(RAnal *a, const char *file);
 R_API bool r_sign_anal_additem(RAnal *a, RSignItem *it);
 
 R_API RSignItem *r_sign_item_new(void);
-R_API RSignItem *r_sign_item_dup(RSignItem *it);
 R_API void r_sign_item_free(RSignItem *item);
 R_API void r_sign_graph_free(RSignGraph *graph);
 R_API void r_sign_bytes_free(RSignBytes *bytes);

@@ -46,12 +46,6 @@ jobs:
       arch: arm64
       dist: bionic
       env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
-    # Building *.deb package
-    - if: (branch = master AND type = push) OR head_branch =~ ^debian-*
-      os: linux
-      name: Debian
-      dist: stretch
-      env: COMPILER_NAME=gcc DEBPKG=1 CC=gcc CFLAGS="-O2 -DR2_ASSERT_STDOUT=1"
     # Run Fuzzing Sanity Test on every push
     # XXX its broken it complains about invalid key
     #- os: linux
@@ -122,12 +116,6 @@ before_install:
     elif [ "$TRAVIS_OS_NAME" != "osx" ] && [ "$NODOCKER" != "1" ]; then
       docker pull radareorg/r2-travis:latest || docker build -t radareorg/r2-travis:latest -f Dockerfile.travis .
     fi
-
-after_success:
-  - wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
-  - compgen -G "r2js.zip" > /dev/null && bash upload.sh r2js.zip
-  - compgen -G "*.deb" > /dev/null && bash upload.sh *.deb
-  - compgen -G "/tmp/*.pkg" > /dev/null && bash upload.sh /tmp/*.pkg
 
 script:
   - export PR_NAME=$(echo $TRAVIS_PULL_REQUEST_SLUG | cut -d'/' -f1)

@@ -2184,6 +2184,7 @@ R_API void r_sign_space_rename_for(RAnal *a, const RSpace *space, const char *on
 struct ctxForeachCB {
 	RAnal *anal;
 	RSignForeachCallback cb;
+	bool freeit;
 	void *user;
 };
 
@@ -2200,13 +2201,21 @@ static bool foreachCB(void *user, const char *k, const char *v) {
 	} else {
 		eprintf ("error: cannot deserialize zign\n");
 	}
-	r_sign_item_free (it);
+	if (ctx->freeit) {
+		r_sign_item_free (it);
+	}
 	return true;
+}
+
+static bool r_sign_foreach_nofree(RAnal *a, RSignForeachCallback cb, void *user) {
+	r_return_val_if_fail (a && cb, false);
+	struct ctxForeachCB ctx = { a, cb, false, user };
+	return sdb_foreach (a->sdb_zigns, foreachCB, &ctx);
 }
 
 R_API bool r_sign_foreach(RAnal *a, RSignForeachCallback cb, void *user) {
 	r_return_val_if_fail (a && cb, false);
-	struct ctxForeachCB ctx = { a, cb, user };
+	struct ctxForeachCB ctx = { a, cb, true, user };
 	return sdb_foreach (a->sdb_zigns, foreachCB, &ctx);
 }
 
@@ -2242,7 +2251,6 @@ static int addSearchKwCB(RSignItem *it, void *user) {
 	struct ctxAddSearchKwCB *ctx = (struct ctxAddSearchKwCB *) user;
 	RSignSearch *ss = ctx->ss;
 	RSignBytes *bytes = it->bytes;
-	RSearchKeyword *kw = NULL;
 
 	if (!bytes) {
 		eprintf ("Cannot find bytes for this signature: %s\n", it->name);
@@ -2252,13 +2260,10 @@ static int addSearchKwCB(RSignItem *it, void *user) {
 	if (ctx->minsz && bytes->size < ctx->minsz) {
 		return 1;
 	}
-	RSignItem *it2 = r_sign_item_dup (it);
-	if (it2) {
-		r_list_append (ss->items, it2);
-		// TODO(nibble): change arg data in r_search_keyword_new to void*
-		kw = r_search_keyword_new (bytes->bytes, bytes->size, bytes->mask, bytes->size, (const char *) it2);
-		r_search_kw_add (ss->search, kw);
-	}
+	r_list_append (ss->items, it);
+	// TODO(nibble): change arg data in r_search_keyword_new to void*
+	RSearchKeyword *kw = r_search_keyword_new (bytes->bytes, bytes->size, bytes->mask, bytes->size, (const char *)it);
+	r_search_kw_add (ss->search, kw);
 	return 1;
 }
 
@@ -2269,7 +2274,7 @@ R_API void r_sign_search_init(RAnal *a, RSignSearch *ss, int minsz, RSignSearchC
 	ss->user = user;
 	r_list_purge (ss->items);
 	r_search_reset (ss->search, R_SEARCH_KEYWORD);
-	r_sign_foreach (a, addSearchKwCB, &ctx);
+	r_sign_foreach_nofree (a, addSearchKwCB, &ctx);
 	r_search_begin (ss->search);
 	r_search_set_callback (ss->search, searchHitCB, ss);
 }
@@ -2552,67 +2557,6 @@ R_API RSignItem *r_sign_item_new(void) {
 		ret->addr = UT64_MAX;
 		ret->space = NULL;
 	}
-	return ret;
-}
-
-R_API RSignItem *r_sign_item_dup(RSignItem *it) {
-	RListIter *iter = NULL;
-	char *ref = NULL;
-	if (!it) {
-		return NULL;
-	}
-	RSignItem *ret = r_sign_item_new ();
-	if (!ret) {
-		return NULL;
-	}
-	ret->name = r_str_new (it->name);
-	if (it->realname) {
-		ret->realname = r_str_newf (it->realname);
-	}
-	if (it->comment) {
-		ret->comment = r_str_newf (it->comment);
-	}
-	ret->space = it->space;
-
-	if (it->bytes) {
-		ret->bytes = R_NEW0 (RSignBytes);
-		if (!ret->bytes) {
-			r_sign_item_free (ret);
-			return NULL;
-		}
-		ret->bytes->size = it->bytes->size;
-		ret->bytes->bytes = malloc (it->bytes->size);
-		if (!ret->bytes->bytes) {
-			r_sign_item_free (ret);
-			return NULL;
-		}
-		memcpy (ret->bytes->bytes, it->bytes->bytes, it->bytes->size);
-		ret->bytes->mask = malloc (it->bytes->size);
-		if (!ret->bytes->mask) {
-			r_sign_item_free (ret);
-			return NULL;
-		}
-		memcpy (ret->bytes->mask, it->bytes->mask, it->bytes->size);
-	}
-
-	if (it->graph) {
-		ret->graph = R_NEW0 (RSignGraph);
-		if (!ret->graph) {
-			r_sign_item_free (ret);
-			return NULL;
-		}
-		*ret->graph = *it->graph;
-	}
-
-	ret->refs = r_list_newf ((RListFree) free);
-	r_list_foreach (it->refs, iter, ref) {
-		r_list_append (ret->refs, r_str_new (ref));
-	}
-	ret->xrefs = r_list_newf ((RListFree) free);
-	r_list_foreach (it->xrefs, iter, ref) {
-		r_list_append (ret->xrefs, r_str_new (ref));
-	}
-
 	return ret;
 }
 

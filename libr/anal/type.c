@@ -170,23 +170,18 @@ R_IPI void union_type_member_free(void *e, void *user) {
 static RAnalBaseType *get_enum_type(RAnal *anal, const char *sname) {
 	r_return_val_if_fail (anal && sname, NULL);
 
-	RAnalBaseType *base_type = R_NEW0 (RAnalBaseType);
+	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ENUM);
 	if (!base_type) {
 		return NULL;
 	}
-	base_type->kind = R_ANAL_BASE_TYPE_KIND_ENUM;
-
-	RAnalBaseTypeEnum base_enum;
 
 	char *members = get_type_data (anal->sdb_types, "enum", sname);
 	if (!members) {
 		goto error;
 	}
 
-	RVector cases;
-	r_vector_init (&cases, sizeof (RAnalEnumCase), enum_type_case_free, NULL);
-
-	if (!r_vector_reserve (&cases, (size_t)sdb_alen (members))) {
+	RVector *cases = &base_type->enum_data.cases;
+	if (!r_vector_reserve (cases, (size_t)sdb_alen (members))) {
 		goto error;
 	}
 
@@ -205,7 +200,7 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sname) {
 
 		RAnalEnumCase cas = { .name = strdup (cur), .val = strtol (value, NULL, 16) };
 
-		void *element = r_vector_push (&cases, &cas); // returns null if  no space available
+		void *element = r_vector_push (cases, &cas); // returns null if no space available
 		if (!element) {
 			goto error;
 		}
@@ -213,38 +208,30 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sname) {
 		sdb_aforeach_next (cur);
 	}
 	free (members);
-	base_enum.cases = cases;
-	base_type->enum_data = base_enum;
 
 	return base_type;
 
 error:
-	free (base_type);
 	free (members);
-	r_vector_fini (&cases);
+	r_anal_base_type_free (base_type);
 	return NULL;
 }
 
 static RAnalBaseType *get_struct_type(RAnal *anal, const char *sname) {
 	r_return_val_if_fail (anal && sname, NULL);
 
-	RAnalBaseType *base_type = R_NEW0 (RAnalBaseType);
+	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
 	if (!base_type) {
 		return NULL;
 	}
-	base_type->kind = R_ANAL_BASE_TYPE_KIND_STRUCT;
-
-	RAnalBaseTypeStruct base_struct;
 
 	char *sdb_members = get_type_data (anal->sdb_types, "struct", sname);
 	if (!sdb_members) {
 		goto error;
 	}
 
-	RVector members;
-	r_vector_init (&members, sizeof (RAnalStructMember), struct_type_member_free, NULL);
-
-	if (!r_vector_reserve (&members, (size_t)sdb_alen (sdb_members))) {
+	RVector *members = &base_type->struct_data.members;
+	if (!r_vector_reserve (members, (size_t)sdb_alen (sdb_members))) {
 		goto error;
 	}
 
@@ -275,7 +262,7 @@ static RAnalBaseType *get_struct_type(RAnal *anal, const char *sname) {
 
 		free (values);
 
-		void *element = r_vector_push (&members, &cas); // returns null if no space available
+		void *element = r_vector_push (members, &cas); // returns null if no space available
 		if (!element) {
 			goto error;
 		}
@@ -283,38 +270,30 @@ static RAnalBaseType *get_struct_type(RAnal *anal, const char *sname) {
 		sdb_aforeach_next (cur);
 	}
 	free (sdb_members);
-	base_struct.members = members;
-	base_type->struct_data = base_struct;
 
 	return base_type;
 
 error:
-	free (base_type);
+	r_anal_base_type_free (base_type);
 	free (sdb_members);
-	r_vector_fini (&members);
 	return NULL;
 }
 
 static RAnalBaseType *get_union_type(RAnal *anal, const char *sname) {
 	r_return_val_if_fail (anal && sname, NULL);
 
-	RAnalBaseType *base_type = R_NEW0 (RAnalBaseType);
+	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_UNION);
 	if (!base_type) {
 		return NULL;
 	}
-	base_type->kind = R_ANAL_BASE_TYPE_KIND_UNION;
-
-	RAnalBaseTypeUnion base_union;
 
 	char *sdb_members = get_type_data (anal->sdb_types, "union", sname);
 	if (!sdb_members) {
 		goto error;
 	}
 
-	RVector members;
-	r_vector_init (&members, sizeof (RAnalUnionMember), union_type_member_free, NULL);
-
-	if (!r_vector_reserve (&members, (size_t)sdb_alen (sdb_members))) {
+	RVector *members = &base_type->union_data.members;
+	if (!r_vector_reserve (members, (size_t)sdb_alen (sdb_members))) {
 		goto error;
 	}
 
@@ -334,7 +313,7 @@ static RAnalBaseType *get_union_type(RAnal *anal, const char *sname) {
 		RAnalUnionMember cas = { .name = strdup (cur), .type = strdup (value) };
 		free (values);
 
-		void *element = r_vector_push (&members, &cas); // returns null if no space available
+		void *element = r_vector_push (members, &cas); // returns null if no space available
 		if (!element) {
 			goto error;
 		}
@@ -342,15 +321,12 @@ static RAnalBaseType *get_union_type(RAnal *anal, const char *sname) {
 		sdb_aforeach_next (cur);
 	}
 	free (sdb_members);
-	base_union.members = members;
-	base_type->union_data = base_union;
 
 	return base_type;
 
 error:
-	free (base_type);
+	r_anal_base_type_free (base_type);
 	free (sdb_members);
-	r_vector_fini (&members);
 	return NULL;
 }
 
@@ -611,7 +587,7 @@ static void save_typedef(const RAnal *anal, const RAnalBaseType *type) {
 	r_strbuf_fini (&val);
 }
 
-R_API void r_anal_free_base_type(RAnalBaseType *type) {
+R_API void r_anal_base_type_free(RAnalBaseType *type) {
 	r_return_if_fail (type);
 	R_FREE (type->name);
 	R_FREE (type->type);
@@ -635,12 +611,26 @@ R_API void r_anal_free_base_type(RAnalBaseType *type) {
 	R_FREE (type);
 }
 
-R_API RAnalBaseType *r_anal_new_base_type(RAnalBaseTypeKind kind) {
+R_API RAnalBaseType *r_anal_base_type_new(RAnalBaseTypeKind kind) {
 	RAnalBaseType *type = R_NEW0 (RAnalBaseType);
 	if (!type) {
 		return NULL;
 	}
 	type->kind = kind;
+	switch (type->kind) {
+	case R_ANAL_BASE_TYPE_KIND_STRUCT:
+		r_vector_init (&type->struct_data.members, sizeof (RAnalStructMember), struct_type_member_free, NULL);
+		break;
+	case R_ANAL_BASE_TYPE_KIND_ENUM:
+		r_vector_init (&type->enum_data.cases, sizeof (RAnalEnumCase), enum_type_case_free, NULL);
+		break;
+	case R_ANAL_BASE_TYPE_KIND_UNION:
+		r_vector_init (&type->union_data.members, sizeof (RAnalUnionMember), union_type_member_free, NULL);
+		break;
+	default:
+		break;
+	}
+
 	return type;
 }
 
