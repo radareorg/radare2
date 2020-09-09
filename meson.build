@@ -607,8 +607,15 @@ subdir('libr/magic/d')
 subdir('libr/flag/d')
 subdir('libr/main')
 
-if not meson.is_subproject()
-  rpath = get_option('local') and get_option('default_library') == 'shared' ? '$ORIGIN/../' + get_option('libdir') : ''
+rpath = get_option('local') and get_option('default_library') == 'shared' ? '$ORIGIN/../' + get_option('libdir') : ''
+
+cli_option = get_option('cli')
+if cli_option.auto()
+  cli_enabled = not meson.is_subproject()
+else
+  cli_enabled = cli_option.enabled()
+endif
+if cli_enabled
   if get_option('blob')
     subdir('binr/blob')
   else
@@ -626,7 +633,9 @@ if not meson.is_subproject()
   endif
   subdir('binr/r2pm')
   subdir('binr/r2r')
-else
+endif
+
+if meson.is_subproject()
   libr2_dep = declare_dependency(
     dependencies: [
       r_anal_dep,
@@ -675,37 +684,39 @@ install_data(
   install_dir: r2_fortunes
 )
 
-install_man(
-  'man/r2agent.1',
-  'man/r2-docker.1',
-  'man/r2pm.1',
-  'man/rabin2.1',
-  'man/radare2.1',
-  'man/radiff2.1',
-  'man/rafind2.1',
-  'man/ragg2.1',
-  'man/rahash2.1',
-  'man/rarun2.1',
-  'man/rasm2.1',
-  'man/rax2.1',
-  'man/esil.7'
-)
+if cli_enabled
+  install_man(
+    'man/r2agent.1',
+    'man/r2-docker.1',
+    'man/r2pm.1',
+    'man/rabin2.1',
+    'man/radare2.1',
+    'man/radiff2.1',
+    'man/rafind2.1',
+    'man/ragg2.1',
+    'man/rahash2.1',
+    'man/rarun2.1',
+    'man/rasm2.1',
+    'man/rax2.1',
+    'man/esil.7'
+  )
 
-install_data('doc/hud',
-  install_dir: r2_hud,
-  rename: 'main'
-)
+  install_data('doc/hud',
+    install_dir: r2_hud,
+    rename: 'main'
+  )
 
-install_data(
-  'doc/zsh/_r2',
-  'doc/zsh/_rabin2',
-  'doc/zsh/_radiff2',
-  'doc/zsh/_rafind2',
-  'doc/zsh/_ragg2',
-  'doc/zsh/_rahash2',
-  'doc/zsh/_rasm2',
-  'doc/zsh/_rax2',
-  install_dir: r2_zsh_compdir
-)
+  install_data(
+    'doc/zsh/_r2',
+    'doc/zsh/_rabin2',
+    'doc/zsh/_radiff2',
+    'doc/zsh/_rafind2',
+    'doc/zsh/_ragg2',
+    'doc/zsh/_rahash2',
+    'doc/zsh/_rasm2',
+    'doc/zsh/_rax2',
+    install_dir: r2_zsh_compdir
+  )
 
-meson.add_install_script(host_machine.system() == 'windows' ? 'sys/create_r2.bat' : 'sys/create_r2.sh')
+  meson.add_install_script(host_machine.system() == 'windows' ? 'sys/create_r2.bat' : 'sys/create_r2.sh')
+endif
