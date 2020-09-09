@@ -444,7 +444,7 @@ static size_t get_template(const char *buf, SStrInfo *str_info, bool memorize) {
 	}
 
 	if (*buf == '?') {
-		RList *names_l = r_list_newf (sstrinfo_free);
+		RList *names_l = r_list_newf ((RListFree)sstrinfo_free);
 		if (!names_l) {
 			return 0;
 		}
@@ -537,7 +537,7 @@ static size_t get_namespace_and_name(const char *buf, STypeCodeStr *type_code_st
 
 	size_t len = 0, read_len = 0, tmp_len = 0;
 
-	names_l = r_list_newf (sstrinfo_free);
+	names_l = r_list_newf ((RListFree)sstrinfo_free);
 
 	if (*buf == '?') {
 		size_t res = get_operator_code (buf, names_l, memorize);
