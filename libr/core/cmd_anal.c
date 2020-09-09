@@ -8058,10 +8058,9 @@ static char *getViewerPath(void) {
 	return NULL;
 }
 
-static char* graph_cmd(RCore *core, char *r2_cmd, const char *save_path) {
+static char* dot_executable_path ()
+{
 	const char *dot = "dot";
-	char *cmd = NULL;
-	const char *ext = r_config_get (core->config, "graph.gv.format");
 	char *dotPath = r_file_path (dot);
 	if (!strcmp (dotPath, dot)) {
 		free (dotPath);
@@ -8069,24 +8068,55 @@ static char* graph_cmd(RCore *core, char *r2_cmd, const char *save_path) {
 		dotPath = r_file_path (dot);
 		if (!strcmp (dotPath, dot)) {
 			free (dotPath);
-			return r_str_new ("agf");
+			return NULL;
 		}
 	}
+	return dotPath;
+}
+
+static bool convert_dot_to_image(RCore *core, const char *dot_file, const char *save_path) {
+	char *dot = dot_executable_path();
+	if (!dot) {
+		return false;
+	}
+	const char *ext = r_config_get (core->config, "graph.gv.format");
+	
+	char *cmd = NULL;
 	if (save_path && *save_path) {
-		cmd = r_str_newf ("%s > a.dot;!%s -T%s -o%s a.dot;",
-			r2_cmd, dot, ext, save_path);
+		cmd = r_str_newf ("!%s -T%s -o%s a.dot;", dot, ext, save_path);
 	} else {
 		char *viewer = getViewerPath();
 		if (viewer) {
-			cmd = r_str_newf ("%s > a.dot;!%s -T%s -oa.%s a.dot;!%s a.%s",
-				r2_cmd, dot, ext, ext, viewer, ext);
+			cmd = r_str_newf ("!%s -T%s -oa.%s a.dot;!%s a.%s",
+				dot, ext, ext, viewer, ext);
 			free (viewer);
 		} else {
 			eprintf ("Cannot find a valid picture viewer\n");
 		}
 	}
-	free (dotPath);
-	return cmd;
+	r_core_cmd0 (core, cmd);
+	free (dot);
+}
+
+static bool convert_dotcmd_to_image(RCore *core, char *r2_cmd, const char *save_path) {
+	char *cmd = NULL;
+	if (save_path && *save_path) {
+		r_cons_printf ("Saving to file '%s'...\n", save_path);
+		r_cons_flush ();
+	}
+	r_core_cmdf (core, "%s > a.dot", cmd); // TODO: check error here
+	return convert_dot_to_image (core, "a.dot", save_path);
+}
+
+static bool convert_dot_str_to_image(RCore *core, char *str, const char *save_path) {
+	if (save_path && *save_path) {
+		r_cons_printf ("Saving to file '%s'...\n", save_path);
+		r_cons_flush ();
+	}
+	if (!r_file_dump("a.dot", (const unsigned char *)str, -1, false)) {
+		return false;
+	}
+	return convert_dot_to_image (core, "a.dot", save_path);
 }
 
 static void agraph_print_edge_dot(RANode *from, RANode *to, void *user) {
@@ -8296,15 +8326,7 @@ R_API void r_core_agraph_print (RCore *core, int use_utf, const char *input) {
 			r_core_cmd0 (core, "=H /graph/");
 		} else {
 			const char *filename = r_str_trim_head_ro (input + 1);
-			char *cmd = graph_cmd (core, "aggd", filename);
-			if (cmd && *cmd) {
-				if (input[1] == ' ') {
-					r_cons_printf ("Saving to file '%s'...\n", filename);
-					r_cons_flush ();
-				}
-				r_core_cmd0 (core, cmd);
-			}
-			free (cmd);
+			convert_dotcmd_to_image (core, "aggd", filename);
 		}
 		break;
 	}
@@ -8356,7 +8378,7 @@ static void print_graph_agg(RGraph/*RGraphNodeInfo*/ *graph) {
 	RGraphNode *node, *target;
 	RListIter *it, *edge_it;
 	r_list_foreach (graph->nodes, it, node) {
-			char *encbody, *cmd;
+			char *encbody;
 			int len;
 			print_node = node->data;
 			if (print_node->body) {
@@ -8380,6 +8402,37 @@ static void print_graph_agg(RGraph/*RGraphNodeInfo*/ *graph) {
 			r_cons_printf ("age \"%s\" \"%s\"", print_node->title, to->title);
 		}
 	}
+}
+
+static char *print_graph_dot(RCore *core, RGraph/*RGraphNodeInfo*/ *graph) {
+	RList *nodes = graph->nodes;
+	RListIter *it, *itt;
+	RGraphNode *node = NULL, *target = NULL;
+	RStrBuf buf;
+	const char *font = r_config_get (core->config, "graph.font");
+	r_strbuf_init (&buf);
+	r_strbuf_appendf (&buf,
+		"digraph code {\nrankdir=LR;\noutputorder=edgesfirst\ngraph [bgcolor=azure];\n"
+		"edge [arrowhead=normal, color=\"#3030c0\" style=bold weight=2];\n"
+		"node [fillcolor=white, style=filled shape=box "
+		"fontname=\"%s\" fontsize=\"8\"];\n", font);
+	
+	r_list_foreach (nodes, it, node) {
+		RGraphNodeInfo *print_node = (RGraphNodeInfo *) node->data;
+		const char *body = print_node->body;
+		if (!body || !*body) {
+			r_strbuf_appendf (&buf,"%d [URL=\"%s\", color=\"lightgray\", label=\"%s\"]\n",
+				node->idx, print_node->title, print_node->title);
+		} else {
+			r_strbuf_appendf (&buf, "%d [URL=\"%s\", color=\"lightgray\", label=\"%s\\n%s\"]\n",
+				node->idx, print_node->title, print_node->title, body);
+		}
+		r_list_foreach (node->out_nodes, itt, target) {
+			r_strbuf_appendf (&buf, "%d -> %d \n", node->idx, target->idx);
+		}
+	}
+	r_strbuf_append (&buf, "}\n");
+	return r_strbuf_drain_nofree (&buf);
 }
 
 static void r_core_graph_print (RCore *core, RGraph/*<RGraphNodeInfo>*/ *graph, int use_utf, bool use_offset, const char *input) {
@@ -8453,29 +8506,13 @@ static void r_core_graph_print (RCore *core, RGraph/*<RGraphNodeInfo>*/ *graph, 
 		break;
 	}
 	case 'd': { // "aggd" - dot format
-		const char *font = r_config_get (core->config, "graph.font");
-		r_cons_printf ("digraph code {\nrankdir=LR;\noutputorder=edgesfirst\ngraph [bgcolor=azure];\n"
-			"edge [arrowhead=normal, color=\"#3030c0\" style=bold weight=2];\n"
-			"node [fillcolor=white, style=filled shape=box "
-			"fontname=\"%s\" fontsize=\"8\"];\n", font);
-		r_list_foreach (graph->nodes, it, graphNode) {
-			print_node = graphNode->data;
-			const char *body = print_node->body;
-			if (!body || !*body) {
-				r_cons_printf ("\"%s\" [URL=\"%s\", color=\"lightgray\", label=\"%s\"]\n",
-						print_node->title, print_node->title, print_node->title);
-			} else {
-				r_cons_printf ("\"%s\" [URL=\"%s\", color=\"lightgray\", label=\"%s\\n%s\"]\n",
-						print_node->title, print_node->title, print_node->title, body);
-			}
-			r_list_foreach (graphNode->out_nodes, edge_it, target) {
-				RGraphNodeInfo *to = target->data;
-				r_cons_printf ("\"%s\" -> \"%s\"\n", print_node->title, to->title);
-			}
+		char *dot_text = print_graph_dot (core, graph);
+		if (dot_text) {
+			r_cons_print (dot_text);
+			free (dot_text);
 		}
-		r_cons_printf ("}\n");
 		break;
-		}
+	}
 	case '*': // "agg*" -
 		print_graph_agg(graph);
 		break;
@@ -8510,23 +8547,15 @@ static void r_core_graph_print (RCore *core, RGraph/*<RGraphNodeInfo>*/ *graph, 
 		}
 		r_cons_print ("]\n");
 		break;
-	/*case 'w':{ // "aggw"
-		if (r_config_get_i (core->config, "graph.web")) {
-			r_core_cmd0 (core, "=H /graph/");
-		} else {
-			const char *filename = r_str_trim_head_ro (input + 1);
-			char *cmd = graph_cmd (core, "aggd", filename);
-			if (cmd && *cmd) {
-				if (input[1] == ' ') {
-					r_cons_printf ("Saving to file '%s'...\n", filename);
-					r_cons_flush ();
-				}
-				r_core_cmd0 (core, cmd);
-			}
-			free (cmd);
+	case 'w':{ // "aggw"
+		const char *filename = r_str_trim_head_ro (input + 1);
+		char *dot_text = print_graph_dot (core, graph);
+		if (dot_text) {
+			convert_dot_str_to_image (core, dot_text, filename);
+			free (dot_text);
 		}
 		break;
-	}*/
+	}
 	default:
 		eprintf ("Usage: see ag?\n");
 	}
@@ -8606,15 +8635,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 				r_core_cmd0 (core, "=H /graph/");
 			} else {
 				char *cmdargs = r_str_newf ("agfd @ 0x%"PFMT64x, core->offset);
-				char *cmd = graph_cmd (core, cmdargs, input + 2);
-				if (cmd && *cmd) {
-					if (*(input + 2)) {
-						r_cons_printf ("Saving to file %s ...\n", input + 2);
-						r_cons_flush ();
-					}
-					r_core_cmd0 (core, cmd);
-				}
-				free (cmd);
+				convert_dotcmd_to_image (core, cmdargs, input + 2);
 				free (cmdargs);
 			}
 			break;
@@ -8850,11 +8871,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
                         }
                         case 'w': {
                                 char *cmdargs = r_str_newf ("agdd 0x%"PFMT64x, core->offset);
-                                char *cmd = graph_cmd (core, cmdargs, input + 2);
-                                if (cmd && *cmd) {
-                                        r_core_cmd0(core, cmd);
-                                }
-                                free(cmd);
+                                convert_dotcmd_to_image (core, cmdargs, input + 2);
                                 free(cmdargs);
                                 break;
                         }
@@ -8869,15 +8886,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			r_core_cmd0 (core, "=H /graph/");
 		} else {
 			char *cmdargs = r_str_newf ("agfd @ 0x%"PFMT64x, core->offset);
-			char *cmd = graph_cmd (core, cmdargs, input + 1);
-			if (cmd && *cmd) {
-				if (input[1]) {
-					r_cons_printf ("Saving to file %s ...\n", input + 1);
-					r_cons_flush ();
-				}
-				r_core_cmd0 (core, cmd);
-			}
-			free (cmd);
+			convert_dotcmd_to_image (core, cmdargs, input + 1);
 			free (cmdargs);
 		}
 		break;
