@@ -1422,10 +1422,12 @@ static int w_handler_old(void *data, const char *input) {
 
 static RCmdStatus w_handler(void *data, int argc, const char **argv) {
 	RCore *core = (void *)data;
-	if (argc != 2) {
+	if (argc < 2) {
 		return R_CMD_STATUS_WRONG_ARGS;
 	}
-	w_handler_common (core, argv[1]);
+	char *s = r_str_array_join (argv + 1, argc - 1, " ");
+	w_handler_common (core, s);
+	free (s);
 	return R_CMD_STATUS_OK;
 }
 
