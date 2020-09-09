@@ -3283,7 +3283,7 @@ static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f) {
 		// f = r_anal_get_fcn_in (core->anal, ds->at, 0);
 		f = fcnIn (ds, ds->at, 0);
 	}
-	label = r_anal_fcn_label_at (core->anal, f, ds->at);
+	label = r_anal_function_get_label_at (f, ds->at);
 	if (!label) {
 		return false;
 	}
@@ -3398,7 +3398,7 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 		return;
 	}
 	st64 delta = ds->analop.jump - f->addr;
-	const char *label = r_anal_fcn_label_at (ds->core->anal, f, ds->analop.jump);
+	const char *label = r_anal_function_get_label_at (f, ds->analop.jump);
 	if (label) {
 		ds_begin_comment (ds);
 		ds_comment (ds, true, "; %s.%s", f->name, label);

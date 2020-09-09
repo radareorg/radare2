@@ -469,7 +469,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				if (ok) {
 					*ok = true;
 				}
-				ut64 dst = r_anal_fcn_label_get (core->anal, fcn, str + 1);
+				ut64 dst = r_anal_function_get_label (fcn, str + 1);
 				if (dst == UT64_MAX) {
 					dst = fcn->addr;
 				}
@@ -2682,7 +2682,7 @@ R_API bool r_core_init(RCore *core) {
 	core->anal->flg_fcn_set = core_flg_fcn_set;
 	r_anal_bind (core->anal, &(core->parser->analb));
 	core->parser->flag_get = r_core_flag_get_by_spaces;
-	core->parser->label_get = r_anal_fcn_label_at;
+	core->parser->label_get = r_anal_function_get_label_at;
 
 	r_core_bind (core, &(core->anal->coreb));
 

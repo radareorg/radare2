@@ -58,6 +58,14 @@ static void inst_vars_kv_free(HtUPKv *kv) {
 	r_pvector_free (kv->value);
 }
 
+static void labels_kv_free(HtUPKv *kv) {
+	free (kv->value);
+}
+
+static void label_addrs_kv_free(HtPPKv *kv) {
+	free (kv->value);
+}
+
 R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	RAnalFunction *fcn = R_NEW0 (RAnalFunction);
 	if (!fcn) {
@@ -75,6 +83,8 @@ R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	fcn->meta._min = UT64_MAX;
 	r_pvector_init (&fcn->vars, NULL);
 	fcn->inst_vars = ht_up_new (NULL, inst_vars_kv_free, NULL);
+	fcn->labels = ht_up_new (NULL, labels_kv_free, NULL);
+	fcn->label_addrs = ht_pp_new (NULL, label_addrs_kv_free, NULL);
 	return fcn;
 }
 
@@ -103,6 +113,9 @@ R_API void r_anal_function_free(void *_fcn) {
 	ht_up_free (fcn->inst_vars);
 	fcn->inst_vars = NULL;
 	r_anal_function_delete_all_vars (fcn);
+
+	ht_up_free (fcn->labels);
+	ht_pp_free (fcn->label_addrs);
 
 	free (fcn->name);
 	fcn->bbs = NULL;
