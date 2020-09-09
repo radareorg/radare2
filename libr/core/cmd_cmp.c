@@ -27,7 +27,6 @@ static const char *help_msg_c[] = {
 	"cx", " [hexpair]", "Compare hexpair string (use '.' as nibble wildcard)",
 	"cx*", " [hexpair]", "Compare hexpair string (output r2 commands)",
 	"cX", " [addr]", "Like 'cc' but using hexdiff output",
-	"", "", "",
 	"cd", " [dir]", "chdir",
 	"cl|cls|clear", "", "Clear screen, (clear0 to goto 0, 0 only)",
 	NULL
