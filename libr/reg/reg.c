@@ -200,7 +200,7 @@ R_API void r_reg_free_internal(RReg *reg, bool init) {
 static int regcmp(RRegItem *a, RRegItem *b) {
 	int offa = (a->offset * 16) + a->size;
 	int offb = (b->offset * 16) + b->size;
-	return offa > offb;
+	return (offa > offb) - (offa < offb);
 }
 
 R_API void r_reg_reindex(RReg *reg) {

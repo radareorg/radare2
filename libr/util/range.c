@@ -248,7 +248,7 @@ R_API int r_range_contains(RRange *rgs, ut64 addr) {
 static int cmp_ranges(void *a, void *b) {
 	RRangeItem *first = (RRangeItem *)a;
 	RRangeItem *second = (RRangeItem *)b;
-	return first->fr > second->fr;
+	return (first->fr > second->fr) - (first->fr < second->fr);
 }
 
 R_API int r_range_sort(RRange *rgs) {
