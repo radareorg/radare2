@@ -3459,7 +3459,7 @@ R_API char *r_str_array_join(const char **a, size_t n, const char *sep) {
 		r_strbuf_append (sb, a[0]);
 	}
 
-	for (i = 1; i < n; ++i) {
+	for (i = 1; i < n; i++) {
 		r_strbuf_append (sb, sep);
 		r_strbuf_append (sb, a[i]);
 	}
