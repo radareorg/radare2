@@ -82,10 +82,11 @@ typedef struct r_socket_http_options {
 	bool httpauth;
 } RSocketHTTPOptions;
 
-#define R_SOCKET_PROTO_DEFAULT 0
 #define R_SOCKET_PROTO_TCP IPPROTO_TCP
 #define R_SOCKET_PROTO_UDP IPPROTO_UDP
 #define R_SOCKET_PROTO_UNIX 0x1337
+#define R_SOCKET_PROTO_NONE 0
+#define R_SOCKET_PROTO_DEFAULT R_SOCKET_PROTO_TCP
 
 #ifdef R_API
 R_API RSocket *r_socket_new_from_fd(int fd);

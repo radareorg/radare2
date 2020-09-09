@@ -60,7 +60,7 @@ static int __core_patch_bracket(RCore *core, const char *str, ut64 *noff) {
 		return 0;
 	}
 	for (;*p;) {
-		if (*p=='\n') {
+		if (*p == '\n') {
 			*p++ = 0;
 		} else {
 			p++;
