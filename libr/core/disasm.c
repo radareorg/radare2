@@ -3277,7 +3277,6 @@ static int ds_print_middle(RDisasmState *ds, int ret) {
 }
 
 static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f) {
-	RCore *core = ds->core;
 	const char *label;
 	if (!f) {
 		// f = r_anal_get_fcn_in (core->anal, ds->at, 0);
