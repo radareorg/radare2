@@ -162,6 +162,16 @@ R_API RGraphNode *r_graph_add_node(RGraph *t, void *data) {
 	return n;
 }
 
+R_API RGraphNode *r_graph_add_nodef(RGraph *graph, void *data, RListFree user_free) {
+	RGraphNode *node = r_graph_add_node(graph, data);
+	if (node) {
+		node->free = user_free;
+	} else if (user_free) {
+		user_free (data);
+	}
+	return node;
+}
+
 /* remove the node from the graph and free the node */
 /* users of this function should be aware they can't access n anymore */
 R_API void r_graph_del_node(RGraph *t, RGraphNode *n) {
@@ -326,6 +336,9 @@ R_API void r_graph_foreach_edge(RGraph *g, RGEdgeCallback callback, void *user) 
 
 R_API void r_graph_free_node_info(void *ptr) {
 	RGraphNodeInfo *info = ptr;
+	if (!info) {
+		return;
+	}
 	free (info->body);
 	free (info->title);
 	free (info);
@@ -337,6 +350,24 @@ R_API RGraphNodeInfo *r_graph_create_node_info(char *title, char *body, ut64 off
 		data->title = title;
 		data->body = body;
 		data->offset = offset;
+	} else {
+		free (title);
+		free (body);
 	}
 	return data;
+}
+
+R_API RGraphNode *r_graph_add_node_info(RGraph *graph, char *title, char *body, ut64 offset) {
+	RGraphNodeInfo *data;
+	RGraphNode *node;
+	if (!graph) {
+		free (title);
+		free (body);
+		return NULL;
+	}
+	data = r_graph_create_node_info (title, body, offset);
+	if (!data) {
+		return NULL;
+	}
+	return r_graph_add_nodef (graph, data, r_graph_free_node_info);
 }

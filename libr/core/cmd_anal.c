@@ -8329,8 +8329,12 @@ static void print_graph_json(RGraph/*RGraphNodeInfo*/ *graph, PJ *pj, bool use_o
 		RGraphNodeInfo *print_node = (RGraphNodeInfo *) node->data;
 		pj_o (pj);
 		pj_ki (pj, "id", node->idx);
-		pj_ks (pj, "title", print_node->title);
-		pj_ks (pj, "body", print_node->body);
+		if (print_node->title) {
+			pj_ks (pj, "title", print_node->title);
+		}
+		if (print_node->body) {
+			pj_ks (pj, "body", print_node->body);
+		}
 		if (use_offset) {
 			pj_kn (pj, "offset", print_node->offset);
 		}
@@ -8704,30 +8708,26 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			}
 		}
 		break;
-	case 'x': // "agx" cross refs
-		switch (input[1]) {
-		case '*': {
-			r_core_anal_codexrefs (core, core->offset);
-			}
-			break;
-		default: {
-			r_core_cmdf (core, "ag-; .agx* @ %"PFMT64u";", core->offset);
-			r_core_agraph_print(core, -1, input + 1);
-			break;
-			}
-		}
-		break;
-	case 'i': // "agi" import graph
-		switch (input[1]) {
-		case '*':
-			r_core_anal_importxrefs (core);
-			break;
-		default:
-			r_core_cmdf (core, "ag-; .agi*;");
-			r_core_agraph_print(core, -1, input + 1);
+	case 'x': {// "agx" cross refs
+		RGraph *graph = r_core_anal_codexrefs (core, core->offset);
+		if (!graph) {
+			eprintf ("Couldn't create graph");
 			break;
 		}
+		r_core_graph_print (core, graph, -1, true, input + 1);
+		r_graph_free (graph);
 		break;
+	}
+	case 'i': {// "agi" import graph
+		RGraph *graph = r_core_anal_importxrefs (core);
+		if (!graph) {
+			eprintf ("Couldn't create graph");
+			break;
+		}
+		r_core_graph_print (core, graph, -1, true, input + 1);
+		r_graph_free (graph);
+		break;
+	}
 	case 'c': // "agc"
 		switch (input[1]) {
 		case 'v':
