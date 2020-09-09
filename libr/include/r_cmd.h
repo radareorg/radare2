@@ -78,12 +78,61 @@ typedef struct r_cmd_desc_example_t {
 	const char *comment;
 } RCmdDescExample;
 
+/**
+ * Define how the command looks like in the help.
+ */
 typedef struct r_cmd_desc_help_t {
-	const char *usage;
+	/**
+	 * Short-sentence explaining what the command does.
+	 * This is shown, for example, when the list of sub-commands is printed
+	 * and each sub-command has a very short description on the right,
+	 * explaining what it does.
+	 */
 	const char *summary;
-	const char *group_summary;
-	const char *args_str;
+	/**
+	 * Long description of what the command does. It can be as long as you
+	 * want and it should explain well how the command behaves.
+	 * This is shown, for example, when `??` is appended on command or `?`
+	 * is appended and the command has no children to show. In that case,
+	 * the short summary is extended with this longer description.
+	 *
+	 * Optional.
+	 */
 	const char *description;
+	/**
+	 * String used to identify the arguments. This usually comes together
+	 * with the summary.
+	 * TODO: explain how to differentiate between required and optional arguments
+	 */
+	const char *args_str;
+	/**
+	 * When true, args_str is shown even when the command has sub-commands.
+	 * By default, arguments are not shown on a command that still has
+	 * sub-commands.
+	 */
+	bool show_group_args;
+	/**
+	 * String that overrides the name+args_str usually used to describe the
+	 * command.
+	 *
+	 * Optional.
+	 */
+	const char *usage;
+	/**
+	 * When a command is used both as a parent command and as a subcommand
+	 * (e.g. `w` is both the parent of `wv`, `ws`, etc. and it's also the
+	 * command `w`), this is the summary used for the parent level, while
+	 * summary becomes the text used for the subcommand.
+	 *
+	 * Optional.
+	 */
+	const char *group_summary;
+	/**
+	 * List of examples used to better explain how to use the command. This
+	 * is shown together with the long description.
+	 *
+	 * Optional.
+	 */
 	const RCmdDescExample *examples;
 } RCmdDescHelp;
 

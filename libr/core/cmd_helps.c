@@ -255,6 +255,7 @@ const RCmdDescExample wB_help_examples[] = {
 const RCmdDescHelp wB_help = {
 	.summary = "Set bits with given value",
 	.args_str = " [value]",
+	.show_group_args = true,
 	.group_summary = "Set or unset bits with given value",
 	.description = "Set the bits that are set in the value passed as arguments. 0 bits in the value argument are ignored, while the others are set at the current offset",
 	.examples = wB_help_examples,

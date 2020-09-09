@@ -397,6 +397,10 @@ static size_t strlen0(const char *s) {
 	return s? strlen (s): 0;
 }
 
+static bool is_arg_shown(RCmdDesc *cd, bool is_sub) {
+	return is_sub || (cd->n_children == 0 && cd->type != R_CMD_DESC_TYPE_OLDINPUT) || cd->help->show_group_args;
+}
+
 static void fill_usage_strbuf(RStrBuf *sb, RCmdDesc *cd, bool use_color) {
 	RCons *cons = r_cons_singleton ();
 	const char *pal_label_color = use_color? cons->context->pal.label: "",
@@ -404,12 +408,12 @@ static void fill_usage_strbuf(RStrBuf *sb, RCmdDesc *cd, bool use_color) {
 		   *pal_help_color = use_color? cons->context->pal.help: "",
 		   *pal_reset = use_color? cons->context->pal.reset: "";
 
-	r_strbuf_appendf (sb, "%sUsage:%s ", pal_label_color, pal_reset);
+	r_strbuf_appendf (sb, "%sUsage:%s", pal_label_color, pal_reset);
 	if (cd->help->usage) {
 		r_strbuf_appendf (sb, "%s%s%s", cd->help->usage, pal_args_color, pal_reset);
 	} else {
 		const char *cd_args_str = cd->help->args_str? cd->help->args_str: "";
-		r_strbuf_appendf (sb, "%s %s%s%s", cd->name, pal_args_color, cd_args_str, pal_reset);
+		r_strbuf_appendf (sb, "%s%s%s%s", cd->name, pal_args_color, cd_args_str, pal_reset);
 	}
 	if (cd->help->group_summary) {
 		r_strbuf_appendf (sb, "   %s# %s%s", pal_help_color, cd->help->group_summary, pal_reset);
@@ -419,19 +423,21 @@ static void fill_usage_strbuf(RStrBuf *sb, RCmdDesc *cd, bool use_color) {
 	r_strbuf_append (sb, "\n");
 }
 
-static size_t update_max_len(RCmdDesc *cd, size_t max_len) {
+static size_t update_max_len(RCmdDesc *cd, size_t max_len, bool is_sub) {
 	size_t name_len = strlen (cd->name);
-	size_t args_len = strlen0 (cd->help->args_str);
+	size_t args_len = 0;
+	if (is_arg_shown (cd, is_sub)) {
+		args_len = strlen0 (cd->help->args_str);
+	}
 	if (name_len + args_len > max_len) {
 		return name_len + args_len;
 	}
 	return max_len;
 }
 
-static void print_child_help_in(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use_color) {
+static void print_child_help(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use_color, bool is_sub) {
 	size_t str_len = strlen (cd->name) + strlen0 (cd->help->args_str);
 	size_t padding = str_len < max_len ? max_len - str_len : 0;
-	const char *cd_args_str = cd->help->args_str ? cd->help->args_str : "";
 	const char *cd_summary = cd->help->summary ? cd->help->summary : "";
 
 	RCons *cons = r_cons_singleton ();
@@ -444,32 +450,35 @@ static void print_child_help_in(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool 
 
 	// Show all the sub-commands between [...] if just a few, otherwise show [?]
 	r_strbuf_appendf (sb, "%s", pal_args_color);
-	if (cd->n_children >= MAX_SHOW_NCHILDREN || cd->type == R_CMD_DESC_TYPE_OLDINPUT) {
-		r_strbuf_append (sb, "[?]");
-	} else if (cd->n_children > 0){
-		bool has_common_prefix = false;
-		RStrBuf *options = r_strbuf_new (NULL);
-		void **it_cd;
-		r_cmd_desc_children_foreach (cd, it_cd) {
-			RCmdDesc *child = *(RCmdDesc **)it_cd;
-			if (r_str_startswith (child->name, cd->name)) {
-				r_strbuf_appendf (options, "%c", child->name[strlen (cd->name)]);
-				has_common_prefix = true;
+	if (!is_sub) {
+		if (cd->n_children >= MAX_SHOW_NCHILDREN || cd->type == R_CMD_DESC_TYPE_OLDINPUT) {
+			r_strbuf_append (sb, "[?]");
+		} else if (cd->n_children > 0) {
+			bool has_common_prefix = false;
+			RStrBuf *options = r_strbuf_new (NULL);
+			void **it_cd;
+			r_cmd_desc_children_foreach (cd, it_cd) {
+				RCmdDesc *child = *(RCmdDesc **)it_cd;
+				if (r_str_startswith (child->name, cd->name)) {
+					r_strbuf_appendf (options, "%c", child->name[strlen (cd->name)]);
+					has_common_prefix = true;
+				}
 			}
-		}
-		if (has_common_prefix) {
-			char *options_str = r_strbuf_drain (options);
-			r_strbuf_appendf (sb, "[%s]", options_str);
-			free (options_str);
+			if (has_common_prefix) {
+				char *options_str = r_strbuf_drain (options);
+				r_strbuf_appendf (sb, "[%s]", options_str);
+				free (options_str);
+			}
 		}
 	}
 
-	r_strbuf_appendf (sb, "%s %*s%s# %s%s\n", cd_args_str,
-		padding, "", pal_help_color, cd_summary, pal_reset);
-}
+	// Show args_str only if this command has no sub-commands
+	if (is_arg_shown (cd, is_sub)) {
+		const char *cd_args_str = cd->help->args_str ? cd->help->args_str : "";
+		r_strbuf_appendf (sb, "%s", cd_args_str);
+	}
 
-static void print_child_help(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use_color) {
-	print_child_help_in (sb, cd, max_len, use_color);
+	r_strbuf_appendf (sb, " %*s%s# %s%s\n", padding, "", pal_help_color, cd_summary, pal_reset);
 }
 
 static char *inner_get_help(RCmd *cmd, RCmdDesc *cd, bool use_color) {
@@ -480,19 +489,19 @@ static char *inner_get_help(RCmd *cmd, RCmdDesc *cd, bool use_color) {
 	size_t max_len = 0;
 
 	if (cd->d.argv_data.cb) {
-		max_len = update_max_len (cd, max_len);
+		max_len = update_max_len (cd, max_len, true);
 	}
 	r_cmd_desc_children_foreach (cd, it_cd) {
 		RCmdDesc *child = *(RCmdDesc **)it_cd;
-		max_len = update_max_len (child, max_len);
+		max_len = update_max_len (child, max_len, false);
 	}
 
 	if (cd->d.argv_data.cb) {
-		print_child_help_in (sb, cd, max_len, use_color);
+		print_child_help (sb, cd, max_len, use_color, true);
 	}
 	r_cmd_desc_children_foreach (cd, it_cd) {
 		RCmdDesc *child = *(RCmdDesc **)it_cd;
-		print_child_help (sb, child, max_len, use_color);
+		print_child_help (sb, child, max_len, use_color, false);
 	}
 	return r_strbuf_drain (sb);
 }
