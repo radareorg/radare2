@@ -106,12 +106,6 @@ typedef struct r_cmd_desc_help_t {
 	 */
 	const char *args_str;
 	/**
-	 * When true, args_str is shown even when the command has sub-commands.
-	 * By default, arguments are not shown on a command that still has
-	 * sub-commands.
-	 */
-	bool show_group_args;
-	/**
 	 * String that overrides the name+args_str usually used to describe the
 	 * command.
 	 *
@@ -201,11 +195,11 @@ typedef struct r_core_plugin_t {
 	r_return_if_fail (c_name##_cd)
 #define DEFINE_CMD_ARGV_DESC_SPECIAL(core, name, c_name, parent) \
 	DEFINE_CMD_ARGV_DESC_DETAIL (core, name, c_name, parent, c_name##_handler, &c_name##_help)
-#define DEFINE_CMD_ARGV_DESC_GROUP(core, name, c_name, parent)	\
+#define DEFINE_CMD_ARGV_DESC_GROUP(core, name, c_name, parent) \
 	DEFINE_CMD_ARGV_DESC_DETAIL (core, name, c_name, parent, NULL, NULL)
 #define DEFINE_CMD_ARGV_DESC(core, name, parent) \
 	DEFINE_CMD_ARGV_DESC_SPECIAL (core, name, name, parent)
-#define DEFINE_CMD_OLDINPUT_DESC(core, name, parent)                                                            \
+#define DEFINE_CMD_OLDINPUT_DESC(core, name, parent) \
 	RCmdDesc *name##_cd = r_cmd_desc_oldinput_new (core->rcmd, parent, #name, name##_handler_old, &name##_help); \
 	r_return_if_fail (name##_cd)
 

@@ -267,7 +267,7 @@ bool test_cmd_help(void) {
 		.summary = "pd summary",
 		.usage = NULL,
 		.group_summary = NULL,
-		.args_str = "<num>",
+		.args_str = " <num>",
 		.description = "pd long description",
 		.examples = pd_help_examples,
 	};
@@ -276,7 +276,7 @@ bool test_cmd_help(void) {
 		.summary = "px summary",
 		.usage = "px-usage",
 		.group_summary = NULL,
-		.args_str = "<verylongarg_str_num>",
+		.args_str = " <verylongarg_str_num>",
 		.description = "px long description",
 		.examples = NULL,
 	};
@@ -339,7 +339,7 @@ bool test_cmd_group_help(void) {
 		.summary = "pd summary",
 		.usage = NULL,
 		.group_summary = NULL,
-		.args_str = "<num>",
+		.args_str = " <num>",
 		.description = "pd long description",
 		.examples = NULL,
 	};
@@ -413,25 +413,6 @@ bool test_remove_cmd(void) {
 	mu_end;
 }
 
-static bool test_cmd_grouping(void) {
-	RCmd *cmd = r_cmd_new ();
-	RCmdDesc *root = r_cmd_get_root (cmd);
-	RCmdDescHelp x_help = { .summary = "x help" };
-	RCmdDesc *x_cd = r_cmd_desc_argv_new (cmd, root, "x", NULL, &x_help);
-	RCmdDesc *x1_cd = r_cmd_desc_argv_new (cmd, x_cd, "x1", NULL, NULL);
-	RCmdDesc *x2_cd = r_cmd_desc_argv_new (cmd, x_cd, "x2", NULL, NULL);
-	RCmdDesc *x3_cd = r_cmd_desc_argv_new (cmd, x_cd, "x3", NULL, NULL);
-
-	RCmdParsedArgs *cpa = r_cmd_parsed_args_new ("?", 0, NULL);
-	char *ohelp = r_cmd_get_help (cmd, cpa, false);
-	char *help = strchr (ohelp, '\n') + 1;
-	mu_assert_streq (help, "| x[123] # x help\n", "x1/x2/x3 should be groupd in x[123]");
-
-	free (help);
-	r_cmd_free (cmd);
-	mu_end;
-}
-
 int all_tests() {
 	mu_run_test (test_parsed_args_noargs);
 	mu_run_test (test_parsed_args_onearg);
@@ -448,7 +429,6 @@ int all_tests() {
 	mu_run_test (test_cmd_help);
 	mu_run_test (test_cmd_group_help);
 	mu_run_test (test_cmd_oldinput_help);
-	mu_run_test (test_cmd_grouping);
 	mu_run_test (test_remove_cmd);
 	return tests_passed != tests_run;
 }
