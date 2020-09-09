@@ -429,15 +429,15 @@ static size_t update_max_len(RCmdDesc *cd, size_t max_len) {
 
 static void print_child_help(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use_color) {
 	size_t str_len = strlen (cd->name) + strlen0 (cd->help->args_str);
-	size_t padding = str_len < max_len? max_len - str_len :0;
-	const char *cd_args_str = cd->help->args_str? cd->help->args_str :"";
-	const char *cd_summary = cd->help->summary? cd->help->summary :"";
+	size_t padding = str_len < max_len? max_len - str_len: 0;
+	const char *cd_args_str = cd->help->args_str? cd->help->args_str: "";
+	const char *cd_summary = cd->help->summary? cd->help->summary: "";
 
 	RCons *cons = r_cons_singleton ();
-	const char *pal_args_color = use_color? cons->context->pal.args :"",
-		   *pal_help_color = use_color? cons->context->pal.help :"",
-		   *pal_input_color = use_color? cons->context->pal.input :"",
-		   *pal_reset = use_color? cons->context->pal.reset :"";
+	const char *pal_args_color = use_color? cons->context->pal.args: "",
+		   *pal_help_color = use_color? cons->context->pal.help: "",
+		   *pal_input_color = use_color? cons->context->pal.input: "",
+		   *pal_reset = use_color? cons->context->pal.reset: "";
 
 	r_strbuf_appendf (sb, "| %s%s%s%s %*s%s# %s%s\n", pal_input_color, cd->name,
 		pal_args_color, cd_args_str, padding, "", pal_help_color, cd_summary, pal_reset);
