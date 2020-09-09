@@ -4,6 +4,8 @@ CS_LDFLAGS=${CAPSTONE_LDFLAGS}
 else
 CS_CFLAGS=-I../../shlr/capstone/include
 CS_CFLAGS+=-I../../../shlr/capstone/include
+CS_CFLAGS+=-I../../shlr/capstone/include/capstone
+CS_CFLAGS+=-I../../../shlr/capstone/include/capstone
 CS_LDFLAGS=$(SHLR)/capstone/libcapstone.a
 endif
 

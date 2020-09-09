@@ -10,7 +10,7 @@
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_asm.h>
-#include <capstone/capstone.h>
+#include <capstone.h>
 
 static csh cd = 0;
 

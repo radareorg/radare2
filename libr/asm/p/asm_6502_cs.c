@@ -2,7 +2,7 @@
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone/capstone.h>
+#include <capstone.h>
 
 #if CS_API_MAJOR >= 4 && CS_API_MINOR >= 1
 #define CAPSTONE_HAS_MOS65XX 1

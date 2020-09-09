@@ -1597,8 +1597,8 @@ EXPECT=<<EOF
 var int64_t var_14h @ rbp-0x14
 var int64_t var_10h @ rbp-0x10
 var int64_t var_8h @ rbp-0x8
-arg int64_t arg1 @ rdi
 arg int64_t arg2 @ rsi
+arg int64_t arg1 @ rdi
 EOF
 RUN
 

@@ -2,8 +2,8 @@
 
 #include <r_anal.h>
 #include <r_lib.h>
-#include <capstone/capstone.h>
-#include <capstone/x86.h>
+#include <capstone.h>
+#include <x86.h>
 
 #if 0
 CYCLES:
@@ -1926,6 +1926,7 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 	val->reg = cs_reg2reg (reg, handle, X86_REG_RIP);
 	r_list_append (ret, val);
 
+#if CS_API_MAJOR >= 4
 	// Register access info
 	cs_regs regs_read, regs_write;
 	ut8 read_count, write_count;
@@ -1949,12 +1950,13 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 			}
 		}
 	}
+#endif
 
 	switch (insn->id) {
 	case X86_INS_PUSH:
 		val = r_anal_value_new ();
 		val->type = R_ANAL_VAL_MEM;
-		val->access = CS_AC_WRITE;
+		val->access = R_ANAL_ACC_W;
 		val->reg = cs_reg2reg (reg, handle, sp);
 		val->delta = -INSOP(0).size;
 		val->memref = INSOP(0).size;
@@ -1964,7 +1966,7 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 		// AX, CX, DX, BX, SP, BP, SI, DI
 		val = r_anal_value_new ();
 		val->type = R_ANAL_VAL_MEM;
-		val->access = CS_AC_WRITE;
+		val->access = R_ANAL_ACC_W;
 		val->reg = cs_reg2reg (reg, handle, sp);
 		val->delta = -16;
 		val->memref = 16;
@@ -1974,7 +1976,7 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 		// EAX, ECX, EDX, EBX, EBP, ESP, EBP, ESI, EDI
 		val = r_anal_value_new ();
 		val->type = R_ANAL_VAL_MEM;
-		val->access = CS_AC_WRITE;
+		val->access = R_ANAL_ACC_W;
 		val->reg = cs_reg2reg (reg, handle, sp);
 		val->delta = -32;
 		val->memref = 32;
@@ -1983,7 +1985,7 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 	case X86_INS_PUSHF:
 		val = r_anal_value_new ();
 		val->type = R_ANAL_VAL_MEM;
-		val->access = CS_AC_WRITE;
+		val->access = R_ANAL_ACC_W;
 		val->reg = cs_reg2reg (reg, handle, sp);
 		val->delta = -2;
 		val->memref = 2;
@@ -1992,7 +1994,7 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 	case X86_INS_PUSHFD:
 		val = r_anal_value_new ();
 		val->type = R_ANAL_VAL_MEM;
-		val->access = CS_AC_WRITE;
+		val->access = R_ANAL_ACC_W;
 		val->reg = cs_reg2reg (reg, handle, sp);
 		val->delta = -4;
 		val->memref = 4;
@@ -2001,7 +2003,7 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 	case X86_INS_PUSHFQ:
 		val = r_anal_value_new ();
 		val->type = R_ANAL_VAL_MEM;
-		val->access = CS_AC_WRITE;
+		val->access = R_ANAL_ACC_W;
 		val->reg = cs_reg2reg (reg, handle, sp);
 		val->delta = -8;
 		val->memref = 8;
@@ -2011,7 +2013,7 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 	case X86_INS_LCALL:
 		val = r_anal_value_new ();
 		val->type = R_ANAL_VAL_MEM;
-		val->access = CS_AC_WRITE;
+		val->access = R_ANAL_ACC_W;
 		val->reg = cs_reg2reg (reg, handle, sp);
 		val->delta = -regsz;
 		val->memref = regsz;
@@ -2026,7 +2028,21 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 		if (INSOP (i).type == X86_OP_MEM) {
 			val = r_anal_value_new ();
 			val->type = R_ANAL_VAL_MEM;
-			val->access = INSOP (i).access;
+#if CS_API_MAJOR >= 4
+			switch (INSOP (i).access) {
+			case CS_AC_READ:
+				val->access = R_ANAL_ACC_R;
+				break;
+			case CS_AC_WRITE:
+				val->access = R_ANAL_ACC_W;
+				break;
+			case CS_AC_INVALID:
+				val->access = R_ANAL_ACC_UNKNOWN;
+				break;
+			}
+#else
+			val->access = R_ANAL_ACC_UNKNOWN;
+#endif
 			val->mul = INSOP (i).mem.scale;
 			val->delta = INSOP (i).mem.disp;
 			if (INSOP(0).mem.base == X86_REG_RIP ||

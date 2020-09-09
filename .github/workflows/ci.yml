@@ -13,19 +13,18 @@ on:
     - 'release-*'
 
 jobs:
-  # TODO: add build check for capstone 3
-  # TODO: add build check for capstone 4
-  # TODO: add build check for capstone 5
   # TODO: build r2-bindings
 
   build-and-test:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 35
+    continue-on-error: ${{ matrix.ignore_error }}
+    timeout-minutes: ${{ matrix.timeout }}
     strategy:
       fail-fast: false
       matrix:
-        name: [linux-acr-gcc-tests, linux-acr-clang-build, linux-acr-clang-tests, linux-meson-gcc-build, linux-meson-gcc-tests, linux-meson-gcc-newshell-tests, macos-clang-tests]
+        name: [linux-acr-gcc-tests, linux-acr-clang-build, linux-acr-clang-tests, linux-meson-gcc-build, linux-meson-gcc-tests, linux-meson-gcc-newshell-tests, macos-clang-tests, linux-gcc-tests-asan, capstone-v3, capstone-v5]
+        ignore_error: [false]
         include:
           - name: linux-acr-gcc-tests
             os: ubuntu-latest
@@ -33,12 +32,14 @@ jobs:
             compiler: gcc
             run_tests: true
             enabled: true
+            timeout: 35
           - name: linux-acr-clang-tests
             os: ubuntu-latest
             build_system: acr
             compiler: clang
             run_tests: true
             enabled: ${{ github.event_name != 'pull_request' }}
+            timeout: 35
           - name: linux-meson-gcc-tests
             os: ubuntu-latest
             build_system: meson
@@ -47,11 +48,13 @@ jobs:
             coverage: true
             run_tests: true
             enabled: ${{ github.event_name != 'pull_request' }}
+            timeout: 35
           - name: linux-acr-clang-build
             os: ubuntu-latest
             build_system: acr
             compiler: clang
             enabled: ${{ github.event_name == 'pull_request' }}
+            timeout: 35
           - name: linux-meson-gcc-build
             os: ubuntu-latest
             build_system: meson
@@ -59,6 +62,7 @@ jobs:
             meson_options: -Db_coverage=true
             coverage: true
             enabled: ${{ github.event_name == 'pull_request' }}
+            timeout: 35
           - name: linux-meson-gcc-newshell-tests
             os: ubuntu-latest
             build_system: meson
@@ -66,12 +70,42 @@ jobs:
             newshell: true
             run_tests: true
             enabled: true
+            timeout: 35
           - name: macos-clang-tests
             os: macos-latest
             build_system: acr
             compiler: clang
             run_tests: true
             enabled: true
+            timeout: 35
+          - name: linux-gcc-tests-asan
+            os: ubuntu-latest
+            build_system: meson
+            compiler: gcc
+            cflags: '-DR2_ASSERT_STDOUT=1'
+            meson_options: -Db_sanitize=address,undefined
+            asan_options: 'detect_leaks=0,detect_odr_violation=0'
+            run_tests: true
+            enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'asan') }}
+            timeout: 100
+            # NOTE: asan errors ignored for release- branch for now, because there are too many issues that would block the release
+            ignore_error: ${{ github.event_name == 'push' && contains(github.ref, 'release-') }}
+          - name: capstone-v3
+            os: ubuntu-latest
+            build_system: meson
+            compiler: gcc
+            meson_options: -Duse_capstone_version=v3
+            run_tests: false
+            enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
+            timeout: 35
+          - name: capstone-v5
+            os: ubuntu-latest
+            build_system: meson
+            compiler: gcc
+            meson_options: -Duse_capstone_version=v5
+            run_tests: false
+            enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
+            timeout: 35
 
     steps:
     - uses: actions/checkout@v2
@@ -102,13 +136,15 @@ jobs:
       run: ./configure --prefix=${HOME} && make
       env:
         CC: ${{ matrix.compiler }}
+        CFLAGS: ${{ matrix.cflags }}
     - name: Build with Meson
       if: matrix.build_system == 'meson' && matrix.enabled
       run: |
         export PATH=${HOME}/.local/bin:${PATH}
-        meson --prefix=${HOME} build && ninja -C build
+        meson --prefix=${HOME} ${{ matrix.meson_options }} build && ninja -C build
       env:
         CC: ${{ matrix.compiler }}
+        CFLAGS: ${{ matrix.cflags }}
     - name: Install with make
       if: matrix.build_system == 'acr' && matrix.enabled
       run: |
@@ -140,6 +176,7 @@ jobs:
         make
       env:
         NEWSHELL: ${{ matrix.newshell }}
+        ASAN_OPTIONS: ${{ matrix.asan_options }}
     - name: Run fuzz tests
       if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
       run: |
@@ -153,6 +190,7 @@ jobs:
         make fuzz-tests
       env:
         NEWSHELL: ${{ matrix.newshell }}
+        ASAN_OPTIONS: ${{ matrix.asan_options }}
     - name: Upload coverage info
       uses: codecov/codecov-action@v1
       if: matrix.coverage == '1' && matrix.enabled
@@ -243,6 +281,8 @@ jobs:
 
   build-static:
     name: Build static
+    # FIXME: ignore error until all tests properly pass
+    continue-on-error: true
     if: contains(github.head_ref, 'static') || contains(github.ref, 'release-') || github.event_name == 'schedule'
     runs-on: ubuntu-20.04
     steps:
@@ -260,9 +300,8 @@ jobs:
       run: |
         r2 -v
         r2r -v
-        # NOTE: disabled until all tests properly pass
-        # cd test
-        # make
+        cd test
+        make
 
   create-tarball:
     name: Create source tarball
@@ -600,6 +639,7 @@ jobs:
   create-release:
     name: Create draft release and upload artifacts
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && contains(github.ref, 'release-')
     needs: [
       build-and-test,
       build-centos6,
@@ -751,6 +791,7 @@ jobs:
 
   publish-docker-image:
     name: Publish Docker image on Docker Hub
+    needs: [build-and-test]
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     steps:

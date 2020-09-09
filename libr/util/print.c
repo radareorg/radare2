@@ -1682,7 +1682,7 @@ static inline void printHistBlock (RPrint *p, int k, int cols) {
 		}
 	} else {
 		if (p->histblock) {
-			p->cb_printf ("%s%s%s", Color_BGGRAY, block, Color_RESET);
+			p->cb_printf ("%s", block);
 		} else {
 			p->cb_printf ("%s", h_line);
 		}
@@ -1692,6 +1692,7 @@ static inline void printHistBlock (RPrint *p, int k, int cols) {
 R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step) {
 	r_return_if_fail (p && arr);
 	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
+	const bool show_offset = (p && (p->flags & R_PRINT_FLAGS_OFFSET));
 	bool useUtf8 = p->cons->use_utf8;
 	const char *v_line = useUtf8 ? RUNE_LINE_VERT : "|";
 	int i = 0, j;
@@ -1722,17 +1723,19 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 		int base = 0, k = 0;
 		if (addr != UT64_MAX && step > 0) {
 			ut64 at = addr + (i * step);
-			if (p->cur_enabled) {
-				if (i == p->cur) {
-					p->cb_printf (Color_INVERT"> 0x%08" PFMT64x " "Color_RESET, at);
-					if (p->num) {
-						p->num->value = at;
+			if (show_offset) {
+				if (p->cur_enabled) {
+					if (i == p->cur) {
+						p->cb_printf (Color_INVERT"> 0x%08" PFMT64x " "Color_RESET, at);
+						if (p->num) {
+							p->num->value = at;
+						}
+					} else {
+						p->cb_printf ("  0x%08" PFMT64x " ", at);
 					}
 				} else {
-					p->cb_printf ("  0x%08" PFMT64x " ", at);
+					p->cb_printf ("0x%08" PFMT64x " ", at);
 				}
-			} else {
-				p->cb_printf ("0x%08" PFMT64x " ", at);
 			}
 			p->cb_printf ("%03x %04x %s", i, arr[i], v_line);
 		} else {

@@ -9,11 +9,10 @@ dts+
 dc
 dsb
 dsb
-dr rbx,rcx,rdx,r12,rip
+dr rbx,rcx,r12,rip
 dk 9
 EOF
 EXPECT=<<EOF
-0x00000001
 0x00000001
 0x00000001
 0x00404870
