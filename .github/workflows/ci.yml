@@ -84,6 +84,7 @@ jobs:
             compiler: gcc
             cflags: '-DR2_ASSERT_STDOUT=1'
             meson_options: -Db_sanitize=address,undefined
+            asan: true
             asan_options: 'detect_leaks=0,detect_odr_violation=0'
             run_tests: true
             enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'asan') }}
@@ -141,8 +142,12 @@ jobs:
       if: matrix.build_system == 'meson' && matrix.enabled
       run: |
         export PATH=${HOME}/.local/bin:${PATH}
+        if [ "$ASAN" == "true" ]; then
+          export CFLAGS="-DASAN=1 ${CFLAGS}"
+        fi
         meson --prefix=${HOME} ${{ matrix.meson_options }} build && ninja -C build
       env:
+        ASAN: ${{ matrix.asan }}
         CC: ${{ matrix.compiler }}
         CFLAGS: ${{ matrix.cflags }}
     - name: Install with make
@@ -171,11 +176,15 @@ jobs:
         if [ "$NEWSHELL" == "true" ]; then
           export R2_CFG_NEWSHELL=1
         fi
+        if [ "$ASAN" == "true" ]; then
+          export ASAN=1
+        fi
         cd test
         radare2 -N -Qc 'e cfg.newshell' -
         make
       env:
         NEWSHELL: ${{ matrix.newshell }}
+        ASAN: ${{ matrix.asan }}
         ASAN_OPTIONS: ${{ matrix.asan_options }}
     - name: Run fuzz tests
       if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
