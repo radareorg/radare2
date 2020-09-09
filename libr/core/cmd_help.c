@@ -127,7 +127,7 @@ static const char *help_msg_question[] = {
 	"?+", " [cmd]", "run cmd if $? > 0",
 	"?-", " [cmd]", "run cmd if $? < 0",
 	"?=", " eip-0x804800", "hex and dec result for this math expr",
-	"?==", " x86 `e asm.arch`", "strcmp two strings separated by ==",
+	"?==", " x86 `e asm.arch`", "strcmp two strings",
 	"??", " [cmd]", "run cmd if $? != 0",
 	"??", "", "show value of operation",
 	"?_", " hudfile", "load hud menu with given file",
