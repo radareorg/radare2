@@ -675,7 +675,7 @@ struct ctxSearchCB {
 	const char *prefix;
 };
 
-static bool apply_name(RCore *core, RAnalFunction *fcn, RSignItem *it, bool rad) {
+static void apply_name(RCore *core, RAnalFunction *fcn, RSignItem *it, bool rad) {
 	r_return_val_if_fail (core && fcn && it && it->name, false);
 	const char *name = it->realname? it->realname: it->name;
 	if (rad) {
@@ -684,24 +684,23 @@ static bool apply_name(RCore *core, RAnalFunction *fcn, RSignItem *it, bool rad)
 			r_cons_printf ("\"afn %s @ 0x%08" PFMT64x "\"\n", tmp, fcn->addr);
 			free (tmp);
 		}
-		return true;
+		return;
 	}
 	RFlagItem *flag = r_flag_get (core->flags, fcn->name);
 	if (!flag || !flag->space || strcmp (flag->space->name, R_FLAGS_FS_FUNCTIONS)) {
-		return false;
+		return;
 	}
 	r_flag_rename (core->flags, flag, name);
 	r_anal_function_rename (fcn, name);
 	if (core->anal->cb.on_fcn_rename) {
 		core->anal->cb.on_fcn_rename (core->anal, core->anal->user, fcn, name);
 	}
-	return true;
 }
 
-static bool apply_types(RCore *core, RAnalFunction *fcn,  RSignItem *it) {
+static void apply_types(RCore *core, RAnalFunction *fcn, RSignItem *it) {
 	r_return_val_if_fail (core && fcn && it && it->name, false);
 	if (!it->types) {
-		return false;
+		return;
 	}
 	const char *name = it->realname? it->realname: it->name;
 	RListIter *iter;
@@ -714,19 +713,18 @@ static bool apply_types(RCore *core, RAnalFunction *fcn,  RSignItem *it) {
 			eprintf ("Unexpected type: %s\n", type);
 			free (alltypes);
 			free (start);
-			return false;
+			return;
 		}
 		if (!(alltypes = r_str_appendf (alltypes, "%s\n", type))) {
 			free (alltypes);
 			free (start);
-			return false;
+			return;
 		}
 	}
 	r_str_remove_char (alltypes, '"');
 	r_anal_save_parsed_type (core->anal, alltypes);
 	free (start);
 	free (alltypes);
-	return true;
 }
 
 static void apply_flag(RCore *core, RSignItem *it, ut64 addr, int size, int count, const char *prefix, bool rad) {
