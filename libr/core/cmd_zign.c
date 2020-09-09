@@ -676,7 +676,7 @@ struct ctxSearchCB {
 };
 
 static void apply_name(RCore *core, RAnalFunction *fcn, RSignItem *it, bool rad) {
-	r_return_val_if_fail (core && fcn && it && it->name, false);
+	r_return_if_fail (core && fcn && it && it->name);
 	const char *name = it->realname? it->realname: it->name;
 	if (rad) {
 		char *tmp = r_name_filter2 (name);
@@ -698,7 +698,7 @@ static void apply_name(RCore *core, RAnalFunction *fcn, RSignItem *it, bool rad)
 }
 
 static void apply_types(RCore *core, RAnalFunction *fcn, RSignItem *it) {
-	r_return_val_if_fail (core && fcn && it && it->name, false);
+	r_return_if_fail (core && fcn && it && it->name);
 	if (!it->types) {
 		return;
 	}
