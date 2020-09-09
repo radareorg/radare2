@@ -32,14 +32,14 @@ jobs:
             compiler: gcc
             run_tests: true
             enabled: true
-            timeout: 35
+            timeout: 45
           - name: linux-acr-clang-tests
             os: ubuntu-latest
             build_system: acr
             compiler: clang
             run_tests: true
             enabled: ${{ github.event_name != 'pull_request' }}
-            timeout: 35
+            timeout: 45
           - name: linux-meson-gcc-tests
             os: ubuntu-latest
             build_system: meson
@@ -48,13 +48,13 @@ jobs:
             coverage: true
             run_tests: true
             enabled: ${{ github.event_name != 'pull_request' }}
-            timeout: 35
+            timeout: 45
           - name: linux-acr-clang-build
             os: ubuntu-latest
             build_system: acr
             compiler: clang
             enabled: ${{ github.event_name == 'pull_request' }}
-            timeout: 35
+            timeout: 45
           - name: linux-meson-gcc-build
             os: ubuntu-latest
             build_system: meson
@@ -62,7 +62,7 @@ jobs:
             meson_options: -Db_coverage=true
             coverage: true
             enabled: ${{ github.event_name == 'pull_request' }}
-            timeout: 35
+            timeout: 45
           - name: linux-meson-gcc-newshell-tests
             os: ubuntu-latest
             build_system: meson
@@ -70,14 +70,14 @@ jobs:
             newshell: true
             run_tests: true
             enabled: true
-            timeout: 35
+            timeout: 45
           - name: macos-clang-tests
             os: macos-latest
             build_system: acr
             compiler: clang
             run_tests: true
             enabled: true
-            timeout: 35
+            timeout: 45
           - name: linux-gcc-tests-asan
             os: ubuntu-latest
             build_system: meson
@@ -97,7 +97,7 @@ jobs:
             meson_options: -Duse_capstone_version=v3
             run_tests: false
             enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
-            timeout: 35
+            timeout: 45
           - name: capstone-v5
             os: ubuntu-latest
             build_system: meson
@@ -105,7 +105,7 @@ jobs:
             meson_options: -Duse_capstone_version=v5
             run_tests: false
             enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
-            timeout: 35
+            timeout: 45
 
     steps:
     - uses: actions/checkout@v2
