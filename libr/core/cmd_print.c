@@ -635,6 +635,7 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 	bool show_color = r_config_get_i (core->config, "scr.color");
 	bool show_flags = r_config_get_i (core->config, "asm.flags");
 	bool show_section = r_config_get_i (core->config, "hex.section");
+	bool show_offset = r_config_get_i (core->config, "hex.offset");
 	bool show_cursor = core->print->cur_enabled;
 	bool show_unalloc = core->print->flags & R_PRINT_FLAGS_UNALLOC;
 	if (cols < 1 || cols > 0xfffff) {
@@ -645,7 +646,9 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 			const char * name = r_core_get_section_name (core, core->offset + i);
 			r_cons_printf ("%20s ", name? name: "");
 		}
-		r_print_addr (core->print, core->offset + i);
+		if (show_offset) {
+			r_print_addr (core->print, core->offset + i);
+		}
 		for (j = i; j < i + cols; j ++) {
 			if (j >= len) {
 				break;
@@ -724,6 +727,7 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 	bool show_color = r_config_get_i (core->config, "scr.color");
 	bool show_flags = r_config_get_i (core->config, "asm.flags");
 	bool show_cursor = core->print->cur_enabled;
+	bool show_offset = r_config_get_i (core->config, "hex.offset");
 	bool show_unalloc = core->print->flags & R_PRINT_FLAGS_UNALLOC;
 	ut8 *block = core->block;
 	int len = core->blocksize;
@@ -762,7 +766,9 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 
 	for (i = 0; i < len; i += cols) {
 		ut64 ea = core->offset + i;
-		r_print_addr (core->print, ea);
+		if (show_offset) {
+			r_print_addr (core->print, ea);
+		}
 		for (j = i; j < i + cols; j ++) {
 			if (j >= len) {
 				break;
@@ -2180,6 +2186,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *input) {
 	int cols = r_config_get_i (core->config, "hex.cols");
 	int show_color = r_config_get_i (core->config, "scr.color");
 	int onechar = r_config_get_i (core->config, "hex.onechar");
+	bool hex_offset = r_config_get_i (core->config, "hex.offset");
 	int bgcolor_in_heap = false;
 	bool show_cursor = core->print->cur_enabled;
 	char buf[2];
@@ -2223,7 +2230,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *input) {
 			r_cons_printf ("  %d\n", i - oi);
 			oi = i;
 		}
-		if (show_offset) {
+		if (show_offset && hex_offset) {
 			r_cons_printf ("0x%08"PFMT64x "  ", core->offset + i);
 			show_offset = false;
 		}
@@ -3824,6 +3831,12 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		break;
 	}
 	if (print_bars) {
+		bool hex_offset = r_config_get_i (core->config, "hex.offset");
+		if (hex_offset) {
+			core->print->flags |= R_PRINT_FLAGS_OFFSET;
+		} else {
+			core->print->flags &= ~R_PRINT_FLAGS_OFFSET;
+		}
 		int i;
 		switch (submode) {
 		case 'j': {
