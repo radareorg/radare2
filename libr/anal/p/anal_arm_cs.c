@@ -2,14 +2,11 @@
 
 #include <r_anal.h>
 #include <r_lib.h>
-<<<<<<< HEAD
 #include <ht_uu.h>
 #include <capstone/capstone.h>
 #include <capstone/arm.h>
-=======
 #include <capstone.h>
 #include <arm.h>
->>>>>>> master
 #include "./anal_arm_hacks.inc"
 
 

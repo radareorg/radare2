@@ -2,12 +2,9 @@
 
 #include <r_asm.h>
 #include <r_lib.h>
-<<<<<<< HEAD
 #include <ht_uu.h>
 #include <capstone/capstone.h>
-=======
 #include <capstone.h>
->>>>>>> master
 #include "../arch/arm/asm-arm.h"
 #include "./asm_arm_hacks.inc"
 
