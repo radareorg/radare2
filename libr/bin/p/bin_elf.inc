@@ -752,7 +752,7 @@ static void _patch_reloc(ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S
 	switch (e_machine) {
 	case EM_ARM:
 		val = S + A;
-		r_write_le64 (buf, val);
+		r_write_le32 (buf, val);
 		iob->write_at (iob->io, rel->rva, buf, 4);
 		break;
 	case EM_AARCH64:
@@ -914,10 +914,12 @@ static RList* patch_relocs(RBin *b) {
 	   	return NULL;
 	}
 	struct Elf_(r_bin_elf_obj_t) *bin = obj->bin_obj;
-	if (bin->ehdr.e_type != ET_REL) {
+	info = obj ? obj->info: NULL;
+	size_t cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
+	if (bin->ehdr.e_type != ET_REL && bin->ehdr.e_type != ET_DYN) {
 		return NULL;
 	}
-	size = bin->g_reloc_num * 4;
+	size = bin->g_reloc_num * cdsz;
 	if (size == 0) {
 		return NULL;
 	}
@@ -926,8 +928,6 @@ static RList* patch_relocs(RBin *b) {
 		return NULL;
 	}
 
-	info = obj ? obj->info: NULL;
-	size_t cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
 
 	void **it;
 	r_pvector_foreach (&io->maps, it) {
@@ -942,7 +942,7 @@ static RList* patch_relocs(RBin *b) {
 	}
 	ut64 n_vaddr = g->itv.addr + g->itv.size;
 	// reserve at least that space
-	size = bin->g_reloc_num * 4;
+	size = bin->g_reloc_num * cdsz;
 	char *muri = r_str_newf ("malloc://%" PFMT64u, size);
 	RIODesc *gotr2desc = b->iob.open_at (io, muri, R_PERM_R, 0664, n_vaddr);
 	free (muri);
