@@ -58,7 +58,10 @@ static bool is_start_of_command(const int32_t ch) {
 
 static bool is_mid_command(const char *res, int len, const int32_t ch) {
 	if (res[0] == '#') {
-		return len == 1? ch == '!': ch == '?';
+		if (len == 1) {
+			return ch == '!' || ch == '?';
+		}
+		return ch == '?';
 	}
 	return isalnum(ch) ||  ch == '$' || ch == '?' || ch == '.' || ch == '!' ||
 		ch == ':' || ch == '+' || ch == '=' || ch == '/' || ch == '*' ||
