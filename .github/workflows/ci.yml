@@ -77,7 +77,7 @@ jobs:
             compiler: clang
             run_tests: true
             enabled: true
-            timeout: 45
+            timeout: 60
           - name: linux-gcc-tests-asan
             os: ubuntu-latest
             build_system: meson
