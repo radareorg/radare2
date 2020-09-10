@@ -1203,6 +1203,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 	}
 	}
 	bool broken = r2r_test_broken (test);
+#if 0
 #if ASAN
 # if !R2_ASSERT_STDOUT
 # error R2_ASSERT_STDOUT undefined or 0
@@ -1215,6 +1216,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 	        (!strstr (out->err, "Sanitizer") && !strstr (out->err, "runtime error:")))) {
 		broken = true;
 	}
+#endif
 #endif
 	if (!success) {
 		ret->result = broken ? R2R_TEST_RESULT_BROKEN : R2R_TEST_RESULT_FAILED;
