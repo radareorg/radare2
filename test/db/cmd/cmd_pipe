@@ -10,7 +10,7 @@ NAME=r2pipe.py
 FILE=bins/elf/_Exit (42)
 CMDS=<<EOF
 ?q `env~?^ASAN=1$`
-?+ env LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.6
+?+ env LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
 #!pipe python3 scripts/get-funcs.py
 EOF
 EXPECT=<<EOF
