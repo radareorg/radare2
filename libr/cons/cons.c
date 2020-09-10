@@ -1010,7 +1010,7 @@ R_API void r_cons_print_fps (int col) {
 		if (diff < 0) {
 			fps = 0;
 		} else {
-			fps = (diff < 1000000)? (1000000.0/diff): 0;
+			fps = (diff < 1000000)? (1000000.0 / diff): 0;
 		}
 		prev = now;
 	} else {
@@ -1677,7 +1677,11 @@ R_API void r_cons_set_last_interactive(void) {
 }
 
 R_API void r_cons_set_title(const char *str) {
+#if __WINDOWS__
+	SetConsoleTitle (str);
+#else
 	r_cons_printf ("\x1b]0;%s\007", str);
+#endif
 }
 
 R_API void r_cons_zero(void) {
