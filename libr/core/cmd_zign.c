@@ -367,7 +367,7 @@ static bool addTypesZign(RCore *core, const char *name, const char *args0, int n
 
 	RList *types = r_list_newf ((RListFree)free);
 	for (i = 0; i < nargs; i++) {
-		r_list_append (types, r_str_new (r_str_word_get0 (args0, i)));
+		r_list_append (types, strdup (r_str_word_get0 (args0, i)));
 	}
 
 	bool retval = r_sign_add_types (core->anal, name, types);
