@@ -1830,7 +1830,7 @@ static int cmd_resize(void *data, const char *input) {
 			}
 			pj_end (pj);
 			char *s = pj_drain (pj);
-			r_cons_printf ("%s\n", s);
+			r_cons_println (s);
 			free (s);
 			break;
 		}
