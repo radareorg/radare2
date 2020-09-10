@@ -750,6 +750,16 @@ static void _patch_reloc(ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S
 	ut64 A = rel->addend, P = rel->rva;
 	ut8 buf[8];
 	switch (e_machine) {
+	case EM_ARM:
+		val = S + A;
+		r_write_le64 (buf, val);
+		iob->write_at (iob->io, rel->rva, buf, 4);
+		break;
+	case EM_AARCH64:
+		val = S + A;
+		r_write_le64 (buf, val);
+		iob->write_at (iob->io, rel->rva, buf, 8);
+		break;
 	case EM_PPC64: {
 		int low = 0, word = 0;
 		switch (rel->type) {
