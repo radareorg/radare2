@@ -79,7 +79,7 @@ jobs:
             enabled: true
             timeout: 60
           - name: linux-gcc-tests-asan
-            os: ubuntu-latest
+            os: ubuntu-20.04
             build_system: meson
             compiler: gcc
             cflags: '-DR2_ASSERT_STDOUT=1'
