@@ -15,21 +15,12 @@ R_API void r_anal_cc_del(RAnal *anal, const char *name) {
 	}
 }
 
-static const char *getreg(RAnal *anal, const char *alias) {
-	int n = r_reg_get_name_idx (alias);
-	if (n != -1) {
-		const char *nname = r_reg_get_name (anal->reg, n);
-		return nname;
-	}
-	return NULL;
-}
-
 R_API char *r_anal_cc_from_regprofile(RAnal *anal) {
-	const char *r0 = getreg (anal, "R0");
-	const char *a0 = getreg (anal, "A0");
-	const char *a1 = getreg (anal, "A1");
-	const char *a2 = getreg (anal, "A2");
-	const char *a3 = getreg (anal, "A3");
+	const char *r0 = r_reg_get_name_by_type (anal, "R0");
+	const char *a0 = r_reg_get_name_by_type (anal, "A0");
+	const char *a1 = r_reg_get_name_by_type (anal, "A1");
+	const char *a2 = r_reg_get_name_by_type (anal, "A2");
+	const char *a3 = r_reg_get_name_by_type (anal, "A3");
 	if (!r0) {
 		r0 = a0;
 	}

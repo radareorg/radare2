@@ -67,6 +67,15 @@ R_API const char *r_reg_get_type(int idx) {
 	return (idx >= 0 && idx < R_REG_TYPE_LAST) ? types[idx] : NULL;
 }
 
+R_API const char *r_reg_get_name_by_type(int idx) {
+	int n = r_reg_get_name_idx (alias);
+	if (n != -1) {
+		const char *nname = r_reg_get_name (anal->reg, n);
+		return nname;
+	}
+	return NULL;
+}
+
 R_API int r_reg_type_by_name(const char *str) {
 	r_return_val_if_fail (str, -1);
 	int i;
