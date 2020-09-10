@@ -369,7 +369,7 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 			if (perm & O_EXCL) {
 				creation = CREATE_NEW;
 			} else {
-				creation = CREATE_ALWAYS;
+				creation = OPEN_ALWAYS;
 			}
 			if (mode & S_IREAD && !(mode & S_IWRITE)) {
 				flags = FILE_ATTRIBUTE_READONLY;
@@ -389,6 +389,9 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 		} else {
 			permission = GENERIC_READ;
 		}
+		if (perm & O_APPEND) {
+			permission |= FILE_APPEND_DATA;
+		}
 
 		wchar_t *wepath = r_utf8_to_utf16 (epath);
 		if (!wepath) {
@@ -397,7 +400,7 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 		}
 		HANDLE h = CreateFileW (wepath, permission, FILE_SHARE_READ | (read_only ? 0 : FILE_SHARE_WRITE), NULL, creation, flags, NULL);
 		if (h != INVALID_HANDLE_VALUE) {
-			ret = _open_osfhandle ((intptr_t)h, 0);
+			ret = _open_osfhandle ((intptr_t)h, perm);
 		}
 		free (wepath);
 	}

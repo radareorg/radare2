@@ -849,8 +849,8 @@ R_API int r_cons_is_vtcompat(void);
 R_API void r_cons_w32_clear(void);
 R_API void r_cons_w32_gotoxy(int fd, int x, int y);
 R_API int r_cons_w32_print(const char *ptr, int len, bool vmode);
-R_API int r_cons_win_printf(bool vmode, const char *fmt, ...);
-R_API int r_cons_win_eprintf(bool vmode, const char *fmt, ...);
+R_API int r_cons_win_printf(bool vmode, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
+R_API int r_cons_win_eprintf(bool vmode, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API int r_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list ap);
 #endif
 
@@ -916,7 +916,7 @@ R_API void r_cons_visual_write(char *buffer);
 R_API bool r_cons_is_utf8(void);
 R_API void r_cons_cmd_help(const char * help[], bool use_color);
 R_API void r_cons_log_stub(const char *output, const char *funcname, const char *filename,
- unsigned int lineno, unsigned int level, const char *tag, const char *fmtstr, ...);
+ unsigned int lineno, unsigned int level, const char *tag, const char *fmtstr, ...) R_PRINTF_CHECK(7, 8);
 
 
 /* input */

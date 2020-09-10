@@ -14,6 +14,16 @@
 #define PTRACE_SETSIGINFO 0x4203
 #endif
 
+// A special case of the older Glibc but the kernel newer than 2.5.46
+// Sadly, there is no reliable and portable way to check the linux kernel
+// version from headers, so we assume it's supported.
+#if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && (__GLIBC__ <= 2) && (__GLIBC_MINOR__ <= 3)
+#if !defined(PT_GETEVENTMSG) && !defined(PTRACE_GETEVENTMSG)
+#define PTRACE_GETEVENTMSG 0x4201
+#define PT_GETEVENTMSG PTRACE_GETEVENTMSG
+#endif
+#endif
+
 #if !defined(PTRACE_EVENT_FORK) && !defined(PTRACE_EVENT_VFORK) && !defined(PTRACE_EVENT_CLONE) \
 	&& !defined(PTRACE_EVENT_EXEC) && !defined(PTRACE_EVENT_VFORK_DONE) && !defined(PTRACE_EVENT_EXIT)
 

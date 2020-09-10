@@ -132,3 +132,52 @@ R_API ut8 *r_hash_do_md4(RHash *ctx, const ut8 *input, int len) {
 	}
 	return NULL;
 }
+
+R_API ut8 *r_hash_do_hmac_sha256(RHash *ctx, const ut8 *input, int len, const ut8 *key, int klen) {
+	if (len < 0 || klen < 0) {
+		return NULL;
+	}
+
+	size_t i;
+	ut8 bskey[SHA256_BLOCK_LENGTH]; // block-sized key
+	ut8 kpad[SHA256_BLOCK_LENGTH]; // keypad for opad, ipad
+
+	// If klen > block-size, bskey = Hash(key)
+	memset (bskey, 0, SHA256_BLOCK_LENGTH);
+	if (klen > SHA256_BLOCK_LENGTH) {
+		SHA256_Init (&ctx->sha256);
+		SHA256_Update (&ctx->sha256, key, klen);
+		SHA256_Final (ctx->digest, &ctx->sha256);
+		memcpy (bskey, ctx->digest, R_HASH_SIZE_SHA256);
+	} else {
+		memcpy (bskey, key, klen);
+	}
+
+	// XOR block-sized key with ipad 0x36
+	memset (kpad, 0, SHA256_BLOCK_LENGTH);
+	memcpy (kpad, bskey, SHA256_BLOCK_LENGTH);
+	for (i = 0; i < SHA256_BLOCK_LENGTH; i++) {
+		kpad[i] ^= 0x36;
+	}
+
+	// Inner hash (key ^ ipad || input)
+	SHA256_Init (&ctx->sha256);
+	SHA256_Update (&ctx->sha256, kpad, SHA256_BLOCK_LENGTH);
+	SHA256_Update (&ctx->sha256, input, len);
+	SHA256_Final (ctx->digest, &ctx->sha256);
+
+	// XOR block-sized key with opad 0x5c
+	memset (kpad, 0, SHA256_BLOCK_LENGTH);
+	memcpy (kpad, bskey, SHA256_BLOCK_LENGTH);
+	for (i = 0; i < SHA256_BLOCK_LENGTH; i++) {
+		kpad[i] ^= 0x5c;
+	}
+
+	// Outer hash (key ^ opad || Inner hash)
+	SHA256_Init (&ctx->sha256);
+	SHA256_Update (&ctx->sha256, kpad, SHA256_BLOCK_LENGTH);
+	SHA256_Update (&ctx->sha256, ctx->digest, R_HASH_SIZE_SHA256);
+	SHA256_Final (ctx->digest, &ctx->sha256);
+
+	return ctx->digest;
+}

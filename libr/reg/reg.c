@@ -88,7 +88,8 @@ R_API void r_reg_item_free(RRegItem *item) {
 }
 
 R_API int r_reg_get_name_idx(const char *type) {
-	if (type)
+	r_return_val_if_fail (type, -1);
+	if (type[0] && type[1] && !type[2])
 	switch (*type | (type[1] << 8)) {
 	/* flags */
 	case 'Z' + ('F' << 8): return R_REG_NAME_ZF;
@@ -199,7 +200,7 @@ R_API void r_reg_free_internal(RReg *reg, bool init) {
 static int regcmp(RRegItem *a, RRegItem *b) {
 	int offa = (a->offset * 16) + a->size;
 	int offb = (b->offset * 16) + b->size;
-	return offa > offb;
+	return (offa > offb) - (offa < offb);
 }
 
 R_API void r_reg_reindex(RReg *reg) {

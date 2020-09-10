@@ -319,6 +319,8 @@ static RDebugReasonType linux_handle_new_task(RDebug *dbg, int tid) {
 			if (ret == -1) {
 				continue;
 			}
+#ifdef PT_GETEVENTMSG
+			// NOTE: This API was added in Linux 2.5.46
 			if (siginfo.si_signo == SIGTRAP) {
 				// si_code = (SIGTRAP | PTRACE_EVENT_* << 8)
 				int pt_evt = siginfo.si_code >> 8;
@@ -333,6 +335,7 @@ static RDebugReasonType linux_handle_new_task(RDebug *dbg, int tid) {
 					break;
 				}
 			}
+#endif
 		}
 	}
 	return R_DEBUG_REASON_UNKNOWN;

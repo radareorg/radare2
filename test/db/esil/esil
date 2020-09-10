@@ -313,3 +313,22 @@ EXPECT=<<EOF
 0x004000c3
 EOF
 RUN
+
+NAME=signext 8 32 64 
+FILE=-
+CMDS="ae 8,0x80,~,8,0x70,~,32,0x80000000,~,64,0x80000000,~"
+EXPECT=<<EOF
+0x80000000
+0xffffffff80000000
+0x70
+0xffffffffffffff80
+EOF
+RUN
+
+NAME=signext ex 
+FILE=-
+CMDS="ae 32,0xffffffffffffff12,~"
+EXPECT=<<EOF
+0xffffffffffffff12
+EOF
+RUN

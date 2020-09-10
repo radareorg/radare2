@@ -18,6 +18,9 @@ typedef SHA_CTX R_SHA_CTX;
 typedef SHA256_CTX R_SHA256_CTX;
 typedef SHA512_CTX R_SHA384_CTX;
 typedef SHA512_CTX R_SHA512_CTX;
+#define SHA256_BLOCK_LENGTH SHA256_CBLOCK
+#define SHA384_BLOCK_LENGTH SHA384_CBLOCK
+#define SHA512_BLOCK_LENGTH SHA512_CBLOCK
 #else
 #define MD5_CTX R_MD5_CTX
 
@@ -490,6 +493,7 @@ R_API ut8 *r_hash_do_sha1(RHash *ctx, const ut8 *input, int len);
 R_API ut8 *r_hash_do_sha256(RHash *ctx, const ut8 *input, int len);
 R_API ut8 *r_hash_do_sha384(RHash *ctx, const ut8 *input, int len);
 R_API ut8 *r_hash_do_sha512(RHash *ctx, const ut8 *input, int len);
+R_API ut8 *r_hash_do_hmac_sha256(RHash *ctx, const ut8 *input, int len, const ut8 *key, int klen);
 
 R_API char *r_hash_to_string(RHash *ctx, const char *name, const ut8 *data, int len);
 

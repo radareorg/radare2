@@ -110,7 +110,6 @@ RUN
 
 NAME=r2 shortcut
 FILE=-
-ARGS=-e cfg.newshell=false
 CMDS=<<EOF
 ?q `!!r2 -h~Usage?`
 ?+ ?vi $?

@@ -608,7 +608,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		free (tmp);
 	}
 	if ((tmp = r_sys_getenv ("RABIN2_DMNGLRCMD"))) {
-		r_config_set (core.config, "bin.demanglecmd", tmp);
+		r_config_set (core.config, "cmd.demangle", tmp);
 		free (tmp);
 	}
 	if ((tmp = r_sys_getenv ("RABIN2_LANG"))) {

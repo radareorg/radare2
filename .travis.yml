@@ -46,29 +46,15 @@ jobs:
       arch: arm64
       dist: bionic
       env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
-    # Building *.deb package
-    - if: (branch = master AND type = push) OR head_branch =~ ^debian-*
-      os: linux
-      name: Debian
-      dist: stretch
-      env: COMPILER_NAME=gcc DEBPKG=1 CC=gcc CFLAGS="-O2 -DR2_ASSERT_STDOUT=1"
     # Run Fuzzing Sanity Test on every push
     # XXX its broken it complains about invalid key
     #- os: linux
     #  env: COMPILER_NAME=clang CXX=clang++ CC=clang R2_TESTS_DISABLE=1 FUZZIT=0 INSTALL_SYSTEM=static CXXFLAGS="-fsanitize=fuzzer"
     # TODO: move this as new GitHub workflows
-    # ASAN as a best effort on every push
-    - if: (not head_branch =~ ^release-* AND not head_branch =~ ^prerelease-* AND not branch =~ ^release-* AND not branch =~ ^prerelease-*) AND (head_branch =~ ^asan-* OR type = push)
-      os: linux
-      env: COMPILER_NAME=gcc INSTALL_SYSTEM=meson ASAN=1 ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0 CFLAGS="-DR2_ASSERT_STDOUT=1"
     # release-only: meson build with system libraries
     - if: head_branch =~ ^release-* OR head_branch =~ ^prerelease-* OR branch =~ ^release-* OR branch =~ ^prerelease-*
       os: linux
       env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_SYS_MAGIC=true R2_SYS_ZIP=true R2_SYS_LZ4=true R2_SYS_ZLIB=true R2_SYS_OPENSSL=true
-    # release-only: meson build with ASAN and R2_ASSERT_STDOUT
-    - if: head_branch =~ ^release-* OR head_branch =~ ^prerelease-* OR branch =~ ^release-* OR branch =~ ^prerelease-*
-      os: linux
-      env: COMPILER_NAME=gcc CFLAGS="-DR2_ASSERT_STDOUT=1" INSTALL_SYSTEM=meson ASAN=1 ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0 RELEASE=1
     # release-only: nogpl plugins file, just test if it builds
     - if: head_branch =~ ^release-* OR head_branch =~ ^prerelease-* OR branch =~ ^release-* OR branch =~ ^prerelease-*
       os: linux
@@ -122,12 +108,6 @@ before_install:
     elif [ "$TRAVIS_OS_NAME" != "osx" ] && [ "$NODOCKER" != "1" ]; then
       docker pull radareorg/r2-travis:latest || docker build -t radareorg/r2-travis:latest -f Dockerfile.travis .
     fi
-
-after_success:
-  - wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
-  - compgen -G "r2js.zip" > /dev/null && bash upload.sh r2js.zip
-  - compgen -G "*.deb" > /dev/null && bash upload.sh *.deb
-  - compgen -G "/tmp/*.pkg" > /dev/null && bash upload.sh /tmp/*.pkg
 
 script:
   - export PR_NAME=$(echo $TRAVIS_PULL_REQUEST_SLUG | cut -d'/' -f1)

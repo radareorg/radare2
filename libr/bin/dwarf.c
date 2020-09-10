@@ -798,8 +798,8 @@ static const ut8 *parse_ext_opcode(const RBin *bin, const ut8 *obuf,
 	default:
 		if (mode == R_MODE_PRINT) {
 			print ("Unexpected ext opcode %d\n", opcode);
-			buf = NULL;
 		}
+		buf = NULL;
 		break;
 	}
 
@@ -1021,6 +1021,9 @@ static size_t parse_opcodes(const RBin *bin, const ut8 *obuf,
 	if (mode == R_MODE_PRINT) {
 		bin->cb_printf ("\n"); // formatting of the output
 	}
+	if (!buf) {
+		return 0;
+	}
 	return (size_t) (buf - obuf); // number of bytes we've moved by
 }
 
@@ -1091,6 +1094,9 @@ static int parse_line_raw(const RBin *a, const ut8 *obuf,
 		} while (bytes_read < buf_size && tmp_read != 0); // if nothing is read -> error, exit
 
 		line_header_fini (&hdr);
+		if (!tmp_read) {
+			return false;
+		}
 	}
 	return true;
 }
@@ -1099,11 +1105,11 @@ static int parse_line_raw(const RBin *a, const ut8 *obuf,
 	(x)=*(y*)buf; idx+=sizeof(y);buf+=sizeof(y)
 
 #define READ_BUF64(x) if (idx+sizeof(ut64)>=len) { return false;} \
-	(x)=r_read_ble64(buf, 0); idx+=sizeof(ut64);buf+=sizeof(ut64)
+	(x)=r_read_ble64(buf, big_end); idx+=sizeof(ut64);buf+=sizeof(ut64)
 #define READ_BUF32(x) if (idx+sizeof(ut32)>=len) { return false;} \
-	(x)=r_read_ble32(buf, 0); idx+=sizeof(ut32);buf+=sizeof(ut32)
+	(x)=r_read_ble32(buf, big_end); idx+=sizeof(ut32);buf+=sizeof(ut32)
 #define READ_BUF16(x) if (idx+sizeof(ut16)>=len) { return false;} \
-	(x)=r_read_ble16(buf, 0); idx+=sizeof(ut16);buf+=sizeof(ut16)
+	(x)=r_read_ble16(buf, big_end); idx+=sizeof(ut16);buf+=sizeof(ut16)
 
 static int parse_aranges_raw(const ut8 *obuf, int len, int mode, PrintfCallback print) {
 	ut32 length, offset;
@@ -2299,6 +2305,8 @@ R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 			free (buf);
 			return NULL;
 		}
+		/* set the endianity global [HOTFIX] */
+		big_end = r_bin_is_big_endian (bin);
 		// Actually parse the section
 		parse_line_raw (bin, buf, len, mode);
 		// k bin/cur/addrinfo/*
@@ -2353,6 +2361,8 @@ R_API RList *r_bin_dwarf_parse_aranges(RBin *bin, int mode) {
 			free (buf);
 			return NULL;
 		}
+		/* set the endianity global [HOTFIX] */
+		big_end = r_bin_is_big_endian (bin);
 		parse_aranges_raw (buf, len, mode, bin->cb_printf);
 
 		free (buf);
@@ -2406,6 +2416,18 @@ static inline RBinDwarfLocRange *create_loc_range(ut64 start, ut64 end, RBinDwar
 	return range;
 }
 
+static void free_loc_table_list(RBinDwarfLocList *loc_list) {
+	RListIter *iter;
+	RBinDwarfLocRange *range;
+	r_list_foreach (loc_list->list, iter, range) {
+		free (range->expression->data);
+		free (range->expression);
+		free (range);
+	}
+	r_list_free (loc_list->list);
+	free (loc_list);
+}
+
 static HtUP *parse_loc_raw(HtUP/*<offset, List *<LocListEntry>*/ *loc_table, const ut8 *buf, size_t len, size_t addr_size) {
 	/* GNU has their own extensions GNU locviews that we can't parse */
 	const ut8 *const buf_start = buf;
@@ -2447,6 +2469,10 @@ static HtUP *parse_loc_raw(HtUP/*<offset, List *<LocListEntry>*/ *loc_table, con
 			range = NULL;
 		}
 	}
+	/* if for some reason end of list is missing, then loc_list would leak */
+	if (loc_list) {
+		free_loc_table_list (loc_list);
+	}
 	return loc_table;
 }
 
@@ -2463,10 +2489,14 @@ R_API HtUP/*<offset, RBinDwarfLocList*/ *r_bin_dwarf_parse_loc(RBin *bin, int ad
 	/* The standarparse_loc_raw_frame, not sure why is that */
 	size_t len = 0;
 	ut8 *buf = get_section_bytes (bin, "debug_loc", &len);
+	if (!buf) {
+		return NULL;
+	}
 	/* set the endianity global [HOTFIX] */
 	big_end = r_bin_is_big_endian (bin);
-	HtUP/*<offset, RBinDwarfLocList*/ *loc_table = ht_up_new0 ();
-	if (!loc_table || !buf) {
+	HtUP /*<offset, RBinDwarfLocList*/ *loc_table = ht_up_new0 ();
+	if (!loc_table) {
+		free (buf);
 		return NULL;
 	}
 	loc_table = parse_loc_raw (loc_table, buf, len, addr_size);
@@ -2521,18 +2551,10 @@ R_API void r_bin_dwarf_print_loc(HtUP /*<offset, RBinDwarfLocList*/ *loc_table, 
 	r_list_free (sort_list);
 }
 
-
 static void free_loc_table_entry(HtUPKv *kv) {
-	RBinDwarfLocList *loc_list = kv->value;
-	RListIter *iter;
-	RBinDwarfLocRange *range;
-	r_list_foreach (loc_list->list, iter, range) {
-		free (range->expression->data);
-		free (range->expression);
-		free (range);
+	if (kv) {
+		free_loc_table_list (kv->value);
 	}
-	r_list_free (loc_list->list);
-	free (loc_list);
 }
 
 R_API void r_bin_dwarf_free_loc(HtUP /*<offset, RBinDwarfLocList*>*/ *loc_table) {

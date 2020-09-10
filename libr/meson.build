@@ -230,7 +230,7 @@ debug_plugins = [
   'null',
   'qnx',
   'rap',
-  'windbg'
+  'winkd'
 ]
 
 egg_plugins = [
@@ -290,16 +290,18 @@ io_plugins = [
   'shm',
   'sparse',
   'tcp',
-  'windbg',
+  'winkd',
   'winedbg',
   'zip'
 ]
 
 if host_machine.system() == 'windows'
   io_plugins += [
+    'windbg',
     'w32dbg',
     'w32',
   ]
+  debug_plugins += 'windbg'
 endif
 
 lang_plugins = [

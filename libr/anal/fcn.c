@@ -140,6 +140,7 @@ static RAnalBlock *fcn_append_basic_block(RAnal *anal, RAnalFunction *fcn, ut64 
 		return NULL;
 	}
 	r_anal_function_add_block (fcn, bb);
+	bb->stackptr = fcn->stack;
 	bb->parent_stackptr = fcn->stack;
 	return bb;
 }
@@ -398,16 +399,56 @@ static RAnalBlock *bbget(RAnal *anal, ut64 addr, bool jumpmid) {
 	return ret;
 }
 
+typedef struct {
+	RAnalFunction *fcn;
+	const int stack_diff;
+} BlockTakeoverCtx;
+
 static bool fcn_takeover_block_recursive_followthrough_cb(RAnalBlock *block, void *user) {
-	RAnalFunction *our_fcn = user;
+	BlockTakeoverCtx *ctx = user;
+	RAnalFunction *our_fcn = ctx->fcn;
 	r_anal_block_ref (block);
 	while (!r_list_empty (block->fcns)) {
 		RAnalFunction *other_fcn = r_list_first (block->fcns);
 		if (other_fcn->addr == block->addr) {
 			return false;
 		}
+		// Steal vars from this block
+		size_t i;
+		for (i = 0; i + 1 < block->ninstr; i++) {
+			const ut64 addr = r_anal_bb_opaddr_i (block, i);
+			RPVector *vars_used = r_anal_function_get_vars_used_at (other_fcn, addr);
+			if (!vars_used) {
+				continue;
+			}
+			// vars_used will get modified if r_anal_var_remove_access_at gets called
+			RPVector *cloned_vars_used = (RPVector *)r_vector_clone ((RVector *)vars_used);
+			void **it;
+			r_pvector_foreach (cloned_vars_used, it) {
+				RAnalVar *other_var = *it;
+				const int actual_delta = other_var->kind == R_ANAL_VAR_KIND_SPV
+					? other_var->delta + ctx->stack_diff
+					: other_var->delta + (other_fcn->bp_off - our_fcn->bp_off);
+				RAnalVar *our_var = r_anal_function_get_var (our_fcn, other_var->kind, actual_delta);
+				if (!our_var) {
+					our_var = r_anal_function_set_var (our_fcn, actual_delta, other_var->kind, other_var->type, 0, other_var->isarg, other_var->name);
+				}
+				if (our_var) {
+					RAnalVarAccess *acc = r_anal_var_get_access_at (other_var, addr);
+					r_anal_var_set_access (our_var, acc->reg, addr, acc->type, acc->stackptr);
+				}
+				r_anal_var_remove_access_at (other_var, addr);
+				if (r_vector_empty (&other_var->accesses)) {
+					r_anal_function_delete_var (other_fcn, other_var);
+				}
+			}
+			r_pvector_free (cloned_vars_used);
+		}
+
 		r_anal_function_remove_block (other_fcn, block);
 	}
+	block->stackptr -= ctx->stack_diff;
+	block->parent_stackptr -= ctx->stack_diff;
 	r_anal_function_add_block (our_fcn, block);
 	r_anal_block_unref (block);
 	return true;
@@ -415,7 +456,8 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RAnalBlock *block, voi
 
 // Remove block and all of its recursive successors from all its functions and add them only to fcn
 static void fcn_takeover_block_recursive(RAnalFunction *fcn, RAnalBlock *start_block) {
-	r_anal_block_recurse_followthrough (start_block, fcn_takeover_block_recursive_followthrough_cb, fcn);
+	BlockTakeoverCtx ctx = { fcn, start_block->parent_stackptr - fcn->stack};
+	r_anal_block_recurse_followthrough (start_block, fcn_takeover_block_recursive_followthrough_cb, &ctx);
 }
 
 static const char *retpoline_reg(RAnal *anal, ut64 addr) {
@@ -501,9 +543,6 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		variadic_reg = r_reg_get (anal->reg, "rax", R_REG_TYPE_GPR);
 	}
 	bool has_variadic_reg = !!variadic_reg;
-	const char *bp_reg = anal->reg->name[R_REG_NAME_BP];
-	const char *sp_reg = anal->reg->name[R_REG_NAME_SP];
-	bool has_stack_regs = bp_reg && sp_reg;
 
 	if (r_cons_is_breaked ()) {
 		return R_ANAL_RET_END;
@@ -645,6 +684,10 @@ repeat:
 			// RET_END causes infinite loops somehow
 			gotoBeach (R_ANAL_RET_END);
 		}
+		const char *bp_reg = anal->reg->name[R_REG_NAME_BP];
+		const char *sp_reg = anal->reg->name[R_REG_NAME_SP];
+		bool has_stack_regs = bp_reg && sp_reg;
+
 		if (anal->opt.nopskip && fcn->addr == at) {
 			RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
 			if (!fi || strncmp (fi->name, "sym.", 4)) {
@@ -1289,7 +1332,9 @@ analopfinish:
 			last_is_mov_lr_pc = false;
 		}
 		if (has_variadic_reg && !fcn->is_variadic) {
-			bool dst_is_variadic = op.dst && op.dst->reg && op.dst->reg->offset == variadic_reg->offset;
+			variadic_reg = r_reg_get (anal->reg, "rax", R_REG_TYPE_GPR);
+			bool dst_is_variadic = op.dst && op.dst->reg
+					&& variadic_reg && op.dst->reg->offset == variadic_reg->offset;
 			bool op_is_cmp = (op.type == R_ANAL_OP_TYPE_CMP) || op.type == R_ANAL_OP_TYPE_ACMP;
 			if (dst_is_variadic && !op_is_cmp) {
 				has_variadic_reg = false;

@@ -210,6 +210,13 @@
   #define FUNC_ATTR_ALWAYS_INLINE
 #endif
 
+/* printf format check attributes */
+#if defined(__clang__) || defined(__GNUC__)
+#define R_PRINTF_CHECK(fmt, dots) __attribute__ ((format (printf, fmt, dots)))
+#else
+#define R_PRINTF_CHECK(fmt, dots)
+#endif
+
 #include <r_types_base.h>
 
 #undef _FILE_OFFSET_BITS

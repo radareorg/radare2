@@ -350,6 +350,7 @@ static int pdb_read_root(RPdb *pdb) {
 		page = (SPage *) r_list_iter_get (it);
 		if (page->stream_pages == 0) {
 			//eprintf ("Warning: no stream pages. Skipping.\n");
+			r_list_append (pList, NULL);
 			i++;
 			continue;
 		}

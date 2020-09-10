@@ -27,7 +27,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, RSocketHTTPOptions *
 		return NULL;
 	}
 	if (so->timeout > 0) {
-		r_socket_block_time (hr->s, 1, so->timeout, 0);
+		r_socket_block_time (hr->s, true, so->timeout, 0);
 	}
 	hr->auth = !so->httpauth;
 	for (;;) {
@@ -105,6 +105,11 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, RSocketHTTPOptions *
 	}
 	if (content_length>0) {
 		r_socket_read_block (hr->s, (ut8*)buf, 1); // one missing byte wtf
+		if (ST32_ADD_OVFCHK (content_length, 1)) {
+			r_socket_http_close (hr);
+			eprintf ("Could not allocate hr data\n");
+			return NULL;
+		}
 		hr->data = malloc (content_length+1);
 		hr->data_length = content_length;
 		r_socket_read_block (hr->s, hr->data, hr->data_length);

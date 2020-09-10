@@ -39,7 +39,6 @@ static bool test_parse_dwarf_types(void) {
 	r_anal_dwarf_process_info (anal, &ctx);
 
 	char * value = NULL;
-	char *object_name = "_cairo_status";
 	Sdb *sdb = anal->sdb_types;
 	check_kv ("_cairo_status", "enum");
 	check_kv ("enum._cairo_status.!size", "32");

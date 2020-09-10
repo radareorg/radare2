@@ -107,13 +107,13 @@ R_API int r_socket_close(RSocket *s);
 R_API int r_socket_free(RSocket *s);
 R_API RSocket *r_socket_accept(RSocket *s);
 R_API RSocket *r_socket_accept_timeout(RSocket *s, unsigned int timeout);
-R_API int r_socket_block_time(RSocket *s, int block, int sec, int usec);
+R_API bool r_socket_block_time(RSocket *s, bool block, int sec, int usec);
 R_API int r_socket_flush(RSocket *s);
 R_API int r_socket_ready(RSocket *s, int secs, int usecs);
 R_API char *r_socket_to_string(RSocket *s);
 R_API int r_socket_write(RSocket *s, void *buf, int len);
 R_API int r_socket_puts(RSocket *s, char *buf);
-R_API void r_socket_printf(RSocket *s, const char *fmt, ...);
+R_API void r_socket_printf(RSocket *s, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API int r_socket_read(RSocket *s, ut8 *read, int len);
 R_API int r_socket_read_block(RSocket *s, unsigned char *buf, int len);
 R_API int r_socket_gets(RSocket *s, char *buf, int size);
@@ -132,7 +132,7 @@ R_API int r_socket_proc_close(RSocketProc *sp);
 R_API int r_socket_proc_read(RSocketProc *sp, unsigned char *buf, int len);
 R_API int r_socket_proc_gets(RSocketProc *sp, char *buf, int size);
 R_API int r_socket_proc_write(RSocketProc *sp, void *buf, int len);
-R_API void r_socket_proc_printf(RSocketProc *sp, const char *fmt, ...);
+R_API void r_socket_proc_printf(RSocketProc *sp, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API int r_socket_proc_ready(RSocketProc *sp, int secs, int usecs);
 
 /* HTTP */
@@ -256,6 +256,7 @@ R_API int r_run_config_env(RRunProfile *p);
 R_API int r_run_start(RRunProfile *p);
 R_API void r_run_reset(RRunProfile *p);
 R_API bool r_run_parsefile(RRunProfile *p, const char *b);
+R_API char *r_run_get_environ_profile(char **env);
 
 /* rapipe */
 R_API R2Pipe *rap_open(const char *cmd);
@@ -263,7 +264,7 @@ R_API R2Pipe *rap_open_corebind(RCoreBind *coreb);
 R_API int rap_close(R2Pipe *rap);
 
 R_API char *rap_cmd(R2Pipe *rap, const char *str);
-R_API char *rap_cmdf(R2Pipe *rap, const char *fmt, ...);
+R_API char *rap_cmdf(R2Pipe *rap, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 
 R_API int rap_write(R2Pipe *rap, const char *str);
 R_API char *rap_read(R2Pipe *rap);
@@ -275,7 +276,7 @@ R_API R2Pipe *r2pipe_open_corebind(RCoreBind *coreb);
 R_API R2Pipe *r2pipe_open(const char *cmd);
 R_API R2Pipe *r2pipe_open_dl(const char *file);
 R_API char *r2pipe_cmd(R2Pipe *r2pipe, const char *str);
-R_API char *r2pipe_cmdf(R2Pipe *r2pipe, const char *fmt, ...);
+R_API char *r2pipe_cmdf(R2Pipe *r2pipe, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 #endif
 
 #ifdef __cplusplus

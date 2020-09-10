@@ -5,6 +5,7 @@
 #include <string.h>
 #if defined(__NetBSD__)
 # include <sys/param.h>
+# include <sys/sysctl.h>
 # if __NetBSD_Prereq__(7,0,0)
 #  define NETBSD_WITH_BACKTRACE
 # endif
@@ -340,7 +341,13 @@ R_API int r_sys_usleep(int usecs) {
 	rqtp.tv_nsec = (usecs - (rqtp.tv_sec * 1000000)) * 1000;
 	return clock_nanosleep (CLOCK_MONOTONIC, 0, &rqtp, NULL);
 #elif __UNIX__
+#if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && (__GLIBC__ <= 2) && (__GLIBC_MINOR__ <= 2)
+	// Old versions of GNU libc return void for usleep
+	usleep (usecs);
+	return 0;
+#else
 	return usleep (usecs);
+#endif
 #else
 	// w32 api uses milliseconds
 	usecs /= 1000;
@@ -547,6 +554,12 @@ R_API bool r_sys_aslr(int val) {
 		ret = false;
 	}
 #endif
+#elif __NetBSD__
+	size_t vlen = sizeof (val);
+	if (sysctlbyname ("security.pax.aslr.enabled", NULL, 0, &val, vlen) == -1) {
+		eprintf ("Failed to set RVA\n");
+		ret = false;
+	}
 #endif
 	return ret;
 }
@@ -1166,7 +1179,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 	int32_t group = 0;
 	image_info ii;
 
-	while (get_next_image_info (0, &group, &ii) == B_OK) {
+	while (get_next_image_info ((team_id)pid, &group, &ii) == B_OK) {
 		if (ii.type == B_APP_IMAGE) {
 			break;
 		}

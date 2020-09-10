@@ -33,5 +33,5 @@ shlr/ptrace-wrap/ @thestr4ng3r
 shlr/radare2-shell-parser/ @ret2libc
 shlr/tcc/ @XVilka @trufae
 shlr/w32dbg_wrap/ @yossizap
-shlr/windbg/ @yossizap
+shlr/winkd/ @yossizap
 doc/fortunes.nsfw @thestr4ng3r

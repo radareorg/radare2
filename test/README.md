@@ -113,6 +113,8 @@ Example commands tests for the other `db/` folders:
 * **ARGS** (optional) are the command line argument passed to r2 (e.g -b 16)
 * **CMDS** are the commands to be executed by the test
 * **EXPECT** is the expected output of the test
+* **BROKEN** (optional) is 1 if the tests is expected to be fail, 0 otherwise
+* **TIMEOUT** (optional) is the number of seconds to wait before considering the test timeout
 
 You must end the test by adding RUN keyword
 

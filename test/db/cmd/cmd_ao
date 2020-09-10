@@ -9,3 +9,18 @@ EXPECT=<<EOF
 type: mov
 EOF
 RUN
+
+NAME=aof
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 55
+aof rsp
+aof rbp
+EOF
+EXPECT=<<EOF
+8,rsp,-=
+
+EOF
+RUN

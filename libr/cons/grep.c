@@ -441,7 +441,7 @@ static int cmp(const void *a, const void *b) {
 	if (IS_DIGIT (*ca) && IS_DIGIT (*cb)) {
 		ut64 na = r_num_get (NULL, ca);
 		ut64 nb = r_num_get (NULL, cb);
-		int ret = na > nb;
+		int ret = (na > nb) - (na < nb);
 		free (da);
 		free (db);
 		return ret;

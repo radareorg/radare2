@@ -15,7 +15,7 @@ R_API void r2r_cmd_test_free(R2RCmdTest *test) {
 		return;
 	}
 #define DO_KEY_STR(key, field) free (test->field.value);
-	R2R_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, R2R_CMD_TEST_FOREACH_RECORD_NOP)
+	R2R_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, R2R_CMD_TEST_FOREACH_RECORD_NOP, R2R_CMD_TEST_FOREACH_RECORD_NOP)
 #undef DO_KEY_STR
 	free (test);
 }
@@ -146,6 +146,11 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 				eprintf (LINEFMT "Error: Test without CMDS key\n", file, linenum);
 				goto fail;
 			}
+			if (!(test->expect.value || test->expect_err.value)) {
+				eprintf (LINEFMT "Error: Test without EXPECT or EXPECT_ERR key"
+				         " (did you forget an EOF?)\n", file, linenum);
+				goto fail;
+			}
 			r_pvector_push (ret, test);
 			test = r2r_cmd_test_new ();
 			if (!test) {
@@ -193,17 +198,43 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 			if (!strcmp (val, "1")) { \
 				test->field.value = true; \
 			} else if (!strcmp (val, "0")) { \
-                test->field.value = false; \
+				test->field.value = false; \
 			} else { \
 				eprintf (LINEFMT "Error: Invalid value \"%s\" for boolean key \"%s\", only \"1\" or \"0\" allowed.\n", file, linenum, val, key); \
 				goto fail; \
-            } \
+			} \
 			continue; \
 		}
 
-		R2R_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, DO_KEY_BOOL)
+#define DO_KEY_NUM(key, field) \
+		if (strcmp (line, key) == 0) { \
+			if (test->field.value) { \
+				eprintf (LINEFMT "Warning: Duplicate key \"%s\"\n", file, linenum, key); \
+			} \
+			test->field.set = true; \
+			/* Strip comment */ \
+			char *cmt = strchr (val, '#'); \
+			if (cmt) { \
+				*cmt = '\0'; \
+				cmt--; \
+				while (cmt > val && *cmt == ' ') { \
+					*cmt = '\0'; \
+					cmt--; \
+				} \
+			} \
+			char *endval; \
+			test->field.value = strtol (val, &endval, 0); \
+			if (!endval || *endval) { \
+				eprintf (LINEFMT "Error: Invalid value \"%s\" for numeric key \"%s\", only numbers allowed.\n", file, linenum, val, key); \
+				goto fail; \
+			} \
+			continue; \
+		}
+
+		R2R_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, DO_KEY_BOOL, DO_KEY_NUM)
 #undef DO_KEY_STR
 #undef DO_KEY_BOOL
+#undef DO_KEY_NUM
 
 		eprintf (LINEFMT "Unknown key \"%s\".\n", file, linenum, line);
 	} while ((line = nextline));
@@ -216,6 +247,8 @@ beach:
 	r2r_cmd_test_free (test);
 	return ret;
 fail:
+	r2r_cmd_test_free (test);
+	test = NULL;
 	r_pvector_free (ret);
 	ret = NULL;
 	goto beach;

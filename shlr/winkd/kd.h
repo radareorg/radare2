@@ -2,6 +2,7 @@
 #ifndef KD_H
 #define KD_H
 #include <r_types_base.h>
+#include "transport.h"
 
 enum {
 	KD_E_OK			=  0,
@@ -79,6 +80,7 @@ enum KD_PACKET_MANIPULATE_TYPE {
 	DbgKdMaximumManipulate              = 0x0000315E
 };
 
+#define KD_PACKET_UNUSED 0x00000000
 #define KD_PACKET_DATA 0x30303030
 #define KD_PACKET_CTRL 0x69696969
 
@@ -203,6 +205,28 @@ typedef struct kd_packet_t {
 	uint8_t data[0];
 }) kd_packet_t;
 
+// KDNET
+
+#define KDNET_MAGIC 0x4d444247 // MDBG
+#define KDNET_HMACKEY_SIZE 32
+#define KDNET_HMAC_SIZE 16
+
+#define KDNET_PACKET_TYPE_DATA 0
+#define KDNET_PACKET_TYPE_CONTROL 1
+
+R_PACKED (
+typedef struct kdnet_packet_t {
+	ut32 magic; // KDNET_MAGIC
+	ut8 version; // Protocol Number
+	ut8 type; // Channel Type - 0 Data, 1 Control
+}) kdnet_packet_t;
+
+// KDNet Data mask
+#define KDNET_DATA_SIZE 8
+#define KDNET_DATA_DIRECTION_MASK 0x80
+#define KDNET_DATA_PADSIZE_MASK 0x7F
+#define KDNET_DATA_SEQNO_MASK 0xFFFFFF00
+
 // Compile time assertions macros taken from :
 // http://www.pixelbeat.org/programming/gcc/static_assert.html
 #define ASSERT_CONCAT_(a, b) a##b
@@ -213,14 +237,14 @@ ct_assert(sizeof(kd_packet_t)==16);
 ct_assert(sizeof(kd_req_t)==56);
 ct_assert(sizeof(kd_ioc_t)==64);
 
-int kd_send_ctrl_packet (void *fp, const uint32_t type, const uint32_t id);
-int kd_send_data_packet (void *fp, const uint32_t type, const uint32_t id, const uint8_t *req, const int req_len, const uint8_t *buf, const uint32_t buf_len);
+int kd_send_ctrl_packet(io_desc_t *desc, const uint32_t type, const uint32_t id);
+int kd_send_data_packet(io_desc_t *desc, const uint32_t type, const uint32_t id, const uint8_t *req, const int req_len, const uint8_t *buf, const uint32_t buf_len);
 
-int kd_read_packet (void *fp, kd_packet_t **p);
+int kd_read_packet(io_desc_t *desc, kd_packet_t **p);
 
-int kd_packet_is_valid (const kd_packet_t *p);
-int kd_packet_is_ack (const kd_packet_t *p);
+bool kd_packet_is_valid(const kd_packet_t *p);
+int kd_packet_is_ack(const kd_packet_t *p);
 
-uint32_t kd_data_checksum (const uint8_t *buf, const uint64_t buf_len);
+uint32_t kd_data_checksum(const uint8_t *buf, const uint64_t buf_len);
 
 #endif

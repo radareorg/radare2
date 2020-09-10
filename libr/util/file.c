@@ -365,6 +365,13 @@ R_API char *r_file_slurp(const char *str, R_NULLABLE size_t *usz) {
 				}
 				size += r;
 			} while (!feof (fd));
+			char *nbuf = realloc (buf, size + 1);
+			if (!nbuf) {
+				free (buf);
+				return NULL;
+			}
+			buf = nbuf;
+			buf[size] = '\0';
 			if (usz) {
 				*usz = size;
 			}
