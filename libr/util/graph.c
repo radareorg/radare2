@@ -163,7 +163,7 @@ R_API RGraphNode *r_graph_add_node(RGraph *t, void *data) {
 }
 
 R_API RGraphNode *r_graph_add_nodef(RGraph *graph, void *data, RListFree user_free) {
-	RGraphNode *node = r_graph_add_node(graph, data);
+	RGraphNode *node = r_graph_add_node (graph, data);
 	if (node) {
 		node->free = user_free;
 	} else if (user_free) {
@@ -200,7 +200,7 @@ R_API void r_graph_add_edge(RGraph *t, RGraphNode *from, RGraphNode *to) {
 	r_graph_add_edge_at (t, from, to, -1);
 }
 
-R_API void r_graph_add_edge_at (RGraph *t, RGraphNode *from, RGraphNode *to, int nth) {
+R_API void r_graph_add_edge_at(RGraph *t, RGraphNode *from, RGraphNode *to, int nth) {
 	if (from && to) {
 		r_list_insert (from->out_nodes, nth, to);
 		r_list_append (from->all_neighbours, to);
@@ -219,8 +219,8 @@ R_API RGraphNode *r_graph_node_split_forward(RGraph *g, RGraphNode *split_me, vo
 	RListIter *iter;
 	RGraphNode *n;
 	r_list_foreach (front->out_nodes, iter, n) {
-		r_list_delete_data (n->in_nodes, split_me);		// optimize me
-		r_list_delete_data (n->all_neighbours, split_me);	// boy this all_neighbours is so retarding perf here
+		r_list_delete_data (n->in_nodes, split_me); // optimize me
+		r_list_delete_data (n->all_neighbours, split_me); // boy this all_neighbours is so retarding perf here
 		r_list_delete_data (split_me->all_neighbours, n);
 		r_list_append (n->all_neighbours, front);
 		r_list_append (n->in_nodes, front);
@@ -228,7 +228,6 @@ R_API RGraphNode *r_graph_node_split_forward(RGraph *g, RGraphNode *split_me, vo
 	}
 	return front;
 }
-
 
 R_API void r_graph_del_edge(RGraph *t, RGraphNode *from, RGraphNode *to) {
 	if (!from || !to || !r_graph_adjacent (t, from, to)) {
@@ -313,27 +312,6 @@ R_API void r_graph_dfs(RGraph *g, RGraphVisitor *vis) {
 	}
 }
 
-
-void r_graph_foreach(RGraph *g, RGNodeCallback callback, void *user)  {
-	RListIter *it;
-	RGraphNode *node;
-	r_list_foreach (g->nodes, it, node) {
-		callback (node, user);
-	}
-}
-
-R_API void r_graph_foreach_edge(RGraph *g, RGEdgeCallback callback, void *user) {
-	RListIter *it;
-	RListIter *edge_it;
-	RGraphNode *node;
-	RGraphNode *target;
-	r_list_foreach (g->nodes, it, node) {
-		r_list_foreach (node->out_nodes, edge_it, target) {
-			callback (node, target, user);
-		}
-	}
-}
-
 R_API void r_graph_free_node_info(void *ptr) {
 	RGraphNodeInfo *info = ptr;
 	if (!info) {
@@ -359,7 +337,6 @@ R_API RGraphNodeInfo *r_graph_create_node_info(char *title, char *body, ut64 off
 
 R_API RGraphNode *r_graph_add_node_info(RGraph *graph, char *title, char *body, ut64 offset) {
 	RGraphNodeInfo *data;
-	RGraphNode *node;
 	if (!graph) {
 		free (title);
 		free (body);

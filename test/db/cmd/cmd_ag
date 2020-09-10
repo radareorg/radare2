@@ -78,31 +78,31 @@ edge [arrowhead=normal, color="#3030c0" style=bold weight=2];
 node [fillcolor=white, style=filled shape=box fontname="Courier" fontsize="8"];
 0 [URL="sym.imp.free", color="lightgray", label="sym.imp.free"]
 1 [URL="0x0000083f", color="lightgray", label="0x0000083f"]
-1 -> 0 
+1 -> 0
 2 [URL="_ITM_deregisterTMCloneTable", color="lightgray", label="_ITM_deregisterTMCloneTable"]
 3 [URL="sym.imp.strcpy", color="lightgray", label="sym.imp.strcpy"]
 4 [URL="0x00000814", color="lightgray", label="0x00000814"]
-4 -> 3 
+4 -> 3
 5 [URL="sym.imp.puts", color="lightgray", label="sym.imp.puts"]
 6 [URL="0x00000833", color="lightgray", label="0x00000833"]
-6 -> 5 
+6 -> 5
 7 [URL="sym.imp.strlen", color="lightgray", label="sym.imp.strlen"]
 8 [URL="0x000007cf", color="lightgray", label="0x000007cf"]
-8 -> 7 
+8 -> 7
 9 [URL="0x000007de", color="lightgray", label="0x000007de"]
-9 -> 7 
+9 -> 7
 10 [URL="__libc_start_main", color="lightgray", label="__libc_start_main"]
 11 [URL="__gmon_start__", color="lightgray", label="__gmon_start__"]
 12 [URL="sym.imp.malloc", color="lightgray", label="sym.imp.malloc"]
 13 [URL="0x000007f6", color="lightgray", label="0x000007f6"]
-13 -> 12 
+13 -> 12
 14 [URL="sym.imp.strcat", color="lightgray", label="sym.imp.strcat"]
 15 [URL="0x00000827", color="lightgray", label="0x00000827"]
-15 -> 14 
+15 -> 14
 16 [URL="_ITM_registerTMCloneTable", color="lightgray", label="_ITM_registerTMCloneTable"]
 17 [URL="section..plt.got", color="lightgray", label="section..plt.got"]
 18 [URL="0x0000077e", color="lightgray", label="0x0000077e"]
-18 -> 17 
+18 -> 17
 }
 graph
 [

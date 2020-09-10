@@ -75,11 +75,6 @@ R_API void r_graph_dfs_node(RGraph *g, RGraphNode *n, RGraphVisitor *vis);
 R_API void r_graph_dfs_node_reverse(RGraph *g, RGraphNode *n, RGraphVisitor *vis);
 R_API void r_graph_dfs(RGraph *g, RGraphVisitor *vis);
 
-typedef void (*RGNodeCallback)(RGraphNode *n, void *user);
-typedef void (*RGEdgeCallback)(RGraphNode *from, RGraphNode *to, void *user);
-R_API void r_graph_foreach(RGraph *g, RGNodeCallback callback, void *user);
-R_API void r_graph_foreach_edge(RGraph *g, RGEdgeCallback callback, void *user);
-
 R_API void r_graph_free_node_info(void *ptr);
 R_API RGraphNodeInfo *r_graph_create_node_info(char *title, char *body, ut64 offset);
 R_API RGraphNode *r_graph_add_node_info(RGraph *graph, char *title, char *body, ut64 offset);

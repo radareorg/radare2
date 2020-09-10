@@ -2280,8 +2280,7 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr) {
 	}
 }
 
-static void add_single_addr_xrefs(RCore *core, ut64 addr, RGraph *graph)
-{
+static void add_single_addr_xrefs(RCore *core, ut64 addr, RGraph *graph) {
 	RFlagItem *f = r_flag_get_at (core->flags, addr, false);
 	RGraphNode *curr_node;
 	char *me;
@@ -2289,8 +2288,9 @@ static void add_single_addr_xrefs(RCore *core, ut64 addr, RGraph *graph)
 		return;
 	}
 	me = (f && f->offset == addr)
-		? r_str_new (f->name) : r_str_newf ("0x%"PFMT64x, addr);
-	
+		? r_str_new (f->name)
+		: r_str_newf ("0x%" PFMT64x, addr);
+
 	curr_node = r_graph_add_node_info (graph, me, NULL, addr);
 	if (!curr_node) {
 		return;
@@ -2300,7 +2300,7 @@ static void add_single_addr_xrefs(RCore *core, ut64 addr, RGraph *graph)
 	RList *list = r_anal_xrefs_get (core->anal, addr);
 	r_list_foreach (list, iter, ref) {
 		RFlagItem *item = r_flag_get_i (core->flags, ref->addr);
-		char *src = item? r_str_new (item->name) : r_str_newf ("0x%08"PFMT64x, ref->addr);
+		char *src = item? r_str_new (item->name): r_str_newf ("0x%08" PFMT64x, ref->addr);
 		RGraphNode *reference_from = r_graph_add_node_info (graph, src, NULL, ref->addr);
 		r_graph_add_edge (graph, reference_from, curr_node);
 	}
@@ -2311,7 +2311,7 @@ R_API RGraph *r_core_anal_importxrefs(RCore *core) {
 	RBinInfo *info = r_bin_get_info (core->bin);
 	RBinObject *obj = r_bin_cur_object (core->bin);
 	RGraph *graph = NULL;
-	bool lit = info ? info->has_lit: false;
+	bool lit = info? info->has_lit: false;
 	bool va = core->io->va || core->bin->is_debugger;
 
 	RListIter *iter;
