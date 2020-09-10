@@ -304,7 +304,6 @@ R_API R2Pipe *r2pipe_open(const char *cmd) {
 			fflush (stderr);
 			// trigger the blocking read
 			write (1, "\xff", 1);
-			close (r2p->output[0]);
 			close (r2p->output[1]);
 			close (0);
 			close (1);
