@@ -1678,7 +1678,15 @@ R_API void r_cons_set_last_interactive(void) {
 
 R_API void r_cons_set_title(const char *str) {
 #if __WINDOWS__
+#  if defined(_UNICODE)
+	wchar_t* wstr = r_utf8_to_utf16_l (str, strlen (str));
+	if (wstr) {
+		SetConsoleTitleW (wstr);
+		R_FREE (wstr);
+	}
+#  else // defined(_UNICODE)
 	SetConsoleTitle (str);
+#  endif // defined(_UNICODE)
 #else
 	r_cons_printf ("\x1b]0;%s\007", str);
 #endif
