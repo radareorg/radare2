@@ -234,7 +234,6 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 	p += sizeof (struct MACH0_(SIVarList));
 	offset += sizeof (struct MACH0_(SIVarList));
 
-	ut64 base_offset = UT64_MAX;
 	for (j = 0; j < il.count; j++) {
 		r = va2pa (p, &offset, &left, bf);
 		if (!r) {
@@ -274,27 +273,23 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 		i.alignment = r_read_ble (&sivar[12], bigendian, 32);
 		i.size = r_read_ble (&sivar[16], bigendian, 32);
 #endif
-		field->vaddr = va2pa (i.offset, NULL, &left, bf);
-		// field->offset = base_offset - i.offset;
-		field->offset = i.offset - base_offset;
-		if (base_offset == UT64_MAX) {
-			base_offset = i.offset; //  - sizeof (mach0_ut);
-		}
+		field->vaddr = i.offset;
+		mach0_ut offset_at = va2pa (i.offset, NULL, &left, bf);
 
-		if (field->vaddr > bf->size) {
+		if (offset_at > bf->size) {
 			goto error;
 		}
-		if (field->vaddr + sizeof (ivar_offset) > bf->size) {
+		if (offset_at + sizeof (ivar_offset) > bf->size) {
 			goto error;
 		}
-		if (field->vaddr != 0 && left >= sizeof (mach0_ut)) {
-			len = r_buf_read_at (bf->buf, field->vaddr, offs, sizeof (mach0_ut));
+		if (offset_at != 0 && left >= sizeof (mach0_ut)) {
+			len = r_buf_read_at (bf->buf, offset_at, offs, sizeof (mach0_ut));
 			if (len != sizeof (mach0_ut)) {
 				eprintf ("Error reading\n");
 				goto error;
 			}
 			ivar_offset = r_read_ble (offs, bigendian, 8 * sizeof (mach0_ut));
-			// field->vaddr = ivar_offset;
+			field->offset = ivar_offset;
 		}
 		r = va2pa (i.name, NULL, &left, bf);
 		if (r) {
@@ -360,30 +355,16 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 		p += sizeof (struct MACH0_(SIVar));
 		offset += sizeof (struct MACH0_(SIVar));
 	}
-	RListIter *iter;
-	r_list_sort (klass->fields, sort_by_offset);
-	size_t first_offset = 0;
-	size_t prev_offset = 0;
-	r_list_foreach (klass->fields, iter, field) {
-		if (!first_offset) {
-			first_offset = field->offset;
-		}
-		if (field->offset > prev_offset + 8) {
-			// adjust offset
-			field->offset = prev_offset + sizeof (mach0_ut);
-		}
-		prev_offset = field->offset;
+	if (!r_list_empty (klass->fields)) {
+		r_list_sort (klass->fields, sort_by_offset);
 	}
-	if (first_offset > 0) {
-		RBinField *field = R_NEW0 (RBinField);
-		field->name = strdup ("_padding");
-		field->size = first_offset;
-		field->type = strdup ((field->size == 8)?  "uint64_t": "uint32_t");
-		field->vaddr = base_offset;
-		field->offset = 0;
-		r_list_prepend (klass->fields, field);
-	}
-	r_list_sort (klass->fields, sort_by_offset);
+	RBinField *isa_field = R_NEW0 (RBinField);
+	isa_field->name = strdup ("isa");
+	isa_field->size = sizeof (mach0_ut);
+	isa_field->type = strdup ("struct objc_class *");
+	isa_field->vaddr = 0;
+	isa_field->offset = 0;
+	r_list_prepend (klass->fields, isa_field);
 	return;
 error:
 	r_bin_field_free (field);
