@@ -8058,7 +8058,7 @@ static char *getViewerPath(void) {
 	return NULL;
 }
 
-static char *dot_executable_path() {
+static char *dot_executable_path(void) {
 	const char *dot = "dot";
 	char *dotPath = r_file_path (dot);
 	if (!strcmp (dotPath, dot)) {
@@ -8110,7 +8110,7 @@ static bool convert_dotcmd_to_image(RCore *core, char *r2_cmd, const char *save_
 		r_cons_printf ("Saving to file '%s'...\n", save_path);
 		r_cons_flush ();
 	}
-	r_core_cmdf (core, "%s > a.dot", cmd); // TODO: check error here
+	r_core_cmdf (core, "%s > a.dot", r2_cmd); // TODO: check error here
 	return convert_dot_to_image (core, "a.dot", save_path);
 }
 
@@ -8277,7 +8277,7 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 			core->graph->force_update_seek = true;
 			core->graph->need_set_layout = true;
 			core->graph->layout = r_config_get_i (core->config, "graph.layout");
-			int ov = r_cons_is_interactive ();
+			bool ov = r_cons_is_interactive ();
 			core->graph->need_update_dim = true;
 			int update_seek = r_core_visual_graph (core, core->graph, NULL, true);
 			r_config_set_i (core->config, "scr.interactive", ov);
@@ -8390,19 +8390,18 @@ static void print_graph_agg(RGraph /*RGraphNodeInfo*/ *graph) {
 		char *encbody;
 		int len;
 		print_node = node->data;
-		if (print_node->body) {
+		if (print_node->body && print_node->body[0]) {
 			len = strlen (print_node->body);
 
 			if (len > 0 && print_node->body[len - 1] == '\n') {
 				len--;
 			}
 			encbody = r_base64_encode_dyn (print_node->body, len);
+			r_cons_printf ("agn \"%s\" base64:%s\n", print_node->title, encbody);
+			free (encbody);
 		} else {
-			encbody = r_base64_encode_dyn ("", 0);
+			r_cons_printf ("agn \"%s\"", print_node->title);
 		}
-
-		r_cons_printf ("agn \"%s\" base64:%s\n", print_node->title, encbody);
-		free (encbody);
 	}
 	r_list_foreach (graph->nodes, it, node) {
 		print_node = node->data;
@@ -8496,7 +8495,7 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 				agraph->force_update_seek = true;
 				agraph->need_set_layout = true;
 				agraph->layout = r_config_get_i (core->config, "graph.layout");
-				int ov = r_cons_is_interactive ();
+				bool ov = r_cons_is_interactive ();
 				agraph->need_update_dim = true;
 				int update_seek = r_core_visual_graph (core, agraph, NULL, true);
 				r_config_set_i (core->config, "scr.interactive", ov);

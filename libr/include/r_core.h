@@ -587,7 +587,7 @@ R_API int r_core_anal_data(RCore *core, ut64 addr, int count, int depth, int wor
 R_API void r_core_anal_datarefs(RCore *core, ut64 addr);
 R_API void r_core_anal_coderefs(RCore *core, ut64 addr);
 R_API RGraph/*<RGraphNodeInfo>*/ *r_core_anal_codexrefs(RCore *core, ut64 addr);
-R_API RGraph /*<RGraphNodeInfo>*/ *r_core_anal_importxrefs(RCore *core);
+R_API RGraph/*<RGraphNodeInfo>*/ *r_core_anal_importxrefs(RCore *core);
 R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt);
 R_API int r_core_anal_refs(RCore *core, const char *input);
 R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input);
