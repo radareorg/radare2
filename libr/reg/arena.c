@@ -43,7 +43,7 @@ R_API ut8 *r_reg_get_bytes(RReg *reg, int type, int *size) {
 		*size = sz;
 	}
 	buf = malloc (sz);
-	if (buf) {
+	if (buf && reg->regset[type].arena->bytes) { // TODO change 2nd check to something more reasonable
 		memcpy (buf, reg->regset[type].arena->bytes, sz);
 	}
 	return buf;
