@@ -5,25 +5,25 @@ aa 2> /dev/null
 agi*
 EOF
 EXPECT=<<EOF
-agn "sym.imp.free" base64:
-agn "0x0000083f" base64:
-agn "_ITM_deregisterTMCloneTable" base64:
-agn "sym.imp.strcpy" base64:
-agn "0x00000814" base64:
-agn "sym.imp.puts" base64:
-agn "0x00000833" base64:
-agn "sym.imp.strlen" base64:
-agn "0x000007cf" base64:
-agn "0x000007de" base64:
-agn "__libc_start_main" base64:
-agn "__gmon_start__" base64:
-agn "sym.imp.malloc" base64:
-agn "0x000007f6" base64:
-agn "sym.imp.strcat" base64:
-agn "0x00000827" base64:
-agn "_ITM_registerTMCloneTable" base64:
-agn "section..plt.got" base64:
-agn "0x0000077e" base64:
+agn "sym.imp.free"
+agn "0x0000083f"
+agn "_ITM_deregisterTMCloneTable"
+agn "sym.imp.strcpy"
+agn "0x00000814"
+agn "sym.imp.puts"
+agn "0x00000833"
+agn "sym.imp.strlen"
+agn "0x000007cf"
+agn "0x000007de"
+agn "__libc_start_main"
+agn "__gmon_start__"
+agn "sym.imp.malloc"
+agn "0x000007f6"
+agn "sym.imp.strcat"
+agn "0x00000827"
+agn "_ITM_registerTMCloneTable"
+agn "section..plt.got"
+agn "0x0000077e"
 age "0x0000083f" "sym.imp.free"
 age "0x00000814" "sym.imp.strcpy"
 age "0x00000833" "sym.imp.puts"
@@ -43,8 +43,8 @@ aa 2> /dev/null
 agx* @ main
 EOF
 EXPECT=<<EOF
-agn "main" base64:
-agn "0x000006bd" base64:
+agn "main"
+agn "0x000006bd"
 age "0x000006bd" "main"
 EOF
 RUN

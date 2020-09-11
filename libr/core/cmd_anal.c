@@ -8400,7 +8400,7 @@ static void print_graph_agg(RGraph /*RGraphNodeInfo*/ *graph) {
 			r_cons_printf ("agn \"%s\" base64:%s\n", print_node->title, encbody);
 			free (encbody);
 		} else {
-			r_cons_printf ("agn \"%s\"", print_node->title);
+			r_cons_printf ("agn \"%s\"\n", print_node->title);
 		}
 	}
 	r_list_foreach (graph->nodes, it, node) {

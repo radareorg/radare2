@@ -1264,8 +1264,8 @@ R_API RGraph *r_anal_class_get_inheritance_graph(RAnal *anal) {
 		// create nodes
 		RGraphNode *curr_node = ht_pp_find (hashmap, name, NULL);
 		if (!curr_node) {
-			RGraphNode *node = r_graph_add_node_info (class_graph, strdup (name), NULL, 0);
-			if (!node) {
+			curr_node = r_graph_add_node_info (class_graph, strdup (name), NULL, 0);
+			if (!curr_node) {
 				goto failure;
 			}
 			ht_pp_insert (hashmap, name, curr_node);
