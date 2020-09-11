@@ -3282,6 +3282,9 @@ static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f) {
 		// f = r_anal_get_fcn_in (core->anal, ds->at, 0);
 		f = fcnIn (ds, ds->at, 0);
 	}
+	if (!f) {
+		return false;
+	}
 	label = r_anal_function_get_label_at (f, ds->at);
 	if (!label) {
 		return false;

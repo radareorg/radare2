@@ -682,58 +682,76 @@ static int flag_space_stack_list(RFlag *f, int mode) {
 	return i;
 }
 
-static int print_function_labels_for(RAnalFunction *fcn, int rad) {
-	return 0;
+typedef struct {
+	int rad;
+	PJ *pj;
+	RAnalFunction *fcn;
+} PrintFcnLabelsCtx;
+
+static bool print_function_labels_cb(void *user, const ut64 addr, const void *v) {
+	const PrintFcnLabelsCtx *ctx = user;
+	const char *name = v;
+	switch (ctx->rad) {
+	case '*':
+	case 1:
+		r_cons_printf ("f.%s@0x%08"PFMT64x"\n", name, addr);
+		break;
+	case 'j':
+		pj_kn (ctx->pj, name, addr);
+		break;
+	default:
+		r_cons_printf ("0x%08"PFMT64x" %s   [%s + %"PFMT64d"]\n",
+			addr,
+			name, ctx->fcn->name,
+			addr - ctx->fcn->addr, addr);
+	}
+	return true;
 }
 
-static int print_function_labels(RAnal *anal, RAnalFunction *fcn, int rad) {
-#if 0
-	r_return_val_if_fail (anal, false);
+
+static void print_function_labels_for(RAnalFunction *fcn, int rad, PJ *pj) {
+	r_return_if_fail (fcn && (rad != 'j' || pj));
+	if (rad == 'j') {
+		pj_o (pj);
+	}
+	PrintFcnLabelsCtx ctx = { rad, pj, fcn };
+	ht_up_foreach (fcn->labels, print_function_labels_cb, &ctx);
+	if (rad == 'j') {
+		pj_end (pj);
+	}
+}
+
+static void print_function_labels(RAnal *anal, RAnalFunction *fcn, int rad) {
+	r_return_if_fail (anal || fcn);
+	PJ *pj = NULL;
+	if (rad == 'j') {
+		pj = pj_new ();
+	}
 	if (fcn) {
-		char *cur, *token;
-		char *str = sdb_get (DB, LABELS, 0);
-		sdb_aforeach (cur, str) {
-			struct {
-				ut64 addr;
-				char *name;
-			} loc;
-			token = strchr (cur, '/');
-			if (!token) {
-				break;
-			}
-			*token = ',';
-			sdb_fmt_tobin (cur, "qz", &loc);
-			switch (rad) {
-			case '*':
-			case 1:
-				anal->cb_printf ("f.%s@0x%08"PFMT64x"\n",
-					loc.name, loc.addr);
-				break;
-			case 'j':
-				eprintf ("TODO\n");
-				break;
-			default:
-				anal->cb_printf ("0x%08"PFMT64x" %s   [%s + %"PFMT64d"]\n",
-					loc.addr,
-					loc.name, fcn->name,
-					loc.addr - fcn->addr, loc.addr);
-			}
-			*token = '/';
-			sdb_fmt_free (&loc, "qz");
-			sdb_aforeach_next (cur);
-		}
-		free (str);
+		print_function_labels_for (fcn, rad, pj);
 	} else {
+		if (rad == 'j') {
+			pj_o (pj);
+		}
 		RAnalFunction *f;
 		RListIter *iter;
 		r_list_foreach (anal->fcns, iter, f) {
-			r_anal_fcn_labels (anal, f, rad);
+			if (!f->labels->count) {
+				continue;
+			}
+			if (rad == 'j') {
+				pj_k (pj, f->name);
+			}
+			print_function_labels_for (f, rad, pj);
+		}
+		if (rad == 'j') {
+			pj_end (pj);
 		}
 	}
-	return true;
-#endif
-	r_cons_print ("TODO\n");
-	return 0;
+	if (rad == 'j') {
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
+	}
 }
 
 static int cmd_flag(void *data, const char *input) {
@@ -1009,16 +1027,16 @@ rep:
 			r_flag_unset_off (core->flags, off);
 		}
 		break;
-	case '.':
+	case '.': // "f."
 		input = r_str_trim_head_ro (input + 1) - 1;
 		if (input[1]) {
-			if (input[1] == '*') {
+			if (input[1] == '*' || input[1] == 'j') {
 				if (input[2] == '*') {
-					print_function_labels (core->anal, NULL, 1);
+					print_function_labels (core->anal, NULL, input[1]);
 				} else {
 					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 					if (fcn) {
-						print_function_labels (core->anal, fcn, 1);
+						print_function_labels (core->anal, fcn, input[1]);
 					} else {
 						eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 					}
@@ -1035,7 +1053,7 @@ rep:
 					r_str_trim (name);
 					if (fcn) {
 						if (*name=='-') {
-							r_anal_function_delete_label (fcn, name);
+							r_anal_function_delete_label (fcn, name + 1);
 						} else {
 							r_anal_function_set_label (fcn, name, off);
 						}
