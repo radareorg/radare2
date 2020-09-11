@@ -63,6 +63,7 @@ static void labels_kv_free(HtUPKv *kv) {
 }
 
 static void label_addrs_kv_free(HtPPKv *kv) {
+	free (kv->key);
 	free (kv->value);
 }
 

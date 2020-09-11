@@ -70,9 +70,63 @@ bool test_r_anal_function_relocate() {
 	mu_end;
 }
 
+bool test_r_anal_function_labels() {
+	RAnal *anal = r_anal_new ();
+
+	RAnalFunction *f = r_anal_create_function (anal, "do_something", 0x1337, 0, NULL);
+
+	bool s = r_anal_function_set_label (f, "smartfriend", 0x1339);
+	mu_assert ("set label", s);
+	s = r_anal_function_set_label (f, "stray", 0x133c);
+	mu_assert ("set label", s);
+	s = r_anal_function_set_label (f, "the", 0x1340);
+	mu_assert ("set label", s);
+	s = r_anal_function_set_label (f, "stray", 0x1234);
+	mu_assert ("set label (existing name)", !s);
+	s = r_anal_function_set_label (f, "henlo", 0x133c);
+	mu_assert ("set label (existing addr)", !s);
+
+	ut64 addr = r_anal_function_get_label (f, "smartfriend");
+	mu_assert_eq (addr, 0x1339, "get label");
+	addr = r_anal_function_get_label (f, "stray");
+	mu_assert_eq (addr, 0x133c, "get label");
+	addr = r_anal_function_get_label (f, "skies");
+	mu_assert_eq (addr, UT64_MAX, "get label (unknown)");
+
+	const char *name = r_anal_function_get_label_at (f, 0x1339);
+	mu_assert_streq (name, "smartfriend", "get label at");
+	name = r_anal_function_get_label_at (f, 0x133c);
+	mu_assert_streq (name, "stray", "get label at");
+	name = r_anal_function_get_label_at (f, 0x1234);
+	mu_assert_null (name, "get label at (unknown)");
+
+	r_anal_function_delete_label (f, "stray");
+	addr = r_anal_function_get_label (f, "stray");
+	mu_assert_eq (addr, UT64_MAX, "get label (deleted)");
+	name = r_anal_function_get_label_at (f, 0x133c);
+	mu_assert_null (name, "get label at (deleted)");
+	addr = r_anal_function_get_label (f, "smartfriend");
+	mu_assert_eq (addr, 0x1339, "get label (unaffected by delete)");
+	name = r_anal_function_get_label_at (f, 0x1339);
+	mu_assert_streq (name, "smartfriend", "get label at (unaffected by delete)");
+
+	r_anal_function_delete_label_at (f, 0x1340);
+	addr = r_anal_function_get_label (f, "the");
+	mu_assert_eq (addr, UT64_MAX, "get label (deleted)");
+	name = r_anal_function_get_label_at (f, 0x340);
+	mu_assert_null (name, "get label at (deleted)");
+	addr = r_anal_function_get_label (f, "smartfriend");
+	mu_assert_eq (addr, 0x1339, "get label (unaffected by delete)");
+	name = r_anal_function_get_label_at (f, 0x1339);
+	mu_assert_streq (name, "smartfriend", "get label at (unaffected by delete)");
+
+	r_anal_free (anal);
+	mu_end;
+}
 
 int all_tests() {
 	mu_run_test (test_r_anal_function_relocate);
+	mu_run_test (test_r_anal_function_labels);
 	return tests_passed != tests_run;
 }
 
