@@ -3,7 +3,7 @@
 
 static void diff_cb(const SdbDiff *diff, void *user) {
 	char buf[2048];
-	if (sdb_diff_format (buf, sizeof(buf), diff) < 0) {
+	if (sdb_diff_format (buf, sizeof (buf), diff) < 0) {
 		return;
 	}
 	printf ("%s\n", buf);

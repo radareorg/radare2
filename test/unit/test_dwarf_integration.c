@@ -253,5 +253,5 @@ int all_tests(void) {
 }
 
 int main(int argc, char **argv) {
-	return all_tests();
+	return all_tests ();
 }

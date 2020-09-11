@@ -280,7 +280,7 @@ error:
 }
 
 static RAnalBaseType *get_typedef_type(RAnal *anal, const char *sname) {
-	r_return_val_if_fail (anal && sname, NULL);
+	r_return_val_if_fail (anal && R_STR_ISNOTEMPTY (sname), NULL);
 
 	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_TYPEDEF);
 	if (!base_type) {
@@ -299,7 +299,7 @@ error:
 }
 
 static RAnalBaseType *get_atomic_type(RAnal *anal, const char *sname) {
-	r_return_val_if_fail (anal && sname, NULL);
+	r_return_val_if_fail (anal && R_STR_ISNOTEMPTY (sname), NULL);
 
 	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ATOMIC);
 	if (!base_type) {
