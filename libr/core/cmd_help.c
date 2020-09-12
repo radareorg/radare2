@@ -136,7 +136,7 @@ static const char *help_msg_question[] = {
 	"?b64[-]", " [str]", "encode/decode in base64",
 	"?btw", " num|expr num|expr num|expr", "returns boolean value of a <= b <= c",
 	"?B", " [elem]", "show range boundaries like 'e?search.in",
-	"?e[nbgc]", " string", "echo string (nonl, gotoxy, column, bars)",
+	"?e[nbgct]", " string", "echo string (nonl, gotoxy, column, bars, title)",
 	"?f", " [num] [str]", "map each bit of the number as flag string index",
 	"?F", "", "flush cons output",
 	"?h", " [str]", "calculate hash for given string",
@@ -949,6 +949,9 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'e': // "?e" echo
 		switch (input[1]) {
+		case 't': // "?e=t newtitle"
+			r_cons_set_title (r_str_trim_head_ro (input + 2));
+			break;
 		case '=': { // "?e="
 			ut64 pc = r_num_math (core->num, input + 2);
 			r_print_progressbar (core->print, pc, 80);
@@ -1057,15 +1060,16 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_newline ();
 			break;
 		default:
-			eprintf ("Usage: ?e[...]\n");
-			eprintf (" e msg       echo message\n");
-			eprintf (" e= N...     progressbar N percent\n");
-			eprintf (" ed N...     display a donut\n");
-			eprintf (" ep N...     echo pie chart\n");
-			eprintf (" eb N...     echo portions bar\n");
-			eprintf (" en msg      echo without newline\n");
-			eprintf (" eg x y      gotoxy\n");
-			eprintf (" es msg      use text-to-speech technology\n");
+			eprintf ("Usage: ?e[...]\n"
+			" e msg       echo message\n"
+			" e= N...     progressbar N percent\n"
+			" ed N...     display a donut\n"
+			" ep N...     echo pie chart\n"
+			" eb N...     echo portions bar\n"
+			" et msg      change terminal title\n"
+			" en msg      echo without newline\n"
+			" eg x y      gotoxy\n"
+			" es msg      use text-to-speech technology\n");
 			break;
 		}
 		break;
