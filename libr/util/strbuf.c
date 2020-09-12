@@ -34,6 +34,15 @@ R_API void r_strbuf_init(RStrBuf *sb) {
 	memset (sb, 0, sizeof (RStrBuf));
 }
 
+R_API void r_strbuf_initf(RStrBuf *sb, const char *fmt, ...) {
+	r_return_if_fail (sb && fmt);
+	r_strbuf_init (sb);
+	va_list ap;
+	va_start (ap, fmt);
+	r_strbuf_vsetf (sb, fmt, ap);
+	va_end (ap);
+}
+
 R_API bool r_strbuf_copy(RStrBuf *dst, RStrBuf *src) {
 	r_return_val_if_fail (dst && src, false);
 	if (src->ptr) {

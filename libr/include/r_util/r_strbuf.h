@@ -34,6 +34,7 @@ R_API int r_strbuf_size(RStrBuf *sb);
 R_API void r_strbuf_free(RStrBuf *sb);
 R_API void r_strbuf_fini(RStrBuf *sb);
 R_API void r_strbuf_init(RStrBuf *sb);
+R_API void r_strbuf_initf(RStrBuf *sb, const char *fmt, ...); // same as init + setf for convenience
 R_API bool r_strbuf_copy(RStrBuf *dst, RStrBuf *src);
 R_API bool r_strbuf_equals(RStrBuf *sa, RStrBuf *sb);
 R_API bool r_strbuf_reserve(RStrBuf *sb, size_t len);
