@@ -174,84 +174,81 @@ static void addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
 	}
 }
 
-static bool parseGraphMetrics(const char *args0, int nargs, RSignGraph *graph) {
-	const char *ptr = NULL;
-	int i = 0;
+static bool addCommentZign(RCore *core, const char *name, RList *args) {
+	if (r_list_length (args) != 1) {
+		eprintf ("Too many arguments for comment signature\n");
+		return false;
+	}
+	const char *comment = (const char *)r_list_get_top (args);
+	return r_sign_add_comment (core->anal, name, comment);
+}
 
-	graph->cc = -1;
-	graph->nbbs = -1;
-	graph->edges = -1;
-	graph->ebbs = -1;
-	graph->bbsum = 0;
+static bool addNameZign(RCore *core, const char *name, RList *args) {
+	if (r_list_length (args) != 1) {
+		eprintf ("Too many arguments for a realname signature\n");
+		return false;
+	}
+	const char *realname = (const char *)r_list_get_top (args);
+	return r_sign_add_name (core->anal, name, realname);
+}
 
-	for (i = 0; i < nargs; i++) {
-		ptr = r_str_word_get0 (args0, i);
+static bool addGraphZign(RCore *core, const char *name, RList *args) {
+	RSignGraph graph;
+	graph.cc = -1;
+	graph.nbbs = -1;
+	graph.edges = -1;
+	graph.ebbs = -1;
+	graph.bbsum = 0;
+
+	char *ptr;
+	RListIter *iter;
+	r_list_foreach (args, iter, ptr) {
 		if (r_str_startswith (ptr, "cc=")) {
-			graph->cc = atoi (ptr + 3);
+			graph.cc = atoi (ptr + 3);
 		} else if (r_str_startswith (ptr, "nbbs=")) {
-			graph->nbbs = atoi (ptr + 5);
+			graph.nbbs = atoi (ptr + 5);
 		} else if (r_str_startswith (ptr, "edges=")) {
-			graph->edges = atoi (ptr + 6);
+			graph.edges = atoi (ptr + 6);
 		} else if (r_str_startswith (ptr, "ebbs=")) {
-			graph->ebbs = atoi (ptr + 5);
+			graph.ebbs = atoi (ptr + 5);
 		} else if (r_str_startswith (ptr, "bbsum=")) {
-			graph->bbsum = atoi (ptr + 6);
+			graph.bbsum = atoi (ptr + 6);
 		} else {
 			return false;
 		}
 	}
-	return true;
-}
-
-static bool addCommentZign(RCore *core, const char *name, const char *args0, int nargs) {
-	const char *comment = args0;
-	return r_sign_add_comment (core->anal, name, comment);
-}
-
-static bool addNameZign(RCore *core, const char *name, const char *args0, int nargs) {
-	const char *realname = r_str_word_get0 (args0, 0);
-	return r_sign_add_name (core->anal, name, realname);
-}
-
-static bool addGraphZign(RCore *core, const char *name, const char *args0, int nargs) {
-	RSignGraph graph = {0};
-	if (!parseGraphMetrics (args0, nargs, &graph)) {
-		eprintf ("error: invalid arguments\n");
-		return false;
-	}
 	return r_sign_add_graph (core->anal, name, graph);
 }
 
-static bool addHashZign(RCore *core, const char *name, int type, const char *args0, int nargs) {
-	if (!args0) {
+static bool addHashZign(RCore *core, const char *name, int type, RList *args) {
+	if (r_list_length (args) != 1) {
+		eprintf ("error: invalid syntax\n");
 		return false;
 	}
-	int len = strlen (args0);
+	const char *hash = (const char *)r_list_get_top (args);
+	int len = strlen (hash);
 	if (!len) {
 		return false;
 	}
-	return r_sign_add_hash (core->anal, name, type, args0, len);
+	return r_sign_add_hash (core->anal, name, type, hash, len);
 }
 
-static bool addBytesZign(RCore *core, const char *name, int type, const char *args0, int nargs) {
-	const char *hexbytes = NULL;
+static bool addBytesZign(RCore *core, const char *name, int type, RList *args) {
 	ut8 *mask = NULL, *bytes = NULL, *sep = NULL;
-	int size = 0, blen = 0;
+	int size = 0;
 	bool retval = true;
 
-	if (nargs != 1) {
+	if (r_list_length (args) != 1) {
 		eprintf ("error: invalid syntax\n");
-		retval = false;
-		goto out;
+		return false;
 	}
 
-	hexbytes = r_str_word_get0 (args0, 0);
-	if ((sep = (ut8*) strchr (hexbytes, ':'))) {
-		blen = sep - (ut8*) hexbytes;
-		if (!blen || (blen & 1) || strlen ((char*) ++sep) != blen) {
+	const char *hexbytes = (const char *)r_list_get_top (args);
+	if ((sep = (ut8 *)strchr (hexbytes, ':'))) {
+		int blen = sep - (ut8 *)hexbytes;
+		if (!blen || (blen & 1) || strlen ((char *)++sep) != blen) {
 			eprintf ("error: cannot parse hexpairs\n");
-			retval = false;
-			goto out;
+			return false;
 		}
 		bytes = calloc (1, blen + 1);
 		mask = calloc (1, blen + 1);
@@ -264,7 +261,7 @@ static bool addBytesZign(RCore *core, const char *name, int type, const char *ar
 			goto out;
 		}
 	} else {
-		blen = strlen (hexbytes) + 4;
+		int blen = strlen (hexbytes) + 4;
 		bytes = malloc (blen);
 		mask = malloc (blen);
 
@@ -292,112 +289,39 @@ out:
 	return retval;
 }
 
-static bool addOffsetZign(RCore *core, const char *name, const char *args0, int nargs) {
-	const char *offstr = NULL;
-	ut64 offset = UT64_MAX;
-
-	if (nargs != 1) {
+static bool addOffsetZign(RCore *core, const char *name, RList *args) {
+	if (r_list_length (args) != 1) {
 		eprintf ("error: invalid syntax\n");
 		return false;
 	}
-
-	offstr = r_str_word_get0 (args0, 0);
-	offset = r_num_get (core->num, offstr);
-
+	const char *offstr = (const char *)r_list_get_top (args);
+	ut64 offset = r_num_get (core->num, offstr);
 	return r_sign_add_addr (core->anal, name, offset);
 }
 
-static bool addRefsZign(RCore *core, const char *name, const char *args0, int nargs) {
-	int i = 0;
-	if (nargs < 1) {
-		eprintf ("error: invalid syntax\n");
-		return false;
-	}
-
-	RList *refs = r_list_newf ((RListFree) free);
-	for (i = 0; i < nargs; i++) {
-		r_list_append (refs, r_str_new (r_str_word_get0 (args0, i)));
-	}
-
-	bool retval = r_sign_add_refs (core->anal, name, refs);
-	r_list_free (refs);
-	return retval;
-}
-
-static bool addXRefsZign(RCore *core, const char *name, const char *args0, int nargs) {
-	int i = 0;
-	if (nargs < 1) {
-		eprintf ("error: invalid syntax\n");
-		return false;
-	}
-
-	RList *refs = r_list_newf ((RListFree) free);
-	for (i = 0; i < nargs; i++) {
-		r_list_append (refs, r_str_new (r_str_word_get0 (args0, i)));
-	}
-
-	bool retval = r_sign_add_xrefs (core->anal, name, refs);
-	r_list_free (refs);
-	return retval;
-}
-
-static bool addVarsZign(RCore *core, const char *name, const char *args0, int nargs) {
-	int i = 0;
-	if (nargs < 1) {
-		eprintf ("error: invalid syntax\n");
-		return false;
-	}
-
-	RList *vars = r_list_newf ((RListFree) free);
-	for (i = 0; i < nargs; i++) {
-		r_list_append (vars, r_str_new (r_str_word_get0 (args0, i)));
-	}
-
-	bool retval = r_sign_add_vars (core->anal, name, vars);
-	r_list_free (vars);
-	return retval;
-}
-
-static bool addTypesZign(RCore *core, const char *name, const char *args0, int nargs) {
-	int i = 0;
-	if (nargs < 1) {
-		eprintf ("error: invalid syntax\n");
-		return false;
-	}
-
-	RList *types = r_list_newf ((RListFree)free);
-	for (i = 0; i < nargs; i++) {
-		r_list_append (types, strdup (r_str_word_get0 (args0, i)));
-	}
-
-	bool retval = r_sign_add_types (core->anal, name, types);
-	r_list_free (types);
-	return retval;
-}
-
-static bool addZign(RCore *core, const char *name, int type, const char *args0, int nargs) {
+static bool addZign(RCore *core, const char *name, int type, RList *args) {
 	switch (type) {
 	case R_SIGN_BYTES:
 	case R_SIGN_ANAL:
-		return addBytesZign (core, name, type, args0, nargs);
+		return addBytesZign (core, name, type, args);
 	case R_SIGN_GRAPH:
-		return addGraphZign (core, name, args0, nargs);
+		return addGraphZign (core, name, args);
 	case R_SIGN_COMMENT:
-		return addCommentZign (core, name, args0, nargs);
+		return addCommentZign (core, name, args);
 	case R_SIGN_NAME:
-		return addNameZign (core, name, args0, nargs);
+		return addNameZign (core, name, args);
 	case R_SIGN_OFFSET:
-		return addOffsetZign (core, name, args0, nargs);
+		return addOffsetZign (core, name, args);
 	case R_SIGN_REFS:
-		return addRefsZign (core, name, args0, nargs);
+		return r_sign_add_refs (core->anal, name, args);
 	case R_SIGN_XREFS:
-		return addXRefsZign (core, name, args0, nargs);
+		return r_sign_add_xrefs (core->anal, name, args);
 	case R_SIGN_VARS:
-		return addVarsZign (core, name, args0, nargs);
+		return r_sign_add_vars (core->anal, name, args);
 	case R_SIGN_TYPES:
-		return addTypesZign (core, name, args0, nargs);
+		return r_sign_add_types (core->anal, name, args);
 	case R_SIGN_BBHASH:
-		return addHashZign (core, name, type, args0, nargs);
+		return addHashZign (core, name, type, args);
 	default:
 		eprintf ("error: unknown zignature type\n");
 	}
@@ -411,30 +335,35 @@ static int cmdAdd(void *data, const char *input) {
 	switch (*input) {
 	case ' ':
 		{
-			const char *zigname = NULL, *args0 = NULL;
-			char *args = NULL;
-			int type = 0, n = 0;
 			bool retval = true;
-
-			args = r_str_new (input + 1);
-			n = r_str_word_set0 (args);
-
-			if (n < 3) {
+			char *args = r_str_new (input + 1);
+			if (!args) {
+				return false;
+			}
+			RList *lst = r_str_split_list (args, " ", 0);
+			if (!lst) {
+				goto out_case_manual;
+			}
+			if (r_list_length (lst) < 3) {
+				eprintf ("usage: za zigname type params\n");
+				retval = false;
+				goto out_case_manual;
+			}
+			char *zigname = r_list_pop_head (lst);
+			char *type_str = r_list_pop_head (lst);
+			if (strlen (type_str) != 1) {
 				eprintf ("usage: za zigname type params\n");
 				retval = false;
 				goto out_case_manual;
 			}
 
-			zigname = r_str_word_get0 (args, 0);
-			type = r_str_word_get0 (args, 1)[0];
-			args0 = r_str_word_get0 (args, 2);
-
-			if (!addZign (core, zigname, type, args0, n - 2)) {
+			if (!addZign (core, zigname, type_str[0], lst)) {
 				retval = false;
 				goto out_case_manual;
 			}
 
 out_case_manual:
+			r_list_free (lst);
 			free (args);
 			return retval;
 		}
