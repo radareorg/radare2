@@ -184,9 +184,33 @@ bool test_r_strbuf_setbin(void) {
 	mu_end;
 }
 
+bool test_r_strbuf_set(void) {
+	RStrBuf sb;
+	r_strbuf_init (&sb);
+	const char *s = r_strbuf_set (&sb, "I have packed only the essentials");
+	mu_assert_notnull (s, "set return notnull");
+	mu_assert_ptreq (s, r_strbuf_get (&sb), "set return");
+	mu_assert_streq (r_strbuf_get (&sb), "I have packed only the essentials", "set");
+	r_strbuf_fini (&sb);
+	mu_end;
+}
+
+bool test_r_strbuf_setf(void) {
+	RStrBuf sb;
+	r_strbuf_init (&sb);
+	const char *s = r_strbuf_setf (&sb, "One %s for hydration", "water");
+	mu_assert_notnull (s, "setf return notnull");
+	mu_assert_ptreq (s, r_strbuf_get (&sb), "setf return");
+	mu_assert_streq (r_strbuf_get (&sb), "One water for hydration", "setf");
+	r_strbuf_fini (&sb);
+	mu_end;
+}
+
 bool test_r_strbuf_initf(void) {
 	RStrBuf sb;
-	r_strbuf_initf (&sb, "hmmst, %s was that audial occurence? %d", "wat", 42);
+	const char *s = r_strbuf_initf (&sb, "hmmst, %s was that audial occurence? %d", "wat", 42);
+	mu_assert_notnull (s, "initf return notnull");
+	mu_assert_ptreq (s, r_strbuf_get (&sb), "initf return");
 	mu_assert_streq (r_strbuf_get (&sb), "hmmst, wat was that audial occurence? 42", "initf");
 	r_strbuf_fini (&sb);
 	mu_end;
@@ -200,6 +224,8 @@ bool all_tests() {
 	mu_run_test (test_r_strbuf_weak_binary);
 	mu_run_test (test_r_strbuf_slice);
 	mu_run_test (test_r_strbuf_setbin);
+	mu_run_test (test_r_strbuf_set);
+	mu_run_test (test_r_strbuf_setf);
 	mu_run_test (test_r_strbuf_initf);
 	return tests_passed != tests_run;
 }
