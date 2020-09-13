@@ -2,6 +2,8 @@
 
 #include <r_anal.h>
 
+HEAPTYPE (ut64);
+
 R_API ut64 r_anal_function_get_label(RAnalFunction *fcn, const char *name) {
 	r_return_val_if_fail (fcn, UT64_MAX);
 	ut64 *addr = ht_pp_find (fcn->label_addrs, name, NULL);
@@ -23,9 +25,7 @@ R_API bool r_anal_function_set_label(RAnalFunction *fcn, const char *name, ut64 
 		free (n);
 		return false;
 	}
-	ut64 *a = R_NEW (ut64);
-	*a = addr;
-	ht_pp_insert (fcn->label_addrs, name, a);
+	ht_pp_insert (fcn->label_addrs, name, ut64_new (addr));
 	return true;
 }
 
