@@ -312,9 +312,7 @@ static RAnalBaseType *get_atomic_type(RAnal *anal, const char *sname) {
 	}
 
 	RStrBuf key;
-	r_strbuf_init (&key);
-	r_strbuf_setf (&key, "type.%s.size", sname);
-	base_type->size = sdb_num_get (anal->sdb_types, r_strbuf_get (&key), 0);
+	base_type->size = sdb_num_get (anal->sdb_types, r_strbuf_initf (&key, "type.%s.size", sname), 0);
 	r_strbuf_fini (&key);
 
 	return base_type;
@@ -387,9 +385,9 @@ static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
 	r_vector_foreach (&type->struct_data.members, member) {
 		// struct.name.param=type,offset,argsize
 		char *member_sname = r_str_sanitize_sdb_key (member->name);
-		r_strbuf_setf (&param_key, "%s.%s.%s", kind, sname, member_sname);
-		r_strbuf_setf (&param_val, "%s,%" PFMT64u ",%" PFMT64u "", member->type, member->offset, 0);
-		sdb_set (anal->sdb_types, r_strbuf_get (&param_key), r_strbuf_get (&param_val), 0);
+		sdb_set (anal->sdb_types,
+			r_strbuf_setf (&param_key, "%s.%s.%s", kind, sname, member_sname),
+			r_strbuf_setf (&param_val, "%s,%" PFMT64u ",%" PFMT64u "", member->type, member->offset, 0), 0);
 		free (member_sname);
 
 		r_strbuf_appendf (&arglist, (i++ == 0) ? "%s" : ",%s", member->name);
@@ -436,9 +434,9 @@ static void save_union(const RAnal *anal, const RAnalBaseType *type) {
 	r_vector_foreach (&type->union_data.members, member) {
 		// union.name.arg1=type,offset,argsize
 		char *member_sname = r_str_sanitize_sdb_key (member->name);
-		r_strbuf_setf (&param_key, "%s.%s.%s", kind, sname, member_sname);
-		r_strbuf_setf (&param_val, "%s,%" PFMT64u ",%" PFMT64u "", member->type, member->offset, 0);
-		sdb_set (anal->sdb_types, r_strbuf_get (&param_key), r_strbuf_get (&param_val), 0);
+		sdb_set (anal->sdb_types,
+				r_strbuf_setf (&param_key, "%s.%s.%s", kind, sname, member_sname),
+				r_strbuf_setf (&param_val, "%s,%" PFMT64u ",%" PFMT64u "", member->type, member->offset, 0), 0);
 		free (member_sname);
 
 		r_strbuf_appendf (&arglist, (i++ == 0) ? "%s" : ",%s", member->name);
@@ -486,12 +484,13 @@ static void save_enum(const RAnal *anal, const RAnalBaseType *type) {
 	r_vector_foreach (&type->enum_data.cases, cas) {
 		// enum.name.arg1=type,offset,???
 		char *case_sname = r_str_sanitize_sdb_key (cas->name);
-		r_strbuf_setf (&param_key, "enum.%s.%s", sname, case_sname);
-		r_strbuf_setf (&param_val, "0x%" PFMT32x "", cas->val);
-		sdb_set (anal->sdb_types, r_strbuf_get (&param_key), r_strbuf_get (&param_val), 0);
+		sdb_set (anal->sdb_types,
+				r_strbuf_setf (&param_key, "enum.%s.%s", sname, case_sname),
+				r_strbuf_setf (&param_val, "0x%" PFMT32x "", cas->val), 0);
 
-		r_strbuf_setf (&param_key, "enum.%s.0x%" PFMT32x "", sname, cas->val);
-		sdb_set (anal->sdb_types, r_strbuf_get (&param_key), case_sname, 0);
+		sdb_set (anal->sdb_types,
+				r_strbuf_setf (&param_key, "enum.%s.0x%" PFMT32x "", sname, cas->val),
+				case_sname, 0);
 		free (case_sname);
 
 		r_strbuf_appendf (&arglist, (i++ == 0) ? "%s" : ",%s", cas->name);
@@ -526,13 +525,13 @@ static void save_atomic_type(const RAnal *anal, const RAnalBaseType *type) {
 	r_strbuf_init (&key);
 	r_strbuf_init (&val);
 
-	r_strbuf_setf (&key, "type.%s.size", sname);
-	r_strbuf_setf (&val, "%" PFMT64u "", type->size);
-	sdb_set (anal->sdb_types, r_strbuf_get (&key), r_strbuf_get (&val), 0);
+	sdb_set (anal->sdb_types,
+			r_strbuf_setf (&key, "type.%s.size", sname),
+			r_strbuf_setf (&val, "%" PFMT64u "", type->size), 0);
 
-	r_strbuf_setf (&key, "type.%s", sname);
-	r_strbuf_setf (&val, "%s", type->type);
-	sdb_set (anal->sdb_types, r_strbuf_get (&key), r_strbuf_get (&val), 0);
+	sdb_set (anal->sdb_types,
+			r_strbuf_setf (&key, "type.%s", sname),
+			r_strbuf_setf (&val, "%s", type->type), 0);
 
 	free (sname);
 
@@ -556,9 +555,9 @@ static void save_typedef(const RAnal *anal, const RAnalBaseType *type) {
 	r_strbuf_init (&key);
 	r_strbuf_init (&val);
 
-	r_strbuf_setf (&key, "typedef.%s", sname);
-	r_strbuf_setf (&val, "%s", type->type);
-	sdb_set (anal->sdb_types, r_strbuf_get (&key), r_strbuf_get (&val), 0);
+	sdb_set (anal->sdb_types,
+			r_strbuf_setf (&key, "typedef.%s", sname),
+			r_strbuf_setf (&val, "%s", type->type), 0);
 
 	free (sname);
 
