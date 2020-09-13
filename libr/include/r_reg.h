@@ -144,6 +144,7 @@ R_API void r_reg_free_internal(RReg *reg, bool init);
 R_API RReg *r_reg_new(void);
 R_API bool r_reg_set_name(RReg *reg, int role, const char *name);
 R_API bool r_reg_set_profile_string(RReg *reg, const char *profile);
+R_API char* r_reg_profile_to_cc(RReg *reg);
 R_API bool r_reg_set_profile(RReg *reg, const char *profile);
 R_API bool r_reg_parse_gdb_profile(const char *profile);
 R_API bool r_reg_is_readonly(RReg *reg, RRegItem *item);

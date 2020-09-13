@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
@@ -397,3 +397,29 @@ R_API bool r_reg_parse_gdb_profile(const char *profile_file) {
 	free (str);
 	return ret;
 }
+
+R_API char *r_reg_profile_to_cc(RReg *reg) {
+	const char *r0 = r_reg_get_name_by_type (reg, "R0");
+	const char *a0 = r_reg_get_name_by_type (reg, "A0");
+	const char *a1 = r_reg_get_name_by_type (reg, "A1");
+	const char *a2 = r_reg_get_name_by_type (reg, "A2");
+	const char *a3 = r_reg_get_name_by_type (reg, "A3");
+
+	// it is mandatory to have at least =A0 defined in the reg profile
+	// this will be enforced in reg/profile at parsing time
+	r_return_val_if_fail (a0, NULL);
+	if (!r0) {
+		r0 = a0;
+	}
+	if (a3 && a2 && a1) {
+		return r_str_newf ("%s reg(%s, %s, %s, %s)", r0, a0, a1, a2, a3);
+	}
+	if (a2 && a1) {
+		return r_str_newf ("%s reg(%s, %s, %s)", r0, a0, a1, a2);
+	}
+	if (a1) {
+		return r_str_newf ("%s reg(%s, %s)", r0, a0, a1);
+	}
+	return r_str_newf ("%s reg(%s)", r0, a0);
+}
+

@@ -4325,7 +4325,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	case 'c': // "arc"
 		// TODO: set flag values with drc zf=1
 		if (str[1] == 'c') { // "arcc"
-			char *s = r_anal_cc_from_regprofile (core->anal);
+			char *s = r_reg_profile_to_cc (core->anal->reg);
 			if (s) {
 				r_cons_printf ("%s\n", s);
 				free (s);
