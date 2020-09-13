@@ -869,6 +869,7 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 	r_anal_fcn_vars_cache_fini (&cache);
 }
 
+
 static bool cmd_anal_aaft(RCore *core) {
 	RListIter *it;
 	RAnalFunction *fcn;
