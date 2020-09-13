@@ -120,7 +120,7 @@ static bool strbuf_rev_prepend_char(RStrBuf *sb, const char *s, int c) {
 		memcpy (ns + idx, s, l);
 		memcpy (ns + idx + l, sb_str + idx, sb->len - idx);
 		ns[newlen] = 0;
-		ret = r_strbuf_set (sb, ns);
+		ret = r_strbuf_set (sb, ns) != NULL;
 		free (ns);
 	}
 	return ret;
@@ -155,7 +155,7 @@ static bool strbuf_rev_append_char(RStrBuf *sb, const char *s, const char *needl
 		memcpy (ns + idx, s, l);
 		memcpy (ns + idx + l, sb_str + idx, sb->len - idx);
 		ns[newlen] = 0;
-		ret = r_strbuf_set (sb, ns);
+		ret = r_strbuf_set (sb, ns) != NULL;
 		free (ns);
 	}
 	return ret;
