@@ -6,6 +6,6 @@ executable('rarun2', 'rarun2.c',
     r_socket_dep
   ],
   install: true,
-  install_rpath: rpath,
+  install_rpath: rpath_exe,
   implicit_include_directories: false
 )

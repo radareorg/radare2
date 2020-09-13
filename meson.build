@@ -607,7 +607,8 @@ subdir('libr/magic/d')
 subdir('libr/flag/d')
 subdir('libr/main')
 
-rpath = get_option('local') and get_option('default_library') == 'shared' ? '$ORIGIN/../' + get_option('libdir') : ''
+rpath_exe = \
+  get_option('local') and get_option('default_library') == 'shared' ? '$ORIGIN/../' + get_option('libdir') : ''
 
 cli_option = get_option('cli')
 if cli_option.auto()

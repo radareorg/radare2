@@ -88,8 +88,9 @@ if get_option('enable_tests')
         lrt,
       ],
       install: false,
-      install_rpath: rpath,
-      implicit_include_directories: false)
+      install_rpath: rpath_exe,
+      implicit_include_directories: false
+    )
     test(test, exe, workdir: join_paths(meson.current_source_dir(), '..'))
   endforeach
 endif

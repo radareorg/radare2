@@ -7,7 +7,7 @@ if get_option('enable_r2r')
       lrt,
     ],
     install: true,
-    install_rpath: rpath,
+    install_rpath: rpath_exe,
     implicit_include_directories: false
   )
 endif
