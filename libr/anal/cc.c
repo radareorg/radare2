@@ -21,11 +21,12 @@ R_API char *r_anal_cc_from_regprofile(RAnal *anal) {
 	const char *a1 = r_reg_get_name_by_type (anal->reg, "A1");
 	const char *a2 = r_reg_get_name_by_type (anal->reg, "A2");
 	const char *a3 = r_reg_get_name_by_type (anal->reg, "A3");
+
+	// it is mandatory to have at least =A0 defined in the reg profile
+	// this will be enforced in reg/profile at parsing time
+	r_return_val_if_fail (a0, NULL);
 	if (!r0) {
 		r0 = a0;
-	}
-	if (!a0) {
-		return NULL;
 	}
 	if (a3 && a2 && a1) {
 		return r_str_newf ("%s reg(%s, %s, %s, %s)", r0, a0, a1, a2, a3);
