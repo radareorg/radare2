@@ -404,13 +404,6 @@ libr_pc = configure_file(
   install_dir: join_paths(get_option('libdir'), 'pkgconfig')
 )
 
-# handle rpath
-rpath = ''
-if get_option('local') and get_option('default_library') == 'shared'
-  rpath = '$ORIGIN/../' + get_option('libdir')
-  add_project_link_arguments('-Wl,--disable-new-dtags', language: 'c')
-endif
-
 # handle zlib dependency
 zlib_dep = dependency('zlib', required: false)
 if not zlib_dep.found() or not get_option('use_sys_zlib')
@@ -613,6 +606,8 @@ subdir('libr/cons/d')
 subdir('libr/magic/d')
 subdir('libr/flag/d')
 subdir('libr/main')
+
+rpath = get_option('local') and get_option('default_library') == 'shared' ? '$ORIGIN/../' + get_option('libdir') : ''
 
 cli_option = get_option('cli')
 if cli_option.auto()
