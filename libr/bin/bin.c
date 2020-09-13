@@ -978,9 +978,8 @@ static void list_xtr_archs(RBin *bin, int mode) {
 				}
 				pj_end (pj);
 				pj_end (pj);
-				char *s = pj_drain (pj);
-				r_cons_println (s);
-				free (s);
+				bin->cb_printf ("%s\n", pj_string (pj));
+				pj_free (pj);
 				break;
 			}
 			default:
