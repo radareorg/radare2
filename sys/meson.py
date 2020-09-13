@@ -246,6 +246,11 @@ def main():
           if not ldflags:
               ldflags = ''
           os.environ['LDFLAGS'] = ldflags + ' -fsanitize=' + args.sanitize
+    if args.local and args.shared:
+        ldflags = os.environ.get('LDFLAGS')
+        if not ldflags:
+            ldflags = ''
+        os.environ['LDFLAGS'] = ldflags + ' -Wl,--disable-new-dtags'
 
     # Check arguments
     if args.pull:
