@@ -496,6 +496,9 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 #endif
 
 	switch (s->proto) {
+	case R_SOCKET_PROTO_DEFAULT:
+		s->proto = R_SOCKET_PROTO_TCP;
+		/* fallthrough */
 	case R_SOCKET_PROTO_TCP:
 		if ((s->fd = socket (AF_INET, SOCK_STREAM, R_SOCKET_PROTO_TCP)) == R_INVALID_SOCKET) {
 			return false;
@@ -507,7 +510,8 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 		}
 		break;
 	default:
-		break;
+		eprintf ("Invalid protocol for socket\n");
+		return false;
 	}
 
 	linger.l_onoff = 1;
@@ -550,6 +554,7 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 #endif
 	if (s->proto == R_SOCKET_PROTO_TCP) {
 		if (listen (s->fd, 32) < 0) {
+			r_sys_perror ("listen");
 #ifdef _MSC_VER
 			closesocket (s->fd);
 #else
