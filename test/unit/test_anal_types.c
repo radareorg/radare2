@@ -95,10 +95,11 @@ static bool test_anal_save_base_type_struct(void) {
 	RAnalBaseType *base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
 	base->name = strdup ("kappa");
 
-	RAnalStructMember member;
-	member.offset = 0;
-	member.type = strdup ("int32_t");
-	member.name = strdup ("bar");
+	RAnalStructMember member = {
+		.offset = 0,
+		.type = strdup ("int32_t"),
+		.name = strdup ("bar")
+	};
 	r_vector_push (&base->struct_data.members, &member);
 
 	member.offset = 4;
@@ -154,10 +155,11 @@ static bool test_anal_save_base_type_union(void) {
 	RAnalBaseType *base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_UNION);
 	base->name = strdup ("kappa");
 
-	RAnalUnionMember member;
-	member.offset = 0;
-	member.type = strdup ("int32_t");
-	member.name = strdup ("bar");
+	RAnalUnionMember member = {
+		.offset = 0,
+		.type = strdup ("int32_t"),
+		.name = strdup ("bar")
+	};
 	r_vector_push (&base->union_data.members, &member);
 
 	member.offset = 0;
@@ -190,9 +192,7 @@ static bool test_anal_get_base_type_enum(void) {
 	mu_assert_eq (R_ANAL_BASE_TYPE_KIND_ENUM, base->kind, "Wrong base type");
 	mu_assert_streq (base->name, "foo", "type name");
 
-	RAnalEnumCase *cas;
-
-	cas = r_vector_index_ptr (&base->enum_data.cases, 0);
+	RAnalEnumCase *cas = r_vector_index_ptr (&base->enum_data.cases, 0);
 	mu_assert_eq (cas->val, 1, "Incorrect value for enum case");
 	mu_assert_streq (cas->name, "firstCase", "Incorrect name for enum case");
 
@@ -213,9 +213,10 @@ static bool test_anal_save_base_type_enum(void) {
 	RAnalBaseType *base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ENUM);
 	base->name = strdup ("foo");
 
-	RAnalEnumCase cas;
-	cas.name = strdup ("firstCase");
-	cas.val = 1;
+	RAnalEnumCase cas = {
+		.name = strdup ("firstCase"),
+		.val = 1
+	};
 	r_vector_push (&base->enum_data.cases, &cas);
 
 	cas.name = strdup ("secondCase");

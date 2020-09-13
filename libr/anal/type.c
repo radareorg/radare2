@@ -531,7 +531,7 @@ static void save_atomic_type(const RAnal *anal, const RAnalBaseType *type) {
 
 	sdb_set (anal->sdb_types,
 			r_strbuf_setf (&key, "type.%s", sname),
-			r_strbuf_setf (&val, "%s", type->type), 0);
+			type->type, 0);
 
 	free (sname);
 
