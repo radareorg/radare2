@@ -1072,15 +1072,22 @@ R_API int r_core_file_list(RCore *core, int mode) {
 		}
 		from = 0LL;
 		switch (mode) {
-		case 'j':
-			r_cons_printf ("{\"raised\":%s,\"fd\":%d,\"uri\":\"%s\",\"from\":%"
-				PFMT64d ",\"writable\":%s,\"size\":%d}%s",
-				r_str_bool (core->io->desc->fd == f->fd),
-				(int) f->fd, desc->uri, (ut64) from,
-				r_str_bool (desc->perm & R_PERM_W),
-				(int) r_io_desc_size (desc),
-				iter->n? ",": "");
+		case 'j': {  // "oj"
+			PJ * pj = pj_new ();
+			pj_o (pj);
+			pj_a (pj);
+			pj_ks (pj, "raised", r_str_bool (core->io->desc->fd == f->fd));
+			pj_ki (pj, "fd", (int) f->fd);
+			pj_ks (pj, "uri", desc->uri);
+			pj_kn (pj, "from", (ut64) from);
+			pj_ks (pj, "writable", r_str_bool (desc->perm & R_PERM_W));
+			pj_ki (pj, "size", (int) r_io_desc_size (desc));
+			pj_end (pj);
+			pj_end (pj);
+			r_cons_printf ("%s\n", pj_string (pj));
+			pj_free (pj);
 			break;
+		}
 		case '*':
 		case 'r':
 			// TODO: use a getter
