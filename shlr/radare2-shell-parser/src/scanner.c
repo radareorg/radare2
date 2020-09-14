@@ -63,7 +63,7 @@ static bool is_mid_command(const char *res, int len, const int32_t ch) {
 		}
 		return ch == '?';
 	}
-	return isalnum(ch) ||  ch == '$' || ch == '?' || ch == '.' || ch == '!' ||
+	return isalnum (ch) || ch == '$' || ch == '?' || ch == '.' || ch == '!' ||
 		ch == ':' || ch == '+' || ch == '=' || ch == '/' || ch == '*' ||
 		ch == '-' || ch == ',' || ch == '&' || (is_at_cmd (res) && ch == '@');
 }
