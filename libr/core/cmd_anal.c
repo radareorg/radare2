@@ -654,6 +654,7 @@ static const char *help_msg_ar[] = {
 	"ar?", " <reg>", "Show register value",
 	"arb", " <type>", "Display hexdump of the given arena",
 	"arc", " <name>", "Conditional flag registers",
+	"arcc", "", "Show calling convention defined from the register profile",
 	"ard", " <name>", "Show only different registers",
 	"arn", " <regalias>", "Get regname for pc,sp,bp,a0-3,zf,cf,of,sg",
 	"aro", "", "Show old (previous) register values",
@@ -4357,7 +4358,13 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		} break;
 	case 'c': // "arc"
 		// TODO: set flag values with drc zf=1
-		{
+		if (str[1] == 'c') { // "arcc"
+			char *s = r_reg_profile_to_cc (core->anal->reg);
+			if (s) {
+				r_cons_printf ("%s\n", s);
+				free (s);
+			}
+		} else {
 			RRegItem *r;
 			const char *name = r_str_trim_head_ro (str + 1);
 			if (*name && name[1]) {

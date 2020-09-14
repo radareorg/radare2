@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
@@ -65,6 +65,11 @@ R_API const char *r_reg_64_to_32(RReg *reg, const char *rreg64) {
 
 R_API const char *r_reg_get_type(int idx) {
 	return (idx >= 0 && idx < R_REG_TYPE_LAST) ? types[idx] : NULL;
+}
+
+R_API const char *r_reg_get_name_by_type(RReg *reg, const char *alias_name) {
+	const int n = r_reg_get_name_idx (alias_name);
+	return (n != -1)? r_reg_get_name (reg, n): NULL;
 }
 
 R_API int r_reg_type_by_name(const char *str) {
