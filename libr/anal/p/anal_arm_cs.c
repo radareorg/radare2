@@ -4,6 +4,7 @@
 #include <r_lib.h>
 #include <capstone.h>
 #include <arm.h>
+#include <r_util/r_assert.h>
 #include "./anal_arm_hacks.inc"
 
 #define esilprintf(op, fmt, ...) r_strbuf_setf (&op->esil, fmt, ##__VA_ARGS__)
@@ -714,6 +715,18 @@ static const char *decode_shift_64(arm64_shifter shift) {
 #define DECODE_SHIFT(x) decode_shift(insn->detail->arm.operands[x].shift.type)
 #define DECODE_SHIFT64(x) decode_shift_64(insn->detail->arm64.operands[x].shift.type)
 
+static unsigned int regsize32(cs_insn *insn, int n) {
+	r_return_val_if_fail(n >= 0 && n < insn->detail->arm.op_count, 0);
+	unsigned int reg = insn->detail->arm.operands[n].reg;
+	if (reg >= ARM_REG_D0 && reg <= ARM_REG_D31) {
+		return 8;
+	}
+	if (reg >= ARM_REG_Q0 && reg <= ARM_REG_Q15) {
+		return 16;
+	}
+	return 4; // s0-s31, r0-r15
+}
+
 static int regsize64(cs_insn *insn, int n) {
 	unsigned int reg = insn->detail->arm64.operands[n].reg;
 	if ( (reg >= ARM64_REG_S0 && reg <= ARM64_REG_S31) ||
@@ -734,6 +747,7 @@ static int regsize64(cs_insn *insn, int n) {
 }
 
 #define REGSIZE64(x) regsize64 (insn, x)
+#define REGSIZE32(x) regsize32 (insn, x)
 
 // return postfix
 const char* arm_prefix_cond(RAnalOp *op, int cond_type) {
@@ -1887,6 +1901,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	int pcdelta = (thumb? 4: 8);
 	ut32 mask = UT32_MAX;
 	int str_ldr_bytes = 4;
+	unsigned int width = 0;
 
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
@@ -2023,6 +2038,54 @@ PUSH { r4, r5, r6, r7, lr }
 				(insn->detail->arm.op_count - 1) * 4, ARG (0));
 		}
 		break;
+	case ARM_INS_VSTMIA:
+		r_strbuf_setf (&op->esil, "");
+		width = 0;
+		for (i = 1; i < insn->detail->arm.op_count; i++) {
+			r_strbuf_appendf (&op->esil, "%s,%d,%s,+,=[%d],",
+				REG (i), width, ARG (0), REGSIZE32(i));
+			width += REGSIZE32(i);
+		}
+		// increment if writeback
+		if (insn->detail->arm.writeback) {
+			r_strbuf_appendf (&op->esil, "%d,%s,+=,", width, ARG (0));
+		}
+		break;
+	case ARM_INS_VSTMDB:
+		r_strbuf_setf (&op->esil, "");
+		width = 0;
+		for (i = insn->detail->arm.op_count - 1; i > 0; i--) {
+			width += REGSIZE32(i);
+			r_strbuf_appendf (&op->esil, "%s,%d,%s,-,=[%d],",
+				REG (i), width, ARG (0), REGSIZE32(i));
+		}
+		// decrement writeback is mandatory for VSTMDB
+		r_strbuf_appendf (&op->esil, "%d,%s,-=,", width, ARG (0));
+		break;
+	case ARM_INS_VLDMIA:
+		r_strbuf_setf (&op->esil, "");
+		width = 0;
+		for (i = 1; i < insn->detail->arm.op_count; i++) {
+			r_strbuf_appendf (&op->esil, "%d,%s,+,[%d],%s,=,",
+				width, ARG (0), REGSIZE32(i), REG (i));
+			width += REGSIZE32(i);
+		}
+		// increment if writeback
+		if (insn->detail->arm.writeback) {
+			r_strbuf_appendf (&op->esil, "%d,%s,+=,", width, ARG (0));
+		}
+		break;
+	case ARM_INS_VLDMDB:
+		r_strbuf_setf (&op->esil, "");
+		width = 0;
+		for (i = insn->detail->arm.op_count - 1; i > 0; i--) {
+			width += REGSIZE32(i);
+			r_strbuf_appendf (&op->esil, "%d,%s,-,[%d],%s,=,",
+				width, ARG (0), REGSIZE32(i), REG (i));
+		}
+		// decrement writeback is mandatory for VLDMDB
+		r_strbuf_appendf (&op->esil, "%d,%s,-=,", width, ARG (0));
+		break;
 	case ARM_INS_ASR:
 		// suffix 'S' forces conditional flag to be updated
 		if (insn->detail->arm.update_flags) {
@@ -2059,7 +2122,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		for (i = 1; i < insn->detail->arm.op_count; i++) {
 			r_strbuf_appendf (&op->esil, "%s,%d,+,[4],%s,=,", ARG (0), (i - 1) * 4, REG (i));
 		}
-		if (insn->detail->arm.writeback == true) { //writeback, reg should be incremented
+		if (insn->detail->arm.writeback) { //writeback, reg should be incremented
 			r_strbuf_appendf (&op->esil, "%d,%s,+=,",
 				(insn->detail->arm.op_count - 1) * 4, ARG (0));
 		}
@@ -3954,7 +4017,6 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	r14	.32	56	0\n"
 		"gpr	r15	.32	60	0\n"
 		"flg	cpsr	.32	64	0\n"
-		"gpr	blank	.32	68	0\n" // Hack, the bit fields below don't work on the last register??
 
 		  // CPSR bit fields:
 		  // 576-580 Mode fields (and register sets associated to each field):
@@ -3980,6 +4042,93 @@ static char *get_reg_profile(RAnal *anal) {
 		"flg	cf	.1	.541	0	carry\n" // +29
 		"flg	zf	.1	.542	0	zero\n" // +30
 		"flg	nf	.1	.543	0	negative\n" // +31
+
+		/* NEON and VFP registers */
+		/* 32bit float sub-registers */
+		"fpu	s0	.32	68	0\n"
+		"fpu	s1	.32	72	0\n"
+		"fpu	s2	.32	76	0\n"
+		"fpu	s3	.32	80	0\n"
+		"fpu	s4	.32	84	0\n"
+		"fpu	s5	.32	88	0\n"
+		"fpu	s6	.32	92	0\n"
+		"fpu	s7	.32	96	0\n"
+		"fpu	s8	.32	100	0\n"
+		"fpu	s9	.32	104	0\n"
+		"fpu	s10	.32	108	0\n"
+		"fpu	s11	.32	112	0\n"
+		"fpu	s12	.32	116	0\n"
+		"fpu	s13	.32	120	0\n"
+		"fpu	s14	.32	124	0\n"
+		"fpu	s15	.32	128	0\n"
+		"fpu	s16	.32	132	0\n"
+		"fpu	s17	.32	136	0\n"
+		"fpu	s18	.32	140	0\n"
+		"fpu	s19	.32	144	0\n"
+		"fpu	s20	.32	148	0\n"
+		"fpu	s21	.32	152	0\n"
+		"fpu	s22	.32	156	0\n"
+		"fpu	s23	.32	160	0\n"
+		"fpu	s24	.32	164	0\n"
+		"fpu	s25	.32	168	0\n"
+		"fpu	s26	.32	172	0\n"
+		"fpu	s27	.32	176	0\n"
+		"fpu	s28	.32	180	0\n"
+		"fpu	s29	.32	184	0\n"
+		"fpu	s30	.32	188	0\n"
+		"fpu	s31	.32	192	0\n"
+
+		/* 64bit double */
+		"fpu	d0	.64	68	0\n"
+		"fpu	d1	.64	76	0\n"
+		"fpu	d2	.64	84	0\n"
+		"fpu	d3	.64	92	0\n"
+		"fpu	d4	.64	100	0\n"
+		"fpu	d5	.64	108	0\n"
+		"fpu	d6	.64	116	0\n"
+		"fpu	d7	.64	124	0\n"
+		"fpu	d8	.64	132	0\n"
+		"fpu	d9	.64	140	0\n"
+		"fpu	d10	.64	148	0\n"
+		"fpu	d11	.64	156	0\n"
+		"fpu	d12	.64	164	0\n"
+		"fpu	d13	.64	172	0\n"
+		"fpu	d14	.64	180	0\n"
+		"fpu	d15	.64	188	0\n"
+		"fpu	d16	.64	196	0\n"
+		"fpu	d17	.64	204	0\n"
+		"fpu	d18	.64	212	0\n"
+		"fpu	d19	.64	220	0\n"
+		"fpu	d20	.64	228	0\n"
+		"fpu	d21	.64	236	0\n"
+		"fpu	d22	.64	244	0\n"
+		"fpu	d23	.64	252	0\n"
+		"fpu	d24	.64	260	0\n"
+		"fpu	d25	.64	268	0\n"
+		"fpu	d26	.64	276	0\n"
+		"fpu	d27	.64	284	0\n"
+		"fpu	d28	.64	292	0\n"
+		"fpu	d29	.64	300	0\n"
+		"fpu	d30	.64	308	0\n"
+		"fpu	d31	.64	316	0\n"
+
+		/* 128bit double */
+		"fpu	q0	.128	68	0\n"
+		"fpu	q1	.128	84	0\n"
+		"fpu	q2	.128	100	0\n"
+		"fpu	q3	.128	116	0\n"
+		"fpu	q4	.128	132	0\n"
+		"fpu	q5	.128	148	0\n"
+		"fpu	q6	.128	164	0\n"
+		"fpu	q7	.128	180	0\n"
+		"fpu	q8	.128	196	0\n"
+		"fpu	q9	.128	212	0\n"
+		"fpu	q10	.128	228	0\n"
+		"fpu	q11	.128	244	0\n"
+		"fpu	q12	.128	260	0\n"
+		"fpu	q13	.128	276	0\n"
+		"fpu	q14	.128	292	0\n"
+		"fpu	q15	.128	308	0\n"
 		;
 	}
 	return strdup (p);
