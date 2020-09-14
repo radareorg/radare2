@@ -17,5 +17,6 @@ ls .foo.touch
 rm .foo.touch
 EOF
 EXPECT=<<EOF
+        .foo.touch  
 EOF
 RUN
