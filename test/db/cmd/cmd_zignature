@@ -1764,3 +1764,23 @@ za main t func.main.ret=int func.main.args=3 func.main.arg.0="int,argc" func.mai
 za main h c82a35182e4217e7d7a4662c066be72bff254100ad71e29492350dba46fad184
 EOF
 RUN
+
+NAME=add types and function name on sig match
+FILE=bins/elf/ls
+CMDS=<<EOF
+zs *
+za main o 0x00004070
+za main t func.sym.new_function_name.ret=int func.sym.new_function_name.args=2 func.sym.new_function_name.arg.0="int,NEWARGC" func.sym.new_function_name.arg.1="char **,NEWARGV"
+za main n sym.new_function_name
+s main
+af
+e zign.offset = true
+z.
+afs
+afn
+EOF
+EXPECT=<<EOF
+int sym.new_function_name (int NEWARGC, char **NEWARGV);
+sym.new_function_name
+EOF
+RUN
