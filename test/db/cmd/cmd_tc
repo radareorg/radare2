@@ -246,7 +246,7 @@ NAME=tc typedef
 FILE=-
 CMDS=<<EOF
 "td typedef char *string;"
-tc
+ttc
 EOF
 EXPECT=<<EOF
 typedef char * string;
