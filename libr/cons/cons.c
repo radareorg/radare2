@@ -152,8 +152,8 @@ static inline void __cons_write_ll(const char *buf, int len) {
 }
 
 static inline void __cons_write(const char *obuf, int olen) {
-	const unsigned int bucket = 64 * 1024;
-	unsigned int i;
+	const size_t bucket = 64 * 1024;
+	size_t i;
 	if (olen < 0) {
 		olen = strlen (obuf);
 	}
@@ -760,12 +760,15 @@ R_API void r_cons_filter(void) {
 		char *input = r_str_ndup (I.context->buffer, I.context->buffer_len);
 		char *res = r_cons_html_filter (input, &newlen);
 		free (I.context->buffer);
-		free (input);
 		I.context->buffer = res;
 		I.context->buffer_len = newlen;
 		I.context->buffer_sz = newlen;
+		free (input);
 	}
-	/* TODO */
+	if (I.was_html) {
+		I.is_html = true;
+		I.was_html = false;
+	}
 }
 
 R_API void r_cons_push(void) {

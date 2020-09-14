@@ -476,7 +476,8 @@ typedef struct r_cons_context_t {
 typedef struct r_cons_t {
 	RConsContext *context;
 	char *lastline;
-	int is_html;
+	bool is_html;
+	bool was_html;
 	int lines;
 	int rows;
 	int echo; // dump to stdout in realtime

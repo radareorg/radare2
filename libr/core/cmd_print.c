@@ -5368,6 +5368,12 @@ static int cmd_print(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_pd);
 			pd_result = 0;
 		}
+		if (formatted_json) {
+			if (r_cons_singleton ()->is_html) {
+				r_cons_singleton ()->is_html = false;
+				r_cons_singleton ()->was_html = true;
+			}
+		}
 		if (!processed_cmd) {
 			ut64 addr = core->offset;
 			ut8 *block1 = NULL;
