@@ -572,6 +572,13 @@ if get_option('b_sanitize').contains('undefined')
   pkgcfg_sanitize_libs += ' -lubsan'
 endif
 
+rpath_exe = ''
+rpath_lib = ''
+if get_option('local') and get_option('default_library') == 'shared'
+  rpath_exe = '$ORIGIN/../' + get_option('libdir')
+  rpath_lib = '$ORIGIN'
+endif
+
 subdir('libr/util')
 subdir('libr/socket')
 subdir('libr/hash')
@@ -606,9 +613,6 @@ subdir('libr/cons/d')
 subdir('libr/magic/d')
 subdir('libr/flag/d')
 subdir('libr/main')
-
-rpath_exe = \
-  get_option('local') and get_option('default_library') == 'shared' ? '$ORIGIN/../' + get_option('libdir') : ''
 
 cli_option = get_option('cli')
 if cli_option.auto()
