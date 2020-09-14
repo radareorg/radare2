@@ -70,7 +70,7 @@ jobs:
             meson_options: -Db_coverage=true
             coverage: true
             enabled: true
-            timeout: 45
+            timeout: 60
           - name: macos-clang-tests
             os: macos-latest
             build_system: acr
