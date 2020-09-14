@@ -32,6 +32,7 @@ r_parse = library('r_parse', r_parse_sources,
   ],
   install: true,
   implicit_include_directories: false,
+  install_rpath: rpath_lib,
   soversion: r2_libversion
 )
 
