@@ -7,7 +7,7 @@ HEAPTYPE (ut64);
 R_API ut64 r_anal_function_get_label(RAnalFunction *fcn, const char *name) {
 	r_return_val_if_fail (fcn, UT64_MAX);
 	ut64 *addr = ht_pp_find (fcn->label_addrs, name, NULL);
-	return addr ? *addr : UT64_MAX;
+	return addr? *addr: UT64_MAX;
 }
 
 R_API const char *r_anal_function_get_label_at(RAnalFunction *fcn, ut64 addr) {
