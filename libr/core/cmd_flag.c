@@ -711,12 +711,13 @@ static bool print_function_labels_cb(void *user, const ut64 addr, const void *v)
 
 static void print_function_labels_for(RAnalFunction *fcn, int rad, PJ *pj) {
 	r_return_if_fail (fcn && (rad != 'j' || pj));
-	if (rad == 'j') {
+	bool json = rad == 'j';
+	if (json) {
 		pj_o (pj);
 	}
 	PrintFcnLabelsCtx ctx = { rad, pj, fcn };
 	ht_up_foreach (fcn->labels, print_function_labels_cb, &ctx);
-	if (rad == 'j') {
+	if (json) {
 		pj_end (pj);
 	}
 }
@@ -724,13 +725,14 @@ static void print_function_labels_for(RAnalFunction *fcn, int rad, PJ *pj) {
 static void print_function_labels(RAnal *anal, RAnalFunction *fcn, int rad) {
 	r_return_if_fail (anal || fcn);
 	PJ *pj = NULL;
-	if (rad == 'j') {
+	bool json = rad == 'j';
+	if (json) {
 		pj = pj_new ();
 	}
 	if (fcn) {
 		print_function_labels_for (fcn, rad, pj);
 	} else {
-		if (rad == 'j') {
+		if (json) {
 			pj_o (pj);
 		}
 		RAnalFunction *f;
@@ -739,16 +741,16 @@ static void print_function_labels(RAnal *anal, RAnalFunction *fcn, int rad) {
 			if (!f->labels->count) {
 				continue;
 			}
-			if (rad == 'j') {
+			if (json) {
 				pj_k (pj, f->name);
 			}
 			print_function_labels_for (f, rad, pj);
 		}
-		if (rad == 'j') {
+		if (json) {
 			pj_end (pj);
 		}
 	}
-	if (rad == 'j') {
+	if (json) {
 		r_cons_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
 	}

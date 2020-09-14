@@ -57,12 +57,12 @@ bool test_r_anal_function_relocate() {
 
 	bool success = r_anal_function_relocate (fa, fb->addr);
 	assert_invariants (anal);
-	mu_assert ("failed relocate", !success);
+	mu_assert_false (success, "failed relocate");
 	mu_assert_eq (fa->addr, 0x1337, "failed relocate addr");
 
 	success = r_anal_function_relocate (fa, 0x1234);
 	assert_invariants (anal);
-	mu_assert ("successful relocate", success);
+	mu_assert_true (success, "successful relocate");
 	mu_assert_eq (fa->addr, 0x1234, "successful relocate addr");
 
 	assert_leaks (anal);
@@ -76,15 +76,15 @@ bool test_r_anal_function_labels() {
 	RAnalFunction *f = r_anal_create_function (anal, "do_something", 0x1337, 0, NULL);
 
 	bool s = r_anal_function_set_label (f, "smartfriend", 0x1339);
-	mu_assert ("set label", s);
+	mu_assert_true (s, "set label");
 	s = r_anal_function_set_label (f, "stray", 0x133c);
-	mu_assert ("set label", s);
+	mu_assert_true (s, "set label");
 	s = r_anal_function_set_label (f, "the", 0x1340);
-	mu_assert ("set label", s);
+	mu_assert_true (s, "set label");
 	s = r_anal_function_set_label (f, "stray", 0x1234);
-	mu_assert ("set label (existing name)", !s);
+	mu_assert_false (s, "set label (existing name)");
 	s = r_anal_function_set_label (f, "henlo", 0x133c);
-	mu_assert ("set label (existing addr)", !s);
+	mu_assert_false (s, "set label (existing addr)");
 
 	ut64 addr = r_anal_function_get_label (f, "smartfriend");
 	mu_assert_eq (addr, 0x1339, "get label");
