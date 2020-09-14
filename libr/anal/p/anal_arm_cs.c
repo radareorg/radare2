@@ -1675,7 +1675,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			05 | t3 = Or64(t5,t4)
 			06 | PUT(x4) = t3
 		*/
-		r_strbuf_setf (&op->esil, "%" PFMT64d ",%s,>>,%" PFMT64d ",%s,<<,|,%s,=", 
+		r_strbuf_setf (&op->esil, "%" PFMT64d ",%s,>>,%" PFMT64d ",%s,<<,|,%s,=",
 			IMM64(3), REG64(2), IMM64(3), REG64(1), REG64(0));
 		break;
 	case ARM64_INS_RBIT:
