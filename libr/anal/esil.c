@@ -3363,9 +3363,7 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 
 /* register callbacks using this anal module. */
 R_API bool r_anal_esil_setup(RAnalEsil *esil, RAnal *anal, int romem, int stats, int nonull) {
-	if (!esil) {
-		return false;
-	}
+	r_return_val_if_fail (esil, false);
 	//esil->debug = 0;
 	esil->anal = anal;
 	esil->parse_goto_count = anal->esil_goto_limit;
@@ -3383,7 +3381,6 @@ R_API bool r_anal_esil_setup(RAnalEsil *esil, RAnal *anal, int romem, int stats,
 		esil->cb.reg_write = internal_esil_reg_write_no_null;
 		esil->cb.mem_read = internal_esil_mem_read_no_null;
 		esil->cb.mem_write = internal_esil_mem_write_no_null;
-
 	} else {
 		esil->cb.reg_write = internal_esil_reg_write;
 		esil->cb.mem_read = internal_esil_mem_read;
@@ -3393,8 +3390,6 @@ R_API bool r_anal_esil_setup(RAnalEsil *esil, RAnal *anal, int romem, int stats,
 	r_anal_esil_stats (esil, stats);
 	r_anal_esil_setup_ops (esil);
 
-	if (anal->cur && anal->cur->esil_init && anal->cur->esil_fini) {
-		return anal->cur->esil_init (esil);
-	}
-	return true;
+	return (anal->cur && anal->cur->esil_init)
+		? anal->cur->esil_init (esil): true;
 }

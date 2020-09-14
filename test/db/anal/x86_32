@@ -3152,6 +3152,7 @@ EXPECT=<<EOF
     "bytes": "31c0",
     "size": 2,
     "type": "xor",
+    "esilcost": 0,
     "scale": 0,
     "refptr": 0,
     "cycles": 1,
@@ -3199,6 +3200,7 @@ EXPECT=<<EOF
     "bytes": "669c",
     "size": 2,
     "type": "upush",
+    "esilcost": 12,
     "scale": 0,
     "refptr": 0,
     "cycles": 2,
@@ -3427,9 +3429,10 @@ ao 1
 p8 1
 EOF
 EXPECT=<<EOF
-16
+17
 address: 0x0
 opcode: nop
+esilcost: 0
 disasm: nop
 mnemonic: nop
 description: no operation

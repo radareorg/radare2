@@ -30,6 +30,7 @@ EXPECT=<<EOF
     "bytes": "0041bd10",
     "size": 4,
     "type": "jmp",
+    "esilcost": 0,
     "scale": 0,
     "refptr": 0,
     "cycles": 0,
