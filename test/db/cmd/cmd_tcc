@@ -25,3 +25,49 @@ tfc rax ms (rcx, rdx, r8, r9, stack);
 tfc rax swift (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4, r13, r12);
 EOF
 RUN
+
+NAME=tcc
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+?e 1
+tcc eax jeje(ebx, ecx)
+tcc jeje
+tcc-jeje
+?e 2
+tcc eax    jeje(ebx, ecx)
+tcc   jeje
+tcc-jeje
+?e 3
+tcc eax  jeje   (ebx, ecx)
+tcc   jeje
+tcc-jeje
+?e 4
+tcc   eax  jeje   (ebx, ecx)
+tcc jeje
+tcc-jeje
+?e 5
+tcc   eax  jeje   ( ebx, ecx )
+tcc jeje
+tcc-jeje
+?e 6
+tcc   eax  jeje   ( 	ebx  ,  ecx  )
+tcc jeje
+tcc-jeje
+EOF
+EXPECT=<<EOF
+1
+eax jeje (ebx, ecx);
+2
+eax jeje (ebx, ecx);
+3
+eax jeje (ebx, ecx);
+4
+eax jeje (ebx, ecx);
+5
+eax jeje (ebx, ecx);
+6
+eax jeje (ebx, ecx);
+EOF
+RUN
