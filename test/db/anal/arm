@@ -906,6 +906,7 @@ EOF
 EXPECT=<<EOF
 address: 0x568
 opcode: push {r3, lr}
+esilcost: 16
 disasm: push {r3, lr}
 pseudo: push (r3, lr) 
 mnemonic: push
@@ -925,6 +926,7 @@ stackptr: 8
 --
 address: 0x50e
 opcode: add r7, sp, 0
+esilcost: 0
 disasm: add r7, sp, 0
 pseudo: r7 = sp + 0
 mnemonic: add
@@ -981,7 +983,6 @@ EXPECT=<<EOF
      r8 0x00000000            r9 0x00000000           r10 0x00000000
     r11 0x00000000           r12 0x00000000           r13 0x00000000
     r14 0x00000000           r15 0x00000000          cpsr 0x00000000
-  blank 0x00000000       
 EOF
 RUN
 

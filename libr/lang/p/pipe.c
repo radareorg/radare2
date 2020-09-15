@@ -211,11 +211,15 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 		if (safe_in != -1) {
 			close (safe_in);
 		}
-		safe_in = open (ttyname(0), O_RDONLY);
-		if (safe_in != -1) {
-			dup2 (safe_in, 0);
-		} else {
-			eprintf ("Cannot open ttyname(0) %s\n", ttyname(0));
+		safe_in = -1;
+		char *term_in = ttyname (0);
+		if (term_in) {
+			safe_in = open (term_in, O_RDONLY);
+			if (safe_in != -1) {
+				dup2 (safe_in, 0);
+			} else {
+				eprintf ("Cannot open ttyname(0) %s\n", term_in);
+			}
 		}
 	}
 

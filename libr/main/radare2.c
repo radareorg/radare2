@@ -386,16 +386,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	r_sys_env_init ();
 	// Create rarun2 profile with startup environ
-	char *envprofile = NULL;
-	char **e = r_sys_get_environ ();
-	if (e) {
-		RStrBuf *sb = r_strbuf_new (NULL);
-		while (e && *e) {
-			r_strbuf_appendf (sb, "setenv=%s\n", *e);
-			e++;
-		}
-		envprofile = r_strbuf_drain (sb);
-	}
+	char **env = r_sys_get_environ ();
+	char *envprofile = r_run_get_environ_profile (env);
 
 	if (r_sys_getenv_asbool ("R2_DEBUG")) {
 		char *sysdbg = r_sys_getenv ("R2_DEBUG_TOOL");

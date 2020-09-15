@@ -283,7 +283,7 @@ typedef struct {
 	ut64 printed_flag_addr;
 	ut64 min_ref_addr;
 
-	PJ *pj; // not null iff printing json
+	PJ *pj; // not null if printing json
 	int buf_line_begin;
 	const char *strip;
 	int maxflags;
@@ -1205,7 +1205,14 @@ static void ds_begin_line(RDisasmState *ds) {
 
 static void ds_newline(RDisasmState *ds) {
 	if (ds->pj) {
-		pj_s (ds->pj, r_cons_get_buffer ());
+		const bool is_html = r_config_get_i (ds->core->config, "scr.html");
+		if (is_html) {
+			char *s = r_cons_html_filter (r_cons_get_buffer (), NULL);
+			pj_s (ds->pj, s);
+			free (s);
+		} else {
+			pj_s (ds->pj, r_cons_get_buffer ());
+		}
 		r_cons_reset ();
 		pj_end (ds->pj);
 	} else {
@@ -1512,13 +1519,6 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 			} else if (!strncmp (fi->name, "str.", 4)) {
 				ds->midflags = R_MIDFLAGS_REALIGN;
 			} else if (!strncmp (fi->name, "reloc.", 6)) {
-				if (print) {
-					ds_begin_line (ds);
-					// this reloc is displayed already as a flag comment
-					// this is unnecessary imho
-					r_cons_printf ("(%s)", fi->name);
-					ds_newline (ds);
-				}
 				continue;
 			} else if (ds->midflags == R_MIDFLAGS_SYMALIGN) {
 				if (strncmp (fi->name, "sym.", 4)) {
@@ -5075,8 +5075,10 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 			name = fcn->name;
 		}
 	} else if (f) {
-		RBinReloc *rel;
-		rel = r_core_getreloc (ds->core, ds->analop.addr, ds->analop.size);
+		RBinReloc *rel = NULL;
+		if (!ds->core->bin->is_reloc_patched) {
+			rel = r_core_getreloc (ds->core, ds->analop.addr, ds->analop.size);
+		}
 		if (!rel) {
 			rel = r_core_getreloc (ds->core, addr, ds->analop.size);
 		}
@@ -5371,21 +5373,10 @@ toro:
 			goto retry;
 		}
 		ds_atabs_option (ds);
-		// TODO: store previous oplen in core->dec
-		// OOPs. double analysis here?
-#if 0
-		if (ds->analop.mnemonic || !ds->lastfail) {
-			r_anal_op_fini (&ds->analop);
-		}
-		if (!ds->lastfail) {
-			r_anal_op (core->anal, &ds->analop, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx));
-		}
-#else
 		if (ds->analop.addr != ds->at) {
 			r_anal_op_fini (&ds->analop);
 			r_anal_op (core->anal, &ds->analop, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx), R_ANAL_OP_MASK_ALL);
 		}
-#endif
 		if (ret < 1) {
 			r_strbuf_fini (&ds->analop.esil);
 			r_strbuf_init (&ds->analop.esil);
@@ -5630,15 +5621,10 @@ toro:
 		if (len < 4) {
 			len = 4;
 		}
-		if (nbuf) {
-			free (nbuf);
-		}
+		free (nbuf);
 		buf = nbuf = malloc (len);
 		if (ds->tries > 0) {
 			if (r_io_read_at (core->io, ds->addr, buf, len)) {
-				if (ds->pj) {
-				//	pj_end (ds->pj);
-				}
 				goto toro;
 			}
 		}
@@ -5647,15 +5633,9 @@ toro:
 			if (!r_io_read_at (core->io, ds->addr, buf, len)) {
 				//ds->tries = -1;
 			}
-			if (ds->pj) {
-				//pj_end (ds->pj);
-			}
 			goto toro;
 		}
 		if (continueoninvbreak) {
-			if (ds->pj) {
-				//pj_end (ds->pj);
-			}
 			goto toro;
 		}
 		R_FREE (nbuf);

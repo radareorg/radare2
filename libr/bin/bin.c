@@ -962,19 +962,26 @@ static void list_xtr_archs(RBin *bin, int mode) {
 			machine = xtr_data->metadata->machine;
 			bits = xtr_data->metadata->bits;
 			switch (mode) {
-			case 'q':
+			case 'q': // "iAq"
 				bin->cb_printf ("%s\n", arch);
 				break;
-			case 'j':
-				bin->cb_printf (
-					"%s{\"arch\":\"%s\",\"bits\":%d,"
-					"\"offset\":%" PFMT64d
-					",\"size\":%" PFMT64d
-					",\"machine\":\"%s\"}",
-					i++ ? "," : "", arch, bits,
-					xtr_data->offset, xtr_data->size,
-					machine);
+			case 'j': { // "iAj"
+				PJ * pj = pj_new ();
+				pj_o (pj);
+				pj_a (pj);
+				pj_ks (pj, "arch", arch);
+				pj_ki (pj, "bits", bits);
+				pj_ki (pj, "offset", xtr_data->offset);
+				pj_kn (pj, "size", xtr_data->size);
+				if (machine) {
+					pj_ks (pj, "machine", machine);
+				}
+				pj_end (pj);
+				pj_end (pj);
+				bin->cb_printf ("%s\n", pj_string (pj));
+				pj_free (pj);
 				break;
+			}
 			default:
 				bin->cb_printf ("%03i 0x%08" PFMT64x
 						" %" PFMT64d " %s_%i %s\n",

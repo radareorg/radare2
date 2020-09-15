@@ -63,7 +63,7 @@ EXPECT=<<EOF
 0x0001018c ldr lr, [pc, 4]
 0x00010190 add lr, pc, lr
 0x00010194 ldr pc, [lr, 8]!
-0x00000000   blank:
+0x00000000   cpsr:
 0x00000000 invalid
 EOF
 RUN

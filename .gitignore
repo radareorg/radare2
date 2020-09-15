@@ -125,3 +125,4 @@ __pycache__
 .docker_alpine
 .ccls-cache/
 vgcore.*
+libr/include/sdb

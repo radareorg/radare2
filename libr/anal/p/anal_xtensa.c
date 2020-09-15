@@ -634,6 +634,12 @@ static inline void sign_extend(st32 *value, ut8 bit) {
 	}
 }
 
+static inline void sign_extend2(st32 *value, ut8 bit1, ut8 bit2, ut8 shift) {
+	if (((*value >> bit1) & 1) && ((*value >> bit2) & 1)) {
+		*value |= UT32_MAX << (32 - shift);
+	}
+}
+
 static void xtensa_check_stack_op(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
 		size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	st32 imm;
@@ -911,7 +917,7 @@ static void esil_move_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format fo
 
 	// 33: movi.n
 	if (opcode == 33) {
-		sign_extend (&imm, 6);
+		sign_extend2 (&imm, 6, 5, 25);
 	}
 
 	esil_push_signed_imm (&op->esil, imm);

@@ -214,3 +214,38 @@ EXPECT=<<EOF
 a3 = 0x0000bbcc
 EOF
 RUN
+
+NAME=movi.n: extract unsigned imm
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=xtensa
+e asm.bits=32
+e asm.esil=1
+wx 4ce87cdb
+s 0x0
+aeip
+aes
+ar~a8
+EOF
+EXPECT=<<EOF
+a8 = 0x0000004e
+EOF
+RUN
+
+NAME=movi.n: extract signed imm
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=xtensa
+e asm.bits=32
+e asm.esil=1
+wx 4ce87cdb
+s 0x0
+aeip
+aes
+aes
+ar~a11
+EOF
+EXPECT=<<EOF
+a11 = 0xfffffffd
+EOF
+RUN

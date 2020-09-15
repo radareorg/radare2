@@ -73,3 +73,29 @@ EXPECT=<<EOF
 8
 EOF
 RUN
+
+NAME=arcc+tcc
+FILE=-
+CMDS=<<EOF
+afcl
+e asm.arch=arm
+e asm.bits=32
+arcc
+e asm.arch=x86
+e asm.bits=64
+arcc
+tcc `arcc`
+afcl
+EOF
+EXPECT=<<EOF
+amd64
+ms
+swift
+r0 reg(r0, r1, r2, r3)
+rdi reg(rdi, rsi, rdx, rcx)
+ms
+amd64
+swift
+reg
+EOF
+RUN

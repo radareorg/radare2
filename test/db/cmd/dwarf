@@ -286,6 +286,40 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME="big endian variable info"
+FILE=bins/elf/ppc64_sudoku_dwarf 
+CMDS=<<EOF
+e asm.dwarf=false
+aaa
+pdf @  dbg.init
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from dbg.main @ 0x10001ae8
+            ;-- Grid::init():
+            ;-- method.Grid.init:
+/ 64: dbg.init (Grid * const this);
+|           ; arg Grid * const this @ r3
+|           0x100012bc      39030144       addi r8, r3, 0x144          ; arg1 [0m; void init(Grid * const this);
+|           0x100012c0      38e30168       addi r7, r3, 0x168          ; arg1
+|           0x100012c4      39400000       li r10, 0
+|           ; CODE XREF from Grid::init() @ 0x100012e8
+|       .-> 0x100012c8      3928febc       addi r9, r8, 0xfebc
+|       :   0x100012cc      38c00009       li r6, 9
+|       :   0x100012d0      7cc903a6       mtctr r6
+|       :   ; CODE XREF from Grid::init() @ 0x100012dc
+|      .--> 0x100012d4      91490000       stw r10, 0(r9)
+|      ::   0x100012d8      39290024       addi r9, r9, 0x24
+|      `==< 0x100012dc      4200fff8       bdnz 0x100012d4
+|       :   0x100012e0      39080004       addi r8, r8, 4
+|       :   0x100012e4      7c283840       cmpld r8, r7
+|       `=< 0x100012e8      4082ffe0       bne 0x100012c8
+|           0x100012ec      39200000       li r9, 0
+|           0x100012f0      91230144       stw r9, 0x144(r3)           ; arg1
+|           0x100012f4      91230148       stw r9, 0x148(r3)           ; arg1
+\           0x100012f8      4e800020       blr
+EOF
+RUN
+
 NAME="function info integration ada"
 FILE=bins/elf/ada_test_dwarf 
 CMDS=<<EOF

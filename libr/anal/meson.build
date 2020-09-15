@@ -29,7 +29,6 @@ r_anal_sources = [
   'rtti.c',
   'rtti_msvc.c',
   'rtti_itanium.c',
-  'session.c',
   'sign.c',
   'switch.c',
   'type.c',
@@ -185,6 +184,7 @@ r_anal = library('r_anal', r_anal_sources,
   ],
   install: true,
   implicit_include_directories: false,
+  install_rpath: rpath_lib,
   soversion: r2_libversion
 )
 

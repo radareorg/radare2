@@ -6,3 +6,17 @@ EOF
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=touch
+FILE=--
+CMDS=<<EOF
+rm .foo.touch
+ls .foo.touch
+touch .foo.touch
+ls .foo.touch
+rm .foo.touch
+EOF
+EXPECT=<<EOF
+        .foo.touch  
+EOF
+RUN

@@ -2,7 +2,7 @@
 
 #include <r_anal.h>
 #include <r_lib.h>
-#include <capstone/capstone.h>
+#include <capstone.h>
 
 #ifdef CAPSTONE_TMS320C64X_H
 #define CAPSTONE_HAS_TMS320C64X 1

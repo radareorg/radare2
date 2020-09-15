@@ -19,6 +19,7 @@ r_lang = library('r_lang', r_lang_sources,
   dependencies: [r_util_dep, r_cons_dep],
   install: true,
   implicit_include_directories: false,
+  install_rpath: rpath_lib,
   soversion: r2_libversion
 )
 

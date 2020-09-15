@@ -278,7 +278,7 @@ static void setASLR(RRunProfile *r, int enabled) {
 	// for osxver>=10.7
 	// "unset the MH_PIE bit in an already linked executable" with --no-pie flag of the script
 	// the right way is to disable the aslr bit in the spawn call
-#elif __FreeBSD__
+#elif __FreeBSD__ || __NetBSD__
 	r_sys_aslr (enabled);
 #else
 	// not supported for this platform
@@ -1227,4 +1227,26 @@ R_API int r_run_start(RRunProfile *p) {
 		r_lib_dl_close (addr);
 	}
 	return 0;
+}
+
+R_API char *r_run_get_environ_profile(char **env) {
+	if (!env) {
+		return NULL;
+	}
+	RStrBuf *sb = r_strbuf_new (NULL);
+	while (*env) {
+		char *k = strdup (*env);
+		char *v = strchr (k, '=');
+		if (v) {
+			*v++ = 0;
+			v = r_str_escape_latin1 (v, false, true, true);
+			if (v) {
+				r_strbuf_appendf (sb, "setenv=%s=\"%s\"\n", k, v);
+				free (v);
+			}
+		}
+		free (k);
+		env++;
+	}
+	return r_strbuf_drain (sb);
 }

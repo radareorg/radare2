@@ -5,8 +5,8 @@
 
 #if CSNEXT
 
-#include <capstone/capstone.h>
-#include <capstone/riscv.h>
+#include <capstone.h>
+#include <riscv.h>
 
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/RISCVir.html
 

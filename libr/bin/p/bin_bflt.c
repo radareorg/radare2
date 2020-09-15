@@ -60,7 +60,7 @@ static RList *patch_relocs(RBin *b) {
 		eprintf (
 			"Warning: please run r2 with -e io.cache=true to patch "
 			"relocations\n");
-		return list;
+		return NULL;
 	}
 
 	obj = r_bin_cur_object (b);

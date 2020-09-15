@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2019 - pancake, Oddcoder */
+/* radare - LGPL - Copyright 2011-2020 - pancake, Oddcoder */
 
 /* Universal calling convention implementation based on sdb */
 
@@ -6,7 +6,7 @@
 #define DB anal->sdb_cc
 
 R_API void r_anal_cc_del(RAnal *anal, const char *name) {
-	int i;
+	size_t i;
 	sdb_unset (DB, sdb_fmt ("%s", name), 0);
 	sdb_unset (DB, sdb_fmt ("cc.%s.ret", name), 0);
 	sdb_unset (DB, sdb_fmt ("cc.%s.argn", name), 0);

@@ -123,6 +123,7 @@ static const char *help_msg_ac[] = {
 	"acm", " [class name] [method name] [offset] ([vtable offset])", "add/edit method",
 	"acm-", " [class name] [method name]", "delete method",
 	"acmn", " [class name] [method name] [new name]", "rename method",
+	"acg", "", "print inheritance ascii graph",
 	"ac?", "", "show this help",
 	NULL
 };
@@ -165,7 +166,6 @@ static const char *help_msg_ae[] = {
 	"aep", "[?] [addr]", "manage esil pin hooks",
 	"aepc", " [addr]", "change esil PC to this address",
 	"aer", " [..]", "handle ESIL registers like 'ar' or 'dr' does",
-	"aets", "[?]", "ESIL Trace session",
 	"aes", "", "perform emulated debugger step",
 	"aesp", " [X] [N]", "evaluate N instr from offset X",
 	"aesb", "", "step back",
@@ -176,6 +176,7 @@ static const char *help_msg_ae[] = {
 	"aesue", " [esil]", "step until esil expression match",
 	"aesuo", " [optype]", "step until given opcode type",
 	"aetr", "[esil]", "Convert an ESIL Expression to REIL",
+	"aets", "[?]", "ESIL Trace session",
 	"aex", " [hex]", "evaluate opcode expression",
 	NULL
 };
@@ -296,8 +297,8 @@ static const char *help_msg_aep[] = {
 
 static const char *help_msg_aets[] = {
 	"Usage:", "aets ", " [...]",
-	"aets", "", "List all ESIL trace sessions",
-	"aets+", "", "Add ESIL trace session",
+	"aets+", "", "Start ESIL trace session",
+	"aets-", "", "Stop ESIL trace session",
 	NULL
 };
 
@@ -620,6 +621,7 @@ static const char *help_msg_ao[] = {
 	"Usage:", "ao[e?] [len]", "Analyze Opcodes",
 	"aoj", " N", "display opcode analysis information in JSON for N opcodes",
 	"aoe", " N", "display esil form for N opcodes",
+	"aoef", " expr", "filter esil expression of opcode by given output",
 	"aor", " N", "display reil form for N opcodes",
 	"aos", " N", "display size of N opcodes",
 	"aom", " [id]", "list current or all mnemonics for current arch",
@@ -652,6 +654,7 @@ static const char *help_msg_ar[] = {
 	"ar?", " <reg>", "Show register value",
 	"arb", " <type>", "Display hexdump of the given arena",
 	"arc", " <name>", "Conditional flag registers",
+	"arcc", "", "Show calling convention defined from the register profile",
 	"ard", " <name>", "Show only different registers",
 	"arn", " <regalias>", "Get regname for pc,sp,bp,a0-3,zf,cf,of,sg",
 	"aro", "", "Show old (previous) register values",
@@ -1682,6 +1685,30 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 	return r_str_appendf (res, ")");
 }
 
+static int mw(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+	int *ec = (int*)esil->user;
+	*ec += (len * 2);
+	return 1;
+}
+
+static int mr(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+	int *ec = (int*)esil->user;
+	*ec += len;
+	return 1;
+}
+
+static int esil_cost(RCore *core, ut64 addr, const char *expr) {
+	int ec = 0;
+	RAnalEsil *e = r_anal_esil_new (256, 0, 0);
+	r_anal_esil_setup (e, core->anal, false, false, false);
+	e->user = &ec;
+	e->cb.mem_read = mr;
+	e->cb.mem_write = mw;
+	r_anal_esil_parse (e, expr);
+	r_anal_esil_free (e);
+	return ec;
+}
+
 static void cmd_syscall_do(RCore *core, st64 n, ut64 addr) {
 	char *msg = cmd_syscall_dostr (core, n, addr);
 	if (msg) {
@@ -1789,6 +1816,8 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 		} else if (fmt == 's') {
 			totalsize += op.size;
+		} else if (fmt == '*') {
+			// TODO: ao* useful for wat? wx [bytes] ?
 		} else if (fmt == 'j') {
 			char strsub[128] = { 0 };
 			// pc+33
@@ -1900,6 +1929,10 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				}
 
 			}
+			if (esilstr) {
+				int ec = esil_cost (core, addr, esilstr);
+				pj_ki (pj, "esilcost", ec);
+			}
 			if (op.reg) {
 				pj_ks (pj, "reg", op.reg);
 			}
@@ -1971,6 +2004,10 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 					r_parse_varsub (core->parser, fcn, addr, asmop.size,
 							disasm, disasm, sizeof (disasm));
 				}
+			}
+			if (esilstr) {
+				int ec = esil_cost (core, addr, esilstr);
+				printline ("esilcost", "%d\n", ec);
 			}
 			printline ("disasm", "%s\n", disasm);
 			{
@@ -4321,7 +4358,13 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		} break;
 	case 'c': // "arc"
 		// TODO: set flag values with drc zf=1
-		{
+		if (str[1] == 'c') { // "arcc"
+			char *s = r_reg_profile_to_cc (core->anal->reg);
+			if (s) {
+				r_cons_printf ("%s\n", s);
+				free (s);
+			}
+		} else {
 			RRegItem *r;
 			const char *name = r_str_trim_head_ro (str + 1);
 			if (*name && name[1]) {
@@ -4568,7 +4611,7 @@ static ut64 initializeEsil(RCore *core) {
 	RBinAddr *entry = NULL;
 	RBinInfo *info = NULL;
 	if (entries && !r_list_empty (entries)) {
-		entry = (RBinAddr *)r_list_pop (entries);
+		entry = (RBinAddr *)r_list_pop_head (entries);
 		info = r_bin_get_info (core->bin);
 		addr = info->has_va? entry->vaddr: entry->paddr;
 		r_list_push (entries, entry);
@@ -4815,30 +4858,13 @@ tail_return:
 }
 
 R_API int r_core_esil_step_back(RCore *core) {
+	r_return_val_if_fail (core->anal->esil && core->anal->esil->trace, -1);
 	RAnalEsil *esil = core->anal->esil;
-	RListIter *tail;
-	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	ut64 prev = 0;
-	ut64 end = r_reg_getv (core->anal->reg, name);
-
-	if (!esil || !(tail = r_list_tail (esil->sessions))) {
-		return 0;
+	if (esil->trace->idx > 0) {
+		r_anal_esil_trace_restore (esil, esil->trace->idx - 1);
+		return 1;
 	}
-	RAnalEsilSession *before = (RAnalEsilSession *) tail->data;
-	if (!before) {
-		eprintf ("Cannot find any previous state here\n");
-		return 0;
-	}
-	eprintf ("NOTE: step back in esil is setting an initial state and stepping into pc is the same.\n");
-	eprintf ("NOTE: this is extremely wrong and poorly efficient. so don't use this feature unless\n");
-	eprintf ("NOTE: you are going to fix it by making it consistent with dts, which is also broken as hell\n");
-	eprintf ("Execute until 0x%08"PFMT64x"\n", end);
-	r_anal_esil_session_set (esil, before);
-	r_core_esil_step (core, end, NULL, &prev, false);
-	eprintf ("Before 0x%08"PFMT64x"\n", prev);
-	r_anal_esil_session_set (esil, before);
-	r_core_esil_step (core, prev, NULL, NULL, false);
-	return 1;
+	return -1;
 }
 
 static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
@@ -6226,11 +6252,33 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		}
 		case 's': // "aets"
 			switch (input[2]) {
-			case 0:
-				r_anal_esil_session_list (esil);
+			case '+': // "aets+"
+				if (!esil) {
+					eprintf ("Error: ESIL is not initialized. Use `aeim` first.\n");
+					break;
+				}
+				if (esil->trace) {
+					eprintf ("ESIL trace already started\n");
+					break;
+				}
+				esil->trace = r_anal_esil_trace_new (esil);
+				if (!esil->trace) {
+					break;
+				}
+				r_config_set_i (core->config, "dbg.trace", true);
 				break;
-			case '+':
-				r_anal_esil_session_add (esil);
+			case '-': // "aets-"
+				if (!esil) {
+					eprintf ("Error: ESIL is not initialized. Use `aeim` first.\n");
+					break;
+				}
+				if (!esil->trace) {
+					eprintf ("No ESIL trace started\n");
+					break;
+				}
+				r_anal_esil_trace_free (esil->trace);
+				esil->trace = NULL;
+				r_config_set_i (core->config, "dbg.trace", false);
 				break;
 			default:
 				r_core_cmd_help (core, help_msg_aets);
@@ -6526,6 +6574,26 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 				count = 1;
 			}
 			core_anal_bytes (core, core->block, len, count, 0);
+		}
+		break;
+	case 'f':
+		{
+			RAnalOp aop = R_EMPTY;
+			ut8 data[32];
+			r_io_read_at (core->io, core->offset, data, sizeof (data));
+			int ret = r_anal_op (core->anal, &aop, core->offset, data, sizeof (data), R_ANAL_OP_MASK_ESIL);
+			if (ret > 0) {
+				const char *arg = input + 2;
+				const char *expr = R_STRBUF_SAFEGET (&aop.esil);
+				RStrBuf *b = r_anal_esil_dfg_filter_expr (core->anal, expr, arg);
+				if (b) {
+					char *s = r_strbuf_drain (b);
+					r_cons_printf ("%s\n", s);
+					free (s);
+				}
+			} else {
+				eprintf ("Warning: Unable to analyze instruction\n");
+			}
 		}
 		break;
 	default:

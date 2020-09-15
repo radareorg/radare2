@@ -125,7 +125,8 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		// FIXME: It is a precision loss, please implement me properly!
 		return (ut64)r_reg_get_longdouble (reg, item);
 	case 128:
-		// XXX 128 bit
+	case 256:
+		// XXX 128 & 256 bit
 		return (ut64)r_reg_get_longdouble (reg, item);
 	default:
 		eprintf ("r_reg_get_value: Bit size %d not supported\n", item->size);
@@ -202,7 +203,8 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		}
 		return true;
 	case 128:
-		// XXX 128 bit
+	case 256:
+		// XXX 128 & 256 bit
 		return false; // (ut64)r_reg_get_longdouble (reg, item);
 	default:
 		eprintf ("r_reg_set_value: Bit size %d not supported\n", item->size);

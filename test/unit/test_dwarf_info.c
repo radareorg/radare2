@@ -324,9 +324,103 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 	mu_end;
 }
 
+bool test_dwarf2_big_endian(void) {
+	RBin *bin = r_bin_new ();
+	RIO *io = r_io_new ();
+	r_io_bind (io, &bin->iob);
+
+	RBinOptions opt = { 0 };
+	bool res = r_bin_open (bin, "bins/elf/ppc64_sudoku_dwarf", &opt);
+	mu_assert ("dwarf4_many_comp_units.elf binary could not be opened", res);
+
+	RBinDwarfDebugAbbrev *da = r_bin_dwarf_parse_abbrev (bin, MODE);
+	mu_assert_eq (da->count, 108, "Incorrect number of abbreviation");
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (da, bin, MODE);
+	mu_assert_notnull (info, "Failed parsing of debug_info");
+	mu_assert_eq (info->count, 1, "Incorrect number of info compilation units");
+
+	// check header
+	RBinDwarfCompUnit cu = info->comp_units[0];
+	RBinDwarfCompUnitHdr hdr = cu.hdr;
+	check_basic_unit_header (2, 0x38b9, false, 8, 0x0);
+
+	int i = 0;
+	check_die_abbr_code (1);
+	check_die_length (7);
+	check_die_tag (DW_TAG_compile_unit);
+
+	check_attr_name (0, DW_AT_producer);
+	check_attr_string (0, "GNU C++14 9.3.0 -msecure-plt -mabi=elfv2 -mcpu=970 -gdwarf-2 -gstrict-dwarf -O1");
+	check_attr_name (1, DW_AT_language);
+	check_attr_data (1, DW_LANG_C_plus_plus);
+
+	check_attr_name (4, DW_AT_low_pc);
+	check_attr_reference (4, 0x0000000010000ec4);
+	check_attr_name (5, DW_AT_high_pc);
+	check_attr_reference (5, 0x0000000010001c48);
+	check_attr_name (6, DW_AT_stmt_list);
+	check_attr_reference (6, 0x0);
+
+	i+=2;
+	check_die_abbr_code (3);
+	check_die_tag (DW_TAG_base_type);
+
+	check_attr_name (0, DW_AT_byte_size);
+	check_attr_data (0, 0x08);
+
+	check_attr_name (1, DW_AT_encoding);
+	check_attr_data (1, DW_ATE_unsigned);
+
+	check_attr_name (2, DW_AT_name);
+	check_attr_string (2, "long unsigned int");
+
+	i++; check_die_abbr_code (4);
+	i++; check_die_abbr_code (2);
+	i++; check_die_abbr_code (3);
+	i++; check_die_abbr_code (2);
+	i++;
+	// i == 7
+	check_die_abbr_code (5);
+	check_die_tag (DW_TAG_structure_type);
+
+	check_attr_name (0, DW_AT_name);
+	check_attr_string (0, "_IO_FILE");
+
+	check_attr_name (1, DW_AT_byte_size);
+	check_attr_data (1, 0x01);
+
+	check_attr_name (2, DW_AT_decl_file);
+	check_attr_name (3, DW_AT_decl_line);
+	check_attr_name (4, DW_AT_decl_column);
+	check_attr_name (5, DW_AT_sibling);
+
+	i = 1668 - 4;
+	check_die_abbr_code (108);
+	check_die_tag (DW_TAG_subprogram);
+
+	check_attr_name (0, DW_AT_abstract_origin);
+	check_attr_reference (0, 0x2f32);
+
+	check_attr_name (1, DW_AT_MIPS_linkage_name);
+	check_attr_string (1, "_Z8isnumberc");
+
+	check_attr_name (2, DW_AT_low_pc);
+	check_attr_reference (2, 0x0000000010001aa4);
+
+	check_attr_name (3, DW_AT_high_pc);
+	check_attr_reference (3, 0x0000000010001ac8);
+
+	r_bin_dwarf_free_debug_info (info);
+	r_bin_dwarf_free_debug_abbrev (da);
+	r_bin_free (bin);
+	r_io_free (io);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test (test_dwarf3_c);
 	mu_run_test (test_dwarf4_cpp_multiple_modules);
+	mu_run_test (test_dwarf2_big_endian);
 	return tests_passed != tests_run;
 }
 

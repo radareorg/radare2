@@ -87,13 +87,15 @@ static STDMETHODIMP IFace##_QueryInterface_impl (     \
 }
 
 #define DECLARE_ADDREF(IFace)                         \
-static ULONG IFace##_AddRef_impl(P##IFace This) {     \
+static STDMETHODIMP_(ULONG) IFace##_AddRef_impl(      \
+	P##IFace This) {                                  \
 	P##IFace##_IMPL impl = (P##IFace##_IMPL)This;     \
 	return InterlockedIncrement (&impl->m_ref);       \
 }
 
 #define DECLARE_RELEASE(IFace)                        \
-static ULONG IFace##_Release_impl(P##IFace This) {    \
+static STDMETHODIMP_(ULONG) IFace##_Release_impl(     \
+	P##IFace This) {                                  \
 	P##IFace##_IMPL impl = (P##IFace##_IMPL)This;     \
 	ULONG ret = InterlockedDecrement (&impl->m_ref);  \
 	if (!ret) {                                       \

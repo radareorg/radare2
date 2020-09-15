@@ -24,7 +24,7 @@ e asm.var=false
 pdb
 EOF
 EXPECT=<<EOF
-/ 337: entry0 (int32_t arg_24h, int32_t arg_40h, int32_t arg_44h);
+/ 337: entry0 (int32_t arg_40h, int32_t arg_44h);
 |           0x006453a1      e8d8170000     call fcn.00646b7e
 |           0x006453a6      8d642444       lea esp, [arg_44h]
 |       ,=< 0x006453aa      0f85a6300000   jne 0x648456
@@ -3152,6 +3152,7 @@ EXPECT=<<EOF
     "bytes": "31c0",
     "size": 2,
     "type": "xor",
+    "esilcost": 0,
     "scale": 0,
     "refptr": 0,
     "cycles": 1,
@@ -3199,6 +3200,7 @@ EXPECT=<<EOF
     "bytes": "669c",
     "size": 2,
     "type": "upush",
+    "esilcost": 12,
     "scale": 0,
     "refptr": 0,
     "cycles": 2,
@@ -3427,9 +3429,10 @@ ao 1
 p8 1
 EOF
 EXPECT=<<EOF
-16
+17
 address: 0x0
 opcode: nop
+esilcost: 0
 disasm: nop
 mnemonic: nop
 description: no operation

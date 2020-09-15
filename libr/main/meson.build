@@ -45,6 +45,7 @@ r_main = library('r_main', r_main_sources,
   dependencies: r_main_deps,
   install: true,
   implicit_include_directories: false,
+  install_rpath: rpath_lib,
   soversion: r2_libversion
 )
 

@@ -2,7 +2,7 @@
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone/capstone.h>
+#include <capstone.h>
 #include "../arch/arm/asm-arm.h"
 #include "./asm_arm_hacks.inc"
 

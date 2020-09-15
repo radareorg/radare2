@@ -365,6 +365,13 @@ R_API char *r_file_slurp(const char *str, R_NULLABLE size_t *usz) {
 				}
 				size += r;
 			} while (!feof (fd));
+			char *nbuf = realloc (buf, size + 1);
+			if (!nbuf) {
+				free (buf);
+				return NULL;
+			}
+			buf = nbuf;
+			buf[size] = '\0';
 			if (usz) {
 				*usz = size;
 			}
@@ -699,6 +706,7 @@ R_API bool r_file_hexdump(const char *file, const ut8 *buf, int len, int append)
 }
 
 R_API bool r_file_touch(const char *file) {
+	r_return_val_if_fail (file, false);
 	return r_file_dump (file, NULL, 0, true);
 }
 

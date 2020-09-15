@@ -985,6 +985,7 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			if (ret != R_DEBUG_REASON_USERSUSP) {
 				ret = R_DEBUG_REASON_NEW_TID;
 			}
+			dbg->corebind.cmdf (dbg->corebind.core, "f teb.%d @ 0x%p", tid, de.u.CreateThread.lpThreadLocalBase);
 			next_event = 0;
 			break;
 		case EXIT_PROCESS_DEBUG_EVENT:
@@ -998,6 +999,7 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			} else {
 				__r_debug_thread_add (dbg, pid, tid, INVALID_HANDLE_VALUE, de.u.CreateThread.lpThreadLocalBase, de.u.CreateThread.lpStartAddress, TRUE);
 			}
+			dbg->corebind.cmdf (dbg->corebind.core, "f- teb.%d", tid);
 			if (de.dwDebugEventCode == EXIT_PROCESS_DEBUG_EVENT) {
 				exited_already = pid;
 				w32_continue (dbg, pid, tid, DBG_CONTINUE);

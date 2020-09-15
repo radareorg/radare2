@@ -364,7 +364,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
-			r_cons_printf ("(%d) Created thread %d (start @ %p)\n", item->pid, item->tid, item->lpStartAddress);
+			r_cons_printf ("(%d) Created thread %d (start @ %p) (teb @ %p)\n", item->pid, item->tid, item->lpStartAddress, item->lpThreadLocalBase);
 			r_cons_flush ();
 
 			r_debug_info_free (r);
