@@ -34,7 +34,7 @@ e asm.bits=32
 ?e 1
 tcc eax jeje(ebx, ecx)
 tcc jeje
-tcc-jeje
+tcc- jeje
 ?e 2
 tcc eax    jeje(ebx, ecx)
 tcc   jeje
