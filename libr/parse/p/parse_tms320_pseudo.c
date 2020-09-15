@@ -69,6 +69,11 @@ static int parse(RParse *p, const char *data, char *str) {
 	int i, len = strlen (data);
 	char *buf, *ptr, *optr;
 
+	if (R_STR_ISEMPTY (data)) {
+		*str = 0;
+		return false;
+	}
+
 	if (len >= sizeof (w0)) {
 		return false;
 	}
@@ -78,52 +83,44 @@ static int parse(RParse *p, const char *data, char *str) {
 	}
 	memcpy (buf, data, len + 1);
 
-	if (*buf) {
-		r_str_replace_char (buf, '(', ' ');
-		r_str_replace_char (buf, ')', ' ');
-		*w0 = *w1 = *w2 = *w3 = '\0';
-		ptr = strchr (buf, ' ');
-		if (!ptr) {
-			ptr = strchr (buf, '\t');
-		}
-		if (ptr) {
-			*ptr = '\0';
-			for (++ptr; *ptr == ' '; ptr++) {
-				;
-			}
-			strncpy (w0, buf, sizeof (w0) - 1);
-			strncpy (w1, ptr, sizeof (w1) - 1);
-			optr = ptr;
-			ptr = strchr (ptr, ',');
-			if (ptr) {
-				*ptr = '\0';
-				for (++ptr; *ptr == ' '; ptr++) {
-					;
-				}
-				strncpy (w1, optr, sizeof (w1) - 1);
-				char *ptr2 = strchr (ptr, ',');
-				if (ptr2) {
-					*ptr2 = 0;
-					for (++ptr2; *ptr2 == ' '; ptr2++) {
-						;
-					}
-					strncpy (w3, ptr2 + 1, sizeof (w3) - 1);
-				}
-				strncpy (w2, ptr, sizeof (w2) - 1);
-			}
-		} else {
-			strncpy (w0, buf, sizeof (w0) - 1);
-		}
-
-		const char *wa[] = {w0, w1, w2, w3};
-		int nw = 0;
-		for (i = 0; i < 4; i++) {
-			if (wa[i][0]) {
-				nw++;
-			}
-		}
-		replace (nw, wa, str);
+	r_str_replace_char (buf, '(', ' ');
+	r_str_replace_char (buf, ')', ' ');
+	*w0 = *w1 = *w2 = *w3 = '\0';
+	ptr = strchr (buf, ' ');
+	if (!ptr) {
+		ptr = strchr (buf, '\t');
 	}
+	if (ptr) {
+		*ptr++ = '\0';
+		ptr = r_str_trim_head_ro (ptr);
+		r_str_ncpy (w0, buf, sizeof (w0) - 1);
+		r_str_ncpy (w1, ptr, sizeof (w1) - 1);
+		optr = ptr;
+		ptr = strchr (ptr, ',');
+		if (ptr) {
+			*ptr++ = '\0';
+			ptr = r_str_trim_head_ro (ptr);
+			strncpy (w1, optr, sizeof (w1) - 1);
+			char *ptr2 = strchr (ptr, ',');
+			if (ptr2) {
+				*ptr2 = 0;
+				ptr2 = r_str_trim_head_ro (ptr2);
+				r_str_ncpy (w3, ptr2 + 1, sizeof (w3) - 1);
+			}
+			r_str_ncpy (w2, ptr, sizeof (w2) - 1);
+		}
+	} else {
+		r_str_ncpy (w0, buf, sizeof (w0) - 1);
+	}
+
+	const char *wa[] = {w0, w1, w2, w3};
+	int nw = 0;
+	for (i = 0; i < 4; i++) {
+		if (wa[i][0]) {
+			nw++;
+		}
+	}
+	replace (nw, wa, str);
 
 	free (buf);
 
