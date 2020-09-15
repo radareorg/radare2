@@ -1,0 +1,13 @@
+NAME=arpg
+FILE=-
+CMDS=<<EOF
+arpg scripts/gdb-reg-profile.txt
+?v $?
+arpg scripts/gdb-reg-profile-invalid.txt
+?v $?
+EOF
+EXPECT=<<EOF
+0x0
+0x1
+EOF
+RUN
