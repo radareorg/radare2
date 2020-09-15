@@ -819,13 +819,12 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			return 1;
 		}
 		if (strstr (uri, "://")) {
-			r_core_cmdf (r, "=+%s", uri);
+			r_core_cmdf (r, "=+ %s", uri);
 		} else {
-			r_core_cmdf (r, "=+http://%s/cmd/", argv[opt.ind]);
+			argv[opt.ind] = r_str_newf ("http://%s/cmd/", argv[opt.ind]);
+			r_core_cmdf (r, "=+ %s", argv[opt.ind]);
 		}
 		r_core_cmd0 (r, "=!=");
-		//LISTS_FREE ();
-	//	return 0;
 	}
 
 	switch (zflag) {

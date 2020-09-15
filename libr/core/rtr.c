@@ -800,6 +800,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			}
 			core->num->value = 0;
 			eprintf ("Connected to: 'http://%s'\n", host);
+			free (str);
 		}
 		break;
 	case RTR_PROTOCOL_RAP:

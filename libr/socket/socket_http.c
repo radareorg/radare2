@@ -119,7 +119,7 @@ static char *socket_http_answer(RSocket *s, int *code, int *rlen, ut32 redirecti
 			}
 		}
 	} else {
-		res = NULL;
+		res = strdup ("");
 	}
 exit:
 	free (buf);
