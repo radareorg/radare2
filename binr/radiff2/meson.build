@@ -14,6 +14,6 @@ executable('radiff2', 'radiff2.c',
     r_config_dep
   ],
   install: true,
-  install_rpath: rpath,
+  install_rpath: rpath_exe,
   implicit_include_directories: false
 )

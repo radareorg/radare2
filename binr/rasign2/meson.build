@@ -8,6 +8,6 @@ executable('rasign2', 'rasign2.c',
     r_bin_dep,
   ],
   install: true,
-  install_rpath: rpath,
+  install_rpath: rpath_exe,
   implicit_include_directories: false
 )

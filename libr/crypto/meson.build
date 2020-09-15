@@ -27,6 +27,7 @@ r_crypto = library('r_crypto', r_crypto_sources,
   c_args: library_cflags,
   install: true,
   implicit_include_directories: false,
+  install_rpath: rpath_lib,
   soversion: r2_libversion
 )
 

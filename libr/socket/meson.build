@@ -22,6 +22,7 @@ r_socket = library('r_socket', r_socket_sources,
   c_args: library_cflags,
   install: true,
   implicit_include_directories: false,
+  install_rpath: rpath_lib,
   soversion: r2_libversion
 )
 
