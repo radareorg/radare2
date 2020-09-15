@@ -142,6 +142,7 @@ typedef struct r_reg_flags_t {
 R_API void r_reg_free(RReg *reg);
 R_API void r_reg_free_internal(RReg *reg, bool init);
 R_API RReg *r_reg_new(void);
+R_API RReg *r_reg_init(RReg *reg);
 R_API bool r_reg_set_name(RReg *reg, int role, const char *name);
 R_API bool r_reg_set_profile_string(RReg *reg, const char *profile);
 R_API char* r_reg_profile_to_cc(RReg *reg);

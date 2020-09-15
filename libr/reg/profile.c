@@ -136,6 +136,8 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 
 	// Same profile, no need to change
 	if (reg->reg_profile_str && !strcmp (reg->reg_profile_str, str)) {
+	//	r_reg_free_internal (reg, false);
+	//	r_reg_init (reg);
 		return true;
 	}
 
@@ -150,6 +152,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 
 	// Line number
 	l = 0;
+	bool have_a0 = false;
 	// For every line
 	do {
 		// Increment line number
@@ -206,6 +209,9 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 			const char *r = (*first == '=')
 				? parse_alias (reg, tok, j)
 				: parse_def (reg, tok, j);
+			if (!strncmp (first, "=A0", 3)) {
+				have_a0 = true;
+			}
 			// Clean up
 			for (i = 0; i < j; i++) {
 				free (tok[i]);
@@ -217,10 +223,16 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 				//eprintf ("(%s)\n", str);
 				// Clean up
 				r_reg_free_internal (reg, false);
+				r_reg_init (reg);
 				return false;
 			}
 		}
 	} while (*p++);
+	if (!have_a0) {
+		eprintf ("Warning: =A0 not defined\n");
+		//r_reg_free_internal (reg, false);
+		///return false;
+	}
 	reg->size = 0;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		RRegSet *rs = &reg->regset[i];
@@ -244,12 +256,11 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 
 R_API bool r_reg_set_profile(RReg *reg, const char *profile) {
 	r_return_val_if_fail (reg && profile, NULL);
-	char *base, *file;
 	char *str = r_file_slurp (profile, NULL);
 	if (!str) {
-		base = r_sys_getenv (R_LIB_ENV);
+		char *base = r_sys_getenv (R_LIB_ENV);
 		if (base) {
-			file = r_str_append (base, profile);
+			char *file = r_str_append (base, profile);
 			str = r_file_slurp (file, NULL);
 			free (file);
 		}

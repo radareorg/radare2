@@ -251,13 +251,10 @@ R_API void r_reg_free(RReg *reg) {
 	}
 }
 
-R_API RReg *r_reg_new(void) {
+R_API RReg *r_reg_init(RReg *reg) {
+	r_return_val_if_fail (reg, NULL);
 	RRegArena *arena;
-	RReg *reg = R_NEW0 (RReg);
-	int i;
-	if (!reg) {
-		return NULL;
-	}
+	size_t i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		arena = r_reg_arena_new (0);
 		if (!arena) {
@@ -274,6 +271,10 @@ R_API RReg *r_reg_new(void) {
 		reg->regset[i].cur = r_list_tail (reg->regset[i].pool);
 	}
 	return reg;
+}
+
+R_API RReg *r_reg_new(void) {
+	return r_reg_init (R_NEW0 (RReg));
 }
 
 R_API bool r_reg_is_readonly(RReg *reg, RRegItem *item) {
@@ -349,7 +350,7 @@ R_API RList *r_reg_get_list(RReg *reg, int type) {
 	}
 
 	regs = reg->regset[type].regs;
-	if (r_list_length (regs) == 0) {
+	if (regs && r_list_length (regs) == 0) {
 		mask = ((int)1 << type);
 		for (i = 0; i < R_REG_TYPE_LAST; i++) {
 			if (reg->regset[i].maskregstype & mask) {
