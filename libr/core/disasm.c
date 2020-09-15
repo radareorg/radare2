@@ -283,7 +283,7 @@ typedef struct {
 	ut64 printed_flag_addr;
 	ut64 min_ref_addr;
 
-	PJ *pj; // not null iff printing json
+	PJ *pj; // not null if printing json
 	int buf_line_begin;
 	const char *strip;
 	int maxflags;
@@ -1205,7 +1205,14 @@ static void ds_begin_line(RDisasmState *ds) {
 
 static void ds_newline(RDisasmState *ds) {
 	if (ds->pj) {
-		pj_s (ds->pj, r_cons_get_buffer ());
+		const bool is_html = r_config_get_i (ds->core->config, "scr.html");
+		if (is_html) {
+			char *s = r_cons_html_filter (r_cons_get_buffer (), NULL);
+			pj_s (ds->pj, s);
+			free (s);
+		} else {
+			pj_s (ds->pj, r_cons_get_buffer ());
+		}
 		r_cons_reset ();
 		pj_end (ds->pj);
 	} else {
@@ -5366,21 +5373,10 @@ toro:
 			goto retry;
 		}
 		ds_atabs_option (ds);
-		// TODO: store previous oplen in core->dec
-		// OOPs. double analysis here?
-#if 0
-		if (ds->analop.mnemonic || !ds->lastfail) {
-			r_anal_op_fini (&ds->analop);
-		}
-		if (!ds->lastfail) {
-			r_anal_op (core->anal, &ds->analop, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx));
-		}
-#else
 		if (ds->analop.addr != ds->at) {
 			r_anal_op_fini (&ds->analop);
 			r_anal_op (core->anal, &ds->analop, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx), R_ANAL_OP_MASK_ALL);
 		}
-#endif
 		if (ret < 1) {
 			r_strbuf_fini (&ds->analop.esil);
 			r_strbuf_init (&ds->analop.esil);
@@ -5625,15 +5621,10 @@ toro:
 		if (len < 4) {
 			len = 4;
 		}
-		if (nbuf) {
-			free (nbuf);
-		}
+		free (nbuf);
 		buf = nbuf = malloc (len);
 		if (ds->tries > 0) {
 			if (r_io_read_at (core->io, ds->addr, buf, len)) {
-				if (ds->pj) {
-				//	pj_end (ds->pj);
-				}
 				goto toro;
 			}
 		}
@@ -5642,15 +5633,9 @@ toro:
 			if (!r_io_read_at (core->io, ds->addr, buf, len)) {
 				//ds->tries = -1;
 			}
-			if (ds->pj) {
-				//pj_end (ds->pj);
-			}
 			goto toro;
 		}
 		if (continueoninvbreak) {
-			if (ds->pj) {
-				//pj_end (ds->pj);
-			}
 			goto toro;
 		}
 		R_FREE (nbuf);

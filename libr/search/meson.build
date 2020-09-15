@@ -14,6 +14,7 @@ r_search = library('r_search', r_search_sources,
   dependencies: [r_util_dep],
   install: true,
   implicit_include_directories: false,
+  install_rpath: rpath_lib,
   soversion: r2_libversion
 )
 

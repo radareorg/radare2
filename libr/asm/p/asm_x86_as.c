@@ -1,13 +1,7 @@
 /* radare - LGPL - Copyright 2011-2020 pancake */
 
-#include <r_types.h>
-#include <r_util.h>
 #include <r_lib.h>
 #include <r_asm.h>
-
-#ifndef O_BINARY
-#define O_BINARY 0
-#endif
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	char *ipath, *opath;
@@ -26,12 +20,13 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		return -1;
 	}
 
-	if (a->syntax == R_ASM_SYNTAX_INTEL) {
+	switch (a->syntax) {
+	case R_ASM_SYNTAX_INTEL:
 		syntaxstr = ".intel_syntax noprefix\n";
-	}
-
-	if (a->syntax == R_ASM_SYNTAX_ATT) {
+		break;
+	case R_ASM_SYNTAX_ATT:
 		syntaxstr = ".att_syntax\n";
+		break;
 	}
 
 	char *asm_buf = r_str_newf (
@@ -47,12 +42,26 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	if (!success) {
 		return -1;
 	}
-
-	if (!r_sys_cmdf ("as %s -o %s", ipath, opath)) {
+#if __i386__ || __x86_64__
+	const char *x86as = "as";
+#else
+	const char *x86as = "";
+#endif
+	char *user_ass = r_sys_getenv ("R2_X86AS");
+	if (user_ass) {
+		x86as = user_ass;
+	}
+	if (R_STR_ISEMPTY (x86as)) {
+		eprintf ("Please set R2_X86AS env to define an x86 assembler program");
+		return 1;
+	}
+	bool res = r_sys_cmdf ("%s %s -o %s", x86as, ipath, opath);
+	free (user_ass);
+	if (!res) {
 		const ut8 *begin, *end;
 		close (ofd);
 // r_sys_cmdf ("cat %s", opath);
-		ofd = r_sandbox_open (opath, O_BINARY|O_RDONLY, 0644);
+		ofd = r_sandbox_open (opath, O_BINARY | O_RDONLY, 0644);
 		if (ofd < 0) {
 			free (ipath);
 			free (opath);
@@ -91,11 +100,11 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 
 RAsmPlugin r_asm_plugin_x86_as = {
 	.name = "x86.as",
-	.desc = "Intel X86 GNU Assembler",
+	.desc = "Intel X86 GNU Assembler (Use R2_X86AS env)",
 	.arch = "x86",
 	.license = "LGPL3",
 	// NOTE: 64bits is not supported on OSX's nasm :(
-	.bits = 16|32|64,
+	.bits = 16 | 32 | 64,
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.assemble = &assemble,
 };

@@ -12,6 +12,7 @@ r_flag = library('r_flag', r_flag_sources,
   ],
   install: true,
   implicit_include_directories: false,
+  install_rpath: rpath_lib,
   soversion: r2_libversion
 )
 

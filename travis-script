@@ -46,6 +46,7 @@ if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
     if [ "${ASAN}" == "1" ] ; then
         # -Db_lundef=false required for issue with clang+meson (see https://github.com/mesonbuild/meson/issues/764)
         OPTS="${OPTS} -Db_sanitize=address -Db_lundef=false"
+        export CFLAGS="-DASAN=1 ${CFLAGS}"
     fi
 
     meson --prefix=${TRAVIS_BUILD_DIR}/install ${OPTS} build || exit 1

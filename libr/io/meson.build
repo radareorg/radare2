@@ -84,6 +84,7 @@ r_io = library('r_io', r_io_sources,
   c_args: library_cflags,
   install: true,
   implicit_include_directories: false,
+  install_rpath: rpath_lib,
   soversion: r2_libversion
 )
 

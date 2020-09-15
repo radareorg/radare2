@@ -65,6 +65,7 @@ EOF
 EXPECT=<<EOF
 address: 0x100007f10
 opcode: irg x8, sp, x8
+esilcost: 0
 disasm: irg x8, sp, x8
 pseudo: irg x8,sp,x8 
 mnemonic: irg
@@ -81,6 +82,7 @@ family: sec
 --
 address: 0x100007f14
 opcode: addg x9, x8, 0x20, 0x0
+esilcost: 0
 disasm: addg x9, x8, 0x20, 0x0
 pseudo: addg x9,x8,0x20, 0x0 
 mnemonic: addg

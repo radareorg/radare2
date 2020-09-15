@@ -5,7 +5,7 @@ executable('radare2', 'main.c',
     r_util_dep,
   ],
   install: true,
-  install_rpath: rpath,
+  install_rpath: rpath_exe,
   implicit_include_directories: false
 )
 

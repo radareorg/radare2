@@ -995,7 +995,7 @@ static RList **compute_classes(const RAGraph *g, Sdb *v_nodes, int is_left, int 
 }
 
 static int cmp_dist(const size_t a, const size_t b) {
-	return (int) a < (int) b;
+	return (a < b) - (a > b);
 }
 
 static RGraphNode *get_sibling(const RAGraph *g, const RANode *n, int is_left, int is_adjust_class) {
@@ -1332,11 +1332,11 @@ static void place_single(const RAGraph *g, int l, const RGraphNode *bm, const RG
 }
 
 static int RM_listcmp(const struct len_pos_t *a, const struct len_pos_t *b) {
-	return a->pos < b->pos;
+	return (a->pos < b->pos) - (a->pos > b->pos);
 }
 
 static int RP_listcmp(const struct len_pos_t *a, const struct len_pos_t *b) {
-	return a->pos >= b->pos;
+	return (a->pos > b->pos) - (a->pos < b->pos);
 }
 
 static void collect_changes(const RAGraph *g, int l, const RGraphNode *b, int from_up, int s, int e, RList *list, int is_left) {

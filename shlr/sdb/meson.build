@@ -64,7 +64,7 @@ libsdb_sources = [
 
 sdb_inc = include_directories(['.', 'src'])
 
-libsdb = both_libraries('libsdb', libsdb_sources,
+libsdb = both_libraries('sdb', libsdb_sources,
   include_directories: sdb_inc,
   implicit_include_directories: false,
   soversion: sdb_libversion,
@@ -90,6 +90,7 @@ else
     'src/ls.h',
     'src/sdb.h',
     'src/sdbht.h',
+    'src/set.h',
     'src/types.h'
   ]
   install_headers(include_files, subdir: 'sdb')
@@ -117,7 +118,7 @@ pkgconfig_mod.generate(
   filebase: 'sdb',
   libraries: [libsdb.get_shared_lib()],
   description: 'Simple DataBase',
-  subdirs: ['sdb', '.'],
+  subdirs: ['sdb'],
   version: sdb_version,
   url: 'https://github.com/radareorg/sdb'
 )

@@ -57,16 +57,6 @@ static void variable_free(Variable *var) {
 	free (var);
 }
 
-static inline bool is_parsable_tag(ut64 tag_code) {
-	return (tag_code == DW_TAG_structure_type ||
-		tag_code == DW_TAG_enumeration_type ||
-		tag_code == DW_TAG_class_type ||
-		tag_code == DW_TAG_subprogram ||
-		tag_code == DW_TAG_union_type ||
-		tag_code == DW_TAG_base_type ||
-		tag_code == DW_TAG_typedef);
-}
-
 /* return -1 if attr isn't found */
 static inline st32 find_attr_idx(const RBinDwarfDie *die, st32 attr_name) {
 	st32 i;
@@ -120,7 +110,7 @@ static bool strbuf_rev_prepend_char(RStrBuf *sb, const char *s, int c) {
 		memcpy (ns + idx, s, l);
 		memcpy (ns + idx + l, sb_str + idx, sb->len - idx);
 		ns[newlen] = 0;
-		ret = r_strbuf_set (sb, ns);
+		ret = r_strbuf_set (sb, ns) != NULL;
 		free (ns);
 	}
 	return ret;
@@ -155,7 +145,7 @@ static bool strbuf_rev_append_char(RStrBuf *sb, const char *s, const char *needl
 		memcpy (ns + idx, s, l);
 		memcpy (ns + idx + l, sb_str + idx, sb->len - idx);
 		ns[newlen] = 0;
-		ret = r_strbuf_set (sb, ns);
+		ret = r_strbuf_set (sb, ns) != NULL;
 		free (ns);
 	}
 	return ret;
