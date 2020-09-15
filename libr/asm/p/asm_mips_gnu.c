@@ -52,13 +52,13 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 
 	/* prepare disassembler */
 	if (a->cpu && a->cpu != pre_cpu) {
-		if (r_str_casecmp (a->cpu, "mips64r2") == 0) {
+		if (!r_str_casecmp (a->cpu, "mips64r2")) {
 			disasm_obj.mach = bfd_mach_mipsisa64r2;
-		} else if (r_str_casecmp (a->cpu, "mips32r2") == 0) {
+		} else if (!r_str_casecmp (a->cpu, "mips32r2")) {
 			disasm_obj.mach = bfd_mach_mipsisa32r2;
-		} else if (r_str_casecmp (a->cpu, "mips64") == 0) {
+		} else if (!r_str_casecmp (a->cpu, "mips64")) {
 			disasm_obj.mach = bfd_mach_mipsisa64;
-		} else if (r_str_casecmp (a->cpu, "mips32") == 0) {
+		} else if (!r_str_casecmp (a->cpu, "mips32")) {
 			disasm_obj.mach = bfd_mach_mipsisa32;
 		}
 		pre_cpu = a->cpu;

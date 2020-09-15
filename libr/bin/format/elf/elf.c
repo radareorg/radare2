@@ -82,7 +82,7 @@ static inline int UTX_MUL(ut64 *r, ut64 a, ut64 b) {
 /*
  * Return non-zero if HDR identifies an MIPS n64 ELF binary.
  */
-static bool is_elfclass64(Elf_(Ehdr) *h) {
+static inline bool is_elfclass64(Elf_(Ehdr) *h) {
 	return h->e_ident[EI_CLASS] == ELFCLASS64;
 }
 
@@ -103,12 +103,10 @@ static bool is_mips_o32(Elf_(Ehdr) *h) {
 
 	return true;
 }
-
 /*
  * Return non-zero if HDR identifies an MIPS n32 ELF binary.
  */
 static bool is_mips_n32(Elf_(Ehdr) *h) {
-	int res = 1;
 
 	if (h->e_ident[EI_CLASS] != ELFCLASS32) {
 		return false;
@@ -120,7 +118,6 @@ static bool is_mips_n32(Elf_(Ehdr) *h) {
 
 	return true;
 }
-
 enum {
 	X86,
 	X86_64,
@@ -2150,7 +2147,7 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 char* Elf_(r_bin_elf_get_abi)(ELFOBJ *bin) {
 	Elf_(Ehdr)* ehdr =(Elf_(Ehdr) *) &bin->ehdr;
 
-	if (ehdr->e_machine == EM_MIPS){
+	if (ehdr->e_machine == EM_MIPS) {
 		if (is_elfclass64 (ehdr)) {
 			return strdup ("n64");
 		}
