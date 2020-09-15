@@ -1,13 +1,17 @@
 NAME=arpg
 FILE=-
 CMDS=<<EOF
-arpg scripts/gdb-reg-profile.txt
+arpg scripts/gdb-reg-profile.txt > $a
 ?v $?
-arpg scripts/gdb-reg-profile-invalid.txt
+$a~?
+arpg scripts/gdb-reg-profile-invalid.txt > $b
 ?v $?
+$b~?
 EOF
 EXPECT=<<EOF
 0x0
+98
 0x1
+0
 EOF
 RUN
