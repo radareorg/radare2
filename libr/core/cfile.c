@@ -1075,7 +1075,6 @@ R_API int r_core_file_list(RCore *core, int mode) {
 		case 'j': {  // "oj"
 			PJ * pj = pj_new ();
 			pj_o (pj);
-			pj_a (pj);
 			pj_ks (pj, "raised", r_str_bool (core->io->desc->fd == f->fd));
 			pj_ki (pj, "fd", (int) f->fd);
 			pj_ks (pj, "uri", desc->uri);
@@ -1084,7 +1083,7 @@ R_API int r_core_file_list(RCore *core, int mode) {
 			pj_ki (pj, "size", (int) r_io_desc_size (desc));
 			pj_end (pj);
 			pj_end (pj);
-			r_cons_printf ("%s\n", pj_string (pj));
+			r_cons_println (pj_string (pj));
 			pj_free (pj);
 			break;
 		}
