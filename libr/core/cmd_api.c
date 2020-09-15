@@ -7,6 +7,8 @@
 #include <r_cmd.h>
 #include <r_util.h>
 
+#define MAX_CHILDREN_SHOW 7
+
 static const RCmdDescHelp not_defined_help = {
 	.usage = "Usage not defined",
 	.summary = "Help summary not defined",
@@ -418,17 +420,49 @@ static void fill_usage_strbuf(RStrBuf *sb, RCmdDesc *cd, bool use_color) {
 	r_strbuf_append (sb, "\n");
 }
 
-static size_t update_max_len(RCmdDesc *cd, size_t max_len) {
-	size_t name_len = strlen (cd->name);
-	size_t args_len = strlen0 (cd->help->args_str);
-	if (name_len + args_len > max_len) {
-		return name_len + args_len;
+static char *children_chars(RCmdDesc *cd) {
+	RStrBuf sb;
+	r_strbuf_init (&sb);
+
+	void **it;
+	r_cmd_desc_children_foreach (cd, it) {
+		RCmdDesc *child = *(RCmdDesc **)it;
+		if (r_str_startswith (child->name, cd->name) && strlen (child->name) == strlen (cd->name) + 1) {
+			r_strbuf_appendf (&sb, "%c", child->name[strlen (cd->name)]);
+		}
 	}
-	return max_len;
+
+	if (r_strbuf_is_empty (&sb) || r_strbuf_length (&sb) >= MAX_CHILDREN_SHOW) {
+		r_strbuf_fini (&sb);
+		return strdup ("?");
+	}
+
+	return r_strbuf_drain_nofree (&sb);
 }
 
-static void print_child_help(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use_color) {
-	size_t str_len = strlen (cd->name) + strlen0 (cd->help->args_str);
+static bool show_children_shortcut(RCmdDesc *cd, RCmdDesc *parent) {
+	return (cd->n_children && parent) || cd->type == R_CMD_DESC_TYPE_OLDINPUT;
+}
+
+static size_t calc_padding_len(RCmdDesc *cd, RCmdDesc *parent) {
+	size_t name_len = strlen (cd->name);
+	size_t args_len = strlen0 (cd->help->args_str);
+	size_t children_length = 0;
+	if (show_children_shortcut (cd, parent)) {
+		char *children_s = children_chars (cd);
+		children_length = strlen (children_s) + 2;
+		free (children_s);
+	}
+	return name_len + args_len + children_length;
+}
+
+static size_t update_max_len(RCmdDesc *cd, size_t max_len, RCmdDesc *parent) {
+	size_t val = calc_padding_len (cd, parent);
+	return val > max_len? val: max_len;
+}
+
+static void print_child_help(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use_color, RCmdDesc *parent) {
+	size_t str_len = calc_padding_len (cd, parent);
 	size_t padding = str_len < max_len? max_len - str_len: 0;
 	const char *cd_args_str = cd->help->args_str? cd->help->args_str: "";
 	const char *cd_summary = cd->help->summary? cd->help->summary: "";
@@ -439,8 +473,14 @@ static void print_child_help(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use
 		   *pal_input_color = use_color? cons->context->pal.input: "",
 		   *pal_reset = use_color? cons->context->pal.reset: "";
 
-	r_strbuf_appendf (sb, "| %s%s%s%s %*s%s# %s%s\n", pal_input_color, cd->name,
-		pal_args_color, cd_args_str, padding, "", pal_help_color, cd_summary, pal_reset);
+	r_strbuf_appendf (sb, "| %s%s", pal_input_color, cd->name);
+	if (show_children_shortcut (cd, parent)) {
+		char *children_s = children_chars (cd);
+		r_strbuf_appendf (sb, "%s[%s]", pal_args_color, children_s);
+		free (children_s);
+	}
+	r_strbuf_appendf (sb, "%s%s", pal_args_color, cd_args_str);
+	r_strbuf_appendf (sb, " %*s%s# %s%s\n", padding, "", pal_help_color, cd_summary, pal_reset);
 }
 
 static char *inner_get_help(RCmd *cmd, RCmdDesc *cd, bool use_color) {
@@ -451,19 +491,19 @@ static char *inner_get_help(RCmd *cmd, RCmdDesc *cd, bool use_color) {
 	size_t max_len = 0;
 
 	if (cd->d.argv_data.cb) {
-		max_len = update_max_len (cd, max_len);
+		max_len = update_max_len (cd, max_len, NULL);
 	}
 	r_cmd_desc_children_foreach (cd, it_cd) {
 		RCmdDesc *child = *(RCmdDesc **)it_cd;
-		max_len = update_max_len (child, max_len);
+		max_len = update_max_len (child, max_len, cd);
 	}
 
 	if (cd->d.argv_data.cb) {
-		print_child_help (sb, cd, max_len, use_color);
+		print_child_help (sb, cd, max_len, use_color, NULL);
 	}
 	r_cmd_desc_children_foreach (cd, it_cd) {
 		RCmdDesc *child = *(RCmdDesc **)it_cd;
-		print_child_help (sb, child, max_len, use_color);
+		print_child_help (sb, child, max_len, use_color, cd);
 	}
 	return r_strbuf_drain (sb);
 }
