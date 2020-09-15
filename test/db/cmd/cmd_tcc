@@ -32,29 +32,29 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
 ?e 1
-tcc eax jeje(ebx, ecx)
+"tcc eax jeje(ebx, ecx)"
 tcc jeje
 tcc- jeje
 ?e 2
-tcc eax    jeje(ebx, ecx)
+"tcc eax    jeje(ebx, ecx)"
 tcc   jeje
-tcc-jeje
+tcc- jeje
 ?e 3
-tcc eax  jeje   (ebx, ecx)
+"tcc eax  jeje   (ebx, ecx)"
 tcc   jeje
-tcc-jeje
+tcc- jeje
 ?e 4
-tcc   eax  jeje   (ebx, ecx)
+"tcc   eax  jeje   (ebx, ecx)"
 tcc jeje
-tcc-jeje
+tcc- jeje
 ?e 5
-tcc   eax  jeje   ( ebx, ecx )
+"tcc   eax  jeje   ( ebx, ecx )"
 tcc jeje
-tcc-jeje
+tcc- jeje
 ?e 6
-tcc   eax  jeje   ( 	ebx  ,  ecx  )
+"tcc   eax  jeje   ( 	ebx  ,  ecx  )"
 tcc jeje
-tcc-jeje
+tcc- jeje
 EOF
 EXPECT=<<EOF
 1
