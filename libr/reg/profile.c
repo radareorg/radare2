@@ -262,7 +262,8 @@ R_API bool r_reg_set_profile(RReg *reg, const char *profile) {
 	return ret;
 }
 
-static bool gdb_to_r2_profile(char *gdb) {
+static char *gdb_to_r2_profile(char *gdb) {
+	RStrBuf *sb = r_strbuf_new ("");
 	char *ptr = gdb, *ptr1, *gptr, *gptr1;
 	char name[16], groups[128], type[16];
 	const int all = 1, gpr = 2, save = 4, restore = 8, float_ = 16,
@@ -275,7 +276,7 @@ static bool gdb_to_r2_profile(char *gdb) {
 	// It's possible someone includes the heading line too. Skip it
 	if (r_str_startswith (ptr, "Name")) {
 		if (!(ptr = strchr (ptr, '\n'))) {
-			return false;
+			return NULL;
 		}
 		ptr++;
 	}
@@ -304,7 +305,7 @@ static bool gdb_to_r2_profile(char *gdb) {
 		// If name is '', then skip
 		if (r_str_startswith (name, "''")) {
 			if (!ptr1) {
-				return true;
+				goto drain;
 			}
 			ptr = ptr1 + 1;
 			continue;
@@ -312,7 +313,7 @@ static bool gdb_to_r2_profile(char *gdb) {
 		// If size is 0, skip
 		if (size == 0) {
 			if (!ptr1) {
-				return true;
+				goto drain;
 			}
 			ptr = ptr1 + 1;
 			continue;
@@ -351,7 +352,7 @@ static bool gdb_to_r2_profile(char *gdb) {
 		// If type is not defined, skip
 		if (!*type) {
 			if (!ptr1) {
-				return true;
+				goto drain;
 			}
 			ptr = ptr1 + 1;
 			continue;
@@ -361,21 +362,22 @@ static bool gdb_to_r2_profile(char *gdb) {
 			type_bits |= gpr;
 		}
 		// Print line
-		eprintf ("%s\t%s\t.%d\t%d\t0\n",
+		r_strbuf_appendf (sb, "%s\t%s\t.%d\t%d\t0\n",
 			// Ref: Comment above about more register type mappings
 			((type_bits & mmx) || (type_bits & float_) || (type_bits & sse)) ? "fpu" : "gpr",
 			name, size * 8, offset);
 		// Go to next line
 		if (!ptr1) {
-			return true;
+			goto drain;
 		}
 		ptr = ptr1 + 1;
 		continue;
 	}
-	return true;
+drain:
+	return r_strbuf_drain (sb);
 }
 
-R_API bool r_reg_parse_gdb_profile(const char *profile_file) {
+R_API char *r_reg_parse_gdb_profile(const char *profile_file) {
 	char *base, *str = NULL;
 	if (!(str = r_file_slurp (profile_file, NULL))) {
 		if ((base = r_sys_getenv (R_LIB_ENV))) {
@@ -390,7 +392,7 @@ R_API bool r_reg_parse_gdb_profile(const char *profile_file) {
 		eprintf ("r_reg_parse_gdb_profile: Cannot find '%s'\n", profile_file);
 		return false;
 	}
-	bool ret = gdb_to_r2_profile (str);
+	char *ret = gdb_to_r2_profile (str);
 	free (str);
 	return ret;
 }

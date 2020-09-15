@@ -887,7 +887,7 @@ static const char *radare_argv[] = {
 	"ao?", "ao", "aoj", "aoe", "aor", "aos", "aom", "aod", "aoda", "aoc", "ao*",
 	"aO", "ap",
 	"ar?", "ar", "ar0", "ara?", "ara", "ara+", "ara-", "aras", "arA", "arC", "arr", "arrj", "ar=",
-	"arb", "arc", "ard", "arn", "aro", "arp?", "arp", "arpi", "arp.", "arpj", "arps",
+	"arb", "arc", "ard", "arn", "aro", "arp?", "arp", "arpi", "arpg", "arp.", "arpj", "arps",
 	"ars", "art", "arw",
 	"as?", "as", "asc", "asca", "asf", "asj", "asl", "ask",
 	"av?", "av", "avj", "av*", "avr", "avra", "avraj", "avrr", "avrD",
@@ -2352,7 +2352,7 @@ static void __init_autocomplete_default (RCore* core) {
 	};
 	const char *files[] = {
 		".", "..", ".*", "/F", "/m", "!", "!!", "#!c", "#!v", "#!cpipe", "#!vala",
-		"#!rust", "#!zig", "#!pipe", "#!python", "aeli", "arp", "dmd", "drp", "o",
+		"#!rust", "#!zig", "#!pipe", "#!python", "aeli", "arp", "arpg", "dmd", "drp", "drpg", "o",
 		"idp", "idpi", "L", "obf", "o+", "oc", "r2", "rabin2", "rasm2", "rahash2", "rax2",
 		"rafind2", "cd", "on", "op", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",
 		"/m", "zos", "zfd", "zfs", "zfz", "cat", "wta", "wtf", "wxf", "dml", "vi",
