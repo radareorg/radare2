@@ -15,3 +15,47 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# NAME=r2 remote webserver
+# BROKEN=1
+# FILE=http://example.org
+# CMDS=<<EOF
+# e http.sandbox=false
+# e http.port=9091
+# # =h
+# =+ http://127.0.0.1:9091/cmd/
+# =
+# =0 ?e hello remote world
+# EOF
+# EXPECT=<<EOF
+# 0 fd:-1 http://127.0.0.1:9091/cmd/
+# hello remote world
+# 
+# EOF
+# EXPECT_ERR=<<EOF
+# Connected to: 'http://127.0.0.1'
+# EOF
+# RUN
+
+NAME=r2 remote webserver two
+FILE=--
+CMDS=<<EOF
+!r2 -e http.sandbox=false -e http.port=9292 -c=h /bin/ls &
+sleep 1
+=+ http://127.0.0.1:9292/cmd/
+=
+=0 ?e hello remote world
+!pkill r2
+EOF
+EXPECT=<<EOF
+0 fd:-1 http://127.0.0.1:9292/cmd/
+hello remote world
+
+EOF
+EXPECT_ERR=<<EOF
+Starting http server...
+open http://localhost:9292/
+r2 -C http://localhost:9292/cmd/
+Connected to: 'http://127.0.0.1'
+EOF
+RUN
+

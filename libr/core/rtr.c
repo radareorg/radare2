@@ -1,4 +1,4 @@
-/* radare - Copyright 2009-2019 - pancake, nibble */
+/* radare - Copyright 2009-2020 - pancake, nibble */
 
 #include "r_core.h"
 #include "r_socket.h"
@@ -194,7 +194,7 @@ R_API int r_core_rtr_http_stop(RCore *u) {
 	return 0;
 }
 
-static char *rtr_dir_files (const char *path) {
+static char *rtr_dir_files(const char *path) {
 	char *ptr = strdup ("<html><body>\n");
 	const char *file;
 	RListIter *iter;
@@ -213,13 +213,13 @@ static char *rtr_dir_files (const char *path) {
 }
 
 #if __UNIX__
-static void dietime (int sig) {
+static void dietime(int sig) {
 	eprintf ("It's Die Time!\n");
 	exit (0);
 }
 #endif
 
-static void activateDieTime (RCore *core) {
+static void activateDieTime(RCore *core) {
 	int dt = r_config_get_i (core->config, "http.dietime");
 	if (dt > 0) {
 #if __UNIX__
@@ -293,7 +293,7 @@ static int write_big_reg(char *buf, ut64 sz, const utX *val, int regsize, bool b
 	}
 }
 
-static int swap_big_regs (char *dest, ut64 sz, const char *src, int regsz) {
+static int swap_big_regs(char *dest, ut64 sz, const char *src, int regsz) {
 	utX val;
 	char sdup[128] = {0};
 	if (!src || !src[0] || !src[1]) {
@@ -943,7 +943,7 @@ static bool r_core_rtr_rap_run(RCore *core, const char *input) {
 	// r_core_cmdf (core, "o rap://%s", input);
 }
 
-static RThreadFunctionRet r_core_rtr_rap_thread (RThread *th) {
+static RThreadFunctionRet r_core_rtr_rap_thread(RThread *th) {
 	if (!th) {
 		return false;
 	}
