@@ -4658,8 +4658,11 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			r_core_cmd_help (core, help_msg);
 		} break;
 		default:
-			r_cons_printf ("%d\n", r_list_length (
-						core->dbg->reg->regset[0].pool));
+			{
+				void *p = core->dbg->reg->regset[0].pool;
+				int len = p? r_list_length (p): 0;
+				r_cons_printf ("%d\n", len);
+			}
 			break;
 		}
 		break;

@@ -600,6 +600,9 @@ static int showreg(RCore *core, const char *str) {
 	if (role != -1) {
 		rname = r_reg_get_name (core->dbg->reg, role);
 	}
+	if (!rname) {
+		return 0;
+	}
 	r = r_reg_get (core->dbg->reg, rname , -1);
 	if (r) {
 		ut64 off;
@@ -2014,6 +2017,10 @@ static void show_drpi(RCore *core) {
 		const char *nmi = r_reg_get_type (i);
 		r_cons_printf ("regset %d (%s)\n", i, nmi);
 		RRegSet *rs = &core->anal->reg->regset[i];
+		if (!rs || !rs->arena) {
+			r_cons_printf ("* arena %s no\n", r_reg_get_type (i));
+			continue;
+		}
 		r_cons_printf ("* arena %s size %d\n", r_reg_get_type (i), rs->arena->size);
 		r_list_foreach (rs->regs, iter, ri) {
 			const char *tpe = r_reg_get_type (ri->type);
@@ -2099,7 +2106,9 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 			RRegSet *rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
 			if (rs) {
 				r_cons_printf ("%d\n", rs->arena->size);
-			} else eprintf ("Cannot find GPR register arena.\n");
+			} else {
+				eprintf ("Cannot find GPR register arena.\n");
+			}
 		}
 		break;
 	case 'j': // "drpj" "arpj"
