@@ -124,7 +124,6 @@ pd 1 @ 0x0000b48a
 pd 1 @ 0x0001000d
 EOF
 EXPECT=<<EOF
-(reloc._TIFFVGetField)
 |           0x0000b469      e80e000000     call sym._TIFFVGetField     ; RELOC 32 _TIFFVGetField @ 0x0000b47c
 sym._TIFFGetField 0xb469 [CALL] call sym._TIFFVGetField
 |           0x0000b48a      e87e4b0000     call _TIFFFindField
@@ -142,7 +141,6 @@ pd 2 @ sym.main+6
 EOF
 EXPECT=<<EOF
             0x0000006a      4c8d051a0000.  lea r8, [0x0000008b]        ; sym..data ; "Win64 assembly"; RELOC 32 .data @ 0x0000008b
-(reloc..data)
             0x00000071      488d15220000.  lea rdx, [0x0000009a]       ; str.Coffee_time ; "Coffee time!"; RELOC 32 .data @ 0x0000008b + 0xf
 EOF
 RUN

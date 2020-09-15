@@ -2420,3 +2420,139 @@ EXPECT=<<EOF
 0x00000004
 EOF
 RUN
+
+NAME=r0 and mem correct after vstmia
+FILE=malloc://0x200
+CMDS=<<EOF
+e esil.verbose=2
+e asm.arch=arm
+e asm.bits=32
+wx 041b80ec # vstmia r0, {d1, d2}
+ar r0=0x100
+ar d1=0x01c00df0fecadec0
+ar d2=0xaaaaaaaaaaaaaaaa
+aes
+aer r0
+aer pc
+p8 16 @0x100
+EOF
+EXPECT=<<EOF
+0x00000100
+0x00000004
+c0decafef00dc001aaaaaaaaaaaaaaaa
+EOF
+RUN
+
+NAME=r0 and mem correct after vstmia writeback
+FILE=malloc://0x200
+CMDS=<<EOF
+e esil.verbose=2
+e asm.arch=arm
+e asm.bits=32
+wx 041ba0ec # vstmia r0!, {d1, d2}
+ar r0=0x100
+ar d1=0x01c00df0fecadec0
+ar d2=0xaaaaaaaaaaaaaaaa
+aes
+aer r0
+aer pc
+p8 16 @0x100
+EOF
+EXPECT=<<EOF
+0x00000110
+0x00000004
+c0decafef00dc001aaaaaaaaaaaaaaaa
+EOF
+RUN
+
+
+NAME=r0 and mem correct after vstmdb
+FILE=malloc://0x200
+CMDS=<<EOF
+e esil.verbose=2
+e asm.arch=arm
+e asm.bits=32
+wx 041b20ed # vstmdb r0!, {d1, d2}
+ar r0=0x110
+ar d1=0x01c00df0fecadec0
+ar d2=0xaaaaaaaaaaaaaaaa
+aes
+aer r0
+aer pc
+p8 16 @0x100
+EOF
+EXPECT=<<EOF
+0x00000100
+0x00000004
+c0decafef00dc001aaaaaaaaaaaaaaaa
+EOF
+RUN
+
+NAME=regs correct after vldmia
+FILE=malloc://0x200
+CMDS=<<EOF
+e esil.verbose=2
+e asm.arch=arm
+e asm.bits=32
+wx 080b93ec # vldmia r3, {d0-d3}
+wx c0decafef00dc001aaaaaaaaaaaaaaaa @0x100
+ar r3=0x100
+aes
+aer r3
+aer pc
+aer d0
+aer d1
+EOF
+EXPECT=<<EOF
+0x00000100
+0x00000004
+0x1c00df0fecadec0
+0xaaaaaaaaaaaaaaaa
+EOF
+RUN
+
+NAME=regs correct after vldmia writeback
+FILE=malloc://0x200
+CMDS=<<EOF
+e esil.verbose=2
+e asm.arch=arm
+e asm.bits=32
+wx 080bb4ec # vldmia r4!, {d0-d3}
+wx c0decafef00dc001aaaaaaaaaaaaaaaa @0x100
+ar r4=0x100
+aes
+aer r4
+aer pc
+aer d0
+aer d1
+EOF
+EXPECT=<<EOF
+0x00000120
+0x00000004
+0x1c00df0fecadec0
+0xaaaaaaaaaaaaaaaa
+EOF
+RUN
+
+NAME=regs correct after vldmdb
+FILE=malloc://0x200
+CMDS=<<EOF
+e esil.verbose=2
+e asm.arch=arm
+e asm.bits=32
+wx 080b35ed # vldmdb r5!, {d0-d3}
+wx c0decafef00dc001aaaaaaaaaaaaaaaa @0x100
+ar r5=0x120
+aes
+aer r5
+aer pc
+aer d0
+aer d1
+EOF
+EXPECT=<<EOF
+0x00000100
+0x00000004
+0x1c00df0fecadec0
+0xaaaaaaaaaaaaaaaa
+EOF
+RUN

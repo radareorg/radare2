@@ -57,16 +57,6 @@ static void variable_free(Variable *var) {
 	free (var);
 }
 
-static inline bool is_parsable_tag(ut64 tag_code) {
-	return (tag_code == DW_TAG_structure_type ||
-		tag_code == DW_TAG_enumeration_type ||
-		tag_code == DW_TAG_class_type ||
-		tag_code == DW_TAG_subprogram ||
-		tag_code == DW_TAG_union_type ||
-		tag_code == DW_TAG_base_type ||
-		tag_code == DW_TAG_typedef);
-}
-
 /* return -1 if attr isn't found */
 static inline st32 find_attr_idx(const RBinDwarfDie *die, st32 attr_name) {
 	st32 i;
@@ -120,7 +110,7 @@ static bool strbuf_rev_prepend_char(RStrBuf *sb, const char *s, int c) {
 		memcpy (ns + idx, s, l);
 		memcpy (ns + idx + l, sb_str + idx, sb->len - idx);
 		ns[newlen] = 0;
-		ret = r_strbuf_set (sb, ns);
+		ret = r_strbuf_set (sb, ns) != NULL;
 		free (ns);
 	}
 	return ret;
@@ -155,7 +145,7 @@ static bool strbuf_rev_append_char(RStrBuf *sb, const char *s, const char *needl
 		memcpy (ns + idx, s, l);
 		memcpy (ns + idx + l, sb_str + idx, sb->len - idx);
 		ns[newlen] = 0;
-		ret = r_strbuf_set (sb, ns);
+		ret = r_strbuf_set (sb, ns) != NULL;
 		free (ns);
 	}
 	return ret;
@@ -510,7 +500,7 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 		kind = R_ANAL_BASE_TYPE_KIND_STRUCT;
 	}
 
-	RAnalBaseType *base_type = r_anal_new_base_type (kind);
+	RAnalBaseType *base_type = r_anal_base_type_new (kind);
 	if (!base_type) {
 		return;
 	}
@@ -536,8 +526,6 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 
 	base_type->size = get_die_size (die);
 
-	r_vector_init (&base_type->struct_data.members,
-		sizeof (RAnalStructMember), struct_type_member_free, NULL);
 	RAnalStructMember member = { 0 };
 	// Parse out all members, can this in someway be extracted to a function?
 	if (die->has_children) {
@@ -569,7 +557,7 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 	}
 	r_anal_save_base_type (ctx->anal, base_type);
 cleanup:
-	r_anal_free_base_type (base_type);
+	r_anal_base_type_free (base_type);
 }
 
 /**
@@ -582,7 +570,7 @@ cleanup:
 static void parse_enum_type(Context *ctx, ut64 idx) {
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
 
-	RAnalBaseType *base_type = r_anal_new_base_type (R_ANAL_BASE_TYPE_KIND_ENUM);
+	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ENUM);
 	if (!base_type) {
 		return;
 	}
@@ -601,8 +589,6 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 		base_type->type = r_strbuf_drain_nofree (&strbuf);
 	}
 
-	r_vector_init (&base_type->enum_data.cases,
-		sizeof (RAnalEnumCase), enum_type_case_free, NULL);
 	RAnalEnumCase cas;
 	if (die->has_children) {
 		int child_depth = 1; // Direct children of the node
@@ -634,7 +620,7 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 	}
 	r_anal_save_base_type (ctx->anal, base_type);
 cleanup:
-	r_anal_free_base_type (base_type);
+	r_anal_base_type_free (base_type);
 }
 
 /**
@@ -679,14 +665,14 @@ static void parse_typedef(Context *ctx, ut64 idx) {
 	if (!name) { // type has to have a name for now
 		goto cleanup;
 	}
-	RAnalBaseType *base_type = r_anal_new_base_type (R_ANAL_BASE_TYPE_KIND_TYPEDEF);
+	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_TYPEDEF);
 	if (!base_type) {
 		goto cleanup;
 	}
 	base_type->name = name;
 	base_type->type = type;
 	r_anal_save_base_type (ctx->anal, base_type);
-	r_anal_free_base_type (base_type);
+	r_anal_base_type_free (base_type);
 	r_strbuf_fini (&strbuf);
 	return;
 cleanup:
@@ -729,14 +715,14 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 	if (!name) { // type has to have a name for now
 		return;
 	}
-	RAnalBaseType *base_type = r_anal_new_base_type (R_ANAL_BASE_TYPE_KIND_ATOMIC);
+	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ATOMIC);
 	if (!base_type) {
 		return;
 	}
 	base_type->name = name;
 	base_type->size = size;
 	r_anal_save_base_type (ctx->anal, base_type);
-	r_anal_free_base_type (base_type);
+	r_anal_base_type_free (base_type);
 }
 
 static const char *get_specification_die_name(const RBinDwarfDie *die) {

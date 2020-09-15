@@ -1306,7 +1306,7 @@ f reloc.test @ 0x1
 pdJ 1 @ 0x0
 EOF
 EXPECT=<<EOF
-[{"offset":0,"text":"(reloc.test)"},{"offset":0,"text":"            0x00000000      0000           add byte [rax], al"}]
+[{"offset":0,"text":"            0x00000000      0000           add byte [rax], al"}]
 EOF
 RUN
 

@@ -101,7 +101,7 @@ static void parse_enum(const RAnal *anal, SType *type, RList *types) {
 		type_info->get_name &&
 		type_info->get_utype);
 
-	RAnalBaseType *base_type = r_anal_new_base_type (R_ANAL_BASE_TYPE_KIND_ENUM);
+	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ENUM);
 	if (!base_type) {
 		return;
 	}
@@ -123,9 +123,6 @@ static void parse_enum(const RAnal *anal, SType *type, RList *types) {
 	}
 	RList *members;
 	type_info->get_members (type_info, &members);
-
-	r_vector_init (&base_type->enum_data.cases,
-		sizeof (RAnalEnumCase), enum_type_case_free, NULL);
 
 	RListIter *it = r_list_iterator (members);
 	while (r_list_iter_next (it)) {
@@ -149,7 +146,7 @@ cleanup:
 	if (to_free_name) {
 		R_FREE (name);
 	}
-	r_anal_free_base_type (base_type);
+	r_anal_base_type_free (base_type);
 	return;
 }
 
@@ -169,12 +166,10 @@ static void parse_structure(const RAnal *anal, SType *type, RList *types) {
 		type_info->get_name &&
 		type_info->get_val);
 
-	RAnalBaseType *base_type = r_anal_new_base_type (R_ANAL_BASE_TYPE_KIND_STRUCT);
+	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
 	if (!base_type) {
 		return;
 	}
-	r_vector_init (&base_type->struct_data.members,
-		sizeof (RAnalStructMember), struct_type_member_free, NULL);
 
 	char *name = NULL;
 	type_info->get_name (type_info, &name);
@@ -214,7 +209,7 @@ cleanup:
 	if (to_free_name) {
 		R_FREE (name);
 	}
-	r_anal_free_base_type (base_type);
+	r_anal_base_type_free (base_type);
 	return;
 }
 

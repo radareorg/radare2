@@ -23,6 +23,7 @@ r_magic = library('r_magic', r_magic_sources,
   dependencies: r_magic_deps,
   install: true,
   implicit_include_directories: false,
+  install_rpath: rpath_lib,
   soversion: r2_libversion
 )
 

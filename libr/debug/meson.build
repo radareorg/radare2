@@ -105,6 +105,7 @@ r_debug = library('r_debug', r_debug_sources,
   dependencies: r_debug_deps,
   install: true,
   implicit_include_directories: false,
+  install_rpath: rpath_lib,
   soversion: r2_libversion
 )
 

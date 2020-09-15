@@ -18,56 +18,6 @@ static char *is_type(char *type) {
 	return NULL;
 }
 
-/*!
- * \brief Save the size of the given datatype in sdb
- * \param sdb_types pointer to the sdb for types
- * \param name the datatype whose size if to be stored
- */
-static void save_type_size(Sdb *sdb_types, char *name) {
-	const char *type = NULL;
-	r_return_if_fail (sdb_types && name);
-	if (!sdb_exists (sdb_types, name) || !(type = sdb_const_get (sdb_types, name, 0))) {
-		return;
-	}
-	char *type_name_size = r_str_newf ("%s.%s.%s", type, name, "!size");
-	r_return_if_fail (type_name_size);
-	int size = r_type_get_bitsize (sdb_types, name);
-	sdb_set (sdb_types, type_name_size, sdb_fmt ("%d", size), 0);
-	free (type_name_size);
-}
-
-/*!
- * \brief Save the sizes of the datatypes which have been parsed
- * \param core pointer to radare2 core
- * \param parsed the parsed c string in sdb format
- */
-static void __save_parsed_type_size(RAnal *anal, const char *parsed) {
-	r_return_if_fail (anal && parsed);
-	char *str = strdup (parsed);
-	if (str) {
-		char *ptr = NULL;
-		int offset = 0;
-		while ((ptr = strstr (str + offset, "=struct\n")) ||
-			(ptr = strstr (str + offset, "=union\n"))) {
-			*ptr = 0;
-			if (str + offset == ptr) {
-				break;
-			}
-			char *name = ptr - 1;
-			while (name > str && *name != '\n') {
-				name--;
-			}
-			if (*name == '\n') {
-				name++;
-			}
-			save_type_size (anal->sdb_types, name);
-			*ptr = '=';
-			offset = ptr + 1 - str;
-		}
-		free (str);
-	}
-}
-
 static char *get_type_data(Sdb *sdb_types, const char *type, const char *sname) {
 	char *key = r_str_newf ("%s.%s", type, sname);
 	if (!key) {
@@ -127,7 +77,6 @@ R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed) {
 
 	// Now add the type to sdb.
 	sdb_query_lines (anal->sdb_types, parsed);
-	__save_parsed_type_size (anal, parsed);
 }
 
 static int typecmp(const void *a, const void *b) {
@@ -170,23 +119,18 @@ R_IPI void union_type_member_free(void *e, void *user) {
 static RAnalBaseType *get_enum_type(RAnal *anal, const char *sname) {
 	r_return_val_if_fail (anal && sname, NULL);
 
-	RAnalBaseType *base_type = R_NEW0 (RAnalBaseType);
+	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ENUM);
 	if (!base_type) {
 		return NULL;
 	}
-	base_type->kind = R_ANAL_BASE_TYPE_KIND_ENUM;
-
-	RAnalBaseTypeEnum base_enum;
 
 	char *members = get_type_data (anal->sdb_types, "enum", sname);
 	if (!members) {
 		goto error;
 	}
 
-	RVector cases;
-	r_vector_init (&cases, sizeof (RAnalEnumCase), enum_type_case_free, NULL);
-
-	if (!r_vector_reserve (&cases, (size_t)sdb_alen (members))) {
+	RVector *cases = &base_type->enum_data.cases;
+	if (!r_vector_reserve (cases, (size_t)sdb_alen (members))) {
 		goto error;
 	}
 
@@ -205,7 +149,7 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sname) {
 
 		RAnalEnumCase cas = { .name = strdup (cur), .val = strtol (value, NULL, 16) };
 
-		void *element = r_vector_push (&cases, &cas); // returns null if  no space available
+		void *element = r_vector_push (cases, &cas); // returns null if no space available
 		if (!element) {
 			goto error;
 		}
@@ -213,38 +157,30 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sname) {
 		sdb_aforeach_next (cur);
 	}
 	free (members);
-	base_enum.cases = cases;
-	base_type->enum_data = base_enum;
 
 	return base_type;
 
 error:
-	free (base_type);
 	free (members);
-	r_vector_fini (&cases);
+	r_anal_base_type_free (base_type);
 	return NULL;
 }
 
 static RAnalBaseType *get_struct_type(RAnal *anal, const char *sname) {
 	r_return_val_if_fail (anal && sname, NULL);
 
-	RAnalBaseType *base_type = R_NEW0 (RAnalBaseType);
+	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
 	if (!base_type) {
 		return NULL;
 	}
-	base_type->kind = R_ANAL_BASE_TYPE_KIND_STRUCT;
-
-	RAnalBaseTypeStruct base_struct;
 
 	char *sdb_members = get_type_data (anal->sdb_types, "struct", sname);
 	if (!sdb_members) {
 		goto error;
 	}
 
-	RVector members;
-	r_vector_init (&members, sizeof (RAnalStructMember), struct_type_member_free, NULL);
-
-	if (!r_vector_reserve (&members, (size_t)sdb_alen (sdb_members))) {
+	RVector *members = &base_type->struct_data.members;
+	if (!r_vector_reserve (members, (size_t)sdb_alen (sdb_members))) {
 		goto error;
 	}
 
@@ -275,7 +211,7 @@ static RAnalBaseType *get_struct_type(RAnal *anal, const char *sname) {
 
 		free (values);
 
-		void *element = r_vector_push (&members, &cas); // returns null if no space available
+		void *element = r_vector_push (members, &cas); // returns null if no space available
 		if (!element) {
 			goto error;
 		}
@@ -283,38 +219,30 @@ static RAnalBaseType *get_struct_type(RAnal *anal, const char *sname) {
 		sdb_aforeach_next (cur);
 	}
 	free (sdb_members);
-	base_struct.members = members;
-	base_type->struct_data = base_struct;
 
 	return base_type;
 
 error:
-	free (base_type);
+	r_anal_base_type_free (base_type);
 	free (sdb_members);
-	r_vector_fini (&members);
 	return NULL;
 }
 
 static RAnalBaseType *get_union_type(RAnal *anal, const char *sname) {
 	r_return_val_if_fail (anal && sname, NULL);
 
-	RAnalBaseType *base_type = R_NEW0 (RAnalBaseType);
+	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_UNION);
 	if (!base_type) {
 		return NULL;
 	}
-	base_type->kind = R_ANAL_BASE_TYPE_KIND_UNION;
-
-	RAnalBaseTypeUnion base_union;
 
 	char *sdb_members = get_type_data (anal->sdb_types, "union", sname);
 	if (!sdb_members) {
 		goto error;
 	}
 
-	RVector members;
-	r_vector_init (&members, sizeof (RAnalUnionMember), union_type_member_free, NULL);
-
-	if (!r_vector_reserve (&members, (size_t)sdb_alen (sdb_members))) {
+	RVector *members = &base_type->union_data.members;
+	if (!r_vector_reserve (members, (size_t)sdb_alen (sdb_members))) {
 		goto error;
 	}
 
@@ -334,7 +262,7 @@ static RAnalBaseType *get_union_type(RAnal *anal, const char *sname) {
 		RAnalUnionMember cas = { .name = strdup (cur), .type = strdup (value) };
 		free (values);
 
-		void *element = r_vector_push (&members, &cas); // returns null if no space available
+		void *element = r_vector_push (members, &cas); // returns null if no space available
 		if (!element) {
 			goto error;
 		}
@@ -342,15 +270,55 @@ static RAnalBaseType *get_union_type(RAnal *anal, const char *sname) {
 		sdb_aforeach_next (cur);
 	}
 	free (sdb_members);
-	base_union.members = members;
-	base_type->union_data = base_union;
 
 	return base_type;
 
 error:
-	free (base_type);
+	r_anal_base_type_free (base_type);
 	free (sdb_members);
-	r_vector_fini (&members);
+	return NULL;
+}
+
+static RAnalBaseType *get_typedef_type(RAnal *anal, const char *sname) {
+	r_return_val_if_fail (anal && R_STR_ISNOTEMPTY (sname), NULL);
+
+	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_TYPEDEF);
+	if (!base_type) {
+		return NULL;
+	}
+
+	base_type->type = get_type_data (anal->sdb_types, "typedef", sname);
+	if (!base_type->type) {
+		goto error;
+	}
+	return base_type;
+
+error:
+	r_anal_base_type_free (base_type);
+	return NULL;
+}
+
+static RAnalBaseType *get_atomic_type(RAnal *anal, const char *sname) {
+	r_return_val_if_fail (anal && R_STR_ISNOTEMPTY (sname), NULL);
+
+	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ATOMIC);
+	if (!base_type) {
+		return NULL;
+	}
+
+	base_type->type = get_type_data (anal->sdb_types, "type", sname);
+	if (!base_type->type) {
+		goto error;
+	}
+
+	RStrBuf key;
+	base_type->size = sdb_num_get (anal->sdb_types, r_strbuf_initf (&key, "type.%s.size", sname), 0);
+	r_strbuf_fini (&key);
+
+	return base_type;
+
+error:
+	r_anal_base_type_free (base_type);
 	return NULL;
 }
 
@@ -360,29 +328,30 @@ R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
 
 	char *sname = r_str_sanitize_sdb_key (name);
 	const char *type = sdb_const_get (anal->sdb_types, sname, NULL);
-
-	// Right now just types: struct, enum, union are supported
-	if (!type || !(strcmp (type, "enum") || strcmp (type, "struct") || strcmp (type, "union"))) {
+	if (!type) {
 		free (sname);
 		return NULL;
 	}
-	// Taking advantage that all 3 types start with distinct letter
-	// because the strcmp condition guarantees that only those will get to this flow
-	RAnalBaseType *base_type = NULL;
 
-	switch (type[0]) {
-	case 's': // struct
+	RAnalBaseType *base_type = NULL;
+	if (!strcmp (type, "struct")) {
 		base_type = get_struct_type (anal, sname);
-		break;
-	case 'e': // enum
+	} else if (!strcmp (type, "enum")) {
 		base_type = get_enum_type (anal, sname);
-		break;
-	case 'u': // union
+	} else if (!strcmp (type, "union")) {
 		base_type = get_union_type (anal, sname);
-		break;
+	} else if (!strcmp (type, "typedef")) {
+		base_type = get_typedef_type (anal, sname);
+	} else if (!strcmp (type, "type")) {
+		base_type = get_atomic_type (anal, sname);
 	}
 
-	free (sname);
+	if (base_type) {
+		base_type->name = sname;
+	} else {
+		free (sname);
+	}
+
 	return base_type;
 }
 
@@ -396,7 +365,6 @@ static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
 		Sdb:
 		name=struct
 		struct.name=param1,param2,paramN
-		struct.name.!size=96
 		struct.name.param1=type,0,0
 		struct.name.param2=type,4,0
 		struct.name.paramN=type,8,0
@@ -417,9 +385,9 @@ static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
 	r_vector_foreach (&type->struct_data.members, member) {
 		// struct.name.param=type,offset,argsize
 		char *member_sname = r_str_sanitize_sdb_key (member->name);
-		r_strbuf_setf (&param_key, "%s.%s.%s", kind, sname, member_sname);
-		r_strbuf_setf (&param_val, "%s,%" PFMT64u ",%" PFMT64u "", member->type, member->offset, 0);
-		sdb_set (anal->sdb_types, r_strbuf_get (&param_key), r_strbuf_get (&param_val), 0);
+		sdb_set (anal->sdb_types,
+			r_strbuf_setf (&param_key, "%s.%s.%s", kind, sname, member_sname),
+			r_strbuf_setf (&param_val, "%s,%" PFMT64u ",%" PFMT64u "", member->type, member->offset, 0), 0);
 		free (member_sname);
 
 		r_strbuf_appendf (&arglist, (i++ == 0) ? "%s" : ",%s", member->name);
@@ -427,12 +395,6 @@ static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
 	// struct.name=param1,param2,paramN
 	char *key = r_str_newf ("%s.%s", kind, sname);
 	sdb_set (anal->sdb_types, key, r_strbuf_get (&arglist), 0);
-	free (key);
-	// struct.name.!size=96
-	key = r_str_newf ("%s.%s.!size", kind, sname);
-	char *val = r_str_newf ("%" PFMT64u "", type->size);
-	sdb_set (anal->sdb_types, key, val, 0);
-	free (val);
 	free (key);
 
 	free (sname);
@@ -452,7 +414,6 @@ static void save_union(const RAnal *anal, const RAnalBaseType *type) {
 	Sdb:
 	name=union
 	union.name=param1,param2,paramN
-	union.name.!size=32
 	union.name.param1=type,0,0
 	union.name.param2=type,0,0
 	union.name.paramN=type,0,0
@@ -473,9 +434,9 @@ static void save_union(const RAnal *anal, const RAnalBaseType *type) {
 	r_vector_foreach (&type->union_data.members, member) {
 		// union.name.arg1=type,offset,argsize
 		char *member_sname = r_str_sanitize_sdb_key (member->name);
-		r_strbuf_setf (&param_key, "%s.%s.%s", kind, sname, member_sname);
-		r_strbuf_setf (&param_val, "%s,%" PFMT64u ",%" PFMT64u "", member->type, member->offset, 0);
-		sdb_set (anal->sdb_types, r_strbuf_get (&param_key), r_strbuf_get (&param_val), 0);
+		sdb_set (anal->sdb_types,
+				r_strbuf_setf (&param_key, "%s.%s.%s", kind, sname, member_sname),
+				r_strbuf_setf (&param_val, "%s,%" PFMT64u ",%" PFMT64u "", member->type, member->offset, 0), 0);
 		free (member_sname);
 
 		r_strbuf_appendf (&arglist, (i++ == 0) ? "%s" : ",%s", member->name);
@@ -483,12 +444,6 @@ static void save_union(const RAnal *anal, const RAnalBaseType *type) {
 	// union.name=arg1,arg2,argN
 	char *key = r_str_newf ("%s.%s", kind, sname);
 	sdb_set (anal->sdb_types, key, r_strbuf_get (&arglist), 0);
-	free (key);
-
-	key = r_str_newf ("%s.%s.!size", kind, sname);
-	char *val = r_str_newf ("%" PFMT64u "", type->size);
-	sdb_set (anal->sdb_types, key, val, 0);
-	free (val);
 	free (key);
 
 	free (sname);
@@ -529,12 +484,13 @@ static void save_enum(const RAnal *anal, const RAnalBaseType *type) {
 	r_vector_foreach (&type->enum_data.cases, cas) {
 		// enum.name.arg1=type,offset,???
 		char *case_sname = r_str_sanitize_sdb_key (cas->name);
-		r_strbuf_setf (&param_key, "enum.%s.%s", sname, case_sname);
-		r_strbuf_setf (&param_val, "0x%" PFMT32x "", cas->val);
-		sdb_set (anal->sdb_types, r_strbuf_get (&param_key), r_strbuf_get (&param_val), 0);
+		sdb_set (anal->sdb_types,
+				r_strbuf_setf (&param_key, "enum.%s.%s", sname, case_sname),
+				r_strbuf_setf (&param_val, "0x%" PFMT32x "", cas->val), 0);
 
-		r_strbuf_setf (&param_key, "enum.%s.0x%" PFMT32x "", sname, cas->val);
-		sdb_set (anal->sdb_types, r_strbuf_get (&param_key), case_sname, 0);
+		sdb_set (anal->sdb_types,
+				r_strbuf_setf (&param_key, "enum.%s.0x%" PFMT32x "", sname, cas->val),
+				case_sname, 0);
 		free (case_sname);
 
 		r_strbuf_appendf (&arglist, (i++ == 0) ? "%s" : ",%s", cas->name);
@@ -542,12 +498,6 @@ static void save_enum(const RAnal *anal, const RAnalBaseType *type) {
 	// enum.name=arg1,arg2,argN
 	char *key = r_str_newf ("enum.%s", sname);
 	sdb_set (anal->sdb_types, key, r_strbuf_get (&arglist), 0);
-	free (key);
-
-	key = r_str_newf ("enum.%s.!size", sname);
-	char *val = r_str_newf ("%" PFMT64u "", type->size);
-	sdb_set (anal->sdb_types, key, val, 0);
-	free (val);
 	free (key);
 
 	free (sname);
@@ -575,9 +525,13 @@ static void save_atomic_type(const RAnal *anal, const RAnalBaseType *type) {
 	r_strbuf_init (&key);
 	r_strbuf_init (&val);
 
-	r_strbuf_setf (&key, "type.%s.size", sname);
-	r_strbuf_setf (&val, "%" PFMT64u "", type->size);
-	sdb_set (anal->sdb_types, r_strbuf_get (&key), r_strbuf_get (&val), 0);
+	sdb_set (anal->sdb_types,
+			r_strbuf_setf (&key, "type.%s.size", sname),
+			r_strbuf_setf (&val, "%" PFMT64u "", type->size), 0);
+
+	sdb_set (anal->sdb_types,
+			r_strbuf_setf (&key, "type.%s", sname),
+			type->type, 0);
 
 	free (sname);
 
@@ -601,9 +555,9 @@ static void save_typedef(const RAnal *anal, const RAnalBaseType *type) {
 	r_strbuf_init (&key);
 	r_strbuf_init (&val);
 
-	r_strbuf_setf (&key, "typedef.%s", sname);
-	r_strbuf_setf (&val, "%s", type->type);
-	sdb_set (anal->sdb_types, r_strbuf_get (&key), r_strbuf_get (&val), 0);
+	sdb_set (anal->sdb_types,
+			r_strbuf_setf (&key, "typedef.%s", sname),
+			r_strbuf_setf (&val, "%s", type->type), 0);
 
 	free (sname);
 
@@ -611,7 +565,7 @@ static void save_typedef(const RAnal *anal, const RAnalBaseType *type) {
 	r_strbuf_fini (&val);
 }
 
-R_API void r_anal_free_base_type(RAnalBaseType *type) {
+R_API void r_anal_base_type_free(RAnalBaseType *type) {
 	r_return_if_fail (type);
 	R_FREE (type->name);
 	R_FREE (type->type);
@@ -635,12 +589,26 @@ R_API void r_anal_free_base_type(RAnalBaseType *type) {
 	R_FREE (type);
 }
 
-R_API RAnalBaseType *r_anal_new_base_type(RAnalBaseTypeKind kind) {
+R_API RAnalBaseType *r_anal_base_type_new(RAnalBaseTypeKind kind) {
 	RAnalBaseType *type = R_NEW0 (RAnalBaseType);
 	if (!type) {
 		return NULL;
 	}
 	type->kind = kind;
+	switch (type->kind) {
+	case R_ANAL_BASE_TYPE_KIND_STRUCT:
+		r_vector_init (&type->struct_data.members, sizeof (RAnalStructMember), struct_type_member_free, NULL);
+		break;
+	case R_ANAL_BASE_TYPE_KIND_ENUM:
+		r_vector_init (&type->enum_data.cases, sizeof (RAnalEnumCase), enum_type_case_free, NULL);
+		break;
+	case R_ANAL_BASE_TYPE_KIND_UNION:
+		r_vector_init (&type->union_data.members, sizeof (RAnalUnionMember), union_type_member_free, NULL);
+		break;
+	default:
+		break;
+	}
+
 	return type;
 }
 

@@ -806,6 +806,7 @@ R_DEPRECATE typedef struct r_anal_var_field_t {
 } RAnalVarField;
 
 typedef enum {
+	R_ANAL_ACC_UNKNOWN = 0,
 	R_ANAL_ACC_R = (1 << 0),
 	R_ANAL_ACC_W = (1 << 1),
 } RAnalValueAccess;
@@ -2109,8 +2110,8 @@ R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn);
 R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name);
 R_API void r_parse_pdb_types(const RAnal *anal, const RPdb *pdb);
 R_API void r_anal_save_base_type(const RAnal *anal, const RAnalBaseType *type);
-R_API void r_anal_free_base_type(RAnalBaseType *type);
-R_API RAnalBaseType *r_anal_new_base_type(RAnalBaseTypeKind kind);
+R_API void r_anal_base_type_free(RAnalBaseType *type);
+R_API RAnalBaseType *r_anal_base_type_new(RAnalBaseTypeKind kind);
 R_API void r_anal_dwarf_process_info(const RAnal *anal, RAnalDwarfContext *ctx);
 R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwarf_sdb);
 /* plugin pointers */

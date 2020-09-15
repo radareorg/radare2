@@ -212,7 +212,6 @@ func.recvfrom.ret=ssize_t
 
 NSString=struct
 struct.NSString=p0,p1,str,len
-struct.NSString.!size=256
 struct.NSString.p0=void *,0,0
 struct.NSString.p0.meta=4
 struct.NSString.p1=size_t,0,0

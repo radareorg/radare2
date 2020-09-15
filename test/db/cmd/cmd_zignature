@@ -430,7 +430,7 @@ zigs:main:
   addr: 0x0040055b
   realname: main
   refs: sym.print
-  vars: b-12, b-24, r110, r114
+  vars: b-12, b-24, r82, r78
   types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
@@ -453,7 +453,7 @@ zigs:main:
   addr: 0x0040055b
   realname: main
   refs: sym.print
-  vars: b-12, b-24, r110, r114
+  vars: b-12, b-24, r82, r78
   types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
@@ -474,7 +474,7 @@ main:
   graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
   addr: 0x0040055b
   refs: sym.print
-  vars: b-12, b-24, r110, r114
+  vars: b-12, b-24, r82, r78
   types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
@@ -497,7 +497,7 @@ foobar:
   addr: 0x0040055b
   realname: main
   refs: sym.print
-  vars: b-12, b-24, r110, r114
+  vars: b-12, b-24, r82, r78
   types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
@@ -519,7 +519,7 @@ foobar:
   addr: 0x0040055b
   realname: main
   refs: sym.print
-  vars: b-12, b-24, r110, r114
+  vars: b-12, b-24, r82, r78
   types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
@@ -1199,7 +1199,7 @@ zaf fcn.00484d40 fcn.00484d40
 zj
 EOF
 EXPECT=<<EOF
-[{"name":"fcn.00484d40","bytes":"55534883ec08488b1f4885db741b4889fd4889dfe857b7f7ff4801d8803800751748c74500000000004883c4084889d85b5dc30f1f440000c600004883c001488945004883c4084889d85b5dc3","mask":"ffffffffffffffffffffffffff00ffffffffffffff00000000ffffffffffffff00ffffffffffffffffffffffffffffffffffff0000000000ffffffffffffffffffffffffffffffffffffffffff","graph":{"cc":4,"nbbs":5,"edges":5,"ebbs":2,"bbsum":72},"addr":4738368,"refs":[],"xrefs":[],"vars":["r110"],"types":[{"name":"arg1","type":"int64_t"}],"hash":{"bbhash":"8ff8a5c7f84179483b764fbb18dc4c44f39da6527a0a16485c7ae519f00e687f"}}]
+[{"name":"fcn.00484d40","bytes":"55534883ec08488b1f4885db741b4889fd4889dfe857b7f7ff4801d8803800751748c74500000000004883c4084889d85b5dc30f1f440000c600004883c001488945004883c4084889d85b5dc3","mask":"ffffffffffffffffffffffffff00ffffffffffffff00000000ffffffffffffff00ffffffffffffffffffffffffffffffffffff0000000000ffffffffffffffffffffffffffffffffffffffffff","graph":{"cc":4,"nbbs":5,"edges":5,"ebbs":2,"bbsum":72},"addr":4738368,"refs":[],"xrefs":[],"vars":["r82"],"types":[{"name":"arg1","type":"int64_t"}],"hash":{"bbhash":"8ff8a5c7f84179483b764fbb18dc4c44f39da6527a0a16485c7ae519f00e687f"}}]
 EOF
 RUN
 
@@ -1217,7 +1217,7 @@ za sym.__write b f30f1efa488d05256d0d008b0085c07517b8010000000f05483d00f0ffff775
 za sym.__write g cc=6 nbbs=7 edges=7 ebbs=3 bbsum=148
 za sym.__write o 0x000ec800
 za sym.__write r sym.__libc_enable_asynccancel sym.__libc_disable_asynccancel
-za sym.__write v s-32 r119 r114 r110
+za sym.__write v s-32 r72 r78 r82
 za sym.__write t func.sym.__write.args=3 func.sym.__write.arg.0="int64_t,arg1" func.sym.__write.arg.1="int64_t,arg2" func.sym.__write.arg.2="int64_t,arg3"
 za sym.__write h 4f2d194bae72345352b26e0a36531e7d6ff6cb5d6b50b92487246507b8dafdc5
 EOF
@@ -1237,7 +1237,7 @@ za sym.bcopy b f30f1efa4887fee92479f9ff:ffffffffffffffff00000000
 za sym.bcopy g cc=1 nbbs=2 edges=1 ebbs=1 bbsum=23
 za sym.bcopy o 0x0008a900
 za sym.bcopy r sym..plt.sec
-za sym.bcopy v r110
+za sym.bcopy v r82
 za sym.bcopy t func.sym.bcopy.args=1 func.sym.bcopy.arg.0="int64_t,arg1"
 za sym.bcopy h 7549556f94a4c26907f0304da9892c797a73e6c44907dc2030389392a9df8f69
 EOF
@@ -1373,7 +1373,7 @@ zs *
 za fcn.100e2b0c b 38c000014800000c38c00000480000049421ffd07c0802a63d401013bf2100147c9923787cbe2b787cda33787c7f1b7890010034480000083bff0001897f0000812aa39c5560083c7c09022e700900204082ffe82f8b002b419e00182f8b002d3b80000040be00143b800001480000083b8000003bff000157c007357c6a1b7840820044881f00003bde000a2f80003040be00288c1f00013bdefffe600000207feafb785400063e2f80007840be000c57de083c3bff00012f9e0010409d00083bc00010381efffe390000002b800022419d00943800ffff7fa0f3967c1df1d67c0000f8541b063e480000087feafb78893f00007c08e8407c88e8003bff00013809ffd061290020540b063e2b0900602b8b0009409d00143929ffa93960002840990008552b063e7f8bf000409c00384181001040a600247f8bd840409d001c4bfe70057f9cd038380000223900ffff900300004bffff987c08f1d67d0b02144bffff8c2f990000419e0008915900002f9a00007d3c00d03c007fff55290ffe6000ffff7fe90214419e001c7f88f84040bd00144bfe6fb138000022900300007fe8fb782f9c0000419e00087d0800d0800100347d034378bb210014382100307c0803a64e800020:ffffffffff0000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000ffffffffffffffffffffffffffffffffffffffffffffffffff000000ffffffffff000000ffffffffffffffffff000000ffffffffff000000ffffffffffffffffffffffffffffffffff000000ffffffffffffffffffffffffff000000ffffffffffffffffffffffffffffffffffffffffffffffffff000000ffffffffffffffffffffffffff000000ffffffffffffffffffffffffffffffffff000000ffffffffffffffffffffffffffffffffffffffffff000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000ffffffffffffffffff000000ffffffffffffffffff000000ff000000ff000000ffffffffff000000ff000000ffffffffffffffffffffffffffffffffff000000ffffffffffffffffff000000ffffffffff000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000ffffffffff000000ff000000ffffffffffffffffffffffffffffffffff000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 za fcn.100e2b0c g cc=19 nbbs=35 edges=52 ebbs=1 bbsum=448
 za fcn.100e2b0c o 0x100e2b0c
-za fcn.100e2b0c v b0 b1 s4 r80 r79 r81
+za fcn.100e2b0c v b0 b1 s4 r6 r7 r5
 za fcn.100e2b0c t func.fcn.100e2b0c.args=6 func.fcn.100e2b0c.arg.0="int32_t,arg1" func.fcn.100e2b0c.arg.1="int32_t,arg2" func.fcn.100e2b0c.arg.2="int32_t,arg3" func.fcn.100e2b0c.arg.3="int32_t,arg_0h" func.fcn.100e2b0c.arg.4="int32_t,arg_1h" func.fcn.100e2b0c.arg.5="int32_t,arg_34h"
 za fcn.100e2b0c h 3b28d8f368cb414615bda7313fc4cdc24096498e7183cc05165607770be26928
 EOF
@@ -1392,7 +1392,7 @@ zs *
 za fcn.10002d70 b 38a0000038c000004bfffed4:ffffffffffffffffff000000
 za fcn.10002d70 g cc=12 nbbs=19 edges=29 ebbs=1 bbsum=304
 za fcn.10002d70 o 0x10002d70
-za fcn.10002d70 v b-4096 s4 s-36 s0 s-4136 r81 r80
+za fcn.10002d70 v b-4096 s4 s-36 s0 s-4136 r5 r6
 za fcn.10002d70 t func.fcn.10002d70.args=4 func.fcn.10002d70.arg.0="int32_t,arg1" func.fcn.10002d70.arg.1="int32_t,arg2" func.fcn.10002d70.arg.2="int32_t,arg_1030h" func.fcn.10002d70.arg.3="int32_t,arg_1034h"
 za fcn.10002d70 h b73e65dc846183808d8e385076f9bbcd0b1dcdaa5652254fb55b3b159462a507
 EOF
@@ -1472,7 +1472,7 @@ zs *
 za sym.memset b 200c014e0400028b5f8001f1c80300545f4000f102020054013c084ea2001836010000f981801ff8c0035fd61f2003d582001036010000b981c01fb8c0035fd6820000b4010000394200083681e01f78c0035fd60000803dc200303780009f3c620028360004803d80009e3cc0035fd60004803d000001ad80003fadc0035fd61f2003d5211c001203ec7c920000803d5f0004f12028407a80010054820003cb634000d1424001d1600001ad600082ad420001f1a8ffff5480003ead80003fadc0035fd61f2003d5e5003bd585fe2737a50c0012bf100071810200546004803d600001ad63e47a92600002ad600003ad820003cb420004d1630002911f2003d523740bd563000191420001f1a8ffff54600000ad600001ad80003ead80003fadc0035fd61f2003d5bf140071410200546004803d600001ad600002ad600003ad63e07992820003cb420004d16300029123740bd563000291420002f1a8ffff5480003cad80003dad80003ead80003fadc0035fd686008052c720c51ae50001915f0005ebc3f8ff54e60400d16500078b63400091a20003eba500268aa0000054600082ac60003fad420001f1a8ffff54e30305aa820005cb420007eba300005423740bd56300078b420007eba2ffff544200078b638000d1b6ffff17:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 za sym.memset g cc=28 nbbs=35 edges=47 ebbs=8 bbsum=460
 za sym.memset o 0x00012180
-za sym.memset v r73 r74 r72
+za sym.memset v r13 r7 r19
 za sym.memset t func.sym.memset.args=3 func.sym.memset.arg.0="void *,s" func.sym.memset.arg.1="int,c" func.sym.memset.arg.2="size_t,n"
 za sym.memset h 82e8b18bbf263f9ed0e31d6b68099efe6eb8805a429444f8aa119af00c47369c
 EOF
@@ -1491,7 +1491,7 @@ zs *
 za sym.strnlen b c1ffffb4ecc300b202ec7c92080c40f2610300542e0400d1cefd44d34310c1a868000ccb69d800b28a000ccb8bd800b20601298a47012b8ace0500f1c80007aa005940fac0feff54c80007aa68fdffb4400000cb660000b4002000d1e70306aa002000d1e70cc0daed10c0da000c4d8b1f0001eb0090819ac0035fd62e0400d1eb0308cb1f2100f1ca0d4092cefd44d3090080924310c1a86bf17dd34a01088b2925cb9ace114a8b630009aa850009aa63d09fda84d0859adaffff17:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000f0ff0000f0ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 za sym.strnlen g cc=7 nbbs=11 edges=14 ebbs=2 bbsum=196
 za sym.strnlen o 0x000131a4
-za sym.strnlen v r73 r74 r70
+za sym.strnlen v r13 r7 r31
 za sym.strnlen t func.sym.strnlen.args=3 func.sym.strnlen.arg.0="int64_t,arg1" func.sym.strnlen.arg.1="int64_t,arg2" func.sym.strnlen.arg.2="int64_t,arg5"
 za sym.strnlen h c573e9053dfa735f51cca8aea51eda71ca46fd402d11feb4d7f8ccf1b3b46d72
 EOF

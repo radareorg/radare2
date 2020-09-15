@@ -213,7 +213,6 @@ t-xoo
 EOF
 EXPECT=<<EOF
 union.xoo=x,y,z
-union.xoo.!size=32
 union.xoo.x=int32_t,0,0
 union.xoo.x.meta=0
 union.xoo.y=int32_t,0,0
@@ -1050,10 +1049,10 @@ s sym.funcarg
 afvr
 EOF
 EXPECT=<<EOF
-arg int64_t arg1 @ rdi
-arg int64_t arg2 @ rsi
-arg int64_t arg3 @ rdx
 arg int64_t arg4 @ rcx
+arg int64_t arg3 @ rdx
+arg int64_t arg2 @ rsi
+arg int64_t arg1 @ rdi
 EOF
 RUN
 
@@ -1066,10 +1065,10 @@ s sym.funcarg
 afvr
 EOF
 EXPECT=<<EOF
-arg char * arg1 @ rdi
-arg char * arg2 @ rsi
-arg int64_t arg3 @ rdx
 arg size_t arg4 @ rcx
+arg int64_t arg3 @ rdx
+arg char * arg2 @ rsi
+arg char * arg1 @ rdi
 EOF
 RUN
 
@@ -1230,8 +1229,8 @@ var char * dest @ rbp-0x1470
 var void * var_1420h @ rbp-0x1420
 var char * s1 @ rbp-0x1020
 var int64_t var_18h @ rbp-0x18
-arg int argc @ rdi
 arg char ** argv @ rsi
+arg int argc @ rdi
 var char ** str @ rbp-0xb0
 var signed int var_a4h @ rbp-0xa4
 var signed int64_t var_a0h @ rbp-0xa0
@@ -1261,8 +1260,8 @@ var char * var_28h @ rbp-0x28
 var char * var_20h @ rbp-0x20
 var int64_t var_18h @ rbp-0x18
 var int64_t var_8h @ rbp-0x8
-arg signed int arg1 @ rdi
 arg char ** arg2 @ rsi
+arg signed int arg1 @ rdi
 EOF
 RUN
 
@@ -1334,9 +1333,9 @@ var char ** var_20h @ rbp-0x20
 var int64_t var_14h @ rbp-0x14
 var void * var_10h @ rbp-0x10
 var int64_t var_4h @ rbp-0x4
-arg int argc @ rdi
-arg char ** argv @ rsi
 arg char ** envp @ rdx
+arg char ** argv @ rsi
+arg int argc @ rdi
 EOF
 RUN
 
@@ -1394,7 +1393,6 @@ tk~struct.s1
 EOF
 EXPECT=<<EOF
 struct.s1=a,size,b
-struct.s1.!size=96
 struct.s1.a=int32_t,0,0
 struct.s1.a.meta=0
 struct.s1.b=int32_t,8,0
@@ -1538,7 +1536,6 @@ EXPECT=<<EOF
 pf.foo dc a b
 tk foo=union
 tk union.foo=a,b
-tk union.foo.!size=32
 tk union.foo.a=int32_t,0,0
 tk union.foo.a.meta=0
 tk union.foo.b=char,0,0

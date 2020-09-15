@@ -111,6 +111,7 @@ ao~opcode,esil
 EOF
 EXPECT=<<EOF
 opcode: imul eax, ebx, 0x89
+esilcost: 0
 esil: 32,137,~,32,ebx,~,*,DUP,eax,=,eax,-,?{,1,1,}{,0,0,},cf,:=,of,:=
 EOF
 RUN
@@ -204,6 +205,7 @@ EOF
 EXPECT=<<EOF
 
 opcode: lea rsi, [rdi + 0x68]
+esilcost: 0
 esil: 0x68,rdi,+,rsi,=
 EOF
 RUN
@@ -220,6 +222,7 @@ EOF
 EXPECT=<<EOF
 
 opcode: lea rdi, [rbp - 0x440]
+esilcost: 0
 esil: 0x440,rbp,-,rdi,=
 EOF
 RUN
@@ -236,6 +239,7 @@ EOF
 EXPECT=<<EOF
 
 opcode: mov dword [rip + 0x40dd], 1
+esilcost: 12
 esil: 1,0x40dd,rip,+,=[4]
 EOF
 RUN
@@ -310,6 +314,7 @@ e asm.bits=64
 ao~esil
 EOF
 EXPECT=<<EOF
+esilcost: 4
 esil: 32,rax,4,*,rdx,+,[4],~,rax,=
 EOF
 RUN
@@ -324,6 +329,7 @@ ao~esil,opcode
 EOF
 EXPECT=<<EOF
 opcode: lea rax, [rdi + r13*8]
+esilcost: 0
 esil: r13,8,*,rdi,+,rax,=
 EOF
 RUN
@@ -338,6 +344,7 @@ ao~opcode,esil
 EOF
 EXPECT=<<EOF
 opcode: lea rbx, [rax + rdx]
+esilcost: 0
 esil: rdx,rax,+,rbx,=
 EOF
 RUN

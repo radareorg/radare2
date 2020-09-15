@@ -51,28 +51,42 @@ static void print_node_options(RConfigNode *node) {
 }
 
 static int compareName(const RAnalFunction *a, const RAnalFunction *b) {
-	return a && b && a->name && b->name && strcmp (a->name, b->name);
+	return (a && b && a->name && b->name ?  strcmp (a->name, b->name) : 0);
 }
 
 static int compareNameLen(const RAnalFunction *a, const RAnalFunction *b) {
-	return a && b && a->name && b->name && strlen (a->name) > strlen (b->name);
+	size_t la, lb;
+	if (!a || !b || !a->name || !b->name) {
+		return 0;
+	}
+	la = strlen (a->name);
+	lb = strlen (a->name);
+	return (la > lb) - (la < lb);
 }
 
 static int compareAddress(const RAnalFunction *a, const RAnalFunction *b) {
-	return a && b && a->addr && b->addr && a->addr > b->addr;
+	return (a && b && a->addr && b->addr ? (a->addr > b->addr) - (a->addr < b->addr) : 0);
 }
 
 static int compareType(const RAnalFunction *a, const RAnalFunction *b) {
-	return a && b && a->diff->type && b->diff->type && a->diff->type > b->diff->type;
+	return (a && b && a->diff->type && b->diff->type ?
+			(a->diff->type > b->diff->type) - (a->diff->type < b->diff->type) : 0);
 }
 
 static int compareSize(const RAnalFunction *a, const RAnalFunction *b) {
+	ut64 sa, sb;
 	// return a && b && a->_size < b->_size;
-	return a && b && r_anal_function_realsize (a) > r_anal_function_realsize (b);
+	if (!a || !b) {
+		return 0;
+	}
+	sa = r_anal_function_realsize (a);
+	sb = r_anal_function_realsize (b);
+	return (sa > sb) - (sa < sb);
 }
 
 static int compareDist(const RAnalFunction *a, const RAnalFunction *b) {
-	return a && b && a->diff->dist && b->diff->dist && a->diff->dist > b->diff->dist;
+	return (a && b && a->diff->dist && b->diff->dist ?
+			(a->diff->dist > b->diff->dist) - (a->diff->dist < b->diff->dist) : 0);
 }
 
 static bool cb_diff_sort(void *_core, void *_node) {
@@ -2975,7 +2989,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("esil.fillstack", "", "Initialize ESIL stack with (random, debrujn, sequence, zeros, ...)");
 	SETICB ("esil.verbose", 0, &cb_esilverbose, "Show ESIL verbose level (0, 1, 2)");
 	SETICB ("esil.gotolimit", core->anal->esil_goto_limit, &cb_gotolimit, "Maximum number of gotos per ESIL expression");
-	SETICB ("esil.stack.depth", 32, &cb_esilstackdepth, "Number of elements that can be pushed on the esilstack");
+	SETICB ("esil.stack.depth", 256, &cb_esilstackdepth, "Number of elements that can be pushed on the esilstack");
 	SETI ("esil.stack.size", 0xf0000, "Set stack size in ESIL VM");
 	SETI ("esil.stack.addr", 0x100000, "Set stack address in ESIL VM");
 	SETPREF ("esil.stack.pattern", "0", "Specify fill pattern to initialize the stack (0, w, d, i)");
@@ -3255,7 +3269,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("zign.mincc", 10, "Minimum cyclomatic complexity for matching");
 	SETBPREF ("zign.graph", "true", "Use graph metrics for matching");
 	SETBPREF ("zign.bytes", "true", "Use bytes patterns for matching");
-	SETBPREF ("zign.offset", "true", "Use original offset for matching");
+	SETBPREF ("zign.offset", "false", "Use original offset for matching");
 	SETBPREF ("zign.refs", "true", "Use references for matching");
 	SETBPREF ("zign.hash", "true", "Use Hash for matching");
 	SETBPREF ("zign.types", "true", "Use types for matching");

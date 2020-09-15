@@ -25,6 +25,6 @@ executable('radare2', 'radare2.c',
     r_magic_dep
   ],
   install: true,
-  install_rpath: rpath,
+  install_rpath: rpath_exe,
   implicit_include_directories: false
 )

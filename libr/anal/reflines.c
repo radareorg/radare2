@@ -16,11 +16,11 @@ typedef struct refline_end {
 } ReflineEnd;
 
 static int cmp_asc(const struct refline_end *a, const struct refline_end *b) {
-	return a->val > b->val;
+	return (a->val > b->val) - (a->val < b->val);
 }
 
 static int cmp_by_ref_lvl(const RAnalRefline *a, const RAnalRefline *b) {
-	return a->level < b->level;
+	return (a->level < b->level) - (a->level > b->level);
 }
 
 static ReflineEnd *refline_end_new(ut64 val, bool is_from, RAnalRefline *ref) {
