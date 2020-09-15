@@ -41,7 +41,6 @@ static bool test_parse_dwarf_types(void) {
 	char * value = NULL;
 	Sdb *sdb = anal->sdb_types;
 	check_kv ("_cairo_status", "enum");
-	check_kv ("enum._cairo_status.!size", "32");
 	check_kv ("enum._cairo_status.0x0", "CAIRO_STATUS_SUCCESS");
 	check_kv ("enum._cairo_status.CAIRO_STATUS_SUCCESS", "0x0");
 	check_kv ("enum._cairo_status.0x9", "CAIRO_STATUS_INVALID_PATH_DATA");
@@ -63,12 +62,10 @@ static bool test_parse_dwarf_types(void) {
 	"CAIRO_STATUS_INVALID_SLANT,CAIRO_STATUS_INVALID_WEIGHT");
 
 	check_kv ("_MARGINS", "struct");
-	check_kv ("struct._MARGINS.!size", "128");
 	// TODO evaluate member_location operations in DWARF to get offset and test it
 	check_kv ("struct._MARGINS", "cxLeftWidth,cxRightWidth,cyTopHeight,cyBottomHeight");
 
 	check_kv ("unaligned", "union");
-	check_kv ("union.unaligned.!size", "64");
 	check_kv ("union.unaligned", "ptr,u2,u4,u8,s2,s4,s8");
 	check_kv ("union.unaligned.u2", "short unsigned int,0,0");
 	check_kv ("union.unaligned.s8", "long long int,0,0");
@@ -256,5 +253,5 @@ int all_tests(void) {
 }
 
 int main(int argc, char **argv) {
-	return all_tests();
+	return all_tests ();
 }

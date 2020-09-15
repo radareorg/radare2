@@ -213,7 +213,6 @@ t-xoo
 EOF
 EXPECT=<<EOF
 union.xoo=x,y,z
-union.xoo.!size=32
 union.xoo.x=int32_t,0,0
 union.xoo.x.meta=0
 union.xoo.y=int32_t,0,0
@@ -1394,7 +1393,6 @@ tk~struct.s1
 EOF
 EXPECT=<<EOF
 struct.s1=a,size,b
-struct.s1.!size=96
 struct.s1.a=int32_t,0,0
 struct.s1.a.meta=0
 struct.s1.b=int32_t,8,0
@@ -1538,7 +1536,6 @@ EXPECT=<<EOF
 pf.foo dc a b
 tk foo=union
 tk union.foo=a,b
-tk union.foo.!size=32
 tk union.foo.a=int32_t,0,0
 tk union.foo.a.meta=0
 tk union.foo.b=char,0,0

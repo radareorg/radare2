@@ -38,6 +38,7 @@ if get_option('enable_tests')
     'json',
     'list',
     'parse_ctype',
+    'pdb',
     'pj',
     'queue',
     'r2r',

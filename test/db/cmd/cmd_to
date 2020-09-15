@@ -63,7 +63,6 @@ days=typedef
 easy_prey=typedef
 humans=typedef
 struct.dangerous=neo
-struct.dangerous.!size=64
 struct.dangerous.neo=uint64_t,0,0
 struct.dangerous.neo.meta=13
 tokyo=typedef
