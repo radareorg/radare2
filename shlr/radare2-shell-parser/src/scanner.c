@@ -42,7 +42,7 @@ static bool is_at_cmd(const char *s) {
 }
 
 static bool is_comment(const char *s) {
-	return !strncmp (s, "/*", 2);
+	return !strncmp (s, "/*", 2) || !strcmp (s, "#");
 }
 
 static bool is_special_start(const int32_t ch) {
@@ -53,11 +53,17 @@ static bool is_special_start(const int32_t ch) {
 
 static bool is_start_of_command(const int32_t ch) {
 	return isalpha (ch) || ch == '$' || ch == '?' || ch == ':' || ch == '+' ||
-		ch == '=' || ch == '/' || ch == '_' || is_special_start (ch);
+		ch == '=' || ch == '/' || ch == '_' || ch == '#' || is_special_start (ch);
 }
 
-static bool is_mid_command(const char *res, const int32_t ch) {
-	return isalnum(ch) ||  ch == '$' || ch == '?' || ch == '.' || ch == '!' ||
+static bool is_mid_command(const char *res, int len, const int32_t ch) {
+	if (res[0] == '#') {
+		if (len == 1) {
+			return ch == '!' || ch == '?';
+		}
+		return ch == '?';
+	}
+	return isalnum (ch) || ch == '$' || ch == '?' || ch == '.' || ch == '!' ||
 		ch == ':' || ch == '+' || ch == '=' || ch == '/' || ch == '*' ||
 		ch == '-' || ch == ',' || ch == '&' || (is_at_cmd (res) && ch == '@');
 }
@@ -141,11 +147,8 @@ bool tree_sitter_r2cmd_external_scanner_scan(void *payload, TSLexer *lexer, cons
 			return false;
 		}
 		res[i_res++] = lexer->lookahead;
-		if (res[0] == '#') {
-			return false;
-		}
 		lexer->advance (lexer, false);
-		while (i_res < CMD_IDENTIFIER_MAX_LENGTH && is_mid_command (res, lexer->lookahead)) {
+		while (i_res < CMD_IDENTIFIER_MAX_LENGTH && is_mid_command (res, i_res, lexer->lookahead)) {
 			res[i_res++] = lexer->lookahead;
 			lexer->advance (lexer, false);
                 }
