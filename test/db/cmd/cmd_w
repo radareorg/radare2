@@ -40,10 +40,10 @@ FILE=-
 ARGS=-e cfg.bigendian=false
 CMDS=<<EOF
 wx 0022
-w1+1
+w1+ 1
 pv2
-w2-1
-w2-1
+w2- 1
+w2- 1
 pv2
 EOF
 EXPECT=<<EOF

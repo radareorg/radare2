@@ -5,6 +5,7 @@
 #include "r_cons.h"
 #include "r_core.h"
 #include "r_io.h"
+#include "cmd_helps.h"
 
 static const char *help_msg_w[] = {
 	"Usage:","w[x] [str] [<file] [<<EOF] [@addr]","",
@@ -299,7 +300,8 @@ static void cmd_write_inc(RCore *core, int size, st64 num) {
 	}
 }
 
-static void cmd_write_op (RCore *core, const char *input) {
+static int wo_handler_old(void *data, const char *input) {
+	RCore *core = (RCore *)data;
 	ut8 *buf;
 	int len;
 	int value;
@@ -307,7 +309,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 	case 'e':
 		if (input[1]!=' ') {
 			r_cons_printf ("Usage: 'woe from-to step'\n");
-			return;
+			return -1;
 		}
 		/* fallthru */
 	case 'a':
@@ -446,6 +448,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_wo);
 		break;
 	}
+	return 0;
 }
 
 #define WSEEK(x,y) if (wseek)r_core_seek_delta (x,y)
@@ -563,24 +566,24 @@ static RCmdStatus common_wv_handler(RCore *core, int argc, const char **argv, in
 	return R_CMD_STATUS_OK;
 }
 
-static RCmdStatus wv_handler(void *user, int argc, const char **argv) {
-	return common_wv_handler (user, argc, argv, 0);
+static RCmdStatus wv_handler(RCore *core, int argc, const char **argv) {
+	return common_wv_handler (core, argc, argv, 0);
 }
 
-static RCmdStatus wv1_handler(void *user, int argc, const char **argv) {
-	return common_wv_handler (user, argc, argv, 1);
+static RCmdStatus wv1_handler(RCore *core, int argc, const char **argv) {
+	return common_wv_handler (core, argc, argv, 1);
 }
 
-static RCmdStatus wv2_handler(void *user, int argc, const char **argv) {
-	return common_wv_handler (user, argc, argv, 2);
+static RCmdStatus wv2_handler(RCore *core, int argc, const char **argv) {
+	return common_wv_handler (core, argc, argv, 2);
 }
 
-static RCmdStatus wv4_handler(void *user, int argc, const char **argv) {
-	return common_wv_handler (user, argc, argv, 4);
+static RCmdStatus wv4_handler(RCore *core, int argc, const char **argv) {
+	return common_wv_handler (core, argc, argv, 4);
 }
 
-static RCmdStatus wv8_handler(void *user, int argc, const char **argv) {
-	return common_wv_handler (user, argc, argv, 8);
+static RCmdStatus wv8_handler(RCore *core, int argc, const char **argv) {
+	return common_wv_handler (core, argc, argv, 8);
 }
 
 static bool cmd_wff(RCore *core, const char *input) {
@@ -749,14 +752,15 @@ static bool cmd_wfs(RCore *core, const char *input) {
 	return true;
 }
 
-static bool cmd_wf(RCore *core, const char *input) {
+static int wf_handler_old(void *data, const char *input) {
+	RCore *core = (RCore *)data;
 	if (!core || !*input) {
-		return false;
+		return -1;
 	}
 	if (input[0] == '?') {
 		eprintf ("Usage: wf [file] ([size] ([offset]))\n");
 		r_core_cmd_help (core, help_msg_wf);
-		return false;
+		return -1;
 	}
 	if (input[0] == 's') { // "wfs"
 		return cmd_wfs (core, input + 1);
@@ -778,7 +782,7 @@ static bool cmd_wf(RCore *core, const char *input) {
 	ioMemcpy (core, core->offset, addr, len);
 	free (args);
 	r_core_block_read (core);
-	return true;
+	return 0;
 }
 
 static void cmd_write_pcache(RCore *core, const char *input) {
@@ -860,6 +864,22 @@ static int wB_handler_old(void *data, const char *input) {
 	return 0;
 }
 
+static RCmdStatus wB_handler(RCore *core, int argc, const char **argv) {
+	if (argc != 2) {
+		return R_CMD_STATUS_WRONG_ARGS;
+	}
+	cmd_write_bits (core, 1, r_num_math (core->num, argv[1]));
+	return R_CMD_STATUS_OK;
+}
+
+static RCmdStatus wB_minus_handler(RCore *core, int argc, const char **argv) {
+	if (argc != 2) {
+		return R_CMD_STATUS_WRONG_ARGS;
+	}
+	cmd_write_bits (core, 0, r_num_math (core->num, argv[1]));
+	return R_CMD_STATUS_OK;
+}
+
 static int w0_handler_common(RCore *core, ut64 len) {
 	int res = 0;
 	if (len > 0) {
@@ -885,6 +905,14 @@ static int w0_handler_old(void *data, const char *input) {
 	return w0_handler_common (core, len);
 }
 
+static RCmdStatus w0_handler(RCore *core, int argc, const char **argv) {
+	if (argc != 2) {
+		return R_CMD_STATUS_WRONG_ARGS;
+	}
+	ut64 len = r_num_math (core->num, argv[1]);
+	return r_cmd_int2status (w0_handler_common (core, len));
+}
+
 static int w_incdec_handler_old(void *data, const char *input, int inc) {
 	RCore *core = (RCore *)data;
 	st64 num = 1;
@@ -902,6 +930,35 @@ static int w_incdec_handler_old(void *data, const char *input, int inc) {
 		eprintf ("Usage: w[1248][+-][num]   # inc/dec byte/word/..\n");
 	}
 	return 0;
+}
+
+static RCmdStatus w_incdec_handler(RCore *core, int argc, const char **argv, int inc_size) {
+	if (argc > 2) {
+		return R_CMD_STATUS_WRONG_ARGS;
+	}
+	st64 num = argc > 1? r_num_math (core->num, argv[1]): 1;
+	const char *command = argv[0];
+	if (command[strlen (command) - 1] == '-') {
+		num *= -1;
+	}
+	cmd_write_inc (core, inc_size, num);
+	return R_CMD_STATUS_OK;
+}
+
+static RCmdStatus w1_incdec_handler(RCore *core, int argc, const char **argv) {
+	return w_incdec_handler (core, argc, argv, 1);
+}
+
+static RCmdStatus w2_incdec_handler(RCore *core, int argc, const char **argv) {
+	return w_incdec_handler (core, argc, argv, 2);
+}
+
+static RCmdStatus w4_incdec_handler(RCore *core, int argc, const char **argv) {
+	return w_incdec_handler (core, argc, argv, 4);
+}
+
+static RCmdStatus w8_incdec_handler(RCore *core, int argc, const char **argv) {
+	return w_incdec_handler (core, argc, argv, 8);
 }
 
 static int w6_handler_old(void *data, const char *input) {
@@ -1342,8 +1399,7 @@ static int wc_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int w_handler_old(void *data, const char *input) {
-	RCore *core = (RCore *)data;
+static void w_handler_common(RCore *core, const char *input) {
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	char *str = strdup (input);
 	/* write string */
@@ -1351,13 +1407,24 @@ static int w_handler_old(void *data, const char *input) {
 	if (!r_core_write_at (core, core->offset, (const ut8 *)str, len)) {
 		cmd_write_fail (core);
 	}
-#if 0
-		r_io_use_desc (core->io, core->file->desc);
-		r_io_write_at (core->io, core->offset, (const ut8*)str, len);
-#endif
 	WSEEK (core, len);
 	r_core_block_read (core);
+}
+
+static int w_handler_old(void *data, const char *input) {
+	RCore *core = (RCore *)data;
+	w_handler_common (core, input);
 	return 0;
+}
+
+static RCmdStatus w_handler(RCore *core, int argc, const char **argv) {
+	if (argc < 2) {
+		return R_CMD_STATUS_WRONG_ARGS;
+	}
+	char *s = r_str_array_join (argv + 1, argc - 1, " ");
+	w_handler_common (core, s);
+	free (s);
+	return R_CMD_STATUS_OK;
 }
 
 static int wz_handler_old(void *data, const char *input) {
@@ -1958,7 +2025,7 @@ static int cmd_write(void *data, const char *input) {
 		wt_handler_old (core, input + 1);
 		break;
 	case 'f': // "wf"
-		cmd_wf (core, input + 1);
+		wf_handler_old (core, input + 1);
 		break;
 	case 'w': // "ww"
 		ww_handler_old (core, input + 1);
@@ -1979,7 +2046,7 @@ static int cmd_write(void *data, const char *input) {
 		cmd_write_value (core, input + 1);
 		break;
 	case 'o': // "wo"
-		cmd_write_op (core, input + 1);
+		wo_handler_old (core, input + 1);
 		break;
 	case 'd': // "wd"
 		wd_handler_old (core, input + 1);
@@ -1995,41 +2062,6 @@ static int cmd_write(void *data, const char *input) {
 	return 0;
 }
 
-static const RCmdDescExample wv_help_examples[] = {
-	{ .example = "wv 0xdeadbeef", .comment = "Write the value 0xdeadbeef at current offset" },
-	{ 0 },
-};
-
-static const RCmdDescHelp wv_help = {
-	.usage = "wv[size] [value]",
-	.summary = "Write value as 4 - bytes / 8 - bytes based on value",
-	.args_str = "[value]",
-	.description = "Write the number passed as argument at the current offset as a 4 - bytes value or 8 - bytes value if the input is bigger than UT32_MAX, respecting the cfg.bigendian variable",
-	.group_summary = "Write value of given size",
-	.examples = wv_help_examples,
-};
-
-static const RCmdDescHelp wv1_help = {
-	.summary = "Write value of 1 byte",
-	.args_str = "[value]",
-	.description = "Write the number passed as argument at the current offset as 1 - byte, respecting the cfg.bigendian variable",
-};
-static const RCmdDescHelp wv2_help = {
-	.summary = "Write value of 2 bytes",
-	.args_str = "[value]",
-	.description = "Write the number passed as argument at the current offset as 2 - bytes, respecting the cfg.bigendian variable",
-};
-static const RCmdDescHelp wv4_help = {
-	.summary = "Write value of 4 bytes",
-	.args_str = "[value]",
-	.description = "Write the number passed as argument at the current offset as 4 - bytes, respecting the cfg.bigendian variable",
-};
-static const RCmdDescHelp wv8_help = {
-	.summary = "Write value of 8 byte",
-	.args_str = "[value]",
-	.description = "Write the number passed as argument at the current offset as 8 - bytes, respecting the cfg.bigendian variable",
-};
-
 static void cmd_write_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, w);
 	DEFINE_CMD_DESCRIPTOR (core, wa);
@@ -2043,18 +2075,48 @@ static void cmd_write_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, wv);
 	DEFINE_CMD_DESCRIPTOR (core, wx);
 
-	RCmdDesc *wv_cd = r_cmd_desc_argv_new (core->rcmd, parent, "wv", wv_handler, &wv_help);
-	r_return_if_fail (wv_cd);
+	DEFINE_CMD_ARGV_DESC (core, wB, parent);
+	DEFINE_CMD_ARGV_DESC_SPECIAL (core, wB-, wB_minus, wB_cd);
 
-	RCmdDesc *wv1_cd = r_cmd_desc_argv_new (core->rcmd, wv_cd, "wv1", wv1_handler, &wv1_help);
-	r_return_if_fail (wv1_cd);
+	DEFINE_CMD_ARGV_DESC (core, wv, parent);
+	DEFINE_CMD_ARGV_DESC (core, wv1, wv_cd);
+	DEFINE_CMD_ARGV_DESC (core, wv2, wv_cd);
+	DEFINE_CMD_ARGV_DESC (core, wv4, wv_cd);
+	DEFINE_CMD_ARGV_DESC (core, wv8, wv_cd);
 
-	RCmdDesc *wv2_cd = r_cmd_desc_argv_new (core->rcmd, wv_cd, "wv2", wv2_handler, &wv2_help);
-	r_return_if_fail (wv2_cd);
+	DEFINE_CMD_ARGV_DESC (core, w0, parent);
 
-	RCmdDesc *wv4_cd = r_cmd_desc_argv_new (core->rcmd, wv_cd, "wv4", wv4_handler, &wv4_help);
-	r_return_if_fail (wv4_cd);
+	DEFINE_CMD_ARGV_DESC_GROUP (core, w[1248][+-], w_incdec, parent);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1, w1, w_incdec_cd, NULL, &w1_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1+, w1_inc, w1_cd, w1_incdec_handler, &w1_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1-, w1_dec, w1_cd, w1_incdec_handler, &w1_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w2, w2, w_incdec_cd, NULL, &w2_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w2+, w2_inc, w2_cd, w2_incdec_handler, &w2_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w2-, w2_dec, w2_cd, w2_incdec_handler, &w2_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w4, w4, w_incdec_cd, NULL, &w4_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w4+, w4_inc, w4_cd, w4_incdec_handler, &w4_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w4-, w4_dec, w4_cd, w4_incdec_handler, &w4_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8, w8, w_incdec_cd, NULL, &w8_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8+, w8_inc, w8_cd, w8_incdec_handler, &w8_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8-, w8_dec, w8_cd, w8_incdec_handler, &w8_incdec_help);
 
-	RCmdDesc *wv8_cd = r_cmd_desc_argv_new (core->rcmd, wv_cd, "wv8", wv8_handler, &wv8_help);
-	r_return_if_fail (wv8_cd);
+	DEFINE_CMD_OLDINPUT_DESC (core, w6, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wh, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, we, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wp, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wu, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wr, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wA, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wc, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wz, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wt, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wf, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, ww, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wx, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wa, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wb, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wm, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wo, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, wd, parent);
+	DEFINE_CMD_OLDINPUT_DESC (core, ws, parent);
 }

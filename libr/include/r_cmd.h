@@ -9,6 +9,8 @@
 extern "C" {
 #endif
 
+typedef struct r_core_t RCore;
+
 //R_LIB_VERSION_HEADER (r_cmd);
 
 #define MACRO_LIMIT 1024
@@ -24,7 +26,7 @@ typedef enum r_cmd_status_t {
 } RCmdStatus;
 
 typedef int (*RCmdCb) (void *user, const char *input);
-typedef RCmdStatus (*RCmdArgvCb) (void *user, int argc, const char **argv);
+typedef RCmdStatus (*RCmdArgvCb) (RCore *core, int argc, const char **argv);
 typedef int (*RCmdNullCb) (void *user);
 
 typedef struct r_cmd_parsed_args_t {
@@ -78,18 +80,61 @@ typedef struct r_cmd_desc_example_t {
 	const char *comment;
 } RCmdDescExample;
 
+/**
+ * Define how the command looks like in the help.
+ */
 typedef struct r_cmd_desc_help_t {
-	const char *usage;
+	/**
+	 * Short-sentence explaining what the command does.
+	 * This is shown, for example, when the list of sub-commands is printed
+	 * and each sub-command has a very short description on the right,
+	 * explaining what it does.
+	 */
 	const char *summary;
-	const char *group_summary;
-	const char *args_str;
+	/**
+	 * Long description of what the command does. It can be as long as you
+	 * want and it should explain well how the command behaves.
+	 * This is shown, for example, when `??` is appended on command or `?`
+	 * is appended and the command has no children to show. In that case,
+	 * the short summary is extended with this longer description.
+	 *
+	 * Optional.
+	 */
 	const char *description;
+	/**
+	 * String used to identify the arguments. This usually comes together
+	 * with the summary.
+	 * TODO: explain how to differentiate between required and optional arguments
+	 */
+	const char *args_str;
+	/**
+	 * String that overrides the name+args_str usually used to describe the
+	 * command.
+	 *
+	 * Optional.
+	 */
+	const char *usage;
+	/**
+	 * When a command is used both as a parent command and as a subcommand
+	 * (e.g. `w` is both the parent of `wv`, `ws`, etc. and it's also the
+	 * command `w`), this is the summary used for the parent level, while
+	 * summary becomes the text used for the subcommand.
+	 *
+	 * Optional.
+	 */
+	const char *group_summary;
+	/**
+	 * List of examples used to better explain how to use the command. This
+	 * is shown together with the long description.
+	 *
+	 * Optional.
+	 */
 	const RCmdDescExample *examples;
 } RCmdDescHelp;
 
 typedef enum {
 	// for old handlers that parse their own input and accept a single string
-	R_CMD_DESC_TYPE_OLDINPUT,
+	R_CMD_DESC_TYPE_OLDINPUT = 0,
 	// for handlers that accept argc/argv
 	R_CMD_DESC_TYPE_ARGV,
 } RCmdDescType;
@@ -147,6 +192,19 @@ typedef struct r_core_plugin_t {
 	RCmdCb fini;
 } RCorePlugin;
 
+#define DEFINE_CMD_ARGV_DESC_DETAIL(core, name, c_name, parent, handler, help) \
+	RCmdDesc *c_name##_cd = r_cmd_desc_argv_new (core->rcmd, parent, #name, handler, help); \
+	r_warn_if_fail (c_name##_cd)
+#define DEFINE_CMD_ARGV_DESC_SPECIAL(core, name, c_name, parent) \
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, name, c_name, parent, c_name##_handler, &c_name##_help)
+#define DEFINE_CMD_ARGV_DESC_GROUP(core, name, c_name, parent) \
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, name, c_name, parent, NULL, NULL)
+#define DEFINE_CMD_ARGV_DESC(core, name, parent) \
+	DEFINE_CMD_ARGV_DESC_SPECIAL (core, name, name, parent)
+#define DEFINE_CMD_OLDINPUT_DESC(core, name, parent) \
+	RCmdDesc *name##_cd = r_cmd_desc_oldinput_new (core->rcmd, parent, #name, name##_handler_old, &name##_help); \
+	r_warn_if_fail (name##_cd)
+
 #ifdef R_API
 R_API int r_core_plugin_init(RCmd *cmd);
 R_API int r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin);
@@ -163,6 +221,30 @@ R_API RCmdStatus r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args);
 R_API RCmdDesc *r_cmd_get_root(RCmd *cmd);
 R_API RCmdDesc *r_cmd_get_desc(RCmd *cmd, const char *cmd_identifier);
 R_API char *r_cmd_get_help(RCmd *cmd, RCmdParsedArgs *args, bool use_color);
+
+static inline RCmdStatus r_cmd_int2status(int v) {
+	if (v == -2) {
+		return R_CMD_STATUS_EXIT;
+	} else if (v < 0) {
+		return R_CMD_STATUS_ERROR;
+	} else {
+		return R_CMD_STATUS_OK;
+	}
+}
+
+static inline int r_cmd_status2int(RCmdStatus s) {
+	switch (s) {
+	case R_CMD_STATUS_OK:
+		return 0;
+	case R_CMD_STATUS_ERROR:
+	case R_CMD_STATUS_WRONG_ARGS:
+	case R_CMD_STATUS_INVALID:
+		return -1;
+	case R_CMD_STATUS_EXIT:
+	default:
+		return -2;
+	}
+}
 
 /* RCmdDescriptor */
 R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb, const RCmdDescHelp *help);
