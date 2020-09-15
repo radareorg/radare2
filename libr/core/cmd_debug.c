@@ -2030,33 +2030,30 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 		}
 		break;
 	case 'g': // "drpg "
-		ptr = str + 2;
-		while (isspace ((ut8)*ptr)) {
-			ptr++;
+		ptr = r_str_trim_head_ro (str + 2);
+		{
+			if (!r_reg_parse_gdb_profile (ptr)) {
+				eprintf ("Warnings: Cannot parse gdb profile.\n");
+				core->num->value = 1;
+			} else {
+				core->num->value = 0;
+			}
+			// r_reg_set_profile (r, str + 2);
+			// r_debug_plugin_set_reg_profile (core->dbg, str + 2);
 		}
-		r_reg_parse_gdb_profile (ptr + 4);
-		r_reg_set_profile (r, str + 2);
-		r_debug_plugin_set_reg_profile (core->dbg, str + 2);
 		break;
 	case ' ': // "drp "
-		ptr = str + 2;
-		while (isspace ((ut8)*ptr)) {
-			ptr++;
-		}
-		if (r_str_startswith (ptr, "gdb ")) {
-			r_reg_parse_gdb_profile (ptr + 4);
-			break;
-		}
-		r_reg_set_profile (r, str + 2);
-		r_debug_plugin_set_reg_profile (core->dbg, str + 2);
+		ptr = r_str_trim_head_ro (str + 2);
+		r_reg_set_profile (r, ptr);
+		r_debug_plugin_set_reg_profile (core->dbg, ptr);
 		break;
 	case '.': { // "drp."
 		RRegSet *rs = r_reg_regset_get (r, R_REG_TYPE_GPR);
 		if (rs) {
 			eprintf ("size = %d\n", rs->arena->size);
 		}
+		}
 		break;
-	}
 	case 'i': // "drpi"
 		show_drpi (core);
 		break;

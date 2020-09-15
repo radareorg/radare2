@@ -270,11 +270,8 @@ static bool gdb_to_r2_profile(char *gdb) {
 	int number, rel, offset, size, type_bits, ret;
 	// Every line is -
 	// Name Number Rel Offset Size Type Groups
+	ptr = r_str_trim_head_ro (ptr);
 
-	// Skip whitespace at beginning of line and empty lines
-	while (isspace ((ut8)*ptr)) {
-		ptr++;
-	}
 	// It's possible someone includes the heading line too. Skip it
 	if (r_str_startswith (ptr, "Name")) {
 		if (!(ptr = strchr (ptr, '\n'))) {
@@ -297,9 +294,9 @@ static bool gdb_to_r2_profile(char *gdb) {
 			&offset, &size, type, groups);
 		// Groups is optional, others not
 		if (ret < 6) {
-			eprintf ("Could not parse line: %s\n", ptr);
-			if (!ptr1) {
-				return true;
+			if (*ptr != '*') {
+				eprintf ("Could not parse line: %s\n", ptr);
+				return false;
 			}
 			ptr = ptr1 + 1;
 			continue;
