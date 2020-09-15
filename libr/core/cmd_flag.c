@@ -751,7 +751,7 @@ static void print_function_labels(RAnal *anal, RAnalFunction *fcn, int rad) {
 		}
 	}
 	if (json) {
-		r_cons_printf ("%s\n", pj_string (pj));
+		r_cons_println (pj_string (pj));
 		pj_free (pj);
 	}
 }
