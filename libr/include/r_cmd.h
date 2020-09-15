@@ -9,6 +9,8 @@
 extern "C" {
 #endif
 
+typedef struct r_core_t RCore;
+
 //R_LIB_VERSION_HEADER (r_cmd);
 
 #define MACRO_LIMIT 1024
@@ -24,7 +26,7 @@ typedef enum r_cmd_status_t {
 } RCmdStatus;
 
 typedef int (*RCmdCb) (void *user, const char *input);
-typedef RCmdStatus (*RCmdArgvCb) (void *user, int argc, const char **argv);
+typedef RCmdStatus (*RCmdArgvCb) (RCore *core, int argc, const char **argv);
 typedef int (*RCmdNullCb) (void *user);
 
 typedef struct r_cmd_parsed_args_t {

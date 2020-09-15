@@ -58,8 +58,6 @@ extern const RCmdDescHelp w0_help;
 
 // w[1248][+-] helps
 
-extern const RCmdDescExample w_incdec_help_examples[];
-
 extern const RCmdDescHelp w1_incdec_help;
 extern const RCmdDescHelp w2_incdec_help;
 extern const RCmdDescHelp w4_incdec_help;
@@ -67,14 +65,10 @@ extern const RCmdDescHelp w8_incdec_help;
 
 // wB helps
 
-extern const RCmdDescExample wB_help_examples[];
-
 extern const RCmdDescHelp wB_help;
 extern const RCmdDescHelp wB_minus_help;
 
 // wv helps
-
-extern const RCmdDescExample wv_help_examples[];
 
 extern const RCmdDescHelp wv_help;
 extern const RCmdDescHelp wv1_help;

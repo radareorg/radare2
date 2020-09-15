@@ -566,24 +566,24 @@ static RCmdStatus common_wv_handler(RCore *core, int argc, const char **argv, in
 	return R_CMD_STATUS_OK;
 }
 
-static RCmdStatus wv_handler(void *user, int argc, const char **argv) {
-	return common_wv_handler (user, argc, argv, 0);
+static RCmdStatus wv_handler(RCore *core, int argc, const char **argv) {
+	return common_wv_handler (core, argc, argv, 0);
 }
 
-static RCmdStatus wv1_handler(void *user, int argc, const char **argv) {
-	return common_wv_handler (user, argc, argv, 1);
+static RCmdStatus wv1_handler(RCore *core, int argc, const char **argv) {
+	return common_wv_handler (core, argc, argv, 1);
 }
 
-static RCmdStatus wv2_handler(void *user, int argc, const char **argv) {
-	return common_wv_handler (user, argc, argv, 2);
+static RCmdStatus wv2_handler(RCore *core, int argc, const char **argv) {
+	return common_wv_handler (core, argc, argv, 2);
 }
 
-static RCmdStatus wv4_handler(void *user, int argc, const char **argv) {
-	return common_wv_handler (user, argc, argv, 4);
+static RCmdStatus wv4_handler(RCore *core, int argc, const char **argv) {
+	return common_wv_handler (core, argc, argv, 4);
 }
 
-static RCmdStatus wv8_handler(void *user, int argc, const char **argv) {
-	return common_wv_handler (user, argc, argv, 8);
+static RCmdStatus wv8_handler(RCore *core, int argc, const char **argv) {
+	return common_wv_handler (core, argc, argv, 8);
 }
 
 static bool cmd_wff(RCore *core, const char *input) {
@@ -864,8 +864,7 @@ static int wB_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static RCmdStatus wB_handler(void *data, int argc, const char **argv) {
-	RCore *core = (void *)data;
+static RCmdStatus wB_handler(RCore *core, int argc, const char **argv) {
 	if (argc != 2) {
 		return R_CMD_STATUS_WRONG_ARGS;
 	}
@@ -873,8 +872,7 @@ static RCmdStatus wB_handler(void *data, int argc, const char **argv) {
 	return R_CMD_STATUS_OK;
 }
 
-static RCmdStatus wB_minus_handler(void *data, int argc, const char **argv) {
-	RCore *core = (void *)data;
+static RCmdStatus wB_minus_handler(RCore *core, int argc, const char **argv) {
 	if (argc != 2) {
 		return R_CMD_STATUS_WRONG_ARGS;
 	}
@@ -907,8 +905,7 @@ static int w0_handler_old(void *data, const char *input) {
 	return w0_handler_common (core, len);
 }
 
-static RCmdStatus w0_handler(void *data, int argc, const char **argv) {
-	RCore *core = (void *)data;
+static RCmdStatus w0_handler(RCore *core, int argc, const char **argv) {
 	if (argc != 2) {
 		return R_CMD_STATUS_WRONG_ARGS;
 	}
@@ -948,20 +945,20 @@ static RCmdStatus w_incdec_handler(RCore *core, int argc, const char **argv, int
 	return R_CMD_STATUS_OK;
 }
 
-static RCmdStatus w1_incdec_handler(void *data, int argc, const char **argv) {
-	return w_incdec_handler (data, argc, argv, 1);
+static RCmdStatus w1_incdec_handler(RCore *core, int argc, const char **argv) {
+	return w_incdec_handler (core, argc, argv, 1);
 }
 
-static RCmdStatus w2_incdec_handler(void *data, int argc, const char **argv) {
-	return w_incdec_handler (data, argc, argv, 2);
+static RCmdStatus w2_incdec_handler(RCore *core, int argc, const char **argv) {
+	return w_incdec_handler (core, argc, argv, 2);
 }
 
-static RCmdStatus w4_incdec_handler(void *data, int argc, const char **argv) {
-	return w_incdec_handler (data, argc, argv, 4);
+static RCmdStatus w4_incdec_handler(RCore *core, int argc, const char **argv) {
+	return w_incdec_handler (core, argc, argv, 4);
 }
 
-static RCmdStatus w8_incdec_handler(void *data, int argc, const char **argv) {
-	return w_incdec_handler (data, argc, argv, 8);
+static RCmdStatus w8_incdec_handler(RCore *core, int argc, const char **argv) {
+	return w_incdec_handler (core, argc, argv, 8);
 }
 
 static int w6_handler_old(void *data, const char *input) {
@@ -1420,8 +1417,7 @@ static int w_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static RCmdStatus w_handler(void *data, int argc, const char **argv) {
-	RCore *core = (void *)data;
+static RCmdStatus w_handler(RCore *core, int argc, const char **argv) {
 	if (argc < 2) {
 		return R_CMD_STATUS_WRONG_ARGS;
 	}
