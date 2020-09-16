@@ -7,7 +7,7 @@ coverage:
           - 'release-*'
         if_not_found: failure
         if_ci_failed: error
-        informational: false
+        informational: true
     patch:
       default:
         if_not_found: success
