@@ -2013,45 +2013,54 @@ static void show_drpi(RCore *core) {
 	}
 }
 
-static void cmd_reg_profile (RCore *core, char from, const char *str) { // "arp" and "drp"
+static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" and "drp"
 	const char *ptr;
 	RReg *r = r_config_get_i (core->config, "cfg.debug")? core->dbg->reg: core->anal->reg;
 	switch (str[1]) {
-	case '\0': // "drp"
+	case '\0': // "drp" "arp"
 		if (r->reg_profile_str) {
 			r_cons_println (r->reg_profile_str);
 		} else {
 			eprintf ("No register profile defined. Try 'dr.'\n");
 		}
 		break;
-	case 'c': // drpc
+	case 'c': // "drpc" "arpc"
 		if (core->dbg->reg->reg_profile_cmt) {
 			r_cons_println (r->reg_profile_cmt);
 		}
 		break;
-	case ' ': // "drp "
-		ptr = str + 2;
-		while (isspace ((ut8)*ptr)) {
-			ptr++;
+	case 'g': // "drpg" "arpg"
+		ptr = r_str_trim_head_ro (str + 2);
+		if (!R_STR_ISEMPTY (ptr)) {
+			char *r2profile = r_reg_parse_gdb_profile (ptr);
+			if (r2profile) {
+				r_cons_println (r2profile);
+				core->num->value = 0;
+				free (r2profile);
+			} else {
+				core->num->value = 1;
+				eprintf ("Warning: Cannot parse gdb profile.\n");
+			}
+		} else {
+			eprintf ("Usage: arpg [gdb-reg-profile]\n");
 		}
-		if (r_str_startswith (ptr, "gdb ")) {
-			r_reg_parse_gdb_profile (ptr + 4);
-			break;
-		}
-		r_reg_set_profile (r, str + 2);
-		r_debug_plugin_set_reg_profile (core->dbg, str + 2);
+		break;
+	case ' ': // "drp " "arp "
+		ptr = r_str_trim_head_ro (str + 2);
+		r_reg_set_profile (r, ptr);
+		r_debug_plugin_set_reg_profile (core->dbg, ptr);
 		break;
 	case '.': { // "drp."
 		RRegSet *rs = r_reg_regset_get (r, R_REG_TYPE_GPR);
 		if (rs) {
 			eprintf ("size = %d\n", rs->arena->size);
 		}
+		}
 		break;
-	}
-	case 'i': // "drpi"
+	case 'i': // "drpi" "arpi"
 		show_drpi (core);
 		break;
-	case 's': // "drps"
+	case 's': // "drps" "arps"
 		if (str[2] == ' ') {
 			ut64 n = r_num_math (core->num, str+2);
 			// TODO: move this thing into the r_reg API
@@ -2079,7 +2088,7 @@ static void cmd_reg_profile (RCore *core, char from, const char *str) { // "arp"
 			} else eprintf ("Cannot find GPR register arena.\n");
 		}
 		break;
-	case 'j': // "drpj"
+	case 'j': // "drpj" "arpj"
 		{
 			// "drpj" .. dup from "arpj"
 			RListIter *iter;
@@ -2118,10 +2127,10 @@ static void cmd_reg_profile (RCore *core, char from, const char *str) { // "arp"
 			pj_free (pj);
 		}
 		break;
-	case '?': // "drp?"
+	case '?': // "drp?" "arp?"
 	default:
 		{
-			const char *from_a[] = { "arp", "arpi", "arp.", "arpj", "arps" };
+			const char *from_a[] = { "arp", "arpi", "arpg", "arp.", "arpj", "arps" };
 			// TODO #7967 help refactor
 			const char **help_msg = help_msg_drp;
 			if (from == 'a') {
