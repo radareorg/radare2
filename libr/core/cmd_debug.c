@@ -2035,8 +2035,6 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 			char *r2profile = r_reg_parse_gdb_profile (ptr);
 			if (r2profile) {
 				r_cons_println (r2profile);
-				// r_reg_set_profile (r, r2profile);
-				// r_debug_plugin_set_reg_profile (core->dbg, r2profile);
 				core->num->value = 0;
 				free (r2profile);
 			} else {
