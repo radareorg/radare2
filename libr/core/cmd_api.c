@@ -76,7 +76,7 @@ static RCmdDesc *create_cmd_desc(RCmd *cmd, RCmdDesc *parent, RCmdDescType type,
 	res->n_children = 0;
 	res->help = help? help: &not_defined_help;
 	r_pvector_init (&res->children, (RPVectorFree)cmd_desc_free);
-	if (!ht_pp_insert (cmd->ht_cmds, name, res)) {
+	if (type != R_CMD_DESC_TYPE_GROUP && !ht_pp_insert (cmd->ht_cmds, name, res)) {
 		goto err;
 	}
 	cmd_desc_set_parent (res, parent);
@@ -421,6 +421,10 @@ static void fill_usage_strbuf(RStrBuf *sb, RCmdDesc *cd, bool use_color) {
 }
 
 static char *children_chars(RCmdDesc *cd) {
+	if (cd->help->options) {
+		return strdup (cd->help->options);
+	}
+
 	RStrBuf sb;
 	r_strbuf_init (&sb);
 
@@ -434,24 +438,39 @@ static char *children_chars(RCmdDesc *cd) {
 
 	if (r_strbuf_is_empty (&sb) || r_strbuf_length (&sb) >= MAX_CHILDREN_SHOW) {
 		r_strbuf_fini (&sb);
-		return strdup ("?");
+		return strdup ("[?]");
 	}
 
+	r_strbuf_prepend (&sb, "[");
+	r_strbuf_append (&sb, "]");
 	return r_strbuf_drain_nofree (&sb);
 }
 
 static bool show_children_shortcut(RCmdDesc *cd, RCmdDesc *parent) {
-	return (cd->n_children && parent) || cd->type == R_CMD_DESC_TYPE_OLDINPUT;
+	return (cd != parent && (cd->n_children || cd->help->options)) || cd->type == R_CMD_DESC_TYPE_OLDINPUT;
+}
+
+static bool show_args(RCmdDesc *cd, RCmdDesc *parent) {
+	return (cd->n_children == 0 || cd == parent) && cd->help->args_str;
+}
+
+static bool show_group_args(RCmdDesc *cd, RCmdDesc *parent) {
+	return !show_args (cd, parent) && cd->help->group_args_str;
 }
 
 static size_t calc_padding_len(RCmdDesc *cd, RCmdDesc *parent) {
 	size_t name_len = strlen (cd->name);
-	size_t args_len = strlen0 (cd->help->args_str);
+	size_t args_len = 0;
 	size_t children_length = 0;
 	if (show_children_shortcut (cd, parent)) {
 		char *children_s = children_chars (cd);
-		children_length = strlen (children_s) + 2;
+		children_length = strlen (children_s);
 		free (children_s);
+	}
+	if (show_args (cd, parent)) {
+		args_len = strlen0 (cd->help->args_str);
+	} else if (show_group_args (cd, parent)) {
+		args_len = strlen0 (cd->help->group_args_str);
 	}
 	return name_len + args_len + children_length;
 }
@@ -464,7 +483,6 @@ static size_t update_max_len(RCmdDesc *cd, size_t max_len, RCmdDesc *parent) {
 static void print_child_help(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use_color, RCmdDesc *parent) {
 	size_t str_len = calc_padding_len (cd, parent);
 	size_t padding = str_len < max_len? max_len - str_len: 0;
-	const char *cd_args_str = cd->help->args_str? cd->help->args_str: "";
 	const char *cd_summary = cd->help->summary? cd->help->summary: "";
 
 	RCons *cons = r_cons_singleton ();
@@ -476,10 +494,14 @@ static void print_child_help(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use
 	r_strbuf_appendf (sb, "| %s%s", pal_input_color, cd->name);
 	if (show_children_shortcut (cd, parent)) {
 		char *children_s = children_chars (cd);
-		r_strbuf_appendf (sb, "%s[%s]", pal_args_color, children_s);
+		r_strbuf_appendf (sb, "%s%s", pal_args_color, children_s);
 		free (children_s);
 	}
-	r_strbuf_appendf (sb, "%s%s", pal_args_color, cd_args_str);
+	if (show_args (cd, parent)) {
+		r_strbuf_appendf (sb, "%s%s", pal_args_color, cd->help->args_str);
+	} else if (show_group_args (cd, parent)) {
+		r_strbuf_appendf (sb, "%s%s", pal_args_color, cd->help->group_args_str);
+	}
 	r_strbuf_appendf (sb, " %*s%s# %s%s\n", padding, "", pal_help_color, cd_summary, pal_reset);
 }
 
@@ -491,7 +513,7 @@ static char *inner_get_help(RCmd *cmd, RCmdDesc *cd, bool use_color) {
 	size_t max_len = 0;
 
 	if (cd->d.argv_data.cb) {
-		max_len = update_max_len (cd, max_len, NULL);
+		max_len = update_max_len (cd, max_len, cd);
 	}
 	r_cmd_desc_children_foreach (cd, it_cd) {
 		RCmdDesc *child = *(RCmdDesc **)it_cd;
@@ -499,7 +521,7 @@ static char *inner_get_help(RCmd *cmd, RCmdDesc *cd, bool use_color) {
 	}
 
 	if (cd->d.argv_data.cb) {
-		print_child_help (sb, cd, max_len, use_color, NULL);
+		print_child_help (sb, cd, max_len, use_color, cd);
 	}
 	r_cmd_desc_children_foreach (cd, it_cd) {
 		RCmdDesc *child = *(RCmdDesc **)it_cd;
@@ -1185,6 +1207,11 @@ R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *nam
 
 	res->d.argv_data.cb = cb;
 	return res;
+}
+
+R_API RCmdDesc *r_cmd_desc_group_new(RCmd *cmd, RCmdDesc *parent, const char *name, const RCmdDescHelp *help) {
+	r_return_val_if_fail (cmd && parent && name, NULL);
+	return create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_GROUP, name, help);
 }
 
 R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdCb cb, const RCmdDescHelp *help) {

@@ -213,6 +213,11 @@ const RCmdDescExample w_incdec_help_examples[] = {
 	{ 0 },
 };
 
+const RCmdDescHelp w_incdec_help = {
+	.summary = "increment/decrement byte,word..",
+	.options = "<1248><+->",
+};
+
 const RCmdDescHelp w1_incdec_help = {
 	.summary = "Increment/decrement a byte",
 	.usage = "w1[+-] [n]",
@@ -255,6 +260,7 @@ const RCmdDescExample wB_help_examples[] = {
 const RCmdDescHelp wB_help = {
 	.summary = "Set bits with given value",
 	.args_str = " [value]",
+	.group_args_str = " [value]",
 	.group_summary = "Set or unset bits with given value",
 	.description = "Set the bits that are set in the value passed as arguments. 0 bits in the value argument are ignored, while the others are set at the current offset",
 	.examples = wB_help_examples,
