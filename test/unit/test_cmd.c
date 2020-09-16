@@ -78,7 +78,7 @@ bool test_parsed_args_newargs(void) {
 	mu_end;
 }
 
-static RCmdStatus afl_argv_handler(void *user, int argc, const char **argv) {
+static RCmdStatus afl_argv_handler(RCore *core, int argc, const char **argv) {
 	return R_CMD_STATUS_OK;
 }
 
@@ -125,11 +125,11 @@ bool test_cmd_descriptor_oldinput(void) {
 	mu_end;
 }
 
-static RCmdStatus ap_handler(void *user, int argc, const char **argv) {
+static RCmdStatus ap_handler(RCore *core, int argc, const char **argv) {
 	return R_CMD_STATUS_OK;
 }
 
-static RCmdStatus aeir_handler(void *user, int argc, const char **argv) {
+static RCmdStatus aeir_handler(RCore *core, int argc, const char **argv) {
 	return R_CMD_STATUS_OK;
 }
 
@@ -183,14 +183,14 @@ bool test_cmd_get_desc(void) {
 	mu_end;
 }
 
-static RCmdStatus pd_handler(void *user, int argc, const char **argv) {
+static RCmdStatus pd_handler(RCore *core, int argc, const char **argv) {
 	mu_assert_eq (argc, 2, "pd_handler called with 2 arguments (name and arg)");
 	mu_assert_streq (argv[0], "pd", "pd is argv[0]");
 	mu_assert_streq (argv[1], "10", "10 is argv[1]");
 	return R_CMD_STATUS_OK;
 }
 
-static RCmdStatus p_handler_argv(void *user, int argc, const char **argv) {
+static RCmdStatus p_handler_argv(RCore *core, int argc, const char **argv) {
 	return R_CMD_STATUS_OK;
 }
 
@@ -267,7 +267,7 @@ bool test_cmd_help(void) {
 		.summary = "pd summary",
 		.usage = NULL,
 		.group_summary = NULL,
-		.args_str = "<num>",
+		.args_str = " <num>",
 		.description = "pd long description",
 		.examples = pd_help_examples,
 	};
@@ -276,7 +276,7 @@ bool test_cmd_help(void) {
 		.summary = "px summary",
 		.usage = "px-usage",
 		.group_summary = NULL,
-		.args_str = "<verylongarg_str_num>",
+		.args_str = " <verylongarg_str_num>",
 		.description = "px long description",
 		.examples = NULL,
 	};
@@ -339,7 +339,7 @@ bool test_cmd_group_help(void) {
 		.summary = "pd summary",
 		.usage = NULL,
 		.group_summary = NULL,
-		.args_str = "<num>",
+		.args_str = " <num>",
 		.description = "pd long description",
 		.examples = NULL,
 	};

@@ -3451,6 +3451,21 @@ R_API char *r_str_list_join(RList *str, const char *sep) {
 	return r_strbuf_drain (sb);
 }
 
+R_API char *r_str_array_join(const char **a, size_t n, const char *sep) {
+	RStrBuf *sb = r_strbuf_new ("");
+	size_t i;
+
+	if (n > 0) {
+		r_strbuf_append (sb, a[0]);
+	}
+
+	for (i = 1; i < n; i++) {
+		r_strbuf_append (sb, sep);
+		r_strbuf_append (sb, a[i]);
+	}
+	return r_strbuf_drain (sb);
+}
+
 /* return the number of arguments expected as extra arguments */
 R_API int r_str_fmtargs(const char *fmt) {
 	int n = 0;

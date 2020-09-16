@@ -6,7 +6,7 @@ R2DEPS=r_config r_cons r_io r_util r_flag r_asm
 R2DEPS+=r_debug r_hash r_bin r_lang r_io r_anal r_parse r_bp r_egg
 R2DEPS+=r_reg r_search r_syscall r_socket r_fs r_magic r_crypto
 
-OBJS=core.o cmd.o cfile.o cconfig.o visual.o cio.o yank.o libs.o agraph.o
+OBJS=core.o cmd.o cmd_helps.o cfile.o cconfig.o visual.o cio.o yank.o libs.o agraph.o
 OBJS+=fortune.o hack.o vasm.o patch.o cbin.o corelog.o rtr.o cmd_api.o
 OBJS+=carg.o canal.o project.o gdiff.o casm.o disasm.o cplugin.o
 OBJS+=vmenus.o vmenus_graph.o vmenus_zigns.o zdiff.o citem.o

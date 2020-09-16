@@ -297,11 +297,6 @@ module.exports = grammar({
 	tmp_string_command: $ => prec.right(1, seq($._simple_command, '@s:', $.arg)),
 	tmp_hex_command: $ => prec.right(1, seq($._simple_command, '@x:', $.arg)),
 
-	_interpreter_command: $ => prec.right(1, seq(
-	    field('command', alias('#!', $.cmd_identifier)),
-	    field('args', optional($.args)),
-	)),
-
 	// basic commands
 	task_command: $ => prec.left(1, choice(
 	    seq(
@@ -321,7 +316,7 @@ module.exports = grammar({
 	help_command: $ => prec.left(1, choice(
 	    field('command', alias($.question_mark_identifier, $.cmd_identifier)),
 	    seq(
-		field('command', alias(choice($._help_command, '#?', '#!?'), $.cmd_identifier)),
+		field('command', alias($._help_command, $.cmd_identifier)),
 		field('args', optional($.args)),
 	    ),
 	)),
@@ -333,7 +328,6 @@ module.exports = grammar({
 	    $._system_command,
 	    $._interpret_command,
 	    $._env_command,
-	    $._interpreter_command,
 	    $._pf_arged_command,
 	),
 
@@ -675,8 +669,7 @@ module.exports = grammar({
 
 	_dec_number: $ => choice(/[1-9][0-9]*/, /[0-9][0-9]+/),
 	_comment: $ => token(choice(
-	    '#',
-	    /#[^!\r\n][^\r\n]*/,
+	    /#[^\r\n]*/,
 	    seq('/*', /[^*]*\*+([^/*][^*]*\*+)*/, '/')
 	)),
 

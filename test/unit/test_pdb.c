@@ -420,7 +420,6 @@ bool test_pdb_tpi_rust(void) {
 			mu_assert_eq (type_info->leaf_type, eLF_ARGLIST, "Incorrect data type");
 		} else if (type->tpi_idx == 0x1058) {
 			mu_assert_eq (type_info->leaf_type, eLF_STRUCTURE, "Incorrect data type");
-			SType *return_type;
 			char *name;
 			type_info->get_name (&type->type_data, &name);
 			mu_assert_streq (name, "std::thread::local::fast::Key<core::cell::Cell<core::option::Option<core::ptr::non_null::NonNull<core::task::wake::Context>>>>", "Wrong name");
@@ -475,7 +474,6 @@ bool test_pdb_type_save(void) {
 	check_kv ("union.R2_TEST_UNION", "r2_union_var_1,r2_union_var_2");
 	check_kv ("union.R2_TEST_UNION.r2_union_var_1", "int32_t,0,0");
 	check_kv ("union.R2_TEST_UNION.r2_union_var_2", "double,0,0");
-	check_kv ("union.R2_TEST_UNION.!size", "8");
 
 	check_kv ("__m64", "union");
 	check_kv ("union.__m64", "m64_u64,m64_f32,m64_i8,m64_i16,m64_i32,m64_i64,m64_u8,m64_u16,m64_u32");
@@ -488,19 +486,16 @@ bool test_pdb_type_save(void) {
 	check_kv ("union.__m64.m64_u8", "uint8_t[8],0,0");
 	check_kv ("union.__m64.m64_u16", "uint16_t[8],0,0");
 	check_kv ("union.__m64.m64_u32", "uint32_t[8],0,0");
-	check_kv ("union.__m64.!size", "8");
 
 	check_kv ("TEST_CLASS", "struct");
 	check_kv ("struct.TEST_CLASS", "class_var1,calss_var2");
 	check_kv ("struct.TEST_CLASS.class_var1", "int32_t,0,0");
 	check_kv ("struct.TEST_CLASS.calss_var2", "uint16_t,4,0");
-	check_kv ("union.__m64.!size", "8");
 
 	check_kv ("localeinfo_struct", "struct");
 	check_kv ("struct.localeinfo_struct", "locinfo,mbcinfo");
 	check_kv ("struct.localeinfo_struct.locinfo", "struct threadlocaleinfostruct*,0,0");
 	check_kv ("struct.localeinfo_struct.mbcinfo", "struct threadmbcinfostruct*,4,0");
-	check_kv ("union.__m64.!size", "8");
 	r_anal_free (anal);
 	mu_end;
 }

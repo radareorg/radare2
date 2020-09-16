@@ -241,3 +241,14 @@ struct NSString {
 };
 EOF
 RUN
+
+NAME=tc typedef
+FILE=-
+CMDS=<<EOF
+"td typedef char *string;"
+ttc string
+EOF
+EXPECT=<<EOF
+typedef char * string;
+EOF
+RUN

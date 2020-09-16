@@ -229,10 +229,9 @@ RUN
 NAME="base help"
 FILE=-
 CMDS=<<EOF
-?~print
+?~print~?
 EOF
 EXPECT=<<EOF
-| p[?] [len]              print current block with format and length
-| x[?] [len]              alias for 'px' (print hexadecimal)
+2
 EOF
 RUN
