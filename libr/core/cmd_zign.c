@@ -176,7 +176,7 @@ static void addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
 
 static bool addCommentZign(RCore *core, const char *name, RList *args) {
 	if (r_list_length (args) != 1) {
-		eprintf ("Too many arguments for comment signature\n");
+		eprintf ("Invalid number of arguments\n");
 		return false;
 	}
 	const char *comment = (const char *)r_list_get_top (args);
@@ -185,7 +185,7 @@ static bool addCommentZign(RCore *core, const char *name, RList *args) {
 
 static bool addNameZign(RCore *core, const char *name, RList *args) {
 	if (r_list_length (args) != 1) {
-		eprintf ("Too many arguments for a realname signature\n");
+		eprintf ("Invalid number of arguments\n");
 		return false;
 	}
 	const char *realname = (const char *)r_list_get_top (args);
@@ -193,12 +193,7 @@ static bool addNameZign(RCore *core, const char *name, RList *args) {
 }
 
 static bool addGraphZign(RCore *core, const char *name, RList *args) {
-	RSignGraph graph;
-	graph.cc = -1;
-	graph.nbbs = -1;
-	graph.edges = -1;
-	graph.ebbs = -1;
-	graph.bbsum = 0;
+	RSignGraph graph = { .cc = -1, .nbbs = -1, .edges = -1, .ebbs = -1, .bbsum = 0 };
 
 	char *ptr;
 	RListIter *iter;
@@ -246,7 +241,8 @@ static bool addBytesZign(RCore *core, const char *name, int type, RList *args) {
 	const char *hexbytes = (const char *)r_list_get_top (args);
 	if ((sep = (ut8 *)strchr (hexbytes, ':'))) {
 		int blen = sep - (ut8 *)hexbytes;
-		if (!blen || (blen & 1) || strlen ((char *)++sep) != blen) {
+		sep++;
+		if (!blen || (blen & 1) || strlen ((char *)sep) != blen) {
 			eprintf ("error: cannot parse hexpairs\n");
 			return false;
 		}
@@ -255,7 +251,7 @@ static bool addBytesZign(RCore *core, const char *name, int type, RList *args) {
 		memcpy (bytes, hexbytes, blen);
 		memcpy (mask, sep, blen);
 		size = r_hex_str2bin ((char*) bytes, bytes);
-		if (size != blen / 2 || r_hex_str2bin ((char*) mask, mask) != size) {
+		if (size != blen / 2 || r_hex_str2bin ((char*)mask, mask) != size) {
 			eprintf ("error: cannot parse hexpairs\n");
 			retval = false;
 			goto out;
@@ -295,6 +291,9 @@ static bool addOffsetZign(RCore *core, const char *name, RList *args) {
 		return false;
 	}
 	const char *offstr = (const char *)r_list_get_top (args);
+	if (!offstr) {
+		return false;
+	}
 	ut64 offset = r_num_get (core->num, offstr);
 	return r_sign_add_addr (core->anal, name, offset);
 }
@@ -336,7 +335,7 @@ static int cmdAdd(void *data, const char *input) {
 	case ' ':
 		{
 			bool retval = true;
-			char *args = r_str_new (input + 1);
+			char *args = r_str_trim_dup (input + 1);
 			if (!args) {
 				return false;
 			}
@@ -345,14 +344,14 @@ static int cmdAdd(void *data, const char *input) {
 				goto out_case_manual;
 			}
 			if (r_list_length (lst) < 3) {
-				eprintf ("usage: za zigname type params\n");
+				eprintf ("Usage: za zigname type params\n");
 				retval = false;
 				goto out_case_manual;
 			}
 			char *zigname = r_list_pop_head (lst);
 			char *type_str = r_list_pop_head (lst);
 			if (strlen (type_str) != 1) {
-				eprintf ("usage: za zigname type params\n");
+				eprintf ("Usage: za zigname type params\n");
 				retval = false;
 				goto out_case_manual;
 			}
@@ -377,11 +376,11 @@ out_case_manual:
 			int n = 0;
 			bool retval = true;
 
-			args = r_str_new (r_str_trim_head_ro (input + 1));
+			args = r_str_trim_dup (input + 1);
 			n = r_str_word_set0 (args);
 
 			if (n > 2) {
-				eprintf ("usage: zaf [fcnname] [zigname]\n");
+				eprintf ("Usage: zaf [fcnname] [zigname]\n");
 				retval = false;
 				goto out_case_fcn;
 			}
@@ -466,7 +465,7 @@ out_case_fcn:
 		}
 		break;
 	default:
-		eprintf ("usage: za[fF?] [args]\n");
+		eprintf ("Usage: za[fF?] [args]\n");
 		return false;
 	}
 
@@ -474,32 +473,32 @@ out_case_fcn:
 }
 
 static int cmdOpen(void *data, const char *input) {
-	RCore *core = (RCore *) data;
+	RCore *core = (RCore *)data;
 
 	switch (*input) {
 	case ' ':
 		if (input[1]) {
 			return r_sign_load (core->anal, input + 1);
 		}
-		eprintf ("usage: zo filename\n");
+		eprintf ("Usage: zo filename\n");
 		return false;
 	case 's':
 		if (input[1] == ' ' && input[2]) {
 			return r_sign_save (core->anal, input + 2);
 		}
-		eprintf ("usage: zos filename\n");
+		eprintf ("Usage: zos filename\n");
 		return false;
 	case 'z':
 		if (input[1] == ' ' && input[2]) {
 			return r_sign_load_gz (core->anal, input + 2);
 		}
-		eprintf ("usage: zoz filename\n");
+		eprintf ("Usage: zoz filename\n");
 		return false;
 	case '?':
 		r_core_cmd_help (core, help_msg_zo);
 		break;
 	default:
-		eprintf ("usage: zo[zs] filename\n");
+		eprintf ("Usage: zo[zs] filename\n");
 		return false;
 	}
 
@@ -513,14 +512,14 @@ static int cmdSpace(void *data, const char *input) {
 	switch (*input) {
 	case '+':
 		if (!input[1]) {
-			eprintf ("usage: zs+zignspace\n");
+			eprintf ("Usage: zs+zignspace\n");
 			return false;
 		}
 		r_spaces_push (zs, input + 1);
 		break;
 	case 'r':
 		if (input[1] != ' ' || !input[2]) {
-			eprintf ("usage: zsr newname\n");
+			eprintf ("Usage: zsr newname\n");
 			return false;
 		}
 		r_spaces_rename (zs, NULL, input + 2);
@@ -541,7 +540,7 @@ static int cmdSpace(void *data, const char *input) {
 		break;
 	case ' ':
 		if (!input[1]) {
-			eprintf ("usage: zs zignspace\n");
+			eprintf ("Usage: zs zignspace\n");
 			return false;
 		}
 		r_spaces_set (zs, input + 1);
@@ -550,7 +549,7 @@ static int cmdSpace(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_zs);
 		break;
 	default:
-		eprintf ("usage: zs[+-*] [namespace]\n");
+		eprintf ("Usage: zs[+-*] [namespace]\n");
 		return false;
 	}
 
@@ -558,13 +557,13 @@ static int cmdSpace(void *data, const char *input) {
 }
 
 static int cmdFlirt(void *data, const char *input) {
-	RCore *core = (RCore *) data;
+	RCore *core = (RCore *)data;
 
 	switch (*input) {
 	case 'd':
 		// TODO
 		if (input[1] != ' ') {
-			eprintf ("usage: zfd filename\n");
+			eprintf ("Usage: zfd filename\n");
 			return false;
 		}
 		r_sign_flirt_dump (core->anal, input + 2);
@@ -572,7 +571,7 @@ static int cmdFlirt(void *data, const char *input) {
 	case 's':
 		// TODO
 		if (input[1] != ' ') {
-			eprintf ("usage: zfs filename\n");
+			eprintf ("Usage: zfs filename\n");
 			return false;
 		}
 		int depth = r_config_get_i (core->config, "dir.depth");
@@ -591,7 +590,7 @@ static int cmdFlirt(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_zf);
 		break;
 	default:
-		eprintf ("usage: zf[dsz] filename\n");
+		eprintf ("Usage: zf[dsz] filename\n");
 		return false;
 	}
 	return true;
@@ -1078,7 +1077,7 @@ static int cmdCompare(void *data, const char *input) {
 	switch (*input) {
 	case ' ':
 		if (!input[1]) {
-			eprintf ("usage: zc other_space\n");
+			eprintf ("Usage: zc other_space\n");
 			result = false;
 			break;
 		}
@@ -1088,7 +1087,7 @@ static int cmdCompare(void *data, const char *input) {
 		switch (input[1]) {
 		case ' ':
 			if (!input[2]) {
-				eprintf ("usage: zcn other_space\n");
+				eprintf ("Usage: zcn other_space\n");
 				result = false;
 				break;
 			}
@@ -1096,14 +1095,14 @@ static int cmdCompare(void *data, const char *input) {
 			break;
 		case '!':
 			if (input[2] != ' ' || !input[3]) {
-				eprintf ("usage: zcn! other_space\n");
+				eprintf ("Usage: zcn! other_space\n");
 				result = false;
 				break;
 			}
 			result = r_sign_diff_by_name (core->anal, options, input + 3, true);
 			break;
 		default:
-			eprintf ("usage: zcn! other_space\n");
+			eprintf ("Usage: zcn! other_space\n");
 			result = false;
 		}
 		break;
@@ -1111,7 +1110,7 @@ static int cmdCompare(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_zc);
 		break;
 	default:
-		eprintf ("usage: zc[?n!] other_space\n");
+		eprintf ("Usage: zc[?n!] other_space\n");
 		result = false;
 	}
 
@@ -1227,14 +1226,14 @@ static int cmdSearch(void *data, const char *input) {
 		case '*':
 			return search (core, input[1] == '*', true);
 		default:
-			eprintf ("usage: z/[f*]\n");
+			eprintf ("Usage: z/[f*]\n");
 			return false;
 		}
 	case '?':
 		r_core_cmd_help (core, help_msg_z_slash);
 		break;
 	default:
-		eprintf ("usage: z/[*]\n");
+		eprintf ("Usage: z/[*]\n");
 		return false;
 	}
 	return true;
