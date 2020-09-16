@@ -42,11 +42,10 @@ R_API ut8 *r_reg_get_bytes(RReg *reg, int type, int *size) {
 	if (size) {
 		*size = sz;
 	}
-	buf = malloc (sz);
-	if (!reg->regset[type].arena->bytes) { // DBG
-		eprintf ("sz %d\n", sz);
-		*(ut8 *)0 = 0;
+	if (!sz) {
+		return NULL;
 	}
+	buf = malloc (sz);
 	if (buf) {
 		memcpy (buf, reg->regset[type].arena->bytes, sz);
 	}
