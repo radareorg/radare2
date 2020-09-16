@@ -46,11 +46,11 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 		if (write) {
 			ut8 *buf = r_reg_get_bytes (dbg->reg, i, &size);
 			if (!buf || !dbg->h->reg_write (dbg, i, buf, size)) {
-				if (!i) {
+				if (i == R_REG_TYPE_GPR) {
 					eprintf ("r_debug_reg: error writing "
 						"registers %d to %d\n", i, dbg->tid);
 				}
-				if (type != R_REG_TYPE_ALL) {
+				if (type != R_REG_TYPE_ALL || i == R_REG_TYPE_GPR) {
 					free (buf);
 					return false;
 				}
