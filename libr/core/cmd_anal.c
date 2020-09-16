@@ -1698,6 +1698,9 @@ static int mr(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 }
 
 static int esil_cost(RCore *core, ut64 addr, const char *expr) {
+	if (R_STR_ISEMPTY (expr)) {
+		return 0;
+	}
 	int ec = 0;
 	RAnalEsil *e = r_anal_esil_new (256, 0, 0);
 	r_anal_esil_setup (e, core->anal, false, false, false);
@@ -1929,7 +1932,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				}
 
 			}
-			if (R_STR_ISNOTEMPTY (esilstr)) {
+			if (esilstr) {
 				int ec = esil_cost (core, addr, esilstr);
 				pj_ki (pj, "esilcost", ec);
 			}
@@ -2005,7 +2008,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 							disasm, disasm, sizeof (disasm));
 				}
 			}
-			if (R_STR_ISNOTEMPTY (esilstr)) {
+			if (esilstr) {
 				int ec = esil_cost (core, addr, esilstr);
 				printline ("esilcost", "%d\n", ec);
 			}
