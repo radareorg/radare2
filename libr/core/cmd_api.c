@@ -487,6 +487,7 @@ static void print_child_help(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use
 
 	RCons *cons = r_cons_singleton ();
 	const char *pal_args_color = use_color? cons->context->pal.args: "",
+		   *pal_opt_color = use_color? cons->context->pal.reset: "",
 		   *pal_help_color = use_color? cons->context->pal.help: "",
 		   *pal_input_color = use_color? cons->context->pal.input: "",
 		   *pal_reset = use_color? cons->context->pal.reset: "";
@@ -494,7 +495,7 @@ static void print_child_help(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use
 	r_strbuf_appendf (sb, "| %s%s", pal_input_color, cd->name);
 	if (show_children_shortcut (cd, parent)) {
 		char *children_s = children_chars (cd);
-		r_strbuf_appendf (sb, "%s%s", pal_args_color, children_s);
+		r_strbuf_appendf (sb, "%s%s", pal_opt_color, children_s);
 		free (children_s);
 	}
 	if (show_args (cd, parent)) {
