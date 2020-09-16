@@ -1078,7 +1078,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 			pj_end (pj);
 			break;
 		default:
-			str_fmt = strcmp (h_flag, "unknown_flag")? sdb_fmt ("%s_%i %s", arch, bits, h_flag) \
+			str_fmt = h_flag && strcmp (h_flag, "unknown_flag")? sdb_fmt ("%s_%i %s", arch, bits, h_flag) \
 				: sdb_fmt ("%s_%i", arch, bits);
 			r_table_add_rowf (table, "nXnss", i, boffset, obj_size, str_fmt , machine);
 			bin->cb_printf ("%s\n", r_table_tostring(table));
@@ -1110,7 +1110,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 				pj_end (pj);
 				break;
 			default:
-				str_fmt = strcmp (h_flag, "unknown_flag")? sdb_fmt ("%s_%i %s", arch, bits, h_flag) \
+				str_fmt = h_flag && strcmp (h_flag, "unknown_flag")? sdb_fmt ("%s_%i %s", arch, bits, h_flag) \
 					: sdb_fmt ("%s_%i", arch, bits);
 				r_table_add_rowf (table, "nsnss", i, sdb_fmt ("0x%08" PFMT64x , boffset), obj_size, str_fmt, "");
 				bin->cb_printf ("%s\n", r_table_tostring(table));
