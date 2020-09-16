@@ -262,9 +262,12 @@ static void __core_cmd_tcc(RCore *core, const char *input) {
 		break;
 	case ' ':
 		if (strchr (input, '(')) {
-			r_anal_cc_set (core->anal, input + 1);
+			if (!r_anal_cc_set (core->anal, input + 1)) {
+				eprintf ("Invalid syntax in cc signature.");
+			}
 		} else {
-			char *cc = r_anal_cc_get (core->anal, input + 1);
+			const char *ccname = r_str_trim_head_ro (input + 1);
+			char *cc = r_anal_cc_get (core->anal, ccname);
 			if (cc) {
 				r_cons_printf ("%s\n", cc);
 				free (cc);
