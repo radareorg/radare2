@@ -44,8 +44,6 @@ jobs:
             os: ubuntu-latest
             build_system: meson
             compiler: gcc
-            meson_options: -Db_coverage=true
-            coverage: true
             run_tests: true
             enabled: ${{ github.event_name != 'pull_request' }}
             timeout: 45
@@ -59,8 +57,6 @@ jobs:
             os: ubuntu-latest
             build_system: meson
             compiler: gcc
-            meson_options: -Db_coverage=true
-            coverage: true
             enabled: ${{ github.event_name == 'pull_request' }}
             timeout: 45
           - name: linux-meson-gcc-newshell-tests
@@ -69,8 +65,10 @@ jobs:
             compiler: gcc
             newshell: true
             run_tests: true
+            meson_options: -Db_coverage=true
+            coverage: true
             enabled: true
-            timeout: 45
+            timeout: 50
           - name: macos-clang-tests
             os: macos-latest
             build_system: acr
