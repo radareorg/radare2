@@ -512,7 +512,7 @@ R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore) {
 	risp = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_SP], R_REG_TYPE_GPR);
 	if (ripc) {
 		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
-		orig = r_reg_get_bytes (dbg->reg, -1, &orig_sz);
+		orig = r_reg_get_bytes (dbg->reg, R_REG_TYPE_ALL, &orig_sz);
 		if (!orig) {
 			eprintf ("Cannot get register arena bytes\n");
 			return 0LL;

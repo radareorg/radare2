@@ -1235,7 +1235,7 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	return false;
 }
 
-int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
+int linux_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	int pid = dbg->tid;
 
 	if (type == R_REG_TYPE_DRX) {
