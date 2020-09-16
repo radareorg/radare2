@@ -222,7 +222,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 				if (flag && !strncmp (flag->name, "section.", 8)) {
 					flag = r_flag_get_i (f, off);
 				}
-				const char *label = p->label_get (p->analb.anal, fcn, off);
+				const char *label = fcn? p->label_get (fcn, off): NULL;
 				if (label || isvalidflag (flag)) {
 					if (p->notin_flagspace) {
 						if (p->flagspace == flag->space) {

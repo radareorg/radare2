@@ -295,6 +295,8 @@ typedef struct r_anal_function_t {
 	int type;
 	const char *cc; // calling convention, should come from RAnal.constpool
 	ut64 addr;
+	HtUP/*<ut64, char *>*/ *labels;
+	HtPP/*<char *, ut64 *>*/ *label_addrs;
 	RPVector vars;
 	HtUP/*<st64, RPVector<RAnalVar *>>*/ *inst_vars; // offset of instructions => the variables they access
 	ut64 reg_save_area; // size of stack area pre-reserved for saving registers 
@@ -759,7 +761,7 @@ typedef struct r_anal_bind_t {
 	RAnalGetHint get_hint;
 } RAnalBind;
 
-typedef const char *(*RAnalLabelAt) (RAnal *a, RAnalFunction *fcn, ut64);
+typedef const char *(*RAnalLabelAt) (RAnalFunction *fcn, ut64);
 
 typedef enum {
 	R_ANAL_VAR_KIND_REG = 'r',
@@ -1955,13 +1957,12 @@ R_API RAnalCaseOp* r_anal_switch_op_add_case(RAnalSwitchOp * swop, ut64 addr, ut
 R_API RAnalCycleFrame* r_anal_cycle_frame_new (void);
 R_API void r_anal_cycle_frame_free (RAnalCycleFrame *cf);
 
-
 /* labels */
-R_API ut64 r_anal_fcn_label_get (RAnal *anal, RAnalFunction *fcn, const char *name);
-R_API const char *r_anal_fcn_label_at (RAnal *anal, RAnalFunction *fcn, ut64 addr);
-R_API int r_anal_fcn_label_set (RAnal *anal, RAnalFunction *fcn, const char *name, ut64 addr);
-R_API int r_anal_fcn_label_del (RAnal *anal, RAnalFunction *fcn, const char *name, ut64 addr);
-R_API int r_anal_fcn_labels (RAnal *anal, RAnalFunction *fcn, int rad);
+R_API ut64 r_anal_function_get_label(RAnalFunction *fcn, const char *name);
+R_API const char *r_anal_function_get_label_at(RAnalFunction *fcn, ut64 addr);
+R_API bool r_anal_function_set_label(RAnalFunction *fcn, const char *name, ut64 addr);
+R_API bool r_anal_function_delete_label(RAnalFunction *fcn, const char *name);
+R_API bool r_anal_function_delete_label_at(RAnalFunction *fcn, ut64 addr);
 
 /* limits */
 R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to);

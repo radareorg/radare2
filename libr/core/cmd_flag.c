@@ -682,6 +682,80 @@ static int flag_space_stack_list(RFlag *f, int mode) {
 	return i;
 }
 
+typedef struct {
+	int rad;
+	PJ *pj;
+	RAnalFunction *fcn;
+} PrintFcnLabelsCtx;
+
+static bool print_function_labels_cb(void *user, const ut64 addr, const void *v) {
+	const PrintFcnLabelsCtx *ctx = user;
+	const char *name = v;
+	switch (ctx->rad) {
+	case '*':
+	case 1:
+		r_cons_printf ("f.%s@0x%08"PFMT64x"\n", name, addr);
+		break;
+	case 'j':
+		pj_kn (ctx->pj, name, addr);
+		break;
+	default:
+		r_cons_printf ("0x%08"PFMT64x" %s   [%s + %"PFMT64d"]\n",
+			addr,
+			name, ctx->fcn->name,
+			addr - ctx->fcn->addr, addr);
+	}
+	return true;
+}
+
+
+static void print_function_labels_for(RAnalFunction *fcn, int rad, PJ *pj) {
+	r_return_if_fail (fcn && (rad != 'j' || pj));
+	bool json = rad == 'j';
+	if (json) {
+		pj_o (pj);
+	}
+	PrintFcnLabelsCtx ctx = { rad, pj, fcn };
+	ht_up_foreach (fcn->labels, print_function_labels_cb, &ctx);
+	if (json) {
+		pj_end (pj);
+	}
+}
+
+static void print_function_labels(RAnal *anal, RAnalFunction *fcn, int rad) {
+	r_return_if_fail (anal || fcn);
+	PJ *pj = NULL;
+	bool json = rad == 'j';
+	if (json) {
+		pj = pj_new ();
+	}
+	if (fcn) {
+		print_function_labels_for (fcn, rad, pj);
+	} else {
+		if (json) {
+			pj_o (pj);
+		}
+		RAnalFunction *f;
+		RListIter *iter;
+		r_list_foreach (anal->fcns, iter, f) {
+			if (!f->labels->count) {
+				continue;
+			}
+			if (json) {
+				pj_k (pj, f->name);
+			}
+			print_function_labels_for (f, rad, pj);
+		}
+		if (json) {
+			pj_end (pj);
+		}
+	}
+	if (json) {
+		r_cons_println (pj_string (pj));
+		pj_free (pj);
+	}
+}
+
 static int cmd_flag(void *data, const char *input) {
 	static int flagenum = 0;
 	RCore *core = (RCore *)data;
@@ -940,7 +1014,7 @@ rep:
 			if (*flagname == '.') {
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 				if (fcn) {
-					r_anal_fcn_label_del (core->anal, fcn, flagname  +  1, off);
+					r_anal_function_delete_label_at (fcn, off);
 				} else {
 					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 				}
@@ -955,16 +1029,16 @@ rep:
 			r_flag_unset_off (core->flags, off);
 		}
 		break;
-	case '.':
+	case '.': // "f."
 		input = r_str_trim_head_ro (input + 1) - 1;
 		if (input[1]) {
-			if (input[1] == '*') {
+			if (input[1] == '*' || input[1] == 'j') {
 				if (input[2] == '*') {
-					r_anal_fcn_labels (core->anal, NULL, 1);
+					print_function_labels (core->anal, NULL, input[1]);
 				} else {
 					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 					if (fcn) {
-						r_anal_fcn_labels (core->anal, fcn, 1);
+						print_function_labels (core->anal, fcn, input[1]);
 					} else {
 						eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 					}
@@ -981,9 +1055,9 @@ rep:
 					r_str_trim (name);
 					if (fcn) {
 						if (*name=='-') {
-							r_anal_fcn_label_del (core->anal, fcn, name + 1, off);
+							r_anal_function_delete_label (fcn, name + 1);
 						} else {
-							r_anal_fcn_label_set (core->anal, fcn, name, off);
+							r_anal_function_set_label (fcn, name, off);
 						}
 					} else {
 						eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
@@ -994,7 +1068,7 @@ rep:
 		} else {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 			if (fcn) {
-				r_anal_fcn_labels (core->anal, fcn, 0);
+				print_function_labels (core->anal, fcn, 0);
 			} else {
 				eprintf ("Local flags require a function to work.");
 			}
