@@ -853,23 +853,30 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 	r_list_join (all_vars, cache.bvars);
 	r_list_join (all_vars, cache.svars);
 
+	RStrBuf key, value;
+	r_strbuf_init (&key);
+	r_strbuf_init (&value);
+
 	r_list_foreach (all_vars, iter, var) {
 		if (var->isarg) {
-			char *key = r_str_newf ("func.%s.arg.%d", fcn->name, arg_count);
-			char *value = r_str_newf ("%s,%s", var->type, var->name);
-			sdb_set (core->anal->sdb_types, key, value, 0);
-			free (key);
-			free (value);
+			if (!r_strbuf_setf (&key, "func.%s.arg.%d", fcn->name, arg_count) ||
+				!r_strbuf_setf (&value, "%s,%s", var->type, var->name)) {
+				goto exit;
+			}
+			sdb_set (core->anal->sdb_types, r_strbuf_get (&key), r_strbuf_get (&value), 0);
 			arg_count++;
 		}
 	}
 	if (arg_count > 0) {
-		char *key = r_str_newf ("func.%s.args", fcn->name);
-		char *value = r_str_newf ("%d", arg_count);
-		sdb_set (core->anal->sdb_types, key, value, 0);
-		free (key);
-		free (value);
+		if (!r_strbuf_setf (&key, "func.%s.args", fcn->name) ||
+			!r_strbuf_setf (&value, "%d", arg_count)) {
+			goto exit;
+		}
+		sdb_set (core->anal->sdb_types, r_strbuf_get (&key), r_strbuf_get (&value), 0);
 	}
+exit:
+	r_strbuf_fini (&key);
+	r_strbuf_fini (&value);
 	r_anal_fcn_vars_cache_fini (&cache);
 }
 
