@@ -108,7 +108,7 @@ static int parse(RParse *p, const char *data, char *str) {
 		data += 3;
 	}
 	char w0[256], w1[256], w2[256], w3[256];
-	int i, len = strlen (data);
+	size_t i, len = strlen (data);
 	char *buf, *ptr, *optr;
 
 	if (R_STR_ISEMPTY (data)) {
