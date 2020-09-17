@@ -1586,6 +1586,8 @@ txf main
 ?e =
 txf fcn.00011b90
 ?e =
+txt size_t
+?e =
 txt size_t *
 EOF
 EXPECT=<<EOF
@@ -1603,6 +1605,11 @@ void *
 wint_t
 =
 fcn.0000f770
+fcn.00011b90
+fcn.00010010
+fcn.0000e780
+fcn.0000c0f0
+=
 fcn.00011b90
 EOF
 RUN
