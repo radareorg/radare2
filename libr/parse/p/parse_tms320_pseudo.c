@@ -156,7 +156,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	}
 
 	const char *wa[] = {w0, w1, w2, w3};
-	int nw = 0;
+	size_t nw = 0;
 	for (i = 0; i < 4; i++) {
 		if (wa[i][0]) {
 			nw++;
