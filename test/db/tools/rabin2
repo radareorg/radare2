@@ -890,7 +890,7 @@ EOF
 RUN
 
 NAME=rabin2 -D Unsupported
-FILE=bins/elf/libc.so.0
+FILE=--
 CMDS=!rabin2 -D XXX LOLILOL
 EXPECT_ERR=<<EOF
 Unsupported demangler
