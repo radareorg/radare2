@@ -104,7 +104,7 @@ static bool is_mips_o32(Elf_(Ehdr) *h) {
 	return true;
 }
 /*
- * Return non-zero if HDR identifies an MIPS n32 ELF binary.
+ * Return true if HDR identifies an MIPS n32 ELF binary.
  */
 static bool is_mips_n32(Elf_(Ehdr) *h) {
 
