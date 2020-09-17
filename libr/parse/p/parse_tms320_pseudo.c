@@ -15,10 +15,13 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		char *str;
 	} ops[] = {
 		{3, "add", "3 = 1 + 2"},    // add b12, b1, b9 -> b9 = b12 + b1
+		{3, "addu", "3 = 1 + 2"},    // add b12, b1, b9 -> b9 = b12 + b1
 		{2, "addk", "2 += 1"},      // addk 123, b0 -> b0 += 123
 		{3, "sadd", "3 = 1 + 2"},   // sadd b12, b1, b9 -> b9 = b12 + b1
 		{3, "sadd2", "3 = 1 + 2"},  // sadd2 b12, b1, b9 -> b9 = b12 + b1
 		{3, "sub", "3 = 1 - 2"},    // sub b12, b1, b9 -> b9 = b12 - b1
+		{3, "subu", "3 = 1 - 2"},    // sub b12, b1, b9 -> b9 = b12 - b1
+		{3, "sub2", "3 = 1 - 2"},    // sub b12, b1, b9 -> b9 = b12 - b1
 		{3, "subab", "3 = 1 - 2"},  // sub b12, b1, b9 -> b9 = b12 - b1
 		{3, "ssub", "3 = 1 - 2"},   // ssub b12, b1, b9 -> b9 = b12 - b1
 		{2, "mvk", "2 = 1"},        // mvk 1, a0 -> a0 = 1
@@ -26,8 +29,12 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{3, "band", "3 = 1 & 2"},   //
 		{4, "andn", "4 = 1 ~ 2 .. 3"}, //
 		{3, "smpylh", "3 = 1 * 2"}, //
+		{3, "smpy", "3 = 1 * 2"}, //
 		{3, "smpyh", "3 = 1 * 2"}, //
 		{3, "mpyu4", "3 = 1 * 2"}, //
+		{3, "smpy", "3 = 1 * 2"}, //
+		{3, "mpy2", "3 = 1 * 2"}, //
+		{3, "mpyu", "3 = 1 * 2"}, //
 		{3, "mpyh", "3 = 1 * 2"}, //
 		{3, "mpyhl", "3 = 1 * 2"}, //
 		{3, "mpyhlu", "3 = 1 * 2"}, //
@@ -35,6 +42,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{3, "mpyhi", "3 = 1 * 2"}, //
 		{3, "mpyhu", "3 = 1 * 2"}, //
 		{3, "mpyhus", "3 = 1 * 2"}, //
+		{3, "mpyhsu", "3 = 1 * 2"}, //
 		{3, "mpyhul", "3 = 1 * 2"}, //
 		{3, "mpyhuls", "3 = 1 * 2"}, //
 		{3, "mpyhir", "3 = 1 * 2"}, //
@@ -47,17 +55,22 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{2, "ldhu", "2 = (half)1"}, // ldhu
 		{2, "ldb", "2 = (byte)1"},  // ldb
 		{2, "ldbu", "2 = (byte)1"}, // ldbu
+		{2, "ldndw", "2 = 1"}, // ldbu
+		{2, "ldnw", "2 = 1"}, // ldbu
 		{2, "ldw", "2 = (word)1"},  // ldw
 		{2, "ldh", "2 = (half)1"},  // ldw
 		{2, "stb", "2 = (byte)1"},  // stb
 		{2, "stw", "2 = (word)1"},  // stw
 		{2, "sth", "2 = (half)1"},  // stw
+		{2, "stnw", "2 = (word)1"},  // stw
 		{2, "stdw", "2 = (half)1"}, // stw
+		{3, "or", "3 = 2 | 1"},
 		{3, "shl", "3 = (2 & 0xffffff) << 1"},
 		{3, "shr", "3 = (2 & 0xffffff) << 1"},
 		{4, "set", "4 = 2 .bitset 1 .. 2"}, // set a29,0x1a, 1, a19
 		{4, "clr", "4 = 2 .bitclear 1 .. 2"}, // clr a29,0x1a, 1, a19
-		{0, "invalid", "?"},
+		{0, "invalid", ""},
+		{0, "nop", ""},
 		{0, NULL}
 	};
 	if (!newstr) {
@@ -104,12 +117,11 @@ static int replace(int argc, const char *argv[], char *newstr) {
 }
 
 static int parse(RParse *p, const char *data, char *str) {
-	if (!strncmp (data, "|| ", 2)) {
+	if (!strncmp (data, "|| ", 3)) {
 		data += 3;
 	}
-	char w0[256], w1[256], w2[256], w3[256];
+	char *optr, w0[256], w1[256], w2[256], w3[256];
 	size_t i, len = strlen (data);
-	char *buf, *ptr, *optr;
 
 	if (R_STR_ISEMPTY (data)) {
 		*str = 0;
@@ -120,15 +132,12 @@ static int parse(RParse *p, const char *data, char *str) {
 		return false;
 	}
 	// malloc can be slow here :?
-	if (!(buf = malloc (len + 1))) {
-		return false;
-	}
-	memcpy (buf, data, len + 1);
+	char *buf = strdup (data);
 
 	r_str_replace_char (buf, '(', ' ');
 	r_str_replace_char (buf, ')', ' ');
 	*w0 = *w1 = *w2 = *w3 = '\0';
-	ptr = strchr (buf, ' ');
+	char *ptr = strchr (buf, ' ');
 	if (!ptr) {
 		ptr = strchr (buf, '\t');
 	}
