@@ -1698,6 +1698,9 @@ static int mr(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 }
 
 static int esil_cost(RCore *core, ut64 addr, const char *expr) {
+	if (R_STR_ISEMPTY (expr)) {
+		return 0;
+	}
 	int ec = 0;
 	RAnalEsil *e = r_anal_esil_new (256, 0, 0);
 	r_anal_esil_setup (e, core->anal, false, false, false);
@@ -1807,7 +1810,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				free (opname);
 			}
 		} else if (fmt == 'e') {
-			if (*esilstr) {
+			if (R_STR_ISNOTEMPTY (esilstr)) {
 				if (use_color) {
 					r_cons_printf ("%s0x%" PFMT64x Color_RESET " %s\n", color, core->offset + idx, esilstr);
 				} else {
@@ -1959,7 +1962,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			pj_ks (pj, "family", r_anal_op_family_to_string (op.family));
 			pj_end (pj);
 		} else if (fmt == 'r') {
-			if (*esilstr) {
+			if (R_STR_ISNOTEMPTY (esilstr)) {
 				if (use_color) {
 					r_cons_printf ("%s0x%" PFMT64x Color_RESET "\n", color, core->offset + idx);
 				} else {
@@ -2096,7 +2099,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			if (hint && hint->esil) {
 				printline ("esil", "%s\n", hint->esil);
-			} else if (*esilstr) {
+			} else if (R_STR_ISNOTEMPTY (esilstr)) {
 				printline ("esil", "%s\n", esilstr);
 			}
 			if (hint && hint->jump != UT64_MAX) {
@@ -5459,7 +5462,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	for (ops = ptr = 0; ptr < buf_sz && hasNext (mode); ops++, ptr += len) {
 		len = r_anal_op (core->anal, &aop, addr + ptr, buf + ptr, buf_sz - ptr, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 		esilstr = R_STRBUF_SAFEGET (&aop.esil);
-		if (*esilstr) {
+		if (R_STR_ISNOTEMPTY (esilstr)) {
 			if (len < 1) {
 				eprintf ("Invalid 0x%08"PFMT64x" instruction %02x %02x\n",
 					addr + ptr, buf[ptr], buf[ptr + 1]);
@@ -6212,7 +6215,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			RAnalOp *aop = r_core_anal_op (core, core->offset, R_ANAL_OP_MASK_ESIL);
 			if (aop) {
 				const char *esilstr = r_strbuf_get (&aop->esil);
-				if (esilstr) {
+				if (R_STR_ISNOTEMPTY (esilstr)) {
 					r_core_anal_esil_graph (core, esilstr);
 				}
 			}
