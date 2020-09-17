@@ -18,6 +18,23 @@
 #define R_BIN_ELF_ALL_SYMBOLS (R_BIN_ELF_SYMTAB_SYMBOLS | R_BIN_ELF_DYNSYM_SYMBOLS)
 #define ELFOBJ struct Elf_(r_bin_elf_obj_t)
 
+#if R_BIN_ELF64
+#define R_BIN_ELF_WORDSIZE 0x8
+#define R_BIN_ELF_WORD_MAX UT64_MAX
+#define R_BIN_ELF_READWORD(x, i) READ64 (x, i)
+#define R_BIN_ELF_BREADWORD(x, i) BREAD64 (x, i)
+#define R_BIN_ELF_ADDR_MAX UT64_MAX
+#define R_BIN_ELF_XWORD_MAX UT64_MAX
+#else
+#define R_BIN_ELF_WORDSIZE 0x4
+#define R_BIN_ELF_WORD_MAX UT32_MAX
+#define R_BIN_ELF_READWORD(x, i) READ32 (x, i)
+#define R_BIN_ELF_BREADWORD(x, i) BREAD32 (x, i)
+#define R_BIN_ELF_ADDR_MAX UT32_MAX
+#define R_BIN_ELF_XWORD_MAX UT64_MAX
+#endif
+
+
 typedef struct r_bin_elf_section_t {
 	ut64 offset;
 	ut64 rva;
