@@ -122,6 +122,7 @@ R_API void r_anal_function_free(void *_fcn) {
 	fcn->bbs = NULL;
 	free (fcn->fingerprint);
 	r_anal_diff_free (fcn->diff);
+	r_list_free (fcn->imports);
 	free (fcn);
 }
 
