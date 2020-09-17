@@ -87,7 +87,7 @@ static inline bool is_elfclass64(Elf_(Ehdr) *h) {
 }
 
 /*
- * Return non-zero if HDR identifies an MIPS o32 ELF binary.
+ * Return true if HDR identifies an MIPS o32 ELF binary.
  */
 static bool is_mips_o32(Elf_(Ehdr) *h) {
 	if (h->e_ident[EI_CLASS] != ELFCLASS32) {
