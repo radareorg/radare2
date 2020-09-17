@@ -1061,9 +1061,6 @@ R_API int r_core_file_list(RCore *core, int mode) {
 	RListIter *it;
 	RBinFile *bf;
 	RListIter *iter;
-	if (mode == 'j') {
-		r_cons_printf ("[");
-	}
 	r_list_foreach (core->files, iter, f) {
 		desc = r_io_desc_get (core->io, f->fd);
 		if (!desc) {
@@ -1072,8 +1069,9 @@ R_API int r_core_file_list(RCore *core, int mode) {
 		}
 		from = 0LL;
 		switch (mode) {
-		case 'j': {  // "oj"
+		case 'j': {  // "oij"
 			PJ * pj = pj_new ();
+			pj_a (pj);
 			pj_o (pj);
 			pj_ks (pj, "raised", r_str_bool (core->io->desc->fd == f->fd));
 			pj_ki (pj, "fd", (int) f->fd);
@@ -1149,9 +1147,6 @@ R_API int r_core_file_list(RCore *core, int mode) {
 		break;
 		}
 		count++;
-	}
-	if (mode == 'j') {
-		r_cons_printf ("]\n");
 	}
 	return count;
 }
