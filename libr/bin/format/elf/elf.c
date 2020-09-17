@@ -116,6 +116,7 @@ static bool is_mips_n32(Elf_(Ehdr) *h) {
 	}
 	return true;
 }
+
 enum {
 	X86,
 	X86_64,
