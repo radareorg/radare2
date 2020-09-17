@@ -142,7 +142,7 @@ static int parse(RParse *p, const char *data, char *str) {
 		if (ptr) {
 			*ptr++ = '\0';
 			ptr = (char*)r_str_trim_head_ro (ptr);
-			strncpy (w1, optr, sizeof (w1) - 1);
+			r_str_ncpy (w1, optr, sizeof (w1));
 			char *ptr2 = strchr (ptr, ',');
 			if (ptr2) {
 				*ptr2 = '\0';
