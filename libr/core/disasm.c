@@ -3481,14 +3481,15 @@ static bool ds_print_core_vmode_jump_hit(RDisasmState *ds, int pos) {
 	RCore *core = ds->core;
 	RAnal *a = core->anal;
 	RAnalHint *hint = r_anal_hint_get (a, ds->at);
+	bool res = false;
 	if (hint) {
 		if (hint->jump != UT64_MAX) {
 			ds_print_shortcut (ds, hint->jump, pos);
+			res = true;
 		}
 		r_anal_hint_free (hint);
-		return true;
 	}
-	return false;
+	return res;
 }
 
 static void getPtr(RDisasmState *ds, ut64 addr, int pos) {
