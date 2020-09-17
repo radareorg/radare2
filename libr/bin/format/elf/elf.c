@@ -2145,7 +2145,7 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 	}
 }
 char* Elf_(r_bin_elf_get_abi)(ELFOBJ *bin) {
-	Elf_(Ehdr)* ehdr =(Elf_(Ehdr) *) &bin->ehdr;
+	Elf_(Ehdr)* ehdr = (Elf_(Ehdr) *) &bin->ehdr;
 
 	if (ehdr->e_machine == EM_MIPS) {
 		if (is_elfclass64 (ehdr)) {
