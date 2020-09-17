@@ -183,11 +183,6 @@ static RList* sections(RBinFile *bf) {
 		return NULL;
 	}
 
-#if R_BIN_ELF64
-	int wordsize = 8;
-#else
-	int wordsize = 4;
-#endif
 	//there is not leak in section since they are cached by elf.c
 	//and freed within Elf_(r_bin_elf_free)
 	if ((section = Elf_(r_bin_elf_get_sections) (obj))) {
@@ -202,7 +197,8 @@ static RList* sections(RBinFile *bf) {
 				ptr->is_data = true;
 			}
 			if (is_wordable_section (ptr->name)) {
-				ptr->format = r_str_newf ("Cd %d[%"PFMT64d"]", wordsize, section[i].size / wordsize);
+				ptr->format = r_str_newf ("Cd %d[%"PFMT64d"]",
+					R_BIN_ELF_WORDSIZE, section[i].size / R_BIN_ELF_WORDSIZE);
 			}
 			ptr->size = section[i].type != SHT_NOBITS ? section[i].size : 0;
 			ptr->vsize = section[i].size;
@@ -923,11 +919,6 @@ static RList* patch_relocs(RBin *b) {
 	if (size == 0) {
 		return NULL;
 	}
-	if (!io->cached) {
-	   	eprintf ("Warning: run r2 with -e io.cache=true to fix relocations in disassembly\n");
-		return NULL;
-	}
-
 
 	void **it;
 	r_pvector_foreach (&io->maps, it) {
@@ -940,6 +931,10 @@ static RList* patch_relocs(RBin *b) {
 	if (!g) {
 		return NULL;
 	}
+	if (!io->cached) {
+		eprintf ("Warning: run r2 with -e io.cache=true to fix relocations in disassembly\n");
+		return NULL;
+	}
 	ut64 n_vaddr = g->itv.addr + g->itv.size;
 	// reserve at least that space
 	size = bin->g_reloc_num * cdsz;
@@ -949,6 +944,7 @@ static RList* patch_relocs(RBin *b) {
 	if (!gotr2desc) {
 		return NULL;
 	}
+
 
 	RIOMap *gotr2map = b->iob.map_get (io, n_vaddr);
 	if (!gotr2map) {
