@@ -976,7 +976,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
 			dst = getarg (&gop, 0, 0, NULL, DST_AR, &bitsize);
 
-			if (bitsize > 63) {
+			if (bitsize > 64) {
 				bitsize = 0;
 			}
 
@@ -1476,7 +1476,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
 			dst = getarg (&gop, 0, 1, "-", DST_AR, &bitsize);
 
-			if (bitsize > 63) {
+			if (bitsize > 64) {
 				bitsize = 0;
 			}
 
