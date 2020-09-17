@@ -15,30 +15,49 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		char *str;
 	} ops[] = {
 		{3, "add", "3 = 1 + 2"},    // add b12, b1, b9 -> b9 = b12 + b1
-		{3, "addu", "3 = 1 + 2"},    // add b12, b1, b9 -> b9 = b12 + b1
+		{3, "addu", "3 = 1 + 2"},
+		{3, "addw", "3 = 1 + 2"},
+		{3, "addaw", "3 = 1 + 2"},
+		{3, "addab", "3 = 1 + 2"},
+		{3, "addah", "3 = 1 + 2"},
 		{2, "addk", "2 += 1"},      // addk 123, b0 -> b0 += 123
 		{3, "sadd", "3 = 1 + 2"},   // sadd b12, b1, b9 -> b9 = b12 + b1
 		{3, "sadd2", "3 = 1 + 2"},  // sadd2 b12, b1, b9 -> b9 = b12 + b1
 		{3, "sub", "3 = 1 - 2"},    // sub b12, b1, b9 -> b9 = b12 - b1
-		{3, "subu", "3 = 1 - 2"},    // sub b12, b1, b9 -> b9 = b12 - b1
-		{3, "sub2", "3 = 1 - 2"},    // sub b12, b1, b9 -> b9 = b12 - b1
+		{3, "subu", "3 = 1 - 2"},   // sub b12, b1, b9 -> b9 = b12 - b1
+		{3, "sub2", "3 = 1 - 2"},   // sub b12, b1, b9 -> b9 = b12 - b1
 		{3, "subab", "3 = 1 - 2"},  // sub b12, b1, b9 -> b9 = b12 - b1
 		{3, "ssub", "3 = 1 - 2"},   // ssub b12, b1, b9 -> b9 = b12 - b1
+		{2, "mv", "2 = 1"},
 		{2, "mvk", "2 = 1"},        // mvk 1, a0 -> a0 = 1
 		{2, "mvklh", "2 = (half) 1"},// mvk 1, a0 -> a0 = 1
 		{3, "band", "3 = 1 & 2"},   //
-		{4, "andn", "4 = 1 ~ 2 .. 3"}, //
+		{1, "zero", "1 = zero"},
+		{3, "andn", "4 = 1 ~ 2"}, //
+		{3, "cmpgtu", "3 = 1 cmpgtu 2"}, //
+		{3, "cmpeq", "3 = 1 == 2"}, //
+		{3, "cmpge", "3 = 1 >= 2"}, //
+		{3, "cmplt", "3 = 1 <= 2"}, //
 		{3, "smpylh", "3 = 1 * 2"}, //
 		{3, "smpy", "3 = 1 * 2"}, //
 		{3, "smpyh", "3 = 1 * 2"}, //
 		{3, "mpyu4", "3 = 1 * 2"}, //
+		{3, "avg2", "3 = 1 avg 2"}, //
+		{3, "pack2", "3 = 1 pack 2"}, //
 		{3, "smpy", "3 = 1 * 2"}, //
+		{3, "max2", "3 = max(1, 2)"}, //
+		{3, "mpy", "3 = 1 * 2"}, //
 		{3, "mpy2", "3 = 1 * 2"}, //
 		{3, "mpyu", "3 = 1 * 2"}, //
 		{3, "mpyh", "3 = 1 * 2"}, //
 		{3, "mpyhl", "3 = 1 * 2"}, //
+		{3, "mpyhl", "3 = 1 * 2"}, //
+		{3, "mpylh", "3 = 1 * 2"}, //
+		{3, "mpysu", "3 = 1 * 2"}, //
+		{3, "smpyhl", "3 = 1 * 2"}, //
 		{3, "mpyhlu", "3 = 1 * 2"}, //
 		{3, "mpyhslu", "3 = 1 * 2"}, //
+		{3, "mpyluhs", "3 = 1 * 2"}, //
 		{3, "mpyhi", "3 = 1 * 2"}, //
 		{3, "mpyhu", "3 = 1 * 2"}, //
 		{3, "mpyhus", "3 = 1 * 2"}, //
@@ -64,9 +83,11 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{2, "sth", "2 = (half)1"},  // stw
 		{2, "stnw", "2 = (word)1"},  // stw
 		{2, "stdw", "2 = (half)1"}, // stw
+		{2, "stndw", "2 = (half)1"}, // stw
 		{3, "or", "3 = 2 | 1"},
-		{3, "shl", "3 = (2 & 0xffffff) << 1"},
-		{3, "shr", "3 = (2 & 0xffffff) << 1"},
+		{3, "shl", "3 = (2 & Oxffffff) << 1"},
+		{3, "shr", "3 = (2 & Oxffffff) << 1"},
+		{3, "shlmb", "3 = << 1"},
 		{4, "set", "4 = 2 .bitset 1 .. 2"}, // set a29,0x1a, 1, a19
 		{4, "clr", "4 = 2 .bitclear 1 .. 2"}, // clr a29,0x1a, 1, a19
 		{0, "invalid", ""},
@@ -120,60 +141,35 @@ static int parse(RParse *p, const char *data, char *str) {
 	if (!strncmp (data, "|| ", 3)) {
 		data += 3;
 	}
-	char *optr, w0[256], w1[256], w2[256], w3[256];
-	size_t i, len = strlen (data);
-
 	if (R_STR_ISEMPTY (data)) {
 		*str = 0;
 		return false;
 	}
 
-	if (len >= sizeof (w0)) {
-		return false;
-	}
-	// malloc can be slow here :?
 	char *buf = strdup (data);
 
-	r_str_replace_char (buf, '(', ' ');
-	r_str_replace_char (buf, ')', ' ');
-	*w0 = *w1 = *w2 = *w3 = '\0';
-	char *ptr = strchr (buf, ' ');
-	if (!ptr) {
-		ptr = strchr (buf, '\t');
-	}
-	if (ptr) {
-		*ptr++ = '\0';
-		ptr = (char*)r_str_trim_head_ro (ptr);
-		r_str_ncpy (w0, buf, sizeof (w0));
-		r_str_ncpy (w1, ptr, sizeof (w1) - 1);
-		optr = ptr;
-		ptr = strchr (ptr, ',');
-		if (ptr) {
-			*ptr++ = '\0';
-			ptr = (char*)r_str_trim_head_ro (ptr);
-			r_str_ncpy (w1, optr, sizeof (w1));
-			char *ptr2 = strchr (ptr, ',');
-			if (ptr2) {
-				*ptr2 = '\0';
-				ptr2 = (char*)r_str_trim_head_ro (ptr2);
-				r_str_ncpy (w3, ptr2 + 1, sizeof (w3));
-			}
-			r_str_ncpy (w2, ptr, sizeof (w2));
-		}
-	} else {
-		r_str_ncpy (w0, buf, sizeof (w0));
-	}
-
-	const char *wa[] = {w0, w1, w2, w3};
-	size_t nw = 0;
-	for (i = 0; i < 4; i++) {
-		if (wa[i][0]) {
+	RListIter *iter;
+	char *sp = strchr (buf, ' ');
+	size_t nw = 1;
+	const char *wa[5] = {0};
+	wa[0] = buf;
+	RList *list = NULL;
+	if (sp) {
+		*sp++ = 0;
+		list = r_str_split_list (sp, ",", 0);
+		char *w;
+		r_list_foreach (list, iter, w) {
+			wa[nw] = w;
 			nw++;
+			if (nw == 5) {
+				break;
+			}
 		}
 	}
 	replace (nw, wa, str);
 
 	free (buf);
+	r_list_free (list);
 
 	return true;
 }
