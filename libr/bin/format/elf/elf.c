@@ -80,7 +80,7 @@ static inline int UTX_MUL(ut64 *r, ut64 a, ut64 b) {
 #define EF_MIPS_ABI			0x0000f000
 
 /*
- * Return non-zero if HDR identifies an MIPS n64 ELF binary.
+ * Return true if HDR identifies an MIPS n64 ELF binary.
  */
 static inline bool is_elfclass64(Elf_(Ehdr) *h) {
 	return h->e_ident[EI_CLASS] == ELFCLASS64;
