@@ -184,6 +184,9 @@ jobs:
         NEWSHELL: ${{ matrix.newshell }}
         ASAN: ${{ matrix.asan }}
         ASAN_OPTIONS: ${{ matrix.asan_options }}
+    - name: Upload coverage info
+      uses: codecov/codecov-action@v1
+      if: matrix.coverage == '1' && matrix.enabled
     - name: Run fuzz tests
       if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
       run: |
@@ -198,9 +201,6 @@ jobs:
       env:
         NEWSHELL: ${{ matrix.newshell }}
         ASAN_OPTIONS: ${{ matrix.asan_options }}
-    - name: Upload coverage info
-      uses: codecov/codecov-action@v1
-      if: matrix.coverage == '1' && matrix.enabled
 
   build-centos6:
     name: Build on CentOS 6
