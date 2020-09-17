@@ -93,7 +93,7 @@ static ut64 t9_pre = UT64_MAX;
 #define ES_ADD_CK32_OVERF(x, y, z) es_add_ck (op, x, y, z, 32)
 #define ES_ADD_CK64_OVERF(x, y, z) es_add_ck (op, x, y, z, 64)
 
-static inline void es_sign_n_64(RAnal *a, RAnalOp *op, char *arg, int bit)
+static inline void es_sign_n_64(RAnal *a, RAnalOp *op, const char *arg, int bit)
 {
 	if (a->bits == 64) {
 		r_strbuf_appendf (&op->esil, ",%d,%s,~,%s,=,", bit, arg, arg);
@@ -102,7 +102,7 @@ static inline void es_sign_n_64(RAnal *a, RAnalOp *op, char *arg, int bit)
 	}
 }
 
-static inline void es_add_ck(RAnalOp *op, char *a1, char *a2, char *re, int bit)
+static inline void es_add_ck(RAnalOp *op, const char *a1, const char *a2, const char *re, int bit)
 {
 	ut64 mask = 1ULL << (bit-1);
 	r_strbuf_appendf (&op->esil,
