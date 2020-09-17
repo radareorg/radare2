@@ -152,7 +152,7 @@ static int parse(RParse *p, const char *data, char *str) {
 			r_str_ncpy (w2, ptr, sizeof (w2) - 1);
 		}
 	} else {
-		r_str_ncpy (w0, buf, sizeof (w0) - 1);
+		r_str_ncpy (w0, buf, sizeof (w0));
 	}
 
 	const char *wa[] = {w0, w1, w2, w3};
