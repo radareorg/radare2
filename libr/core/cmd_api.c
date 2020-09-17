@@ -438,11 +438,16 @@ static char *children_chars(RCmdDesc *cd) {
 
 	if (r_strbuf_is_empty (&sb) || r_strbuf_length (&sb) >= MAX_CHILDREN_SHOW) {
 		r_strbuf_fini (&sb);
-		return strdup ("[?]");
+		r_strbuf_set (&sb, "?");
 	}
 
-	r_strbuf_prepend (&sb, "[");
-	r_strbuf_append (&sb, "]");
+	if (!cd->n_children || r_cmd_desc_has_handler (cd)) {
+		r_strbuf_prepend (&sb, "[");
+		r_strbuf_append (&sb, "]");
+	} else {
+		r_strbuf_prepend (&sb, "<");
+		r_strbuf_append (&sb, ">");
+	}
 	return r_strbuf_drain_nofree (&sb);
 }
 
@@ -1228,6 +1233,19 @@ R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char 
 R_API RCmdDesc *r_cmd_desc_parent(RCmdDesc *cd) {
 	r_return_val_if_fail (cd, NULL);
 	return cd->parent;
+}
+
+R_API bool r_cmd_desc_has_handler(RCmdDesc *cd) {
+	r_return_val_if_fail (cd, NULL);
+	switch (cd->type) {
+	case R_CMD_DESC_TYPE_ARGV:
+		return cd->d.argv_data.cb;
+	case R_CMD_DESC_TYPE_OLDINPUT:
+		return cd->d.oldinput_data.cb;
+	case R_CMD_DESC_TYPE_GROUP:
+		return false;
+	}
+	return false;
 }
 
 R_API bool r_cmd_desc_remove(RCmd *cmd, RCmdDesc *cd) {

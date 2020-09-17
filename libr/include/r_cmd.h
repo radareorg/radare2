@@ -275,6 +275,7 @@ R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *nam
 R_API RCmdDesc *r_cmd_desc_group_new(RCmd *cmd, RCmdDesc *parent, const char *name, const RCmdDescHelp *help);
 R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdCb cb, const RCmdDescHelp *help);
 R_API RCmdDesc *r_cmd_desc_parent(RCmdDesc *cd);
+R_API bool r_cmd_desc_has_handler(RCmdDesc *cd);
 R_API bool r_cmd_desc_remove(RCmd *cmd, RCmdDesc *cd);
 
 #define r_cmd_desc_children_foreach(root, it_cd) r_pvector_foreach (&root->children, it_cd)
