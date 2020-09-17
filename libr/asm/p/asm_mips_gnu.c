@@ -20,7 +20,7 @@ static unsigned char bytes[4];
 static char *pre_cpu = NULL;
 static char *pre_features = NULL;
 
-static int mips_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
+static int mips_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
 	memcpy (myaddr, bytes, length);
 	return 0;
 }

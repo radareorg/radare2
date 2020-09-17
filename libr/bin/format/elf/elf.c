@@ -100,7 +100,6 @@ static bool is_mips_o32(Elf_(Ehdr) *h) {
 		((h->e_flags & EF_MIPS_ABI) != EF_MIPS_ABI_O32)) {
 		return false;
 	}
-
 	return true;
 }
 /*
@@ -115,7 +114,6 @@ static bool is_mips_n32(Elf_(Ehdr) *h) {
 		((h->e_flags & EF_MIPS_ABI) != 0)) {
 		return false;
 	}
-
 	return true;
 }
 enum {
@@ -2182,18 +2180,15 @@ char* Elf_(r_bin_elf_get_cpu)(ELFOBJ *bin) {
 
 char* Elf_(r_bin_elf_get_head_flag)(ELFOBJ *bin) {
 	char *head_flag = r_str_new ("");
-	char *str = NULL;
-	str = Elf_(r_bin_elf_get_cpu) (bin);
+	char *str = Elf_(r_bin_elf_get_cpu) (bin);
 	if (str) {
 		r_str_append (head_flag, str);
 	}
 	str = Elf_(r_bin_elf_get_abi) (bin);
 	if (str) {
-		r_str_append (head_flag, " ");
-		r_str_append (head_flag, str);
+		r_str_appendf (head_flag, " %s", str);
 	}
-	
-	if (!*head_flag) {
+	if (R_STR_ISEMPTY(head_flag)) {
 		r_str_append (head_flag, "unknown_flag");
 	}
 	return head_flag;
