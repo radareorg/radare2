@@ -2180,17 +2180,17 @@ char* Elf_(r_bin_elf_get_cpu)(ELFOBJ *bin) {
 }
 
 char* Elf_(r_bin_elf_get_head_flag)(ELFOBJ *bin) {
-	char *head_flag = r_str_new ("");
+	char *head_flag = NULL;
 	char *str = Elf_(r_bin_elf_get_cpu) (bin);
 	if (str) {
-		r_str_append (head_flag, str);
+		head_flag = r_str_append (head_flag, str);
 	}
 	str = Elf_(r_bin_elf_get_abi) (bin);
 	if (str) {
-		r_str_appendf (head_flag, " %s", str);
+		head_flag = r_str_appendf (head_flag, " %s", str);
 	}
-	if (R_STR_ISEMPTY(head_flag)) {
-		r_str_append (head_flag, "unknown_flag");
+	if (R_STR_ISEMPTY (head_flag)) {
+		head_flag = r_str_append (head_flag, "unknown_flag");
 	}
 	return head_flag;
 }

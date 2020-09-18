@@ -65,14 +65,15 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 	}
 
 	if (a->features && a->features != pre_features) {
-		disasm_obj.disassembler_options = r_str_new ("");
+		char *ops = NULL;
 		if (strstr (a->features, "n64")) {
-			r_str_append (disasm_obj.disassembler_options, "abi=n64,");
+			ops = r_str_append (ops, "abi=n64,");
 		} else if (strstr (a->features, "n32")) {
-			r_str_append (disasm_obj.disassembler_options, "abi=n32,");
+			ops = r_str_append (ops, "abi=n32,");
 		} else if (strstr (a->features, "o32")) {
-			r_str_append (disasm_obj.disassembler_options, "abi=o32,");
+			ops = r_str_append (ops, "abi=o32,");
 		}
+		disasm_obj.disassembler_options = ops;
 		pre_features = a->features;
 	}
 
