@@ -47,3 +47,33 @@ EXPECT=<<EOF
 37
 EOF
 RUN
+
+NAME=example table
+FILE=--
+CMDS=<<EOF
+,h xxd foo bar cow
+,
+,,
+,j
+,r 123 456 789
+,
+
+EOF
+EXPECT=<<EOF
+.--------------------.
+| foo  | bar  | cow  |
+)--------------------(
+`--------------------'
+
+foo,bar,cow
+
+[]
+.--------------------.
+| foo  | bar  | cow  |
+)--------------------(
+| 123  | 456  | 789  |
+`--------------------'
+
+EOF
+RUN
+

@@ -138,7 +138,7 @@ static const char *help_msg_star[] = {
 	NULL
 };
 
-static const char *help_msg_table[] = {
+static const char *table_help[] = {
 	"Usage:", ",[/] [file]", "# load table data",
 	",", "", "display table",
 	".", "$foo", "aflt > $foo (files starting with '$' are saved in memory)",
@@ -1391,14 +1391,27 @@ static int cmd_table(void *data, const char *input) {
 	switch (*input) {
 	case 'h': // table header
 		{
-			RTableColumnType *typeString = r_table_type ("string");
 			char *s = r_str_trim_dup (input + 1);
 			RList *list = r_str_split_list (s, " ", 0);
 			RListIter *iter;
+			char *format = r_list_pop_head (list);
+			if (!format) {
+				break;
+			}
+			size_t i = 0;
 			r_list_foreach (list, iter, s) {
+				const char type_char = format[i];
+				if (!type_char) {
+					break;
+				}
+				const char *type_name = (type_char == 's')
+					? "string": "number";
+				RTableColumnType *typeString = r_table_type (type_name);
 				r_table_add_column (t, typeString, s, 0);
+				i++;
 			}
 			r_list_free (list);
+			free (format);
 	//		free (s);
 		}
 		break;
@@ -1409,7 +1422,8 @@ static int cmd_table(void *data, const char *input) {
 			if (list) {
 				r_table_add_row_list (t, list);
 			}
-			free (args);
+			// args is now owned by the list
+			//free (args);
 		}
 		break;
 	case '-':
@@ -1429,6 +1443,16 @@ static int cmd_table(void *data, const char *input) {
 		break;
 	case ' ':
 		load_table (core, t, r_str_trim_head_ro (input + 1));
+		break;
+	case ',':
+		// print csv
+		{
+			char *ts = r_table_tocsv (t);
+			if (ts) {
+				r_cons_printf ("%s\n", ts);
+				free (ts);
+			}
+		}
 		break;
 	case 0:
 		// print table
@@ -1457,11 +1481,11 @@ static int cmd_table(void *data, const char *input) {
 		}
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_table);
+		r_core_cmd_help (core, table_help);
 		r_cons_printf ("%s\n", r_table_help ());
 		break;
 	default:
-		r_core_cmd_help (core, help_msg_table);
+		r_core_cmd_help (core, table_help);
 		break;
 	}
 	return 0;
@@ -7322,6 +7346,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"*",        "pointer read/write", cmd_pointer, NULL, &pointer_help},
 		{"-",        "open cfg.editor and run script", cmd_stdin, NULL, &stdin_help},
 		{".",        "interpret", cmd_interpret, NULL, &interpret_help},
+		{",",        "create and manipulate tables", cmd_table, NULL, &table_help},
 		{"/",        "search kw, pattern aes", cmd_search, cmd_search_init, &search_help},
 		{"=",        "io pipe", cmd_rap, NULL, &rap_help},
 		{"?",        "help message", cmd_help, cmd_help_init, &help_help},
