@@ -16,3 +16,13 @@ EXPECT=<<EOF
 0x0804841d
 EOF
 RUN
+
+NAME=et_dyn no warnings for relocations
+FILE=bins/elf/analysis/ls-linux64
+CMDS=<<EOF
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
