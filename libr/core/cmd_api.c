@@ -469,8 +469,10 @@ static size_t calc_padding_len(RCmdDesc *cd, RCmdDesc *parent) {
 	size_t children_length = 0;
 	if (show_children_shortcut (cd, parent)) {
 		char *children_s = children_chars (cd);
-		children_length = strlen (children_s);
-		free (children_s);
+		if (children_s) {
+			children_length = strlen (children_s);
+			free (children_s);
+		}
 	}
 	if (show_args (cd, parent)) {
 		args_len = strlen0 (cd->help->args_str);
@@ -500,8 +502,10 @@ static void print_child_help(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use
 	r_strbuf_appendf (sb, "| %s%s", pal_input_color, cd->name);
 	if (show_children_shortcut (cd, parent)) {
 		char *children_s = children_chars (cd);
-		r_strbuf_appendf (sb, "%s%s", pal_opt_color, children_s);
-		free (children_s);
+		if (children_s) {
+			r_strbuf_appendf (sb, "%s%s", pal_opt_color, children_s);
+			free (children_s);
+		}
 	}
 	if (show_args (cd, parent)) {
 		r_strbuf_appendf (sb, "%s%s", pal_args_color, cd->help->args_str);
@@ -1236,7 +1240,7 @@ R_API RCmdDesc *r_cmd_desc_parent(RCmdDesc *cd) {
 }
 
 R_API bool r_cmd_desc_has_handler(RCmdDesc *cd) {
-	r_return_val_if_fail (cd, NULL);
+	r_return_val_if_fail (cd, false);
 	switch (cd->type) {
 	case R_CMD_DESC_TYPE_ARGV:
 		return cd->d.argv_data.cb;
