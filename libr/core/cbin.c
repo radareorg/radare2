@@ -1015,6 +1015,41 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 	return true;
 }
 
+typedef struct {
+	int *line_starts;
+	char *content;
+	int line_count;
+} FileLines;
+
+static void file_lines_free(FileLines *file) {
+	if (!file) {
+		return;
+	}
+	free (file->line_starts);
+	free (file->content);
+	free (file);
+}
+
+FileLines *read_file_lines(const char *path) {
+	FileLines *result = R_NEW0 (FileLines);
+	if (!result) {
+		return result;
+	}
+	result->content = r_file_slurp (path, NULL);
+	if (result->content) {
+		result->line_starts = r_str_split_lines (result->content, &result->line_count);
+	}
+	if (!result->content || !result->line_starts) {
+		R_FREE (result);
+	}
+	return result;
+}
+
+static void file_lines_free_kv(HtPPKv *kv) {
+	free (kv->key);
+	file_lines_free (kv->value);
+}
+
 static int bin_dwarf(RCore *core, int mode) {
 	RBinDwarfRow *row;
 	RListIter *iter;
@@ -1063,21 +1098,8 @@ static int bin_dwarf(RCore *core, int mode) {
 
 	r_cons_break_push (NULL, NULL);
 	/* cache file:line contents */
-	const char *lastFile = NULL;
-	int *lastFileLines = NULL;
-	char *lastFileContents = NULL;
-	int lastFileLinesCount = 0;
+	HtPP* file_lines = ht_pp_new (NULL, file_lines_free_kv, NULL);
 
-	/* ugly dupe for speedup */
-	const char *lastFile2 = NULL;
-	int *lastFileLines2 = NULL;
-	char *lastFileContents2 = NULL;
-	int lastFileLinesCount2 = 0;
-
-	const char *lf = NULL;
-	int *lfl = NULL;
-	char *lfc = NULL;
-	int lflc = 0;
 	PJ *j = NULL;
 	if (IS_MODE_JSON (mode)) {
 		j = pj_new ();
@@ -1093,41 +1115,21 @@ static int bin_dwarf(RCore *core, int mode) {
 		if (mode) {
 			// TODO: use 'Cl' instead of CC
 			const char *path = row->file;
-			if (!lastFile || strcmp (path, lastFile)) {
-				if (lastFile && lastFile2 && !strcmp (path, lastFile2)) {
-					lf = lastFile;
-					lfl = lastFileLines;
-					lfc = lastFileContents;
-					lflc = lastFileLinesCount;
-					lastFile = lastFile2;
-					lastFileLines = lastFileLines2;
-					lastFileContents = lastFileContents2;
-					lastFileLinesCount = lastFileLinesCount2;
-					lastFile2 = lf;
-					lastFileLines2 = lfl;
-					lastFileContents2 = lfc;
-					lastFileLinesCount2 = lflc;
-				} else {
-					lastFile2 = lastFile;
-					lastFileLines2 = lastFileLines;
-					lastFileContents2 = lastFileContents;
-					lastFileLinesCount2 = lastFileLinesCount;
-					lastFile = path;
-					lastFileContents = r_file_slurp (path, NULL);
-					if (lastFileContents) {
-						lastFileLines = r_str_split_lines (lastFileContents, &lastFileLinesCount);
-					}
+			FileLines *current_lines = ht_pp_find (file_lines, path, NULL);
+			if (!current_lines) {
+				current_lines = read_file_lines (path);
+				if (!ht_pp_insert (file_lines, path, current_lines)) {
+					file_lines_free (current_lines);
+					current_lines = NULL;
 				}
 			}
 			char *line = NULL;
-			//r_file_slurp_line (path, row->line - 1, 0);
-			if (lastFileLines && lastFileContents) {
+
+			if (current_lines) {
 				int nl = row->line - 1;
-				if (nl >= 0 && nl < lastFileLinesCount) {
-					line = strdup (lastFileContents + lastFileLines[nl]);
+				if (nl >= 0 && nl < current_lines->line_count) {
+					line = strdup (current_lines->content + current_lines->line_starts[nl]);
 				}
-			} else {
-				line = NULL;
 			}
 			if (line) {
 				r_str_filter (line, strlen (line));
@@ -1193,10 +1195,8 @@ static int bin_dwarf(RCore *core, int mode) {
 		j = NULL;
 	}
 	r_cons_break_pop ();
-	R_FREE (lastFileContents);
-	R_FREE (lastFileContents2);
+	ht_pp_free (file_lines);
 	r_list_free (ownlist);
-	free (lastFileLines);
 	return true;
 }
 
