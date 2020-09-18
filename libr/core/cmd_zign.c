@@ -240,7 +240,7 @@ static bool addBytesZign(RCore *core, const char *name, int type, RList *args) {
 
 	const char *hexbytes = (const char *)r_list_get_top (args);
 	if ((sep = (ut8 *)strchr (hexbytes, ':'))) {
-		int blen = sep - (ut8 *)hexbytes;
+		size_t blen = sep - (ut8 *)hexbytes;
 		sep++;
 		if (!blen || (blen & 1) || strlen ((char *)sep) != blen) {
 			eprintf ("error: cannot parse hexpairs\n");
@@ -257,7 +257,7 @@ static bool addBytesZign(RCore *core, const char *name, int type, RList *args) {
 			goto out;
 		}
 	} else {
-		int blen = strlen (hexbytes) + 4;
+		size_t blen = strlen (hexbytes) + 4;
 		bytes = malloc (blen);
 		mask = malloc (blen);
 
