@@ -73,6 +73,7 @@ R_API char *r_table_tofancystring(RTable *t);
 R_API char *r_table_tosimplestring(RTable *t);
 R_API char *r_table_tostring(RTable *t);
 R_API char *r_table_tocsv(RTable *t);
+R_API char *r_table_tor2cmds(RTable *t);
 R_API char *r_table_tojson(RTable *t);
 R_API const char *r_table_help(void);
 R_API void r_table_filter(RTable *t, int nth, int op, const char *un);

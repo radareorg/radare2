@@ -462,6 +462,37 @@ R_API char *r_table_tosimplestring(RTable *t) {
 	return r_strbuf_drain (sb);
 }
 
+R_API char *r_table_tor2cmds(RTable *t) {
+	RStrBuf *sb = r_strbuf_new ("");
+	RTableRow *row;
+	RTableColumn *col;
+	RListIter *iter, *iter2;
+
+	r_strbuf_appendf (sb, ",h ");
+	r_list_foreach (t->cols, iter, col) {
+		char fmt = col->type == &r_table_type_string? 's': 'x';
+		r_strbuf_appendf (sb, "%c", fmt);
+	}
+	r_list_foreach (t->cols, iter, col) {
+		r_strbuf_appendf (sb, " %s",  col->name);
+	}
+	r_strbuf_append (sb, "\n");
+
+	r_list_foreach (t->rows, iter, row) {
+		char *item;
+		int c = 0;
+	r_strbuf_appendf (sb, ",r ");
+		r_list_foreach (row->items, iter2, item) {
+			RTableColumn *col = r_list_get_n (t->cols, c);
+			if (col) {
+				r_strbuf_appendf (sb, " %s", item);
+			}
+			c++;
+		}
+		r_strbuf_append (sb, "\n");
+	}
+	return r_strbuf_drain (sb);
+}
 R_API char *r_table_tocsv(RTable *t) {
 	RStrBuf *sb = r_strbuf_new ("");
 	RTableRow *row;

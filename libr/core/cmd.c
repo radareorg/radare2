@@ -142,9 +142,11 @@ static const char *table_help[] = {
 	"Usage:", ",[/] [file]", "# load table data",
 	",", "", "display table",
 	".", "$foo", "aflt > $foo (files starting with '$' are saved in memory)",
-	".", " file.csv", "load the csv file into a table",
+	". ", " [table-query]", "filter and print table. See ,? for more details",
+	"..", " file.csv", "load the csv file into a table",
 	",-", "", "reset table",
-	",/", "?", "query",
+	",/", "?", "query/filter current table",
+	",*", ">$foo", "print table as r2 commands",
 	",j", "", "print table in json format",
 	",h", "xxd foo bar cow", "define header column names and types",
 	",r", "xxd 1 2 foo", "adds a row using the given format string",
@@ -1442,12 +1444,36 @@ static int cmd_table(void *data, const char *input) {
 		load_table (core, t, input);
 		break;
 	case ' ':
+		{
+			const char *q = r_str_trim_head_ro (input + 1);
+			if (r_table_query (t, q)) {
+				// char *ts = r_table_tostring (t);
+				char *ts = r_table_tofancystring (t);
+				if (ts) {
+					r_cons_printf ("%s\n", ts);
+					free (ts);
+				}
+			}
+		}
+		break;
+	case '.':
 		load_table (core, t, r_str_trim_head_ro (input + 1));
 		break;
 	case ',':
 		// print csv
 		{
 			char *ts = r_table_tocsv (t);
+			if (ts) {
+				r_cons_printf ("%s\n", ts);
+				free (ts);
+			}
+		}
+		break;
+	case '*':
+		// print table
+		{
+			char *ts = r_table_tor2cmds (t);
+			// char *ts = r_table_tostring (t);
 			if (ts) {
 				r_cons_printf ("%s\n", ts);
 				free (ts);
