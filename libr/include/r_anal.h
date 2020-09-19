@@ -668,7 +668,6 @@ typedef struct r_anal_t {
 	RHintCb hint_cbs;
 	RIntervalTree meta;
 	RSpaces meta_spaces;
-	Sdb *sdb_fcnsign; // OK
 	Sdb *sdb_cc; // calling conventions
 	Sdb *sdb_classes;
 	Sdb *sdb_classes_attrs;
@@ -1531,11 +1530,7 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr);
 R_API const char *r_anal_fcntype_tostring(int type);
 R_API int r_anal_fcn_bb (RAnal *anal, RAnalFunction *fcn, ut64 addr, int depth);
 R_API void r_anal_bind(RAnal *b, RAnalBind *bnd);
-
-/* fcnsign */
 R_API bool r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int bits);
-R_API bool r_anal_set_fcnsign(RAnal *anal, const char *name);
-R_API const char *r_anal_get_fcnsign(RAnal *anal, const char *sym);
 
 /* bb.c */
 R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off);
