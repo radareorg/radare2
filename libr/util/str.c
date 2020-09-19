@@ -3108,13 +3108,13 @@ R_API RList *r_str_split_duplist(const char *_str, const char *c, bool trim) {
 	return lst;
 }
 
-R_API int *r_str_split_lines(char *str, int *count) {
+R_API size_t *r_str_split_lines(char *str, size_t *count) {
 	int i;
-	int lines = 0;
+	size_t lines = 0;
 	if (!str) {
 		return NULL;
 	}
-	int *indexes = NULL;
+	size_t *indexes = NULL;
 	// count lines
 	for (i = 0; str[i]; i++) {
 		if (str[i] == '\n') {
@@ -3122,11 +3122,11 @@ R_API int *r_str_split_lines(char *str, int *count) {
 		}
 	}
 	// allocate and set indexes
-	indexes = calloc (sizeof (int), lines + 1);
+	indexes = calloc (sizeof (count[0]), lines + 1);
 	if (!indexes) {
 		return NULL;
 	}
-	int line = 0;
+	size_t line = 0;
 	indexes[line++] = 0;
 	for (i = 0; str[i]; i++) {
 		if (str[i] == '\n') {

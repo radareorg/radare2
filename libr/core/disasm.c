@@ -4943,8 +4943,8 @@ static void ds_print_comments_right(RDisasmState *ds) {
 					if (comment) {
 						ds_newline (ds);
 						ds_begin_line (ds);
-						int lines_count;
-						int *line_indexes = r_str_split_lines (comment, &lines_count);
+						size_t lines_count;
+						size_t *line_indexes = r_str_split_lines (comment, &lines_count);
 						if (line_indexes) {
 							int i;
 							for (i = 0; i < lines_count; i++) {

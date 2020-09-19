@@ -87,8 +87,8 @@ static RList *fs_io_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
 	char *cmd = r_str_newf ("md %s", path);
 	char *res = root->iob.system (root->iob.io, cmd);
 	if (res) {
-		int i, count = 0;
-		int *lines = r_str_split_lines (res, &count);
+		size_t i, count = 0;
+		size_t *lines = r_str_split_lines (res, &count);
 		if (lines) {
 			for (i = 0; i < count; i++) {
 				const char *line = res + lines[i];
