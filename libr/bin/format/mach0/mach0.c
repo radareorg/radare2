@@ -34,6 +34,9 @@ static ut64 read_uleb128(ut8 **p, ut8 *end) {
 	bool success = true;
 	ut64 v;
 	*p = (ut8 *)r_uleb128 (*p, end - *p, &v, &success);
+	if (!success) {
+		return UT64_MAX;
+	}
 	return v;
 }
 
