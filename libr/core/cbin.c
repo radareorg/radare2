@@ -1016,9 +1016,9 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 }
 
 typedef struct {
-	int *line_starts;
+	size_t *line_starts;
 	char *content;
-	int line_count;
+	size_t line_count;
 } FileLines;
 
 static void file_lines_free(FileLines *file) {
