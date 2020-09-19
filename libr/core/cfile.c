@@ -1071,7 +1071,6 @@ R_API int r_core_file_list(RCore *core, int mode) {
 		switch (mode) {
 		case 'j': {  // "oij"
 			PJ * pj = pj_new ();
-			pj_a (pj);
 			pj_o (pj);
 			pj_ks (pj, "raised", r_str_bool (core->io->desc->fd == f->fd));
 			pj_ki (pj, "fd", (int) f->fd);
