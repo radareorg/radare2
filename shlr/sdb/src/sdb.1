@@ -8,7 +8,7 @@
 .Nm sdb
 .Op Fl 0dehjJv
 .Ar -|db
-.Ar -=
+.Ar [-|=|==]
 .Ar [.file|expr ..]
 .Sh DESCRIPTION
 SDB is a simple disk and memory string-based key-value database. It is based on CDB and uses
@@ -36,6 +36,8 @@ Some useful ways to run it:
 $ sdb -                           ; in memory database
 .Pp
 $ sdb test.db = < test.txt        ; create database from text file
+.Pp
+$ sdb test.db == a.txt b.txt      ; create database from text files in a single command
 .Pp
 $ sdb test.db                     ; dump contents of database
 .Pp
