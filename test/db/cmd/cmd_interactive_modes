@@ -1,0 +1,12 @@
+NAME=Internal less
+FILE=-
+CMDS=<<EOF
+e scr.interactive=false
+pd 10~..
+pd 10~...
+EOF
+EXPECT_ERR=<<EOF
+Internal less requires scr.interactive=true
+Hud mode requires scr.interactive=true
+EOF
+
