@@ -172,6 +172,13 @@ R_API PJ *pj_ks(PJ *j, const char *k, const char *v) {
 	return j;
 }
 
+R_API PJ *pj_ks_e(PJ *j, const char *k, const char *v, const char *e) {
+	r_return_val_if_fail (j && k && v, j);
+	pj_k (j, k);
+	pj_s_e (j, v, e);
+	return j;
+}
+
 R_API PJ *pj_kb(PJ *j, const char *k, bool v) {
 	r_return_val_if_fail (j && k, j);
 	pj_k (j, k);
@@ -202,6 +209,19 @@ R_API PJ *pj_s(PJ *j, const char *k) {
 		free (ek);
 	} else {
 		eprintf ("cannot escape string\n");
+	}
+	pj_raw (j, "\"");
+	return j;
+}
+
+R_API PJ *pj_s_e(PJ *j, const char *k, const char *e) {
+	r_return_val_if_fail (j && k, j);
+	pj_comma (j);
+	pj_raw (j, "\"");
+	char *en = r_str_encoded_json (k, -1, e);
+	if (en) {
+		pj_raw (j, en);
+		free (en);
 	}
 	pj_raw (j, "\"");
 	return j;

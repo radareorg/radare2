@@ -446,6 +446,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 		} else if (IS_MODE_SIMPLEST (mode)) {
 			r_cons_println (string->string);
 		} else if (IS_MODE_JSON (mode)) {
+			const char *encoding = r_config_get (r->config, "json.encoding");
 			int *block_list;
 			pj_o (pj);
 			pj_kn (pj, "vaddr", vaddr);
@@ -455,7 +456,12 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			pj_kn (pj, "length", string->length);
 			pj_ks (pj, "section", section_name);
 			pj_ks (pj, "type", type_string);
-			pj_ks (pj, "string", string->string);
+			if (!strcmp(encoding, "none")) {
+				pj_ks (pj, "string", string->string);
+			} else {
+				pj_ks_e (pj, "string", string->string, encoding);
+				pj_ks (pj, "encoding", encoding);
+			}
 			switch (string->type) {
 			case R_STRING_TYPE_UTF8:
 			case R_STRING_TYPE_WIDE:

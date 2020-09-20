@@ -3534,6 +3534,12 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("esil.nonull", "false", "Prevent memory read, memory write at null pointer");
 	SETCB ("esil.mdev.range", "", &cb_mdevrange, "Specify a range of memory to be handled by cmd.esil.mdev");
 
+	/* json encodings */
+	n = NODECB ("json.encoding", "none", &cb_emuskip);
+	SETDESC (n, "Encode json outputs using the specified option");
+	SETOPTIONS (n, "none", "base64", "strip", "bytearray", NULL);
+
+
 	/* scr */
 #if __EMSCRIPTEN__
 	r_config_set_cb (cfg, "scr.fgets", "true", cb_scrfgets);

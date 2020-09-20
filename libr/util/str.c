@@ -9,6 +9,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
+#include <r_util/r_base64.h>
 
 /* stable code */
 static const char *nullstr = "";
@@ -1505,8 +1506,139 @@ R_API char *r_str_escape_utf32be(const char *buf, int buf_size, bool show_asciid
 	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF32BE, show_asciidot, esc_bslash, false);
 }
 
-// JSON has special escaping requirements
-// TODO: merge with r_str_escape_utf() and r_str_byte_escape() using RStrEsc
+R_API char *r_str_encoded_json(const char *buf, int buf_size, const char *encoding) {
+	if (!strcmp (encoding, "base64")) {
+		return r_base64_encode_dyn (buf, buf_size);
+	} else if (!strcmp (encoding, "bytearray")) {
+		int len = buf_size < 0 ? strlen (buf) : buf_size;
+		int new_sz = (len * 2) + 1;
+		char *string_bytes = malloc (new_sz);
+
+		int loop = 0;
+		int i = 0;
+		while(buf[loop] != '\0' && i < new_sz) {
+			sprintf (string_bytes + i, "%02X", buf[loop]);
+			loop += 1;
+			i += 2;
+		}
+		
+		string_bytes[i++] = '\0';
+		return string_bytes;
+	} else if (!strcmp (encoding, "strip")) {
+		return r_str_escape_utf8_for_json_strip (buf, buf_size);
+	}
+	return r_str_escape_utf8_for_json (buf, buf_size);
+}
+
+R_API char *r_str_escape_utf8_for_json_strip(const char *buf, int buf_size) {
+	char *new_buf, *q;
+	const char *p, *end;
+	RRune ch;
+	int i, len, ch_bytes;
+
+	if (!buf) {
+		return NULL;
+	}
+	len = buf_size < 0 ? strlen (buf) : buf_size;
+	end = buf + len;
+	/* Worst case scenario, we convert every byte to \u00hh */
+	new_buf = malloc (1 + (len * 6));
+	if (!new_buf) {
+		return NULL;
+	}
+	p = buf;
+	q = new_buf;
+	while (p < end) {
+		ch_bytes = r_utf8_decode ((ut8 *)p, end - p, &ch);
+		if (ch_bytes == 1) {
+			switch (*p) {
+			case '\n':
+				*q++ = '\\';
+				*q++ = 'n';
+				break;
+			case '\r':
+				*q++ = '\\';
+				*q++ = 'r';
+				break;
+			case '\\':
+				*q++ = '\\';
+				*q++ = '\\';
+				break;
+#if 0
+			case '/': /* has 2-char esc seq in JSON spec, but escaping is optional */
+				*q++ = '\\';
+				*q++ = '/';
+				break;
+#endif
+			case '\t':
+				*q++ = '\\';
+				*q++ = 't';
+				break;
+			case '"' :
+				*q++ = '\\';
+				*q++ = '"';
+				break;
+			case '\f':
+				*q++ = '\\';
+				*q++ = 'f';
+				break;
+			case '\b':
+				*q++ = '\\';
+				*q++ = 'b';
+				break;
+			default:
+				if (IS_PRINTABLE (*p)) {
+					*q++ = *p;
+				}
+			}
+		} else if (ch_bytes == 4) {
+			if (r_isprint (ch)) {
+				// Assumes buf is UTF8-encoded
+				for (i = 0; i < ch_bytes; i++) {
+					*q++ = *(p + i);
+				}
+			} else {
+				RRune high, low;
+				ch -= 0x10000;
+				high = 0xd800 + (ch >> 10 & 0x3ff);
+				low = 0xdc00 + (ch & 0x3ff);
+				*q++ = '\\';
+				*q++ = 'u';
+				for (i = 2; i >= 0; i -= 2) {
+					*q++ = "0123456789abcdef"[high >> 4 * (i + 1) & 0xf];
+					*q++ = "0123456789abcdef"[high >> 4 * i & 0xf];
+				}
+				*q++ = '\\';
+				*q++ = 'u';
+				for (i = 2; i >= 0; i -= 2) {
+					*q++ = "0123456789abcdef"[low >> 4 * (i + 1) & 0xf];
+					*q++ = "0123456789abcdef"[low >> 4 * i & 0xf];
+				}
+			}
+		} else if (ch_bytes > 1) {
+			if (r_isprint (ch)) {
+				// Assumes buf is UTF8-encoded
+				for (i = 0; i < ch_bytes; i++) {
+					*q++ = *(p + i);
+				}
+			} else {
+				*q++ = '\\';
+				*q++ = 'u';
+				for (i = 2; i >= 0; i -= 2) {
+					*q++ = "0123456789abcdef"[ch >> 4 * (i + 1) & 0xf];
+					*q++ = "0123456789abcdef"[ch >> 4 * i & 0xf];
+				}
+			}
+		} else { 
+			ch_bytes = 1;
+		}
+		p += ch_bytes;
+	}
+	*q = '\0';
+	return new_buf;
+}
+
+
 R_API char *r_str_escape_utf8_for_json(const char *buf, int buf_size) {
 	char *new_buf, *q;
 	const char *p, *end;
