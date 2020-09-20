@@ -2318,7 +2318,7 @@ R_API RGraph *r_core_anal_importxrefs(RCore *core) {
 	if (!obj) {
 		return NULL;
 	}
-	RGraph *graph = graph = r_graph_new ();
+	RGraph *graph = r_graph_new ();
 	if (!graph) {
 		return NULL;
 	}
