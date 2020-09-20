@@ -2,6 +2,7 @@
 
 #include <r_core.h>
 #include <r_cons.h>
+#include <r_util/r_graph_drawable.h>
 #include <ctype.h>
 #include <limits.h>
 

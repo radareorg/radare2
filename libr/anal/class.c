@@ -2,6 +2,7 @@
 
 #include <r_anal.h>
 #include <r_vector.h>
+#include <r_util/r_graph_drawable.h>
 #include "../include/r_anal.h"
 #include "../include/r_util/r_graph.h"
 
@@ -1264,7 +1265,7 @@ R_API RGraph *r_anal_class_get_inheritance_graph(RAnal *anal) {
 		// create nodes
 		RGraphNode *curr_node = ht_pp_find (hashmap, name, NULL);
 		if (!curr_node) {
-			curr_node = r_graph_add_node_info (class_graph, strdup (name), NULL, 0);
+			curr_node = r_graph_add_node_info (class_graph, name, NULL, 0);
 			if (!curr_node) {
 				goto failure;
 			}
@@ -1278,7 +1279,7 @@ R_API RGraph *r_anal_class_get_inheritance_graph(RAnal *anal) {
 			RGraphNode *base_node = ht_pp_find (hashmap, base->class_name, &base_found);
 			// If base isn't processed, do it now
 			if (!base_found) {
-				base_node = r_graph_add_node_info (class_graph, strdup (base->class_name), NULL, 0);
+				base_node = r_graph_add_node_info (class_graph, base->class_name, NULL, 0);
 				if (!base_node) {
 					goto failure;
 				}

@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2020 - pancake, maijin */
 
 #include <r_core.h>
+#include <r_util/r_graph_drawable.h>
 
 #define MAX_SCAN_SIZE 0x7ffffff
 
@@ -25,7 +26,7 @@ static const char *help_msg_a[] = {
 	"ai", " [addr]", "address information (show perms, stack, heap, ...)",
 	"aj", "", "same as a* but in json (aflj)",
 	"aL", "", "list all asm/anal plugins (e asm.arch=?)",
-	"an"," [name] [@addr]","show/rename/create whatever flag/function is used at addr",
+	"an", " [name] [@addr]", "show/rename/create whatever flag/function is used at addr",
 	"ao", "[?] [len]", "analyze Opcodes (or emulate it)",
 	"aO", "[?] [len]", "Analyze N instructions in M bytes",
 	"ap", "", "find prelude for current offset",
@@ -8345,43 +8346,6 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 	}
 }
 
-static void print_graph_json(RGraph /*RGraphNodeInfo*/ *graph, PJ *pj, bool use_offset) {
-	RList *nodes = graph->nodes, *neighbours = NULL;
-	RListIter *it, *itt;
-	RGraphNode *node = NULL, *neighbour = NULL;
-	if (!pj) {
-		return;
-	}
-	pj_o (pj);
-	pj_k (pj, "nodes");
-	pj_a (pj);
-
-	r_list_foreach (nodes, it, node) {
-		RGraphNodeInfo *print_node = (RGraphNodeInfo *)node->data;
-		pj_o (pj);
-		pj_ki (pj, "id", node->idx);
-		if (print_node->title) {
-			pj_ks (pj, "title", print_node->title);
-		}
-		if (print_node->body) {
-			pj_ks (pj, "body", print_node->body);
-		}
-		if (use_offset) {
-			pj_kn (pj, "offset", print_node->offset);
-		}
-		pj_k (pj, "out_nodes");
-		pj_a (pj);
-		neighbours = node->out_nodes;
-		r_list_foreach (neighbours, itt, neighbour) {
-			pj_i (pj, neighbour->idx);
-		}
-		pj_end (pj);
-		pj_end (pj);
-	}
-	pj_end (pj);
-	pj_end (pj);
-}
-
 static void print_graph_agg(RGraph /*RGraphNodeInfo*/ *graph) {
 	RGraphNodeInfo *print_node;
 	RGraphNode *node, *target;
@@ -8412,36 +8376,12 @@ static void print_graph_agg(RGraph /*RGraphNodeInfo*/ *graph) {
 	}
 }
 
-static char *print_graph_dot(RCore *core, RGraph /*RGraphNodeInfo*/ *graph) {
-	RList *nodes = graph->nodes;
-	RListIter *it, *itt;
-	RGraphNode *node = NULL, *target = NULL;
-	RStrBuf buf;
+static char *print_graph_dot(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph) {
 	const char *font = r_config_get (core->config, "graph.font");
-	r_strbuf_init (&buf);
-	r_strbuf_appendf (&buf,
-		"digraph code {\nrankdir=LR;\noutputorder=edgesfirst\ngraph [bgcolor=azure];\n"
-		"edge [arrowhead=normal, color=\"#3030c0\" style=bold weight=2];\n"
-		"node [fillcolor=white, style=filled shape=box "
-		"fontname=\"%s\" fontsize=\"8\"];\n",
-		font);
-
-	r_list_foreach (nodes, it, node) {
-		RGraphNodeInfo *print_node = (RGraphNodeInfo *)node->data;
-		const char *body = print_node->body;
-		if (!body || !*body) {
-			r_strbuf_appendf (&buf, "%d [URL=\"%s\", color=\"lightgray\", label=\"%s\"]\n",
-				node->idx, print_node->title, print_node->title);
-		} else {
-			r_strbuf_appendf (&buf, "%d [URL=\"%s\", color=\"lightgray\", label=\"%s\\n%s\"]\n",
-				node->idx, print_node->title, print_node->title, body);
-		}
-		r_list_foreach (node->out_nodes, itt, target) {
-			r_strbuf_appendf (&buf, "%d -> %d\n", node->idx, target->idx);
-		}
-	}
-	r_strbuf_append (&buf, "}\n");
-	return r_strbuf_drain_nofree (&buf);
+	char *node_properties = r_str_newf ("fontname=\"%s\"", font);
+	char *result = r_graph_drawable_to_dot (graph, node_properties, NULL);
+	free (node_properties);
+	return result;
 }
 
 static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, int use_utf, bool use_offset, const char *input) {
@@ -8529,7 +8469,7 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 		if (!pj) {
 			return;
 		}
-		print_graph_json (graph, pj, use_offset);
+		r_graph_drawable_to_json (graph, pj, use_offset);
 		r_cons_println (pj_string (pj));
 		pj_free (pj);
 	} break;
