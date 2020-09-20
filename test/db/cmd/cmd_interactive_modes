@@ -9,4 +9,4 @@ EXPECT_ERR=<<EOF
 Internal less requires scr.interactive=true
 Hud mode requires scr.interactive=true
 EOF
-
+RUN
