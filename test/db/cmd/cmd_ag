@@ -74,8 +74,8 @@ digraph code {
 rankdir=LR;
 outputorder=edgesfirst
 graph [bgcolor=azure];
-edge [arrowhead=normal, color="#3030c0" style=bold weight=2];
-node [fillcolor=white, style=filled shape=box fontname="Courier" fontsize="8"];
+edge [arrowhead=normal, color="#3030c0" style=bold weight=2 ];
+node [fillcolor=white, style=filled shape=box fontsize="8" fontname="Courier"];
 0 [URL="sym.imp.free", color="lightgray", label="sym.imp.free"]
 1 [URL="0x0000083f", color="lightgray", label="0x0000083f"]
 1 -> 0
