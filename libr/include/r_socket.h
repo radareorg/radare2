@@ -210,6 +210,7 @@ R_API int r_socket_rap_client_seek(RSocket *s, ut64 offset, int whence);
 typedef struct r_run_profile_t {
 	char *_args[R_RUN_PROFILE_NARGS];
 	int _argc;
+	bool _daemon;
 	char *_system;
 	char *_program;
 	char *_runlib;

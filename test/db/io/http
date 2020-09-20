@@ -39,12 +39,11 @@ RUN
 NAME=r2 remote webserver two
 FILE=--
 CMDS=<<EOF
-!r2 -e http.sandbox=false -e http.port=9292 -c=h /bin/ls &
+!rarun2 timeout=2 daemon=1 system="r2 -e http.port=9292 -c=h -qcq -"
 sleep 1
 =+ http://127.0.0.1:9292/cmd/
 =
 =0 ?e hello remote world
-!pkill r2
 EOF
 EXPECT=<<EOF
 0 fd:-1 http://127.0.0.1:9292/cmd/
@@ -56,6 +55,8 @@ Starting http server...
 open http://localhost:9292/
 r2 -C http://localhost:9292/cmd/
 Connected to: 'http://127.0.0.1'
+
+rarun2: Interrupted by timeout
 EOF
 RUN
 
