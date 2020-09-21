@@ -889,6 +889,12 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		bytefmt = "%3d";
 		pre = " ";
 		break;
+	case 16:
+		if (inc < 2) {
+			inc = 2;
+			use_header = false;
+		}
+		break;
 	case 32:
 		bytefmt = "0x%08x ";
 		pre = " ";
@@ -1240,7 +1246,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			if (!p || !(p->flags & R_PRINT_FLAGS_NONASCII)) {
 				bytes = 0;
 				for (j = i; j < i + inc; j++) {
-					if (j!=i && use_align  && bytes >= rowbytes) {
+					if (j != i && use_align  && bytes >= rowbytes) {
 						int sz = (p && p->offsize)? p->offsize (p->user, addr + j): -1;
 						if (sz >= 0) {
 							printfmt (" ");
@@ -1263,7 +1269,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			bool eol = false;
 			if (!eol && p && p->flags & R_PRINT_FLAGS_REFS) {
 				ut64 off = 0;
-				if (i + 8 < len) {
+				if (i + 8 <= len) {
 					ut64 *foo = (ut64 *) (buf + i);
 					off = *foo;
 				}
