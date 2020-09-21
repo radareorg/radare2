@@ -1834,7 +1834,7 @@ static int cmd_resize(void *data, const char *input) {
 			char *s = pj_drain (pj);
 			r_cons_println (s);
 			free (s);
-			break;
+			return true;
 		}
 	case 'h':
 		if (core->file) {
