@@ -31,10 +31,12 @@ typedef struct {
 #define mach0_endian 1
 
 static ut64 read_uleb128(ut8 **p, ut8 *end) {
-	bool success = true;
+	const char *error = NULL;
 	ut64 v;
-	*p = (ut8 *)r_uleb128 (*p, end - *p, &v, &success);
-	if (!success) {
+	*p = (ut8 *)r_uleb128 (*p, end - *p, &v, &error);
+	if (error) {
+		eprintf (error);
+		R_FREE (error);
 		return UT64_MAX;
 	}
 	return v;

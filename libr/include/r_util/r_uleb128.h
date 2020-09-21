@@ -5,7 +5,7 @@
 // compression used to store an arbitrarily large integer in a small number of
 // bytes. LEB128 is used in the DWARF debug file format.
 
-R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v, bool *success);
+R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v, const char **error);
 R_API const ut8 *r_uleb128_decode(const ut8 *data, int *datalen, ut64 *v);
 R_API int r_uleb128_len(const ut8 *data, int size);
 R_API ut8 *r_uleb128_encode(const ut64 s, int *len);

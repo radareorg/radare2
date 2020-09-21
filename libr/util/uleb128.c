@@ -1,10 +1,11 @@
 /* radare - LGPL - Copyright 2014-2015 - pancake */
 
+#include "r_util/r_str.h"
 #include <r_util.h>
 
 /* dex/dwarf uleb128 implementation */
 
-R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v, bool *success) {
+R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v, const char **error) {
 	ut8 c;
 	ut64 s, sum = 0;
 	const ut8 *data_end;
@@ -25,9 +26,8 @@ R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v, bool *success)
 			for (s = 0; data < data_end; s += 7) {
 				c = *(data++) & 0xff;
 				if (s > 63) {
-					eprintf ("r_uleb128: undefined behaviour in %d shift on ut32\n", (int)s);
-					if (success) {
-						*success = false;
+					if (error) {
+						*error = r_str_newf ("r_uleb128: undefined behaviour in %d shift on ut32\n", (int)s);
 					}
 					break;
 				} else {
@@ -39,9 +39,8 @@ R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v, bool *success)
 				}
 			}
 			if (malformed_uleb) {
-				eprintf ("malformed uleb128\n");
-				if (success) {
-					*success = false;
+				if (error) {
+					*error = r_str_newf ("malformed uleb128\n");
 				}
 			}
 		} else {
