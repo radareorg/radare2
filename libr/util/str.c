@@ -1519,9 +1519,9 @@ R_API char *r_str_encoded_json(const char *buf, int buf_size, const char *encodi
 		int len = buf_size < 0 ? strlen (buf) : buf_size;
 		int new_sz = (len * 2) + 1;
 
-		char *string_bytes = malloc (new_sz * sizeof(char));
+		char *string_bytes = malloc (new_sz * sizeof (char));
 		while(buf[loop] != '\0' && i < (new_sz-1)) {
-			sprintf (string_bytes + i, "%02X", buf[loop]);
+			snprintf (string_bytes + i, sizeof (string_bytes), "%02X", (unsigned char) buf[loop]);
 			loop += 1;
 			i += 2;
 		}
