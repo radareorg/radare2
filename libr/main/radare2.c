@@ -1141,9 +1141,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				}
 			}
 			if (mapaddr) {
-				eprintf ("WARNING: using oba to load the syminfo from different mapaddress.\n");
-				eprintf ("TODO: Must use the API instead of running commands to speedup loading times.\n");
 				if (r_config_get_i (r->config, "file.info")) {
+					eprintf ("Warning: using oba to load the syminfo from different mapaddress.\n");
 					// load symbols when using r2 -m 0x1000 /bin/ls
 					r_core_cmdf (r, "oba 0 0x%"PFMT64x, mapaddr);
 					r_core_cmd0 (r, ".ies*");
@@ -1324,6 +1323,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 		free (global_rc);
 	}
+
 	// only analyze if file contains entrypoint
 	{
 		char *s = r_core_cmd_str (r, "ieq");
