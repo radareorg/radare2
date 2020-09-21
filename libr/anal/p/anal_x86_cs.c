@@ -986,7 +986,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			} else {
 				esilprintf (op,
 					"%s,%s,==,$z,zf,:=,%d,$b,cf,:=,$p,pf,:=,%d,$s,sf,:=,%s,0x%"PFMT64x",-,!,%d,$o,^,of,:=,3,$b,af,:=",
-					src, dst, bitsize, bitsize - 1, src, (1ULL << (bitsize - 1)), bitsize - 1);
+					src, dst, bitsize, bitsize - 1, src, bitsize ? 1ULL << (bitsize - 1) : 0, bitsize - 1);
 			}
 		}
 		break;
@@ -1484,7 +1484,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			// We use $b rather than $c here as the carry flag really
 			// represents a "borrow"
 			esilprintf (op, "%s,%s,%s,0x%"PFMT64x",-,!,%d,$o,^,of,:=,%d,$s,sf,:=,$z,zf,:=,$p,pf,:=,%d,$b,cf,:=,3,$b,af,:=",
-				src, dst, src, (1ULL << (bitsize - 1)), bitsize - 1, bitsize - 1, bitsize);
+				src, dst, src, bitsize ? 1ULL << (bitsize - 1) : 0, bitsize - 1, bitsize - 1, bitsize);
 		}
 		break;
 	case X86_INS_SBB:
