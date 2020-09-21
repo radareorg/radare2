@@ -1269,7 +1269,7 @@
           },
           {
             "type": "SYMBOL",
-            "name": "arg"
+            "name": "args"
           }
         ]
       }
@@ -1290,7 +1290,7 @@
           },
           {
             "type": "SYMBOL",
-            "name": "arg"
+            "name": "args"
           }
         ]
       }
@@ -1371,7 +1371,7 @@
           },
           {
             "type": "SYMBOL",
-            "name": "arg"
+            "name": "args"
           }
         ]
       }
@@ -1455,7 +1455,7 @@
           },
           {
             "type": "SYMBOL",
-            "name": "arg"
+            "name": "args"
           }
         ]
       }
@@ -1497,7 +1497,7 @@
           },
           {
             "type": "SYMBOL",
-            "name": "arg"
+            "name": "args"
           }
         ]
       }
