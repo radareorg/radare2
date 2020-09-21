@@ -708,7 +708,7 @@ static bool cb_dbgbtdepth(void *user, void *data) {
 static bool cb_asmbits(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	int ret = 0;
+	bool ret = false;
 	if (!core) {
 		eprintf ("user can't be NULL\n");
 		return false;
@@ -734,6 +734,8 @@ static bool cb_asmbits(void *user, void *data) {
 		}
 		if (!r_anal_set_bits (core->anal, bits)) {
 			eprintf ("asm.arch: Cannot setup '%d' bits analysis engine\n", bits);
+		} else {
+			ret = true;
 		}
 		core->print->bits = bits;
 	}
