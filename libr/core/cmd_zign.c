@@ -157,7 +157,7 @@ static void addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
 	/* r_sign_add_addr (core->anal, zigname, fcn->addr); */
 
 	// commit the item to anal
-	r_sign_anal_additem (core->anal, it);
+	r_sign_add_item (core->anal, it);
 
 	/*
 	XXX this is very slow and poorly tested
