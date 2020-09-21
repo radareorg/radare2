@@ -4,7 +4,7 @@
 
 /* dex/dwarf uleb128 implementation */
 
-R_API const ut8 *r_uleb128 (const ut8 *data, int datalen, ut64 *v, bool *success) {
+R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v, bool *success) {
 	ut8 c;
 	ut64 s, sum = 0;
 	const ut8 *data_end;
