@@ -525,7 +525,7 @@ static const char *help_msg_px[] = {
 	"pxo", "", "show octal dump",
 	"pxq", "", "show hexadecimal quad-words dump (64bit)",
 	"pxQ", "[q]", "same as above, but one per line",
-	"pxr", "[j]", "show words with references to flags and code (q=quiet)",
+	"pxr", "[1248][qj]", "show hexword references (q=quiet, j=json)",
 	"pxs", "", "show hexadecimal in sparse mode",
 	"pxt", "[*.] [origin]", "show delta pointer table in r2 commands",
 	"pxw", "", "show hexadecimal words dump (32bit)",
@@ -6259,6 +6259,10 @@ l = use_blocksize;
 			if (l) {
 				int mode = input[2];
 				int wordsize = core->anal->bits / 8;
+				if (mode == '?') {
+					eprintf ("Usage: pxr[1248][jq] [length]\n");
+					break;
+				}
 				if (isdigit (mode)) {
 					wordsize = atoi (input + 2);
 					mode = input[3];
