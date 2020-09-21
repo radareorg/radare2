@@ -796,6 +796,9 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 			if (info->cpu && *info->cpu) {
 				r_config_set (r->config, "asm.cpu", info->cpu);
 			}
+			if (info->features && *info->features) {
+				r_config_set (r->config, "asm.features", info->features);
+			}
 			r_config_set (r->config, "anal.arch", info->arch);
 			snprintf (str, R_FLAG_NAME_SIZE, "%i", info->bits);
 			r_config_set (r->config, "asm.bits", str);
