@@ -1,3 +1,17 @@
+NAME=tcc-star
+FILE=bins/elf/ls
+CMDS=<<EOF
+tcc
+tcc-*
+tcc
+EOF
+EXPECT=<<EOF
+amd64
+ms
+swift
+EOF
+RUN
+
 NAME=tcc
 FILE=bins/elf/ls
 CMDS=tcc
