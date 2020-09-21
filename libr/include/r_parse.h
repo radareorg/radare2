@@ -135,6 +135,7 @@ extern RParsePlugin r_parse_plugin_wasm_pseudo;
 extern RParsePlugin r_parse_plugin_x86_pseudo;
 extern RParsePlugin r_parse_plugin_z80_pseudo;
 extern RParsePlugin r_parse_plugin_tms320_pseudo;
+extern RParsePlugin r_parse_plugin_v850_pseudo;
 #endif
 
 #ifdef __cplusplus
