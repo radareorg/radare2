@@ -91,9 +91,11 @@ static const char *help_msg_aar[] = {
 static const char *help_msg_ab[] = {
 	"Usage:", "ab", "",
 	"ab", " [addr]", "show basic block information at given address",
+	"ab.", "", "same as: ab $$",
 	"aba", " [addr]", "analyze esil accesses in basic block (see aea?)",
 	"abb", " [length]", "analyze N bytes and extract basic blocks",
 	"abj", " [addr]", "display basic block information in JSON (alias to afbj)",
+	"abl", "[,j]", "list all basic blocks",
 	"abx", " [hexpair-bytes]", "analyze N bytes",
 	"abt[?]", " [addr] [num]", "find num paths from current offset to addr",
 	NULL
@@ -2189,6 +2191,117 @@ static ut64 __opaddr(RAnalBlock *b, ut64 addr) {
 		}
 	}
 	return UT64_MAX;
+}
+
+static RList *get_calls(RAnalBlock *block) {
+	RList *list = NULL;
+	RAnalOp op;
+	ut8 *data = malloc (block->size);
+	if (data) {
+		block->anal->iob.read_at (block->anal->iob.io, block->addr, data, block->size);
+		//
+int i;
+for (i = 0; i < block->size ; i ++ ) {
+		int ret = r_anal_op (block->anal, &op, block->addr + i, data + i, block->size - i, R_ANAL_OP_MASK_HINT);
+		if (op.type == R_ANAL_OP_TYPE_CALL) {
+			if (!list) {
+				list = r_list_newf (free);
+			}
+			r_list_push (list, ut64_new (op.jump));
+		}
+		r_anal_op_fini (&op);
+		if (op.size > 0 ) {
+			i += op.size - 1;
+		}
+}
+		
+	}
+	return list;
+}
+
+static bool anal_bb_list(RCore *core, const char *input) {
+	const int mode = *input;
+	PJ *pj = NULL;
+	RBIter iter;
+	RAnalBlock *block;
+	if (mode == 'j') {
+		pj = pj_new ();
+		pj_o (pj);
+		pj_ka (pj, "blocks");
+	}
+	
+	RBNode rb;
+	r_rbtree_foreach (core->anal->bb_tree, iter, block, RAnalBlock, _rb) {
+		RList *calls = get_calls (block);
+		switch (mode) {
+		case 'j':
+			pj_o (pj);
+			char *addr = r_str_newf ("0x%" PFMT64x, block->addr);
+			pj_ks (pj, "addr", addr);
+			free (addr);
+			pj_kb (pj, "traced", block->traced);
+			pj_kn (pj, "ninstr", block->ninstr);
+			pj_kn (pj, "size", block->size);
+			if (block->jump != UT64_MAX) {
+				pj_kn (pj, "jump", block->jump);
+			}
+			if (block->fail != UT64_MAX) {
+				pj_kn (pj, "fail", block->fail);
+			}
+			if (calls) {
+				pj_ka (pj, "calls");
+				RListIter *iter2;
+				ut64 *addr;
+				r_list_foreach (calls, iter2, addr) {
+					pj_n (pj, *addr);
+				}
+				pj_end (pj);
+			}
+			pj_ka (pj, "fcns");
+			RListIter *iter2;
+			RAnalFunction *fcn;
+			r_list_foreach (block->fcns, iter2, fcn) {
+				pj_n (pj, fcn->addr);
+			}
+			pj_end (pj);
+			pj_end (pj);
+			break;
+		default:
+			r_cons_printf ("0x%08" PFMT64x , block->addr);
+			if (block->jump != UT64_MAX) {
+				r_cons_printf (" .j 0x%08" PFMT64x, block->jump);
+			}
+			if (block->fail != UT64_MAX) {
+				r_cons_printf (" .f 0x%08" PFMT64x, block->fail);
+			}
+			if (calls) {
+				r_cons_printf (" .c");
+				RListIter *iter2;
+				ut64 *addr;
+				r_list_foreach (calls, iter2, addr) {
+					r_cons_printf (" 0x%08" PFMT64x, *addr);
+				}
+			}
+			if (block->fcns) {
+				RListIter *iter2;
+				RAnalFunction *fcn;
+				r_list_foreach (block->fcns, iter2, fcn) {
+					r_cons_printf (" .u 0x%" PFMT64x, fcn->addr);
+				}
+			}
+			r_cons_printf (" .s %" PFMT64d, block->size);
+			r_cons_printf ("\n");
+			r_core_cmdf (core, "pD %d @ 0x%"PFMT64x , block->size ,block->addr);
+		}
+		r_list_free (calls);
+	}
+	if (mode == 'j') {
+		pj_end (pj);
+		pj_end (pj);
+		char *j = pj_drain (pj);
+		r_cons_println (j);
+		free (j);
+	}
 }
 
 static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
@@ -10207,25 +10320,41 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'b': // "ab"
-		if (input[1] == 'a') { // "aba"
+		switch (input[1]) {
+		case '.': // "ab."
+			r_core_cmd0 (core, "aba $$");
+			break;
+		case 'a': // "aba"
 			r_core_cmdf (core, "aeab%s", input + 1);
-		} else if (input[1] == 'b') { // "abb"
+			break;
+		case 'b': // "abb"
 			core_anal_bbs (core, input + 2);
-		} else if (input[1] == 'r') { // "abr"
+			break;
+		case 'r': // "abr"
 			core_anal_bbs_range (core, input + 2);
-		} else if (input[1] == 't') {
+			break;
+		case 't': // "abt"
 			cmd_anal_abt (core, input+2);
-		} else if (input[1] == 'j') { // "abj"
+			break;
+		case 'l': // "abl"
+			anal_bb_list (core, input + 2);
+			break;
+		case 'j': // "abj"
 			anal_fcn_list_bb (core, input + 1, false);
-		} else if (input[1] == ' ' || !input[1] || input[1] == '.') {
+			break;
+		case ' ': // "ab "
 			// find block
+			{
 			ut64 addr = core->offset;
 			if (input[1] && input[1] != '.') {
 				addr = r_num_math (core->num, input + 1);
 			}
 			r_core_cmdf (core, "afbi @ 0x%"PFMT64x, addr);
-		} else {
+			}
+			break;
+		default:
 			r_core_cmd_help (core, help_msg_ab);
+			break;
 		}
 		break;
 	case 'c': // "ac"
