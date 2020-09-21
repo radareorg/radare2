@@ -4528,7 +4528,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		if (i && l > i) {
 			eprintf ("This block size is too big (0x%"PFMT64x
-				" < 0x%zx). Did you mean 'p%c @ %s' instead?\n",
+				" < 0x%llx). Did you mean 'p%c @ %s' instead?\n",
 				n, l, *input, input + 2);
 			goto beach;
 		}
@@ -5418,7 +5418,7 @@ l = use_blocksize;
 						core->num->value = r_core_print_disasm (core->print,
 							core, addr, block1, addrbytes * l, l, 0, 1, formatted_json, NULL, NULL);
 					} else {
-						eprintf ("Cannot allocate %zd byte(s)\n", addrbytes * l);
+						eprintf ("Cannot allocate %lld byte(s)\n", addrbytes * l);
 					}
 				} else {
 					ut8 *buf = core->block;
