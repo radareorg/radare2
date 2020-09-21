@@ -522,26 +522,10 @@ sdb_exe = executable('sdb', ['shlr/sdb/src/main.c'] + sdb_files,
   native: true,
 )
 
-sdb_gen_cmd_script = '''#script
-import os
-import sys
-sdb_exe = r'@0@'
-outfile = sys.argv[1]
-infiles = sys.argv[2:]
-if os.name == 'nt':
-    # DO NOT replace chr(92) below with a backslash
-    infiles, sdb_exe, outfile = map(lambda x: x.replace('/', chr(92)), [' '.join(infiles), sdb_exe, outfile])
-    os.system('type {} | {} {} ='.format(infiles, sdb_exe, outfile))
-else:
-    infiles = ' '.join(infiles)
-    os.system('cat {} | {} {} ='.format(infiles, sdb_exe, outfile))
-'''.format(sdb_exe.full_path())
-
 sdb_gen_cmd = [
-  py3_exe,
-  '-c',
-  sdb_gen_cmd_script,
+  sdb_exe,
   '@OUTPUT@',
+  '==',
   '@INPUT@'
 ]
 
