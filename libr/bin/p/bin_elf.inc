@@ -912,7 +912,7 @@ static RList* patch_relocs(RBin *b) {
 	struct Elf_(r_bin_elf_obj_t) *bin = obj->bin_obj;
 	info = obj ? obj->info: NULL;
 	size_t cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
-	if (bin->ehdr.e_type != ET_REL) {
+	if (bin->ehdr.e_type != ET_REL && bin->ehdr.e_type != ET_DYN) {
 		return NULL;
 	}
 	size = bin->g_reloc_num * cdsz;
