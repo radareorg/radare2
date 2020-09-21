@@ -51,7 +51,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 	}	
 
 	/* prepare disassembler */
-	if (a->cpu && a->cpu != pre_cpu) {
+	if (a->cpu && (!pre_cpu || !strcmp(a->cpu, pre_cpu))) {
 		if (!r_str_casecmp (a->cpu, "mips64r2")) {
 			disasm_obj.mach = bfd_mach_mipsisa64r2;
 		} else if (!r_str_casecmp (a->cpu, "mips32r2")) {
@@ -61,20 +61,19 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 		} else if (!r_str_casecmp (a->cpu, "mips32")) {
 			disasm_obj.mach = bfd_mach_mipsisa32;
 		}
-		pre_cpu = a->cpu;
+		pre_cpu = r_str_dup (pre_cpu, a->cpu);
 	}
 
-	if (a->features && a->features != pre_features) {
-		char *ops = NULL;
+	if (a->features && (!pre_features || !strcmp (a->features, pre_features))) {
+		free (disasm_obj.disassembler_options);
 		if (strstr (a->features, "n64")) {
-			ops = r_str_append (ops, "abi=n64,");
+			disasm_obj.disassembler_options = r_str_new ("abi=n64");
 		} else if (strstr (a->features, "n32")) {
-			ops = r_str_append (ops, "abi=n32,");
+			disasm_obj.disassembler_options = r_str_new ("abi=n32");
 		} else if (strstr (a->features, "o32")) {
-			ops = r_str_append (ops, "abi=o32,");
+			disasm_obj.disassembler_options = r_str_new ("abi=o32");
 		}
-		disasm_obj.disassembler_options = ops;
-		pre_features = a->features;
+		pre_features = r_str_dup (pre_features, a->features);
 	}
 
 	mips_mode = a->bits;

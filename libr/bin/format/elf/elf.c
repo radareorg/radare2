@@ -79,16 +79,10 @@ static inline int UTX_MUL(ut64 *r, ut64 a, ut64 b) {
 #define EF_MIPS_ABI_O64		0x00002000  /* O32 extended for 64 bit.  */
 #define EF_MIPS_ABI			0x0000f000
 
-/*
- * Return true if HDR identifies an MIPS n64 ELF binary.
- */
 static inline bool is_elfclass64(Elf_(Ehdr) *h) {
 	return h->e_ident[EI_CLASS] == ELFCLASS64;
 }
 
-/*
- * Return true if HDR identifies an MIPS o32 ELF binary.
- */
 static bool is_mips_o32(Elf_(Ehdr) *h) {
 	if (h->e_ident[EI_CLASS] != ELFCLASS32) {
 		return false;
@@ -102,9 +96,7 @@ static bool is_mips_o32(Elf_(Ehdr) *h) {
 	}
 	return true;
 }
-/*
- * Return true if HDR identifies an MIPS n32 ELF binary.
- */
+
 static bool is_mips_n32(Elf_(Ehdr) *h) {
 	if (h->e_ident[EI_CLASS] != ELFCLASS32) {
 		return false;
