@@ -460,7 +460,6 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 				pj_ks (pj, "string", string->string);
 			} else {
 				pj_ks_e (pj, "string", string->string, encoding);
-				pj_ks (pj, "encoding", encoding);
 			}
 			switch (string->type) {
 			case R_STRING_TYPE_UTF8:

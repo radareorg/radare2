@@ -1507,21 +1507,24 @@ R_API char *r_str_escape_utf32be(const char *buf, int buf_size, bool show_asciid
 }
 
 R_API char *r_str_encoded_json(const char *buf, int buf_size, const char *encoding) {
+	if (!buf) {
+		return NULL;
+	}
+
 	if (!strcmp (encoding, "base64")) {
 		return r_base64_encode_dyn (buf, buf_size);
 	} else if (!strcmp (encoding, "bytearray")) {
-		int len = buf_size < 0 ? strlen (buf) : buf_size;
-		int new_sz = (len * 2) + 1;
-		char *string_bytes = malloc (new_sz);
-
 		int loop = 0;
 		int i = 0;
-		while(buf[loop] != '\0' && i < new_sz) {
+		int len = buf_size < 0 ? strlen (buf) : buf_size;
+		int new_sz = (len * 2) + 1;
+
+		char *string_bytes = malloc (new_sz * sizeof(char));
+		while(buf[loop] != '\0' && i < (new_sz-1)) {
 			sprintf (string_bytes + i, "%02X", buf[loop]);
 			loop += 1;
 			i += 2;
 		}
-		
 		string_bytes[i++] = '\0';
 		return string_bytes;
 	} else if (!strcmp (encoding, "strip")) {
