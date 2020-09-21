@@ -200,7 +200,6 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 	RAnalPlugin *h;
 
 	if (anal) {
-		bool change = anal->cur && strcmp (anal->cur->name, name);
 		r_list_foreach (anal->plugins, it, h) {
 			if (!h->name || strcmp (h->name, name)) {
 				continue;
@@ -213,9 +212,6 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 #endif
 			anal->cur = h;
 			r_anal_set_reg_profile (anal);
-			if (change) {
-				r_anal_set_fcnsign (anal, NULL);
-			}
 			return true;
 		}
 	}
@@ -241,27 +237,6 @@ R_API bool r_anal_set_reg_profile(RAnal *anal) {
 		free (p);
 	}
 	return ret;
-}
-
-R_API bool r_anal_set_fcnsign(RAnal *anal, const char *name) {
-	const char *dirPrefix = r_sys_prefix (NULL);
-	const char *arch = (anal->cur && anal->cur->arch) ? anal->cur->arch : R_SYS_ARCH;
-	const char *file = (name && *name)
-		? sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "%s.sdb"), dirPrefix, name)
-		: sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "%s-%s-%d.sdb"), dirPrefix,
-			anal->os, arch, anal->bits);
-	if (r_file_exists (file)) {
-		sdb_close (anal->sdb_fcnsign);
-		sdb_free (anal->sdb_fcnsign);
-		anal->sdb_fcnsign = sdb_new (0, file, 0);
-		sdb_ns_set (anal->sdb, "fcnsign", anal->sdb_fcnsign);
-		return (anal->sdb_fcnsign != NULL);
-	}
-	return false;
-}
-
-R_API const char *r_anal_get_fcnsign(RAnal *anal, const char *sym) {
-	return sdb_const_get (anal->sdb_fcnsign, sym, 0);
 }
 
 R_API bool r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int bits) {
@@ -309,7 +284,6 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 	case 64:
 		if (anal->bits != bits) {
 			anal->bits = bits;
-			r_anal_set_fcnsign (anal, NULL);
 			r_anal_set_reg_profile (anal);
 		}
 		return true;

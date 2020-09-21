@@ -685,7 +685,6 @@ static const char *help_msg_as[] = {
 	"as", "", "show current syscall and arguments",
 	"as", " 4", "show syscall 4 based on asm.os and current regs/mem",
 	"asc[a]", " 4", "dump syscall info in .asm or .h",
-	"asf", " [k[=[v]]]", "list/set/unset pf function signatures (see fcnsign)",
 	"asj", "", "list of syscalls in JSON",
 	"asl", "", "list of syscalls by asm.os and asm.arch",
 	"asl", " close", "returns the syscall number for close",
@@ -6983,9 +6982,6 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 				r_list_free (list);
 			}
 		}
-		break;
-	case 'f': // "asf"
-		cmd_sdbk (core->anal->sdb_fcnsign, input + 1);
 		break;
 	case 'k': // "ask"
 		cmd_sdbk (core->anal->syscall->db, input + 1);
