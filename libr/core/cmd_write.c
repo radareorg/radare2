@@ -2088,17 +2088,17 @@ static void cmd_write_init(RCore *core, RCmdDesc *parent) {
 
 	DEFINE_CMD_ARGV_DESC_GROUP (core, w, w_incdec, parent);
 	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1, w1, w_incdec_cd, NULL, &w1_incdec_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1+, w1_inc, w1_cd, w1_incdec_handler, &w1_incdec_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1-, w1_dec, w1_cd, w1_incdec_handler, &w1_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1+, w1_inc, w1_cd, w1_incdec_handler, &w1_inc_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1-, w1_dec, w1_cd, w1_incdec_handler, &w1_dec_help);
 	DEFINE_CMD_ARGV_DESC_DETAIL (core, w2, w2, w_incdec_cd, NULL, &w2_incdec_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w2+, w2_inc, w2_cd, w2_incdec_handler, &w2_incdec_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w2-, w2_dec, w2_cd, w2_incdec_handler, &w2_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w2+, w2_inc, w2_cd, w2_incdec_handler, &w2_inc_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w2-, w2_dec, w2_cd, w2_incdec_handler, &w2_dec_help);
 	DEFINE_CMD_ARGV_DESC_DETAIL (core, w4, w4, w_incdec_cd, NULL, &w4_incdec_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w4+, w4_inc, w4_cd, w4_incdec_handler, &w4_incdec_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w4-, w4_dec, w4_cd, w4_incdec_handler, &w4_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w4+, w4_inc, w4_cd, w4_incdec_handler, &w4_inc_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w4-, w4_dec, w4_cd, w4_incdec_handler, &w4_dec_help);
 	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8, w8, w_incdec_cd, NULL, &w8_incdec_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8+, w8_inc, w8_cd, w8_incdec_handler, &w8_incdec_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8-, w8_dec, w8_cd, w8_incdec_handler, &w8_incdec_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8+, w8_inc, w8_cd, w8_incdec_handler, &w8_inc_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8-, w8_dec, w8_cd, w8_incdec_handler, &w8_dec_help);
 
 	DEFINE_CMD_OLDINPUT_DESC (core, w6, parent);
 	DEFINE_CMD_OLDINPUT_DESC (core, wh, parent);

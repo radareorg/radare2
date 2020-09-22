@@ -60,9 +60,17 @@ extern const RCmdDescHelp w0_help;
 
 extern const RCmdDescHelp w_incdec_help;
 extern const RCmdDescHelp w1_incdec_help;
+extern const RCmdDescHelp w1_inc_help;
+extern const RCmdDescHelp w1_dec_help;
 extern const RCmdDescHelp w2_incdec_help;
+extern const RCmdDescHelp w2_inc_help;
+extern const RCmdDescHelp w2_dec_help;
 extern const RCmdDescHelp w4_incdec_help;
+extern const RCmdDescHelp w4_inc_help;
+extern const RCmdDescHelp w4_dec_help;
 extern const RCmdDescHelp w8_incdec_help;
+extern const RCmdDescHelp w8_inc_help;
+extern const RCmdDescHelp w8_dec_help;
 
 // wB helps
 

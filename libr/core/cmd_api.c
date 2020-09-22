@@ -402,6 +402,7 @@ static void fill_usage_strbuf(RStrBuf *sb, RCmdDesc *cd, bool use_color) {
 	RCons *cons = r_cons_singleton ();
 	const char *pal_label_color = use_color? cons->context->pal.label: "",
 		   *pal_args_color = use_color? cons->context->pal.args: "",
+		   *pal_input_color = use_color? cons->context->pal.input: "",
 		   *pal_help_color = use_color? cons->context->pal.help: "",
 		   *pal_reset = use_color? cons->context->pal.reset: "";
 
@@ -410,7 +411,11 @@ static void fill_usage_strbuf(RStrBuf *sb, RCmdDesc *cd, bool use_color) {
 		r_strbuf_appendf (sb, "%s%s%s", cd->help->usage, pal_args_color, pal_reset);
 	} else {
 		const char *cd_args_str = cd->help->args_str? cd->help->args_str: "";
-		r_strbuf_appendf (sb, "%s%s%s%s", cd->name, pal_args_color, cd_args_str, pal_reset);
+		r_strbuf_appendf (sb, "%s%s", pal_input_color, cd->name);
+		if (cd->help->options) {
+			r_strbuf_appendf (sb, "%s%s", pal_reset, cd->help->options);
+		}
+		r_strbuf_appendf (sb, "%s%s%s", pal_args_color, cd_args_str, pal_reset);
 	}
 	if (cd->help->group_summary) {
 		r_strbuf_appendf (sb, "   %s# %s%s", pal_help_color, cd->help->group_summary, pal_reset);
