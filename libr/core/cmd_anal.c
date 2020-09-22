@@ -4965,13 +4965,13 @@ static void cmd_anal_info(RCore *core, const char *input) {
 		// global imports
 		if (input[1]) {
 			if (input[1] == ' ') {
-				if (!core->anal->imports) {
-					core->anal->imports = r_list_newf ((RListFree)free);
+				char *s = r_str_trim_dup (input + 1);
+				if (s) {
+					r_anal_add_import (core->anal, s);
+					free (s);
 				}
-				r_list_append (core->anal->imports, r_str_trim_dup (input + 1));
 			} else if (input[1] == '-') {
-				r_list_free (core->anal->imports);
-				core->anal->imports = NULL;
+				r_anal_purge_imports (core->anal);
 			} else {
 				eprintf ("Usagae: aii [namespace] # see afii - imports\n");
 			}

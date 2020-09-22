@@ -178,6 +178,7 @@ R_API RAnal *r_anal_free(RAnal *a) {
 		a->esil = NULL;
 	}
 	free (a->last_disasm_reg);
+	r_list_free (a->imports);
 	r_str_constpool_fini (&a->constpool);
 	free (a);
 	return NULL;
@@ -421,6 +422,7 @@ R_API int r_anal_purge (RAnal *anal) {
 	sdb_reset (anal->sdb_classes_attrs);
 	r_list_free (anal->fcns);
 	anal->fcns = r_list_newf (r_anal_function_free);
+	r_anal_purge_imports (anal);
 	return 0;
 }
 
@@ -689,4 +691,42 @@ R_API bool r_anal_is_prelude(RAnal *anal, const ut8 *data, int len) {
 		r_list_free (l);
 	}
 	return false;
+}
+
+R_API void r_anal_add_import(RAnal *anal, const char *imp) {
+	if (anal->imports) {
+		RListIter *it;
+		const char *eimp;
+		r_list_foreach (anal->imports, it, eimp) {
+			if (!strcmp (eimp, imp)) {
+				return;
+			}
+		}
+	} else {
+		anal->imports = r_list_newf (free);
+	}
+	char *cimp = strdup (imp);
+	if (!cimp) {
+		return;
+	}
+	r_list_push (anal->imports, cimp);
+}
+
+R_API void r_anal_remove_import(RAnal *anal, const char *imp) {
+	if (!anal->imports) {
+		return;
+	}
+	RListIter *it;
+	const char *eimp;
+	r_list_foreach (anal->imports, it, eimp) {
+		if (!strcmp (eimp, imp)) {
+			r_list_delete (anal->imports, it);
+			return;
+		}
+	}
+}
+
+R_API void r_anal_purge_imports(RAnal *anal) {
+	r_list_free (anal->imports);
+	anal->imports = NULL;
 }
