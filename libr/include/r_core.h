@@ -238,7 +238,7 @@ typedef struct r_core_tasks_t {
 	bool oneshot_running;
 } RCoreTaskScheduler;
 
-typedef struct r_core_t {
+struct r_core_t {
 	RBin *bin;
 	RConfig *config;
 	ut64 offset; // current seek
@@ -343,7 +343,7 @@ typedef struct r_core_t {
 	int (*r_main_ragg2)(int argc, const char **argv);
 	int (*r_main_rasm2)(int argc, const char **argv);
 	int (*r_main_rax2)(int argc, const char **argv);
-} RCore;
+};
 
 // maybe move into RAnal
 typedef struct r_core_item_t {
