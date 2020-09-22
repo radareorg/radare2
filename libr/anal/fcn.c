@@ -6,7 +6,6 @@
 #include <r_list.h>
 
 #define READ_AHEAD 1
-#define SDB_KEY_BB "bb.0x%"PFMT64x ".0x%"PFMT64x
 // XXX must be configurable by the user
 #define JMPTBLSZ 512
 #define JMPTBL_LEA_SEARCH_SZ 64
@@ -26,10 +25,6 @@
 // 64KB max size
 // 256KB max function size
 #define MAX_FCN_SIZE (1024 * 256)
-
-#define DB a->sdb_fcns
-#define EXISTS(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__), sdb_exists (DB, key)
-#define SETKEY(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__);
 
 typedef struct fcn_tree_iter_t {
 	int len;
