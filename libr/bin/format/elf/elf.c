@@ -38,25 +38,9 @@
 #define BREAD32(x, i) r_buf_read_ble32_at (x, i, bin->endian); (i) += 4
 #define BREAD64(x, i) r_buf_read_ble64_at (x, i, bin->endian); (i) += 8
 
-#if R_BIN_ELF64
-#define WORDSIZE 0x8
-#define WORD_MAX UT64_MAX
-#define READWORD(x, i) READ64 (x, i)
-#define BREADWORD(x, i) BREAD64 (x, i)
-#define ELF_ADDR_MAX UT64_MAX
-#define ELF_XWORD_MAX UT64_MAX
-#else
-#define WORDSIZE 0x4
-#define WORD_MAX UT32_MAX
-#define READWORD(x, i) READ32 (x, i)
-#define BREADWORD(x, i) BREAD32 (x, i)
-#define ELF_ADDR_MAX UT32_MAX
-#define ELF_XWORD_MAX UT64_MAX
-#endif
-
 #define NUMENTRIES_ROUNDUP(sectionsize, entrysize) (((sectionsize) + (entrysize)-1) / (entrysize))
 #define COMPUTE_PLTGOT_POSITION(rel, pltgot_addr, n_initial_unused_entries) \
-	((rel->rva - pltgot_addr - n_initial_unused_entries * WORDSIZE) / WORDSIZE)
+	((rel->rva - pltgot_addr - n_initial_unused_entries * R_BIN_ELF_WORDSIZE) / R_BIN_ELF_WORDSIZE)
 
 #if R_BIN_ELF64
 static inline int UTX_MUL(ut64 *r, ut64 a, ut64 b) {
@@ -74,6 +58,39 @@ static inline int UTX_MUL(ut64 *r, ut64 a, ut64 b) {
 #define GROWTH_FACTOR (1.5)
 
 #define round_up(a) ((((a) + (4) - (1)) / (4)) * (4))
+
+#define EF_MIPS_ABI_O32		0x00001000  /* O32 ABI.  */
+#define EF_MIPS_ABI_O64		0x00002000  /* O32 extended for 64 bit.  */
+#define EF_MIPS_ABI			0x0000f000
+
+static inline bool is_elfclass64(Elf_(Ehdr) *h) {
+	return h->e_ident[EI_CLASS] == ELFCLASS64;
+}
+
+static bool is_mips_o32(Elf_(Ehdr) *h) {
+	if (h->e_ident[EI_CLASS] != ELFCLASS32) {
+		return false;
+	}
+	if ((h->e_flags & EF_MIPS_ABI2) != 0) {
+		return false;
+	}
+	if (((h->e_flags & EF_MIPS_ABI) != 0) &&
+		((h->e_flags & EF_MIPS_ABI) != EF_MIPS_ABI_O32)) {
+		return false;
+	}
+	return true;
+}
+
+static bool is_mips_n32(Elf_(Ehdr) *h) {
+	if (h->e_ident[EI_CLASS] != ELFCLASS32) {
+		return false;
+	}
+	if (((h->e_flags & EF_MIPS_ABI2) == 0) ||
+		((h->e_flags & EF_MIPS_ABI) != 0)) {
+		return false;
+	}
+	return true;
+}
 
 enum {
 	X86,
@@ -248,16 +265,16 @@ static bool read_phdr(ELFOBJ *bin, bool linux_kernel_hack) {
 		if (is_elf64) {
 			bin->phdr[i].p_flags = READ32 (phdr, j);
 		}
-		bin->phdr[i].p_offset = READWORD (phdr, j);
-		bin->phdr[i].p_vaddr = READWORD (phdr, j);
-		bin->phdr[i].p_paddr = READWORD (phdr, j);
-		bin->phdr[i].p_filesz = READWORD (phdr, j);
-		bin->phdr[i].p_memsz = READWORD (phdr, j);
+		bin->phdr[i].p_offset = R_BIN_ELF_READWORD (phdr, j);
+		bin->phdr[i].p_vaddr = R_BIN_ELF_READWORD (phdr, j);
+		bin->phdr[i].p_paddr = R_BIN_ELF_READWORD (phdr, j);
+		bin->phdr[i].p_filesz = R_BIN_ELF_READWORD (phdr, j);
+		bin->phdr[i].p_memsz = R_BIN_ELF_READWORD (phdr, j);
 		if (!is_elf64) {
 			bin->phdr[i].p_flags = READ32 (phdr, j);
 		//	bin->phdr[i].p_flags |= 1; tiny.elf needs this somehow :? LOAD0 is always +x for linux?
 		}
-		bin->phdr[i].p_align = READWORD (phdr, j);
+		bin->phdr[i].p_align = R_BIN_ELF_READWORD (phdr, j);
 	}
 	/* Here is the where all the fun starts.
 	 * Linux kernel since 2005 calculates phdr offset wrongly
@@ -380,14 +397,14 @@ static int init_shdr(ELFOBJ *bin) {
 		}
 		bin->shdr[i].sh_name = READ32 (shdr, j);
 		bin->shdr[i].sh_type = READ32 (shdr, j);
-		bin->shdr[i].sh_flags = READWORD (shdr, j);
-		bin->shdr[i].sh_addr = READWORD (shdr, j);
-		bin->shdr[i].sh_offset = READWORD (shdr, j);
-		bin->shdr[i].sh_size = READWORD (shdr, j);
+		bin->shdr[i].sh_flags = R_BIN_ELF_READWORD (shdr, j);
+		bin->shdr[i].sh_addr = R_BIN_ELF_READWORD (shdr, j);
+		bin->shdr[i].sh_offset = R_BIN_ELF_READWORD (shdr, j);
+		bin->shdr[i].sh_size = R_BIN_ELF_READWORD (shdr, j);
 		bin->shdr[i].sh_link = READ32 (shdr, j);
 		bin->shdr[i].sh_info = READ32 (shdr, j);
-		bin->shdr[i].sh_addralign = READWORD (shdr, j);
-		bin->shdr[i].sh_entsize = READWORD (shdr, j);
+		bin->shdr[i].sh_addralign = R_BIN_ELF_READWORD (shdr, j);
+		bin->shdr[i].sh_entsize = R_BIN_ELF_READWORD (shdr, j);
 	}
 
 #if R_BIN_ELF64
@@ -502,27 +519,27 @@ static void init_dynamic_section_sdb(ELFOBJ *bin, Elf_(Addr) strtabaddr, size_t 
 
 static void set_default_value_dynamic_info(ELFOBJ *bin) {
 	bin->dyn_info.dt_pltrelsz = 0;
-	bin->dyn_info.dt_pltgot = ELF_ADDR_MAX;
-	bin->dyn_info.dt_hash = ELF_ADDR_MAX;
-	bin->dyn_info.dt_strtab = ELF_ADDR_MAX;
-	bin->dyn_info.dt_symtab = ELF_ADDR_MAX;
-	bin->dyn_info.dt_rela = ELF_ADDR_MAX;
+	bin->dyn_info.dt_pltgot = R_BIN_ELF_ADDR_MAX;
+	bin->dyn_info.dt_hash = R_BIN_ELF_ADDR_MAX;
+	bin->dyn_info.dt_strtab = R_BIN_ELF_ADDR_MAX;
+	bin->dyn_info.dt_symtab = R_BIN_ELF_ADDR_MAX;
+	bin->dyn_info.dt_rela = R_BIN_ELF_ADDR_MAX;
 	bin->dyn_info.dt_relasz = 0;
 	bin->dyn_info.dt_relaent = 0;
 	bin->dyn_info.dt_strsz = 0;
 	bin->dyn_info.dt_syment = 0;
-	bin->dyn_info.dt_rel = ELF_ADDR_MAX;
+	bin->dyn_info.dt_rel = R_BIN_ELF_ADDR_MAX;
 	bin->dyn_info.dt_relsz = 0;
 	bin->dyn_info.dt_relent = 0;
-	bin->dyn_info.dt_pltrel = ELF_XWORD_MAX;
-	bin->dyn_info.dt_jmprel = ELF_ADDR_MAX;
-	bin->dyn_info.dt_pltgot = ELF_ADDR_MAX;
-	bin->dyn_info.dt_mips_pltgot = ELF_ADDR_MAX;
+	bin->dyn_info.dt_pltrel = R_BIN_ELF_XWORD_MAX;
+	bin->dyn_info.dt_jmprel = R_BIN_ELF_ADDR_MAX;
+	bin->dyn_info.dt_pltgot = R_BIN_ELF_ADDR_MAX;
+	bin->dyn_info.dt_mips_pltgot = R_BIN_ELF_ADDR_MAX;
 	bin->dyn_info.dt_bind_now = false;
-	bin->dyn_info.dt_flags = ELF_XWORD_MAX;
-	bin->dyn_info.dt_flags_1 = ELF_XWORD_MAX;
-	bin->dyn_info.dt_rpath = ELF_XWORD_MAX;
-	bin->dyn_info.dt_runpath = ELF_XWORD_MAX;
+	bin->dyn_info.dt_flags = R_BIN_ELF_XWORD_MAX;
+	bin->dyn_info.dt_flags_1 = R_BIN_ELF_XWORD_MAX;
+	bin->dyn_info.dt_rpath = R_BIN_ELF_XWORD_MAX;
+	bin->dyn_info.dt_runpath = R_BIN_ELF_XWORD_MAX;
 	r_vector_init(&bin->dyn_info.dt_needed, sizeof(Elf_(Off)), NULL, NULL);
 }
 
@@ -538,8 +555,8 @@ static bool fill_dynamic_entry(ELFOBJ *bin, ut64 entry_offset, Elf_(Dyn) *d) {
 		return false;
 	}
 
-	d->d_tag = READWORD (sdyn, j);
-	d->d_un.d_ptr = READWORD (sdyn, j);
+	d->d_tag = R_BIN_ELF_READWORD (sdyn, j);
+	d->d_un.d_ptr = R_BIN_ELF_READWORD (sdyn, j);
 
 	return true;
 }
@@ -682,7 +699,7 @@ static int init_dynamic_section(ELFOBJ *bin) {
 
 	fill_dynamic_entries (bin, loaded_offset, dyn_size);
 
-	if (bin->dyn_info.dt_strtab != ELF_ADDR_MAX) {
+	if (bin->dyn_info.dt_strtab != R_BIN_ELF_ADDR_MAX) {
 		strtabaddr = Elf_(r_bin_elf_v2p_new) (bin, bin->dyn_info.dt_strtab);
 	}
 
@@ -1387,9 +1404,9 @@ static ut64 get_got_entry(ELFOBJ *bin, RBinElfReloc *rel) {
 	}
 
 	ut64 p_sym_got_addr = Elf_(r_bin_elf_v2p_new) (bin, rel->rva);
-	ut64 addr = BREADWORD (bin->b, p_sym_got_addr);
+	ut64 addr = R_BIN_ELF_BREADWORD (bin->b, p_sym_got_addr);
 
-	return (!addr || addr == WORD_MAX) ? UT64_MAX : addr;
+	return (!addr || addr == R_BIN_ELF_WORD_MAX) ? UT64_MAX : addr;
 }
 
 static bool is_thumb_symbol(ut64 plt_addr) {
@@ -1398,7 +1415,7 @@ static bool is_thumb_symbol(ut64 plt_addr) {
 
 static ut64 get_import_addr_arm(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 got_addr = bin->dyn_info.dt_pltgot;
-	if (got_addr == ELF_ADDR_MAX) {
+	if (got_addr == R_BIN_ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
 
@@ -1430,7 +1447,7 @@ static ut64 get_import_addr_mips(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 jmprel_addr = bin->dyn_info.dt_jmprel;
 	ut64 got_addr = bin->dyn_info.dt_mips_pltgot;
 
-	if (jmprel_addr == ELF_ADDR_MAX || got_addr == ELF_ADDR_MAX) {
+	if (jmprel_addr == R_BIN_ELF_ADDR_MAX || got_addr == R_BIN_ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
 
@@ -1466,7 +1483,7 @@ static ut64 get_num_relocs_dynamic_plt(ELFOBJ *bin) {
 
 static ut64 get_import_addr_riscv(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 got_addr = bin->dyn_info.dt_pltgot;
-	if (got_addr == ELF_ADDR_MAX) {
+	if (got_addr == R_BIN_ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
 
@@ -1491,7 +1508,7 @@ static ut64 get_import_addr_sparc(ELFOBJ *bin, RBinElfReloc *rel) {
 
 static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 plt_addr = bin->dyn_info.dt_pltgot;
-	if (plt_addr == ELF_ADDR_MAX) {
+	if (plt_addr == R_BIN_ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
 	ut64 p_plt_addr = Elf_(r_bin_elf_v2p_new) (bin, plt_addr);
@@ -1520,7 +1537,7 @@ static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
 
 static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 got_addr = bin->dyn_info.dt_pltgot;
-	if (got_addr == ELF_ADDR_MAX) {
+	if (got_addr == R_BIN_ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
 
@@ -1560,7 +1577,7 @@ static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RBinElfReloc *rel) {
 		}
 
 		size_t i = 0;
-		plt_sym_addr = READWORD (buf, i);
+		plt_sym_addr = R_BIN_ELF_READWORD (buf, i);
 
 		//relative address
 		if ((plt_addr + 6 + Elf_(r_bin_elf_v2p) (bin, plt_sym_addr)) == rel->rva) {
@@ -1653,7 +1670,7 @@ int Elf_(r_bin_elf_has_relro)(ELFOBJ *bin) {
 
 	if (bin->dyn_info.dt_bind_now) {
 		haveBindNow = true;
-	} else if (bin->dyn_info.dt_flags != ELF_XWORD_MAX && bin->dyn_info.dt_flags != ELF_XWORD_MAX) {
+	} else if (bin->dyn_info.dt_flags != R_BIN_ELF_XWORD_MAX && bin->dyn_info.dt_flags != R_BIN_ELF_XWORD_MAX) {
 		haveBindNow = bin->dyn_info.dt_flags_1 & DF_1_NOW;
 	}
 
@@ -2101,8 +2118,24 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 	default: return strdup ("x86");
 	}
 }
+char* Elf_(r_bin_elf_get_abi)(ELFOBJ *bin) {
+	Elf_(Ehdr)* ehdr = (Elf_(Ehdr) *) &bin->ehdr;
 
-char* Elf_(r_bin_elf_get_head_flag)(ELFOBJ *bin) {
+	if (ehdr->e_machine == EM_MIPS) {
+		if (is_elfclass64 (ehdr)) {
+			return strdup ("n64");
+		}
+		if (is_mips_n32 (ehdr)) {
+			return strdup ("n32");
+		}
+		if (is_mips_o32 (ehdr)) {
+			return strdup ("o32");
+		}
+	}
+	return NULL;
+}
+
+char* Elf_(r_bin_elf_get_cpu)(ELFOBJ *bin) {
 	if (bin->phdr && bin->ehdr.e_machine == EM_MIPS) {
 		const ut32 mipsType = bin->ehdr.e_flags & EF_MIPS_ARCH;
 		switch (mipsType) {
@@ -2118,8 +2151,23 @@ char* Elf_(r_bin_elf_get_head_flag)(ELFOBJ *bin) {
 		default :                   return strdup (" Unknown mips ISA");
 		}
 	}
-	//TODO: Fill other arch 
-	return strdup("unknown_flag");
+	return NULL;
+}
+
+char* Elf_(r_bin_elf_get_head_flag)(ELFOBJ *bin) {
+	char *head_flag = NULL;
+	char *str = Elf_(r_bin_elf_get_cpu) (bin);
+	if (str) {
+		head_flag = r_str_append (head_flag, str);
+	}
+	str = Elf_(r_bin_elf_get_abi) (bin);
+	if (str) {
+		head_flag = r_str_appendf (head_flag, " %s", str);
+	}
+	if (R_STR_ISEMPTY (head_flag)) {
+		head_flag = r_str_append (head_flag, "unknown_flag");
+	}
+	return head_flag;
 }
 
 // http://www.sco.com/developers/gabi/latest/ch4.eheader.html
@@ -2537,9 +2585,9 @@ char *Elf_(r_bin_elf_get_rpath)(ELFOBJ *bin) {
 		return NULL;
 	}
 
-	if (bin->dyn_info.dt_rpath != ELF_XWORD_MAX)  {
+	if (bin->dyn_info.dt_rpath != R_BIN_ELF_XWORD_MAX)  {
 		val = bin->dyn_info.dt_rpath;
-	} else if (bin->dyn_info.dt_runpath != ELF_XWORD_MAX) {
+	} else if (bin->dyn_info.dt_runpath != R_BIN_ELF_XWORD_MAX) {
 		val = bin->dyn_info.dt_runpath;
 	} else {
 		return NULL;
@@ -2601,11 +2649,11 @@ static bool read_reloc(ELFOBJ *bin, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 
 	size_t i = 0;
 	Elf_(Rela) reloc_info;
 
-	reloc_info.r_offset = READWORD (buf, i);
-	reloc_info.r_info = READWORD (buf, i);
+	reloc_info.r_offset = R_BIN_ELF_READWORD (buf, i);
+	reloc_info.r_info = R_BIN_ELF_READWORD (buf, i);
 
 	if (rel_mode == DT_RELA) {
-		reloc_info.r_addend = READWORD (buf, i);
+		reloc_info.r_addend = R_BIN_ELF_READWORD (buf, i);
 		r->addend = reloc_info.r_addend;
 	}
 
@@ -2708,17 +2756,17 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin, RBinElfReloc *rel
 static size_t get_next_not_analysed_offset(ELFOBJ *bin, size_t section_vaddr, size_t offset) {
 	size_t gvaddr = section_vaddr + offset;
 
-	if (bin->dyn_info.dt_rela != ELF_ADDR_MAX && bin->dyn_info.dt_rela <= gvaddr
+	if (bin->dyn_info.dt_rela != R_BIN_ELF_ADDR_MAX && bin->dyn_info.dt_rela <= gvaddr
 		&& gvaddr < bin->dyn_info.dt_rela + bin->dyn_info.dt_relasz) {
 		return bin->dyn_info.dt_rela + bin->dyn_info.dt_relasz - section_vaddr;
 	}
 
-	if (bin->dyn_info.dt_rel != ELF_ADDR_MAX && bin->dyn_info.dt_rel <= gvaddr
+	if (bin->dyn_info.dt_rel != R_BIN_ELF_ADDR_MAX && bin->dyn_info.dt_rel <= gvaddr
 		&& gvaddr < bin->dyn_info.dt_rel + bin->dyn_info.dt_relsz) {
 		return bin->dyn_info.dt_rel + bin->dyn_info.dt_relsz - section_vaddr;
 	}
 
-	if (bin->dyn_info.dt_jmprel != ELF_ADDR_MAX && bin->dyn_info.dt_jmprel <= gvaddr
+	if (bin->dyn_info.dt_jmprel != R_BIN_ELF_ADDR_MAX && bin->dyn_info.dt_jmprel <= gvaddr
 		&& gvaddr < bin->dyn_info.dt_jmprel + bin->dyn_info.dt_pltrelsz) {
 		return bin->dyn_info.dt_jmprel + bin->dyn_info.dt_pltrelsz - section_vaddr;
 	}
@@ -2860,11 +2908,11 @@ static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 		return NULL;
 	}
 
-	if (bin->dyn_info.dt_rel != ELF_ADDR_MAX) {
+	if (bin->dyn_info.dt_rel != R_BIN_ELF_ADDR_MAX) {
 		reldyn = bin->dyn_info.dt_rel;
 		num_sections++;
 	}
-	if (bin->dyn_info.dt_rela != ELF_ADDR_MAX) {
+	if (bin->dyn_info.dt_rela != R_BIN_ELF_ADDR_MAX) {
 		relva = bin->dyn_info.dt_rela;
 		num_sections++;
 	}
@@ -2874,14 +2922,14 @@ static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 	if (bin->dyn_info.dt_relasz) {
 		relasz = bin->dyn_info.dt_relasz;
 	}
-	if (bin->dyn_info.dt_pltgot != ELF_ADDR_MAX) {
+	if (bin->dyn_info.dt_pltgot != R_BIN_ELF_ADDR_MAX) {
 		pltgotva = bin->dyn_info.dt_pltgot;
 		num_sections++;
 	}
 	if (bin->dyn_info.dt_pltrelsz) {
 		pltgotsz = bin->dyn_info.dt_pltrelsz;
 	}
-	if (bin->dyn_info.dt_jmprel != ELF_ADDR_MAX) {
+	if (bin->dyn_info.dt_jmprel != R_BIN_ELF_ADDR_MAX) {
 		relava = bin->dyn_info.dt_jmprel;
 		num_sections++;
 	}
@@ -3036,7 +3084,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		return NULL;
 	}
 
-	if (bin->dyn_info.dt_symtab == ELF_ADDR_MAX || !bin->dyn_info.dt_syment) {
+	if (bin->dyn_info.dt_symtab == R_BIN_ELF_ADDR_MAX || !bin->dyn_info.dt_syment) {
 		return NULL;
 	}
 

@@ -60,8 +60,8 @@ static RList *fscmd(RFSRoot *root, const char *cmd, int type) {
 			free (res);
 			return NULL;
 		}
-		int i, count = 0;
-		int *lines = r_str_split_lines (res, &count);
+		size_t i, count = 0;
+		size_t *lines = r_str_split_lines (res, &count);
 		if (lines) {
 			for (i = 0; i < count; i++) {
 				append_file (list, res + lines[i], type, 0, 0);
@@ -252,8 +252,8 @@ static RList *__cfg(RFSRoot *root, const char *path) {
 			free (res);
 			return NULL;
 		}
-		int i, count = 0;
-		int *lines = r_str_split_lines (res, &count);
+		size_t i, count = 0;
+		size_t *lines = r_str_split_lines (res, &count);
 		if (lines) {
 			for (i = 0; i < count; i++) {
 				char *line = res + lines[i];

@@ -52,3 +52,52 @@ vaddr      paddr      type   name
 0x100004a0 str.Simple_PPC_program. str.Simple_PPC_program.
 EOF
 RUN
+
+NAME=ELF: arm sh relocs
+ARGS=-e io.cache=1
+FILE=bins/elf/r2pay-arm32.so
+CMDS=<<EOF
+ir*~reloc?
+s section..init_array
+pd 10
+EOF
+EXPECT=<<EOF
+366
+            ;-- section..init_array:
+            0x000b58c4      .dword 0x00004560 ; reloc..datadiv_decode1794556967687044894 ; sym..datadiv_decode1794556967687044894 ; [15] -rw- section size 364 named .init_array
+            0x000b58c8      .dword 0x00004570 ; reloc..datadiv_decode12875440098136793118 ; sym..datadiv_decode12875440098136793118
+            0x000b58cc      .dword 0x00098028 ; reloc..datadiv_decode11893604691534341392 ; sym..datadiv_decode11893604691534341392
+            0x000b58d0      .dword 0x0014383c
+            0x000b58d4      .dword 0x00143840
+            0x000b58d8      .dword 0x00098b44 ; reloc..datadiv_decode668687990735969933 ; sym..datadiv_decode668687990735969933
+            0x000b58dc      .dword 0x00098b48 ; reloc..datadiv_decode16868916699024037624 ; sym..datadiv_decode16868916699024037624
+            0x000b58e0      .dword 0x00098b4c ; reloc..datadiv_decode12802097292201864397 ; sym..datadiv_decode12802097292201864397
+            0x000b58e4      .dword 0x00098b50 ; reloc..datadiv_decode12428479046606065387 ; sym..datadiv_decode12428479046606065387
+            0x000b58e8      .dword 0x00098b54 ; reloc..datadiv_decode7496105736011033460 ; sym..datadiv_decode7496105736011033460
+EOF
+RUN
+
+NAME=ELF: arm64 sh relocs
+ARGS=-e io.cache=1
+FILE=bins/elf/r2pay-arm64.so
+CMDS=<<EOF
+ir*~reloc?
+s section..init_array
+pd 10
+EOF
+EXPECT=<<EOF
+175
+            ;-- section..init_array:
+            ;-- segment.LOAD1:
+            0x00126510      .qword 0x0000000000005a6c ; sym..datadiv_decode9958896245423089702 ; [13] -rw- section size 728 named .init_array
+            0x00126518      .qword 0x0000000000005a80 ; sym..datadiv_decode10476194973746341988
+            0x00126520      .qword 0x00000000000efddc ; sym..datadiv_decode16323044921667855934
+            0x00126528      .qword 0x00000000001bd998
+            0x00126530      .qword 0x000000000022c634
+            0x00126538      .qword 0x00000000000f22e0 ; sym..datadiv_decode667225052219618748
+            0x00126540      .qword 0x00000000000f22e4 ; sym..datadiv_decode8132880250332170398
+            0x00126548      .qword 0x00000000000f22e8 ; sym..datadiv_decode3655886617018729963
+            0x00126550      .qword 0x00000000000f22ec ; sym..datadiv_decode16406252260792032531
+            0x00126558      .qword 0x00000000000f22f0 ; sym..datadiv_decode13403071575248320347
+EOF
+RUN

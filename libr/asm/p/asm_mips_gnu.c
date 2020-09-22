@@ -17,8 +17,10 @@ static int mips_mode = 0;
 static unsigned long Offset = 0;
 static RStrBuf *buf_global = NULL;
 static unsigned char bytes[4];
+static char *pre_cpu = NULL;
+static char *pre_features = NULL;
 
-static int mips_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
+static int mips_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
 	memcpy (myaddr, bytes, length);
 	return 0;
 }
@@ -43,8 +45,37 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 	Offset = a->pc;
 	memcpy (bytes, buf, 4); // TODO handle thumb
 
+	if ((a->cpu != pre_cpu) && (a->features != pre_features)) {
+		free (disasm_obj.disassembler_options);
+		memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
+	}	
+
 	/* prepare disassembler */
-	memset (&disasm_obj,'\0', sizeof (struct disassemble_info));
+	if (a->cpu && (!pre_cpu || !strcmp(a->cpu, pre_cpu))) {
+		if (!r_str_casecmp (a->cpu, "mips64r2")) {
+			disasm_obj.mach = bfd_mach_mipsisa64r2;
+		} else if (!r_str_casecmp (a->cpu, "mips32r2")) {
+			disasm_obj.mach = bfd_mach_mipsisa32r2;
+		} else if (!r_str_casecmp (a->cpu, "mips64")) {
+			disasm_obj.mach = bfd_mach_mipsisa64;
+		} else if (!r_str_casecmp (a->cpu, "mips32")) {
+			disasm_obj.mach = bfd_mach_mipsisa32;
+		}
+		pre_cpu = r_str_dup (pre_cpu, a->cpu);
+	}
+
+	if (a->features && (!pre_features || !strcmp (a->features, pre_features))) {
+		free (disasm_obj.disassembler_options);
+		if (strstr (a->features, "n64")) {
+			disasm_obj.disassembler_options = r_str_new ("abi=n64");
+		} else if (strstr (a->features, "n32")) {
+			disasm_obj.disassembler_options = r_str_new ("abi=n32");
+		} else if (strstr (a->features, "o32")) {
+			disasm_obj.disassembler_options = r_str_new ("abi=o32");
+		}
+		pre_features = r_str_dup (pre_features, a->features);
+	}
+
 	mips_mode = a->bits;
 	disasm_obj.arch = CPU_LOONGSON_2F;
 	disasm_obj.buffer = bytes;
@@ -57,7 +88,6 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 	disasm_obj.endian = !a->big_endian;
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = stdout;
-
 	op->size = (disasm_obj.endian == BFD_ENDIAN_LITTLE)
 		? print_insn_little_mips ((bfd_vma)Offset, &disasm_obj)
 		: print_insn_big_mips ((bfd_vma)Offset, &disasm_obj);

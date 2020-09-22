@@ -43,6 +43,7 @@ if get_option('enable_tests')
     'queue',
     'r2r',
     'rbtree',
+    'sign',
     'skiplist',
     'spaces',
     'sparse',

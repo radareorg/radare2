@@ -34,12 +34,12 @@ static void write_null(void) {
 #define BS 128
 #define USE_SLURPIN 1
 
-static char *stdin_slurp(int *sz) {
+static char *slurp(FILE *f, size_t *sz) {
 	int blocksize = BS;
 	static int bufsize = BS;
 	static char *next = NULL;
-	static int nextlen = 0;
-	int len, rr, rr2;
+	static size_t nextlen = 0;
+	size_t len, rr, rr2;
 	char *tmp, *buf = NULL;
 	if (sz) {
 		*sz = 0;
@@ -55,11 +55,11 @@ static char *stdin_slurp(int *sz) {
 			return NULL;
 		}
 
-		if (!fgets (buf, buf_size, stdin)) {
+		if (!fgets (buf, buf_size, f)) {
 			free (buf);
 			return NULL;
 		}
-		if (feof (stdin)) {
+		if (feof (f)) {
 			free (buf);
 			return NULL;
 		}
@@ -90,7 +90,7 @@ static char *stdin_slurp(int *sz) {
 			bufsize = nextlen + blocksize;
 			//len = nextlen;
 			rr = nextlen;
-			rr2 = read (0, buf + nextlen, blocksize);
+			rr2 = fread (buf + nextlen, 1, blocksize, f);
 			if (rr2 > 0) {
 				rr += rr2;
 				bufsize += rr2;
@@ -98,7 +98,7 @@ static char *stdin_slurp(int *sz) {
 			next = NULL;
 			nextlen = 0;
 		} else {
-			rr = read (0, buf + len, blocksize);
+			rr = fread (buf + len, 1, blocksize, f);
 		}
 		if (rr < 1) { // EOF
 			buf[len] = 0;
@@ -262,22 +262,48 @@ static int createdb(const char *f, const char **args, int nargs) {
 		eprintf ("Cannot create database\n");
 		return 1;
 	}
-	insertkeys (s, args, nargs, '=');
 	sdb_config (s, options);
-	for (; (line = stdin_slurp (NULL));) {
-		if ((eq = strchr (line, '='))) {
-			*eq++ = 0;
-			sdb_disk_insert (s, line, eq);
+	int ret = 0;
+	if (args) {
+		int i;
+		size_t buf_sz = 256;
+		char *buf = malloc (buf_sz);
+		if (!buf) {
+			ret = 1;
+			goto beach;
 		}
-		free (line);
+		for (i = 0; i < nargs; i++) {
+			FILE *ff = fopen (args[i], "r");
+			if (!ff) {
+				ret = 1;
+				goto beach;
+			}
+			for (; (line = slurp (ff, NULL));) {
+				if ((eq = strchr (line, '='))) {
+					*eq++ = 0;
+					sdb_disk_insert (s, line, eq);
+				}
+				free (line);
+			}
+			fclose (ff);
+		}
+	} else {
+		for (; (line = slurp (stdin, NULL));) {
+			if ((eq = strchr (line, '='))) {
+				*eq++ = 0;
+				sdb_disk_insert (s, line, eq);
+			}
+			free (line);
+		}
 	}
+beach:
 	sdb_disk_finish (s);
-	return 0;
+	return ret;
 }
 
 static int showusage(int o) {
 	printf ("usage: sdb [-0cdehjJv|-D A B] [-|db] "
-		"[.file]|[-=]|[-+][(idx)key[:json|=value] ..]\n");
+		"[.file]|[-=]|==||[-+][(idx)key[:json|=value] ..]\n");
 	if (o == 2) {
 		printf ("  -0      terminate results with \\x00\n"
 			"  -c      count the number of keys database\n"
@@ -300,9 +326,9 @@ static int showversion(void) {
 }
 
 static int jsonIndent(void) {
-	int len;
+	size_t len;
 	char *out;
-	char *in = stdin_slurp (&len);
+	char *in = slurp (stdin, &len);
 	if (!in) {
 		return 0;
 	}
@@ -319,12 +345,12 @@ static int jsonIndent(void) {
 
 static int base64encode(void) {
 	char *out;
-	int len = 0;
-	ut8 *in = (ut8 *) stdin_slurp (&len);
+	size_t len = 0;
+	ut8 *in = (ut8 *) slurp (stdin, &len);
 	if (!in) {
 		return 0;
 	}
-	out = sdb_encode (in, len);
+	out = sdb_encode (in, (int)len);
 	if (!out) {
 		free (in);
 		return 1;
@@ -337,17 +363,16 @@ static int base64encode(void) {
 
 static int base64decode(void) {
 	ut8 *out;
-	int len, ret = 1;
-	char *in = (char *) stdin_slurp (&len);
+	size_t len, ret = 1;
+	char *in = slurp (stdin, &len);
 	if (in) {
-		out = sdb_decode (in, &len);
-		if (out) {
-			if (len >= 0) {
-				(void)write (1, out, len);
-				ret = 0;
-			}
-			free (out);
+		int declen;
+		out = sdb_decode (in, &declen);
+		if (out && declen >= 0) {
+			(void)write (1, out, declen);
+			ret = 0;
 		}
+		free (out);
 		free (in);
 	}
 	return ret;
@@ -490,7 +515,7 @@ int main(int argc, const char **argv) {
 			if (kvs < argc) {
 				save |= insertkeys (s, argv + argi + 2, argc - kvs, '-');
 			}
-			for (; (line = stdin_slurp (NULL));) {
+			for (; (line = slurp (stdin, NULL));) {
 				save |= sdb_query (s, line);
 				if (fmt) {
 					fflush (stdout);
@@ -501,6 +526,8 @@ int main(int argc, const char **argv) {
 		}
 	} else if (!strcmp (argv[db0 + 1], "=")) {
 		ret = createdb (argv[db0], NULL, 0);
+	} else if (!strcmp (argv[db0 + 1], "==")) {
+		ret = createdb (argv[db0], argv + db0 + 2, argc - (db0 + 2));
 	} else {
 		s = sdb_new (NULL, argv[db0], 0);
 		if (!s) {

@@ -72,6 +72,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=MIPS new abi
+FILE=bins/elf/analysis/mips64r2-busybox-loongson
+CMDS=<<EOF
+e asm.arch=mips.gnu
+s 0x120005978
+pd 6
+EOF
+EXPECT=<<EOF
+            0x120005978      1800bfff       sd ra, 24(sp)
+            0x12000597c      3800a7ff       sd a3, 56(sp)
+            0x120005980      4000a8ff       sd a4, 64(sp)
+            0x120005984      4800a9ff       sd a5, 72(sp)
+            0x120005988      5000aaff       sd a6, 80(sp)
+            0x12000598c      5800abff       sd a7, 88(sp)
+EOF
+RUN
+
 NAME=mac ls pdsf
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF

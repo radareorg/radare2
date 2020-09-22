@@ -20,3 +20,11 @@ EXPECT=<<EOF
             0x00000000      90             nop
 EOF
 RUN
+
+NAME=rj-pj
+FILE=bins/elf/crackme0x05
+CMDS=rj
+EXPECT=<<EOF
+{"size":7656}
+EOF
+RUN

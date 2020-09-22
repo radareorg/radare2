@@ -359,7 +359,7 @@ static RAnalFunction *fcnIn(RDisasmState *ds, ut64 at, int type) {
 	return r_anal_get_fcn_in (ds->core->anal, at, type);
 }
 
-static const char *get_utf8_char (const char line, RDisasmState *ds) {
+static const char *get_utf8_char(const char line, RDisasmState *ds) {
 	switch (line) {
 	case '<': return ds->core->cons->vline[ARROW_LEFT];
 	case '>': return ds->core->cons->vline[ARROW_RIGHT];
@@ -373,6 +373,7 @@ static const char *get_utf8_char (const char line, RDisasmState *ds) {
 	default: return " ";
 	}
 }
+
 static void ds_print_ref_lines(char *line, char *line_col, RDisasmState *ds) {
 	int i;
 	int len = strlen (line);
@@ -1098,8 +1099,8 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 					if (addr > ds->min_ref_addr) {
 						RFlagItem *fi = r_flag_get_i (ds->core->flags, addr);
 						if (fi) {
-							strcpy (ox, fi->name);
-							strcat (ox, e);
+							r_str_cpy (ox, fi->name);
+							r_str_cat (ox, e);
 						}
 					}
 					free (e);
@@ -1755,10 +1756,7 @@ static void printVarSummary(RDisasmState *ds, RList *list) {
 }
 
 static bool empty_signature(const char *s) {
-	if (s && !strncmp (s, "void ", 5) && strstr (s, "()")) {
-		return true;
-	}
-	return false;
+	return (s && !strncmp (s, "void ", 5) && strstr (s, "()"));
 }
 
 static void ds_show_functions(RDisasmState *ds) {
@@ -3481,14 +3479,15 @@ static bool ds_print_core_vmode_jump_hit(RDisasmState *ds, int pos) {
 	RCore *core = ds->core;
 	RAnal *a = core->anal;
 	RAnalHint *hint = r_anal_hint_get (a, ds->at);
+	bool res = false;
 	if (hint) {
 		if (hint->jump != UT64_MAX) {
 			ds_print_shortcut (ds, hint->jump, pos);
+			res = true;
 		}
 		r_anal_hint_free (hint);
-		return true;
 	}
-	return false;
+	return res;
 }
 
 static void getPtr(RDisasmState *ds, ut64 addr, int pos) {
@@ -3502,6 +3501,7 @@ static void getPtr(RDisasmState *ds, ut64 addr, int pos) {
 		ds_print_shortcut (ds, n32, pos);
 	}
 }
+
 static ut64 get_ptr_ble(RDisasmState *ds, ut64 addr, int pos) {
 	ut8 buf[sizeof (ut64)] = {0};
 	int endian = ds->core->rasm->big_endian;
@@ -3601,8 +3601,8 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 	case R_ANAL_OP_TYPE_RJMP:
 	case R_ANAL_OP_TYPE_RCALL:
 		if (ds->analop.jump != UT64_MAX && ds->analop.jump != UT32_MAX) {
-				ds->analop.jump = get_ptr_ble (ds, ds->analop.jump, pos);
-				gotShortcut = true;
+			ds->analop.jump = get_ptr_ble (ds, ds->analop.jump, pos);
+			gotShortcut = true;
 		}
 		break;
 	case R_ANAL_OP_TYPE_JMP:
@@ -4942,8 +4942,8 @@ static void ds_print_comments_right(RDisasmState *ds) {
 					if (comment) {
 						ds_newline (ds);
 						ds_begin_line (ds);
-						int lines_count;
-						int *line_indexes = r_str_split_lines (comment, &lines_count);
+						size_t lines_count;
+						size_t *line_indexes = r_str_split_lines (comment, &lines_count);
 						if (line_indexes) {
 							int i;
 							for (i = 0; i < lines_count; i++) {
@@ -6524,7 +6524,7 @@ toro:
 					} else if (esil) {
 						opstr = (R_STRBUF_SAFEGET (&analop.esil));
 					}
-					if (asm_immtrim ) {
+					if (asm_immtrim) {
 						r_parse_immtrim (opstr);
 					}
 					r_cons_println (opstr);

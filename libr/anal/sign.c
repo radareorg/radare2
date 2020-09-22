@@ -631,7 +631,26 @@ static void mergeItem(RSignItem *dst, RSignItem *src) {
 	}
 }
 
-R_API bool r_sign_anal_additem(RAnal *a, RSignItem *it) {
+R_API RSignItem *r_sign_get_item(RAnal *a, const char *name) {
+	char k[R_SIGN_KEY_MAXSZ];
+	serializeKey (a, r_spaces_current (&a->zign_spaces), name, k);
+
+	const char *v = sdb_const_get (a->sdb_zigns, k, 0);
+	if (!v) {
+		return NULL;
+	}
+	RSignItem *it = r_sign_item_new ();
+	if (!it) {
+		return NULL;
+	}
+	if (!r_sign_deserialize (a, it, k, v)) {
+		r_sign_item_free (it);
+		return NULL;
+	}
+	return it;
+}
+
+R_API bool r_sign_add_item(RAnal *a, RSignItem *it) {
 	char key[R_SIGN_KEY_MAXSZ], val[R_SIGN_VAL_MAXSZ];
 	const char *curval = NULL;
 	bool retval = true;
@@ -681,7 +700,7 @@ static bool addHash(RAnal *a, const char *name, int type, const char *val) {
 	switch (type) {
 	case R_SIGN_BBHASH:
 		it->hash->bbhash = strdup (val);
-		retval = r_sign_anal_additem (a, it);
+		retval = r_sign_add_item (a, it);
 		r_sign_item_free (it);
 		break;
 	}
@@ -702,7 +721,7 @@ static bool addBBHash(RAnal *a, RAnalFunction *fcn, const char *name) {
 	it->space = r_spaces_current (&a->zign_spaces);
 
 	if (r_sign_addto_item (a, it, fcn, R_SIGN_BBHASH)) {
-		retval = r_sign_anal_additem (a, it);
+		retval = r_sign_add_item (a, it);
 	}
 beach:
 	r_sign_item_free (it);
@@ -743,7 +762,7 @@ static bool addBytes(RAnal *a, const char *name, ut64 size, const ut8 *bytes, co
 		goto fail;
 	}
 	memcpy (it->bytes->mask, mask, size);
-	retval = r_sign_anal_additem (a, it);
+	retval = r_sign_add_item (a, it);
 	r_sign_item_free (it);
 	return retval;
 fail:
@@ -946,7 +965,7 @@ R_API bool r_sign_add_graph(RAnal *a, const char *name, RSignGraph graph) {
 		return false;
 	}
 	*it->graph = graph;
-	retval = r_sign_anal_additem (a, it);
+	retval = r_sign_add_item (a, it);
 	r_sign_item_free (it);
 
 	return retval;
@@ -962,7 +981,7 @@ R_API bool r_sign_add_comment(RAnal *a, const char *name, const char *comment) {
 	it->name = r_str_new (name);
 	it->space = r_spaces_current (&a->zign_spaces);
 	it->comment = strdup (comment);
-	bool retval = r_sign_anal_additem (a, it);
+	bool retval = r_sign_add_item (a, it);
 	r_sign_item_free (it);
 	return retval;
 }
@@ -974,7 +993,7 @@ R_API bool r_sign_add_name(RAnal *a, const char *name, const char *realname) {
 		it->name = r_str_new (name);
 		it->realname = strdup (realname);
 		it->space = r_spaces_current (&a->zign_spaces);
-		bool retval = r_sign_anal_additem (a, it);
+		bool retval = r_sign_add_item (a, it);
 		r_sign_item_free (it);
 		return retval;
 	}
@@ -992,7 +1011,7 @@ R_API bool r_sign_add_addr(RAnal *a, const char *name, ut64 addr) {
 	it->space = r_spaces_current (&a->zign_spaces);
 	it->addr = addr;
 
-	bool retval = r_sign_anal_additem (a, it);
+	bool retval = r_sign_add_item (a, it);
 
 	r_sign_item_free (it);
 
@@ -1019,7 +1038,7 @@ R_API bool r_sign_add_vars(RAnal *a, const char *name, RList *vars) {
 	r_list_foreach (vars, iter, var) {
 		r_list_append (it->vars, strdup (var));
 	}
-	bool retval = r_sign_anal_additem (a, it);
+	bool retval = r_sign_add_item (a, it);
 	r_sign_item_free (it);
 
 	return retval;
@@ -1045,7 +1064,7 @@ R_API bool r_sign_add_types(RAnal *a, const char *name, RList *types) {
 	r_list_foreach (types, iter, type) {
 		r_list_append (it->types, strdup (type));
 	}
-	bool retval = r_sign_anal_additem (a, it);
+	bool retval = r_sign_add_item (a, it);
 	r_sign_item_free (it);
 
 	return retval;
@@ -1070,7 +1089,7 @@ R_API bool r_sign_add_refs(RAnal *a, const char *name, RList *refs) {
 	r_list_foreach (refs, iter, ref) {
 		r_list_append (it->refs, strdup (ref));
 	}
-	bool retval = r_sign_anal_additem (a, it);
+	bool retval = r_sign_add_item (a, it);
 	r_sign_item_free (it);
 
 	return retval;
@@ -1095,7 +1114,7 @@ R_API bool r_sign_add_xrefs(RAnal *a, const char *name, RList *xrefs) {
 	r_list_foreach (xrefs, iter, ref) {
 		r_list_append (it->xrefs, strdup (ref));
 	}
-	bool retval = r_sign_anal_additem (a, it);
+	bool retval = r_sign_add_item (a, it);
 	r_sign_item_free (it);
 
 	return retval;

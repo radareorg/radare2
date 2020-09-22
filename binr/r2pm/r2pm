@@ -19,8 +19,11 @@ gmake --help >/dev/null 2>&1
 export MAKE
 export GLOBAL=0
 export R2PM_JOBS=4
-export R2VERSION="`r2 -qv`"
 export R2PMCACHE="$HOME/.r2pm.cache"
+
+# Set R2_* Vars
+eval $(r2 -H)
+export R2_VERSION
 
 R2PM=$0
 R2PMCACHE_LOADED=0
@@ -38,11 +41,11 @@ if [ -f ~/.r2pm.cache ]; then
 	fi
 fi
 if [ "${R2PMCACHE_LOADED}" != 1 ]; then
-	export LIBEXT="`r2 -H LIBEXT`"
-	LIBDIR="`r2 -H R2_LIBDIR`"
-	export R2CONFIGHOME="`r2 -H R2_RCONFIGHOME`"
-	export R2DATAHOME="`r2 -H R2_RDATAHOME`"
-	PREFIX="`r2 -H R2_PREFIX`"
+	export LIBEXT="$R2_LIBEXT"
+	LIBDIR="$R2_LIBDIR"
+	export R2CONFIGHOME="$R2_RCONFIGHOME"
+	export R2DATAHOME="$R2_RDATAHOME"
+	PREFIX="$R2_PREFIX"
 fi
 BINDIR="${PREFIX}/bin/"
 WRKDIR="$PWD"
@@ -63,8 +66,8 @@ export R2PM_BINDIR
 export R2PM_SYSLIBDIR="${LIBDIR}"
 
 # plugdir
-export R2PM_SYSPLUGIN_DIR=$(r2 -H R2_LIBR_PLUGINS)
-export R2PM_USRPLUGIN_DIR=$(r2 -H R2_USER_PLUGINS)
+export R2PM_SYSPLUGIN_DIR="$R2_LIBR_PLUGINS"
+export R2PM_USRPLUGIN_DIR="$R2_USER_PLUGINS"
 [ -z "${R2PM_PLUGDIR}" ] && R2PM_PLUGDIR="${R2PM_USRPLUGIN_DIR}"
 [ -z "${R2PM_PLUGDIR}" ] && R2PM_PLUGDIR="${R2DATAHOME}/plugins"
 
@@ -81,7 +84,7 @@ export LDFLAGS="-L${R2PM_HOMEPREFIX}/lib"
 export R2PM_PYPATH="${R2PM_PREFIX}/python"
 export R2PM_OLDPWD="${PWD}"
 
-export RHOMEDIR="`r2 -H R2_RCONFIGHOME`"
+export RHOMEDIR="$R2_RCONFIGHOME"
 
 if [ "`uname`" = Darwin ]; then
 	export LD_LIBRARY_PATH="${R2PM_HOMEPREFIX}/lib"
@@ -529,12 +532,12 @@ case "$1" in
 	PATH="${R2PM_BINDIR}:${PATH}" "$@"
 	;;
 -v|version)
-	echo "r2pm ${R2VERSION}"
+	echo "r2pm ${R2_VERSION}"
 	;;
 -gi|global-install)
 	GLOBAL=1
 	R2PM_PREFIX="${R2PM_SYSPREFIX}"
-	#R2PM_PLUGDIR="${R2PM_SYSLIBDIR}/radare2/${R2VERSION}/"
+	#R2PM_PLUGDIR="${R2PM_SYSLIBDIR}/radare2/${R2_VERSION}/"
 	R2PM_PLUGDIR="${R2PM_SYSPLUGIN_DIR}"
 	R2PM_BINDIR="${R2PM_SYSBINDIR}"
 	R2PM_WWWROOT="${R2PM_SYSWWWROOT}"
@@ -547,7 +550,7 @@ case "$1" in
 -gu|global-uninstall)
 	GLOBAL=1
 	R2PM_PREFIX="${R2PM_SYSPREFIX}"
-	#R2PM_PLUGDIR="${R2PM_SYSLIBDIR}/radare2/${R2VERSION}/"
+	#R2PM_PLUGDIR="${R2PM_SYSLIBDIR}/radare2/${R2_VERSION}/"
 	R2PM_PLUGDIR="${R2PM_SYSPLUGIN_DIR}"
 	R2PM_BINDIR="${R2PM_SYSBINDIR}"
 	R2PM_WWWROOT="${R2PM_SYSWWWROOT}"

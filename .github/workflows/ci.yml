@@ -83,7 +83,7 @@ jobs:
             cflags: '-DR2_ASSERT_STDOUT=1'
             meson_options: -Db_sanitize=address,undefined
             asan: true
-            asan_options: 'detect_leaks=0,detect_odr_violation=0'
+            asan_options: 'detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1'
             run_tests: true
             enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'asan') }}
             timeout: 100

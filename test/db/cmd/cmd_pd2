@@ -842,3 +842,14 @@ EXPECT=<<EOF
    entry0 + 4                   inc eax
 EOF
 RUN
+
+NAME=seek with spaces
+FILE=-
+CMDS=<<EOF
+wx 010203040506
+p8 1 @ 1 + 3
+EOF
+EXPECT=<<EOF
+05
+EOF
+RUN

@@ -22,11 +22,11 @@ p8 10 @ flag
   (tmp_seek_command
     (arged_command (cmd_identifier)
       (args (arg (arg_identifier))))
-    (arg (arg_identifier)))
+    (args (arg (arg_identifier))))
   (tmp_seek_command
     (arged_command (cmd_identifier)
       (args (arg (arg_identifier))))
-    (arg (arg_identifier))))
+    (args (arg (arg_identifier)))))
 
 
 ===================
@@ -41,7 +41,7 @@ p8 10 @! 30
   (tmp_blksz_command
     (arged_command (cmd_identifier)
       (args (arg (arg_identifier))))
-    (arg (arg_identifier))))
+    (args (arg (arg_identifier)))))
 
 
 =================
@@ -86,7 +86,7 @@ pd 2 @b:16
   (tmp_bits_command
     (arged_command (cmd_identifier)
       (args (arg (arg_identifier))))
-    (arg (arg_identifier))))
+    (args (arg (arg_identifier)))))
 
 =================
 Temporary seek to nth instr
@@ -148,7 +148,7 @@ pd 2 @i:4
   (tmp_reli_command
     (arged_command (cmd_identifier)
       (args (arg (arg_identifier))))
-    (arg (arg_identifier))))
+    (args (arg (arg_identifier)))))
 
 =================
 Temporary seek to sdb key
@@ -174,7 +174,7 @@ pd @o:3
 (commands
   (tmp_fd_command
     (arged_command (cmd_identifier))
-    (arg (arg_identifier))))
+    (args (arg (arg_identifier)))))
 
 =================
 Temporary seek to reg value
@@ -245,7 +245,7 @@ p8 4 @ 0xdead @a:x86 > /tmp/out.txt
       (tmp_seek_command
         (arged_command (cmd_identifier)
 	  (args (arg (arg_identifier))))
-	(arg (arg_identifier)))
+	(args (arg (arg_identifier))))
       (arg (arg_identifier)))
     (fdn_redirect_operator)
     (arg (arg_identifier))))
@@ -260,4 +260,21 @@ wx  0x68a0a@entry0
   (tmp_seek_command
     (arged_command (cmd_identifier)
       (args (arg (arg_identifier))))
-    (arg (arg_identifier))))
+    (args (arg (arg_identifier)))))
+
+
+=======================
+Spaces in tmp_seek args
+=======================
+
+pd @ entry0 + 2
+
+---
+
+(commands
+  (tmp_seek_command
+    (arged_command (cmd_identifier))
+    (args
+      (arg (arg_identifier))
+      (arg (arg_identifier))
+      (arg (arg_identifier)))))

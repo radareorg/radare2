@@ -274,8 +274,8 @@ module.exports = grammar({
 	)),
 
 	// tmp changes commands
-	tmp_seek_command: $ => prec.right(1, seq($._simple_command, '@', $.arg)),
-	tmp_blksz_command: $ => prec.right(1, seq($._simple_command, '@!', $.arg)),
+	tmp_seek_command: $ => prec.right(1, seq($._simple_command, '@', $.args)),
+	tmp_blksz_command: $ => prec.right(1, seq($._simple_command, '@!', $.args)),
 	// NOTE: need to use special arg_brace here because of https://github.com/radareorg/radare2/commit/c3dee9332c19f874ac2cc9294a9ffe17575d8141
 	tmp_fromto_command: $ => prec.right(1, seq(
 	    $._simple_command,
@@ -285,13 +285,13 @@ module.exports = grammar({
 	    '}'
 	)),
 	tmp_arch_command: $ => prec.right(1, seq($._simple_command, '@a:', $.arg)),
-	tmp_bits_command: $ => prec.right(1, seq($._simple_command, '@b:', $.arg)),
+	tmp_bits_command: $ => prec.right(1, seq($._simple_command, '@b:', $.args)),
 	tmp_nthi_command: $ => prec.right(1, seq($._simple_command, '@B:', $.arg)),
 	tmp_eval_command: $ => prec.right(1, seq($._simple_command, '@e:', $.tmp_eval_args)),
 	tmp_fs_command: $ => prec.right(1, seq($._simple_command, '@F:', $.arg)),
-	tmp_reli_command: $ => prec.right(1, seq($._simple_command, '@i:', $.arg)),
+	tmp_reli_command: $ => prec.right(1, seq($._simple_command, '@i:', $.args)),
 	tmp_kuery_command: $ => prec.right(1, seq($._simple_command, '@k:', $.arg)),
-	tmp_fd_command: $ => prec.right(1, seq($._simple_command, '@o:', $.arg)),
+	tmp_fd_command: $ => prec.right(1, seq($._simple_command, '@o:', $.args)),
 	tmp_reg_command: $ => prec.right(1, seq($._simple_command, '@r:', $.arg)),
 	tmp_file_command: $ => prec.right(1, seq($._simple_command, '@f:', $.arg)),
 	tmp_string_command: $ => prec.right(1, seq($._simple_command, '@s:', $.arg)),
