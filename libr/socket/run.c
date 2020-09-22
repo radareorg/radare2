@@ -709,6 +709,11 @@ static int redirect_socket_to_stdio(RSocket *sock) {
 	return 0;
 }
 
+static RThreadFunctionRet exit_process(RThread *th) {
+	eprintf ("\nrarun2: Interrupted by timeout\n");
+	exit (0);
+}
+
 static int redirect_socket_to_pty(RSocket *sock) {
 #if HAVE_PTY
 	// directly duplicating the fds using dup2() creates problems
@@ -1050,7 +1055,11 @@ R_API int r_run_config_env(RRunProfile *p) {
 			exit (0);
 		}
 #else
-		eprintf ("timeout not supported for this platform\n");
+		if (p->_timeout_sig < 1 || p->_timeout_sig == 9) {
+			r_th_new (exit_process, NULL, p->_timeout);
+		} else {
+			eprintf ("timeout with signal not supported for this platform\n");
+		}
 #endif
 	}
 	return 0;

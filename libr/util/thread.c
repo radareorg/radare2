@@ -25,17 +25,11 @@ static void *_r_th_launcher(void *_th) {
 	int ret;
 	RThread *th = _th;
 	th->ready = true;
-#if __UNIX__
 	if (th->delay > 0) {
-		sleep (th->delay);
+		r_sys_sleep (th->delay);
 	} else if (th->delay < 0) {
 		r_th_lock_wait (th->lock);
 	}
-#else
-	if (th->delay < 0) {
-		r_th_lock_wait (th->lock);
-	}
-#endif
 	r_th_lock_enter (th->lock);
 	do {
 		r_th_lock_leave (th->lock);

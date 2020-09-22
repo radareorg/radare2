@@ -162,7 +162,7 @@ static char *http_get_w32(const char *url, int *code, int *rlen) {
 		ret = tmp;
 	} while (!(res = InternetReadFile (hOpenUrl, ret + w, read_sz, &r)) || r);
 
-	if (w) {
+	if (res) {
 		char *tmp = realloc (ret, (size_t)w + 1);
 		if (tmp) {
 			ret = tmp;
