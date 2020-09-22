@@ -94,11 +94,13 @@ static bool test_anal_sign_get_set(void) {
 	mu_assert_streq (r_list_get_n (item->types, 3), "func.sym.mahboi.arg.1=\"uint32_t,die\"", "type");
 	mu_assert_notnull (item->hash, "hash");
 	mu_assert_streq (item->hash->bbhash, "7bfa1358c427e26bc03c2384f41de7be6ebc01958a57e9a6deda5bdba9768851", "hash val");
+	r_sign_item_free (item);
 	
 	r_spaces_set (&anal->zign_spaces, "koridai");
 	item = r_sign_get_item (anal, "sym.boring");
 	mu_assert_notnull (item, "get item in space");
 	mu_assert_streq (item->comment, "gee it sure is boring around here", "item in space comment");
+	r_sign_item_free (item);
 
 	r_anal_free (anal);
 	mu_end;
