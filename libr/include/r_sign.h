@@ -114,6 +114,7 @@ R_API bool r_sign_add_hash(RAnal *a, const char *name, int type, const char *val
 R_API bool r_sign_add_bb_hash(RAnal *a, RAnalFunction *fcn, const char *name);
 R_API char *r_sign_calc_bbhash(RAnal *a, RAnalFunction *fcn);
 R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char *v);
+R_API RSignItem *r_sign_get_item(RAnal *a, const char *name);
 R_API bool r_sign_add_item(RAnal *a, RSignItem *it);
 
 R_API bool r_sign_foreach(RAnal *a, RSignForeachCallback cb, void *user);

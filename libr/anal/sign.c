@@ -631,6 +631,25 @@ static void mergeItem(RSignItem *dst, RSignItem *src) {
 	}
 }
 
+R_API RSignItem *r_sign_get_item(RAnal *a, const char *name) {
+	char k[R_SIGN_KEY_MAXSZ];
+	serializeKey (a, r_spaces_current (&a->zign_spaces), name, k);
+
+	const char *v = sdb_const_get (a->sdb_zigns, k, 0);
+	if (!v) {
+		return NULL;
+	}
+	RSignItem *it = r_sign_item_new ();
+	if (!it) {
+		return NULL;
+	}
+	if (!r_sign_deserialize (a, it, k, v)) {
+		r_sign_item_free (it);
+		return NULL;
+	}
+	return it;
+}
+
 R_API bool r_sign_add_item(RAnal *a, RSignItem *it) {
 	char key[R_SIGN_KEY_MAXSZ], val[R_SIGN_VAL_MAXSZ];
 	const char *curval = NULL;
