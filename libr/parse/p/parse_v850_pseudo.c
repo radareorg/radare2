@@ -21,17 +21,21 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{1, "zxb", "1 = O"},
 		{1, "zxh", "1 = O"},
 		{1, "zxw", "1 = O"},
-		{1, "set1", "2 |= (I << 2)"},
-		{1, "clr1", "2 &= ~(I << 2)"},
-		{2, "sld.w", "2 = 1"},
+		{2, "set1", "2 |= (I << 2)"},
+		{2, "clr1", "2 &= ~(I << 2)"},
+		{2, "sld.w", "2 = (word) 1"},
+		{2, "sld.h", "2 = (half) 1"},
+		{2, "sld.b", "2 = (byte) 1"},
 		{2, "ld.bu", "2 = 1"},
-		{2, "ld.h", "2 = (half) 1"},
 		{2, "ld.w", "2 = (word) 1"},
+		{2, "ld.h", "2 = (half) 1"},
 		{2, "ld.b", "2 = (byte) 1"},
 		{2, "st.h", "2 = (half) 1"},
 		{2, "st.w", "2 = (word) 1"},
 		{2, "st.b", "2 = (byte) 1"},
-		{2, "sst.w", "2 = 1"},
+		{2, "sst.w", "2 = (word) 1"},
+		{2, "sst.h", "2 = (half) 1"},
+		{2, "sst.b", "2 = (byte) 1"},
 		{2, "stsr", "2 = 1"},
 		{2, "ldsr", "2 = 1"},
 		{2, "and", "3 = 2 & 1"},
@@ -39,12 +43,22 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{2, "add", "2 += 1"},
 		{3, "addi", "3 = 2 + 1"},
 		{2, "sub", "2 -= 1"},
+		{2, "divh", "2 /= 1"},
+		{3, "divh", "3 = 2 / 1"},
+		{2, "mulh", "2 *= 1"},
+		{3, "mul", "3 = 2 * 1"},
+		{3, "mulf.s", "3 = 2 * 1"},
 		{2, "shl", "2 <<= 1"},
 		{2, "shr", "2 >>= 1"},
+		{2, "xor", "2 ^= 1"},
+		{3, "xori", "3 = 1 ^ 2"},
 		{2, "tst", "2 == 1"},
 		{2, "tst1", "2 == 1"},
+		{1, "jr", "jmp 1"},
 		{2, "cmp", "2 == 1"},
+		{4, "cmov", "4 == 1 ? 2 : 3"},
 		{2, "mov", "2 = 1"},
+		{3, "movhi", "3 = (1 << XX) + 2"},
 		{3, "movea", "3 = 1 & 2"},
 		{3, "ori", "3 = 1 | 2"},
 		{2, "jarl", "call 1 # 2"},
@@ -71,6 +85,11 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							k += strlen (w) - 1;
 						}
 					}
+				} else if (ops[i].str[j] == 'X') {
+					newstr[k] = '1';
+					k++;
+					j++;
+					newstr[k] = '6';
 				} else if (ops[i].str[j] == 'I') {
 					newstr[k] = '1';
 				} else if (ops[i].str[j] == 'O') {
@@ -94,7 +113,51 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		strcat (newstr, argv[i]);
 		strcat (newstr, (i == 0 || i == argc - 1) ? " " : ",");
 	}
+	r_str_replace_in (newstr, strlen (newstr), "+= -", "-= ", true);
+	r_str_replace_in (newstr, strlen (newstr), " + -", " - ", true);
+//	strcpy (newstr, a);
 	return false;
+}
+
+static char *reorder(char *buf) {
+	char *arr = strstr (buf, "-0x");
+	if (!arr) {
+		arr = strstr (buf, "0x");
+	}
+	if (!arr) {
+		return buf;
+	}
+	char *par = strchr (arr + 2, '[');
+	if (par) {
+		char arg[32], reg[32];
+		char *end = strchr (par + 1, ']');
+		if (end) {
+			r_str_ncpy (reg, par + 1, end - par);
+			r_str_ncpy (arg, arr, par - arr + 1);
+			sprintf (buf, "%s[%s]", reg, arg);
+		}
+	}
+	return buf;
+}
+
+static void guard_braces (char *buf) {
+	bool braces = false;
+	char *p = buf;
+	for (;*p;p++) {
+		switch (*p) {
+		case '{':
+			braces = true;
+			break;
+		case '}':
+			braces = false;
+			break;
+		case ',':
+			if (braces) {
+				*p = ' ';
+			}
+			break;
+		}
+	}
 }
 
 static int parse(RParse *p, const char *data, char *str) {
@@ -107,7 +170,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	}
 
 	char *buf = strdup (data);
-
+	guard_braces (buf);
 	RListIter *iter;
 	char *sp = strchr (buf, ' ');
 	size_t nw = 1;
@@ -119,7 +182,7 @@ static int parse(RParse *p, const char *data, char *str) {
 		list = r_str_split_list (sp, ",", 0);
 		char *w;
 		r_list_foreach (list, iter, w) {
-			wa[nw] = w;
+			wa[nw] = reorder(w);
 			nw++;
 			if (nw == 5) {
 				break;
