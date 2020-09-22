@@ -42,6 +42,7 @@ static const char *help_msg_tcc[] = {
 	"tcc", "", "List all calling convcentions",
 	"tcc", " r0 pascal(r0,r1,r2)", "Show signature for the 'pascal' calling convention",
 	"tcc", "-pascal", "Remove the pascal cc",
+	"tcc-*", "", "Unregister all the calling conventions",
 	"tcck", "", "List calling conventions in k=v",
 	"tccl", "", "List the cc signatures",
 	"tccj", "", "List them in JSON",
@@ -198,7 +199,11 @@ static void __core_cmd_tcc(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_tcc);
 		break;
 	case '-':
-		r_anal_cc_del (core->anal, r_str_trim_head_ro (input + 1));
+		if (input[1] == '*') {
+			sdb_reset (core->anal->sdb_cc);
+		} else {
+			r_anal_cc_del (core->anal, r_str_trim_head_ro (input + 1));
+		}
 		break;
 	case 0:
 		r_core_cmd0 (core, "afcl");
