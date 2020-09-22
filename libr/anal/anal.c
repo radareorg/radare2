@@ -130,6 +130,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->lineswidth = 0;
 	anal->fcns = r_list_newf (r_anal_function_free);
 	anal->leaddrs = NULL;
+	anal->imports = r_list_newf (free);
 	r_anal_set_bits (anal, 32);
 	anal->plugins = r_list_newf ((RListFree) r_anal_plugin_free);
 	if (anal->plugins) {
@@ -694,16 +695,12 @@ R_API bool r_anal_is_prelude(RAnal *anal, const ut8 *data, int len) {
 }
 
 R_API void r_anal_add_import(RAnal *anal, const char *imp) {
-	if (anal->imports) {
-		RListIter *it;
-		const char *eimp;
-		r_list_foreach (anal->imports, it, eimp) {
-			if (!strcmp (eimp, imp)) {
-				return;
-			}
+	RListIter *it;
+	const char *eimp;
+	r_list_foreach (anal->imports, it, eimp) {
+		if (!strcmp (eimp, imp)) {
+			return;
 		}
-	} else {
-		anal->imports = r_list_newf (free);
 	}
 	char *cimp = strdup (imp);
 	if (!cimp) {
@@ -713,9 +710,6 @@ R_API void r_anal_add_import(RAnal *anal, const char *imp) {
 }
 
 R_API void r_anal_remove_import(RAnal *anal, const char *imp) {
-	if (!anal->imports) {
-		return;
-	}
 	RListIter *it;
 	const char *eimp;
 	r_list_foreach (anal->imports, it, eimp) {
@@ -727,6 +721,5 @@ R_API void r_anal_remove_import(RAnal *anal, const char *imp) {
 }
 
 R_API void r_anal_purge_imports(RAnal *anal) {
-	r_list_free (anal->imports);
-	anal->imports = NULL;
+	r_list_purge (anal->imports);
 }
