@@ -2199,22 +2199,24 @@ static RList *get_calls(RAnalBlock *block) {
 	ut8 *data = malloc (block->size);
 	if (data) {
 		block->anal->iob.read_at (block->anal->iob.io, block->addr, data, block->size);
-		//
-int i;
-for (i = 0; i < block->size ; i ++ ) {
-		int ret = r_anal_op (block->anal, &op, block->addr + i, data + i, block->size - i, R_ANAL_OP_MASK_HINT);
-		if (op.type == R_ANAL_OP_TYPE_CALL) {
-			if (!list) {
-				list = r_list_newf (free);
+		size_t i;
+		for (i = 0; i < block->size; i++) {
+			int ret = r_anal_op (block->anal, &op, block->addr + i, data + i, block->size - i, R_ANAL_OP_MASK_HINT);
+			if (ret < 1) {
+				continue;
 			}
-			r_list_push (list, ut64_new (op.jump));
+			if (op.type == R_ANAL_OP_TYPE_CALL) {
+				if (!list) {
+					list = r_list_newf (free);
+				}
+				r_list_push (list, ut64_new (op.jump));
+			}
+			r_anal_op_fini (&op);
+			if (op.size > 0) {
+				i += op.size - 1;
+			}
 		}
-		r_anal_op_fini (&op);
-		if (op.size > 0 ) {
-			i += op.size - 1;
-		}
-}
-		
+
 	}
 	return list;
 }
@@ -2230,7 +2232,6 @@ static void anal_bb_list(RCore *core, const char *input) {
 		pj_ka (pj, "blocks");
 	}
 	
-	RBNode rb;
 	r_rbtree_foreach (core->anal->bb_tree, iter, block, RAnalBlock, _rb) {
 		RList *calls = get_calls (block);
 		switch (mode) {
@@ -10321,6 +10322,7 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case 'b': // "ab"
 		switch (input[1]) {
+		case 0:
 		case '.': // "ab."
 			r_core_cmd0 (core, "aba $$");
 			break;
