@@ -625,11 +625,6 @@ R_API char *r_cmd_get_help(RCmd *cmd, RCmdParsedArgs *args, bool use_color) {
 			}
 			return inner_get_help (cmd, cd, use_color);
 		}
-		if (detail == 1 && r_pvector_empty (&cd->children)) {
-			// if the current node does not have children, just
-			// print the full help
-			detail = 2;
-		}
 		return argv_get_help (cmd, cd, args, detail, use_color);
 	case R_CMD_DESC_TYPE_OLDINPUT:
 		return oldinput_get_help (cmd, cd, args);
