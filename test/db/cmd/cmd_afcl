@@ -7,9 +7,10 @@ e asm.bits = 64
 afcl
 EOF
 EXPECT=<<EOF
-amd64
 ms
+amd64
 swift
+reg
 EOF
 RUN
 
@@ -70,6 +71,7 @@ e asm.bits = 64
 afcl
 EOF
 EXPECT=<<EOF
+reg
 arm64
 swift
 EOF
@@ -142,6 +144,7 @@ e asm.bits = 32
 afcl
 EOF
 EXPECT=<<EOF
+reg
 n32
 o32
 EOF
@@ -152,6 +155,7 @@ FILE=bins/elf/libc.so.0
 ARGS=-a mips -b 64
 CMDS=afcl
 EXPECT=<<EOF
+reg
 n32
 o32
 EOF
