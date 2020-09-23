@@ -45,6 +45,7 @@ jobs:
             build_system: meson
             compiler: gcc
             run_tests: true
+            meson_options: -Duse_webui=true
             enabled: ${{ github.event_name != 'pull_request' }}
             timeout: 45
           - name: linux-acr-clang-build
@@ -65,7 +66,7 @@ jobs:
             compiler: gcc
             newshell: true
             run_tests: true
-            meson_options: -Db_coverage=true
+            meson_options: -Db_coverage=true -Duse_webui=true
             coverage: true
             enabled: true
             timeout: 50
@@ -81,7 +82,7 @@ jobs:
             build_system: meson
             compiler: gcc
             cflags: '-DR2_ASSERT_STDOUT=1'
-            meson_options: -Db_sanitize=address,undefined
+            meson_options: -Db_sanitize=address,undefined -Duse_webui=true
             asan: true
             asan_options: 'detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1'
             run_tests: true
