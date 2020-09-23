@@ -18,8 +18,15 @@ static int sortNumber(const void *a, const void *b) {
 // maybe just index by name instead of exposing those symbols as global
 static RTableColumnType r_table_type_string = { "string", sortString };
 static RTableColumnType r_table_type_number = { "number", sortNumber };
+static RTableColumnType r_table_type_bool = { "bool", sortNumber };
 
 R_API RTableColumnType *r_table_type (const char *name) {
+	if (!strcmp (name, "bool")) {
+		return &r_table_type_bool;
+	}
+	if (!strcmp (name, "boolean")) {
+		return &r_table_type_bool;
+	}
 	if (!strcmp (name, "string")) {
 		return &r_table_type_string;
 	}
@@ -136,6 +143,7 @@ R_API void r_table_set_columnsf(RTable *t, const char *fmt, ...) {
 	va_start (ap, fmt);
 	RTableColumnType *typeString = r_table_type ("string");
 	RTableColumnType *typeNumber = r_table_type ("number");
+	RTableColumnType *typeBool = r_table_type ("bool");
 	const char *name;
 	const char *f = fmt;
 	for (;*f;f++) {
@@ -144,6 +152,9 @@ R_API void r_table_set_columnsf(RTable *t, const char *fmt, ...) {
 			break;
 		}
 		switch (*f) {
+		case 'b':
+			r_table_add_column (t, typeBool, name, 0);
+			break;
 		case 's':
 		case 'z':
 			r_table_add_column (t, typeString, name, 0);
@@ -174,7 +185,10 @@ R_API void r_table_add_rowf(RTable *t, const char *fmt, ...) {
 		case 's':
 		case 'z':
 			arg = va_arg (ap, const char *);
-			r_list_append (list, strdup (arg?arg:""));
+			r_list_append (list, strdup (arg? arg: ""));
+			break;
+		case 'b':
+			r_list_append (list, r_str_new (r_str_bool (va_arg (ap, int))));
 			break;
 		case 'i':
 		case 'd':
