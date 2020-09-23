@@ -35,11 +35,6 @@ EXPECT=<<EOF
   "anal": {
     "cur_cmd": [
       "fcns",
-      "fcn.0x00000000.arg.0=int32_t",
-      "fcn.0x00000000.arg.4=int32_t",
-      "fcn.0x00000000.arg.8=int32_t",
-      "fcn.0x0804846e.arg.0=int32_t",
-      "fcn.0x0804846e.arg.4=int32_t",
       "types",
       "*aligned_alloc=func",
       "_Exit=func",
