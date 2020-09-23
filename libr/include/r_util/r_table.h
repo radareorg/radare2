@@ -46,7 +46,9 @@ typedef struct {
 	RList *cols;
 	int totalCols;
 	bool showHeader;
+	bool showSimple;
 	bool showJSON;
+	bool showCSV;
 	bool showSum;
 	bool adjustedCols;
 	void *cons;
@@ -68,6 +70,7 @@ R_API void r_table_add_row(RTable *t, const char *name, ...);
 R_API void r_table_add_rowf(RTable *t, const char *fmt, ...);
 R_API void r_table_add_row_list(RTable *t, RList *items);
 R_API char *r_table_tofancystring(RTable *t);
+R_API char *r_table_tosimplestring(RTable *t);
 R_API char *r_table_tostring(RTable *t);
 R_API char *r_table_tocsv(RTable *t);
 R_API char *r_table_tojson(RTable *t);
