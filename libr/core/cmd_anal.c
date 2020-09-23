@@ -101,6 +101,15 @@ static const char *help_msg_ab[] = {
 	NULL
 };
 
+static const char *help_msg_abl[] = {
+	"Usage:", "abl", "analyzed basicblocks listing",
+	"abl", "", "list all program-wide basic blocks analyzed",
+	"ablj", "", "in json format",
+	"ablq", "", "in quiet format",
+	"ablt", " [table-query]", "render the list using a table",
+	NULL
+};
+
 static const char *help_msg_abt[] = {
 	"Usage:", "abt", "[addr] [num] # find num paths from current offset to addr",
 	"abt", " [addr] [num]", "find num paths from current offset to addr",
@@ -10452,7 +10461,11 @@ static int cmd_anal(void *data, const char *input) {
 			cmd_anal_abt (core, input+2);
 			break;
 		case 'l': // "abl"
-			anal_bb_list (core, input + 2);
+			if (input[2] == '?') {
+				r_core_cmd_help (core, help_msg_abl);
+			} else {
+				anal_bb_list (core, input + 2);
+			}
 			break;
 		case 'j': // "abj"
 			anal_fcn_list_bb (core, input + 1, false);
