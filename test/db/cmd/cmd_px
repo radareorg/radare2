@@ -151,22 +151,22 @@ EXPECT=<<EOF
 0x00600ae8 0x000000000040056e   n.@..... @reloc.puts 4195694 (.plt) R X 'push 1'
 0x00600af0 0x000000000040057e   ~.@..... @reloc.__libc_start_main 4195710 (.plt) R X 'push 2'
 0x00600af8 0x000000000040058e   ..@..... @reloc.fgets 4195726 (.plt) R X 'push 3'
-5e05  ^. @reloc.printf 4195678 (.plt) R X 'push 0'
-4000  @.
-0000  ..
-0000  .. 274969001984
-6e05  n. @reloc.puts 4195694 (.plt) R X 'push 1'
-4000  @.
-0000  ..
-0000  .. 274970050560
-7e05  ~. @reloc.__libc_start_main 4195710 (.plt) R X 'push 2'
-4000  @.
-0000  ..
-0000  .. 274971099136
-8e05  .. @reloc.fgets 4195726 (.plt) R X 'push 3'
-4000  @. 0 loc.imp.__gmon_start
-0000  .. 0 loc.imp.__gmon_start
-0000  .. 0 loc.imp.__gmon_start
+0x00600ae0 5e05  ^. @reloc.printf 4195678 (.plt) R X 'push 0'
+0x00600ae2 4000  @.
+0x00600ae4 0000  ..
+0x00600ae6 0000  .. 274969001984
+0x00600ae8 6e05  n. @reloc.puts 4195694 (.plt) R X 'push 1'
+0x00600aea 4000  @.
+0x00600aec 0000  ..
+0x00600aee 0000  .. 274970050560
+0x00600af0 7e05  ~. @reloc.__libc_start_main 4195710 (.plt) R X 'push 2'
+0x00600af2 4000  @.
+0x00600af4 0000  ..
+0x00600af6 0000  .. 274971099136
+0x00600af8 8e05  .. @reloc.fgets 4195726 (.plt) R X 'push 3'
+0x00600afa 4000  @. 0 loc.imp.__gmon_start
+0x00600afc 0000  .. 0 loc.imp.__gmon_start
+0x00600afe 0000  .. 0 loc.imp.__gmon_start
 0x00600ae0 0x0040055e  ^.@. @reloc.printf (.plt) R X 'push 0'
 0x00600ae4 ..[ null bytes ]..   00000000 
 0x00600ae8 0x0040056e  n.@. @reloc.puts (.plt) R X 'push 1'

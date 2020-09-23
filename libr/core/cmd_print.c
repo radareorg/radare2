@@ -4487,12 +4487,12 @@ static void r_core_disasm_table(RCore * core, int l, const char *input) {
 }
 
 static void cmd_pxr(RCore *core, int len, int mode, int wordsize) {
-// Formats supported:
-// * [x] json
-// * [x] normal
-// * [ ] r2
-// * [ ] table
-// * [ ] quiet
+	// Formats supported:
+	// * [x] json
+	// * [x] normal
+	// * [ ] r2
+	// * [ ] table
+	// * [ ] quiet
 	if (mode == 'j') {
 		size_t i;
 		PJ *pj = pj_new ();
@@ -6264,7 +6264,8 @@ l = use_blocksize;
 					break;
 				}
 				if (isdigit (mode)) {
-					wordsize = atoi (input + 2);
+					char tmp[2] = {input[2], 0};
+					wordsize = atoi (tmp);
 					mode = input[3];
 				}
 				switch (wordsize) {

@@ -1057,7 +1057,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			}
 		}
 		ut64 at = addr + (j * zoomsz);
-		if (use_offset && !isPxr) {
+		if (use_offset && (!isPxr || inc < 4)) {
 			r_print_section (p, at);
 			r_print_addr (p, at);
 		}
