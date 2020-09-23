@@ -4486,21 +4486,29 @@ static void r_core_disasm_table(RCore * core, int l, const char *input) {
 	r_table_free (t);
 }
 
-static void cmd_pxr(RCore *core, int len, int mode, int wordsize) {
-	// Formats supported:
-	// * [x] json
-	// * [x] normal
-	// * [ ] r2
-	// * [ ] table
-	// * [ ] quiet
+static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *arg) {
+	PJ *pj = NULL;
+	RTable *t = NULL;
+	if (mode == ',') {
+		t = r_table_new ();
+		RTableColumnType *n = r_table_type ("number");
+		RTableColumnType *s = r_table_type ("string");
+		r_table_add_column (t, n, "addr", 0);
+		r_table_add_column (t, n, "value", 0);
+		r_table_add_column (t, s, "refs", 0);
+	}
 	if (mode == 'j') {
-		size_t i;
-		PJ *pj = pj_new ();
+		pj = pj_new ();
 		if (!pj) {
 			return;
 		}
+	}
+	if (mode == 'j' || mode == ',' || mode == '*' || mode == 'q') {
+		size_t i;
 		const int base = core->anal->bits;
-		pj_a (pj);
+		if (pj) {
+			pj_a (pj);
+		}
 		const ut8 *buf = core->block;
 		int withref = 0;
 		for (i = 0; i < core->blocksize; i += wordsize) {
@@ -4510,30 +4518,60 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize) {
 			if (base == 32) {
 				val &= UT32_MAX;
 			}
-			pj_o (pj);
-			pj_kn (pj, "addr", addr);
-			pj_kn (pj, "value", val);
+			if (pj) {
+				pj_o (pj);
+				pj_kn (pj, "addr", addr);
+				pj_kn (pj, "value", val);
+			}
 
 			// XXX: this only works in little endian
 			withref = 0;
+			char *refs = NULL;
 			if (core->print->hasrefs) {
 				char *rstr = core->print->hasrefs (core->print->user, val, true);
 				if (rstr && *rstr) {
-					char *ns = r_str_escape (rstr);
-					pj_ks (pj, "ref", r_str_trim_head_ro (ns));
-					pj_end (pj);
-					free (ns);
+					r_str_trim (rstr);
+					if (pj) {
+						char *ns = r_str_escape (rstr);
+						pj_ks (pj, "ref", r_str_trim_head_ro (ns));
+						pj_end (pj);
+						free (ns);
+					}
 					withref = 1;
 				}
-				free (rstr);
+				refs = rstr;
 			}
-			if (!withref) {
+			if (mode == '*' && refs && *refs) {
+				// Show only the mapped ones?
+				char *rs = r_str_escape_r2 (refs);
+				r_cons_printf ("f pxr.%"PFMT64x"=0x%"PFMT64x" # %s\n", val, addr, rs);
+				free (rs);
+			}
+			if (mode == 'q' && refs && *refs) {
+				r_cons_printf ("%s\n", refs);
+			}
+			if (t) {
+				r_table_add_rowf (t, "xxs", addr, val, refs);
+				refs = NULL;
+			} else {
+				R_FREE (refs);
+			}
+			if (!withref && pj) {
 				pj_end (pj);
 			}
 		}
-		pj_end (pj);
-		r_cons_println (pj_string (pj));
-		pj_free (pj);
+		if (t) {
+			r_table_query (t, arg? arg + 1: NULL);
+			char *s = r_table_tostring (t);
+			r_cons_println (s);
+			free (s);
+			r_table_free (t);
+		}
+		if (pj) {
+			pj_end (pj);
+			r_cons_println (pj_string (pj));
+			pj_free (pj);
+		}
 	} else {
 		const int ocols = core->print->cols;
 		int bitsize = core->rasm->bits;
@@ -6260,23 +6298,27 @@ l = use_blocksize;
 				int mode = input[2];
 				int wordsize = core->anal->bits / 8;
 				if (mode == '?') {
-					eprintf ("Usage: pxr[1248][jq] [length]\n");
+					eprintf ("Usage: pxr[1248][*,jq] [length]\n");
 					break;
 				}
-				if (isdigit (mode)) {
+				if (mode && isdigit (mode)) {
 					char tmp[2] = {input[2], 0};
 					wordsize = atoi (tmp);
 					mode = input[3];
 				}
+				if (!mode) {
+					mode = 1;
+				}
+			
 				switch (wordsize) {
 				case 1:
 				case 2:
 				case 4:
 				case 8:
-					cmd_pxr (core, len, mode, wordsize);
+					cmd_pxr (core, len, mode, wordsize, strchr (input, mode));
 					break;
 				default:
-					eprintf ("Invalid word size\n");
+					eprintf ("Invalid word size. Use 1, 2, 4 or 8.\n");
 					break;
 				}
 			}
