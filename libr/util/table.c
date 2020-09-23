@@ -540,11 +540,49 @@ R_API void r_table_filter(RTable *t, int nth, int op, const char *un) {
 	RListIter *iter, *iter2;
 	ut64 uv = r_num_math (NULL, un);
 	ut64 sum = 0;
+	int page = 0, page_items = 0;
+	size_t lrow = 0;
+	if (op == 't') {
+		size_t ll = r_list_length (t->rows);
+		if (ll > uv) {
+			uv = ll - uv;
+		}
+	}
+	if (op == 'p') {
+		sscanf (un, "%d/%d", &page, &page_items);
+		if (page < 1) {
+			page = 1;
+		}
+		lrow = page_items * (page - 1);
+		uv = page_items * (page);
+	}
+	size_t nrow = 0;
 	r_list_foreach_safe (t->rows, iter, iter2, row) {
 		const char *nn = r_list_get_n (row->items, nth);
 		ut64 nv = r_num_math (NULL, nn);
 		bool match = true;
 		switch (op) {
+		case 'p':
+			nrow++;
+			if (nrow < lrow) {
+				match = false;
+			}
+			if (nrow > uv) {
+				match = false;
+			}
+			break;
+		case 't':
+			nrow++;
+			if (nrow < uv) {
+				match = false;
+			}
+			break;
+		case 'h':
+			nrow++;
+			if (nrow > uv) {
+				match = false;
+			}
+			break;
 		case '+':
 			// "sum"
 			sum += nv;
@@ -953,6 +991,18 @@ R_API bool r_table_query(RTable *t, const char *q) {
 		} else if (!strcmp (operation, "maxlen")) {
 			if (operand) {
 				r_table_filter (t, col, 'L', operand);
+			}
+		} else if (!strcmp (operation, "page")) {
+			if (operand) {
+				r_table_filter (t, col, 'p', operand);
+			}
+		} else if (!strcmp (operation, "tail")) {
+			if (operand) {
+				r_table_filter (t, col, 't', operand);
+			}
+		} else if (!strcmp (operation, "head")) {
+			if (operand) {
+				r_table_filter (t, col, 'h', operand);
 			}
 		} else if (!strcmp (operation, "str")) {
 			if (operand) {
