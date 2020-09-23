@@ -235,10 +235,49 @@ static RList *parse_format(RCore *core, char *fmt) {
 	return ret;
 }
 
+static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stack, const char *place, int size, const char *type) {
+	RAnalFunction *fcn = r_anal_get_function_byname (anal, callee_name);
+	if (!fcn) {
+		return;
+	}
+	if (in_stack) {
+		RAnalVar *var = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_BPV, size - fcn->bp_off + 8);
+		if (!var) {
+			return;
+		}
+		__var_retype (anal, var, NULL, type, false, false);
+	} else {
+		RRegItem *item = r_reg_get (anal->reg, place, -1);
+		if (!item) {
+			return;
+		}
+		RAnalVar *rvar = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, item->index);
+		if (!rvar) {
+			return;
+		}
+		__var_retype (anal, rvar, NULL, type, false, false);
+		RAnalVar *lvar = r_anal_var_get_dst_var (rvar);
+		if (lvar) {
+			__var_retype (anal, lvar, NULL, type, false, false);
+		}
+	}
+}
+
 #define DEFAULT_MAX 3
 #define REGNAME_SIZE 10
 #define MAX_INSTR 5
 
+/**
+ * type match at a call instruction inside another function
+ *
+ * \param fcn_name name of the callee
+ * \param addr addr of the call instruction
+ * \param baddr addr of the caller function
+ * \param cc cc of the callee
+ * \param prev_idx index in the esil trace
+ * \param userfnc whether the callee is a user function (affects propagation direction)
+ * \param caddr addr of the callee
+ */
 static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const char* cc,
 		int prev_idx, bool userfnc, ut64 caddr) {
 	Sdb *trace = core->anal->esil->trace->db;
@@ -319,13 +358,7 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 				r_anal_op_free (next_op);
 				break;
 			}
-			const char *key = NULL;
 			RAnalVar *var = r_anal_get_used_function_var (anal, op->addr);
-			if (!in_stack) {
-				key = sdb_fmt ("fcn.0x%08"PFMT64x".arg.%s", caddr, place? place: "");
-			} else {
-				key = sdb_fmt ("fcn.0x%08"PFMT64x".arg.%d", caddr, size);
-			}
 			const char *query = sdb_fmt ("%d.mem.read", j);
 			if (op->type == R_ANAL_OP_TYPE_MOV && sdb_const_get (trace, query, 0)) {
 				memref = ! (!memref && var && (var->kind != R_ANAL_VAR_KIND_REG));
@@ -353,11 +386,12 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 				}
 				if (var) {
 					if (!userfnc) {
+						// not a userfunction, propagate the callee's arg types into our function's vars
 						__var_retype (anal, var, name, type, memref, false);
 						__var_rename (anal, var, name, addr);
 					} else {
-						// Set callee argument info
-						sdb_set (anal->sdb_fcns, key, var->type, 0);
+						// callee is a userfunction, propagate our variable's type into the callee's args
+						retype_callee_arg (anal, fcn_name, in_stack, place, size, var->type);
 					}
 					res = true;
 				} else {
@@ -369,10 +403,12 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 			if (!res && *regname && SDB_CONTAINS (j, regname)) {
 				if (var) {
 					if (!userfnc) {
+						// not a userfunction, propagate the callee's arg types into our function's vars
 						__var_retype (anal, var, name, type, memref, false);
 						__var_rename (anal, var, name, addr);
 					} else {
-						sdb_set (anal->sdb_fcns, key, var->type, 0);
+						// callee is a userfunction, propagate our variable's type into the callee's args
+						retype_callee_arg (anal, fcn_name, in_stack, place, size, var->type);
 					}
 					res = true;
 				} else {
@@ -717,64 +753,22 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	}
 	// Type propgation for register based args
 	RList *list = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_REG);
-	RAnalVar *rvar, *bp_var;
-	RListIter *iter , *iter2;
+	RAnalVar *rvar;
+	RListIter *iter;
 	r_list_foreach (list, iter, rvar) {
 		RAnalVar *lvar = r_anal_var_get_dst_var (rvar);
 		RRegItem *i = r_reg_index_get (anal->reg, rvar->delta);
 		if (!i) {
 			continue;
 		}
-		bool res = true;
-		char *type = NULL;
-		const char *query = sdb_fmt ("fcn.0x%08"PFMT64x".arg.%s", fcn->addr, i->name);
-		const char *qres = sdb_const_get (anal->sdb_fcns, query, NULL);
-		if (qres) {
-			type = strdup (qres);
-		}
 		if (lvar) {
 			// Propagate local var type = to => register-based var
 			__var_retype (anal, rvar, NULL, lvar->type, false, false);
 			// Propagate local var type <= from = register-based var
 			__var_retype (anal, lvar, NULL, rvar->type, false, false);
-			if (!strstr (lvar->type, "int")) {
-				res = false;
-			}
 		}
-		if (type && res) {
-			// Propgate type to local var and register based var passed
-			// from caller function
-			__var_retype (anal, rvar, NULL, type, false, false);
-			if (lvar) {
-				__var_retype (anal, lvar, NULL, type, false, false);
-			}
-		}
-		free (type);
 	}
 	r_list_free (list);
-	// Type propgation from caller to callee function for stack based arguments
-	if (fcn->cc) {
-		const char *place = r_anal_cc_arg (anal, fcn->cc, 0);
-		if (anal->verbose) {
-			eprintf ("[-] place: %s\n", place);
-		}
-		if (place && r_str_startswith ("stack", place)) {
-			RList *list2 = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_BPV);
-			r_list_foreach (list2, iter2, bp_var) {
-				if (bp_var->isarg) {
-					const char *query = sdb_fmt ("fcn.0x%08" PFMT64x ".arg.%d",
-						fcn->addr, (int)(bp_var->delta + fcn->bp_off - 8));
-					char *type = (char *)sdb_const_get (anal->sdb_fcns, query, NULL);
-					if (type) {
-						__var_retype (anal, bp_var, NULL, type, false, false);
-					}
-				}
-			}
-			r_list_free (list2);
-		}
-	} else {
-		R_LOG_DEBUG ("No calling convention set for function '%s'\n", fcn->name);
-	}
 out_function:
 	R_FREE (ret_reg);
 	R_FREE (ret_type);
