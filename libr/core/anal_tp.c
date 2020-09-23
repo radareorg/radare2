@@ -241,6 +241,7 @@ static RList *parse_format(RCore *core, char *fmt) {
 
 static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const char* cc,
 		int prev_idx, bool userfnc, ut64 caddr) {
+	eprintf ("  type_match(%s @ 0x%"PFMT64x", baddr: 0x%"PFMT64x", userfnc: %d, 0x%"PFMT64x")\n", fcn_name, addr, baddr, userfnc, caddr);
 	Sdb *trace = core->anal->esil->trace->db;
 	Sdb *TDB = core->anal->sdb_types;
 	RAnal *anal = core->anal;
@@ -326,6 +327,7 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 			} else {
 				key = sdb_fmt ("fcn.0x%08"PFMT64x".arg.%d", caddr, size);
 			}
+			eprintf ("    set key %s\n", key);
 			const char *query = sdb_fmt ("%d.mem.read", j);
 			if (op->type == R_ANAL_OP_TYPE_MOV && sdb_const_get (trace, query, 0)) {
 				memref = ! (!memref && var && (var->kind != R_ANAL_VAR_KIND_REG));
@@ -412,6 +414,7 @@ static int bb_cmpaddr(const void *_a, const void *_b) {
 }
 
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
+	eprintf ("r_core_anal_type_match (%s @ 0x%"PFMT64x")\n", fcn->name, fcn->addr);
 	RAnalBlock *bb;
 	RListIter *it;
 	RAnalOp aop = {0};
@@ -729,8 +732,10 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 		char *type = NULL;
 		const char *query = sdb_fmt ("fcn.0x%08"PFMT64x".arg.%s", fcn->addr, i->name);
 		const char *qres = sdb_const_get (anal->sdb_fcns, query, NULL);
+		eprintf ("  check(reg) %s\n", query);
 		if (qres) {
-			*(char *)0;
+			eprintf("GOT %s\n", qres);
+			exit (1);
 			type = strdup (qres);
 		}
 		if (lvar) {
@@ -765,9 +770,11 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 				if (bp_var->isarg) {
 					const char *query = sdb_fmt ("fcn.0x%08" PFMT64x ".arg.%d",
 						fcn->addr, (int)(bp_var->delta + fcn->bp_off - 8));
+					eprintf ("  check(sta) %s\n", query);
 					char *type = (char *)sdb_const_get (anal->sdb_fcns, query, NULL);
 					if (type) {
-			*(char *)0;
+						eprintf("GOT %s\n", type);
+						exit (1);
 						__var_retype (anal, bp_var, NULL, type, false, false);
 					}
 				}
