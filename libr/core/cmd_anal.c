@@ -95,7 +95,7 @@ static const char *help_msg_ab[] = {
 	"aba", " [addr]", "analyze esil accesses in basic block (see aea?)",
 	"abb", " [length]", "analyze N bytes and extract basic blocks",
 	"abj", " [addr]", "display basic block information in JSON (alias to afbj)",
-	"abl", "[,j]", "list all basic blocks",
+	"abl", "[,qj]", "list all basic blocks",
 	"abx", " [hexpair-bytes]", "analyze N bytes",
 	"abt[?]", " [addr] [num]", "find num paths from current offset to addr",
 	NULL
@@ -2193,6 +2193,50 @@ static ut64 __opaddr(RAnalBlock *b, ut64 addr) {
 	return UT64_MAX;
 }
 
+static RList *get_xrefs(RAnalBlock *block) {
+	RListIter *iter;
+	RAnalRef *ref;
+	RList *list = NULL;
+	size_t i;
+	for (i = 0; i < block->ninstr; i++) {
+		ut64 ia = block->addr + block->op_pos[i];
+		RList *xrefs = r_anal_xrefs_get (block->anal, ia);
+		r_list_foreach (xrefs, iter, ref) {
+			if (!list) {
+				list = r_list_newf (free);
+			}
+			r_list_push (list, ut64_new (ref->addr));
+		}
+	}
+	return list;
+}
+
+static char *fcnjoin(RList *list) {
+	RAnalFunction *n;
+	RListIter *iter;
+	RStrBuf buf;
+	r_strbuf_init (&buf);
+	r_list_foreach (list, iter, n) {
+		r_strbuf_appendf (&buf, " 0x%08" PFMT64x, n->addr);
+	}
+	char *s = strdup (r_strbuf_get (&buf));
+	r_strbuf_fini (&buf);
+	return s;
+}
+
+static char *ut64join(RList *list) {
+	ut64 *n;
+	RListIter *iter;
+	RStrBuf buf;
+	r_strbuf_init (&buf);
+	r_list_foreach (list, iter, n) {
+		r_strbuf_appendf (&buf, " 0x%08" PFMT64x, *n);
+	}
+	char *s = strdup (r_strbuf_get (&buf));
+	r_strbuf_fini (&buf);
+	return s;
+}
+
 static RList *get_calls(RAnalBlock *block) {
 	RList *list = NULL;
 	RAnalOp op;
@@ -2224,15 +2268,30 @@ static RList *get_calls(RAnalBlock *block) {
 static void anal_bb_list(RCore *core, const char *input) {
 	const int mode = *input;
 	PJ *pj = NULL;
+	RTable *table = NULL;
 	RBIter iter;
 	RAnalBlock *block;
 	if (mode == 'j') {
 		pj = pj_new ();
 		pj_o (pj);
 		pj_ka (pj, "blocks");
+	} else if (mode == ',' || mode == 't') {
+		table = r_table_new ();
+		RTableColumnType *s = r_table_type ("string");
+		RTableColumnType *n = r_table_type ("number");
+		r_table_add_column (table, n, "addr", 0);
+		r_table_add_column (table, n, "size", 0);
+		r_table_add_column (table, n, "traced", 0);
+		r_table_add_column (table, n, "ninstr", 0);
+		r_table_add_column (table, s, "jump", 0);
+		r_table_add_column (table, s, "fail", 0);
+		r_table_add_column (table, s, "fcns", 0);
+		r_table_add_column (table, s, "calls", 0);
+		r_table_add_column (table, s, "xrefs", 0);
 	}
 	
 	r_rbtree_foreach (core->anal->bb_tree, iter, block, RAnalBlock, _rb) {
+		RList *xrefs = get_xrefs (block);
 		RList *calls = get_calls (block);
 		switch (mode) {
 		case 'j':
@@ -2248,6 +2307,15 @@ static void anal_bb_list(RCore *core, const char *input) {
 			}
 			if (block->fail != UT64_MAX) {
 				pj_kn (pj, "fail", block->fail);
+			}
+			if (xrefs) {
+				pj_ka (pj, "xrefs");
+				RListIter *iter2;
+				ut64 *addr;
+				r_list_foreach (xrefs, iter2, addr) {
+					pj_n (pj, *addr);
+				}
+				pj_end (pj);
 			}
 			if (calls) {
 				pj_ka (pj, "calls");
@@ -2267,6 +2335,35 @@ static void anal_bb_list(RCore *core, const char *input) {
 			pj_end (pj);
 			pj_end (pj);
 			break;
+		case ',':
+		case 't':
+			{
+				char *jump = block->jump != UT64_MAX? r_str_newf ("0x%08" PFMT64x, block->jump): strdup ("");
+				char *fail = block->fail != UT64_MAX? r_str_newf ("0x%08" PFMT64x, block->fail): strdup ("");
+				char *call = ut64join (calls);
+				char *xref = ut64join (calls);
+				char *fcns = fcnjoin (block->fcns);
+				r_table_add_rowf (table, "xdddsssss",
+					block->addr,
+					block->size,
+					block->traced,
+					block->ninstr,
+					jump,
+					fail,
+					fcns,
+					call,
+					xref
+				);
+				free (jump);
+				free (fail);
+				free (call);
+				free (xref);
+				free (fcns);
+			}
+			break;
+		case 'q':
+			r_cons_printf ("0x%08" PFMT64x"\n", block->addr);
+			break;
 		default:
 			r_cons_printf ("0x%08" PFMT64x , block->addr);
 			if (block->jump != UT64_MAX) {
@@ -2274,6 +2371,14 @@ static void anal_bb_list(RCore *core, const char *input) {
 			}
 			if (block->fail != UT64_MAX) {
 				r_cons_printf (" .f 0x%08" PFMT64x, block->fail);
+			}
+			if (xrefs) {
+				RListIter *iter2;
+				r_cons_printf (" .x");
+				ut64 *addr;
+				r_list_foreach (xrefs, iter2, addr) {
+					r_cons_printf (" 0x%08" PFMT64x, *addr);
+				}
 			}
 			if (calls) {
 				r_cons_printf (" .c");
@@ -2290,9 +2395,8 @@ static void anal_bb_list(RCore *core, const char *input) {
 					r_cons_printf (" .u 0x%" PFMT64x, fcn->addr);
 				}
 			}
-			r_cons_printf (" .s %" PFMT64d, block->size);
-			r_cons_printf ("\n");
-			r_core_cmdf (core, "pD %"PFMT64d" @ 0x%" PFMT64x, block->size, block->addr);
+			r_cons_printf (" .s %" PFMT64d "\n", block->size);
+			// r_core_cmdf (core, "pD %"PFMT64d" @ 0x%" PFMT64x, block->size, block->addr);
 		}
 		r_list_free (calls);
 	}
@@ -2302,6 +2406,15 @@ static void anal_bb_list(RCore *core, const char *input) {
 		char *j = pj_drain (pj);
 		r_cons_println (j);
 		free (j);
+	} else if (mode == 't' || mode == ',') {
+		char *q = strchr (input, ' ');
+		if (q) {
+			r_table_query (table, q + 1);
+		}
+		char *s = r_table_tofancystring (table);
+		r_cons_println (s);
+		free (s);
+		r_table_free (table);
 	}
 }
 
@@ -2686,7 +2799,7 @@ static void r_core_anal_nofunclist  (RCore *core, const char *input) {
 	if (code_size < 1) {
 		return;
 	}
-	bitmap = calloc (1, code_size+64);
+	bitmap = calloc (1, code_size + 64);
 	if (!bitmap) {
 		return;
 	}
@@ -7161,7 +7274,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 	}
 }
 
-static void anal_axg (RCore *core, const char *input, int level, Sdb *db, int opts, PJ* pj) {
+static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opts, PJ* pj) {
 	char arg[32], pre[128];
 	RListIter *iter;
 	RAnalRef *ref;
@@ -9227,7 +9340,7 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 		break;
 	}
 	case '\0':
-		eprintf ("Usage abt?\n");
+		r_core_cmdf (core, "ablt addr/eq/0x%08"PFMT64x, core->offset);
 		break;
 	}
 }
