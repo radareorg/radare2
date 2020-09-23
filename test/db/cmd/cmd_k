@@ -34,7 +34,6 @@ EXPECT=<<EOF
 {
   "anal": {
     "cur_cmd": [
-      "fcns",
       "types",
       "*aligned_alloc=func",
       "_Exit=func",
