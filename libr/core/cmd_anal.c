@@ -7388,38 +7388,6 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		char *space = strchr (input, ' ');
 		char *tmp = NULL;
 		char *name = space ? strdup (space + 1): NULL;
-
-		if (name && (tmp = strchr (name, ' '))) {
-			char *varname = tmp + 1;
-			*tmp = '\0';
-			RAnalFunction *fcn = r_anal_get_function_byname (core->anal, name);
-			if (fcn) {
-				RAnalVar *var = r_anal_function_get_var_byname (fcn, varname);
-				if (var) {
-					const char *rvar = var_ref_list (fcn->addr, var->delta, 'R');
-					const char *wvar = var_ref_list (fcn->addr, var->delta, 'W');
-					char *res = sdb_get (core->anal->sdb_fcns, rvar, 0);
-					char *res1 = sdb_get (core->anal->sdb_fcns, wvar, 0);
-					const char *ref;
-					RListIter *iter;
-					RList *list = (res && *res)? r_str_split_list (res, ",", 0): NULL;
-					RList *list1 = (res1 && *res1)? r_str_split_list (res1, ",", 0): NULL;
-					r_list_join (list , list1);
-					r_list_foreach (list, iter, ref) {
-						ut64 addr = r_num_math (NULL, ref);
-						char *op = get_buf_asm (core, core->offset, addr, fcn, true);
-						r_cons_printf ("%s 0x%"PFMT64x" [DATA] %s\n", fcn?  fcn->name : "(nofunc)", addr, op);
-						free (op);
-					}
-					free (res);
-					free (res1);
-					R_FREE (name);
-					r_list_free (list);
-					r_list_free (list1);
-					break;
-				}
-			}
-		}
 		if (space) {
 			addr = r_num_math (core->num, space + 1);
 		} else {
