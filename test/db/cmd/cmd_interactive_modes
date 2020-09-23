@@ -2,11 +2,20 @@ NAME=Internal less
 FILE=-
 CMDS=<<EOF
 e scr.interactive=false
-pd 10~..
-pd 10~...
+pd 1~..
 EOF
 EXPECT_ERR=<<EOF
-Internal less requires scr.interactive=true
-Hud mode requires scr.interactive=true
+Internal less requires scr.interactive=true.
+EOF
+RUN
+
+NAME=Hud mode
+FILE=-
+CMDS=<<EOF
+e scr.interactive=false
+pd 1~...
+EOF
+EXPECT_ERR=<<EOF
+Hud mode requires scr.interactive=true.
 EOF
 RUN
