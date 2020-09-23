@@ -783,6 +783,11 @@ typedef struct r_anal_var_access_t {
 	ut8 type; // RAnalVarAccessType bits
 } RAnalVarAccess;
 
+typedef struct r_anal_var_constraint_t {
+	_RAnalCond cond;
+	ut64 val;
+} RAnalVarConstraint;
+
 // generic for args and locals
 typedef struct r_anal_var_t {
 	RAnalFunction *fcn;
@@ -794,6 +799,7 @@ typedef struct r_anal_var_t {
 	char *regname; // name of the register
 	RVector/*<RAnalVarAccess>*/ accesses; // ordered by offset, touch this only through API or expect uaf
 	char *comment;
+	RVector/*<RAnalVarConstraint>*/ constraints;
 
 	// below members are just for caching, TODO: remove them and do it better
 	int argnum;
@@ -1694,6 +1700,8 @@ R_API ut64 r_anal_var_addr(RAnalVar *var);
 R_API void r_anal_var_set_access(RAnalVar *var, const char *reg, ut64 access_addr, int access_type, st64 stackptr);
 R_API void r_anal_var_remove_access_at(RAnalVar *var, ut64 address);
 R_API void r_anal_var_clear_accesses(RAnalVar *var);
+R_API void r_anal_var_add_constraint(RAnalVar *var, R_BORROW RAnalVarConstraint *constraint);
+R_API char *r_anal_var_get_constraints_readable(RAnalVar *var);
 
 // Get the access to var at exactly addr if there is one
 R_API RAnalVarAccess *r_anal_var_get_access_at(RAnalVar *var, ut64 addr);

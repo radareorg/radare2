@@ -161,6 +161,7 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 		r_pvector_push (&fcn->vars, var);
 		var->fcn = fcn;
 		r_vector_init (&var->accesses, sizeof (RAnalVarAccess), NULL, NULL);
+		r_vector_init (&var->constraints, sizeof (RAnalVarConstraint), NULL, NULL);
 	} else {
 		free (var->name);
 		free (var->regname);
@@ -191,6 +192,7 @@ static void var_free(RAnalVar *var) {
 		return;
 	}
 	r_anal_var_clear_accesses (var);
+	r_vector_fini (&var->constraints);
 	free (var->name);
 	free (var->regname);
 	free (var->type);
@@ -515,6 +517,56 @@ R_API RAnalVarAccess *r_anal_var_get_access_at(RAnalVar *var, ut64 addr) {
 		return acc;
 	}
 	return NULL;
+}
+
+R_API void r_anal_var_add_constraint(RAnalVar *var, R_BORROW RAnalVarConstraint *constraint) {
+	r_vector_push (&var->constraints, constraint);
+}
+
+R_API char *r_anal_var_get_constraints_readable(RAnalVar *var) {
+	size_t n = var->constraints.len;
+	if (!n) {
+		return NULL;
+	}
+	bool low = false, high = false;
+	RStrBuf sb;
+	r_strbuf_init (&sb);
+	size_t i;
+	for (i = 0; i < n; i += 1) {
+		RAnalVarConstraint *constr = r_vector_index_ptr (&var->constraints, i);
+		switch (constr->cond) {
+		case R_ANAL_COND_LE:
+			if (high) {
+				r_strbuf_append (&sb, " && ");
+			}
+			r_strbuf_appendf (&sb, "<= 0x%"PFMT64x "", constr->val);
+			low = true;
+			break;
+		case R_ANAL_COND_LT:
+			if (high) {
+				r_strbuf_append (&sb, " && ");
+			}
+			r_strbuf_appendf (&sb, "< 0x%"PFMT64x "", constr->val);
+			low = true;
+			break;
+		case R_ANAL_COND_GE:
+			r_strbuf_appendf (&sb, ">= 0x%"PFMT64x "", constr->val);
+			high = true;
+			break;
+		case R_ANAL_COND_GT:
+			r_strbuf_appendf (&sb, "> 0x%"PFMT64x "", constr->val);
+			high = true;
+			break;
+		default:
+			break;
+		}
+		if (low && high && i != n - 1) {
+			r_strbuf_append (&sb, " || ");
+			low = false;
+			high = false;
+		}
+	}
+	return r_strbuf_drain_nofree (&sb);
 }
 
 R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type) {

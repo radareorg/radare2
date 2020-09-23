@@ -264,3 +264,25 @@ Pointer type commands with substitution
         (arg (cmd_substitution_arg
 	        (arged_command (cmd_identifier)
 		  (args (arg (arg_identifier))))))))))
+
+========
+editor -
+========
+
+-
+
+---
+
+(commands
+  (arged_command (cmd_identifier)))
+
+=========
+\ command
+=========
+
+\
+
+---
+
+(commands
+  (arged_command (cmd_identifier)))

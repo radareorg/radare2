@@ -204,7 +204,12 @@ static void rasm2_list(RAsmState *as, const char *arch) {
 			bits[0] = 0;
 			if (h->bits == 27) {
 				strcat (bits, "27");
+			} else if (h->bits == 0) {
+				strcat (bits, "any");
 			} else {
+				if (h->bits & 4) {
+					strcat (bits, "4 ");
+				}
 				if (h->bits & 8) {
 					strcat (bits, "8 ");
 				}
