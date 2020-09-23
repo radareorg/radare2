@@ -380,12 +380,22 @@ static int __strbuf_append_col_aligned(RStrBuf *sb, RTableColumn *col, const cha
 }
 
 R_API char *r_table_tostring(RTable *t) {
+	if (t->showCSV) {
+		return r_table_tocsv (t);
+	}
 	if (t->showJSON) {
 		char *s = r_table_tojson (t);
 		char *q = r_str_newf ("%s\n", s);;
 		free (s);
 		return q;
 	}
+	if (t->showSimple) {
+		return r_table_tosimplestring (t);
+	}
+	return r_table_tofancystring (t);
+}
+
+R_API char *r_table_tosimplestring(RTable *t) {
 	RStrBuf *sb = r_strbuf_new ("");
 	RTableRow *row;
 	RTableColumn *col;
@@ -830,15 +840,21 @@ R_API void r_table_filter_columns(RTable *t, RList *list) {
 }
 
 static bool __table_special(RTable *t, const char *columnName) {
+	if (*columnName != ':') {
+		return false;
+	}
 	if (!strcmp (columnName, ":quiet")) {
 		t->showHeader = true;
-		return true;
-	}
-	if (!strcmp (columnName, ":json")) {
+	} else if (!strcmp (columnName, ":simple")) {
+		t->showSimple = true;
+	} else if (!strcmp (columnName, ":csv")) {
+		t->showCSV = true;
+	} else if (!strcmp (columnName, ":json")) {
 		t->showJSON = true;
-		return true;
+	} else {
+		return false;
 	}
-	return false;
+	return true;
 }
 
 R_API bool r_table_query(RTable *t, const char *q) {

@@ -454,8 +454,7 @@ static void cmd_flag_table(RCore *core, const char *input) {
 	if (r_table_query (t, q)) {
 		char *s = (fmt == 'j')
 			? r_table_tojson (t)
-			: r_table_tofancystring (t);
-		// char *s = r_table_tostring (t);
+			: r_table_tostring (t);
 		r_cons_printf ("%s\n", s);
 		free (s);
 	}
