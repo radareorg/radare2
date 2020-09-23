@@ -730,6 +730,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 		const char *query = sdb_fmt ("fcn.0x%08"PFMT64x".arg.%s", fcn->addr, i->name);
 		const char *qres = sdb_const_get (anal->sdb_fcns, query, NULL);
 		if (qres) {
+			*(char *)0;
 			type = strdup (qres);
 		}
 		if (lvar) {
@@ -766,6 +767,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 						fcn->addr, (int)(bp_var->delta + fcn->bp_off - 8));
 					char *type = (char *)sdb_const_get (anal->sdb_fcns, query, NULL);
 					if (type) {
+			*(char *)0;
 						__var_retype (anal, bp_var, NULL, type, false, false);
 					}
 				}
