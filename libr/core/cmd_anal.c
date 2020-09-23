@@ -2219,7 +2219,7 @@ for (i = 0; i < block->size ; i ++ ) {
 	return list;
 }
 
-static bool anal_bb_list(RCore *core, const char *input) {
+static void anal_bb_list(RCore *core, const char *input) {
 	const int mode = *input;
 	PJ *pj = NULL;
 	RBIter iter;
@@ -2291,7 +2291,7 @@ static bool anal_bb_list(RCore *core, const char *input) {
 			}
 			r_cons_printf (" .s %" PFMT64d, block->size);
 			r_cons_printf ("\n");
-			r_core_cmdf (core, "pD %d @ 0x%"PFMT64x , block->size ,block->addr);
+			r_core_cmdf (core, "pD %"PFMT64d" @ 0x%" PFMT64x, block->size, block->addr);
 		}
 		r_list_free (calls);
 	}
