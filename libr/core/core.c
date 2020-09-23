@@ -2288,11 +2288,12 @@ static int mywrite(const ut8 *buf, int len) {
 }
 
 static bool exists_var(RPrint *print, ut64 func_addr, char *str) {
-	char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", func_addr, 1, str);
-	if (sdb_const_get_len (((RCore*)(print->user))->anal->sdb_fcns, name_key, NULL, 0)) {
-		return true;
+	RAnal *anal = ((RCore*)(print->user))->anal;
+	RAnalFunction *fcn = r_anal_get_function_at (anal, func_addr);
+	if (!fcn) {
+		return false;
 	}
-	return false;
+	return !!r_anal_function_get_var_byname (fcn, str);
 }
 
 static bool r_core_anal_log(struct r_anal_t *anal, const char *msg) {

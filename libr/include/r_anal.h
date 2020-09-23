@@ -660,7 +660,6 @@ typedef struct r_anal_t {
 	PrintfCallback cb_printf;
 	//moved from RAnalFcn
 	Sdb *sdb; // root
-	Sdb *sdb_fcns;
 	Sdb *sdb_pins;
 	HtUP/*<RVector<RAnalAddrHintRecord>>*/ *addr_hints; // all hints that correspond to a single address
 	RBTree/*<RAnalArchHintRecord>*/ arch_hints;

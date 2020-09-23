@@ -106,7 +106,6 @@ R_API RAnal *r_anal_new(void) {
 	r_event_hook (anal->zign_spaces.event, R_SPACE_EVENT_UNSET, zign_unset_for, NULL);
 	r_event_hook (anal->zign_spaces.event, R_SPACE_EVENT_COUNT, zign_count_for, NULL);
 	r_event_hook (anal->zign_spaces.event, R_SPACE_EVENT_RENAME, zign_rename_for, NULL);
-	anal->sdb_fcns = sdb_ns (anal->sdb, "fcns", 1);
 	r_anal_hint_storage_init (anal);
 	r_interval_tree_init (&anal->meta, r_meta_item_free);
 	anal->sdb_types = sdb_ns (anal->sdb, "types", 1);
@@ -413,7 +412,6 @@ R_API bool r_anal_op_is_eob(RAnalOp *op) {
 }
 
 R_API int r_anal_purge (RAnal *anal) {
-	sdb_reset (anal->sdb_fcns);
 	r_anal_hint_clear (anal);
 	r_interval_tree_fini (&anal->meta);
 	r_interval_tree_init (&anal->meta, r_meta_item_free);
