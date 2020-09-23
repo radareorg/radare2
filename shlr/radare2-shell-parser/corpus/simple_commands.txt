@@ -258,6 +258,7 @@ s $
 ?v $*
 ?v $$$ test
 ?v $alias
+?e hello$alias
 ?e test
 
 ---
@@ -273,6 +274,8 @@ s $
     (args
       (arg (arg_identifier))
       (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
   (arged_command (cmd_identifier)
     (args (arg (arg_identifier))))
   (arged_command (cmd_identifier)
