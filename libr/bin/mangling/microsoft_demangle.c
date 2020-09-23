@@ -876,108 +876,174 @@ static char *get_num(SStateInfo *state) {
 	return ptr;
 }
 
-#define MODIFIER(modifier_str) { \
-	size_t i = 0; \
-	EDemanglerErr err = eDemanglerErrOK; \
-	char *tmp = NULL; \
-	STypeCodeStr tmp_str; \
-	STypeCodeStr modifier; \
-	int flag__64ptr = 0; \
-\
-	state->state = eTCStateEnd; \
-\
-	if (!init_type_code_str_struct (&tmp_str)) { \
-		state->err = eTCStateMachineErrAlloc; \
-		return; \
-	} \
-	if (!init_type_code_str_struct (&modifier)) { \
-		free_type_code_str_struct (&tmp_str); \
-		state->err = eTCStateMachineErrAlloc; \
-		return; \
-	} \
-\
-	if (*state->buff_for_parsing == 'E') { \
-		flag__64ptr = 1; \
-		state->amount_of_read_chars++; \
-		state->buff_for_parsing++; \
-	} \
-\
-	switch (*state->buff_for_parsing++) { \
-	case 'A': \
-		break; \
-	case 'B': \
-		copy_string (&modifier, "const ", 0); \
-		break; \
-	case 'C': \
-		copy_string (&modifier, "volatile ", 0); \
-		break; \
-	case 'D': \
-		copy_string (&modifier, "const volatile ", 0); \
-		break; \
-	default: \
-		state->err = eTCStateMachineErrUnsupportedTypeCode; \
-		break; \
-	} \
-\
-	state->amount_of_read_chars++;\
-\
-	if (*state->buff_for_parsing == 'Y') { \
-		char *n1; \
-		int num; \
-\
-		state->buff_for_parsing++; \
-		state->amount_of_read_chars++; \
-		if (!(n1 = get_num (state))) { \
-			goto MODIFIER_err; \
-		} \
-		num = atoi (n1); \
-		R_FREE (n1); \
-\
-		copy_string (&tmp_str, " ", 0); \
-		copy_string (&tmp_str, "(", 0); \
-		copy_string (&tmp_str, modifier.type_str, modifier.curr_pos); \
-		copy_string (&tmp_str, modifier_str, 0); \
-		copy_string (&tmp_str, ")", 0); \
-\
-		while (num--) { \
-			n1 = get_num (state); \
-			copy_string (&tmp_str, "[", 0); \
-			copy_string (&tmp_str, n1, 0); \
-			copy_string (&tmp_str, "]", 0); \
-			R_FREE (n1); \
-		} \
-	} \
-\
-	if (tmp_str.curr_pos == 0) { \
-		copy_string (&tmp_str, " ", 0); \
-		copy_string (&tmp_str, modifier.type_str, modifier.curr_pos); \
-		copy_string (&tmp_str, modifier_str, 0); \
-		if (flag__64ptr) { \
-			copy_string (&tmp_str, " __ptr64", 0); \
-		} \
-	} \
-\
-	err = get_type_code_string (state->buff_for_parsing, &i, &tmp); \
-	if (err != eDemanglerErrOK) { \
-		state->err = eTCStateMachineErrUnsupportedTypeCode; \
-		goto MODIFIER_err; \
-	} \
-\
-	state->amount_of_read_chars += i; \
-	state->buff_for_parsing += i; \
-	copy_string (type_code_str, tmp, 0); \
-	copy_string (type_code_str, tmp_str.type_str, tmp_str.curr_pos); \
-\
-MODIFIER_err: \
-	R_FREE (tmp); \
-	free_type_code_str_struct (&tmp_str); \
-	free_type_code_str_struct (&modifier); \
+static inline void parse_type_modifier(SStateInfo *state, STypeCodeStr *type_code_str, const char *modifier_str) {
+	size_t i = 0;
+	EDemanglerErr err = eDemanglerErrOK;
+	char *tmp = NULL;
+	STypeCodeStr tmp_str;
+	STypeCodeStr modifier;
+	bool is_ptr64 = false;
+	bool is_pin_ptr = false;
+	char clr_type = '\0';
+
+	state->state = eTCStateEnd;
+
+	if (!init_type_code_str_struct (&tmp_str)) {
+		state->err = eTCStateMachineErrAlloc;
+		return;
+	}
+	if (!init_type_code_str_struct (&modifier)) {
+		free_type_code_str_struct (&tmp_str);
+		state->err = eTCStateMachineErrAlloc;
+		return;
+	}
+
+	if (*state->buff_for_parsing == 'E') {
+		is_ptr64 = true;
+		state->amount_of_read_chars++;
+		state->buff_for_parsing++;
+	}
+
+	if (*state->buff_for_parsing == '$') {
+		state->buff_for_parsing++;
+		switch (*state->buff_for_parsing++) {
+		case 'A':
+			clr_type = '^';
+			break;
+		case 'B': // cli::pin_ptr<T>
+			is_pin_ptr = true;
+			break;
+		case 'C':
+			clr_type = '%';
+			break;
+		default:
+			state->err = eTCStateMachineErrUnsupportedTypeCode;
+			break;
+		}
+		state->amount_of_read_chars += 2;
+	}
+
+	switch (*state->buff_for_parsing++) {
+	case 'A':
+		break;
+	case 'B':
+		copy_string (&modifier, "const ", 0);
+		break;
+	case 'C':
+		copy_string (&modifier, "volatile ", 0);
+		break;
+	case 'D':
+		copy_string (&modifier, "const volatile ", 0);
+		break;
+	default:
+		state->err = eTCStateMachineErrUnsupportedTypeCode;
+		break;
+	}
+
+	state->amount_of_read_chars++;
+
+	if (*state->buff_for_parsing == 'Y') {
+		char *n1;
+		int num;
+
+		state->buff_for_parsing++;
+		state->amount_of_read_chars++;
+		if (!(n1 = get_num (state))) {
+			goto MODIFIER_err;
+		}
+		num = atoi (n1);
+		R_FREE (n1);
+
+		copy_string (&tmp_str, " ", 0);
+		copy_string (&tmp_str, "(", 0);
+		copy_string (&tmp_str, modifier.type_str, modifier.curr_pos);
+		copy_string (&tmp_str, modifier_str, 0);
+		copy_string (&tmp_str, ")", 0);
+
+		while (num--) {
+			n1 = get_num (state);
+			copy_string (&tmp_str, "[", 0);
+			copy_string (&tmp_str, n1, 0);
+			copy_string (&tmp_str, "]", 0);
+			R_FREE (n1);
+		}
+	}
+
+	if (tmp_str.curr_pos == 0) {
+		copy_string (&tmp_str, " ", 0);
+		copy_string (&tmp_str, modifier.type_str, modifier.curr_pos);
+		if (clr_type) {
+			char *str = strdup (modifier_str);
+			if (!str) {
+				state->err = eTCStateMachineErrAlloc;
+				goto MODIFIER_err;
+			}
+			*str = clr_type;
+			copy_string (&tmp_str, str, 0);
+			free (str);
+		} else {
+			if (is_pin_ptr) {
+				while (*++modifier_str == ' ') {};
+			}
+			copy_string (&tmp_str, modifier_str, 0);
+		}
+	}
+
+	if (!strncmp (state->buff_for_parsing, "__Z", 3)) {
+		// TODO: no idea what this means
+		state->buff_for_parsing += 3;
+		state->amount_of_read_chars += 3;
+	}
+
+	err = get_type_code_string (state->buff_for_parsing, &i, &tmp);
+	if (err != eDemanglerErrOK) {
+		state->err = eTCStateMachineErrUnsupportedTypeCode;
+		goto MODIFIER_err;
+	}
+
+	state->amount_of_read_chars += i;
+	state->buff_for_parsing += i;
+	if (is_pin_ptr) {
+		copy_string (type_code_str, "cli::pin_ptr<", 0);
+	}
+	copy_string (type_code_str, tmp, 0);
+	copy_string (type_code_str, tmp_str.type_str, tmp_str.curr_pos);
+	if (is_pin_ptr) {
+		copy_string (type_code_str, ">", 0);
+	}
+	if (is_ptr64) {
+		copy_string (type_code_str, " __ptr64", 0);
+	}
+
+MODIFIER_err:
+	R_FREE (tmp);
+	free_type_code_str_struct (&tmp_str);
+	free_type_code_str_struct (&modifier);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 DEF_STATE_ACTION(S)
 {
-	MODIFIER ("* const volatile");
+	parse_type_modifier (state, type_code_str, "* const volatile");
+}
+
+static inline const char *get_calling_convention(char calling_convention) {
+	switch (calling_convention) {
+		case 'A': return "__cdecl";
+		case 'B': return "__cdecl __declspec(dllexport)";
+		case 'C': return "__pascal";
+		case 'D': return "__pascal __declspec(dllexport)";
+		case 'E': return "__thiscall";
+		case 'F': return "__thiscall __declspec(dllexport)";
+		case 'G': return "__stdcall";
+		case 'H': return "__stdcall __declspec(dllexport)";
+		case 'I': return "__fastcall";
+		case 'J': return "__fastcall __declspec(dllexport)";
+		case 'K': return "default (none given)";
+		case 'L': return "default (none given) __declspec(dllexport)";
+		case 'M': return "__clrcall";
+		default: return NULL;
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -986,7 +1052,7 @@ DEF_STATE_ACTION(P)
 	// function pointer
 	if (isdigit ((ut8)*state->buff_for_parsing)) {
 		if (*state->buff_for_parsing++ == '6') {
-			char *call_conv = NULL;
+			const char *call_conv = NULL;
 			char *ret_type = NULL;
 			char *arg = NULL;
 			size_t i = 0;
@@ -996,22 +1062,10 @@ DEF_STATE_ACTION(P)
 			state->state = eTCStateEnd;
 
 			// Calling convention
-			switch (*state->buff_for_parsing++) {
-			case 'A': call_conv = "__cdecl"; break;
-			case 'B': call_conv = "__cdecl __declspec(dllexport)"; break;
-			case 'C': call_conv = "__pascal"; break;
-			case 'D': call_conv = "__pascal __declspec(dllexport)"; break;
-			case 'E': call_conv = "__thiscall"; break;
-			case 'F': call_conv = "__thiscall __declspec(dllexport)"; break;
-			case 'G': call_conv = "__stdcall"; break;
-			case 'H': call_conv = "__stdcall __declspec(dllexport)"; break;
-			case 'I': call_conv = "__fastcall"; break;
-			case 'J': call_conv = "__fastcall __declspec(dllexport)"; break;
-			case 'K': call_conv = "default (none given)"; break;
-			default:
+			call_conv = get_calling_convention (*state->buff_for_parsing++);
+			if (!call_conv) {
 				// XXX unify error messages into a single enum
 				state->err = (ETCStateMachineErr)eDemanglerErrUncorrectMangledSymbol;
-				break;
 			}
 
 			state->amount_of_read_chars += 2; // '6' + call_conv
@@ -1100,25 +1154,24 @@ DEF_STATE_ACTION(P)
 		}
 	}
 
-	MODIFIER ("*");
+	parse_type_modifier (state, type_code_str, "*");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 DEF_STATE_ACTION(R) {
-	MODIFIER ("* volatile");
+	parse_type_modifier (state, type_code_str, "* volatile");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 DEF_STATE_ACTION(Q) {
-	MODIFIER ("* const");
+	parse_type_modifier (state, type_code_str, "* const");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 DEF_STATE_ACTION(A) {
-	MODIFIER ("&");
+	parse_type_modifier (state, type_code_str, "&");
 }
 
-#undef MODIFIER
 #undef ONE_LETTER_ACTION
 #undef GO_TO_NEXT_STATE
 #undef DEF_STATE_ACTION
@@ -1389,11 +1442,12 @@ static EDemanglerErr parse_microsoft_mangled_name(const char *sym, char **demang
 	bool is_abbr_type = false;
 	bool is_implicit_this_pointer;
 	bool is_static;
+	bool is_based = false;
 	char *memb_func_access_code = NULL;
-	char *call_conv = NULL;
-	char *storage_class_code_for_ret = NULL;
+	const char *call_conv = NULL;
+	const char *storage_class_code_for_ret = NULL;
 	char *ret_type = NULL;
-	char *__64ptr = NULL;
+	const char *__64ptr = NULL;
 	RList /* <char *> */ *func_args = NULL;
 	RListIter *it = NULL;
 	SStrInfo *str_arg = NULL;
@@ -1403,8 +1457,6 @@ static EDemanglerErr parse_microsoft_mangled_name(const char *sym, char **demang
 
 	const char *curr_pos = sym;
 	char *tmp = NULL;
-
-	memset(&type_code_str, 0, sizeof(type_code_str));
 
 	if (!init_type_code_str_struct (&func_str)) {
 		err = eDemanglerErrMemoryAllocation;
@@ -1424,6 +1476,17 @@ static EDemanglerErr parse_microsoft_mangled_name(const char *sym, char **demang
 
 	curr_pos += len + 1;
 
+	if (!strncmp (curr_pos, "$$F", 3)) {
+		// Managed function (Managed C++ or C++/CLI)
+		curr_pos += 3;
+	}
+
+	if (curr_pos[0] == '_') {
+		// TODO: __based()
+		is_based = true;
+		curr_pos++;
+	}
+
 	err = parse_data_type (curr_pos, &data_type, &access_modifier, &len, &is_static, &is_implicit_this_pointer);
 	if (err != eDemanglerErrOK) {
 		goto parse_microsoft_mangled_name_err;
@@ -1436,10 +1499,13 @@ static EDemanglerErr parse_microsoft_mangled_name(const char *sym, char **demang
 		goto parse_microsoft_mangled_name_err;
 	}
 
-	// TODO: what?????
 	if (*curr_pos == 'E') {
 		__64ptr = "__ptr64";
 		curr_pos++;
+	}
+
+	if (*curr_pos == '$') {
+		curr_pos += 2;
 	}
 
 	// member function access code
@@ -1469,24 +1535,9 @@ static EDemanglerErr parse_microsoft_mangled_name(const char *sym, char **demang
 	}
 
 	// Calling convention
-	switch (*curr_pos++) {
-		case 'A': call_conv = "__cdecl"; break;
-		case 'B': call_conv = "__cdecl __declspec(dllexport)"; break;
-		case 'C': call_conv = "__pascal"; break;
-		case 'D': call_conv = "__pascal __declspec(dllexport)"; break;
-		case 'E': call_conv = "__thiscall"; break;
-		case 'F': call_conv = "__thiscall __declspec(dllexport)"; break;
-		case 'G': call_conv = "__stdcall"; break;
-		case 'H': call_conv = "__stdcall __declspec(dllexport)"; break;
-		case 'I': call_conv = "__fastcall"; break;
-		case 'J': call_conv = "__fastcall __declspec(dllexport)"; break;
-		case 'K': call_conv = "default (none given)"; break;
-		default:
-			err = eDemanglerErrUncorrectMangledSymbol;
-			break;
-	}
-
-	if (err != eDemanglerErrOK) {
+	call_conv = get_calling_convention (*curr_pos++);
+	if (!call_conv) {
+		err = eDemanglerErrUncorrectMangledSymbol;
 		goto parse_microsoft_mangled_name_err;
 	}
 
@@ -1508,8 +1559,7 @@ static EDemanglerErr parse_microsoft_mangled_name(const char *sym, char **demang
 	if (*curr_pos == '@') {
 		ret_type = strdup ("void");
 		curr_pos++;
-	}
-	else {
+	} else {
 		i = 0;
 		err = get_type_code_string (curr_pos, &i, &ret_type);
 		if (err != eDemanglerErrOK) {
