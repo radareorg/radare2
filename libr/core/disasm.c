@@ -1635,25 +1635,15 @@ static ut32 tmp_get_realsize (RAnalFunction *f) {
 
 static void ds_show_functions_argvar(RDisasmState *ds, RAnalFunction *fcn, RAnalVar *var, const char *base, bool is_var, char sign) {
 	int delta = var->kind == 'b' ? R_ABS (var->delta + fcn->bp_off) : R_ABS (var->delta);
-	const char *pfx = is_var ? "var" : "arg", *constr = NULL;
-	RStrBuf *constr_buf = NULL;
-	bool cond = false;
-	if (ds->core && ds->core->anal) {
-		constr_buf = var_get_constraint (ds->core->anal, fcn, var);
-		if (constr_buf) {
-			constr = r_strbuf_get (constr_buf);
-			if (constr[0]) {
-				cond = true;
-			}
-		}
-	}
+	const char *pfx = is_var ? "var" : "arg";
+	char *constr = r_anal_var_get_constraints_readable (var);
 	r_cons_printf ("%s%s %s%s%s%s %s%s%s%s@ %s%c0x%x", COLOR_ARG (ds, color_func_var), pfx,
 			COLOR_ARG (ds, color_func_var_type), var->type,
 			r_str_endswith (var->type, "*") ? "" : " ",
 			var->name, COLOR_ARG (ds, color_func_var_addr),
-			cond? " { ":"",
-			cond? constr: "",
-			cond? "} ":"",
+			constr? " { ":"",
+			constr? constr: "",
+			constr? "} ":"",
 			base, sign, delta);
 	if (ds->show_varsum == -1) {
 		char *val = r_core_cmd_strf (ds->core, ".afvd %s", var->name);
@@ -1663,7 +1653,7 @@ static void ds_show_functions_argvar(RDisasmState *ds, RAnalFunction *fcn, RAnal
 			free (val);
 		}
 	}
-	r_strbuf_free (constr_buf);
+	free (constr);
 }
 
 static void printVarSummary(RDisasmState *ds, RList *list) {

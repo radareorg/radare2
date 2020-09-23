@@ -200,64 +200,6 @@ static _RAnalCond cond_invert(RAnal *anal, _RAnalCond cond) {
 	the opposite of any condition not in the list above is "always"? */
 }
 
-#define RKEY(a,k,d) sdb_fmt ("var.range.0x%"PFMT64x ".%c.%d", a, k, d)
-#define ADB a->sdb_fcns
-
-static void var_add_range(RAnal *a, RAnalFunction *fcn, RAnalVar *var, _RAnalCond cond, ut64 val) {
-	const char *key = RKEY (fcn->addr, var->kind, var->delta);
-	sdb_array_append_num (ADB, key, cond, 0);
-	sdb_array_append_num (ADB, key, val, 0);
-}
-
-R_API RStrBuf *var_get_constraint(RAnal *a, RAnalFunction *fcn, RAnalVar *var) {
-	const char *key = RKEY (fcn->addr, var->kind, var->delta);
-	int i, n = sdb_array_length (ADB, key);
-
-	if (n < 2) {
-		return NULL;
-	}
-
-	bool low = false, high = false;
-	RStrBuf *sb = r_strbuf_new ("");
-
-	for (i = 0; i < n; i += 2) {
-		_RAnalCond cond = sdb_array_get_num (ADB, key, i, 0);
-		ut64 val = sdb_array_get_num (ADB, key, i + 1, 0);
-		switch (cond) {
-		case R_ANAL_COND_LE:
-			if (high) {
-				r_strbuf_append (sb, " && ");
-			}
-			r_strbuf_append (sb, sdb_fmt ("<= 0x%"PFMT64x "", val));
-			low = true;
-			break;
-		case R_ANAL_COND_LT:
-			if (high) {
-				r_strbuf_append (sb, " && ");
-			}
-			r_strbuf_append (sb, sdb_fmt ("< 0x%"PFMT64x "", val));
-			low = true;
-			break;
-		case R_ANAL_COND_GE:
-			r_strbuf_append (sb, sdb_fmt (">= 0x%"PFMT64x "", val));
-			high = true;
-			break;
-		case R_ANAL_COND_GT:
-			r_strbuf_append (sb, sdb_fmt ("> 0x%"PFMT64x "", val));
-			high = true;
-			break;
-		default:
-			break;
-		}
-		if (low && high && i != n-2) {
-			r_strbuf_append (sb, " || ");
-			low = false;
-			high = false;
-		}
-	}
-	return sb;
-}
-
 static RList *parse_format(RCore *core, char *fmt) {
 	if (!fmt || !*fmt) {
 		return NULL;
@@ -725,8 +667,11 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 						jmp_addr += jmp_op->size;
 						r_anal_op_free (jmp_op);
 					}
-					_RAnalCond cond = jmp? cond_invert (anal, next_op->cond): next_op->cond;
-					var_add_range (anal, fcn, var, cond, aop.val);
+					RAnalVarConstraint constr = {
+						.cond = jmp? cond_invert (anal, next_op->cond): next_op->cond,
+						.val = aop.val
+					};
+					r_anal_var_add_constraint (var, &constr);
 				}
 			}
 			prev_var = (var && aop.direction == R_ANAL_OP_DIR_READ);
