@@ -403,10 +403,10 @@ R_API char *r_table_tostring(RTable *t) {
 		free (s);
 		return q;
 	}
-	if (t->showSimple) {
-		return r_table_tosimplestring (t);
+	if (t->showFancy) {
+		return r_table_tofancystring (t);
 	}
-	return r_table_tofancystring (t);
+	return r_table_tosimplestring (t);
 }
 
 R_API char *r_table_tosimplestring(RTable *t) {
@@ -553,8 +553,10 @@ R_API void r_table_filter(RTable *t, int nth, int op, const char *un) {
 		if (page < 1) {
 			page = 1;
 		}
-		lrow = page_items * (page - 1);
-		uv = page_items * (page);
+		if (!ST32_MUL_OVFCHK (page, page_items)) {
+			lrow = page_items * (page - 1);
+			uv = page_items * (page);
+		}
 	}
 	size_t nrow = 0;
 	r_list_foreach_safe (t->rows, iter, iter2, row) {
@@ -905,8 +907,10 @@ static bool __table_special(RTable *t, const char *columnName) {
 	}
 	if (!strcmp (columnName, ":quiet")) {
 		t->showHeader = true;
+	} else if (!strcmp (columnName, ":fancy")) {
+		t->showFancy = true;
 	} else if (!strcmp (columnName, ":simple")) {
-		t->showSimple = true;
+		t->showFancy = false;
 	} else if (!strcmp (columnName, ":csv")) {
 		t->showCSV = true;
 	} else if (!strcmp (columnName, ":json")) {

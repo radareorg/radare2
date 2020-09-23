@@ -46,7 +46,7 @@ typedef struct {
 	RList *cols;
 	int totalCols;
 	bool showHeader;
-	bool showSimple;
+	bool showFancy;
 	bool showJSON;
 	bool showCSV;
 	bool showSum;
