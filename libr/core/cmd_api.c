@@ -7,6 +7,28 @@
 #include <r_cmd.h>
 #include <r_util.h>
 
+/*!
+ * Number of sub-commands to show as options when displaying the help of a
+ * command. When a command has more options than MAX_CHILDREN_SHOW, `?` is shown
+ * instead.
+ *
+ * Example:
+ * w -> wa
+ *   -> wb
+ *   -> wc
+ *   -> wd
+ *   -> we
+ *   -> wf
+ *   -> wg
+ *
+ * When doing `?`, you would see:
+ * w[abcdefg]
+ *
+ * If there is also:
+ *   -> wh
+ * you would see:
+ * w[?]
+ */
 #define MAX_CHILDREN_SHOW 7
 
 static const RCmdDescHelp not_defined_help = {
