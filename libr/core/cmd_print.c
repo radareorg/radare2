@@ -4546,8 +4546,7 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 				char *rs = r_str_escape_r2 (refs);
 				r_cons_printf ("f pxr.%"PFMT64x"=0x%"PFMT64x" # %s\n", val, addr, rs);
 				free (rs);
-			}
-			if (mode == 'q' && refs && *refs) {
+			} else if (mode == 'q' && R_STR_ISNOTEMPTY (refs)) {
 				r_cons_printf ("%s\n", refs);
 			}
 			if (t) {
