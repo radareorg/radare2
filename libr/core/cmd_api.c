@@ -12,20 +12,16 @@
  * command. When a command has more options than MAX_CHILDREN_SHOW, `?` is shown
  * instead.
  *
- * Example:
+ * Example with MAX_CHILDREN_SHOW=3:
  * w -> wa
  *   -> wb
  *   -> wc
- *   -> wd
- *   -> we
- *   -> wf
- *   -> wg
  *
  * When doing `?`, you would see:
- * w[abcdefg]
+ * w[abc]
  *
  * If there is also:
- *   -> wh
+ *   -> wd
  * you would see:
  * w[?]
  */
