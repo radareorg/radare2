@@ -97,7 +97,7 @@ static const char *getstr(RBinDexObj *dex, int idx) {
 		return NULL;
 	}
 	ut64 len;
-	int uleblen = r_uleb128 (buf, sizeof (buf), &len) - buf;
+	int uleblen = r_uleb128 (buf, sizeof (buf), &len, NULL) - buf;
 	if (!uleblen || uleblen >= dex->size || uleblen >= dex->header.strings_size) {
 		return NULL;
 	}
@@ -854,7 +854,7 @@ static RList *strings(RBinFile *bf) {
 			goto out_error;
 		}
 		r_buf_read_at (bin->b, bin->strings[i], buf, sizeof (buf));
-		r_uleb128 (buf, sizeof (buf), &len);
+		r_uleb128 (buf, sizeof (buf), &len, NULL);
 
 		if (len > 5 && len < R_BIN_SIZEOF_STRINGS) {
 			ptr->string = malloc (len + 1);

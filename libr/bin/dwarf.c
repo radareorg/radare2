@@ -480,17 +480,17 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 				buf = NULL;
 				goto beach;
 			}
-			buf = r_uleb128 (buf, buf_end - buf, &id_idx);
+			buf = r_uleb128 (buf, buf_end - buf, &id_idx, NULL);
 			if (buf >= buf_end) {
 				buf = NULL;
 				goto beach;
 			}
-			buf = r_uleb128 (buf, buf_end - buf, &mod_time);
+			buf = r_uleb128 (buf, buf_end - buf, &mod_time, NULL);
 			if (buf >= buf_end) {
 				buf = NULL;
 				goto beach;
 			}
-			buf = r_uleb128 (buf, buf_end - buf, &file_len);
+			buf = r_uleb128 (buf, buf_end - buf, &file_len, NULL);
 			if (buf >= buf_end) {
 				buf = NULL;
 				goto beach;
@@ -779,17 +779,17 @@ static const ut8 *parse_ext_opcode(const RBin *bin, const ut8 *obuf,
 		ut64 dir_idx;
 		ut64 ignore;
 		if (buf + 1 < buf_end) {
-			buf = r_uleb128 (buf, buf_end - buf, &dir_idx);
+			buf = r_uleb128 (buf, buf_end - buf, &dir_idx, NULL);
 		}
 		if (buf + 1 < buf_end) {
-			buf = r_uleb128 (buf, buf_end - buf, &ignore);
+			buf = r_uleb128 (buf, buf_end - buf, &ignore, NULL);
 		}
 		if (buf + 1 < buf_end) {
-			buf = r_uleb128 (buf, buf_end - buf, &ignore);
+			buf = r_uleb128 (buf, buf_end - buf, &ignore, NULL);
 		}
 		break;
 	case DW_LNE_set_discriminator:
-		buf = r_uleb128 (buf, buf_end - buf, &addr);
+		buf = r_uleb128 (buf, buf_end - buf, &addr, NULL);
 		if (mode == R_MODE_PRINT) {
 			print ("set Discriminator to %"PFMT64d"\n", addr);
 		}
@@ -887,7 +887,7 @@ static const ut8 *parse_std_opcode(
 		regs->basic_block = DWARF_FALSE;
 		break;
 	case DW_LNS_advance_pc:
-		buf = r_uleb128 (buf, buf_end - buf, &addr);
+		buf = r_uleb128 (buf, buf_end - buf, &addr, NULL);
 		regs->address += addr * hdr->min_inst_len;
 		if (mode == R_MODE_PRINT) {
 			print ("Advance PC by %"PFMT64d" to 0x%"PFMT64x"\n",
@@ -902,14 +902,14 @@ static const ut8 *parse_std_opcode(
 		}
 		break;
 	case DW_LNS_set_file:
-		buf = r_uleb128 (buf, buf_end - buf, &addr);
+		buf = r_uleb128 (buf, buf_end - buf, &addr, NULL);
 		if (mode == R_MODE_PRINT) {
 			print ("Set file to %"PFMT64d"\n", addr);
 		}
 		regs->file = addr;
 		break;
 	case DW_LNS_set_column:
-		buf = r_uleb128 (buf, buf_end - buf, &addr);
+		buf = r_uleb128 (buf, buf_end - buf, &addr, NULL);
 		if (mode == R_MODE_PRINT) {
 			print ("Set column to %"PFMT64d"\n", addr);
 		}
@@ -960,7 +960,7 @@ static const ut8 *parse_std_opcode(
 		}
 		break;
 	case DW_LNS_set_isa:
-		buf = r_uleb128 (buf, buf_end - buf, &addr);
+		buf = r_uleb128 (buf, buf_end - buf, &addr, NULL);
 		regs->isa = addr;
 		if (mode == R_MODE_PRINT) {
 			print ("set_isa\n");
@@ -1654,7 +1654,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		break;
 	case DW_FORM_udata:
 		value->kind = DW_AT_KIND_CONSTANT;
-		buf = r_uleb128 (buf, buf_end - buf, &value->uconstant);
+		buf = r_uleb128 (buf, buf_end - buf, &value->uconstant, NULL);
 		break;
 	case DW_FORM_string:
 		value->kind = DW_AT_KIND_STRING;
@@ -1686,7 +1686,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		break;
 	case DW_FORM_block: // variable length ULEB128
 		value->kind = DW_AT_KIND_BLOCK;
-		buf = r_uleb128 (buf, buf_end - buf, &value->block.length);
+		buf = r_uleb128 (buf, buf_end - buf, &value->block.length, NULL);
 		if (!buf || buf >= buf_end) {
 			return NULL;
 		}
@@ -1733,7 +1733,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 	case DW_FORM_ref_udata:
 		value->kind = DW_AT_KIND_REFERENCE;
 		// uleb128 is enough to fit into ut64?
-		buf = r_uleb128 (buf, buf_end - buf, &value->reference);
+		buf = r_uleb128 (buf, buf_end - buf, &value->reference, NULL);
 		value->reference += hdr->unit_offset;
 		break;
 	// offset in a section other than .debug_info or .debug_str
@@ -1743,7 +1743,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		break;
 	case DW_FORM_exprloc:
 		value->kind = DW_AT_KIND_BLOCK;
-		buf = r_uleb128 (buf, buf_end - buf, &value->block.length);
+		buf = r_uleb128 (buf, buf_end - buf, &value->block.length, NULL);
 		if (!buf || buf >= buf_end) {
 			return NULL;
 		}
@@ -1794,7 +1794,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 	    index into an array of addresses in the .debug_addr section.*/
 	case DW_FORM_addrx:
 		value->kind = DW_AT_KIND_ADDRESS;
-		buf = r_uleb128 (buf, buf_end - buf, &value->address);
+		buf = r_uleb128 (buf, buf_end - buf, &value->address, NULL);
 		break;
 	case DW_FORM_addrx1:
 		value->kind = DW_AT_KIND_ADDRESS;
@@ -1838,7 +1838,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 	 // An index into the .debug_rnglists
 	case DW_FORM_rnglistx:
 		value->kind = DW_AT_KIND_ADDRESS;
-		buf = r_uleb128 (buf, buf_end - buf, &value->address);
+		buf = r_uleb128 (buf, buf_end - buf, &value->address, NULL);
 		break;
 	default:
 		eprintf ("Unknown DW_FORM 0x%02" PFMT64x "\n", def->attr_form);
@@ -1919,7 +1919,7 @@ static const ut8 *parse_comp_unit(RBinDwarfDebugInfo *info, Sdb *sdb, const ut8 
 
 		// DIE starts with ULEB128 with the abbreviation code
 		ut64 abbr_code;
-		buf = r_uleb128 (buf, buf_end - buf, &abbr_code);
+		buf = r_uleb128 (buf, buf_end - buf, &abbr_code, NULL);
 
 		if (abbr_code > abbrevs->count || !buf) { // something invalid
 			return NULL;
@@ -2114,7 +2114,7 @@ static RBinDwarfDebugAbbrev *parse_abbrev_raw(const ut8 *obuf, size_t len) {
 
 	while (buf && buf+1 < buf_end) {
 		offset = buf - obuf;
-		buf = r_uleb128 (buf, (size_t)(buf_end-buf), &tmp);
+		buf = r_uleb128 (buf, (size_t)(buf_end-buf), &tmp, NULL);
 		if (!buf || !tmp || buf >= buf_end) {
 			continue;
 		}
@@ -2125,7 +2125,7 @@ static RBinDwarfDebugAbbrev *parse_abbrev_raw(const ut8 *obuf, size_t len) {
 		init_abbrev_decl (tmpdecl);
 
 		tmpdecl->code = tmp;
-		buf = r_uleb128 (buf, (size_t)(buf_end-buf), &tmp);
+		buf = r_uleb128 (buf, (size_t)(buf_end-buf), &tmp, NULL);
 		tmpdecl->tag = tmp;
  
 		tmpdecl->offset = offset;
@@ -2138,11 +2138,11 @@ static RBinDwarfDebugAbbrev *parse_abbrev_raw(const ut8 *obuf, size_t len) {
 			if (tmpdecl->count == tmpdecl->capacity) {
 				expand_abbrev_decl (tmpdecl);
 			}
-			buf = r_uleb128 (buf, (size_t)(buf_end - buf), &attr_code);
+			buf = r_uleb128 (buf, (size_t)(buf_end - buf), &attr_code, NULL);
 			if (buf >= buf_end) {
 				break;
 			}
-			buf = r_uleb128 (buf, (size_t)(buf_end - buf), &attr_form);
+			buf = r_uleb128 (buf, (size_t)(buf_end - buf), &attr_form, NULL);
 			// http://www.dwarfstd.org/doc/DWARF5.pdf#page=225
 			if (attr_form == DW_FORM_implicit_const) {
 				buf = r_leb128 (buf, (size_t)(buf_end - buf), &special);

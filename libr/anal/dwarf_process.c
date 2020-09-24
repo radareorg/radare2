@@ -1083,7 +1083,7 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 			/* I need to find binaries that uses this so I can test it out*/
 			const ut8 *buffer = &block.data[++i];
 			const ut8 *buf_end = &block.data[block.length];
-			buffer = r_uleb128 (buffer, buf_end - buffer, &reg_num);
+			buffer = r_uleb128 (buffer, buf_end - buffer, &reg_num, NULL);
 			if (buffer == buf_end) {
 				return NULL;
 			}

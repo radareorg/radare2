@@ -10,7 +10,7 @@ bool test_uleb128_small(void) {
 	mu_assert_memeq (data, (ut8 *)"\xef\xfd\x02", 3, "right bytes");
 
 	ut64 val;
-	r_uleb128 (data, len, &val);
+	r_uleb128 (data, len, &val, NULL);
 	mu_assert_eq (val, 0xbeef, "uleb128 decoded");
 
 	r_uleb128_decode (data, &len, &val);
@@ -47,7 +47,7 @@ bool test_uleb128_big(void) {
 	mu_assert_memeq (data, (ut8 *)"\xa3\xe0\xd4\xb9\xbf\x86\x02", 7, "right bytes");
 
 	ut64 val;
-	r_uleb128 (data, len, &val);
+	r_uleb128 (data, len, &val, NULL);
 	mu_assert_eq (val, 9019283812387, "uleb128 decoded");
 
 	r_uleb128_decode (data, &len, &val);
