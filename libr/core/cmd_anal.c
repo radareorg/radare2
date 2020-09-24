@@ -104,9 +104,9 @@ static const char *help_msg_ab[] = {
 static const char *help_msg_abl[] = {
 	"Usage:", "abl", "analyzed basicblocks listing",
 	"abl", "", "list all program-wide basic blocks analyzed",
+	"abl,", " [table-query]", "render the list using a table",
 	"ablj", "", "in json format",
 	"ablq", "", "in quiet format",
-	"ablt", " [table-query]", "render the list using a table",
 	NULL
 };
 
@@ -9348,7 +9348,7 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 		break;
 	}
 	case '\0':
-		r_core_cmdf (core, "ablt addr/eq/0x%08"PFMT64x, core->offset);
+		r_core_cmdf (core, "abl, addr/eq/0x%08"PFMT64x, core->offset);
 		break;
 	}
 }
@@ -10455,6 +10455,7 @@ static int cmd_anal(void *data, const char *input) {
 		case 'r': // "abr"
 			core_anal_bbs_range (core, input + 2);
 			break;
+		case ',': // "ab,"
 		case 't': // "abt"
 			cmd_anal_abt (core, input+2);
 			break;
