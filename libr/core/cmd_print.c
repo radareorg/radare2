@@ -4543,9 +4543,7 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 			}
 			if (mode == '*' && R_STR_ISNOTEMPTY (refs)) {
 				// Show only the mapped ones?
-				char *rs = r_str_escape_r2 (refs);
-				r_cons_printf ("f pxr.%"PFMT64x"=0x%"PFMT64x" # %s\n", val, addr, rs);
-				free (rs);
+				r_cons_printf ("f pxr.%"PFMT64x"=0x%"PFMT64x"\n", val, addr);
 			} else if (mode == 'q' && R_STR_ISNOTEMPTY (refs)) {
 				r_cons_printf ("%s\n", refs);
 			}
