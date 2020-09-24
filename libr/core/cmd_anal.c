@@ -9741,11 +9741,20 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			if (!list) {
 				break;
 			}
-			r_list_foreach (list, iter, map) {
-				r_core_seek (core, map->itv.addr, true);
-				r_core_anal_esil (core, "$SS", NULL);
+			if (!strcmp ("range", r_config_get (core->config, "anal.in"))) {
+				ut64 from = r_config_get_i (core->config, "anal.from");
+				ut64 to = r_config_get_i (core->config, "anal.to");
+				char *len = r_str_newf (" 0x%"PFMT64x, to - from);
+				r_core_seek (core, from, true);
+				r_core_anal_esil (core, len, NULL);
+				free (len);
+			} else {
+				r_list_foreach (list, iter, map) {
+					r_core_seek (core, map->itv.addr, true);
+					r_core_anal_esil (core, "$MM", NULL);
+				}
+				r_list_free (list);
 			}
-			r_list_free (list);
 			r_core_seek (core, at, true);
 		}
 		break;

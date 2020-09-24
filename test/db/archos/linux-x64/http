@@ -4,7 +4,10 @@ FILE=--
 CMDS=!scripts/test-webserver.sh
 EXPECT=<<EOF
             ; [14] -r-x section size 594 named .text
-            ;-- entry0, section..text, sym..text, sym._start:
+            ;-- entry0:
+            ;-- section..text:
+            ;-- .text:
+            ;-- _start:
             0x000006a0      xor ebp, ebp
             0x000006a2      mov r9, rdx
             0x000006a5      pop rsi
@@ -30,7 +33,6 @@ EXPECT=<<EOF
 	<script type="text/javascript" src="m/r2.js"></script>
 EOF
 EXPECT_ERR=<<EOF
-Connected to: 'http://127.0.0.1:9393'
 
 EOF
 RUN
