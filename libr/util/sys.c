@@ -73,6 +73,7 @@ extern char **environ;
 #include <psapi.h>
 #include <process.h>  // to allow getpid under windows msvc compilation
 #include <direct.h>  // to allow getcwd under windows msvc compilation
+#define sig_t int
 #endif
 #endif
 

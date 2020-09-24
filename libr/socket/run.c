@@ -54,6 +54,7 @@
 #ifdef _MSC_VER
 #include <direct.h>   // to compile chdir in msvc windows
 #include <process.h>  // to compile execv in msvc windows
+#define pid_t int
 #endif
 
 #if EMSCRIPTEN
@@ -709,10 +710,12 @@ static int redirect_socket_to_stdio(RSocket *sock) {
 	return 0;
 }
 
+#if __WINDOWS__
 static RThreadFunctionRet exit_process(RThread *th) {
-	eprintf ("\nrarun2: Interrupted by timeout\n");
+	// eprintf ("\nrarun2: Interrupted by timeout\n");
 	exit (0);
 }
+#endif
 
 static int redirect_socket_to_pty(RSocket *sock) {
 #if HAVE_PTY
@@ -873,11 +876,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 				is_child = true;
 
 				if (p->_dofork && !p->_dodebug) {
-#ifdef _MSC_VER
-					int child_pid = r_sys_fork ();
-#else
 					pid_t child_pid = r_sys_fork ();
-#endif
 					if (child_pid == -1) {
 						eprintf("rarun2: cannot fork\n");
 						r_socket_free (child);
@@ -1049,7 +1048,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 			}
 			sleep (p->_timeout);
 			if (!kill (mypid, 0)) {
-				eprintf ("\nrarun2: Interrupted by timeout\n");
+				// eprintf ("\nrarun2: Interrupted by timeout\n");
 			}
 			kill (mypid, use_signal);
 			exit (0);
@@ -1125,7 +1124,7 @@ R_API int r_run_start(RRunProfile *p) {
 		}
 		if (p->_daemon) {
 #if __WINDOWS__
-			eprintf ("PID: Cannot determine pid with 'system' directive. Use 'program'.\n");
+	//		eprintf ("PID: Cannot determine pid with 'system' directive. Use 'program'.\n");
 #else
 			pid_t child = r_sys_fork ();
 			if (child == -1) {
@@ -1153,7 +1152,7 @@ R_API int r_run_start(RRunProfile *p) {
 					}
 					sleep (p->_timeout);
 					if (!kill (mypid, 0)) {
-						eprintf ("\nrarun2: Interrupted by timeout\n");
+						// eprintf ("\nrarun2: Interrupted by timeout\n");
 					}
 					kill (mypid, use_signal);
 					exit (0);
