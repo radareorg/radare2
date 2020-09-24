@@ -4529,7 +4529,7 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 			char *refs = NULL;
 			if (core->print->hasrefs) {
 				char *rstr = core->print->hasrefs (core->print->user, val, true);
-				if (rstr && *rstr) {
+				if (R_STR_ISNOTEMPTY (rstr)) {
 					r_str_trim (rstr);
 					if (pj) {
 						char *ns = r_str_escape (rstr);
