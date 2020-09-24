@@ -799,7 +799,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 				return;
 			}
 			core->num->value = 0;
-			eprintf ("Connected to: 'http://%s'\n", host);
+			// eprintf ("Connected to: 'http://%s:%s'\n", host, port);
 			free (str);
 		}
 		break;
@@ -888,39 +888,6 @@ R_API void r_core_rtr_remove(RCore *core, const char *input) {
 
 R_API void r_core_rtr_session(RCore *core, const char *input) {
 	__rtr_shell (core, atoi (input));
-	return;
-
-	char prompt[64], buf[1024];
-	int fd;
-
-	prompt[0] = 0;
-	if (IS_DIGIT (input[0])) {
-		fd = r_num_math (core->num, input);
-		for (rtr_n = 0; rtr_host[rtr_n].fd && rtr_host[rtr_n].fd->fd != fd && rtr_n < RTR_MAX_HOSTS - 1; rtr_n++) {
-			;
-		}
-	}
-
-	while (!r_cons_is_breaked ()) {
-		if (rtr_host[rtr_n].fd) {
-			snprintf (prompt, sizeof (prompt),
-				"fd:%d> ", (int)(size_t)rtr_host[rtr_n].fd->fd);
-		}
-		free (r_line_singleton ()->prompt);
-		r_line_singleton ()->prompt = strdup (prompt);
-		if (r_cons_fgets (buf, sizeof (buf), 0, NULL) < 1) {
-			break;
-		}
-		if (!*buf || *buf == 'q') {
-			break;
-		}
-		if (*buf == 'V') {
-			eprintf ("Visual mode not supported\n");
-			continue;
-		}
-		r_core_rtr_cmd (core, buf);
-		r_cons_flush ();
-	}
 }
 
 static bool r_core_rtr_rap_run(RCore *core, const char *input) {
@@ -1006,7 +973,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		cmd = input;
 	}
 
-	if (!rtr_host[rtr_n].fd){
+	if (!rtr_host[rtr_n].fd) {
 		eprintf ("Error: Unknown host\n");
 		core->num->value = 1; // fail
 		return;
@@ -1055,7 +1022,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		}
 		core->num->value = 0;
 		str[len] = 0;
-		r_cons_println (str);
+		r_cons_print (str);
 		free ((void *)str);
 		free ((void *)uri);
 		return;
