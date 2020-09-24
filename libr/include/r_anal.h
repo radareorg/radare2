@@ -683,7 +683,7 @@ typedef struct r_anal_t {
 	int seggrn;
 	RFlagGetAtAddr flag_get;
 	REvent *ev;
-	RList *imports; // global imports
+	RList/*<char *>*/ *imports; // global imports
 	SetU *visited;
 	RStrConstPool constpool;
 	RList *leaddrs;
@@ -1537,6 +1537,9 @@ R_API const char *r_anal_fcntype_tostring(int type);
 R_API int r_anal_fcn_bb (RAnal *anal, RAnalFunction *fcn, ut64 addr, int depth);
 R_API void r_anal_bind(RAnal *b, RAnalBind *bnd);
 R_API bool r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int bits);
+R_API void r_anal_add_import(RAnal *anal, const char *imp);
+R_API void r_anal_remove_import(RAnal *anal, const char *imp);
+R_API void r_anal_purge_imports(RAnal *anal);
 
 /* bb.c */
 R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off);
