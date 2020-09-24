@@ -481,7 +481,7 @@ R_API char *r_table_tor2cmds(RTable *t) {
 	r_list_foreach (t->rows, iter, row) {
 		char *item;
 		int c = 0;
-	r_strbuf_appendf (sb, ",r ");
+		r_strbuf_appendf (sb, ",r ");
 		r_list_foreach (row->items, iter2, item) {
 			RTableColumn *col = r_list_get_n (t->cols, c);
 			if (col) {

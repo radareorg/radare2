@@ -1384,10 +1384,9 @@ static void load_table(RCore *core, RTable *t, const char *file) {
 
 static int cmd_table(void *data, const char *input) {
 	RCore *core = (RCore*)data;
-	static RTable *t = NULL;
 
-	if (!t) {
-		t = r_table_new ();
+	if (!core->table) {
+		core->table = r_table_new ();
 	}
 
 	switch (*input) {
@@ -1409,7 +1408,7 @@ static int cmd_table(void *data, const char *input) {
 				const char *type_name = (type_char == 's')
 					? "string": "number";
 				RTableColumnType *typeString = r_table_type (type_name);
-				r_table_add_column (t, typeString, s, 0);
+				r_table_add_column (core->table, typeString, s, 0);
 				i++;
 			}
 			r_list_free (list);
@@ -1422,33 +1421,32 @@ static int cmd_table(void *data, const char *input) {
 			char *args = r_str_trim_dup (input + 1);
 			RList *list = r_str_split_list (args, " ", 0);
 			if (list) {
-				r_table_add_row_list (t, list);
+				r_table_add_row_list (core->table, list);
 			}
 			// args is now owned by the list
 			//free (args);
 		}
 		break;
 	case '-':
-		r_table_free (t);
-		t = r_table_new ();
+		r_table_free (core->table);
+		core->table = r_table_new ();
 		break;
 	case '/':
 		// query here
-		if (r_table_query (t, input + 1)) {
-			char *ts = r_table_tofancystring (t);
+		if (r_table_query (core->table, input + 1)) {
+			char *ts = r_table_tostring (core->table);
 			r_cons_printf ("%s", ts);
 			free (ts);
 		}
 		break;
 	case '$':
-		load_table (core, t, input);
+		load_table (core, core->table, input);
 		break;
 	case ' ':
 		{
 			const char *q = r_str_trim_head_ro (input + 1);
-			if (r_table_query (t, q)) {
-				// char *ts = r_table_tostring (t);
-				char *ts = r_table_tofancystring (t);
+			if (r_table_query (core->table, q)) {
+				char *ts = r_table_tostring (core->table);
 				if (ts) {
 					r_cons_printf ("%s\n", ts);
 					free (ts);
@@ -1457,12 +1455,12 @@ static int cmd_table(void *data, const char *input) {
 		}
 		break;
 	case '.':
-		load_table (core, t, r_str_trim_head_ro (input + 1));
+		load_table (core, core->table, r_str_trim_head_ro (input + 1));
 		break;
 	case ',':
 		// print csv
 		{
-			char *ts = r_table_tocsv (t);
+			char *ts = r_table_tocsv (core->table);
 			if (ts) {
 				r_cons_printf ("%s\n", ts);
 				free (ts);
@@ -1472,8 +1470,7 @@ static int cmd_table(void *data, const char *input) {
 	case '*':
 		// print table
 		{
-			char *ts = r_table_tor2cmds (t);
-			// char *ts = r_table_tostring (t);
+			char *ts = r_table_tor2cmds (core->table);
 			if (ts) {
 				r_cons_printf ("%s\n", ts);
 				free (ts);
@@ -1483,8 +1480,7 @@ static int cmd_table(void *data, const char *input) {
 	case 0:
 		// print table
 		{
-			char *ts = r_table_tofancystring (t);
-			// char *ts = r_table_tostring (t);
+			char *ts = r_table_tofancystring (core->table);
 			if (ts) {
 				r_cons_printf ("%s\n", ts);
 				free (ts);
@@ -1495,15 +1491,17 @@ static int cmd_table(void *data, const char *input) {
 		// print table
 		if (input[1] == ' ') {
 			const char *q = r_str_trim_head_ro (input + 2);
-			if (r_table_query (t, q)) {
-				char *ts = r_table_tojson (t);
+			if (r_table_query (core->table, q)) {
+				char *ts = r_table_tojson (core->table);
 				r_cons_printf ("%s\n", ts);
 				free (ts);
 			}
 		} else {
-			char *ts = r_table_tojson (t);
-			r_cons_printf ("%s\n", ts);
-			free (ts);
+			char *ts = r_table_tojson (core->table);
+			if (ts) {
+				r_cons_printf ("%s\n", ts);
+				free (ts);
+			}
 		}
 		break;
 	case '?':

@@ -34,7 +34,7 @@ static int on_fcn_new(RAnal *_anal, void* _user, RAnalFunction *fcn) {
 	return 0;
 }
 
-static int on_fcn_delete (RAnal *_anal, void* _user, RAnalFunction *fcn) {
+static int on_fcn_delete(RAnal *_anal, void* _user, RAnalFunction *fcn) {
 	RCore *core = (RCore*)_user;
 	const char *cmd = r_config_get (core->config, "cmd.fcn.delete");
 	if (cmd && *cmd) {
@@ -2896,6 +2896,7 @@ R_API void r_core_fini(RCore *c) {
 	if (!c) {
 		return;
 	}
+	r_table_free (c->table);
 	r_core_task_break_all (&c->tasks);
 	r_core_task_join (&c->tasks, NULL, -1);
 	r_core_wait (c);
