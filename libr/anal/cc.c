@@ -7,12 +7,16 @@
 
 R_API void r_anal_cc_del(RAnal *anal, const char *name) {
 	size_t i;
-	sdb_unset (DB, sdb_fmt ("%s", name), 0);
-	sdb_unset (DB, sdb_fmt ("cc.%s.ret", name), 0);
-	sdb_unset (DB, sdb_fmt ("cc.%s.argn", name), 0);
+	RStrBuf sb;
+	sdb_unset (DB, r_strbuf_initf (&sb, "%s", name), 0);
+	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.ret", name), 0);
+	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.argn", name), 0);
 	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
-		sdb_unset (DB, sdb_fmt ("cc.%s.arg%d", name, i), 0);
+		sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.arg%d", name, i), 0);
 	}
+	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.self", name), 0);
+	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.error", name), 0);
+	r_strbuf_fini (&sb);
 }
 
 R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
@@ -134,11 +138,29 @@ R_API const char *r_anal_cc_self(RAnal *anal, const char *convention) {
 	return self? r_str_constpool_get (&anal->constpool, self): NULL;
 }
 
+R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *self) {
+	if (!r_anal_cc_exist (anal, convention)) {
+		return;
+	}
+	RStrBuf sb;
+	sdb_set (anal->sdb_cc, r_strbuf_initf (&sb, "cc.%s.self", convention), self, 0);
+	r_strbuf_fini (&sb);
+}
+
 R_API const char *r_anal_cc_error(RAnal *anal, const char *convention) {
 	r_return_val_if_fail (anal && convention, NULL);
 	const char *query = sdb_fmt ("cc.%s.error", convention);
 	const char *error = sdb_const_get (DB, query, 0);
 	return error? r_str_constpool_get (&anal->constpool, error): NULL;
+}
+
+R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *error) {
+	if (!r_anal_cc_exist (anal, convention)) {
+		return;
+	}
+	RStrBuf sb;
+	sdb_set (anal->sdb_cc, r_strbuf_initf (&sb, "cc.%s.error", convention), error, 0);
+	r_strbuf_fini (&sb);
 }
 
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
