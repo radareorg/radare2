@@ -1,0 +1,31 @@
+NAME=v850 random pseudo
+FILE=bins/elf/ld-2.27.so
+CMDS=<<EOF
+s+128
+e asm.arch=v850
+e asm.pseudo=true
+b 64
+pi~=
+EOF
+EXPECT=<<EOF
+r8 &= r17
+r9 &= r17
+r4 += r5
+2 <<<= r10
+r8 &= r17
+r22 += r9
+r8 |= r6
+r0 = r9
+r12 &= r17
+var = r12 - r8
+r0 = r0
+r0 = r0
+r0 = r0
+r0 = r0
+r0 = r0
+r0 = r0
+r17 ^= r25
+r5 &= r6
+EOF
+RUN
+
