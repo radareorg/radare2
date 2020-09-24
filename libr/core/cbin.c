@@ -759,6 +759,19 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		sdb_concat_by_path (cc, dbhomepath);
 		cc->path = strdup (dbhomepath);
 	}
+	// same as "tcc `arcc`"
+	char *s = r_reg_profile_to_cc (core->anal->reg);
+	if (s) {
+		if (!r_anal_cc_set (core->anal, s)) {
+			eprintf ("Warning: Invalid CC from reg profile.\n");
+		}
+		free (s);
+	} else {
+		eprintf ("Warning: Cannot derive CC from reg profile.\n");
+	}
+	if (sdb_isempty (core->anal->sdb_cc)) {
+		eprintf ("Warning: Missing calling conventions for '%s'. Deriving it from the regprofile.\n", anal_arch);
+	}
 }
 
 static int bin_info(RCore *r, int mode, ut64 laddr) {

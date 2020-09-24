@@ -688,6 +688,7 @@ static bool cb_asmarch(void *user, void *data) {
 		r_core_anal_type_init (core);
 	}
 	r_core_anal_cc_init (core);
+
 	return true;
 }
 
