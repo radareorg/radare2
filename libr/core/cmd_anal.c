@@ -2405,7 +2405,6 @@ static void anal_bb_list(RCore *core, const char *input) {
 				}
 			}
 			r_cons_printf (" .s %" PFMT64d "\n", block->size);
-			// r_core_cmdf (core, "pD %"PFMT64d" @ 0x%" PFMT64x, block->size, block->addr);
 		}
 		r_list_free (calls);
 	}
