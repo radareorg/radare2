@@ -4674,11 +4674,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			if (graphCursor) {
 				graphNodeMove (g, 'l', movspeed * 2);
 			} else {
-				if (is_mini (g)) {
-					discroll = 0;
-				} else {
-					can->sx -= (5 * movspeed) * (invscroll? -1: 1);
-				}
+				can->sx -= (5 * movspeed) * (invscroll? -1: 1);
 			}
 			break;
 		case 'c':
