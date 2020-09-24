@@ -10444,9 +10444,8 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case 'b': // "ab"
 		switch (input[1]) {
-		case 0:
 		case '.': // "ab."
-			r_core_cmd0 (core, "aba $$");
+			r_core_cmd0 (core, "ab $$");
 			break;
 		case 'a': // "aba"
 			r_core_cmdf (core, "aeab%s", input + 1);
@@ -10470,6 +10469,7 @@ static int cmd_anal(void *data, const char *input) {
 		case 'j': // "abj"
 			anal_fcn_list_bb (core, input + 1, false);
 			break;
+		case 0:
 		case ' ': // "ab "
 			// find block
 			{
