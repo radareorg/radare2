@@ -419,6 +419,8 @@ R_API int r_anal_purge (RAnal *anal) {
 	sdb_reset (anal->sdb_zigns);
 	sdb_reset (anal->sdb_classes);
 	sdb_reset (anal->sdb_classes_attrs);
+	r_anal_pin_fini (anal);
+	r_anal_pin_init (anal);
 	r_list_free (anal->fcns);
 	anal->fcns = r_list_newf (r_anal_function_free);
 	r_anal_purge_imports (anal);
