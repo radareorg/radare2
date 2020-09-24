@@ -288,8 +288,8 @@ bool test_cmd_help(void) {
 	r_cmd_desc_oldinput_new (cmd, p_cd, "px", px_handler, &px_help);
 
 	const char *p_help_exp = "Usage: p-usage   # p summary\n"
-		"| pd <num>                 # pd summary\n"
-		"| px <verylongarg_str_num> # px summary\n";
+		"| pd <num>                    # pd summary\n"
+		"| px[?] <verylongarg_str_num> # px summary\n";
 	RCmdParsedArgs *a = r_cmd_parsed_args_newcmd ("p?");
 	char *h = r_cmd_get_help (cmd, a, false);
 	mu_assert_notnull (h, "help is not null");
@@ -297,10 +297,7 @@ bool test_cmd_help(void) {
 	free (h);
 	r_cmd_parsed_args_free (a);
 
-	const char *pd_help_exp = "Usage: pd <num>   # pd summary\n"
-		"\npd long description\n"
-		"\nExamples:\n"
-		"| pd 10 # print 10 disassembled instructions\n";
+	const char *pd_help_exp = "Usage: pd <num>   # pd summary\n";
 	a = r_cmd_parsed_args_newcmd ("pd?");
 	h = r_cmd_get_help (cmd, a, false);
 	mu_assert_notnull (h, "help is not null");
