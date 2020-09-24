@@ -577,3 +577,43 @@ EXPECT=<<EOF
 class Class::Template<struct UnnamedStruct, &struct StructType1 const StructName1, &struct StructType1 const StructName2, 1, 0, class Class::ChildClass>
 EOF
 RUN
+
+NAME=public: void __cdecl Platform::Delegate::constructor(void) __ptr64
+FILE=-
+CMDS="!rabin2 -D msvc ??0Delegate@Platform@@QE\$AAA@XZ"
+EXPECT=<<EOF
+public: void __cdecl Platform::Delegate::constructor(void) __ptr64
+EOF
+RUN
+
+NAME=class Platform::String ^ __ptr64 __cdecl Platform::Delegate(bool, class Platform::Object ^ __ptr64)
+FILE=-
+CMDS="!rabin2 -D msvc ?Delegate@Platform@@YAPE\$AAVString@Platform@@_NPE\$AAVObject@3@@Z"
+EXPECT=<<EOF
+class Platform::String ^ __ptr64 __cdecl Platform::Delegate(bool, class Platform::Object ^ __ptr64)
+EOF
+RUN
+
+NAME=int __clrcall test(struct V ^ __ptr64)
+FILE=-
+CMDS="!rabin2 -D msvc ?test@@\$\$FYMHPE\$AA__ZUV@@@Z"
+EXPECT=<<EOF
+int __clrcall test(struct V ^ __ptr64)
+EOF
+RUN
+
+NAME=int __clrcall test(struct V % __ptr64)
+FILE=-
+CMDS="!rabin2 -D msvc ?test@@\$\$FYMHPE\$CA__ZUV@@@Z"
+EXPECT=<<EOF
+int __clrcall test(struct V % __ptr64)
+EOF
+RUN
+
+NAME=int __clrcall test(struct V * __ptr64 % __ptr64)
+FILE=-
+CMDS="!rabin2 -D msvc ?test@@YMHAE\$CAPEAUV@@@Z"
+EXPECT=<<EOF
+int __clrcall test(struct V * __ptr64 % __ptr64)
+EOF
+RUN

@@ -25,7 +25,6 @@ const ARG_IDENTIFIER_BASE = choice(
     repeat1(noneOf(...SPECIAL_CHARACTERS)),
     '$$$',
     '$$',
-    '$',
     /\$[^\s@|#"'>;`~\\({) ]/,
     /\${[^\r\n $}]+}/,
     /\\./,
@@ -34,7 +33,6 @@ const ARG_IDENTIFIER_BRACE = choice(
     repeat1(noneOf(...SPECIAL_CHARACTERS_BRACE)),
     '$$$',
     '$$',
-    '$',
     /\$[^\s@|#"'>;`~\\({) ]/,
     /\${[^\r\n $}]+}/,
     /\\./,
@@ -43,7 +41,6 @@ const PF_DOT_ARG_IDENTIFIER_BASE = choice(
     repeat1(noneOf(...PF_DOT_SPECIAL_CHARACTERS)),
     '$$$',
     '$$',
-    '$',
     /\$[^\s@|#"'>;`~\\({) ]/,
     /\${[^\r\n $}]+}/,
     /\\./,
@@ -52,7 +49,6 @@ const PF_ARG_IDENTIFIER_BASE = choice(
     repeat1(noneOf(...PF_SPECIAL_CHARACTERS)),
     '$$$',
     '$$',
-    '$',
     /\$[^\s@|#"'>;`~\\({) ]/,
     /\${[^\r\n $}]+}/,
     /\\./,
@@ -437,17 +433,13 @@ module.exports = grammar({
 		$.pf_args,
 	    )),
 	),
-	_pf_dot_arg_identifier: $ => token(seq(
-	    repeat1(PF_DOT_ARG_IDENTIFIER_BASE),
-	)),
+	_pf_dot_arg_identifier: $ => argIdentifier(PF_DOT_ARG_IDENTIFIER_BASE),
 	_pf_arg_parentheses: $ => seq(
 	    alias('(', $.pf_arg_identifier),
 	    $.pf_args,
 	    alias(')', $.pf_arg_identifier),
 	),
-	pf_arg_identifier: $ => token(seq(
-	    repeat1(PF_ARG_IDENTIFIER_BASE),
-	)),
+	pf_arg_identifier: $ => argIdentifier(PF_ARG_IDENTIFIER_BASE),
 	_pf_arg: $ => choice(
 	    $.pf_arg_identifier,
 	    $._pf_arg_parentheses,
@@ -628,8 +620,8 @@ module.exports = grammar({
 	)),
 	_any_command: $ => /[^\r\n;~|]+/,
 
-	arg_identifier: $ => token(repeat1(ARG_IDENTIFIER_BASE)),
-	arg_identifier_brace: $ => token(repeat1(ARG_IDENTIFIER_BRACE)),
+	arg_identifier: $ => argIdentifier(ARG_IDENTIFIER_BASE),
+	arg_identifier_brace: $ => argIdentifier(ARG_IDENTIFIER_BRACE),
 	double_quoted_arg: $ => seq(
 	    '"',
 	    repeat(choice(
@@ -685,4 +677,11 @@ module.exports = grammar({
 function noneOf(...characters) {
     const negatedString = characters.map(c => c == '\\' ? '\\\\' : c).join('')
     return new RegExp('[^' + negatedString + ']')
+}
+
+function argIdentifier(baseCharacters) {
+    return choice(
+	token(repeat1(baseCharacters)),
+	'$'
+    )
 }
