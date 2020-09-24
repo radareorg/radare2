@@ -73,3 +73,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ablt xrefs
+FILE=bins/mach0/mac-ls2
+CMDS=<<EOF
+aa
+abl, addr/cols/xrefs,xrefs/str/0x
+EOF
+EXPECT=<<EOF
+115
+EOF
+RUN
+
