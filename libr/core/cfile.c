@@ -1071,12 +1071,16 @@ R_API int r_core_file_list(RCore *core, int mode) {
 		switch (mode) {
 		case 'j': {  // "oij"
 			PJ * pj = pj_new ();
+			if (!pj) {
+				free (desc);
+				break;
+			}
 			pj_o (pj);
-			pj_ks (pj, "raised", r_str_bool (core->io->desc->fd == f->fd));
+			pj_kb (pj, "raised", r_str_bool (core->io->desc->fd == f->fd));
 			pj_ki (pj, "fd", (int) f->fd);
 			pj_ks (pj, "uri", desc->uri);
 			pj_kn (pj, "from", (ut64) from);
-			pj_ks (pj, "writable", r_str_bool (desc->perm & R_PERM_W));
+			pj_kb (pj, "writable", r_str_bool (desc->perm & R_PERM_W));
 			pj_ki (pj, "size", (int) r_io_desc_size (desc));
 			pj_end (pj);
 			pj_end (pj);
