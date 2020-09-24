@@ -8,24 +8,25 @@ b 64
 pi~=
 EOF
 EXPECT=<<EOF
-r8 &= r17
-r9 &= r17
-r4 += r5
-2 <<<= r10
-r8 &= r17
-r22 += r9
-r8 |= r6
-r0 = r9
-r12 &= r17
-var = r12 - r8
+r8[0x1047] = (byte) r24
 r0 = r0
 r0 = r0
 r0 = r0
 r0 = r0
+r0 == 0xa
+r17 = 0x388 | r13
 r0 = r0
-r0 = r0
-r17 ^= r25
-r5 &= r6
+r9 = r0
+r11 = (0x8548 << 16) + r26
+r2 == -0xc
+r9 = r3
+r9 = r3
+r9 = r16
+r9 = r8
+r2 /= r19
+r9 /= r19
+r0 = r20
+r9 = r0
 EOF
 RUN
 
