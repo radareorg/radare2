@@ -2,42 +2,49 @@ NAME=aav find xrefs
 FILE=bins/mach0/macho-bash
 CMDS=<<EOF
 e anal.loads=true
-aa;afna;aac;aar;aan;aav
+e anal.in=range
+e anal.from=0x8000
+e anal.to=0x8000+4K
+aac
+afna
+aar
+aan
+aav
+# aa;afna;aac;aar;aan;aav
 pd 17 @0x8058
 EOF
 EXPECT=<<EOF
-|           0x00008058      .dword 0x0000e403
-            ; DATA XREF from sub.free_7890 @ 0x7d30
+|       `=< 0x00008058      03e4           b 0x7862
+            0x0000805a      0000           movs r0, r0
+            ; DATA XREF from sub.free_73a0 @ 0x7d30
             0x0000805c      .dword 0x000693da
-            ; DATA XREF from sub.free_7890 @ 0x7d3e
-            0x00008060      .dword 0x0006c1f4 ; aav.0x0006c1f4
-            ; DATA XREF from sub.free_7890 @ 0x7d48
+            ; DATA XREF from sub.free_73a0 @ 0x7d3e
+            0x00008060      .dword 0x0006c1f4
+            ; DATA XREF from sub.free_73a0 @ 0x7d48
             0x00008064      .dword 0x0006c1a6
-            ; DATA XREF from sub.free_7890 @ 0x7e30
+            ; DATA XREF from sub.free_73a0 @ 0x7e30
             0x00008068      .dword 0x0006c102
-            ; DATA XREF from sub.free_7890 @ 0x7e3a
-            0x0000806c      .dword 0x0006c0b4 ; aav.0x0006c0b4
-            ; DATA XREF from sub.free_7890 @ 0x7e58
+            ; DATA XREF from sub.free_73a0 @ 0x7e3a
+            0x0000806c      .dword 0x0006c0b4
+            ; DATA XREF from sub.free_73a0 @ 0x7e58
             0x00008070      .dword 0x0006c0da
-            ; DATA XREF from sub.free_7890 @ 0x7e62
-            0x00008074      .dword 0x0006c08c ; aav.0x0006c08c
-            ; DATA XREF from sub.free_7890 @ 0x7e80
+            ; DATA XREF from sub.free_73a0 @ 0x7e62
+            0x00008074      .dword 0x0006c08c
+            ; DATA XREF from sub.strcpy_7890 @ 0x7e80
             0x00008078      .dword 0x0006c0b2
-            ; DATA XREF from sub.free_7890 @ 0x7e8a
-            0x0000807c      .dword 0x0006c064 ; aav.0x0006c064
-            ; DATA XREF from sub.free_7890 @ 0x7ed8
+            ; DATA XREF from sub.strcpy_7890 @ 0x7e8a
+            0x0000807c      .dword 0x0006c064
+            ; DATA XREF from sub.strcpy_7890 @ 0x7ed8
             0x00008080      .dword 0x00069232
-            ; DATA XREF from sub.free_7890 @ 0x7ee8
+            ; DATA XREF from sub.strcpy_7890 @ 0x7ee8
             0x00008084      .dword 0x0006c04a
-            ; DATA XREF from sub.free_7890 @ 0x7ef2
-            0x00008088      .dword 0x0006bffc ; aav.0x0006bffc
-            ; DATA XREF from sub.free_7890 @ 0x7f64
+            ; DATA XREF from sub.strcpy_7890 @ 0x7ef2
+            0x00008088      .dword 0x0006bffc
+            ; DATA XREF from sub.free_73a0 @ 0x7f64
             0x0000808c      .dword 0x0006bfce
-            ; DATA XREF from sub.free_7890 @ 0x7f72
-            0x00008090      .dword 0x0006bf7c ; aav.0x0006bf7c
-            ; DATA XREF from sub.free_7890 @ 0x7fcc
+            ; DATA XREF from sub.free_73a0 @ 0x7f72
+            0x00008090      .dword 0x0006bf7c
+            ; DATA XREF from sub.free_73a0 @ 0x7fcc
             0x00008094      .dword 0x0006bf66
-            ; DATA XREF from sub.free_7890 @ 0x7fd6
-            0x00008098      .dword 0x0006bf18 ; aav.0x0006bf18
 EOF
 RUN

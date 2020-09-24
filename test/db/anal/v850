@@ -4,6 +4,7 @@ BROKEN=1
 CMDS=<<EOF
 s+128
 e asm.arch=v850
+e asm.parser=v850.pseudo
 e asm.pseudo=true
 b 64
 pi~=

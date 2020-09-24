@@ -1,8 +1,14 @@
+
+# XXX this is a very slow test
 NAME=MZ: corkami cdogs.exe - open
 FILE=bins/le/cdogs.exe
-ARGS=-A
-CMDS=q!
+CMDS=<<EOF
+aac
+# aaef
+aflc
+EOF
 EXPECT=<<EOF
+794
 EOF
 RUN
 
