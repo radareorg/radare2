@@ -6,9 +6,10 @@ tcc-*
 tcc
 EOF
 EXPECT=<<EOF
-amd64
 ms
+amd64
 swift
+reg
 EOF
 RUN
 
