@@ -486,6 +486,9 @@ static bool pdb7_parse(RPdb *pdb) {
 	}
 	p_tmp = root_page_data;
 	for (i = 0; i < num_root_index_pages; i++) {
+		if (UT64_MUL_OVFCHK (root_index_pages[i], page_size)) {
+			break;
+		}
 		r_buf_seek (pdb->buf, root_index_pages[i] * page_size,
 			   R_BUF_SET);
 		r_buf_read (pdb->buf, p_tmp, page_size);

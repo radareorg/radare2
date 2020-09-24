@@ -4488,12 +4488,13 @@ static void r_core_disasm_table(RCore * core, int l, const char *input) {
 
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *) data;
-	int i, l, len, ret;
+	st64 l;
+	int i, len, ret;
 	ut8* block;
 	ut32 tbs = core->blocksize;
 	ut64 n, off, from, to, at, ate, piece;
 	ut64 tmpseek = UT64_MAX;
-	const int addrbytes = core->io->addrbytes;
+	const size_t addrbytes = core->io->addrbytes;
 	i = l = len = ret = 0;
 	n = off = from = to = at = ate = piece = 0;
 	PJ *pj = NULL;
@@ -4540,7 +4541,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		if (i && l > i) {
 			eprintf ("This block size is too big (0x%"PFMT64x
-				" < 0x%x). Did you mean 'p%c @ %s' instead?\n",
+				" < 0x%" PFMT64x "). Did you mean 'p%c @ %s' instead?\n",
 				n, l, *input, input + 2);
 			goto beach;
 		}
@@ -5436,7 +5437,7 @@ l = use_blocksize;
 						core->num->value = r_core_print_disasm (core->print,
 							core, addr, block1, addrbytes * l, l, 0, 1, formatted_json, NULL, NULL);
 					} else {
-						eprintf ("Cannot allocate %d byte(s)\n", addrbytes * l);
+						eprintf ("Cannot allocate %" PFMT64d " byte(s)\n", addrbytes * l);
 					}
 				} else {
 					ut8 *buf = core->block;

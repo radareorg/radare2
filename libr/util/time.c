@@ -197,3 +197,12 @@ R_API const char *r_time_to_string (ut64 ts) {
 	l = ts >> 20;
 	return r_time_stamp_to_str (l);
 }
+
+R_API char *r_asctime_r(const struct tm *tm, char *buf, size_t size) {
+#if __WINDOWS__
+	errno_t err = asctime_s (buf, size, tm);
+	return err? NULL: buf;
+#else
+	return asctime_r (tm, buf);
+#endif
+}

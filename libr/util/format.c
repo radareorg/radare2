@@ -506,7 +506,11 @@ static void r_print_format_time(const RPrint* p, int endian, int mode,
 	if (MUSTSET) {
 		p->cb_printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem*4:0));
 	} else if (MUSTSEE) {
-		char *timestr = strdup(asctime (gmtime_r ((time_t*)&addr, &timestruct)));
+		char *timestr = malloc (ASCTIME_BUF_MINLEN);
+		if (!timestr) {
+			return;
+		}
+		r_asctime_r (gmtime_r ((time_t*)&addr, &timestruct), timestr, ASCTIME_BUF_MINLEN);
 		*(timestr+24) = '\0';
 		if (!SEEVALUE && !ISQUIET) {
 			p->cb_printf ("0x%08" PFMT64x " = ", seeki + ((elem >= 0) ? elem * 4 : 0));
@@ -519,8 +523,7 @@ static void r_print_format_time(const RPrint* p, int endian, int mode,
 			}
 			while (size--) {
 				updateAddr (buf + i, size - i, endian, &addr, NULL);
-				free (timestr);
-				timestr = strdup (asctime (gmtime_r ((time_t*)&addr, &timestruct)));
+				r_asctime_r (gmtime_r ((time_t*)&addr, &timestruct), timestr, ASCTIME_BUF_MINLEN);
 				*(timestr+24) = '\0';
 				if (elem == -1 || elem == 0) {
 					p->cb_printf ("%s", timestr);
@@ -542,7 +545,11 @@ static void r_print_format_time(const RPrint* p, int endian, int mode,
 		}
 		free (timestr);
 	} else if (MUSTSEEJSON || MUSTSEESTRUCT) {
-		char *timestr = strdup (asctime (gmtime_r ((time_t*)&addr, &timestruct)));
+		char *timestr = malloc (ASCTIME_BUF_MINLEN);
+		if (!timestr) {
+			return;
+		}
+		r_asctime_r (gmtime_r ((time_t*)&addr, &timestruct), timestr, ASCTIME_BUF_MINLEN);
 		*(timestr+24) = '\0';
 		if (size==-1) {
 			p->cb_printf ("\"%s\"", timestr);
@@ -550,8 +557,7 @@ static void r_print_format_time(const RPrint* p, int endian, int mode,
 			p->cb_printf ("[ ");
 			while (size--) {
 				updateAddr (buf + i, size - i, endian, &addr, NULL);
-				free (timestr);
-				timestr = strdup (asctime (gmtime_r ((time_t*)&addr, &timestruct)));
+				r_asctime_r (gmtime_r ((time_t*)&addr, &timestruct), timestr, ASCTIME_BUF_MINLEN);
 				*(timestr+24) = '\0';
 				if (elem == -1 || elem == 0) {
 					p->cb_printf ("\"%s\"", timestr);
