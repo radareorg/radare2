@@ -1,5 +1,6 @@
 NAME=v850 random pseudo
 FILE=bins/elf/ld-2.27.so
+BROKEN=1
 CMDS=<<EOF
 s+128
 e asm.arch=v850
