@@ -1061,6 +1061,8 @@ R_API int r_core_file_list(RCore *core, int mode) {
 	RListIter *it;
 	RBinFile *bf;
 	RListIter *iter;
+	PJ * pj = pj_new ();
+	pj_a (pj);
 	r_list_foreach (core->files, iter, f) {
 		desc = r_io_desc_get (core->io, f->fd);
 		if (!desc) {
@@ -1070,7 +1072,6 @@ R_API int r_core_file_list(RCore *core, int mode) {
 		from = 0LL;
 		switch (mode) {
 		case 'j': {  // "oij"
-			PJ * pj = pj_new ();
 			if (!pj) {
 				free (desc);
 				break;
