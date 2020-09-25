@@ -29,6 +29,9 @@ e asm.bytes=0
 e asm.lines.bb=0
 e asm.comments=0
 pd 1~push
+e anal.in=range
+e anal.from=$$
+e anal.to=$$+4K
 aae
 pd 1~push
 EOF

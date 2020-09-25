@@ -451,7 +451,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case '=':
-			r->cmdremote = 1;
+			R_FREE (r->cmdremote);
+			r->cmdremote = strdup ("");
 			break;
 		case '2':
 			noStderr = true;
@@ -819,13 +820,13 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			return 1;
 		}
 		if (strstr (uri, "://")) {
-			r_core_cmdf (r, "=+%s", uri);
+			r_core_cmdf (r, "=+ %s", uri);
 		} else {
-			r_core_cmdf (r, "=+http://%s/cmd/", argv[opt.ind]);
+			argv[opt.ind] = r_str_newf ("http://%s/cmd/", argv[opt.ind]);
+			r_core_cmdf (r, "=+ %s", argv[opt.ind]);
 		}
-		r_core_cmd0 (r, "=!=");
-		//LISTS_FREE ();
-	//	return 0;
+		r_core_cmd0 (r, "=!=0");
+		argv[opt.ind] = "-";
 	}
 
 	switch (zflag) {

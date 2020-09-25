@@ -1,4 +1,4 @@
-/* radare - Copyright 2009-2019 - pancake, nibble */
+/* radare - Copyright 2009-2020 - pancake, nibble */
 
 #include "r_core.h"
 #include "r_socket.h"
@@ -194,7 +194,7 @@ R_API int r_core_rtr_http_stop(RCore *u) {
 	return 0;
 }
 
-static char *rtr_dir_files (const char *path) {
+static char *rtr_dir_files(const char *path) {
 	char *ptr = strdup ("<html><body>\n");
 	const char *file;
 	RListIter *iter;
@@ -213,13 +213,13 @@ static char *rtr_dir_files (const char *path) {
 }
 
 #if __UNIX__
-static void dietime (int sig) {
+static void dietime(int sig) {
 	eprintf ("It's Die Time!\n");
 	exit (0);
 }
 #endif
 
-static void activateDieTime (RCore *core) {
+static void activateDieTime(RCore *core) {
 	int dt = r_config_get_i (core->config, "http.dietime");
 	if (dt > 0) {
 #if __UNIX__
@@ -293,7 +293,7 @@ static int write_big_reg(char *buf, ut64 sz, const utX *val, int regsize, bool b
 	}
 }
 
-static int swap_big_regs (char *dest, ut64 sz, const char *src, int regsz) {
+static int swap_big_regs(char *dest, ut64 sz, const char *src, int regsz) {
 	utX val;
 	char sdup[128] = {0};
 	if (!src || !src[0] || !src[1]) {
@@ -799,7 +799,8 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 				return;
 			}
 			core->num->value = 0;
-			eprintf ("Connected to: 'http://%s'\n", host);
+			// eprintf ("Connected to: 'http://%s:%s'\n", host, port);
+			free (str);
 		}
 		break;
 	case RTR_PROTOCOL_RAP:
@@ -887,39 +888,6 @@ R_API void r_core_rtr_remove(RCore *core, const char *input) {
 
 R_API void r_core_rtr_session(RCore *core, const char *input) {
 	__rtr_shell (core, atoi (input));
-	return;
-
-	char prompt[64], buf[1024];
-	int fd;
-
-	prompt[0] = 0;
-	if (IS_DIGIT (input[0])) {
-		fd = r_num_math (core->num, input);
-		for (rtr_n = 0; rtr_host[rtr_n].fd && rtr_host[rtr_n].fd->fd != fd && rtr_n < RTR_MAX_HOSTS - 1; rtr_n++) {
-			;
-		}
-	}
-
-	while (!r_cons_is_breaked ()) {
-		if (rtr_host[rtr_n].fd) {
-			snprintf (prompt, sizeof (prompt),
-				"fd:%d> ", (int)(size_t)rtr_host[rtr_n].fd->fd);
-		}
-		free (r_line_singleton ()->prompt);
-		r_line_singleton ()->prompt = strdup (prompt);
-		if (r_cons_fgets (buf, sizeof (buf), 0, NULL) < 1) {
-			break;
-		}
-		if (!*buf || *buf == 'q') {
-			break;
-		}
-		if (*buf == 'V') {
-			eprintf ("Visual mode not supported\n");
-			continue;
-		}
-		r_core_rtr_cmd (core, buf);
-		r_cons_flush ();
-	}
 }
 
 static bool r_core_rtr_rap_run(RCore *core, const char *input) {
@@ -942,7 +910,7 @@ static bool r_core_rtr_rap_run(RCore *core, const char *input) {
 	// r_core_cmdf (core, "o rap://%s", input);
 }
 
-static RThreadFunctionRet r_core_rtr_rap_thread (RThread *th) {
+static RThreadFunctionRet r_core_rtr_rap_thread(RThread *th) {
 	if (!th) {
 		return false;
 	}
@@ -1005,7 +973,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		cmd = input;
 	}
 
-	if (!rtr_host[rtr_n].fd){
+	if (!rtr_host[rtr_n].fd) {
 		eprintf ("Error: Unknown host\n");
 		core->num->value = 1; // fail
 		return;
@@ -1054,7 +1022,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		}
 		core->num->value = 0;
 		str[len] = 0;
-		r_cons_println (str);
+		r_cons_print (str);
 		free ((void *)str);
 		free ((void *)uri);
 		return;

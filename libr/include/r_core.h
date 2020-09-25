@@ -309,7 +309,7 @@ struct r_core_t {
 	int incomment;
 	int curtab; // current tab
 	int seltab; // selected tab
-	int cmdremote;
+	char *cmdremote;
 	char *lastsearch;
 	char *cmdfilter;
 	bool break_loop;

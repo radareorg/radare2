@@ -792,10 +792,11 @@ static int cmd_rap(void *data, const char *input) {
 		eprintf ("TODO: list connections in json\n");
 		break;
 	case '!': // "=!"
-		if (input[1] == '=') {
-			// swap core->cmdremote = core->cmdremote? 0: 1;
-			core->cmdremote = input[2]? 1: 0;
-			r_cons_println (r_str_bool (core->cmdremote));
+		if (input[1] == 'q') {
+			R_FREE (core->cmdremote);
+		} else if (input[1] == '=') { // =!=0 or =!= for iosystem
+			R_FREE (core->cmdremote);
+			core->cmdremote = r_str_trim_dup (input + 2);
 		} else {
 			char *res = r_io_system (core->io, input + 1);
 			if (res) {
@@ -2240,8 +2241,7 @@ static int cmd_system(void *data, const char *input) {
 			r_cons_printf ("Usage: !=[!]  - enable/disable remote commands\n");
 		} else {
 			if (!r_sandbox_enable (0)) {
-				core->cmdremote = input[1]? 1: 0;
-				r_cons_println (r_str_bool (core->cmdremote));
+				R_FREE (core->cmdremote);
 			}
 		}
 		break;
@@ -6744,11 +6744,23 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 		}
 	}
 	if (core->cmdremote) {
-		if (*cstr != '=' && *cstr != 'q' && strncmp (cstr, "!=", 2)) {
-			char *res = r_io_system (core->io, cstr);
-			if (res) {
-				r_cons_printf ("%s\n", res);
-				free (res);
+		if (*cstr == 'q') {
+			R_FREE (core->cmdremote);
+			goto beach; // false
+		} else if (*cstr != '=' && strncmp (cstr, "!=", 2)) {
+			if (core->cmdremote[0]) {
+				char *s = r_str_newf ("%s %s", core->cmdremote, cstr);
+				r_core_rtr_cmd (core, s);
+				free (s);
+			} else {
+				char *res = r_io_system (core->io, cstr);
+				if (res) {
+					r_cons_printf ("%s\n", res);
+					free (res);
+				}
+			}
+			if (log) {
+				r_line_hist_add (cstr);
 			}
 			goto beach; // false
 		}

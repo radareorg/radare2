@@ -119,7 +119,7 @@ static char *socket_http_answer(RSocket *s, int *code, int *rlen, ut32 redirecti
 			}
 		}
 	} else {
-		res = NULL;
+		res = strdup ("");
 	}
 exit:
 	free (buf);
@@ -162,7 +162,7 @@ static char *http_get_w32(const char *url, int *code, int *rlen) {
 		ret = tmp;
 	} while (!(res = InternetReadFile (hOpenUrl, ret + w, read_sz, &r)) || r);
 
-	if (w) {
+	if (res) {
 		char *tmp = realloc (ret, (size_t)w + 1);
 		if (tmp) {
 			ret = tmp;

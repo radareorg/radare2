@@ -3466,7 +3466,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("http.index", "index.html", "Main html file to check in directory");
 	SETPREF ("http.bind", "localhost", "Server address");
 	SETPREF ("http.homeroot", R_JOIN_2_PATHS ("~", R2_HOME_WWWROOT), "http home root directory");
-#if __ANDROID__
+#if __WINDOWS__
+	SETPREF ("http.root", "www", "http root directory");
+#elif __ANDROID__
 	SETPREF ("http.root", "/data/data/org.radare.radare2installer/www", "http root directory");
 #else
 	SETPREF ("http.root", R2_WWWROOT, "http root directory");
