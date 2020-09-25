@@ -1,5 +1,4 @@
 NAME==h
-BROKEN=1
 FILE=--
 CMDS=!scripts/test-webserver.sh
 EXPECT=<<EOF
