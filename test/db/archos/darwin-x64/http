@@ -1,5 +1,6 @@
 NAME==h
 FILE=--
+BROKEN=1
 CMDS=!scripts/test-webserver.sh
 EXPECT=<<EOF
             ; [14] -r-x section size 594 named .text
