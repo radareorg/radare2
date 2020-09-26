@@ -70,17 +70,20 @@ const ut64 cleanup_masks[] = {
 	0x7fffffffffffffff
 };
 
+static void pcache_kv_free(HtUPKv *kv) {
+	free (kv->value);
+}
+
 R_API bool r_io_desc_cache_init(RIODesc *desc) {
 	if (!desc || desc->cache) {
 		return false;
 	}
-	return (desc->cache = sdb_new0 ()) ? true : false;
+	return (desc->cache = ht_up_new (NULL, pcache_kv_free, NULL)) ? true : false;
 }
 
 R_API int r_io_desc_cache_write(RIODesc *desc, ut64 paddr, const ut8 *buf, int len) {
 	RIODescCache *cache;
 	ut64 caddr, desc_sz = r_io_desc_size (desc);
-	char k[64];
 	int cbaddr, written = 0;
 	if ((len < 1) || !desc || (desc_sz <= paddr) ||
 	    !desc->io || (!desc->cache && !r_io_desc_cache_init (desc))) {
@@ -95,16 +98,15 @@ R_API int r_io_desc_cache_write(RIODesc *desc, ut64 paddr, const ut8 *buf, int l
 	caddr = paddr / R_IO_DESC_CACHE_SIZE;
 	cbaddr = paddr % R_IO_DESC_CACHE_SIZE;
 	while (written < len) {
-		sdb_itoa (caddr, k, 10);
 		//get an existing desc-cache, if it exists
-		if (!(cache = (RIODescCache *)(size_t)sdb_num_get (desc->cache, k, NULL))) {
+		if (!(cache = (RIODescCache *)ht_up_find (desc->cache, caddr, NULL))) {
 			//create new desc-cache
 			cache = R_NEW0 (RIODescCache);
 			if (!cache) {
 				return 0;
 			}
-			//feed sdb with the new desc-cache
-			sdb_num_set (desc->cache, k, (ut64)(size_t)cache, 0);
+			//feed ht with the new desc-cache
+			ht_up_insert (desc->cache, caddr, cache);
 		}
 		//check if the remaining data fits into the cache
 		if ((len - written) > (R_IO_DESC_CACHE_SIZE - cbaddr)) {
@@ -135,7 +137,6 @@ R_API int r_io_desc_cache_write(RIODesc *desc, ut64 paddr, const ut8 *buf, int l
 
 R_API int r_io_desc_cache_read(RIODesc *desc, ut64 paddr, ut8 *buf, int len) {
 	RIODescCache *cache;
-	char k[64];
 	ut8 *ptr = buf;
 	ut64 caddr, desc_sz = r_io_desc_size (desc);
 	int cbaddr, amount = 0;
@@ -151,9 +152,8 @@ R_API int r_io_desc_cache_read(RIODesc *desc, ut64 paddr, ut8 *buf, int len) {
 	caddr = paddr / R_IO_DESC_CACHE_SIZE;
 	cbaddr = paddr % R_IO_DESC_CACHE_SIZE;
 	while (amount < len) {
-		sdb_itoa (caddr, k, 10);
 		// get an existing desc-cache, if it exists
-		if (!(cache = (RIODescCache *)(size_t)sdb_num_get (desc->cache, k, NULL))) {	
+		if (!(cache = (RIODescCache *)ht_up_find (desc->cache, caddr, NULL))) {	
 			amount += (R_IO_DESC_CACHE_SIZE - cbaddr);
 			ptr += (R_IO_DESC_CACHE_SIZE - cbaddr);
 			goto beach;
@@ -192,20 +192,16 @@ static void __riocache_free(void *user) {
 	free (cache);
 }
 
-static bool __desc_cache_list_cb(void *user, const char *k, const char *v) {
+static bool __desc_cache_list_cb(void *user, const ut64 k, const void *v) {
 	RList *writes = (RList *)user;
-	RIODescCache *dcache;
 	RIOCache *cache = NULL;
 	ut64 blockaddr;
 	int byteaddr, i;
 	if (!writes) {
 		return false;
 	}
-	dcache = (RIODescCache *)(size_t)sdb_atoi (v);
-	if (!dcache) {
-		return false;
-	}
-	blockaddr = sdb_atoi (k) * R_IO_DESC_CACHE_SIZE;
+	const RIODescCache *dcache = v;
+	blockaddr = k * R_IO_DESC_CACHE_SIZE;
 	for (i = byteaddr = 0; byteaddr < R_IO_DESC_CACHE_SIZE; byteaddr++) {
 		if (dcache->cached & (0x1LL << byteaddr)) {
 			if (!cache) {
@@ -254,7 +250,7 @@ R_API RList *r_io_desc_cache_list(RIODesc *desc) {
 	if (!writes) {
 		return NULL;
 	}
-	sdb_foreach (desc->cache, __desc_cache_list_cb, writes);
+	ht_up_foreach (desc->cache, __desc_cache_list_cb, writes);
 	RIODesc *current = desc->io->desc;
 	desc->io->desc = desc;
 	desc->io->p_cache = false;
@@ -275,19 +271,15 @@ R_API RList *r_io_desc_cache_list(RIODesc *desc) {
 	return writes;
 }
 
-static bool __desc_cache_commit_cb(void *user, const char *k, const char *v) {
+static bool __desc_cache_commit_cb(void *user, const ut64 k, const void *v) {
 	RIODesc *desc = (RIODesc *)user;
-	ut64 blockaddr;
 	int byteaddr, i;
 	ut8 buf[R_IO_DESC_CACHE_SIZE] = {0};
 	if (!desc || !desc->io) {
 		return false;
 	}
-	RIODescCache *dcache = (RIODescCache *)(size_t)sdb_atoi (v);
-	if (!dcache) {
-		return false;
-	}
-	blockaddr = R_IO_DESC_CACHE_SIZE * sdb_atoi (k);
+	const RIODescCache *dcache = v;
+	ut64 blockaddr = R_IO_DESC_CACHE_SIZE * k;
 	for (i = byteaddr = 0; byteaddr < R_IO_DESC_CACHE_SIZE; byteaddr++) {
 		if (dcache->cached & (0x1LL << byteaddr)) {
 			buf[i] = dcache->cdata[byteaddr];
@@ -300,7 +292,6 @@ static bool __desc_cache_commit_cb(void *user, const char *k, const char *v) {
 	if (i > 0) {
 		r_io_pwrite_at (desc->io, blockaddr + R_IO_DESC_CACHE_SIZE - i, buf, i);
 	}
-	free (dcache);
 	return true;
 }
 
@@ -315,28 +306,26 @@ R_API bool r_io_desc_cache_commit(RIODesc *desc) {
 	current = desc->io->desc;
 	desc->io->desc = desc;
 	desc->io->p_cache = false;
-	sdb_foreach (desc->cache, __desc_cache_commit_cb, desc);
-	sdb_free (desc->cache);
+	ht_up_foreach (desc->cache, __desc_cache_commit_cb, desc);
+	ht_up_free (desc->cache);
 	desc->cache = NULL;
 	desc->io->p_cache = true;
 	desc->io->desc = current;
 	return true;
 }
 
-static bool __desc_cache_cleanup_cb(void *user, const char *k, const char *v) {
+static bool __desc_cache_cleanup_cb(void *user, const ut64 k, const void *v) {
 	RIODesc *desc = (RIODesc *)user;
-	RIODescCache *cache;
 	ut64 size, blockaddr;
 	int byteaddr;
 	if (!desc || !desc->cache) {
 		return false;
 	}
-	cache = (RIODescCache *) (size_t)sdb_atoi (v);
-	blockaddr = R_IO_DESC_CACHE_SIZE * sdb_atoi (k);
+	RIODescCache *cache = (RIODescCache *)v;
+	blockaddr = R_IO_DESC_CACHE_SIZE * k;
 	size = r_io_desc_size (desc);
 	if (size <= blockaddr) {
-		free (cache);
-		sdb_unset (desc->cache, k, 0);
+		ht_up_delete (desc->cache, k);
 		return true;
 	}
 	if (size <= (blockaddr + R_IO_DESC_CACHE_SIZE - 1)) {
@@ -349,21 +338,14 @@ static bool __desc_cache_cleanup_cb(void *user, const char *k, const char *v) {
 
 R_API void r_io_desc_cache_cleanup(RIODesc *desc) {
 	if (desc && desc->cache) {
-		sdb_foreach (desc->cache, __desc_cache_cleanup_cb, desc);
+		ht_up_foreach (desc->cache, __desc_cache_cleanup_cb, desc);
 	}
-}
-
-static bool __desc_cache_free_cb(void *user, const char* k, const char *v) {
-	RIODescCache *cache = (RIODescCache *)(size_t)sdb_atoi (v);
-	free (cache);
-	return true;
 }
 
 static bool __desc_fini_cb (void *user, void *data, ut32 id) {
 	RIODesc *desc = (RIODesc *)data;
 	if (desc->cache) {
-		sdb_foreach (desc->cache, __desc_cache_free_cb, NULL);
-		sdb_free (desc->cache);
+		ht_up_free (desc->cache);
 		desc->cache = NULL;
 	}
 	return true;
