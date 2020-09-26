@@ -114,7 +114,6 @@ typedef struct r_io_t {
 typedef struct r_io_desc_t {
 	int fd;
 	int perm;
-	int obsz;	//optimal blocksize// do we really need this here?
 	char *uri;
 	char *name;
 	char *referer;

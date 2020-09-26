@@ -264,7 +264,6 @@ static void r_core_file_info(RCore *core, int mode) {
 			}
 			r_cons_printf (",\"iorw\":%s", r_str_bool ( io_cache || desc->perm & R_PERM_W));
 			r_cons_printf (",\"mode\":\"%s\"", r_str_rwx_i (desc->perm & R_PERM_RWX));
-			r_cons_printf (",\"obsz\":%"PFMT64d, (ut64) core->io->desc->obsz);
 			if (desc->referer && *desc->referer) {
 				r_cons_printf (",\"referer\":\"%s\"", desc->referer);
 			}
@@ -313,9 +312,6 @@ static void r_core_file_info(RCore *core, int mode) {
 		}
 		if (desc) {
 			pair ("iorw", r_str_bool (io_cache || desc->perm & R_PERM_W));
-		}
-		if (desc) {
-			pair ("blksz", sdb_fmt ("0x%"PFMT64x, (ut64) core->io->desc->obsz));
 		}
 		pair ("block", sdb_fmt ("0x%x", core->blocksize));
 
