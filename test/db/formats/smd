@@ -8,7 +8,6 @@ humansz  156.7K
 mode     r-x
 format   smd
 iorw     false
-blksz    0x0
 block    0x100
 type     ROM
 arch     m68k

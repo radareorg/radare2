@@ -181,7 +181,6 @@ humansz  1.0K
 mode     rwx
 format   any
 iorw     true
-blksz    0x0
 block    0x100
 baddr    0x0
 binsz    1025
@@ -258,7 +257,6 @@ humansz  1K
 mode     rwx
 format   any
 iorw     true
-blksz    0x0
 block    0x100
 e cfg.bigendian=false
 e asm.bits=64
@@ -301,7 +299,6 @@ humansz  4.8K
 mode     r-x
 format   elf
 iorw     false
-blksz    0x0
 block    0x100
 arch     x86
 baddr    0x8048000
@@ -395,7 +392,6 @@ humansz  1K
 mode     rwx
 format   java
 iorw     true
-blksz    0x0
 block    0x100
 type     JAVA CLASS
 arch     java
@@ -2991,7 +2987,6 @@ humansz  6.6K
 mode     r-x
 format   elf64
 iorw     false
-blksz    0x0
 block    0x100
 type     EXEC (Executable file)
 arch     x86
@@ -3446,7 +3441,6 @@ size     0x1a36
 humansz  6.6K
 mode     r-x
 iorw     false
-blksz    0x0
 block    0x100
 EOF
 RUN

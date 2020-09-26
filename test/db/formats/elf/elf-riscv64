@@ -406,7 +406,6 @@ humansz  629.4K
 mode     r-x
 format   elf64
 iorw     false
-blksz    0x0
 block    0x100
 type     EXEC (Executable file)
 arch     riscv

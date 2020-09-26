@@ -411,7 +411,6 @@ humansz  21.5K
 mode     r-x
 format   elf
 iorw     false
-blksz    0x0
 block    0x100
 type     EXEC (Executable file)
 arch     x86
@@ -452,7 +451,6 @@ humansz  512
 mode     rwx
 format   any
 iorw     true
-blksz    0x0
 block    0x100
 
 EOF
