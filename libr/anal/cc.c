@@ -81,7 +81,8 @@ R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
 		return NULL;
 	}
 	RStrBuf *sb = r_strbuf_new (NULL);
-	r_strbuf_appendf (sb, "%s %s (", ret, name);
+	const char *self = r_anal_cc_self (anal, name);
+	r_strbuf_appendf (sb, "%s %s%s%s (", ret, self? self: "", self? ".": "", name);
 	bool isFirst = true;
 	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
 		const char *k = sdb_fmt ("cc.%s.arg%d", name, i);
@@ -96,16 +97,14 @@ R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
 	if (argn) {
 		r_strbuf_appendf (sb, "%s%s", isFirst? "": ", ", argn);
 	}
-	const char *self = r_anal_cc_self (anal, name);
-	if (self) {
-		r_strbuf_appendf (sb, "%s%s", isFirst? "": ", ", self);
-	}
+	r_strbuf_append (sb, ")");
+
 	const char *error = r_anal_cc_error (anal, name);
 	if (error) {
-		r_strbuf_appendf (sb, "%s%s", isFirst? "": ", ", error);
+		r_strbuf_appendf (sb, " %s", error);
 	}
 
-	r_strbuf_appendf (sb, ");");
+	r_strbuf_append (sb, ";");
 	return r_strbuf_drain (sb);
 }
 
