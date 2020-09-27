@@ -66,7 +66,7 @@ ST_DATA CType func_vt;	/* current function return type (used by return instructi
 ST_DATA int func_vc;
 ST_DATA int last_line_num, last_ind, func_ind;	/* debug last line number and pc */
 ST_DATA char *funcname;
-ST_DATA char *dirname;
+ST_DATA char *dir_name;
 
 ST_DATA CType char_pointer_type, func_old_type;
 ST_DATA CType int8_type, int16_type, int32_type, int64_type, size_type;

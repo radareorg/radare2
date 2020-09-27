@@ -1,5 +1,5 @@
 NAME=r_fs
-R2DEPS=r_util r_io
+R2DEPS=r_util r_io r_socket
 CFLAGS+=-DR2_PLUGIN_INCORE -Iarch/include -Iarch
 
 SHLR=../../shlr/
@@ -22,7 +22,7 @@ OBJS=${STATIC_OBJS} fs.o fs_file.o shell.o
 #p/grub/libgrubfs.a:
 #	cd p/grub && ${MAKE} libgrubfs.a CC="${CC}"
 
-pre: 
+pre:
 	cd d && ${MAKE}
 #	@if [ ! -e libr_fs.${EXT_SO} ]; then if [ ! -e libr_fs.${EXT_AR} ]; then rm -f ${STATIC_OBJS} ; fi ; fi
 

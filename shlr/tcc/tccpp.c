@@ -1600,10 +1600,10 @@ include_trynext:
 			memcpy (filepath, file->filename, filepath_len);
 			strcpy (filepath + filepath_len, buf);
 			if (tcc_open (s1, filepath) < 0) {
-				if (!dirname) {
-					dirname = "/usr/include";
+				if (!dir_name) {
+					dir_name = "/usr/include";
 				}
-				int len = snprintf (filepath, sizeof (filepath), "%s/%s", dirname, buf);
+				int len = snprintf (filepath, sizeof (filepath), "%s/%s", dir_name, buf);
 				if (len >= sizeof (filepath) || tcc_open (s1, filepath) < 0) {
 					tcc_error ("include file '%s' not found", filepath);
 				} else {

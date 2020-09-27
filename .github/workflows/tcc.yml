@@ -1,0 +1,48 @@
+name: Radare2 CI - build with TinyCC compiler
+
+on:
+  schedule:
+    # “At 00:00 on every Tuesday, Thursday, and Saturday”
+    - cron:  '0 13 * * 2,4,6'
+
+jobs:
+  build:
+    name: ubuntu-tcc-test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout TinyCC repository
+      run: |
+          git clone https://repo.or.cz/tinycc.git
+          cd tinycc
+          git checkout mob
+
+    - name: Compiling and installing TinyCC
+      working-directory: tinycc
+      run: |
+          ./configure --prefix=/usr
+          make
+          sudo make install
+
+    - uses: actions/checkout@v2
+    - name: Checkout our Testsuite Binaries
+      uses: actions/checkout@v2
+      with:
+          repository: radareorg/radare2-testbins
+          path: test/bins
+
+    - name: Configure, build and install
+      env:
+          CC: tcc
+      run: |
+          ./configure --prefix=/usr --with-compiler=tcc
+          make
+          sudo make install
+
+    - name: Install test dependencies
+      run: python3 -m pip install --user 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
+
+    - name: Run tests
+      run: cd test && make
+      working-directory: radare2
+      env:
+        PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig

@@ -1335,7 +1335,7 @@ fail:
 	return NULL;
 }
 
-#if __i386__ || __x86_64
+#if __i386__ || __x86_64__
 static int get_xsave_size(RDebug *dbg, int pid) {
 #ifdef PTRACE_GETREGSET
 	struct iovec local;

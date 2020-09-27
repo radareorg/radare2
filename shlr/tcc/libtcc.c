@@ -742,7 +742,7 @@ the_end:
 LIBTCCAPI int tcc_add_file(TCCState *s, const char *filename, const char *directory)
 {
 	if (directory) {
-		dirname = strdup (directory);
+		dir_name = strdup (directory);
 	}
 
 	if (s->output_type == TCC_OUTPUT_PREPROCESS) {

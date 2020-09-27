@@ -120,7 +120,7 @@ static int countOnes(ut32 val) {
 		return 0;
 	}
 	/* visual studio doesnt supports __buitin_clz */
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(__TINYC__)
 	int count = 0;
 	val = val - ((val >> 1) & 0x55555555);
 	val = (val & 0x33333333) + ((val >> 2) & 0x33333333);

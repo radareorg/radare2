@@ -169,6 +169,17 @@ typedef struct _utX {
 #define NAN (0.0f/0.0f)
 #endif
 
+/* A workaround against libc headers redefinition of __attribute__:
+ * Standard include has lines like
+ * #if (GCC_VERSION < 2007)
+ * # define __attribute__(x)
+ * #endif
+ * So we have do remove this define for TinyCC compiler
+ */
+#if defined(__TINYC__) && (GCC_VERSION < 2007)
+#undef __attribute__
+#endif
+
 #ifdef _MSC_VER
 #define R_PACKED( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
 #undef INFINITY
