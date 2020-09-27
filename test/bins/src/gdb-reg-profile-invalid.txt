@@ -1,0 +1,36 @@
+ Name         Nr  Offset    Size  Type
+     0      0       4 uint32_t
+     1      4       4 uint32_t
+     2      8       4 uint32_t
+     3     12       4 uint32_t
+     4     16       4 uint32_t
+     5     20       4 uint32_t
+ r6            6    6     24       4 uint32_t
+ r7            7    7     28       4 uint32_t
+ r8            8    8     32       4 uint32_t
+ r9            9    t32_t
+ r10          10   1t32_t
+ r11          11   1t32_t
+ r12          12   1t32_t
+ sp           13   1
+ lr           14   1g
+ pc           15   1
+ ''           16   10_t
+ ''           22   20_t
+ ''           23   20_t
+ ''           24   20_t
+ cpsr         25   25     64       4 long
+ ''           26   26     68       0 int0_t
+ ''           27   27     68       0 int0_t
+ ''           28   28     68       0 int0_t
+ ''           29   29     68       0 int0_t
+ ''           30   30     68       0 int0_t
+ ''           31   31     68       0 int0_t
+ ''           32   32     68       0 int0_t
+ ''           33   33     68       0 int0_t
+ ''           34   34     68       0 int0_t
+ ''           35   35     68       0 int0_t
+ ''           36   36     68       0 int0_t
+ s14         105   14    384       4 float
+ q15         138   47    696      16 neon_q
+*1: Register type's name NULL.
