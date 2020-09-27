@@ -36,7 +36,9 @@ R_API void r_anal_pin_init(RAnal *a) {
 }
 
 R_API void r_anal_pin_fini(RAnal *a) {
-	sdb_free (DB);
+	if (sdb_free (DB)) {
+		DB = NULL;
+	}
 }
 
 R_API void r_anal_pin(RAnal *a, ut64 addr, const char *name) {
