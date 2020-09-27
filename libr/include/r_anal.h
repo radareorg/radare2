@@ -1516,7 +1516,7 @@ R_API bool r_anal_function_contains(RAnalFunction *fcn, ut64 addr);
 
 /* anal.c */
 R_API RAnal *r_anal_new(void);
-R_API int r_anal_purge (RAnal *anal);
+R_API void r_anal_purge(RAnal *anal);
 R_API RAnal *r_anal_free(RAnal *r);
 R_API void r_anal_set_user_ptr(RAnal *anal, void *user);
 R_API void r_anal_plugin_free (RAnalPlugin *p);
@@ -1605,8 +1605,8 @@ R_API void r_anal_esil_trace_restore(RAnalEsil *esil, int idx);
 /* pin */
 R_API void r_anal_pin_init(RAnal *a);
 R_API void r_anal_pin_fini(RAnal *a);
-R_API void r_anal_pin (RAnal *a, ut64 addr, const char *name);
-R_API void r_anal_pin_unset (RAnal *a, ut64 addr);
+R_API void r_anal_pin(RAnal *a, ut64 addr, const char *name);
+R_API void r_anal_pin_unset(RAnal *a, ut64 addr);
 R_API const char *r_anal_pin_call(RAnal *a, ut64 addr);
 R_API void r_anal_pin_list(RAnal *a);
 
