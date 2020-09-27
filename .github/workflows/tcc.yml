@@ -4,6 +4,10 @@ on:
   schedule:
     # “At 00:00 on every Tuesday, Thursday, and Saturday”
     - cron:  '0 13 * * 2,4,6'
+  # FIXME: To remove before merge!!!
+  pull_request:
+    branches:
+    - master
 
 jobs:
   build:
