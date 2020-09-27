@@ -163,7 +163,7 @@ fd       3
 file     malloc://1024
 size     0x400
 file     malloc://1024
-blksz    0x0
+iorw     true
 block    0x100
 3
 3
