@@ -11,7 +11,7 @@ NAME=ELF: mipsbe-ubusd
 FILE=bins/elf/analysis/mipsbe-ubusd
 CMDS=<<EOF
 af
-e asm.var.sub=false
+e asm.sub.var=false
 pif
 EOF
 EXPECT=<<EOF
@@ -40,7 +40,7 @@ NAME=ELF: mipsbe-busybox
 FILE=bins/elf/analysis/mipsbe-busybox
 CMDS=<<EOF
 af
-e asm.var.sub=false
+e asm.sub.var=false
 pif
 EOF
 EXPECT=<<EOF

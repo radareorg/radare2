@@ -2,9 +2,9 @@ NAME=pd varsub-issue
 FILE=bins/mach0/mac-ls2
 CMDS=<<EOF
 s 0x100001232
-e asm.var.sub=0
+e asm.sub.var=0
 pd 1
-e asm.var.sub=1
+e asm.sub.var=1
 pd 1
 f fin.dus=0x1000054d0
 pd 1
@@ -580,7 +580,7 @@ CMDS=<<EOF
 e anal.vars.stackname=true
 e asm.arch=x86
 e asm.bits=64
-e asm.var.sub=true
+e asm.sub.var=true
 e asm.lines.bb=false
 e asm.bytes=false
 e asm.comments=false
@@ -1883,7 +1883,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=arm asm.var.sub, asm.ucase and asm.pseudo (fp)
+NAME=arm asm.sub.var, asm.ucase and asm.pseudo (fp)
 FILE=bins/elf/analysis/armcall
 CMDS=<<EOF
 e asm.bytes=false
@@ -1893,16 +1893,16 @@ wv4 0xe59b0008 @ 0x00010464
 wv4 0xe59b100c @ 0x00010468
 af @ main
 e asm.pseudo=false
-e asm.var.sub=true
+e asm.sub.var=true
 e asm.ucase=true
 pd 4 @ 0x0001045c
 ?e
-e asm.var.sub=false
+e asm.sub.var=false
 e asm.ucase=false
 pd 4 @ 0x0001045c
 ?e
 e asm.pseudo=true
-e asm.var.sub=true
+e asm.sub.var=true
 e asm.sub.varonly=false
 pd 4 @ 0x0001045c
 ?e
