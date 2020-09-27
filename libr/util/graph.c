@@ -166,8 +166,6 @@ R_API RGraphNode *r_graph_add_nodef(RGraph *graph, void *data, RListFree user_fr
 	RGraphNode *node = r_graph_add_node (graph, data);
 	if (node) {
 		node->free = user_free;
-	} else if (user_free) {
-		user_free (data);
 	}
 	return node;
 }

@@ -8295,9 +8295,9 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 	case 'd': { // "aggd" - dot format
 		const char *font = r_config_get (core->config, "graph.font");
 		r_cons_printf ("digraph code {\nrankdir=LR;\noutputorder=edgesfirst\ngraph [bgcolor=azure];\n"
-			       "edge [arrowhead=normal, color=\"#3030c0\" style=bold weight=2];\n"
-			       "node [fillcolor=white, style=filled shape=box "
-			       "fontname=\"%s\" fontsize=\"8\"];\n",
+			"edge [arrowhead=normal, color=\"#3030c0\" style=bold weight=2];\n"
+			"node [fillcolor=white, style=filled shape=box "
+			"fontname=\"%s\" fontsize=\"8\"];\n",
 			font);
 		r_agraph_foreach (core->graph, agraph_print_node_dot, NULL);
 		r_agraph_foreach_edge (core->graph, agraph_print_edge_dot, NULL);
