@@ -195,7 +195,6 @@ EOF
 RUN
 
 NAME=Custom types in project file
-BROKEN=1
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 tk char **=type
