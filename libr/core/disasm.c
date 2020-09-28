@@ -1051,7 +1051,6 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	if (ds->immtrim) {
 		char *res = r_parse_immtrim (ds->opstr);
 		if (res) {
-			free (ds->opstr);
 			ds->opstr = res;
 		}
 		return;
