@@ -1266,7 +1266,7 @@ R_API bool r_sys_tts(const char *txt, bool bg) {
 	return false;
 }
 
-R_API const char *r_sys_prefix(const char *pfx) {
+R_API char *r_sys_prefix(const char *pfx) {
 	static char *prefix = NULL;
 	if (!prefix) {
 #if __WINDOWS__

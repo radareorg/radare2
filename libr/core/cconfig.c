@@ -3467,7 +3467,13 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("http.bind", "localhost", "Server address");
 	SETPREF ("http.homeroot", R_JOIN_2_PATHS ("~", R2_HOME_WWWROOT), "http home root directory");
 #if __WINDOWS__
-	SETPREF ("http.root", "www", "http root directory");
+	{
+		char *prefix = r_sys_prefix (NULL);
+		char *wwwroot = r_str_newf ("%s\\share\\www", prefix);
+		SETPREF ("http.root", wwwroot, "http root directory");
+		free (wwwroot);
+		free (prefix);
+	}
 #elif __ANDROID__
 	SETPREF ("http.root", "/data/data/org.radare.radare2installer/www", "http root directory");
 #else
