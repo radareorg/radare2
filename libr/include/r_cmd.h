@@ -158,8 +158,10 @@ typedef enum {
 	R_CMD_DESC_TYPE_ARGV,
 	// for cmd descriptors that are just used to group together related
 	// sub-commands. Do not use this if the command can be used by itself or
-	// if it's necessary to show its help.
-	R_CMD_DESC_TYPE_GROUP,
+	// if it's necessary to show its help, because this descriptor is not
+	// stored in the hashtable and cannot be retrieved except by listing the
+	// children of its parent.
+	R_CMD_DESC_TYPE_INNER,
 } RCmdDescType;
 
 typedef struct r_cmd_desc_t {
@@ -220,8 +222,8 @@ typedef struct r_core_plugin_t {
 	r_warn_if_fail (c_name##_cd)
 #define DEFINE_CMD_ARGV_DESC_SPECIAL(core, name, c_name, parent) \
 	DEFINE_CMD_ARGV_DESC_DETAIL (core, name, c_name, parent, c_name##_handler, &c_name##_help)
-#define DEFINE_CMD_ARGV_DESC_GROUP(core, name, c_name, parent) \
-	RCmdDesc *c_name##_cd = r_cmd_desc_group_new (core->rcmd, parent, #name, &c_name##_help); \
+#define DEFINE_CMD_ARGV_DESC_INNER(core, name, c_name, parent) \
+	RCmdDesc *c_name##_cd = r_cmd_desc_inner_new (core->rcmd, parent, #name, &c_name##_help); \
 	r_warn_if_fail (c_name##_cd)
 #define DEFINE_CMD_ARGV_DESC(core, name, parent) \
 	DEFINE_CMD_ARGV_DESC_SPECIAL (core, name, name, parent)
@@ -272,7 +274,7 @@ static inline int r_cmd_status2int(RCmdStatus s) {
 
 /* RCmdDescriptor */
 R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb, const RCmdDescHelp *help);
-R_API RCmdDesc *r_cmd_desc_group_new(RCmd *cmd, RCmdDesc *parent, const char *name, const RCmdDescHelp *help);
+R_API RCmdDesc *r_cmd_desc_inner_new(RCmd *cmd, RCmdDesc *parent, const char *name, const RCmdDescHelp *help);
 R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdCb cb, const RCmdDescHelp *help);
 R_API RCmdDesc *r_cmd_desc_parent(RCmdDesc *cd);
 R_API bool r_cmd_desc_has_handler(RCmdDesc *cd);

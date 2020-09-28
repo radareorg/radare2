@@ -2086,7 +2086,7 @@ static void cmd_write_init(RCore *core, RCmdDesc *parent) {
 
 	DEFINE_CMD_ARGV_DESC (core, w0, parent);
 
-	DEFINE_CMD_ARGV_DESC_GROUP (core, w, w_incdec, parent);
+	DEFINE_CMD_ARGV_DESC_INNER (core, w, w_incdec, parent);
 	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1, w1, w_incdec_cd, NULL, &w1_incdec_help);
 	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1+, w1_inc, w1_cd, w1_incdec_handler, &w1_inc_help);
 	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1-, w1_dec, w1_cd, w1_incdec_handler, &w1_dec_help);

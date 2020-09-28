@@ -94,7 +94,7 @@ static RCmdDesc *create_cmd_desc(RCmd *cmd, RCmdDesc *parent, RCmdDescType type,
 	res->n_children = 0;
 	res->help = help? help: &not_defined_help;
 	r_pvector_init (&res->children, (RPVectorFree)cmd_desc_free);
-	if (type != R_CMD_DESC_TYPE_GROUP && !ht_pp_insert (cmd->ht_cmds, name, res)) {
+	if (type != R_CMD_DESC_TYPE_INNER && !ht_pp_insert (cmd->ht_cmds, name, res)) {
 		goto err;
 	}
 	cmd_desc_set_parent (res, parent);
@@ -1240,9 +1240,9 @@ R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *nam
 	return res;
 }
 
-R_API RCmdDesc *r_cmd_desc_group_new(RCmd *cmd, RCmdDesc *parent, const char *name, const RCmdDescHelp *help) {
+R_API RCmdDesc *r_cmd_desc_inner_new(RCmd *cmd, RCmdDesc *parent, const char *name, const RCmdDescHelp *help) {
 	r_return_val_if_fail (cmd && parent && name, NULL);
-	return create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_GROUP, name, help);
+	return create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_INNER, name, help);
 }
 
 R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdCb cb, const RCmdDescHelp *help) {
@@ -1267,7 +1267,7 @@ R_API bool r_cmd_desc_has_handler(RCmdDesc *cd) {
 		return cd->d.argv_data.cb;
 	case R_CMD_DESC_TYPE_OLDINPUT:
 		return cd->d.oldinput_data.cb;
-	case R_CMD_DESC_TYPE_GROUP:
+	case R_CMD_DESC_TYPE_INNER:
 		return false;
 	}
 	return false;

@@ -7161,8 +7161,8 @@ R_API void r_core_cmd_init(RCore *core) {
 		case R_CMD_DESC_TYPE_ARGV:
 			cd = r_cmd_desc_argv_new (core->rcmd, root, cmds[i].cmd, cmds[i].argv_cb, cmds[i].help);
 			break;
-		case R_CMD_DESC_TYPE_GROUP:
-			cd = r_cmd_desc_group_new (core->rcmd, root, cmds[i].cmd, cmds[i].help);
+		case R_CMD_DESC_TYPE_INNER:
+			cd = r_cmd_desc_inner_new (core->rcmd, root, cmds[i].cmd, cmds[i].help);
 			break;
 		}
 		if (cmds[i].descriptor_init) {
