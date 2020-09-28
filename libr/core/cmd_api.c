@@ -405,6 +405,12 @@ R_API RCmdStatus r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
 
 	res = R_CMD_STATUS_INVALID;
 	switch (cd->type) {
+	case R_CMD_DESC_TYPE_GROUP:
+		if (!cd->d.group_data.exec_cd) {
+			break;
+		}
+		cd = cd->d.group_data.exec_cd;
+		// fallthrough
 	case R_CMD_DESC_TYPE_ARGV:
 		if (cd->d.argv_data.cb) {
 			res = cd->d.argv_data.cb (cmd->data, args->argc, (const char **)args->argv);
