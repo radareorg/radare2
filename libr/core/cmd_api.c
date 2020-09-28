@@ -459,11 +459,11 @@ static void fill_children_chars(RStrBuf *sb, RCmdDesc *cd) {
 	r_strbuf_append (sb, r_strbuf_drain_nofree (&csb));
 }
 
-static bool show_children_shortcut(RCmdDesc *cd, RCmdDesc *parent) {
-	return (cd != parent && (cd->n_children || cd->help->options)) || cd->type == R_CMD_DESC_TYPE_OLDINPUT;
+static bool show_children_shortcut(RCmdDesc *cd) {
+	return cd->n_children || cd->help->options || cd->type == R_CMD_DESC_TYPE_OLDINPUT;
 }
 
-static void fill_usage_strbuf(RStrBuf *sb, RCmdDesc *cd, bool use_color, RCmdDesc *parent) {
+static void fill_usage_strbuf(RStrBuf *sb, RCmdDesc *cd, bool use_color) {
 	RCons *cons = r_cons_singleton ();
 	const char *pal_label_color = use_color? cons->context->pal.label: "",
 		   *pal_args_color = use_color? cons->context->pal.args: "",
@@ -476,7 +476,7 @@ static void fill_usage_strbuf(RStrBuf *sb, RCmdDesc *cd, bool use_color, RCmdDes
 		r_strbuf_appendf (sb, "%s%s%s", cd->help->usage, pal_args_color, pal_reset);
 	} else {
 		r_strbuf_appendf (sb, "%s%s", pal_input_color, cd->name);
-		if (show_children_shortcut (cd, parent)) {
+		if (show_children_shortcut (cd)) {
 			r_strbuf_append (sb, pal_reset);
 			fill_children_chars (sb, cd);
 		}
@@ -490,11 +490,11 @@ static void fill_usage_strbuf(RStrBuf *sb, RCmdDesc *cd, bool use_color, RCmdDes
 	r_strbuf_append (sb, "\n");
 }
 
-static size_t calc_padding_len(RCmdDesc *cd, RCmdDesc *parent) {
+static size_t calc_padding_len(RCmdDesc *cd) {
 	size_t name_len = strlen (cd->name);
 	size_t args_len = 0;
 	size_t children_length = 0;
-	if (show_children_shortcut (cd, parent)) {
+	if (show_children_shortcut (cd)) {
 		RStrBuf sb;
 		r_strbuf_init (&sb);
 		fill_children_chars (&sb, cd);
@@ -507,13 +507,13 @@ static size_t calc_padding_len(RCmdDesc *cd, RCmdDesc *parent) {
 	return name_len + args_len + children_length;
 }
 
-static size_t update_max_len(RCmdDesc *cd, size_t max_len, RCmdDesc *parent) {
-	size_t val = calc_padding_len (cd, parent);
+static size_t update_max_len(RCmdDesc *cd, size_t max_len) {
+	size_t val = calc_padding_len (cd);
 	return val > max_len? val: max_len;
 }
 
-static void print_child_help(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use_color, RCmdDesc *parent) {
-	size_t str_len = calc_padding_len (cd, parent);
+static void print_child_help(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use_color) {
+	size_t str_len = calc_padding_len (cd);
 	size_t padding = str_len < max_len? max_len - str_len: 0;
 	const char *cd_summary = cd->help->summary? cd->help->summary: "";
 
@@ -525,7 +525,7 @@ static void print_child_help(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use
 		   *pal_reset = use_color? cons->context->pal.reset: "";
 
 	r_strbuf_appendf (sb, "| %s%s", pal_input_color, cd->name);
-	if (show_children_shortcut (cd, parent)) {
+	if (show_children_shortcut (cd)) {
 		r_strbuf_append (sb, pal_opt_color);
 		fill_children_chars (sb, cd);
 	}
@@ -537,19 +537,19 @@ static void print_child_help(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use
 
 static char *argv_group_get_help(RCmd *cmd, RCmdDesc *cd, bool use_color) {
 	RStrBuf *sb = r_strbuf_new (NULL);
-	fill_usage_strbuf (sb, cd, use_color, cd->parent);
+	fill_usage_strbuf (sb, cd, use_color);
 
 	void **it_cd;
 	size_t max_len = 0;
 
 	r_cmd_desc_children_foreach (cd, it_cd) {
 		RCmdDesc *child = *(RCmdDesc **)it_cd;
-		max_len = update_max_len (child, max_len, cd);
+		max_len = update_max_len (child, max_len);
 	}
 
 	r_cmd_desc_children_foreach (cd, it_cd) {
 		RCmdDesc *child = *(RCmdDesc **)it_cd;
-		print_child_help (sb, child, max_len, use_color, cd);
+		print_child_help (sb, child, max_len, use_color);
 	}
 	return r_strbuf_drain (sb);
 }
@@ -563,7 +563,7 @@ static char *argv_get_help(RCmd *cmd, RCmdDesc *cd, RCmdParsedArgs *a, size_t de
 
 	RStrBuf *sb = r_strbuf_new (NULL);
 
-	fill_usage_strbuf (sb, cd, use_color, cd);
+	fill_usage_strbuf (sb, cd, use_color);
 
 	switch (detail) {
 	case 1:
