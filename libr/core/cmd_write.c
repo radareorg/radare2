@@ -2075,10 +2075,10 @@ static void cmd_write_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, wv);
 	DEFINE_CMD_DESCRIPTOR (core, wx);
 
-	DEFINE_CMD_ARGV_DESC (core, wB, parent);
+	DEFINE_CMD_ARGV_GROUP_WITH_CHILD (core, wB, parent);
 	DEFINE_CMD_ARGV_DESC_SPECIAL (core, wB-, wB_minus, wB_cd);
 
-	DEFINE_CMD_ARGV_DESC (core, wv, parent);
+	DEFINE_CMD_ARGV_GROUP_WITH_CHILD (core, wv, parent);
 	DEFINE_CMD_ARGV_DESC (core, wv1, wv_cd);
 	DEFINE_CMD_ARGV_DESC (core, wv2, wv_cd);
 	DEFINE_CMD_ARGV_DESC (core, wv4, wv_cd);

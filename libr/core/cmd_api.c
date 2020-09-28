@@ -81,7 +81,7 @@ static void cmd_desc_free(RCmdDesc *cd) {
 	free (cd);
 }
 
-static RCmdDesc *create_cmd_desc(RCmd *cmd, RCmdDesc *parent, RCmdDescType type, const char *name, const RCmdDescHelp *help) {
+static RCmdDesc *create_cmd_desc(RCmd *cmd, RCmdDesc *parent, RCmdDescType type, const char *name, const RCmdDescHelp *help, bool ht_insert) {
 	RCmdDesc *res = R_NEW0 (RCmdDesc);
 	if (!res) {
 		return NULL;
@@ -94,7 +94,7 @@ static RCmdDesc *create_cmd_desc(RCmd *cmd, RCmdDesc *parent, RCmdDescType type,
 	res->n_children = 0;
 	res->help = help? help: &not_defined_help;
 	r_pvector_init (&res->children, (RPVectorFree)cmd_desc_free);
-	if (type != R_CMD_DESC_TYPE_INNER && !ht_pp_insert (cmd->ht_cmds, name, res)) {
+	if (ht_insert && !ht_pp_insert (cmd->ht_cmds, name, res)) {
 		goto err;
 	}
 	cmd_desc_set_parent (res, parent);
@@ -122,7 +122,7 @@ R_API RCmd *r_cmd_new(void) {
 	}
 	cmd->nullcallback = cmd->data = NULL;
 	cmd->ht_cmds = ht_pp_new0 ();
-	cmd->root_cmd_desc = create_cmd_desc (cmd, NULL, R_CMD_DESC_TYPE_ARGV, "", &root_help);
+	cmd->root_cmd_desc = create_cmd_desc (cmd, NULL, R_CMD_DESC_TYPE_ARGV, "", &root_help, true);
 	r_core_plugin_init (cmd);
 	r_cmd_macro_init (&cmd->macro);
 	r_cmd_alias_init (cmd);
@@ -165,10 +165,21 @@ R_API RCmdDesc *r_cmd_get_desc(RCmd *cmd, const char *cmd_identifier) {
 	// match longer commands first
 	while (*cmdid) {
 		RCmdDesc *cd = ht_pp_find (cmd->ht_cmds, cmdid, NULL);
-		if (cd && (cd->type == R_CMD_DESC_TYPE_OLDINPUT ||
-			(cd->type == R_CMD_DESC_TYPE_ARGV && is_exact_match))) {
-			res = cd;
-			goto out;
+		if (cd) {
+			switch (cd->type) {
+			case R_CMD_DESC_TYPE_ARGV:
+				if (!is_exact_match) {
+					break;
+				}
+				// fallthrough
+			case R_CMD_DESC_TYPE_GROUP:
+				// fallthrough
+			case R_CMD_DESC_TYPE_OLDINPUT:
+				res = cd;
+				goto out;
+			case R_CMD_DESC_TYPE_INNER:
+				break;
+			}
 		}
 		is_exact_match = false;
 		*(--end_cmdid) = '\0';
@@ -452,14 +463,6 @@ static bool show_children_shortcut(RCmdDesc *cd, RCmdDesc *parent) {
 	return (cd != parent && (cd->n_children || cd->help->options)) || cd->type == R_CMD_DESC_TYPE_OLDINPUT;
 }
 
-static bool show_args(RCmdDesc *cd, RCmdDesc *parent) {
-	return (cd->n_children == 0 || cd == parent) && cd->help->args_str;
-}
-
-static bool show_group_args(RCmdDesc *cd, RCmdDesc *parent) {
-	return !show_args (cd, parent) && cd->help->group_args_str;
-}
-
 static void fill_usage_strbuf(RStrBuf *sb, RCmdDesc *cd, bool use_color, RCmdDesc *parent) {
 	RCons *cons = r_cons_singleton ();
 	const char *pal_label_color = use_color? cons->context->pal.label: "",
@@ -477,16 +480,11 @@ static void fill_usage_strbuf(RStrBuf *sb, RCmdDesc *cd, bool use_color, RCmdDes
 			r_strbuf_append (sb, pal_reset);
 			fill_children_chars (sb, cd);
 		}
-		if (show_args (cd, parent)) {
-			const char *cd_args_str = cd->help->args_str? cd->help->args_str: "";
-			r_strbuf_appendf (sb, "%s%s%s", pal_args_color, cd_args_str, pal_reset);
-		} else if (show_group_args (cd, parent)) {
-			r_strbuf_appendf (sb, "%s%s%s", pal_args_color, cd->help->group_args_str, pal_reset);
+		if (R_STR_ISNOTEMPTY (cd->help->args_str)) {
+			r_strbuf_appendf (sb, "%s%s%s", pal_args_color, cd->help->args_str, pal_reset);
 		}
 	}
-	if (cd->help->group_summary) {
-		r_strbuf_appendf (sb, "   %s# %s%s", pal_help_color, cd->help->group_summary, pal_reset);
-	} else if (cd->help->summary) {
+	if (cd->help->summary) {
 		r_strbuf_appendf (sb, "   %s# %s%s", pal_help_color, cd->help->summary, pal_reset);
 	}
 	r_strbuf_append (sb, "\n");
@@ -503,10 +501,8 @@ static size_t calc_padding_len(RCmdDesc *cd, RCmdDesc *parent) {
 		children_length += r_strbuf_length (&sb);
 		r_strbuf_fini (&sb);
 	}
-	if (show_args (cd, parent)) {
+	if (R_STR_ISNOTEMPTY (cd->help->args_str)) {
 		args_len = strlen0 (cd->help->args_str);
-	} else if (show_group_args (cd, parent)) {
-		args_len = strlen0 (cd->help->group_args_str);
 	}
 	return name_len + args_len + children_length;
 }
@@ -533,32 +529,24 @@ static void print_child_help(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use
 		r_strbuf_append (sb, pal_opt_color);
 		fill_children_chars (sb, cd);
 	}
-	if (show_args (cd, parent)) {
+	if (R_STR_ISNOTEMPTY (cd->help->args_str)) {
 		r_strbuf_appendf (sb, "%s%s", pal_args_color, cd->help->args_str);
-	} else if (show_group_args (cd, parent)) {
-		r_strbuf_appendf (sb, "%s%s", pal_args_color, cd->help->group_args_str);
 	}
 	r_strbuf_appendf (sb, " %*s%s# %s%s\n", padding, "", pal_help_color, cd_summary, pal_reset);
 }
 
-static char *inner_get_help(RCmd *cmd, RCmdDesc *cd, bool use_color) {
+static char *argv_group_get_help(RCmd *cmd, RCmdDesc *cd, bool use_color) {
 	RStrBuf *sb = r_strbuf_new (NULL);
 	fill_usage_strbuf (sb, cd, use_color, cd->parent);
 
 	void **it_cd;
 	size_t max_len = 0;
 
-	if (cd->d.argv_data.cb) {
-		max_len = update_max_len (cd, max_len, cd);
-	}
 	r_cmd_desc_children_foreach (cd, it_cd) {
 		RCmdDesc *child = *(RCmdDesc **)it_cd;
 		max_len = update_max_len (child, max_len, cd);
 	}
 
-	if (cd->d.argv_data.cb) {
-		print_child_help (sb, cd, max_len, use_color, cd);
-	}
 	r_cmd_desc_children_foreach (cd, it_cd) {
 		RCmdDesc *child = *(RCmdDesc **)it_cd;
 		print_child_help (sb, child, max_len, use_color, cd);
@@ -636,20 +624,26 @@ R_API char *r_cmd_get_help(RCmd *cmd, RCmdParsedArgs *args, bool use_color) {
 	}
 
 	switch (cd->type) {
+	case R_CMD_DESC_TYPE_GROUP:
+		if (detail > 1 && cd->d.group_data.exec_cd) {
+			cd = cd->d.group_data.exec_cd;
+		}
+		// fallthrough
 	case R_CMD_DESC_TYPE_ARGV:
 		if (detail == 1 && !r_pvector_empty (&cd->children)) {
 			if (args->argc > 1) {
 				return NULL;
 			}
-			return inner_get_help (cmd, cd, use_color);
+			return argv_group_get_help (cmd, cd, use_color);
 		}
 		return argv_get_help (cmd, cd, args, detail, use_color);
 	case R_CMD_DESC_TYPE_OLDINPUT:
 		return oldinput_get_help (cmd, cd, args);
-	default:
+	case R_CMD_DESC_TYPE_INNER:
 		r_warn_if_reached ();
 		return NULL;
 	}
+	return NULL;
 }
 
 /** macro.c **/
@@ -1229,9 +1223,8 @@ R_API const char *r_cmd_parsed_args_cmd(RCmdParsedArgs *a) {
 
 /* RCmdDescriptor */
 
-R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb, const RCmdDescHelp *help) {
-	r_return_val_if_fail (cmd && parent && name, NULL);
-	RCmdDesc *res = create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_ARGV, name, help);
+static RCmdDesc *argv_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb, const RCmdDescHelp *help, bool ht_insert) {
+	RCmdDesc *res = create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_ARGV, name, help, ht_insert);
 	if (!res) {
 		return NULL;
 	}
@@ -1240,14 +1233,39 @@ R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *nam
 	return res;
 }
 
+R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb, const RCmdDescHelp *help) {
+	r_return_val_if_fail (cmd && parent && name, NULL);
+	return argv_new (cmd, parent, name, cb, help, true);
+}
+
 R_API RCmdDesc *r_cmd_desc_inner_new(RCmd *cmd, RCmdDesc *parent, const char *name, const RCmdDescHelp *help) {
 	r_return_val_if_fail (cmd && parent && name, NULL);
-	return create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_INNER, name, help);
+	return create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_INNER, name, help, false);
+}
+
+R_API RCmdDesc *r_cmd_desc_group_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb, const RCmdDescHelp *help, const RCmdDescHelp *group_help) {
+	r_return_val_if_fail (cmd && parent && name, NULL);
+	RCmdDesc *res = create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_GROUP, name, group_help, true);
+	if (!res) {
+		return NULL;
+	}
+
+	RCmdDesc *exec_cd = NULL;
+	if (cb && help) {
+		exec_cd = argv_new (cmd, res, name, cb, help, false);
+		if (!exec_cd) {
+			r_cmd_desc_remove (cmd, res);
+			return NULL;
+		}
+	}
+
+	res->d.group_data.exec_cd = exec_cd;
+	return res;
 }
 
 R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdCb cb, const RCmdDescHelp *help) {
 	r_return_val_if_fail (cmd && parent && name && cb, NULL);
-	RCmdDesc *res = create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_OLDINPUT, name, help);
+	RCmdDesc *res = create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_OLDINPUT, name, help, true);
 	if (!res) {
 		return NULL;
 	}
@@ -1269,6 +1287,8 @@ R_API bool r_cmd_desc_has_handler(RCmdDesc *cd) {
 		return cd->d.oldinput_data.cb;
 	case R_CMD_DESC_TYPE_INNER:
 		return false;
+	case R_CMD_DESC_TYPE_GROUP:
+		return cd->d.group_data.exec_cd && r_cmd_desc_has_handler (cd->d.group_data.exec_cd);
 	}
 	return false;
 }

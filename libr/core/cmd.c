@@ -7085,6 +7085,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		RCmdCb cb;
 		void (*descriptor_init)(RCore *core, RCmdDesc *parent);
 		const RCmdDescHelp *help;
+		const RCmdDescHelp *group_help;
 		RCmdDescType type;
 		RCmdArgvCb argv_cb;
 	} cmds[] = {
@@ -7133,7 +7134,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"<",        "pipe into RCons.readChar", cmd_pipein, NULL, &pipein_help},
 		{"V",   "enter visual mode", cmd_visual, NULL, &V_help},
 		{"v",   "enter visual mode", cmd_panels, NULL, &v_help},
-		{"w",    "write bytes", cmd_write, cmd_write_init, &w_help, R_CMD_DESC_TYPE_ARGV, w_handler},
+		{"w",    "write bytes", cmd_write, cmd_write_init, &w_help, &w_group_help, R_CMD_DESC_TYPE_GROUP, w_handler},
 		{"x",        "alias for px", cmd_hexdump, NULL, &x_help},
 		{"y",     "yank bytes", cmd_yank, NULL, &y_help},
 		{"z",     "zignatures", cmd_zign, cmd_zign_init, &z_help},
@@ -7163,6 +7164,9 @@ R_API void r_core_cmd_init(RCore *core) {
 			break;
 		case R_CMD_DESC_TYPE_INNER:
 			cd = r_cmd_desc_inner_new (core->rcmd, root, cmds[i].cmd, cmds[i].help);
+			break;
+		case R_CMD_DESC_TYPE_GROUP:
+			cd = r_cmd_desc_group_new (core->rcmd, root, cmds[i].cmd, cmds[i].argv_cb, cmds[i].help, cmds[i].group_help);
 			break;
 		}
 		if (cmds[i].descriptor_init) {

@@ -177,10 +177,13 @@ const RCmdDescHelp v_help = {
 	.summary = "enter visual panels mode",
 };
 
+const RCmdDescHelp w_group_help = {
+	.summary = "write commands",
+};
+
 const RCmdDescHelp w_help = {
 	.args_str = " <string>",
 	.summary = "write string",
-	.group_summary = "write commands",
 };
 
 const RCmdDescHelp x_help = {
@@ -215,7 +218,7 @@ const RCmdDescExample w_incdec_help_examples[] = {
 
 const RCmdDescHelp w_incdec_help = {
 	.summary = "increment/decrement byte,word..",
-	.group_args_str = " [n]",
+	.args_str = " [n]",
 	.options = "<1248><+->",
 };
 
@@ -314,11 +317,14 @@ const RCmdDescExample wB_help_examples[] = {
 	{ 0 },
 };
 
+const RCmdDescHelp wB_group_help = {
+	.args_str = " [value]",
+	.summary = "Set or unset bits with given value",
+};
+
 const RCmdDescHelp wB_help = {
 	.summary = "Set bits with given value",
 	.args_str = " [value]",
-	.group_args_str = " [value]",
-	.group_summary = "Set or unset bits with given value",
 	.description = "Set the bits that are set in the value passed as arguments. 0 bits in the value argument are ignored, while the others are set at the current offset",
 	.examples = wB_help_examples,
 };
@@ -336,13 +342,15 @@ const RCmdDescExample wv_help_examples[] = {
 	{ 0 },
 };
 
+const RCmdDescHelp wv_group_help = {
+	.args_str = " [value]",
+	.summary = "Write value of given size",
+};
+
 const RCmdDescHelp wv_help = {
 	.summary = "Write value as 4 - bytes / 8 - bytes based on value",
-	.options = "[size]",
 	.args_str = " [value]",
-	.group_args_str = " [value]",
 	.description = "Write the number passed as argument at the current offset as a 4 - bytes value or 8 - bytes value if the input is bigger than UT32_MAX, respecting the cfg.bigendian variable",
-	.group_summary = "Write value of given size",
 	.examples = wv_help_examples,
 };
 
