@@ -134,9 +134,9 @@ R_API char *r_parse_immtrim(char *opstr) {
 	return opstr;
 }
 
-R_API bool r_parse_varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
-	if (p->cur && p->cur->varsub) {
-		return p->cur->varsub (p, f, addr, oplen, data, str, len);
+R_API bool r_parse_subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+	if (p->cur && p->cur->subvar) {
+		return p->cur->subvar (p, f, addr, oplen, data, str, len);
 	}
 	return false;
 }

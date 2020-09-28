@@ -1845,7 +1845,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		} else if (fmt == 'j') {
 			char strsub[128] = { 0 };
 			// pc+33
-			r_parse_varsub (core->parser, NULL,
+			r_parse_subvar (core->parser, NULL,
 				core->offset + idx,
 				asmop.size, r_asm_op_get_asm (&asmop),
 				strsub, sizeof (strsub));
@@ -1868,7 +1868,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			{
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 				if (fcn) {
-					r_parse_varsub (core->parser, fcn, addr, asmop.size,
+					r_parse_subvar (core->parser, fcn, addr, asmop.size,
 							strsub, strsub, sizeof (strsub));
 				}
 			}
@@ -1995,7 +1995,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 		} else {
 		char disasm[128] = { 0 };
-		r_parse_varsub (core->parser, NULL,
+		r_parse_subvar (core->parser, NULL,
 			core->offset + idx,
 			asmop.size, r_asm_op_get_asm (&asmop),
 			disasm, sizeof (disasm));
@@ -2025,7 +2025,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			{
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 				if (fcn) {
-					r_parse_varsub (core->parser, fcn, addr, asmop.size,
+					r_parse_subvar (core->parser, fcn, addr, asmop.size,
 							disasm, disasm, sizeof (disasm));
 				}
 			}
@@ -7466,7 +7466,7 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	ut8 buf[12];
 	RAsmOp asmop = {0};
 	char *buf_asm = NULL;
-	bool asm_varsub = r_config_get_i (core->config, "asm.var.sub");
+	bool asm_subvar = r_config_get_i (core->config, "asm.sub.var");
 	core->parser->pseudo = r_config_get_i (core->config, "asm.pseudo");
 	core->parser->subrel = r_config_get_i (core->config, "asm.sub.rel");
 	core->parser->localvar_only = r_config_get_i (core->config, "asm.sub.varonly");
@@ -7480,11 +7480,11 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	int ba_len = r_strbuf_length (&asmop.buf_asm) + 128;
 	char *ba = malloc (ba_len);
 	strcpy (ba, r_strbuf_get (&asmop.buf_asm));
-	if (asm_varsub) {
+	if (asm_subvar) {
 		core->parser->get_ptr_at = r_anal_function_get_var_stackptr_at;
 		core->parser->get_reg_at = r_anal_function_get_var_reg_at;
 		core->parser->get_op_ireg = get_op_ireg;
-		r_parse_varsub (core->parser, fcn, addr, asmop.size,
+		r_parse_subvar (core->parser, fcn, addr, asmop.size,
 				ba, ba, sizeof (asmop.buf_asm));
 	}
 	RAnalHint *hint = r_anal_hint_get (core->anal, addr);

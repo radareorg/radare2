@@ -48,7 +48,7 @@ typedef struct r_parse_plugin_t {
 	int (*parse)(RParse *p, const char *data, char *str);
 	bool (*assemble)(RParse *p, char *data, char *str);
 	int (*filter)(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len, bool big_endian);
-	bool (*varsub)(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
+	bool (*subvar)(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
 	int (*replace)(int argc, const char *argv[], char *newstr);
 } RParsePlugin;
 
@@ -67,7 +67,7 @@ R_API bool r_parse_use(RParse *p, const char *name);
 R_API bool r_parse_parse(RParse *p, const char *data, char *str);
 R_API bool r_parse_assemble(RParse *p, char *data, char *str); // XXX deprecate, unused and probably useless, related to write-hack
 R_API bool r_parse_filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian);
-R_API bool r_parse_varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
+R_API bool r_parse_subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
 R_API char *r_parse_immtrim(char *opstr);
 
 /* c */

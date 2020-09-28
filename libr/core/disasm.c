@@ -91,7 +91,7 @@ typedef struct {
 	int filter;
 	int interactive;
 	bool subjmp;
-	bool varsub;
+	bool subvar;
 	bool show_lines;
 	bool show_lines_bb;
 	bool show_lines_ret;
@@ -633,7 +633,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->filter = r_config_get_i (core->config, "asm.filter");
 	ds->interactive = r_cons_is_interactive ();
 	ds->subjmp = r_config_get_i (core->config, "asm.sub.jmp");
-	ds->varsub = r_config_get_i (core->config, "asm.var.sub");
+	ds->subvar = r_config_get_i (core->config, "asm.sub.var");
 	core->parser->subrel = r_config_get_i (core->config, "asm.sub.rel");
 	core->parser->subreg = r_config_get_i (core->config, "asm.sub.reg");
 	core->parser->localvar_only = r_config_get_i (core->config, "asm.sub.varonly");
@@ -1013,13 +1013,13 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	    && ds->analop.ptr != UT64_MAX) {
 		core->parser->subrel_addr = ds->analop.ptr;
 	}
-	if (ds->varsub && ds->opstr) {
+	if (ds->subvar && ds->opstr) {
 		ut64 at = ds->vat;
 		RAnalFunction *f = fcnIn (ds, at, R_ANAL_FCN_TYPE_NULL);
 		core->parser->get_op_ireg = get_op_ireg;
 		core->parser->get_ptr_at = get_ptr_at;
 		core->parser->get_reg_at = get_reg_at;
-		r_parse_varsub (core->parser, f, at, ds->analop.size,
+		r_parse_subvar (core->parser, f, at, ds->analop.size,
 			ds->opstr, ds->strsub, sizeof (ds->strsub));
 		if (*ds->strsub) {
 			free (ds->opstr);
@@ -1087,9 +1087,9 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		r_parse_filter (core->parser, ds->vat, core->flags, ds->hint, asm_str,
 				ds->str, sizeof (ds->str), core->print->big_endian);
 		free (asm_str);
-		// varsub depends on filter
-		if (ds->varsub) {
-			// HACK to do varsub outside rparse becacuse the whole rparse api must be rewritten
+		// subvar depends on filter
+		if (ds->subvar) {
+			// HACK to do subvar outside rparse becacuse the whole rparse api must be rewritten
 			char *ox = strstr (ds->str, "0x");
 			if (ox) {
 				char *e = strchr (ox, ']');
@@ -6033,12 +6033,12 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 
 		// f = r_anal_get_fcn_in (core->anal, at,
 		f = fcnIn (ds, at, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_LOC);
-		if (ds->varsub && f) {
+		if (ds->subvar && f) {
 			int ba_len = r_strbuf_length (&asmop.buf_asm) + 128;
 			char *ba = malloc (ba_len);
 			if (ba) {
 				strcpy (ba, r_asm_op_get_asm (&asmop));
-				r_parse_varsub (core->parser, f, at, ds->analop.size,
+				r_parse_subvar (core->parser, f, at, ds->analop.size,
 						ba, ba, ba_len);
 				r_asm_op_set_asm (&asmop, ba);
 				free (ba);
