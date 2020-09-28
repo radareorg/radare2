@@ -11,6 +11,8 @@
 #define R2R_OS "linux"
 #elif defined(__APPLE__)
 #define R2R_OS "darwin"
+#elif __WINDOWS__
+#define R2R_OS "windows"
 #else
 #define R2R_OS "unknown"
 #endif
