@@ -520,8 +520,6 @@ sdb_exe = executable('sdb', ['shlr/sdb/src/main.c'] + sdb_files,
   ],
   implicit_include_directories: false,
   native: true,
-  install: true,
-  rename: 'r2sdb'
 )
 
 sdb_gen_cmd = [

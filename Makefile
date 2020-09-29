@@ -218,11 +218,7 @@ install-doc-symlink:
 	for FILE in $(shell cd doc ; ls) ; do \
 		ln -fs "$(PWD)/doc/$$FILE" "${DESTDIR}${DOCDIR}" ; done
 
-install-r2sdb:
-	mkdir -p "${DESTDIR}${BINDIR}"
-	${INSTALL_PROGRAM} $(SHLR)/sdb/sdb "${DESTDIR}${BINDIR}/r2sdb"
-
-install love: install-doc install-man install-www install-pkgconfig install-r2sdb
+install love: install-doc install-man install-www install-pkgconfig
 	cd libr && ${MAKE} install
 	cd binr && ${MAKE} install
 	cd shlr && ${MAKE} install
@@ -279,7 +275,6 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	mkdir -p "${DESTDIR}${BINDIR}"
 	ln -fs "${PWD}/sys/indent.sh" "${DESTDIR}${BINDIR}/r2-indent"
 	ln -fs "${PWD}/sys/r2-docker.sh" "${DESTDIR}${BINDIR}/r2-docker"
-	ln -fs "${PWD}/shlr/sdb/sdb" "${DESTDIR}${BINDIR}/r2sdb"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
 	ln -fs "${PWD}/doc/hud" "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud/main"
 	#mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/flag"
@@ -295,7 +290,6 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 deinstall uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/r2-indent
 	rm -f $(DESTDIR)$(BINDIR)/r2-docker
-	rm -f $(DESTDIR)$(BINDIR)/r2sdb
 	cd libr && ${MAKE} uninstall
 	cd binr && ${MAKE} uninstall
 	cd shlr && ${MAKE} uninstall
@@ -345,7 +339,6 @@ purge: purge-doc purge-dev user-uninstall
 	for FILE in ${R2BINS} ; do rm -f "${DESTDIR}${BINDIR}/$$FILE" ; done
 	rm -f "${DESTDIR}${BINDIR}/ragg2-cc"
 	rm -f "${DESTDIR}${BINDIR}/r2"
-	rm -f "${DESTDIR}${BINDIR}/r2sdb"
 	rm -f "${DESTDIR}${LIBDIR}/libr_"*
 	rm -f "${DESTDIR}${LIBDIR}/libr2"*".${EXT_SO}"
 	rm -rf "${DESTDIR}${LIBDIR}/radare2"
