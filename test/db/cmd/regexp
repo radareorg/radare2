@@ -42,11 +42,6 @@ b 777
 EOF
 EXPECT=<<EOF
 
-0x00000001 hit0_0 ""test123 ab""
-0x000001bd hit0_1 ""Test123 ab""
-EOF
-RUN
-
 NAME="/e /t\wst\d\d\d\s\w\w/i" - newshell
 ARGS=-ecfg.newshell=true
 FILE=malloc://1024
