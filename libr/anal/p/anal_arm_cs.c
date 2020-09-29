@@ -3,7 +3,7 @@
 #include <r_anal.h>
 #include <r_lib.h>
 #include <ht_uu.h>
-#include <capstone/arm.h>
+#include <arm.h>
 #include <capstone.h>
 #include <arm.h>
 #include "./anal_arm_hacks.inc"
