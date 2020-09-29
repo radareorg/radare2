@@ -2968,8 +2968,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 }
 
 static void anal_itblock(cs_insn *insn) {
-	size_t i, size;
-	size =  r_str_nlen (insn->mnemonic, 5);
+	size_t i, size =  r_str_nlen (insn->mnemonic, 5);
 	ht_uu_update (ht_itblock, insn->address,  size);
 	for (i = 1; i < size; i++) {
 		switch (insn->mnemonic[i]) {
