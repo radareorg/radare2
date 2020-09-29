@@ -564,6 +564,10 @@ R_API R2RSubprocess *r2r_subprocess_start(
 		close (stderr_pipe[1]);
 		close (stderr_pipe[0]);
 
+		int fd;
+		for (fd = 3; fd < 2048; fd++) {
+			close (fd);
+		}
 		size_t i;
 		for (i = 0; i < env_size; i++) {
 			setenv (envvars[i], envvals[i], 1);
