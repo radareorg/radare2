@@ -410,9 +410,12 @@ R_API char *r_reg_profile_to_cc(RReg *reg) {
 	const char *a2 = r_reg_get_name_by_type (reg, "A2");
 	const char *a3 = r_reg_get_name_by_type (reg, "A3");
 
-	// it is mandatory to have at least =A0 defined in the reg profile
+	// TODO: it is mandatory to have at least =A0 defined in the reg profile
 	// this will be enforced in reg/profile at parsing time
-	r_return_val_if_fail (a0, NULL);
+	// r_return_val_if_fail (a0, NULL);
+	if (!a0) {
+		return NULL;
+	}
 	if (!r0) {
 		r0 = a0;
 	}
