@@ -684,6 +684,7 @@ static bool set_reg_profile(RAnal *anal) {
 	char *p =
 		"=PC	pc\n"
 		"=SP	r7\n"
+		"=A0	r0\n"
 		"gpr	r0	.16	0	0\n"
 		"gpr	r0h	.8	0	0\n"
 		"gpr	r0l	.8	1	0\n"

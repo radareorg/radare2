@@ -1009,6 +1009,8 @@ static bool anal_pic_midrange_set_reg_profile (RAnal *esil) {
 	const char *p = \
 		"=PC	pc\n"
 		"=SP	stkptr\n"
+		"=A0	porta\n"
+		"=A1	portb\n"
 		"gpr	indf0	.8	0	0\n"
 		"gpr	indf1	.8	1	0\n"
 		"gpr	pcl		.8	2	0\n"
@@ -1038,6 +1040,8 @@ static bool anal_pic_pic18_set_reg_profile(RAnal *esil) {
 		"#pc lives in nowhere actually"
 		"=PC	pc\n"
 		"=SP	tos\n"
+		"=A0	porta\n"
+		"=A1	portb\n"
 		"gpr	pc	.32	0	0\n"
 		"gpr	pcl	.8	0	0\n"
 		"gpr	pclath	.8	1	0\n"
