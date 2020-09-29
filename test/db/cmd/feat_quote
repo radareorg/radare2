@@ -1,0 +1,72 @@
+NAME=Double quotes - newshell
+ARGS=-e cfg.newshell=true
+FILE=-
+CMDS=<<EOF
+w "Hello World"
+ps
+w0 15
+w "\"Hello World\""
+ps
+w0 15
+w "Hello;World"
+ps
+w0 15
+w "Hello@World"
+ps
+EOF
+EXPECT=<<EOF
+Hello World
+"Hello World"
+Hello;World
+Hello@World
+EOF
+RUN
+
+NAME=Single quotes - newshell
+ARGS=-e cfg.newshell=true
+FILE=-
+CMDS=<<EOF
+w 'Hello World'
+ps
+w0 15
+w '"Hello World"'
+ps
+w0 15
+w '\'Hello World\''
+ps
+w0 15
+w 'Hello;World'
+ps
+w0 15
+w 'Hello@World'
+ps
+EOF
+EXPECT=<<EOF
+Hello World
+"Hello World"
+'Hello World'
+Hello;World
+Hello@World
+EOF
+RUN
+
+NAME=Quotes and substitution - newshell
+ARGS=-e cfg.newshell=true
+FILE=-
+CMDS=<<EOF
+w "Hello $(?e World)"
+ps
+w0 15
+w 'Hello $(?e World)'
+ps
+w0 15
+w "Hello \$(?e World)"
+ps
+w0 15
+EOF
+EXPECT=<<EOF
+Hello World
+Hello $(?e World)
+Hello $(?e World)
+EOF
+RUN
