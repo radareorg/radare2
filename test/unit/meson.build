@@ -3,6 +3,7 @@ if get_option('enable_tests')
   tests = [
     'addr_interval',
     'anal_block',
+    'anal_cc',
     'anal_function',
     'anal_hints',
     'anal_types',
