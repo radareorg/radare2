@@ -1108,7 +1108,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		insn.r_reg.rs = mips_reg_decode (rs);
 		insn.r_reg.rd = mips_reg_decode (rd);
 		insn.r_reg.rt = mips_reg_decode (rt);
-		snprintf (insn.r_reg.sa, REG_BUF_MAX, "%d", sa);
+		snprintf (insn.r_reg.sa, REG_BUF_MAX, "%"PFMT32d, sa);
 
 		switch (fun) {
 		case 0: // sll
@@ -1369,7 +1369,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 
 		insn.i_reg.rs = mips_reg_decode (rs);
 		insn.i_reg.rt = mips_reg_decode (rt);
-		snprintf (insn.i_reg.imm, REG_BUF_MAX, "%d", imm);
+		snprintf (insn.i_reg.imm, REG_BUF_MAX, "%"PFMT32d, imm);
 
 		switch (optype) {
 		case 1: 
@@ -1383,7 +1383,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 				case 17: //bal  bgezal
 					if (rs==0) {
 						op->jump = addr+(imm<<2)+4;
-						snprintf (insn.i_reg.jump, REG_BUF_MAX, "0x%lx", op->jump) ;
+						snprintf (insn.i_reg.jump, REG_BUF_MAX, "0x%"PFMT64x, op->jump) ;
 						insn.id = MIPS_INS_BAL;
 					} else {
 						op->fail = addr+8;
@@ -1426,7 +1426,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			op->fail = addr + 8;
 			op->delay = 1;
 			
-			snprintf (insn.i_reg.jump, REG_BUF_MAX, "0x%lx", op->jump);
+			snprintf (insn.i_reg.jump, REG_BUF_MAX, "0x%"PFMT64x, op->jump);
 			break;
 		// The following idiom is very common in mips 32 bit:
 		//
