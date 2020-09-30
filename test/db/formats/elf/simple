@@ -9,7 +9,7 @@ RUN
 NAME=ELF: simple.elf - code
 FILE=bins/elf/analysis/simple.elf
 CMDS=<<EOF
-e asm.filter=false
+e asm.sub.names=false
 pid 4 @ entry0
 EOF
 EXPECT=<<EOF

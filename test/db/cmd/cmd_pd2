@@ -527,7 +527,7 @@ FILE=bins/elf/abcde-qt32
 CMDS=<<EOF
 e asm.demangle=true
 e asm.bytes=false
-e asm.filter=false
+e asm.sub.names=false
 e asm.sub.jmp=false
 aa
 e asm.cmt.right=true
@@ -556,7 +556,7 @@ NAME=newlined-comment-refline fix (#14627), wayward rip-relative flag fixes
 FILE=bins/elf/ls
 CMDS=<<EOF
 e asm.bytes=false
-e asm.filter=true
+e asm.sub.names=true
 (pd_tests; e asm.sub.rel=true; pd 15; ?e; e asm.sub.rel=false; pd 1 @ 0x000041ee; pd 1 @ 0x00004225)
 (insn_tests; e scr.color=0; .(pd_tests); ?e; e scr.color=1; .(pd_tests))
 s 0x000041e0
