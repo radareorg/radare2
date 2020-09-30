@@ -88,7 +88,7 @@ typedef struct {
 	int atabsoff;
 	int decode;
 	bool pseudo;
-	int filter;
+	int subnames;
 	int interactive;
 	bool subjmp;
 	bool subvar;
@@ -630,7 +630,7 @@ static RDisasmState * ds_init(RCore *core) {
 	if (ds->pseudo) {
 		ds->atabs = 0;
 	}
-	ds->filter = r_config_get_i (core->config, "asm.filter");
+	ds->subnames = r_config_get_i (core->config, "asm.sub.names");
 	ds->interactive = r_cons_is_interactive ();
 	ds->subjmp = r_config_get_i (core->config, "asm.sub.jmp");
 	ds->subvar = r_config_get_i (core->config, "asm.sub.var");
@@ -1060,7 +1060,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		free (ds->opstr);
 		ds->opstr = strdup (ds->hint->opcode);
 	}
-	if (ds->filter) {
+	if (ds->subnames) {
 		RSpace *ofs = core->parser->flagspace;
 		RSpace *fs = ds->flagspace_ports;
 		if (ds->analop.type == R_ANAL_OP_TYPE_IO) {
@@ -3371,7 +3371,7 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 		return;
 	}
 	RAnalFunction *f = fcnIn (ds, ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
-	if (!f && ds->core->flags && (!ds->core->vmode || (!ds->subjmp && !ds->filter))) {
+	if (!f && ds->core->flags && (!ds->core->vmode || (!ds->subjmp && !ds->subnames))) {
 		const char *arch;
 		RFlagItem *flag = r_flag_get_by_spaces (ds->core->flags, ds->analop.jump,
 		                                        R_FLAGS_FS_CLASSES, R_FLAGS_FS_SYMBOLS, NULL);
@@ -3410,7 +3410,7 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 		} else if (delta < 0) {
 			ds_begin_comment (ds);
 			ds_comment (ds, true, "; %s-0x%x", f->name, -delta);
-		} else if ((!ds->core->vmode || (!ds->subjmp && !ds->filter))
+		} else if ((!ds->core->vmode || (!ds->subjmp && !ds->subnames))
 			   && (!ds->opstr || !strstr (ds->opstr, f->name))) {
 			RFlagItem *flag_sym;
 			if (ds->core->vmode && ds->asm_demangle
@@ -5770,7 +5770,7 @@ toro:
 					free (ds->opstr);
 					ds->opstr = strdup (R_STRBUF_SAFEGET (&ds->analop.esil));
 				}
-			} else if (ds->filter) {
+			} else if (ds->subnames) {
 				char *asm_str;
 				RSpace *ofs = core->parser->flagspace;
 				RSpace *fs = ds->flagspace_ports;
@@ -6331,7 +6331,7 @@ R_API int r_core_disasm_pdi_with_buf(RCore *core, ut64 address, ut8 *buf, ut32 n
 	bool show_offset = r_config_get_i (core->config, "asm.offset");
 	bool show_bytes = r_config_get_i (core->config, "asm.bytes");
 	int decode = r_config_get_i (core->config, "asm.decode");
-	int filter = r_config_get_i (core->config, "asm.filter");
+	int subnames = r_config_get_i (core->config, "asm.sub.names");
 	int show_color = r_config_get_i (core->config, "scr.color");
 	bool asm_ucase = r_config_get_i (core->config, "asm.ucase");
 	bool asm_instr = r_config_get_i (core->config, "asm.instr");
@@ -6531,7 +6531,7 @@ toro:
 				if (asm_immtrim) {
 					r_parse_immtrim (asm_str);
 				}
-				if (filter) {
+				if (subnames) {
 					RAnalHint *hint = r_anal_hint_get (core->anal, at);
 					r_parse_filter (core->parser, at, core->flags, hint,
 						asm_str, opstr, sizeof (opstr) - 1, core->print->big_endian);

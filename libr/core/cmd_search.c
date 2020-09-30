@@ -2260,7 +2260,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	}
 
 	maxhits = (int) r_config_get_i (core->config, "search.maxhits");
-	filter = (int) r_config_get_i (core->config, "asm.filter");
+	filter = (int) r_config_get_i (core->config, "asm.sub.names");
 	if (param->outmode == R_MODE_JSON) {
 		r_cons_print ("[");
 	}
