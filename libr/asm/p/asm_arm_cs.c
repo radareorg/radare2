@@ -2,12 +2,15 @@
 
 #include <r_asm.h>
 #include <r_lib.h>
+#include <ht_uu.h>
 #include <capstone.h>
 #include "../arch/arm/asm-arm.h"
 #include "./asm_arm_hacks.inc"
 
 bool arm64ass(const char *str, ut64 addr, ut32 *op);
 static csh cd = 0;
+static HtUU *ht_itblock = NULL;
+static HtUU *ht_it = NULL;
 
 #include "cs_mnemonics.c"
 
@@ -40,6 +43,72 @@ static bool check_features(RAsm *a, cs_insn *insn) {
 	return true;
 }
 
+static const char *cc_name(arm_cc cc) {
+	switch (cc) {
+	case ARM_CC_EQ: // Equal                      Equal
+		return "eq";
+	case ARM_CC_NE: // Not equal                  Not equal, or unordered
+		return "ne";
+	case ARM_CC_HS: // Carry set                  >, ==, or unordered
+		return "hs";
+	case ARM_CC_LO: // Carry clear                Less than
+		return "lo";
+	case ARM_CC_MI: // Minus, negative            Less than
+		return "mi";
+	case ARM_CC_PL: // Plus, positive or zero     >, ==, or unordered
+		return "pl";
+	case ARM_CC_VS: // Overflow                   Unordered
+		return "vs";
+	case ARM_CC_VC: // No overflow                Not unordered
+		return "vc";
+	case ARM_CC_HI: // Unsigned higher            Greater than, or unordered
+		return "hi";
+	case ARM_CC_LS: // Unsigned lower or same     Less than or equal
+		return "ls";
+	case ARM_CC_GE: // Greater than or equal      Greater than or equal
+		return "ge";
+	case ARM_CC_LT: // Less than                  Less than, or unordered
+		return "lt";
+	case ARM_CC_GT: // Greater than               Greater than
+		return "gt";
+	case ARM_CC_LE: // Less than or equal         <, ==, or unordered
+		return "le";
+	default:
+		return "";
+	}
+}
+
+static void disass_itblock(RAsm *a, cs_insn *insn) {
+	size_t i, size;
+	size = r_str_nlen (insn->mnemonic, 5);
+	ht_uu_update (ht_itblock, a->pc, size);
+	for (i = 1; i < size; i++) {
+		switch (insn->mnemonic[i]) {
+		case 0x74: //'t'
+			ht_uu_update (ht_it, a->pc + (i * insn->size), insn->detail->arm.cc);
+			break;
+		case 0x65: //'e'
+			ht_uu_update (ht_it, a->pc + (i * insn->size), (insn->detail->arm.cc % 2)?
+				insn->detail->arm.cc + 1:insn->detail->arm.cc - 1);
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+static void check_itblock(RAsm *a, cs_insn *insn) {
+	size_t x;
+	bool found;
+	ut64 itlen = ht_uu_find (ht_itblock, a->pc, &found);
+	if (found) {
+		for (x = 1; x < itlen; x++) {
+			ht_uu_delete (ht_it, a->pc + (x*insn->size));
+		}
+		ht_uu_delete (ht_itblock, a->pc);
+	}
+}
+
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int omode = -1;
 	static int obits = 32;
@@ -47,6 +116,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	cs_insn* insn = NULL;
 	cs_mode mode = 0;
 	int ret, n = 0;
+	bool found = false;
+	ut64 itcond;
+
 	mode |= (a->bits == 16)? CS_MODE_THUMB: CS_MODE_ARM;
 	mode |= (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	if (mode != omode || a->bits != obits) {
@@ -89,6 +161,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			: CS_OPT_SYNTAX_DEFAULT);
 	cs_option (cd, CS_OPT_DETAIL, (a->features && *a->features)
 		? CS_OPT_ON: CS_OPT_OFF);
+	cs_option (cd, CS_OPT_DETAIL, CS_OPT_ON);
 	if (!buf) {
 		goto beach;
 	}
@@ -113,6 +186,21 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	if (op && !op->size) {
 		op->size = insn->size;
+		if (insn->id == ARM_INS_IT) {
+			disass_itblock (a, insn);
+		} else {
+			check_itblock (a, insn);
+		}
+		itcond = ht_uu_find (ht_it,  a->pc, &found);
+		if (found) {
+			insn->detail->arm.cc = itcond;
+			insn->detail->arm.update_flags = 0;
+			char *tmpstr = r_str_newf ("%s%s",
+				cs_insn_name (cd, insn->id),
+				cc_name (itcond));
+			r_str_cpy (insn->mnemonic, tmpstr);
+			free (tmpstr);
+		}
 		char *buf_asm = sdb_fmt ("%s%s%s",
 			insn->mnemonic,
 			insn->op_str[0]?" ":"",
@@ -183,6 +271,24 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	return opsize;
 }
 
+static bool init(void* user) {
+	if (!ht_it) {
+		ht_it = ht_uu_new0 ();
+	}
+	if (!ht_itblock) {
+		ht_itblock = ht_uu_new0 ();
+	}
+	return 0;
+}
+
+static bool fini(void* user) {
+	ht_uu_free (ht_it);
+	ht_uu_free (ht_itblock);
+	ht_it = NULL;
+	ht_itblock = NULL;
+	return 0;
+}
+
 RAsmPlugin r_asm_plugin_arm_cs = {
 	.name = "arm",
 	.desc = "Capstone ARM disassembler",
@@ -195,6 +301,8 @@ RAsmPlugin r_asm_plugin_arm_cs = {
 	.disassemble = &disassemble,
 	.mnemonics = mnemonics,
 	.assemble = &assemble,
+	.init = &init,
+	.fini = &fini,
 #if 0
 	// arm32 and arm64
 	"crypto,databarrier,divide,fparmv8,multpro,neon,t2extractpack,"
