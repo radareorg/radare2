@@ -496,6 +496,7 @@ R_API R2RSubprocess *r2r_subprocess_start(
 		memcpy (argv + 1, args, sizeof (char *) * args_size);
 	}
 	// done by calloc: argv[args_size + 1] = NULL;
+	r_th_lock_enter (subprocs_mutex);
 	R2RSubprocess *proc = R_NEW0 (R2RSubprocess);
 	if (!proc) {
 		goto error;
@@ -543,7 +544,6 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	}
 	proc->stderr_fd = stderr_pipe[0];
 
-	r_th_lock_enter (subprocs_mutex);
 	proc->pid = r_sys_fork ();
 	if (proc->pid == -1) {
 		// fail
@@ -611,6 +611,7 @@ error:
 	if (stdin_pipe[1] == -1) {
 		close (stdin_pipe[1]);
 	}
+	r_th_lock_leave (subprocs_mutex);
 	return NULL;
 }
 
