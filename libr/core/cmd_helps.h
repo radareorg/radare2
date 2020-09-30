@@ -48,6 +48,7 @@ extern const RCmdDescHelp pipein_help;
 extern const RCmdDescHelp V_help;
 extern const RCmdDescHelp v_help;
 extern const RCmdDescHelp w_help;
+extern const RCmdDescHelp w_group_help;
 extern const RCmdDescHelp x_help;
 extern const RCmdDescHelp y_help;
 extern const RCmdDescHelp z_help;
@@ -74,11 +75,13 @@ extern const RCmdDescHelp w8_dec_help;
 
 // wB helps
 
+extern const RCmdDescHelp wB_group_help;
 extern const RCmdDescHelp wB_help;
 extern const RCmdDescHelp wB_minus_help;
 
 // wv helps
 
+extern const RCmdDescHelp wv_group_help;
 extern const RCmdDescHelp wv_help;
 extern const RCmdDescHelp wv1_help;
 extern const RCmdDescHelp wv2_help;
