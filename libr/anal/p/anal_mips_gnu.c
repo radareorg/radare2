@@ -8,7 +8,7 @@
 
 
 static ut64 t9_pre = UT64_MAX;
-
+#define REG_BUF_MAX 32
 // ESIL macros:
 
 // put the sign bit on the stack
@@ -700,19 +700,19 @@ struct gnu_rreg {
 	const char *rs;
 	const char *rt;
 	const char *rd;
-	ut8 sa[32];
+	ut8 sa[REG_BUF_MAX];
 };
 
 struct gnu_jreg {
-	ut8 jump[32];
+	ut8 jump[REG_BUF_MAX];
 };
 
 struct gnu_ireg {
 	const char *rs;
 	const char *rt;
 	union {
-		ut8 imm[32];
-		ut8 jump[32];
+		ut8 imm[REG_BUF_MAX];
+		ut8 jump[REG_BUF_MAX];
 	};
 };
 
@@ -733,7 +733,7 @@ typedef struct gnu_insn {
 
 
 /* Return a mapping from the register number i.e. $0 .. $31 to string name */
-static const char* mips_reg_decode(unsigned reg_num) {
+static const char* mips_reg_decode(ut32 reg_num) {
 /* See page 36 of "See Mips Run Linux, 2e, D. Sweetman, 2007"*/
 	static const char *REGISTERS[32] = {
 		"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3",
@@ -758,7 +758,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, gnu_insn*insn) {
 			break;
 		case MIPS_INS_SD:
 			r_strbuf_appendf (&op->esil, "%s,%s,%s,+,=[8]",
-				I_REG (rt),I_REG (imm), I_REG (rs));
+				I_REG (rt), I_REG (imm), I_REG (rs));
 			break;
 		case MIPS_INS_SW:
 		case MIPS_INS_SWL:
@@ -1005,7 +1005,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, gnu_insn*insn) {
 			r_strbuf_appendf (&op->esil, "%s,%s,|,0xffffffff,^,%s,=",R_REG (rs), R_REG (rt), R_REG (rd));
 			break;
 		case MIPS_INS_SLT:
-				r_strbuf_appendf (&op->esil, "%s,%s,<,t,=", R_REG (rs), R_REG (rt));
+			r_strbuf_appendf (&op->esil, "%s,%s,<,t,=", R_REG (rs), R_REG (rt));
 			break;
 		case MIPS_INS_SLTI:
 			r_strbuf_appendf (&op->esil, "%s,%s,<,%s,=", I_REG (imm), I_REG (rs), I_REG (rt));
@@ -1056,7 +1056,6 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 	// WIP char buf[10]; int reg; int family;
 	int optype, oplen = (anal->bits==16)?2:4;
 	const ut8 * buf;
-	ut8 t_buf[4];
 	gnu_insn insn;
 
 	if (!op) {
@@ -1109,7 +1108,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		insn.r_reg.rs = mips_reg_decode (rs);
 		insn.r_reg.rd = mips_reg_decode (rd);
 		insn.r_reg.rt = mips_reg_decode (rt);
-		sprintf (insn.r_reg.sa, "%d", sa);
+		snprintf (insn.r_reg.sa, REG_BUF_MAX, "%d", sa);
 
 		switch (fun) {
 		case 0: // sll
@@ -1300,7 +1299,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->jump = page_hack + address;
 			op->delay = 1;
-			sprintf (insn.j_reg.jump, "0x%lx", op->jump);
+			snprintf (insn.j_reg.jump, REG_BUF_MAX, "0x%"PFMT32x, op->jump);
 			break;
 		case 3: // jal
 			insn.id = MIPS_INS_JAL;
@@ -1308,7 +1307,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			op->jump = page_hack + address;
 			op->fail = addr + 8;
 			op->delay = 1;
-			sprintf (insn.j_reg.jump, "0x%lx", op->jump);
+			snprintf (insn.j_reg.jump, REG_BUF_MAX, "0x%"PFMT32x, op->jump);
 			break;
 		}
 		//family = 'J';
@@ -1370,7 +1369,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 
 		insn.i_reg.rs = mips_reg_decode (rs);
 		insn.i_reg.rt = mips_reg_decode (rt);
-		sprintf (insn.i_reg.imm, "%d", imm);
+		snprintf (insn.i_reg.imm, REG_BUF_MAX, "%d", imm);
 
 		switch (optype) {
 		case 1: 
@@ -1384,7 +1383,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 				case 17: //bal  bgezal
 					if (rs==0) {
 						op->jump = addr+(imm<<2)+4;
-						sprintf (insn.i_reg.jump, "0x%lx", op->jump) ;
+						snprintf (insn.i_reg.jump, REG_BUF_MAX, "0x%lx", op->jump) ;
 						insn.id = MIPS_INS_BAL;
 					} else {
 						op->fail = addr+8;
@@ -1423,11 +1422,11 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 				insn.id = MIPS_INS_BGTZ;
 			}
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->jump = addr+(imm<<2)+4;
-			op->fail = addr+8;
+			op->jump = addr + (imm << 2) + 4;
+			op->fail = addr + 8;
 			op->delay = 1;
 			
-			sprintf (insn.i_reg.jump, "0x%lx", op->jump);
+			snprintf (insn.i_reg.jump, REG_BUF_MAX, "0x%lx", op->jump);
 			break;
 		// The following idiom is very common in mips 32 bit:
 		//
@@ -1447,7 +1446,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		// flags directly, as suggested here: https://github.com/radareorg/radare2/issues/949#issuecomment-43654922
 		case 15: // lui
 			insn.id = MIPS_INS_LUI;
-			sprintf (insn.i_reg.imm, "0x%"PFMT64x, imm);
+			snprintf (insn.i_reg.imm, REG_BUF_MAX, "0x%"PFMT32x, imm);
 			op->dst = r_anal_value_new ();
 			op->dst->reg = r_reg_get (anal->reg, mips_reg_decode (rt), R_REG_TYPE_GPR);
 			// TODO: currently there is no way for the macro to get access to this register
@@ -1464,7 +1463,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			op->val = imm; // Beware: this one is signed... use `?vi $v`
 			if (rs == 0) {
 				insn.id = MIPS_INS_LI;
-				sprintf (insn.i_reg.imm, "0x%"PFMT32x, imm);
+				snprintf (insn.i_reg.imm, REG_BUF_MAX, "0x%"PFMT32x, imm);
 			}
 			break;
 		case 8: // addi
@@ -1498,34 +1497,37 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			op->type = R_ANAL_OP_TYPE_ADD;
 			if (rs == 0) {
 				insn.id = MIPS_INS_LDI;
-				sprintf (insn.i_reg.imm, "0x%"PFMT64x, imm);
+				snprintf (insn.i_reg.imm, REG_BUF_MAX, "0x%"PFMT32x, imm);
 			}
 			break;
 		case 32: // lb
 			op->refptr =  1;
 			insn.id = MIPS_INS_LB;
+			 /* fallthrough */
 		case 33: // lh
 			if (!op->refptr) {
 				op->refptr =  2;
 				insn.id = MIPS_INS_LB;
 			}
+			 /* fallthrough */
 		case 35: // lw
 			if (!op->refptr) {
 				op->refptr =  4;
 				insn.id = MIPS_INS_LW;
 			}
+			 /* fallthrough */
 		case 55: // ld
 			if (!op->refptr) {
 				op->refptr =  8;
 				insn.id = MIPS_INS_LD;
 			}
 			
-			if (rs == 28){
+			if (rs == 28) {
 				op->ptr = anal->gp + imm;
-			}else{
+			} else {
 				op->ptr = imm;
 			}
-			if (rt == 25){
+			if (rt == 25) {
 				t9_pre = op->ptr;
 			}
 			op->type = R_ANAL_OP_TYPE_LOAD;
@@ -1563,7 +1565,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			op->jump = addr + 4*((buf[3] | buf[2]<<8 | buf[1]<<16));
 			op->fail = addr + 8;
 			op->delay = 1;
-			sprintf (insn.i_reg.jump, "0x%lx", op->jump);
+			snprintf (insn.i_reg.jump, REG_BUF_MAX, "0x%"PFMT32x, op->jump);
 
 			break;
 		}
@@ -1571,30 +1573,13 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 	}
 
 	if (mask & R_ANAL_OP_MASK_ESIL) {
-		if (analop_esil (anal, op, addr, &insn) != 0) {
+		if (analop_esil (anal, op, addr, &insn)) {
 			r_strbuf_fini (&op->esil);
 		}
 	}
 	if (mask & R_ANAL_OP_MASK_VAL) {
 		//TODO: add op_fillval (anal, op, &insn);
 	}
-#if 0
-	switch (optype) {
-	case 'R': // register only
-		op->type = R_ANAL_OP_TYPE_ADD;
-		break;
-	case 'I': // immediate
-		op->type = R_ANAL_OP_TYPE_JMP;
-		break;
-	case 'J': // memory address jumps
-		op->type = R_ANAL_OP_TYPE_CALL;
-		break;
-	case 'C': // coprocessor
-		op->type = R_ANAL_OP_TYPE_RET;
-		break;
-	}
-#endif
-	//eprintf ("MIPS: family=%c optype=%d oplen=%d op=>type=%d\n", family, optype, oplen, op->type);
 	return oplen;
 /*
  R - all instructions that only take registers as arguments (jalr, jr)
