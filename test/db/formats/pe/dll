@@ -16,7 +16,7 @@ RUN
 NAME=PE: corkami dll.dll - pi 1
 FILE=bins/pe/dll.dll
 CMDS=<<EOF
-e asm.filter=false
+e asm.sub.names=false
 pi 1
 EOF
 EXPECT=<<EOF
