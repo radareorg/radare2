@@ -648,6 +648,8 @@ static char *get_reg_profile(RAnal *anal) {
 	switch (anal->bits) {
 	case 32: p =
 		"=PC	pc\n"
+		"=A0	a0\n"
+		"=A1	a1\n"
 		"=SP	sp\n" // ABI: stack pointer
 		"=LR	ra\n" // ABI: return address
 		"=BP	s0\n" // ABI: frame pointer
@@ -736,6 +738,8 @@ static char *get_reg_profile(RAnal *anal) {
 		"=SP	sp\n" // ABI: stack pointer
 		"=LR	ra\n" // ABI: return address
 		"=BP	s0\n" // ABI: frame pointer
+		"=A0	a0\n"
+		"=A1	a1\n"
 
 		"gpr	pc	.64	0	0\n"
 		// RV64I regs (ABI names)

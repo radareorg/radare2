@@ -142,6 +142,7 @@ static char *r_debug_bf_reg_profile(RDebug *dbg) {
 	"=PC	pc\n"
 	"=SP	esp\n"
 	"=BP	ptr\n"
+	"=A0	mem\n"
 	"gpr	pc	.32	0	0\n"
 	"gpr	ptr	.32	4	0\n"
 	"gpr	esp	.32	8	0\n"

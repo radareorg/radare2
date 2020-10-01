@@ -390,6 +390,7 @@ static bool set_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	r3\n"
+		"=A0	r0\n"
 		"=ZF	z\n"
 		"=SF	s\n"
 		"=OF	ov\n"

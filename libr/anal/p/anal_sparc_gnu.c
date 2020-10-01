@@ -476,6 +476,8 @@ static bool set_reg_profile(RAnal *anal) {
 	"=PC	pc\n"
 	"=SP	o6\n"
 	"=BP	i6\n"
+	"=A0	g0\n"
+	"=A1	g1\n"
 	/* prgregset_t for _LP64 */
 	"gpr	g0	.64	0	0\n"
 	"gpr	g1	.64	8	0\n"

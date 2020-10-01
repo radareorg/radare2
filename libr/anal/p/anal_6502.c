@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019 - condret, riq */
+/* radare - LGPL - Copyright 2019-2020 - condret, riq */
 
 /* 6502 info taken from http://unusedino.de/ec64/technical/aay/c64/bchrt651.htm
  *
@@ -911,6 +911,8 @@ static bool set_reg_profile(RAnal *anal) {
 	char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
+		"=A0	y\n"
+		"=A1	y\n"
 		"gpr	a	.8	0	0\n"
 		"gpr	x	.8	1	0\n"
 		"gpr	y	.8	2	0\n"
