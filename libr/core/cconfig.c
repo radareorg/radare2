@@ -709,6 +709,18 @@ static bool cb_dbgbtdepth(void *user, void *data) {
 static bool cb_asmbits(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
+
+	if (node->value[0] == '?') {
+		int bits = core->rasm->cur->bits;
+		int i;
+		for (i = 1; i <= bits; i <<= 1) {
+			if (i & bits) {
+				r_cons_printf ("%d\n", i);
+			}
+		}
+		return false;
+	}
+
 	bool ret = false;
 	if (!core) {
 		eprintf ("user can't be NULL\n");
@@ -909,6 +921,15 @@ static bool cb_asmos(void *user, void *data) {
 static bool cb_asmparser(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
+	if (node->value[0] == '?') {
+		RListIter *iter;
+		RParsePlugin *plugin;
+		r_list_foreach (core->parser->parsers, iter, plugin) {
+			r_cons_printf ("%s\n", plugin->name);
+		}
+		return false;
+	}
+
 	return r_parse_use (core->parser, node->value);
 }
 
@@ -2128,7 +2149,7 @@ static bool scr_vtmode(void *user, void *data) {
 	}
 	node->i_value = node->i_value > 2 ? 2 : node->i_value;
 	r_line_singleton ()->vtmode = r_cons_singleton ()->vtmode = node->i_value;
-	
+
 	DWORD mode;
 	HANDLE input = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (input, &mode);
