@@ -341,6 +341,7 @@ static const char *help_msg_vertical_bar[] = {
 
 static const char *help_msg_v[] = {
 	"Usage:", "v[*i]", "",
+	"v", "", "open visual panels",
 	"v", " test", "load saved layout with name test",
 	"v=", " test", "save current layout with name test",
 	"vi", " test", "open the file test in 'cfg.editor'",
