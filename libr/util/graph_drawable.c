@@ -34,7 +34,7 @@ R_API RGraphNode *r_graph_add_node_info(RGraph *graph, const char *title, const 
 	return node;
 }
 
-R_API char *r_graph_drawable_to_dot (RGraph /*RGraphNodeInfo*/ *graph, const char *node_properties, const char *edge_properties) {
+R_API char *r_graph_drawable_to_dot(RGraph /*RGraphNodeInfo*/ *graph, const char *node_properties, const char *edge_properties) {
 	RList *nodes = graph->nodes;
 	RListIter *it, *itt;
 	RGraphNode *node = NULL, *target = NULL;
@@ -66,7 +66,7 @@ R_API char *r_graph_drawable_to_dot (RGraph /*RGraphNodeInfo*/ *graph, const cha
 	return r_strbuf_drain_nofree (&buf);
 }
 
-R_API void r_graph_drawable_to_json (RGraph /*RGraphNodeInfo*/ *graph, PJ *pj, bool use_offset) {
+R_API void r_graph_drawable_to_json(RGraph /*RGraphNodeInfo*/ *graph, PJ *pj, bool use_offset) {
 	RList *nodes = graph->nodes, *neighbours = NULL;
 	RListIter *it, *itt;
 	RGraphNode *node = NULL, *neighbour = NULL;

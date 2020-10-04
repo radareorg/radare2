@@ -8354,7 +8354,7 @@ static void print_graph_agg(RGraph /*RGraphNodeInfo*/ *graph) {
 		char *encbody;
 		int len;
 		print_node = node->data;
-		if (print_node->body && print_node->body[0]) {
+		if (R_STR_ISNOTEMPTY (print_node->body)) {
 			len = strlen (print_node->body);
 
 			if (len > 0 && print_node->body[len - 1] == '\n') {
@@ -8466,12 +8466,11 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 	case 'J':
 	case 'j': {
 		PJ *pj = pj_new ();
-		if (!pj) {
-			return;
+		if (pj) {
+			r_graph_drawable_to_json (graph, pj, use_offset);
+			r_cons_println (pj_string (pj));
+			pj_free (pj);
 		}
-		r_graph_drawable_to_json (graph, pj, use_offset);
-		r_cons_println (pj_string (pj));
-		pj_free (pj);
 	} break;
 	case 'g':
 		r_cons_printf ("graph\n[\n"

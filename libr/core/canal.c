@@ -2282,10 +2282,9 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr) {
 }
 
 static void add_single_addr_xrefs(RCore *core, ut64 addr, RGraph *graph) {
-	RFlagItem *f = r_flag_get_at (core->flags, addr, false);
-	char *me;
 	r_return_if_fail (graph);
-	me = (f && f->offset == addr)
+	RFlagItem *f = r_flag_get_at (core->flags, addr, false);
+	char *me = (f && f->offset == addr)
 		? r_str_new (f->name)
 		: r_str_newf ("0x%" PFMT64x, addr);
 
