@@ -58,6 +58,17 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return rep;
 }
 
+static bool _write_asm(RAsmOp *op, int value, int n) {
+	ut8 *opbuf = malloc (n);
+	if (opbuf == NULL) {
+		return true;
+	}
+	memset (opbuf, value, n);
+	r_strbuf_setbin (&op->buf, opbuf, n);
+	free (opbuf);
+	return false;
+}
+
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	int n = 0;
 	if (buf[0] && buf[1] == ' ') {
@@ -65,73 +76,46 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	}
 	const char *arg = strchr (buf, ',');
 	const char *ref = strchr (buf, '[');
-	ut8 opbuf[32];
-	if (!strncmp (buf, "trap", 4)) {
-		if (arg) {
-			n = atoi (arg + 1);
-			memset (opbuf, 0xcc, n);
-		} else {
-			opbuf[0] = 0x90;
-			n = 1;
-		}
-	} else if (!strncmp (buf, "nop", 3))        {
-		if (arg) {
-			n = atoi (arg + 1);
-			memset (opbuf, 0x90, n);
-		} else {
-			opbuf[0] = 0x90;
-			n = 1;
-		}
-	} else if (!strncmp (buf, "inc", 3))        {
-		char ch = ref? '+': '>';
-		opbuf[0] = ch;
+	bool write_err = false;
+	if (arg) {
+		n = atoi (arg + 1);
+	} else {
 		n = 1;
-	} else if (!strncmp (buf, "dec", 3))        {
-		char ch = ref? '-': '<';
-		opbuf[0] = ch;
-		n = 1;
-	} else if (!strncmp (buf, "sub", 3))        {
-		char ch = ref? '-': '<';
-		if (arg) {
-			n = atoi (arg + 1);
-			memset (opbuf, ch, n);
-		} else {
-			opbuf[0] = '<';
-			n = 1;
-		}
-	} else if (!strncmp (buf, "add", 3))        {
-		char ch = ref? '+': '>';
-		if (arg) {
-			n = atoi (arg + 1);
-			memset (opbuf, ch, n);
-		} else {
-			opbuf[0] = '<';
-			n = 1;
-		}
-	} else if (!strncmp (buf, "while", 5))        {
-		opbuf[0] = '[';
-		n = 1;
-	} else if (!strncmp (buf, "loop", 4))        {
-		opbuf[0] = ']';
-		n = 1;
-	} else if (!strncmp (buf, "in", 2))        {
-		if (arg) {
-			n = atoi (arg + 1);
-			memset (opbuf, ',', n);
-		} else {
-			opbuf[0] = ',';
-			n = 1;
-		}
-	} else if (!strncmp (buf, "out", 3))        {
-		if (arg) {
-			n = atoi (arg + 1);
-			memset (opbuf, '.', n);
-		} else {
-			opbuf[0] = '.';
-			n = 1;
-		}
 	}
-	r_strbuf_setbin (&op->buf, opbuf, n);
+	if (!strncmp (buf, "trap", 4)) {
+		write_err = _write_asm (op, 0xcc, n);
+	} else if (!strncmp (buf, "nop", 3)) {
+		write_err = _write_asm (op, 0x90, n);
+	} else if (!strncmp (buf, "inc", 3)) {
+		char ch = ref? '+': '>';
+		n = 1;
+		write_err = _write_asm (op, ch, n);
+	} else if (!strncmp (buf, "dec", 3)) {
+		char ch = ref? '-': '<';
+		n = 1;
+		write_err = _write_asm (op, ch, n);
+	} else if (!strncmp (buf, "sub", 3)) {
+		char ch = ref? '-': '<';
+		write_err = _write_asm (op, ch, n);
+	} else if (!strncmp (buf, "add", 3)) {
+		char ch = ref? '+': '>';
+		write_err = _write_asm (op, ch, n);
+	} else if (!strncmp (buf, "while", 5)) {
+		n = 1;
+		write_err = _write_asm (op, '[', 1);
+	} else if (!strncmp (buf, "loop", 4)) {
+		n = 1;
+		write_err = _write_asm (op, ']', 1);
+	} else if (!strncmp (buf, "in", 2)) {
+		write_err = _write_asm (op, ',', n);
+	} else if (!strncmp (buf, "out", 3)) {
+		write_err = _write_asm (op, '.', n);
+	} else {
+		n = 0;
+	}
+	if (write_err) {
+		return 0;
+	}
 	return n;
 }
 
