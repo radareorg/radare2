@@ -96,7 +96,7 @@ static int r_debug_handle_signals(RDebug *dbg) {
 #if __KFBSD__
 	return bsd_handle_signals (dbg);
 #else
-	eprinf ("Warning: signal handling is not supported on this platform\n");
+	eprintf ("Warning: signal handling is not supported on this platform\n");
 	return 0;
 #endif
 }
