@@ -560,14 +560,12 @@ static void update_asmarch_options(RCore *core, RConfigNode *node) {
 
 static void update_asmbits_options(RCore *core, RConfigNode *node) {
 	if (core && core->rasm && core->rasm->cur && node) {
-		char buf[20];
 		int bits = core->rasm->cur->bits;
 		int i;
 		r_list_purge (node->options);
 		for (i = 1; i <= bits; i <<= 1) {
 			if (i & bits) {
-				snprintf (buf, 20, "%d", i);
-				SETOPTIONS (node, strdup (buf), NULL);
+				SETOPTIONS (node, r_str_newf ("%d", i), NULL);
 			}
 		}
 	}
