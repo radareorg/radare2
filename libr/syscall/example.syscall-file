@@ -1,4 +1,0 @@
-; Linux syscalls
-; name int sysnum args
-write 0x80 4 3 ; write(fd, ptr, len)
-read 0x80 3 3 ; read(fd, ptr, len)
