@@ -37,9 +37,9 @@ code, debugging programs, attaching to remote gdb servers...
 
 radare2 is portable.
 
-To learn more on radare2 you may want to read the [official radare2 book](https://book.rada.re).
-
-You can also use [r2lrn](https://github.com/0ki/r2lrn) or r2golf for a hands-on learning experience.
+To learn more you may read the [official radare2 book](https://book.rada.re),
+the source code, or browse the web for blog posts or presentations from
+[r2con](https://www.youtube.com/c/r2con).
 
 ## Operating Systems
 
