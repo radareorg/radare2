@@ -1,7 +1,7 @@
 NAME=List Parser Plugins Lp
 FILE=-
 CMDS=<<EOF
-Lp ~
+Lp~$
 EOF
 EXPECT=<<EOF
 6502.pseudo
