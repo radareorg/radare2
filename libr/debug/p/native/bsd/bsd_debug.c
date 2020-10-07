@@ -296,7 +296,11 @@ RList *bsd_pid_list(RDebug *dbg, RList *list) {
 	char errbuf[_POSIX2_LINE_MAX];
 	struct KINFO_PROC* kp;
 	int cnt = 0;
-	kvm_t* kd = kvm_openfiles (NULL, NULL, NULL, KVM_OPEN_FLAG, errbuf);
+#if __FreeBSD__
+	kvm_t *kd = kvm_openfiles (NULL, "/dev/null", NULL, KVM_OPEN_FLAG, errbuf);
+#else
+	kvm_t *kd = kvm_openfiles (NULL, NULL, NULL, KVM_OPEN_FLAG, errbuf);
+#endif
 	if (!kd) {
 		eprintf ("kvm_openfiles says %s\n", errbuf);
 		return NULL;
