@@ -608,7 +608,7 @@ static RList *r_debug_native_pids(RDebug *dbg, int pid) {
 #elif __linux__
 	return linux_pid_list (pid, list);
 #else /* rest is BSD */
-	return bsd_pid_list (dbg, list);
+	return bsd_pid_list (dbg, pid, list);
 #endif
 	return list;
 }

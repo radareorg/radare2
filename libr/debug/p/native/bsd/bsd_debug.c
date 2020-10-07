@@ -253,7 +253,7 @@ RDebugInfo *bsd_info(RDebug *dbg, const char *arg) {
 #endif
 }
 
-RList *bsd_pid_list(RDebug *dbg, RList *list) {
+RList *bsd_pid_list(RDebug *dbg, int pid, RList *list) {
 #if __KFBSD__
 #ifdef __NetBSD__
 # define KVM_OPEN_FLAG KVM_NO_FILES
@@ -292,7 +292,6 @@ RList *bsd_pid_list(RDebug *dbg, RList *list) {
 # define KP_UID(x) (x)->ki_uid
 # define KINFO_PROC kinfo_proc
 #endif
-	int pid = dbg->pid;
 	char errbuf[_POSIX2_LINE_MAX];
 	struct KINFO_PROC* kp;
 	int cnt = 0;
