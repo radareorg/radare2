@@ -6,19 +6,28 @@
 #include "../arch/arm/v35arm64/arm64dis.h"
 bool arm64ass(const char *str, ut64 addr, ut32 *op);
 
+
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	Instruction inst;
 	char output[256];
 	ut32 n = r_read_le32 (buf);
-	aarch64_decompose (n, &inst, 0);
-	if (aarch64_disassemble (&inst, output, sizeof (output)) == 0) {
-		op->size = 4;
-		r_strbuf_set (&op->buf_asm, output);
-		return op->size;
-	}
+	aarch64_decompose (n, &inst, a->pc);
 	op->size = 4;
+	if (!aarch64_disassemble (&inst, output, sizeof (output))) {
+		if (*output) {
+			// XXX trim tailing newline on UNDEFINED string
+			output[strlen (output) - 1] = 0;
+		}
+		r_str_trim_tail (output);
+		if (!r_str_startswith (output, "UNDEF")) {
+			r_strbuf_set (&op->buf_asm, output);
+			return op->size;
+		}
+		r_strbuf_set (&op->buf_asm, "undefined");
+		return 4 - (a->pc % 4);
+	}
 	r_strbuf_set (&op->buf_asm, "invalid");
-	return 0;
+	return 4 - (a->pc % 4);
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
@@ -71,7 +80,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 }
 
 RAsmPlugin r_asm_plugin_arm_v35 = {
-	.name = "arm",
+	.name = "arm.v35",
 	.desc = "Vector35 ARM64 disassembler",
 	.license = "Apache",
 	.arch = "arm",
