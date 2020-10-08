@@ -6842,10 +6842,23 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 	if (!odata) {
 		return false;
 	}
+	int line_count = 0;
+	{
+		int i = 0;
+		while (lines[i]) {
+			if (lines[i] == '\n') {
+				line_count++;
+			}
+			i++;
+		}
+	}
+
+	int current_line = 0;
 	nl = strchr (odata, '\n');
 	if (nl) {
 		r_cons_break_push (NULL, NULL);
 		do {
+			r_print_progressbar_with_count (core->print, current_line++, line_count, 80, true);
 			if (r_cons_is_breaked ()) {
 				free (odata);
 				r_cons_break_pop ();
@@ -6872,6 +6885,7 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 			r_core_task_yield (&core->tasks);
 		} while ((nl = strchr (data, '\n')));
 		r_cons_break_pop ();
+		printf ("\n");
 	}
 	if (ret >= 0 && data && *data) {
 		r_core_cmd (core, data, 0);

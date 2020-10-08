@@ -1581,9 +1581,44 @@ R_API void r_print_progressbar(RPrint *p, int pc, int _cols) {
 	p->cb_printf ("]");
 }
 
+/* TODO: handle screen width */
+R_API void r_print_progressbar_with_count(RPrint *p, int pc, int total, int _cols, bool reset_line) {
+	int i, cols = (_cols == -1)? 78: _cols;
+	if (!p) {
+		p = &staticp;
+	}
+	const bool enable_colors = p && (p->flags & R_PRINT_FLAGS_COLOR);
+	const char *h_line = p->cons->use_utf8? RUNE_LONG_LINE_HORIZ: "-";
+	const char *block = p->cons->use_utf8? UTF_BLOCK: "#";
+
+	pc = R_MAX (0, R_MIN (total, pc));
+	if (reset_line) {
+		p->cb_printf ("\r");
+	}
+	if (p->flags & R_PRINT_FLAGS_HEADER) {
+		if (enable_colors) {
+			p->cb_printf ("%s%4d%s%% %s%6d%s/%6d ", Color_GREEN, pc * 100 / total, Color_RESET, Color_GREEN, pc, Color_RESET, total);
+		} else {
+			p->cb_printf ("%4d%% %6d/%6d ", pc * 100 / total, pc, total);
+		}
+	}
+	cols -= 29;
+	enable_colors? p->cb_printf ("[%s", Color_YELLOW): p->cb_printf ("[");
+	for (i = cols * pc / total; i; i--) {
+		p->cb_printf (block);
+	}
+	if (enable_colors) {
+		p->cb_printf (Color_RESET);
+	}
+	for (i = cols - (cols * pc / total); i; i--) {
+		p->cb_printf (h_line);
+	}
+	enable_colors? p->cb_printf ("%s]", Color_RESET): p->cb_printf ("]");
+}
+
 R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols) {
-	const char *h_line = p->cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
-	const char *block = p->cons->use_utf8 ? UTF_BLOCK : "#";
+	const char *h_line = p->cons->use_utf8? RUNE_LONG_LINE_HORIZ: "-";
+	const char *block = p->cons->use_utf8? UTF_BLOCK: "#";
 	const bool show_colors = p->flags & R_PRINT_FLAGS_COLOR;
 	int j = 0;
 	p->cb_printf ("|");
