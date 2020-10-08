@@ -207,7 +207,7 @@ RUN
 
 NAME=rafind2 -F
 FILE=-
-CMDS=!rafind2 -F scripts/keyword bins/mach0/FileDP
+CMDS=!rafind2 -F bins/src/keyword bins/mach0/FileDP
 EXPECT=<<EOF
 0x4e9
 0x6f5

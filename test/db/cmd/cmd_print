@@ -710,7 +710,7 @@ RUN
 NAME=io.unalloc, io.unalloc.ch and prc
 FILE=bins/elf/analysis/tiny.elf
 CMDS=<<EOF
-. scripts/palette.r2
+. bins/src/palette.r2
 (print; prc 0x00010032-0x0000fffa @ 0x0000fffa)
 e io.unalloc=true
 e scr.color=0
@@ -752,7 +752,7 @@ RUN
 NAME=prc text color
 FILE=-
 CMDS=<<EOF
-. scripts/palette.r2
+. bins/src/palette.r2
 woe 0 0xff 1
 (test_flag; f `p8 1`)
 .(test_flag) @@s:0 0xff 1
