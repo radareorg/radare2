@@ -1944,19 +1944,25 @@ static int autocomplete(RLineCompletion *completion, RLineBuffer *buf, RLineProm
 }
 
 R_API int r_core_fgets(char *buf, int len) {
-	const char *ptr;
-	RLine *rli = r_line_singleton ();
-	buf[0] = '\0';
-	r_line_completion_set (&rli->completion, radare_argc, radare_argv);
- 	rli->completion.run = autocomplete;
- 	rli->completion.run_user = rli->user;
-	ptr = r_line_readline ();
+	bool prompt = r_cons_singleton ()->line->prompt_mode;
+	if (prompt) {
+		const char *ptr;
+		RLine *rli = r_line_singleton ();
+		buf[0] = '\0';
+		r_line_completion_set (&rli->completion, radare_argc, radare_argv);
+		rli->completion.run = autocomplete;
+		rli->completion.run_user = rli->user;
+		ptr = r_line_readline ();
+		if (!ptr) {
+			return -1;
+		}
+		return r_str_ncpy (buf, ptr, len - 1);
+	}
+	const char *ptr = r_line_readline ();
 	if (!ptr) {
 		return -1;
 	}
-	strncpy (buf, ptr, len - 1);
-	buf[len - 1] = 0;
-	return strlen (buf);
+	return r_str_ncpy (buf, ptr, len - 1);
 }
 
 static const char *r_core_print_offname(void *p, ut64 addr) {
