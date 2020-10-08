@@ -117,6 +117,20 @@ static const char *help_msg_root[] = {
 	NULL
 };
 
+static const char *help_msg_question_e[] = {
+	"Usage: ?e[=bdgnpst] arg", "print/echo things", "",
+	"?e", "", "echo message with newline",
+	"?e=", " 32", "progress bar at 32 percentage",
+	"?eb", " 10 20 30", "proportional segments bar",
+	"?ed", " 1", "draw a 3D ascii donut at the given animation frame",
+	"?eg", " 10 20", "move cursor to column 10, row 20",
+	"?en", " nonl", "echo message without ending newline",
+	"?ep", " 10 20 30", "draw a pie char with given portion sizes",
+	"?es", " msg", "speak message using the text-to-speech program (e cfg.tts)",
+	"?et", " msg", "change terminal title",
+	NULL
+};
+
 static const char *help_msg_question[] = {
 	"Usage: ?[?[?]] expression", "", "",
 	"?", " eip-0x804800", "show all representation result for this math expr",
@@ -136,7 +150,7 @@ static const char *help_msg_question[] = {
 	"?b64[-]", " [str]", "encode/decode in base64",
 	"?btw", " num|expr num|expr num|expr", "returns boolean value of a <= b <= c",
 	"?B", " [elem]", "show range boundaries like 'e?search.in",
-	"?e[nbgct]", " string", "echo string (nonl, gotoxy, column, bars, title)",
+	"?e", "[=bdgnpst] arg", "echo messages, bars, pie charts and more (see ?e? for details)",
 	"?f", " [num] [str]", "map each bit of the number as flag string index",
 	"?F", "", "flush cons output",
 	"?h", " [str]", "calculate hash for given string",
@@ -1060,16 +1074,7 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_newline ();
 			break;
 		default:
-			eprintf ("Usage: ?e[...]\n"
-			" e msg       echo message\n"
-			" e= N...     progressbar N percent\n"
-			" ed N...     display a donut\n"
-			" ep N...     echo pie chart\n"
-			" eb N...     echo portions bar\n"
-			" et msg      change terminal title\n"
-			" en msg      echo without newline\n"
-			" eg x y      gotoxy\n"
-			" es msg      use text-to-speech technology\n");
+			r_core_cmd_help (core, help_msg_question_e);
 			break;
 		}
 		break;
