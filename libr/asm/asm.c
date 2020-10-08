@@ -219,7 +219,7 @@ R_API bool r_asm_setup(RAsm *a, const char *arch, int bits, int big_endian) {
 }
 
 // TODO: spagueti
-R_API int r_asm_filter_input(RAsm *a, const char *f) {
+R_API int r_asm_sub_names_input(RAsm *a, const char *f) {
 	r_return_val_if_fail (a && f, false);
 	if (!a->ifilter) {
 		a->ifilter = r_parse_new ();
@@ -232,7 +232,7 @@ R_API int r_asm_filter_input(RAsm *a, const char *f) {
 	return true;
 }
 
-R_API int r_asm_filter_output(RAsm *a, const char *f) {
+R_API int r_asm_sub_names_output(RAsm *a, const char *f) {
 	if (!a->ofilter) {
 		a->ofilter = r_parse_new ();
 	}

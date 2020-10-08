@@ -124,25 +124,6 @@ typedef struct r_cmd_desc_help_t {
 	 */
 	const char *options;
 	/**
-	 * When a command is used both as a parent command and as a subcommand
-	 * (e.g. `w` is both the parent of `wv`, `ws`, etc. and it's also the
-	 * command `w`), this is the summary used for the parent level, while
-	 * summary becomes the text used for the subcommand.
-	 *
-	 * Optional.
-	 */
-	const char *group_summary;
-	/**
-	 * When a command is used both as a parent command and as a subcommand
-	 * (e.g. `w` is both the parent of `wv`, `ws`, etc. and it's also the
-	 * command `w`), this is the argument string used for the parent level,
-	 * while args_str becomes the text used for the subcommand.
-	 *
-	 * Optional.
-	 * TODO: explain how to differentiate between required and optional arguments
-	 */
-	const char *group_args_str;
-	/**
 	 * List of examples used to better explain how to use the command. This
 	 * is shown together with the long description.
 	 *
@@ -158,7 +139,14 @@ typedef enum {
 	R_CMD_DESC_TYPE_ARGV,
 	// for cmd descriptors that are just used to group together related
 	// sub-commands. Do not use this if the command can be used by itself or
-	// if it's necessary to show its help.
+	// if it's necessary to show its help, because this descriptor is not
+	// stored in the hashtable and cannot be retrieved except by listing the
+	// children of its parent.
+	R_CMD_DESC_TYPE_INNER,
+	// for cmd descriptors that are parent of other sub-commands but that
+	// may also have a sub-command with the same name. For example, `wc` is
+	// both the parent of `wci`, `wc*`, etc. but there is also `wc` as a
+	// sub-command.
 	R_CMD_DESC_TYPE_GROUP,
 } RCmdDescType;
 
@@ -177,6 +165,9 @@ typedef struct r_cmd_desc_t {
 		struct {
 			RCmdArgvCb cb;
 		} argv_data;
+		struct {
+			struct r_cmd_desc_t *exec_cd;
+		} group_data;
 	} d;
 } RCmdDesc;
 
@@ -220,9 +211,12 @@ typedef struct r_core_plugin_t {
 	r_warn_if_fail (c_name##_cd)
 #define DEFINE_CMD_ARGV_DESC_SPECIAL(core, name, c_name, parent) \
 	DEFINE_CMD_ARGV_DESC_DETAIL (core, name, c_name, parent, c_name##_handler, &c_name##_help)
-#define DEFINE_CMD_ARGV_DESC_GROUP(core, name, c_name, parent) \
-	RCmdDesc *c_name##_cd = r_cmd_desc_group_new (core->rcmd, parent, #name, &c_name##_help); \
+#define DEFINE_CMD_ARGV_DESC_INNER(core, name, c_name, parent) \
+	RCmdDesc *c_name##_cd = r_cmd_desc_inner_new (core->rcmd, parent, #name, &c_name##_help); \
 	r_warn_if_fail (c_name##_cd)
+#define DEFINE_CMD_ARGV_GROUP_WITH_CHILD(core, name, parent)                                    \
+	RCmdDesc *name##_cd = r_cmd_desc_group_new (core->rcmd, parent, #name, name##_handler, &name##_help, &name##_group_help); \
+	r_warn_if_fail (name##_cd)
 #define DEFINE_CMD_ARGV_DESC(core, name, parent) \
 	DEFINE_CMD_ARGV_DESC_SPECIAL (core, name, name, parent)
 #define DEFINE_CMD_OLDINPUT_DESC(core, name, parent) \
@@ -272,7 +266,8 @@ static inline int r_cmd_status2int(RCmdStatus s) {
 
 /* RCmdDescriptor */
 R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb, const RCmdDescHelp *help);
-R_API RCmdDesc *r_cmd_desc_group_new(RCmd *cmd, RCmdDesc *parent, const char *name, const RCmdDescHelp *help);
+R_API RCmdDesc *r_cmd_desc_inner_new(RCmd *cmd, RCmdDesc *parent, const char *name, const RCmdDescHelp *help);
+R_API RCmdDesc *r_cmd_desc_group_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb, const RCmdDescHelp *help, const RCmdDescHelp *group_help);
 R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdCb cb, const RCmdDescHelp *help);
 R_API RCmdDesc *r_cmd_desc_parent(RCmdDesc *cd);
 R_API bool r_cmd_desc_has_handler(RCmdDesc *cd);

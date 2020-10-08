@@ -16,7 +16,7 @@ RUN
 NAME=PE: corkami ddsect.exe - pi 1
 FILE=bins/pe/ddsect.exe
 CMDS=<<EOF
-e asm.filter=false
+e asm.sub.names=false
 pi 1
 EOF
 EXPECT=<<EOF

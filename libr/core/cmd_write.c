@@ -2075,10 +2075,10 @@ static void cmd_write_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, wv);
 	DEFINE_CMD_DESCRIPTOR (core, wx);
 
-	DEFINE_CMD_ARGV_DESC (core, wB, parent);
+	DEFINE_CMD_ARGV_GROUP_WITH_CHILD (core, wB, parent);
 	DEFINE_CMD_ARGV_DESC_SPECIAL (core, wB-, wB_minus, wB_cd);
 
-	DEFINE_CMD_ARGV_DESC (core, wv, parent);
+	DEFINE_CMD_ARGV_GROUP_WITH_CHILD (core, wv, parent);
 	DEFINE_CMD_ARGV_DESC (core, wv1, wv_cd);
 	DEFINE_CMD_ARGV_DESC (core, wv2, wv_cd);
 	DEFINE_CMD_ARGV_DESC (core, wv4, wv_cd);
@@ -2086,7 +2086,7 @@ static void cmd_write_init(RCore *core, RCmdDesc *parent) {
 
 	DEFINE_CMD_ARGV_DESC (core, w0, parent);
 
-	DEFINE_CMD_ARGV_DESC_GROUP (core, w, w_incdec, parent);
+	DEFINE_CMD_ARGV_DESC_INNER (core, w, w_incdec, parent);
 	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1, w1, w_incdec_cd, NULL, &w1_incdec_help);
 	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1+, w1_inc, w1_cd, w1_incdec_handler, &w1_inc_help);
 	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1-, w1_dec, w1_cd, w1_incdec_handler, &w1_dec_help);

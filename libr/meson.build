@@ -404,6 +404,7 @@ r_util_files = [
   'include/r_util/r_event.h',
   'include/r_util/r_file.h',
   'include/r_util/r_graph.h',
+  'include/r_util/r_graph_drawable.h',
   'include/r_util/r_hex.h',
   'include/r_util/r_idpool.h',
   'include/r_util/r_itv.h',

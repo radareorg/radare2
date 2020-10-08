@@ -1168,6 +1168,9 @@ R_API int r_str_unescape(char *buf) {
 			buf[i] = (ch << 4) + ch2;
 			esc_seq_len = 4;
 			break;
+		case '$':
+			buf[i] = '$';
+			break;
 		default:
 			if (IS_OCTAL (buf[i + 1])) {
 				int num_digits = 1;

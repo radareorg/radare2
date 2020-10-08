@@ -125,6 +125,50 @@ bool test_cmd_descriptor_oldinput(void) {
 	mu_end;
 }
 
+static RCmdStatus a_exec_cb(RCore *core, int argc, const char **argv) {
+	return R_CMD_STATUS_OK;
+}
+
+static RCmdStatus ab_cb(RCore *core, int argc, const char **argv) {
+	return R_CMD_STATUS_OK;
+}
+
+bool test_cmd_descriptor_group(void) {
+	const RCmdDescHelp ab_help = { .summary = "ab help" };
+	const RCmdDescHelp a_exec_help = { .summary = "a exec help" };
+	const RCmdDescHelp a_group_help = { .summary = "a group help" };
+
+	RCmd *cmd = r_cmd_new ();
+	RCmdDesc *root = r_cmd_get_root (cmd);
+	RCmdDesc *cd = r_cmd_desc_group_new (cmd, root, "a", a_exec_cb, &a_exec_help, &a_group_help);
+	r_cmd_desc_argv_new (cmd, cd, "ab", ab_cb, &ab_help);
+	mu_assert_notnull (cd, "cmddesc created");
+	mu_assert_streq (cd->name, "a", "command descriptor name is a");
+	mu_assert_eq (cd->type, R_CMD_DESC_TYPE_GROUP, "type of command descriptor is group");
+	mu_assert_ptreq (r_cmd_desc_parent (cd), root, "root parent descriptor");
+	mu_assert_eq (cd->n_children, 2, "no children");
+	mu_assert_true (r_cmd_desc_has_handler (cd), "a_exec_cb is the handler for this");
+
+	mu_assert_ptreq (r_cmd_get_desc (cmd, "a"), cd, "cd is the desc for `a`");
+
+	RCmdParsedArgs *pa = r_cmd_parsed_args_newcmd("a??");
+	char *h = r_cmd_get_help (cmd, pa, false);
+	mu_assert_streq (h, "Usage: a   # a exec help\n", "detailed help for a is a_exec_help");
+	r_cmd_parsed_args_free (pa);
+	free (h);
+
+	pa = r_cmd_parsed_args_newcmd ("a?");
+	h = r_cmd_get_help (cmd, pa, false);
+	const char *exp_h = "Usage: a[b]   # a group help\n"
+		"| a  # a exec help\n"
+		"| ab # ab help\n";
+	mu_assert_streq (h, exp_h, "regular help for a is a_group_help");
+	free (h);
+
+	r_cmd_free (cmd);
+	mu_end;
+}
+
 static RCmdStatus ap_handler(RCore *core, int argc, const char **argv) {
 	return R_CMD_STATUS_OK;
 }
@@ -252,7 +296,6 @@ bool test_cmd_help(void) {
 	const RCmdDescHelp p_help = {
 		.summary = "p summary",
 		.usage = "p-usage",
-		.group_summary = NULL,
 		.args_str = "",
 		.description = NULL,
 		.examples = NULL,
@@ -266,7 +309,6 @@ bool test_cmd_help(void) {
 	const RCmdDescHelp pd_help = {
 		.summary = "pd summary",
 		.usage = NULL,
-		.group_summary = NULL,
 		.args_str = " <num>",
 		.description = "pd long description",
 		.examples = pd_help_examples,
@@ -275,7 +317,6 @@ bool test_cmd_help(void) {
 	const RCmdDescHelp px_help = {
 		.summary = "px summary",
 		.usage = "px-usage",
-		.group_summary = NULL,
 		.args_str = " <verylongarg_str_num>",
 		.description = "px long description",
 		.examples = NULL,
@@ -326,8 +367,15 @@ bool test_cmd_group_help(void) {
 	const RCmdDescHelp p_help = {
 		.summary = "p summary",
 		.usage = "p-usage",
-		.group_summary = "p group-summary",
 		.args_str = "",
+		.description = NULL,
+		.examples = NULL,
+	};
+
+	const RCmdDescHelp p_group_help = {
+		.usage = "p-usage",
+		.summary = "p group-summary",
+		.args_str = NULL,
 		.description = NULL,
 		.examples = NULL,
 	};
@@ -335,7 +383,6 @@ bool test_cmd_group_help(void) {
 	const RCmdDescHelp pd_help = {
 		.summary = "pd summary",
 		.usage = NULL,
-		.group_summary = NULL,
 		.args_str = " <num>",
 		.description = "pd long description",
 		.examples = NULL,
@@ -343,7 +390,7 @@ bool test_cmd_group_help(void) {
 
 	RCmd *cmd = r_cmd_new ();
 	RCmdDesc *root = r_cmd_get_root (cmd);
-	RCmdDesc *p_cd = r_cmd_desc_argv_new (cmd, root, "p", p_handler_argv, &p_help);
+	RCmdDesc *p_cd = r_cmd_desc_group_new (cmd, root, "p", p_handler_argv, &p_help, &p_group_help);
 	r_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler, &pd_help);
 
 	const char *p_help_exp = "Usage: p-usage   # p group-summary\n"
@@ -421,6 +468,7 @@ int all_tests() {
 	mu_run_test (test_cmd_descriptor_argv_nested);
 	mu_run_test (test_cmd_descriptor_oldinput);
 	mu_run_test (test_cmd_descriptor_tree);
+	mu_run_test (test_cmd_descriptor_group);
 	mu_run_test (test_cmd_get_desc);
 	mu_run_test (test_cmd_call_desc);
 	mu_run_test (test_cmd_help);

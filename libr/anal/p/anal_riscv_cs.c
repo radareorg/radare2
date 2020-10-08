@@ -402,6 +402,8 @@ static char *get_reg_profile(RAnal *anal) {
 		"=SP	sp\n" // ABI: stack pointer
 		"=LR	ra\n" // ABI: return address
 		"=BP	s0\n" // ABI: frame pointer
+		"=A0	a0\n"
+		"=A1	a1\n"
 
 		"gpr	pc	.32	0	0\n"
 		// RV32I regs (ABI names)
@@ -487,6 +489,8 @@ static char *get_reg_profile(RAnal *anal) {
 		"=SP	sp\n" // ABI: stack pointer
 		"=LR	ra\n" // ABI: return address
 		"=BP	s0\n" // ABI: frame pointer
+		"=A0	a0\n"
+		"=A1	a1\n"
 
 		"gpr	pc	.64	0	0\n"
 		// RV64I regs (ABI names)

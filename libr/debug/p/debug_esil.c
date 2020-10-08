@@ -95,6 +95,7 @@ static char *__esil_reg_profile(RDebug *dbg) {
 			"=PC	pc\n"
 			"=SP	esp\n"
 			"=BP	ptr\n"
+			"=A0	rax\n"
 			"gpr	rax	.32	0	0\n"
 			"gpr	pc	.32	0	0\n"
 			"gpr	ptr	.32	4	0\n"

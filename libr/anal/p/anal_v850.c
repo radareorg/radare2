@@ -489,6 +489,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"=PC	pc\n"
 		"=SP	r3\n"
 		"=ZF	z\n"
+		"=A0	r0\n"
 		"=SF	s\n"
 		"=OF	ov\n"
 		"=CF	cy\n"

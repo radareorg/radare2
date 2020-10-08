@@ -170,8 +170,8 @@ R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp);
 R_API char *r_asm_to_string(RAsm *a, ut64 addr, const ut8 *b, int l);
 /* to ease the use of the native bindings (not used in r2) */
 R_API ut8 *r_asm_from_string(RAsm *a, ut64 addr, const char *b, int *l);
-R_API int r_asm_filter_input(RAsm *a, const char *f);
-R_API int r_asm_filter_output(RAsm *a, const char *f);
+R_API int r_asm_sub_names_input(RAsm *a, const char *f);
+R_API int r_asm_sub_names_output(RAsm *a, const char *f);
 R_API char *r_asm_describe(RAsm *a, const char* str);
 R_API RList* r_asm_get_plugins(RAsm *a);
 R_API void r_asm_list_directives(void);

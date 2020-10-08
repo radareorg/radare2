@@ -191,7 +191,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	}
 	r_config_hold_i (hc, "asm.pseudo", "asm.decode", "asm.lines", "asm.bytes", "asm.stackptr", NULL);
 	r_config_hold_i (hc, "asm.offset", "asm.flags", "asm.lines.fcn", "asm.comments", NULL);
-	r_config_hold_i (hc, "asm.functions", "asm.section", "asm.cmt.col", "asm.filter", NULL);
+	r_config_hold_i (hc, "asm.functions", "asm.section", "asm.cmt.col", "asm.sub.names", NULL);
 	r_config_hold_i (hc, "scr.color", "emu.str", "asm.emu", "emu.write", NULL);
 	r_config_hold_i (hc, "io.cache", NULL);
 	if (!fcn) {
@@ -203,7 +203,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_config_set_i (core->config, "asm.stackptr", 0);
 	r_config_set_i (core->config, "asm.pseudo", 1);
 	r_config_set_i (core->config, "asm.decode", 0);
-	r_config_set_i (core->config, "asm.filter", 1);
+	r_config_set_i (core->config, "asm.sub.names", 1);
 	r_config_set_i (core->config, "asm.lines", 0);
 	r_config_set_i (core->config, "asm.bytes", 0);
 	r_config_set_i (core->config, "asm.offset", 0);

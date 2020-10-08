@@ -4830,28 +4830,42 @@ static void handle_substitution_args(struct tsr2cmd_state *state, TSNode args, R
 	}
 }
 
-static char *unescape_arg(struct tsr2cmd_state *state, TSNode arg, const char *special_chars) {
-	char *arg_str = ts_node_sub_string (arg, state->input);
+static char *unescape_arg_str(struct tsr2cmd_state *state, const char *arg_str, const char *special_chars) {
 	char *unescaped_arg = unescape_special_chars (arg_str, special_chars);
 	R_LOG_DEBUG ("original arg = '%s', unescaped arg = '%s'\n", arg_str, unescaped_arg);
+	return unescaped_arg;
+}
+
+static char *unescape_arg(struct tsr2cmd_state *state, TSNode arg, const char *special_chars) {
+	char *arg_str = ts_node_sub_string (arg, state->input);
+	char *unescaped_arg = unescape_arg_str (state, arg_str, special_chars);
 	free (arg_str);
 	return unescaped_arg;
 }
 
-static char *do_handle_ts_unescape_arg(struct tsr2cmd_state *state, TSNode arg) {
+static char *do_handle_ts_unescape_arg(struct tsr2cmd_state *state, TSNode arg, bool do_unwrap) {
 	if (is_ts_arg (arg)) {
-		return do_handle_ts_unescape_arg (state, ts_node_named_child (arg, 0));
+		return do_handle_ts_unescape_arg (state, ts_node_named_child (arg, 0), do_unwrap);
 	} else if (is_ts_arg_identifier (arg)) {
 		return unescape_arg (state, arg, SPECIAL_CHARS_REGULAR);
 	} else if (is_ts_single_quoted_arg (arg) || is_ts_double_quoted_arg (arg)) {
 		const char *special = is_ts_single_quoted_arg (arg)? SPECIAL_CHARS_SINGLE_QUOTED: SPECIAL_CHARS_DOUBLE_QUOTED;
-		return unescape_arg (state, arg, special);
+		char *o_arg_str = ts_node_sub_string (arg, state->input);
+		char *arg_str = o_arg_str;
+		if (do_unwrap) {
+			// remove quotes
+			arg_str[strlen (arg_str) - 1] = '\0';
+			arg_str++;
+		}
+		char *res = unescape_arg_str (state, arg_str, special);
+		free (o_arg_str);
+		return res;
 	} else if (is_ts_concatenation (arg)) {
 		uint32_t i, n_children = ts_node_named_child_count (arg);
 		RStrBuf *sb = r_strbuf_new (NULL);
 		for (i = 0; i < n_children; i++) {
 			TSNode sub_arg = ts_node_named_child (arg, i);
-			char *s = do_handle_ts_unescape_arg (state, sub_arg);
+			char *s = do_handle_ts_unescape_arg (state, sub_arg, do_unwrap);
 			r_strbuf_append (sb, s);
 		}
 		return r_strbuf_drain (sb);
@@ -4860,7 +4874,7 @@ static char *do_handle_ts_unescape_arg(struct tsr2cmd_state *state, TSNode arg) 
 	}
 }
 
-static RCmdParsedArgs *parse_args(struct tsr2cmd_state *state, TSNode args) {
+static RCmdParsedArgs *parse_args(struct tsr2cmd_state *state, TSNode args, bool do_unwrap) {
 	if (ts_node_is_null (args)) {
 		return r_cmd_parsed_args_newargs (0, NULL);
 	} else if (is_ts_args (args)) {
@@ -4869,7 +4883,7 @@ static RCmdParsedArgs *parse_args(struct tsr2cmd_state *state, TSNode args) {
 		char **unescaped_args = R_NEWS0 (char *, n_children);
 		for (i = 0; i < n_children; i++) {
 			TSNode arg = ts_node_named_child (args, i);
-			unescaped_args[i] = do_handle_ts_unescape_arg (state, arg);
+			unescaped_args[i] = do_handle_ts_unescape_arg (state, arg, do_unwrap);
 		}
 		RCmdParsedArgs *res = r_cmd_parsed_args_newargs (n_children, unescaped_args);
 		for (i = 0; i < n_children; i++) {
@@ -4878,7 +4892,7 @@ static RCmdParsedArgs *parse_args(struct tsr2cmd_state *state, TSNode args) {
 		free (unescaped_args);
 		return res;
 	} else {
-		char *unescaped_args[] = { do_handle_ts_unescape_arg (state, args) };
+		char *unescaped_args[] = { do_handle_ts_unescape_arg (state, args, do_unwrap) };
 		RCmdParsedArgs *res = r_cmd_parsed_args_newargs (1, unescaped_args);
 		free (unescaped_args[0]);
 		return res;
@@ -4947,7 +4961,7 @@ static bool substitute_args(struct tsr2cmd_state *state, TSNode args, TSNode *ne
 	return res;
 }
 
-static RCmdParsedArgs *ts_node_handle_arg_prargs(struct tsr2cmd_state *state, TSNode command, TSNode arg, uint32_t child_idx) {
+static RCmdParsedArgs *ts_node_handle_arg_prargs(struct tsr2cmd_state *state, TSNode command, TSNode arg, uint32_t child_idx, bool do_unwrap) {
 	RCmdParsedArgs *res = NULL;
 	TSNode new_command;
 	substitute_args_init (state, command);
@@ -4958,7 +4972,7 @@ static RCmdParsedArgs *ts_node_handle_arg_prargs(struct tsr2cmd_state *state, TS
 	}
 
 	arg = ts_node_named_child (new_command, child_idx);
-	res = parse_args (state, arg);
+	res = parse_args (state, arg, do_unwrap);
 	if (res == NULL) {
 		R_LOG_ERROR ("Cannot parse arg\n");
 		goto err;
@@ -4969,7 +4983,7 @@ err:
 }
 
 static char *ts_node_handle_arg(struct tsr2cmd_state *state, TSNode command, TSNode arg, uint32_t child_idx) {
-	RCmdParsedArgs *a = ts_node_handle_arg_prargs (state, command, arg, child_idx);
+	RCmdParsedArgs *a = ts_node_handle_arg_prargs (state, command, arg, child_idx, true);
 	char *str = r_cmd_parsed_args_argstr (a);
 	r_cmd_parsed_args_free (a);
 	return str;
@@ -4997,7 +5011,9 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_command) {
 
 	RCmdParsedArgs *pr_args = NULL;
 	if (!ts_node_is_null (args)) {
-		pr_args = ts_node_handle_arg_prargs (state, node, args, 1);
+		RCmdDesc *cd = r_cmd_get_desc (state->core->rcmd, command_str);
+		bool do_unwrap = cd && cd->type != R_CMD_DESC_TYPE_OLDINPUT;
+		pr_args = ts_node_handle_arg_prargs (state, node, args, 1, do_unwrap);
 		if (!pr_args) {
 			goto err;
 		}
@@ -5186,7 +5202,9 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_command) {
 		RCmdParsedArgs *pr_args = NULL;
 		RCmdStatus res = R_CMD_STATUS_INVALID;
 		if (!ts_node_is_null (args)) {
-			pr_args = ts_node_handle_arg_prargs (state, node, args, 1);
+			RCmdDesc *cd = r_cmd_get_desc (state->core->rcmd, command_str);
+			bool do_unwrap = cd && cd->type != R_CMD_DESC_TYPE_OLDINPUT;
+			pr_args = ts_node_handle_arg_prargs (state, node, args, 1, do_unwrap);
 			if (!pr_args) {
 				goto err_else;
 			}
@@ -5722,7 +5740,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_offsets_command) {
 	TSNode args = ts_node_named_child (node, 1);
 	ut64 orig_offset = core->offset;
 
-	RCmdParsedArgs *a = ts_node_handle_arg_prargs (state, node, args, 1);
+	RCmdParsedArgs *a = ts_node_handle_arg_prargs (state, node, args, 1, true);
 	if (!a) {
 		R_LOG_ERROR ("Cannot parse args\n");
 		return R_CMD_STATUS_INVALID;
@@ -5983,7 +6001,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_interpret_command) {
 	}
 	TSNode args = ts_node_named_child (new_command, 1);
 
-	RCmdParsedArgs *a = parse_args (state, args);
+	RCmdParsedArgs *a = parse_args (state, args, true);
 	if (!a) {
 		r_list_free (edits);
 		substitute_args_fini (state);
@@ -7085,6 +7103,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		RCmdCb cb;
 		void (*descriptor_init)(RCore *core, RCmdDesc *parent);
 		const RCmdDescHelp *help;
+		const RCmdDescHelp *group_help;
 		RCmdDescType type;
 		RCmdArgvCb argv_cb;
 	} cmds[] = {
@@ -7133,7 +7152,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"<",        "pipe into RCons.readChar", cmd_pipein, NULL, &pipein_help},
 		{"V",   "enter visual mode", cmd_visual, NULL, &V_help},
 		{"v",   "enter visual mode", cmd_panels, NULL, &v_help},
-		{"w",    "write bytes", cmd_write, cmd_write_init, &w_help, R_CMD_DESC_TYPE_ARGV, w_handler},
+		{"w",    "write bytes", cmd_write, cmd_write_init, &w_help, &w_group_help, R_CMD_DESC_TYPE_GROUP, w_handler},
 		{"x",        "alias for px", cmd_hexdump, NULL, &x_help},
 		{"y",     "yank bytes", cmd_yank, NULL, &y_help},
 		{"z",     "zignatures", cmd_zign, cmd_zign_init, &z_help},
@@ -7161,8 +7180,11 @@ R_API void r_core_cmd_init(RCore *core) {
 		case R_CMD_DESC_TYPE_ARGV:
 			cd = r_cmd_desc_argv_new (core->rcmd, root, cmds[i].cmd, cmds[i].argv_cb, cmds[i].help);
 			break;
+		case R_CMD_DESC_TYPE_INNER:
+			cd = r_cmd_desc_inner_new (core->rcmd, root, cmds[i].cmd, cmds[i].help);
+			break;
 		case R_CMD_DESC_TYPE_GROUP:
-			cd = r_cmd_desc_group_new (core->rcmd, root, cmds[i].cmd, cmds[i].help);
+			cd = r_cmd_desc_group_new (core->rcmd, root, cmds[i].cmd, cmds[i].argv_cb, cmds[i].help, cmds[i].group_help);
 			break;
 		}
 		if (cmds[i].descriptor_init) {

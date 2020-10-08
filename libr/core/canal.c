@@ -6,6 +6,7 @@
 #include <r_core.h>
 #include <r_bin.h>
 #include <ht_uu.h>
+#include <r_util/r_graph_drawable.h>
 
 #include <string.h>
 
@@ -2280,43 +2281,64 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr) {
 	}
 }
 
-R_API void r_core_anal_importxrefs(RCore *core) {
-	RBinInfo *info = r_bin_get_info (core->bin);
-	RBinObject *obj = r_bin_cur_object (core->bin);
-	bool lit = info ? info->has_lit: false;
-	bool va = core->io->va || core->bin->is_debugger;
-
-	RListIter *iter;
-	RBinImport *imp;
-	if (!obj) {
-		return;
-	}
-	r_list_foreach (obj->imports, iter, imp) {
-		ut64 addr = lit ? r_core_bin_impaddr (core->bin, va, imp->name): 0;
-		if (addr) {
-			r_core_anal_codexrefs (core, addr);
-		} else {
-			r_cons_printf ("agn %s\n", imp->name);
-		}
-	}
-}
-
-R_API void r_core_anal_codexrefs(RCore *core, ut64 addr) {
+static void add_single_addr_xrefs(RCore *core, ut64 addr, RGraph *graph) {
+	r_return_if_fail (graph);
 	RFlagItem *f = r_flag_get_at (core->flags, addr, false);
 	char *me = (f && f->offset == addr)
-		? r_str_new (f->name) : r_str_newf ("0x%"PFMT64x, addr);
-	r_cons_printf ("agn %s\n", me);
+		? r_str_new (f->name)
+		: r_str_newf ("0x%" PFMT64x, addr);
+
+	RGraphNode *curr_node = r_graph_add_node_info (graph, me, NULL, addr);
+	R_FREE (me);
+	if (!curr_node) {
+		return;
+	}
 	RListIter *iter;
 	RAnalRef *ref;
 	RList *list = r_anal_xrefs_get (core->anal, addr);
 	r_list_foreach (list, iter, ref) {
 		RFlagItem *item = r_flag_get_i (core->flags, ref->addr);
-		const char *src = item? item->name: sdb_fmt ("0x%08"PFMT64x, ref->addr);
-		r_cons_printf ("agn %s\n", src);
-		r_cons_printf ("age %s %s\n", src, me);
+		char *src = item? r_str_new (item->name): r_str_newf ("0x%08" PFMT64x, ref->addr);
+		RGraphNode *reference_from = r_graph_add_node_info (graph, src, NULL, ref->addr);
+		free (src);
+		r_graph_add_edge (graph, reference_from, curr_node);
 	}
 	r_list_free (list);
-	free (me);
+}
+
+R_API RGraph *r_core_anal_importxrefs(RCore *core) {
+	RBinInfo *info = r_bin_get_info (core->bin);
+	RBinObject *obj = r_bin_cur_object (core->bin);
+	bool lit = info? info->has_lit: false;
+	bool va = core->io->va || core->bin->is_debugger;
+
+	RListIter *iter;
+	RBinImport *imp;
+	if (!obj) {
+		return NULL;
+	}
+	RGraph *graph = r_graph_new ();
+	if (!graph) {
+		return NULL;
+	}
+	r_list_foreach (obj->imports, iter, imp) {
+		ut64 addr = lit ? r_core_bin_impaddr (core->bin, va, imp->name): 0;
+		if (addr) {
+			add_single_addr_xrefs (core, addr, graph);
+		} else {
+			r_graph_add_node_info (graph, imp->name, NULL, 0);
+		}
+	}
+	return graph;
+}
+
+R_API RGraph *r_core_anal_codexrefs(RCore *core, ut64 addr) {
+	RGraph *graph = r_graph_new ();
+	if (!graph) {
+		return NULL;
+	}
+	add_single_addr_xrefs (core, addr, graph);
+	return graph;
 }
 
 static int RAnalRef_cmp(const RAnalRef* ref1, const RAnalRef* ref2) {

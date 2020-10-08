@@ -2,10 +2,13 @@
 
 #include <r_anal.h>
 #include <r_lib.h>
+#include <ht_uu.h>
+#include <arm.h>
 #include <capstone.h>
 #include <arm.h>
 #include <r_util/r_assert.h>
 #include "./anal_arm_hacks.inc"
+
 
 #define esilprintf(op, fmt, ...) r_strbuf_setf (&op->esil, fmt, ##__VA_ARGS__)
 
@@ -62,6 +65,8 @@
 
 static RRegItem base_regs[4];
 static RRegItem regdelta_regs[4];
+static HtUU *ht_itblock = NULL;
+static HtUU *ht_it = NULL;
 
 static const ut64 bitmask_by_width[] = {
 	0x1, 0x3, 0x7, 0xf, 0x1f, 0x3f, 0x7f, 0xff, 0x1ff, 0x3ff, 0x7ff,
@@ -3025,21 +3030,43 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	}
 }
 
-static ut64 lookahead(csh handle, const ut64 addr, const ut8 *buf, int len, int distance) {
-	cs_insn *insn = NULL;
-	int n = cs_disasm (handle, buf, len, addr, distance, &insn);
-	if (n < 1) {
-		return UT64_MAX;
+static void anal_itblock(cs_insn *insn) {
+	size_t i, size =  r_str_nlen (insn->mnemonic, 5);
+	ht_uu_update (ht_itblock, insn->address,  size);
+	for (i = 1; i < size; i++) {
+		switch (insn->mnemonic[i]) {
+		case 0x74: //'t'
+			ht_uu_update (ht_it, insn->address + (i * insn->size), insn->detail->arm.cc);
+			break;
+		case 0x65: //'e'
+			ht_uu_update (ht_it, insn->address + (i * insn->size), (insn->detail->arm.cc % 2)?
+				insn->detail->arm.cc + 1: insn->detail->arm.cc - 1);
+			break;
+		default:
+			break;
+		}
 	}
-	ut64 result = insn[n - 1].address;
-	cs_free (insn, n);
-	return result;
+}
+
+static void check_itblock(cs_insn *insn) {
+	size_t x;
+	bool found;
+	ut64 itlen = ht_uu_find (ht_itblock, insn->address, &found);
+	if (found) {
+		for (x = 1; x < itlen; x++) {
+			ht_uu_delete (ht_it, insn->address + (x*insn->size));
+		}
+		ht_uu_delete (ht_itblock, insn->address);
+	}
 }
 
 static void anop32(RAnal *a, csh handle, RAnalOp *op, cs_insn *insn, bool thumb, const ut8 *buf, int len) {
 	const ut64 addr = op->addr;
-	const int pcdelta = thumb? 4 : 8;
+	const int pcdelta = thumb? 4: 8;
 	int i;
+	bool found = 0;
+	ut64 itcond;
+
 	op->cond = cond_cs2r2 (insn->detail->arm.cc);
 	if (op->cond == R_ANAL_COND_NV) {
 		op->type = R_ANAL_OP_TYPE_NOP;
@@ -3066,6 +3093,11 @@ static void anop32(RAnal *a, csh handle, RAnalOp *op, cs_insn *insn, bool thumb,
 	} else {
 		op->family = R_ANAL_OP_FAMILY_CPU;
 	}
+
+	if (insn->id != ARM_INS_IT) {
+		check_itblock (insn);
+	}
+
 	switch (insn->id) {
 #if 0
 
@@ -3101,14 +3133,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 		}
 		break;
 	case ARM_INS_IT:
-	{
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = addr + insn->size;
-		int distance = r_str_nlen (insn->mnemonic, 5);
+		anal_itblock (insn);
 		op->cycles = 2;
-		op->fail = lookahead (handle, addr + insn->size, buf + insn->size, len - insn->size, distance);
 		break;
-	}
 	case ARM_INS_BKPT:
 		op->type = R_ANAL_OP_TYPE_TRAP;
 		op->cycles = 4;
@@ -3487,6 +3514,17 @@ jmp $$ + 4 + ( [delta] * 2 )
 	default:
 		R_LOG_DEBUG ("ARM analysis: Op type %d at 0x%" PFMT64x " not handled\n", insn->id, op->addr);
 		break;
+	}
+	itcond = ht_uu_find (ht_it,  addr, &found);
+	if (found) {
+		insn->detail->arm.cc = itcond;
+		insn->detail->arm.update_flags = 0;
+		op->mnemonic = r_str_newf ("%s%s%s%s",
+			r_anal_optype_to_string (op->type),
+			cc_name (itcond),
+			insn->op_str[0]?" ":"",
+			insn->op_str);
+		op->cond = itcond;
 	}
 }
 
@@ -4302,6 +4340,24 @@ static RList *anal_preludes(RAnal *anal) {
 	return l;
 }
 
+static int init(void* user) {
+	if (!ht_it) {
+		ht_it = ht_uu_new0 ();
+	}
+	if (!ht_itblock) {
+		ht_itblock = ht_uu_new0 ();
+	}
+	return 0;
+}
+
+static int fini(void* user) {
+	ht_uu_free (ht_itblock);
+	ht_uu_free (ht_it);
+	ht_itblock = NULL;
+	ht_it = NULL;
+	return 0;
+}
+
 RAnalPlugin r_anal_plugin_arm_cs = {
 	.name = "arm",
 	.desc = "Capstone ARM analyzer",
@@ -4314,6 +4370,8 @@ RAnalPlugin r_anal_plugin_arm_cs = {
 	.preludes = anal_preludes,
 	.bits = 16 | 32 | 64,
 	.op = &analop,
+	.init = &init,
+	.fini = &fini,
 };
 
 #ifndef R2_PLUGIN_INCORE

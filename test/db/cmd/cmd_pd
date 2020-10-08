@@ -2,9 +2,9 @@ NAME=pd varsub-issue
 FILE=bins/mach0/mac-ls2
 CMDS=<<EOF
 s 0x100001232
-e asm.var.sub=0
+e asm.sub.var=0
 pd 1
-e asm.var.sub=1
+e asm.sub.var=1
 pd 1
 f fin.dus=0x1000054d0
 pd 1
@@ -152,10 +152,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=asm.filter issue
+NAME=asm.sub.names issue
 FILE=malloc://1024
 CMDS=<<EOF
-e asm.filter=1
+e asm.sub.names=1
 e asm.arch=arm
 e asm.bits=64
 
@@ -167,10 +167,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=asm.filter issue
+NAME=asm.sub.names issue
 FILE=malloc://1024
 CMDS=<<EOF
-e asm.filter=0
+e asm.sub.names=0
 e asm.arch=arm
 e asm.bits=64
 wx fa67bba9
@@ -181,7 +181,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=asm.filter issue #6752
+NAME=asm.sub.names issue #6752
 FILE=malloc://1024
 CMDS=<<EOF
 s 0x100
@@ -580,7 +580,7 @@ CMDS=<<EOF
 e anal.vars.stackname=true
 e asm.arch=x86
 e asm.bits=64
-e asm.var.sub=true
+e asm.sub.var=true
 e asm.lines.bb=false
 e asm.bytes=false
 e asm.comments=false
@@ -802,15 +802,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pd asm.filter color
+NAME=pd asm.sub.names color
 FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
 e asm.bytes=false
 e asm.comments=false
 e scr.color=1
-e asm.filter=true
+e asm.sub.names=true
 pd 1 @ 0x0001145f
-e asm.filter=false
+e asm.sub.names=false
 pd 1 @ 0x0001145f
 EOF
 EXPECT=<<EOF
@@ -869,7 +869,7 @@ e scr.strconv=asciiesc
 pd 1 @ 0x0040169d
 e scr.strconv=asciidot
 pd 1 @ 0x0040169d
-e asm.filter=false
+e asm.sub.names=false
 e asm.noisy=false
 pd 1 @ 0x00401693
 e bin.str.enc=utf8
@@ -895,7 +895,7 @@ NAME=bin.str.enc utf8
 FILE=bins/elf/strenc
 CMDS=<<EOF
 e asm.bytes=false
-e asm.filter=false
+e asm.sub.names=false
 e asm.noisy=false
 e str.escbslash=true
 e bin.str.enc=utf8
@@ -915,7 +915,7 @@ RUN
 NAME=bin.str.enc latin1
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
-e asm.filter=false
+e asm.sub.names=false
 e asm.noisy=false
 e bin.str.enc=latin1
 pd 1 @ 0x140001058
@@ -932,12 +932,12 @@ NAME=bin.str.enc utf16le
 FILE=bins/elf/strenc
 CMDS=<<EOF
 e asm.bytes=false
-e asm.filter=false
+e asm.sub.names=false
 e asm.noisy=false
 e str.escbslash=true
 e bin.str.enc=guess
 pd 1 @ 0x004016ac
-e asm.filter=true
+e asm.sub.names=true
 e asm.cmt.off=false
 e bin.str.enc=guess
 pd 1 @ 0x004016b6
@@ -971,7 +971,7 @@ e bin.str.enc=utf16le
 pd 1 @ 0x004016de
 e bin.str.enc=utf32le
 pd 1 @ 0x004016de
-e asm.filter=false
+e asm.sub.names=false
 e asm.noisy=false
 e bin.str.enc=guess
 pd 1 @ 0x004016ed
@@ -993,7 +993,7 @@ RUN
 NAME=bin.str.enc guess utf16le
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
-e asm.filter=false
+e asm.sub.names=false
 e asm.noisy=false
 e bin.str.enc=guess
 pd 1 @ 0x14000104c
@@ -1025,7 +1025,7 @@ RUN
 NAME=bin.str.enc alias
 FILE=bins/elf/strenc
 CMDS=<<EOF
-e asm.filter=false
+e asm.sub.names=false
 e asm.noisy=false
 e asm.bytes=false
 e asm.cmt.off=false
@@ -1076,7 +1076,7 @@ RUN
 NAME=hide flag iff unchanged and string shown
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
-e asm.filter=false
+e asm.sub.names=false
 e asm.noisy=false
 e str.escbslash=false
 e asm.cmt.right=true
@@ -1108,7 +1108,7 @@ RUN
 NAME=asm.noisy
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
-e asm.filter=false
+e asm.sub.names=false
 e asm.noisy=true
 e str.escbslash=false
 e asm.cmt.right=true
@@ -1127,7 +1127,7 @@ RUN
 NAME=fcn name cmt alignment
 FILE=bins/pe/ConsoleApplication1.exe
 CMDS=<<EOF
-e asm.filter=false
+e asm.sub.names=false
 af @ main
 pd 1 @ 0x00401157
 EOF
@@ -1136,10 +1136,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=call asm.filter=false flag cmt
+NAME=call asm.sub.names=false flag cmt
 FILE=bins/pe/ConsoleApplication1.exe
 CMDS=<<EOF
-e asm.filter=false
+e asm.sub.names=false
 e asm.cmt.right=true
 pd 1 @ 0x004010c6
 e asm.cmt.right=false
@@ -1159,10 +1159,10 @@ FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
 e asm.noisy=false
 e str.escbslash=false
-e asm.filter=true
+e asm.sub.names=true
 e asm.cmt.off=false
 pd 1 @ 0x140001010
-e asm.filter=false
+e asm.sub.names=false
 e asm.cmt.off=true
 pd 1 @ 0x140001010
 e asm.cmt.off=nodup
@@ -1310,10 +1310,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdJ string
+NAME=pdJ string - oldshell
+ARGS=-ecfg.newshell=false
 FILE=malloc://128
 CMDS=<<EOF
 w Snoo"ping as" usual,
+Cs 30
+pdJ 1
+EOF
+EXPECT=<<EOF
+[{"offset":0,"text":"            0x00000000     .string \"Snoo\\\"ping as\\\" usual,\" ; len=30"}]
+EOF
+RUN
+
+NAME=pdJ string - newshell
+ARGS=-ecfg.newshell=true
+FILE=malloc://128
+CMDS=<<EOF
+w "Snoo\"ping as\" usual,"
 Cs 30
 pdJ 1
 EOF
@@ -1661,9 +1675,9 @@ NAME=emu.str dup str/flag cmt fix
 FILE=bins/elf/analysis/ls2
 CMDS=<<EOF
 e emu.str=true
-e asm.filter=true
+e asm.sub.names=true
 pd 1 @ 0x00402a5f
-e asm.filter=false
+e asm.sub.names=false
 pd 1 @ 0x00402a5f
 EOF
 EXPECT=<<EOF
@@ -1883,7 +1897,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=arm asm.var.sub, asm.ucase and asm.pseudo (fp)
+NAME=arm asm.sub.var, asm.ucase and asm.pseudo (fp)
 FILE=bins/elf/analysis/armcall
 CMDS=<<EOF
 e asm.bytes=false
@@ -1893,16 +1907,16 @@ wv4 0xe59b0008 @ 0x00010464
 wv4 0xe59b100c @ 0x00010468
 af @ main
 e asm.pseudo=false
-e asm.var.sub=true
+e asm.sub.var=true
 e asm.ucase=true
 pd 4 @ 0x0001045c
 ?e
-e asm.var.sub=false
+e asm.sub.var=false
 e asm.ucase=false
 pd 4 @ 0x0001045c
 ?e
 e asm.pseudo=true
-e asm.var.sub=true
+e asm.sub.var=true
 e asm.sub.varonly=false
 pd 4 @ 0x0001045c
 ?e

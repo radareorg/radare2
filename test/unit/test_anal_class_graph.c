@@ -1,6 +1,7 @@
 #include <r_core.h>
 #include <r_anal.h>
 #include <r_util.h>
+#include <r_util/r_graph_drawable.h>
 #include "minunit.h"
 
 bool test_inherit_graph_creation() {

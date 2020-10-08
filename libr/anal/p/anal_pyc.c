@@ -29,6 +29,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"=PC    pc\n"
 		"=BP    bp\n"
 		"=SP    sp\n"
+		"=A0    sp\n"
 		"gpr    sp  .32 0   0\n" // stack pointer
 		"gpr    pc  .32 4   0\n" // program counter
 		"gpr    bp  .32 8   0\n" // base pointer // unused

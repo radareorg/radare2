@@ -35,7 +35,7 @@ static ut64 read_uleb128(ut8 **p, ut8 *end) {
 	ut64 v;
 	*p = (ut8 *)r_uleb128 (*p, end - *p, &v, &error);
 	if (error) {
-		eprintf (error);
+		eprintf ("%s", error);
 		R_FREE (error);
 		return UT64_MAX;
 	}

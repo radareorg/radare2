@@ -617,3 +617,75 @@ EXPECT=<<EOF
 int __clrcall test(struct V * __ptr64 % __ptr64)
 EOF
 RUN
+
+NAME=[thunk]:public virtual: unsigned long int __cdecl NetworkUX::View::__CFEWiFiWCNComboActivationFactory::[Platform::Object]::__abi_Release`adjustor{8}'(void) __ptr64
+FILE=-
+CMDS="!rabin2 -D msvc ?__abi_Release@?QObject@Platform@@__CFEWiFiWCNComboActivationFactory@View@NetworkUX@@W7E\$AAAKXZ"
+EXPECT=<<EOF
+[thunk]:public virtual: unsigned long int __cdecl NetworkUX::View::__CFEWiFiWCNComboActivationFactory::[Platform::Object]::__abi_Release`adjustor{8}'(void) __ptr64
+EOF
+RUN
+
+NAME=public: void __cdecl std::_Func_class<void, enum Windows::System::LaunchUriStatus, struct std::_Nil, struct std::_Nil>::~destructor(void) __ptr64
+FILE=-
+CMDS="!rabin2 -D msvc ??1?\$_Func_class@XW4LaunchUriStatus@System@Windows@@U_Nil@std@@U45@@std@@QEAA@XZ"
+EXPECT=<<EOF
+public: void __cdecl std::_Func_class<void, enum Windows::System::LaunchUriStatus, struct std::_Nil, struct std::_Nil>::~destructor(void) __ptr64
+EOF
+RUN
+
+NAME=const NetworkUXViewProviderImpl::vftable{for `IWeakReferenceSource'}
+FILE=-
+CMDS="!rabin2 -D msvc ??_7NetworkUXViewProviderImpl@@6BIWeakReferenceSource@@@"
+EXPECT=<<EOF
+const NetworkUXViewProviderImpl::vftable{for `IWeakReferenceSource'}
+EOF
+RUN
+
+NAME=const NetworkUX::OOBEMainPage::vftable{for `__abi_IUnknown's `Platform::Details::IWeakReferenceSource'}
+FILE=-
+CMDS="!rabin2 -D msvc ??_7OOBEMainPage@NetworkUX@@6B__abi_IUnknown@@IWeakReferenceSource@Details@Platform@@@"
+EXPECT=<<EOF
+const NetworkUX::OOBEMainPage::vftable{for `__abi_IUnknown's `Platform::Details::IWeakReferenceSource'}
+EOF
+RUN
+
+NAME=class Microsoft::WRL::Details::StaticStorage<class Platform::Details::InProcModule, 0, int> Microsoft::WRL::Details::StaticStorage<class Platform::Details::InProcModule, 0, int>::instance_
+FILE=-
+CMDS="!rabin2 -D msvc ?instance_@?\$StaticStorage@VInProcModule@Details@Platform@@\$0A@H@Details@WRL@Microsoft@@0V1234@A"
+EXPECT=<<EOF
+class Microsoft::WRL::Details::StaticStorage<class Platform::Details::InProcModule, 0, int> Microsoft::WRL::Details::StaticStorage<class Platform::Details::InProcModule, 0, int>::instance_
+EOF
+RUN
+
+NAME=const std::_Func_impl<struct std::_Callable_obj<class lambda, 0>, class std::allocator<class std::_Func_class<void, struct std::_Nil, struct std::_Nil>>, void, struct std::_Nil, struct std::_Nil>::vftable
+FILE=-
+CMDS="!rabin2 -D msvc ??_7?\$_Func_impl@U?\$_Callable_obj@Vlambda@@\$0A@@std@@V?\$allocator@V?\$_Func_class@XU_Nil@std@@U12@@std@@@2@XU_Nil@2@U42@@std@@6B@"
+EXPECT=<<EOF
+const std::_Func_impl<struct std::_Callable_obj<class lambda, 0>, class std::allocator<class std::_Func_class<void, struct std::_Nil, struct std::_Nil>>, void, struct std::_Nil, struct std::_Nil>::vftable
+EOF
+RUN
+
+NAME=public: bool __cdecl wil::unique_any_t<class wil::semaphore_t<class wil::details::unique_storage<struct wil::details::resource_policy<void * __ptr64, void (__cdecl*)(void * __ptr64), &void __cdecl wil::details::CloseHandle(void * __ptr64), struct wistd::integral_constant<unsigned long long(unsigned __int64), 0>, void * __ptr64, void * __ptr64, 0, std::nullptr_t>>, struct wil::err_returncode_policy>>::operator bool(void)const __ptr64
+FILE=-
+CMDS="!rabin2 -D msvc ??B?\$unique_any_t@V?\$semaphore_t@V?\$unique_storage@U?\$resource_policy@PEAXP6AXPEAX@Z\$1?CloseHandle@details@wil@@YAX0@ZU?\$integral_constant@_K\$0A@@wistd@@PEAXPEAX\$0A@\$\$T@details@wil@@@details@wil@@Uerr_returncode_policy@3@@wil@@@wil@@QEBA_NXZ"
+EXPECT=<<EOF
+public: bool __cdecl wil::unique_any_t<class wil::semaphore_t<class wil::details::unique_storage<struct wil::details::resource_policy<void * __ptr64, void (__cdecl*)(void * __ptr64), &void __cdecl wil::details::CloseHandle(void * __ptr64), struct wistd::integral_constant<unsigned long long(unsigned __int64), 0>, void * __ptr64, void * __ptr64, 0, std::nullptr_t>>, struct wil::err_returncode_policy>>::operator bool(void)const __ptr64
+EOF
+RUN
+
+NAME=public virtual: void * __ptr64 __cdecl wistd::__function::__func<class lambda, long int (__cdecl*)(class Windows::Internal::PlatformExtensions::Details::ExtensionRegistration const * __ptr64, bool, bool * __ptr64)>::scalar_dtor(unsigned int) __ptr64
+FILE=-
+CMDS="!rabin2 -D msvc ??_G?\$__func@Vlambda@@\$\$A6AJPEBVExtensionRegistration@Details@PlatformExtensions@Internal@Windows@@_NPEA_N@Z@__function@wistd@@UEAAPEAXI@Z"
+EXPECT=<<EOF
+public virtual: void * __ptr64 __cdecl wistd::__function::__func<class lambda, long int (__cdecl*)(class Windows::Internal::PlatformExtensions::Details::ExtensionRegistration const * __ptr64, bool, bool * __ptr64)>::scalar_dtor(unsigned int) __ptr64
+EOF
+RUN
+
+NAME=void __cdecl wistd::invoke<void (__cdecl*)(void * __ptr64), void * __ptr64 & __ptr64>(void (__cdecl*)(void * __ptr64) && volatile __ptr64, void * __ptr64 & __ptr64)
+FILE=-
+CMDS="!rabin2 -D msvc ??\$invoke@P6AXPEAX@ZAEAPEAX@wistd@@YAX\$\$REAP6AXPEAX@ZAEAPEAX@Z"
+EXPECT=<<EOF
+void __cdecl wistd::invoke<void (__cdecl*)(void * __ptr64), void * __ptr64 & __ptr64>(void (__cdecl*)(void * __ptr64) && volatile __ptr64, void * __ptr64 & __ptr64)
+EOF
+RUN

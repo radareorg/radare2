@@ -3058,7 +3058,7 @@ R_API int r_core_config_init(RCore *core) {
 	n = NODECB ("emu.skip", "ds", &cb_emuskip);
 	SETDESC (n, "Skip metadata of given types in asm.emu");
 	SETOPTIONS (n, "d", "c", "s", "f", "m", "h", "C", "r", NULL);
-	SETBPREF ("asm.filter", "true", "Replace numeric values by flags (e.g. 0x4003e0 -> sym.imp.printf)");
+	SETBPREF ("asm.sub.names", "true", "Replace numeric values by flags (e.g. 0x4003e0 -> sym.imp.printf)");
 	SETPREF ("asm.strip", "", "strip all instructions given comma separated types");
 	SETBPREF ("asm.optype", "false", "show opcode type next to the instruction bytes");
 	SETBPREF ("asm.lines.fcn", "true", "Show function boundary lines");
@@ -3086,7 +3086,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.lines.wide", "false", "Put a space between lines");
 	SETBPREF ("asm.fcnsig", "true", "Show function signature in disasm");
 	SETICB ("asm.lines.width", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
-	SETICB ("asm.sub.varmin", 0x100, &cb_asmsubvarmin, "Minimum value to substitute in instructions (asm.var.sub)");
+	SETICB ("asm.sub.varmin", 0x100, &cb_asmsubvarmin, "Minimum value to substitute in instructions (asm.sub.var)");
 	SETCB ("asm.sub.tail", "false", &cb_asmsubtail, "Replace addresses with prefix .. syntax");
 	SETBPREF ("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
 	SETBPREF ("asm.noisy", "true", "Show comments considered noisy but possibly useful");
@@ -3119,7 +3119,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.capitalize", "false", "Use camelcase at disassembly");
 	SETBPREF ("asm.var", "true", "Show local function variables in disassembly");
 	SETBPREF ("asm.var.access", "false", "Show accesses of local variables");
-	SETBPREF ("asm.var.sub", "true", "Substitute variables in disassembly");
+	SETBPREF ("asm.sub.var", "true", "Substitute variables in disassembly");
 	SETI ("asm.var.summary", 0, "Show variables summary instead of full list in disasm (0, 1, 2)");
 	SETBPREF ("asm.sub.varonly", "true", "Substitute the entire variable expression with the local variable name (e.g. [local10h] instead of [ebp+local10h])");
 	SETBPREF ("asm.sub.reg", "false", "Substitute register names with their associated role name (drp~=)");
@@ -3467,7 +3467,11 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("http.bind", "localhost", "Server address");
 	SETPREF ("http.homeroot", R_JOIN_2_PATHS ("~", R2_HOME_WWWROOT), "http home root directory");
 #if __WINDOWS__
-	SETPREF ("http.root", "www", "http root directory");
+	{
+		char *wwwroot = r_str_newf ("%s\\share\\www", r_sys_prefix (NULL));
+		SETPREF ("http.root", wwwroot, "http root directory");
+		free (wwwroot);
+	}
 #elif __ANDROID__
 	SETPREF ("http.root", "/data/data/org.radare.radare2installer/www", "http root directory");
 #else
