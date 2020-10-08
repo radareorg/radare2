@@ -102,7 +102,7 @@ static bool GH(r_resolve_jemalloc)(RCore *core, char *symname, ut64 *symbol) {
 #else
 	eprintf ("[*] Resolving %s from libjemalloc.2... ", symname);
 	// this is quite sloooow, we must optimize dmi
-	char *va = r_core_cmd_strf (core, "dmi libjemalloc.2 %s$~[1]", symname, symname);
+	char *va = r_core_cmd_strf (core, "dmi libjemalloc.2 %s$~[1]", symname);
 	ut64 n = r_num_get (NULL, va);
 	if (n && n != UT64_MAX) {
 		*symbol = n;
