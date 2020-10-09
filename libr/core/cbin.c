@@ -432,7 +432,14 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 				? r_str_newf ("%s.str.%s", r->bin->prefix, string->string)
 				: r_str_newf ("str.%s", string->string);
 			r_name_filter (str, -1);
-			(void)r_flag_set (r->flags, str, vaddr, string->size);
+			RFlagItem *fi = r_flag_set (r->flags, str, vaddr, string->size);
+			if (fi) {
+				char *es = r_str_escape (string->string);
+				char *s = r_str_newf ("\"%s\"", es);
+				r_flag_item_set_realname (fi, s);
+				free (s);
+				free (es);
+			}
 			free (str);
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%"PFMT64x" %d %d %s\n", vaddr,
