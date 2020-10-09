@@ -7622,8 +7622,6 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		RAnalRef *ref;
 		RListIter *iter;
 		char *space = strchr (input, ' ');
-		char *tmp = NULL;
-		char *name = space ? strdup (space + 1): NULL;
 		if (space) {
 			addr = r_num_math (core->num, space + 1);
 		} else {
@@ -8360,7 +8358,6 @@ end:
 }
 
 static bool convert_dotcmd_to_image(RCore *core, char *r2_cmd, const char *save_path) {
-	char *cmd = NULL;
 	if (save_path && *save_path) {
 		r_cons_printf ("Saving to file '%s'...\n", save_path);
 		r_cons_flush ();
