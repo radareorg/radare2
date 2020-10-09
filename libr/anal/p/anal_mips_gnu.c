@@ -1299,7 +1299,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->jump = page_hack + address;
 			op->delay = 1;
-			snprintf (insn.j_reg.jump, REG_BUF_MAX, "0x%"PFMT32x, op->jump);
+			snprintf (insn.j_reg.jump, REG_BUF_MAX, "0x%"PFMT64x, op->jump);
 			break;
 		case 3: // jal
 			insn.id = MIPS_INS_JAL;
@@ -1307,7 +1307,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			op->jump = page_hack + address;
 			op->fail = addr + 8;
 			op->delay = 1;
-			snprintf (insn.j_reg.jump, REG_BUF_MAX, "0x%"PFMT32x, op->jump);
+			snprintf (insn.j_reg.jump, REG_BUF_MAX, "0x%"PFMT64x, op->jump);
 			break;
 		}
 		//family = 'J';
@@ -1565,7 +1565,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			op->jump = addr + 4*((buf[3] | buf[2]<<8 | buf[1]<<16));
 			op->fail = addr + 8;
 			op->delay = 1;
-			snprintf (insn.i_reg.jump, REG_BUF_MAX, "0x%"PFMT32x, op->jump);
+			snprintf (insn.i_reg.jump, REG_BUF_MAX, "0x%"PFMT64x, op->jump);
 
 			break;
 		}
