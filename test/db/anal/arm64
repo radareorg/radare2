@@ -1,3 +1,29 @@
+NAME=rcall
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wx e18f1394 # BL XXX
+s+4
+wx 00013fd6 # BLR x8
+ao~type[1]
+ao@0~type[1]
+/at call
+?e --
+/at ucall
+?e --
+/at rcall
+EOF
+EXPECT=<<EOF
+rcall
+call
+0x00000000 4 bl 0x4e3f84
+--
+--
+0x00000004 4 blr x8
+EOF
+RUN
+
 NAME=noreturn errno
 FILE=bins/mach0/BatteryLife.arm_64.1
 CMDS=<<EOF
