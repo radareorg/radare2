@@ -56,7 +56,6 @@ r_bin_sources = [
   'p/bin_sfc.c',
   'p/bin_smd.c',
   'p/bin_sms.c',
-  'p/bin_spc700.c',
   'p/bin_symbols.c',
   'p/bin_te.c',
   'p/bin_vsf.c',

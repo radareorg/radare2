@@ -1,5 +1,7 @@
+# XXX this plugin is now living in radare2-extras
 NAME=SPC700: Open/iI
 FILE=bins/spc700/bin.spc
+BROKEN=1
 CMDS=iI~machine[1]
 EXPECT=<<EOF
 SPC700
