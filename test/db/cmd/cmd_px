@@ -1,3 +1,71 @@
+NAME=pxr4
+FILE=malloc://1024
+CMDS=<<EOF
+woe 1 255
+s+11
+b 8
+pxr8
+pxr4
+pxr2
+pxr1
+b 4
+pxr8
+pxr4
+pxr2
+pxr1
+b 2
+pxr8
+pxr4
+pxr2
+pxr1
+pxr2
+b 1
+pxr8
+pxr4
+pxr2
+pxr1
+EOF
+EXPECT=<<EOF
+0x0000000b 0x0101010101010101   ........
+0x0000000b 0x01010101  .... 16843009
+0x0000000f 0x01010101  .... 0 R W X 'add dword [rcx], eax'
+0x0000000b 0101  ..
+0x0000000d 0101  .. 0 R W X 'add dword [rcx], eax'
+0x0000000f 0101  .. 0 R W X 'add dword [rcx], eax'
+0x00000011 0101  .. 0 R W X 'add dword [rcx], eax'
+- offset -    0 0
+0x0000000b 001 .
+0x0000000c 001 . 0 R W X 'add dword [rcx], eax'
+0x0000000d 001 . 0 R W X 'add dword [rcx], eax'
+0x0000000e 001 . 0 R W X 'add dword [rcx], eax'
+0x0000000f 001 . 0 R W X 'add dword [rcx], eax'
+0x00000010 001 . 0 R W X 'add dword [rcx], eax'
+0x00000011 001 . 0 R W X 'add dword [rcx], eax'
+0x00000012 001 . 0 R W X 'add dword [rcx], eax'
+0x0000000b 0x0000000001010101   .... 0 R W X 'add dword [rcx], eax'
+0x0000000b 0x01010101  .... 0 R W X 'add dword [rcx], eax'
+0x0000000b 0101  .. 0 R W X 'add dword [rcx], eax'
+0x0000000d 0101  .. 0 R W X 'add dword [rcx], eax'
+- offset -    0 0
+0x0000000b 001 . 0 R W X 'add dword [rcx], eax'
+0x0000000c 001 . 0 R W X 'add dword [rcx], eax'
+0x0000000d 001 . 0 R W X 'add dword [rcx], eax'
+0x0000000e 001 . 0 R W X 'add dword [rcx], eax'
+0x0000000b 0x0000000000000101   .. 0 R W X 'add dword [rcx], eax'
+0x0000000b 0x00000101  .. 0 R W X 'add dword [rcx], eax'
+0x0000000b 0101  .. 0 R W X 'add dword [rcx], eax'
+- offset -    0 0
+0x0000000b 001 . 0 R W X 'add dword [rcx], eax'
+0x0000000c 001 . 0 R W X 'add dword [rcx], eax'
+0x0000000b 0101  .. 0 R W X 'add dword [rcx], eax'
+0x0000000b 0x0000000000000001   . 0 R W X 'add dword [rcx], eax'
+0x0000000b 0x00000001  . 0 R W X 'add dword [rcx], eax'
+0x0000000b 01    . 0 R W X 'add dword [rcx], eax'
+- offset -    0 0
+0x0000000b 001 . 0 R W X 'add dword [rcx], eax'
+EOF
+RUN
+
 NAME=px 10
 FILE=malloc://1024
 CMDS=wx 90909090909090909090 ; px 10
@@ -209,10 +277,6 @@ EXPECT=<<EOF
     "addr": 6294252,
     "value": 0,
     "ref": "0 loc.imp.__gmon_start"
-  },
-  {
-    "addr": 6294254,
-    "value": 92143616
   }
 ]
 EOF

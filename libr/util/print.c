@@ -835,8 +835,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	int K = 0;
 	bool hex_style = false;
 	int rowbytes = p->cols;
-
-	len = len - (len % step);
+	if (step < len) {
+		len = len - (len % step);
+	}
 	if (p) {
 		pairs = p->pairs;
 		use_sparse = p->flags & R_PRINT_FLAGS_SPARSE;
@@ -1269,9 +1270,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			bool eol = false;
 			if (!eol && p && p->flags & R_PRINT_FLAGS_REFS) {
 				ut64 off = 0;
-				if (i + 8 <= len) {
-					ut64 *foo = (ut64 *) (buf + i);
-					off = *foo;
+				if (i + 7 < len) {
+					off = r_read_le64 (buf + i);
 				}
 				if (base == 32) {
 					off &= UT32_MAX;

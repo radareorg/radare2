@@ -4511,12 +4511,17 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 		}
 		const ut8 *buf = core->block;
 		int withref = 0;
-		for (i = 0; i < core->blocksize; i += wordsize) {
+		for (i = 0; i + wordsize < core->blocksize; i += wordsize) {
 			ut64 addr = core->offset + i;
-			ut64 *foo = (ut64 *) (buf + i);
-			ut64 val = *foo;
+			ut64 val = buf[i];
+			if (i + wordsize >= len) {
+				break;
+			}
 			if (base == 32) {
+				val = r_read_le32 (buf + i);
 				val &= UT32_MAX;
+			} else {
+				val = r_read_le64 (buf + i);
 			}
 			if (pj) {
 				pj_o (pj);
