@@ -2991,7 +2991,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->fail = addr + 4;
 		break;
 	case ARM64_INS_BLR: // blr x0
-		op->type = R_ANAL_OP_TYPE_UCALL;
+		op->type = R_ANAL_OP_TYPE_RCALL;
 		op->fail = addr + 4;
 		//op->jump = IMM64(0);
 		break;
