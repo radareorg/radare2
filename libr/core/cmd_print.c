@@ -6306,16 +6306,12 @@ l = use_blocksize;
 					wordsize = atoi (tmp);
 					mode = input[3];
 				}
-				if (!mode) {
-					mode = 1;
-				}
-			
 				switch (wordsize) {
 				case 1:
 				case 2:
 				case 4:
 				case 8:
-					cmd_pxr (core, len, mode, wordsize, strchr (input, mode));
+					cmd_pxr (core, len, mode, wordsize, mode? strchr (input, mode): NULL);
 					break;
 				default:
 					eprintf ("Invalid word size. Use 1, 2, 4 or 8.\n");
