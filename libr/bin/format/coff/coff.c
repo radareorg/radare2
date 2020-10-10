@@ -16,6 +16,8 @@ bool r_coff_supported_arch(const ut8 *buf) {
 	case COFF_FILE_MACHINE_R4000:
 	case COFF_FILE_MACHINE_AMD29KBE:
 	case COFF_FILE_MACHINE_AMD29KLE:
+	case COFF_FILE_MACHINE_ARM64:
+	case COFF_FILE_MACHINE_ARMNT:
 		return true;
 	default:
 		return false;
@@ -25,12 +27,12 @@ bool r_coff_supported_arch(const ut8 *buf) {
 char *r_coff_symbol_name(struct r_bin_coff_obj *obj, void *ptr) {
 	char n[256] = {0};
 	int len = 0, offset = 0;
-	union { 
-		char name[8]; 
-		struct { 
-			ut32 zero; 
-			ut32 offset; 
-		}; 
+	union {
+		char name[8];
+		struct {
+			ut32 zero;
+			ut32 offset;
+		};
 	} *p = ptr;
 	if (!ptr) {
 		return NULL;
@@ -59,7 +61,7 @@ static int r_coff_rebase_sym(struct r_bin_coff_obj *obj, RBinAddr *addr, struct 
 	return 1;
 }
 
-/* Try to get a valid entrypoint using the methods outlined in 
+/* Try to get a valid entrypoint using the methods outlined in
  * http://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_mono/ld.html#SEC24 */
 RBinAddr *r_coff_get_entry(struct r_bin_coff_obj *obj) {
 	RBinAddr *addr = R_NEW0 (RBinAddr);
@@ -137,7 +139,7 @@ static bool r_bin_coff_init_opt_hdr(struct r_bin_coff_obj *obj) {
 	if (!obj->hdr.f_opthdr) {
 		return false;
 	}
-	ret = r_buf_fread_at (obj->b, sizeof (struct coff_hdr), 
+	ret = r_buf_fread_at (obj->b, sizeof (struct coff_hdr),
 						 (ut8 *)&obj->opt_hdr, obj->endian? "2S6I": "2s6i", 1);
 	if (ret != sizeof (struct coff_opt_hdr)) {
 		return false;
@@ -147,7 +149,7 @@ static bool r_bin_coff_init_opt_hdr(struct r_bin_coff_obj *obj) {
 
 static bool r_bin_coff_init_scn_hdr(struct r_bin_coff_obj *obj) {
 	int ret, size;
-	ut64 offset = sizeof (struct coff_hdr) + (obj->hdr.f_opthdr ? sizeof (struct coff_opt_hdr) : 0); 
+	ut64 offset = sizeof (struct coff_hdr) + (obj->hdr.f_opthdr ? sizeof (struct coff_opt_hdr) : 0);
 	if (obj->hdr.f_magic == COFF_FILE_TI_COFF) {
 		offset += 2;
 	}
@@ -155,7 +157,7 @@ static bool r_bin_coff_init_scn_hdr(struct r_bin_coff_obj *obj) {
 	if (offset > obj->size || offset + size > obj->size || size < 0) {
 		return false;
 	}
-	obj->scn_hdrs = calloc (1, size + sizeof (struct coff_scn_hdr)); 
+	obj->scn_hdrs = calloc (1, size + sizeof (struct coff_scn_hdr));
 	if (!obj->scn_hdrs) {
 		return false;
 	}
@@ -179,7 +181,7 @@ static bool r_bin_coff_init_symtable(struct r_bin_coff_obj *obj) {
 		offset > obj->size ||
 		offset + size > obj->size) {
 		return false;
-	} 
+	}
 	obj->symbols = calloc (1, size + sizeof (struct coff_symbol));
 	if (!obj->symbols) {
 		return false;
@@ -188,6 +190,21 @@ static bool r_bin_coff_init_symtable(struct r_bin_coff_obj *obj) {
 	if (ret != size) {
 		R_FREE (obj->symbols);
 		return false;
+	}
+	return true;
+}
+
+static bool r_bin_coff_init_scn_va(struct r_bin_coff_obj *obj) {
+	obj->scn_va = R_NEWS (ut64, obj->hdr.f_nscns);
+	if (!obj->scn_va) {
+		return false;
+	}
+	int i;
+	ut64 va = 0;
+	for (i = 0; i < obj->hdr.f_nscns; i++) {
+		obj->scn_va[i] = va;
+		va += obj->scn_hdrs[i].s_size;
+		va = R_ROUND (va, 16ULL);
 	}
 	return true;
 }
@@ -211,12 +228,17 @@ static int r_bin_coff_init(struct r_bin_coff_obj *obj, RBuffer *buf, bool verbos
 		bprintf ("Warning: failed to init symtable\n");
 		return false;
 	}
+	if (!r_bin_coff_init_scn_va (obj)) {
+		bprintf ("Warning: failed to init section VA table\n");
+		return false;
+	}
 	return true;
 }
 
 void r_bin_coff_free(struct r_bin_coff_obj *obj) {
 	ht_up_free (obj->sym_ht);
 	ht_up_free (obj->imp_ht);
+	free (obj->scn_va);
 	free (obj->scn_hdrs);
 	free (obj->symbols);
 	r_buf_free (obj->b);
