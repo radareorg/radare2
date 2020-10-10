@@ -4549,10 +4549,8 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 			}
 			if (t) {
 				r_table_add_rowf (t, "xxs", addr, val, refs);
-				refs = NULL;
-			} else {
-				R_FREE (refs);
 			}
+			R_FREE (refs);
 			if (!withref && pj) {
 				pj_end (pj);
 			}
