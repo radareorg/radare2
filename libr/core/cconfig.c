@@ -558,6 +558,19 @@ static void update_asmarch_options(RCore *core, RConfigNode *node) {
 	}
 }
 
+static void update_asmbits_options(RCore *core, RConfigNode *node) {
+	if (core && core->rasm && core->rasm->cur && node) {
+		int bits = core->rasm->cur->bits;
+		int i;
+		r_list_purge (node->options);
+		for (i = 1; i <= bits; i <<= 1) {
+			if (i & bits) {
+				SETOPTIONS (node, r_str_newf ("%d", i), NULL);
+			}
+		}
+	}
+}
+
 static bool cb_asmarch(void *user, void *data) {
 	char asmparser[32];
 	RCore *core = (RCore *) user;
@@ -618,6 +631,7 @@ static bool cb_asmarch(void *user, void *data) {
 		} else {
 			bits = 64;
 		}
+		update_asmbits_options (core, r_config_node_get (core->config, "asm.bits"));
 	}
 	snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
 	r_config_set (core->config, "asm.parser", asmparser);
@@ -709,6 +723,13 @@ static bool cb_dbgbtdepth(void *user, void *data) {
 static bool cb_asmbits(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
+
+	if (node->value[0] == '?') {
+		update_asmbits_options (core, node);
+		print_node_options (node);
+		return false;
+	}
+
 	bool ret = false;
 	if (!core) {
 		eprintf ("user can't be NULL\n");
@@ -906,9 +927,26 @@ static bool cb_asmos(void *user, void *data) {
 	return true;
 }
 
+static void update_asmparser_options(RCore *core, RConfigNode *node) {
+	RListIter *iter;
+	RParsePlugin *parser;
+	if (core && node && core->parser && core->parser->parsers) {
+		r_list_purge (node->options);
+		r_list_foreach (core->parser->parsers, iter, parser) {
+			SETOPTIONS (node, parser->name, NULL);
+		}
+	}
+}
+
 static bool cb_asmparser(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
+	if (node->value[0] == '?') {
+		update_asmparser_options (core, node);
+		print_node_options (node);
+		return false;
+	}
+
 	return r_parse_use (core->parser, node->value);
 }
 
@@ -2128,7 +2166,7 @@ static bool scr_vtmode(void *user, void *data) {
 	}
 	node->i_value = node->i_value > 2 ? 2 : node->i_value;
 	r_line_singleton ()->vtmode = r_cons_singleton ()->vtmode = node->i_value;
-	
+
 	DWORD mode;
 	HANDLE input = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (input, &mode);
@@ -3141,7 +3179,9 @@ R_API int r_core_config_init(RCore *core) {
 	n = NODECB ("asm.features", "", &cb_asmfeatures);
 	SETDESC (n, "Specify supported features by the target CPU");
 	update_asmfeatures_options (core, n);
-	SETCB ("asm.parser", "x86.pseudo", &cb_asmparser, "Set the asm parser to use");
+	n = NODECB ("asm.parser", "x86.pseudo", &cb_asmparser);
+	SETDESC (n, "Set the asm parser to use");
+	update_asmparser_options (core, n);
 	SETCB ("asm.segoff", "false", &cb_segoff, "Show segmented address in prompt (x86-16)");
 	SETCB ("asm.decoff", "false", &cb_decoff, "Show segmented address in prompt (x86-16)");
 	SETICB ("asm.seggrn", 4, &cb_seggrn, "Segment granularity in bits (x86-16)");
@@ -3155,6 +3195,8 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	SETICB ("asm.bits", 32, &cb_asmbits, "Word size in bits at assembler");
 #endif
+	n = r_config_node_get(cfg, "asm.bits");
+	update_asmbits_options (core, n);
 	SETBPREF ("asm.functions", "true", "Show functions in disassembly");
 	SETBPREF ("asm.xrefs", "true", "Show xrefs in disassembly");
 	SETBPREF ("asm.demangle", "true", "Show demangled symbols in disasm");
