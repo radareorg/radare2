@@ -2111,6 +2111,8 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 		return strdup ("msp430");
 	case EM_SH:
 		return strdup ("sh");
+	case EM_V800:
+		return strdup ("v850");
 	case EM_V850:
 		return strdup ("v850");
 	case EM_IA_64:
