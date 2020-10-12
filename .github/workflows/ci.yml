@@ -48,6 +48,7 @@ jobs:
             meson_options: -Duse_webui=true
             enabled: ${{ github.event_name != 'pull_request' }}
             timeout: 45
+            cflags: '-Werror'
           - name: linux-acr-clang-build
             os: ubuntu-latest
             build_system: acr
@@ -60,6 +61,7 @@ jobs:
             compiler: gcc
             enabled: ${{ github.event_name == 'pull_request' }}
             timeout: 45
+            cflags: '-Werror'
           - name: linux-meson-gcc-newshell-tests
             os: ubuntu-latest
             build_system: meson
@@ -70,6 +72,7 @@ jobs:
             coverage: true
             enabled: true
             timeout: 50
+            cflags: '-Werror'
           - name: macos-clang-tests
             os: macos-latest
             build_system: acr
@@ -77,6 +80,7 @@ jobs:
             run_tests: true
             enabled: true
             timeout: 60
+            cflags: '-Werror'
           - name: linux-gcc-tests-asan
             os: ubuntu-20.04
             build_system: meson
@@ -90,6 +94,7 @@ jobs:
             timeout: 100
             # NOTE: asan errors ignored for release- branch for now, because there are too many issues that would block the release
             ignore_error: ${{ github.event_name == 'push' && contains(github.ref, 'release-') }}
+            cflags: '-Werror'
           - name: capstone-v3
             os: ubuntu-latest
             build_system: meson
@@ -98,6 +103,7 @@ jobs:
             run_tests: false
             enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
             timeout: 45
+            cflags: '-Werror'
           - name: capstone-v5
             os: ubuntu-latest
             build_system: meson
@@ -106,6 +112,7 @@ jobs:
             run_tests: false
             enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
             timeout: 45
+            cflags: '-Werror'
 
     steps:
     - uses: actions/checkout@v2
@@ -136,7 +143,7 @@ jobs:
       run: ./configure --prefix=${HOME} && make
       env:
         CC: ${{ matrix.compiler }}
-        CFLAGS: "${{ matrix.cflags }} -Werror"
+        CFLAGS: ${{ matrix.cflags }}
     - name: Build with Meson
       if: matrix.build_system == 'meson' && matrix.enabled
       run: |

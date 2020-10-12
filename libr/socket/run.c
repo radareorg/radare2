@@ -298,6 +298,8 @@ static void restore_saved_fd(int saved, bool restore, int fd) {
 }
 #endif
 
+#if __APPLE__ && !__POWERPC__
+#else
 static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err) {
 #if HAVE_PTY
 	if (!dyn_forkpty) {
@@ -382,6 +384,7 @@ static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err)
 	return -1;
 #endif
 }
+#endif
 
 static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 #if __APPLE__ && !__POWERPC__
