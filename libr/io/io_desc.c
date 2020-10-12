@@ -231,7 +231,7 @@ R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
 	r_id_storage_set (io->files, desc,  fdx);
 	r_id_storage_set (io->files, descx, fd);
 	if (io->p_cache) {
-		Sdb* cache = desc->cache;
+		HtUP* cache = desc->cache;
 		desc->cache = descx->cache;
 		descx->cache = cache;
 		r_io_desc_cache_cleanup (desc);
