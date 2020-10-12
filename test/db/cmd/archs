@@ -176,4 +176,108 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=endian tests: arm.v35
+FILE=bins/mach0/BatteryLife.arm_64.1
+CMDS=<<EOF
+e anal.hasnext=1
+afr
+sn
+pdr
+EOF
+EXPECT=<<EOF
+  ; CALL XREF from sym.func.100013adc @ 0x100013e60
+  ; CALL XREF from sym.func.100069028 @ 0x10006907c
+/ 272: sym.func.100010ffc ();
+| ; var int64_t var_10h @ x29-0x10
+| ; var int64_t var_bp_8h @ x29-0x8
+| ; var int64_t var_0h @ sp+0x0
+| ; var int64_t var_8h @ sp+0x8
+| ; var int64_t var_sp_10h @ sp+0x10
+| ; var int64_t var_18h @ sp+0x18
+| 0x100010ffc      fd7bbfa9       stp x29, x30, [sp, -0x10]!
+| ; DATA XREFS from sym.func.1000119f0 @ 0x100011b60, 0x100011b88, 0x100011bac
+| 0x100011000      fd030091       mov x29, sp
+| 0x100011004      ffc300d1       sub sp, sp, 0x30
+| 0x100011008      080080d2       movz x8, 0
+| 0x10001100c      a0031ff8       stur x0, [var_10h]                   ; [0x10:4]=-1 ; 16
+| 0x100011010      e10f00f9       str x1, [sp, 0x18]
+| 0x100011014      a0035ff8       ldur x0, [var_10h]
+| 0x100011018      1f0008eb       cmp x0, x8
+| 0x10001101c      81000054       b.ne 0x10001102c
+| ----------- true: 0x10001102c  false: 0x100011020
+| 0x100011020      080080d2       movz x8, 0
+| 0x100011024      a8831ff8       stur x8, [var_bp_8h]                 ; [0x8:4]=-1 ; 8
+| 0x100011028      35000014       b 0x1000110fc
+| ----------- true: 0x1000110fc
+| 0x10001102c      0100a152       movz w1, 0x800, lsl 16
+| 0x100011030      01208072       movk w1, 0x100
+| 0x100011034      a0035ff8       ldur x0, [var_10h]
+| 0x100011038      fbba0394       bl sym.imp.CFStringGetCStringPtr
+| 0x10001103c      080080d2       movz x8, 0
+| 0x100011040      01008052       movz w1, 0
+| 0x100011044      e88300a9       stp x8, x0, [sp, 8]
+| 0x100011048      e00f40f9       ldr x0, [var_18h]                    ; [0x18:4]=-1 ; 24
+| 0x10001104c      01000039       strb w1, [x0]
+| 0x100011050      e00b40f9       ldr x0, [var_sp_10h]                 ; [0x10:4]=-1 ; 16
+| 0x100011054      1f0008eb       cmp x0, x8
+| 0x100011058      41000054       b.ne 0x100011060
+| ----------- true: 0x100011060  false: 0x10001105c
+| 0x10001105c      04000014       b 0x10001106c
+| ----------- true: 0x10001106c
+| 0x100011060      e80b40f9       ldr x8, [var_sp_10h]                 ; [0x10:4]=-1 ; 16
+| 0x100011064      e80700f9       str x8, [sp, 8]
+| 0x100011068      23000014       b 0x1000110f4
+| ----------- true: 0x1000110f4
+| ; CODE XREF from sym.func.100010ffc @ 0x10001105c
+| 0x10001106c      a0035ff8       ldur x0, [var_10h]
+| 0x100011070      f0ba0394       bl sym.imp.CFStringGetLength
+| 0x100011074      0100a152       movz w1, 0x800, lsl 16
+| 0x100011078      01208072       movk w1, 0x100
+| 0x10001107c      f0ba0394       bl sym.imp.CFStringGetMaximumSizeForEncoding
+| 0x100011080      e80340b2       orr x8, xzr, 1
+| 0x100011084      e00300f9       str x0, [sp]
+| 0x100011088      e00340f9       ldr x0, [sp]
+| 0x10001108c      e90340b2       orr x9, xzr, 1
+| 0x100011090      0100098b       add x1, x0, x9
+| 0x100011094      e00308aa       mov x0, x8
+| 0x100011098      fcb90394       bl sym.imp.calloc
+| 0x10001109c      080080d2       movz x8, 0
+| 0x1000110a0      e00700f9       str x0, [sp, 8]
+| 0x1000110a4      e90740f9       ldr x9, [var_8h]                     ; [0x8:4]=-1 ; 8
+| 0x1000110a8      3f0108eb       cmp x9, x8
+| 0x1000110ac      41000054       b.ne 0x1000110b4
+| ----------- true: 0x1000110b4  false: 0x1000110b0
+| 0x1000110b0      0e000014       b 0x1000110e8
+| ----------- true: 0x1000110e8
+| 0x1000110b4      a0035ff8       ldur x0, [var_10h]
+| 0x1000110b8      e20740a9       ldp x2, x1, [sp]
+| 0x1000110bc      0300a152       movz w3, 0x800, lsl 16
+| 0x1000110c0      03208072       movk w3, 0x100
+| 0x1000110c4      d5ba0394       bl sym.imp.CFStringGetCString
+| 0x1000110c8      001c0013       sxtb w0, w0
+| 0x1000110cc      1f000071       cmp w0, 0
+| 0x1000110d0      c1000054       b.ne 0x1000110e8
+| ----------- true: 0x1000110e8  false: 0x1000110d4
+| 0x1000110d4      e00740f9       ldr x0, [var_8h]                     ; [0x8:4]=-1 ; 8
+| 0x1000110d8      0dba0394       bl sym.imp.free                      ; void free(void *ptr)
+| 0x1000110dc      000080d2       movz x0, 0
+| 0x1000110e0      a0831ff8       stur x0, [var_bp_8h]                 ; [0x8:4]=-1 ; 8
+| 0x1000110e4      06000014       b 0x1000110fc
+| ----------- true: 0x1000110fc
+| ; CODE XREF from sym.func.100010ffc @ 0x1000110b0
+| 0x1000110e8      e8030032       orr w8, wzr, 1
+| 0x1000110ec      e90f40f9       ldr x9, [var_18h]                    ; [0x18:4]=-1 ; 24
+| 0x1000110f0      28010039       strb w8, [x9]
+| ----------- true: 0x1000110f4
+| ; CODE XREF from sym.func.100010ffc @ 0x100011068
+| 0x1000110f4      e80740f9       ldr x8, [var_8h]                     ; [0x8:4]=-1 ; 8
+| 0x1000110f8      a8831ff8       stur x8, [var_bp_8h]                 ; [0x8:4]=-1 ; 8
+| ----------- true: 0x1000110fc
+| ; CODE XREFS from sym.func.100010ffc @ 0x100011028, 0x1000110e4
+| 0x1000110fc      a0835ff8       ldur x0, [var_bp_8h]
+| 0x100011100      bf030091       mov sp, x29
+| 0x100011104      fd7bc1a8       ldp x29, x30, [sp], 0x10
+\ 0x100011108      c0035fd6       ret
 
+EOF
+RUN
