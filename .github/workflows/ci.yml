@@ -85,7 +85,7 @@ jobs:
             os: ubuntu-20.04
             build_system: meson
             compiler: gcc
-            cflags: '-DR2_ASSERT_STDOUT=1'
+            cflags: '-DR2_ASSERT_STDOUT=1 -Werror'
             meson_options: -Db_sanitize=address,undefined -Duse_webui=true
             asan: true
             asan_options: 'detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1'
@@ -94,7 +94,6 @@ jobs:
             timeout: 100
             # NOTE: asan errors ignored for release- branch for now, because there are too many issues that would block the release
             ignore_error: ${{ github.event_name == 'push' && contains(github.ref, 'release-') }}
-            cflags: '-Werror'
           - name: capstone-v3
             os: ubuntu-latest
             build_system: meson
