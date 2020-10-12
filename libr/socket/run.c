@@ -286,6 +286,8 @@ static void setASLR(RRunProfile *r, int enabled) {
 #endif
 }
 
+#if __APPLE__ && !__POWERPC__
+#else
 #if HAVE_PTY
 static void restore_saved_fd(int saved, bool restore, int fd) {
 	if (saved == -1) {
@@ -298,8 +300,6 @@ static void restore_saved_fd(int saved, bool restore, int fd) {
 }
 #endif
 
-#if __APPLE__ && !__POWERPC__
-#else
 static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err) {
 #if HAVE_PTY
 	if (!dyn_forkpty) {
