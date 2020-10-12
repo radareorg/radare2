@@ -82,12 +82,12 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			ut32 vC = (len > 4)? r_read_le32 (data + 2): 0x22;
 			// op->stackop = R_ANAL_STACK_SET;
 			// op->ptr = vC; // why
-			ut32 val = vC?vC:vA;
+			ut64 val = vC?vC:vA;
 			op->val = val;
 	//		op->reg = vB;
 			op->nopcode = 2;
 			if (mask & R_ANAL_OP_MASK_ESIL) {
-				esilprintf (op, "0x%x,v%d,=", val, vB);
+				esilprintf (op, "0x%" PFMT64x ",v%d,=", val, vB);
 			}
 		}
 		break;

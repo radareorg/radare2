@@ -131,7 +131,7 @@ static void opex(RStrBuf *buf, cs_insn *insn, int mode) {
 			break;
 		case X86_OP_IMM:
 			r_strbuf_appendf (buf, ",\"type\":\"imm\"");
-			r_strbuf_appendf (buf, ",\"value\":%ld", op->imm);
+			r_strbuf_appendf (buf, ",\"value\":%" PFMT64d, (st64)op->imm);
 			break;
 		case X86_OP_MEM:
 			r_strbuf_appendf (buf, ",\"type\":\"mem\"");
@@ -145,7 +145,7 @@ static void opex(RStrBuf *buf, cs_insn *insn, int mode) {
 				r_strbuf_appendf (buf, ",\"index\":\"%s\"", cs_reg_name (handle, op->mem.index));
 			}
 			r_strbuf_appendf (buf, ",\"scale\":%d", op->mem.scale);
-			r_strbuf_appendf (buf, ",\"disp\":%lu", op->mem.disp);
+			r_strbuf_appendf (buf, ",\"disp\":%" PFMT64d, (st64)op->mem.disp);
 			break;
 		default:
 			r_strbuf_appendf (buf, ",\"type\":\"invalid\"");
@@ -164,7 +164,7 @@ static void opex(RStrBuf *buf, cs_insn *insn, int mode) {
 		r_strbuf_appendf (buf, ",\"sib\":%d", x->sib);
 	}
 	if (x->disp) {
-		r_strbuf_appendf (buf, ",\"disp\":%ld", x->disp);
+		r_strbuf_appendf (buf, ",\"disp\":%" PFMT64d, (st64)x->disp);
 	}
 	if (x->sib_index) {
 		r_strbuf_appendf (buf, ",\"sib_index\":\"%s\"",
