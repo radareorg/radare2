@@ -136,7 +136,7 @@ jobs:
       run: ./configure --prefix=${HOME} && make
       env:
         CC: ${{ matrix.compiler }}
-        CFLAGS: ${{ matrix.cflags }}
+        CFLAGS: "${{ matrix.cflags }} -Werror"
     - name: Build with Meson
       if: matrix.build_system == 'meson' && matrix.enabled
       run: |
