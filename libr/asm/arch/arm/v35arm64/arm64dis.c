@@ -1549,6 +1549,8 @@ const char* get_register_name(Register reg)
 {
 	if (reg < REG_END && reg > REG_NONE)
 		return RegisterString[reg];
+	if (reg < SYSREG_END && reg > SYSREG_NONE)
+		return get_system_register_name(reg);
 	return NULL;
 }
 
@@ -1786,10 +1788,12 @@ uint32_t get_implementation_specific(const InstructionOperand* restrict operand,
 
 const char* get_system_register_name(SystemReg reg)
 {
+	const uint32_t idx = reg - SYSREG_NONE;
+
 	//REG_W0 is the first of the general purpose registers
-	if (reg >= COUNT_OF(SystemRegisterString))
+	if (idx >= COUNT_OF(SystemRegisterString))
 		return NULL;
-	return SystemRegisterString[reg];
+	return SystemRegisterString[idx];
 }
 
 
