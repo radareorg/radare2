@@ -78,7 +78,7 @@ stackptr: 8
           "type": "mem",
           "base": "rbp",
           "scale": 1,
-          "disp": 18446744073709551604
+          "disp": -12
         },
         {
           "size": 4,

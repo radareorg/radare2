@@ -1791,7 +1791,7 @@ static void analop_esil (xtensa_isa isa, xtensa_opcode opcode, xtensa_format for
 		break;
 	case 0:  /* excw */
 	case 34: /* nop.n */
-		r_strbuf_setf (&op->esil, "");
+		r_strbuf_setf (&op->esil, "%s", "");
 		break;
 	// TODO: s32cli (s32c1i) is conditional (CAS)
 	// should it be handled here?
@@ -1873,7 +1873,7 @@ static void analop_esil (xtensa_isa isa, xtensa_opcode opcode, xtensa_format for
 		esil_extract_unsigned (isa, opcode, format, i, slot_buffer, op);
 		break;
 	case 79: /* ill */
-		r_strbuf_setf (&op->esil, "");
+		r_strbuf_setf (&op->esil, "%s", "");
 		break;
 	// TODO: windowed calls?
 	case 7: /* call4 */

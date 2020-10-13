@@ -391,9 +391,9 @@ static void exi_rn(RAnalOp *op, ut8 reg, const char *operation) {
 #define bit_r ef ("%d,", buf[1] & 7); xr (bit); e (">>,1,&,")
 #define bit_c ef ("%d,c,<<,", buf[1] & 7);
 
-#define jmp ef ("%d,pc,=", op->jump)
+#define jmp ef ("%" PFMT64d ",pc,=", op->jump)
 #define cjmp e ("?{,"); jmp; e (",}")
-#define call ef ("%d,", op->fail); xw (sp2); jmp
+#define call ef ("%" PFMT64d ",", op->fail); xw (sp2); jmp
 
 #define alu_op(val, aluop, flags) xr (val); e ("a," aluop "=," flags)
 #define alu_op_c(val, aluop, flags) e ("c,"); xr (val); e ("+,a," aluop "=," flags)

@@ -5069,7 +5069,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(repeat_command) {
 		return R_CMD_STATUS_INVALID;
 	}
 	if (rep > INTERACTIVE_MAX_REP && r_cons_is_interactive ()) {
-		if (!r_cons_yesno ('n', "Are you sure to repeat this %" PFMT64d " times? (y/N)", rep)) {
+		if (!r_cons_yesno ('n', "Are you sure to repeat this %d times? (y/N)", rep)) {
 			return R_CMD_STATUS_INVALID;
 		}
 	}

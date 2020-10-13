@@ -124,7 +124,7 @@ R_API void r_io_free(RIO *io) {
 
 R_API RIODesc *r_io_open_buffer(RIO *io, RBuffer *b, int perm, int mode) {
 	ut64 bufSize = r_buf_size (b);
-	char *uri = r_str_newf ("malloc://%d", bufSize);
+	char *uri = r_str_newf ("malloc://%" PFMT64d, bufSize);
 	RIODesc *desc = r_io_open_nomap (io, uri, perm, mode);
 	if (desc) {
 		const ut8 *tmp = r_buf_data (b, &bufSize);

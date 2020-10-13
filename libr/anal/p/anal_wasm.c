@@ -332,7 +332,7 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			break;
 		case WASM_OP_NOP:
 			op->type = R_ANAL_OP_TYPE_NOP;
-			r_strbuf_setf (&op->esil, "");
+			r_strbuf_setf (&op->esil, "%s", "");
 			break;
 		case WASM_OP_CALL:
 		case WASM_OP_CALLINDIRECT:
