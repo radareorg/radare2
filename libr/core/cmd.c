@@ -1401,11 +1401,6 @@ const void cmd_table_header(RCore *core, char *s) {
 
 static int cmd_table(void *data, const char *input) {
 	RCore *core = (RCore*)data;
-
-	if (!core->table) {
-		core->table = r_table_new ();
-	}
-
 	switch (*input) {
 	case 'h': // table header
 		cmd_table_header (core, r_str_trim_dup (input + 1));

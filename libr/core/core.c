@@ -2675,6 +2675,7 @@ R_API bool r_core_init(RCore *core) {
 	core->incomment = false;
 	core->config = NULL;
 	core->http_up = false;
+	core->table = r_table_new ();
 	core->use_tree_sitter_r2cmd = false;
 	ZERO_FILL (core->root_cmd_descriptor);
 	core->print = r_print_new ();
@@ -2896,7 +2897,6 @@ R_API void r_core_fini(RCore *c) {
 	if (!c) {
 		return;
 	}
-	r_table_free (c->table);
 	r_core_task_break_all (&c->tasks);
 	r_core_task_join (&c->tasks, NULL, -1);
 	r_core_wait (c);
@@ -2904,6 +2904,7 @@ R_API void r_core_fini(RCore *c) {
 	//update_sdb (c);
 	// avoid double free
 	r_list_free (c->ropchain);
+	r_table_free (c->table);
 	r_event_free (c->ev);
 	free (c->cmdlog);
 	free (c->lastsearch);
