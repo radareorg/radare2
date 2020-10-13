@@ -1090,7 +1090,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						}
 					} else {
 						if (base == 32) {
-							printfmt ((j%4)? "   ": "  ");
+							printfmt ((j % 4)? "   ": "  ");
 						} else if (base == 10) {
 							printfmt (j % 2? "     ": "  ");
 						} else {
@@ -1272,12 +1272,19 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			if (!eol && p && p->flags & R_PRINT_FLAGS_REFS) {
 				ut64 off = UT64_MAX;
 				if (inc == 8) {
-					if (i + sizeof (ut64) < len) {
+					if (i + sizeof (ut64) - 1 < len) {
 						off = r_read_le64 (buf + i);
 					}
 				} else if (inc == 4) {
-					if (i + sizeof (ut32) < len) {
+					if (i + sizeof (ut32) - 1 < len) {
 						off = r_read_le32 (buf + i);
+					}
+				} else if (inc == 2 && base == 16) {
+					if (i + sizeof (ut16) - 1 < len) {
+						off = r_read_le16 (buf + i);
+						if (off == 0) {
+							off = UT64_MAX;
+						}
 					}
 				}
 				if (p->hasrefs && off != UT64_MAX) {
