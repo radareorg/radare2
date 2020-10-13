@@ -541,10 +541,19 @@ static char *get_reg_profile(RAnal *anal) {
 	return strdup (p);
 }
 
+static RList *anal_preludes(RAnal *anal) {
+#define KW(d,ds,m,ms) r_list_append (l, r_search_keyword_new((const ut8*)d,ds,(const ut8*)m, ms, NULL))
+	RList *l = r_list_newf ((RListFree)r_search_keyword_free);
+	KW ("\x80\x07", 2, "\xf0\xff", 2);
+	KW ("\x50\x1a\x63\x0f", 4, "\xf0\xff\xff\x0f", 4);
+	return l;
+}
+
 RAnalPlugin r_anal_plugin_v850 = {
 	.name = "v850",
 	.desc = "V850 code analysis plugin",
 	.license = "LGPL3",
+	.preludes = anal_preludes,
 	.arch = "v850",
 	.bits = 32,
 	.op = v850_op,
