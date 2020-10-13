@@ -1,6 +1,5 @@
 NAME=v850 random pseudo
 FILE=bins/elf/ld-2.27.so
-BROKEN=1
 CMDS=<<EOF
 s+128
 e asm.arch=v850
@@ -15,20 +14,47 @@ r0 = r0
 r0 = r0
 r0 = r0
 r0 = r0
-r0 == 0xa
+r13 = 8
+r13 = 0
+r9 = r2
 r17 = 0x388 | r13
 r0 = r0
 r9 = r0
 r11 = (0x8548 << 16) + r26
-r2 == -0xc
-r9 = r3
-r9 = r3
 r9 = r16
 r9 = r8
-r2 /= r19
-r9 /= r19
-r0 = r20
+r9 = r16
+r4 == -1
+u = r17 & r8
+r25 = (byte) r8805[0x5]
 r9 = r0
 EOF
 RUN
 
+NAME=v850 prepare-dispose
+FILE=bins/v850/hello-v850e
+CMDS=<<EOF
+e asm.arch=v850
+e asm.parser=v850.pseudo
+e asm.pseudo=true
+e asm.bits
+aa
+sn
+pdf
+EOF
+EXPECT=<<EOF
+32
+/ 36: sym._compute ();
+|           0x0010006c      80074100       prepare 0x00002080,r0
+|           0x00100070      581a           r3 -= 8
+|           0x00100072      03e8           r29 = r3
+|           0x00100074      7d370500       r29[0x4] = (word) r6
+|           0x00100078      7d3f0100       r29[0x0] = (word) r7
+|           0x0010007c      3d5f0500       r11 = (word) r29[0x4]
+|           0x00100080      3d570100       r10 = (word) r29[0x0]
+|           0x00100084      eb572002       setf h,r10
+|           0x00100088      1d18           r3 = r29
+|           0x0010008a      481a           r3 += 8
+\           0x0010008c      40065f00       dispose 0x5f,r0,r0
+EOF
+RUN

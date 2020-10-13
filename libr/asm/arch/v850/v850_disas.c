@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2018 - Fedor Sakharov */
+/* radare - LGPL - Copyright 2014-2020 - Fedor Sakharov, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -167,7 +167,7 @@ static int decode_bcond(const ut16 instr, int len, struct v850_cmd *cmd) {
 	return 2;
 }
 
-static int decode_jarl(const ut8 *instr, int len, struct v850_cmd *cmd) {
+static int decode_prepare(const ut8 *instr, int len, struct v850_cmd *cmd) {
 	if (len < 4) {
 		return -1;
 	}
@@ -178,16 +178,55 @@ static int decode_jarl(const ut8 *instr, int len, struct v850_cmd *cmd) {
 	ut8 reg = get_reg2 (word1);
 	ut32 disp = (word2 << 6) | get_reg1 (word1);
 
-	snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "%s", instrs[get_opcode (word1)]);
+	snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "prepare");
 	snprintf (cmd->operands, V850_INSTR_MAXLEN - 1, "0x%08x, r%d",
 			disp << 1, reg);
 
 	return 4;
 }
 
+static int decode_jarl(const ut8 *instr, int len, struct v850_cmd *cmd) {
+	if (len < 4) {
+		return -1;
+	}
+	if(instr[0] == 0x80 && instr[1] != 0xFF) {
+		// on modern E models
+		return decode_prepare(instr, len, cmd);
+	}
+	ut16 word1 = r_read_le16 (instr);
+	ut16 word2 = r_read_at_le16 (instr, 2);
+	ut16 word3 = r_read_at_le16 (instr, 4);
+	// (1) rrrrr11110dddddd ddddddddddddddd0
+	// (2) 00000010111RRRRR ddddddddddddddd0 DDDDDDDDDDDDDDDD
+	ut8 reg = ((word1 & 0xf800 ) >>11);
+	ut32 disp = word2;
+	disp += cmd->addr;
+
+	snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "%s", instrs[get_opcode (word1)]);
+	snprintf (cmd->operands, V850_INSTR_MAXLEN - 1, "0x%08x, r%d",
+			disp, reg);
+
+	return 4;
+}
+
+static int decode_dispose(const ut8 *instr, int len, struct v850_cmd *cmd) {
+	if (len < 4) {
+		return -1;
+	}
+	ut16 word1 = r_read_le16 (instr);
+	ut16 word2 = r_read_at_le16 (instr, 2);
+	snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "dispose");
+	snprintf (cmd->operands, V850_INSTR_MAXLEN - 1, "0x%x, r%d, r%d",
+			word2, get_reg1 (word1), get_reg2 (word1));
+	return 4;
+}
 static int decode_3operands(const ut8 *instr, int len, struct v850_cmd *cmd) {
 	if (len < 4) {
 		return -1;
+	}
+	// 4006 // dispose
+	if (instr[0] == 0x40 && !(instr[1] >> 4)) {
+		return decode_dispose (instr, len , cmd);
 	}
 	ut16 word1 = r_read_le16 (instr);
 	ut16 word2 = r_read_at_le16 (instr, 2);
@@ -265,7 +304,7 @@ static int decode_extended(const ut8 *instr, int len, struct v850_cmd *cmd) {
 		break;
 	case V850_EXT_LDSR:
 		snprintf (cmd->operands, V850_INSTR_MAXLEN - 1, "r%d, r%d",
-				get_reg2 (word1), get_reg1(word1));
+				get_reg2 (word1), get_reg1 (word1));
 		break;
 	case V850_EXT_STSR:
 		snprintf (cmd->operands, V850_INSTR_MAXLEN - 1, "r%d, r%d",
@@ -297,7 +336,7 @@ static int decode_extended(const ut8 *instr, int len, struct v850_cmd *cmd) {
 	return 4;
 }
 
-int v850_decode_command (const ut8 *instr, int len, struct v850_cmd *cmd) {
+int v850_decode_command(const ut8 *instr, int len, struct v850_cmd *cmd) {
 	int ret;
 
 	if (len < 2) {

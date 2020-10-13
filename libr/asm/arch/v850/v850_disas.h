@@ -44,7 +44,8 @@ enum v850_cmd_opcodes {
 	V850_BCOND4	= 0x2F,
 	V850_ADDI	= 0x30,
 	V850_MOVEA	= 0x31,
-	V850_MOVHI	= 0x32,
+	V850_DISPOSE	= 0x32, // also movhi
+	V850_MOVHI	= 0x32, // also dispose
 	V850_SATSUBI	= 0x33,
 	V850_ORI	= 0x34,
 	V850_XORI	= 0x35,
@@ -54,7 +55,8 @@ enum v850_cmd_opcodes {
 	V850_LDHW	= 0x39,
 	V850_STB	= 0x3A,
 	V850_STHW	= 0x3B,
-	V850_JARL1	= 0x3C,
+	V850_PREPARE	= 0x3C, // also jarl1
+	V850_JARL1	= 0x3C, // also prepare
 	V850_JARL2	= 0x3D,
 	V850_BIT_MANIP	= 0x3E,
 	V850_EXT1	= 0x3F,

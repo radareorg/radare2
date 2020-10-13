@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2013 - pancake
+/* radare - LGPL - Copyright 2012-2020 - pancake
 	2014 - Fedor Sakharov <fedor.sakharov@gmail.com> */
 
 #include <string.h>
@@ -190,8 +190,16 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		word2 = r_read_le16 (buf + 2);
 	}
 	opcode = get_opcode (word1);
-
+	// eprintf("opcode %d%c", opcode, 10);
 	switch (opcode) {
+	case V850_PREPARE: // PREPARE
+		op->type = R_ANAL_OP_TYPE_PUSH;
+		break;
+	case V850_DISPOSE: // DISPOSE
+		if (buf[0] == 0x40) {
+			op->type = R_ANAL_OP_TYPE_RET;
+		}
+		break;
 	case V850_MOV_IMM5:
 	case V850_MOV:
 		// 2 formats
@@ -526,7 +534,9 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	r28	.32	112 0\n"
 		"gpr	r29	.32	116 0\n"
 		"gpr	r30	.32	120 0\n"
+		"gpr	ep	.32	120 0\n"
 		"gpr	r31	.32	124 0\n"
+		"gpr	lp	.32	124 0\n"
 		"gpr	pc	.32	128 0\n"
 
 		"gpr	psw .32 132 0\n"
@@ -541,10 +551,27 @@ static char *get_reg_profile(RAnal *anal) {
 	return strdup (p);
 }
 
+static int archinfo(RAnal *anal, int q) {
+	if (q == R_ANAL_ARCHINFO_DATA_ALIGN) {
+		return 4;
+	}
+	if (q == R_ANAL_ARCHINFO_ALIGN) {
+		return 2;
+	}
+	if (q == R_ANAL_ARCHINFO_MAX_OP_SIZE) {
+		return 4;
+	}
+	if (q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
+		return 2;
+	}
+	return 4;
+}
+
 RAnalPlugin r_anal_plugin_v850 = {
 	.name = "v850",
 	.desc = "V850 code analysis plugin",
 	.license = "LGPL3",
+	.archinfo = archinfo,
 	.arch = "v850",
 	.bits = 32,
 	.op = v850_op,
