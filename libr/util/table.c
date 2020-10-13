@@ -71,6 +71,16 @@ R_API void r_table_column_free(void *_col) {
 	free (col);
 }
 
+R_API RTableRow *r_table_row_clone(RTableRow *row) {
+	RTableRow *r = r_table_row_new (r_list_newf (free));
+	RListIter *iter;
+	char *word;
+	r_list_foreach (row->items, iter, word) {
+		r_list_append (r->items, strdup (word));
+	}
+	return r;
+}
+
 R_API RTableColumn *r_table_column_clone(RTableColumn *col) {
 	RTableColumn *c = R_NEW0 (RTableColumn);
 	if (!c) {
@@ -1171,12 +1181,22 @@ R_API void r_table_visual_list(RTable *table, RList *list, ut64 seek, ut64 len, 
 	}
 }
 
+R_API RTable *r_table_clone(const RTable *t) {
+	RTable *o = r_table_new ();
+	RTableColumn *col;
+	RTableRow *row;
+	RListIter *iter;
+	r_list_foreach (t->cols, iter, col) {
+		r_list_append (o->rows, r_table_column_clone (col));
+	}
+	r_list_foreach (t->rows, iter, row) {
+		r_list_append (o->rows, r_table_row_clone (row));
+	}
+	return o;
+}
+
 #if 0
 // TODO: to be implemented
-R_API RTable *r_table_clone(RTable *t) {
-	// TODO: implement
-	return NULL;
-}
 
 R_API RTable *r_table_push(RTable *t) {
 	// TODO: implement

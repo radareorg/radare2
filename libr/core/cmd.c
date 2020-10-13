@@ -685,7 +685,7 @@ static int cmd_alias(void *data, const char *input) {
 		if (!q || (q && q > def)) {
 			if (*def) {
 				if (!strcmp (def, "-")) {
-					char *v = r_cmd_alias_get (core->rcmd, buf, 0);
+					const char *v = r_cmd_alias_get (core->rcmd, buf, 0);
 					char *n = r_cons_editor (NULL, v);
 					if (n) {
 						r_cmd_alias_set (core->rcmd, buf, n, 0);
@@ -701,7 +701,7 @@ static int cmd_alias(void *data, const char *input) {
 	/* Show command for alias */
 	} else if (desc && !q) {
 		*desc = 0;
-		char *v = r_cmd_alias_get (core->rcmd, buf, 0);
+		const char *v = r_cmd_alias_get (core->rcmd, buf, 0);
 		if (v) {
 			if (nonl == desc + 1) {
 				r_cons_print (v);
@@ -718,7 +718,7 @@ static int cmd_alias(void *data, const char *input) {
 		int i, count = 0;
 		char **keys = r_cmd_alias_keys (core->rcmd, &count);
 		for (i = 0; i < count; i++) {
-			char *v = r_cmd_alias_get (core->rcmd, keys[i], 0);
+			const char *v = r_cmd_alias_get (core->rcmd, keys[i], 0);
 			char *q = r_base64_encode_dyn (v, -1);
 			if (buf[2] == '*') {
 				r_cons_printf ("%s=%s\n", keys[i], v);
@@ -738,7 +738,7 @@ static int cmd_alias(void *data, const char *input) {
 		if (q) {
 			*q = 0;
 		}
-		char *v = r_cmd_alias_get (core->rcmd, buf, 0);
+		const char *v = r_cmd_alias_get (core->rcmd, buf, 0);
 		if (v) {
 			if (*v == '$') {
 				r_cons_strcat (v + 1);
@@ -1282,21 +1282,8 @@ static int cmd_stdin(void *data, const char *input) {
 	return r_core_run_script (core, "-");
 }
 
-static void load_table(RCore *core, RTable *t, const char *file) {
-	char *data = NULL;
-
-	if (*file == '$') {
-		const char *cdata = r_cmd_alias_get (core->rcmd, file, 1);
-		if (cdata) {
-			data = strdup (cdata + 1);
-		}
-	} else {
-		data = r_file_slurp (file, NULL);
-	}
-	if (!data) {
-		eprintf ("Error: Cannot slurp '%s'\n", file);
-		return;
-	}
+static void load_table(RCore *core, RTable *t, char *data) {
+	r_return_if_fail (core && t && data);
 	RListIter *iter;
 	char *line;
 	RList *lines = r_str_split_list (data, "\n", 0);
@@ -1440,10 +1427,16 @@ static int cmd_table(void *data, const char *input) {
 		}
 		break;
 	case '$':
-		load_table (core, core->table, input);
+		{
+			const char *cdata = r_cmd_alias_get (core->rcmd, input + 1, 1);
+			if (cdata) {
+				load_table (core, core->table, strdup (cdata + 1));
+			}
+		}
 		break;
 	case ' ':
 		{
+			RTable *ot = r_table_clone (core->table);
 			const char *q = r_str_trim_head_ro (input + 1);
 			if (r_table_query (core->table, q)) {
 				char *ts = r_table_tostring (core->table);
@@ -1452,10 +1445,20 @@ static int cmd_table(void *data, const char *input) {
 					free (ts);
 				}
 			}
+			r_table_free (core->table);
+			core->table = ot;
 		}
 		break;
 	case '.':
-		load_table (core, core->table, r_str_trim_head_ro (input + 1));
+		{
+			const char *file = r_str_trim_head_ro (input + 1);
+			char *data = r_file_slurp (file, NULL);
+			if (data) {
+				load_table (core, core->table, data);
+			} else {
+				eprintf ("Cannot open file.\n");
+			}
+		}
 		break;
 	case ',':
 		// print csv
@@ -3431,7 +3434,7 @@ escape_pipe:
 			// register output of command as an alias
 			char *o = r_core_cmd_str (core, cmd);
 			if (appendResult) {
-				char *oldText = r_cmd_alias_get (core->rcmd, str, 1);
+				const char *oldText = r_cmd_alias_get (core->rcmd, str, 1);
 				if (oldText) {
 					char *two = r_str_newf ("%s%s", oldText, o);
 					if (two) {
@@ -5380,7 +5383,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_command) {
 		char *command_str = ts_node_sub_string (command, state->input);
 
 		char *output = r_core_cmd_str (state->core, command_str);
-		char *old_alias_value = r_cmd_alias_get (state->core->rcmd, arg_str, 1);
+		const char *old_alias_value = r_cmd_alias_get (state->core->rcmd, arg_str, 1);
 		char *new_alias_value;
 		const char *start_char = "$";
 		if (is_append && old_alias_value) {
