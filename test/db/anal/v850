@@ -58,3 +58,77 @@ EXPECT=<<EOF
 \           0x0010008c      40065f00       dispose 0x5f,r0,r0
 EOF
 RUN
+
+NAME=v850 functions
+FILE=bins/v850/ired_v850
+CMDS=<<EOF
+e asm.arch=v850
+e asm.parser=v850.pseudo
+e asm.bits
+s..4c
+af
+pdr
+EOF
+EXPECT=<<EOF
+32
+| 0x00100048      66070100       st.w r0, 0x0[r6]
+| ----------- true: 0x0010004c
+/ 166: fcn.0010004c ();
+| 0x0010004c      06360400       addi 0x4, r6, r6
+| 0x00100050      e731           cmp r7, r6
+| 0x00100052      b1fd           bcl 0x00110048
+| ----------- true: 0x00100048  false: 0x00100054
+| 0x00100054      80ff8452       jarl sym.___main, r31
+| 0x00100058      031ef0ff       addi 0xfff0, r3, r3
+| 0x0010005c      0032           mov 0, r6
+| 0x0010005e      003a           mov 0, r7
+| 0x00100060      0042           mov 0, r8
+| 0x00100062      80ff7a4a       jarl sym._main, r31
+| 0x00100066      0a30           mov r10, r6
+| 0x00100068      80ffba52       jarl sym._exit, r31
+| ;-- _io_open:
+| 0x0010006c      581a           add -8, r3
+| 0x0010006e      63ff0500       st.w r31, 0x4[r3]
+| 0x00100072      63ef0100       st.w r29, 0x0[r3]
+| 0x00100076      541a           add -0xc, r3
+| 0x00100078      03e8           mov r3, r29
+| 0x0010007a      7d370900       st.w r6, 0x8[r29]
+| 0x0010007e      2056a401       movea 0x1a4, r0, r10
+| 0x00100082      63570500       st.w r10, 0x4[r3]
+| 0x00100086      20560202       movea 0x202, r0, r10
+| 0x0010008a      63570100       st.w r10, 0x0[r3]
+| 0x0010008e      3d370900       ld.w 0x8[r29], r6
+| 0x00100092      2a060aae       movea 0xae0a, r10, r0
+| 0x00100096      1000           mov r16, r0
+| 0x00100098      eac760f9       setf nz, r24
+| 0x0010009c      0a58           mov r10, r11
+| 0x0010009e      2a060c74       movea 0x740c, r10, r0
+| 0x001000a2      1100           mov r17, r0
+| 0x001000a4      6a5f0100       st.w r11, 0x0[r10]
+| 0x001000a8      2a060c74       movea 0x740c, r10, r0
+| 0x001000ac      1100           mov r17, r0
+| 0x001000ae      2a570100       ld.w 0x0[r10], r10
+| 0x001000b2      7f52           cmp -1, r10
+| 0x001000b4      8a15           bnz 0x001000d4
+| ----------- true: 0x001000d4  false: 0x001000b6
+| 0x001000b6      63070100       st.w r0, 0x0[r3]
+| 0x001000ba      3d370900       ld.w 0x8[r29], r6
+| 0x001000be      2a060aae       movea 0xae0a, r10, r0
+| 0x001000c2      1000           mov r16, r0
+| 0x001000c4      eac760f9       setf nz, r24
+| 0x001000c8      0a58           mov r10, r11
+| 0x001000ca      2a060c74       movea 0x740c, r10, r0
+| 0x001000ce      1100           mov r17, r0
+| 0x001000d0      6a5f0100       st.w r11, 0x0[r10]
+| ----------- true: 0x001000d4
+| 0x001000d4      2a060c74       movea 0x740c, r10, r0
+| 0x001000d8      1100           mov r17, r0
+| 0x001000da      2a570100       ld.w 0x0[r10], r10
+| 0x001000de      1d18           mov r29, r3
+| 0x001000e0      23ff1100       ld.w 0x10[r3], r31
+| 0x001000e4      23ef0d00       ld.w 0xc[r3], r29
+| 0x001000e8      031e1400       addi 0x14, r3, r3
+| 0x001000ec      7f00           jmp [r31]
+
+EOF
+RUN
