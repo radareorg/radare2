@@ -88,6 +88,7 @@ r_asm_sources = [
   'arch/arm/aarch64/aarch64-dis.c',
   'arch/arm/aarch64/aarch64-opc-2.c',
   'arch/arm/aarch64/aarch64-opc.c',
+  'arch/arm/v35arm64/arm64dis.c',
   'arch/arm/armass.c',
   'arch/arm/armass64.c',
   'arch/arm/gnu/arm-dis.c',
