@@ -2213,3 +2213,16 @@ EXPECT=<<EOF
 66: parell (char *s);
 EOF
 RUN
+
+NAME=asm.imm.trim
+FILE=bins/elf/crackme0x05
+CMDS=<<EOF
+s 0x080483d5
+pi 1 @e:asm.imm.trim=false
+pi 1 @e:asm.imm.trim=true
+EOF
+EXPECT=<<EOF
+and esp, 0xfffffff0
+and esp, 
+EOF
+RUN
