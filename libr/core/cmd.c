@@ -138,7 +138,7 @@ static const char *help_msg_star[] = {
 	NULL
 };
 
-static const char *table_help[] = {
+static const char *cmd_table_help[] = {
 	"Usage:", ",[/] [file]", "# load table data",
 	",", "", "display table",
 	".", "$foo", "aflt > $foo (files starting with '$' are saved in memory)",
@@ -1491,25 +1491,22 @@ static int cmd_table(void *data, const char *input) {
 		// print table
 		if (input[1] == ' ') {
 			const char *q = r_str_trim_head_ro (input + 2);
-			if (r_table_query (core->table, q)) {
-				char *ts = r_table_tojson (core->table);
-				r_cons_printf ("%s\n", ts);
-				free (ts);
+			if (!r_table_query (core->table, q)) {
+				break;
 			}
-		} else {
-			char *ts = r_table_tojson (core->table);
-			if (ts) {
-				r_cons_printf ("%s\n", ts);
-				free (ts);
-			}
+		}
+		char *ts = r_table_tojson (core->table);
+		if (ts) {
+			r_cons_printf ("%s\n", ts);
+			free (ts);
 		}
 		break;
 	case '?':
-		r_core_cmd_help (core, table_help);
+		r_core_cmd_help (core, cmd_table_help);
 		r_cons_printf ("%s\n", r_table_help ());
 		break;
 	default:
-		r_core_cmd_help (core, table_help);
+		r_core_cmd_help (core, cmd_table_help);
 		break;
 	}
 	return 0;
