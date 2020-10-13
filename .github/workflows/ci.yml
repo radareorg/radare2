@@ -80,7 +80,6 @@ jobs:
             run_tests: true
             enabled: true
             timeout: 60
-            cflags: '-Werror'
           - name: linux-gcc-tests-asan
             os: ubuntu-20.04
             build_system: meson
