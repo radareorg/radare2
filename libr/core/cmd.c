@@ -149,7 +149,7 @@ static const char *cmd_table_help[] = {
 	",*", ">$foo", "print table as r2 commands",
 	",j", "", "print table in json format",
 	",h", "xxd foo bar cow", "define header column names and types",
-	",r", "xxd 1 2 foo", "adds a row using the given format string",
+	",r", "1 2 foo", "adds a row using the given format string",
 	",,", "", "print table in csv format",
 	NULL
 };
