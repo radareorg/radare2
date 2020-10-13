@@ -727,9 +727,9 @@ typedef struct gnu_insn {
 } gnu_insn;
 
 
-#define R_REG(x) insn->r_reg.x
-#define I_REG(x) insn->i_reg.x
-#define J_REG(x) insn->j_reg.x
+#define R_REG(x) ((const char *)insn->r_reg.x)
+#define I_REG(x) ((const char *)insn->i_reg.x)
+#define J_REG(x) ((const char *)insn->j_reg.x)
 
 
 /* Return a mapping from the register number i.e. $0 .. $31 to string name */
@@ -1108,7 +1108,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		insn.r_reg.rs = mips_reg_decode (rs);
 		insn.r_reg.rd = mips_reg_decode (rd);
 		insn.r_reg.rt = mips_reg_decode (rt);
-		snprintf (insn.r_reg.sa, REG_BUF_MAX, "%"PFMT32d, sa);
+		snprintf ((char *)insn.r_reg.sa, REG_BUF_MAX, "%"PFMT32d, sa);
 
 		switch (fun) {
 		case 0: // sll
@@ -1299,7 +1299,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->jump = page_hack + address;
 			op->delay = 1;
-			snprintf (insn.j_reg.jump, REG_BUF_MAX, "0x%"PFMT64x, op->jump);
+			snprintf ((char *)insn.j_reg.jump, REG_BUF_MAX, "0x%"PFMT64x, op->jump);
 			break;
 		case 3: // jal
 			insn.id = MIPS_INS_JAL;
@@ -1307,7 +1307,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			op->jump = page_hack + address;
 			op->fail = addr + 8;
 			op->delay = 1;
-			snprintf (insn.j_reg.jump, REG_BUF_MAX, "0x%"PFMT64x, op->jump);
+			snprintf ((char *)insn.j_reg.jump, REG_BUF_MAX, "0x%"PFMT64x, op->jump);
 			break;
 		}
 		//family = 'J';
@@ -1369,7 +1369,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 
 		insn.i_reg.rs = mips_reg_decode (rs);
 		insn.i_reg.rt = mips_reg_decode (rt);
-		snprintf (insn.i_reg.imm, REG_BUF_MAX, "%"PFMT32d, imm);
+		snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "%"PFMT32d, imm);
 
 		switch (optype) {
 		case 1: 
@@ -1383,7 +1383,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 				case 17: //bal  bgezal
 					if (rs==0) {
 						op->jump = addr+(imm<<2)+4;
-						snprintf (insn.i_reg.jump, REG_BUF_MAX, "0x%"PFMT64x, op->jump) ;
+						snprintf ((char *)insn.i_reg.jump, REG_BUF_MAX, "0x%"PFMT64x, op->jump) ;
 						insn.id = MIPS_INS_BAL;
 					} else {
 						op->fail = addr+8;
@@ -1426,7 +1426,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			op->fail = addr + 8;
 			op->delay = 1;
 			
-			snprintf (insn.i_reg.jump, REG_BUF_MAX, "0x%"PFMT64x, op->jump);
+			snprintf ((char *)insn.i_reg.jump, REG_BUF_MAX, "0x%"PFMT64x, op->jump);
 			break;
 		// The following idiom is very common in mips 32 bit:
 		//
@@ -1446,7 +1446,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		// flags directly, as suggested here: https://github.com/radareorg/radare2/issues/949#issuecomment-43654922
 		case 15: // lui
 			insn.id = MIPS_INS_LUI;
-			snprintf (insn.i_reg.imm, REG_BUF_MAX, "0x%"PFMT32x, imm);
+			snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%"PFMT32x, imm);
 			op->dst = r_anal_value_new ();
 			op->dst->reg = r_reg_get (anal->reg, mips_reg_decode (rt), R_REG_TYPE_GPR);
 			// TODO: currently there is no way for the macro to get access to this register
@@ -1463,7 +1463,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			op->val = imm; // Beware: this one is signed... use `?vi $v`
 			if (rs == 0) {
 				insn.id = MIPS_INS_LI;
-				snprintf (insn.i_reg.imm, REG_BUF_MAX, "0x%"PFMT32x, imm);
+				snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%"PFMT32x, imm);
 			}
 			break;
 		case 8: // addi
@@ -1497,7 +1497,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			op->type = R_ANAL_OP_TYPE_ADD;
 			if (rs == 0) {
 				insn.id = MIPS_INS_LDI;
-				snprintf (insn.i_reg.imm, REG_BUF_MAX, "0x%"PFMT32x, imm);
+				snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%"PFMT32x, imm);
 			}
 			break;
 		case 32: // lb
@@ -1565,7 +1565,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			op->jump = addr + 4*((buf[3] | buf[2]<<8 | buf[1]<<16));
 			op->fail = addr + 8;
 			op->delay = 1;
-			snprintf (insn.i_reg.jump, REG_BUF_MAX, "0x%"PFMT64x, op->jump);
+			snprintf ((char *)insn.i_reg.jump, REG_BUF_MAX, "0x%"PFMT64x, op->jump);
 
 			break;
 		}

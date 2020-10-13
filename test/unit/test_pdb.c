@@ -203,7 +203,6 @@ bool test_pdb_tpi_cpp(void) {
 			mu_assert_eq (type_info->leaf_type, eLF_ARGLIST, "Incorrect data type");
 		} else if (type->tpi_idx == 0x101A) {
 			mu_assert_eq (type_info->leaf_type, eLF_STRUCTURE, "Incorrect data type");
-			SType *return_type;
 			char *name;
 			int is_forward_ref;
 			type_info->get_name (&type->type_data, &name);

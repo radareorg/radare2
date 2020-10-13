@@ -1842,7 +1842,6 @@ static EDemanglerErr parse_microsoft_mangled_name(const char *sym, char **demang
 	STypeCodeStr type_code_str;
 	EDemanglerErr err = eDemanglerErrOK;
 
-	bool is_based = false;
 	SDataType data_type;
 
 	const char *curr_pos = sym;
@@ -1867,7 +1866,6 @@ static EDemanglerErr parse_microsoft_mangled_name(const char *sym, char **demang
 	
 	if (curr_pos[0] == '_') {
 		// TODO: __based()
-		is_based = true;
 		curr_pos++;
 	}
 
