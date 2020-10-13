@@ -10,6 +10,7 @@ r_asm_sources = [
   'p/asm_arc.c',
   'p/asm_arm_as.c',
   'p/asm_arm_cs.c',
+  'p/asm_arm_v35.c',
   'p/asm_arm_gnu.c',
   'p/asm_arm_winedbg.c',
   'p/asm_avr.c',
