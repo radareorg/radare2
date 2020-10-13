@@ -1,0 +1,48 @@
+NAME=ELF: ired v800
+FILE=bins/v850/ired_v850
+CMDS=<<EOF
+i
+s+4
+pd 3
+EOF
+EXPECT=<<EOF
+fd       3
+file     bins/v850/ired_v850
+size     0xedeb8
+humansz  951.7K
+mode     r-x
+format   elf
+iorw     false
+block    0x100
+type     EXEC (Executable file)
+arch     v850
+baddr    0x100000
+binsz    973677
+bintype  elf
+bits     32
+canary   false
+class    ELF32
+compiler GCC: (GNU) 9.3.0
+crypto   false
+endian   little
+havecode true
+laddr    0x0
+lang     c
+linenum  true
+lsyms    true
+machine  NEC V800 series
+nx       false
+os       linux
+pic      false
+relocs   true
+rpath    NONE
+sanitiz  false
+static   true
+stripped false
+subsys   linux
+va       true
+            0x00100004      3506ffff       movea 0xffff, r21, r0
+            0x00100008      0000           mov r0, r0
+            0x0010000a      23060000       movea 0x0, r3, r0
+EOF
+RUN
