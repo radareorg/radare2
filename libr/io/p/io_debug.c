@@ -133,7 +133,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		i++;
 	}
 
-	LPCTSTR appname_ = r_sys_conv_utf8_to_win (argv[0]);
+	LPTSTR appname_ = r_sys_conv_utf8_to_win (argv[0]);
 	LPTSTR cmdline_ = r_sys_conv_utf8_to_win (cmdline);
 	free (cmdline);
 	struct __createprocess_params p = {appname_, cmdline_, &pi};
