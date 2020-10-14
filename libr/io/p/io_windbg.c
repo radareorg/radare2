@@ -449,7 +449,7 @@ static RIODesc *windbg_open(RIO *io, const char *uri, int perm, int mode) {
 	DWORD pid = 0;
 	int c;
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "c:dgGh:i:k:op:y:z:");
+	r_getopt_init (&opt, argc, (const char **)argv, "c:dgGh:i:k:op:y:z:");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'c':
@@ -531,7 +531,7 @@ static RIODesc *windbg_open(RIO *io, const char *uri, int perm, int mode) {
 	switch (target) {
 	case TARGET_LOCAL_SPAWN:
 		if (argv[opt.ind]) {
-			char *cmd = r_str_format_msvc_argv ((size_t)opt.argc - opt.ind, argv + opt.ind);
+			char *cmd = r_str_format_msvc_argv ((size_t)opt.argc - opt.ind, (const char **)argv + opt.ind);
 			hr = ITHISCALL (dbgClient, CreateProcess, 0ULL, cmd, spawn_options);
 			free (cmd);
 		} else {

@@ -258,7 +258,6 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 	r_return_val_if_fail (s, false);
 #if __WINDOWS__
 #define gai_strerror gai_strerrorA
-	struct sockaddr_in sa;
 	WSADATA wsadata;
 
 	if (WSAStartup (MAKEWORD (1, 1), &wsadata) == SOCKET_ERROR) {
@@ -301,7 +300,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 
 			switch (proto) {
 			case R_SOCKET_PROTO_TCP:
-				ret = setsockopt (s->fd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof (flag));
+				ret = setsockopt (s->fd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof (flag));
 				if (ret < 0) {
 					perror ("setsockopt");
 					close (s->fd);
@@ -791,7 +790,7 @@ R_API int r_socket_read(RSocket *s, unsigned char *buf, int len) {
 	}
 #endif
 	// int r = read (s->fd, buf, len);
-	int r = recv (s->fd, buf, len, 0);
+	int r = recv (s->fd, (char *)buf, len, 0);
 	D { eprintf ("READ "); int i; for (i = 0; i<len; i++) { eprintf ("%02x ", buf[i]); } eprintf ("\n"); }
 	return r;
 }

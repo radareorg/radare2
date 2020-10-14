@@ -94,8 +94,8 @@ err_enable:
 }
 
 struct __createprocess_params {
-	LPCWSTR appname;
-	LPWSTR cmdline;
+	LPCTSTR appname;
+	LPTSTR cmdline;
 	PROCESS_INFORMATION *pi;
 };
 
@@ -133,7 +133,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		i++;
 	}
 
-	LPTSTR appname_ = r_sys_conv_utf8_to_win (argv[0]);
+	LPCTSTR appname_ = r_sys_conv_utf8_to_win (argv[0]);
 	LPTSTR cmdline_ = r_sys_conv_utf8_to_win (cmdline);
 	free (cmdline);
 	struct __createprocess_params p = {appname_, cmdline_, &pi};
