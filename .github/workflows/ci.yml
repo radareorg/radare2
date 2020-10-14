@@ -48,7 +48,7 @@ jobs:
             meson_options: -Duse_webui=true
             enabled: ${{ github.event_name != 'pull_request' }}
             timeout: 45
-            cflags: '-Werror'
+            cflags: '-Werror -Wno-cpp'
           - name: linux-acr-clang-build
             os: ubuntu-latest
             build_system: acr
@@ -61,7 +61,7 @@ jobs:
             compiler: gcc
             enabled: ${{ github.event_name == 'pull_request' }}
             timeout: 45
-            cflags: '-Werror'
+            cflags: '-Werror -Wno-cpp'
           - name: linux-meson-gcc-newshell-tests
             os: ubuntu-latest
             build_system: meson
@@ -72,7 +72,7 @@ jobs:
             coverage: true
             enabled: true
             timeout: 50
-            cflags: '-Werror'
+            cflags: '-Werror -Wno-cpp'
           - name: macos-clang-tests
             os: macos-latest
             build_system: acr
@@ -84,7 +84,7 @@ jobs:
             os: ubuntu-20.04
             build_system: meson
             compiler: gcc
-            cflags: '-DR2_ASSERT_STDOUT=1 -Werror'
+            cflags: '-DR2_ASSERT_STDOUT=1 -Werror -Wno-cpp'
             meson_options: -Db_sanitize=address,undefined -Duse_webui=true
             asan: true
             asan_options: 'detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1'
@@ -101,7 +101,7 @@ jobs:
             run_tests: false
             enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
             timeout: 45
-            cflags: '-Werror'
+            cflags: '-Werror -Wno-cpp'
           - name: capstone-v5
             os: ubuntu-latest
             build_system: meson
@@ -110,7 +110,7 @@ jobs:
             run_tests: false
             enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
             timeout: 45
-            cflags: '-Werror'
+            cflags: '-Werror -Wno-cpp'
 
     steps:
     - uses: actions/checkout@v2
