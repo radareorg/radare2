@@ -309,25 +309,25 @@ static DbgEngContext *create_context(void) {
 	}
 
 	// Initialize interfaces
-	if (w32_DebugCreate (&IID_IDebugClient5, &idbg->dbgClient) != S_OK) {
+	if (w32_DebugCreate (&IID_IDebugClient5, (PVOID *)&idbg->dbgClient) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugCreate (&IID_IDebugControl4, &idbg->dbgCtrl) != S_OK) {
+	if (w32_DebugCreate (&IID_IDebugControl4, (PVOID *)&idbg->dbgCtrl) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugCreate (&IID_IDebugDataSpaces4, &idbg->dbgData) != S_OK) {
+	if (w32_DebugCreate (&IID_IDebugDataSpaces4, (PVOID *)&idbg->dbgData) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugCreate (&IID_IDebugRegisters2, &idbg->dbgReg) != S_OK) {
+	if (w32_DebugCreate (&IID_IDebugRegisters2, (PVOID *)&idbg->dbgReg) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugCreate (&IID_IDebugSystemObjects4, &idbg->dbgSysObj) != S_OK) {
+	if (w32_DebugCreate (&IID_IDebugSystemObjects4, (PVOID *)&idbg->dbgSysObj) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugCreate (&IID_IDebugAdvanced3, &idbg->dbgAdvanced) != S_OK) {
+	if (w32_DebugCreate (&IID_IDebugAdvanced3, (PVOID *)&idbg->dbgAdvanced) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugCreate (&IID_IDebugSymbols3, &idbg->dbgSymbols) != S_OK) {
+	if (w32_DebugCreate (&IID_IDebugSymbols3, (PVOID *)&idbg->dbgSymbols) != S_OK) {
 		goto fail;
 	}
 	if (!init_callbacks (idbg)) {
