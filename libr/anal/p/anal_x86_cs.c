@@ -249,6 +249,10 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, int sel, ut
 		*bitsize = op.size * 8;
 	}
 	switch (op.type) {
+#if CS_API_MAJOR == 3
+	case X86_OP_FP:
+		return "invalid";
+#endif
 	case X86_OP_INVALID:
 		return "invalid";
 	case X86_OP_REG:
