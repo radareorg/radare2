@@ -41,7 +41,7 @@ typedef struct { // Keep in sync with debug_windbg.c
 typedef struct IFace##_impl {                         \
 	IFace *lpVtbl;                                    \
 	DbgEngContext *m_idbg;                            \
-	ULONG m_ref;                                      \
+	LONG m_ref;                                       \
 } Type##_IMPL, *P##Type##_IMPL;                       \
 
 #define INIT_IUNKNOWN_CALLBACKS(IFace, lpVtbl)        \
@@ -97,7 +97,7 @@ static STDMETHODIMP_(ULONG) IFace##_AddRef_impl(      \
 static STDMETHODIMP_(ULONG) IFace##_Release_impl(     \
 	P##IFace This) {                                  \
 	P##IFace##_IMPL impl = (P##IFace##_IMPL)This;     \
-	ULONG ret = InterlockedDecrement (&impl->m_ref);  \
+	LONG ret = InterlockedDecrement (&impl->m_ref);   \
 	if (!ret) {                                       \
 		free (This->lpVtbl);                          \
 		free (This);                                  \
@@ -167,7 +167,7 @@ static STDMETHODIMP __input_end_cb(PDEBUG_INPUT_CALLBACKS This) {
 }
 
 static STDMETHODIMP __output_cb(PDEBUG_OUTPUT_CALLBACKS This, ULONG Mask, PCSTR Text) {
-	eprintf (Text);
+	eprintf ("%s", Text);
 	return S_OK;
 }
 
@@ -270,25 +270,25 @@ static DbgEngContext *create_remote_context(const char *opts) {
 	LPWSTR wopts = (LPWSTR)r_utf8_to_utf16 (opts);
 
 	// Initialize interfaces
-	if (w32_DebugConnectWide (wopts, &IID_IDebugClient5, &idbg->dbgClient) != S_OK) {
+	if (w32_DebugConnectWide (wopts, &IID_IDebugClient5, (PVOID *)&idbg->dbgClient) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugConnectWide (wopts, &IID_IDebugControl4, &idbg->dbgCtrl) != S_OK) {
+	if (w32_DebugConnectWide (wopts, &IID_IDebugControl4, (PVOID *)&idbg->dbgCtrl) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugConnectWide (wopts, &IID_IDebugDataSpaces4, &idbg->dbgData) != S_OK) {
+	if (w32_DebugConnectWide (wopts, &IID_IDebugDataSpaces4, (PVOID *)&idbg->dbgData) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugConnectWide (wopts, &IID_IDebugRegisters2, &idbg->dbgReg) != S_OK) {
+	if (w32_DebugConnectWide (wopts, &IID_IDebugRegisters2, (PVOID *)&idbg->dbgReg) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugConnectWide (wopts, &IID_IDebugSystemObjects4, &idbg->dbgSysObj) != S_OK) {
+	if (w32_DebugConnectWide (wopts, &IID_IDebugSystemObjects4, (PVOID *)&idbg->dbgSysObj) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugConnectWide (wopts, &IID_IDebugAdvanced3, &idbg->dbgAdvanced) != S_OK) {
+	if (w32_DebugConnectWide (wopts, &IID_IDebugAdvanced3, (PVOID *)&idbg->dbgAdvanced) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugConnectWide (wopts, &IID_IDebugSymbols3, &idbg->dbgSymbols) != S_OK) {
+	if (w32_DebugConnectWide (wopts, &IID_IDebugSymbols3, (PVOID *)&idbg->dbgSymbols) != S_OK) {
 		goto fail;
 	}
 	if (!init_callbacks (idbg)) {
@@ -309,25 +309,25 @@ static DbgEngContext *create_context(void) {
 	}
 
 	// Initialize interfaces
-	if (w32_DebugCreate (&IID_IDebugClient5, &idbg->dbgClient) != S_OK) {
+	if (w32_DebugCreate (&IID_IDebugClient5, (PVOID *)&idbg->dbgClient) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugCreate (&IID_IDebugControl4, &idbg->dbgCtrl) != S_OK) {
+	if (w32_DebugCreate (&IID_IDebugControl4, (PVOID *)&idbg->dbgCtrl) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugCreate (&IID_IDebugDataSpaces4, &idbg->dbgData) != S_OK) {
+	if (w32_DebugCreate (&IID_IDebugDataSpaces4, (PVOID *)&idbg->dbgData) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugCreate (&IID_IDebugRegisters2, &idbg->dbgReg) != S_OK) {
+	if (w32_DebugCreate (&IID_IDebugRegisters2, (PVOID *)&idbg->dbgReg) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugCreate (&IID_IDebugSystemObjects4, &idbg->dbgSysObj) != S_OK) {
+	if (w32_DebugCreate (&IID_IDebugSystemObjects4, (PVOID *)&idbg->dbgSysObj) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugCreate (&IID_IDebugAdvanced3, &idbg->dbgAdvanced) != S_OK) {
+	if (w32_DebugCreate (&IID_IDebugAdvanced3, (PVOID *)&idbg->dbgAdvanced) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugCreate (&IID_IDebugSymbols3, &idbg->dbgSymbols) != S_OK) {
+	if (w32_DebugCreate (&IID_IDebugSymbols3, (PVOID *)&idbg->dbgSymbols) != S_OK) {
 		goto fail;
 	}
 	if (!init_callbacks (idbg)) {
@@ -449,7 +449,7 @@ static RIODesc *windbg_open(RIO *io, const char *uri, int perm, int mode) {
 	DWORD pid = 0;
 	int c;
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "c:dgGh:i:k:op:y:z:");
+	r_getopt_init (&opt, argc, (const char **)argv, "c:dgGh:i:k:op:y:z:");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'c':
@@ -531,7 +531,7 @@ static RIODesc *windbg_open(RIO *io, const char *uri, int perm, int mode) {
 	switch (target) {
 	case TARGET_LOCAL_SPAWN:
 		if (argv[opt.ind]) {
-			char *cmd = r_str_format_msvc_argv ((size_t)opt.argc - opt.ind, argv + opt.ind);
+			char *cmd = r_str_format_msvc_argv ((size_t)opt.argc - opt.ind, (const char **)argv + opt.ind);
 			hr = ITHISCALL (dbgClient, CreateProcess, 0ULL, cmd, spawn_options);
 			free (cmd);
 		} else {

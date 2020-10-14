@@ -94,8 +94,8 @@ err_enable:
 }
 
 struct __createprocess_params {
-	LPCWSTR appname;
-	LPWSTR cmdline;
+	LPCTSTR appname;
+	LPTSTR cmdline;
 	PROCESS_INFORMATION *pi;
 };
 

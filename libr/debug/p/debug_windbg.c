@@ -66,20 +66,10 @@ static int windbg_step(RDebug *dbg) {
 	return SUCCEEDED (ITHISCALL (dbgCtrl, SetExecutionStatus, DEBUG_STATUS_STEP_INTO));
 }
 
-static int windbg_step_over(RDebug *dbg) {
-	DbgEngContext *idbg = dbg->user;
-	r_return_val_if_fail (idbg && idbg->initialized, 0);
-	idbg->lastExecutionStatus = DEBUG_STATUS_STEP_OVER;
-	if (SUCCEEDED (ITHISCALL (dbgCtrl, SetExecutionStatus, DEBUG_STATUS_STEP_OVER))) {
-		return windbg_wait (dbg, dbg->pid) != R_DEBUG_REASON_ERROR;
-	}
-	return 0;
-}
-
 static int windbg_select(RDebug *dbg, int pid, int tid) {
 	DbgEngContext *idbg = dbg->user;
 	r_return_val_if_fail (idbg && idbg->initialized, 0);
-	ULONG Id = tid, Class, Qualifier;
+	ULONG Id = tid;
 	if (!__is_target_kernel (idbg)) {
 		ITHISCALL (dbgSysObj, GetThreadIdBySystemId, tid, &Id);
 	}
@@ -162,8 +152,8 @@ static int windbg_wait(RDebug *dbg, int pid) {
 	}
 	ITHISCALL (dbgCtrl, GetLastEventInformation, &Type, &ProcessId, &ThreadId, NULL, 0, NULL, NULL, 0, NULL);
 	if (!__is_target_kernel (idbg)) {
-		ITHISCALL (dbgSysObj, GetCurrentProcessSystemId, &dbg->pid);
-		ITHISCALL (dbgSysObj, GetCurrentThreadSystemId, &dbg->tid);
+		ITHISCALL (dbgSysObj, GetCurrentProcessSystemId, (PULONG)&dbg->pid);
+		ITHISCALL (dbgSysObj, GetCurrentThreadSystemId, (PULONG)&dbg->tid);
 	} else {
 		dbg->pid = ProcessId;
 		dbg->tid = ThreadId;
@@ -206,8 +196,18 @@ static int windbg_wait(RDebug *dbg, int pid) {
 	return ret;
 }
 
+static int windbg_step_over(RDebug *dbg) {
+	DbgEngContext *idbg = dbg->user;
+	r_return_val_if_fail (idbg && idbg->initialized, 0);
+	idbg->lastExecutionStatus = DEBUG_STATUS_STEP_OVER;
+	if (SUCCEEDED (ITHISCALL (dbgCtrl, SetExecutionStatus, DEBUG_STATUS_STEP_OVER))) {
+		return windbg_wait (dbg, dbg->pid) != R_DEBUG_REASON_ERROR;
+	}
+	return 0;
+}
+
 static int windbg_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
-	static int bp_idx = 0;
+	static volatile LONG bp_idx = 0;
 	RDebug *dbg = bp->user;
 	r_return_val_if_fail (dbg, 0);
 	DbgEngContext *idbg = dbg->user;
@@ -245,7 +245,7 @@ static int windbg_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 		THISCALL (bkpt, SetDataParameters, b->size, access_type);
 	}
 	THISCALL (bkpt, SetFlags, flags);
-	THISCALL (bkpt, GetCurrentPassCount, &b->togglehits);
+	THISCALL (bkpt, GetCurrentPassCount, (PULONG)&b->togglehits);
 	THISCALL (bkpt, SetOffset, b->addr);
 	return 1;
 }
@@ -276,19 +276,20 @@ static char *windbg_reg_profile(RDebug *dbg) {
 static int windbg_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	DbgEngContext *idbg = dbg->user;
 	r_return_val_if_fail (idbg && idbg->initialized, 0);
-	if (!idbg || !idbg->initialized || FAILED (ITHISCALL (dbgCtrl, GetActualProcessorType, &type))) {
+	ULONG ptype;
+	if (!idbg || !idbg->initialized || FAILED (ITHISCALL (dbgCtrl, GetActualProcessorType, &ptype))) {
 		return 0;
 	}
-	if (type == IMAGE_FILE_MACHINE_IA64 || type == IMAGE_FILE_MACHINE_AMD64) {
+	if (ptype == IMAGE_FILE_MACHINE_IA64 || ptype == IMAGE_FILE_MACHINE_AMD64) {
 		DWORD *b = (DWORD *)(buf + 0x30);
 		*b |= 0xff | CONTEXT_AMD64;
-	} else if (type == IMAGE_FILE_MACHINE_I386) {
+	} else if (ptype == IMAGE_FILE_MACHINE_I386) {
 		DWORD *b = (DWORD *)buf;
 		*b |= 0xff | CONTEXT_i386;
-	} else if (type == IMAGE_FILE_MACHINE_ARM64) {
+	} else if (ptype == IMAGE_FILE_MACHINE_ARM64) {
 		DWORD *b = (DWORD *)buf;
 		*b |= 0xff | CONTEXT_ARM64;
-	} else if (type == IMAGE_FILE_MACHINE_ARM64) {
+	} else if (ptype == IMAGE_FILE_MACHINE_ARM64) {
 		DWORD *b = (DWORD *)buf;
 		*b |= 0xff | CONTEXT_ARM;
 	}
