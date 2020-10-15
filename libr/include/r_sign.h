@@ -70,11 +70,19 @@ typedef struct r_sign_item_t {
 
 typedef int (*RSignForeachCallback)(RSignItem *it, void *user);
 typedef int (*RSignSearchCallback)(RSignItem *it, RSearchKeyword *kw, ut64 addr, void *user);
-typedef int (*RSignGraphMatchCallback)(RSignItem *it, RAnalFunction *fcn, void *user);
-typedef int (*RSignOffsetMatchCallback)(RSignItem *it, RAnalFunction *fcn, void *user);
-typedef int (*RSignHashMatchCallback)(RSignItem *it, RAnalFunction *fcn, void *user);
-typedef int (*RSignRefsMatchCallback)(RSignItem *it, RAnalFunction *fcn, void *user);
-typedef int (*RSignVarsMatchCallback)(RSignItem *it, RAnalFunction *fcn, void *user);
+typedef int (*RSignMatchCallback)(RSignItem *it, RAnalFunction *fcn, RSignType type, bool seen, void *user);
+
+typedef struct r_sign_search_met {
+	/* types is an 0 terminated array of RSignTypes that are going to be
+	 * searched for. Valid types are: graph, offset, refs, bbhash, types, vars
+	 */
+	RSignType types[7];
+	int mincc; // min complexity for graph search
+	RAnal *anal;
+	void *user; // user data for callback function
+	RSignMatchCallback cb;
+	RAnalFunction *fcn;
+} RSignSearchMetrics;
 
 typedef struct r_sign_search_t {
 	RSearch *search;
@@ -123,12 +131,7 @@ R_API RSignSearch *r_sign_search_new(void);
 R_API void r_sign_search_free(RSignSearch *ss);
 R_API void r_sign_search_init(RAnal *a, RSignSearch *ss, int minsz, RSignSearchCallback cb, void *user);
 R_API int r_sign_search_update(RAnal *a, RSignSearch *ss, ut64 *at, const ut8 *buf, int len);
-R_API bool r_sign_match_graph(RAnal *a, RAnalFunction *fcn, int mincc, RSignGraphMatchCallback cb, void *user);
-R_API bool r_sign_match_addr(RAnal *a, RAnalFunction *fcn, RSignOffsetMatchCallback cb, void *user);
-R_API bool r_sign_match_hash(RAnal *a, RAnalFunction *fcn, RSignHashMatchCallback cb, void *user);
-R_API bool r_sign_match_refs(RAnal *a, RAnalFunction *fcn, RSignRefsMatchCallback cb, void *user);
-R_API bool r_sign_match_vars(RAnal *a, RAnalFunction *fcn, RSignRefsMatchCallback cb, void *user);
-R_API bool r_sign_match_types(RAnal *a, RAnalFunction *fcn, RSignRefsMatchCallback cb, void *user);
+R_API int r_sign_fcn_match_metrics(RSignSearchMetrics *sm);
 
 R_API bool r_sign_load(RAnal *a, const char *file);
 R_API bool r_sign_load_gz(RAnal *a, const char *filename);

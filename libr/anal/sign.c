@@ -2332,242 +2332,179 @@ static bool fcnMetricsCmp(RSignItem *it, RAnalFunction *fcn) {
 	return true;
 }
 
-struct ctxFcnMatchCB {
-	RAnal *anal;
-	RAnalFunction *fcn;
-	RSignGraphMatchCallback cb;
-	void *user;
-	int mincc;
-};
-
-static int graphMatchCB(RSignItem *it, void *user) {
-	struct ctxFcnMatchCB *ctx = (struct ctxFcnMatchCB *) user;
+static bool graph_match(RSignItem *it, RSignSearchMetrics *sm) {
 	RSignGraph *graph = it->graph;
 
 	if (!graph) {
-		return 1;
+		return false;
 	}
 
-	if (graph->cc < ctx->mincc) {
-		return 1;
+	if (graph->cc < sm->mincc) {
+		return false;
 	}
 
-	if (!fcnMetricsCmp (it, ctx->fcn)) {
-		return 1;
+	if (!fcnMetricsCmp (it, sm->fcn)) {
+		return false;
 	}
 
-	if (ctx->cb) {
-		return ctx->cb (it, ctx->fcn, ctx->user);
-	}
-
-	return 1;
+	return true;
 }
 
-R_API bool r_sign_match_graph(RAnal *a, RAnalFunction *fcn, int mincc, RSignGraphMatchCallback cb, void *user) {
-	r_return_val_if_fail (a && fcn && cb, false);
-	struct ctxFcnMatchCB ctx = { a, fcn, cb, user, mincc };
-	return r_sign_foreach (a, graphMatchCB, &ctx);
+static bool addr_match(RSignItem *it, RSignSearchMetrics *sm) {
+	if (it->addr != sm->fcn->addr || it->addr == UT64_MAX) {
+		return false;
+	}
+	return true;
 }
 
-static int addrMatchCB(RSignItem *it, void *user) {
-	struct ctxFcnMatchCB *ctx = (struct ctxFcnMatchCB *) user;
-
-	if (it->addr == UT64_MAX) {
-		return 1;
-	}
-
-	if (it->addr != ctx->fcn->addr) {
-		return 1;
-	}
-
-	if (ctx->cb) {
-		return ctx->cb (it, ctx->fcn, ctx->user);
-	}
-
-	return 1;
-}
-
-R_API bool r_sign_match_addr(RAnal *a, RAnalFunction *fcn, RSignOffsetMatchCallback cb, void *user) {
-	r_return_val_if_fail (a && fcn && cb, false);
-	struct ctxFcnMatchCB ctx = { a, fcn, cb, user, 0 };
-	return r_sign_foreach (a, addrMatchCB, &ctx);
-}
-
-static int hashMatchCB(RSignItem *it, void *user) {
-	struct ctxFcnMatchCB *ctx = (struct ctxFcnMatchCB *) user;
+static bool hash_match(RSignItem *it, char **digest_hex, RSignSearchMetrics *sm) {
 	RSignHash *hash = it->hash;
-
 	if (!hash || !hash->bbhash || hash->bbhash[0] == 0) {
-		return 1;
+		return false;
 	}
 
-	char *digest_hex = r_sign_calc_bbhash (ctx->anal, ctx->fcn);
-	bool retval = false;
-	if (digest_hex && strcmp (hash->bbhash, digest_hex)) {
-		goto beach;
+	if (!*digest_hex) {
+		*digest_hex = r_sign_calc_bbhash (sm->anal, sm->fcn);
 	}
-
-	if (ctx->cb) {
-		retval = ctx->cb (it, ctx->fcn, ctx->user);
+	if (strcmp (hash->bbhash, *digest_hex)) {
+		return false;
 	}
-beach:
-	free (digest_hex);
-	return retval;
+	return true;
 }
 
-R_API bool r_sign_match_hash(RAnal *a, RAnalFunction *fcn, RSignHashMatchCallback cb, void *user) {
-	r_return_val_if_fail (a && fcn && cb, false);
-	struct ctxFcnMatchCB ctx = { a, fcn, cb, user, 0 };
-	return r_sign_foreach (a, hashMatchCB, &ctx);
-}
-
-
-static int refsMatchCB(RSignItem *it, void *user) {
-	struct ctxFcnMatchCB *ctx = (struct ctxFcnMatchCB *) user;
-	RList *refs = NULL;
-	char *ref_a = NULL, *ref_b = NULL;
-	int i = 0, retval = 1;
-
-	if (!it->refs) {
-		return 1;
+static bool str_list_equals(RList *la, RList *lb) {
+	r_return_val_if_fail (la && lb, false);
+	int len = r_list_length (la);
+	if (len != r_list_length (lb)) {
+		return false;
 	}
-
-	// TODO(nibble): slow operation, add cache
-	refs = r_sign_fcn_refs (ctx->anal, ctx->fcn);
-	if (!refs) {
-		return 1;
-	}
-
-	for (i = 0; ; i++) {
-		ref_a = (char *) r_list_get_n (it->refs, i);
-		ref_b = (char *) r_list_get_n (refs, i);
-
-		if (!ref_a || !ref_b) {
-			if (ref_a != ref_b) {
-				retval = 1;
-				goto out;
-			}
-			break;
-		}
-		if (strcmp (ref_a, ref_b)) {
-			retval = 1;
-			goto out;
+	int i;
+	for (i = 0; i < len; i++) {
+		const char *a = r_list_get_n (la, i);
+		const char *b = r_list_get_n (lb, i);
+		if (strcmp (a, b)) {
+			return false;
 		}
 	}
-
-	if (ctx->cb) {
-		retval = ctx->cb (it, ctx->fcn, ctx->user);
-		goto out;
-	}
-
-out:
-	r_list_free (refs);
-
-	return retval;
+	return true;
 }
 
-R_API bool r_sign_match_refs(RAnal *a, RAnalFunction *fcn, RSignRefsMatchCallback cb, void *user) {
-	r_return_val_if_fail (a && fcn && cb, false);
-	struct ctxFcnMatchCB ctx = { a, fcn, cb, user, 0 };
-	return r_sign_foreach (a, refsMatchCB, &ctx);
-}
-
-static int varsMatchCB(RSignItem *it, void *user) {
-	struct ctxFcnMatchCB *ctx = (struct ctxFcnMatchCB *) user;
-	RList *vars = NULL;
-	char *var_a = NULL, *var_b = NULL;
-	int i = 0, retval = 1;
-
+static bool vars_match(RSignItem *it, RList **vars, RSignSearchMetrics *sm) {
+	r_return_val_if_fail (vars && sm, false);
 	if (!it->vars) {
-		return 1;
+		return false;
 	}
 
-	// TODO(nibble): slow operation, add cache
-	vars = r_sign_fcn_vars (ctx->anal, ctx->fcn);
-	if (!vars) {
-		return 1;
-	}
-
-	for (i = 0; ; i++) {
-		var_a = (char *) r_list_get_n (it->vars, i);
-		var_b = (char *) r_list_get_n (vars, i);
-
-		if (!var_a || !var_b) {
-			if (var_a != var_b) {
-				retval = 1;
-				goto out;
-			}
-			break;
-		}
-		if (strcmp (var_a, var_b)) {
-			retval = 1;
-			goto out;
+	if (!*vars) {
+		*vars = r_sign_fcn_vars (sm->anal, sm->fcn);
+		if (!*vars) {
+			return false;
 		}
 	}
 
-	if (ctx->cb) {
-		retval = ctx->cb (it, ctx->fcn, ctx->user);
-		goto out;
+	if (str_list_equals (*vars, it->vars)) {
+		return true;
+	}
+	return false;
+}
+
+static bool refs_match(RSignItem *it, RList **refs, RSignSearchMetrics *sm) {
+	r_return_val_if_fail (refs && sm, false);
+	if (!it->refs) {
+		return false;
 	}
 
-out:
-	r_list_free (vars);
+	if (!*refs) {
+		*refs = r_sign_fcn_refs (sm->anal, sm->fcn);
+		if (!*refs) {
+			return false;
+		}
+	}
 
-	return retval;
+	if (str_list_equals (*refs, it->refs)) {
+		return true;
+	}
+	return false;
 }
 
-R_API bool r_sign_match_vars(RAnal *a, RAnalFunction *fcn, RSignVarsMatchCallback cb, void *user) {
-	r_return_val_if_fail (a && fcn && cb, false);
-	struct ctxFcnMatchCB ctx = { a, fcn, cb, user, 0 };
-	return r_sign_foreach (a, varsMatchCB, &ctx);
-}
-
-static int typesMatchCB(RSignItem *it, void *user) {
-	struct ctxFcnMatchCB *ctx = (struct ctxFcnMatchCB *) user;
-	RList *types = NULL;
-	char *type_a = NULL, *type_b = NULL;
-	int i = 0, retval = 1;
-
+static bool types_match(RSignItem *it, RList **types, RSignSearchMetrics *sm) {
+	r_return_val_if_fail (types && sm, false);
 	if (!it->types) {
-		return 1;
+		return false;
 	}
-	// TODO(nibble | oxcabe): slow operation, add cache
-	types = r_sign_fcn_types (ctx->anal, ctx->fcn);
-	if (!types) {
-		return 1;
-	}
-	for (i = 0; ; i++) {
-		type_a = (char *) r_list_get_n (it->types, i);
-		type_b = (char *) r_list_get_n (types, i);
 
-		if (!type_a || !type_b) {
-			if (type_a != type_b) {
-				retval = 1;
-				goto out;
-			}
-			break;
-		}
-		if (strcmp (type_a, type_b)) {
-			retval = 1;
-			goto out;
+	if (!*types) {
+		*types = r_sign_fcn_types (sm->anal, sm->fcn);
+		if (!*types) {
+			return false;
 		}
 	}
 
-	if (ctx->cb) {
-		retval = ctx->cb (it, ctx->fcn, ctx->user);
-		goto out;
+	if (str_list_equals (*types, it->types)) {
+		return true;
 	}
-
-out:
-	r_list_free (types);
-
-	return retval;
+	return false;
 }
 
-R_API bool r_sign_match_types(RAnal *a, RAnalFunction *fcn, RSignVarsMatchCallback cb, void *user) {
-	r_return_val_if_fail (a && fcn && cb, false);
-	struct ctxFcnMatchCB ctx = { a, fcn, cb, user, 0 };
-	return r_sign_foreach (a, typesMatchCB, &ctx);
+struct metric_ctx {
+	int matched;
+	RSignSearchMetrics *sm;
+	RList *refs;
+	RList *types;
+	RList *vars;
+	char *digest_hex;
+};
+
+static int match_metrics(RSignItem *it, void *user) {
+	struct metric_ctx *ctx = (struct metric_ctx *)user;
+	RSignSearchMetrics *sm = ctx->sm;
+	RSignType type;
+	int count = 0;
+	int i = 0;
+	while ((type = sm->types[i++])) {
+		bool found = false;
+		switch (type) {
+		case R_SIGN_GRAPH:
+			found = graph_match (it, sm);
+			break;
+		case R_SIGN_OFFSET:
+			found = addr_match (it, sm);
+			break;
+		case R_SIGN_BBHASH:
+			found = hash_match (it, &ctx->digest_hex, sm);
+			break;
+		case R_SIGN_REFS:
+			found = refs_match (it, &ctx->refs, sm);
+			break;
+		case R_SIGN_TYPES:
+			found = vars_match (it, &ctx->vars, sm);
+			break;
+		case R_SIGN_VARS:
+			found = types_match (it, &ctx->types, sm);
+			break;
+		default:
+			eprintf ("Invalid type: %c\n", type);
+		}
+		if (found) {
+			sm->cb (it, sm->fcn, type, (count > 1), sm->user);
+			count++;
+		}
+	}
+	ctx->matched += count;
+	return count? 0: 1;
+}
+
+R_API int r_sign_fcn_match_metrics(RSignSearchMetrics *sm) {
+	r_return_val_if_fail (sm && sm->mincc >= 0 && sm->anal && sm->fcn, false);
+	struct metric_ctx ctx = { 0, sm, NULL, NULL, NULL, NULL };
+	if (sm->types) {
+		r_sign_foreach (sm->anal, match_metrics, (void *)&ctx);
+	}
+	r_list_free (ctx.refs);
+	r_list_free (ctx.types);
+	r_list_free (ctx.vars);
+	free (ctx.digest_hex);
+	return ctx.matched;
 }
 
 R_API RSignItem *r_sign_item_new(void) {
