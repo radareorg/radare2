@@ -6847,7 +6847,11 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 		}
 	}
 
+	#if __UNIX__
+	const bool show_progress_bar = r_config_get_i(core->config, "scr.progressbar") && r_cons_isatty ();
+	#else
 	const bool show_progress_bar = r_config_get_i(core->config, "scr.progressbar");
+	#endif
 	int current_line = 0;
 	nl = strchr (odata, '\n');
 	if (nl) {
