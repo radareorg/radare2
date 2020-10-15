@@ -6120,7 +6120,7 @@ l = use_blocksize;
 				case 'j':
 				case 0:
 					// 4 byte signed words
-					if (input[2] == 'j' || input[3] == 'j') {
+					if (input[2] == 'j' || (input[2] && input[3] == 'j')) {
 						r_print_jsondump (core->print, core->block,
 							len, 32);
 					} else {
