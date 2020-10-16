@@ -689,3 +689,35 @@ EXPECT=<<EOF
 void __cdecl wistd::invoke<void (__cdecl*)(void * __ptr64), void * __ptr64 & __ptr64>(void (__cdecl*)(void * __ptr64) && volatile __ptr64, void * __ptr64 & __ptr64)
 EOF
 RUN
+
+NAME=class wil::ResultException `RTTI Type Descriptor'
+FILE=-
+CMDS="!rabin2 -D msvc ??_R0?AVResultException@wil@@@8"
+EXPECT=<<EOF
+class wil::ResultException `RTTI Type Descriptor'
+EOF
+RUN
+
+NAME=public: void __cdecl cask::PoolingFwdFP16x2Shader::constructor(class cask::KernelInfo const * __ptr64, class cask::SafeEnum<struct cask::ErrorEnum> (__cdecl* const)(struct cask::PoolingOperation::poolingDescription & __ptr64, void const * __ptr64, void * __ptr64, struct CUstream_st * __ptr64, enum cudaError & __ptr64)) __ptr64
+FILE=-
+CMDS="!rabin2 -D msvc ??0PoolingFwdFP16x2Shader@cask@@QEAA@PEBVKernelInfo@1@Q6A?AV?\$SafeEnum@UErrorEnum@cask@@@1@AEAUpoolingDescription@PoolingOperation@1@PEBXPEAXPEAUCUstream_st@@AEAW4cudaError@@@Z@Z"
+EXPECT=<<EOF
+public: void __cdecl cask::PoolingFwdFP16x2Shader::constructor(class cask::KernelInfo const * __ptr64, class cask::SafeEnum<struct cask::ErrorEnum> (__cdecl* const)(struct cask::PoolingOperation::poolingDescription & __ptr64, void const * __ptr64, void * __ptr64, struct CUstream_st * __ptr64, enum cudaError & __ptr64)) __ptr64
+EOF
+RUN
+
+NAME=class Concurrency::details::_CancellationTokenCallback<class `public: void __cdecl Concurrency::details::_Task_impl_base::_RegisterCancellation(class std::weak_ptr<struct Concurrency::details::_Task_impl_base>) __ptr64'::`2'::lambda_1>
+FILE=-
+CMDS="!rabin2 -D msvc .?AV?\$_CancellationTokenCallback@Vlambda_1@?1??_RegisterCancellation@_Task_impl_base@details@Concurrency@@QEAAXV?\$weak_ptr@U_Task_impl_base@details@Concurrency@@@std@@@Z@@details@Concurrency@@"
+EXPECT=<<EOF
+class Concurrency::details::_CancellationTokenCallback<class `public: void __cdecl Concurrency::details::_Task_impl_base::_RegisterCancellation(class std::weak_ptr<struct Concurrency::details::_Task_impl_base>) __ptr64'::`2'::lambda_1>
+EOF
+RUN
+
+NAME=struct `private: void __cdecl wil::ActivityBase<class NetworkFlyoutLogging, 1, 0, 5, 0, struct _TlgReflectorTag_Param0IsProviderType>::ReportStopActivity(long int) __ptr64'::`12'::unnamed-type-_tlgEvent const `private: void __cdecl wil::ActivityBase<class NetworkFlyoutLogging, 1, 0, 5, 0, struct _TlgReflectorTag_Param0IsProviderType>::ReportStopActivity(long int) __ptr64'::`12'::_tlgEvent
+FILE=-
+CMDS="!rabin2 -D msvc ?_tlgEvent@?M@??ReportStopActivity@?\$ActivityBase@VNetworkFlyoutLogging@@\$00\$0A@\$04\$0A@U_TlgReflectorTag_Param0IsProviderType@@@wil@@AEAAXJ@Z@4Uunnamed-type-_tlgEvent@?M@??123@AEAAXJ@Z@B"
+EXPECT=<<EOF
+struct `private: void __cdecl wil::ActivityBase<class NetworkFlyoutLogging, 1, 0, 5, 0, struct _TlgReflectorTag_Param0IsProviderType>::ReportStopActivity(long int) __ptr64'::`12'::unnamed-type-_tlgEvent const `private: void __cdecl wil::ActivityBase<class NetworkFlyoutLogging, 1, 0, 5, 0, struct _TlgReflectorTag_Param0IsProviderType>::ReportStopActivity(long int) __ptr64'::`12'::_tlgEvent
+EOF
+RUN
