@@ -66,3 +66,19 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=RISC-V ESIL for jalr with same source and target register
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=riscv
+e asm.bits=32
+wx b730130093800070e7802004
+aei
+3aes
+ar ra
+ar pc
+EOF
+EXPECT=<<EOF
+0x0000000c
+0x00133742
+EOF
+RUN
