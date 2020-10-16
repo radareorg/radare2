@@ -2,6 +2,7 @@
 # XXX this is a very slow test
 NAME=MZ: corkami cdogs.exe - open
 FILE=bins/le/cdogs.exe
+TIMEOUT=1320
 CMDS=<<EOF
 aac
 # aaef
