@@ -387,7 +387,7 @@ static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
 		char *member_sname = r_str_sanitize_sdb_key (member->name);
 		sdb_set (anal->sdb_types,
 			r_strbuf_setf (&param_key, "%s.%s.%s", kind, sname, member_sname),
-			r_strbuf_setf (&param_val, "%s,%zu,%" PFMT64u "", member->type, member->offset, 0), 0ULL);
+			r_strbuf_setf (&param_val, "%s,%zu,%d", member->type, member->offset, 0), 0ULL);
 		free (member_sname);
 
 		r_strbuf_appendf (&arglist, (i++ == 0) ? "%s" : ",%s", member->name);
@@ -436,7 +436,7 @@ static void save_union(const RAnal *anal, const RAnalBaseType *type) {
 		char *member_sname = r_str_sanitize_sdb_key (member->name);
 		sdb_set (anal->sdb_types,
 			r_strbuf_setf (&param_key, "%s.%s.%s", kind, sname, member_sname),
-			r_strbuf_setf (&param_val, "%s,%zu,%" PFMT64u "", member->type, member->offset, 0), 0ULL);
+			r_strbuf_setf (&param_val, "%s,%zu,%d", member->type, member->offset, 0), 0ULL);
 		free (member_sname);
 
 		r_strbuf_appendf (&arglist, (i++ == 0) ? "%s" : ",%s", member->name);

@@ -55,7 +55,7 @@ static inline void es_add_ck(RAnalOp *op, const char *a1, const char *a2, const 
 {
 	ut64 mask = 1ULL << (bit-1);
 	r_strbuf_appendf (&op->esil,
-		"%d,0x%lx,%s,%s,^,&,>>,%d,0x%lx,%s,%s,+,&,>>,|,1,==,$z,?{,$$,1,TRAP,}{,%s,%s,+,%s,=,}",
+		"%d,0x%" PFMT64x ",%s,%s,^,&,>>,%d,0x%" PFMT64x ",%s,%s,+,&,>>,|,1,==,$z,?{,$$,1,TRAP,}{,%s,%s,+,%s,=,}",
 		bit-2, mask, a1, a2, bit-1, mask, a1, a2, a1, a2, re);
 }
 // MIPS instruction

@@ -167,7 +167,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					}
 					r_asm_disassemble (core->rasm, &op, buf + addrbytes * idx,
 					      core->blocksize - addrbytes * idx);
-					hit->code = r_str_newf (r_strbuf_get (&op.buf_asm));
+					hit->code = r_str_new (r_strbuf_get (&op.buf_asm));
 					idx = (matchcount)? tidx + 1: idx + 1;
 					matchcount = 0;
 					r_list_append (hits, hit);
