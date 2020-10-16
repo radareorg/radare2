@@ -2374,11 +2374,11 @@ static bool hash_match(RSignItem *it, char **digest_hex, RSignSearchMetrics *sm)
 
 static bool str_list_equals(RList *la, RList *lb) {
 	r_return_val_if_fail (la && lb, false);
-	int len = r_list_length (la);
+	size_t len = r_list_length (la);
 	if (len != r_list_length (lb)) {
 		return false;
 	}
-	int i;
+	size_t i;
 	for (i = 0; i < len; i++) {
 		const char *a = r_list_get_n (la, i);
 		const char *b = r_list_get_n (lb, i);
