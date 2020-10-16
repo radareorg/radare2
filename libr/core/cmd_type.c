@@ -547,7 +547,7 @@ static void print_enum_in_c_format(Sdb *TDB, const char *arg, bool multiline) {
 						RTypeEnum *member;
 						separator = multiline? "\t": "";
 						r_list_foreach (list, iter, member) {
-							r_cons_printf ("%s%s = %d", separator, member->name, r_num_math (NULL, member->val));
+							r_cons_printf ("%s%s = %" PFMT64u, separator, member->name, r_num_math (NULL, member->val));
 							separator = multiline? ",\n\t": ", ";
 						}
 					}
@@ -1121,7 +1121,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 's':
 			if (input[2] == ' ') {
-				r_cons_printf ("%d\n", (r_type_get_bitsize (TDB, input + 3) / 8));
+				r_cons_printf ("%" PFMT64u "\n", (r_type_get_bitsize (TDB, input + 3) / 8));
 			} else {
 				r_core_cmd_help (core, help_msg_ts);
 			}
