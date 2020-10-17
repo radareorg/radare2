@@ -92,6 +92,9 @@ else
 	export DYLD_LIBRARY_PATH="${R2PM_HOMEPREFIX}/lib"
 fi
 
+# Anything defined here will cause master not to be checked out or pulled
+export R2PM_GITSKIP="${R2PM_GITSKIP}"
+
 # Global Vars
 TRAVIS_TYPE=XX
 TRAVIS_JOB=86948888
@@ -330,15 +333,19 @@ R2PM_GIT() {
 	cd "${R2PM_GITDIR}"
 	if [ -d "${DIR}" ]; then
 		cd "${DIR}"
-		git checkout master
-		git pull
+		if [ -z "${R2PM_GITSKIP}" ]; then
+			git checkout master
+			git pull
+		fi
 	else
 		git clone --depth 1 --recursive "${URL}" "${DIR}" || R2PM_FAIL "Oops"
 		cd "${DIR}" || R2PM_FAIL "Oops"
 	fi
 	r2 -qv | grep -q git || { # r2 >= 4.5
-		git checkout "r2-${R2_VERSION}"
-		git pull
+		if [ -z "${R2PM_GITSKIP}" ]; then
+			git checkout "r2-${R2_VERSION}"
+			git pull
+		fi
 	}
 }
 
@@ -737,6 +744,7 @@ Environment:
  R2PM_BINDIR=${R2PM_BINDIR}
  R2PM_DBDIR=${R2PM_DBDIR}
  R2PM_GITDIR=${R2PM_GITDIR}
+ R2PM_GITSKIP=${R2PM_GITSKIP}
 HELP
 	;;
 esac
