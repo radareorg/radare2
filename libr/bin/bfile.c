@@ -66,7 +66,7 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 				pj_kn (pj, "length", string->length);
 				pj_ks (pj, "section", section_name);
 				pj_ks (pj, "type", type_string);
-				pj_ks (pj, "string", string->string);
+				pj_ke (pj, "string", string->string);
 				pj_end (pj);
 			}
 		}

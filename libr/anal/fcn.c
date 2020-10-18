@@ -1716,7 +1716,7 @@ R_API char *r_anal_function_get_json(RAnalFunction *function) {
 	int argc = argc_str? atoi (argc_str): 0;
 
 	pj_o (pj);
-	pj_ks (pj, "name", function->name);
+	pj_ke (pj, "name", function->name);
 	const bool no_return = r_anal_noreturn_at_addr (a, function->addr);
 	pj_kb (pj, "noreturn", no_return);
 	pj_ks (pj, "ret", ret_type?ret_type: "void");
@@ -1732,11 +1732,11 @@ R_API char *r_anal_function_get_json(RAnalFunction *function) {
 		char *comma = strchr (arg_i, ',');
 		if (comma) {
 			*comma = 0;
-			pj_ks (pj, "name", comma + 1);
+			pj_ke (pj, "name", comma + 1);
 			pj_ks (pj, "type", arg_i);
 			const char *cc_arg = r_reg_get_name (a->reg, r_reg_get_name_idx (sdb_fmt ("A%d", i)));
 			if (cc_arg) {
-				pj_ks (pj, "cc", cc_arg);
+				pj_ke (pj, "cc", cc_arg);
 			}
 		}
 		free (arg_i);

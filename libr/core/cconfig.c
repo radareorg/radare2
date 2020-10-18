@@ -856,17 +856,20 @@ static bool cb_emuskip(void *user, void *data) {
 static bool cb_jsonencoding(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
-		if (strlen (node->value) > 1 && node->value[1] == '?') {
+		if (node->value[1] && node->value[1] == '?') {
 			r_cons_printf ("choose either: \n"\
 			"none (default)\n" \
 			"base64 - encode the json string values as base64\n" \
-			"bytearray - convert the string to hexpairs\n" \
+			"hex - convert the string to a string of hexpairs\n" \
+			"array - convert the string to an array of hexpairs\n" \
 			"strip - strip non-printable characters\n");
 		} else {
 			print_node_options (node);
 		}
 		return false;
 	}
+	//set the encoding
+	pj_set_encoding(node->value);
 	return true;
 }
 
@@ -3554,7 +3557,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* json encodings */
 	n = NODECB ("json.encoding", "none", &cb_jsonencoding);
 	SETDESC (n, "Encode json outputs using the specified option");
-	SETOPTIONS (n, "none", "base64", "strip", "bytearray", NULL);
+	SETOPTIONS (n, "none", "base64", "strip", "hex", "array", NULL);
 
 
 	/* scr */

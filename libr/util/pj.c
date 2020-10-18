@@ -3,6 +3,8 @@
 #include <r_util.h>
 #include <r_util/r_print.h>
 
+static int pj_encoding = PJ_ENCODING_DEFAULT;
+
 static void pj_raw(PJ *j, const char *msg) {
 	r_return_if_fail (j && msg);
 	if (*msg) {
@@ -28,6 +30,20 @@ R_API PJ *pj_new(void) {
 		j->is_first = true;
 	}
 	return j;
+}
+
+R_API void pj_set_encoding(const ut8 *encoding) {
+	if (!strcmp("base64", encoding)) {
+		pj_encoding = PJ_ENCODING_BASE64;
+	} else if (!strcmp("hex", encoding)) {
+		pj_encoding = PJ_ENCODING_HEX;
+	} else if (!strcmp("array", encoding)) {
+		pj_encoding = PJ_ENCODING_ARRAY;
+	} else if (!strcmp("strip", encoding)) {
+		pj_encoding = PJ_ENCODING_STRIP;
+	} else {
+		pj_encoding = PJ_ENCODING_DEFAULT;
+	}
 }
 
 R_API void pj_free(PJ *pj) {
@@ -172,10 +188,10 @@ R_API PJ *pj_ks(PJ *j, const char *k, const char *v) {
 	return j;
 }
 
-R_API PJ *pj_ks_e(PJ *j, const char *k, const char *v, const char *e) {
+R_API PJ *pj_ke(PJ *j, const char *k, const ut8 *v) {
 	r_return_val_if_fail (j && k && v, j);
 	pj_k (j, k);
-	pj_s_e (j, v, e);
+	pj_se (j, v);
 	return j;
 }
 
@@ -214,16 +230,24 @@ R_API PJ *pj_s(PJ *j, const char *k) {
 	return j;
 }
 
-R_API PJ *pj_s_e(PJ *j, const char *k, const char *e) {
+R_API PJ *pj_se(PJ *j, const char *k) {
 	r_return_val_if_fail (j && k, j);
 	pj_comma (j);
-	pj_raw (j, "\"");
-	char *en = r_str_encoded_json (k, -1, e);
+	if (pj_encoding == PJ_ENCODING_ARRAY) {
+		pj_raw (j, "[");
+	} else {
+		pj_raw (j, "\"");
+	}
+	char *en = r_str_encoded_json (k, -1, pj_encoding);
 	if (en) {
 		pj_raw (j, en);
 		free (en);
 	}
-	pj_raw (j, "\"");
+	if (pj_encoding == PJ_ENCODING_ARRAY) {
+		pj_raw (j, "]");
+	} else {
+		pj_raw (j, "\"");
+	}
 	return j;
 }
 

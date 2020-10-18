@@ -6104,7 +6104,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		pj_kn (pj, "fcn_last", f ? r_anal_function_max_addr (f) - ds->oplen : 0);
 		pj_ki (pj, "size", ds->analop.size);
 		pj_ks (pj, "opcode", opstr);
-		pj_ks (pj, "disasm", str);
+		pj_ke (pj, "disasm", str);
 		{
 			char *hex = r_asm_op_get_hex (&asmop);
 			pj_ks (pj, "bytes", hex);

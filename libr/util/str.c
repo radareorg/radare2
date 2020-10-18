@@ -1506,31 +1506,45 @@ R_API char *r_str_escape_utf32be(const char *buf, int buf_size, bool show_asciid
 	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF32BE, show_asciidot, esc_bslash, false);
 }
 
-R_API char *r_str_encoded_json(const char *buf, int buf_size, const char *encoding) {
+R_API char *r_str_encoded_json(const char *buf, int buf_size, int encoding) {
 	if (!buf) {
 		return NULL;
 	}
+	char *encodedString;
 
-	if (!strcmp (encoding, "base64")) {
-		return r_base64_encode_dyn (buf, buf_size);
-	} else if (!strcmp (encoding, "bytearray")) {
+	if (encoding == PJ_ENCODING_BASE64) {
+		encodedString = r_base64_encode_dyn (buf, buf_size);
+	} else if (encoding == PJ_ENCODING_HEX || encoding == PJ_ENCODING_ARRAY) {
 		int loop = 0;
 		int i = 0;
-		int len = buf_size < 0 ? strlen (buf) : buf_size;
-		int new_sz = (len * 2) + 1;
+		size_t len = buf_size < 0 ? strlen (buf) : buf_size;
+		size_t increment = encoding == PJ_ENCODING_ARRAY ? 4 : 2;
+		size_t new_sz = (len * increment) + 1;
+		const ut8 *format = encoding == PJ_ENCODING_ARRAY ? "%03u," : "%02X";
 
-		char *string_bytes = malloc (new_sz * sizeof (char));
-		while(buf[loop] != '\0' && i < (new_sz-1)) {
-			snprintf (string_bytes + i, sizeof (string_bytes), "%02X", (unsigned char) buf[loop]);
-			loop += 1;
-			i += 2;
+		encodedString = malloc (new_sz);
+		if (!encodedString) {
+			printf ("can't malloc\n");
+			return NULL;
 		}
-		string_bytes[i++] = '\0';
-		return string_bytes;
-	} else if (!strcmp (encoding, "strip")) {
-		return r_str_escape_utf8_for_json_strip (buf, buf_size);
+		while (buf[loop] != '\0' && i < (new_sz - 1)) {
+			snprintf (encodedString + i, sizeof (encodedString), format, (ut8) buf[loop]);
+			loop += 1;
+			i += increment;
+		}
+		if (encoding == PJ_ENCODING_ARRAY) {
+			// get rid of the trailing comma
+			encodedString[i - 1] = '\0';
+		} else {
+			encodedString[i] = '\0';
+		}
+	} else if (encoding == PJ_ENCODING_STRIP) {
+		encodedString = r_str_escape_utf8_for_json_strip (buf, buf_size);
 	}
-	return r_str_escape_utf8_for_json (buf, buf_size);
+	else {
+		encodedString = r_str_escape_utf8_for_json (buf, buf_size);
+	}
+	return encodedString;
 }
 
 R_API char *r_str_escape_utf8_for_json_strip(const char *buf, int buf_size) {
@@ -1567,12 +1581,6 @@ R_API char *r_str_escape_utf8_for_json_strip(const char *buf, int buf_size) {
 				*q++ = '\\';
 				*q++ = '\\';
 				break;
-#if 0
-			case '/': /* has 2-char esc seq in JSON spec, but escaping is optional */
-				*q++ = '\\';
-				*q++ = '/';
-				break;
-#endif
 			case '\t':
 				*q++ = '\\';
 				*q++ = 't';
@@ -1676,12 +1684,6 @@ R_API char *r_str_escape_utf8_for_json(const char *buf, int buf_size) {
 				*q++ = '\\';
 				*q++ = '\\';
 				break;
-#if 0
-			case '/': /* has 2-char esc seq in JSON spec, but escaping is optional */
-				*q++ = '\\';
-				*q++ = '/';
-				break;
-#endif
 			case '\t':
 				*q++ = '\\';
 				*q++ = 't';

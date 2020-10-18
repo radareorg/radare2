@@ -16,8 +16,18 @@ typedef struct pj_t {
 	int level;
 } PJ;
 
+/* new encoding options of j commands */
+enum {
+	PJ_ENCODING_DEFAULT = 0,
+	PJ_ENCODING_BASE64,
+	PJ_ENCODING_HEX,
+	PJ_ENCODING_ARRAY,
+	PJ_ENCODING_STRIP
+};
+
 /* lifecycle */
 R_API PJ *pj_new(void);
+R_API void pj_set_encoding(const ut8 *encoding);
 R_API void pj_free(PJ *j);
 R_API void pj_reset(PJ *j); // clear the pj contents, but keep the buffer allocated to re-use it
 R_API char *pj_drain(PJ *j);
@@ -37,7 +47,7 @@ R_API PJ *pj_knull(PJ *j, const char *k);
 R_API PJ *pj_kn(PJ *j, const char *k, ut64 n);
 R_API PJ *pj_kN(PJ *j, const char *k, st64 n);
 R_API PJ *pj_ks(PJ *j, const char *k, const char *v);
-R_API PJ *pj_ks_e(PJ *j, const char *k, const char *v, const char *e);
+R_API PJ *pj_ke(PJ *j, const char *k, const ut8 *v);
 R_API PJ *pj_ka(PJ *j, const char *k);
 R_API PJ *pj_ko(PJ *j, const char *k);
 R_API PJ *pj_ki(PJ *j, const char *k, int d);
@@ -49,7 +59,7 @@ R_API PJ *pj_r(PJ *j, const unsigned char *v, size_t v_len);
 R_API PJ *pj_kr(PJ *j, const char *k, const unsigned char *v, size_t v_len);
 R_API PJ *pj_b(PJ *j, bool v);
 R_API PJ *pj_s(PJ *j, const char *k);
-R_API PJ *pj_s_e(PJ *j, const char *k, const char *e);
+R_API PJ *pj_se(PJ *j, const char *k);
 R_API PJ *pj_n(PJ *j, ut64 n);
 R_API PJ *pj_N(PJ *j, st64 n);
 R_API PJ *pj_d(PJ *j, double d);

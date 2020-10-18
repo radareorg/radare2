@@ -446,7 +446,6 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 		} else if (IS_MODE_SIMPLEST (mode)) {
 			r_cons_println (string->string);
 		} else if (IS_MODE_JSON (mode)) {
-			const char *encoding = r_config_get (r->config, "json.encoding");
 			int *block_list;
 			pj_o (pj);
 			pj_kn (pj, "vaddr", vaddr);
@@ -456,11 +455,9 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			pj_kn (pj, "length", string->length);
 			pj_ks (pj, "section", section_name);
 			pj_ks (pj, "type", type_string);
-			if (!strcmp(encoding, "none")) {
-				pj_ks (pj, "string", string->string);
-			} else {
-				pj_ks_e (pj, "string", string->string, encoding);
-			}
+			// data itself may be encoded so use pj_ke
+			pj_ke (pj, "string", string->string);
+
 			switch (string->type) {
 			case R_STRING_TYPE_UTF8:
 			case R_STRING_TYPE_WIDE:
@@ -1699,7 +1696,6 @@ static int bin_relocs(RCore *r, int mode, int va) {
 		r_cons_println ("[Relocations]");
 		r_table_set_columnsf (table, "XXss", "vaddr", "paddr", "type", "name");
 	} else if (IS_MODE_JSON (mode)) {
-		// start a new JSON object
 		pj = pj_new ();
 		if (pj) {
 			pj_a (pj);
@@ -2374,12 +2370,12 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		} else if (IS_MODE_JSON (mode)) {
 			char *str = r_str_escape_utf8_for_json (r_symbol_name, -1);
 			pj_o (pj);
-			pj_ks (pj, "name", str);
+			pj_ke (pj, "name", str);
 			if (sn.demname) {
-				pj_ks (pj, "demname", sn.demname);
+				pj_ke (pj, "demname", sn.demname);
 			}
-			pj_ks (pj, "flagname", sn.nameflag);
-			pj_ks (pj, "realname", symbol->name);
+			pj_ke (pj, "flagname", sn.nameflag);
+			pj_ke (pj, "realname", symbol->name);
 			pj_ki (pj, "ordinal", symbol->ordinal);
 			pj_ks (pj, "bind", symbol->bind);
 			pj_kn (pj, "size", (ut64)symbol->size);

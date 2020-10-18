@@ -2011,9 +2011,9 @@ static void header(RBinFile *bf) {
 				pj_ks (pj, "path", file);
 				char *last_slash = strrchr (file, '/');
 				if (last_slash && *last_slash) {
-					pj_ks (pj, "name", last_slash + 1);
+					pj_ke (pj, "name", last_slash + 1);
 				} else {
-					pj_ks (pj, "name", file);
+					pj_ke (pj, "name", file);
 				}
 			}
 			pj_end (pj);

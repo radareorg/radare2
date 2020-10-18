@@ -1202,7 +1202,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 			case R_ANAL_VAR_KIND_BPV: {
 				st64 delta = (st64)var->delta + fcn->bp_off;
 				pj_o (pj);
-				pj_ks (pj, "name", var->name);
+				pj_ke (pj, "name", var->name);
 				if (var->isarg) {
 					pj_ks (pj, "kind", "arg");
 				} else {
@@ -1224,7 +1224,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 					break;
 				}
 				pj_o (pj);
-				pj_ks (pj, "name", var->name);
+				pj_ke (pj, "name", var->name);
 				pj_ks (pj, "kind", "reg");
 				pj_ks (pj, "type", var->type);
 				pj_ks (pj, "ref", i->name);
@@ -1234,7 +1234,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 			case R_ANAL_VAR_KIND_SPV: {
 				st64 delta = (st64)var->delta + fcn->maxstack;
 				pj_o (pj);
-				pj_ks (pj, "name", var->name);
+				pj_ke (pj, "name", var->name);
 				if (var->isarg) {
 					pj_ks (pj, "kind", "arg");
 				} else {				
