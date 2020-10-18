@@ -861,7 +861,7 @@ static bool cb_jsonencoding(void *user, void *data) {
 			"none (default)\n" \
 			"base64 - encode the json string values as base64\n" \
 			"hex - convert the string to a string of hexpairs\n" \
-			"array - convert the string to an array of hexpairs\n" \
+			"array - convert the string to an array of chars\n" \
 			"strip - strip non-printable characters\n");
 		} else {
 			print_node_options (node);
