@@ -4786,7 +4786,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			showcursor (core, false);
 			break;
 		case ':':
+			r_config_set_i (core->config, "scr.interactive", true);
 			r_core_visual_prompt_input (core);
+			r_config_set_i (core->config, "scr.interactive", false);
 			if (!g) {
 				g->need_reload_nodes = true; // maybe too slow and unnecessary sometimes? better be safe and reload
 				get_bbupdate (g, core, fcn);
