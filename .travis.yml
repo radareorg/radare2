@@ -121,5 +121,6 @@ script:
     elif [ "$TRAVIS_OS_NAME" != "osx" ] && [ "$NODOCKER" != "1" ] ; then
       docker run -v /home/travis/.ccache:/root/.ccache -v "${TRAVIS_BUILD_DIR}":"${TRAVIS_BUILD_DIR}" --entrypoint "/bin/bash" radareorg/r2-travis:latest -c "cd ${TRAVIS_BUILD_DIR}; . docker-env.sh; bash travis-script"
     else
+      pip3 install 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
       $SHELL travis-script
     fi
