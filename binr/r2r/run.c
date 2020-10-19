@@ -1118,7 +1118,7 @@ R_API void r2r_asm_test_output_free(R2RAsmTestOutput *out) {
 
 R_API R2RProcessOutput *r2r_run_fuzz_test(R2RRunConfig *config, R2RFuzzTest *test, R2RCmdRunner runner, void *user) {
 #if ASAN
-	ut64 fuzz_timeout_ms = config->timeout_ms + 360 * 1000;
+	ut64 fuzz_timeout_ms = 6060 * 1000;
 #else
 	ut64 fuzz_timeout_ms = config->timeout_ms;
 #endif
