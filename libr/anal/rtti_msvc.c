@@ -937,7 +937,7 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 	return name;
 }
 
-void str_value_free(HtPPKv *kv) {
+void str_value_free(HtUPKv *kv) {
 	free (kv->value);
 }
 
