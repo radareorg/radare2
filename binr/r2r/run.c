@@ -1117,9 +1117,14 @@ R_API void r2r_asm_test_output_free(R2RAsmTestOutput *out) {
 }
 
 R_API R2RProcessOutput *r2r_run_fuzz_test(R2RRunConfig *config, R2RFuzzTest *test, R2RCmdRunner runner, void *user) {
+#if ASAN
+	ut64 fuzz_timeout_ms = config->timeout_ms + 360 * 1000;
+#else
+	ut64 fuzz_timeout_ms = config->timeout_ms;
+#endif
 	RList *files = r_list_new ();
 	r_list_push (files, test->file);
-	R2RProcessOutput *ret = run_r2_test (config, config->timeout_ms, "aaa", files, NULL, false, runner, user);
+	R2RProcessOutput *ret = run_r2_test (config, fuzz_timeout_ms, "aaa", files, NULL, false, runner, user);
 	r_list_free (files);
 	return ret;
 }
