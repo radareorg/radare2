@@ -868,8 +868,6 @@ static bool cb_jsonencoding(void *user, void *data) {
 		}
 		return false;
 	}
-	//set the encoding
-	pj_set_encoding(node->value);
 	return true;
 }
 

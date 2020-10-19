@@ -5170,7 +5170,8 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	ds->pdf = pdf;
 
 	if (json) {
-		ds->pj = pj ? pj : pj_new ();
+		const ut8 *encoding = r_config_get (core->config, "json.encoding");
+		ds->pj = pj ? pj : pj_new_with_encoding (encoding);
 		if (!ds->pj) {
 			ds_free (ds);
 			return 0;
@@ -6613,7 +6614,8 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	}
 	PJ *pj = NULL;
 	if (mode == R_MODE_JSON) {
-		pj = pj_new ();
+		const ut8 *encoding = r_config_get (core->config, "json.encoding");
+		pj = pj_new_with_encoding (encoding);
 		if (!pj) {
 			return -1;
 		}

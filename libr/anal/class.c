@@ -1100,7 +1100,8 @@ static bool r_anal_class_list_json_cb(void *user, const char *k, const char *v) 
 }
 
 static void r_anal_class_list_json(RAnal *anal) {
-	PJ *j = pj_new ();
+	const ut8 *encoding = anal->coreb.cfgGet (anal->coreb.core, "json.encoding");
+	PJ *j = pj_new_with_encoding (encoding);
 	if (!j) {
 		return;
 	}

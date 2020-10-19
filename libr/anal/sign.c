@@ -2021,7 +2021,8 @@ R_API void r_sign_list(RAnal *a, int format) {
 	PJ *pj = NULL;
 
 	if (format == 'j') {
-		pj = pj_new ();
+		const ut8 *encoding = a->coreb.cfgGet (a->coreb.core, "json.encoding");
+		pj = pj_new_with_encoding (encoding);
 		pj_a (pj);
 	}
 

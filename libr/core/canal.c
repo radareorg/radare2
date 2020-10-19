@@ -381,7 +381,8 @@ static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int dump, int mo
 	RList *refs = r_anal_function_get_refs (fcn);
 	if (mode == 'j') {
 		// start a new JSON object
-		pj = pj_new ();
+		const ut8 *encoding = r_config_get (core->config, "json.encoding");
+		pj = pj_new_with_encoding (encoding);
 		pj_a (pj);
 	}
 	if (refs) {
@@ -2764,7 +2765,8 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 	PJ *pj = NULL;
 
 	if (mode == 'j') {
-		pj = pj_new ();
+		const ut8 *encoding = r_config_get (core->config, "json.encoding");
+		pj = pj_new_with_encoding (encoding);
 		pj_a (pj);
 	}
 
@@ -2798,7 +2800,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 				char *dst = r_str_newf ((f? f->name: "0x%08"PFMT64x), refi->addr);
 				if (pj) { // Append calee json item
 					pj_o (pj);
-					pj_ks (pj, "name", dst);
+					pj_ke (pj, "name", dst);
 					pj_kn (pj, "addr", refi->addr);
 					pj_end (pj); // close referenced item
 				} else if (mode == 'q') {
@@ -2838,7 +2840,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, PJ *pj) {
 	pj_kn (pj, "offset", fcn->addr);
 	char *name = r_core_anal_fcn_name (core, fcn);
 	if (name) {
-		pj_ks (pj, "name", name);
+		pj_ke (pj, "name", name);
 	}
 	pj_kn (pj, "size", r_anal_function_linear_size (fcn));
 	pj_ks (pj, "is-pure", r_str_bool (r_anal_function_purity (fcn)));
@@ -2952,7 +2954,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, PJ *pj) {
 			pj_kn (pj, "diffaddr", fcn->diff->addr);
 		}
 		if (fcn->diff->name) {
-			pj_ks (pj, "diffname", fcn->diff->name);
+			pj_ke (pj, "diffname", fcn->diff->name);
 		}
 	}
 	pj_end (pj);
@@ -2963,7 +2965,8 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, PJ *pj) {
 static int fcn_list_json(RCore *core, RList *fcns, bool quiet) {
 	RListIter *iter;
 	RAnalFunction *fcn;
-	PJ *pj = pj_new ();
+	const ut8 *encoding = r_config_get (core->config, "json.encoding");
+	PJ *pj = pj_new_with_encoding (encoding);
 	if (!pj) {
 		return -1;
 	}
@@ -3631,7 +3634,8 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 			"\tedge [%s];\n", font, gv_spline, gv_node, gv_edge);
 	}
 	if (is_json) {
-		pj = pj_new ();
+		const ut8 *encoding = r_config_get (core->config, "json.encoding");
+		pj = pj_new_with_encoding (encoding);
 		if (!pj) {
 			r_config_hold_restore (hc);
 			r_config_hold_free (hc);
@@ -5686,7 +5690,8 @@ R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, 
 
 	// Initialize a PJ object for json mode
 	if (is_json) {
-		pj = pj_new ();
+		const ut8 *encoding = r_config_get (core->config, "json.encoding");
+		pj = pj_new_with_encoding (encoding);
 		pj_a (pj);
 	}
 
