@@ -781,6 +781,12 @@ typedef struct {
 	size_t cur_succ_count;
 } AutomergeCtx;
 
+static bool count_successors_cb(ut64 addr, void *user) {
+	AutomergeCtx *ctx = user;
+	ctx->cur_succ_count++;
+	return true;
+}
+
 static bool automerge_predecessor_successor_cb(ut64 addr, void *user) {
 	AutomergeCtx *ctx = user;
 	ctx->cur_succ_count++;
@@ -880,6 +886,10 @@ R_API void r_anal_block_automerge(RList *blocks) {
 
 		if (r_anal_block_merge (predecessor, block)) { // r_anal_block_merge() does checks like contiguous, to that's fine
 			// block was merged into predecessor, it is now freed!
+			// Update number of successors of the predecessor
+			ctx.cur_succ_count = 0;
+			r_anal_block_successor_addrs_foreach (predecessor, count_successors_cb, &ctx);
+			ht_up_update (ctx.visited_blocks, (ut64)predecessor, (void *)ctx.cur_succ_count);
 			r_list_foreach (fixup_candidates, bit, clock) {
 				// Make sure all previous pointers to block now go to predecessor
 				ht_up_update (ctx.predecessors, (ut64)clock, predecessor);
