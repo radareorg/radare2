@@ -2661,7 +2661,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (!icmd || (cmd[0] == '#' && cmd[1] != '!' && cmd[1] != '?')) {
 		goto beach;
 	}
-	if (*icmd && !strchr (icmd, '"')) {
+	if (*icmd && *icmd != '"' && !strchr (icmd, '"')) {
 		char *hash = icmd;
 		for (hash = icmd + 1; *hash; hash++) {
 			if (*hash == '\\') {
@@ -2678,8 +2678,6 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			*hash = 0;
 			r_str_trim_tail (icmd);
 		}
-	}
-	if (*cmd != '"') {
 		if (!strchr (cmd, '\'')) { // allow | awk '{foo;bar}' // ignore ; if there's a single quote
 			if (is_macro_command (cmd)) {
 				colon = find_ch_after_macro (cmd, ';');
@@ -2992,10 +2990,13 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 		}
 	}
 
-// TODO must honor `
 	/* comments */
 	if (*cmd != '#') {
-		ptr = (char *)r_str_firstbut (cmd, '#', "`\""); // TODO: use quotestr here
+		if (*cmd == '"') {
+			ptr = NULL;
+		} else {
+			ptr = (char *)r_str_firstbut (cmd, '#', "`\""); // TODO: use quotestr here
+		}
 		if (ptr && (ptr[1] == ' ' || ptr[1] == '\t')) {
 			*ptr = '\0';
 		}
