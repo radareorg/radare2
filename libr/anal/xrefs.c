@@ -210,8 +210,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 	listxrefs (anal->dict_refs, UT64_MAX, list);
 	sortxrefs (list);
 	if (rad == 'j') {
-		const ut8 *encoding = anal->coreb.cfgGet (anal->coreb.core, "json.encoding");
-		pj = pj_new_with_encoding (encoding);
+		pj = anal->coreb.pjWithEncoding (anal->coreb.core);
 		if (!pj) {
 			return;
 		}

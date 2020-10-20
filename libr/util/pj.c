@@ -31,18 +31,20 @@ R_API PJ *pj_new(void) {
 	return j;
 }
 
-R_API PJ *pj_new_with_encoding(const ut8 *encoding) {
+R_API PJ *pj_new_with_encoding(const char *encoding) {
 	PJ *j = pj_new ();
-	if (!strcmp("base64", encoding)) {
-		j->encoding = PJ_ENCODING_BASE64;
-	} else if (!strcmp("hex", encoding)) {
-		j->encoding = PJ_ENCODING_HEX;
-	} else if (!strcmp("array", encoding)) {
-		j->encoding = PJ_ENCODING_ARRAY;
-	} else if (!strcmp("strip", encoding)) {
-		j->encoding = PJ_ENCODING_STRIP;
-	} else {
-		j->encoding = PJ_ENCODING_DEFAULT;
+	if (j) {
+		if (!strcmp ("base64", encoding)) {
+			j->encoding = PJ_ENCODING_BASE64;
+		} else if (!strcmp ("hex", encoding)) {
+			j->encoding = PJ_ENCODING_HEX;
+		} else if (!strcmp ("array", encoding)) {
+			j->encoding = PJ_ENCODING_ARRAY;
+		} else if (!strcmp ("strip", encoding)) {
+			j->encoding = PJ_ENCODING_STRIP;
+		} else {
+			j->encoding = PJ_ENCODING_DEFAULT;
+		}
 	}
 	return j;
 }

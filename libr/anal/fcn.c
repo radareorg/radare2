@@ -1704,8 +1704,7 @@ R_API int r_anal_function_complexity(RAnalFunction *fcn) {
 // tfj and afsj call this function
 R_API char *r_anal_function_get_json(RAnalFunction *function) {
 	RAnal *a = function->anal;
-	const ut8 *encoding = a->coreb.cfgGet (a->coreb.core, "json.encoding");
-	PJ *pj = pj_new_with_encoding (encoding);
+	PJ *pj = a->coreb.pjWithEncoding (a->coreb.core);
 	
 	char *args = strdup ("");
 	char *sdb_ret = r_str_newf ("func.%s.ret", function->name);
@@ -1718,7 +1717,7 @@ R_API char *r_anal_function_get_json(RAnalFunction *function) {
 	int argc = argc_str? atoi (argc_str): 0;
 
 	pj_o (pj);
-	pj_ke (pj, "name", function->name);
+	pj_ks (pj, "name", function->name);
 	const bool no_return = r_anal_noreturn_at_addr (a, function->addr);
 	pj_kb (pj, "noreturn", no_return);
 	pj_ks (pj, "ret", ret_type?ret_type: "void");

@@ -1507,13 +1507,13 @@ R_API char *r_str_escape_utf32be(const char *buf, int buf_size, bool show_asciid
 }
 
 R_API char *r_str_encoded_json(const char *buf, int buf_size, int encoding) {
-	if (!buf) {
-		return NULL;
-	}
-	char *encodedString;
+	r_return_val_if_fail (buf, NULL);
+	r_return_val_if_fail (buf_size > 0, NULL);
+
+	char *encoded_str;
 
 	if (encoding == PJ_ENCODING_BASE64) {
-		encodedString = r_base64_encode_dyn (buf, buf_size);
+		encoded_str = r_base64_encode_dyn (buf, buf_size);
 	} else if (encoding == PJ_ENCODING_HEX || encoding == PJ_ENCODING_ARRAY) {
 		int loop = 0;
 		int i = 0;
@@ -1522,29 +1522,28 @@ R_API char *r_str_encoded_json(const char *buf, int buf_size, int encoding) {
 		size_t new_sz = (len * increment) + 1;
 		const ut8 *format = encoding == PJ_ENCODING_ARRAY ? "%03u," : "%02X";
 
-		encodedString = malloc (new_sz);
-		if (!encodedString) {
+		encoded_str = malloc (new_sz);
+		if (!encoded_str) {
 			printf ("can't malloc\n");
 			return NULL;
 		}
 		while (buf[loop] != '\0' && i < (new_sz - 1)) {
-			snprintf (encodedString + i, sizeof (encodedString), format, (ut8) buf[loop]);
+			snprintf (encoded_str + i, sizeof (encoded_str), format, (ut8) buf[loop]);
 			loop += 1;
 			i += increment;
 		}
-		if (encoding == PJ_ENCODING_ARRAY) {
+		if (encoding == PJ_ENCODING_ARRAY && i > 0) {
 			// get rid of the trailing comma
-			encodedString[i - 1] = '\0';
+			encoded_str[i - 1] = '\0';
 		} else {
-			encodedString[i] = '\0';
+			encoded_str[i] = '\0';
 		}
 	} else if (encoding == PJ_ENCODING_STRIP) {
-		encodedString = r_str_escape_utf8_for_json_strip (buf, buf_size);
+		encoded_str = r_str_escape_utf8_for_json_strip (buf, buf_size);
+	} else {
+		encoded_str = r_str_escape_utf8_for_json (buf, buf_size);
 	}
-	else {
-		encodedString = r_str_escape_utf8_for_json (buf, buf_size);
-	}
-	return encodedString;
+	return encoded_str;
 }
 
 R_API char *r_str_escape_utf8_for_json_strip(const char *buf, int buf_size) {

@@ -327,6 +327,7 @@ R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->numGet = (RCoreNumGet)numget;
 	bnd->isMapped = (RCoreIsMapped)__isMapped;
 	bnd->syncDebugMaps = (RCoreDebugMapsSync)__syncDebugMaps;
+	bnd->pjWithEncoding = (RCorePJWithEncoding)r_core_pj_new;
 	return true;
 }
 
@@ -3666,4 +3667,11 @@ R_API RTable *r_core_table(RCore *core) {
 		table->cons = core->cons;
 	}
 	return table;
+}
+
+/* Config helper function for PJ json encodings */
+R_API PJ *r_core_pj_new(RCore *core) {
+	const char *encoding = r_config_get (core->config, "json.encoding");
+	PJ *pj = pj_new_with_encoding (encoding);
+	return pj;
 }

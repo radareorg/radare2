@@ -28,7 +28,7 @@ enum {
 
 /* lifecycle */
 R_API PJ *pj_new(void);
-R_API PJ *pj_new_with_encoding(const ut8 *encoding);
+R_API PJ *pj_new_with_encoding(const char *encoding);
 R_API void pj_free(PJ *j);
 R_API void pj_reset(PJ *j); // clear the pj contents, but keep the buffer allocated to re-use it
 R_API char *pj_drain(PJ *j);
