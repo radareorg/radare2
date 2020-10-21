@@ -71,7 +71,7 @@ jobs:
             meson_options: -Db_coverage=true -Duse_webui=true
             coverage: true
             enabled: true
-            timeout: 50
+            timeout: 60
             cflags: '-Werror -Wno-cpp'
           - name: macos-clang-tests
             os: macos-latest
