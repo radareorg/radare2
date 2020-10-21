@@ -185,7 +185,7 @@ endif
 tree_sitter_cflags = ''
 if cc.has_argument('-std=gnu99')
   tree_sitter_cflags = '-std=gnu99'
-elif cc.has_argument('std=c99')
+elif cc.has_argument('-std=c99')
   tree_sitter_cflags = '-std=c99'
 endif
 
