@@ -1446,7 +1446,7 @@ repeat:
 				} else {
 					RFlagItem *f = r_flag_get_at (core->flags, refi->addr, true);
 					if (f) {
-						name = r_str_newf ("%s + %d", f->name, refi->addr - f->offset);
+						name = r_str_newf ("%s + %" PFMT64d, f->name, refi->addr - f->offset);
 					} else {
 						name = strdup ("unk");
 					}

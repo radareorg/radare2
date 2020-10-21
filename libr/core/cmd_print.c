@@ -1771,7 +1771,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			// collect comments
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr + j);
 			if (comment) {
-				note[j] = r_str_newf (";", comment);
+				note[j] = r_str_newf (";%s", comment);
 				marks = true;
 			}
 

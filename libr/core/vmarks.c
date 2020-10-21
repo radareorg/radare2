@@ -20,9 +20,9 @@ R_API bool r_core_visual_mark_dump(RCore *core) {
 	for (i = 0; i < UT8_MAX; i++) {
 		if (core->marks[i] != UT64_MAX) {
 			if (i > ASCII_MAX) {
-				r_cons_printf ("fV %d 0x%"PFMT64x"\n", i - ASCII_MAX - 1, core->marks[i]);
+				r_cons_printf ("fV %zu 0x%"PFMT64x"\n", i - ASCII_MAX - 1, core->marks[i]);
 			} else {
-				r_cons_printf ("fV %c 0x%"PFMT64x"\n", i, core->marks[i]);
+				r_cons_printf ("fV %c 0x%"PFMT64x"\n", (char)i, core->marks[i]);
 			}
 			res = true;
 		}

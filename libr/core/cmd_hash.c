@@ -266,7 +266,7 @@ static void handle_mod255 (const ut8 *block, int len) {
 }
 
 static void handle_luhn (const ut8 *block, int len) {
-	r_cons_printf ("%d\n", r_hash_luhn (block, len));
+	r_cons_printf ("%" PFMT64u "\n", r_hash_luhn (block, len));
 }
 
 static void handle_crc8_smbus (const ut8 *block, int len) {

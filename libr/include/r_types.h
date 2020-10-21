@@ -426,6 +426,8 @@ static inline void *r_new_copy(int size, void *data) {
 #define HHXFMT  "hhx"
 #endif
 
+#define PFMTDPTR "td"
+
 #define PFMT32x "x"
 #define PFMT32d "d"
 #define PFMT32u "u"

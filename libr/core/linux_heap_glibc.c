@@ -250,13 +250,13 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 		for (i = 0; i < NBINS * 2 - 2; i += 2) {
 			GHT addr = m_arena + align + SZ * i - SZ * 2;
 			GHT bina = main_arena->GH(bins)[i];
-			r_cons_printf ("f chunk.%d.bin = 0x%"PFMT64x"\n", i, (ut64)addr);
-			r_cons_printf ("f chunk.%d.fd = 0x%"PFMT64x"\n", i, (ut64)bina);
+			r_cons_printf ("f chunk.%zu.bin = 0x%"PFMT64x"\n", i, (ut64)addr);
+			r_cons_printf ("f chunk.%zu.fd = 0x%"PFMT64x"\n", i, (ut64)bina);
 			bina = main_arena->GH(bins)[i + 1];
-			r_cons_printf ("f chunk.%d.bk = 0x%"PFMT64x"\n", i, (ut64)bina);
+			r_cons_printf ("f chunk.%zu.bk = 0x%"PFMT64x"\n", i, (ut64)bina);
 		}
 		for (i = 0; i < BINMAPSIZE; i++) {
-			r_cons_printf ("f binmap.%d = 0x%"PFMT64x, i, (ut64)main_arena->binmap[i]);
+			r_cons_printf ("f binmap.%zu = 0x%"PFMT64x, i, (ut64)main_arena->binmap[i]);
 		}
 		{	/* maybe use SDB instead of flags for this? */
 			char units[8];
@@ -1114,8 +1114,8 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 	char *top_title, *top_data, *node_title, *node_data;
 	bool first_node = true;
 
-	top_data = r_str_newf ("");
-	top_title = r_str_newf ("");
+	top_data = r_str_new ("");
+	top_title = r_str_new ("");
 
 	(void)r_io_read_at (core->io, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
 	size_tmp = (cnk->size >> 3) << 3;
@@ -1151,14 +1151,14 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 				(ut64)cnk->size, (ut64)cnk->fd, (ut64)cnk->bk);
 				break;
 			case 'j':
-				r_cons_printf ("%s{\"addr\":%"PFMT64d",\"size\":%"PFMT64d",\"status\":\"%s\",\"fd\":"PFMT64d",\"bk\":"PFMT64d"}",
+				r_cons_printf ("%s{\"addr\":%"PFMT64d",\"size\":%"PFMT64d",\"status\":\"%s\",\"fd\":%"PFMT64d",\"bk\":%"PFMT64d"}",
 						comma, (ut64)next_chunk, (ut64)cnk->size, status, (ut64)cnk->fd, (ut64)cnk->bk);
 				comma = ",";
 				break;
 			case '*':
 				r_cons_printf ("fs heap.corrupted\n");
-				char *name = r_str_newf ("chunk.corrupted.%06x", ((prev_chunk>>4) & 0xffff));
-				r_cons_printf ("f %s %d 0x%"PFMT64x"\n", name, (int)cnk->size, prev_chunk);
+				char *name = r_str_newf ("chunk.corrupted.%06" PFMT64x , ((prev_chunk >> 4) & 0xffffULL));
+				r_cons_printf ("f %s %d 0x%"PFMT64x"\n", name, (int)cnk->size, (ut64)prev_chunk);
 				free (name);
 				break;
 			case 'g':
@@ -1299,8 +1299,8 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 			break;
 		case '*':
 			r_cons_printf ("fs heap.%s\n", status);
-			char *name = r_str_newf ("chunk.%06x", ((prev_chunk_addr>>4) & 0xffff));
-			r_cons_printf ("f %s %d 0x%"PFMT64x"\n", name, (int)prev_chunk_size, prev_chunk_addr);
+			char *name = r_str_newf ("chunk.%06" PFMT64x, ((prev_chunk_addr>>4) & 0xffffULL));
+			r_cons_printf ("f %s %d 0x%"PFMT64x"\n", name, (int)prev_chunk_size, (ut64)prev_chunk_addr);
 			free (name);
 			break;
 		case 'g':

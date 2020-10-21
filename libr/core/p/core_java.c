@@ -357,17 +357,17 @@ static const char *r_cmd_java_strtok(const char *str1, const char b, size_t len)
 	if (len == (size_t)-1) {
 		len = strlen (str1);
 	}
-	IFDBG r_cons_printf ("Looking for char (%c) in (%s) up to %d\n", b, p, len);
+	IFDBG r_cons_printf ("Looking for char (%c) in (%s) up to %zu\n", b, p, len);
 	for (; i < len; i++, p++) {
 		if (*p == b) {
-			IFDBG r_cons_printf ("Found? for char (%c) @ %d: (%s)\n", b, i, p);
+			IFDBG r_cons_printf ("Found? for char (%c) @ %zu: (%s)\n", b, i, p);
 			break;
 		}
 	}
 	if (i == len) {
 		p = NULL;
 	}
-	IFDBG r_cons_printf ("Found? for char (%c) @ %d: (%s)\n", b, len, p);
+	IFDBG r_cons_printf ("Found? for char (%c) @ %zu: (%s)\n", b, len, p);
 	return p;
 }
 
@@ -429,12 +429,12 @@ static int r_cmd_java_handle_summary_info(RCore *core, const char *cmd) {
 	}
 
 	r_cons_printf ("Summary for %s:\n", obj->file);
-	r_cons_printf ("  Size 0x%" PFMT64x ":\n", obj->size);
-	r_cons_printf ("  Constants  size: 0x%" PFMT64x " count: %d:\n", obj->cp_size, obj->cp_count);
-	r_cons_printf ("  Methods    size: 0x%" PFMT64x " count: %d:\n", obj->methods_size, obj->methods_count);
-	r_cons_printf ("  Fields     size: 0x%" PFMT64x " count: %d:\n", obj->fields_size, obj->fields_count);
-	r_cons_printf ("  Attributes size: 0x%" PFMT64x " count: %d:\n", obj->attrs_size, obj->attrs_count);
-	r_cons_printf ("  Interfaces size: 0x%" PFMT64x " count: %d:\n", obj->interfaces_size, obj->interfaces_count);
+	r_cons_printf ("  Size 0x%x:\n", obj->size);
+	r_cons_printf ("  Constants  size: 0x%x count: %d:\n", obj->cp_size, obj->cp_count);
+	r_cons_printf ("  Methods    size: 0x%x count: %d:\n", obj->methods_size, obj->methods_count);
+	r_cons_printf ("  Fields     size: 0x%x count: %d:\n", obj->fields_size, obj->fields_count);
+	r_cons_printf ("  Attributes size: 0x%x count: %d:\n", obj->attrs_size, obj->attrs_count);
+	r_cons_printf ("  Interfaces size: 0x%x count: %d:\n", obj->interfaces_size, obj->interfaces_count);
 
 	return true;
 }
@@ -480,7 +480,7 @@ static RList *cpfind_str(RBinJavaObj *obj, const char *cmd) {
 	if (!cmd) {
 		return r_list_new ();
 	}
-	IFDBG r_cons_printf ("Looking for str: %s (%d)\n", cmd, strlen (cmd));
+	IFDBG r_cons_printf ("Looking for str: %s (%zu)\n", cmd, strlen (cmd));
 	return r_bin_java_find_cp_const_by_val (obj, (const ut8 *)cmd, strlen (cmd), R_BIN_JAVA_CP_UTF8);
 }
 
@@ -742,7 +742,7 @@ static char *r_cmd_replace_name(const char *s_new, ut32 replace_len, const char 
 		p_result = result;
 		while (next && consumed < buf_len) {
 			// replace up to next
-			IFDBG r_cons_printf ("next: \"%s\", len to: %d\n", next, next - buffer);
+			IFDBG r_cons_printf ("next: \"%s\", len to: %" PFMTDPTR "\n", next, (ptrdiff_t)(next - buffer));
 			for (; buffer + consumed < next && consumed < buf_len; consumed++, p_result++) {
 				*p_result = *(buffer + consumed);
 				(*res_len)++;
@@ -1440,7 +1440,7 @@ static int r_cmd_java_handle_set_flags(RCore *core, const char *input) {
 		default: flag_value = -1;
 		}
 	}
-	IFDBG r_cons_printf ("Current args: (flag_value: 0x%04x addr: 0x%" PFMT64x ")\n.", flag_value, addr, res);
+	IFDBG r_cons_printf ("Current args: (flag_value: 0x%04x addr: 0x%" PFMT64x ")\n.", flag_value, addr);
 	if (flag_value != -1) {
 		res = r_cmd_java_set_acc_flags (core, addr, ((ut16)flag_value) & 0xffff);
 		IFDBG r_cons_printf ("Writing 0x%04x to 0x%" PFMT64x ": %d.", flag_value, addr, res);
@@ -1947,11 +1947,11 @@ static int r_cmd_java_handle_print_exceptions(RCore *core, const char *input) {
 			char *class_info = r_bin_java_resolve_without_space (bin, exc_entry->catch_type);
 			r_cons_printf ("  Catch Type: %d, %s @ 0x%"PFMT64x"\n", exc_entry->catch_type,
 				class_info, exc_entry->file_offset+6);
-			r_cons_printf ("  Start PC: (0x%"PFMT64x") 0x%"PFMT64x" @ 0x%"PFMT64x"\n",
+			r_cons_printf ("  Start PC: (0x%x) 0x%"PFMT64x" @ 0x%"PFMT64x"\n",
 				exc_entry->start_pc, exc_entry->start_pc+start, exc_entry->file_offset);
-			r_cons_printf ("  End PC: (0x%"PFMT64x") 0x%"PFMT64x" 0x%"PFMT64x"\n",
+			r_cons_printf ("  End PC: (0x%x) 0x%"PFMT64x" 0x%"PFMT64x"\n",
 				exc_entry->end_pc, exc_entry->end_pc+start, exc_entry->file_offset + 2);
-			r_cons_printf ("  Handler PC: (0x%"PFMT64x") 0x%"PFMT64x" 0x%"PFMT64x"\n",
+			r_cons_printf ("  Handler PC: (0x%x) 0x%"PFMT64x" 0x%"PFMT64x"\n",
 				exc_entry->handler_pc, exc_entry->handler_pc+start, exc_entry->file_offset+4);
 			free (class_info);
 		}

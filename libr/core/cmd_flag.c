@@ -702,7 +702,7 @@ static bool print_function_labels_cb(void *user, const ut64 addr, const void *v)
 		r_cons_printf ("0x%08"PFMT64x" %s   [%s + %"PFMT64d"]\n",
 			addr,
 			name, ctx->fcn->name,
-			addr - ctx->fcn->addr, addr);
+			addr - ctx->fcn->addr);
 	}
 	return true;
 }
