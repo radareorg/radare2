@@ -267,7 +267,7 @@ R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format) {
 				r_cons_newline ();
 				break;
 			default:
-				r_cons_printf ("0x%08" PFMT64x " %d ",
+				r_cons_printf ("0x%08" PFMT64x " %" PFMT64d " ",
 						core->yank_addr + pos,
 						r_buf_size (core->yank_buf) - pos);
 				for (i = pos; i < r_buf_size (core->yank_buf); i++) {

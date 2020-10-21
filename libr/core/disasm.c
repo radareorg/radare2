@@ -1855,7 +1855,7 @@ static void ds_show_functions(RDisasmState *ds) {
 			ds_print_pre (ds, true);
 			r_cons_printf ("%s  ", COLOR_RESET (ds));
 		}
-		r_cons_printf ("%d: ", r_anal_function_realsize (f));
+		r_cons_printf ("%" PFMT64d ": ", r_anal_function_realsize (f));
 
 		// show function's realname in the signature if realnames are enabled
 		if (core->flags->realnames) {
@@ -2873,21 +2873,21 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *buf, int ib, int siz
 		r_cons_printf ("%s %d", type, ntohs (n & 0xFFFF));
 		break;
 	case 8:
-		r_cons_printf ("%s %oo", type, n);
+		r_cons_printf ("%s %" PFMT64o "o", type, n);
 		break;
 	case 10:
-		r_cons_printf ("%s %d", type, n);
+		r_cons_printf ("%s %" PFMT64d, type, n);
 		break;
 	default:
 		switch (size) {
 		case 1:
-			r_cons_printf ("%s 0x%02x", type, n);
+			r_cons_printf ("%s 0x%02" PFMT64x, type, n);
 			break;
 		case 2:
-			r_cons_printf ("%s 0x%04x", type, n);
+			r_cons_printf ("%s 0x%04" PFMT64x, type, n);
 			break;
 		case 4:
-			r_cons_printf ("%s 0x%08x", type, n);
+			r_cons_printf ("%s 0x%08" PFMT64x, type, n);
 			break;
 		case 8:
 			r_cons_printf ("%s 0x%016" PFMT64x, type, n);
@@ -3034,7 +3034,7 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 			// print operation
 			int size = R_MIN (mi_size, len - idx);
 			if (!ds_print_data_type (ds, buf + idx, ds->hint? ds->hint->immbase: 0, size)) {
-				r_cons_printf ("hex length=%" PFMT64d " delta=%d\n", size , delta);
+				r_cons_printf ("hex length=%d delta=%d\n", size , delta);
 				r_print_hexdump (core->print, ds->at, buf+idx, hexlen-delta, 16, 1, 1);
 			}
 			core->print->flags |= R_PRINT_FLAGS_HEADER;
@@ -3048,7 +3048,7 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 			break;
 		case R_META_TYPE_FORMAT:
 			{
-				r_cons_printf ("pf %s # size=%d\n", mi->str, mi_size);
+				r_cons_printf ("pf %s # size=%" PFMT64d "\n", mi->str, mi_size);
 				int len_before = r_cons_get_buffer_len ();
 				r_print_format (core->print, ds->at, buf + idx,
 						len - idx, mi->str, R_PRINT_MUSTSEE, NULL, NULL);
@@ -5306,7 +5306,7 @@ toro:
 				ds_setup_print_pre (ds, true, false);
 				ds_print_lines_left (ds);
 				ds_print_offset (ds);
-				r_cons_printf ("(%d byte folded function)\n", r_anal_function_linear_size (f));
+				r_cons_printf ("(%" PFMT64d " byte folded function)\n", r_anal_function_linear_size (f));
 				//r_cons_printf ("%s%s%s\n", COLOR (ds, color_fline), core->cons->vline[RDWN_CORNER], COLOR_RESET (ds));
 				if (delta < 0) {
 					delta = -delta;
@@ -6421,7 +6421,7 @@ toro:
 					RDisasmState ds = {0};
 					ds.core = core;
 					if (!ds_print_data_type (&ds, buf + i, 0, size)) {
-						r_cons_printf ("hex length=%" PFMT64d " delta=%d\n", size, delta);
+						r_cons_printf ("hex length=%d delta=%d\n", size, delta);
 						r_print_hexdump (core->print, at, buf + idx, hexlen - delta, 16, 1, 1);
 					} else {
 						r_cons_newline ();
