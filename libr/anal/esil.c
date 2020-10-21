@@ -1540,6 +1540,17 @@ static bool esil_mod(RAnalEsil *esil) {
 	return ret;
 }
 
+static bool detect_fpu_div_exception(ut64 a, ut64 b) {
+	if (b == UT64_MIN) {
+		// division by zero
+		return true;
+	}
+	if (a == UT64_GT0 && b == UT64_MAX) {
+		return true;
+	}
+	return false;
+}
+
 static bool esil_signed_mod(RAnalEsil *esil) {
 	bool ret = false;
 	st64 s, d;
@@ -1547,7 +1558,7 @@ static bool esil_signed_mod(RAnalEsil *esil) {
 	char *src = r_anal_esil_pop (esil);
 	if (src && r_anal_esil_get_parm (esil, src, (ut64 *)&s)) {
 		if (dst && r_anal_esil_get_parm (esil, dst, (ut64 *)&d)) {
-			if (s == 0) {
+			if (detect_fpu_div_exception (d, s)) {
 				if (esil->verbose > 0) {
 					eprintf ("0x%08"PFMT64x" esil_mod: Division by zero!\n", esil->address);
 				}
@@ -1617,17 +1628,6 @@ static bool esil_div(RAnalEsil *esil) {
 	free (src);
 	free (dst);
 	return ret;
-}
-
-static bool detect_fpu_div_exception(ut64 a, ut64 b) {
-	if (b == 0LL) {
-		// division by zero
-		return true;
-	}
-	if (a == 0x8000000000000000 && b == -1) {
-		return true;
-	}
-	return false;
 }
 
 static bool esil_signed_div(RAnalEsil *esil) {

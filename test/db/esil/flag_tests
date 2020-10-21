@@ -140,3 +140,21 @@ EXPECT=<<EOF
 0x0
 EOF
 RUN
+
+NAME=signed division traps
+FILE=-
+CMDS=<<EOF
+"ae 32,0,/"
+"ae 0,32,/"
+"ae -1,0x8000000000000000,~/"
+"ae -1,0x8000000000000000,~%"
+EOF
+EXPECT=<<EOF
+0x0
+EOF
+EXPECT_ERR=<<EOF
+ESIL TRAP type 3 code 0x00000000 divbyzero
+ESIL TRAP type 3 code 0x00000000 divbyzero
+ESIL TRAP type 3 code 0x00000000 divbyzero
+EOF
+RUN
