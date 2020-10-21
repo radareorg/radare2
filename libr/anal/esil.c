@@ -1541,10 +1541,11 @@ static bool esil_mod(RAnalEsil *esil) {
 }
 
 static bool detect_fpu_div_exception(ut64 a, ut64 b) {
+	// division by zero
 	if (b == UT64_MIN) {
-		// division by zero
 		return true;
 	}
+	// undefined result (0x80000 / -1) cant be represented
 	if (a == UT64_GT0 && b == UT64_MAX) {
 		return true;
 	}
