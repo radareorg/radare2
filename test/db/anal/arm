@@ -1,6 +1,8 @@
 NAME=noreturn errno
 FILE=malloc://32
 CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
 s main
 af
 afi~^size
