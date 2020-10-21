@@ -478,10 +478,10 @@ static void _ds_comment_align_(RDisasmState *ds, bool up, bool nl) {
 	ds_print_ref_lines (ds->refline, ds->line_col, ds);
 	r_cons_printf ("  %s %s",up? "": ".-", COLOR (ds, color_comment));
 }
-#define _ALIGN _ds_comment_align_ (ds, true, false)
+#define CMT_ALIGN _ds_comment_align_ (ds, true, false)
 
 static void ds_comment_lineup(RDisasmState *ds) {
-	_ALIGN;
+	CMT_ALIGN;
 }
 
 static void ds_comment_(RDisasmState *ds, bool align, bool nl, const char *format, va_list ap) {
@@ -1233,7 +1233,7 @@ static void ds_begin_cont(RDisasmState *ds) {
 
 static void ds_begin_comment(RDisasmState *ds) {
 	if (ds->show_comment_right) {
-		_ALIGN;
+		CMT_ALIGN;
 	} else {
 		ds_begin_line (ds);
 		ds_pre_xrefs (ds, false);
@@ -3335,7 +3335,7 @@ static void ds_print_sysregs(RDisasmState *ds) {
 			RSyscall *sc = core->anal->syscall;
 			const char *ioname = r_syscall_get_io (sc, imm);
 			if (ioname && *ioname) {
-				_ALIGN;
+				CMT_ALIGN;
 				ds_comment (ds, true, "; IO %s", ioname);
 				ds->has_description = true;
 			}
@@ -3350,7 +3350,7 @@ static void ds_print_sysregs(RDisasmState *ds) {
 			const int imm = (int)ds->analop.ptr;
 			const char *sr = r_syscall_sysreg (core->anal->syscall, "reg", imm);
 			if (sr) {
-				_ALIGN;
+				CMT_ALIGN;
 				ds_comment (ds, true, "; REG %s - %s", sr, "");
 				// TODO: add register description description
 				ds->has_description = true;
