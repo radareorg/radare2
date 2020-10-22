@@ -42,7 +42,7 @@ typedef struct r_core_bind_t {
 	RCoreNumGet numGet;
 	RCoreIsMapped isMapped;
 	RCoreDebugMapsSync syncDebugMaps;
-	RCorePJWithEncoding	pjWithEncoding;
+	RCorePJWithEncoding pjWithEncoding;
 } RCoreBind;
 
 #endif
