@@ -397,7 +397,7 @@ static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int dump, int mo
 							pj_o (pj);
 							pj_kn (pj, "addr", ref->at);
 							pj_kn (pj, "ref", ref->addr);
-							pj_ke (pj, "flag", f->name);
+							pj_ks (pj, "flag", f->name);
 							pj_end (pj);
 						} else {
 							r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n", ref->at, ref->addr, f->name);
@@ -1856,7 +1856,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 		// TODO: show vars, refs and xrefs
 		char *fcn_name_escaped = r_str_escape_utf8_for_json (fcn->name, -1);
 		pj_o (pj);
-		pj_ke (pj, "name", r_str_get (fcn_name_escaped));
+		pj_ks (pj, "name", r_str_get (fcn_name_escaped));
 		free (fcn_name_escaped);
 		pj_kn (pj, "offset", fcn->addr);
 		pj_ki (pj, "ninstr", fcn->ninstr);
@@ -2779,7 +2779,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 		if (!r_list_empty (refs)) {
 			if (pj) { // begin json output of function
 				pj_o (pj);
-				pj_ke (pj, "name", fcn->name);
+				pj_ks (pj, "name", fcn->name);
 				pj_kn (pj, "addr", fcn->addr);
 				pj_k (pj, "calls");
 				pj_a (pj);
@@ -2798,7 +2798,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 				char *dst = r_str_newf ((f? f->name: "0x%08"PFMT64x), refi->addr);
 				if (pj) { // Append calee json item
 					pj_o (pj);
-					pj_ke (pj, "name", dst);
+					pj_ks (pj, "name", dst);
 					pj_kn (pj, "addr", refi->addr);
 					pj_end (pj); // close referenced item
 				} else if (mode == 'q') {
@@ -2838,7 +2838,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, PJ *pj) {
 	pj_kn (pj, "offset", fcn->addr);
 	char *name = r_core_anal_fcn_name (core, fcn);
 	if (name) {
-		pj_ke (pj, "name", name);
+		pj_ks (pj, "name", name);
 	}
 	pj_kn (pj, "size", r_anal_function_linear_size (fcn));
 	pj_ks (pj, "is-pure", r_str_bool (r_anal_function_purity (fcn)));
@@ -2952,7 +2952,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, PJ *pj) {
 			pj_kn (pj, "diffaddr", fcn->diff->addr);
 		}
 		if (fcn->diff->name) {
-			pj_ke (pj, "diffname", fcn->diff->name);
+			pj_ks (pj, "diffname", fcn->diff->name);
 		}
 	}
 	pj_end (pj);

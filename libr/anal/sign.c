@@ -1619,7 +1619,7 @@ static void listComment(RAnal *a, RSignItem *it, PJ *pj, int format) {
 		} else if (format == '*') {
 			a->cb_printf ("%s\n", it->comment); // comment injection via CCu..
 		} else if (format == 'j') {
-			pj_ke (pj, "comments", it->comment);
+			pj_ks (pj, "comments", it->comment);
 		} else {
 			a->cb_printf ("  comment: 0x%08" PFMT64x "\n", it->addr);
 		}
@@ -1719,7 +1719,7 @@ static void print_function_args_json(RAnal *a, PJ *pj, char *arg_type) {
 	arg_name[len_arg_name - 1] = '\0';
 
 	pj_o (pj);
-	pj_ke (pj, "name", arg_name);
+	pj_ks (pj, "name", arg_name);
 	pj_ks (pj, "type", arg_type + 1);
 	pj_end (pj);
 }
@@ -1929,7 +1929,7 @@ static bool listCB(void *user, const char *k, const char *v) {
 		if (it->space) {
 			pj_ks (ctx->pj, "zignspace", it->space->name);
 		}
-		pj_ke (ctx->pj, "name", it->name);
+		pj_ks (ctx->pj, "name", it->name);
 	} else {
 		if (!r_spaces_current (&a->zign_spaces) && it->space) {
 			a->cb_printf ("(%s) ", it->space->name);

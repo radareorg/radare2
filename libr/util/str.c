@@ -1508,40 +1508,42 @@ R_API char *r_str_escape_utf32be(const char *buf, int buf_size, bool show_asciid
 
 R_API char *r_str_encoded_json(const char *buf, int buf_size, int encoding) {
 	r_return_val_if_fail (buf, NULL);
-	r_return_val_if_fail (buf_size > 0, NULL);
-
+	size_t buf_sz = buf_size < 0 ? strlen (buf) : buf_size;
 	char *encoded_str;
 
-	if (encoding == PJ_ENCODING_BASE64) {
-		encoded_str = r_base64_encode_dyn (buf, buf_size);
-	} else if (encoding == PJ_ENCODING_HEX || encoding == PJ_ENCODING_ARRAY) {
-		int loop = 0;
-		int i = 0;
-		size_t len = buf_size < 0 ? strlen (buf) : buf_size;
-		size_t increment = encoding == PJ_ENCODING_ARRAY ? 4 : 2;
-		size_t new_sz = (len * increment) + 1;
-		const ut8 *format = encoding == PJ_ENCODING_ARRAY ? "%03u," : "%02X";
+	if (encoding == PJ_ENCODING_STR_BASE64) {
+		encoded_str = r_base64_encode_dyn (buf, buf_sz);
+	} else if (encoding == PJ_ENCODING_STR_HEX || encoding == PJ_ENCODING_STR_ARRAY) {
+		size_t loop = 0;
+		size_t i = 0;
+		size_t increment = encoding == PJ_ENCODING_STR_ARRAY ? 4 : 2;
+		
+		if (!SZT_MUL_OVFCHK (((buf_sz * increment) + 1), SZT_MAX)) {
+			return NULL;
+		}
+		size_t new_sz = (buf_sz * increment) + 1;
 
 		encoded_str = malloc (new_sz);
 		if (!encoded_str) {
-			printf ("can't malloc\n");
 			return NULL;
 		}
+
+		const ut8 *format = encoding == PJ_ENCODING_STR_ARRAY ? "%03u," : "%02X";
 		while (buf[loop] != '\0' && i < (new_sz - 1)) {
 			snprintf (encoded_str + i, sizeof (encoded_str), format, (ut8) buf[loop]);
-			loop += 1;
+			loop++;
 			i += increment;
 		}
-		if (encoding == PJ_ENCODING_ARRAY && i > 0) {
+		if (encoding == PJ_ENCODING_STR_ARRAY && i) {
 			// get rid of the trailing comma
 			encoded_str[i - 1] = '\0';
 		} else {
 			encoded_str[i] = '\0';
 		}
-	} else if (encoding == PJ_ENCODING_STRIP) {
-		encoded_str = r_str_escape_utf8_for_json_strip (buf, buf_size);
+	} else if (encoding == PJ_ENCODING_STR_STRIP) {
+		encoded_str = r_str_escape_utf8_for_json_strip (buf, buf_sz);
 	} else {
-		encoded_str = r_str_escape_utf8_for_json (buf, buf_size);
+		encoded_str = r_str_escape_utf8_for_json (buf, buf_sz);
 	}
 	return encoded_str;
 }

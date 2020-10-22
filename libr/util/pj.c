@@ -26,25 +26,41 @@ R_API PJ *pj_new(void) {
 	if (j) {
 		r_strbuf_init (&j->sb);
 		j->is_first = true;
-		j->encoding = PJ_ENCODING_DEFAULT;
+		j->str_encoding = PJ_ENCODING_DEFAULT;
+		j->num_encoding = PJ_ENCODING_DEFAULT;
 	}
 	return j;
 }
 
-R_API PJ *pj_new_with_encoding(const char *encoding) {
+void pj_set_str_encoding(PJ *j, const char *str_encoding) {
+	if (!strcmp ("base64", str_encoding)) {
+		j->str_encoding = PJ_ENCODING_STR_BASE64;
+	} else if (!strcmp ("hex", str_encoding)) {
+		j->str_encoding = PJ_ENCODING_STR_HEX;
+	} else if (!strcmp ("array", str_encoding)) {
+		j->str_encoding = PJ_ENCODING_STR_ARRAY;
+	} else if (!strcmp ("strip", str_encoding)) {
+		j->str_encoding = PJ_ENCODING_STR_STRIP;
+	} else {
+		j->str_encoding = PJ_ENCODING_DEFAULT;
+	}
+}
+
+void pj_set_num_encoding(PJ *j, const char *num_encoding) {
+	if (!strcmp ("string", num_encoding)) {
+		j->num_encoding = PJ_ENCODING_NUM_STR;
+	} else if (!strcmp ("hex", num_encoding)) {
+		j->num_encoding = PJ_ENCODING_NUM_HEX;
+	} else {
+		j->num_encoding = PJ_ENCODING_DEFAULT;
+	}
+}
+
+R_API PJ *pj_new_with_encoding(const char *str_encoding, const char *num_encoding) {
 	PJ *j = pj_new ();
 	if (j) {
-		if (!strcmp ("base64", encoding)) {
-			j->encoding = PJ_ENCODING_BASE64;
-		} else if (!strcmp ("hex", encoding)) {
-			j->encoding = PJ_ENCODING_HEX;
-		} else if (!strcmp ("array", encoding)) {
-			j->encoding = PJ_ENCODING_ARRAY;
-		} else if (!strcmp ("strip", encoding)) {
-			j->encoding = PJ_ENCODING_STRIP;
-		} else {
-			j->encoding = PJ_ENCODING_DEFAULT;
-		}
+		pj_set_str_encoding (j, str_encoding);
+		pj_set_num_encoding (j, num_encoding);
 	}
 	return j;
 }
@@ -138,7 +154,11 @@ R_API PJ *pj_knull(PJ *j, const char *k) {
 R_API PJ *pj_kn(PJ *j, const char *k, ut64 n) {
 	r_return_val_if_fail (j && k, j);
 	pj_k (j, k);
-	pj_n (j, n);
+	if (j->num_encoding != PJ_ENCODING_DEFAULT) {
+		pj_ne (j, n);
+	} else {
+		pj_n (j, n);
+	}
 	return j;
 }
 
@@ -187,14 +207,11 @@ R_API PJ *pj_ka(PJ *j, const char *k) {
 R_API PJ *pj_ks(PJ *j, const char *k, const char *v) {
 	r_return_val_if_fail (j && k && v, j);
 	pj_k (j, k);
-	pj_s (j, v);
-	return j;
-}
-
-R_API PJ *pj_ke(PJ *j, const char *k, const char *v) {
-	r_return_val_if_fail (j && k && v, j);
-	pj_k (j, k);
-	pj_se (j, v);
+	if (j->str_encoding != PJ_ENCODING_DEFAULT) {
+		pj_se (j, v);
+	} else {
+		pj_s (j, v);
+	}
 	return j;
 }
 
@@ -236,17 +253,17 @@ R_API PJ *pj_s(PJ *j, const char *k) {
 R_API PJ *pj_se(PJ *j, const char *k) {
 	r_return_val_if_fail (j && k, j);
 	pj_comma (j);
-	if (j->encoding == PJ_ENCODING_ARRAY) {
+	if (j->str_encoding == PJ_ENCODING_STR_ARRAY) {
 		pj_raw (j, "[");
 	} else {
 		pj_raw (j, "\"");
 	}
-	char *en = r_str_encoded_json (k, -1, j->encoding);
+	char *en = r_str_encoded_json (k, -1, j->str_encoding);
 	if (en) {
 		pj_raw (j, en);
 		free (en);
 	}
-	if (j->encoding == PJ_ENCODING_ARRAY) {
+	if (j->str_encoding == PJ_ENCODING_STR_ARRAY) {
 		pj_raw (j, "]");
 	} else {
 		pj_raw (j, "\"");
@@ -288,6 +305,19 @@ R_API PJ *pj_n(PJ *j, ut64 n) {
 	return j;
 }
 
+R_API PJ *pj_ne(PJ *j, ut64 n) {
+	r_return_val_if_fail (j, j);
+	pj_comma (j);
+	if (j->num_encoding == PJ_ENCODING_NUM_STR) {
+		pj_raw (j, sdb_fmt ("\"%" PFMT64u "\"", n));
+	} else if (j->num_encoding == PJ_ENCODING_NUM_HEX) {
+		pj_raw (j, sdb_fmt ("\"0x%" HHXFMT "\"", n));
+	} else {
+		pj_n(j, n);
+	}
+	return j;
+}
+
 R_API PJ *pj_N(PJ *j, st64 n) {
 	r_return_val_if_fail (j, NULL);
 	pj_comma (j);
@@ -324,8 +354,6 @@ R_API char *pj_fmt(PrintfCallback p, const char *fmt, ...) {
 	char ch[2] = { 0 };
 	PJ *j = pj_new ();
 	while (*fmt) {
-		j->is_first = true;
-		j->encoding = PJ_ENCODING_DEFAULT;
 		ch[0] = *fmt;
 		switch (*fmt) {
 		case '\\':

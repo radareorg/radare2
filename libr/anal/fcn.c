@@ -1733,11 +1733,11 @@ R_API char *r_anal_function_get_json(RAnalFunction *function) {
 		char *comma = strchr (arg_i, ',');
 		if (comma) {
 			*comma = 0;
-			pj_ke (pj, "name", comma + 1);
+			pj_ks (pj, "name", comma + 1);
 			pj_ks (pj, "type", arg_i);
 			const char *cc_arg = r_reg_get_name (a->reg, r_reg_get_name_idx (sdb_fmt ("A%d", i)));
 			if (cc_arg) {
-				pj_ke (pj, "cc", cc_arg);
+				pj_ks (pj, "cc", cc_arg);
 			}
 		}
 		free (arg_i);

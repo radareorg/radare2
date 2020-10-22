@@ -252,7 +252,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 				char *name = anal->coreb.getNameDelta (anal->coreb.core, ref->at);
 				if (name) {
 					r_str_replace_ch (name, ' ', 0, true);
-					pj_ke (pj, "name", name);
+					pj_ks (pj, "name", name);
 					free (name);
 				}
 				pj_kn (pj, "from", ref->at);
@@ -261,7 +261,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 				name = anal->coreb.getNameDelta (anal->coreb.core, ref->addr);
 				if (name) {
 					r_str_replace_ch (name, ' ', 0, true);
-					pj_ke (pj, "refname", name);
+					pj_ks (pj, "refname", name);
 					free (name);
 				}
 				pj_end (pj);

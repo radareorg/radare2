@@ -14,21 +14,24 @@ typedef struct pj_t {
 	bool is_key;
 	char braces[R_PRINT_JSON_DEPTH_LIMIT];
 	int level;
-	int encoding;
+	int str_encoding;
+	int num_encoding;
 } PJ;
 
 /* new encoding options of j commands */
 enum {
 	PJ_ENCODING_DEFAULT = 0,
-	PJ_ENCODING_BASE64,
-	PJ_ENCODING_HEX,
-	PJ_ENCODING_ARRAY,
-	PJ_ENCODING_STRIP
+	PJ_ENCODING_STR_BASE64,
+	PJ_ENCODING_STR_HEX,
+	PJ_ENCODING_STR_ARRAY,
+	PJ_ENCODING_STR_STRIP,
+	PJ_ENCODING_NUM_STR,
+	PJ_ENCODING_NUM_HEX
 };
 
 /* lifecycle */
 R_API PJ *pj_new(void);
-R_API PJ *pj_new_with_encoding(const char *encoding);
+R_API PJ *pj_new_with_encoding(const char *str_encoding, const char *num_encoding);
 R_API void pj_free(PJ *j);
 R_API void pj_reset(PJ *j); // clear the pj contents, but keep the buffer allocated to re-use it
 R_API char *pj_drain(PJ *j);
@@ -48,7 +51,6 @@ R_API PJ *pj_knull(PJ *j, const char *k);
 R_API PJ *pj_kn(PJ *j, const char *k, ut64 n);
 R_API PJ *pj_kN(PJ *j, const char *k, st64 n);
 R_API PJ *pj_ks(PJ *j, const char *k, const char *v);
-R_API PJ *pj_ke(PJ *j, const char *k, const char *v);
 R_API PJ *pj_ka(PJ *j, const char *k);
 R_API PJ *pj_ko(PJ *j, const char *k);
 R_API PJ *pj_ki(PJ *j, const char *k, int d);
@@ -62,6 +64,7 @@ R_API PJ *pj_b(PJ *j, bool v);
 R_API PJ *pj_s(PJ *j, const char *k);
 R_API PJ *pj_se(PJ *j, const char *k);
 R_API PJ *pj_n(PJ *j, ut64 n);
+R_API PJ *pj_ne(PJ *j, ut64 n);
 R_API PJ *pj_N(PJ *j, st64 n);
 R_API PJ *pj_d(PJ *j, double d);
 R_API PJ *pj_f(PJ *j, float d);

@@ -3671,7 +3671,7 @@ R_API RTable *r_core_table(RCore *core) {
 
 /* Config helper function for PJ json encodings */
 R_API PJ *r_core_pj_new(RCore *core) {
-	const char *encoding = r_config_get (core->config, "json.encoding");
-	PJ *pj = pj_new_with_encoding (encoding);
-	return pj;
+	const char *string_encoding = r_config_get (core->config, "json.encoding.strings");
+	const char *num_encoding = r_config_get (core->config, "json.encoding.numbers");
+	return pj_new_with_encoding (string_encoding, num_encoding);
 }
