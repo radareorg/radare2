@@ -17,6 +17,10 @@
 #  define FREEBSD_WITH_BACKTRACE
 # endif
 #endif
+#if defined(__DragonFly__)
+# include <sys/param.h>
+# include <sys/sysctl.h>
+#endif
 #if defined(__HAIKU__)
 # include <kernel/image.h>
 # include <sys/param.h>
@@ -558,6 +562,13 @@ R_API bool r_sys_aslr(int val) {
 		eprintf ("Failed to set RVA\n");
 		ret = false;
 	}
+#elif __DragonFly__
+	size_t vlen = sizeof (val);
+	if (sysctlbyname ("vm.randomize_mmap", NULL, 0, &val, vlen) == -1) {
+		eprintf ("Failed to set RVA\n");
+		ret = false;
+	}
+#elif __DragonFly__
 #endif
 	return ret;
 }
