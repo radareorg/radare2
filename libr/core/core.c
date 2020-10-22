@@ -3671,7 +3671,26 @@ R_API RTable *r_core_table(RCore *core) {
 
 /* Config helper function for PJ json encodings */
 R_API PJ *r_core_pj_new(RCore *core) {
-	const char *string_encoding = r_config_get (core->config, "json.encoding.strings");
-	const char *num_encoding = r_config_get (core->config, "json.encoding.numbers");
-	return pj_new_with_encoding (string_encoding, num_encoding);
+	const char *config_string_encoding = r_config_get (core->config, "json.encoding.strings");
+	const char *config_num_encoding = r_config_get (core->config, "json.encoding.numbers");
+	PJEncodingNum number_encoding = PJ_ENCODING_NUM_DEFAULT;
+	PJEncodingStr string_encoding = PJ_ENCODING_STR_DEFAULT;
+
+	if (!strcmp ("string", config_num_encoding)) {
+		number_encoding = PJ_ENCODING_NUM_STR;
+	} else if (!strcmp ("hex", config_num_encoding)) {
+		number_encoding = PJ_ENCODING_NUM_HEX;
+	}
+
+	if (!strcmp ("base64", config_string_encoding)) {
+		string_encoding = PJ_ENCODING_STR_BASE64;
+	} else if (!strcmp ("hex", config_string_encoding)) {
+		string_encoding = PJ_ENCODING_STR_HEX;
+	} else if (!strcmp ("array", config_string_encoding)) {
+		string_encoding = PJ_ENCODING_STR_ARRAY;
+	} else if (!strcmp ("strip", config_string_encoding)) {
+		string_encoding = PJ_ENCODING_STR_STRIP;
+	}
+
+	return pj_new_with_encoding (string_encoding, number_encoding);
 }

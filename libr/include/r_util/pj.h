@@ -8,30 +8,34 @@
 extern "C" {
 #endif
 
+/* new encoding options of j commands */
+typedef enum PJEncodingStr {
+	PJ_ENCODING_STR_DEFAULT = 0,
+	PJ_ENCODING_STR_BASE64,
+	PJ_ENCODING_STR_HEX,
+	PJ_ENCODING_STR_ARRAY,
+	PJ_ENCODING_STR_STRIP
+} PJEncodingStr;
+
+typedef enum PJEncodingNum {
+	PJ_ENCODING_NUM_DEFAULT = 0,
+	PJ_ENCODING_NUM_STR,
+	PJ_ENCODING_NUM_HEX
+} PJEncodingNum;
+
 typedef struct pj_t {
 	RStrBuf sb;
 	bool is_first;
 	bool is_key;
 	char braces[R_PRINT_JSON_DEPTH_LIMIT];
 	int level;
-	int str_encoding;
-	int num_encoding;
+	PJEncodingStr str_encoding;
+	PJEncodingNum num_encoding;
 } PJ;
-
-/* new encoding options of j commands */
-enum {
-	PJ_ENCODING_DEFAULT = 0,
-	PJ_ENCODING_STR_BASE64,
-	PJ_ENCODING_STR_HEX,
-	PJ_ENCODING_STR_ARRAY,
-	PJ_ENCODING_STR_STRIP,
-	PJ_ENCODING_NUM_STR,
-	PJ_ENCODING_NUM_HEX
-};
 
 /* lifecycle */
 R_API PJ *pj_new(void);
-R_API PJ *pj_new_with_encoding(const char *str_encoding, const char *num_encoding);
+R_API PJ *pj_new_with_encoding(PJEncodingStr str_encoding, PJEncodingNum num_encoding);
 R_API void pj_free(PJ *j);
 R_API void pj_reset(PJ *j); // clear the pj contents, but keep the buffer allocated to re-use it
 R_API char *pj_drain(PJ *j);

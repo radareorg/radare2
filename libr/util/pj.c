@@ -26,41 +26,17 @@ R_API PJ *pj_new(void) {
 	if (j) {
 		r_strbuf_init (&j->sb);
 		j->is_first = true;
-		j->str_encoding = PJ_ENCODING_DEFAULT;
-		j->num_encoding = PJ_ENCODING_DEFAULT;
+		j->str_encoding = PJ_ENCODING_STR_DEFAULT;
+		j->num_encoding = PJ_ENCODING_NUM_DEFAULT;
 	}
 	return j;
 }
 
-void pj_set_str_encoding(PJ *j, const char *str_encoding) {
-	if (!strcmp ("base64", str_encoding)) {
-		j->str_encoding = PJ_ENCODING_STR_BASE64;
-	} else if (!strcmp ("hex", str_encoding)) {
-		j->str_encoding = PJ_ENCODING_STR_HEX;
-	} else if (!strcmp ("array", str_encoding)) {
-		j->str_encoding = PJ_ENCODING_STR_ARRAY;
-	} else if (!strcmp ("strip", str_encoding)) {
-		j->str_encoding = PJ_ENCODING_STR_STRIP;
-	} else {
-		j->str_encoding = PJ_ENCODING_DEFAULT;
-	}
-}
-
-void pj_set_num_encoding(PJ *j, const char *num_encoding) {
-	if (!strcmp ("string", num_encoding)) {
-		j->num_encoding = PJ_ENCODING_NUM_STR;
-	} else if (!strcmp ("hex", num_encoding)) {
-		j->num_encoding = PJ_ENCODING_NUM_HEX;
-	} else {
-		j->num_encoding = PJ_ENCODING_DEFAULT;
-	}
-}
-
-R_API PJ *pj_new_with_encoding(const char *str_encoding, const char *num_encoding) {
+R_API PJ *pj_new_with_encoding(PJEncodingStr str_encoding, PJEncodingNum num_encoding) {
 	PJ *j = pj_new ();
 	if (j) {
-		pj_set_str_encoding (j, str_encoding);
-		pj_set_num_encoding (j, num_encoding);
+		j->str_encoding = str_encoding;
+		j->num_encoding = num_encoding;
 	}
 	return j;
 }
@@ -154,7 +130,7 @@ R_API PJ *pj_knull(PJ *j, const char *k) {
 R_API PJ *pj_kn(PJ *j, const char *k, ut64 n) {
 	r_return_val_if_fail (j && k, j);
 	pj_k (j, k);
-	if (j->num_encoding != PJ_ENCODING_DEFAULT) {
+	if (j->num_encoding != PJ_ENCODING_NUM_DEFAULT) {
 		pj_ne (j, n);
 	} else {
 		pj_n (j, n);
@@ -207,7 +183,7 @@ R_API PJ *pj_ka(PJ *j, const char *k) {
 R_API PJ *pj_ks(PJ *j, const char *k, const char *v) {
 	r_return_val_if_fail (j && k && v, j);
 	pj_k (j, k);
-	if (j->str_encoding != PJ_ENCODING_DEFAULT) {
+	if (j->str_encoding != PJ_ENCODING_STR_DEFAULT) {
 		pj_se (j, v);
 	} else {
 		pj_s (j, v);

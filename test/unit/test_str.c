@@ -482,7 +482,7 @@ bool test_r_str_encoded_json(void) {
 	mu_assert_streq (b64, "VGhpcyBpcyBteSDiIHNhbXBsZSDCqSBzdHJpbmcK", "string as base64 encoded");
 	const char *stripped = r_str_encoded_json (invalidJsonString, len, PJ_ENCODING_STR_STRIP);
 	mu_assert_streq (stripped, "This is my  sample © string\\n", "string with bad chars stripped");
-	const char *none = r_str_encoded_json (invalidJsonString, len, PJ_ENCODING_DEFAULT);
+	const char *none = r_str_encoded_json (invalidJsonString, len, PJ_ENCODING_STR_DEFAULT);
 	mu_assert_streq (none, "This is my \\xe2 sample © string\\n", "default encoding");
 	mu_end;
 }
