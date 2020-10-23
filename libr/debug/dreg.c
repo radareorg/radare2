@@ -123,15 +123,13 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char
 	if (dbg->regcols) {
 		cols = dbg->regcols;
 	}
-	PJ *pj;
+	PJ *pj = NULL;
 	if (isJson) {
 		pj = pj_new ();
 		if (!pj) {
 			return false;
 		}
-		if (rad == 'j') {
-			pj_o (pj);
-		}
+		pj_o (pj);
 	}
 	// with the new field "arena" into reg items why need
 	// to get all arenas.
@@ -288,9 +286,7 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char
 	}
 beach:
 	if (isJson) {
-		if (rad == 'j') {
-			pj_end (pj);
-		}
+		pj_end (pj);
 		dbg->cb_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
 	} else if (n > 0 && (rad == 2 || rad == '=') && ((n%cols))) {
