@@ -231,7 +231,7 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 		js = create_json (R_JSON_OBJECT, key, parent);
 		p++;
 		while (1) {
-			const char *new_key;
+			const char *new_key = NULL;
 			p = parse_key (&new_key, p);
 			if (!p) {
 				return NULL; // error
