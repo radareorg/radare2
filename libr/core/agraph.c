@@ -4108,8 +4108,11 @@ static void nextword(RCore *core, RAGraph *g, const char *word) {
 }
 
 R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive) {
+	if (is_interactive && !r_cons_is_interactive ()) {
+		eprintf ("Interactive graph mode requires scr.interactive=true.\n");
+		return 0;
+	}
 	int o_asmqjmps_letter = core->is_asmqjmps_letter;
-	int o_scrinteractive = r_cons_is_interactive ();
 	int o_vmode = core->vmode;
 	int exit_graph = false, is_error = false;
 	int update_seek = false;
@@ -4166,7 +4169,6 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	} else {
 		o_can = g->can;
 	}
-	r_config_set_i (core->config, "scr.interactive", false);
 	g->can = can;
 	g->movspeed = r_config_get_i (core->config, "graph.scroll");
 	g->show_node_titles = r_config_get_i (core->config, "graph.ntitles");
@@ -4611,8 +4613,6 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case 'd':
 			{
 				showcursor (core, true);
-				// WTF?
-				r_config_set_i (core->config, "scr.interactive", true);
 				r_core_visual_define (core, "", 0);
 				get_bbupdate (g, core, fcn);
 				showcursor (core, false);
@@ -4780,9 +4780,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case '/':
 			showcursor (core, true);
-			r_config_set_i (core->config, "scr.interactive", true);
 			r_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
-			r_config_set_i (core->config, "scr.interactive", false);
 			showcursor (core, false);
 			break;
 		case ':':
@@ -4911,7 +4909,6 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	free (grd);
 	if (graph_allocated) {
 		r_agraph_free (g);
-		r_config_set_i (core->config, "scr.interactive", o_scrinteractive);
 	} else {
 		g->can = o_can;
 	}

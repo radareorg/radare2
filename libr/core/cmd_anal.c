@@ -8779,7 +8779,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			break;
 		}
 		case 'v': // "agfv"
-			eprintf ("\rRendering graph...");
+			eprintf ("\rRendering graph...\n");
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_ROOT);
 			if (fcn) {
 				r_core_visual_graph (core, NULL, fcn, 1);
