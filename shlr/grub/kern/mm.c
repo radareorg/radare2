@@ -130,28 +130,6 @@ typedef struct grub_mm_region
 
 static grub_mm_region_t base;
 
-/* Get a header from the pointer PTR, and set *P and *R to a pointer
-   to the header and a pointer to its region, respectively. PTR must
-   be allocated.  */
-static void
-get_header_from_pointer (void *ptr, grub_mm_header_t *p, grub_mm_region_t *r)
-{
-  if ((int)(size_t) ptr & (GRUB_MM_ALIGN - 1))
-    grub_fatal ("unaligned pointer %p", ptr);
-
-  for (*r = base; *r; *r = (*r)->next)
-    if ((long) ptr > (*r)->addr
-	&& (long)ptr <= (*r)->addr + (*r)->size)
-      break;
-
-  if (! *r)
-    grub_fatal ("out of range pointer %p", ptr);
-
-  *p = (grub_mm_header_t) ptr - 1;
-  if ((*p)->magic != GRUB_MM_ALLOC_MAGIC)
-    grub_fatal ("alloc magic is broken at %p", *p);
-}
-
 /* Initialize a region starting from ADDR and whose size is SIZE,
    to use it as free space.  */
 void
@@ -392,128 +370,12 @@ void *grub_zalloc (grub_size_t size)
     return ret;
 }
 
-/* Allocate SIZE bytes, clear them and return the pointer.  */
-void *
-grub_zalloc_orig (grub_size_t size)
-{
-  void *ret;
-
-  ret = grub_memalign (0, size);
-  if (ret)
-    grub_memset (ret, 0, size);
-
-  return ret;
-}
-
 void grub_free (void *ptr) {
     free(ptr);
 }
 
-/* Deallocate the pointer PTR.  */
-void
-grub_free_orig (void *ptr)
-{
-    
-  grub_mm_header_t p;
-  grub_mm_region_t r;
-
-  if (! ptr)
-    return;
-
-  get_header_from_pointer (ptr, &p, &r);
-
-  if (r->first->magic == GRUB_MM_ALLOC_MAGIC)
-    {
-      p->magic = GRUB_MM_FREE_MAGIC;
-      r->first = p->next = p;
-    }
-  else
-    {
-      grub_mm_header_t q;
-
-#if 0
-      q = r->first;
-      do
-	{
-	  grub_printf ("%s:%d: q=%p, q->size=0x%x, q->magic=0x%x\n",
-		       GRUB_FILE, __LINE__, q, q->size, q->magic);
-	  q = q->next;
-	}
-      while (q != r->first);
-#endif
-
-      for (q = r->first; q >= p || q->next <= p; q = q->next)
-	{
-	  if (q->magic != GRUB_MM_FREE_MAGIC)
-	    grub_fatal ("free magic is broken at %p: 0x%x", q, q->magic);
-
-	  if (q >= q->next && (q < p || q->next > p))
-	    break;
-	}
-
-      p->magic = GRUB_MM_FREE_MAGIC;
-      p->next = q->next;
-      q->next = p;
-
-      if (p + p->size == p->next)
-	{
-	  if (p->next == q)
-	    q = p;
-
-	  p->next->magic = 0;
-	  p->size += p->next->size;
-	  p->next = p->next->next;
-	}
-
-      if (q + q->size == p)
-	{
-	  p->magic = 0;
-	  q->size += p->size;
-	  q->next = p->next;
-	}
-
-      r->first = q;
-    }
-}
-
 void * grub_realloc (void *ptr, grub_size_t size) {
     return realloc(ptr, size);
-}
-
-/* Reallocate SIZE bytes and return the pointer. The contents will be
-   the same as that of PTR.  */
-   
-void *
-grub_realloc_orig (void *ptr, grub_size_t size)
-{
-  grub_mm_header_t p;
-  grub_mm_region_t r;
-  void *q;
-  grub_size_t n;
-
-  if (! ptr)
-    return grub_malloc (size);
-
-  if (! size)
-    {
-      grub_free (ptr);
-      return 0;
-    }
-
-  /* FIXME: Not optimal.  */
-  n = ((size + GRUB_MM_ALIGN - 1) >> GRUB_MM_ALIGN_LOG2) + 1;
-  get_header_from_pointer (ptr, &p, &r);
-
-  if (p->size >= n)
-    return ptr;
-
-  q = grub_malloc (size);
-  if (! q)
-    return q;
-
-  grub_memcpy (q, ptr, size);
-  grub_free (ptr);
-  return q;
 }
 
 #ifdef MM_DEBUG
