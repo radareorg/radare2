@@ -253,6 +253,7 @@ static RCmdJavaCmd JAVA_CMDS[] = {
 	{ INSERT_MREF, INSERT_MREF_ARGS, INSERT_MREF_DESC, INSERT_MREF_LEN, r_cmd_java_handle_insert_method_ref },
 	{ CALC_SZ, CALC_SZ_ARGS, CALC_SZ_DESC, CALC_SZ_LEN, r_cmd_java_handle_calc_class_sz },
 	{ ISVALID, ISVALID_ARGS, ISVALID_DESC, ISVALID_LEN, r_cmd_java_handle_isvalid },
+	{ NULL, NULL, NULL, 0, NULL }
 };
 
 enum {
