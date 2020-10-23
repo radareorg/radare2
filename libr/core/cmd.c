@@ -7178,7 +7178,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	for (i = 0; i < R_ARRAY_SIZE (cmds); i++) {
 		r_cmd_add (core->rcmd, cmds[i].cmd, cmds[i].cb);
 
-		RCmdDesc *cd;
+		RCmdDesc *cd = NULL;
 		switch (cmds[i].type) {
 		case R_CMD_DESC_TYPE_OLDINPUT:
 			cd = r_cmd_desc_oldinput_new (core->rcmd, root, cmds[i].cmd, cmds[i].cb, cmds[i].help);
@@ -7193,7 +7193,7 @@ R_API void r_core_cmd_init(RCore *core) {
 			cd = r_cmd_desc_group_new (core->rcmd, root, cmds[i].cmd, cmds[i].argv_cb, cmds[i].help, cmds[i].group_help);
 			break;
 		}
-		if (cmds[i].descriptor_init) {
+		if (cd && cmds[i].descriptor_init) {
 			cmds[i].descriptor_init (core, cd);
 		}
 	}
