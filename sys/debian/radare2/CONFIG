@@ -1,7 +1,4 @@
 PACKAGE=radare2
-SECTION=user/editors
-PRIORITY=optional
-MAINTAINER=pancake <pancake@nopcode.org>
 DEPENDS=libuv1 libssl-dev
 
-include ../../../config-user.mk
+include ../CONFIG
