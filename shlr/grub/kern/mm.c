@@ -19,6 +19,7 @@
 
 #include <grub/mm.h>
 
+#include <string.h>
 #include <stdlib.h>
 
 GRUB_EXPORT(grub_malloc);
