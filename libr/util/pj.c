@@ -287,7 +287,7 @@ R_API PJ *pj_ne(PJ *j, ut64 n) {
 	if (j->num_encoding == PJ_ENCODING_NUM_STR) {
 		pj_raw (j, sdb_fmt ("\"%" PFMT64u "\"", n));
 	} else if (j->num_encoding == PJ_ENCODING_NUM_HEX) {
-		pj_raw (j, sdb_fmt ("\"0x%x\"", n));
+		pj_raw (j, sdb_fmt ("\"0x%llx\"", n));
 	} else {
 		pj_n(j, n);
 	}
