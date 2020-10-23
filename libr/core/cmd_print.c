@@ -4506,22 +4506,30 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 	if (mode == 'j' || mode == ',' || mode == '*' || mode == 'q') {
 		size_t i;
 		const int base = core->anal->bits;
+		const int be = core->anal->big_endian;
 		if (pj) {
 			pj_a (pj);
 		}
 		const ut8 *buf = core->block;
-		int withref = 0;
-		for (i = 0; i + wordsize < core->blocksize; i += wordsize) {
+
+		bool withref = false;
+		int end = R_MIN (core->blocksize, len);
+		for (i = 0; i + wordsize < end; i += wordsize) {
 			ut64 addr = core->offset + i;
-			ut64 val = buf[i];
-			if (i + wordsize >= len) {
-				break;
-			}
-			if (base == 32) {
-				val = r_read_le32 (buf + i);
+			ut64 val;
+			if (base == 64) {
+				val = r_read_ble64 (buf + i, be);
+			} else if (base == 32) {
+				val = r_read_ble32 (buf + i, be);
 				val &= UT32_MAX;
+			} else if (base == 32) {
+				val = r_read_ble32 (buf + i, be);
+				val &= UT32_MAX;
+			} else if (base == 16) {
+				val = r_read_ble16 (buf + i, be);
+				val &= UT16_MAX;
 			} else {
-				val = r_read_le64 (buf + i);
+				val = buf[i];
 			}
 			if (pj) {
 				pj_o (pj);
@@ -4530,7 +4538,7 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 			}
 
 			// XXX: this only works in little endian
-			withref = 0;
+			withref = false;
 			char *refs = NULL;
 			if (core->print->hasrefs) {
 				char *rstr = core->print->hasrefs (core->print->user, val, true);
@@ -4542,7 +4550,7 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 						pj_end (pj);
 						free (ns);
 					}
-					withref = 1;
+					withref = true;
 				}
 				refs = rstr;
 			}
