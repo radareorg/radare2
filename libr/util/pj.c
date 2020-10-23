@@ -330,6 +330,7 @@ R_API char *pj_fmt(PrintfCallback p, const char *fmt, ...) {
 	char ch[2] = { 0 };
 	PJ *j = pj_new ();
 	while (*fmt) {
+		j->is_first = true;
 		ch[0] = *fmt;
 		switch (*fmt) {
 		case '\\':
