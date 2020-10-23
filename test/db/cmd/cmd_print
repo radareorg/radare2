@@ -859,6 +859,7 @@ RUN
 NAME=pxA hex.offset=0
 FILE=-
 CMDS=<<EOF
+e asm.arch=x86
 e hex.offset=0
 e scr.color=0
 woe 0 0xff 1
