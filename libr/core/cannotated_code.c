@@ -51,6 +51,7 @@ R_API void r_core_annotated_code_print_json(RAnnotatedCode *code) {
 			break;
 		case R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT:
 			pj_ks (pj, "type", "syntax_highlight");
+			type_str = NULL;
 			switch (annotation->syntax_highlight.type) {
 			case R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD:
 				type_str = "keyword";
@@ -77,7 +78,9 @@ R_API void r_core_annotated_code_print_json(RAnnotatedCode *code) {
 				type_str = "global_variable";
 				break;
 			}
-			pj_ks (pj, "syntax_highlight", type_str);
+			if (type_str) {
+				pj_ks (pj, "syntax_highlight", type_str);
+			}
 			break;
 		}
 		pj_end (pj);
