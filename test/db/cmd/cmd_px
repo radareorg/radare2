@@ -1,3 +1,71 @@
+NAME=pxr4
+FILE=malloc://1024
+CMDS=<<EOF
+woe 1 255
+s+11
+b 8
+pxr8
+pxr4
+pxr2
+pxr1
+b 4
+pxr8
+pxr4
+pxr2
+pxr1
+b 2
+pxr8
+pxr4
+pxr2
+pxr1
+pxr2
+b 1
+pxr8
+pxr4
+pxr2
+pxr1
+EOF
+EXPECT=<<EOF
+0x0000000b 0x0101010101010101   ........
+0x0000000b 0x01010101  .... 16843009
+0x0000000f 0x01010101  .... 16843009
+0x0000000b 0101  .. 257 R W X 'add byte [rax], al'
+0x0000000d 0101  .. 257 R W X 'add byte [rax], al'
+0x0000000f 0101  .. 257 R W X 'add byte [rax], al'
+0x00000011 0101  .. 257 R W X 'add byte [rax], al'
+- offset -    0 0
+0x0000000b 001 .
+0x0000000c 001 .
+0x0000000d 001 .
+0x0000000e 001 .
+0x0000000f 001 .
+0x00000010 001 .
+0x00000011 001 .
+0x00000012 001 .
+0x0000000b 0x0000000001010101   ....
+0x0000000b 0x01010101  .... 16843009
+0x0000000b 0101  .. 257 R W X 'add byte [rax], al'
+0x0000000d 0101  .. 257 R W X 'add byte [rax], al'
+- offset -    0 0
+0x0000000b 001 .
+0x0000000c 001 .
+0x0000000d 001 .
+0x0000000e 001 .
+0x0000000b 0x0000000000000101   ..
+0x0000000b 0x00000101  ..
+0x0000000b 0101  .. 257 R W X 'add byte [rax], al'
+- offset -    0 0
+0x0000000b 001 .
+0x0000000c 001 .
+0x0000000b 0101  .. 257 R W X 'add byte [rax], al'
+0x0000000b 0x0000000000000001   .
+0x0000000b 0x00000001  .
+0x0000000b 01    .
+- offset -    0 0
+0x0000000b 001 .
+EOF
+RUN
+
 NAME=px 10
 FILE=malloc://1024
 CMDS=wx 90909090909090909090 ; px 10
@@ -108,9 +176,12 @@ EOF
 RUN
 
 NAME=pxr
-BROKEN=1
 FILE=bins/elf/crackme
-CMDS=pxr 0x30@0x00600ae0
+CMDS=<<EOF
+pxr 48 @ 0x00600ae0
+?e ===
+pxr 24 @ 0x00600ae0+32
+EOF
 EXPECT=<<EOF
 0x00600ae0 0x000000000040055e   ^.@..... @reloc.printf 4195678 (.plt) R X 'push 0'
 0x00600ae8 0x000000000040056e   n.@..... @reloc.puts 4195694 (.plt) R X 'push 1'
@@ -118,6 +189,96 @@ EXPECT=<<EOF
 0x00600af8 0x000000000040058e   ..@..... @reloc.fgets 4195726 (.plt) R X 'push 3'
 0x00600b00 0x000000000040059e   ..@..... @reloc.strcmp 4195742 (.plt) R X 'push 4'
 0x00600b08 0x00000000004005ae   ..@..... @reloc.fflush 4195758 (.plt) R X 'push 5'
+===
+0x00600b00 0x000000000040059e   ..@..... @reloc.strcmp 4195742 (.plt) R X 'push 4'
+0x00600b08 0x00000000004005ae   ..@..... @reloc.fflush 4195758 (.plt) R X 'push 5'
+0x00600b10 ..[ null bytes ]..   00000000 loc.__data_start
+EOF
+RUN
+
+NAME=pxr1248
+FILE=bins/elf/crackme
+CMDS=<<EOF
+pxr4 32@0x00600ae0
+pxr8 32@0x00600ae0
+pxr2 32@0x00600ae0
+e asm.bits=32
+pxr 32@0x00600ae0
+pxr2j 16@0x00600ae0~{}
+EOF
+EXPECT=<<EOF
+0x00600ae0 0x0040055e  ^.@. @reloc.printf 4195678 (.plt) R X 'push 0'
+0x00600ae4 ..[ null bytes ]..   00000000 
+0x00600ae8 0x0040056e  n.@. @reloc.puts 4195694 (.plt) R X 'push 1'
+0x00600aec ..[ null bytes ]..   00000000 
+0x00600af0 0x0040057e  ~.@. @reloc.__libc_start_main 4195710 (.plt) R X 'push 2'
+0x00600af4 ..[ null bytes ]..   00000000 
+0x00600af8 0x0040058e  ..@. @reloc.fgets 4195726 (.plt) R X 'push 3'
+0x00600afc ..[ null bytes ]..   00000000 
+0x00600ae0 0x000000000040055e   ^.@..... @reloc.printf 4195678 (.plt) R X 'push 0'
+0x00600ae8 0x000000000040056e   n.@..... @reloc.puts 4195694 (.plt) R X 'push 1'
+0x00600af0 0x000000000040057e   ~.@..... @reloc.__libc_start_main 4195710 (.plt) R X 'push 2'
+0x00600af8 0x000000000040058e   ..@..... @reloc.fgets 4195726 (.plt) R X 'push 3'
+0x00600ae0 5e05  ^. @reloc.printf 1374 (.symtab)
+0x00600ae2 4000  @. 64 (.shstrtab) ascii ('@')
+0x00600ae4 0000  ..
+0x00600ae6 0000  ..
+0x00600ae8 6e05  n. @reloc.puts 1390 (.symtab)
+0x00600aea 4000  @. 64 (.shstrtab) ascii ('@')
+0x00600aec 0000  ..
+0x00600aee 0000  ..
+0x00600af0 7e05  ~. @reloc.__libc_start_main 1406 (.symtab)
+0x00600af2 4000  @. 64 (.shstrtab) ascii ('@')
+0x00600af4 0000  ..
+0x00600af6 0000  ..
+0x00600af8 8e05  .. @reloc.fgets 1422 (.symtab)
+0x00600afa 4000  @. 64 (.shstrtab) ascii ('@')
+0x00600afc 0000  ..
+0x00600afe 0000  ..
+0x00600ae0 0x0040055e  ^.@. @reloc.printf (.plt) R X 'push 0'
+0x00600ae4 ..[ null bytes ]..   00000000 
+0x00600ae8 0x0040056e  n.@. @reloc.puts (.plt) R X 'push 1'
+0x00600aec ..[ null bytes ]..   00000000 
+0x00600af0 0x0040057e  ~.@. @reloc.__libc_start_main (.plt) R X 'push 2'
+0x00600af4 ..[ null bytes ]..   00000000 
+0x00600af8 0x0040058e  ..@. @reloc.fgets (.plt) R X 'push 3'
+0x00600afc ..[ null bytes ]..   00000000 
+[
+  {
+    "addr": 6294240,
+    "value": 4195678,
+    "ref": "(.plt) R X 'push 0'"
+  },
+  {
+    "addr": 6294242,
+    "value": 64,
+    "ref": "64 (.shstrtab) ascii ('@')"
+  },
+  {
+    "addr": 6294244,
+    "value": 0,
+    "ref": "0 loc.imp.__gmon_start"
+  },
+  {
+    "addr": 6294246,
+    "value": 91095040
+  },
+  {
+    "addr": 6294248,
+    "value": 4195694,
+    "ref": "(.plt) R X 'push 1'"
+  },
+  {
+    "addr": 6294250,
+    "value": 64,
+    "ref": "64 (.shstrtab) ascii ('@')"
+  },
+  {
+    "addr": 6294252,
+    "value": 0,
+    "ref": "0 loc.imp.__gmon_start"
+  }
+]
 EOF
 RUN
 

@@ -1209,7 +1209,7 @@ afx
 EOF
 EXPECT=<<EOF
 d 0x00401006 -> 0x0040d004 mov eax, dword [0x40d004]
-s 0x00401010 -> 0x0040b9a0 0x6c6c6568  hell @str.hello 0
+s 0x00401010 -> 0x0040b9a0 0x6c6c6568  hell @str.hello ascii ('h')
 C 0x00401015 -> 0x004010e4 call fcn.004010e4
 d 0x0040101e -> 0x0040b9a8 push 0x40b9a8
 C 0x00401023 -> 0x004010c7 call fcn.004010c7

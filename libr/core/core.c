@@ -2223,7 +2223,7 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 		ut64 *n64 = (ut64*)buf;
 		r_io_read_at (core->io, value, buf, sizeof (buf));
 		ut64 n = (core->rasm->bits == 64)? *n64: *n32;
-		if(n != value) {
+		if (n != value) {
 			char* rrstr = r_core_anal_hasrefs_to_depth (core, n, depth-1);
 			if (rrstr) {
 				if (rrstr[0]) {

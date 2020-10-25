@@ -835,8 +835,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	int K = 0;
 	bool hex_style = false;
 	int rowbytes = p->cols;
-
-	len = len - (len % step);
+	if (step < len) {
+		len = len - (len % step);
+	}
 	if (p) {
 		pairs = p->pairs;
 		use_sparse = p->flags & R_PRINT_FLAGS_SPARSE;
@@ -888,6 +889,12 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	case 10:
 		bytefmt = "%3d";
 		pre = " ";
+		break;
+	case 16:
+		if (inc < 2) {
+			inc = 2;
+			use_header = false;
+		}
 		break;
 	case 32:
 		bytefmt = "0x%08x ";
@@ -1051,7 +1058,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			}
 		}
 		ut64 at = addr + (j * zoomsz);
-		if (use_offset && !isPxr) {
+		if (use_offset && (!isPxr || inc < 4)) {
 			r_print_section (p, at);
 			r_print_addr (p, at);
 		}
@@ -1083,7 +1090,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						}
 					} else {
 						if (base == 32) {
-							printfmt ((j%4)? "   ": "  ");
+							printfmt ((j % 4)? "   ": "  ");
 						} else if (base == 10) {
 							printfmt (j % 2? "     ": "  ");
 						} else {
@@ -1239,8 +1246,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			}
 			if (!p || !(p->flags & R_PRINT_FLAGS_NONASCII)) {
 				bytes = 0;
-				for (j = i; j < i + inc; j++) {
-					if (j!=i && use_align  && bytes >= rowbytes) {
+				size_t end = i + inc;
+				for (j = i; j < end; j++) {
+					if (j != i && use_align  && bytes >= rowbytes) {
 						int sz = (p && p->offsize)? p->offsize (p->user, addr + j): -1;
 						if (sz >= 0) {
 							printfmt (" ");
@@ -1262,15 +1270,24 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			}
 			bool eol = false;
 			if (!eol && p && p->flags & R_PRINT_FLAGS_REFS) {
-				ut64 off = 0;
-				if (i + 8 < len) {
-					ut64 *foo = (ut64 *) (buf + i);
-					off = *foo;
+				ut64 off = UT64_MAX;
+				if (inc == 8) {
+					if (i + sizeof (ut64) - 1 < len) {
+						off = r_read_le64 (buf + i);
+					}
+				} else if (inc == 4) {
+					if (i + sizeof (ut32) - 1 < len) {
+						off = r_read_le32 (buf + i);
+					}
+				} else if (inc == 2 && base == 16) {
+					if (i + sizeof (ut16) - 1 < len) {
+						off = r_read_le16 (buf + i);
+						if (off == 0) {
+							off = UT64_MAX;
+						}
+					}
 				}
-				if (base == 32) {
-					off &= UT32_MAX;
-				}
-				if (p->hasrefs) {
+				if (p->hasrefs && off != UT64_MAX) {
 					char *rstr = p->hasrefs (p->user, addr + i, false);
 					if (rstr && *rstr) {
 						printfmt (" @%s", rstr);

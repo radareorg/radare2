@@ -525,7 +525,7 @@ static const char *help_msg_px[] = {
 	"pxo", "", "show octal dump",
 	"pxq", "", "show hexadecimal quad-words dump (64bit)",
 	"pxQ", "[q]", "same as above, but one per line",
-	"pxr", "[j]", "show words with references to flags and code (q=quiet)",
+	"pxr", "[1248][qj]", "show hexword references (q=quiet, j=json)",
 	"pxs", "", "show hexadecimal in sparse mode",
 	"pxt", "[*.] [origin]", "show delta pointer table in r2 commands",
 	"pxw", "", "show hexadecimal words dump (32bit)",
@@ -4486,6 +4486,119 @@ static void r_core_disasm_table(RCore * core, int l, const char *input) {
 	r_table_free (t);
 }
 
+static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *arg) {
+	PJ *pj = NULL;
+	RTable *t = NULL;
+	if (mode == ',') {
+		t = r_table_new ();
+		RTableColumnType *n = r_table_type ("number");
+		RTableColumnType *s = r_table_type ("string");
+		r_table_add_column (t, n, "addr", 0);
+		r_table_add_column (t, n, "value", 0);
+		r_table_add_column (t, s, "refs", 0);
+	}
+	if (mode == 'j') {
+		pj = pj_new ();
+		if (!pj) {
+			return;
+		}
+	}
+	if (mode == 'j' || mode == ',' || mode == '*' || mode == 'q') {
+		size_t i;
+		const int base = core->anal->bits;
+		const int be = core->anal->big_endian;
+		if (pj) {
+			pj_a (pj);
+		}
+		const ut8 *buf = core->block;
+
+		bool withref = false;
+		int end = R_MIN (core->blocksize, len);
+		for (i = 0; i + wordsize < end; i += wordsize) {
+			ut64 addr = core->offset + i;
+			ut64 val;
+			if (base == 64) {
+				val = r_read_ble64 (buf + i, be);
+			} else if (base == 32) {
+				val = r_read_ble32 (buf + i, be);
+				val &= UT32_MAX;
+			} else if (base == 32) {
+				val = r_read_ble32 (buf + i, be);
+				val &= UT32_MAX;
+			} else if (base == 16) {
+				val = r_read_ble16 (buf + i, be);
+				val &= UT16_MAX;
+			} else {
+				val = buf[i];
+			}
+			if (pj) {
+				pj_o (pj);
+				pj_kn (pj, "addr", addr);
+				pj_kn (pj, "value", val);
+			}
+
+			// XXX: this only works in little endian
+			withref = false;
+			char *refs = NULL;
+			if (core->print->hasrefs) {
+				char *rstr = core->print->hasrefs (core->print->user, val, true);
+				if (R_STR_ISNOTEMPTY (rstr)) {
+					r_str_trim (rstr);
+					if (pj) {
+						char *ns = r_str_escape (rstr);
+						pj_ks (pj, "ref", r_str_trim_head_ro (ns));
+						pj_end (pj);
+						free (ns);
+					}
+					withref = true;
+				}
+				refs = rstr;
+			}
+			if (mode == '*' && R_STR_ISNOTEMPTY (refs)) {
+				// Show only the mapped ones?
+				r_cons_printf ("f pxr.%"PFMT64x"=0x%"PFMT64x"\n", val, addr);
+			} else if (mode == 'q' && R_STR_ISNOTEMPTY (refs)) {
+				r_cons_printf ("%s\n", refs);
+			}
+			if (t) {
+				r_table_add_rowf (t, "xxs", addr, val, refs);
+			}
+			R_FREE (refs);
+			if (!withref && pj) {
+				pj_end (pj);
+			}
+		}
+		if (t) {
+			r_table_query (t, arg? arg + 1: NULL);
+			char *s = r_table_tostring (t);
+			r_cons_println (s);
+			free (s);
+			r_table_free (t);
+		}
+		if (pj) {
+			pj_end (pj);
+			r_cons_println (pj_string (pj));
+			pj_free (pj);
+		}
+	} else {
+		const int ocols = core->print->cols;
+		int bitsize = core->rasm->bits;
+		/* Thumb is 16bit arm but handles 32bit data */
+		if (bitsize == 16) {
+			bitsize = 32;
+		}
+		core->print->cols = 1;
+		core->print->flags |= R_PRINT_FLAGS_REFS;
+		r_cons_break_push (NULL, NULL);
+		r_print_hexdump (core->print, core->offset,
+				core->block, R_MIN (len, core->blocksize),
+				wordsize * 8, bitsize / 8, 1);
+		r_cons_break_pop ();
+		core->print->flags &= ~R_PRINT_FLAGS_REFS;
+		core->print->cols = ocols;
+	}
+}
+
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	st64 l;
@@ -6190,63 +6303,27 @@ l = use_blocksize;
 			break;
 		case 'r': // "pxr"
 			if (l) {
-				if (input[2] == 'j') {
-					PJ *pj = pj_new ();
-					if (!pj) {
-						return 0;
-					}
-					int base = core->anal->bits;
-					pj_a (pj);
-					const ut8 *buf = core->block;
-					int withref = 0;
-					const int wordsize = base / 8;
-					for (i = 0; i < core->blocksize; i += wordsize) {
-						ut64 addr = core->offset + i;
-						ut64 *foo = (ut64 *) (buf + i);
-						ut64 val = *foo;
-						if (base == 32) {
-							val &= UT32_MAX;
-						}
-						pj_o (pj);
-						pj_kn (pj, "addr", addr);
-						pj_kn (pj, "value", val);
-
-						// XXX: this only works in little endian
-						withref = 0;
-						if (core->print->hasrefs) {
-							char *rstr = core->print->hasrefs (core->print->user, val, true);
-							if (rstr && *rstr) {
-								char *ns = r_str_escape (rstr);
-								pj_ks (pj, "ref", r_str_trim_head_ro (ns));
-								pj_end (pj);
-								free (ns);
-								withref = 1;
-							}
-							free (rstr);
-						}
-						if (!withref) {
-							pj_end (pj);
-						}
-					}
-					pj_end (pj);
-					r_cons_println (pj_string (pj));
-					pj_free (pj);
-				} else {
-					const int ocols = core->print->cols;
-					int bitsize = core->rasm->bits;
-					/* Thumb is 16bit arm but handles 32bit data */
-					if (bitsize == 16) {
-						bitsize = 32;
-					}
-					core->print->cols = 1;
-					core->print->flags |= R_PRINT_FLAGS_REFS;
-					r_cons_break_push (NULL, NULL);
-					r_print_hexdump (core->print, core->offset,
-						core->block, R_MIN (len, core->blocksize),
-						bitsize, bitsize / 8, 1);
-					r_cons_break_pop ();
-					core->print->flags &= ~R_PRINT_FLAGS_REFS;
-					core->print->cols = ocols;
+				int mode = input[2];
+				int wordsize = core->anal->bits / 8;
+				if (mode == '?') {
+					eprintf ("Usage: pxr[1248][*,jq] [length]\n");
+					break;
+				}
+				if (mode && isdigit (mode)) {
+					char tmp[2] = {input[2], 0};
+					wordsize = atoi (tmp);
+					mode = input[3];
+				}
+				switch (wordsize) {
+				case 1:
+				case 2:
+				case 4:
+				case 8:
+					cmd_pxr (core, len, mode, wordsize, mode? strchr (input, mode): NULL);
+					break;
+				default:
+					eprintf ("Invalid word size. Use 1, 2, 4 or 8.\n");
+					break;
 				}
 			}
 			break;

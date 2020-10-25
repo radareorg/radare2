@@ -102,6 +102,7 @@ e hex.cols=8
 pxw 2~[1]
 EOF
 EXPECT=<<EOF
+0x00008955
 EOF
 RUN
 
