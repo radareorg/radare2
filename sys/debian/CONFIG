@@ -1,0 +1,6 @@
+SECTION=user/editors
+PRIORITY=optional
+MAINTAINER=pancake <pancake@nopcode.org>
+ARCH?=amd64
+
+include ../../../config-user.mk
