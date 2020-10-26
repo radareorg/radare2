@@ -3843,7 +3843,7 @@ static void bin_elf_versioninfo(RCore *r, int mode) {
 	int num_version = 0;
 	Sdb *sdb = NULL;
 	const char *oValue = NULL;
-	PJ *pj;
+	PJ *pj = NULL;
 	if (IS_MODE_JSON (mode)) {
 		pj = pj_new ();
 		if (!pj) {
