@@ -70,6 +70,7 @@ static const char *help_msg_slash[] = {
 	"/x", " ff0033", "search for hex string",
 	"/x", " ff43:ffd0", "search for hexpair with mask",
 	"/z", " min max", "search for strings of given size",
+	"/*", " [comment string]", "add multiline comment, end it with '*/'",
 #if 0
 	"\nConfiguration:", "", " (type `e??search.` for a complete list)",
 	"e", " cmd.hit = x", "command to execute on every search hit",
