@@ -1,4 +1,4 @@
-/* radare - Apache - Copyright 2014-2019 - dso, pancake */
+/* radare - Apache - Copyright 2014-2020 - dso, pancake */
 
 #include <r_types.h>
 #include <r_lib.h>
@@ -386,7 +386,7 @@ static int r_cmd_java_handle_help(RCore *core, const char *input) {
 	help_msg[0] = "Usage:";
 	help_msg[1] = "java [cmd] [arg..] ";
 	help_msg[2] = r_core_plugin_java.desc;
-	for (i = 0; i < END_CMDS; i++) {
+	for (i = 0; JAVA_CMDS[i].name; i++) {
 		RCmdJavaCmd *cmd = &JAVA_CMDS[i];
 		help_msg[3 + (i * 3) + 0] = cmd->name;
 		help_msg[3 + (i * 3) + 1] = cmd->args;
@@ -1463,7 +1463,7 @@ static int r_cmd_java_call(void *user, const char *input) {
 	if (input[4] != ' ') {
 		return r_cmd_java_handle_help (core, input);
 	}
-	for (; i < END_CMDS - 1; i++) {
+	for (; JAVA_CMDS[i].name; i++) {
 		//IFDBG r_cons_printf ("Checking cmd: %s %d %s\n", JAVA_CMDS[i].name, JAVA_CMDS[i].name_len, p);
 		IFDBG r_cons_printf ("Checking cmd: %s %d\n", JAVA_CMDS[i].name,
 			strncmp (input + 5, JAVA_CMDS[i].name, JAVA_CMDS[i].name_len));
