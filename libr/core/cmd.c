@@ -1448,8 +1448,8 @@ static int cmd_kuery(void *data, const char *input) {
 	const char *sp, *p = "[sdb]> ";
 	Sdb *s = core->sdb;
 
-	char *cur_pos, *cur_cmd, *next_cmd = NULL;
-	char *temp_pos, *temp_cmd, *temp_storage = NULL;
+	char *cur_pos = NULL, *cur_cmd = NULL, *next_cmd = NULL;
+	char *temp_pos = NULL, *temp_cmd = NULL, *temp_storage = NULL;
 
 	switch (input[0]) {
 
@@ -1474,7 +1474,6 @@ static int cmd_kuery(void *data, const char *input) {
 					break;
 			}
 			cur_cmd = r_str_ndup (out, cur_pos - out);
-
 			pj_s (pj, cur_cmd);
 
 			free (next_cmd);
