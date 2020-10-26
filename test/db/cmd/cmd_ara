@@ -77,6 +77,8 @@ RUN
 NAME=arcc+tcc
 FILE=-
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 afcl
 e asm.arch=arm
 e asm.bits=32
