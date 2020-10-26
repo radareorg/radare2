@@ -432,15 +432,18 @@ static int fork_and_ptraceme_for_unix(RIO *io, int bits, const char *cmd) {
 #endif
 
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
-#if __APPLE__
-#  if __POWERPC__
-	return fork_and_ptraceme_for_unix (io, bits, cmd);
-#  else
-	return fork_and_ptraceme_for_mac (io, bits, cmd);
-#  endif
+	// Before calling the platform implementation, append arguments to the command if they have been provided
+	char *_eff_cmd = io->args ? r_str_appendf (strdup (cmd), " %s", io->args) : strdup(cmd);
+	int r = 0;
+
+#if __APPLE__ && !__POWERPC__
+	r = fork_and_ptraceme_for_mac (io, bits, _eff_cmd);
 #else
-	return fork_and_ptraceme_for_unix (io, bits, cmd);
+	r = fork_and_ptraceme_for_unix (io, bits, _eff_cmd);
 #endif
+
+	free (_eff_cmd);
+	return r;
 }
 #endif
 
