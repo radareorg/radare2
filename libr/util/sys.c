@@ -1175,7 +1175,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 #endif
 #else
 	int ret;
-#if __FreeBSD__
+#if __FreeBSD__ || __DragonFly__
 	char pathbuf[PATH_MAX];
 	size_t pathbufl = sizeof (pathbuf);
 	int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, pid};
