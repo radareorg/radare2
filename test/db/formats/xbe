@@ -29,7 +29,7 @@ EXPECT=<<EOF
 
 nth paddr       vaddr      bind type size lib name
 --------------------------------------------------
-0    0x000016c0 0x000116c0 NONE NONE 4        kt.vsnprintf
+0    0x000016c0 0x000116c0 NONE NONE 4        kt.sprintf
 EOF
 RUN
 
