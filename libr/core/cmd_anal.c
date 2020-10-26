@@ -9768,10 +9768,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_cmd0 (core, "aaef");
 					r_print_rowlog_done (core->print, oldstr);
 					r_core_task_yield (&core->tasks);
-					if (!ioCache) {
-						r_core_cmd0 (core, "wc-*");
-						r_core_task_yield (&core->tasks);
-					}
 					r_config_set_i (core->config, "io.pcache", ioCache);
 					if (r_cons_is_breaked ()) {
 						goto jacuzzi;
