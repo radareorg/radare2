@@ -2465,7 +2465,6 @@ static char *get_name(struct MACH0_(obj_t) *mo, ut32 stridx, bool filter) {
 }
 
 static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, void * ctx) {
-#define ULEB() read_uleb128 (&p, end)
 	r_return_val_if_fail (bin, 0);
 	if (!bin->dyld_info) {
 		return 0;
@@ -2506,16 +2505,16 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 	do {
 		RTrieState * state = r_list_get_top (states);
 		p = state->node;
-		ut64 len = ULEB ();
+		ut64 len = read_uleb128 (&p, end);
 		if (len == UT64_MAX) {
 			break;
 		}
 		if (len) {
-			ut64 flags = ULEB ();
+			ut64 flags = read_uleb128 (&p, end);
 		if (flags == UT64_MAX) {
 			break;
 		}
-			ut64 offset = ULEB ();
+			ut64 offset = read_uleb128 (&p, end);
 		if (offset == UT64_MAX) {
 			break;
 		}
@@ -2523,7 +2522,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 			bool isReexport = flags & EXPORT_SYMBOL_FLAGS_REEXPORT;
 			bool hasResolver = flags & EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER;
 			if (hasResolver) {
-				ut64 res = ULEB ();
+				ut64 res = read_uleb128 (&p, end);
 				if (res == UT64_MAX) {
 					break;
 				}
@@ -2566,7 +2565,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 				count++;
 			}
 		}
-		ut64 child_count = ULEB ();
+		ut64 child_count = read_uleb128 (&p, end);
 		if (child_count == UT64_MAX) {
 			goto beach;
 		}
@@ -2590,7 +2589,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 			R_FREE (next);
 			goto beach;
 		}
-		ut64 tr = ULEB ();
+		ut64 tr = read_uleb128 (&p, end);
 		if (tr == UT64_MAX) {
 			goto beach;
 		}
@@ -2617,7 +2616,6 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 		state->next_child = p;
 		r_list_push (states, next);
 	} while (r_list_length (states));
-#undef ULEB
 
 beach:
 	r_list_free (states);
@@ -3264,8 +3262,6 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 				ut8 op = *p & BIND_OPCODE_MASK;
 				p++;
 				switch (op) {
-#define ULEB() read_uleb128 (&p, end)
-#define SLEB() r_sleb128 ((const ut8 **)&p, end)
 				case BIND_OPCODE_DONE: {
 					bool in_lazy_binds = pidx == 1;
 					if (!in_lazy_binds) {
@@ -3276,7 +3272,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 				case BIND_OPCODE_THREADED: {
 					switch (imm) {
 					case BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB: {
-						ut64 table_size = ULEB ();
+						ut64 table_size = read_uleb128 (&p, end);
 						if (!is_valid_ordinal_table_size (table_size)) {
 							bprintf ("Error: BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB size is wrong\n");
 							break;
@@ -3366,7 +3362,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 					lib_ord = imm;
 					break;
 				case BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB:
-					lib_ord = ULEB ();
+					lib_ord = read_uleb128 (&p, end);
 					break;
 				case BIND_OPCODE_SET_DYLIB_SPECIAL_IMM:
 					lib_ord = imm? (st8)(BIND_OPCODE_MASK | imm) : 0;
@@ -3408,7 +3404,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 					type = imm;
 					break;
 				case BIND_OPCODE_SET_ADDEND_SLEB:
-					addend = SLEB ();
+					addend = r_sleb128 ((const ut8 **)&p, end);
 					break;
 				case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
 					seg_idx = imm;
@@ -3420,12 +3416,12 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 						r_pvector_free (threaded_binds);
 						return NULL; // early exit to avoid future mayhem
 					}
-					addr = bin->segs[seg_idx].vmaddr + ULEB ();
+					addr = bin->segs[seg_idx].vmaddr + read_uleb128 (&p, end);
 					segment_end_addr = bin->segs[seg_idx].vmaddr \
 							+ bin->segs[seg_idx].vmsize;
 					break;
 				case BIND_OPCODE_ADD_ADDR_ULEB:
-					addr += ULEB ();
+					addr += read_uleb128 (&p, end);
 					break;
 #define DO_BIND() do {\
 	if (sym_ord < 0 && !sym_name) break;\
@@ -3473,7 +3469,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 						goto beach;
 					}
 					DO_BIND ();
-					addr += ULEB () + wordsize;
+					addr += read_uleb128 (&p, end) + wordsize;
 					break;
 				case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
 					if (addr >= segment_end_addr) {
@@ -3484,8 +3480,8 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 					addr += (ut64)imm * (ut64)wordsize + wordsize;
 					break;
 				case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
-					count = ULEB ();
-					skip = ULEB ();
+					count = read_uleb128 (&p, end);
+					skip = read_uleb128 (&p, end);
 					for (j = 0; j < count; j++) {
 						if (addr >= segment_end_addr) {
 							bprintf ("Error: Malformed ULEB TIMES bind opcode\n");
@@ -3496,8 +3492,6 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 					}
 					break;
 #undef DO_BIND
-#undef ULEB
-#undef SLEB
 				default:
 					bprintf ("Error: unknown bind opcode 0x%02x in dyld_info\n", *p);
 					R_FREE (opcodes);
