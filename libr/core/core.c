@@ -3671,8 +3671,8 @@ R_API RTable *r_core_table(RCore *core) {
 
 /* Config helper function for PJ json encodings */
 R_API PJ *r_core_pj_new(RCore *core) {
-	const char *config_string_encoding = r_config_get (core->config, "json.encoding.strings");
-	const char *config_num_encoding = r_config_get (core->config, "json.encoding.numbers");
+	const char *config_string_encoding = r_config_get (core->config, "cfg.json.str");
+	const char *config_num_encoding = r_config_get (core->config, "cfg.json.num");
 	PJEncodingNum number_encoding = PJ_ENCODING_NUM_DEFAULT;
 	PJEncodingStr string_encoding = PJ_ENCODING_STR_DEFAULT;
 

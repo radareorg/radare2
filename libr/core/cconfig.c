@@ -3569,11 +3569,11 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("esil.mdev.range", "", &cb_mdevrange, "Specify a range of memory to be handled by cmd.esil.mdev");
 
 	/* json encodings */
-	n = NODECB ("json.encoding.strings", "none", &cb_jsonencoding);
+	n = NODECB ("cfg.json.str", "none", &cb_jsonencoding);
 	SETDESC (n, "Encode strings from json outputs using the specified option");
 	SETOPTIONS (n, "none", "base64", "strip", "hex", "array", NULL);
 
-	n = NODECB ("json.encoding.numbers", "none", &cb_jsonencoding_numbers);
+	n = NODECB ("cfg.json.num", "none", &cb_jsonencoding_numbers);
 	SETDESC (n, "Encode numbers from json outputs using the specified option");
 	SETOPTIONS (n, "none", "string", "hex", NULL);
 
