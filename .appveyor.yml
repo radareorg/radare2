@@ -27,7 +27,7 @@ environment:
     - builder: vs2019_64
       PYTHON: 'C:\\Python38-x64'
       INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 6'
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+      APPVEYOR_BUILD_WORKER_IMAGE: Previous Visual Studio 2019
       BUILD_DIR: build
       RUN_TESTS: true
     # VS2017 64 (Dynamic linking)
