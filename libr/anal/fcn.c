@@ -2003,6 +2003,7 @@ static void __anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 				&& strcmp (op.src[0]->reg->name, anal->reg->name[R_REG_NAME_SP])) {
 					fcn->bp_frame = false;
 					r_anal_op_fini (&op);
+					free (buf);
 					return;
 				}
 				break;
@@ -2024,6 +2025,7 @@ static void __anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 				if (pos && pos - op.opex.ptr < 60) {
 					fcn->bp_frame = false;
 					r_anal_op_fini (&op);
+					free (buf);
 					return;
 				}
 				break;
@@ -2031,6 +2033,7 @@ static void __anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 				if (op.opex.ptr && strstr (op.opex.ptr, str_to_find)) {
 					fcn->bp_frame = false;
 					r_anal_op_fini (&op);
+					free (buf);
 					return;
     			}
 				break;
