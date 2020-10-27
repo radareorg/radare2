@@ -383,7 +383,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	bin->minstrlen = minstr;
 	bin->maxstrlen = maxstr;
 	if (IS_MODE_JSON (mode)) {
-		pj = pj_new ();
+		pj = r_core_pj_new (r);
 		pj_a (pj);
 	} else if (IS_MODE_RAD (mode)) {
 		r_cons_println ("fs strings");
@@ -455,7 +455,9 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			pj_kn (pj, "length", string->length);
 			pj_ks (pj, "section", section_name);
 			pj_ks (pj, "type", type_string);
+			// data itself may be encoded so use pj_ks
 			pj_ks (pj, "string", string->string);
+
 			switch (string->type) {
 			case R_STRING_TYPE_UTF8:
 			case R_STRING_TYPE_WIDE:
@@ -1126,7 +1128,7 @@ static int bin_dwarf(RCore *core, int mode) {
 
 	PJ *j = NULL;
 	if (IS_MODE_JSON (mode)) {
-		j = pj_new ();
+		j = r_core_pj_new (core);
 		pj_a (j);
 	}
 
@@ -1262,7 +1264,7 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, int mode) {
 		mode = 'd'; // default
 		break;
 	}
-	PJ *pj = pj_new ();
+	PJ *pj = r_core_pj_new (core);
 
 	pdb.print_types (&pdb, pj, mode);
 	pdb.print_gvars (&pdb, baddr, pj, mode);
@@ -1718,8 +1720,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 		r_cons_println ("[Relocations]");
 		r_table_set_columnsf (table, "XXss", "vaddr", "paddr", "type", "name");
 	} else if (IS_MODE_JSON (mode)) {
-		// start a new JSON object
-		pj = pj_new ();
+		pj = r_core_pj_new (r);
 		if (pj) {
 			pj_a (pj);
 		}
@@ -1984,7 +1985,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 	RList *imports = r_bin_get_imports (r->bin);
 	int cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
 	if (IS_MODE_JSON (mode)) {
-		pj = pj_new ();
+		pj = r_core_pj_new (r);
 		pj_a (pj);
 	} else if (IS_MODE_RAD (mode)) {
 		r_cons_println ("fs imports");
@@ -2276,7 +2277,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		return 0;
 	}
 
-	PJ *pj = pj_new ();
+	PJ *pj = r_core_pj_new (r);
 	bool is_arm = info && info->arch && !strncmp (info->arch, "arm", 3);
 	const char *lang = bin_demangle ? r_config_get (r->config, "bin.lang") : NULL;
 
@@ -3609,7 +3610,7 @@ static int bin_libs(RCore *r, int mode) {
 
 	RList *libs = r_bin_get_libs (r->bin);
 	if (IS_MODE_JSON (mode)) {
-		pj = pj_new ();
+		pj = r_core_pj_new (r);
 		pj_a (pj);
 	} else {
 		if (!libs) {
@@ -3845,7 +3846,7 @@ static void bin_elf_versioninfo(RCore *r, int mode) {
 	const char *oValue = NULL;
 	PJ *pj = NULL;
 	if (IS_MODE_JSON (mode)) {
-		pj = pj_new ();
+		pj = r_core_pj_new (r);
 		if (!pj) {
 			return;
 		}
@@ -4030,7 +4031,7 @@ static void bin_pe_resources(RCore *r, int mode) {
 	} else if (IS_MODE_RAD (mode)) {
 		r_cons_printf ("fs resources\n");
 	} else if (IS_MODE_JSON (mode)) {
-		pj = pj_new ();
+		pj = r_core_pj_new (r);
 		pj_a (pj);
 	}
 	while (true) {

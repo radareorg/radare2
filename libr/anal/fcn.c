@@ -1704,8 +1704,9 @@ R_API int r_anal_function_complexity(RAnalFunction *fcn) {
 
 // tfj and afsj call this function
 R_API char *r_anal_function_get_json(RAnalFunction *function) {
-	PJ *pj = pj_new ();
 	RAnal *a = function->anal;
+	PJ *pj = a->coreb.pjWithEncoding (a->coreb.core);
+	
 	char *args = strdup ("");
 	char *sdb_ret = r_str_newf ("func.%s.ret", function->name);
 	char *sdb_args = r_str_newf ("func.%s.args", function->name);

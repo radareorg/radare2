@@ -817,6 +817,7 @@ R_API void r_core_log_del(RCore *core, int n);
 // TODO MOVE SOMEWHERE ELSE
 typedef char *(*PrintItemCallback)(void *user, void *p, bool selected);
 R_API char *r_str_widget_list(void *user, RList *list, int rows, int cur, PrintItemCallback cb);
+R_API PJ *r_core_pj_new(RCore *core);
 /* help */
 R_API void r_core_cmd_help(const RCore *core, const char * help[]);
 

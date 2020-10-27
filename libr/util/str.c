@@ -9,6 +9,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
+#include <r_util/r_base64.h>
 
 /* stable code */
 static const char *nullstr = "";
@@ -1509,8 +1510,151 @@ R_API char *r_str_escape_utf32be(const char *buf, int buf_size, bool show_asciid
 	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF32BE, show_asciidot, esc_bslash, false);
 }
 
-// JSON has special escaping requirements
-// TODO: merge with r_str_escape_utf() and r_str_byte_escape() using RStrEsc
+R_API char *r_str_encoded_json(const char *buf, int buf_size, int encoding) {
+	r_return_val_if_fail (buf, NULL);
+	size_t buf_sz = buf_size < 0 ? strlen (buf) : buf_size;
+	char *encoded_str;
+
+	if (encoding == PJ_ENCODING_STR_BASE64) {
+		encoded_str = r_base64_encode_dyn (buf, buf_sz);
+	} else if (encoding == PJ_ENCODING_STR_HEX || encoding == PJ_ENCODING_STR_ARRAY) {
+		size_t loop = 0;
+		size_t i = 0;
+		size_t increment = encoding == PJ_ENCODING_STR_ARRAY ? 4 : 2;
+		
+		if (!SZT_MUL_OVFCHK (((buf_sz * increment) + 1), SZT_MAX)) {
+			return NULL;
+		}
+		size_t new_sz = (buf_sz * increment) + 1;
+
+		encoded_str = malloc (new_sz);
+		if (!encoded_str) {
+			return NULL;
+		}
+
+		const char *format = encoding == PJ_ENCODING_STR_ARRAY ? "%03u," : "%02X";
+		while (buf[loop] != '\0' && i < (new_sz - 1)) {
+			snprintf (encoded_str + i, sizeof (encoded_str), format, (ut8) buf[loop]);
+			loop++;
+			i += increment;
+		}
+		if (encoding == PJ_ENCODING_STR_ARRAY && i) {
+			// get rid of the trailing comma
+			encoded_str[i - 1] = '\0';
+		} else {
+			encoded_str[i] = '\0';
+		}
+	} else if (encoding == PJ_ENCODING_STR_STRIP) {
+		encoded_str = r_str_escape_utf8_for_json_strip (buf, buf_sz);
+	} else {
+		encoded_str = r_str_escape_utf8_for_json (buf, buf_sz);
+	}
+	return encoded_str;
+}
+
+R_API char *r_str_escape_utf8_for_json_strip(const char *buf, int buf_size) {
+	char *new_buf, *q;
+	const char *p, *end;
+	RRune ch;
+	int i, len, ch_bytes;
+
+	if (!buf) {
+		return NULL;
+	}
+	len = buf_size < 0 ? strlen (buf) : buf_size;
+	end = buf + len;
+	/* Worst case scenario, we convert every byte to \u00hh */
+	new_buf = malloc (1 + (len * 6));
+	if (!new_buf) {
+		return NULL;
+	}
+	p = buf;
+	q = new_buf;
+	while (p < end) {
+		ch_bytes = r_utf8_decode ((ut8 *)p, end - p, &ch);
+		if (ch_bytes == 1) {
+			switch (*p) {
+			case '\n':
+				*q++ = '\\';
+				*q++ = 'n';
+				break;
+			case '\r':
+				*q++ = '\\';
+				*q++ = 'r';
+				break;
+			case '\\':
+				*q++ = '\\';
+				*q++ = '\\';
+				break;
+			case '\t':
+				*q++ = '\\';
+				*q++ = 't';
+				break;
+			case '"' :
+				*q++ = '\\';
+				*q++ = '"';
+				break;
+			case '\f':
+				*q++ = '\\';
+				*q++ = 'f';
+				break;
+			case '\b':
+				*q++ = '\\';
+				*q++ = 'b';
+				break;
+			default:
+				if (IS_PRINTABLE (*p)) {
+					*q++ = *p;
+				}
+			}
+		} else if (ch_bytes == 4) {
+			if (r_isprint (ch)) {
+				// Assumes buf is UTF8-encoded
+				for (i = 0; i < ch_bytes; i++) {
+					*q++ = *(p + i);
+				}
+			} else {
+				RRune high, low;
+				ch -= 0x10000;
+				high = 0xd800 + (ch >> 10 & 0x3ff);
+				low = 0xdc00 + (ch & 0x3ff);
+				*q++ = '\\';
+				*q++ = 'u';
+				for (i = 2; i >= 0; i -= 2) {
+					*q++ = "0123456789abcdef"[high >> 4 * (i + 1) & 0xf];
+					*q++ = "0123456789abcdef"[high >> 4 * i & 0xf];
+				}
+				*q++ = '\\';
+				*q++ = 'u';
+				for (i = 2; i >= 0; i -= 2) {
+					*q++ = "0123456789abcdef"[low >> 4 * (i + 1) & 0xf];
+					*q++ = "0123456789abcdef"[low >> 4 * i & 0xf];
+				}
+			}
+		} else if (ch_bytes > 1) {
+			if (r_isprint (ch)) {
+				// Assumes buf is UTF8-encoded
+				for (i = 0; i < ch_bytes; i++) {
+					*q++ = *(p + i);
+				}
+			} else {
+				*q++ = '\\';
+				*q++ = 'u';
+				for (i = 2; i >= 0; i -= 2) {
+					*q++ = "0123456789abcdef"[ch >> 4 * (i + 1) & 0xf];
+					*q++ = "0123456789abcdef"[ch >> 4 * i & 0xf];
+				}
+			}
+		} else { 
+			ch_bytes = 1;
+		}
+		p += ch_bytes;
+	}
+	*q = '\0';
+	return new_buf;
+}
+
+
 R_API char *r_str_escape_utf8_for_json(const char *buf, int buf_size) {
 	char *new_buf, *q;
 	const char *p, *end;
@@ -1545,12 +1689,6 @@ R_API char *r_str_escape_utf8_for_json(const char *buf, int buf_size) {
 				*q++ = '\\';
 				*q++ = '\\';
 				break;
-#if 0
-			case '/': /* has 2-char esc seq in JSON spec, but escaping is optional */
-				*q++ = '\\';
-				*q++ = '/';
-				break;
-#endif
 			case '\t':
 				*q++ = '\\';
 				*q++ = 't';

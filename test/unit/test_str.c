@@ -470,6 +470,23 @@ bool test_r_str_str_xy(void) {
 	mu_end;
 }
 
+bool test_r_str_encoded_json(void) {
+	char *invalidJsonString = "This is my \xe2 sample © string\n";
+	size_t len = strlen (invalidJsonString);
+
+	const char *array = r_str_encoded_json (invalidJsonString, len, PJ_ENCODING_STR_ARRAY);
+	mu_assert_streq (array, "084,104,105,115,032,105,115,032,109,121,032,226,032,115,097,109,112,108,101,032,194,169,032,115,116,114,105,110,103,010", "string as array of uchar");
+	const char *hex = r_str_encoded_json (invalidJsonString, len, PJ_ENCODING_STR_HEX);
+	mu_assert_streq (hex, "54686973206973206D7920E22073616D706C6520C2A920737472696E670A", "string as hexpairs");
+	const char *b64 = r_str_encoded_json (invalidJsonString, len, PJ_ENCODING_STR_BASE64);
+	mu_assert_streq (b64, "VGhpcyBpcyBteSDiIHNhbXBsZSDCqSBzdHJpbmcK", "string as base64 encoded");
+	const char *stripped = r_str_encoded_json (invalidJsonString, len, PJ_ENCODING_STR_STRIP);
+	mu_assert_streq (stripped, "This is my  sample © string\\n", "string with bad chars stripped");
+	const char *none = r_str_encoded_json (invalidJsonString, len, PJ_ENCODING_STR_DEFAULT);
+	mu_assert_streq (none, "This is my \\xe2 sample © string\\n", "default encoding");
+	mu_end;
+}
+
 bool all_tests () {
 	mu_run_test (test_r_str_newf);
 	mu_run_test (test_r_str_replace_char_once);
@@ -500,6 +517,7 @@ bool all_tests () {
 	mu_run_test (test_r_str_constpool);
 	mu_run_test (test_r_str_format_msvc_argv);
 	mu_run_test (test_r_str_str_xy);
+	mu_run_test (test_r_str_encoded_json);
 	return tests_passed != tests_run;
 }
 

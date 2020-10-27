@@ -382,7 +382,7 @@ static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int dump, int mo
 	RList *refs = r_anal_function_get_refs (fcn);
 	if (mode == 'j') {
 		// start a new JSON object
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		pj_a (pj);
 	}
 	if (refs) {
@@ -2786,7 +2786,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 	PJ *pj = NULL;
 
 	if (mode == 'j') {
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		pj_a (pj);
 	}
 
@@ -2985,7 +2985,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, PJ *pj) {
 static int fcn_list_json(RCore *core, RList *fcns, bool quiet) {
 	RListIter *iter;
 	RAnalFunction *fcn;
-	PJ *pj = pj_new ();
+	PJ *pj = r_core_pj_new (core);
 	if (!pj) {
 		return -1;
 	}
@@ -3653,7 +3653,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 			"\tedge [%s];\n", font, gv_spline, gv_node, gv_edge);
 	}
 	if (is_json) {
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		if (!pj) {
 			r_config_hold_restore (hc);
 			r_config_hold_free (hc);
@@ -5708,7 +5708,7 @@ R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, 
 
 	// Initialize a PJ object for json mode
 	if (is_json) {
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		pj_a (pj);
 	}
 

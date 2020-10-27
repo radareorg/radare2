@@ -877,6 +877,40 @@ static bool cb_emuskip(void *user, void *data) {
 	return true;
 }
 
+static bool cb_jsonencoding(void *user, void *data) {
+	RConfigNode *node = (RConfigNode*) data;
+	if (*node->value == '?') {
+		if (node->value[1] && node->value[1] == '?') {
+			r_cons_printf ("choose either: \n"\
+			"none (default)\n" \
+			"base64 - encode the json string values as base64\n" \
+			"hex - convert the string to a string of hexpairs\n" \
+			"array - convert the string to an array of chars\n" \
+			"strip - strip non-printable characters\n");
+		} else {
+			print_node_options (node);
+		}
+		return false;
+	}
+	return true;
+}
+
+static bool cb_jsonencoding_numbers(void *user, void *data) {
+	RConfigNode *node = (RConfigNode*) data;
+	if (*node->value == '?') {
+		if (node->value[1] && node->value[1] == '?') {
+			r_cons_printf ("choose either: \n"\
+			"none (default)\n" \
+			"string - encode the json number values as strings\n" \
+			"hex - encode the number values as hex, then as a string\n");
+		} else {
+			print_node_options (node);
+		}
+		return false;
+	}
+	return true;
+}
+
 static bool cb_asm_armimm(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -3584,6 +3618,16 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("esil.stats", "false", "Statistics from ESIL emulation stored in sdb");
 	SETBPREF ("esil.nonull", "false", "Prevent memory read, memory write at null pointer");
 	SETCB ("esil.mdev.range", "", &cb_mdevrange, "Specify a range of memory to be handled by cmd.esil.mdev");
+
+	/* json encodings */
+	n = NODECB ("cfg.json.str", "none", &cb_jsonencoding);
+	SETDESC (n, "Encode strings from json outputs using the specified option");
+	SETOPTIONS (n, "none", "base64", "strip", "hex", "array", NULL);
+
+	n = NODECB ("cfg.json.num", "none", &cb_jsonencoding_numbers);
+	SETDESC (n, "Encode numbers from json outputs using the specified option");
+	SETOPTIONS (n, "none", "string", "hex", NULL);
+
 
 	/* scr */
 #if __EMSCRIPTEN__

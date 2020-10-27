@@ -4518,3 +4518,38 @@ EXPECT=<<EOF
 0
 EOF
 RUN
+
+NAME=izjencoding
+FILE=bins/elf/analysis/hello-utf-16
+CMDS=<<EOF
+e cfg.json.str = base64
+izj~{[0].section}
+EOF
+EXPECT=<<EOF
+LnJvZGF0YQ==
+EOF
+RUN
+
+
+NAME=izjencodinghex
+FILE=bins/elf/analysis/hello-utf-16
+CMDS=<<EOF
+e cfg.json.str = hex
+izj~{[0].string}
+EOF
+EXPECT=<<EOF
+48656C6C6F20576F726C64
+EOF
+RUN
+
+
+NAME=izjencodingarray
+FILE=bins/elf/analysis/hello-utf-16
+CMDS=<<EOF
+e cfg.json.str = array
+izj~{[0].type}
+EOF
+EXPECT=<<EOF
+[117,116,102,049,054,108,101]
+EOF
+RUN

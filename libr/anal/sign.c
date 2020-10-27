@@ -2040,7 +2040,7 @@ R_API void r_sign_list(RAnal *a, int format) {
 	PJ *pj = NULL;
 
 	if (format == 'j') {
-		pj = pj_new ();
+		pj = a->coreb.pjWithEncoding (a->coreb.core);
 		pj_a (pj);
 	}
 
