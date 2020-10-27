@@ -2497,9 +2497,7 @@ static int match_metrics(RSignItem *it, void *user) {
 R_API int r_sign_fcn_match_metrics(RSignSearchMetrics *sm) {
 	r_return_val_if_fail (sm && sm->mincc >= 0 && sm->anal && sm->fcn, false);
 	struct metric_ctx ctx = { 0, sm, NULL, NULL, NULL, NULL };
-	if (sm->types) {
-		r_sign_foreach (sm->anal, match_metrics, (void *)&ctx);
-	}
+	r_sign_foreach (sm->anal, match_metrics, (void *)&ctx);
 	r_list_free (ctx.refs);
 	r_list_free (ctx.types);
 	r_list_free (ctx.vars);
