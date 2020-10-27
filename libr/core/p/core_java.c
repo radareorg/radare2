@@ -272,13 +272,12 @@ enum {
 	REPLACE_CLASS_NAME_IDX = 12,
 	RELOAD_BIN_IDX = 13,
 	SUMMARY_INFO_IDX = 14,
-	LIST_CODE_REFS_IDX = 15,
-	PRINT_EXC_IDX = 16,
-	YARA_CODE_REFS_IDX = 17,
-	INSERT_MREF_IDX = 18,
-	CALC_SZ_IDX = 19,
-	ISVALID_IDX = 20,
-	END_CMDS = 21,
+	PRINT_EXC_IDX = 15,
+	YARA_CODE_REFS_IDX = 16,
+	INSERT_MREF_IDX = 17,
+	CALC_SZ_IDX = 18,
+	ISVALID_IDX = 19,
+	END_CMDS = 20,
 };
 
 static ut8 _(r_cmd_java_obj_ref)(const char *name, const char *class_name, ut32 len) {
