@@ -149,6 +149,7 @@ static const char *help_msg_star[] = {
 	"*", "entry0=cc", "write trap in entrypoint",
 	"*", "entry0+10=0x804800", "write value in delta address",
 	"*", "entry0", "read byte at given address",
+	"*", "/", "end multiline comment. (use '/*' to start mulitiline comment",
 	"TODO: last command should honor asm.bits", "", "",
 	NULL
 };
