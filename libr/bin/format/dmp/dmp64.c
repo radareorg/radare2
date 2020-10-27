@@ -39,8 +39,8 @@ static int r_bin_dmp64_init_memory_runs(struct r_bin_dmp64_obj_t *obj) {
 				free (runs);
 				return false;
 			}
-			page->start = (run->BasePage + j) * PAGE_SIZE ;
-			page->file_offset = base + num_page * PAGE_SIZE;
+			page->start = (run->BasePage + j) * DMP_PAGE_SIZE ;
+			page->file_offset = base + num_page * DMP_PAGE_SIZE;
 			r_list_append (obj->pages, page);
 			num_page++;
 		}
@@ -90,8 +90,8 @@ static int r_bin_dmp64_init_bmp_pages(struct r_bin_dmp64_obj_t *obj) {
 		if (!page) {
 			return false;
 		}
-		page->start = i * PAGE_SIZE;
-		page->file_offset = paddr_base + num_bitset * PAGE_SIZE;
+		page->start = i * DMP_PAGE_SIZE;
+		page->file_offset = paddr_base + num_bitset * DMP_PAGE_SIZE;
 		r_list_append (obj->pages, page);
 		num_bitset++;
 	}
