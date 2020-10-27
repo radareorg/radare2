@@ -2035,7 +2035,7 @@ static void __anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 					r_anal_op_fini (&op);
 					free (buf);
 					return;
-    			}
+				}
 				break;
 			case R_ANAL_OP_TYPE_POP:
 				break;
