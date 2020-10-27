@@ -49,10 +49,7 @@ static inline bool overflow_name(type_base a, type_base b) { \
 
 #define SIGNED_DIV_OVERFLOW_CHECK(overflow_name, type_base, type_mid, type_max) \
 static inline bool overflow_name(type_base a, type_base b) { \
-	if (!b || (a == type_mid && b == type_max)) { \
-		return true; \
-	} \
-	return false; \
+	return (!b || (a == type_mid && b == type_max)); \
 }
 #define UNSIGNED_DIV_OVERFLOW_CHECK(overflow_name, type_base, type_min, type_max) \
 static inline bool overflow_name(type_base a, type_base b) { \
