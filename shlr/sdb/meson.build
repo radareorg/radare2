@@ -60,6 +60,7 @@ libsdb_sources = [
   'src/sdb.c',
   'src/sdbht.c',
   'src/util.c',
+  'src/text.c'
 ]
 
 sdb_inc = include_directories(['.', 'src'])
@@ -71,12 +72,12 @@ libsdb = both_libraries('sdb', libsdb_sources,
   install: not meson.is_subproject()
 )
 
-if meson.is_subproject()
-  sdb_dep = declare_dependency(
-    link_with: libsdb.get_static_lib(),
-    include_directories: sdb_inc
-  )
-else
+sdb_dep = declare_dependency(
+  link_with: libsdb.get_static_lib(),
+  include_directories: sdb_inc
+)
+
+if not meson.is_subproject()
   include_files = [
     'src/buffer.h',
     'src/cdb.h',
@@ -135,4 +136,5 @@ if not meson.is_subproject()
   endif
 
   subdir('test/bench')
+  subdir('test/unit')
 endif
