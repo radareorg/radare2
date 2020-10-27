@@ -4522,9 +4522,6 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 			} else if (base == 32) {
 				val = r_read_ble32 (buf + i, be);
 				val &= UT32_MAX;
-			} else if (base == 32) {
-				val = r_read_ble32 (buf + i, be);
-				val &= UT32_MAX;
 			} else if (base == 16) {
 				val = r_read_ble16 (buf + i, be);
 				val &= UT16_MAX;
