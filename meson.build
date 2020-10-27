@@ -470,7 +470,8 @@ sdb_files = [
   'shlr/sdb/src/query.c',
   'shlr/sdb/src/sdb.c',
   'shlr/sdb/src/sdbht.c',
-  'shlr/sdb/src/util.c'
+  'shlr/sdb/src/util.c',
+  'shlr/sdb/src/text.c'
 ]
 
 sdb_inc = [platform_inc, include_directories('shlr/sdb/src')]
