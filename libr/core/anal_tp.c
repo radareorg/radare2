@@ -471,8 +471,8 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	if (!hc) {
 		return;
 	}
-	RDebugTrace *dt;
-	RAnalEsilTrace *et;
+	RDebugTrace *dt = NULL;
+	RAnalEsilTrace *et = NULL;
 	if (!anal_emul_init (core, hc, &dt, &et) || !fcn) {
 		anal_emul_restore (core, hc, dt, et);
 		return;
