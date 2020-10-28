@@ -175,16 +175,16 @@ static int parse(RParse *p, const char *data, char *str) {
 					num = (char *)r_str_lchr (buf, ',');
 				}
 				if (num) {
-					n = atoi (num+1);
+					n = atoi (num + 1);
 					*ptr = '[';
-					memmove (num+1, ptr, strlen (ptr)+1);
+					r_str_cpy (num + 1, ptr);
 					ptr = (char*)r_str_lchr (buf, ']');
 					if (n && ptr) {
-						char *rest = strdup (ptr+1);
+						char *rest = strdup (ptr + 1);
 						if (n > 0) {
-							sprintf (ptr, "+%d]%s", n, rest);
+							snprintf (ptr, sizeof (ptr), "+%d]%s", n, rest);
 						} else {
-							sprintf (ptr, "%d]%s", n, rest);
+							snprintf (ptr, sizeof (ptr), "%d]%s", n, rest);
 						}
 						free (rest);
 					}
