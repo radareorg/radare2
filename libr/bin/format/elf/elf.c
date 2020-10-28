@@ -42,19 +42,6 @@
 #define COMPUTE_PLTGOT_POSITION(rel, pltgot_addr, n_initial_unused_entries) \
 	((rel->rva - pltgot_addr - n_initial_unused_entries * R_BIN_ELF_WORDSIZE) / R_BIN_ELF_WORDSIZE)
 
-#if R_BIN_ELF64
-static inline int UTX_MUL(ut64 *r, ut64 a, ut64 b) {
-	return UT64_MUL (r, a, b);
-}
-#else
-static inline int UTX_MUL(ut64 *r, ut64 a, ut64 b) {
-	ut32 r2 = *r;
-	int res = UT32_MUL (&r2, a, b);
-	*r = r2;
-	return res;
-}
-#endif
-
 #define GROWTH_FACTOR (1.5)
 
 #define round_up(a) ((((a) + (4) - (1)) / (4)) * (4))

@@ -21,7 +21,7 @@
 #define DMP_DUMPTYPE_BITMAPKERNEL	6
 #define DMP_DUMPTYPE_AUTOMATIC		7
 
-#define PAGE_SIZE	0x1000
+#define DMP_PAGE_SIZE	0x1000
 
 typedef struct _PHYSICAL_MEMORY_RUN {
     ut64 BasePage;
