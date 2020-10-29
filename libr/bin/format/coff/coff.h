@@ -29,6 +29,7 @@ struct r_bin_coff_obj {
 	bool verbose;
 	HtUP *sym_ht;
 	HtUP *imp_ht;
+	ut64 *scn_va;
 };
 
 bool r_coff_supported_arch(const ut8 *buf); /* Reads two bytes from buf. */

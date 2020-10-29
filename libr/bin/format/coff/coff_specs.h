@@ -153,6 +153,14 @@
 #define COFF_REL_AMD64_REL32_4		8
 #define COFF_REL_AMD64_REL32_5		9
 
+#define COFF_REL_ARM_BRANCH24T		20
+#define COFF_REL_ARM_BLX23T		21
+
+#define COFF_REL_ARM64_ABSOLUTE		0
+#define COFF_REL_ARM64_ADDR32		1
+#define COFF_REL_ARM64_ADDR32NB		2
+#define COFF_REL_ARM64_BRANCH26		3
+
 R_PACKED(
 struct coff_hdr {
 	ut16 f_magic;	/* Magic number */
