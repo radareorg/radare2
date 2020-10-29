@@ -448,3 +448,180 @@ EXPECT=<<EOF
 0x00000000  0708 090a 0b0c 0d1b 5c40 070d 7e00 0000  ........\@..~...
 EOF
 RUN
+
+NAME=Automatically reanalyze function control flow after a write
+FILE=-
+ARGS=-a x86 -b 64 -e anal.detectwrites=true
+CMDS=<<EOF
+wa jne 6 @ 2
+wa ret @ 8
+af
+pdr
+wa jne 8 @ 4
+pdr
+wa mov rax, [rbp-4]
+pdr
+afvn test var_4h
+wa jne 0 @ 4
+pdr
+wx 00000000
+afv # check var was deleted
+EOF
+EXPECT=<<EOF
+/ 9: fcn.00000000 ();
+| 0x00000000      0000           add byte [rax], al
+| 0x00000002      7502           jne 6
+| ----------- true: 0x00000006  false: 0x00000004
+| 0x00000004      0000           add byte [rax], al
+| ----------- true: 0x00000006
+| 0x00000006      0000           add byte [rax], al
+\ 0x00000008      c3             ret
+
+/ 9: fcn.00000000 ();
+| 0x00000000      0000           add byte [rax], al
+| 0x00000002      7502           jne 6
+| ----------- true: 0x00000006  false: 0x00000004
+| 0x00000004      7502           jne 8
+| ----------- true: 0x00000008  false: 0x00000006
+| 0x00000006      0000           add byte [rax], al
+| ----------- true: 0x00000008
+\ 0x00000008      c3             ret
+
+/ 9: fcn.00000000 ();
+| ; var int64_t var_4h @ rbp-0x4
+| 0x00000000      488b45fc       mov rax, qword [var_4h]
+| 0x00000004      7502           jne 8
+| ----------- true: 0x00000008  false: 0x00000006
+| 0x00000006      0000           add byte [rax], al
+| ----------- true: 0x00000008
+\ 0x00000008      c3             ret
+
+/ 9: fcn.00000000 ();
+| ; var int64_t test @ rbp-0x4
+| 0x00000000      488b45fc       mov rax, qword [test]
+| 0x00000004      75fa           jne fcn.00000000
+| ----------- true: 0x00000000  false: 0x00000006
+| 0x00000006      0000           add byte [rax], al
+\ 0x00000008      c3             ret
+
+EOF
+RUN
+
+NAME=Write misaligns jump instruction, control flow is reanalyzed
+FILE=-
+ARGS=-a x86 -b 64 -e anal.detectwrites=true
+CMDS=<<EOF
+wx e80200000075020000c3
+af
+pdr
+wa jne 9
+pdr
+wx e802
+pdr
+EOF
+EXPECT=<<EOF
+/ 10: fcn.00000000 ();
+| 0x00000000      e802000000     call 7
+| 0x00000005      7502           jne 9
+| ----------- true: 0x00000009  false: 0x00000007
+| ; CALL XREF from fcn.00000000 @ 
+| 0x00000007      0000           add byte [rax], al
+| ----------- true: 0x00000009
+\ 0x00000009      c3             ret
+
+/ 10: fcn.00000000 (int64_t arg_2h);
+| ; arg int64_t arg_2h @ rbp+0x2
+| 0x00000000      7507           jne 9
+| ----------- true: 0x00000009  false: 0x00000002
+| 0x00000002      0000           add byte [rax], al
+| 0x00000004      007502         add byte [arg_2h], dh
+| ; CALL XREF from fcn.00000000 @ 
+| 0x00000007      0000           add byte [rax], al
+| ----------- true: 0x00000009
+\ 0x00000009      c3             ret
+
+/ 10: fcn.00000000 (int64_t arg_2h);
+| ; arg int64_t arg_2h @ rbp+0x2
+| 0x00000000      e802000000     call 7
+| 0x00000005      7502           jne 9
+| ----------- true: 0x00000009  false: 0x00000007
+| ; CALL XREF from fcn.00000000 @ 
+| 0x00000007      0000           add byte [rax], al
+| ----------- true: 0x00000009
+\ 0x00000009      c3             ret
+
+EOF
+RUN
+
+NAME=Write reanalysis keeps already unreachable block
+FILE=-
+ARGS=-a x86 -b 64 -e anal.detectwrites=true
+CMDS=<<EOF
+wx 0000c300c3
+af
+afb+ 0 4 1
+pdr
+wa add byte [rax], bl
+pdr
+EOF
+EXPECT=<<EOF
+/ 4: fcn.00000000 ();
+| 0x00000000      0000           add byte [rax], al
+| 0x00000002      c3             ret
+
+\ 0x00000004      c3             ret
+
+/ 4: fcn.00000000 ();
+| 0x00000000      0018           add byte [rax], bl
+| 0x00000002      c3             ret
+
+\ 0x00000004      c3             ret
+
+EOF
+RUN
+
+NAME=Write reanalysis of child of non-modified block
+FILE=-
+ARGS=-a x86 -b 64 -e anal.detectwrites=true
+CMDS=<<EOF
+wx eb020000000075fac3
+af
+wx eb04eb02
+pdr
+af-
+wx eb020000eb020000000075fac3
+af
+wx eb040000eb02 @ 4
+pdr
+EOF
+EXPECT=<<EOF
+/ 7: fcn.00000000 ();
+| 0x00000000      eb04           jmp 6
+| ----------- true: 0x00000006
+| 0x00000002      eb02           jmp 6
+| ----------- true: 0x00000006
+| ; CODE XREFS from fcn.00000000 @ , 0x2
+| 0x00000006      75fa           jne 2
+| ----------- true: 0x00000002  false: 0x00000008
+\ 0x00000008      c3             ret
+
+/ 11: fcn.00000000 ();
+| 0x00000000      eb02           jmp 4
+| ----------- true: 0x00000004
+| ; CODE XREF from fcn.00000000 @ 
+| 0x00000004      eb04           jmp 0xa
+| ----------- true: 0x0000000a
+| ; CODE XREF from fcn.00000000 @ 
+| ; CODE XREF from fcn.00000000 @ +0x2
+| 0x00000006      0000           add byte [rax], al
+| ; CODE XREF from fcn.00000000 @ 0x4
+| 0x00000008      eb02           jmp 0xc
+| ----------- true: 0x0000000c
+| ; CODE XREF from fcn.00000000 @ 0x4
+| 0x0000000a      75fa           jne 6
+| ----------- true: 0x00000006  false: 0x0000000c
+| ; CODE XREF from fcn.00000000 @ 0x8
+\ 0x0000000c      c3             ret
+
+EOF
+RUN
