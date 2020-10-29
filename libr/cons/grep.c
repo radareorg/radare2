@@ -597,7 +597,8 @@ R_API void r_cons_grepbuf(void) {
 			break;
 		}
 		l = p - in;
-		if (l >= 0) {
+		if ((grep->range_line == 2 && l > 0) ||
+		    (grep->range_line != 2 && l >= 0)) {
 			char *tline = r_str_ndup (in, l);
 			if (cons->grep_color) {
 				tl = l;
@@ -623,7 +624,8 @@ R_API void r_cons_grepbuf(void) {
 					show = true;
 				}
 			}
-			if (ret >= 0) {
+			if ((grep->range_line == 2 && ret > 0) ||
+			    (grep->range_line != 2 && ret >= 0)) {
 				if (show) {
 					char *str = r_str_ndup (tline, ret);
 					if (cons->grep_highlight) {
@@ -651,7 +653,7 @@ R_API void r_cons_grepbuf(void) {
 					show = false;
 				}
 				cons->lines++;
-			} else {
+			} else if (ret < 0) {
 				free (tline);
 				return;
 			}
