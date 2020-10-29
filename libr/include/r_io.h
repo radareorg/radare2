@@ -107,6 +107,7 @@ typedef struct r_io_t {
 	struct w32dbg_wrap_instance_t *w32dbg_wrap;
 #endif
 	char *args;
+	REvent *event;
 	PrintfCallback cb_printf;
 	RCoreBind corebind;
 } RIO;

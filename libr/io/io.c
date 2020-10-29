@@ -111,6 +111,7 @@ R_API RIO* r_io_init(RIO* io) {
 	r_io_cache_init (io);
 	r_io_plugin_init (io);
 	r_io_undo_init (io);
+	io->event = r_event_new (io);
 	return io;
 }
 
@@ -670,6 +671,7 @@ R_API int r_io_fini(RIO* io) {
 	if (io->runprofile) {
 		R_FREE (io->runprofile);
 	}
+	r_event_free (io->event);
 #if R_IO_USE_PTRACE_WRAP
 	if (io->ptrace_wrap) {
 		ptrace_wrap_instance_stop (io->ptrace_wrap);

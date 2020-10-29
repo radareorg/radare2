@@ -37,6 +37,7 @@ typedef enum {
 	R_EVENT_CLASS_ATTR_DEL, // REventClassAttrSet
 	R_EVENT_CLASS_ATTR_RENAME, // REventClassAttrRename
 	R_EVENT_DEBUG_PROCESS_FINISHED, // REventDebugProcessFinished
+	R_EVENT_IO_WRITE, // REventIOWrite
 	R_EVENT_MAX,
 } REventType;
 
@@ -74,6 +75,12 @@ typedef struct r_event_class_attr_rename_t {
 typedef struct r_event_debug_process_finished_t {
 	int pid;
 } REventDebugProcessFinished;
+
+typedef struct r_event_io_write_t {
+	ut64 addr;
+	const ut8 *buf;
+	int len;
+} REventIOWrite;
 
 R_API REvent *r_event_new(void *user);
 R_API void r_event_free(REvent *ev);
