@@ -3488,6 +3488,15 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 	return true;
 }
 
+static void check_function_modified(RCore *core, RAnalFunction *fcn) {
+	if (r_anal_function_was_modified (fcn)) {
+		if (r_config_get_i (core->config, "anal.detectwrites")
+			|| r_cons_yesno ('y', "Function was modified. Reanalyze? (Y/n)")) {
+			r_anal_function_update_analysis (fcn);
+		}
+	}
+}
+
 static int agraph_refresh(struct agraph_refresh_data *grd) {
 	if (!grd) {
 		return 0;
@@ -3534,6 +3543,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 			}
 			if (f && fcn && f != *fcn) {
 				*fcn = f;
+				check_function_modified (core, *fcn);
 				g->need_reload_nodes = true;
 				g->force_update_seek = true;
 			}
@@ -3555,6 +3565,10 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 
 static void agraph_refresh_oneshot(struct agraph_refresh_data *grd) {
 	r_core_task_enqueue_oneshot (&grd->core->tasks, (RCoreTaskOneShot) agraph_refresh, grd);
+}
+
+static void agraph_set_need_reload_nodes(struct agraph_refresh_data *grd) {
+	grd->g->need_reload_nodes = true;
 }
 
 static void agraph_toggle_speed(RAGraph *g, RCore *core) {
@@ -4155,6 +4169,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			r_cons_canvas_free (can);
 			return false;
 		}
+		check_function_modified (core, fcn);
 		g = r_agraph_new (can);
 		if (!g) {
 			r_cons_canvas_free (can);
@@ -4784,7 +4799,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			showcursor (core, false);
 			break;
 		case ':':
+			core->cons->event_resize = (RConsEvent)agraph_set_need_reload_nodes;
 			r_core_visual_prompt_input (core);
+			core->cons->event_resize = (RConsEvent)agraph_refresh_oneshot;
 			if (!g) {
 				g->need_reload_nodes = true; // maybe too slow and unnecessary sometimes? better be safe and reload
 				get_bbupdate (g, core, fcn);
