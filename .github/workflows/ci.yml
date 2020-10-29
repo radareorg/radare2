@@ -74,7 +74,7 @@ jobs:
             timeout: 60
             cflags: '-Werror -Wno-cpp'
           - name: macos-clang-tests
-            os: macos-11.0
+            os: macos-10.15
             build_system: acr
             compiler: clang
             run_tests: true
@@ -116,10 +116,10 @@ jobs:
     - uses: actions/checkout@v2
       if: matrix.enabled
     - name: Install pkg-config with Homebrew
-      if: matrix.os == 'macos-11.0' && matrix.enabled
+      if: matrix.os == 'macos-10.15' && matrix.enabled
       run: brew install pkg-config
     - name: Install python
-      if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-11.0' && matrix.enabled
+      if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-10.15' && matrix.enabled
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools
     - name: Install meson and ninja
       if: matrix.build_system == 'meson' && matrix.enabled
@@ -388,7 +388,7 @@ jobs:
 
   build-osx-pkg:
     name: Build OSX package
-    runs-on: macos-11.0
+    runs-on: macos-10.15
     if: contains(github.head_ref, 'osx') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     steps:
@@ -460,7 +460,7 @@ jobs:
 
   build-ios-cydia:
     name: Build iOS Cydia packages
-    runs-on: macos-11.0
+    runs-on: macos-10.15
     if: contains(github.head_ref, 'ios') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     steps:
@@ -594,7 +594,7 @@ jobs:
 
   test-osx-pkg:
     name: Test OSX pkg
-    runs-on: macos-11.0
+    runs-on: macos-10.15
     needs: [build-osx-pkg]
     steps:
     - name: Install pkg-config with Homebrew
