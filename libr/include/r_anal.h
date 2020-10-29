@@ -1640,7 +1640,8 @@ R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 l
 R_API void r_anal_fcn_invalidate_read_ahead_cache(void);
 
 R_API void r_anal_function_check_bp_use(RAnalFunction *fcn);
-
+R_API void r_anal_update_analysis_range(RAnal *anal, ut64 addr, int size);
+R_API void r_anal_function_update_analysis(RAnalFunction *fcn);
 
 #define R_ANAL_FCN_VARKIND_LOCAL 'v'
 
