@@ -3,6 +3,7 @@ ARCH=$(shell uname -m)
 
 XCODE_VERSION=$(shell xcodebuild -version|grep Xcode|grep -o "[\.0-9]\+")
 XCODE_VERSION_MAJOR=$(word 1, $(subst ., ,$(XCODE_VERSION)))
+CFLAGS+=-arch x86_64
 
 ifeq ($(COMPILER),ios-sdk)
 
