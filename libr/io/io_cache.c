@@ -169,6 +169,8 @@ R_API bool r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 	}
 	memcpy (ch->data, buf, len);
 	r_list_append (io->cache, ch);
+	REventIOWrite iow = { addr, buf, len };
+	r_event_send (io->event, R_EVENT_IO_WRITE, &iow);
 	return true;
 }
 

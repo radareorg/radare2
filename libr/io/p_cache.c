@@ -132,6 +132,8 @@ R_API int r_io_desc_cache_write(RIODesc *desc, ut64 paddr, const ut8 *buf, int l
 		caddr++;
 		cbaddr = 0;
 	}
+	REventIOWrite iow = { paddr, buf, len };
+	r_event_send (desc->io->event, R_EVENT_IO_WRITE, &iow);
 	return written;
 }
 

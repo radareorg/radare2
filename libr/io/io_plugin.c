@@ -172,7 +172,11 @@ R_API int r_io_plugin_write(RIODesc *desc, const ut8 *buf, int len) {
 	if (!desc->plugin->write) {
 		return -1;
 	}
-	return desc->plugin->write (desc->io, desc, buf, len);
+	const ut64 cur_addr = r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR);
+	int ret = desc->plugin->write (desc->io, desc, buf, len);
+	REventIOWrite iow = { cur_addr, buf, len };
+	r_event_send (desc->io->event, R_EVENT_IO_WRITE, &iow);
+	return ret;
 }
 
 R_API int r_io_plugin_read_at(RIODesc *desc, ut64 addr, ut8 *buf, int len) {
