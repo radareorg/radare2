@@ -363,3 +363,15 @@ R_API bool r_anal_function_contains(RAnalFunction *fcn, ut64 addr) {
 	// fcn_in_cb breaks with false if it finds the fcn
 	return !r_anal_blocks_foreach_in (fcn->anal, addr, fcn_in_cb, fcn);
 }
+
+R_API bool r_anal_function_was_modified(RAnalFunction *fcn) {
+	r_return_val_if_fail (fcn, false);
+	RListIter *it;
+	RAnalBlock *bb;
+	r_list_foreach (fcn->bbs, it, bb) {
+		if (r_anal_block_was_modified (bb)) {
+			return true;
+		}
+	}
+	return false;
+}
