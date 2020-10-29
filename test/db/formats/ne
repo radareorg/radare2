@@ -54,7 +54,7 @@ NAME=NE Relocs and resolve function ordinal names
 FILE=bins/ne/anim8.exe
 CMDS=<<EOF
 ir~WIN87EM
-ir~:0..10
+ir~:0..11
 EOF
 EXPECT=<<EOF
 0x00004c98 0x00004c98 SET_32 WIN87EM.__FPMATH
@@ -67,6 +67,7 @@ EXPECT=<<EOF
 0x000056b3 0x000056b3 ADD_16 WIN87EM.0
 0x00005891 0x00005891 ADD_16 WIN87EM.0
 [Relocations]
+
 vaddr      paddr      type   name
 ---------------------------------
 0x00000a01 0x00000a01 SET_32 KERNEL.INITTASK
