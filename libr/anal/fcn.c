@@ -1046,6 +1046,9 @@ repeat:
 				cmpval = val;
 				bb->cmpval = cmpval;
 				bb->cmpreg = op.reg;
+				if (bb->cond) {
+					r_anal_cond_free (bb->cond);
+				}
 				bb->cond = r_anal_cond_new_from_op (&op);
 			}
 		}
