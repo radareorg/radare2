@@ -1355,6 +1355,7 @@ beach:
 	if (bb && bb->size == 0) {
 		r_anal_function_remove_block (fcn, bb);
 	}
+	r_anal_block_update_hash (bb);
 	r_anal_block_unref (bb);
 	return ret;
 }
