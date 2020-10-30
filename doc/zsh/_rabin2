@@ -49,7 +49,7 @@ _rabin2() {
   '-s[symbols]'
   '-S[sections]'
   '-u[unfiltered (no rename duplicated symbols/sections)]'
-  '-U[resoUrces]'
+  '-U[resources]'
   '-v[display version and quit]'
   '-V[Show binary version information]'
   '-x[extract bins contained in file]'
