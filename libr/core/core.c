@@ -2731,7 +2731,9 @@ R_API bool r_core_init(RCore *core) {
 		char *a = r_str_r2_prefix (R2_FLAGS);
 		if (a) {
 			char *file = r_str_newf ("%s/tags.r2", a);
+			core->print->enable_progressbar = false;
 			(void)r_core_run_script (core, file);
+			core->print->enable_progressbar = true;
 			free (file);
 			free (a);
 		}
