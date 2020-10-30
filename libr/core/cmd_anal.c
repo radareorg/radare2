@@ -2077,7 +2077,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				printline ("opex", "%s\n", opexstr);
 			}
 #endif
-			printline ("bytes", NULL, 0);
+			printline ("bytes", "%s", "");
 			int minsz = R_MIN (len, size);
 			minsz = R_MAX (minsz, 0);
 			for (j = 0; j < minsz; j++) {
@@ -8284,7 +8284,7 @@ static void agraph_print_node(RANode *n, void *user) {
 	}
 	encbody = r_base64_encode_dyn (n->body, len);
 	cmd = r_str_newf ("agn \"%s\" base64:%s\n", n->title, encbody);
-	r_cons_printf (cmd);
+	r_cons_print (cmd);
 	free (cmd);
 	free (encbody);
 }

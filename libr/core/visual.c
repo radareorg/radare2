@@ -223,7 +223,7 @@ static const char *__core_visual_print_command(RCore *core) {
 	}
 	if (r_config_get_i (core->config, "scr.dumpcols")) {
 		free (core->stkcmd);
-		core->stkcmd = r_str_newf (stackPrintCommand (core));
+		core->stkcmd = r_str_new (stackPrintCommand (core));
 		return printfmtColumns[PIDX];
 	}
 	return printfmtSingle[PIDX];

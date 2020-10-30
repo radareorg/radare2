@@ -238,8 +238,8 @@ static bool load_project_rop(RCore *core, const char *prjfile) {
 		eprintf ("ENDS WITH\n");
 		path = strdup (prjfile);
 		path[strlen (path) - 3] = 0;
-	} else if (r_file_fexists ("%s" R_SYS_DIR "rc", prjDir, prjfile)) {
-		path = r_str_newf ("%s" R_SYS_DIR, prjDir, prjfile);
+	} else if (r_file_fexists ("%s%s%src", R_SYS_DIR, prjDir, prjfile)) {
+		path = r_str_newf ("%s%s%s", R_SYS_DIR, prjDir, prjfile);
 	} else {
 		if (*prjfile == R_SYS_DIR[0]) {
 			db = r_str_newf ("%s.d", prjfile);

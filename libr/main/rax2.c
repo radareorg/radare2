@@ -543,7 +543,7 @@ dotherax:
 		if (*str != '0') {
 			modified_str = r_str_newf ("0%s", str);
 		} else {
-			modified_str = r_str_newf (str);
+			modified_str = r_str_new (str);
 		}
 
 		ut64 n = r_num_math (num, modified_str);

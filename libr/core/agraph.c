@@ -3932,8 +3932,8 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 	r_cons_get_size (&rows);
 	r_cons_gotoxy (0, rows);
 	r_cons_clear_line (0);
-	r_cons_printf (Color_RESET);
-	r_cons_printf (h);
+	r_cons_print (Color_RESET);
+	r_cons_print (h);
 	r_cons_flush ();
 
 	do {

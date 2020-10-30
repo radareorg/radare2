@@ -286,12 +286,12 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 
 	for (i = 0, j = 1, k = SZ * 4; i < NFASTBINS; i++, j++, k += SZ * 2) {
 		if (FASTBIN_IDX_TO_SIZE (j) <= global_max_fast) {
-			PRINTF_YA (" Fastbin %02d\n", j);
+			PRINTF_YA (" Fastbin %02zu\n", j);
 		} else {
-			PRINTF_RA (" Fastbin %02d\n", j);
+			PRINTF_RA (" Fastbin %02zu\n", j);
 		}
 		PRINT_GA (" chunksize:");
-		PRINTF_BA (" == %04d ", k);
+		PRINTF_BA (" == %04zu ", k);
 		PRINTF_GA ("0x%"PFMT64x, (ut64)main_arena->GH(fastbinsY)[i]);
 		PRINT_GA (",\n");
 	}
@@ -313,7 +313,7 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 		}
 	}
 	for (i = 0, j = 1, k = SZ * 4; i < NBINS * 2 - 2; i += 2, j++) {
-		PRINTF_YA (" Bin %03d: ", j);
+		PRINTF_YA (" Bin %03zu: ", j);
 		if (j == 1) {
 			PRINT_GA ("Unsorted Bin");
 			PRINT_GA (" [");
@@ -330,7 +330,7 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 				PRINT_GA ("             └");
 			}
 			PRINT_GA (" chunksize:");
-			PRINTF_BA (" == %06d  ", k);
+			PRINTF_BA (" == %06zu  ", k);
 			if (j < NSMALLBINS) {
 				k += SZ * 2;
 			}
@@ -346,7 +346,7 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 			}
 			PRINT_GA (" chunksize:");
 			if (j != NBINS - 1) {
-				PRINTF_BA (" >= %06d  ", apart[j - NSMALLBINS - 1]);
+				PRINTF_BA (" >= %06"PFMT64d"  ", (ut64)apart[j - NSMALLBINS - 1]);
 			} else {
 				PRINT_BA (" remaining ");
 			}
@@ -494,11 +494,11 @@ void GH(print_heap_chunk)(RCore *core) {
 	PRINT_GA (",\n  size = ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)cnk->size & ~(NON_MAIN_ARENA | IS_MMAPPED | PREV_INUSE));
 	PRINT_GA(",\n  flags: |N:");
-	PRINTF_BA("%1d", (cnk->size & NON_MAIN_ARENA ) >> 2);
+	PRINTF_BA("%1"PFMT64u, (ut64)(cnk->size & NON_MAIN_ARENA ) >> 2);
 	PRINT_GA(" |M:");
-	PRINTF_BA("%1d", (cnk->size & IS_MMAPPED) >> 1);
+	PRINTF_BA("%1"PFMT64u, (ut64)(cnk->size & IS_MMAPPED) >> 1);
 	PRINT_GA(" |P:");
-	PRINTF_BA("%1d", cnk->size & PREV_INUSE);
+	PRINTF_BA("%1"PFMT64u, (ut64)cnk->size & PREV_INUSE);
 
 	PRINT_GA (",\n  fd = ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)cnk->fd);
@@ -749,7 +749,7 @@ static void GH(print_heap_bin)(RCore *core, GHT m_arena, MallocState *main_arena
 			eprintf ("Error: 0 < bin <= %d\n", NBINS - 1);
 			break;
 		}
-		PRINTF_YA ("  Bin %03d:\n", num_bin + 1);
+		PRINTF_YA ("  Bin %03"PFMT64u":\n", (ut64)num_bin + 1);
 		GH(print_double_linked_list_bin) (core, main_arena, m_arena, offset, num_bin, j);
 		break;
 	}
@@ -787,7 +787,7 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
 		return 0;
 	}
 
-	PRINTF_GA ("  fastbin %d @ ", bin_num + 1);
+	PRINTF_GA ("  fastbin %"PFMT64d" @ ", (ut64)bin_num + 1);
 	PRINTF_GA ("0x%"PFMT64x" {\n   ", (ut64)bin);
 
 	GHT size = main_arena->GH(top) - brk_start;
@@ -936,12 +936,12 @@ static void GH (tcache_print) (RCore *core, GH (RTcache)* tcache, bool demangle)
 		GHT entry = GH (tcache_get_entry) (tcache, i);
 		if (count > 0) {
 			PRINT_GA ("bin :");
-			PRINTF_BA ("%2d", i);
+			PRINTF_BA ("%2zu", i);
 			PRINT_GA (", items :");
 			PRINTF_BA ("%2d", count);
 			PRINT_GA (", fd :");
 
-			PRINTF_BA ("0x%"PFMT64x, entry - GH (HDR_SZ));
+			PRINTF_BA ("0x%"PFMT64x, (ut64)(entry - GH (HDR_SZ)));
 			if (count > 1) {
 				tcache_fd = entry;
 				size_t n;
@@ -953,7 +953,7 @@ static void GH (tcache_print) (RCore *core, GH (RTcache)* tcache, bool demangle)
 					tcache_tmp = (!demangle)
 						? read_le (&tcache_tmp)
 						: PROTECT_PTR (tcache_fd, read_le (&tcache_tmp));
-					PRINTF_BA ("->0x%"PFMT64x, tcache_tmp - TC_HDR_SZ);
+					PRINTF_BA ("->0x%"PFMT64x, (ut64)(tcache_tmp - TC_HDR_SZ));
 					tcache_fd = tcache_tmp;
 				}
 			}
