@@ -323,7 +323,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			const ut8 *byte = buf + i;
 			char ch = IS_PRINTABLE (*byte)? *byte: '?';
 			if (i == 4) {
-				r_cons_printf (" |");
+				r_cons_print (" |");
 			}
 			if (use_color) {
 				r_cons_printf (" %5s'%s%c"Color_RESET"'", " ", core->cons->context->pal.btext, ch);
@@ -335,7 +335,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		for (i = 0; i < 8; i++) {
 			const ut8 *byte = buf + i;
 			if (i == 4) {
-				r_cons_printf (" |");
+				r_cons_print (" |");
 			}
 			r_cons_printf (" %8d", *byte);
 		}
@@ -343,7 +343,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		for (i = 0; i < 8; i++) {
 			const ut8 *byte = buf + i;
 			if (i == 4) {
-				r_cons_printf (" |");
+				r_cons_print (" |");
 			}
 			r_cons_printf ("     0x%02x", *byte);
 		}
@@ -352,7 +352,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			for (i = 0; i < 8; i++) {
 				ut8 *byte = buf + i;
 				if (i == 4) {
-					r_cons_printf ("| ");
+					r_cons_print ("| ");
 				}
 				if (colorBits && i >= asmop.size) {
 					r_cons_print (Color_RESET);
@@ -372,7 +372,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 				for (i = 0; i < 8; i++) {
 					ut8 *byte = buf + i;
 					if (i == 4) {
-						r_cons_printf ("| ");
+						r_cons_print ("| ");
 					}
 					if (colorBits && i >= asmop.size) {
 						r_cons_print (Color_RESET);
@@ -381,11 +381,11 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 					for (j = 0; j < 8; j++) {
 						bool bit = R_BIT_CHK (byte, 7 - j);
 						if (set && bit) {
-							r_cons_printf ("1");
+							r_cons_print ("1");
 						} else if (!set && !bit) {
-							r_cons_printf ("0");
+							r_cons_print ("0");
 						} else {
-							r_cons_printf (ws);
+							r_cons_print (ws);
 						}
 					}
 					r_cons_print (" ");

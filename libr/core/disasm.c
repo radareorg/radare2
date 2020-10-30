@@ -465,7 +465,7 @@ R_API const char *r_core_get_section_name(RCore *core, ut64 addr) {
 static void _ds_comment_align_(RDisasmState *ds, bool up, bool nl) {
 	if (ds->show_comment_right) {
 		if (ds->show_color) {
-			r_cons_printf (ds->pal_comment);
+			r_cons_print (ds->pal_comment);
 		}
 		return;
 	}
@@ -3636,7 +3636,7 @@ static void ds_begin_nl_comment(RDisasmState *ds) {
 		ds_pre_xrefs (ds, false);
 	}
 	if (ds->show_color && (ds->cmtcount > 0 || ds->show_comment_right)) {
-		r_cons_printf (ds->pal_comment);
+		r_cons_print (ds->pal_comment);
 	}
 }
 

@@ -254,7 +254,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->jump = addr + F5_DISP(((ut32)word2 << 16) | word1);
 		op->fail = addr + 4;
-		r_strbuf_appendf (&op->esil, "pc,%s,=,pc,%hu,+=", F5_RN2(word1), F5_DISP(((ut32)word2 << 16) | word1));
+		r_strbuf_appendf (&op->esil, "pc,%s,=,pc,%u,+=", F5_RN2(word1), F5_DISP(((ut32)word2 << 16) | word1));
 		break;
 #if 0 // WTF - same opcode as JARL?
 	case V850_JR:
