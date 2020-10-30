@@ -47,6 +47,23 @@ static inline bool overflow_name(type_base a, type_base b) { \
 	return a && b < type_max / a; \
 }
 
+#define SIGNED_DIV_OVERFLOW_CHECK(overflow_name, type_base, type_mid, type_max) \
+static inline bool overflow_name(type_base a, type_base b) { \
+	return (!b || (a == type_mid && b == type_max)); \
+}
+#define UNSIGNED_DIV_OVERFLOW_CHECK(overflow_name, type_base, type_min, type_max) \
+static inline bool overflow_name(type_base a, type_base b) { \
+	return !b; \
+}
+
+SIGNED_DIV_OVERFLOW_CHECK(ST8_DIV_OVFCHK,  ut8,  UT8_GT0,  UT8_MAX)
+SIGNED_DIV_OVERFLOW_CHECK(ST16_DIV_OVFCHK, ut16, UT16_GT0, UT16_MAX)
+SIGNED_DIV_OVERFLOW_CHECK(ST32_DIV_OVFCHK, ut32, UT32_GT0, UT32_MAX)
+SIGNED_DIV_OVERFLOW_CHECK(ST64_DIV_OVFCHK, ut64, UT64_GT0, UT64_MAX)
+UNSIGNED_DIV_OVERFLOW_CHECK(UT8_DIV_OVFCHK,  ut8,  UT8_MIN,  UT8_MAX)
+UNSIGNED_DIV_OVERFLOW_CHECK(UT16_DIV_OVFCHK, ut16, UT16_MIN, UT16_MAX)
+UNSIGNED_DIV_OVERFLOW_CHECK(UT32_DIV_OVFCHK, ut32, UT32_MIN, UT32_MAX)
+UNSIGNED_DIV_OVERFLOW_CHECK(UT64_DIV_OVFCHK, ut64, UT64_MIN, UT64_MAX)
 // TODO: Windows doesn't have ssize_t, and we don't need this check yet
 // SIGNED_MUL_OVERFLOW_CHECK(SSZT_MUL_OVFCHK, ssize_t, SSZT_MIN, SSZT_MAX)
 SIGNED_MUL_OVERFLOW_CHECK(ST8_MUL_OVFCHK, st8, ST8_MIN, ST8_MAX)
