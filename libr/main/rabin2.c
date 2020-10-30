@@ -61,7 +61,7 @@ static int rabin_show_help(int v) {
 		" -t              display file hashes\n"
 		" -T              display file signature\n"
 		" -u              unfiltered (no rename duplicated symbols/sections)\n"
-		" -U              resoUrces\n"
+		" -U              resources\n"
 		" -v              display version and quit\n"
 		" -V              Show binary version information\n"
 		" -w              display try/catch blocks\n"
