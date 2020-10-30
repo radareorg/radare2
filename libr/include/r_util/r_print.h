@@ -125,6 +125,9 @@ typedef struct r_print_t {
 	// represents the first not-visible offset on the screen
 	// (only when in visual disasm mode)
 	ut64 screen_bounds;
+	// HACK: Used to temporarily disable the progress bar when it doesn't make sense to have it,
+	// eg. when setting the default flag tags on startup. Does not override scr.progressbar.
+	bool enable_progressbar;
 } RPrint;
 
 #ifdef R_API
@@ -199,6 +202,7 @@ R_API int r_print_date_get_now(RPrint *p, char *str);
 R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen);
 R_API void r_print_zoom_buf(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen);
 R_API void r_print_progressbar(RPrint *pr, int pc, int _cols);
+void r_print_progressbar_set_enable(const bool enable);
 R_API void r_print_progressbar_with_count(RPrint *pr, int pc, int total, int _cols, bool reset_line);
 R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions);
 R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols);

@@ -341,6 +341,7 @@ R_API RPrint* r_print_new(void) {
 	p->strconv_mode = NULL;
 	memset (&p->consbind, 0, sizeof (p->consbind));
 	p->io_unalloc_ch = '.';
+	p->enable_progressbar = true;
 	return p;
 }
 
