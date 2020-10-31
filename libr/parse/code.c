@@ -3,7 +3,9 @@
 #include "r_util.h"
 #include "r_types.h"
 #include "r_parse.h"
-#include "libr_tcc.h"
+#include "tcc.h"
+
+extern int tcc_sym_push(char *typename, int typesize, int meta);
 
 /* parse C code and return it in key-value form */
 
