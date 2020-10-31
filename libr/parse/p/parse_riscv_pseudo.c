@@ -181,11 +181,11 @@ static int parse(RParse *p, const char *data, char *str) {
 					ptr = (char*)r_str_lchr (buf, ']');
 					if (n && ptr) {
 						char *rest = strdup (ptr + 1);
-						int dist = ptr - buf;
+						size_t dist = len + 1 - (ptr - buf);
 						if (n > 0) {
-							snprintf (ptr, len + 1 - dist, "+%d]%s", n, rest);
+							snprintf (ptr, dist, "+%d]%s", n, rest);
 						} else {
-							snprintf (ptr, len + 1 - dist, "%d]%s", n, rest);
+							snprintf (ptr, dist, "%d]%s", n, rest);
 						}
 						free (rest);
 					}
