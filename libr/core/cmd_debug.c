@@ -5304,6 +5304,8 @@ static int cmd_debug(void *data, const char *input) {
 				eprintf ("No open debug session\n");
 				break;
 			}
+			// Stop trace session
+			r_core_cmd0 (core, "dts-");
 			// Kill debugee and all child processes
 			if (core->dbg && core->dbg->h && core->dbg->h->pids && core->dbg->pid != -1) {
 				list = core->dbg->h->pids (core->dbg, core->dbg->pid);
