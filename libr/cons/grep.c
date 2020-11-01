@@ -590,6 +590,7 @@ R_API void r_cons_grepbuf(void) {
 			grep->l_line = total_lines + grep->l_line;
 		}
 	}
+	bool is_range_line_grep_only = grep->range_line != 2 && !*grep->str;
 	in = buf;
 	while ((int) (size_t) (in - buf) < len) {
 		char *p = strchr (in, '\n');
@@ -597,7 +598,7 @@ R_API void r_cons_grepbuf(void) {
 			break;
 		}
 		l = p - in;
-		if (l > 0) {
+		if ((!l && is_range_line_grep_only) || l > 0) {
 			char *tline = r_str_ndup (in, l);
 			if (cons->grep_color) {
 				tl = l;
@@ -623,7 +624,7 @@ R_API void r_cons_grepbuf(void) {
 					show = true;
 				}
 			}
-			if (ret > 0) {
+			if ((!ret && is_range_line_grep_only) || ret > 0) {
 				if (show) {
 					char *str = r_str_ndup (tline, ret);
 					if (cons->grep_highlight) {

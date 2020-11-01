@@ -93,6 +93,7 @@ addr,size,space,name
 0x0040023c,36,sections,section..note.gnu.build_id
 0x00400260,56,sections,section..gnu.hash
 0x00400298,432,sections,section..dynsym
+
 [
   {
     "addr": 6296136,
