@@ -11,6 +11,6 @@ ifeq ($(CC),cccl)
 	endif
 
 ${TARGET_RISCVPSEUDO}: ${OBJ_RISCVPSEUDO}
-	${CC} $(call libname,parse_riscv_pseudo) -L../../util -llibr_util \
+	${CC} $(call libname,parse_riscv_pseudo) -L../../util -lr_util \
 		$(LDFLAGS_SHARED) ${RISCV_CFLAGS} -o ${TARGET_RISCVPSEUDO} ${OBJ_RISCVPSEUDO}
 
