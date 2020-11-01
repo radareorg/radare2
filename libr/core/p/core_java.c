@@ -212,11 +212,6 @@ typedef struct r_cmd_java_cms_t {
 #define SUMMARY_INFO_DESC "print summary information for the current java class file"
 #define SUMMARY_INFO_LEN 7
 
-#define LIST_CODE_REFS "lcr"
-#define LIST_CODE_REFS_ARGS " [addr]"
-#define LIST_CODE_REFS_DESC "list all references to fields and methods in code sections"
-#define LIST_CODE_REFS_LEN 3
-
 #define PRINT_EXC "exc"
 #define PRINT_EXC_ARGS " [<addr>]"
 #define PRINT_EXC_DESC "list all exceptions to fields and methods in code sections"
@@ -1833,15 +1828,10 @@ static int r_cmd_java_handle_yara_code_extraction_refs(RCore *core, const char *
 
 	if (name && count != (ut64)-1 && addr != (ut64)-1) {
 		// find function at addr
-
 		// find the start basic block
-
 		// read the bytes
-
 		// hexlify the bytes
-
 		// set the name = bytes
-
 		// print t
 	}
 	free (name);
@@ -1854,24 +1844,23 @@ static int r_cmd_java_handle_insert_method_ref(RCore *core, const char *input) {
 	const char *p = input? r_cmd_java_consumetok (input, ' ', -1): NULL, *n = NULL;
 	char *classname = NULL, *name = NULL, *descriptor = NULL;
 	ut32 cn_sz = 0, n_sz = 0, d_sz = 0;
-	int res = false;
 
 	if (!bin) {
-		return res;
+		return false;
 	}
 	if (!anal || !anal->fcns || r_list_length (anal->fcns) == 0) {
 		eprintf ("Unable to access the current analysis, perform 'af' for function analysis.\n");
 		return true;
 	}
 	if (!p) {
-		return res;
+		return false;
 	}
 
 	n = p && *p? r_cmd_java_strtok (p, ' ', -1): NULL;
 	classname = n && p && p != n? malloc (n - p + 1): NULL;
 	cn_sz = n && p? n - p + 1: 0;
 	if (!classname) {
-		return res;
+		return false;
 	}
 
 	snprintf (classname, cn_sz, "%s", p);
@@ -1881,7 +1870,7 @@ static int r_cmd_java_handle_insert_method_ref(RCore *core, const char *input) {
 	n_sz = n && p? n - p + 1: 0;
 	if (!name) {
 		free (classname);
-		return res;
+		return false;
 	}
 	snprintf (name, n_sz, "%s", p);
 
@@ -1898,7 +1887,7 @@ static int r_cmd_java_handle_insert_method_ref(RCore *core, const char *input) {
 	if (!descriptor) {
 		free (classname);
 		free (name);
-		return res;
+		return false;
 	}
 	snprintf (descriptor, d_sz, "%s", p);
 
@@ -1906,14 +1895,13 @@ static int r_cmd_java_handle_insert_method_ref(RCore *core, const char *input) {
 	free (classname);
 	free (name);
 	free (descriptor);
-	res = true;
-	return res;
+	return true;
 }
 
 static int r_cmd_java_handle_print_exceptions(RCore *core, const char *input) {
 	RAnal *anal = get_anal (core);
 	RBinJavaObj *bin = (RBinJavaObj *) r_cmd_java_get_bin_obj (anal);
-	RListIter *exc_iter = NULL, *methods_iter=NULL;
+	RListIter *exc_iter = NULL, *methods_iter = NULL;
 	RBinJavaField *method;
 	ut64 func_addr = -1;
 	RBinJavaExceptionEntry *exc_entry;
@@ -1926,8 +1914,8 @@ static int r_cmd_java_handle_print_exceptions(RCore *core, const char *input) {
 	}
 
 	r_list_foreach (bin->methods_list, methods_iter, method) {
-		ut64 start = r_bin_java_get_method_start (bin, method),
-		     end = r_bin_java_get_method_end (bin, method);
+		ut64 start = r_bin_java_get_method_start (bin, method);
+		ut64 end = r_bin_java_get_method_end (bin, method);
 		ut8 do_this_one = start <= func_addr && func_addr <= end;
 		RList *exc_table = NULL;
 		do_this_one = func_addr == (ut64)-1? 1: do_this_one;
@@ -1936,7 +1924,7 @@ static int r_cmd_java_handle_print_exceptions(RCore *core, const char *input) {
 		}
 		exc_table = r_bin_java_get_method_exception_table_with_addr (bin, start);
 
-		if (r_list_length (exc_table) == 0){
+		if (r_list_length (exc_table) == 0) {
 			r_cons_printf (" Exception table for %s @ 0x%"PFMT64x":\n", method->name, start);
 			r_cons_printf (" [ NONE ]\n");
 		} else {
