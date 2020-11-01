@@ -1399,6 +1399,15 @@ const void cmd_table_header(RCore *core, char *s) {
 	free (format);
 }
 
+static void display_table_filter(RCore *core, const char *input) {
+	if (input[1] == ' ') {
+		const char *q = r_str_trim_head_ro (input + 2);
+		if (!r_table_query (core->table, q)) {
+			break;
+		}
+	}
+}
+
 static int cmd_table(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	switch (*input) {
@@ -1455,23 +1464,19 @@ static int cmd_table(void *data, const char *input) {
 		}
 		break;
 	case ',':
+		display_table_filter (core, input);
 		display_table (r_table_tocsv (core->table));
 		break;
 	case '*':
+		display_table_filter (core, input);
 		display_table (r_table_tor2cmds (core->table));
+		break;
+	case 'j':
+		display_table_filter (core, input);
+		display_table (r_table_tojson (core->table));
 		break;
 	case 0:
 		display_table (r_table_tofancystring (core->table));
-		break;
-	case 'j':
-		// print table
-		if (input[1] == ' ') {
-			const char *q = r_str_trim_head_ro (input + 2);
-			if (!r_table_query (core->table, q)) {
-				break;
-			}
-		}
-		display_table (r_table_tojson (core->table));
 		break;
 	case '?':
 		r_core_cmd_help (core, cmd_table_help);
