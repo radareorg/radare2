@@ -957,7 +957,7 @@ static const char *radare_argv[] = {
 	"ob?", "ob", "ob*", "obo", "oba", "obf", "obj", "obr", "ob-", "ob-*",
 	"oc", "of", "oi", "oj", "oL", "om", "on",
 	"oo?", "oo", "oo+", "oob", "ood", "oom", "oon", "oon+", "oonn", "oonn+",
-	"op",  "ox",
+	"op",  "opn", "opp", "opr", "ox",
 	"p?", "p-", "p=", "p2", "p3", "p6?", "p6", "p6d", "p6e", "p8?", "p8", "p8f", "p8j",
 	"pa?", "paD", "pad", "pade", "pae", "pA",
 	"pb?", "pb", "pB", "pxb", "pB?",

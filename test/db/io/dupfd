@@ -27,3 +27,37 @@ EXPECT=<<EOF
 1001
 EOF
 RUN
+
+NAME=dupfd hard
+FILE=-
+CMDS=<<EOF
+op
+o -
+op
+opn
+op
+opn
+op
+opr
+op
+opr
+op
+opp
+op
+opp
+EOF
+EXPECT_ERR=<<EOF
+Cannot find file
+Cannot find file
+Cannot find file
+EOF
+EXPECT=<<EOF
+3
+4
+4
+4
+3
+4
+3
+EOF
+RUN
