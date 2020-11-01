@@ -1,11 +1,10 @@
-/* radare2 - LGPL - Copyright 2017-2019 - condret, pancake, alvaro */
+/* radare2 - LGPL - Copyright 2017-2020 - condret, pancake, alvaro */
 
 #include <r_io.h>
 #include <sdb.h>
 #include <string.h>
 
-//shall be used by plugins for creating descs
-//XXX kill mode
+// shall be used by plugins for creating descs
 R_API RIODesc* r_io_desc_new(RIO* io, RIOPlugin* plugin, const char* uri, int perm, int mode, void* data) {
 	ut32 fd32 = 0;
 	// this is required for emscripten builds to work, but should assert
