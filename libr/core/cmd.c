@@ -145,7 +145,7 @@ static const char *cmd_table_help[] = {
 	", ", " [table-query]", "filter and print table. See ,? for more details",
 	",.", " file.csv", "load the csv file into a table",
 	",-", "", "reset table",
-	",/", "?", "query/filter current table",
+	",/", "?", "query/filter current table (non-destructive)",
 	",*", ">$foo", "print table as r2 commands",
 	",j", "", "print table in json format",
 	",h", " xxd foo bar cow", "define header column names and types",
@@ -1399,13 +1399,12 @@ const void cmd_table_header(RCore *core, char *s) {
 	free (format);
 }
 
-static void display_table_filter(RCore *core, const char *input) {
+static bool display_table_filter(RCore *core, const char *input) {
 	if (input[1] == ' ') {
 		const char *q = r_str_trim_head_ro (input + 2);
-		if (!r_table_query (core->table, q)) {
-			break;
-		}
+		return r_table_query (core->table, q);
 	}
+	return true;
 }
 
 static int cmd_table(void *data, const char *input) {
@@ -1444,8 +1443,7 @@ static int cmd_table(void *data, const char *input) {
 	case ' ':
 		{
 			RTable *ot = r_table_clone (core->table);
-			const char *q = r_str_trim_head_ro (input + 1);
-			if (r_table_query (core->table, q)) {
+			if (display_table_filter (core, input - 1)) {
 				display_table (r_table_tostring (core->table));
 			}
 			r_table_free (core->table);
@@ -1464,16 +1462,19 @@ static int cmd_table(void *data, const char *input) {
 		}
 		break;
 	case ',':
-		display_table_filter (core, input);
-		display_table (r_table_tocsv (core->table));
+		if (display_table_filter (core, input)) {
+			display_table (r_table_tocsv (core->table));
+		}
 		break;
 	case '*':
-		display_table_filter (core, input);
-		display_table (r_table_tor2cmds (core->table));
+		if (display_table_filter (core, input)) {
+			display_table (r_table_tor2cmds (core->table));
+		}
 		break;
 	case 'j':
-		display_table_filter (core, input);
-		display_table (r_table_tojson (core->table));
+		if (display_table_filter (core, input)) {
+			display_table (r_table_tojson (core->table));
+		}
 		break;
 	case 0:
 		display_table (r_table_tofancystring (core->table));
