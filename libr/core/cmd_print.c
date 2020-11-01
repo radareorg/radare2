@@ -4545,7 +4545,10 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 					r_str_trim (rstr);
 					if (pj) {
 						char *ns = r_str_escape (rstr);
-						pj_ks (pj, "ref", r_str_trim_head_ro (ns));
+						pj_ks (pj, "refstr", r_str_trim_head_ro (ns));
+						pj_k (pj, "ref");
+						const int hex_depth = r_config_get_i (core->config, "hex.depth");
+						free (r_core_anal_hasrefs_to_depth (core, val, pj, hex_depth));
 						pj_end (pj);
 						free (ns);
 					}

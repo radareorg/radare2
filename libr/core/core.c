@@ -2093,27 +2093,93 @@ static char *getvalue(ut64 value, int bits) {
 			st64 v = (st64)(value);
 			st64 h = UT64_MAX / 0x1000000;
 			if (v > -h && v < h) {
-				r_strbuf_appendf (s," %"PFMT64d, v);
+				return r_str_newf ("%"PFMT64d, v);
 			}
 		}
 		break;
 	}
-	RBinSection *sect = value? r_bin_get_section_at (r_bin_cur_object (core->bin), value, true): NULL;
-	if(! ((type&R_ANAL_ADDR_TYPE_HEAP)||(type&R_ANAL_ADDR_TYPE_STACK)) ) {
-		// Do not repeat "stack" or "heap" words unnecessarily.
-		if (sect && sect->name[0]) {
-			r_strbuf_appendf (s," (%s)", sect->name);
+	return NULL;
+}
+
+/*
+ pxr logic is dupplicated in other places
+ * ai, ad
+ * no json support
+*/
+R_API char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, PJ *pj, int depth) {
+	const int bits = core->rasm->bits;
+	r_return_val_if_fail (core, NULL);
+	RStrBuf *s = r_strbuf_new (NULL);
+	if (pj) {
+		pj_o (pj);
+		pj_kn (pj, "addr", value);
+	}
+	if (depth < 1 || value == UT64_MAX) {
+		if (pj) {
+			pj_end (pj);
+		}
+		return NULL;
+	}
+
+	char *val = getvalue (value, bits);
+	if (val) {
+		if (pj) {
+			pj_ks (pj, "value", val);
+		} else {
+			r_strbuf_appendf (s, "%s ", val);
+		}
+		R_FREE (val);
+	}
+
+	if (value && value != UT64_MAX) {
+		RDebugMap *map = r_debug_map_get (core->dbg, value);
+		if (map && map->name && map->name[0]) {
+			if (pj) {
+				pj_ks (pj, "map", map->name);
+			} else {
+				r_strbuf_appendf (s, "%s ", map->name);
+			}
 		}
 	}
-	if (fi) {
-		RRegItem *r = r_reg_get (core->dbg->reg, fi->name, -1);
-		if (!r) {
-			r_strbuf_appendf (s, " %s", fi->name);
+	ut64 type = r_core_anal_address (core, value);
+	RBinSection *sect = value? r_bin_get_section_at (r_bin_cur_object (core->bin), value, true): NULL;
+	if(! ((type & R_ANAL_ADDR_TYPE_HEAP) || (type & R_ANAL_ADDR_TYPE_STACK)) ) {
+		// Do not repeat "stack" or "heap" words unnecessarily.
+		if (sect && sect->name[0]) {
+			if (pj) {
+				pj_ks (pj, "section", sect->name);
+			} else {
+				r_strbuf_appendf (s, "%s ", sect->name);
+			}
+		}
+	}
+	if (value != 0 && value != UT64_MAX) {
+		if (pj) {
+			RListIter *iter;
+			RFlagItem *f;
+			const RList *flags = r_flag_get_list (core->flags, value);
+			if (flags && !r_list_empty (flags)) {
+				pj_ka (pj, "flags");
+				r_list_foreach (flags, iter, f) {
+					pj_s (pj, f->name);
+				}
+				pj_end (pj);
+			}
+		} else {
+			char *flags = r_flag_get_liststr (core->flags, value);
+			if (flags) {
+				r_strbuf_appendf (s, "%s ", flags);
+				free (flags);
+			}
 		}
 	}
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, value, 0);
 	if (fcn) {
-		r_strbuf_appendf (s, " %s", fcn->name);
+		if (pj) {
+			pj_ks (pj, "fcn", fcn->name);
+		} else {
+			r_strbuf_appendf (s, "%s ", fcn->name);
+		}
 	}
 	if (type) {
 		const char *c = r_core_anal_optype_colorfor (core, value, true);
@@ -2121,59 +2187,102 @@ static char *getvalue(ut64 value, int bits) {
 		if (!c) {
 			c = "";
 		}
+		if (pj) {
+			pj_ka (pj, "attr");
+		}
 		if (type & R_ANAL_ADDR_TYPE_HEAP) {
-			r_strbuf_appendf (s, " %sheap%s", c, cend);
+			if (pj) {
+				pj_s (pj, "heap");
+			} else {
+				r_strbuf_appendf (s, "%sheap%s ", c, cend);
+			}
 		} else if (type & R_ANAL_ADDR_TYPE_STACK) {
-			r_strbuf_appendf (s, " %sstack%s", c, cend);
+			if (pj) {
+				pj_s (pj, "stack");
+			} else {
+				r_strbuf_appendf (s, "%sstack%s ", c, cend);
+			}
 		}
 		if (type & R_ANAL_ADDR_TYPE_PROGRAM) {
-			r_strbuf_appendf (s, " %sprogram%s", c, cend);
+			if (pj) {
+				pj_s (pj, "program");
+			} else {
+				r_strbuf_appendf (s, "%sprogram%s ", c, cend);
+			}
 		}
 		if (type & R_ANAL_ADDR_TYPE_LIBRARY) {
-			r_strbuf_appendf (s, " %slibrary%s", c, cend);
+			if (pj) {
+				pj_s (pj, "library");
+			} else {
+				r_strbuf_appendf (s, "%slibrary%s ", c, cend);
+			}
 		}
 		if (type & R_ANAL_ADDR_TYPE_ASCII) {
-			r_strbuf_appendf (s, " %sascii%s ('%c')", c, cend, (char)value);
+			if (pj) {
+				pj_s (pj, "ascii");
+			} else {
+				r_strbuf_appendf (s, "%sascii%s ('%c') ", c, cend, (char)value);
+			}
 		}
 		if (type & R_ANAL_ADDR_TYPE_SEQUENCE) {
-			r_strbuf_appendf (s, " %ssequence%s", c, cend);
+			if (pj) {
+				pj_s (pj, "sequence");
+			} else {
+				r_strbuf_appendf (s, "%ssequence%s ", c, cend);
+			}
 		}
-		if (type & R_ANAL_ADDR_TYPE_READ) {
-			r_strbuf_appendf (s, " %sR%s", c, cend);
-		}
-		if (type & R_ANAL_ADDR_TYPE_WRITE) {
-			r_strbuf_appendf (s, " %sW%s", c, cend);
-		}
-		if (type & R_ANAL_ADDR_TYPE_EXEC) {
-			RAsmOp op;
-			ut8 buf[32];
-			r_strbuf_appendf (s, " %sX%s", c, cend);
-			/* instruction disassembly */
-			r_io_read_at (core->io, value, buf, sizeof (buf));
-			r_asm_set_pc (core->rasm, value);
-			r_asm_disassemble (core->rasm, &op, buf, sizeof (buf));
-			r_strbuf_appendf (s, " '%s'", r_asm_op_get_asm (&op));
-			/* get library name */
-			{ // NOTE: dup for mapname?
-				RDebugMap *map;
-				RListIter *iter;
-				r_list_foreach (core->dbg->maps, iter, map) {
-					if ((value >= map->addr) &&
-						(value<map->addr_end)) {
-						const char *lastslash = r_str_lchr (map->name, '/');
-						r_strbuf_appendf (s, " '%s'", lastslash?
-							lastslash+1:map->name);
-						break;
+		if (pj) {
+			if (type & R_ANAL_ADDR_TYPE_READ) {
+				pj_s (pj, "R");
+			}
+			if (type & R_ANAL_ADDR_TYPE_WRITE) {
+				pj_s (pj, "W");
+			}
+			if (type & R_ANAL_ADDR_TYPE_EXEC) {
+				pj_s (pj, "X");
+			}
+		} else {
+			if (type & R_ANAL_ADDR_TYPE_READ) {
+				r_strbuf_appendf (s, "%sR%s ", c, cend);
+			}
+			if (type & R_ANAL_ADDR_TYPE_WRITE) {
+				r_strbuf_appendf (s, "%sW%s ", c, cend);
+			}
+			if (type & R_ANAL_ADDR_TYPE_EXEC) {
+				RAsmOp op;
+				ut8 buf[32];
+				r_strbuf_appendf (s, "%sX%s ", c, cend);
+				/* instruction disassembly */
+				r_io_read_at (core->io, value, buf, sizeof (buf));
+				r_asm_set_pc (core->rasm, value);
+				r_asm_disassemble (core->rasm, &op, buf, sizeof (buf));
+				r_strbuf_appendf (s, "'%s' ", r_asm_op_get_asm (&op));
+				/* get library name */
+				{ // NOTE: dup for mapname?
+					RDebugMap *map;
+					RListIter *iter;
+					r_list_foreach (core->dbg->maps, iter, map) {
+						if ((value >= map->addr) &&
+							(value<map->addr_end)) {
+							const char *lastslash = r_str_lchr (map->name, '/');
+							r_strbuf_appendf (s, "'%s' ", lastslash?
+								lastslash + 1: map->name);
+							break;
+						}
 					}
 				}
+			} else if (type & R_ANAL_ADDR_TYPE_READ) {
+				ut8 buf[32];
+				ut32 *n32 = (ut32 *)buf;
+				ut64 *n64 = (ut64*)buf;
+				if (r_io_read_at (core->io, value, buf, sizeof (buf))) {
+					ut64 n = (bits == 64)? *n64: *n32;
+					r_strbuf_appendf (s, "0x%"PFMT64x" ", n);
+				}
 			}
-		} else if (type & R_ANAL_ADDR_TYPE_READ) {
-			ut8 buf[32];
-			ut32 *n32 = (ut32 *)buf;
-			ut64 *n64 = (ut64*)buf;
-			r_io_read_at (core->io, value, buf, sizeof (buf));
-			ut64 n = (core->rasm->bits == 64)? *n64: *n32;
-			r_strbuf_appendf (s, " 0x%"PFMT64x, n);
+		}
+		if (pj) {
+			pj_end (pj);
 		}
 	}
 	{
@@ -2183,17 +2292,24 @@ static char *getvalue(ut64 value, int bits) {
 		int len, r;
 		if (r_io_read_at (core->io, value, buf, sizeof (buf))) {
 			buf[sizeof (buf) - 1] = 0;
-			switch (is_string (buf, sizeof(buf), &len)) {
+			switch (is_string (buf, sizeof (buf), &len)) {
 			case 1:
-				r_strbuf_appendf (s, " (%s%s%s)", c, buf, cend);
+				if (pj) {
+					pj_ks (pj, "string", (const char *)buf);
+				} else {
+					r_strbuf_appendf (s, "%s%s%s ", c, buf, cend);
+				}
 				break;
 			case 2:
-				r = r_utf8_encode_str ((const RRune *)buf, widebuf,
-						       sizeof (widebuf) - 1);
+				r = r_utf8_encode_str ((const RRune *)buf, widebuf, sizeof (widebuf) - 1);
 				if (r == -1) {
 					eprintf ("Something was wrong with refs\n");
 				} else {
-					r_strbuf_appendf (s, " (%s%s%s)", c, widebuf, cend);
+					if (pj) {
+						pj_ks (pj, "string", (const char *)widebuf);
+					} else {
+						r_strbuf_appendf (s, "%s%s%s ", c, widebuf, cend);
+					}
 				}
 				break;
 			}
@@ -2205,20 +2321,28 @@ static char *getvalue(ut64 value, int bits) {
 		ut8 buf[32];
 		ut32 *n32 = (ut32 *)buf;
 		ut64 *n64 = (ut64*)buf;
-		r_io_read_at (core->io, value, buf, sizeof (buf));
-		ut64 n = (core->rasm->bits == 64)? *n64: *n32;
-		if (n != value) {
-			char* rrstr = r_core_anal_hasrefs_to_depth (core, n, depth-1);
-			if (rrstr) {
-				if (rrstr[0]) {
-					r_strbuf_appendf (s, " --> %s", rrstr);
+		if (r_io_read_at (core->io, value, buf, sizeof (buf))) {
+			ut64 n = (bits == 64)? *n64: *n32;
+			if (n != value) {
+				if (pj) {
+					pj_k (pj, "ref");
 				}
-				free (rrstr);
+				char* rrstr = r_core_anal_hasrefs_to_depth (core, n, pj, depth - 1);
+				if (rrstr) {
+					if (!pj && rrstr[0]) {
+						r_strbuf_appendf (s, " -> %s", rrstr);
+					}
+					free (rrstr);
+				}
 			}
 		}
 	}
-	free (mapname);
-	return r_strbuf_drain (s);
+	if (pj) {
+		pj_end (pj);
+	}
+	char *res = r_strbuf_drain (s);
+	r_str_trim_tail (res);
+	return res;
 }
 
 R_API char *r_core_anal_get_comments(RCore *core, ut64 addr) {

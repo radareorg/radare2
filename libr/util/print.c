@@ -1290,12 +1290,12 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				if (p->hasrefs && off != UT64_MAX) {
 					char *rstr = p->hasrefs (p->user, addr + i, false);
 					if (rstr && *rstr) {
-						printfmt (" @%s", rstr);
+						printfmt (" @ %s", rstr);
 					}
 					free (rstr);
 					rstr = p->hasrefs (p->user, off, true);
 					if (rstr && *rstr) {
-						printfmt ("%s", rstr);
+						printfmt (" %s", rstr);
 					}
 					free (rstr);
 				}

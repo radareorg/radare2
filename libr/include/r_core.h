@@ -468,6 +468,7 @@ R_API void r_core_set_asmqjmps(RCore *core, char *str, size_t len, int i);
 R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr);
 
 R_API void r_core_anal_type_init(RCore *core);
+R_API char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, PJ *pj, int depth);
 R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn);
 R_API void r_core_anal_inflags (RCore *core, const char *glob);
 R_API bool cmd_anal_objc (RCore *core, const char *input, bool auto_anal);
@@ -840,7 +841,7 @@ typedef struct {
 
 R_API bool core_anal_bbs(RCore *core, const char* input);
 R_API bool core_anal_bbs_range (RCore *core, const char* input);
-R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, bool verbose);
+R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, int mode);
 R_API char *r_core_anal_get_comments(RCore *core, ut64 addr);
 R_API RCoreAnalStats* r_core_anal_get_stats (RCore *a, ut64 from, ut64 to, ut64 step);
 R_API void r_core_anal_stats_free (RCoreAnalStats *s);

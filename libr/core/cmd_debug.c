@@ -1931,7 +1931,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 		colorend = Color_RESET;
 	}
 
-	r_table_set_columnsf (t, "ssss", "role", "reg", "value", "ref");
+	r_table_set_columnsf (t, "ssss", "role", "reg", "value", "refstr");
 	r_list_foreach (list, iter, r) {
 		if (r->size != bits) {
 			continue;
