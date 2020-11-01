@@ -845,6 +845,21 @@ struct three_elements {
 EOF
 RUN
 
+NAME=tsc with array
+FILE=-
+CMDS=<<EOF
+"td struct with_array{int x; char y[50]; float z;}"
+tsc with_array
+EOF
+EXPECT=<<EOF
+struct with_array {
+	int32_t x;
+	char y[50];
+	float z;
+};
+EOF
+RUN
+
 NAME=tec test
 FILE=-
 CMDS=<<EOF

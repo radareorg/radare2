@@ -491,22 +491,30 @@ static void print_struct_union_in_c_format(Sdb *TDB, SdbForeachCallback filter, 
 			if (var2) {
 				char *val = sdb_array_get (TDB, var2, 0, NULL);
 				if (val) {
+					char *arr = sdb_array_get (TDB, var2, 2, NULL);
+					int arrnum = atoi (arr);
+					free (arr);
 					if (multiline) {
 						r_cons_printf ("\t%s", val);
 						if (p && p[0] != '\0') {
 							r_cons_printf ("%s%s", strstr (val, " *")? "": " ", p);
+							if (arrnum) {
+								r_cons_printf ("[%d]", arrnum);
+							}
 						}
+						r_cons_println (";");
 					} else {
-						r_cons_printf ("%s%s %s;", space, val, p);
+						r_cons_printf ("%s%s %s", space, val, p);
+						if (arrnum) {
+							r_cons_printf ("[%d]", arrnum);
+						}
+						r_cons_print (";");
 						space = " ";
 					}
+					free (val);
 				}
-				if (multiline) {
-					r_cons_println (";");
-				}
-				free (val);
+				free (var2);
 			}
-			free (var2);
 			free (p);
 		}
 		free (var);
