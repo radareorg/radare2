@@ -2023,7 +2023,7 @@ static void update_sdb(RCore *core) {
 }
 
 #define MINLEN 1
-static int is_string (const ut8 *buf, int size, int *len) {
+static int is_string(const ut8 *buf, int size, int *len) {
 	int i;
 	if (size < 1) {
 		return 0;
@@ -2053,52 +2053,38 @@ static int is_string (const ut8 *buf, int size, int *len) {
 	return 1;
 }
 
-static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth);
-R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, bool verbose) {
-	if (verbose) {
-		const int hex_depth = r_config_get_i (core->config, "hex.depth");
-		return r_core_anal_hasrefs_to_depth (core, value, hex_depth);
+R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, int mode) {
+	if (mode) {
+		PJ *pj = (mode == 'j')? pj_new (): NULL;
+		const int hex_depth = 1; // r_config_get_i (core->config, "hex.depth");
+		char *res = r_core_anal_hasrefs_to_depth (core, value, pj, hex_depth);
+		if (pj) {
+			free (res);
+			return pj_drain (pj);
+		}
+		return res;
 	}
 	RFlagItem *fi = r_flag_get_i (core->flags, value);
 	return fi? strdup (fi->name): NULL;
 }
 
-static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
-	r_return_val_if_fail (core, NULL);
-	if (depth < 1 || value == UT64_MAX) {
-		return NULL;
-	}
-	RStrBuf *s = r_strbuf_new (NULL);
-	char *mapname = NULL;
-	RFlagItem *fi = r_flag_get_i (core->flags, value);
-	ut64 type = r_core_anal_address (core, value);
-	if (value && value != UT64_MAX) {
-		RDebugMap *map = r_debug_map_get (core->dbg, value);
-		if (map && map->name && map->name[0]) {
-			mapname = strdup (map->name);
-		}
-	}
-	if (mapname) {
-		r_strbuf_appendf (s, " (%s)", mapname);
-		R_FREE (mapname);
-	}
-	int bits = core->rasm->bits;
+static char *getvalue(ut64 value, int bits) {
 	switch (bits) {
 	case 16: // umf, not in sync with pxr
 		{
 			st16 v = (st16)(value & UT16_MAX);
 			st16 h = UT16_MAX / 0x100;
 			if (v > -h && v < h) {
-				r_strbuf_appendf (s," %hd", v);
+				return r_str_newf ("%hd", v);
 			}
 		}
 		break;
 	case 32:
 		{
-			st32 v = (st32)(value & 0xffffffff);
+			st32 v = (st32)(value & UT32_MAX);
 			st32 h = UT32_MAX / 0x10000;
 			if (v > -h && v < h) {
-				r_strbuf_appendf (s," %d", v);
+				return r_str_newf ("%d", v);
 			}
 		}
 		break;
@@ -2241,9 +2227,11 @@ R_API char *r_core_anal_get_comments(RCore *core, ut64 addr) {
 		const char *cmt = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 		if (type && cmt) {
 			return r_str_newf ("%s %s", type, cmt);
-		} else if (type) {
+		}
+		if (type) {
 			return strdup (type);
-		} else if (cmt) {
+		}
+		if (cmt) {
 			return strdup (cmt);
 		}
 	}
@@ -2421,8 +2409,8 @@ static const char *colorfor_cb(void *user, ut64 addr, bool verbose) {
 	return r_core_anal_optype_colorfor ((RCore *)user, addr, verbose);
 }
 
-static char *hasrefs_cb(void *user, ut64 addr, bool verbose) {
-	return r_core_anal_hasrefs ((RCore *)user, addr, verbose);
+static char *hasrefs_cb(void *user, ut64 addr, int mode) {
+	return r_core_anal_hasrefs ((RCore *)user, addr, mode);
 }
 
 static const char *get_section_name(void *user, ut64 addr) {

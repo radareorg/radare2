@@ -1978,7 +1978,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 		free (rrstr);
 	}
 
-	char *s = (mode == 'j')? r_table_tojson(t): r_table_tostring(t);
+	char *s = (mode == 'j')? r_table_tojson (t): r_table_tostring (t);
 	r_cons_print (s);
 	free (s);
 	r_table_free (t);

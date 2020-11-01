@@ -3147,9 +3147,9 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 		flagstr = r_flag_get_liststr (core->flags, ds->at);
 	}
 	if (flagstr) {
-		str = flagstr;
+		str = r_str_newf ("%s:", flagstr);
 		if (ds->nb > 0) {
-			k = ds->nb - strlen (flagstr) - 1;
+			k = ds->nb - strlen (str) - 1;
 			if (k < 0) {
 				str[ds->nb - 1] = '\0';
 			}
@@ -3163,6 +3163,7 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 		} else {
 			pad[0] = 0;
 		}
+		R_FREE (flagstr);
 	} else {
 		if (ds->show_flag_in_bytes) {
 			k = ds->nb - 1;

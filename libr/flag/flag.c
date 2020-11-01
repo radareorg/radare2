@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2019 - pancake, ret2libc */
+/* radare - LGPL - Copyright 2007-2020 - pancake, ret2libc */
 
 #include <r_flag.h>
 #include <r_util.h>
@@ -680,7 +680,7 @@ R_API char *r_flag_get_liststr(RFlag *f, ut64 off) {
 	char *p = NULL;
 	r_list_foreach (list, iter, fi) {
 		p = r_str_appendf (p, "%s%s",
-			fi->realname, iter->n? ",": ":");
+			fi->realname, iter->n? ",": "");
 	}
 	return p;
 }

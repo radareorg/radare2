@@ -823,8 +823,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	bool use_pair = true;
 	bool use_offset = true;
 	bool compact = false;
-	int use_segoff = 0;
-	int pairs = 0;
+	bool use_segoff = false;
+	bool pairs = false;
 	const char *bytefmt = "%02x";
 	const char *pre = "";
 	int last_sparse = 0;
