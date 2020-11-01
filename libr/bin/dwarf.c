@@ -85,7 +85,6 @@ static const char *dwarf_tag_name_encodings[] = {
 	[DW_TAG_subprogram] = "DW_TAG_subprogram",
 	[DW_TAG_template_type_param] = "DW_TAG_template_type_param",
 	[DW_TAG_template_value_param] = "DW_TAG_template_value_param",
-	[DW_TAG_template_alias] = "DW_TAG_template_alias",
 	[DW_TAG_thrown_type] = "DW_TAG_thrown_type",
 	[DW_TAG_try_block] = "DW_TAG_try_block",
 	[DW_TAG_variant_part] = "DW_TAG_variant_part",
