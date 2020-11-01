@@ -286,9 +286,18 @@ static const char *help_msg_u[] = {
 	"u", "", "show system uname",
 	"uw", "", "alias for wc (requires: e io.cache=true)",
 	"us", "", "alias for s- (seek history)",
-	"uc", "", "undo core commands (uc?, ucl, uc*, ..)",
+	"uc", "[?]", "undo core commands (uc?, ucl, uc*, ..)",
 	"uniq", "", "filter rows to avoid duplicates",
 	"uname", "", "uname - show system information",
+	NULL
+};
+
+static const char *help_msg_uc[] = {
+	"Usage:", "uc [cmd] [revert-cmd]", "undo core commands",
+	"uc", "", "list all core undos",
+	"uc*", "", "list all core undos as r2 commands",
+	"uc-", "", "undo last action",
+	"uc.", "", "list all reverts in current",
 	NULL
 };
 
@@ -562,14 +571,10 @@ static int cmd_undo(void *data, const char *input) {
 			free (cmd);
 			}
 			break;
-		case '?':
-			eprintf ("Usage: uc [cmd],[revert-cmd]\n");
-			eprintf (" uc. - list all reverts in current\n");
-			eprintf (" uc* - list all core undos\n");
-			eprintf (" uc  - list all core undos\n");
-			eprintf (" uc- - undo last action\n");
+		case '?': // "uc?"
+			r_core_cmd_help (core, help_msg_uc);
 			break;
-		case '.': {
+		case '.': { // "uc."
 			RCoreUndoCondition cond = {
 				.addr = core->offset,
 				.minstamp = 0,
@@ -577,7 +582,7 @@ static int cmd_undo(void *data, const char *input) {
 			};
 			r_core_undo_print (core, 1, &cond);
 			} break;
-		case '*':
+		case '*': // "uc*"
 			r_core_undo_print (core, 1, NULL);
 			break;
 		case '-': // "uc-"
