@@ -3479,7 +3479,9 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 		cons->cb_editor = tmp;
 	} else {
 		if (editor && name) {
-			r_sys_cmdf ("%s '%s'", editor, name);
+			char *escaped_name = r_str_escape_sh (name);
+			r_sys_cmdf ("%s \"%s\"", editor, escaped_name);
+			free (escaped_name);
 		}
 	}
 	size_t len = 0;
