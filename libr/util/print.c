@@ -1581,23 +1581,27 @@ R_API void r_print_progressbar_with_count(RPrint *p, int pc, int total, int _col
 	}
 	if (p->flags & R_PRINT_FLAGS_HEADER) {
 		if (enable_colors) {
-			p->cb_printf ("%s%4d%s%% %s%6d%s/%6d ", Color_GREEN, pc * 100 / total, Color_RESET, Color_GREEN, pc, Color_RESET, total);
+			p->cb_printf ("%s%4d%s%% %s%6d%s/%6d [%s", Color_GREEN, pc * 100 / total, Color_RESET, Color_GREEN, pc, Color_RESET, total, Color_YELLOW);
 		} else {
-			p->cb_printf ("%4d%% %6d/%6d ", pc * 100 / total, pc, total);
+			p->cb_printf ("%4d%% %6d/%6d [", pc * 100 / total, pc, total);
 		}
 	}
 	cols -= 29;
-	enable_colors? p->cb_printf ("[%s", Color_YELLOW): p->cb_printf ("[");
 	for (i = cols * pc / total; i; i--) {
-		p->cb_printf (block);
+		p->cb_printf ("%s", block);
 	}
 	if (enable_colors) {
-		p->cb_printf (Color_RESET);
+		p->cb_printf ("%s", Color_RESET);
 	}
 	for (i = cols - (cols * pc / total); i; i--) {
-		p->cb_printf (h_line);
+		p->cb_printf ("%s", h_line);
 	}
-	enable_colors? p->cb_printf ("%s]", Color_RESET): p->cb_printf ("]");
+	if (enable_colors) {
+		p->cb_printf ("%s]", Color_RESET);
+	}
+	else {
+		p->cb_printf ("]");
+	}
 }
 
 R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols) {
