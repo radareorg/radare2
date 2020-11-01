@@ -6842,23 +6842,15 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 	if (!odata) {
 		return false;
 	}
-	int line_count = 0;
-	{
-		int i = 0;
-		while (lines[i]) {
-			if (lines[i] == '\n') {
-				line_count++;
-			}
-			i++;
-		}
-	}
+	size_t line_count = r_str_char_count(lines, '\n');
 
 #if __UNIX__
-	const bool show_progress_bar = core->print->enable_progressbar && r_config_get_i (core->config, "scr.interactive") && r_config_get_i (core->config, "scr.progressbar") && r_cons_isatty ();
+	const bool istty = r_cons_isatty ();
 #else
-	const bool show_progress_bar = core->print->enable_progressbar && r_config_get_i (core->config, "scr.interactive") && r_config_get_i (core->config, "scr.progressbar");
+	const bool istty = true;
 #endif
-	int current_line = 0;
+	const bool show_progress_bar = core->print->enable_progressbar && r_config_get_i (core->config, "scr.interactive") && r_config_get_i (core->config, "scr.progressbar") && istty;
+	size_t current_line = 0;
 	nl = strchr (odata, '\n');
 	if (nl) {
 		r_cons_break_push (NULL, NULL);
@@ -6893,7 +6885,7 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 		} while ((nl = strchr (data, '\n')));
 		r_cons_break_pop ();
 		if (show_progress_bar) {
-			printf ("\n");
+			r_cons_newline ();
 		}
 	}
 	if (ret >= 0 && data && *data) {
