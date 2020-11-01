@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2018 - condret */
+/* radare2 - LGPL - Copyright 2017-2020 - condret */
 
 #include <r_util.h>
 #include <r_types.h>
@@ -22,19 +22,18 @@ R_API RIDPool* r_id_pool_new(ut32 start_id, ut32 last_id) {
 	RIDPool* pool = NULL;
 	if (start_id < last_id) {
 		pool = R_NEW0 (RIDPool);
-		if (!pool) {
-			return NULL;
+		if (pool) {
+			pool->next_id = pool->start_id = start_id;
+			pool->last_id = last_id;
 		}
-		pool->next_id = pool->start_id = start_id;
-		pool->last_id = last_id;
 	}
 	return pool;
 }
 
 R_API bool r_id_pool_grab_id(RIDPool* pool, ut32* grabber) {
-	if (!pool || !grabber) {
-		return false;
-	}
+	r_return_val_if_fail (pool && grabber, false);
+
+	*grabber = UT32_MAX;
 	if (pool->freed_ids) {
 		ut32 grab = (ut32) (size_t)r_queue_dequeue (pool->freed_ids);
 		*grabber = (ut32) grab;
@@ -75,9 +74,9 @@ R_API void r_id_pool_free(RIDPool* pool) {
 }
 
 R_API RIDStorage* r_id_storage_new(ut32 start_id, ut32 last_id) {
-	RIDPool* pool;
 	RIDStorage* storage = NULL;
-	if ((start_id < 16) && (pool = r_id_pool_new (start_id, last_id))) {
+	RIDPool *pool = r_id_pool_new (start_id, last_id);
+	if (pool) {
 		storage = R_NEW0 (RIDStorage);
 		if (!storage) {
 			r_id_pool_free (pool);
@@ -161,6 +160,54 @@ R_API void* r_id_storage_get(RIDStorage* storage, ut32 id) {
 		return NULL;
 	}
 	return storage->data[id];
+}
+
+R_API bool r_id_storage_get_lowest(RIDStorage *storage, ut32 *id) {
+	r_return_val_if_fail (storage, false);
+	ut32 i;
+	for (i = 0; i < storage->size && !storage->data[i]; i++);
+	*id = i;
+	return i < storage->size;
+}
+
+R_API bool r_id_storage_get_highest(RIDStorage *storage, ut32 *id) {
+	r_return_val_if_fail (storage, false);
+	size_t i = 0;
+	if (storage->size > 0) {
+		for (i = storage->size - 1; !storage->data[i] && i > 0; i--);
+		*id = i;
+		return storage->data[i] != NULL;
+	}
+	// *id = i;
+	return false;
+}
+
+R_API bool r_id_storage_get_next(RIDStorage *storage, ut32 *idref) {
+	r_return_val_if_fail (idref && storage, false);
+	ut32 id = *idref;
+	if (storage->size < 1 || id >= storage->size || !storage->data) {
+		return false;
+	}
+	for (id = *idref + 1; id < storage->size && !storage->data[id]; id++);
+	if (id < storage->size) {
+		*idref = id;
+		return true;
+	}
+	return false;
+}
+
+R_API bool r_id_storage_get_prev(RIDStorage *storage, ut32 *idref) {
+	r_return_val_if_fail (idref && storage, false);
+	ut32 id = *idref;
+	if (id == 0 || id >= storage->size || storage->size < 1 || !storage->data) {
+		return false;
+	}
+	for (id = *idref - 1; id > 0 && !storage->data[id]; id--);
+	if (storage->data[id]) {
+		*idref = id;
+		return true;
+	}
+	return false;
 }
 
 R_API void r_id_storage_delete(RIDStorage* storage, ut32 id) {
