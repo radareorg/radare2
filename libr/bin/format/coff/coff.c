@@ -224,7 +224,7 @@ static int r_bin_coff_init(struct r_bin_coff_obj *obj, RBuffer *buf, bool verbos
 		bprintf ("Warning: failed to init section header\n");
 		return false;
 	}
-	if (!r_bin_coff_init_scn_va(obj)) {
+	if (!r_bin_coff_init_scn_va (obj)) {
 		bprintf ("Warning: failed to init section VA table\n");
 		return false;
 	}
