@@ -1583,7 +1583,7 @@ R_API void r_print_progressbar(RPrint *p, int pc, int _cols) {
 }
 
 /* TODO: handle screen width */
-R_API void r_print_progressbar_with_count(RPrint *p, int pc, int total, int _cols, bool reset_line) {
+R_API void r_print_progressbar_with_count(RPrint *p, unsigned int pc, unsigned int total, int _cols, bool reset_line) {
 	int i, cols = (_cols == -1)? 78: _cols;
 	if (!p) {
 		p = &staticp;
@@ -1592,32 +1592,41 @@ R_API void r_print_progressbar_with_count(RPrint *p, int pc, int total, int _col
 	const char *h_line = p->cons->use_utf8? RUNE_LONG_LINE_HORIZ: "-";
 	const char *block = p->cons->use_utf8? UTF_BLOCK: "#";
 
+	total = R_MAX (1, total);
 	pc = R_MAX (0, R_MIN (total, pc));
 	if (reset_line) {
 		p->cb_printf ("\r");
 	}
 	if (p->flags & R_PRINT_FLAGS_HEADER) {
 		if (enable_colors) {
-			p->cb_printf ("%s%4d%s%% %s%6d%s/%6d [%s", Color_GREEN, pc * 100 / total, Color_RESET, Color_GREEN, pc, Color_RESET, total, Color_YELLOW);
+			p->cb_printf ("%s%4d%s%% %s%6d%s/%6d ", Color_GREEN, pc * 100 / total, Color_RESET, Color_GREEN, pc, Color_RESET, total, Color_YELLOW);
 		} else {
-			p->cb_printf ("%4d%% %6d/%6d [", pc * 100 / total, pc, total);
+			p->cb_printf ("%4d%% %6d/%6d ", pc * 100 / total, pc, total);
 		}
+		// TODO: determine string length of the numbers
+		cols -= 20;
 	}
-	cols -= 29;
-	for (i = cols * pc / total; i; i--) {
-		p->cb_printf ("%s", block);
-	}
-	if (enable_colors) {
-		p->cb_printf ("%s", Color_RESET);
-	}
-	for (i = cols - (cols * pc / total); i; i--) {
-		p->cb_printf ("%s", h_line);
-	}
-	if (enable_colors) {
-		p->cb_printf ("%s]", Color_RESET);
-	}
-	else {
-		p->cb_printf ("]");
+	if (cols > 0) {
+		if (enable_colors) {
+			p->cb_printf ("[%s", Color_YELLOW);
+		} else {
+			p->cb_printf ("[");
+		}
+		for (i = cols * pc / total; i; i--) {
+			p->cb_printf ("%s", block);
+		}
+		if (enable_colors) {
+			p->cb_printf ("%s", Color_RESET);
+		}
+		for (i = cols - (cols * pc / total); i; i--) {
+			p->cb_printf ("%s", h_line);
+		}
+		if (enable_colors) {
+			p->cb_printf ("%s]", Color_RESET);
+		}
+		else {
+			p->cb_printf ("]");
+		}
 	}
 }
 
