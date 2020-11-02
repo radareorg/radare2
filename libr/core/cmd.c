@@ -143,7 +143,7 @@ static const char *cmd_table_help[] = {
 	",", "", "display table",
 	",", "$foo", "aflt > $foo (files starting with '$' are saved in memory)",
 	", ", " [table-query]", "filter and print table. See ,? for more details",
-	",.", " file.csv", "load the csv file into a table",
+	",.", " file.csv", "load table from CSV, JSON or ascii-art file",
 	",-", "", "reset table",
 	",/", "?", "query/filter current table (non-destructive)",
 	",*", ">$foo", "print table as r2 commands",
@@ -1282,15 +1282,106 @@ static int cmd_stdin(void *data, const char *input) {
 	return r_core_run_script (core, "-");
 }
 
-static void load_table(RCore *core, RTable *t, char *data) {
-	r_return_if_fail (core && t && data);
+static void load_table_json(RCore *core, RTable *t, char *data) {
+	// parse json file and iterate over all the entries
+	// RTableRow *row = r_table_row_new (items);
+	// r_list_append (t->rows, row);
+	eprintf ("TODO\n");
+}
+
+static void load_table_csv(RCore *core, RTable *t, RList *lines) {
 	RListIter *iter;
 	char *line;
-	RList *lines = r_str_split_list (data, "\n", 0);
-	bool expect_header = false;
-	bool expect_rows = false;
 	const char *separator = "|";
 	int ncols = 0;
+	bool expect_header = false;
+	bool expect_rows = false;
+	bool first_row = true;
+	r_list_foreach (lines, iter, line) {
+		if (first_row) {
+		}
+		if (!expect_rows) {
+			if (r_str_startswith (line, ".--")) {
+				expect_header = true;
+				separator = "|";
+				continue;
+			}
+			if (r_str_startswith (line, "┌")) {
+				expect_header = true;
+				separator = "│";
+				continue;
+			}
+			if (r_str_startswith (line, ")-")) {
+				expect_rows = true;
+				separator = "|";
+				continue;
+			}
+			if (r_str_startswith (line, "│─")) {
+				expect_rows = true;
+				separator = "│";
+				continue;
+			}
+		}
+
+		RTableColumnType *typeString = r_table_type ("string");
+		RTableColumnType *typeNumber = r_table_type ("number");
+		if (expect_header) {
+			char *arg;
+			RList *args = r_str_split_list (line + strlen (separator), separator, 0);
+			RListIter *iter2;
+			ncols = 0;
+			if (r_list_length (t->cols) > 0) {
+				eprintf ("Warning: Not re-adding headers. Use ,- to reset the table.\n");
+				continue;
+			}
+			r_list_foreach (args, iter2, arg) {
+				char *s = strchr (arg, ' ');
+				char *ss = r_str_trim_dup (s? s + 1: arg);
+				if (!*ss) {
+					free (ss);
+					continue;
+				}
+				r_table_add_column (t, typeString, ss, 0);
+				ncols ++;
+			}
+			expect_header = false;
+		} else if (expect_rows) {
+			char *arg;
+			RList *args = r_str_split_list (line + strlen (separator), separator, 0);
+			RList *items = r_list_newf (free);
+			RListIter *iter2;
+			if (r_list_length (args) < ncols) {
+				// dowarn?
+				continue;
+			}
+			r_list_foreach (args, iter2, arg) {
+				char *ss = r_str_trim_dup (arg);
+				if (!*ss) {
+					free (ss);
+					continue;
+				}
+				if (isdigit (*ss)) {
+					int col = r_list_length (items);
+					RTableColumn *c = r_list_get_n (t->cols, col);
+					if (c) {
+						c->type = typeNumber;
+					}
+				}
+				r_list_append (items, ss);
+			}
+			RTableRow *row = r_table_row_new (items);
+			r_list_append (t->rows, row);
+		}
+	}
+}
+
+static void load_table_asciiart(RCore *core, RTable *t, RList *lines) {
+	RListIter *iter;
+	char *line;
+	const char *separator = "|";
+	int ncols = 0;
+	bool expect_header = false;
+	bool expect_rows = false;
 	r_list_foreach (lines, iter, line) {
 		if (!expect_rows) {
 			if (r_str_startswith (line, ".--")) {
@@ -1365,7 +1456,21 @@ static void load_table(RCore *core, RTable *t, char *data) {
 			r_list_append (t->rows, row);
 		}
 	}
-	r_list_free (lines);
+}
+
+static void load_table(RCore *core, RTable *t, char *data) {
+	r_return_if_fail (core && t && data);
+	if (*data == '[') {
+		load_table_json (core, t, data);
+	} else {
+		RList *lines = r_str_split_list (data, "\n", 0);
+		if (strchr (data, ',')) {
+			load_table_csv (core, t, lines);
+		} else {
+			load_table_asciiart (core, t, lines);
+		}
+		r_list_free (lines);
+	}
 	free (data);
 }
 
@@ -1400,8 +1505,9 @@ const void cmd_table_header(RCore *core, char *s) {
 }
 
 static bool display_table_filter(RCore *core, const char *input) {
-	if (input[1] == ' ') {
-		const char *q = r_str_trim_head_ro (input + 2);
+	int skip = (*input == ' ')? 1: (*input)? 2: 0;
+	if (skip) {
+		const char *q = r_str_trim_head_ro (input + skip);
 		return r_table_query (core->table, q);
 	}
 	return true;
@@ -1428,29 +1534,16 @@ static int cmd_table(void *data, const char *input) {
 		break;
 	case '/':
 		// query here
-		if (r_table_query (core->table, input + 1)) {
-			display_table (r_table_tostring (core->table));
-		}
-		break;
-	case '$':
-		{
-			const char *cdata = r_cmd_alias_get (core->rcmd, input + 1, 1);
-			if (cdata) {
-				load_table (core, core->table, strdup (cdata + 1));
-			}
-		}
-		break;
-	case ' ':
 		{
 			RTable *ot = r_table_clone (core->table);
-			if (display_table_filter (core, input - 1)) {
+			if (display_table_filter (core, input)) {
 				display_table (r_table_tostring (core->table));
 			}
 			r_table_free (core->table);
 			core->table = ot;
 		}
 		break;
-	case '.':
+	case '.': // ",."
 		{
 			const char *file = r_str_trim_head_ro (input + 1);
 			char *data = r_file_slurp (file, NULL);
@@ -1459,6 +1552,21 @@ static int cmd_table(void *data, const char *input) {
 			} else {
 				eprintf ("Cannot open file.\n");
 			}
+		}
+		break;
+	case '$': // ",$"
+		{
+			const char *cdata = r_cmd_alias_get (core->rcmd, input + 1, 1);
+			if (cdata) {
+				load_table (core, core->table, strdup (cdata + 1));
+			} else {
+				eprintf ("Unknown alias.\n");
+			}
+		}
+		break;
+	case ' ':
+		if (display_table_filter (core, input)) {
+			display_table (r_table_tostring (core->table));
 		}
 		break;
 	case ',':

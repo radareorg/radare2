@@ -2675,7 +2675,6 @@ R_API bool r_core_init(RCore *core) {
 	core->incomment = false;
 	core->config = NULL;
 	core->http_up = false;
-	core->table = r_table_new ();
 	core->use_tree_sitter_r2cmd = false;
 	ZERO_FILL (core->root_cmd_descriptor);
 	core->print = r_print_new ();
@@ -2743,6 +2742,7 @@ R_API bool r_core_init(RCore *core) {
 	}
 	core->print->cons = core->cons;
 	r_cons_bind (&core->print->consbind);
+	core->table = r_core_table (core);
 
 	// We save the old num ad user, in order to restore it after free
 	core->lang = r_lang_new ();
