@@ -6885,6 +6885,7 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 		} while ((nl = strchr (data, '\n')));
 		r_cons_break_pop ();
 		if (show_progress_bar) {
+			r_print_progressbar_with_count (core->print, line_count, line_count, 80, true);
 			r_cons_newline ();
 		}
 	}
