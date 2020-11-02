@@ -67,7 +67,9 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RB
 		//first index is 0 that is why -1
 		sc_hdr = &bin->scn_hdrs[s->n_scnum - 1];
 		ptr->paddr = sc_hdr->s_scnptr + s->n_value;
-		ptr->vaddr = bin->scn_va[s->n_scnum - 1] + s->n_value;
+		if (bin->scn_va) {
+			ptr->vaddr = bin->scn_va[s->n_scnum - 1] + s->n_value;
+		}
 	}
 
 	switch (s->n_sclass) {
@@ -192,7 +194,9 @@ static RList *sections(RBinFile *bf) {
 			ptr->size = obj->scn_hdrs[i].s_size;
 			ptr->vsize = obj->scn_hdrs[i].s_size;
 			ptr->paddr = obj->scn_hdrs[i].s_scnptr;
-			ptr->vaddr = obj->scn_va[i];
+			if (obj->scn_va) {
+				ptr->vaddr = obj->scn_va[i];
+			}
 			ptr->add = true;
 			ptr->perm = 0;
 			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_READ) {
@@ -330,7 +334,9 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch, u
 
 			reloc->symbol = symbol;
 			reloc->paddr = bin->scn_hdrs[i].s_scnptr + rel[j].r_vaddr;
-			reloc->vaddr = bin->scn_va[i] + rel[j].r_vaddr;
+			if (bin->scn_va) {
+				reloc->vaddr = bin->scn_va[i] + rel[j].r_vaddr;
+			}
 			reloc->type = rel[j].r_type;
 
 			ut64 sym_vaddr = symbol->vaddr;
