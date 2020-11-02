@@ -42,3 +42,19 @@ EXPECT=<<EOF
             0x00000008      0000           illegal
 EOF
 RUN
+
+NAME=asm pseudo for riscv
+FILE=bins/elf/analysis/guess-number-riscv64
+CMDS=<<EOF
+s 0x00010178
+e asm.pseudo = 1
+pd 5
+EOF
+EXPECT=<<EOF
+            0x00010178      ef00c01f       jmp ra                      ; sym.printf
+            0x0001017c      930784fe       a5 = s0 - 24
+            0x00010180      93850700       a1 = a5
+            0x00010184      b7170200       a5 = 0x21
+            0x00010188      13850751       a0 = a5 + 1296
+EOF
+RUN
