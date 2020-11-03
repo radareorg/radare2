@@ -886,7 +886,7 @@ R_API char *r_str_append(char *ptr, const char *string) {
 		return strdup (string);
 	}
 	if (R_STR_ISEMPTY (string)) {
-		return strdup (ptr);
+		return ptr;
 	}
 	int plen = strlen (ptr);
 	int slen = strlen (string);
