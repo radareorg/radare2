@@ -42,8 +42,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 					if (ops[i].str[j]>='0' && ops[i].str[j]<='9') {
 						const char *w = argv[ ops[i].str[j]-'0' ];
 						if (w != NULL) {
-							strcpy(newstr+k, w);
-							k += strlen(w)-1;
+							strcpy (newstr + k, w);
+							k += strlen (w) - 1;
 						}
 					} else {
 						newstr[k] = ops[i].str[j];
@@ -105,16 +105,17 @@ static int parse(RParse *p, const char *data, char *str) {
 			num = (char *)r_str_lchr (buf, ',');
 		}
 		if (num) {
-			n = atoi (num+1);
+			n = atoi (num + 1);
 			*ptr = '[';
-			memmove (num+1, ptr, strlen (ptr)+1);
+			r_str_cpy (num + 1, ptr);
 			ptr = (char*)r_str_lchr (buf, ']');
 			if (n && ptr) {
 				char *rest = strdup (ptr+1);
+				size_t dist = strlen (data) + 1 - (ptr - buf);
 				if (n > 0) {
-					sprintf (ptr, "+%d]%s", n, rest);
+					snprintf (ptr, dist, "+%d]%s", n, rest);
 				} else {
-					sprintf (ptr, "%d]%s", n, rest);
+					snprintf (ptr, dist, "%d]%s", n, rest);
 				}
 				free (rest);
 			}
