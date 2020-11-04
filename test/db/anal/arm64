@@ -124,3 +124,25 @@ cycles: 0
 family: sec
 EOF
 RUN
+
+NAME=Variable analysis with stp/preindexed str
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e anal.vars.stackname=true
+wx f30f1ef8fd7b01a9fd430091fd7b41a9e00313aaf30742f8c0035fd6
+aap
+aaef
+afvx
+EOF
+EXPECT=<<EOF
+afvR
+   var_10h  0xc
+   var_20h  0x14
+    var_8h  0xc
+afvW
+   var_10h  0x4
+   var_20h  0x0
+    var_8h  0x4
+EOF
+RUN
