@@ -1084,7 +1084,7 @@ R_API int r_file_mkstemp(R_NULLABLE const char *prefix, char **oname) {
 		char *name_ = r_sys_conv_win_to_utf8 (name);
 		name_[strlen (name_) - 4] = '\0';
 		name_ = r_str_append (name_, suffix);
-		h = r_sandbox_open (name_, O_RDWR|O_CREAT|O_EXCL|O_BINARY, 0644);
+		h = r_sandbox_open (name_, O_RDWR|O_EXCL|O_BINARY, 0644);
 		if (oname) {
 			if (h != -1) {
 				*oname = name_;
