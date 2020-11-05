@@ -1488,6 +1488,9 @@ const void cmd_table_header(RCore *core, char *s) {
 	if (!format) {
 		return;
 	}
+	if (!core->table) {
+		core->table = r_core_table (core);
+	}
 	size_t i = 0;
 	r_list_foreach (list, iter, s) {
 		const char type_char = format[i];
@@ -1505,7 +1508,11 @@ const void cmd_table_header(RCore *core, char *s) {
 }
 
 static bool display_table_filter(RCore *core, const char *input) {
-	int skip = (*input == ' ')? 1: (*input)? 2: 0;
+	r_return_val_if_fail (core && input, false);
+	if (!core->table) {
+		return false;
+	}
+	int skip = (*input == ' ')? 1: (*input&&input[1])? 2: 0;
 	if (skip) {
 		const char *q = r_str_trim_head_ro (input + skip);
 		return r_table_query (core->table, q);
@@ -1516,11 +1523,15 @@ static bool display_table_filter(RCore *core, const char *input) {
 static int cmd_table(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	switch (*input) {
-	case 'h': // table header
+	case 'h': // table header columns
+	case 'c': // table columns
 		cmd_table_header (core, r_str_trim_dup (input + 1));
 		break;
 	case 'r': // add row
 		{
+			if (!core->table) {
+				core->table = r_table_new ();
+			}
 			char *args = r_str_trim_dup (input + 1);
 			RList *list = r_str_split_list (args, " ", 0);
 			if (list) {
@@ -1585,7 +1596,9 @@ static int cmd_table(void *data, const char *input) {
 		}
 		break;
 	case 0:
-		display_table (r_table_tofancystring (core->table));
+		if (core->table) {
+			display_table (r_table_tofancystring (core->table));
+		}
 		break;
 	case '?':
 		r_core_cmd_help (core, cmd_table_help);

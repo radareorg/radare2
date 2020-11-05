@@ -142,6 +142,7 @@ static bool __addRow(RTable *t, RList *items, const char *arg, int col) {
 }
 
 R_API void r_table_add_row_list(RTable *t, RList *items) {
+	r_return_if_fail (t && items);
 	RTableRow *row = r_table_row_new (items);
 	r_list_append (t->rows, row);
 	// throw warning if not enough columns defined in header
@@ -1174,7 +1175,7 @@ R_API void r_table_visual_list(RTable *table, RList *list, ut64 seek, ut64 len, 
 						     (j * mul) + min <= seek + len) ? "^" : h_line);
 			}
 			r_table_add_rowf (table, "sssssss", "=>", sdb_fmt ("0x%08"PFMT64x, seek),
-					r_strbuf_drain (buf),  sdb_fmt ("0x%08"PFMT64x, seek + len), "", "", "");
+					r_strbuf_drain (buf), sdb_fmt ("0x%08"PFMT64x, seek + len), "", "", "");
 		} else {
 			r_strbuf_free (buf);
 		}

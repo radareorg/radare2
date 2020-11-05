@@ -2742,13 +2742,13 @@ R_API bool r_core_init(RCore *core) {
 	}
 	core->print->cons = core->cons;
 	r_cons_bind (&core->print->consbind);
-	core->table = r_core_table (core);
 
 	// We save the old num ad user, in order to restore it after free
 	core->lang = r_lang_new ();
 	core->lang->cmd_str = (char *(*)(void *, const char *))r_core_cmd_str;
 	core->lang->cmdf = (int (*)(void *, const char *, ...))r_core_cmdf;
 	r_core_bind_cons (core);
+	core->table = NULL;
 	core->lang->cb_printf = r_cons_printf;
 	r_lang_define (core->lang, "RCore", "core", core);
 	r_lang_set_user_ptr (core->lang, core);
