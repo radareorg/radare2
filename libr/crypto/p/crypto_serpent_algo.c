@@ -77,7 +77,7 @@ void apply_IP(ut32 in[DW_BY_BLOCK], ut32 out[DW_BY_BLOCK]) {
 	for (i = 0; i < DW_BY_BLOCK*32; i++) {
 		index = IPTable[i];
 		out[i/32] ^= (-(ut32)get_bit (index%32, in[index/32]) ^ out[i/32])
-			& (1 << i);
+			& (1 << (i & 0x1f));
 	}
 }
 
@@ -87,7 +87,7 @@ void apply_FP(ut32 in[DW_BY_BLOCK], ut32 out[DW_BY_BLOCK]) {
 	for (i = 0; i < DW_BY_BLOCK*32; i++) {
 		index = FPTable[i];
 		out[i/32] ^= (-(ut32)get_bit (index%32, in[index/32]) ^ out[i/32])
-			& (1 << i);
+			& (1 << (i & 0x1f));
 	}
 }
 

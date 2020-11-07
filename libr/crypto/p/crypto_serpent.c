@@ -50,11 +50,14 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	}
 
 	// Construct ut32 blocks from byte stream
-	for (j = 0; j < size/4; j++) {
-		ibuf[j] = r_read_le32(&buf[4*j]);
+	for (j = 0; j < len/4; j++) {
+		ibuf[j] = r_read_le32 (&buf[4*j]);
 	}
-
-	// Zero padding.
+	if (len & 0x3) {
+		ut8 tail[4] = {0}; // Zero padding
+		memcpy (tail, buf + (len & ~0x3), len & 0x3);
+		ibuf[len/4] = r_read_le32 (tail);
+	}
 
 	if (cry->dir == 0) {
 		for (i = 0; i < blocks; i++) {
