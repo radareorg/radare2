@@ -276,7 +276,7 @@ R_API char *r_core_sysenv_begin(RCore * core, const char *cmd) {
 	r_sys_setenv ("RABIN2_LANG", r_config_get (core->config, "bin.lang"));
 	r_sys_setenv ("RABIN2_DEMANGLE", r_config_get (core->config, "bin.demangle"));
 	r_sys_setenv ("R2_ARCH", r_config_get (core->config, "asm.arch"));
-	r_sys_setenv ("R2_BITS", sdb_fmt ("%d", r_config_get_i (core->config, "asm.bits")));
+	r_sys_setenv ("R2_BITS", sdb_fmt ("%"PFMT64u, r_config_get_i (core->config, "asm.bits")));
 	r_sys_setenv ("R2_COLOR", r_config_get_i (core->config, "scr.color")? "1": "0");
 	r_sys_setenv ("R2_DEBUG", r_config_get_i (core->config, "cfg.debug")? "1": "0");
 	r_sys_setenv ("R2_IOVA", r_config_get_i (core->config, "io.va")? "1": "0");
