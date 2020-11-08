@@ -575,6 +575,7 @@ remote_client:
 
 static int windbg_close(RIODesc *fd) {
 	DbgEngContext *idbg = fd->data;
+	RCore *core = fd->io->corebind.core;
 	if (idbg->server) {
 		ITHISCALL (dbgClient, EndSession, DEBUG_END_DISCONNECT);
 		ITHISCALL (dbgClient, DisconnectProcessServer, idbg->server);
@@ -583,6 +584,7 @@ static int windbg_close(RIODesc *fd) {
 		ITHISCALL (dbgClient, EndSession, DEBUG_END_PASSIVE);
 	}
 	__free_context (idbg);
+	core->dbg->user = NULL;
 	return 1;
 }
 
