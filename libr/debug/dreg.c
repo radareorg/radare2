@@ -275,7 +275,7 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char
 				break;
 			default:
 				if (delta && use_color) {
-					dbg->cb_printf (use_color);
+					dbg->cb_printf ("%s", use_color);
 					dbg->cb_printf (fmt, item->name, strvalue, Color_RESET"\n");
 				} else {
 					dbg->cb_printf (fmt, item->name, strvalue, "\n");

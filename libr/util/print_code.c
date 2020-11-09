@@ -221,7 +221,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		p->cb_printf ("\n]\n");
 		break;
 	case 'y': // "pcy"
-		p->cb_printf ("$hex_%"PFMT64x" = {");
+		p->cb_printf ("$hex_%"PFMT64x" = {", addr);
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
 			p->cb_printf (" %02x", buf[i] & 0xff);
