@@ -1062,19 +1062,10 @@ R_API int r_file_mkstemp(R_NULLABLE const char *prefix, char **oname) {
 	if (!prefix) {
 		prefix = "r2";
 	}
-	char *pfxx;
-	const char *suffix = strchr (prefix, '*');
-	if (suffix) {
-		pfxx = r_str_ndup (prefix, (size_t)(suffix - prefix));
-		suffix++;
-	} else {
-		pfxx = strdup (prefix);
-		suffix = "";
-	}
 #if __WINDOWS__
 	LPTSTR name = NULL;
 	LPTSTR path_ = r_sys_conv_utf8_to_win (path);
-	LPTSTR prefix_ = r_sys_conv_utf8_to_win (pfxx);
+	LPTSTR prefix_ = r_sys_conv_utf8_to_win (prefix);
 
 	name = (LPTSTR)malloc (sizeof (TCHAR) * (MAX_PATH + 1));
 	if (!name) {
@@ -1082,9 +1073,7 @@ R_API int r_file_mkstemp(R_NULLABLE const char *prefix, char **oname) {
 	}
 	if (GetTempFileName (path_, prefix_, 0, name)) {
 		char *name_ = r_sys_conv_win_to_utf8 (name);
-		name_[strlen (name_) - 4] = '\0';
-		name_ = r_str_append (name_, suffix);
-		h = r_sandbox_open (name_, O_RDWR|O_CREAT|O_EXCL|O_BINARY, 0644);
+		h = r_sandbox_open (name_, O_RDWR|O_EXCL|O_BINARY, 0644);
 		if (oname) {
 			if (h != -1) {
 				*oname = name_;
@@ -1101,8 +1090,18 @@ err_r_file_mkstemp:
 	free (path_);
 	free (prefix_);
 #else
+	char pfxx[1024];
+	const char *suffix = strchr (prefix, '*');
 
-	char *name = r_str_newf ("%s/r2.%s.XXXXXX%s", path, pfxx, suffix);
+	if (suffix) {
+		suffix++;
+		r_str_ncpy (pfxx, prefix, (size_t)(suffix - prefix));
+		prefix = pfxx;
+	} else {
+		suffix = "";
+	}
+
+	char *name = r_str_newf ("%s/r2.%s.XXXXXX%s", path, prefix, suffix);
 	mode_t mask = umask (S_IWGRP | S_IWOTH);
 	if (suffix && *suffix) {
 #if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && 2 <= __GLIBC__ && 19 <= __GLIBC__MINOR__
@@ -1127,7 +1126,6 @@ err_r_file_mkstemp:
 	}
 	free (name);
 #endif
-	free (pfxx);
 	free (path);
 	return h;
 }
