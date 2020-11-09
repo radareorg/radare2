@@ -641,7 +641,7 @@ static const ut8 *parse_line_header (
 			}
 			hdr->std_opcode_lengths[i] = READ (buf, ut8);
 			if (mode == R_MODE_PRINT) {
-				print ("  Opcode %d has %d arg\n", i, hdr->std_opcode_lengths[i]);
+				print ("  Opcode %zu has %d arg\n", i, hdr->std_opcode_lengths[i]);
 			}
 		}
 		if (mode == R_MODE_PRINT) {

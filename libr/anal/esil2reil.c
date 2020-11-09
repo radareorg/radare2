@@ -126,7 +126,7 @@ void reil_print_inst(RAnalEsil *esil, RAnalReilInst *ins) {
 	if (!ins || !esil) {
 		return;
 	}
-	esil->anal->cb_printf("%04"PFMT64x".%02"PFMT64x": %8s",
+	esil->anal->cb_printf("%04"PFMT64x".%02x: %8s",
 		esil->Reil->addr, esil->Reil->seq_num++, ops[ins->opcode]);
 	for (i = 0; i < 3; i++) {
 		if (i > 0) {
