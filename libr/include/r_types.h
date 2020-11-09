@@ -262,7 +262,7 @@ extern "C" {
 #define __packed __attribute__((__packed__))
 #endif
 
-typedef int (*PrintfCallback)(const char *str, ...);
+typedef int (*PrintfCallback)(const char *str, ...) R_PRINTF_CHECK(1, 2);
 
 /* compile-time introspection helpers */
 #define CTO(y,z) ((size_t) &((y*)0)->z)
