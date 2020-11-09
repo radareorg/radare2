@@ -509,7 +509,7 @@ R_API RAnalClassErr r_anal_class_method_get(RAnal *anal, const char *class_name,
 	}
 	sdb_anext (cur, NULL);
 
-	meth->vtable_offset = atoi (cur);
+	meth->vtable_offset = atoll (cur);
 
 	free (content);
 
