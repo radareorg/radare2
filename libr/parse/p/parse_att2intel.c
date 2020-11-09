@@ -112,11 +112,7 @@ static int parse(RParse *p, const char *data, char *str) {
 			if (n && ptr) {
 				char *rest = strdup (ptr+1);
 				size_t dist = strlen (data) + 1 - (ptr - buf);
-				if (n > 0) {
-					snprintf (ptr, dist, "+%d]%s", n, rest);
-				} else {
-					snprintf (ptr, dist, "%d]%s", n, rest);
-				}
+				snprintf (ptr, dist, "+%d]%s", n, rest);
 				free (rest);
 			}
 		} else {
