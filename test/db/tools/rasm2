@@ -499,9 +499,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rasm2 -a x86 -r push ebp
+NAME=rasm2 -a x86 -b 64 -r push ebp
 FILE=-
-CMDS=!rasm2 -a x86 -r push ebp
+CMDS=!rasm2 -a x86 -b 64 -r push ebp
 EXPECT=<<EOF
 e asm.arch=x86
 e asm.bits=64
