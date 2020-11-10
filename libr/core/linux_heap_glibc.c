@@ -1448,7 +1448,7 @@ void GH(print_malloc_info)(RCore *core, GHT m_state, GHT malloc_state) {
 
 static const char* GH(help_msg)[] = {
 	"Usage:", " dmh", " # Memory map heap",
-	"dmh", "", "List chunks in heap segment",
+	"dmh", "", "List the chunks inside the heap segment",
 	"dmh", " @[malloc_state]", "List heap chunks of a particular arena",
 	"dmha", "", "List all malloc_state instances in application",
 	"dmhb", " @[malloc_state]", "Display all parsed Double linked list of main_arena's or a particular arena bins instance",
@@ -1460,6 +1460,7 @@ static const char* GH(help_msg)[] = {
 	"dmhg", "", "Display heap graph of heap segment",
 	"dmhg", " [malloc_state]", "Display heap graph of a particular arena",
 	"dmhi", " @[malloc_state]", "Display heap_info structure/structures for a given arena",
+	"dmhj", "", "List the chunks inside the heap segment in JSON format",
 	"dmhm", "", "List all elements of struct malloc_state of main thread (main_arena)",
 	"dmhm", " @[malloc_state]", "List all malloc_state instance of a particular arena",
 	"dmht", "", "Display all parsed thread cache bins of all arena's tcache instance",
