@@ -134,7 +134,7 @@ static void arm_ctrl_reg_pretty_print (RIO *io, struct r2k_control_reg ctrl) {
 #elif __arm64__ || __aarch64__
 /*ARM Cortex-A57 and ARM Cortex-A72. This might show some wrong values for other processor.*/
 static void arm64_ctrl_reg_pretty_print (RIO *io, struct r2k_control_reg ctrl) {
-	io->cb_printf ("SCTLR_EL1: 0x%"PFMT64x"\n", ctrl.sctlr_el1);
+	io->cb_printf ("SCTLR_EL1: 0x%"PFMTSZx"\n", ctrl.sctlr_el1);
 	io->cb_printf (" [*] UCI:     %d\n"
 		       " [*] EE:      %d\n"
 		       " [*] E0E:     %d\n"
@@ -161,19 +161,19 @@ static void arm64_ctrl_reg_pretty_print (RIO *io, struct r2k_control_reg ctrl) {
 		       fset (ctrl.sctlr_el1, 2), fset (ctrl.sctlr_el1, 1), fset (ctrl.sctlr_el1, 0));
 	io->cb_printf ("\n");
 
-	io->cb_printf ("TTBR0_EL1: 0x%"PFMT64x"\n", ctrl.ttbr0_el1);
+	io->cb_printf ("TTBR0_EL1: 0x%"PFMTSZx"\n", ctrl.ttbr0_el1);
 	io->cb_printf (" [*] ASID [63:48]:    0x%"PFMT64x"\n"
 		       " [*] BADDR [47:10]:   0x%"PFMT64x"\n",
-		       (ctrl.ttbr0_el1 & 0xffff000000000000) >> 48, (ctrl.ttbr0_el1 & ((((ut64) 1) << (47 + 1)) - (1 << 10))) >> 10);
+		       (ctrl.ttbr0_el1 & 0xffff000000000000LLU) >> 48, (ctrl.ttbr0_el1 & ((((ut64) 1) << (47 + 1)) - (1 << 10))) >> 10);
 	io->cb_printf ("\n");
 
-	io->cb_printf ("TTBR1_EL1: 0x%"PFMT64x"\n", ctrl.ttbr1_el1);
+	io->cb_printf ("TTBR1_EL1: 0x%"PFMTSZx"\n", ctrl.ttbr1_el1);
 	io->cb_printf (" [*] ASID [63:48]:    0x%"PFMT64x"\n"
 		       " [*] BADDR [47:10]:   0x%"PFMT64x"\n",
-		       (ctrl.ttbr1_el1 & 0xffff000000000000) >> 48, (ctrl.ttbr1_el1 & ((((ut64) 1) << (47 + 1)) - (1 << 10))) >> 10);
+		       (ctrl.ttbr1_el1 & 0xffff000000000000LLU) >> 48, (ctrl.ttbr1_el1 & ((((ut64) 1) << (47 + 1)) - (1 << 10))) >> 10);
 	io->cb_printf ("\n");
 
-	io->cb_printf ("TCR_EL1: 0x%"PFMT64x"\n", ctrl.tcr_el1);
+	io->cb_printf ("TCR_EL1: 0x%"PFMTSZx"\n", ctrl.tcr_el1);
 	io->cb_printf (" [*] TBI1:    %d\n"
 		       " [*] TBI0:    %d\n"
 		       " [*] AS:      %d\n"
@@ -192,11 +192,11 @@ static void arm64_ctrl_reg_pretty_print (RIO *io, struct r2k_control_reg ctrl) {
 		       " [*] EPD0:    %d\n"
 		       " [*] T0SZ:    %d\n",
 		       fset (ctrl.tcr_el1, 38), fset (ctrl.tcr_el1, 37), fset (ctrl.tcr_el1, 36),
-		       (ctrl.tcr_el1 & 0x700000000) >> 32, fset (ctrl.tcr_el1, 30), (ctrl.tcr_el1 & 0x30000000) >> 28,
-		       (ctrl.tcr_el1 & 0xc000000) >> 26, (ctrl.tcr_el1 & 0x3000000) >> 24, fset (ctrl.tcr_el1, 23),
-		       fset (ctrl.tcr_el1, 22), (ctrl.tcr_el1 & 0x3f0000) >> 16, fset (ctrl.tcr_el1, 14),
-		       (ctrl.tcr_el1 & 0x3000) >> 12, (ctrl.tcr_el1 & 0xc00) >> 10, (ctrl.tcr_el1 & 0x300) >> 8,
-		       fset (ctrl.tcr_el1, 7), (ctrl.tcr_el1 & 0x3f));
+		       (int)(ctrl.tcr_el1 >> 32) & 0x7, fset (ctrl.tcr_el1, 30), (int)(ctrl.tcr_el1 >> 28) & 0x3,
+		       (int)(ctrl.tcr_el1 >> 26) & 0x3, (int)(ctrl.tcr_el1 >> 24) & 0x3, fset (ctrl.tcr_el1, 23),
+		       fset (ctrl.tcr_el1, 22), (int)(ctrl.tcr_el1 >> 16) & 0x3f, fset (ctrl.tcr_el1, 14),
+		       (int)(ctrl.tcr_el1 >> 12) & 0x3, (int)(ctrl.tcr_el1 >> 10) & 0x3, (int)(ctrl.tcr_el1 >> 8) & 0x3,
+		       fset (ctrl.tcr_el1, 7), (int)ctrl.tcr_el1 & 0x3f);
 }
 #endif
 
