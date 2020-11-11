@@ -1166,7 +1166,7 @@ static bool like_cb(void *user, const char *k, const char *v) {
 	if (lcd->array) {
 		int idx = lcd->array_index;
 		int newsize = lcd->array_size + sizeof (char*) * 2;
-		const char **newarray = (const char **)realloc (lcd->array, newsize);
+		const char **newarray = (const char **)realloc ((void*)lcd->array, newsize);
 		if (!newarray) {
 			return false;
 		}

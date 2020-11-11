@@ -260,6 +260,21 @@ SDB_API void *ls_pop(SdbList *list) {
 	return NULL;
 }
 
+SDB_API SdbList *ls_clone(SdbList *list) {
+	if (!list) {
+		return NULL;
+	}
+	SdbList *r = ls_new (); // ownership of elements stays in original list
+	if (!r) {
+		return NULL;
+	}
+	void *v;
+	SdbListIter *iter;
+	ls_foreach (list, iter, v) {
+		ls_append (r, v);
+	}
+	return r;
+}
 
 SDB_API int ls_join(SdbList *list1, SdbList *list2) {
 	if (!list1 || !list2) {
