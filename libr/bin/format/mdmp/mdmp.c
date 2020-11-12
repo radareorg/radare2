@@ -391,7 +391,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		sdb_num_set (obj->kv, "mdmp_thread_list.offset",
 			entry->location.rva, 0);
 		sdb_set (obj->kv, "mdmp_thread_list.format",
-			sdb_fmt ("d[%i]? "
+			sdb_fmt ("d[%d]? "
 				"NumberOfThreads (mdmp_thread)Threads",
 				thread_list.number_of_threads),
 			0);
@@ -414,10 +414,9 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		sdb_num_set (obj->kv, "mdmp_module_list.offset",
 			entry->location.rva, 0);
 		sdb_set (obj->kv, "mdmp_module_list.format",
-			sdb_fmt ("d[%i]? "
+			sdb_fmt ("d[%d]? "
 				"NumberOfModule (mdmp_module)Modules",
-				module_list.number_of_modules,
-				0),
+				module_list.number_of_modules),
 			0);
 
 		offset = entry->location.rva + sizeof (module_list);
@@ -443,11 +442,10 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		sdb_num_set (obj->kv, "mdmp_memory_list.offset",
 			entry->location.rva, 0);
 		sdb_set (obj->kv, "mdmp_memory_list.format",
-			sdb_fmt ("d[%i]? "
+			sdb_fmt ("d[%d]? "
 				"NumberOfMemoryRanges "
 				"(mdmp_memory_descriptor)MemoryRanges ",
-				memory_list.number_of_memory_ranges,
-				0),
+				memory_list.number_of_memory_ranges),
 			0);
 
 		offset = entry->location.rva + sizeof (memory_list);
@@ -528,9 +526,9 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		sdb_num_set (obj->kv, "mdmp_thread_ex_list.offset",
 			entry->location.rva, 0);
 		sdb_set (obj->kv, "mdmp_thread_ex_list.format",
-			sdb_fmt ("d[%i]? NumberOfThreads "
+			sdb_fmt ("d[%d]? NumberOfThreads "
 				"(mdmp_thread_ex)Threads",
-				thread_ex_list.number_of_threads, 0),
+				thread_ex_list.number_of_threads),
 			0);
 
 		offset = entry->location.rva + sizeof (thread_ex_list);
@@ -556,7 +554,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		sdb_num_set (obj->kv, "mdmp_memory64_list.offset",
 			entry->location.rva, 0);
 		sdb_set (obj->kv, "mdmp_memory64_list.format",
-			sdb_fmt ("qq[%i]? NumberOfMemoryRanges "
+			sdb_fmt ("qq[%"PFMT64d"]? NumberOfMemoryRanges "
 				"BaseRva "
 				"(mdmp_memory_descriptor64)MemoryRanges",
 				memory64_list.number_of_memory_ranges),
@@ -711,7 +709,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		sdb_num_set (obj->kv, "mdmp_memory_info_list.offset",
 			entry->location.rva, 0);
 		sdb_set (obj->kv, "mdmp_memory_info_list.format",
-			sdb_fmt ("ddq[%i]? SizeOfHeader SizeOfEntry "
+			sdb_fmt ("ddq[%"PFMT64d"]? SizeOfHeader SizeOfEntry "
 				"NumberOfEntries (mdmp_memory_info)MemoryInfo",
 				memory_info_list.number_of_entries),
 			0);
@@ -826,7 +824,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		/* Silently ignore reserved streams */
 		break;
 	default:
-		eprintf ("[WARN] Invalid or unsupported enumeration encountered %i\n", entry->stream_type);
+		eprintf ("[WARN] Invalid or unsupported enumeration encountered %d\n", entry->stream_type);
 		break;
 	}
 	return true;
