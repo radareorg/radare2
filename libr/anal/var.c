@@ -463,11 +463,11 @@ R_API void r_anal_var_set_access(RAnalVar *var, const char *reg, ut64 access_add
 		acc = r_vector_insert (&var->accesses, index, NULL);
 		acc->offset = offset;
 		acc->type = 0;
-		acc->reg = r_str_constpool_get (&var->fcn->anal->constpool, reg);
 	}
 
 	acc->type |= (ut8)access_type;
 	acc->stackptr = stackptr;
+	acc->reg = r_str_constpool_get (&var->fcn->anal->constpool, reg);
 
 	// add the inverse reference from the instruction to the var
 	RPVector *inst_accesses = ht_up_find (var->fcn->inst_vars, (ut64)offset, NULL);

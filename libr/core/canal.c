@@ -4680,26 +4680,30 @@ typedef struct {
 } EsilBreakCtx;
 
 static const char *reg_name_for_access(RAnalOp* op, RAnalVarAccessType type) {
-	if (type == R_ANAL_VAR_ACCESS_TYPE_READ) {
+	if (type == R_ANAL_VAR_ACCESS_TYPE_WRITE) {
+		if (op->dst && op->dst->reg) {
+			return op->dst->reg->name;
+		}
+	} else {
 		if (op->src[0] && op->src[0]->reg) {
 			return op->src[0]->reg->name;
 		}
-	} else if (op->dst && op->dst->reg) {
-		return op->dst->reg->name;
 	}
 	return NULL;
 }
 
 static ut64 delta_for_access(RAnalOp *op, RAnalVarAccessType type) {
-	if (type == R_ANAL_VAR_ACCESS_TYPE_READ) {
-		if (op->src[1] && op->src[1]->imm) {
-			return op->src[1]->imm;
+	if (type == R_ANAL_VAR_ACCESS_TYPE_WRITE) {
+		if (op->dst) {
+			return op->dst->imm + op->dst->delta;
+		}
+	} else {
+		if (op->src[1] && (op->src[1]->imm || op->src[1]->delta)) {
+			return op->src[1]->imm + op->src[1]->delta;
 		}
 		if (op->src[0]) {
-			return op->src[0]->delta;
+			return op->src[0]->imm + op->src[0]->delta;
 		}
-	} else if (op->dst) {
-		return op->dst->delta;
 	}
 	return 0;
 }
@@ -4715,7 +4719,7 @@ static void handle_var_stack_access(RAnalEsil *esil, ut64 addr, RAnalVarAccessTy
 			if (!var) {
 				var = r_anal_function_get_var (ctx->fcn, R_ANAL_VAR_KIND_BPV, stack_off);
 			}
-			if (!var && stack_off > -ctx->fcn->maxstack) {
+			if (!var && stack_off >= -ctx->fcn->maxstack) {
 				char *varname;
 				varname = ctx->fcn->anal->opt.varname_stack
 					? r_str_newf ("var_%xh", R_ABS (stack_off))
@@ -4801,7 +4805,7 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	EsilBreakCtx *ctx = esil->user;
 	RAnalOp *op = ctx->op;
 	RCore *core = anal->coreb.core;
-	handle_var_stack_access (esil, *val, R_ANAL_VAR_ACCESS_TYPE_READ, esil->anal->bits / 8);
+	handle_var_stack_access (esil, *val, R_ANAL_VAR_ACCESS_TYPE_PTR, esil->anal->bits / 8);
 	//specific case to handle blx/bx cases in arm through emulation
 	// XXX this thing creates a lot of false positives
 	ut64 at = *val;

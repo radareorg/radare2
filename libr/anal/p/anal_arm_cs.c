@@ -1275,26 +1275,30 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			} else {
 				// I really don't like the DUP / tmp approach but its better than doubling the calculation
 				if (LSHIFT2_64(1)) {
-					r_strbuf_appendf (&op->esil, "%s,%d,%"PFMT64d",%s,+,DUP,tmp,=,[%d],%s,=",
-							MEMBASE64(1), LSHIFT2_64(1), MEMDISP64(1), DECODE_SHIFT64(1), size, REG64(0));
+					r_strbuf_appendf (&op->esil, "%s,%d,%"PFMT64d",%s,+",
+							MEMBASE64(1), LSHIFT2_64(1), MEMDISP64(1), DECODE_SHIFT64(1));
 				} else if ((int)MEMDISP64(1) < 0){
-					r_strbuf_appendf (&op->esil, "%"PFMT64d",%s,-,DUP,tmp,=,[%d],%s,=",
-							-(st64)MEMDISP64(1), MEMBASE64(1), size, REG64(0));
+					r_strbuf_appendf (&op->esil, "%"PFMT64d",%s,-",
+							-(st64)MEMDISP64(1), MEMBASE64(1));
 				} else {
-					r_strbuf_appendf (&op->esil, "%"PFMT64d",%s,+,DUP,tmp,=,[%d],%s,=",
-							MEMDISP64(1), MEMBASE64(1), size, REG64(0));
+					r_strbuf_appendf (&op->esil, "%"PFMT64d",%s,+",
+							MEMDISP64(1), MEMBASE64(1));
 				}
+
+				r_strbuf_append (&op->esil, ",DUP,tmp,=");
 
 				// I assume the DUPs here previously were to handle preindexing
 				// but it was never finished?
 				if (ISPREINDEX32()) {
 					r_strbuf_appendf (&op->esil, ",tmp,%s,=", REG64(1));
 				}
-				else if (ISPOSTINDEX32()) {
+
+				r_strbuf_appendf (&op->esil, ",[%d],%s,=", size, REG64 (0));
+
+				if (ISPOSTINDEX32()) {
 					if (ISREG64(2)) { // not sure if register valued post indexing exists?
 						r_strbuf_appendf (&op->esil, ",tmp,%s,+,%s,=", REG64(2), REG64(1));
-					}
-					else {
+					} else {
 						r_strbuf_appendf (&op->esil, ",tmp,%"PFMT64d",+,%s,=", IMM64(2), REG64(1));
 					}
 				}
@@ -1364,26 +1368,30 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 				}
 			} else {
 				if (LSHIFT2_64(1)) {
-					r_strbuf_appendf (&op->esil, "%d,%s,%d,%"PFMT64d",%s,+,DUP,tmp,=,[%d],~,%s,=",
-							size*8, MEMBASE64(1), LSHIFT2_64(1), MEMDISP64(1), DECODE_SHIFT64(1), size, REG64(0));
+					r_strbuf_appendf (&op->esil, "%d,%s,%d,%"PFMT64d",%s",
+							size*8, MEMBASE64(1), LSHIFT2_64(1), MEMDISP64(1), DECODE_SHIFT64(1));
 				} else if ((int)MEMDISP64(1) < 0){
-					r_strbuf_appendf (&op->esil, "%d,%"PFMT64d",%s,-,DUP,tmp,=,[%d],~,%s,=",
-							size*8, -(st64)MEMDISP64(1), MEMBASE64(1), size, REG64(0));
+					r_strbuf_appendf (&op->esil, "%d,%"PFMT64d",%s,-",
+							size*8, -(st64)MEMDISP64(1), MEMBASE64(1));
 				} else {
-					r_strbuf_appendf (&op->esil, "%d,%"PFMT64d",%s,+,DUP,tmp,=,[%d],~,%s,=",
-							size*8, MEMDISP64(1), MEMBASE64(1), size, REG64(0));
+					r_strbuf_appendf (&op->esil, "%d,%"PFMT64d",%s,+",
+							size*8, MEMDISP64(1), MEMBASE64(1));
 				}
+
+				r_strbuf_append (&op->esil, ",DUP,tmp,=");
 
 				// I assume the DUPs here previously were to handle preindexing
 				// but it was never finished?
 				if (ISPREINDEX32()) {
 					r_strbuf_appendf (&op->esil, ",tmp,%s,=", REG64(1));
 				}
-				else if (ISPOSTINDEX32()) {
+
+				r_strbuf_appendf (&op->esil, ",[%d],~,%s,=", size, REG64(0));
+				
+				if (ISPOSTINDEX32()) {
 					if (ISREG64(2)) { // not sure if register valued post indexing exists?
 						r_strbuf_appendf (&op->esil, ",tmp,%s,+,%s,=", REG64(2), REG64(1));
-					}
-					else {
+					} else {
 						r_strbuf_appendf (&op->esil, ",tmp,%"PFMT64d",+,%s,=", IMM64(2), REG64(1));
 					}
 				}
@@ -1489,26 +1497,30 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 				}
 			} else {
 				if (LSHIFT2_64(1)) {
-					r_strbuf_appendf (&op->esil, "%s,%s,%d,%"PFMT64d",%s,+,DUP,tmp,=,=[%d]",
-							REG64(0), MEMBASE64(1), LSHIFT2_64(1), MEMDISP64(1), DECODE_SHIFT64(1), size);
-				} else if ((int)MEMDISP64(1) < 0){
-					r_strbuf_appendf (&op->esil, "%s,%"PFMT64d",%s,-,DUP,tmp,=,=[%d]",
-							REG64(0), -(st64)MEMDISP64(1), MEMBASE64(1), size);
+					r_strbuf_appendf (&op->esil, "%s,%s,%d,%"PFMT64d",%s,+",
+							REG64(0), MEMBASE64(1), LSHIFT2_64(1), MEMDISP64(1), DECODE_SHIFT64(1));
+				} else if ((int)MEMDISP64 (1) < 0) {
+					r_strbuf_appendf (&op->esil, "%s,%"PFMT64d",%s,-",
+							REG64(0), -(st64)MEMDISP64(1), MEMBASE64(1));
 				} else {
-					r_strbuf_appendf (&op->esil, "%s,%"PFMT64d",%s,+,DUP,tmp,=,=[%d]",
-							REG64(0), MEMDISP64(1), MEMBASE64(1), size);
+					r_strbuf_appendf (&op->esil, "%s,%"PFMT64d",%s,+",
+							REG64(0), MEMDISP64(1), MEMBASE64(1));
 				}
+
+				r_strbuf_append (&op->esil, ",DUP,tmp,=");
 
 				// I assume the DUPs here previously were to handle preindexing
 				// but it was never finished?
 				if (ISPREINDEX32()) {
 					r_strbuf_appendf (&op->esil, ",tmp,%s,=", REG64(1));
 				}
-				else if (ISPOSTINDEX32()) {
+
+				r_strbuf_appendf (&op->esil, ",=[%d]", size);
+
+				if (ISPOSTINDEX32()) {
 					if (ISREG64(2)) { // not sure if register valued post indexing exists?
 						r_strbuf_appendf (&op->esil, ",tmp,%s,+,%s,=", REG64(2), REG64(1));
-					}
-					else {
+					} else {
 						r_strbuf_appendf (&op->esil, ",tmp,%"PFMT64d",+,%s,=", IMM64(2), REG64(1));
 					}
 				}
@@ -2752,6 +2764,20 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->type = R_ANAL_OP_TYPE_MUL;
 		break;
 	case ARM64_INS_ADD:
+		if (ISREG64 (0) && REGID64 (0) == ARM64_REG_SP) {
+			op->stackop = R_ANAL_STACK_INC;
+			if (ISIMM64 (1)) {
+				//add sp, 0x54
+				op->stackptr = -IMM (1);
+			} else if (ISIMM64 (2) && ISREG64 (1) && REGID64 (1) == ARM64_REG_SP) {
+				//add sp, sp, 0x10
+				op->stackptr = -IMM64 (2);
+			}
+			op->val = op->stackptr;
+		} else {
+			op->stackop = R_ANAL_STACK_RESET;
+			op->stackptr = 0;
+		}
 		op->cycles = 1;
 		/* fallthru */
 	case ARM64_INS_ADC:
@@ -2899,10 +2925,18 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_STLXRH:
 	case ARM64_INS_STXRB:
 		op->type = R_ANAL_OP_TYPE_STORE;
-		if (REGBASE64(1) == ARM64_REG_X29) {
-			op->stackop = R_ANAL_STACK_SET;
-			op->stackptr = 0;
-			op->ptr = -MEMDISP64(1);
+		if (ISPREINDEX64 () && REGBASE64 (2) == ARM64_REG_SP) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = -MEMDISP64 (2);
+		} else if (ISPOSTINDEX64 () && REGID64 (2) == ARM64_REG_SP) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = -IMM64 (3);
+		} else if (ISPREINDEX32 () && REGBASE64 (1) == ARM64_REG_SP) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = -MEMDISP64 (1);
+		} else if (ISPOSTINDEX32 () && REGID64 (1) == ARM64_REG_SP) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = -IMM64 (2);
 		}
 		break;
 	case ARM64_INS_LDUR:
@@ -2917,6 +2951,19 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_LDPSW:
 	case ARM64_INS_LDRH:
 	case ARM64_INS_LDRB:
+		if (ISPREINDEX64 () && REGBASE64 (2) == ARM64_REG_SP) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = -MEMDISP64 (2);
+		} else if (ISPOSTINDEX64 () && REGID64 (2) == ARM64_REG_SP) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = -IMM64 (3);
+		} else if (ISPREINDEX32 () && REGBASE64 (1) == ARM64_REG_SP) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = -MEMDISP64 (1);
+		} else if (ISPOSTINDEX32 () && REGID64 (1) == ARM64_REG_SP) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = -IMM64 (2);
+		}
 		if (REGID(0) == ARM_REG_PC) {
 			op->type = R_ANAL_OP_TYPE_UJMP;
 			if (insn->detail->arm.cc != ARM_CC_AL) {
@@ -3188,6 +3235,17 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->type = R_ANAL_OP_TYPE_SUB;
 		break;
 	case ARM_INS_ADD:
+		if (ISREG (0) && REGID (0) == ARM_REG_SP) {
+			op->stackop = R_ANAL_STACK_INC;
+			if (ISIMM (1)) {
+				//add sp, 0x54
+				op->stackptr = -IMM (1);
+			} else if (ISIMM (2) && ISREG (1) && REGID (1) == ARM_REG_SP) {
+				//add sp, sp, 0x10
+				op->stackptr = -IMM (2);
+			}
+			op->val = op->stackptr;
+		}
 	case ARM_INS_ADC:
 		op->type = R_ANAL_OP_TYPE_ADD;
 		if (REGID(0) == ARM_REG_PC) {
@@ -3623,27 +3681,35 @@ static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x, int 
 	} else {
 		parse_reg_name (&base_regs[x], &regdelta_regs[x], *handle, insn, x);
 	}
-	switch (armop.type) {
-	case ARM_OP_REG:
-		break;
-	case ARM_OP_MEM:
-		if (bits == 64) {
+	if (bits == 64) {
+		switch (arm64op.type) {
+		case ARM64_OP_REG:
+			break;
+		case ARM64_OP_MEM:
 			val->delta = arm64op.mem.disp;
-		} else {
+			val->regdelta = &regdelta_regs[x];
+			break;
+		case ARM64_OP_IMM:
+			val->imm = arm64op.imm;
+			break;
+		default:
+			break;
+		}
+	} else {
+		switch (armop.type) {
+		case ARM_OP_REG:
+			break;
+		case ARM_OP_MEM:
 			val->mul = armop.mem.scale;
 			val->delta = armop.mem.disp;
-		}
-		val->regdelta = &regdelta_regs[x];
-		break;
-	case ARM_OP_IMM:
-		if (bits == 64) {
-			val->imm = arm64op.imm;
-		} else {
+			val->regdelta = &regdelta_regs[x];
+			break;
+		case ARM_OP_IMM:
 			val->imm = armop.imm;
+			break;
+		default:
+			break;
 		}
-		break;
-	default:
-		break;
 	}
 	val->reg = &base_regs[x];
 }
@@ -3663,8 +3729,10 @@ static void create_src_dst(RAnalOp *op) {
 	ZERO_FILL (regdelta_regs[3]);
 }
 
-static void op_fillval(RAnalOp *op , csh handle, cs_insn *insn, int bits) {
+static void op_fillval (RAnalOp *op, csh handle, cs_insn *insn, int bits) {
 	create_src_dst (op);
+	int i, j;
+	int count = bits == 64 ? insn->detail->arm64.op_count : insn->detail->arm.op_count;
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_MOV:
 	case R_ANAL_OP_TYPE_CMP:
@@ -3686,14 +3754,43 @@ static void op_fillval(RAnalOp *op , csh handle, cs_insn *insn, int bits) {
 	case R_ANAL_OP_TYPE_ROR:
 	case R_ANAL_OP_TYPE_ROL:
 	case R_ANAL_OP_TYPE_CAST:
-		set_src_dst (op->src[2], &handle, insn, 3, bits);
-		set_src_dst (op->src[1], &handle, insn, 2, bits);
-		set_src_dst (op->src[0], &handle, insn, 1, bits);
+		for (i = 1; i < count; i++) {
+			if (bits == 64) {
+				cs_arm64_op arm64op = INSOP64 (i);
+				if (arm64op.access == CS_AC_WRITE) {
+					continue;
+				}
+			} else {
+				cs_arm_op armop = INSOP (i);
+				if (armop.access == CS_AC_WRITE) {
+					continue;
+				}
+			}
+			break;
+		}
+		for (j = 0; j < 3; j++, i++) {
+			set_src_dst (op->src[j], &handle, insn, i, bits);
+		}
 		set_src_dst (op->dst, &handle, insn, 0, bits);
 		break;
 	case R_ANAL_OP_TYPE_STORE:
-		set_src_dst (op->dst, &handle, insn, 1, bits);
-		set_src_dst (op->src[0], &handle, insn, 0, bits);
+		if (count > 2) {
+			if (bits == 64) {
+				cs_arm64_op arm64op = INSOP64 (count - 1);
+				if (arm64op.type == ARM64_OP_IMM) {
+					count--;
+				}
+			} else {
+				cs_arm_op armop = INSOP (count - 1);
+				if (armop.type == ARM_OP_IMM) {
+					count--;
+				}
+			}
+		}
+		set_src_dst (op->dst, &handle, insn, --count, bits);
+		for (j = 0; j < 3 && j < count; j++) {
+			set_src_dst (op->src[j], &handle, insn, j, bits);
+		}
 		break;
 	default:
 		break;
@@ -4329,6 +4426,7 @@ static RList *anal_preludes(RAnal *anal) {
 		KW("\x00\x00\x2d\xe9", 4, "\x0f\x0f\xff\xff", 4);
 		break;
 	case 64:
+		KW ("\xf0\x0f\x00\xf8", 4, "\xf0\x0f\x00\xff", 4);
 		KW ("\xf0\x00\x00\xd1", 4, "\xf0\x00\x00\xff", 4);
 		KW ("\xf0\x00\x00\xa9", 4, "\xf0\x00\x00\xff", 4);
 		KW ("\x7f\x23\x03\xd5\xff", 5, NULL, 0);

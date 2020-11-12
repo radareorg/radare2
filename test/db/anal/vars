@@ -187,12 +187,12 @@ EOF
 EXPECT=<<EOF
 afvR
    var_c0h  0x18
-   var_30h  0x21,0x35
-   var_28h  0x0
+   var_30h  0x21
+   var_28h
    var_20h  0x29
    var_18h  0x2d
    var_10h  0x31
-   var_a0h  0x1d
+   var_a0h
 afvW
    var_c0h  0x18
    var_30h
@@ -250,7 +250,7 @@ afvR
     var_ch  0x18,0x22
     var_eh  0x16,0x1e
     var_fh  0x10
-    var_4h  0x2a,0x2c
+    var_4h  0x2c
 afvW
       arg1
       arg2
