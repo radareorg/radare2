@@ -431,7 +431,7 @@ static bool __tableItemCallback(RFlagItem *flag, void *user) {
 		RTable *t = ftd->t;
 		const char *spaceName = (flag->space && flag->space->name)? flag->space->name: "";
 		const char *addr = sdb_fmt ("0x%08"PFMT64x, flag->offset);
-		r_table_add_row (t, addr, sdb_fmt ("%d", flag->size), spaceName, flag->name, NULL);
+		r_table_add_row (t, addr, sdb_fmt ("%"PFMT64d, flag->size), spaceName, flag->name, NULL);
 	}
 	return true;
 }

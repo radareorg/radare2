@@ -330,9 +330,9 @@ static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
 	bin->segs[j].flags = r_read_ble32 (&segcom[i], bin->big_endian);
 
 #if R_BIN_MACH064
-	sdb_num_set (bin->kv, sdb_fmt ("mach0_segment64_%d.offset", j), off, 0);
+	sdb_num_set (bin->kv, sdb_fmt ("mach0_segment64_%zu.offset", j), off, 0);
 #else
-	sdb_num_set (bin->kv, sdb_fmt ("mach0_segment_%d.offset", j), off, 0);
+	sdb_num_set (bin->kv, sdb_fmt ("mach0_segment_%zu.offset", j), off, 0);
 #endif
 
 	sdb_num_set (bin->kv, "mach0_segments.count", 0, 0);
@@ -393,11 +393,14 @@ static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
 			memcpy (&bin->sects[k].segname, &sec[i], 16);
 			i += 16;
 
-			sdb_num_set (bin->kv, sdb_fmt ("mach0_section_%.16s_%.16s.offset", &bin->sects[k].segname, &bin->sects[k].sectname), offset, 0);
+			sdb_num_set (bin->kv, sdb_fmt ("mach0_section_%.16s_%.16s.offset",
+						bin->sects[k].segname, bin->sects[k].sectname), offset, 0);
 #if R_BIN_MACH064
-			sdb_set (bin->kv, sdb_fmt ("mach0_section_%.16s_%.16s.format", &bin->sects[k].segname, &bin->sects[k].sectname), "mach0_section64", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_section_%.16s_%.16s.format",
+						bin->sects[k].segname, bin->sects[k].sectname), "mach0_section64", 0);
 #else
-			sdb_set (bin->kv, sdb_fmt ("mach0_section_%.16s_%.16s.format", &bin->sects[k].segname, &bin->sects[k].sectname), "mach0_section", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_section_%.16s_%.16s.format",
+						bin->sects[k].segname, bin->sects[k].sectname), "mach0_section", 0);
 #endif
 
 #if R_BIN_MACH064
