@@ -54,7 +54,7 @@ typedef unsigned int ssize_t;
 typedef unsigned long unichar;
 
 struct stat;
-const char *file_fmttime(unsigned int, int);
+const char *file_fmttime(unsigned int, int, char *);
 int file_buffer(struct r_magic_set *, int, const char *, const void *, size_t);
 int file_fsmagic(struct r_magic_set *, const char *, struct stat *);
 int file_pipe2file(struct r_magic_set *, int, const void *, size_t);
