@@ -1704,6 +1704,9 @@ static int cmd_bsize(void *data, const char *input) {
 		break;
 	case 'j': { // "bj"
 		PJ * pj = pj_new ();
+		if (!pj) {
+			break;
+		}
 		pj_o (pj);
 		pj_ki (pj, "blocksize", core->blocksize);
 		pj_ki (pj, "blocksize_limit", core->blocksize_max);
