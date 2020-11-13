@@ -105,8 +105,7 @@ bins/elf/crackme0x00b
 EOF
 CMDS=oij
 EXPECT=<<EOF
-{"raised":true,"fd":3,"uri":"bins/elf/crackme0x05","from":0,"writable":true,"size":7656}
-{"raised":true,"fd":5,"uri":"bins/elf/crackme0x00b","from":0,"writable":true,"size":7375}
+[{"raised":false,"fd":3,"uri":"bins/elf/crackme0x05","from":0,"writable":false,"size":7656},{"raised":true,"fd":5,"uri":"bins/elf/crackme0x00b","from":0,"writable":false,"size":7375}]
 EOF
 RUN
 

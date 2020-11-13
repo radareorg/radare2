@@ -1061,8 +1061,14 @@ R_API int r_core_file_list(RCore *core, int mode) {
 	RListIter *it;
 	RBinFile *bf;
 	RListIter *iter;
-	PJ * pj = pj_new ();
-	pj_a (pj);
+	PJ *pj;
+	if (mode == 'j') {
+		pj = pj_new ();
+		if (!pj) {
+			return 0;
+		}
+		pj_a (pj);
+	}
 	r_list_foreach (core->files, iter, f) {
 		desc = r_io_desc_get (core->io, f->fd);
 		if (!desc) {
@@ -1072,21 +1078,14 @@ R_API int r_core_file_list(RCore *core, int mode) {
 		from = 0LL;
 		switch (mode) {
 		case 'j': {  // "oij"
-			if (!pj) {
-				free (desc);
-				break;
-			}
 			pj_o (pj);
-			pj_kb (pj, "raised", r_str_bool (core->io->desc->fd == f->fd));
-			pj_ki (pj, "fd", (int) f->fd);
+			pj_kb (pj, "raised", core->io->desc->fd == f->fd);
+			pj_ki (pj, "fd", f->fd);
 			pj_ks (pj, "uri", desc->uri);
 			pj_kn (pj, "from", (ut64) from);
-			pj_kb (pj, "writable", r_str_bool (desc->perm & R_PERM_W));
+			pj_kb (pj, "writable", desc->perm & R_PERM_W);
 			pj_ki (pj, "size", (int) r_io_desc_size (desc));
 			pj_end (pj);
-			pj_end (pj);
-			r_cons_println (pj_string (pj));
-			pj_free (pj);
 			break;
 		}
 		case '*':
@@ -1151,6 +1150,11 @@ R_API int r_core_file_list(RCore *core, int mode) {
 		break;
 		}
 		count++;
+	}
+	if (mode == 'j') {
+		pj_end (pj);
+		r_cons_println (pj_string (pj));
+		pj_free (pj);
 	}
 	return count;
 }
