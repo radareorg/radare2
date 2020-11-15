@@ -756,8 +756,7 @@ static bool cb_asmbits(void *user, void *data) {
 		}
 		if (!r_anal_set_bits (core->anal, bits)) {
 			eprintf ("asm.arch: Cannot setup '%d' bits analysis engine\n", bits);
-		} else {
-			ret = true;
+			ret = false;
 		}
 		core->print->bits = bits;
 	}
