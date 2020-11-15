@@ -359,17 +359,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Save project for a file with asm.bits=32 and check the value after loading again
+NAME=Save project for a file with x86_16 and check the value after loading again
 FILE=bins/src/hello.c
 ARGS=
 CMDS=<<EOF
 e dir.projects = .tmp/
+e asm.arch=x86
 e asm.bits=16
 Ps sun > /dev/null
 Po sun > /dev/null
+e asm.arch
 e asm.bits
 EOF
 EXPECT=<<EOF
+x86
 16
 EOF
 RUN
