@@ -1521,7 +1521,7 @@ R_API char *r_str_encoded_json(const char *buf, int buf_size, int encoding) {
 		size_t loop = 0;
 		size_t i = 0;
 		size_t increment = encoding == PJ_ENCODING_STR_ARRAY ? 4 : 2;
-		
+
 		if (!SZT_MUL_OVFCHK (((buf_sz * increment) + 1), SZT_MAX)) {
 			return NULL;
 		}
@@ -1645,7 +1645,7 @@ R_API char *r_str_escape_utf8_for_json_strip(const char *buf, int buf_size) {
 					*q++ = "0123456789abcdef"[ch >> 4 * i & 0xf];
 				}
 			}
-		} else { 
+		} else {
 			ch_bytes = 1;
 		}
 		p += ch_bytes;
