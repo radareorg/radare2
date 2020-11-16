@@ -352,8 +352,8 @@ static int abbrev_cmp(const void *a, const void *b) {
 }
 
 static inline bool is_printable_attr(ut64 attr_code) {
-	return (attr_code >= DW_AT_sibling && attr_code <= DW_AT_loclists_base) || 
-			attr_code == DW_AT_MIPS_linkage_name || 
+	return (attr_code >= DW_AT_sibling && attr_code <= DW_AT_loclists_base) ||
+			attr_code == DW_AT_MIPS_linkage_name ||
 			(attr_code >= DW_AT_GNU_call_site_value && attr_code <= DW_AT_GNU_deleted) ||
 			(attr_code >= DW_AT_GNU_dwo_name && attr_code <= DW_AT_GNU_pubtypes);
 }
@@ -372,7 +372,7 @@ static inline bool is_printable_unit_type(ut64 unit_type) {
 
 /**
  * @brief Reads 64/32 bit unsigned based on format
- * 
+ *
  * @param is_64bit Format of the comp unit
  * @param buf Pointer to the buffer to read from, to update after read
  * @param buf_end To check the boundary /for READ macro/
@@ -400,8 +400,7 @@ static inline ut64 dwarf_read_address(size_t size, const ut8 **buf, const ut8 *b
 		default:
 		result = 0;
 		*buf += size;
-		eprintf ("Weird dwarf address size: %lu.", size);
-
+		eprintf ("Weird dwarf address size: %zu.", size);
 	}
 	return result;
 }
@@ -562,7 +561,7 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 // 	ut8 dir_entry_count = READ8 (buf);
 // 	// uleb128 pairs
 // 	ut8 dir_count = READ8 (buf);
-	
+
 // 	// dirs
 
 // 	ut8 file_entry_count = READ8 (buf);
@@ -579,7 +578,7 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 static const ut8 *parse_line_header (
 	RBinFile *bf, const ut8 *buf, const ut8 *buf_end,
 	RBinDwarfLineHeader *hdr, int mode, PrintfCallback print) {
-	
+
 	r_return_val_if_fail(hdr && bf && buf, NULL);
 
 	hdr->is_64bit = false;
@@ -1575,12 +1574,12 @@ static const ut8 *fill_block_data(const ut8 *buf, const ut8 *buf_end, RBinDwarfB
 /**
  * This function is quite incomplete and requires lot of work
  * With parsing various new FORM values
- * @brief Parses attribute value based on its definition 
+ * @brief Parses attribute value based on its definition
  *        and stores it into `value`
- * 
+ *
  * @param obuf
  * @param obuf_len Buffer max capacity
- * @param def Attribute definition 
+ * @param def Attribute definition
  * @param value Parsed value storage
  * @param hdr Current unit header
  * @param debug_str Ptr to string section start
@@ -1789,7 +1788,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->uconstant = def->special;
 		break;
 	/*  addrx* forms : The index is relative to the value of the
-		DW_AT_addr_base attribute of the associated compilation unit. 
+		DW_AT_addr_base attribute of the associated compilation unit.
 	    index into an array of addresses in the .debug_addr section.*/
 	case DW_FORM_addrx:
 		value->kind = DW_AT_KIND_ADDRESS;
@@ -1849,7 +1848,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 
 /**
  * @brief
- * 
+ *
  * @param buf Start of the DIE data
  * @param buf_end
  * @param abbrev Abbreviation of the DIE
@@ -1857,10 +1856,10 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
  * @param die DIE to store the parsed info into
  * @param debug_str Ptr to string section start
  * @param debug_str_len Length of the string section
- * @param sdb 
+ * @param sdb
  * @return const ut8* Updated buffer
  */
-static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevDecl *abbrev, 
+static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevDecl *abbrev,
 		RBinDwarfCompUnitHdr *hdr, RBinDwarfDie *die, const ut8 *debug_str, size_t debug_str_len, Sdb *sdb) {
 	size_t i;
 	for (i = 0; i < abbrev->count - 1; i++) {
@@ -1889,7 +1888,7 @@ static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevD
 
 /**
  * @brief Reads throught comp_unit buffer and parses all its DIEntries
- * 
+ *
  * @param sdb
  * @param buf_start Start of the compilation unit data
  * @param unit Unit to store the newly parsed information
@@ -1897,7 +1896,7 @@ static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevD
  * @param first_abbr_idx index for first abbrev of the current comp unit in abbrev array
  * @param debug_str Ptr to string section start
  * @param debug_str_len Length of the string section
- * 
+ *
  * @return const ut8* Update buffer
  */
 static const ut8 *parse_comp_unit(RBinDwarfDebugInfo *info, Sdb *sdb, const ut8 *buf_start,
@@ -1958,7 +1957,7 @@ static const ut8 *parse_comp_unit(RBinDwarfDebugInfo *info, Sdb *sdb, const ut8 
 
 /**
  * @brief Reads all information about compilation unit header
- * 
+ *
  * @param buf Start of the buffer
  * @param buf_end Upper bound of the buffer
  * @param unit Unit to read information into
@@ -2012,14 +2011,14 @@ static int expand_info(RBinDwarfDebugInfo *info) {
 
 /**
  * @brief Parses whole .debug_info section
- * 
+ *
  * @param sdb Sdb to store line related information into
  * @param da Parsed Abbreviations
  * @param obuf .debug_info section buffer start
  * @param len length of the section buffer
  * @param debug_str start of the .debug_str section
  * @param debug_str_len length of the debug_str section
- * @param mode 
+ * @param mode
  * @return R_API* parse_info_raw Parsed information
  */
 static RBinDwarfDebugInfo *parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
@@ -2070,7 +2069,7 @@ static RBinDwarfDebugInfo *parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
 		r_warn_if_fail (da->count <= da->capacity);
 
 		// find abbrev start for current comp unit
-		// we could also do naive, ((char *)da->decls) + abbrev_offset, 
+		// we could also do naive, ((char *)da->decls) + abbrev_offset,
 		// but this is more bulletproof to invalid DWARF
 		RBinDwarfAbbrevDecl key = { .offset = unit->hdr.abbrev_offset };
 		RBinDwarfAbbrevDecl *abbrev_start = bsearch (&key, da->decls, da->count, sizeof (key), abbrev_cmp);
@@ -2126,7 +2125,7 @@ static RBinDwarfDebugAbbrev *parse_abbrev_raw(const ut8 *obuf, size_t len) {
 		tmpdecl->code = tmp;
 		buf = r_uleb128 (buf, (size_t)(buf_end-buf), &tmp, NULL);
 		tmpdecl->tag = tmp;
- 
+
 		tmpdecl->offset = offset;
 		if (buf >= buf_end) {
 			break;
@@ -2190,7 +2189,7 @@ static ut8 *get_section_bytes(RBin *bin, const char *sect_name, size_t *len) {
 
 /**
  * @brief Parses .debug_info section
- * 
+ *
  * @param da Parsed abbreviations
  * @param bin
  * @param mode R_MODE_PRINT to print
@@ -2379,7 +2378,7 @@ R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *bin, int mode) {
 
 	if (mode == R_MODE_PRINT && abbrevs) {
 		print_abbrev_section (abbrevs, bin->cb_printf);
-	} 
+	}
 	free (buf);
 	return abbrevs;
 }
@@ -2452,7 +2451,7 @@ static HtUP *parse_loc_raw(HtUP/*<offset, List *<LocListEntry>*/ *loc_table, con
 			address_base = 0;
 			continue;
 		} else if (start_addr == max_offset && end_addr != max_offset) {
-			/* base address, DWARF2 doesn't have this type of entry, these entries shouldn't 
+			/* base address, DWARF2 doesn't have this type of entry, these entries shouldn't
 			   be in the list, they are just informational entries for further parsing (address_base) */
 			address_base = end_addr;
 		} else { /* location list entry: */
@@ -2478,10 +2477,10 @@ static HtUP *parse_loc_raw(HtUP/*<offset, List *<LocListEntry>*/ *loc_table, con
 /**
  * @brief Parses out the .debug_loc section into a table that maps each list as
  *        offset of a list -> LocationList
- * 
- * @param bin 
+ *
+ * @param bin
  * @param addr_size machine address size used in executable (necessary for parsing)
- * @return R_API* 
+ * @return R_API*
  */
 R_API HtUP/*<offset, RBinDwarfLocList*/ *r_bin_dwarf_parse_loc(RBin *bin, int addr_size) {
 	r_return_val_if_fail  (bin, NULL);
@@ -2528,7 +2527,7 @@ R_API void r_bin_dwarf_print_loc(HtUP /*<offset, RBinDwarfLocList*/ *loc_table, 
 	r_return_if_fail (loc_table && print);
 	print ("\nContents of the .debug_loc section:\n");
 	RList /*<RBinDwarfLocList *>*/ *sort_list = r_list_new ();
-	/* sort the table contents by offset and print sorted 
+	/* sort the table contents by offset and print sorted
 	   a bit ugly, but I wanted to decouple the parsing and printing */
 	ht_up_foreach (loc_table, sort_loclists, sort_list);
 	RListIter *i;

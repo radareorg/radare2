@@ -255,9 +255,9 @@ R_API bool r_th_start(RThread *th, int enable) {
 
 R_API int r_th_wait(struct r_th_t *th) {
 	int ret = false;
-	void *thret;
 	if (th) {
 #if HAVE_PTHREAD
+		void *thret;
 		ret = pthread_join (th->tid, &thret);
 #elif __WINDOWS__
 		ret = WaitForSingleObject (th->tid, INFINITE);
