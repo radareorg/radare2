@@ -4,17 +4,15 @@ checkshellscript() {
 	filelist="$1"
 	checkfun="$2"
 
-	printf '%s\n' "$filelist" | while IFS= read -r file 
+	while read -r file 
 	do
 		$checkfun "$file"	
-	done
+	done < "$filelist"
+		
 }
 
-if [ -f "$1" ]; then
-	SCRIPTS="$1"
-else
-	SCRIPTS=$(git grep '^#!/bin/sh' | cut -d: -f1)
-fi
+echo "Find all shellscripts, caching $SCRIPTS"
+SCRIPTS=$(git grep '/bin/sh' | cut -d: -f1)
 
-checkshellscript "$SCRIPTS" "shellcheck --format=gcc"
-checkshellscript "$SCRIPTS" checkbashisms
+checkshellscript "./sys/scripts.list" "shellcheck --format=gcc"
+checkshellscript "./sys/scripts.list" "checkbashisms"
