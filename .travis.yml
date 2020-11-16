@@ -35,7 +35,7 @@ jobs:
       addons:
         apt:
           packages:
-            - gcc-x86-64-linux-gnu
+            - binutils-x86-64-linux-gnu
     # Linux with GCC on System Z
     - if: (branch = master AND type = push) OR head_branch =~ ^s390x-*
       os: linux
@@ -53,11 +53,12 @@ jobs:
       name: ARM64
       arch: arm64
       dist: bionic
-      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1" R2_X86AS=x86_64-linux-gnu-as
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1" R2_X86AS=x86_64-linux-gnu-as R2_PPC_AS=powerpc64le-linux-gnu-as
       addons:
         apt:
           packages:
-            - gcc-x86-64-linux-gnu
+            - binutils-x86-64-linux-gnu
+            - binutils-powerpc64le-linux-gnu
     # Run Fuzzing Sanity Test on every push
     # XXX its broken it complains about invalid key
     #- os: linux
@@ -96,7 +97,7 @@ jobs:
       addons:
         apt:
           packages:
-            - gcc-x86-64-linux-gnu
+            - binutils-x86-64-linux-gnu
     # Linux with GCC on System Z
     - os: linux
       arch: s390x
@@ -108,11 +109,12 @@ jobs:
     # Linux with GCC on ARMv8 (64bit)
     - os: linux
       arch: arm64
-      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1" R2_X86AS=x86_64-linux-gnu-as
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1" R2_X86AS=x86_64-linux-gnu-as R2_PPC_AS=powerpc64le-linux-gnu-as
       addons:
         apt:
           packages:
-            - gcc-x86-64-linux-gnu
+            - binutils-x86-64-linux-gnu
+            - binutils-powerpc64le-linux-gnu
     - os: linux
       env: COMPILER_NAME=clang CXX=clang++ CC=clang ASAN=1 ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0 CFLAGS="-DR2_ASSERT_STDOUT=1"
 

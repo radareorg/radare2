@@ -566,3 +566,37 @@ EXPECT=<<EOF
 0x0000000c   2                     e031  cmp/eq r14, r1
 EOF
 RUN
+
+NAME=rasm2 -a ppc.as -b 64 "std r31, -8(r1)"
+FILE=-
+BROKEN=1
+CMDS=!rasm2 -a ppc.as -b 64 "std r31, -8(r1)"
+EXPECT=<<EOF
+f8ffe1fb
+EOF
+RUN
+
+NAME=rasm2 -a ppc -b 64 -d f8ffe1fb
+FILE=-
+CMDS=!rasm2 -a ppc -b 64 -d f8ffe1fb
+EXPECT=<<EOF
+std r31, -8(r1)
+EOF
+RUN
+
+NAME=rasm2 -a ppc.as -b 32 -e "mr r10, r4"
+FILE=-
+BROKEN=1
+CMDS=!rasm2 -a ppc.as -b 32 -e "mr r10, r4"
+EXPECT=<<EOF
+7c8a2378
+EOF
+RUN
+
+NAME=rasm2 -a ppc -b 32 -d 78238a7c
+FILE=-
+CMDS=!rasm2 -a ppc -b 32 -d 78238a7c
+EXPECT=<<EOF
+mr r10, r4
+EOF
+RUN

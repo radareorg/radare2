@@ -42,6 +42,7 @@ r_asm_sources = [
   'p/asm_or1k.c',
   'p/asm_pic.c',
   'p/asm_mcore.c',
+  'p/asm_ppc_as.c',
   'p/asm_ppc_cs.c',
   'p/asm_ppc_gnu.c',
   'p/asm_propeller.c',

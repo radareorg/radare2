@@ -93,6 +93,7 @@ asm_plugins = [
   'nios2',
   'or1k',
   'pic',
+  'ppc_as',
   'ppc_cs',
   'ppc_gnu',
   'propeller',
