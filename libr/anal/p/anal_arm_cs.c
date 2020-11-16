@@ -3754,6 +3754,7 @@ static void op_fillval (RAnalOp *op, csh handle, cs_insn *insn, int bits) {
 	case R_ANAL_OP_TYPE_ROR:
 	case R_ANAL_OP_TYPE_ROL:
 	case R_ANAL_OP_TYPE_CAST:
+#if CS_API_MAJOR > 3
 		for (i = 1; i < count; i++) {
 			if (bits == 64) {
 				cs_arm64_op arm64op = INSOP64 (i);
@@ -3762,12 +3763,14 @@ static void op_fillval (RAnalOp *op, csh handle, cs_insn *insn, int bits) {
 				}
 			} else {
 				cs_arm_op armop = INSOP (i);
+
 				if (armop.access == CS_AC_WRITE) {
 					continue;
 				}
 			}
 			break;
 		}
+#endif
 		for (j = 0; j < 3; j++, i++) {
 			set_src_dst (op->src[j], &handle, insn, i, bits);
 		}
