@@ -30,7 +30,7 @@ plugins: ${LIBSO} ${LIBAR}
 
 include ${STATIC_ASM_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst asm_,p/asm_,$(STATIC_OBJ)))
-OBJS=${STATIC_OBJS} asm.o acode.o aop.o
+OBJS=${STATIC_OBJS} asm.o acode.o aop.o binutils_as.o
 OBJS+=${SHARED2_OBJ}
 
 include $(TOP)/libr/rules.mk

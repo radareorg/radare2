@@ -600,3 +600,30 @@ EXPECT=<<EOF
 mr r10, r4
 EOF
 RUN
+
+NAME=rasm2 -a arm.as -b 16 "wfe"
+FILE=-
+BROKEN=1
+CMDS=!rasm2 -a arm.as -b 16 "wfe"
+EXPECT=<<EOF
+20bf
+EOF
+RUN
+
+NAME=rasm2 -a arm.as -b 32 "add fp, sp, 0"
+FILE=-
+BROKEN=1
+CMDS=!rasm2 -a arm.as -b 32 "add fp, sp, 0"
+EXPECT=<<EOF
+00b08de2
+EOF
+RUN
+
+NAME=rasm2 -a arm.as -b 64 "sub sp, sp, 16"
+FILE=-
+BROKEN=1
+CMDS=!rasm2 -a arm.as -b 64 "sub sp, sp, 16"
+EXPECT=<<EOF
+ff4300d1
+EOF
+RUN
