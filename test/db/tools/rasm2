@@ -619,10 +619,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rasm2 -a arm.as -b 32 -e 'ldr fp, [sp], #4'
+NAME=rasm2 -a arm.as -b 32 -e "ldr fp, [sp], 4"
 FILE=-
 BROKEN=1
-CMDS=!rasm2 -a arm.as -b 32 -e 'ldr fp, [sp], #4'
+CMDS=!rasm2 -a arm.as -b 32 -e "ldr fp, [sp], 4"
 EXPECT=<<EOF
 e49db004
 EOF
