@@ -29,7 +29,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 
 RAsmPlugin r_asm_plugin_x86_as = {
 	.name = "x86.as",
-	.desc = "Intel X86 GNU Assembler (Use R2_X86AS env)",
+	.desc = "Intel X86 GNU Assembler (Use "ASSEMBLER" env)",
 	.arch = "x86",
 	.license = "LGPL3",
 	// NOTE: 64bits is not supported on OSX's nasm :(
