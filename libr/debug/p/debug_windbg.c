@@ -289,7 +289,7 @@ static int windbg_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	} else if (ptype == IMAGE_FILE_MACHINE_ARM64) {
 		DWORD *b = (DWORD *)buf;
 		*b |= 0xff | CONTEXT_ARM64;
-	} else if (ptype == IMAGE_FILE_MACHINE_ARM64) {
+	} else if (ptype == IMAGE_FILE_MACHINE_ARM) {
 		DWORD *b = (DWORD *)buf;
 		*b |= 0xff | CONTEXT_ARM;
 	}
