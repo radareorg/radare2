@@ -318,8 +318,9 @@ dotherax:
 			if (flags & 1) {
 				fwrite (&n, sizeof (n), 1, stdout);
 			} else {
-				for (int i = 0; i < 8; ++i) {
-					printf ("%02x", (int) n & 0xff);
+				int i;
+				for (i = 0; i < 8; i++) {
+					printf ("%02x", (int) (n & 0xff));
 					n >>= 8;
 				}
 				printf ("\n");
@@ -330,7 +331,8 @@ dotherax:
 			if (flags & 1) {
 				fwrite (&n32, sizeof (n32), 1, stdout);
 			} else {
-				for (int i = 0; i < 4; ++i) {
+				int i = 0;
+				for (i = 0; i < 4; i++) {
 					printf ("%02x", n32 & 0xff);
 					n32 >>= 8;
 				}
@@ -376,8 +378,9 @@ dotherax:
 			if (flags & 1) {
 				fwrite (&n, sizeof (n), 1, stdout);
 			} else {
-				for (int i = 0; i < 8; ++i) {
-					printf ("\\x%02x", (int) n & 0xff);
+				int i;
+				for (i = 0; i < 8; i++) {
+					printf ("\\x%02x", (int) (n & 0xff));
 					n >>= 8;
 				}
 				printf ("\n");
@@ -388,7 +391,8 @@ dotherax:
 			if (flags & 1) {
 				fwrite (&n32, sizeof (n32), 1, stdout);
 			} else {
-				for (int i = 0; i < 4; ++i) {
+				int i;
+				for (i = 0; i < 4; i++) {
 					printf ("\\x%02x", n32 & 0xff);
 					n32 >>= 8;
 				}
