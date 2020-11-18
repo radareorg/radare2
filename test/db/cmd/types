@@ -1629,3 +1629,32 @@ fcn.00011b90
 fcn.00014d50
 EOF
 RUN
+
+NAME=aht aligned
+FILE=-
+CMDS=<<EOF
+"td struct foo {char gap;int bar __attribute__((__aligned__(8)));};"
+ahts 8 ~foo
+?e =
+wx c7400800000000
+aht foo.bar
+pd 1
+EOF
+EXPECT=<<EOF
+foo.bar
+=
+            0x00000000      c74008000000.  mov dword [rax + foo.bar], 0
+EOF
+RUN
+
+NAME=ahts nested
+FILE=-
+CMDS=<<EOF
+"td struct foo {int bar;int cow;};"
+"td struct spam {int ham;struct foo _foo;int eggs;};"
+ahts 8 ~spam
+EOF
+EXPECT=<<EOF
+spam._foo.cow
+EOF
+RUN
