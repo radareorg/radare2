@@ -331,7 +331,7 @@ dotherax:
 			if (flags & 1) {
 				fwrite (&n32, sizeof (n32), 1, stdout);
 			} else {
-				int i = 0;
+				int i;
 				for (i = 0; i < 4; i++) {
 					printf ("%02x", n32 & 0xff);
 					n32 >>= 8;
