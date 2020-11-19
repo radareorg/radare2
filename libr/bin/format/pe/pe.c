@@ -574,12 +574,113 @@ error:
 	return false;
 }
 
+#if R_SYS_ENDIAN
+static void PE_(image_dos_header_swapendian)(PE_(image_dos_header) *header) {
+#define swapendian(field) r_mem_swapendian ((ut8*) &header->field, (ut8*) &header->field, sizeof (header->field))
+	swapendian (e_magic);
+	swapendian (e_cblp);
+	swapendian (e_cp);
+	swapendian (e_crlc);
+	swapendian (e_cparhdr);
+	swapendian (e_minalloc);
+	swapendian (e_maxalloc);
+	swapendian (e_ss);
+	swapendian (e_sp);
+	swapendian (e_csum);
+	swapendian (e_ip);
+	swapendian (e_cs);
+	swapendian (e_lfarlc);
+	swapendian (e_ovno);
+	int i;
+	for (i = 0; i < 4; i++) {
+		swapendian (e_res[i]);
+	}
+	swapendian (e_oemid);
+	swapendian (e_oeminfo);
+	for (i = 0; i < 10; i++) {
+		swapendian (e_res2[i]);
+	}
+	swapendian (e_lfanew);
+#undef swapendian
+}
+
+static void PE_(image_nt_headers_swapendian)(PE_(image_nt_headers) *headers) {
+#define swapendian(field) r_mem_swapendian ((ut8*) &headers->field, (ut8*) &headers->field, sizeof (headers->field))
+	swapendian (Signature);
+	swapendian (file_header.Machine);
+	swapendian (file_header.NumberOfSections);
+	swapendian (file_header.TimeDateStamp);
+	swapendian (file_header.PointerToSymbolTable);
+	swapendian (file_header.NumberOfSymbols);
+	swapendian (file_header.SizeOfOptionalHeader);
+	swapendian (file_header.Characteristics);
+	swapendian (optional_header.Magic);
+	swapendian (optional_header.MajorLinkerVersion);
+	swapendian (optional_header.MinorLinkerVersion);
+	swapendian (optional_header.SizeOfCode);
+	swapendian (optional_header.SizeOfInitializedData);
+	swapendian (optional_header.SizeOfUninitializedData);
+	swapendian (optional_header.AddressOfEntryPoint);
+	swapendian (optional_header.BaseOfCode);
+#ifndef R_BIN_PE64
+	swapendian (optional_header.BaseOfData);
+#endif
+	swapendian (optional_header.ImageBase);
+	swapendian (optional_header.SectionAlignment);
+	swapendian (optional_header.FileAlignment);
+	swapendian (optional_header.MajorOperatingSystemVersion);
+	swapendian (optional_header.MinorOperatingSystemVersion);
+	swapendian (optional_header.MajorImageVersion);
+	swapendian (optional_header.MinorImageVersion);
+	swapendian (optional_header.MajorSubsystemVersion);
+	swapendian (optional_header.MinorSubsystemVersion);
+	swapendian (optional_header.Win32VersionValue);
+	swapendian (optional_header.SizeOfImage);
+	swapendian (optional_header.SizeOfHeaders);
+	swapendian (optional_header.CheckSum);
+	swapendian (optional_header.Subsystem);
+	swapendian (optional_header.DllCharacteristics);
+	swapendian (optional_header.SizeOfStackReserve);
+	swapendian (optional_header.SizeOfStackCommit);
+	swapendian (optional_header.SizeOfHeapReserve);
+	swapendian (optional_header.SizeOfHeapCommit);
+	swapendian (optional_header.LoaderFlags);
+	swapendian (optional_header.NumberOfRvaAndSizes);
+	int i;
+	for (i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES; i++) {
+		swapendian (optional_header.DataDirectory[i].VirtualAddress);
+		swapendian (optional_header.DataDirectory[i].Size);
+	}
+#undef swapendian
+}
+#endif
+
+static int read_dos_header(RBuffer *b, PE_(image_dos_header) *header) {
+	st64 r = r_buf_read_at (b, 0, (ut8*) header, sizeof(PE_(image_dos_header)));
+#if R_SYS_ENDIAN
+	if (r >= 0) {
+		PE_(image_dos_header_swapendian) (header);
+	}
+#endif
+	return r;
+}
+
+static int read_nt_headers(RBuffer *b, ut64 addr, PE_(image_nt_headers) *headers) {
+	int r = r_buf_read_at (b, addr, (ut8*) headers, sizeof (PE_(image_nt_headers)));
+#if R_SYS_ENDIAN
+	if (r >= 0) {
+		PE_(image_nt_headers_swapendian) (headers);
+	}
+#endif
+	return r;
+}
+
 static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!(bin->dos_header = malloc (sizeof(PE_(image_dos_header))))) {
 		r_sys_perror ("malloc (dos header)");
 		return false;
 	}
-	if (r_buf_read_at (bin->b, 0, (ut8*) bin->dos_header, sizeof(PE_(image_dos_header))) < 0) {
+	if (read_dos_header (bin->b, bin->dos_header) < 0) {
 		bprintf ("Warning: read (dos header)\n");
 		return false;
 	}
@@ -597,7 +698,7 @@ static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 		return false;
 	}
 	bin->nt_header_offset = bin->dos_header->e_lfanew;
-	if (r_buf_read_at (bin->b, bin->dos_header->e_lfanew, (ut8*) bin->nt_headers, sizeof (PE_(image_nt_headers))) < 0) {
+	if (read_nt_headers (bin->b, bin->dos_header->e_lfanew, bin->nt_headers) < 0) {
 		bprintf ("Warning: read (dos header)\n");
 		return false;
 	}
@@ -656,10 +757,10 @@ static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->optional_header = &bin->nt_headers->optional_header;
 	bin->data_directory = (PE_(image_data_directory*)) & bin->optional_header->DataDirectory;
 
-	if (strncmp ((char *)&bin->dos_header->e_magic, "MZ", 2) ||
-		(strncmp ((char *)&bin->nt_headers->Signature, "PE", 2) &&
+	if (bin->dos_header->e_magic != 0x5a4d || // "MZ"
+		(bin->nt_headers->Signature != 0x4550 && // "PE"
 		/* Check also for Phar Lap TNT DOS extender PL executable */
-		strncmp ((char *)&bin->nt_headers->Signature, "PL", 2))) {
+		bin->nt_headers->Signature != 0x4c50)) { // "PL"
 		return false;
 	}
 	return true;
