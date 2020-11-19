@@ -114,3 +114,22 @@ gpr	pc	.32	160	0
 
 EOF
 RUN
+
+NAME= Instruction descriptions for TriCore
+FILE=bins/tricore/return_0.elf
+CMDS=<<EOF
+e asm.describe = 1
+s 0x80000004
+pd 8
+EOF
+EXPECT=<<EOF
+            0x80000004      8c80           ld.h d15, [a8]0             ; load half word
+            0x80000006      0000           nop                         ; nop operation
+            0x80000008      8c80           ld.h d15, [a8]0             ; load half word
+            0x8000000a      0000           nop                         ; nop operation
+            0x8000000c      8c80           ld.h d15, [a8]0             ; load half word
+            0x8000000e      0000           nop                         ; nop operation
+            0x80000010      8c80           ld.h d15, [a8]0             ; load half word
+            0x80000012      0000           nop                         ; nop operation
+EOF
+RUN
