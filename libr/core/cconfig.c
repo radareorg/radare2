@@ -562,6 +562,7 @@ static void update_asmbits_options(RCore *core, RConfigNode *node) {
 	if (core && core->rasm && core->rasm->cur && node) {
 		int bits = core->rasm->cur->bits;
 		int i;
+		node->options->free = free;
 		r_list_purge (node->options);
 		for (i = 1; i <= bits; i <<= 1) {
 			if (i & bits) {
