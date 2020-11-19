@@ -1629,3 +1629,40 @@ fcn.00011b90
 fcn.00014d50
 EOF
 RUN
+
+NAME=aht aligned
+FILE=-
+CMDS=<<EOF
+"td struct foo {char gap;int bar __attribute__((__aligned__(4)));};"
+"td struct foo2 {char gap[1];int bar __attribute__((__aligned__(4)));};"
+"td struct foo3 {char gap[3];int bar __attribute__((__aligned__(4)));};"
+"td struct foo4 {char gap[4];int bar;};"
+"td struct foo5 {int gap;int bar;};"
+ahts 4 ~foo
+?e =
+wx c7400400000000
+aht foo.bar
+pd 1
+EOF
+EXPECT=<<EOF
+foo.bar
+foo2.bar
+foo3.bar
+foo4.bar
+foo5.bar
+=
+            0x00000000      c74004000000.  mov dword [rax + foo.bar], 0
+EOF
+RUN
+
+NAME=ahts nested
+FILE=-
+CMDS=<<EOF
+"td struct foo {int bar;int cow;};"
+"td struct spam {int ham;struct foo _foo;int eggs;};"
+ahts 8 ~spam
+EOF
+EXPECT=<<EOF
+spam._foo.cow
+EOF
+RUN
