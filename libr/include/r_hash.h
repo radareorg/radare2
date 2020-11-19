@@ -80,7 +80,7 @@ typedef ut32 utcrc;
 #endif
 #define UTCRC_C(x) ((utcrc)(x))
 
-R_API ut16 r_hash_fletcher8(const ut8 *d, size_t length);
+R_API ut8 r_hash_fletcher8(const ut8 *d, size_t length);
 R_API ut16 r_hash_fletcher16(const ut8 *data, size_t len);
 R_API ut32 r_hash_fletcher32(const ut8 *data, size_t len);
 R_API ut64 r_hash_fletcher64(const ut8 *addr, size_t len);
