@@ -55,7 +55,10 @@ static int format_output(RNum *num, char mode, const char *s, int force_mode, ut
 	}
 	if (flags & 2) {
 		ut64 n2 = n;
-		r_mem_swapendian ((ut8 *) &n, (ut8 *) &n2, (n >> 32)? 8: 4);
+		r_mem_swapendian ((ut8 *) &n, (ut8 *) &n2, 8);
+		if (!(int) n) {
+			n >>= 32;
+		}
 	}
 	switch (mode) {
 	case 'I':
@@ -65,15 +68,16 @@ static int format_output(RNum *num, char mode, const char *s, int force_mode, ut
 		printf ("0x%" PFMT64x "\n", n);
 		break;
 	case 'F': {
-		float *f = (float *) &n;
+		int n2 = (int) n;
+		float *f = (float *) &n2;
 		printf ("%ff\n", *f);
 	} break;
 	case 'f': printf ("%.01lf\n", num->fvalue); break;
 	case 'l':
 		R_STATIC_ASSERT (sizeof (float) == 4);
 		float f = (float) num->fvalue;
-		ut8 *p = (ut8 *) &f;
-		printf ("Fx%02x%02x%02x%02x\n", p[3], p[2], p[1], p[0]);
+		ut32 *p = (ut32 *) &f;
+		printf ("Fx%08x\n", *p);
 		break;
 	case 'O': printf ("0%" PFMT64o "\n", n); break;
 	case 'B':
@@ -311,24 +315,28 @@ dotherax:
 		ut64 n = r_num_math (num, str);
 		if (n >> 32) {
 			/* is 64 bit value */
-			ut8 *np = (ut8 *) &n;
 			if (flags & 1) {
 				fwrite (&n, sizeof (n), 1, stdout);
 			} else {
-				printf ("%02x%02x%02x%02x"
-					"%02x%02x%02x%02x\n",
-					np[0], np[1], np[2], np[3],
-					np[4], np[5], np[6], np[7]);
+				int i;
+				for (i = 0; i < 8; i++) {
+					printf ("%02x", (int) (n & 0xff));
+					n >>= 8;
+				}
+				printf ("\n");
 			}
 		} else {
 			/* is 32 bit value */
-			ut32 n32 = (ut32) (n & UT32_MAX);
-			ut8 *np = (ut8 *) &n32;
+			ut32 n32 = (ut32) n;
 			if (flags & 1) {
 				fwrite (&n32, sizeof (n32), 1, stdout);
 			} else {
-				printf ("%02x%02x%02x%02x\n",
-					np[0], np[1], np[2], np[3]);
+				int i;
+				for (i = 0; i < 4; i++) {
+					printf ("%02x", n32 & 0xff);
+					n32 >>= 8;
+				}
+				printf ("\n");
 			}
 		}
 		fflush (stdout);
@@ -367,24 +375,28 @@ dotherax:
 		ut64 n = r_num_math (num, str);
 		if (n >> 32) {
 			/* is 64 bit value */
-			ut8 *np = (ut8 *) &n;
 			if (flags & 1) {
 				fwrite (&n, sizeof (n), 1, stdout);
 			} else {
-				printf ("\\x%02x\\x%02x\\x%02x\\x%02x"
-					"\\x%02x\\x%02x\\x%02x\\x%02x\n",
-					np[0], np[1], np[2], np[3],
-					np[4], np[5], np[6], np[7]);
+				int i;
+				for (i = 0; i < 8; i++) {
+					printf ("\\x%02x", (int) (n & 0xff));
+					n >>= 8;
+				}
+				printf ("\n");
 			}
 		} else {
 			/* is 32 bit value */
-			ut32 n32 = (ut32) (n & UT32_MAX);
-			ut8 *np = (ut8 *) &n32;
+			ut32 n32 = (ut32) n;
 			if (flags & 1) {
 				fwrite (&n32, sizeof (n32), 1, stdout);
 			} else {
-				printf ("\\x%02x\\x%02x\\x%02x\\x%02x\n",
-					np[0], np[1], np[2], np[3]);
+				int i;
+				for (i = 0; i < 4; i++) {
+					printf ("\\x%02x", n32 & 0xff);
+					n32 >>= 8;
+				}
+				printf ("\n");
 			}
 		}
 		fflush (stdout);
@@ -403,6 +415,7 @@ dotherax:
 		}
 		ut32 n = r_num_math (num, ts);
 		RPrint *p = r_print_new ();
+		p->big_endian = R_SYS_ENDIAN;
 		if (gmt) {
 			p->datezone = r_num_math (num, gmt);
 		}
