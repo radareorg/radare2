@@ -1633,6 +1633,8 @@ RUN
 NAME=aht aligned
 FILE=-
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 "td struct foo {char gap;int bar __attribute__((__aligned__(4)));};"
 "td struct foo2 {char gap[1];int bar __attribute__((__aligned__(4)));};"
 "td struct foo3 {char gap[3];int bar __attribute__((__aligned__(4)));};"
