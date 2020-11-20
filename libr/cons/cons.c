@@ -1320,7 +1320,7 @@ static int __xterm_get_cur_pos(int *xpos) {
 		is_reply = true;
 		ch = r_cons_readchar ();
 		if (ch != 0x1b) {
-			while (ch = r_cons_readchar_timeout (25)) {
+			while ((ch = r_cons_readchar_timeout (25))) {
 				if (ch < 1) {
 					return 0;
 				}

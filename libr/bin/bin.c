@@ -149,6 +149,7 @@ R_API void r_bin_info_free(RBinInfo *rb) {
 	free (rb->actual_checksum);
 	free (rb->claimed_checksum);
 	free (rb->compiler);
+	free (rb->head_flag);
 	free (rb);
 }
 

@@ -562,6 +562,7 @@ static void update_asmbits_options(RCore *core, RConfigNode *node) {
 	if (core && core->rasm && core->rasm->cur && node) {
 		int bits = core->rasm->cur->bits;
 		int i;
+		node->options->free = free;
 		r_list_purge (node->options);
 		for (i = 1; i <= bits; i <<= 1) {
 			if (i & bits) {
@@ -756,8 +757,7 @@ static bool cb_asmbits(void *user, void *data) {
 		}
 		if (!r_anal_set_bits (core->anal, bits)) {
 			eprintf ("asm.arch: Cannot setup '%d' bits analysis engine\n", bits);
-		} else {
-			ret = true;
+			ret = false;
 		}
 		core->print->bits = bits;
 	}

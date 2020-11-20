@@ -63,8 +63,6 @@
 #define ISPREINDEX64() ((OPCOUNT64() == 3) && (ISMEM64(2)) && (ISWRITEBACK64()))
 #define ISPOSTINDEX64() ((OPCOUNT64() == 4) && (ISIMM64(3)) && (ISWRITEBACK64()))
 
-static RRegItem base_regs[4];
-static RRegItem regdelta_regs[4];
 static HtUU *ht_itblock = NULL;
 static HtUU *ht_it = NULL;
 
@@ -3590,20 +3588,20 @@ static bool is_valid(arm_reg reg) {
 	return reg != ARM_REG_INVALID;
 }
 
-static int parse_reg_name(RRegItem *reg_base, RRegItem *reg_delta, csh handle, cs_insn *insn, int reg_num) {
+static int parse_reg_name(RReg *reg, RRegItem **reg_base, RRegItem **reg_delta, csh handle, cs_insn *insn, int reg_num) {
 	cs_arm_op armop = INSOP (reg_num);
 	switch (armop.type) {
 	case ARM_OP_REG:
-		reg_base->name = (char *)cs_reg_name (handle, armop.reg);
+		*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.reg), R_REG_TYPE_ALL);
 		break;
 	case ARM_OP_MEM:
 		if (is_valid (armop.mem.base) && is_valid (armop.mem.index)) {
-			reg_base->name = (char *)cs_reg_name (handle, armop.mem.base);
-			reg_delta->name = (char *)cs_reg_name (handle, armop.mem.index);
+			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.base), R_REG_TYPE_ALL);
+			*reg_delta = r_reg_get (reg, cs_reg_name (handle, armop.mem.index), R_REG_TYPE_ALL);
 		} else if (is_valid (armop.mem.base)) {
-			reg_base->name = (char *)cs_reg_name (handle, armop.mem.base);
+			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.base), R_REG_TYPE_ALL);
 		} else if (is_valid (armop.mem.index)) {
-			reg_base->name = (char *)cs_reg_name (handle, armop.mem.index);
+			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.index), R_REG_TYPE_ALL);
 		}
 		break;
 	default:
@@ -3626,27 +3624,27 @@ static char *reg_list[] = {
 	"x30"
 };
 
-static int parse_reg64_name(RRegItem *reg_base, RRegItem *reg_delta, csh handle, cs_insn *insn, int reg_num) {
+static int parse_reg64_name(RReg *reg, RRegItem **reg_base, RRegItem **reg_delta, csh handle, cs_insn *insn, int reg_num) {
 	cs_arm64_op armop = INSOP64 (reg_num);
 	switch (armop.type) {
 	case ARM64_OP_REG:
-		reg_base->name = (char *)cs_reg_name (handle, armop.reg);
+		*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.reg), R_REG_TYPE_ALL);
 		break;
 	case ARM64_OP_MEM:
 		if (is_valid64 (armop.mem.base) && is_valid64 (armop.mem.index)) {
-			reg_base->name = (char *)cs_reg_name (handle, armop.mem.base);
-			reg_delta->name = (char *)cs_reg_name (handle, armop.mem.index);
+			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.base), R_REG_TYPE_ALL);
+			*reg_delta = r_reg_get (reg, cs_reg_name (handle, armop.mem.index), R_REG_TYPE_ALL);
 		} else if (is_valid64 (armop.mem.base)) {
-			reg_base->name = (char *)cs_reg_name (handle, armop.mem.base);
+			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.base), R_REG_TYPE_ALL);
 		} else if (is_valid64 (armop.mem.index)) {
-			reg_base->name = (char *)cs_reg_name (handle, armop.mem.index);
+			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.index), R_REG_TYPE_ALL);
 		}
 		break;
 	default:
 		break;
 	}
-	if (reg_base->name && *reg_base->name == 'w') {
-		reg_base->name = reg_list[atoi (reg_base->name + 1)];
+	if (*reg_base && *(*reg_base)->name == 'w') {
+		*reg_base = r_reg_get (reg, reg_list[atoi ((*reg_base)->name + 1)], R_REG_TYPE_ALL);
 	}
 	return 0;
 }
@@ -3673,13 +3671,13 @@ static void set_opdir(RAnalOp *op) {
         }
 }
 
-static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x, int bits) {
+static void set_src_dst(RAnalValue *val, RReg *reg, csh *handle, cs_insn *insn, int x, int bits) {
 	cs_arm_op armop = INSOP (x);
 	cs_arm64_op arm64op = INSOP64 (x);
 	if (bits == 64) {
-		parse_reg64_name (&base_regs[x], &regdelta_regs[x], *handle, insn, x);
+		parse_reg64_name (reg, &val->reg, &val->regdelta, *handle, insn, x);
 	} else {
-		parse_reg_name (&base_regs[x], &regdelta_regs[x], *handle, insn, x);
+		parse_reg_name (reg, &val->reg, &val->regdelta, *handle, insn, x);
 	}
 	if (bits == 64) {
 		switch (arm64op.type) {
@@ -3687,7 +3685,6 @@ static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x, int 
 			break;
 		case ARM64_OP_MEM:
 			val->delta = arm64op.mem.disp;
-			val->regdelta = &regdelta_regs[x];
 			break;
 		case ARM64_OP_IMM:
 			val->imm = arm64op.imm;
@@ -3702,7 +3699,6 @@ static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x, int 
 		case ARM_OP_MEM:
 			val->mul = armop.mem.scale;
 			val->delta = armop.mem.disp;
-			val->regdelta = &regdelta_regs[x];
 			break;
 		case ARM_OP_IMM:
 			val->imm = armop.imm;
@@ -3711,7 +3707,6 @@ static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x, int 
 			break;
 		}
 	}
-	val->reg = &base_regs[x];
 }
 
 static void create_src_dst(RAnalOp *op) {
@@ -3719,17 +3714,9 @@ static void create_src_dst(RAnalOp *op) {
 	op->src[1] = r_anal_value_new ();
 	op->src[2] = r_anal_value_new ();
 	op->dst = r_anal_value_new ();
-	ZERO_FILL (base_regs[0]);
-	ZERO_FILL (base_regs[1]);
-	ZERO_FILL (base_regs[2]);
-	ZERO_FILL (base_regs[3]);
-	ZERO_FILL (regdelta_regs[0]);
-	ZERO_FILL (regdelta_regs[1]);
-	ZERO_FILL (regdelta_regs[2]);
-	ZERO_FILL (regdelta_regs[3]);
 }
 
-static void op_fillval (RAnalOp *op, csh handle, cs_insn *insn, int bits) {
+static void op_fillval (RAnal *anal, RAnalOp *op, csh handle, cs_insn *insn, int bits) {
 	create_src_dst (op);
 	int i, j;
 	int count = bits == 64 ? insn->detail->arm64.op_count : insn->detail->arm.op_count;
@@ -3754,6 +3741,7 @@ static void op_fillval (RAnalOp *op, csh handle, cs_insn *insn, int bits) {
 	case R_ANAL_OP_TYPE_ROR:
 	case R_ANAL_OP_TYPE_ROL:
 	case R_ANAL_OP_TYPE_CAST:
+#if CS_API_MAJOR > 3
 		for (i = 1; i < count; i++) {
 			if (bits == 64) {
 				cs_arm64_op arm64op = INSOP64 (i);
@@ -3762,16 +3750,18 @@ static void op_fillval (RAnalOp *op, csh handle, cs_insn *insn, int bits) {
 				}
 			} else {
 				cs_arm_op armop = INSOP (i);
+
 				if (armop.access == CS_AC_WRITE) {
 					continue;
 				}
 			}
 			break;
 		}
+#endif
 		for (j = 0; j < 3; j++, i++) {
-			set_src_dst (op->src[j], &handle, insn, i, bits);
+			set_src_dst (op->src[j], anal->reg, &handle, insn, i, bits);
 		}
-		set_src_dst (op->dst, &handle, insn, 0, bits);
+		set_src_dst (op->dst, anal->reg, &handle, insn, 0, bits);
 		break;
 	case R_ANAL_OP_TYPE_STORE:
 		if (count > 2) {
@@ -3787,9 +3777,9 @@ static void op_fillval (RAnalOp *op, csh handle, cs_insn *insn, int bits) {
 				}
 			}
 		}
-		set_src_dst (op->dst, &handle, insn, --count, bits);
+		set_src_dst (op->dst, anal->reg, &handle, insn, --count, bits);
 		for (j = 0; j < 3 && j < count; j++) {
-			set_src_dst (op->src[j], &handle, insn, j, bits);
+			set_src_dst (op->src[j], anal->reg, &handle, insn, j, bits);
 		}
 		break;
 	default:
@@ -3874,7 +3864,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		}
 		set_opdir (op);
 		if (mask & R_ANAL_OP_MASK_VAL) {
-			op_fillval (op, handle, insn, a->bits);
+			op_fillval (a, op, handle, insn, a->bits);
 		}
 		cs_free (insn, n);
 	}

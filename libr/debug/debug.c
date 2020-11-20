@@ -458,38 +458,35 @@ R_API int r_debug_stop(RDebug *dbg) {
 
 R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
 	if (arch && dbg && dbg->h) {
-		bool rc = r_sys_arch_match (dbg->h->arch, arch);
-		if (rc) {
-			switch (bits) {
-			case 27:
-				if (dbg->h->bits == 27) {
-					dbg->bits = 27;
-				}
-				break;
-			case 32:
-				if (dbg->h->bits & R_SYS_BITS_32) {
-					dbg->bits = R_SYS_BITS_32;
-				}
-				break;
-			case 64:
-				dbg->bits = R_SYS_BITS_64;
-				break;
+		switch (bits) {
+		case 27:
+			if (dbg->h->bits == 27) {
+				dbg->bits = 27;
 			}
-			if (!dbg->h->bits) {
-				dbg->bits = dbg->h->bits;
-			} else if (!(dbg->h->bits & dbg->bits)) {
-				dbg->bits = dbg->h->bits & R_SYS_BITS_64;
-				if (!dbg->bits) {
-					dbg->bits = dbg->h->bits & R_SYS_BITS_32;
-				}
-				if (!dbg->bits) {
-					dbg->bits = R_SYS_BITS_32;
-				}
+			break;
+		case 32:
+			if (dbg->h->bits & R_SYS_BITS_32) {
+				dbg->bits = R_SYS_BITS_32;
 			}
-			free (dbg->arch);
-			dbg->arch = strdup (arch);
-			return true;
+			break;
+		case 64:
+			dbg->bits = R_SYS_BITS_64;
+			break;
 		}
+		if (!dbg->h->bits) {
+			dbg->bits = dbg->h->bits;
+		} else if (!(dbg->h->bits & dbg->bits)) {
+			dbg->bits = dbg->h->bits & R_SYS_BITS_64;
+			if (!dbg->bits) {
+				dbg->bits = dbg->h->bits & R_SYS_BITS_32;
+			}
+			if (!dbg->bits) {
+				dbg->bits = R_SYS_BITS_32;
+			}
+		}
+		free (dbg->arch);
+		dbg->arch = strdup (arch);
+		return true;
 	}
 	return false;
 }

@@ -164,7 +164,7 @@ pyc_opcodes *new_pyc_opcodes() {
 		return NULL;
 	}
 	for (i = 0; i < 256; i++) {
-		ret->opcodes[i].op_name = r_str_newf ("<%lu>", i);
+		ret->opcodes[i].op_name = r_str_newf ("<%zu>", i);
 		if (!ret->opcodes[i].op_name) {
 			for (j = 0; j < i; j++) {
 				free (ret->opcodes[j].op_name);
