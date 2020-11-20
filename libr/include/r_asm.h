@@ -239,6 +239,7 @@ extern RAsmPlugin r_asm_plugin_msp430;
 extern RAsmPlugin r_asm_plugin_nios2;
 extern RAsmPlugin r_asm_plugin_or1k;
 extern RAsmPlugin r_asm_plugin_pic;
+extern RAsmPlugin r_asm_plugin_ppc_as;
 extern RAsmPlugin r_asm_plugin_ppc_cs;
 extern RAsmPlugin r_asm_plugin_ppc_gnu;
 extern RAsmPlugin r_asm_plugin_propeller;
