@@ -805,6 +805,7 @@ RUN
 NAME=ts function pointer test
 FILE=-
 CMDS=<<EOF
+e asm.bits=64
 ws hello @ 0xc
 "td struct foo {int x; int (*fp)(int a , int b ); char *b;};"
 ts foo
