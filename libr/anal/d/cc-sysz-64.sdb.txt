@@ -1,0 +1,9 @@
+default.cc=sysz
+
+sysz=cc
+cc.sysz.arg0=r2
+cc.sysz.arg1=r3
+cc.sysz.arg2=r4
+cc.sysz.arg3=r5
+cc.sysz.arg4=r6
+cc.sysz.ret=r2
