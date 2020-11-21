@@ -6618,16 +6618,19 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 		}
 	}
 	RAnalEsil *esil = core->anal->esil;
-	RList *ocache = core->io->cache;
+	RPVector ocache = core->io->cache;
 	RCache *ocacheb = core->io->buffer;
 	const int ocached = core->io->cached;
-	if (ocache) {
+	if (ocache.v.a) {
 		if (ocacheb && ocacheb->len) {
 			RCache *c = r_cache_new ();
 			r_cache_set (c, ocacheb->base, ocacheb->buf, ocacheb->len);
 			core->io->buffer = c;
 		}
-		core->io->cache = r_list_clone (ocache);
+		RPVector *vec = (RPVector *)r_vector_clone ((RVector *)&ocache);
+		vec->v.free = NULL;
+		core->io->cache = *vec;
+		free (vec);
 	} else {
 		r_io_cache_init (core->io);
 	}
@@ -6729,17 +6732,23 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	}
 	free (buf);
 	r_reg_arena_pop (reg);
-	int len = r_list_length (ocache);
-	if (r_list_length (core->io->cache) > len) {
+	int len = r_pvector_len (&ocache);
+	if (r_pvector_len (&core->io->cache) > len) {
 		// TODO: Implement push/pop for IO.cache
 		while (len > 0) {
-			(void)r_list_pop_head (core->io->cache);
+			(void)r_pvector_pop_front (&core->io->cache);
 			len--;
 		}
-		core->io->cache->free = ocache->free;
+		core->io->cache.v.free = ocache.v.free;
 	}
 	r_io_cache_fini (core->io);
 	core->io->cache = ocache;
+	r_skyline_clear (&core->io->cache_skyline);
+	void **it;
+	r_pvector_foreach (&ocache, it) {
+		RIOCache *c = (RIOCache *)*it;
+		r_skyline_add (&core->io->cache_skyline, c->itv, c);
+	}
 	core->io->buffer = ocacheb;
 	core->io->cached = ocached;
 	r_config_hold_restore (chold);
