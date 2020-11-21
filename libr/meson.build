@@ -384,6 +384,7 @@ include_files =[
   'include/r_types.h',
   'include/r_util.h',
   'include/r_vector.h',
+  'include/r_skyline.h',
 ]
 install_headers(include_files, install_dir: r2_incdir)
 
