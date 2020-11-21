@@ -64,6 +64,11 @@ extern "C" {
 
 typedef struct xtensa_isa_opaque { int unused; } *xtensa_isa;
 
+#if defined(_MSC_VER)
+__declspec(dllexport)
+#endif
+extern xtensa_isa xtensa_default_isa;
+
 
 /* Most of the Xtensa ISA entities (e.g., opcodes, regfiles, etc.) are
    represented here using sequential integers beginning with 0.  The
