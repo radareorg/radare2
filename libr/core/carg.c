@@ -194,8 +194,9 @@ R_API void r_core_print_func_args(RCore *core) {
 			int nargs = 4; // TODO: use a correct value here when available
 			//if (nargs > 0) {
 				int i;
+				const char *cc = r_anal_cc_default (core->anal); // or use "reg" ?
 				for (i = 0; i < nargs; i++) {
-					ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_STDCALL, i);
+					ut64 v = r_debug_arg_get (core->dbg, cc, i);
 					print_arg_str (i, "", color);
 					r_cons_printf ("0x%08" PFMT64x, v);
 					r_cons_newline ();

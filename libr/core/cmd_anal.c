@@ -1669,6 +1669,7 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 	}
 	char *res = r_str_newf ("%s = %s (", syscallNumber (item->num), item->name);
 	// TODO: move this to r_syscall
+	const char *cc = r_anal_syscc_default (core->anal);
 	//TODO replace the hardcoded CC with the sdb ones
 	for (i = 0; i < item->args; i++) {
 		// XXX this is a hack to make syscall args work on x86-32 and x86-64
@@ -1677,7 +1678,7 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 		if (core->rasm->bits == 32 && core->rasm->cur && !strcmp (core->rasm->cur->arch, "x86")) {
 			regidx++;
 		}
-		ut64 arg = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_FASTCALL, regidx);
+		ut64 arg = r_debug_arg_get (core->dbg, cc, regidx);
 		//r_cons_printf ("(%d:0x%"PFMT64x")\n", i, arg);
 		if (item->sargs) {
 			switch (item->sargs[i]) {
@@ -1695,7 +1696,7 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 				break;
 			case 'Z': {
 				//TODO replace the hardcoded CC with the sdb ones
-				ut64 len = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_FASTCALL, i + 2);
+				ut64 len = r_debug_arg_get (core->dbg, cc, i + 2);
 				len = R_MIN (len + 1, sizeof (str) - 1);
 				if (len == 0) {
 					len = 16; // override default
@@ -5992,7 +5993,7 @@ static void r_anal_aefa(RCore *core, const char *arg) {
 		int i;
 		eprintf ("NARGS %d (%s)\n", nargs, key);
 		for (i = 0; i < nargs; i++) {
-			ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_STDCALL, i);
+			ut64 v = r_debug_arg_get (core->dbg, "reg", i);
 			eprintf ("arg: 0x%08"PFMT64x"\n", v);
 		}
 	}
@@ -10555,6 +10556,7 @@ static void show_reg_args(RCore *core, int nargs, RStrBuf *sb) {
 // TODO: Implement aC* and aCj
 static void cmd_anal_aC(RCore *core, const char *input) {
 	bool is_aCer = false;
+	const char *cc = r_anal_cc_default (core->anal);
 	RAnalFuncArg *arg;
 	RListIter *iter;
 	RListIter *nextele;
@@ -10582,7 +10584,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 		r_strbuf_free (sb);
 		return;
 	}
-bool go_on = true;
+	bool go_on = true;
 	if (op->type != R_ANAL_OP_TYPE_CALL) {
 		show_reg_args (core, -1, sb);
 		go_on = false;
@@ -10675,7 +10677,7 @@ bool go_on = true;
 					r_strbuf_appendf (sb, "; 0x%"PFMT64x"(", pcv);
 				}
 				for (i = 0; i < nargs; i++) {
-					ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_FASTCALL, i);
+					ut64 v = r_debug_arg_get (core->dbg, cc, i);
 					r_strbuf_appendf (sb, "%s0x%"PFMT64x, i?", ":"", v);
 				}
 				r_strbuf_appendf (sb, ")");
