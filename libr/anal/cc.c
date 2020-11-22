@@ -6,6 +6,7 @@
 #define DB anal->sdb_cc
 
 R_API void r_anal_cc_del(RAnal *anal, const char *name) {
+	r_return_if_fail (anal && name);
 	size_t i;
 	RStrBuf sb;
 	sdb_unset (DB, r_strbuf_initf (&sb, "%s", name), 0);
@@ -20,6 +21,7 @@ R_API void r_anal_cc_del(RAnal *anal, const char *name) {
 }
 
 R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
+	r_return_val_if_fail (anal && expr, false);
 	char *e = strdup (expr);
 	char *p = strchr (e, '(');
 	if (!p) {
@@ -69,6 +71,7 @@ R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
 }
 
 R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
+	r_return_val_if_fail (anal && name, NULL);
 	int i;
 	// get cc by name and print the expr
 	if (r_str_cmp (sdb_const_get (DB, name, 0), "cc", -1)) {
@@ -138,6 +141,7 @@ R_API const char *r_anal_cc_self(RAnal *anal, const char *convention) {
 }
 
 R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *self) {
+	r_return_if_fail (anal && convention && self);
 	if (!r_anal_cc_exist (anal, convention)) {
 		return;
 	}
@@ -154,6 +158,7 @@ R_API const char *r_anal_cc_error(RAnal *anal, const char *convention) {
 }
 
 R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *error) {
+	r_return_if_fail (anal && convention && error);
 	if (!r_anal_cc_exist (anal, convention)) {
 		return;
 	}
@@ -194,6 +199,21 @@ R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention) {
 R_API const char *r_anal_cc_default(RAnal *anal) {
 	r_return_val_if_fail (anal, NULL);
 	return sdb_const_get (DB, "default.cc", 0);
+}
+
+R_API void r_anal_set_cc_default(RAnal *anal, const char *cc) {
+	r_return_if_fail (anal && cc);
+	sdb_set (DB, "default.cc", cc, 0);
+}
+
+R_API const char *r_anal_syscc_default(RAnal *anal) {
+	r_return_val_if_fail (anal, NULL);
+	return sdb_const_get (DB, "default.syscc", 0);
+}
+
+R_API void r_anal_set_syscc_default(RAnal *anal, const char *cc) {
+	r_return_if_fail (anal && cc);
+	sdb_set (DB, "default.syscc", cc, 0);
 }
 
 R_API const char *r_anal_cc_func(RAnal *anal, const char *func_name) {

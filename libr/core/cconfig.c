@@ -2701,6 +2701,28 @@ static bool cb_dirpfx(RCore *core, RConfigNode *node) {
 	return true;
 }
 
+static bool cb_analsyscc(RCore *core, RConfigNode *node) {
+	if (core && core->anal) {
+		if (!strcmp (node->value, "?")) {
+			r_core_cmd0 (core, "afcl");
+			return false;
+		}
+		r_anal_set_syscc_default (core->anal, node->value);
+	}
+	return true;
+}
+
+static bool cb_analcc(RCore *core, RConfigNode *node) {
+	if (core && core->anal) {
+		if (!strcmp (node->value, "?")) {
+			r_core_cmd0 (core, "afcl");
+			return false;
+		}
+		r_anal_set_cc_default (core->anal, node->value);
+	}
+	return true;
+}
+
 static bool cb_anal_roregs(RCore *core, RConfigNode *node) {
 	if (core && core->anal && core->anal->reg) {
 		r_list_free (core->anal->reg->roregs);
@@ -3017,6 +3039,10 @@ R_API int r_core_config_init(RCore *core) {
 	/* anal */
 	SETBPREF ("anal.detectwrites", "false", "Automatically reanalyze function after a write");
 	SETPREF ("anal.fcnprefix", "fcn",  "Prefix new function names with this");
+	const char *analcc = r_anal_cc_default (core->anal);
+	SETCB ("anal.cc", analcc? analcc: "", (RConfigCallback)&cb_analcc, "Specify default calling convention");
+	const char *analsyscc = r_anal_syscc_default (core->anal);
+	SETCB ("anal.syscc", analsyscc? analsyscc: "", (RConfigCallback)&cb_analsyscc, "Specify default syscall calling convention");
 	SETCB ("anal.verbose", "false", &cb_analverbose, "Show RAnal warnings when analyzing code");
 	SETBPREF ("anal.a2f", "false",  "Use the new WIP analysis algorithm (core/p/a2f), anal.depth ignored atm");
 	SETCB ("anal.roregs", "gp,zero", (RConfigCallback)&cb_anal_roregs, "Comma separated list of register names to be readonly");
