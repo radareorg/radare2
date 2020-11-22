@@ -184,12 +184,6 @@ enum {
 	R_ANAL_FQUALIFIER_VIRTUAL = 5,
 };
 
-/*--------------------Function Conventions-----------*/
-//XXX don't use them in the future
-#define R_ANAL_CC_TYPE_STDCALL 0
-#define R_ANAL_CC_TYPE_PASCAL 1
-#define R_ANAL_CC_TYPE_FASTCALL 'A' // syscall
-#define R_ANAL_CC_TYPE_SYSV 8
 #define R_ANAL_CC_MAXARG 16
 
 enum {

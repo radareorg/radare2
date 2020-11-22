@@ -4797,8 +4797,9 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 					} else {
 						ds_comment_middle (ds, "; 0x%"PFMT64x"(", pcv);
 					}
+					const char *cc = r_anal_syscc_default (core->anal);
 					for (i = 0; i < nargs; i++) {
-						ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_FASTCALL, i);
+						ut64 v = r_debug_arg_get (core->dbg, cc, i);
 						ds_comment_middle (ds, "%s0x%"PFMT64x, i?", ":"", v);
 					}
 					ds_comment_end (ds, ")");
