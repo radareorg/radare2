@@ -87,7 +87,7 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
 		}
 	}
 	r_skyline_clear (&io->cache_skyline);
-	r_pvector_foreach_prev (&io->cache, iter) {
+	r_pvector_foreach (&io->cache, iter) {
 		c = *iter;
 		r_skyline_add (&io->cache_skyline, c->itv, c);
 	}
