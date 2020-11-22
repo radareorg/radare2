@@ -1501,7 +1501,7 @@ aaa
 afi @@@F~?pascal
 EOF
 EXPECT=<<EOF
-65
+130
 EOF
 RUN
 
@@ -2537,6 +2537,7 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 4
 cyclomatic-complexity: 0
+cc: amd64
 bits: 64
 type: fcn [NEW]
 num-bbs: 2
@@ -2596,6 +2597,7 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 6
 cyclomatic-complexity: 1
+cc: amd64
 bits: 64
 type: fcn [NEW]
 num-bbs: 2
@@ -2671,6 +2673,7 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 7
 cyclomatic-complexity: 0
+cc: amd64
 bits: 64
 type: fcn [NEW]
 num-bbs: 2
@@ -2754,6 +2757,7 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 7
 cyclomatic-complexity: 0
+cc: amd64
 bits: 64
 type: fcn [NEW]
 num-bbs: 3
@@ -2846,6 +2850,7 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 9
 cyclomatic-complexity: 0
+cc: amd64
 bits: 64
 type: fcn [NEW]
 num-bbs: 4

@@ -1814,6 +1814,9 @@ R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc);
 R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention);
 R_API const char *r_anal_cc_default(RAnal *anal);
+R_API void r_anal_set_cc_default(RAnal *anal, const char *convention);
+R_API const char *r_anal_syscc_default(RAnal *anal);
+R_API void r_anal_set_syscc_default(RAnal *anal, const char *convention);
 R_API const char *r_anal_cc_func(RAnal *anal, const char *func_name);
 R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr);
 
