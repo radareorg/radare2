@@ -1,0 +1,21 @@
+NAME=b
+FILE=-
+CMDS=<<EOF
+b 100
+b
+EOF
+EXPECT=<<EOF
+0x64
+EOF
+RUN
+
+NAME=bj
+FILE=-
+CMDS=<<EOF
+b 100
+bj
+EOF
+EXPECT=<<EOF
+{"blocksize":100,"blocksize_limit":52428800}
+EOF
+RUN
