@@ -22,6 +22,7 @@ R_API bool r_skyline_add(RSkyline *skyline, RInterval itv, void *user) {
 		RSkylineItem *prev_part = r_vector_index_ptr (skyline_vec, slot - 1);
 		const ut64 prev_part_end = r_itv_end (prev_part->itv);
 		if (prev_part_end > r_itv_begin (new_part.itv)) {
+			prev_part->itv.size = r_itv_begin (new_part.itv) - r_itv_begin (prev_part->itv);
 			if (prev_part_end > new_part_end) {
 				RSkylineItem tail;
 				tail.user = prev_part->user;
@@ -33,7 +34,6 @@ R_API bool r_skyline_add(RSkyline *skyline, RInterval itv, void *user) {
 					r_vector_push (skyline_vec, &tail);
 				}
 			}
-			prev_part->itv.size = r_itv_begin (new_part.itv) - r_itv_begin (prev_part->itv);
 		}
 	}
 	if (part) {
