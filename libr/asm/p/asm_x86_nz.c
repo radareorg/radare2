@@ -5113,10 +5113,11 @@ static int oprep(RAsm *a, ut8 *data, const Opcode *op) {
 					free (instr.mnemonic);
 					return -1;
 				}
-				ut8 *ptr = (ut8 *)&lt_ptr->opcode;
-				int i = 0;
-				for (; i < lt_ptr->size; i++) {
-					data[i + l] = ptr[lt_ptr->size - (i + 1)];
+				ut64 opcode = lt_ptr->opcode;
+				int i = lt_ptr->size - 1;
+				for (; i >= 0; i--) {
+					data[i + l] = opcode & 0xff;
+					opcode >>= 8;
 				}
 				free (instr.mnemonic);
 				return l + lt_ptr->size;
@@ -5158,10 +5159,11 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		if (!r_str_casecmp (instr.mnemonic, lt_ptr->mnemonic)) {
 			if (lt_ptr->opcode > 0) {
 				if (!lt_ptr->only_x32 || a->bits != 64) {
-					ut8 *ptr = (ut8 *)&lt_ptr->opcode;
-					int i = 0;
-					for (; i < lt_ptr->size; i++) {
-						data[i] = ptr[lt_ptr->size - (i + 1)];
+					ut64 opcode = lt_ptr->opcode;
+					int i = lt_ptr->size - 1;
+					for (; i >= 0; i--) {
+						data[i] = opcode & 0xff;
+						opcode >>= 8;
 					}
 					retval = lt_ptr->size;
 				}
