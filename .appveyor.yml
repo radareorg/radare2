@@ -100,7 +100,7 @@ for:
       - python3 -m pip install "git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python"
       - cd test
       - git clone -q --depth 1 https://github.com/radareorg/radare2-testbins bins
-      - r2r -L db
+      - r2r -o results.json -L db
       - cd ..
 
     after_test:
@@ -115,6 +115,8 @@ artifacts:
   - path: "%ARTIFACT_ZIP%"
   # Inno Setup files
   - path: radare2_installer-%builder%.exe
+  # Test results
+  - path: test/results.json
 
 # Upload builds to the CI release at GitHub
 deploy:
