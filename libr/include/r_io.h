@@ -7,6 +7,7 @@
 #include <r_util.h>
 #include "r_socket.h"
 #include "r_vector.h"
+#include "r_skyline.h"
 
 #define R_IO_SEEK_SET	0
 #define R_IO_SEEK_CUR	1
@@ -89,11 +90,11 @@ typedef struct r_io_t {
 	int p_cache;
 	RIDPool *map_ids;
 	RPVector maps; //from tail backwards maps with higher priority are found
-	RPVector map_skyline; // map parts that are not covered by others
+	RSkyline map_skyline; // map parts that are not covered by others
 	RIDStorage *files;
 	RCache *buffer;
-	RList *cache;	//sdblist?
-	RBNode cacheTree;
+	RPVector cache;
+	RSkyline cache_skyline;
 	ut8 *write_mask;
 	int write_mask_len;
 	RIOUndo undo;
@@ -178,11 +179,6 @@ typedef struct r_io_map_t {
 	ut64 delta; // paddr = itv.addr + delta
 	char *name;
 } RIOMap;
-
-typedef struct r_io_map_skyline_t {
-	RIOMap *map;
-	RInterval itv;
-} RIOMapSkyline;
 
 typedef struct r_io_cache_t {
 	RInterval itv;

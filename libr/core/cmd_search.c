@@ -707,15 +707,15 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 		int len = strlen ("io.sky.");
 		int mask = (mode[len - 1] == '.')? r_str_rwx (mode + len): 0;
 		bool only = (bool)(size_t)strstr (mode, ".only");
-		const RPVector *skyline = &core->io->map_skyline;
+		RVector *skyline = &core->io->map_skyline.v;
 		ut64 begin = UT64_MAX;
 		ut64 end = UT64_MAX;
 		size_t i;
-		for (i = 0; i < r_pvector_len (skyline); i++) {
-			const RIOMapSkyline *part = r_pvector_at (skyline, i);
+		for (i = 0; i < r_vector_len (skyline); i++) {
+			const RSkylineItem *part = r_vector_index_ptr (skyline, i);
 			ut64 from = part->itv.addr;
 			ut64 to = part->itv.addr + part->itv.size;
-			int perm = part->map->perm;
+			int perm = ((RIOMap *)part->user)->perm;
 			if (maskMatches (perm, mask, only)) {
 				continue;
 			}
