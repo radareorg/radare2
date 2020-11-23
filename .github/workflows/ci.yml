@@ -219,7 +219,7 @@ jobs:
       if: matrix.run_tests && matrix.enabled
       uses: actions/upload-artifact@v2
       with:
-        name: test-results
+        name: test-results-${{ matrix.name }}
         path: test/results.json
 
   build-centos6:
@@ -332,7 +332,7 @@ jobs:
     - name: Upload test results
       uses: actions/upload-artifact@v2
       with:
-        name: test-results
+        name: test-results-static
         path: test/results.json
 
 
