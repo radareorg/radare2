@@ -173,7 +173,7 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 	check_attr_string (0, "_vptr$Bird");
 	check_attr_reference (1, 0xc5);
 	check_attr_data (2, 0);
-	check_attr_data (3, true);
+	check_attr_flag (3, true);
 
 	i++;
 	check_die_abbr_code (6);
