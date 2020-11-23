@@ -21,10 +21,10 @@ jobs:
   fast_finish: true
   include:
     # emscripten
-    - if: (branch = master AND type = push) OR head_branch =~ ^wasm-*
-      os: linux
-      name: WASM
-      env: EMSCRIPTEN=1
+    #- if: (branch = master AND type = push) OR head_branch =~ ^wasm-*
+    #  os: linux
+    #  name: WASM
+    #  env: EMSCRIPTEN=1
     # Linux with GCC on PowerPC
     - if: (branch = master AND type = push) OR head_branch =~ ^ppc64-*
       os: linux
@@ -90,9 +90,9 @@ jobs:
 
   allow_failures:
     # Emscripten
-    - os: linux
-      name: WASM
-      env: EMSCRIPTEN=1
+    #- os: linux
+    #  name: WASM
+    #  env: EMSCRIPTEN=1
     # Linux with GCC on PowerPC
     - os: linux
       arch: ppc64le
