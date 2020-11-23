@@ -698,7 +698,7 @@ static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	}
 	bin->nt_header_offset = bin->dos_header->e_lfanew;
 	if (read_nt_headers (bin->b, bin->dos_header->e_lfanew, bin->nt_headers) < 0) {
-		bprintf ("Warning: read (dos header)\n");
+		bprintf ("Warning: read (nt header)\n");
 		return false;
 	}
 	sdb_set (bin->kv, "pe_magic.cparse",     "enum pe_magic { IMAGE_NT_OPTIONAL_HDR32_MAGIC=0x10b, IMAGE_NT_OPTIONAL_HDR64_MAGIC=0x20b, IMAGE_ROM_OPTIONAL_HDR_MAGIC=0x107 };", 0);
