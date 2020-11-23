@@ -1172,6 +1172,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 	}
 	ret->test = test;
 	bool success = false;
+	ut64 start_time = r_time_now_mono ();
 	switch (test->type) {
 	case R2R_TEST_TYPE_CMD: {
 		R2RCmdTest *cmd_test = test->cmd_test;
@@ -1209,6 +1210,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 		ret->run_failed = !out;
 	}
 	}
+	ret->time_elapsed = r_time_now_mono () - start_time;
 	bool broken = r2r_test_broken (test);
 #if ASAN
 # if !R2_ASSERT_STDOUT
