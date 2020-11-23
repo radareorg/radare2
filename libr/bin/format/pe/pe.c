@@ -574,12 +574,112 @@ error:
 	return false;
 }
 
+static int read_dos_header(RBuffer *b, PE_(image_dos_header) *header) {
+	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
+	if (r_buf_seek (b, 0, R_BUF_SET) < 0) {
+		return -1;
+	}
+	header->e_magic = r_buf_read_le16 (b);
+	header->e_cblp = r_buf_read_le16 (b);
+	header->e_cp = r_buf_read_le16 (b);
+	header->e_crlc = r_buf_read_le16 (b);
+	header->e_cparhdr = r_buf_read_le16 (b);
+	header->e_minalloc = r_buf_read_le16 (b);
+	header->e_maxalloc = r_buf_read_le16 (b);
+	header->e_ss = r_buf_read_le16 (b);
+	header->e_sp = r_buf_read_le16 (b);
+	header->e_csum = r_buf_read_le16 (b);
+	header->e_ip = r_buf_read_le16 (b);
+	header->e_cs = r_buf_read_le16 (b);
+	header->e_lfarlc = r_buf_read_le16 (b);
+	header->e_ovno = r_buf_read_le16 (b);
+	int i;
+	for (i = 0; i < 4; i++) {
+		header->e_res[i] = r_buf_read_le16 (b);
+	}
+	header->e_oemid = r_buf_read_le16 (b);
+	header->e_oeminfo = r_buf_read_le16 (b);
+	for (i = 0; i < 10; i++) {
+		header->e_res2[i] = r_buf_read_le16 (b);
+	}
+	header->e_lfanew = r_buf_read_le32 (b);
+	if (r_buf_seek (b, o_addr, R_BUF_SET) < 0) {
+		return -1;
+	}
+	return sizeof (PE_(image_dos_header));
+}
+
+static int read_nt_headers(RBuffer *b, ut64 addr, PE_(image_nt_headers) *headers) {
+	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
+	if (r_buf_seek (b, addr, R_BUF_SET) < 0) {
+		return -1;
+	}
+	headers->Signature = r_buf_read_le32 (b);
+	headers->file_header.Machine = r_buf_read_le16 (b);
+	headers->file_header.NumberOfSections = r_buf_read_le16 (b);
+	headers->file_header.TimeDateStamp = r_buf_read_le32 (b);
+	headers->file_header.PointerToSymbolTable = r_buf_read_le32 (b);
+	headers->file_header.NumberOfSymbols = r_buf_read_le32 (b);
+	headers->file_header.SizeOfOptionalHeader = r_buf_read_le16 (b);
+	headers->file_header.Characteristics = r_buf_read_le16 (b);
+	headers->optional_header.Magic = r_buf_read_le16 (b);
+	headers->optional_header.MajorLinkerVersion = r_buf_read8 (b);
+	headers->optional_header.MinorLinkerVersion = r_buf_read8 (b);
+	headers->optional_header.SizeOfCode = r_buf_read_le32 (b);
+	headers->optional_header.SizeOfInitializedData = r_buf_read_le32 (b);
+	headers->optional_header.SizeOfUninitializedData = r_buf_read_le32 (b);
+	headers->optional_header.AddressOfEntryPoint = r_buf_read_le32 (b);
+	headers->optional_header.BaseOfCode = r_buf_read_le32 (b);
+#ifdef R_BIN_PE64
+	headers->optional_header.ImageBase = r_buf_read_le64 (b);
+#else
+	headers->optional_header.BaseOfData = r_buf_read_le32 (b);
+	headers->optional_header.ImageBase = r_buf_read_le32 (b);
+#endif
+	headers->optional_header.SectionAlignment = r_buf_read_le32 (b);
+	headers->optional_header.FileAlignment = r_buf_read_le32 (b);
+	headers->optional_header.MajorOperatingSystemVersion = r_buf_read_le16 (b);
+	headers->optional_header.MinorOperatingSystemVersion = r_buf_read_le16 (b);
+	headers->optional_header.MajorImageVersion = r_buf_read_le16 (b);
+	headers->optional_header.MinorImageVersion = r_buf_read_le16 (b);
+	headers->optional_header.MajorSubsystemVersion = r_buf_read_le16 (b);
+	headers->optional_header.MinorSubsystemVersion = r_buf_read_le16 (b);
+	headers->optional_header.Win32VersionValue = r_buf_read_le32 (b);
+	headers->optional_header.SizeOfImage = r_buf_read_le32 (b);
+	headers->optional_header.SizeOfHeaders = r_buf_read_le32 (b);
+	headers->optional_header.CheckSum = r_buf_read_le32 (b);
+	headers->optional_header.Subsystem = r_buf_read_le16 (b);
+	headers->optional_header.DllCharacteristics = r_buf_read_le16 (b);
+#ifdef R_BIN_PE64
+	headers->optional_header.SizeOfStackReserve = r_buf_read_le64 (b);
+	headers->optional_header.SizeOfStackCommit = r_buf_read_le64 (b);
+	headers->optional_header.SizeOfHeapReserve = r_buf_read_le64 (b);
+	headers->optional_header.SizeOfHeapCommit = r_buf_read_le64 (b);
+#else
+	headers->optional_header.SizeOfStackReserve = r_buf_read_le32 (b);
+	headers->optional_header.SizeOfStackCommit = r_buf_read_le32 (b);
+	headers->optional_header.SizeOfHeapReserve = r_buf_read_le32 (b);
+	headers->optional_header.SizeOfHeapCommit = r_buf_read_le32 (b);
+#endif
+	headers->optional_header.LoaderFlags = r_buf_read_le32 (b);
+	headers->optional_header.NumberOfRvaAndSizes = r_buf_read_le32 (b);
+	int i;
+	for (i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES; i++) {
+		headers->optional_header.DataDirectory[i].VirtualAddress = r_buf_read_le32 (b);
+		headers->optional_header.DataDirectory[i].Size = r_buf_read_le32 (b);
+	}
+	if (r_buf_seek (b, o_addr, R_BUF_SET) < 0) {
+		return -1;
+	}
+	return sizeof (PE_(image_nt_headers));
+}
+
 static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!(bin->dos_header = malloc (sizeof(PE_(image_dos_header))))) {
 		r_sys_perror ("malloc (dos header)");
 		return false;
 	}
-	if (r_buf_read_at (bin->b, 0, (ut8*) bin->dos_header, sizeof(PE_(image_dos_header))) < 0) {
+	if (read_dos_header (bin->b, bin->dos_header) < 0) {
 		bprintf ("Warning: read (dos header)\n");
 		return false;
 	}
@@ -597,8 +697,8 @@ static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 		return false;
 	}
 	bin->nt_header_offset = bin->dos_header->e_lfanew;
-	if (r_buf_read_at (bin->b, bin->dos_header->e_lfanew, (ut8*) bin->nt_headers, sizeof (PE_(image_nt_headers))) < 0) {
-		bprintf ("Warning: read (dos header)\n");
+	if (read_nt_headers (bin->b, bin->dos_header->e_lfanew, bin->nt_headers) < 0) {
+		bprintf ("Warning: read (nt header)\n");
 		return false;
 	}
 	sdb_set (bin->kv, "pe_magic.cparse",     "enum pe_magic { IMAGE_NT_OPTIONAL_HDR32_MAGIC=0x10b, IMAGE_NT_OPTIONAL_HDR64_MAGIC=0x20b, IMAGE_ROM_OPTIONAL_HDR_MAGIC=0x107 };", 0);
@@ -656,10 +756,10 @@ static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->optional_header = &bin->nt_headers->optional_header;
 	bin->data_directory = (PE_(image_data_directory*)) & bin->optional_header->DataDirectory;
 
-	if (strncmp ((char *)&bin->dos_header->e_magic, "MZ", 2) ||
-		(strncmp ((char *)&bin->nt_headers->Signature, "PE", 2) &&
+	if (bin->dos_header->e_magic != 0x5a4d || // "MZ"
+		(bin->nt_headers->Signature != 0x4550 && // "PE"
 		/* Check also for Phar Lap TNT DOS extender PL executable */
-		strncmp ((char *)&bin->nt_headers->Signature, "PL", 2))) {
+		bin->nt_headers->Signature != 0x4c50)) { // "PL"
 		return false;
 	}
 	return true;
