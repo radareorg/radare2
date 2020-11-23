@@ -3109,7 +3109,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.sub.jmp", "true", "Always substitute jump, call and branch targets in disassembly");
 	SETBPREF ("asm.hints", "true", "Disable all asm.hint* if false");
 	SETBPREF ("asm.hint.jmp", "false", "Show jump hints [numbers] in disasm");
-	SETBPREF ("asm.hint.call", "true", "Show call hints [numbers] in disarm");
+	SETBPREF ("asm.hint.call", "true", "Show call hints [numbers] in disasm");
+	SETBPREF ("asm.hint.call.indirect", "true", "Hints for indirect call intructions go to the call destination");
 	SETBPREF ("asm.hint.lea", "false", "Show LEA hints [numbers] in disasm");
 	SETBPREF ("asm.hint.emu", "false", "Show asm.emu hints [numbers] in disasm");
 	SETBPREF ("asm.hint.cdiv", "false", "Show CDIV hints optimization hint");
