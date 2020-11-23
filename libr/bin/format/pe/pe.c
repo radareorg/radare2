@@ -574,105 +574,104 @@ error:
 	return false;
 }
 
-#if R_SYS_ENDIAN
-static void PE_(image_dos_header_swapendian)(PE_(image_dos_header) *header) {
-#define swapendian(field) r_mem_swapendian ((ut8*) &header->field, (ut8*) &header->field, sizeof (header->field))
-	swapendian (e_magic);
-	swapendian (e_cblp);
-	swapendian (e_cp);
-	swapendian (e_crlc);
-	swapendian (e_cparhdr);
-	swapendian (e_minalloc);
-	swapendian (e_maxalloc);
-	swapendian (e_ss);
-	swapendian (e_sp);
-	swapendian (e_csum);
-	swapendian (e_ip);
-	swapendian (e_cs);
-	swapendian (e_lfarlc);
-	swapendian (e_ovno);
+static int read_dos_header(RBuffer *b, PE_(image_dos_header) *header) {
+	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
+	if (r_buf_seek (b, 0, R_BUF_SET) < 0) {
+		return -1;
+	}
+	header->e_magic = r_buf_read_le16 (b);
+	header->e_cblp = r_buf_read_le16 (b);
+	header->e_cp = r_buf_read_le16 (b);
+	header->e_crlc = r_buf_read_le16 (b);
+	header->e_cparhdr = r_buf_read_le16 (b);
+	header->e_minalloc = r_buf_read_le16 (b);
+	header->e_maxalloc = r_buf_read_le16 (b);
+	header->e_ss = r_buf_read_le16 (b);
+	header->e_sp = r_buf_read_le16 (b);
+	header->e_csum = r_buf_read_le16 (b);
+	header->e_ip = r_buf_read_le16 (b);
+	header->e_cs = r_buf_read_le16 (b);
+	header->e_lfarlc = r_buf_read_le16 (b);
+	header->e_ovno = r_buf_read_le16 (b);
 	int i;
 	for (i = 0; i < 4; i++) {
-		swapendian (e_res[i]);
+		header->e_res[i] = r_buf_read_le16 (b);
 	}
-	swapendian (e_oemid);
-	swapendian (e_oeminfo);
+	header->e_oemid = r_buf_read_le16 (b);
+	header->e_oeminfo = r_buf_read_le16 (b);
 	for (i = 0; i < 10; i++) {
-		swapendian (e_res2[i]);
+		header->e_res2[i] = r_buf_read_le16 (b);
 	}
-	swapendian (e_lfanew);
-#undef swapendian
-}
-
-static void PE_(image_nt_headers_swapendian)(PE_(image_nt_headers) *headers) {
-#define swapendian(field) r_mem_swapendian ((ut8*) &headers->field, (ut8*) &headers->field, sizeof (headers->field))
-	swapendian (Signature);
-	swapendian (file_header.Machine);
-	swapendian (file_header.NumberOfSections);
-	swapendian (file_header.TimeDateStamp);
-	swapendian (file_header.PointerToSymbolTable);
-	swapendian (file_header.NumberOfSymbols);
-	swapendian (file_header.SizeOfOptionalHeader);
-	swapendian (file_header.Characteristics);
-	swapendian (optional_header.Magic);
-	swapendian (optional_header.MajorLinkerVersion);
-	swapendian (optional_header.MinorLinkerVersion);
-	swapendian (optional_header.SizeOfCode);
-	swapendian (optional_header.SizeOfInitializedData);
-	swapendian (optional_header.SizeOfUninitializedData);
-	swapendian (optional_header.AddressOfEntryPoint);
-	swapendian (optional_header.BaseOfCode);
-#ifndef R_BIN_PE64
-	swapendian (optional_header.BaseOfData);
-#endif
-	swapendian (optional_header.ImageBase);
-	swapendian (optional_header.SectionAlignment);
-	swapendian (optional_header.FileAlignment);
-	swapendian (optional_header.MajorOperatingSystemVersion);
-	swapendian (optional_header.MinorOperatingSystemVersion);
-	swapendian (optional_header.MajorImageVersion);
-	swapendian (optional_header.MinorImageVersion);
-	swapendian (optional_header.MajorSubsystemVersion);
-	swapendian (optional_header.MinorSubsystemVersion);
-	swapendian (optional_header.Win32VersionValue);
-	swapendian (optional_header.SizeOfImage);
-	swapendian (optional_header.SizeOfHeaders);
-	swapendian (optional_header.CheckSum);
-	swapendian (optional_header.Subsystem);
-	swapendian (optional_header.DllCharacteristics);
-	swapendian (optional_header.SizeOfStackReserve);
-	swapendian (optional_header.SizeOfStackCommit);
-	swapendian (optional_header.SizeOfHeapReserve);
-	swapendian (optional_header.SizeOfHeapCommit);
-	swapendian (optional_header.LoaderFlags);
-	swapendian (optional_header.NumberOfRvaAndSizes);
-	int i;
-	for (i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES; i++) {
-		swapendian (optional_header.DataDirectory[i].VirtualAddress);
-		swapendian (optional_header.DataDirectory[i].Size);
+	header->e_lfanew = r_buf_read_le32 (b);
+	if (r_buf_seek (b, o_addr, R_BUF_SET) < 0) {
+		return -1;
 	}
-#undef swapendian
-}
-#endif
-
-static int read_dos_header(RBuffer *b, PE_(image_dos_header) *header) {
-	st64 r = r_buf_read_at (b, 0, (ut8*) header, sizeof(PE_(image_dos_header)));
-#if R_SYS_ENDIAN
-	if (r >= 0) {
-		PE_(image_dos_header_swapendian) (header);
-	}
-#endif
-	return r;
+	return sizeof (PE_(image_dos_header));
 }
 
 static int read_nt_headers(RBuffer *b, ut64 addr, PE_(image_nt_headers) *headers) {
-	int r = r_buf_read_at (b, addr, (ut8*) headers, sizeof (PE_(image_nt_headers)));
-#if R_SYS_ENDIAN
-	if (r >= 0) {
-		PE_(image_nt_headers_swapendian) (headers);
+	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
+	if (r_buf_seek (b, addr, R_BUF_SET) < 0) {
+		return -1;
 	}
+	headers->Signature = r_buf_read_le32 (b);
+	headers->file_header.Machine = r_buf_read_le16 (b);
+	headers->file_header.NumberOfSections = r_buf_read_le16 (b);
+	headers->file_header.TimeDateStamp = r_buf_read_le32 (b);
+	headers->file_header.PointerToSymbolTable = r_buf_read_le32 (b);
+	headers->file_header.NumberOfSymbols = r_buf_read_le32 (b);
+	headers->file_header.SizeOfOptionalHeader = r_buf_read_le16 (b);
+	headers->file_header.Characteristics = r_buf_read_le16 (b);
+	headers->optional_header.Magic = r_buf_read_le16 (b);
+	headers->optional_header.MajorLinkerVersion = r_buf_read8 (b);
+	headers->optional_header.MinorLinkerVersion = r_buf_read8 (b);
+	headers->optional_header.SizeOfCode = r_buf_read_le32 (b);
+	headers->optional_header.SizeOfInitializedData = r_buf_read_le32 (b);
+	headers->optional_header.SizeOfUninitializedData = r_buf_read_le32 (b);
+	headers->optional_header.AddressOfEntryPoint = r_buf_read_le32 (b);
+	headers->optional_header.BaseOfCode = r_buf_read_le32 (b);
+#ifdef R_BIN_PE64
+	headers->optional_header.ImageBase = r_buf_read_le64 (b);
+#else
+	headers->optional_header.BaseOfData = r_buf_read_le32 (b);
+	headers->optional_header.ImageBase = r_buf_read_le32 (b);
 #endif
-	return r;
+	headers->optional_header.SectionAlignment = r_buf_read_le32 (b);
+	headers->optional_header.FileAlignment = r_buf_read_le32 (b);
+	headers->optional_header.MajorOperatingSystemVersion = r_buf_read_le16 (b);
+	headers->optional_header.MinorOperatingSystemVersion = r_buf_read_le16 (b);
+	headers->optional_header.MajorImageVersion = r_buf_read_le16 (b);
+	headers->optional_header.MinorImageVersion = r_buf_read_le16 (b);
+	headers->optional_header.MajorSubsystemVersion = r_buf_read_le16 (b);
+	headers->optional_header.MinorSubsystemVersion = r_buf_read_le16 (b);
+	headers->optional_header.Win32VersionValue = r_buf_read_le32 (b);
+	headers->optional_header.SizeOfImage = r_buf_read_le32 (b);
+	headers->optional_header.SizeOfHeaders = r_buf_read_le32 (b);
+	headers->optional_header.CheckSum = r_buf_read_le32 (b);
+	headers->optional_header.Subsystem = r_buf_read_le16 (b);
+	headers->optional_header.DllCharacteristics = r_buf_read_le16 (b);
+#ifdef R_BIN_PE64
+	headers->optional_header.SizeOfStackReserve = r_buf_read_le64 (b);
+	headers->optional_header.SizeOfStackCommit = r_buf_read_le64 (b);
+	headers->optional_header.SizeOfHeapReserve = r_buf_read_le64 (b);
+	headers->optional_header.SizeOfHeapCommit = r_buf_read_le64 (b);
+#else
+	headers->optional_header.SizeOfStackReserve = r_buf_read_le32 (b);
+	headers->optional_header.SizeOfStackCommit = r_buf_read_le32 (b);
+	headers->optional_header.SizeOfHeapReserve = r_buf_read_le32 (b);
+	headers->optional_header.SizeOfHeapCommit = r_buf_read_le32 (b);
+#endif
+	headers->optional_header.LoaderFlags = r_buf_read_le32 (b);
+	headers->optional_header.NumberOfRvaAndSizes = r_buf_read_le32 (b);
+	int i;
+	for (i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES; i++) {
+		headers->optional_header.DataDirectory[i].VirtualAddress = r_buf_read_le32 (b);
+		headers->optional_header.DataDirectory[i].Size = r_buf_read_le32 (b);
+	}
+	if (r_buf_seek (b, o_addr, R_BUF_SET) < 0) {
+		return -1;
+	}
+	return sizeof (PE_(image_nt_headers));
 }
 
 static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
