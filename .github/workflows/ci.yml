@@ -215,6 +215,12 @@ jobs:
       env:
         NEWSHELL: ${{ matrix.newshell }}
         ASAN_OPTIONS: ${{ matrix.asan_options }}
+    - name: Upload test results
+      if: matrix.run_tests && matrix.enabled
+      uses: actions/upload-artifact@v2
+      with:
+        name: test-results-${{ matrix.name }}
+        path: test/results.json
 
   build-centos6:
     name: Build on CentOS 6
@@ -323,6 +329,12 @@ jobs:
         r2r -v
         cd test
         make
+    - name: Upload test results
+      uses: actions/upload-artifact@v2
+      with:
+        name: test-results-static
+        path: test/results.json
+
 
   create-tarball:
     name: Create source tarball

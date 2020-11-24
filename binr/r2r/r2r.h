@@ -158,6 +158,7 @@ typedef struct r2r_test_result_info_t {
 	R2RTestResult result;
 	bool timeout;
 	bool run_failed; // something went seriously wrong (e.g. r2 not found)
+	ut64 time_elapsed;
 	union {
 		R2RProcessOutput *proc_out; // for test->type == R2R_TEST_TYPE_CMD, R2R_TEST_TYPE_JSON or R2R_TEST_TYPE_FUZZ
 		R2RAsmTestOutput *asm_out;  // for test->type == R2R_TEST_TYPE_ASM
