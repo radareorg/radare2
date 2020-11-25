@@ -296,10 +296,6 @@ static void __layout_default(RPanels *panels);
 static void __default_panel_print(RCore *core, RPanel *panel);
 static void __panels_refresh(RCore *core);
 
-/* mouse */
-static bool __handle_mouse_on_X(RCore *core, int x, int y);
-static bool __handle_mouse_on_panel(RCore *core, RPanel *panel, int x, int y, int *key);
-static void __create_modal(RCore *core, RPanel *panel, Sdb *menu_db);
 
 static RPanel *__get_panel(RPanels *panels, int i) {
 	return (panels && i < PANEL_NUM_LIMIT)? panels->panel[i]: NULL;
@@ -3797,60 +3793,187 @@ static void __handle_mouse_on_menu(RCore *core, int x, int y) {
 	free (word);
 }
 
-static bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
-	const int MENU_Y = 1;
-	RPanels *panels = core->panels;
-	if (__drag_and_resize (core)) {
-		return true;
-	}
-	if (!*key) {
-		int x, y;
-		if (!r_cons_get_click (&x, &y)) {
-			return false;
-		}
-		if (y == MENU_Y && __handle_mouse_on_top (core, x, y)) {
-			return true;
-		}
-		if (panels->mode == PANEL_MODE_MENU) {
-			__handle_mouse_on_menu (core, x, y);
-			return true;
-		}
-		if (__handle_mouse_on_X (core, x, y)) {
-			return true;
-		}
-		if (__check_if_mouse_x_illegal (core, x) || __check_if_mouse_y_illegal (core, y)) {
-			panels->mouse_on_edge_x = false;
-			panels->mouse_on_edge_y = false;
-			return true;
-		}
-		panels->mouse_on_edge_x = __check_if_mouse_x_on_edge (core, x, y);
-		panels->mouse_on_edge_y = __check_if_mouse_y_on_edge (core, x, y);
-		if (panels->mouse_on_edge_x || panels->mouse_on_edge_y) {
-			return true;
-		}
-		if (__handle_mouse_on_panel (core, panel, x, y, key)) {
-			return true;
-		}
-		int h, w = r_cons_get_size (&h);
-		if (y == h) {
-			RPanel *p = __get_cur_panel (panels);
-			__split_panel_horizontal (core, p, p->model->title, p->model->cmd);
-		} else if (x == w) {
-			RPanel *p = __get_cur_panel (panels);
-			__split_panel_vertical (core, p, p->model->title, p->model->cmd);
-		}
-	}
-	if (*key == INT8_MAX) {
-		*key = '"';
-		return false;
-	}
-	return false;
-}
-
-static void __toggle_cache (RCore *core, RPanel *p) {
+static void __toggle_cache(RCore *core, RPanel *p) {
 	p->model->cache = !p->model->cache;
 	__set_cmd_str_cache (core, p, NULL);
 	p->view->refresh = true;
+}
+
+static bool __draw_modal(RCore *core, RModal *modal, int range_end, int start, const char *name) {
+	if (start < modal->offset) {
+		return true;
+	}
+	if (start >= range_end) {
+		return false;
+	}
+	if (start == modal->idx) {
+		r_strbuf_appendf (modal->data, ">  %s%s"Color_RESET, core->cons->context->pal.graph_box2, name);
+	} else {
+		r_strbuf_appendf (modal->data, "   %s", name);
+	}
+	r_strbuf_append (modal->data, "          \n");
+	return true;
+}
+
+static void __update_modal(RCore *core, Sdb *menu_db, RModal *modal) {
+	RPanels *panels = core->panels;
+	RConsCanvas *can = panels->can;
+	modal->data = r_strbuf_new (NULL);
+	int count = sdb_count (menu_db);
+	if (modal->idx >= count) {
+		modal->idx = 0;
+		modal->offset = 0;
+	} else if (modal->idx >= modal->offset + modal->pos.h) {
+		if (modal->offset + modal->pos.h >= count) {
+			modal->offset = 0;
+			modal->idx = 0;
+		} else {
+			modal->offset += 1;
+		}
+	} else if (modal->idx < 0) {
+		modal->offset = R_MAX (count - modal->pos.h, 0);
+		modal->idx = count - 1;
+	} else if (modal->idx < modal->offset) {
+		modal->offset -= 1;
+	}
+	SdbList *l = sdb_foreach_list (menu_db, true);
+	SdbKv *kv;
+	SdbListIter *iter;
+	int i = 0;
+	int max_h = R_MIN (modal->offset + modal->pos.h, count);
+	ls_foreach (l, iter, kv) {
+		if (__draw_modal (core, modal, max_h, i, sdbkv_key (kv))) {
+			i++;
+		}
+	}
+	r_cons_gotoxy (0, 0);
+	r_cons_canvas_fill (can, modal->pos.x, modal->pos.y, modal->pos.w + 2, modal->pos.h + 2, ' ');
+	(void)r_cons_canvas_gotoxy (can, modal->pos.x + 2, modal->pos.y + 1);
+	r_cons_canvas_write (can, r_strbuf_get (modal->data));
+	r_strbuf_free (modal->data);
+
+	r_cons_canvas_box (can, modal->pos.x, modal->pos.y, modal->pos.w + 2, modal->pos.h + 2, core->cons->context->pal.graph_box2);
+
+	r_cons_canvas_print (can);
+	r_cons_flush ();
+}
+
+static void __exec_modal(RCore *core, RPanel *panel, RModal *modal, Sdb *menu_db, RPanelLayout dir) {
+	SdbList *l = sdb_foreach_list (menu_db, true);
+	SdbKv *kv;
+	SdbListIter *iter;
+	int i = 0;
+	ls_foreach (l, iter, kv) {
+		if (i++ == modal->idx) {
+			RPanelAlmightyCallback cb = sdb_ptr_get (menu_db, sdbkv_key (kv), 0);
+			cb (core, panel, dir, sdbkv_key (kv));
+			break;
+		}
+	}
+}
+
+static void __delete_modal(RCore *core, RModal *modal, Sdb *menu_db) {
+	SdbList *l = sdb_foreach_list (menu_db, true);
+	SdbKv *kv;
+	SdbListIter *iter;
+	int i = 0;
+	ls_foreach (l, iter, kv) {
+		if (i++ == modal->idx) {
+			sdb_remove (menu_db, sdbkv_key (kv), 0);
+		}
+	}
+}
+
+static RModal *__init_modal(void) {
+	RModal *modal = R_NEW0 (RModal);
+	if (modal) {
+		__set_pos (&modal->pos, 0, 0);
+		modal->idx = 0;
+		modal->offset = 0;
+	}
+	return modal;
+}
+
+static void __free_modal(RModal **modal) {
+	free (*modal);
+	*modal = NULL;
+}
+
+static void __create_modal(RCore *core, RPanel *panel, Sdb *menu_db) {
+	__set_cursor (core, false);
+	const int w = 40;
+	const int h = 20;
+	const int x = (core->panels->can->w - w) / 2;
+	const int y = (core->panels->can->h - h) / 2;
+	RModal *modal = __init_modal ();
+	__set_geometry (&modal->pos, x, y, w, h);
+	int okey, key, cx, cy;
+	char *word = NULL;
+	__update_modal (core, menu_db, modal);
+	while (modal) {
+		okey = r_cons_readchar ();
+		key = r_cons_arrow_to_hjkl (okey);
+		word = NULL;
+		if (key == INT8_MAX - 1) {
+			if (r_cons_get_click (&cx, &cy)) {
+				if ((cx < x || x + w < cx) || ((cy < y || y + h < cy))) {
+					key = 'q';
+				} else {
+					word = __get_word_from_canvas_for_menu (core, core->panels, cx, cy);
+					if (word) {
+						void *cb = sdb_ptr_get (menu_db, word, 0);
+						if (cb) {
+							((RPanelAlmightyCallback)cb) (core, panel, NONE, word);
+							__free_modal (&modal);
+							free (word);
+							break;
+						}
+						free (word);
+					}
+				}
+			}
+		}
+		switch (key) {
+		case 'e':
+			{
+				__free_modal (&modal);
+				char *cmd = __show_status_input (core, "New command: ");
+				if (R_STR_ISNOTEMPTY (cmd)) {
+					__replace_cmd (core, cmd, cmd);
+				}
+				free (cmd);
+			}
+		break;
+		case 'j':
+			modal->idx++;
+			__update_modal (core, menu_db, modal);
+			break;
+		case 'k':
+			modal->idx--;
+			__update_modal (core, menu_db, modal);
+			break;
+		case 'v':
+			__exec_modal (core, panel, modal, menu_db, VERTICAL);
+			__free_modal (&modal);
+			break;
+		case 'h':
+			__exec_modal (core, panel, modal, menu_db, HORIZONTAL);
+			__free_modal (&modal);
+			break;
+		case 0x0d:
+			__exec_modal (core, panel, modal, menu_db, NONE);
+			__free_modal (&modal);
+			break;
+		case '-':
+			__delete_modal (core, modal, menu_db);
+			__update_modal (core, menu_db, modal);
+			break;
+		case 'q':
+		case '"':
+			__free_modal (&modal);
+			break;
+		}
+	}
 }
 
 static bool __handle_mouse_on_X(RCore *core, int x, int y) {
@@ -3927,6 +4050,56 @@ static bool __handle_mouse_on_panel(RCore *core, RPanel *panel, int x, int y, in
 		return false;
 	}
 	return true;
+}
+
+static bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
+	const int MENU_Y = 1;
+	RPanels *panels = core->panels;
+	if (__drag_and_resize (core)) {
+		return true;
+	}
+	if (!*key) {
+		int x, y;
+		if (!r_cons_get_click (&x, &y)) {
+			return false;
+		}
+		if (y == MENU_Y && __handle_mouse_on_top (core, x, y)) {
+			return true;
+		}
+		if (panels->mode == PANEL_MODE_MENU) {
+			__handle_mouse_on_menu (core, x, y);
+			return true;
+		}
+		if (__handle_mouse_on_X (core, x, y)) {
+			return true;
+		}
+		if (__check_if_mouse_x_illegal (core, x) || __check_if_mouse_y_illegal (core, y)) {
+			panels->mouse_on_edge_x = false;
+			panels->mouse_on_edge_y = false;
+			return true;
+		}
+		panels->mouse_on_edge_x = __check_if_mouse_x_on_edge (core, x, y);
+		panels->mouse_on_edge_y = __check_if_mouse_y_on_edge (core, x, y);
+		if (panels->mouse_on_edge_x || panels->mouse_on_edge_y) {
+			return true;
+		}
+		if (__handle_mouse_on_panel (core, panel, x, y, key)) {
+			return true;
+		}
+		int h, w = r_cons_get_size (&h);
+		if (y == h) {
+			RPanel *p = __get_cur_panel (panels);
+			__split_panel_horizontal (core, p, p->model->title, p->model->cmd);
+		} else if (x == w) {
+			RPanel *p = __get_cur_panel (panels);
+			__split_panel_vertical (core, p, p->model->title, p->model->cmd);
+		}
+	}
+	if (*key == INT8_MAX) {
+		*key = '"';
+		return false;
+	}
+	return false;
 }
 
 static void __add_visual_mark(RCore *core) {
@@ -5432,21 +5605,6 @@ static bool __init_panels(RCore *core, RPanels *panels) {
 	return true;
 }
 
-static RModal *__init_modal(void) {
-	RModal *modal = R_NEW0 (RModal);
-	if (modal) {
-		__set_pos (&modal->pos, 0, 0);
-		modal->idx = 0;
-		modal->offset = 0;
-	}
-	return modal;
-}
-
-static void __free_modal(RModal **modal) {
-	free (*modal);
-	*modal = NULL;
-}
-
 static void __refresh_core_offset (RCore *core) {
 	RPanels *panels = core->panels;
 	RPanel *cur = __get_cur_panel (panels);
@@ -5940,168 +6098,6 @@ R_API bool r_core_panels_load(RCore *core, const char *_name) {
 	}
 	__set_refresh_all (core, true, false);
 	return true;
-}
-
-static bool __draw_modal (RCore *core, RModal *modal, int range_end, int start, const char *name) {
-	if (start < modal->offset) {
-		return true;
-	}
-	if (start >= range_end) {
-		return false;
-	}
-	if (start == modal->idx) {
-		r_strbuf_appendf (modal->data, ">  %s%s"Color_RESET, core->cons->context->pal.graph_box2, name);
-	} else {
-		r_strbuf_appendf (modal->data, "   %s", name);
-	}
-	r_strbuf_append (modal->data, "          \n");
-	return true;
-}
-
-static void __update_modal(RCore *core, Sdb *menu_db, RModal *modal) {
-	RPanels *panels = core->panels;
-	RConsCanvas *can = panels->can;
-	modal->data = r_strbuf_new (NULL);
-	int count = sdb_count (menu_db);
-	if (modal->idx >= count) {
-		modal->idx = 0;
-		modal->offset = 0;
-	} else if (modal->idx >= modal->offset + modal->pos.h) {
-		if (modal->offset + modal->pos.h >= count) {
-			modal->offset = 0;
-			modal->idx = 0;
-		} else {
-			modal->offset += 1;
-		}
-	} else if (modal->idx < 0) {
-		modal->offset = R_MAX (count - modal->pos.h, 0);
-		modal->idx = count - 1;
-	} else if (modal->idx < modal->offset) {
-		modal->offset -= 1;
-	}
-	SdbList *l = sdb_foreach_list (menu_db, true);
-	SdbKv *kv;
-	SdbListIter *iter;
-	int i = 0;
-	int max_h = R_MIN (modal->offset + modal->pos.h, count);
-	ls_foreach (l, iter, kv) {
-		if (__draw_modal (core, modal, max_h, i, sdbkv_key (kv))) {
-			i++;
-		}
-	}
-	r_cons_gotoxy (0, 0);
-	r_cons_canvas_fill (can, modal->pos.x, modal->pos.y, modal->pos.w + 2, modal->pos.h + 2, ' ');
-	(void)r_cons_canvas_gotoxy (can, modal->pos.x + 2, modal->pos.y + 1);
-	r_cons_canvas_write (can, r_strbuf_get (modal->data));
-	r_strbuf_free (modal->data);
-
-	r_cons_canvas_box (can, modal->pos.x, modal->pos.y, modal->pos.w + 2, modal->pos.h + 2, core->cons->context->pal.graph_box2);
-
-	r_cons_canvas_print (can);
-	r_cons_flush ();
-}
-
-static void __exec_modal(RCore *core, RPanel *panel, RModal *modal, Sdb *menu_db, RPanelLayout dir) {
-	SdbList *l = sdb_foreach_list (menu_db, true);
-	SdbKv *kv;
-	SdbListIter *iter;
-	int i = 0;
-	ls_foreach (l, iter, kv) {
-		if (i++ == modal->idx) {
-			RPanelAlmightyCallback cb = sdb_ptr_get (menu_db, sdbkv_key (kv), 0);
-			cb (core, panel, dir, sdbkv_key (kv));
-			break;
-		}
-	}
-}
-
-static void __delete_modal(RCore *core, RModal *modal, Sdb *menu_db) {
-	SdbList *l = sdb_foreach_list (menu_db, true);
-	SdbKv *kv;
-	SdbListIter *iter;
-	int i = 0;
-	ls_foreach (l, iter, kv) {
-		if (i++ == modal->idx) {
-			sdb_remove (menu_db, sdbkv_key (kv), 0);
-		}
-	}
-}
-
-static void __create_modal(RCore *core, RPanel *panel, Sdb *menu_db) {
-	__set_cursor (core, false);
-	const int w = 40;
-	const int h = 20;
-	const int x = (core->panels->can->w - w) / 2;
-	const int y = (core->panels->can->h - h) / 2;
-	RModal *modal = __init_modal ();
-	__set_geometry (&modal->pos, x, y, w, h);
-	int okey, key, cx, cy;
-	char *word = NULL;
-	__update_modal (core, menu_db, modal);
-	while (modal) {
-		okey = r_cons_readchar ();
-		key = r_cons_arrow_to_hjkl (okey);
-		word = NULL;
-		if (key == INT8_MAX - 1) {
-			if (r_cons_get_click (&cx, &cy)) {
-				if ((cx < x || x + w < cx) || ((cy < y || y + h < cy))) {
-					key = 'q';
-				} else {
-					word = __get_word_from_canvas_for_menu (core, core->panels, cx, cy);
-					if (word) {
-						void *cb = sdb_ptr_get (menu_db, word, 0);
-						if (cb) {
-							((RPanelAlmightyCallback)cb) (core, panel, NONE, word);
-							__free_modal (&modal);
-							free (word);
-							break;
-						}
-						free (word);
-					}
-				}
-			}
-		}
-		switch (key) {
-		case 'e':
-			{
-				__free_modal (&modal);
-				char *cmd = __show_status_input (core, "New command: ");
-				if (R_STR_ISNOTEMPTY (cmd)) {
-					__replace_cmd (core, cmd, cmd);
-				}
-				free (cmd);
-			}
-		break;
-		case 'j':
-			modal->idx++;
-			__update_modal (core, menu_db, modal);
-			break;
-		case 'k':
-			modal->idx--;
-			__update_modal (core, menu_db, modal);
-			break;
-		case 'v':
-			__exec_modal (core, panel, modal, menu_db, VERTICAL);
-			__free_modal (&modal);
-			break;
-		case 'h':
-			__exec_modal (core, panel, modal, menu_db, HORIZONTAL);
-			__free_modal (&modal);
-			break;
-		case 0x0d:
-			__exec_modal (core, panel, modal, menu_db, NONE);
-			__free_modal (&modal);
-			break;
-		case '-':
-			__delete_modal (core, modal, menu_db);
-			__update_modal (core, menu_db, modal);
-			break;
-		case 'q':
-		case '"':
-			__free_modal (&modal);
-			break;
-		}
-	}
 }
 
 static void __rotate_panels(RCore *core, bool rev) {
