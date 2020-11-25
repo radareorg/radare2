@@ -175,11 +175,15 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	ut16 word1 = 0, word2 = 0;
 	struct v850_cmd cmd;
 
+	if (len < 1 || (len > 0 && !memcmp (buf, "\xff\xff\xff\xff\xff\xff", R_MIN (len, 6)))) {
+		return -1;
+	}
+
 	memset (&cmd, 0, sizeof (cmd));
 
 	ret = op->size = v850_decode_command (buf, len, &cmd);
 
-	if (ret <= 0) {
+	if (ret < 1) {
 		return ret;
 	}
 
@@ -553,6 +557,18 @@ static RList *anal_preludes(RAnal *anal) {
 	return l;
 }
 
+static int archinfo(RAnal *anal, int q) {
+	switch (q) {
+	case R_ANAL_ARCHINFO_ALIGN:
+		return 2;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return 6;
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return 2;
+	}
+	return 0;
+}
+
 RAnalPlugin r_anal_plugin_v850 = {
 	.name = "v850",
 	.desc = "V850 code analysis plugin",
@@ -562,6 +578,7 @@ RAnalPlugin r_anal_plugin_v850 = {
 	.bits = 32,
 	.op = v850_op,
 	.esil = true,
+	.archinfo = archinfo,
 	.get_reg_profile = get_reg_profile,
 };
 
