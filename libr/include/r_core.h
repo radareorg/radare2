@@ -448,7 +448,6 @@ R_API int r_core_visual_anal_classes(RCore *core);
 R_API int r_core_visual_types(RCore *core);
 R_API int r_core_visual(RCore *core, const char *input);
 R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive);
-R_API bool r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root);
 R_API void r_core_visual_browse(RCore *core, const char *arg);
 R_API int r_core_visual_cmd(RCore *core, const char *arg);
 R_API void r_core_visual_seek_animation (RCore *core, ut64 addr);
@@ -466,6 +465,11 @@ R_API RBinReloc *r_core_getreloc(RCore *core, ut64 addr, int size);
 R_API ut64 r_core_get_asmqjmps(RCore *core, const char *str);
 R_API void r_core_set_asmqjmps(RCore *core, char *str, size_t len, int i);
 R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr);
+
+// core/panels.c
+R_API bool r_core_panels_root(RCore *core, RPanelsRoot *panels_root);
+R_API void r_core_panels_save(RCore *core, const char *_name);
+R_API bool r_core_panels_load(RCore *core, const char *_name);
 
 R_API void r_core_anal_type_init(RCore *core);
 R_API char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, PJ *pj, int depth);

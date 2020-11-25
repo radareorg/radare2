@@ -1953,7 +1953,7 @@ static int cmd_panels(void *data, const char *input) {
 		////r_sys_cmdf ("v%s", input);
 		return false;
 	}
-	r_core_visual_panels_root (core, core->panels_root);
+	r_core_panels_root (core, core->panels_root);
 	return true;
 }
 
