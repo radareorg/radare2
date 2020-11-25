@@ -30,6 +30,7 @@ R_API bool r_skyline_add(RSkyline *skyline, RInterval itv, void *user) {
 				tail.itv.size = prev_part_end - r_itv_begin (tail.itv);
 				if (slot < r_vector_len (skyline_vec)) {
 					r_vector_insert (skyline_vec, slot, &tail);
+					part = r_vector_index_ptr (skyline_vec, slot + 1);
 				} else {
 					r_vector_push (skyline_vec, &tail);
 				}
