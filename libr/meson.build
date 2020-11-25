@@ -109,6 +109,7 @@ asm_plugins = [
   'tricore',
   'v810',
   'v850',
+  'v850_gnu',
   'vax',
   'wasm',
   'ws',
