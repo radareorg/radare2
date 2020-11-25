@@ -376,6 +376,16 @@ static bool cb_analarch(void *user, void *data) {
 		if (r_anal_use (core->anal, node->value)) {
 			return true;
 		}
+		char *p = strchr (node->value, '.');
+		if (p) {
+			char *arch = strdup (node->value);
+			arch[p - node->value] = 0;
+			free (node->value);
+			node->value = arch;
+			if (r_anal_use (core->anal, node->value)) {
+				return true;
+			}
+		}
 		const char *aa = r_config_get (core->config, "asm.arch");
 		if (!aa || strcmp (aa, node->value)) {
 			eprintf ("anal.arch: cannot find '%s'\n", node->value);
