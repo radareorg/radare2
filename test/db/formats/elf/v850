@@ -31,8 +31,11 @@ lang     c
 linenum  true
 lsyms    true
 machine  NEC V800 series
+maxopsz  8
+minopsz  2
 nx       false
 os       linux
+pcalign  2
 pic      false
 relocs   true
 rpath    NONE

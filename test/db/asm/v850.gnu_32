@@ -1,0 +1,7 @@
+d "prepare {ep - lp}, 1" 83072100 0x0
+d "prepare {ep - lp}, 0" 81072100 0x0
+d "prepare {r20 - lp}, 1" 8307e1ff 0x0
+d "dispose 1, {ep - lp}, r0" 43062000 0x0
+d "ei" e0876001 0x0
+# d "nop" 0000 0x0
+# d "breakpoint" ffff 0x0

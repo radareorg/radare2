@@ -33,12 +33,9 @@ DECLARE_GENERIC_FPRINTF_FUNC()
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
-	if (len < 6) {
-		return -1;
-	}
 	buf_global = &op->buf_asm;
 	Offset = a->pc;
-	memcpy (bytes, buf, 6);
+	memcpy (bytes, buf, R_MIN (len, 8));
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
@@ -69,9 +66,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (op->size == -1) {
 		r_strbuf_set (&op->buf_asm, "(data)");
 	}
-	if (!memcmp (buf, "\xff\xff\xff\xff\xff\xff", op->size)) {
+	if (!memcmp (buf, "\xff\xff\xff\xff\xff\xff\xff\xff", op->size)) {
 		r_strbuf_set (&op->buf_asm, "breakpoint");
-		return 2;
+		return 4;
 	}
 	return op->size;
 }
