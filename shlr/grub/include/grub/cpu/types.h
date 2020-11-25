@@ -19,14 +19,17 @@
 #ifndef GRUB_TYPES_CPU_HEADER
 #define GRUB_TYPES_CPU_HEADER	1
 
+#include <r_types.h>
+
 /* The size of void *.  */
 #define GRUB_TARGET_SIZEOF_VOID_P	4
 
 /* The size of long.  */
 #define GRUB_TARGET_SIZEOF_LONG		4
 
-/* i386 is little-endian.  */
-#undef GRUB_TARGET_WORDS_BIGENDIAN
+#if R_SYS_ENDIAN
+#define GRUB_TARGET_WORDS_BIGENDIAN
+#endif
 
 #define GRUB_TARGET_I386		1
 
