@@ -98,6 +98,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=oij-pj
+FILE=<<EOF
+bins/elf/crackme0x05
+bins/elf/crackme0x00b
+EOF
+CMDS=oij
+EXPECT=<<EOF
+[{"raised":false,"fd":3,"uri":"bins/elf/crackme0x05","from":0,"writable":false,"size":7656},{"raised":true,"fd":5,"uri":"bins/elf/crackme0x00b","from":0,"writable":false,"size":7375}]
+EOF
+RUN
+
 NAME=o -
 FILE=malloc://1024
 CMDS=<<EOF
