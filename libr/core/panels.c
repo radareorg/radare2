@@ -2,6 +2,18 @@
 
 #include <r_core.h>
 
+/* few remaining static functions */
+static bool __init_panels_menu(RCore *core);
+static bool __init_panels(RCore *core, RPanels *panels);
+static void __init_menu_screen_settings_layout(void *_core, const char *parent);
+static void __init_new_panels_root(RCore *core);
+static void __init_menu_color_settings_layout(void *core, const char *parent);
+static void __init_menu_disasm_asm_settings_layout(void *_core, const char *parent);
+static void __set_dcb(RCore *core, RPanel *p);
+static void __set_pcb(RPanel *p);
+static void __panels_refresh(RCore *core);
+
+
 #define PANEL_NUM_LIMIT 9
 
 #define PANEL_TITLE_SYMBOLS          "Symbols"
@@ -278,24 +290,6 @@ static const char *help_msg_panels_zoom[] = {
 	"q/Q/Enter","quit Zoom mode",
 	NULL
 };
-
-/* init */
-static bool __init_panels_menu(RCore *core);
-static bool __init_panels(RCore *core, RPanels *panels);
-static void __init_menu_screen_settings_layout(void *_core, const char *parent);
-static void __init_new_panels_root(RCore *core);
-static void __init_menu_color_settings_layout(void *core, const char *parent);
-static void __init_menu_disasm_asm_settings_layout(void *_core, const char *parent);
-
-/* set */
-static void __set_dcb(RCore *core, RPanel *p);
-static void __set_pcb(RPanel *p);
-
-/* panel layout */
-static void __layout_default(RPanels *panels);
-static void __default_panel_print(RCore *core, RPanel *panel);
-static void __panels_refresh(RCore *core);
-
 
 static RPanel *__get_panel(RPanels *panels, int i) {
 	return (panels && i < PANEL_NUM_LIMIT)? panels->panel[i]: NULL;
@@ -680,30 +674,6 @@ static void __menu_panel_print(RConsCanvas *can, RPanel *panel, int x, int y, in
 	}
 }
 
-static void __panel_print(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
-	if (!can || !panel|| !panel->view->refresh) {
-		return;
-	}
-	if (can->w <= panel->view->pos.x || can->h <= panel->view->pos.y) {
-		return;
-	}
-	panel->view->refresh = panel->model->type == PANEL_TYPE_MENU;
-	r_cons_canvas_fill (can, panel->view->pos.x, panel->view->pos.y, panel->view->pos.w, panel->view->pos.h, ' ');
-	if (panel->model->type == PANEL_TYPE_MENU) {
-		__menu_panel_print (can, panel, panel->view->sx, panel->view->sy, panel->view->pos.w, panel->view->pos.h);
-	} else {
-		__default_panel_print (core, panel);
-	}
-	int w, h;
-	w = R_MIN (panel->view->pos.w, can->w - panel->view->pos.x);
-	h = R_MIN (panel->view->pos.h, can->h - panel->view->pos.y);
-	if (color) {
-		r_cons_canvas_box (can, panel->view->pos.x, panel->view->pos.y, w, h, core->cons->context->pal.graph_box2);
-	} else {
-		r_cons_canvas_box (can, panel->view->pos.x, panel->view->pos.y, w, h, core->cons->context->pal.graph_box);
-	}
-}
-
 static void __update_help_contents(RCore *core, RPanel *panel) {
 	char *read_only = panel->model->readOnly;
 	char *text = NULL;
@@ -887,19 +857,6 @@ static void __update_pdc_contents(RCore *core, RPanel *panel, char *cmdstr) {
 		r_cons_canvas_write (can, text);
 		free (text);
 	}
-}
-
-static void __default_panel_print(RCore *core, RPanel *panel) {
-	bool o_cur = core->print->cur_enabled;
-	core->print->cur_enabled = o_cur & (__get_cur_panel (core->panels) == panel);
-	if (panel->model->readOnly) {
-		__update_help_contents (core, panel);
-		__update_help_title (core, panel);
-	} else if (panel->model->cmd) {
-		panel->model->print_cb (core, panel);
-		__update_panel_title (core, panel);
-	}
-	core->print->cur_enabled = o_cur;
 }
 
 static char *__find_cmd_str_cache(RCore *core, RPanel* panel) {
@@ -5660,6 +5617,43 @@ static void demo_end (RCore *core, RConsCanvas *can) {
 		}
 		r_sys_usleep (100000);
 		free (s);
+	}
+}
+
+static void __default_panel_print(RCore *core, RPanel *panel) {
+	bool o_cur = core->print->cur_enabled;
+	core->print->cur_enabled = o_cur & (__get_cur_panel (core->panels) == panel);
+	if (panel->model->readOnly) {
+		__update_help_contents (core, panel);
+		__update_help_title (core, panel);
+	} else if (panel->model->cmd) {
+		panel->model->print_cb (core, panel);
+		__update_panel_title (core, panel);
+	}
+	core->print->cur_enabled = o_cur;
+}
+
+static void __panel_print(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
+	if (!can || !panel|| !panel->view->refresh) {
+		return;
+	}
+	if (can->w <= panel->view->pos.x || can->h <= panel->view->pos.y) {
+		return;
+	}
+	panel->view->refresh = panel->model->type == PANEL_TYPE_MENU;
+	r_cons_canvas_fill (can, panel->view->pos.x, panel->view->pos.y, panel->view->pos.w, panel->view->pos.h, ' ');
+	if (panel->model->type == PANEL_TYPE_MENU) {
+		__menu_panel_print (can, panel, panel->view->sx, panel->view->sy, panel->view->pos.w, panel->view->pos.h);
+	} else {
+		__default_panel_print (core, panel);
+	}
+	int w, h;
+	w = R_MIN (panel->view->pos.w, can->w - panel->view->pos.x);
+	h = R_MIN (panel->view->pos.h, can->h - panel->view->pos.y);
+	if (color) {
+		r_cons_canvas_box (can, panel->view->pos.x, panel->view->pos.y, w, h, core->cons->context->pal.graph_box2);
+	} else {
+		r_cons_canvas_box (can, panel->view->pos.x, panel->view->pos.y, w, h, core->cons->context->pal.graph_box);
 	}
 }
 
