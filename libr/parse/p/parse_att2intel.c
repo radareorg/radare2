@@ -35,12 +35,12 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ NULL }
 	};
 
-	for (i=0; ops[i].op != NULL; i++) {
+	for (i = 0; ops[i].op != NULL; i++) {
 		if (!strcmp (ops[i].op, argv[0])) {
 			if (newstr != NULL) {
-				for (j=k=0;ops[i].str[j]!='\0';j++,k++) {
-					if (ops[i].str[j]>='0' && ops[i].str[j]<='9') {
-						const char *w = argv[ ops[i].str[j]-'0' ];
+				for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
+					if (ops[i].str[j] >= '0' && ops[i].str[j] <= '9') {
+						const char *w = argv[ops[i].str[j] - '0'];
 						if (w != NULL) {
 							strcpy (newstr + k, w);
 							k += strlen (w) - 1;
