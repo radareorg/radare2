@@ -323,12 +323,25 @@ static void r_bin_mdmp_init_parsing(struct r_bin_mdmp_obj *obj) {
 	sdb_set (obj->kv, "mdmp_string.format", "dZ Length Buffer", 0);
 }
 
+static void read_hdr(RBuffer *b, struct minidump_header *hdr) {
+	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
+	r_buf_seek (b, 0, R_BUF_SET);
+	hdr->signature = r_buf_read_le32 (b);
+	hdr->version = r_buf_read_le32 (b);
+	hdr->number_of_streams = r_buf_read_le32 (b);
+	hdr->stream_directory_rva = r_buf_read_le32 (b);
+	hdr->check_sum = r_buf_read_le32 (b);
+	hdr->reserved = r_buf_read_le32 (b);
+	hdr->flags = r_buf_read_le64 (b);
+	r_buf_seek (b, o_addr, R_BUF_SET);
+}
+
 static bool r_bin_mdmp_init_hdr(struct r_bin_mdmp_obj *obj) {
 	obj->hdr = R_NEW (struct minidump_header);
 	if (!obj->hdr) {
 		return false;
 	}
-	r_buf_read_at (obj->b, 0, (ut8 *)obj->hdr, sizeof (*obj->hdr));
+	read_hdr (obj->b, obj->hdr);
 
 	if (obj->hdr->number_of_streams == 0) {
 		eprintf ("[WARN] No streams present!\n");
@@ -354,6 +367,52 @@ static bool r_bin_mdmp_init_hdr(struct r_bin_mdmp_obj *obj) {
 		"TimeDateStamp (mdmp_type)Flags", 0);
 
 	return true;
+}
+
+static void read_module(RBuffer *b, ut64 addr, struct minidump_module *module) {
+	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
+	r_buf_seek (b, addr, R_BUF_SET);
+	module->base_of_image = r_buf_read_le64 (b);
+	module->size_of_image = r_buf_read_le32 (b);
+	module->check_sum = r_buf_read_le32 (b);
+	module->time_date_stamp = r_buf_read_le32 (b);
+	module->module_name_rva = r_buf_read_le32 (b);
+	module->version_info.dw_signature = r_buf_read_le32 (b);
+	module->version_info.dw_struc_version = r_buf_read_le32 (b);
+	module->version_info.dw_file_version_ms = r_buf_read_le32 (b);
+	module->version_info.dw_file_version_ls = r_buf_read_le32 (b);
+	module->version_info.dw_product_version_ms = r_buf_read_le32 (b);
+	module->version_info.dw_product_version_ls = r_buf_read_le32 (b);
+	module->version_info.dw_file_flags_mask = r_buf_read_le32 (b);
+	module->version_info.dw_file_flags = r_buf_read_le32 (b);
+	module->version_info.dw_file_os = r_buf_read_le32 (b);
+	module->version_info.dw_file_type = r_buf_read_le32 (b);
+	module->version_info.dw_file_subtype = r_buf_read_le32 (b);
+	module->version_info.dw_file_date_ms = r_buf_read_le32 (b);
+	module->version_info.dw_file_date_ls = r_buf_read_le32 (b);
+	module->cv_record.data_size = r_buf_read_le32 (b);
+	module->cv_record.rva = r_buf_read_le32 (b);
+	module->misc_record.data_size = r_buf_read_le32 (b);
+	module->misc_record.rva = r_buf_read_le32 (b);
+	module->reserved_0 = r_buf_read_le64 (b);
+	module->reserved_1 = r_buf_read_le64 (b);
+	r_buf_seek (b, o_addr, R_BUF_SET);
+}
+
+static void read_memory64_list(RBuffer *b, ut64 addr, struct minidump_memory64_list *memory64_list) {
+	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
+	r_buf_seek (b, addr, R_BUF_SET);
+	memory64_list->number_of_memory_ranges = r_buf_read_le64 (b);
+	memory64_list->base_rva = r_buf_read_le64 (b);
+	r_buf_seek (b, o_addr, R_BUF_SET);
+}
+
+static void read_desc(RBuffer *b, ut64 addr, struct minidump_memory_descriptor64 *desc) {
+	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
+	r_buf_seek (b, addr, R_BUF_SET);
+	desc->start_of_memory_range = r_buf_read_le64 (b);
+	desc->data_size = r_buf_read_le64 (b);
+	r_buf_seek (b, o_addr, R_BUF_SET);
 }
 
 static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct minidump_directory *entry) {
@@ -399,10 +458,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		/* TODO: Not yet fully parsed or utilised */
 		break;
 	case MODULE_LIST_STREAM:
-		r = r_buf_read_at (obj->b, entry->location.rva, (ut8 *)&module_list, sizeof (module_list));
-		if (r != sizeof (module_list)) {
-			break;
-		}
+		module_list.number_of_modules = r_buf_read_le32_at (obj->b, entry->location.rva);
 
 		sdb_set (obj->kv, "mdmp_module.format", "qddtd???qq "
 			"BaseOfImage SizeOfImage CheckSum "
@@ -425,10 +481,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			if (!module) {
 				break;
 			}
-			r = r_buf_read_at (obj->b, offset, (ut8 *)module, sizeof (*module));
-			if (r != sizeof (*module)) {
-				break;
-			}
+			read_module (obj->b, offset, module);
 			r_list_append (obj->streams.modules, module);
 			offset += sizeof (*module);
 		}
@@ -546,10 +599,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		}
 		break;
 	case MEMORY_64_LIST_STREAM:
-		r = r_buf_read_at (obj->b, entry->location.rva, (ut8 *)&memory64_list, sizeof (memory64_list));
-		if (r != sizeof (memory64_list)) {
-			break;
-		}
+		read_memory64_list (obj->b, entry->location.rva, &memory64_list);
 
 		sdb_num_set (obj->kv, "mdmp_memory64_list.offset",
 			entry->location.rva, 0);
@@ -567,10 +617,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			if (!desc) {
 				break;
 			}
-			r = r_buf_read_at (obj->b, offset, (ut8 *)desc, sizeof (*desc));
-			if (r != sizeof (*desc)) {
-				break;
-			}
+			read_desc (obj->b, offset, desc);
 			r_list_append (obj->streams.memories64.memories, desc);
 			offset += sizeof (*desc);
 		}
@@ -830,6 +877,18 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 	return true;
 }
 
+static bool read_entry (RBuffer *b, ut64 addr, struct minidump_directory *entry) {
+	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
+	if (r_buf_seek (b, addr, R_BUF_SET) < 0) {
+		return false;
+	}
+	entry->stream_type = r_buf_read_le32 (b);
+	entry->location.data_size = r_buf_read_le32 (b);
+	entry->location.rva = r_buf_read_le32 (b);
+	r_buf_seek (b, o_addr, R_BUF_SET);
+	return true;
+}
+
 static bool r_bin_mdmp_init_directory(struct r_bin_mdmp_obj *obj) {
 	ut32 i;
 	struct minidump_directory entry;
@@ -850,8 +909,7 @@ static bool r_bin_mdmp_init_directory(struct r_bin_mdmp_obj *obj) {
 	/* Parse each entry in the directory */
 	for (i = 0; i < max_entries; i++) {
 		ut32 delta = i * sizeof (struct minidump_directory);
-		int r = r_buf_read_at (obj->b, rvadir + delta, (ut8*) &entry, sizeof (struct minidump_directory));
-		if (r) {
+		if (read_entry (obj->b, rvadir + delta, &entry)) {
 			if (!r_bin_mdmp_init_directory_entry (obj, &entry)) {
 				return false;
 			}
@@ -866,16 +924,16 @@ static bool r_bin_mdmp_patch_pe_headers(RBuffer *pe_buf) {
 	Pe64_image_dos_header dos_hdr;
 	Pe64_image_nt_headers nt_hdr;
 
-	r_buf_read_at (pe_buf, 0, (ut8 *)&dos_hdr, sizeof (Pe64_image_dos_header));
-	r_buf_read_at (pe_buf, dos_hdr.e_lfanew, (ut8 *)&nt_hdr, sizeof (Pe64_image_nt_headers));
+	Pe64_read_dos_header (pe_buf, &dos_hdr);
+	Pe64_read_nt_headers (pe_buf, dos_hdr.e_lfanew, &nt_hdr);
 
 	/* Patch RawData in headers */
 	ut64 sect_hdrs_off = dos_hdr.e_lfanew + 4 + sizeof (Pe64_image_file_header) + nt_hdr.file_header.SizeOfOptionalHeader;
 	Pe64_image_section_header section_hdr;
 	for (i = 0; i < nt_hdr.file_header.NumberOfSections; i++) {
-		r_buf_read_at (pe_buf, sect_hdrs_off + i * sizeof (section_hdr), (ut8 *)&section_hdr, sizeof (section_hdr));
+		Pe64_read_image_section_header (pe_buf, sect_hdrs_off + i * sizeof (section_hdr), &section_hdr);
 		section_hdr.PointerToRawData = section_hdr.VirtualAddress;
-		r_buf_write_at (pe_buf, sect_hdrs_off + i * sizeof (section_hdr), (const ut8 *)&section_hdr, sizeof (section_hdr));
+		Pe64_write_image_section_header (pe_buf, sect_hdrs_off + i * sizeof (section_hdr), &section_hdr);
 	}
 
 	return true;
