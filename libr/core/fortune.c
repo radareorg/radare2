@@ -1,5 +1,6 @@
 /* radare2 - LGPL - Copyright 2009-2020 - pancake */
 
+#include <ctype.h>
 #include <r_core.h>
 
 static const char *fortunes[] = {
@@ -57,6 +58,17 @@ static char *getrandomline(RCore *core) {
 			if (templine && *templine) {
 				free (line);
 				line = templine;
+				if (!strcmp (fortunes[i], "nsfw")) {
+					char *c = line;
+					while (*c) {
+						if (isupper(*c)) {
+							*c = (*c - 'A' + 1) % 26 + 'A';
+						} else if (islower(*c)) {
+							*c = (*c - 'a' + 1) % 26 + 'a';
+						}
+						c++;
+					}
+				}
 			}
 			free (file);
 		}
