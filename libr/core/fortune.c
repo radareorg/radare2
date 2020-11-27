@@ -3,7 +3,7 @@
 #include <r_core.h>
 
 static const char *fortunes[] = {
-	"tips", "fun", "nsfw", "creepy"
+	"tips", "fun",
 };
 
 static char *getFortuneFile(RCore *core, const char *type) {
