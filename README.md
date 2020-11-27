@@ -93,6 +93,10 @@ Alternatively you can also build with meson + ninja:
 
 	$ ./sys/meson.py --prefix=/usr --shared --install
 
+Or install in your home with meson + ninja:
+
+	$ ./sys/meson.py --prefix=/home/$USER/r2meson --local --shared --install
+
 ## Uninstall
 
 In case of a polluted filesystem, you can uninstall the current
