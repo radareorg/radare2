@@ -39,7 +39,9 @@ jobs:
           sudo make install
 
     - name: Install test dependencies
-      run: python3 -m pip install --user 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
+      run: |
+          sudo apt-get --assume-yes install python3-wheel python3-setuptools
+          python3 -m pip install --user 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
 
     - name: Run tests
       run: cd test && make
