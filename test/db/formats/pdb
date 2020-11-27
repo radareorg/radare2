@@ -212,3 +212,14 @@ EXPECT=<<EOF
 15F778B3671D4EFDBDCDE79905308B792
 EOF
 RUN
+
+NAME=PDB set flag realname
+FILE=-
+CMDS=<<EOF
+idp bins/pdb/Project1.pdb
+fN @ 0x00011000
+EOF
+EXPECT=<<EOF
+__enc$textbss$end
+EOF
+RUN
