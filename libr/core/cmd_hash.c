@@ -337,13 +337,13 @@ static int cmd_hash_bang (RCore *core, const char *input) {
 					eprintf ("Error: scr.interactive required to run the rlang prompt\n");
 				}
 			}
-		} else if (av[0][0]=='?' || av[0][0]=='*') {
+		} else if (av[0][0] == '?' || av[0][0] == '*') {
 			r_lang_list (core->lang);
 		}
 	} else {
 		r_lang_list (core->lang);
 	}
-	r_str_argv_free(av);
+	r_str_argv_free (av);
 	return true;
 }
 

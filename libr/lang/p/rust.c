@@ -70,10 +70,13 @@ static int lang_rust_init(void *user) {
 	return true;
 }
 
-static int lang_rust_run(RLang *lang, const char *code, int len) {
+static bool lang_rust_run(RLang *lang, const char *code, int len) {
 	FILE *fd = r_sandbox_fopen ("_tmp.rs", "w");
-	if (fd) {
-		const char *rust_header = \
+	if (!fd) {
+		eprintf ("Cannot open _tmp.rs\n");
+		return false;
+	}
+	const char *rust_header = \
 "use std::ffi::CStr;\n" \
 "extern {\n" \
 "        pub fn r_core_cmd_str(core: *const u8, s: *const u8) -> *const u8;\n" \
@@ -103,13 +106,12 @@ static int lang_rust_run(RLang *lang, const char *code, int len) {
 		const char *rust_footer = \
 "        }\n" \
 "}\n";
-		fputs (rust_header, fd);
-		fputs (code, fd);
-		fputs (rust_footer, fd);
-		fclose (fd);
-		lang_rust_file (lang, "_tmp.rs");
-		r_file_rm ("_tmp.rs");
-	} else eprintf ("Cannot open _tmp.rs\n");
+	fputs (rust_header, fd);
+	fputs (code, fd);
+	fputs (rust_footer, fd);
+	fclose (fd);
+	lang_rust_file (lang, "_tmp.rs");
+	r_file_rm ("_tmp.rs");
 	return true;
 }
 
