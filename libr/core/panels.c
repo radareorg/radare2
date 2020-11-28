@@ -872,7 +872,7 @@ static char *__handle_cmd_str_cache(RCore *core, RPanel *panel, bool force_cache
 	if (b) {
 		core->print->cur_enabled = false;
 	}
-	char *out = (*cmd == '.' || *cmd == '#')
+	char *out = (*cmd == '.')
 		? r_core_cmd_str_pipe (core, cmd)
 		: r_core_cmd_str (core, cmd);
 	if (force_cache) {
