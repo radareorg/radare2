@@ -173,6 +173,10 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 	if (bp->baddr > addr) {
 		eprintf ("base addr should not be larger than the breakpoint address.\n");
 	}
+	if (bp->bpinmaps && !r_bp_is_valid (bp, b)) {
+		eprintf ("WARNING: Breakpoint won't be placed since it's not in a valid map.\n"
+			 "You can bypass this check by setting dbg.bpinmaps to false.\n");
+	}
 	b->delta = addr - bp->baddr;
 	b->size = size;
 	b->enabled = true;
