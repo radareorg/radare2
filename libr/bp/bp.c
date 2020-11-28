@@ -194,14 +194,10 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 		} else {
 			b->obytes = NULL;
 		}
-		/* XXX: endian .. use bp->endian */
 		ret = r_bp_get_bytes (bp, b->bbytes, size, bp->endian, 0);
 		if (ret != size) {
 			eprintf ("Cannot get breakpoint bytes. No architecture selected?\n");
-			unlinkBreakpoint (bp, b);
-			return NULL;
 		}
-		b->recoil = ret;
 	}
 	bp->nbps++;
 	r_list_append (bp->bps, b);
