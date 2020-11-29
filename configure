@@ -203,7 +203,6 @@ printf "
 Some influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
-  CPPFLAGS    C preprocessor flags
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
               nonstandard directory <lib dir>
   CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
@@ -317,6 +316,7 @@ echo "FLAGS:     --disable-debugger --with-sysmagic --with-capstone5 --disable-l
 	INFODIR="$value"; ;;
 --mandir)
 	MANDIR="$value"; ;;
+
 "--disable-debugger") DEBUGGER="0"; ;;
 "--with-sysmagic") USE_MAGIC="1"; ;;
 "--with-capstone5") CSNEXT="1"; ;;
@@ -346,9 +346,9 @@ esac
 # MAIN #
 take_environ
 split_host BUILD HOST TARGET
-
 [ -z "$ACRHOOK" ] && ACRHOOK=./configure.hook
 [ -e "$ACRHOOK" ] && . ${ACRHOOK}
+
 while : ; do
 [ -z "$1" ] && break
 parse_options "$1"
