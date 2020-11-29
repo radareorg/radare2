@@ -534,7 +534,9 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	r28	.32	112 0\n"
 		"gpr	r29	.32	116 0\n"
 		"gpr	r30	.32	120 0\n"
+		"gpr	ep	.32	120 0\n"
 		"gpr	r31	.32	124 0\n"
+		"gpr	lp	.32	124 0\n"
 		"gpr	pc	.32	128 0\n"
 
 		"gpr	psw .32 132 0\n"
