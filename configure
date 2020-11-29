@@ -317,7 +317,6 @@ echo "FLAGS:     --disable-debugger --with-sysmagic --with-capstone5 --disable-l
 	INFODIR="$value"; ;;
 --mandir)
 	MANDIR="$value"; ;;
-
 "--disable-debugger") DEBUGGER="0"; ;;
 "--with-sysmagic") USE_MAGIC="1"; ;;
 "--with-capstone5") CSNEXT="1"; ;;
@@ -347,9 +346,9 @@ esac
 # MAIN #
 take_environ
 split_host BUILD HOST TARGET
+
 [ -z "$ACRHOOK" ] && ACRHOOK=./configure.hook
 [ -e "$ACRHOOK" ] && . ${ACRHOOK}
-
 while : ; do
 [ -z "$1" ] && break
 parse_options "$1"
