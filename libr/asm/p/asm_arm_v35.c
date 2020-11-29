@@ -2,8 +2,11 @@
 
 #include <r_asm.h>
 #include <r_lib.h>
+
 #include "../arch/arm/asm-arm.h"
-#include "../arch/arm/v35arm64/arm64dis.h"
+#include "../arch/arm/v35arm64/disassembler/operations.h"
+#include "../arch/arm/v35arm64/disassembler/encodings.h"
+#include "../arch/arm/v35arm64/disassembler/arm64dis.h"
 bool arm64ass(const char *str, ut64 addr, ut32 *op);
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {

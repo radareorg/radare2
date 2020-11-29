@@ -1,0 +1,48 @@
+# $ make -f Makefile-local
+
+LIB_OBJS = arm64dis.o pcode.o decode0.o decode1.o decode_fields32.o decode_scratchpad.o decode2.o operations.o encodings.o sysregs.o
+
+HEADERS = decode1.h decode2.h arm64dis.h pcode.h operations.h sysregs.h decode_fields32.h encodings.h
+
+CFLAGS = -g -Wunused
+#CFLAGS = -g -Wpedantic
+#CFLAGS = -ofast
+
+#$(info $(GENERATED_OBJECTS))
+
+.PHONY: all clean
+
+all: libdisasm.a gofer.so test
+
+# operations.o, encodings.o, sysregs.o
+%.o: %.c $(HEADERS)
+	gcc -c $(CFLAGS) $< -o $@
+
+libdisasm.a: $(LIB_OBJS)
+	ar rvs libdisasm.a $(LIB_OBJS)
+
+disasm.dylib: $(LIB_OBJS)
+	gcc -shared $(LIB_OBJS) -o disasm.dylib
+
+#------------------------------------------------------------------------------
+# test tools
+#------------------------------------------------------------------------------
+
+gofer.so: gofer.c libdisasm.a
+	gcc $(CFLAGS) \
+		libdisasm.a \
+		-shared -o gofer.so gofer.c \
+		-Wl,-headerpad_max_install_names
+	#install_name_tool -change libcapstone.3.dylib gofer.so
+	#install_name_tool -add_rpath `pwd` gofer.so
+
+test: test.c libdisasm.a
+	gcc $(CFLAGS) test.c libdisasm.a -o test
+
+#------------------------------------------------------------------------------
+# 
+#------------------------------------------------------------------------------
+clean:
+	rm -f *.o *.so *.a test
+	rm -rf gofer.so.dSYM test.dSYM
+
