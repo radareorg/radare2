@@ -238,6 +238,8 @@ static const char *help_msg_p[] = {
 	"pF", "[?][apx]", "print asn1, pkcs7 or x509",
 	"pg", "[?][x y w h] [cmd]", "create new visual gadget or print it (see pg? for details)",
 	"ph", "[?][=|hash] ([len])", "calculate hash for a block",
+	"pi", "[?][bdefrj] [num]", "print instructions",
+	"pI", "[?][iI][df] [len]", "print N instructions/bytes (f=func)",
 	"pj", "[?] [len]", "print as indented JSON",
 	"pm", "[?] [magic]", "print libmagic data (see pm? and /m?)",
 	"po", "[?] hex", "print operation applied to block (see po?)",
@@ -311,7 +313,7 @@ static const char *help_msg_pd[] = {
 	"pd", " -N", "disassemble N instructions backward",
 	"pd", " N", "disassemble N instructions",
 	"pd--", "[n]", "context disassembly of N instructions",
-	"pda", "", "disassemble all possible opcodes (byte per byte)",
+	"pda", "[?]", "disassemble all possible opcodes (byte per byte)",
 	"pdb", "", "disassemble basic block",
 	"pdc", "", "pseudo disassembler output in C-like syntax",
 	"pdC", "", "show comments found in N instructions",
@@ -329,6 +331,19 @@ static const char *help_msg_pd[] = {
 	"pds", "[?]", "disassemble summary (strings, calls, jumps, refs) (see pdsf and pdfs)",
 	"pdt", " [n] [query]", "disassemble N instructions in a table (see dtd for debug traces)",
 	"pdx", " [hex]", "alias for pad or pix",
+	NULL
+};
+
+static const char *help_msg_pda[] = {
+	"Usage:", "pda[j]", "Print disassembly of all possbile opcodes",
+	"pdaj", "", "Display the disassembly of all possbile opcodes (byte per byte) in JSON",
+	NULL
+};
+
+static const char *help_msg_pds[] = {
+	"Usage:", "pds[bf]", "Summarize N bytes or function",
+	"pdsf", "", "Summarize the current function",
+	"pdsb", "", "Summarize N bytes",
 	NULL
 };
 
@@ -5254,6 +5269,10 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'a': // "pda"
 			processed_cmd = true;
+			if (input[2] == '?') {
+				r_core_cmd_help (core, help_msg_pda);
+				break;
+			}
 			r_core_print_disasm_all (core, core->offset, l, len, input[2]);
 			pd_result = true;
 			break;
@@ -5335,7 +5354,7 @@ static int cmd_print(void *data, const char *input) {
 		case 's': // "pds" and "pdsf"
 			processed_cmd = true;
 			if (input[2] == '?') {
-				r_cons_printf ("Usage: pds[bf]  - sumarize N bytes or function (pdfs)\n");
+				r_core_cmd_help (core, help_msg_pds);
 			} else {
 				disasm_strings (core, input, NULL);
 			}
@@ -5343,7 +5362,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'f': // "pdf"
 			processed_cmd = true;
 			if (input[2] == '?') {
-				r_core_cmd_help(core, help_msg_pdf);
+				r_core_cmd_help (core, help_msg_pdf);
 			} else if (input[2] == 's') { // "pdfs"
 				ut64 oseek = core->offset;
 				int oblock = core->blocksize;
