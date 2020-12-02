@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2013 - pancake
+/* radare - LGPL - Copyright 2012-2020 - pancake
 	2014 - Fedor Sakharov <fedor.sakharov@gmail.com> */
 
 #include <string.h>
@@ -507,8 +507,11 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	r1	.32	4   0\n"
 		"gpr	r2	.32	8   0\n"
 		"gpr	r3	.32	12  0\n"
+		"gpr	sp	.32	12  0\n"
 		"gpr	r4	.32	16  0\n"
+		"gpr	gp	.32	16  0\n"
 		"gpr	r5	.32	20  0\n"
+		"gpr	tp	.32	20  0\n"
 		"gpr	r6	.32	24  0\n"
 		"gpr	r7	.32	28  0\n"
 		"gpr	r8	.32	32  0\n"
@@ -534,7 +537,9 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	r28	.32	112 0\n"
 		"gpr	r29	.32	116 0\n"
 		"gpr	r30	.32	120 0\n"
+		"gpr	ep	.32	120 0\n"
 		"gpr	r31	.32	124 0\n"
+		"gpr	lp	.32	124 0\n"
 		"gpr	pc	.32	128 0\n"
 
 		"gpr	psw .32 132 0\n"
