@@ -14,6 +14,7 @@
 #define MAX_METADATA_STRING_LENGTH 256
 #define bprintf if (bin->verbose) eprintf
 #define COFF_SYMBOL_SIZE 18
+#define PE_READ_STRUCT_FIELD(var, struct_type, field, size) var->field = r_read_le##size (buf + offsetof (struct_type, field))
 
 struct SCV_NB10_HEADER;
 typedef struct {
@@ -880,16 +881,19 @@ int PE_(read_image_section_header)(RBuffer *b, ut64 addr, PE_(image_section_head
 	if (r_buf_seek (b, addr, R_BUF_SET) < 0) {
 		return -1;
 	}
-	r_buf_read (b, section_header->Name, PE_IMAGE_SIZEOF_SHORT_NAME);
-	section_header->Misc.PhysicalAddress = r_buf_read_le32 (b);
-	section_header->VirtualAddress = r_buf_read_le32 (b);
-	section_header->SizeOfRawData = r_buf_read_le32 (b);
-	section_header->PointerToRawData = r_buf_read_le32 (b);
-	section_header->PointerToRelocations = r_buf_read_le32 (b);
-	section_header->PointerToLinenumbers = r_buf_read_le32 (b);
-	section_header->NumberOfRelocations = r_buf_read_le16 (b);
-	section_header->NumberOfLinenumbers = r_buf_read_le16 (b);
-	section_header->Characteristics = r_buf_read_le32 (b);
+
+	ut8 buf[sizeof (PE_(image_section_header))];
+	r_buf_read (b, buf, sizeof (buf));
+	memcpy (section_header->Name, buf, PE_IMAGE_SIZEOF_SHORT_NAME);
+	PE_READ_STRUCT_FIELD (section_header, PE_(image_section_header), Misc.PhysicalAddress, 32);
+	PE_READ_STRUCT_FIELD (section_header, PE_(image_section_header), VirtualAddress, 32);
+	PE_READ_STRUCT_FIELD (section_header, PE_(image_section_header), SizeOfRawData, 32);
+	PE_READ_STRUCT_FIELD (section_header, PE_(image_section_header), PointerToRawData, 32);
+	PE_READ_STRUCT_FIELD (section_header, PE_(image_section_header), PointerToRelocations, 32);
+	PE_READ_STRUCT_FIELD (section_header, PE_(image_section_header), PointerToLinenumbers, 32);
+	PE_READ_STRUCT_FIELD (section_header, PE_(image_section_header), NumberOfRelocations, 16);
+	PE_READ_STRUCT_FIELD (section_header, PE_(image_section_header), NumberOfLinenumbers, 16);
+	PE_READ_STRUCT_FIELD (section_header, PE_(image_section_header), Characteristics, 32);
 	r_buf_seek (b, o_addr, R_BUF_SET);
 	return sizeof (PE_(image_section_header));
 }
@@ -1329,25 +1333,27 @@ static int read_image_clr_header(RBuffer *b, ut64 addr, PE_(image_clr_header) *h
 	if (r_buf_seek (b, addr, R_BUF_SET) < 0) {
 		return -1;
 	}
-	header->HeaderSize = r_buf_read_le32 (b);
-	header->MajorRuntimeVersion = r_buf_read_le16 (b);
-	header->MinorRuntimeVersion = r_buf_read_le16 (b);
-	header->MetaDataDirectoryAddress = r_buf_read_le32 (b);
-	header->MetaDataDirectorySize = r_buf_read_le32 (b);
-	header->Flags = r_buf_read_le32 (b);
-	header->EntryPointToken = r_buf_read_le32 (b);
-	header->ResourcesDirectoryAddress = r_buf_read_le32 (b);
-	header->ResourcesDirectorySize = r_buf_read_le32 (b);
-	header->StrongNameSignatureAddress = r_buf_read_le32 (b);
-	header->StrongNameSignatureSize = r_buf_read_le32 (b);
-	header->CodeManagerTableAddress = r_buf_read_le32 (b);
-	header->CodeManagerTableSize = r_buf_read_le32 (b);
-	header->VTableFixupsAddress = r_buf_read_le32 (b);
-	header->VTableFixupsSize = r_buf_read_le32 (b);
-	header->ExportAddressTableJumpsAddress = r_buf_read_le32 (b);
-	header->ExportAddressTableJumpsSize = r_buf_read_le32 (b);
-	header->ManagedNativeHeaderAddress = r_buf_read_le32 (b);
-	header->ManagedNativeHeaderSize = r_buf_read_le32 (b);
+	ut8 buf[sizeof (PE_(image_clr_header))];
+	r_buf_read (b, buf, sizeof (buf));
+	PE_READ_STRUCT_FIELD (header, PE_(image_clr_header), HeaderSize, 32);
+	PE_READ_STRUCT_FIELD (header, PE_(image_clr_header), MajorRuntimeVersion, 16);
+	PE_READ_STRUCT_FIELD (header, PE_(image_clr_header), MinorRuntimeVersion, 16);
+	PE_READ_STRUCT_FIELD (header, PE_(image_clr_header), MetaDataDirectoryAddress, 32);
+	PE_READ_STRUCT_FIELD (header, PE_(image_clr_header), MetaDataDirectorySize, 32);
+	PE_READ_STRUCT_FIELD (header, PE_(image_clr_header), Flags, 32);
+	PE_READ_STRUCT_FIELD (header, PE_(image_clr_header), EntryPointToken, 32);
+	PE_READ_STRUCT_FIELD (header, PE_(image_clr_header), ResourcesDirectoryAddress, 32);
+	PE_READ_STRUCT_FIELD (header, PE_(image_clr_header), ResourcesDirectorySize, 32);
+	PE_READ_STRUCT_FIELD (header, PE_(image_clr_header), StrongNameSignatureAddress, 32);
+	PE_READ_STRUCT_FIELD (header, PE_(image_clr_header), StrongNameSignatureSize, 32);
+	PE_READ_STRUCT_FIELD (header, PE_(image_clr_header), CodeManagerTableAddress, 32);
+	PE_READ_STRUCT_FIELD (header, PE_(image_clr_header), CodeManagerTableSize, 32);
+	PE_READ_STRUCT_FIELD (header, PE_(image_clr_header), VTableFixupsAddress, 32);
+	PE_READ_STRUCT_FIELD (header, PE_(image_clr_header), VTableFixupsSize, 32);
+	PE_READ_STRUCT_FIELD (header, PE_(image_clr_header), ExportAddressTableJumpsAddress, 32);
+	PE_READ_STRUCT_FIELD (header, PE_(image_clr_header), ExportAddressTableJumpsSize, 32);
+	PE_READ_STRUCT_FIELD (header, PE_(image_clr_header), ManagedNativeHeaderAddress, 32);
+	PE_READ_STRUCT_FIELD (header, PE_(image_clr_header), ManagedNativeHeaderSize, 32);
 	r_buf_seek (b, o_addr, R_BUF_SET);
 	return sizeof (PE_(image_clr_header));
 }
@@ -1386,11 +1392,13 @@ static int read_image_import_directory(RBuffer *b, ut64 addr, PE_(image_import_d
 	if (r_buf_seek (b, addr, R_BUF_SET) < 0) {
 		return -1;
 	}
-	import_dir->Characteristics = r_buf_read_le32 (b);
-	import_dir->TimeDateStamp = r_buf_read_le32 (b);
-	import_dir->ForwarderChain = r_buf_read_le32 (b);
-	import_dir->Name = r_buf_read_le32 (b);
-	import_dir->FirstThunk = r_buf_read_le32 (b);
+	ut8 buf[sizeof (PE_(image_import_directory))];
+	r_buf_read (b, buf, sizeof (buf));
+	PE_READ_STRUCT_FIELD (import_dir, PE_(image_import_directory), Characteristics, 32);
+	PE_READ_STRUCT_FIELD (import_dir, PE_(image_import_directory), TimeDateStamp, 32);
+	PE_READ_STRUCT_FIELD (import_dir, PE_(image_import_directory), ForwarderChain, 32);
+	PE_READ_STRUCT_FIELD (import_dir, PE_(image_import_directory), Name, 32);
+	PE_READ_STRUCT_FIELD (import_dir, PE_(image_import_directory), FirstThunk, 32);
 	r_buf_seek (b, o_addr, R_BUF_SET);
 	return sizeof (PE_(image_import_directory));
 }
@@ -1400,14 +1408,16 @@ static int read_image_delay_import_directory(RBuffer *b, ut64 addr, PE_(image_de
 	if (r_buf_seek (b, addr, R_BUF_SET) < 0) {
 		return -1;
 	}
-	directory->Attributes = r_buf_read_le32 (b);
-	directory->Name = r_buf_read_le32 (b);
-	directory->ModulePlugin = r_buf_read_le32 (b);
-	directory->DelayImportAddressTable = r_buf_read_le32 (b);
-	directory->DelayImportNameTable = r_buf_read_le32 (b);
-	directory->BoundDelayImportTable = r_buf_read_le32 (b);
-	directory->UnloadDelayImportTable = r_buf_read_le32 (b);
-	directory->TimeStamp = r_buf_read_le32 (b);
+	ut8 buf[sizeof (PE_(image_delay_import_directory))];
+	r_buf_read (b, buf, sizeof (buf));
+	PE_READ_STRUCT_FIELD (directory, PE_(image_delay_import_directory), Attributes, 32);
+	PE_READ_STRUCT_FIELD (directory, PE_(image_delay_import_directory), Name, 32);
+	PE_READ_STRUCT_FIELD (directory, PE_(image_delay_import_directory), ModulePlugin, 32);
+	PE_READ_STRUCT_FIELD (directory, PE_(image_delay_import_directory), DelayImportAddressTable, 32);
+	PE_READ_STRUCT_FIELD (directory, PE_(image_delay_import_directory), DelayImportNameTable, 32);
+	PE_READ_STRUCT_FIELD (directory, PE_(image_delay_import_directory), BoundDelayImportTable, 32);
+	PE_READ_STRUCT_FIELD (directory, PE_(image_delay_import_directory), UnloadDelayImportTable, 32);
+	PE_READ_STRUCT_FIELD (directory, PE_(image_delay_import_directory), TimeStamp, 32);
 	r_buf_seek (b, o_addr, R_BUF_SET);
 	return sizeof (PE_(image_delay_import_directory));
 }
@@ -1534,17 +1544,19 @@ static int read_image_export_directory(RBuffer *b, ut64 addr, PE_(image_export_d
 	if (r_buf_seek (b, addr, R_BUF_SET) < 0) {
 		return -1;
 	}
-	export_dir->Characteristics = r_buf_read_le32 (b);
-	export_dir->TimeDateStamp = r_buf_read_le32 (b);
-	export_dir->MajorVersion = r_buf_read_le16 (b);
-	export_dir->MinorVersion = r_buf_read_le16 (b);
-	export_dir->Name = r_buf_read_le32 (b);
-	export_dir->Base = r_buf_read_le32 (b);
-	export_dir->NumberOfFunctions = r_buf_read_le32 (b);
-	export_dir->NumberOfNames = r_buf_read_le32 (b);
-	export_dir->AddressOfFunctions = r_buf_read_le32 (b);
-	export_dir->AddressOfNames = r_buf_read_le32 (b);
-	export_dir->AddressOfOrdinals = r_buf_read_le32 (b);
+	ut8 buf[sizeof (PE_(image_export_directory))];
+	r_buf_read (b, buf, sizeof (buf));
+	PE_READ_STRUCT_FIELD (export_dir, PE_(image_export_directory), Characteristics, 32);
+	PE_READ_STRUCT_FIELD (export_dir, PE_(image_export_directory), TimeDateStamp, 32);
+	PE_READ_STRUCT_FIELD (export_dir, PE_(image_export_directory), MajorVersion, 16);
+	PE_READ_STRUCT_FIELD (export_dir, PE_(image_export_directory), MinorVersion, 16);
+	PE_READ_STRUCT_FIELD (export_dir, PE_(image_export_directory), Name, 32);
+	PE_READ_STRUCT_FIELD (export_dir, PE_(image_export_directory), Base, 32);
+	PE_READ_STRUCT_FIELD (export_dir, PE_(image_export_directory), NumberOfFunctions, 32);
+	PE_READ_STRUCT_FIELD (export_dir, PE_(image_export_directory), NumberOfNames, 32);
+	PE_READ_STRUCT_FIELD (export_dir, PE_(image_export_directory), AddressOfFunctions, 32);
+	PE_READ_STRUCT_FIELD (export_dir, PE_(image_export_directory), AddressOfNames, 32);
+	PE_READ_STRUCT_FIELD (export_dir, PE_(image_export_directory), AddressOfOrdinals, 32);
 	r_buf_seek (b, o_addr, R_BUF_SET);
 	return sizeof (PE_(image_export_directory));
 }
@@ -2927,10 +2939,12 @@ static int read_image_resource_data_entry(RBuffer *b, ut64 addr, Pe_image_resour
 	if (r_buf_seek (b, addr, R_BUF_SET) < 0) {
 		return -1;
 	}
-	entry->OffsetToData = r_buf_read_le32 (b);
-	entry->Size = r_buf_read_le32 (b);
-	entry->CodePage = r_buf_read_le32 (b);
-	entry->Reserved = r_buf_read_le32 (b);
+	ut8 buf[sizeof (Pe_image_resource_data_entry)];
+	r_buf_read (b, buf, sizeof (Pe_image_resource_data_entry));
+	PE_READ_STRUCT_FIELD (entry, Pe_image_resource_data_entry, OffsetToData, 32);
+	PE_READ_STRUCT_FIELD (entry, Pe_image_resource_data_entry, Size, 32);
+	PE_READ_STRUCT_FIELD (entry, Pe_image_resource_data_entry, CodePage, 32);
+	PE_READ_STRUCT_FIELD (entry, Pe_image_resource_data_entry, Reserved, 32);
 	r_buf_seek (b, o_addr, R_BUF_SET);
 	return sizeof (Pe_image_resource_data_entry);
 }
@@ -3218,7 +3232,7 @@ static int bin_pe_init_security(struct PE_(r_bin_pe_obj_t) * bin) {
 		if (actual_authentihash && claimed_authentihash) {
 			bin->is_authhash_valid = !strcmp (actual_authentihash, claimed_authentihash);
 		} else {
-			bin->is_authhash_valid = NULL;
+			bin->is_authhash_valid = false;
 		}
 		if (actual_authentihash) {
 			free ((void *)actual_authentihash);
@@ -3645,14 +3659,16 @@ static int read_image_debug_directory_entry(RBuffer *b, ut64 addr, PE_(image_deb
 	if (r_buf_seek (b, addr, R_BUF_SET) < 0) {
 		return -1;
 	}
-	entry->Characteristics = r_buf_read_le32 (b);
-	entry->TimeDateStamp = r_buf_read_le32 (b);
-	entry->MajorVersion = r_buf_read_le16 (b);
-	entry->MinorVersion = r_buf_read_le16 (b);
-	entry->Type = r_buf_read_le32 (b);
-	entry->SizeOfData = r_buf_read_le32 (b);
-	entry->AddressOfRawData = r_buf_read_le32 (b);
-	entry->PointerToRawData = r_buf_read_le32 (b);
+	ut8 buf[sizeof (PE_(image_debug_directory_entry))];
+	r_buf_read (b, buf, sizeof (buf));
+	PE_READ_STRUCT_FIELD (entry, PE_(image_debug_directory_entry), Characteristics, 32);
+	PE_READ_STRUCT_FIELD (entry, PE_(image_debug_directory_entry), TimeDateStamp, 32);
+	PE_READ_STRUCT_FIELD (entry, PE_(image_debug_directory_entry), MajorVersion, 16);
+	PE_READ_STRUCT_FIELD (entry, PE_(image_debug_directory_entry), MinorVersion, 16);
+	PE_READ_STRUCT_FIELD (entry, PE_(image_debug_directory_entry), Type, 32);
+	PE_READ_STRUCT_FIELD (entry, PE_(image_debug_directory_entry), SizeOfData, 32);
+	PE_READ_STRUCT_FIELD (entry, PE_(image_debug_directory_entry), AddressOfRawData, 32);
+	PE_READ_STRUCT_FIELD (entry, PE_(image_debug_directory_entry), PointerToRawData, 32);
 	r_buf_seek (b, o_addr, R_BUF_SET);
 	return sizeof (PE_(image_debug_directory_entry));
 }
