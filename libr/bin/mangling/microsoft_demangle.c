@@ -140,10 +140,7 @@ static int copy_string(STypeCodeStr *type_code_str, const char *str_for_copy, si
 	size_t str_for_copy_len = (copy_len == 0 && str_for_copy) ? strlen (str_for_copy) : copy_len;
 	size_t free_space = type_code_str->type_str_len - type_code_str->curr_pos - 1;
 
-	if (str_for_copy_len > free_space) {
-		return 0;
-	}
-	if (free_space > str_for_copy_len) {
+	if (free_space < str_for_copy_len) {
 		int newlen = type_code_str->type_str_len + (str_for_copy_len << 1) + 1;
 		if (newlen < 1) {
 			R_FREE (type_code_str->type_str);
