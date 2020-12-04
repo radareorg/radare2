@@ -140,10 +140,7 @@ static int copy_string(STypeCodeStr *type_code_str, const char *str_for_copy, si
 	size_t str_for_copy_len = (copy_len == 0 && str_for_copy) ? strlen (str_for_copy) : copy_len;
 	size_t free_space = type_code_str->type_str_len - type_code_str->curr_pos - 1;
 
-	if (str_for_copy_len > free_space) {
-		return 0;
-	}
-	if (free_space > str_for_copy_len) {
+	if (free_space < str_for_copy_len) {
 		int newlen = type_code_str->type_str_len + (str_for_copy_len << 1) + 1;
 		if (newlen < 1) {
 			R_FREE (type_code_str->type_str);
@@ -1279,6 +1276,7 @@ static void pf(SStateInfo *state, STypeCodeStr *type_code_str, const char *point
 	R_FREE (ret_type);
 
 	copy_string (type_code_str, call_conv, 0);
+	copy_string (type_code_str, " ", 1);
 	copy_string (type_code_str, pointer_str, 0);
 	copy_string (type_code_str, ")", 1);
 
@@ -1297,14 +1295,34 @@ static void pf(SStateInfo *state, STypeCodeStr *type_code_str, const char *point
 	return;
 }
 
-#define PARSE_POINTER(pointer_str) \
-	if (isdigit ((ut8)*state->buff_for_parsing)) { \
-		if (*state->buff_for_parsing++ == '6') { \
-			pf (state, type_code_str, pointer_str); \
-			return; \
-		} \
-	} \
-	parse_type_modifier (state, type_code_str, pointer_str); \
+static void parse_pointer(SStateInfo *state, STypeCodeStr *type_code_str, const char *pointer_str) {
+	if (isdigit ((ut8)*state->buff_for_parsing)) {
+		ut8 digit = *state->buff_for_parsing++;
+		if (digit == '6' || digit == '7') {
+			pf (state, type_code_str, pointer_str);
+			return;
+		} else if (digit == '8' || digit == '9') {
+			STypeCodeStr func_str;
+			if (!init_type_code_str_struct (&func_str)) {
+				state->err = eTCStateMachineErrAlloc;
+				return;
+			};
+			size_t read = get_namespace_and_name (state->buff_for_parsing, &func_str, NULL, true) + 1;
+			state->amount_of_read_chars += read;
+			state->buff_for_parsing += read;
+			copy_string (&func_str, "::", 2);
+			copy_string (&func_str, pointer_str, 0);
+			pf (state, type_code_str, func_str.type_str);
+			free_type_code_str_struct (&func_str);
+			state->state = eTCStateEnd;
+			return;
+		}
+	}
+	parse_type_modifier (state, type_code_str, pointer_str);
+}
+
+#define PARSE_POINTER(pointer_str) parse_pointer (state, type_code_str, pointer_str)
+
 
 DEF_STATE_ACTION(P) {
 	PARSE_POINTER ("*");
