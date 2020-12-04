@@ -1279,6 +1279,7 @@ static void pf(SStateInfo *state, STypeCodeStr *type_code_str, const char *point
 	R_FREE (ret_type);
 
 	copy_string (type_code_str, call_conv, 0);
+	copy_string (type_code_str, " ", 1);
 	copy_string (type_code_str, pointer_str, 0);
 	copy_string (type_code_str, ")", 1);
 
