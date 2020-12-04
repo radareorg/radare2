@@ -44,7 +44,10 @@ jobs:
           python3 -m pip install --user 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
 
     - name: Run tests
-      run: cd test && make
-      working-directory: radare2
       env:
         PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
+      run: |
+        r2 -v
+        r2r -v
+        cd test
+        make
