@@ -267,6 +267,7 @@ a "msr sp_el0, x3" 034118d5
 a "cbnz w3, 0x1fffd4" a3feff35
 a "cbz x3, 0x1fffe8" 43ffffb4
 d "addg x0, sp, 0x80, 0x4" e0138891
+dE "addg x12, x8, 0x0, 0x2" 91a0090c
 d "subg x0, sp, 0x20, 0xf" e03f82d1
 d "irg sp, x0" 1f10df9a
 d "irg x13, x3, x7" 6d10c79a
