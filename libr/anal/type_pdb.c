@@ -265,7 +265,7 @@ R_API void r_parse_pdb_types(const RAnal *anal, const RPdb *pdb) {
 	RListIter *iter = r_list_iterator (tpi_stream->types);
 	while (r_list_iter_next (iter)) { // iterate all types
 		SType *type = r_list_iter_get (iter);
-		if (is_parsable_type (type->type_data.leaf_type)) {
+		if (type && is_parsable_type (type->type_data.leaf_type)) {
 			parse_type (anal, type, tpi_stream->types);
 		}
 	}
