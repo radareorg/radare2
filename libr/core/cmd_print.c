@@ -158,6 +158,7 @@ static const char *help_msg_at[] = {
 	"@o:", "fd", "temporary switch to another fd",
 	"@r:", "reg", "tmp seek to reg value (f.ex pd@r:PC)",
 	"@s:", "string", "same as above but from a string",
+	"@v:", "value", "modify the current offset to a custom value",
 	"@x:", "909192", "from hex pairs string",
 	"@@=", "1 2 3", "run the previous command at offsets 1, 2 and 3",
 	"@@", " hit*", "run the command on every flag matching 'hit*'",
