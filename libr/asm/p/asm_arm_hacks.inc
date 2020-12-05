@@ -8,7 +8,7 @@ static char *hack_handle_dp_imm(ut32 insn) {
 		const bool sf = (insn >> 31) & 0x1;
 		const bool op = (insn >> 30) & 0x1;
 		const bool S = (insn >> 29) & 0x1;
-		const bool o2 = (insn >> 2) & 0x1;
+		const bool o2 = (insn >> 22) & 0x1;
 		if (sf && !S && !o2) {
 			if (op) {
 				mnemonic = "subg";
