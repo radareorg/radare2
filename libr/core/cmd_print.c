@@ -4486,6 +4486,20 @@ static void r_core_disasm_table(RCore * core, int l, const char *input) {
 	r_table_free (t);
 }
 
+// the caller controls the size of the buffer is enough for the base wordsize
+static ut64 read_value(const ut8 *buf, int base, int be) {
+	if (base == 8) {
+		return r_read_ble64 (buf, be);
+	}
+	if (base == 4) {
+		return r_read_ble32 (buf, be) & UT32_MAX;
+	}
+	if (base == 2) {
+		return r_read_ble16 (buf, be) & UT16_MAX;
+	}
+	return *buf;
+}
+
 static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *arg) {
 	PJ *pj = NULL;
 	RTable *t = NULL;
@@ -4505,7 +4519,6 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 	}
 	if (mode == 'j' || mode == ',' || mode == '*' || mode == 'q') {
 		size_t i;
-		const int base = core->anal->bits;
 		const int be = core->anal->big_endian;
 		if (pj) {
 			pj_a (pj);
@@ -4516,18 +4529,7 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 		int end = R_MIN (core->blocksize, len);
 		for (i = 0; i + wordsize < end; i += wordsize) {
 			ut64 addr = core->offset + i;
-			ut64 val;
-			if (base == 64) {
-				val = r_read_ble64 (buf + i, be);
-			} else if (base == 32) {
-				val = r_read_ble32 (buf + i, be);
-				val &= UT32_MAX;
-			} else if (base == 16) {
-				val = r_read_ble16 (buf + i, be);
-				val &= UT16_MAX;
-			} else {
-				val = buf[i];
-			}
+			ut64 val = read_value (buf + i, wordsize, be);
 			if (pj) {
 				pj_o (pj);
 				pj_kn (pj, "addr", addr);
@@ -4543,7 +4545,10 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 					r_str_trim (rstr);
 					if (pj) {
 						char *ns = r_str_escape (rstr);
-						pj_ks (pj, "ref", r_str_trim_head_ro (ns));
+						pj_ks (pj, "refstr", r_str_trim_head_ro (ns));
+						pj_k (pj, "ref");
+						const int hex_depth = r_config_get_i (core->config, "hex.depth");
+						free (r_core_anal_hasrefs_to_depth (core, val, pj, hex_depth));
 						pj_end (pj);
 						free (ns);
 					}
