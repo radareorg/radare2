@@ -147,6 +147,7 @@ typedef struct {
 	bool asm_hint_jmp;
 	bool asm_hint_cdiv;
 	bool asm_hint_call;
+	bool asm_hint_call_indirect;
 	bool asm_hint_lea;
 	bool asm_hint_emu;
 	int  asm_hint_pos;
@@ -717,6 +718,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_usercomments = r_config_get_i (core->config, "asm.usercomments");
 	ds->asm_hint_jmp = r_config_get_i (core->config, "asm.hint.jmp");
 	ds->asm_hint_call = r_config_get_i (core->config, "asm.hint.call");
+	ds->asm_hint_call_indirect = r_config_get_i (core->config, "asm.hint.call.indirect");
 	ds->asm_hint_lea = r_config_get_i (core->config, "asm.hint.lea");
 	ds->asm_hint_emu = r_config_get_i (core->config, "asm.hint.emu");
 	ds->asm_hint_cdiv = r_config_get_i (core->config, "asm.hint.cdiv");
@@ -3479,29 +3481,27 @@ static bool ds_print_core_vmode_jump_hit(RDisasmState *ds, int pos) {
 	return res;
 }
 
-static void getPtr(RDisasmState *ds, ut64 addr, int pos) {
+static ut64 get_ptr(RDisasmState *ds, ut64 addr) {
 	ut8 buf[sizeof (ut64)] = {0};
 	r_io_read_at (ds->core->io, addr, buf, sizeof (buf));
+	ut64 n64_32;
 	if (ds->core->rasm->bits == 64) {
-		ut64 n64 = r_read_ble64 (buf, 0);
-		ds_print_shortcut (ds, n64, pos);
+		n64_32 = r_read_ble64 (buf, 0);
 	} else {
-		ut32 n32 = r_read_ble32 (buf, 0);
-		ds_print_shortcut (ds, n32, pos);
+		n64_32 = r_read_ble32 (buf, 0);
 	}
+	return n64_32;
 }
 
-static ut64 get_ptr_ble(RDisasmState *ds, ut64 addr, int pos) {
+static ut64 get_ptr_ble(RDisasmState *ds, ut64 addr) {
 	ut8 buf[sizeof (ut64)] = {0};
 	int endian = ds->core->rasm->big_endian;
 	ut64 n64_32;
 	r_io_read_at (ds->core->io, addr, buf, sizeof (buf));
 	if (ds->core->rasm->bits == 64) {
 		n64_32 = r_read_ble64 (buf, endian);
-		ds_print_shortcut (ds, n64_32, pos);
 	} else {
 		n64_32 = r_read_ble32 (buf, endian);
-		ds_print_shortcut (ds, n64_32, pos);
 	}
 	return n64_32;
 }
@@ -3535,7 +3535,7 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 		if (mi) {
 			int obits = ds->core->rasm->bits;
 			ds->core->rasm->bits = size * 8;
-			getPtr (ds, ds->at, pos);
+			slen = ds_print_shortcut(ds, get_ptr (ds, ds->at), pos);
 			ds->core->rasm->bits = obits;
 			gotShortcut = true;
 		}
@@ -3547,7 +3547,7 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 	case R_ANAL_OP_TYPE_UJMP | R_ANAL_OP_TYPE_IND | R_ANAL_OP_TYPE_REG:
 		if (ds->asm_hint_lea) {
 			if (ds->analop.ptr != UT64_MAX && ds->analop.ptr != UT32_MAX) {
-				getPtr (ds, ds->analop.ptr, pos);
+				slen = ds_print_shortcut (ds, get_ptr (ds, ds->analop.ptr), pos);
 				gotShortcut = true;
 			}
 		}
@@ -3565,24 +3565,17 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 	case R_ANAL_OP_TYPE_UCALL:
 	case R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_REG | R_ANAL_OP_TYPE_IND:
 	case R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_IND:
-#if 0
-		if (ds->analop.jump == 0 && ds->analop.ptr) {
-			ut8 buf[sizeof(ut64)] = {0};
-			r_io_read_at (core->io, ds->analop.ptr, buf, sizeof (buf));
-			ut32 n32 = r_read_ble32 (buf, 0);
-			// is valid address
-			// ut32 n64 = r_read_ble32 (buf, 0);
-			ds_print_shortcut (ds, n32, pos);
-		} else {
-			// ds_print_shortcut (ds, ds->analop.jump, pos);
-			ds_print_shortcut (ds, ds->analop.ptr, pos);
-		}
-#endif
 		if (ds->asm_hint_call) {
 			if (ds->analop.jump != UT64_MAX) {
 				slen = ds_print_shortcut (ds, ds->analop.jump, pos);
 			} else {
-				slen = ds_print_shortcut (ds, ds->analop.ptr, pos);
+				ut64 addr;
+				if (ds->asm_hint_call_indirect) {
+					addr = get_ptr_ble (ds, ds->analop.ptr);
+				} else {
+					addr = ds->analop.ptr;
+				}
+				slen = ds_print_shortcut (ds, addr, pos);
 			}
 			gotShortcut = true;
 		}
@@ -3590,7 +3583,8 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 	case R_ANAL_OP_TYPE_RJMP:
 	case R_ANAL_OP_TYPE_RCALL:
 		if (ds->analop.jump != UT64_MAX && ds->analop.jump != UT32_MAX) {
-			ds->analop.jump = get_ptr_ble (ds, ds->analop.jump, pos);
+			ds->analop.jump = get_ptr_ble (ds, ds->analop.jump);
+			slen = ds_print_shortcut (ds, ds->analop.jump, pos);
 			gotShortcut = true;
 		}
 		break;
