@@ -570,10 +570,10 @@ static void cmd_open_map(RCore *core, const char *input) {
 	case '.': // "om."
 		map = r_io_map_get (core->io, core->offset);
 		if (map) {
-			core->print->cb_printf ("map: %i fd: %i +0x%"PFMT64x" 0x%"PFMT64x
-				" - 0x%"PFMT64x" ; %s : %s\n", map->id, map->fd,
-				map->delta, map->itv.addr, r_itv_end (map->itv),
-			r_str_rwx_i (map->perm), map->name ? map->name : "");
+			core->print->cb_printf ("%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
+				" - 0x%08"PFMT64x" %s %s\n", map->id, map->fd,
+				map->delta, map->itv.addr, r_itv_end (map->itv) - 1,
+				r_str_rwx_i (map->perm), (map->name ? map->name : ""));
 		}
 		break;
 	case 'r': // "omr"
