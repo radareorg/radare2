@@ -125,6 +125,71 @@ family: sec
 EOF
 RUN
 
+NAME=ao mte big endian
+FILE=-
+ARGS=-a arm -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 91a0090c918201099ac813e8
+ao@0
+?e ---
+ao@4
+?e ---
+ao@8
+EOF
+EXPECT=<<EOF
+address: 0x0
+opcode: addg x12, x8, 0x0, 0x2
+esilcost: 0
+disasm: addg x12, x8, 0x0, 0x2
+pseudo: addg x12,x8,0x0, 0x2 
+mnemonic: addg
+mask: ffffffff
+prefix: 0
+id: 0
+bytes: 91a0090c
+refptr: 0
+size: 4
+sign: false
+type: add
+cycles: 0
+family: sec
+---
+address: 0x4
+opcode: addg x9, x8, 0x20, 0x0
+esilcost: 0
+disasm: addg x9, x8, 0x20, 0x0
+pseudo: addg x9,x8,0x20, 0x0 
+mnemonic: addg
+mask: ffffffff
+prefix: 0
+id: 0
+bytes: 91820109
+refptr: 0
+size: 4
+sign: false
+type: add
+cycles: 0
+family: sec
+---
+address: 0x8
+opcode: irg x8, sp, x8
+esilcost: 0
+disasm: irg x8, sp, x8
+pseudo: irg x8,sp,x8 
+mnemonic: irg
+mask: ffffffff
+prefix: 0
+id: 0
+bytes: 9ac813e8
+refptr: 0
+size: 4
+sign: false
+type: mov
+cycles: 0
+family: sec
+EOF
+RUN
+
 NAME=Variable analysis with stp/preindexed str
 FILE=-
 ARGS=-a arm -b 64
