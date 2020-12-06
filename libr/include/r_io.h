@@ -15,6 +15,9 @@
 
 #define R_IO_UNDOS 64
 
+#define r_io_map_get_from(map) map->itv.addr
+#define r_io_map_get_to(map) ( r_itv_end (map->itv) - 1 )
+
 #if HAVE_PTRACE
 
 #if __sun
