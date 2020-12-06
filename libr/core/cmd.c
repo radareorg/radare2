@@ -1296,7 +1296,6 @@ static void load_table_csv(RCore *core, RTable *t, RList *lines) {
 	int ncols = 0;
 	bool expect_header = false;
 	bool expect_rows = false;
-	bool first_row = true;
 	r_list_foreach (lines, iter, line) {
 		if (!expect_rows) {
 			if (r_str_startswith (line, ".--")) {
