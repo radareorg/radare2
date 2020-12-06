@@ -1298,8 +1298,6 @@ static void load_table_csv(RCore *core, RTable *t, RList *lines) {
 	bool expect_rows = false;
 	bool first_row = true;
 	r_list_foreach (lines, iter, line) {
-		if (first_row) {
-		}
 		if (!expect_rows) {
 			if (r_str_startswith (line, ".--")) {
 				expect_header = true;
@@ -1481,7 +1479,7 @@ static void display_table(char *ts) {
 	}
 }
 
-const void cmd_table_header(RCore *core, char *s) {
+static void cmd_table_header(RCore *core, char *s) {
 	RList *list = r_str_split_list (s, " ", 0); // owns *s
 	RListIter *iter;
 	char *format = r_list_pop_head (list);
@@ -1557,9 +1555,9 @@ static int cmd_table(void *data, const char *input) {
 	case '.': // ",."
 		{
 			const char *file = r_str_trim_head_ro (input + 1);
-			char *data = r_file_slurp (file, NULL);
-			if (data) {
-				load_table (core, core->table, data);
+			char *file_data = r_file_slurp (file, NULL);
+			if (file_data) {
+				load_table (core, core->table, file_data);
 			} else {
 				eprintf ("Cannot open file.\n");
 			}
