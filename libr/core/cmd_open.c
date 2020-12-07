@@ -571,10 +571,17 @@ static void cmd_open_map(RCore *core, const char *input) {
 	case '.': // "om."
 		map = r_io_map_get (core->io, core->offset);
 		if (map) {
-			core->print->cb_printf ("%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
-				" - 0x%08"PFMT64x" %s %s\n", map->id, map->fd,
-				map->delta, r_io_map_get_from (map), r_io_map_get_to (map),
-				r_str_rwx_i (map->perm), r_str_get2 (map->name));
+			if (input[2] == 'j') { // "om.j"
+				core->print->cb_printf ("{\"map\":%2d,\"fd\":%d,\"delta\":%"PFMT64u",\"from\":%"PFMT64u
+					",\"to\":%"PFMT64u",\"perm\":\"%s\",\"name\":\"%s\"}\n", map->id, map->fd,
+					map->delta, r_io_map_get_from (map), r_itv_end (map->itv),
+					r_str_rwx_i (map->perm), r_str_get2 (map->name));
+			} else {
+				core->print->cb_printf ("%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
+					" - 0x%08"PFMT64x" %s %s\n", map->id, map->fd,
+					map->delta, r_io_map_get_from (map), r_io_map_get_to (map),
+					r_str_rwx_i (map->perm), r_str_get2 (map->name));
+			}
 		}
 		break;
 	case 'r': // "omr"
