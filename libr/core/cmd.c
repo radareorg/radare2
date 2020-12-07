@@ -2798,11 +2798,6 @@ static char* findSeparator(char *p) {
 	return strchr (p, '-');
 }
 
-static void tmpenvs_free(void *item) {
-	r_sys_setenv (item, NULL);
-	free (item);
-}
-
 static bool set_tmp_arch(RCore *core, char *arch, char **tmparch) {
 	r_return_val_if_fail (tmparch, false);
 	*tmparch = strdup (r_config_get (core->config, "asm.arch"));
@@ -2822,31 +2817,329 @@ static bool set_tmp_bits(RCore *core, int bits, char **tmpbits, int *cmd_ignbith
 	return true;
 }
 
+
+typedef enum {
+	ARROBA_OK = 0,
+	ARROBA_FUJI,
+	ARROBA_NEXT,
+} ArrobaReturn;
+
+static void tmpenvs_free(void *item) {
+	r_sys_setenv (item, NULL);
+	free (item);
+}
+
+static RCoreArrobaContext *__core_arroba_context_new(RCore *core) {
+	RCoreArrobaContext *ac = R_NEW0 (RCoreArrobaContext);
+	ac->core = core;
+	ac->cmd_ignbithints = -1;
+	ac->tmpenvs = r_list_newf (tmpenvs_free);
+	return ac;
+}
+
+static void __core_arroba_context_free(RCoreArrobaContext *ctx) {
+	if (ctx) {
+		if (ctx->tmpfd != -1) {
+			// TODO: reuse tmpfd instead of
+			r_io_use_fd (ctx->core->io, ctx->oldfd);
+		}
+		if (ctx->tmpdesc) {
+			r_io_desc_close (ctx->tmpdesc);
+		}
+		r_list_free (ctx->tmpenvs);
+	}
+}
+
+static ArrobaReturn handle_arroba(RCore *core, char *ptr, RCoreArrobaContext *ctx) {
+	char *cmd = ptr- 1;
+	bool pamode = !core->io->va;
+	ut64 num = r_num_math (core->num, ptr);
+	if (num && num != UT64_MAX) {
+		r_core_seek (core, num, true);
+	} else if (ptr[1] == '?') {
+		r_core_cmd_help (core, help_msg_at);
+	} else if (ptr[1] == '%') { // "@%"
+		char *k = strdup (ptr + 2);
+		char *v = strchr (k, '=');
+		if (v) {
+			*v++ = 0;
+			r_sys_setenv (k, v);
+			r_list_append (ctx->tmpenvs, k);
+		} else {
+			free (k);
+		}
+	} else if (ptr[1] == '.') { // "@."
+		if (ptr[2] == '.') { // "@.."
+			if (ptr[3] == '.') { // "@..."
+				ut64 addr = r_num_tail (core->num, core->offset, ptr + 4);
+				r_core_block_size (core, R_ABS ((st64)addr - (st64)core->offset));
+			} else {
+				ut64 addr = r_num_tail (core->num, core->offset, ptr + 3);
+				r_core_seek (core, addr, true);
+				ctx->cmd_tmpseek = core->tmpseek = true;
+			}
+			return ARROBA_FUJI;
+		} else {
+			// WAT DU
+			eprintf ("TODO: what do you expect for @. import offset from file maybe?\n");
+		}
+	} else if (ptr[0] && ptr[1] == ':' && ptr[2]) {
+		switch (ptr[0]) {
+		case 'F': // "@F:" // temporary flag space
+			ctx->flgspc_changed = r_flag_space_push (core->flags, ptr + 2);
+			break;
+		case 'B': // "@B:#" // seek to the last instruction in current bb
+			{
+				int index = (int)r_num_math (core->num, ptr + 2);
+				RAnalBlock *bb = r_anal_bb_from_offset (core->anal, core->offset);
+				if (bb) {
+					// handle negative indices
+					if (index < 0) {
+						index = bb->ninstr + index;
+					}
+					if (index >= 0 && index < bb->ninstr) {
+						ut16 inst_off = r_anal_bb_offset_inst (bb, index);
+						r_core_seek (core, bb->addr + inst_off, true);
+						ctx->cmd_tmpseek = core->tmpseek = true;
+					} else {
+						eprintf ("The current basic block has %d instructions\n", bb->ninstr);
+					}
+				} else {
+					eprintf ("Can't find a basic block for 0x%08"PFMT64x"\n", core->offset);
+				}
+				break;
+			}
+			break;
+		case 'f': // "@f:" // slurp file in block
+			{
+				size_t sz;
+				char *f = r_file_slurp (ptr + 2, &sz);
+				if (f) {
+					{
+						RBuffer *b = r_buf_new_with_bytes ((const ut8*)f, (ut64)sz);
+						RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
+						if (d) {
+							if (ctx->tmpdesc) {
+								r_io_desc_close (ctx->tmpdesc);
+							}
+							ctx->tmpdesc = d;
+							if (pamode) {
+								r_config_set_i (core->config, "io.va", 1);
+							}
+							r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
+						}
+					}
+				} else {
+					eprintf ("cannot open '%s'\n", ptr + 3);
+				}
+			}
+			break;
+		case 'r': // "@r:" // regname
+			if (ptr[1] == ':') {
+				ut64 regval;
+				char *mander = strdup (ptr + 2);
+				char *sep = findSeparator (mander);
+				if (sep) {
+					char ch = *sep;
+					*sep = 0;
+					regval = r_debug_reg_get (core->dbg, mander);
+					*sep = ch;
+					char *numexpr = r_str_newf ("0x%"PFMT64x"%s", regval, sep);
+					regval = r_num_math (core->num, numexpr);
+					free (numexpr);
+				} else {
+					regval = r_debug_reg_get (core->dbg, ptr + 2);
+				}
+				r_core_seek (core, regval, true);
+				ctx->cmd_tmpseek = core->tmpseek = true;
+				free (mander);
+			}
+			break;
+		case 'b': // "@b:" // bits
+			ctx->is_bits_set = set_tmp_bits (core, r_num_math (core->num, ptr + 2), &ctx->tmpbits, &ctx->cmd_ignbithints);
+			break;
+		case 'i': // "@i:"
+			{
+				ut64 addr = r_num_math (core->num, ptr + 2);
+				if (addr) {
+					r_core_cmdf (core, "so %s", ptr + 2);
+					ctx->cmd_tmpseek = core->tmpseek = true;
+				}
+			}
+			break;
+		case 'e': // "@e:"
+			{
+				char *cmd = parse_tmp_evals (core, ptr + 2);
+				if (!ctx->tmpeval) {
+					ctx->tmpeval = cmd;
+				} else {
+					ctx->tmpeval = r_str_prepend (ctx->tmpeval, cmd);
+					free (cmd);
+				}
+			}
+			break;
+		case 'v': // "@v:" // value (honors asm.bits and cfg.bigendian)
+			if (ptr[1] == ':') {
+				ut8 buf[8] = {0};
+				ut64 v = r_num_math (core->num, ptr + 2);
+				int be = r_config_get_i (core->config, "cfg.bigendian");
+				int bi = r_config_get_i (core->config, "asm.bits");
+				int len = 4;
+				if (bi == 64) {
+					r_write_ble64 (buf, v, be);
+					len = 8;
+				} else {
+					r_write_ble32 (buf, v, be);
+					len = 4;
+				}
+				r_core_block_size (core, R_ABS (len));
+				RBuffer *b = r_buf_new_with_bytes (buf, len);
+				RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
+				if (d) {
+					if (ctx->tmpdesc) {
+						r_io_desc_close (ctx->tmpdesc);
+					}
+					ctx->tmpdesc = d;
+					if (pamode) {
+						r_config_set_i (core->config, "io.va", 1);
+					}
+					r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
+					r_core_block_size (core, len);
+					r_core_block_read (core);
+				}
+			} else {
+				eprintf ("Invalid @v: syntax\n");
+			}
+			break;
+		case 'x': // "@x:" // hexpairs
+			if (ptr[1] == ':') {
+				ut8 *buf = malloc (strlen (ptr + 2) + 1);
+				if (buf) {
+					int len = r_hex_str2bin (ptr + 2, buf);
+					r_core_block_size (core, R_ABS (len));
+					if (len > 0) {
+						RBuffer *b = r_buf_new_with_bytes (buf, len);
+						RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
+						if (d) {
+							if (ctx->tmpdesc) {
+								r_io_desc_close (ctx->tmpdesc);
+							}
+							ctx->tmpdesc = d;
+							if (pamode) {
+								r_config_set_i (core->config, "io.va", 1);
+							}
+							r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
+							r_core_block_size (core, len);
+							r_core_block_read (core);
+						}
+					} else {
+						eprintf ("Error: Invalid hexpairs for @x:\n");
+					}
+					free (buf);
+				} else {
+					eprintf ("cannot allocate\n");
+				}
+			} else {
+				eprintf ("Invalid @x: syntax\n");
+			}
+			break;
+		case 'k': // "@k"
+			 {
+				char *out = sdb_querys (core->sdb, NULL, 0, ptr + ((ptr[1])? 2: 1));
+				if (out) {
+					r_core_seek (core, r_num_math(core->num, out), true);
+					free (out);
+					ctx->usemyblock = true;
+				}
+			 }
+			break;
+		case 'o': // "@o:3"
+			if (ptr[1] == ':') {
+				ctx->tmpfd = core->io->desc ? core->io->desc->fd : -1;
+				r_io_use_fd (core->io, atoi (ptr + 2));
+			}
+			break;
+		case 'a': // "@a:"
+			if (ptr[1] == ':') {
+				char *q = strchr (ptr + 2, ':');
+				if (q) {
+					*q++ = 0;
+					int bits = r_num_math (core->num, q);
+					ctx->is_bits_set = set_tmp_bits (core, bits, &ctx->tmpbits, &ctx->cmd_ignbithints);
+				}
+				ctx->is_arch_set = set_tmp_arch (core, ptr + 2, &ctx->tmpasm);
+			} else {
+				eprintf ("Usage: pd 10 @a:arm:32\n");
+			}
+			break;
+		case 's': // "@s:" // wtf syntax
+			{
+				int len = strlen (ptr + 2);
+				r_core_block_size (core, len);
+				const ut8 *buf = (const ut8*)r_str_trim_head_ro (ptr + 2);
+
+				if (len > 0) {
+					RBuffer *b = r_buf_new_with_bytes (buf, len);
+					RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
+					if (!core->io->va) {
+						r_config_set_i (core->config, "io.va", 1);
+					}
+					if (d) {
+						if (ctx->tmpdesc) {
+							r_io_desc_close (ctx->tmpdesc);
+						}
+						ctx->tmpdesc = d;
+						if (pamode) {
+							r_config_set_i (core->config, "io.va", 1);
+						}
+						r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
+						r_core_block_size (core, len);
+						// r_core_block_read (core);
+					}
+				}
+			}
+			break;
+		default:
+			// break ?
+			return ARROBA_OK;
+		}
+		*ptr = '@';
+		/* trim whitespaces before the @ */
+		/* Fixes pd @x:9090 */
+		char *trim = ptr - 2;
+		while (trim > cmd) {
+			if (!IS_WHITESPACE (*trim)) {
+				break;
+			}
+			*trim = 0;
+			trim--;
+		}
+		return ARROBA_NEXT;
+	}
+	return ARROBA_OK;
+}
+
 static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek) {
-	RList *tmpenvs = r_list_newf (tmpenvs_free);
 	const char *quotestr = "`";
 	const char *tick = NULL;
 	char *ptr, *ptr2, *str;
 	char *arroba = NULL;
 	char *grep = NULL;
-	RIODesc *tmpdesc = NULL;
 	int pamode = !core->io->va;
 	int i, ret = 0, pipefd;
-	bool usemyblock = false;
 	int scr_html = -1;
 	int scr_color = -1;
 	bool eos = false;
 	bool haveQuote = false;
 	bool oldfixedarch = core->fixedarch;
 	bool oldfixedbits = core->fixedbits;
-	bool cmd_tmpseek = false;
 	ut64 tmpbsz = core->blocksize;
-	int cmd_ignbithints = -1;
 
 	if (!cmd) {
-		r_list_free (tmpenvs);
 		return 0;
 	}
+	RCoreArrobaContext *ctx = __core_arroba_context_new (core);
+
 	r_str_trim (cmd);
 
 	char *$0 = strstr (cmd, "$(");
@@ -2865,7 +3158,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 	switch (*cmd) {
 	case '.':
 		if (cmd[1] == '"') { /* interpret */
-			r_list_free (tmpenvs);
+			__core_arroba_context_free (ctx);
 			return r_cmd_call (core->rcmd, cmd);
 		}
 		break;
@@ -2880,7 +3173,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 				p = *cmd ? find_eoq (cmd) : NULL;
 				if (!p || !*p) {
 					eprintf ("Missing \" in (%s).", cmd);
-					r_list_free (tmpenvs);
+					__core_arroba_context_free (ctx);
 					return false;
 				}
 				*p++ = 0;
@@ -2972,18 +3265,18 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 				cmd = p + 1;
 			}
 		}
-		r_list_free (tmpenvs);
+		__core_arroba_context_free (ctx);
 		return true;
 	case '(':
 		if (cmd[1] != '*' && !strstr (cmd, ")()")) {
-			r_list_free (tmpenvs);
+			__core_arroba_context_free (ctx);
 			return r_cmd_call (core->rcmd, cmd);
 		}
 		break;
 	case '?':
 		if (cmd[1] == '>') {
 			r_core_cmd_help (core, help_msg_greater_sign);
-			r_list_free (tmpenvs);
+			__core_arroba_context_free (ctx);
 			return true;
 		}
 	}
@@ -3010,13 +3303,13 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 			int ret ;
 			*ptr = '\0';
 			if (r_core_cmd_subst (core, cmd) == -1) {
-				r_list_free (tmpenvs);
+				__core_arroba_context_free (ctx);
 				return -1;
 			}
 			cmd = ptr + 1;
 			ret = r_core_cmd_subst (core, cmd);
 			*ptr = ';';
-			r_list_free (tmpenvs);
+			__core_arroba_context_free (ctx);
 			return ret;
 			//r_cons_flush ();
 		}
@@ -3041,7 +3334,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 				cmd = r_str_trim_nc (cmd);
 				if (!strcmp (ptr + 1, "?")) { // "|?"
 					r_core_cmd_help (core, help_msg_vertical_bar);
-					r_list_free (tmpenvs);
+					__core_arroba_context_free (ctx);
 					return ret;
 				} else if (!strncmp (ptr + 1, "H", 1)) { // "|H"
 					scr_html = r_config_get_i (core->config, "scr.html");
@@ -3052,7 +3345,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 					core->cons->use_tts = true;
 				} else if (!strcmp (ptr + 1, ".")) { // "|."
 					ret = *cmd ? r_core_cmdf (core, ".%s", cmd) : 0;
-					r_list_free (tmpenvs);
+					__core_arroba_context_free (ctx);
 					return ret;
 				} else if (ptr[1]) { // "| grep .."
 					int value = core->num->value;
@@ -3066,7 +3359,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 						}
 					}
 					core->num->value = value;
-					r_list_free (tmpenvs);
+					__core_arroba_context_free (ctx);
 					return 0;
 				} else { // "|"
 					scr_html = r_config_get_i (core->config, "scr.html");
@@ -3094,7 +3387,7 @@ escape_pipe:
 			if (scr_color != -1) {
 				r_config_set_i (core->config, "scr.color", scr_color);
 			}
-			r_list_free (tmpenvs);
+			__core_arroba_context_free (ctx);
 			return ret;
 		}
 		for (cmd = ptr + 2; cmd && *cmd == ' '; cmd++) {
@@ -3124,7 +3417,7 @@ escape_pipe:
 			if (scr_color != -1) {
 				r_config_set_i (core->config, "scr.color", scr_color);
 			}
-			r_list_free (tmpenvs);
+			__core_arroba_context_free (ctx);
 			return 0;
 		}
 	}
@@ -3142,7 +3435,7 @@ escape_pipe:
 		}
 		if (ptr[0] && ptr[1] == '?') {
 			r_core_cmd_help (core, help_msg_greater_sign);
-			r_list_free (tmpenvs);
+			__core_arroba_context_free (ctx);
 			return true;
 		}
 		int fdn = 1;
@@ -3154,7 +3447,7 @@ escape_pipe:
 		r_str_trim (str);
 		if (!*str) {
 			eprintf ("No output?\n");
-			goto next2;
+			goto escape_redir;
 		}
 		/* r_cons_flush() handles interactive output (to the terminal)
 		 * differently (e.g. asking about too long output). This conflicts
@@ -3238,11 +3531,10 @@ escape_pipe:
 			r_config_set_i (core->config, "scr.color", scr_color);
 		}
 		core->cons->use_tts = false;
-		r_list_free (tmpenvs);
+		__core_arroba_context_free (ctx);
 		return ret;
 	}
 escape_redir:
-next2:
 	/* sub commands */
 	ptr = strchr (cmd, '`');
 	if (ptr) {
@@ -3306,7 +3598,7 @@ next2:
 				r_config_set_i (core->config, "scr.html", scr_html);
 			}
 			free (str);
-			r_list_free (tmpenvs);
+			__core_arroba_context_free (ctx);
 			return ret;
 		}
 	}
@@ -3329,7 +3621,7 @@ escape_backtick:
 			}
 			if (showHelp) {
 				r_cons_grep_help ();
-				r_list_free (tmpenvs);
+				__core_arroba_context_free (ctx);
 				return true;
 			}
 		}
@@ -3349,23 +3641,16 @@ escape_backtick:
 		ptr = NULL;
 	}
 
-	cmd_tmpseek = core->tmpseek = ptr != NULL;
+	ctx->cmd_tmpseek = core->tmpseek = ptr != NULL;
 	int rc = 0;
 	if (ptr) {
-		char *f, *ptr2 = strchr (ptr + 1, '!');
+		char *ptr2 = strchr (ptr + 1, '!');
 		ut64 addr = core->offset;
 		bool addr_is_set = false;
 		char *tmpbits = NULL;
 		const char *offstr = NULL;
 		bool is_bits_set = false;
-		bool is_arch_set = false;
-		char *tmpeval = NULL;
-		char *tmpasm = NULL;
-		bool flgspc_changed = false;
-		int tmpfd = -1;
-		size_t sz;
-		int len;
-		ut8 *buf;
+// 		int len;
 
 		*ptr++ = '\0';
 repeat_arroba:
@@ -3378,7 +3663,7 @@ repeat_arroba:
 		for (; *ptr == ' '; ptr++) {
 			//nothing to see here
 		}
-		if (*ptr && ptr[1] == ':') {
+		if (*ptr && ptr[1] == ':') { // handle @:.. commands
 			/* do nothing here */
 		} else {
 			ptr--;
@@ -3386,264 +3671,11 @@ repeat_arroba:
 
 		r_str_trim_tail (ptr);
 
-		if (ptr[1] == '?') {
-			r_core_cmd_help (core, help_msg_at);
-		} else if (ptr[1] == '%') { // "@%"
-			char *k = strdup (ptr + 2);
-			char *v = strchr (k, '=');
-			if (v) {
-				*v++ = 0;
-				r_sys_setenv (k, v);
-				r_list_append (tmpenvs, k);
-			} else {
-				free (k);
-			}
-		} else if (ptr[1] == '.') { // "@."
-			if (ptr[2] == '.') { // "@.."
-				if (ptr[3] == '.') { // "@..."
-					ut64 addr = r_num_tail (core->num, core->offset, ptr + 4);
-					r_core_block_size (core, R_ABS ((st64)addr - (st64)core->offset));
-					goto fuji;
-				} else {
-					addr = r_num_tail (core->num, core->offset, ptr + 3);
-					r_core_seek (core, addr, true);
-					cmd_tmpseek = core->tmpseek = true;
-					goto fuji;
-				}
-			} else {
-				// WAT DU
-				eprintf ("TODO: what do you expect for @. import offset from file maybe?\n");
-			}
-		} else if (ptr[0] && ptr[1] == ':' && ptr[2]) {
-			switch (ptr[0]) {
-			case 'F': // "@F:" // temporary flag space
-				flgspc_changed = r_flag_space_push (core->flags, ptr + 2);
-				break;
-			case 'B': // "@B:#" // seek to the last instruction in current bb
-				{
-					int index = (int)r_num_math (core->num, ptr + 2);
-					RAnalBlock *bb = r_anal_bb_from_offset (core->anal, core->offset);
-					if (bb) {
-						// handle negative indices
-						if (index < 0) {
-							index = bb->ninstr + index;
-						}
-
-						if (index >= 0 && index < bb->ninstr) {
-							ut16 inst_off = r_anal_bb_offset_inst (bb, index);
-							r_core_seek (core, bb->addr + inst_off, true);
-							cmd_tmpseek = core->tmpseek = true;
-						} else {
-							eprintf ("The current basic block has %d instructions\n", bb->ninstr);
-						}
-					} else {
-						eprintf ("Can't find a basic block for 0x%08"PFMT64x"\n", core->offset);
-					}
-					break;
-				}
-				break;
-			case 'f': // "@f:" // slurp file in block
-				f = r_file_slurp (ptr + 2, &sz);
-				if (f) {
-					{
-						RBuffer *b = r_buf_new_with_bytes ((const ut8*)f, (ut64)sz);
-						RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
-						if (d) {
-							if (tmpdesc) {
-								r_io_desc_close (tmpdesc);
-							}
-							tmpdesc = d;
-							if (pamode) {
-								r_config_set_i (core->config, "io.va", 1);
-							}
-							r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
-						}
-					}
-				} else {
-					eprintf ("cannot open '%s'\n", ptr + 3);
-				}
-				break;
-			case 'r': // "@r:" // regname
-				if (ptr[1] == ':') {
-					ut64 regval;
-					char *mander = strdup (ptr + 2);
-					char *sep = findSeparator (mander);
-					if (sep) {
-						char ch = *sep;
-						*sep = 0;
-						regval = r_debug_reg_get (core->dbg, mander);
-						*sep = ch;
-						char *numexpr = r_str_newf ("0x%"PFMT64x"%s", regval, sep);
-						regval = r_num_math (core->num, numexpr);
-						free (numexpr);
-					} else {
-						regval = r_debug_reg_get (core->dbg, ptr + 2);
-					}
-					r_core_seek (core, regval, true);
-					cmd_tmpseek = core->tmpseek = true;
-					free (mander);
-				}
-				break;
-			case 'b': // "@b:" // bits
-				is_bits_set = set_tmp_bits (core, r_num_math (core->num, ptr + 2), &tmpbits, &cmd_ignbithints);
-				break;
-			case 'i': // "@i:"
-				{
-					ut64 addr = r_num_math (core->num, ptr + 2);
-					if (addr) {
-						r_core_cmdf (core, "so %s", ptr + 2);
-						cmd_tmpseek = core->tmpseek = true;
-					}
-				}
-				break;
-			case 'e': // "@e:"
-				{
-					char *cmd = parse_tmp_evals (core, ptr + 2);
-					if (!tmpeval) {
-						tmpeval = cmd;
-					} else {
-						tmpeval = r_str_prepend (tmpeval, cmd);
-						free (cmd);
-					}
-				}
-				break;
-			case 'v': // "@v:" // value (honors asm.bits and cfg.bigendian)
-				if (ptr[1] == ':') {
-					ut8 buf[8] = {0};
-					ut64 v = r_num_math (core->num, ptr + 2);
-					int be = r_config_get_i (core->config, "cfg.bigendian");
-					int bi = r_config_get_i (core->config, "asm.bits");
-					if (bi == 64) {
-						r_write_ble64 (buf, v, be);
-						len = 8;
-					} else {
-						r_write_ble32 (buf, v, be);
-						len = 4;
-					}
-					r_core_block_size (core, R_ABS (len));
-					RBuffer *b = r_buf_new_with_bytes (buf, len);
-					RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
-					if (d) {
-						if (tmpdesc) {
-							r_io_desc_close (tmpdesc);
-						}
-						tmpdesc = d;
-						if (pamode) {
-							r_config_set_i (core->config, "io.va", 1);
-						}
-						r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
-						r_core_block_size (core, len);
-						r_core_block_read (core);
-					}
-				} else {
-					eprintf ("Invalid @v: syntax\n");
-				}
-				break;
-			case 'x': // "@x:" // hexpairs
-				if (ptr[1] == ':') {
-					buf = malloc (strlen (ptr + 2) + 1);
-					if (buf) {
-						len = r_hex_str2bin (ptr + 2, buf);
-						r_core_block_size (core, R_ABS (len));
-						if (len > 0) {
-							RBuffer *b = r_buf_new_with_bytes (buf, len);
-							RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
-							if (d) {
-								if (tmpdesc) {
-									r_io_desc_close (tmpdesc);
-								}
-								tmpdesc = d;
-								if (pamode) {
-									r_config_set_i (core->config, "io.va", 1);
-								}
-								r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
-								r_core_block_size (core, len);
-								r_core_block_read (core);
-							}
-						} else {
-							eprintf ("Error: Invalid hexpairs for @x:\n");
-						}
-						free (buf);
-					} else {
-						eprintf ("cannot allocate\n");
-					}
-				} else {
-					eprintf ("Invalid @x: syntax\n");
-				}
-				break;
-			case 'k': // "@k"
-				 {
-					char *out = sdb_querys (core->sdb, NULL, 0, ptr + ((ptr[1])? 2: 1));
-					if (out) {
-						r_core_seek (core, r_num_math(core->num, out), true);
-						free (out);
-						usemyblock = true;
-					}
-				 }
-				break;
-			case 'o': // "@o:3"
-				if (ptr[1] == ':') {
-					tmpfd = core->io->desc ? core->io->desc->fd : -1;
-					r_io_use_fd (core->io, atoi (ptr + 2));
-				}
-				break;
-			case 'a': // "@a:"
-				if (ptr[1] == ':') {
-					char *q = strchr (ptr + 2, ':');
-					if (q) {
-						*q++ = 0;
-						int bits = r_num_math (core->num, q);
-						is_bits_set = set_tmp_bits (core, bits, &tmpbits, &cmd_ignbithints);
-					}
-					is_arch_set = set_tmp_arch (core, ptr + 2, &tmpasm);
-				} else {
-					eprintf ("Usage: pd 10 @a:arm:32\n");
-				}
-				break;
-			case 's': // "@s:" // wtf syntax
-				{
-					len = strlen (ptr + 2);
-					r_core_block_size (core, len);
-					const ut8 *buf = (const ut8*)r_str_trim_head_ro (ptr + 2);
-
-					if (len > 0) {
-						RBuffer *b = r_buf_new_with_bytes (buf, len);
-						RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
-						if (!core->io->va) {
-							r_config_set_i (core->config, "io.va", 1);
-						}
-						if (d) {
-							if (tmpdesc) {
-								r_io_desc_close (tmpdesc);
-							}
-							tmpdesc = d;
-							if (pamode) {
-								r_config_set_i (core->config, "io.va", 1);
-							}
-							r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
-							r_core_block_size (core, len);
-							// r_core_block_read (core);
-						}
-					}
-				}
-break;
-			default:
-				goto ignore;
-			}
-			*ptr = '@';
-			/* trim whitespaces before the @ */
-			/* Fixes pd @x:9090 */
-			char *trim = ptr - 2;
-			while (trim > cmd) {
-				if (!IS_WHITESPACE (*trim)) {
-					break;
-				}
-				*trim = 0;
-				trim--;
-			}
-			goto next_arroba;
+		switch (handle_arroba (core, ptr, ctx)) {
+		case ARROBA_OK: break;
+		case ARROBA_FUJI: goto fuji;
+		case ARROBA_NEXT: goto next_arroba;
 		}
-ignore:
 		r_str_trim_head (ptr + 1);
 		cmd = r_str_trim_nc (cmd);
 		if (ptr2) {
@@ -3682,7 +3714,7 @@ ignore:
 		}
 		// remap thhe tmpdesc if any
 		if (addr) {
-			RIODesc *d = tmpdesc;
+			RIODesc *d = ctx->tmpdesc;
 			if (d) {
 				r_io_map_new (core->io, d->fd, d->perm, 0, addr, r_io_desc_size (d));
 			}
@@ -3694,7 +3726,7 @@ next_arroba:
 			arroba = NULL;
 			goto repeat_arroba;
 		}
-		core->fixedblock = !!tmpdesc;
+		core->fixedblock = !!ctx->tmpdesc;
 		if (core->fixedblock) {
 			r_core_block_read (core);
 		}
@@ -3722,9 +3754,9 @@ next_arroba:
 					eprintf ("Usage: / ABCD @{0x1000 0x3000}\n");
 					eprintf ("Run command and define the following vars:\n");
 					eprintf (" (anal|diff|graph|search|zoom).{from,to}\n");
-					free (tmpeval);
-					free (tmpasm);
-					free (tmpbits);
+					R_FREE (ctx->tmpeval);
+					R_FREE (ctx->tmpasm);
+					R_FREE (ctx->tmpbits);
 					goto fail;
 				}
 				char *arg = p + 1;
@@ -3751,7 +3783,7 @@ next_arroba:
 				}
 				tmpseek = true;
 			}
-			if (usemyblock) {
+			if (ctx->usemyblock) {
 				if (addr_is_set) {
 					core->offset = addr;
 				}
@@ -3780,21 +3812,21 @@ next_arroba:
 			*ptr2 = '!';
 			r_core_block_size (core, tmpbsz);
 		}
-		if (is_arch_set) {
+		if (ctx->is_arch_set) {
 			core->fixedarch = oldfixedarch;
-			r_config_set (core->config, "asm.arch", tmpasm);
-			R_FREE (tmpasm);
+			r_config_set (core->config, "asm.arch", ctx->tmpasm);
+			R_FREE (ctx->tmpasm);
 		}
-		if (tmpfd != -1) {
+		if (ctx->tmpfd != -1) {
 			// TODO: reuse tmpfd instead of
-			r_io_use_fd (core->io, tmpfd);
+			r_io_use_fd (core->io, ctx->tmpfd);
 		}
-		if (tmpdesc) {
+		if (ctx->tmpdesc) {
 			if (pamode) {
 				r_config_set_i (core->config, "io.va", 0);
 			}
-			r_io_desc_close (tmpdesc);
-			tmpdesc = NULL;
+			r_io_desc_close (ctx->tmpdesc);
+			ctx->tmpdesc = NULL;
 		}
 		if (is_bits_set) {
 			r_config_set (core->config, "asm.bits", tmpbits);
@@ -3803,11 +3835,11 @@ next_arroba:
 		if (tmpbsz != core->blocksize) {
 			r_core_block_size (core, tmpbsz);
 		}
-		if (tmpeval) {
-			r_core_cmd0 (core, tmpeval);
-			R_FREE (tmpeval);
+		if (ctx->tmpeval) {
+			r_core_cmd0 (core, ctx->tmpeval);
+			R_FREE (ctx->tmpeval);
 		}
-		if (flgspc_changed) {
+		if (ctx->flgspc_changed) {
 			r_flag_space_pop (core->flags);
 		}
 		*ptr = '@';
@@ -3835,19 +3867,15 @@ beach:
 	if (scr_color != -1) {
 		r_config_set_i (core->config, "scr.color", scr_color);
 	}
-	r_list_free (tmpenvs);
-	if (tmpdesc) {
-		r_io_desc_close (tmpdesc);
-		tmpdesc = NULL;
-	}
 	core->fixedarch = oldfixedarch;
 	core->fixedbits = oldfixedbits;
 	if (tmpseek) {
-		*tmpseek = cmd_tmpseek;
+		*tmpseek = ctx->cmd_tmpseek;
 	}
-	if (cmd_ignbithints != -1) {
-		r_config_set_i (core->config, "anal.ignbithints", cmd_ignbithints);
+	if (ctx->cmd_ignbithints != -1) {
+		r_config_set_i (core->config, "anal.ignbithints", ctx->cmd_ignbithints);
 	}
+	__core_arroba_context_free (ctx);
 	return rc;
 fail:
 	rc = -1;
@@ -5245,22 +5273,8 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_seek_command) {
 	TSNode command = ts_node_named_child (node, 0);
 	TSNode offset = ts_node_named_child (node, 1);
 	char *offset_string = ts_node_handle_arg (state, node, offset, 1);
-	ut64 offset_val = r_num_math (state->core->num, offset_string);
-	ut64 orig_offset = state->core->offset;
-	if (!offset_val && isalpha ((int)offset_string[0])) {
-		if (!r_flag_get (state->core->flags, offset_string)) {
-			eprintf ("Invalid address (%s)\n", offset_string);
-			free (offset_string);
-			return R_CMD_STATUS_INVALID;
-		}
-	}
-	if (offset_string[0] == '-' || offset_string[0] == '+') {
-		offset_val += state->core->offset;
-	}
-	R_LOG_DEBUG ("tmp_seek_command, changing offset to %" PFMT64x "\n", offset_val);
-	r_core_seek (state->core, offset_val, true);
+	handle_arroba (state->core, offset_string, state->core->ac);
 	RCmdStatus res = handle_ts_command_tmpseek (state, command);
-	r_core_seek (state->core, orig_offset, true);
 	free (offset_string);
 	return res;
 }
@@ -6706,6 +6720,7 @@ static RCmdStatus core_cmd_tsr2cmd(RCore *core, const char *cstr, bool split_lin
 	R_LOG_DEBUG("s-expr %s\n", ts_str);
 	free (ts_str);
 
+	state.core->ac = __core_arroba_context_new (state.core);
 	if (is_ts_commands (root) && !ts_node_has_error (root)) {
 		res = handle_ts_commands (&state, root);
 	} else {
@@ -6713,7 +6728,8 @@ static RCmdStatus core_cmd_tsr2cmd(RCore *core, const char *cstr, bool split_lin
 		// tokens to indicate where, probably, the error is.
 		eprintf ("Error while parsing command: `%s`\n", input);
 	}
-
+	__core_arroba_context_free (core->ac);
+	core->ac = NULL;
 	ts_tree_delete (tree);
 	ts_parser_delete (parser);
 	free (input);
@@ -6750,7 +6766,7 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 
 R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	if (core->use_tree_sitter_r2cmd) {
-		return r_cmd_status2int(core_cmd_tsr2cmd (core, cstr, false, log));
+		return r_cmd_status2int (core_cmd_tsr2cmd (core, cstr, false, log));
 	}
 
 	int ret = false, i;

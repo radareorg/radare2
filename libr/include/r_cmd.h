@@ -243,11 +243,11 @@ R_API char *r_cmd_get_help(RCmd *cmd, RCmdParsedArgs *args, bool use_color);
 static inline RCmdStatus r_cmd_int2status(int v) {
 	if (v == -2) {
 		return R_CMD_STATUS_EXIT;
-	} else if (v < 0) {
-		return R_CMD_STATUS_ERROR;
-	} else {
-		return R_CMD_STATUS_OK;
 	}
+	if (v < 0) {
+		return R_CMD_STATUS_ERROR;
+	}
+	return R_CMD_STATUS_OK;
 }
 
 static inline int r_cmd_status2int(RCmdStatus s) {
