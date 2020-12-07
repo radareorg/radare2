@@ -1,12 +1,7 @@
 /* radare - LGPL - Copyright 2009-2020 - pancake */
 
-#include "r_list.h"
-#include "r_config.h"
-#include "r_core.h"
-#include "r_util.h"
-#include "r_bin.h"
-#include "r_debug.h"
-#include "r_io.h"
+#include <r_bin.h>
+#include <r_debug.h>
 
 static const char *help_msg_o[] = {
 	"Usage: o","[com- ] [file] ([offset])","",
@@ -405,13 +400,17 @@ static void cmd_open_bin(RCore *core, const char *input) {
 
 // TODO: discuss the output format
 static void map_list(RIO *io, int mode, RPrint *print, int fd) {
+	PJ *pj;
 	if (!io || !print || !print->cb_printf) {
 		return;
 	}
 	if (mode == 'j') {
-		print->cb_printf ("[");
+		pj = pj_new ();
+		if (!pj) {
+			return;
+		}
+		pj_a (pj);
 	}
-	bool first = true;
 	char *om_cmds = NULL;
 
 	void **it;
@@ -429,14 +428,15 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 			}
 			break;
 		case 'j':
-			if (!first) {
-				print->cb_printf (",");
-			}
-			first = false;
-			print->cb_printf ("{\"map\":%i,\"fd\":%d,\"delta\":%"PFMT64u",\"from\":%"PFMT64u
-					",\"to\":%"PFMT64u",\"perm\":\"%s\",\"name\":\"%s\"}", map->id, map->fd,
-					map->delta, r_io_map_get_from (map), r_itv_end (map->itv),
-					r_str_rwx_i (map->perm), r_str_get2 (map->name));
+			pj_o (pj);
+			pj_ki (pj, "map", map->id);
+			pj_ki (pj, "fd", map->fd);
+			pj_kn (pj, "delta", map->delta);
+			pj_kn (pj, "from", r_io_map_get_from (map));
+			pj_kn (pj, "to", r_itv_end (map->itv));
+			pj_ks (pj, "perm", r_str_rwx_i (map->perm));
+			pj_ks (pj, "name", r_str_get2 (map->name));
+			pj_end (pj);
 			break;
 		case 1:
 		case '*':
@@ -464,7 +464,9 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 		free (om_cmds);
 	}
 	if (mode == 'j') {
-		print->cb_printf ("]\n");
+		pj_end (pj);
+		print->cb_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 	}
 }
 
@@ -566,16 +568,30 @@ static void cmd_open_map(RCore *core, const char *input) {
 	ut64 new;
 	RIOMap *map = NULL;
 	const char *P;
+	PJ *pj;
 
 	switch (input[1]) {
 	case '.': // "om."
 		map = r_io_map_get (core->io, core->offset);
 		if (map) {
 			if (input[2] == 'j') { // "om.j"
-				core->print->cb_printf ("{\"map\":%2d,\"fd\":%d,\"delta\":%"PFMT64u",\"from\":%"PFMT64u
-					",\"to\":%"PFMT64u",\"perm\":\"%s\",\"name\":\"%s\"}\n", map->id, map->fd,
-					map->delta, r_io_map_get_from (map), r_itv_end (map->itv),
-					r_str_rwx_i (map->perm), r_str_get2 (map->name));
+				pj = pj_new ();
+				if (!pj) {
+					return;
+				}
+				pj_o (pj);
+				pj_ki (pj, "map", map->id);
+				pj_ki (pj, "fd", map->fd);
+				pj_kn (pj, "delta", map->delta);
+				pj_kn (pj, "from", r_io_map_get_from (map));
+				pj_kn (pj, "to", r_itv_end (map->itv));
+				pj_ks (pj, "perm", r_str_rwx_i (map->perm));
+				pj_ks (pj, "name", r_str_get2 (map->name));
+				pj_end (pj);
+
+				core->print->cb_printf ("%s\n", pj_string (pj));
+
+				pj_free (pj);
 			} else {
 				core->print->cb_printf ("%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
 					" - 0x%08"PFMT64x" %s %s\n", map->id, map->fd,
