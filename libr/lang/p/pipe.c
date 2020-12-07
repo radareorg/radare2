@@ -192,8 +192,8 @@ static bool lang_pipe_run(RLang *lang, const char *code, int len) {
 			}
 			buf[sizeof (buf) - 1] = 0;
 			res = lang->cmd_str ((RCore*)lang->user, buf);
-			//eprintf ("%d %s\n", ret, buf);
 			if (res) {
+				r_cons_print (res);
 				(void) write (input[1], res, strlen (res) + 1);
 				free (res);
 			} else {
