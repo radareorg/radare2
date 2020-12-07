@@ -405,6 +405,9 @@ static int __strbuf_append_col_aligned(RStrBuf *sb, RTableColumn *col, const cha
 }
 
 R_API char *r_table_tostring(RTable *t) {
+	if (t->showR2) {
+		return r_table_tor2cmds (t);
+	}
 	if (t->showCSV) {
 		return r_table_tocsv (t);
 	}
@@ -504,6 +507,7 @@ R_API char *r_table_tor2cmds(RTable *t) {
 	}
 	return r_strbuf_drain (sb);
 }
+
 R_API char *r_table_tocsv(RTable *t) {
 	RStrBuf *sb = r_strbuf_new ("");
 	RTableRow *row;
@@ -963,7 +967,9 @@ R_API const char *r_table_help(void) {
 		" c/maxlen/3        grep rows matching strlen(col) < X\n"
 		" c/sum             sum all the values of given column\n"
 		" :csv              .tostring() == .tocsv()\n"
+		" :fancy            .tostring() == .tofancystring()\n"
 		" :json             .tostring() == .tojson()\n"
+		" :r2               .tostring() == .tor2()\n"
 		" :simple           simple table output without lines\n"
 		" :quiet            do not print column names header\n";
 }
@@ -978,6 +984,8 @@ static bool __table_special(RTable *t, const char *columnName) {
 		t->showFancy = true;
 	} else if (!strcmp (columnName, ":simple")) {
 		t->showFancy = false;
+	} else if (!strcmp (columnName, ":r2")) {
+		t->showR2 = true;
 	} else if (!strcmp (columnName, ":csv")) {
 		t->showCSV = true;
 	} else if (!strcmp (columnName, ":json")) {

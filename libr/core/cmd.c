@@ -1519,6 +1519,9 @@ static bool display_table_filter(RCore *core, const char *input) {
 
 static int cmd_table(void *data, const char *input) {
 	RCore *core = (RCore*)data;
+	if (!core->table) {
+		core->table = r_table_new ();
+	}
 	switch (*input) {
 	case 'h': // table header columns
 	case 'c': // table columns
@@ -1684,7 +1687,8 @@ static int cmd_interpret(void *data, const char *input) {
 		{
 			const char *script_file = r_str_trim_head_ro (input + 1);
 			if (*script_file == '$') {
-				r_core_cmd0 (core, script_file);
+				const char *oldText = r_cmd_alias_get (core->rcmd, script_file, 1);
+				r_core_cmd0 (core, oldText); // script_file);
 			} else {
 				if (!r_core_run_script (core, script_file)) {
 					eprintf ("Cannot find script '%s'\n", script_file);
@@ -1713,7 +1717,7 @@ static int cmd_interpret(void *data, const char *input) {
 			*filter = 0;
 		}
 		int tmp_html = r_cons_singleton ()->is_html;
-		r_cons_singleton ()->is_html = 0;
+		r_cons_singleton ()->is_html = false;
 		ptr = str = r_core_cmd_str (core, inp);
 		r_cons_singleton ()->is_html = tmp_html;
 

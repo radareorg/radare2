@@ -3,9 +3,9 @@ FILE=bins/mach0/mac-ls
 CMDS=<<EOF
 afr
 e scr.utf8=true
-aflt > .tt
+aflt :fancy > .tt
 cat .tt~?
-, .tt
+,. .tt
 rm .tt
 ,~?
 EOF
@@ -15,14 +15,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=comma table
+NAME=comma table2
 FILE=bins/mach0/mac-ls
+BROKEN=1
 CMDS=<<EOF
 afr
 e scr.utf8=false
-aflt > .tt2
+aflt :fancy > .tt2
 cat .tt2~?
-, .tt2
+,. .tt2
 rm .tt2
 ,~?
 EOF
@@ -32,11 +33,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=comma table
+NAME=comma table3
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
 afr
-aflt > $a
+aflt :fancy > $a
 cat $a~?
 , $a
 rm $a
@@ -44,6 +45,33 @@ rm $a
 EOF
 EXPECT=<<EOF
 37
+37
+EOF
+RUN
+
+NAME=comma table r2 include
+FILE=bins/mach0/mac-ls
+CMDS=<<EOF
+afr
+.aflt :r2
+,~?
+EOF
+EXPECT=<<EOF
+37
+EOF
+RUN
+
+NAME=comma table r2 include twice
+FILE=bins/mach0/mac-ls
+CMDS=<<EOF
+afr
+aflt :r2 > $a
+.$a
+,~?
+. $a
+,~?
+EOF
+EXPECT=<<EOF
 37
 EOF
 RUN

@@ -49,6 +49,7 @@ typedef struct {
 	bool showFancy;
 	bool showJSON;
 	bool showCSV;
+	bool showR2;
 	bool showSum;
 	bool adjustedCols;
 	void *cons;
