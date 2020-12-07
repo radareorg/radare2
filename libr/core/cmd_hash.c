@@ -9,18 +9,18 @@ typedef struct {
 	HashHandler handler;
 } RHashHashHandlers;
 
-static void hexprint(const ut8 *data, int len) {
+static inline void hexprint(const ut8 *data, int len) {
 	int i = 0;
 	for (i = 0; i < len; i++) {
 		r_cons_printf ("%02x", data[i]);
 	}
+	r_cons_newline ();
 }
 
 static void handle_md4 (const ut8 *block, int len) {
 	RHash *ctx = r_hash_new (true, R_HASH_MD4);
 	const ut8 *c = r_hash_do_md4 (ctx, block, len);
 	hexprint (c, R_HASH_SIZE_MD4);
-	r_cons_newline ();
 	r_hash_free (ctx);
 }
 
@@ -28,7 +28,6 @@ static void handle_md5 (const ut8 *block, int len) {
 	RHash *ctx = r_hash_new (true, R_HASH_MD5);
 	const ut8 *c = r_hash_do_md5 (ctx, block, len);
 	hexprint (c, R_HASH_SIZE_MD5);
-	r_cons_newline ();
 	r_hash_free (ctx);
 }
 
@@ -36,7 +35,6 @@ static void handle_sha1 (const ut8 *block, int len) {
 	RHash *ctx = r_hash_new (true, R_HASH_SHA1);
 	const ut8 *c = r_hash_do_sha1 (ctx, block, len);
 	hexprint (c, R_HASH_SIZE_SHA1);
-	r_cons_newline ();
 	r_hash_free (ctx);
 }
 
@@ -44,7 +42,6 @@ static void handle_sha256 (const ut8 *block, int len) {
 	RHash *ctx = r_hash_new (true, R_HASH_SHA256);
 	const ut8 *c = r_hash_do_sha256 (ctx, block, len);
 	hexprint (c, R_HASH_SIZE_SHA256);
-	r_cons_newline ();
 	r_hash_free (ctx);
 }
 
@@ -52,14 +49,12 @@ static void handle_sha512 (const ut8 *block, int len) {
 	RHash *ctx = r_hash_new (true, R_HASH_SHA512);
 	const ut8 *c = r_hash_do_sha512 (ctx, block, len);
 	hexprint (c, R_HASH_SIZE_SHA512);
-	r_cons_newline ();
 	r_hash_free (ctx);
 }
 
 static void handle_adler32 (const ut8 *block, int len) {
 	ut32 hn = r_hash_adler32 (block, len);
-	ut8 *b = (ut8*)&hn;
-	r_cons_printf ("%02x%02x%02x%02x\n", b[0], b[1], b[2], b[3]);
+	hexprint ((ut8 *)&hn, sizeof (ut32));
 }
 
 static void handle_xor (const ut8 *block, int len) {
