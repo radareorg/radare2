@@ -238,27 +238,8 @@ typedef struct r_core_tasks_t {
 	bool oneshot_running;
 } RCoreTaskScheduler;
 
-typedef struct {
-	RList *tmpenvs;
-	char *tmpeval;
-	RIODesc *tmpdesc;
-	int tmpfd;
-	int oldfd;
-	bool cmd_tmpseek;
-	bool usemyblock;
-	bool flgspc_changed;
-	int cmd_ignbithints;
-	bool is_arch_set;
-	bool is_bits_set;
-	bool ignbithints;
-	char *tmpasm;
-	char *tmpbits;
-	RCore *core;
-} RCoreArrobaContext;
-
 struct r_core_t {
 	RBin *bin;
-	RCoreArrobaContext *ac;
 	RConfig *config;
 	ut64 offset; // current seek
 	ut64 prompt_offset; // temporarily set to offset to have $$ in expressions always stay the same during temp seeks

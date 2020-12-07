@@ -18,6 +18,24 @@
 #include <tree_sitter/api.h>
 TSLanguage *tree_sitter_r2cmd ();
 
+typedef struct {
+	RList *tmpenvs;
+	char *tmpeval;
+	RIODesc *tmpdesc;
+	int tmpfd;
+	int oldfd;
+	bool cmd_tmpseek;
+	bool usemyblock;
+	bool flgspc_changed;
+	int cmd_ignbithints;
+	bool is_arch_set;
+	bool is_bits_set;
+	bool ignbithints;
+	char *tmpasm;
+	char *tmpbits;
+	struct r_core_t *core;
+} RCoreArrobaContext;
+
 // NOTE: this should be in sync with SPECIAL_CHARACTERS in
 //       radare2-shell-parser grammar, except for ", ' and
 //       whitespaces, because we let cmd_substitution_arg create
@@ -4621,8 +4639,10 @@ out_finish:
 
 static int run_cmd_depth(RCore *core, char *cmd);
 
+
 struct tsr2cmd_state {
 	TSParser *parser;
+	RCoreArrobaContext *ac;
 	RCore *core;
 	char *input;
 	char *saved_input;
@@ -5273,7 +5293,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_seek_command) {
 	TSNode command = ts_node_named_child (node, 0);
 	TSNode offset = ts_node_named_child (node, 1);
 	char *offset_string = ts_node_handle_arg (state, node, offset, 1);
-	handle_arroba (state->core, offset_string, state->core->ac);
+	handle_arroba (state->core, offset_string, state->ac);
 	RCmdStatus res = handle_ts_command_tmpseek (state, command);
 	free (offset_string);
 	return res;
@@ -6720,7 +6740,7 @@ static RCmdStatus core_cmd_tsr2cmd(RCore *core, const char *cstr, bool split_lin
 	R_LOG_DEBUG("s-expr %s\n", ts_str);
 	free (ts_str);
 
-	state.core->ac = __core_arroba_context_new (state.core);
+	state.ac = __core_arroba_context_new (state.core);
 	if (is_ts_commands (root) && !ts_node_has_error (root)) {
 		res = handle_ts_commands (&state, root);
 	} else {
@@ -6728,8 +6748,8 @@ static RCmdStatus core_cmd_tsr2cmd(RCore *core, const char *cstr, bool split_lin
 		// tokens to indicate where, probably, the error is.
 		eprintf ("Error while parsing command: `%s`\n", input);
 	}
-	__core_arroba_context_free (core->ac);
-	core->ac = NULL;
+	__core_arroba_context_free (state.ac);
+	state.ac = NULL;
 	ts_tree_delete (tree);
 	ts_parser_delete (parser);
 	free (input);
