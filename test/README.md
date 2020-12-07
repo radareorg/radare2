@@ -17,6 +17,7 @@ Requirements
 ------------
 
  * Radare2 installed (and in `$PATH` or set the R2 environment).
+ * For r2pipe tests, Python 3 (binary named/symlinked as `python3`) and the latest version of r2pipe-python (can be installed via `pip3 install --user 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'`).
  * Valgrind (optional).
 
 Usage
