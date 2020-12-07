@@ -1847,13 +1847,13 @@ static void __create_panel(RCore *core, RPanel *panel, const RPanelLayout dir, R
 		return;
 	}
 	switch (dir) {
-	case VERTICAL:
+	case PANEL_LAYOUT_VERTICAL:
 		__split_panel_vertical (core, panel, title, cmd);
 		break;
-	case HORIZONTAL:
+	case PANEL_LAYOUT_HORIZONTAL:
 		__split_panel_horizontal (core, panel, title, cmd);
 		break;
-	case NONE:
+	case PANEL_LAYOUT_NONE:
 		__replace_cmd (core, title, cmd);
 		break;
 	}
@@ -3315,10 +3315,10 @@ static bool __handle_window_mode(RCore *core, const int key) {
 		__resize_panel_up (panels);
 		break;
 	case 'n':
-		__create_panel_input (core, cur, VERTICAL, NULL);
+		__create_panel_input (core, cur, PANEL_LAYOUT_VERTICAL, NULL);
 		break;
 	case 'N':
-		__create_panel_input (core, cur, HORIZONTAL, NULL);
+		__create_panel_input (core, cur, PANEL_LAYOUT_HORIZONTAL, NULL);
 		break;
 	case 'X':
 		__dismantle_del_panel (core, cur, panels->curnode);
@@ -3880,7 +3880,7 @@ static void __create_modal(RCore *core, RPanel *panel, Sdb *menu_db) {
 					if (word) {
 						void *cb = sdb_ptr_get (menu_db, word, 0);
 						if (cb) {
-							((RPanelAlmightyCallback)cb) (core, panel, NONE, word);
+							((RPanelAlmightyCallback)cb) (core, panel, PANEL_LAYOUT_NONE, word);
 							__free_modal (&modal);
 							free (word);
 							break;
@@ -3910,15 +3910,15 @@ static void __create_modal(RCore *core, RPanel *panel, Sdb *menu_db) {
 			__update_modal (core, menu_db, modal);
 			break;
 		case 'v':
-			__exec_modal (core, panel, modal, menu_db, VERTICAL);
+			__exec_modal (core, panel, modal, menu_db, PANEL_LAYOUT_VERTICAL);
 			__free_modal (&modal);
 			break;
 		case 'h':
-			__exec_modal (core, panel, modal, menu_db, HORIZONTAL);
+			__exec_modal (core, panel, modal, menu_db, PANEL_LAYOUT_HORIZONTAL);
 			__free_modal (&modal);
 			break;
 		case 0x0d:
-			__exec_modal (core, panel, modal, menu_db, NONE);
+			__exec_modal (core, panel, modal, menu_db, PANEL_LAYOUT_NONE);
 			__free_modal (&modal);
 			break;
 		case '-':

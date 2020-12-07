@@ -579,7 +579,7 @@ repeat:
 		r_strbuf_free (q);
 		return ret;
 	case '!':
-		r_core_visual_panels_root (core, core->panels_root);
+		r_core_panels_root (core, core->panels_root);
 		break;
 	case '?':
 		r_core_visual_append_help (p, "Visual mode help", help_msg_visual);
@@ -2543,7 +2543,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		}
 		break;
 		case '!':
-			r_core_visual_panels_root (core, core->panels_root);
+			r_core_panels_root (core, core->panels_root);
 			break;
 		case 'g':
 			r_core_visual_showcursor (core, true);

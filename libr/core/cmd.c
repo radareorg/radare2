@@ -1,17 +1,4 @@
 /* radare - LGPL - Copyright 2009-2020 - nibble, pancake */
-#if 0
-* Use RList
-* Support callback for null command (why?)
-* Show help of commands
-  - long commands not yet tested at all
-  - added interface to export command list into an autocompletable
-    argc, argv for dietline
-* r_cmd must provide a nesting char table indexing for commands
-  - this is already partially done
-  - this is pretty similar to r_db
-  - every module can register their own commands
-  - commands can be listed like in a tree
-#endif
 
 #define INTERACTIVE_MAX_REP 1024
 
@@ -39,9 +26,6 @@ static const char *SPECIAL_CHARS_REGULAR = "@;~$#|`\"'()<>";
 static const char *SPECIAL_CHARS_PF = "@;~$#|`\"'<>";
 static const char *SPECIAL_CHARS_DOUBLE_QUOTED = "\"";
 static const char *SPECIAL_CHARS_SINGLE_QUOTED = "'";
-
-R_API void r_save_panels_layout(RCore *core, const char *_name);
-R_API bool r_load_panels_layout(RCore *core, const char *_name);
 
 static RCmdDescriptor *cmd_descriptor(const char *cmd, const char *help[]) {
 	RCmdDescriptor *d = R_NEW0 (RCmdDescriptor);
@@ -1930,13 +1914,13 @@ static int cmd_panels(void *data, const char *input) {
 	}
 	if (*input == ' ') {
 		if (core->panels) {
-			r_load_panels_layout (core, input + 1);
+			r_core_panels_load (core, input + 1);
 		}
 		r_config_set (core->config, "scr.layout", input + 1);
 		return true;
 	}
 	if (*input == '=') {
-		r_save_panels_layout (core, input + 1);
+		r_core_panels_save (core, input + 1);
 		r_config_set (core->config, "scr.layout", input + 1);
 		return true;
 	}
