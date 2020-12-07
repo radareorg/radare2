@@ -75,9 +75,10 @@ static const char *help_msg_afls[] = {
 
 static const char *help_msg_ai[] = {
 	"Usage:", "ai", "[j*] [sz] # analysis/address information/imports",
+	"ai", " @addr", "show address information",
 	"aii", " [namespace]", "global import (like afii, but global)",
 	"aii", "-", "delete all global imports",
-	"ai", " @addr", "show address information",
+	"aij", " @addr", "show address information in JSON format",
 	NULL
 };
 
@@ -654,6 +655,7 @@ static const char *help_msg_ar[] = {
 	".ar-", "", "Unflag all registers",
 	"ar0", "", "Reset register arenas to 0",
 	"ara", "[?]", "Manage register arenas",
+	"arj", "", "Show 'gpr' registers in JSON format",
 	"arA", "", "Show values of function argument calls (A0, A1, A2, ..)",
 	"ar", " 16", "Show 16 bit registers",
 	"ar", " 32", "Show 32 bit registers",
