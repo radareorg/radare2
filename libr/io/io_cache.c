@@ -88,7 +88,7 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
 }
 
 R_API bool r_io_cache_list(RIO *io, int rad) {
-	r_return_val_if_fail (io && buf, false);
+	r_return_val_if_fail (io, false);
 	size_t i, j = 0;
 	void **iter;
 	RIOCache *c;
