@@ -3030,7 +3030,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		}
 	}
 	// TODO: store in core->cmdtimes to speedup ?
-	const char *cmdrep = core->cmdtimes ? core->cmdtimes: "";
+	const char *cmdrep = r_str_get (core->cmdtimes);
 	orep = rep;
 
 	r_cons_break_push (NULL, NULL);
@@ -4257,8 +4257,8 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			if (maps) {
 				RListIter *iter;
 				r_list_foreach (maps, iter, map) {
-					r_core_seek (core, map->itv.addr, true);
-					r_core_block_size (core, map->itv.size);
+					r_core_seek (core, r_io_map_begin (map), true);
+					r_core_block_size (core, r_io_map_size (map));
 					r_core_cmd0 (core, cmd);
 				}
 				r_list_free (maps);
@@ -6650,8 +6650,8 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_iomap_command) {
 	if (maps) {
 		RListIter *iter;
 		r_list_foreach (maps, iter, map) {
-			r_core_seek (core, map->itv.addr, true);
-			r_core_block_size (core, map->itv.size);
+			r_core_seek (core, r_io_map_begin (map), true);
+			r_core_block_size (core, r_io_map_size (map));
 			RCmdStatus cmd_res = handle_ts_command_tmpseek (state, command);
 			UPDATE_CMD_STATUS_RES (res, cmd_res, err);
 		}
@@ -7354,7 +7354,7 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 	}
 	r_cons_filter ();
 	const char *static_str = r_cons_get_buffer ();
-	char *retstr = strdup (static_str? static_str: "");
+	char *retstr = strdup (r_str_get (static_str));
 	r_cons_pop ();
 	r_cons_echo (NULL);
 	return retstr;

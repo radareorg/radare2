@@ -535,7 +535,7 @@ static int cmd_help(void *data, const char *input) {
 			return false;
 		}
 		r_list_foreach (tmp, iter, map) {
-			r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
+			r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
 		}
 		r_list_free (tmp);
 		break;
@@ -1108,7 +1108,7 @@ static int cmd_help(void *data, const char *input) {
 				r_num_math (core->num, input+2): core->offset;
 			RIOMap *map = r_io_map_get_paddr (core->io, n);
 			if (map) {
-				o = n + map->itv.addr - map->delta;
+				o = n + r_io_map_begin (map) - map->delta;
 				r_cons_printf ("0x%08"PFMT64x"\n", o);
 			} else {
 				r_cons_printf ("no map at 0x%08"PFMT64x"\n", n);
@@ -1124,7 +1124,7 @@ static int cmd_help(void *data, const char *input) {
 				r_num_math (core->num, input + 2): core->offset;
 			RIOMap *map = r_io_map_get (core->io, n);
 			if (map) {
-				o = n - map->itv.addr + map->delta;
+				o = n - r_io_map_begin (map) + map->delta;
 				r_cons_printf ("0x%08"PFMT64x"\n", o);
 			} else {
 				r_cons_printf ("no map at 0x%08"PFMT64x"\n", n);

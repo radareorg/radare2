@@ -675,6 +675,7 @@ static bool print_link_cb(void *p, const char *k, const char *v) {
 	return true;
 }
 
+//TODO PJ
 static bool print_link_json_cb(void *p, const char *k, const char *v) {
 	r_cons_printf ("{\"0x%s\":\"%s\"}", k + strlen ("link."), v);
 	return true;
@@ -697,6 +698,7 @@ static bool print_link_readable_cb(void *p, const char *k, const char *v) {
 	return true;
 }
 
+//TODO PJ
 static bool print_link_readable_json_cb(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
 	char *fmt = r_type_format (core->anal->sdb_types, v);

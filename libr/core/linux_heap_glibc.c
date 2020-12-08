@@ -226,8 +226,8 @@ static void GH(get_brks)(RCore *core, GHT *brk_start, GHT *brk_end) {
 			RIOMap *map = *it;
 			if (map->name) {
 				if (strstr (map->name, "[heap]")) {
-					*brk_start = map->itv.addr;
-					*brk_end = map->itv.addr + map->itv.size;
+					*brk_start = r_io_map_begin (map);
+					*brk_end = r_io_map_end (map);
 					break;
 				}
 			}
@@ -421,8 +421,8 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 		r_pvector_foreach (&core->io->maps, it) {
 			RIOMap *map = *it;
 			if (map->name && strstr (map->name, "arena")) {
-				libc_addr_sta = map->itv.addr;
-				libc_addr_end = map->itv.addr + map->itv.size;
+				libc_addr_sta = r_io_map_begin (map);
+				libc_addr_end = r_io_map_end (map);
 				break;
 			}
 		}
@@ -1124,6 +1124,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 
 	switch (format_out) {
 	case 'j':
+		//TODO PJ
 		r_cons_printf ("{\"chunks\":[");
 		break;
 	case '*':
@@ -1151,6 +1152,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 				(ut64)cnk->size, (ut64)cnk->fd, (ut64)cnk->bk);
 				break;
 			case 'j':
+				//TODO PJ
 				r_cons_printf ("%s{\"addr\":%"PFMT64d",\"size\":%"PFMT64d",\"status\":\"%s\",\"fd\":%"PFMT64d",\"bk\":%"PFMT64d"}",
 						comma, (ut64)next_chunk, (ut64)cnk->size, status, (ut64)cnk->fd, (ut64)cnk->bk);
 				comma = ",";
@@ -1293,6 +1295,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 			PRINTF_GA ("][%s]",status);
 			break;
 		case 'j':
+			//TODO PJ
 			r_cons_printf ("%s{\"addr\":0x%"PFMT64x",\"size\":0x%"PFMT64x",\"status\":\"%s\"}",
 					comma, prev_chunk_addr, prev_chunk_size, status);
 			comma = ",";

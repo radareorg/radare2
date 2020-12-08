@@ -512,7 +512,7 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 				}
 
 				if (hdr->file_names) {
-					hdr->file_names[count].name = r_str_newf("%s/%s", include_dir ? include_dir : "", filename);
+					hdr->file_names[count].name = r_str_newf("%s/%s", r_str_get (include_dir), filename);
 					hdr->file_names[count].id_idx = id_idx;
 					hdr->file_names[count].mod_time = mod_time;
 					hdr->file_names[count].file_len = file_len;

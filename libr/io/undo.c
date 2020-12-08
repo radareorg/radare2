@@ -48,10 +48,10 @@ R_API RIOUndos *r_io_sundo(RIO *io, ut64 offset) {
 
 	undo = &io->undo.seek[io->undo.idx];
 	RIOMap *map = r_io_map_get (io, undo->off);
-	if (!map || (map->delta == map->itv.addr)) {
+	if (!map || (map->delta == r_io_map_begin (map))) {
 		io->off = undo->off;
 	} else {
-		io->off = undo->off - (map->itv.addr + map->delta);
+		io->off = undo->off - (r_io_map_begin (map) + map->delta);
 	}
 	return undo;
 }
@@ -70,10 +70,10 @@ R_API RIOUndos *r_io_sundo_redo(RIO *io) {
 
 	undo = &io->undo.seek[io->undo.idx];
 	map = r_io_map_get (io, undo->off);
-	if (!map || (map->delta == map->itv.addr)) {
+	if (!map || (map->delta == r_io_map_begin (map))) {
 		io->off = undo->off;
 	} else {
-		io->off = undo->off - map->itv.addr + map->delta;
+		io->off = undo->off - r_io_map_begin (map) + map->delta;
 	}
 	return undo;
 }

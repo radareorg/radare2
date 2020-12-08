@@ -3340,7 +3340,7 @@ R_API int r_core_config_init(RCore *core) {
 	free (p);
 	// R2_LOGFILE / log.file
 	p = r_sys_getenv ("R2_LOGFILE");
-	SETCB ("log.file", p ? p : "", cb_log_config_file, "Logging output filename / path");
+	SETCB ("log.file", r_str_get (p), cb_log_config_file, "Logging output filename / path");
 	free (p);
 	// R2_LOGSRCINFO / log.srcinfo
 	p = r_sys_getenv ("R2_LOGSRCINFO");
@@ -3393,7 +3393,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("dir.home", p? p: "/", &cb_dirhome, "Path for the home directory");
 	free (p);
 	p = r_sys_getenv (R_SYS_TMP);
-	SETCB ("dir.tmp", p? p: "", &cb_dirtmp, "Path of the tmp directory");
+	SETCB ("dir.tmp", r_str_get (p), &cb_dirtmp, "Path of the tmp directory");
 	free (p);
 #if __ANDROID__
 	SETPREF ("dir.projects", "/data/data/org.radare.radare2installer/radare2/projects", "Default path for projects");
@@ -3578,7 +3578,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("http.auth", "false", "Enable/Disable HTTP Authentification");
 	SETPREF ("http.authtok", "r2admin:r2admin", "HTTP Authentification user:password token");
 	p = r_sys_getenv ("R2_HTTP_AUTHFILE");
-	SETPREF ("http.authfile", p? p : "", "HTTP Authentification user file");
+	SETPREF ("http.authfile", r_str_get (p), "HTTP Authentification user file");
 	tmpdir = r_file_tmpdir ();
 	r_config_set (cfg, "http.uproot", tmpdir);
 	free (tmpdir);

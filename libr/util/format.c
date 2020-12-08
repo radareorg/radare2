@@ -1230,11 +1230,11 @@ static void r_print_format_nulltermstring(const RPrint* p, int len, int endian, 
 		           ? p->iob.map_get (p->iob.io, addr)
 		           : p->iob.map_get_paddr (p->iob.io, addr))
 		       && map->perm & R_PERM_R) {
-			if (!map->itv.size) {
+			if (!r_io_map_size(map)) {
 				total_map_left = addr == 0 ? UT64_MAX : UT64_MAX - addr + 1;
 				break;
 			}
-			total_map_left += map->itv.size - (addr - (p->iob.io->va ? map->itv.addr : map->delta));
+			total_map_left += r_io_map_size (map) - (addr - (p->iob.io->va ? r_io_map_begin (map) : map->delta));
 			addr += total_map_left;
 		}
 		if (total_map_left < len) {
@@ -1914,6 +1914,7 @@ static char *get_format_type(const char fmt, const char arg) {
 	return type;
 }
 
+//TODO PJ
 #define MINUSONE ((void*)(size_t)-1)
 #define ISSTRUCT (tmp == '?' || (tmp == '*' && *(arg+1) == '?'))
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,

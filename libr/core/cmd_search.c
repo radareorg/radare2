@@ -204,7 +204,8 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			ut64 from = map->itv.addr, to = r_itv_end (map->itv);
+			ut64 from = r_io_map_begin (map);
+			ut64 to = r_io_map_end (map);
 			st64 bufsz;
 			bufsz = to - from;
 			if (len > bufsz) {
@@ -507,6 +508,7 @@ static int _cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		}
 
 		if (param->outmode == R_MODE_JSON) {
+			//TODO PJ
 			if (core->search->nhits >= 1) {
 				r_cons_printf (",");
 			}
@@ -525,6 +527,7 @@ static int _cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		free (str);
 	} else if (kw) {
 		if (param->outmode == R_MODE_JSON) {
+			//TODO PJ
 			if (core->search->nhits >= 1) {
 				r_cons_printf (",");
 			}
@@ -589,7 +592,7 @@ static void append_bound(RList *list, RIO *io, RInterval search_itv, ut64 from, 
 		r_list_append (list, map);
 	} else if (r_itv_overlap (itv, search_itv)) {
 		map->itv = r_itv_intersect (itv, search_itv);
-		if (map->itv.size) {
+		if (r_io_map_size (map)) {
 			r_list_append (list, map);
 		} else {
 			free (map);
@@ -663,8 +666,8 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 		void **it;
 		r_pvector_foreach (&core->io->maps, it) {
 			RIOMap *map = *it;
-			ut64 from = r_itv_begin (map->itv);
-			ut64 to = r_itv_end (map->itv);
+			ut64 from = r_io_map_begin (map);
+			ut64 to = r_io_map_end (map);
 			int rwx = map->perm;
 #endif
 			// eprintf ("--------- %llx %llx    (%llx %llx)\n", from, to, begin, end);
@@ -695,13 +698,13 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 		void **it;
 		r_pvector_foreach (&core->io->maps, it) {
 			RIOMap *map = *it;
-			ut64 from = r_itv_begin (map->itv);
-			//ut64 to = r_itv_end (map->itv);
+			ut64 from = r_io_map_begin (map);
+			//ut64 to = r_io_map_end (map);
 			int rwx = map->perm;
 			if ((rwx & mask) != mask) {
 				continue;
 			}
-			append_bound (list, core->io, search_itv, from, r_itv_size (map->itv), rwx);
+			append_bound (list, core->io, search_itv, from, r_io_map_size (map), rwx);
 		}
 	} else if (r_str_startswith (mode, "io.sky.")) {
 		int len = strlen ("io.sky.");
@@ -783,8 +786,8 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 				void **it;
 				r_pvector_foreach (&core->io->maps, it) {
 					RIOMap *map = *it;
-					ut64 from = r_itv_begin (map->itv);
-					ut64 size = r_itv_size (map->itv);
+					ut64 from = r_io_map_begin (map);
+					ut64 size = r_io_map_size (map);
 					int rwx = map->perm;
 					if ((rwx & mask) != mask) {
 						continue;
@@ -901,8 +904,8 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 					RIOMap *nmap = R_NEW0 (RIOMap);
 					if (nmap) {
 						// nmap->fd = core->io->desc->fd;
-						nmap->itv.addr = from;
-						nmap->itv.size = to - from;
+						r_io_map_set_begin(nmap, from);
+						r_io_map_set_size(nmap, to - from);
 						nmap->perm = perm;
 						nmap->delta = 0;
 						r_list_append (list, nmap);
@@ -943,11 +946,11 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 						if (!nmap) {
 							break;
 						}
-						nmap->itv.addr = map->addr;
-						nmap->itv.size = map->addr_end - map->addr;
-						if (nmap->itv.addr) {
-							from = R_MIN (from, nmap->itv.addr);
-							to = R_MAX (to - 1, r_itv_end (nmap->itv) - 1) + 1;
+						r_io_map_set_begin (nmap, map->addr);
+						r_io_map_set_size (nmap, map->addr_end - map->addr);
+						if (r_io_map_begin (nmap)) {
+							from = R_MIN (from, r_io_map_begin (nmap));
+							to = R_MAX (to, r_io_map_end (nmap));
 						}
 						nmap->perm = map->perm;
 						nmap->delta = 0;
@@ -1185,6 +1188,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 
 	switch (mode) {
 	case 'j':
+		//TODO PJ
 		// Handle comma between gadgets
 		if (*json_first) {
 			*json_first = 0;
@@ -1645,8 +1649,8 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		size_t hit_combo = 0;
 		char *res;
 		ut64 nres, addr;
-		ut64 from = map->itv.addr;
-		ut64 to = r_itv_end (map->itv);
+		ut64 from = r_io_map_begin (map);
+		ut64 to = r_io_map_end (map);
 		unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 		if (!core->anal->esil) {
 			core->anal->esil = r_anal_esil_new (stacksize, iotrap, addrsize);
@@ -1846,8 +1850,8 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 		}
 	}
 	r_list_foreach (param->boundaries, iter, map) {
-		ut64 from = map->itv.addr;
-		ut64 to = r_itv_end (map->itv);
+		ut64 from = r_io_map_begin (map);
+		ut64 to = r_io_map_end (map);
 		if (from >= to) {
 			eprintf ("Error: from must be lower than to\n");
 			goto beach;
@@ -2063,8 +2067,8 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 	RIOMap* map;
 	RListIter *iter;
 	r_list_foreach (param->boundaries, iter, map) {
-		ut64 from = map->itv.addr;
-		ut64 to = r_itv_end (map->itv);
+		ut64 from = r_io_map_begin (map);
+		ut64 to = r_io_map_end (map);
 		for (i = 0, at = from; at < to; i++, at++) {
 			if (r_cons_is_breaked ()) {
 				break;
@@ -2116,6 +2120,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 					char *opstr = r_core_op_str (core, at);
 					switch (mode) {
 					case 'j':
+						//TODO PJ
 						r_cons_printf ("%s{\"addr\":%"PFMT64d ",\"size\":%d,\"opstr\":\"%s\"}",
 							firstItem? "": ",",
 							at, ret, opstr);
@@ -2194,8 +2199,8 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 	bool lastBlock = true;
 	r_cons_break_push (NULL, NULL);
 	r_list_foreach (param->boundaries, iter, map) {
-		ut64 from = map->itv.addr;
-		ut64 to = r_itv_end (map->itv);
+		ut64 from = r_io_map_begin (map);
+		ut64 to = r_io_map_end (map);
 		if (r_cons_is_breaked ()) {
 			break;
 		}
@@ -2273,8 +2278,8 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		if (!r_itv_overlap (search_itv, map->itv)) {
 			continue;
 		}
-		ut64 from = map->itv.addr;
-		ut64 to = r_itv_end (map->itv);
+		ut64 from = r_io_map_begin (map);
+		ut64 to = r_io_map_end (map);
 		if (r_cons_is_breaked ()) {
 			break;
 		}
@@ -2294,6 +2299,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 				}
 				switch (param->outmode) {
 				case R_MODE_JSON:
+					//TODO PJ
 					if (count > 0) {
 						r_cons_printf (",");
 					}
@@ -2485,6 +2491,7 @@ static void rop_kuery(void *data, const char *input) {
 		}
 		break;
 	case 'j':
+		//TODO PJ
 		r_cons_print ("{\"gadgets\":[");
 		ls_foreach (db_rop->ns, it, ns) {
 			sdb_list = sdb_foreach_list (ns->sdb, false);
@@ -2632,6 +2639,7 @@ void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, int count, vo
 	if (param->outmode != R_MODE_JSON) {
 		r_cons_printf ("0x%"PFMT64x ": 0x%"PFMT64x"\n", from, to);
 	} else {
+		//TODO PJ
 		if (count >= 1) {
 			r_cons_printf (",");
 		}
@@ -2882,15 +2890,15 @@ static void __core_cmd_search_asm_infinite (RCore *core, const char *arg) {
 	RAnalOp analop;
 	ut64 at;
 	r_list_foreach (boundaries, iter, map) {
-		ut64 map_begin = map->itv.addr;
-		ut64 map_size = map->itv.size;
-		ut64 map_end = map_begin + map_size;
-		ut8 *buf = calloc (map_end - map_begin, 1);
+		ut64 map_begin = r_io_map_begin (map);
+		ut64 map_size = r_io_map_size (map);
+		ut64 map_end = r_io_map_end (map);
+		ut8 *buf = calloc (map_size, 1);
 		if (!buf) {
 			continue;
 		}
 		(void) r_io_read_at (core->io, map_begin, buf, map_size);
-		for (at = map->itv.addr; at + 24< map_end; at += 1) {
+		for (at = map_begin; at + 24 < map_end; at += 1) {
 			r_anal_op (core->anal, &analop, at, buf + (at - map_begin), 24, R_ANAL_OP_MASK_HINT);
 			if (at == analop.jump) {
 				r_cons_printf ("0x%08"PFMT64x"\n", at);
@@ -3136,8 +3144,8 @@ reread:
 				RListIter *iter;
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
-					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
-					r_core_anal_search (core, map->itv.addr, r_itv_end (map->itv), n, 'c');
+					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
+					r_core_anal_search (core, r_io_map_begin (map), r_io_map_end (map), n, 'c');
 				}
 			}
 			break;
@@ -3146,8 +3154,8 @@ reread:
 				RListIter *iter;
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
-					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
-					r_core_anal_search (core, map->itv.addr, r_itv_end (map->itv), n, 0);
+					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
+					r_core_anal_search (core, r_io_map_begin (map), r_io_map_end (map), n, 0);
 				}
 			}
 			break;
@@ -3158,11 +3166,11 @@ reread:
 				RListIter *iter;
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
-					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
+					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
 					ut64 refptr = r_num_math (core->num, input + 2);
 					ut64 curseek = core->offset;
-					r_core_seek (core, map->itv.addr, true);
-					char *arg = r_str_newf (" %"PFMT64d, r_itv_end (map->itv) - map->itv.addr);
+					r_core_seek (core, r_io_map_begin (map), true);
+					char *arg = r_str_newf (" %"PFMT64d, r_io_map_size (map));
 					char *trg = refptr? r_str_newf (" %"PFMT64d, refptr): strdup ("");
 					r_core_anal_esil (core, arg, trg);
 					free (arg);
@@ -3176,8 +3184,8 @@ reread:
 				RListIter *iter;
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
-					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
-					r_core_anal_search (core, map->itv.addr, r_itv_end (map->itv), n, 'r');
+					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
+					r_core_anal_search (core, r_io_map_begin (map), r_io_map_end (map), n, 'r');
 				}
 			}
 			break;
@@ -3186,8 +3194,8 @@ reread:
 				RListIter *iter;
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
-					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
-					r_core_anal_search (core, map->itv.addr, r_itv_end (map->itv), n, 'w');
+					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
+					r_core_anal_search (core, r_io_map_begin (map), r_io_map_end (map), n, 'w');
 				}
 			}
 			break;
@@ -3197,8 +3205,8 @@ reread:
 				RListIter *iter;
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
-					ut64 from = map->itv.addr;
-					ut64 to = r_itv_end (map->itv);
+					ut64 from = r_io_map_begin (map);
+					ut64 to = r_io_map_end (map);
 					if (input[param_offset - 1] == ' ') {
 						r_core_anal_search (core, from, to,
 								r_num_math (core->num, input + 2), 0);
@@ -3384,9 +3392,9 @@ reread:
 			int count = 0;
 			const int align = core->search->align;
 			r_list_foreach (param.boundaries, iter, map) {
-				// eprintf ("-- %llx %llx\n", map->itv.addr, r_itv_end (map->itv));
+				// eprintf ("-- %llx %llx\n", r_io_map_begin (map), r_io_map_end (map));
 				r_cons_break_push (NULL, NULL);
-				for (addr = map->itv.addr; addr < r_itv_end (map->itv); addr++) {
+				for (addr = r_io_map_begin (map); addr < r_io_map_end (map); addr++) {
 					if (r_cons_is_breaked ()) {
 						break;
 					}
@@ -3422,10 +3430,10 @@ reread:
 			int hits = 0;
 			r_list_foreach (param.boundaries, iter, map) {
 				if (param.outmode != R_MODE_JSON) {
-					eprintf ("-- %llx %llx\n", map->itv.addr, r_itv_end (map->itv));
+					eprintf ("-- %llx %llx\n", r_io_map_begin (map), r_io_map_end (map));
 				}
 				r_cons_break_push (NULL, NULL);
-				for (addr = map->itv.addr; addr < r_itv_end (map->itv); addr++) {
+				for (addr = r_io_map_begin (map); addr < r_io_map_end (map); addr++) {
 					if (r_cons_is_breaked ()) {
 						break;
 					}
@@ -3458,10 +3466,10 @@ reread:
 				RListIter *iter;
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
-					eprintf ("-- %llx %llx\n", map->itv.addr, r_itv_end (map->itv));
+					eprintf ("-- %llx %llx\n", r_io_map_begin (map), r_io_map_end (map));
 					r_cons_break_push (NULL, NULL);
 					r_search_pattern_size (core->search, ps);
-					r_search_pattern (core->search, map->itv.addr, r_itv_end (map->itv));
+					r_search_pattern (core->search, r_io_map_begin (map), r_io_map_end (map));
 					r_cons_break_pop ();
 				}
 				break;

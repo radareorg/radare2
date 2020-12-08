@@ -555,7 +555,7 @@ static int cmd_seek(void *data, const char *input) {
 						}
 					}
 					if (mode) {
-						r_cons_printf ("0x%"PFMT64x" %s\n", undo->off, name? name: "");
+						r_cons_printf ("0x%"PFMT64x" %s\n", undo->off, r_str_get (name));
 					} else {
 						if (!name) {
 							name = r_str_newf ("0x%"PFMT64x, undo->off);
@@ -728,7 +728,7 @@ static int cmd_seek(void *data, const char *input) {
 	{
 		RIOMap *map  = r_io_map_get (core->io, core->offset);
 		if (map) {
-			r_core_seek (core, map->itv.addr, true);
+			r_core_seek (core, r_io_map_begin (map), true);
 		} else {
 			r_core_seek (core, 0, true);
 		}
@@ -742,7 +742,7 @@ static int cmd_seek(void *data, const char *input) {
 		RIOMap *map = r_io_map_get (core->io, core->offset);
 		// XXX: this +2 is a hack. must fix gap between sections
 		if (map) {
-			r_core_seek (core, map->itv.addr + map->itv.size + 2, true);
+			r_core_seek (core, r_io_map_end (map) + 2, true);
 		} else {
 			r_core_seek (core, r_io_fd_size (core->io, core->file->fd), true);
 		}

@@ -302,10 +302,10 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 				b->trace ? "trace" : "break",
 				b->enabled ? "enabled" : "disabled",
 				r_bp_is_valid (bp, b) ? "valid" : "invalid",
-				r_str_get2 (b->data),
-				r_str_get2 (b->cond),
-				r_str_get2 (b->name),
-				r_str_get2 (b->module_name));
+				r_str_get (b->data),
+				r_str_get (b->cond),
+				r_str_get (b->name),
+				r_str_get (b->module_name));
 			break;
 		case 1:
 		case 'r':
@@ -318,9 +318,10 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 			}
 			//b->trace? "trace": "break",
 			//b->enabled? "enabled": "disabled",
-			// b->data? b->data: "");
+			//r_str_get (b->data));
 			break;
 		case 'j':
+			//TODO PJ
 			bp->cb_printf ("%s{\"addr\":%"PFMT64d",\"size\":%d,"
 				"\"prot\":\"%c%c%c\",\"hw\":%s,"
 				"\"trace\":%s,\"enabled\":%s,"
@@ -335,8 +336,8 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 				b->trace ? "true" : "false",
 				b->enabled ? "true" : "false",
 				r_bp_is_valid (bp, b) ? "true" : "false",
-				r_str_get2 (b->data),
-				r_str_get2 (b->cond));
+				r_str_get (b->data),
+				r_str_get (b->cond));
 			break;
 		}
 		/* TODO: Show list of pids and trace points, conditionals */

@@ -160,6 +160,7 @@ static const char* getspr(struct Getarg *gop, int n) {
 	return cspr;
 }
 
+//TODO PJ
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	r_strbuf_init (buf);

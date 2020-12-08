@@ -350,13 +350,13 @@ static bool print_flag_rad(RFlagItem *flag, void *user) {
 		u->f->cb_printf ("fa %s %s\n", flag->name, flag->alias);
 		if (comment_b64) {
 			u->f->cb_printf ("\"fC %s %s\"\n",
-				flag->name, comment_b64? comment_b64: "");
+				flag->name, r_str_get (comment_b64));
 		}
 	} else {
 		u->f->cb_printf ("f %s %" PFMT64d " 0x%08" PFMT64x "%s%s %s\n",
 			flag->name, flag->size, flag->offset,
-			u->pfx? "+": "", u->pfx? u->pfx: "",
-			comment_b64? comment_b64: "");
+			u->pfx? "+": "", r_str_get (u->pfx),
+			r_str_get (comment_b64));
 	}
 
 	free (comment_b64);

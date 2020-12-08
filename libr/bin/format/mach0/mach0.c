@@ -4111,11 +4111,11 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 #if 0
 			{
 			char *id = r_buf_get_string (buf, addr + 20);
-			cb_printf ("0x%08"PFMT64x"  id         0x%x\n", addr + 20, id? id: "");
-			cb_printf ("0x%08"PFMT64x"  symooff    0x%x\n", addr + 20, id? id: "");
-			cb_printf ("0x%08"PFMT64x"  nsyms      %d\n", addr + 20, id? id: "");
-			cb_printf ("0x%08"PFMT64x"  stroff     0x%x\n", addr + 20, id? id: "");
-			cb_printf ("0x%08"PFMT64x"  strsize    0x%x\n", addr + 20, id? id: "");
+			cb_printf ("0x%08"PFMT64x"  id         0x%x\n", addr + 20, r_str_get (id));
+			cb_printf ("0x%08"PFMT64x"  symooff    0x%x\n", addr + 20, r_str_get (id));
+			cb_printf ("0x%08"PFMT64x"  nsyms      %d\n", addr + 20, r_str_get (id));
+			cb_printf ("0x%08"PFMT64x"  stroff     0x%x\n", addr + 20, r_str_get (id));
+			cb_printf ("0x%08"PFMT64x"  strsize    0x%x\n", addr + 20, r_str_get (id));
 			free (id);
 			}
 #endif
@@ -4130,8 +4130,10 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 				pvaddr + 12, r_buf_read_le16_at (buf, addr + 14), r_buf_read8_at (buf, addr + 13),
 				r_buf_read8_at (buf, addr + 12));
 			cb_printf ("0x%08"PFMT64x"  id          %s\n",
-				pvaddr + str_off - 8, id? id: "");
-			free (id);
+				pvaddr + str_off - 8, r_str_get (id));
+			if (id) {
+				free (id);
+			}
 			break;
 		}
 		case LC_UUID:
@@ -4175,15 +4177,19 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 				pvaddr + 12, r_buf_read_le16_at (buf, addr + 14), r_buf_read8_at (buf, addr + 13),
 				r_buf_read8_at (buf, addr + 12));
 			cb_printf ("0x%08"PFMT64x"  load_dylib  %s\n",
-				pvaddr + str_off - 8, load_dylib? load_dylib: "");
-			free (load_dylib);
+				pvaddr + str_off - 8, r_str_get (load_dylib));
+			if (load_dylib) {
+				free (load_dylib);
+			}
 			break;
 		}
 		case LC_RPATH: {
 			char *rpath = r_buf_get_string (buf, addr + 4);
 			cb_printf ("0x%08" PFMT64x "  rpath       %s\n",
-				pvaddr + 4, rpath ? rpath : "");
-			free (rpath);
+				pvaddr + 4, r_str_get (rpath));
+			if (rpath) {
+				free (rpath);
+			}
 			break;
 		}
 		case LC_ENCRYPTION_INFO:

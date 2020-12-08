@@ -660,7 +660,7 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 	for (i = 0; i < len; i += cols) {
 		if (show_section) {
 			const char * name = r_core_get_section_name (core, core->offset + i);
-			r_cons_printf ("%20s ", name? name: "");
+			r_cons_printf ("%20s ", r_str_get (name));
 		}
 		if (show_offset) {
 			r_print_addr (core->print, core->offset + i);
@@ -761,7 +761,7 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 		RIOMap* map1 = iter1->data;
 		from = map1->itv.addr;
 		r_list_foreach (list, iter, map) {
-			to = r_itv_end (map->itv);
+			to = r_io_map_end (map);
 		}
 	} else {
 		from = core->offset;
@@ -2844,15 +2844,15 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 							r_cons_printf ("%s0x%08"PFMT64x" "Color_RESET, use_color? pal->offset: "", addr);
 						}
 						r_cons_printf ("%s%s%s%s%s%s%s\n",
-							linecolor? linecolor: "",
-							string2? string2: "", string2? " ": "", string,
+							r_str_get (linecolor),
+							r_str_get (string2), string2? " ": "", string,
 							flag? " ": "", flag? flag->name: "", Color_RESET);
 					} else {
 						if (show_offset) {
 							r_cons_printf ("0x%08"PFMT64x" ", addr);
 						}
 						r_cons_printf ("%s%s%s%s%s\n",
-							string2? string2: "", string2? " ": "", string,
+							r_str_get (string2), string2? " ": "", string,
 							flag? " ": "", flag? flag->name: "");
 					}
 				}
@@ -3181,8 +3181,8 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 	RListIter *iter;
 	RIOMap *map;
 	r_list_foreach (list, iter, map) {
-		ut64 f = r_itv_begin (map->itv);
-		ut64 t = r_itv_end (map->itv);
+		ut64 f = r_io_map_begin (map);
+		ut64 t = r_io_map_end (map);
 		if (f < from) {
 			from = f;
 		}
@@ -3537,7 +3537,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		if (map1) {
 			from = map1->itv.addr;
 			r_list_foreach (list, iter, map) {
-				to = r_itv_end (map->itv);
+				to = r_io_map_end (map);
 			}
 			totalsize = to - from;
 		} else {
@@ -4415,6 +4415,7 @@ static void print_json_string(RCore *core, const char* block, int len, const cha
 	r_cons_printf ("%s\n", pj_string (pj));
 	pj_free (pj);
 #else
+	//TODO PJ (?)
 	r_cons_printf ("{\"string\":");
 	char *str = r_str_utf16_encode (block, len); // XXX just block + len should be fine, pj takes care of this
 	r_cons_printf ("\"%s\"", str);
@@ -4485,7 +4486,7 @@ static void r_core_disasm_table(RCore * core, int l, const char *input) {
 		const char *esil = R_STRBUF_SAFEGET (&op->esil);
 		char *refs = __op_refs (core, op, 0);
 		char *xrefs = __op_refs (core, op, 1);
-		r_table_add_rowf (t, "sXssssss", fn, ea, sbytes, op->mnemonic, comment? comment: "", esil, refs, xrefs);
+		r_table_add_rowf (t, "sXssssss", fn, ea, sbytes, op->mnemonic, r_str_get (comment), esil, refs, xrefs);
 		free (sbytes);
 		free (bytes);
 		free (xrefs);
@@ -6315,7 +6316,7 @@ l = use_blocksize;
 						r_print_section (core->print, core->offset +i);
 						r_cons_printf ("0x%08"PFMT64x " %s0x%08"PFMT64x "%s%s%s\n",
 								(ut64) core->offset + i, a, (ut64) v,
-								b, fn? " ": "", fn? fn: "");
+								b, fn? " ": "", r_str_get (fn));
 					} else {
 						r_cons_printf ("%s0x%08"PFMT64x "%s\n", a, (ut64) v, b);
 					}
@@ -6391,7 +6392,7 @@ l = use_blocksize;
 						}
 					}
 					r_cons_printf ("0x%08"PFMT64x " %s0x%04"PFMT64x "%s %s\n",
-						(ut64) core->offset + i, a, v, b, fn? fn: "");
+						(ut64) core->offset + i, a, v, b, r_str_get (fn));
 					free (fn);
 				}
 			}
@@ -6441,7 +6442,7 @@ l = use_blocksize;
 					if (printOffset) {
 						r_print_section (core->print, core->offset +i);
 						r_cons_printf ("0x%08"PFMT64x " %s0x%016"PFMT64x "%s %s\n",
-								(ut64) core->offset + i, a, v, b, fn? fn: "");
+								(ut64) core->offset + i, a, v, b, r_str_get (fn));
 					} else {
 						r_cons_printf ("%s0x%016"PFMT64x "%s\n", a, v, b);
 					}
@@ -6820,7 +6821,7 @@ l = use_blocksize;
 				RIOMap* map1 = iter1->data;
 				from = map1->itv.addr;
 				r_list_foreach (list, iter, map) {
-					to = r_itv_end (map->itv);
+					to = r_io_map_end (map);
 				}
 			} else {
 				from = core->offset;

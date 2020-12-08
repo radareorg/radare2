@@ -538,7 +538,7 @@ RList *r_bin_le_get_relocs(r_bin_le_obj_t *bin) {
 			ut64 off = (ut64)h->impproc + nameoff + bin->headerOff;
 			char *proc_name = __read_nonnull_str_at (bin->buf, &off);
 			char *mod_name = __get_modname_by_ord (bin, ordinal);
-			imp->name = r_str_newf ("%s.%s", mod_name ? mod_name : "", proc_name ? proc_name : "");
+			imp->name = r_str_newf ("%s.%s", r_str_get (mod_name), r_str_get (proc_name));
 			rel->import = imp;
 			break;
 		}

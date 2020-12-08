@@ -240,7 +240,7 @@ static bool __core_visual_gogo(RCore *core, int ch) {
 				map = r_pvector_at (&core->io->maps, r_pvector_len (&core->io->maps) - 1);
 			}
 			if (map) {
-				r_core_seek (core, r_itv_begin (map->itv), true);
+				r_core_seek (core, r_io_map_begin (map), true);
 			}
 		} else {
 			r_core_seek (core, 0, true);
@@ -260,7 +260,7 @@ static bool __core_visual_gogo(RCore *core, int ch) {
 			}
 			(void)p->consbind.get_size (&scr_rows);
 			ut64 scols = r_config_get_i (core->config, "hex.cols");
-			ret = r_core_seek (core, r_itv_end (map->itv) - (scr_rows - 2) * scols, true);
+			ret = r_core_seek (core, r_io_map_end (map) - (scr_rows - 2) * scols, true);
 		}
 		if (ret != -1) {
 			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
@@ -2537,7 +2537,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				(void)r_config_set (core->config, "cmd.cprompt", "p=e $r-2");
 			} else {
 				R_FREE (I->line->contents);
-				(void)r_config_set (core->config, "cmd.cprompt", buf? buf: "");
+				(void)r_config_set (core->config, "cmd.cprompt", r_str_get (buf));
 			}
 			r_core_visual_showcursor (core, false);
 		}
@@ -3397,7 +3397,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						} else {
 							RIOMap *map = r_pvector_pop (&core->io->maps);
 							if (map) {
-								entry = map->itv.addr;
+								entry = r_io_map_begin (map);
 							} else {
 								entry = r_config_get_i (core->config, "bin.baddr");
 							}

@@ -106,6 +106,7 @@ static void hidden_op(cs_insn *insn, cs_x86 *x, int mode) {
 	}
 }
 
+//TODO PJ
 static void opex(RStrBuf *buf, cs_insn *insn, int mode) {
 	int i;
 	r_strbuf_init (buf);
@@ -232,7 +233,7 @@ static bool is_xmm_reg(cs_x86_op op) {
 static char *getarg(struct Getarg* gop, int n, int set, char *setop, int sel, ut32 *bitsize) {
 	static char buf[AR_DIM][BUF_SZ];
 	char *out = buf[sel];
-	char *setarg = setop ? setop : "";
+	const char *setarg = r_str_get (setop);
 	cs_insn *insn = gop->insn;
 	csh handle = gop->handle;
 	cs_x86_op op;

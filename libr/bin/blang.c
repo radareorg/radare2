@@ -79,7 +79,7 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 	bool cxxIsChecked = false;
 	bool isMsvc = false;
 
-	char *ft = info->rclass? info->rclass: "";
+	const char *ft = r_str_get (info->rclass);
 	bool unknownType = info->rclass == NULL;
 	bool isMacho = strstr (ft, "mach");
 	bool isElf = strstr (ft, "elf");

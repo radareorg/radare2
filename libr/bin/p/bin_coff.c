@@ -488,8 +488,8 @@ static RList *patch_relocs(RBin *b) {
 		ut64 offset = 0;
 		r_pvector_foreach (&io->maps, it) {
 			RIOMap *map = *it;
-			if ((map->itv.addr + map->itv.size) > offset) {
-				offset = map->itv.addr + map->itv.size;
+			if (r_io_map_end (map) > offset) {
+				offset = r_io_map_end (map);
 			}
 		}
 		m_vaddr = R_ROUND (offset, 16);

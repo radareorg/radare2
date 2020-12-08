@@ -204,6 +204,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 		}
 		return 1;
 	case 'j':
+		// TODO PJ
 		if (ro->disasm) {
 			eprintf ("JSON (-j) + disasm (-D) not yet implemented\n");
 		}
@@ -835,7 +836,7 @@ static char *get_graph_commands(RCore *c, ut64 off) {
         r_cons_push ();
         r_core_anal_graph (c, off, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF |  R_CORE_ANAL_STAR);
         const char *static_str = r_cons_get_buffer ();
-        char *retstr = strdup (static_str? static_str: "");
+        char *retstr = strdup (r_str_get (static_str));
         r_cons_pop ();
         r_cons_echo (NULL);
         r_cons_singleton ()->is_html = tmp_html;
@@ -1089,11 +1090,11 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 	case MODE_DIFF_IMPORTS:
 		c = opencore (&ro, ro.file);
 		if (!c) {
-			eprintf ("Cannot open '%s'\n", r_str_get (ro.file));
+			eprintf ("Cannot open '%s'\n", r_str_getf (ro.file));
 		}
 		c2 = opencore (&ro, ro.file2);
 		if (!c || !c2) {
-			eprintf ("Cannot open '%s'\n", r_str_get (ro.file2));
+			eprintf ("Cannot open '%s'\n", r_str_getf (ro.file2));
 			return 1;
 		}
 		c->c2 = c2;
@@ -1194,13 +1195,13 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		bufa = slurp (&ro, &c, ro.file, &fsz);
 		sza = fsz;
 		if (!bufa) {
-			eprintf ("radiff2: Cannot open %s\n", r_str_get (ro.file));
+			eprintf ("radiff2: Cannot open %s\n", r_str_getf (ro.file));
 			return 1;
 		}
 		bufb = slurp (&ro, &c, ro.file2, &fsz);
 		szb = fsz;
 		if (!bufb) {
-			eprintf ("radiff2: Cannot open: %s\n", r_str_get (ro.file2));
+			eprintf ("radiff2: Cannot open: %s\n", r_str_getf (ro.file2));
 			free (bufa);
 			return 1;
 		}
@@ -1233,6 +1234,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		d = r_diff_new ();
 		r_diff_set_delta (d, delta);
 		if (ro.diffmode == 'j') {
+			//TODO PJ
 			printf ("{\"files\":[{\"filename\":\"%s\", \"size\":%"PFMT64u", \"sha256\":\"", ro.file, sza);
 			handle_sha256 (bufa, (int)sza);
 			printf ("\"},\n{\"filename\":\"%s\", \"size\":%"PFMT64u", \"sha256\":\"", ro.file2, szb);

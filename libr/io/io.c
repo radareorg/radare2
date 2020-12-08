@@ -65,7 +65,7 @@ static st64 on_map_skyline(RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg
 		RIOMap *map = part->user;
 		// The map satisfies the permission requirement or p_cache is enabled
 		if (((map->perm & match_flg) == match_flg || io->p_cache)) {
-			st64 result = op (io, map->fd, map->delta + addr - map->itv.addr,
+			st64 result = op (io, map->fd, map->delta + addr - r_io_map_begin(map),
 					buf + (addr - vaddr), len1, map, NULL);
 			if (prefix_mode) {
 				if (result < 0) {
@@ -406,7 +406,7 @@ R_API bool r_io_resize(RIO* io, ut64 newsize) {
 		ut64 fd_size = r_io_fd_size (io, io->desc->fd);
 		r_list_foreach (maps, iter, current_map) {
 			// we just resize map of the same size of its fd
-			if (current_map->itv.size == fd_size) {
+			if (r_io_map_size (current_map) == fd_size) {
 				r_io_map_resize (io, current_map->id, newsize);
 			}
 		}
@@ -485,7 +485,7 @@ R_API bool r_io_set_write_mask(RIO* io, const ut8* mask, int len) {
 R_API ut64 r_io_p2v(RIO *io, ut64 pa) {
 	RIOMap *map = r_io_map_get_paddr (io, pa);
 	if (map) {
-		return pa - map->delta + map->itv.addr;
+		return pa - map->delta + r_io_map_begin (map);
 	}
 	return UT64_MAX;
 }
@@ -493,8 +493,8 @@ R_API ut64 r_io_p2v(RIO *io, ut64 pa) {
 R_API ut64 r_io_v2p(RIO *io, ut64 va) {
 	RIOMap *map = r_io_map_get (io, va);
 	if (map) {
-		st64 delta = va - map->itv.addr;
-		return map->itv.addr + map->delta + delta;
+		st64 delta = va - r_io_map_begin (map);
+		return r_io_map_begin (map) + map->delta + delta;
 	}
 	return UT64_MAX;
 }

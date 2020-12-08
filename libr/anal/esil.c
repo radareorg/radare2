@@ -3161,7 +3161,7 @@ R_API bool r_anal_esil_runword(RAnalEsil *esil, const char *word) {
 		}
 		int ew = evalWord (esil, word, &str);
 		eprintf ("ew %d\n", ew);
-		eprintf ("--> %s\n", r_str_get (str));
+		eprintf ("--> %s\n", r_str_getf (str));
 	}
 	return true;
 }

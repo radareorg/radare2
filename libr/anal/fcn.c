@@ -997,7 +997,7 @@ repeat:
 				bool must_eob = true;
 				RIOMap *map = anal->iob.map_get (anal->iob.io, addr);
 				if (map) {
-					must_eob = (op.jump < map->itv.addr || op.jump >= map->itv.addr + map->itv.size);
+					must_eob = ( ! r_io_map_contain (map, op.jump) );
 				}
 				if (must_eob) {
 					op.jump = UT64_MAX;

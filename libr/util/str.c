@@ -820,11 +820,15 @@ R_API char *r_str_word_get_first(const char *text) {
 }
 
 R_API const char *r_str_get(const char *str) {
-	return str? str: nullstr_c;
+	return str? str: nullstr;
 }
 
-R_API const char *r_str_get2(const char *str) {
-	return str? str: nullstr;
+R_API const char *r_str_get_fail(const char *str, const char *failstr) {
+	return str? str: failstr;
+}
+
+R_API const char *r_str_getf(const char *str) {
+	return str? str: nullstr_c;
 }
 
 R_API char *r_str_ndup(const char *ptr, int len) {

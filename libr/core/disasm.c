@@ -347,7 +347,7 @@ R_API ut64 r_core_pava (RCore *core, ut64 addr) {
 	if (core->print->pava) {
 		RIOMap *map = r_io_map_get_paddr (core->io, addr);
 		if (map) {
-			return addr - map->delta + map->itv.addr;
+			return addr - map->delta + r_io_map_begin (map);
 		}
 	}
 	return addr;
@@ -1643,7 +1643,7 @@ static void ds_show_functions_argvar(RDisasmState *ds, RAnalFunction *fcn, RAnal
 			r_str_endswith (var->type, "*") ? "" : " ",
 			var->name, COLOR_ARG (ds, color_func_var_addr),
 			constr? " { ":"",
-			constr? constr: "",
+			r_str_get (constr),
 			constr? "} ":"",
 			base, sign, delta);
 	if (ds->show_varsum == -1) {
@@ -2671,7 +2671,7 @@ static void ds_print_lines_left(RDisasmState *ds) {
 static void ds_print_family(RDisasmState *ds) {
 	if (ds->show_family) {
 		const char *familystr = r_anal_op_family_to_string (ds->analop.family);
-		r_cons_printf ("%5s ", familystr? familystr: "");
+		r_cons_printf ("%5s ", r_str_get (familystr));
 	}
 }
 
@@ -4374,10 +4374,10 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 					if (ds->show_color) {
 						bool inv = ds->show_emu_strinv;
 						m = r_str_newf ("%s%s%s\"%s\"%s",
-						                  prefix, type ? type : "", inv ? Color_INVERT : "",
+						                  prefix, r_str_get (type), inv ? Color_INVERT : "",
 						                  escstr, inv ? Color_INVERT_RESET : "");
 					} else {
-						m = r_str_newf ("%s%s\"%s\"", prefix, type? type: "", escstr);
+						m = r_str_newf ("%s%s\"%s\"", prefix, r_str_get (type), escstr);
 					}
 					msg = r_str_append_owned (msg, m);
 					emu_str_printed = true;
@@ -4731,9 +4731,9 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 				// ds_comment_start (ds, "");
 				ds_comment_esil (ds, true, false, "%s", ds->show_color ? ds->pal_comment : "");
 				if (fcn_type) {
-					ds_comment_middle (ds, "; %s%s%s(", r_str_get (fcn_type),
+					ds_comment_middle (ds, "; %s%s%s(", r_str_getf (fcn_type),
 							(*fcn_type && fcn_type[strlen (fcn_type) - 1] == '*') ? "" : " ",
-							r_str_get (key));
+							r_str_getf (key));
 					if (!nargs) {
 						ds_comment_end (ds, "void)");
 						break;
@@ -6297,6 +6297,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 				}
 				break;
 			case 'j': {
+				//TODO PJ
 				char *op_hex = r_asm_op_get_hex (&asmop);
 				r_cons_printf ("{\"addr\":%08"PFMT64d",\"bytes\":\"%s\",\"inst\":\"%s\"}%s",
 					addr + i, op_hex, r_asm_op_get_asm (&asmop), ",");
