@@ -1,25 +1,14 @@
-/* radare - LGPL - Copyright 2008-2018 - pancake */
+/* radare - LGPL - Copyright 2008-2020 - pancake */
 
-// TODO: implement a more intelligent way to store cached memory
-
-#include "r_io.h"
+#include <r_io.h>
 #include <r_skyline.h>
 
-#if 0
-#define CACHE_CONTAINER(x) container_of ((RBNode*)x, RCache, rb)
-
-static void _fcn_tree_calc_max_addr(RBNode *node) {
-	RIOCache *c = CACHE_CONTAINER (node);
-}
-#endif // 0
-
 static void cache_item_free(RIOCache *cache) {
-	if (!cache) {
-		return;
+	if (cache) {
+		free (cache->data);
+		free (cache->odata);
+		free (cache);
 	}
-	free (cache->data);
-	free (cache->odata);
-	free (cache);
 }
 
 R_API bool r_io_cache_at(RIO *io, ut64 addr) {
@@ -28,6 +17,7 @@ R_API bool r_io_cache_at(RIO *io, ut64 addr) {
 }
 
 R_API void r_io_cache_init(RIO *io) {
+	r_return_if_fail (io);
 	r_pvector_init (&io->cache, (RPVectorFree)cache_item_free);
 	r_skyline_init (&io->cache_skyline);
 	io->buffer = r_cache_new ();
@@ -35,6 +25,7 @@ R_API void r_io_cache_init(RIO *io) {
 }
 
 R_API void r_io_cache_fini(RIO *io) {
+	r_return_if_fail (io);
 	r_pvector_fini (&io->cache);
 	r_skyline_fini (&io->cache_skyline);
 	r_cache_free (io->buffer);
@@ -43,11 +34,11 @@ R_API void r_io_cache_fini(RIO *io) {
 }
 
 R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to) {
+	r_return_if_fail (io);
 	void **iter;
 	RIOCache *c;
 	RInterval range = (RInterval){from, to - from};
 	r_pvector_foreach (&io->cache, iter) {
-		// if (from <= c->to - 1 && c->from <= to - 1) {
 		c = *iter;
 		if (r_itv_overlap (c->itv, range)) {
 			int cached = io->cached;
@@ -64,12 +55,14 @@ R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to) {
 }
 
 R_API void r_io_cache_reset(RIO *io, int set) {
+	r_return_if_fail (io);
 	io->cached = set;
 	r_pvector_clear (&io->cache);
 	r_skyline_clear (&io->cache_skyline);
 }
 
 R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
+	r_return_val_if_fail (io, false);
 	int invalidated = 0;
 	void **iter;
 	RIOCache *c;
@@ -94,11 +87,12 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
 	return invalidated;
 }
 
-R_API int r_io_cache_list(RIO *io, int rad) {
+R_API bool r_io_cache_list(RIO *io, int rad) {
+	r_return_val_if_fail (io, false);
 	size_t i, j = 0;
 	void **iter;
 	RIOCache *c;
-	PJ *pj;
+	PJ *pj = NULL;
 	if (rad == 2) {
 		pj = pj_new ();
 		pj_a (pj);
@@ -153,8 +147,8 @@ R_API int r_io_cache_list(RIO *io, int rad) {
 }
 
 R_API bool r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
-	RIOCache *ch;
-	ch = R_NEW0 (RIOCache);
+	r_return_val_if_fail (io && buf, false);
+	RIOCache *ch = R_NEW0 (RIOCache);
 	if (!ch) {
 		return false;
 	}
@@ -172,7 +166,7 @@ R_API bool r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 	}
 	ch->written = false;
 	{
-		bool cm = io->cachemode;
+		const bool cm = io->cachemode;
 		io->cachemode = false;
 		r_io_read_at (io, addr, ch->odata, len);
 		io->cachemode = cm;
@@ -186,7 +180,7 @@ R_API bool r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 }
 
 R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
-	r_return_val_if_fail (io, false);
+	r_return_val_if_fail (io && buf, false);
 	RSkyline *skyline = &io->cache_skyline;
 	const RSkylineItem *iter = r_skyline_get_item_intersect (skyline, addr, len);
 	if (!iter) {
