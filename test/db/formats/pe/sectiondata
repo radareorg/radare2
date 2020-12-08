@@ -28,7 +28,7 @@ NAME=PE: corkami cm01.exe - section seek 1
 FILE=bins/pe/cm01.exe
 CMDS=<<EOF
 s 0x00401000
-om.~[10]
+om.~[8]
 EOF
 EXPECT=<<EOF
 fmap.CODE
@@ -39,7 +39,7 @@ NAME=PE: corkami cm01.exe - section seek 2
 FILE=bins/pe/cm01.exe
 CMDS=<<EOF
 s 0x00402000
-om.~[10]
+om.~[8]
 EOF
 EXPECT=<<EOF
 fmap.DATA
@@ -50,7 +50,7 @@ NAME=PE: corkami cm01.exe - section seek 3
 FILE=bins/pe/cm01.exe
 CMDS=<<EOF
 s 0x00403000
-om.~[10]
+om.~[8]
 EOF
 EXPECT=<<EOF
 fmap..idata
@@ -61,7 +61,7 @@ NAME=PE: corkami cm01.exe - section seek 4
 FILE=bins/pe/cm01.exe
 CMDS=<<EOF
 s 0x00404000
-om.~[10]
+om.~[8]
 EOF
 EXPECT=<<EOF
 fmap..edata
@@ -72,7 +72,7 @@ NAME=PE: corkami cm01.exe - section seek 5
 FILE=bins/pe/cm01.exe
 CMDS=<<EOF
 s 0x00405000
-om.~[10]
+om.~[8]
 EOF
 EXPECT=<<EOF
 fmap..reloc
@@ -83,7 +83,7 @@ NAME=PE: corkami cm01.exe - section seek 6
 FILE=bins/pe/cm01.exe
 CMDS=<<EOF
 s 0x00406000
-om.~[10]
+om.~[8]
 EOF
 EXPECT=<<EOF
 fmap..rsrc
