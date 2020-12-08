@@ -484,6 +484,7 @@ static bool r_bin_print_plugin_details(RBin *bin, RBinPlugin *bp, int json) {
 	if (json == 'q') {
 		bin->cb_printf ("%s\n", bp->name);
 	} else if (json) {
+		//TODO PJ
 		bin->cb_printf (
 			"{\"name\":\"%s\",\"description\":\"%s\","
 			"\"license\":\"%s\"}\n",
@@ -508,6 +509,7 @@ static void __printXtrPluginDetails(RBin *bin, RBinXtrPlugin *bx, int json) {
 	if (json == 'q') {
 		bin->cb_printf ("%s\n", bx->name);
 	} else if (json) {
+		//TODO PJ
 		bin->cb_printf (
 			"{\"name\":\"%s\",\"description\":\"%s\","
 			"\"license\":\"%s\"}\n",
@@ -560,6 +562,7 @@ R_API void r_bin_list(RBin *bin, int format) {
 			bin->cb_printf ("%s\n", bx->name);
 		}
 	} else if (format) {
+		//TODO PJ
 		int i;
 
 		i = 0;
@@ -596,8 +599,8 @@ R_API void r_bin_list(RBin *bin, int format) {
 		r_list_foreach (bin->plugins, it, bp) {
 			bin->cb_printf ("bin  %-11s %s (%s) %s %s\n",
 				bp->name, bp->desc, bp->license? bp->license: "???",
-				bp->version? bp->version: "",
-				bp->author? bp->author: "");
+				r_str_get (bp->version),
+				r_str_get (bp->author));
 		}
 		r_list_foreach (bin->binxtrs, it, bx) {
 			const char *name = strncmp (bx->name, "xtr.", 4)? bx->name : bx->name + 3;

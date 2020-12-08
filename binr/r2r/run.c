@@ -1142,9 +1142,9 @@ R_API char *r2r_test_name(R2RTest *test) {
 		}
 		return strdup ("<unnamed>");
 	case R2R_TEST_TYPE_ASM:
-		return r_str_newf ("<asm> %s", test->asm_test->disasm ? test->asm_test->disasm : "");
+		return r_str_newf ("<asm> %s", r_str_get (test->asm_test->disasm));
 	case R2R_TEST_TYPE_JSON:
-		return r_str_newf ("<json> %s", test->json_test->cmd ? test->json_test->cmd: "");
+		return r_str_newf ("<json> %s", r_str_get (test->json_test->cmd));
 	case R2R_TEST_TYPE_FUZZ:
 		return r_str_newf ("<fuzz> %s", test->fuzz_test->file);
 	}

@@ -1524,7 +1524,7 @@ static int wt_handler_old(void *data, const char *input) {
 				RIOMap *map = r_io_map_get (core->io, poff);
 				toend = true;
 				//use physical address
-				poff = map ? poff - map->itv.addr + map->delta : poff;
+				poff = map ? poff - r_io_map_begin (map) + map->delta : poff;
 				str++;
 			}
 			if (*str == 'f') { // "wtff"

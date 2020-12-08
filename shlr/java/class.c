@@ -550,7 +550,7 @@ R_API char *r_bin_java_unmangle_method(const char *flags, const char *name, cons
 	if (!r_val_str) {
 		r_val_str = strdup ("UNKNOWN");
 	}
-	f_val_str = strdup (flags ? flags : "");
+	f_val_str = strdup (r_str_get (flags));
 	r_list_foreach (the_list, iter, str) {
 		params_len += strlen (str);
 		if (params_idx > 0) {

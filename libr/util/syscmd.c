@@ -105,6 +105,7 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 			r_str_rwx_i (perm & 7),
 			uid, gid, sz, nn);
 	} else if (printfmt == FMT_JSON) {
+		//TODO PJ
 		if (nth > 0) {
 			res = r_str_append (res, ",");
 		}

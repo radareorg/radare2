@@ -521,7 +521,7 @@ static size_t update_max_len(RCmdDesc *cd, size_t max_len) {
 static void print_child_help(RStrBuf *sb, RCmdDesc *cd, size_t max_len, bool use_color) {
 	size_t str_len = calc_padding_len (cd);
 	int padding = str_len < max_len? max_len - str_len: 0;
-	const char *cd_summary = cd->help->summary? cd->help->summary: "";
+	const char *cd_summary = r_str_get (cd->help->summary);
 
 	RCons *cons = r_cons_singleton ();
 	const char *pal_args_color = use_color? cons->context->pal.args: "",
@@ -602,7 +602,7 @@ static char *oldinput_get_help(RCmd *cmd, RCmdDesc *cd, RCmdParsedArgs *a) {
 		r_cons_filter ();
 		s = r_cons_get_buffer ();
 	}
-	char *res = strdup (s? s: "");
+	char *res = strdup (r_str_get (s));
 	r_cons_pop ();
 	return res;
 }

@@ -370,6 +370,7 @@ static int cmd_plugins(void *data, const char *input) {
 		RCorePlugin *cp;
 		switch (input[1]) {
 		case 'j': {
+			//TODO PJ
 			r_cons_printf ("[");
 			bool is_first_element = true;
 			r_list_foreach (core->rcmd->plist, iter, cp) {

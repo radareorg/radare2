@@ -36,7 +36,8 @@ RIOMap* io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) 
 		io_map_new (io, fd, perm, delta - addr, 0LL, size + addr);
 		size = -(st64)addr;
 	}
-	// RIOMap describes an interval of addresses (map->from; map->to)
+	// RIOMap describes an interval of addresses
+	// r_io_map_begin (map) -> r_io_map_to (map)
 	map->itv = (RInterval){ addr, size };
 	map->perm = perm;
 	map->delta = delta;
@@ -53,10 +54,10 @@ R_API RIOMap *r_io_map_new(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut6
 R_API bool r_io_map_remap(RIO *io, ut32 id, ut64 addr) {
 	RIOMap *map = r_io_map_resolve (io, id);
 	if (map) {
-		ut64 size = map->itv.size;
-		map->itv.addr = addr;
+		ut64 size = r_io_map_size (map);
+		r_io_map_set_begin (map, addr);
 		if (UT64_MAX - size + 1 < addr) {
-			map->itv.size = -addr;
+			r_io_map_set_size (map, -addr);
 			r_io_map_new (io, map->fd, map->perm, map->delta - addr, 0, size + addr);
 		}
 		io_map_calculate_skyline (io);
@@ -154,7 +155,7 @@ R_API RIOMap* r_io_map_get_paddr(RIO* io, ut64 paddr) {
 	void **it;
 	r_pvector_foreach_prev (&io->maps, it) {
 		RIOMap *map = *it;
-		if (map->delta <= paddr && paddr <= map->delta + map->itv.size - 1) {
+		if (map->delta <= paddr && paddr < map->delta + r_io_map_size (map)) {
 			return map;
 		}
 	}
@@ -340,12 +341,12 @@ R_API ut64 r_io_map_next_available(RIO* io, ut64 addr, ut64 size, ut64 load_alig
 	void **it;
 	r_pvector_foreach (&io->maps, it) {
 		RIOMap *map = *it;
-		ut64 to = r_itv_end (map->itv);
+		ut64 to = r_io_map_end (map);
 		next_addr = R_MAX (next_addr, to + (load_align - (to % load_align)) % load_align);
 		// XXX - This does not handle when file overflow 0xFFFFFFFF000 -> 0x00000FFF
 		// adding the check for the map's fd to see if this removes contention for
 		// memory mapping with multiple files. infinite loop ahead?
-		if ((map->itv.addr <= next_addr && next_addr < to) || r_itv_contain (map->itv, end_addr)) {
+		if ((r_io_map_begin (map) <= next_addr && next_addr < to) || r_io_map_contain (map, end_addr)) {
 			next_addr = to + (load_align - (to % load_align)) % load_align;
 			return r_io_map_next_available (io, next_addr, size, load_align);
 		}
@@ -360,11 +361,11 @@ R_API ut64 r_io_map_next_address(RIO* io, ut64 addr) {
 	void **it;
 	r_pvector_foreach (&io->maps, it) {
 		RIOMap *map = *it;
-		ut64 from = r_itv_begin (map->itv);
+		ut64 from = r_io_map_begin (map);
 		if (from > addr && addr < lowest) {
 			lowest = from;
 		}
-		ut64 to = r_itv_end (map->itv);
+		ut64 to = r_io_map_end (map);
 		if (to > addr && to < lowest) {
 			lowest = to;
 		}
@@ -392,13 +393,13 @@ R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 	if (!newsize || !(map = r_io_map_resolve (io, id))) {
 		return false;
 	}
-	ut64 addr = map->itv.addr;
+	ut64 addr = r_io_map_begin (map);
 	if (UT64_MAX - newsize + 1 < addr) {
-		map->itv.size = -addr;
+		r_io_map_set_size (map, -addr);
 		r_io_map_new (io, map->fd, map->perm, map->delta - addr, 0, newsize + addr);
 		return true;
 	}
-	map->itv.size = newsize;
+	r_io_map_set_size (map, newsize);
 	io_map_calculate_skyline (io);
 	return true;
 }

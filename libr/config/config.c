@@ -9,7 +9,7 @@ R_API RConfigNode* r_config_node_new(const char *name, const char *value) {
 		return NULL;
 	}
 	node->name = strdup (name);
-	node->value = strdup (value? value: "");
+	node->value = strdup (r_str_get (value));
 	node->flags = CN_RW | CN_STR;
 	node->i_value = r_num_get (NULL, value);
 	node->options = r_list_new ();
@@ -23,8 +23,8 @@ R_API RConfigNode* r_config_node_clone(RConfigNode *n) {
 		return NULL;
 	}
 	cn->name = strdup (n->name);
-	cn->desc = n->desc? strdup (n->desc): NULL;
-	cn->value = strdup (n->value? n->value: "");
+	cn->desc = n->desc ? strdup (n->desc) : NULL;
+	cn->value = strdup (r_str_get (n->value));
 	cn->i_value = n->i_value;
 	cn->flags = n->flags;
 	cn->setter = n->setter;
@@ -182,7 +182,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 			if (!str || (str && (!strncmp (str, node->name, len)))) {
 				if (!str || !strncmp (str, node->name, len)) {
 					cfg->cb_printf ("%20s: %s\n", node->name,
-						node->desc? node->desc: "");
+						r_str_get (node->desc));
 				}
 			}
 		}
@@ -457,8 +457,10 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 				node->i_value = oi;
 			}
 			free (node->value);
-			node->value = strdup (ov? ov: "");
-			free (ov);
+			node->value = strdup (r_str_get (ov));
+			if (ov) {
+				free (ov);
+			}
 			return NULL;
 		}
 	}

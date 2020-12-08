@@ -88,7 +88,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	if (browse == 'H') {
 		const char *browser = r_config_get (core->config, "http.browser");
 		r_sys_cmdf ("%s http://%s:%d/%s &",
-			browser, host, atoi (port), path? path:"");
+			browser, host, atoi (port), r_str_get (path));
 	}
 
 	so.httpauth = r_config_get_i (core->config, "http.auth");

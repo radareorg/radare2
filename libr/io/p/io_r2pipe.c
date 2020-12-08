@@ -27,6 +27,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		snprintf (bufn, bufn_sz, "%s%d", i ? "," : "", buf[i]);
 		bufn += strlen (bufn);
 	}
+	//TODO PJ (?)
 	int len = snprintf (fmt, sizeof (fmt),
 		"{\"op\":\"write\",\"address\":%" PFMT64d ",\"data\":[%s]}",
 		io->off, bufnum);
@@ -60,6 +61,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	if (count > 1024) {
 		count = 1024;
 	}
+	//TODO PJ (?)
 	snprintf (fmt, sizeof (fmt),
 		"{\"op\":\"read\",\"address\":%"PFMT64d",\"count\":%d}",
 		io->off, count);

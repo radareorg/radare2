@@ -1293,6 +1293,7 @@ static int var_cmd(RCore *core, const char *str) {
 	}
 	if (str[0] == 'j') {
 		// "afvj"
+		//TODO PJ
 		r_cons_printf ("{\"sp\":");
 		r_core_cmd0 (core, "afvsj");
 		r_cons_printf (",\"bp\":");
@@ -3050,8 +3051,8 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 			int nargs = r_type_func_args_count (core->anal->sdb_types, key);
 			if (fcn_type) {
 				pj_o (j);
-				pj_ks (j, "name", r_str_get (key));
-				pj_ks (j, "return", r_str_get (fcn_type));
+				pj_ks (j, "name", r_str_getf (key));
+				pj_ks (j, "return", r_str_getf (fcn_type));
 				pj_k (j, "args");
 				pj_a (j);
 				if (nargs) {
@@ -3072,7 +3073,7 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 			free (key);
 		} else {
 			pj_o (j);
-			pj_ks (j, "name", r_str_get (fcn_name));
+			pj_ks (j, "name", r_str_getf (fcn_name));
 			pj_k (j, "args");
 			pj_a (j);
 
@@ -3462,7 +3463,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 			r_config_set_i (core->config, "anal.from", a);
 			r_config_set_i (core->config, "anal.to", b);
-			r_config_set (core->config, "anal.limits", c? c: "");
+			r_config_set (core->config, "anal.limits", r_str_get (c));
 		}
 		}
 		break;
@@ -6996,8 +6997,8 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 		RIOMap *map = r_io_map_get (core->io, addr);
 		if (map && (map->perm & R_PERM_X)) {
 			// search in current section
-			if (map->itv.size > bf->size) {
-				addr = map->itv.addr;
+			if (r_io_map_size (map) > bf->size) {
+				addr = r_io_map_begin (map);
 				if (bf->size > map->delta) {
 					len = bf->size - map->delta;
 				} else {
@@ -7005,12 +7006,12 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 					return;
 				}
 			} else {
-				addr = map->itv.addr;
-				len = map->itv.size;
+				addr = r_io_map_begin (map);
+				len = r_io_map_size (map);
 			}
 		} else {
-			if (map && map->itv.addr != map->delta && bf->size > (core->offset - map->itv.addr + map->delta)) {
-				len = bf->size - (core->offset - map->itv.addr + map->delta);
+			if (map && r_io_map_begin (map) != map->delta && bf->size > (core->offset - r_io_map_begin (map) + map->delta)) {
+				len = bf->size - (core->offset - r_io_map_begin (map) + map->delta);
 			} else {
 				if (bf->size > core->offset) {
 					len = bf->size - core->offset;
@@ -7082,8 +7083,8 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 			goto ctrl_c;
 		}
 		r_list_foreach (list, iter, map) {
-			from = map->itv.addr;
-			to = r_itv_end (map->itv);
+			from = r_io_map_begin (map);
+			to = r_io_map_end (map);
 			if (r_cons_is_breaked ()) {
 				goto ctrl_c;
 			}
@@ -7244,8 +7245,8 @@ static void cmd_anal_calls(RCore *core, const char *input, bool printCommands, b
 		ranges = r_core_get_boundaries_prot (core, 0, NULL, "anal");
 		if (ranges) {
 			r_list_foreach (ranges, iter, map) {
-				ut64 addr = map->itv.addr;
-				_anal_calls (core, addr, r_itv_end (map->itv), printCommands, importsOnly);
+				ut64 addr = r_io_map_begin (map);
+				_anal_calls (core, addr, r_io_map_end (map), printCommands, importsOnly);
 			}
 		}
 	} else {
@@ -9255,8 +9256,8 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 			}
 			int nth = 0;
 			r_list_foreach (list, iter, map) {
-				from = map->itv.addr;
-				to = r_itv_end (map->itv);
+				from = r_io_map_begin (map);
+				to = r_io_map_end (map);
 				if (r_cons_is_breaked ()) {
 					break;
 				}
@@ -9321,9 +9322,9 @@ static int compute_coverage(RCore *core) {
 		r_pvector_foreach (&core->io->maps, it) {
 			RIOMap *map = *it;
 			if (map->perm & R_PERM_X) {
-				ut64 section_end = map->itv.addr + map->itv.size;
+				ut64 section_end = r_io_map_end (map);
 				ut64 s = r_anal_function_realsize (fcn);
-				if (fcn->addr >= map->itv.addr && (fcn->addr + s) < section_end) {
+				if (fcn->addr >= r_io_map_begin (map) && (fcn->addr + s) < section_end) {
 					cov += s;
 				}
 			}
@@ -9338,7 +9339,7 @@ static int compute_code (RCore* core) {
 	r_pvector_foreach (&core->io->maps, it) {
 		RIOMap *map = *it;
 		if (map->perm & R_PERM_X) {
-			code += map->itv.size;
+			code += r_io_map_size (map);
 		}
 	}
 	return code;
@@ -9501,10 +9502,11 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			oldstr = r_print_rowlog (core->print, sdb_fmt ("from 0x%"PFMT64x" to 0x%"PFMT64x" (aav)", map->itv.addr, r_itv_end (map->itv)));
+			oldstr = r_print_rowlog (core->print, sdb_fmt ("from 0x%"PFMT64x" to 0x%"PFMT64x" (aav)", r_io_map_begin (map),
+				r_io_map_end (map)));
 			r_print_rowlog_done (core->print, oldstr);
 			(void)r_core_search_value_in_range (core, map->itv,
-				map->itv.addr, r_itv_end (map->itv), vsize, _CbInRangeAav, (void *)asterisk);
+				r_io_map_begin (map), r_io_map_end (map), vsize, _CbInRangeAav, (void *)asterisk);
 		}
 		r_list_free (list);
 	} else {
@@ -9531,8 +9533,8 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			}
 			r_print_rowlog_done (core->print, oldstr);
 			r_list_foreach (list, iter, map) {
-				ut64 begin = map->itv.addr;
-				ut64 end = r_itv_end (map->itv);
+				ut64 begin = r_io_map_begin (map);
+				ut64 end = r_io_map_end (map);
 				if (r_cons_is_breaked ()) {
 					break;
 				}
@@ -9681,7 +9683,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				break;
 			}
 			r_list_foreach (list, iter, map) {
-				r_core_seek (core, map->itv.addr, true);
+				r_core_seek (core, r_io_map_begin (map), true);
 				r_config_set_i (core->config, "anal.hasnext", 1);
 				r_core_cmd0 (core, "afr");
 				r_config_set_i (core->config, "anal.hasnext", hasnext);
@@ -10041,8 +10043,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			} else {
 				r_list_foreach (list, iter, map) {
 					if (map->perm & R_PERM_X) {
-						char *ss = r_str_newf (" 0x%"PFMT64x, map->itv.size);
-						r_core_seek (core, map->itv.addr, true);
+						char *ss = r_str_newf (" 0x%"PFMT64x, r_io_map_size (map));
+						r_core_seek (core, r_io_map_begin (map), true);
 						r_core_anal_esil (core, ss, NULL);
 						free (ss);
 					}
@@ -10601,9 +10603,9 @@ bool go_on = true;
 			int nargs = r_type_func_args_count (core->anal->sdb_types, key);
 			// remove other comments
 			if (fcn_type) {
-				r_strbuf_appendf (sb, "%s%s%s(", r_str_get (fcn_type),
+				r_strbuf_appendf (sb, "%s%s%s(", r_str_getf (fcn_type),
 						(*fcn_type && fcn_type[strlen (fcn_type) - 1] == '*') ? "" : " ",
-						r_str_get (key));
+						r_str_getf (key));
 				if (!nargs) {
 					r_strbuf_appendf (sb, "void)\n");
 				}

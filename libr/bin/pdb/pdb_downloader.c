@@ -201,6 +201,7 @@ int r_bin_pdb_download(RCore *core, int isradjson, int *actions_done, SPDBOption
 	init_pdb_downloader (&opt, &pdb_downloader);
 	ret = pdb_downloader.download ? pdb_downloader.download (&pdb_downloader) : 0;
 	if (isradjson && actions_done) {
+		//TODO PJ
 		printf ("%s\"pdb\":{\"file\":\"%s\",\"download\":%s}",
 		        *actions_done ? "," : "", opt.dbg_file, ret ? "true" : "false");
 	} else {

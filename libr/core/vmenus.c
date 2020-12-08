@@ -79,7 +79,7 @@ static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype, u
 		char *s2 = strdup (spacer + 2);
 		char *scol1 = r_print_colorize_opcode (core->print, s1, color_reg, color_num, false, fcn ? fcn->addr : 0);
 		char *scol2 = r_print_colorize_opcode (core->print, s2, color_reg, color_num, false, fcn ? fcn->addr : 0);
-		char *source = r_str_newf ("%s||%s", r_str_get2 (scol1), r_str_get2 (scol2));
+		char *source = r_str_newf ("%s||%s", r_str_get (scol1), r_str_get (scol2));
 		free (scol1);
 		free (scol2);
 		free (s1);
@@ -1159,7 +1159,7 @@ R_API int r_core_visual_classes(RCore *core) {
 		int cols;
 		r_cons_clear00 ();
 		if (grepmode) {
-			r_cons_printf ("Grep: %s\n", grep? grep: "");
+			r_cons_printf ("Grep: %s\n", r_str_get (grep));
 		}
 		ptr = show_class (core, mode, &index, cur, grep, list);
 		switch (mode) {
@@ -1657,7 +1657,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 		int count = 0;
 		r_cons_flush ();
 		r_cons_gotoxy (0, 20);
-		r_cons_printf ("ROPChain:\n  %s\n", chainstr? chainstr: "");
+		r_cons_printf ("ROPChain:\n  %s\n", r_str_get (chainstr));
 		r_list_foreach (core->ropchain, iter, msg) {
 			int extra = strlen (chainstr) / scr_w;
 			r_cons_gotoxy (0, extra + 22 + count);

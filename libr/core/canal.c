@@ -608,8 +608,8 @@ static bool r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int ref
 	if (map->perm & R_PERM_X) {
 		ut8 buf[64];
 		r_io_read_at (core->io, ref->addr, buf, sizeof (buf));
-		bool looksLikeAFunction = r_anal_check_fcn (core->anal, buf, sizeof (buf), ref->addr, map->itv.addr,
-				map->itv.addr + map->itv.size);
+		bool looksLikeAFunction = r_anal_check_fcn (core->anal, buf, sizeof (buf), ref->addr, r_io_map_begin (map),
+				r_io_map_end (map));
 		if (looksLikeAFunction) {
 			if (core->anal->limit) {
 				if (ref->addr < core->anal->limit->from ||
@@ -1857,7 +1857,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 		// TODO: show vars, refs and xrefs
 		char *fcn_name_escaped = r_str_escape_utf8_for_json (fcn->name, -1);
 		pj_o (pj);
-		pj_ks (pj, "name", r_str_get (fcn_name_escaped));
+		pj_ks (pj, "name", r_str_getf (fcn_name_escaped));
 		free (fcn_name_escaped);
 		pj_kn (pj, "offset", fcn->addr);
 		pj_ki (pj, "ninstr", fcn->ninstr);
@@ -2448,6 +2448,7 @@ repeat:
 			break;
 		}
 		case R_GRAPH_FORMAT_JSON:
+			//TODO PJ
 			if (usenames) {
 				r_cons_printf ("%s{\"name\":\"%s\", "
 						"\"size\":%" PFMT64u ",\"imports\":[",
@@ -2621,7 +2622,7 @@ R_API char *r_core_anal_fcn_name(RCore *core, RAnalFunction *fcn) {
 	bool demangle = r_config_get_i (core->config, "bin.demangle");
 	const char *lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
 	bool keep_lib = r_config_get_i (core->config, "bin.demangle.libs");
-	char *name = strdup (fcn->name ? fcn->name : "");
+	char *name = strdup (r_str_get (fcn->name));
 	if (demangle) {
 		char *tmp = r_bin_demangle (core->bin->cur, lang, name, fcn->addr, keep_lib);
 		if (tmp) {
@@ -5085,7 +5086,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		} else {
 			RIOMap *map = r_io_map_get (core->io, addr);
 			if (map) {
-				end = map->itv.addr + map->itv.size;
+				end = r_io_map_end (map);
 			} else {
 				end = addr + core->blocksize;
 			}

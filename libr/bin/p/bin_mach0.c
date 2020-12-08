@@ -615,8 +615,8 @@ static RList* patch_relocs(RBin *b) {
 	void **vit;
 	r_pvector_foreach (&io->maps, vit) {
 		RIOMap *map = *vit;
-		if (map->itv.addr > offset) {
-			offset = map->itv.addr;
+		if (r_io_map_begin (map) > offset) {
+			offset = r_io_map_begin (map);
 			g = map;
 		}
 	}

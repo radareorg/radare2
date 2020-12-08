@@ -1118,7 +1118,7 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			bin->cb_printf ("      name          : '%s'\n", fieldName);
 			bin->cb_printf ("      type          : '%s'\n", type_str);
 			bin->cb_printf ("      access        : 0x%04x (%s)\n",
-					 (ut32)accessFlags, accessStr? accessStr: "");
+					 (ut32)accessFlags, r_str_get (accessStr));
 		}
 		r_list_append (dex->methods_list, sym);
 
@@ -1491,7 +1491,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 		goto beach;
 	}
 	const char *str = createAccessFlagStr (c->access_flags, kAccessForClass);
-	cls->visibility_str = strdup (str? str: "");
+	cls->visibility_str = strdup (r_str_get (str));
 	r_list_append (dex->classes_list, cls);
 	if (dexdump) {
 		rbin->cb_printf ("  Class descriptor  : '%s;'\n", cls->name);

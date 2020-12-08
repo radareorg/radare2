@@ -118,6 +118,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		str[i] = 0;
 	}
 	if (ro->json) {
+		//TODO PJ
 		const char *type = "string";
 		printf ("%s{\"offset\":%"PFMT64d",\"type\":\"%s\",\"data\":\"%s\"}",
 			ro->comma, addr, type, str);

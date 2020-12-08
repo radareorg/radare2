@@ -298,6 +298,7 @@ static void rtti_msvc_print_complete_object_locator(rtti_complete_object_locator
 				   prefix, col->object_base);
 }
 
+//TODO PJ
 static void rtti_msvc_print_complete_object_locator_json(rtti_complete_object_locator *col) {
 	r_cons_printf ("{\"signature\":%"PFMT32u",\"vftable_offset\":%"PFMT32u",\"cd_offset\":%"PFMT32u","
 				   "\"type_desc_addr\":%"PFMT32u",\"class_desc_addr\":%"PFMT32u",\"object_base\":%"PFMT32u"}",
@@ -316,6 +317,7 @@ static void rtti_msvc_print_type_descriptor(rtti_type_descriptor *td, ut64 addr,
 				   prefix, td->name);
 }
 
+//TODO PJ
 static void rtti_msvc_print_type_descriptor_json(rtti_type_descriptor *td) {
 	r_cons_printf ("{\"vtable_addr\":%"PFMT64u",\"spare\":%"PFMT64u",\"name\":\"%s\"}",
 				   td->vtable_addr, td->spare, td->name);
@@ -334,6 +336,7 @@ static void rtti_msvc_print_class_hierarchy_descriptor(rtti_class_hierarchy_desc
 				   prefix, chd->base_class_array_addr);
 }
 
+//TODO
 static void rtti_msvc_print_class_hierarchy_descriptor_json(rtti_class_hierarchy_descriptor *chd) {
 	r_cons_printf ("{\"signature\":%"PFMT32u",\"attributes\":%"PFMT32u",\"num_base_classes\":%"PFMT32u","
 				   "\"base_class_array_addr\":%"PFMT32u"}",
@@ -359,6 +362,7 @@ static void rtti_msvc_print_base_class_descriptor(rtti_base_class_descriptor *bc
 				   prefix, bcd->attributes);
 }
 
+//TODO PJ
 static void rtti_msvc_print_base_class_descriptor_json(rtti_base_class_descriptor *bcd) {
 	r_cons_printf ("{\"type_desc_addr\":%"PFMT32u",\"num_contained_bases\":%"PFMT32u","
 				   "\"where\":{\"mdisp\":%"PFMT32d",\"pdisp\":%"PFMT32d",\"vdisp\":%"PFMT32d"},"
@@ -517,6 +521,7 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 	}
 
 
+	//TODO PJ
 	// print
 	if (use_json) {
 		r_cons_print ("{\"complete_object_locator\":");

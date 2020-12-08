@@ -111,6 +111,7 @@ static void do_hash_print(RHash *ctx, ut64 hash, int dlen, int rad, int ule) {
 		do_hash_hexprint (c, dlen, ule, 'j');
 		break;
 	case 'j':
+		//TODO PJ
 		printf ("{\"name\":\"%s\",\"hash\":\"", hname);
 		do_hash_hexprint (c, dlen, ule, rad);
 		printf ("\"}");

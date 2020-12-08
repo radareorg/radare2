@@ -196,7 +196,7 @@ R_API void r_table_add_rowf(RTable *t, const char *fmt, ...) {
 		case 's':
 		case 'z':
 			arg = va_arg (ap, const char *);
-			r_list_append (list, strdup (arg? arg: ""));
+			r_list_append (list, strdup (r_str_get (arg)));
 			break;
 		case 'b':
 			r_list_append (list, r_str_new (r_str_bool (va_arg (ap, int))));
@@ -1046,7 +1046,7 @@ R_API bool r_table_query(RTable *t, const char *q) {
 		} else if (!strcmp (operation, "join")) {
 			// TODO: implement join operation with other command's tables
 		} else if (!strcmp (operation, "sum")) {
-			char *op = strdup (operand?operand: "");
+			char *op = strdup (r_str_get (operand));
 			RList *list = r_str_split_list (op, "/", 0);
 			r_list_prepend (list, strdup (columnName));
 			r_table_columns (t, list); // select/reorder columns
@@ -1082,7 +1082,7 @@ R_API bool r_table_query(RTable *t, const char *q) {
 				r_table_filter (t, col, '~', operand);
 			}
 		} else if (!strcmp (operation, "cols")) {
-			char *op = strdup (operand?operand: "");
+			char *op = strdup (r_str_get (operand));
 			RList *list = r_str_split_list (op, "/", 0);
 			r_list_prepend (list, strdup (columnName));
 			r_table_columns (t, list); // select/reorder columns

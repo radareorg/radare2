@@ -82,7 +82,7 @@ R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
 	}
 	RStrBuf *sb = r_strbuf_new (NULL);
 	const char *self = r_anal_cc_self (anal, name);
-	r_strbuf_appendf (sb, "%s %s%s%s (", ret, self? self: "", self? ".": "", name);
+	r_strbuf_appendf (sb, "%s %s%s%s (", ret, r_str_get (self), self? ".": "", name);
 	bool isFirst = true;
 	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
 		const char *k = sdb_fmt ("cc.%s.arg%d", name, i);

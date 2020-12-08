@@ -45,8 +45,8 @@ R_API char *r_graph_drawable_to_dot(RGraph /*RGraphNodeInfo*/ *graph, const char
 		"edge [arrowhead=normal, color=\"#3030c0\" style=bold weight=2 %s];\n"
 		"node [fillcolor=white, style=filled shape=box "
 		"fontsize=\"8\" %s];\n",
-		edge_properties? edge_properties: "",
-		node_properties? node_properties: "");
+		r_str_get (edge_properties),
+		r_str_get (node_properties));
 
 	r_list_foreach (nodes, it, node) {
 		RGraphNodeInfo *print_node = (RGraphNodeInfo *)node->data;

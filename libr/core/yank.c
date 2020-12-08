@@ -51,7 +51,7 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 			yank_file_sz = r_io_size (core->io);
 			ut64 addr = r_io_map_next_available (core->io, 0, yank_file_sz, load_align);
         		map = r_io_map_new (core->io, yankdesc->fd, R_PERM_R, 0, addr, yank_file_sz);
-			loadaddr = map? map->itv.addr: -1;
+			loadaddr = map? r_io_map_begin (map): -1;
 			if (yankdesc && map && loadaddr != -1) {
 				// ***NOTE*** this is important, we need to
 				// address the file at its physical address!
@@ -249,6 +249,7 @@ R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format) {
 				r_cons_newline ();
 				break;
 			case 'j':
+				//TODO PJ
 				{
 					r_cons_printf ("{\"addr\":%"PFMT64u",\"bytes\":\"", core->yank_addr);
 					for (i = pos; i < r_buf_size (core->yank_buf); i++) {

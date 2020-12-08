@@ -657,8 +657,8 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				ut64 size = 0LL;
 				RIOMap *map = r_io_map_get (core->io, core->offset);
 				if (map) {
-					lower = r_itv_begin (map->itv);
-					size = r_itv_size (map->itv);
+					lower = r_io_map_begin (map);
+					size = r_io_map_size (map);
 				}
 
 				if (str[1] == 'B') {
@@ -2556,7 +2556,7 @@ static void cb_event_handler(REvent *ev, int event_type, void *user, void *data)
 	case R_EVENT_META_SET:
 		switch (rems->type) {
 		case 'C':
-			r_core_log_add (ev->user, sdb_fmt (":add-comment 0x%08"PFMT64x" %s\n", rems->addr, str? str: ""));
+			r_core_log_add (ev->user, sdb_fmt (":add-comment 0x%08"PFMT64x" %s\n", rems->addr, r_str_get (str)));
 			break;
 		default:
 			break;
@@ -3090,7 +3090,7 @@ static void set_prompt (RCore *r) {
 	chop_prompt (filename, tmp, 128);
 	char *prompt = r_str_newf ("%s%s[%s%s]>%s ", filename, BEGIN, remote,
 		tmp, END);
-	r_line_set_prompt (prompt ? prompt : "");
+	r_line_set_prompt (r_str_get (prompt));
 
 	R_FREE (filename);
 	R_FREE (prompt);

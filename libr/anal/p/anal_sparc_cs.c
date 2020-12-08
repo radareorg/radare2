@@ -13,6 +13,7 @@
 #define INSOP(n) insn->detail->sparc.operands[n]
 #define INSCC insn->detail->sparc.cc
 
+//TODO PJ
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	r_strbuf_init (buf);
