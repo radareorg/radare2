@@ -9,18 +9,11 @@
                              --pancake
 ```
 
-| Service | Badge |
-|----------|---------------------------------------------------------------------|
-| **GithubCI**  | [![Tests Status](https://github.com/radareorg/radare2/workflows/Radare2%20CI/badge.svg)](https://github.com/radareorg/radare2/actions?query=workflow%3A%22Radare2+CI%22)|
-| **TravisCI** 	| [![Build Status](https://travis-ci.com/radareorg/radare2.svg?branch=master)](https://travis-ci.com/radareorg/radare2)|
-| **AppVeyor**  | [![Build status](https://ci.appveyor.com/api/projects/status/9cgkgxkc3203fm1o/branch/master?svg=true)](https://ci.appveyor.com/project/radareorg/radare2/branch/master)|
-| **FreeBSD (sr.ht)**  | [![builds.sr.ht status](https://builds.sr.ht/~xvilka/radare2/commits/freebsd.yml.svg)](https://builds.sr.ht/~xvilka/radare2/commits/freebsd.yml?)|
-| **OpenBSD (sr.ht)**  | [![builds.sr.ht status](https://builds.sr.ht/~xvilka/radare2/commits/openbsd.yml.svg)](https://builds.sr.ht/~xvilka/radare2/commits/openbsd.yml?)|
-| **Coverity** 	| [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) |
-| **LGTM** | [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/)
-| **Infrastructure** |  [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) |
-| **Codecov** | [![codecov](https://codecov.io/gh/radareorg/radare2/branch/master/graph/badge.svg)](https://codecov.io/gh/radareorg/radare2)
-| **Fuzzit** | [![fuzzit](https://app.fuzzit.dev/badge?org_id=2zv5qI33roZkRm0oO2Mi&target_id=YVkkS6RPVpKhSixyFWcT&branch=master)](https://app.fuzzit.dev/admin/2zv5qI33roZkRm0oO2Mi/target)
+| Service | Badge | Badge |
+|----------|------|--------|
+| **Build&Test** | [![Tests Status](https://github.com/radareorg/radare2/workflows/Radare2%20CI/badge.svg)](https://github.com/radareorg/radare2/actions?query=workflow%3A%22Radare2+CI%22) | [![Build Status](https://travis-ci.com/radareorg/radare2.svg?branch=master)](https://travis-ci.com/radareorg/radare2)|
+| **CodeQuality** | [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) | [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/) |
+| **Infrastructure** | [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) | [![codecov](https://codecov.io/gh/radareorg/radare2/branch/master/graph/badge.svg)](https://codecov.io/gh/radareorg/radare2) |
 <a href="https://repology.org/metapackage/radare2">
 <img src="https://repology.org/badge/vertical-allrepos/radare2.svg" alt="Packaging status" align="right" width="150px">
 </a>
