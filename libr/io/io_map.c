@@ -10,7 +10,7 @@
 #define END_OF_MAP_IDS UT32_MAX
 
 // Store map parts that are not covered by others into io->map_skyline
-void io_map_calculate_skyline(RIO *io) {
+static void io_map_calculate_skyline(RIO *io) {
 	r_skyline_clear (&io->map_skyline);
 	// Last map has highest priority (it shadows previous maps)
 	void **it;

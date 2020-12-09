@@ -278,7 +278,7 @@ R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v, int remote) 
 	return 0;
 }
 
-R_API char *r_cmd_alias_get (RCmd *cmd, const char *k, int remote) {
+R_API const char *r_cmd_alias_get(RCmd *cmd, const char *k, int remote) {
 	int matches, i;
 	if (!cmd || !k) {
 		return NULL;

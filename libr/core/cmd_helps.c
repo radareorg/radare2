@@ -41,6 +41,10 @@ const RCmdDescHelp interpret_help = {
 	.summary = "Define macro or load r2, cparse or rlang file",
 };
 
+const RCmdDescHelp table_help = {
+	.summary = "Load, filter CSV and display in json, tables",
+};
+
 const RCmdDescHelp search_help = {
 	.summary = "search for bytes, regexps, patterns, ..",
 };

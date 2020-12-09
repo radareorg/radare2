@@ -34,7 +34,7 @@ static int on_fcn_new(RAnal *_anal, void* _user, RAnalFunction *fcn) {
 	return 0;
 }
 
-static int on_fcn_delete (RAnal *_anal, void* _user, RAnalFunction *fcn) {
+static int on_fcn_delete(RAnal *_anal, void* _user, RAnalFunction *fcn) {
 	RCore *core = (RCore*)_user;
 	const char *cmd = r_config_get (core->config, "cmd.fcn.delete");
 	if (cmd && *cmd) {
@@ -2748,6 +2748,7 @@ R_API bool r_core_init(RCore *core) {
 	core->lang->cmd_str = (char *(*)(void *, const char *))r_core_cmd_str;
 	core->lang->cmdf = (int (*)(void *, const char *, ...))r_core_cmdf;
 	r_core_bind_cons (core);
+	core->table = NULL;
 	core->lang->cb_printf = r_cons_printf;
 	r_lang_define (core->lang, "RCore", "core", core);
 	r_lang_set_user_ptr (core->lang, core);
@@ -2903,6 +2904,7 @@ R_API void r_core_fini(RCore *c) {
 	//update_sdb (c);
 	// avoid double free
 	r_list_free (c->ropchain);
+	r_table_free (c->table);
 	r_event_free (c->ev);
 	free (c->cmdlog);
 	free (c->lastsearch);

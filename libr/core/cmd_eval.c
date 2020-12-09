@@ -350,8 +350,8 @@ static int cmd_eval(void *data, const char *input) {
 					e++;
 				}
 			}
-		} else if (strlen (input)>3) {
-			char *v, *k = strdup (input+3);
+		} else if (strlen (input) > 3) {
+			char *v, *k = strdup (input + 3);
 			if (!k) break;
 			v = strchr (k, '=');
 			if (v) {

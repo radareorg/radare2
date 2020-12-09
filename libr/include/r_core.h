@@ -321,6 +321,7 @@ struct r_core_t {
 	char *table_query;
 	int sync_index; // used for http.sync and T=
 	struct r_core_t *c2;
+	RTable *table;
 	RCoreAutocomplete *autocomplete;
 	int autocomplete_type;
 	int maxtab;

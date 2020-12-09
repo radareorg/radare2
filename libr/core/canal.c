@@ -3227,8 +3227,7 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	if (r_table_query (t, q)) {
 		char *s = (fmt== 'j')
 			? r_table_tojson (t)
-			: r_table_tofancystring (t);
-		// char *s = r_table_tostring (t);
+			: r_table_tostring (t);
 		r_cons_printf ("%s\n", s);
 		free (s);
 	}
@@ -3314,9 +3313,10 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		r_list_free (flist);
 		break;
 		}
+	case ',': // "afl," "afl,j"
 	case 't': // "aflt" "afltj"
 		if (rad[1] == 'j') {
-			fcn_list_table (core, r_str_trim_head_ro (rad+ 2), 'j');
+			fcn_list_table (core, r_str_trim_head_ro (rad + 2), 'j');
 		} else {
 			fcn_list_table (core, r_str_trim_head_ro (rad + 1), rad[1]);
 		}
