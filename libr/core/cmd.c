@@ -139,7 +139,7 @@ static const char *help_msg_star[] = {
 };
 
 static const char *cmd_table_help[] = {
-	"Usage:", ",[/] [file]", "# load table data",
+	"Usage:", ",[,.-/*jhr] [file]", "# load table data",
 	",", "", "display table",
 	",", "$foo", "aflt > $foo (files starting with '$' are saved in memory)",
 	", ", " [table-query]", "filter and print table. See ,? for more details",
@@ -1286,89 +1286,68 @@ static void load_table_json(RCore *core, RTable *t, char *data) {
 	// parse json file and iterate over all the entries
 	// RTableRow *row = r_table_row_new (items);
 	// r_list_append (t->rows, row);
-	eprintf ("TODO\n");
+	eprintf ("TODO: Loading tables from JSON is not yet implemented\n");
+}
+
+static const char *get_type_string(const char *s) {
+	if (!strncmp (s, "0x", 2)) {
+		return "x";
+	}
+	if (*s == '0' || atoi (s)) {
+		return "d";
+	}
+	return "s";
 }
 
 static void load_table_csv(RCore *core, RTable *t, RList *lines) {
 	RListIter *iter;
 	char *line;
-	const char *separator = "|";
-	int ncols = 0;
-	bool expect_header = false;
-	bool expect_rows = false;
+	int row = 0;
+	
+	RList *cols = NULL;
 	r_list_foreach (lines, iter, line) {
-		if (!expect_rows) {
-			if (r_str_startswith (line, ".--")) {
-				expect_header = true;
-				separator = "|";
-				continue;
-			}
-			if (r_str_startswith (line, "┌")) {
-				expect_header = true;
-				separator = "│";
-				continue;
-			}
-			if (r_str_startswith (line, ")-")) {
-				expect_rows = true;
-				separator = "|";
-				continue;
-			}
-			if (r_str_startswith (line, "│─")) {
-				expect_rows = true;
-				separator = "│";
-				continue;
+		char *word;
+		RListIter *iter2;
+		RList *words = r_str_split_list (line, ",", 0);
+		if (r_list_length (words) > 0) {
+			switch (row) {
+			case 0:
+				cols = words;
+				words = NULL;
+				break;
+			case 1:
+				{
+				RStrBuf *b = r_strbuf_new (",h ");
+				RStrBuf *args = r_strbuf_new ("");
+				r_list_foreach (words, iter2, word) {
+					const char *type = get_type_string (word);
+					r_strbuf_append (b, type);
+				}
+				r_list_foreach (cols, iter2, word) {
+					r_strbuf_append (b , " ");
+					r_strbuf_append (b, word);
+				}
+				eprintf ("%s%c", r_strbuf_get (b), 10);
+				r_core_cmd0 (core, r_strbuf_get (b));
+				r_strbuf_free (args);
+				r_strbuf_free (b);
+				}
+				/* fallthrough */
+			default:
+				{
+				RStrBuf *b = r_strbuf_new (",r ");
+				r_list_foreach (words, iter2, word) {
+					r_strbuf_append (b, " ");
+					r_strbuf_append (b, word);
+				}
+				r_core_cmd0 (core, r_strbuf_get (b));
+				r_strbuf_free (b);
+				}
+				break;
 			}
 		}
-
-		RTableColumnType *typeString = r_table_type ("string");
-		RTableColumnType *typeNumber = r_table_type ("number");
-		if (expect_header) {
-			char *arg;
-			RList *args = r_str_split_list (line + strlen (separator), separator, 0);
-			RListIter *iter2;
-			ncols = 0;
-			if (r_list_length (t->cols) > 0) {
-				eprintf ("Warning: Not re-adding headers. Use ,- to reset the table.\n");
-				continue;
-			}
-			r_list_foreach (args, iter2, arg) {
-				char *s = strchr (arg, ' ');
-				char *ss = r_str_trim_dup (s? s + 1: arg);
-				if (!*ss) {
-					free (ss);
-					continue;
-				}
-				r_table_add_column (t, typeString, ss, 0);
-				ncols ++;
-			}
-			expect_header = false;
-		} else if (expect_rows) {
-			char *arg;
-			RList *args = r_str_split_list (line + strlen (separator), separator, 0);
-			RList *items = r_list_newf (free);
-			RListIter *iter2;
-			if (r_list_length (args) < ncols) {
-				// dowarn?
-				continue;
-			}
-			r_list_foreach (args, iter2, arg) {
-				char *ss = r_str_trim_dup (arg);
-				if (!*ss) {
-					free (ss);
-					continue;
-				}
-				if (isdigit (*ss)) {
-					int col = r_list_length (items);
-					RTableColumn *c = r_list_get_n (t->cols, col);
-					if (c) {
-						c->type = typeNumber;
-					}
-				}
-				r_list_append (items, ss);
-			}
-			RTableRow *row = r_table_row_new (items);
-			r_list_append (t->rows, row);
-		}
+		r_list_free (words);
+		row++;
 	}
 }
 
@@ -1533,9 +1512,11 @@ static int cmd_table(void *data, const char *input) {
 				core->table = r_table_new ();
 			}
 			char *args = r_str_trim_dup (input + 1);
-			RList *list = r_str_split_list (args, " ", 0);
-			if (list) {
-				r_table_add_row_list (core->table, list);
+			if (*args) {
+				RList *list = r_str_split_list (args, " ", 0);
+				if (list) {
+					r_table_add_row_list (core->table, list);
+				}
 			}
 		}
 		break;
@@ -1555,23 +1536,22 @@ static int cmd_table(void *data, const char *input) {
 		}
 		break;
 	case '.': // ",."
-		{
+		if (R_STR_ISEMPTY (input + 1)) {
+			eprintf ("Usage: ,. [file | $alias]\n");
+		} else {
 			const char *file = r_str_trim_head_ro (input + 1);
-			char *file_data = r_file_slurp (file, NULL);
-			if (file_data) {
-				load_table (core, core->table, file_data);
+			if (*file == '$') {
+				const char *file_data = r_cmd_alias_get (core->rcmd, file, 1);
+				if (file_data) {
+					load_table (core, core->table, strdup (file_data + 1));
+				}
 			} else {
-				eprintf ("Cannot open file.\n");
-			}
-		}
-		break;
-	case '$': // ",$"
-		{
-			const char *cdata = r_cmd_alias_get (core->rcmd, input + 1, 1);
-			if (cdata) {
-				load_table (core, core->table, strdup (cdata + 1));
-			} else {
-				eprintf ("Unknown alias.\n");
+				char *file_data = r_file_slurp (file, NULL);
+				if (file_data) {
+					load_table (core, core->table, file_data);
+				} else {
+					eprintf ("Cannot open file.\n");
+				}
 			}
 		}
 		break;
