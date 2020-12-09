@@ -202,18 +202,6 @@ static const char *help_msg_equal[] = {
 	NULL
 };
 
-#if 0
-static const char *help_msg_equalh[] = {
-	"Usage:",  "=h[---*&] [port]", " # manage http connections",
-	"=h", " port", "listen for http connections (r2 -qc=H /bin/ls)",
-	"=h-", "", "stop background webserver",
-	"=h--", "", "stop foreground webserver",
-	"=h*", "", "restart current webserver",
-	"=h&", " port", "start http server in background",
-	NULL
-};
-#endif
-
 static const char *help_msg_equalh[] = {
 	"Usage:", " =[hH] [...]", " # http server",
 	"http server:", "", "",
