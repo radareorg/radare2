@@ -37,14 +37,13 @@ NAME=comma table3
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
 afr
-aflt :fancy > $a
+afl,:csv>$a
 cat $a~?
-, $a
-rm $a
+,. $a
 ,~?
 EOF
 EXPECT=<<EOF
-37
+34
 37
 EOF
 RUN
@@ -73,6 +72,7 @@ aflt :r2 > $a
 EOF
 EXPECT=<<EOF
 37
+70
 EOF
 RUN
 
