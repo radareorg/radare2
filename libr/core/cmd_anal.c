@@ -3682,6 +3682,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				break;
 			}
 			/* fallthrough */
+		case ',': // "afl,"
 		case 't': // "aflt"
 		case 'j': // "aflj"
 		case 'q': // "aflq"

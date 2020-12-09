@@ -3313,6 +3313,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		r_list_free (flist);
 		break;
 		}
+	case ',': // "afl," "afl,j"
 	case 't': // "aflt" "afltj"
 		if (rad[1] == 'j') {
 			fcn_list_table (core, r_str_trim_head_ro (rad + 2), 'j');
