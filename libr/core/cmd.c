@@ -141,16 +141,15 @@ static const char *help_msg_star[] = {
 static const char *cmd_table_help[] = {
 	"Usage:", ",[,.-/*jhr] [file]", "# load table data",
 	",", "", "display table",
-	",", "$foo", "aflt > $foo (files starting with '$' are saved in memory)",
-	", ", " [table-query]", "filter and print table. See ,? for more details",
-	",.", " file.csv", "load table from CSV, JSON or ascii-art file",
+	", ", "[table-query]", "filter and print table. See ,? for more details",
+	",.", " file.csv", "load table from CSV file (comma dot)",
+	",,", "", "print table in csv format (comma comma)",
 	",-", "", "reset table",
 	",/", "?", "query/filter current table (non-destructive)",
 	",*", ">$foo", "print table as r2 commands",
 	",j", "", "print table in json format",
 	",h", " xxd foo bar cow", "define header column names and types",
 	",r", " 1 2 foo", "adds a row using the given format string",
-	",,", "", "print table in csv format",
 	NULL
 };
 
