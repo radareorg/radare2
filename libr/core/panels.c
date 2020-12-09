@@ -6852,15 +6852,13 @@ R_API bool r_core_panels_root(RCore *core, RPanelsRoot *panels_root) {
 			panels_root->cur_pdc_cache = sdb;
 		}
 	}
-	{
-		const char *l = r_config_get (core->config, "scr.layout");
-		if (l && *l) {
-			r_core_cmdf (core, "v %s", l);
-		}
+	const char *layout = r_config_get (core->config, "scr.layout");
+	if (!R_STR_ISEMPTY (layout)) {
+		r_core_cmdf (core, "v %s", layout);
 	}
 	RPanels *panels = panels_root->panels[panels_root->cur_panels];
 	if (panels) {
-		int i = 0;
+		size_t i = 0;
 		for (; i < panels->n_panels; i++) {
 			RPanel *cur = __get_panel (panels, i);
 			if (cur) {
@@ -6878,9 +6876,10 @@ R_API bool r_core_panels_root(RCore *core, RPanelsRoot *panels_root) {
 			break;
 		}
 	}
-	r_cons_enable_mouse (false);
 	if (fromVisual) {
 		r_core_cmdf (core, "V");
+	} else {
+		r_cons_enable_mouse (false);
 	}
 	return true;
 }
