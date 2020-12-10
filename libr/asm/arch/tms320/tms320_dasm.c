@@ -1137,9 +1137,8 @@ int tms320_dasm(tms320_dasm_t * dasm, const ut8 * stream, int len)
 	return full_insn_size(dasm);
 }
 
-static insn_head_t c55x_list[] = {
-#  include "c55x/table.h"
-};
+// insn_head_t c55x_list[]
+#include "c55x/table.h"
 
 int tms320_dasm_init(tms320_dasm_t * dasm) {
 	int i = 0;
