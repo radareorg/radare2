@@ -11,6 +11,10 @@
 
 // Store map parts that are not covered by others into io->map_skyline
 static void io_map_calculate_skyline(RIO *io) {
+	if (io->use_banks) {
+		r_io_bank_drain (io, io->bank);
+		return;
+	}
 	r_skyline_clear (&io->map_skyline);
 	// Last map has highest priority (it shadows previous maps)
 	void **it;
@@ -21,7 +25,8 @@ static void io_map_calculate_skyline(RIO *io) {
 }
 
 RIOMap* io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
-	if (!size || !io || !io->map_ids) {
+	r_return_val_if_fail (io && io->map_ids, NULL);
+	if (!size) {
 		return NULL;
 	}
 	RIOMap* map = R_NEW0 (RIOMap);
@@ -29,6 +34,7 @@ RIOMap* io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) 
 		free (map);
 		return NULL;
 	}
+	map->ts = r_time_now ();
 	map->fd = fd;
 	map->delta = delta;
 	map->ts = io->mts++;
@@ -226,6 +232,9 @@ R_API bool r_io_map_del_for_fd(RIO* io, int fd) {
 //return a boolean denoting whether is was possible to priorized
 R_API bool r_io_map_priorize(RIO* io, ut32 id) {
 	r_return_val_if_fail (io, false);
+	if (io->use_banks) {
+		r_io_bank_map_priorize (io, io->bank, id);
+	}
 	size_t i;
 	for (i = 0; i < r_pvector_len (&io->maps); i++) {
 		RIOMap *map = r_pvector_at (&io->maps, i);
@@ -326,13 +335,12 @@ R_API void r_io_map_set_name(RIOMap* map, const char* name) {
 }
 
 R_API void r_io_map_del_name(RIOMap* map) {
-	if (map) {
-		R_FREE (map->name);
-	}
+	r_return_if_fail (map);
 }
 
 // TODO: very similar to r_io_map_next_address, decide which one to use
 R_API ut64 r_io_map_next_available(RIO* io, ut64 addr, ut64 size, ut64 load_align) {
+	r_return_val_if_fail (io, UT64_MAX);
 	if (load_align == 0) {
 		load_align = 1;
 	}
@@ -360,6 +368,7 @@ R_API ut64 r_io_map_next_available(RIO* io, ut64 addr, ut64 size, ut64 load_alig
 
 // TODO: very similar to r_io_map_next_available. decide which one to use
 R_API ut64 r_io_map_next_address(RIO* io, ut64 addr) {
+	r_return_val_if_fail (io, UT64_MAX);
 	ut64 lowest = UT64_MAX;
 	void **it;
 	r_pvector_foreach (&io->maps, it) {
@@ -376,7 +385,20 @@ R_API ut64 r_io_map_next_address(RIO* io, ut64 addr) {
 	return lowest;
 }
 
+R_API RIOMap* r_io_map_get_by_id(RIO* io, ut32 id) {
+	r_return_val_if_fail (io, NULL);
+	void **it;
+	r_pvector_foreach (&io->maps, it) {
+		RIOMap *map = *it;
+		if (map && map->id == id) {
+			return map;
+		}
+	}
+	return NULL;
+}
+
 R_API RList* r_io_map_get_by_fd(RIO* io, int fd) {
+	r_return_val_if_fail (io, NULL);
 	RList* map_list = r_list_newf (NULL);
 	if (!map_list) {
 		return NULL;
@@ -392,6 +414,7 @@ R_API RList* r_io_map_get_by_fd(RIO* io, int fd) {
 }
 
 R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
+	r_return_val_if_fail (io, false);
 	RIOMap *map;
 	if (!newsize || !(map = r_io_map_get (io, id))) {
 		return false;
@@ -411,6 +434,7 @@ R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 // find a location that can hold enough bytes without overlapping
 // XXX this function is buggy and doesnt works as expected, but i need it for a PoC for now
 R_API ut64 r_io_map_location(RIO *io, ut64 size) {
+	r_return_val_if_fail (io, UT64_MAX);
 	ut64 base = (io->bits == 64)? 0x60000000000LL: 0x60000000;
 	while (r_io_map_get_at (io, base)) {
 		base += 0x200000;

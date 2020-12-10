@@ -68,6 +68,20 @@ static const char *help_msg_op[] = {
 	NULL
 };
 
+static const char *help_msg_omb[] = {
+	"Usage:", "omb[jq,+] [fd]", "Operate on memory banks",
+	"omb", "", "list all memory banks",
+	"omb", " [id]", "switch to use a different bank",
+	"omb+", "[name]", "create a new bank with given name",
+	"omba", " [id]", "adds a map to the bank",
+	"ombd", " [id]", "deletes a map from the bank",
+	"omb-", "*", "delete all banks",
+	"omb-", "[mapid]", "delete the bank with given id",
+	"ombg", "", "associate all maps to the current bank",
+	"ombq", "", "show current bankid",
+	NULL
+};
+
 static const char *help_msg_o_star[] = {
 	"Usage:", "o* [> files.r2]", "",
 	"o*", "", "list opened files in r2 commands", NULL
@@ -119,8 +133,9 @@ static const char *help_msg_om[] = {
 	"om.", "", "show map, that is mapped to current offset",
 	"om=", "", "list all maps in ascii art",
 	"oma"," [fd]", "create a map covering all VA for given fd",
-	"omb", " mapid addr", "relocate map with corresponding id",
-	"omb.", " addr", "relocate current map",
+	"omb", " ", "list/select memory map banks",
+	"omB", " mapid addr", "relocate map with corresponding id",
+	"omB.", " addr", "relocate current map",
 	"omd", " from to @ paddr", "simplied om, takes current seek, fd and perms",
 	"omf", " [mapid] rwx", "change flags/perms for current/given map",
 	"omfg", "[+-]rwx", "change flags/perms for all maps (global)",
@@ -137,7 +152,7 @@ static const char *help_msg_om[] = {
 	"omq", "", "list all maps and their fds",
 	"omqq", "", "list all maps addresses (See $MM to get the size)",
 	"omr", " mapid newsize", "resize map with corresponding id",
-	"omt", " [query]", "list maps using table api",
+	"omt", " [query]", "list maps using table api", // "om,"
 	NULL
 };
 
@@ -563,9 +578,10 @@ static void r_core_cmd_omt(RCore *core, const char *arg) {
 		ut64 pa_size = r_itv_size (m->itv);
 		ut64 pa_end = pa + pa_size;
 		const char *name = r_str_get (m->name);
-		r_table_add_rowf (t, "ddxxxxxss", m->id, m->fd, pa, pa_end, pa_size, va, va_end, r_str_rwx_i (m->perm), name);
+		r_table_add_rowf (t, "ddxxxxxss",
+			m->id, m->fd, pa, pa_end, pa_size,
+			va, va_end, r_str_rwx_i (m->perm), name);
 	}
-
 	if (r_table_query (t, arg)) {
 		char *ts = r_table_tofancystring (t);
 		r_cons_printf ("%s", ts);
@@ -675,12 +691,125 @@ static void cmd_omd(RCore *core, const char* input) {
 	}
 }
 
+static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
+	if (argc == 1) {
+		switch (argv[0][1]) {
+		case 'g': // "ombg"
+			{
+				void **it;
+				r_pvector_foreach_prev (&core->io->maps, it) {
+					RIOMap *map = *it;
+					r_io_bank_map_add_top (core->io, core->io->bank, map->id);
+					ut64 from = map->itv.addr;
+					ut64 to = from + map->itv.size;
+					r_io_bank_update_map_boundaries(core->io, core->io->bank,
+						map->id, from, to);
+					break;
+				}
+			}
+			break;
+		case 'q': // "ombq"
+			r_cons_printf ("%d\n", core->io->bank);
+			break;
+		case 0: // "omb"
+			{
+				RList *list = r_id_storage_list (core->io->banks);
+				RIOMap *map;
+				RIOBank *bank;
+				RListIter *iter, *iter2;
+				r_list_foreach (list, iter, bank) {
+					const char ch = core->io->bank == bank->id? '*': '-';
+					r_cons_printf ("%c %d %s [", ch, bank->id, bank->name);
+					r_list_foreach (bank->maprefs, iter2, map) {
+						r_cons_printf (" %d", map->id);
+					}
+					r_cons_printf (" ]\n");
+					// list all the associated maps
+				}
+			}
+			break;
+		case '+': // "omb+ [name]"
+			{
+				const char *name = argv[0] + 2;
+				if (IS_DIGIT (*name)) {
+					// add a map to the current bank
+					// we cant name a bank with a number :?
+					r_io_bank_map_add_top (core->io, core->io->bank, atoi (name));
+				} else {
+					// add a new bank
+					RIOBank *bank = r_io_bank_new (name);
+					if (bank) {
+						r_io_bank_add (core->io, bank);
+					}
+				}
+			}
+			break;
+		case '?': // "omb?"
+		default:
+			r_core_cmd_help (core, help_msg_omb);
+			break;
+		}
+		return;
+	}
+	switch (argv[0][1]) {
+	case 'a': // "omba"
+		if (IS_DIGIT (argv[1][0])) {
+			int mapid = atoi (argv[1]);
+			if (r_io_map_get (core->io, mapid)) {
+				r_io_bank_map_add_top (core->io, core->io->bank, mapid);
+			} else {
+				eprintf ("Invalid map id\n");
+			}
+		} else {
+			eprintf ("Expect a mapid number\n");
+		}
+		break;
+	case 'd': // "ombd"
+		{
+			int mapid = atoi (argv[1]);
+			RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
+			if (bank) {
+				r_io_bank_delete_map (core->io, core->io->bank, mapid);
+			} else {
+				eprintf ("Unknown bank id\n");
+			}
+		}
+		break;
+	case '-': // "omb-"
+		if (!strcmp ("*", argv[1])) {
+			r_io_bank_drain (core->io, core->io->bank);
+			core->io->bank = r_io_bank_first (core->io);
+		} else {
+			int bank_id = atoi (argv[1]);
+			r_io_bank_del (core->io, bank_id);
+		}
+		break;
+	case '+': // "omb+ [name]"
+		{
+			RIOBank *bank = r_io_bank_new (argv[1]);
+			r_io_bank_add (core->io, bank);
+		}
+		break;
+	case 0: // "omb [id]"
+		{
+			if (!r_io_bank_use (core->io, r_num_get (NULL, argv[1]))) {
+				eprintf ("Cannot find bank by id %s\n", argv[1]);
+			}
+		}
+		break;
+	case '?': // "omb?"
+	default:
+		r_core_cmd_help (core, help_msg_omb);
+		break;
+	}
+}
+
 static void cmd_open_map(RCore *core, const char *input) {
 	ut64 fd = 0LL;
 	ut32 id = 0;
 	ut64 addr = 0;
 	char *s = NULL, *p = NULL, *q = NULL;
-	ut64 new;
+	ut64 newaddr;
 	RIOMap *map = NULL;
 	const char *P;
 	PJ *pj;
@@ -719,14 +848,22 @@ static void cmd_open_map(RCore *core, const char *input) {
 		if (input[2] != ' ') {
 			break;
 		}
-		P = strchr (input+3, ' ');
+		P = strchr (input + 3, ' ');
 		if (P) {
-			id = (ut32)r_num_math (core->num, input+3);	//mapid
-			new = r_num_math (core->num, P+1);
-			r_io_map_resize (core->io, id, new);
+			id = (ut32)r_num_math (core->num, input + 3);
+			newaddr = r_num_math (core->num, P + 1);
+			r_io_map_resize (core->io, id, newaddr);
 		}
 		break;
-	case 'b': // "omb"
+	case 'b': // "omb" -- manage memory banks
+		{
+			int argc;
+			char **argv = r_str_argv (&input[1], &argc);
+			cmd_open_banks (core, argc, argv);
+			r_str_argv_free (argv);
+		}
+		break;
+	case 'B': // "omB"
 		if (input[2] == '.') {
 			RIOMap *map = r_io_map_get_at (core->io, core->offset);
 			if (map) {
@@ -739,9 +876,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 			}
 			P = strchr (input + 3, ' ');
 			if (P) {
-				id = (ut32)r_num_math (core->num, input+3);	//mapid
-				new = r_num_math (core->num, P + 1);
-				r_io_map_remap (core->io, id, new);
+				id = (ut32)r_num_math (core->num, input + 3);
+				newaddr = r_num_math (core->num, P + 1);
+				r_io_map_remap (core->io, id, newaddr);
 			}
 		}
 		break;

@@ -2155,6 +2155,23 @@ static bool cb_io_cache(void *user, void *data) {
 	return true;
 }
 
+static bool cb_io_banks(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->io->use_banks = node->i_value;
+#if 0
+	void **p;
+	r_pvector_foreach (&core->io->maps, p) {
+		RIOMap *map = (RIOMap*) p;
+		r_io_bank_map_add_top (core->io, core->io->bank, map->id);
+		ut64 from = map->itv.addr;
+		ut64 to = map->itv.addr+map->itv.size;
+		r_io_bank_update_map_boundaries (core->io, core->io->bank, map->id, from, to);
+	}
+#endif
+	return true;
+}
+
 static bool cb_ioaslr(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -3987,6 +4004,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("rop.comments", "false", "Display comments in rop search output");
 
 	/* io */
+	SETCB ("io.banks", "false", &cb_io_banks, "Use RIOBank api instead of the skyline implementation");
 	SETCB ("io.cache", "false", &cb_io_cache, "Change both of io.cache.{read,write}");
 	SETCB ("io.cache.auto", "false", &cb_io_cache_mode, "Automatic cache all reads in the IO backend");
 	SETCB ("io.cache.read", "false", &cb_io_cache_read, "Enable read cache for vaddr (or paddr when io.va=0)");

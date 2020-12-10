@@ -106,6 +106,7 @@ typedef struct r_io_t {
 	struct r_io_desc_t *desc; // XXX deprecate... we should use only the fd integer, not hold a weak pointer
 	ut64 off;
 	ut32 bank;	// current bank
+	bool use_banks; // read from banks instead of the skyline thing
 	int bits;
 	int va;	// keep it as int, value can be 0, 1 or 2
 	bool ff;
@@ -117,6 +118,7 @@ typedef struct r_io_t {
 	bool cachemode; // write in cache all the read operations (EXPERIMENTAL)
 	ut32 p_cache; // uses 1, 2, 4.. probably R_PERM_RWX :D
 	ut64 mts;	// map "timestamps", this sucks somehow
+	ut32 curbank;	// id of current bank
 	RIDPool *map_ids;
 	RPVector maps; //from tail backwards maps with higher priority are found
 	RSkyline map_skyline; // map parts that are not covered by others
@@ -218,6 +220,7 @@ typedef struct r_io_submap_t {
 } RIOSubMap;
 
 typedef struct r_io_bank_t {
+	char *name;
 	RContRBTree *submaps;
 	RList *maprefs;	// references to maps, avoid double-free and dups
 	RQueue *todo;	// needed for operating on submap tree
@@ -358,11 +361,16 @@ R_API bool r_io_submap_set_from(RIOSubMap *sm, const ut64 from);
 R_API bool r_io_submap_set_to(RIOSubMap *sm, const ut64 to);
 
 //io_bank.c
-R_API RIOBank *r_io_bank_new(void);
+R_API RIOBank *r_io_bank_new(const char *name);
+R_API void r_io_bank_del(RIO *io, const ut32 bankid);
+R_API ut32 r_io_bank_first(RIO *io);
+R_API void r_io_bank_delete_map(RIO *io, const ut32 bankid, const ut32 mapid);
+R_API ut32 r_io_bank_add(RIO *io, RIOBank *bank);
 R_API void r_io_bank_free(RIOBank *bank);
 R_API void r_io_bank_init(RIO *io);
 R_API void r_io_bank_fini(RIO *io);
 R_API RIOBank *r_io_bank_get(RIO *io, const ut32 bankid);
+R_API bool r_io_bank_use(RIO *io, ut32 bankid);
 R_API bool r_io_bank_map_add_top(RIO *io, const ut32 bankid, const ut32 mapid);
 R_API bool r_io_bank_map_priorize (RIO *io, const ut32 bankid, const ut32 mapid);
 R_API bool r_io_bank_update_map_boundaries(RIO *io, const ut32 bankid, const ut32 mapid, ut64 ofrom, ut64 oto);
@@ -415,6 +423,22 @@ R_API int r_io_plugin_read_at(RIODesc *desc, ut64 addr, ut8 *buf, int len);
 R_API int r_io_plugin_write_at(RIODesc *desc, ut64 addr, const ut8 *buf, int len);
 R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many);
 R_API RIOPlugin *r_io_plugin_get_default(RIO *io, const char *filename, bool many);
+
+/* bank */
+R_API void r_io_use_bank(RIO *io, RIOBank *bank);
+R_API RIOBank* r_io_new_bank(const char *name);
+R_API bool r_io_bank_add_map(RIO *io, RIOBank *bank, ut32 map_id);
+R_API void r_io_bank_free(RIOBank *bank);
+R_API void r_io_bank_rename(RIOBank *bank, const char *name);
+
+/* banks */
+R_API void r_io_banks_reset(RIO *io);
+R_API bool r_io_banks_add(RIO *io, RIOBank *bank);
+R_API bool r_io_banks_del(RIO *io, RIOBank *bank);
+R_API char *r_io_banks_list(RIO *io, int mode);
+R_API bool r_io_banks_use(RIO *io, ut32 id);
+R_API RIOBank* r_io_bank_get_by_name(RIO *io, const char *name);
+R_API RIOBank* r_io_bank_get_by_id(RIO *io, ut32 id);
 
 /* undo api */
 // track seeks and writes
