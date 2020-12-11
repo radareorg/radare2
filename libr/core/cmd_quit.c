@@ -24,6 +24,7 @@ static int cmd_Quit(void *data, const char *input) {
 	if (input[0] == '!') {
 		if (input[1] == '!' || !input[1]) {
 			if (!r_sandbox_enable (false)) {
+				r_cons_flush ();
 				exit (0);
 			}
 			return -2;
