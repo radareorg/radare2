@@ -255,13 +255,13 @@ static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stac
 		if (!rvar) {
 			return;
 		}
+		char *t = strdup (type);
 		__var_retype (anal, rvar, NULL, type, false, false);
 		RAnalVar *lvar = r_anal_var_get_dst_var (rvar);
 		if (lvar) {
-			char *t = strdup (type);
 			__var_retype (anal, lvar, NULL, t, false, false);
-			free (t);
 		}
+		free (t);
 	}
 }
 
