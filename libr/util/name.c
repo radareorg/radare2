@@ -1,9 +1,9 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_util.h>
 
 R_API bool r_name_validate_char(const char ch) {
-	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (IS_DIGIT(ch))) {
+	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || IS_DIGIT (ch)) {
 		return true;
 	}
 	switch (ch) {
@@ -16,8 +16,9 @@ R_API bool r_name_validate_char(const char ch) {
 }
 
 R_API bool r_name_check(const char *name) {
+	r_return_val_if_fail (name, false);
 	/* Cannot start by number */
-	if (!name || !*name || IS_DIGIT (*name)) {
+	if (!*name || IS_DIGIT (*name) || *name == '$') {
 		return false;
 	}
 	/* Cannot contain non-alphanumeric chars + [:._] */
@@ -29,7 +30,7 @@ R_API bool r_name_check(const char *name) {
 	return true;
 }
 
-static inline bool is_special_char (char *name) {
+static inline bool is_special_char(char *name) {
 	const char n = *name;
 	return (n == 'b' || n == 'f' || n == 'n' || n == 'r' || n == 't' || n == 'v' || n == 'a');
 }
@@ -50,9 +51,11 @@ R_API bool r_name_filter(char *name, int maxlen) {
 			break;
 		}
 		if (!r_name_validate_char (*name) && *name != '\\') {
+			if (i == 0) {
+				*name = 0;
+				return false;
+			}
 			*name = '_';
-			//		r_str_ccpy (name, name+1, 0);
-			//name--;
 		}
 	}
 	while (i > 0) {
@@ -69,19 +72,12 @@ R_API bool r_name_filter(char *name, int maxlen) {
 	if (*name == '\\') {
 		*name = '_';
 	}
-	// trimming trailing and leading underscores
+	// trimming trailing underscores
 	len = strlen (name);
 	for (; len > 0 && *(name + len - 1) == '_'; len--) {
+		name[len - 1] = 0;
 		;
 	}
-	if (!len) { // name consists only of underscores
-		return r_name_check (oname);
-	}
-	for (i = 0; *(name + i) == '_'; i++, len--) {
-		;
-	}
-	memmove (name, name + i, len);
-	*(name + len) = '\0';
 	return r_name_check (oname);
 }
 

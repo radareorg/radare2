@@ -1618,7 +1618,9 @@ rep:
 	case '?':
 	default:
 		if (input[1]) {
-			core->num->value = r_flag_get (core->flags, input + 1)? 1: 0;
+			const char *arg = r_str_trim_head_ro (input + 1);
+			RFlagItem *fi = r_flag_get (core->flags, arg);
+			core->num->value = fi? 1: 0;
 		} else {
 			r_core_cmd_help (core, help_msg_f);
 			break;
