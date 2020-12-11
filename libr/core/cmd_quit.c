@@ -22,7 +22,7 @@ static void cmd_quit_init(RCore *core, RCmdDesc *parent) {
 static int cmd_Quit(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (input[0] == '!') {
-		if (input[1] == '!') {
+		if (input[1] == '!' || !input[1]) {
 			if (!r_sandbox_enable (false)) {
 				exit (0);
 			}
