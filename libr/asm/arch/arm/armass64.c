@@ -624,6 +624,47 @@ if (op->operands[1].reg_type == ARM_REG64) {
 	return seq_data;
 }
 
+static ut32 and(ArmOp *op, bool is_bic) {
+	ut32 data = UT32_MAX;
+
+	// Reg types need to match
+	if (!(op->operands[0].reg_type == op->operands[1].reg_type)) {
+		return data;
+	}
+	if (op->operands[0].reg_type & ARM_REG64) {
+		data = 0x00004092;
+	} else {
+		return data;
+	}
+
+	data += op->operands[0].reg << 24;
+	data += op->operands[1].reg << 29;
+	data += (op->operands[1].reg >> 3)  << 16;
+
+	ut32 imm = decodeBitMasks (op->operands[2].immediate);
+	if (imm == -1) {
+		return imm;
+	}
+	if (is_bic) {
+		imm = -imm;
+		imm &= 0x1fff;
+	}
+	int low = imm & 0xF;
+	if (op->operands[0].reg_type & ARM_REG64) {
+		imm = ((imm >> 6) | 0x78);
+		if (imm > 120) {
+			data |= imm << 8;
+		}
+	} else {
+		imm = ((imm >> 2));
+		if (imm > 120) {
+			data |= imm << 4;
+		}
+	}
+	data |= (4 * low) << 16;
+	return data;
+}
+
 static ut32 orr(ArmOp *op, int addr) {
 	ut32 data = UT32_MAX;
 
@@ -1177,6 +1218,14 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		if (*op != UT32_MAX) {
 			return true;
 		}
+	}
+	if (!strncmp (str, "and ", 4)) {
+		*op = and (&ops, false);
+		return *op != UT32_MAX;
+	}
+	if (!strncmp (str, "bic ", 4)) {
+		*op = and (&ops, true);
+		return *op != UT32_MAX;
 	}
 	if (!strncmp (str, "orr ", 4)) {
 		*op = orr (&ops, addr);

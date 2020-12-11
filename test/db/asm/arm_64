@@ -1,3 +1,5 @@
+ad "and x1, x2, 3" 41044092
+a "bic x1, x2, 3" 413c7f92
 a "adrp x5, 0x0" 05000090
 a "add x0, x1, x2" 2000028b
 a "add x0, xzr, x30" e0031e8b
