@@ -167,7 +167,8 @@ static const char *help_msg_ae[] = {
 	"aecue", " [esil]", "continue until esil expression match",
 	"aef", " [addr]", "emulate function",
 	"aefa", " [addr]", "emulate function to find out args in given or current offset",
-	"aeg", " [expr]", "esil graph",
+	"aeg", " [expr]", "esil data flow graph",
+	"aegf", " [expr] [register]", "esil data flow graph filter",
 	"aei", "", "initialize ESIL VM state (aei- to deinitialize)",
 	"aeim", " [addr] [size] [name]", "initialize ESIL VM stack (aeim- remove)",
 	"aeip", "", "initialize ESIL program counter to curseek",
@@ -296,6 +297,15 @@ static const char *help_msg_aec[] = {
 static const char *help_msg_aeC[] = {
 	"Examples:", "aeC", " arg0 arg1 ... @ calladdr",
 	"aeC", " 1 2 @ sym._add", "Call sym._add(1,2)",
+	NULL
+};
+
+static const char *help_msg_aeg[] = {
+	"Usage:", "aeg[cfiv*]", " [...]",
+	"aeg", "", "analyze current instruction as an esil graph",
+	"aegf", "", "analyze given expression and filter for register",
+	"aeg*", "", "analyze current instruction as an esil graph",
+	"aegv" "", "analyse and launch the visual interactive mode (.aeg*;aggv == aegv)",
 	NULL
 };
 
@@ -6072,6 +6082,123 @@ static void __anal_esil_function(RCore *core, ut64 addr) {
 	r_anal_esil_free (core->anal->esil);
 }
 
+static void print_esil_dfg_as_commands(RCore *core, RAnalEsilDFG *dfg) {
+	RListIter *iter, *ator;
+	RGraphNode *node, *edon;
+	RStrBuf *sb = r_strbuf_new ("");
+	if (!sb) {
+		return;
+	}
+	r_cons_println ("ag-");
+	r_list_foreach (r_graph_get_nodes (dfg->flow), iter, node) {
+		const RAnalEsilDFGNode *enode = (RAnalEsilDFGNode *)node->data;
+		char *esc_str = r_str_escape (r_strbuf_get (enode->content));
+		if (!esc_str) {
+			r_strbuf_free (sb);
+			return;
+		}
+		r_strbuf_set (sb, esc_str);
+		if (enode->type == R_ANAL_ESIL_DFG_BLOCK_GENERATIVE) {
+			r_strbuf_prepend (sb, "generative:");
+		}
+		char *b64_buf = r_base64_encode_dyn (r_strbuf_get (sb), sb->len);
+		if (!b64_buf) {
+			r_strbuf_free (sb);
+			free (esc_str);
+			return;
+		}
+
+		r_cons_printf ("agn %d base64:%s\n", enode->idx, b64_buf);
+		free (b64_buf);
+		free (esc_str);
+	}
+	r_strbuf_free (sb);
+
+	r_list_foreach (r_graph_get_nodes (dfg->flow), iter, node) {
+		const RAnalEsilDFGNode *enode = (RAnalEsilDFGNode *)node->data;
+		r_list_foreach (r_graph_get_neighbours (dfg->flow, node), ator, edon) {
+			const RAnalEsilDFGNode *edone = (RAnalEsilDFGNode *)edon->data;
+			r_cons_printf ("age %d %d\n", enode->idx, edone->idx);
+		}
+	}
+}
+
+static void cmd_aeg(RCore *core, int argc, char *argv[]) {
+	if (argc == 0) {
+		r_core_cmd0 (core, ".aeg*;agg");
+		return;
+	}
+	if (argc == 1) {	// "aeg"
+		RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, argv[0]);
+		r_return_if_fail (dfg);
+		print_esil_dfg_as_commands (core, dfg);
+		r_anal_esil_dfg_free (dfg);
+		return;
+	}
+	switch (argv[0][0]) {
+	case '*':	// "aeg*"
+	{
+		RAnalOp *aop = r_core_anal_op (core, core->offset, R_ANAL_OP_MASK_ESIL);
+		if (!aop) {
+			return;
+		}
+		const char *esilstr = r_strbuf_get (&aop->esil);
+		if (R_STR_ISNOTEMPTY (esilstr)) {
+			RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, esilstr);
+			if (!dfg) {
+				r_anal_op_free (aop);
+				return;
+			}
+			print_esil_dfg_as_commands (core, dfg);
+			r_anal_esil_dfg_free (dfg);
+		}
+	}
+	break;
+	case 'i':	// "aegi"
+	case 'v':	// "aegv"
+	{
+		RConfigHold *hc = r_config_hold_new (core->config);
+		if (!hc) {
+			return;
+		}
+		r_config_hold_s (hc, "cmd.gprompt",  NULL);
+		r_config_set (core->config, "cmd.gprompt", "pi 1");
+		r_core_cmd0 (core, ".aeg*;aggv");
+		r_config_hold_free (hc);
+	}
+	break;
+	case 'f':	// "aegf"
+	{
+		RStrBuf *filtered = r_anal_esil_dfg_filter_expr (core->anal, argv[1], argv[2]);
+		if (filtered) {
+			r_cons_printf ("%s\n", r_strbuf_get (filtered));
+			r_strbuf_free (filtered);
+		}
+	}
+	case 'c':	// "aegc"
+	{
+		RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, argv[1]);
+		if (!dfg) {
+			return;
+		}
+		r_anal_esil_dfg_fold_const (core->anal, dfg);
+		if (argv[0][1] == 'f') {	// "aegcf"
+			RStrBuf *filtered = r_anal_esil_dfg_filter (dfg, argv[2]);
+			if (filtered) {
+				r_cons_printf ("%s\n", r_strbuf_get (filtered));
+				r_strbuf_free (filtered);
+			}
+		} else {
+			print_esil_dfg_as_commands (core, dfg);
+		}
+		r_anal_esil_dfg_free (dfg);
+	}
+	case '?':	// "aeg?"
+	default:
+		r_core_cmd_help (core, help_msg_aeg);
+	}
+}
+
 static void cmd_anal_esil(RCore *core, const char *input) {
 	RAnalEsil *esil = core->anal->esil;
 	ut64 addr = core->offset;
@@ -6452,29 +6579,16 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		}
 		break;
 	case 'g': // "aeg"
-		if (input[1] == 'i' || input[1] == 'v') {
-			char *oprompt = strdup (r_config_get (core->config, "cmd.gprompt"));
-			r_config_set (core->config, "cmd.gprompt", "pi 1");
-			r_core_cmd0 (core, ".aeg*;aggv");
-			r_config_set (core->config, "cmd.gprompt", oprompt);
-			free (oprompt);
-		} else if (!input[1]) {
-			r_core_cmd0 (core, ".aeg*;agg");
-		} else if (input[1] == ' ') {
-			r_core_anal_esil_graph (core, input + 2);
-		} else if (input[1] == '*') {
-			RAnalOp *aop = r_core_anal_op (core, core->offset, R_ANAL_OP_MASK_ESIL);
-			if (aop) {
-				const char *esilstr = r_strbuf_get (&aop->esil);
-				if (R_STR_ISNOTEMPTY (esilstr)) {
-					r_core_anal_esil_graph (core, esilstr);
-				}
+		{
+			int argc;
+			char **argv = r_str_argv (&input[1], &argc);
+			r_return_if_fail (argv);
+			cmd_aeg (core, argc, argv);
+			int i;
+			for (i = 0; i < argc; i++) {
+				free (argv[i]);
 			}
-		} else {
-			r_cons_printf ("Usage: aeg[iv*]\n");
-			r_cons_printf (" aeg  analyze current instruction as an esil graph\n");
-			r_cons_printf (" aeg* analyze current instruction as an esil graph\n");
-			r_cons_printf (" aegv and launch the visual interactive mode (.aeg*;aggv == aegv)\n");
+			free (argv);
 		}
 		break;
 	case 'b': // "aeb"
