@@ -3,12 +3,6 @@
 #include <r_core.h>
 #include <r_main.h>
 
-#ifdef _MSC_VER
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#endif
-
 enum {
 	MODE_DIFF,
 	MODE_DIFF_STRS,
@@ -46,6 +40,9 @@ typedef struct {
 	int showbare;
 	bool json_started;
 	int diffmode;
+	int diffops;
+	int mode;
+	int gmode;
 	bool disasm;
 	bool pdc;
 	bool quiet;
@@ -54,6 +51,7 @@ typedef struct {
 	const char *runcmd;
 	int bits;
 	int anal_all;
+	int threshold;
 	bool verbose;
 	RList *evals;
 } RadiffOptions;
@@ -222,7 +220,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 		for (i = 0; i < op->b_len; i++) {
 			printf ("%02x", op->b_buf[i]);
 		}
-		printf ("\"}"); // ,\n");
+		printf ("\"}");
 		return 1;
 	case 0:
 	default:
@@ -920,25 +918,34 @@ static void __print_diff_graph(RCore *c, ut64 off, int gmode) {
         }
 }
 
+static void radiff_options_init(RadiffOptions *ro) {
+	memset (ro, 0, sizeof (RadiffOptions));
+	ro->threshold = -1;
+	ro->useva = true;
+	ro->evals = r_list_newf (NULL);
+	ro->mode = MODE_DIFF;
+	ro->gmode = GRAPH_DEFAULT_MODE;
+}
+static void radiff_options_fini(RadiffOptions *ro) {
+	r_list_free (ro->evals);
+	r_core_free (ro->core);
+	r_cons_free ();
+}
+
 R_API int r_main_radiff2(int argc, const char **argv) {
-	RadiffOptions ro = (RadiffOptions){0};
+	RadiffOptions ro;
 	const char *columnSort = NULL;
 	const char *addr = NULL;
 	RCore *c = NULL, *c2 = NULL;
 	ut8 *bufa = NULL, *bufb = NULL;
 	int o, /*diffmode = 0,*/ delta = 0;
 	ut64 sza = 0, szb = 0;
-	int mode = MODE_DIFF;
-	int gmode = GRAPH_DEFAULT_MODE;
-	int diffops = 0;
-	int threshold = -1;
 	double sim = 0.0;
 	RDiff *d;
-
-	ro.useva = true;
-	ro.evals = r_list_newf (NULL);
-
 	RGetopt opt;
+
+	radiff_options_init (&ro);
+
 	r_getopt_init (&opt, argc, argv, "Aa:b:BCDe:npg:m:G:OijrhcdsS:uUvVxXt:zqZ");
 	while ((o = r_getopt_next (&opt)) != -1) {
 		switch (o) {
@@ -964,22 +971,22 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			ro.diffmode = 'r';
 			break;
 		case 'g':
-			mode = MODE_GRAPH;
+			ro.mode = MODE_GRAPH;
 			addr = opt.arg;
 			break;
 		case 'm':{
 		        const char *tmp = opt.arg;
 		        switch(tmp[0]) {
-	                case 'i': gmode = GRAPH_INTERACTIVE_MODE; break;
-	                case 'k': gmode = GRAPH_SDB_MODE; break;
-	                case 'j': gmode = GRAPH_JSON_MODE; break;
-	                case 'J': gmode = GRAPH_JSON_DIS_MODE; break;
-	                case 't': gmode = GRAPH_TINY_MODE; break;
-	                case 'd': gmode = GRAPH_DOT_MODE; break;
-	                case 's': gmode = GRAPH_STAR_MODE; break;
-	                case 'g': gmode = GRAPH_GML_MODE; break;
+	                case 'i': ro.gmode = GRAPH_INTERACTIVE_MODE; break;
+	                case 'k': ro.gmode = GRAPH_SDB_MODE; break;
+	                case 'j': ro.gmode = GRAPH_JSON_MODE; break;
+	                case 'J': ro.gmode = GRAPH_JSON_DIS_MODE; break;
+	                case 't': ro.gmode = GRAPH_TINY_MODE; break;
+	                case 'd': ro.gmode = GRAPH_DOT_MODE; break;
+	                case 's': ro.gmode = GRAPH_STAR_MODE; break;
+	                case 'g': ro.gmode = GRAPH_GML_MODE; break;
 	                case 'a':
-                        default: gmode = GRAPH_DEFAULT_MODE; break;
+                        default: ro.gmode = GRAPH_DEFAULT_MODE; break;
 		        }
 		}       break;
 		case 'G':
@@ -989,19 +996,19 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			ro.showcount = 1;
 			break;
 		case 'C':
-			mode = MODE_CODE;
+			ro.mode = MODE_CODE;
 			break;
 		case 'i':
-			mode = MODE_DIFF_IMPORTS;
+			ro.mode = MODE_DIFF_IMPORTS;
 			break;
 		case 'n':
 			ro.showbare = true;
 			break;
 		case 'O':
-			diffops = 1;
+			ro.diffops = 1;
 			break;
 		case 't':
-			threshold = atoi (opt.arg);
+			ro.threshold = atoi (opt.arg);
 			printf ("%s\n", opt.arg);
 			break;
 		case 'd':
@@ -1011,7 +1018,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			if (ro.disasm) {
 				ro.pdc = true;
 				ro.disasm = false;
-				mode = MODE_CODE;
+				ro.mode = MODE_CODE;
 			} else {
 				ro.disasm = true;
 			}
@@ -1019,22 +1026,22 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		case 'h':
 			return show_help (1);
 		case 's':
-			if (mode == MODE_DIST) {
-				mode = MODE_DIST_LEVENSTEIN;
-			} else if (mode == MODE_DIST_LEVENSTEIN) {
-				mode = MODE_DIST_MYERS;
+			if (ro.mode == MODE_DIST) {
+				ro.mode = MODE_DIST_LEVENSTEIN;
+			} else if (ro.mode == MODE_DIST_LEVENSTEIN) {
+				ro.mode = MODE_DIST_MYERS;
 			} else {
-				mode = MODE_DIST;
+				ro.mode = MODE_DIST;
 			}
 			break;
 		case 'S':
 			columnSort = opt.arg;
 			break;
 		case 'x':
-			mode = MODE_COLS;
+			ro.mode = MODE_COLS;
 			break;
 		case 'X':
-			mode = MODE_COLSII;
+			ro.mode = MODE_COLSII;
 			break;
 		case 'u':
 			ro.diffmode = 'u';
@@ -1054,7 +1061,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			ro.diffmode = 'j';
 			break;
 		case 'z':
-			mode = MODE_DIFF_STRS;
+			ro.mode = MODE_DIFF_STRS;
 			break;
 		case 'Z':
 			ro.zignatures = true;
@@ -1075,7 +1082,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		return 1;
 	}
 
-	switch (mode) {
+	switch (ro.mode) {
 	case MODE_GRAPH:
 	case MODE_CODE:
 	case MODE_DIFF_STRS:
@@ -1106,8 +1113,8 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		}
 		r_config_set_i (c->config, "diff.bare", ro.showbare);
 		r_config_set_i (c2->config, "diff.bare", ro.showbare);
-		r_anal_diff_setup_i (c->anal, diffops, threshold, threshold);
-		r_anal_diff_setup_i (c2->anal, diffops, threshold, threshold);
+		r_anal_diff_setup_i (c->anal, ro.diffops, ro.threshold, ro.threshold);
+		r_anal_diff_setup_i (c2->anal, ro.diffops, ro.threshold, ro.threshold);
 		if (ro.pdc) {
 			if (!addr) {
 				//addr = "entry0";
@@ -1124,8 +1131,8 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			ut64 addrb = r_num_math (c2->num, addr);
 			bufb = (ut8 *) r_core_cmd_strf (c2, "af;pdc @ 0x%08"PFMT64x, addrb);
 			szb = (ut64)strlen ((const char *) bufb);
-			mode = MODE_DIFF;
-		} else if (mode == MODE_GRAPH) {
+			ro.mode = MODE_DIFF;
+		} else if (ro.mode == MODE_GRAPH) {
 			int depth = r_config_get_i (c->config, "anal.depth");
 			if (depth < 1) {
 				depth = 64;
@@ -1140,17 +1147,17 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 				r_core_anal_fcn (c2, r_num_math (c2->num, second),
 					UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 				r_core_gdiff (c, c2);
-				__print_diff_graph (c, off, gmode);
+				__print_diff_graph (c, off, ro.gmode);
 			} else {
 				r_core_anal_fcn (c, r_num_math (c->num, words),
 					UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 				r_core_anal_fcn (c2, r_num_math (c2->num, words),
 					UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 				r_core_gdiff (c, c2);
-				__print_diff_graph (c, r_num_math (c->num, addr), gmode);
+				__print_diff_graph (c, r_num_math (c->num, addr), ro.gmode);
 			}
 			free (words);
-		} else if (mode == MODE_CODE) {
+		} else if (ro.mode == MODE_CODE) {
 			if (ro.zignatures) {
 				r_core_cmd0 (c, "z~?");
 				r_core_cmd0 (c2, "z~?");
@@ -1159,26 +1166,26 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 				r_core_gdiff (c, c2);
 				r_core_diff_show (c, c2);
 			}
-		} else if (mode == MODE_DIFF_IMPORTS) {
+		} else if (ro.mode == MODE_DIFF_IMPORTS) {
 			int sz;
 			bufa = get_imports (c, &sz);
 			sza = sz;
 			bufb = get_imports (c2, &sz);
 			szb = sz;
-		} else if (mode == MODE_DIFF_STRS) {
+		} else if (ro.mode == MODE_DIFF_STRS) {
 			int sz;
 			bufa = get_strings (c, &sz);
 			sza = sz;
 			bufb = get_strings (c2, &sz);
 			szb = sz;
 		}
-		if (mode == MODE_CODE || mode == MODE_GRAPH) {
+		if (ro.mode == MODE_CODE || ro.mode == MODE_GRAPH) {
 			r_cons_flush ();
 		}
 		r_core_free (c);
 		r_core_free (c2);
 
-		if (mode == MODE_CODE || mode == MODE_GRAPH) {
+		if (ro.mode == MODE_CODE || ro.mode == MODE_GRAPH) {
 			return 0;
 		}
 		break;
@@ -1207,7 +1214,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 	// initialize RCons
 	(void)r_cons_new ();
 
-	switch (mode) {
+	switch (ro.mode) {
 	case MODE_COLSII:
 		if (!c && !r_list_empty (ro.evals)) {
 			c = opencore (&ro, NULL);
@@ -1262,9 +1269,9 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			RDiff *d = r_diff_new ();
 			if (d) {
 				d->verbose = ro.verbose;
-				if (mode == MODE_DIST_LEVENSTEIN) {
+				if (ro.mode == MODE_DIST_LEVENSTEIN) {
 					d->type = 'l';
-				} else if (mode == MODE_DIST_MYERS) {
+				} else if (ro.mode == MODE_DIST_MYERS) {
 					d->type = 'm';
 				} else {
 					d->type = 0;
@@ -1277,7 +1284,6 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		printf ("distance: %d\n", ro.count);
 		break;
 	}
-	r_cons_free ();
 
 	if (ro.diffmode == 'j' && ro.showcount) {
 		printf (",\"count\":%d}\n", ro.count);
@@ -1288,6 +1294,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 	}
 	free (bufa);
 	free (bufb);
+	radiff_options_fini (&ro);
 
 	return 0;
 }
