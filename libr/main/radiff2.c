@@ -169,7 +169,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 					printf ("%02x ", op->b_buf[i]);
 				}
 				if (!ro->quiet) {
-					char *p = r_str_escape((const char*)op->b_buf);
+					char *p = r_str_escape ((const char*)op->b_buf);
 					printf (" \"%s\"", p);
 					free (p);
 					printf (Color_RESET);
@@ -921,11 +921,10 @@ static void __print_diff_graph(RCore *c, ut64 off, int gmode) {
 }
 
 R_API int r_main_radiff2(int argc, const char **argv) {
-	RadiffOptions ro = {0};
+	RadiffOptions ro = (RadiffOptions){0};
 	const char *columnSort = NULL;
 	const char *addr = NULL;
 	RCore *c = NULL, *c2 = NULL;
-	RDiff *d;
 	ut8 *bufa = NULL, *bufb = NULL;
 	int o, /*diffmode = 0,*/ delta = 0;
 	ut64 sza = 0, szb = 0;
@@ -934,6 +933,9 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 	int diffops = 0;
 	int threshold = -1;
 	double sim = 0.0;
+	RDiff *d;
+
+	ro.useva = true;
 	ro.evals = r_list_newf (NULL);
 
 	RGetopt opt;
