@@ -35,6 +35,7 @@ enum {
 };
 
 typedef struct {
+	ut64 gdiff_start;
 	bool zignatures;
 	const char *file;
 	const char *file2;
@@ -302,8 +303,6 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 	return 0;
 }
 
-static ut64 gdiff_start = 0;
-
 void print_bytes(const void *p, size_t len, bool big_endian) {
 	size_t i;
 	for (i = 0; i < len; i++) {
@@ -315,7 +314,8 @@ void print_bytes(const void *p, size_t len, bool big_endian) {
 }
 
 static int bcb(RDiff *d, void *user, RDiffOp *op) {
-	ut64 offset_diff = op->a_off - gdiff_start;
+	RadiffOptions *ro = user;
+	ut64 offset_diff = op->a_off - ro->gdiff_start;
 	unsigned char opcode;
 	unsigned short USAddr = 0;
 	int IAddr = 0;
@@ -327,12 +327,12 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 	if (offset_diff > 0) {
 
 		// size for the position
-		if (gdiff_start <= USHRT_MAX) {
+		if (ro->gdiff_start <= USHRT_MAX) {
 			opcode = 249;
-			USAddr = (unsigned short) gdiff_start;
-		} else if (gdiff_start <= INT_MAX) {
+			USAddr = (unsigned short) ro->gdiff_start;
+		} else if (ro->gdiff_start <= INT_MAX) {
 			opcode = 252;
-			IAddr = (int) gdiff_start;
+			IAddr = (int) ro->gdiff_start;
 		} else {
 			opcode = 255;
 		}
@@ -367,7 +367,7 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 		} else if (opcode < 255) {
 			print_bytes (&IAddr, sizeof (IAddr), true);
 		} else {
-			print_bytes (&gdiff_start, sizeof (gdiff_start), true);
+			print_bytes (&ro->gdiff_start, sizeof (ro->gdiff_start), true);
 		}
 
 		// print length for COPY
@@ -420,10 +420,10 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 
 		// print the remaining size
 		int remain_size = op->b_len;
-		print_bytes(&remain_size, sizeof(remain_size), true);
+		print_bytes (&remain_size, sizeof (remain_size), true);
 	}
-	print_bytes(op->b_buf, op->b_len, false);
-	gdiff_start = op->b_off + op->b_len;
+	print_bytes (op->b_buf, op->b_len, false);
+	ro->gdiff_start = op->b_off + op->b_len;
 	return 0;
 }
 
@@ -844,7 +844,7 @@ static char *get_graph_commands(RCore *c, ut64 off) {
         return retstr;
 }
 
-static void __generate_graph (RCore *c, ut64 off) {
+static void __generate_graph(RCore *c, ut64 off) {
         r_return_if_fail (c);
         char *ptr = get_graph_commands (c, off);
 	char *str = ptr;
@@ -1241,7 +1241,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 				free (res);
 			}
 		} else if (ro.diffmode == 'B') {
-			r_diff_set_callback (d, &bcb, 0);
+			r_diff_set_callback (d, &bcb, &ro);
 			r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
 			(void) write (1, "\x00", 1);
 		} else {
