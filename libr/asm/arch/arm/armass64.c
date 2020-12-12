@@ -27,7 +27,8 @@ typedef enum shifttype_t {
 	ARM_NO_SHIFT = -1,
 	ARM_LSL = 0,
 	ARM_LSR = 1,
-	ARM_ASR = 2
+	ARM_ASR = 2,
+	ARM_ROR = 3
 } ShiftType;
 
 typedef struct operand_t {
@@ -663,35 +664,61 @@ if (op->operands[1].reg_type == ARM_REG64) {
 
 static ut32 and(ArmOp *op, bool is_bic) {
 	ut32 data = UT32_MAX;
+	RegType reg_type = op->operands[0].reg_type;
 
 	// Reg types need to match
-	if (!(op->operands[0].reg_type == op->operands[1].reg_type)) {
+	if (!(reg_type == op->operands[1].reg_type)) {
 		return data;
 	}
 
-	if (op->operands[0].reg_type & ARM_REG64) {
-		data = 0x92000000;
-	} else if (op->operands[0].reg_type & ARM_REG32) {
-		data = 0x12000000;
+	OpType op2_type = op->operands[2].type;
+	if (op2_type == ARM_CONSTANT) {
+		if (reg_type & ARM_REG64) {
+			data = 0x92000000;
+		} else if (reg_type & ARM_REG32) {
+			data = 0x12000000;
+		} else {
+			return UT32_MAX;
+		}
+
+		bool is64bit = reg_type & ARM_REG64;
+
+		data |= op->operands[0].reg;
+		data |= op->operands[1].reg << 5;
+
+		ut32 imm_orig = op->operands[2].immediate;
+		ut32 imm = decodeBitMasksWithSize (is_bic? ~imm_orig: imm_orig, is64bit? 64: 32);
+		if (imm == UT32_MAX) {
+			return UT32_MAX;
+		}
+		data |= (imm & 0x1fff) << 10;
+	} else if (op2_type == ARM_GPR) {
+		if (reg_type & ARM_REG64) {
+			data = 0x8a000000;
+		} else if (reg_type & ARM_REG32) {
+			data = 0x0a000000;
+		} else {
+			return UT32_MAX;
+		}
+
+		data |= op->operands[0].reg;
+		data |= op->operands[1].reg << 5;
+		data |= op->operands[2].reg << 16;
+
+		if (op->operands_count == 4) {
+			Operand shift_op = op->operands[3];
+			if (shift_op.shift != ARM_NO_SHIFT) {
+				data |= (shift_op.shift_amount & 0x3f) << 10;
+				data |= (shift_op.shift & 0x3) << 22;
+			}
+		}
+
+		if (is_bic) {
+			data |= 1 << 21;
+		}
 	} else {
 		return UT32_MAX;
 	}
-
-	bool is64bit = op->operands[0].reg_type & ARM_REG64;
-
-	data |= op->operands[0].reg;
-	data |= op->operands[1].reg << 5;
-
-	ut32 imm;
-	if (is_bic) {
-		imm = decodeBitMasksWithSize (~op->operands[2].immediate, is64bit ? 64 : 32);
-	} else {
-		imm = decodeBitMasksWithSize (op->operands[2].immediate, is64bit ? 64 : 32);
-	}
-	if (imm == UT32_MAX) {
-		return UT32_MAX;
-	}
-	data |= (imm & 0x1fff) << 10;
 
 	return r_read_be32 (&data);
 }
@@ -943,6 +970,8 @@ static bool parseOperands(char* str, ArmOp *op) {
 			op->operands[operand].shift = ARM_LSR;
 		} else if (!strncmp (token, "asr", 3)) {
 			op->operands[operand].shift = ARM_ASR;
+		} else if (!strncmp (token, "ror", 3)) {
+			op->operands[operand].shift = ARM_ROR;
 		}
 		if (strlen (token) > 4 && op->operands[operand].shift != ARM_NO_SHIFT) {
 			op->operands_count ++;
