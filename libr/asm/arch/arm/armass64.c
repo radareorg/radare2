@@ -136,6 +136,43 @@ static bool isShiftedMask (ut32 value) {
   return value && isMask ((value - 1) | value);
 }
 
+static ut32 decodeBitMasksWithSize(ut32 imm, ut8 reg_size) {
+	// get element size
+	int size = reg_size;
+	// determine rot to make element be 0^m 1^n
+	ut32 cto, i;
+	ut32 mask = ((ut64) - 1LL) >> (64 - size);
+
+	if (isShiftedMask (imm)) {
+		i = countTrailingZeros (imm);
+		cto = countTrailingOnes (imm >> i);
+	} else {
+		imm |= ~mask;
+		if (!isShiftedMask (imm)) {
+			return UT32_MAX;
+		}
+
+		ut32 clo = countLeadingOnes (imm);
+		i = 64 - clo;
+		cto = clo + countTrailingOnes (imm) - (64 - size);
+	}
+
+	// Encode in Immr the number of RORs it would take to get *from* 0^m 1^n
+	// to our target value, where I is the number of RORs to go the opposite
+	// direction
+	ut32 immr = (size - i) & (size - 1);
+	// If size has a 1 in the n'th bit, create a value that has zeroes in
+	// bits [0, n] and ones above that.
+	ut64 nimms = ~(size - 1) << 1;
+	// Or the cto value into the low bits, which must be below the Nth bit
+	// bit mentioned above.
+	nimms |= (cto - 1);
+	// Extract and toggle seventh bit to make N field.
+	ut32 n = ((nimms >> 6) & 1) ^ 1;
+	ut64 encoding = (n << 12) | (immr << 6) | (nimms & 0x3f);
+	return encoding;
+}
+
 static ut32 decodeBitMasks(ut32 imm) {
 	// get element size
 	int size = 32;
@@ -631,38 +668,32 @@ static ut32 and(ArmOp *op, bool is_bic) {
 	if (!(op->operands[0].reg_type == op->operands[1].reg_type)) {
 		return data;
 	}
+
 	if (op->operands[0].reg_type & ARM_REG64) {
-		data = 0x00004092;
+		data = 0x92000000;
+	} else if (op->operands[0].reg_type & ARM_REG32) {
+		data = 0x12000000;
 	} else {
-		return data;
+		return UT32_MAX;
 	}
 
-	data += op->operands[0].reg << 24;
-	data += op->operands[1].reg << 29;
-	data += (op->operands[1].reg >> 3)  << 16;
+	bool is64bit = op->operands[0].reg_type & ARM_REG64;
 
-	ut32 imm = decodeBitMasks (op->operands[2].immediate);
-	if (imm == -1) {
-		return imm;
-	}
+	data |= op->operands[0].reg;
+	data |= op->operands[1].reg << 5;
+
+	ut32 imm;
 	if (is_bic) {
-		imm = -imm;
-		imm &= 0x1fff;
-	}
-	int low = imm & 0xF;
-	if (op->operands[0].reg_type & ARM_REG64) {
-		imm = ((imm >> 6) | 0x78);
-		if (imm > 120) {
-			data |= imm << 8;
-		}
+		imm = decodeBitMasksWithSize (~op->operands[2].immediate, is64bit ? 64 : 32);
 	} else {
-		imm = ((imm >> 2));
-		if (imm > 120) {
-			data |= imm << 4;
-		}
+		imm = decodeBitMasksWithSize (op->operands[2].immediate, is64bit ? 64 : 32);
 	}
-	data |= (4 * low) << 16;
-	return data;
+	if (imm == UT32_MAX) {
+		return UT32_MAX;
+	}
+	data |= (imm & 0x1fff) << 10;
+
+	return r_read_be32 (&data);
 }
 
 static ut32 orr(ArmOp *op, int addr) {
