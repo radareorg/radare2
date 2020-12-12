@@ -36,6 +36,10 @@ static inline bool is_special_char(char *name) {
 }
 
 R_API bool r_name_filter(char *name, int maxlen) {
+	if (*name == '<') {
+		// fix test, but the whole thing needs a better validation rule
+		r_str_cpy (name, name + 1);
+	}
 	size_t i, len;
 	if (!name) {
 		return false;
