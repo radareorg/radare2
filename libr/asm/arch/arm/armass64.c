@@ -31,6 +31,13 @@ typedef enum shifttype_t {
 	ARM_ROR = 3
 } ShiftType;
 
+typedef enum logicalop_t {
+	ARM_AND = 0,
+	ARM_ORR = 1,
+	ARM_EOR = 2,
+	ARM_ANDS = 3
+} LogicalOp;
+
 typedef struct operand_t {
 	OpType type;
 	union {
@@ -149,7 +156,7 @@ static ut32 decodeBitMasksWithSize(ut32 imm, ut8 reg_size) {
 		cto = countTrailingOnes (imm >> i);
 	} else {
 		imm |= ~mask;
-		if (!isShiftedMask (imm)) {
+		if (!isShiftedMask (~imm)) {
 			return UT32_MAX;
 		}
 
@@ -662,7 +669,7 @@ if (op->operands[1].reg_type == ARM_REG64) {
 	return seq_data;
 }
 
-static ut32 and(ArmOp *op, bool is_bic) {
+static ut32 logical(ArmOp *op, bool invert, LogicalOp opc) {
 	ut32 data = UT32_MAX;
 	RegType reg_type = op->operands[0].reg_type;
 
@@ -673,6 +680,10 @@ static ut32 and(ArmOp *op, bool is_bic) {
 
 	OpType op2_type = op->operands[2].type;
 	if (op2_type == ARM_CONSTANT) {
+		if (invert) {
+			/* there aren't inverted immediates in arm64 */
+			return UT32_MAX;
+		}
 		if (reg_type & ARM_REG64) {
 			data = 0x92000000;
 		} else if (reg_type & ARM_REG32) {
@@ -685,9 +696,10 @@ static ut32 and(ArmOp *op, bool is_bic) {
 
 		data |= op->operands[0].reg;
 		data |= op->operands[1].reg << 5;
+		data |= (opc & 3) << 29;
 
 		ut32 imm_orig = op->operands[2].immediate;
-		ut32 imm = decodeBitMasksWithSize (is_bic? ~imm_orig: imm_orig, is64bit? 64: 32);
+		ut32 imm = decodeBitMasksWithSize (invert? ~imm_orig: imm_orig, is64bit? 64: 32);
 		if (imm == UT32_MAX) {
 			return UT32_MAX;
 		}
@@ -704,6 +716,7 @@ static ut32 and(ArmOp *op, bool is_bic) {
 		data |= op->operands[0].reg;
 		data |= op->operands[1].reg << 5;
 		data |= op->operands[2].reg << 16;
+		data |= (opc & 3) << 29;
 
 		if (op->operands_count == 4) {
 			Operand shift_op = op->operands[3];
@@ -713,7 +726,7 @@ static ut32 and(ArmOp *op, bool is_bic) {
 			}
 		}
 
-		if (is_bic) {
+		if (invert) {
 			data |= 1 << 21;
 		}
 	} else {
@@ -721,60 +734,6 @@ static ut32 and(ArmOp *op, bool is_bic) {
 	}
 
 	return r_read_be32 (&data);
-}
-
-static ut32 orr(ArmOp *op, int addr) {
-	ut32 data = UT32_MAX;
-
-	if (op->operands[2].type & ARM_GPR) {
-		// All operands need to be the same
-		if (!(op->operands[0].reg_type == op->operands[1].reg_type &&
-	 	    op->operands[1].reg_type == op->operands[2].reg_type)) {
-		 	   return data;
-		}
-		if (op->operands[0].reg_type & ARM_REG64) {
-			data = 0x000000aa;
-		} else {
-			data = 0x0000002a;
-		}
-		data += op->operands[0].reg << 24;
-		data += op->operands[1].reg << 29;
-		data += (op->operands[1].reg >> 3)  << 16;
-		data += op->operands[2].reg << 8;
-	} else if (op->operands[2].type & ARM_CONSTANT) {
-		// Reg types need to match
-		if (!(op->operands[0].reg_type == op->operands[1].reg_type)) {
-			return data;
-		}
-		if (op->operands[0].reg_type & ARM_REG64) {
-			data = 0x000040b2;
-		} else {
-			data = 0x00000032;
-		}
-
-		data += op->operands[0].reg << 24;
-		data += op->operands[1].reg << 29;
-		data += (op->operands[1].reg >> 3)  << 16;
-
-		ut32 imm = decodeBitMasks (op->operands[2].immediate);
-		if (imm == -1) {
-			return imm;
-		}
-		int low = imm & 0xF;
-		if (op->operands[0].reg_type & ARM_REG64) {
-			imm = ((imm >> 6) | 0x78);
-			if (imm > 120) {
-				data |= imm << 8;
-			}
-		} else {
-			imm = ((imm >> 2));
-			if (imm > 120) {
-				data |= imm << 4;
-			}
-		}
-		data |= (4 * low) << 16;
-	}
-	return data;
 }
 
 static ut32 adrp(ArmOp *op, ut64 addr, ut32 k) { //, int reg, ut64 dst) {
@@ -1279,16 +1238,36 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 			return true;
 		}
 	}
+	if (!strncmp (str, "ands ", 5)) {
+		*op = logical (&ops, false, ARM_ANDS);
+		return *op != UT32_MAX;
+	}
 	if (!strncmp (str, "and ", 4)) {
-		*op = and (&ops, false);
+		*op = logical (&ops, false, ARM_AND);
+		return *op != UT32_MAX;
+	}
+	if (!strncmp (str, "bics ", 5)) {
+		*op = logical (&ops, true, ARM_ANDS);
 		return *op != UT32_MAX;
 	}
 	if (!strncmp (str, "bic ", 4)) {
-		*op = and (&ops, true);
+		*op = logical (&ops, true, ARM_AND);
+		return *op != UT32_MAX;
+	}
+	if (!strncmp (str, "eon ", 4)) {
+		*op = logical (&ops, true, ARM_EOR);
+		return *op != UT32_MAX;
+	}
+	if (!strncmp (str, "eor ", 4)) {
+		*op = logical (&ops, false, ARM_EOR);
+		return *op != UT32_MAX;
+	}
+	if (!strncmp (str, "orn ", 4)) {
+		*op = logical (&ops, true, ARM_ORR);
 		return *op != UT32_MAX;
 	}
 	if (!strncmp (str, "orr ", 4)) {
-		*op = orr (&ops, addr);
+		*op = logical (&ops, false, ARM_ORR);
 		return *op != UT32_MAX;
 	}
 	if (!strncmp (str, "svc ", 4)) { // system level exception
