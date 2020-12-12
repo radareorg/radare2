@@ -1,3 +1,46 @@
+ad "and x1, x2, 3" 41044092
+a "and x1, x2, x3" 4100038a
+a "and x1, x2, x3, lsl 8" 4120038a
+a "and x1, x2, x3, lsr 8" 4120438a
+a "and x1, x2, x3, asr 16" 4140838a
+a "and x1, x2, x3, ror 3" 410cc38a
+a "and w1, w2, 3" 41040012
+a "and w1, w2, w3" 4100030a
+a "and w1, w2, w3, lsl 8" 4120030a
+a "and w1, w2, w3, lsr 8" 4120430a
+a "and w1, w2, w3, asr 16" 4140830a
+a "and w1, w2, w3, ror 3" 410cc30a
+a "ands w1, w2, 3" 41040072
+a "ands x1, x2, 3" 410440f2
+a "ands w1, w2, w3, ror 3" 410cc36a
+a "ands x1, x2, x3, ror 3" 410cc3ea
+a "bic x1, x2, x3" 4100238a
+a "bic x1, x2, x3, lsl 8" 4120238a
+a "bic x1, x2, x3, lsr 8" 4120638a
+a "bic x1, x2, x3, asr 16" 4140a38a
+a "bic x1, x2, x3, ror 3" 410ce38a
+a "bics x1, x2, x3, ror 3" 410ce3ea
+a "bic w1, w2, w3" 4100230a
+a "bic w1, w2, w3, ror 3" 410ce30a
+a "bics w1, w2, w3, ror 3" 410ce36a
+a "orr w0, w13, w20" a001142a
+a "orr w22, w3, 0x2" 76001f32
+a "orr x0, x13, x20" a00114aa
+a "orr x1, x23, x0" e10200aa
+a "orr x2, x3, 0x3" 620440b2
+a "orr x2, x3, 0x7" 620840b2
+a "orr x2, x3, x20" 620014aa
+a "orr x22, x3, 0x2" 76007fb2
+a "orn w0, w13, w20" a001342a
+a "orn x0, x13, x20" a00134aa
+a "orn x0, x13, x20, ror 15" a03df4aa
+a "eor w22, w3, 0x2" 76001f52
+a "eor w0, w13, w20" a001144a
+a "eor x0, x13, x20" a00114ca
+a "eor x0, x13, x20, ror 15" a03dd4ca
+a "eon w0, w13, w20" a001344a
+a "eon x0, x13, x20" a00134ca
+a "eon x0, x13, x20, ror 15" a03df4ca
 a "adrp x5, 0x0" 05000090
 a "add x0, x1, x2" 2000028b
 a "add x0, xzr, x30" e0031e8b
@@ -168,14 +211,6 @@ a "movk x16, 15" f00180f2
 a "movn x6, 2" 46008092
 a "movz x1, 5" a10080d2
 a "nop" 1f2003d5
-a "orr w0, w13, w20" a001142a
-a "orr w22, w3, 0x2" 76001f32
-a "orr x0, x13, x20" a00114aa
-a "orr x1, x23, x0" e10200aa
-a "orr x2, x3, 0x3" 620440b2
-a "orr x2, x3, 0x7" 620840b2
-a "orr x2, x3, x20" 620014aa
-a "orr x22, x3, 0x2" 76007fb2
 a "str w2, [x7, -10]" e2601fb8
 a "str w2, [x7, -133]" e2b017b8
 a "str w2, [x7, -256]" e20010b8
