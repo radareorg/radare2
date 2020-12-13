@@ -2457,3 +2457,23 @@ EXPECT=<<EOF
 0x00000000
 EOF
 RUN
+
+NAME=cmc
+FILE=-
+EXPECT=<<EOF
+0x00000000
+0x00000001
+EOF
+CMDS=<<EOF
+e io.va=true
+e esil.debug=true
+e asm.arch=x86
+e asm.bits=32
+aei
+aeim
+"wa cmc"
+aer?eflags
+aes
+aer?eflags
+EOF
+RUN
