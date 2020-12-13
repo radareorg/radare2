@@ -11,7 +11,7 @@ LINK=-lm
 endif
 endif
 
-OBJS=binheap.o mem.o unum.o str.o hex.o file.o range.o
+OBJS=binheap.o mem.o unum.o str.o hex.o file.o range.o charset.o
 OBJS+=prof.o cache.o sys.o buf.o w32-sys.o ubase64.o base85.o base91.o
 OBJS+=list.o flist.o chmod.o graph.o event.o alloc.o donut.o print_code.o
 OBJS+=regex/regcomp.o regex/regerror.o regex/regexec.o uleb128.o
@@ -37,12 +37,7 @@ endif
 
 include deps.mk
 
-SDBCHARSETPATH=$(DESTDIR)$(DATADIR)/radare2/$(VERSION)/util
 CWD=$(shell pwd)
-
-all:
-	mkdir -p "${SDBCHARSETPATH}/d"
-	${MAKE} -C "${CWD}/d"
 
 LDFLAGS+=${BN_LIBS}
 LDFLAGS+=${TH_LIBS}
@@ -72,12 +67,15 @@ ifeq (${BUILD_OS},haiku)
 endif
 
 EXTRA_PRE+=spp_config
+EXTRA_PRE+=charsets
 
 include ../rules.mk
 include sdb.mk
 include spp.mk
 
-
+charsets:
+	$(MAKE) -C d
+.PHONY: charsets
 
 sync-regex regex-sync:
 	-rm -rf src/

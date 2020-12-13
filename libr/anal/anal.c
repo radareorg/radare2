@@ -137,7 +137,6 @@ R_API RAnal *r_anal_new(void) {
 			r_anal_add (anal, anal_static_plugins[i]);
 		}
 	}
-	anal->charset_db = sdb_ns (anal->sdb, "charset", 1);
 	return anal;
 }
 

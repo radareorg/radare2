@@ -12,6 +12,6 @@ foreach file : sdb_files
     depends: sdb_exe,
     build_by_default: true,
     install: true,
-    install_dir: join_paths(r2_sdb, 'util', 'd')
+    install_dir: join_paths(r2_sdb, 'charsets')
   )
 endforeach

@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_core.h>
+#include <r_types_base.h>
 
 #define NODECB(w,x,y) r_config_set_cb (cfg,w,x,y)
 #define NODEICB(w,x,y) r_config_set_i_cb (cfg,w,x,y)
@@ -1192,6 +1193,48 @@ static bool cb_bigendian(void *user, void *data) {
 	// Set printing endian to user's choice
 	core->print->big_endian = node->i_value;
 	return true;
+}
+
+static void list_available_plugins(const char *path) {
+	RListIter *iter;
+	const char *fn;
+	RList *files = r_sys_dir (path);
+	r_list_foreach (files, iter, fn) {
+		if (*fn && *fn != '.' && r_str_endswith (fn, ".sdb")) {
+			char *f = strdup (fn);
+			f[strlen (f) - 4] = 0;
+			r_cons_println (f);
+			free (f);
+		}
+	}
+	r_list_free (files);
+}
+
+static bool cb_cfgcharset(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	const char *cf = r_str_trim_head_ro (node->value);
+	if (!*cf) {
+		return false;
+	}
+
+	const char *cs = R2_PREFIX R_SYS_DIR R2_SDB R_SYS_DIR "charsets" R_SYS_DIR;
+	bool rc = true;
+	if (*cf == '?') {
+		list_available_plugins (cs);
+	} else {
+		char *syscs = r_str_newf ("%s%s.sdb", cs, cf);
+		if (r_file_exists (syscs)) {
+			rc = r_charset_open (core->charset, syscs);
+		} else {
+			rc = r_charset_open (core->charset, cf);
+		}
+		if (!rc) {
+			eprintf ("Warning: Cannot load charset file '%s' '%s'.\n", syscs, cf);
+		}
+		free (syscs);
+	}
+	return rc;
 }
 
 static bool cb_cfgdatefmt(void *user, void *data) {
@@ -3296,6 +3339,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("prj.simple", "false", "Use simple project saving style (functions, comments, options)");
 
 	/* cfg */
+	SETCB ("cfg.charset", "", &cb_cfgcharset, "Specify encoding to use in pse");
 	SETBPREF ("cfg.r2wars", "false", "Enable some tweaks for the r2wars game");
 	SETBPREF ("cfg.plugins", "true", "Load plugins at startup");
 	SETCB ("time.fmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
