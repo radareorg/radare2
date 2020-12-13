@@ -6176,6 +6176,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 			r_strbuf_free (filtered);
 		}
 	}
+	break;
 	case 'c':	// "aegc"
 	{
 		RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, argv[1]);
@@ -6194,6 +6195,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 		}
 		r_anal_esil_dfg_free (dfg);
 	}
+	break;
 	case '?':	// "aeg?"
 	default:
 		r_core_cmd_help (core, help_msg_aeg);
