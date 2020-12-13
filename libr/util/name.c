@@ -2,37 +2,63 @@
 
 #include <r_util.h>
 
+/* Validate if char is printable , why not use ISPRINTABLE() ?? */
+R_API bool r_name_validate_print(const char ch) {
+	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || IS_DIGIT (ch)) {
+		return true;
+	}
+	switch (ch) {
+	case '<':
+	case '>':
+	case '$':
+	case '%':
+	case '@':
+	case ' ':
+	case '.':
+	case ':':
+	case '_':
+		return true;
+	case '\b':
+	case '\t':
+	case '\n':
+	case '\r':
+		// must be replaced with ' ' and trimmed later
+		return false;
+	}
+	return false;
+}
+
 R_API bool r_name_validate_char(const char ch) {
 	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || IS_DIGIT (ch)) {
 		return true;
 	}
-	return r_name_validate_special (ch) == 1;
-}
-
-R_API int r_name_validate_special(const char ch) {
 	switch (ch) {
-	case ':':
 	case '.':
+	case ':':
 	case '_':
-		return 1;
-	case ' ':
-	case '$':
-	case '<':
-	case '>':
-		return 2;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
-R_API bool r_name_check(const char *name) {
-	r_return_val_if_fail (name, false);
-	/* Cannot start by number */
-	if (!*name || IS_DIGIT (*name) || *name == '$') {
+R_API bool r_name_validate_first(const char ch) {
+	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
+		return true;
+	}
+	switch (ch) {
+	case '_':
+	case ':':
+		return true;
+	}
+	return false;
+}
+
+R_API bool r_name_check(const char *s) {
+	if (!r_name_validate_first (*s)) {
 		return false;
 	}
-	/* Cannot contain non-alphanumeric chars + [:._] */
-	for (; *name != '\0'; name++) {
-		if (!r_name_validate_char (*name)) {
+	for (s++; *s; s++) {
+		if (!r_name_validate_char (*s)) {
 			return false;
 		}
 	}
@@ -45,18 +71,34 @@ static inline bool is_special_char(char *name) {
 }
 
 R_API const char *r_name_filter_ro(const char *a) {
-	while (*a && r_name_validate_special (*a)) {
-		a++;
+	for (;*a; a++) {
+		if (r_name_validate_first (*a)) {
+			break;
+		}
 	}
 	return a;
 }
 
-R_API bool r_name_filter(char *name, int maxlen) {
-	if (*name == '<') {
-		// fix test, but the whole thing needs a better validation rule
-		r_str_cpy (name, name + 1);
+R_API bool r_name_filter_flag(char *s) {
+	if (!r_name_validate_first (*s)) {
+		return false;
 	}
-	size_t i, len;
+	for (s++; *s; s++) {
+		if (!r_name_validate_char (*s)) {
+			r_str_cpy (s, s + 1);
+			s--;
+		}
+	}
+	return true;
+}
+
+R_API bool r_name_filter(char *name, int maxlen) {
+	return r_name_filter_flag (name);
+	if (r_name_validate_print(*name) && !r_name_validate_first (*name)) {
+		// fix test, but the whole thing needs a better validation rule
+		*name = ' ';
+	}
+	size_t i;
 	if (!name) {
 		return false;
 	}
@@ -70,34 +112,42 @@ R_API bool r_name_filter(char *name, int maxlen) {
 			*name = '\0';
 			break;
 		}
+		if (!r_name_validate_print (*name)) {
+			r_str_cpy (name, name + 1);
+			i--;
+			continue;
+		}
 		if (!r_name_validate_char (*name) && *name != '\\') {
 			if (i == 0) {
 				*name = 0;
 				return false;
 			}
-			*name = '_';
+			*name = ' ';
 		}
 	}
 	while (i > 0) {
 		if (*(name - 1) == '\\' && is_special_char (name)) {
 			*name = '_';
-			*(name - 1) = '_';
+			*(name - 1) = ' ';
 		}
 		if (*name == '\\') {
-			*name = '_';
+			*name = ' ';
 		}
 		name--;
 		i--;
 	}
 	if (*name == '\\') {
-		*name = '_';
+		*name = ' ';
 	}
+	r_str_trim (oname);
+#if 0
 	// trimming trailing underscores
 	len = strlen (name);
 	for (; len > 0 && *(name + len - 1) == '_'; len--) {
 		name[len - 1] = 0;
 		;
 	}
+#endif
 	return r_name_check (oname);
 }
 
