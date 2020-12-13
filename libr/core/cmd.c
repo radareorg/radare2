@@ -1392,7 +1392,10 @@ static void load_table_asciiart(RCore *core, RTable *t, RList *lines) {
 			expect_header = false;
 		} else if (expect_rows) {
 			char *arg;
-			RList *args = r_str_split_list (line + strlen (separator), separator, 0);
+			size_t line_len = strlen (line);
+			size_t separator_len = strlen (separator);
+			size_t pos = (line_len < separator_len)? line_len: separator_len;
+			RList *args = r_str_split_list (line + pos, separator, 0);
 			RList *items = r_list_newf (free);
 			RListIter *iter2;
 			if (r_list_length (args) < ncols) {
