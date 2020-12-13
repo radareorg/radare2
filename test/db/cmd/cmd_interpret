@@ -21,7 +21,7 @@ RUN
 NAME=.spp
 FILE=-
 CMDS=<<EOF
-. scripts/r2test.spp
+. bins/src/r2test.spp
 EOF
 EXPECT=<<EOF
 Test

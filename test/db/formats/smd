@@ -129,7 +129,7 @@ RUN
 NAME=smd strings
 FILE=malloc://256k
 CMDS=<<EOF
-. scripts/smd_strings.r2
+. bins/src/smd_strings.r2
 e bin.str.filter=U
 izz
 EOF

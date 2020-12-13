@@ -1,6 +1,6 @@
 NAME==h
 FILE=--
-CMDS=!!scripts/test-webserver.sh
+CMDS=!!bins/src/test-webserver.sh
 EXPECT=<<EOF
             ; [14] -r-x section size 594 named .text
             ;-- entry0:
