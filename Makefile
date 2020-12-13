@@ -14,7 +14,7 @@ BUILDSEC=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null ||
 else
 BUILDSEC=$(shell date "+__%H:%M:%S")
 endif
-DATADIRS=libr/cons/d libr/flag/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d
+DATADIRS=libr/cons/d libr/flag/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d libr/util/d
 USE_ZIP=YES
 ZIP=zip
 

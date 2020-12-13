@@ -1816,11 +1816,13 @@ static int cmd_kuery(void *data, const char *input) {
 		break;
 
 	case ' ':
-		out = sdb_querys (s, NULL, 0, input + 1);
-		if (out) {
-			r_cons_print (out);
+		if (s) {
+			out = sdb_querys (s, NULL, 0, input + 1);
+			if (out) {
+				r_cons_print (out);
+			}
+			R_FREE (out);
 		}
-		free (out);
 		break;
 	//case 's': r_pair_save (s, input + 3); break;
 	//case 'l': r_pair_load (sdb, input + 3); break;

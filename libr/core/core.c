@@ -2710,6 +2710,8 @@ R_API bool r_core_init(RCore *core) {
 	core->printidx = 0;
 	core->lastcmd = NULL;
 	core->cmdlog = NULL;
+	core->charset = r_charset_new ();
+	core->charset->db = sdb_ns (core->sdb, "charset", 1);
 	core->stkcmd = NULL;
 	core->cmdqueue = NULL;
 	core->cmdrepeat = true;
@@ -2897,6 +2899,7 @@ R_API void r_core_fini(RCore *c) {
 	if (!c) {
 		return;
 	}
+	r_charset_free (c->charset); // TODO. maybe move into RPrint?
 	r_core_task_break_all (&c->tasks);
 	r_core_task_join (&c->tasks, NULL, -1);
 	r_core_wait (c);

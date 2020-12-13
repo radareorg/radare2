@@ -29,6 +29,7 @@ typedef struct r_charset_rune_t {
 } RCharsetRune;
 
 typedef struct r_charset_t {
+	Sdb *db;
 	RCharsetRune *custom_charset;
 	size_t remaining;
 } RCharset;
@@ -41,9 +42,13 @@ R_API RCharset *r_charset_new(void);
 R_API void r_charset_free(RCharset *charset);
 R_API RCharsetRune *r_charset_rune_new(const ut8 *ch, const ut8 *hx);
 R_API void r_charset_rune_free(RCharsetRune *rcr);
+R_API size_t r_charset_encode_str(RCharset *r_char, ut8 *out, size_t out_len, const ut8 *in, size_t len_input);
+R_API bool r_charset_open(RCharset *c, const char *cs);
 R_API RCharsetRune * add_rune(RCharsetRune *rcsr, const ut8 *ch, const ut8 *hx);
 R_API RCharsetRune *search_from_hex(RCharsetRune *rcsr, const ut8 *hx);
 R_API RCharsetRune *search_from_char(RCharsetRune *rcsr, const ut8 *ch);
+
+// str
 R_API char *r_str_repeat(const char *ch, int sz);
 R_API const char *r_str_pad(const char ch, int len);
 R_API const char *r_str_rstr(const char *base, const char *p);
@@ -224,7 +229,6 @@ R_API const char *r_str_rsep(const char *base, const char *p, const char *sep);
 R_API char *r_str_donut(int size);
 R_API char *r_str_version(const char *program);
 
-R_API size_t r_charset_encode_str(ut8 *asciistr, ut8 *in, size_t len_input, RCharset *r_char);
 #ifdef __cplusplus
 }
 #endif

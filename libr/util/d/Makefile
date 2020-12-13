@@ -1,27 +1,29 @@
+FILES=pokered
+F_SDB=$(addsuffix .sdb,$(FILES))
+SDB=../../../shlr/sdb/sdb
+
+include ../../../config-user.mk
 include ../../../global.mk
 
-SDBCHARSETPATH=$(DESTDIR)$(DATADIR)/radare2/$(VERSION)/util
+R2_CHARSETS_PATH=$(DESTDIR)$(DATADIR)/radare2/$(VERSION)/charsets
 CWD=$(shell pwd)
 
-all:
-	for FILE in * ; do \
-		if [ "$$FILE" != Makefile && "$$FILE" != meson.build ]; then \
-			cp "${CWD}/$$FILE" "${SDBCHARSETPATH}/d/$$FILE" ; \
-		fi ; \
-	done
+alle: $(F_SDB)
+
+%.sdb: %.sdb.txt
+	${SDB} $@ = < $<
+	test -f $@
 
 install:
-	for FILE in * ; do \
-		if [ "$$FILE" != Makefile && "$$FILE" != meson.build ]; then \
-			cp "${CWD}/$$FILE" "${SDBCHARSETPATH}/d/$$FILE" ; \
-		fi ; \
+	mkdir -p "$(R2_CHARSETS_PATH)"
+	for FILE in *.sdb ; do \
+		cp "${CWD}/$$FILE" "${R2_CHARSETS_PATH}/$$FILE" ; \
 	done
 
 symstall install-symlink:
-	for FILE in * ; do \
-		if [ "$$FILE" != Makefile && "$$FILE" != meson.build ]; then \
-			cp "${CWD}/$$FILE" "${SDBCHARSETPATH}/d/$$FILE" ; \
-		fi ; \
+	mkdir -p "$(R2_CHARSETS_PATH)"
+	for FILE in *.sdb ; do \
+		ln -fs "${CWD}/$$FILE" "${R2_CHARSETS_PATH}/$$FILE" ; \
 	done
 
 .PHONY: all install symstall

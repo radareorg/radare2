@@ -11,72 +11,6 @@
 #include <stdarg.h>
 #include <r_util/r_base64.h>
 
-R_API RCharset *r_charset_new(void) {
-	RCharset* rcs = R_NEW0 (RCharset);
-	if (!rcs) {
-		return NULL;
-	}
-	rcs->custom_charset = NULL;
-	rcs->remaining = 0;
-	return rcs;
-}
-
-R_API void r_charset_free(RCharset *charset) {
-	r_charset_rune_free (charset->custom_charset);
-	free (charset);
-}
-
-R_API RCharsetRune *r_charset_rune_new(const ut8 *ch, const ut8 *hx) {
-	RCharsetRune* rcr = R_NEW0 (RCharsetRune);
-	if (!rcr) {
-		return NULL;
-	}
-	rcr->ch = (ut8 *) strdup ((char *) ch);
-	rcr->hx = (ut8 *) strdup ((char *) hx);
-	rcr->left = NULL;
-	rcr->right = NULL;
-	return rcr;
-}
-
-R_API void r_charset_rune_free(RCharsetRune *rcr) {
-	free (rcr->ch);
-	free (rcr->hx);
-	free (rcr);
-}
-
-R_API RCharsetRune *add_rune(RCharsetRune *rcsr, const ut8 *ch, const ut8 *hx) {
-	if (rcsr == NULL) {
-		rcsr = r_charset_rune_new (ch, hx);
-	}
-
-	if (strcmp ((char *)hx, (char *)rcsr->hx) < 0) {
-		rcsr->left = add_rune (rcsr->left, ch, hx);
-	} else if (strcmp ((char *)hx, (char *)rcsr->hx) > 0) {
-		rcsr->right = add_rune (rcsr->right, ch, hx);
-	} else {
-		if(strcmp ((char *)ch, (char *)rcsr->ch) > 0) {
-			rcsr->left = add_rune (rcsr->left, ch, hx);
-		} else if(strcmp ((char *)ch, (char *)rcsr->ch) < 0) {
-			rcsr->right = add_rune (rcsr->right, ch, hx);
-		}
-	}
-
-	return rcsr;
-}
-
-R_API RCharsetRune *search_from_hex(RCharsetRune *rcsr, const ut8 *hx) {
-	if (!rcsr) {
-		return NULL;
-	}
-	else if ( !strcmp ((char *)rcsr->hx, (char *)hx) ) {
-		return rcsr;
-	}
-	else {
-		RCharsetRune *left = search_from_hex(rcsr->left, hx);
-		return left? left:  search_from_hex(rcsr->right, hx);
-	}
-}
-
 /* stable code */
 static const char *nullstr = "";
 static const char *nullstr_c = "(null)";
@@ -3792,47 +3726,6 @@ R_API const char *r_str_str_xy(const char *s, const char *word, const char *prev
 	return d;
 }
 
-R_API size_t r_charset_encode_str(ut8 *asciistr, ut8 *in, size_t len_input, RCharset *r_char) {
-	bool is_in_set = false;
-	size_t j, k, l;
-	size_t current_ascii = 0;
-	ut8 * buff_hex = (ut8 *) malloc (len_input);
-	if (!buff_hex) {
-		return -1;
-	}
-
-	for (j = 0; j < len_input; j ++) {
-		is_in_set = true;
-		buff_hex[0] = in[j];
-		buff_hex[1] = '\0';
-
-		for (k = 0; !search_from_hex (r_char->custom_charset, buff_hex) && k < (len_input - j); k ++) {
-			buff_hex[k] = in[j+k];
-			if (k >= (len_input - j) - 1) {
-				is_in_set = false;
-			}
-		}
-		buff_hex[k+1] = '\0';
-
-		if (!is_in_set) {
-			break;
-		}
-
-		ut8 * tmp = search_from_hex (r_char->custom_charset, buff_hex)->ch;
-		if (!tmp) {
-			return -1;
-		}
-
-		for (l = 0; l < strlen ( (char *) tmp); l ++) {
-			asciistr[current_ascii] = tmp[l];
-			current_ascii ++;
-		}
-	}
-
-	asciistr[current_ascii] = '\0';
-	free (buff_hex);
-	return j;
-}
 
 // version.c
 #include <r_userconf.h>
