@@ -28,6 +28,20 @@ R_API bool r_name_validate_print(const char ch) {
 	return false;
 }
 
+// used to determine if we want to replace those chars with '_' in r_name_filter()
+R_API bool r_name_validate_dash(const char ch) {
+	switch (ch) {
+	case ' ':
+	case '/':
+	case '@':
+	case '`':
+	case '"':
+	case '\n':
+		return true;
+	}
+	return false;
+}
+
 R_API bool r_name_validate_char(const char ch) {
 	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || IS_DIGIT (ch)) {
 		return true;
@@ -65,8 +79,7 @@ R_API bool r_name_check(const char *s) {
 	return true;
 }
 
-static inline bool is_special_char(char *name) {
-	const char n = *name;
+static inline bool is_special_char(char n) {
 	return (n == 'b' || n == 'f' || n == 'n' || n == 'r' || n == 't' || n == 'v' || n == 'a');
 }
 
@@ -80,20 +93,37 @@ R_API const char *r_name_filter_ro(const char *a) {
 }
 
 R_API bool r_name_filter_flag(char *s) {
+	char *os = s;
 	if (!r_name_validate_first (*s)) {
 		return false;
 	}
 	for (s++; *s; s++) {
+		if (*s == '\\') {
+			if (is_special_char (s[1])) {
+				r_str_cpy (s, s + 2);
+				s--;
+			} else {
+				r_str_cpy (s, s + 1);
+				s--;
+			}
+		}
 		if (!r_name_validate_char (*s)) {
-			r_str_cpy (s, s + 1);
-			s--;
+			if (r_name_validate_dash (*s)) {
+				*s = '_';
+			} else {
+				r_str_cpy (s, s + 1);
+				s--;
+			}
 		}
 	}
+	r_str_trim (os);
+	return r_name_check (os);
 	return true;
 }
 
 R_API bool r_name_filter(char *name, int maxlen) {
 	return r_name_filter_flag (name);
+#if 0
 	if (r_name_validate_print(*name) && !r_name_validate_first (*name)) {
 		// fix test, but the whole thing needs a better validation rule
 		*name = ' ';
@@ -149,6 +179,7 @@ R_API bool r_name_filter(char *name, int maxlen) {
 	}
 #endif
 	return r_name_check (oname);
+#endif
 }
 
 R_API char *r_name_filter2(const char *name) {
