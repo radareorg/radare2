@@ -235,7 +235,7 @@ R_API bool r_cmd_alias_del (RCmd *cmd, const char *k) {
 }
 
 // XXX: use a hashtable or any other standard data structure
-R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v, int remote) {
+R_API int r_cmd_alias_set(RCmd *cmd, const char *k, const char *v, int remote) {
 	void *tofree = NULL;
 	if (!strncmp (v, "base64:", 7)) {
 		ut8 *s = r_base64_decode_dyn (v + 7, -1);
@@ -686,7 +686,7 @@ R_API void r_cmd_macro_fini(RCmdMacro *mac) {
 
 // XXX add support single line function definitions
 // XXX add support for single name multiple nargs macros
-R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
+R_API bool r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	struct r_cmd_macro_item_t *macro;
 	char *name, *args = NULL;
 	//char buf[R_CMD_MAXLEN];
@@ -700,13 +700,12 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 
 	if (!*oname) {
 		r_cmd_macro_list (mac);
-		return 0;
+		return false;
 	}
 
 	name = strdup (oname);
 	if (!name) {
-		perror ("strdup");
-		return 0;
+		return false;
 	}
 
 	pbody = strchr (name, ';');
@@ -721,7 +720,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	if (*name && name[1] && name[strlen (name)-1]==')') {
 		eprintf ("r_cmd_macro_add: missing macro body?\n");
 		free (name);
-		return -1;
+		return false;
 	}
 
 	macro = NULL;
@@ -748,7 +747,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		macro = r_cmd_macro_item_new ();
 		if (!macro) {
 			free (name);
-			return 0;
+			return false;
 		}
 		macro->name = strdup (name);
 	}
@@ -780,10 +779,11 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		r_list_append (mac->macros, macro);
 	}
 	free (name);
-	return 0;
+	return true;
 }
 
-R_API int r_cmd_macro_rm(RCmdMacro *mac, const char *_name) {
+R_API bool r_cmd_macro_rm(RCmdMacro *mac, const char *_name) {
+	r_return_val_if_fail (mac && _name, false);
 	RListIter *iter;
 	RCmdMacroItem *m;
 	char *name = strdup (_name);
