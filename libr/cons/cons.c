@@ -1003,7 +1003,7 @@ R_API void r_cons_visual_flush(void) {
 	}
 }
 
-R_API void r_cons_print_fps (int col) {
+R_API void r_cons_print_fps(int col) {
 	int fps = 0, w = r_cons_get_size (NULL);
 	static ut64 prev = 0LL; //r_time_now_mono ();
 	fps = 0;
