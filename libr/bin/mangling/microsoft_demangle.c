@@ -231,7 +231,7 @@ static int get_template_params(const char *sym, size_t *amount_of_read_chars, ch
 				free (data_type.left);
 				free (data_type.right);
 			} else {
-				char *tmp;
+				char *tmp = NULL;
 				err = parse_function (sym, &str, &tmp, &ret);
 				*str_type_code = r_str_newf ("&%s", tmp);
 				free (tmp);
