@@ -118,9 +118,16 @@ ifneq ($(CC),cccl)
 PIC=-fPIC
 endif
 
-sdbs:
+SDB_HOST=sdb/sdb$(BUILD_EXT_EXE)
+SDB_LIBA=sdb/src/libsdb.a
+
+$(SDB_HOST):
 	$(MAKE) sdb-host HOST_CC=$(HOST_CC) CC=$(HOST_CC)
+
+$(SDB_LIBA):
 	$(MAKE) sdb-target
+
+sdbs: $(SDB_HOST)
 
 sdb-host:
 	@echo
