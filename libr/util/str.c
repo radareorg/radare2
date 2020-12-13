@@ -1356,7 +1356,7 @@ R_API char *r_str_escape(const char *buf) {
 	return r_str_escape_ (buf, false, true, true, false, true);
 }
 
-R_API char *r_str_escape_r2(const char *buf) {
+R_API char *r_str_sanitize_r2(const char *buf) {
 	r_return_val_if_fail (buf, NULL);
 	char *new_buf = malloc (1 + strlen (buf) * 2);
 	if (!new_buf) {
@@ -1373,7 +1373,7 @@ R_API char *r_str_escape_r2(const char *buf) {
 		case '"':
 			*q++ = ' ';
 			p++;
-			/* FALLTHRU */
+			break;
 		default:
 			*q++ = *p++;
 			break;
@@ -1382,6 +1382,7 @@ R_API char *r_str_escape_r2(const char *buf) {
 	*q = '\0';
 	return new_buf;
 }
+
 // Return MUST BE surrounded by double-quotes
 R_API char *r_str_escape_sh(const char *buf) {
 	r_return_val_if_fail (buf, NULL);
