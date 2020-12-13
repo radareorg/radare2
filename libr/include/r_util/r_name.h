@@ -7,6 +7,8 @@ extern "C" {
 
 R_API bool r_name_check(const char *name);
 R_API bool r_name_filter(char *name, int len);
+R_API const char *r_name_filter_ro(const char *a);
+R_API int r_name_validate_special(const char ch);
 R_API char *r_name_filter2(const char *name);
 R_API bool r_name_validate_char(const char ch);
 

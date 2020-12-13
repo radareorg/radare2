@@ -6,13 +6,22 @@ R_API bool r_name_validate_char(const char ch) {
 	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || IS_DIGIT (ch)) {
 		return true;
 	}
+	return r_name_validate_special (ch) == 1;
+}
+
+R_API int r_name_validate_special(const char ch) {
 	switch (ch) {
 	case ':':
 	case '.':
 	case '_':
-		return true;
+		return 1;
+	case ' ':
+	case '$':
+	case '<':
+	case '>':
+		return 2;
 	}
-	return false;
+	return 0;
 }
 
 R_API bool r_name_check(const char *name) {
@@ -33,6 +42,13 @@ R_API bool r_name_check(const char *name) {
 static inline bool is_special_char(char *name) {
 	const char n = *name;
 	return (n == 'b' || n == 'f' || n == 'n' || n == 'r' || n == 't' || n == 'v' || n == 'a');
+}
+
+R_API const char *r_name_filter_ro(const char *a) {
+	while (*a && r_name_validate_special (*a)) {
+		a++;
+	}
+	return a;
 }
 
 R_API bool r_name_filter(char *name, int maxlen) {
