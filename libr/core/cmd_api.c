@@ -879,8 +879,7 @@ R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args
 				} else {
 					eprintf ("Undefined argument %d\n", w);
 				}
-			} else
-			if (ptr[j+1]=='@') {
+			} else if (ptr[j+1]=='@') {
 				char off[32];
 				int offlen;
 				offlen = snprintf (off, sizeof (off), "%d",
@@ -914,16 +913,16 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 	for (; *ptr == ' '; ptr++) {
 		;
 	}
-	if (ptr[strlen (ptr)-1]==':' && !strchr (ptr, ' ')) {
+	if (ptr[strlen (ptr) - 1]==':' && !strchr (ptr, ' ')) {
 		/* label detected */
-		if (ptr[0]=='.') {
+		if (ptr[0] == '.') {
 		//	eprintf("---> GOTO '%s'\n", ptr+1);
 			/* goto */
-			for (i=0;i<*labels_n;i++) {
-		//	eprintf("---| chk '%s'\n", labels[i].name);
-				if (!strcmp (ptr+1, labels[i].name)) {
+			for (i = 0; i < *labels_n; i++) {
+			//	eprintf("---| chk '%s'\n", labels[i].name);
+				if (!strcmp (ptr + 1, labels[i].name)) {
 					return labels[i].ptr;
-			}
+				}
 			}
 			return NULL;
 		} else
@@ -934,9 +933,9 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 				for (; *label == ' ' || *label == '.'; label++) {
 					;
 				}
-				//		eprintf("===> GOTO %s\n", label);
+				// eprintf("===> GOTO %s\n", label);
 				/* goto label ptr+3 */
-				for (i=0;i<*labels_n;i++) {
+				for (i = 0; i < *labels_n; i++) {
 					if (!strcmp (label, labels[i].name)) {
 						return labels[i].ptr;
 					}
@@ -945,7 +944,7 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 			}
 		} else
 		/* conditional goto */
-		if (ptr[0]=='?' && ptr[1]=='?' && ptr[2] != '?') {
+		if (ptr[0] == '?' && ptr[1] == '?' && ptr[2] != '?') {
 			if (mac->num->value == 0) {
 				char *label = ptr + 3;
 				for (; label[0] == ' ' || label[0] == '.'; label++) {
@@ -961,9 +960,9 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 				return NULL;
 			}
 		} else {
-			for (i=0; i<*labels_n; i++) {
+			for (i = 0; i < *labels_n; i++) {
 		//	eprintf("---| chk '%s'\n", labels[i].name);
-				if (!strcmp (ptr+1, labels[i].name)) {
+				if (!strcmp (ptr + 1, labels[i].name)) {
 					i = 0;
 					break;
 				}
@@ -976,7 +975,7 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 				*labels_n = *labels_n + 1;
 			}
 		}
-		return ptr + strlen (ptr)+1;
+		ptr += strlen (ptr) + 1;
 	}
 	return ptr;
 }
