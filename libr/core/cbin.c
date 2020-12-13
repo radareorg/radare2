@@ -2370,7 +2370,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 					}
 				} else {
 					fi = r_flag_set (r->flags, sn.methflag, addr, symbol->size);
-					char *comment = fi->comment ? strdup (fi->comment) : NULL;
+					char *comment = (fi && fi->comment) ? strdup (fi->comment) : NULL;
 					if (comment) {
 						r_flag_item_set_comment (fi, comment);
 						R_FREE (comment);
