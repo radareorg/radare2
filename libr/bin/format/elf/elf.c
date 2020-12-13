@@ -1422,20 +1422,6 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RBinElfReloc *rel) {
 		return plt_addr;
 	case R_AARCH64_RELATIVE:
 		eprintf ("Unsupported relocation type for imports %d\n", rel->type);
-#if 0
-// TODO
-	 if (rela->r_addend >= start)
-> +	{
-> +	  if (read_uneclass (dso, rela->r_offset) == rela->r_addend)
-> +	    write_neclass (dso, rela->r_offset, rela->r_addend + adjust);
-> +	  rela->r_addend += adjust;
-> +	}
-		if (rel->addend > plt_addr) { // start
-			return (plt_addr + pos * 16 + 32) + rel->addend;
-		}
-		// same as fallback to JUMP_SLOT
-		return plt_addr + pos * 16 + 32;
-#endif
 		return UT64_MAX;
 	case R_AARCH64_IRELATIVE:
 		if (rel->addend > plt_addr) { // start
