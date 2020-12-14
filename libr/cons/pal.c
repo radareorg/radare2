@@ -229,7 +229,7 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.graph_box4         = (RColor) RColor_GRAY;
 	ctx->cpal.graph_true         = (RColor) RColor_GREEN;
 	ctx->cpal.graph_false        = (RColor) RColor_RED;
-	ctx->cpal.graph_trufae       = (RColor) RColor_BLUE; // single jump
+	ctx->cpal.graph_trufae       = (RColor) RColor_CYAN; // single jump
 	ctx->cpal.graph_traced       = (RColor) RColor_YELLOW;
 	ctx->cpal.graph_current      = (RColor) RColor_BLUE;
 	ctx->cpal.graph_diff_unknown = (RColor) RColor_MAGENTA;
