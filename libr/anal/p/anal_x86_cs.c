@@ -120,7 +120,6 @@ static void opex(RStrBuf *buf, cs_insn *insn, int mode) {
 		cs_x86_op *op = &x->operands[i];
 		pj_o (pj);
 		pj_ki (pj, "size", op->size);
-		pj_end (pj);
 #if CS_API_MAJOR >= 4
 		pj_ki (pj, "rw", op->access);// read , write, read|write
 #endif
