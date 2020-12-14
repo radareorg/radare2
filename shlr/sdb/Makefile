@@ -75,7 +75,7 @@ install-dirs:
 
 INCFILES=src/sdb.h src/sdb_version.h src/cdb.h src/ht_uu.h src/ht_up.h src/ht_pp.h src/types.h
 INCFILES+=src/ls.h src/cdb_make.h src/buffer.h src/config.h src/sdbht.h
-INCFILES+=src/dict.h
+INCFILES+=src/dict.h src/set.h src/ht_inc.h
 
 install: pkgconfig install-dirs
 	$(INSTALL_MAN) src/sdb.1 ${DESTDIR}${MANDIR}
