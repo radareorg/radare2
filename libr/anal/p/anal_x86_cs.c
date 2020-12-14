@@ -174,6 +174,7 @@ static void opex(RStrBuf *buf, cs_insn *insn, int mode) {
 	if (x->sib_base) {
 		pj_ks (pj, "sib_base", cs_reg_name (handle, x->sib_base));
 	}
+	pj_end (pj);
 
 	char *s = pj_drain (pj);
 	r_strbuf_append (buf, s);
