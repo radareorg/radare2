@@ -160,44 +160,49 @@ static const char* getspr(struct Getarg *gop, int n) {
 	return cspr;
 }
 
-//TODO PJ
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
-	r_strbuf_init (buf);
-	r_strbuf_append (buf, "{");
+	PJ *pj;
+	pj = pj_new ();
+	if (!pj) {
+		return;
+	}
 	cs_sysz *x = &insn->detail->sysz;
-	r_strbuf_append (buf, "\"operands\":[");
+	pj_o (pj);
+	pj_ka (pj, "operands");
 	for (i = 0; i < x->op_count; i++) {
 		cs_sysz_op *op = &x->operands[i];
-		if (i > 0) {
-			r_strbuf_append (buf, ",");
-		}
-		r_strbuf_append (buf, "{");
+		pj_o (pj);
 		switch (op->type) {
 		case SYSZ_OP_REG:
-			r_strbuf_append (buf, "\"type\":\"reg\"");
-			r_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->reg));
+			pj_ks (pj, "type", "reg");
+			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
 			break;
 		case SYSZ_OP_IMM:
-			r_strbuf_append (buf, "\"type\":\"imm\"");
-			r_strbuf_appendf (buf, ",\"value\":%" PFMT64d, (st64)op->imm);
+			pj_ks (pj, "type", "imm");
+			pj_kN (pj, "value", (st64)op->imm);
 			break;
 		case SYSZ_OP_MEM:
-			r_strbuf_append (buf, "\"type\":\"mem\"");
+			pj_ks (pj, "type", "mem");
 			if (op->mem.base != SYSZ_REG_INVALID) {
-				r_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
+				pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
 			}
-			r_strbuf_appendf (buf, ",\"index\":%"PFMT64d"", (st64) op->mem.index);
-			r_strbuf_appendf (buf, ",\"length\":%"PFMT64d"", (st64) op->mem.length);
-			r_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", (st64) op->mem.disp);
+			pj_kN (pj, "index", (st64) op->mem.index);
+			pj_kN (pj, "length", (st64) op->mem.length);
+			pj_kN (pj, "disp", (st64) op->mem.disp);
 			break;
 		default:
-			r_strbuf_append (buf, "\"type\":\"invalid\"");
+			pj_ks (pj, "type", "invalid");
 			break;
 		}
-		r_strbuf_append (buf, "}");
+		pj_end (pj); /* o operand */
 	}
-	r_strbuf_append (buf, "]}");
+	pj_end (pj); /* a operands */
+	pj_end (pj);
+
+	r_strbuf_init (buf);
+	r_strbuf_append (buf, pj_string (pj));
+	pj_free (pj);
 }
 
 #define PPCSPR(n) getspr(&gop, n)

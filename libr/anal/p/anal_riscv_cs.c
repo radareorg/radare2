@@ -101,43 +101,49 @@
 			ARG(1), REG(0));\
 	}
 
-//TODO PJ
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
-	r_strbuf_init (buf);
-	r_strbuf_append (buf, "{");
+	PJ *pj;
+	pj = pj_new ();
+	if (!pj) {
+		return:
+	}
+	pj_o (pj);
 	cs_riscv *x = &insn->detail->riscv;
-	r_strbuf_append (buf, "\"operands\":[");
+	pj_ka (pj, "operands");
 	for (i = 0; i < x->op_count; i++) {
 		cs_riscv_op *op = &x->operands[i];
-		if (i > 0) {
-			r_strbuf_append (buf, ",");
-		}
-		r_strbuf_append (buf, "{");
+		pj_o (pj);
 		switch (op->type) {
 		case RISCV_OP_REG:
-			r_strbuf_append (buf, "\"type\":\"reg\"");
-			r_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->reg));
+			pj_ks (pj, "type", "reg");
+			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
 			break;
 		case RISCV_OP_IMM:
-			r_strbuf_append (buf, "\"type\":\"imm\"");
+			pj_ks (pj, "type", "imm");
 			r_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
 			break;
 		case RISCV_OP_MEM:
-			r_strbuf_append (buf, "\"type\":\"mem\"");
+			pj_ks (pj, "type", "mem");
 			if (op->mem.base != RISCV_REG_INVALID) {
-				r_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
+				pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
 			}
-			r_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", op->mem.disp);
+			pj_kN (pj, "disp", op->mem.disp);
 			break;
 		default:
-			r_strbuf_append (buf, "\"type\":\"invalid\"");
+			pj_ks (pj, "type", "invalid");
 			break;
 		}
-		r_strbuf_append (buf, "}");
+		pj_end (pj); /* o operand */
 	}
-	r_strbuf_append (buf, "]");
-	r_strbuf_append (buf, "}");
+	pj_end (pj); /* a operands */
+	pj_end (pj);
+
+	char *s = pj_drain (pj);
+	r_strbuf_init (buf);
+	r_strbuf_append (s);
+
+	pj_free (pj);
 }
 
 static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {

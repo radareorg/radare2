@@ -223,134 +223,141 @@ static const char *cc_name(arm_cc cc) {
 	}
 }
 
-//TODO PJ
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
+	PJ *pj;
 	int i;
-	r_strbuf_init (buf);
-	r_strbuf_append (buf, "{");
+	pj = pj_new ();
+	if (!pj) {
+		return;
+	}
+
+	pj_o (pj);
 	cs_arm *x = &insn->detail->arm;
-	r_strbuf_append (buf, "\"operands\":[");
+	pj_ka (pj, "operands");
 	for (i = 0; i < x->op_count; i++) {
 		cs_arm_op *op = &x->operands[i];
-		if (i > 0) {
-			r_strbuf_append (buf, ",");
-		}
-		r_strbuf_append (buf, "{");
+		pj_o (pj);
 		switch (op->type) {
 		case ARM_OP_REG:
-			r_strbuf_append (buf, "\"type\":\"reg\"");
-			r_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->reg));
+			pj_ks (pj, "type", "reg");
+			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
 			break;
 		case ARM_OP_IMM:
-			r_strbuf_append (buf, "\"type\":\"imm\"");
-			r_strbuf_appendf (buf, ",\"value\":%d", (st32)op->imm);
+			pj_ks (pj, "type", "imm");
+			pj_ki (pj, "value", op->imm);
 			break;
 		case ARM_OP_MEM:
-			r_strbuf_append (buf, "\"type\":\"mem\"");
+			pj_ks (pj, "type", "mem");
 			if (op->mem.base != ARM_REG_INVALID) {
-				r_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
+				pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
 			}
 			if (op->mem.index != ARM_REG_INVALID) {
-				r_strbuf_appendf (buf, ",\"index\":\"%s\"", cs_reg_name (handle, op->mem.index));
+				pj_ks (pj, "index", cs_reg_name (handle, op->mem.index));
 			}
-			r_strbuf_appendf (buf, ",\"scale\":%d", op->mem.scale);
-			r_strbuf_appendf (buf, ",\"disp\":%d", op->mem.disp);
+			pj_ki (pj, "scale", op->mem.scale);
+			pj_ki (pj, "disp", op->mem.disp);
 			break;
 		case ARM_OP_FP:
-			r_strbuf_append (buf, "\"type\":\"fp\"");
-			r_strbuf_appendf (buf, ",\"value\":%lf", op->fp);
+			pj_ks (pj, "type", "fp");
+			pj_kd (pj, "value", op->fp);
 			break;
 		case ARM_OP_CIMM:
-			r_strbuf_append (buf, "\"type\":\"cimm\"");
-			r_strbuf_appendf (buf, ",\"value\":%d", (st32)op->imm);
+			pj_ks (pj, "type", "cimm");
+			pj_ki (pj, "value", op->imm);
 			break;
 		case ARM_OP_PIMM:
-			r_strbuf_append (buf, "\"type\":\"pimm\"");
-			r_strbuf_appendf (buf, ",\"value\":%d", (st32)op->imm);
+			pj_ks (pj, "type", "pimm");
+			pj_ki (pj, "value", op->imm);
 			break;
 		case ARM_OP_SETEND:
-			r_strbuf_append (buf, "\"type\":\"setend\"");
+			pj_ks (pj, "type", "setend");
 			switch (op->setend) {
 			case ARM_SETEND_BE:
-				r_strbuf_append (buf, ",\"value\":\"be\"");
+				pj_ks (pj, "value", "be");
 				break;
 			case ARM_SETEND_LE:
-				r_strbuf_append (buf, ",\"value\":\"le\"");
+				pj_ks (pj, "value", "le");
 				break;
 			default:
-				r_strbuf_append (buf, ",\"value\":\"invalid\"");
+				pj_ks (pj, "value", "invalid");
 				break;
 			}
 			break;
 		case ARM_OP_SYSREG:
-			r_strbuf_append (buf, "\"type\":\"sysreg\"");
-			r_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->reg));
+			pj_ks (pj, "type", "sysreg");
+			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
 			break;
 		default:
-			r_strbuf_append (buf, ",\"type\":\"invalid\"");
+			pj_ks (pj, "type", "invalid");
 			break;
 		}
 		if (op->shift.type != ARM_SFT_INVALID) {
-			r_strbuf_append (buf, ",\"shift\":{");
+			pj_ko (pj, "shift");
 			switch (op->shift.type) {
 			case ARM_SFT_ASR:
 			case ARM_SFT_LSL:
 			case ARM_SFT_LSR:
 			case ARM_SFT_ROR:
 			case ARM_SFT_RRX:
-				r_strbuf_appendf (buf, "\"type\":\"%s\"", shift_type_name (op->shift.type));
-				r_strbuf_appendf (buf, ",\"value\":\"%u\"", op->shift.value);
+				pj_ks (pj, "type", shift_type_name (op->shift.type));
+				pj_kn (pj, "value", (ut64)op->shift.value);
 				break;
 			case ARM_SFT_ASR_REG:
 			case ARM_SFT_LSL_REG:
 			case ARM_SFT_LSR_REG:
 			case ARM_SFT_ROR_REG:
 			case ARM_SFT_RRX_REG:
-				r_strbuf_appendf (buf, "\"type\":\"%s\"", shift_type_name (op->shift.type));
-				r_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->shift.value));
+				pj_ks (pj, "type", shift_type_name (op->shift.type));
+				pj_ks (pj, "value", cs_reg_name (handle, op->shift.value));
 				break;
 			default:
 				break;
 			}
-			r_strbuf_append (buf, "}");
+			pj_end (pj); /* o shift */
 		}
 		if (op->vector_index != -1) {
-			r_strbuf_appendf (buf, ",\"vector_index\":\"%d\"", op->vector_index);
+			pj_ki (pj, "vector_index", op->vector_index);
 		}
 		if (op->subtracted) {
-			r_strbuf_append (buf, ",\"subtracted\":true");
+			pj_kb (pj, "subtracted", op->subtracted);
 		}
-		r_strbuf_append (buf, "}");
+		pj_end (pj); /* o operand */
 	}
-	r_strbuf_append (buf, "]");
+	pj_end (pj); /* a operands */
 	if (x->usermode) {
-		r_strbuf_append (buf, ",\"usermode\":true");
+		pj_kb (pj, "usermode", x->usermode);
 	}
 	if (x->update_flags) {
-		r_strbuf_append (buf, ",\"update_flags\":true");
+		pj_kb (pj, "update_flags", x->update_flags);
 	}
 	if (x->writeback) {
-		r_strbuf_append (buf, ",\"writeback\":true");
+		pj_kb (pj, "writeback", x->writeback);
 	}
 	if (x->vector_size) {
-		r_strbuf_appendf (buf, ",\"vector_size\":%d", x->vector_size);
+		pj_ki (pj, "vector_size", x->vector_size);
 	}
 	if (x->vector_data != ARM_VECTORDATA_INVALID) {
-		r_strbuf_appendf (buf, ",\"vector_data\":\"%s\"", vector_data_type_name (x->vector_data));
+		pj_ki (pj, "vector_data", x->vector_data);
 	}
 	if (x->cps_mode != ARM_CPSMODE_INVALID) {
-		r_strbuf_appendf (buf, ",\"cps_mode\":%d", x->cps_mode);
+		pj_ki (pj, "cps_mode", x->cps_mode);
 	}
 	if (x->cps_flag != ARM_CPSFLAG_INVALID) {
-		r_strbuf_appendf (buf, ",\"cps_flag\":%d", x->cps_flag);
+		pj_ki (pj, "cps_flag", x->cps_flag);
 	}
 	if (x->cc != ARM_CC_INVALID && x->cc != ARM_CC_AL) {
-		r_strbuf_appendf (buf, ",\"cc\":\"%s\"", cc_name (x->cc));
+		pj_ks (pj, "cc", cc_name (x->cc));
 	}
 	if (x->mem_barrier != ARM_MB_INVALID) {
-		r_strbuf_appendf (buf, ",\"mem_barrier\":%d", x->mem_barrier - 1);
+		pj_ki (pj, "mem_barrier", x->mem_barrier - 1);
 	}
-	r_strbuf_append (buf, "}");
+	pj_end (pj);
+
+	char *s = pj_drain (pj);
+	r_strbuf_init (buf);
+	r_strbuf_append (buf, s);
+
+	free (s);
 }
 
 static int arm64_reg_width(int reg) {
@@ -507,135 +514,144 @@ static const char *vess_name(arm64_vess vess) {
 #endif
 
 static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
+	PJ *pj;
 	int i;
-	r_strbuf_init (buf);
-	r_strbuf_append (buf, "{");
+	pj = pj_new ();
+	if (!pj) {
+		return;
+	}
+
+	pj_o (pj);
 	cs_arm64 *x = &insn->detail->arm64;
-	r_strbuf_append (buf, "\"operands\":[");
+	pj_ka (pj, "operands");
 	for (i = 0; i < x->op_count; i++) {
 		cs_arm64_op *op = &x->operands[i];
-		if (i > 0) {
-			r_strbuf_append (buf, ",");
-		}
-		r_strbuf_append (buf, "{");
+		pj_o (pj);
 		switch (op->type) {
 		case ARM64_OP_REG:
-			r_strbuf_append (buf, "\"type\":\"reg\"");
-			r_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->reg));
+			pj_ks (pj, "type", "reg");
+			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
 			break;
 		case ARM64_OP_REG_MRS:
-			r_strbuf_append (buf, "\"type\":\"reg_mrs\"");
+			pj_ks (pj, "type", "reg_mrs");
 			// TODO value
 			break;
 		case ARM64_OP_REG_MSR:
-			r_strbuf_append (buf, "\"type\":\"reg_msr\"");
+			pj_ks (pj, "type", "reg_msr");
 			// TODO value
 			break;
 		case ARM64_OP_IMM:
-			r_strbuf_append (buf, "\"type\":\"imm\"");
-			r_strbuf_appendf (buf, ",\"value\":%" PFMT64d, (st64)op->imm);
+			pj_ks (pj, "type", "imm");
+			pj_kN (pj, "value", (st64)op->imm);
 			break;
 		case ARM64_OP_MEM:
-			r_strbuf_append (buf, "\"type\":\"mem\"");
+			pj_ks (pj, "type", "mem");
 			if (op->mem.base != ARM64_REG_INVALID) {
-				r_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
+				pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
 			}
 			if (op->mem.index != ARM64_REG_INVALID) {
-				r_strbuf_appendf (buf, ",\"index\":\"%s\"", cs_reg_name (handle, op->mem.index));
+				pj_ks (pj, "index", cs_reg_name (handle, op->mem.index));
 			}
-			r_strbuf_appendf (buf, ",\"disp\":%d", op->mem.disp);
+			pj_ki (pj, "disp", op->mem.disp);
 			break;
 		case ARM64_OP_FP:
-			r_strbuf_append (buf, "\"type\":\"fp\"");
-			r_strbuf_appendf (buf, ",\"value\":%lf", op->fp);
+			pj_ks (pj, "type", "fp");
+			pj_kd (pj, "value", op->fp);
 			break;
 		case ARM64_OP_CIMM:
-			r_strbuf_append (buf, "\"type\":\"cimm\"");
-			r_strbuf_appendf (buf, ",\"value\":%" PFMT64d, (st64)op->imm);
+			pj_ks (pj, "type", "cimm");
+			pj_kN (pj, "value", (st64)op->imm);
 			break;
 		case ARM64_OP_PSTATE:
-			r_strbuf_append (buf, "\"type\":\"pstate\"");
+			pj_ks (pj, "type", "pstate");
 			switch (op->pstate) {
 			case ARM64_PSTATE_SPSEL:
-				r_strbuf_append (buf, ",\"value\":\"spsel\"");
+				pj_ks (pj, "value", "spsel");
 				break;
 			case ARM64_PSTATE_DAIFSET:
-				r_strbuf_append (buf, ",\"value\":\"daifset\"");
+				pj_ks (pj, "value", "daifset");
 				break;
 			case ARM64_PSTATE_DAIFCLR:
-				r_strbuf_append (buf, ",\"value\":\"daifclr\"");
+				pj_ks (pj, "value", "daifclr");
 				break;
 			default:
-				r_strbuf_appendf (buf, ",\"value\":%d", op->pstate);
+				pj_ki (pj, "value", op->pstate);
 			}
 			break;
 		case ARM64_OP_SYS:
-			r_strbuf_append (buf, "\"type\":\"sys\"");
-			r_strbuf_appendf (buf, ",\"value\":%u", op->sys);
+			pj_ks (pj, "type", "sys");
+			pj_kn (pj, "value", (ut64)op->sys);
 			break;
 		case ARM64_OP_PREFETCH:
-			r_strbuf_append (buf, "\"type\":\"prefetch\"");
-			r_strbuf_appendf (buf, ",\"value\":%d", op->prefetch - 1);
+			pj_ks (pj, "type", "prefetch");
+			pj_ki (pj, "value", op->prefetch - 1);
 			break;
 		case ARM64_OP_BARRIER:
-			r_strbuf_append (buf, "\"type\":\"prefetch\"");
-			r_strbuf_appendf (buf, ",\"value\":%d", op->barrier - 1);
+			pj_ks (pj, "type", "prefetch");
+			pj_ki (pj, "value", op->barrier - 1);
 			break;
 		default:
-			r_strbuf_append (buf, ",\"type\":\"invalid\"");
+			pj_ks (pj, "type", "invalid");
 			break;
 		}
 		if (op->shift.type != ARM64_SFT_INVALID) {
-			r_strbuf_append (buf, ",\"shift\":{");
+			pj_ko (pj, "shift");
 			switch (op->shift.type) {
 			case ARM64_SFT_LSL:
-				r_strbuf_append (buf, "\"type\":\"lsl\"");
+				pj_ks (pj, "type", "lsl");
 				break;
 			case ARM64_SFT_MSL:
-				r_strbuf_append (buf, "\"type\":\"msl\"");
+				pj_ks (pj, "type", "msl");
 				break;
 			case ARM64_SFT_LSR:
-				r_strbuf_append (buf, "\"type\":\"lsr\"");
+				pj_ks (pj, "type", "lsr");
 				break;
 			case ARM64_SFT_ASR:
-				r_strbuf_append (buf, "\"type\":\"asr\"");
+				pj_ks (pj, "type", "asr");
 				break;
 			case ARM64_SFT_ROR:
-				r_strbuf_append (buf, "\"type\":\"ror\"");
+				pj_ks (pj, "type", "ror");
 				break;
 			default:
 				break;
 			}
-			r_strbuf_appendf (buf, ",\"value\":\"%u\"", op->shift.value);
-			r_strbuf_append (buf, "}");
+			pj_kn (pj, "value", (ut64)op->shift.value);
+			pj_end (pj);
 		}
 		if (op->ext != ARM64_EXT_INVALID) {
-			r_strbuf_appendf (buf, ",\"ext\":\"%s\"", extender_name (op->ext));
+			pj_ks (pj, "ext", extender_name (op->ext));
 		}
 		if (op->vector_index != -1) {
-			r_strbuf_appendf (buf, ",\"vector_index\":\"%d\"", op->vector_index);
+			pj_ki (pj, "vector_index", op->vector_index);
 		}
 		if (op->vas != ARM64_VAS_INVALID) {
-			r_strbuf_appendf (buf, ",\"vas\":\"%s\"", vas_name (op->vas));
+			pj_ks (pj, "vas", vas_name (op->vas));
 		}
 #if CS_API_MAJOR == 4
 		if (op->vess != ARM64_VESS_INVALID) {
-			r_strbuf_appendf (buf, ",\"vess\":\"%s\"", vess_name (op->vess));
+			pj_ks (pj, "vess", vess_name (op->vess));
 		}
 #endif
-		r_strbuf_append (buf, "}");
+		pj_end (pj);
 	}
-	r_strbuf_append (buf, "]");
+	pj_end (pj);
 	if (x->update_flags) {
-		r_strbuf_append (buf, ",\"update_flags\":true");
+		pj_kb (pj, "update_flags", x->update_flags);
 	}
 	if (x->writeback) {
-		r_strbuf_append (buf, ",\"writeback\":true");
+		pj_kb (pj, "writeback", x->writeback);
 	}
 	if (x->cc != ARM64_CC_INVALID && x->cc != ARM64_CC_AL && x->cc != ARM64_CC_NV) {
 		r_strbuf_appendf (buf, ",\"cc\":\"%s\"", cc_name64 (x->cc));
+		pj_ks (pj, "cc", cc_name64 (x->cc));
 	}
-	r_strbuf_append (buf, "}");
+	pj_end (pj);
+
+	char *s = pj_drain (pj);
+	r_strbuf_init (buf);
+	r_strbuf_append (buf, s);
+
+	free (s);
 }
 
 static int decode_sign_ext(arm64_extender extender) {

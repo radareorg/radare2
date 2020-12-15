@@ -12,43 +12,49 @@
 #define esilprintf(op, fmt, ...) r_strbuf_setf (&op->esil, fmt, ##__VA_ARGS__)
 #define INSOP(n) insn->detail->xcore.operands[n]
 
-//TODO PJ
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
-	r_strbuf_init (buf);
-	r_strbuf_append (buf, "{");
+	PJ *pj;
+	pj = pj_new ();
+	if (!pj) {
+		return;
+	}
+	pj_o (pj);
 	cs_xcore *x = &insn->detail->xcore;
-	r_strbuf_append (buf, "\"operands\":[");
+	pj_ka (pj, "operands");
 	for (i = 0; i < x->op_count; i++) {
 		cs_xcore_op *op = &x->operands[i];
-		if (i > 0) {
-			r_strbuf_append (buf, ",");
-		}
-		r_strbuf_append (buf, "{");
+		pj_o (pj);
 		switch (op->type) {
 		case XCORE_OP_REG:
-			r_strbuf_append (buf, "\"type\":\"reg\"");
+			pj_ks (pj, "type", "reg");
 			r_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->reg));
 			break;
 		case XCORE_OP_IMM:
-			r_strbuf_append (buf, "\"type\":\"imm\"");
+			pj_ks (pj, "type", "imm");
 			r_strbuf_appendf (buf, ",\"value\":%"PFMT64d, (st64)op->imm);
 			break;
 		case XCORE_OP_MEM:
-			r_strbuf_append (buf, "\"type\":\"mem\"");
+			pj_ks (pj, "type", "mem");
 			if (op->mem.base != XCORE_REG_INVALID) {
-				r_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
+				pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
 			}
-			r_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", (st64)op->mem.disp);
+			pj_kN (pj, "disp", (st64)op->mem.disp);
 			break;
 		default:
-			r_strbuf_append (buf, "\"type\":\"invalid\"");
+			pj_ks (pj, "type", "invalid");
 			break;
 		}
-		r_strbuf_append (buf, "}");
+		pj_end (pj); /* o operand */
 	}
-	r_strbuf_append (buf, "]");
-	r_strbuf_append (buf, "}");
+	pj_end (pj); /* a operands */
+	pj_end (pj);
+
+	char *s = pj_drain (pj);
+	r_strbuf_init (buf);
+	r_strbuf_append (buf, s);
+
+	free (s);
 }
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
