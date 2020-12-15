@@ -2358,9 +2358,9 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 				RFlagItem *fi = r_flag_get (r->flags, sn.methflag);
 				if (r->bin->prefix) {
 					char *prname = r_str_newf ("%s.%s", r->bin->prefix, sn.methflag);
-					r_name_filter (sn.methflag, -1);
 					free (sn.methflag);
 					sn.methflag = prname;
+					r_name_filter (sn.methflag, -1);
 				}
 				if (fi) {
 					r_flag_item_set_realname (fi, sn.methname);

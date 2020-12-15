@@ -32,11 +32,18 @@ R_API bool r_name_validate_print(const char ch) {
 R_API bool r_name_validate_dash(const char ch) {
 	switch (ch) {
 	case ' ':
+	case '_':
 	case '/':
+	case '(':
+	case ')':
+	case '[':
+	case ']':
+	case '<':
+	case '>':
+	case ';':
 	case '@':
 	case '`':
 	case '"':
-	case '\n':
 		return true;
 	}
 	return false;
@@ -183,6 +190,10 @@ R_API bool r_name_filter(char *name, int maxlen) {
 }
 
 R_API char *r_name_filter2(const char *name) {
+	char *s = strdup (name);
+	r_name_filter (s, -1);
+	return s;
+#if 0
 	size_t i;
 	while (!r_name_validate_char (*name)) {
 		name++;
@@ -197,4 +208,5 @@ R_API char *r_name_filter2(const char *name) {
 		res[i] = '\0';
 	}
 	return res;
+#endif
 }
