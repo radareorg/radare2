@@ -2,31 +2,24 @@
 
 #include <r_io.h>
 
-R_API RIOBanks *r_io_banks_new(void) {
-	RIOBanks *banks = R_NEW0 (RIOBanks);
-	banks->curbank = NULL;
-	banks->list = r_list_newf ((RListFree)r_io_bank_free);
-	banks->ids = r_id_storage_new (1, UT32_MAX);
-	return banks;
-}
 
-R_API void r_io_banks_add(RIO *io, RIOBank *bank) {
-	r_return_if_fail (io && bank);
+R_API bool r_io_banks_add(RIO *io, RIOBank *bank) {
+	if (!bank || !io) {
+		return false;
+	}
 	// TODO: check if its registered first
-	ut32 id;
-	r_id_storage_add (io->banks->ids, bank, &id);
-	bank->id = id;
-	r_list_append (io->banks->list, bank);
+	return r_id_storage_add (io->banks, bank, &bank->id);
 }
 
 R_API bool r_io_banks_del(RIO *io, RIOBank *bank) {
-	r_id_storage_delete (io->banks->ids, bank->id);
-	r_list_delete_data (io->banks->list, bank);
-	if (bank == io->banks->curbank) {
-		io->banks->curbank = NULL;
+	if (!io || !io->banks || !bank) {
+		return false;
 	}
-	// r_io_bank_free (bank);
-	return false;
+	// check if bank is a bank of this instance of io
+	r_return_val_if_fail (r_id_storage_get (io->banks, bank->id) == bank, false);
+	r_id_storage_delete (io->banks->ids, bank->id);
+	r_io_bank_free (bank);
+	return true;
 }
 
 R_API char *r_io_banks_list(RIO *io, int mode) {
@@ -99,6 +92,6 @@ R_API RIOBank* r_io_bank_get_by_name(RIO *io, const char *name) {
 	return NULL;
 }
 
-R_API RIOBank* r_io_bank_get_by_id(RIO *io, int id) {
-	return r_id_storage_get (io->banks->ids, id);
+R_API RIOBank* r_io_bank_get_by_id(RIO *io, ut32 id) {
+	return r_id_storage_get (io->banks, id);
 }

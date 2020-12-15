@@ -83,20 +83,11 @@ typedef struct r_io_undo_t {
 } RIOUndo;
 
 
-typedef struct {
-	RPVector maps; // associated maps, maybe by ID better than pointer
-	RIDPool *map_ids;
+typedef struct r_io_bank_t {
+	RList *map_refs;
 	char *name;
-	int id;
+	ut32 id;
 } RIOBank;
-
-typedef struct {
-	RIOBank *curbank; // id of the currently selected bank
-	RPVector maps; // backup of io->maps
-	RIDPool *map_ids; // backup of io->map_ids
-	RIDStorage *ids; // bank ids
-	RList *list; // list of banks
-} RIOBanks;
 
 
 typedef struct r_io_undo_w_t {
@@ -143,7 +134,7 @@ typedef struct r_io_t {
 	REvent *event;
 	PrintfCallback cb_printf;
 	RCoreBind corebind;
-	RIOBanks *banks;
+	RIDStorage *banks;
 } RIO;
 
 typedef struct r_io_desc_t {
@@ -393,14 +384,13 @@ R_API RIOPlugin *r_io_plugin_get_default(RIO *io, const char *filename, bool man
 /* bank */
 R_API void r_io_map_bank(RIO *io, RIOBank *bank);
 R_API RIOBank* r_io_new_bank(RIO *io, const char *name);
-R_API void r_io_bank_add_map(RIOBank *bank, RIOMap *map);
+R_API bool r_io_bank_add_map(RIOBank *bank, RIOMap *map);
 R_API void r_io_bank_free(RIOBank *bank);
 R_API void r_io_bank_rename(RIOBank *bank, const char *name);
 
 /* banks */
-R_API RIOBanks *r_io_banks_new(void);
 R_API void r_io_banks_reset(RIO *io);
-R_API void r_io_banks_add(RIO *io, RIOBank *bank);
+R_API bool r_io_banks_add(RIO *io, RIOBank *bank);
 R_API bool r_io_banks_del(RIO *io, RIOBank *bank);
 R_API char *r_io_banks_id(RIO *io);
 R_API char *r_io_banks_list(RIO *io, int mode);
