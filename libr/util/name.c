@@ -15,6 +15,7 @@ R_API bool r_name_validate_print(const char ch) {
 	case '@':
 	case ' ':
 	case '.':
+	case ',':
 	case ':':
 	case '_':
 		return true;
@@ -40,9 +41,12 @@ R_API bool r_name_validate_dash(const char ch) {
 	case ']':
 	case '<':
 	case '>':
+	case '!':
+	case '?':
 	case ';':
 	case '@':
 	case '`':
+	case ',':
 	case '"':
 		return true;
 	}
@@ -91,12 +95,8 @@ static inline bool is_special_char(char n) {
 }
 
 R_API const char *r_name_filter_ro(const char *a) {
-	for (;*a; a++) {
-		if (r_name_validate_first (*a)) {
-			break;
-		}
-	}
-	return a;
+	while (*a++ == '_');
+	return a - 1;
 }
 
 R_API bool r_name_filter_flag(char *s) {
