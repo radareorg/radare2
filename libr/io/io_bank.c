@@ -2,7 +2,7 @@
 
 #include <r_io.h>
 
-typedef struct map_ret_t {
+typedef struct map_ref_t {
 	ut64 ts;
 	ut32 id;
 } MapRef;
@@ -61,7 +61,7 @@ R_API void r_io_map_bank(RIO *io, RIOBank *bank) {
 	}
 	MapRef *map_ref;
 	RListIter *iter, *ator;
-	r_list_foreach_safe (bank->map_refs, iter, ator, map_ref) {	
+	r_list_foreach_safe (bank->map_refs, iter, ator, map_ref) {
 		RIOMap *map = r_io_map_resolve (io, map_ref->id);
 		if (!map || (map_ref->ts != map->ts)) {
 			// cleaning up bank if map got deleted
@@ -70,4 +70,40 @@ R_API void r_io_map_bank(RIO *io, RIOBank *bank) {
 			r_io_map_priorize (io, map->id);
 		}
 	}
+}
+
+typedef struct banks_lister_t {
+	RIO *io;
+	RStrBuf *sb;
+} BanksLister;
+
+static bool banks_list_cb(void *user, void *data, ut32 id) {
+	BanksLister *bl = (BanksLister *)user;
+	RIOBank *bank = (RIOBank *)data;
+	const char *mark = (io->banks->curbank == bank->id) ? "(selected)" : "";
+	r_strbuf_appendf (bl->sb, "%u: %s %s\n", bank->id, bank->name, mark);
+	RListIter *iter, *ator;
+	MapRef *map_ref;
+	r_list_foreach_safe (bank->maps, iter, ator, map_ref) {
+		RIOMap *map = r_io_map_resolve (bl->io, map_ref->id);
+		if (!map || (map_ref->ts != map->ts)) {
+			// cleaning up bank if map got deleted
+			r_list_delete (bank->map_refs, iter);
+		} else {
+			r_strbuf_appendf (bl->sb, "  - map %u\n", map->id);
+		}
+	}
+	return true;
+}
+
+R_API char *r_io_banks_list(RIO *io, int mode) {
+	if (!io || !io->banks) {
+		return NULL;
+	}
+	BanksLister bl = {io; r_strbuf_new ("")};
+	if (!bl.buf) {
+		return NULL;
+	}
+	r_id_storage_foreach (io->banks, banks_list_cb, &bl);
+	return r_strbuf_drain (bl.sb);
 }

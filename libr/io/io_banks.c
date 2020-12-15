@@ -22,22 +22,6 @@ R_API bool r_io_banks_del(RIO *io, RIOBank *bank) {
 	return true;
 }
 
-R_API char *r_io_banks_list(RIO *io, int mode) {
-	RStrBuf *sb = r_strbuf_new ("");
-	RListIter *iter;
-	RIOBank *bank;
-	r_list_foreach (io->banks->list, iter, bank) {
-		const char *mark = (io->banks->curbank == bank)? "(selected)": "";
-		r_strbuf_appendf (sb, "%d: %s %s\n", bank->id, bank->name, mark);
-		void **it;
-		r_pvector_foreach (&bank->maps, it) {
-			int id = (int)(size_t)*it;
-			RIOMap *map = *it;
-			r_strbuf_appendf (sb, "  - map %d\n", map->id);
-		}
-	}
-	return r_strbuf_drain (sb);
-}
 
 R_API bool r_io_banks_use(RIO *io, int id) {
 	if (id < 0) {

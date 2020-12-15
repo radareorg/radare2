@@ -111,6 +111,7 @@ typedef struct r_io_t {
 	int cached;
 	bool cachemode; // write in cache all the read operations (EXPERIMENTAL)
 	int p_cache;
+	ut32 curbank:	// id of current bank
 	RIDPool *map_ids;
 	RPVector maps; //from tail backwards maps with higher priority are found
 	RSkyline map_skyline; // map parts that are not covered by others
