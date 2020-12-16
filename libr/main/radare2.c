@@ -643,12 +643,14 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			if (quiet) {
 				printf ("%s\n", R2_VERSION);
 				LISTS_FREE ();
+				free (debugbackend);
 				free (customRarunProfile);
 				return 0;
 			} else {
 				r_main_version_verify (0);
 				LISTS_FREE ();
 				free (customRarunProfile);
+				free (debugbackend);
 				return r_main_version_print ("radare2");
 			}
 		case 'V':
@@ -899,6 +901,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 #else
 		eprintf ("Cannot reopen stdin without UNIX\n");
 		free (buf);
+		R_FREE (debugbackend);
 		return 1;
 #endif
 		if (buf && sz > 0) {
@@ -910,6 +913,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				eprintf ("[=] Cannot open '%s'\n", path);
 				LISTS_FREE ();
 				free (path);
+				R_FREE (debugbackend);
 				return 1;
 			}
 			r_io_map_new (r->io, fh->fd, 7, 0LL, mapaddr,
@@ -1497,6 +1501,7 @@ beach:
 	// and this fh may be come stale during the command
 	// execution.
 	//r_core_file_close (r, fh);
+	free (debugbackend);
 	r_core_free (r);
 	r_cons_set_raw (0);
 	r_cons_free ();
