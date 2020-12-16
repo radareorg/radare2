@@ -33,6 +33,7 @@ R_API bool r_name_validate_print(const char ch) {
 R_API bool r_name_validate_dash(const char ch) {
 	switch (ch) {
 	case ' ':
+	case '-':
 	case '_':
 	case '/':
 	case '(':
@@ -45,6 +46,7 @@ R_API bool r_name_validate_dash(const char ch) {
 	case '?':
 	case '$':
 	case ';':
+	case '%':
 	case '@':
 	case '`':
 	case ',':
@@ -101,8 +103,15 @@ R_API const char *r_name_filter_ro(const char *a) {
 }
 
 
-R_API bool r_name_filter(char *s, int _maxlen) {
+R_API bool r_name_filter(char *s, int maxlen) {
+	// if maxlen == -1 : R_FLAG_NAME_SIZE
 	// maxlen is ignored, the function signature must change
+	if (maxlen > 0) {
+		int slen = strlen (s);
+		if (slen > maxlen) {
+			s[maxlen] = 0;
+		}
+	}
 	char *os = s;
 	if (!r_name_validate_first (*s)) {
 		if (r_name_validate_dash (*s)) {

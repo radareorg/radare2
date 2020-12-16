@@ -430,12 +430,12 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			}
 			r_meta_set (r->anal, R_META_TYPE_STRING, vaddr, string->size, string->string);
 			f_name = strdup (string->string);
-			r_name_filter (f_name, -1);
 			if (r->bin->prefix) {
 				str = r_str_newf ("%s.str.%s", r->bin->prefix, f_name);
 			} else {
 				str = r_str_newf ("str.%s", f_name);
 			}
+			r_name_filter (str, -1);
 			(void)r_flag_set (r->flags, str, vaddr, string->size);
 			free (str);
 			free (f_name);
@@ -483,10 +483,10 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			pj_end (pj);
 		} else if (IS_MODE_RAD (mode)) {
 			char *f_name = strdup (string->string);
-			r_name_filter (f_name, R_FLAG_NAME_SIZE);
 			char *str = (r->bin->prefix)
 				? r_str_newf ("%s.str.%s", r->bin->prefix, f_name)
 				: r_str_newf ("str.%s", f_name);
+			r_name_filter (str, R_FLAG_NAME_SIZE);
 			r_cons_printf ("f %s %u 0x%08"PFMT64x"\n"
 				"Cs %u @ 0x%08"PFMT64x"\n",
 				str, string->size, vaddr,
@@ -2696,7 +2696,7 @@ struct io_bin_section_info_t {
 };
 
 /* Map Sections to Segments https://github.com/radareorg/radare2/issues/14647 */
-static int bin_map_sections_to_segments (RBin *bin, int mode) {
+static int bin_map_sections_to_segments(RBin *bin, int mode) {
 	RListIter *iter, *iter2;
 	RBinSection *section = NULL, *segment = NULL;
 	RList *sections = r_list_new ();
@@ -2865,7 +2865,6 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			continue;
 		}
 
-		r_name_filter (section->name, strlen (section->name) + 1);
 		if (at != UT64_MAX && (!section->size || !is_in_range (at, addr, section->size))) {
 			continue;
 		}
@@ -2907,9 +2906,12 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			bits = R_SYS_BITS;
 		}
 		if (IS_MODE_RAD (mode)) {
-			char *n = __filterQuotedShell (section->name);
-			r_cons_printf ("\"f %s.%s 1 0x%08"PFMT64x"\"\n", type, n, section->vaddr);
+			char *name = r_str_newf ("%s.%s", type, section->name);
+			r_name_filter (name, -1);
+			char *n = __filterQuotedShell (name); // unnecessary because the flag is filterd already
+			r_cons_printf ("\"f %s 1 0x%08"PFMT64x"\"\n", name, section->vaddr);
 			free (n);
+			free (name);
 		} else if (IS_MODE_SET (mode)) {
 #if LOAD_BSS_MALLOC
 			if (!strcmp (section->name, ".bss")) {
@@ -2935,11 +2937,11 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				}
 			}
 			if (r->bin->prefix) {
-				str = r_str_newf ("%s.%s.%s", r->bin->prefix, type, section->name);
+				str = r_str_newf ("%s.%s.%s", r->bin->prefix, type, name);
 			} else {
 				str = r_str_newf ("%s.%s", type, section->name);
-
 			}
+			r_name_filter (str, R_FLAG_NAME_SIZE);
 			ut64 size = r->io->va? section->vsize: section->size;
 			r_flag_set (r->flags, str, addr, size);
 			R_FREE (str);
