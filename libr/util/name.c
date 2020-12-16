@@ -117,8 +117,7 @@ R_API bool r_name_filter(char *s, int maxlen) {
 		if (r_name_validate_dash (*s)) {
 			*s = '_';
 		} else {
-			r_str_cpy (s, s + 1);
-			s--;
+			return false;
 		}
 	}
 	for (s++; *s; s++) {
