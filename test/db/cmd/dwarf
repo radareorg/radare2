@@ -211,7 +211,7 @@ EOF
 EXPECT=<<EOF
             ; CALL XREF from rust::main::h523dcf5432fcfd88 @ 0x5875 ; dbg.main
             ;-- rust::bubble_sort::h0777bc845caabc60:
-            ;-- dbg.bubble_sort_i32:
+            ;-- dbg.bubble_sort_i32_:
 / 614: dbg.bubble_sort<i32> (int64_t arg1, int64_t arg2);
 |           ; var int64_t var_fh @ rsp+0xf
 |           ; var int64_t var_10h @ rsp+0x10
