@@ -21,47 +21,47 @@ f~segment
 f~section
 EOF
 EXPECT=<<EOF
-0x00000000 0 segment.PAGEZERO
-0x100000000 32768 segment.TEXT
-0x100008000 16384 segment.DATA
-0x10000c000 81920 segment.LLVM
-0x100020000 4096 segment.LINKEDIT
-0x100021000 942080 segment.DWARF
+0x00000000 0 segment.__PAGEZERO
+0x100000000 32768 segment.__TEXT
+0x100008000 16384 segment.__DATA
+0x10000c000 81920 segment.__LLVM
+0x100020000 4096 segment.__LINKEDIT
+0x100021000 942080 segment.__DWARF
 0x100000000 25544 section.MACH_HEADER
-0x1000063c8 412 section.TEXT___text
-0x100006564 144 section.TEXT___stubs
-0x1000065f4 168 section.TEXT___stub_helper
-0x10000669c 3366 section.TEXT___objc_methname
-0x1000073c2 112 section.TEXT___objc_classname
-0x100007432 2778 section.TEXT___objc_methtype
-0x100007f0c 144 section.TEXT___cstring
-0x100007f9c 100 section.TEXT___unwind_info
-0x100008000 8 section.DATA___got
-0x100008008 96 section.DATA___la_symbol_ptr
-0x100008068 32 section.DATA___cfstring
-0x100008088 24 section.DATA___objc_classlist
-0x1000080a0 32 section.DATA___objc_protolist
-0x1000080c0 8 section.DATA___objc_imageinfo
-0x1000080c8 4872 section.DATA___objc_const
-0x1000093d0 32 section.DATA___objc_selrefs
-0x1000093f0 16 section.DATA___objc_classrefs
-0x100009400 8 section.DATA___objc_superrefs
-0x100009408 4 section.DATA___objc_ivar
-0x100009410 240 section.DATA___objc_data
-0x100009500 392 section.DATA___data
-0x10000c000 77261 section.LLVM___bundle
-0x100021000 42034 section.DWARF___debug_line
-0x10002b432 125245 section.DWARF___debug_pubtypes
-0x100049d6f 288036 section.DWARF___debug_info
-0x100090293 685 section.DWARF___debug_pubnames
-0x100090540 729 section.DWARF___debug_loc
-0x100090819 192 section.DWARF___debug_aranges
-0x1000908d9 1925 section.DWARF___debug_abbrev
-0x10009105e 342172 section.DWARF___debug_str
-0x1000e48fa 732 section.DWARF___apple_names
-0x1000e4bd6 36 section.DWARF___apple_namespac
-0x1000e4bfa 139417 section.DWARF___apple_types
-0x100106c93 156 section.DWARF___apple_objc
+0x1000063c8 412 section.__TEXT___text
+0x100006564 144 section.__TEXT___stubs
+0x1000065f4 168 section.__TEXT___stub_helper
+0x10000669c 3366 section.__TEXT___objc_methname
+0x1000073c2 112 section.__TEXT___objc_classname
+0x100007432 2778 section.__TEXT___objc_methtype
+0x100007f0c 144 section.__TEXT___cstring
+0x100007f9c 100 section.__TEXT___unwind_info
+0x100008000 8 section.__DATA___got
+0x100008008 96 section.__DATA___la_symbol_ptr
+0x100008068 32 section.__DATA___cfstring
+0x100008088 24 section.__DATA___objc_classlist
+0x1000080a0 32 section.__DATA___objc_protolist
+0x1000080c0 8 section.__DATA___objc_imageinfo
+0x1000080c8 4872 section.__DATA___objc_const
+0x1000093d0 32 section.__DATA___objc_selrefs
+0x1000093f0 16 section.__DATA___objc_classrefs
+0x100009400 8 section.__DATA___objc_superrefs
+0x100009408 4 section.__DATA___objc_ivar
+0x100009410 240 section.__DATA___objc_data
+0x100009500 392 section.__DATA___data
+0x10000c000 77261 section.__LLVM___bundle
+0x100021000 42034 section.__DWARF___debug_line
+0x10002b432 125245 section.__DWARF___debug_pubtypes
+0x100049d6f 288036 section.__DWARF___debug_info
+0x100090293 685 section.__DWARF___debug_pubnames
+0x100090540 729 section.__DWARF___debug_loc
+0x100090819 192 section.__DWARF___debug_aranges
+0x1000908d9 1925 section.__DWARF___debug_abbrev
+0x10009105e 342172 section.__DWARF___debug_str
+0x1000e48fa 732 section.__DWARF___apple_names
+0x1000e4bd6 36 section.__DWARF___apple_namespac
+0x1000e4bfa 139417 section.__DWARF___apple_types
+0x100106c93 156 section.__DWARF___apple_objc
 EOF
 RUN
 
@@ -71,15 +71,15 @@ CMDS=<<EOF
 is*~SceneDelegate
 EOF
 EXPECT=<<EOF
-"f sym.__SceneDelegate_scene:willConnectToSession:options: 4 0x100006514"
-"f sym.__SceneDelegate_sceneDidDisconnect: 4 0x100006518"
-"f sym.__SceneDelegate_sceneDidBecomeActive: 4 0x10000651c"
-"f sym.__SceneDelegate_sceneWillResignActive: 4 0x100006520"
-"f sym.__SceneDelegate_sceneWillEnterForeground: 4 0x100006524"
-"f sym.__SceneDelegate_sceneDidEnterBackground: 4 0x100006528"
-"f sym.__SceneDelegate_window 16 0x10000652c"
-"f sym.__SceneDelegate_setWindow: 20 0x10000653c"
-"f sym.__SceneDelegate_.cxx_destruct 20 0x100006550"
+"f sym.__SceneDelegate_scene:willConnectToSession:options:_ 4 0x100006514"
+"f sym.__SceneDelegate_sceneDidDisconnect:_ 4 0x100006518"
+"f sym.__SceneDelegate_sceneDidBecomeActive:_ 4 0x10000651c"
+"f sym.__SceneDelegate_sceneWillResignActive:_ 4 0x100006520"
+"f sym.__SceneDelegate_sceneWillEnterForeground:_ 4 0x100006524"
+"f sym.__SceneDelegate_sceneDidEnterBackground:_ 4 0x100006528"
+"f sym.__SceneDelegate_window_ 16 0x10000652c"
+"f sym.__SceneDelegate_setWindow:_ 20 0x10000653c"
+"f sym.__SceneDelegate_.cxx_destruct_ 20 0x100006550"
 "f sym.__OBJC_LABEL_PROTOCOL___UISceneDelegate 8 0x1000080b0"
 "f sym.__OBJC_LABEL_PROTOCOL___UIWindowSceneDelegate 8 0x1000080b8"
 "f sym.__OBJC___PROTOCOL_REFS_UISceneDelegate 24 0x100008f50"
@@ -124,7 +124,7 @@ fdj@0x100006430~{:
 EOF
 EXPECT=<<EOF
 offset: 4294992900
-name: sym.__AppDelegate_application:configurationForConnectingSceneSession:options:
+name: sym.__AppDelegate_application:configurationForConnectingSceneSession:options:_
 realname: -[AppDelegate application:configurationForConnectingSceneSession:options:]
 EOF
 RUN

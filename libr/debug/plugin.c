@@ -66,6 +66,7 @@ R_API int r_debug_plugin_list(RDebug *dbg, int mode) {
 		if (mode == 'q') {
 			dbg->cb_printf ("%s\n", h->name);
 		} else if (mode == 'j') {
+			//TODO PJ
 			dbg->cb_printf ("%s{\"name\":\"%s\",\"license\":\"%s\"}",
 							(count ? "," : ""),
 							h->name,

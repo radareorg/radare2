@@ -1,4 +1,4 @@
-/* radare - Apache - Copyright 2014-2019 - dso, pancake */
+/* radare - Apache - Copyright 2014-2020 - dso, pancake */
 
 #include <r_types.h>
 #include <r_lib.h>
@@ -212,11 +212,6 @@ typedef struct r_cmd_java_cms_t {
 #define SUMMARY_INFO_DESC "print summary information for the current java class file"
 #define SUMMARY_INFO_LEN 7
 
-#define LIST_CODE_REFS "lcr"
-#define LIST_CODE_REFS_ARGS " [addr]"
-#define LIST_CODE_REFS_DESC "list all references to fields and methods in code sections"
-#define LIST_CODE_REFS_LEN 3
-
 #define PRINT_EXC "exc"
 #define PRINT_EXC_ARGS " [<addr>]"
 #define PRINT_EXC_DESC "list all exceptions to fields and methods in code sections"
@@ -253,6 +248,7 @@ static RCmdJavaCmd JAVA_CMDS[] = {
 	{ INSERT_MREF, INSERT_MREF_ARGS, INSERT_MREF_DESC, INSERT_MREF_LEN, r_cmd_java_handle_insert_method_ref },
 	{ CALC_SZ, CALC_SZ_ARGS, CALC_SZ_DESC, CALC_SZ_LEN, r_cmd_java_handle_calc_class_sz },
 	{ ISVALID, ISVALID_ARGS, ISVALID_DESC, ISVALID_LEN, r_cmd_java_handle_isvalid },
+	{ NULL, NULL, NULL, 0, NULL }
 };
 
 enum {
@@ -271,13 +267,12 @@ enum {
 	REPLACE_CLASS_NAME_IDX = 12,
 	RELOAD_BIN_IDX = 13,
 	SUMMARY_INFO_IDX = 14,
-	LIST_CODE_REFS_IDX = 15,
-	PRINT_EXC_IDX = 16,
-	YARA_CODE_REFS_IDX = 17,
-	INSERT_MREF_IDX = 18,
-	CALC_SZ_IDX = 19,
-	ISVALID_IDX = 20,
-	END_CMDS = 21,
+	PRINT_EXC_IDX = 15,
+	YARA_CODE_REFS_IDX = 16,
+	INSERT_MREF_IDX = 17,
+	CALC_SZ_IDX = 18,
+	ISVALID_IDX = 19,
+	END_CMDS = 20,
 };
 
 static ut8 _(r_cmd_java_obj_ref)(const char *name, const char *class_name, ut32 len) {
@@ -385,7 +380,7 @@ static int r_cmd_java_handle_help(RCore *core, const char *input) {
 	help_msg[0] = "Usage:";
 	help_msg[1] = "java [cmd] [arg..] ";
 	help_msg[2] = r_core_plugin_java.desc;
-	for (i = 0; i < END_CMDS; i++) {
+	for (i = 0; JAVA_CMDS[i].name; i++) {
 		RCmdJavaCmd *cmd = &JAVA_CMDS[i];
 		help_msg[3 + (i * 3) + 0] = cmd->name;
 		help_msg[3 + (i * 3) + 1] = cmd->args;
@@ -1462,7 +1457,7 @@ static int r_cmd_java_call(void *user, const char *input) {
 	if (input[4] != ' ') {
 		return r_cmd_java_handle_help (core, input);
 	}
-	for (; i < END_CMDS - 1; i++) {
+	for (; JAVA_CMDS[i].name; i++) {
 		//IFDBG r_cons_printf ("Checking cmd: %s %d %s\n", JAVA_CMDS[i].name, JAVA_CMDS[i].name_len, p);
 		IFDBG r_cons_printf ("Checking cmd: %s %d\n", JAVA_CMDS[i].name,
 			strncmp (input + 5, JAVA_CMDS[i].name, JAVA_CMDS[i].name_len));
@@ -1833,15 +1828,10 @@ static int r_cmd_java_handle_yara_code_extraction_refs(RCore *core, const char *
 
 	if (name && count != (ut64)-1 && addr != (ut64)-1) {
 		// find function at addr
-
 		// find the start basic block
-
 		// read the bytes
-
 		// hexlify the bytes
-
 		// set the name = bytes
-
 		// print t
 	}
 	free (name);
@@ -1854,24 +1844,23 @@ static int r_cmd_java_handle_insert_method_ref(RCore *core, const char *input) {
 	const char *p = input? r_cmd_java_consumetok (input, ' ', -1): NULL, *n = NULL;
 	char *classname = NULL, *name = NULL, *descriptor = NULL;
 	ut32 cn_sz = 0, n_sz = 0, d_sz = 0;
-	int res = false;
 
 	if (!bin) {
-		return res;
+		return false;
 	}
 	if (!anal || !anal->fcns || r_list_length (anal->fcns) == 0) {
 		eprintf ("Unable to access the current analysis, perform 'af' for function analysis.\n");
 		return true;
 	}
 	if (!p) {
-		return res;
+		return false;
 	}
 
 	n = p && *p? r_cmd_java_strtok (p, ' ', -1): NULL;
 	classname = n && p && p != n? malloc (n - p + 1): NULL;
 	cn_sz = n && p? n - p + 1: 0;
 	if (!classname) {
-		return res;
+		return false;
 	}
 
 	snprintf (classname, cn_sz, "%s", p);
@@ -1881,7 +1870,7 @@ static int r_cmd_java_handle_insert_method_ref(RCore *core, const char *input) {
 	n_sz = n && p? n - p + 1: 0;
 	if (!name) {
 		free (classname);
-		return res;
+		return false;
 	}
 	snprintf (name, n_sz, "%s", p);
 
@@ -1898,7 +1887,7 @@ static int r_cmd_java_handle_insert_method_ref(RCore *core, const char *input) {
 	if (!descriptor) {
 		free (classname);
 		free (name);
-		return res;
+		return false;
 	}
 	snprintf (descriptor, d_sz, "%s", p);
 
@@ -1906,14 +1895,13 @@ static int r_cmd_java_handle_insert_method_ref(RCore *core, const char *input) {
 	free (classname);
 	free (name);
 	free (descriptor);
-	res = true;
-	return res;
+	return true;
 }
 
 static int r_cmd_java_handle_print_exceptions(RCore *core, const char *input) {
 	RAnal *anal = get_anal (core);
 	RBinJavaObj *bin = (RBinJavaObj *) r_cmd_java_get_bin_obj (anal);
-	RListIter *exc_iter = NULL, *methods_iter=NULL;
+	RListIter *exc_iter = NULL, *methods_iter = NULL;
 	RBinJavaField *method;
 	ut64 func_addr = -1;
 	RBinJavaExceptionEntry *exc_entry;
@@ -1926,8 +1914,8 @@ static int r_cmd_java_handle_print_exceptions(RCore *core, const char *input) {
 	}
 
 	r_list_foreach (bin->methods_list, methods_iter, method) {
-		ut64 start = r_bin_java_get_method_start (bin, method),
-		     end = r_bin_java_get_method_end (bin, method);
+		ut64 start = r_bin_java_get_method_start (bin, method);
+		ut64 end = r_bin_java_get_method_end (bin, method);
 		ut8 do_this_one = start <= func_addr && func_addr <= end;
 		RList *exc_table = NULL;
 		do_this_one = func_addr == (ut64)-1? 1: do_this_one;
@@ -1936,7 +1924,7 @@ static int r_cmd_java_handle_print_exceptions(RCore *core, const char *input) {
 		}
 		exc_table = r_bin_java_get_method_exception_table_with_addr (bin, start);
 
-		if (r_list_length (exc_table) == 0){
+		if (r_list_length (exc_table) == 0) {
 			r_cons_printf (" Exception table for %s @ 0x%"PFMT64x":\n", method->name, start);
 			r_cons_printf (" [ NONE ]\n");
 		} else {

@@ -328,7 +328,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 		if (!strcmp (h->name, name) && h->arch) {
 			if (!a->cur || (a->cur && strcmp (a->cur->arch, h->arch))) {
 				char *r2prefix = r_str_r2_prefix (R2_SDB_OPCODES);
-				char *file = r_str_newf ("%s/%s.sdb", r_str_get (r2prefix), h->arch);
+				char *file = r_str_newf ("%s/%s.sdb", r_str_getf (r2prefix), h->arch);
 				if (file) {
 					r_asm_set_cpu (a, NULL);
 					sdb_free (a->pair);

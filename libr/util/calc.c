@@ -233,7 +233,7 @@ static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 	char c;
 	str[0] = 0;
 	while (cin_get (num, nc, &c)) {
-		if (c != '_' && c!=':' && c!='.' && !isalnum ((ut8)c)) {
+		if (c != '_' && c != ':' && c != '.' && !isalnum ((ut8)c)) {
 			cin_putback (num, nc, c);
 			break;
 		}

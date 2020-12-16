@@ -47,7 +47,6 @@ RUN
 
 NAME=r2 --
 FILE=bins/elf/bomb
-BROKEN=1
 CMDS=r2 -s main -qcs bins/elf/bomb
 EXPECT=<<EOF
 0x400da0

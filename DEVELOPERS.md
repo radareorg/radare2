@@ -126,7 +126,7 @@ a = (b << 3) * 5;
 
 * Multiline ternary operator conditionals must be indented a-la JS way:
 
-```c
+```diff
 - ret = over ?
 -         r_debug_step_over (dbg, 1) :
 -         r_debug_step (dbg, 1);
@@ -137,7 +137,7 @@ a = (b << 3) * 5;
 
 * Split long conditional expressions into small `static inline` functions to make them more readable:
 
-```c
+```diff
 +static inline bool inRange(RBreakpointItem *b, ut64 addr) {
 +       return (addr >= b->addr && addr < (b->addr + b->size));
 +}
@@ -250,8 +250,10 @@ a single byte.
 
 It can seem very easy to write the following code:
 
-  	ut8 opcode[4] = {0x10, 0x20, 0x30, 0x40};
-  	ut32 value = *(ut32*)opcode;
+```c
+ut8 opcode[4] = {0x10, 0x20, 0x30, 0x40};
+ut32 value = *(ut32*)opcode;
+```
 
 ... and then continue to use "value" in the code to represent the opcode.
 
@@ -269,12 +271,16 @@ value stored in "value" might be 0x40302010 instead of 0x10203040.
 Use bitshifts and OR instructions to interpret bytes in a known endian.
 Instead of casting streams of bytes to larger width integers, do the following:
 
+```c
 ut8 opcode[4] = {0x10, 0x20, 0x30, 0x40};
 ut32 value = opcode[0] | opcode[1] << 8 | opcode[2] << 16 | opcode[3] << 24;
+```
 
 or if you prefer the other endian:
 
+```c
 ut32 value = opcode[3] | opcode[2] << 8 | opcode[1] << 16 | opcode[0] << 24;
+```
 
 This is much better because you actually know which endian your bytes are stored in
 within the integer value, REGARDLESS of the host endian of the machine.
@@ -285,11 +291,13 @@ Radare2 now uses helper functions to interpret all byte streams in a known endia
 
 Please use these at all times, eg:
 
-  	val32 = r_read_be32(buffer)		// reads 4 bytes from a stream in BE
-  	val32 = r_read_le32(buffer)		// reads 4 bytes from a stream in LE
-  	val32 = r_read_ble32(buffer, isbig)	// reads 4 bytes from a stream:
-  						//   if isbig is true, reads in BE
-  						//   otherwise reads in LE
+```c
+val32 = r_read_be32(buffer)         // reads 4 bytes from a stream in BE
+val32 = r_read_le32(buffer)         // reads 4 bytes from a stream in LE
+val32 = r_read_ble32(buffer, isbig) // reads 4 bytes from a stream:
+                                    //   if isbig is true, reads in BE
+                                    //   otherwise reads in LE
+```
 
 There are a number of helper functions for 64, 32, 16, and 8 bit reads and writes.
 
@@ -372,7 +380,7 @@ As mentioned in README.md, the API itself is maintained in a different
 repository. The API function definitions in C header files are derived
 from and documented in the radare2-bindings repository, found at:
 ```sh
-   git clone git://github.com/radareorg/radare2-bindings
+git clone git://github.com/radareorg/radare2-bindings
 ```
 
 Currently the process of updating the header files from changed API
@@ -406,7 +414,7 @@ linux-arm and others, but the procedure is like this:
 
 The source of radare2 can be found in the following GitHub repository.
 ```sh
-   git clone git://github.com/radareorg/radare2
+git clone git://github.com/radareorg/radare2
 ```
 Other packages radare2 depends on, such as Capstone, are pulled from
 their git repository as required.
@@ -414,15 +422,15 @@ their git repository as required.
 To get an up-to-date copy of the repository, you should perform the
 following steps:
 ```sh
-   git pull
+git pull
 ```
 
 If you have conflicts in your local copy, it's because you have modified
 files which are conflicting with the incoming patchsets. To get a clean
 source directory, type the following command:
 ```sh
-   git clean -xdf
-   git reset --hard
+git clean -xdf
+git reset --hard
 ```
 
 ## Compilation
@@ -463,7 +471,7 @@ The source of the radare2 regression test suite can be found in the
  `test/` directory, while binaries for this test are located in the
  following GitHub repository.
 ```sh
-   git clone git://github.com/radareorg/radare2-testbins
+git clone git://github.com/radareorg/radare2-testbins
 ```
 
 See the `README.md` file in that repository for further information.

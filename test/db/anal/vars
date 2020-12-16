@@ -295,3 +295,34 @@ afvW
 \           0x00000030      7047           bx lr
 EOF
 RUN
+
+NAME=Takeover variables
+FILE=-
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx e805000000e80600000039d1742577145589e583ec048b5d088b4d0c895dfc83f90174098b45fc8945fc49ebf28b45fc89ec5dc3
+aac
+afv  @ 10
+afvx @ 10
+afv  @ 16
+afvx @ 16
+EOF
+EXPECT=<<EOF
+afvR
+afvW
+var int32_t var_4h_2 @ ebp-0x4
+var int32_t var_4h @ ebp+0x0
+arg int32_t arg_8h @ ebp+0x8
+arg int32_t arg_ch @ ebp+0xc
+afvR
+    arg_8h  0x16
+    arg_ch  0x19
+  var_4h_2
+    var_4h  0x24,0x2d
+afvW
+    arg_8h
+    arg_ch
+  var_4h_2  0x1c
+    var_4h  0x27
+EOF
+RUN

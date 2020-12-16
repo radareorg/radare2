@@ -8,6 +8,7 @@
 #include "r_util/r_str_util.h"
 #include <r_userconf.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <assert.h>
 
 // TODO: fix this to make it crosscompile-friendly: R_SYS_OSTYPE ?
@@ -70,6 +71,7 @@
 #define R_PERM_PRIV	16
 #define R_PERM_ACCESS	32
 #define R_PERM_CREAT	64
+
 
 // HACK to fix capstone-android-mips build
 #undef mips

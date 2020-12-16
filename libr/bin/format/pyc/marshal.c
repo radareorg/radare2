@@ -1155,7 +1155,7 @@ static bool extract_sections_symbols(pyc_object *obj, RList *sections, RList *sy
 	}
 	section = R_NEW0 (RBinSection);
 	symbol = R_NEW0 (RBinSymbol);
-	prefix = r_str_newf ("%s%s%s", prefix? prefix: "",
+	prefix = r_str_newf ("%s%s%s", r_str_get (prefix),
 		prefix? ".": "", (const char *)cobj->name->data);
 	if (!prefix || !section || !symbol) {
 		goto fail;

@@ -146,7 +146,7 @@ Defaults for the options are specified in brackets.
 Configuration:
   -h, --help              display this help and exit
   -r, --report            show what libs/programs require to work
-  -q, --quiet             be less verbose
+  -q, --quiet             be quiet, less verbose (see ./configure -qV)
   -V, --version           display version information and exit
 
 Installation directories:
@@ -203,7 +203,6 @@ printf "
 Some influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
-  CPPFLAGS    C preprocessor flags
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
               nonstandard directory <lib dir>
   CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have

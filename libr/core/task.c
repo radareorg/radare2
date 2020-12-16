@@ -59,6 +59,7 @@ typedef struct oneshot_t {
 R_API void r_core_task_print (RCore *core, RCoreTask *task, int mode) {
 	switch (mode) {
 	case 'j':
+		//TODO PJ
 		{
 		r_cons_printf ("{\"id\":%d,\"state\":\"", task->id);
 		switch (task->state) {
@@ -92,7 +93,7 @@ R_API void r_core_task_print (RCore *core, RCoreTask *task, int mode) {
 					   task->id,
 					   task->transient ? "(t)" : "",
 					   r_core_task_status (task),
-					   info ? info : "");
+					   r_str_get (info));
 		}
 		break;
 	}

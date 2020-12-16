@@ -1067,7 +1067,7 @@ CMDS=<<EOF
 aav
 aae
 af
-axt str.helloradareworld
+axt str.helloradareworld_n
 EOF
 EXPECT=<<EOF
 main 0xbf9c [DATA] add r0, pc

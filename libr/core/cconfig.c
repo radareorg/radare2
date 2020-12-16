@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_core.h>
+#include <r_types_base.h>
 
 #define NODECB(w,x,y) r_config_set_cb (cfg,w,x,y)
 #define NODEICB(w,x,y) r_config_set_i_cb (cfg,w,x,y)
@@ -375,6 +376,16 @@ static bool cb_analarch(void *user, void *data) {
 	if (*node->value) {
 		if (r_anal_use (core->anal, node->value)) {
 			return true;
+		}
+		char *p = strchr (node->value, '.');
+		if (p) {
+			char *arch = strdup (node->value);
+			arch[p - node->value] = 0;
+			free (node->value);
+			node->value = arch;
+			if (r_anal_use (core->anal, node->value)) {
+				return true;
+			}
 		}
 		const char *aa = r_config_get (core->config, "asm.arch");
 		if (!aa || strcmp (aa, node->value)) {
@@ -1182,6 +1193,48 @@ static bool cb_bigendian(void *user, void *data) {
 	// Set printing endian to user's choice
 	core->print->big_endian = node->i_value;
 	return true;
+}
+
+static void list_available_plugins(const char *path) {
+	RListIter *iter;
+	const char *fn;
+	RList *files = r_sys_dir (path);
+	r_list_foreach (files, iter, fn) {
+		if (*fn && *fn != '.' && r_str_endswith (fn, ".sdb")) {
+			char *f = strdup (fn);
+			f[strlen (f) - 4] = 0;
+			r_cons_println (f);
+			free (f);
+		}
+	}
+	r_list_free (files);
+}
+
+static bool cb_cfgcharset(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	const char *cf = r_str_trim_head_ro (node->value);
+	if (!*cf) {
+		return false;
+	}
+
+	const char *cs = R2_PREFIX R_SYS_DIR R2_SDB R_SYS_DIR "charsets" R_SYS_DIR;
+	bool rc = true;
+	if (*cf == '?') {
+		list_available_plugins (cs);
+	} else {
+		char *syscs = r_str_newf ("%s%s.sdb", cs, cf);
+		if (r_file_exists (syscs)) {
+			rc = r_charset_open (core->charset, syscs);
+		} else {
+			rc = r_charset_open (core->charset, cf);
+		}
+		if (!rc) {
+			eprintf ("Warning: Cannot load charset file '%s' '%s'.\n", syscs, cf);
+		}
+		free (syscs);
+	}
+	return rc;
 }
 
 static bool cb_cfgdatefmt(void *user, void *data) {
@@ -2648,6 +2701,28 @@ static bool cb_dirpfx(RCore *core, RConfigNode *node) {
 	return true;
 }
 
+static bool cb_analsyscc(RCore *core, RConfigNode *node) {
+	if (core && core->anal) {
+		if (!strcmp (node->value, "?")) {
+			r_core_cmd0 (core, "afcl");
+			return false;
+		}
+		r_anal_set_syscc_default (core->anal, node->value);
+	}
+	return true;
+}
+
+static bool cb_analcc(RCore *core, RConfigNode *node) {
+	if (core && core->anal) {
+		if (!strcmp (node->value, "?")) {
+			r_core_cmd0 (core, "afcl");
+			return false;
+		}
+		r_anal_set_cc_default (core->anal, node->value);
+	}
+	return true;
+}
+
 static bool cb_anal_roregs(RCore *core, RConfigNode *node) {
 	if (core && core->anal && core->anal->reg) {
 		r_list_free (core->anal->reg->roregs);
@@ -2964,6 +3039,10 @@ R_API int r_core_config_init(RCore *core) {
 	/* anal */
 	SETBPREF ("anal.detectwrites", "false", "Automatically reanalyze function after a write");
 	SETPREF ("anal.fcnprefix", "fcn",  "Prefix new function names with this");
+	const char *analcc = r_anal_cc_default (core->anal);
+	SETCB ("anal.cc", analcc? analcc: "", (RConfigCallback)&cb_analcc, "Specify default calling convention");
+	const char *analsyscc = r_anal_syscc_default (core->anal);
+	SETCB ("anal.syscc", analsyscc? analsyscc: "", (RConfigCallback)&cb_analsyscc, "Specify default syscall calling convention");
 	SETCB ("anal.verbose", "false", &cb_analverbose, "Show RAnal warnings when analyzing code");
 	SETBPREF ("anal.a2f", "false",  "Use the new WIP analysis algorithm (core/p/a2f), anal.depth ignored atm");
 	SETCB ("anal.roregs", "gp,zero", (RConfigCallback)&cb_anal_roregs, "Comma separated list of register names to be readonly");
@@ -3099,7 +3178,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.sub.jmp", "true", "Always substitute jump, call and branch targets in disassembly");
 	SETBPREF ("asm.hints", "true", "Disable all asm.hint* if false");
 	SETBPREF ("asm.hint.jmp", "false", "Show jump hints [numbers] in disasm");
-	SETBPREF ("asm.hint.call", "true", "Show call hints [numbers] in disarm");
+	SETBPREF ("asm.hint.call", "true", "Show call hints [numbers] in disasm");
+	SETBPREF ("asm.hint.call.indirect", "true", "Hints for indirect call intructions go to the call destination");
 	SETBPREF ("asm.hint.lea", "false", "Show LEA hints [numbers] in disasm");
 	SETBPREF ("asm.hint.emu", "false", "Show asm.emu hints [numbers] in disasm");
 	SETBPREF ("asm.hint.cdiv", "false", "Show CDIV hints optimization hint");
@@ -3248,6 +3328,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("bin.usextr", "true", &cb_usextr, "Use extract plugins when loading files");
 	SETCB ("bin.useldr", "true", &cb_useldr, "Use loader plugins when loading files");
 	SETCB ("bin.str.purge", "", &cb_strpurge, "Purge strings (e bin.str.purge=? provides more detail)");
+	SETPREF ("bin.str.real", "false", "Set the realname in rbin.strings for better disasm (EXPERIMENTAL)");
 	SETBPREF ("bin.b64str", "false", "Try to debase64 the strings");
 	SETCB ("bin.at", "false", &cb_binat, "RBin.cur depends on RCore.offset");
 	SETBPREF ("bin.libs", "false", "Try to load libraries after loading main binary");
@@ -3285,6 +3366,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("prj.simple", "false", "Use simple project saving style (functions, comments, options)");
 
 	/* cfg */
+	SETCB ("cfg.charset", "", &cb_cfgcharset, "Specify encoding to use in pse");
 	SETBPREF ("cfg.r2wars", "false", "Enable some tweaks for the r2wars game");
 	SETBPREF ("cfg.plugins", "true", "Load plugins at startup");
 	SETCB ("time.fmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
@@ -3302,7 +3384,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "cfg.editor", "Select default editor program");
 	SETPREF ("cfg.user", r_sys_whoami (buf), "Set current username/pid");
 	SETCB ("cfg.fortunes", "true", &cb_cfg_fortunes, "If enabled show tips at start");
-	SETCB ("cfg.fortunes.type", "tips,fun", &cb_cfg_fortunes_type, "Type of fortunes to show (tips, fun, nsfw, creepy)");
+	SETCB ("cfg.fortunes.type", "tips,fun", &cb_cfg_fortunes_type, "Type of fortunes to show (tips, fun)");
 	SETBPREF ("cfg.fortunes.clippy", "false", "Use ?E instead of ?e");
 	SETBPREF ("cfg.fortunes.tts", "false", "Speak out the fortune");
 	SETPREF ("cfg.prefixdump", "dump", "Filename prefix for automated dumps");
@@ -3329,7 +3411,7 @@ R_API int r_core_config_init(RCore *core) {
 	free (p);
 	// R2_LOGFILE / log.file
 	p = r_sys_getenv ("R2_LOGFILE");
-	SETCB ("log.file", p ? p : "", cb_log_config_file, "Logging output filename / path");
+	SETCB ("log.file", r_str_get (p), cb_log_config_file, "Logging output filename / path");
 	free (p);
 	// R2_LOGSRCINFO / log.srcinfo
 	p = r_sys_getenv ("R2_LOGSRCINFO");
@@ -3382,7 +3464,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("dir.home", p? p: "/", &cb_dirhome, "Path for the home directory");
 	free (p);
 	p = r_sys_getenv (R_SYS_TMP);
-	SETCB ("dir.tmp", p? p: "", &cb_dirtmp, "Path of the tmp directory");
+	SETCB ("dir.tmp", r_str_get (p), &cb_dirtmp, "Path of the tmp directory");
 	free (p);
 #if __ANDROID__
 	SETPREF ("dir.projects", "/data/data/org.radare.radare2installer/radare2/projects", "Default path for projects");
@@ -3556,7 +3638,7 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	SETPREF ("http.port", "9090", "HTTP server port");
 	SETPREF ("http.maxport", "9999", "Last HTTP server port");
-	SETPREF ("http.ui", "m", "Default webui (enyo, m, p, t)");
+	SETPREF ("http.ui", "m", "Default webui (m, t, f)");
 	SETBPREF ("http.sandbox", "true", "Sandbox the HTTP server");
 	SETI ("http.timeout", 3, "Disconnect clients after N seconds of inactivity");
 	SETI ("http.dietime", 0, "Kill server after N seconds with no client");
@@ -3567,7 +3649,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("http.auth", "false", "Enable/Disable HTTP Authentification");
 	SETPREF ("http.authtok", "r2admin:r2admin", "HTTP Authentification user:password token");
 	p = r_sys_getenv ("R2_HTTP_AUTHFILE");
-	SETPREF ("http.authfile", p? p : "", "HTTP Authentification user file");
+	SETPREF ("http.authfile", r_str_get (p), "HTTP Authentification user file");
 	tmpdir = r_file_tmpdir ();
 	r_config_set (cfg, "http.uproot", tmpdir);
 	free (tmpdir);

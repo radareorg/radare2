@@ -488,6 +488,23 @@ R_API void *r_rbtree_cont_find(RContRBTree *tree, void *data, RContRBCmp cmp, vo
 	return NULL;
 }
 
+// not a direct pendant to r_rbtree_first, but similar
+// returns first element in the tree, not an iter or a node
+R_API void *r_rbtree_cont_first(RContRBTree *tree) {
+	r_return_val_if_fail (tree, NULL);
+	if (!tree->root) {
+		// empty tree
+		return NULL;
+	}
+	RBIter iter = r_rbtree_first (&tree->root->node);
+	if (iter.len == 0) {
+		// also empty tree
+		return NULL;
+	}
+	RBNode *first_rbnode = iter.path[iter.len-1];
+	return (container_of (first_rbnode, RContRBNode, node))->data;
+}
+
 R_API void r_rbtree_cont_free(RContRBTree *tree) {
 	if (tree && tree->root) {
 		r_rbtree_free (&tree->root->node, cont_node_free, tree->free);

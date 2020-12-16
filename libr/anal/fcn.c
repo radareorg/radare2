@@ -416,7 +416,7 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RAnalBlock *block, voi
 		}
 		// Steal vars from this block
 		size_t i;
-		for (i = 0; i + 1 < block->ninstr; i++) {
+		for (i = 0; i < block->ninstr; i++) {
 			const ut64 addr = r_anal_bb_opaddr_i (block, i);
 			RPVector *vars_used = r_anal_function_get_vars_used_at (other_fcn, addr);
 			if (!vars_used) {
@@ -997,7 +997,7 @@ repeat:
 				bool must_eob = true;
 				RIOMap *map = anal->iob.map_get (anal->iob.io, addr);
 				if (map) {
-					must_eob = (op.jump < map->itv.addr || op.jump >= map->itv.addr + map->itv.size);
+					must_eob = ( ! r_io_map_contain (map, op.jump) );
 				}
 				if (must_eob) {
 					op.jump = UT64_MAX;

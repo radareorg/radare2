@@ -11,11 +11,6 @@
 #define CM ","
 #define XTENSA_MAX_LENGTH 8
 
-#if defined(_MSC_VER)
-__declspec(dllimport)
-#endif
-extern xtensa_isa xtensa_default_isa;
-
 static int xtensa_length(const ut8 *insn) {
 	static int length_table[16] = { 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 8, 8 };
 	return length_table[*insn & 0xf];

@@ -17,6 +17,7 @@ Requirements
 ------------
 
  * Radare2 installed (and in `$PATH` or set the R2 environment).
+ * r2pipe tests require Python and r2pipe (in CI uses python3 and r2pipe from git, but users may be good with latests releases)
  * Valgrind (optional).
 
 Usage

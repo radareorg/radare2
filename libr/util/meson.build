@@ -1,8 +1,10 @@
+subdir('d')
 
 r_util_sources = [
   'ascii_table.c',
   'assert.c',
   'alloc.c',
+  'charset.c',
   'donut.c',
   'table.c',
   'getopt.c',
@@ -76,6 +78,7 @@ r_util_sources = [
   'utf16.c',
   'utf32.c',
   'vector.c',
+  'skyline.c',
   'w32-sys.c',
   'zip.c',
   'protobuf.c',

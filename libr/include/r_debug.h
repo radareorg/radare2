@@ -534,8 +534,8 @@ R_API RList *r_debug_frames(RDebug *dbg, ut64 at);
 R_API bool r_debug_is_dead(RDebug *dbg);
 R_API int r_debug_map_protect(RDebug *dbg, ut64 addr, int size, int perms);
 /* args XXX: weird food */
-R_API ut64 r_debug_arg_get(RDebug *dbg, int fast, int num);
-R_API bool r_debug_arg_set(RDebug *dbg, int fast, int num, ut64 value);
+R_API ut64 r_debug_arg_get(RDebug *dbg, const char *cc, int num);
+R_API bool r_debug_arg_set(RDebug *dbg, const char *cc, int num, ut64 value);
 
 /* breakpoints (most in r_bp, this calls those) */
 R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch, int rw, char *module, st64 m_delta);

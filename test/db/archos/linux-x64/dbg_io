@@ -1,5 +1,5 @@
 NAME=dbg.readpc
-FILE=/bin/ls
+FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF
 sr PC
@@ -25,7 +25,7 @@ EOF
 RUN
 
 NAME=dbg.write
-FILE=/bin/ls
+FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF
 s entry0
@@ -35,7 +35,7 @@ p8 2
 dk 9
 EOF
 EXPECT=<<EOF
-31ed
+f30f
 9090
 EOF
 RUN

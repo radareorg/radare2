@@ -1061,8 +1061,13 @@ R_API int r_core_file_list(RCore *core, int mode) {
 	RListIter *it;
 	RBinFile *bf;
 	RListIter *iter;
+	PJ *pj;
 	if (mode == 'j') {
-		r_cons_printf ("[");
+		pj = pj_new ();
+		if (!pj) {
+			return 0;
+		}
+		pj_a (pj);
 	}
 	r_list_foreach (core->files, iter, f) {
 		desc = r_io_desc_get (core->io, f->fd);
@@ -1072,15 +1077,17 @@ R_API int r_core_file_list(RCore *core, int mode) {
 		}
 		from = 0LL;
 		switch (mode) {
-		case 'j':
-			r_cons_printf ("{\"raised\":%s,\"fd\":%d,\"uri\":\"%s\",\"from\":%"
-				PFMT64d ",\"writable\":%s,\"size\":%d}%s",
-				r_str_bool (core->io->desc->fd == f->fd),
-				(int) f->fd, desc->uri, (ut64) from,
-				r_str_bool (desc->perm & R_PERM_W),
-				(int) r_io_desc_size (desc),
-				iter->n? ",": "");
+		case 'j': {  // "oij"
+			pj_o (pj);
+			pj_kb (pj, "raised", core->io->desc->fd == f->fd);
+			pj_ki (pj, "fd", f->fd);
+			pj_ks (pj, "uri", desc->uri);
+			pj_kn (pj, "from", (ut64) from);
+			pj_kb (pj, "writable", desc->perm & R_PERM_W);
+			pj_ki (pj, "size", (int) r_io_desc_size (desc));
+			pj_end (pj);
 			break;
+		}
 		case '*':
 		case 'r':
 			// TODO: use a getter
@@ -1115,7 +1122,7 @@ R_API int r_core_file_list(RCore *core, int mode) {
 					char *absfile = r_file_abspath (desc->uri);
 					r_list_foreach (maps, iter, current_map) {
 						if (current_map) {
-							r_cons_printf ("on %s 0x%"PFMT64x "\n", absfile, current_map->itv.addr);
+							r_cons_printf ("on %s 0x%"PFMT64x "\n", absfile, r_io_map_begin (current_map));
 						}
 					}
 					r_list_free (maps);
@@ -1145,7 +1152,9 @@ R_API int r_core_file_list(RCore *core, int mode) {
 		count++;
 	}
 	if (mode == 'j') {
-		r_cons_printf ("]\n");
+		pj_end (pj);
+		r_cons_println (pj_string (pj));
+		pj_free (pj);
 	}
 	return count;
 }

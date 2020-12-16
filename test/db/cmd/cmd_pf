@@ -642,6 +642,7 @@ RUN
 NAME=print n-times a format
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.bits=64
 wx 71776572747975696f706173646667686a6b6c7a786376626e6d71776572747975696f706173646667686a6b6c7a786376626e6d
 pf.plop ip int ptr
 pf {2}? (plop)structname @ 0
@@ -661,6 +662,7 @@ RUN
 NAME=print with byte(s) skip
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.bits=64
 wx 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 pf.abc ic...i:pii a b c d e f
 pf.abc

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2019 - pancake */
+/* radare - LGPL - Copyright 2007-2020 - pancake */
 
 #if __WINDOWS__
 #include <stdlib.h>

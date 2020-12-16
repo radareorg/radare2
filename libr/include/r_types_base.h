@@ -144,6 +144,22 @@ typedef struct _utX {
 #define B_UNSET(x, n)    ((x) &= ~(1ULL << (n)))
 #define B_TOGGLE(x, n)   ((x) ^= (1ULL << (n)))
 
+#define B11111 31
+#define B11110 30
+#define B11101 29
+#define B11100 28
+#define B11011 27
+#define B11010 26
+#define B11001 25
+#define B11000 24
+#define B10111 23
+#define B10110 22
+#define B10101 21
+#define B10100 20
+#define B10011 19
+#define B10010 18
+#define B10001 17
+#define B10000 16
 #define B1111 15
 #define B1110 14
 #define B1101 13

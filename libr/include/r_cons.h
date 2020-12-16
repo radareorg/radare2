@@ -1191,7 +1191,7 @@ typedef struct r_panels_t {
 	RPanelsMenu *panels_menu;
 	Sdb *db;
 	Sdb *rotate_db;
-	Sdb *almighty_db;
+	Sdb *modal_db;
 	HtPP *mht;
 	RPanelsMode mode;
 	RPanelsFun fun;

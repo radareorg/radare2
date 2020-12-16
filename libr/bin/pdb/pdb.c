@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 - inisider */
+/* radare - LGPL - Copyright 2014-2020 - inisider */
 
 #include <r_pdb.h>
 #include <r_bin.h>
@@ -1047,7 +1047,7 @@ static void print_types_regular(const RPdb *pdb, const RList *types) {
 		SType *type = r_list_iter_get (it);
 		STypeInfo *type_info = &type->type_data;
 		// skip unprintable types
-		if (!is_printable_type (type_info->leaf_type)) {
+		if (!type || !is_printable_type (type_info->leaf_type)) {
 			continue;
 		}
 		// skip forward references
@@ -1106,7 +1106,7 @@ static void print_types_json(const RPdb *pdb, PJ *pj, const RList *types) {
 		SType *type = r_list_iter_get (it);
 		STypeInfo *type_info = &type->type_data;
 		// skip unprintable types
-		if (!is_printable_type (type_info->leaf_type)) {
+		if (!type || !is_printable_type (type_info->leaf_type)) {
 			continue;
 		}
 		// skip forward references
@@ -1222,7 +1222,7 @@ static void print_types_format(const RPdb *pdb, const RList *types) {
 		SType *type = r_list_iter_get (it);
 		STypeInfo *type_info = &type->type_data;
 		// skip unprintable types and enums
-		if (!is_printable_type (type_info->leaf_type) || type_info->leaf_type == eLF_ENUM) {
+		if (!type || !is_printable_type (type_info->leaf_type) || type_info->leaf_type == eLF_ENUM) {
 			continue;
 		}
 		// skip forward references
@@ -1374,13 +1374,9 @@ static void print_gvars(RPdb *pdb, ut64 img_base, PJ *pj, int format) {
 		gdata = (SGlobal *)r_list_iter_get (it);
 		sctn_header = r_list_get_n (pe_stream->sections_hdrs, (gdata->segment - 1));
 		if (sctn_header) {
+			char *filtered_name;
 			name = r_bin_demangle_msvc (gdata->name.name);
 			name = (name) ? name : strdup (gdata->name.name);
-			if (name && format != 'd') {
-				char *_name = name;
-				name = r_name_filter2 (_name);
-				free (_name);
-			}
 			switch (format) {
 			case 2:
 			case 'j': // JSON
@@ -1394,10 +1390,13 @@ static void print_gvars(RPdb *pdb, ut64 img_base, PJ *pj, int format) {
 			case 1:
 			case '*':
 			case 'r':
+				filtered_name = r_name_filter2 (r_str_trim_head_ro (name));
 				pdb->cb_printf ("f pdb.%s = 0x%" PFMT64x " # %d %.*s\n",
-					name,
+					filtered_name,
 					(ut64) (img_base + omap_remap ((omap) ? (omap->stream) : 0, gdata->offset + sctn_header->virtual_address)),
 					gdata->symtype, PDB_SIZEOF_SECTION_NAME, sctn_header->name);
+				pdb->cb_printf ("\"fN pdb.%s %s\"\n", filtered_name, name);
+				free (filtered_name);
 				break;
 			case 'd':
 			default:

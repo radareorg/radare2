@@ -19,6 +19,10 @@ R_API char *r_cons_hud_file(const char *f) {
 // Display a buffer in the hud (splitting it line-by-line and ignoring
 // the lines starting with # )
 R_API char *r_cons_hud_string(const char *s) {
+	if (!r_cons_is_interactive ()) {
+		eprintf ("Hud mode requires scr.interactive=true.\n");
+		return NULL;
+	}
 	char *os, *track, *ret, *o = strdup (s);
 	if (!o) {
 		return NULL;

@@ -608,8 +608,8 @@ static bool r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int ref
 	if (map->perm & R_PERM_X) {
 		ut8 buf[64];
 		r_io_read_at (core->io, ref->addr, buf, sizeof (buf));
-		bool looksLikeAFunction = r_anal_check_fcn (core->anal, buf, sizeof (buf), ref->addr, map->itv.addr,
-				map->itv.addr + map->itv.size);
+		bool looksLikeAFunction = r_anal_check_fcn (core->anal, buf, sizeof (buf), ref->addr, r_io_map_begin (map),
+				r_io_map_end (map));
 		if (looksLikeAFunction) {
 			if (core->anal->limit) {
 				if (ref->addr < core->anal->limit->from ||
@@ -1857,7 +1857,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 		// TODO: show vars, refs and xrefs
 		char *fcn_name_escaped = r_str_escape_utf8_for_json (fcn->name, -1);
 		pj_o (pj);
-		pj_ks (pj, "name", r_str_get (fcn_name_escaped));
+		pj_ks (pj, "name", r_str_getf (fcn_name_escaped));
 		free (fcn_name_escaped);
 		pj_kn (pj, "offset", fcn->addr);
 		pj_ki (pj, "ninstr", fcn->ninstr);
@@ -2448,6 +2448,7 @@ repeat:
 			break;
 		}
 		case R_GRAPH_FORMAT_JSON:
+			//TODO PJ
 			if (usenames) {
 				r_cons_printf ("%s{\"name\":\"%s\", "
 						"\"size\":%" PFMT64u ",\"imports\":[",
@@ -2621,7 +2622,7 @@ R_API char *r_core_anal_fcn_name(RCore *core, RAnalFunction *fcn) {
 	bool demangle = r_config_get_i (core->config, "bin.demangle");
 	const char *lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
 	bool keep_lib = r_config_get_i (core->config, "bin.demangle.libs");
-	char *name = strdup (fcn->name ? fcn->name : "");
+	char *name = strdup (r_str_get (fcn->name));
 	if (demangle) {
 		char *tmp = r_bin_demangle (core->bin->cur, lang, name, fcn->addr, keep_lib);
 		if (tmp) {
@@ -3100,6 +3101,9 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	}
 	r_cons_printf ("\ncyclomatic-cost: %d", r_anal_function_cost (fcn));
 	r_cons_printf ("\ncyclomatic-complexity: %d", r_anal_function_complexity (fcn));
+	if (!R_STR_ISEMPTY (fcn->cc)) {
+		r_cons_printf ("\ncc: %s", fcn->cc);
+	}
 	r_cons_printf ("\nbits: %d", fcn->bits);
 	r_cons_printf ("\ntype: %s", r_anal_fcntype_tostring (fcn->type));
 	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {
@@ -3227,8 +3231,7 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	if (r_table_query (t, q)) {
 		char *s = (fmt== 'j')
 			? r_table_tojson (t)
-			: r_table_tofancystring (t);
-		// char *s = r_table_tostring (t);
+			: r_table_tostring (t);
 		r_cons_printf ("%s\n", s);
 		free (s);
 	}
@@ -3314,9 +3317,10 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		r_list_free (flist);
 		break;
 		}
+	case ',': // "afl," "afl,j"
 	case 't': // "aflt" "afltj"
 		if (rad[1] == 'j') {
-			fcn_list_table (core, r_str_trim_head_ro (rad+ 2), 'j');
+			fcn_list_table (core, r_str_trim_head_ro (rad + 2), 'j');
 		} else {
 			fcn_list_table (core, r_str_trim_head_ro (rad + 1), rad[1]);
 		}
@@ -5085,7 +5089,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		} else {
 			RIOMap *map = r_io_map_get (core->io, addr);
 			if (map) {
-				end = map->itv.addr + map->itv.size;
+				end = r_io_map_end (map);
 			} else {
 				end = addr + core->blocksize;
 			}
@@ -5951,35 +5955,4 @@ kontinue:
 	}
 	r_list_free (todo);
 	ht_uu_free (done);
-}
-
-R_API void r_core_anal_esil_graph(RCore *core, const char *expr) {
-	RAnalEsilDFG * edf = r_anal_esil_dfg_expr(core->anal, NULL, expr);
-	RListIter *iter, *ator;
-	RGraphNode *node, *edon;
-	RStrBuf *buf = r_strbuf_new ("");
-	r_cons_printf ("ag-\n");
-	r_list_foreach (r_graph_get_nodes (edf->flow), iter, node) {
-		const RAnalEsilDFGNode *enode = (RAnalEsilDFGNode *)node->data;
-		char *esc_str = r_str_escape (r_strbuf_get (enode->content));
-		r_strbuf_set (buf, esc_str);
-		if (enode->type == R_ANAL_ESIL_DFG_BLOCK_GENERATIVE) {
-			r_strbuf_prepend (buf, "generative:");
-		}
-		char *b64_buf = r_base64_encode_dyn (r_strbuf_get (buf), buf->len);
-		r_cons_printf ("agn %d base64:%s\n", enode->idx, b64_buf);
-		free (b64_buf);
-		free (esc_str);
-	}
-	r_strbuf_free (buf);
-
-	r_list_foreach (r_graph_get_nodes (edf->flow), iter, node) {
-		const RAnalEsilDFGNode *enode = (RAnalEsilDFGNode *)node->data;
-		r_list_foreach (r_graph_get_neighbours (edf->flow, node), ator, edon) {
-			const RAnalEsilDFGNode *edone = (RAnalEsilDFGNode *)edon->data;
-			r_cons_printf ("age %d %d\n", enode->idx, edone->idx);
-		}
-	}
-
-	r_anal_esil_dfg_free (edf);
 }

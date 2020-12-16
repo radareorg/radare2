@@ -20,30 +20,30 @@ typedef int (*cbOnIterMap)(RIO *io, int fd, ut64 addr, ut8 *buf, int len, RIOMap
 // If prefix_mode is true, returns the number of bytes of operated prefix; returns < 0 on error.
 // If prefix_mode is false, operates in non-stop mode and returns true iff all IO operations on overlapped maps are complete.
 static st64 on_map_skyline(RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg, cbOnIterMap op, bool prefix_mode) {
-	const RPVector *skyline = &io->map_skyline;
+	RVector *skyline = &io->map_skyline.v;
 	ut64 addr = vaddr;
 	size_t i;
 	bool ret = true, wrap = !prefix_mode && vaddr + len < vaddr;
-#define CMP(addr, part) ((addr) < r_itv_end (((RIOMapSkyline *)(part))->itv) - 1 ? -1 : \
-			(addr) > r_itv_end (((RIOMapSkyline *)(part))->itv) - 1 ? 1 : 0)
+#define CMP(addr, part) ((addr) < r_itv_end (((RSkylineItem *)(part))->itv) - 1 ? -1 : \
+			(addr) > r_itv_end (((RSkylineItem *)(part))->itv) - 1 ? 1 : 0)
 	// Let i be the first skyline part whose right endpoint > addr
 	if (!len) {
-		i = r_pvector_len (skyline);
+		i = r_vector_len (skyline);
 	} else {
-		r_pvector_lower_bound (skyline, addr, i, CMP);
-		if (i == r_pvector_len (skyline) && wrap) {
+		r_vector_lower_bound (skyline, addr, i, CMP);
+		if (i == r_vector_len (skyline) && wrap) {
 			wrap = false;
 			i = 0;
 			addr = 0;
 		}
 	}
 #undef CMP
-	while (i < r_pvector_len (skyline)) {
-		const RIOMapSkyline *part = r_pvector_at (skyline, i);
+	while (i < r_vector_len (skyline)) {
+		const RSkylineItem *part = r_vector_index_ptr (skyline, i);
 		// Right endpoint <= addr
 		if (r_itv_end (part->itv) - 1 < addr) {
 			i++;
-			if (wrap && i == r_pvector_len (skyline)) {
+			if (wrap && i == r_vector_len (skyline)) {
 				wrap = false;
 				i = 0;
 				addr = 0;
@@ -62,10 +62,11 @@ static st64 on_map_skyline(RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg
 		if (len1 < 1) {
 			break;
 		}
+		RIOMap *map = part->user;
 		// The map satisfies the permission requirement or p_cache is enabled
-		if (((part->map->perm & match_flg) == match_flg || io->p_cache)) {
-			st64 result = op (io, part->map->fd, part->map->delta + addr - part->map->itv.addr,
-					buf + (addr - vaddr), len1, part->map, NULL);
+		if (((map->perm & match_flg) == match_flg || io->p_cache)) {
+			st64 result = op (io, map->fd, map->delta + addr - r_io_map_begin(map),
+					buf + (addr - vaddr), len1, map, NULL);
 			if (prefix_mode) {
 				if (result < 0) {
 					return result;
@@ -106,7 +107,7 @@ R_API RIO* r_io_init(RIO* io) {
 	r_return_val_if_fail (io, NULL);
 	io->addrbytes = 1;
 	r_io_desc_init (io);
-	r_pvector_init (&io->map_skyline, free);
+	r_skyline_init (&io->map_skyline);
 	r_io_map_init (io);
 	r_io_cache_init (io);
 	r_io_plugin_init (io);
@@ -405,7 +406,7 @@ R_API bool r_io_resize(RIO* io, ut64 newsize) {
 		ut64 fd_size = r_io_fd_size (io, io->desc->fd);
 		r_list_foreach (maps, iter, current_map) {
 			// we just resize map of the same size of its fd
-			if (current_map->itv.size == fd_size) {
+			if (r_io_map_size (current_map) == fd_size) {
 				r_io_map_resize (io, current_map->id, newsize);
 			}
 		}
@@ -484,7 +485,7 @@ R_API bool r_io_set_write_mask(RIO* io, const ut8* mask, int len) {
 R_API ut64 r_io_p2v(RIO *io, ut64 pa) {
 	RIOMap *map = r_io_map_get_paddr (io, pa);
 	if (map) {
-		return pa - map->delta + map->itv.addr;
+		return pa - map->delta + r_io_map_begin (map);
 	}
 	return UT64_MAX;
 }
@@ -492,8 +493,8 @@ R_API ut64 r_io_p2v(RIO *io, ut64 pa) {
 R_API ut64 r_io_v2p(RIO *io, ut64 va) {
 	RIOMap *map = r_io_map_get (io, va);
 	if (map) {
-		st64 delta = va - map->itv.addr;
-		return map->itv.addr + map->delta + delta;
+		st64 delta = va - r_io_map_begin (map);
+		return r_io_map_begin (map) + map->delta + delta;
 	}
 	return UT64_MAX;
 }
@@ -666,7 +667,7 @@ R_API int r_io_fini(RIO* io) {
 	r_io_desc_fini (io);
 	r_io_map_fini (io);
 	ls_free (io->plugins);
-	r_list_free (io->cache);
+	r_io_cache_fini (io);
 	r_list_free (io->undo.w_list);
 	if (io->runprofile) {
 		R_FREE (io->runprofile);

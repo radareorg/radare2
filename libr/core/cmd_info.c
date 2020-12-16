@@ -205,7 +205,7 @@ static void cmd_info_here(RCore *core, int mode) {
 	}
 }
 
-#define STR(x) (x)? (x): ""
+//TODO PJ
 static void r_core_file_info(RCore *core, int mode) {
 	const char *fn = NULL;
 	int dbg = r_config_get_i (core->config, "cfg.debug");
@@ -229,7 +229,7 @@ static void r_core_file_info(RCore *core, int mode) {
 		fn = info->file;
 		if (mode == R_MODE_JSON) {
 			comma = ",";
-			r_cons_printf ("\"type\":\"%s\"", STR (info->type));
+			r_cons_printf ("\"type\":\"%s\"", r_str_get (info->type));
 		}
 	} else {
 		fn = desc ? desc->name: NULL;
@@ -344,6 +344,7 @@ static int bin_is_executable(RBinObject *obj){
 	return false;
 }
 
+//TODO PJ
 static void cmd_info_bin(RCore *core, int va, int mode) {
 	RBinObject *obj = r_bin_cur_object (core->bin);
 	int array = 0;
@@ -964,7 +965,7 @@ static int cmd_info(void *data, const char *input) {
 				}
 				core->tmpseek = false;
 				r_core_cmdf (core, "e bin.str.purge=%s%s0x%" PFMT64x,
-				             strpurge ? strpurge : "",
+				             r_str_get (strpurge),
 				             strpurge && *strpurge ? "," : "",
 				             addr);
 				core->tmpseek = old_tmpseek;
@@ -1107,6 +1108,7 @@ static int cmd_info(void *data, const char *input) {
 							input++;
 							break;
 						case 'j':
+							//TODO PJ
 							input++;
 							r_cons_printf ("\"class\":\"%s\"", cls->name);
 							r_cons_printf (",\"methods\":[");

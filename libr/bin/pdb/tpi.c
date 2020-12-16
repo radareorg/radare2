@@ -1224,12 +1224,11 @@ static void get_union_members(void *type, RList **l) {
 		SType *tmp = 0;
 		indx = lf_union->field_list - base_idx;
 		tmp = (SType *)r_list_get_n(p_types_list, indx);
-		*l = ((SLF_FIELDLIST *) tmp->type_data.type_info)->substructs;
+		*l = tmp ? ((SLF_FIELDLIST *)tmp->type_data.type_info)->substructs : NULL;
 	}
 }
 
 static void get_struct_class_members(void *type, RList **l) {
-	SLF_FIELDLIST *lf_fieldlist = 0;
 	STypeInfo *t = (STypeInfo *) type;
 	SLF_STRUCTURE *lf = (SLF_STRUCTURE *) t->type_info;
 	unsigned int indx = 0;
@@ -1240,8 +1239,7 @@ static void get_struct_class_members(void *type, RList **l) {
 		SType *tmp = 0;
 		indx = lf->field_list - base_idx;
 		tmp = (SType *)r_list_get_n(p_types_list, indx);
-		lf_fieldlist = (SLF_FIELDLIST *) tmp->type_data.type_info;
-		*l = lf_fieldlist->substructs;
+		*l = tmp ? ((SLF_FIELDLIST *)tmp->type_data.type_info)->substructs : NULL;
 	}
 }
 
@@ -1256,7 +1254,7 @@ static void get_enum_members(void *type, RList **l) {
 		SType *tmp = 0;
 		indx = lf->field_list - base_idx;
 		tmp = (SType *)r_list_get_n(p_types_list, indx);
-		*l = ((SLF_FIELDLIST *) tmp->type_data.type_info)->substructs;
+		*l = tmp ? ((SLF_FIELDLIST *)tmp->type_data.type_info)->substructs : NULL;
 	}
 }
 
@@ -2940,7 +2938,8 @@ static int parse_tpi_stypes(R_STREAM_FILE *stream, SType *type) {
 		PARSE_LF(SLF_VTSHAPE, lf_vtshape);
 		break;
 	default:
-		printf("parse_tpi_streams(): unsupported leaf type\n");
+		eprintf ("parse_tpi_streams(): unsupported leaf type: 0x%"PFMT32x"\n", type->type_data.leaf_type);
+		read_bytes = 0;
 		break;
 	}
 
@@ -2969,8 +2968,7 @@ int parse_tpi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream) {
 		type->type_data.leaf_type = eLF_MAX;
 		init_stype_info(&type->type_data);
 		if (!parse_tpi_stypes(stream, type)) {
-			free (type);
-			return 0;
+			R_FREE (type);
 		}
 		r_list_append(tpi_stream->types, type);
 	}

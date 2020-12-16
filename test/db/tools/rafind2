@@ -92,7 +92,6 @@ EOF
 RUN
 
 NAME=rafind2 -i
-BROKEN=1
 FILE=-
 CMDS=!!rafind2 -i bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
@@ -101,7 +100,6 @@ EOF
 RUN
 
 NAME=rafind2 -m
-BROKEN=1
 FILE=-
 CMDS=!!rafind2 -m bins/elf/ioli/crackme0x00
 EXPECT=<<EOF

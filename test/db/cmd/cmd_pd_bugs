@@ -4,7 +4,7 @@ CMDS=<<EOF
 e asm.lines.bb=0
 e asm.bytes=0
 e asm.comments=0
-s sym.static_int_Test::callMeNot
+s sym.static_int_Test::callMeNot__
 pd 20~?NSLog
 af
 pd 20~?NSLog

@@ -109,6 +109,7 @@ asm_plugins = [
   'tricore',
   'v810',
   'v850',
+  'v850_gnu',
   'vax',
   'wasm',
   'ws',
@@ -384,6 +385,7 @@ include_files =[
   'include/r_types.h',
   'include/r_util.h',
   'include/r_vector.h',
+  'include/r_skyline.h',
 ]
 install_headers(include_files, install_dir: r2_incdir)
 

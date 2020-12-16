@@ -1,5 +1,5 @@
 NAME=dmi ld
-FILE=/bin/ls
+FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF
 dmiqq ld
@@ -45,7 +45,7 @@ EOF
 RUN
 
 NAME=dmia ld
-FILE=/bin/ls
+FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF
 dmiaqq ld~la_activity
@@ -59,7 +59,7 @@ EOF
 RUN
 
 NAME=dmias ld
-FILE=/bin/ls
+FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF
 dmias ld

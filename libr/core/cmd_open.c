@@ -1,11 +1,7 @@
 /* radare - LGPL - Copyright 2009-2020 - pancake */
 
-#include "r_list.h"
-#include "r_config.h"
-#include "r_core.h"
-#include "r_util.h"
-#include "r_bin.h"
-#include "r_debug.h"
+#include <r_bin.h>
+#include <r_debug.h>
 
 static const char *help_msg_o[] = {
 	"Usage: o","[com- ] [file] ([offset])","",
@@ -404,13 +400,17 @@ static void cmd_open_bin(RCore *core, const char *input) {
 
 // TODO: discuss the output format
 static void map_list(RIO *io, int mode, RPrint *print, int fd) {
+	PJ *pj;
 	if (!io || !print || !print->cb_printf) {
 		return;
 	}
 	if (mode == 'j') {
-		print->cb_printf ("[");
+		pj = pj_new ();
+		if (!pj) {
+			return;
+		}
+		pj_a (pj);
 	}
-	bool first = true;
 	char *om_cmds = NULL;
 
 	void **it;
@@ -422,28 +422,29 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 		switch (mode) {
 		case 'q':
 			if (fd == -2) {
-				print->cb_printf ("0x%08"PFMT64x"\n", map->itv.addr);
+				print->cb_printf ("0x%08"PFMT64x"\n", r_io_map_begin (map));
 			} else {
 				print->cb_printf ("%d %d\n", map->fd, map->id);
 			}
 			break;
 		case 'j':
-			if (!first) {
-				print->cb_printf (",");
-			}
-			first = false;
-			print->cb_printf ("{\"map\":%i,\"fd\":%d,\"delta\":%"PFMT64u",\"from\":%"PFMT64u
-					",\"to\":%"PFMT64u",\"perm\":\"%s\",\"name\":\"%s\"}", map->id, map->fd,
-					map->delta, map->itv.addr, r_itv_end (map->itv),
-					r_str_rwx_i (map->perm), (map->name ? map->name : ""));
+			pj_o (pj);
+			pj_ki (pj, "map", map->id);
+			pj_ki (pj, "fd", map->fd);
+			pj_kn (pj, "delta", map->delta);
+			pj_kn (pj, "from", r_io_map_begin (map));
+			pj_kn (pj, "to", r_io_map_end (map));
+			pj_ks (pj, "perm", r_str_rwx_i (map->perm));
+			pj_ks (pj, "name", r_str_get (map->name));
+			pj_end (pj);
 			break;
 		case 1:
 		case '*':
 		case 'r': {
 			// Need FIFO order here
 			char *om_cmd = r_str_newf ("om %d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s%s%s\n",
-					map->fd, map->itv.addr, map->itv.size, map->delta, r_str_rwx_i(map->perm),
-					map->name ? " " : "", map->name ? map->name : "");
+					map->fd, r_io_map_begin (map), r_io_map_size (map), map->delta, r_str_rwx_i(map->perm),
+					map->name ? " " : "", r_str_get (map->name));
 			if (om_cmd) {
 				om_cmds = r_str_prepend (om_cmds, om_cmd);
 				free (om_cmd);
@@ -453,8 +454,8 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 		default:
 			print->cb_printf ("%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
 					" - 0x%08"PFMT64x" %s %s\n", map->id, map->fd,
-					map->delta, map->itv.addr, r_itv_end (map->itv) - 1,
-					r_str_rwx_i (map->perm), (map->name ? map->name : ""));
+					map->delta, r_io_map_begin (map), r_io_map_to (map),
+					r_str_rwx_i (map->perm), r_str_get (map->name));
 			break;
 		}
 	}
@@ -463,7 +464,9 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 		free (om_cmds);
 	}
 	if (mode == 'j') {
-		print->cb_printf ("]\n");
+		pj_end (pj);
+		print->cb_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 	}
 }
 
@@ -524,7 +527,7 @@ static void cmd_omf(RCore *core, const char *input) {
 		void **it;
 		r_pvector_foreach (&core->io->maps, it) {
 			RIOMap *map = *it;
-			if (r_itv_contain (map->itv, core->offset)) {
+			if (r_io_map_contain (map, core->offset)) {
 				map->perm = perm;
 			}
 		}
@@ -545,7 +548,7 @@ static void r_core_cmd_omt(RCore *core, const char *arg) {
 		ut64 pa = m->delta;
 		ut64 pa_size = r_itv_size (m->itv);
 		ut64 pa_end = pa + pa_size;
-		const char *name = m->name? m->name: "";
+		const char *name = r_str_get (m->name);
 		r_table_add_rowf (t, "ddxxxxxss", m->id, m->fd, pa, pa_end, pa_size, va, va_end, r_str_rwx_i (m->perm), name);
 	}
 
@@ -565,15 +568,36 @@ static void cmd_open_map(RCore *core, const char *input) {
 	ut64 new;
 	RIOMap *map = NULL;
 	const char *P;
+	PJ *pj;
 
 	switch (input[1]) {
 	case '.': // "om."
 		map = r_io_map_get (core->io, core->offset);
 		if (map) {
-			core->print->cb_printf ("map: %i fd: %i +0x%"PFMT64x" 0x%"PFMT64x
-				" - 0x%"PFMT64x" ; %s : %s\n", map->id, map->fd,
-				map->delta, map->itv.addr, r_itv_end (map->itv),
-			r_str_rwx_i (map->perm), map->name ? map->name : "");
+			if (input[2] == 'j') { // "om.j"
+				pj = pj_new ();
+				if (!pj) {
+					return;
+				}
+				pj_o (pj);
+				pj_ki (pj, "map", map->id);
+				pj_ki (pj, "fd", map->fd);
+				pj_kn (pj, "delta", map->delta);
+				pj_kn (pj, "from", r_io_map_begin (map));
+				pj_kn (pj, "to", r_io_map_end (map));
+				pj_ks (pj, "perm", r_str_rwx_i (map->perm));
+				pj_ks (pj, "name", r_str_get (map->name));
+				pj_end (pj);
+
+				core->print->cb_printf ("%s\n", pj_string (pj));
+
+				pj_free (pj);
+			} else {
+				core->print->cb_printf ("%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
+					" - 0x%08"PFMT64x" %s %s\n", map->id, map->fd,
+					map->delta, r_io_map_begin (map), r_io_map_to (map),
+					r_str_rwx_i (map->perm), r_str_get (map->name));
+			}
 		}
 		break;
 	case 'r': // "omr"
@@ -665,17 +689,23 @@ static void cmd_open_map(RCore *core, const char *input) {
 			switch (words) {
 			case 6:
 				name = r_str_word_get0 (s, 5);
-			case 5:			//this sucks
+				// fallthrough
+			case 5:
 				rwx = r_str_rwx (r_str_word_get0 (s, 4));
 				rwx_arg = true;
+				// fallthrough
 			case 4:
 				paddr = r_num_math (core->num, r_str_word_get0 (s, 3));
+				// fallthrough
 			case 3:
 				size = r_num_math (core->num, r_str_word_get0 (s, 2));
+				// fallthrough
 			case 2:
 				vaddr = r_num_math (core->num, r_str_word_get0 (s, 1));
+				// fallthrough
 			case 1:
 				fd = r_num_math (core->num, r_str_word_get0 (s, 0));
+				break;
 			}
 			if (fd < 3) {
 				eprintf ("wrong fd, it must be greater than 3\n");
@@ -1171,7 +1201,7 @@ static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
 				p->cb_printf ("  +0x%"PFMT64x" 0x%"PFMT64x
 					" - 0x%"PFMT64x" : %s : %s : %s\n", map->delta,
 					map->from, map->to, r_str_rwx_i (map->flags), "",
-					map->name ? map->name : "");
+					r_str_get (map));
 			}
 		}
 	}

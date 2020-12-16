@@ -173,6 +173,10 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 	if (bp->baddr > addr) {
 		eprintf ("base addr should not be larger than the breakpoint address.\n");
 	}
+	if (bp->bpinmaps && !r_bp_is_valid (bp, b)) {
+		eprintf ("WARNING: Breakpoint won't be placed since it's not in a valid map.\n"
+			 "You can bypass this check by setting dbg.bpinmaps to false.\n");
+	}
 	b->delta = addr - bp->baddr;
 	b->size = size;
 	b->enabled = true;
@@ -194,14 +198,10 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 		} else {
 			b->obytes = NULL;
 		}
-		/* XXX: endian .. use bp->endian */
 		ret = r_bp_get_bytes (bp, b->bbytes, size, bp->endian, 0);
 		if (ret != size) {
 			eprintf ("Cannot get breakpoint bytes. No architecture selected?\n");
-			unlinkBreakpoint (bp, b);
-			return NULL;
 		}
-		b->recoil = ret;
 	}
 	bp->nbps++;
 	r_list_append (bp->bps, b);
@@ -302,10 +302,10 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 				b->trace ? "trace" : "break",
 				b->enabled ? "enabled" : "disabled",
 				r_bp_is_valid (bp, b) ? "valid" : "invalid",
-				r_str_get2 (b->data),
-				r_str_get2 (b->cond),
-				r_str_get2 (b->name),
-				r_str_get2 (b->module_name));
+				r_str_get (b->data),
+				r_str_get (b->cond),
+				r_str_get (b->name),
+				r_str_get (b->module_name));
 			break;
 		case 1:
 		case 'r':
@@ -318,9 +318,10 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 			}
 			//b->trace? "trace": "break",
 			//b->enabled? "enabled": "disabled",
-			// b->data? b->data: "");
+			//r_str_get (b->data));
 			break;
 		case 'j':
+			//TODO PJ
 			bp->cb_printf ("%s{\"addr\":%"PFMT64d",\"size\":%d,"
 				"\"prot\":\"%c%c%c\",\"hw\":%s,"
 				"\"trace\":%s,\"enabled\":%s,"
@@ -335,8 +336,8 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 				b->trace ? "true" : "false",
 				b->enabled ? "true" : "false",
 				r_bp_is_valid (bp, b) ? "true" : "false",
-				r_str_get2 (b->data),
-				r_str_get2 (b->cond));
+				r_str_get (b->data),
+				r_str_get (b->cond));
 			break;
 		}
 		/* TODO: Show list of pids and trace points, conditionals */

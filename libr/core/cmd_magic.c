@@ -84,7 +84,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		}
 	}
 //repeat:
-	//if (v) r_cons_printf ("  %d # pm %s @ 0x%"PFMT64x"\n", depth, file? file: "", addr);
+	//if (v) r_cons_printf ("  %d # pm %s @ 0x%"PFMT64x"\n", depth, r_str_get (file), addr);
 	if (delta + 2 > core->blocksize) {
 		eprintf ("EOB\n");
 		ret = -1;
@@ -131,6 +131,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		if (!json) {
 			r_cons_printf ("0x%08"PFMT64x" %d %s\n", addr + adelta, magicdepth-depth, p);
 		} else {
+			//TODO PJ
 			if (found >= 1) {
 				r_cons_printf (",");
 			}

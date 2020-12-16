@@ -82,23 +82,19 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 		}
 		break;
 	case R_MODE_RADARE: {
-		char *f_name, *nstr;
-		f_name = strdup (string->string);
-		r_name_filter (f_name, 512);
+		char *f_name = strdup (string->string);
+		r_name_filter (f_name, 32);
 		if (bin->prefix) {
-			nstr = r_str_newf ("%s.str.%s", bin->prefix, f_name);
 			io->cb_printf ("f %s.str.%s %u @ 0x%08"PFMT64x"\n"
 					"Cs %u @ 0x%08"PFMT64x"\n",
 					bin->prefix, f_name, string->size, addr,
 					string->size, addr);
 		} else {
-			nstr = r_str_newf ("str.%s", f_name);
 			io->cb_printf ("f str.%s %u @ 0x%08"PFMT64x"\n"
 					"Cs %u @ 0x%08"PFMT64x"\n",
 					f_name, string->size, addr,
 					string->size, addr);
 		}
-		free (nstr);
 		free (f_name);
 		break;
 		}

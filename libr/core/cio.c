@@ -429,7 +429,7 @@ R_API bool r_core_extend_at(RCore *core, ut64 addr, int size) {
 	if (io_va) {
 		RIOMap *map = r_io_map_get (core->io, core->offset);
 		if (map) {
-			addr = addr - map->itv.addr + map->delta;
+			addr = addr - r_io_map_begin (map) + map->delta;
 		}
 		r_config_set_i (core->config, "io.va", false);
 	}

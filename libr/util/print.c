@@ -827,8 +827,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	bool use_pair = true;
 	bool use_offset = true;
 	bool compact = false;
-	int use_segoff = 0;
-	int pairs = 0;
+	bool use_segoff = false;
+	bool pairs = false;
 	const char *bytefmt = "%02x";
 	const char *pre = "";
 	int last_sparse = 0;
@@ -1165,7 +1165,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 							const char *n = p->offname (p->user, addr + j);
 							r_print_section (p, at);
 							r_print_addr (p, addr + j * zoomsz);
-							printfmt ("..[ null bytes ]..   00000000 %s\n", n? n: "");
+							printfmt ("..[ null bytes ]..   00000000 %s\n", r_str_get (n));
 						}
 					}
 					r_print_cursor (p, j, sz_n, 0);
@@ -1294,12 +1294,12 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				if (p->hasrefs && off != UT64_MAX) {
 					char *rstr = p->hasrefs (p->user, addr + i, false);
 					if (rstr && *rstr) {
-						printfmt (" @%s", rstr);
+						printfmt (" @ %s", rstr);
 					}
 					free (rstr);
 					rstr = p->hasrefs (p->user, off, true);
 					if (rstr && *rstr) {
-						printfmt ("%s", rstr);
+						printfmt (" %s", rstr);
 					}
 					free (rstr);
 				}
@@ -1316,7 +1316,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						a = p->offname (p->user, addr + j);
 						if (p->colorfor && a && *a) {
 							const char *color = p->colorfor (p->user, addr + j, true);
-							printfmt ("%s  ; %s%s", color ? color: "", a,
+							printfmt ("%s  ; %s%s", r_str_get (color), a,
 									color ? Color_RESET : "");
 						}
 					}
@@ -1950,6 +1950,8 @@ static char o[COLORIZE_BUFSIZE];
 
 static bool issymbol(char c) {
 	switch (c) {
+	case '$':
+	case ':':
 	case '+':
 	case '-':
 	/* case '/': not good for dalvik */
@@ -1971,7 +1973,7 @@ static bool issymbol(char c) {
 	}
 }
 
-static bool check_arg_name (RPrint *print, char *p, ut64 func_addr) {
+static bool check_arg_name(RPrint *print, char *p, ut64 func_addr) {
 	if (func_addr && print->exists_var) {
 		int z;
 		for (z = 0; p[z] && (isalpha (p[z]) || isdigit (p[z]) || p[z] == '_'); z++) {
@@ -2260,7 +2262,7 @@ R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize) {
 	return words;
 }
 
-R_API void r_print_hex_from_bin (RPrint *p, char *bin_str) {
+R_API void r_print_hex_from_bin(RPrint *p, char *bin_str) {
 	int i, j, index;
 	RPrint myp = {.cb_printf = libc_printf};
 	const int len = strlen (bin_str);

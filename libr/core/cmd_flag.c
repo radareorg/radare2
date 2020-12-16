@@ -811,20 +811,24 @@ rep:
 		}
 		break;
 	case 'a':
-		if (input[1] == ' '){
+		if (input[1] == ' ') {
 			RFlagItem *fi;
 			R_FREE (str);
 			str = strdup (input+2);
 			ptr = strchr (str, '=');
-			if (!ptr)
+			if (!ptr) {
 				ptr = strchr (str, ' ');
-			if (ptr) *ptr++ = 0;
+			}
+			if (ptr) {
+				*ptr++ = 0;
+			}
 			name = (char *)r_str_trim_head_ro (str);
 			ptr = (char *)r_str_trim_head_ro (ptr);
 			fi = r_flag_get (core->flags, name);
-			if (!fi)
+			if (!fi) {
 				fi = r_flag_set (core->flags, name,
 					core->offset, 1);
+			}
 			if (fi) {
 				r_flag_item_set_alias (fi, ptr);
 			} else {
@@ -992,6 +996,10 @@ rep:
 			}
 		}
 		if (addFlag) {
+			if (!r_name_check (cstr)) {
+				eprintf ("Invalid flag name '%s'.\n", cstr);
+				return false;
+			}
 			item = r_flag_set (core->flags, cstr, off, bsze);
 		}
 		if (item && comment) {
@@ -1618,7 +1626,9 @@ rep:
 	case '?':
 	default:
 		if (input[1]) {
-			core->num->value = r_flag_get (core->flags, input + 1)? 1: 0;
+			const char *arg = r_str_trim_head_ro (input + 1);
+			RFlagItem *fi = r_flag_get (core->flags, arg);
+			core->num->value = fi? 1: 0;
 		} else {
 			r_core_cmd_help (core, help_msg_f);
 			break;

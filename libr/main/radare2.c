@@ -242,28 +242,29 @@ static bool run_commands(RCore *r, RList *cmds, RList *files, bool quiet, int do
 	const char *file;
 	int ret;
 	/* -i */
+	bool has_failed = false;
 	r_list_foreach (files, iter, file) {
 		if (!r_file_exists (file)) {
 			eprintf ("Script '%s' not found.\n", file);
 			goto beach;
 		}
 		ret = r_core_run_script (r, file);
+		r_cons_flush ();
 		if (ret == -2) {
 			eprintf ("[c] Cannot open '%s'\n", file);
 		}
-		if (ret < 0 || (ret == 0 && quiet)) {
-			r_cons_flush ();
-			return false;
+		if (ret < 0) {
+			has_failed = true;
+			break;
 		}
 	}
 	/* -c */
 	r_list_foreach (cmds, iter, cmdn) {
-		//r_core_cmd0 (r, cmdn);
 		r_core_cmd_lines (r, cmdn);
 		r_cons_flush ();
 	}
 beach:
-	if (quiet) {
+	if (quiet && !has_failed) {
 		if (do_analysis) {
 			return true;
 		}
@@ -1259,7 +1260,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				}
 			}
 		}
-		if (o && compute_hashes) {
+		if (o && o->info && compute_hashes) {
 			// TODO: recall with limit=0 ?
 			ut64 limit = r_config_get_i (r->config, "bin.hashlimit");
 			r_bin_file_set_hashes (r->bin, r_bin_file_compute_hashes (r->bin, limit));
