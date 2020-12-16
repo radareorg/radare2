@@ -1,5 +1,5 @@
 NAME=dbg.step
-FILE=/bin/ls
+FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF
 .dr*
@@ -18,7 +18,7 @@ EOF
 RUN
 
 NAME=dbg.symbols
-FILE=/bin/ls
+FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF
 id~?
@@ -30,7 +30,7 @@ EOF
 RUN
 
 NAME=dso over a breakpoint
-FILE=/bin/ls
+FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF
 dr rax=rip > /dev/null
