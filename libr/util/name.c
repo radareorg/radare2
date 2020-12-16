@@ -101,7 +101,7 @@ R_API bool r_name_check(const char *s) {
 }
 
 static inline bool is_special_char(char n) {
-	return (n == 'b' || n == 'f' || n == 'n' || n == 'r' || n == 't' || n == 'v' || n == 'a' || n == 'v');
+	return (n == 'b' || n == 'f' || n == 'n' || n == 'r' || n == 't' || n == 'v' || n == 'a');
 }
 
 R_API const char *r_name_filter_ro(const char *a) {
@@ -134,7 +134,6 @@ R_API bool r_name_filter(char *s, int maxlen) {
 		if (*s == '\\') {
 			if (is_special_char (s[1])) {
 				*s = '_';
-				s++;
 			} else {
 				r_str_cpy (s, s + 1);
 				s--;
