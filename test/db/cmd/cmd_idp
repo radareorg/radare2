@@ -7,7 +7,7 @@ fi 1 @ 0x00401010
 EOF
 EXPECT=<<EOF
 0x00401000 4096 section..text
-0x00401000 0 pdb.void___cdecl_SomeCoolFunction_void
+0x00401000 0 pdb.void___cdecl_SomeCoolFunction_void_
 0x00401010 0 pdb._main
 EOF
 RUN
