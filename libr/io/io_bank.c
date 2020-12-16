@@ -100,7 +100,7 @@ R_API char *r_io_banks_list(RIO *io, int mode) {
 	if (!io || !io->banks) {
 		return NULL;
 	}
-	BanksLister bl = {io; r_strbuf_new ("")};
+	BanksLister bl = {io, r_strbuf_new ("")};
 	if (!bl.buf) {
 		return NULL;
 	}
