@@ -50,7 +50,7 @@ static const char *help_msg_op[] = {
 };
 
 static const char *help_msg_omb[] = {
-	"Usage:", "omb[jq,+] [fd]", "",
+	"Usage:", "omb[jq,+] [fd]", "Operate on memory banks",
 	"omb", "", "list all memory banks",
 	"omb", " [name|id]", "switch to use a different bank",
 	"omb+", "[name] [mapid ...]", "add a new bank with the given maps",
