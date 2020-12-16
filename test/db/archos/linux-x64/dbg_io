@@ -35,7 +35,7 @@ p8 2
 dk 9
 EOF
 EXPECT=<<EOF
-31ed
+f30f
 9090
 EOF
 RUN
