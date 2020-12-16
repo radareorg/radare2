@@ -92,16 +92,18 @@ static int lang_c_init(void *user) {
 	return true;
 }
 
-static int lang_c_run(RLang *lang, const char *code, int len) {
+static bool lang_c_run(RLang *lang, const char *code, int len) {
 	FILE *fd = r_sandbox_fopen (".tmp.c", "w");
-	if (fd) {
-		fputs ("#include <r_core.h>\n\nvoid entry(RCore *core, int argc, const char **argv) {\n", fd);
-		fputs (code, fd);
-		fputs ("\n}\n", fd);
-		fclose (fd);
-		lang_c_file (lang, ".tmp.c");
-		r_file_rm (".tmp.c");
-	} else eprintf ("Cannot open .tmp.c\n");
+	if (!fd) {
+		eprintf ("Cannot open .tmp.c\n");
+		return false;
+	}
+	fputs ("#include <r_core.h>\n\nvoid entry(RCore *core, int argc, const char **argv) {\n", fd);
+	fputs (code, fd);
+	fputs ("\n}\n", fd);
+	fclose (fd);
+	lang_c_file (lang, ".tmp.c");
+	r_file_rm (".tmp.c");
 	return true;
 }
 
