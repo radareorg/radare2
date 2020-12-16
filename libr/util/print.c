@@ -1950,6 +1950,8 @@ static char o[COLORIZE_BUFSIZE];
 
 static bool issymbol(char c) {
 	switch (c) {
+	case '$':
+	case ':':
 	case '+':
 	case '-':
 	/* case '/': not good for dalvik */
@@ -1971,7 +1973,7 @@ static bool issymbol(char c) {
 	}
 }
 
-static bool check_arg_name (RPrint *print, char *p, ut64 func_addr) {
+static bool check_arg_name(RPrint *print, char *p, ut64 func_addr) {
 	if (func_addr && print->exists_var) {
 		int z;
 		for (z = 0; p[z] && (isalpha (p[z]) || isdigit (p[z]) || p[z] == '_'); z++) {
@@ -2260,7 +2262,7 @@ R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize) {
 	return words;
 }
 
-R_API void r_print_hex_from_bin (RPrint *p, char *bin_str) {
+R_API void r_print_hex_from_bin(RPrint *p, char *bin_str) {
 	int i, j, index;
 	RPrint myp = {.cb_printf = libc_printf};
 	const int len = strlen (bin_str);

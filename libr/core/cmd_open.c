@@ -689,17 +689,23 @@ static void cmd_open_map(RCore *core, const char *input) {
 			switch (words) {
 			case 6:
 				name = r_str_word_get0 (s, 5);
-			case 5:			//this sucks
+				// fallthrough
+			case 5:
 				rwx = r_str_rwx (r_str_word_get0 (s, 4));
 				rwx_arg = true;
+				// fallthrough
 			case 4:
 				paddr = r_num_math (core->num, r_str_word_get0 (s, 3));
+				// fallthrough
 			case 3:
 				size = r_num_math (core->num, r_str_word_get0 (s, 2));
+				// fallthrough
 			case 2:
 				vaddr = r_num_math (core->num, r_str_word_get0 (s, 1));
+				// fallthrough
 			case 1:
 				fd = r_num_math (core->num, r_str_word_get0 (s, 0));
+				break;
 			}
 			if (fd < 3) {
 				eprintf ("wrong fd, it must be greater than 3\n");

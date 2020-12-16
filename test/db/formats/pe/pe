@@ -111,7 +111,7 @@ e asm.comments=false
 pd 1@0x0040131a~str.Hello
 EOF
 EXPECT=<<EOF
-  0x0040131a      mov dword [esp], str.Hello
+  0x0040131a      mov dword [esp], str.Hello_n
 EOF
 RUN
 

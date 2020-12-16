@@ -39,17 +39,17 @@ nth vaddr bind type lib name
 
 nth paddr         size vaddr        vsize perm name
 ---------------------------------------------------
-0   0x000001cc    0x2f 0x00000000    0x2f ---- .drectve_0
-1   0x000001fb  0x8670 0x00000030  0x8670 -r-- .debug_S_1
-2   0x0000ad73    0x70 0x000086a0    0x70 -r-- .debug_T_2
-3   0x0000ade3   0x625 0x00008710   0x625 -rw- .data_3
-4   0x0000b408    0x54 0x00008d40    0x54 -r-- .rdata_4
-5   0x00000000     0x8 0x00008da0     0x8 -rw- .bss_5
-6   0x0000b45c  0x2895 0x00008db0  0x2895 -r-x .text_mn_6
-7   0x0000e967     0x8 0x0000b650     0x8 -r-- .rdata_7
-8   0x0000e96f     0x4 0x0000b660     0x4 -r-- .rdata_8
-9   0x0000e973     0x8 0x0000b670     0x8 -r-- .rdata_9
-10  0x0000e97b     0x4 0x0000b680     0x4 -r-- .rdata_10
+0   0x000001cc    0x2f 0x00000000    0x2f ---- .drectve-0
+1   0x000001fb  0x8670 0x00000030  0x8670 -r-- .debug$S-1
+2   0x0000ad73    0x70 0x000086a0    0x70 -r-- .debug$T-2
+3   0x0000ade3   0x625 0x00008710   0x625 -rw- .data-3
+4   0x0000b408    0x54 0x00008d40    0x54 -r-- .rdata-4
+5   0x00000000     0x8 0x00008da0     0x8 -rw- .bss-5
+6   0x0000b45c  0x2895 0x00008db0  0x2895 -r-x .text$mn-6
+7   0x0000e967     0x8 0x0000b650     0x8 -r-- .rdata-7
+8   0x0000e96f     0x4 0x0000b660     0x4 -r-- .rdata-8
+9   0x0000e973     0x8 0x0000b670     0x8 -r-- .rdata-9
+10  0x0000e97b     0x4 0x0000b680     0x4 -r-- .rdata-10
 
 EOF
 RUN
@@ -106,7 +106,7 @@ EXPECT=<<EOF
             ;-- section..text_mn_5:
             ;-- .text$mn:
             ;-- ??1FooBar@@QAE@XZ:
-            0x00000d30      55             push ebp                    ; [05] -r-x section size 42 named .text_mn_5
+            0x00000d30      55             push ebp                    ; [05] -r-x section size 42 named .text$mn-5
             0x00000d31      8bec           mov ebp, esp
 EOF
 RUN
@@ -140,6 +140,6 @@ pd 2 @ sym.main+6
 EOF
 EXPECT=<<EOF
             0x00000006      4c8d05230000.  lea r8, [0x00000030]        ; sym..data ; "Win64 assembly"; RELOC 32 .data @ 0x00000030
-            0x0000000d      488d152b0000.  lea rdx, [0x0000003f]       ; str.Coffee_time ; "Coffee time!"; RELOC 32 .data @ 0x00000030 + 0xf
+            0x0000000d      488d152b0000.  lea rdx, [0x0000003f]       ; str.Coffee_time_ ; "Coffee time!"; RELOC 32 .data @ 0x00000030 + 0xf
 EOF
 RUN

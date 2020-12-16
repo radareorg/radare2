@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2019 - condret, MaskRay */
+/* radare2 - LGPL - Copyright 2017-2020 - condret, MaskRay */
 
 #include <r_io.h>
 #include <stdlib.h>
@@ -318,9 +318,7 @@ R_API void r_io_map_fini(RIO* io) {
 }
 
 R_API void r_io_map_set_name(RIOMap* map, const char* name) {
-	if (!map || !name) {
-		return;
-	}
+	r_return_if_fail (map && name);
 	free (map->name);
 	map->name = strdup (name);
 }

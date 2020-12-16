@@ -722,6 +722,11 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 	if (!itemname) {
 		return NULL;
 	}
+	// this should never happen because the name is filtered before..
+	if (!r_name_check (itemname)) {
+		eprintf ("Invalid flag name '%s'\n", name);
+		return NULL;
+	}
 
 	RFlagItem *item = r_flag_get (f, itemname);
 	free (itemname);

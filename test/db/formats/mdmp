@@ -46,7 +46,7 @@ NAME=: sections
 FILE=bins/mdmp/calc.dmp
 CMDS=iS~calc
 EXPECT=<<EOF
-9   0x00000000   0xe3000 0xfffe0000      0xe3000 ---- C:_Windows_System32_calc.exe
+9   0x00000000   0xe3000 0xfffe0000      0xe3000 ---- C:\Windows\System32\calc.exe
 EOF
 RUN
 

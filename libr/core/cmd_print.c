@@ -641,6 +641,19 @@ static void __cmd_pad(RCore *core, const char *arg) {
 	}
 }
 
+static void first_flag_chars(const char *name, char *ch, char *ch2) {
+	name = r_name_filter_ro (name);
+	// name = "ab"; // r_name_filter_ro (name);
+/*
+	while (*name == '_') {
+		name++;
+	}
+*/
+	const bool two = name[0] && name[1];
+	*ch = two? name[0]: ' ';
+	*ch2 = two? name[1]: name[0]; // two? 1: 0];
+}
+
 // colordump
 static void cmd_prc(RCore *core, const ut8* block, int len) {
 	const char *chars = " .,:;!O@#";
@@ -708,13 +721,7 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 				if (show_flags) {
 					RFlagItem *fi = r_flag_get_i (core->flags, core->offset + j);
 					if (fi) {
-						if (fi->name[1]) {
-							ch = fi->name[0];
-							ch2 = fi->name[1];
-						} else {
-							ch = ' ';
-							ch2 = fi->name[0];
-						}
+						first_flag_chars (fi->name, &ch, &ch2);
 					} else {
 						ch2 = ch;
 					}
@@ -1800,7 +1807,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 					fend = addr + j + flag->size;
 				}
 				free (note[j]);
-				note[j] = r_str_prepend (strdup (flag->name), "/");
+				const char *name = r_name_filter_ro (flag->name);
+				note[j] = r_str_prepend (strdup (name), "/");
 				marks = true;
 				color_idx++;
 				color_idx %= 10;
@@ -1953,7 +1961,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			out[out_sz - 1] = 0;
 			if (hasline) {
 				r_cons_strcat (addrpad);
-				r_cons_strcat (out);
+				r_cons_strcat (out + 1);
 				r_cons_newline ();
 			}
 			marks = false;

@@ -763,10 +763,13 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				return fcn->addr;
 			}
 			return 0;
+		default:
+			eprintf ("Invalid variable '%s'\n", str);
+			return 0;
 		}
 		break;
 	default:
-		if (*str >= 'A') {
+		if (*str >= 'A' || *str == ':' || *str == '_') {
 			// NOTE: functions override flags
 			RAnalFunction *fcn = r_anal_get_function_byname (core->anal, str);
 			if (fcn) {

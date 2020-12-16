@@ -285,7 +285,7 @@ CMDS=<<EOF
 EOF
 EXPECT=<<EOF
 0x08048515   # 3: mov ebx, dword [esp]
-0x08048527   # 5: mov ebx, obj.__CTOR_LIST
+0x08048527   # 5: mov ebx, obj.__CTOR_LIST__
 --
 --
 [{"offset":134513941,"len":3,"code":"mov ebx, dword [esp]"},{"offset":134513959,"len":5,"code":"mov ebx, 0x8049f0c"}]
@@ -307,10 +307,10 @@ CMDS=<<EOF
 EOF
 EXPECT=<<EOF
 0x08048515   # 3: mov ebx, dword [esp]
-0x08048527   # 5: mov ebx, obj.__CTOR_LIST
+0x08048527   # 5: mov ebx, obj.__CTOR_LIST__
 --
 0x08048515   # 3: mov ebx, dword [esp]
-0x08048527   # 5: mov ebx, obj.__CTOR_LIST
+0x08048527   # 5: mov ebx, obj.__CTOR_LIST__
 --
 [{"offset":134513941,"len":3,"code":"mov ebx, dword [esp]"},{"offset":134513959,"len":5,"code":"mov ebx, 0x8049f0c"}]
 --
