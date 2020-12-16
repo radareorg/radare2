@@ -393,12 +393,10 @@ R_API void r_io_bank_rename(RIOBank *bank, const char *name);
 R_API void r_io_banks_reset(RIO *io);
 R_API bool r_io_banks_add(RIO *io, RIOBank *bank);
 R_API bool r_io_banks_del(RIO *io, RIOBank *bank);
-R_API char *r_io_banks_id(RIO *io);
 R_API char *r_io_banks_list(RIO *io, int mode);
-R_API bool r_io_banks_use(RIO *io, int id);
-R_API ut32 r_io_bank_id(RIO *io);
+R_API bool r_io_banks_use(RIO *io, ut32 id);
 R_API RIOBank* r_io_bank_get_by_name(RIO *io, const char *name);
-R_API RIOBank* r_io_bank_get_by_id(RIO *io, int id);
+R_API RIOBank* r_io_bank_get_by_id(RIO *io, ut32 id);
 
 /* undo api */
 // track seeks and writes
