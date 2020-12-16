@@ -100,7 +100,9 @@ R_API const char *r_name_filter_ro(const char *a) {
 	return a - 1;
 }
 
-R_API bool r_name_filter_flag(char *s) {
+
+R_API bool r_name_filter(char *s, int _maxlen) {
+	// maxlen is ignored, the function signature must change
 	char *os = s;
 	if (!r_name_validate_first (*s)) {
 		if (r_name_validate_dash (*s)) {
@@ -133,85 +135,8 @@ R_API bool r_name_filter_flag(char *s) {
 	return r_name_check (os);
 }
 
-R_API bool r_name_filter(char *name, int maxlen) {
-	return r_name_filter_flag (name);
-#if 0
-	if (r_name_validate_print(*name) && !r_name_validate_first (*name)) {
-		// fix test, but the whole thing needs a better validation rule
-		*name = ' ';
-	}
-	size_t i;
-	if (!name) {
-		return false;
-	}
-	if (maxlen < 0) {
-		maxlen = strlen (name);
-	}
-	r_str_trim (name);
-	char *oname = name;
-	for (i = 0; *name; name++, i++) {
-		if (maxlen && i > maxlen) {
-			*name = '\0';
-			break;
-		}
-		if (!r_name_validate_print (*name)) {
-			r_str_cpy (name, name + 1);
-			i--;
-			continue;
-		}
-		if (!r_name_validate_char (*name) && *name != '\\') {
-			if (i == 0) {
-				*name = 0;
-				return false;
-			}
-			*name = ' ';
-		}
-	}
-	while (i > 0) {
-		if (*(name - 1) == '\\' && is_special_char (name)) {
-			*name = '_';
-			*(name - 1) = ' ';
-		}
-		if (*name == '\\') {
-			*name = ' ';
-		}
-		name--;
-		i--;
-	}
-	if (*name == '\\') {
-		*name = ' ';
-	}
-	r_str_trim (oname);
-#if 0
-	// trimming trailing underscores
-	len = strlen (name);
-	for (; len > 0 && *(name + len - 1) == '_'; len--) {
-		name[len - 1] = 0;
-		;
-	}
-#endif
-	return r_name_check (oname);
-#endif
-}
-
 R_API char *r_name_filter2(const char *name) {
 	char *s = strdup (name);
 	r_name_filter (s, -1);
 	return s;
-#if 0
-	size_t i;
-	while (!r_name_validate_char (*name)) {
-		name++;
-	}
-	char *res = strdup (name);
-	for (i = 0; res[i]; i++) {
-		if (!r_name_validate_char (res[i])) {
-			res[i] = '_';
-		}
-	}
-	for (i--; i != 0 && res[i] == '_'; i--) {
-		res[i] = '\0';
-	}
-	return res;
-#endif
 }
