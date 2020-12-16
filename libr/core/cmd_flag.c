@@ -997,7 +997,7 @@ rep:
 		}
 		if (addFlag) {
 			if (!r_name_check (cstr)) {
-				eprintf ("Invalid flag name '%s'\n", cstr);
+				eprintf ("Invalid flag name '%s'.\n", cstr);
 				return false;
 			}
 			item = r_flag_set (core->flags, cstr, off, bsze);

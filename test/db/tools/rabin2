@@ -107,8 +107,8 @@ nth paddr        size vaddr       vsize perm name
 -------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ---- prixfixe.
 1   0x00000134   0x13 0x08048134   0x13 -r-- prixfixe..interp
-2   0x00000148   0x20 0x08048148   0x20 -r-- prixfixe..note.ABI_tag
-3   0x00000168   0x24 0x08048168   0x24 -r-- prixfixe..note.gnu.build_id
+2   0x00000148   0x20 0x08048148   0x20 -r-- prixfixe..note.ABI-tag
+3   0x00000168   0x24 0x08048168   0x24 -r-- prixfixe..note.gnu.build-id
 4   0x0000018c   0x20 0x0804818c   0x20 -r-- prixfixe..gnu.hash
 5   0x000001ac   0x50 0x080481ac   0x50 -r-- prixfixe..dynsym
 6   0x000001fc   0x4a 0x080481fc   0x4a -r-- prixfixe..dynstr
@@ -481,8 +481,8 @@ nth paddr        size vaddr       vsize perm name
 -------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ---- 
 1   0x00000134   0x13 0x08048134   0x13 -r-- .interp
-2   0x00000148   0x20 0x08048148   0x20 -r-- .note.ABI_tag
-3   0x00000168   0x24 0x08048168   0x24 -r-- .note.gnu.build_id
+2   0x00000148   0x20 0x08048148   0x20 -r-- .note.ABI-tag
+3   0x00000168   0x24 0x08048168   0x24 -r-- .note.gnu.build-id
 4   0x0000018c   0x20 0x0804818c   0x20 -r-- .gnu.hash
 5   0x000001ac   0x50 0x080481ac   0x50 -r-- .dynsym
 6   0x000001fc   0x4a 0x080481fc   0x4a -r-- .dynstr
@@ -687,10 +687,10 @@ Segment      Section
 --------------------
 PHDR         
 INTERP       .interp 
-LOAD0        .interp .note.ABI_tag .note.gnu.build_id .gnu.hash .dynsym .dynstr .gnu.version .gnu.version_r .rel.dyn .rel.plt .init .plt .text .fini .rodata .eh_frame_hdr .eh_frame 
+LOAD0        .interp .note.ABI-tag .note.gnu.build-id .gnu.hash .dynsym .dynstr .gnu.version .gnu.version_r .rel.dyn .rel.plt .init .plt .text .fini .rodata .eh_frame_hdr .eh_frame 
 LOAD1        .init_array .fini_array .jcr .dynamic .got .got.plt .data .bss 
 DYNAMIC      .dynamic 
-NOTE         .note.ABI_tag .note.gnu.build_id 
+NOTE         .note.ABI-tag .note.gnu.build-id 
 GNU_EH_FRAME .eh_frame_hdr 
 GNU_STACK    
 ehdr         

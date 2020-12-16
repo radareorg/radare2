@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 - inisider */
+/* radare - LGPL - Copyright 2014-2020 - inisider */
 
 #include <r_pdb.h>
 #include <r_bin.h>
@@ -1390,12 +1390,12 @@ static void print_gvars(RPdb *pdb, ut64 img_base, PJ *pj, int format) {
 			case 1:
 			case '*':
 			case 'r':
-				filtered_name = r_name_filter2 (name);
+				filtered_name = r_name_filter2 (r_str_trim_head_ro (name));
 				pdb->cb_printf ("f pdb.%s = 0x%" PFMT64x " # %d %.*s\n",
 					filtered_name,
 					(ut64) (img_base + omap_remap ((omap) ? (omap->stream) : 0, gdata->offset + sctn_header->virtual_address)),
 					gdata->symtype, PDB_SIZEOF_SECTION_NAME, sctn_header->name);
-				pdb->cb_printf ("\"fN pdb.%s %s\"\n", filtered_name, name);
+				pdb->cb_printf ("\"fN pdb.%s %s\"\n", filtered_name, filtered_name);
 				free (filtered_name);
 				break;
 			case 'd':

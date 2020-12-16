@@ -23,9 +23,9 @@ EXPECT=<<EOF
 0xffffffffffffffff
 EOF
 EXPECT_ERR=<<EOF
-Invalid flag name '123'
-Invalid flag name '$123'
-Invalid flag name '$foo'
+Invalid flag name '123'.
+Invalid flag name '$123'.
+Invalid flag name '$foo'.
 EOF
 RUN
 
