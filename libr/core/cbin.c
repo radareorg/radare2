@@ -433,7 +433,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 				: r_str_newf ("str.%s", string->string);
 			r_name_filter (str, -1);
 			RFlagItem *fi = r_flag_set (r->flags, str, vaddr, string->size);
-			const bool realstr = r_config_get_i (core->config, "bin.str.real");
+			const bool realstr = r_config_get_i (r->config, "bin.str.real");
 			if (fi && realstr) {
 				char *es = r_str_escape (string->string);
 				char *s = r_str_newf ("\"%s\"", es);
