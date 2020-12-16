@@ -71,17 +71,31 @@ R_API void r_io_banks_reset(RIO *io) {
 	io->banks = r_id_storage_new (1, UT32_MAX);
 }
 
-R_API RIOBank* r_io_bank_get_by_name(RIO *io, const char *name) {
-	RListIter *iter;
+typedef struct bank_finder_t {
+	char *name;
 	RIOBank *bank;
-	r_list_foreach (io->banks->list, iter, bank) {
-		if (!strcmp (bank->name, name)) {
-			return bank;
-		}
+} BankFinder;
+
+static bool bank_find_by_name_cb(void *user, void *data, ut32 id) {
+	BankFinder *bf = (BankFinder *)user;
+	RIOBank *bank = (RIOBank *)data;
+	if (!strcmp (bank->name, bf->name)) {
+		bf->bank = bank;
+		return false;
 	}
-	return NULL;
+	return true;
 }
 
-R_API RIOBank* r_io_bank_get_by_id(RIO *io, ut32 id) {
-	return r_id_storage_get (io->banks, id);
+R_API RIOBank *r_io_bank_get_by_name(RIO *io, const char *name) {
+	r_return_val_if_fail (io && io->banks, NULL);
+	if (!name) {
+		return NULL;
+	}
+	BankFinder bf = {name, NULL};
+	r_id_storage_foreach (io->banks, bank_find_by_name_cb, &bf);
+	return bf.bank;
+}
+
+R_API RIOBank *r_io_bank_get_by_id(RIO *io, ut32 id) {
+	return (RIOBank *)r_id_storage_get (io->banks, id);
 }
