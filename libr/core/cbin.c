@@ -2904,12 +2904,10 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			bits = R_SYS_BITS;
 		}
 		if (IS_MODE_RAD (mode)) {
-			char *name = r_str_newf ("%s.%s", type, section->name);
-			r_name_filter (name, -1);
-			char *n = __filterQuotedShell (name); // unnecessary because the flag is filterd already
-			r_cons_printf ("\"f %s 1 0x%08"PFMT64x"\"\n", name, section->vaddr);
-			free (n);
-			free (name);
+			char *fname = r_str_newf ("%s.%s", type, section->name);
+			r_name_filter (fname, -1);
+			r_cons_printf ("\"f %s 1 0x%08"PFMT64x"\"\n", fname, section->vaddr);
+			free (fname);
 		} else if (IS_MODE_SET (mode)) {
 #if LOAD_BSS_MALLOC
 			if (!strcmp (section->name, ".bss")) {
