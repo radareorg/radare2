@@ -424,21 +424,16 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			}
 		}
 		if (IS_MODE_SET (mode)) {
-			char *f_name, *str;
 			if (r_cons_is_breaked ()) {
 				break;
 			}
 			r_meta_set (r->anal, R_META_TYPE_STRING, vaddr, string->size, string->string);
-			f_name = strdup (string->string);
-			if (r->bin->prefix) {
-				str = r_str_newf ("%s.str.%s", r->bin->prefix, f_name);
-			} else {
-				str = r_str_newf ("str.%s", f_name);
-			}
+			char *str = (r->bin->prefix)
+				? r_str_newf ("%s.str.%s", r->bin->prefix, string->string)
+				: r_str_newf ("str.%s", string->string);
 			r_name_filter (str, -1);
 			(void)r_flag_set (r->flags, str, vaddr, string->size);
 			free (str);
-			free (f_name);
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%"PFMT64x" %d %d %s\n", vaddr,
 				string->size, string->length, string->string);
@@ -482,17 +477,15 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			}
 			pj_end (pj);
 		} else if (IS_MODE_RAD (mode)) {
-			char *f_name = strdup (string->string);
 			char *str = (r->bin->prefix)
-				? r_str_newf ("%s.str.%s", r->bin->prefix, f_name)
-				: r_str_newf ("str.%s", f_name);
+				? r_str_newf ("%s.str.%s", r->bin->prefix, string->string)
+				: r_str_newf ("str.%s", string->string);
 			r_name_filter (str, R_FLAG_NAME_SIZE);
 			r_cons_printf ("f %s %u 0x%08"PFMT64x"\n"
 				"Cs %u @ 0x%08"PFMT64x"\n",
 				str, string->size, vaddr,
 				string->size, vaddr);
 			free (str);
-			free (f_name);
 		} else {
 			int *block_list;
 			char *str = string->string;
@@ -1640,13 +1633,11 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 	r_name_filter (flagname, 0);
 	RFlagItem *fi = r_flag_set (r->flags, flagname, addr, bin_reloc_size (reloc));
 	if (demname) {
-		char *realname;
-		if (r->bin->prefix) {
-			realname = sdb_fmt ("%s.reloc.%s", r->bin->prefix, demname);
-		} else {
-			realname = sdb_fmt ("reloc.%s", demname);
-		}
+		char *realname = (r->bin->prefix)
+			? r_str_newf ("%s.reloc.%s", r->bin->prefix, demname)
+			: r_str_newf ("%s", demname);
 		r_flag_item_set_realname (fi, realname);
+		free (realname);
 	}
 	free (demname);
 }

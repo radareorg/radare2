@@ -2,12 +2,12 @@ NAME=fnj shows demangled symbols
 FILE=bins/elf/demangle-test-cpp
 CMDS=<<EOF
 aaa
-fj~{269}
-fnj~{269}
+fj~{258}
+fnj~{258}
 EOF
 EXPECT=<<EOF
-{"name":"reloc.operator_delete_void","realname":"reloc.operator delete(void*)","size":8,"offset":16432}
-{"name":"reloc.operator_delete_void","realname":"reloc.operator delete(void*)","size":8,"offset":16432}
+{"name":"reloc.std::__throw_length_error_char_const_","realname":"std::__throw_length_error(char const*)","size":8,"offset":16424}
+{"name":"reloc.std::__throw_length_error_char_const_","realname":"std::__throw_length_error(char const*)","size":8,"offset":16424}
 EOF
 RUN
 

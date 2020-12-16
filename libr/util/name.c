@@ -42,6 +42,7 @@ R_API bool r_name_validate_dash(const char ch) {
 	case '-':
 	case '_':
 	case '/':
+	case '\\':
 	case '(':
 	case ')':
 	case '[':
@@ -100,7 +101,7 @@ R_API bool r_name_check(const char *s) {
 }
 
 static inline bool is_special_char(char n) {
-	return (n == 'b' || n == 'f' || n == 'n' || n == 'r' || n == 't' || n == 'v' || n == 'a');
+	return (n == 'b' || n == 'f' || n == 'n' || n == 'r' || n == 't' || n == 'v' || n == 'a' || n == 'v');
 }
 
 R_API const char *r_name_filter_ro(const char *a) {
@@ -119,18 +120,21 @@ R_API bool r_name_filter(char *s, int maxlen) {
 		}
 	}
 	char *os = s;
-	if (!r_name_validate_first (*s)) {
+	while (*s) {
+		if (r_name_validate_first (*s)) {
+			break;
+		}
 		if (r_name_validate_dash (*s)) {
 			*s = '_';
-		} else {
-			return false;
+			break;
 		}
+		r_str_cpy (s, s + 1);
 	}
 	for (s++; *s; s++) {
 		if (*s == '\\') {
 			if (is_special_char (s[1])) {
-				r_str_cpy (s, s + 2);
-				s--;
+				*s = '_';
+				s++;
 			} else {
 				r_str_cpy (s, s + 1);
 				s--;
