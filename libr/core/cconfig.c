@@ -3328,6 +3328,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("bin.usextr", "true", &cb_usextr, "Use extract plugins when loading files");
 	SETCB ("bin.useldr", "true", &cb_useldr, "Use loader plugins when loading files");
 	SETCB ("bin.str.purge", "", &cb_strpurge, "Purge strings (e bin.str.purge=? provides more detail)");
+	SETPREF ("bin.str.real", "false", "Set the realname in rbin.strings for better disasm (EXPERIMENTAL)");
 	SETBPREF ("bin.b64str", "false", "Try to debase64 the strings");
 	SETCB ("bin.at", "false", &cb_binat, "RBin.cur depends on RCore.offset");
 	SETBPREF ("bin.libs", "false", "Try to load libraries after loading main binary");
