@@ -17,14 +17,14 @@ R_API bool r_io_banks_del(RIO *io, RIOBank *bank) {
 	}
 	// check if bank is a bank of this instance of io
 	r_return_val_if_fail (r_id_storage_get (io->banks, bank->id) == bank, false);
-	r_id_storage_delete (io->banks->ids, bank->id);
+	r_id_storage_delete (io->banks, bank->id);
 	r_io_bank_free (bank);
 	return true;
 }
 
 
 R_API bool r_io_banks_use(RIO *io, ut32 id) {
-	r_return_val_if_fail (io, false):
+	r_return_val_if_fail (io, false);
 	if (id == 0) {
 		r_io_banks_reset(io);
 		return true;
@@ -51,7 +51,7 @@ R_API void r_io_banks_reset(RIO *io) {
 }
 
 typedef struct bank_finder_t {
-	char *name;
+	const char *name;
 	RIOBank *bank;
 } BankFinder;
 

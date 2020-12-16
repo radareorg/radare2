@@ -16,14 +16,17 @@ R_API RIOBank* r_io_new_bank(const char *name) {
 			return NULL;
 		}
 		bank->map_refs = r_list_newf (free);
-		if (!map_refs) {
-		
+		if (!bank->map_refs) {
+			free (bank->name);
+			free (bank);
+			return NULL;
+		}
 	}
 	return bank;
 }
 
 R_API bool r_io_bank_add_map(RIO *io, RIOBank *bank, ut32 map_id) {
-	if (!bank || !io || !io->maps) {
+	if (!bank || !io) {
 		return false;
 	}
 	RIOMap *map = r_io_map_resolve (io, map_id);
@@ -34,7 +37,7 @@ R_API bool r_io_bank_add_map(RIO *io, RIOBank *bank, ut32 map_id) {
 	if (!map_ref) {
 		return false;
 	}
-	map_ref->ts = mpa->ts;
+	map_ref->ts = map->ts;
 	map_ref->id = map_id;
 	r_list_append (bank->map_refs, map_ref);
 	return true;
@@ -43,7 +46,7 @@ R_API bool r_io_bank_add_map(RIO *io, RIOBank *bank, ut32 map_id) {
 R_API void r_io_bank_free(RIOBank *bank) {
 	if (bank) {
 		free (bank->name);
-		r_list_free (bank);
+		r_list_free (bank->map_refs);
 		free (bank);
 	}
 }
@@ -56,7 +59,7 @@ R_API void r_io_bank_rename(RIOBank *bank, const char *name) {
 }
 
 R_API void r_io_map_bank(RIO *io, RIOBank *bank) {
-	if (!io || !io->maps || !bank || !bank->map_refs) {
+	if (!io || !bank || !bank->map_refs) {
 		return;
 	}
 	MapRef *map_ref;
@@ -80,11 +83,11 @@ typedef struct banks_lister_t {
 static bool banks_list_cb(void *user, void *data, ut32 id) {
 	BanksLister *bl = (BanksLister *)user;
 	RIOBank *bank = (RIOBank *)data;
-	const char *mark = (io->banks->curbank == bank->id) ? "(selected)" : "";
+	const char *mark = (bl->io->curbank == bank->id) ? "(selected)" : "";
 	r_strbuf_appendf (bl->sb, "%u: %s %s\n", bank->id, bank->name, mark);
 	RListIter *iter, *ator;
 	MapRef *map_ref;
-	r_list_foreach_safe (bank->maps, iter, ator, map_ref) {
+	r_list_foreach_safe (bank->map_refs, iter, ator, map_ref) {
 		RIOMap *map = r_io_map_resolve (bl->io, map_ref->id);
 		if (!map || (map_ref->ts != map->ts)) {
 			// cleaning up bank if map got deleted
@@ -101,7 +104,7 @@ R_API char *r_io_banks_list(RIO *io, int mode) {
 		return NULL;
 	}
 	BanksLister bl = {io, r_strbuf_new ("")};
-	if (!bl.buf) {
+	if (!bl.sb) {
 		return NULL;
 	}
 	r_id_storage_foreach (io->banks, banks_list_cb, &bl);

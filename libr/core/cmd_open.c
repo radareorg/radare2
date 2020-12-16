@@ -607,16 +607,13 @@ static void cmd_open_banks(RCore *core, const char *input) {
 				*arg0++ = 0;
 				args = r_str_split_list (arg0, " ", 0);
 			}
-			RIOBank *bank = r_io_new_bank (core->io, name);
+			RIOBank *bank = r_io_new_bank (name);
 			r_io_banks_add (core->io, bank);
 			RListIter *iter;
 			char *arg;
 			r_list_foreach (args, iter, arg) {
 				const ut32 id = r_num_get (NULL, arg);
-				RIOMap *map = r_io_map_resolve (core->io, id);
-				if (map) {
-					r_io_bank_add_map (bank, map);
-				} else {
+				if (!r_io_bank_add_map (core->io, bank, id)) {
 					eprintf ("Invalid map id = %d\n", id);
 				}
 			}
@@ -632,7 +629,6 @@ static void cmd_open_banks(RCore *core, const char *input) {
 				r_io_banks_use (core->io, bank->id);
 			} else {
 				eprintf ("Cannot find bank by name\n");
-			}
 			}
 		}
 		break;

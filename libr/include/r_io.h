@@ -111,7 +111,7 @@ typedef struct r_io_t {
 	int cached;
 	bool cachemode; // write in cache all the read operations (EXPERIMENTAL)
 	int p_cache;
-	ut32 curbank:	// id of current bank
+	ut32 curbank;	// id of current bank
 	RIDPool *map_ids;
 	RPVector maps; //from tail backwards maps with higher priority are found
 	RSkyline map_skyline; // map parts that are not covered by others
@@ -384,8 +384,8 @@ R_API RIOPlugin *r_io_plugin_get_default(RIO *io, const char *filename, bool man
 
 /* bank */
 R_API void r_io_map_bank(RIO *io, RIOBank *bank);
-R_API RIOBank* r_io_new_bank(RIO *io, const char *name);
-R_API bool r_io_bank_add_map(RIOBank *bank, RIOMap *map);
+R_API RIOBank* r_io_new_bank(const char *name);
+R_API bool r_io_bank_add_map(RIO *io, RIOBank *bank, ut32 map_id);
 R_API void r_io_bank_free(RIOBank *bank);
 R_API void r_io_bank_rename(RIOBank *bank, const char *name);
 
