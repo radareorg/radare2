@@ -589,7 +589,7 @@ static void cmd_open_banks(RCore *core, const char *input) {
 		} else if (input[1] == '*') {
 			r_io_banks_reset (core->io);
 		} else {
-			int id = atoi (input + 1);
+			const ut32 id = r_num_get (NULL, input + 1);
 			RIOBank *bank = r_io_bank_get_by_id (core->io, id);
 			if (bank) {
 				r_io_banks_del (core->io, bank);
@@ -612,7 +612,7 @@ static void cmd_open_banks(RCore *core, const char *input) {
 			RListIter *iter;
 			char *arg;
 			r_list_foreach (args, iter, arg) {
-				int id = atoi (arg);
+				const ut32 id = r_num_get (NULL, arg);
 				RIOMap *map = r_io_map_resolve (core->io, id);
 				if (map) {
 					r_io_bank_add_map (bank, map);
@@ -627,16 +627,12 @@ static void cmd_open_banks(RCore *core, const char *input) {
 	case ' ': // "omb [name]"
 		{
 			const char *name = input + 1;
-			int id = atoi (name);
-			if (id > 0) {
-				r_io_banks_use (core->io, id);
+			RIOBank* bank = r_io_bank_get_by_name (core->io, name);
+			if (bank) {
+				r_io_banks_use (core->io, bank->id);
 			} else {
-				RIOBank* bank = r_io_bank_get_by_name (core->io, name);
-				if (bank) {
-					r_io_banks_use (core->io, id);
-				} else {
-					eprintf ("Cannot find map by name\n");
-				}
+				eprintf ("Cannot find bank by name\n");
+			}
 			}
 		}
 		break;
