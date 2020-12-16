@@ -25,37 +25,16 @@ R_API bool r_io_banks_del(RIO *io, RIOBank *bank) {
 
 R_API bool r_io_banks_use(RIO *io, ut32 id) {
 	r_return_val_if_fail (io, false):
-	if (id < 0) {
-		if (io->banks->curbank) {
-			r_io_map_bank (io, io->banks->curbank);
-			io->banks->curbank = NULL;
-			return true;
-		}
-		return false;
-	}
-	RIOBank *bank = r_id_storage_get (io->banks->ids, id);
-	if (bank) {
-		if (bank == io->banks->curbank) {
-			return true;
-		}
-		if (io->banks->curbank) {
-			RIOBank *b = io->banks->curbank;
-			b->maps = io->maps;
-			b->map_ids = io->map_ids;
-		}
-		io->banks->curbank = bank;
-		if (io->banks->map_ids) { // r_pvector_len (&io->banks->maps)) {
-			io->banks->maps = io->maps;
-			io->banks->map_ids = io->map_ids;
-		} else {
-			io->banks->maps = io->maps;
-			io->banks->map_ids = io->map_ids;
-		}
-		io->maps = bank->maps;
-		io->map_ids = bank->map_ids;
+	if (id == 0) {
+		r_io_banks_reset(io);
 		return true;
 	}
-	return false;
+	RIOBank *bank = (RIOBank *)r_id_storage_get (io->banks, id);
+	if (!bank) {
+		return false;
+	}
+	r_io_map_bank (io, bank);
+	return true;
 }
 
 static bool bank_free_cb(void *user, void *data, ut32 id) {
