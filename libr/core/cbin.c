@@ -2653,7 +2653,7 @@ static bool io_create_mem_map(RIO *io, RBinSection *sec, ut64 at) {
 
 static void add_section(RCore *core, RBinSection *sec, ut64 addr, int fd) {
 	if (!r_io_desc_get (core->io, fd) || UT64_ADD_OVFCHK (sec->size, sec->paddr) ||
-	    UT64_ADD_OVFCHK (sec->size, addr) || !sec->vsize) {
+			UT64_ADD_OVFCHK (sec->size, addr) || !sec->vsize) {
 		return;
 	}
 
@@ -2664,7 +2664,6 @@ static void add_section(RCore *core, RBinSection *sec, ut64 addr, int fd) {
 		if (!io_create_mem_map (core->io, sec, addr + sec->size)) {
 			return;
 		}
-
 		size = sec->size;
 	}
 
@@ -2673,7 +2672,7 @@ static void add_section(RCore *core, RBinSection *sec, ut64 addr, int fd) {
 	if (!map_name) {
 		return;
 	}
-
+	r_name_filter (map_name, R_FLAG_NAME_SIZE);
 	int perm = sec->perm;
 	// workaround to force exec bit in text section
 	if (sec->name &&  strstr (sec->name, "text")) {
