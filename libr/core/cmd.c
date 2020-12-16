@@ -3837,6 +3837,7 @@ repeat_arroba:
 						r_write_ble32 (buf, v, be);
 						len = 4;
 					}
+					tmpfd = r_io_fd_get_current(core->io);
 					r_core_block_size (core, R_ABS (len));
 					RBuffer *b = r_buf_new_with_bytes (buf, len);
 					RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
@@ -4102,16 +4103,17 @@ next_arroba:
 			r_config_set (core->config, "asm.arch", tmpasm);
 			R_FREE (tmpasm);
 		}
-		if (tmpfd != -1) {
-			// TODO: reuse tmpfd instead of
-			r_io_use_fd (core->io, tmpfd);
-		}
 		if (tmpdesc) {
 			if (pamode) {
 				r_config_set_i (core->config, "io.va", 0);
 			}
 			r_io_desc_close (tmpdesc);
 			tmpdesc = NULL;
+		}
+		if (tmpfd != -1) {
+			// TODO: reuse tmpfd instead of
+			r_io_use_fd (core->io, tmpfd);
+			tmpfd = -1;
 		}
 		if (is_bits_set) {
 			r_config_set (core->config, "asm.bits", tmpbits);
