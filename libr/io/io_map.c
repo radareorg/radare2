@@ -321,7 +321,6 @@ R_API void r_io_map_set_name(RIOMap* map, const char* name) {
 	r_return_if_fail (map && name);
 	free (map->name);
 	map->name = strdup (name);
-	r_name_filter (map->name, -1);
 }
 
 R_API void r_io_map_del_name(RIOMap* map) {
