@@ -403,7 +403,7 @@ fcn.1000b540:
     sym.imp.calloc
 
 sym._init:
-    loc.imp.__gmon_start
+    loc.imp.__gmon_start__
     fcn.100015e0
     fcn.100264c0
 
