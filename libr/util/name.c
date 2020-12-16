@@ -43,6 +43,7 @@ R_API bool r_name_validate_dash(const char ch) {
 	case '>':
 	case '!':
 	case '?':
+	case '$':
 	case ';':
 	case '@':
 	case '`':
@@ -102,7 +103,12 @@ R_API const char *r_name_filter_ro(const char *a) {
 R_API bool r_name_filter_flag(char *s) {
 	char *os = s;
 	if (!r_name_validate_first (*s)) {
-		return false;
+		if (r_name_validate_dash (*s)) {
+			*s = '_';
+		} else {
+			r_str_cpy (s, s + 1);
+			s--;
+		}
 	}
 	for (s++; *s; s++) {
 		if (*s == '\\') {
@@ -125,7 +131,6 @@ R_API bool r_name_filter_flag(char *s) {
 	}
 	r_str_trim (os);
 	return r_name_check (os);
-	return true;
 }
 
 R_API bool r_name_filter(char *name, int maxlen) {
