@@ -1395,7 +1395,7 @@ static void print_gvars(RPdb *pdb, ut64 img_base, PJ *pj, int format) {
 					filtered_name,
 					(ut64) (img_base + omap_remap ((omap) ? (omap->stream) : 0, gdata->offset + sctn_header->virtual_address)),
 					gdata->symtype, PDB_SIZEOF_SECTION_NAME, sctn_header->name);
-				pdb->cb_printf ("\"fN pdb.%s %s\"\n", filtered_name, filtered_name);
+				pdb->cb_printf ("\"fN pdb.%s %s\"\n", filtered_name, name);
 				free (filtered_name);
 				break;
 			case 'd':

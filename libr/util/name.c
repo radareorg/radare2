@@ -8,7 +8,13 @@ R_API bool r_name_validate_print(const char ch) {
 		return true;
 	}
 	switch (ch) {
+	case '(':
+	case ')':
+	case '[':
+	case ']':
 	case '<':
+	case '+':
+	case '-':
 	case '>':
 	case '$':
 	case '%':
