@@ -41,7 +41,7 @@ makeDeb() {
 	make -C binr ios-sdk-sign
 	rm -rf /tmp/r2ios
 	make install DESTDIR=/tmp/r2ios
-	rm -rf /tmp/r2ios/${PREFIX}/share/radare2/*/www/enyo/node_modules
+	rm -rf /tmp/r2ios/${PREFIX}/share/radare2/*/www/*/node_modules
 	( cd /tmp/r2ios && tar czvf ../r2ios-${CPU}.tar.gz ./* )
 	rm -rf sys/cydia/radare2/root
 	mkdir -p sys/cydia/radare2/root
