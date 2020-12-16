@@ -97,15 +97,15 @@ addr,size,space,name
 [
   {
     "addr": 6296136,
-    "name": "reloc.__gmon_start"
+    "name": "reloc.__gmon_start__"
   },
   {
     "addr": 6296168,
-    "name": "reloc.std::ostream::operator___int"
+    "name": "reloc.std::ostream::operator___int_"
   },
   {
     "addr": 6296176,
-    "name": "reloc.operator_delete_void"
+    "name": "reloc.operator_delete_void_"
   }
 ]
 
@@ -113,25 +113,25 @@ space            name
 ---------------------
 segments         segment.GNU_STACK
 symbols.sections sym..comment
-imports          loc.imp.__gmon_start
+imports          loc.imp.__gmon_start__
 imports          loc.imp._Jv_RegisterClasses
 imports          loc.imp._ITM_deregisterTMCloneTable
 
-.----------------------------------------------------------------------------------------------------.
-| space     | size  | name                                                                           |
-)----------------------------------------------------------------------------------------------------(
-| classes   | 1     | class.std::ostream                                                             |
-| classes   | 1     | class.std::ios_base::Init                                                      |
-| classes   | 1     | class.std::basic_ostream_char__std::char_traits_char_____std::operator____std  |
-| classes   | 1     | class.std::basic_ostream_char__std::char_traits_char_____std::endl_char__std   |
-| classes   | 1     | class.B                                                                        |
-| classes   | 1     | class.A                                                                        |
-| classes   | 1     | class.C                                                                        |
-| imports   | 16    | loc.imp._ITM_registerTMCloneTable                                              |
-| imports   | 16    | loc.imp._ITM_deregisterTMCloneTable                                            |
-| segments  | 64    | segment.ehdr                                                                   |
-| segments  | 4132  | segment.LOAD0                                                                  |
-`----------------------------------------------------------------------------------------------------'
+.---------------------------------------------------------------------------------------------------.
+| space     | size  | name                                                                          |
+)---------------------------------------------------------------------------------------------------(
+| classes   | 1     | class.std::ostream                                                            |
+| classes   | 1     | class.std::ios_base::Init                                                     |
+| classes   | 1     | class.std::basic_ostream_char__std::char_traits_char____std::operator____std  |
+| classes   | 1     | class.std::basic_ostream_char__std::char_traits_char____std::endl_char__std   |
+| classes   | 1     | class.B                                                                       |
+| classes   | 1     | class.A                                                                       |
+| classes   | 1     | class.C                                                                       |
+| imports   | 16    | loc.imp._ITM_registerTMCloneTable                                             |
+| imports   | 16    | loc.imp._ITM_deregisterTMCloneTable                                           |
+| segments  | 64    | segment.ehdr                                                                  |
+| segments  | 4132  | segment.LOAD0                                                                 |
+`---------------------------------------------------------------------------------------------------'
 
 EOF
 RUN

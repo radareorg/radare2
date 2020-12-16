@@ -7,18 +7,18 @@ EOF
 EXPECT=<<EOF
 
 Vtable Found at 0x00400ce8
-0x00400ce8 : method.A.greet
-0x00400cf0 : method.C.printValue
+0x00400ce8 : method.A.greet__
+0x00400cf0 : method.C.printValue__
 
 
 Vtable Found at 0x00400d08
-0x00400d08 : method.A.greet
-0x00400d10 : method.B.printValue
+0x00400d08 : method.A.greet__
+0x00400d10 : method.B.printValue__
 
 
 Vtable Found at 0x00400d28
-0x00400d28 : method.A.greet
-0x00400d30 : method.A.printValue
+0x00400d28 : method.A.greet__
+0x00400d30 : method.A.printValue__
 
 EOF
 RUN
