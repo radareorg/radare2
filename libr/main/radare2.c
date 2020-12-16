@@ -504,8 +504,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			debugbackend = strdup (opt.arg);
 			if (!strcmp (opt.arg, "?")) {
 				r_debug_plugin_list (r->dbg, 'q');
-				r_cons_flush();
+				r_cons_flush ();
 				LISTS_FREE ();
+				free (envprofile);
 				return 0;
 			}
 			break;
@@ -583,6 +584,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			if (!strcmp (opt.arg, "?")) {
 				r_core_project_list (r, 0);
 				r_cons_flush ();
+				free (envprofile);
 				LISTS_FREE ();
 				return 0;
 			}
@@ -1003,6 +1005,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				const char *f = (haveRarunProfile && pfile)? pfile: argv[opt.ind];
 				is_gdb = (!memcmp (f, "gdb://", R_MIN (f? strlen (f):0, 6)));
 				if (!is_gdb) {
+					free (pfile);
 					pfile = strdup ("dbg://");
 				}
 #if __UNIX__
@@ -1501,6 +1504,7 @@ beach:
 	// and this fh may be come stale during the command
 	// execution.
 	//r_core_file_close (r, fh);
+	free (envprofile);
 	free (debugbackend);
 	r_core_free (r);
 	r_cons_set_raw (0);

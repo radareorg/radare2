@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_core.h>
 #include <stdlib.h>
@@ -27,15 +27,13 @@ static void loadGP(RCore *core) {
 	}
 }
 
-
 R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbin) {
 	int isdebug = r_config_get_i (core->config, "cfg.debug");
 	char *path;
 	ut64 laddr = r_config_get_i (core->config, "bin.laddr");
 	RCoreFile *file = NULL;
 	RCoreFile *ofile = core->file;
-	RBinFile *bf = ofile ? r_bin_file_find_by_fd (core->bin, ofile->fd)
-		: NULL;
+	RBinFile *bf = ofile ? r_bin_file_find_by_fd (core->bin, ofile->fd) : NULL;
 	RIODesc *odesc = (core->io && ofile) ? r_io_desc_get (core->io, ofile->fd) : NULL;
 	char *ofilepath = NULL, *obinfilepath = (bf && bf->file)? strdup (bf->file): NULL;
 	int ret = false;
