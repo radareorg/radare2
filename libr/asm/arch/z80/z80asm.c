@@ -1144,7 +1144,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 					break;
 				}
 				if (s == 7) {
-					char n = r_num_math(NULL, readbyte);
+					char n = r_num_math (NULL, readbyte);
 					wrtb (0x08 * (r - 7) + 0x6);
 					wrtb (n);
 				} else {

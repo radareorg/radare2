@@ -3233,7 +3233,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 					}
 					haveQuote = q != NULL;
 					oseek = core->offset;
-					r_core_seek (core, r_num_math(core->num, p + 2), true);
+					r_core_seek (core, r_num_math (core->num, p + 2), true);
 					if (q) {
 						*p = '"';
 						p = q;
@@ -3893,7 +3893,7 @@ repeat_arroba:
 				 {
 					char *out = sdb_querys (core->sdb, NULL, 0, ptr + ((ptr[1])? 2: 1));
 					if (out) {
-						r_core_seek (core, r_num_math(core->num, out), true);
+						r_core_seek (core, r_num_math (core->num, out), true);
 						free (out);
 						usemyblock = true;
 					}
@@ -5795,7 +5795,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_kuery_command) {
 	ut64 orig_offset = state->core->offset;
 	char *out = sdb_querys (core->sdb, NULL, 0, arg_str);
 	if (out) {
-		r_core_seek (core, r_num_math(core->num, out), true);
+		r_core_seek (core, r_num_math (core->num, out), true);
 		free (out);
 	}
 	RCmdStatus res = handle_ts_command_tmpseek (state, command);
