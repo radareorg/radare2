@@ -53,12 +53,13 @@ static const char *help_msg_omb[] = {
 	"Usage:", "omb[jq,+] [fd]", "Operate on memory banks",
 	"omb", "", "list all memory banks",
 	"omb", " [id]", "switch to use a different bank",
-	"omb+", "[id] [mapid ...]", "add a new bank with the given maps",
+	"omb+", "[name] [mapid ...]", "add a new bank with the given maps",
 //	"omb-", "", "unselect all io banks",
 	"omb-", "*", "delete all banks",
-	"omb-", "3", "delete the bank with given id",
+	"omb-", "[mapid ...]", "delete the bank with given id",
 	NULL
 };
+
 static const char *help_msg_o_star[] = {
 	"Usage:", "o* [> files.r2]", "",
 	"o*", "", "list opened files in r2 commands", NULL
