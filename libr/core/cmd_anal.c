@@ -2367,7 +2367,7 @@ static void anal_bb_list(RCore *core, const char *input) {
 				char *call = ut64join (calls);
 				char *xref = ut64join (calls);
 				char *fcns = fcnjoin (block->fcns);
-				r_table_add_rowf (table, "xdddsssss",
+				r_table_add_rowf (table, "xnddsssss",
 					block->addr,
 					block->size,
 					block->traced,
