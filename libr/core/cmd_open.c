@@ -52,9 +52,9 @@ static const char *help_msg_op[] = {
 static const char *help_msg_omb[] = {
 	"Usage:", "omb[jq,+] [fd]", "Operate on memory banks",
 	"omb", "", "list all memory banks",
-	"omb", " [name|id]", "switch to use a different bank",
-	"omb+", "[name] [mapid ...]", "add a new bank with the given maps",
-	"omb-", "", "unselect all io banks",
+	"omb", " [id]", "switch to use a different bank",
+	"omb+", "[id] [mapid ...]", "add a new bank with the given maps",
+//	"omb-", "", "unselect all io banks",
 	"omb-", "*", "delete all banks",
 	"omb-", "3", "delete the bank with given id",
 	NULL
@@ -571,66 +571,61 @@ static void r_core_cmd_omt(RCore *core, const char *arg) {
 	r_table_free (t);
 }
 
-static void cmd_open_banks(RCore *core, const char *input) {
-	switch (*input) {
-	case 0: // "omb"
+static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
+	if (argc == 1) {
+		switch (argv[0][1]) {
+		case 0: // "omb"
+			{
+				char *list = r_io_banks_list (core->io, 0);
+				r_cons_printf ("%s\n", list);
+				free (list);
+			}
+			break;
+		case '?': // "omb?"
+		default:
+			r_core_cmd_help (core, help_msg_omb);
+			break;
+		}
+		return;
+	}
+	switch (argv[0][1]) {
+	case '-': // "omb-"
+		if (!strcmp ("*", argv[1])) {
+			r_io_banks_reset (core->io);
+		} else {
+			int i;
+			for (i = 1; i < argc; i++) {
+				RIOBank *bank = r_io_bank_get_by_id (core->io, r_num_get(NULL, argv[i]));
+				if (bank) {
+					r_io_banks_del (core->io, bank);
+				} else {
+					eprintf ("Invalid bank id.\n");
+				}
+			}
+		}
+		break;
+	case '+': // "omb+ [name] [mapids ...]"
 		{
-			char *list = r_io_banks_list (core->io, 0);
-			r_cons_printf ("%s\n", list);
-			free (list);
+			RIOBank *bank = r_io_new_bank (argv[1]);
+			r_io_banks_add (core->io, bank);
+			int i;
+			for (i = 2; i < argc; i++) {
+				if (!r_io_bank_add_map (core->io, bank, r_num_get (NULL, argv[i]))) {
+					eprintf ("Invalid map id = %s\n", argv[i]);
+				}
+			}
+		}
+		break;
+	case 0: // "omb [id]"
+		{
+			if (!r_io_banks_use (core->io, r_num_get (NULL, argv[1]))) {
+				eprintf ("Cannot find bank by id %s\n", argv[1]);
+			}
 		}
 		break;
 	case '?': // "omb?"
+	default:
 		r_core_cmd_help (core, help_msg_omb);
-		break;
-	case '-': // "omb-[]"
-		if (input[1] == 0) {
-			r_io_banks_use (core->io, -1);
-		} else if (input[1] == '*') {
-			r_io_banks_reset (core->io);
-		} else {
-			const ut32 id = r_num_get (NULL, input + 1);
-			RIOBank *bank = r_io_bank_get_by_id (core->io, id);
-			if (bank) {
-				r_io_banks_del (core->io, bank);
-			} else {
-				eprintf ("Invalid bank id.\n");
-			}
-		}
-		break;
-	case '+': // "omb+[name]"
-		{
-			char *name = r_str_trim_dup (input + 1);
-			char *arg0 = strchr (name, ' ');
-			RList *args = NULL;
-			if (arg0) {
-				*arg0++ = 0;
-				args = r_str_split_list (arg0, " ", 0);
-			}
-			RIOBank *bank = r_io_new_bank (name);
-			r_io_banks_add (core->io, bank);
-			RListIter *iter;
-			char *arg;
-			r_list_foreach (args, iter, arg) {
-				const ut32 id = r_num_get (NULL, arg);
-				if (!r_io_bank_add_map (core->io, bank, id)) {
-					eprintf ("Invalid map id = %d\n", id);
-				}
-			}
-			free (name);
-			r_list_free (args);
-		}
-		break;
-	case ' ': // "omb [name]"
-		{
-			const char *name = input + 1;
-			RIOBank* bank = r_io_bank_get_by_name (core->io, name);
-			if (bank) {
-				r_io_banks_use (core->io, bank->id);
-			} else {
-				eprintf ("Cannot find bank by name\n");
-			}
-		}
 		break;
 	}
 }
@@ -687,7 +682,12 @@ static void cmd_open_map(RCore *core, const char *input) {
 		}
 		break;
 	case 'b': // "omb" -- manage memory banks
-		cmd_open_banks (core, input + 2);
+		{
+			int argc;
+			char **argv = r_str_argv(&input[1], &argc);
+			cmd_open_banks (core, argc, argv);
+			r_str_argv_free (argv);
+		}
 		break;
 	case 'B': // "omB"
 		if (input[2] == '.') {
