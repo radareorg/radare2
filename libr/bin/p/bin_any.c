@@ -36,11 +36,6 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->has_pi = 0;
 	ret->has_canary = 0;
 	ret->has_retguard = -1;
-	if (R_SYS_BITS & R_SYS_BITS_64) {
-		ret->bits = 64;
-	} else {
-		ret->bits = 32;
-	}
 	ret->big_endian = 0;
 	ret->has_va = 0;
 	ret->has_nx = 0;

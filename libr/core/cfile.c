@@ -397,7 +397,7 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 	binfile = r_bin_cur (r->bin);
 	r_core_bin_set_env (r, binfile);
 	plugin = r_bin_file_cur_plugin (binfile);
-	if (plugin && !strncmp (plugin->name, "any", 5)) {
+	if (plugin && !strcmp (plugin->name, "any")) {
 		// set use of raw strings
 		// r_config_set_i (r->config, "io.va", false);
 		//\\ r_config_set (r->config, "bin.rawstr", "true");
@@ -407,7 +407,7 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 	} else if (binfile) {
 		RBinObject *obj = r_bin_cur_object (r->bin);
 		RBinInfo *info = obj? obj->info: NULL;
-		if (plugin && strcmp (plugin->name, "any") && info) {
+		if (plugin && info) {
 			r_core_bin_set_arch_bits (r, binfile->file, info->arch, info->bits);
 		}
 	}
@@ -450,6 +450,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 		if (!info) {
 			return false;
 		}
+		info->bits = r->rasm->bits;
 		// set use of raw strings
 		r_core_bin_set_arch_bits (r, binfile->file, info->arch, info->bits);
 		// r_config_set_i (r->config, "io.va", false);
@@ -463,7 +464,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 		if (!info) {
 			return false;
 		}
-		if (plugin && strcmp (plugin->name, "any") && info) {
+		if (plugin) {
 			r_core_bin_set_arch_bits (r, binfile->file,
 				info->arch, info->bits);
 		}
