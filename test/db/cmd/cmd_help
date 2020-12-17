@@ -151,7 +151,7 @@ fvalue: 1.0
 float:  0.000000f
 double: 0.000000
 binary  0b00000001
-trits   0t1
+ternary 0t1
 1
 EOF
 RUN
@@ -171,7 +171,7 @@ fvalue: 0.0
 float:  0.000000f
 double: 0.000000
 binary  0b00000000
-trits   0t0
+ternary 0t0
 0
 EOF
 RUN
@@ -191,7 +191,7 @@ fvalue: -1.0
 float:  nanf
 double: nan
 binary  0b1111111111111111111111111111111111111111111111111111111111111111
-trits   0t11112220022122120101211020120210210211220
+ternary 0t11112220022122120101211020120210210211220
 EOF
 RUN
 
@@ -210,7 +210,7 @@ fvalue: 3.0
 float:  0.000000f
 double: 0.000000
 binary  0b00000010
-trits   0t2
+ternary 0t2
 EOF
 RUN
 

@@ -278,7 +278,7 @@ fvalue: 8.0
 float:  0.000000f
 double: 0.000000
 binary  0b00001000
-trits   0t22
+ternary 0t22
 0x8
 int32   0
 uint32  0
@@ -291,7 +291,7 @@ fvalue: 0.0
 float:  0.000000f
 double: 0.000000
 binary  0b00000000
-trits   0t0
+ternary 0t0
 0x0
 EOF
 RUN
@@ -351,7 +351,7 @@ fvalue: 123.0
 float:  0.000000f
 double: 0.000000
 binary  0b01111011
-trits   0t11120
+ternary 0t11120
 EOF
 RUN
 

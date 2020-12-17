@@ -1107,11 +1107,11 @@ void reil_flag_spew_inst(RAnalEsil *esil, const char *flag) {
 			r_anal_esil_push(esil, esil->Reil->cur);
 			break;
 		case 'b':
-			bit = (ut8)r_num_get(NULL, &flag[1]);
+			bit = (ut8)r_num_get (NULL, &flag[1]);
 			reil_generate_borrow_flag(esil, bit);
 			break;
 		case 'c':
-			bit = (ut8)r_num_get(NULL, &flag[1]);
+			bit = (ut8)r_num_get (NULL, &flag[1]);
 			reil_generate_carry_flag(esil, bit);
 			break;
 		case 'o':
