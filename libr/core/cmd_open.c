@@ -53,7 +53,7 @@ static const char *help_msg_omb[] = {
 	"Usage:", "omb[jq,+] [fd]", "Operate on memory banks",
 	"omb", "", "list all memory banks",
 	"omb", " [id]", "switch to use a different bank",
-	"omb+", "[name] [mapid ...]", "add a new bank with the given maps",
+	"omb+", "[name] [mapid ...]", "add a new bank with the given maps, or add maps to existing bank",
 //	"omb-", "", "unselect all io banks",
 	"omb-", "*", "delete all banks",
 	"omb-", "[mapid ...]", "delete the bank with given id",
@@ -607,8 +607,11 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 		break;
 	case '+': // "omb+ [name] [mapids ...]"
 		{
-			RIOBank *bank = r_io_new_bank (argv[1]);
-			r_io_banks_add (core->io, bank);
+			RIOBank *bank = r_io_bank_get_by_name (core->io, argv[1]);
+			if (!bank) {
+				bank = r_io_new_bank (argv[1]);
+				r_io_banks_add (core->io, bank);
+			}
 			int i;
 			for (i = 2; i < argc; i++) {
 				if (!r_io_bank_add_map (core->io, bank, r_num_get (NULL, argv[i]))) {
