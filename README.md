@@ -36,7 +36,7 @@ the source code, or browse the web for blog posts or presentations from
 
 You may also want to meet other perople in r2land. use the following chats:
 
-* [IRC](irc://irc.freenode.net/#radare)
+* irc.freenode.net `#radare` `#radare_side`
 * [Telegram](https://t.me/radare)
 * [Discord](https://discord.gg/W4uuvwHs)
 
