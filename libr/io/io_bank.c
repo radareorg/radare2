@@ -7,7 +7,7 @@ typedef struct map_ref_t {
 	ut32 id;
 } MapRef;
 
-R_API RIOBank* r_io_new_bank(const char *name) {
+R_API RIOBank *r_io_new_bank(const char *name) {
 	RIOBank *bank = R_NEW0 (RIOBank);
 	if (bank) {
 		bank->name = strdup (name);
@@ -103,7 +103,7 @@ R_API char *r_io_banks_list(RIO *io, int mode) {
 	if (!io || !io->banks) {
 		return NULL;
 	}
-	BanksLister bl = {io, r_strbuf_new ("")};
+	BanksLister bl = { io, r_strbuf_new ("") };
 	if (!bl.sb) {
 		return NULL;
 	}

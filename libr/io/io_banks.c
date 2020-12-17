@@ -2,7 +2,6 @@
 
 #include <r_io.h>
 
-
 R_API bool r_io_banks_add(RIO *io, RIOBank *bank) {
 	if (!bank || !io) {
 		return false;
@@ -22,11 +21,10 @@ R_API bool r_io_banks_del(RIO *io, RIOBank *bank) {
 	return true;
 }
 
-
 R_API bool r_io_banks_use(RIO *io, ut32 id) {
 	r_return_val_if_fail (io, false);
 	if (id == 0) {
-		r_io_banks_reset(io);
+		r_io_banks_reset (io);
 		return true;
 	}
 	RIOBank *bank = (RIOBank *)r_id_storage_get (io->banks, id);
@@ -70,7 +68,7 @@ R_API RIOBank *r_io_bank_get_by_name(RIO *io, const char *name) {
 	if (!name) {
 		return NULL;
 	}
-	BankFinder bf = {name, NULL};
+	BankFinder bf = { name, NULL };
 	r_id_storage_foreach (io->banks, bank_find_by_name_cb, &bf);
 	return bf.bank;
 }
