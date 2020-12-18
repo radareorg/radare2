@@ -897,8 +897,12 @@ static void __print_prompt(void) {
                 r_cons_gotoxy (0,  cons->rows);
                 r_cons_flush ();
 	}
-	r_cons_clear_line (0);
-	printf ("\r%s%s", Color_RESET, I.prompt);
+	if (cons->context->color_mode > 0) {
+		r_cons_clear_line (0);
+		printf ("\r%s%s", Color_RESET, I.prompt);
+	} else {
+		printf ("\r%s", I.prompt);
+	}
 	fwrite (I.buffer.data, 1, R_MIN (cols, chars), stdout);
 	printf ("\r%s", I.prompt);
 	if (I.buffer.index > cols) {
