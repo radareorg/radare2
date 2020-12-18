@@ -5846,10 +5846,10 @@ l = use_blocksize;
 				size_t out_len = len * 10;
 				ut8 *out = calloc (len, 10);
 				if (out) {
-					ut8 *data = calloc (1, len);
+					ut8 *data = malloc (len);
 					if (data) {
 						r_io_read_at (core->io, core->offset, data, len);
-						r_charset_encode_str (core->charset, out, out_len, data, len);
+						r_charset_encode_str (core->print->charset, out, out_len, data, len);
 						r_print_string (core->print, core->offset,
 							out, len, R_PRINT_STRING_ZEROEND);
 						free (data);
