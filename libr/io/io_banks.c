@@ -3,17 +3,13 @@
 #include <r_io.h>
 
 R_API bool r_io_banks_add(RIO *io, RIOBank *bank) {
-	if (!bank || !io) {
-		return false;
-	}
+	r_return_val_if_fail (io && bank, false);
 	// TODO: check if its registered first
 	return r_id_storage_add (io->banks, bank, &bank->id);
 }
 
 R_API bool r_io_banks_del(RIO *io, RIOBank *bank) {
-	if (!io || !io->banks || !bank) {
-		return false;
-	}
+	r_return_val_if_fail (io && io->banks && bank, false);
 	// check if bank is a bank of this instance of io
 	r_return_val_if_fail (r_id_storage_get (io->banks, bank->id) == bank, false);
 	r_id_storage_delete (io->banks, bank->id);
@@ -65,7 +61,7 @@ static bool bank_find_by_name_cb(void *user, void *data, ut32 id) {
 
 R_API RIOBank *r_io_bank_get_by_name(RIO *io, const char *name) {
 	r_return_val_if_fail (io && io->banks, NULL);
-	if (!name) {
+	if (R_STR_ISEMPTY (name)) {
 		return NULL;
 	}
 	BankFinder bf = { name, NULL };
