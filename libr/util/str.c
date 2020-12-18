@@ -1566,7 +1566,7 @@ R_API char *r_str_encoded_json(const char *buf, int buf_size, int encoding) {
 
 		const char *format = encoding == PJ_ENCODING_STR_ARRAY ? "%03u," : "%02X";
 		while (buf[loop] != '\0' && i < (new_sz - 1)) {
-			sprintf (encoded_str + i, format, (ut8) buf[loop]);
+			snprintf (encoded_str + i, new_sz - i, format, (ut8) buf[loop]);
 			loop++;
 			i += increment;
 		}
