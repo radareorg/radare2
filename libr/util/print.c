@@ -342,6 +342,7 @@ R_API RPrint* r_print_new(void) {
 	p->strconv_mode = NULL;
 	memset (&p->consbind, 0, sizeof (p->consbind));
 	p->io_unalloc_ch = '.';
+	p->charset = r_charset_new ();
 	return p;
 }
 
@@ -359,6 +360,7 @@ R_API RPrint* r_print_free(RPrint *p) {
 	}
 	R_FREE (p->lines_cache);
 	R_FREE (p->row_offsets);
+	r_charset_free (p->charset);
 	free (p);
 	return NULL;
 }

@@ -331,7 +331,6 @@ struct r_core_t {
 	bool log_events; // core.c:cb_event_handler : log actions from events if cfg.log.events is set
 	RList *ropchain;
 	bool use_tree_sitter_r2cmd;
-	RCharset *charset;
 
 	bool marks_init;
 	ut64 marks[UT8_MAX + 1];
