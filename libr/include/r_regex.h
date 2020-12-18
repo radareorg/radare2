@@ -13,8 +13,8 @@ typedef struct r_regex_t {
 } RRegex;
 
 typedef struct r_regmatch_t {
-	off_t rm_so;		/* start of match */
-	off_t rm_eo;		/* end of match */
+	st64 rm_so;		/* start of match */
+	st64 rm_eo;		/* end of match */
 } RRegexMatch;
 
 /* regcomp() flags */
