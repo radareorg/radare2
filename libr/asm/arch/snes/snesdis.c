@@ -20,7 +20,7 @@ static int snesDisass(int M_flag, int X_flag, ut64 pc, RAsmOp *op, const ut8 *bu
 		break;
 	case SNES_OP_16BIT:
 		if (*buf % 0x20 == 0x10 || *buf == 0x80) { // relative branch
-			buf_asm = sdb_fmt (s_op->name, pc + 2 + (st8)buf[1]);
+			buf_asm = sdb_fmt (s_op->name, (ut32)(pc + 2 + (st8)buf[1]));
 		} else {
 			buf_asm = sdb_fmt (s_op->name, buf[1]);
 		}
