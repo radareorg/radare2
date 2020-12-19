@@ -3,6 +3,7 @@
 
 #include <ctype.h>
 #include <sys/types.h>
+#include <limits.h>
 
 #define cut8 const unsigned char
 #define ut64 unsigned long long

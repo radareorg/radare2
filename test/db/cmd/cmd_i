@@ -157,7 +157,7 @@ RUN
 
 NAME=i (all) (malloc)
 FILE=malloc://1025
-ARGS=-a x86
+ARGS=-a x86 -b 64
 CMDS=<<EOF
 i
 ia
@@ -242,7 +242,7 @@ RUN
 
 NAME=i (all) (malloc) iI*
 FILE=malloc://1024
-ARGS=-a x86
+ARGS=-a x86 -b 64
 CMDS=<<EOF
 i
 i*
