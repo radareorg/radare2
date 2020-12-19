@@ -3366,7 +3366,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("prj.simple", "false", "Use simple project saving style (functions, comments, options)");
 
 	/* cfg */
-	SETCB ("cfg.charset", "", &cb_cfgcharset, "Specify encoding to use in pse");
+	SETCB ("cfg.charset", "", &cb_cfgcharset, "Specify encoding to use when printing strings");
 	SETBPREF ("cfg.r2wars", "false", "Enable some tweaks for the r2wars game");
 	SETBPREF ("cfg.plugins", "true", "Load plugins at startup");
 	SETCB ("time.fmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
