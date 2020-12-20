@@ -540,23 +540,37 @@ R_API void r_core_visual_jump(RCore *core, ut8 ch) {
 	}
 }
 
+// TODO: merge with r_cons_cmd_help
 R_API void r_core_visual_append_help(RStrBuf *p, const char *title, const char **help) {
+	RCons *cons = r_cons_singleton ();
+	bool use_color = cons->context->color_mode;
+	const char
+		*pal_input_color = use_color ? cons->context->pal.input : "",
+		*pal_args_color = use_color ? cons->context->pal.args : "",
+		*pal_help_color = use_color ? cons->context->pal.help : "",
+		*pal_reset = use_color ? cons->context->pal.reset : "";
 	int i, max_length = 0, padding = 0;
-	RConsContext *cons_ctx = r_cons_singleton ()->context;
-	const char *pal_args_color = cons_ctx->color_mode ? cons_ctx->pal.args : "",
-		   *pal_help_color = cons_ctx->color_mode ? cons_ctx->pal.help : "",
-		   *pal_reset = cons_ctx->color_mode ? cons_ctx->pal.reset : "";
+	const char *help_cmd = NULL, *help_desc = NULL;
+
+	// calculate padding for description text in advance
 	for (i = 0; help[i]; i += 2) {
 		max_length = R_MAX (max_length, strlen (help[i]));
 	}
-	r_strbuf_appendf (p, "|%s:\n", title);
 
+	/* Usage header */
+	r_strbuf_appendf (p, "%s%s%s\n",
+		pal_args_color, title, pal_reset);
+
+	/* Body of help text, indented */
 	for (i = 0; help[i]; i += 2) {
+		help_cmd  = help[i + 0];
+		help_desc = help[i + 1];
+
 		padding = max_length - (strlen (help[i]));
 		r_strbuf_appendf (p, "| %s%s%*s  %s%s%s\n",
-			 pal_args_color, help[i],
-			 padding, "",
-			 pal_help_color, help[i + 1], pal_reset);
+			pal_input_color, help_cmd,
+			padding, "",
+			pal_help_color, help_desc, pal_reset);
 	}
 }
 

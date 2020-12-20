@@ -1909,17 +1909,18 @@ R_API void r_cons_breakword(R_NULLABLE const char *s) {
  */
 R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 	RCons *cons = r_cons_singleton ();
-	const char *pal_args_color = use_color ? cons->context->pal.args : "",
-		   *pal_help_color = use_color ? cons->context->pal.help : "",
-		   *pal_input_color = use_color ? cons->context->pal.input : "",
-		   *pal_reset = use_color ? cons->context->pal.reset : "";
-	int i, max_length = 0;
+	const char
+		*pal_input_color = use_color ? cons->context->pal.input : "",
+		*pal_args_color = use_color ? cons->context->pal.args : "",
+		*pal_help_color = use_color ? cons->context->pal.help : "",
+		*pal_reset = use_color ? cons->context->pal.reset : "";
+	int i, max_length = 0, padding = 0;
 	const char *usage_str = "Usage:";
 	const char *help_cmd = NULL, *help_args = NULL, *help_desc = NULL;
 
 	// calculate padding for description text in advance
 	for (i = 0; help[i]; i += 3) {
-		help_cmd = help[i];
+		help_cmd  = help[i + 0];
 		help_args = help[i + 1];
 
 		int len_cmd = strlen (help_cmd);
@@ -1930,14 +1931,14 @@ R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 	}
 
 	for (i = 0; help[i]; i += 3) {
-		help_cmd = help[i];
+		help_cmd  = help[i + 0];
 		help_args = help[i + 1];
 		help_desc = help[i + 2];
 
 		if (!strncmp (help_cmd, usage_str, strlen (usage_str))) {
 			/* Usage header */
-			r_cons_printf ("%s%s %s  %s%s\n", pal_args_color,
-				help_cmd, help_args, help_desc, pal_reset);
+			r_cons_printf ("%s%s %s  %s%s\n",
+				pal_args_color, help_cmd, help_args, help_desc, pal_reset);
 			continue;
 		}
 		if (!help_args[0] && !help_desc[0]) {
@@ -1946,10 +1947,12 @@ R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 		} else {
 			/* Body of help text, indented */
 			int str_length = strlen (help_cmd) + strlen (help_args);
-			int padding = R_MAX ((max_length - str_length), 0);
+			padding = R_MAX ((max_length - str_length), 0);
 			r_cons_printf ("| %s%s%s%s%*s  %s%s%s\n",
-				pal_input_color, help_cmd, pal_args_color, help_args,
-				padding, "", pal_help_color, help_desc, pal_reset);
+				pal_input_color, help_cmd,
+				pal_args_color, help_args,
+				padding, "",
+				pal_help_color, help_desc, pal_reset);
 		}
 	}
 }
