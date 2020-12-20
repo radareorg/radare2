@@ -621,8 +621,11 @@ static void selection_widget_down(int steps) {
 	}
 }
 
-static void print_rline_task(void *core) {
-	r_cons_clear_line (0);
+static void print_rline_task(void *_core) {
+	RCore *core =(RCore *)_core;
+	if (core->cons->context->color_mode) {
+		r_cons_clear_line (0);
+	}
 	r_cons_printf ("%s%s%s", Color_RESET, I.prompt,  I.buffer.data);
 	r_cons_flush ();
 }
@@ -1329,7 +1332,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		buf[0] = ch;
 #endif
 #endif
-		if (I.echo) {
+		if (I.echo && cons->context->color_mode) {
 			r_cons_clear_line (0);
 		}
 		(void)r_cons_get_size (&rows);
