@@ -221,7 +221,7 @@ R_API void r_cons_printat(const char *str, int x, char y) {
 		if (str[i] == '\n') {
 			r_cons_gotoxy (x, y + lines);
 			int wlen = R_MIN (len - x, w - x);
-			r_cons_memcat (str + o, len);
+			r_cons_memcat (str + o, wlen);
 			o = i + 1;
 			len = 0;
 			lines++;
