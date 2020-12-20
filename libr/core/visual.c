@@ -20,7 +20,6 @@ static int color = 1;
 static int debug = 1;
 static int zoom = 0;
 
-
 typedef struct {
 	int x;
 	int y;
@@ -2309,6 +2308,33 @@ static bool toggle_bb(RCore *core, ut64 addr) {
 	return false;
 }
 
+static int process_get_click(RCore *core, int ch) {
+	int x, y;
+	if (r_cons_get_click (&x, &y)) {
+		if (y == 1) {
+			if (x < 13) {
+				ch = '_';
+			} else if (x < 20) {
+				ch = 'p';
+			} else if (x < 24) {
+				ch = 9;
+			}
+		} else if (y == 2) {
+			if (x < 2) {
+				visual_closetab (core);
+			} else if (x < 5) {
+				visual_newtab (core);
+			} else {
+				visual_nexttab (core);
+			}
+			return 0;
+		} else {
+			ch = 0; //'c';
+		}
+	}
+	return ch;
+}
+
 R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	ut8 och = arg[0];
 	RAsmOp op;
@@ -2325,29 +2351,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	ch = r_cons_arrow_to_hjkl (ch);
 	ch = visual_nkey (core, ch);
 	if (ch < 2) {
-		int x, y;
-		if (r_cons_get_click (&x, &y)) {
-			if (y == 1) {
-				if (x < 15) {
-					ch = '_';
-				} else if (x < 20) {
-					ch = 'p';
-				} else if (x < 24) {
-					ch = 9;
-				}
-			} else if (y == 2) {
-				if (x < 2) {
-					visual_closetab (core);
-				} else if (x < 5) {
-					visual_newtab (core);
-				} else {
-					visual_nexttab (core);
-				}
-				return 1;
-			} else {
-				ch = 0; //'c';
-			}
-		} else {
+		ch = process_get_click (core, ch);
+		if (!ch) {
 			return 1;
 		}
 	}
@@ -2390,7 +2395,14 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 #endif
 		case 0x0d: // "enter" "\\n" "newline"
-		{
+			if (r_config_get_i (core->config, "scr.cursor")) {
+				r_cons_set_click (core->cons->cpos.x, core->cons->cpos.y);
+				char buf[10];
+				int ch = process_get_click (core, 0);
+				buf[0] = ch;
+				buf[1] = 0;
+				r_core_visual_cmd(core, buf);
+			} else {
 			RAnalOp *op;
 			int wheel = r_config_get_i (core->config, "scr.wheel");
 			if (wheel) {
@@ -2877,7 +2889,16 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'h':
 		case 'l':
-			{
+			if (r_config_get_i (core->config, "scr.cursor")) {
+				core->cons->cpos.x += ch == 'h'? -1: 1;
+				if (core->cons->cpos.x < 1) {
+					core->cons->cpos.x = 0;
+				}
+				int h, w = r_cons_get_size (&h);
+				if (core->cons->cpos.x >= w) {
+					core->cons->cpos.x = w;
+				}
+			} else {
 				int distance = numbuf_pull ();
 				if (core->print->cur_enabled) {
 					if (ch == 'h') {
@@ -2899,7 +2920,17 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'L':
 		case 'H':
-			{
+			if (r_config_get_i (core->config, "scr.cursor")) {
+				int distance = 8; // numbuf_pull ();
+				core->cons->cpos.x += (ch == 'h' || ch == 'H')? -distance: distance;
+				if (core->cons->cpos.x < 1) {
+					core->cons->cpos.x = 0;
+				}
+				int h, w = r_cons_get_size (&h);
+				if (core->cons->cpos.x >= w) {
+					core->cons->cpos.x = w;
+				}
+			} else {
 				int distance = numbuf_pull ();
 				if (core->print->cur_enabled) {
 					if (ch == 'H') {
@@ -2920,7 +2951,14 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case 'j':
-			if (core->print->cur_enabled) {
+			if (r_config_get_i (core->config, "scr.cursor")) {
+				core->cons->cpos.y++;
+				int h;
+				(void)r_cons_get_size (&h);
+				if (core->cons->cpos.y >= h) {
+					core->cons->cpos.y = h;
+				}
+			} else if (core->print->cur_enabled) {
 				int distance = numbuf_pull ();
 				for (i = 0; i < distance; i++) {
 					cursor_nextrow (core, false);
@@ -2963,7 +3001,15 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case 'J':
-			if (core->print->cur_enabled) {
+			if (r_config_get_i (core->config, "scr.cursor")) {
+				int distance = 4;// numbuf_pull ();
+				core->cons->cpos.y += distance;
+				int h;
+				(void)r_cons_get_size (&h);
+				if (core->cons->cpos.y >= h) {
+					core->cons->cpos.y = h;
+				}
+			} else if (core->print->cur_enabled) {
 				int distance = numbuf_pull ();
 				for (i = 0; i < distance; i++) {
 					cursor_nextrow (core, true);
@@ -2996,7 +3042,12 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case 'k':
-			if (core->print->cur_enabled) {
+			if (r_config_get_i (core->config, "scr.cursor")) {
+				core->cons->cpos.y--;
+				if (core->cons->cpos.y < 1) {
+					core->cons->cpos.y = 0;
+				}
+			} else if (core->print->cur_enabled) {
 				int distance = numbuf_pull ();
 				for (i = 0; i < distance; i++) {
 					cursor_prevrow (core, false);
@@ -3031,7 +3082,13 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case 'K':
-			if (core->print->cur_enabled) {
+			if (r_config_get_i (core->config, "scr.cursor")) {
+				int distance = 4;// numbuf_pull ();
+				core->cons->cpos.y -= distance;
+				if (core->cons->cpos.y < 1) {
+					core->cons->cpos.y = 0;
+				}
+			} else if (core->print->cur_enabled) {
 				int distance = numbuf_pull ();
 				for (i = 0; i < distance; i++) {
 					cursor_prevrow (core, true);
@@ -3959,6 +4016,17 @@ R_API void r_core_print_scrollbar_bottom(RCore *core) {
 	r_cons_flush ();
 }
 
+static void show_cursor(RCore *core) {
+	const bool keyCursor = r_config_get_i (core->config, "scr.cursor");
+	if (keyCursor) {
+		r_cons_gotoxy (core->cons->cpos.x, core->cons->cpos.y);
+		r_cons_show_cursor (1);
+		//r_cons_invert (1, 1);
+		//r_cons_print ("#");
+		r_cons_flush ();
+	}
+}
+
 static void visual_refresh(RCore *core) {
 	static ut64 oseek = UT64_MAX;
 	const char *vi, *vcmd, *cmd_str;
@@ -4093,6 +4161,7 @@ static void visual_refresh(RCore *core) {
 	if (r_config_get_i (core->config, "scr.scrollbar")) {
 		r_core_print_scrollbar (core);
 	}
+	show_cursor (core);
 }
 
 static void visual_refresh_oneshot(RCore *core) {

@@ -13,7 +13,7 @@ static void __set_dcb(RCore *core, RPanel *p);
 static void __set_pcb(RPanel *p);
 static void __panels_refresh(RCore *core);
 
-
+#define MENU_Y 1
 #define PANEL_NUM_LIMIT 9
 
 #define PANEL_TITLE_SYMBOLS          "Symbols"
@@ -1279,6 +1279,15 @@ static void __fix_layout_h(RCore *core) {
 static void __fix_layout(RCore *core) {
 	__fix_layout_w (core);
 	__fix_layout_h (core);
+}
+
+static void show_cursor(RCore *core) {
+	const bool keyCursor = r_config_get_i (core->config, "scr.cursor");
+	if (keyCursor) {
+		r_cons_gotoxy (core->cons->cpos.x, core->cons->cpos.y);
+		r_cons_show_cursor (1);
+		r_cons_flush ();
+	}
 }
 
 static void __set_refresh_all(RCore *core, bool clearCache, bool force_refresh) {
@@ -3276,44 +3285,76 @@ static bool __handle_window_mode(RCore *core, const int key) {
 	}
 		break;
 	case 'h':
-		(void)__move_to_direction (core, LEFT);
-		if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
-			__reset_snow (panels);
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.x--;
+		} else {
+			(void)__move_to_direction (core, LEFT);
+			if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
+				__reset_snow (panels);
+			}
 		}
 		break;
 	case 'j':
-		(void)__move_to_direction (core, DOWN);
-		if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
-			__reset_snow (panels);
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.y++;
+		} else {
+			(void)__move_to_direction (core, DOWN);
+			if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
+				__reset_snow (panels);
+			}
 		}
 		break;
 	case 'k':
-		(void)__move_to_direction (core, UP);
-		if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
-			__reset_snow (panels);
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.y--;
+		} else {
+			(void)__move_to_direction (core, UP);
+			if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
+				__reset_snow (panels);
+			}
 		}
 		break;
 	case 'l':
-		(void)__move_to_direction (core, RIGHT);
-		if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
-			__reset_snow (panels);
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.x++;
+		} else {
+			(void)__move_to_direction (core, RIGHT);
+			if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
+				__reset_snow (panels);
+			}
 		}
 		break;
 	case 'H':
-		r_cons_switchbuf (false);
-		__resize_panel_left (panels);
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.x += 5;
+		} else {
+			r_cons_switchbuf (false);
+			__resize_panel_left (panels);
+		}
 		break;
 	case 'L':
-		r_cons_switchbuf (false);
-		__resize_panel_right (panels);
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.x += 5;
+		} else {
+			r_cons_switchbuf (false);
+			__resize_panel_right (panels);
+		}
 		break;
 	case 'J':
-		r_cons_switchbuf (false);
-		__resize_panel_down (panels);
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.y += 5;
+		} else {
+			r_cons_switchbuf (false);
+			__resize_panel_down (panels);
+		}
 		break;
 	case 'K':
-		r_cons_switchbuf (false);
-		__resize_panel_up (panels);
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.y -= 5;
+		} else {
+			r_cons_switchbuf (false);
+			__resize_panel_up (panels);
+		}
 		break;
 	case 'n':
 		__create_panel_input (core, cur, PANEL_LAYOUT_VERTICAL, NULL);
@@ -3814,6 +3855,7 @@ static void __update_modal(RCore *core, Sdb *menu_db, RModal *modal) {
 
 	r_cons_canvas_print (can);
 	r_cons_flush ();
+	show_cursor (core);
 }
 
 static void __exec_modal(RCore *core, RPanel *panel, RModal *modal, Sdb *menu_db, RPanelLayout dir) {
@@ -4011,12 +4053,11 @@ static bool __handle_mouse_on_panel(RCore *core, RPanel *panel, int x, int y, in
 }
 
 static bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
-	const int MENU_Y = 1;
 	RPanels *panels = core->panels;
 	if (__drag_and_resize (core)) {
 		return true;
 	}
-	if (!*key) {
+	if (key && !*key) {
 		int x, y;
 		if (!r_cons_get_click (&x, &y)) {
 			return false;
@@ -4053,7 +4094,7 @@ static bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 			__split_panel_vertical (core, p, p->model->title, p->model->cmd);
 		}
 	}
-	if (*key == INT8_MAX) {
+	if (key && *key == INT8_MAX) {
 		*key = '"';
 		return false;
 	}
@@ -5571,7 +5612,7 @@ static void __refresh_core_offset (RCore *core) {
 	}
 }
 
-static void demo_begin (RCore *core, RConsCanvas *can) {
+static void demo_begin(RCore *core, RConsCanvas *can) {
 	char *s = r_cons_canvas_to_string (can);
 	if (s) {
 		// TODO drop utf8!!
@@ -5591,7 +5632,7 @@ static void demo_begin (RCore *core, RConsCanvas *can) {
 	}
 }
 
-static void demo_end (RCore *core, RConsCanvas *can) {
+static void demo_end(RCore *core, RConsCanvas *can) {
 	bool utf8 = r_config_get_i (core->config, "scr.utf8");
 	r_config_set_i (core->config, "scr.utf8", 0);
 	RPanel *cur = __get_cur_panel (core->panels);
@@ -5778,6 +5819,7 @@ static void __panels_refresh(RCore *core) {
 	if (core->scr_gadgets) {
 		r_core_cmd0 (core, "pg");
 	}
+	show_cursor (core);
 	r_cons_flush ();
 	if (r_cons_singleton ()->fps) {
 		r_cons_print_fps (40);
@@ -5820,7 +5862,9 @@ static void __handle_menu(RCore *core, const int key) {
 		}
 		break;
 	case 'j':
-		{
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.y++;
+		} else {
 			if (menu->depth == 1) {
 				(void)(child->cb (core));
 			} else {
@@ -5830,7 +5874,9 @@ static void __handle_menu(RCore *core, const int key) {
 		}
 		break;
 	case 'k':
-		{
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.y--;
+		} else {
 			if (menu->depth < 2) {
 				break;
 			}
@@ -6257,6 +6303,7 @@ repeat:
 	}
 
 	key = r_cons_arrow_to_hjkl (okey);
+virtualmouse:
 	if (__handle_mouse (core, cur, &key)) {
 		if (panels_root->root_state != DEFAULT) {
 			goto exit;
@@ -6427,46 +6474,70 @@ repeat:
 		__replace_cmd (core, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
 		break;
 	case 'j':
-		r_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			cur->model->directionCb (core, (int)DOWN);
-		}
-		break;
-	case 'k':
-		r_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			cur->model->directionCb (core, (int)UP);
-		}
-		break;
-	case 'K':
-		r_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
-				cur->model->directionCb (core, (int)UP);
-			}
-		}
-		break;
-	case 'J':
-		r_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.y++;
+		} else {
+			r_cons_switchbuf (false);
+			if (cur->model->directionCb) {
 				cur->model->directionCb (core, (int)DOWN);
 			}
 		}
 		break;
+	case 'k':
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.y--;
+		} else {
+			r_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				cur->model->directionCb (core, (int)UP);
+			}
+		}
+		break;
+	case 'K':
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.y -= 5;
+		} else {
+			r_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
+					cur->model->directionCb (core, (int)UP);
+				}
+			}
+		}
+		break;
+	case 'J':
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.y += 5;
+		} else {
+			r_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
+					cur->model->directionCb (core, (int)DOWN);
+				}
+			}
+		}
+		break;
 	case 'H':
-		r_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			for (i = 0; i < __get_cur_panel (panels)->view->pos.w / 3; i++) {
-				cur->model->directionCb (core, (int)LEFT);
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.x -= 5;
+		} else {
+			r_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				for (i = 0; i < __get_cur_panel (panels)->view->pos.w / 3; i++) {
+					cur->model->directionCb (core, (int)LEFT);
+				}
 			}
 		}
 		break;
 	case 'L':
-		r_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			for (i = 0; i < __get_cur_panel (panels)->view->pos.w / 3; i++) {
-				cur->model->directionCb (core, (int)RIGHT);
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.x += 5;
+		} else {
+			r_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				for (i = 0; i < __get_cur_panel (panels)->view->pos.w / 3; i++) {
+					cur->model->directionCb (core, (int)RIGHT);
+				}
 			}
 		}
 		break;
@@ -6558,15 +6629,23 @@ repeat:
 		}
 		break;
 	case 'h':
-		r_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			cur->model->directionCb (core, (int)LEFT);
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.x--;
+		} else {
+			r_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				cur->model->directionCb (core, (int)LEFT);
+			}
 		}
 		break;
 	case 'l':
-		r_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			cur->model->directionCb (core, (int)RIGHT);
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.x++;
+		} else {
+			r_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				cur->model->directionCb (core, (int)RIGHT);
+			}
 		}
 		break;
 	case 'V':
@@ -6636,7 +6715,13 @@ repeat:
 		__move_panel_to_dir (core, cur, panels->curnode);
 		break;
 	case 0x0d: // "\\n"
-		__toggle_zoom_mode (core);
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			key = 0;
+			r_cons_set_click (core->cons->cpos.x, core->cons->cpos.y);
+			goto virtualmouse;
+		} else {
+			__toggle_zoom_mode (core);
+		}
 		break;
 	case '|':
 		{
