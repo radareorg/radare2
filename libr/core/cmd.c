@@ -2186,7 +2186,12 @@ static int cmd_resize(void *data, const char *input) {
 		}
 		break;
 	case 'e':
-		write (1, Color_RESET_TERMINAL, strlen (Color_RESET_TERMINAL));
+		{
+			int rc = write (1, Color_RESET_TERMINAL, strlen (Color_RESET_TERMINAL));
+			if (rc == -1) {
+				return false;
+			}
+		}
 		return true;
 	case '?': // "r?"
 	default:

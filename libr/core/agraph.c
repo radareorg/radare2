@@ -1028,7 +1028,8 @@ static void adjust_class(const RAGraph *g, int is_left, RList **classes, Sdb *re
 	const RGraphNode *gn;
 	const RListIter *it;
 	const RANode *an;
-	int dist, v, is_first = true;
+	int dist = 0;
+	bool is_first = true;
 
 	graph_foreach_anode (classes[c], it, gn, an) {
 		const RGraphNode *sibling;
@@ -1042,7 +1043,7 @@ static void adjust_class(const RAGraph *g, int is_left, RList **classes, Sdb *re
 		if (sibl_anode->klass == c) {
 			continue;
 		}
-		v = adjust_class_val (g, gn, sibling, res, is_left);
+		int v = adjust_class_val (g, gn, sibling, res, is_left);
 		dist = is_first? v: R_MIN (dist, v);
 		is_first = false;
 	}
@@ -1749,15 +1750,18 @@ static int get_edge_number (const RAGraph *g, RANode *src, RANode *dst, bool out
 	return cur_nth;
 }
 
-static int count_edges (const RAGraph *g, RANode *src, RANode *dst) {
+static int count_edges(const RAGraph *g, RANode *src, RANode *dst) {
 	return get_edge_number (g, src, dst, true);
 }
 
-static void backedge_info (RAGraph *g) {
+static void backedge_info(RAGraph *g) {
 	int i, j, k;
 	int min, max;
 	int inedge = 0;
 	int outedge = 0;
+	if (g->n_layers > ST16_MAX) {
+		return;
+	}
 
 	int **arr = R_NEWS0 (int *, g->n_layers);
 	if (!arr) {
