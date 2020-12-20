@@ -3134,6 +3134,35 @@ R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y,
 	return ret;
 }
 
+// TODO: improve loop to wrap by words
+R_API char *r_str_wrap(const char *str, int w) {
+	char *r, *ret;
+	if (w < 1 || !str) {
+		return strdup ("");
+	}
+	size_t r_size = 8 * strlen (str);
+	r = ret = malloc (r_size);
+	char *end = r + r_size;
+	int cw = 0;
+	while (*str && r + 1 < end) {
+		if (*str == '\n') {
+			*r++ = *str++;
+			cw = 0;
+		} else {
+			if (cw > w) {
+				*r++ = '\n';
+				*r++ = *str++;
+				cw = 1;
+			} else {
+				*r++ = *str++;
+				cw++;
+			}
+		}
+	}
+	*r = 0;
+	return ret;
+}
+
 R_API const char * r_str_tok(const char *str1, const char b, size_t len) {
 	const char *p = str1;
 	size_t i = 0;
