@@ -405,11 +405,13 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	}
 	if (argc < 2) {
 		LISTS_FREE ();
+		free (envprofile);
 		return main_help (1);
 	}
 	r = r_core_new ();
 	if (!r) {
 		eprintf ("Cannot initialize RCore\n");
+		free (envprofile);
 		LISTS_FREE ();
 		return 1;
 	}
@@ -427,6 +429,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	if (argc == 2 && !strcmp (argv[1], "-p")) {
 		r_core_project_list (r, 0);
 		r_cons_flush ();
+		free (envprofile);
 		LISTS_FREE ();
 		return 0;
 	}
@@ -440,6 +443,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	// -H option without argument
 	if (argc == 2 && !strcmp (argv[1], "-H")) {
 		main_print_var (NULL);
+		free (envprofile);
 		LISTS_FREE ();
 		return 0;
 	}
@@ -686,6 +690,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		if (2 != new_stderr) {
 			if (-1 == dup2 (new_stderr, 2)) {
 				eprintf ("Failed to dup2 stderr");
+				free (envprofile);
 				LISTS_FREE ();
 				R_FREE (debugbackend);
 				return 1;
@@ -693,6 +698,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			if (-1 == close (new_stderr)) {
 				eprintf ("Failed to close %s", nul);
 				LISTS_FREE ();
+				free (envprofile);
 				R_FREE (debugbackend);
 				return 1;
 			}
@@ -746,6 +752,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		LISTS_FREE ();
 		free (pfile);
 		R_FREE (debugbackend);
+		free (envprofile);
 		return 0;
 	}
 
@@ -753,6 +760,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		LISTS_FREE ();
 		free (pfile);
 		R_FREE (debugbackend);
+		free (envprofile);
 		return main_help (help > 1? 2: 0);
 	}
 #if __WINDOWS__
@@ -773,6 +781,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			eprintf ("Missing argument for -d\n");
 			LISTS_FREE ();
 			R_FREE (debugbackend);
+			free (envprofile);
 			return 1;
 		}
 		const char *src = haveRarunProfile? pfile: argv[opt.ind];
@@ -822,6 +831,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			eprintf ("Missing URI for -C\n");
 			LISTS_FREE ();
 			R_FREE (debugbackend);
+			free (envprofile);
 			return 1;
 		}
 		if (strstr (uri, "://")) {
@@ -880,6 +890,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			LISTS_FREE ();
 			free (pfile);
 			R_FREE (debugbackend);
+			free (envprofile);
 			return 1;
 		}
 		if (r_sys_chdir (argv[opt.ind])) {
@@ -887,6 +898,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			LISTS_FREE ();
 			free (pfile);
 			R_FREE (debugbackend);
+			free (envprofile);
 			return 1;
 		}
 	} else if (argv[opt.ind] && !strcmp (argv[opt.ind], "=")) {
@@ -904,6 +916,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		eprintf ("Cannot reopen stdin without UNIX\n");
 		free (buf);
 		R_FREE (debugbackend);
+		free (envprofile);
 		return 1;
 #endif
 		if (buf && sz > 0) {
@@ -915,6 +928,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				eprintf ("[=] Cannot open '%s'\n", path);
 				LISTS_FREE ();
 				free (path);
+				free (envprofile);
 				R_FREE (debugbackend);
 				return 1;
 			}
@@ -929,6 +943,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			eprintf ("Cannot slurp from stdin\n");
 			free (buf);
 			LISTS_FREE ();
+			free (envprofile);
 			return 1;
 		}
 	} else if (strcmp (argv[opt.ind - 1], "--") && !(r_config_get (r->config, "prj.name") && r_config_get (r->config, "prj.name")[0]) ) {
@@ -943,6 +958,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				eprintf ("No program given to -d\n");
 				LISTS_FREE ();
 				R_FREE (debugbackend);
+				free (envprofile);
 				return 1;
 			}
 			if (debug == 2) {
