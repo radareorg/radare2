@@ -380,7 +380,6 @@ static const char *help_msg_afc[] = {
 	"Usage:", "afc[agl?]", "",
 	"afc", " convention", "Manually set calling convention for current function",
 	"afc", "", "Show Calling convention for the Current function",
-	"afc=", "([cctype])", "Select or show default calling convention",
 	"afcr", "[j]", "Show register usage for the current function",
 	"afca", "", "Analyse function for finding the current calling convention",
 	"afcf", "[j] [name]", "Prints return type function(arg1, arg2...), see afij",
@@ -3849,18 +3848,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			free (argument);
 			break;
 		}
-		case '=': // "afc="
-			if (input[3]) {
-				char *argument = strdup (input + 3);
-				char *cc = argument;
-				r_str_trim (cc);
-				r_core_cmdf (core, "k anal/cc/default.cc=%s", cc);
-				r_anal_set_reg_profile (core->anal);
-				free (argument);
-			} else {
-				r_core_cmd0 (core, "k anal/cc/default.cc");
-			}
-			break;
 		case 'a': // "afca"
 			eprintf ("Todo\n");
 			break;

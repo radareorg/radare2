@@ -839,7 +839,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 		r_core_anal_type_init (r);
 		r_core_anal_cc_init (r);
 		if (info->default_cc && r_anal_cc_exist (r->anal, info->default_cc)) {
-			r_core_cmdf (r, "k anal/cc/default.cc=%s", info->default_cc);
+			r_core_cmdf (r, "e anal.cc=%s", info->default_cc);
 		}
 	} else if (IS_MODE_SIMPLE (mode)) {
 		r_cons_printf ("arch %s\n", info->arch);
@@ -889,7 +889,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 				r_cons_printf ("e asm.cpu=%s\n", info->cpu);
 			}
 			if (info->default_cc) {
-				r_cons_printf ("k anal/cc/default.cc=%s", info->default_cc);
+				r_cons_printf ("e anal.cc=%s", info->default_cc);
 			}
 			v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_ALIGN);
 			if (v != -1) {
