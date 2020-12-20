@@ -208,7 +208,7 @@ static const char *help_msg_panels[] = {
 	"_",        "start the hud input mode",
 	"\\",       "show the user-friendly hud",
 	"?",        "show this help",
-	"!",        "run r2048 game",
+	"!",        "swap into visual mode",
 	".",        "seek to PC or entrypoint",
 	"*",        "show decompiler in the current panel",
 	"\"",       "create a panel from the list and replace the current one",

@@ -394,7 +394,7 @@ R_API int r_cons_get_cur_line(void) {
 }
 
 R_API void r_cons_break_timeout(int timeout) {
-	I.timeout = (timeout && !I.timeout) 
+	I.timeout = (timeout && !I.timeout)
 		? r_time_now_mono () + ((ut64) timeout << 20) : 0;
 }
 
@@ -501,7 +501,7 @@ R_API bool r_cons_enable_mouse(const bool enable) {
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
 	mode |= ENABLE_EXTENDED_FLAGS;
-	mode = enable 
+	mode = enable
 		? (mode | ENABLE_MOUSE_INPUT) & ~ENABLE_QUICK_EDIT_MODE
 		: (mode & ~ENABLE_MOUSE_INPUT) | ENABLE_QUICK_EDIT_MODE;
 	if (SetConsoleMode (h, mode)) {
@@ -1895,10 +1895,18 @@ R_API void r_cons_breakword(R_NULLABLE const char *s) {
 	}
 }
 
-/* Prints a coloured help message.
- * help should be an array of the following form:
- * {"command", "args", "description",
- * "command2", "args2", "description"}; */
+/* Print a coloured help message.
+ * Help should be an array of NULL-terminated triples of the following form:
+ *
+ * 	{"command", "args", "description",
+ * 	 "command2", "args2", "description",
+ * 	 ...,
+ * 	 NULL};
+ *
+ * 	 First line typically is a "Usage:" header.
+ * 	 Section headers are the triples with empty args and description.
+ * 	 Unlike normal body lines, headers are not indented.
+ */
 R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 	RCons *cons = r_cons_singleton ();
 	const char *pal_args_color = use_color ? cons->context->pal.args : "",
@@ -1907,32 +1915,41 @@ R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 		   *pal_reset = use_color ? cons->context->pal.reset : "";
 	int i, max_length = 0;
 	const char *usage_str = "Usage:";
+	const char *help_cmd = NULL, *help_args = NULL, *help_desc = NULL;
 
+	// calculate padding for description text in advance
 	for (i = 0; help[i]; i += 3) {
-		int len0 = strlen (help[i]);
-		int len1 = strlen (help[i + 1]);
+		help_cmd = help[i];
+		help_args = help[i + 1];
+
+		int len_cmd = strlen (help_cmd);
+		int len_args = strlen (help_args);
 		if (i) {
-			max_length = R_MAX (max_length, len0 + len1);
+			max_length = R_MAX (max_length, len_cmd + len_args);
 		}
 	}
 
 	for (i = 0; help[i]; i += 3) {
-		if (!strncmp (help[i], usage_str, strlen (usage_str))) {
-			// Lines matching Usage: should always be the first in inline doc
+		help_cmd = help[i];
+		help_args = help[i + 1];
+		help_desc = help[i + 2];
+
+		if (!strncmp (help_cmd, usage_str, strlen (usage_str))) {
+			/* Usage header */
 			r_cons_printf ("%s%s %s  %s%s\n", pal_args_color,
-				help[i], help[i + 1], help[i + 2], pal_reset);
+				help_cmd, help_args, help_desc, pal_reset);
 			continue;
 		}
-		if (!help[i + 1][0] && !help[i + 2][0]) {
-			// no need to indent the sections lines
-			r_cons_printf ("%s%s%s\n", pal_help_color, help[i], pal_reset);
+		if (!help_args[0] && !help_desc[0]) {
+			/* Section header, no need to indent it */
+			r_cons_printf ("%s%s%s\n", pal_help_color, help_cmd, pal_reset);
 		} else {
-			// these are the normal lines
-			int str_length = strlen (help[i]) + strlen (help[i + 1]);
-			int padding = (str_length < max_length)? (max_length - str_length): 0;
+			/* Body of help text, indented */
+			int str_length = strlen (help_cmd) + strlen (help_args);
+			int padding = R_MAX ((max_length - str_length), 0);
 			r_cons_printf ("| %s%s%s%s%*s  %s%s%s\n",
-				pal_input_color, help[i], pal_args_color, help[i + 1],
-				padding, "", pal_help_color, help[i + 2], pal_reset);
+				pal_input_color, help_cmd, pal_args_color, help_args,
+				padding, "", pal_help_color, help_desc, pal_reset);
 		}
 	}
 }
