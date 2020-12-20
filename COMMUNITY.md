@@ -28,7 +28,8 @@ engineering in general.
 This does not limit to the conversations in our official chat servers,
 you can also talk about other things **in the side channel**.
 
-We urge you to respect the personal boundaries of each member in r2land.
+We urge you to respect the personal boundaries of everyone in this
+community.
 
 ## What we don't want to see
 
