@@ -412,10 +412,10 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			esilprintf (op, "%s000,$$,+,%s,=", ARG (1), ARG (0));
 		} else if (!strncmp (name, "sll", 3)) {
 			esilprintf (op, "%s,%s,<<,%s,=", ARG (2), ARG (1), ARG (0));
-			if (name[3] == 'w') {
+			if (name[3] == 'w' || !strncmp (name, "slliw", 5)) {
 				r_strbuf_appendf (&op->esil, ",0xffffffff,%s,&=", ARG (0));
 			}
-		} else if (!strncmp (name, "srlw", 4)) {
+		} else if (!strncmp (name, "srlw", 4) || !strncmp (name, "srliw", 4)) {
 			esilprintf (op, "%s,0xffffffff,%s,&,>>,%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strncmp (name, "srl", 3)) {
 			esilprintf (op, "%s,%s,>>,%s,=", ARG (2), ARG (1), ARG (0));
@@ -470,10 +470,27 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			esilprintf (op, "%s,%s,+,[8],%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strcmp (name, "lw") || !strcmp (name, "lwu") || !strcmp (name, "lwsp")) {
 			esilprintf (op, "%s,%s,+,[4],%s,=", ARG (2), ARG (1), ARG (0));
+			if ((anal->bits == 64) && strcmp (name, "lwu")) {
+				r_strbuf_appendf (&op->esil, ",31,%s,>>,?{,0xffffffff00000000,%s,|=,}", ARG (0), ARG (0));
+			}
 		} else if (!strcmp (name, "lh") || !strcmp (name, "lhu") || !strcmp (name, "lhsp")) {
 			esilprintf (op, "%s,%s,+,[2],%s,=", ARG (2), ARG (1), ARG (0));
+			if (strcmp (name, "lwu")) {
+				if (anal->bits == 64) {
+					r_strbuf_appendf (&op->esil, ",15,%s,>>,?{,0xffffffffffff0000,%s,|=,}", ARG (0), ARG (0));
+				} else {
+					r_strbuf_appendf (&op->esil, ",15,%s,>>,?{,0xffff0000,%s,|=,}", ARG (0), ARG (0));
+				}
+			}
 		} else if (!strcmp (name, "lb") || !strcmp (name, "lbu") || !strcmp (name, "lbsp")) {
 			esilprintf (op, "%s,%s,+,[1],%s,=", ARG (2), ARG (1), ARG (0));
+			if (strcmp (name, "lbu")) {
+				if (anal->bits == 64) {
+					r_strbuf_appendf (&op->esil, ",7,%s,>>,?{,0xffffffffffffff00,%s,|=,}", ARG (0), ARG (0));
+				} else {
+					r_strbuf_appendf (&op->esil, ",7,%s,>>,?{,0xffffff00,%s,|=,}", ARG (0), ARG (0));
+				}
+			}
 		} else if (!strcmp (name, "flq") || !strcmp (name, "flqsp")) {
 			esilprintf (op, "%s,%s,+,[16],%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strcmp (name, "fld") || !strcmp (name, "fldsp")) {
@@ -617,7 +634,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_DIV;
 	} else if (is_any ("sll", "slli", "sllw", "slliw", "c.slli")) {
 		op->type = R_ANAL_OP_TYPE_SHL;
-	} else if (is_any ("srl", "srlw", "c.srli")) {
+	} else if (is_any ("srl", "srlw", "srliw", "c.srli")) {
 		op->type = R_ANAL_OP_TYPE_SHR;
 	} else if (is_any ("sra", "sra", "srai", "c.srai")) {
 		op->type = R_ANAL_OP_TYPE_SAR;
