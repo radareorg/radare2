@@ -13,6 +13,7 @@ static void __set_dcb(RCore *core, RPanel *p);
 static void __set_pcb(RPanel *p);
 static void __panels_refresh(RCore *core);
 
+#define MENU_Y 1
 #define PANEL_NUM_LIMIT 9
 
 #define PANEL_TITLE_SYMBOLS          "Symbols"
@@ -4052,7 +4053,6 @@ static bool __handle_mouse_on_panel(RCore *core, RPanel *panel, int x, int y, in
 }
 
 static bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
-	const int MENU_Y = 1;
 	RPanels *panels = core->panels;
 	if (__drag_and_resize (core)) {
 		return true;
@@ -6717,6 +6717,7 @@ virtualmouse:
 	case 0x0d: // "\\n"
 		if (r_config_get_i (core->config, "scr.cursor")) {
 			key = 0;
+			r_cons_set_click (core->cons->cpos.x, core->cons->cpos.y);
 			goto virtualmouse;
 		} else {
 			__toggle_zoom_mode (core);
