@@ -1018,7 +1018,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					}
 				}
 			} else {
-				const char *f = (haveRarunProfile && pfile)? pfile: argv[opt.ind];
+				char *f = (haveRarunProfile && pfile)? strdup (pfile): strdup (argv[opt.ind]);
 				is_gdb = (!memcmp (f, "gdb://", R_MIN (f? strlen (f):0, 6)));
 				if (!is_gdb) {
 					free (pfile);
@@ -1047,7 +1047,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				}
 #else
 #	if __WINDOWS__
-				f = r_acp_to_utf8 (f);
+				char *f2 = r_acp_to_utf8 (f);
+				free (f);
+				f = f2;
 #	endif // __WINDOWS__
 				if (f) {
 					char *escaped_path = r_str_arg_escape (f);
@@ -1057,6 +1059,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				}
 #endif
 				opt.ind++;
+				free (f);
 				while (opt.ind < argc) {
 					char *escaped_arg = r_str_arg_escape (argv[opt.ind]);
 					file = r_str_append (file, " ");
