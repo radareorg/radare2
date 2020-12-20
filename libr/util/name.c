@@ -4,6 +4,7 @@
 
 /* Validate if char is printable , why not use ISPRINTABLE() ?? */
 R_API bool r_name_validate_print(const char ch) {
+	// TODO: support utf8
 	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || IS_DIGIT (ch)) {
 		return true;
 	}
@@ -109,6 +110,23 @@ R_API const char *r_name_filter_ro(const char *a) {
 	return a - 1;
 }
 
+// filter string for printing purposes
+R_API bool r_name_filter_print(char *s) {
+	char *es = s + strlen (s);
+	char *os = s;
+	while (*s && s < es) {
+		int us = r_utf8_size ((const ut8*)s);
+		if (us > 1) {
+			s += us;	
+			continue;
+		}
+		if (!r_name_validate_print (*s)) {
+			r_str_cpy (s, s + 1);
+		}
+		s++;
+	}
+	return os;
+}
 
 R_API bool r_name_filter(char *s, int maxlen) {
 	// if maxlen == -1 : R_FLAG_NAME_SIZE

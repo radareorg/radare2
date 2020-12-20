@@ -2479,17 +2479,22 @@ static void __set_refresh_by_type(RCore *core, const char *cmd, bool clearCache)
 	}
 }
 
+static char *filter_arg(char *a) {
+	r_name_filter_print (a);
+	char *r = r_str_escape (a);
+	free (a);
+	return r;
+}
+
 static void __handleComment(RCore *core) {
 	RPanel *p = __get_cur_panel (core->panels);
 	if (!__check_panel_type (p, PANEL_CMD_DISASSEMBLY)) {
 		return;
 	}
 	char buf[4095];
-	int i;
+	char *cmd = NULL;
 	r_line_set_prompt ("[Comment]> ");
-	strcpy (buf, "\"CC ");
-	i = strlen (buf);
-	if (r_cons_fgets (buf + i, sizeof (buf) - i, 0, NULL) > 0) {
+	if (r_cons_fgets (buf, sizeof (buf), 0, NULL) > 0) {
 		ut64 addr, orig;
 		addr = orig = core->offset;
 		if (core->print->cur_enabled) {
@@ -2497,40 +2502,30 @@ static void __handleComment(RCore *core) {
 			r_core_seek (core, addr, false);
 			r_core_cmdf (core, "s 0x%"PFMT64x, addr);
 		}
-		if (!strcmp (buf + i, "-")) {
-			strcpy (buf, "CC-");
+		if (!strcmp (buf, "-")) {
+			cmd = strdup ("CC-");
 		} else {
-			switch (buf[i]) {
+			char *arg = filter_arg (strdup (buf));
+			switch (buf[0]) {
 			case '-':
-				memcpy (buf, "\"CC-", 5);
+				cmd = r_str_newf ("\"CC-%s\"", arg);
 				break;
 			case '!':
-				memcpy (buf, "\"CC!", 5);
+				strcpy (buf, "\"CC!");
 				break;
 			default:
-				memcpy (buf, "\"CC ", 4);
+				cmd = r_str_newf ("\"CC %s\"", arg);
 				break;
 			}
-			strcat (buf, "\"");
+			free (arg);
 		}
-		if (buf[3] == ' ') {
-			int j, len = strlen (buf);
-			char *duped = strdup (buf);
-			for (i = 4, j = 4; i < len; i++, j++) {
-				char c = duped[i];
-				if (c == '"' && i != (len - 1)) {
-					buf[j++] = '\\';
-					buf[j] = '"';
-				} else {
-					buf[j] = c;
-				}
-			}
-			free (duped);
+		if (cmd) {
+			r_core_cmd (core, cmd, 1);
 		}
-		r_core_cmd (core, buf, 1);
 		if (core->print->cur_enabled) {
 			r_core_seek (core, orig, true);
 		}
+		free (cmd);
 	}
 	__set_refresh_by_type (core, p->model->cmd, true);
 }

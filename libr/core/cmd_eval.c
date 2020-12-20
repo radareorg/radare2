@@ -241,6 +241,7 @@ static void nextpal(RCore *core, int mode) {
 			}
 		}
 		r_list_free (files);
+		files = NULL;
 		R_FREE (home);
 	}
 

@@ -3525,6 +3525,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 							buf[j] = c;
 						}
 					}
+					buf[j] = 0;
 					free (duped);
 				}
 				r_core_cmd (core, buf, 1);

@@ -919,7 +919,9 @@ static void __print_prompt(void) {
 	}
 	len = I.buffer.index - i;
 	if (len > 0 && (i + len) <= I.buffer.length) {
-		fwrite (I.buffer.data + i, 1, len, stdout);
+		if (i<I.buffer.length) {
+			fwrite (I.buffer.data + i, 1, len, stdout);
+		}
 	}
 	fflush (stdout);
 }

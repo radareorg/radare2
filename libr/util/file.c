@@ -907,7 +907,7 @@ static RMmap *r_file_mmap_unix (RMmap *m, int fd) {
 		m->rw?PROT_READ|PROT_WRITE:PROT_READ,
 		MAP_SHARED, fd, (off_t)m->base);
 	if (m->buf == MAP_FAILED) {
-		R_FREE (m);
+		m->buf = NULL;
 	}
 	return m;
 }

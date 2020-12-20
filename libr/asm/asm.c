@@ -1021,6 +1021,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 				if (op.buf_inc && r_buf_size (op.buf_inc) > 1) {
 					char *inc = r_buf_to_string (op.buf_inc);
 					r_buf_free (op.buf_inc);
+					op.buf_inc = NULL;
 					if (inc) {
 						ret += r_hex_str2bin (inc, acode->bytes + idx + ret);
 						free (inc);

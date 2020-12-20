@@ -1500,7 +1500,7 @@ static RList *resolve_mig_subsystem(RKernelCacheObj *obj) {
 			continue;
 		}
 
-		ut64 *routines = (ut64 *) malloc (n_routines * sizeof (ut64));
+		ut64 *routines = (ut64 *) calloc (n_routines, sizeof (ut64));
 		if (!routines) {
 			goto beach;
 		}
