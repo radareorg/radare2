@@ -90,15 +90,17 @@ tcc `arcc`
 afcl
 EOF
 EXPECT=<<EOF
-ms
-amd64
 swift
+amd64
+amd64syscall
+ms
 reg
 r0 reg(r0, r1, r2, r3)
 rdi reg(rdi, rsi, rdx, rcx)
-ms
-amd64
 swift
+amd64
+amd64syscall
+ms
 reg
 EOF
 RUN
