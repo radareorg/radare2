@@ -3149,9 +3149,7 @@ R_API char *r_str_wrap(const char *str, int w) {
 			*r++ = *str++;
 			cw = 0;
 		} else {
-			if (cw == 0 && isspace (*str)) {
-				str++;
-			} else if (cw > w) {
+			if (cw > w) {
 				*r++ = '\n';
 				*r++ = *str++;
 				cw = 1;

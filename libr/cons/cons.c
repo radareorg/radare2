@@ -225,8 +225,6 @@ R_API void r_cons_printat(const char *str, int x, char y) {
 			o = i + 1;
 			len = 0;
 			lines++;
-		} else {
-			r_cons_memset (str[i], 1);
 		}
 	}
 	if (len > 1) {
