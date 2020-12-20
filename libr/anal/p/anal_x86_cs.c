@@ -3182,7 +3182,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 
 	if (handle && mode != omode) {
 		if (handle != 0) {
-			cs_close (&handle);
+			// cs_close (&handle);
 			handle = 0;
 		}
 	}
