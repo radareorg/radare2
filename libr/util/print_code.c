@@ -6,13 +6,13 @@
 static const char* bits_to_c_code_fmtstr(int bits) {
 	switch (bits) {
 	case 16:
-		return "0x%04x";
+		return "0x%04" PFMT64x;
 	case 32:
-		return "0x%08xU";
+		return "0x%08" PFMT64x "U";
 	case 64:
 		return "0x%016" PFMT64x "ULL";
 	}
-	return "0x%02x";
+	return "0x%02" PFMT64x;
 }
 
 static int get_instruction_size(RPrint *p, ut64 at) {
