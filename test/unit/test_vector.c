@@ -2,12 +2,6 @@
 #include <r_vector.h>
 #include "minunit.h"
 
-#if __WORDSIZE == 32
-#define INITIAL_VECTOR_LEN 3
-#else
-#define INITIAL_VECTOR_LEN 4
-#endif
-
 // allocates a vector of len ut32 values from 0 to len
 // with capacity len + padding
 static bool _init_test_vector(RVector *v, size_t len, size_t padding, RVectorFree free, void *free_user) {
@@ -74,7 +68,6 @@ static bool test_vector_fini(void) {
 	mu_assert_eq (v.elem_size, sizeof (void *), "init elem_size");
 	mu_assert_eq (v.len, 1, "init len");
 	mu_assert_notnull (v.a, "init a");
-	mu_assert_eq (v.capacity, INITIAL_VECTOR_LEN, "init capacity");
 	mu_assert_null (v.free, "init free");
 	mu_assert_eq (v.free_user, (void*)free, "init free_user");
 	r_vector_clear (&v);
