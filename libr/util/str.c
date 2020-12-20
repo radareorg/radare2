@@ -3134,6 +3134,7 @@ R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y,
 	return ret;
 }
 
+// TODO: improve loop to wrap by words
 R_API char *r_str_wrap(const char *str, int w) {
 	char *r, *ret;
 	if (w < 1 || !str) {
@@ -3142,20 +3143,23 @@ R_API char *r_str_wrap(const char *str, int w) {
 	size_t r_size = 8 * strlen (str);
 	r = ret = malloc (r_size);
 	char *end = r + r_size;
-	strcpy (r, str);
 	int cw = 0;
 	while (*str && r + 1 < end) {
 		if (*str == '\n') {
+			*r++ = *str++;
 			cw = 0;
 		} else {
-			if (cw > w) {
+			if (cw == 0 && isspace (*str)) {
+				str++;
+			} else if (cw > w) {
 				*r++ = '\n';
-				cw = 0;
+				*r++ = *str++;
+				cw = 1;
+			} else {
+				*r++ = *str++;
+				cw++;
 			}
 		}
-		*r = *str;
-		str++;
-		
 	}
 	*r = 0;
 	return ret;

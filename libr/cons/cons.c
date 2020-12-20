@@ -212,6 +212,28 @@ R_API void r_cons_println(const char* str) {
 	r_cons_newline ();
 }
 
+R_API void r_cons_printat(const char *str, int x, char y) {
+	int i, o, len;
+	int h, w = r_cons_get_size (&h);
+	r_cons_gotoxy (x, y);
+	int lines = 0;
+	for (o = i = len = 0; str[i]; i++, len++) {
+		if (str[i] == '\n') {
+			r_cons_gotoxy (x, y + lines);
+			int wlen = R_MIN (len - x, w - x);
+			r_cons_memcat (str + o, len);
+			o = i + 1;
+			len = 0;
+			lines++;
+		} else {
+			r_cons_memset (str[i], 1);
+		}
+	}
+	if (len > 1) {
+		r_cons_memcat (str + o, len);
+	}
+}
+
 R_API void r_cons_strcat_justify(const char *str, int j, char c) {
 	int i, o, len;
 	for (o = i = len = 0; str[i]; i++, len++) {
