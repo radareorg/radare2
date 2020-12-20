@@ -105,7 +105,7 @@ R_API bool r_parse_parse(RParse *p, const char *data, char *str) {
 }
 
 R_API char *r_parse_immtrim(char *opstr) {
-	if (!opstr || !*opstr) {
+	if (R_STR_ISEMPTY (opstr)) {
 		return NULL;
 	}
 	char *n = strstr (opstr, "0x");

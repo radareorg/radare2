@@ -348,6 +348,7 @@ static bool _sendResponsePacket(iobnet_t *obj, const ut8 *pokedata) {
 	ut8 *pkt = _createKDNetPacket (obj, resbuf, 322, &size, seqno, 1);
 	if (!pkt) {
 		free (resbuf);
+		resbuf = NULL;
 	}
 
 	if (r_socket_write (obj->sock, (void *)pkt, size) < 0) {

@@ -807,7 +807,6 @@ RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *cont
 	return td;
 }
 
-
 static char *unique_class_name(RAnal *anal, const char *original_name) {
 	if (!r_anal_class_exists (anal, original_name)) {
 		return strdup (original_name);
@@ -835,9 +834,7 @@ static void recovery_apply_vtable(RAnal *anal, const char *class_name, RVTableIn
 		return;
 	}
 
-	RAnalVTable vtable;
-	vtable.id = NULL;
-	vtable.offset = 0;
+	RAnalVTable vtable = {0};
 	vtable.addr = vtable_info->saddr;
 	r_anal_class_vtable_set (anal, class_name, &vtable);
 	r_anal_class_vtable_fini (&vtable);
