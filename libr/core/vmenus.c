@@ -1413,16 +1413,16 @@ static const char *show_anal_classes(RCore *core, char mode, int *idx, SdbList *
 
 			if (i == *idx) {
 				pointer = Color_GREEN ">>";
-				txt_clr = Color_YELLOW; 
+				txt_clr = Color_YELLOW;
 				cur_class = class_name;
-			} 
-			r_cons_printf ("%s" Color_RESET " %02d" 
+			}
+			r_cons_printf ("%s" Color_RESET " %02d"
 				" %s%s\n" Color_RESET, pointer, i, txt_clr, class_name);
 		} else {
 			r_cons_printf ("%s %02d %s\n", (i==*idx) ? ">>" : "- ", i, class_name);
 		}
 
-		i++;		
+		i++;
 	}
 
 	return cur_class;
@@ -1462,17 +1462,17 @@ R_API int r_core_visual_anal_classes(RCore *core) {
 		case 'C':
 			r_config_toggle (core->config, "scr.color");
 			break;
-		case 'J': 
+		case 'J':
 			index += 10;
 			if (index >= list->length) {
 				index = list->length -1;
 			}
 			break;
-		case 'j': 
+		case 'j':
 			if (++index >= list->length) {
 				index = 0;
 			}
-			break; 
+			break;
 		case 'k':
 			if (--index < 0) {
 				index = list->length - 1;
@@ -3044,7 +3044,13 @@ static const char *help_var_visual[] = {
 	NULL
 };
 
-static const char *help_vv_visual[] = {
+static const char *help_visual_anal_actions[] = {
+	"functions:", "Add, Modify, Delete, Xrefs Calls Vars",
+	"variables:", "Add, Modify, Delete",
+	NULL
+};
+
+static const char *help_visual_anal_keys[] = {
 	"j,k", "select next/prev item or scroll if tab pressed",
 	"J,K", "scroll next/prev page \"\"",
 	"h,q", "go back, quit",
@@ -3052,17 +3058,11 @@ static const char *help_vv_visual[] = {
 	"v", "view selected function arguments and variables",
 	"x,X", "see xrefs to the selected function",
 	"tab", "toggle disasm column selection (to scroll in code)",
-	"!", "run 'afls' to sort all functions by address",
+	"!", "run `afls` to sort all functions by address",
 	".", "seek to current function address",
 	":", "run r2 commands",
-	"_", "hud mode. same as: s $(afl~...)",
+	"_", "hud mode, same as `s $(afl~...)`",
 	"enter", "enter function view (variables), xrefs",
-	NULL
-};
-
-static const char *help_vv_actions_visual[] = {
-	" functions:", "Add, Modify, Delete, Xrefs Calls Vars",
-	" variables:", "Add, Modify, Delete",
 	NULL
 };
 
@@ -3332,11 +3332,12 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			r_cons_singleton ()->show_vals = false;
 			break;
 		case '?':
+			// TODO: use r2 visual help subsystem instead of directly printing to console
 			r_cons_clear00 ();
 			RStrBuf *buf = r_strbuf_new ("");
-			r_cons_println ("|Usage: vv");
-			r_core_visual_append_help (buf, "Actions supported", help_vv_actions_visual);
-			r_core_visual_append_help (buf, "Keys", help_vv_visual);
+			r_core_visual_append_help (buf, "Functions/Variables Visual Analysis Mode (Vv) Help", (const char *[]){ NULL });
+			r_core_visual_append_help (buf, "Actions Supported", help_visual_anal_actions);
+			r_core_visual_append_help (buf, "Keys", help_visual_anal_keys);
 			r_cons_printf ("%s", r_strbuf_drain (buf));
 			r_cons_flush ();
 			r_cons_any_key (NULL);
