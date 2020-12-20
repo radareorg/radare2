@@ -294,30 +294,30 @@ R_API void r_anal_list_vtables(RAnal *anal, int rad) {
 
 	RList *vtables = r_anal_vtable_search (&context);
 
-	//TODO PJ
 	if (rad == 'j') {
-		bool isFirstElement = true;
-		r_cons_print ("[");
+		PJ *pj = pj_new ();
+		if (!pj) {
+			return;
+		}
+		pj_a (pj);
 		r_list_foreach (vtables, vtableIter, table) {
-			if (!isFirstElement) {
-				r_cons_print (",");
-			}
-			bool isFirstMethod = true;
-			r_cons_printf ("{\"offset\":%"PFMT64d",\"methods\":[", table->saddr);
+			pj_o (pj);
+			pj_kN (pj, "offset", table->saddr);
+			pj_ka (pj, "methods");
 			r_vector_foreach (&table->methods, curMethod) {
-				if (!isFirstMethod) {
-					r_cons_print (",");
-				}
 				RAnalFunction *fcn = r_anal_get_fcn_in (anal, curMethod->addr, 0);
 				const char *const name = fcn ? fcn->name : NULL;
-				r_cons_printf ("{\"offset\":%"PFMT64d",\"name\":\"%s\"}",
-						curMethod->addr, name ? name : noMethodName);
-				isFirstMethod = false;
+				pj_o (pj);
+				pj_kN (pj, "offset", curMethod->addr);
+				pj_ks (pj, "name", name ? name : noMethodName);
+				pj_end (pj);
 			}
-			r_cons_print ("]}");
-			isFirstElement = false;
+			pj_end (pj);
+			pj_end (pj);
 		}
-		r_cons_println ("]");
+		pj_end (pj);
+		r_cons_println (pj_string (pj));
+		pj_free (pj);
 	} else if (rad == '*') {
 		r_list_foreach (vtables, vtableIter, table) {
 			r_cons_printf ("f vtable.0x%08"PFMT64x" %"PFMT64d" @ 0x%08"PFMT64x"\n",
