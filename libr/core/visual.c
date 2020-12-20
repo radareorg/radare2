@@ -1369,6 +1369,22 @@ static int follow_ref(RCore *core, RList *xrefs, int choice, int xref) {
 	return 0;
 }
 
+static const char *help_msg_visual_xref[] = {
+	"j/k",	"select next or previous item (use arrows)",
+	"J/K",	"scroll by 10 refs",
+	"g/G",	"scroll to top / bottom",
+	"p/P",	"rotate between various print modes",
+	":",	"run r2 command",
+	"/",	"highlight given word",
+	"?",	"show this help message",
+	"x/<",	"show xrefs",
+	"X/>",	"show refs",
+	"l/Space/Enter",	"seek to ref or xref",
+	"Tab",	"toggle between address and function references",
+	"h/q/Q",	"quit xref mode",
+	NULL
+};
+
 R_API int r_core_visual_refs(RCore *core, bool xref, bool fcnInsteadOfAddr) {
 	ut64 cur_ref_addr = UT64_MAX;
 	int ret = 0;
@@ -1554,20 +1570,9 @@ repeat:
 		goto repeat;
 	} else if (ch == '?') {
 		r_cons_clear00 ();
-		r_cons_printf ("Usage: Visual Xrefs\n"
-		" jk  - select next or previous item (use arrows)\n"
-		" JK  - step 10 rows\n"
-		" pP  - rotate between various print modes\n"
-		" :   - run r2 command\n"
-		" /   - highlight given word\n"
-		" ?   - show this help message\n"
-		" <>  - '<' for xrefs and '>' for refs\n"
-		" TAB - toggle between address and function references\n"
-		" xX  - switch to refs or xrefs\n"
-		" q   - quit this view\n"
-		" \\n  - seek to this xref");
-		r_cons_flush ();
-		r_cons_any_key (NULL);
+		RStrBuf *rsb = r_strbuf_new ("");
+		r_core_visual_append_help (rsb, "Xrefs Visual Analysis Mode (Vv + x) Help", help_msg_visual_xref);
+		ret = r_cons_less_str (r_strbuf_get (rsb), "?");
 		goto repeat;
 	} else if (ch == 9) { // TAB
 		xrefsMode = !xrefsMode;
@@ -1598,9 +1603,6 @@ repeat:
 		xref = false;
 		xrefsMode = !xrefsMode;
 		goto repeat;
-	} else if (ch == 'J') {
-		skip += 10;
-		goto repeat;
 	} else if (ch == 'g') {
 		skip = 0;
 		goto repeat;
@@ -1616,14 +1618,17 @@ repeat:
 	} else if (ch == 'j') {
 		skip++;
 		goto repeat;
-	} else if (ch == 'K') {
-		skip = (skip < 10) ? 0: skip - 10;
+	} else if (ch == 'J') {
+		skip += 10;
 		goto repeat;
 	} else if (ch == 'k') {
 		skip--;
 		if (skip < 0) {
 			skip = 0;
 		}
+		goto repeat;
+	} else if (ch == 'K') {
+		skip = (skip < 10) ? 0: skip - 10;
 		goto repeat;
 	} else if (ch == ' ' || ch == '\n' || ch == '\r' || ch == 'l') {
 		ret = follow_ref (core, xrefs, skip, xref);
