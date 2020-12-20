@@ -2981,6 +2981,8 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 				hash++;
 				if (*hash == '#') {
 					continue;
+				} else if (!*hash) {
+					break;
 				}
 			}
 			if (*hash == '#') {
