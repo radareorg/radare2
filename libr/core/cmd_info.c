@@ -595,10 +595,14 @@ static int cmd_info(void *data, const char *input) {
 				if (z) { playMsg (core, n, z);}\
 				r_core_bin_info (core, x, mode, va, NULL, y);
 		case 'A': // "iA"
-			newline = false;
-			{
-				int mode = (input[1] == 'j')? 'j': 1;
-				r_bin_list_archs (core->bin, mode);
+			if (input[1] == 'j') {
+				r_cons_print ("{");
+				r_bin_list_archs (core->bin, 'j');
+				r_cons_print ("}");
+				newline = true;
+			} else {
+				r_bin_list_archs (core->bin, 1);
+				newline = false;
 			}
 			break;
 		case 'E': // "iE"
@@ -917,6 +921,9 @@ static int cmd_info(void *data, const char *input) {
 			}
 			break;
 		case 'i': { // "ii"
+			if (input[1] == 'j') {
+				newline = true;
+			}
 			RBinObject *obj = r_bin_cur_object (core->bin);
 			RBININFO ("imports", R_CORE_BIN_ACC_IMPORTS, NULL,
 				(obj && obj->imports)? r_list_length (obj->imports): 0);

@@ -625,26 +625,6 @@ R_API RBinFile *r_bin_file_find_by_name(RBin *bin, const char *name) {
 	return NULL;
 }
 
-R_IPI RBinFile *r_bin_file_find_by_name_n(RBin *bin, const char *name, int idx) {
-	RListIter *iter;
-	RBinFile *bf = NULL;
-	int i = 0;
-	if (!bin) {
-		return bf;
-	}
-
-	r_list_foreach (bin->binfiles, iter, bf) {
-		if (bf && bf->file && !strcmp (bf->file, name)) {
-			if (i == idx) {
-				break;
-			}
-			i++;
-		}
-		bf = NULL;
-	}
-	return bf;
-}
-
 R_API bool r_bin_file_set_cur_by_id(RBin *bin, ut32 bin_id) {
 	RBinFile *bf = r_bin_file_find_by_id (bin, bin_id);
 	return bf? r_bin_file_set_cur_binfile (bin, bf): false;

@@ -2093,7 +2093,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 
 	if (pj) {
 		pj_end (pj);
-		r_cons_printf ("%s\n", pj_string (pj));
+		r_cons_print (pj_string (pj));
 		pj_free (pj);
 	}
 
