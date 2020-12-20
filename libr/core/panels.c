@@ -968,32 +968,31 @@ static void __adjust_side_panels(RCore *core) {
 }
 
 static void __update_help(RCore *core, RPanels *ps) {
+	const char *help = "Help";
 	int i;
 	for (i = 0; i < ps->n_panels; i++) {
 		RPanel *p = __get_panel (ps, i);
-		if (r_str_endswith (p->model->cmd, "Help")) {
+		if (!strncmp (p->model->cmd, help, strlen (help))) {
 			RStrBuf *rsb = r_strbuf_new (NULL);
-			const char *title, *cmd;
+			const char *title;
 			const char **msg;
 			switch (ps->mode) {
 				case PANEL_MODE_WINDOW:
-					title = "Panels Window mode help";
-					cmd = "Window Mode Help";
+					title = "Panels Window Mode";
 					msg = help_msg_panels_window;
 					break;
 				case PANEL_MODE_ZOOM:
-					title = "Panels Zoom mode help";
-					cmd = "Zoom Mode Help";
+					title = "Panels Zoom Mode";
 					msg = help_msg_panels_zoom;
 					break;
 				default:
-					title = "Visual Ascii Art Panels";
-					cmd = "Help";
+					title = "Panels Mode";
 					msg = help_msg_panels;
 					break;
 			}
-			p->model->title = r_str_dup (p->model->title, cmd);
-			p->model->cmd = r_str_dup (p->model->cmd, cmd);
+			// panel's title does not change, keep it short and simple
+			p->model->title = r_str_dup (p->model->title, help);
+			p->model->cmd = r_str_dup (p->model->cmd, help);
 			r_core_visual_append_help (rsb, title, msg);
 			if (!rsb) {
 				break;
