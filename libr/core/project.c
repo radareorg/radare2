@@ -359,17 +359,16 @@ static RThreadFunctionRet project_load_background(RThread *th) {
 }
 
 R_API RThread *r_core_project_load_bg(RCore *core, const char *prjName, const char *rcPath) {
-	ProjectState *ps = R_NEW (ProjectState);
+	ProjectState *ps = R_NEW0 (ProjectState);
 	ps->core = core;
 	ps->prjName = strdup (prjName);
 	ps->rcPath = strdup (rcPath);
 	RThread *th = r_th_new (project_load_background, ps, false);
 	if (th) {
 		r_th_start (th, true);
-		char thname[16] = {0};
-		size_t thlen = R_MIN (strlen(prjName), sizeof(thname) - 1);
-		strncpy (thname, prjName, thlen);
-		thname[15] = 0;
+		char thname[32] = {0};
+		size_t thlen = R_MIN (strlen (prjName), sizeof (thname) - 1);
+		r_str_ncpy (thname, prjName, thlen);
 		r_th_setname (th, thname);
 	}
 	return th;

@@ -3332,8 +3332,8 @@ static int init(void *p) {
 
 static int fini(void *p) {
 	if (handle != 0) {
-		// SEGFAULTS RANDOMLY, better leak on exit
-		// cs_close (&handle);
+		// SEGFAULTS RANDOMLY, better leak on exit.. lets try it out again
+		cs_close (&handle);
 		handle = 0;
 	}
 	return true;

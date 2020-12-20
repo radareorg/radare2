@@ -300,12 +300,11 @@ R_API const char *r_cmd_alias_get(RCmd *cmd, const char *k, int remote) {
 	return NULL;
 }
 
-R_API int r_cmd_set_data(RCmd *cmd, void *data) {
+R_API void r_cmd_set_data(RCmd *cmd, void *data) {
 	cmd->data = data;
-	return 1;
 }
 
-R_API int r_cmd_add(RCmd *c, const char *cmd, RCmdCb cb) {
+R_API bool r_cmd_add(RCmd *c, const char *cmd, RCmdCb cb) {
 	int idx = (ut8)cmd[0];
 	RCmdItem *item = c->cmds[idx];
 	if (!item) {
@@ -317,10 +316,9 @@ R_API int r_cmd_add(RCmd *c, const char *cmd, RCmdCb cb) {
 	return true;
 }
 
-R_API int r_cmd_del(RCmd *cmd, const char *command) {
+R_API void r_cmd_del(RCmd *cmd, const char *command) {
 	int idx = (ut8)command[0];
 	R_FREE (cmd->cmds[idx]);
-	return 0;
 }
 
 R_API int r_cmd_call(RCmd *cmd, const char *input) {

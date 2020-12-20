@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_core.h>
 #include <stdlib.h>
@@ -27,15 +27,13 @@ static void loadGP(RCore *core) {
 	}
 }
 
-
 R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbin) {
 	int isdebug = r_config_get_i (core->config, "cfg.debug");
 	char *path;
 	ut64 laddr = r_config_get_i (core->config, "bin.laddr");
 	RCoreFile *file = NULL;
 	RCoreFile *ofile = core->file;
-	RBinFile *bf = ofile ? r_bin_file_find_by_fd (core->bin, ofile->fd)
-		: NULL;
+	RBinFile *bf = ofile ? r_bin_file_find_by_fd (core->bin, ofile->fd) : NULL;
 	RIODesc *odesc = (core->io && ofile) ? r_io_desc_get (core->io, ofile->fd) : NULL;
 	char *ofilepath = NULL, *obinfilepath = (bf && bf->file)? strdup (bf->file): NULL;
 	int ret = false;
@@ -101,7 +99,6 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 
 	// r_str_trim (path);
 	file = r_core_file_open (core, path, perm, laddr);
-
 	if (isdebug) {
 		int newtid = newpid;
 		// XXX - select the right backend
@@ -199,6 +196,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	// loaded into the view
 	free (obinfilepath);
 	//free (ofilepath);
+	// causes double free . dont free file here // R_FREE (file);
 	free (path);
 	return ret;
 }
@@ -477,8 +475,10 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 }
 
 static bool try_loadlib(RCore *core, const char *lib, ut64 addr) {
-	if (r_core_file_open (core, lib, 0, addr) != NULL) {
+	void *p = r_core_file_open (core, lib, 0, addr);
+	if (p) {
 		r_core_bin_load (core, lib, addr);
+		R_FREE (p);
 		return true;
 	}
 	return false;
@@ -915,7 +915,6 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 
 	fh = R_NEW0 (RCoreFile);
 	if (!fh) {
-		eprintf ("core/file.c: r_core_open failed to allocate RCoreFile.\n");
 		goto beach;
 	}
 	fh->alive = 1;

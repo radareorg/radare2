@@ -2841,7 +2841,6 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				break;
 			}
 		}
-
 		io_section_info = r_list_newf ((RListFree)free);
 	}
 	r_list_foreach (sections, iter, section) {
@@ -3078,9 +3077,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			add_section (r, ibs->sec, ibs->addr, ibs->fd);
 		}
 		r_io_update (r->io);
-		r_list_free (io_section_info);
-		io_section_info = NULL;
 	}
+	r_list_free (io_section_info);
+	io_section_info = NULL;
 	if (IS_MODE_JSON (mode) && !printHere) {
 		r_cons_println ("]");
 	} else if (IS_MODE_NORMAL (mode) && at == UT64_MAX && !printHere) {

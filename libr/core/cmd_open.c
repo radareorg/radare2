@@ -400,10 +400,8 @@ static void cmd_open_bin(RCore *core, const char *input) {
 
 // TODO: discuss the output format
 static void map_list(RIO *io, int mode, RPrint *print, int fd) {
-	PJ *pj;
-	if (!io || !print || !print->cb_printf) {
-		return;
-	}
+	r_return_if_fail (io && print && print->cb_printf);
+	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = pj_new ();
 		if (!pj) {

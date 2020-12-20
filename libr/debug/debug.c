@@ -617,7 +617,7 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 		dbg->tid = tid;
 	}
 
-	r_io_system (dbg->iob.io, sdb_fmt ("pid %d", dbg->tid));
+	free (r_io_system (dbg->iob.io, sdb_fmt ("pid %d", dbg->tid)));
 
 	// Synchronize with the current thread's data
 	if (dbg->corebind.core) {
