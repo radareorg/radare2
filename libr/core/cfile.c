@@ -99,7 +99,6 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 
 	// r_str_trim (path);
 	file = r_core_file_open (core, path, perm, laddr);
-
 	if (isdebug) {
 		int newtid = newpid;
 		// XXX - select the right backend
@@ -197,6 +196,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	// loaded into the view
 	free (obinfilepath);
 	//free (ofilepath);
+	R_FREE (file);
 	free (path);
 	return ret;
 }
@@ -475,8 +475,10 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 }
 
 static bool try_loadlib(RCore *core, const char *lib, ut64 addr) {
-	if (r_core_file_open (core, lib, 0, addr) != NULL) {
+	void *p = r_core_file_open (core, lib, 0, addr);
+	if (p) {
 		r_core_bin_load (core, lib, addr);
+		R_FREE (p);
 		return true;
 	}
 	return false;

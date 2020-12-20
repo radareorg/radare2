@@ -165,7 +165,7 @@ static void GH(update_arena_with_tc)(GH(RHeap_MallocState_tcache) *cmain_arena, 
 }
 
 static void GH(update_arena_without_tc)(GH(RHeap_MallocState) *cmain_arena, MallocState *main_arena) {
-	int i = 0;
+	size_t i = 0;
 	main_arena->mutex = cmain_arena->mutex;
 	main_arena->flags = cmain_arena->flags;
 	for (i = 0; i < BINMAPSIZE; i++) {
@@ -194,14 +194,14 @@ static bool GH(update_main_arena)(RCore *core, GHT m_arena, MallocState *main_ar
 			return false;
 		}
 		(void)r_io_read_at (core->io, m_arena, (ut8 *)cmain_arena, sizeof (GH(RHeap_MallocState_tcache)));
-		GH(update_arena_with_tc)(cmain_arena,main_arena);
+		GH(update_arena_with_tc)(cmain_arena, main_arena);
 	} else {
 		GH(RHeap_MallocState) *cmain_arena = R_NEW0 (GH(RHeap_MallocState));
 		if (!cmain_arena) {
 			return false;
 		}
 		(void)r_io_read_at (core->io, m_arena, (ut8 *)cmain_arena, sizeof (GH(RHeap_MallocState)));
-		GH(update_arena_without_tc)(cmain_arena,main_arena);
+		GH(update_arena_without_tc)(cmain_arena, main_arena);
 	}
 	return true;
 }

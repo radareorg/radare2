@@ -775,6 +775,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_config_set (r->config, "dbg.profile", tfn);
 		}
 		free (tfn);
+		R_FREE (customRarunProfile);
 	}
 	if (debug == 1) {
 		if (opt.ind >= argc && !haveRarunProfile) {
