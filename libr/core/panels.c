@@ -13,13 +13,6 @@ static void __set_dcb(RCore *core, RPanel *p);
 static void __set_pcb(RPanel *p);
 static void __panels_refresh(RCore *core);
 
-typedef struct {
-	int x;
-	int y;
-} RCursor;
-
-static RCursor cursor = {};
-
 #define PANEL_NUM_LIMIT 9
 
 #define PANEL_TITLE_SYMBOLS          "Symbols"
@@ -1290,10 +1283,8 @@ static void __fix_layout(RCore *core) {
 static void show_cursor(RCore *core) {
 	const bool keyCursor = r_config_get_i (core->config, "scr.cursor");
 	if (keyCursor) {
-		r_cons_gotoxy (cursor.x, cursor.y);
+		r_cons_gotoxy (core->cons->cpos.x, core->cons->cpos.y);
 		r_cons_show_cursor (1);
-		//r_cons_invert (1, 1);
-		//r_cons_print ("#");
 		r_cons_flush ();
 	}
 }
@@ -3294,7 +3285,7 @@ static bool __handle_window_mode(RCore *core, const int key) {
 		break;
 	case 'h':
 		if (r_config_get_i (core->config, "scr.cursor")) {
-			cursor.x--;
+			core->cons->cpos.x--;
 		} else {
 			(void)__move_to_direction (core, LEFT);
 			if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
@@ -3304,7 +3295,7 @@ static bool __handle_window_mode(RCore *core, const int key) {
 		break;
 	case 'j':
 		if (r_config_get_i (core->config, "scr.cursor")) {
-			cursor.y++;
+			core->cons->cpos.y++;
 		} else {
 			(void)__move_to_direction (core, DOWN);
 			if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
@@ -3314,7 +3305,7 @@ static bool __handle_window_mode(RCore *core, const int key) {
 		break;
 	case 'k':
 		if (r_config_get_i (core->config, "scr.cursor")) {
-			cursor.y--;
+			core->cons->cpos.y--;
 		} else {
 			(void)__move_to_direction (core, UP);
 			if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
@@ -3324,7 +3315,7 @@ static bool __handle_window_mode(RCore *core, const int key) {
 		break;
 	case 'l':
 		if (r_config_get_i (core->config, "scr.cursor")) {
-			cursor.x++;
+			core->cons->cpos.x++;
 		} else {
 			(void)__move_to_direction (core, RIGHT);
 			if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
@@ -5856,7 +5847,7 @@ static void __handle_menu(RCore *core, const int key) {
 		break;
 	case 'j':
 		if (r_config_get_i (core->config, "scr.cursor")) {
-			cursor.y++;
+			core->cons->cpos.y++;
 		} else {
 			if (menu->depth == 1) {
 				(void)(child->cb (core));
@@ -5868,7 +5859,7 @@ static void __handle_menu(RCore *core, const int key) {
 		break;
 	case 'k':
 		if (r_config_get_i (core->config, "scr.cursor")) {
-			cursor.y--;
+			core->cons->cpos.y--;
 		} else {
 			if (menu->depth < 2) {
 				break;
@@ -6467,7 +6458,7 @@ repeat:
 		break;
 	case 'j':
 		if (r_config_get_i (core->config, "scr.cursor")) {
-			cursor.y++;
+			core->cons->cpos.y++;
 		} else {
 			r_cons_switchbuf (false);
 			if (cur->model->directionCb) {
@@ -6477,7 +6468,7 @@ repeat:
 		break;
 	case 'k':
 		if (r_config_get_i (core->config, "scr.cursor")) {
-			cursor.y--;
+			core->cons->cpos.y--;
 		} else {
 			r_cons_switchbuf (false);
 			if (cur->model->directionCb) {
@@ -6606,7 +6597,7 @@ repeat:
 		break;
 	case 'h':
 		if (r_config_get_i (core->config, "scr.cursor")) {
-			cursor.x--;
+			core->cons->cpos.x--;
 		} else {
 			r_cons_switchbuf (false);
 			if (cur->model->directionCb) {
@@ -6616,7 +6607,7 @@ repeat:
 		break;
 	case 'l':
 		if (r_config_get_i (core->config, "scr.cursor")) {
-			cursor.x++;
+			core->cons->cpos.x++;
 		} else {
 			r_cons_switchbuf (false);
 			if (cur->model->directionCb) {

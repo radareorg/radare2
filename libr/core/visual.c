@@ -23,13 +23,6 @@ static int zoom = 0;
 typedef struct {
 	int x;
 	int y;
-} RCursor;
-
-static RCursor cursor = {};
-
-typedef struct {
-	int x;
-	int y;
 } Snow;
 
 #define KEY_ALTQ 0xc5
@@ -2403,7 +2396,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 #endif
 		case 0x0d: // "enter" "\\n" "newline"
 			if (r_config_get_i (core->config, "scr.cursor")) {
-				r_cons_set_click (cursor.x, cursor.y);
+				r_cons_set_click (core->cons->cpos.x, core->cons->cpos.y);
 				char buf[10];
 				int ch = process_get_click (core, 0);
 				buf[0] = ch;
@@ -2897,13 +2890,13 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		case 'h':
 		case 'l':
 			if (r_config_get_i (core->config, "scr.cursor")) {
-				cursor.x += ch == 'h'? -1: 1;		
-				if (cursor.x < 1) {
-					cursor.x = 0;
+				core->cons->cpos.x += ch == 'h'? -1: 1;
+				if (core->cons->cpos.x < 1) {
+					core->cons->cpos.x = 0;
 				}
 				int h, w = r_cons_get_size (&h);
-				if (cursor.x >= w) {
-					cursor.x = w;
+				if (core->cons->cpos.x >= w) {
+					core->cons->cpos.x = w;
 				}
 			} else {
 				int distance = numbuf_pull ();
@@ -2929,13 +2922,13 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		case 'H':
 			if (r_config_get_i (core->config, "scr.cursor")) {
 				int distance = 8; // numbuf_pull ();
-				cursor.x += (ch == 'h' || ch == 'H')? -distance: distance;
-				if (cursor.x < 1) {
-					cursor.x = 0;
+				core->cons->cpos.x += (ch == 'h' || ch == 'H')? -distance: distance;
+				if (core->cons->cpos.x < 1) {
+					core->cons->cpos.x = 0;
 				}
 				int h, w = r_cons_get_size (&h);
-				if (cursor.x >= w) {
-					cursor.x = w;
+				if (core->cons->cpos.x >= w) {
+					core->cons->cpos.x = w;
 				}
 			} else {
 				int distance = numbuf_pull ();
@@ -2959,10 +2952,11 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'j':
 			if (r_config_get_i (core->config, "scr.cursor")) {
-				cursor.y++;
-				int h, w = r_cons_get_size (&h);
-				if (cursor.y >= h) {
-					cursor.y = h;
+				core->cons->cpos.y++;
+				int h;
+				(void)r_cons_get_size (&h);
+				if (core->cons->cpos.y >= h) {
+					core->cons->cpos.y = h;
 				}
 			} else if (core->print->cur_enabled) {
 				int distance = numbuf_pull ();
@@ -3009,10 +3003,11 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		case 'J':
 			if (r_config_get_i (core->config, "scr.cursor")) {
 				int distance = 4;// numbuf_pull ();
-				cursor.y += distance;
-				int h, w = r_cons_get_size (&h);
-				if (cursor.y >= h) {
-					cursor.y = h;
+				core->cons->cpos.y += distance;
+				int h;
+				(void)r_cons_get_size (&h);
+				if (core->cons->cpos.y >= h) {
+					core->cons->cpos.y = h;
 				}
 			} else if (core->print->cur_enabled) {
 				int distance = numbuf_pull ();
@@ -3048,9 +3043,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'k':
 			if (r_config_get_i (core->config, "scr.cursor")) {
-				cursor.y--;
-				if (cursor.y < 1) {
-					cursor.y = 0;
+				core->cons->cpos.y--;
+				if (core->cons->cpos.y < 1) {
+					core->cons->cpos.y = 0;
 				}
 			} else if (core->print->cur_enabled) {
 				int distance = numbuf_pull ();
@@ -3089,9 +3084,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		case 'K':
 			if (r_config_get_i (core->config, "scr.cursor")) {
 				int distance = 4;// numbuf_pull ();
-				cursor.y -= distance;
-				if (cursor.y < 1) {
-					cursor.y = 0;
+				core->cons->cpos.y -= distance;
+				if (core->cons->cpos.y < 1) {
+					core->cons->cpos.y = 0;
 				}
 			} else if (core->print->cur_enabled) {
 				int distance = numbuf_pull ();
@@ -4024,7 +4019,7 @@ R_API void r_core_print_scrollbar_bottom(RCore *core) {
 static void show_cursor(RCore *core) {
 	const bool keyCursor = r_config_get_i (core->config, "scr.cursor");
 	if (keyCursor) {
-		r_cons_gotoxy (cursor.x, cursor.y);
+		r_cons_gotoxy (core->cons->cpos.x, core->cons->cpos.y);
 		r_cons_show_cursor (1);
 		//r_cons_invert (1, 1);
 		//r_cons_print ("#");
