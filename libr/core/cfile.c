@@ -196,7 +196,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	// loaded into the view
 	free (obinfilepath);
 	//free (ofilepath);
-	R_FREE (file);
+	// causes double free . dont free file here // R_FREE (file);
 	free (path);
 	return ret;
 }
@@ -915,7 +915,6 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 
 	fh = R_NEW0 (RCoreFile);
 	if (!fh) {
-		eprintf ("core/file.c: r_core_open failed to allocate RCoreFile.\n");
 		goto beach;
 	}
 	fh->alive = 1;
