@@ -285,8 +285,8 @@ static const char *help_visual[] = {
 };
 
 static const char *help_msg_visual[] = {
-	"?", "show visual help menu",
-	"??", "show this help",
+	"?", "show visual mode help (short)",
+	"??", "show visual mode help (full)",
 	"$", "set the program counter to the current offset + cursor",
 	"&", "rotate asm.bits between 8, 16, 32 and 64 applying hints",
 	"%", "in cursor mode finds matching pair, otherwise toggle autoblocksz",
@@ -331,7 +331,7 @@ static const char *help_msg_visual[] = {
 	"sS", "step / step over",
 	"tT", "tt new tab, t[1-9] switch to nth tab, t= name tab, t- close tab",
 	"uU", "undo/redo seek",
-	"v", "visual function/vars code analysis menu",
+	"v", "visual function/vars code analysis mode",
 	"V", "(V)iew interactive ascii art graph (agfv)",
 	"wW", "seek cursor to next/prev word",
 	"xX", "show xrefs/refs of current function from/to data/code",
@@ -584,7 +584,7 @@ repeat:
 		return 0;
 	}
 	r_cons_clear00 ();
-	r_core_visual_append_help (q, "Visual Help", help_visual);
+	r_core_visual_append_help (q, "Visual Mode Help (short)", help_visual);
 	r_cons_printf ("%s", r_strbuf_get (q));
 	r_cons_flush ();
 	switch (r_cons_readchar ()) {
@@ -596,8 +596,8 @@ repeat:
 		r_core_panels_root (core, core->panels_root);
 		break;
 	case '?':
-		r_core_visual_append_help (p, "Visual mode help", help_msg_visual);
-		r_core_visual_append_help (p, "Function Keys: (See 'e key.'), defaults to", help_msg_visual_fn);
+		r_core_visual_append_help (p, "Visual Mode Help (full)", help_msg_visual);
+		r_core_visual_append_help (p, "Function Keys Defaults  # Use `e key.` to owerwrite", help_msg_visual_fn);
 		ret = r_cons_less_str (r_strbuf_get (p), "?");
 		break;
 	case 'v':
