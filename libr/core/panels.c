@@ -3324,20 +3324,36 @@ static bool __handle_window_mode(RCore *core, const int key) {
 		}
 		break;
 	case 'H':
-		r_cons_switchbuf (false);
-		__resize_panel_left (panels);
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.x += 5;
+		} else {
+			r_cons_switchbuf (false);
+			__resize_panel_left (panels);
+		}
 		break;
 	case 'L':
-		r_cons_switchbuf (false);
-		__resize_panel_right (panels);
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.x += 5;
+		} else {
+			r_cons_switchbuf (false);
+			__resize_panel_right (panels);
+		}
 		break;
 	case 'J':
-		r_cons_switchbuf (false);
-		__resize_panel_down (panels);
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.y += 5;
+		} else {
+			r_cons_switchbuf (false);
+			__resize_panel_down (panels);
+		}
 		break;
 	case 'K':
-		r_cons_switchbuf (false);
-		__resize_panel_up (panels);
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.y -= 5;
+		} else {
+			r_cons_switchbuf (false);
+			__resize_panel_up (panels);
+		}
 		break;
 	case 'n':
 		__create_panel_input (core, cur, PANEL_LAYOUT_VERTICAL, NULL);
@@ -6287,6 +6303,7 @@ repeat:
 	}
 
 	key = r_cons_arrow_to_hjkl (okey);
+virtualmouse:
 	if (__handle_mouse (core, cur, &key)) {
 		if (panels_root->root_state != DEFAULT) {
 			goto exit;
@@ -6477,34 +6494,50 @@ repeat:
 		}
 		break;
 	case 'K':
-		r_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
-				cur->model->directionCb (core, (int)UP);
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.y -= 5;
+		} else {
+			r_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
+					cur->model->directionCb (core, (int)UP);
+				}
 			}
 		}
 		break;
 	case 'J':
-		r_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
-				cur->model->directionCb (core, (int)DOWN);
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.y += 5;
+		} else {
+			r_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
+					cur->model->directionCb (core, (int)DOWN);
+				}
 			}
 		}
 		break;
 	case 'H':
-		r_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			for (i = 0; i < __get_cur_panel (panels)->view->pos.w / 3; i++) {
-				cur->model->directionCb (core, (int)LEFT);
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.x -= 5;
+		} else {
+			r_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				for (i = 0; i < __get_cur_panel (panels)->view->pos.w / 3; i++) {
+					cur->model->directionCb (core, (int)LEFT);
+				}
 			}
 		}
 		break;
 	case 'L':
-		r_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			for (i = 0; i < __get_cur_panel (panels)->view->pos.w / 3; i++) {
-				cur->model->directionCb (core, (int)RIGHT);
+		if (r_config_get_i (core->config, "scr.cursor")) {
+			core->cons->cpos.x += 5;
+		} else {
+			r_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				for (i = 0; i < __get_cur_panel (panels)->view->pos.w / 3; i++) {
+					cur->model->directionCb (core, (int)RIGHT);
+				}
 			}
 		}
 		break;
@@ -6683,8 +6716,8 @@ repeat:
 		break;
 	case 0x0d: // "\\n"
 		if (r_config_get_i (core->config, "scr.cursor")) {
-			RPanel *cur = __get_cur_panel (panels);
-			__handle_mouse (core, cur, "");
+			key = 0;
+			goto virtualmouse;
 		} else {
 			__toggle_zoom_mode (core);
 		}
