@@ -934,7 +934,7 @@ static void GH (tcache_print) (RCore *core, GH (RTcache)* tcache, bool demangle)
 	for (i = 0; i < TCACHE_MAX_BINS; i++) {
 		int count = GH (tcache_get_count) (tcache, i);
 		GHT entry = GH (tcache_get_entry) (tcache, i);
-		if (entry == UT64_MAX) {
+		if (entry == GHT_MAX) {
 			break;
 		}
 		if (count > 0) {
@@ -969,7 +969,7 @@ static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *ma
 	r_return_if_fail (core && core->dbg && core->dbg->maps);
 
 	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
-	if (!tcache || m_arena == (GHT)UT64_MAX) {
+	if (!tcache || m_arena == GHT_MAX) {
 		return;
 	}
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, initial_brk = GHT_MAX;
