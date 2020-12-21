@@ -454,7 +454,7 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			break;
 		case LOAD_DLL_DEBUG_EVENT:
 			dllname = get_file_name_from_handle (de.u.LoadDll.hFile);
-			//eprintf ("(%d) Loading library at %p (%s)\n",pid, de.u.LoadDll.lpBaseOfDll, dllname ? dllname : "no name");
+			//eprintf ("(%d) Loading library at %p (%s)\n",pid, de.u.LoadDll.lpBaseOfDll, r_str_get_fail (dllname, "no name"));
 			r_debug_lstLibAdd (pid,de.u.LoadDll.lpBaseOfDll, de.u.LoadDll.hFile, dllname);
 			if (dllname) {
 				free (dllname);

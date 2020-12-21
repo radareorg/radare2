@@ -300,7 +300,7 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 				r_strbuf_append (sig, "?;");
 			} else {
 				const char *buff = getstr (bin, type_desc_id);
-				r_strbuf_append (sig, buff? buff: "?;");
+				r_strbuf_append (sig, r_str_get_fail (buff, "?;"));
 			}
 		}
 		free (typeidx_buf);
@@ -787,7 +787,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->bclass = r_bin_dex_get_version (bf->o->bin_obj);
 	ret->rclass = strdup ("class");
 	ret->os = strdup ("linux");
-	ret->subsystem = strdup (dexSubsystem? dexSubsystem: "java");
+	ret->subsystem = strdup (r_str_get_fail (dexSubsystem, "java"));
 	ret->machine = strdup ("Dalvik VM");
 	h = &ret->sum[0];
 	h->type = "sha1";

@@ -253,7 +253,7 @@ static void __printRecursive (RCore *core, RList *flags, const char *prefix, int
 		}
 		if (mode == '*') {
 			r_cons_printf ("agn %s %s\n", fn, fn + prefix_len);
-			r_cons_printf ("age %s %s\n", *prefix? prefix: "root", fn);
+			r_cons_printf ("age %s %s\n", *prefix ? prefix : "root", fn);
 		} else {
 			r_cons_printf ("%s %s\n", r_str_pad (' ', prefix_len), fn + prefix_len);
 		}
@@ -315,7 +315,7 @@ static void cmd_fz(RCore *core, const char *input) {
 		{
 			const char *a = NULL, *b = NULL;
 			r_flag_zone_around (core->flags, core->offset, &a, &b);
-			r_cons_printf ("%s %s\n", a?a:"~", b?b:"~");
+			r_cons_printf ("%s %s\n", r_str_get_fail (a, "~"), r_str_get_fail (b, "~"));
 		}
 		break;
 	case ':': // "fz:"

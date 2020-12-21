@@ -1422,7 +1422,7 @@ R_API int r_cons_get_size(int *rows) {
 	if (isatty (0) && !ioctl (0, TIOCGWINSZ, &win)) {
 		if ((!win.ws_col) || (!win.ws_row)) {
 			const char *tty = isatty (1)? ttyname (1): NULL;
-			int fd = open (tty? tty: "/dev/tty", O_RDONLY);
+			int fd = open (r_str_get_fail (tty, "/dev/tty"), O_RDONLY);
 			if (fd != -1) {
 				int ret = ioctl (fd, TIOCGWINSZ, &win);
 				if (ret || !win.ws_col || !win.ws_row) {

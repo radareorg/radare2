@@ -1723,7 +1723,7 @@ R_API char *r_anal_function_get_json(RAnalFunction *function) {
 	pj_ks (pj, "name", function->name);
 	const bool no_return = r_anal_noreturn_at_addr (a, function->addr);
 	pj_kb (pj, "noreturn", no_return);
-	pj_ks (pj, "ret", ret_type?ret_type: "void");
+	pj_ks (pj, "ret", r_str_get_fail (ret_type, "void"));
 	if (function->cc) {
 		pj_ks (pj, "cc", function->cc);
 	}
@@ -1805,7 +1805,7 @@ R_API char *r_anal_function_get_signature(RAnalFunction *function) {
 		free (arg_i);
 		free (sdb_arg_i);
 	}
-	ret = r_str_newf ("%s %s (%s);", ret_type? ret_type: "void", realname, args);
+	ret = r_str_newf ("%s %s (%s);", r_str_get_fail (ret_type, "void"), realname, args);
 
 	free (sdb_args);
 	free (sdb_ret);

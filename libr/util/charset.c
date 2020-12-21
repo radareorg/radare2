@@ -84,7 +84,7 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 		ut8 ch_in = in[i];
 		snprintf (k, sizeof (k), "0x%02x", ch_in);
 		const char *v = sdb_const_get (rc->db, k, 0);
-		strcpy (o, v?v:"?");
+		strcpy (o, r_str_get_fail (v, "?"));
 		o += strlen (o);
 	}
 	return o - (char*)out;
