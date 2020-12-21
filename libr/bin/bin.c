@@ -906,7 +906,7 @@ trashbin_binxtrs:
 	r_id_storage_free (bin->ids);
 	r_str_constpool_fini (&bin->constpool);
 trashbin:
-	free(bin);
+	free (bin);
 	return NULL;
 }
 
@@ -1094,7 +1094,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 			str_fmt = h_flag && strcmp (h_flag, "unknown_flag")? sdb_fmt ("%s_%i %s", arch, bits, h_flag) \
 				: sdb_fmt ("%s_%i", arch, bits);
 			r_table_add_rowf (table, fmt, 0, boffset, obj_size, str_fmt, machine);
-			bin->cb_printf ("%s", r_table_tostring(table));
+			bin->cb_printf ("%s", r_table_tostring (table));
 		}
 		snprintf (archline, sizeof (archline) - 1,
 			"0x%08" PFMT64x ":%" PFMT64u ":%s:%d:%s",
@@ -1126,7 +1126,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 				str_fmt = h_flag && strcmp (h_flag, "unknown_flag")? sdb_fmt ("%s_%i %s", arch, bits, h_flag) \
 					: sdb_fmt ("%s_%i", arch, bits);
 				r_table_add_rowf (table, fmt, 0, boffset, obj_size, str_fmt, "");
-				bin->cb_printf ("%s", r_table_tostring(table));
+				bin->cb_printf ("%s", r_table_tostring (table));
 			}
 			snprintf (archline, sizeof (archline),
 				"0x%08" PFMT64x ":%" PFMT64u ":%s:%d",
@@ -1149,7 +1149,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 				break;
 			default:
 				r_table_add_rowf (table, fmt, 0, boffset, obj_size, "", "");
-				bin->cb_printf ("%s", r_table_tostring(table));
+				bin->cb_printf ("%s", r_table_tostring (table));
 			}
 			snprintf (archline, sizeof (archline),
 				"0x%08" PFMT64x ":%" PFMT64u ":%s:%d",
