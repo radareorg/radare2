@@ -79,7 +79,7 @@ This code was intentionally left blank, try 'e asm.arch = ws'
 Thanks for using radare2!
 give | and > a try piping and redirection
 Run .dmm* to load the flags of the symbols of all modules loaded in the debugger
-Use V! to enter into the visual panels mode (dwm style)
+Use V or v to enter visual or visual panels modes respectively
 Toggle between disasm and graph with the space key
 The more 'a' you add after 'aa' the more analysis steps are executed.
 Review all the subcommands of aa to see better ways to analyze your targets.
