@@ -142,6 +142,7 @@ r_bin = library('r_bin', r_bin_sources,
   c_args: ['-DR_API_BIN_ONLY=1'] + library_cflags,
   dependencies: [
     r_util_dep,
+    r_cons_dep,
     r_io_dep,
     r_hash_dep,
     r_magic_dep,
