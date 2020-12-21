@@ -650,23 +650,26 @@ R_API DsoJsonObj *r_bin_java_get_bin_obj_json(RBinJavaObj *bin) {
 	char *res = dso_json_obj_to_str (methods_list);
 	// eprintf ("Resulting methods json: \n%s\n", res);
 	free (res);
-	dso_json_dict_insert_str_key_obj (class_dict, "methods", methods_list);
-	// dso_json_list_free (methods_list);
-	dso_json_obj_del (methods_list);
+	if (dso_json_dict_insert_str_key_obj (class_dict, "methods", methods_list)) {
+		// dso_json_list_free (methods_list);
+		dso_json_obj_del (methods_list);
+	}
 
 	res = dso_json_obj_to_str (fields_list);
 	// eprintf ("Resulting fields json: \n%s\n", res);
 	free (res);
-	dso_json_dict_insert_str_key_obj (class_dict, "fields", fields_list);
-	// dso_json_list_free (fields_list);
-	dso_json_obj_del (fields_list);
+	if (dso_json_dict_insert_str_key_obj (class_dict, "fields", fields_list)) {
+		// dso_json_list_free (fields_list);
+		dso_json_obj_del (fields_list);
+	}
 
 	res = dso_json_obj_to_str (imports_list);
 	// eprintf ("Resulting imports json: \n%s\n", res);
 	free (res);
-	dso_json_dict_insert_str_key_obj (class_dict, "imports", imports_list);
-	// dso_json_list_free (imports_list);
-	dso_json_obj_del (imports_list);
+	if (dso_json_dict_insert_str_key_obj (class_dict, "imports", imports_list)) {
+		// dso_json_list_free (imports_list);
+		dso_json_obj_del (imports_list);
+	}
 
 	// res = dso_json_obj_to_str (interfaces_list);
 	// eprintf ("Resulting interfaces json: \n%s\n", res);
@@ -739,8 +742,9 @@ R_API DsoJsonObj *r_bin_java_get_class_info_json(RBinJavaObj *bin) {
 
 		if (!class_->super) {
 			DsoJsonObj *str = dso_json_str_new ();
-			dso_json_dict_insert_str_key_obj (class_info_dict, "super", str);
-			dso_json_str_free (str);
+			if (dso_json_dict_insert_str_key_obj (class_info_dict, "super", str)) {
+				dso_json_str_free (str);
+			}
 		} else {
 			dso_json_dict_insert_str_key_str (class_info_dict, "super", class_->super);
 		}
@@ -756,10 +760,11 @@ R_API DsoJsonObj *r_bin_java_get_class_info_json(RBinJavaObj *bin) {
 			}
 		}
 	}
-	dso_json_dict_insert_str_key_obj (class_info_dict, "interfaces", interfaces_list);
+	if (dso_json_dict_insert_str_key_obj (class_info_dict, "interfaces", interfaces_list)) {
+		// dso_json_list_free (interfaces_list);
+		dso_json_obj_del (interfaces_list);
+	}
 	r_list_free (classes);
-	// dso_json_list_free (interfaces_list);
-	dso_json_obj_del (interfaces_list);
 	return class_info_dict;
 }
 

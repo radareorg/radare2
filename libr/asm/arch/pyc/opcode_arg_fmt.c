@@ -32,7 +32,7 @@ const char *format_MAKE_FUNCTION_arg_36(ut32 oparg) {
 	char *ret = r_str_new (" ");
 	for (i = 0; i < sizeof (MAKE_FUNCTION_FLAGS) / sizeof (char *); ++i) {
 		if (oparg & 0x1) {
-			r_str_appendf (ret, ", %s", MAKE_FUNCTION_FLAGS[i]);
+			ret = r_str_appendf (ret, ", %s", MAKE_FUNCTION_FLAGS[i]);
 		} else {
 			free (ret);
 			ret = r_str_new (MAKE_FUNCTION_FLAGS[i]);

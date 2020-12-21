@@ -476,7 +476,7 @@ static void linux_dbg_wait_break(RDebug *dbg) {
 
 RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
-	int tid;
+	int tid = pid;
 	int status, flags = __WALL;
 	int ret = -1;
 

@@ -80,6 +80,7 @@ static bool r2r_chdir(const char *argv0) {
 	char *r2r_path = r_file_path (argv0);
 	bool found = false;
 	if (readlink (r2r_path, src_path, sizeof (src_path)) != -1) {
+		src_path[sizeof (src_path) - 1] = 0;
 		char *p = strstr (src_path, R_SYS_DIR "binr"R_SYS_DIR"r2r"R_SYS_DIR"r2r");
 		if (p) {
 			*p = 0;
