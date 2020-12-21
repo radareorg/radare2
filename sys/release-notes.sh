@@ -31,7 +31,6 @@ echo "Release Notes"
 echo "-------------"
 echo
 echo "Version: ${VERS}"
-# echo "From: ${PREV}"
 echo "Previous: ${PREV}"
 printf "Commits: "
 cat .l |grep ^commit |wc -l |xargs echo
@@ -44,8 +43,8 @@ echo "<details><summary>More details</summary><p>"
 echo "Authors"
 echo "-------"
 echo
-cat .A | perl -ne 'print "*$_"'
-# | xargs echo '*'
+cat .A | perl -ne '/([^<]*)(.*)$/;$a=$1;$b=$2;$a=~s/^\s+|\s+$//;print "[$a]($b) "'
+echo
 echo
 
 echo "Changes"
