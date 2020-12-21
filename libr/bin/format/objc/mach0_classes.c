@@ -1522,7 +1522,7 @@ void MACH0_(get_category_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, RSkipLis
 		if (target_class_name) {
 			demangled = demangle_classname (target_class_name);
 		}
-		klass->name = r_str_newf ("%s(%s)", demangled ? demangled : "(null)", category_name);
+		klass->name = r_str_newf ("%s(%s)", r_str_getf (demangled), category_name);
 		R_FREE (target_class_name);
 		R_FREE (demangled);
 	}
