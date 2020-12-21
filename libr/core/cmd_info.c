@@ -834,7 +834,7 @@ static int cmd_info(void *data, const char *input) {
 					int r = 1;
 					r_list_foreach (server_l, it, server) {
 						pdbopts.symbol_server = server;
-						r = r_bin_pdb_download (core, 0, NULL, &pdbopts);
+						r = r_bin_pdb_download (core, input[3] == 'j', NULL, &pdbopts);
 						if (!r) {
 							break;
 						}
@@ -1243,8 +1243,7 @@ static int cmd_info(void *data, const char *input) {
 done:
 	if (is_array && !is_izzzj) {
 		r_cons_printf ("}\n");
-	}
-	if (newline) {
+	} else if (newline) {
 		r_cons_newline ();
 	}
 redone:
