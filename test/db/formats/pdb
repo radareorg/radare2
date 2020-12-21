@@ -9,6 +9,28 @@ PDB "user32.pdb" download success
 EOF
 RUN
 
+NAME=PDB downloader json
+FILE=-
+CMDS=<<EOF
+%R2_CURL=1
+!!rabin2 -PPj bins/pdb/user32.dll
+EOF
+EXPECT=<<EOF
+{"pdb":{"file":"user32.pdb","download":true},"pdb":false}
+EOF
+RUN
+
+NAME=idpdj
+FILE=bins/pdb/user32.dll
+CMDS=<<EOF
+%R2_CURL=1
+idpdj
+EOF
+EXPECT=<<EOF
+{"pdb":{"file":"user32.pdb","download":true}}
+EOF
+RUN
+
 NAME=idp 404
 FILE=-
 CMDS=<<EOF
