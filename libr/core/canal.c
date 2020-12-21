@@ -2349,11 +2349,11 @@ R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 	const char *font = r_config_get (core->config, "graph.font");
 	int is_html = r_cons_singleton ()->is_html;
 	bool refgraph = r_config_get_i (core->config, "graph.refs");
-	int first, first2;
 	RListIter *iter, *iter2;
 	int usenames = r_config_get_i (core->config, "graph.json.usenames");;
 	RAnalFunction *fcni;
 	RAnalRef *fcnr;
+	PJ *pj;
 
 	ut64 from = r_config_get_i (core->config, "graph.from");
 	ut64 to = r_config_get_i (core->config, "graph.to");
@@ -2361,7 +2361,11 @@ R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 	switch (fmt)
 	{
 	case R_GRAPH_FORMAT_JSON:
-		r_cons_printf ("[");
+		pj = pj_new ();
+		if (!pj) {
+			return;
+		}
+		pj_a (pj);
 		break;
 	case R_GRAPH_FORMAT_GML:
 	case R_GRAPH_FORMAT_GMLFCN:
@@ -2399,7 +2403,6 @@ R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 		}
 		break;
 	}
-	first = 0;
 	ut64 base = UT64_MAX;
 	int iteration = 0;
 repeat:
@@ -2448,19 +2451,16 @@ repeat:
 			break;
 		}
 		case R_GRAPH_FORMAT_JSON:
-			//TODO PJ
+			pj_o (pj);
 			if (usenames) {
-				r_cons_printf ("%s{\"name\":\"%s\", "
-						"\"size\":%" PFMT64u ",\"imports\":[",
-						first ? "," : "", fcni->name,
-						r_anal_function_linear_size (fcni));
+				pj_ks (pj, "name", fcni->name);
 			} else {
-				r_cons_printf ("%s{\"name\":\"0x%08" PFMT64x
-						"\", \"size\":%" PFMT64u ",\"imports\":[",
-						first ? "," : "", fcni->addr,
-						r_anal_function_linear_size (fcni));
+				char addr[20];
+				snprintf (addr, sizeof (addr) - 1, "0x%08" PFMT64x, fcni->addr);
+				pj_ks (pj, "name", addr);
 			}
-			first = 1;
+			pj_kn (pj, "size", r_anal_function_linear_size (fcni));
+			pj_ka (pj, "imports");
 			break;
 		case R_GRAPH_FORMAT_DOT:
 			r_cons_printf ("  \"0x%08"PFMT64x"\" "
@@ -2469,7 +2469,6 @@ repeat:
 					fcni->addr, fcni->name,
 					fcni->name, fcni->addr);
 		}
-		first2 = 0;
 		r_list_foreach (calls, iter2, fcnr) {
 			// TODO: display only code or data refs?
 			RFlagItem *flag = r_flag_get_i (core->flags, fcnr->addr);
@@ -2510,10 +2509,11 @@ repeat:
 				break;
 			case R_GRAPH_FORMAT_JSON:
 				if (usenames) {
-					r_cons_printf ("%s\"%s\"", first2?",":"", fcnr_name);
-				}
-				else {
-					r_cons_printf ("%s\"0x%08"PFMT64x"\"", first2? ",":"", fcnr->addr);
+					pj_s (pj, fcnr_name);
+				} else {
+					char addr[20];
+					snprintf (addr, sizeof (addr) - 1, "0x%08" PFMT64x, fcnr->addr);
+					pj_s (pj, addr);
 				}
 				break;
 			default:
@@ -2529,12 +2529,12 @@ repeat:
 			if (!(flag && flag->name)) {
 				free(fcnr_name);
 			}
-			first2 = 1;
 		}
 		r_list_free (refs);
 		r_list_free (calls);
 		if (fmt == R_GRAPH_FORMAT_JSON) {
-			r_cons_printf ("]}");
+			pj_end (pj);
+			pj_end (pj);
 		}
 	}
 	if (iteration == 0 && fmt == R_GRAPH_FORMAT_GML) {
@@ -2549,7 +2549,9 @@ repeat:
 	case R_GRAPH_FORMAT_GML:
 	case R_GRAPH_FORMAT_GMLFCN:
 	case R_GRAPH_FORMAT_JSON:
-		r_cons_printf ("]\n");
+		pj_end (pj);
+		r_cons_println (pj_string (pj));
+		pj_free (pj);
 		break;
 	case R_GRAPH_FORMAT_DOT:
 		r_cons_printf ("}\n");
