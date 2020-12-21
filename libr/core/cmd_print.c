@@ -349,19 +349,19 @@ static const char *help_msg_pds[] = {
 };
 
 static const char *help_msg_pf[] = {
-	"pf:", PF_USAGE_STR, "",
+	"Usage:", PF_USAGE_STR, "",
 	"Commands:", "", "",
 	"pf", " fmt", "Show data using the given format-string. See 'pf\?\?' and 'pf\?\?\?'.",
-	"pf", "?", "Show this help",
-	"pf", "??", "Format characters",
-	"pf", "???", "pf usage examples",
+	"pf", "?", "Help on commands",
+	"pf", "??", "Help on format characters",
+	"pf", "???", "Show usage examples",
 	"pf* ", "fmt_name|fmt", "Show data using (named) format as r2 flag create commands",
 	"pf.", "", "List all format definitions",
 	"pf.", "fmt_name", "Show data using named format",
 	"pf.", "fmt_name.field_name", "Show specific data field using named format",
 	"pf.", "fmt_name.field_name=33", "Set new value for the specified field in named format",
 	"pf.", "fmt_name.field_name[i]", "Show element i of array field_name",
-	"pf.", "name [0|cnt]fmt", "Define a new named format",
+	"pf.", "fmt_name [0|cnt]fmt", "Define a new named format",
 	"pf?", "fmt_name", "Show the definition of a named format",
 	"pfc ", "fmt_name|fmt", "Show data using (named) format as C string",
 	"pfd.", "fmt_name", "Show data using named format as graphviz commands",
@@ -375,7 +375,7 @@ static const char *help_msg_pf[] = {
 };
 
 static const char *help_detail_pf[] = {
-	"pf:", PF_USAGE_STR, "",
+	"Usage:", PF_USAGE_STR, "",
 	"Format:", "", "",
 	" ", "b", "byte (unsigned)",
 	" ", "B", "resolve enum bitfield (see t?)",
@@ -406,7 +406,7 @@ static const char *help_detail_pf[] = {
 	" ", "z", "null terminated string",
 	" ", "Z", "null terminated wide string",
 	" ", "?", "data structure `pf ? (struct_name)example_name`",
-	" ", "*", "next char is pointer (honors asm.bits)",
+	" ", "*", "next char is a pointer (honors asm.bits)",
 	" ", "+", "toggle show flags for each offset",
 	" ", ":", "skip 4 bytes",
 	" ", ".", "skip 1 byte",
@@ -416,7 +416,7 @@ static const char *help_detail_pf[] = {
 };
 
 static const char *help_detail2_pf[] = {
-	"pf:", PF_USAGE_STR, "",
+	"Usage:", PF_USAGE_STR, "",
 	"Examples:", "", "",
 	"pf", " 3xi foo bar", "3-array of struct, each with named fields: 'foo' as hex, and 'bar' as int",
 	"pf", " B (BitFldType)arg_name`", "bitfield type",
@@ -5977,7 +5977,9 @@ l = use_blocksize;
 			break;
 		case 'c': // "prc" // color raw dump
 			if (input[2] == '?') {
+				// TODO: change =e to colorized =mode
 				r_cons_printf ("prc=e # colorblocks of entropy\n");
+				// TODO: replace pz? help text with "See also"
 				r_core_cmd0 (core, "pz?");
 			} else if (input[2] == '=') {
 				if (input[3] == '?') {
