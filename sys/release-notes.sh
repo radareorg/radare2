@@ -32,7 +32,7 @@ echo "-------------"
 echo
 echo "Version: ${VERS}"
 # echo "From: ${PREV}"
-echo "Previous: ${VERS}"
+echo "Previous: ${PREV}"
 printf "Commits: "
 cat .l |grep ^commit |wc -l |xargs echo
 echo "Contributors: `wc -l .A | awk '{print $1}'`"
