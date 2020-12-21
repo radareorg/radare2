@@ -820,7 +820,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			r_list_foreach (maps, iter, mapcore) {
 				RIOMap *iomap = r_io_map_get (r->io, mapcore->addr);
 				if (iomap && (mapcore->file || stack_map == iomap)) {
-					r_io_map_set_name (iomap, mapcore->file ? mapcore->file : "[stack]");
+					r_io_map_set_name (iomap, r_str_get_fail (mapcore->file, "[stack]"));
 				}
 				map++;
 			}

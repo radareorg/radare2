@@ -288,7 +288,7 @@ R_API char *r_cons_hud_path(const char *path, int dir) {
 	RList *files;
 	if (path) {
 		path = r_str_trim_head_ro (path);
-		tmp = strdup (*path? path: "./");
+		tmp = strdup (*path ? path : "./");
 	} else {
 		tmp = strdup ("./");
 	}

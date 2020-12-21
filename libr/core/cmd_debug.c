@@ -5103,7 +5103,7 @@ static int cmd_debug(void *data, const char *input) {
 				if (rdi) {
 					const char *s = r_signal_to_string (core->dbg->reason.signum);
 					P ("type=%s\n", r_debug_reason_to_string (core->dbg->reason.type));
-					P ("signal=%s\n", s? s: "none");
+					P ("signal=%s\n", r_str_get_fail (s, "none"));
 					P ("signum=%d\n", core->dbg->reason.signum);
 					P ("sigpid=%d\n", core->dbg->reason.tid);
 					P ("addr=0x%"PFMT64x"\n", core->dbg->reason.addr);
@@ -5187,7 +5187,7 @@ static int cmd_debug(void *data, const char *input) {
 				if (rdi) {
 					const char *s = r_signal_to_string (core->dbg->reason.signum);
 					P ("\"type\":\"%s\",", r_debug_reason_to_string (core->dbg->reason.type));
-					P ("\"signal\":\"%s\",", s? s: "none");
+					P ("\"signal\":\"%s\",", r_str_get_fail (s, "none"));
 					P ("\"signum\":%d,", core->dbg->reason.signum);
 					P ("\"sigpid\":%d,", core->dbg->reason.tid);
 					P ("\"addr\":%"PFMT64d",", core->dbg->reason.addr);

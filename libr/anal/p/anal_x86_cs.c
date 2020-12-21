@@ -1036,7 +1036,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		{
 			dst = getarg (&gop, 0, 0, NULL, DST_AR, NULL);
 			esilprintf (op, "%s,%d,%s,-,=[%d],%d,%s,-=",
-				dst ? dst : "eax", rs, sp, rs, rs, sp);
+				r_str_get_fail (dst, "eax"), rs, sp, rs, rs, sp);
 		}
 		break;
 	case X86_INS_PUSHF:

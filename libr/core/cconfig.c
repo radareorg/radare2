@@ -204,7 +204,7 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 			} else {
 				r_cons_printf ("%s%s  %-9s  %-11s %-7s %s\n",
 						feat, feat2, bits, h->name,
-						h->license?h->license:"unknown", h->desc);
+						r_str_get_fail (h->license, "unknown"), h->desc);
 			}
 		}
 	}
@@ -3376,9 +3376,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cfg.debug", "false", &cb_cfgdebug, "Debugger mode");
 	p = r_sys_getenv ("EDITOR");
 #if __WINDOWS__
-	r_config_set (cfg, "cfg.editor", p? p: "notepad");
+	r_config_set (cfg, "cfg.editor", r_str_get_fail (p, "notepad"));
 #else
-	r_config_set (cfg, "cfg.editor", p? p: "vi");
+	r_config_set (cfg, "cfg.editor", r_str_get_fail (p, "vi"));
 #endif
 	free (p);
 	r_config_desc (cfg, "cfg.editor", "Select default editor program");
@@ -3415,11 +3415,11 @@ R_API int r_core_config_init(RCore *core) {
 	free (p);
 	// R2_LOGSRCINFO / log.srcinfo
 	p = r_sys_getenv ("R2_LOGSRCINFO");
-	SETCB ("log.srcinfo", p ? p : "false", cb_log_config_srcinfo, "Should the log output contain src info (filename:lineno)");
+	SETCB ("log.srcinfo", r_str_get_fail (p, "false"), cb_log_config_srcinfo, "Should the log output contain src info (filename:lineno)");
 	free (p);
 	// R2_LOGCOLORS / log.colors
 	p = r_sys_getenv ("R2_LOGCOLORS");
-	SETCB ("log.colors", p ? p : "false", cb_log_config_colors, "Should the log output use colors (TODO)");
+	SETCB ("log.colors", r_str_get_fail (p, "false"), cb_log_config_colors, "Should the log output use colors (TODO)");
 	free (p);
 
 	SETCB ("log.events", "false", &cb_log_events, "Remote HTTP server to sync events with");
@@ -3461,7 +3461,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("dir.types", "/usr/include", "Default path to look for cparse type files");
 	SETPREF ("dir.libs", "", "Specify path to find libraries to load when bin.libs=true");
 	p = r_sys_getenv (R_SYS_HOME);
-	SETCB ("dir.home", p? p: "/", &cb_dirhome, "Path for the home directory");
+	SETCB ("dir.home", r_str_get_fail (p, "/"), &cb_dirhome, "Path for the home directory");
 	free (p);
 	p = r_sys_getenv (R_SYS_TMP);
 	SETCB ("dir.tmp", r_str_get (p), &cb_dirtmp, "Path of the tmp directory");

@@ -617,7 +617,7 @@ static void printFunctionType(RCore *core, const char *input) {
 	int i, args = sdb_num_get (TDB, sdb_fmt ("func.%s.args", name), 0);
 	pj_ks (pj, "name", name);
 	const char *ret_type = sdb_const_get (TDB, sdb_fmt ("func.%s.ret", name), 0);
-	pj_ks (pj, "ret", ret_type? ret_type: "void");
+	pj_ks (pj, "ret", r_str_get_fail (ret_type, "void"));
 	pj_k (pj, "args");
 	pj_a (pj);
 	for (i = 0; i < args; i++) {
