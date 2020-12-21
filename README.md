@@ -38,7 +38,7 @@ You may also want to meet other perople in r2land. use the following chats:
 
 * irc.freenode.net `#radare` `#radare_side`
 * [Telegram](https://t.me/radare)
-* [Discord](https://discord.gg/W4uuvwHs)
+* [Discord](https://discord.gg/MgEdxrMnqx)
 
 ## Operating Systems
 
