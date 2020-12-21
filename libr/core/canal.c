@@ -1177,7 +1177,7 @@ static void hint_node_print(HintNode *node, int mode, PJ *pj) {
 			break;
 		}
 		case HINT_NODE_ARCH:
-			HINTCMD_ADDR (node, "aha %s", node->arch ? node->arch : "0");
+			HINTCMD_ADDR (node, "aha %s", r_str_get_fail (node->arch, "0"));
 			break;
 		case HINT_NODE_BITS:
 			HINTCMD_ADDR (node, "ahb %d", node->bits);

@@ -1467,7 +1467,7 @@ static int show_syscall(RDebug *dbg, const char *sysreg) {
 	reg = (int)r_debug_reg_get (dbg, sysreg);
 	si = r_syscall_get (dbg->anal->syscall, reg, -1);
 	if (si) {
-		sysname = si->name? si->name: "unknown";
+		sysname = r_str_get_fail (si->name, "unknown");
 		args = si->args;
 	} else {
 		sysname = "unknown";

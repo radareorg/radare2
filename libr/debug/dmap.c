@@ -72,8 +72,8 @@ static void print_debug_map_line(RDebug *dbg, RDebugMap *map, ut64 addr, const c
 			humansz,
 			map->user ? 'u' : 's',
 			r_str_rwx_i (map->perm),
-			map->name ? map->name : "?",
-			map->file ? map->file : "?",
+			r_str_get_fail (map->name, "?"),
+			r_str_get_fail (map->file, "?"),
 			*flagname ? " ; " : "",
 			flagname
 		);

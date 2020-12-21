@@ -1760,7 +1760,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				int reloc_size = 4;
 				char *n = __filterQuotedShell (name);
 				r_cons_printf ("\"f %s%s%s %d 0x%08"PFMT64x"\"\n",
-					r->bin->prefix ? r->bin->prefix : "reloc.",
+					r_str_get_fail (r->bin->prefix, "reloc."),
 					r->bin->prefix ? "." : "", n, reloc_size, addr);
 				add_metadata (r, reloc, addr, mode);
 				free (n);
@@ -2057,8 +2057,8 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		} else if (IS_MODE_RAD (mode)) {
 			// TODO(eddyb) symbols that are imports.
 		} else {
-			const char *bind = import->bind? import->bind: "NONE";
-			const char *type = import->type? import->type: "NONE";
+			const char *bind = r_str_get_fail (import->bind, "NONE");
+			const char *type = r_str_get_fail (import->type, "NONE");
 			if (import->classname && import->classname[0]) {
 				r_table_add_rowf (table, "nXssss", (ut64)import->ordinal, addr, bind, type, r_str_get (libname),
 					sdb_fmt ("%s.%s", import->classname, symname));
@@ -2483,8 +2483,8 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 				}
 			}
 		} else {
-			const char *bind = symbol->bind? symbol->bind: "NONE";
-			const char *type = symbol->type? symbol->type: "NONE";
+			const char *bind = r_str_get_fail (symbol->bind, "NONE");
+			const char *type = r_str_get_fail (symbol->type, "NONE");
 			const char *name = r_str_getf (sn.demname? sn.demname: sn.name);
 			// const char *fwd = r_str_getf (symbol->forwarder);
 			r_table_add_rowf (table, "dssssdss",

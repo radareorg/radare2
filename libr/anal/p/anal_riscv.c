@@ -41,7 +41,7 @@ static bool _is_any(const char *str, ...) {
 }
 
 static void arg_p2(char *buf, unsigned long val, const char* const* array, size_t size) {
-	const char *s = val >= size || array[val] ? array[val] : "unknown";
+	const char *s = (val >= size || array[val]) ? array[val] : "unknown";
 	snprintf (buf, RISCVARGSIZE, "%s", s);
 }
 

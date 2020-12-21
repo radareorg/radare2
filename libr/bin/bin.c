@@ -491,7 +491,7 @@ static bool r_bin_print_plugin_details(RBin *bin, RBinPlugin *bp, int json) {
 		pj_o (pj);
 		pj_ks (pj, "name", bp->name);
 		pj_ks (pj, "description", bp->desc);
-		pj_ks (pj, "license", bp->license ? bp->license : "???");
+		pj_ks (pj, "license", r_str_get_fail (bp->license, "???"));
 		pj_end (pj);
 		bin->cb_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
@@ -522,7 +522,7 @@ static void __printXtrPluginDetails(RBin *bin, RBinXtrPlugin *bx, int json) {
 		pj_o (pj);
 		pj_ks (pj, "name", bx->name);
 		pj_ks (pj, "description", bx->desc);
-		pj_ks (pj, "license", bx->license ? bx->license : "???");
+		pj_ks (pj, "license", r_str_get_fail (bx->license, "???"));
 		pj_end (pj);
 		bin->cb_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
@@ -584,7 +584,7 @@ R_API void r_bin_list(RBin *bin, int format) {
 			pj_o (pj);
 			pj_ks (pj, "name", bp->name);
 			pj_ks (pj, "description", bp->desc);
-			pj_ks (pj, "license", bp->license ? bp->license : "???");
+			pj_ks (pj, "license", r_str_get_fail (bp->license, "???"));
 			pj_end (pj);
 		}
 		pj_end (pj);
@@ -593,7 +593,7 @@ R_API void r_bin_list(RBin *bin, int format) {
 			pj_o (pj);
 			pj_ks (pj, "name", bx->name);
 			pj_ks (pj, "description", bx->desc);
-			pj_ks (pj, "license", bx->license ? bx->license : "???");
+			pj_ks (pj, "license", r_str_get_fail (bx->license, "???"));
 			pj_end (pj);
 		}
 		pj_end (pj);
@@ -602,7 +602,7 @@ R_API void r_bin_list(RBin *bin, int format) {
 			pj_o (pj);
 			pj_ks (pj, "name", ld->name);
 			pj_ks (pj, "description", ld->desc);
-			pj_ks (pj, "license", ld->license ? ld->license : "???");
+			pj_ks (pj, "license", r_str_get_fail (ld->license, "???"));
 			pj_end (pj);
 		}
 		pj_end (pj);
@@ -612,19 +612,19 @@ R_API void r_bin_list(RBin *bin, int format) {
 	} else {
 		r_list_foreach (bin->plugins, it, bp) {
 			bin->cb_printf ("bin  %-11s %s (%s) %s %s\n",
-				bp->name, bp->desc, bp->license? bp->license: "???",
+				bp->name, bp->desc, r_str_get_fail (bp->license, "???"),
 				r_str_get (bp->version),
 				r_str_get (bp->author));
 		}
 		r_list_foreach (bin->binxtrs, it, bx) {
 			const char *name = strncmp (bx->name, "xtr.", 4)? bx->name : bx->name + 3;
 			bin->cb_printf ("xtr  %-11s %s (%s)\n", name,
-				bx->desc, bx->license? bx->license: "???");
+				bx->desc, r_str_get_fail (bx->license, "???"));
 		}
 		r_list_foreach (bin->binldrs, it, ld) {
 			const char *name = strncmp (ld->name, "ldr.", 4)? ld->name : ld->name + 3;
 			bin->cb_printf ("ldr  %-11s %s (%s)\n", name,
-				ld->desc, ld->license? ld->license: "???");
+				ld->desc, r_str_get_fail (ld->license, "???"));
 		}
 	}
 }
