@@ -48,7 +48,7 @@ You may find some additional notes on this topic in doc/vim.
   cases are indented at the switch level.
 
 ```c
-switch(n) {
+switch (n) {
 case 1:
 	break;
 case 2:
