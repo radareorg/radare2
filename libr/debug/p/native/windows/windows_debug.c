@@ -1486,7 +1486,8 @@ RList *w32_desc_list(int pid) {
 			CloseHandle (dupHandle);
 			continue;
 		}
-		if (memcmp (L"File", objectTypeInfo->Name.Buffer, sizeof ("File"))) {
+		if (wcscmp (objectTypeInfo->Name.Buffer, L"File")) {
+			CloseHandle (dupHandle);
 			continue;
 		}
 		GENERIC_MAPPING *gm = &objectTypeInfo->GenericMapping;
