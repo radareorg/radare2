@@ -1,3 +1,14 @@
+NAME=agcj
+FILE=bins/elf/hello_world
+CMDS=<<EOF
+aa 2> /dev/null
+agcj
+EOF
+EXPECT=<<EOF
+[{"name":"entry0","size":42,"imports":["reloc.__libc_start_main"]}]
+EOF
+RUN
+
 NAME=agi
 FILE=bins/elf/hello_world
 CMDS=<<EOF
