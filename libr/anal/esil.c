@@ -587,6 +587,55 @@ static bool esil_signext(RAnalEsil *esil) {
 	return r_anal_esil_pushnum (esil, ((src ^ m) - m));
 }
 
+// sign extension assignement
+// example : > "ae 0x81,a0,="
+//           > "ae 8,a0,~="   ( <src bit width>,register,~= )
+// output  : > ar a0
+//           0xffffff81
+static bool esil_signexteq(RAnalEsil *esil) {
+	ut64 src, dst;
+
+	char *p_src = r_anal_esil_pop (esil);
+	if (!p_src) {
+		return false;
+	}
+
+	if (!r_anal_esil_reg_read (esil, p_src, &src, NULL)) {
+		ERR ("esil_of: empty stack");
+		free (p_src);
+		return false;
+	}
+
+	char *p_dst = r_anal_esil_pop (esil);
+	if (!p_dst) {
+		return false;
+	}
+
+	if (!r_anal_esil_get_parm (esil, p_dst, &dst)) {
+		ERR ("esil_of: empty stack");
+		free (p_dst);
+		return false;
+	} else {
+		free (p_dst);
+	}
+	//Make sure the other bits are 0
+	src &= UT64_MAX >> (64 - dst);
+
+	ut64 m = 0;
+	if (dst < 64) {
+		m = 1ULL << (dst - 1);
+	}
+
+	esil->old = src;
+	esil->cur = ((src ^ m) - m);
+	esil->lastsz = esil_internal_sizeof_reg (esil, p_src);
+	// dst = (dst & ((1U << src_bit) - 1)); // clear upper bits
+	r_anal_esil_reg_write (esil, p_src, ((src ^ m) - m));
+	free (p_src);
+
+	return true;
+}
+
 static bool esil_zf(RAnalEsil *esil) {
 	return r_anal_esil_pushnum (esil, !(esil->cur & genmask (esil->lastsz - 1)));
 }
@@ -3226,6 +3275,7 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("$r", esil_rs, 1, 0, OT_UNK);
 	OP ("$$", esil_address, 1, 0, OT_UNK);
 	OP ("~", esil_signext, 1, 2, OT_MATH);
+	OP ("~=", esil_signexteq, 0, 2, OT_MATH);
 	OP ("==", esil_cmp, 0, 2, OT_MATH);
 	OP ("<", esil_smaller, 1, 2, OT_MATH);
 	OP (">", esil_bigger, 1, 2, OT_MATH);
