@@ -32,3 +32,7 @@ Running rapatches
 -----------------
 
 	$ r2 -P rapatch.txt target-program.txt
+
+Or for scripted patching like `patch(1)`:
+
+	$ r2 -w -q -P rapatch.txt target-program.txt

@@ -299,7 +299,7 @@ V: View ascii-art basic block graph of current function
 W: WebUI
 x, X: XREFs to current function. ("u" to go back)
 t: track flags (browse symbols, functions..)
-gG: Begging or end of file
+gG: Begin or end of file
 HUD
 	_ Show HUD
 	backspace: Exits HUD
@@ -573,7 +573,7 @@ Show differences between original and patched on x86_32
 ## rafind2 - Search
 ```
 -Z: Look for Zero terminated strings
--s str: Look for specifc string
+-s str: Look for specific string
 ```
 
 ## ragg2 - Shellcode generator, C/opcode compiler

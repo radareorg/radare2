@@ -13,7 +13,7 @@
 #define emitf(...) r_strbuf_appendf(&op->esil, __VA_ARGS__)
 //setting the appropriate flags, NOTE: semicolon included
 #define setZ r_strbuf_appendf(&op->esil, ",$z,Z,:=") //zero flag
-#define setN r_strbuf_appendf(&op->esil, ",$s,N,=") //negative(sign) flag
+#define setN r_strbuf_appendf(&op->esil, ",15,$s,N,=") //negative(sign) flag
 #define setV(val) r_strbuf_appendf(&op->esil, ",%s,V,=", val) //overflow flag
 #define setC_B r_strbuf_appendf(&op->esil, ",7,$c,C,:=") //carry flag for byte op
 #define setC_W r_strbuf_appendf(&op->esil, ",15,$c,C,:=") //carryflag for word op
@@ -138,8 +138,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		setZ;
 		return 0;
 	case H8300_ADDX_4BIT:
-		r_strbuf_appendf(&op->esil, "0x%02x,C,+,r%u%c,+= ", imm,
-				rdB(0), rdB(0));
+		r_strbuf_appendf(&op->esil, "0x%02x,C,+,r%u%c,+= ", imm, rdB(0));
 		//setZ
 		setV("%o");
 		setN;
@@ -240,7 +239,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case H8300_ADDX:
 		//Rd + (Rs) + C → Rd
 		r_strbuf_appendf (&op->esil, "r%u%c,C,+,r%u%c,+=",
-				rsB(), rdB(1), rdB(1));
+				rsB(), rdB(1));
 		//setZ
 		setV("%o");
 		setN;
@@ -548,11 +547,7 @@ static int h8300_op(RAnal *anal, RAnalOp *op, ut64 addr,
 		return 2;
 	}
 
-	memset(op, 0, sizeof (RAnalOp));
-
 	op->addr = addr;
-	op->jump = op->fail = -1;
-	op->ptr = op->val = -1;
 	ret = op->size = h8300_decode_command(buf, &cmd);
 
 	if (ret < 0) {
@@ -684,10 +679,11 @@ static int h8300_op(RAnal *anal, RAnalOp *op, ut64 addr,
 	return ret;
 }
 
-static int set_reg_profile(RAnal *anal) {
+static bool set_reg_profile(RAnal *anal) {
 	char *p =
 		"=PC	pc\n"
 		"=SP	r7\n"
+		"=A0	r0\n"
 		"gpr	r0	.16	0	0\n"
 		"gpr	r0h	.8	0	0\n"
 		"gpr	r0l	.8	1	0\n"
@@ -736,7 +732,7 @@ RAnalPlugin r_anal_plugin_h8300 = {
 	.set_reg_profile = set_reg_profile,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_h8300,

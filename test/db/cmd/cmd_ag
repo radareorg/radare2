@@ -1,0 +1,337 @@
+NAME=agi
+FILE=bins/elf/hello_world
+CMDS=<<EOF
+aa 2> /dev/null
+agi*
+EOF
+EXPECT=<<EOF
+agn "sym.imp.free"
+agn "0x0000083f"
+agn "_ITM_deregisterTMCloneTable"
+agn "sym.imp.strcpy"
+agn "0x00000814"
+agn "sym.imp.puts"
+agn "0x00000833"
+agn "sym.imp.strlen"
+agn "0x000007cf"
+agn "0x000007de"
+agn "__libc_start_main"
+agn "__gmon_start__"
+agn "sym.imp.malloc"
+agn "0x000007f6"
+agn "sym.imp.strcat"
+agn "0x00000827"
+agn "_ITM_registerTMCloneTable"
+agn "section..plt.got"
+agn "0x0000077e"
+age "0x0000083f" "sym.imp.free"
+age "0x00000814" "sym.imp.strcpy"
+age "0x00000833" "sym.imp.puts"
+age "0x000007cf" "sym.imp.strlen"
+age "0x000007de" "sym.imp.strlen"
+age "0x000007f6" "sym.imp.malloc"
+age "0x00000827" "sym.imp.strcat"
+age "0x0000077e" "section..plt.got"
+EOF
+RUN
+
+
+NAME=agx
+FILE=bins/elf/hello_world
+CMDS=<<EOF
+aa 2> /dev/null
+agx* @ main
+EOF
+EXPECT=<<EOF
+agn "main"
+agn "0x000006bd"
+age "0x000006bd" "main"
+EOF
+RUN
+
+NAME=formats
+FILE=bins/elf/hello_world
+CMDS=<<EOF
+aa 2> /dev/null
+agx @ main
+agid
+agig
+agij
+agik
+agit
+EOF
+EXPECT=<<EOF
+.--------------------.
+|  0x000006bd        |
+`--------------------'
+    v
+    |
+    |
+.--------------------.
+|  main              |
+`--------------------'
+digraph code {
+rankdir=LR;
+outputorder=edgesfirst
+graph [bgcolor=azure];
+edge [arrowhead=normal, color="#3030c0" style=bold weight=2 ];
+node [fillcolor=white, style=filled shape=box fontsize="8" fontname="Courier"];
+0 [URL="sym.imp.free", color="lightgray", label="sym.imp.free"]
+1 [URL="0x0000083f", color="lightgray", label="0x0000083f"]
+1 -> 0
+2 [URL="_ITM_deregisterTMCloneTable", color="lightgray", label="_ITM_deregisterTMCloneTable"]
+3 [URL="sym.imp.strcpy", color="lightgray", label="sym.imp.strcpy"]
+4 [URL="0x00000814", color="lightgray", label="0x00000814"]
+4 -> 3
+5 [URL="sym.imp.puts", color="lightgray", label="sym.imp.puts"]
+6 [URL="0x00000833", color="lightgray", label="0x00000833"]
+6 -> 5
+7 [URL="sym.imp.strlen", color="lightgray", label="sym.imp.strlen"]
+8 [URL="0x000007cf", color="lightgray", label="0x000007cf"]
+8 -> 7
+9 [URL="0x000007de", color="lightgray", label="0x000007de"]
+9 -> 7
+10 [URL="__libc_start_main", color="lightgray", label="__libc_start_main"]
+11 [URL="__gmon_start__", color="lightgray", label="__gmon_start__"]
+12 [URL="sym.imp.malloc", color="lightgray", label="sym.imp.malloc"]
+13 [URL="0x000007f6", color="lightgray", label="0x000007f6"]
+13 -> 12
+14 [URL="sym.imp.strcat", color="lightgray", label="sym.imp.strcat"]
+15 [URL="0x00000827", color="lightgray", label="0x00000827"]
+15 -> 14
+16 [URL="_ITM_registerTMCloneTable", color="lightgray", label="_ITM_registerTMCloneTable"]
+17 [URL="section..plt.got", color="lightgray", label="section..plt.got"]
+18 [URL="0x0000077e", color="lightgray", label="0x0000077e"]
+18 -> 17
+}
+graph
+[
+hierarchic 1
+label ""
+directed 1
+  node [
+    id  0
+    label  "sym.imp.free"
+  ]
+  node [
+    id  1
+    label  "0x0000083f"
+  ]
+  node [
+    id  2
+    label  "_ITM_deregisterTMCloneTable"
+  ]
+  node [
+    id  3
+    label  "sym.imp.strcpy"
+  ]
+  node [
+    id  4
+    label  "0x00000814"
+  ]
+  node [
+    id  5
+    label  "sym.imp.puts"
+  ]
+  node [
+    id  6
+    label  "0x00000833"
+  ]
+  node [
+    id  7
+    label  "sym.imp.strlen"
+  ]
+  node [
+    id  8
+    label  "0x000007cf"
+  ]
+  node [
+    id  9
+    label  "0x000007de"
+  ]
+  node [
+    id  10
+    label  "__libc_start_main"
+  ]
+  node [
+    id  11
+    label  "__gmon_start__"
+  ]
+  node [
+    id  12
+    label  "sym.imp.malloc"
+  ]
+  node [
+    id  13
+    label  "0x000007f6"
+  ]
+  node [
+    id  14
+    label  "sym.imp.strcat"
+  ]
+  node [
+    id  15
+    label  "0x00000827"
+  ]
+  node [
+    id  16
+    label  "_ITM_registerTMCloneTable"
+  ]
+  node [
+    id  17
+    label  "section..plt.got"
+  ]
+  node [
+    id  18
+    label  "0x0000077e"
+  ]
+  edge [
+    source  1
+    target  0
+  ]
+  edge [
+    source  4
+    target  3
+  ]
+  edge [
+    source  6
+    target  5
+  ]
+  edge [
+    source  8
+    target  7
+  ]
+  edge [
+    source  9
+    target  7
+  ]
+  edge [
+    source  13
+    target  12
+  ]
+  edge [
+    source  15
+    target  14
+  ]
+  edge [
+    source  18
+    target  17
+  ]
+]
+{"nodes":[{"id":0,"title":"sym.imp.free","offset":1584,"out_nodes":[]},{"id":1,"title":"0x0000083f","offset":2111,"out_nodes":[0]},{"id":2,"title":"_ITM_deregisterTMCloneTable","offset":0,"out_nodes":[]},{"id":3,"title":"sym.imp.strcpy","offset":1600,"out_nodes":[]},{"id":4,"title":"0x00000814","offset":2068,"out_nodes":[3]},{"id":5,"title":"sym.imp.puts","offset":1616,"out_nodes":[]},{"id":6,"title":"0x00000833","offset":2099,"out_nodes":[5]},{"id":7,"title":"sym.imp.strlen","offset":1632,"out_nodes":[]},{"id":8,"title":"0x000007cf","offset":1999,"out_nodes":[7]},{"id":9,"title":"0x000007de","offset":2014,"out_nodes":[7]},{"id":10,"title":"__libc_start_main","offset":0,"out_nodes":[]},{"id":11,"title":"__gmon_start__","offset":0,"out_nodes":[]},{"id":12,"title":"sym.imp.malloc","offset":1648,"out_nodes":[]},{"id":13,"title":"0x000007f6","offset":2038,"out_nodes":[12]},{"id":14,"title":"sym.imp.strcat","offset":1664,"out_nodes":[]},{"id":15,"title":"0x00000827","offset":2087,"out_nodes":[14]},{"id":16,"title":"_ITM_registerTMCloneTable","offset":0,"out_nodes":[]},{"id":17,"title":"section..plt.got","offset":1680,"out_nodes":[]},{"id":18,"title":"0x0000077e","offset":1918,"out_nodes":[17]}]}
+agraph.color_box=G1swbQ==
+agraph.delta_x=0x8a
+agraph.delta_y=0x1
+agraph.h=0xf
+agraph.is_callgraph=false
+agraph.nodes=sym.imp.free,0x0000083f,_ITM_deregisterTMCloneTable,sym.imp.strcpy,0x00000814,sym.imp.puts,0x00000833,sym.imp.strlen,0x000007cf,0x000007de,__libc_start_main,__gmon_start__,sym.imp.malloc,0x000007f6,sym.imp.strcat,0x00000827,_ITM_registerTMCloneTable,section..plt.got,0x0000077e
+agraph.nodes.0x0000077e.body=base64:
+agraph.nodes.0x0000077e.h=0x3
+agraph.nodes.0x0000077e.neighbours=section..plt.got
+agraph.nodes.0x0000077e.w=0x16
+agraph.nodes.0x0000077e.x=0x130
+agraph.nodes.0x0000077e.y=0x8a
+agraph.nodes.0x000007cf.body=base64:
+agraph.nodes.0x000007cf.h=0x3
+agraph.nodes.0x000007cf.neighbours=sym.imp.strlen
+agraph.nodes.0x000007cf.w=0x16
+agraph.nodes.0x000007cf.x=0x72
+agraph.nodes.0x000007cf.y=0x8a
+agraph.nodes.0x000007de.body=base64:
+agraph.nodes.0x000007de.h=0x3
+agraph.nodes.0x000007de.neighbours=sym.imp.strlen
+agraph.nodes.0x000007de.w=0x16
+agraph.nodes.0x000007de.x=0x8c
+agraph.nodes.0x000007de.y=0x8a
+agraph.nodes.0x000007f6.body=base64:
+agraph.nodes.0x000007f6.h=0x3
+agraph.nodes.0x000007f6.neighbours=sym.imp.malloc
+agraph.nodes.0x000007f6.w=0x16
+agraph.nodes.0x000007f6.x=0xda
+agraph.nodes.0x000007f6.y=0x8a
+agraph.nodes.0x00000814.body=base64:
+agraph.nodes.0x00000814.h=0x3
+agraph.nodes.0x00000814.neighbours=sym.imp.strcpy
+agraph.nodes.0x00000814.w=0x16
+agraph.nodes.0x00000814.x=0x3e
+agraph.nodes.0x00000814.y=0x8a
+agraph.nodes.0x00000827.body=base64:
+agraph.nodes.0x00000827.h=0x3
+agraph.nodes.0x00000827.neighbours=sym.imp.strcat
+agraph.nodes.0x00000827.w=0x16
+agraph.nodes.0x00000827.x=0xf4
+agraph.nodes.0x00000827.y=0x8a
+agraph.nodes.0x00000833.body=base64:
+agraph.nodes.0x00000833.h=0x3
+agraph.nodes.0x00000833.neighbours=sym.imp.puts
+agraph.nodes.0x00000833.w=0x16
+agraph.nodes.0x00000833.x=0x58
+agraph.nodes.0x00000833.y=0x8a
+agraph.nodes.0x0000083f.body=base64:
+agraph.nodes.0x0000083f.h=0x3
+agraph.nodes.0x0000083f.neighbours=sym.imp.free
+agraph.nodes.0x0000083f.w=0x16
+agraph.nodes.0x0000083f.x=0
+agraph.nodes.0x0000083f.y=0x8a
+agraph.nodes._ITM_deregisterTMCloneTable.body=base64:
+agraph.nodes._ITM_deregisterTMCloneTable.h=0x3
+agraph.nodes._ITM_deregisterTMCloneTable.w=0x21
+agraph.nodes._ITM_deregisterTMCloneTable.x=0x1a
+agraph.nodes._ITM_deregisterTMCloneTable.y=0x8a
+agraph.nodes._ITM_registerTMCloneTable.body=base64:
+agraph.nodes._ITM_registerTMCloneTable.h=0x3
+agraph.nodes._ITM_registerTMCloneTable.w=0x1f
+agraph.nodes._ITM_registerTMCloneTable.x=0x10e
+agraph.nodes._ITM_registerTMCloneTable.y=0x8a
+agraph.nodes.__gmon_start__.body=base64:
+agraph.nodes.__gmon_start__.h=0x3
+agraph.nodes.__gmon_start__.w=0x16
+agraph.nodes.__gmon_start__.x=0xc0
+agraph.nodes.__gmon_start__.y=0x8a
+agraph.nodes.__libc_start_main.body=base64:
+agraph.nodes.__libc_start_main.h=0x3
+agraph.nodes.__libc_start_main.w=0x17
+agraph.nodes.__libc_start_main.x=0xa6
+agraph.nodes.__libc_start_main.y=0x8a
+agraph.nodes.section..plt.got.body=base64:
+agraph.nodes.section..plt.got.h=0x3
+agraph.nodes.section..plt.got.w=0x16
+agraph.nodes.section..plt.got.x=0x130
+agraph.nodes.section..plt.got.y=0x92
+agraph.nodes.sym.imp.free.body=base64:
+agraph.nodes.sym.imp.free.h=0x3
+agraph.nodes.sym.imp.free.w=0x16
+agraph.nodes.sym.imp.free.x=0
+agraph.nodes.sym.imp.free.y=0x92
+agraph.nodes.sym.imp.malloc.body=base64:
+agraph.nodes.sym.imp.malloc.h=0x3
+agraph.nodes.sym.imp.malloc.w=0x16
+agraph.nodes.sym.imp.malloc.x=0xda
+agraph.nodes.sym.imp.malloc.y=0x92
+agraph.nodes.sym.imp.puts.body=base64:
+agraph.nodes.sym.imp.puts.h=0x3
+agraph.nodes.sym.imp.puts.w=0x16
+agraph.nodes.sym.imp.puts.x=0x58
+agraph.nodes.sym.imp.puts.y=0x92
+agraph.nodes.sym.imp.strcat.body=base64:
+agraph.nodes.sym.imp.strcat.h=0x3
+agraph.nodes.sym.imp.strcat.w=0x16
+agraph.nodes.sym.imp.strcat.x=0xf4
+agraph.nodes.sym.imp.strcat.y=0x92
+agraph.nodes.sym.imp.strcpy.body=base64:
+agraph.nodes.sym.imp.strcpy.h=0x3
+agraph.nodes.sym.imp.strcpy.w=0x16
+agraph.nodes.sym.imp.strcpy.x=0x3e
+agraph.nodes.sym.imp.strcpy.y=0x92
+agraph.nodes.sym.imp.strlen.body=base64:
+agraph.nodes.sym.imp.strlen.h=0x3
+agraph.nodes.sym.imp.strlen.w=0x16
+agraph.nodes.sym.imp.strlen.x=0x7f
+agraph.nodes.sym.imp.strlen.y=0x92
+agraph.w=0x146
+
+
+() ()   () () () () () ()  () () ()  ()
+()      () ()   ()         () ()     ()
+EOF
+RUN

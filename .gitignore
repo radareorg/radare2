@@ -18,6 +18,7 @@ supported.*
 config.mk
 plugins.cfg
 langs.cfg
+.test.c
 .*.swp
 .*.swo
 *.un~
@@ -26,6 +27,8 @@ langs.cfg
 *.ilk
 binr/r2agent/r2agent
 binr/r2agent/r2agent.exe
+binr/r2r/r2r
+binr/r2r/r2r.exe
 binr/rabin2/rabin2
 binr/rabin2/rabin2.exe
 binr/radare2/radare2
@@ -68,6 +71,7 @@ shlr/sdb/src/sdb-version.h
 shlr/sdb/src/sdb_version.h
 shlr/sdb/src/libsdb.so*
 shlr/spp/config.h
+shlr/.cs_tmp.zip
 sys/travis/*.txt
 sys/.mark_python-deps
 sys/.mark_swig
@@ -119,3 +123,6 @@ doc/doxygen/html
 __pycache__
 # Dynamic docker building folder to minimize docker context
 .docker_alpine
+.ccls-cache/
+vgcore.*
+libr/include/sdb

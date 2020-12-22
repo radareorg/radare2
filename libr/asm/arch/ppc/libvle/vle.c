@@ -860,7 +860,7 @@ static vle_t *find_ppc(const ut8* buffer) {
 	ut32 data = (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3];
 	const ppc_t* p = NULL;
 	const ut32 size = sizeof (ppc_ops) / sizeof (ppc_t);
-	for (i = 0; i < size; ++i) {
+	for (i = 0; i < size; i++) {
 		p = &ppc_ops[i];
 		if ((p->op & data) == p->op && (p->mask & data) == data) {
 			vle_t* ret = R_NEW0 (vle_t);
@@ -880,7 +880,7 @@ static vle_t *find_e(const ut8* buffer) {
 	ut32 data = (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3];
 	const e_vle_t* p = NULL;
 	const ut32 size = sizeof (e_ops) / sizeof (e_vle_t);
-	for (i = 0; i < size; ++i) {
+	for (i = 0; i < size; i++) {
 		p = &e_ops[i];
 		if ((p->op & data) == p->op && (p->mask & data) == data) {
 			vle_t* ret = R_NEW0 (vle_t);
@@ -900,15 +900,15 @@ static vle_t *find_se(const ut8* buffer) {
 	ut16 data = (buffer[0] << 8) | buffer[1];
 	const se_vle_t* p = NULL;
 	const ut32 size = sizeof (se_ops) / sizeof (se_vle_t);
-	for (i = 0; i < size; ++i) {
+	for (i = 0; i < size; i++) {
 		p = &se_ops[i];
 		if ((p->op & data) == p->op && (p->mask & data) == data) {
 			vle_t* ret = R_NEW0 (vle_t);
 			ret->name = p->name;
 			ret->size = 2;
 			ret->anal_op = p->anal_op;
-			for (j = 0; j < p->n; ++j) {
-				for (k = 0; k < p->n; ++k) {
+			for (j = 0; j < p->n; j++) {
+				for (k = 0; k < p->n; k++) {
 					if (p->fields[k].idx == j) {
 						ret->fields[j].value = data & p->fields[k].mask;
 						ret->fields[j].value >>= p->fields[k].shr;
@@ -981,7 +981,7 @@ void vle_snprint(char* str, int size, ut32 addr, vle_t* instr) {
 	ut32 i;
 	int bufsize = size, add = 0;
 	add = snprintf (str, bufsize, "%s", instr->name);
-	for (i = 0; add > 0 && i < instr->n && add < bufsize; ++i) {
+	for (i = 0; add > 0 && i < instr->n && add < bufsize; i++) {
 		if (instr->fields[i].type == TYPE_REG) {
 			add += snprintf (str + add, bufsize - add, " r%u", instr->fields[i].value);
 		} else if (instr->fields[i].type == TYPE_IMM) {

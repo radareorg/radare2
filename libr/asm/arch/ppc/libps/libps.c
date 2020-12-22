@@ -183,7 +183,7 @@ void libps_snprint(char* str, int size, ut64 addr, ppcps_t* instr) {
 	ut32 i;
 	int bufsize = size, add = 0;
 	add = snprintf (str, bufsize, "%s", instr->name);
-	for (i = 0; add > 0 && i < instr->n && add < bufsize; ++i) {
+	for (i = 0; add > 0 && i < instr->n && add < bufsize; i++) {
 		if (instr->operands[i].type == TYPE_REG) {
 			add += snprintf (str + add, bufsize - add, " fr%u", instr->operands[i].value);
 		} else if (instr->operands[i].type == TYPE_IMM) {

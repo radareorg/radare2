@@ -65,7 +65,7 @@ If you need thread-safety, you must synchronize the access yourself.
 
 ## About
 
-Created by Florian Märkl for [radare2](https://github.com/radare/radare2) and [Cutter](https://github.com/radareorg/cutter/).
+Created by Florian Märkl for [radare2](https://github.com/radareorg/radare2) and [Cutter](https://github.com/radareorg/cutter/).
 
 ```
 ptrace-wrap is free software: you can redistribute it and/or modify

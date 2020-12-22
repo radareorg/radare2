@@ -25,6 +25,8 @@ rm -rf "${SDKDIR}"
 mkdir -p "${SDKDIR}"/lib
 rm -f libr/libr.a
 cp -rf libr/include "${SDKDIR}"
+mkdir -p "${SDKDIR}/include/sdb"
+cp -rf shlr/sdb/src/*.h "${SDKDIR}/include/sdb/"
 FILES=`find libr shlr -iname '*.a'`
 cp -f ${FILES} "${SDKDIR}"/lib
 OS=`uname`

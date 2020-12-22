@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2018 - JohnPeng47 */
+/* radare - LGPL - Copyright 2018-2019 - JohnPeng47 */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -7,17 +7,17 @@
 #include "pe/pemixed.h"
 
 static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size);
-static bool check_bytes(const ut8 *bytes, ut64 sz);
 static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int subbin_type);
-static int destroy(RBin *bin);
-static int free_xtr (void *xtr_obj);
 
-//copied from bin_pe
-//another check is used later to check for .NET only code
-static bool check_bytes(const ut8 *bytes, ut64 sz) {
-	// XXX pemixed is always loaded because it uses
-	// XXX the same signature for fat and non-fat
-	// XXX so we need to make that action implicit
+static void free_xtr (void *xtr_obj) {
+	r_bin_pemixed_free ((struct r_bin_pemixed_obj_t*) xtr_obj);
+}
+
+static void destroy(RBin *bin) {
+	free_xtr (bin->cur->xtr_obj);
+}
+
+static bool check_buffer(RBuffer *b) {
 	return false;
 #if 0
 	if (!bytes) {
@@ -46,6 +46,7 @@ static bool check_bytes(const ut8 *bytes, ut64 sz) {
 #endif
 }
 
+// TODO RBufferify
 static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
 	//extract dos componenent first
 	RBinXtrData *data = oneshot (bin, buf, size, SUB_BIN_DOS);
@@ -79,43 +80,26 @@ static void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, void *foo) {// st
 	//strcpy (meta->xtr_type, "net");
 }
 
+// XXX: ut8* should be RBuffer *
 static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int sub_bin_type) {
-	struct r_bin_pemixed_obj_t* fb;
-	struct PE_(r_bin_pe_obj_t)* pe;
+	r_return_val_if_fail (bin && bin->cur && buf, false);
 
-	if (!bin || !bin->cur) {
+	if (!bin->cur->xtr_obj) {
+		bin->cur->xtr_obj = r_bin_pemixed_from_bytes_new (buf, size);
+	}
+
+	struct r_bin_pemixed_obj_t* fb = bin->cur->xtr_obj;
+	// this function is prolly not nessescary
+	struct PE_(r_bin_pe_obj_t)* pe = r_bin_pemixed_extract (fb, sub_bin_type);
+	if (!pe) {
 		return NULL;
 	}
-
-	if (!bin->cur->xtr_obj){
-		bin->cur->xtr_obj = r_bin_pemixed_from_bytes_new(buf, size);
-	}
-
-	fb = bin->cur->xtr_obj;
-
-	//this function is prolly not nessescary
-	pe = r_bin_pemixed_extract (fb, sub_bin_type);
-
-	if (!pe){
-		return NULL;
-	}
-
 	RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
 	if (!metadata) {
 		return NULL;
 	}
-
 	fill_metadata_info_from_hdr (metadata, pe);
 	return r_bin_xtrdata_new (pe->b, 0, pe->size, 3, metadata);
-}
-
-static int destroy(RBin *bin) {
-	return free_xtr (bin->cur->xtr_obj);
-}
-
-static int free_xtr (void *xtr_obj) {
-	r_bin_pemixed_free ((struct r_bin_pemixed_obj_t*) xtr_obj);
-	return true;
 }
 
 RBinXtrPlugin r_bin_xtr_plugin_xtr_pemixed = {
@@ -128,10 +112,10 @@ RBinXtrPlugin r_bin_xtr_plugin_xtr_pemixed = {
 	.extract_from_bytes = &oneshot,
 	.extractall_from_bytes = &oneshotall,
 	.free_xtr = &free_xtr,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN_XTR,
 	.data = &r_bin_xtr_plugin_pemixed,

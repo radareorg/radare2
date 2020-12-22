@@ -1,0 +1,2318 @@
+ad "lea edx, [0x2c4b]" 8d154b2c0000
+d "aaa" 37
+d "aad" d50a
+d "aam" d40a
+d "aas" 3F
+d "adc al, 0" 1400
+d "adc al, byte [eax]" 1200
+d "adc byte [eax], al" 1000
+d "adc dword [eax], eax" 1100
+d "adc eax, dword [eax]" 1300
+d "add al, 0" 0400
+d "add al, byte [eax]" 0200
+d "add byte [bx + si], al" 670000
+d "add byte [eax], 0" 800000
+d "add byte [eax], 0" 820000
+d "add byte [eax], al" 0000
+d "add byte [eax], al" 0000
+d "add dword [eax], 0" 810000000000
+d "add dword [eax], 0" 830000
+d "add dword [eax], eax" 0100
+d "add eax, dword [eax]" 0300
+d "addsd xmm0, qword [eax]" f20f5800
+d "addss xmm0, dword [eax]" f30f5800
+d "addsubpd xmm0, xmmword [eax]" 660fd000
+d "addsubps xmm0, xmmword [eax]" f20fd000
+d "and al, 0" 2400
+d "and al, byte [eax]" 2200
+d "and byte [eax], al" 2000
+d "and dword [eax], eax" 2100
+d "and eax, dword [eax]" 2300
+d "arpl word [eax], ax" 6300
+d "bound eax, qword [eax]" 6200
+d "bsf eax, dword [eax]" 0fbc00
+d "bsr eax, dword [eax]" 0fbd00
+d "bswap eax" 0fc8
+d "bswap ebp" 0fcd
+d "bswap ebx" 0fcb
+d "bswap ecx" 0fc9
+d "bswap edi" 0fcf
+d "bswap edx" 0fca
+d "bswap esi" 0fce
+d "bswap esp" 0fcc
+d "bt dword [eax], eax" 0fa300
+d "btc dword [eax], eax" 0fbb00
+d "btr dword [eax], eax" 0fb300
+d "bts dword [eax], eax" 0fab00
+d "call 4" 66e80000
+d "call 5" e800000000
+d "call dword [eax]" ff10
+d "cbw" 6698
+d "cdq" 99
+d "clc" F8
+d "cld" FC
+d "clflush byte [eax]" 0fae38
+d "clgi" 0f01dd
+d "cli" FA
+d "clts" 0f06
+d "cmc" F5
+d "cmova eax, dword [eax]" 0f4700
+d "cmovae eax, dword [eax]" 0f4300
+d "cmovb eax, dword [eax]" 0f4200
+d "cmovbe eax, dword [eax]" 0f4600
+d "cmove eax, dword [eax]" 0f4400
+d "cmovg eax, dword [eax]" 0f4f00
+d "cmovge eax, dword [eax]" 0f4d00
+d "cmovl eax, dword [eax]" 0f4c00
+d "cmovle eax, dword [eax]" 0f4e00
+d "cmovne eax, dword [eax]" 0f4500
+d "cmovno eax, dword [eax]" 0f4100
+d "cmovnp eax, dword [eax]" 0f4b00
+d "cmovns eax, dword [eax]" 0f4900
+d "cmovo eax, dword [eax]" 0f4000
+d "cmovp eax, dword [eax]" 0f4a00
+d "cmovs eax, dword [eax]" 0f4800
+d "cmp al, 0" 3c00
+d "cmp al, byte [eax]" 3a00
+d "cmp byte [eax], al" 3800
+d "cmp dword [eax], eax" 3900
+d "cmp eax, dword [eax]" 3b00
+d "cmpeqpd xmm0, xmmword [eax]" 660fc20000
+d "cmpeqps xmm0, xmmword [eax]" 0fc20000
+d "cmpeqsd xmm0, qword [eax]" f20fc20000
+d "cmpeqss xmm0, dword [eax]" f30fc20000
+d "cmplepd xmm0, xmmword [eax]" 660fc20002
+d "cmpleps xmm0, xmmword [eax]" 0fc20002
+d "cmplesd xmm0, qword [eax]" f20fc20002
+d "cmpless xmm0, dword [eax]" f30fc20002
+d "cmpltpd xmm0, xmmword [eax]" 660fc20001
+d "cmpltps xmm0, xmmword [eax]" 0fc20001
+d "cmpltsd xmm0, qword [eax]" f20fc20001
+d "cmpltss xmm0, dword [eax]" f30fc20001
+d "cmpneqpd xmm0, xmmword [eax]" 660fc20004
+d "cmpneqps xmm0, xmmword [eax]" 0fc20004
+d "cmpneqsd xmm0, qword [eax]" f20fc20004
+d "cmpneqss xmm0, dword [eax]" f30fc20004
+d "cmpnlepd xmm0, xmmword [eax]" 660fc20006
+d "cmpnleps xmm0, xmmword [eax]" 0fc20006
+d "cmpnlesd xmm0, qword [eax]" f20fc20006
+d "cmpnless xmm0, dword [eax]" f30fc20006
+d "cmpnltpd xmm0, xmmword [eax]" 660fc20005
+d "cmpnltps xmm0, xmmword [eax]" 0fc20005
+d "cmpnltsd xmm0, qword [eax]" f20fc20005
+d "cmpnltss xmm0, dword [eax]" f30fc20005
+d "cmpordpd xmm0, xmmword [eax]" 660fc20007
+d "cmpordps xmm0, xmmword [eax]" 0fc20007
+d "cmpordsd xmm0, qword [eax]" f20fc20007
+d "cmpordss xmm0, dword [eax]" f30fc20007
+d "cmpsb byte [esi], byte ptr es:[edi]" a6
+d "cmpsd dword [esi], dword ptr es:[edi]" a7
+d "cmpunordpd xmm0, xmmword [eax]" 660fc20003
+d "cmpunordps xmm0, xmmword [eax]" 0fc20003
+d "cmpunordsd xmm0, qword [eax]" f20fc20003
+d "cmpunordss xmm0, dword [eax]" f30fc20003
+d "cmpxchg byte [eax], al" 0fb000
+d "cmpxchg dword [eax], eax" 0fb100
+d "cpuid" 0fa2
+d "crc32 eax, byte [eax]" f20f38f000
+d "crc32 eax, dword [eax]" f20f38f100
+d "cwd" 6699
+d "cwde" 98
+d "daa" 27
+d "das" 2F
+d "dec byte [eax]" fe08
+d "dec dword [eax]" ff08
+d "dec eax" 48
+d "dec ebp" 4d
+d "dec ebx" 4b
+d "dec ecx" 49
+d "dec edi" 4f
+d "dec edx" 4a
+d "dec esi" 4e
+d "dec esp" 4c
+d "div byte [eax]" f630
+d "divsd xmm0, qword [eax]" f20f5e00
+d "divss xmm0, dword [eax]" f30f5e00
+d "emms" 0f77
+ad "endbr32" f30f1efb
+d "femms" 0f0e
+d "fxrstor [eax]" 0fae08
+d "fxsave [eax]" 0fae00
+d "getsec" 0f37
+d "haddpd xmm0, xmmword [eax]" 660f7c00
+d "haddps xmm0, xmmword [eax]" f20f7c00
+d "hlt" F4
+d "hsubpd xmm0, xmmword [eax]" 660f7d00
+d "hsubps xmm0, xmmword [eax]" f20f7d00
+d "idiv byte [eax]" f638
+d "imul byte [eax]" f628
+d "imul eax, dword [eax]" 0faf00
+d "imul eax, dword [eax], 0" 690000000000
+d "imul eax, dword [eax], 0" 6b0000
+d "in al, 0" E400
+d "in al, dx" ec
+d "in eax, 0" E500
+d "in eax, 0x8c" e58c
+d "in eax, dx" ed
+d "inc byte [eax]" fe00
+d "inc dword [eax]" ff00
+d "inc eax" 40
+d "inc ebp" 45
+d "inc ebx" 43
+d "inc ecx" 41
+d "inc edi" 47
+d "inc edx" 42
+d "inc esi" 46
+d "inc esp" 44
+d "insb byte es:[edi], dx" 6c
+d "insd dword es:[edi], dx" 6d
+d "int 1" CD01
+d "int 3" CD03
+d "int1" F1
+d "int3" CC
+d "into" CE
+d "invd" 0f08
+d "invlpg byte [eax]" 0f0138
+d "iret" 66CF
+d "iretd" CF
+d "ja 2" 7700
+d "ja 6" 0f8700000000
+d "jae 2" 7300
+d "jae 6" 0f8300000000
+d "jb 2" 7200
+d "jb 6" 0f8200000000
+d "jbe 2" 7600
+d "jbe 6" 0f8600000000
+d "je 2" 7400
+d "je 6" 0f8400000000
+d "jg 2" 7f00
+d "jg 6" 0f8f00000000
+d "jge 2" 7d00
+d "jge 6" 0f8d00000000
+d "jl 2" 7c00
+d "jl 6" 0f8c00000000
+d "jle 2" 7e00
+d "jle 6" 0f8e00000000
+d "jmp 3" 66EB00
+d "jne 2" 7500
+d "jne 6" 0f8500000000
+d "jno 2" 7100
+d "jno 6" 0f8100000000
+d "jnp 2" 7b00
+d "jnp 6" 0f8b00000000
+d "jns 2" 7900
+d "jns 6" 0f8900000000
+d "jo 2" 7000
+d "jo 6" 0f8000000000
+d "jp 2" 7a00
+d "jp 6" 0f8a00000000
+d "js 2" 7800
+d "js 6" 0f8800000000
+d "lahf" 9F
+d "lar eax, word [eax]" 0f0200
+d "lcall [0]" ff1c2500000000
+d "lcall [eax]" ff18
+d "lddqu xmm0, xmmword [eax]" f20ff000
+d "ldmxcsr dword [eax]" 0fae10
+d "lds eax, [eax]" c500
+d "lea eax, [eax]" 8d00
+d "leave" C9
+d "les eax, [eax]" c400
+d "lfence" 0faee8
+d "lgdt [eax]" 0f0110
+d "lidt [eax]" 0f0118
+d "lldt ax" 0f00d0
+d "lldt word [eax]" 0f0010
+d "lmsw ax" 0f01f0
+d "lmsw word [eax]" 0f0130
+d "lock and word fs:[bx + si], si" 646766f02130
+d "lodsb al, byte [esi]" ac
+d "lodsd eax, dword [esi]" ad
+d "loop 3" 66e200
+d "lsl eax, dword [eax]" 0f0300
+d "ltr ax" 0f00d8
+d "ltr word [eax]" 0f0018
+d "lzcnt eax, dword [eax]" f30fbd00
+d "mfence" 0faef0
+d "monitor" 0f01c8
+d "mov ah, 0" B400
+d "mov ah, 0" b400
+d "mov al, 0" B000
+d "mov al, 0" b000
+d "mov al, byte [0]" a000000000
+d "mov al, byte [eax]" 8a00
+d "mov bh, 0" B700
+d "mov bh, 0" b700
+d "mov bl, 0" B300
+d "mov bl, 0" b300
+d "mov byte [0], al" a200000000
+d "mov byte [eax], 0" c60000
+d "mov byte [eax], al" 8800
+d "mov ch, 0" B500
+d "mov ch, 0" b500
+d "mov cl, 0" B100
+d "mov cl, 0" b100
+d "mov dh, 0" B600
+d "mov dh, 0" b600
+d "mov dl, 0" B200
+d "mov dl, 0" b200
+d "mov dr0, eax" 0f2300
+d "mov dword [0], eax" a300000000
+d "mov dword [eax], 0" c70000000000
+d "mov dword [eax], eax" 8900
+d "mov dword cs:[eax], eax" 2e8900
+d "mov dword ds:[eax], eax" 3e8900
+d "mov dword es:[eax], eax" 268900
+d "mov dword fs:[eax], eax" 648900
+d "mov dword gs:[eax], eax" 658900
+d "mov dword ss:[eax], eax" 368900
+d "mov eax, 0" b800000000
+d "mov eax, cr0" 0f2000
+d "mov eax, dr0" 0f2100
+d "mov cr0, eax" 0f2200
+d "mov eax, dword [0]" a100000000
+d "mov eax, dword [eax]" 8b00
+d "mov eax, dword [ebp]" 8b4500
+d "mov eax, dword [esp]" 8b0424
+d "mov eax, dword fs:[ebp]" 648b4500
+d "mov ebp, 0" bd00000000
+d "mov ebx, 0" bb00000000
+d "mov ecx, 0" b900000000
+d "mov edi, 0" bf00000000
+d "mov edx, 0" ba00000000
+d "mov es, word [eax]" 8e00
+d "mov esi, 0" be00000000
+d "mov esp, 0" bc00000000
+d "mov word [eax], es" 8c00
+a "mov al, [0xbeef]" a0efbe0000
+a "mov ax, [0xbeef]" 66a1efbe0000
+a "mov eax, [0xbeef]" a1efbe0000
+a "mov eax, [0x12345678]" a178563412
+d "movapd xmm0, xmmword [eax]" 660f2800
+d "movapd xmmword [eax], xmm0" 660f2900
+d "movhpd qword [eax], xmm0" 660f1700
+d "movhpd xmm0, qword [eax]" 660f1600
+d "movlpd qword [eax], xmm0" 660f1300
+d "movlpd xmm0, qword [eax]" 660f1200
+d "movntdq xmmword [eax], xmm0" 660fe700
+d "movnti dword [eax], eax" 0fc300
+d "movntq qword [eax], mm0" 0fe700
+d "movq qword [eax], xmm0" 660fd600
+d "movsb byte es:[edi], byte ptr [esi]" a4
+d "movsd dword es:[edi], dword ptr [esi]" a5
+d "movsd dword es:[edi], dword ptr fs:[esi]" 64a5
+d "movshdup xmm0, xmmword [eax]" f30f1600
+d "movsldup xmm0, xmmword [eax]" f30f1200
+d "movss dword [eax], xmm0" f30f1100
+d "movss xmm0, dword [eax]" f30f1000
+d "movsx eax, byte [eax]" 0fbe00
+d "movsx eax, word [eax]" 0fbf00
+d "movupd xmm0, xmmword [eax]" 660f1000
+d "movupd xmmword [eax], xmm0" 660f1100
+d "movzx eax, byte [eax]" 0fb600
+d "movzx eax, word [eax]" 0fb700
+ad "mov byte [esp + eax + 0xf], 0" c644040f00
+ad "mov byte [eax + ecx + 0xf], 0" c644080f00
+ad "mov byte [edx + ecx + 2], 4" c6440a0204
+d "mul byte [eax]" f620
+d "mulsd xmm0, qword [eax]" f20f5900
+d "mulss xmm0, dword [eax]" f30f5900
+d "mwait" 0f01c9
+d "neg byte [eax]" f618
+d "neg eax" f7d8
+a "neg eax" f7d8
+d "nop" 90
+d "not byte [eax]" f610
+d "not al" f6d0
+d "or al, 0" 0c00
+d "or byte [eax], al" 0800
+d "or dword [eax], eax" 0900
+d "or eax, dword [eax]" 0b00
+d "out 0, al" E600
+d "out 0, eax" E700
+d "out 0x84, eax" e784
+ad "out dx, al" ee
+ad "out dx, eax" ef
+d "outsb dx, byte [esi]" 6e
+d "outsd dx, dword [esi]" 6f
+d "paddq xmm0, xmmword [eax]" 660fd400
+d "paddsb mm0, qword [eax]" 0fec00
+d "paddsw mm0, qword [eax]" 0fed00
+d "paddusb mm0, qword [eax]" 0fdc00
+d "paddusw mm0, qword [eax]" 0fdd00
+d "pand mm0, qword [eax]" 0fdb00
+d "pandn mm0, qword [eax]" 0fdf00
+d "pause" f390
+d "pavgb mm0, qword [eax]" 0fe000
+d "pavgb mm0, qword [eax]" 0fe000
+d "pavgw mm0, qword [eax]" 0fe300
+d "pextrb eax, xmm0, 0" 660f3a14c000
+d "pextrd eax, xmm0, 0" 660f3a16c000
+d "pextrw eax, mm0, 0" 0fc5c000
+d "pextrw eax, xmm0, 0" 660fc5c000
+d "pinsrd xmm0, dword [eax], 0" 660f3a220000
+d "pinsrw mm0, word [eax], 0" 0fc40000
+d "pinsrw xmm0, word [eax], 0" 660fc40000
+d "pmaxsw mm0, qword [eax]" 0fee00
+d "pmaxub mm0, qword [eax]" 0fde00
+d "pminsw mm0, qword [eax]" 0fea00
+d "pminub mm0, qword [eax]" 0fda00
+d "pop ds" 1F
+d "pop dword [eax]" 8f00
+d "pop eax" 58
+d "pop ebp" 5D
+d "pop ebx" 5B
+d "pop ecx" 59
+d "pop edi" 5F
+d "pop edx" 5A
+d "pop es" 07
+d "pop esi" 5E
+d "pop esp" 5C
+d "pop fs" 0fa1
+d "pop gs" 0fa9
+d "pop ss" 17
+d "popal" 61
+d "popaw" 6661
+d "popfd" 9D
+d "por mm0, qword [eax]" 0feb00
+d "prefetchnta byte [eax]" 0f1800
+d "prefetcht0 byte [eax]" 0f1808
+d "prefetcht1 byte [eax]" 0f1810
+d "prefetcht2 byte [eax]" 0f1818
+d "psrad mm0, 0" 0f72e000
+d "psrad mm0, qword [eax]" 0fe200
+d "psrad xmm0, 0" 660f72e000
+d "psrad xmm0, xmmword [eax]" 660fe200
+d "psraw mm0, 0" 0f71e000
+d "psraw mm0, qword [eax]" 0fe100
+d "psraw xmm0, 0" 660f71e000
+d "psraw xmm0, xmmword [eax]" 660fe100
+d "psubsb mm0, qword [eax]" 0fe800
+d "psubsw mm0, qword [eax]" 0fe900
+d "psubusb mm0, qword [eax]" 0fd800
+d "psubusw mm0, qword [eax]" 0fd900
+d "punpckhqdq xmm0, xmmword [eax]" 660f6d00
+d "punpcklqdq xmm0, xmmword [eax]" 660f6c00
+d "push 0" 6a00
+d "push cs" 0E
+d "push ds" 1E
+d "push dword [eax]" ff30
+d "push eax" 50
+d "push ebp" 55
+d "push ebx" 53
+d "push ecx" 51
+d "push edi" 57
+d "push edx" 52
+d "push es" 06
+d "push esi" 56
+d "push esp" 54
+d "push fs" 0fa0
+d "push gs" 0fa8
+d "push ss" 16
+d "pushal" 60
+d "pushfd" 9C
+d "pxor mm0, qword [eax]" 0fef00
+d "rdmsr" 0f32
+d "rdpmc" 0f33
+d "rdtsc" 0f31
+d "rdtscp" 0f01f9
+d "repne movsb byte es:[edi], byte ptr [esi]" f2a4
+d "ret" C3
+d "retf 0" CA0000
+d "retf" CB
+d "rol byte [eax], 0" c00000
+d "rol byte [eax], 1" d000
+d "rol byte [eax], cl" d200
+d "rol dword [eax], 0" c10000
+d "rol dword [eax], 1" d100
+d "rol dword [eax], cl" d300
+d "rsm" 0faa
+d "sahf" 9E
+d "salc" D6
+d "sbb al, 0" 1c00
+d "sbb al, byte [eax]" 1a00
+d "sbb byte [eax], al" 1800
+d "sbb dword [eax], eax" 1900
+d "sbb eax, dword [eax]" 1b00
+d "scasb al, byte es:[edi]" ae
+d "scasd eax, dword es:[edi]" af
+d "seta byte [eax]" 660f9700
+d "setae byte [eax]" 660f9300
+d "setb byte [eax]" 660f9200
+d "setbe byte [eax]" 660f9600
+d "sete byte [eax]" 660f9400
+d "setg byte [eax]" 660f9f00
+d "setge byte [eax]" 660f9d00
+d "setl byte [eax]" 660f9c00
+d "setle byte [eax]" 660f9e00
+d "setne byte [eax]" 660f9500
+d "setno byte [eax]" 660f9100
+d "setnp byte [eax]" 660f9b00
+d "setns byte [eax]" 660f9900
+d "seto byte [eax]" 660f9000
+d "setp byte [eax]" 660f9a00
+d "sets byte [eax]" 660f9800
+d "sfence" 0faef8
+d "sgdt [eax]" 0f0100
+d "shld dword [eax], eax, 0" 0fa40000
+d "shld dword [eax], eax, cl" 0fa500
+d "shrd dword [eax], eax, 0" 0fac0000
+d "shrd dword [eax], eax, cl" 0fad00
+d "shufpd xmm0, xmmword [eax], 0" 660fc60000
+d "shufps xmm0, xmmword [eax], 0" 0fc60000
+d "sidt [eax]" 0f0108
+d "sldt word [eax]" 0f0000
+d "smsw ax" 660f01e0
+d "smsw eax" 0f01e0
+d "smsw word [eax]" 0f0120
+d "stc" F9
+d "std" FD
+d "stgi" 0f01dc
+d "sti" FB
+d "stmxcsr dword [eax]" 0fae18
+d "stosb byte es:[edi], al" aa
+d "stosd dword es:[edi], eax" ab
+d "str word [eax]" 0f0008
+d "sub al, 0" 2c00
+d "sub al, byte [eax]" 2a00
+d "sub byte [eax], al" 2800
+d "sub dword [eax], eax" 2900
+d "sub eax, dword [eax]" 2b00
+d "subsd xmm0, qword [eax]" f20f5c00
+d "subss xmm0, dword [eax]" f30f5c00
+d "syscall" 0f05
+d "sysenter" 0f34
+d "sysexit" 0f35
+d "sysret" 0f07
+d "test al, 0" a800
+d "test byte [eax], 0" f60000
+d "test byte [eax], 0" f60800
+d "test byte [eax], al" 8400
+d "test dword [eax], 0" f70000000000
+d "test dword [eax], 0" f70000000000
+d "test dword [eax], 0" f70800000000
+d "test dword [eax], eax" 8500
+d "test eax, 0" a900000000
+d "ud2" 0f0b
+d "unpckhpd xmm0, xmmword [eax]" 660f1500
+d "unpcklpd xmm0, xmmword [eax]" 660f1400
+d "verr ax" 0f00e0
+d "verr word [eax]" 0f0020
+d "verw ax" 0f00e8
+d "verw word [eax]" 0f0028
+d "vmcall" 0f01c1
+d "vmclear qword [eax]" 660fc730
+d "vmlaunch" 0f01c2
+d "vmmcall" 0f01d9
+d "vmptrld qword [eax]" 0fc730
+d "vmptrst qword [eax]" 0fc738
+d "vmresume" 0f01c3
+d "vmxoff" 0f01c4
+d "vmxon qword [eax]" f30fc730
+d "vzeroall" c5fc77
+d "vzeroupper" c5f877
+d "wbinvd" 0f09
+d "wrmsr" 0f30
+d "xadd byte [eax], al" 0fc000
+d "xadd dword [eax], eax" 0fc100
+d "xchg byte [eax], al" 8600
+d "xchg dword [eax], eax" 8700
+d "xchg eax, ebp" 95
+d "xchg eax, ebx" 93
+d "xchg eax, ecx" 91
+d "xchg eax, edi" 97
+d "xchg eax, edx" 92
+d "xchg eax, esi" 96
+d "xchg eax, esp" 94
+d "xgetbv" 0f01d0
+d "xlatb" D7
+d "xor al, 0" 3400
+d "xor al, byte [eax]" 3200
+d "xor byte [eax], al" 3000
+d "xor byte [eax], 0xff" 8030FF
+d "xor dword [eax], eax" 3100
+d "xor eax, dword [eax]" 3300
+d "xrstor [eax]" 0fae28
+d "xsave [eax]" 0fae20
+d "xsetbv" 0f01d1
+d "xsaves [ecx]" 0fc729
+d "xsaveopt [ecx]" 0fae31
+d "xrstors [ecx]" 0fc719
+dB "adx" d4
+dB "amx" d5
+d "cwde" 98
+dB "cmpxchg16b [eax]" 67480f0c70
+dB "cmpxchg8b dword [eax]" 0fc7c0
+dB "extrq xmm0, 0, 0" 660f78000000
+dB "extrq xmm0, xmm0" 660f7900
+dB "invlpga" 0f01df
+dB "lcall 0, 0" 9a
+dB "lfs eax, dword [eax]" 0fb400
+dB "lgs eax, dword [eax]" 0fb500
+dB "lock mov dword [eax], eax" f08900
+dB "lock mov eax, eax" f089c0
+dB "lock" f00fc7c0
+dB "lss eax, dword [eax]" 0fb200
+dB "maskmovdqu xmm0, xmm0" 660ff7
+dB "maskmovq mm0, mm0" 0ff7
+dB "movdq2q mm0, xmm0" f20fd6
+dB "movq2dq xmm0, mm0" f30fd6
+dB "pextrq dword [eax], xmm0, 0" 660f3a16
+dB "pinsrq xmm0, dword [eax], 0" 660f3a22
+dB "pmovmskb eax, mm0" 0fd7
+dB "popcnt eax, qword [eax]" f30fb8
+dB "prefetch byte [eax]" 0f0d00
+d "rep movsb byte es:[edi], byte ptr [esi]" f3a4
+dB "retw" 66c3
+dB "skinit" 0f01de
+dB "swapgs" 0f1ff8
+dB "vmload" 0f01da
+dB "vmrun" 0f01d8
+dB "vmsave" 0f01db
+d "vaddpd ymm0, ymm0, ymm0" c5fd58c0
+d "aesdec xmm0, xmm0" 660f38dec0
+d "aesdeclast xmm0, xmm0" 660f38dfc0
+d "aesenc xmm0, xmm0" 660f38dcc0
+d "aesenclast xmm0, xmm0" 660f38ddc0
+d "aesimc xmm0, xmm0" 660f38dbc0
+d "aeskeygenassist xmm0, xmm0, 0" 660f3adfc000
+d "vaesdec xmm0, xmm0, xmm0" c4e279dec0
+d "vaesdeclast xmm0, xmm0, xmm0" c4e279dfc0
+d "vaesenc xmm0, xmm0, xmm0" c4e279dcc0
+d "vaesenclast xmm0, xmm0, xmm0" c4e279ddc0
+d "vaesimc xmm0, xmm0" c4e279dbc0
+d "vaeskeygenassist xmm0, xmm0, 0" c4e379dfc000
+d "vextractf128 xmm0, ymm0, 0" c4e37d19c000
+d "vbroadcastf128 ymm0, xmmword [0]" c4e27d1a0500000000
+d "vbroadcastsd ymm0, qword [0]" c4e27d190500000000
+d "vinsertf128 ymm0, ymm0, xmm0, 0" c4e37d18c000
+d "vperm2f128 ymm0, ymm0, ymm0, 0" c4e37d06c000
+d "vpermilpd ymm0, ymm0, ymmword [0]" c4e27d0d0500000000
+d "vpermilps ymm0, ymm0, ymmword [0]" c4e27d0c0500000000
+d "vfmadd132pd xmm0, xmm0, xmm0" c4e2f998c0
+d "vfmadd213pd xmm0, xmm0, xmm0" c4e2f9a8c0
+d "vfmadd231pd xmm0, xmm0, xmm0" c4e2f9b8c0
+d "addpd xmm0, xmmword [eax]" 660f5800
+d "vaeskeygenassist xmm0, xmm0, 0" c4e379dfc000
+d "vextractf128 xmm0, ymm0, 0" c4e37d19c000
+d "vbroadcastf128 ymm0, xmmword [0]" c4e27d1a0500000000
+d "vbroadcastsd ymm0, qword [0]" c4e27d190500000000
+d "vbroadcastss ymm0, dword [eax]" c4e27d1800
+d "vinsertf128 ymm0, ymm0, xmm0, 0" c4e37d18c000
+d "vperm2f128 ymm0, ymm0, ymm0, 0" c4e37d06c000
+d "vmaskmovps ymm0, ymm0, ymmword [0]" c4e27d2c0500000000
+d "vmaskmovpd ymm0, ymm0, ymmword [0]" c4e27d2d0500000000
+d "vpermilpd ymm0, ymm0, ymmword [0]" c4e27d0d0500000000
+d "vpermilps ymm0, ymm0, ymmword [0]" c4e27d0c0500000000
+d "pclmulqdq xmm0, xmm0, 0" 660f3a44c000
+d "vtestps ymm0, ymm0" c4e27d0ec0
+d "vtestpd ymm0, ymm0" c4e27d0fc0
+d "pshufb xmm0, xmmword [eax]" 660f380000
+d "phaddw xmm0, xmmword [eax]" 660f380100
+d "phaddd xmm0, xmmword [eax]" 660f380200
+d "phaddsw xmm0, xmmword [eax]" 660f380300
+d "pmaddubsw xmm0, xmmword [eax]" 660f380400
+d "phsubw xmm0, xmmword [eax]" 660f380500
+d "phsubd xmm0, xmmword [eax]" 660f380600
+d "phsubsw xmm0, xmmword [eax]" 660f380700
+d "pblendvb xmm0, xmm0" 660f3810c0
+d "blendvps xmm0, xmm0" 660f3814c0
+d "blendvpd xmm0, xmm0" 660f3815c0
+d "ptest xmm0, xmm0" 660f3817c0
+d "pcmpgtq xmm0, xmm0" 660f3837c0
+d "pmulld xmm0, xmm0" 660f3840c0
+d "phminposuw xmm0, xmm0" 660f3841c0
+d "movbe dword [eax], eax" 0f38f100
+d "movbe eax, dword [eax]" 0f38f000
+d "mulsd xmm7, xmm7" 66f3f20f59ff
+dB "mulss xmm7, xmm7" 66f2f0f59ff0
+d "mulpd xmm7, xmm7" 660f59ff
+dB "mulsd xmm7, xmm7" f2660f59ff
+d "mulps xmm7, xmm7" 0f59ff
+d "mpsadbw xmm0, xmm0, 0" 660f3a42c000
+d "pcmpestrm xmm0, xmm0, 0" 660f3a60c000
+d "pcmpestri xmm0, xmm0, 0" 660f3a61c000
+d "pcmpistrm xmm0, xmm0, 0" 660f3a62c000
+d "pcmpistri xmm0, xmm0, 0" 660f3a63c000
+d "roundps xmm0, xmm0, 0" 660f3a08c000
+d "roundpd xmm0, xmm0, 0" 660f3a09c000
+d "roundss xmm0, xmm0, 0" 660f3a0ac000
+d "roundsd xmm0, xmm0, 0" 660f3a0bc000
+d "blendps xmm0, xmm0, 0" 660f3a0cc000
+d "blendpd xmm0, xmm0, 0" 660f3a0dc000
+d "pblendw xmm0, xmm0, 0" 660f3a0ec000
+d "palignr xmm0, xmm0, 0" 660f3a0fc000
+d "palignr mm0, mm0, 0" 0f3a0fc000
+d "psrlw mm0, 0" 0f71d000
+d "psrld mm0, 0" 0f72d000
+d "psrlq mm0, 0" 0f73d000
+d "psllw mm0, 0" 0f71f000
+d "psllq mm0, 0" 0f73f000
+d "psrlw xmm0, 0" 660f71d000
+d "psrld xmm0, 0" 660f72d000
+d "psrlq xmm0, 0" 660f73d000
+d "psllw xmm0, 0" 660f71f000
+d "pslld xmm0, 0" 660f72f000
+d "psllq xmm0, 0" 660f73f000
+d "psrldq xmm0, 0" 660f73d800
+d "pslldq xmm0, 0" 660f73f800
+d "sqrtps xmm0, xmmword [eax]" 0f5100
+d "sqrtpd xmm0, xmmword [eax]" 660f5100
+d "sqrtsd xmm0, qword [eax]" f20f5100
+d "sqrtss xmm0, dword [eax]" f30f5100
+d "rsqrtps xmm0, xmmword [eax]" 0f5200
+d "rsqrtss xmm0, dword [eax]" f30f5200
+d "rcpps xmm0, xmmword [eax]" 0f5300
+d "rcpss xmm0, dword [eax]" f30f5300
+d "andps xmm0, xmmword [eax]" 0f5400
+d "andnps xmm0, xmmword [eax]" 0f5500
+d "andpd xmm0, xmmword [eax]" 660f5400
+d "andnpd xmm0, xmmword [eax]" 660f5500
+d "orps xmm0, xmmword [eax]" 0f5600
+d "xorps xmm0, xmmword [eax]" 0f5700
+d "orpd xmm0, xmmword [eax]" 660f5600
+d "xorpd xmm0, xmmword [eax]" 660f5700
+d "addps xmm0, xmmword [eax]" 0f5800
+d "subps xmm0, xmmword [eax]" 0f5c00
+d "mulps xmm0, xmmword [eax]" 0f5900
+d "divps xmm0, xmmword [eax]" 0f5e00
+d "addpd xmm0, xmmword [eax]" 660f5800
+d "subpd xmm0, xmmword [eax]" 660f5c00
+d "mulpd xmm0, xmmword [eax]" 660f5900
+d "divpd xmm0, xmmword [eax]" 660f5e00
+d "minps xmm0, xmmword [eax]" 0f5d00
+d "maxps xmm0, xmmword [eax]" 0f5f00
+d "minpd xmm0, xmmword [eax]" 660f5d00
+d "maxpd xmm0, xmmword [eax]" 660f5f00
+d "minsd xmm0, qword [eax]" f20f5d00
+d "maxsd xmm0, qword [eax]" f20f5f00
+d "minss xmm0, dword [eax]" f30f5d00
+d "maxss xmm0, dword [eax]" f30f5f00
+d "punpcklbw mm0, qword [eax]" 0f6000
+d "punpcklwd mm0, qword [eax]" 0f6100
+d "punpckldq mm0, qword [eax]" 0f6200
+d "punpcklbw xmm0, xmmword [eax]" 660f6000
+d "punpcklwd xmm0, xmmword [eax]" 660f6100
+d "punpckldq xmm0, xmmword [eax]" 660f6200
+d "packsswb mm0, qword [eax]" 0f6300
+d "packuswb mm0, qword [eax]" 0f6700
+d "packsswb xmm0, xmmword [eax]" 660f6300
+d "packuswb xmm0, xmmword [eax]" 660f6700
+d "pcmpgtb mm0, qword [eax]" 0f6400
+d "pcmpgtw mm0, qword [eax]" 0f6500
+d "pcmpgtd mm0, qword [eax]" 0f6600
+d "pcmpgtb xmm0, xmmword [eax]" 660f6400
+d "pcmpgtw xmm0, xmmword [eax]" 660f6500
+d "pcmpgtd xmm0, xmmword [eax]" 660f6600
+d "punpckhbw mm0, qword [eax]" 0f6800
+d "punpckhwd mm0, qword [eax]" 0f6900
+d "punpckhdq mm0, qword [eax]" 0f6a00
+d "punpckhbw xmm0, xmmword [eax]" 660f6800
+d "punpckhwd xmm0, xmmword [eax]" 660f6900
+d "punpckhdq xmm0, xmmword [eax]" 660f6a00
+d "packssdw mm0, qword [eax]" 0f6b00
+d "packssdw xmm0, xmmword [eax]" 660f6b00
+d "pshufb mm0, qword [eax]" 0f380000
+d "pshufw mm0, qword [eax], 0" 0f700000
+d "pshufb xmm0, xmmword [eax]" 660f380000
+d "pshufd xmm0, xmmword [eax], 0" 660f700000
+d "pshuflw xmm0, xmmword [eax], 0" f20f700000
+d "pshufhw xmm0, xmmword [eax], 0" f30f700000
+d "pcmpeqb mm0, qword [eax]" 0f7400
+d "pcmpeqw mm0, qword [eax]" 0f7500
+d "pcmpeqd mm0, qword [eax]" 0f7600
+d "pcmpeqb xmm0, xmmword [eax]" 660f7400
+d "pcmpeqw xmm0, xmmword [eax]" 660f7500
+d "pcmpeqd xmm0, xmmword [eax]" 660f7600
+d "movd mm0, dword [eax]" 0f6e00
+d "movq mm0, qword [eax]" 0f6f00
+d "movd dword [eax], mm0" 0f7e00
+d "movq qword [eax], mm0" 0f7f00
+d "movd xmm0, dword [eax]" 660f6e00
+d "movdqa xmm0, xmmword [eax]" 660f6f00
+d "movd dword [eax], xmm0" 660f7e00
+d "movdqa xmmword [eax], xmm0" 660f7f00
+d "movdqu xmm0, xmmword [eax]" f30f6f00
+d "movq xmm0, qword [eax]" f30f7e00
+d "movdqu xmmword [eax], xmm0" f30f7f00
+d "pmovsxbw xmm0, xmm0" 660f3820c0
+d "pmovsxbd xmm0, xmm0" 660f3821c0
+d "pmovsxbq xmm0, xmm0" 660f3822c0
+d "pmovsxwd xmm0, xmm0" 660f3823c0
+d "pmovsxwq xmm0, xmm0" 660f3824c0
+d "pmovsxdq xmm0, xmm0" 660f3825c0
+d "pmovzxbw xmm0, xmm0" 660f3830c0
+d "pmovzxbd xmm0, xmm0" 660f3831c0
+d "pmovzxbq xmm0, xmm0" 660f3832c0
+d "pmovzxwd xmm0, xmm0" 660f3833c0
+d "pmovzxwq xmm0, xmm0" 660f3834c0
+d "pmovzxdq xmm0, xmm0" 660f3835c0
+d "pminsb xmm0, xmm0" 660f3838c0
+d "pminsd xmm0, xmm0" 660f3839c0
+d "pminuw xmm0, xmm0" 660f383ac0
+d "pminud xmm0, xmm0" 660f383bc0
+d "pmaxsb xmm0, xmm0" 660f383cc0
+d "pmaxsd xmm0, xmm0" 660f383dc0
+d "pmaxuw xmm0, xmm0" 660f383ec0
+d "pmaxud xmm0, xmm0" 660f383fc0
+d "psignb xmm0, xmm0" 660f3808c0
+d "psignw xmm0, xmm0" 660f3809c0
+d "psignd xmm0, xmm0" 660f380ac0
+d "pmulhrsw xmm0, xmm0" 660f380bc0
+d "pabsb xmm0, xmm0" 660f381cc0
+d "pabsw xmm0, xmm0" 660f381dc0
+d "pabsd xmm0, xmm0" 660f381ec0
+d "pmuldq xmm0, xmm0" 660f3828c0
+d "pcmpeqq xmm0, xmm0" 660f3829c0
+d "movntdqa xmm0, xmmword [eax]" 660f382a00
+d "packusdw xmm0, xmm0" 660f382bc0
+d "extractps eax, xmm0, 0" 660f3a17c000
+d "pinsrb xmm0, eax, 0" 660f3a20c000
+d "insertps xmm0, xmm0, 0" 660f3a21c000
+d "dpps xmm0, xmm0, 0" 660f3a40c000
+d "dppd xmm0, xmm0, 0" 660f3a41c000
+d "pslld mm0, 0" 0f72f000
+d "movups xmm0, xmmword [eax]" 0f1000
+d "movups xmmword [eax], xmm0" 0f1100
+d "unpcklps xmm0, xmmword [eax]" 0f1400
+d "unpckhps xmm0, xmmword [eax]" 0f1500
+d "movlps xmm0, qword [eax]" 0f1200
+d "movlps qword [eax], xmm0" 0f1300
+dB "movhlps xmm0, xmm0" 0f1200
+dB "movlhps xmm0, xmm0" 0f1600
+d "movhps xmm0, qword [eax]" 0f1600
+d "movhps qword [eax], xmm0" 0f1700
+d "movmskps eax, xmm0" 0f50c0
+d "movmskpd eax, xmm0" 660f50c0
+d "vfmsubpd xmm0, xmm0, xmm0, xmm0" c4e3796dc000
+d "vfmsubps xmm0, xmm0, xmm0, xmm0" c4e3796cc000
+d "vfmsubsd xmm0, xmm0, xmm0, xmm0" c4e3796fc000
+d "vfmsubss xmm0, xmm0, xmm0, xmm0" c4e3796ec000
+d "vfnmaddpd xmm0, xmm0, xmm0, xmm0" c4e37979c000
+d "vfnmaddps xmm0, xmm0, xmm0, xmm0" c4e37978c000
+d "vfnmaddsd xmm0, xmm0, xmm0, xmm0" c4e3797bc000
+d "vfnmaddss xmm0, xmm0, xmm0, xmm0" c4e3797ac000
+d "vfnmaddpd ymm0, ymm0, ymm0, ymm0" c4e37d79c000
+d "vfnmaddps ymm0, ymm0, ymm0, ymm0" c4e37d78c000
+d "vfnmsubpd xmm0, xmm0, xmm0, xmm0" c4e3797dc000
+d "vfnmsubps xmm0, xmm0, xmm0, xmm0" c4e3797cc000
+d "vfnmsubsd xmm0, xmm0, xmm0, xmm0" c4e3797fc000
+d "vfnmsubss xmm0, xmm0, xmm0, xmm0" c4e3797ec000
+d "vfnmsubpd ymm0, ymm0, ymm0, ymm0" c4e37d7dc000
+d "vfnmsubps ymm0, ymm0, ymm0, ymm0" c4e37d7cc000
+d "vfnmsubss xmm0, xmm0, xmm0, xmm0" c4e3797ec000
+d "vfnmsubsd xmm0, xmm0, xmm0, xmm0" c4e3797fc000
+d "movsd xmm0, qword [eax]" f20f1000
+d "movsd qword [eax], xmm0" f20f1100
+d "movddup xmm0, qword [eax]" f20f1200
+d "cvtps2pd xmm0, qword [eax]" 0f5a00
+d "cvtpd2ps xmm0, xmmword [eax]" 660f5a00
+d "cvtsd2ss xmm0, qword [eax]" f20f5a00
+d "cvtss2sd xmm0, dword [eax]" f30f5a00
+d "cvtdq2ps xmm0, xmmword [eax]" 0f5b00
+d "cvtps2dq xmm0, xmmword [eax]" 660f5b00
+d "cvttps2dq xmm0, xmmword [eax]" f30f5b00
+d "cvttpd2dq xmm0, xmmword [eax]" 660fe600
+d "cvtpd2dq xmm0, xmmword [eax]" f20fe600
+d "cvtdq2pd xmm0, qword [eax]" f30fe600
+d "cvttps2pi mm0, qword [eax]" 0f2c00
+d "cvttpd2pi mm0, xmmword [eax]" 660f2c00
+d "cvttsd2si eax, qword [eax]" f20f2c00
+d "cvttss2si eax, dword [eax]" f30f2c00
+d "cvtpi2ps xmm0, qword [eax]" 0f2a00
+d "cvtpi2pd xmm0, qword [eax]" 660f2a00
+d "cvtsi2sd xmm0, dword [eax]" f20f2a00
+d "cvtsi2ss xmm0, dword [eax]" f30f2a00
+d "cvtps2pi mm0, qword [eax]" 0f2d00
+d "cvtsd2si eax, qword [eax]" f20f2d00
+d "cvtss2si eax, dword [eax]" f30f2d00
+d "cvtpd2pi mm0, xmmword [eax]" 660f2d00
+d "movaps xmm0, xmmword [eax]" 0f2800
+d "movaps xmmword [eax], xmm0" 0f2900
+d "movntps xmmword [eax], xmm0" 0f2b00
+d "movntpd xmmword [eax], xmm0" 660f2b00
+d "ucomiss xmm0, dword [eax]" 0f2e00
+d "comiss xmm0, xmmword [eax]" 0f2f00
+d "ucomisd xmm0, qword [eax]" 660f2e00
+d "comisd xmm0, xmmword [eax]" 660f2f00
+d "psubb mm0, qword [eax]" 0ff800
+d "psubw mm0, qword [eax]" 0ff900
+d "psubd mm0, qword [eax]" 0ffa00
+d "psubq mm0, qword [eax]" 0ffb00
+d "paddb mm0, qword [eax]" 0ffc00
+d "paddw mm0, qword [eax]" 0ffd00
+d "paddd mm0, qword [eax]" 0ffe00
+d "psrlw mm0, qword [eax]" 0fd100
+d "psrld mm0, qword [eax]" 0fd200
+d "psrlq mm0, qword [eax]" 0fd300
+d "psrlw xmm0, xmmword [eax]" 660fd100
+d "psrld xmm0, xmmword [eax]" 660fd200
+d "psrlq xmm0, xmmword [eax]" 660fd300
+d "psllw mm0, qword [eax]" 0ff100
+d "pslld mm0, qword [eax]" 0ff200
+d "psllq mm0, qword [eax]" 0ff300
+d "psllw xmm0, xmmword [eax]" 660ff100
+d "pslld xmm0, xmmword [eax]" 660ff200
+d "psllq xmm0, xmmword [eax]" 660ff300
+d "pmullw mm0, qword [eax]" 0fd500
+d "pmullw xmm0, xmmword [eax]" 660fd500
+d "pmulhuw mm0, qword [eax]" 0fe400
+d "pmulhuw xmm0, xmmword [eax]" 660fe400
+d "pmulhw mm0, qword [eax]" 0fe500
+d "pmulhw xmm0, xmmword [eax]" 660fe500
+d "pmuludq mm0, qword [eax]" 0ff400
+d "pmuludq xmm0, xmmword [eax]" 660ff400
+d "pmaddwd mm0, qword [eax]" 0ff500
+d "pmaddwd xmm0, xmmword [eax]" 660ff500
+d "psadbw mm0, qword [eax]" 0ff600
+d "psadbw xmm0, xmmword [eax]" 660ff600
+d "psubusb xmm0, xmmword [eax]" 660fd800
+d "psubusw xmm0, xmmword [eax]" 660fd900
+d "pminub xmm0, xmmword [eax]" 660fda00
+d "pmaxub xmm0, xmmword [eax]" 660fde00
+d "pand xmm0, xmmword [eax]" 660fdb00
+d "pandn xmm0, xmmword [eax]" 660fdf00
+d "paddusb xmm0, xmmword [eax]" 660fdc00
+d "paddusw xmm0, xmmword [eax]" 660fdd00
+d "pavgb xmm0, xmmword [eax]" 660fe000
+d "pavgw xmm0, xmmword [eax]" 660fe300
+d "psubsb xmm0, xmmword [eax]" 660fe800
+d "psubsw xmm0, xmmword [eax]" 660fe900
+d "pminsw xmm0, xmmword [eax]" 660fea00
+d "pmaxsw xmm0, xmmword [eax]" 660fee00
+d "por xmm0, xmmword [eax]" 660feb00
+d "paddsb xmm0, xmmword [eax]" 660fec00
+d "paddsw xmm0, xmmword [eax]" 660fed00
+d "pxor xmm0, xmmword [eax]" 660fef00
+d "psubb xmm0, xmmword [eax]" 660ff800
+d "psubw xmm0, xmmword [eax]" 660ff900
+d "psubd xmm0, xmmword [eax]" 660ffa00
+d "psubq xmm0, xmmword [eax]" 660ffb00
+d "paddb xmm0, xmmword [eax]" 660ffc00
+d "paddw xmm0, xmmword [eax]" 660ffd00
+d "paddd xmm0, xmmword [eax]" 660ffe00
+d "vpmadcsswd xmm0, xmm0, xmm0, xmm0" 8fe878a6c000
+d "vfrczpd xmm0, xmm0" 8fe97881c0
+dB "vcvtph2ps xmm0, xmm0, 0" 8fe878a0c000
+dB "vcvtps2ph xmm0, xmm0, 0" 8fe878a1c000
+d "vfrczps xmm0, xmm0" 8fe97880c0
+d "vfrczsd xmm0, xmm0" 8fe97883c0
+d "vfrczss xmm0, xmm0" 8fe97882c0
+d "vphaddbd xmm0, xmm0" 8fe978c2c0
+d "vphaddbq xmm0, xmm0" 8fe978c3c0
+d "vphaddbw xmm0, xmm0" 8fe978c1c0
+d "vphadddq xmm0, xmm0" 8fe978cbc0
+d "vphaddwd xmm0, xmm0" 8fe978c6c0
+d "vphaddwq xmm0, xmm0" 8fe978c7c0
+d "vphsubbw xmm0, xmm0" 8fe978e1c0
+d "vphsubdq xmm0, xmm0" 8fe978e3c0
+d "vphsubwd xmm0, xmm0" 8fe978e2c0
+d "vfmaddpd xmm0, xmm0, xmm0, xmm0" c4e37969c000
+d "vfmaddps xmm0, xmm0, xmm0, xmm0" c4e37968c000
+d "vfmaddsd xmm0, xmm0, xmm0, xmm0" c4e3796bc000
+d "vfmaddss xmm0, xmm0, xmm0, xmm0" c4e3796ac000
+d "vfmaddpd ymm0, ymm0, ymm0, ymm0" c4e37d69c000
+d "vfmaddps ymm0, ymm0, ymm0, ymm0" c4e37d68c000
+d "vfmsubpd ymm0, ymm0, ymm0, ymm0" c4e37d6dc000
+d "vfmsubps ymm0, ymm0, ymm0, ymm0" c4e37d6cc000
+d "vfmaddsubpd xmm0, xmm0, xmm0, xmm0" c4e3795dc000
+d "vfmaddsubps xmm0, xmm0, xmm0, xmm0" c4e3795cc000
+d "vfmsubaddpd xmm0, xmm0, xmm0, xmm0" c4e3795fc000
+d "vfmsubaddps xmm0, xmm0, xmm0, xmm0" c4e3795ec000
+d "vfmaddsubpd ymm0, ymm0, ymm0, ymm0" c4e37d5dc000
+d "vfmaddsubps ymm0, ymm0, ymm0, ymm0" c4e37d5cc000
+d "vfmsubaddps ymm0, ymm0, ymm0, ymm0" c4e37d5ec000
+d "vfmsubaddpd ymm0, ymm0, ymm0, ymm0" c4e37d5fc000
+d "vpcmov xmm0, xmm0, xmm0, xmm0" 8fe878a2c000
+dB "vpcomb xmm0, xmm0, xmm0, 0" 8fe878ccc000
+dB "vpcomd xmm0, xmm0, xmm0, 0" 8fe878cec000
+dB "vpcomq xmm0, xmm0, xmm0, 0" 8fe878cfc000
+dB "vpcomub xmm0, xmm0, xmm0, 0" 8fe878ecc000
+dB "vpcomud xmm0, xmm0, xmm0, 0" 8fe878eec000
+dB "vpcomuq xmm0, xmm0, xmm0, 0" 8fe878efc000
+dB "vpcomuw xmm0, xmm0, xmm0, 0" 8fe878edc000
+dB "vpcomw xmm0, xmm0, xmm0, 0" 8fe878cdc000
+d "vpmacsdd xmm0, xmm0, xmm0, xmm0" 8fe8789ec000
+d "vpmacsdqh xmm0, xmm0, xmm0, xmm0" 8fe8789fc000
+d "vpmacsdql xmm0, xmm0, xmm0, xmm0" 8fe87897c000
+d "vpmacssdd xmm0, xmm0, xmm0, xmm0" 8fe8788ec000
+d "vpmacssdqh xmm0, xmm0, xmm0, xmm0" 8fe8788fc000
+d "vpmacssdql xmm0, xmm0, xmm0, xmm0" 8fe87887c000
+d "vpmacsswd xmm0, xmm0, xmm0, xmm0" 8fe87886c000
+d "vpmacssww xmm0, xmm0, xmm0, xmm0" 8fe87885c000
+d "vpmacswd xmm0, xmm0, xmm0, xmm0" 8fe87896c000
+d "vpmacsww xmm0, xmm0, xmm0, xmm0" 8fe87895c000
+d "vpmadcswd xmm0, xmm0, xmm0, xmm0" 8fe878b6c000
+d "vpperm xmm0, xmm0, xmm0, xmm0" 8fe878a3c000
+d "vprotb xmm0, xmm0, xmm0" 8fe97890c0
+d "vprotd xmm0, xmm0, xmm0" 8fe97892c0
+d "vprotq xmm0, xmm0, xmm0" 8fe97893c0
+d "vprotw xmm0, xmm0, xmm0" 8fe97891c0
+d "vpshab xmm0, xmm0, xmm0" 8fe97898c0
+d "vpshad xmm0, xmm0, xmm0" 8fe9789ac0
+d "vpshaq xmm0, xmm0, xmm0" 8fe9789bc0
+d "vpshaw xmm0, xmm0, xmm0" 8fe97899c0
+d "vpshlb xmm0, xmm0, xmm0" 8fe97894c0
+d "vpshld xmm0, xmm0, xmm0" 8fe97896c0
+d "vpshlq xmm0, xmm0, xmm0" 8fe97897c0
+d "vpshlw xmm0, xmm0, xmm0" 8fe97895c0
+d "vphaddubd xmm0, xmm0" 8fe978d2c0
+d "vphaddubq xmm0, xmm0" 8fe978d3c0
+d "vphaddubw xmm0, xmm0" 8fe978d1c0
+d "vphaddudq xmm0, xmm0" 8fe978dbc0
+d "vphadduwd xmm0, xmm0" 8fe978d6c0
+d "vphadduwq xmm0, xmm0" 8fe978d7c0
+d "vpmadcsswd xmm0, xmm0, xmm0, xmm0" 8fe878a6c000
+a "aaa" 37
+a "aad" d50a
+a "aam" d40a
+a "aam 12" d40c
+a "aas" 3f
+a "adc al, 0" 1400
+a "adc al, byte [eax]" 1200
+a "adc byte [eax], al" 1000
+a "adc dword [eax], eax" 1100
+a "adc eax, dword [eax]" 1300
+a "add al, 0" 0400
+a "add ax, 0x4" 6683c004
+a "add ax, 0x96" 66059600
+a "add cx, 0x4" 6683c104
+a "add al, byte [eax]" 0200
+aB "add byte [bx + si], al" 670001
+a "add byte [eax], 0" 800000
+a "add byte [eax], al" 0000
+a "add dword [eax], 1" 830001
+a "add dword [eax+8], 1" 83400801
+a "add dword [eax], eax" 0100
+a "add dword [ebp+4], 1" 83450401
+a "add dword [ebp+8], 1" 83450801
+a "add dword [ebx], 1" 830301
+a "add dword [ebx+8], 1" 83430801
+a "add dword [esp+8], 1" 8344240801
+a "add eax, 1" 83c001
+a "add eax, 3" 83c003
+a "add eax, dword [eax]" 0300
+a "add [eax], eax" 0100
+a "add esi,-334" 81c6b2feffff
+a "add byte [0x45342], al" 000542530400
+a "add byte [0x45a42], 0x24" 8005425a040024
+a "add byte [eax + eax], bl" 001c
+aB "addpd xmm0, xmmword [eax]" 660f5800
+aB "addps xmm0, xmmword [eax]" 0f5800
+aB "addsd xmm0, qword [eax]" F20F5800
+aB "addss xmm0, dword [eax]" F30F5800
+aB "addsubpd xmm0, xmmword [eax]" 660fd000
+aB "addsubps xmm0, xmmword [eax]" f20fd000
+a "adx" d4
+aB "aesdeclast xmm0, xmm0" 660f38dfc0
+aB "aesdec xmm0, xmm0" 660f38dec0
+aB "aesenclast xmm0, xmm0" 660f38ddc0
+aB "aesenc xmm0, xmm0" 660f38dcc0
+aB "aesimc xmm0, xmm0" 660f38dbc0
+aB "aeskeygenassist xmm0, xmm0, 0x0" 660f3adfc000
+a "amx" d5
+a "and al, 0" 2400
+a "and ax, 0x6" 6683e006
+a "and ax, 0x97" 66259700
+a "and bx, 0x7" 6683e307
+a "and bx, 0x97" 6681e39700
+a "and al, byte [eax]" 2200
+a "and byte [eax], al" 2000
+a "and dword [eax], eax" 2100
+a "and eax, dword [eax]" 2300
+aB "andnpd xmm0, xmmword [eax]" 660f55
+aB "andnps xmm0, xmmword [eax]" 0f5500
+aB "andpd xmm0, xmmword [eax]" 660f54
+aB "andps xmm0, xmmword [eax]" 0f5400
+aB "arpl word [eax], ax" 6300
+aB "blendpd xmm0, xmm0, 0" 660f3a0dc000
+aB "blendps xmm0, xmm0, 0" 660f3a0cc000
+aB "blendvpd xmm0, xmm0" 660f3815c0
+aB "blendvps xmm0, xmm0" 660f3814c0
+aB "bound eax, qword [eax]" 6200
+a "bsf eax, dword [eax]" 0fbc00
+a "bsr eax, dword [eax]" 0fbd00
+a "bswap eax" 0fc8
+a "bswap ebp" 0fcd
+a "bswap ebx" 0fcb
+a "bswap ecx" 0fc9
+a "bswap edi" 0fcf
+a "bswap edx" 0fca
+a "bswap esi" 0fce
+a "bswap esp" 0fcc
+aB "btc dword [eax], eax" 0fbb00
+aB "bt dword [eax], eax" 0fa300
+aB "bt ecx, esp" 0fa3e1
+aB "bt edx, 59" 0fbae23b
+aB "bt ebp, -20" 0fbae5e0
+aB "btr dword [eax], eax" 0fb300
+aB "bts dword [eax], eax" 0fab00
+a "call 0x8049100" e8fb900408
+a "call 4" e8ffffffff
+a "call 5" e800000000
+a "call dword [eax]" ff10
+a "call ebx" ffd3
+a "bnd call ebx" f2ffd3
+a "cbw" 6698
+a "cdq" 99
+a "cdqe" 98
+a "clc" f8
+a "cld" fc
+a "clflush byte [eax]" 0fae38
+a "clgi" 0f01dd
+a "cli" fa
+a "clts" 0f06
+a "cmc" f5
+a "cmova eax, dword [eax]" 0f4700
+a "cmovae eax, dword [eax]" 0f4300
+a "cmovb eax, dword [eax]" 0f4200
+a "cmovbe eax, dword [eax]" 0f4600
+a "cmove eax, dword [eax]" 0f4400
+a "cmovg eax, [eax]" 0f4f00
+a "cmovge eax, dword [eax]" 0f4d00
+a "cmovl eax, dword [eax]" 0f4c00
+a "cmovle eax, dword [eax]" 0f4e00
+a "cmovne eax, dword [eax]" 0f4500
+a "cmovno eax, dword [eax]" 0f4100
+a "cmovnp eax, dword [eax]" 0f4b00
+a "cmovns eax, dword [eax]" 0f4900
+a "cmovo eax, dword [eax]" 0f4000
+a "cmovp eax, dword [eax]" 0f4a00
+a "cmovs eax, dword [eax]" 0f4800
+a "cmova eax, dword eax" 0f47c0
+a "cmovae eax, dword eax" 0f43c0
+a "cmovb eax, dword eax" 0f42c0
+a "cmovbe eax, dword eax" 0f46c0
+a "cmove eax, dword eax" 0f44c0
+a "cmovg eax, eax" 0f4fc0
+a "cmovge eax, dword eax" 0f4dc0
+a "cmovl eax, dword eax" 0f4cc0
+a "cmovle eax, dword eax" 0f4ec0
+a "cmovne eax, dword eax" 0f45c0
+a "cmovno eax, dword eax" 0f41c0
+a "cmovnp eax, dword eax" 0f4bc0
+a "cmovns eax, dword eax" 0f49c0
+a "cmovo eax, dword eax" 0f40c0
+a "cmovp eax, dword eax" 0f4ac0
+a "cmovs eax, dword eax" 0f48c0
+a "cmova eax, [eax*2]" 0f470400
+a "cmovae eax, [ecx+4]" 0f434104
+a "cmovb eax, [edx*4+edx]" 0f420492
+a "cmovbe eax, [ecx*8]" 0f4604cd
+a "cmove eax, [ebx*2+44]" 0f44441b2c
+a "cmovg ecx, [eax*4+656]" 0f4f0c8590020000
+a "cmovge edx, [ebp]" 0f4d5500
+a "cmovl eax, [ebp*2+88]" 0f4c442d58
+a "cmp al, 0" 3c00
+a "cmp al, byte [eax]" 3a00
+a "cmp byte [eax], al" 3800
+a "cmp dword [eax], eax" 3900
+a "cmp eax, 33" 83f821
+a "cmp eax, dword [eax]" 3b00
+a "cmp eax, ebx" 39d8
+a "cmp ebx, eax" 39c3
+a "cmp edx, esi" 39f2
+aB "cmpeqpd xmm0, xmmword [eax]" 660fc20000
+aB "cmpeqps xmm0, xmmword [eax]" 0fc20000
+aB "cmpeqss xmm0, dword [eax]" f30fc20000
+aB "cmplepd xmm0, xmmword [eax]" 660fc20002
+aB "cmpleps xmm0, xmmword [eax]" 0fc20002
+aB "cmplesd xmm0, qword [eax]" f20fc20002
+aB "cmpless xmm0, dword [eax]" f30fc20002
+aB "cmpltpd xmm0, xmmword [eax]" 660fc20001
+aB "cmpltps xmm0, xmmword [eax]" 0fc20001
+aB "cmpltsd xmm0, qword [eax]" f20fc20001
+aB "cmpltss xmm0, dword [eax]" f30fc20001
+aB "cmpneqpd xmm0, xmmword [eax]" 660fc20004
+aB "cmpneqps xmm0, xmmword [eax]" 0fc20004
+aB "cmpneqsd xmm0, qword [eax]" f20fc20004
+aB "cmpneqss xmm0, dword [eax]" f30fc20004
+aB "cmpnlepd xmm0, xmmword [eax]" 660fc20006
+aB "cmpnleps xmm0, xmmword [eax]" 0fc20006
+aB "cmpnlesd xmm0, qword [eax]" f20fc20006
+aB "cmpnless xmm0, dword [eax]" f30fc20006
+aB "cmpnltpd xmm0, xmmword [eax]" 660fc20005
+aB "cmpnltps xmm0, xmmword [eax]" 0fc20005
+aB "cmpnltsd xmm0, qword [eax]" f20fc20005
+aB "cmpnltss xmm0, dword [eax]" f30fc20005
+aB "cmpordpd xmm0, xmmword [eax]" 660fc20007
+aB "cmpordps xmm0, xmmword [eax]" 0fc20007
+aB "cmpordsd xmm0, qword [eax]" f20fc20007
+aB "cmpordss xmm0, dword [eax]" f30fc20007
+a "cmpsb byte [esi], byte ptr es:[edi]" a6
+a "cmpsd dword [esi], dword ptr es:[edi]" a7
+aB "cmpsd xmm0, qword [eax]" f20fc20000
+aB "cmpunordpd xmm0, xmmword [eax]" 660fc20003
+aB "cmpunordps xmm0, xmmword [eax]" 0fc20003
+aB "cmpunordsd xmm0, qword [eax]" f20fc20003
+aB "cmpunordss xmm0, dword [eax]" f30fc20003
+aB "cmpxchg16b [eax]" 67480f0c70
+aB "cmpxchg8b dword [eax]" 0fc7c0
+aB "cmpxchg byte [eax], al" 0fb000
+aB "cmpxchg dword [eax], eax" 0fb100
+aB "comisd xmm0, xmmword [eax]" 660f2f00
+aB "comiss xmm0, xmmword [eax]" 0f2f00
+a "cpuid" 0fa2
+aB "crc32 eax, byte [eax]" f20f38f0
+aB "crc32 eax, dword [eax]" f20f38f1
+aB "cvtdq2pd xmm0, qword [eax]" f30fe600
+aB "cvtdq2ps xmm0, xmmword [eax]" 0f5b00
+aB "cvtpd2dq xmm0, xmmword [eax]" f20fe600
+aB "cvtpd2pi mm0, xmmword [eax]" 660f2d00
+aB "cvtpd2ps xmm0, xmmword [eax]" 660f5a00
+aB "cvtpi2pd xmm0, qword [eax]" 660f2a00
+aB "cvtpi2ps xmm0, qword [eax]" 0f2a00
+aB "cvtps2dq xmm0, xmmword [eax]" 660f5b00
+aB "cvtps2pd xmm0, qword [eax]" 0f5a00
+aB "cvtps2pi mm0, qword [eax]" 0f2d00
+aB "cvtsd2si eax, qword [eax]" f20f2d00
+aB "cvtsd2ss xmm0, qword [eax]" f20f5a00
+aB "cvtsi2sd xmm0, dword [eax]" f20f2a00
+aB "cvtsi2ss xmm0, dword [eax]" f30f2a00
+aB "cvtss2sd xmm0, dword [eax]" f30f5a00
+aB "cvtss2si eax, dword [eax]" f30f2d00
+aB "cvttpd2dq xmm0, xmmword [eax]" 660fe600
+aB "cvttpd2pi mm0, xmmword [eax]" 660f2c00
+aB "cvttps2dq xmm0, xmmword [eax]" f30f5b00
+aB "cvttps2pi mm0, qword [eax]" 0f2c00
+aB "cvttsd2si eax, qword [eax]" f20f2c00
+aB "cvttss2si eax, dword [eax]" f30f2c00
+a "cwd" 6699
+a "cwde" 98
+a "daa" 27
+a "das" 2f
+a "dec byte [eax]" fe08
+a "dec dword [eax]" ff08
+a "dec eax" 48
+a "dec ebp" 4d
+a "dec ebx" 4b
+a "dec ecx" 49
+a "dec edi" 4f
+a "dec edx" 4a
+a "dec esi" 4e
+a "dec esp" 4c
+a "div byte [eax]" f630
+aB "divpd xmm0, xmmword [eax]" 660f5e00
+aB "divps xmm0, xmmword [eax]" 0f5e00
+aB "divsd xmm0, qword [eax]" f20f5e00
+aB "divss xmm0, dword [eax]" f30f5e00
+aB "dppd xmm0, xmm0, 0" 660f3a41c000
+aB "dpps xmm0, xmm0, 0" 660f3a40c000
+a "emms" 0f77
+aB "extractps eax, xmm0, 0" 660f3a17c000
+aB "extrq xmm0, 0x0, 0x0" 660f78c00000
+aB "extrq xmm0, xmm0" 660f7900
+a "femms" 0f0e
+a "fsincos" d9fb
+a "fxrstor [eax]" 0fae08
+a "fxsave [eax]" 0fae00
+a "getsec" 0f37
+aB "haddpd xmm0, xmmword [eax]" 660f7c00
+aB "haddps xmm0, xmmword [eax]" f20f7c00
+a "hlt" f4
+aB "hsubpd xmm0, xmmword [eax]" 660f7d00
+aB "hsubps xmm0, xmmword [eax]" f20f7d00
+a "idiv byte [eax]" f638
+a "imul eax" f7e8
+a "imul edx" f7ea
+a "imul edx, eax" 0fafd0
+a "imul ecx, 23" 6bc917
+a "imul edx, ecx, 34" 6bd122
+a "imul byte [eax]" f628
+a "imul dword [eax]" f728
+a "imul ebx, [edx + ecx]" 0faf1c0a
+a "imul ebx, dword [edx], 0" 6b1a00
+a "imul ebx, edx, 4" 6bda04
+a "imul eax, dword [eax]" 0faf00
+a "imul eax, [eax], 0" 6b0000
+a "in al,0" e400
+a "in al,dx" ec
+a "inc byte [eax]" fe00
+a "inc dword [eax]" ff00
+a "inc eax" 40
+a "inc ebp" 45
+a "inc ebx" 43
+a "inc ecx" 41
+a "inc edi" 47
+a "inc edx" 42
+a "inc esi" 46
+a "inc esp" 44
+a "in eax, 0" e500
+a "in eax, 0x8c" e58c
+a "in eax, dx" ed
+a "insb byte es:[edi], dx" 6c
+a "insd dword es:[edi], dx" 6d
+aB "insertps xmm0, xmm0, 0" 660f3a21c000
+a "int 0x21" cd21
+a "int 1" cd01
+a "int1" f1
+a "int3" cc
+a "int 3" cd03
+a "into" ce
+a "invd" 0f08
+aB "invlpga" 0f01df
+aB "invlpg byte [eax]" 0f0138
+a "iret" 66cf
+a "iretd" cf
+a "ja 0x8049300" 0f87fa920408
+a "ja 2" 7700
+a "ja 6" 7704
+a "jae 2" 7300
+a "jae 6" 7304
+a "jb 0x8049300" 0f82fa920408
+a "jb 2" 7200
+a "jb 6" 7204
+a "jbe 2" 7600
+a "jbe 6" 7604
+a "je 2" 7400
+a "je 6" 7404
+a "jg 0x8049300" 0f8ffa920408
+a "jg 2" 7f00
+a "jg 6" 7f04
+a "jge 0x8048010" 0f8d0a800408
+a "jge 0x8049300" 0f8dfa920408
+a "jge 2" 7d00
+a "jge 6" 7d04
+a "jl 0x8048010" 0f8c0a800408
+a "jl 0x8049300" 0f8cfa920408
+a "jl 2" 7c00
+a "jl 6" 7c04
+a "jle 0x8048010" 0f8e0a800408
+a "jle 0x8049300" 0f8efa920408
+a "jle 2" 7e00
+a "jle 6" 7e04
+a "jmp 0" ebfe
+a "jmp 0x42" eb40
+a "jmp -0x7e" eb80
+a "jmp -0x7f" e97cffffff
+a "jmp 0x8049200" e9fb910408
+a "jmp 0x81" eb7f
+a "jmp 0x82" e97d000000
+a "jmp 2" eb00
+a "jmp 3" eb01
+a "jmp ecx" ffe1
+a "jmp [ecx]" ff21
+a "jmp [ebx+43]" ff632b
+a "jmp [ecx+200]" ffa1c8000000
+a "jmp [edx-10]" ff62f6
+a "jmp [eax-140]" ffa074ffffff
+a "bnd jmp 0x82" f2e97d000000
+a "jne 6" 7504
+a "jno 2" 7100
+a "jno 6" 7104
+a "jnp 2" 7b00
+a "jnp 6" 7b04
+a "jns 2" 7900
+a "jns 6" 7904
+a "jnz 2" 7500
+a "jo 2" 7000
+a "jo 6" 7004
+a "jp 2" 7a00
+a "jp 6" 7a04
+a "jpo 599" 0f8b51020000
+a "js 2" 7800
+a "js 6" 7804
+a "jz 6" 7404
+a "jz short 2" 7400
+a "jnz short 6" 7504
+a "jz short 5" 7403
+a "jnz short -2" 75fc
+a "jz short -52" 74ca
+a "jnz short 23" 7515
+a "jo short 32" 701e
+a "jo short -62" 70c0
+a "jno short 52" 7132
+a "jno short -33" 71dd
+a "js short 43" 7829
+a "js short -73" 78b5
+a "jns short -41" 79d5
+a "jns short 63" 793d
+a "je short 24" 7416
+a "jne SHORT 84" 7552
+a "jb short 23" 7215
+a "jnae short 65" 723f
+a "jc SHORT 37" 7223
+a "jnb short 97" 735f
+a "jae short 10" 7308
+a "jnc short 0" 73fe
+a "jbe short -12" 76f2
+a "jna short 24" 7616
+a "ja short 86" 7754
+a "jnbe short 31" 771d
+a "jl short 16" 7c0e
+a "jnge short -40" 7cd6
+a "jge short 52" 7d32
+a "jnl short 76" 7d4a
+a "jle short 54" 7e34
+a "jng short -80" 7eae
+a "jg short 56" 7f36
+a "jnle short 2" 7f00
+a "jp short -7" 7af7
+a "jpe short 22" 7a14
+a "jnp short 64" 7b3e
+a "jpo short 88" 7b56
+aB "lahf" 9e
+aB "lar eax, word [eax]" 0f02
+aB "lcall 0, 0" 9a
+aB "lcall [0]" ff1c2500000000
+aB "lcall [eax]" ff18
+aB "lddqu xmm0, xmmword [eax]" f20ff000
+aB "ldmxcsr [eax]" 0fae10
+aB "lds eax, [eax]" c500
+a "lea eax, [4]" 8d0504000000
+a "lea eax, [eax+4]" 8d4004
+a "lea eax, [eax]" 8d00
+a "lea eax, [ebp+24]" 8d4518
+a "lea eax, [ebx+24]" 8d4318
+a "lea eax, [ebx+4]" 8d4304
+a "lea eax, [ecx]" 8d01
+a "lea eax, [esp]" 8d0424
+a "lea ebx, [4]" 8d1d04000000
+a "lea ebx, [eax+24]" 8d5818
+a "lea ebx, [eax+4]" 8d5804
+a "lea ebx, [ebp+324]" 8d9d44010000
+a "lea ebx, [ebp]" 8d5d00
+a "lea edx, [0x4422221d]" 8d151d222244
+a "lea edx, 0x2c4b" 8d154b2c0000
+a "leave" c9
+a "les eax, [eax]" c400
+a "les eax, [eax+12]" c4400c
+a "les eax, [eax-233]" c48017ffffff
+a "lfence" 0faee8
+aB "lfs eax, dword [eax]" 0fb400
+a "lgdt [eax]" 0f0110
+aB "lgs eax, dword [eax]" 0fb500
+a "lidt [eax]" 0f0118
+a "lldt ax" 0f00d0
+a "lldt word [eax]" 0f0010
+a "lmsw ax" 0f01f0
+a "lmsw word [eax]" 0f0130
+aB "lock and word [fs:bx + si], si" 646766f02130
+aB "lock cmpxchg8b" f00fc7c0
+aB "lock mov dword [eax], eax" f08900
+aB "lock mov eax, eax" f089c0
+a "lodsb al, byte [esi]" ac
+a "lodsd eax, dword [esi]" ad
+aB "loop 3" 66e200
+aB "lsl eax, dword [eax]" 0f03
+aB "lss eax, dword [eax]" 0fb200
+aB "ltr ax" 0f00d8
+aB "ltr word [eax]" 0f0018
+aB "lzcnt eax, dword [eax]" f30fbd00
+aB "maskmovdqu xmm0, xmm0" 660ff7
+aB "maskmovq mm0, mm0" 0ff7
+aB "maxpd xmm0, xmmword [eax]" 660f5f00
+aB "maxps xmm0, xmmword [eax]" 0f5f00
+aB "maxsd xmm0, qword [eax]" f20f5f00
+aB "maxss xmm0, dword [eax]" f30f5f00
+a "mfence" 0faef0
+aB "minpd xmm0, xmmword [eax]" 660f5d00
+aB "minps xmm0, xmmword [eax]" 0f5d00
+aB "minsd xmm0, qword [eax]" f20f5d00
+aB "minss xmm0, dword [eax]" f30f5d00
+a "monitor" 0f01c8
+a "mov [33], ebp" 892d21000000
+a "mov [33], ebx" 891d21000000
+a "mov [33], ecx" 890d21000000
+a "mov [33], edi" 893d21000000
+a "mov [33], edx" 891521000000
+a "mov [33], esi" 893521000000
+a "mov [33], esp" 892521000000
+a "mov ah, 0" b400
+a "mov al, 0" b000
+a "mov al, byte [0]" a000000000
+a "mov al, byte [eax]" 8a00
+a "mov al, [eax]" 8a00
+aB "movapd xmm0, xmmword [eax]" 660f2800
+aB "movapd xmmword [eax], xmm0" 660f2900
+aB "movaps xmm0, xmmword [eax]" 0f2800
+aB "movaps xmmword [eax], xmm0" 0f2900
+aB "movbe dword [eax], eax" 0f38f100
+aB "movbe eax, dword [eax]" 0f38f000
+a "mov bh, 0" b700
+a "mov bl, 0" b300
+a "mov byte [0], al" 880500000000
+a "mov ch, 0" b500
+a "mov cl, 0" b100
+a "mov cr0, eax" 0f22c0
+aB "movddup xmm0, qword [eax]" f20f1200
+aB "movd dword [eax], mm0" 0f7e00
+aB "movd dword [eax], xmm0" 660f7e00
+a "mov dh, 0" b600
+a "mov dl, 0" b200
+aB "movd mm0, dword [eax]" 0f6e00
+aB "movdq2q mm0, xmm0" f20fd6
+aB "movdqa xmm0, xmmword [eax]" 660f6f00
+aB "movdqa xmmword [eax], xmm0" 660f7f00
+aB "movdqu xmm0, xmmword [eax]" f30f6f00
+aB "movdqu xmmword [eax], xmm0" f30f7f00
+a "mov dr0, eax" 0f23c0
+a "mov dword [0], eax" 890500000000
+aB "mov dword cs:[eax], eax" 2e8900
+aB "mov dword ds:[eax], eax" 3e8900
+a "mov dword [eax], 0" c70000000000
+a "mov dword [eax], 0x6f77206f" c7006f20776f
+a "mov dword [eax+16], 0x6f77206f" c740106f20776f
+a "mov dword [eax], 3" c70003000000
+a "mov dword [eax+4], 1" c7400401000000
+a "mov dword [eax+4], 3" c7400403000000
+a "mov dword [eax+450], 0x6f77206f" c780c20100006f20776f
+a "mov dword [eax+4], 666" c740049a020000
+a "mov dword [eax-512], 421" c78000feffffa5010000
+a "mov dword [eax], 666" c7009a020000
+a "mov dword [eax], eax" 8900
+a "mov dword [ebp-12], 1" c745f401000000
+a "mov dword [ebp+16], 0x6f77206f" c745106f20776f
+a "mov dword [ebp-312], 3" c785c8feffff03000000
+a "mov dword [ebp+4], 1" c7450401000000
+a "mov dword [ebp+450], 0x6f77206f" c785c20100006f20776f
+aB "mov dword es:[eax], eax" 268900
+a "mov dword [esi+4], 33" c7460421000000
+a "mov dword [esp-312], 321" c78424c8feffff41010000
+a "mov dword [esp], 3" c7042403000000
+a "mov dword [esp+4], 1" c744240401000000
+aB "mov dword fs:[eax], eax" 648900
+aB "mov dword gs:[eax], eax" 658900
+aB "mov dword ss:[eax], eax" 368900
+aB "mov eax, dword fs:[1]" 648b042501000000
+aB "movd xmm0, dword [eax]" 660f6e00
+a "mov eax, 0" b800000000
+a "mov [eax], 0" c70000000000
+a "mov eax, 0x8049000" b800900408
+a "mov eax, 1" b801000000
+a "mov [eax+2], ebx" 895802
+a "mov [eax+345], ebx" 899859010000
+a "mov eax, 300" b82c010000
+a "mov eax, 3" b803000000
+a "mov [eax+4], eax" 894004
+a "mov [eax+4], ecx" 894804
+a "mov eax, cr0" 0f20c0
+a "mov eax, dr0" 0f21c0
+a "mov eax, dword [0]" a100000000
+a "mov ecx, dword [0]" 8b0d00000000
+a "mov ecx, dword [1]" 8b0d01000000
+a "mov eax, dword [eax]" 8b00
+a "mov eax, dword [ebp]" 8b4500
+a "mov eax, dword [esp]" 8b0424
+aB "mov eax, dword fs:[ebp]" 648b4500
+a "mov eax, [eax+1337]" 8b8039050000
+a "mov ecx, [eip+1337]" 8b0d39050000
+a "mov ecx, [eip+13]" 8b0d0d000000
+a "mov eax, [eax-1337]" 8b80c7faffff
+a "mov eax,[eax*4+32]" 8b048520000000
+a "mov eax,[eax*4-32]" 8b0485e0ffffff
+a "mov eax,[eax*4+332]" 8b04854c010000
+a "mov eax,[eax*4-332]" 8b0485b4feffff
+a "mov eax, [eax+4]" 8b4004
+a "mov eax, [eax-4]" 8b40fc
+a "mov [eax], eax" 8900
+a "mov byte [eax], al" 8800
+a "mov eax, eax" 89c0
+a "mov eax, [eax]" 8b00
+a "mov [eax+eax], eax" 890400
+aB "mov eax,[eax+ebx*4+32]" 8b449820
+a "mov [eax+eax], ebx" 891c00
+a "mov [eax+eax], ecx" 890c00
+a "mov eax, [ebp]" 8b4500
+a "mov [eax], ebx" 8918
+a "mov eax, ebx" 89d8
+a "mov eax, [ebx]" 8b03
+a "mov eax,[ecx*8+64]" 8b04cd40000000
+aB "mov [ecx*8+64], eax" 8904CD40000000
+a "mov [eax+ecx], eax" 890408
+a "mov eax, [esi]" 8b06
+a "mov eax, [esp+4]" 8b442404
+a "mov eax, esp" 89e0
+a "mov eax, [esp]" 8b0424
+a "mov ebp, 0" bd00000000
+a "mov [ebp+4], eax" 898504000000
+a "mov [ebp+4], ebx" 899d04000000
+a "mov [ebp+4], ecx" 898d04000000
+a "mov ebx, 0" bb00000000
+a "mov [ebx+2], ebx" 895b02
+a "mov [ebx-2], ecx" 894bfe
+a "mov ebx, -3" bbfdffffff
+a "mov [ebx+454], ebx" 899bc6010000
+a "mov [ebx-552], edx" 8993d8fdffff
+a "mov [ebx], eax" 8903
+a "mov ebx, eax" 89c3
+a "mov ebx, [eax]" 8b18
+a "mov [ebx+eax], eax" 890403
+a "mov ebx, [ecx + edx]" 8b1c11
+a "mov ecx, 0" b900000000
+a "mov ecx, -432" b950feffff
+a "mov ecx, [eax]" 8b08
+a "mov edi, 0" bf00000000
+a "mov edx, 0" ba00000000
+a "mov esi, 0" be00000000
+a "mov esi, [esi + 8]" 8b7608
+a "mov esp, 0" bc00000000
+a "mov [esp-12], eax" 894424f4
+a "mov [esp+2], ebx" 895c2402
+a "mov [esp-2], ebx" 895c24fe
+a "mov [esp-233], ebx" 899c2417ffffff
+a "mov [esp+454], ebx" 899c24c6010000
+aB "mov es, word [eax]" 8e00
+aB "movhlps xmm0, xmm0" 0f12
+aB "movhpd qword [eax], xmm0" 660f1700
+aB "movhpd xmm0, qword [eax]" 660f1600
+aB "movhps qword [eax], xmm0" 0f17
+aB "movhps xmm0, qword [eax]" 0f16
+aB "movlhps xmm0, xmm0" 0f16
+aB "movlpd qword [eax], xmm0" 660f1300
+aB "movlpd xmm0, qword [eax]" 660f1200
+aB "movlps qword [eax], xmm0" 0f13
+aB "movlps xmm0, qword [eax]" 0f12
+aB "movmskpd eax, xmm0" 660f50c0
+aB "movmskps eax, xmm0" 0f50c0
+aB "movntdqa xmm0, xmmword [eax]" 660f382a00
+aB "movntdq xmmword [eax], xmm0" 660fe700
+aB "movnti dword [eax], eax" 0fc300
+aB "movntpd xmmword [eax], xmm0" 660f2b00
+aB "movntps xmmword [eax], xmm0" 0f2b00
+aB "movntq qword [eax], mm0" 0fe700
+aB "movq2dq xmm0, mm0" f30fd6
+aB "movq mm0, qword [eax]" 0f6f00
+aB "movq qword [eax], mm0" 0f7f00
+aB "movq qword [eax], xmm0" 660fd600
+aB "movq xmm0, qword [eax]" f30f7e00
+a "movsb byte es:[edi], byte ptr [esi]" a4
+a "movsd dword es:[edi], dword ptr [esi]" a5
+aB "movsd dword es:[edi], dword ptr fs:[esi]" 64a5
+aB "movsd qword [eax], xmm0" f20f1100
+aB "movsd xmm0, qword [eax]" f20f1000
+aB "movshdup xmm0, xmmword [eax]" f30f1600
+aB "movsldup xmm0, xmmword [eax]" f30f1200
+aB "movss dword [eax], xmm0" f30f1100
+aB "movss xmm0, dword [eax]" f30f1000
+a "movsx eax, byte [eax]" 0fbe00
+a "movsx eax, word [eax]" 0fbf00
+aB "movupd xmm0, xmmword [eax]" 660f1000
+aB "movupd xmmword [eax], xmm0" 660f1100
+aB "movups xmm0, xmmword [eax]" 0f10
+aB "movups xmmword [eax], xmm0" 0f11
+a "mov word [eax], es" 8c00
+a "movzx eax, byte [eax]" 0fb600
+a "movzx ecx, byte [esp]" 0fb60c24
+a "movzx eax, word [eax]" 0fb700
+a "movzx edx, word [esp]" 0fb71424
+aB "mpsadbw xmm0, xmm0, 0" 660f3a42c000
+a "mul byte [eax]" f620
+aB "mulpd xmm0, xmmword [eax]" 660f5900
+aB "mulpd xmm7, xmm7" 660f59ff
+aB "mulps xmm0, xmmword [eax]" 0f5900
+aB "mulps xmm7, xmm7" 0f59ff
+aB "mulsd xmm0, qword [eax]" f20f5900
+aB "mulsd xmm7, xmm7" 66f3f20f59ff
+aB "mulsd xmm7, xmm7" f2660f59ff
+aB "mulss xmm0, dword [eax]" f30f5900
+aB "mulss xmm7, xmm7" 66f2f0f59ff0
+a "mwait" 0f01c9
+aB "neg byte [eax]" f618
+a "nop" 90
+aB "not byte [eax]" f610
+aB "not al" f6d0
+a "or al, 0" 0c00
+a "or byte [eax], al" 0800
+a "or dword [eax], eax" 0900
+a "or eax, dword [eax]" 0b00
+aB "orpd xmm0, xmmword [eax]" 660f5600
+aB "orps xmm0, xmmword [eax]" 0f5600
+a "out 0, al" e600
+a "out 0, eax" e700
+a "out 0x84, eax" e784
+a "outsb dx, byte [esi]" 6e
+a "outsd dx, dword [esi]" 6f
+aB "pabsb xmm0, xmm0" 660f381cc0
+aB "pabsd xmm0, xmm0" 660f381ec0
+aB "pabsw xmm0, xmm0" 660f381dc0
+aB "packssdw mm0, qword [eax]" 0f6b00
+aB "packssdw xmm0, xmmword [eax]" 660f6b00
+aB "packsswb mm0, qword [eax]" 0f6300
+aB "packsswb xmm0, xmmword [eax]" 660f6300
+aB "packusdw xmm0, xmm0" 660f382bc0
+aB "packuswb mm0, qword [eax]" 0f6700
+aB "packuswb xmm0, xmmword [eax]" 660f6700
+aB "paddb mm0, qword [eax]" 0ffc00
+aB "paddb xmm0, xmmword [eax]" 660ffc00
+aB "paddd mm0, qword [eax]" 0ffe00
+aB "paddd xmm0, xmmword [eax]" 660ffe00
+aB "paddq xmm0, xmmword [eax]" 660fd400
+aB "paddsb mm0, qword [eax]" 0fec00
+aB "paddsb xmm0, xmmword [eax]" 660fec00
+aB "paddsw mm0, qword [eax]" 0fed00
+aB "paddsw xmm0, xmmword [eax]" 660fed00
+aB "paddusb mm0, qword [eax]" 0fdc00
+aB "paddusb xmm0, xmmword [eax]" 660fdc00
+aB "paddusw mm0, qword [eax]" 0fdd00
+aB "paddusw xmm0, xmmword [eax]" 660fdd00
+aB "paddw mm0, qword [eax]" 0ffd00
+aB "paddw xmm0, xmmword [eax]" 660ffd00
+aB "palignr mm0, mm0, 0" 0f3a0fc000
+aB "palignr xmm0, xmm0, 0" 660f3a0fc000
+aB "pand mm0, qword [eax]" 0fdb00
+aB "pandn mm0, qword [eax]" 0fdf00
+aB "pandn xmm0, xmmword [eax]" 660fdf00
+aB "pand xmm0, xmmword [eax]" 660fdb00
+aB "pause" f390
+aB "pavgb mm0, qword [eax]" 0fe000
+aB "pavgb mm0, qword [eax]" 0fe0
+aB "pavgb xmm0, xmmword [eax]" 660fe000
+aB "pavgw mm0, qword [eax]" 0fe300
+aB "pavgw xmm0, xmmword [eax]" 660fe300
+aB "pblendvb xmm0, xmm0" 660f3810c0
+aB "pblendw xmm0, xmm0, 0" 660f3a0ec000
+aB "pclmulqdq xmm0, xmm0, 0" 660f3a44c000
+aB "pcmpeqb mm0, qword [eax]" 0f7400
+aB "pcmpeqb xmm0, xmmword [eax]" 660f7400
+aB "pcmpeqd mm0, qword [eax]" 0f7600
+aB "pcmpeqd xmm0, xmmword [eax]" 660f7600
+aB "pcmpeqq xmm0, xmm0" 660f3829c0
+aB "pcmpeqw mm0, qword [eax]" 0f7500
+aB "pcmpeqw xmm0, xmmword [eax]" 660f7500
+aB "pcmpestri xmm0, xmm0, 0" 660f3a61c000
+aB "pcmpestrm xmm0, xmm0, 0" 660f3a60c000
+aB "pcmpgtb mm0, qword [eax]" 0f6400
+aB "pcmpgtb xmm0, xmmword [eax]" 660f6400
+aB "pcmpgtd mm0, qword [eax]" 0f6600
+aB "pcmpgtd xmm0, xmmword [eax]" 660f6600
+aB "pcmpgtq xmm0, xmm0" 660f3837c0
+aB "pcmpgtw mm0, qword [eax]" 0f6500
+aB "pcmpgtw xmm0, xmmword [eax]" 660f6500
+aB "pcmpistri xmm0, xmm0, 0" 660f3a63c000
+aB "pcmpistrm xmm0, xmm0, 0" 660f3a62c000
+aB "pextrb eax, xmm0, 0" 660f3a14c000
+aB "pextrd eax, xmm0, 0" 660f3a16c000
+aB "pextrq dword [eax], xmm0, 0" 660f3a16
+aB "pextrw eax, mm0, 0" 0fc5c000
+aB "pextrw eax, xmm0, 0" 660fc5c000
+aB "phaddd xmm0, xmmword [eax]" 660f380200
+aB "phaddsw xmm0, xmmword [eax]" 660f380300
+aB "phaddw xmm0, xmmword [eax]" 660f380100
+aB "phminposuw xmm0, xmm0" 660f3841c0
+aB "phsubd xmm0, xmmword [eax]" 660f380600
+aB "phsubsw xmm0, xmmword [eax]" 660f380700
+aB "phsubw xmm0, xmmword [eax]" 660f380500
+aB "pinsrb xmm0, eax, 0" 660f3a20c000
+aB "pinsrd xmm0, dword [eax], 0" 660f3a22
+aB "pinsrq xmm0, dword [eax], 0" 660f3a22
+aB "pinsrw mm0, word [eax], 0x0" 0fc40000
+aB "pinsrw xmm0, word [eax], 0x0" 660fc40000
+aB "pmaddubsw xmm0, xmmword [eax]" 660f380400
+aB "pmaddwd mm0, qword [eax]" 0ff500
+aB "pmaddwd xmm0, xmmword [eax]" 660ff500
+aB "pmaxsb xmm0, xmm0" 660f383cc0
+aB "pmaxsd xmm0, xmm0" 660f383dc0
+aB "pmaxsw mm0, qword [eax]" 0fee00
+aB "pmaxsw xmm0, xmmword [eax]" 660fee00
+aB "pmaxub mm0, qword [eax]" 0fde00
+aB "pmaxub xmm0, xmmword [eax]" 660fde00
+aB "pmaxud xmm0, xmm0" 660f383fc0
+aB "pmaxuw xmm0, xmm0" 660f383ec0
+aB "pminsb xmm0, xmm0" 660f3838c0
+aB "pminsd xmm0, xmm0" 660f3839c0
+aB "pminsw mm0, qword [eax]" 0fea00
+aB "pminsw xmm0, xmmword [eax]" 660fea00
+aB "pminub mm0, qword [eax]" 0fda00
+aB "pminub xmm0, xmmword [eax]" 660fda00
+aB "pminud xmm0, xmm0" 660f383bc0
+aB "pminuw xmm0, xmm0" 660f383ac0
+aB "pmovmskb eax, mm0" 0fd7
+aB "pmovsxbd xmm0, xmm0" 660f3821c0
+aB "pmovsxbq xmm0, xmm0" 660f3822c0
+aB "pmovsxbw xmm0, xmm0" 660f3820c0
+aB "pmovsxdq xmm0, xmm0" 660f3825c0
+aB "pmovsxwd xmm0, xmm0" 660f3823c0
+aB "pmovsxwq xmm0, xmm0" 660f3824c0
+aB "pmovzxbd xmm0, xmm0" 660f3831c0
+aB "pmovzxbq xmm0, xmm0" 660f3832c0
+aB "pmovzxbw xmm0, xmm0" 660f3830c0
+aB "pmovzxdq xmm0, xmm0" 660f3835c0
+aB "pmovzxwd xmm0, xmm0" 660f3833c0
+aB "pmovzxwq xmm0, xmm0" 660f3834c0
+aB "pmuldq xmm0, xmm0" 660f3828c0
+aB "pmulhrsw xmm0, xmm0" 660f380bc0
+aB "pmulhuw mm0, qword [eax]" 0fe400
+aB "pmulhuw xmm0, xmmword [eax]" 660fe400
+aB "pmulhw mm0, qword [eax]" 0fe500
+aB "pmulhw xmm0, xmmword [eax]" 660fe500
+aB "pmulld xmm0, xmm0" 660f3840c0
+aB "pmullw mm0, qword [eax]" 0fd500
+aB "pmullw xmm0, xmmword [eax]" 660fd500
+aB "pmuludq mm0, qword [eax]" 0ff400
+aB "pmuludq xmm0, xmmword [eax]" 660ff400
+a "popal" 61
+a "popaw" 6661
+aB "popcnt eax, qword [eax]" f30fb8
+a "pop ds" 1f
+a "pop dword [eax+4]" 8f4004
+a "pop dword [eax]" 8f00
+a "pop dword [ebp+4]" 8f4504
+a "pop dword [ebp]" 8f4500
+a "pop dword [ecx]" 8f01
+a "pop dword [edi]" 8f07
+a "pop dword [esi]" 8f06
+a "pop dword [esp]" 8f0424
+a "pop eax" 58
+a "pop ebp" 5d
+a "pop ebx" 5b
+a "pop ecx" 59
+a "pop edi" 5f
+a "pop edx" 5a
+a "pop es" 07
+a "pop esi" 5e
+a "pop esp" 5c
+a "popfd" 9d
+a "pop fs" 0fa1
+a "pop gs" 0fa9
+a "pop ss" 17
+aB "por mm0, qword [eax]" 0feb00
+aB "por xmm0, xmmword [eax]" 660feb00
+aB "prefetch byte [eax]" 0f0d00
+aB "prefetchnta byte [eax]" 0f1800
+aB "prefetcht0 byte [eax]" 0f1808
+aB "prefetcht1 byte [eax]" 0f1810
+aB "prefetcht2 byte [eax]" 0f1818
+aB "psadbw mm0, qword [eax]" 0ff600
+aB "psadbw xmm0, xmmword [eax]" 660ff600
+aB "pshufb mm0, qword [eax]" 0f380000
+aB "pshufb xmm0, xmmword [eax]" 660f380000
+aB "pshufd xmm0, xmmword [eax], 0" 660f700000
+aB "pshufhw xmm0, xmmword [eax], 0" f30f700000
+aB "pshuflw xmm0, xmmword [eax], 0" f20f700000
+aB "pshufw mm0, qword [eax], 0" 0f700000
+aB "psignb xmm0, xmm0" 660f3808c0
+aB "psignd xmm0, xmm0" 660f380ac0
+aB "psignw xmm0, xmm0" 660f3809c0
+aB "pslld mm0, 0" 0f72f000
+aB "pslld mm0, qword [eax]" 0ff200
+aB "pslldq xmm0, 0" 660f73f800
+aB "pslld xmm0, 0" 660f72f000
+aB "pslld xmm0, xmmword [eax]" 660ff200
+aB "psllq mm0, 0" 0f73f000
+aB "psllq mm0, qword [eax]" 0ff300
+aB "psllq xmm0, 0" 660f73f000
+aB "psllq xmm0, xmmword [eax]" 660ff300
+aB "psllw mm0, 0" 0f71f000
+aB "psllw mm0, qword [eax]" 0ff100
+aB "psllw xmm0, 0" 660f71f000
+aB "psllw xmm0, xmmword [eax]" 660ff100
+aB "psrad mm0, 0" 0f72e000
+aB "psrad mm0, qword [eax]" 0fe200
+aB "psrad xmm0, 0" 660f72e000
+aB "psrad xmm0, xmmword [eax]" 660fe200
+aB "psraw mm0, 0" 0f71e000
+aB "psraw mm0, qword [eax]" 0fe100
+aB "psraw xmm0, 0" 660f71e000
+aB "psraw xmm0, xmmword [eax]" 660fe100
+aB "psrld mm0, 0" 0f72d000
+aB "psrld mm0, qword [eax]" 0fd200
+aB "psrldq xmm0, 0" 660f73d800
+aB "psrld xmm0, 0" 660f72d000
+aB "psrld xmm0, xmmword [eax]" 660fd200
+aB "psrlq mm0, 0" 0f73d000
+aB "psrlq mm0, qword [eax]" 0fd300
+aB "psrlq xmm0, 0" 660f73d000
+aB "psrlq xmm0, xmmword [eax]" 660fd300
+aB "psrlw mm0, 0" 0f71d000
+aB "psrlw mm0, qword [eax]" 0fd100
+aB "psrlw xmm0, 0" 660f71d000
+aB "psrlw xmm0, xmmword [eax]" 660fd100
+aB "psubb mm0, qword [eax]" 0ff800
+aB "psubb xmm0, xmmword [eax]" 660ff800
+aB "psubd mm0, qword [eax]" 0ffa00
+aB "psubd xmm0, xmmword [eax]" 660ffa00
+aB "psubq mm0, qword [eax]" 0ffb00
+aB "psubq xmm0, xmmword [eax]" 660ffb00
+aB "psubsb mm0, xmmword [eax]" 0fe800
+aB "psubsb xmm0, xmmword [eax]" 660fe800
+aB "psubsw mm0, xmmword [eax]" 0fe900
+aB "psubsw xmm0, xmmword [eax]" 660fe900
+aB "psubusb mm0, qword [eax]" 0fd800
+aB "psubusb xmm0, xmmword [eax]" 660fd800
+aB "psubusw mm0, qword [eax]" 0fd900
+aB "psubusw xmm0, xmmword [eax]" 660fd900
+aB "psubw mm0, qword [eax]" 0ff900
+aB "psubw xmm0, xmmword [eax]" 660ff900
+aB "ptest xmm0, xmm0" 660f3817c0
+aB "punpckhbw mm0, qword [eax]" 0f6800
+aB "punpckhbw xmm0, xmmword [eax]" 660f6800
+aB "punpckhdq mm0, qword [eax]" 0f6a00
+aB "punpckhdq xmm0, xmmword [eax]" 660f6a00
+aB "punpckhqdq xmm0, xmmword [eax]" 660f6d00
+aB "punpckhwd mm0, qword [eax]" 0f6900
+aB "punpckhwd xmm0, xmmword [eax]" 660f6900
+aB "punpcklbw mm0, qword [eax]" 0f6000
+aB "punpcklbw xmm0, xmmword [eax]" 660f6000
+aB "punpckldq mm0, qword [eax]" 0f6200
+aB "punpckldq xmm0, xmmword [eax]" 660f6200
+aB "punpcklqdq xmm0, xmmword [eax]" 660f6c00
+aB "punpcklwd mm0, qword [eax]" 0f6100
+aB "punpcklwd xmm0, xmmword [eax]" 660f6100
+a "push 0" 6a00
+a "pushal" 60
+a "push cs" 0e
+a "push ds" 1e
+a "push dword [eax+8]" ff7008
+a "push dword [eax]" ff30
+a "push dword [ebp+4]" ff7504
+a "push dword [ebp]" ff7500
+a "push dword [ebx+4]" ff7304
+a "push dword [ecx]" ff31
+a "push dword [edi]" ff37
+a "push dword [esi+4]" ff7604
+a "push dword [esi]" ff36
+a "push dword [esp+4]" ff742404
+a "push dword [esp]" ff3424
+a "push [esp+4]" ff742404
+a "push [esp]" ff3424
+a "push eax" 50
+a "push ebp" 55
+a "push ebx" 53
+a "push ecx" 51
+a "push edi" 57
+a "push edx" 52
+a "push es" 06
+a "push esi" 56
+a "push esp" 54
+a "pushfd" 9c
+a "push fs" 0fa0
+a "push gs" 0fa8
+a "push ss" 16
+aB "pxor mm0, qword [eax]" 0fef00
+aB "pxor xmm0, xmmword [eax]" 660fef00
+aB "rcpps xmm0, xmmword [eax]" 0f5300
+aB "rcpss xmm0, dword [eax]" f30f5300
+a "rdmsr" 0f32
+a "rdpmc" 0f33
+a "rdtsc" 0f31
+a "rdtscp" 0f01f9
+a "repne movsb byte es:[edi], byte ptr [esi]" f2a4
+a "repz movsb" f3a4
+a "ret" c3
+a "bnd ret" f2c3
+a "retf 0" ca0000
+a "retf" cb
+a "retw" 66c3
+a "rol byte [eax], 0" c00000
+a "rol byte [eax], 1" d000
+a "rol byte [eax], cl" d200
+a "rol dword [eax], 0" c10000
+a "rol dword [eax], 1" d100
+a "rol dword [eax], cl" d300
+aB "roundpd xmm0, xmm0, 0" 660f3a09c000
+aB "roundps xmm0, xmm0, 0" 660f3a08c000
+aB "roundsd xmm0, xmm0, 0" 660f3a0bc000
+aB "roundss xmm0, xmm0, 0" 660f3a0ac000
+a "rsm" 0faa
+aB "rsqrtps xmm0, xmmword [eax]" 0f5200
+aB "rsqrtss xmm0, dword [eax]" f30f5200
+a "sahf" 9e
+a "salc" d6
+a "sbb al, 0" 1c00
+a "sbb al, byte [eax]" 1a00
+a "sbb byte [eax], al" 1800
+a "sbb dword [eax], eAX" 1900
+a "sbb eax, dword [eax]" 1b00
+a "scasb al, byte es:[edi]" ae
+a "scasd eax, dword es:[edi]" af
+a "seta byte [eax]" 0f9700
+a "setae byte [eax]" 0f9300
+a "setb byte [eax]" 0f9200
+a "setbe byte [eax]" 0f9600
+a "sete byte [eax]" 0f9400
+a "setg byte [eax]" 0f9f00
+a "setge byte [eax]" 0f9d00
+a "setl byte [eax]" 0f9c00
+a "setle byte [eax]" 0f9e00
+a "setne byte [eax]" 0f9500
+a "setno byte [eax]" 0f9100
+a "setnp byte [eax]" 0f9b00
+a "setns byte [eax]" 0f9900
+a "seto byte [eax]" 0f9000
+a "setp byte [eax]" 0f9a00
+a "sets byte [eax]" 0f9800
+a "sfence" 0faef8
+a "sgdt [eax]" 0f0100
+aB "shld dword [eax], eax, 0" 0fa40000
+aB "shld dword [eax], eax, cl" 0fa500
+a "shl edx, 5" c1e205
+aB "shrd dword [eax], eax, 0" 0fac0000
+aB "shrd dword [eax], eax, cl" 0fad00
+aB "shufpd xmm0, xmmword [eax], 0x0" 660fc60000
+aB "shufps xmm0, xmmword [eax], 0" 0fc60000
+a "sidt [eax]" 0f0108
+aB "skinit" 0f01de
+a "sldt word [eax]" 0f0000
+aB "smsw ax" 660f01e0
+a "smsw eax" 0f01e0
+a "smsw word [eax]" 0f0120
+aB "sqrtpd xmm0, xmmword [eax]" 660f5100
+aB "sqrtps xmm0, xmmword [eax]" 0f5100
+aB "sqrtsd xmm0, qword [eax]" f20f5100
+aB "sqrtss xmm0, dword [eax]" f30f5100
+a "stc" f9
+a "std" fd
+a "stgi" 0f01dc
+a "sti" fb
+a "stmxcsr dword [eax]" 0fae18
+a "stosb byte es:[edi], al" aa
+a "stosd dword es:[edi], eax" ab
+a "str word [eax]" 0f0008
+a "sub al, 0" 2c00
+a "sub al, byte [eax]" 2a00
+a "sub byte [eax], al" 2800
+a "sub dword [eax], 1" 832801
+a "sub dword [eax+4], -666" 81680466fdffff
+a "sub dword [eax+4], 666" 8168049a020000
+a "sub dword [eax+666], 666" 81a89a0200009a020000
+a "sub dword [eax], 666" 81289a020000
+a "sub dword [eax], eax" 2900
+a "sub dword [ebp+4], 1" 836d0401
+a "sub dword [ebp+555], 1" 83ad2b02000001
+a "sub dword [ebp+555], 7357" 81ad2b020000bd1c0000
+a "sub dword [ebp-555], 7357" 81add5fdffffbd1c0000
+a "sub dword [ebx], 1" 832b01
+a "sub eax, 3" 83e803
+a "sub eax, -666" 2d66fdffff
+a "sub eax, 666" 2d9a020000
+a "sub eax, dword [eax]" 2b00
+a "sub eax, eax" 29c0
+a "sub eax, ebx" 29d8
+a "sub ebx, 3" 83eb03
+a "sub ebx, -3" 83ebfd
+a "sub ebx, 666" 81eb9a020000
+a "sub [ebx], eax" 2903
+a "sub ebx, eax" 29c3
+a "sub ecx, 666" 81e99a020000
+a "sub esi,-334" 81eeb2feffff
+aB "subpd xmm0, xmmword [eax]" 660f5c00
+aB "subps xmm0, xmmword [eax]" 0f5c00
+aB "subsd xmm0, qword [eax]" f20f5c00
+aB "subss xmm0, dword [eax]" f30f5c00
+a "swapgs" 0f1ff8
+a "syscall" 0f05
+a "sysenter" 0f34
+a "sysexit" 0f35
+a "sysret" 0f07
+a "test al, 0" f6c000
+a "test byte [eax], 0" f60000
+a "test byte [eax], al" 8400
+a "test dword [eax], 0" f70000000000
+a "test dword [eax], eax" 8500
+a "test eax, 0" f7c000000000
+a "test eax, ebx" 85d8
+a "test edx, esi" 85f2
+aB "ucomisd xmm0, qword [eax]" 660f2e00
+aB "ucomiss xmm0, dword [eax]" 0f2e00
+a "ud2" 0f0b
+aB "unpckhpd xmm0, xmmword [eax]" 660f1500
+aB "unpckhps xmm0, xmmword [eax]" 0f15
+aB "unpcklpd xmm0, xmmword [eax]" 660f1400
+aB "unpcklps xmm0, xmmword [eax]" 0f14
+aB "vaddpd ymm0, ymm0, ymm0" c5fd58c0
+aB "vaesdeclast xmm0, xmm0, xmm0" c4e279dfc0
+aB "vaesdec xmm0, xmm0, xmm0" c4e279dec0
+aB "vaesenclast xmm0, xmm0, xmm0" c4e279ddc0
+aB "vaesenc xmm0, xmm0, xmm0" c4e279dcc0
+aB "vaesimc xmm0, xmm0" c4e279dbc0
+aB "vaeskeygenassist xmm0, xmm0, 0" c4e379dfc000
+aB "vaeskeygenassist xmm0, xmm0, 0x0" c4e379dfc000
+aB "vbroadcastf128 ymm0, xmmword [0]" c4e27d1a0500000000
+aB "vbroadcastsd ymm0, qword [0]" c4e27d190500000000
+aB "vbroadcastss ymm0, dword [eax]" c4e27d1800
+aB "vcvtph2ps xmm0, xmm0, 0" 8fe878a0c000
+aB "vcvtps2ph xmm0, xmm0, 0" 8fe878a1c000
+a "verr ax" 0f00e0
+aB "verr [eax]" 0f0020
+a "verw ax" 0f00e8
+a "verw word [eax]" 0f0028
+aB "vextractf128 xmm0, ymm0, 0" c4e37d19c000
+aB "vextractf128 xmm0, ymm0, 0x0" c4e37d19c000
+aB "vfmadd132pd xmm0, xmm0, xmm0" c4e2f998c0
+aB "vfmadd213pd xmm0, xmm0, xmm0" c4e2f9a8c0
+aB "vfmadd231pd xmm0, xmm0, xmm0" c4e2f9b8c0
+aB "vfmaddpd xmm0, xmm0, xmm0, xmm0" c4e37969c000
+aB "vfmaddpd ymm0, ymm0, ymm0, ymm0" c4e37d69c000
+aB "vfmaddps xmm0, xmm0, xmm0, xmm0" c4e37968c000
+aB "vfmaddps ymm0, ymm0, ymm0, ymm0" c4e37d68c000
+aB "vfmaddsd xmm0, xmm0, xmm0, xmm0" c4e3796bc000
+aB "vfmaddss xmm0, xmm0, xmm0, xmm0" c4e3796ac000
+aB "vfmaddsubpd xmm0, xmm0, xmm0, xmm0" c4e3795dc000
+aB "vfmaddsubpd ymm0, ymm0, ymm0, ymm0" c4e37d5dc000
+aB "vfmaddsubps xmm0, xmm0, xmm0, xmm0" c4e3795cc000
+aB "vfmaddsubps ymm0, ymm0, ymm0, ymm0" c4e37d5cc000
+aB "vfmsubaddpd xmm0, xmm0, xmm0, xmm0" c4e3795fc000
+aB "vfmsubaddpd ymm0, ymm0, ymm0, ymm0" c4e37d5fc000
+aB "vfmsubaddps xmm0, xmm0, xmm0, xmm0" c4e3795ec000
+aB "vfmsubaddps ymm0, ymm0, ymm0, ymm0" c4e37d5ec000
+aB "vfmsubpd xmm0, xmm0, xmm0, xmm0" c4e3796dc000
+aB "vfmsubpd ymm0, ymm0, ymm0, ymm0" c4e37d6dc000
+aB "vfmsubps xmm0, xmm0, xmm0, xmm0" c4e3796cc000
+aB "vfmsubps ymm0, ymm0, ymm0, ymm0" c4e37d6cc000
+aB "vfmsubsd xmm0, xmm0, xmm0, xmm0" c4e3796fc000
+aB "vfmsubss xmm0, xmm0, xmm0, xmm0" c4e3796ec000
+aB "vfnmaddpd xmm0, xmm0, xmm0, xmm0" c4e37979c000
+aB "vfnmaddpd ymm0, ymm0, ymm0, ymm0" c4e37d79c000
+aB "vfnmaddps xmm0, xmm0, xmm0, xmm0" c4e37978c000
+aB "vfnmaddps ymm0, ymm0, ymm0, ymm0" c4e37d78c000
+aB "vfnmaddsd xmm0, xmm0, xmm0, xmm0" c4e3797bc000
+aB "vfnmaddss xmm0, xmm0, xmm0, xmm0" c4e3797ac000
+aB "vfnmsubpd xmm0, xmm0, xmm0, xmm0" c4e3797dc000
+aB "vfnmsubpd ymm0, ymm0, ymm0, ymm0" c4e37d7dc000
+aB "vfnmsubps xmm0, xmm0, xmm0, xmm0" c4e3797cc000
+aB "vfnmsubps ymm0, ymm0, ymm0, ymm0" c4e37d7cc000
+aB "vfnmsubsd xmm0, xmm0, xmm0, xmm0" c4e3797fc000
+aB "vfnmsubss xmm0, xmm0, xmm0, xmm0" c4e3797ec000
+aB "vfrczpd xmm0, xmm0" 8fe97881c0
+aB "vfrczps xmm0, xmm0" 8fe97880c0
+aB "vfrczsd xmm0, xmm0" 8fe97883c0
+aB "vfrczss xmm0, xmm0" 8fe97882c0
+aB "vinsertf128 ymm0, ymm0, xmm0, 0" c4e37d18c000
+aB "vinsertf128 ymm0, ymm0, xmm0, 0x0" c4e37d18c000
+aB "vmaskmovpd ymm0, ymm0, ymmword [0]" c4e27d2d0500000000
+aB "vmaskmovps ymm0, ymm0, ymmword [0]" c4e27d2c0500000000
+a "vmcall" 0f01c1
+a "vmclear qword [eax]" 660fc730
+a "vmlaunch" 0f01c2
+a "vmload" 0f01da
+a "vmmcall" 0f01d9
+a "vmptrld qword [eax]" 0fc730
+a "vmptrst qword [eax]" 0fc738
+a "vmresume" 0f01c3
+a "vmrun" 0f01d8
+a "vmsave" 0f01db
+a "vmxoff" 0f01c4
+a "vmxon qword [eax]" f30fc730
+aB "vpcmov xmm0, xmm0, xmm0, xmm0" 8fe878a2c000
+aB "vpcomb xmm0, xmm0, xmm0, 0" 8fe878ccc000
+aB "vpcomd xmm0, xmm0, xmm0, 0" 8fe878cec000
+aB "vpcomq xmm0, xmm0, xmm0, 0" 8fe878cfc000
+aB "vpcomub xmm0, xmm0, xmm0, 0" 8fe878ecc000
+aB "vpcomud xmm0, xmm0, xmm0, 0" 8fe878eec000
+aB "vpcomuq xmm0, xmm0, xmm0, 0" 8fe878efc000
+aB "vpcomuw xmm0, xmm0, xmm0, 0" 8fe878edc000
+aB "vpcomw xmm0, xmm0, xmm0, 0" 8fe878cdc000
+aB "vperm2f128 ymm0, ymm0, ymm0, 0" c4e37d06c000
+aB "vperm2f128 ymm0, ymm0, ymm0, 0x0" c4e37d06c000
+aB "vpermilpd ymm0, ymm0, ymmword [0]" c4e27d0d0500000000
+aB "vpermilps ymm0, ymm0, ymmword [0]" c4e27d0c0500000000
+aB "vphaddbd xmm0, xmm0" 8fe978c2c0
+aB "vphaddbq xmm0, xmm0" 8fe978c3c0
+aB "vphaddbw xmm0, xmm0" 8fe978c1c0
+aB "vphadddq xmm0, xmm0" 8fe978cbc0
+aB "vphaddubd xmm0, xmm0" 8fe978d2c0
+aB "vphaddubq xmm0, xmm0" 8fe978d3c0
+aB "vphaddubw xmm0, xmm0" 8fe978d1c0
+aB "vphaddudq xmm0, xmm0" 8fe978dbc0
+aB "vphadduwd xmm0, xmm0" 8fe978d6c0
+aB "VPHADDUWQ XMM0, XMM0" 8fe978d7c0
+aB "vphaddwd xmm0, xmm0" 8fe978c6c0
+aB "vphaddwq xmm0, xmm0" 8fe978c7c0
+aB "vphsubbw xmm0, xmm0" 8fe978e1c0
+aB "vphsubdq xmm0, xmm0" 8fe978e3c0
+aB "vphsubwd xmm0, xmm0" 8fe978e2c0
+aB "vpmacsddxmm0, xmm0, xmm0, xmm0" 8fe8789ec000
+aB "vpmacsdqh xmm0, xmm0, xmm0, xmm0" 8fe8789fc000
+aB "vpmacsdql xmm0, xmm0, xmm0, xmm0" 8fe87897c000
+aB "vpmacssdd xmm0, xmm0, xmm0, xmm0" 8fe8788ec000
+aB "vpmacssdqh xmm0, xmm0, xmm0, xmm0" 8fe8788fc000
+aB "vpmacssdql xmm0, xmm0, xmm0, xmm0" 8fe87887c000
+aB "vpmacsswd xmm0, xmm0, xmm0, xmm0" 8fe87886c000
+aB "vpmacssww xmm0, xmm0, xmm0, xmm0" 8fe87885c000
+aB "vpmacswd xmm0, xmm0, xmm0, xmm0" 8fe87896c000
+aB "vpmacsww xmm0, xmm0, xmm0, xmm0" 8fe87895c000
+aB "vpmadcsswd xmm0, xmm0, xmm0, xmm0" 8fe878a6c000
+aB "VPMADCSSWD XMM0, XMM0, XMM0, XMM0" 8fe878a6c000
+aB "vpmadcswd xmm0, xmm0, xmm0, xmm0" 8fe878b6c000
+aB "vpperm xmm0, xmm0, xmm0, xmm0" 8fe878a3c000
+aB "vprotb xmm0, xmm0, xmm0" 8fe97890c0
+aB "vprotd xmm0, xmm0, xmm0" 8fe97892c0
+aB "vprotq xmm0, xmm0, xmm0" 8fe97893c0
+aB "vprotw xmm0, xmm0, xmm0" 8fe97891c0
+aB "vpshab xmm0, xmm0, xmm0" 8fe97898c0
+aB "vpshad xmm0, xmm0, xmm0" 8fe9789ac0
+aB "vpshaq xmm0, xmm0, xmm0" 8fe9789bc0
+aB "vpshaw xmm0, xmm0, xmm0" 8fe97899c0
+aB "vpshlb xmm0, xmm0, xmm0" 8fe97894c0
+aB "vpshld xmm0, xmm0, xmm0" 8fe97896c0
+aB "vpshlq xmm0, xmm0, xmm0" 8fe97897c0
+aB "vpshlw xmm0, xmm0, xmm0" 8fe97895c0
+aB "vtestpd ymm0, ymm0" c4e27d0fc0
+aB "vtestps ymm0, ymm0" c4e27d0ec0
+a "vzeroall" c5fc77
+a "vzeroupper" c5f877
+a "wbinvd" 0f09
+a "wrmsr" 0f30
+aB "xadd byte [eax], al" 0fc000
+aB "xadd dword [eax], eax" 0fc100
+aB "xchg byte [eax], al" 8600
+a "xchg dword [eax], eax" 8700
+ad "xchg al, dl" 86d0
+ad "xchg dl, al" 86c2
+ad "xchg ax, dx" 6692
+a "xchg dx, ax" 6692
+ad "xchg ah, dh" 86f4
+ad "xchg dh, ah" 86e6
+a "xchg eax, eax" 90
+ad "xchg eax, ebp" 95
+ad "xchg eax, ebx" 93
+ad "xchg eax, ebx" 93
+ad "xchg eax, ecx" 91
+ad "xchg eax, edi" 97
+ad "xchg eax, edx" 92
+ad "xchg eax, esi" 96
+ad "xchg eax, esp" 94
+ad "xchg ebx, ecx" 87cb
+ad "xchg ecx, ebp" 87e9
+ad "xchg ecx, ebx" 87d9
+ad "xchg ecx, ecx" 87c9
+a "xgetbv" 0f01d0
+a "xlatb" d7
+a "xor al, 0" 3400
+a "xor al, 0x80" 3480
+a "xor ax, 0x8080" 66358080
+a "xor ax, 0x8" 6683f008
+a "xor cx, 0x8080" 6681f18080
+a "xor sp, 0x8080" 6681f48080
+a "xor bp, 0x8080" 6681f58080
+a "xor si, 0x8" 6683f608
+a "xor al, byte [eax]" 3200
+a "xor byte [eax], al" 3000
+a "xor byte [eax], 0xff" 8030ff
+a "xor dword [eax], eax" 3100
+a "xor eax, dword [eax]" 3300
+a "xor [eax], eax" 3100
+a "xor eax, eax" 31c0
+a "xor eax, ebx" 31d8
+a "xor ebx, eax" 31c3
+a "xor esi, ebp" 31ee
+a "xor esp,esp" 31e4
+aB "xorpd xmm0, xmmword [eax]" 660f5700
+aB "xorps xmm0, xmmword [eax]" 0f5700
+aB "xrstor [eax]" 0fae28
+aB "xsave [eax]" 0fae20
+a "xsetbv" 0f01d1
+a "nop" 90
+a "int 0x80" cd80
+a "mov eax, 33" b821000000
+a "mov rax, 33" 48c7c021000000
+a "mov [ebp+4],0" c7450400000000
+a "jmp 0x1b" eb05 0x14
+ad "sete al" 0f94c0
+a "mov byte ptr [bp+di],0x0" 67c60300
+a "mov byte ptr [bp+di-0x1],0x20" 67c643ff20
+a "mov byte ptr [bp+di],0x25" 67c60325
+a "mov byte ptr [bp+di],0x30" 67c60330
+a "mov byte ptr [bp+si-0x1],0x30" 67c642ff30
+a "mov byte ptr [bx],0x0" 67c60700
+a "mov byte ptr [bx+si+0x3e06],0x0" 67c680063e00
+a "mov byte ptr [esi],0x7f" c6067f
+a "mov byte ptr [esi],0x86" c60686
+a "mov byte ptr [esp+0x25],0xc0" c6442425c0
+a "mov byte ptr [si],0x11" 67c60411
+a "mov byte ptr [si],0x13" 67c60413
+a "mov byte ptr [si+0x24],0x14" 67c6442414
+a "mov byte ptr [si+0x24],0x18" 67c6442418
+a "mov byte ptr [si+0x24],0x1a" 67c644241a
+a "mov byte ptr [si+0x24],0x25" 67c6442425
+a "mov byte ptr [si+0x24],0x2e" 67c644242e
+a "mov byte ptr [si+0x24],0x44" 67c6442444
+a "mov byte ptr [si],0x24" 67c60424
+a "mov dword ptr [bx+si+0x6],0x8b640000" 67c740060000648b
+a "mov dword ptr [eax+eax*1],0xa740000" c704000000740a
+a "mov dword ptr [ebp-0x44],0x31660305" c745bc05036631
+a "mov dword ptr [ebp-0x4c],0x47534943" c745b443495347
+a "mov dword ptr [edx],0x74000000" c70200000074
+a "mov dword ptr [esi],0x15078" c70678500100
+a "mov dword ptr [esi],0x404020" c70620404000
+a "mov dword ptr [esi],0xb0003e04" c706043e00b0
+a "mov dword ptr [esi],0xb8003e04" c706043e00b8
+a "mov dword ptr [esp+0x1c],0x534d4150" c744241c50414d53
+a "mov dword ptr [esp+0x1c],0xc6670001" c744241c010067c6
+a "mov dword ptr [esp],0x1" c7042401000000
+a "mov dword ptr [esp+0x20],0x66670014" c744242014006766
+a "mov dword ptr [esp+0x24],0x66670f00" c7442424000f6766
+a "mov dword ptr [esp+0x24],0x66671a00" c7442424001a6766
+a "mov dword ptr [esp+0x4],0x0" c744240400000000
+a "mov dword ptr [esp+0xc],0x1" c744240c01000000
+a "mov dword ptr [esp+0xc],0x3" c744240c03000000
+a "mov dword ptr [si+0x24],0x6606071c" 67c744241c070666
+a "mov dword ptr [si+0x24],0x660b0c1c" 67c744241c0c0b66
+a "mov dword ptr [si+0x24],0x66111120" 67c7442420111166
+a "mov dword ptr [si+0x24],0x66111220" 67c7442420121166
+a "mov dword ptr [si+0x24],0x66240120" 67c7442420012466
+a "mov dword ptr [si+0x24],0x6700002a" 67c744242a000067
+a "mov dword ptr [si+0x24],0x67000714" 67c7442414070067
+a "mov dword ptr [si+0x24],0x674f0134" 67c7442434014f67
+a "mov dword ptr [si+0x24],0x67e80124" 67c744242401e867
+a "mov dword ptr [si+0x24],0x67e82024" 67c744242420e867
+a "mov word ptr [bp+di+0x10],0x0" 6766c743100000
+a "mov word ptr [bx+si],0x5" 6766c7000500
+a "mov word ptr [esi],0x3d04" 66c706043d
+a "mov word ptr [esi],0x4020" 66c7062040
+a "mov word ptr [esi],0x5078" 66c7067850
+a "mov word ptr [esi],0x5084" 66c7068450
+a "mov word ptr [esp+0x10],0x0" 66c74424100000
+a "mov word ptr [esp+0x14],0x0" 66c74424140000
+a "mov word ptr [si+0x24],0x4" 6766c744240400
+a "mov word ptr [si+0x24],0x8" 6766c744240800
+a "mov word ptr [si+0x24],0xff04" 6766c7442404ff
+a "mov word ptr [si],0x24" 6766c7042400
+a "mov eax, [eax * 2 + 8]" 8b044508000000
+a "inc al" fec0
+a "inc ax" 6640
+a "inc BYTE PTR [ebx+0x18]" fe4318
+a "inc BYTE PTR [edi+0x18]" fe4718
+a "inc BYTE PTR [esi+0x1a]" fe461a
+a "inc cl" fec1
+a "inc dl" fec2
+a "inc DWORD PTR [eax]" ff00
+a "inc DWORD PTR [eax+0x14c]" ff804c010000
+a "inc DWORD PTR [ebp+0x10]" ff4510
+a "inc DWORD PTR [ebx]" ff03
+a "inc DWORD PTR [ebx+0x18]" ff4318
+a "inc DWORD PTR [ebx+0x20]" ff4320
+a "inc DWORD PTR [ecx]" ff01
+a "inc DWORD PTR [ecx+0x4]" ff4104
+a "inc DWORD PTR [edi]" ff07
+a "inc DWORD PTR [edi+0x28]" ff4728
+a "inc DWORD PTR [edx]" ff02
+a "inc DWORD PTR [edx+0x10]" ff4210
+a "inc DWORD PTR [esi+0x8]" ff4608
+a "inc DWORD PTR [esp]" ff0424
+a "inc DWORD PTR [esp+0x10]" ff442410
+a "inc eax" 40
+a "inc ebp" 45
+a "inc ebx" 43
+a "inc ecx" 41
+a "inc edi" 47
+a "inc edx" 42
+a "dec al" fec8
+a "dec ax" 6648
+a "dec BYTE PTR [ebx+0x18]" fe4b18
+a "dec BYTE PTR [edi+0x18]" fe4f18
+a "dec BYTE PTR [esi+0x1a]" fe4e1a
+a "dec cl" fec9
+a "dec dl" feca
+a "dec DWORD PTR [eax]" ff08
+a "dec DWORD PTR [eax+0x14c]" ff884c010000
+a "dec DWORD PTR [ebp+0x10]" ff4d10
+a "dec DWORD PTR [ebx]" ff0b
+a "dec DWORD PTR [ebx+0x18]" ff4b18
+a "dec DWORD PTR [ebx+0x20]" ff4b20
+a "dec DWORD PTR [ecx]" ff09
+a "dec DWORD PTR [ecx+0x4]" ff4904
+a "dec DWORD PTR [edi]" ff0f
+a "dec DWORD PTR [edi+0x28]" ff4f28
+a "dec DWORD PTR [edx]" ff0a
+a "dec DWORD PTR [edx+0x10]" ff4a10
+a "dec DWORD PTR [esi+0x8]" ff4e08
+a "dec DWORD PTR [esp]" ff0c24
+a "dec DWORD PTR [esp+0x10]" ff4c2410
+a "dec eax" 48
+a "dec ebp" 4d
+a "dec ebx" 4b
+a "dec ecx" 49
+a "dec edi" 4f
+a "dec edx" 4a

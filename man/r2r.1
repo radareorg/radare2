@@ -1,0 +1,69 @@
+.Dd Mar 31, 2020
+.Dt R2R 1
+.Sh NAME
+.Nm r2r
+.Nd radare2 regression testsuite
+.Sh SYNOPSIS
+.Nm r2r
+.Op Fl h
+.Op Fl i
+.Op Fl n
+.Op Fl q
+.Op Fl v
+.Op Fl V
+.Op Fl j Ar threads
+.Op Fl r Ar r2-path
+.Op Fl m Ar rasm2-pth
+.Op Fl f Ar bin-for-json-tests
+.Op Fl C Ar chdir
+.Op [test-(dir|file) ...]
+.Sh DESCRIPTION
+Run all the radare2-regressions tests matching a specific word in the name.
+.Pp
+You need radare2 to be available in $PATH.
+.Sh OPTIONS
+.Bl -tag -width Fl
+.It Fl h
+Show the help/usage message
+.It Fl i
+Interactive mode
+.It Fl n
+Do not run any test, just load/parse them
+.It Fl q
+Quiet mode (use like this: r2r -qv)
+.It Fl v
+Show version number
+.It Fl V
+Be verbose
+.It Fl j Ar threads
+Specify the number of tasks to run in parallel
+.It Fl r Ar r2-path
+Set path to radare2 executable
+.It Fl n Ar rasm2-path
+Set path to rasm2executable
+.It Fl m Ar rasm2-path
+Set path to rasm2executable
+.It Fl f Ar bin-for-json-tests
+Load the given binary when running the JSON tests
+.It Fl C Ar directory
+Early chdir before running any test
+.El
+.Sh USAGE
+.Pp
+Use the -n flag to dont run any test. Just load them.
+.Pp
+  $ r2r -n
+  [r2r] Loading tests...
+.Pp
+.Sh SEE ALSO
+.Pp
+.Xr radare2(1) ,
+.Xr rahash2(1) ,
+.Xr rafind2(1) ,
+.Xr rabin2(1) ,
+.Xr rafind2(1) ,
+.Xr radiff2(1) ,
+.Xr rasm2(1) ,
+.Sh AUTHORS
+.Pp
+Written by pancake <pancake@nopcode.org>.

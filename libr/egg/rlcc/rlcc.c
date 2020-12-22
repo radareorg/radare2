@@ -181,7 +181,7 @@ int main(int argc, char **argv) {
 			" sigbody   : '@' <ident> '(' <number> ')' ';' ; \n"
 			" includes  : (\"#include\" <string>)* ;                           \n"
 			" smallc    : /^/ (<comment>|<asm>|<linecomment>|<sigdef>|<sigbody>|<procedure>|<cprocedure>)* <includes> <decls> /$/ ; \n",
-		Ident, Number, Character, String, Factor, Term, Lexp, Stmt, Exp, 
+		Ident, Number, Character, String, Factor, Term, Lexp, Stmt, Exp,
 		Vartype, Typeident, Decls, Args, Body, Comment, Linecomment, Asm, Procedure, CProcedure,
 		Sigdef, Sigbody, Includes, Smallc, NULL);
 

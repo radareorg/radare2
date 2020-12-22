@@ -18,6 +18,7 @@ r_bp = library('r_bp', r_bp_sources,
   dependencies: [r_util_dep],
   install: true,
   implicit_include_directories: false,
+  install_rpath: rpath_lib,
   soversion: r2_libversion
 )
 
@@ -29,6 +30,7 @@ pkgconfig_mod.generate(r_bp,
   version: r2_version,
   name: 'r_bp',
   filebase: 'r_bp',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util'
   ],

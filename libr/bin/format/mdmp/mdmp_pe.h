@@ -22,6 +22,6 @@ struct PE_(r_bin_mdmp_pe_bin) {
 RList *PE_(r_bin_mdmp_pe_get_entrypoint)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin);
 RList *PE_(r_bin_mdmp_pe_get_imports)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin);
 RList *PE_(r_bin_mdmp_pe_get_sections)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin);
-RList *PE_(r_bin_mdmp_pe_get_symbols)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin);
+RList *PE_(r_bin_mdmp_pe_get_symbols)(RBin *rbin, struct PE_(r_bin_mdmp_pe_bin) *pe_bin);
 
 #endif /* MDMP_PE_H */

@@ -11,18 +11,20 @@ static const char *help_msg_q[] = {
 	"q"," 1","quit with return value 1",
 	"q"," a-b","quit with return value a-b",
 	"q[y/n][y/n]","","quit, chose to kill process, chose to save project ",
+	"Q","", "same as q!!",
 	NULL
 };
 
-static void cmd_quit_init(RCore *core) {
+static void cmd_quit_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, q);
 }
 
 static int cmd_Quit(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (input[0] == '!') {
-		if (input[1] == '!') {
+		if (input[1] == '!' || !input[1]) {
 			if (!r_sandbox_enable (false)) {
+				r_cons_flush ();
 				exit (0);
 			}
 			return -2;

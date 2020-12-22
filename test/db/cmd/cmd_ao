@@ -1,0 +1,111 @@
+NAME=a8
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+a8 c745f400000000~type
+EOF
+EXPECT=<<EOF
+type: mov
+EOF
+RUN
+
+NAME=aof
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 55
+aof rsp
+aof rbp
+EOF
+EXPECT=<<EOF
+8,rsp,-=
+
+EOF
+RUN
+
+NAME=ao_aoj
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx c745f400000000
+ao
+aoj~{}
+EOF
+EXPECT=<<EOF
+address: 0x0
+opcode: mov dword [rbp - 0xc], 0
+esilcost: 12
+disasm: mov dword [rbp - 0xc], 0
+pseudo: dword [rbp - 0xc] = 0
+mnemonic: mov
+description: moves data from src to dst
+mask: ffffffffffffff
+prefix: 0
+id: 449
+bytes: c745f400000000
+val: 0x00000000
+disp: 0xfffffffffffffff4
+refptr: 4
+size: 7
+sign: false
+type: mov
+cycles: 1
+esil: 0,0xc,rbp,-,=[4]
+direction: write
+family: cpu
+stackop: set
+stackptr: 8
+[
+  {
+    "opcode": "mov dword [rbp - 0xc], 0",
+    "disasm": "mov dword [rbp - 0xc], 0",
+    "pseudo": "dword [rbp - 0xc] = 0",
+    "description": "moves data from src to dst",
+    "mnemonic": "mov",
+    "mask": "ffffffffffffff",
+    "esil": "0,0xc,rbp,-,=[4]",
+    "sign": false,
+    "prefix": 0,
+    "id": 449,
+    "opex": {
+      "operands": [
+        {
+          "size": 4,
+          "rw": 2,
+          "type": "mem",
+          "base": "rbp",
+          "scale": 1,
+          "disp": -12
+        },
+        {
+          "size": 4,
+          "rw": 0,
+          "type": "imm",
+          "value": 0
+        }
+      ],
+      "modrm": true,
+      "disp": -12
+    },
+    "addr": 0,
+    "bytes": "c745f400000000",
+    "val": 0,
+    "disp": 18446744073709551604,
+    "size": 7,
+    "type": "mov",
+    "esilcost": 12,
+    "scale": 0,
+    "refptr": 4,
+    "cycles": 1,
+    "failcycles": 0,
+    "delay": 0,
+    "stack": "set",
+    "stackptr": 8,
+    "family": "cpu"
+  }
+]
+EOF
+RUN

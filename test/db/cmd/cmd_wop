@@ -1,0 +1,132 @@
+NAME=debruijn little endian
+FILE=-
+CMDS=<<EOF
+e cfg.bigendian=false
+wopO 0x41574141
+EOF
+EXPECT=<<EOF
+64
+EOF
+RUN
+
+NAME=debruijn big endian
+FILE=-
+CMDS=<<EOF
+e cfg.bigendian=true
+wopO 0x41574141
+EOF
+EXPECT=<<EOF
+65
+EOF
+RUN
+
+NAME=wopD 0x10 @ 0
+FILE=-
+CMDS=<<EOF
+wopD 0x10 @ 0
+p8 0x10
+EOF
+EXPECT=<<EOF
+41414142414143414144414145414146
+EOF
+RUN
+
+NAME=wopD* 0x10
+FILE=-
+CMDS=wopD* 0x10
+EXPECT=<<EOF
+wx 41414142414143414144414145414146
+EOF
+RUN
+
+NAME=wopO 0x41417641
+FILE=-
+CMDS=wopO 0x41417641
+EXPECT=<<EOF
+140
+EOF
+RUN
+
+NAME=wopO 41417641
+FILE=-
+CMDS=wopO 41417641
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=woE woD rc4
+FILE=-
+CMDS=<<EOF
+w helloworld
+woE rc4 s:key
+woD rc4 s:key
+ps
+EOF
+EXPECT=<<EOF
+helloworld
+EOF
+RUN
+
+NAME=woE woD xor
+FILE=-
+CMDS=<<EOF
+w helloworld
+woE xor s:key
+woD xor s:key
+ps
+EOF
+EXPECT=<<EOF
+helloworld
+EOF
+RUN
+
+NAME=woE woD xor fix value
+FILE=-
+CMDS=<<EOF
+b 20
+woE xor s:helloworld
+ps
+EOF
+EXPECT=<<EOF
+helloworldhelloworld
+EOF
+RUN
+
+NAME=woE woD blowfish
+FILE=-
+CMDS=<<EOF
+w helloworld
+woE blowfish s:key
+woD blowfish s:key
+ps
+EOF
+EXPECT=<<EOF
+helloworld
+EOF
+RUN
+
+NAME=woE woD aes-ecb
+FILE=-
+CMDS=<<EOF
+w helloworld
+woE aes-ecb s:0123456789abcdef
+woD aes-ecb s:0123456789abcdef
+ps
+EOF
+EXPECT=<<EOF
+helloworld
+EOF
+RUN
+
+NAME=woE aes-ecb-192
+FILE=-
+CMDS=<<EOF
+w0 16
+b 16
+woE aes-ecb 502a6ab36984af268bf423c7f509205207fc1552af4a91e5
+p8
+EOF
+EXPECT=<<EOF
+8e06556dcbb00b809a025047cff2a940
+EOF
+RUN

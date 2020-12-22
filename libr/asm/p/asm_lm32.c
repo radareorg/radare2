@@ -193,7 +193,7 @@ static int r_asm_lm32_decode(RAsmLm32Instruction *instr) {
 			return -1;
 		}
 		//might be less bits used, but this shouldn't hurt
-		//invalid parameters are catched in print_pseudo_instruction anyway
+		//invalid parameters are caught in print_pseudo_instruction anyway
 		instr->immediate = extract_imm5 (instr->value);
 		break;
 	case one_reg:
@@ -455,7 +455,7 @@ RAsmPlugin r_asm_plugin_lm32 = {
 	.disassemble = &disassemble,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_lm32,

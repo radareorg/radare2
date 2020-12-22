@@ -1,0 +1,74 @@
+NAME=dmi ld
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+dmiqq ld
+dmiqq ld _dl_rtld_di_serinfo
+dk 9
+EOF
+EXPECT=<<EOF
+__get_cpu_features
+_dl_signal_exception
+_dl_get_tls_static_info
+GLIBC_PRIVATE
+GLIBC_2.3
+_dl_catch_exception
+GLIBC_2.4
+_dl_catch_error
+free
+realloc
+_dl_allocate_tls
+_r_debug
+__libc_stack_end
+_dl_deallocate_tls
+_dl_find_dso_for_object
+_dl_exception_create
+calloc
+_dl_argv
+_dl_mcount
+_dl_exception_create_format
+__tunable_get_val
+_dl_exception_free
+_dl_signal_error
+_dl_debug_state
+_rtld_global
+GLIBC_2.2.5
+__tls_get_addr
+_dl_make_stack_executable
+malloc
+_dl_allocate_tls_init
+_rtld_global_ro
+__libc_enable_secure
+_dl_rtld_di_serinfo
+_dl_rtld_di_serinfo
+EOF
+RUN
+
+NAME=dmia ld
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+dmiaqq ld~la_activity
+dmia* ld~:2[0]
+dk 9
+EOF
+EXPECT=<<EOF
+la_activity
+Cs
+EOF
+RUN
+
+NAME=dmias ld
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+dmias ld
+s sym._dl_rtld_di_serinfo
+fN
+dk 9
+EOF
+EXPECT=<<EOF
+_dl_rtld_di_serinfo
+EOF
+RUN
+

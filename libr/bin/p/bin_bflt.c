@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2017 - Oscar Salvador */
+/* radare - LGPL - Copyright 2016-2019 - Oscar Salvador */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -7,8 +7,9 @@
 #include <r_io.h>
 #include "bflt/bflt.h"
 
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	return r_bin_bflt_new_buf (buf);
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	*bin_obj = r_bin_bflt_new_buf (buf);
+	return *bin_obj;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -59,7 +60,7 @@ static RList *patch_relocs(RBin *b) {
 		eprintf (
 			"Warning: please run r2 with -e io.cache=true to patch "
 			"relocations\n");
-		return list;
+		return NULL;
 	}
 
 	obj = r_bin_cur_object (b);
@@ -111,18 +112,18 @@ static RList *patch_relocs(RBin *b) {
 		R_FREE (bin->reloc_table);
 	}
 	ut64 tmpsz;
-	const ut8 *tmp = r_buf_buffer (bin->b, &tmpsz);
+	const ut8 *tmp = r_buf_data (bin->b, &tmpsz);
 	b->iob.write_at (b->iob.io, 0, tmp, tmpsz);
 	return list;
 }
 
-static int get_ngot_entries(struct r_bin_bflt_obj *obj) {
+static ut32 get_ngot_entries(struct r_bin_bflt_obj *obj) {
 	ut32 data_size = obj->hdr->data_end - obj->hdr->data_start;
-	int i = 0, n_got = 0;
+	ut32 i = 0, n_got = 0;
 	if (data_size > obj->size) {
 		return 0;
 	}
-	for (i = 0, n_got = 0; i < data_size; i += 4, n_got++) {
+	for (; i < data_size; i += 4, n_got++) {
 		ut32 entry, offset = obj->hdr->data_start;
 		if (offset + i + sizeof (ut32) > obj->size ||
 		    offset + i + sizeof (ut32) < offset) {
@@ -143,7 +144,7 @@ static int get_ngot_entries(struct r_bin_bflt_obj *obj) {
 static RList *relocs(RBinFile *bf) {
 	struct r_bin_bflt_obj *obj = (struct r_bin_bflt_obj *) bf->o->bin_obj;
 	RList *list = r_list_newf ((RListFree) free);
-	int i, len, n_got, amount;
+	ut32 i, len, n_got, amount;
 	if (!list || !obj) {
 		r_list_free (list);
 		return NULL;
@@ -151,12 +152,11 @@ static RList *relocs(RBinFile *bf) {
 	if (obj->hdr->flags & FLAT_FLAG_GOTPIC) {
 		n_got = get_ngot_entries (obj);
 		if (n_got) {
-			amount = n_got * sizeof (ut32);
-			if (amount < n_got || amount > UT32_MAX) {
+			if (n_got > UT32_MAX / sizeof (struct reloc_struct_t)) {
 				goto out_error;
 			}
-			struct reloc_struct_t *got_table = calloc (
-				1, n_got * sizeof (struct reloc_struct_t));
+			amount = n_got * sizeof (struct reloc_struct_t);
+			struct reloc_struct_t *got_table = calloc (1, amount);
 			if (got_table) {
 				ut32 offset = 0;
 				for (i = 0; i < n_got; offset += 4, i++) {
@@ -180,22 +180,17 @@ static RList *relocs(RBinFile *bf) {
 	}
 
 	if (obj->hdr->reloc_count > 0) {
-		int n_reloc = obj->hdr->reloc_count;
-
-		amount = n_reloc * sizeof (struct reloc_struct_t);
-		if (amount < n_reloc || amount > UT32_MAX) {
+		ut32 n_reloc = obj->hdr->reloc_count;
+		if (n_reloc > UT32_MAX / sizeof (struct reloc_struct_t)) {
 			goto out_error;
 		}
-		struct reloc_struct_t *reloc_table = calloc (1, amount + 1);
+		amount = n_reloc * sizeof (struct reloc_struct_t);
+		struct reloc_struct_t *reloc_table = calloc (1, amount);
 		if (!reloc_table) {
 			goto out_error;
 		}
 		amount = n_reloc * sizeof (ut32);
-		if (amount < n_reloc || amount > UT32_MAX) {
-			free (reloc_table);
-			goto out_error;
-		}
-		ut32 *reloc_pointer_table = calloc (1, amount + 1);
+		ut32 *reloc_pointer_table = calloc (1, amount);
 		if (!reloc_pointer_table) {
 			free (reloc_table);
 			goto out_error;
@@ -289,16 +284,8 @@ static bool check_buffer(RBuffer *buf) {
 	return r == sizeof (tmp) && !memcmp (tmp, "bFLT", 4);
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	RBuffer *b = r_buf_new_with_bytes (buf, length);
-	bool res = check_buffer (b);
-	r_buf_free (b);
-	return res;
-}
-
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	r_bin_bflt_free (bf->o->bin_obj);
-	return true;
 }
 
 RBinPlugin r_bin_plugin_bflt = {
@@ -307,7 +294,6 @@ RBinPlugin r_bin_plugin_bflt = {
 	.license = "LGPL3",
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
 	.check_buffer = &check_buffer,
 	.entries = &entries,
 	.info = &info,
@@ -315,7 +301,7 @@ RBinPlugin r_bin_plugin_bflt = {
 	.patch_relocs = &patch_relocs,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_bflt,

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2011-2018 - pancake */
+/* radare2 - LGPL - Copyright 2011-2019 - pancake */
 
 #include <r_fs.h>
 #include "config.h"
@@ -18,7 +18,7 @@ static RFSPlugin* fs_static_plugins[] = {
 	R_FS_STATIC_PLUGINS
 };
 
-R_API RFS* r_fs_new() {
+R_API RFS* r_fs_new(void) {
 	int i;
 	RFSPlugin* static_plugin;
 	RFS* fs = R_NEW0 (RFS);
@@ -82,13 +82,12 @@ R_API void r_fs_add(RFS* fs, RFSPlugin* p) {
 		p->init ();
 	}
 	RFSPlugin* sp = R_NEW0 (RFSPlugin);
-	if (!sp) {
-		return;
+	if (sp) {
+		if (p) {
+			memcpy (sp, p, sizeof (RFSPlugin));
+		}
+		r_list_append (fs->plugins, sp);
 	}
-	if (p) {
-		memcpy (sp, p, sizeof (RFSPlugin));
-	}
-	r_list_append (fs->plugins, sp);
 }
 
 R_API void r_fs_del(RFS* fs, RFSPlugin* p) {
@@ -99,8 +98,6 @@ R_API void r_fs_del(RFS* fs, RFSPlugin* p) {
 R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 delta) {
 	RFSPlugin* p;
 	RFSRoot* root;
-	RFSFile* file;
-	RList* list;
 	RListIter* iter;
 	char* str;
 	int len, lenstr;
@@ -147,7 +144,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 			return NULL;
 		}
 	}
-	file = r_fs_open (fs, str);
+	RFSFile* file = r_fs_open (fs, str, false);
 	if (file) {
 		r_fs_close (fs, file);
 		eprintf ("r_fs_mount: Invalid mount point\n");
@@ -155,7 +152,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 		free (str);
 		return NULL;
 	}
-	list = r_fs_dir (fs, str);
+	RList *list = r_fs_dir (fs, str);
 	if (!r_list_empty (list)) {
 		//XXX: list need free ??
 		eprintf ("r_fs_mount: Invalid mount point\n");
@@ -163,9 +160,9 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 		free (heapFsType);
 		return NULL;
 	}
+	// TODO: we should just construct the root with the rfs instance
 	root = r_fs_root_new (str, delta);
 	root->p = p;
-	//memcpy (&root->iob, &fs->iob, sizeof (root->iob));
 	root->iob = fs->iob;
 	root->cob = fs->cob;
 	if (!p->mount (root)) {
@@ -234,24 +231,29 @@ R_API RList* r_fs_root(RFS* fs, const char* p) {
 }
 
 /* filez */
-R_API RFSFile* r_fs_open(RFS* fs, const char* p) {
+R_API RFSFile* r_fs_open(RFS* fs, const char* p, bool create) {
 	RFSRoot* root;
-	RList* roots;
 	RListIter* iter;
 	RFSFile* f = NULL;
 	const char* dir;
-	char* path = strdup (p);
-	//r_str_trim_path (path);
-	roots = r_fs_root (fs, path);
+	char* path = r_str_trim_dup (p);
+	RList *roots = r_fs_root (fs, path);
 	if (!r_list_empty (roots)) {
 		r_list_foreach (roots, iter, root) {
+			if (create) {
+				if (root && root->p && root->p->write) {
+					f = r_fs_file_new (root, path + strlen (root->path));
+					break;
+				}
+				continue;
+			}
 			if (root && root->p && root->p->open) {
 				if (strlen (root->path) == 1) {
 					dir = path;
 				} else {
 					dir = path + strlen (root->path);
 				}
-				f = root->p->open (root, dir);
+				f = root->p->open (root, dir, false);
 				if (f) {
 					break;
 				}
@@ -263,7 +265,7 @@ R_API RFSFile* r_fs_open(RFS* fs, const char* p) {
 	return f;
 }
 
-// TODO: close or free?
+// NOTE: close doesnt free
 R_API void r_fs_close(RFS* fs, RFSFile* file) {
 	if (fs && file) {
 		R_FREE (file->data);
@@ -273,16 +275,32 @@ R_API void r_fs_close(RFS* fs, RFSFile* file) {
 	}
 }
 
+R_API int r_fs_write(RFS* fs, RFSFile* file, ut64 addr, const ut8 *data, int len) {
+	if (len < 1) {
+		return false;
+	}
+	if (fs && file) {
+		// TODO: fill file->data ? looks like dupe of rbuffer 
+		if (file->p && file->p->write) {
+			file->p->write (file, addr, data, len);
+			return true;
+		}
+		eprintf ("r_fs_write: file->p->write is null\n");
+	}
+	return false;
+}
+
 R_API int r_fs_read(RFS* fs, RFSFile* file, ut64 addr, int len) {
 	if (len < 1) {
 		eprintf ("r_fs_read: too short read\n");
 		return false;
 	}
 	if (fs && file) {
-		free (file->data);
-		file->data = calloc (1, len + 1);
-		// file->data_len = len;
-		if (file->p && file->data && file->p->read) {
+		if (file->p && file->p->read) {
+			if (!file->data) {
+				free (file->data);
+				file->data = calloc (1, len + 1);
+			}
 			file->p->read (file, addr, len);
 			return true;
 		} else {
@@ -293,13 +311,13 @@ R_API int r_fs_read(RFS* fs, RFSFile* file, ut64 addr, int len) {
 }
 
 R_API RList* r_fs_dir(RFS* fs, const char* p) {
-	RList* roots, * ret = NULL;
+	RList *ret = NULL;
 	RFSRoot* root;
 	RListIter* iter;
 	const char* dir;
 	char* path = strdup (p);
 	r_str_trim_path (path);
-	roots = r_fs_root (fs, path);
+	RList *roots = r_fs_root (fs, path);
 	r_list_foreach (roots, iter, root) {
 		if (root) {
 			if (strlen (root->path) == 1) {
@@ -357,7 +375,7 @@ R_API int r_fs_dir_dump(RFS* fs, const char* path, const char* name) {
 		strcat (npath, "/");
 		strcat (npath, file->name);
 		switch (file->type) {
-		// DONT FOLLOW MOUNTPOINTS
+		// DON'T FOLLOW MOUNTPOINTS
 		case R_FS_FILE_TYPE_DIRECTORY:
 			if (!r_fs_dir_dump (fs, npath, str)) {
 				free (npath);
@@ -366,7 +384,7 @@ R_API int r_fs_dir_dump(RFS* fs, const char* path, const char* name) {
 			}
 			break;
 		case R_FS_FILE_TYPE_REGULAR:
-			item = r_fs_open (fs, npath);
+			item = r_fs_open (fs, npath, false);
 			if (item) {
 				r_fs_read (fs, item, 0, item->size);
 				if (!r_file_dump (str, item->data, item->size, 0)) {
@@ -407,7 +425,7 @@ static void r_fs_find_off_aux(RFS* fs, const char* name, ut64 offset, RList* lis
 		if (item->type == R_FS_FILE_TYPE_DIRECTORY) {
 			r_fs_find_off_aux (fs, found, offset, list);
 		} else {
-			file = r_fs_open (fs, found);
+			file = r_fs_open (fs, found, false);
 			if (file) {
 				r_fs_read (fs, file, 0, file->size);
 				if (file->off == offset) {
@@ -467,10 +485,9 @@ static void r_fs_find_name_aux(RFS* fs, const char* name, const char* glob, RLis
 
 R_API RList* r_fs_find_name(RFS* fs, const char* name, const char* glob) {
 	RList* list = r_list_newf (free);
-	if (!list) {
-		return NULL;
+	if (list) {
+		r_fs_find_name_aux (fs, name, glob, list);
 	}
-	r_fs_find_name_aux (fs, name, glob, list);
 	return list;
 }
 
@@ -484,7 +501,7 @@ R_API RFSFile* r_fs_slurp(RFS* fs, const char* path) {
 			continue;
 		}
 		if (root->p->open && root->p->read && root->p->close) {
-			file = root->p->open (root, path);
+			file = root->p->open (root, path, false);
 			if (file) {
 				root->p->read (file, 0, file->size); //file->data
 			}else {
@@ -532,7 +549,10 @@ static RFSPartitionType partitions[] = {
 	{"dos", &fs_part_dos, fs_parhook},
 #if USE_GRUB
 	/* WARNING GPL code */
+#if !__EMSCRIPTEN__
+// wtf for some reason is not available on emscripten
 	{"msdos", &grub_msdos_partition_map, grub_parhook},
+#endif
 	{"apple", &grub_apple_partition_map, grub_parhook},
 	{"sun", &grub_sun_partition_map, grub_parhook},
 	{"sunpc", &grub_sun_pc_partition_map, grub_parhook},
@@ -554,7 +574,7 @@ R_API const char* r_fs_partition_type_get(int n) {
 	return partitions[n].name;
 }
 
-R_API int r_fs_partition_get_size() {
+R_API int r_fs_partition_get_size(void) {
 	return R_FS_PARTITIONS_LENGTH;
 }
 

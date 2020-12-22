@@ -21,7 +21,6 @@
 #include <grub/disk.h>
 #include <grub/mm.h>
 #include <grub/misc.h>
-#include <grub/dl.h>
 #include <grub/symbol.h>
 #include <grub/types.h>
 #include <grub/err.h>
@@ -56,7 +55,7 @@ struct grub_partition_map grub_sun_pc_partition_map;
 static int
 grub_sun_is_valid (struct grub_sun_pc_block *label)
 {
-  grub_uint16_t *pos;
+  grub_unaligned_uint16_t *pos;
   grub_uint16_t sum = 0;
 
   for (pos = (grub_uint16_t *) label;

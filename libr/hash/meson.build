@@ -1,8 +1,9 @@
 r_hash_sources = [
   'adler32.c',
-  'calc.c',
+  'hcalc.c',
   'crca.c',
   'entropy.c',
+  'fletcher.c',
   'hamdist.c',
   'hash.c',
   'luhn.c',
@@ -29,6 +30,7 @@ r_hash = library('r_hash', r_hash_sources,
   dependencies: dependencies,
   install: true,
   implicit_include_directories: false,
+  install_rpath: rpath_lib,
   soversion: r2_libversion
 )
 
@@ -40,6 +42,7 @@ pkgconfig_mod.generate(r_hash,
   version: r2_version,
   name: 'r_hash',
   filebase: 'r_hash',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util'
   ],

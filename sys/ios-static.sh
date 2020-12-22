@@ -14,6 +14,9 @@ if [ -z "${CPU}" ]; then
 #	export CPU=armv7
 fi
 
+STATIC_BINS=1
+CLEAN_BUILD=1
+
 R2BINS="radare2 rabin2 rasm2 r2pm r2agent radiff2 rafind2 ragg2 rahash2 rarun2 rasm2 rax2"
 CAPSTONE_ARCHS="arm aarch64"
 #export CAPSTONE_MAKEFLAGS="CAPSTONE_ARCHS=\"arm aarch64\""
@@ -35,7 +38,7 @@ PREFIX="/usr"
 if [ ! -f sys/ios-include/mach/mach_vm.h ]; then
 (
 	cd sys && \
-	wget http://lolcathost.org/b/ios-include.tar.gz && \
+	wget -c https://lolcathost.org/b/ios-include.tar.gz && \
 	tar xzvf ios-include.tar.gz
 )
 fi
@@ -58,7 +61,7 @@ else
 	CFGFLAGS=""
 fi
 
-if true ; then
+if [ "${CLEAN_BUILD}" = 1 ] ; then
 ${MAKE} clean
 cp -f plugins.tiny.cfg plugins.cfg
 cp -f plugins.ios.cfg plugins.cfg
@@ -67,17 +70,24 @@ cp -f plugins.ios.cfg plugins.cfg
 	${CFGFLAGS} \
 	--with-ostype=darwin --with-libr \
 	--without-gpl --without-fork --without-libuv \
-	--with-compiler=ios-sdk \
+	--with-compiler=ios-sdk --with-capstone5 \
 	--target=arm-unknown-darwin
 fi
 
 if [ $? = 0 ]; then
 	time ${MAKE} -j${MAKE_JOBS} CAPSTONE_ARCHS="${CAPSTONE_ARCHS}"
 	if [ $? = 0 ]; then
+		if [ "${STATIC_BINS}" = 1 ]; then
+		(
+			find . -iname '*.dylib' |xargs rm -f
+			cd binr ; make clean
+			make
+		)
+		fi
 		( cd binr/radare2 ; ${MAKE} ios_sdk_sign )
 		rm -rf /tmp/r2ios
 		${MAKE} install DESTDIR=/tmp/r2ios
-		rm -rf /tmp/r2ios/usr/share/radare2/*/www/enyo/node_modules
+		rm -rf /tmp/r2ios/usr/share/radare2/*/www/*/node_modules
 		( cd /tmp/r2ios && tar czvf ../r2ios-static-${CPU}.tar.gz ./* )
 		rm -rf sys/cydia/radare2/root
 		mkdir -p sys/cydia/radare2/root

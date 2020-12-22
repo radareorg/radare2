@@ -1,0 +1,74 @@
+NAME=to
+FILE=-
+CMDS=to bins/headers/s1.h;t S1
+EXPECT=<<EOF
+pf ddd x y z
+EOF
+RUN
+
+NAME=to
+FILE=-
+CMDS=to bins/headers/s2.h; t S1
+EXPECT=<<EOF
+pf ddd x test z
+EOF
+RUN
+
+NAME=to
+FILE=-
+CMDS=to bins/headers/s1.h; to bins/headers/s2.h; t S1
+EXPECT=<<EOF
+pf ddd x test z
+EOF
+RUN
+
+NAME=to perturbated
+FILE=-
+CMDS=to bins/headers/s1.h; to bins/headers/s4.h; t S1
+EXPECT=<<EOF
+pf ddd x test z
+EOF
+RUN
+
+NAME=to arrays
+FILE=-
+CMDS=<<EOF
+to bins/headers/s3.h
+t S1
+tk S1
+tk struct.S1
+tk struct.S1.x
+tk struct.S1.y
+tk struct.S1.z
+EOF
+EXPECT=<<EOF
+pf [3]d[4]dd x y z
+struct
+x,y,z
+int32_t,0,3
+int32_t,12,4
+int32_t,28,0
+EOF
+RUN
+
+NAME=to typedefs
+FILE=-
+CMDS=<<EOF
+to bins/headers/t1.h
+tk~easy,humans,days,tokyo,dangerous
+EOF
+EXPECT=<<EOF
+dangerous=struct
+days=typedef
+easy_prey=typedef
+humans=typedef
+struct.dangerous=neo
+struct.dangerous.neo=uint64_t,0,0
+struct.dangerous.neo.meta=13
+tokyo=typedef
+typedef.days=struct dangerous
+typedef.easy_prey=uint32_t
+typedef.humans=uint32_t
+typedef.tokyo=struct dangerous
+EOF
+RUN

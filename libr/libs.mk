@@ -3,10 +3,10 @@
 ifeq ($(LIBS0),)
 LIBS0=util
 LIBS1=socket hash reg cons magic bp search config
-LIBS2=syscall lang io crypto flag
-LIBS3=fs parse bin
-LIBS4=asm anal
-LIBS5=egg
+LIBS2=syscall lang crypto flag
+LIBS3=parse io
+LIBS4=fs asm bin
+LIBS5=anal egg
 LIBS6=debug
 LIBS7=core
 LIBS8=main

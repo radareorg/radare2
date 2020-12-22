@@ -1,0 +1,84 @@
+NAME=RISC-V ESIL for arithmetic instructions
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=riscv
+e asm.bits=32
+wx 1305400093085000330e1503b3021e011388f2ffb306a840b3d3a602
+aei
+7aes
+ar t2
+EOF
+EXPECT=<<EOF
+0x00000005
+EOF
+RUN
+
+NAME=RISC-V ESIL for arithmetic compressed instructions
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=riscv
+e asm.bits=32
+wx ad668d067d562206d18e1186158e
+aei
+7aes
+ar a2
+ar a3
+EOF
+EXPECT=<<EOF
+0x000000ed
+0xffffff03
+EOF
+RUN
+
+NAME=RISC-V ESIL for jump instructions
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=riscv
+e asm.bits=32
+wx ef00c0006f00000113000000938676006780000093c6f6ff6ff01fff
+aei
+5aes
+ar pc
+ar a3
+EOF
+EXPECT=<<EOF
+0x00000018
+0xfffffff8
+EOF
+RUN
+
+NAME=RISC-V ESIL for branch instructions
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=riscv
+e asm.bits=32
+wx 3709080013094900b70b0800938b5b00631479013349290163047901130919006306790133492901b3cb7b0113000000
+aei
+12aes
+ar s2
+ar s7
+ar pc
+EOF
+EXPECT=<<EOF
+0x00080005
+0x00080005
+0x0000003c
+EOF
+RUN
+
+NAME=RISC-V ESIL for jalr with same source and target register
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=riscv
+e asm.bits=32
+wx b730130093800070e7802004
+aei
+3aes
+ar ra
+ar pc
+EOF
+EXPECT=<<EOF
+0x0000000c
+0x00133742
+EOF
+RUN

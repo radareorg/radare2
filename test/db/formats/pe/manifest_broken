@@ -1,0 +1,6 @@
+NAME=PE: corkami manifest_broken.exe - open
+FILE=bins/pe/manifest_broken.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN

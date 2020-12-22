@@ -1,0 +1,16 @@
+d "call 0" e8fdff
+a "jmp 0x0" ebfe
+a "jmp 0x10" eb0e
+a "jmp 0x34" eb32
+a "jne 0x14" 7512
+a "jnz 0x94" 660f858d000000
+a "jnz -0x94" 660f8565ffffff
+a "jno -0x34" 71ca
+dB "jmp 0xfec50" e95bec f000:fff2
+d "jmp 0x1fec50" e95bec 0x001ffff2
+a "mov al, [0xbeef]" a0efbe
+a "mov ax, [0xbeef]" a1efbe
+a "test bl, 0x12" f6c312
+a "test bx, 0x1234" f7c33412
+aB "test byte [bx], 0x12" f60712
+aB "test word [bx], 0x1234" f7073412

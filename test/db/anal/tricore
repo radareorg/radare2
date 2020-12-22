@@ -1,0 +1,157 @@
+NAME=TriCore lea
+FILE=malloc://512
+CMDS=!rasm2 -a tricore -d d916606c
+EXPECT=<<EOF
+lea a6, [a1]-14944
+EOF
+RUN
+
+NAME=TriCore sub
+FILE=malloc://512
+CMDS=!rasm2 -a tricore -d 200a
+EXPECT=<<EOF
+sub.a sp, 10
+EOF
+RUN
+
+NAME=TriCore multi
+FILE=malloc://512
+CMDS=!rasm2 -a tricore -d 0f0200007cb10880f8130200
+EXPECT=<<EOF
+sh d0, d2, d0
+jnz.a a11, 0x00000006
+ld.bu d0, [a15]8
+st.a [sp]76, a15
+mov d0, d0
+EOF
+RUN
+
+NAME=TriCore multi
+FILE=malloc://512
+CMDS=!rasm2 -a tricore -d 0f0200007cb10880f8130200
+EXPECT=<<EOF
+sh d0, d2, d0
+jnz.a a11, 0x00000006
+ld.bu d0, [a15]8
+st.a [sp]76, a15
+mov d0, d0
+EOF
+RUN
+
+NAME=TriCore return_0.elf
+FILE=bins/tricore/return_0.elf
+CMDS=iI~arch
+EXPECT=<<EOF
+arch     tricore
+EOF
+RUN
+
+NAME=TriCore return_0.elf
+FILE=bins/tricore/return_0.elf
+CMDS=drp
+EXPECT=<<EOF
+=PC	pc
+=SP	a10
+=A0	a0
+gpr	p0	.64	0	0
+gpr	a0	.32	0	0
+gpr	a1	.32	4	0
+gpr	p2	.64	8	0
+gpr	a2	.32	8	0
+gpr	a3	.32	12	0
+gpr	p4	.64	16	0
+gpr	a4	.32	16	0
+gpr	a5	.32	20	0
+gpr	p6	.64	24	0
+gpr	a6	.32	24	0
+gpr	a7	.32	28	0
+gpr	p8	.64	32	0
+gpr	a8	.32	32	0
+gpr	a9	.32	36	0
+gpr	p10	.64	40	0
+gpr	a10	.32	40	0
+gpr	a11	.32	44	0
+gpr	p12	.64	48	0
+gpr	a12	.32	48	0
+gpr	a13	.32	52	0
+gpr	p14	.64	56	0
+gpr	a14	.32	56	0
+gpr	a15	.32	60	0
+gpr	e0	.64	64	0
+gpr	d0	.32	64	0
+gpr	d1	.32	68	0
+gpr	e2	.64	72	0
+gpr	d2	.32	72	0
+gpr	d3	.32	76	0
+gpr	e4	.64	80	0
+gpr	d4	.32	80	0
+gpr	d5	.32	84	0
+gpr	e6	.64	88	0
+gpr	d6	.32	88	0
+gpr	d7	.32	92	0
+gpr	e8	.64	96	0
+gpr	d8	.32	96	0
+gpr	d9	.32	100	0
+gpr	e10	.64	104	0
+gpr	d10	.32	104	0
+gpr	d11	.32	108	0
+gpr	e12	.64	112	0
+gpr	d12	.32	112	0
+gpr	d13	.32	114	0
+gpr	e14	.64	118	0
+gpr	d14	.32	118	0
+gpr	d15	.32	120	0
+gpr	PSW	.32	124	0
+gpr	PCXI	.32	128	0
+gpr	FCX	.32	132	0
+gpr	LCX	.32	136	0
+gpr	ISP	.32	140	0
+gpr	ICR	.32	144	0
+gpr	PIPN	.32	148	0
+gpr	BIV	.32	152	0
+gpr	BTV	.32	156	0
+gpr	pc	.32	160	0
+
+EOF
+RUN
+
+NAME= Instruction descriptions for TriCore
+FILE=bins/tricore/return_0.elf
+CMDS=<<EOF
+e asm.describe = 1
+s 0x80000004
+pd 30
+EOF
+EXPECT=<<EOF
+            0x80000004      8c80           ld.h d15, [a8]0             ; load half word
+            0x80000006      0000           nop                         ; nop operation
+            0x80000008      8c80           ld.h d15, [a8]0             ; load half word
+            0x8000000a      0000           nop                         ; nop operation
+            0x8000000c      8c80           ld.h d15, [a8]0             ; load half word
+            0x8000000e      0000           nop                         ; nop operation
+            0x80000010      8c80           ld.h d15, [a8]0             ; load half word
+            0x80000012      0000           nop                         ; nop operation
+            0x80000014      85f12000       ld.w d1, 0xf0000020         ; load word
+            0x80000018      6f010400       jz.t d1, 0, 0x80000020      ; jump if zero bit
+            0x8000001c      5d006800       jl 0x800000ec               ; jump and link
+            0x80000020      910000ad       movh.a sp, 53248            ; move high to address
+            0x80000024      d9aa6000       lea sp, [sp]1056 <0xd0000420> ; load effective address
+            0x80000028      7b00000d       movh d0, 53248              ; move high
+            0x8000002c      1b008200       addi d0, d0, 2080           ; add immediate
+            0x80000030      cd80e20f       mtcr #0xfe28, d0            ; move to core register
+            0x80000034      0d00c004       isync                       ; synchronize instructions
+            0x80000038      7b000008       movh d0, 32768              ; move high
+            0x8000003c      1b003000       addi d0, d0, 768            ; add immediate
+            0x80000040      cd40e20f       mtcr #0xfe24, d0            ; move to core register
+            0x80000044      0d00c004       isync                       ; synchronize instructions
+            0x80000048      4d40e00f       mfcr d0, #0xfe04            ; move from core register
+            0x8000004c      8ff04701       or d0, d0, 127              ; bitwise or
+            0x80000050      8f00c801       andn d0, d0, 128
+            0x80000054      cd40e00f       mtcr #0xfe04, d0            ; move to core register
+            0x80000058      0d00c004       isync                       ; synchronize instructions
+            0x8000005c      4d40e00f       mfcr d0, #0xfe04            ; move from core register
+            0x80000060      8f005001       or d0, d0, 256              ; bitwise or
+            0x80000064      cd40e00f       mtcr #0xfe04, d0            ; move to core register
+            0x80000068      0d00c004       isync                       ; synchronize instructions
+EOF
+RUN

@@ -1,0 +1,288 @@
+======================
+Pointer type commands
+======================
+
+*entry0
+*entry0=cc
+*entry0+10=cc
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args
+      (args (arg (arg_identifier)))))
+  (arged_command (cmd_identifier)
+    (args
+      (args (arg (arg_identifier)))
+      (arg_identifier)
+      (args (arg (arg_identifier)))))
+  (arged_command (cmd_identifier)
+    (args
+      (args (arg (arg_identifier)))
+      (arg_identifier)
+      (args (arg (arg_identifier))))))
+
+
+==============================
+Environment variable command
+==============================
+
+%
+%SHELL
+%TMPDIR=/tmp
+%SHELL;
+%TMPDIR=/tmp;
+
+---
+
+(commands
+  (arged_command (cmd_identifier))
+  (arged_command (cmd_identifier)
+    (args
+      (args (arg (arg_identifier)))))
+  (arged_command (cmd_identifier)
+    (args
+      (args (arg (arg_identifier)))
+      (arg_identifier)
+      (args (arg (arg_identifier)))))
+  (arged_command (cmd_identifier)
+    (args
+      (args (arg (arg_identifier)))))
+  (arged_command (cmd_identifier)
+    (args
+      (args (arg (arg_identifier)))
+      (arg_identifier)
+      (args (arg (arg_identifier))))))
+
+
+===============
+Macro commands
+===============
+
+(_foo x y; p8 $0 @ $1)
+(-foo)
+(foo x y; p8 $0 @ $1)(10 0x10)
+(pdstr bits; s $0; .(pdenc guess); .(pdenc utf$0le); .(pdenc utf$0be))
+(foo; pd 10~this is special\))
+(
+(*
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (macro_args
+      (macro_content
+        (arg (arg_identifier))
+	(args
+	  (arg (arg_identifier))
+	  (arg (arg_identifier)))
+        (tmp_seek_command
+	  (arged_command (cmd_identifier)
+	    (args (arg (arg_identifier))))
+	  (args (arg (arg_identifier)))))))
+  (arged_command (cmd_identifier)
+    (macro_args
+      (macro_content
+        (arg (arg_identifier)))))
+  (arged_command (cmd_identifier)
+    (macro_args
+      (macro_content
+        (arg (arg_identifier))
+	(args
+	  (arg (arg_identifier))
+	  (arg (arg_identifier)))
+        (tmp_seek_command
+	  (arged_command (cmd_identifier)
+	    (args (arg (arg_identifier))))
+	  (args (arg (arg_identifier)))))
+      (macro_call_full_content
+        (macro_call_content
+	  (args
+	    (arg (arg_identifier))
+	    (arg (arg_identifier)))))))
+  (arged_command (cmd_identifier)
+    (macro_args
+      (macro_content
+        (arg (arg_identifier))
+	(args (arg (arg_identifier)))
+        (arged_command (cmd_identifier)
+	  (args (arg (arg_identifier))))
+	(arged_command (cmd_identifier)
+	  (macro_call_content
+	    (args
+	      (arg (arg_identifier))
+	      (arg (arg_identifier)))))
+	(arged_command (cmd_identifier)
+	  (macro_call_content
+	    (args
+	      (arg (arg_identifier))
+	      (arg (arg_identifier)))))
+	(arged_command (cmd_identifier)
+	  (macro_call_content
+	    (args
+	      (arg (arg_identifier))
+	      (arg (arg_identifier))))))))
+  (arged_command (cmd_identifier)
+    (macro_args
+      (macro_content
+        (arg (arg_identifier))
+	(grep_command
+	  (arged_command (cmd_identifier)
+	    (args (arg (arg_identifier))))
+	  (grep_specifier (grep_specifier_identifier))))))
+  (arged_command (cmd_identifier))
+  (arged_command (cmd_identifier)))
+
+
+===============
+System commands
+===============
+
+!
+!ls
+!!
+!!ls
+!=!
+
+---
+
+(commands
+  (arged_command (system_identifier))
+  (arged_command (system_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (system_identifier))
+  (arged_command (system_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (system_identifier)))
+
+
+===================
+Interpret r2 commands
+===================
+
+.cmd a1
+.. myfile
+. myfile.r2
+.* file
+.!rabin2 -ri $FILE
+.(foo 1 2 3)
+./ ELF
+pd 10 |.
+
+---
+
+(commands
+  (arged_command
+    command: (cmd_identifier)
+    args: (arged_command command: (cmd_identifier)
+            args: (args (arg (arg_identifier)))))
+  (arged_command
+    command: (cmd_identifier)
+    args: (args (arg (arg_identifier))))
+  (arged_command
+    command: (cmd_identifier)
+    args: (args (arg (arg_identifier))))
+  (arged_command
+    command: (cmd_identifier)
+    args: (args (arg (arg_identifier))))
+  (arged_command
+    command: (cmd_identifier)
+    args: (interpret_arg))
+  (arged_command
+    command: (cmd_identifier)
+    args: (macro_call_content
+            (args
+	      (arg (arg_identifier))
+	      (arg (arg_identifier))
+	      (arg (arg_identifier))
+	      (arg (arg_identifier)))))
+  (arged_command
+    command: (cmd_identifier)
+    args: (args (arg (arg_identifier))))
+  (arged_command
+    args: (arged_command command: (cmd_identifier)
+            args: (args (arg (arg_identifier)))))
+  )
+
+
+============
+Last cmd
+============
+
+.
+...
+
+---
+
+(commands
+  (last_command (cmd_identifier))
+  (last_command (cmd_identifier)))
+
+===================
+Interpreter commands
+===================
+
+#!
+#!python arg0
+#!rust
+#!?
+
+---
+
+(commands
+  (arged_command (cmd_identifier))
+  (arged_command (cmd_identifier)
+    (args
+      (arg (arg_identifier))
+      (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args
+      (arg (arg_identifier))))
+  (help_command (cmd_identifier)))
+
+
+=======================================
+Pointer type commands with substitution
+=======================================
+
+*entr$(?e y0)=$(?v $$)
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args
+      (args
+        (arg (arg_identifier))
+	(arg (cmd_substitution_arg
+	        (arged_command (cmd_identifier)
+		  (args (arg (arg_identifier)))))))
+      (arg_identifier)
+      (args
+        (arg (cmd_substitution_arg
+	        (arged_command (cmd_identifier)
+		  (args (arg (arg_identifier))))))))))
+
+========
+editor -
+========
+
+-
+
+---
+
+(commands
+  (arged_command (cmd_identifier)))
+
+=========
+\ command
+=========
+
+\
+
+---
+
+(commands
+  (arged_command (cmd_identifier)))

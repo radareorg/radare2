@@ -1,0 +1,56 @@
+NAME=env FOO
+FILE=-
+CMDS=<<EOF
+env FOO=BAR
+env FOO
+EOF
+EXPECT=<<EOF
+BAR
+EOF
+RUN
+
+NAME=int/str values
+FILE=-
+CMDS=<<EOF
+e log.level=1
+e log.level
+e log.level=0
+e log.level
+e log.level=4
+e log.level
+e asm.cmt.off=nodup
+e asm.cmt.off
+e asm.cmt.off=false
+e asm.cmt.off
+e asm.cmt.off=true
+e asm.cmt.off
+e asm.cmt.off=0
+e asm.cmt.off
+e asm.cmt.off=1
+e asm.cmt.off
+e asm.cmt.off=
+e asm.cmt.off
+EOF
+EXPECT=<<EOF
+1
+0
+4
+nodup
+false
+true
+false
+true
+false
+EOF
+RUN
+
+NAME=env with spaces
+FILE=-
+CMDS=<<EOF
+env AAA   =    BBB
+env AAA
+EOF
+EXPECT=<<EOF
+BBB
+EOF
+RUN

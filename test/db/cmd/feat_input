@@ -1,0 +1,177 @@
+NAME=newline ?e 
+
+FILE=malloc://1024
+CMDS=<<EOF
+# The test suite is not allowed to interpret the output!
+?e 
+EOF
+EXPECT=<<EOF
+
+EOF
+RUN
+
+NAME=comments
+FILE=malloc://1024
+CMDS=<<EOF
+# This is a comment.
+# This is a comment with a ; in it - and it is still only a comment.
+# Other stuff is also ignored: `..` ~ ..
+
+# But inside a command line only the commands after the # are ignored.
+?v $$ # this must beignored ; ?v $$ | ls
+EOF
+EXPECT=<<EOF
+0x0
+EOF
+RUN
+
+NAME=w foo#bar
+FILE=malloc://1024
+CMDS=<<EOF
+"w foo#bar"
+psz
+EOF
+EXPECT=<<EOF
+foo#bar
+EOF
+RUN
+
+NAME="quoted"
+FILE=malloc://1024
+CMDS=<<EOF
+"w fuck;you@23"
+psz
+EOF
+EXPECT=<<EOF
+fuck;you@23
+EOF
+RUN
+
+NAME="quoted"@addr
+FILE=malloc://1024
+CMDS=<<EOF
+"w fuck;you@23"@0x10
+psz@0x10
+EOF
+EXPECT=<<EOF
+fuck;you@23
+EOF
+RUN
+
+NAME="?e foo" "?e bar"
+FILE=malloc://1024
+CMDS="?e foo";"?e bar"
+EXPECT=<<EOF
+foo
+bar
+EOF
+RUN
+
+NAME=at3 "?vi $$"@3;"?e bar"
+FILE=malloc://1024
+CMDS="?vi $$"@3;?e bar
+EXPECT=<<EOF
+3
+bar
+EOF
+RUN
+
+NAME=at3 "?vi $$"@3;"?e bar"
+FILE=malloc://1024
+CMDS="?vi $$"@3;"?e bar"
+EXPECT=<<EOF
+3
+bar
+EOF
+RUN
+
+NAME="?v 1>>>2 ror"
+FILE=malloc://1024
+CMDS="?v 1>>>2"
+EXPECT=<<EOF
+0x4000000000000000
+EOF
+RUN
+
+NAME="?v 0xdeadbeef<<<40 rol"
+FILE=malloc://1024
+CMDS="?v 0xdeadbeef<<<40"
+EXPECT=<<EOF
+0xadbeef00000000de
+EOF
+RUN
+
+NAME=?e foo;?e bar
+FILE=malloc://1024
+CMDS=?e foo;?e bar
+EXPECT=<<EOF
+foo
+bar
+EOF
+RUN
+
+NAME=;?e bar
+FILE=malloc://1024
+CMDS=;?e bar
+EXPECT=<<EOF
+bar
+EOF
+RUN
+
+NAME='>' in cmd: agn "sh->fu"
+FILE=-
+CMDS=<<EOF
+agn "sh->fu"
+agg
+EOF
+EXPECT=<<EOF
+.--------------------.
+|  sh->fu            |
+`--------------------'
+EOF
+RUN
+
+NAME=multiple '>' in cmd line: ?e abc > def>ghi
+FILE=-
+CMDS=<<EOF
+?e abc > def>ghi  # should not hang
+"rm ./def>ghi"
+rm ./ghi
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=hash+space in quoted string
+FILE=-
+CMDS=<<EOF
+agn "Process form A# B# in cloud"
+agg
+EOF
+EXPECT=<<EOF
+.-------------------------------.
+|  Process form A# B# in cloud  |
+`-------------------------------'
+EOF
+RUN
+
+NAME=cmd outputting trailing space
+FILE=-
+CMDS=<<EOF
+# do not convert test to base64
+?e aaa
+"?e bbb  "
+?e ccc
+"?e ddd     "
+?e eee
+"?e fff        "
+EOF
+EXPECT=<<EOF
+aaa
+bbb  
+ccc
+ddd     
+eee
+fff        
+EOF
+RUN

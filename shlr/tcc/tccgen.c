@@ -39,6 +39,7 @@ ST_DATA int rsym, anon_sym = SYM_FIRST_ANOM, ind, loc;
 ST_DATA Sym *sym_free_first;
 ST_DATA void **sym_pools;
 ST_DATA int nb_sym_pools;
+
 static int arraysize = 0;
 
 static const char *global_symname = NULL;
@@ -65,6 +66,7 @@ ST_DATA CType func_vt;	/* current function return type (used by return instructi
 ST_DATA int func_vc;
 ST_DATA int last_line_num, last_ind, func_ind;	/* debug last line number and pc */
 ST_DATA char *funcname;
+ST_DATA char *dir_name;
 
 ST_DATA CType char_pointer_type, func_old_type;
 ST_DATA CType int8_type, int16_type, int32_type, int64_type, size_type;
@@ -83,12 +85,34 @@ static void unary_type(CType *type);
 static int is_compatible_parameter_types(CType *type1, CType *type2);
 static void expr_type(CType *type);
 
-ST_INLN int is_float(int t) {
+/* ------------------------------------------------------------------------- */
+ST_INLN bool is_structured(CType *t) {
+	return (t->t & VT_BTYPE) == VT_STRUCT || (t->t & VT_BTYPE) == VT_UNION;
+}
+
+ST_INLN bool is_struct(CType *t) {
+	return (t->t & VT_BTYPE) == VT_STRUCT;
+}
+
+ST_INLN bool is_union(CType *t) {
+	return (t->t & VT_BTYPE) == VT_UNION;
+}
+
+ST_INLN bool is_enum(CType *t) {
+	return (t->t & VT_BTYPE) == VT_ENUM;
+}
+
+ST_INLN bool is_float(int t) {
 	int bt;
 	bt = t & VT_BTYPE;
 	return bt == VT_LDOUBLE || bt == VT_DOUBLE || bt == VT_FLOAT || bt == VT_QFLOAT;
 }
 
+ST_INLN bool not_structured(CType *t) {
+	return (t->t & VT_BTYPE) != VT_STRUCT && (t->t & VT_BTYPE) != VT_UNION;
+}
+
+/* ------------------------------------------------------------------------- */
 /* we use our own 'finite' function to avoid potential problems with
    non standard math libs */
 /* XXX: endianness dependent */
@@ -226,6 +250,8 @@ void dump_type(CType *type, int depth) {
 	int bt = type->t & VT_BTYPE;
 	eprintf ("BTYPE = %d ", bt);
 	switch (bt) {
+	case VT_UNION: eprintf ("[UNION]\n");
+		break;
 	case VT_STRUCT: eprintf ("[STRUCT]\n");
 		break;
 	case VT_PTR: eprintf ("[PTR]\n");
@@ -282,7 +308,6 @@ ST_FUNC Sym *sym_push(int v, CType *type, int r, long long c) {
 	if (!(v & SYM_FIELD) && (v & ~SYM_STRUCT) < SYM_FIRST_ANOM) {
 		int i = (v & ~SYM_STRUCT);
 		if (i < TOK_IDENT) {
-			eprintf ("Not found\n");
 			return NULL;
 		}
 		// ts = table_ident[i - TOK_IDENT];
@@ -487,7 +512,7 @@ ST_FUNC int type_size(CType *type, int *a) {
 	int bt;
 
 	bt = type->t & VT_BTYPE;
-	if (bt == VT_STRUCT) {
+	if (is_structured(type)) {
 		/* struct/union */
 		s = type->ref;
 		*a = s->r;
@@ -628,7 +653,7 @@ static int compare_types(CType *type1, CType *type2, int unqualified) {
 		type1 = pointed_type (type1);
 		type2 = pointed_type (type2);
 		return is_compatible_types (type1, type2);
-	} else if (bt1 == VT_STRUCT) {
+	} else if (bt1 == VT_STRUCT || bt1 == VT_UNION) {
 		return type1->ref == type2->ref;
 	} else if (bt1 == VT_FUNC) {
 		return is_compatible_func (type1, type2);
@@ -728,16 +753,18 @@ add_tstr:
 		break;
 	case VT_ENUM:
 	case VT_STRUCT:
+	case VT_UNION:
 		if (bt == VT_STRUCT) {
-			tstr = "struct ";
+			tstr = "struct";
+		} else if (bt == VT_UNION) {
+			tstr = "union";
 		} else {
-			tstr = "enum ";
+			tstr = "enum";
 		}
 		pstrcat (buf, buf_size, tstr);
 		v = type->ref->v & ~SYM_STRUCT;
-		if (v >= SYM_FIRST_ANOM) {
-			strcat_printf (buf, buf_size, "%u", v - SYM_FIRST_ANOM);
-		} else {
+		if (v < SYM_FIRST_ANOM) {
+			pstrcat (buf, buf_size, " ");
 			pstrcat (buf, buf_size, get_tok_str (v, NULL));
 		}
 		break;
@@ -926,14 +953,16 @@ static void parse_attribute(AttributeDef *ad) {
 	}
 }
 
-/* enum/struct/union declaration. u is either VT_ENUM or VT_STRUCT */
-static void struct_decl(CType *type, int u) {
+/* enum/struct/union declaration. u is either VT_ENUM, VT_STRUCT or VT_UNION */
+static void struct_decl(CType *type, int u, bool is_typedef) {
 	int a, v, size, align, maxalign, offset;
 	long long c = 0;
 	int bit_size, bit_pos, bsize, bt, lbit_pos, prevbt;
+	char buf[STRING_MAX_SIZE + 1];
 	Sym *s, *ss, *ass, **ps;
 	AttributeDef ad;
 	const char *name = NULL;
+	bool autonamed = false;
 	STACK_NEW0 (CType, type1);
 	STACK_NEW0 (CType, btype);
 
@@ -955,19 +984,20 @@ static void struct_decl(CType *type, int u) {
 			goto do_decl;
 		}
 	} else {
-		static char buf[STRING_MAX_SIZE + 1];
 		v = anon_sym++;
 		snprintf (buf, sizeof(buf), "%u", v - SYM_FIRST_ANOM);
 		name = buf;
+		autonamed = true;
 	}
 	type1.t = a;
-	/* we put an undefined size for struct/union */
+	/* we put an undefined size for struct/union/enum */
 	s = sym_push (v | SYM_STRUCT, &type1, 0, -1);
 	if (!s) {
 		return;
 	}
 	s->r = 0;	/* default alignment is zero as gcc */
 	/* put struct/union/enum name in type */
+	/* TODO: Extract this part into the separate functions per type */
 do_decl:
 	type->t = u;
 	type->ref = s;
@@ -995,6 +1025,7 @@ do_decl:
 					next ();
 					c = expr_const ();
 				}
+				// TODO: use is_typedef here
 				if (strcmp (name, "{")) {
 					char *varstr = get_tok_str (v, NULL);
 					tcc_appendf ("%s=enum\n", name);
@@ -1027,6 +1058,12 @@ do_decl:
 			prevbt = VT_INT32;
 			bit_pos = 0;
 			offset = 0;
+
+			const char *ctype = (a == TOK_UNION)? "union": "struct";
+			if (!is_typedef || !autonamed) {
+				tcc_appendf ("%s=%s\n", name, ctype);
+			}
+
 			while (tok != '}') {
 				if (!parse_btype (&btype, &ad)) {
 					expect ("bracket");
@@ -1038,7 +1075,7 @@ do_decl:
 					memcpy (&type1, &btype, sizeof(type1));
 					if (tok != ':') {
 						type_decl (&type1, &ad, &v, TYPE_DIRECT | TYPE_ABSTRACT);
-						if (v == 0 && (type1.t & VT_BTYPE) != VT_STRUCT) {
+						if (v == 0 && not_structured(&type1)) {
 							expect ("identifier");
 						}
 						if ((type1.t & VT_BTYPE) == VT_FUNC ||
@@ -1117,7 +1154,7 @@ do_decl:
 					} else {
 						bit_pos = 0;
 					}
-					if (v != 0 || (type1.t & VT_BTYPE) == VT_STRUCT) {
+					if (v != 0 || is_structured(&type1)) {
 						/* add new memory data only if starting
 						   bit field */
 						if (lbit_pos == 0) {
@@ -1143,21 +1180,25 @@ do_decl:
 						char *varstr = get_tok_str (v, NULL);
 						type_to_str (b, sizeof(b), &type1, NULL);
 						{
-							const char *ctype = (a == TOK_UNION)? "union": "struct";
 							int type_bt = type1.t & VT_BTYPE;
-							// eprintf("2: %s.%s = %s\n", ctype, name, varstr);
-							tcc_appendf ("%s=%s\n", name, ctype);
-							tcc_appendf ("[+]%s.%s=%s\n",
-								ctype, name, varstr);
-							tcc_appendf ("%s.%s.%s.meta=%d\n",
-								ctype, name, varstr, type_bt);
-							/* compact form */
-							tcc_appendf ("%s.%s.%s=%s,%d,%d\n",
-								ctype, name, varstr, b, offset, arraysize);
+							//eprintf("2: %s.%s = %s\n", ctype, name, varstr);
+							if (is_typedef && autonamed) {
+								tcc_typedef_appendf ("[+]typedef.%%s.fields=%s\n", varstr);
+								tcc_typedef_appendf ("typedef.%%s.%s.meta=%d\n", varstr, type_bt);
+								tcc_typedef_appendf ("typedef.%%s.%s=%s,%d,%d\n", varstr, b, offset, arraysize);
+							} else {
+								tcc_appendf ("[+]%s.%s=%s\n",
+									ctype, name, varstr);
+								tcc_appendf ("%s.%s.%s.meta=%d\n",
+									ctype, name, varstr, type_bt);
+								/* compact form */
+								tcc_appendf ("%s.%s.%s=%s,%d,%d\n",
+									ctype, name, varstr, b, offset, arraysize);
+							}
 #if 0
-							printf ("struct.%s.%s.type=%s\n", name, varstr, b);
-							printf ("struct.%s.%s.offset=%d\n", name, varstr, offset);
-							printf ("struct.%s.%s.array=%d\n", name, varstr, arraysize);
+							eprintf ("%s.%s.%s.type=%s\n", ctype, name, varstr, b);
+							eprintf ("%s.%s.%s.offset=%d\n", ctype, name, varstr, offset);
+							eprintf ("%s.%s.%s.array=%d\n", ctype, name, varstr, arraysize);
 #endif
 							// (%s) field (%s) offset=%d array=%d", name, b, get_tok_str(v, NULL), offset, arraysize);
 							arraysize = 0;
@@ -1171,7 +1212,7 @@ do_decl:
 						}
 #endif
 					}
-					if (v == 0 && (type1.t & VT_BTYPE) == VT_STRUCT) {
+					if (v == 0 && is_structured (&type1)) {
 						ass = type1.ref;
 						while ((ass = ass->next) != NULL) {
 							ss = sym_push (ass->v, &ass->type, 0, offset + ass->c);
@@ -1232,6 +1273,7 @@ static int parse_btype(CType *type, AttributeDef *ad) {
 		/* int8_t, uint8_t, char */
 		case TOK_UINT8:
 			t |= VT_UNSIGNED;
+			/* fall through */
 		case TOK_INT8:
 			u = VT_INT8;
 			goto basic_type;
@@ -1258,6 +1300,7 @@ basic_type1:
 		/* int16_t, uint16_t, short */
 		case TOK_UINT16:
 			t |= VT_UNSIGNED;
+			/* fall through */
 		case TOK_INT16:
 		case TOK_SHORT:
 			u = VT_INT16;
@@ -1266,6 +1309,7 @@ basic_type1:
 		/* int32_t, uint32_t, int */
 		case TOK_UINT32:
 			t |= VT_UNSIGNED;
+			/* fall through */
 		case TOK_INT32:
 			u = VT_INT32;
 			goto basic_type;
@@ -1277,6 +1321,7 @@ basic_type1:
 		/* int64_t, uint64_t, long, long long */
 		case TOK_UINT64:
 			t |= VT_UNSIGNED;
+			/* fall through */
 		case TOK_INT64:
 			u = VT_INT64;
 			goto basic_type;
@@ -1315,14 +1360,16 @@ basic_type1:
 			}
 			break;
 		case TOK_ENUM:
-			struct_decl (&type1, VT_ENUM);
+			struct_decl (&type1, VT_ENUM, (bool)(t & VT_ENUM));
 basic_type2:
 			u = type1.t;
 			type->ref = type1.ref;
 			goto basic_type1;
 		case TOK_STRUCT:
+			struct_decl (&type1, VT_STRUCT, (bool)(t & VT_TYPEDEF));
+			goto basic_type2;
 		case TOK_UNION:
-			struct_decl (&type1, VT_STRUCT);
+			struct_decl (&type1, VT_UNION, (bool)(t & VT_UNION));
 			goto basic_type2;
 
 		/* type modifiers */
@@ -1858,7 +1905,9 @@ tok_next:
 		type.t = VT_INT8;
 		mk_pointer (&type);
 		type.t |= VT_ARRAY;
-		type.ref->c = len;
+		if (type.ref) {
+			type.ref->c = len;
+		}
 		// XXX ptr is NULL HERE WTF
 		// memcpy(ptr, funcname, len);
 		next ();
@@ -2096,7 +2145,7 @@ tok_identifier:
 			gaddrof ();
 			next ();
 			/* expect pointer on structure */
-			if ((vtop->type.t & VT_BTYPE) != VT_STRUCT) {
+			if (not_structured(&vtop->type)) {
 				expect ("struct or union");
 			}
 			s = vtop->type.ref;
@@ -2421,7 +2470,7 @@ static void decl_designator(CType *type, unsigned long c,
 			l = tok;
 			next ();
 struct_field:
-			if ((type->t & VT_BTYPE) != VT_STRUCT) {
+			if (not_structured(type)) {
 				expect ("struct/union type");
 			}
 			s = type->ref;
@@ -2647,8 +2696,7 @@ static void decl_initializer(CType *type, unsigned long c, int first, int size_o
 		if (n < 0) {
 			s->c = array_length;
 		}
-	} else if ((type->t & VT_BTYPE) == VT_STRUCT &&
-		   (!first || tok == '{')) {
+	} else if (is_structured(type) && (!first || tok == '{')) {
 		int par_count;
 
 		/* NOTE: the previous test is a specific case for automatic
@@ -2787,7 +2835,7 @@ static void decl_initializer_alloc(CType *type, AttributeDef *ad, int r, int has
 	Sym *flexible_array;
 
 	flexible_array = NULL;
-	if ((type->t & VT_BTYPE) == VT_STRUCT) {
+	if (is_struct(type)) {
 		Sym *field;
 		field = type->ref;
 		while (field && field->next)
@@ -2945,9 +2993,7 @@ static void func_decl_list(Sym *func_sym) {
 		if (!parse_btype (&btype, &ad)) {
 			expect ("declaration list");
 		}
-		if (((btype.t & VT_BTYPE) == VT_ENUM ||
-		     (btype.t & VT_BTYPE) == VT_STRUCT) &&
-		    tok == ';') {
+		if ((is_enum(&btype) || is_structured(&btype)) && tok == ';') {
 			/* we accept no variable after */
 		} else {
 			while (tcc_nerr () == 0) {
@@ -3023,7 +3069,7 @@ static int decl0(int l, int is_for_loop_init) {
 			}
 			btype.t = VT_INT32;
 		}
-		if (((btype.t & VT_BTYPE) == VT_ENUM || (btype.t & VT_BTYPE) == VT_STRUCT) && tok == ';') {
+		if ((is_enum(&btype) || is_structured(&btype)) && tok == ';') {
 			/* we accept no variable after */
 			next ();
 			continue;
@@ -3146,8 +3192,9 @@ func_error1:
 					char buf[500];
 					alias = get_tok_str(v, NULL);
 					type_to_str(buf, sizeof(buf), &sym->type, NULL);
-					tcc_appendf("%s=typedef\n",alias);
-					tcc_appendf("typedef.%s=%s\n",alias, buf);
+					tcc_appendf ("%s=typedef\n", alias);
+					tcc_appendf ("typedef.%s=%s\n", alias, buf);
+					tcc_typedef_alias_fields (alias);
 				} else {
 					r = 0;
 					if ((type.t & VT_BTYPE) == VT_FUNC) {

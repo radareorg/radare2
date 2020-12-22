@@ -1,0 +1,175 @@
+NAME=no preincrement/predecrement in 3rd part of for statement
+# Bad: for (;; ++i, --j)
+# Good: for (;; i++, j--)
+FILE=-
+# TODO: multiline
+CMDS="!git grep \"for[[:space:]]*([^;)]*;[^;)]*;\([^,)(]*,\)*[[:space:]]*\(++\|--\)[[:space:]]*[[:alpha:]_][[:alnum:]_]*[[:space:]]*[,)]\" -- .. :!db/tools/r2 :!../shlr/** :!../libr/asm/arch/** :!../**/mangling/cxx/cp-demangle.c"
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=use void on functions without parameters
+# Bad: static void foo() {
+# Good: static void foo(void) {
+FILE=-
+CMDS="!git grep -e ^R_API -e ^static ../libr | grep -e '[a-z]() {' -e '[a-z]();'"
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=r2 -
+FILE=-
+CMDS=e file.path
+EXPECT=<<EOF
+
+EOF
+RUN
+
+NAME=r2 -
+FILE=-
+CMDS=e file.lastpath
+EXPECT=<<EOF
+
+EOF
+RUN
+
+NAME=r2 --
+FILE=--
+CMDS=e file.path
+EXPECT=<<EOF
+
+EOF
+RUN
+
+NAME=r2 --
+FILE=bins/elf/bomb
+CMDS=r2 -s main -qcs bins/elf/bomb
+EXPECT=<<EOF
+0x400da0
+EOF
+RUN
+
+NAME=seek undo/redo
+FILE=-
+CMDS=<<EOF
+wx 01
+s 1
+s-
+s+
+pb 8
+EOF
+EXPECT=<<EOF
+00000000
+EOF
+RUN
+
+NAME=seek undo/redo
+FILE=-
+CMDS=wx 01; s 1; s-; s+; pb 8
+EXPECT=<<EOF
+00000000
+EOF
+RUN
+
+NAME=radare2 -V
+FILE=-
+CMDS=!!radare2 -V~r_anal?
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=radare2 -h
+FILE=-
+CMDS=!!radare2 -h~Usage?
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=radare2 -hh
+FILE=-
+CMDS=!!radare2 -hh~R2_USER_PLUGINS?
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=radare2 -L
+FILE=-
+CMDS=!!radare2 -L~default?
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=r2 shortcut
+FILE=-
+CMDS=<<EOF
+?q `!!r2 -h~Usage?`
+?+ ?vi $?
+?! ?e `!!r2.bat -h~Usage?`
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=no-nl-at-eof script
+FILE=-
+CMDS=!radare2 -i scripts/no-nl-at-eof.r2 -NQ -
+EXPECT=<<EOF
+1
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=radare2 -i -Q with missing script
+FILE=-
+CMDS=<<EOF
+# Should not hang
+!radare2 -i script/missing.r2 -NQ -
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+Script 'script/missing.r2' not found.
+EOF
+RUN
+
+NAME=radare2 empty -i
+FILE=-
+CMDS=!radare2 -i "" -
+EXPECT_ERR=<<EOF
+Cannot open empty script path
+EOF
+RUN
+
+NAME=radare2 empty -I
+FILE=-
+CMDS=!radare2 -I "" -
+EXPECT_ERR=<<EOF
+Cannot open empty script path
+EOF
+RUN
+
+NAME=radare2 empty -R
+FILE=-
+CMDS=!radare2 -R ""
+EXPECT_ERR=<<EOF
+Missing file to open
+EOF
+RUN
+
+NAME=radare2 empty -P
+FILE=-
+CMDS=!radare2 -P ""
+EXPECT_ERR=<<EOF
+Cannot open empty rapatch path
+EOF
+RUN

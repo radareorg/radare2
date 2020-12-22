@@ -17,6 +17,8 @@
 #define COFF_FILE_MACHINE_MIPS16	0x266
 #define COFF_FILE_MACHINE_MIPSFPU	0x366
 #define COFF_FILE_MACHINE_MIPSFPU16	0x466
+#define COFF_FILE_MACHINE_AMD29KBE	0x7a01
+#define COFF_FILE_MACHINE_AMD29KLE	0x17a
 #define COFF_FILE_MACHINE_POWERPC	0x1f0
 #define COFF_FILE_MACHINE_POWERPCFP	0x1f1
 #define COFF_FILE_MACHINE_R4000	0x166
@@ -79,6 +81,10 @@
 #define COFF_SCN_MEM_READ		0x40000000
 #define COFF_SCN_MEM_WRITE		0x80000000
 
+#define COFF_SYM_SCNUM_UNDEF 		0
+#define COFF_SYM_SCNUM_ABS		0xffff
+#define COFF_SYM_SCNUM_DEBUG		0xfffe
+
 #define COFF_SYM_TYPE_NULL		0
 #define COFF_SYM_TYPE_VOID		1
 #define COFF_SYM_TYPE_CHAR		2
@@ -129,9 +135,35 @@
 #define COFF_SYM_CLASS_WEAK_EXTERNAL	105
 #define COFF_SYM_CLASS_CLR_TOKEN	107
 
+#define COFF_REL_I386_ABS		0
+#define COFF_REL_I386_DIR16		1
+#define COFF_REL_I386_REL16		2
+#define COFF_REL_I386_DIR32		6
+#define COFF_REL_I386_DIR32NB		7
+#define COFF_REL_I386_REL32		20
+
+#define COFF_REL_AMD64_ABS		0
+#define COFF_REL_AMD64_ADDR64		1
+#define COFF_REL_AMD64_ADDR32		2
+#define COFF_REL_AMD64_ADDR32_NB	3
+#define COFF_REL_AMD64_REL32		4
+#define COFF_REL_AMD64_REL32_1		5
+#define COFF_REL_AMD64_REL32_2		6
+#define COFF_REL_AMD64_REL32_3		7
+#define COFF_REL_AMD64_REL32_4		8
+#define COFF_REL_AMD64_REL32_5		9
+
+#define COFF_REL_ARM_BRANCH24T		20
+#define COFF_REL_ARM_BLX23T		21
+
+#define COFF_REL_ARM64_ABSOLUTE		0
+#define COFF_REL_ARM64_ADDR32		1
+#define COFF_REL_ARM64_ADDR32NB		2
+#define COFF_REL_ARM64_BRANCH26		3
+
 R_PACKED(
 struct coff_hdr {
-	ut16 f_magic;	/* Magic number */	
+	ut16 f_magic;	/* Magic number */
 	ut16 f_nscns;	/* Number of Sections */
 	ut32 f_timdat;	/* Time & date stamp */
 	ut32 f_symptr;	/* File pointer to Symbol Table */
@@ -182,4 +214,6 @@ struct coff_reloc {
 	ut32 r_symndx;	/* Symbol index */
 	ut16 r_type;	/* Type of relocation */
 });
+
+#define COFF_SYM_GET_DTYPE(type)	(((type) >> 4) & 3)
 #endif /* COFF_SPECS_H */

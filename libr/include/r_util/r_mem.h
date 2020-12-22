@@ -11,6 +11,7 @@ typedef struct r_mmap_t {
 	int len;
 	int fd;
 	int rw;
+	char *filename;
 #if __WINDOWS__
 	HANDLE fh;
 	HANDLE fm;
@@ -43,7 +44,6 @@ R_API int r_mem_protect(void *ptr, int size, const char *prot);
 R_API int r_mem_set_num(ut8 *dest, int dest_size, ut64 num);
 R_API int r_mem_eq(ut8 *a, ut8 *b, int len);
 R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits);
-R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits);
 R_API void r_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, int bits);
 R_API void r_mem_copyloop(ut8 *dest, const ut8 *orig, int dsize, int osize);
 R_API void r_mem_swaporcopy(ut8 *dest, const ut8 *src, int len, bool big_endian);
@@ -54,6 +54,7 @@ R_API const ut8 *r_mem_mem_aligned(const ut8 *haystack, int hlen, const ut8 *nee
 R_API int r_mem_count(const ut8 **addr);
 R_API bool r_mem_is_printable (const ut8 *a, int la);
 R_API bool r_mem_is_zero(const ut8 *b, int l);
+R_API void *r_mem_mmap_resize(RMmap *m, ut64 newsize);
 
 #ifdef __cplusplus
 }

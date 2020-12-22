@@ -12,7 +12,7 @@ Allows to install, update, uninstall and discover plugins and tools that can be 
 .Bl -tag -width Fl
 .It Fl a, Cm repo
 Adds an external r2pm repository, no arguments to -a will list all the registered repos, use '-a - repo' to unregister/remove those repos.
-.It Fl i, Cm info
+.It Fl I, Cm info
 Show information about repository and installed packages
 .It Fl i, Cm install Ar pkgname
 Install a package
@@ -49,6 +49,10 @@ Initialize and update the package database
 Install a package
 .Pp
   $ r2pm install yara3
+.Pp
+Install a test package (don't git pull on $R2PM_GITDIR/yara3)
+.Pp
+  $ R2PM_GITSKIP=1 r2pm install yara3
 .Pp
 Uninstall a package
 .Pp

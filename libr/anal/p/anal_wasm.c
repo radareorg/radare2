@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2019 - xvilka, deroad */
+/* radare2 - LGPL - Copyright 2017-2020 - xvilka, deroad */
 
 #include <string.h>
 #include <r_types.h>
@@ -7,6 +7,7 @@
 #include <r_anal.h>
 #undef R_IPI
 #define R_IPI static
+#define WASM_NO_ASM // to get rid of a warning
 #include "../../bin/format/wasm/wasm.h"
 #include "../../asm/arch/wasm/wasm.c"
 
@@ -74,22 +75,21 @@ static bool advance_till_scope_end(RAnal* anal, RAnalOp *op, ut64 address, ut32 
 static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	WasmOp wop = {{0}};
 	RAnalHint *hint = NULL;
-	memset (op, '\0', sizeof (RAnalOp));
 	int ret = wasm_dis (&wop, data, len);
-	op->jump = UT64_MAX;
-	op->fail = UT64_MAX;
-	op->ptr = op->val = UT64_MAX;
 	op->size = ret;
 	op->addr = addr;
 	op->sign = true;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	switch (wop.type) {
-		case WASM_TYPE_OP_CORE:
-			op->id = wop.op.core;
-			break;
-		case WASM_TYPE_OP_ATOMIC:
-			op->id = (0xfe << 8) | wop.op.atomic;
-			break;
+	case WASM_TYPE_OP_CORE:
+		op->id = wop.op.core;
+		break;
+	case WASM_TYPE_OP_ATOMIC:
+		op->id = (0xfe << 8) | wop.op.atomic;
+		break;
+	case WASM_TYPE_OP_SIMD:
+		op->id = 0xfd;
+		break;
 	}
 
 	if (!wop.txt || !strncmp (wop.txt, "invalid", 7)) {
@@ -332,7 +332,7 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			break;
 		case WASM_OP_NOP:
 			op->type = R_ANAL_OP_TYPE_NOP;
-			r_strbuf_setf (&op->esil, "");
+			r_strbuf_setf (&op->esil, "%s", "");
 			break;
 		case WASM_OP_CALL:
 		case WASM_OP_CALLINDIRECT:
@@ -448,6 +448,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"=PC	pc\n"
 		"=BP	bp\n"
 		"=SP	sp\n"
+		"=A0	r0\n"
 		"gpr	sp	.32	0	0\n" // stack pointer
 		"gpr	pc	.32	4	0\n" // program counter
 		"gpr	bp	.32	8	0\n" // base pointer // unused
@@ -466,7 +467,7 @@ RAnalPlugin r_anal_plugin_wasm = {
 	.esil = true
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_wasm,

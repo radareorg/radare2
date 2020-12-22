@@ -1,3 +1,6 @@
+#ifndef DEX_H
+#define DEX_H
+
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
@@ -5,6 +8,24 @@
 
 #define R_BIN_DEX_MAXSTR 256
 #define DEX_CLASS_SIZE (32)
+#define LEB_MAX_SIZE 6
+
+/* method flags */
+#define R_DEX_METH_PUBLIC 0x0001
+#define R_DEX_METH_PRIVATE 0x0002
+#define R_DEX_METH_PROTECTED 0x0004
+#define R_DEX_METH_STATIC 0x0008
+#define R_DEX_METH_FINAL 0x0010
+#define R_DEX_METH_SYNCHRONIZED 0x0020
+#define R_DEX_METH_BRIDGE 0x0040
+#define R_DEX_METH_VARARGS 0x0080
+#define R_DEX_METH_NATIVE 0x0100
+#define R_DEX_METH_ABSTRACT 0x0400
+#define R_DEX_METH_STRICT 0x0800
+#define R_DEX_METH_SYNTHETIC 0x1000
+#define R_DEX_METH_MIRANDA 0x8000
+#define R_DEX_METH_CONSTRUCTOR 0x10000
+#define R_DEX_METH_DECLARED_SYNCHRONIZED 0x20000
 
 R_PACKED(
 typedef struct dex_header_t {
@@ -91,6 +112,7 @@ typedef struct r_bin_dex_obj_t {
 	struct dex_method_t *methods;
 	struct dex_class_t *classes;
 	RList *methods_list;
+	RList *trycatch_list;
 	RList *imports_list;
 	RList *classes_list;
 	RList *lines_list;
@@ -98,6 +120,7 @@ typedef struct r_bin_dex_obj_t {
 	ut64 code_to;
 	char *version;
 	Sdb *kv;
+	char **cal_strings;
 } RBinDexObj;
 
 struct r_bin_dex_str_t {
@@ -136,9 +159,8 @@ struct dex_debug_local_t {
 };
 
 char* r_bin_dex_get_version(struct r_bin_dex_obj_t* bin);
+void r_bin_dex_free(struct r_bin_dex_obj_t *bin);
 struct r_bin_dex_obj_t *r_bin_dex_new_buf(RBuffer *buf);
-struct r_bin_dex_str_t *r_bin_dex_get_strings (struct r_bin_dex_obj_t *bin);
+struct r_bin_dex_str_t *r_bin_dex_get_strings(struct r_bin_dex_obj_t *bin);
 
-int dex_read_uleb128 (const ut8 *ptr, int size);
-int dex_read_sleb128 (const char *ptr, int size);
-int dex_uleb128_len (const ut8 *ptr, int size);
+#endif

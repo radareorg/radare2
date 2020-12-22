@@ -1,9 +1,9 @@
 r_core_sources = [
   'anal_tp.c',
   'anal_objc.c',
-  'esil_data_flow.c',
   'casm.c',
   'blaze.c',
+  'citem.c',
   'canal.c',
   'carg.c',
   'cbin.c',
@@ -12,6 +12,7 @@ r_core_sources = [
   'cmd.c',
   #'cmd_anal.c',
   'cmd_api.c',
+  'cmd_helps.c',
   #'cmd_cmp.c',
   #'cmd_debug.c',
   #'cmd_egg.c',
@@ -42,17 +43,19 @@ r_core_sources = [
   'fortune.c',
   'gdiff.c',
   'zdiff.c',
-  'graph.c',
+  'agraph.c',
   'hack.c',
   'libs.c',
   #'linux_heap_glibc.c',
   'corelog.c',
   'panels.c',
   'patch.c',
-  'plugin.c',
+  'cplugin.c',
   'project.c',
   'pseudo.c',
   'rtr.c',
+  #'rtr_http.c',
+  #'rtr_shell.c',
   'task.c',
   'vasm.c',
   'visual.c',
@@ -63,14 +66,17 @@ r_core_sources = [
   'yank.c',
   'p/core_a2f.c',
   'p/core_java.c',
+  'cannotated_code.c'
 ]
 
 r_core_inc = []
 if host_machine.system() != 'windows'
   r_core_inc += ['../../shlr/heap/include']
+else
+	r_core_sources += 'windows_heap.c'
+	r_core_inc += ['../../shlr/heap/include/r_windows']
 endif
 r_core_inc = [platform_inc, include_directories(r_core_inc)]
-
 
 r_core_deps = [
   r_util_dep,
@@ -95,10 +101,10 @@ r_core_deps = [
   r_asm_dep,
   r_bp_dep,
   platform_deps,
-  sdb_dep,
-  spp_dep,
   gdb_dep,
-  java_dep
+  java_dep,
+  lrt,
+  shell_parser_dep
 ]
 
 if use_libuv
@@ -111,6 +117,7 @@ r_core = library('r_core', r_core_sources,
   dependencies: r_core_deps,
   install: true,
   implicit_include_directories: false,
+  install_rpath: rpath_lib,
   soversion: r2_libversion
 )
 
@@ -123,6 +130,7 @@ pkgconfig_mod.generate(
   version: r2_version,
   name: 'r_core',
   filebase: 'r_core',
+  libraries: pkgcfg_sanitize_libs,
   requires: pkgconfig_magic_requires + [
     'r_util',
     'r_reg',

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -11,14 +11,14 @@
 
 static ut64 from = 0LL;
 static ut64 to = 0LL;
-static int incremental = 1;
+static bool incremental = true;
 static int iterations = 0;
 static int quiet = 0;
 static RHashSeed s = {
 	0
 }, *_s = NULL;
 
-void compare_hashes(const RHash *ctx, const ut8 *compare, int length, int *ret) {
+static void compare_hashes(const RHash *ctx, const ut8 *compare, int length, int *ret) {
 	if (compare) {
 		// algobit has only 1 bit set
 		if (!memcmp (ctx->digest, compare, length)) {
@@ -42,7 +42,9 @@ static void do_hash_seed(const char *seed) {
 		return;
 	}
 	if (seed[0] == '@') {
-		s.buf = (ut8 *)r_file_slurp (seed + 1, &s.len);
+		size_t len;
+		s.buf = (ut8 *)r_file_slurp (seed + 1, &len);
+		s.len = (size_t)len;
 		return;
 	}
 	s.buf = (ut8 *) malloc (strlen (seed) + 128);
@@ -109,6 +111,7 @@ static void do_hash_print(RHash *ctx, ut64 hash, int dlen, int rad, int ule) {
 		do_hash_hexprint (c, dlen, ule, 'j');
 		break;
 	case 'j':
+		//TODO PJ
 		printf ("{\"name\":\"%s\",\"hash\":\"", hname);
 		do_hash_hexprint (c, dlen, ule, rad);
 		printf ("\"}");
@@ -246,7 +249,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 					if (to > fsize) {
 						to = fsize;
 					}
-					do_hash_internal (ctx, hashbit, buf, nsize, rad, 0, ule);
+					do_hash_internal (ctx, hashbit, buf, nsize, rad, 1, ule);
 				}
 				do_hash_internal (ctx, hashbit, NULL, 0, rad, 1, ule);
 				from = ofrom;
@@ -293,10 +296,9 @@ static int do_help(int line) {
 	return 0;
 }
 
-static void algolist() {
+static void algolist(void) {
 	ut64 bits;
 	ut64 i;
-	eprintf ("Available Hashes: \n");
 	for (i = 0; i < R_HASH_NBITS; i++) {
 		bits = 1ULL << i;
 		const char *name = r_hash_name (bits);
@@ -304,12 +306,10 @@ static void algolist() {
 			printf ("h  %s\n", name);
 		}
 	}
-	eprintf ("\nAvailable Encoders/Decoders: \n");
 	// TODO: do not hardcode
 	printf ("e  base64\n");
 	printf ("e  base91\n");
 	printf ("e  punycode\n");
-	eprintf ("\nAvailable Crypto Algos: \n");
 	for (i = 0;; i++) {
 		bits = ((ut64) 1) << i;
 		const char *name = r_crypto_name (bits);
@@ -321,12 +321,12 @@ static void algolist() {
 }
 
 #define setHashString(x, y) {\
-		if (hashstr) {\
-			eprintf ("Hashstring already defined\n");\
-			return 1;\
-		}\
-		hashstr_hex = y;\
-		hashstr = x;\
+	if (hashstr) {\
+		eprintf ("Hashstring already defined\n");\
+		return 1;\
+	}\
+	hashstr_hex = y;\
+	hashstr = (char*)x;\
 }
 
 static bool is_power_of_two(const ut64 x) {
@@ -354,7 +354,9 @@ static int encrypt_or_decrypt(const char *algo, int direction, const char *hashs
 				int result_size = 0;
 				ut8 *result = r_crypto_get_output (cry, &result_size);
 				if (result) {
-					write (1, result, result_size);
+					if (write (1, result, result_size) != result_size) {
+						eprintf ("Warning: cannot write result\n");
+					}
 					free (result);
 				}
 			} else {
@@ -371,16 +373,21 @@ static int encrypt_or_decrypt(const char *algo, int direction, const char *hashs
 	return 1;
 }
 
-static int encrypt_or_decrypt_file(const char *algo, int direction, char *filename, const ut8 *iv, int ivlen, int mode) {
+static int encrypt_or_decrypt_file(const char *algo, int direction, const char *filename, const ut8 *iv, int ivlen, int mode) {
 	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo); // TODO: generalise this for all non key encoding/decoding.
 	if (no_key_mode || s.len > 0) {
 		RCrypto *cry = r_crypto_new ();
 		if (r_crypto_use (cry, algo)) {
 			if (r_crypto_set_key (cry, s.buf, s.len, 0, direction)) {
-				int file_size;
-				ut8 *buf = strcmp (filename, "-")
-				           ? (ut8 *) r_file_slurp (filename, &file_size)
-					   : (ut8 *) r_stdin_slurp (&file_size);
+				size_t file_size;
+				ut8 *buf;
+				if (strcmp (filename, "-") == 0) {
+					int sz;
+					buf = (ut8 *)r_stdin_slurp (&sz);
+					file_size = (size_t)sz;
+				} else {
+					buf = (ut8 *)r_file_slurp (filename, &file_size);
+				}
 				if (!buf) {
 					eprintf ("rahash2: Cannot open '%s'\n", filename);
 					return -1;
@@ -398,7 +405,7 @@ static int encrypt_or_decrypt_file(const char *algo, int direction, char *filena
 				int result_size = 0;
 				ut8 *result = r_crypto_get_output (cry, &result_size);
 				if (result) {
-					write (1, result, result_size);
+					(void)write (1, result, result_size);
 					free (result);
 				}
 				free (buf);
@@ -416,9 +423,10 @@ static int encrypt_or_decrypt_file(const char *algo, int direction, char *filena
 	return 1;
 }
 
-int r_main_rahash2(int argc, char **argv) {
+R_API int r_main_rahash2(int argc, const char **argv) {
 	ut64 i;
 	int ret, c, rad = 0, bsize = 0, numblocks = 0, ule = 0;
+	const char *file = NULL;
 	const char *algo = "sha256"; /* default hashing algorithm */
 	const char *seed = NULL;
 	const char *decrypt = NULL;
@@ -426,7 +434,7 @@ int r_main_rahash2(int argc, char **argv) {
 	char *hashstr = NULL;
 	ut8 *iv = NULL;
 	int ivlen = -1;
-	char *ivseed = NULL;
+	const char *ivseed = NULL;
 	const char *compareStr = NULL;
 	const char *ptype = NULL;
 	ut8 *compareBin = NULL;
@@ -437,37 +445,39 @@ int r_main_rahash2(int argc, char **argv) {
 	RHash *ctx;
 	RIO *io;
 
-	while ((c = r_getopt (argc, argv, "p:jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:")) != -1) {
+	RGetopt opt;
+	r_getopt_init (&opt, argc, argv, "p:jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:");
+	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'q': quiet++; break;
 		case 'i':
-			iterations = atoi (r_optarg);
+			iterations = atoi (opt.arg);
 			if (iterations < 0) {
 				eprintf ("error: -i argument must be positive\n");
 				return 1;
 			}
 			break;
 		case 'j': rad = 'j'; break;
-		case 'S': seed = r_optarg; break;
-		case 'I': ivseed = r_optarg; break;
+		case 'S': seed = opt.arg; break;
+		case 'I': ivseed = opt.arg; break;
 		case 'n': numblocks = 1; break;
-		case 'D': decrypt = r_optarg; break;
-		case 'E': encrypt = r_optarg; break;
+		case 'D': decrypt = opt.arg; break;
+		case 'E': encrypt = opt.arg; break;
 		case 'L': algolist (); return 0;
 		case 'e': ule = 1; break;
 		case 'r': rad = 1; break;
 		case 'k': rad = 2; break;
-		case 'p': ptype = r_optarg; break;
-		case 'a': algo = r_optarg; break;
-		case 'B': incremental = 0; break;
-		case 'b': bsize = (int) r_num_math (NULL, r_optarg); break;
-		case 'f': from = r_num_math (NULL, r_optarg); break;
-		case 't': to = 1 + r_num_math (NULL, r_optarg); break;
+		case 'p': ptype = opt.arg; break;
+		case 'a': algo = opt.arg; break;
+		case 'B': incremental = false; break;
+		case 'b': bsize = (int) r_num_math (NULL, opt.arg); break;
+		case 'f': from = r_num_math (NULL, opt.arg); break;
+		case 't': to = 1 + r_num_math (NULL, opt.arg); break;
 		case 'v': return r_main_version_print ("rahash2");
 		case 'h': return do_help (0);
-		case 's': setHashString (r_optarg, 0); break;
-		case 'x': setHashString (r_optarg, 1); break;
-		case 'c': compareStr = r_optarg; break;
+		case 's': setHashString (opt.arg, 0); break;
+		case 'x': setHashString (opt.arg, 1); break;
+		case 'c': compareStr = opt.arg; break;
 		default: return do_help (0);
 		}
 	}
@@ -528,7 +538,7 @@ int r_main_rahash2(int argc, char **argv) {
 		// TODO: support p=%s (horizontal bars)
 		// TODO: list supported statistical metrics
 		// TODO: support -f and -t
-		for (i = r_optind; i < argc; i++) {
+		for (i = opt.ind; i < argc; i++) {
 			printf ("%s:\n", argv[i]);
 			r_sys_cmdf ("r2 -qfnc \"p==%s 100\" \"%s\"", ptype, argv[i]);
 		}
@@ -651,7 +661,7 @@ int r_main_rahash2(int argc, char **argv) {
 			return ret;
 		}
 	}
-	if (r_optind >= argc) {
+	if (opt.ind >= argc) {
 		free (iv);
 		return do_help (1);
 	}
@@ -664,7 +674,14 @@ int r_main_rahash2(int argc, char **argv) {
 	}
 
 	io = r_io_new ();
-	for (ret = 0, i = r_optind; i < argc; i++) {
+	for (ret = 0, i = opt.ind; i < argc; i++) {
+		file = argv[i];
+
+		if (file && !*file) {
+			eprintf ("Cannot open empty path\n");
+			return 1;
+		}
+
 		if (encrypt) {// for encrytion when files are provided
 			int rt = encrypt_or_decrypt_file (encrypt, 0, argv[i], iv, ivlen, 0);
 			if (rt == -1) {

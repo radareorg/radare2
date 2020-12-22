@@ -17,7 +17,7 @@ BuildJobsThrottler(){
 
 	# Get number of CPUs on this target
 	# getconf does not exit on Darwin. Use sysctl on Darwin machines.
-	CPU_N=$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu) 
+	CPU_N=$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu)
 	printf "Number of CPUs is %s and "  "$CPU_N"
 
 	# Get remaining RAM that could be used for this build
@@ -25,10 +25,10 @@ BuildJobsThrottler(){
 
 	DEFAULT_MAX_MEM_PER_JOB=200000
 	[ -z "${MAX_MEM_PER_JOB}" ] && MAX_MEM_PER_JOB="$DEFAULT_MAX_MEM_PER_JOB" # Defensive, prevent devision by 0
-	
+
 	# Assuming we may have many 300MB compilation jobs running in parallel
 	MEM_ALLOWED_JOBS=$((FREE_RAM / MAX_MEM_PER_JOB))
-	echo "current free RAM allows us to run $MEM_ALLOWED_JOBS jobs in parallel." 
+	echo "current free RAM allows us to run $MEM_ALLOWED_JOBS jobs in parallel."
 
 	# Set number of build jobs to be run in parallel as the minimum between $MEM_ALLOWED_JOBS and $CPU_N
 	MAKE_JOBS=$((MEM_ALLOWED_JOBS<CPU_N?MEM_ALLOWED_JOBS:CPU_N))
@@ -38,7 +38,9 @@ BuildJobsThrottler(){
 	echo "So, the build will run on $MAKE_JOBS job(s)."
 }
 
-if [ "`uname`" = Linux ]; then
+OSNAME=$(uname)
+
+if [ "${OSNAME}" = Linux ]; then
 	# Identify current platform
 	GetPlatform
 	# Define number of parallel jobs depending on ncpus and memory
@@ -52,49 +54,50 @@ if [ -z "${MAKE}" ]; then
 fi
 
 [ -z "${MAKE_JOBS}" ] && MAKE_JOBS=12
-
 [ -z "${CERTID}" ] && CERTID=org.radare.radare2
 
 # find root
 A=$(dirname "$PWD/$0")
 cd "$A" && cd .. || exit 1
 
-if [ "`uname`" = Darwin ]; then
-	DEFAULT_PREFIX=/usr/local
+DEFAULT_PREFIX=/usr/local
+if [ "${OSNAME}" = Darwin ]; then
 	# purge previous installations on other common paths
 	if [ -f /usr/bin/r2 ]; then
 		type sudo || NOSUDO=1
 		[ "$(id -u)" = 0 ] || SUDO=sudo
 		[ -n "${NOSUDO}" ] && SUDO=
-		# purge first
-		echo "Purging r2 installation..."
-		./configure --prefix=/usr > /dev/null
-		${SUDO} ${MAKE} uninstall > /dev/null
 	fi
-else
-	DEFAULT_PREFIX=/usr
-	[ -n "${PREFIX}" -a "${PREFIX}" != /usr ] && \
-		CFGARG="${CFGARG} --with-rpath"
 fi
 
 [ -z "${PREFIX}" ] && PREFIX="${DEFAULT_PREFIX}"
 
-case "$1" in
--h)
-	echo "Usage: sys/build.sh [/usr]"
-	exit 0
-	;;
-'')
-	:
-	;;
--)
-	shift
-	CFGARG="${CFGARG} $*"
-	;;
-*)
-	PREFIX="$1"
-	;;
-esac
+for a in $* ; do
+	case "$a" in
+	-h|--help)
+		echo "Usage: sys/build.sh [/usr/local]"
+		exit 0
+		;;
+	'')
+		:
+		;;
+	--**|-)
+		shift
+		CFGARG="${CFGARG} $a"
+		;;
+	*)
+		PREFIX="$a"
+		;;
+	esac
+done
+
+if [ "${USE_CS5}" = 1 ]; then
+	CFGARG="${CFGARG} --with-capstone5"
+fi
+
+if [ "${OSNAME}" = Linux ] && [ -n "${PREFIX}" ] && [ "${PREFIX}" != /usr ]; then
+	CFGARG="${CFGARG} --with-rpath"
+fi
 
 ccache --help > /dev/null 2>&1
 if [ $? = 0 ]; then
@@ -104,46 +107,38 @@ if [ $? = 0 ]; then
 fi
 
 # Required to build on FreeBSD
-if [ ! -x /usr/bin/gcc -a -x /usr/bin/cc ]; then
+if [ ! -x /usr/bin/gcc ] && [ -x /usr/bin/cc ]; then
 	export CC=cc
 	export HOST_CC=cc
 fi
 
-#echo
-#echo "export USE_R2_CAPSTONE=$USE_R2_CAPSTONE"
-#echo
-## Set USE_R2_CAPSTONE env var to ignore syscapstone check
-#if [ -z "${USE_R2_CAPSTONE}" ]; then
-#	pkg-config --atleast-version=4.0 capstone 2>/dev/null
-#	if [ $? = 0 ]; then
-#		echo '#include <capstone/capstone.h>' > .a.c
-#		echo 'int main() {return 0;}' >> .a.c
-#		gcc `pkg-config --cflags --libs capstone` -o .a.out .a.c
-#		if [ $? = 0 ]; then
-#			CFGARG="${CFGARG} --with-syscapstone"
-#		else
-#			echo
-#			echo "** WARNING ** capstone pkg-config is wrongly installed."
-#			echo
-#		fi
-#		rm -f .a.c .a.out
-#	fi
-#fi
+# purge first
+if [ "${PREFIX}" != "/usr" ]; then
+	A=$(readlink /usr/bin/radare2 2>/dev/null)
+	B="${PWD}/binr/radare2/radare2"
+	if [ -n "$A" ] && [ ! -f "$A" ]; then
+		A="$B"
+	fi
+	if [ "$A" = "$B" ]; then
+		echo "Purging r2 installation from /usr..."
+		./configure --prefix=/usr > /dev/null
+		echo ${SUDO} ${MAKE} uninstall
+		SD=""
+		type sudo && SD=sudo
+		${SD} ${MAKE} uninstall
+	fi
+fi
 
 # build
 ${MAKE} mrproper > /dev/null 2>&1
-if [ -d shlr/capstone/.git ]; then
-( cd shlr/capstone ; git clean -xdf )
-fi
-[ "`uname`" = Linux ] && export LDFLAGS="-Wl,--as-needed ${LDFLAGS}"
-if [ -z "${KEEP_PLUGINS_CFG}" ]; then
-	rm -f plugins.cfg
-fi
-unset DEPS
+[ "${OSNAME}" = Linux ] && export LDFLAGS="-Wl,--as-needed ${LDFLAGS}"
+[ -z "${KEEP_PLUGINS_CFG}" ] && rm -f plugins.cfg
+unset R2DEPS
 pwd
+
 ./configure ${CFGARG} --prefix="${PREFIX}" || exit 1
 ${MAKE} -s -j${MAKE_JOBS} MAKE_JOBS=${MAKE_JOBS} || exit 1
-if [ "`uname`" = Darwin ]; then
+if [ "${OSNAME}" = Darwin ]; then
 	./sys/macos-cert.sh
 	${MAKE} macos-sign macos-sign-libs CERTID="${CERTID}" || (
 		echo "CERTID not defined. If you want the bins signed to debug without root"

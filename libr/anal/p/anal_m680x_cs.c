@@ -1,8 +1,8 @@
-/* radare2 - LGPL - Copyright 2015-2018 - pancake */
+/* radare2 - LGPL - Copyright 2015-2019 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone/capstone.h>
+#include <capstone.h>
 
 #if CS_API_MAJOR >= 4 && CS_API_MINOR >= 0
 #define CAPSTONE_HAS_M680X 1
@@ -19,7 +19,7 @@
 #endif
 
 #if CAPSTONE_HAS_M680X
-#include <capstone/m680x.h>
+#include <m680x.h>
 
 static int m680xmode(const char *str) {
 	if (!str) {
@@ -56,6 +56,9 @@ static int m680xmode(const char *str) {
 	return CS_MODE_M680X_6800;
 }
 
+#define IMM(x) insn->detail->m680x.operands[x].imm
+#define REL(x) insn->detail->m680x.operands[x].rel
+
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	int n, ret, opsize = -1;
 	static csh handle = 0;
@@ -71,7 +74,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		omode = mode;
 		obits = a->bits;
 	}
-	op->delay = 0;
 	op->size = 4;
 	if (handle == 0) {
 		ret = cs_open (CS_ARCH_M680X, mode, &handle);
@@ -93,8 +95,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		opsize = -1;
 		goto beach;
 	}
-	op->type = R_ANAL_OP_TYPE_NULL;
-	op->delay = 0;
 	op->id = insn->id;
 	opsize = op->size = insn->size;
 	switch (insn->id) {
@@ -144,15 +144,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M680X_INS_BCS: ///< or BLO
 	case M680X_INS_BEOR:
 		break;
-	case M680X_INS_BEQ:
-	case M680X_INS_BGE:
-	case M680X_INS_BGND:
-	case M680X_INS_BGT:
-	case M680X_INS_BHCC:
-	case M680X_INS_BHCS:
-	case M680X_INS_BHI:
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		break;
 	case M680X_INS_BIAND:
 	case M680X_INS_BIEOR:
 	case M680X_INS_BIH:
@@ -164,6 +155,18 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M680X_INS_BITD:
 	case M680X_INS_BITMD:
 		break;
+	case M680X_INS_BRA:
+		op->type = R_ANAL_OP_TYPE_JMP;
+		op->jump = addr + op->size + REL(0).offset;
+		op->fail = UT64_MAX;
+		break;
+	case M680X_INS_BEQ:
+	case M680X_INS_BGE:
+	case M680X_INS_BGND:
+	case M680X_INS_BGT:
+	case M680X_INS_BHCC:
+	case M680X_INS_BHCS:
+	case M680X_INS_BHI:
 	case M680X_INS_BLE:
 	case M680X_INS_BLS:
 	case M680X_INS_BLT:
@@ -175,13 +178,14 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M680X_INS_BPL:
 	case M680X_INS_BRCLR:
 	case M680X_INS_BRSET:
-	case M680X_INS_BRA:
 	case M680X_INS_BRN:
 	case M680X_INS_BSET:
 	case M680X_INS_BSR:
 	case M680X_INS_BVC:
 	case M680X_INS_BVS:
 		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = addr + op->size + REL(0).offset;
+		op->fail = addr + op->size;
 		break;
 	case M680X_INS_CALL:
 	case M680X_INS_CBA: ///< M6800/1/2/3
@@ -510,8 +514,8 @@ fin:
 	return opsize;
 }
 
-// XXX 
-static int set_reg_profile(RAnal *anal) {
+// XXX
+static bool set_reg_profile(RAnal *anal) {
 	const char *p = \
 		"=PC    pc\n"
 		"=SP    sp\n"
@@ -544,7 +548,7 @@ RAnalPlugin r_anal_plugin_m680x_cs = {
 };
 #endif
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_m680x_cs,

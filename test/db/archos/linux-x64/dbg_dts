@@ -1,0 +1,22 @@
+NAME=save and load debug session (dtst, dtsf)
+FILE=bins/elf/analysis/calls_x64
+ARGS=-d
+CMDS=<<EOF
+dcu main
+dts+
+ds 200
+dtst ./
+dtsf ./
+dr rip
+ds 10
+dr rip
+rm ./session.sdb
+rm ./registers.sdb
+rm ./memory.sdb
+rm ./checkpoints.sdb
+EOF
+EXPECT=<<EOF
+0x00400574
+0x00400565
+EOF
+RUN

@@ -4,7 +4,7 @@
 
 /* We can not use some kind of structure type with
  * a string for each case, because some architectures (like ARM)
- * have several modes/alignement requirements.
+ * have several modes/alignment requirements.
  */
 
 void r_core_hack_help(const RCore *core) {
@@ -20,10 +20,28 @@ void r_core_hack_help(const RCore *core) {
 		"wao", " nocj", "remove conditional operation from branch (make it unconditional)",
 		"wao", " trap", "make the current opcode a trap",
 		"wao", " recj", "reverse (swap) conditional branch instruction",
-		"NOTE:", "", "those operations are only implemented for x86 and arm atm.", //TODO
+		"WIP:", "", "not all archs are supported and not all commands work on all archs",
 		NULL
 	};
 	r_core_cmd_help (core, help_msg);
+}
+
+R_API bool r_core_hack_dalvik(RCore *core, const char *op, const RAnalOp *analop) {
+	if (!strcmp (op, "nop")) {
+		r_core_cmdf (core, "wx 0000");
+	} else if (!strcmp (op, "ret2")) {
+		r_core_cmdf (core, "wx 12200f00"); // mov v0, 2;ret v0
+	} else if (!strcmp (op, "jinf")) {
+		r_core_cmd0 (core, "wx 2800\n");
+	} else if (!strcmp (op, "ret1")) {
+		r_core_cmdf (core, "wx 12100f00"); // mov v0, 1;ret v0
+	} else if (!strcmp (op, "ret0")) {
+		r_core_cmdf (core, "wx 12000f00"); // mov v0, 0;ret v0
+	} else {
+		eprintf ("Unsupported operation '%s'\n", op);
+		return false;
+	}
+	return true;
 }
 
 R_API bool r_core_hack_arm64(RCore *core, const char *op, const RAnalOp *analop) {
@@ -60,7 +78,7 @@ R_API bool r_core_hack_arm64(RCore *core, const char *op, const RAnalOp *analop)
 	return true;
 }
 R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
-	const int bits = core->assembler->bits;
+	const int bits = core->rasm->bits;
 	const ut8 *b = core->block;
 
 	if (!strcmp (op, "nop")) {
@@ -248,13 +266,15 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 R_API int r_core_hack(RCore *core, const char *op) {
 	bool (*hack)(RCore *core, const char *op, const RAnalOp *analop) = NULL;
 	const char *asmarch = r_config_get (core->config, "asm.arch");
-	const int asmbits = core->assembler->bits;
+	const int asmbits = core->rasm->bits;
 
 	if (!asmarch) {
 		return false;
 	}
 	if (strstr (asmarch, "x86")) {
 		hack = r_core_hack_x86;
+	} else if (strstr (asmarch, "dalvik")) {
+		hack = r_core_hack_dalvik;
 	} else if (strstr (asmarch, "arm")) {
 		if (asmbits == 64) {
 			hack = r_core_hack_arm64;

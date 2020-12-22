@@ -32,11 +32,13 @@ configure_file(
 
 libsdb_sources = [
   'src/array.c',
+  'src/set.c',
   'src/base64.c',
   'src/buffer.c',
   'src/cdb.c',
   'src/cdb_make.c',
   'src/dict.c',
+  'src/diff.c',
   'src/disk.c',
   'src/fmt.c',
   'src/ht_uu.c',
@@ -58,23 +60,31 @@ libsdb_sources = [
   'src/sdb.c',
   'src/sdbht.c',
   'src/util.c',
+  'src/text.c'
 ]
 
 sdb_inc = include_directories(['.', 'src'])
+rpath_lib = ''
+rpath_exe = ''
+if get_option('local') and get_option('default_library') == 'shared'
+  rpath_lib = '$ORIGIN'
+  rpath_exe = '$ORIGIN/../' + get_option('libdir')
+endif
 
-libsdb = both_libraries('libsdb', libsdb_sources,
+libsdb = both_libraries('sdb', libsdb_sources,
   include_directories: sdb_inc,
   implicit_include_directories: false,
   soversion: sdb_libversion,
-  install: not meson.is_subproject()
+  install: not meson.is_subproject(),
+  install_rpath: rpath_lib
 )
 
-if meson.is_subproject()
-  sdb_dep = declare_dependency(
-    link_with: libsdb.get_static_lib(),
-    include_directories: sdb_inc
-  )
-else
+sdb_dep = declare_dependency(
+  link_with: libsdb.get_static_lib(),
+  include_directories: sdb_inc
+)
+
+if not meson.is_subproject()
   include_files = [
     'src/buffer.h',
     'src/cdb.h',
@@ -88,6 +98,7 @@ else
     'src/ls.h',
     'src/sdb.h',
     'src/sdbht.h',
+    'src/set.h',
     'src/types.h'
   ]
   install_headers(include_files, subdir: 'sdb')
@@ -103,6 +114,7 @@ sdb_exe = executable('sdb', 'src/main.c',
   include_directories: sdb_inc,
   link_with: [link_with],
   install: not meson.is_subproject(),
+  install_rpath: rpath_exe,
   implicit_include_directories: false
 )
 
@@ -115,9 +127,9 @@ pkgconfig_mod.generate(
   filebase: 'sdb',
   libraries: [libsdb.get_shared_lib()],
   description: 'Simple DataBase',
-  subdirs: ['sdb', '.'],
+  subdirs: ['sdb'],
   version: sdb_version,
-  url: 'https://github.com/radare/sdb'
+  url: 'https://github.com/radareorg/sdb'
 )
 
 if not meson.is_subproject()
@@ -132,4 +144,5 @@ if not meson.is_subproject()
   endif
 
   subdir('test/bench')
+  subdir('test/unit')
 endif

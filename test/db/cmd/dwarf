@@ -1,0 +1,407 @@
+NAME="pdf dwarf invalid main for analysis not found (aa)"
+FILE=bins/src/dwarftest
+CMDS=<<EOF
+e asm.dwarf=true
+e anal.nopskip=true # if set to true it fucks the test
+aa
+pd 1 @main
+EOF
+EXPECT=<<EOF
+            ; DATA XREF from entry0 @ 0x40045d
+/ 44: int main (int argc, char **argv, char **envp);
+|           ; var int64_t var_4h @ rbp-0x4
+|           0x0040052d      55             push rbp                    ; dwarftest.c:4
+EOF
+RUN
+
+NAME="Mach-O dSYM lines (armv7)"
+FILE=bins/mach0/TestRTTI-armv7-dSYM
+CMDS=<<EOF
+CL 0x0000a24e
+EOF
+EXPECT=<<EOF
+file: /Users/ftamagni/src/TestRTTI/TestRTTI//TestRTTI.cpp
+line: 18
+EOF
+RUN
+
+NAME="function info integration c++"
+FILE=bins/elf/dwarf3_many_comp_units.elf 
+CMDS=<<EOF
+e asm.dwarf=false
+aaa
+pd 13 @ main
+EOF
+EXPECT=<<EOF
+            ; DATA XREF from entry0 @ 0x10c1
+            ;-- main:
+/ 139: int dbg.main (int argc, char **argv, char **envp);
+|           ; var int output @ rbp-0x24
+|           ; var Bird *b @ rbp-0x20
+|           ; var Mammal *m @ rbp-0x18
+|           0x0000123b      f30f1efa       endbr64                     ; int main();
+|           0x0000123f      55             push rbp
+|           0x00001240      4889e5         mov rbp, rsp
+|           0x00001243      53             push rbx
+|           0x00001244      4883ec28       sub rsp, 0x28
+|           0x00001248      bf08000000     mov edi, 8
+|           0x0000124d      e81efeffff     call sym.imp.operator_new_unsigned_long_
+|           0x00001252      4889c3         mov rbx, rax
+|           0x00001255      4889df         mov rdi, rbx
+|           0x00001258      e827010000     call dbg.Bird::Bird()
+|           0x0000125d      48895de0       mov qword [b], rbx
+|           0x00001261      bf08000000     mov edi, 8
+|           0x00001266      e805feffff     call sym.imp.operator_new_unsigned_long_
+EOF
+RUN
+
+
+NAME="function info integration 1 rust"
+FILE=bins/elf/dwarf_rust_bubble 
+CMDS=<<EOF
+e asm.dwarf=false
+aaa
+pd 75 @ dbg.main
+EOF
+EXPECT=<<EOF
+            ; DATA XREF from main @ 0x5b0d
+            ;-- rust::main::h523dcf5432fcfd88:
+/ 940: int dbg.main (int argc, char **argv);
+|           ; var int64_t var_8h @ rsp+0x8
+|           ; var int64_t var_10h @ rsp+0x10
+|           ; var int64_t var_18h @ rsp+0x18
+|           ; var int64_t var_20h @ rsp+0x20
+|           ; var int64_t var_28h @ rsp+0x28
+|           ; var int64_t var_30h @ rsp+0x30
+|           ; var int64_t var_38h @ rsp+0x38
+|           ; var int64_t var_40h @ rsp+0x40
+|           ; var int64_t var_48h @ rsp+0x48
+|           ; var int64_t var_50h @ rsp+0x50
+|           ; var int64_t var_58h @ rsp+0x58
+|           ; var int64_t var_60h @ rsp+0x60
+|           ; var int64_t var_68h @ rsp+0x68
+|           ; var int64_t var_70h @ rsp+0x70
+|           ; var int64_t var_78h @ rsp+0x78
+|           ; var i32[11] numbers @ rsp+0x80
+|           ; var int64_t var_84h @ rsp+0x84
+|           ; var int64_t var_88h @ rsp+0x88
+|           ; var int64_t var_8ch @ rsp+0x8c
+|           ; var int64_t var_90h @ rsp+0x90
+|           ; var int64_t var_94h @ rsp+0x94
+|           ; var int64_t var_98h @ rsp+0x98
+|           ; var int64_t var_9ch @ rsp+0x9c
+|           ; var int64_t var_a0h @ rsp+0xa0
+|           ; var int64_t var_a4h @ rsp+0xa4
+|           ; var int64_t var_a8h @ rsp+0xa8
+|           ; var int64_t var_d8h @ rsp+0xd8
+|           ; var int64_t var_e0h @ rsp+0xe0
+|           ; var int64_t var_e8h @ rsp+0xe8
+|           ; var int64_t var_f0h @ rsp+0xf0
+|           ; var int64_t var_120h @ rsp+0x120
+|           ; var int64_t var_128h @ rsp+0x128
+|           ; var int64_t var_130h @ rsp+0x130
+|           ; var &str[6] strings @ rsp+0x138
+|           ; var int64_t var_140h @ rsp+0x140
+|           ; var int64_t var_148h @ rsp+0x148
+|           ; var int64_t var_150h @ rsp+0x150
+|           ; var int64_t var_158h @ rsp+0x158
+|           ; var int64_t var_160h @ rsp+0x160
+|           ; var int64_t var_168h @ rsp+0x168
+|           ; var int64_t var_170h @ rsp+0x170
+|           ; var int64_t var_178h @ rsp+0x178
+|           ; var int64_t var_180h @ rsp+0x180
+|           ; var int64_t var_188h @ rsp+0x188
+|           ; var int64_t var_1b8h @ rsp+0x1b8
+|           ; var int64_t var_1c0h @ rsp+0x1c0
+|           ; var int64_t var_1c8h @ rsp+0x1c8
+|           ; var int64_t var_1d0h @ rsp+0x1d0
+|           ; var int64_t var_200h @ rsp+0x200
+|           ; var int64_t var_208h @ rsp+0x208
+|           ; var int64_t var_210h @ rsp+0x210
+|           ; var int64_t var_218h @ rsp+0x218
+|           ; var int64_t var_220h @ rsp+0x220
+|           ; var int64_t var_228h @ rsp+0x228
+|           ; var &str[6] *arg0 @ rsp+0x230
+|           0x00005750      4881ec380200.  sub rsp, 0x238              ; void main();
+|           0x00005757      c78424800000.  mov dword [numbers], 8
+|           0x00005762      c78424840000.  mov dword [var_84h], 7
+|           0x0000576d      c78424880000.  mov dword [var_88h], 1
+|           0x00005778      c784248c0000.  mov dword [var_8ch], 2
+|           0x00005783      c78424900000.  mov dword [var_90h], 9
+|           0x0000578e      c78424940000.  mov dword [var_94h], 3
+|           0x00005799      c78424980000.  mov dword [var_98h], 4
+|           0x000057a4      c784249c0000.  mov dword [var_9ch], 5
+|           0x000057af      c78424a00000.  mov dword [var_a0h], 0
+|           0x000057ba      c78424a40000.  mov dword [var_a4h], 6
+|           0x000057c5      488b05842b03.  mov rax, qword [0x00038350] ; [0x38350:8]=0x38330
+|           0x000057cc      488d8c248000.  lea rcx, [numbers]
+|           0x000057d4      48898c24e800.  mov qword [var_e8h], rcx
+|           0x000057dc      488b8c24e800.  mov rcx, qword [var_e8h]
+|           0x000057e4      48898c241802.  mov qword [var_218h], rcx
+|           0x000057ec      4889cf         mov rdi, rcx                ; int64_t arg1
+|           0x000057ef      488d35da0f00.  lea rsi, [sym.core::array::__impl_core::fmt::Debug_for__T_____::fmt::h894a83bd2e78b654] ; 0x67d0 ; "H\x83\xecHH\x89|$8H\x89t$@\xb8\n" ; int64_t arg2
+|           0x000057f6      4889442478     mov qword [var_78h], rax
+|           0x000057fb      e8501b0000     call sym core::fmt::ArgumentV1::new::h4b3dd9450748c5fc ; dbg.new<[i32; 10]>
+|           0x00005800      4889442470     mov qword [var_70h], rax
+|           0x00005805      4889542468     mov qword [var_68h], rdx
+|           0x0000580a      488b442470     mov rax, qword [var_70h]
+|           0x0000580f      48898424d800.  mov qword [var_d8h], rax
+|           0x00005817      488b4c2468     mov rcx, qword [var_68h]
+|           0x0000581c      48898c24e000.  mov qword [var_e0h], rcx
+|           0x00005824      488d9424d800.  lea rdx, [var_d8h]
+|           0x0000582c      488dbc24a800.  lea rdi, [var_a8h]          ; int64_t arg1
+|           0x00005834      488b742478     mov rsi, qword [var_78h]    ; int64_t arg2
+|           0x00005839      41b802000000   mov r8d, 2
+|           0x0000583f      4889542460     mov qword [var_60h], rdx
+|           0x00005844      4c89c2         mov rdx, r8                 ; int64_t arg3
+|           0x00005847      488b4c2460     mov rcx, qword [var_60h]    ; int64_t arg4
+|           0x0000584c      41b801000000   mov r8d, 1                  ; int64_t arg5
+|           0x00005852      e8591b0000     call sym core::fmt::Arguments::new_v1::h2673b5bf555c0288 ; dbg.new_v1
+|           0x00005857      488dbc24a800.  lea rdi, [var_a8h]
+|           0x0000585f      ff15b3430300   call qword [dbg._print]     ; [0x39c18:8]=0xa2d0 dbg._print
+|           0x00005865      488d84248000.  lea rax, [numbers]
+|           0x0000586d      4889c7         mov rdi, rax
+|           0x00005870      be0a000000     mov esi, 0xa
+|           0x00005875      e8f6f9ffff     call sym rust::bubble_sort::h0777bc845caabc60 ; dbg.bubble_sort<i32>
+|           0x0000587a      488b05f72a03.  mov rax, qword [0x00038378] ; [0x38378:8]=0x38358
+|           0x00005881      488d8c248000.  lea rcx, [numbers]
+|           0x00005889      48898c243001.  mov qword [var_130h], rcx
+|           0x00005891      488b8c243001.  mov rcx, qword [var_130h]
+|           0x00005899      48898c242002.  mov qword [var_220h], rcx
+|           0x000058a1      4889cf         mov rdi, rcx                ; int64_t arg1
+|           0x000058a4      488d35250f00.  lea rsi, [sym.core::array::__impl_core::fmt::Debug_for__T_____::fmt::h894a83bd2e78b654] ; 0x67d0 ; "H\x83\xecHH\x89|$8H\x89t$@\xb8\n" ; int64_t arg2
+|           0x000058ab      4889442458     mov qword [var_58h], rax
+|           0x000058b0      e89b1a0000     call sym core::fmt::ArgumentV1::new::h4b3dd9450748c5fc ; dbg.new<[i32; 10]>
+|           0x000058b5      4889442450     mov qword [var_50h], rax
+|           0x000058ba      4889542448     mov qword [var_48h], rdx
+|           0x000058bf      488b442450     mov rax, qword [var_50h]
+|           0x000058c4      488984242001.  mov qword [var_120h], rax
+|           0x000058cc      488b4c2448     mov rcx, qword [var_48h]
+|           0x000058d1      48898c242801.  mov qword [var_128h], rcx
+|           0x000058d9      488d94242001.  lea rdx, [var_120h]
+|           0x000058e1      488dbc24f000.  lea rdi, [var_f0h]          ; int64_t arg1
+|           0x000058e9      488b742458     mov rsi, qword [var_58h]    ; int64_t arg2
+|           0x000058ee      41b802000000   mov r8d, 2
+|           0x000058f4      4889542440     mov qword [var_40h], rdx
+|           0x000058f9      4c89c2         mov rdx, r8                 ; int64_t arg3
+|           0x000058fc      488b4c2440     mov rcx, qword [var_40h]    ; int64_t arg4
+|           0x00005901      41b801000000   mov r8d, 1                  ; int64_t arg5
+|           0x00005907      e8a41a0000     call sym core::fmt::Arguments::new_v1::h2673b5bf555c0288 ; dbg.new_v1
+|           0x0000590c      488dbc24f000.  lea rdi, [var_f0h]
+|           0x00005914      ff15fe420300   call qword [dbg._print]     ; [0x39c18:8]=0xa2d0 dbg._print
+|           0x0000591a      488d052b4702.  lea rax, [0x0002a04c]       ; "dealempty/usr/src/rustc-1.43.0/src/libcore/slice/mod.rscalled `Option::unwrap()` on a `None` valuesrc/libstd/env.rsfailed to ge"
+|           0x00005921      488d0d214702.  lea rcx, [0x0002a049]       ; "cardealempty/usr/src/rustc-1.43.0/src/libcore/slice/mod.rscalled `Option::unwrap()` on a `None` valuesrc/libstd/env.rsfailed to"
+|           0x00005928      488d15174702.  lea rdx, [0x0002a046]       ; "artcardealempty/usr/src/rustc-1.43.0/src/libcore/slice/mod.rscalled `Option::unwrap()` on a `None` valuesrc/libstd/env.rsfailed"
+|           0x0000592f      488d350b4702.  lea rsi, [0x0002a041]       ; "beachartcardealempty/usr/src/rustc-1.43.0/src/libcore/slice/mod.rscalled `Option::unwrap()` on a `None` valuesrc/libstd/env.rsf"
+|           0x00005936      488d3d134702.  lea rdi, [0x0002a050]       ; "empty/usr/src/rustc-1.43.0/src/libcore/slice/mod.rscalled `Option::unwrap()` on a `None` valuesrc/libstd/env.rsfailed to get en"
+|           0x0000593d      4889bc243801.  mov qword [strings], rdi
+|           0x00005945      48c784244001.  mov qword [var_140h], 5
+|           0x00005951      4889b4244801.  mov qword [var_148h], rsi
+EOF
+RUN
+
+
+NAME="function info integration 2 rust"
+FILE=bins/elf/dwarf_rust_bubble 
+CMDS=<<EOF
+e asm.dwarf=false
+aaa
+pd 40 @  dbg.bubble_sort_i32_
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from rust::main::h523dcf5432fcfd88 @ 0x5875 ; dbg.main
+            ;-- rust::bubble_sort::h0777bc845caabc60:
+            ;-- dbg.bubble_sort_i32_:
+/ 614: dbg.bubble_sort<i32> (int64_t arg1, int64_t arg2);
+|           ; var int64_t var_fh @ rsp+0xf
+|           ; var int64_t var_10h @ rsp+0x10
+|           ; var int64_t var_18h @ rsp+0x18
+|           ; var int64_t var_20h @ rsp+0x20
+|           ; var int64_t var_28h @ rsp+0x28
+|           ; var int64_t var_30h @ rsp+0x30
+|           ; var int64_t var_38h @ rsp+0x38
+|           ; var int64_t var_40h @ rsp+0x40
+|           ; var int64_t var_48h @ rsp+0x48
+|           ; var usize n @ rsp+0x50
+|           ; var bool swapped @ rsp+0x5f
+|           ; var int64_t var_60h @ rsp+0x60
+|           ; var int64_t var_68h @ rsp+0x68
+|           ; var Range<usize> iter @ rsp+0x70
+|           ; var int64_t var_78h @ rsp+0x78
+|           ; var int64_t var_80h @ rsp+0x80
+|           ; var int64_t var_88h @ rsp+0x88
+|           ; var &mut [i32] values @ rsp+0x90
+|           ; var int64_t var_98h @ rsp+0x98
+|           ; var usize val @ rsp+0xa0
+|           ; var usize __next @ rsp+0xa8
+|           ; var usize i @ rsp+0xb0
+|           ; arg int64_t arg1 @ rdi
+|           ; arg int64_t arg2 @ rsi
+|           0x00005270      4881ecb80000.  sub rsp, 0xb8               ; void bubble_sort<i32>(&mut [i32] values);
+|           0x00005277      4889bc249000.  mov qword [values], rdi     ; arg1
+|           0x0000527f      4889b4249800.  mov qword [var_98h], rsi    ; arg2
+|           0x00005287      48897c2448     mov qword [var_48h], rdi    ; arg1
+|           0x0000528c      4889742440     mov qword [var_40h], rsi    ; arg2
+|           ; DATA XREF from core::fmt::builders::DebugTuple::finish::hfbbe40c195c334d6 @ 0x28b56
+|           0x00005291      e8ea090000     call sym core::slice::_<impl [T]>::len::hbaf7153778228b73 ; dbg.len<i32>
+|           0x00005296      4889442450     mov qword [n], rax
+|           0x0000529b      c644245f01     mov byte [swapped], 1
+|           ; CODE XREF from rust::bubble_sort::h0777bc845caabc60 @ 0x5441
+|           0x000052a0      f644245f01     test byte [swapped], 1
+|       ,=< 0x000052a5      7508           jne 0x52af
+|       |   0x000052a7      4881c4b80000.  add rsp, 0xb8
+|       |   0x000052ae      c3             ret
+|       |   ; CODE XREF from rust::bubble_sort::h0777bc845caabc60 @ 0x52a5
+|       `-> 0x000052af      c644245f00     mov byte [swapped], 0
+|           0x000052b4      488b442450     mov rax, qword [n]
+|           0x000052b9      48c744246001.  mov qword [var_60h], 1
+|           0x000052c2      4889442468     mov qword [var_68h], rax
+|           0x000052c7      488b7c2460     mov rdi, qword [var_60h]    ; int64_t arg1
+|           0x000052cc      488b742468     mov rsi, qword [var_68h]    ; int64_t arg2
+|           0x000052d1      e83a140000     call sym <I as core::iter::traits::collect::IntoIterator>::into_iter::h12f1e7995fb38cf5 ; dbg.into_iter<core::ops::range::Range<usize>>
+|           0x000052d6      4889442438     mov qword [var_38h], rax
+|           0x000052db      4889542430     mov qword [var_30h], rdx
+|           0x000052e0      488b442438     mov rax, qword [var_38h]
+|           0x000052e5      4889442470     mov qword [iter], rax
+|           0x000052ea      488b4c2430     mov rcx, qword [var_30h]
+|           0x000052ef      48894c2478     mov qword [var_78h], rcx
+|           ; CODE XREF from rust::bubble_sort::h0777bc845caabc60 @ 0x5432
+|           0x000052f4      488d7c2470     lea rdi, [iter]             ; int64_t arg1
+|           0x000052f9      e812130000     call sym core::iter::range::_<impl core::iter::traits::iterator::Iterator for core::ops::range::Range<A>>::next::h707e8283b20ce50a ; dbg.next<usize>
+|           0x000052fe      488994248800.  mov qword [var_88h], rdx
+|           0x00005306      488984248000.  mov qword [var_80h], rax
+|           0x0000530e      488b84248000.  mov rax, qword [var_80h]
+|           0x00005316      4885c0         test rax, rax
+|       ,=< 0x00005319      7404           je 0x531f
+|      ,==< 0x0000531b      eb00           jmp 0x531d
+|      ||   ; CODE XREF from rust::bubble_sort::h0777bc845caabc60 @ 0x531b
+|     ,`--> 0x0000531d      eb23           jmp 0x5342
+|     | |   ; CODE XREF from rust::bubble_sort::h0777bc845caabc60 @ 0x5319
+|     | `-> 0x0000531f      488b442450     mov rax, qword [n]
+|     |     0x00005324      482d01000000   sub rax, 1
+|     |     0x0000532a      0f92c1         setb cl
+|     |     0x0000532d      f6c101         test cl, 1
+|     |     0x00005330      4889442428     mov qword [var_28h], rax
+|     | ,=< 0x00005335      0f857f010000   jne 0x54ba
+EOF
+RUN
+
+NAME="big endian variable info"
+FILE=bins/elf/ppc64_sudoku_dwarf 
+CMDS=<<EOF
+e asm.dwarf=false
+aaa
+pdf @  dbg.init
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from dbg.main @ 0x10001ae8
+            ;-- Grid::init():
+            ;-- method.Grid.init__:
+/ 64: dbg.init (Grid * const this);
+|           ; arg Grid * const this @ r3
+|           0x100012bc      39030144       addi r8, r3, 0x144          ; arg1 [0m; void init(Grid * const this);
+|           0x100012c0      38e30168       addi r7, r3, 0x168          ; arg1
+|           0x100012c4      39400000       li r10, 0
+|           ; CODE XREF from Grid::init() @ 0x100012e8
+|       .-> 0x100012c8      3928febc       addi r9, r8, 0xfebc
+|       :   0x100012cc      38c00009       li r6, 9
+|       :   0x100012d0      7cc903a6       mtctr r6
+|       :   ; CODE XREF from Grid::init() @ 0x100012dc
+|      .--> 0x100012d4      91490000       stw r10, 0(r9)
+|      ::   0x100012d8      39290024       addi r9, r9, 0x24
+|      `==< 0x100012dc      4200fff8       bdnz 0x100012d4
+|       :   0x100012e0      39080004       addi r8, r8, 4
+|       :   0x100012e4      7c283840       cmpld r8, r7
+|       `=< 0x100012e8      4082ffe0       bne 0x100012c8
+|           0x100012ec      39200000       li r9, 0
+|           0x100012f0      91230144       stw r9, 0x144(r3)           ; arg1
+|           0x100012f4      91230148       stw r9, 0x148(r3)           ; arg1
+\           0x100012f8      4e800020       blr
+EOF
+RUN
+
+NAME="function info integration ada"
+FILE=bins/elf/ada_test_dwarf 
+CMDS=<<EOF
+e asm.dwarf=false
+aaa
+pdf @  dbg.main
+EOF
+EXPECT=<<EOF
+            ; DATA XREF from entry0 @ 0x2271
+            ;-- main:
+/ 101: int dbg.main (int argc, char **argv, char **envp);
+|           ; var char **var_28h @ rbp-0x28
+|           ; var char **var_20h @ rbp-0x20
+|           ; var int64_t var_14h @ rbp-0x14
+|           ; var system__address volatile ensure_reference @ rbp-0x10
+|           ; var ada_main__main__seh___PAD seh @ rbp-0x8
+|           ; arg int argc @ rdi
+|           ; arg char **argv @ rsi
+|           ; arg char **envp @ rdx
+|           0x00002742      55             push rbp                    ; integer main(integer const argc,void * const argv,void * const envp);
+|           0x00002743      4889e5         mov rbp, rsp
+|           0x00002746      4883ec30       sub rsp, 0x30
+|           0x0000274a      897dec         mov dword [var_14h], edi    ; argc
+|           0x0000274d      488975e0       mov qword [var_20h], rsi    ; argv
+|           0x00002751      488955d8       mov qword [var_28h], rdx    ; envp
+|           0x00002755      488d05dc0800.  lea rax, obj.__gnat_ada_main_program_name ; 0x3038 ; "_ada_ada_test"
+|           0x0000275c      488945f0       mov qword [ensure_reference], rax
+|           0x00002760      8b45ec         mov eax, dword [var_14h]
+|           0x00002763      8905572a0000   mov dword [obj.gnat_argc], eax ; [0x51c0:4]=0
+|           0x00002769      488b45e0       mov rax, qword [var_20h]
+|           0x0000276d      488905b42900.  mov qword [obj.gnat_argv], rax ; [0x5128:8]=0
+|           0x00002774      488b45d8       mov rax, qword [var_28h]
+|           0x00002778      488905112900.  mov qword [obj.gnat_envp], rax ; [0x5090:8]=0
+|           0x0000277f      488d45f8       lea rax, [seh.F]
+|           0x00002783      4889c7         mov rdi, rax
+|           0x00002786      e875f9ffff     call sym.imp.__gnat_initialize
+|           0x0000278b      e8e8fcffff     call dbg.adainit
+|           0x00002790      e847000000     call dbg._ada_ada_test
+|           0x00002795      e8b6fcffff     call dbg.adafinal
+|           0x0000279a      e8d1f8ffff     call sym.imp.__gnat_finalize
+|           0x0000279f      8b054b290000   mov eax, dword [obj.gnat_exit_status] ; [0x50f0:4]=0
+|           0x000027a5      c9             leave
+\           0x000027a6      c3             ret
+EOF
+RUN
+
+NAME="function info integration freepascal"
+FILE=bins/efi/freepascal_test_dwarf 
+CMDS=<<EOF
+e asm.dwarf=false
+aaa
+pd 20 @  dbg.palya
+EOF
+EXPECT=<<EOF
+            ; CALL XREFS from sym.main @ +0x1a87, +0x1c7d, +0x23f3, +0x3679
+            ;-- P$MOZGKIGYO_$$_PALYA$SMALLINT$SMALLINT:
+/ 439: dbg.palya ();
+|           ; var int64_t var_28h @ rbp-0x28
+|           ; var int64_t var_20h @ rbp-0x20
+|           ; var SmallInt i @ rbp-0x14
+|           ; var SmallInt szel @ rbp-0x10
+|           ; var SmallInt mag @ rbp-0x8
+|           0x00401980      55             push rbp                    ; void palya(SmallInt mag,SmallInt szel);
+|           0x00401981      4889e5         mov rbp, rsp
+|           0x00401984      488d6424d0     lea rsp, [rsp - 0x30]
+|           0x00401989      48895dd8       mov qword [var_28h], rbx
+|           0x0040198d      4c8965e0       mov qword [var_20h], r12
+|           0x00401991      66897df8       mov word [mag], di
+|           0x00401995      668975f0       mov word [szel], si
+|           0x00401999      b801000000     mov eax, 1
+|           0x0040199e      bf01000000     mov edi, 1
+|           0x004019a3      89c6           mov esi, eax
+|           0x004019a5      e8b6a10200     call sym.CRT____GOTOXY_TCRTCOORD_TCRTCOORD
+|           0x004019aa      66448b65f0     mov r12w, word [szel]
+|           0x004019af      66c745ec0100   mov word [i], 1
+|           0x004019b5      66443b65ec     cmp r12w, word [i]
+|       ,=< 0x004019ba      7c45           jl 0x401a01
+|       |   0x004019bc      66816dec0100   sub word [i], 1
+|       |   0x004019c2      66666690       nop
+|       |   0x004019c6      6690           nop
+|       |   ; CODE XREF from dbg.palya @ 0x4019ff
+|       |   0x004019c8      668145ec0100   add word [i], 1
+|       |   0x004019ce      e82d280200     call sym.fpc_get_output
+EOF
+RUN

@@ -58,7 +58,7 @@ static void rc4_crypt(struct rc4_state *const state, const ut8 *inbuf, ut8 *outb
 	ut8 j;
 
 	for (i = 0; i < buflen; i++) {
-		/* Update modification indicies */
+		/* Update modification indices */
 		state->index1++;
 		state->index2 += state->perm[state->index1];
 		/* Modify permutation */
@@ -110,7 +110,7 @@ RCryptoPlugin r_crypto_plugin_rc4 = {
 	.final = final
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_rc4,

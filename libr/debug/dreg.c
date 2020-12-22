@@ -10,7 +10,7 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 	if (!dbg || !dbg->reg || !dbg->h) {
 		return false;
 	}
-	// Theres no point in syncing a dead target
+	// There's no point in syncing a dead target
 	if (r_debug_is_dead (dbg)) {
 		return false;
 	}
@@ -24,7 +24,7 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 	// Sync all the types sequentially if asked
 	i = (type == R_REG_TYPE_ALL)? R_REG_TYPE_GPR: type;
 	// Check to get the correct arena when using @ into reg profile (arena!=type)
-	// if request type is positive and the request regset dont have regs
+	// if request type is positive and the request regset don't have regs
 	if (i >= R_REG_TYPE_GPR && dbg->reg->regset[i].regs && !dbg->reg->regset[i].regs->length) {
 		// seek into the other arena for redirections.
 		for (n = R_REG_TYPE_GPR; n < R_REG_TYPE_LAST; n++) {
@@ -46,12 +46,14 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 		if (write) {
 			ut8 *buf = r_reg_get_bytes (dbg->reg, i, &size);
 			if (!buf || !dbg->h->reg_write (dbg, i, buf, size)) {
-				if (!i) {
+				if (i == R_REG_TYPE_GPR) {
 					eprintf ("r_debug_reg: error writing "
 						"registers %d to %d\n", i, dbg->tid);
 				}
-				free (buf);
-				return false;
+				if (type != R_REG_TYPE_ALL || i == R_REG_TYPE_GPR) {
+					free (buf);
+					return false;
+				}
 			}
 			free (buf);
 		} else {
@@ -76,14 +78,14 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 		}
 		// DO NOT BREAK R_REG_TYPE_ALL PLEASE
 		//   break;
-		// Continue the syncronization or just stop if it was asked only for a single type of regs
+		// Continue the synchronization or just stop if it was asked only for a single type of regs
 		i++;
 	} while ((type == R_REG_TYPE_ALL) && (i < R_REG_TYPE_LAST));
 	return true;
 }
 
-R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char *use_color) {
-	int i, delta, from, to, cols, n = 0;
+R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char *use_color) {
+	int delta, cols, n = 0;
 	const char *fmt, *fmt2, *kwhites;
 	RPrint *pr = NULL;
 	int colwidth = 20;
@@ -92,6 +94,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 	RList *head;
 	ut64 diff;
 	char strvalue[256];
+	bool isJson = (rad == 'j' || rad == 'J');
 	if (!dbg || !dbg->reg) {
 		return false;
 	}
@@ -105,14 +108,14 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 	if (dbg->bits & R_SYS_BITS_64) {
 		//fmt = "%s = 0x%08"PFMT64x"%s";
 		fmt = "%s = %s%s";
-		fmt2 = "%s%4s%s %s%s";
+		fmt2 = "%s%7s%s %s%s";
 		kwhites = "         ";
 		colwidth = dbg->regcols? 20: 25;
 		cols = 3;
 	} else {
 		//fmt = "%s = 0x%08"PFMT64x"%s";
 		fmt = "%s = %s%s";
-		fmt2 = "%s%4s%s %s%s";
+		fmt2 = "%s%7s%s %s%s";
 		kwhites = "    ";
 		colwidth = 20;
 		cols = 4;
@@ -120,73 +123,75 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 	if (dbg->regcols) {
 		cols = dbg->regcols;
 	}
-	if (rad == 'j') {
-		dbg->cb_printf ("{");
+	PJ *pj = NULL;
+	if (isJson) {
+		pj = pj_new ();
+		if (!pj) {
+			return false;
+		}
+		pj_o (pj);
 	}
 	// with the new field "arena" into reg items why need
 	// to get all arenas.
-	from = 0;
-	to = R_REG_TYPE_LAST;
 
 	int itmidx = -1;
 	dbg->creg = NULL;
-	for (i = from; i < to; i++) {
-		head = r_reg_get_list (dbg->reg, i);
-		if (!head) {
-			continue;
+	head = r_reg_get_list (dbg->reg, type);
+	if (!head) {
+		return false;
+	}
+	r_list_foreach (head, iter, item) {
+		ut64 value;
+		utX valueBig;
+		if (type != -1) {
+			if (type != item->type && R_REG_TYPE_FLG != item->type) {
+				continue;
+			}
+			if (size != 0 && size != item->size) {
+				continue;
+			}
 		}
-		r_list_foreach (head, iter, item) {
-			ut64 value;
-			utX valueBig;
-			if (type != -1) {
-				if (type != item->type && R_REG_TYPE_FLG != item->type) {
+		// Is this register being asked?
+		if (dbg->q_regs) {
+			if (!r_list_empty (dbg->q_regs)) {
+				RListIter *iterreg;
+				RList *q_reg = dbg->q_regs;
+				char *q_name;
+				bool found = false;
+				r_list_foreach (q_reg, iterreg, q_name) {
+					if (!strcmp (item->name, q_name)) {
+						found = true;
+						break;
+					}
+				}
+				if (!found) {
 					continue;
 				}
-				if (size != 0 && size != item->size) {
-					continue;
-				}
-			}
-			// Is this register being asked?
-			if (dbg->q_regs) {
-				if (!r_list_empty (dbg->q_regs)) {
-					RListIter *iterreg;
-					RList *q_reg = dbg->q_regs;
-					char *q_name;
-					bool found = false;
-					r_list_foreach (q_reg, iterreg, q_name) {
-						if (!strcmp (item->name, q_name)) {
-							found = true;
-							break;
-						}
-					}
-					if (!found) {
-					        continue;
-					}
-					r_list_delete (q_reg, iterreg);
-				} else {
-					// List is empty, all requested regs were taken, no need to go further
-					goto beach;
-				}
-			}
-			int regSize = item->size;
-			if (regSize < 80) {
-				value = r_reg_get_value (dbg->reg, item);
-				r_reg_arena_swap (dbg->reg, false);
-				diff = r_reg_get_value (dbg->reg, item);
-				r_reg_arena_swap (dbg->reg, false);
-				delta = value-diff;
-				if (tolower ((ut8)rad) == 'j') {
-					snprintf (strvalue, sizeof (strvalue),"%"PFMT64u, value);
-				} else {
-					if (pr && pr->wide_offsets && dbg->bits & R_SYS_BITS_64) {
-						snprintf (strvalue, sizeof (strvalue),"0x%016"PFMT64x, value);
-					} else {
-						snprintf (strvalue, sizeof (strvalue),"0x%08"PFMT64x, value);
-					}
-				}
+				r_list_delete (q_reg, iterreg);
 			} else {
-				value = r_reg_get_value_big (dbg->reg, item, &valueBig);
-				switch (regSize) {
+				// List is empty, all requested regs were taken, no need to go further
+				goto beach;
+			}
+		}
+		int regSize = item->size;
+		if (regSize < 80) {
+			value = r_reg_get_value (dbg->reg, item);
+			r_reg_arena_swap (dbg->reg, false);
+			diff = r_reg_get_value (dbg->reg, item);
+			r_reg_arena_swap (dbg->reg, false);
+			delta = value - diff;
+			if (isJson) {
+				pj_kn (pj, item->name, value);
+			} else {
+				if (pr && pr->wide_offsets && dbg->bits & R_SYS_BITS_64) {
+					snprintf (strvalue, sizeof (strvalue),"0x%016"PFMT64x, value);
+				} else {
+					snprintf (strvalue, sizeof (strvalue),"0x%08"PFMT64x, value);
+				}
+			}
+		} else {
+			value = r_reg_get_value_big (dbg->reg, item, &valueBig);
+			switch (regSize) {
 				case 80:
 					snprintf (strvalue, sizeof (strvalue), "0x%04x%016"PFMT64x"", valueBig.v80.High, valueBig.v80.Low);
 					break;
@@ -196,19 +201,24 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 				case 128:
 					snprintf (strvalue, sizeof (strvalue), "0x%016"PFMT64x"%016"PFMT64x"", valueBig.v128.High, valueBig.v128.Low);
 					break;
+				case 256:
+					snprintf (strvalue, sizeof (strvalue), "0x%016"PFMT64x"%016"PFMT64x"%016"PFMT64x"%016"PFMT64x"",
+							valueBig.v256.High.High, valueBig.v256.High.Low, valueBig.v256.Low.High, valueBig.v256.Low.Low);
+					break;
 				default:
 					snprintf (strvalue, sizeof (strvalue), "ERROR");
-				}
-				delta = 0; // TODO: calculate delta with big values.
 			}
-			itmidx++;
+			if (isJson) {
+				pj_ks (pj, item->name, strvalue);
+			}
+			delta = 0; // TODO: calculate delta with big values.
+		}
+		itmidx++;
 
-			switch (rad) {
-			case 'J':
-			case 'j':
-				dbg->cb_printf ("%s\"%s\":%s",
-					n?",":"", item->name, strvalue);
-				break;
+		if (isJson) {
+			continue;
+		}
+		switch (rad) {
 			case '-':
 				dbg->cb_printf ("f-%s\n", item->name);
 				break;
@@ -217,13 +227,15 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 				break;
 			case 1:
 			case '*':
-				dbg->cb_printf ("f %s 1 %s\n", item->name, strvalue);
+				dbg->cb_printf ("f %s %d %s\n", item->name, item->size / 8, strvalue);
 				break;
-			case 'd':
-			case 2:
+			case '.':
+				dbg->cb_printf ("dr %s=%s\n", item->name, strvalue);
+				break;
+			case '=':
 				{
 					int len, highlight = use_color && pr && pr->cur_enabled && itmidx == pr->cur;
-					char *str, whites[32], content[300];
+					char whites[32], content[300];
 					const char *a = "", *b = "";
 					if (highlight) {
 						a = Color_INVERT;
@@ -234,26 +246,16 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 					if (delta && use_color) {
 						dbg->cb_printf ("%s", use_color);
 					}
-					if (item->flags) {
-						str = r_reg_get_bvalue (dbg->reg, item);
-						len = 12 - strlen (str);
-						memset (whites, ' ', sizeof (whites));
-						whites[len] = 0;
-						dbg->cb_printf (" %s%s%s %s%s", a, item->name, b,
-							str, ((n+1)%cols)? whites: "\n");
-						free (str);
-					} else {
-						snprintf (content, sizeof (content),
+					snprintf (content, sizeof (content),
 							fmt2, "", item->name, "", strvalue, "");
-						len = colwidth - strlen (content);
-						if (len < 0) {
-							len = 0;
-						}
-						memset (whites, ' ', sizeof (whites));
-						whites[len] = 0;
-						dbg->cb_printf (fmt2, a, item->name, b, strvalue,
-							((n+1)%cols)? whites: "\n");
+					len = colwidth - strlen (content);
+					if (len < 0) {
+						len = 0;
 					}
+					memset (whites, ' ', sizeof (whites));
+					whites[len] = 0;
+					dbg->cb_printf (fmt2, a, item->name, b, strvalue,
+							((n+1)%cols)? whites: "\n");
 					if (highlight) {
 						dbg->cb_printf (Color_INVERT_RESET);
 					}
@@ -262,35 +264,35 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 					}
 				}
 				break;
+			case 'd':
 			case 3:
 				if (delta) {
 					char woot[512];
 					snprintf (woot, sizeof (woot),
-						" was 0x%"PFMT64x" delta %d\n", diff, delta);
+							" was 0x%"PFMT64x" delta %d\n", diff, delta);
 					dbg->cb_printf (fmt, item->name, strvalue, woot);
 				}
 				break;
 			default:
 				if (delta && use_color) {
-					dbg->cb_printf (use_color);
+					dbg->cb_printf ("%s", use_color);
 					dbg->cb_printf (fmt, item->name, strvalue, Color_RESET"\n");
 				} else {
 					dbg->cb_printf (fmt, item->name, strvalue, "\n");
 				}
 				break;
-			}
-			n++;
 		}
+		n++;
 	}
 beach:
-	if (rad == 'j') {
-		dbg->cb_printf ("}\n");
-	} else if (rad == 'J') {
-		// do nothing
-	} else if (n > 0 && rad == 2 && ((n%cols))) {
+	if (isJson) {
+		pj_end (pj);
+		dbg->cb_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
+	} else if (n > 0 && (rad == 2 || rad == '=') && ((n%cols))) {
 		dbg->cb_printf ("\n");
 	}
-	return n;
+	return n != 0;
 }
 
 R_API int r_debug_reg_set(struct r_debug_t *dbg, const char *name, ut64 num) {

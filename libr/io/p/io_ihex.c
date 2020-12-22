@@ -65,6 +65,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		fclose (out);
 		return -1;
 	}
+	r_buf_seek (rih->rbuf, count, R_BUF_CUR);
 
 	/* disk write : process each sparse chunk */
 	//TODO : sort addresses + check overlap?
@@ -189,7 +190,11 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	}
 	Rihex *rih = fd->data;
 	memset (buf, io->Oxff, count);
-	return r_buf_read_at (rih->rbuf, io->off, buf, count);
+	int r = r_buf_read_at (rih->rbuf, io->off, buf, count);
+	if (r >= 0) {
+		r_buf_seek (rih->rbuf, r, R_BUF_CUR);
+	}
+	return r;
 }
 
 static int __close(RIODesc *fd) {
@@ -209,7 +214,8 @@ static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
 		return -1;
 	}
 	rih = fd->data;
-	return r_buf_seek (rih->rbuf, offset, whence);
+	io->off = r_buf_seek (rih->rbuf, offset, whence);
+	return io->off;
 }
 
 static bool __plugin_open(RIO *io, const char *pathname, bool many) {
@@ -370,7 +376,7 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 			str = eol;
 			break;
 		case 3:	//undefined rec. Just skip.
-		case 5:	//non-standard, sometimes "start linear adddress"
+		case 5:	//non-standard, sometimes "start linear address"
 			str = strchr (str + 1, ':');
 			break;
 		}
@@ -440,7 +446,7 @@ RIOPlugin r_io_plugin_ihex = {
 	.resize = __resize
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_ihex,

@@ -1,0 +1,54 @@
+d "adc r11" 0b63
+d "adc.b r11" 4b63
+d "bic 2, r10" 2ac3
+d "bic 4, r10" 2ac2
+d "bic.b 2, 0x0026" e2c32600
+d "bic.b 4, 0x002e" e2c22e00
+d "bis.b 2, 0x0021" e2d32100
+d "br 0x0021" 30402100
+d "br 0x0003" 10420300
+d "br sp" 0041
+d "br r10" 004a
+d "call 0xc096" b01296c0
+d "clr 0x0033" 80433300
+d "clr 0xfffa(r4)" 8443faff
+d "clrn" 22c2
+d "clrz" 22c3
+d "cmp.b 0x003b, 0x0(r11)" fb903b000000
+d "dadc r11" 0ba3
+d "dadc.b r11" 4ba3
+d "dec r11" 1b83
+d "dec.b r11" 5b83
+d "inc r11" 1b53
+d "inv 0x0003" b0e30300
+d "inv 0x3(r5)" b5e30300
+d "inv r10" 3ae3
+d "jeq $+0x0014" 0924
+d "jmp $+0x0010" 073c
+d "mov 0x0003, 0x5(r9)" b94003000500
+d "mov 0x000a, 0x002a" b0400a002a00
+d "mov 0x0021, 0x6(r11)" bb4021000600
+d "mov 1, 0x002c" 90432c00
+d "mov 8, 0x002c" b0422c00
+d "mov 8, 0x002e" b0422e00
+d "mov 0x0033, 0x002e" 924233002e00
+d "mov 0x0033, 0x002a" 904233002a00
+d "mov 0x3(r6), 0x002e" 924603002e00
+d "mov 0x5(r10), 0x6(r11)" 9b4a05000600
+d "mov 0x6(r11), 0x0033" 924b06003300
+d "mov.b 0x0021, r15" 5f422100
+d "mov.b r15, 0x0021" c24f2100
+d "nop" 0343
+d "pop r11" 3b41
+d "pop r4" 3441
+d "push 1" 1312
+d "ret" 3041
+d "sbc r11" 0b73
+d "sbc.b r11" 4b73
+d "setc" 12d3
+d "setz" 22d3
+d "tst 0x0003" 82930300
+d "tst 0x3(r5)" 85930300
+d "tst r10" 0a93
+d "xor.b 0x0020, r15" 7fe02000
+d "xor.b 8, r15" 7fe2

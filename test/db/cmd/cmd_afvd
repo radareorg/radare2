@@ -1,0 +1,28 @@
+NAME=afvd
+FILE=-
+CMDS=<<EOF
+e anal.vars.stackname=true
+e asm.arch=x86
+e asm.bits=64
+wx 554889e54883ec2848897c24204889742418488995e0ffffff48898dd8ffffff4883c4285dc3
+af
+aei
+aeim
+dr rdi=0x1111111111111111
+dr rsi=0x2222222222222222
+dr rdx=0x3333333333333333
+dr rcx=0x4444444444444444
+7ds
+afvd
+EOF
+EXPECT=<<EOF
+arg arg1 =   : rdi : 0x1111111111111111
+arg arg2 =   : rsi : 0x2222222222222222
+arg arg3 =   : rdx : 0x3333333333333333
+arg arg4 =   : rcx : 0x4444444444444444
+var var_28h = 0x00177fd8 = (qword)0x3333333333333333
+var var_30h = 0x00177fd0 = (qword)0x4444444444444444
+var var_10h = 0x00177ff0 = (qword)0x1111111111111111
+var var_18h = 0x00177fe8 = (qword)0x2222222222222222
+EOF
+RUN

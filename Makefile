@@ -7,15 +7,14 @@ B=$(DESTDIR)$(BINDIR)
 L=$(DESTDIR)$(LIBDIR)
 MESON?=meson
 PYTHON?=python
-R2R=radare2-regressions
-R2R_URL=$(shell doc/repo REGRESSIONS)
-R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm r2-indent)
+R2R=test
+R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm r2-indent r2r)
 ifdef SOURCE_DATE_EPOCH
 BUILDSEC=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u "+__%H:%M:%S")
 else
 BUILDSEC=$(shell date "+__%H:%M:%S")
 endif
-DATADIRS=libr/cons/d libr/flag/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d
+DATADIRS=libr/cons/d libr/flag/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d libr/util/d
 USE_ZIP=YES
 ZIP=zip
 
@@ -54,6 +53,7 @@ endif
 endif
 
 all: plugins.cfg libr/include/r_version.h
+	${MAKE} -C shlr sdbs
 	${MAKE} -C shlr/zip
 	${MAKE} -C libr/util
 	${MAKE} -C libr/socket
@@ -62,9 +62,9 @@ all: plugins.cfg libr/include/r_version.h
 	${MAKE} -C binr
 
 #.PHONY: libr/include/r_version.h
-GIT_TAP=$(shell git describe --tags --match "[0-9]*" 2>/dev/null || echo $(VERSION))
+GIT_TAP=$(shell git tag -l --sort=refname | grep -e '^\d.\d.\d$' | tail -n1 || echo $(VERSION))
 GIT_TIP=$(shell git rev-parse HEAD 2>/dev/null || echo HEAD)
-R2_VER=$(shell grep VERSION configure.acr | head -n1 | awk '{print $$2}')
+R2_VER=$(shell ./configure -qV)
 ifdef SOURCE_DATE_EPOCH
 GIT_NOW=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+%Y-%m-%d" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+%Y-%m-%d" 2>/dev/null || date -u "+%Y-%m-%d")
 else
@@ -76,7 +76,11 @@ libr/include/r_version.h:
 	@echo $(Q)#ifndef R_VERSION_H$(Q) > $@.tmp
 	@echo $(Q)#define R_VERSION_H 1$(Q) >> $@.tmp
 	@echo $(Q)#define R2_VERSION_COMMIT $(R2VC)$(Q) >> $@.tmp
-	@echo $(Q)#define R2_VERSION $(ESC)"$(R2_VER)$(ESC)"$(Q) >> $@.tmp
+	@echo $(Q)#define R2_VERSION $(ESC)"$(R2_VERSION)$(ESC)"$(Q) >> $@.tmp
+	@echo $(Q)#define R2_VERSION_MAJOR $(R2_VERSION_MAJOR)$(Q) >> $@.tmp
+	@echo $(Q)#define R2_VERSION_MINOR $(R2_VERSION_MINOR)$(Q) >> $@.tmp
+	@echo $(Q)#define R2_VERSION_PATCH $(R2_VERSION_PATCH)$(Q) >> $@.tmp
+	@echo $(Q)#define R2_VERSION_NUMBER $(R2_VERSION_NUMBER)$(Q) >> $@.tmp
 	@echo $(Q)#define R2_GITTAP $(ESC)"$(GIT_TAP)$(ESC)"$(Q) >> $@.tmp
 	@echo $(Q)#define R2_GITTIP $(ESC)"$(GIT_TIP)$(ESC)"$(Q) >> $@.tmp
 	@echo $(Q)#define R2_BIRTH $(ESC)"$(GIT_NOW)$(BUILDSEC)$(ESC)"$(Q) >> $@.tmp
@@ -146,7 +150,7 @@ windist:
 	mkdir -p "${WINDIST}/include/libr/sdb"
 	mkdir -p "${WINDIST}/include/libr/r_util"
 	@echo "${C}[WINDIST] Copying development files${R}"
-	cp -f libr/include/sdb/*.h "${WINDIST}/include/libr/sdb/"
+	cp -f shlr/sdb/src/*.h "${WINDIST}/include/libr/sdb/"
 	cp -f libr/include/r_util/*.h "${WINDIST}/include/libr/r_util/"
 	cp -f libr/include/*.h "${WINDIST}/include/libr"
 	#mkdir -p "${WINDIST}/include/libr/sflib"
@@ -201,6 +205,7 @@ install-man-symlink:
 		ln -fs "${PWD}/man/$$FILE" "${DESTDIR}${MANDIR}/man7/$$FILE" ; done
 
 install-doc:
+	mkdir -p "${DESTDIR}${DOCDIR}"
 	${INSTALL_DIR} "${DESTDIR}${DOCDIR}"
 	@echo ${DOCDIR}
 	for FILE in doc/* ; do \
@@ -208,14 +213,15 @@ install-doc:
 	done
 
 install-doc-symlink:
+	mkdir -p "${DESTDIR}${DOCDIR}"
 	${INSTALL_DIR} "${DESTDIR}${DOCDIR}"
 	for FILE in $(shell cd doc ; ls) ; do \
 		ln -fs "$(PWD)/doc/$$FILE" "${DESTDIR}${DOCDIR}" ; done
 
-install love: install-doc install-man install-www
-	cd libr && ${MAKE} install
-	cd binr && ${MAKE} install
-	cd shlr && ${MAKE} install
+install: install-doc install-man install-www install-pkgconfig
+	$(MAKE) -C libr install
+	$(MAKE) -C binr install
+	$(MAKE) -C shlr install
 	for DIR in ${DATADIRS} ; do $(MAKE) -C "$$DIR" install ; done
 	cd "$(DESTDIR)$(LIBDIR)/radare2/" ;\
 		rm -f last ; ln -fs $(VERSION) last
@@ -228,7 +234,6 @@ install love: install-doc install-man install-www
 	#${INSTALL_SCRIPT} "${PWD}/sys/r1-docker.sh" "${DESTDIR}${BINDIR}/r2-docker"
 	cp -f doc/hud "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud/main"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
-	$(SHELL) sys/ldconfig.sh
 	$(SHELL) ./configure-plugins --rm-static $(DESTDIR)$(LIBDIR)/radare2/last/
 
 install-www:
@@ -244,7 +249,13 @@ symstall-www:
 	for FILE in $(shell cd shlr/www ; ls) ; do \
 		ln -fs "$(PWD)/shlr/www/$$FILE" "$(DESTDIR)$(WWWROOT)" ; done
 
-install-pkgconfig-symlink:
+install-pkgconfig pkgconfig-install:
+	@${INSTALL_DIR} "${DESTDIR}${LIBDIR}/pkgconfig"
+	for FILE in $(shell cd pkgcfg ; ls *.pc) ; do \
+		cp -f "$(PWD)/pkgcfg/$$FILE" "${DESTDIR}${LIBDIR}/pkgconfig/$$FILE" ; done
+
+install-pkgconfig-symlink pkgconfig-symstall symstall-pkgconfig:
+	mkdir -p "${DESTDIR}${LIBDIR}/pkgconfig"
 	@${INSTALL_DIR} "${DESTDIR}${LIBDIR}/pkgconfig"
 	for FILE in $(shell cd pkgcfg ; ls *.pc) ; do \
 		ln -fs "$(PWD)/pkgcfg/$$FILE" "${DESTDIR}${LIBDIR}/pkgconfig/$$FILE" ; done
@@ -378,11 +389,6 @@ shot:
 		radare.org:/srv/http/radareorg/get/shot
 
 tests:
-	@if [ -d $(R2R) ]; then \
-		cd $(R2R) ; git clean -xdf ; git pull ; \
-	else \
-		git clone --depth 1 "${R2R_URL}" "$(R2R)"; \
-	fi
 	$(MAKE) -C $(R2R)
 
 macos-sign:

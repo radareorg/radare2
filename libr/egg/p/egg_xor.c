@@ -96,7 +96,7 @@ REggPlugin r_egg_plugin_xor = {
 };
 
 #if 0
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_EGG,
 	.data = &r_egg_plugin_xor,

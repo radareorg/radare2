@@ -11,7 +11,7 @@
   "homepage": "https://www.radare.org",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/radare/radare2.git"
+    "url": "git+https://github.com/radareorg/radare2.git"
   },
   "keywords": [
     "radare2"
@@ -23,6 +23,6 @@
   "name": "radare2-git",
   "version": "1.6.0-git",
   "bugs": {
-    "url": "https://github.com/radare/radare2/issues"
+    "url": "https://github.com/radareorg/radare2/issues"
   }
 }

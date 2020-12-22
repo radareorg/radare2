@@ -119,6 +119,16 @@ typedef grub_uint64_t	grub_off_t;
 /* The type for representing a disk block address.  */
 typedef grub_uint64_t	grub_disk_addr_t;
 
+#ifdef __GNUC__
+typedef grub_uint64_t grub_unaligned_uint64_t __attribute__((aligned(1)));
+typedef grub_uint32_t grub_unaligned_uint32_t __attribute__((aligned(1)));
+typedef grub_uint16_t grub_unaligned_uint16_t __attribute__((aligned(1)));
+#else
+typedef grub_uint64_t grub_unaligned_uint64_t;
+typedef grub_uint32_t grub_unaligned_uint32_t;
+typedef grub_uint16_t grub_unaligned_uint16_t;
+#endif
+
 /* Byte-orders.  */
 #ifdef _MSC_VER
 __inline grub_uint16_t grub_swap_bytes16 (grub_uint16_t x)

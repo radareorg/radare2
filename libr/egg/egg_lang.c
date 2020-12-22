@@ -126,7 +126,7 @@ R_API void r_egg_lang_init(REgg *egg) {
 	egg->lang.varsize = 'l';
 	/* do call or inline it ? */	// BOOL
 	egg->lang.docall = 1;
-	egg->lang.line = 1;	
+	egg->lang.line = 1;
 	egg->lang.file = "stdin";
 	egg->lang.oc = '\n';
 	egg->lang.mode = NORMAL;
@@ -413,13 +413,26 @@ static void rcc_element(REgg *egg, char *str) {
 				eprintf ("global-buffer-overflow in syscalls\n");
 				break;
 			}
+			{
+			bool found = false;
+			int idx = egg->lang.nsyscalls;
+			for (i = 0; i < egg->lang.nsyscalls; i++) {
+				if (!strcmp (egg->lang.dstvar, egg->lang.syscalls[i].name)) {
+					idx = i;
+					found = true;
+					break;
+				}
+			}
 			// XXX the mem for name and arg are not freed - MEMLEAK
-			R_FREE (egg->lang.syscalls[egg->lang.nsyscalls].name);
-			R_FREE (egg->lang.syscalls[egg->lang.nsyscalls].arg);
-			egg->lang.syscalls[egg->lang.nsyscalls].name = strdup (egg->lang.dstvar);
-			egg->lang.syscalls[egg->lang.nsyscalls].arg = strdup (str);
-			egg->lang.nsyscalls++;
+			R_FREE (egg->lang.syscalls[idx].name);
+			R_FREE (egg->lang.syscalls[idx].arg);
+			egg->lang.syscalls[idx].name = strdup (egg->lang.dstvar);
+			egg->lang.syscalls[idx].arg = strdup (str);
+			if (!found) {
+				egg->lang.nsyscalls++;
+			}
 			R_FREE (egg->lang.dstvar);
+			}
 			break;
 		case GOTO:
 			egg->lang.elem[egg->lang.elem_n] = 0;
@@ -720,7 +733,7 @@ static void rcc_fun(REgg *egg, const char *str) {
 }
 
 #if 0
-static void shownested() {
+static void shownested(void) {
 	int i;
 	eprintf ("[[[NESTED %d]]] ", context);
 	for (i = 0; egg->lang.nested[i]; i++) {
@@ -782,7 +795,7 @@ static void rcc_context(REgg *egg, int delta) {
 // eprintf ("Callname is (%s)\n", callname);
 		const char *elm = skipspaces (egg->lang.elem);
 		// const char *cn = callname;
-		// seems cn is useless in nowdays content
+		// seems cn is useless in nowadays content
 // if (egg->lang.nested[context-1])
 #if 0
 		if (delta < 0 && context > 0) {
@@ -805,7 +818,6 @@ static void rcc_context(REgg *egg, int delta) {
 // eprintf ("END BLOCK %d, (%s)\n", context, egg->lang.nested[context-1]);
 // eprintf ("CN = (%s) %d (%s) delta=%d\n", cn, context, egg->lang.nested[context-1], delta);
 		if (egg->lang.callname) {
-			// if (callname) { // handle 'foo() {'
 			/* TODO: this must be an array */
 			char *b, *g, *e, *n;
 			emit->comment (egg, "cond frame %s (%s)", egg->lang.callname, elm);
@@ -1050,7 +1062,7 @@ static void rcc_next(REgg *egg) {
 			rcc_printf ("  cmp $0, %%eax\n");	// XXX MUST SUPPORT != 0 COMPARE HERE
 			/* TODO : Simplify!! */
 			// if (pushvar)
-			// printf("  push %s /* wihle push */\n", pushvar);
+			// printf("  push %s /* while push */\n", pushvar);
 			if (egg->lang.lastctxdelta < 0) {
 				rcc_printf ("  jnz %s\n", get_frame_label (1));
 			} else {
@@ -1312,6 +1324,11 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 			break;
 		case '{':
 			if (CTX > 0) {
+				if (CTX > 31 || CTX < 0) {
+					eprintf ("Sinking before overflow\n");
+					CTX = 0;
+					break;
+				}
 				// r_egg_printf (egg, " %s:\n", get_frame_label (0));
 				if (egg->lang.nested_callname[CTX] && strstr (egg->lang.nested_callname[CTX], "if") &&
 				    strstr (egg->lang.elem, "else")) {

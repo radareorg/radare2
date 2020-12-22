@@ -1,0 +1,17 @@
+{
+  "name": "tree-sitter-r2cmd",
+  "version": "1.0.0",
+  "description": "Tree-Sitter grammar for parsing radare2 commands",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Riccardo Schirone",
+  "license": "ISC",
+  "dependencies": {
+    "nan": "^2.14.0"
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "^0.16.8"
+  }
+}

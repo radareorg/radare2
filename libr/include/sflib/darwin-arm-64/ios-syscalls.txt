@@ -1,5 +1,5 @@
 1	__exit
-1	__exit
+2	fork
 3	read
 4	write
 5	__open

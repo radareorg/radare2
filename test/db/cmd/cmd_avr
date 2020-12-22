@@ -1,0 +1,174 @@
+NAME=avrD msvc simple
+FILE=--
+CMDS=e anal.cpp.abi=msvc;"avrD .?AVClassName@@"
+EXPECT=<<EOF
+ClassName
+EOF
+RUN
+
+NAME=avrD msvc empty
+FILE=--
+CMDS=e anal.cpp.abi=msvc;"avrD .?AV@@"
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=avrD msvc namespaces
+FILE=--
+CMDS=e anal.cpp.abi=msvc;"avrD .?AVClassInInnerNamespace@InnerNamespace@OuterNamespace@@"
+EXPECT=<<EOF
+OuterNamespace::InnerNamespace::ClassInInnerNamespace
+EOF
+RUN
+
+NAME=avra and avrr msvc x86
+FILE=bins/pe/cpp-msvc-x86.exe
+CMDS=<<EOF
+aar
+avra
+?e --
+avrr
+acll
+EOF
+EXPECT=<<EOF
+Complete Object Locator at 0x00417860:
+	signature: 0
+	vftableOffset: 0
+	cdOffset: 0
+	typeDescriptorAddr: 0x004198b0
+	classDescriptorAddr: 0x00417874
+	objectBase: 0x00000000
+
+	Type Descriptor at 0x004198b0:
+		vtableAddr: 0x004121fc
+		spare: 0x00000000
+		name: .?AVAlbum@@
+
+	Class Hierarchy Descriptor at 0x00417874:
+		signature: 0
+		attributes: 0
+		numBaseClasses: 0x1
+		baseClassArrayAddr: 0x00417884
+
+		Base Class Descriptor:
+			typeDescriptorAddr: 0x004198b0
+			numContainedBases: 0
+			where:
+				mdisp: 0
+				pdisp: -1
+				vdisp: 0
+			attributes: 0x40
+
+			Type Descriptor at 0x004198b0:
+				vtableAddr: 0x004121fc
+				spare: 0x00000000
+				name: .?AVAlbum@@
+
+
+Complete Object Locator at 0x004178a8:
+	signature: 0
+	vftableOffset: 0
+	cdOffset: 0
+	typeDescriptorAddr: 0x004198c4
+	classDescriptorAddr: 0x004178bc
+	objectBase: 0x00000000
+
+	Type Descriptor at 0x004198c4:
+		vtableAddr: 0x004121fc
+		spare: 0x00000000
+		name: .?AVInAbsentia@@
+
+	Class Hierarchy Descriptor at 0x004178bc:
+		signature: 0
+		attributes: 0
+		numBaseClasses: 0x2
+		baseClassArrayAddr: 0x004178cc
+
+		Base Class Descriptor:
+			typeDescriptorAddr: 0x004198c4
+			numContainedBases: 0x1
+			where:
+				mdisp: 0
+				pdisp: -1
+				vdisp: 0
+			attributes: 0x40
+
+			Type Descriptor at 0x004198c4:
+				vtableAddr: 0x004121fc
+				spare: 0x00000000
+				name: .?AVInAbsentia@@
+
+		Base Class Descriptor:
+			typeDescriptorAddr: 0x004198b0
+			numContainedBases: 0
+			where:
+				mdisp: 0
+				pdisp: -1
+				vdisp: 0
+			attributes: 0x40
+
+			Type Descriptor at 0x004198b0:
+				vtableAddr: 0x004121fc
+				spare: 0x00000000
+				name: .?AVAlbum@@
+
+
+Complete Object Locator at 0x004178f4:
+	signature: 0
+	vftableOffset: 0
+	cdOffset: 0
+	typeDescriptorAddr: 0x004198e0
+	classDescriptorAddr: 0x00417908
+	objectBase: 0x00000000
+
+	Type Descriptor at 0x004198e0:
+		vtableAddr: 0x004121fc
+		spare: 0x00000000
+		name: .?AVtype_info@@
+
+	Class Hierarchy Descriptor at 0x00417908:
+		signature: 0
+		attributes: 0
+		numBaseClasses: 0x1
+		baseClassArrayAddr: 0x00417918
+
+		Base Class Descriptor:
+			typeDescriptorAddr: 0x004198e0
+			numContainedBases: 0
+			where:
+				mdisp: 0
+				pdisp: -1
+				vdisp: 0
+			attributes: 0x40
+
+			Type Descriptor at 0x004198e0:
+				vtableAddr: 0x004121fc
+				spare: 0x00000000
+				name: .?AVtype_info@@
+
+
+--
+Album
+  (vtable at 0x412164)
+  virtual_0 @ 0x40105d (vtable + 0x0)
+  virtual_4 @ 0x4010a7 (vtable + 0x4)
+InAbsentia: Album
+  (vtable at 0x4121a4)
+  virtual_0 @ 0x401088 (vtable + 0x0)
+  virtual_4 @ 0x4010b3 (vtable + 0x4)
+type_info
+  (vtable at 0x4121fc)
+  virtual_0 @ 0x401136 (vtable + 0x0)
+EOF
+RUN
+
+NAME=avraj msvc x86
+FILE=bins/pe/cpp-msvc-x86.exe
+CMDS=<<EOF
+aar
+avraj
+EOF
+EXPECT=<<EOF
+[{"complete_object_locator":{"signature":0,"vftable_offset":0,"cd_offset":0,"type_desc_addr":4298928,"class_desc_addr":4290676,"object_base":0},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVAlbum@@"},"class_hierarchy_desc":{"signature":0,"attributes":0,"num_base_classes":1,"base_class_array_addr":4290692},"base_classes":[{"desc":{"type_desc_addr":4298928,"num_contained_bases":0,"where":{"mdisp":0,"pdisp":-1,"vdisp":0},"attributes":64},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVAlbum@@"}}]},{"complete_object_locator":{"signature":0,"vftable_offset":0,"cd_offset":0,"type_desc_addr":4298948,"class_desc_addr":4290748,"object_base":0},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVInAbsentia@@"},"class_hierarchy_desc":{"signature":0,"attributes":0,"num_base_classes":2,"base_class_array_addr":4290764},"base_classes":[{"desc":{"type_desc_addr":4298948,"num_contained_bases":1,"where":{"mdisp":0,"pdisp":-1,"vdisp":0},"attributes":64},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVInAbsentia@@"}},{"desc":{"type_desc_addr":4298928,"num_contained_bases":0,"where":{"mdisp":0,"pdisp":-1,"vdisp":0},"attributes":64},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVAlbum@@"}}]},{"complete_object_locator":{"signature":0,"vftable_offset":0,"cd_offset":0,"type_desc_addr":4298976,"class_desc_addr":4290824,"object_base":0},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVtype_info@@"},"class_hierarchy_desc":{"signature":0,"attributes":0,"num_base_classes":1,"base_class_array_addr":4290840},"base_classes":[{"desc":{"type_desc_addr":4298976,"num_contained_bases":0,"where":{"mdisp":0,"pdisp":-1,"vdisp":0},"attributes":64},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVtype_info@@"}}]}]
+EOF
+RUN

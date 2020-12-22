@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2020 - nibble, pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -65,6 +65,10 @@ static int replace (int argc, char *argv[], char *newstr) {
 		{ "jne", "if (var) goto #", {1}},
 		{ "lea",  "# = #", {1, 2}},
 		{ "mov",  "# = #", {1, 2}},
+		{ "movabs", "# = #", {1, 2}},
+		{ "movq",  "# = #", {1, 2}},
+		{ "movaps",  "# = #", {1, 2}},
+		{ "movups",  "# = #", {1, 2}},
 		{ "movsd",  "# = #", {1, 2}},
 		{ "movsx","# = #", {1, 2}},
 		{ "movsxd","# = #", {1, 2}},
@@ -72,11 +76,14 @@ static int replace (int argc, char *argv[], char *newstr) {
 		{ "movntdq", "# = #", {1, 2}},
 		{ "movnti", "# = #", {1, 2}},
 		{ "movntpd", "# = #", {1, 2}},
+		{ "pcmpeqb", "# == #", {1, 2}},
+
 		{ "movdqu", "# = #", {1, 2}},
 		{ "movdqa", "# = #", {1, 2}},
 		{ "pextrb", "# = (byte) # [#]", {1, 2, 3}},
 		{ "palignr", "# = # align #", {1, 2, 3}},
 		{ "pxor", "# ^= #", {1, 2}},
+		{ "xorps", "# ^= #", {1, 2}},
 		{ "mul",  "# = # * #", {1, 2, 3}},
 		{ "mulss",  "# = # * #", {1, 2, 3}},
 		{ "neg",  "# ~= #", {1, 1}},
@@ -147,18 +154,17 @@ static int replace (int argc, char *argv[], char *newstr) {
 	}
 
 	/* TODO: this is slow */
-	if (newstr != NULL) {
+	if (newstr) {
 		newstr[0] = '\0';
-		for (i=0; i<argc; i++) {
+		for (i = 0; i < argc; i++) {
 			strcat (newstr, argv[i]);
-			strcat (newstr, (i == 0 || i== argc - 1)?" ":",");
+			strcat (newstr, (i == 0 || i == argc - 1)? " ": ",");
 		}
 	}
 	return false;
-#undef MAXPSEUDOOPS
 }
 
-static int parse (RParse *p, const char *data, char *str) {
+static int parse(RParse *p, const char *data, char *str) {
 	char w0[256], w1[256], w2[256], w3[256];
 	int i;
 	size_t len = strlen (data);
@@ -173,7 +179,7 @@ static int parse (RParse *p, const char *data, char *str) {
 	}
 	*w0 = *w1 = *w2 = *w3 = '\0';
 	if (*buf) {
-		end = strchr (buf, '\0');
+		end = buf + strlen (buf);
 		ptr = strchr (buf, ' ');
 		if (!ptr) {
 			ptr = strchr (buf, '\t');
@@ -256,6 +262,10 @@ static int parse (RParse *p, const char *data, char *str) {
 
 		replace (nw, wa, str);
 
+	} else if (strstr (w0, "lea")) {
+		r_str_replace_char (w2, '[', 0);
+		r_str_replace_char (w2, ']', 0);
+		replace (nw, wa, str);
 	} else if ((strstr (w1, "ax") || strstr (w1, "ah") || strstr (w1, "al")) && !p->retleave_asm) {
 		if (!(p->retleave_asm = (char *) malloc (sz))) {
 			return false;
@@ -263,8 +273,8 @@ static int parse (RParse *p, const char *data, char *str) {
 		r_snprintf (p->retleave_asm, sz, "return %s", w2);
 		replace (nw, wa, str);
 	} else if ((strstr (w0, "leave") && p->retleave_asm) || (strstr (w0, "pop") && strstr (w1, "bp"))) {
-		r_str_ncpy (wa[0], " \0", 2);
-		r_str_ncpy (wa[1], " \0", 2);
+		r_str_ncpy (wa[0], " ", 2);
+		r_str_ncpy (wa[1], " ", 2);
 		replace (nw, wa, str);
 	} else if (strstr (w0, "ret") && p->retleave_asm) {
 		r_str_ncpy (str, p->retleave_asm, sz);
@@ -278,28 +288,6 @@ static int parse (RParse *p, const char *data, char *str) {
 	free (buf);
 	return true;
 }
-
-#if 0
-static inline int ishexch (char c) {
-	if (c>=0 && c<=9) return 1;
-	if (c>='a' && c<='f') return 1;
-	if (c>='A' && c<='F') return 1;
-	return 0;
-}
-
-static inline int issegoff (const char *w) {
-	if (!ishexch (w[0])) return 0;
-	if (!ishexch (w[1])) return 0;
-	if (!ishexch (w[2])) return 0;
-	if (!ishexch (w[3])) return 0;
-	// :
-	if (!ishexch (w[5])) return 0;
-	if (!ishexch (w[6])) return 0;
-	if (!ishexch (w[7])) return 0;
-	if (!ishexch (w[8])) return 0;
-	return 1;
-}
-#endif
 
 static void parse_localvar (RParse *p, char *newstr, size_t newstr_len, const char *var, const char *reg, char sign, char *ireg, bool att) {
 	RStrBuf *sb = r_strbuf_new ("");
@@ -320,9 +308,9 @@ static void parse_localvar (RParse *p, char *newstr, size_t newstr_len, const ch
 			r_strbuf_setf (sb, " + %s", ireg);
 		}
 		if (p->localvar_only) {
-			snprintf (newstr, newstr_len - 1, "[%s%s]", var, r_strbuf_get (sb));
+			snprintf (newstr, newstr_len - 1, "%s%s", var, r_strbuf_get (sb));
 		} else {
-			snprintf (newstr, newstr_len - 1, "[%s%s %c %s]", reg, r_strbuf_get (sb), sign, var);
+			snprintf (newstr, newstr_len - 1, "%s%s %c %s", reg, r_strbuf_get (sb), sign, var);
 		}
 	}
 	r_strbuf_free (sb);
@@ -334,7 +322,9 @@ static inline void mk_reg_str(const char *regname, int delta, bool sign, bool at
 		if (ireg) {
 			r_strbuf_setf (sb, ", %%%s", ireg);
 		}
-		if (delta < 10) {
+		if (delta == 0) {
+			snprintf (dest, len - 1, "(%%%s%s)", regname, r_strbuf_get (sb));
+		} else if (delta < 10) {
 			snprintf (dest, len - 1, "%s%d(%%%s%s)", sign ? "" : "-", delta, regname, r_strbuf_get (sb));
 		} else {
 			snprintf (dest, len - 1, "%s0x%x(%%%s%s)", sign ? "" : "-", delta, regname, r_strbuf_get (sb));
@@ -343,18 +333,20 @@ static inline void mk_reg_str(const char *regname, int delta, bool sign, bool at
 		if (ireg) {
 			r_strbuf_setf (sb, " + %s", ireg);
 		}
-		if (delta < 10) {
-			snprintf (dest, len - 1, "[%s%s %c %d]", regname, r_strbuf_get (sb), sign ? '+':'-', delta);
+		if (delta == 0) {
+			snprintf (dest, len - 1, "%s%s", regname, r_strbuf_get (sb));
+		} else if (delta < 10) {
+			snprintf (dest, len - 1, "%s%s %c %d", regname, r_strbuf_get (sb), sign ? '+':'-', delta);
 		} else {
-			snprintf (dest, len - 1, "[%s%s %c 0x%x]", regname, r_strbuf_get (sb), sign ? '+':'-', delta);
+			snprintf (dest, len - 1, "%s%s %c 0x%x", regname, r_strbuf_get (sb), sign ? '+':'-', delta);
 		}
 	}
 	r_strbuf_free (sb);
 }
 
-static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	RList *bpargs, *spargs;
-	RAnalVar *bparg, *sparg;
+	RAnal *anal = p->analb.anal;
 	RListIter *bpargiter, *spiter;
 	char oldstr[64], newstr[64];
 	char *tstr = strdup (data);
@@ -364,7 +356,7 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 
 	bool att = strchr (data, '%');
 
-	if (p->relsub) {
+	if (p->subrel) {
 		if (att) {
 			char *rip = (char *) r_str_casestr (tstr, "(%rip)");
 			if (rip) {
@@ -415,12 +407,12 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 	}
 
 	if (!p->varlist) {
-                free (tstr);
+		free (tstr);
 		return false;
-        }
-	bpargs = p->varlist (p->anal, f, 'b');
-	spargs = p->varlist (p->anal, f, 's');
-	/*iterate over stack pointer arguments/variables*/
+	}
+	bpargs = p->varlist (f, 'b');
+	spargs = p->varlist (f, 's');
+	/* Iterate over stack pointer arguments/variables */
 	bool ucase = *tstr >= 'A' && *tstr <= 'Z';
 	if (ucase && tstr[1]) {
 		ucase = tstr[1] >= 'A' && tstr[1] <= 'Z';
@@ -429,31 +421,47 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 	if (p->get_op_ireg) {
 		ireg = p->get_op_ireg(p->user, addr);
 	}
+	RAnalVarField *bparg, *sparg;
 	r_list_foreach (spargs, spiter, sparg) {
-		// assuming delta always positive?
-		mk_reg_str (p->anal->reg->name[R_REG_NAME_SP], sparg->delta, true, att, ireg, oldstr, sizeof (oldstr));
+		char sign = '+';
+		st64 delta = p->get_ptr_at
+			? p->get_ptr_at (f, sparg->delta, addr)
+			: ST64_MAX;
+		if (delta == ST64_MAX && sparg->field) {
+			delta = sparg->delta;
+		} else if (delta == ST64_MAX) {
+			continue;
+		}
+		if (delta < 0) {
+			sign = '-';
+			delta = -delta;
+		}
+		const char *reg = NULL;
+		if (p->get_reg_at) {
+			reg = p->get_reg_at (f, sparg->delta, addr);
+		}
+		if (!reg) {
+			reg = anal->reg->name[R_REG_NAME_SP];
+		}
+		mk_reg_str (reg, delta, sign == '+', att, ireg, oldstr, sizeof (oldstr));
 
 		if (ucase) {
 			r_str_case (oldstr, true);
 		}
-		parse_localvar (p, newstr, sizeof (newstr), sparg->name, p->anal->reg->name[R_REG_NAME_SP], '+', ireg, att);
-		if (ucase) {
-			char *plus = strchr (newstr, '+');
-			if (plus) {
-				*plus = 0;
-				r_str_case (newstr, true);
-				*plus = '+';
-			} else {
-				r_str_case (newstr, true);
-			}
-		}
-		char *ptr = strstr(tstr, oldstr);
+		parse_localvar (p, newstr, sizeof (newstr), sparg->name, reg, sign, ireg, att);
+		char *ptr = strstr (tstr, oldstr);
 		if (ptr && (!att || *(ptr - 1) == ' ')) {
+			if (delta == 0) {
+				char *end = ptr + strlen (oldstr);
+				if (*end != ']' && *end != '\0') {
+					continue;
+				}
+			}
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);
 			break;
 		} else {
 			r_str_case (oldstr, false);
-			ptr = strstr(tstr, oldstr);
+			ptr = strstr (tstr, oldstr);
 			if (ptr && (!att || *(ptr - 1) == ' ')) {
 				tstr = r_str_replace (tstr, oldstr, newstr, 1);
 				break;
@@ -463,39 +471,50 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 	/* iterate over base pointer args/vars */
 	r_list_foreach (bpargs, bpargiter, bparg) {
 		char sign = '+';
-		if (bparg->delta < 0) {
-			sign = '-';
-			bparg->delta = -bparg->delta;
+		st64 delta = p->get_ptr_at
+			? p->get_ptr_at (f, bparg->delta, addr)
+			: ST64_MAX;
+		if (delta == ST64_MAX && bparg->field) {
+			delta = bparg->delta + f->bp_off;
+		} else if (delta == ST64_MAX) {
+			continue;
 		}
-		mk_reg_str (p->anal->reg->name[R_REG_NAME_BP], bparg->delta, sign=='+', att, ireg, oldstr, sizeof (oldstr));
+		if (delta < 0) {
+			sign = '-';
+			delta = -delta;
+		}
+		const char *reg = NULL;
+		if (p->get_reg_at) {
+			reg = p->get_reg_at (f, bparg->delta, addr);
+		}
+		if (!reg) {
+			reg = anal->reg->name[R_REG_NAME_BP];
+		}
+		mk_reg_str (reg, delta, sign == '+', att, ireg, oldstr, sizeof (oldstr));
 		if (ucase) {
 			r_str_case (oldstr, true);
 		}
-		parse_localvar (p, newstr, sizeof (newstr), bparg->name, p->anal->reg->name[R_REG_NAME_BP], sign, ireg, att);
-		if (ucase) {
-			char *plus = strchr (newstr, sign);
-			if (plus) {
-				*plus = 0;
-				r_str_case (newstr, true);
-				*plus = sign;
-			} else {
-				r_str_case (newstr, true);
-			}
-		}
+		parse_localvar (p, newstr, sizeof (newstr), bparg->name, reg, sign, ireg, att);
 		char *ptr = strstr (tstr, oldstr);
 		if (ptr && (!att || *(ptr - 1) == ' ')) {
+			if (delta == 0) {
+				char *end = ptr + strlen (oldstr);
+				if (*end != ']' && *end != '\0') {
+					continue;
+				}
+			}
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);
 			break;
 		} else {
 			r_str_case (oldstr, false);
-			ptr = strstr(tstr, oldstr);
+			ptr = strstr (tstr, oldstr);
 			if (ptr && (!att || *(ptr - 1) == ' ')) {
 				tstr = r_str_replace (tstr, oldstr, newstr, 1);
 				break;
 			}
 		}
 		// Try with no spaces
-		snprintf (oldstr, sizeof (oldstr)-1, "[%s%c0x%x]", p->anal->reg->name[R_REG_NAME_BP], sign, bparg->delta);
+		snprintf (oldstr, sizeof (oldstr) - 1, "[%s%c0x%x]", reg, sign, (int)delta);
 		if (strstr (tstr, oldstr) != NULL) {
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);
 			break;
@@ -503,8 +522,8 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 	}
 
 	char bp[32];
-	if (p->anal->reg->name[R_REG_NAME_BP]) {
-		strncpy (bp, p->anal->reg->name[R_REG_NAME_BP], sizeof (bp) - 1);
+	if (anal->reg->name[R_REG_NAME_BP]) {
+		strncpy (bp, anal->reg->name[R_REG_NAME_BP], sizeof (bp) - 1);
 		if (isupper ((ut8)*str)) {
 			r_str_case (bp, true);
 		}
@@ -531,10 +550,10 @@ RParsePlugin r_parse_plugin_x86_pseudo = {
 	.name = "x86.pseudo",
 	.desc = "X86 pseudo syntax",
 	.parse = &parse,
-	.varsub = &varsub,
+	.subvar = &subvar,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
 	.data = &r_parse_plugin_x86_pseudo,

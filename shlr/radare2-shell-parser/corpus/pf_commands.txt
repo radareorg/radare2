@@ -1,0 +1,232 @@
+==========================
+Show data with format_name
+==========================
+
+pf fmt_name
+pf* fmt_name
+pfc fmt_name
+pfj fmt_name
+pfq fmt_name
+pfs fmt_name
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (pf_args (pf_arg (pf_arg_identifier))))
+  (arged_command (cmd_identifier)
+    (pf_args (pf_arg (pf_arg_identifier))))
+  (arged_command (cmd_identifier)
+    (pf_args (pf_arg (pf_arg_identifier))))
+  (arged_command (cmd_identifier)
+    (pf_args (pf_arg (pf_arg_identifier))))
+  (arged_command (cmd_identifier)
+    (pf_args (pf_arg (pf_arg_identifier))))
+  (arged_command (cmd_identifier)
+    (pf_args (pf_arg (pf_arg_identifier)))))
+
+
+================================
+Show data with format definition (simple)
+================================
+
+pf 3xi foo bar
+pf* 3xi foo bar
+pfc 3xi foo bar
+pfj 3xi foo bar
+pfq 3xi foo bar
+pfs 3xi foo bar
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (pf_args
+      (pf_arg (pf_arg_identifier))
+      (pf_arg (pf_arg_identifier))
+      (pf_arg (pf_arg_identifier))))
+  (arged_command (cmd_identifier)
+    (pf_args
+      (pf_arg (pf_arg_identifier))
+      (pf_arg (pf_arg_identifier))
+      (pf_arg (pf_arg_identifier))))
+  (arged_command (cmd_identifier)
+    (pf_args
+      (pf_arg (pf_arg_identifier))
+      (pf_arg (pf_arg_identifier))
+      (pf_arg (pf_arg_identifier))))
+  (arged_command (cmd_identifier)
+    (pf_args
+      (pf_arg (pf_arg_identifier))
+      (pf_arg (pf_arg_identifier))
+      (pf_arg (pf_arg_identifier))))
+  (arged_command (cmd_identifier)
+    (pf_args
+      (pf_arg (pf_arg_identifier))
+      (pf_arg (pf_arg_identifier))
+      (pf_arg (pf_arg_identifier))))
+  (arged_command (cmd_identifier)
+    (pf_args
+      (pf_arg (pf_arg_identifier))
+      (pf_arg (pf_arg_identifier))
+      (pf_arg (pf_arg_identifier)))))
+
+
+===============
+pf. format name
+===============
+
+pf.fmt_name
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (pf_dot_cmd_args (pf_args (pf_arg (pf_arg_identifier))))))
+
+
+=================
+pf. format fields
+=================
+
+pf.fmt_name.field_name
+pf.fmt_name.field_name=33
+pf.fmt_name.field_name[3]
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (pf_dot_cmd_args
+      (pf_args
+	(pf_arg (pf_arg_identifier))
+	(pf_arg (pf_arg_identifier)))))
+  (arged_command (cmd_identifier)
+    (pf_dot_cmd_args
+      (pf_args
+	(pf_arg (pf_arg_identifier))
+	(pf_arg (pf_arg_identifier)))
+      (pf_arg_identifier)
+      (pf_args (pf_arg (pf_arg_identifier)))))
+  (arged_command (cmd_identifier)
+    (pf_dot_cmd_args
+      (pf_args
+	(pf_arg (pf_arg_identifier))
+	(pf_arg (pf_arg_identifier))))))
+
+
+=================
+pfv format fields
+=================
+
+pfv.fmt_name
+pfv.fmt_name.field_name
+pfv.fmt_name.field_name=0xdeadbeef
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (pf_dot_cmd_args
+      (pf_args
+	(pf_arg (pf_arg_identifier)))))
+  (arged_command (cmd_identifier)
+    (pf_dot_cmd_args
+      (pf_args
+	(pf_arg (pf_arg_identifier))
+	(pf_arg (pf_arg_identifier)))))
+  (arged_command (cmd_identifier)
+    (pf_dot_cmd_args
+      (pf_args
+	(pf_arg (pf_arg_identifier))
+	(pf_arg (pf_arg_identifier)))
+      (pf_arg_identifier)
+      (pf_args (pf_arg (pf_arg_identifier))))))
+
+======================
+pf.fmt_name definition
+======================
+
+pf.obj xxdz prev next size name
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (pf_new_args
+      (pf_arg (pf_arg_identifier))
+      (pf_args
+	(pf_arg (pf_arg_identifier))
+	(pf_arg (pf_arg_identifier))
+	(pf_arg (pf_arg_identifier))
+	(pf_arg (pf_arg_identifier))
+	(pf_arg (pf_arg_identifier))))))
+
+
+=======
+List pf
+=======
+
+pf.
+
+---
+
+(commands
+  (arged_command (cmd_identifier)))
+
+=================
+Pf load from file
+=================
+
+pfo /tmp/myfile
+pfo
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)))
+
+
+==========================
+pf format with parentheses
+==========================
+
+pf B (BitFldType)arg_name
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (pf_args
+      (pf_arg (pf_arg_identifier))
+      (pf_arg
+        (pf_concatenation
+	  (pf_arg_identifier)
+	  (pf_args (pf_arg (pf_arg_identifier)))
+	  (pf_arg_identifier)
+	  (pf_arg_identifier))))))
+
+
+==========
+Cf example
+==========
+
+Cf 64 [2]zwww e_magic e_cblp e_cp e_crlc e_cparhdr
+Cf-
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args
+      (arg (arg_identifier))
+      (pf_args
+	(pf_arg (pf_arg_identifier))
+	(pf_arg (pf_arg_identifier))
+	(pf_arg (pf_arg_identifier))
+	(pf_arg (pf_arg_identifier))
+	(pf_arg (pf_arg_identifier))
+	(pf_arg (pf_arg_identifier)))))
+  (arged_command (cmd_identifier)))

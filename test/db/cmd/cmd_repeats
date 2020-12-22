@@ -1,0 +1,93 @@
+NAME=repeat-help
+FILE=-
+CMDS=<<EOF
+@@?~?
+@@@?~?
+EOF
+EXPECT=<<EOF
+16
+18
+EOF
+RUN
+
+NAME=repeat registers
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+?e @@@r~xmm0
+EOF
+EXPECT=<<EOF
+xmm0h: 
+xmm0l: 
+EOF
+RUN
+
+NAME=repeat comments
+FILE=-
+CMDS=<<EOF
+CC aero@0x42
+CC pause@0x43
+CC plus@0x1337
+s@@@C:p*
+EOF
+EXPECT=<<EOF
+0x43
+0x1337
+EOF
+RUN
+
+NAME=3p8
+FILE=-
+CMDS=<<EOF
+3p8 1
+?e hi
+EOF
+EXPECT=<<EOF
+00
+00
+00
+hi
+EOF
+RUN
+
+NAME=3p8;?e hi
+FILE=-
+CMDS=3p8 1;?e hi
+EXPECT=<<EOF
+00
+00
+00
+hi
+EOF
+RUN
+
+NAME=2p8 1;?e hi
+FILE=-
+CMDS=2p8 1;?e hi
+EXPECT=<<EOF
+00
+00
+hi
+EOF
+RUN
+
+NAME=3p8 1 && 2p8 4
+FILE=-
+CMDS=<<EOF
+b 4
+wx 0000ffff
+3p8 1 ; 2p8 2
+3p8 1
+EOF
+EXPECT=<<EOF
+00
+00
+00
+0000
+0000
+00
+00
+00
+EOF
+RUN

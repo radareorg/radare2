@@ -1,0 +1,7 @@
+NAME=crash aae oob
+FILE=bins/elf/arm32esilcrash
+TIMEOUT=2040
+CMDS=aae
+EXPECT=<<EOF
+EOF
+RUN

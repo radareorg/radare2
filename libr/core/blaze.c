@@ -30,6 +30,46 @@ typedef struct fcn {
 	ut64 ends;
 } fcn_t;
 
+static bool __is_data_block_cb(RAnalBlock *block, void *user) {
+	bool *block_exists = user;
+	*block_exists = true;
+	return false;
+}
+
+static int __isdata(RCore *core, ut64 addr) {
+	if (!r_io_is_valid_offset (core->io, addr, false)) {
+		// eprintf ("Warning: Invalid memory address at 0x%08"PFMT64x"\n", addr);
+		return 4;
+	}
+
+	bool block_exists = false;
+	// This will just set block_exists = true if there is any basic block at this addr
+	r_anal_blocks_foreach_in (core->anal, addr, __is_data_block_cb, &block_exists);
+	if (block_exists) {
+		return 1;
+	}
+
+	RPVector *list = r_meta_get_all_in (core->anal, addr, R_META_TYPE_ANY);
+	void **it;
+	int result = 0;
+	r_pvector_foreach (list, it) {
+		RIntervalNode *node = *it;
+		RAnalMetaItem *meta = node->data;
+		switch (meta->type) {
+		case R_META_TYPE_DATA:
+		case R_META_TYPE_STRING:
+		case R_META_TYPE_FORMAT:
+			result = node->end - addr + 1;
+			goto exit;
+		default:
+			break;
+		}
+	}
+exit:
+	r_pvector_free (list);
+	return result;
+}
+
 static bool fcnAddBB (fcn_t *fcn, bb_t* block) {
 	if (!fcn) {
 		eprintf ("No function given to add a basic block\n");
@@ -86,7 +126,7 @@ static void initBB (bb_t *bb, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_typ
 	}
 }
 
-static bool addBB (RList *block_list, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_type_t type, int score) {
+static bool addBB(RList *block_list, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_type_t type, int score) {
 	bb_t *bb = (bb_t*) R_NEW0 (bb_t);
 	if (!bb) {
 		eprintf ("Failed to calloc mem for new basic block!\n");
@@ -180,7 +220,7 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 		pfx = "fcn";
 	}
 
-	RAnalFunction *f = r_anal_fcn_new ();
+	RAnalFunction *f = r_anal_function_new (core->anal);
 	if (!f) {
 		eprintf ("Failed to create new function\n");
 		return;
@@ -189,17 +229,18 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 	f->name = name? strdup (name): r_str_newf ("%s.%" PFMT64x, pfx, fcn->addr);
 	f->addr = fcn->addr;
 	f->bits = core->anal->bits;
-	f->cc = r_str_const (r_anal_cc_default (core->anal));
-	r_anal_fcn_set_size (NULL, f, fcn->size);
+	f->cc = r_str_constpool_get (&core->anal->constpool, r_anal_cc_default (core->anal));
 	f->type = R_ANAL_FCN_TYPE_FCN;
 
 	r_list_foreach (fcn->bbs, fcn_iter, cur) {
-		r_anal_fcn_add_bb (core->anal, f, cur->start, (cur->end - cur->start), cur->jump, cur->fail, 0, NULL);
+		if (__isdata (core, cur->start)) {
+			continue;
+		}
+		r_anal_fcn_add_bb (core->anal, f, cur->start, (cur->end - cur->start), cur->jump, cur->fail, NULL);
 	}
-	if (!r_anal_fcn_insert (core->anal, f)) {
+	if (!r_anal_add_function (core->anal, f)) {
 		// eprintf ("Failed to insert function\n");
-		r_anal_fcn_free (f);
-		//TODO free not added function
+		r_anal_function_free (f);
 		return;
 	}
 }
@@ -212,11 +253,9 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 	}
 
 	Sdb *sdb = NULL;
-	ut64 cur = 0;
-	ut64 start = core->offset;
+	const ut64 start = core->offset;
 	ut64 size = input[0] ? r_num_math (core->num, input + 1) : core->blocksize;
 	ut64 b_start = start;
-	RAnalOp *op;
 	RListIter *iter;
 	int block_score = 0;
 	RList *block_list;
@@ -234,7 +273,8 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		eprintf ("Analyzing [0x%08"PFMT64x"-0x%08"PFMT64x"]\n", start, start + size);
 		eprintf ("Creating basic blocks\b");
 	}
-	while (cur < size) {
+	ut64 cur = 0, base = 0;
+	while (cur >= base && cur < size) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
@@ -242,7 +282,18 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		if (block_score < invalid_instruction_barrier) {
 			break;
 		}
-		op = r_core_anal_op (core, start + cur, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
+		const ut64 dst = start + cur;
+		if (dst < start) {
+			// fix underflow issue
+			break;
+		}
+		base = cur;
+		int dsize = __isdata (core, dst);
+		if (dsize > 0) {
+			cur += dsize;
+			continue;
+		}
+		RAnalOp *const op = r_core_anal_op (core, dst, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
 
 		if (!op || !op->mnemonic) {
 			block_score -= 10;
@@ -251,48 +302,48 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		}
 
 		if (op->mnemonic[0] == '?') {
-			eprintf ("? Bad op at: 0x%08"PFMT64x"\n", cur + start);
-			eprintf ("Cannot analyze opcode at 0x%"PFMT64x"\n", start + cur);
+			eprintf ("? Bad op at: 0x%08"PFMT64x"\n", dst);
+			eprintf ("Cannot analyze opcode at 0x%"PFMT64x"\n", dst);
 			block_score -= 10;
 			cur++;
 			continue;
 		}
 		switch (op->type) {
 		case R_ANAL_OP_TYPE_NOP:
-				if (nopskip && b_start == start + cur) {
-					b_start = start + cur + op->size;
-				}
+			if (nopskip && b_start == dst) {
+				b_start = dst + op->size;
+			}
 			break;
 		case R_ANAL_OP_TYPE_CALL:
 			if (r_anal_noreturn_at (core->anal, op->jump)) {
-				addBB (block_list, b_start, start + cur + op->size, UT64_MAX, UT64_MAX, END, block_score);
-				b_start = start + cur + op->size;
+				addBB (block_list, b_start, dst + op->size, UT64_MAX, UT64_MAX, END, block_score);
+				b_start = dst + op->size;
 				block_score = 0;
 			} else {
 				addBB (block_list, op->jump, UT64_MAX, UT64_MAX, UT64_MAX, CALL, block_score);
 			}
 			break;
 		case R_ANAL_OP_TYPE_JMP:
-			addBB (block_list, b_start, start + cur + op->size, op->jump, UT64_MAX, END, block_score);
-			b_start = start + cur + op->size;
+			addBB (block_list, b_start, dst + op->size, op->jump, UT64_MAX, END, block_score);
+			b_start = dst + op->size;
 			block_score = 0;
 			break;
 		case R_ANAL_OP_TYPE_TRAP:
-			// we dont want to add trap stuff
-			if (b_start < start + cur) {
-				addBB (block_list, b_start, start + cur, UT64_MAX, UT64_MAX, NORMAL, block_score);
+			// we don't want to add trap stuff
+			if (b_start < dst) {
+				addBB (block_list, b_start, dst, UT64_MAX, UT64_MAX, NORMAL, block_score);
 			}
-			b_start = start + cur + op->size;
+			b_start = dst + op->size;
 			block_score = 0;
 			break;
 		case R_ANAL_OP_TYPE_RET:
-			addBB (block_list, b_start, start + cur + op->size, UT64_MAX, UT64_MAX, END, block_score);
-			b_start = start + cur + op->size;
+			addBB (block_list, b_start, dst + op->size, UT64_MAX, UT64_MAX, END, block_score);
+			b_start = dst + op->size;
 			block_score = 0;
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
-			addBB (block_list, b_start, start + cur + op->size, op->jump, start + cur + op->size, NORMAL, block_score);
-			b_start = start + cur + op->size;
+			addBB (block_list, b_start, dst + op->size, op->jump, dst + op->size, NORMAL, block_score);
+			b_start = dst + op->size;
 			block_score = 0;
 			break;
 		case R_ANAL_OP_TYPE_UNK:
@@ -304,7 +355,6 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		}
 		cur += op->size;
 		r_anal_op_free (op);
-		op = NULL;
 	}
 
 	if (debug) {
@@ -524,7 +574,7 @@ R_API bool core_anal_bbs_range (RCore *core, const char* input) {
 				}
 
 				bool bFound = false;
-				// check if offset dont have into block_list, to end branch analisys
+				// check if offset don't have into block_list, to end branch analisys
 				r_list_foreach (block_list, iter, block) {
 					if ( (block->type == END || block->type == NORMAL) && b_start + cur == block->start ) {
 						bFound = true;
@@ -589,7 +639,7 @@ R_API bool core_anal_bbs_range (RCore *core, const char* input) {
 					op = NULL;
 				}
 				else {
-					// we have this offset into previous analized block, exit from this path flow.
+					// we have this offset into previous analyzed block, exit from this path flow.
 					break;
 				}
 			}
@@ -681,9 +731,9 @@ R_API bool core_anal_bbs_range (RCore *core, const char* input) {
 		r_list_append (result, block);
 	}
 
-	// finally add bb to fuction
+	// finally add bb to function
 	// we simply assume that non reached blocks
-	// dont are part of the created function
+	// don't are part of the created function
 	if (debug) {
 		eprintf ("Trying to create functions\n");
 	}
@@ -746,9 +796,9 @@ R_API bool core_anal_bbs_range (RCore *core, const char* input) {
 
 			// function creation complete
 			if (current_function) {
-				// check for supply fuction address match with current block
+				// check for supply function address match with current block
 				if (current_function->addr == start) {
-					// set supply fuction size
+					// set supply function size
 					current_function->size = size;
 					if (checkFunction (current_function)) {
 						if (input[0] == '*') {

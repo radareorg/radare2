@@ -1,5 +1,5 @@
 r_fs_sources = [
-  'file.c',
+  'fs_file.c',
   'fs.c',
   'shell.c',
   'p/fs_cpio.c',
@@ -35,6 +35,7 @@ r_fs = library('r_fs', r_fs_sources,
   ],
   install: true,
   implicit_include_directories: false,
+  install_rpath: rpath_lib,
   soversion: r2_libversion
 )
 
@@ -46,6 +47,7 @@ pkgconfig_mod.generate(r_fs,
   version: r2_version,
   name: 'r_fs',
   filebase: 'r_fs',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util'
   ],

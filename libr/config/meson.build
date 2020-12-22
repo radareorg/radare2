@@ -7,11 +7,11 @@ r_config_sources = [
 r_config = library('r_config', r_config_sources,
   include_directories: [platform_inc],
   dependencies: [
-    r_util_dep,
-    sdb_dep
+    r_util_dep
   ],
   install: true,
   implicit_include_directories: false,
+  install_rpath: rpath_lib,
   soversion: r2_libversion
 )
 
@@ -23,6 +23,7 @@ pkgconfig_mod.generate(r_config,
   version: r2_version,
   name: 'r_config',
   filebase: 'r_config',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util'
   ],

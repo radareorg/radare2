@@ -1,0 +1,138 @@
+NAME=anal classes
+FILE=bins/pe/cpp_sample.exe
+CMDS=<<EOF
+aar
+avrr
+acll
+EOF
+EXPECT=<<EOF
+Album
+  (vtable at 0x140009d80)
+  virtual_0 @ 0x1400011f4 (vtable + 0x0)
+  virtual_8 @ 0x140001267 (vtable + 0x8)
+InAbsentia: Album
+  (vtable at 0x140009da0)
+  virtual_0 @ 0x1400010a5 (vtable + 0x0)
+  virtual_8 @ 0x14000102d (vtable + 0x8)
+type_info
+  (vtable at 0x140009dc0)
+  virtual_0 @ 0x1400011ea (vtable + 0x0)
+EOF
+RUN
+
+NAME=anal classes armv7
+FILE=bins/mach0/TestRTTI-armv7
+CMDS=<<EOF
+avrr
+acl
+acll~\@
+avra~0x0000c1c8:0
+avra~vmi:0
+?e `avraj~{[0]}`~{:
+EOF
+EXPECT=<<EOF
+A
+B: A
+C: A
+D: B, C
+  virtual_0 @ 0xa235 (vtable + 0x0)
+  virtual_4 @ 0xa24f (vtable + 0x4)
+  virtual_8 @ 0xa269 (vtable + 0x8)
+  virtual_0 @ 0xa29d (vtable + 0x0)
+  virtual_4 @ 0xa24f (vtable + 0x4)
+  virtual_8 @ 0xa2cb (vtable + 0x8)
+  virtual_0 @ 0xa235 (vtable + 0x0)
+  virtual_4 @ 0xa2f9 (vtable + 0x4)
+  virtual_8 @ 0xa327 (vtable + 0x8)
+  virtual_0 @ 0xa29d (vtable + 0x0)
+  virtual_4 @ 0xa2f9 (vtable + 0x4)
+  virtual_8 @ 0xa363 (vtable + 0x8)
+Type Info at 0x0000c1c8:
+  Type Info type: __vmi_class_type_info
+type: __class_type_info
+found_at: 49228
+class_vtable: 49216
+ref_to_type_class: 8
+ref_to_type_name: 49137
+name: A
+name_unique: true
+EOF
+RUN
+
+NAME=anal classes arm64
+FILE=bins/mach0/TestRTTI-arm64
+CMDS=<<EOF
+avrr
+acl
+acll~\@
+avra~0x100008378:0
+avra~vmi:0
+?e `avraj~{[0]}`~{:
+EOF
+EXPECT=<<EOF
+A
+B: A
+C: A
+D: B, C
+  virtual_0 @ 0x100005f1c (vtable + 0x0)
+  virtual_8 @ 0x100005f44 (vtable + 0x8)
+  virtual_16 @ 0x100005f6c (vtable + 0x10)
+  virtual_0 @ 0x100005fbc (vtable + 0x0)
+  virtual_8 @ 0x100005f44 (vtable + 0x8)
+  virtual_16 @ 0x100006008 (vtable + 0x10)
+  virtual_0 @ 0x100005f1c (vtable + 0x0)
+  virtual_8 @ 0x100006054 (vtable + 0x8)
+  virtual_16 @ 0x1000060a0 (vtable + 0x10)
+  virtual_0 @ 0x100005fbc (vtable + 0x0)
+  virtual_8 @ 0x100006054 (vtable + 0x8)
+  virtual_16 @ 0x100006108 (vtable + 0x10)
+Type Info at 0x100008378:
+  Type Info type: __vmi_class_type_info
+type: __class_type_info
+found_at: 4295000208
+class_vtable: 4295000184
+ref_to_type_class: 16
+ref_to_type_name: 4294999928
+name: A
+name_unique: true
+EOF
+RUN
+
+NAME=anal classes arm64e
+FILE=bins/mach0/TestRTTI-arm64e
+CMDS=<<EOF
+avrr
+acl
+acll~\@
+avra~0x100008370:0
+avra~vmi:0
+?e `avraj~{[0]}`~{:
+EOF
+EXPECT=<<EOF
+A
+B: A
+C: A
+D: B, C
+  virtual_0 @ 0x100005f50 (vtable + 0x0)
+  virtual_8 @ 0x100005f7c (vtable + 0x8)
+  virtual_16 @ 0x100005fa8 (vtable + 0x10)
+  virtual_0 @ 0x100006000 (vtable + 0x0)
+  virtual_8 @ 0x100005f7c (vtable + 0x8)
+  virtual_16 @ 0x100006050 (vtable + 0x10)
+  virtual_0 @ 0x100005f50 (vtable + 0x0)
+  virtual_8 @ 0x1000060a0 (vtable + 0x8)
+  virtual_16 @ 0x1000060f0 (vtable + 0x10)
+  virtual_0 @ 0x100006000 (vtable + 0x0)
+  virtual_8 @ 0x1000060a0 (vtable + 0x8)
+  virtual_16 @ 0x10000615c (vtable + 0x10)
+Type Info at 0x100008370:
+  Type Info type: __vmi_class_type_info
+type: __class_type_info
+found_at: 4295000200
+class_vtable: 4295000176
+ref_to_type_class: 13838435755002691596
+ref_to_type_name: 4294999928
+name: A
+name_unique: true
+EOF
+RUN

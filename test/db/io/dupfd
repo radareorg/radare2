@@ -1,0 +1,63 @@
+NAME=dupfd bug
+FILE=-
+CMDS=<<EOF
+e file.nowarn=true
+e file.loadmethod=append
+e scr.null=true
+10o -
+e scr.null=false
+o~?
+EOF
+EXPECT=<<EOF
+11
+EOF
+RUN
+
+NAME=dupfd hard
+FILE=-
+CMDS=<<EOF
+e file.loadmethod=append
+e file.nowarn=true
+e scr.null=true
+1000o -
+e scr.null=false
+o~?
+EOF
+EXPECT=<<EOF
+1001
+EOF
+RUN
+
+NAME=dupfd hard
+FILE=-
+CMDS=<<EOF
+op
+o -
+op
+opn
+op
+opn
+op
+opr
+op
+opr
+op
+opp
+op
+opp
+EOF
+EXPECT_ERR=<<EOF
+Cannot find file
+Cannot find file
+Cannot find file
+EOF
+EXPECT=<<EOF
+3
+4
+4
+4
+3
+4
+3
+EOF
+RUN

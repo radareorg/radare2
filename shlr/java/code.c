@@ -9,7 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <r_anal_ex.h>
+#include "ops.h"
 #include "code.h"
 #include "class.h"
 
@@ -22,11 +22,11 @@
 #define R_API
 #endif
 
-static void init_switch_op ();
-static int enter_switch_op (ut64 addr, const ut8 * bytes, int len);
-static int update_switch_op (ut64 addr, const ut8 * bytes);
-static int update_bytes_consumed (int sz);
-static int handle_switch_op (ut64 addr, const ut8 * bytes, char *output, int outlen);
+static void init_switch_op(void);
+static int enter_switch_op(ut64 addr, const ut8 * bytes, int len);
+static int update_switch_op(ut64 addr, const ut8 * bytes);
+static int update_bytes_consumed(int sz);
+static int handle_switch_op(ut64 addr, const ut8 * bytes, char *output, int outlen);
 
 static ut8 IN_SWITCH_OP = 0;
 typedef struct current_table_switch_t {
@@ -41,7 +41,7 @@ static CurrentTableSwitch SWITCH_OP;
 static ut64 BYTES_CONSUMED = 0LL;
 //static RBinJavaObj *BIN_OBJ = NULL;
 
-static void init_switch_op () {
+static void init_switch_op (void) {
 	memset (&SWITCH_OP, 0, sizeof (SWITCH_OP));
 }
 
@@ -69,10 +69,10 @@ static int enter_switch_op (ut64 addr, const ut8* bytes, int len) {
 }
 
 static bool isRelative (ut32 type) {
-	if (type & R_ANAL_EX_CODEOP_CJMP) {
+	if (type & R_ANAL_JAVA_CODEOP_CJMP) {
 		return true;
 	}
-	if (type & R_ANAL_EX_CODEOP_JMP) {
+	if (type & R_ANAL_JAVA_CODEOP_JMP) {
 		return true;
 	}
 	return false;
@@ -256,7 +256,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 	return update_bytes_consumed (JAVA_OPS[idx].size);
 }
 
-R_API void r_java_new_method () {
+R_API void r_java_new_method (void) {
 	IFDBG eprintf ("Reseting the bytes consumed, they were: 0x%04"PFMT64x".\n", BYTES_CONSUMED);
 	init_switch_op ();
 	IN_SWITCH_OP = 0;

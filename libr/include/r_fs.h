@@ -6,6 +6,7 @@
 #include <r_bind.h> // RCoreBind
 #include <r_io.h> // RIOBind
 #include <r_util.h>
+#include <r_cons.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,6 +21,7 @@ struct r_fs_t;
 typedef struct r_fs_t {
 	RIOBind iob;
 	RCoreBind cob;
+	RConsBind csb;
 	RList /*<RFSPlugin>*/ *plugins;
 	RList /*<RFSRoot>*/ *roots;
 	int view;
@@ -49,6 +51,7 @@ typedef struct r_fs_root_t {
 	ut64 delta;
 	struct r_fs_plugin_t *p;
 	void *ptr;
+	// TODO: deprecate
 	RIOBind iob;
 	RCoreBind cob;
 } RFSRoot;
@@ -58,7 +61,9 @@ typedef struct r_fs_plugin_t {
 	const char *desc;
 	const char *license;
 	RFSFile* (*slurp)(RFSRoot *root, const char *path);
-	RFSFile* (*open)(RFSRoot *root, const char *path);
+	RFSFile* (*open)(RFSRoot *root, const char *path, bool create);
+	bool (*unlink)(RFSRoot *root, const char *path);
+	bool (*write)(RFSFile *fs, ut64 addr, const ut8 *data, int len);
 	bool (*read)(RFSFile *fs, ut64 addr, int len);
 	void (*close)(RFSFile *fs);
 	RList *(*dir)(RFSRoot *root, const char *path, int view);
@@ -115,9 +120,10 @@ R_API void r_fs_del(RFS *fs, RFSPlugin *p);
 R_API RFSRoot *r_fs_mount(RFS* fs, const char *fstype, const char *path, ut64 delta);
 R_API bool r_fs_umount(RFS* fs, const char *path);
 R_API RList *r_fs_root(RFS *fs, const char *path);
-R_API RFSFile *r_fs_open(RFS* fs, const char *path);
+R_API RFSFile *r_fs_open(RFS* fs, const char *path, bool create);
 R_API void r_fs_close(RFS* fs, RFSFile *file);
 R_API int r_fs_read(RFS* fs, RFSFile *file, ut64 addr, int len);
+R_API int r_fs_write(RFS* fs, RFSFile* file, ut64 addr, const ut8 *data, int len);
 R_API RFSFile *r_fs_slurp(RFS* fs, const char *path);
 R_API RList *r_fs_dir(RFS* fs, const char *path);
 R_API int r_fs_dir_dump(RFS* fs, const char *path, const char *name);
@@ -127,11 +133,12 @@ R_API RList *r_fs_partitions(RFS* fs, const char *ptype, ut64 delta);
 R_API char *r_fs_name(RFS *fs, ut64 offset);
 R_API int r_fs_prompt(RFS *fs, const char *root);
 R_API bool r_fs_check(RFS *fs, const char *p);
-R_API int r_fs_shell_prompt(RFSShell *shell, RFS *fs, const char *root); 
+R_API int r_fs_shell_prompt(RFSShell *shell, RFS *fs, const char *root);
 
 /* file.c */
 R_API RFSFile *r_fs_file_new(RFSRoot *root, const char *path);
 R_API void r_fs_file_free(RFSFile *file);
+R_API char* r_fs_file_copy_abs_path(RFSFile* file);
 R_API RFSRoot *r_fs_root_new(const char *path, ut64 delta);
 R_API void r_fs_root_free(RFSRoot *root);
 R_API RFSPartition *r_fs_partition_new(int num, ut64 start, ut64 length);

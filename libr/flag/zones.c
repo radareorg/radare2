@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2018 - pancake */
+/* radare - LGPL - Copyright 2016-2020 - pancake */
 
 #include <r_flag.h>
 #include <r_util.h>
@@ -110,7 +110,7 @@ typedef struct r_flag_zone_context_t {
 	const char **next;
 } RFlagZoneContext;
 
-static int cb(void *user, const char *name, const char *from_to) {
+static bool cb(void *user, const char *name, const char *from_to) {
 	RFlagZoneContext *zc = (RFlagZoneContext*)user;
 	RFlagZoneItem zi = { 0, 0, name };
 	sdb_fmt_tobin (from_to, "qq", &zi);
@@ -158,7 +158,7 @@ static int cb(void *user, const char *name, const char *from_to) {
 			}
 		}
 	}
-	return 1;
+	return true;
 }
 
 R_API bool r_flag_zone_around(RFlag *f, ut64 addr, const char **prev, const char **next) {
@@ -168,9 +168,9 @@ R_API bool r_flag_zone_around(RFlag *f, ut64 addr, const char **prev, const char
 	return true;
 }
 
-static int cb_list(void *user, const char *name, const char *from_to) {
+static bool cb_list(void *user, const char *name, const char *from_to) {
 	eprintf ("%s%s  %s\n", name, r_str_pad (' ', 10 - strlen (name)), from_to);
-	return 1;
+	return true;
 }
 
 R_API bool r_flag_zone_list(RFlag *f, int mode) {
@@ -262,7 +262,7 @@ R_API bool r_flag_zone_list(RFlag *f, int mode) {
 	r_list_foreach (DB, iter, zi) {
 		if (mode == '*') {
 			f->cb_printf ("fz %s @ 0x08%"PFMT64x"\n", zi->name, zi->from);
-			f->cb_printf ("f %s %d 0x08%"PFMT64x"\n", zi->name,
+			f->cb_printf ("f %s %"PFMT64d" 0x08%"PFMT64x"\n", zi->name,
 				zi->to - zi->from, zi->from);
 		} else {
 			f->cb_printf ("0x08%"PFMT64x"  0x%08"PFMT64x"  %s\n",

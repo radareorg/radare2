@@ -20,30 +20,30 @@ typedef int (*cbOnIterMap)(RIO *io, int fd, ut64 addr, ut8 *buf, int len, RIOMap
 // If prefix_mode is true, returns the number of bytes of operated prefix; returns < 0 on error.
 // If prefix_mode is false, operates in non-stop mode and returns true iff all IO operations on overlapped maps are complete.
 static st64 on_map_skyline(RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg, cbOnIterMap op, bool prefix_mode) {
-	const RPVector *skyline = &io->map_skyline;
+	RVector *skyline = &io->map_skyline.v;
 	ut64 addr = vaddr;
 	size_t i;
 	bool ret = true, wrap = !prefix_mode && vaddr + len < vaddr;
-#define CMP(addr, part) ((addr) < r_itv_end (((RIOMapSkyline *)(part))->itv) - 1 ? -1 : \
-			(addr) > r_itv_end (((RIOMapSkyline *)(part))->itv) - 1 ? 1 : 0)
+#define CMP(addr, part) ((addr) < r_itv_end (((RSkylineItem *)(part))->itv) - 1 ? -1 : \
+			(addr) > r_itv_end (((RSkylineItem *)(part))->itv) - 1 ? 1 : 0)
 	// Let i be the first skyline part whose right endpoint > addr
 	if (!len) {
-		i = r_pvector_len (skyline);
+		i = r_vector_len (skyline);
 	} else {
-		r_pvector_lower_bound (skyline, addr, i, CMP);
-		if (i == r_pvector_len (skyline) && wrap) {
+		r_vector_lower_bound (skyline, addr, i, CMP);
+		if (i == r_vector_len (skyline) && wrap) {
 			wrap = false;
 			i = 0;
 			addr = 0;
 		}
 	}
 #undef CMP
-	while (i < r_pvector_len (skyline)) {
-		const RIOMapSkyline *part = r_pvector_at (skyline, i);
+	while (i < r_vector_len (skyline)) {
+		const RSkylineItem *part = r_vector_index_ptr (skyline, i);
 		// Right endpoint <= addr
 		if (r_itv_end (part->itv) - 1 < addr) {
 			i++;
-			if (wrap && i == r_pvector_len (skyline)) {
+			if (wrap && i == r_vector_len (skyline)) {
 				wrap = false;
 				i = 0;
 				addr = 0;
@@ -59,10 +59,14 @@ static st64 on_map_skyline(RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg
 		}
 		// Now left endpoint <= addr < right endpoint
 		ut64 len1 = R_MIN (vaddr + len - addr, r_itv_end (part->itv) - addr);
+		if (len1 < 1) {
+			break;
+		}
+		RIOMap *map = part->user;
 		// The map satisfies the permission requirement or p_cache is enabled
-		if (((part->map->perm & match_flg) == match_flg || io->p_cache)) {
-			st64 result = op (io, part->map->fd, part->map->delta + addr - part->map->itv.addr,
-					buf + (addr - vaddr), len1, part->map, NULL);
+		if (((map->perm & match_flg) == match_flg || io->p_cache)) {
+			st64 result = op (io, map->fd, map->delta + addr - r_io_map_begin(map),
+					buf + (addr - vaddr), len1, map, NULL);
 			if (prefix_mode) {
 				if (result < 0) {
 					return result;
@@ -95,7 +99,7 @@ static st64 on_map_skyline(RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg
 	return prefix_mode ? addr - vaddr : ret;
 }
 
-R_API RIO* r_io_new() {
+R_API RIO* r_io_new(void) {
 	return r_io_init (R_NEW0 (RIO));
 }
 
@@ -103,12 +107,12 @@ R_API RIO* r_io_init(RIO* io) {
 	r_return_val_if_fail (io, NULL);
 	io->addrbytes = 1;
 	r_io_desc_init (io);
-	r_pvector_init (&io->map_skyline, free);
-	r_pvector_init (&io->map_skyline_shadow, free);
+	r_skyline_init (&io->map_skyline);
 	r_io_map_init (io);
 	r_io_cache_init (io);
 	r_io_plugin_init (io);
 	r_io_undo_init (io);
+	io->event = r_event_new (io);
 	return io;
 }
 
@@ -122,12 +126,13 @@ R_API void r_io_free(RIO *io) {
 
 R_API RIODesc *r_io_open_buffer(RIO *io, RBuffer *b, int perm, int mode) {
 	ut64 bufSize = r_buf_size (b);
-	char *uri = r_str_newf ("malloc://%d", bufSize);
+	char *uri = r_str_newf ("malloc://%" PFMT64d, bufSize);
 	RIODesc *desc = r_io_open_nomap (io, uri, perm, mode);
 	if (desc) {
-		const ut8 *tmp = r_buf_buffer (b, &bufSize);
+		const ut8 *tmp = r_buf_data (b, &bufSize);
 		r_io_desc_write (desc, tmp, bufSize);
 	}
+	free (uri);
 	return desc;
 }
 
@@ -143,7 +148,7 @@ R_API RIODesc *r_io_open_nomap(RIO *io, const char *uri, int perm, int mode) {
 
 /* opens a file and maps it to 0x0 */
 R_API RIODesc* r_io_open(RIO* io, const char* uri, int perm, int mode) {
-	r_return_val_if_fail (io && io->maps, NULL);
+	r_return_val_if_fail (io, NULL);
 	RIODesc* desc = r_io_open_nomap (io, uri, perm, mode);
 	if (desc) {
 		r_io_map_new (io, desc->fd, desc->perm, 0LL, 0LL, r_io_desc_size (desc));
@@ -153,7 +158,7 @@ R_API RIODesc* r_io_open(RIO* io, const char* uri, int perm, int mode) {
 
 /* opens a file and maps it to an offset specified by the "at"-parameter */
 R_API RIODesc* r_io_open_at(RIO* io, const char* uri, int perm, int mode, ut64 at) {
-	r_return_val_if_fail (io && io->maps && uri, NULL);
+	r_return_val_if_fail (io && uri, NULL);
 
 	RIODesc* desc = r_io_open_nomap (io, uri, perm, mode);
 	if (!desc) {
@@ -163,7 +168,7 @@ R_API RIODesc* r_io_open_at(RIO* io, const char* uri, int perm, int mode, ut64 a
 	// second map
 	if (size && ((UT64_MAX - size + 1) < at)) {
 		// split map into 2 maps if only 1 big map results into interger overflow
-		io_map_new (io, desc->fd, desc->perm, UT64_MAX - at + 1, 0LL, size - (UT64_MAX - at) - 1, false);
+		io_map_new (io, desc->fd, desc->perm, UT64_MAX - at + 1, 0LL, size - (UT64_MAX - at) - 1);
 		// someone pls take a look at this confusing stuff
 		size = UT64_MAX - at + 1;
 	}
@@ -211,14 +216,15 @@ R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
 	}
 	//does this really work, or do we have to handler debuggers ugly
 	uri = old->referer? old->referer: old->uri;
-#if __WINDOWS__ //TODO: workaround, see https://github.com/radare/radare2/issues/8840
-	if (!r_io_desc_close (old)) {
+#if __WINDOWS__ //TODO: workaround, see https://github.com/radareorg/radare2/issues/8840
+	if (old->plugin->close && old->plugin->close (old)) {
 		return false; // TODO: this is an unrecoverable scenario
 	}
 	if (!(new = r_io_open_nomap (io, uri, perm, mode))) {
 		return false;
 	}
 	r_io_desc_exchange (io, old->fd, new->fd);
+	r_io_desc_del (io, old->fd);
 	return true;
 #else
 	if (!(new = r_io_open_nomap (io, uri, perm, mode))) {
@@ -400,7 +406,7 @@ R_API bool r_io_resize(RIO* io, ut64 newsize) {
 		ut64 fd_size = r_io_fd_size (io, io->desc->fd);
 		r_list_foreach (maps, iter, current_map) {
 			// we just resize map of the same size of its fd
-			if (current_map->itv.size == fd_size) {
+			if (r_io_map_size (current_map) == fd_size) {
 				r_io_map_resize (io, current_map->id, newsize);
 			}
 		}
@@ -479,7 +485,7 @@ R_API bool r_io_set_write_mask(RIO* io, const ut8* mask, int len) {
 R_API ut64 r_io_p2v(RIO *io, ut64 pa) {
 	RIOMap *map = r_io_map_get_paddr (io, pa);
 	if (map) {
-		return pa - map->delta + map->itv.addr;
+		return pa - map->delta + r_io_map_begin (map);
 	}
 	return UT64_MAX;
 }
@@ -487,8 +493,8 @@ R_API ut64 r_io_p2v(RIO *io, ut64 pa) {
 R_API ut64 r_io_v2p(RIO *io, ut64 va) {
 	RIOMap *map = r_io_map_get (io, va);
 	if (map) {
-		st64 delta = va - map->itv.addr;
-		return map->itv.addr + map->delta + delta;
+		st64 delta = va - r_io_map_begin (map);
+		return r_io_map_begin (map) + map->delta + delta;
 	}
 	return UT64_MAX;
 }
@@ -513,6 +519,7 @@ R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->fd_close = r_io_fd_close;
 	bnd->fd_seek = r_io_fd_seek;
 	bnd->fd_size = r_io_fd_size;
+	bnd->fd_resize = r_io_fd_resize;
 	bnd->fd_read = r_io_fd_read;
 	bnd->fd_write = r_io_fd_write;
 	bnd->fd_read_at = r_io_fd_read_at;
@@ -523,6 +530,7 @@ R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->fd_remap = r_io_map_remap_fd;
 	bnd->is_valid_offset = r_io_is_valid_offset;
 	bnd->map_get = r_io_map_get;
+	bnd->map_get_paddr = r_io_map_get_paddr;
 	bnd->addr_is_mapped = r_io_addr_is_mapped;
 	bnd->map_add = r_io_map_add;
 #if HAVE_PTRACE
@@ -532,7 +540,7 @@ R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 }
 
 /* moves bytes up (+) or down (-) within the specified range */
-R_API int r_io_shift(RIO* io, ut64 start, ut64 end, st64 move) {
+R_API bool r_io_shift(RIO* io, ut64 start, ut64 end, st64 move) {
 	ut8* buf;
 	ut64 chunksize = 0x10000;
 	ut64 saved_off = io->off;
@@ -659,11 +667,12 @@ R_API int r_io_fini(RIO* io) {
 	r_io_desc_fini (io);
 	r_io_map_fini (io);
 	ls_free (io->plugins);
-	r_list_free (io->cache);
+	r_io_cache_fini (io);
 	r_list_free (io->undo.w_list);
 	if (io->runprofile) {
 		R_FREE (io->runprofile);
 	}
+	r_event_free (io->event);
 #if R_IO_USE_PTRACE_WRAP
 	if (io->ptrace_wrap) {
 		ptrace_wrap_instance_stop (io->ptrace_wrap);

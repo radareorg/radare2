@@ -11,8 +11,8 @@ Doxyfile and generate HTML documentation into
 
 If you're contributing code or willing to update existing code, you can use the
 doxygen C-style comments to improve documentation and comments in code.
-See the [Doxygen Manual](https://www.stack.nl/~dimitri/doxygen/manual/index.html)
-for more info. Example usage can be found [here](https://www.stack.nl/~dimitri/doxygen/manual/docblocks.html)
+See the [Doxygen Manual](http://www.doxygen.nl/manual/index.html)
+for more info. Example usage can be found [here](http://www.doxygen.nl/manual/docblocks.html)
 ```c
 /**
  * \brief Find the min and max addresses in an RList of maps.
@@ -126,7 +126,7 @@ a = (b << 3) * 5;
 
 * Multiline ternary operator conditionals must be indented a-la JS way:
 
-```c
+```diff
 - ret = over ?
 -         r_debug_step_over (dbg, 1) :
 -         r_debug_step (dbg, 1);
@@ -137,7 +137,7 @@ a = (b << 3) * 5;
 
 * Split long conditional expressions into small `static inline` functions to make them more readable:
 
-```c
+```diff
 +static inline bool inRange(RBreakpointItem *b, ut64 addr) {
 +       return (addr >= b->addr && addr < (b->addr + b->size));
 +}
@@ -165,19 +165,19 @@ a = (b << 3) * 5;
 The structure of the C files in r2 must be like this:
 
 ```c
-/* Copyright ... */        ## copyright
-#include <r_core.h>        ## includes
-static int globals         ## const, define, global variables
-static void helper() {}    ## static functions
-R_IPI void internal() {}   ## internal apis (used only inside the library
-R_API void public() {}     ## public apis starting with constructor/destructor
+/* Copyright ... */           ## copyright
+#include <r_core.h>           ## includes
+static int globals            ## const, define, global variables
+static void helper(void) {}   ## static functions
+R_IPI void internal(void) {}  ## internal apis (used only inside the library)
+R_API void public(void) {}    ## public apis starting with constructor/destructor
 
 ```
 
 
 * Why return int vs enum
 
-The reason why many places in r2land functions return int instead of an enum type is because enums cant be OR'ed; otherwise, it breaks the usage within a switch statement and swig can't handle that stuff.
+The reason why many places in r2land functions return int instead of an enum type is because enums can't be OR'ed; otherwise, it breaks the usage within a switch statement and swig can't handle that stuff.
 
 ```
 r_core_wrap.cxx:28612:60: error: assigning to 'RRegisterType' from incompatible type 'long'
@@ -192,6 +192,8 @@ r_core_wrap.cxx:32103:61: error: assigning to 'RDebugReasonType' from incompatib
 * Do not leave trailing whitespaces at the end of line
 
 * Do not use assert.h, use r_util/r_assert.h instead.
+
+* You can use `export R2_DEBUG_ASSERT=1` to set a breakpoint when hitting an assert.
 
 * Do not use C99 variable declaration
     - This way we reduce the number of local variables per function
@@ -229,14 +231,14 @@ r_core_wrap.cxx:32103:61: error: assigning to 'RDebugReasonType' from incompatib
 
 * Never ever use %lld or %llx. This is not portable. Always use the PFMT64x
   macros. Those are similar to the ones in GLIB.
-  
+
 ### Shell Scripts
 
 * Use `#!/bin/sh`
 
 * Do not use bashisms `[[`, `$'...'` etc.
 
-* Use our [shellcheck.sh](https://github.com/radare/radare2/blob/master/sys/shellcheck.sh) script to check for problems and for bashisms
+* Use our [shellcheck.sh](https://github.com/radareorg/radare2/blob/master/sys/shellcheck.sh) script to check for problems and for bashisms
 
 # Manage Endianness
 
@@ -248,8 +250,10 @@ a single byte.
 
 It can seem very easy to write the following code:
 
-  	ut8 opcode[4] = {0x10, 0x20, 0x30, 0x40};
-  	ut32 value = *(ut32*)opcode;
+```c
+ut8 opcode[4] = {0x10, 0x20, 0x30, 0x40};
+ut32 value = *(ut32*)opcode;
+```
 
 ... and then continue to use "value" in the code to represent the opcode.
 
@@ -267,12 +271,16 @@ value stored in "value" might be 0x40302010 instead of 0x10203040.
 Use bitshifts and OR instructions to interpret bytes in a known endian.
 Instead of casting streams of bytes to larger width integers, do the following:
 
+```c
 ut8 opcode[4] = {0x10, 0x20, 0x30, 0x40};
 ut32 value = opcode[0] | opcode[1] << 8 | opcode[2] << 16 | opcode[3] << 24;
+```
 
 or if you prefer the other endian:
 
+```c
 ut32 value = opcode[3] | opcode[2] << 8 | opcode[1] << 16 | opcode[0] << 24;
+```
 
 This is much better because you actually know which endian your bytes are stored in
 within the integer value, REGARDLESS of the host endian of the machine.
@@ -283,11 +291,13 @@ Radare2 now uses helper functions to interpret all byte streams in a known endia
 
 Please use these at all times, eg:
 
-  	val32 = r_read_be32(buffer)		// reads 4 bytes from a stream in BE
-  	val32 = r_read_le32(buffer)		// reads 4 bytes from a stream in LE
-  	val32 = r_read_ble32(buffer, isbig)	// reads 4 bytes from a stream:
-  						//   if isbig is true, reads in BE
-  						//   otherwise reads in LE
+```c
+val32 = r_read_be32(buffer)         // reads 4 bytes from a stream in BE
+val32 = r_read_le32(buffer)         // reads 4 bytes from a stream in LE
+val32 = r_read_ble32(buffer, isbig) // reads 4 bytes from a stream:
+                                    //   if isbig is true, reads in BE
+                                    //   otherwise reads in LE
+```
 
 There are a number of helper functions for 64, 32, 16, and 8 bit reads and writes.
 
@@ -329,6 +339,26 @@ You may use directory-local variables by putting
 
 into `.dir-locals.el`.
 
+## Packed structures
+
+Due to the various differences between platforms and compilers radare2
+has a special helper macro - `R_PACKED()`. Instead of non-portable
+`#pragma pack` or `__attribute__((packed))` it is advised to use this macro
+instead. To wrap the code inside of it you just need to write:
+```c
+R_PACKED (union mystruct {
+	int a;
+	char b;
+})
+```
+or in case of typedef:
+```c
+R_PACKED (typedef structmystruct {
+	int a;
+	char b;
+})
+```
+
 ## Modules
 
 The radare2 code base is modularized into different libraries that are
@@ -350,7 +380,7 @@ As mentioned in README.md, the API itself is maintained in a different
 repository. The API function definitions in C header files are derived
 from and documented in the radare2-bindings repository, found at:
 ```sh
-   git clone git://github.com/radare/radare2-bindings
+git clone git://github.com/radareorg/radare2-bindings
 ```
 
 Currently the process of updating the header files from changed API
@@ -382,9 +412,9 @@ linux-arm and others, but the procedure is like this:
 
 ## Source repository
 
-The source of radare2 can be found in the following github repository.
+The source of radare2 can be found in the following GitHub repository.
 ```sh
-   git clone git://github.com/radare/radare2
+git clone git://github.com/radareorg/radare2
 ```
 Other packages radare2 depends on, such as Capstone, are pulled from
 their git repository as required.
@@ -392,15 +422,15 @@ their git repository as required.
 To get an up-to-date copy of the repository, you should perform the
 following steps:
 ```sh
-   git pull
+git pull
 ```
 
 If you have conflicts in your local copy, it's because you have modified
 files which are conflicting with the incoming patchsets. To get a clean
 source directory, type the following command:
 ```sh
-   git clean -xdf
-   git reset --hard
+git clean -xdf
+git reset --hard
 ```
 
 ## Compilation
@@ -438,15 +468,16 @@ in the code for various reasons.
 ## Regression testing
 
 The source of the radare2 regression test suite can be found in the
-following github repository.
+ `test/` directory, while binaries for this test are located in the
+ following GitHub repository.
 ```sh
-   git clone git://github.com/radare/radare2-regressions
+git clone git://github.com/radareorg/radare2-testbins
 ```
 
 See the `README.md` file in that repository for further information.
 
 The existing test coverage can always do with improvement. So if you can
-contribute additions tests, that would be gratefully accepted.
+contribute additional tests, that would be gratefully accepted.
 
 ## Reporting bugs
 
@@ -454,8 +485,8 @@ If you notice any misfeature, issue, error, problem or you just
 don't know how to do something which is supposed to be covered
 by this framework.
 
-You should report it into the github issues page.
-   https://github.com/radare/radare2/issues
+You should report it into the GitHub issues page.
+   https://github.com/radareorg/radare2/issues
 
 Otherwise, if you are looking for some more feedback, I will
 encourage you to send an email to any of the emails enumerated
@@ -464,20 +495,10 @@ in the AUTHORS file.
 Anyway, if you want to get even more feedback and discuss this
 in a public place: join the #radare channel on irc.freenode.net.
 
-The issues page of Github contains a list of all the bugs that
+The issues page of GitHub contains a list of all the bugs that
 have been reported classified with labels by difficulty, type,
 milestone, etc. It is a good place to start if you are looking
 to contribute.
-
-## Contributing with patches
-
-All the development happens in the git repository. It is
-good that all patches can be applied against the `git HEAD`.
-
-I can get patches in unidiff format like this:
-```sh
-   git diff > p
-```
 
 ## HOW TO RELEASE
 
@@ -487,7 +508,7 @@ I can get patches in unidiff format like this:
   RADARE2
   ---
    - bump revision
-   - `./configure`  
+   - `./configure`
    - `make dist`
 
   R2-BINDINGS

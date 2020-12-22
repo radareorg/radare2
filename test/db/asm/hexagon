@@ -1,0 +1,24 @@
+d "call 0x107ffffc" feffff5a 0x10000000
+d "call 0xffffffc" feffff5b 0x10000000
+d "call 0xf800000" 00c0005b 0x10000000
+d "jump 0x107ffffc" feffff58 0x10000000
+d "jump 0xffffffc" feffff59 0x10000000
+d "jump 0xf800000" 00c00059 0x10000000
+d "if (P3) call 0x1000fffc" fee35f5d 0x10000000
+d "if (P3) call 0xffffffc" fee3df5d 0x10000000
+d "if (P3) call 0xfff0000" 00c3805d 0x10000000
+d "if !P3 jump:t 0x1000fffc" fef37f5c 0x10000000
+d "if !P3 jump:t 0xffffffc" fef3ff5c 0x10000000
+d "if !P3 jump:t 0xfff0000" 00d3a05c 0x10000000
+d "p0 = tstbit (R9, #0) ; if (!p0.new) jump:t 0x100003fc" fee3d911 0x10000000
+d "p0 = tstbit (R9, #0) ; if (!p0.new) jump:t 0xffffffc" fee3f911 0x10000000
+d "p0 = tstbit (R9, #0) ; if (!p0.new) jump:t 0xffffc00" 00e3e911 0x10000000
+d "p0 = cmp.eq (R9, 0x15) ; if (p0.new) jump:nt 0x100003fc" fed51910 0x10000000
+d "p0 = cmp.eq (R9, 0x15) ; if (p0.new) jump:nt 0xffffffc" fed53910 0x10000000
+d "p0 = cmp.eq (R9, 0x15) ; if (p0.new) jump:nt 0xffffc00" 00d52910 0x10000000
+d "p1 = tstbit (R9, #0) ; if (!p1.new) jump:t 0x100003fc" fee3d913 0x10000000
+d "p1 = tstbit (R9, #0) ; if (!p1.new) jump:t 0xffffffc" fee3f913 0x10000000
+d "p1 = tstbit (R9, #0) ; if (!p1.new) jump:t 0xffffc00" 00e3e913 0x10000000
+d "p0 = cmp.eq (R9, R6) ; if (p0.new) jump:nt 0x100003fc" fec61914 0x10000000
+d "p0 = cmp.eq (R9, R6) ; if (p0.new) jump:nt 0xffffffc" fec63914 0x10000000
+d "p0 = cmp.eq (R9, R6) ; if (p0.new) jump:nt 0xffffc00" 00c62914 0x10000000

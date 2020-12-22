@@ -159,7 +159,7 @@ int read_packet(libgdbr_t *g, bool vcont) {
 		}
 	}
 	g->data_len = 0;
-	for (i = 0; i < g->num_retries; vcont ? 0 : i++) {
+	for (i = 0; i < g->num_retries && !g->isbreaked; vcont ? 0 : i++) {
 		ret = r_socket_ready (g->sock, 0, READ_TIMEOUT);
 		if (ret == 0 && !vcont) {
 			continue;

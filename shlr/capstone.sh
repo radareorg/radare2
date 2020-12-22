@@ -3,13 +3,20 @@ CS_URL="$1" # url
 CS_BRA="$2" # branch name
 CS_TIP="$3" # tip commit
 CS_REV="$4" # revert
+CS_ARCHIVE="$5" # download archived tip
 CS_DEPTH_CLONE=512
 
-git --help > /dev/null 2>&1
-if [ $? != 0 ]; then
-	echo "ERROR: Cannot find git command in PATH"
-	exit 1
-fi
+git_assert() {
+	git --help > /dev/null 2>&1
+	if [ $? != 0 ]; then
+		echo "ERROR: Cannot find git command in PATH"
+		if [ "$1" = check ]; then
+			return 1
+		fi
+		exit 1
+	fi
+	return 0
+}
 
 fatal_msg() {
 	echo "[capstone] $1"
@@ -32,14 +39,32 @@ parse_capstone_tip() {
 	BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 }
 
-clone_capstone() {
-	if [ ! -d capstone ]; then
-		git clone --quiet --single-branch --branch "${CS_BRA}" \
-		    --depth "$CS_DEPTH_CLONE" "${CS_URL}" capstone \
-		  || fatal_msg 'Cannot clone capstone from git'
+download_archive() {
+	echo '[capstone] Downloading capstone snapshot...' >&2
+	wget --help > /dev/null 2>&1
+	if [ $? = 0 ]; then
+		DLBIN="wget -O"
+	else
+		DLBIN="curl -o"
 	fi
-	cd capstone && parse_capstone_tip
-	cd - || fatal_msg 'Cannot change working directory'
+	${DLBIN} .cs_tmp.zip "$CS_ARCHIVE" || fatal_msg 'Cannot download archived capstone'
+	unzip .cs_tmp.zip || exit 1
+	mv "capstone-$CS_TIP" capstone
+}
+
+git_clone() {
+	git_assert
+	echo '[capstone] Cloning capstone from git...' >&2
+	git clone --quiet --single-branch --branch "${CS_BRA}" \
+	    --depth "$CS_DEPTH_CLONE" "${CS_URL}" capstone \
+	|| fatal_msg 'Cannot clone capstone from git'
+}
+
+get_capstone() {
+	git_clone || fatal_msg 'Clone failed'
+	cd capstone || fatal_msg 'Failed to chdir'
+	parse_capstone_tip
+	cd ..
 }
 
 update_capstone_git() {
@@ -62,35 +87,36 @@ update_capstone_git() {
 		fi
 		env EDITOR=cat git revert --no-edit "${CS_REV}"
 	fi
-	return 0
 }
 
-if [ -d capstone ] && [ ! -d capstone/.git ]; then
-	printf '[capstone] release with no git?\n' >&2
-	cd capstone || fatal_msg 'Cannot change working directory'
-	#patch_capstone
-	cd -
+### MAIN ###
+
+if [ -n "${CS_ARCHIVE}" ]; then
+	echo "CS_ARCHIVE=${CS_ARCHIVE}"
 else
-	clone_capstone
-
-	if [ "${BRANCH}" != "${CS_BRA}" ]; then
-		echo '[capstone] Reset capstone' >&2
-		rm -rf capstone
-		clone_capstone
-	fi
-
-#	if [ "${HEAD}" = "${CS_TIP}" ]; then
-#		printf '[capstone] Already in TIP, no need to update from git\n' >&2
-#		git reset --hard
-#		exit 0
-#	fi
-
-	echo '[capstone] Updating capstone from git...' >&2
-	echo "HEAD ${HEAD}" >&2
-	echo "TIP  ${CS_TIP}" >&2
-
-	cd capstone || fatal_msg 'Cannot change working directory'
-	update_capstone_git
-	#patch_capstone
-	cd -
+	echo
+	echo "Run 'make CS_COMMIT_ARCHIVE=1' to download capstone with wget/curl instead of git"
+	echo
 fi
+
+if [ -z "${CS_ARCHIVE}" ]; then
+	git_assert check
+	if [ $? != 0 ]; then
+		export CS_ARCHIVE="https://github.com/aquynh/capstone/archive/$3.zip"
+	fi
+fi
+
+if [ -d capstone ]; then
+	echo "[capstone] Nothing to do"
+	exit 0
+fi
+if [ -n "${CS_ARCHIVE}" ]; then
+	download_archive
+else
+	git_assert
+	get_capstone
+	# if [ ! -d capstone/.git ]; then update_capstone_git fi
+fi
+cd capstone || fatal_msg 'Cannot change working directory'
+patch_capstone
+cd -

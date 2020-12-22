@@ -11,7 +11,7 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include "rsp_idec.h"
+#include "../../asm/arch/rsp/rsp_idec.h"
 
 static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
 	int i;
@@ -29,20 +29,16 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 		return 4;
 	}
 
-	memset (op, 0, sizeof (RAnalOp));
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = 4;
-	op->jump = UT64_MAX;
-	op->fail = UT64_MAX;
 	op->addr = addr;
-	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "TODO");
 
 	iw = r_read_ble32 (b, anal->big_endian);
 	r_instr = rsp_instruction_decode (addr, iw);
 
 	/* parse operands */
-	for (i = 0; i < r_instr.noperands; ++i) {
+	for (i = 0; i < r_instr.noperands; i++) {
 		parsed_operands[i].value = r_anal_value_new ();
 		parsed_operands[i].esil[0] = '\0';
 
@@ -205,7 +201,7 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 		op->dst = r_anal_value_new ();
 		op->dst->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
 		op->src[0] = parsed_operands[0].value;
-		r_strbuf_setf (&op->esil, "%s,PC,=,0x%08x,RA,=", parsed_operands[0].esil, op->fail);
+		r_strbuf_setf (&op->esil, "%s,PC,=,0x%08" PFMT64x ",RA,=", parsed_operands[0].esil, op->fail);
 		break;
 	case RSP_OP_JR:
 		/* if register is RA, this is a return */
@@ -702,7 +698,7 @@ RAnalPlugin r_anal_plugin_rsp = {
 	.get_reg_profile = &get_reg_profile,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_rsp,

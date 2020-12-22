@@ -15,27 +15,6 @@ R_LIB_VERSION_HEADER(r_magic);
 #define MAGICFILE "/etc/magic"
 #endif
 
-#if USE_LIB_MAGIC
-
-#include <magic.h>
-
-#ifdef R_API
-#define RMagic struct magic_set
-
-#define r_magic_new(x)              magic_open(x)
-#define r_magic_free(x)             { if (x) { magic_close(x); }}
-#define r_magic_file(x,y)           magic_file(x,y)
-#define r_magic_buffer(x,y,z)       magic_buffer(x,y,z)
-#define r_magic_descriptor(x,y)     magic_descriptor(x,y)
-#define r_magic_error(x)            magic_error(x)
-#define r_magic_setflags(x,y)       magic_setflags(x,y)
-#define r_magic_load(x,y)           magic_load(x,y)
-#define r_magic_compile(x,y)        magic_compile(x,y)
-#define r_magic_check(x,y)          magic_check(x,y)
-#define r_magic_errno(x)            magic_errno(x)
-#endif
-
-#else
 #ifdef R_API
 
 #ifdef __EMX__
@@ -291,7 +270,11 @@ struct r_magic_set {
 	union VALUETYPE ms_value;	/* either number or string */
 };
 
+#if USE_LIB_MAGIC
+#define RMagic struct magic_set
+#else
 typedef struct r_magic_set RMagic;
+#endif
 
 #ifdef R_API
 R_API RMagic* r_magic_new(int flags);
@@ -304,15 +287,15 @@ R_API const char *r_magic_buffer(RMagic*, const void *, size_t);
 R_API const char *r_magic_error(RMagic*);
 R_API void r_magic_setflags(RMagic*, int);
 
-R_API int r_magic_load(RMagic*, const char *);
-R_API int r_magic_compile(RMagic*, const char *);
-R_API int r_magic_check(RMagic*, const char *);
+R_API bool r_magic_load(RMagic*, const char *);
+R_API bool r_magic_load_buffer(RMagic*, const char *);
+R_API bool r_magic_compile(RMagic*, const char *);
+R_API bool r_magic_check(RMagic*, const char *);
 R_API int r_magic_errno(RMagic*);
 #endif
 
 
 #endif
-#endif // USE_LIB_MAGIC
 
 #ifdef __cplusplus
 }

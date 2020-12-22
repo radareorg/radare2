@@ -1,0 +1,71 @@
+NAME=T hello
+FILE=-
+CMDS=<<EOF
+T hello
+T
+EOF
+EXPECT=<<EOF
+1 hello
+EOF
+RUN
+
+NAME=T-*
+FILE=-
+CMDS=<<EOF
+T hello
+T-*
+T
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=T hello world
+FILE=-
+CMDS=<<EOF
+T hello
+T world
+T
+EOF
+EXPECT=<<EOF
+1 hello
+2 world
+EOF
+RUN
+
+NAME=T-1
+FILE=-
+CMDS=<<EOF
+T hello
+T world
+T-1
+T
+EOF
+EXPECT=<<EOF
+2 world
+EOF
+RUN
+
+NAME=T-2
+FILE=-
+CMDS=<<EOF
+T hello
+T world
+T-2
+T
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=T-3
+FILE=-
+CMDS=<<EOF
+T hello
+T world
+T-3
+T
+EOF
+EXPECT=<<EOF
+EOF
+RUN

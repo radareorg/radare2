@@ -9,8 +9,8 @@
 
 R_API int r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2) {
 	RList *la, *lb;
-	RAnalFunction *fa = r_anal_get_fcn_at (c->anal, addr, 0);
-	RAnalFunction *fb = r_anal_get_fcn_at (c->anal, addr2, 0);
+	RAnalFunction *fa = r_anal_get_function_at (c->anal, addr);
+	RAnalFunction *fb = r_anal_get_function_at (c->anal, addr2);
 	if (!fa || !fb) {
 		return false;
 	}
@@ -47,8 +47,7 @@ R_API int r_core_gdiff(RCore *c, RCore *c2) {
 		/* remove strings */
 		r_list_foreach_safe (cores[i]->anal->fcns, iter, iter2, fcn) {
 			if (!strncmp (fcn->name, "str.", 4)) {
-				r_anal_fcn_tree_delete (cores[i]->anal, fcn);
-				r_list_delete (cores[i]->anal->fcns, iter);
+				r_anal_function_delete (fcn);
 			}
 		}
 		/* Fingerprint fcn bbs (functions basic-blocks) */
@@ -59,8 +58,7 @@ R_API int r_core_gdiff(RCore *c, RCore *c2) {
 		}
 		/* Fingerprint fcn */
 		r_list_foreach (cores[i]->anal->fcns, iter, fcn) {
-			int newsize = r_anal_diff_fingerprint_fcn (cores[i]->anal, fcn);
-			r_anal_fcn_set_size (cores[i]->anal, fcn, newsize);
+			r_anal_diff_fingerprint_fcn (cores[i]->anal, fcn);
 		}
 	}
 	/* Diff functions */
@@ -98,7 +96,7 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
         RListIter *iter;
         RAnalFunction *f;
         int maxnamelen = 0;
-        int maxsize = 0;
+        ut64 maxsize = 0;
         int digits = 1;
         int len;
 
@@ -106,8 +104,8 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
                 if (f->name && (len = strlen (f->name)) > maxnamelen) {
                         maxnamelen = len;
 		}
-                if (r_anal_fcn_size (f) > maxsize) {
-                        maxsize = r_anal_fcn_size (f);
+                if (r_anal_function_linear_size (f) > maxsize) {
+                        maxsize = r_anal_function_linear_size (f);
 		}
         }
         fcns = r_anal_get_fcns (c2->anal);
@@ -115,8 +113,8 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
                 if (f->name && (len = strlen (f->name)) > maxnamelen) {
                         maxnamelen = len;
 		}
-                if (r_anal_fcn_size (f) > maxsize) {
-                        maxsize = r_anal_fcn_size (f);
+                if (r_anal_function_linear_size (f) > maxsize) {
+                        maxsize = r_anal_function_linear_size (f);
 		}
         }
         while (maxsize > 9) {
@@ -146,9 +144,9 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
                                 match = "NEW";
 				f->diff->dist = 0;
                         }
-                        diffrow (f->addr, f->name, r_anal_fcn_size (f), maxnamelen, digits,
-				f->diff->addr, f->diff->name, f->diff->size,
-				match, f->diff->dist, bare);
+                        diffrow (f->addr, f->name, r_anal_function_linear_size (f), maxnamelen, digits,
+							f->diff->addr, f->diff->name, f->diff->size,
+							match, f->diff->dist, bare);
                         break;
                 }
         }
@@ -159,9 +157,9 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
                 case R_ANAL_FCN_TYPE_FCN:
                 case R_ANAL_FCN_TYPE_SYM:
                         if (f->diff->type == R_ANAL_DIFF_TYPE_NULL) {
-                                diffrow (f->addr, f->name, r_anal_fcn_size (f), maxnamelen,
-					digits, f->diff->addr, f->diff->name, f->diff->size,
-					"NEW", 0, bare); //f->diff->dist, bare);
+                                diffrow (f->addr, f->name, r_anal_function_linear_size (f), maxnamelen,
+									digits, f->diff->addr, f->diff->name, f->diff->size,
+									"NEW", 0, bare); //f->diff->dist, bare);
 			}
 			break;
                 }

@@ -1,8 +1,7 @@
-CC=tcc
-RANLIB=ranlib
-LINK=
+CC=tcc -D__LITTLE_ENDIAN__=1
+RANLIB?=ranlib
 ONELIB=0
-AR=ar
+AR?=ar
 CC_AR=${AR} -r ${LIBAR}
 CC_LIB=${CC} -shared -o ${LIBSO}
 CFLAGS_INCLUDE=-I
@@ -17,13 +16,14 @@ LD?=ld
 ifeq ($(OSTYPE),darwin)
 PARTIALLD=${LD} -r -all_load
 LDFLAGS_LIB=-dynamiclib
-LDFLAGS_SONAME=-Wl,-install_name,
+LDFLAGS_SONAME=-soname
+# LDFLAGS_SONAME=-Wl,-install_name,
 else
 PARTIALLD=${LD} -r --whole-archive
 LDFLAGS_LIB=-shared
 LDFLAGS_LIB+=-Dxx
 #Wl,-soname,lib${NAME}.${EXT_SO}.${VERSION}
-LDFLAGS_SONAME=-Dxx
+LDFLAGS_SONAME=-soname
 #Wl,-soname=
 endif
 

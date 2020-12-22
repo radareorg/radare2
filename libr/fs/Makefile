@@ -1,6 +1,6 @@
 NAME=r_fs
-DEPS=r_util r_io
-CFLAGS+=-DCORELIB -Iarch/include -Iarch
+R2DEPS=r_util r_io r_socket r_hash r_cons r_crypto
+CFLAGS+=-DR2_PLUGIN_INCORE -Iarch/include -Iarch
 
 SHLR=../../shlr/
 
@@ -16,13 +16,13 @@ foo:
 
 include ${STATIC_FS_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst fs_,p/fs_,$(STATIC_OBJ)))
-OBJS=${STATIC_OBJS} fs.o file.o shell.o
+OBJS=${STATIC_OBJS} fs.o fs_file.o shell.o
 #p/grub/main.o
 
 #p/grub/libgrubfs.a:
 #	cd p/grub && ${MAKE} libgrubfs.a CC="${CC}"
 
-pre: 
+pre:
 	cd d && ${MAKE}
 #	@if [ ! -e libr_fs.${EXT_SO} ]; then if [ ! -e libr_fs.${EXT_AR} ]; then rm -f ${STATIC_OBJS} ; fi ; fi
 

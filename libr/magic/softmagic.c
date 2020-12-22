@@ -38,7 +38,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
-#include <time.h>
+#include "r_util/r_time.h"
 
 static int match(RMagic *, struct r_magic *, ut32,
     const ut8 *, size_t, int);
@@ -316,6 +316,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 	ut64 t = 0;
  	char *buf = NULL;
 	union VALUETYPE *p = &ms->ms_value;
+	char pp[ASCTIME_BUF_MINLEN];
 
   	switch (m->type) {
   	case FILE_BYTE:
@@ -432,7 +433,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 	case FILE_BEDATE:
 	case FILE_LEDATE:
 	case FILE_MEDATE:
-		if (file_printf (ms, R_MAGIC_DESC, file_fmttime (p->l, 1)) == -1) {
+		if (file_printf (ms, R_MAGIC_DESC, file_fmttime (p->l, 1, pp)) == -1) {
 			return -1;
 		}
 		t = ms->offset + sizeof(time_t);
@@ -441,7 +442,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 	case FILE_BELDATE:
 	case FILE_LELDATE:
 	case FILE_MELDATE:
-		if (file_printf (ms, R_MAGIC_DESC, file_fmttime (p->l, 0)) == -1) {
+		if (file_printf (ms, R_MAGIC_DESC, file_fmttime (p->l, 0, pp)) == -1) {
 			return -1;
 		}
 		t = ms->offset + sizeof(time_t);
@@ -449,7 +450,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 	case FILE_QDATE:
 	case FILE_BEQDATE:
 	case FILE_LEQDATE:
-		if (file_printf (ms, R_MAGIC_DESC, file_fmttime ((ut32)p->q, 1)) == -1) {
+		if (file_printf (ms, R_MAGIC_DESC, file_fmttime ((ut32)p->q, 1, pp)) == -1) {
 			return -1;
 		}
 		t = ms->offset + sizeof(ut64);
@@ -457,7 +458,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 	case FILE_QLDATE:
 	case FILE_BEQLDATE:
 	case FILE_LEQLDATE:
-		if (file_printf (ms, R_MAGIC_DESC, file_fmttime ((ut32)p->q, 0)) == -1) {
+		if (file_printf (ms, R_MAGIC_DESC, file_fmttime ((ut32)p->q, 0, pp)) == -1) {
 			return -1;
 		}
 		t = ms->offset + sizeof(ut64);

@@ -1,0 +1,301 @@
+================
+No arguments
+================
+
+afl
+ afl
+
+---
+
+(commands
+  (arged_command (cmd_identifier))
+  (arged_command (cmd_identifier)))
+
+=============
+One argument
+=============
+
+af 0xdeadbeef
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+     (args (arg (arg_identifier)))))
+
+
+==============================
+Semi-colon separated commands
+==============================
+
+afl;af 0xdeadbeef  ; afl
+
+---
+
+(commands
+  (arged_command (cmd_identifier))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)))
+
+
+=========================
+Newline separate commands
+=========================
+
+afl
+af 0xdeadbeef
+
+---
+
+(commands
+  (arged_command (cmd_identifier))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier)))))
+
+
+======================
+Question mark commands
+======================
+
+? x
+??
+???
+?t cmd
+?x hello
+?:
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier))
+  (help_command (cmd_identifier))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)))
+
+
+===============
+Search commands
+===============
+
+/x 90
+/v4 0xdead
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier)))))
+
+
+========================
+Different output formats
+========================
+
+afl*
+afl+
+aflj
+
+---
+
+(commands
+  (arged_command (cmd_identifier))
+  (arged_command (cmd_identifier))
+  (arged_command (cmd_identifier)))
+
+
+=============
+Help commands
+=============
+
+?
+a?
+$?
+*?
+afl?
+(?
+=?
+/v?
+/v4?
+|?
+.?
+./?
+@?
+@@?
+@@@?
+~?
+?*
+p?*
+&?
+pf??
+pf???
+>?
+
+---
+
+(commands
+  (help_command (cmd_identifier))
+  (help_command (cmd_identifier))
+  (help_command (cmd_identifier))
+  (help_command (cmd_identifier))
+  (help_command (cmd_identifier))
+  (help_command (cmd_identifier))
+  (help_command (cmd_identifier))
+  (help_command (cmd_identifier))
+  (help_command (cmd_identifier))
+  (help_command (cmd_identifier))
+  (help_command (cmd_identifier))
+  (help_command (cmd_identifier))
+  (help_command (cmd_identifier))
+  (help_command (cmd_identifier))
+  (help_command (cmd_identifier))
+  (help_command (cmd_identifier))
+  (help_command (cmd_identifier))
+  (help_command (cmd_identifier))
+  (help_command (cmd_identifier))
+  (help_command (cmd_identifier))
+  (help_command (cmd_identifier))
+  (help_command (cmd_identifier)))
+
+
+===============================
+Command with concatenation args
+===============================
+
+?e Hello" World"'!' And All
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args
+      (arg
+	(concatenation
+	  (arg_identifier)
+	  (double_quoted_arg)
+	  (single_quoted_arg)))
+      (arg (arg_identifier))
+      (arg (arg_identifier)))))
+
+
+==============
+Number command
+==============
+
+0x8048000
+0b1001
+0xtest
+0123123
+0x123command
+
+---
+
+(commands
+  (number_command)
+  (number_command)
+  (number_command) (ERROR)
+  (number_command)
+  (number_command) (ERROR))
+
+
+=============
+Tasks command
+=============
+
+& ?e Hello
+& ?e Hello
+&& 1
+&=
+&
+
+---
+
+(commands
+  (task_command (cmd_identifier)
+    (arged_command (cmd_identifier)
+      (args (arg (arg_identifier)))))
+  (task_command (cmd_identifier)
+    (arged_command (cmd_identifier)
+      (args (arg (arg_identifier)))))
+  (task_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (task_command (cmd_identifier))
+  (task_command (cmd_identifier)))
+
+
+==============
+Arg with (...)
+==============
+
+?e Hello(World)
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args
+      (arg
+        (concatenation
+	  (arg_identifier)
+	  (arg_identifier)
+	  (args (arg (arg_identifier)))
+	  (arg_identifier))))))
+
+
+==========
+Arg with $
+==========
+
+?v $$
+s $
+?v $*
+?v $$$ test
+?v $alias
+?e hello$alias
+?e test
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args
+      (arg (arg_identifier))
+      (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier)))))
+
+
+==========
+Arg with /
+==========
+
+md /
+md /root
+md /root/
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier)))))

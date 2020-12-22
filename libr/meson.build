@@ -1,6 +1,7 @@
 anal_plugins = [
   '6502',
   '8051',
+  'amd29k',
   'arc',
   'arm_cs',
   'arm_gnu',
@@ -18,6 +19,7 @@ anal_plugins = [
   'i8080',
   'java',
   'm68k_cs',
+  'm680x_cs',
   'malbolge',
   'mcore',
   'mips_cs',
@@ -25,6 +27,7 @@ anal_plugins = [
   'msp430',
   'nios2',
   'null',
+  'or1k',
   'pic',
   'ppc_cs',
   'ppc_gnu',
@@ -38,6 +41,7 @@ anal_plugins = [
   'sysz',
   'tms320',
   #'tms320c64x',
+  'tricore',
   'v810',
   'v850',
   'vax',
@@ -53,6 +57,7 @@ anal_plugins = [
 asm_plugins = [
   '6502',
   '8051',
+  'amd29k',
   'arc',
   'arm_as',
   'arm_cs',
@@ -78,13 +83,17 @@ asm_plugins = [
   'lh5801',
   'lm32',
   'm68k_cs',
+  'm680x_cs',
   'malbolge',
+  'mcore',
   'mcs96',
   'mips_cs',
   'mips_gnu',
   'msp430',
   'nios2',
+  'or1k',
   'pic',
+  'ppc_as',
   'ppc_cs',
   'ppc_gnu',
   'propeller',
@@ -94,13 +103,13 @@ asm_plugins = [
   'snes',
   'sparc_cs',
   'sparc_gnu',
-  'spc700',
   'sysz',
   'tms320',
   'tms320c64x',
   'tricore',
   'v810',
   'v850',
+  'v850_gnu',
   'vax',
   'wasm',
   'ws',
@@ -125,18 +134,21 @@ bin_plugins = [
   'cgc',
   'coff',
   'dex',
+  'dmp64',
   'dol',
   'dyldcache',
   'elf',
   'elf64',
   'fs',
   'java',
+  'le',
   'mach0',
   'mach064',
   'mbn',
   'mdmp',
   'menuet',
   'mz',
+  'ne',
   'nes',
   'nin3ds',
   'ninds',
@@ -150,11 +162,12 @@ bin_plugins = [
   'pe',
   'pe64',
   'pebble',
+  'prg',
   'psxexe',
   'sfc',
   'smd',
   'sms',
-  'spc700',
+  'symbols',
   'te',
   'vsf',
   'wasm',
@@ -171,6 +184,7 @@ bin_ldr_plugins = [
 bin_xtr_plugins = [
   'xtr_dyldcache',
   'xtr_fatmach0',
+  'xtr_sep64',
 ]
 
 bp_plugins = [
@@ -216,7 +230,7 @@ debug_plugins = [
   'null',
   'qnx',
   'rap',
-  'windbg'
+  'winkd'
 ]
 
 egg_plugins = [
@@ -250,6 +264,7 @@ fs_plugins = [
 
 io_plugins = [
   'ar',
+  'fd',
   'bfdbg',
   'bochs',
   'debug',
@@ -275,26 +290,33 @@ io_plugins = [
   'shm',
   'sparse',
   'tcp',
-  'windbg',
+  'winkd',
   'winedbg',
   'zip'
 ]
 
 if host_machine.system() == 'windows'
   io_plugins += [
+    'windbg',
     'w32dbg',
     'w32',
   ]
+  debug_plugins += 'windbg'
 endif
 
 lang_plugins = [
-  'c',
-  'cpipe',
   'lib',
   'pipe',
   'rust',
   'vala'
 ]
+
+if host_machine.system() != 'windows'
+  lang_plugins += [
+    'c',
+    'cpipe'
+  ]
+endif
 
 parse_plugins = [
   '6502_pseudo',
@@ -302,12 +324,14 @@ parse_plugins = [
   'att2intel',
   'avr_pseudo',
   'chip8_pseudo',
+  'tms320_pseudo',
   'dalvik_pseudo',
   'm68k_pseudo',
   'mips_pseudo',
-  'mreplace',
   'ppc_pseudo',
   'sh_pseudo',
+  'riscv_pseudo',
+  'v850_pseudo',
   'wasm_pseudo',
   'x86_pseudo',
   'z80_pseudo'
@@ -315,7 +339,7 @@ parse_plugins = [
 
 include_files =[
   'include/r2naked.h',
-  'include/r_anal_ex.h',
+  'include/r_agraph.h',
   'include/r_anal.h',
   'include/r_asm.h',
   'include/r_bind.h',
@@ -356,40 +380,43 @@ include_files =[
   'include/r_socket.h',
   'include/r_syscall.h',
   'include/r_th.h',
+  'include/r_types_overflow.h',
   'include/r_types_base.h',
   'include/r_types.h',
   'include/r_util.h',
   'include/r_vector.h',
-  'include/sdb.h'
+  'include/r_skyline.h',
 ]
-install_headers(include_files,
-  subdir: 'libr')
+install_headers(include_files, install_dir: r2_incdir)
 
 r_util_files = [
   'include/r_util/pj.h',
   'include/r_util/r_ascii_table.h',
   'include/r_util/r_asn1.h',
   'include/r_util/r_assert.h',
+  'include/r_util/r_protobuf.h',
   'include/r_util/r_base64.h',
   'include/r_util/r_base91.h',
   'include/r_util/r_big.h',
   'include/r_util/r_bitmap.h',
   'include/r_util/r_buf.h',
   'include/r_util/r_cache.h',
-  'include/r_util/r_constr.h',
   'include/r_util/r_ctypes.h',
   'include/r_util/r_debruijn.h',
   'include/r_util/r_event.h',
   'include/r_util/r_file.h',
   'include/r_util/r_graph.h',
+  'include/r_util/r_graph_drawable.h',
   'include/r_util/r_hex.h',
   'include/r_util/r_idpool.h',
   'include/r_util/r_itv.h',
+  'include/r_util/r_json.h',
   'include/r_util/r_log.h',
   'include/r_util/r_mem.h',
   'include/r_util/r_name.h',
   'include/r_util/r_num.h',
   'include/r_util/r_panels.h',
+  'include/r_util/r_table.h',
   'include/r_util/r_pkcs7.h',
   'include/r_util/r_pool.h',
   'include/r_util/r_print.h',
@@ -397,6 +424,7 @@ r_util_files = [
   'include/r_util/r_queue.h',
   'include/r_util/r_range.h',
   'include/r_util/r_rbtree.h',
+  'include/r_util/r_intervaltree.h',
   'include/r_util/r_sandbox.h',
   'include/r_util/r_signal.h',
   'include/r_util/r_spaces.h',
@@ -404,42 +432,25 @@ r_util_files = [
   'include/r_util/r_strbuf.h',
   'include/r_util/r_str.h',
   'include/r_util/r_strpool.h',
+  'include/r_util/r_str_constpool.h',
   'include/r_util/r_str_util.h',
   'include/r_util/r_sys.h',
   'include/r_util/r_alloc.h',
-  'include/r_util/r_date.h',
   'include/r_util/r_time.h',
   'include/r_util/r_tree.h',
   'include/r_util/r_uleb128.h',
   'include/r_util/r_utf16.h',
   'include/r_util/r_utf32.h',
   'include/r_util/r_utf8.h',
-  'include/r_util/r_x509.h'
+  'include/r_util/r_x509.h',
+  'include/r_util/r_annotated_code.h'
 ]
-install_headers(r_util_files, subdir: 'libr/r_util')
+install_headers(r_util_files, install_dir: join_paths(r2_incdir, 'r_util'))
 
 r_crypto_files = [
   'include/r_crypto/r_des.h'
 ]
-install_headers(r_crypto_files, subdir: 'libr/r_crypto')
-
-sdb_files = [
-  'include/sdb/buffer.h',
-  'include/sdb/cdb.h',
-  'include/sdb/cdb_make.h',
-  'include/sdb/config.h',
-  'include/sdb/dict.h',
-  'include/sdb/ht_inc.h',
-  'include/sdb/ht_pp.h',
-  'include/sdb/ht_up.h',
-  'include/sdb/ht_uu.h',
-  'include/sdb/ls.h',
-  'include/sdb/sdb.h',
-  'include/sdb/sdbht.h',
-  'include/sdb/sdb_version.h',
-  'include/sdb/types.h'
-]
-install_headers(sdb_files, subdir: 'libr/sdb')
+install_headers(r_crypto_files, install_dir: join_paths(r2_incdir, 'r_crypto'))
 
 sflib_common_files = [
   'include/sflib/common/sftypes.h',
@@ -462,10 +473,10 @@ sflib_arch_files = [
   'sfsysnr.h'
 ]
 
-install_headers(sflib_common_files, subdir: 'libr/sflib/common')
+install_headers(sflib_common_files, install_dir: join_paths(r2_incdir, 'sflib/common'))
 foreach arch : sflib_arch
   foreach file : sflib_arch_files
-    install_headers(join_paths('include/sflib', arch, file), subdir: join_paths('libr/sflib', arch))
+    install_headers(join_paths('include/sflib', arch, file), install_dir: join_paths(r2_incdir, 'sflib', arch))
   endforeach
 endforeach
 

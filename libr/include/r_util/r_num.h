@@ -15,8 +15,7 @@ typedef struct {
 typedef enum {
 	RNCNAME, RNCNUMBER, RNCEND, RNCINC, RNCDEC,
 	RNCPLUS='+', RNCMINUS='-', RNCMUL='*', RNCDIV='/', RNCMOD='%',
-	//RNCXOR='^', RNCOR='|', RNCAND='&',
-	RNCNEG='~', RNCAND='&', RNCORR='|', RNCXOR='^',
+	RNCNEG='~', RNCAND='&', RNCOR='|', RNCXOR='^',
 	RNCPRINT=';', RNCASSIGN='=', RNCLEFTP='(', RNCRIGHTP=')',
 	RNCSHL='<', RNCSHR = '>', RNCROL = '#', RNCROR = '$'
 } RNumCalcToken;
@@ -66,18 +65,20 @@ R_API void r_num_minmax_swap_i(int *a, int *b); // XXX this can be a cpp macro :
 R_API ut64 r_num_math(RNum *num, const char *str);
 R_API ut64 r_num_get(RNum *num, const char *str);
 R_API int r_num_to_bits(char *out, ut64 num);
-R_API int r_num_to_trits(char *out, ut64 num);	//Rename this please
+R_API int r_num_to_ternary(char *out, ut64 num);
 R_API int r_num_rand(int max);
 R_API void r_num_irand(void);
-R_API ut16 r_num_ntohs(ut16 foo);
 R_API ut64 r_get_input_num_value(RNum *num, const char *input_value);
-R_API int r_is_valid_input_num_value(RNum *num, const char *input_value);
+R_API bool r_is_valid_input_num_value(RNum *num, const char *input_value);
 R_API int r_num_between(RNum *num, const char *input_value);
 R_API bool r_num_is_op(const char c);
 R_API int r_num_str_len(const char *str);
 R_API int r_num_str_split(char *str);
 R_API RList *r_num_str_split_list(char *str);
 R_API void *r_num_dup(ut64 n);
+R_API double r_num_cos(double a);
+R_API double r_num_sin(double a);
+R_API double r_num_get_float(RNum *num, const char *str);
 
 static inline st64 r_num_abs(st64 num) {
 	return num < 0 ? -num : num;

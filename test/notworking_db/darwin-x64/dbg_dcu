@@ -1,0 +1,17 @@
+NAME=dbg.dcu
+FILE=/bin/test
+ARGS=-d
+BROKEN=1
+CMDS=<<EOF
+?v $$
+dcu entry0
+ieq
+sr PC
+?v $$
+EOF
+EXPECT=<<EOF
+0x7fff5fc01000
+0x10000134c
+0x10000134c
+EOF
+RUN

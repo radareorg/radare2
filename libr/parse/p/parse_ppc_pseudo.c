@@ -710,7 +710,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "lbzux", "A = Byte[C + B]", 3},
 		{ "lbzx", "A = byte[C + B]", 3},
 		{ "ld", "A = [C + B]", 3},
-		// No clue how to reprensent them since they are kinda complex..
+		// No clue how to represent them since they are kinda complex..
 		//  { "ldarx", "A = [C + B]", 3},
 		//  { "ldbrx", "A = [C + B]", 3},
 		//  { "ldcix", "A = B + C", 3},
@@ -1751,7 +1751,7 @@ RParsePlugin r_parse_plugin_ppc_pseudo = {
 	.parse = parse,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
 	.data = &r_parse_plugin_ppc_pseudo,

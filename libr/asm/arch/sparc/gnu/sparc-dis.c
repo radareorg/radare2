@@ -313,7 +313,7 @@ compare_opcodes (const void * a, const void * b)
 
   /* Because the bits that are variable in one opcode are constant in
      another, it is important to order the opcodes in the right order.  */
-  for (i = 0; i < 32; ++i)
+  for (i = 0; i < 32; i++)
     {
       unsigned long int x = 1 << i;
       int x0 = (match0 & x) != 0;
@@ -324,7 +324,7 @@ compare_opcodes (const void * a, const void * b)
       }
     }
 
-  for (i = 0; i < 32; ++i)
+  for (i = 0; i < 32; i++)
     {
       unsigned long int x = 1 << i;
       int x0 = (lose0 & x) != 0;
@@ -453,7 +453,7 @@ build_hash_table (const sparc_opcode **opcode_table,
     int min_count = num_opcodes, max_count = 0;
     int total;
 
-    for (i = 0; i < HASH_SIZE; ++i)
+    for (i = 0; i < HASH_SIZE; i++)
       {
         if (hash_count[i] < min_count)
 	  min_count = hash_count[i];
@@ -501,7 +501,7 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 		      xmalloc (sparc_num_opcodes * sizeof (sparc_opcode *));
       }
       /* Reset the sorted table so we can resort it.  */
-      for (i = 0; i < sparc_num_opcodes; ++i) {
+      for (i = 0; i < sparc_num_opcodes; i++) {
 	      sorted_opcodes[i] = &sparc_opcodes[i];
       }
       qsort ((char *) sorted_opcodes, sparc_num_opcodes,
@@ -586,7 +586,7 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 	    const char *s;
 	    int brackets = 0;
 
-	    for (s = opcode->args; *s != '\0'; ++s)
+	    for (s = opcode->args; *s != '\0'; s++)
 	      {
 		while (*s == ',')
 		  {

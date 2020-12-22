@@ -13,7 +13,7 @@ Radare2 Dependencies:
 
 	sudo pkg install git gcc gmake patch pkgconf
 
-	git clone https://github.com/radare/radare2
+	git clone https://github.com/radareorg/radare2
 	cd radare2
 	sys/install.sh /usr/local
 
@@ -30,7 +30,7 @@ Python Swig Bindings Dependencies:
 Building Python Swig Bindings:
 ------------------------------
 
-	git clone https://github.com/radare/radare2-bindings
+	git clone https://github.com/radareorg/radare2-bindings
 	cd radare2-bindings
 	export CC=cc
 	export CXX=c++

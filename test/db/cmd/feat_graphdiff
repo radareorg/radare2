@@ -1,0 +1,6 @@
+NAME=graphdiff segfault
+FILE=-
+CMDS=cg / 2>/dev/null
+EXPECT=<<EOF
+EOF
+RUN

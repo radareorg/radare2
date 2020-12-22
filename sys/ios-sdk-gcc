@@ -5,17 +5,14 @@ CWD="$(dirname "$0")"
 [ -z "${IOSINC}" ] && IOSINC="${CWD}/ios-include"
 CPUS=""
 CPU=`echo $CPU | sed -e 's,+, ,g'`
-EXTRA=""
 for a in `IFS=+ echo ${CPU}` ; do
 	CPUS="-arch $a ${CPUS}"
 done
 [ -z "${SDK}" ] && SDK=iphoneos
 APPLE_SDK=`echo ${SDK} |tr a-z A-Z`
-CC="xcrun --sdk ${SDK} clang ${CPUS} -DAPPLE_SDK_${APPLE_SDK}=1 -I${IOSINC} ${EXTRA}"
+CC="xcrun --sdk ${SDK} clang ${CPUS} -fembed-bitcode -DAPPLE_SDK_${APPLE_SDK}=1 -I${IOSINC} -miphoneos-version-min=10.0"
 echo $CC $*
 ${CC} $*
 r=$?
-if [ "$r" != 0 ]; then
-	echo ${CC} $* >&2
-fi
+[ "$r" != 0 ] && echo ${CC} $* >&2
 exit $r

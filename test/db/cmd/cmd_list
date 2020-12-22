@@ -1,0 +1,24 @@
+NAME=List Parser Plugins Lp
+FILE=-
+CMDS=<<EOF
+Lp~$
+EOF
+EXPECT=<<EOF
+6502.pseudo
+arm.pseudo
+att2intel
+avr.pseudo
+chip8.pseudo
+dalvik.pseudo
+m68k.pseudo
+mips.pseudo
+ppc.pseudo
+riscv.pseudo
+sh.pseudo
+tms320.pseudo
+v850.pseudo
+wasm.pseudo
+x86.pseudo
+z80.pseudo
+EOF
+RUN

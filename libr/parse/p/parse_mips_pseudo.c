@@ -250,42 +250,58 @@ static int parse(RParse *p, const char *data, char *str) {
 	return true;
 }
 
-static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
-	RAnalVar *var;
+static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	RListIter *iter;
 	char *oldstr;
 	char *tstr = strdup (data);
+	RAnal *anal = p->analb.anal;
 
 	if (!p->varlist) {
 		free (tstr);
 		return false;
 	}
-	RList *bpargs = p->varlist (p->anal, f, 'b');
-	RList *spargs = p->varlist (p->anal, f, 's');
+	RList *bpargs = p->varlist (f, 'b');
+	RList *spargs = p->varlist (f, 's');
 	const bool ucase = IS_UPPER (*tstr);
+	RAnalVarField *var;
 	r_list_foreach (spargs, iter, var) {
+		st64 delta = p->get_ptr_at
+			? p->get_ptr_at (f, var->delta, addr)
+			: ST64_MAX;
+		if (delta == ST64_MAX && var->field) {
+			delta = var->delta;
+		} else if (delta == ST64_MAX) {
+			continue;
+		}
+		const char *reg = NULL;
+		if (p->get_reg_at) {
+			reg = p->get_reg_at (f, var->delta, addr);
+		}
+		if (!reg) {
+			reg = anal->reg->name[R_REG_NAME_SP];
+		}
 		char *tmpf;
 		//TODO: honor asm pseudo
-		if (var->delta < 10) {
+		if (R_ABS (delta) < 10) {
 			tmpf = "%d(%s)";
-		} else if (var->delta > 0) {
+		} else if (delta > 0) {
 			tmpf = "0x%x(%s)";
 		} else {
 			tmpf = "-0x%x(%s)";
 		}
-		oldstr = r_str_newf (tmpf, r_num_abs(var->delta), p->anal->reg->name[R_REG_NAME_SP]);
+		oldstr = r_str_newf (tmpf, R_ABS (delta), reg);
 		if (ucase) {
 			char *comma = strchr (oldstr, ',');
-                        if (comma) {
-                                *comma = 0;
-                                r_str_case (oldstr, true);
-                                *comma = ',';
-                        }
-                }
+			if (comma) {
+				*comma = 0;
+				r_str_case (oldstr, true);
+				*comma = ',';
+			}
+		}
 		if (strstr (tstr, oldstr)) {
-			char *newstr = (p->localvar_only) ? r_str_newf ("(%s)", var->name):
-				r_str_newf ("%s%s(%s)", var->delta > 0 ? "" : "-",
-						var->name, p->anal->reg->name[R_REG_NAME_SP]);
+			char *newstr = (p->localvar_only)
+				? r_str_newf ("(%s)", var->name)
+				: r_str_newf ("%s%s(%s)", delta > 0 ? "" : "-", var->name, reg);
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);
 			free (newstr);
 			free (oldstr);
@@ -294,33 +310,48 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		free (oldstr);
 	}
 	r_list_foreach (bpargs, iter, var) {
-                char *tmpf = NULL;
-                if (var->delta < 10) {
-                        tmpf = "%d(%s)";
-                } else if (var->delta > 0) {
-                        tmpf = "0x%x(%s)";
-                } else {
-                        tmpf = "-0x%x(%s)";
-                }
-                oldstr = r_str_newf (tmpf, r_num_abs(var->delta), p->anal->reg->name[R_REG_NAME_BP]);
-                if (ucase) {
-                        char *comma = strchr (oldstr, ',');
-                        if (comma) {
-                                *comma = 0;
-                                r_str_case (oldstr, true);
-                                *comma = ',';
-                        }
-                }
-                if (strstr (tstr, oldstr)) {
-                        char *newstr = (p->localvar_only) ? r_str_newf ("(%s)", var->name):
-				r_str_newf ("%s%s(%s)", var->delta > 0 ? "" : "-",
-						var->name, p->anal->reg->name[R_REG_NAME_SP]);
-                        tstr = r_str_replace (tstr, oldstr, newstr, 1);
-                        free (newstr);
-                        free (oldstr);
-                        break;
-                }
-                free (oldstr);
+		char *tmpf = NULL;
+		st64 delta = p->get_ptr_at
+			? p->get_ptr_at (f, var->delta, addr)
+			: ST64_MAX;
+		if (delta == ST64_MAX && var->field) {
+			delta = var->delta + f->bp_off;
+		} else if (delta == ST64_MAX) {
+			continue;
+		}
+		const char *reg = NULL;
+		if (p->get_reg_at) {
+			reg = p->get_reg_at (f, var->delta, addr);
+		}
+		if (!reg) {
+			reg = anal->reg->name[R_REG_NAME_BP];
+		}
+		if (R_ABS (delta) < 10) {
+			tmpf = "%d(%s)";
+		} else if (delta > 0) {
+			tmpf = "0x%x(%s)";
+		} else {
+			tmpf = "-0x%x(%s)";
+		}
+		oldstr = r_str_newf (tmpf, R_ABS (delta), reg);
+		if (ucase) {
+			char *comma = strchr (oldstr, ',');
+			if (comma) {
+				*comma = 0;
+				r_str_case (oldstr, true);
+				*comma = ',';
+			}
+		}
+		if (strstr (tstr, oldstr)) {
+			char *newstr = (p->localvar_only)
+				? r_str_newf ("(%s)", var->name)
+				: r_str_newf ("%s%s(%s)", delta > 0 ? "" : "-", var->name, reg);
+			tstr = r_str_replace (tstr, oldstr, newstr, 1);
+			free (newstr);
+			free (oldstr);
+			break;
+		}
+		free (oldstr);
 	}
 	bool ret = true;
 	if (len > strlen (tstr)) {
@@ -341,10 +372,10 @@ RParsePlugin r_parse_plugin_mips_pseudo = {
 	.init = NULL,
 	.fini = NULL,
 	.parse = parse,
-	.varsub = varsub,
+	.subvar = subvar,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
 	.data = &r_parse_plugin_mips_pseudo,

@@ -32,7 +32,7 @@ static void find_and_change (char* in, int len) {
 	RFindCTX ctx = {0};
 	end = in + len;
 //	type = TYPE_NONE;
-	for (ctx.linebegin = in; in < end; ++in) {
+	for (ctx.linebegin = in; in < end; in++) {
 		if (*in == '\n' || !*in) {
 			if (ctx.type == TYPE_SYM && ctx.linecount < 1) {
 				ctx.linecount++;
@@ -169,6 +169,15 @@ static void find_and_change (char* in, int len) {
 R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	const char *cmdPdc = r_config_get (core->config, "cmd.pdc");
 	if (cmdPdc && *cmdPdc && !strstr (cmdPdc, "pdc")) {
+		if (strstr (cmdPdc, "!*") || strstr (cmdPdc, "#!")) {
+			if (!strcmp (input, "*")) {
+				input = " -r2";
+			} else if (!strcmp (input, "=")) {
+				input = " -a";
+			} else if (!strcmp (input, "?")) {
+				input = " -h";
+			}
+		}
 		return r_core_cmdf (core, "%s%s", cmdPdc, input);
 	}
 
@@ -182,7 +191,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	}
 	r_config_hold_i (hc, "asm.pseudo", "asm.decode", "asm.lines", "asm.bytes", "asm.stackptr", NULL);
 	r_config_hold_i (hc, "asm.offset", "asm.flags", "asm.lines.fcn", "asm.comments", NULL);
-	r_config_hold_i (hc, "asm.functions", "asm.section", "asm.cmt.col", "asm.filter", NULL);
+	r_config_hold_i (hc, "asm.functions", "asm.section", "asm.cmt.col", "asm.sub.names", NULL);
 	r_config_hold_i (hc, "scr.color", "emu.str", "asm.emu", "emu.write", NULL);
 	r_config_hold_i (hc, "io.cache", NULL);
 	if (!fcn) {
@@ -194,7 +203,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_config_set_i (core->config, "asm.stackptr", 0);
 	r_config_set_i (core->config, "asm.pseudo", 1);
 	r_config_set_i (core->config, "asm.decode", 0);
-	r_config_set_i (core->config, "asm.filter", 1);
+	r_config_set_i (core->config, "asm.sub.names", 1);
 	r_config_set_i (core->config, "asm.lines", 0);
 	r_config_set_i (core->config, "asm.bytes", 0);
 	r_config_set_i (core->config, "asm.offset", 0);
@@ -238,7 +247,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		r_cons_push ();
 		bool html = r_config_get_i (core->config, "scr.html");
 		r_config_set_i (core->config, "scr.html", 0);
-		char *code = r_core_cmd_str (core, sdb_fmt ("pD %d @ 0x%08"PFMT64x"\n", bb->size, bb->addr));
+		char *code = r_core_cmd_str (core, sdb_fmt ("pD %"PFMT64d" @ 0x%08"PFMT64x"\n", bb->size, bb->addr));
 		r_cons_pop ();
 		r_config_set_i (core->config, "scr.html", html);
 		if (indent * I_TAB + 2 >= sizeof (indentstr)) {
@@ -270,7 +279,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		}
 		if (sdb_const_get (db, K_INDENT (bb->addr), 0)) {
 			// already analyzed, go pop and continue
-			// XXX check if cant pop
+			// XXX check if can't pop
 			//eprintf ("%s// 0x%08llx already analyzed\n", indentstr, bb->addr);
 			ut64 addr = sdb_array_pop_num (db, "indent", NULL);
 			if (addr == UT64_MAX) {
@@ -345,7 +354,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				} else {
 					bb = r_anal_bb_from_offset (core->anal, jump);
 					if (!bb) {
-						eprintf ("failed to retrieve blcok at 0x%"PFMT64x"\n", jump);
+						eprintf ("failed to retrieve block at 0x%"PFMT64x"\n", jump);
 						break;
 					}
 					if (fail != UT64_MAX) {

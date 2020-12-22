@@ -1,0 +1,15 @@
+coverage:
+  status:
+    project:
+      default:
+        branches:
+          - master
+          - 'release-*'
+        if_not_found: failure
+        if_ci_failed: error
+        informational: true
+    patch:
+      default:
+        if_not_found: success
+        if_ci_failed: success
+        informational: true

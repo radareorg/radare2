@@ -287,7 +287,7 @@ lg_floor(size_t x)
 	assert(ret < UINT_MAX);
 	return ((unsigned)ret);
 }
-#elif (defined(JEMALLOC_HAVE_BUILTIN_CLZ))
+#elif (defined(JEMALLOC_HAVE_BUILTIN_CLZ)) && !defined(__TINYC__)
 JEMALLOC_INLINE unsigned
 lg_floor(size_t x)
 {

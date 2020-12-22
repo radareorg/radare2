@@ -1,0 +1,16 @@
+NAME=dmh crash without arena/heap map
+FILE=-
+ARGS=
+CMDS=<<EOF
+dmh
+o malloc://512 0x20000 rwx
+omn 0x20000 arena
+dmh
+o malloc://512 0x10000 rwx
+omn 0x10000 [heap]
+dmh
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+

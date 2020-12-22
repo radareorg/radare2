@@ -1,0 +1,15 @@
+NAME=rarun2 -v 
+FILE=-
+CMDS=!rarun2 -v | grep -c build
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=rarun2 -h
+FILE=-
+CMDS=!rarun2 -h | grep -c Usage
+EXPECT=<<EOF
+1
+EOF
+RUN

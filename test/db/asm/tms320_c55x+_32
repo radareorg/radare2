@@ -1,0 +1,25 @@
+d "add t1, ac1" 740131
+d "add #0x1 << #0xe, ac1, ac1" c261410001
+d "amar *ar+2, *ar+4, *ar15" ea928014c03f
+d "amar *(ar2+t0b)" 621200
+d "asub #0xb, xar1" ae21000b
+d "bclr st0_acov0, st0_55" 0a0a
+d "cmp t2 == t3, tc1" a4323300
+d "macm *ar2, *ar4, ac0, ac0" c832803400
+d "mov *(ar0+t0b) << t2, ac0" b410004032
+d "mov ac0.l, *ar2 || mov *(ar1+t0b) << t3, ac1" 395102a0b411014033
+d "mov t0, ac0" 770030
+d "mpym *ar2, *ar4, ac0" c832003400
+d "sub ac1, ac0" 740081
+d "pop t2, t3" 713233
+d "pop mmap(@st1_55)" 2461e508
+d "psh mmap(@st0_55)" 2461e400
+d "pshboth xar5" 0d25
+d "ret" 21
+d "rptblocal #0x000011 || sfts ac0, #-1" 376e00117b00a0
+d "sfts ac1, t3, ac1" a6818133
+d "sftl ac1, #0x31, ac1" a7810131
+d "xccpart tc1" 07e4
+d "xccpart ac0 <= #0 || mov #0x0, t0" 3605a07bb000
+d "xor #0x1, ar3, ar3" c5a3230001
+d "xccpart xar12 == #0" 07cc

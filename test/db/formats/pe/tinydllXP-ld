@@ -1,0 +1,6 @@
+NAME=PE: corkami tinydllXP-ld.exe - open
+FILE=bins/pe/tinydllXP-ld.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN

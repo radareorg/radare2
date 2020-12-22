@@ -1,4 +1,5 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2019 - pancake, nibble */
+
 #include "bin_write_elf.inc"
 
 RBinWrite r_bin_write_elf = {

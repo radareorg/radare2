@@ -38,7 +38,7 @@ static void r_anal_ref_free(void *ref) {
 	free (ref);
 }
 
-R_API RList *r_anal_ref_list_new() {
+R_API RList *r_anal_ref_list_new(void) {
 	return r_list_newf (r_anal_ref_free);
 }
 
@@ -83,6 +83,10 @@ static int ref_cmp(const RAnalRef *a, const RAnalRef *b) {
 	return 0;
 }
 
+static void sortxrefs(RList *list) {
+	r_list_sort (list, (RListComparator)ref_cmp);
+}
+
 static void listxrefs(HtUP *m, ut64 addr, RList *list) {
 	if (addr == UT64_MAX) {
 		ht_up_foreach (m, mylistrefs_cb, list);
@@ -95,7 +99,6 @@ static void listxrefs(HtUP *m, ut64 addr, RList *list) {
 
 		ht_up_foreach (d, appendRef, list);
 	}
-	r_list_sort (list, (RListComparator)ref_cmp);
 }
 
 static void setxref(HtUP *m, ut64 from, ut64 to, int type) {
@@ -119,11 +122,13 @@ R_API int r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType t
 	if (!anal || from == to) {
 		return false;
 	}
-	if (!anal->iob.is_valid_offset (anal->iob.io, from, 0)) {
-		return false;
-	}
-	if (!anal->iob.is_valid_offset (anal->iob.io, to, 0)) {
-		return false;
+	if (anal->iob.is_valid_offset) {
+		if (!anal->iob.is_valid_offset (anal->iob.io, from, 0)) {
+			return false;
+		}
+		if (!anal->iob.is_valid_offset (anal->iob.io, to, 0)) {
+			return false;
+		}
 	}
 	setxref (anal->dict_xrefs, to, from, type);
 	setxref (anal->dict_refs, from, to, type);
@@ -151,6 +156,7 @@ R_API int r_anal_xref_del(RAnal *anal, ut64 from, ut64 to) {
 
 R_API int r_anal_xrefs_from(RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr) {
 	listxrefs (anal->dict_refs, addr, list);
+	sortxrefs (list);
 	return true;
 }
 
@@ -160,6 +166,7 @@ R_API RList *r_anal_xrefs_get(RAnal *anal, ut64 to) {
 		return NULL;
 	}
 	listxrefs (anal->dict_xrefs, to, list);
+	sortxrefs (list);
 	if (r_list_empty (list)) {
 		r_list_free (list);
 		list = NULL;
@@ -173,6 +180,7 @@ R_API RList *r_anal_refs_get(RAnal *anal, ut64 from) {
 		return NULL;
 	}
 	listxrefs (anal->dict_refs, from, list);
+	sortxrefs (list);
 	if (r_list_empty (list)) {
 		r_list_free (list);
 		list = NULL;
@@ -186,6 +194,7 @@ R_API RList *r_anal_xrefs_get_from(RAnal *anal, ut64 to) {
 		return NULL;
 	}
 	listxrefs (anal->dict_refs, to, list);
+	sortxrefs (list);
 	if (r_list_empty (list)) {
 		r_list_free (list);
 		list = NULL;
@@ -199,8 +208,9 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 	PJ *pj = NULL;
 	RList *list = r_anal_ref_list_new();
 	listxrefs (anal->dict_refs, UT64_MAX, list);
+	sortxrefs (list);
 	if (rad == 'j') {
-		pj = pj_new ();
+		pj = anal->coreb.pjWithEncoding (anal->coreb.core);
 		if (!pj) {
 			return;
 		}
@@ -320,8 +330,15 @@ R_API bool r_anal_xrefs_init(RAnal *anal) {
 	return true;
 }
 
-R_API int r_anal_xrefs_count(RAnal *anal) {
-	return anal->dict_xrefs->count;
+static bool count_cb(void *user, const ut64 k, const void *v) {
+	(*(ut64 *)user) += ((HtUP *)v)->count;
+	return true;
+}
+
+R_API ut64 r_anal_xrefs_count(RAnal *anal) {
+	ut64 ret = 0;
+	ht_up_foreach (anal->dict_xrefs, count_cb, &ret);
+	return ret;
 }
 
 static RList *fcn_get_refs(RAnalFunction *fcn, HtUP *ht) {
@@ -331,25 +348,26 @@ static RList *fcn_get_refs(RAnalFunction *fcn, HtUP *ht) {
 	if (!list) {
 		return NULL;
 	}
-
 	r_list_foreach (fcn->bbs, iter, bb) {
 		int i;
 
-		for (i = 0; i < bb->ninstr; ++i) {
+		for (i = 0; i < bb->ninstr; i++) {
 			ut64 at = bb->addr + r_anal_bb_offset_inst (bb, i);
 			listxrefs (ht, at, list);
 		}
 	}
+	sortxrefs (list);
 	return list;
 }
 
-R_API RList *r_anal_fcn_get_refs(RAnal *anal, RAnalFunction *fcn) {
-	r_return_val_if_fail (anal && fcn, NULL);
-	return fcn_get_refs (fcn, anal->dict_refs);
+R_API RList *r_anal_function_get_refs(RAnalFunction *fcn) {
+	r_return_val_if_fail (fcn, NULL);
+	return fcn_get_refs (fcn, fcn->anal->dict_refs);
 }
 
-R_API RList *r_anal_fcn_get_xrefs(RAnal *anal, RAnalFunction *fcn) {
-	return fcn_get_refs (fcn, anal->dict_xrefs);
+R_API RList *r_anal_function_get_xrefs(RAnalFunction *fcn) {
+	r_return_val_if_fail (fcn, NULL);
+	return fcn_get_refs (fcn, fcn->anal->dict_xrefs);
 }
 
 R_API const char *r_anal_ref_type_tostring(RAnalRefType t) {

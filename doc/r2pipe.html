@@ -1,0 +1,35 @@
+<html>
+
+<body>
+Hello World
+<button type="button" id="buttonInfo">Info</button>
+<button type="button" id="buttonFlags">Flags</button>
+<div id="urls">Starting up...</div>
+</body>
+
+
+<script type="application/javascript" src="/m/r2.js">
+</script>
+<script>
+
+r2.id=(x) => document.getElementById(x);
+r2.onload=(x) => document.addEventListener('DOMContentLoaded', x);
+
+function main() {
+	const urls = r2.id('urls');
+	r2.id('buttonInfo').addEventListener('click', () => {
+		r2.cmd('i', function(res) {
+			urls.innerHTML = '<pre>' + res + '</pre>';
+		});
+	});
+	r2.id('buttonFlags').addEventListener('click', () => {
+		r2.cmd('f', function(res) {
+			urls.innerHTML = '<pre>' + res + '</pre>';
+		});
+	});
+	urls.innerHTML = 'Press any button';
+}
+r2.onload(main);
+</script>
+
+</html>

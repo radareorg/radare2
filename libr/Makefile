@@ -52,12 +52,16 @@ endif
 
 ifeq ($(WITH_LIBR),1)
 
+ifeq ($(CC),emcc)
+MLFLAGS=
+else
 ifeq ($(OSTYPE),darwin)
 MLFLAGS+=-install_name @rpath/libr2.dylib
 endif
 ifeq ($(OSTYPE),ios)
 MLFLAGS+=-install_name @rpath/libr2.dylib
 MLFLAGS+=-fembed-bitcode
+endif
 endif
 LDFLAGS+=${SSL_LDFLAGS}
 # XXX version-script only works with shlib as output
@@ -66,11 +70,12 @@ LDFLAGS+=${SSL_LDFLAGS}
 #endif
 # from env: ALFLAGS+=$(ALFLAGS)
 
+# ${PARTIALLD} $(ALFLAGS) $(MLFLAGS) $(PLFLAGS) -o .libr/$$(basename $${LIB}.a).o $${LIB}
 .libr: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 	rm -rf .libr
 	mkdir -p .libr
 	for LIB in $^ ; do \
-		${PARTIALLD} $(ALFLAGS) $(MLFLAGS) $(PLFLAGS) -o .libr/$$(basename $${LIB} .a).o $${LIB} ; \
+		${PARTIALLD} $(ALFLAGS) $(MLFLAGS) $(PLFLAGS) -o .libr/$$(basename $${LIB}.a).o $${LIB} ; \
 	done
 ifeq ($(OSTYPE),linux)
 	for LIB in .libr/* ; do $(OBJCOPY) --localize-hidden $$LIB ; done
@@ -86,31 +91,33 @@ ifeq ($(OSTYPE),bsd)
 endif
 
 _libr.${EXT_AR}: .libr
-	${AR} crs $@ .libr/*.o
+	-${AR} -rs $@ .libr/*.o
+
+# this code should be in do-ar-sh not inlined here..
 
 .libr2: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 	rm -rf .libr2
 	mkdir -p .libr2
-	for LIB in $^ ; do \
+	-for LIB in $^ ; do \
 		BN=`basename $$LIB` ; \
-		echo $$BN ; \
 		mkdir -p .libr2/$$BN ; \
-		( cd .libr2/$$BN ; pwd ; du -hs ../../$$LIB; ar x ../../$$LIB ) ; \
+		echo "( cd .libr2/$$BN ; pwd ; du -hs ../../$$LIB; ${AR} -x ../../$$LIB )" ; \
+		( cd .libr2/$$BN ; pwd ; du -hs ../../$$LIB; ${AR} -x ../../$$LIB ) ; \
 	done
 
 libr.${EXT_AR}: .libr2
-	${AR} crs $@ .libr2/*/*.o
-
-#libr.${EXT_AR}: .libr
-#	${AR} crs $@ .libr/*.o
+	-${AR} -rs $@ .libr2/*/*.o
 
 ifeq (1,$(WITH_GPL))
 E+=../shlr/grub/libgrubfs.${EXT_AR}
 endif
+E+=../shlr/yxml/libyxml.${EXT_AR}
 E+=../shlr/ar/libr_ar.${EXT_AR}
-E+=../shlr/windbg/libr_windbg.${EXT_AR}
+E+=../shlr/winkd/libr_winkd.${EXT_AR}
 E+=../shlr/qnx/lib/libqnxr.${EXT_AR}
 E+=../shlr/bochs/lib/libbochs.${EXT_AR}
+E+=../shlr/radare2-shell-parser/libshell-parser.${EXT_AR}
+E+=../shlr/tree-sitter/libtree-sitter.${EXT_AR}
 #ifeq ($(COMPILER),ios-sdk)
 #E+=../shlr/sdb/src/libsdb.${EXT_AR}
 #endif
@@ -124,17 +131,22 @@ else
 E+=../shlr/capstone/libcapstone.${EXT_AR}
 endif
 
+ifeq ($(OSTYPE),darwin)
+libr_LDFLAGS=-dynamiclib -shared
+else
+libr_LDFLAGS=-shared
+endif
+
 libr.${EXT_SO}: .libr2
-	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -shared -dynamiclib -o libr.${EXT_SO}  \
+ifeq (${COMPILER},emscripten)
+	echo nothing to do here
+else
+	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} $(libr_LDFLAGS) -o libr.${EXT_SO}  \
 		.libr2/*/*.o \
 		../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
-		../shlr/libr_shlr.${EXT_AR} $(E)
-
-#libr.${EXT_SO}: .libr
-#	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -shared -dynamiclib -o libr.${EXT_SO}  \
-#		.libr/*.o \
-#		../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
-#		../shlr/libr_shlr.${EXT_AR} $(E)
+		../shlr/libr_shlr.${EXT_AR} ../shlr/mpc/libmpc.${EXT_AR} $(E) \
+		../libr/util/libr_util.${EXT_AR}
+endif
 
 else
 
@@ -156,7 +168,7 @@ $(LIBS):
 
 pkgcfg:
 	@for lib in ${LIBS}; do $(MAKE) -C $${lib} pkgcfg; done
-	$(MAKE) -C asm pkgcfg NAME=libr DEPS="r_`echo ${LIBS}|sed -e 's, , r_,g'`"
+	$(MAKE) -C asm pkgcfg NAME=libr R2DEPS="r_`echo ${LIBS}|sed -e 's, , r_,g'`"
 	# TODO: Magically generate libr.pc.acr here using LIBS and so :)
 
 install-pkgconfig:
@@ -178,7 +190,7 @@ install-includes:
 		done ; \
 	done)
 	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/sdb"
-	(cd include/sdb && for FILE in * ; do \
+	(cd ../shlr/sdb/src && for FILE in *.h ; do \
 		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/sdb/$$FILE" ; \
 	done)
 	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/r_util"
@@ -195,6 +207,7 @@ symstall install-symlink:
 		"${DESTDIR}${LIBDIR}/pkgconfig" \
 		"${DESTDIR}${LIBDIR}/radare2/${VERSION}" ; \
 	rm -rf "${DESTDIR}${INCLUDEDIR}/libr" && ln -fs "${PWD}/include" "${DESTDIR}${INCLUDEDIR}/libr" ; \
+	rm -rf "${DESTDIR}${INCLUDEDIR}/libr/sdb" && ln -fs "${PWD}/../shlr/sdb/src" "${DESTDIR}${INCLUDEDIR}/libr/sdb" ; \
 	$(MAKE) install-pkgconfig-symlink ; \
 	$(foreach lib,${LIBS}, \
 	  ln -fs "${PWD}/$(lib)/libr_$(lib).${EXT_SO}" \

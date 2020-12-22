@@ -1,0 +1,12 @@
+NAME=drrj color
+FILE=-
+ARGS=-a x86 -b 32 -m 0x10000
+CMDS=<<EOF
+e scr.color=1
+dr ebx=0x10
+drrj~{2}
+EOF
+EXPECT=<<EOF
+{"role":"A1","reg":"ebx","value":"10","refstr":"16 ebx"}
+EOF
+RUN

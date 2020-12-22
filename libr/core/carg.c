@@ -142,7 +142,7 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 	free (buf);
 }
 
-/* This functon display list of arg with some colors */
+/* This function display list of arg with some colors */
 
 R_API void r_core_print_func_args(RCore *core) {
 	RListIter *iter;
@@ -162,15 +162,13 @@ R_API void r_core_print_func_args(RCore *core) {
 	if (op->type == R_ANAL_OP_TYPE_CALL) {
 		RAnalFunction *fcn;
 		RAnalFuncArg *arg;
-		int i;
-		int nargs = 0;
 		bool onstack = false;
 		const char *fcn_name = NULL;
 		ut64 pcv = op->jump;
 		if (pcv == UT64_MAX) {
 			pcv = op->ptr;
 		}
-		fcn = r_anal_get_fcn_at (core->anal, pcv, 0);
+		fcn = r_anal_get_function_at (core->anal, pcv);
 		if (fcn) {
 			fcn_name = fcn->name;
 		} else {
@@ -193,19 +191,19 @@ R_API void r_core_print_func_args(RCore *core) {
 				argcnt++;
 			}
 		} else {
-			if (fcn) {
-				nargs = fcn->nargs;
-			}
-			if (nargs > 0) {
+			int nargs = 4; // TODO: use a correct value here when available
+			//if (nargs > 0) {
+				int i;
+				const char *cc = r_anal_cc_default (core->anal); // or use "reg" ?
 				for (i = 0; i < nargs; i++) {
-					ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_STDCALL, i);
+					ut64 v = r_debug_arg_get (core->dbg, cc, i);
 					print_arg_str (i, "", color);
 					r_cons_printf ("0x%08" PFMT64x, v);
 					r_cons_newline ();
 				}
-			} else {
-				print_arg_str (0, "void", color);
-			}
+			//} else {
+			//	print_arg_str (0, "void", color);
+			//}
 		}
 	}
 	r_anal_op_fini (op);
@@ -232,7 +230,10 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 	}
 	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 	int nargs = r_type_func_args_count (TDB, key);
-	const char *cc = r_anal_cc_func (core->anal, key);
+	if (!r_anal_cc_func (core->anal, key)){
+		return NULL;
+	}
+	char *cc = strdup (r_anal_cc_func (core->anal, key));
 	const char *src = r_anal_cc_arg (core->anal, cc, 0); // src of first argument
 	if (!cc) {
 		// unsupported calling convention
@@ -264,11 +265,18 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 				}
 				spv += arg->size;
 			} else {
-				arg->src = r_reg_getv (core->anal->reg, arg->cc_source);
+				const char *cs = arg->cc_source;
+				if (!cs) {
+					cs = r_anal_cc_default (core->anal);
+				}
+				if (cs) {
+					arg->src = r_reg_getv (core->anal->reg, cs);
+				}
 			}
 			r_list_append (list, arg);
 		}
 	}
 	free (key);
+	free (cc);
 	return list;
 }

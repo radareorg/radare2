@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2017-2020 - polsha3 */
+
 #include <r_util.h>
 
 #include <signal.h>

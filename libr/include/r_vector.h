@@ -2,6 +2,7 @@
 #define R2_VECTOR_H
 
 #include <r_types.h>
+#include <r_util/r_assert.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -60,7 +61,7 @@ R_API void r_vector_init(RVector *vec, size_t elem_size, RVectorFree free, void 
 R_API RVector *r_vector_new(size_t elem_size, RVectorFree free, void *free_user);
 
 // clears the vector and calls vec->free on every element if set.
-R_API void r_vector_clear(RVector *vec);
+R_API void r_vector_fini(RVector *vec);
 
 // frees the vector and calls vec->free on every element if set.
 R_API void r_vector_free(RVector *vec);
@@ -68,12 +69,24 @@ R_API void r_vector_free(RVector *vec);
 // the returned vector will have the same capacity as vec.
 R_API RVector *r_vector_clone(RVector *vec);
 
-static inline bool r_vector_empty(RVector *vec) {
+static inline bool r_vector_empty(const RVector *vec) {
+	r_return_val_if_fail (vec, false);
 	return vec->len == 0;
 }
 
+R_API void r_vector_clear(RVector *vec);
+
+// returns the length of the vector
+static inline size_t r_vector_len(const RVector *vec) {
+	r_return_val_if_fail (vec, 0);
+	return vec->len;
+}
+
 // returns a pointer to the offset inside the array where the element of the index lies.
-R_API void *r_vector_index_ptr(RVector *vec, size_t index);
+static inline void *r_vector_index_ptr(RVector *vec, size_t index) {
+	r_return_val_if_fail (vec && index < vec->capacity, NULL);
+	return (char *)vec->a + vec->elem_size * index;
+}
 
 // helper function to assign an element of size vec->elem_size from elem to p.
 // elem is a pointer to the actual data to assign!
@@ -122,19 +135,60 @@ R_API void *r_vector_shrink(RVector *vec);
  * }
  */
 #define r_vector_foreach(vec, it) \
-	if ((vec) && (vec)->a) \
+	if (!r_vector_empty (vec)) \
 		for (it = (void *)(vec)->a; (char *)it != (char *)(vec)->a + ((vec)->len * (vec)->elem_size); it = (void *)((char *)it + (vec)->elem_size))
 
+#define r_vector_foreach_prev(vec, it) \
+	if (!r_vector_empty (vec)) \
+		for (it = (void *)((char *)(vec)->a + (((vec)->len - 1)* (vec)->elem_size)); (char *)it != (char *)(vec)->a; it = (void *)((char *)it - (vec)->elem_size))
+
 #define r_vector_enumerate(vec, it, i) \
-	if ((vec) && (vec)->a) \
+	if (!r_vector_empty (vec)) \
 		for (it = (void *)(vec)->a, i = 0; i < (vec)->len; it = (void *)((char *)it + (vec)->elem_size), i++)
 
+/*
+ * example:
+ *
+ * RVector *v = ...; // contains {(st64)0, (st64)2, (st64)4, (st64)6, (st64)8};
+ * size_t l;
+ * #define CMP(x, y) x - (*(st64 *)y)
+ * r_vector_lower_bound (v, 3, l, CMP);
+ * // l == 2
+ */
+#define r_vector_lower_bound(vec, x, i, cmp) \
+	do { \
+		size_t h = (vec)->len, m; \
+		for (i = 0; i < h; ) { \
+			m = i + ((h - i) >> 1); \
+			if ((cmp (x, ((char *)(vec)->a + (vec)->elem_size * m))) > 0) { \
+				i = m + 1; \
+			} else { \
+				h = m; \
+			} \
+		} \
+	} while (0) \
+
+#define r_vector_upper_bound(vec, x, i, cmp) \
+	do { \
+		size_t h = (vec)->len, m; \
+		for (i = 0; i < h; ) { \
+			m = i + ((h - i) >> 1); \
+			if ((cmp (x, ((char *)(vec)->a + (vec)->elem_size * m))) < 0) { \
+				h = m; \
+			} else { \
+				i = m + 1; \
+			} \
+		} \
+	} while (0) \
 
 // RPVector
 
 R_API void r_pvector_init(RPVector *vec, RPVectorFree free);
+R_API void r_pvector_fini(RPVector *vec);
 
 R_API RPVector *r_pvector_new(RPVectorFree free);
+
+R_API RPVector *r_pvector_new_with_len(RPVectorFree free, size_t length);
 
 // clear the vector and call vec->v.free on every element.
 R_API void r_pvector_clear(RPVector *vec);
@@ -143,19 +197,34 @@ R_API void r_pvector_clear(RPVector *vec);
 R_API void r_pvector_free(RPVector *vec);
 
 static inline size_t r_pvector_len(const RPVector *vec) {
+	r_return_val_if_fail (vec, 0);
 	return vec->v.len;
 }
 
 static inline void *r_pvector_at(const RPVector *vec, size_t index) {
+	r_return_val_if_fail (vec && index < vec->v.len, NULL);
 	return ((void **)vec->v.a)[index];
 }
 
 static inline void r_pvector_set(RPVector *vec, size_t index, void *e) {
+	r_return_if_fail (vec && index < vec->v.len);
 	((void **)vec->v.a)[index] = e;
 }
 
 static inline bool r_pvector_empty(RPVector *vec) {
 	return r_pvector_len (vec) == 0;
+}
+
+// returns a pointer to the offset inside the array where the element of the index lies.
+static inline void **r_pvector_index_ptr(RPVector *vec, size_t index) {
+	r_return_val_if_fail (vec && index < vec->v.capacity, NULL);
+	return ((void **)vec->v.a) + index;
+}
+
+// same as r_pvector_index_ptr(<vec>, 0)
+static inline void **r_pvector_data(RPVector *vec) {
+	r_return_val_if_fail (vec, NULL);
+	return (void **)vec->v.a;
 }
 
 // returns the respective pointer inside the vector if x is found or NULL otherwise.
@@ -217,35 +286,25 @@ static inline void **r_pvector_shrink(RPVector *vec) {
 #define r_pvector_foreach(vec, it) \
 	for (it = (void **)(vec)->v.a; it != (void **)(vec)->v.a + (vec)->v.len; it++)
 
+// like r_pvector_foreach() but inverse
+#define r_pvector_foreach_prev(vec, it) \
+	for (it = ((vec)->v.len == 0 ? NULL : (void **)(vec)->v.a + (vec)->v.len - 1); it != NULL && it != (void **)(vec)->v.a - 1; it--)
+
 /*
  * example:
  *
  * RPVector *v = ...; // contains {(void*)0, (void*)2, (void*)4, (void*)6, (void*)8};
- * size_t l;
+ * size_t index;
  * #define CMP(x, y) x - y
- * r_pvector_lower_bound (v, (void *)3, l, CMP);
- * // l == 2
+ * r_pvector_lower_bound (v, (void *)3, index, CMP);
+ * // index == 2
  */
 #define r_pvector_lower_bound(vec, x, i, cmp) \
 	do { \
-		int h = (vec)->v.len, m; \
+		size_t h = (vec)->v.len, m; \
 		for (i = 0; i < h; ) { \
 			m = i + ((h - i) >> 1); \
-			if ((cmp (x, ((void **)(vec)->v.a)[m])) > 0) { \
-				i = m + 1; \
-			} else { \
-				h = m; \
-			} \
-		} \
-	} while (0) \
-
-// see r_pvector_lower_bound
-#define r_pvector_upper_bound(vec, x, i, cmp) \
-	do { \
-		int h = (vec)->v.len, m; \
-		for (i = 0; i < h; ) { \
-			m = i + ((h - i) >> 1); \
-			if (!((cmp (x, ((void **)(vec)->v.a)[m])) < 0)) { \
+			if ((cmp ((x), ((void **)(vec)->v.a)[m])) > 0) { \
 				i = m + 1; \
 			} else { \
 				h = m; \

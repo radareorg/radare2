@@ -2,7 +2,7 @@
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone/capstone.h>
+#include <capstone.h>
 
 #define USE_ITER_API 0
 
@@ -198,10 +198,14 @@ static int check_features(RAsm *a, cs_insn *insn) {
 	return 1;
 }
 
-#ifndef CORELIB
-R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_x86_cs,
-	.version = R2_VERSION
-};
+#ifndef R2_PLUGIN_INCORE
+R_API RLibStruct *radare_plugin_function(void) {
+	RLibStruct *rp = R_NEW0 (RLibStruct);
+	if (rp) {
+		rp->type = R_LIB_TYPE_ASM;
+		rp->data = &r_asm_plugin_x86_cs;
+		rp->version = R2_VERSION;
+	}
+	return rp;
+}
 #endif

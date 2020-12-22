@@ -7,7 +7,6 @@
 #include <r_anal.h>
 
 static int chip8_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
-	memset (op, '\0', sizeof (RAnalOp));
 	ut16 opcode = r_read_be16 (data);
 //	uint8_t x = (opcode >> 8) & 0x0F;
 //	uint8_t y = (opcode >> 4) & 0x0F;
@@ -160,7 +159,7 @@ RAnalPlugin r_anal_plugin_chip8 = {
 	.op = &chip8_anop,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_chip8,

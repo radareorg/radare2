@@ -51,7 +51,7 @@ makeReadme() {
 if [ ! -d "${R2B}" ]; then
 	mkdir -p "${R2B}"
 	cd "${R2B}/.."
-	git clone https://github.com/radare/radare2-bin
+	git clone https://github.com/radareorg/radare2-bin
 fi
 
 cd "$R2B"
@@ -71,7 +71,7 @@ for a in ${ARCHS} ; do
 		msg "[X] Build for $a has failed"
 		exit 1
 	fi
-	msg "[>] Commiting $a into radare2-bin..."
+	msg "[>] Committing $a into radare2-bin..."
 	# cp -f "${R2T}/radare2-${v}-android-${a}.tar.gz" . || exit 1
 	cp -f "${R2T}/radare2-${v}-android-${a}.tar.gz" . # || exit 1
 	rm -f README.md

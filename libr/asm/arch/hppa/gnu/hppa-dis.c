@@ -51,7 +51,7 @@ static const char *const fp_reg_names[] =
 
 typedef unsigned int CORE_ADDR;
 
-/* Get at various relevent fields of an instruction word.  */
+/* Get at various relevant fields of an instruction word.  */
 
 #define MASK_5  0x1f
 #define MASK_10 0x3ff

@@ -1,0 +1,70 @@
+NAME=mosquitoes ii
+FILE=bins/elf/mosquito-ppc64le
+BROKEN=1
+CMDS=ii
+EXPECT=<<EOF
+[Imports]
+Num  Vaddr       Bind      Type Name
+   1 0x10013de8  GLOBAL    FUNC unlink
+   2 0x10013df0  GLOBAL    FUNC fgets
+   3 0x10013df8  GLOBAL    FUNC ftruncate
+   4 0x10013e00  GLOBAL    FUNC __libc_start_main
+   5 0x10013e08  GLOBAL    FUNC rewind
+   6 0x10013e10  GLOBAL    FUNC strtok
+   7 0x10013e18  GLOBAL    FUNC fileno
+   8 0x10013e20    WEAK  NOTYPE __gmon_start__
+   9 0x00000000    WEAK  NOTYPE _Jv_RegisterClasses
+  10 0x10013e28  GLOBAL    FUNC EVP_MD_CTX_init
+  11 0x10013e30  GLOBAL    FUNC putchar
+  12 0x10013e38  GLOBAL    FUNC BIO_set_flags
+  13 0x10013e40  GLOBAL    FUNC memcpy
+  14 0x10013e48  GLOBAL    FUNC fread
+  15 0x10013e50  GLOBAL    FUNC BIO_s_mem
+  16 0x10013e58  GLOBAL    FUNC BIO_free_all
+  17 0x10013e60  GLOBAL    FUNC strncpy
+  18 0x10013e68  GLOBAL    FUNC exit
+  19 0x10013e70  GLOBAL    FUNC __printf_chk
+  20 0x10013e78  GLOBAL    FUNC BIO_push
+  21 0x00000000    WEAK  NOTYPE _ITM_deregisterTMCloneTable
+  22 0x10013e80  GLOBAL    FUNC BIO_f_base64
+  23 0x10013e88  GLOBAL    FUNC EVP_MD_CTX_cleanup
+  24 0x00000000    WEAK  NOTYPE _ITM_registerTMCloneTable
+  25 0x00000000  GLOBAL     OBJ stderr
+  26 0x10013e90  GLOBAL    FUNC EVP_DigestInit_ex
+  27 0x10013e98  GLOBAL    FUNC EVP_DigestFinal_ex
+  28 0x10013ea0  GLOBAL    FUNC __errno_location
+  29 0x10013ea8  GLOBAL    FUNC __fprintf_chk
+  30 0x00000000  GLOBAL     OBJ stdin
+  31 0x10013eb0  GLOBAL    FUNC EVP_get_digestbyname
+  32 0x10013eb8  GLOBAL    FUNC signal
+  33 0x10013ec0  GLOBAL    FUNC BIO_write
+  34 0x10013ec8  GLOBAL    FUNC tmpfile
+  35 0x10013ed0  GLOBAL    FUNC fopen
+  36 0x10013ed8  GLOBAL    FUNC __stack_chk_fail
+  37 0x10013ee0  GLOBAL    FUNC feof
+  38 0x10013ee8  GLOBAL    FUNC BIO_ctrl
+  39 0x10013ef0  GLOBAL    FUNC malloc
+  40 0x10013ef8  GLOBAL    FUNC RAND_bytes
+  41 0x10013f00  GLOBAL    FUNC fclose
+  42 0x10013f08  GLOBAL    FUNC strcmp
+  43 0x10013f10  GLOBAL    FUNC tcgetattr
+  44 0x10013f18  GLOBAL    FUNC calloc
+  45 0x10013f20  GLOBAL    FUNC BIO_new
+  46 0x10013f28  GLOBAL    FUNC free
+  47 0x10013f30  GLOBAL    FUNC puts
+  48 0x10013f38  GLOBAL    FUNC tcsetattr
+  49 0x10013f40  GLOBAL    FUNC strerror
+  50 0x10013f48  GLOBAL    FUNC fwrite
+  51 0x10013f50  GLOBAL    FUNC fputs
+  52 0x10013f58  GLOBAL    FUNC strlen
+  53 0x10013f60  GLOBAL    FUNC OpenSSL_add_all_digests
+  54 0x10013f68  GLOBAL    FUNC __snprintf_chk
+  55 0x10013f70  GLOBAL    FUNC memset
+  56 0x10013f78  GLOBAL    FUNC EVP_DigestUpdate
+   9 0x00000000    WEAK  NOTYPE _Jv_RegisterClasses
+  21 0x00000000    WEAK  NOTYPE _ITM_deregisterTMCloneTable
+  24 0x00000000    WEAK  NOTYPE _ITM_registerTMCloneTable
+  25 0x00000000  GLOBAL     OBJ stderr
+  30 0x00000000  GLOBAL     OBJ stdin
+EOF
+RUN

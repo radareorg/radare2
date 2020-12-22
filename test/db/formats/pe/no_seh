@@ -1,0 +1,6 @@
+NAME=PE: corkami no_seh.exe - open
+FILE=bins/pe/no_seh.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN

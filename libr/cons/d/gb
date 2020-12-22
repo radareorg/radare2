@@ -1,0 +1,71 @@
+ec comment rgb:86c06c
+ec usrcmt rgb:86c06c
+ec mov rgb:306850
+ec fname rgb:e0f8cf
+ec args white
+ec floc rgb:86c06c
+ec fline rgb:e0f8cf
+ec flag rgb:e0f8cf
+ec invalid rgb:306850
+ec input rgb:e0f8cf
+ec label rgb:86c06c
+ec flow rgb:86c06c
+ec flow2 rgb:86c06c
+ec prompt rgb:e0f8cf
+ec offset rgb:306850
+ec other rgb:306850
+ec b0x00 rgb:306850
+ec b0x7f rgb:86c06c
+ec b0xff rgb:e0f8cf
+ec math rgb:86c06c
+ec crypto rgb:86c06c
+ec bin rgb:86c06c
+ec btext rgb:86c06c
+ec push rgb:86c06c
+ec pop rgb:86c06c
+ec jmp rgb:e0f8cf
+ec cjmp rgb:e0f8cf
+ec ujmp rgb:e0f8cf
+ec call rgb:e0f8cf
+ec trap rgb:e0f8cf
+ec swi rgb:e0f8cf
+ec ret rgb:e0f8cf
+ec cmp rgb:86c06c
+ec nop rgb:306850
+ec trap rgb:86c06c
+ec reg rgb:e0f8cf
+ec creg rgb:e8f8cf
+ec num rgb:e0f8cf
+ec help rgb:e0f8cf
+ec trap rgb:000 rgb:86c06c
+ec ucall rgb:86c06c
+ec linehl rgb:306850
+
+ec graph.box rgb:86c06c
+ec graph.box2 rgb:86c06c
+ec graph.box3 rgb:86c06c
+ec graph.box4 rgb:86c06c
+ec graph.true rgb:86c06c
+ec graph.false rgb:e0f8cf
+ec graph.trufae rgb:86c06c
+ec graph.current rgb:e0f8cf
+ec graph.traced rgb:86c06c
+
+ec gui.cflow rgb:e0f8cf
+ec gui.dataoffset rgb:e0f8cf
+ec gui.background rgb:e0f8cf
+ec gui.alt_background rgb:e0f8cf
+ec gui.border rgb:e0f8cf
+
+ec ai.read rgb:e0f8cf
+ec ai.write rgb:86c06c
+ec ai.exec rgb:86c06c
+ec ai.seq rgb:86c06c
+ec ai.ascii rgb:86c06c
+
+ec func_var rgb:86c06c
+ec func_var_type rgb:86c06c
+ec func_var_addr rgb:e0f8cf
+
+ec widget_bg rgb:86c06c rgb:000
+ec widget_sel rgb:e0f8cf rgb:000

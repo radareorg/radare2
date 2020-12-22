@@ -1,0 +1,268 @@
+### ncrypt.h ###
+
+NCRYPT_PROV_HANDLE=typedef
+typedef.NCRYPT_PROV_HANDLE=ULONG_PTR
+
+NCRYPT_HANDLE=typedef
+typedef.NCRYPT_HANDLE=ULONG_PTR
+
+NCRYPT_SECRET_HANDLE=typedef
+typedef.NCRYPT_SECRET_HANDLE=ULONG_PTR
+
+NCRYPT_KEY_HANDLE=typedef
+typedef.NCRYPT_KEY_HANDLE=ULONG_PTR
+
+
+
+NCRYPT_DESCRIPTOR_HANDLE=type
+type.NCRYPT_DESCRIPTOR_HANDLE=p
+
+NCRYPT_STREAM_HANDLE=type
+type.NCRYPT_STREAM_HANDLE=p
+
+
+
+NCryptCreateClaim=func
+func.NCryptCreateClaim.args=8
+func.NCryptCreateClaim.arg.0=NCRYPT_KEY_HANDLE,hSubjectKey
+func.NCryptCreateClaim.arg.1=NCRYPT_KEY_HANDLE,hAuthorityKey
+func.NCryptCreateClaim.arg.2=DWORD,dwClaimType
+func.NCryptCreateClaim.arg.3=NCryptBufferDesc *,pParameterList
+func.NCryptCreateClaim.arg.4=PBYTE,pbClaimBlob
+func.NCryptCreateClaim.arg.5=DWORD,cbClaimBlob
+func.NCryptCreateClaim.arg.6=DWORD *,pcbResult
+func.NCryptCreateClaim.arg.7=DWORD,dwFlags
+func.NCryptCreateClaim.ret=SECURITY_STATUS
+
+NCryptCreatePersistedKey=func
+func.NCryptCreatePersistedKey.args=6
+func.NCryptCreatePersistedKey.arg.0=NCRYPT_PROV_HANDLE,hProvider
+func.NCryptCreatePersistedKey.arg.1=NCRYPT_KEY_HANDLE *,phKey
+func.NCryptCreatePersistedKey.arg.2=LPCWSTR,pszAlgId
+func.NCryptCreatePersistedKey.arg.3=LPCWSTR,pszKeyName
+func.NCryptCreatePersistedKey.arg.4=DWORD,dwLegacyKeySpec
+func.NCryptCreatePersistedKey.arg.5=DWORD,dwFlags
+func.NCryptCreatePersistedKey.ret=SECURITY_STATUS
+
+NCryptDecrypt=func
+func.NCryptDecrypt.args=8
+func.NCryptDecrypt.arg.0=NCRYPT_KEY_HANDLE,hKey
+func.NCryptDecrypt.arg.1=PBYTE,pbInput
+func.NCryptDecrypt.arg.2=DWORD,cbInput
+func.NCryptDecrypt.arg.3=VOID *,pPaddingInfo
+func.NCryptDecrypt.arg.4=PBYTE,pbOutput
+func.NCryptDecrypt.arg.5=DWORD,cbOutput
+func.NCryptDecrypt.arg.6=DWORD *,pcbResult
+func.NCryptDecrypt.arg.7=DWORD,dwFlags
+func.NCryptDecrypt.ret=SECURITY_STATUS
+
+NCryptDeleteKey=func
+func.NCryptDeleteKey.args=2
+func.NCryptDeleteKey.arg.0=NCRYPT_KEY_HANDLE,hKey
+func.NCryptDeleteKey.arg.1=DWORD,dwFlags
+func.NCryptDeleteKey.ret=SECURITY_STATUS
+
+NCryptDeriveKey=func
+func.NCryptDeriveKey.args=7
+func.NCryptDeriveKey.arg.0=NCRYPT_SECRET_HANDLE,hSharedSecret
+func.NCryptDeriveKey.arg.1=LPCWSTR,pwszKDF
+func.NCryptDeriveKey.arg.2=NCryptBufferDesc *,pParameterList
+func.NCryptDeriveKey.arg.3=PBYTE,pbDerivedKey
+func.NCryptDeriveKey.arg.4=DWORD,cbDerivedKey
+func.NCryptDeriveKey.arg.5=DWORD *,pcbResult
+func.NCryptDeriveKey.arg.6=ULONG,dwFlags
+func.NCryptDeriveKey.ret=SECURITY_STATUS
+
+NCryptEncrypt=func
+func.NCryptEncrypt.args=8
+func.NCryptEncrypt.arg.0=NCRYPT_KEY_HANDLE,hKey
+func.NCryptEncrypt.arg.1=PBYTE,pbInput
+func.NCryptEncrypt.arg.2=DWORD,cbInput
+func.NCryptEncrypt.arg.3=VOID *,pPaddingInfo
+func.NCryptEncrypt.arg.4=PBYTE,pbOutput
+func.NCryptEncrypt.arg.5=DWORD,cbOutput
+func.NCryptEncrypt.arg.6=DWORD *,pcbResult
+func.NCryptEncrypt.arg.7=DWORD,dwFlags
+func.NCryptEncrypt.ret=SECURITY_STATUS
+
+NCryptEnumAlgorithms=func
+func.NCryptEnumAlgorithms.args=5
+func.NCryptEnumAlgorithms.arg.0=NCRYPT_PROV_HANDLE,hProvider
+func.NCryptEnumAlgorithms.arg.1=DWORD,dwAlgOperations
+func.NCryptEnumAlgorithms.arg.2=DWORD *,pdwAlgCount
+func.NCryptEnumAlgorithms.arg.3=NCryptAlgorithmName **,ppAlgList
+func.NCryptEnumAlgorithms.arg.4=DWORD,dwFlags
+func.NCryptEnumAlgorithms.ret=SECURITY_STATUS
+
+NCryptEnumKeys=func
+func.NCryptEnumKeys.args=5
+func.NCryptEnumKeys.arg.0=NCRYPT_PROV_HANDLE,hProvider
+func.NCryptEnumKeys.arg.1=LPCWSTR,pszScope
+func.NCryptEnumKeys.arg.2=NCryptKeyName **,ppKeyName
+func.NCryptEnumKeys.arg.3=PVOID *,ppEnumState
+func.NCryptEnumKeys.arg.4=DWORD,dwFlags
+func.NCryptEnumKeys.ret=SECURITY_STATUS
+
+NCryptEnumStorageProviders=func
+func.NCryptEnumStorageProviders.args=3
+func.NCryptEnumStorageProviders.arg.0=DWORD *,pdwProviderCount
+func.NCryptEnumStorageProviders.arg.1=NCryptProviderName **,ppProviderList
+func.NCryptEnumStorageProviders.arg.2=DWORD,dwFlags
+func.NCryptEnumStorageProviders.ret=SECURITY_STATUS
+
+NCryptExportKey=func
+func.NCryptExportKey.args=8
+func.NCryptExportKey.arg.0=NCRYPT_KEY_HANDLE,hKey
+func.NCryptExportKey.arg.1=NCRYPT_KEY_HANDLE,hExportKey
+func.NCryptExportKey.arg.2=LPCWSTR,pszBlobType
+func.NCryptExportKey.arg.3=NCryptBufferDesc *,pParameterList
+func.NCryptExportKey.arg.4=PBYTE,pbOutput
+func.NCryptExportKey.arg.5=DWORD,cbOutput
+func.NCryptExportKey.arg.6=DWORD *,pcbResult
+func.NCryptExportKey.arg.7=DWORD,dwFlags
+func.NCryptExportKey.ret=SECURITY_STATUS
+
+NCryptFinalizeKey=func
+func.NCryptFinalizeKey.args=2
+func.NCryptFinalizeKey.arg.0=NCRYPT_KEY_HANDLE,hKey
+func.NCryptFinalizeKey.arg.1=DWORD,dwFlags
+func.NCryptFinalizeKey.ret=SECURITY_STATUS
+
+NCryptFreeBuffer=func
+func.NCryptFreeBuffer.args=1
+func.NCryptFreeBuffer.arg.0=PVOID,pvInput
+func.NCryptFreeBuffer.ret=SECURITY_STATUS
+
+NCryptFreeObject=func
+func.NCryptFreeObject.args=1
+func.NCryptFreeObject.arg.0=NCRYPT_HANDLE,hObject
+func.NCryptFreeObject.ret=SECURITY_STATUS
+
+NCryptGetProperty=func
+func.NCryptGetProperty.args=6
+func.NCryptGetProperty.arg.0=NCRYPT_HANDLE,hObject
+func.NCryptGetProperty.arg.1=LPCWSTR,pszProperty
+func.NCryptGetProperty.arg.2=PBYTE,pbOutput
+func.NCryptGetProperty.arg.3=DWORD,cbOutput
+func.NCryptGetProperty.arg.4=DWORD *,pcbResult
+func.NCryptGetProperty.arg.5=DWORD,dwFlags
+func.NCryptGetProperty.ret=SECURITY_STATUS
+
+NCryptImportKey=func
+func.NCryptImportKey.args=8
+func.NCryptImportKey.arg.0=NCRYPT_PROV_HANDLE,hProvider
+func.NCryptImportKey.arg.1=NCRYPT_KEY_HANDLE,hImportKey
+func.NCryptImportKey.arg.2=LPCWSTR,pszBlobType
+func.NCryptImportKey.arg.3=NCryptBufferDesc *,pParameterList
+func.NCryptImportKey.arg.4=NCRYPT_KEY_HANDLE *,phKey
+func.NCryptImportKey.arg.5=PBYTE,pbData
+func.NCryptImportKey.arg.6=DWORD,cbData
+func.NCryptImportKey.arg.7=DWORD,dwFlags
+func.NCryptImportKey.ret=SECURITY_STATUS
+
+NCryptIsAlgSupported=func
+func.NCryptIsAlgSupported.args=3
+func.NCryptIsAlgSupported.arg.0=NCRYPT_PROV_HANDLE,hProvider
+func.NCryptIsAlgSupported.arg.1=LPCWSTR,pszAlgId
+func.NCryptIsAlgSupported.arg.2=DWORD,dwFlags
+func.NCryptIsAlgSupported.ret=SECURITY_STATUS
+
+NCryptIsKeyHandle=func
+func.NCryptIsKeyHandle.args=1
+func.NCryptIsKeyHandle.arg.0=NCRYPT_KEY_HANDLE,hKey
+func.NCryptIsKeyHandle.ret=BOOL
+
+NCryptKeyDerivation=func
+func.NCryptKeyDerivation.args=6
+func.NCryptKeyDerivation.arg.0=NCRYPT_KEY_HANDLE,hKey
+func.NCryptKeyDerivation.arg.1=NCryptBufferDesc *,pParameterList
+func.NCryptKeyDerivation.arg.2=PUCHAR,pbDerivedKey
+func.NCryptKeyDerivation.arg.3=DWORD,cbDerivedKey
+func.NCryptKeyDerivation.arg.4=DWORD *,pcbResult
+func.NCryptKeyDerivation.arg.5=ULONG,dwFlags
+func.NCryptKeyDerivation.ret=SECURITY_STATUS
+
+NCryptNotifyChangeKey=func
+func.NCryptNotifyChangeKey.args=3
+func.NCryptNotifyChangeKey.arg.0=NCRYPT_PROV_HANDLE,hProvider
+func.NCryptNotifyChangeKey.arg.1=HANDLE *,phEvent
+func.NCryptNotifyChangeKey.arg.2=DWORD,dwFlags
+func.NCryptNotifyChangeKey.ret=SECURITY_STATUS
+
+NCryptOpenKey=func
+func.NCryptOpenKey.args=5
+func.NCryptOpenKey.arg.0=NCRYPT_PROV_HANDLE,hProvider
+func.NCryptOpenKey.arg.1=NCRYPT_KEY_HANDLE *,phKey
+func.NCryptOpenKey.arg.2=LPCWSTR,pszKeyName
+func.NCryptOpenKey.arg.3=DWORD,dwLegacyKeySpec
+func.NCryptOpenKey.arg.4=DWORD,dwFlags
+func.NCryptOpenKey.ret=SECURITY_STATUS
+
+NCryptOpenStorageProvider=func
+func.NCryptOpenStorageProvider.args=3
+func.NCryptOpenStorageProvider.arg.0=NCRYPT_PROV_HANDLE *,phProvider
+func.NCryptOpenStorageProvider.arg.1=LPCWSTR,pszProviderName
+func.NCryptOpenStorageProvider.arg.2=DWORD,dwFlags
+func.NCryptOpenStorageProvider.ret=SECURITY_STATUS
+
+NCryptSecretAgreement=func
+func.NCryptSecretAgreement.args=4
+func.NCryptSecretAgreement.arg.0=NCRYPT_KEY_HANDLE,hPrivKey
+func.NCryptSecretAgreement.arg.1=NCRYPT_KEY_HANDLE,hPubKey
+func.NCryptSecretAgreement.arg.2=NCRYPT_SECRET_HANDLE *,phAgreedSecret
+func.NCryptSecretAgreement.arg.3=DWORD,dwFlags
+func.NCryptSecretAgreement.ret=SECURITY_STATUS
+
+NCryptSetProperty=func
+func.NCryptSetProperty.args=5
+func.NCryptSetProperty.arg.0=NCRYPT_HANDLE,hObject
+func.NCryptSetProperty.arg.1=LPCWSTR,pszProperty
+func.NCryptSetProperty.arg.2=PBYTE,pbInput
+func.NCryptSetProperty.arg.3=DWORD,cbInput
+func.NCryptSetProperty.arg.4=DWORD,dwFlags
+func.NCryptSetProperty.ret=SECURITY_STATUS
+
+NCryptSignHash=func
+func.NCryptSignHash.args=8
+func.NCryptSignHash.arg.0=NCRYPT_KEY_HANDLE,hKey
+func.NCryptSignHash.arg.1=VOID *,pPaddingInfo
+func.NCryptSignHash.arg.2=PBYTE,pbHashValue
+func.NCryptSignHash.arg.3=DWORD,cbHashValue
+func.NCryptSignHash.arg.4=PBYTE,pbSignature
+func.NCryptSignHash.arg.5=DWORD,cbSignature
+func.NCryptSignHash.arg.6=DWORD *,pcbResult
+func.NCryptSignHash.arg.7=DWORD,dwFlags
+func.NCryptSignHash.ret=SECURITY_STATUS
+
+NCryptTranslateHandle=func
+func.NCryptTranslateHandle.args=6
+func.NCryptTranslateHandle.arg.0=NCRYPT_PROV_HANDLE *,phProvider
+func.NCryptTranslateHandle.arg.1=NCRYPT_KEY_HANDLE *,phKey
+func.NCryptTranslateHandle.arg.2=HCRYPTPROV,hLegacyProv
+func.NCryptTranslateHandle.arg.3=HCRYPTKEY,hLegacyKey
+func.NCryptTranslateHandle.arg.4=DWORD,dwLegacyKeySpec
+func.NCryptTranslateHandle.arg.5=DWORD,dwFlags
+func.NCryptTranslateHandle.ret=SECURITY_STATUS
+
+NCryptVerifyClaim=func
+func.NCryptVerifyClaim.args=8
+func.NCryptVerifyClaim.arg.0=NCRYPT_KEY_HANDLE,hSubjectKey
+func.NCryptVerifyClaim.arg.1=NCRYPT_KEY_HANDLE,hAuthorityKey
+func.NCryptVerifyClaim.arg.2=DWORD,dwClaimType
+func.NCryptVerifyClaim.arg.3=NCryptBufferDesc *,pParameterList
+func.NCryptVerifyClaim.arg.4=PBYTE,pbClaimBlob
+func.NCryptVerifyClaim.arg.5=DWORD,cbClaimBlob
+func.NCryptVerifyClaim.arg.6=NCryptBufferDesc *,pOutput
+func.NCryptVerifyClaim.arg.7=DWORD,dwFlags
+func.NCryptVerifyClaim.ret=SECURITY_STATUS
+
+NCryptVerifySignature=func
+func.NCryptVerifySignature.args=7
+func.NCryptVerifySignature.arg.0=NCRYPT_KEY_HANDLE,hKey
+func.NCryptVerifySignature.arg.1=VOID *,pPaddingInfo
+func.NCryptVerifySignature.arg.2=PBYTE,pbHashValue
+func.NCryptVerifySignature.arg.3=DWORD,cbHashValue
+func.NCryptVerifySignature.arg.4=PBYTE,pbSignature
+func.NCryptVerifySignature.arg.5=DWORD,cbSignature
+func.NCryptVerifySignature.arg.6=DWORD,dwFlags
+func.NCryptVerifySignature.ret=SECURITY_STATUS

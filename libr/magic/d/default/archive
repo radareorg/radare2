@@ -130,6 +130,9 @@
 >>30	ubelong		!0x6d696d65	Zip archive data, at least v2.0 to extract
 !:mime	application/zip
 
+# ZIP footer
+0       string      PK\005\006      End of Zip archive
+
 # OpenOffice.org / KOffice / StarOffice documents
 # From: Abel Cheung <abel@oaka.org>
 # Listed here because they are basically zip files
@@ -256,3 +259,4 @@
 >24	belong	1		SHA-1 checksum
 >24	belong	2		MD5 checksum
 
+0	lelong 0x0a02d40a	protobuf: Google's protocol-buffer file

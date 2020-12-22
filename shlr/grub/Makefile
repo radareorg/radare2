@@ -27,7 +27,6 @@ KERNFILES+=kern/fs.c kern/misc.c
 KERNFILES+=kern/time.c
 KERNFILES+=kern/list.c kern/partition.c
 KERNFILES+=kern/mm.c
-#KERNFILES+=kern/dl.c
 KERNFILES+=fs/fshelp.c
 KERNFILES+=fs/reiserfs.c
 KERNFILES+=fs/ext2.c
@@ -83,6 +82,8 @@ endif
 ifeq (${OSTYPE},darwin)
 CFLAGS+=-DAPPLE_CC
 endif
+
+include ../../shlr/sdb.mk
 
 BIN=test${EXT_EXE}
 

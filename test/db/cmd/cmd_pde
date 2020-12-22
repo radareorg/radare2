@@ -1,0 +1,173 @@
+NAME=pde x86
+FILE=bins/pe/ioli/w32/crackme0x00.exe
+CMDS=<<EOF
+e asm.bytes = false
+e asm.comments = false
+s main
+aei
+aeim
+aeip
+pdeq 0x1a
+EOF
+EXPECT=<<EOF
+0x00401310   eip:
+0x00401310 push ebp
+0x00401311 mov ebp, esp
+0x00401313 sub esp, 0x38
+0x00401316 and esp, 0xfffffff0
+0x00401319 mov eax, 0
+0x0040131e add eax, 0xf
+0x00401321 add eax, 0xf
+0x00401324 shr eax, 4
+0x00401327 shl eax, 4
+0x0040132a mov dword [ebp - 0x1c], eax
+0x0040132d mov eax, dword [ebp - 0x1c]
+0x00401330 call 0x402c70
+0x00402c70 push ecx
+0x00402c71 mov ecx, esp
+0x00402c73 add ecx, 8
+0x00402c76 cmp eax, 0x1000
+0x00402c7b jb 0x402c8d
+0x00402c8d sub ecx, eax
+0x00402c8f or dword [ecx], 0
+0x00402c92 mov eax, esp
+0x00402c94 mov esp, ecx
+0x00402c96 mov ecx, dword [eax]
+0x00402c98 mov eax, dword [eax + 4]
+0x00402c9b jmp eax
+0x00401335 call sym.___main
+0x00401470   sym.___main:
+0x00401470 push ebp
+EOF
+RUN
+
+NAME=pde arm
+FILE=bins/elf/analysis/hello-arm32
+CMDS=<<EOF
+e asm.bytes = false
+pdeq
+EOF
+EXPECT=<<EOF
+0x000101c0   r15:
+0x000101c0 push {r7, lr}
+0x000101c4 add r7, sp, 0
+0x000101c8 movw r0, 0x200
+0x000101cc movt r0, 1
+0x000101d0 bl sym.imp.puts
+0x0001019c   sym.imp.puts:
+0x0001019c add ip, pc, 0, 12
+0x000101a0 add ip, ip, 16, 20
+0x000101a4 ldr pc, [ip, 0x118]!
+0x00010188   sym..plt:
+0x00010188 str lr, [sp, -4]!
+0x0001018c ldr lr, [pc, 4]
+0x00010190 add lr, pc, lr
+0x00010194 ldr pc, [lr, 8]!
+0x00000000   cpsr:
+0x00000000 invalid
+EOF
+RUN
+
+NAME=pde mips
+FILE=bins/elf/mipsloop
+CMDS=<<EOF
+e asm.comments = false
+e asm.bytes = false
+pde 12
+EOF
+EXPECT=<<EOF
+;-- entry0:
+;-- __start:
+;-- _start:
+;-- pc:
+0x000804f0      bal 0x804f8
+0x000804f4      nop
+0x000804f8      lui gp, 2
+0x000804fc      addiu gp, gp, -0x74f8
+0x00080500      addu gp, gp, ra
+0x00080504      move a0, sp
+0x00080508      addiu sp, sp, -0x20
+0x0008050c      sw zero, 0x1c(sp)
+0x00080510      lw t9, -sym.do_mips_start(gp)
+0x00080514      jalr t9
+0x00080518      nop
+;-- do_mips_start:
+0x0008053c      lui gp, 2
+EOF
+RUN
+
+NAME=pde ppc
+FILE=bins/elf/hello.ppc
+CMDS=<<EOF
+e asm.comments = false
+e asm.bytes = false
+pde
+EOF
+EXPECT=<<EOF
+;-- entry0:
+;-- section..text:
+;-- .text:
+;-- _start:
+;-- pc:
+0x10000308      mr r9, r1                                              ; start.S:62
+0x1000030c      rlwinm r1, r1, 0, 0, 0x1b                              ; start.S:64
+0x10000310      li r0, 0                                               ; start.S:69
+0x10000314      stwu r1, -0x10(r1)                                     ; start.S:71
+0x10000318      mtlr r0                                                ; start.S:72
+0x1000031c      stw r0, 0(r1)                                          ; start.S:73
+0x10000320      lis r8, 0x1000                                         ; start.S:83
+0x10000324      lwzu r13, 0x62c(r8)                                    ; start.S:84
+0x10000328      b __libc_start_main                                    ; start.S:87
+;-- reloc.__libc_start_main:
+0x10020074      invalid
+EOF
+RUN
+
+NAME=pde dont pollute
+ARGS=-a x86 -b 32
+FILE=-
+CMDS=<<EOF
+wx 31c0c700ffff0000ffe0
+pdeqq
+pi 1
+dr eax
+EOF
+EXPECT=<<EOF
+xor eax, eax
+mov dword [eax], 0xffff
+jmp eax
+invalid
+xor eax, eax
+0x00000000
+EOF
+RUN
+
+NAME=pde use cache but dont pollute it
+ARGS=-a x86 -b 32
+FILE=-
+CMDS=<<EOF
+e io.cache=1
+wx 20 @ 0x30
+wx ff @ 0x40
+wx ffff @ 0x20
+wx 31C0C60020C64040008A484038C90F85FC0F0000A030000000FFE0
+pdeqq
+s
+pi 1
+p8 1 @ 0x40
+EOF
+EXPECT=<<EOF
+xor eax, eax
+mov byte [eax], 0x20
+mov byte [eax + 0x40], 0
+mov cl, byte [eax + 0x40]
+cmp cl, cl
+jne 0x1010
+mov al, byte [0x30]
+jmp eax
+invalid
+0x0
+xor eax, eax
+ff
+EOF
+RUN

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2016 - pancake */
+/* radare - LGPL - Copyright 2008-2020 - pancake */
 
 #include "r_io.h"
 #include "r_lib.h"
@@ -76,7 +76,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	int rlen, code;
 	if (__plugin_open (io, pathname, 0)) {
 		out = r_socket_http_get (pathname, &code, &rlen);
-		if (out && rlen>0) {
+		if (out) {
 			RIOMalloc *mal = R_NEW0 (RIOMalloc);
 			if (!mal) {
 				return NULL;
@@ -115,7 +115,7 @@ RIOPlugin r_io_plugin_http = {
 	.write = __write,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_http,

@@ -92,7 +92,7 @@ static bool des_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, int
 	// key permutation to derive round keys
 	r_des_permute_key (&keylo, &keyhi);
 
-	for (i = 0; i < 16; ++i) {
+	for (i = 0; i < 16; i++) {
 		// filling round keys space
 		r_des_round_key (i, &st.keylo[i], &st.keyhi[i], &keylo, &keyhi);
 	}
@@ -169,7 +169,7 @@ RCryptoPlugin r_crypto_plugin_des = {
 	.final = final
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_des,

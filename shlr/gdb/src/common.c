@@ -7,8 +7,12 @@
 #include "r_util/r_str.h"
 
 int handle_qSupported(libgdbr_t *g) {
-	// TODO handle the message correct and set all infos like packetsize, thread stuff and features
 	char *tok = NULL;
+	// Catch no data received
+	if (!*g->data) {
+		return -1;
+	}
+	// TODO handle the message correct and set all infos like packetsize, thread stuff and features
 	tok = strtok (g->data, ";");
 	while (tok) {
 		if (r_str_startswith (tok, "PacketSize=")) {
@@ -109,6 +113,10 @@ int handle_qSupported(libgdbr_t *g) {
 		} else if (r_str_startswith (tok, "qEcho")) {
 			g->remote_type = GDB_REMOTE_TYPE_LLDB;
 			g->stub_features.lldb.qEcho = (tok[strlen ("qEcho")] == '+');
+		} else if (r_str_startswith (tok, "ReverseStep")) {
+			g->stub_features.ReverseStep = (tok[strlen ("ReverseStep")] == '+');
+		} else if (r_str_startswith (tok, "ReverseContinue")) {
+			g->stub_features.ReverseContinue = (tok[strlen ("ReverseContinue")] == '+');
 		}
 		// TODO
 		tok = strtok (NULL, ";");

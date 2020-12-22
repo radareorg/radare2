@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2015 - ret2libc */
+/* radare - LGPL - Copyright 2007-2020 - ret2libc */
 
 #include <r_util.h>
 
@@ -38,14 +38,15 @@ R_API void r_stack_free(RStack *s) {
 	}
 }
 
-R_API int r_stack_push(RStack *s, void *el) {
+R_API bool r_stack_push(RStack *s, void *el) {
 	if (s->top == s->n_elems - 1) {
 		/* reallocate the stack */
 		s->n_elems *= 2;
-		s->elems = realloc (s->elems, s->n_elems * sizeof (void *));
-		if (!s->elems) {
+		void **elems = realloc (s->elems, s->n_elems * sizeof (void *));
+		if (!elems) {
 			return false;
 		}
+		s->elems = elems;
 	}
 
 	s->top++;
@@ -53,14 +54,12 @@ R_API int r_stack_push(RStack *s, void *el) {
 	return true;
 }
 
-
 //the caller should be take care of the object returned
 R_API void *r_stack_pop(RStack *s) {
-	void *res;
 	if (s->top == -1) {
 		return NULL;
 	}
-	res = s->elems[s->top];
+	void *res = s->elems[s->top];
 	s->top--;
 	return res;
 }
@@ -69,15 +68,10 @@ R_API bool r_stack_is_empty(RStack *s) {
 	return s->top == -1;
 }
 
-R_API unsigned int r_stack_size(RStack *s) {
-	return (unsigned int)(s->top + 1);
+R_API size_t r_stack_size(RStack *s) {
+	return (size_t)(s->top + 1);
 }
 
 R_API void *r_stack_peek(RStack *s) {
-	void *res;
-	if (!r_stack_is_empty (s)) {
-		res = s->elems[s->top];
-		return res;
-	}
-	return NULL;
+	return r_stack_is_empty (s)? NULL: s->elems[s->top];
 }

@@ -1,9 +1,10 @@
-/* radare - LGPL - Copyright 2012-2015 - pancake */
+/* radare - LGPL - Copyright 2012-2019 - pancake */
 
 #include <r_bin.h>
 #include "../i/private.h"
 
-R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
+R_API char *r_bin_demangle_objc(RBinFile *bf, const char *sym) {
+	r_return_val_if_fail ((!bf || (bf && bf->o && bf->o->classes)) && sym, NULL);
 	char *ret = NULL;
 	char *clas = NULL;
 	char *name = NULL;
@@ -11,34 +12,30 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 	int i, nargs = 0;
 	const char *type = NULL;
 
-	if (!sym) {
-		return NULL;
-	}
-	if (binfile && binfile->o && binfile->o->classes) {
-		binfile = NULL;
+	if (bf && bf->o && bf->o->classes) {
+		bf = NULL;
 	}
 	/* classes */
 	if (!strncmp (sym, "_OBJC_Class_", 12)) {
-		ret = r_str_newf ("class %s", sym + 12);
-		if (binfile) {
-			r_bin_class_new (binfile, sym + 12,
-				NULL, R_BIN_CLASS_PUBLIC);
+		const char *className = sym + 12;
+		ret = r_str_newf ("class %s", className);
+		if (bf) {
+			r_bin_file_add_class (bf, className, NULL, R_BIN_CLASS_PUBLIC);
 		}
 		return ret;
 	}
 	if (!strncmp (sym, "_OBJC_CLASS_$_", 14)) {
-		ret = r_str_newf ("class %s", sym + 14);
-		if (binfile) {
-			r_bin_class_new (binfile, sym + 14,
-				NULL, R_BIN_CLASS_PUBLIC);
+		const char *className = sym + 14;
+		ret = r_str_newf ("class %s", className);
+		if (bf) {
+			r_bin_file_add_class (bf, className, NULL, R_BIN_CLASS_PUBLIC);
 		}
 		return ret;
 	}
 	/* fields */
 	if (!strncmp (sym, "_OBJC_IVAR_$_", 13)) {
-		char *p;
 		clas = strdup (sym + 13);
-		p = strchr (clas, '.');
+		char *p = strchr (clas, '.');
 		type = "field";
 		if (p) {
 			*p = 0;
@@ -46,8 +43,8 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 		} else {
 			name = NULL;
 		}
-		if (binfile) {
-			r_bin_class_add_field (binfile, clas, name);
+		if (bf) {
+			r_bin_file_add_field (bf, clas, name);
 		}
 	}
 	/* methods */
@@ -130,8 +127,8 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 			}
 			if (type && name && *name) {
 				ret = r_str_newf ("%s int %s::%s(%s)", type, clas, name, args);
-				if (binfile) {
-					r_bin_class_add_method (binfile, clas, name, nargs);
+				if (bf) {
+					r_bin_file_add_method (bf, clas, name, nargs);
 				}
 			}
 		}

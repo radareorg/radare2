@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2019 - pancake */
+/* radare - LGPL - Copyright 2011-2020 - pancake */
 
 #include <r_egg.h>
 #include <r_bin.h>
@@ -42,6 +42,7 @@ static int usage(int v) {
 			" -v              show version\n"
 			" -w [off:hex]    patch hexpairs at given offset\n"
 			" -x              execute\n"
+			" -X [hexpairs]   execute rop chain, using the stack provided\n"
 			" -z              output in C string syntax\n");
 	}
 	return 1;
@@ -73,7 +74,7 @@ static int create(const char *format, const char *arch, int bits, const ut8 *cod
 	b = r_bin_create (bin, format, code, codelen, NULL, 0, &opts);
 	if (b) {
 		ut64 blen;
-		const ut8 *tmp = r_buf_buffer (b, &blen);
+		const ut8 *tmp = r_buf_data (b, &blen);
 		if (write (1, tmp, blen) != blen) {
 			eprintf ("Failed to write buffer\n");
 		}
@@ -112,7 +113,7 @@ static int openfile(const char *f, int x) {
 }
 #define ISEXEC (fmt!='r')
 
-R_API int r_main_ragg2(int argc, char **argv) {
+R_API int r_main_ragg2(int argc, const char **argv) {
 	const char *file = NULL;
 	const char *padding = NULL;
 	const char *pattern = NULL;
@@ -121,56 +122,65 @@ R_API int r_main_ragg2(int argc, char **argv) {
 	const char *contents = NULL;
 	const char *arch = R_SYS_ARCH;
 	const char *os = R_EGG_OS_NAME;
-	char *format = "raw";
-	int show_execute = 0;
+	const char *format = "raw";
+	bool show_execute = false;
+	bool show_execute_rop = false;
 	int show_hex = 1;
 	int show_asm = 0;
 	int show_raw = 0;
 	int append = 0;
 	int show_str = 0;
 	ut64 get_offset  = 0;
-	char *shellcode = NULL;
-	char *encoder = NULL;
+	const char *shellcode = NULL;
+	const char *encoder = NULL;
 	char *sequence = NULL;
 	int bits = (R_SYS_BITS & R_SYS_BITS_64)? 64: 32;
 	int fmt = 0;
 	const char *ofile = NULL;
 	int ofileauto = 0;
 	RBuffer *b;
-	int c, i;
+	int c, i, fd = -1;
 	REgg *egg = r_egg_new ();
 
-	while ((c = r_getopt (argc, argv, "n:N:he:a:b:f:o:sxrk:FOI:Li:c:p:P:B:C:vd:D:w:zq:S:")) != -1) {
+	RGetopt opt;
+	r_getopt_init (&opt, argc, argv, "n:N:he:a:b:f:o:sxXrk:FOI:Li:c:p:P:B:C:vd:D:w:zq:S:");
+	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
-			arch = r_optarg;
+			arch = opt.arg;
 			if (!strcmp (arch, "trace")) {
 				show_asm = 1;
 				show_hex = 0;
 			}
 			break;
 		case 'e':
-			encoder = r_optarg;
+			encoder = opt.arg;
 			break;
 		case 'b':
-			bits = atoi (r_optarg);
+			bits = atoi (opt.arg);
 			break;
 		case 'B':
-			bytes = r_str_append (bytes, r_optarg);
+			bytes = r_str_append (bytes, opt.arg);
 			break;
 		case 'C':
-			contents = r_optarg;
+			if (R_STR_ISEMPTY (opt.arg)) {
+				eprintf ("Cannot open empty contents path\n");
+				free (sequence);
+				r_egg_free (egg);
+				return 1;
+			}
+			contents = opt.arg;
 			break;
 		case 'w':
 			{
-			char *arg = strdup (r_optarg);
+			char *arg = strdup (opt.arg);
 			char *p = strchr (arg, ':');
 			if (p) {
 				int len, off;
 				ut8 *b;
 				*p++ = 0;
 				off = r_num_math (NULL, arg);
-				b = malloc (strlen (r_optarg) + 1);
+				b = malloc (strlen (opt.arg) + 1);
 				len = r_hex_str2bin (p, b);
 				if (len > 0) {
 					r_egg_patch (egg, off, (const ut8*)b, len);
@@ -186,14 +196,14 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			break;
 		case 'n':
 			{
-			ut32 n = r_num_math (NULL, r_optarg);
+			ut32 n = r_num_math (NULL, opt.arg);
 			append = 1;
 			r_egg_patch (egg, -1, (const ut8*)&n, 4);
 			}
 			break;
 		case 'N':
 			{
-			ut64 n = r_num_math (NULL, r_optarg);
+			ut64 n = r_num_math (NULL, opt.arg);
 			r_egg_patch (egg, -1, (const ut8*)&n, 8);
 			append = 1;
 			}
@@ -201,10 +211,10 @@ R_API int r_main_ragg2(int argc, char **argv) {
 		case 'd':
 			{
 			ut32 off, n;
-			char *p = strchr (r_optarg, ':');
+			char *p = strchr (opt.arg, ':');
 			if (p) {
 				*p = 0;
-				off = r_num_math (NULL, r_optarg);
+				off = r_num_math (NULL, opt.arg);
 				n = r_num_math (NULL, p + 1);
 				*p = ':';
 				// TODO: honor endianness here
@@ -216,9 +226,9 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			break;
 		case 'D':
 			{
-			char *p = strchr (r_optarg, ':');
+			char *p = strchr (opt.arg, ':');
 			if (p) {
-				ut64 n, off = r_num_math (NULL, r_optarg);
+				ut64 n, off = r_num_math (NULL, opt.arg);
 				n = r_num_math (NULL, p + 1);
 				// TODO: honor endianness here
 				r_egg_patch (egg, off, (const ut8*)&n, 8);
@@ -228,34 +238,40 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			}
 			break;
 		case 'S':
-			str = r_optarg;
+			str = opt.arg;
 			break;
 		case 'o':
-			ofile = r_optarg;
+			ofile = opt.arg;
 			break;
 		case 'O':
 			ofileauto = 1;
 			break;
 		case 'I':
-			r_egg_lang_include_path (egg, r_optarg);
+			if (R_STR_ISEMPTY (opt.arg)) {
+				eprintf ("Cannot open empty include path\n");
+				free (sequence);
+				r_egg_free (egg);
+				return 1;
+			}
+			r_egg_lang_include_path (egg, opt.arg);
 			break;
 		case 'i':
-			 shellcode = r_optarg;
-			 break;
+			shellcode = opt.arg;
+			break;
 		case 'p':
-			padding = r_optarg;
+			padding = opt.arg;
 			break;
 		case 'P':
-			pattern = r_optarg;
+			pattern = opt.arg;
 			break;
 		case 'c':
 			{
-			char *p = strchr (r_optarg, '=');
+			char *p = strchr (opt.arg, '=');
 			if (p) {
 				*p++ = 0;
-				r_egg_option_set (egg, r_optarg, p);
+				r_egg_option_set (egg, opt.arg, p);
 			} else {
-				r_egg_option_set (egg, r_optarg, "true");
+				r_egg_option_set (egg, opt.arg, "true");
 			}
 			}
 			break;
@@ -270,7 +286,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			show_asm = 0;
 			break;
 		case 'f':
-			format = r_optarg;
+			format = opt.arg;
 			show_asm = 0;
 			break;
 		case 's':
@@ -278,14 +294,19 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			show_hex = 0;
 			break;
 		case 'k':
-			os = r_optarg;
+			os = opt.arg;
 			break;
 		case 'r':
 			show_raw = 1;
 			break;
 		case 'x':
 			// execute
+			show_execute = true;
+			break;
+		case 'X':
+			// execute rop chain
 			show_execute = 1;
+			show_execute_rop = 1;
 			break;
 		case 'L':
 			list (egg);
@@ -305,7 +326,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			break;
 		case 'q':
 			get_offset = 1;
-			sequence = strdup (r_optarg);
+			sequence = strdup (opt.arg);
 			break;
 		default:
 			free (sequence);
@@ -314,11 +335,12 @@ R_API int r_main_ragg2(int argc, char **argv) {
 		}
 	}
 
-	if (r_optind == argc && !shellcode && !bytes && !contents && !encoder && !padding && !pattern && !append && !get_offset && !str) {
+	if (opt.ind == argc && !shellcode && !bytes && !contents && !encoder && !padding && !pattern && !append && !get_offset && !str) {
+		free (sequence);
 		r_egg_free (egg);
 		return usage (0);
 	} else {
-		file = argv[r_optind];
+		file = argv[opt.ind];
 	}
 
 	if (bits == 64) {
@@ -349,10 +371,14 @@ R_API int r_main_ragg2(int argc, char **argv) {
 	// initialize egg
 	r_egg_setup (egg, arch, bits, 0, os);
 	if (file) {
+		if (R_STR_ISEMPTY (file)) {
+			eprintf ("Cannot open empty path\n");
+			goto fail;
+		}
 		if (!strcmp (file, "-")) {
 			char buf[1024];
 			for (;;) {
-				if (!fgets (buf, sizeof (buf) - 1, stdin)) {
+				if (!fgets (buf, sizeof (buf), stdin)) {
 					break;
 				}
 				if (feof (stdin)) {
@@ -370,10 +396,10 @@ R_API int r_main_ragg2(int argc, char **argv) {
 				goto fail;
 			}
 
-			int l;
+			size_t l;
 			char *buf = r_file_slurp (textFile, &l);
 			if (buf && l > 0) {
-				r_egg_raw (egg, (const ut8*)buf, l);
+				r_egg_raw (egg, (const ut8*)buf, (int)l);
 			} else {
 				eprintf ("Error loading '%s'\n", textFile);
 			}
@@ -399,6 +425,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 	if (!r_egg_compile (egg)) {
 		if (!fmt) {
 			eprintf ("r_egg_compile: fail\n");
+			free (sequence);
 			r_egg_free (egg);
 			return 1;
 		}
@@ -414,10 +441,10 @@ R_API int r_main_ragg2(int argc, char **argv) {
 
 	// add raw file
 	if (contents) {
-		int l;
+		size_t l;
 		char *buf = r_file_slurp (contents, &l);
 		if (buf && l > 0) {
-			r_egg_raw (egg, (const ut8*)buf, l);
+			r_egg_raw (egg, (const ut8*)buf, (int)l);
 		} else {
 			eprintf ("Error loading '%s'\n", contents);
 		}
@@ -428,8 +455,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 	if (shellcode) {
 		if (!r_egg_shellcode (egg, shellcode)) {
 			eprintf ("Unknown shellcode '%s'\n", shellcode);
-			r_egg_free (egg);
-			return 1;
+			goto fail;
 		}
 	}
 
@@ -440,8 +466,8 @@ R_API int r_main_ragg2(int argc, char **argv) {
 		if (len > 0) {
 			if (!r_egg_raw (egg, b, len)) {
 				eprintf ("Unknown '%s'\n", shellcode);
-				r_egg_free (egg);
-				return 1;
+				free (b);
+				goto fail;
 			}
 		} else {
 			eprintf ("Invalid hexpair string for -B\n");
@@ -453,10 +479,9 @@ R_API int r_main_ragg2(int argc, char **argv) {
 
 	/* set output (create output file if needed) */
 	if (ofileauto) {
-		int fd;
 		if (file) {
 			char *o, *q, *p = strdup (file);
-			if ( (o = strchr (p, '.')) ) {
+			if ((o = strchr (p, '.'))) {
 				while ( (q = strchr (o + 1, '.')) ) {
 					o = q;
 				}
@@ -470,12 +495,14 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			fd = openfile ("a.out", ISEXEC);
 		}
 		if (fd == -1) {
-			eprintf ("cannot open file '%s'\n", r_optarg);
+			eprintf ("cannot open file '%s'\n", opt.arg);
 			goto fail;
 		}
+		close (fd);
 	}
 	if (ofile) {
-		if (openfile (ofile, ISEXEC) == -1) {
+		fd = openfile (ofile, ISEXEC);
+		if (fd == -1) {
 			eprintf ("cannot open file '%s'\n", ofile);
 			goto fail;
 		}
@@ -489,8 +516,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 	if (encoder) {
 		if (!r_egg_encode (egg, encoder)) {
 			eprintf ("Invalid encoder '%s'\n", encoder);
-			r_egg_free (egg);
-			return 1;
+			goto fail;
 		}
 	}
 
@@ -520,14 +546,19 @@ R_API int r_main_ragg2(int argc, char **argv) {
 
 	if (show_raw || show_hex || show_execute) {
 		if (show_execute) {
-			int r = r_egg_run (egg);
+			int r;
+			if (show_execute_rop) {
+				r = r_egg_run_rop (egg);
+			} else {
+				r = r_egg_run (egg);
+			}
 			r_egg_free (egg);
 			return r;
 		}
 		b = r_egg_get_bin (egg);
 		if (show_raw) {
 			ut64 blen;
-			const ut8 *tmp = r_buf_buffer (b, &blen);
+			const ut8 *tmp = r_buf_data (b, &blen);
 			if (write (1, tmp, blen) != blen) {
 				eprintf ("Failed to write buffer\n");
 				goto fail;
@@ -539,7 +570,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			}
 			RPrint *p = r_print_new ();
 			ut64 tmpsz;
-			const ut8 *tmp = r_buf_buffer (b, &tmpsz);
+			const ut8 *tmp = r_buf_data (b, &tmpsz);
 			switch (*format) {
 			case 'c':
 				r_print_code (p, 0, tmp, tmpsz, 'c');
@@ -555,7 +586,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 					}
 					printf ("\"\n");
 				} else if (show_hex) {
-					r_buf_seek (b, 0, 0);
+					r_buf_seek (b, 0, R_BUF_SET);
 					for (i = 0; i < tmpsz; i++) {
 						printf ("%02x", tmp[i]);
 					}
@@ -578,9 +609,17 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			r_print_free (p);
 		}
 	}
+	if (fd != -1) {
+		close (fd);
+	}
+	free (sequence);
 	r_egg_free (egg);
 	return 0;
 fail:
+	if (fd != -1) {
+		close (fd);
+	}
+	free (sequence);
 	r_egg_free (egg);
 	return 1;
 }

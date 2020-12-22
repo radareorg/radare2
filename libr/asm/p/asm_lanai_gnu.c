@@ -14,7 +14,14 @@ static RStrBuf *buf_global = NULL;
 static unsigned char bytes[4];
 
 static int lanai_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
-	memcpy (myaddr, bytes, length);
+	int delta = (memaddr - Offset);
+	if (delta < 0) {
+		return -1;      // disable backward reads
+	}
+	if ((delta + length) > 4) {
+		return -1;
+	}
+	memcpy (myaddr, bytes + delta, length);
 	return 0;
 }
 
@@ -67,7 +74,7 @@ RAsmPlugin r_asm_plugin_lanai_gnu = {
 	.disassemble = &disassemble
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_lanai_gnu,

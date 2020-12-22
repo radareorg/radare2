@@ -26,7 +26,7 @@
 #include <windows.h>
 #else
 
-#if __linux__ ||  __APPLE__ || __OpenBSD__ || __FreeBSD__ || __NetBSD__ || __DragonFly__
+#if __linux__ ||  __APPLE__ || __OpenBSD__ || __FreeBSD__ || __NetBSD__ || __DragonFly__ || __HAIKU__
 #include <sys/ioctl.h>
 #include <termios.h>
 #else
@@ -86,7 +86,7 @@ static ut8 gprobe_checksum_i2c (const ut8 *p, unsigned int size, ut8 initial) {
 	ut8 res = initial;
 	unsigned int k;
 
-	for (k = 0; k < size; ++k) {
+	for (k = 0; k < size; k++) {
 		res ^= p[k];
 	}
 
@@ -101,7 +101,7 @@ static void gprobe_frame_i2c(RBuffer *frame) {
 	r_buf_prepend_bytes (frame, header, sizeof (header));
 
 	ut64 tmpsz;
-	const ut8 *tmp = r_buf_buffer (frame, &tmpsz);
+	const ut8 *tmp = r_buf_data (frame, &tmpsz);
 	ut8 checksum = gprobe_checksum_i2c (tmp, tmpsz, GPROBE_I2C_ADDR);
 
 	r_buf_append_bytes (frame, &checksum, 1);
@@ -148,7 +148,7 @@ static int gprobe_get_reply_i2c(struct gport *port, ut8 cmd, RBuffer *reply) {
 
 static int gprobe_send_request_i2c(struct gport *port, RBuffer *request) {
 	ut64 tmpsz;
-	const ut8 *tmp = r_buf_buffer (request, &tmpsz);
+	const ut8 *tmp = r_buf_data (request, &tmpsz);
 	if (write (port->fd, tmp, tmpsz) != r_buf_size (request)) {
 		return -1;
 	}
@@ -648,7 +648,7 @@ static ut8 gprobe_checksum (const ut8 *p, unsigned int size) {
 	ut8 res = 0;
 	unsigned int k;
 
-	for (k = 0; k < size; ++k) {
+	for (k = 0; k < size; k++) {
 		res += p[k];
 	}
 
@@ -659,7 +659,7 @@ static ut8 gprobe_checksum (const ut8 *p, unsigned int size) {
 
 static void gprobe_frame_sp(RBuffer *frame) {
 	ut64 size;
-	const ut8 *tmp = r_buf_buffer (frame, &size);
+	const ut8 *tmp = r_buf_data (frame, &size);
 	size += 2;
 	ut8 checksum;
 
@@ -707,7 +707,7 @@ static int gprobe_send_request_sp(struct gport *port, RBuffer *request) {
 	sp_flush (port);
 
 	ut64 tmpsz;
-	const ut8 *tmp = r_buf_buffer (request, &tmpsz);
+	const ut8 *tmp = r_buf_data (request, &tmpsz);
 	if (sp_blocking_write (port, tmp, tmpsz, 100) != tmpsz) {
 		return -1;
 	}
@@ -1009,7 +1009,7 @@ static int gprobe_getinformation (struct gport *port) {
 	}
 
 	ut64 tmpsz;
-	const ut8 *tmp = r_buf_buffer (reply, &tmpsz);
+	const ut8 *tmp = r_buf_data (reply, &tmpsz);
 	r_print_hexdump (NULL, 0, tmp, tmpsz, 16, 1, 1);
 
 	r_buf_free (request);
@@ -1241,7 +1241,7 @@ RIOPlugin r_io_plugin_gprobe = {
 	.system = __system,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_gprobe,

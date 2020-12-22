@@ -2,7 +2,7 @@
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone/capstone.h>
+#include <capstone.h>
 
 #ifdef CAPSTONE_M68K_H
 #define CAPSTONE_HAS_M68K 1
@@ -16,7 +16,7 @@
 #endif
 
 #if CAPSTONE_HAS_M68K
-#include <capstone/m68k.h>
+#include <m68k.h>
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/M68Kir.html
 
 #define OPERAND(x) insn->detail->m68k.operands[x]
@@ -59,6 +59,7 @@ static inline void handle_jump_instruction(RAnalOp *op, ut64 addr, cs_m68k *m68k
 	op->fail = make_64bits_address (addr + op->size);
 }
 
+//TODO PJ
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	r_strbuf_init (buf);
@@ -78,7 +79,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case M68K_OP_IMM:
 			r_strbuf_append (buf, "\"type\":\"imm\"");
-			r_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
+			r_strbuf_appendf (buf, ",\"value\":%" PFMT64d, (st64)op->imm);
 			break;
 		case M68K_OP_MEM:
 			r_strbuf_append (buf, "\"type\":\"mem\"");
@@ -91,8 +92,8 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			if (op->mem.in_base_reg != M68K_REG_INVALID) {
 				r_strbuf_appendf (buf, ",\"base_reg\":\"%s\"", cs_reg_name (handle, op->mem.in_base_reg));
 			}
-			r_strbuf_appendf (buf, ",\"in_disp\":%"PFMT64d"", op->mem.in_disp);
-			r_strbuf_appendf (buf, ",\"out_disp\":%"PFMT64d"", op->mem.out_disp);
+			r_strbuf_appendf (buf, ",\"in_disp\":%" PFMT64d, (st64)op->mem.in_disp);
+			r_strbuf_appendf (buf, ",\"out_disp\":%" PFMT64d, (st64)op->mem.out_disp);
 			r_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", (st64)op->mem.disp);
 			r_strbuf_appendf (buf, ",\"scale\":%"PFMT64d"", (st64)op->mem.scale);
 			r_strbuf_appendf (buf, ",\"bitfield\":%"PFMT64d"", (st64)op->mem.bitfield);
@@ -176,7 +177,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		obits = a->bits;
 	}
 // XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
-	op->delay = 0;
 	// replace this with the asm.features?
 	if (a->cpu && strstr (a->cpu, "68000")) {
 		mode |= CS_MODE_M68K_000;
@@ -219,8 +219,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	}
 	detail = insn->detail;
 	m68k = &detail->m68k;
-	op->type = R_ANAL_OP_TYPE_NULL;
-	op->delay = 0;
 	op->id = insn->id;
 	opsize = op->size = insn->size;
 	if (mask & R_ANAL_OP_MASK_OPEX) {
@@ -705,7 +703,7 @@ fin:
 	return opsize;
 }
 
-static int set_reg_profile(RAnal *anal) {
+static bool set_reg_profile(RAnal *anal) {
 	const char *p = \
 		"=PC    pc\n"
 		"=SP    a7\n"
@@ -746,7 +744,7 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	usp	.32	116	0\n" //user stack point this is an shadow register of A7 user mode, SR bit 0xD is 0
 		"gpr	vbr	.32	120	0\n" //vector base register, this is a Address pointer
 		"gpr	cacr	.32	124	0\n" //cache control register, implementation specific
-		"gpr	caar	.32	128	0\n" //cache address register, 68020, 68EC020, 68030 and 68EC030 only.  
+		"gpr	caar	.32	128	0\n" //cache address register, 68020, 68EC020, 68030 and 68EC030 only.
 		"gpr	msp	.32	132	0\n" //master stack pointer, this is an shadow register of A7 supervisor mode, SR bits 0xD && 0xC are set
 		"gpr	isp	.32	136	0\n" //interrupt stack pointer, this is an shadow register of A7  supervisor mode, SR bit 0xD is set, 0xC is not.
 		"gpr	tc	.32	140	0\n"
@@ -783,7 +781,7 @@ RAnalPlugin r_anal_plugin_m68k_cs = {
 };
 #endif
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_m68k_cs,

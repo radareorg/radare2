@@ -169,7 +169,7 @@ if (typeof process !== 'undefined') {
 				});
 			});
 		} else {
-			/* asuming its being used as an api */
+			/* assuming its being used as an api */
 		}
 	}
 }

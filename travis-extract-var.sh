@@ -16,6 +16,7 @@ env -0 | while IFS='=' read -r -d '' n v; do
 done
 
 # print extra variables
+print_var DEBPKG "${DEBPKG}"
 print_var CC "${CC}"
 print_var CXX "${CXX}"
 print_var CFLAGS "${CFLAGS}"

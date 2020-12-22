@@ -1,0 +1,57 @@
+d "mov r1, r2" 4100
+d "add r1, r2" 4104
+d "sub r1, r2" 4108
+d "cmp r1, r2" 410c
+d "shl r1, r2" 4110
+d "shr r1, r2" 4114
+d "jmp [r1]" 0118
+d "sar r1, r2" 411c
+d "mul r1, r2" 4120
+d "div r1, r2" 4124
+d "mulu r1, r2" 4128
+d "divu r1, r2" 412c
+d "or r1, r2" 4130
+d "and r1, r2" 4134
+d "not r1, r2" 413c
+d "mov -1, r2" 5f40
+d "add 1, r2" 4144
+d "cmp 0, r2" 404c
+d "shl 8, r2" 4850
+d "shr 24, r2" 5854
+d "sar 0, r2" 405c
+d "cli " 0058
+d "sei " 0078
+d "trap 15" 0f60
+d "reti " 0064
+d "halt " 0068
+d "ldsr FEPSW, r2" 4370
+d "stsr TKCW, r2" 4774
+d "stsr s8, r2" 4874
+d "bv -8" f881
+d "ble 8" 088e
+d "movea 0xffff, r1, r2" 41a0ffff
+d "addi -1, r1, r2" 41a4ffff
+d "jr -8" ffabf8ff
+d "jal 8" 00ac0800
+d "ori 0xff, r1, r2" 41b0ff00
+d "andi 0x0, r1, r2" 41b40000
+d "xori 0x0, r1, r2" 41b80000
+d "movhi 0x501, r1, r2" 41bc0105
+d "ld.b 0[r1], r2" 41c00000
+d "ld.h 32[r1], r2" 41c42000
+d "ld.w -32[r1], r2" 41cce0ff
+d "st.b r2, -32[r1]" 41d0e0ff
+d "st.h r2, 32[r1]" 41d42000
+d "st.w r2, 0[r1]" 41dc0000
+d "in.b 123[r1], r2" 41e07b00
+d "in.h 123[r1], r2" 41e47b00
+d "caxi 123[r1], r2" 41e87b00
+d "in.w 123[r1], r2" 41ec7b00
+d "out.b r2, 123[r1]" 41f07b00
+d "out.h r2, 123[r1]" 41f47b00
+d "out.w r2, 123[r1]" 41fc7b00
+d "mulf.s r11, r10" 4bf90018
+d "cvt.sw r10, r11" 6af9000c
+d "subf.s r15, r30" cffb0014
+d "rev r15, r10" 4ff90028
+d "xb r11" 60f90020

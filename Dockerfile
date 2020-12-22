@@ -5,6 +5,8 @@
 #
 # Build docker image with:
 # $ docker build -t r2docker:latest .
+# To enable rasm2 plugins based on binutils, pass '--build-arg with_ARCH_as=1' to the build command.
+# Supported ARCHs are arm32, arm64, ppc. Each ARCH should be passed in a separate '--build-arg'.
 #
 # Run the docker image:
 # $ docker images
@@ -28,8 +30,8 @@
 # $ r2 -d /bin/true
 #
 
-# Using debian 9 as base image.
-FROM debian:9
+# Using debian 10 as base image.
+FROM debian:10
 
 # Label base
 LABEL r2docker latest
@@ -37,18 +39,18 @@ LABEL r2docker latest
 # Radare version
 ARG R2_VERSION=master
 # R2pipe python version
-ARG R2_PIPE_PY_VERSION=0.8.9
-# R2pipe node version
-ARG R2_PIPE_NPM_VERSION=2.3.2
+ARG R2_PIPE_PY_VERSION=1.4.2
+
+ARG with_arm32_as
+ARG with_arm64_as
+ARG with_ppc_as
 
 ENV R2_VERSION ${R2_VERSION}
 ENV R2_PIPE_PY_VERSION ${R2_PIPE_PY_VERSION}
-ENV R2_PIPE_NPM_VERSION ${R2_PIPE_NPM_VERSION}
 
 RUN echo -e "Building versions:\n\
   R2_VERSION=$R2_VERSION\n\
-  R2_PIPE_PY_VERSION=${R2_PIPE_PY_VERSION}\n\
-  R2_PIPE_NPM_VERSION=${R2_PIPE_NPM_VERSION}"
+  R2_PIPE_PY_VERSION=${R2_PIPE_PY_VERSION}"
 
 # Build radare2 in a volume to minimize space used by build
 VOLUME ["/mnt"]
@@ -62,6 +64,7 @@ RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
   apt-get update && \
   apt-get install -y \
   curl \
+  wget \
   gcc \
   git \
   bison \
@@ -72,15 +75,16 @@ RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
   libncurses5:i386 \
   libstdc++6:i386 \
   gnupg2 \
-  sudo && \
-  curl -sL https://deb.nodesource.com/setup_8.x | bash - && \
-  apt-get install -y nodejs python-pip && \
+  python-pip \
+  ${with_arm64_as:+binutils-aarch64-linux-gnu} \
+  ${with_arm32_as:+binutils-arm-linux-gnueabi} \
+  ${with_ppc_as:+binutils-powerpc64le-linux-gnu} && \
   pip install r2pipe=="$R2_PIPE_PY_VERSION" && \
-  npm install --unsafe-perm -g "r2pipe@$R2_PIPE_NPM_VERSION" && \
   cd /mnt && \
-  git clone -b "$R2_VERSION" -q --depth 1 https://github.com/radare/radare2.git && \
+  git clone -b "$R2_VERSION" -q --depth 1 https://github.com/radareorg/radare2.git && \
   cd radare2 && \
-  ./sys/install.sh && \
+  ./configure && \
+  make && \
   make install && \
   apt-get install -y xz-utils && \
   apt-get remove --purge -y \
@@ -89,6 +93,10 @@ RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
   glib-2.0 && \
   apt-get autoremove --purge -y && \
   apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+ENV R2_ARM64_AS=${with_arm64_as:+aarch64-linux-gnu-as}
+ENV R2_ARM32_AS=${with_arm32_as:+arm-linux-gnueabi-as}
+ENV R2_PPC_AS=${with_ppc_as:+powerpc64le-linux-gnu-as}
 
 # Create non-root user
 RUN useradd -m r2 && \

@@ -17,7 +17,6 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 	//if (baddr>0x7fff)
 	//      baddr = -baddr;
 
-	memset (op, '\0', sizeof (RAnalOp));
 	op->addr = addr;
 	op->type = 0;
 	op->size = 4;
@@ -79,7 +78,7 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 	return op->size;
 }
 
-static int set_reg_profile(RAnal *anal) {
+static bool set_reg_profile(RAnal *anal) {
     const char *p =
 	"=PC	srr0\n"
 	"=SR	srr1\n" // status register
@@ -152,7 +151,7 @@ RAnalPlugin r_anal_plugin_ppc_gnu = {
 	.set_reg_profile = &set_reg_profile,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_ppc_gnu,

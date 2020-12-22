@@ -7,30 +7,51 @@ R_LIB_VERSION (r_crypto);
 
 static const struct {
 	const char *name;
-	ut64 bit;
+	RCryptoSelector bit;
 } crypto_name_bytes[] = {
-	{"all", UT64_MAX},
-	{"rc2", R_CRYPTO_RC2},
-	{"rc4", R_CRYPTO_RC4},
-	{"rc6", R_CRYPTO_RC6},
-	{"aes-ecb", R_CRYPTO_AES_ECB},
-	{"aes-cbc", R_CRYPTO_AES_CBC},
-	{"ror", R_CRYPTO_ROR},
-	{"rol", R_CRYPTO_ROL},
-	{"rot", R_CRYPTO_ROT},
-	{"blowfish", R_CRYPTO_BLOWFISH},
-	{"cps2", R_CRYPTO_CPS2},
-	{"des-ecb", R_CRYPTO_DES_ECB},
-	{"xor", R_CRYPTO_XOR},
-	{"serpent-ecb", R_CRYPTO_SERPENT},
-	{NULL, 0}
+	{ "all", UT64_MAX },
+	{ "rc2", R_CRYPTO_RC2 },
+	{ "rc4", R_CRYPTO_RC4 },
+	{ "rc6", R_CRYPTO_RC6 },
+	{ "aes-ecb", R_CRYPTO_AES_ECB },
+	{ "aes-cbc", R_CRYPTO_AES_CBC },
+	{ "ror", R_CRYPTO_ROR },
+	{ "rol", R_CRYPTO_ROL },
+	{ "rot", R_CRYPTO_ROT },
+	{ "blowfish", R_CRYPTO_BLOWFISH },
+	{ "cps2", R_CRYPTO_CPS2 },
+	{ "des-ecb", R_CRYPTO_DES_ECB },
+	{ "xor", R_CRYPTO_XOR },
+	{ "serpent-ecb", R_CRYPTO_SERPENT },
+	{ NULL, 0 }
 };
 
-R_API const char *r_crypto_name(ut64 bit) {
-	int i;
+static const struct {
+	const char *name;
+	RCryptoSelector bit;
+} codec_name_bytes[] = {
+	{ "all", UT64_MAX },
+	{ "base64", R_CODEC_B64 },
+	{ "base91", R_CODEC_B91 },
+	{ "punycode", R_CODEC_PUNYCODE },
+	{ NULL, 0 }
+};
+
+R_API const char *r_crypto_name(const RCryptoSelector bit) {
+	size_t i;
 	for (i = 1; crypto_name_bytes[i].bit; i++) {
 		if (bit & crypto_name_bytes[i].bit) {
 			return crypto_name_bytes[i].name;
+		}
+	}
+	return "";
+}
+
+R_API const char *r_crypto_codec_name(const RCryptoSelector bit) {
+	size_t i;
+	for (i = 1; codec_name_bytes[i].bit; i++) {
+		if (bit & codec_name_bytes[i].bit) {
+			return codec_name_bytes[i].name;
 		}
 	}
 	return "";
@@ -51,7 +72,7 @@ R_API RCrypto *r_crypto_init(RCrypto *cry, int hard) {
 			// first call initializes the output_* variables
 			r_crypto_get_output (cry, NULL);
 			cry->plugins = r_list_newf (NULL);
-			for (i=0; crypto_static_plugins[i]; i++) {
+			for (i = 0; crypto_static_plugins[i]; i++) {
 				RCryptoPlugin *p = R_NEW0 (RCryptoPlugin);
 				if (!p) {
 					free (cry);
@@ -76,7 +97,7 @@ R_API int r_crypto_del(RCrypto *cry, RCryptoPlugin *h) {
 	return true;
 }
 
-R_API struct r_crypto_t *r_crypto_new() {
+R_API struct r_crypto_t *r_crypto_new(void) {
 	RCrypto *cry = R_NEW0 (RCrypto);
 	return r_crypto_init (cry, true);
 }
@@ -91,7 +112,7 @@ R_API struct r_crypto_t *r_crypto_as_new(struct r_crypto_t *cry) {
 }
 
 R_API struct r_crypto_t *r_crypto_free(RCrypto *cry) {
-	// TODO: call the destructor function of the plugin to destory the *user pointer if needed
+	// TODO: call the destructor function of the plugin to destroy the *user pointer if needed
 	r_list_free (cry->plugins);
 	free (cry->output);
 	free (cry->key);

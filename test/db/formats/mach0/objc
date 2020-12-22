@@ -1,0 +1,99 @@
+NAME=objc hello-objc not encrypted
+FILE=bins/mach0/hello-objc
+CMDS=ic
+EXPECT=<<EOF
+0x100001180 [0x100000da0 - 0x100000e20]    128 class 0 Person :: NSObject
+0x100000da0 method 0      sayHello
+0x100000df0 method 1      name
+0x100000e20 method 2      setName:
+EOF
+RUN
+
+NAME=objc generics-objc
+FILE=bins/mach0/generics-objc
+CMDS=ic
+EXPECT=<<EOF
+0x100001120 [0x100000e70 - 0x100000e70]      0 class 0 MyCustomClass :: NSObject
+0x100000e70 method 0      doSomethingWithGeneric:
+EOF
+RUN
+
+NAME=objc method flags (ic ViewController)
+FILE=bins/mach0/TestMethods
+CMDS=ic ViewController
+EXPECT=<<EOF
+class ViewController
+0x10000676c method ViewController      viewDidLoad
+0x1000067d0 method ViewController      didReceiveMemoryWarning
+0x1000067bc method ViewController c    thisIsAClassMethod
+0x100006820 method ViewController c    andAnotherOne
+EOF
+RUN
+
+NAME=objc method flags (icj)
+FILE=bins/mach0/TestMethods
+CMDS=icj~{[0].methods[2].flags[0]}
+EXPECT=<<EOF
+class
+EOF
+RUN
+
+NAME=objc method flags (ic*)
+FILE=bins/mach0/TestMethods
+CMDS=ic*~thisIsAClassMethod
+EXPECT=<<EOF
+"f method.class.ViewController.thisIsAClassMethod = 0x1000067bc"
+EOF
+RUN
+
+NAME=objc categories (mangled)
+FILE=bins/mach0/Alamofire-stripped
+CMDS=ic Alamofire.SessionDelegate(Alamofire)~?
+EXPECT=<<EOF
+4
+EOF
+RUN
+
+NAME=infinite aao
+FILE=bins/mach0/r2_hang_test
+CMDS=aao
+EXPECT=
+RUN
+
+NAME=objc categories (swift)
+FILE=bins/mach0/TestSwiftObjc
+CMDS=ic~ class
+EXPECT=<<EOF
+0x100003078 [0x100001ad0 - 0x100001ad0]      0 class 0 TestSwiftObjc.ThisIsASwiftClass(TEST)
+0x1000031e8 [0x100001d80 - 0x100001d80]      0 class 0 TestSwiftObjc.ThisIsASwiftClass :: NSObject
+EOF
+RUN
+
+NAME=aao hello-objc selrefs
+FILE=bins/mach0/hello-objc
+CMDS=<<EOF
+aao
+ax~?
+ax~selref
+EOF
+EXPECT=<<EOF
+92
+              section.0.__TEXT.__text+20 0x100000db4 ->      DATA -> 0x100001150 section.14.__DATA.__objc_selrefs
+                                 main+15 0x100000e5f ->      DATA -> 0x100001158 section.14.__DATA.__objc_selrefs+8
+                                 main+45 0x100000e7d ->      DATA -> 0x100001160 section.14.__DATA.__objc_selrefs+16
+                                 main+64 0x100000e90 ->      DATA -> 0x100001168 section.14.__DATA.__objc_selrefs+24
+                                 main+86 0x100000ea6 ->      DATA -> 0x100001158 section.14.__DATA.__objc_selrefs+8
+                                main+116 0x100000ec4 ->      DATA -> 0x100001160 section.14.__DATA.__objc_selrefs+16
+                                main+135 0x100000ed7 ->      DATA -> 0x100001168 section.14.__DATA.__objc_selrefs+24
+EOF
+RUN
+
+NAME=aao hello-objc methods references
+FILE=bins/mach0/hello-objc
+CMDS=aao;ax~method
+EXPECT=<<EOF
+              section.0.__TEXT.__text+20 0x100000db4 ->      CODE -> 0x100000df0 method.Person.name
+                                 main+45 0x100000e7d ->      CODE -> 0x100000e20 method.Person.setName:
+                                main+116 0x100000ec4 ->      CODE -> 0x100000e20 method.Person.setName:
+EOF
+RUN

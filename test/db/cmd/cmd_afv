@@ -1,0 +1,12 @@
+NAME=avr[rbs]- without function
+FILE=-
+CMDS=<<EOF
+afvr-*
+afvb-42
+afvb- ulumulu
+?e not segfaulted
+EOF
+EXPECT=<<EOF
+not segfaulted
+EOF
+RUN

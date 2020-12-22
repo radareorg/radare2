@@ -1,0 +1,409 @@
+NAME=ahi s + endian
+FILE=-
+CMDS=<<EOF
+wx b8410d4300
+e asm.arch=x86
+ahi s
+e cfg.bigendian=false
+pi 1
+e cfg.bigendian=true
+pi 1
+EOF
+EXPECT=<<EOF
+mov eax, 'C\x0dA'
+mov eax, 'A\x0dC'
+EOF
+RUN
+
+NAME=ahi s + endian 2
+FILE=-
+CMDS=<<EOF
+wx b841424300
+e asm.arch=x86
+ahi s
+e cfg.bigendian=false
+pi 1
+e cfg.bigendian=true
+pi 1
+EOF
+EXPECT=<<EOF
+mov eax, 'CBA'
+mov eax, 'ABC'
+EOF
+RUN
+
+NAME=1: ahi none
+FILE=-
+CMDS=<<EOF
+e asm.bits=64
+e asm.arch=x86
+wx 4881ec48060000
+pi 1
+EOF
+EXPECT=<<EOF
+sub rsp, 0x648
+EOF
+RUN
+
+NAME=ahi with colors
+FILE=-
+CMDS=<<EOF
+e asm.bits=64
+e asm.arch=x86
+e scr.color=1
+wx 4881ec48060000
+pd 1
+ahi 10
+pd 1
+EOF
+EXPECT=<<EOF
+            [32m[7m0x00000000[0m      [33m48[37m81[37mec[33m48[37m06[32m00[37m.[0m  [33msub[36m rsp[0m,[36m[36m [33m0x648[0m[0m[0m
+            [32m[7m0x00000000[0m      [33m48[37m81[37mec[33m48[37m06[32m00[37m.[0m  [33msub[36m rsp[0m,[36m[36m [33m1608[0m[0m[0m
+EOF
+RUN
+
+NAME=ahi 0x41 -> 'A'
+FILE=-
+CMDS=<<EOF
+e asm.bits=64
+e asm.arch=x86
+wx 4881ec48060000
+wx 4883f841 # cmp rax, 0x41
+pi 1
+ahi s
+pi 1
+EOF
+EXPECT=<<EOF
+cmp rax, 0x41
+cmp rax, 'A'
+EOF
+RUN
+
+NAME=ahi 0xe -> 1
+FILE=-
+CMDS=<<EOF
+e asm.bits=64
+e asm.arch=x86
+wx 4881ec48060000
+wx 4883f80e # cmp rax, 0xe
+pi 1
+ahi 2
+pi 1
+EOF
+EXPECT=<<EOF
+cmp rax, 0xe
+cmp rax, 1110b
+EOF
+RUN
+
+NAME=ahi 4 -> 1
+FILE=-
+CMDS=<<EOF
+e asm.bits=64
+e asm.arch=x86
+wx 4881ec48060000
+wx 4883f804 # cmp rax, 4
+pi 1
+ahi 2
+pi 1
+EOF
+EXPECT=<<EOF
+cmp rax, 4
+cmp rax, 100b
+EOF
+RUN
+
+NAME=2: ahi none
+FILE=-
+CMDS=<<EOF
+e asm.bits=64
+e asm.arch=x86
+wx 4881ec48060000
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      4881ec480600.  sub rsp, 0x648
+EOF
+RUN
+
+NAME=3: ahi none
+FILE=-
+CMDS=<<EOF
+e asm.bits=64
+e asm.arch=x86
+ahi 16
+wx 4881ec48060000
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      4881ec480600.  sub rsp, 0x648
+EOF
+RUN
+
+NAME=1: ahi 10
+FILE=-
+CMDS=<<EOF
+e asm.bits=64
+e asm.arch=x86
+wx 4881ec48060000
+ahi 10
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      4881ec480600.  sub rsp, 1608
+EOF
+RUN
+
+NAME=ahi 8
+FILE=-
+CMDS=<<EOF
+e asm.bits=64
+e asm.arch=x86
+wx 4881ec48060000
+ahi 8
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      4881ec480600.  sub rsp, 03110
+EOF
+RUN
+
+NAME=1: ahi 2
+FILE=-
+CMDS=<<EOF
+e asm.bits=64
+e asm.arch=x86
+wx 4881ec48060000
+ahi 2
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      4881ec480600.  sub rsp, 11001001000b
+EOF
+RUN
+
+NAME=ahi 2 - pi
+FILE=-
+CMDS=<<EOF
+e asm.bits=64
+e asm.arch=x86
+wx 4881ec48060000
+ahi 2
+pi 1
+EOF
+EXPECT=<<EOF
+sub rsp, 11001001000b
+EOF
+RUN
+
+NAME=2: ahi 2
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 4883e4f0
+ahi 2
+pi 1
+EOF
+EXPECT=<<EOF
+and rsp, 1111111111111111111111111111111111111111111111111111111111110000b
+EOF
+RUN
+
+NAME=2: ahi 10
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 4883e4f0
+ahi 10
+pi 1
+EOF
+EXPECT=<<EOF
+and rsp, -16
+EOF
+RUN
+
+NAME=1: ahi s
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx b841414141
+ahi s
+pi 1
+EOF
+EXPECT=<<EOF
+mov eax, 'AAAA'
+EOF
+RUN
+
+NAME=ah*
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 4883e4f0
+ahi 10 @ 0x00404879
+ah*
+EOF
+EXPECT=<<EOF
+ahi 10 @ 0x404879
+EOF
+RUN
+
+NAME=ah.
+FILE=malloc://16
+CMDS=<<EOF
+ahi 10 @ 0x8
+s 0x8
+ah.
+EOF
+EXPECT=<<EOF
+ 0x00000008 => immbase=10
+EOF
+RUN
+
+NAME=64bit ahi 10
+FILE=-
+ARGS=-m 0x100001000
+CMDS=<<EOF
+e io.va
+e asm.sub.rel=false
+e asm.leahints=false
+e asm.arch=x86
+e asm.bits=64
+e io.va=true
+wx c7055f44000000000000
+pd 1
+e asm.sub.rel=true; pd 1
+ahi 10; pd 1
+EOF
+EXPECT=<<EOF
+true
+            0x100001000      c7055f440000.  mov dword [rip + 0x445f], 0 ; [0x100005469:4]=-1
+            0x100001000      c7055f440000.  mov dword [0x100005469], 0 ; [0x100005469:4]=-1
+            0x100001000      c7055f440000.  mov dword [4294988905], 0  ; [0x100005469:4]=-1
+EOF
+RUN
+
+NAME=2: ahi s
+FILE=-
+CMDS=<<EOF
+e asm.bits=64
+e asm.arch=x86
+wx 67c744246864616572
+pi 1
+ahi1 s
+pi 1
+EOF
+EXPECT=<<EOF
+mov dword [esp + 0x68], 0x72656164
+mov dword [esp + 0x68], 'read'
+EOF
+RUN
+
+NAME=ahi s 2
+FILE=-
+CMDS=<<EOF
+wx b868584d56
+e asm.arch=x86
+e asm.bits=64
+ahi s
+pi 1
+EOF
+EXPECT=<<EOF
+mov eax, 'VMXh'
+EOF
+RUN
+
+NAME=ahi s - pd with colors
+FILE=-
+CMDS=<<EOF
+e asm.bytes=false
+e asm.comments=false
+e asm.bits=64
+e asm.arch=x86
+wx 67c74424681b5b306d
+ahi1 s
+e scr.color=0
+pd 1
+e scr.color=1
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      mov dword [esp + 0x68], 'm0[\x1b'
+            [32m[7m0x00000000[0m      [37mmov dword [0m[[36mesp [0m+[36m[36m [33m0x68[0m][36m[0m,[36m[36m [33m'm0[\x1b'[0m[0m
+EOF
+RUN
+
+NAME=ahi nword
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.bytes=false
+wx c7458843c6ff00
+pid 1
+ahi 10
+pid 1
+ahi-
+ahi1 10
+pid 1
+EOF
+EXPECT=<<EOF
+0x00000000 mov dword [rbp - 0x78], 0xffc643
+0x00000000 mov dword [rbp - 120], 0xffc643
+0x00000000 mov dword [rbp - 0x78], 16762435
+EOF
+RUN
+
+NAME=ahi 10 and 10u imm (x86_32)
+ARGS=-a x86 -b 32
+FILE=-
+CMDS=<<EOF
+e asm.bytes=false
+"wa cmp eax, -1"
+pd 1
+ahi 10
+pd 1
+ahi 10u
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      cmp eax, 0xffffffff
+            0x00000000      cmp eax, -1
+            0x00000000      cmp eax, 4294967295
+EOF
+RUN
+
+NAME=ahi 10 and 10u imm (x86_64)
+ARGS=-a x86 -b 64
+FILE=-
+CMDS=<<EOF
+e asm.bytes=false
+"wa cmp eax, -1"
+pd 1
+ahi 10
+pd 1
+ahi 10u
+pd 1
+?e
+ah-
+"wa cmp rax, -1"
+pd 1
+ahi 10
+pd 1
+ahi 10u
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      cmp eax, 0xffffffff
+            0x00000000      cmp eax, -1
+            0x00000000      cmp eax, 4294967295
+
+            0x00000000      cmp rax, 0xffffffffffffffff
+            0x00000000      cmp rax, -1
+            0x00000000      cmp rax, 18446744073709551615
+EOF
+RUN

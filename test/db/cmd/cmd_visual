@@ -1,0 +1,80 @@
+NAME=visual_dw
+FILE=-
+CMDS=<<EOF
+Vc10dwq @e:scr.interactive=true > /dev/null
+pd 20~dword?
+EOF
+EXPECT=<<EOF
+10
+EOF
+RUN
+
+NAME=Vc+cq
+FILE=-
+CMDS=<<EOF
+e scr.interactive=true
+Vc+cq
+p8 1
+EOF
+EXPECT=<<EOF
+01
+EOF
+RUN
+
+NAME=visual hex scroll
+FILE=-
+CMDS=<<EOF
+e scr.interactive=true
+e asm.arch=x86
+e asm.bits=64
+wx 4889e54889e5
+Vjq
+s
+EOF
+EXPECT=<<EOF
+0x10
+EOF
+RUN
+
+NAME=visual op scroll
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e scr.interactive=true
+wx 4889e54889e5
+Vpjq
+s
+EOF
+EXPECT=<<EOF
+0x3
+EOF
+RUN
+
+NAME=visual hex pP scroll
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e scr.interactive=true
+wx 4889e54889e5
+VpPjq
+s
+EOF
+EXPECT=<<EOF
+0x10
+EOF
+RUN
+
+NAME=visual noninteractive
+FILE=-
+CMDS=<<EOF
+e scr.interactive=false
+V
+v
+EOF
+EXPECT_ERR=<<EOF
+Visual mode requires scr.interactive=true.
+Panel mode requires scr.interactive=true.
+EOF
+RUN

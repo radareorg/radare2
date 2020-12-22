@@ -1,0 +1,37 @@
+NAME=yara: scan
+FILE=bins/elf/vim
+CMDS=<<EOF
+yara scan
+f
+EOF
+EXPECT=<<EOF
+BLOWFISH_Constants
+SHA256_Constants
+0x001936c4 4 yara1_SHA256_Constants_0
+0x0019372b 4 yara1_SHA256_Constants_1
+0x0019379d 4 yara1_SHA256_Constants_2
+0x001937e5 4 yara1_SHA256_Constants_3
+0x002960c0 4 yara0_BLOWFISH_Constants_0
+0x002960c4 4 yara0_BLOWFISH_Constants_1
+0x002960c8 4 yara0_BLOWFISH_Constants_2
+0x002960cc 4 yara0_BLOWFISH_Constants_3
+0x002964c0 4 yara0_BLOWFISH_Constants_4
+0x002968c8 4 yara0_BLOWFISH_Constants_5
+EOF
+RUN
+
+NAME=yara: scanS
+FILE=malloc://1024
+CMDS=<<EOF
+wx cffbc0b5e9b5dba5a5dbb5e9d728ae2222ae28d7
+yara scanS
+EOF
+EXPECT=<<EOF
+SHA512_Constants
+0x00000000: yara0_SHA512_Constants_0 : cffbc0b5
+0x00000004: yara0_SHA512_Constants_1 : e9b5dba5
+0x00000008: yara0_SHA512_Constants_2 : a5dbb5e9
+0x0000000c: yara0_SHA512_Constants_3 : d728ae22
+0x00000010: yara0_SHA512_Constants_4 : 22ae28d7
+EOF
+RUN

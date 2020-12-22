@@ -1,13 +1,15 @@
 /* radare - LGPL - Copyright 2014-2015 - pancake */
 
+#include "r_util/r_str.h"
 #include <r_util.h>
 
 /* dex/dwarf uleb128 implementation */
 
-R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v) {
+R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v, const char **error) {
 	ut8 c;
 	ut64 s, sum = 0;
 	const ut8 *data_end;
+	bool malformed_uleb = true;
 	if (v) {
 		*v = 0LL;
 	}
@@ -24,12 +26,21 @@ R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v) {
 			for (s = 0; data < data_end; s += 7) {
 				c = *(data++) & 0xff;
 				if (s > 63) {
-					eprintf ("r_uleb128: undefined behaviour in %d shift on ut32\n", (int)s);
+					if (error) {
+						*error = r_str_newf ("r_uleb128: undefined behaviour in %d shift on ut32\n", (int)s);
+					}
+					break;
 				} else {
 					sum |= ((ut64) (c & 0x7f) << s);
 				}
 				if (!(c & 0x80)) {
+					malformed_uleb = false;
 					break;
+				}
+			}
+			if (malformed_uleb) {
+				if (error) {
+					*error = r_str_newf ("malformed uleb128\n");
 				}
 			}
 		} else {
@@ -40,6 +51,16 @@ R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v) {
 		*v = sum;
 	}
 	return data;
+}
+
+R_API int r_uleb128_len (const ut8 *data, int size) {
+	int i = 1;
+	ut8 c = *(data++);
+	while (c > 0x7f && i < size) {
+		c = *(data++);
+		i++;
+	}
+	return i;
 }
 
 /* data is the char array containing the uleb number
@@ -92,11 +113,16 @@ R_API ut8 *r_uleb128_encode(const ut64 s, int *len) {
 	return otarget;
 }
 
-R_API const ut8 *r_leb128(const ut8 *data, st64 *v) {
+R_API const ut8 *r_leb128(const ut8 *data, int datalen, st64 *v) {
 	ut8 c = 0;
 	st64 s = 0, sum = 0;
-	if (data) {
-		for (s = 0; *data;) {
+	const ut8 *data_end = data + datalen;
+	if (data && datalen > 0) {
+		if (!*data) {
+			data++;
+			goto beach;
+		}
+		while (data < data_end) {
 			c = *(data++) & 0x0ff;
 			sum |= ((st64) (c & 0x7f) << s);
 			s += 7;
@@ -108,6 +134,7 @@ R_API const ut8 *r_leb128(const ut8 *data, st64 *v) {
 	if ((s < (8 * sizeof (sum))) && (c & 0x40)) {
 		sum |= -((st64)1 << s);
 	}
+beach:
 	if (v) {
 		*v = sum;
 	}
@@ -130,7 +157,7 @@ R_API st64 r_sleb128(const ut8 **data, const ut8 *end) {
 	} while (cond = *p & 0x80 && p + 1 < end, p++, cond);
 
 	if ((value & 0x40) != 0) {
-		result |= ~0UL << offset;
+		result |= ~0ULL << offset;
 	}
 	*data = p;
 	return result;

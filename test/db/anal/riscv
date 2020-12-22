@@ -1,0 +1,60 @@
+NAME=ret
+FILE=bins/elf/analysis/guess-number-riscv64
+CMDS=<<EOF
+af @ sym._printf_r
+afl~_printf_r
+EOF
+EXPECT=<<EOF
+0x00010330    1 68           sym._printf_r
+EOF
+RUN
+
+NAME=jump with compress instruction
+FILE=-
+CMDS=<<EOF
+e asm.arch=riscv
+e asm.bits=32
+wx 21a001009d06aa858146
+pd 5
+EOF
+EXPECT=<<EOF
+        ,=< 0x00000000      21a0           j 0x8
+        |   0x00000002      0100           nop
+        |   0x00000004      9d06           addi a3, a3, 7
+        |   0x00000006      aa85           mv a1, a0
+        `-> 0x00000008      8146           li a3, 0
+EOF
+RUN
+
+NAME=branch with compress instruction
+FILE=-
+CMDS=<<EOF
+e asm.arch=riscv
+e asm.bits=32
+wx 11c182809d06f5fe
+pd 5
+EOF
+EXPECT=<<EOF
+        ,=< 0x00000000      11c1           beqz a0, 0x4
+       .--> 0x00000002      8280           ret
+       :`-> 0x00000004      9d06           addi a3, a3, 7
+       `==< 0x00000006      f5fe           bnez a3, 0x2
+            0x00000008      0000           illegal
+EOF
+RUN
+
+NAME=asm pseudo for riscv
+FILE=bins/elf/analysis/guess-number-riscv64
+CMDS=<<EOF
+s 0x00010178
+e asm.pseudo = 1
+pd 5
+EOF
+EXPECT=<<EOF
+            0x00010178      ef00c01f       jmp ra                      ; sym.printf
+            0x0001017c      930784fe       a5 = s0 - 24
+            0x00010180      93850700       a1 = a5
+            0x00010184      b7170200       a5 = 0x21
+            0x00010188      13850751       a0 = a5 + 1296
+EOF
+RUN

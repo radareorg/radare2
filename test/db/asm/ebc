@@ -1,0 +1,43 @@
+d "add64 r4, r6(1)" cc640100
+d "add64 r7, r4" 4c47
+d "and64 r7, r4" 5447
+d "ashr32 r4, r6(1)" 99640100
+d "break 6" 0006
+d "call32 r0(0xffff5d9a)" 83109a5dffff
+d "call32 r0(0xfffff47c)" 83107cf4ffff
+d "call32a r7" 0307
+d "call32exa @r7(+1, +0)" 832f01000010
+d "cmp64eq r7, r4" 4547
+d "cmp64gte r7, r6" 4767
+d "cmpi32weq r7 (+2, +144), 1" 2d1742120100
+d "cmpi64wugte r7, 2" 71070200
+d "divu64 r7, r6(2)" d1670200
+d "extndd64 r4, r4" 5c44
+d "jmp32cc 0x28a" 81908a020000
+d "jmp8 0x3" 0203
+d "jmp8cc 0xdf" 82df
+d "jmp8cs 0xd" c20d
+d "mod32 r7, r6(4)" 92670400
+d "modu64 r7, r4" 5347
+d "movdd r7, @r7(+7, +584)" 63f787240010
+d "movdw @r0(+0, +56), r6" 9f683800
+d "movdw r4, @r4" 1fc4
+d "movidw @r0(+5, +0), 4" 776805200400
+d "movinw @r0(+0, +48), (+0, +100)" 784830006400
+d "movinw r7, (+2, +8)" 78072210
+d "moviqw r6, 0" 77360000
+d "moviqw r7, 65535" 7737ffff
+d "movnw r7, @r0(+0, +16)" 72871000
+d "movqw r0, r0(+0, +80)" 60005000
+d "movrelw r1, 0x0f15" 7901150f
+d "movsnw r7, @r0(+0, +56)" 65873800
+d "neg64 r7, r7" 4b77
+d "not32 r7, r7" 0a77
+d "or64 r7, r6(15)" d5670f00
+d "pop64 r3" 6c03
+d "push32 r7" 2b07
+d "ret" 0400
+d "shl64 r7, r4" 5747
+d "shr64 r7, r4" 5847
+d "storesp r7, FLAGS" 2a07
+d "xor32 r7, r4" 1647

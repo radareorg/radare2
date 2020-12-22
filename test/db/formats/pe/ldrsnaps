@@ -1,0 +1,6 @@
+NAME=PE: corkami ldrsnaps.exe - open
+FILE=bins/pe/ldrsnaps.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN

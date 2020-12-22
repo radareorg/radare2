@@ -89,7 +89,7 @@ R_API int r_anal_esil_fire_interrupt(RAnalEsil *esil, ut32 intr_num) {
 	}
 	RAnalEsilInterrupt *intr = _get_interrupt (esil, intr_num);
 #if 0
-	// we dont want this warning
+	// we don't want this warning
 	if (!intr) {
 		eprintf ("Warning no interrupt handler registered for 0x%x\n", intr_num);
 	}

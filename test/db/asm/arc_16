@@ -1,0 +1,32 @@
+d "add r1, r1, 0x14c" 80210503 0x152
+d "add.nz r18, r18, 0xfff" c022822f0000ff0f
+d "add2 r14, 0x104, r3" 1526ce7000000401
+d "add3 r20, r19, 41" 5623542a
+d "add_s sp, sp, 12" a3c0
+d "asl r4, 1, r13" 002e447300000100
+d "asr_s r14, r14, 2" da6e
+dB "beq 0x0000002a" 2a000100
+d "bic r13, r13, 7" 4625cd11
+d "bl 0x00000104" a60fcfff 0x160
+d "breq r15, 0,0x00000534" 450f1010 0x4f2
+d "brlt r13, 0,0x0000050a" 2b0d1210 0x4e2
+d "cmp r2, 0" 4c220080 0x100
+d "cmp_s r3, 0" 80e3 0x100
+d "extb_s r2, r2" 4f7a
+d "flag 1" 69204000
+d "ld.as r1, [gp, 0]" 00120136 0x148
+d "lpnz 0x00000144" e820a201 0x138
+d "mov gp, 0x3928" 0a22803f00002839 0x144
+d "mov_s r0, r4" 8870 0x100
+d "neg_s r1, r1" 3379
+d "nop " 4a260070
+d "nop_s " e078
+d "or r4, r4, 1" 45244400
+d "pop_s blink" d1c0
+d "push_s blink" f1c0
+d "rsub.hi r1, r1, 0" ce212d00
+d "st r1, [r1, -4]" fc194080
+d "st_s r0, [r1, 8]" 02a1
+d "sub r3, 0x3974, r2" 0226837000007439 0x122
+d "swi " 6f223f00
+d "tst r4, r3" 0b24c080

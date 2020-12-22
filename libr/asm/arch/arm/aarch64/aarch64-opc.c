@@ -643,7 +643,7 @@ aarch64_get_expected_qualifier (const aarch64_opnd_qualifier_seq_t *qseq_list,
       return qseq_list[0][idx];
     }
 
-  for (i = 0, saved_i = -1; i < AARCH64_MAX_QLF_SEQ_NUM; ++i)
+  for (i = 0, saved_i = -1; i < AARCH64_MAX_QLF_SEQ_NUM; i++)
     {
       if (qseq_list[i][known_idx] == known_qlf)
 	{
@@ -811,7 +811,7 @@ dump_qualifier_sequence (const aarch64_opnd_qualifier_t *qualifier)
 {
   int i;
   printf ("####  ");
-  for (i = 0; i < AARCH64_MAX_OPND_NUM; ++i, ++qualifier)
+  for (i = 0; i < AARCH64_MAX_OPND_NUM; i++, ++qualifier)
     printf ("%s,", aarch64_get_qualifier_name (*qualifier));
   printf ("\n");
 }
@@ -824,7 +824,7 @@ dump_match_qualifiers (const struct aarch64_opnd_info *opnd,
   aarch64_opnd_qualifier_t curr[AARCH64_MAX_OPND_NUM];
 
   aarch64_verbose ("dump_match_qualifiers:");
-  for (i = 0; i < AARCH64_MAX_OPND_NUM; ++i)
+  for (i = 0; i < AARCH64_MAX_OPND_NUM; i++)
     curr[i] = opnd[i].qualifier;
   dump_qualifier_sequence (curr);
   aarch64_verbose ("against");

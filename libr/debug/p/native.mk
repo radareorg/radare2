@@ -17,6 +17,10 @@ ifeq ($(OSTYPE),$(filter $(OSTYPE),gnulinux))
 COREDUMP_OBJS=native/linux/linux_coredump.o
 endif
 
+ifneq (,$(findstring bsd,$(OSTYPE))$(findstring dragonfly,$(OSTYPE)))
+NATIVE_OBJS=native/bsd/bsd_debug.o
+endif
+
 ${TARGET_PTRACE}: ${OBJ_PTRACE}
 	${CC} $(call libname,debug_native) ${CFLAGS} \
 		${LDFLAGS_LINKPATH}.. -L.. -lr_debug \

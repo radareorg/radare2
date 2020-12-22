@@ -67,3 +67,6 @@ ec ai.ascii rgb:f0f
 ec func_var rgb:f0f
 ec func_var_type rgb:f0f
 ec func_var_addr rgb:0ff
+
+ec widget_bg rgb:f0f rgb:000
+ec widget_sel rgb:0ff rgb:000

@@ -44,6 +44,7 @@ enum {
 	TYPE_MUL = 18,
 	TYPE_CLZ = 19,
 	TYPE_REV = 20,
+	TYPE_NEG = 21
 };
 
 static int strcmpnull(const char *a, const char *b) {
@@ -147,6 +148,7 @@ static ArmOp ops[] = {
 	{"mrc", 0x100010ee, TYPE_COPROC},
 	{"setend", 0x000001f1, TYPE_ENDIAN},
 	{ "clz", 0x000f6f01, TYPE_CLZ},
+	{ "neg", 0x7000, TYPE_NEG },
 
 	{ NULL }
 };
@@ -200,11 +202,10 @@ static char *parse_hints(char *input) {
 
 static st8 iflag(char *input) {
 	st8 res = 0;
-	ut8 i;
 	r_str_case (input, false);
 	
-	for (i = 0; i < strlen(input); i++) {
-		switch (input[i]) {
+	for (; *input; input++) {
+		switch (*input) {
 		case 'a':
 			res |= 0x4;
 			break;
@@ -6277,9 +6278,25 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				}
 				ao->o |= reg << 8;
 				reg = getreg (ao->a[2]);
-				ao->o |= (reg != -1)? reg << 24 : 2 | getnum (ao->a[2]) << 24;
+				if (reg == -1) {
+					int imm = getnum(ao->a[2]);
+					if (imm && !(imm & (imm - 1)) && imm > 255) {
+						int r;
+						for (r = 0; r != 32; r += 2) {
+							if (!(imm & ~0xff)) {
+								ao->o |= (r << 15) | (imm << 24) | 2;
+								break;
+							}
+							imm = (imm << 2) | (imm >> 30);
+						}
+					} else {
+						ao->o |= (imm << 24) | 2;
+					}
+				} else {
+					ao->o |= reg << 24;
+				}
 				if (ao->a[3]) {
-					ao->o |= getshift (ao->a[3]);
+					ao->o |= getshift(ao->a[3]);
 				}
 				break;
 			case TYPE_SWP:
@@ -6526,6 +6543,18 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				ao->o |= reg << 24;
 
 				break;
+			case TYPE_NEG:
+				if (!ao->a[0] || !ao->a[1]) {
+					return 0;
+				}
+				ao->a[2] = "0";
+				int len = strlen (ao->a[1]) + 1;
+				memmove (ao->a[0] + 1, ao->a[0], ao->a[1] - ao->a[0] + len);
+				ao->a[0]++;
+				ao->a[1]++;
+				strncpy (ao->op, "rsbs", 5);
+				arm_assemble (ao, off, str); // rsbs reg0, reg1, #0
+				break;
 			}
 			}
 			return 1;
@@ -6553,7 +6582,7 @@ ut32 armass_assemble(const char *str, ut64 off, int thumb) {
 	if (thumb < 0 || thumb > 1) {
 		return -1;
 	}
-	if (!assemble[thumb] (&aop, off, buf)) {
+	if (assemble[thumb] (&aop, off, buf) <= 0) {
 		//eprintf ("armass: Unknown opcode (%s)\n", buf);
 		return -1;
 	}

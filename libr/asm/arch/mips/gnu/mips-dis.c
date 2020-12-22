@@ -326,9 +326,9 @@ struct mips_abi_choice
 struct mips_abi_choice mips_abi_choices[] =
 {
   { "numeric", mips_gpr_names_numeric, mips_fpr_names_numeric },
-  { "32", mips_gpr_names_oldabi, mips_fpr_names_32 },
+  { "o32", mips_gpr_names_oldabi, mips_fpr_names_32 },
   { "n32", mips_gpr_names_newabi, mips_fpr_names_n32 },
-  { "64", mips_gpr_names_newabi, mips_fpr_names_64 },
+  { "n64", mips_gpr_names_newabi, mips_fpr_names_64 },
 };
 
 struct mips_arch_choice
@@ -429,6 +429,16 @@ const struct mips_arch_choice mips_arch_choices[] =
     mips_cp0_names_sb1,
     mips_cp0sel_names_sb1, ARRAY_SIZE (mips_cp0sel_names_sb1),
     mips_hwr_names_numeric },
+
+  { "loongson2e", 1, bfd_mach_mips_loongson_2e, CPU_LOONGSON_2E,
+    ISA_MIPS3 | INSN_LOONGSON_2E, 
+    mips_cp0_names_numeric, 
+    NULL, 0, mips_hwr_names_numeric },
+
+  { "loongson2f", 1, bfd_mach_mips_loongson_2f, CPU_LOONGSON_2F,
+    ISA_MIPS64 | INSN_LOONGSON_2F, 
+    mips_cp0_names_numeric,
+    NULL, 0, mips_hwr_names_numeric },
 
   /* This entry, mips16, is here only for ISA/processor selection; do
      not print its name.  */
@@ -609,6 +619,16 @@ parse_mips_dis_option (const char *option, unsigned int len)
   optionlen = i;
   val = option + (optionlen + 1);
   vallen = len - (optionlen + 1);
+
+  if (strlen ("abi") == optionlen
+	&& !strncmp ("abi", option, optionlen)) {
+	chosen_abi = choose_abi_by_name (val, vallen);
+	if (chosen_abi) {
+		mips_gpr_names = chosen_abi->gpr_names;
+		mips_fpr_names = chosen_abi->fpr_names;
+	}
+	return;
+  }
 
   if (strncmp ("gpr-names", option, optionlen) == 0
       && strlen ("gpr-names") == optionlen)

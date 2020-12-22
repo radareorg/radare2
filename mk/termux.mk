@@ -11,7 +11,6 @@ PARTIALLD=ld -r --whole-archive
 
 ONELIB=0
 OSTYPE=android
-LINK=
 PICFLAGS=-fPIC -fpic
 CFLAGS+=${PICFLAGS}
 CC_LIB=${CC} -shared -o

@@ -6,7 +6,6 @@ CC_AR=${AR} -r ${LIBAR}
 
 ONELIB=0
 OSTYPE=android
-LINK=
 PICFLAGS=-fPIC -fpic
 CFLAGS+=${PICFLAGS}
 CC_LIB=${CC} -shared -o

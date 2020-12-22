@@ -1,0 +1,185 @@
+d "addi sp, sp, -144" 7571
+d "lui a5, 0x10" c167
+d "sw a5, 28(sp)" 3ece
+d "lui a5, 0x30" b7070300
+d "sw a5, 36(sp)" 3ed2
+d "lui a5, 0xc" b167
+d "sw a5, 60(sp)" 3ede
+d "lui a5, 0xffff8" e177
+d "sw s1, 132(sp)" 26c3
+d "sw ra, 140(sp)" 06c7
+d "sw s0, 136(sp)" 22c5
+d "sw s2, 128(sp)" 4ac1
+d "sw s3, 124(sp)" cede
+d "sw s4, 120(sp)" d2dc
+d "sw s5, 116(sp)" d6da
+d "sw s6, 112(sp)" dad8
+d "sw s7, 108(sp)" ded6
+d "sw s8, 104(sp)" e2d4
+d "sw s9, 100(sp)" e6d2
+d "sw s10, 96(sp)" ead0
+d "sw s11, 92(sp)" eece
+d "sw zero, 40(sp)" 02d4
+d "sw zero, 32(sp)" 02d0
+d "sw zero, 56(sp)" 02dc
+d "sw zero, 48(sp)" 02d8
+d "sw a5, 52(sp)" 3eda
+d "sw zero, 24(sp)" 02cc
+d "lui s1, 0x40" b7040400 0x38
+d "lui a5, 0x10013" b7370110
+d "lw a5, 4(a5)" dc43 0x40
+d "blez a5, 0x64" 6351f002 0x42
+d "lw ra, 140(sp)" ba40 0x40
+d "lw s0, 136(sp)" 2a44 0x40
+d "lw s1, 132(sp)" 9a44 0x40
+d "lw s2, 128(sp)" 0a49 0x40
+d "lw s3, 124(sp)" f659 0x40
+d "lw s4, 120(sp)" 665a 0x44
+d "lw s5, 116(sp)" d65a 0x48
+d "lw s6, 112(sp)" 465b 0x40
+d "lw s7, 108(sp)" b65b 0x40
+d "lw s8, 104(sp)" 265c 0x40
+d "lw s9, 100(sp)" 965c 0x40
+d "lw s10, 96(sp)" 065d 0x40
+d "lw s11, 92(sp)" f64d 0x40
+d "addi sp, sp, 144" 4961 0x40
+d "ret" 8280 0x40
+d "lw a5, 24(sp)" e247 0x40
+d "beqz a5, 0x2d8" 63890726 0x66
+d "lw s0, 28(sp)" 7244 0x40
+d "lw a0, 36(sp)" 1255 0x40
+d "lw a6, 40(sp)" 2258 0x40
+d "lw t3, 56(sp)" 625e 0x40
+d "srai a5, s0, 0x1f" 9357f441 0x40
+d "lw a2, 32(sp)" 0256 0x40
+d "andi a5, a5, 15" bd8b 0x40
+d "srai a4, a0, 0x1f" 1357f541 0x40
+d "lw a7, 48(sp)" c258 0x40
+d "add a3, a5, a6" b3860701 0x80
+d "sub s2, t3, a6" 33090e41 0x80
+d "andi a4, a4, 63" 1377f703 0x80
+d "lw a6, 52(sp)" 5258 0x80
+d "add a1, a4, a2" b305c700 0x80
+d "sltu a4, a1, a4" 33b7e500 0x80
+d "sub a2, a7, a2" 3386c840 0x80
+d "sltu s7, a3, a5" b3bbf600 0x80
+d "sltu a7, a7, a2" b3b8c800 0x80
+d "add a5, a4, a0" b307a700 0x80
+d "mv a4, a2" 3287 0x80
+d "sub a2, a6, a0" 3306a840 0x80
+d "sltu a6, t3, s2" 33382e01 0x80
+d "lw t3, 60(sp)" 725e 0x80
+d "mv t1, a0" 2a83 0x80
+d "srli a1, a1, 0x6" 9981 0x80
+d "slli a0, a5, 0x1a" 1395a701 0x80
+d "sw a4, 64(sp)" bac0 0x80
+d "sub a4, a2, a7" 33071641 0x80
+d "add s7, s7, s0" a29b 0xc0
+d "sw a4, 68(sp)" bac2 0xc0
+d "srai a5, a5, 0x6" 9987 0xc0
+d "or a4, a0, a1" 3367b500 0xc0
+d "slli s8, s7, 0x1c" 139ccb01 0xc0
+d "sub s0, t3, s0" 33048e40 0xc0
+d "srli a3, a3, 0x4" 9182 0xc0
+d "sw a4, 16(sp)" 3ac8 0xc0
+d "sw a5, 20(sp)" 3eca 0xc0
+d "lui a4, 0x1" 0567 0xc0
+d "sub s0, s0, a6" 33040441 0xc0
+d "or s8, s8, a3" 336cdc00 0xc0
+d "srai s7, s7, 0x4" 93db4b40 0xc0
+d "blt t1, a4, 0x2d4" 6347e31e 0xe6
+d "lw a5, 28(sp)" f247 0xc0
+d "lui a4, 0x1" 0567 0xc0
+d "blt a5, a4, 0x2d4" 63c3e71e 0xee
+d "srli a5, s8, 0x1d" 9357dc01 0xc0
+d "slli a4, s7, 0x3" 13973b00 0xc0
+d "or a5, a5, a4" d98f 0xc0
+d "sw a5, 76(sp)" bec6 0xc0
+d "slli a5, s8, 0x3" 93173c00 0xc0
+d "addi a5, sp, 8" 3c00 0x100
+d "li s11, 255" 930df00f 0x100
+d "sw a5, 72(sp)" bec4 0x100
+d "sw s2, 12(sp)" 4ac6 0x100
+d "li a5, 4" 9147 0x100
+d "li s2, 0" 0149 0x100
+d "mv s3, s11" ee89 0x100
+d "sw a5, 44(sp)" 3ed6 0x100
+d "li s6, 16" 414b 0x100
+d "li s9, 8" a14c 0x100
+d "mv s11, s2" ca8d 0x100
+d "lw s10, 64(sp)" 064d 0x100
+d "lw s5, 68(sp)" 964a 0x100
+d "li s2, 128" 13090008 0x100
+d "mv s4, s3" 4e8a 0x100
+d "mv s3, s2" ca89 0x100
+d "lw t2, 12(sp)" b243 0x100
+d "mv t6, s0" a28f 0x100
+d "li ra, 0" 8140 0x100
+d "li s2, 0" 0149 0x100
+d "li a1, 0" 8145 0x100
+d "li a4, 0" 0147 0x100
+d "li t3, 0" 014e 0x100
+d "li a6, 0" 0148 0x100
+d "li a5, 0" 8147 0x100
+d "li a3, 0" 8146 0x100
+d "li t1, 0" 0143 0x100
+d "li a2, 0" 0146 0x100
+d "li a0, 0" 0145 0x100
+d "j 0x176" 25a8 0x13e
+d "mul a4, a0, a2" 3307c502 0x140
+d "mulhu t1, a2, a2" 3333c602 0x140
+d "slli a4, a4, 0x1" 0607 0x140
+d "mul a7, a5, a6" b3880703 0x140
+d "add t1, t1, a4" 3a93 0x140
+d "mul a3, a2, a2" b306c602 0x140
+d "slli a7, a7, 0x1" 8608 0x140
+d "mulhu t3, a6, a6" 333e0803 0x140
+d "mul a4, a6, a6" 33070803 0x140
+d "add t3, t3, a7" 469e 0x140
+d "add t5, t1, t3" 330fc301 0x140
+d "add t4, a3, a4" b38ee600 0x140
+d "sltu a7, t4, a3" b3b8de00 0x140
+d "add a7, a7, t5" fa98 0x140
+d "blt s1, a7, 0x2c6" 63cc1415 0x16e
+d "beq a7, s1, 0x2c2" 63889814 0x172
+d "sub a4, a3, a4" 3387e640 0x140
+d "sub t3, t1, t3" 330ec341 0x140
+d "sltu a3, ra, zero" b3b60000 0x140
+d "add a7, a4, s10" b308a701 0x180
+d "sub a3, t3, a3" b306de40 0x180
+d "sltu a4, a7, a4" 33b7e800 0x180
+d "add a3, a3, s5" d696 0x180
+d "add a3, a3, a4" ba96 0x180
+d "mul a5, a5, a2" b387c702 0x180
+d "slli t1, a3, 0x8" 13938600 0x180
+d "addi a1, a1, 1" 8505 0x180
+d "mul a4, a0, a6" 33070503 0x180
+d "srai a0, a3, 0x18" 13d58641 0x180
+d "mulhu a3, a6, a2" b336c802 0x180
+d "add a4, a4, a5" 3e97 0x180
+d "mul a6, a6, a2" 3308c802 0x180
+d "add a4, a4, a3" 3697 0x180
+d "srli a2, a7, 0x18" 13d68801 0x180
+d "slli a4, a4, 0x1" 0607 0x180
+d "or a2, t1, a2" 3366c300 0x180
+d "slli a7, a6, 0x1" 93181800 0x180
+d "srli a3, a6, 0x1f" 9356f801 0x180
+d "add a5, a7, t2" b3877800 0x1c0
+d "or a4, a4, a3" 558f 0x1c0
+d "srli a6, a5, 0x18" 13d88701 0x1c0
+d "add a4, a4, t6" 7e97 0x1c0
+d "sltu a5, a5, a7" b3b71701 0x1c0
+d "add a4, a4, a5" 3e97 0x1c0
+d "slli a5, a4, 0x8" 93178700 0x1c0
+d "or a6, a5, a6" 33e80701 0x1c0
+d "srai a5, a4, 0x18" 93578741 0x1c0
+d "bne a1, s6, 0x140" e39065f7 0x1e0
+d "li a5, 0" 8147 0x1c0
+d "add a4, t2, s8" 33878301 0x1c0
+d "sltu a3, a4, t2" b3367700 0x1c0
+d "or s2, a5, s2" 33e92701 0x1c0
+d "add t6, t6, s7" de9f 0x1c0
+d "addi ra, ra, 1" 8500 0x1c0
+d "andi s2, s2, 255" 1379f90f 0x1c0
+d "mv t2, a4" ba83 0x1c0
+d "add t6, t6, a3" b69f 0x1c0

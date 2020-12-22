@@ -4,3 +4,15 @@ type.char *.size=32
 size_t=type
 type.size_t=d
 type.size_t.size=32
+
+pid_t=type
+type.pid_t=d
+type.pid_t.pid=32
+
+uid_t=type
+type.uid_t=d
+type.uid_t.uid=32
+
+gid_t=type
+type.gid_t=d
+type.gid_t.uid=32

@@ -1,0 +1,63 @@
+NAME==h
+FILE=--
+CMDS=!scripts/test-webserver.sh
+EXPECT=<<EOF
+            ; [14] -r-x section size 594 named .text
+            ;-- entry0:
+            ;-- section..text:
+            ;-- .text:
+            ;-- _start:
+            0x000006a0      xor ebp, ebp
+            0x000006a2      mov r9, rdx
+            0x000006a5      pop rsi
+            0x000006a6      mov rdx, rsp
+            0x000006a9      and rsp, 0xfffffffffffffff0
+            0x000006ad      push rax
+            0x000006ae      push rsp
+            ; 0x8f0
+            0x000006af      lea r8, sym.__libc_csu_fini
+            ; 0x880
+            ; "AWAVA\x89\xffAUATL\x8d%\xfe\x04 "
+            0x000006b6      lea rcx, sym.__libc_csu_init
+            ; 0x81e
+            0x000006bd      lea rdi, main
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=false" />
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="language" content="en" />
+
+	<title>radare2 webui</title>
+
+	<script type="text/javascript" src="m/vendors/jquery.min.js"></script>
+	<script type="text/javascript" src="m/r2.js"></script>
+EOF
+EXPECT_ERR=<<EOF
+
+EOF
+RUN
+
+# this test fails on newshell and windows better to mark it as broken
+NAME=r2 remote webserver two
+BROKEN=1
+FILE=--
+CMDS=<<EOF
+e cfg.newshell=true
+& !rarun2 timeout=3 daemon=1 system="r2 -e http.root=/404 -e http.port=9292 -c=h -qcq -"
+sleep 1
+=+ http://127.0.0.1:9292/cmd/
+=
+=0 ?e hello remote world
+EOF
+EXPECT=<<EOF
+0 fd:-1 http://127.0.0.1:9292/cmd/
+hello remote world
+EOF
+EXPECT_ERR=<<EOF
+Cannot find http.root or http.homeroot
+Starting http server...
+open http://localhost:9292/
+r2 -C http://localhost:9292/cmd/
+EOF
+RUN

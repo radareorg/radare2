@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2018 - pancake */
+/* radare - LGPL - Copyright 2013-2019 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -33,25 +33,16 @@ static bool check_buffer(RBuffer *buf) {
 	return bep == 0xea || bep == 0xe9;
 }
 
-static bool check_bytes(const ut8 *b, ut64 length) {
-	RBuffer *buf = r_buf_new_with_bytes (b, length);
-	bool res = check_buffer (buf);
-	r_buf_free (buf);
-	return res;
-}
-
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	RBuffer *obj = r_buf_ref (buf);
-	if (!check_buffer (obj)) {
-		r_buf_free (obj);
-		return NULL;
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	if (!check_buffer (buf)) {
+		return false;
 	}
-	return obj;
+	*bin_obj = r_buf_ref (buf);
+	return true;
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	r_buf_free (bf->o->bin_obj);
-	return true;
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -98,7 +89,7 @@ static RList *sections(RBinFile *bf) {
 	}
 	ptr->name = strdup ("bootblk"); // Maps to 0xF000:0000 segment
 	ptr->vsize = ptr->size = 0x10000;
-	ptr->paddr = r_buf_size (obj) - ptr->size;
+	ptr->paddr = r_buf_size (bf->buf) - ptr->size;
 	ptr->vaddr = 0xf0000;
 	ptr->perm = R_PERM_RWX;
 	ptr->add = true;
@@ -141,7 +132,6 @@ RBinPlugin r_bin_plugin_bios = {
 	.license = "LGPL",
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.entries = entries,
@@ -150,7 +140,7 @@ RBinPlugin r_bin_plugin_bios = {
 	.info = &info,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_bios,

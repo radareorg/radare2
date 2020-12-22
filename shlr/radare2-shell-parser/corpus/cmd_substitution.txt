@@ -1,0 +1,88 @@
+=======================================
+Command substitution used as simple arg $(
+=======================================
+
+?e $(p8 10)
+
+---
+
+(commands
+  (arged_command command: (cmd_identifier)
+    args: (args
+            (arg (cmd_substitution_arg
+	      (arged_command command: (cmd_identifier)
+	        args: (args (arg (arg_identifier)))))))))
+
+=======================================
+Command substitution with multiple commands
+=======================================
+
+?e $(p8 10; p8 4 @ 0xdeadbeef)
+
+---
+
+(commands
+  (arged_command command: (cmd_identifier)
+    args: (args
+            (arg (cmd_substitution_arg
+	      (arged_command command: (cmd_identifier)
+	        args: (args (arg (arg_identifier))))
+	      (tmp_seek_command
+	        (arged_command command: (cmd_identifier)
+	          args: (args (arg (arg_identifier))))
+		(args (arg (arg_identifier)))))))))
+
+
+
+=======================================
+Command substitution used as simple arg `
+=======================================
+
+?e `p8 10`
+
+---
+
+(commands
+  (arged_command command: (cmd_identifier)
+    args: (args
+            (arg (cmd_substitution_arg
+	      (arged_command command: (cmd_identifier)
+	        args: (args (arg (arg_identifier)))))))))
+
+
+=======================================
+Nested command substitution
+=======================================
+
+?e $(p8 $(?e 10))
+
+---
+
+(commands
+  (arged_command command: (cmd_identifier)
+    args: (args (arg (cmd_substitution_arg
+	         (arged_command command: (cmd_identifier)
+	           args: (args (arg (cmd_substitution_arg
+		           (arged_command command: (cmd_identifier)
+			     args: (args (arg (arg_identifier)))))))))))))
+
+
+=======================================
+Nested command substitution 2
+=======================================
+
+?e Hello$(?e Wor$(?e ld))
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args (arg (concatenation
+                 (arg_identifier)
+                 (cmd_substitution_arg
+                   (arged_command (cmd_identifier)
+                     (args (arg (concatenation
+		                  (arg_identifier)
+				  (cmd_substitution_arg
+				    (arged_command (cmd_identifier)
+				      (args (arg (arg_identifier)))))))))))))))

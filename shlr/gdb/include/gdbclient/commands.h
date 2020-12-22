@@ -5,6 +5,16 @@
 #include "r_types_base.h"
 #include <r_util.h>
 
+/*!
+ * \brief Acquires the gdbr lock and sets up breaking
+ * \returns true on success, false on failure
+ */
+bool gdbr_lock_enter(libgdbr_t *g);
+
+/*!
+ * \brief Releases the gdbr lock
+ */
+void gdbr_lock_leave(libgdbr_t *g);
 
 /*!
  * \brief Function connects to a gdbserver instance
@@ -68,8 +78,8 @@ int gdbr_detach_pid(libgdbr_t *g, int pid);
  * \param pid of the process to detach from (only the multiprocess/pid variant)
  * \retuns a failure code (currently -1) or 0 if call successfully
  */
-bool gdbr_kill(libgdbr_t *g);
-bool gdbr_kill_pid(libgdbr_t *g, int pid);
+int gdbr_kill(libgdbr_t *g);
+int gdbr_kill_pid(libgdbr_t *g, int pid);
 
 // Commands
 int gdbr_continue(libgdbr_t *g, int pid, int tid, int sig);
@@ -84,7 +94,7 @@ int gdbr_read_registers(libgdbr_t *g);
  * i.e. eax=0x123,ebx=0x234
  * \returns a failurre code (currently -1) or 0 if call successfully
  */
-int gdbr_write_bin_registers(libgdbr_t *g);
+int gdbr_write_bin_registers(libgdbr_t *g, const char *regs, int len);
 int gdbr_write_reg(libgdbr_t *g, const char *name, char *value, int len);
 int gdbr_write_register(libgdbr_t *g, int index, char *value, int len);
 int gdbr_write_registers(libgdbr_t *g, char *registers);
@@ -120,6 +130,11 @@ int gdbr_close_file(libgdbr_t *g);
  * \brief get list of threads for given pid
  */
 RList* gdbr_threads_list(libgdbr_t *g, int pid);
+
+/*!
+ * \brief get a list of the child processes of the given pid
+ */
+RList* gdbr_pids_list(libgdbr_t *g, int pid);
 
 /*!
  * Get absolute name of file executed to create a process

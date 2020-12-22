@@ -5,7 +5,6 @@ EXT_SO=.wasm
 EXT_AR=a
 CC=emcc
 AR=emar
-LINK=
 RANLIB=emranlib
 ONELIB=0
 CC_AR=emar q ${LIBAR}

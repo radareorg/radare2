@@ -1,17 +1,14 @@
-/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2020 pancake<nopcode.org> */
 
 #include <r_util.h>
 
 // TODO: use r_list instead of list.h
 // TODO: redesign this api.. why? :)
-
-#if 0
 // TODO: add tags to ranges
-#endif
 
 //void (*ranges_new_callback)(struct range_t *r) = NULL;
 
-R_API RRange *r_range_new() {
+R_API RRange *r_range_new(void) {
 	RRange *r = R_NEW0 (RRange);
 	if (r) {
 		r->count = r->changed = 0;
@@ -70,7 +67,7 @@ RRangeItem *r_range_item_get(RRange *rgs, ut64 addr) {
 }
 
 /* returns the sum of all the ranges contained */
-// XXX: can be catched while adding/removing elements
+// XXX: can be caught while adding/removing elements
 R_API ut64 r_range_size(RRange *rgs) {
 	ut64 sum = 0;
 	RListIter *iter;
@@ -251,7 +248,7 @@ R_API int r_range_contains(RRange *rgs, ut64 addr) {
 static int cmp_ranges(void *a, void *b) {
 	RRangeItem *first = (RRangeItem *)a;
 	RRangeItem *second = (RRangeItem *)b;
-	return first->fr > second->fr;
+	return (first->fr > second->fr) - (first->fr < second->fr);
 }
 
 R_API int r_range_sort(RRange *rgs) {

@@ -1,0 +1,76 @@
+ad "bipush 33" 1021
+ad "nop" 00
+d "iconst_0" 03
+d "istore_1" 3c
+d "iload_1" 1b
+d "iconst_1" 04
+d "ixor" 82
+d "istore_1" 3c
+d "iload_1" 1b
+d "ireturn" ac
+d "iconst_0" 03
+d "istore_1" 3c
+d "iload_0" 1a
+d "iconst_1" 04
+d "if_icmpne 0x000c" a00008 0x00000004
+d "iconst_0" 03
+d "istore_1" 3c
+d "goto 0x0010" a70007 0x00000009
+d "iload_1" 1b
+d "iconst_1" 04
+d "ixor" 82
+d "istore_1" 3c
+d "iload_1" 1b
+d "ireturn" ac
+d "iconst_0" 03
+d "istore_1" 3c
+d "iload_0" 1a
+d "iconst_1" 04
+d "if_icmpeq 0x000c" 9f0008 0x00000004
+d "iconst_0" 03
+d "istore_1" 3c
+d "goto 0x0010" a70007 0x00000009
+d "iload_1" 1b
+d "iconst_1" 04
+d "ixor" 82
+d "istore_1" 3c
+d "iload_1" 1b
+d "ireturn" ac
+d "iconst_0" 03
+d "istore_1" 3c
+d "iload_0" 1a
+d "iconst_1" 04
+d "if_icmplt 0x000c" a10008 0x00000004
+d "iconst_0" 03
+d "istore_1" 3c
+d "goto 0x0010" a70007 0x00000009
+d "iload_1" 1b
+d "iconst_1" 04
+d "ixor" 82
+d "istore_1" 3c
+d "iload_1" 1b
+d "ireturn" ac 0x00000011
+d "if_icmple 0x000c" a40008 0x00000004
+d "goto 0x0010" a70007 0x00000009
+d "if_icmpgt 0x000c" a30008 0x00000004
+d "goto 0x0010"  a70007 0x00000009
+d "if_icmpge 0x000c" a20008 0x00000004
+d "goto 0x0010" a70007 0x00000009
+d "aload_0" 2a
+d "return" b1
+d "bipush 100" 1064 0x00000006
+d "istore_2" 3d
+d "goto 0x0019" a70010 0x00000009
+d "iload_2" 1c
+d "sipush 255" 1100ff
+d "irem" 70
+d "iinc 0 1" 840001
+d "if_icmplt 0x000c" a1fff1 0x0000001b
+d "iload_2" 1c
+d "i2b" 91
+d "if_icmpne 0x001a" a00006 0x00000014
+d "if_icmplt 0x000c" a1ffe7 0x00000025
+d "goto 0x003b" a70037 0x00000004
+d "bipush 32" 1020
+d "nop" 00
+d "iadd" 60

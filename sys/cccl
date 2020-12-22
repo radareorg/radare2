@@ -264,7 +264,7 @@ EOF
         done
         ;;
     /*/*)
-	# If there are multiple slashes, then it's an absoulte path
+	# If there are multiple slashes, then it's an absolute path
         path=$(cygpath -aw "$1")
         clopt="${clopt},${path}"
 	;;

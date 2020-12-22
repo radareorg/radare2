@@ -1,0 +1,21 @@
+d "addlw 0x12" 120f
+d "addwf 0xd1, 0, 1" d125
+d "addwfc 0x35, 1, 0" 3522
+d "andwf 0x85, 1, 1" 8517
+d "bcf 0x42, 7, 1" 429f
+d "bnn 0xfa" fae7
+d "bra 0x51e" 1ed5
+d "call 0x612a1, 1" a1ed12f6
+d "clrf 0x15, 0" 156a
+d "comf 0x48, 0, 0" 481c
+d "cpfseq 0x71, 1" 7163
+d "cpfsgt 0x62, 0" 6264
+d "cpfslt 0xc4, 0" c460
+d "goto 0x274e" a7ef13f0
+d "invalid" 02
+dB "invalid" 0200
+d "lfsr fsr2, 4005" 2feea5f0
+d "movff 0xe54, 0x49" 54ce49f0
+d "movlb 0xd" 0d01
+d "nop" 15f0
+d "return 0" 1200

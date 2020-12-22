@@ -4328,7 +4328,7 @@ arc_opcode_init_tables (int flags)
           /* Initialize operand map table for ARCtanget-A4 */
           memset (arc_operand_map_a4, 0, sizeof (arc_operand_map_a4));
 
-	  for (i = 0; i < (int)ELEMENTS_IN (arc_operands_a4); ++i) {
+	  for (i = 0; i < (int)ELEMENTS_IN (arc_operands_a4); i++) {
 		  arc_operand_map_a4[arc_operands_a4[i].fmt] = i;
 	  }
 
@@ -4345,7 +4345,7 @@ arc_opcode_init_tables (int flags)
           /* Initialize operand map table for ARCompact */
           memset (arc_operand_map_ac, 0, sizeof (arc_operand_map_ac));
 
-	  for (i = 0; i < (int)ELEMENTS_IN (arc_operands_ac); ++i) {
+	  for (i = 0; i < (int)ELEMENTS_IN (arc_operands_ac); i++) {
 		  arc_operand_map_ac[arc_operands_ac[i].fmt] = i;
 	  }
 

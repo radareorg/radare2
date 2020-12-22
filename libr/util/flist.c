@@ -31,7 +31,7 @@ R_API void **r_flist_new(int n) {
 		return NULL;
 	}
 	*it = it;
-	memset (++it, 0, (n+1) * sizeof (void*));
+	memset (++it, 0, (n + 1) * sizeof (void*));
 	return it;
 }
 
@@ -69,8 +69,9 @@ R_API void r_flist_delete(void **it, int idx) {
 
 R_API void r_flist_free(void **it) {
 	void *pos;
-	r_flist_foreach (it, pos)
+	r_flist_foreach (it, pos) {
 		free (pos);
+	}
 	r_flist_rewind (it);
 	free (--it);
 }
@@ -78,7 +79,8 @@ R_API void r_flist_free(void **it) {
 R_API int r_flist_length (void **it) {
 	void *pos;
 	int len = 0;
-	r_flist_foreach (it, pos)
+	r_flist_foreach (it, pos) {
 		len++;
+	}
 	return len;
 }

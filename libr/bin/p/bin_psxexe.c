@@ -7,15 +7,16 @@
 #include "../i/private.h"
 #include "psxexe/psxexe.h"
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (!buf || (length < PSXEXE_ID_LEN)) {
-		return false;
+static bool check_buffer(RBuffer *b) {
+	ut8 magic[PSXEXE_ID_LEN];
+	if (r_buf_read_at (b, 0, magic, sizeof (magic)) == PSXEXE_ID_LEN) {
+		return !memcmp (magic, PSXEXE_ID, PSXEXE_ID_LEN);
 	}
-	return !memcmp (buf, PSXEXE_ID, PSXEXE_ID_LEN);
+	return false;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	return check_bytes (buf, sz);
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+	return check_buffer (b);
 }
 
 static RBinInfo* info(RBinFile* bf) {
@@ -115,15 +116,15 @@ RBinPlugin r_bin_plugin_psxexe = {
 	.name = "psxexe",
 	.desc = "Sony PlayStation 1 Executable",
 	.license = "LGPL3",
-	.load_bytes = &load_bytes,
-	.check_bytes = &check_bytes,
+	.load_buffer = &load_buffer,
+	.check_buffer = &check_buffer,
 	.info = &info,
 	.sections = &sections,
 	.entries = &entries,
 	.strings = &strings,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_psxexe,

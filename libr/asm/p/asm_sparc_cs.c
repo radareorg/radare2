@@ -2,7 +2,7 @@
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone/capstone.h>
+#include <capstone.h>
 static csh cd = 0;
 #include "cs_mnemonics.c"
 
@@ -70,7 +70,7 @@ RAsmPlugin r_asm_plugin_sparc_cs = {
 	.mnemonics = mnemonics
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_sparc_cs,

@@ -312,7 +312,7 @@ static int r_debug_bochs_wait(RDebug *dbg, int pid) {
 	ripStop = 0;
 	if ((x = strstr (desc->data, "Next at"))) {
 		if ((ini = strstr (x, "[0x"))) {
-			if ((fin = strstr (ini,"]"))) {
+			if ((fin = strchr (ini, ']'))) {
 				int len = fin - ini - 1;
 				strncpy (strIP, ini+1, len);
 				strIP[len] = 0;
@@ -562,7 +562,7 @@ RDebugPlugin r_debug_plugin_bochs = {
 	.reg_profile = (void *)r_debug_bochs_reg_profile,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_bochs,

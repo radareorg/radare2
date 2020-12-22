@@ -1,6 +1,5 @@
 include ../../libr/config.mk
 include ../../mk/platform.mk
-include ../../mk/gcc.mk
 
 CC ?= gcc
 AR ?= ar

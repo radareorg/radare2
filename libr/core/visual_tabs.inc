@@ -13,21 +13,21 @@ static char *__core_visual_tab_string(RCore *core, const char *kolor) {
 	if (hex_cols < 4) {
 		return strdup ("");
 	}
-	int i=0;
+	int i = 0;
 	char *str = NULL;
 	int tabs = r_list_length (core->visual.tabs);
 	if (scr_color > 0) {
 		// TODO: use theme
 		if (tabs > 0) {
-			str = r_str_appendf (str, "%s___", kolor);
+			str = r_str_appendf (str, "%s-+__", kolor);
 		}
 		for (i = 0; i < tabs;i++) {
 			RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, i);
 			const char *name = (tab && *tab->name)? tab->name: NULL;
 			if (i == core->visual.tab) {
-				str = r_str_appendf (str, Color_WHITE"_/ %s \\_%s", name? name: "t=", kolor);
+				str = r_str_appendf (str, Color_WHITE"_/ %s \\_%s", r_str_get_fail (name, "t="), kolor);
 			} else {
-				str = r_str_appendf (str, "_%s(%d)_", name?name: "", i+ 1);
+				str = r_str_appendf (str, "_%s(%d)_", r_str_get (name), i + 1);
 			}
 		}
 	} else {
@@ -41,9 +41,9 @@ static char *__core_visual_tab_string(RCore *core, const char *kolor) {
 				name = tab->name;
 			}
 			if (i==core->visual.tab) {
-				str = r_str_appendf (str, "_/ %d:%s \\_", i + 1, name? name: "'=");
+				str = r_str_appendf (str, "_/ %d:%s \\_", i + 1, r_str_get_fail (name, "'="));
 			} else {
-				str = r_str_appendf (str, "_(t%d%s%s)__", i + 1, name?":":"", name?name: "");
+				str = r_str_appendf (str, "_(t%d%s%s)__", i + 1, name ? ":" : "", r_str_get (name));
 			}
 		}
 	}
@@ -60,7 +60,7 @@ static char *__core_visual_tab_string(RCore *core, const char *kolor) {
 static void visual_tabset(RCore *core, RCoreVisualTab *tab) {
 	r_return_if_fail (core && tab);
 
-	r_core_seek (core, tab->offset, 1);
+	r_core_seek (core, tab->offset, true);
 	core->printidx = tab->printidx;
 	core->print->cur_enabled = tab->cur_enabled;
 	core->print->cur = tab->cur;
@@ -72,7 +72,7 @@ static void visual_tabset(RCore *core, RCoreVisualTab *tab) {
 	current4format = tab->current4format;
 	current5format = tab->current5format;
 	r_core_visual_applyDisMode (core, disMode);
-	applyHexMode (core, hexMode);
+	r_core_visual_applyHexMode (core, hexMode);
 	r_config_set_i (core->config, "asm.offset", tab->asm_offset);
 	r_config_set_i (core->config, "asm.instr", tab->asm_instr);
 	r_config_set_i (core->config, "asm.bytes", tab->asm_bytes);

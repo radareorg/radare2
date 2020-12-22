@@ -9,46 +9,25 @@
 #define BUFSIZE 1024
 void r_sys_perror_str(const char *fun);
 
-#define ErrorExit(x) { r_sys_perror(x); return NULL; }
+#define ErrorExit(x) { r_sys_perror(x); return false; }
 char *ReadFromPipe(HANDLE fh, int *outlen);
 
-// HACKY
-static char *getexe(const char *str) {
-	char *ptr, *targv, *argv0 = strdup (str);
-	ptr = strchr (argv0, ' ');
-	if (ptr) *ptr = '\0';
-	targv = realloc (argv0, strlen (argv0)+8);
-	if (!targv) {
-		free (argv0);
-		return NULL;
-	}
-	argv0 = targv;
-	strcat (argv0, ".exe");
-	return argv0;
-}
-
-R_API int r_sys_get_src_dir_w32(char *buf) {
-	int i = 0;
+R_API char *r_sys_get_src_dir_w32(void) {
 	TCHAR fullpath[MAX_PATH + 1];
 	TCHAR shortpath[MAX_PATH + 1];
-	char *path;
 
 	if (!GetModuleFileName (NULL, fullpath, MAX_PATH + 1) ||
 		!GetShortPathName (fullpath, shortpath, MAX_PATH + 1)) {
-		return false;
+		return NULL;
 	}
-	path = r_sys_conv_win_to_utf8 (shortpath);
-	memcpy (buf, path, strlen(path) + 1);
-	free (path);
-	i = strlen (buf);
-	while(i > 0 && buf[i-1] != '/' && buf[i-1] != '\\') {
-		buf[--i] = 0;
+	char *path = r_sys_conv_win_to_utf8 (shortpath);
+	char *dir = r_file_dirname (path);
+	if (!r_sys_getenv_asbool ("R_ALT_SRC_DIR")) {
+		char *tmp = dir;
+		dir = r_file_dirname (tmp);
+		free (tmp);
 	}
-	// Remove the last separator in the path.
-	if(i > 0) {
-		buf[--i] = 0;
-	}
-	return true;
+	return dir;
 }
 
 R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **output, int *outlen, char **sterr) {
@@ -119,7 +98,7 @@ R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **out
 	if (sterr) {
 		*sterr = ReadFromPipe (fe, NULL);
 	}
-	
+
 	if (fi && !CloseHandle (fi)) {
 		ErrorExit ("PipeIn CloseHandle");
 	}
@@ -129,7 +108,7 @@ R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **out
 	if (fe && !CloseHandle (fe)) {
 		ErrorExit ("PipeErr CloseHandle");
 	}
-	
+
 	return true;
 }
 
@@ -138,8 +117,8 @@ R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE ou
 	STARTUPINFO si = {0};
 	LPTSTR cmdline_;
 	bool ret = false;
-	const size_t max_length = 32768;
-	char *_cmdline_ = malloc (max_length);
+	const size_t max_length = 32768 * sizeof (TCHAR);
+	LPTSTR _cmdline_ = malloc (max_length);
 
 	if (!_cmdline_) {
 		R_LOG_ERROR ("Failed to allocate memory\n");
@@ -164,7 +143,7 @@ R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE ou
 			NULL,          // use parent's environment
 			NULL,          // use parent's current directory
 			&si,           // STARTUPINFO pointer
-			&pi))) {  // receives PROCESS_INFORMATION 
+			&pi))) {  // receives PROCESS_INFORMATION
 		ret = true;
 		CloseHandle (pi.hProcess);
 		CloseHandle (pi.hThread);

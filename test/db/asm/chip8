@@ -1,0 +1,45 @@
+d "invalid" 0000
+d "scd 0x2" 00c2
+d "cls" 00e0
+d "ret" 00ee
+d "scr" 00fb
+d "scl" 00fc
+d "exit" 00fd
+d "low" 00fe
+d "high" 00ff
+d "jp 0x240" 1240
+d "call 0x220" 2220
+d "se vf, 0x01" 3f01
+d "sne vf, 0x00" 4f00
+d "se va, vb" 5ab0
+d "ld v0, 0xff" 60ff
+d "add v0, 0x7f" 707f
+d "ld v0, v1" 8010
+d "or v0, v1" 8011
+d "and v0, v1" 8012
+d "xor v0, v1" 8013
+d "add v0, v1" 8014
+d "sub v0, v1" 8015
+d "shr v0, v1" 8016
+d "subn v0, v1" 8017
+d "shl v0, v1" 801e
+d "sne va, vb" 9ab0
+d "ld i, 0x300" a300
+d "jp v0, 0x200" b200
+d "rnd v9, 0x7f" c97f
+d "drw v3, v4, 0x8" d348
+d "skp v8" e89e
+d "sknp v8" e8a1
+d "ld v5, dt" f507
+d "ld v7, k" f70a
+d "ld dt, v6" f615
+d "ld st, v6" f618
+d "add i, v9" f91e
+d "ld f, vd" fd29
+d "ld hf, vd" fd30
+d "ld b, v7" f733
+d "ld [i], v8" f855
+d "ld v8, [i]" f865
+d "ld r, v3" f375
+d "ld v3, r" f385
+d "invalid" ffff

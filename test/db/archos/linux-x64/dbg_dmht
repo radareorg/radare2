@@ -1,0 +1,61 @@
+NAME=check tcache mangling pointers on glibc 2.32
+FILE=bins/elf/glibc-heap-2.32
+ARGS=-Rsetenv=LD_PRELOAD=bins/elf/libc-2.32.so -d
+CMDS=<<EOF
+db 0x004011fa
+dc
+dmht~?0xffffffffffff
+e dbg.glibc.demangle = true
+dmht~?0xffffffffffff
+dmht~?items : 7
+dc
+dmht~?items : 6
+dc
+dmht~?items : 5
+EOF
+EXPECT=<<EOF
+1
+0
+1
+1
+1
+EOF
+RUN
+
+NAME=check tcache list on glibc 2.31
+FILE=bins/elf/glibc-heap-2.31
+ARGS=-Rsetenv=LD_PRELOAD=bins/elf/libc-2.31.so -d
+CMDS=<<EOF
+db 0x004011fa
+dc
+dmht~?items : 7
+dc
+dmht~?items : 6
+dc
+dmht~?items : 5
+EOF
+EXPECT=<<EOF
+1
+1
+1
+EOF
+RUN
+
+NAME=check tcache list on glibc 2.27
+FILE=bins/elf/glibc-heap-2.27
+ARGS=-Rsetenv=LD_PRELOAD=bins/elf/libc-2.27.so -d
+CMDS=<<EOF
+db 0x004011fa
+dc
+dmht~?items : 7
+dc
+dmht~?items : 6
+dc
+dmht~?items : 5
+EOF
+EXPECT=<<EOF
+1
+1
+1
+EOF
+RUN

@@ -9,6 +9,7 @@
 
 // TODO: add support for colors
 // TODO: better rounding ascii art
+// TODO: add support for xy_factor
 
 static void drawSectorLine(char *out, int size, int percent) {
 	int i, x, y;
@@ -19,7 +20,7 @@ static void drawSectorLine(char *out, int size, int percent) {
 		x += cos (A) * foo + 1;
 		y += sin (A) * foo + 1;
 		foo += 1.1;
-		O = ':';
+		O = '.';
 	}
 }
 
@@ -60,7 +61,7 @@ R_API int r_print_pie(RPrint *p, ut64 *values, int nvalues, int size) {
 		for (x = 0; x <= 2 * radius; x++) {
 			for (y = 0; y <= 2 * radius; y++) {
 				double distance = sqrt ((double)(x - radius) * (x - radius) + (y - radius) * (y - radius));
-				O = (distance > radius - 0.5 && distance < radius + 0.5) ? '.' : ' ';
+				O = (distance > radius - 0.5 && distance < radius + 0.5) ? 'x' : ' ';
 			}
 		}
 #endif

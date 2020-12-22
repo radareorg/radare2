@@ -1,0 +1,32 @@
+NAME=pe entrypoint
+FILE=bins/pe/base.exe
+CMDS=<<EOF
+s entry0
+?v entry0
+p8 8
+EOF
+EXPECT=<<EOF
+0x401280
+5589e583ec08c704
+EOF
+RUN
+
+NAME=pe section
+FILE=bins/pe/base.exe
+CMDS=?v section..text
+EXPECT=<<EOF
+0x401000
+EOF
+RUN
+
+NAME=pe symbol addr
+FILE=bins/pe/base.exe
+CMDS=<<EOF
+?v sym._malloc
+p8 4
+EOF
+EXPECT=<<EOF
+0x401838
+5589e583
+EOF
+RUN

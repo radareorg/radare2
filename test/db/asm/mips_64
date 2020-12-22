@@ -1,0 +1,80 @@
+d "add.s f0, f0, f0" 00000046 0x4
+d "addi zero, zero, 0" 00000020 0x4
+d "addiu zero, t0, -0x19" e7ff0025 0x4
+d "addiu zero, t0, 0" 00000025 0x4
+d "andi zero, zero, 0" 00000030 0x4
+d "b 8" 00000010 0x4
+d "bc0f 8" 00000041 0x4
+d "bc1f 8" 00000045 0x4
+d "bc2f 8" 00000049 0x4
+d "bc3f 8" 0000004d 0x4
+d "beq t0, s0, 0x444c" 11111011 0x4
+d "beql sp, t8, 0x14008" 0050b853 0x4
+d "beqz t0, 8" 00000011 0x4
+d "bgez v0, 0x10" 02004104 0x4
+d "bgezal s1, 0x108" 40003106 0x4
+d "bgezall t3, 0x128" 48007305 0x4
+d "bgezl t6, 0x128" 4800c305 0x4
+d "bgtz zero, 8" 0000001c 0x4
+d "bgtzl zero, 8" 0000005c 0x4
+d "blez zero, 8" 00000018 0x4
+d "blezl zero, 8" 00000058 0x4
+d "bltz zero, 8" 00000004 0x4
+d "bltzl s6, 0x118" 4400c206 0x4
+d "bne t0, s0, 0x440c" 01111015 0x4
+d "bnel s0, s0, -0xbff8" 00d01056 0x4
+d "bnez zero, 8" 00000014 0x4
+d "cache 0, (zero)" 000000bc 0x4
+d "daddi zero, zero, 0" 00000060 0x4
+d "daddiu zero, zero, 0" 00000064 0x4
+d "j 0" 00000008 0x4
+d "jal 0" 0000000c 0x4
+d "jalx 0" 00000074 0x4
+d "jalx 4" 01000074 0x4
+d "lb zero, (zero)" 00000080 0x4
+d "lbu zero, (zero)" 00000090 0x4
+d "ldc1 f0, (zero)" 000000d4 0x4
+d "ldl zero, (zero)" 00000068 0x4
+d "ldr zero, (zero)" 0000006c 0x4
+d "lh zero, (zero)" 00000084 0x4
+d "lhu zero, (zero)" 00000094 0x4
+d "ll zero, (zero)" 000000c0 0x4
+d "lld zero, (zero)" 000000d0 0x4
+d "lui zero, 0" 0000003c 0x4
+d "lw zero, (zero)" 0000008c 0x4
+d "lwc1 f0, (zero)" 000000c4 0x4
+d "lwl zero, (zero)" 00000088 0x4
+d "lwr zero, (zero)" 00000098 0x4
+d "lwu zero, (zero)" 0000009c 0x4
+d "lwxc1 f0, zero(zero)" 0000004c 0x4
+d "mfc0 zero, zero, 0" 00000040 0x4
+d "mfc1 zero, f0" 00000044 0x4
+d "mfc2 zero, zero, 0" 00000048 0x4
+d "nop" 00000000 0x4
+d "ori zero, t0, 0" 00000035 0x4
+d "sb zero, (zero)" 000000a0 0x4
+d "sc zero, (zero)" 000000e0 0x4
+d "scd zero, (zero)" 000000f0 0x4
+d "sd zero, (zero)" 000000fc 0x4
+d "sdc1 f0, (zero)" 000000f4 0x4
+d "sdl zero, (zero)" 000000b0 0x4
+d "sdr zero, (zero)" 000000b4 0x4
+d "sh zero, (zero)" 000000a4 0x4
+d "slti zero, zero, 0" 00000028 0x4
+d "sltiu zero, zero, 0" 0000002c 0x4
+d "sw zero, (zero)" 000000ac 0x4
+d "swc1 f0, (zero)" 000000e4 0x4
+d "swl zero, (zero)" 000000a8 0x4
+d "swr zero, (zero)" 000000b8 0x4
+d "xori zero, zero, 0" 00000038 0x4
+dB "beqzl zero, 8" 00000050 0x4
+dB "bnezl t0, 8" 00000055 0x4
+dB "c0 0x0" 00000042 0x4
+dB "c1 0x1000000" 00000047 0x4
+dB "c2 0x0" 0000004a 0x4
+dB "ld zero, 0(zero)" 000000dc 0x4
+dB "ldc2 0, (zero)" 000000d8 0x4
+dB "lwc2 0, (zero)" 000000c8 0x4
+dB "paddsh f0, f0, f0" 0000004b 0x4
+dB "sdc2 0, (zero)" 000000f8 0x4
+dB "swc2 0, (zero)" 000000e8 0x4

@@ -9,7 +9,7 @@
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct cr16_cmd cmd;
-	int ret = cr16_decode_command (buf, &cmd);
+	int ret = cr16_decode_command (buf, &cmd, len);
 	r_strbuf_set (&op->buf_asm, sdb_fmt ("%s %s", cmd.instr, cmd.operands));
 	return op->size = ret;
 }
@@ -24,7 +24,7 @@ RAsmPlugin r_asm_plugin_cr16 = {
 	.disassemble = &disassemble
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_cr16,

@@ -31,11 +31,11 @@ static void r_cf_parse_state_free(RCFParseState *state);
 static RCFKeyValue *r_cf_key_value_new(char *key, RCFValue *value);
 static void r_cf_key_value_free(RCFKeyValue *key_value);
 
-static RCFValueDict *r_cf_value_dict_new();
+static RCFValueDict *r_cf_value_dict_new(void);
 static void r_cf_value_dict_add(RCFValueDict *dict, RCFKeyValue *key_value);
 static void r_cf_value_dict_print(RCFValueDict *dict);
 
-static RCFValueArray *r_cf_value_array_new();
+static RCFValueArray *r_cf_value_array_new(void);
 static void r_cf_value_array_free(RCFValueArray *array);
 static void r_cf_value_array_add(RCFValueArray *array, RCFValue *value);
 static void r_cf_value_array_print(RCFValueArray *dict);
@@ -52,7 +52,7 @@ static RCFValueData *r_cf_value_data_new(char *string);
 static void r_cf_value_data_free(RCFValueData *data);
 static void r_cf_value_data_print(RCFValueData *data);
 
-static RCFValueNULL *r_cf_value_null_new();
+static RCFValueNULL *r_cf_value_null_new(void);
 static void r_cf_value_null_free(RCFValueNULL *null);
 static void r_cf_value_null_print(RCFValueNULL *null);
 
@@ -238,6 +238,7 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 						r_cf_value_dict_add (next_state->dict, key_value);
 					} else if (state->phase != R_CF_STATE_IN_IGNORE) {
 						eprintf ("Missing value for key %s\n", next_state->key);
+						r_cf_value_free ((RCFValue *)value);
 						goto beach;
 					}
 				} else if (next_state->phase == R_CF_STATE_IN_ARRAY) {
@@ -245,6 +246,7 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 						r_cf_value_array_add (next_state->array, value);
 					} else if (state->phase != R_CF_STATE_IN_IGNORE) {
 						eprintf ("Missing value for array\n");
+						r_cf_value_free ((RCFValue *)value);
 						goto beach;
 					}
 				}
@@ -332,7 +334,7 @@ static void r_cf_key_value_free(RCFKeyValue *key_value) {
 	R_FREE (key_value);
 }
 
-static RCFValueDict *r_cf_value_dict_new() {
+static RCFValueDict *r_cf_value_dict_new(void) {
 	RCFValueDict *dict = R_NEW0 (RCFValueDict);
 	if (!dict) {
 		return NULL;
@@ -379,7 +381,7 @@ static void r_cf_value_dict_print(RCFValueDict *dict) {
 	printf ("}");
 }
 
-static RCFValueArray *r_cf_value_array_new() {
+static RCFValueArray *r_cf_value_array_new(void) {
 	RCFValueArray *array = R_NEW0 (RCFValueArray);
 	if (!array) {
 		return NULL;
@@ -501,8 +503,7 @@ static RCFValueData *r_cf_value_data_new(char *string) {
 	r_base64_decode (out, string, len);
 
 	data->type = R_CF_DATA;
-	data->value = r_buf_new ();
-	r_buf_set_bytes_steal (data->value, out, out_len);
+	data->value = r_buf_new_with_pointers (out, out_len, true);
 
 	return data;
 }
@@ -525,7 +526,7 @@ static void r_cf_value_data_print(RCFValueData *data) {
 	printf ("\"...\"");
 }
 
-static RCFValueNULL *r_cf_value_null_new() {
+static RCFValueNULL *r_cf_value_null_new(void) {
 	RCFValueNULL *null = R_NEW0 (RCFValueNULL);
 	if (!null) {
 		return NULL;

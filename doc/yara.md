@@ -16,9 +16,10 @@ malware family.
 Requirements
 ------------
 
-You can either install libyara with your prefered package manager, or you
-can execute `r2pm -i yara3-lib` and `r2pm -i yara3` in order to retrieve
-latest source, compile, and install the library.
+You can either install libyara with your preferred package manager, or you
+can execute `r2pm -i yara` in order to retrieve latest source, compile,
+and install the library via the r2 package manager. You will also need `yara-r2`
+to execute the yara utility from the r2 shell.
 
 Yara in radare2
 ----------
@@ -26,7 +27,7 @@ Yara in radare2
 radare2 provides several commands, allowing the user, to add or remove rules,
 scan a file, and list or use rules tags.
 
-You can list the yara commands with the following r2 command `yara3 [help]`.
+You can list the yara commands with the following r2 command `yara [help]`.
 
 Rules
 -----
@@ -43,8 +44,8 @@ Example
 
 Load a rule file on the fly, and then scan the currently opened file:
 ```
-yara3 add /home/name/rules/malware.rules
-yara3 scan
+yara add /home/name/rules/malware.rules
+yara scan
 ```
 Yara versions
 -------------
@@ -52,4 +53,4 @@ Yara versions
 Because radare2 has support for both yara versions currently,
 depending from the version/plugin you've loaded, you need
 to use the proper versioned command.
-E.g. `yara2` or `yara3`. For example `yara3 scan`.
+E.g. `yara` or `yara`. For example `yara scan`.

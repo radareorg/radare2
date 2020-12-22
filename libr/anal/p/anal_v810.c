@@ -10,10 +10,10 @@
 #include <v810_disas.h>
 
 enum {
-	V810_FLAG_CY,
-	V810_FLAG_OV,
-	V810_FLAG_S,
-	V810_FLAG_Z,
+	V810_FLAG_CY = 1,
+	V810_FLAG_OV = 2,
+	V810_FLAG_S = 4,
+	V810_FLAG_Z = 8,
 };
 
 static void update_flags(RAnalOp *op, int flags) {
@@ -21,10 +21,10 @@ static void update_flags(RAnalOp *op, int flags) {
 		r_strbuf_append (&op->esil, ",31,$c,cy,:=");
 	}
 	if (flags & V810_FLAG_OV) {
-		r_strbuf_append (&op->esil, ",$o,ov,:=");
+		r_strbuf_append (&op->esil, ",31,$o,ov,:=");
 	}
 	if (flags & V810_FLAG_S) {
-		r_strbuf_append (&op->esil, ",$s,s,:=");
+		r_strbuf_append (&op->esil, ",31,$s,s,:=");
 	}
 	if (flags & V810_FLAG_Z) {
 		r_strbuf_append (&op->esil, ",$z,z,:=");
@@ -54,9 +54,6 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	struct v810_cmd cmd;
 
 	memset (&cmd, 0, sizeof(cmd));
-	memset (op, 0, sizeof(RAnalOp));
-	r_strbuf_init (&op->esil);
-	r_strbuf_set (&op->esil, "");
 
 	ret = op->size = v810_decode_command (buf, len, &cmd);
 	if (ret <= 0) {
@@ -70,8 +67,6 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	}
 
 	op->addr = addr;
-	op->jump = op->fail = -1;
-	op->ptr = op->val = -1;
 
 	opcode = OPCODE(word1);
 	if (opcode >> 3 == 0x4) {
@@ -115,7 +110,7 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	case V810_DIV:
 	case V810_DIVU:
 		op->type = R_ANAL_OP_TYPE_DIV;
-		r_strbuf_appendf (&op->esil, "r%u,r%u,/=,r%u,r%u,%,r30,=",
+		r_strbuf_appendf (&op->esil, "r%u,r%u,/=,r%u,r%u,%%,r30,=",
 						 REG1(word1), REG2(word1),
 						 REG1(word1), REG2(word1));
 		update_flags (op, V810_FLAG_OV | V810_FLAG_S | V810_FLAG_Z);
@@ -318,7 +313,7 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 
 		if (opcode == V810_JAL) {
 			op->type = R_ANAL_OP_TYPE_CALL;
-			r_strbuf_appendf (&op->esil, "$$,4,+,r31,=,", jumpdisp);
+			r_strbuf_appendf (&op->esil, "$$,4,+,r31,=,");
 		} else {
 			op->type = R_ANAL_OP_TYPE_JMP;
 		}
@@ -391,10 +386,11 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	return ret;
 }
 
-static int set_reg_profile(RAnal *anal) {
+static bool set_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	r3\n"
+		"=A0	r0\n"
 		"=ZF	z\n"
 		"=SF	s\n"
 		"=OF	ov\n"
@@ -458,7 +454,7 @@ RAnalPlugin r_anal_plugin_v810 = {
 	.set_reg_profile = set_reg_profile,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_v810,

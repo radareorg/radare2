@@ -18,7 +18,7 @@ mv core_test.so ~/.config/radare2/plugins
 #undef R_IPI
 #define R_IPI static
 
-static int r_cmd_test_call() {
+static int r_cmd_test_call(void) {
 	eprintf ("Dummy!\n");
 	return false;
 }
@@ -30,7 +30,7 @@ RCorePlugin r_core_plugin_test = {
 	.call = r_cmd_test_call,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CORE,
 	.data = &r_core_plugin_test,

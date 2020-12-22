@@ -1,0 +1,30 @@
+NAME=r
+FILE=malloc://512
+CMDS=r
+EXPECT=<<EOF
+512
+EOF
+RUN
+
+NAME=wx 90 r pd 1
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 90
+r
+pd 1
+EOF
+EXPECT=<<EOF
+512
+            0x00000000      90             nop
+EOF
+RUN
+
+NAME=rj-pj
+FILE=bins/elf/crackme0x05
+CMDS=rj
+EXPECT=<<EOF
+{"size":7656}
+EOF
+RUN

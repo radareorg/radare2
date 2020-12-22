@@ -35,7 +35,7 @@ static const char *help_msg_Pn[] = {
 	NULL
 };
 
-static void cmd_project_init(RCore *core) {
+static void cmd_project_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, P);
 	DEFINE_CMD_DESCRIPTOR (core, Pn);
 }
@@ -96,7 +96,7 @@ static int cmd_project(void *data, const char *input) {
 		break;
 	case 'S':
 		if (input[1] == ' ') {
-			r_core_project_save_rdb (core, input + 2, R_CORE_PRJ_ALL);
+			r_core_project_save_script (core, input + 2, R_CORE_PRJ_ALL);
 		} else {
 			eprintf ("Usage: PS [file]\n");
 		}
@@ -179,12 +179,12 @@ static int cmd_project(void *data, const char *input) {
 				break;
 			case 'j': // "Pnj"
 				if (!input[2]) {
-					int len = 0;
+					size_t len = 0;
 					/* get base64 string */
 					char *str = r_core_project_notes_file (core, fileproject);
 					if (str) {
 						char *data = r_file_slurp (str, &len);
-						char *res = r_base64_encode_dyn (data, len);
+						char *res = r_base64_encode_dyn (data, (int)len);
 						if (res) {
 							r_cons_println (res);
 							free (res);

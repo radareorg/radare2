@@ -31,6 +31,7 @@ typedef struct r_list_range_t {
 	//RListComparator c;
 } RListRange;
 
+// RListComparator should return -1, 0, 1 to indicate "a<b", "a==b", "a>b".
 typedef int (*RListComparator)(const void *a, const void *b);
 
 #define ROFList_Parent RList
@@ -41,7 +42,7 @@ typedef struct r_oflist_t {
 #endif
 
 #ifdef R_API
-//#define R_LIST_NEW(x,y) x=r_list_new();x->free=(RListFree)y
+// #define R_LIST_NEW(x,y) x = r_list_new (); x->free = (RListFree)y
 #define r_list_foreach(list, it, pos)\
 	if (list)\
 		for (it = list->head; it && (pos = it->data, 1); it = it->n)
@@ -86,10 +87,9 @@ R_API void *r_list_first(const RList *list);
 R_API void *r_list_last(const RList *list);
 R_API RListIter *r_list_add_sorted(RList *list, void *data, RListComparator cmp);
 R_API void r_list_sort(RList *list, RListComparator cmp);
-R_API RList *r_list_uniq(const RList *list, RListComparator cmp);
 R_API void r_list_merge_sort(RList *list, RListComparator cmp);
 R_API void r_list_insertion_sort(RList *list, RListComparator cmp);
-
+R_API RList *r_list_uniq(const RList *list, RListComparator cmp);
 R_API void r_list_init(RList *list);
 R_API void r_list_delete(RList *list, RListIter *iter);
 R_API bool r_list_delete_data(RList *list, void *ptr);
@@ -107,7 +107,8 @@ R_API void *r_list_get_bottom(const RList *list);
 R_API void *r_list_pop(RList *list);
 R_API void *r_list_pop_head(RList *list);
 R_API void r_list_reverse(RList *list);
-R_API RList *r_list_clone(RList *list);
+R_API RList *r_list_clone(const RList *list);
+R_API char *r_list_to_str(RList *list, char ch);
 
 /* hashlike api */
 R_API RListIter *r_list_contains(const RList *list, const void *p);

@@ -1,0 +1,101 @@
+=======================
+One command and comment
+=======================
+
+afl # af is not going to be parsed
+
+---
+
+(commands
+  (arged_command (cmd_identifier)))
+
+
+==================
+Begin with comment
+==================
+
+# this is just a comment
+#    ~?
+# boh
+
+---
+
+(commands)
+
+
+====================================
+Multiple commands multiple comments
+====================================
+
+afl # first comment
+p8 10 # second comment
+p8 10# third comment
+
+---
+
+(commands
+  (arged_command (cmd_identifier))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier)))))
+
+
+===========================
+Multiline comment on a line
+===========================
+
+p8 /* inline comment */ 3
+afl
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)))
+
+
+=====================================
+Multiline comment on multiple lines
+=====================================
+
+p8 /* multiline
+comment */ 3
+afl
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)))
+
+
+==================================
+Comment with # in the middle line
+==================================
+
+p8 4 # something
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier)))))
+
+
+============================================
+#! identified as comment if not command name
+============================================
+
+?e #!this is a comment
+?e #this is also a comment
+?e # and this too
+
+---
+
+(commands
+  (arged_command (cmd_identifier))
+  (arged_command (cmd_identifier))
+  (arged_command (cmd_identifier)))

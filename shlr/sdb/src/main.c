@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2011-2017 - pancake */
+/* sdb - MIT - Copyright 2011-2020 - pancake */
 
 #include <signal.h>
 #include <stdio.h>
@@ -24,18 +24,22 @@ static void terminate(int sig UNUSED) {
 		exit (1);
 	}
 	sdb_free (s);
-	exit (0);
+	exit (sig<2?sig:0);
+}
+
+static void write_null(void) {
+	(void)write (1, "", 1);
 }
 
 #define BS 128
 #define USE_SLURPIN 1
 
-static char *stdin_slurp(int *sz) {
+static char *slurp(FILE *f, size_t *sz) {
 	int blocksize = BS;
 	static int bufsize = BS;
 	static char *next = NULL;
-	static int nextlen = 0;
-	int len, rr, rr2;
+	static size_t nextlen = 0;
+	size_t len, rr, rr2;
 	char *tmp, *buf = NULL;
 	if (sz) {
 		*sz = 0;
@@ -51,11 +55,11 @@ static char *stdin_slurp(int *sz) {
 			return NULL;
 		}
 
-		if (!fgets (buf, buf_size, stdin)) {
+		if (!fgets (buf, buf_size, f)) {
 			free (buf);
 			return NULL;
 		}
-		if (feof (stdin)) {
+		if (feof (f)) {
 			free (buf);
 			return NULL;
 		}
@@ -86,7 +90,7 @@ static char *stdin_slurp(int *sz) {
 			bufsize = nextlen + blocksize;
 			//len = nextlen;
 			rr = nextlen;
-			rr2 = read (0, buf + nextlen, blocksize);
+			rr2 = fread (buf + nextlen, 1, blocksize, f);
 			if (rr2 > 0) {
 				rr += rr2;
 				bufsize += rr2;
@@ -94,7 +98,7 @@ static char *stdin_slurp(int *sz) {
 			next = NULL;
 			nextlen = 0;
 		} else {
-			rr = read (0, buf + len, blocksize);
+			rr = fread (buf + len, 1, blocksize, f);
 		}
 		if (rr < 1) { // EOF
 			buf[len] = 0;
@@ -142,11 +146,9 @@ static char *stdin_slurp(int *sz) {
 	if (sz) {
 		*sz = len;
 	}
-	//eprintf ("LEN %d (%s)\n", len, buf);
 	if (len < 1) {
 		free (buf);
-		buf = NULL;
-		return NULL;
+		return buf = NULL;
 	}
 	buf[len] = 0;
 	return buf;
@@ -155,9 +157,8 @@ static char *stdin_slurp(int *sz) {
 #if USE_MMAN
 static void synchronize(int sig UNUSED) {
 	// TODO: must be in sdb_sync() or wat?
-	Sdb *n;
 	sdb_sync (s);
-	n = sdb_new (s->path, s->name, s->lock);
+	Sdb *n = sdb_new (s->path, s->name, s->lock);
 	if (n) {
 		sdb_config (n, options);
 		sdb_free (s);
@@ -165,23 +166,22 @@ static void synchronize(int sig UNUSED) {
 	}
 }
 #endif
-static int sdb_grep_dump(const char *db, int fmt, bool grep,
+
+static int sdb_grep_dump(const char *dbname, int fmt, bool grep,
                          const char *expgrep) {
-	char *v;
-	char k[SDB_MAX_KEY] = {
-		0
-	};
+	char *v, k[SDB_MAX_KEY] = { 0 };
 	const char *comma = "";
-	Sdb *s = sdb_new (NULL, db, 0);
-	if (!s) {
+	// local db beacuse is readonly and we dont need to finalize in case of ^C
+	Sdb *db = sdb_new (NULL, dbname, 0);
+	if (!db) {
 		return 1;
 	}
-	sdb_config (s, options);
-	sdb_dump_begin (s);
+	sdb_config (db, options);
+	sdb_dump_begin (db);
 	if (fmt == MODE_JSON) {
 		printf ("{");
 	}
-	while (sdb_dump_dupnext (s, k, &v, NULL)) {
+	while (sdb_dump_dupnext (db, k, &v, NULL)) {
 		if (grep && !strstr (k, expgrep) && !strstr (v, expgrep)) {
 			free (v);
 			continue;
@@ -201,7 +201,6 @@ static int sdb_grep_dump(const char *db, int fmt, bool grep,
 			break;
 		case MODE_ZERO:
 			printf ("%s=%s", k, v);
-			fwrite ("", 1, 1, stdout);
 			break;
 		default:
 			printf ("%s=%s\n", k, v);
@@ -212,15 +211,16 @@ static int sdb_grep_dump(const char *db, int fmt, bool grep,
 	switch (fmt) {
 	case MODE_ZERO:
 		fflush (stdout);
-		write (1, "", 1);
+		write_null ();
 		break;
 	case MODE_JSON:
 		printf ("}\n");
 		break;
 	}
-	sdb_free (s);
+	sdb_free (db);
 	return 0;
 }
+
 static int sdb_grep(const char *db, int fmt, const char *grep) {
 	return sdb_grep_dump (db, fmt, true, grep);
 }
@@ -256,28 +256,38 @@ static int insertkeys(Sdb *s, const char **args, int nargs, int mode) {
 }
 
 static int createdb(const char *f, const char **args, int nargs) {
-	char *line, *eq;
 	s = sdb_new (NULL, f, 0);
-	if (!s || !sdb_disk_create (s)) {
+	if (!s) {
 		eprintf ("Cannot create database\n");
 		return 1;
 	}
-	insertkeys (s, args, nargs, '=');
 	sdb_config (s, options);
-	for (; (line = stdin_slurp (NULL));) {
-		if ((eq = strchr (line, '='))) {
-			*eq++ = 0;
-			sdb_disk_insert (s, line, eq);
+	int ret = 0;
+	if (args) {
+		int i;
+		for (i = 0; i < nargs; i++) {
+			if (!sdb_text_load (s, args[i])) {
+				eprintf ("Failed to load text sdb from %s\n", args[i]);
+			}
 		}
-		free (line);
+	} else {
+		size_t len;
+		char *in = slurp (stdin, &len);
+		if (!in) {
+			return 0;
+		}
+		if (!sdb_text_load_buf (s, in, len)) {
+			eprintf ("Failed to read text sdb from stdin\n");
+		}
+		free (in);
 	}
-	sdb_disk_finish (s);
-	return 0;
+	sdb_sync (s);
+	return ret;
 }
 
 static int showusage(int o) {
 	printf ("usage: sdb [-0cdehjJv|-D A B] [-|db] "
-		"[.file]|[-=]|[-+][(idx)key[:json|=value] ..]\n");
+		"[.file]|[-=]|==||[-+][(idx)key[:json|=value] ..]\n");
 	if (o == 2) {
 		printf ("  -0      terminate results with \\x00\n"
 			"  -c      count the number of keys database\n"
@@ -299,10 +309,10 @@ static int showversion(void) {
 	return 0;
 }
 
-static int jsonIndent() {
-	int len;
+static int jsonIndent(void) {
+	size_t len;
 	char *out;
-	char *in = stdin_slurp (&len);
+	char *in = slurp (stdin, &len);
 	if (!in) {
 		return 0;
 	}
@@ -317,14 +327,14 @@ static int jsonIndent() {
 	return 0;
 }
 
-static int base64encode() {
+static int base64encode(void) {
 	char *out;
-	int len = 0;
-	ut8 *in = (ut8 *) stdin_slurp (&len);
+	size_t len = 0;
+	ut8 *in = (ut8 *) slurp (stdin, &len);
 	if (!in) {
 		return 0;
 	}
-	out = sdb_encode (in, len);
+	out = sdb_encode (in, (int)len);
 	if (!out) {
 		free (in);
 		return 1;
@@ -335,56 +345,53 @@ static int base64encode() {
 	return 0;
 }
 
-static int base64decode() {
+static int base64decode(void) {
 	ut8 *out;
-	int len, ret = 1;
-	char *in = (char *) stdin_slurp (&len);
+	size_t len, ret = 1;
+	char *in = slurp (stdin, &len);
 	if (in) {
-		out = sdb_decode (in, &len);
-		if (out) {
-			if (len >= 0) {
-				write (1, out, len);
-				ret = 0;
-			}
-			free (out);
+		int declen;
+		out = sdb_decode (in, &declen);
+		if (out && declen >= 0) {
+			(void)write (1, out, declen);
+			ret = 0;
 		}
+		free (out);
 		free (in);
 	}
 	return ret;
 }
 
-static int dbdiff(const char *a, const char *b) {
-	int n = 0;
-	char *v;
-	char k[SDB_MAX_KEY] = {
-		0
-	};
-	const char *v2;
+static void dbdiff_cb(const SdbDiff *diff, void *user) {
+	char sbuf[512];
+	int r = sdb_diff_format (sbuf, sizeof(sbuf), diff);
+	if (r < 0) {
+		return;
+	}
+	char *buf = sbuf;
+	char *hbuf = NULL;
+	if ((size_t)r >= sizeof (sbuf)) {
+		hbuf = malloc (r + 1);
+		if (!hbuf) {
+			return;
+		}
+		r = sdb_diff_format (hbuf, r + 1, diff);
+		if (r < 0) {
+			goto beach;
+		}
+	}
+	printf ("\x1b[%sm%s\x1b[0m\n", diff->add ? "32" : "31", buf);
+beach:
+	free (hbuf);
+}
+
+static bool dbdiff(const char *a, const char *b) {
 	Sdb *A = sdb_new (NULL, a, 0);
 	Sdb *B = sdb_new (NULL, b, 0);
-	sdb_dump_begin (A);
-	while (sdb_dump_dupnext (A, k, &v, NULL)) {
-		v2 = sdb_const_get (B, k, 0);
-		if (!v2) {
-			printf ("%s=\n", k);
-			n = 1;
-		}
-	}
-	sdb_dump_begin (B);
-	while (sdb_dump_dupnext (B, k, &v, NULL)) {
-		if (!v || !*v) {
-			continue;
-		}
-		v2 = sdb_const_get (A, k, 0);
-		if (!v2 || strcmp (v, v2)) {
-			printf ("%s=%s\n", k, v2);
-			n = 1;
-		}
-	}
+	bool equal = sdb_diff (A, B, dbdiff_cb, NULL);
 	sdb_free (A);
 	sdb_free (B);
-	free (v);
-	return n;
+	return equal;
 }
 
 int showcount(const char *db) {
@@ -401,7 +408,7 @@ int showcount(const char *db) {
 int main(int argc, const char **argv) {
 	char *line;
 	const char *arg, *grep = NULL;
-	int i, ret, fmt = MODE_DFLT;
+	int i, fmt = MODE_DFLT;
 	int db0 = 1, argi = 1;
 	bool interactive = false;
 
@@ -447,7 +454,7 @@ int main(int argc, const char **argv) {
 		case 'd': return base64decode ();
 		case 'D':
 			if (argc == 4) {
-				return dbdiff (argv[2], argv[3]);
+				return dbdiff (argv[2], argv[3]) ? 0 : 1;
 			}
 			return showusage (0);
 		case 'j':
@@ -484,7 +491,7 @@ int main(int argc, const char **argv) {
 	signal (SIGINT, terminate);
 	signal (SIGHUP, synchronize);
 #endif
-	ret = 0;
+	int ret = 0;
 	if (interactive || !strcmp (argv[db0 + 1], "-")) {
 		if ((s = sdb_new (NULL, argv[db0], 0))) {
 			sdb_config (s, options);
@@ -492,17 +499,19 @@ int main(int argc, const char **argv) {
 			if (kvs < argc) {
 				save |= insertkeys (s, argv + argi + 2, argc - kvs, '-');
 			}
-			for (; (line = stdin_slurp (NULL));) {
+			for (; (line = slurp (stdin, NULL));) {
 				save |= sdb_query (s, line);
 				if (fmt) {
 					fflush (stdout);
-					write (1, "", 1);
+					write_null ();
 				}
 				free (line);
 			}
 		}
 	} else if (!strcmp (argv[db0 + 1], "=")) {
 		ret = createdb (argv[db0], NULL, 0);
+	} else if (!strcmp (argv[db0 + 1], "==")) {
+		ret = createdb (argv[db0], argv + db0 + 2, argc - (db0 + 2));
 	} else {
 		s = sdb_new (NULL, argv[db0], 0);
 		if (!s) {
@@ -513,10 +522,10 @@ int main(int argc, const char **argv) {
 			save |= sdb_query (s, argv[i]);
 			if (fmt) {
 				fflush (stdout);
-				write (1, "", 1);
+				write_null ();
 			}
 		}
 	}
-	terminate (0);
+	terminate (ret);
 	return ret;
 }

@@ -1,0 +1,7 @@
+NAME=ELF: IOLI - crackme3 - with -A
+FILE=bins/elf/ioli/crackme0x03
+CMDS=aa ; fs symbols ; f~sym.main
+EXPECT=<<EOF
+0x08048498 128 sym.main
+EOF
+RUN

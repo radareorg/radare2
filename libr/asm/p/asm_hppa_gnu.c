@@ -27,7 +27,14 @@ static int hppa_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 leng
 		return 0;
 	}
 #endif
-	memcpy (myaddr, bytes, length);
+	int delta = (memaddr - Offset);
+	if (delta < 0) {
+		return -1;      // disable backward reads
+	}
+	if ((delta + length) > 4) {
+		return -1;
+	}
+	memcpy (myaddr, bytes + delta, length);
 	return 0;
 }
 
@@ -80,7 +87,7 @@ RAsmPlugin r_asm_plugin_hppa_gnu = {
 	.disassemble = &disassemble
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_hppa_gnu,

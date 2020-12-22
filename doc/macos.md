@@ -21,7 +21,7 @@ To install bindings you will need to install r2, valac, valabind and swig. The w
 Code Signing
 ------------
 
-After Mac OS X 10.6, binaries that need permissions to debug require to be signed and include a .plist describing them. In order to do this you can follow the following steps:
+After Mac OS X 10.6, binaries that need permissions to debug require to be signed and include a .plist describing them. The aforementioned `install.sh` script will install a new code signing certificate into the system keychain and sign r2 with it. Alternatively, you can manually create a code signing certificate by following the following steps:
 
 (Based on https://llvm.org/svn/llvm-project/lldb/trunk/docs/code-signing.txt)
 
@@ -44,7 +44,6 @@ After Mac OS X 10.6, binaries that need permissions to debug require to be signe
 1. Switch to Terminal, and run the following:
 1. $ sudo security add-trust -d -r trustRoot -p basic -p codeSign -k /Library/Keychains/System.keychain ~/Desktop/org.radare.radare2.cer
 1. $ rm -f ~/Desktop/org.radare.radare2.cer
-1. Drag the "org.radare.radare2" certificate from the "System" keychain back into the "login" keychain
 1. Quit Keychain Access
 1. Reboot
 1. Run sys/install.sh (or follow the next steps if you want to install and sign radare2 manually)
@@ -53,7 +52,7 @@ As said before, the signing process can also be done manually following the next
 
 	$ make -C binr/radare2 macossign
 
-But this is not enough. As long as r2 code is splitted into several libraries, you should sign every single dependency (libr*).
+But this is not enough. As long as r2 code is split into several libraries, you should sign every single dependency (libr*).
 
 	$ make -C binr/radare2 macos-sign-libs
 
@@ -66,7 +65,7 @@ You can verify that the binary is properly signed and verified by using the code
 
 	$ codesign -dv binr/radare2/radare2
 
-Additionally, you can run the following command to add the non-priviledge user (username) to the Developer Tools group in macOS, avoiding the related Xcode prompts:
+Additionally, you can run the following command to add the non-privileged user (username) to the Developer Tools group in macOS, avoiding the related Xcode prompts:
 
 	$ sudo dscl . append /Groups/_developer GroupMembership <username>
 
@@ -84,3 +83,11 @@ Packaging
 To create a macOS .pkg just run the following command:
 
 	$ sys/osx-pkg.sh
+
+Uninstall
+---------
+
+To uninstall the .pkg downloaded from the r2 website or the one you have generated with `sys/osx-pkg.sh`, run the following as root:
+
+	$ pkgutil --only-files --files org.radare.radare2 | sed 's/^/\//' | tr '\n' '\0' | xargs -o -n 1 -0 rm -i
+

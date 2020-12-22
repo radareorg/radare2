@@ -13,17 +13,6 @@ typedef struct gdb_reg {
 	uint64_t size;	/*! Size of the register */
 } gdb_reg_t;
 
-/*!
- * Existing register sets
- */
-extern gdb_reg_t gdb_regs_x86_64[];
-extern gdb_reg_t gdb_regs_x86_32[];
-extern gdb_reg_t gdb_regs_arm32[];
-extern gdb_reg_t gdb_regs_aarch64[];
-extern gdb_reg_t gdb_regs_lm32[];
-extern gdb_reg_t gdb_regs_mips[];
-extern gdb_reg_t gdb_regs_avr[];
-extern gdb_reg_t gdb_regs_v850[];
-
+gdb_reg_t *arch_parse_reg_profile(const char * reg_profile);
 
 #endif

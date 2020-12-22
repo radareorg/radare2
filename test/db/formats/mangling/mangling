@@ -1,0 +1,731 @@
+NAME=m128 parsing test
+FILE=-
+CMDS="!rabin2 -D cxx _ZNSt2147483648ios_base4InitD1Ev"
+EXPECT=<<EOF
+_ZNSt2147483648ios_base4InitD1Ev
+EOF
+RUN
+
+NAME=m128 parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var__m128@@3T__m128@@A"
+EXPECT=<<EOF
+__m128 var__m128
+EOF
+RUN
+
+NAME=m64 parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var__m64@@3T__m64@@A"
+EXPECT=<<EOF
+__m64 var__m64
+EOF
+RUN
+
+NAME=m128d parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var__m128d@@3U__m128d@@A"
+EXPECT=<<EOF
+__m128d var__m128d
+EOF
+RUN
+
+NAME=m128i parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var__m128i@@3T__m128i@@A"
+EXPECT=<<EOF
+__m128i var__m128i
+EOF
+RUN
+
+NAME=m256 parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var__m256@@3T__m256@@A"
+EXPECT=<<EOF
+__m256 var__m256
+EOF
+RUN
+
+NAME=m256d parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var__m256d@@3U__m256d@@A"
+EXPECT=<<EOF
+__m256d var__m256d
+EOF
+RUN
+
+NAME=m256i parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var__m256i@@3T__m256i@@A"
+EXPECT=<<EOF
+__m256i var__m256i
+EOF
+RUN
+
+NAME=void bin mangling rust swift parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_voidptr@@3PEAXA"
+EXPECT=<<EOF
+void * __ptr64 var_voidptr
+EOF
+RUN
+
+NAME=bool parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_bool@@3_NA"
+EXPECT=<<EOF
+bool var_bool
+EOF
+RUN
+
+NAME=char parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_char@@3DA"
+EXPECT=<<EOF
+char var_char
+EOF
+RUN
+
+NAME=signed char parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_signed_char@@3CA"
+EXPECT=<<EOF
+signed char var_signed_char
+EOF
+RUN
+
+NAME=unsigned char parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_unsigned_char@@3EA"
+EXPECT=<<EOF
+unsigned char var_unsigned_char
+EOF
+RUN
+
+NAME=short int parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_short_int@@3FA"
+EXPECT=<<EOF
+short int var_short_int
+EOF
+RUN
+
+NAME=int parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_int@@3HA"
+EXPECT=<<EOF
+int var_int
+EOF
+RUN
+
+NAME=unsigned int parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_unsigned_int@@3IA"
+EXPECT=<<EOF
+unsigned int var_unsigned_int
+EOF
+RUN
+
+NAME=long int parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_long_int@@3JA"
+EXPECT=<<EOF
+long int var_long_int
+EOF
+RUN
+
+NAME=unsigned long int parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_unsigned_long_int@@3KA"
+EXPECT=<<EOF
+unsigned long int var_unsigned_long_int
+EOF
+RUN
+
+NAME=long long parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_long_long@@3_JA"
+EXPECT=<<EOF
+long long(__int64) var_long_long
+EOF
+RUN
+
+NAME=unsigned long long parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_unsigned_long_long@@3_KA"
+EXPECT=<<EOF
+unsigned long long(unsigned __int64) var_unsigned_long_long
+EOF
+RUN
+
+NAME="whcar_t parsing test"
+FILE=-
+CMDS="!rabin2 -D msvc ?var_wchar_t@@3_WA"
+EXPECT=<<EOF
+wchar_t var_wchar_t
+EOF
+RUN
+
+NAME=float parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_float@@3MA"
+EXPECT=<<EOF
+float var_float
+EOF
+RUN
+
+NAME=double parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_double@@3NA"
+EXPECT=<<EOF
+double var_double
+EOF
+RUN
+
+NAME=long double parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_long_double@@3OA"
+EXPECT=<<EOF
+long double var_long_double
+EOF
+RUN
+
+NAME=int bin mangling rust swift parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_int_ptr@@3PEAHA"
+EXPECT=<<EOF
+int * __ptr64 var_int_ptr
+EOF
+RUN
+
+NAME=const int bin mangling rust swift const parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_const_int_ptr@@3PEBHEB"
+EXPECT=<<EOF
+int const * __ptr64 const __ptr64 var_const_int_ptr
+EOF
+RUN
+
+NAME=int volatile bin mangling rust swift volatile const parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_volatile_int_ptr@@3PECHEC"
+EXPECT=<<EOF
+int volatile * __ptr64 volatile __ptr64 var_volatile_int_ptr
+EOF
+RUN
+
+NAME=int const volatile bin mangling rust swift const volatile parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_const_volatile_int_ptr@@3PEDHED"
+EXPECT=<<EOF
+int const volatile * __ptr64 const volatile __ptr64 var_const_volatile_int_ptr
+EOF
+RUN
+
+NAME=int bin mangling rust swift volatile parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_int_ptr_volatile@@3REAHEA"
+EXPECT=<<EOF
+int * volatile __ptr64 __ptr64 var_int_ptr_volatile
+EOF
+RUN
+
+NAME=arr parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?arr@@3PAHA"
+EXPECT=<<EOF
+int * arr
+EOF
+RUN
+
+NAME=arr[][] parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?arr2@@3PAY07HA"
+EXPECT=<<EOF
+int (*)[8] arr2
+EOF
+RUN
+
+NAME=arr[][][] parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?arr3@@3PAY1BA@4HA"
+EXPECT=<<EOF
+int (*)[16][5] arr3
+EOF
+RUN
+
+NAME=union parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_union@@3TUNION_TEST@@A"
+EXPECT=<<EOF
+union UNION_TEST var_union
+EOF
+RUN
+
+NAME=class parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_class@@3VCLASS_TEST@@A"
+EXPECT=<<EOF
+class CLASS_TEST var_class
+EOF
+RUN
+
+NAME=enum parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_enum@@3W4ENUM_TEST@@A"
+EXPECT=<<EOF
+enum ENUM_TEST var_enum
+EOF
+RUN
+
+NAME=union with namespace parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_union_with_namespace@TEST_NAMESPACE@@3TUNION_TEST@@A"
+EXPECT=<<EOF
+union UNION_TEST TEST_NAMESPACE::var_union_with_namespace
+EOF
+RUN
+
+NAME=class with namespace parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_class_with_namespace@TEST_NAMESPACE@@3VCLASS_TEST@@A"
+EXPECT=<<EOF
+class CLASS_TEST TEST_NAMESPACE::var_class_with_namespace
+EOF
+RUN
+
+NAME=enum with namespace parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_enum_with_namespace@TEST_NAMESPACE@@3W4ENUM_TEST@@A"
+EXPECT=<<EOF
+enum ENUM_TEST TEST_NAMESPACE::var_enum_with_namespace
+EOF
+RUN
+
+NAME=ptr with namespace parsing test
+FILE=-
+CMDS="!rabin2 -D msvc ?var_ptr_with_namespace@TEST_NAMESPACE@@3PEAUSTRUCT_TEST@@EA"
+EXPECT=<<EOF
+struct STRUCT_TEST * __ptr64 __ptr64 TEST_NAMESPACE::var_ptr_with_namespace
+EOF
+RUN
+
+NAME=copy constructor demangler test
+FILE=-
+CMDS="!rabin2 -D msvc ??0TEST_CLASS@@QEAA@AEBV0@@Z"
+EXPECT=<<EOF
+public: void __cdecl TEST_CLASS::constructor(class TEST_CLASS const & __ptr64) __ptr64
+EOF
+RUN
+
+NAME=constructor demangler test
+FILE=-
+CMDS="!rabin2 -D msvc ??0TEST_CLASS@@QEAA@H@Z"
+EXPECT=<<EOF
+public: void __cdecl TEST_CLASS::constructor(int) __ptr64
+EOF
+RUN
+
+NAME=destructor demangler test
+FILE=-
+CMDS="!rabin2 -D msvc ??1TEST_CLASS@@QEAA@XZ"
+EXPECT=<<EOF
+public: void __cdecl TEST_CLASS::~destructor(void) __ptr64
+EOF
+RUN
+
+NAME=operator= demangler test
+FILE=-
+CMDS="!rabin2 -D msvc ??4TEST_CLASS@@QEAAAEAV0@AEBV0@@Z "
+EXPECT=<<EOF
+public: class TEST_CLASS & __ptr64 __cdecl TEST_CLASS::operator=(class TEST_CLASS const & __ptr64) __ptr64
+EOF
+RUN
+
+NAME=operator+ demangler test
+FILE=-
+CMDS="!rabin2 -D msvc ??HTEST_CLASS@@QEAA?AV0@AEBV0@@Z "
+EXPECT=<<EOF
+public: class TEST_CLASS __cdecl TEST_CLASS::operator+(class TEST_CLASS const & __ptr64) __ptr64
+EOF
+RUN
+
+NAME=public function demangler test
+FILE=-
+CMDS="!rabin2 -D msvc ?public_func@TEST_CLASS@@QEAAHXZ"
+EXPECT=<<EOF
+public: int __cdecl TEST_CLASS::public_func(void) __ptr64
+EOF
+RUN
+
+NAME=static function demangler test
+FILE=-
+CMDS="!rabin2 -D msvc ?static_func@TEST_CLASS@@SAXH@Z"
+EXPECT=<<EOF
+public: static void __cdecl TEST_CLASS::static_func(int)
+EOF
+RUN
+
+NAME=private function demangler test
+FILE=-
+CMDS="!rabin2 -D msvc ?private_func@TEST_CLASS@@AEAAXXZ"
+EXPECT=<<EOF
+private: void __cdecl TEST_CLASS::private_func(void) __ptr64
+EOF
+RUN
+
+NAME=Abbreviation Of Repetead Types demangler test
+FILE=-
+CMDS="!rabin2 -D msvc ?AbbreviationOfRepeteadTypes@@YA_NPEAHHH0_N1PEA_N@Z"
+EXPECT=<<EOF
+bool __cdecl AbbreviationOfRepeteadTypes(int * __ptr64, int, int, int * __ptr64, bool, bool, bool * __ptr64)
+EOF
+RUN
+
+NAME=Abbreviation Of Repetead Names demangler test
+FILE=-
+CMDS="!rabin2 -D msvc ?AbbreviationOfRepeteadNames@@YAPEAVTEST_CLASS@@PEAV1@00AEAV1@@Z"
+EXPECT=<<EOF
+class TEST_CLASS * __ptr64 __cdecl AbbreviationOfRepeteadNames(class TEST_CLASS * __ptr64, class TEST_CLASS * __ptr64, class TEST_CLASS * __ptr64, class TEST_CLASS & __ptr64)
+EOF
+RUN
+
+NAME=Abbreviation Of Name tests demangler test3
+FILE=-
+CMDS="!rabin2 -D msvc ?SomeFunction@@YAPAVClass1@@PAV1@PAVClass2@@1AAV2@@Z"
+EXPECT=<<EOF
+class Class1 * __cdecl SomeFunction(class Class1 *, class Class2 *, class Class2 *, class Class2 &)
+EOF
+RUN
+
+NAME=Function pointer demangler test
+FILE=-
+CMDS="!rabin2 -D msvc ?Fx_i@@YAHP6AHH@Z@Z"
+EXPECT=<<EOF
+int __cdecl Fx_i(int (__cdecl *)(int))
+EOF
+RUN
+
+NAME=Function pointer with abbreviation of types demangler test
+FILE=-
+CMDS="!rabin2 -D msvc ?Fxix_i@@YAHP6AHH@ZH0@Z"
+EXPECT=<<EOF
+int __cdecl Fxix_i(int (__cdecl *)(int), int, int (__cdecl *)(int))
+EOF
+RUN
+
+NAME=Function pointer with 2 abbreviation of types demangler test
+FILE=-
+CMDS="!rabin2 -D msvc ?Fxyxy_i@@YAHP6AHH@ZP6AHF@Z01@Z"
+EXPECT=<<EOF
+int __cdecl Fxyxy_i(int (__cdecl *)(int), int (__cdecl *)(short int), int (__cdecl *)(int), int (__cdecl *)(short int))
+EOF
+RUN
+
+NAME=Function pointer with abbreviation of types demangler test 2
+FILE=-
+CMDS="!rabin2 -D msvc ?Fxyxy_i_x64@@YAHP6AHPEAH0H@ZP6AH0H0@ZP6AHH@ZP6AHF@Z@Z"
+EXPECT=<<EOF
+int __cdecl Fxyxy_i_x64(int (__cdecl *)(int * __ptr64, int * __ptr64, int), int (__cdecl *)(int * __ptr64, int, int * __ptr64), int (__cdecl *)(int), int (__cdecl *)(short int))
+EOF
+RUN
+
+NAME=func_with_arg_union_from_namespace demangler test
+FILE=-
+CMDS="!rabin2 -D msvc ?func_with_arg_union_from_namespace@@YAXTUNION_TEST@1@@Z"
+EXPECT=<<EOF
+void __cdecl func_with_arg_union_from_namespace(union UNION_TEST::UNION_TEST)
+EOF
+RUN
+
+NAME=func_with_arg_class_from_namespace demangler test 2
+FILE=-
+CMDS="!rabin2 -D msvc ?func_with_arg_class_from_namespace@@YAXVTEST@1@@Z"
+EXPECT=<<EOF
+void __cdecl func_with_arg_class_from_namespace(class TEST::TEST)
+EOF
+RUN
+
+NAME=Abbreviation Of Repetead Names (Name with Template Arguments) demangler test
+FILE=-
+CMDS="!rabin2 -D msvc ?xyz@?\$abc@V?\$def@H@@PAX@@YAXXZ"
+EXPECT=<<EOF
+void __cdecl abc<class def<int>, void *>::xyz(void)
+EOF
+RUN
+
+NAME=Abbreviation Of Name with template demangler test
+FILE=-
+CMDS="!rabin2 -D msvc ??\$MyTemplateFunction@VClass1@@@Class1@@QAEXPAV0@@Z"
+EXPECT=<<EOF
+public: void __thiscall Class1::MyTemplateFunction<class Class1>(class Class1 *)
+EOF
+RUN
+
+NAME=void __cdecl f1(union UNION_TEST::UNION_TEST,union UNION_TEST::UNION_TEST) test
+FILE=-
+CMDS="!rabin2 -D msvc ?f1@@YAXTUNION_TEST@1@0@Z"
+EXPECT=<<EOF
+void __cdecl f1(union UNION_TEST::UNION_TEST, union UNION_TEST::UNION_TEST)
+EOF
+RUN
+
+NAME=void __cdecl f2(union UNION_TEST::UNION_TEST,class TEST::TEST,union UNION_TEST::UNION_TEST) test
+FILE=-
+CMDS="!rabin2 -D msvc ?f2@@YAXTUNION_TEST@1@VTEST@2@0@Z"
+EXPECT=<<EOF
+void __cdecl f2(union UNION_TEST::UNION_TEST, class TEST::TEST, union UNION_TEST::UNION_TEST)
+EOF
+RUN
+
+NAME=void __cdecl f3(union UNION_TEST_NEW) test
+FILE=-
+CMDS="!rabin2 -D msvc ?f3@@YAXTUNION_TEST_NEW@@@Z"
+EXPECT=<<EOF
+void __cdecl f3(union UNION_TEST_NEW)
+EOF
+RUN
+
+NAME=void __cdecl f4(union NAMESPACE_1::NAMESPACE_2::UNION_NAMESPACE_2,class TEST::TEST,union UNION_TEST::UNION_TEST) test
+FILE=-
+CMDS="!rabin2 -D msvc ?f4@@YAXTUNION_NAMESPACE_2@NAMESPACE_2@NAMESPACE_1@@VTEST@4@TUNION_TEST@5@@Z"
+EXPECT=<<EOF
+void __cdecl f4(union NAMESPACE_1::NAMESPACE_2::UNION_NAMESPACE_2, class TEST::TEST, union UNION_TEST::UNION_TEST)
+EOF
+RUN
+
+NAME=void __cdecl f5(union NAMESPACE_1::UNION_TEST::UNION_TEST,class TEST::TEST,union UNION_TEST::UNION_TEST) test
+FILE=-
+CMDS="!rabin2 -D msvc ?f5@@YAXTUNION_TEST@1NAMESPACE_1@@VTEST@3@T11@@Z"
+EXPECT=<<EOF
+void __cdecl f5(union NAMESPACE_1::UNION_TEST::UNION_TEST, class TEST::TEST, union UNION_TEST::UNION_TEST)
+EOF
+RUN
+
+NAME=class OuterNamespace::InnerNamespace::ClassInInnerNamespace
+FILE=-
+CMDS="!rabin2 -D msvc .?AVClassInInnerNamespace@InnerNamespace@OuterNamespace@@"
+EXPECT=<<EOF
+class OuterNamespace::InnerNamespace::ClassInInnerNamespace
+EOF
+RUN
+
+NAME=class ns::FunctionT<void (__cdecl*)(void *)>
+FILE=-
+CMDS="!rabin2 -D msvc .?AV?\$FunctionT@P6AXPAX@Z@ns@@"
+EXPECT=<<EOF
+class ns::FunctionT<void (__cdecl *)(void *)>
+EOF
+RUN
+
+NAME=class ABC::DEF::GHI<1, class JKL::MNO::PQR>
+FILE=-
+CMDS=<<EOF
+"!rabin2 -D msvc .?AV?\$GHI@\$00VPQR@MNO@JKL@@@DEF@ABC@@"
+"!rabin2 -D msvc .?AV?\$GHI@\$H0VPQR@MNO@JKL@@@DEF@ABC@@"
+EOF
+EXPECT=<<EOF
+class ABC::DEF::GHI<1, class JKL::MNO::PQR>
+class ABC::DEF::GHI<1, class JKL::MNO::PQR>
+EOF
+RUN
+
+NAME=class ABC::DEF::GHI<{1, 2}, class JKL::MNO::PQR>
+FILE=-
+CMDS=<<EOF
+"!rabin2 -D msvc .?AV?\$GHI@\$FB@C@VPQR@MNO@JKL@@@DEF@ABC@@"
+"!rabin2 -D msvc .?AV?\$GHI@\$IB@C@VPQR@MNO@JKL@@@DEF@ABC@@"
+EOF
+EXPECT=<<EOF
+class ABC::DEF::GHI<{1, 2}, class JKL::MNO::PQR>
+class ABC::DEF::GHI<{1, 2}, class JKL::MNO::PQR>
+EOF
+RUN
+
+NAME=class ABC::DEF::GHI<{1, 2, 3}, class JKL::MNO::PQR>
+FILE=-
+CMDS=<<EOF
+"!rabin2 -D msvc .?AV?\$GHI@\$GB@C@D@VPQR@MNO@JKL@@@DEF@ABC@@"
+"!rabin2 -D msvc .?AV?\$GHI@\$JB@C@D@VPQR@MNO@JKL@@@DEF@ABC@@"
+EOF
+EXPECT=<<EOF
+class ABC::DEF::GHI<{1, 2, 3}, class JKL::MNO::PQR>
+class ABC::DEF::GHI<{1, 2, 3}, class JKL::MNO::PQR>
+EOF
+RUN
+
+NAME=public: void __cdecl ABC::operator()<char>(char const * __ptr64 const)const __ptr64
+FILE=-
+CMDS="!rabin2 -D msvc ??\$?RD@ABC@@QEBAXQEBD@Z"
+EXPECT=<<EOF
+public: void __cdecl ABC::operator()<char>(char const * const __ptr64)const __ptr64
+EOF
+RUN
+
+NAME=public: bool __cdecl ABC<char, struct DEF>::operator bool(void)const __ptr64
+FILE=-
+CMDS="!rabin2 -D msvc ??B?\$ABC@DUDEF@@@@QEBA_NXZ"
+EXPECT=<<EOF
+public: bool __cdecl ABC<char, struct DEF>::operator bool(void)const __ptr64
+EOF
+RUN
+
+NAME=Template with ref to mangled symbol
+FILE=-
+CMDS="!rabin2 -D msvc .?AV?\$Template@UUnnamedStruct@@\$1?StructName1@@3UStructType1@@B\$1?StructName2@@3U3@B\$00\$0A@VChildClass@Class@@@Class@@"
+EXPECT=<<EOF
+class Class::Template<struct UnnamedStruct, &struct StructType1 const StructName1, &struct StructType1 const StructName2, 1, 0, class Class::ChildClass>
+EOF
+RUN
+
+NAME=public: void __cdecl Platform::Delegate::constructor(void) __ptr64
+FILE=-
+CMDS="!rabin2 -D msvc ??0Delegate@Platform@@QE\$AAA@XZ"
+EXPECT=<<EOF
+public: void __cdecl Platform::Delegate::constructor(void) __ptr64
+EOF
+RUN
+
+NAME=class Platform::String ^ __ptr64 __cdecl Platform::Delegate(bool, class Platform::Object ^ __ptr64)
+FILE=-
+CMDS="!rabin2 -D msvc ?Delegate@Platform@@YAPE\$AAVString@Platform@@_NPE\$AAVObject@3@@Z"
+EXPECT=<<EOF
+class Platform::String ^ __ptr64 __cdecl Platform::Delegate(bool, class Platform::Object ^ __ptr64)
+EOF
+RUN
+
+NAME=int __clrcall test(struct V ^ __ptr64)
+FILE=-
+CMDS="!rabin2 -D msvc ?test@@\$\$FYMHPE\$AA__ZUV@@@Z"
+EXPECT=<<EOF
+int __clrcall test(struct V ^ __ptr64)
+EOF
+RUN
+
+NAME=int __clrcall test(struct V % __ptr64)
+FILE=-
+CMDS="!rabin2 -D msvc ?test@@\$\$FYMHPE\$CA__ZUV@@@Z"
+EXPECT=<<EOF
+int __clrcall test(struct V % __ptr64)
+EOF
+RUN
+
+NAME=int __clrcall test(struct V * __ptr64 % __ptr64)
+FILE=-
+CMDS="!rabin2 -D msvc ?test@@YMHAE\$CAPEAUV@@@Z"
+EXPECT=<<EOF
+int __clrcall test(struct V * __ptr64 % __ptr64)
+EOF
+RUN
+
+NAME=[thunk]:public virtual: unsigned long int __cdecl NetworkUX::View::__CFEWiFiWCNComboActivationFactory::[Platform::Object]::__abi_Release`adjustor{8}'(void) __ptr64
+FILE=-
+CMDS="!rabin2 -D msvc ?__abi_Release@?QObject@Platform@@__CFEWiFiWCNComboActivationFactory@View@NetworkUX@@W7E\$AAAKXZ"
+EXPECT=<<EOF
+[thunk]:public virtual: unsigned long int __cdecl NetworkUX::View::__CFEWiFiWCNComboActivationFactory::[Platform::Object]::__abi_Release`adjustor{8}'(void) __ptr64
+EOF
+RUN
+
+NAME=public: void __cdecl std::_Func_class<void, enum Windows::System::LaunchUriStatus, struct std::_Nil, struct std::_Nil>::~destructor(void) __ptr64
+FILE=-
+CMDS="!rabin2 -D msvc ??1?\$_Func_class@XW4LaunchUriStatus@System@Windows@@U_Nil@std@@U45@@std@@QEAA@XZ"
+EXPECT=<<EOF
+public: void __cdecl std::_Func_class<void, enum Windows::System::LaunchUriStatus, struct std::_Nil, struct std::_Nil>::~destructor(void) __ptr64
+EOF
+RUN
+
+NAME=const NetworkUXViewProviderImpl::vftable{for `IWeakReferenceSource'}
+FILE=-
+CMDS="!rabin2 -D msvc ??_7NetworkUXViewProviderImpl@@6BIWeakReferenceSource@@@"
+EXPECT=<<EOF
+const NetworkUXViewProviderImpl::vftable{for `IWeakReferenceSource'}
+EOF
+RUN
+
+NAME=const NetworkUX::OOBEMainPage::vftable{for `__abi_IUnknown's `Platform::Details::IWeakReferenceSource'}
+FILE=-
+CMDS="!rabin2 -D msvc ??_7OOBEMainPage@NetworkUX@@6B__abi_IUnknown@@IWeakReferenceSource@Details@Platform@@@"
+EXPECT=<<EOF
+const NetworkUX::OOBEMainPage::vftable{for `__abi_IUnknown's `Platform::Details::IWeakReferenceSource'}
+EOF
+RUN
+
+NAME=class Microsoft::WRL::Details::StaticStorage<class Platform::Details::InProcModule, 0, int> Microsoft::WRL::Details::StaticStorage<class Platform::Details::InProcModule, 0, int>::instance_
+FILE=-
+CMDS="!rabin2 -D msvc ?instance_@?\$StaticStorage@VInProcModule@Details@Platform@@\$0A@H@Details@WRL@Microsoft@@0V1234@A"
+EXPECT=<<EOF
+class Microsoft::WRL::Details::StaticStorage<class Platform::Details::InProcModule, 0, int> Microsoft::WRL::Details::StaticStorage<class Platform::Details::InProcModule, 0, int>::instance_
+EOF
+RUN
+
+NAME=const std::_Func_impl<struct std::_Callable_obj<class lambda, 0>, class std::allocator<class std::_Func_class<void, struct std::_Nil, struct std::_Nil>>, void, struct std::_Nil, struct std::_Nil>::vftable
+FILE=-
+CMDS="!rabin2 -D msvc ??_7?\$_Func_impl@U?\$_Callable_obj@Vlambda@@\$0A@@std@@V?\$allocator@V?\$_Func_class@XU_Nil@std@@U12@@std@@@2@XU_Nil@2@U42@@std@@6B@"
+EXPECT=<<EOF
+const std::_Func_impl<struct std::_Callable_obj<class lambda, 0>, class std::allocator<class std::_Func_class<void, struct std::_Nil, struct std::_Nil>>, void, struct std::_Nil, struct std::_Nil>::vftable
+EOF
+RUN
+
+NAME=public: bool __cdecl wil::unique_any_t<class wil::semaphore_t<class wil::details::unique_storage<struct wil::details::resource_policy<void * __ptr64, void (__cdecl*)(void * __ptr64), &void __cdecl wil::details::CloseHandle(void * __ptr64), struct wistd::integral_constant<unsigned long long(unsigned __int64), 0>, void * __ptr64, void * __ptr64, 0, std::nullptr_t>>, struct wil::err_returncode_policy>>::operator bool(void)const __ptr64
+FILE=-
+CMDS="!rabin2 -D msvc ??B?\$unique_any_t@V?\$semaphore_t@V?\$unique_storage@U?\$resource_policy@PEAXP6AXPEAX@Z\$1?CloseHandle@details@wil@@YAX0@ZU?\$integral_constant@_K\$0A@@wistd@@PEAXPEAX\$0A@\$\$T@details@wil@@@details@wil@@Uerr_returncode_policy@3@@wil@@@wil@@QEBA_NXZ"
+EXPECT=<<EOF
+public: bool __cdecl wil::unique_any_t<class wil::semaphore_t<class wil::details::unique_storage<struct wil::details::resource_policy<void * __ptr64, void (__cdecl *)(void * __ptr64), &void __cdecl wil::details::CloseHandle(void * __ptr64), struct wistd::integral_constant<unsigned long long(unsigned __int64), 0>, void * __ptr64, void * __ptr64, 0, std::nullptr_t>>, struct wil::err_returncode_policy>>::operator bool(void)const __ptr64
+EOF
+RUN
+
+NAME=public virtual: void * __ptr64 __cdecl wistd::__function::__func<class lambda, long int (__cdecl*)(class Windows::Internal::PlatformExtensions::Details::ExtensionRegistration const * __ptr64, bool, bool * __ptr64)>::scalar_dtor(unsigned int) __ptr64
+FILE=-
+CMDS="!rabin2 -D msvc ??_G?\$__func@Vlambda@@\$\$A6AJPEBVExtensionRegistration@Details@PlatformExtensions@Internal@Windows@@_NPEA_N@Z@__function@wistd@@UEAAPEAXI@Z"
+EXPECT=<<EOF
+public virtual: void * __ptr64 __cdecl wistd::__function::__func<class lambda, long int (__cdecl *)(class Windows::Internal::PlatformExtensions::Details::ExtensionRegistration const * __ptr64, bool, bool * __ptr64)>::scalar_dtor(unsigned int) __ptr64
+EOF
+RUN
+
+NAME=void __cdecl wistd::invoke<void (__cdecl*)(void * __ptr64), void * __ptr64 & __ptr64>(void (__cdecl*)(void * __ptr64) && volatile __ptr64, void * __ptr64 & __ptr64)
+FILE=-
+CMDS="!rabin2 -D msvc ??\$invoke@P6AXPEAX@ZAEAPEAX@wistd@@YAX\$\$REAP6AXPEAX@ZAEAPEAX@Z"
+EXPECT=<<EOF
+void __cdecl wistd::invoke<void (__cdecl *)(void * __ptr64), void * __ptr64 & __ptr64>(void (__cdecl *)(void * __ptr64) && volatile __ptr64, void * __ptr64 & __ptr64)
+EOF
+RUN
+
+NAME=class wil::ResultException `RTTI Type Descriptor'
+FILE=-
+CMDS="!rabin2 -D msvc ??_R0?AVResultException@wil@@@8"
+EXPECT=<<EOF
+class wil::ResultException `RTTI Type Descriptor'
+EOF
+RUN
+
+NAME=public: void __cdecl cask::PoolingFwdFP16x2Shader::constructor(class cask::KernelInfo const * __ptr64, class cask::SafeEnum<struct cask::ErrorEnum> (__cdecl* const)(struct cask::PoolingOperation::poolingDescription & __ptr64, void const * __ptr64, void * __ptr64, struct CUstream_st * __ptr64, enum cudaError & __ptr64)) __ptr64
+FILE=-
+CMDS="!rabin2 -D msvc ??0PoolingFwdFP16x2Shader@cask@@QEAA@PEBVKernelInfo@1@Q6A?AV?\$SafeEnum@UErrorEnum@cask@@@1@AEAUpoolingDescription@PoolingOperation@1@PEBXPEAXPEAUCUstream_st@@AEAW4cudaError@@@Z@Z"
+EXPECT=<<EOF
+public: void __cdecl cask::PoolingFwdFP16x2Shader::constructor(class cask::KernelInfo const * __ptr64, class cask::SafeEnum<struct cask::ErrorEnum> (__cdecl * const)(struct cask::PoolingOperation::poolingDescription & __ptr64, void const * __ptr64, void * __ptr64, struct CUstream_st * __ptr64, enum cudaError & __ptr64)) __ptr64
+EOF
+RUN
+
+NAME=class Concurrency::details::_CancellationTokenCallback<class `public: void __cdecl Concurrency::details::_Task_impl_base::_RegisterCancellation(class std::weak_ptr<struct Concurrency::details::_Task_impl_base>) __ptr64'::`2'::lambda_1>
+FILE=-
+CMDS="!rabin2 -D msvc .?AV?\$_CancellationTokenCallback@Vlambda_1@?1??_RegisterCancellation@_Task_impl_base@details@Concurrency@@QEAAXV?\$weak_ptr@U_Task_impl_base@details@Concurrency@@@std@@@Z@@details@Concurrency@@"
+EXPECT=<<EOF
+class Concurrency::details::_CancellationTokenCallback<class `public: void __cdecl Concurrency::details::_Task_impl_base::_RegisterCancellation(class std::weak_ptr<struct Concurrency::details::_Task_impl_base>) __ptr64'::`2'::lambda_1>
+EOF
+RUN
+
+NAME=struct `private: void __cdecl wil::ActivityBase<class NetworkFlyoutLogging, 1, 0, 5, 0, struct _TlgReflectorTag_Param0IsProviderType>::ReportStopActivity(long int) __ptr64'::`12'::unnamed-type-_tlgEvent const `private: void __cdecl wil::ActivityBase<class NetworkFlyoutLogging, 1, 0, 5, 0, struct _TlgReflectorTag_Param0IsProviderType>::ReportStopActivity(long int) __ptr64'::`12'::_tlgEvent
+FILE=-
+CMDS="!rabin2 -D msvc ?_tlgEvent@?M@??ReportStopActivity@?\$ActivityBase@VNetworkFlyoutLogging@@\$00\$0A@\$04\$0A@U_TlgReflectorTag_Param0IsProviderType@@@wil@@AEAAXJ@Z@4Uunnamed-type-_tlgEvent@?M@??123@AEAAXJ@Z@B"
+EXPECT=<<EOF
+struct `private: void __cdecl wil::ActivityBase<class NetworkFlyoutLogging, 1, 0, 5, 0, struct _TlgReflectorTag_Param0IsProviderType>::ReportStopActivity(long int) __ptr64'::`12'::unnamed-type-_tlgEvent const `private: void __cdecl wil::ActivityBase<class NetworkFlyoutLogging, 1, 0, 5, 0, struct _TlgReflectorTag_Param0IsProviderType>::ReportStopActivity(long int) __ptr64'::`12'::_tlgEvent
+EOF
+RUN
+
+NAME=Very long one with member functions
+FILE=-
+CMDS="iD msvc ??_G?$impl@V?$binder2@V?$io_op@V?$basic_stream_socket@Vtcp@ip@asio@boost@@V?$any_executor@U?$context_as_t@AEAVexecution_context@asio@boost@@@execution@asio@boost@@U?$never_t@$0A@@blocking@detail@234@U?$prefer_only@U?$possibly_t@$0A@@blocking@detail@execution@asio@boost@@@234@U?$prefer_only@U?$tracked_t@$0A@@outstanding_work@detail@execution@asio@boost@@@234@U?$prefer_only@U?$untracked_t@$0A@@outstanding_work@detail@execution@asio@boost@@@234@U?$prefer_only@U?$fork_t@$0A@@relationship@detail@execution@asio@boost@@@234@U?$prefer_only@U?$continuation_t@$0A@@relationship@detail@execution@asio@boost@@@234@@execution@34@@asio@boost@@V?$read_op@Vmutable_buffers_1@asio@boost@@@detail@ssl@23@V?$read_op@V?$stream@V?$basic_stream_socket@Vtcp@ip@asio@boost@@V?$any_executor@U?$context_as_t@AEAVexecution_context@asio@boost@@@execution@asio@boost@@U?$never_t@$0A@@blocking@detail@234@U?$prefer_only@U?$possibly_t@$0A@@blocking@detail@execution@asio@boost@@@234@U?$prefer_only@U?$tracked_t@$0A@@outstanding_work@detail@execution@asio@boost@@@234@U?$prefer_only@U?$untracked_t@$0A@@outstanding_work@detail@execution@asio@boost@@@234@U?$prefer_only@U?$fork_t@$0A@@relationship@detail@execution@asio@boost@@@234@U?$prefer_only@U?$continuation_t@$0A@@relationship@detail@execution@asio@boost@@@234@@execution@34@@asio@boost@@@ssl@asio@boost@@Vmutable_buffers_1@34@PEBVmutable_buffer@34@Vtransfer_at_least_t@detail@34@V?$wrapped_handler@Vstrand@io_context@asio@boost@@V?$custom_alloc_handler@V?$_Binder@U_Unforced@std@@P8?$connection@Utransport_config@asio_tls@config@websocketpp@@@asio@transport@websocketpp@@EAAXV?$function@$$A6AXAEBVerror_code@std@@_K@Z@2@AEBVerror_code@system@boost@@_K@ZV?$shared_ptr@V?$connection@Utransport_config@asio_tls@config@websocketpp@@@asio@transport@websocketpp@@@2@AEAV72@AEBU?$_Ph@$00@2@AEBU?$_Ph@$01@2@@std@@@3transport@websocketpp@@Uis_continuation_if_running@detail@34@@834@@523@@detail@ssl@asio@boost@@Verror_code@system@5@_K@detail@asio@boost@@V?$allocator@X@std@@@executor_function@detail@asio@boost@@QEAAPEAXI@Z"
+EXPECT=<<EOF
+public: void * __ptr64 __cdecl boost::asio::detail::executor_function::impl<class boost::asio::detail::binder2<class boost::asio::ssl::detail::io_op<class boost::asio::basic_stream_socket<class boost::asio::ip::tcp, class boost::asio::execution::any_executor<struct boost::asio::execution::context_as_t<class boost::asio::execution_context & __ptr64>, struct boost::asio::execution::detail::blocking::never_t<0>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::blocking::possibly_t<0>>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::outstanding_work::tracked_t<0>>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::outstanding_work::untracked_t<0>>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::relationship::fork_t<0>>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::relationship::continuation_t<0>>>>, class boost::asio::ssl::detail::read_op<class boost::asio::mutable_buffers_1>, class boost::asio::detail::read_op<class boost::asio::ssl::stream<class boost::asio::basic_stream_socket<class boost::asio::ip::tcp, class boost::asio::execution::any_executor<struct boost::asio::execution::context_as_t<class boost::asio::execution_context & __ptr64>, struct boost::asio::execution::detail::blocking::never_t<0>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::blocking::possibly_t<0>>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::outstanding_work::tracked_t<0>>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::outstanding_work::untracked_t<0>>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::relationship::fork_t<0>>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::relationship::continuation_t<0>>>>>, class boost::asio::mutable_buffers_1, class boost::asio::mutable_buffer const * __ptr64, class boost::asio::detail::transfer_at_least_t, class boost::asio::detail::wrapped_handler<class boost::asio::io_context::strand, class websocketpp::transport::asio::custom_alloc_handler<class std::_Binder<struct std::_Unforced, void & (__thiscall websocketpp::transport::asio::connection<struct websocketpp::config::asio_tls::transport_config>::*)(class std::function<void (__cdecl *)(class std::error_code const & __ptr64, unsigned long long(unsigned __int64))>, class boost::system::error_code const & __ptr64, unsigned long long(unsigned __int64)), class std::shared_ptr<class websocketpp::transport::asio::connection<struct websocketpp::config::asio_tls::transport_config>>, class std::function<void (__cdecl *)(class std::error_code const & __ptr64, unsigned long long(unsigned __int64))> & __ptr64, struct std::_Ph<1> const & __ptr64, struct std::_Ph<2> const & __ptr64>>, struct boost::asio::detail::is_continuation_if_running>>>, class boost::system::error_code, unsigned long long(unsigned __int64)>, class std::allocator<void>>::scalar_dtor(unsigned int) __ptr64
+EOF
+RUN

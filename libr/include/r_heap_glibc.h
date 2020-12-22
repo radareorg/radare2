@@ -8,16 +8,16 @@ extern "C" {
 R_LIB_VERSION_HEADER(r_heap_glibc);
 
 #define PRINTF_A(color, fmt , ...) r_cons_printf (color fmt Color_RESET, __VA_ARGS__)
-#define PRINTF_YA(fmt, ...) PRINTF_A ("%s", fmt, r_cons_singleton ()->context->pal.offset, __VA_ARGS__)
-#define PRINTF_GA(fmt, ...) PRINTF_A ("%s", fmt, r_cons_singleton ()->context->pal.args, __VA_ARGS__)
-#define PRINTF_BA(fmt, ...) PRINTF_A ("%s", fmt, r_cons_singleton ()->context->pal.num, __VA_ARGS__)
-#define PRINTF_RA(fmt, ...) PRINTF_A ("%s", fmt, r_cons_singleton ()->context->pal.invalid, __VA_ARGS__)
+#define PRINTF_YA(fmt, ...) PRINTF_A ("%s", fmt, pal->offset, __VA_ARGS__)
+#define PRINTF_GA(fmt, ...) PRINTF_A ("%s", fmt, pal->args, __VA_ARGS__)
+#define PRINTF_BA(fmt, ...) PRINTF_A ("%s", fmt, pal->num, __VA_ARGS__)
+#define PRINTF_RA(fmt, ...) PRINTF_A ("%s", fmt, pal->invalid, __VA_ARGS__)
 
 #define PRINT_A(color, msg) r_cons_print (color msg Color_RESET)
-#define PRINT_YA(msg) r_cons_printf ("%s" msg Color_RESET, r_cons_singleton ()->context->pal.offset)
-#define PRINT_GA(msg) r_cons_printf ("%s" msg Color_RESET, r_cons_singleton ()->context->pal.args)
-#define PRINT_BA(msg) r_cons_printf ("%s" msg Color_RESET, r_cons_singleton ()->context->pal.num)
-#define PRINT_RA(msg) r_cons_printf ("%s" msg Color_RESET, r_cons_singleton ()->context->pal.invalid)
+#define PRINT_YA(msg) r_cons_printf ("%s" msg Color_RESET, pal->offset)
+#define PRINT_GA(msg) r_cons_printf ("%s" msg Color_RESET, pal->args)
+#define PRINT_BA(msg) r_cons_printf ("%s" msg Color_RESET, pal->num)
+#define PRINT_RA(msg) r_cons_printf ("%s" msg Color_RESET, pal->invalid)
 
 #define PREV_INUSE 0x1
 #define IS_MMAPPED 0x2
@@ -35,6 +35,7 @@ R_LIB_VERSION_HEADER(r_heap_glibc);
 #define NPAD -6
 #define TCACHE_MAX_BINS 64
 #define TCACHE_FILL_COUNT 7
+#define TCACHE_NEW_VERSION 230
 
 #define MMAP_ALIGN_32 0x14
 #define MMAP_ALIGN_64 0x18
@@ -45,6 +46,10 @@ R_LIB_VERSION_HEADER(r_heap_glibc);
 #define TC_HDR_SZ 0x10
 #define TC_SZ_32 0x0
 #define TC_SZ_64 0x10
+
+// Introduced with glibc 2.32
+#define PROTECT_PTR(pos, ptr) \
+	((__typeof (ptr)) ((((size_t) pos) >> 12) ^ ((size_t) ptr)))
 
 #define largebin_index_32(size)				       \
 (((((ut32)(size)) >>  6) <= 38)?  56 + (((ut32)(size)) >>  6): \
@@ -141,14 +146,42 @@ typedef struct r_malloc_state_64 {
 } RHeap_MallocState_64;
 
 typedef struct r_tcache_perthread_struct_32 {
-	ut8 counts[TCACHE_MAX_BINS];
+	ut16 counts[TCACHE_MAX_BINS];
 	ut32 entries[TCACHE_MAX_BINS];
 } RHeapTcache_32;
 
 typedef struct r_tcache_perthread_struct_64 {
-	ut8 counts[TCACHE_MAX_BINS];
+	ut16 counts[TCACHE_MAX_BINS];
 	ut64 entries[TCACHE_MAX_BINS];
 } RHeapTcache_64;
+
+typedef struct r_tcache_perthread_struct_pre_230_32 {
+	ut8 counts[TCACHE_MAX_BINS];
+	ut32 entries[TCACHE_MAX_BINS];
+} RHeapTcachePre230_32;
+
+typedef struct r_tcache_perthread_struct_pre_230_64 {
+	ut8 counts[TCACHE_MAX_BINS];
+	ut64 entries[TCACHE_MAX_BINS];
+} RHeapTcachePre230_64;
+
+typedef enum {NEW, OLD} tcache_type;
+
+typedef struct {
+	tcache_type type;
+	union {
+		RHeapTcache_64 *heap_tcache;
+		RHeapTcachePre230_64 *heap_tcache_pre_230;
+	} RHeapTcache;
+} RTcache_64;
+
+typedef struct {
+	tcache_type type;
+	union {
+		RHeapTcache_32 *heap_tcache;
+		RHeapTcachePre230_32 *heap_tcache_pre_230;
+	} RHeapTcache;
+} RTcache_32;
 
 typedef struct r_malloc_state_tcache_32 {
 	int mutex;                              /* serialized access */

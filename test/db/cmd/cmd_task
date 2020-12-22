@@ -1,0 +1,27 @@
+NAME=&
+FILE=-
+CMDS=<<EOF
+& ?e Hello\nfrom\na task!
+&& 1
+&= 1
+EOF
+EXPECT=<<EOF
+Hello
+from
+a task!
+
+EOF
+RUN
+
+NAME=& + grep
+FILE=-
+CMDS=<<EOF
+"& ?e Hello\nfrom\na task!~task"
+&& 1
+&= 1
+EOF
+EXPECT=<<EOF
+a task!
+
+EOF
+RUN

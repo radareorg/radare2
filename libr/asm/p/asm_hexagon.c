@@ -10,7 +10,7 @@
 static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int l) {
 	HexInsn hi = {0};
 	ut32 data = r_read_le32 (buf);
-	op->size = hexagon_disasm_instruction (data, &hi);
+	op->size = hexagon_disasm_instruction (data, &hi, (ut32) a->pc);
 	r_strbuf_set (&op->buf_asm, hi.mnem);
 	return op->size;
 }
@@ -25,7 +25,7 @@ RAsmPlugin r_asm_plugin_hexagon = {
 	.disassemble = &disassemble,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_hexagon

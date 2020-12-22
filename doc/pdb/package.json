@@ -5,7 +5,7 @@
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/radare/radare2.git"
+    "url": "https://github.com/radareorg/radare2.git"
   },
   "dependencies": {
     "node-curl": "*"
@@ -31,7 +31,7 @@
   },
   "license": "LGPLv3",
   "bugs": {
-    "url": "https://github.com/radare/radare2/issues"
+    "url": "https://github.com/radareorg/radare2/issues"
   },
   "homepage": "http://www.radare.org"
 }

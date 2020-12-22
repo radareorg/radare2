@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - nibble, pancake, alvarofe */
+/* radare - LGPL - Copyright 2009-2019 - nibble, pancake, alvarofe */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -17,49 +17,19 @@ static Sdb* get_sdb (RBinFile *bf) {
 	return bin? bin->kv: NULL;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	struct PE_(r_bin_pe_obj_t) *res = NULL;
-	RBuffer *tbuf = NULL;
-	if (!buf || !sz || sz == UT64_MAX) {
-		return false;
-	}
-	tbuf = r_buf_new ();
-	r_buf_set_bytes (tbuf, buf, sz);
-	res = PE_(r_bin_pe_new_buf) (tbuf, bf->rbin->verbose);
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	r_return_val_if_fail (bf && bin_obj && buf, false);
+	struct PE_(r_bin_pe_obj_t) *res = PE_(r_bin_pe_new_buf) (buf, bf->rbin->verbose);
 	if (res) {
 		sdb_ns_set (sdb, "info", res->kv);
+		*bin_obj = res;
+		return true;
 	}
-	r_buf_free (tbuf);
-	*bin_obj = res;
-	return true;
+	return false;
 }
 
-static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	struct PE_(r_bin_pe_obj_t) *res;
-	if (!buf) {
-		return NULL;
-	}
-	res = PE_(r_bin_pe_new_buf) (buf, bf->rbin->verbose);
-	if (res) {
-		sdb_ns_set (sdb, "info", res->kv);
-	}
-	return res;
-}
-
-static bool load(RBinFile *bf) {
-	const ut8 *bytes;
-	ut64 sz;
-
-	if (!bf || !bf->o) {
-		return false;
-	}
-	bytes = r_buf_buffer (bf->buf, &sz);
-	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
-}
-
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	PE_(r_bin_pe_free) ((struct PE_(r_bin_pe_obj_t)*)bf->o->bin_obj);
-	return true;
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -237,10 +207,11 @@ static RList* symbols(RBinFile *bf) {
 				break;
 			}
 			ptr->name = strdup ((char *)symbols[i].name);
-			ptr->forwarder = r_str_const ((char *)symbols[i].forwarder);
+			ptr->libname = *symbols[i].libname ? strdup ((char *)symbols[i].libname) : NULL;
+			ptr->forwarder = r_str_constpool_get (&bf->rbin->constpool, (char *)symbols[i].forwarder);
 			//strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-			ptr->bind = r_str_const (R_BIN_BIND_GLOBAL_STR);
-			ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
+			ptr->bind = R_BIN_BIND_GLOBAL_STR;
+			ptr->type = R_BIN_TYPE_FUNC_STR;
 			ptr->size = 0;
 			ptr->vaddr = symbols[i].vaddr;
 			ptr->paddr = symbols[i].paddr;
@@ -257,10 +228,12 @@ static RList* symbols(RBinFile *bf) {
 				break;
 			}
 			//strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
-			ptr->name = r_str_newf ("imp.%s", imports[i].name);
+			ptr->name = strdup ((const char *)imports[i].name);
+			ptr->libname = strdup ((const char *)imports[i].libname);
+			ptr->is_imported = true;
 			//strncpy (ptr->forwarder, (char*)imports[i].forwarder, R_BIN_SIZEOF_STRINGS);
-			ptr->bind = r_str_const ("NONE");
-			ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
+			ptr->bind = "NONE";
+			ptr->type = R_BIN_TYPE_FUNC_STR;
 			ptr->size = 0;
 			ptr->vaddr = imports[i].vaddr;
 			ptr->paddr = imports[i].paddr;
@@ -317,8 +290,9 @@ static RList* imports(RBinFile *bf) {
 		}
 		filter_import (imports[i].name);
 		ptr->name = strdup ((char*)imports[i].name);
-		ptr->bind = r_str_const ("NONE");
-		ptr->type = r_str_const ("FUNC");
+		ptr->libname = strdup ((char*)imports[i].libname);
+		ptr->bind = "NONE";
+		ptr->type = "FUNC";
 		ptr->ordinal = imports[i].ordinal;
 		// NOTE(eddyb) a PE hint is just an optional possible DLL export table
 		// index for the import. There is no point in exposing it.
@@ -446,7 +420,7 @@ static int haschr(const RBinFile* bf, ut16 dllCharacteristic) {
 	if (!bf) {
 		return false;
 	}
-	buf = r_buf_buffer (bf->buf, &sz);
+	buf = r_buf_data (bf->buf, &sz);
 	if (!buf) {
 		return false;
 	}
@@ -476,6 +450,7 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->arch = PE_(r_bin_pe_get_arch) (bf->o->bin_obj);
 	ret->machine = PE_(r_bin_pe_get_machine) (bf->o->bin_obj);
 	ret->subsystem = PE_(r_bin_pe_get_subsystem) (bf->o->bin_obj);
+	ret->default_cc = PE_(r_bin_pe_get_cc) (bf->o->bin_obj);
 	if (is_dot_net (bf)) {
 		ret->lang = "cil";
 	}
@@ -501,26 +476,28 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->actual_checksum  = strdup (sdb_fmt ("0x%08x", actual_checksum));
 	ret->pe_overlay = pe_overlay > 0;
 	ret->signature = bin ? bin->is_signed : false;
-
-	sdb_bool_set (bf->sdb, "pe.canary", has_canary(bf), 0);
-	sdb_bool_set (bf->sdb, "pe.highva", haschr(bf, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);
-	sdb_bool_set (bf->sdb, "pe.aslr", haschr(bf, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE), 0);
-	sdb_bool_set (bf->sdb, "pe.forceintegrity", haschr(bf, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY), 0);
-	sdb_bool_set (bf->sdb, "pe.nx", haschr(bf, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT), 0);
-	sdb_bool_set (bf->sdb, "pe.isolation", !haschr(bf, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY), 0);
-	sdb_bool_set (bf->sdb, "pe.seh", !haschr(bf, IMAGE_DLLCHARACTERISTICS_NO_SEH), 0);
-	sdb_bool_set (bf->sdb, "pe.bind", !haschr(bf, IMAGE_DLLCHARACTERISTICS_NO_BIND), 0);
-	sdb_bool_set (bf->sdb, "pe.appcontainer", haschr(bf, IMAGE_DLLCHARACTERISTICS_APPCONTAINER), 0);
-	sdb_bool_set (bf->sdb, "pe.wdmdriver", haschr(bf, IMAGE_DLLCHARACTERISTICS_WDM_DRIVER), 0);
-	sdb_bool_set (bf->sdb, "pe.guardcf", haschr(bf, IMAGE_DLLCHARACTERISTICS_GUARD_CF), 0);
-	sdb_bool_set (bf->sdb, "pe.terminalserveraware", haschr(bf, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE), 0);
-	sdb_num_set (bf->sdb, "pe.bits", ret->bits, 0);
-	sdb_set (bf->sdb, "pe.claimed_checksum", ret->claimed_checksum, 0);
-	sdb_set (bf->sdb, "pe.actual_checksum", ret->actual_checksum, 0);
+	ret->file_hashes = r_list_newf ((RListFree) r_bin_file_hash_free);
+	Sdb *db = sdb_ns (bf->sdb, "pe", true);
+	sdb_bool_set (db, "canary", has_canary (bf), 0);
+	sdb_bool_set (db, "highva", haschr (bf, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);
+	sdb_bool_set (db, "aslr", haschr (bf, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE), 0);
+	sdb_bool_set (db, "forceintegrity", haschr (bf, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY), 0);
+	sdb_bool_set (db, "nx", haschr (bf, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT), 0);
+	sdb_bool_set (db, "isolation", !haschr (bf, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY), 0);
+	sdb_bool_set (db, "seh", !haschr (bf, IMAGE_DLLCHARACTERISTICS_NO_SEH), 0);
+	sdb_bool_set (db, "bind", !haschr (bf, IMAGE_DLLCHARACTERISTICS_NO_BIND), 0);
+	sdb_bool_set (db, "appcontainer", haschr (bf, IMAGE_DLLCHARACTERISTICS_APPCONTAINER), 0);
+	sdb_bool_set (db, "wdmdriver", haschr (bf, IMAGE_DLLCHARACTERISTICS_WDM_DRIVER), 0);
+	sdb_bool_set (db, "guardcf", haschr (bf, IMAGE_DLLCHARACTERISTICS_GUARD_CF), 0);
+	sdb_bool_set (db, "terminalserveraware", haschr (bf, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE), 0);
+	sdb_num_set (db, "bits", ret->bits, 0);
+	sdb_set (db, "claimed_checksum", ret->claimed_checksum, 0);
+	sdb_set (db, "actual_checksum", ret->actual_checksum, 0);
+	sdb_bool_set (db, "is_authhash_valid", PE_(bin_pe_is_authhash_valid) (bf->o->bin_obj), 0);
 
 	ret->has_va = true;
 
-	if (!PE_(r_bin_pe_is_stripped_debug) (bf->o->bin_obj)) {
+	if (PE_(r_bin_pe_is_stripped_debug) (bf->o->bin_obj)) {
 		ret->dbg_info |= R_BIN_DBG_STRIPPED;
 	}
 	if (PE_(r_bin_pe_is_stripped_line_nums) (bf->o->bin_obj)) {
@@ -547,4 +524,19 @@ static RBinInfo* info(RBinFile *bf) {
 
 static ut64 get_vaddr (RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	return baddr + vaddr;
+}
+
+static RList *compute_hashes(RBinFile *bf) {
+	RList *file_hashes = r_list_newf ((RListFree) r_bin_file_hash_free);
+	const char *authentihash = PE_(bin_pe_compute_authentihash) (bf->o->bin_obj);
+	if (authentihash) {
+		RBinFileHash *authhash = R_NEW0 (RBinFileHash);
+		if (authhash) {
+			authhash->type = strdup ("authentihash");
+			authhash->hex = authentihash;
+			r_list_push (file_hashes, authhash);
+		}
+	}
+
+	return file_hashes;
 }

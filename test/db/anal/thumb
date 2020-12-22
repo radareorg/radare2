@@ -1,0 +1,20 @@
+NAME=thumb tbb jmptbl
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+e asm.flags.inbytes=true
+wx 10b50078114c06281ed2dfe800f01d1d030e1d150e480078002815d00d48a1690222bde81040fcf74dba0020e2f7aefb03220948a169f4e70020e2f7a7fbbde810400020fff7c2bf10bd0000bc0b0010a1010020c9e00508cdf8050870b5002500b10578e6f766f9691c884200d2002500211148eef72cf8e6f75cf90f4c98b165700120f7f718f961780170a0611820f7f712f9206105466178e2f7edfe2846bde87040eaf742bd002020700d206070bde87040f1f76cb9841c0708bc0b001008b506208df80000012269460148fcf7f9f908bd412a0608feb50446e6f72af910b1e6f727f9401e254a0623c0b251788df804102578062d0bd2dfe805f00a03
+af
+pdr~case
+EOF
+EXPECT=<<EOF
+| 0x00000008                    bhs case.0xa.0
+| 0x0000000a      switch.0x000  tbb [0x00000010]                       ; switch table (6 cases) at 0xe
+| 0x00000014       case.0xa.2:  ldr r0, [0x00000050]                   ; [0x50:4]=0x200001a1
+| 0x0000001a                    beq case.0xa.0
+| 0x0000002a       case.0xa.3:  movs r0, 0
+| 0x00000038       case.0xa.5:  movs r0, 0
+\ 0x00000048      case.0xa.0,c  pop {r4, pc}
+EOF
+RUN

@@ -2,7 +2,7 @@
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone/capstone.h>
+#include <capstone.h>
 
 #ifdef CAPSTONE_M68K_H
 #define CAPSTONE_HAS_M68K 1
@@ -107,7 +107,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (op && buf_asm) {
 		char *p = r_str_replace (strdup (buf_asm), "$", "0x", true);
 		if (p) {
-			r_str_rmch (p, '#');
+			r_str_replace_char (p, '#', 0);
 			r_asm_op_set_asm (op, p);
 			free (p);
 		}
@@ -141,7 +141,7 @@ static bool check_features(RAsm *a, cs_insn *insn) {
 	return true;
 }
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_m68k_cs,
@@ -160,7 +160,7 @@ RAsmPlugin r_asm_plugin_m68k_cs = {
 	.endian = R_SYS_ENDIAN_BIG,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_m68k_cs,

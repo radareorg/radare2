@@ -19,7 +19,7 @@ static void de_bruijn_seq(int prenecklace_len_t, int lyndon_prefix_len_p, int or
 	}
 	if (prenecklace_len_t > order) {
 		if (order % lyndon_prefix_len_p == 0) {
-			for (j = 1; j <= lyndon_prefix_len_p; ++j) {
+			for (j = 1; j <= lyndon_prefix_len_p; j++) {
 				sequence[strlen(sequence)] = charset[prenecklace_a[j]];
 				if (strlen (sequence) == maxlen) {
 					return;
@@ -32,7 +32,7 @@ static void de_bruijn_seq(int prenecklace_len_t, int lyndon_prefix_len_p, int or
 		de_bruijn_seq(prenecklace_len_t + 1, lyndon_prefix_len_p, order, maxlen,
 				size, prenecklace_a, sequence, charset);
 		for (j = prenecklace_a[prenecklace_len_t - lyndon_prefix_len_p] + 1;
-				j < size; ++j) {
+				j < size; j++) {
 			prenecklace_a[prenecklace_len_t] = j;
 			de_bruijn_seq (prenecklace_len_t + 1, prenecklace_len_t, order, maxlen,
 					size, prenecklace_a, sequence, charset);
@@ -118,7 +118,7 @@ R_API int r_debruijn_offset(ut64 value, bool is_big_endian) {
 		return -1;
 	}
 
-	for (j = 0; j < 2 && retval == -1; ++j) {
+	for (j = 0; j < 2 && retval == -1; j++) {
 		pattern = r_debruijn_pattern (lens[j], 0, debruijn_charset);
 
 		buf[8] = '\0';

@@ -2,7 +2,7 @@
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone/capstone.h>
+#include <capstone.h>
 #include "../arch/ppc/libvle/vle.h"
 #include "../arch/ppc/libps/libps.h"
 
@@ -122,7 +122,7 @@ RAsmPlugin r_asm_plugin_ppc_cs = {
 	.disassemble = &disassemble,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_ppc_cs,

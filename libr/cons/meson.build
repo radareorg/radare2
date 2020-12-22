@@ -3,28 +3,31 @@ r_cons_sources = [
   'canvas.c',
   'canvas_line.c',
   'cons.c',
+  'html.c',
   # 'dietline.c',
   'editor.c',
   'grep.c',
   'hud.c',
   'input.c',
   'less.c',
+  'stiv.c',
   'line.c',
   'more.c',
   'output.c',
   'pager.c',
   'pal.c',
-  'pipe.c',
+  'cpipe.c',
   'rgb.c',
-  'utf8.c'
+  'cutf8.c'
 ]
 
 r_cons = library('r_cons', r_cons_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
-  dependencies: [r_util_dep, sdb_dep],
+  dependencies: [r_util_dep],
   install: true,
   implicit_include_directories: false,
+  install_rpath: rpath_lib,
   soversion: r2_libversion
 )
 
@@ -36,6 +39,7 @@ pkgconfig_mod.generate(r_cons,
   version: r2_version,
   name: 'r_cons',
   filebase: 'r_cons',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util'
   ],

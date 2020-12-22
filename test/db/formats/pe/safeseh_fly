@@ -1,0 +1,6 @@
+NAME=PE: corkami safeseh_fly.exe - open
+FILE=bins/pe/safeseh_fly.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN

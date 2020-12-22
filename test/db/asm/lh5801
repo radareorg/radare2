@@ -1,0 +1,167 @@
+d "adc #(1234h)" fda31234
+d "adc #(x)" fd03
+d "adc (1234h)" a31234
+d "adc (x)" 03
+d "adc xh" 82
+d "adc xl" 02
+d "adi #(1234h), 56h" fdef123456
+d "adi #(x), 12h" fd4f12
+d "adi (1234h), 56h" ef123456
+d "adi (x), 12h" 4f12
+d "adi a, 12h" b312
+d "adr x" fdca
+d "aex" f1
+d "am0" fdce
+d "am1" fdde
+d "and #(1234h)" fda91234
+d "and #(x)" fd09
+d "and (1234h)" a91234
+d "and (x)" 09
+d "ani #(3456h), 78h" fde9345678
+d "ani #(x), 12h" fd4912
+d "ani (3456h), 78h" e9345678
+d "ani (x), 12h" 4912
+d "ani a, 12h" b912
+d "atp" fdcc
+d "att" fdec
+d "bch +12h" 8e12
+d "bch -34h" 9e34
+d "bcr +12h" 8112
+d "bcr -12h" 9112
+d "bcs +12h" 8312
+d "bcs -12h" 9312
+d "bhr +12h" 8512
+d "bhr -12h" 9512
+d "bhs +12h" 8712
+d "bhs -12h" 9712
+d "bii #(3456h), 12h" fded345612
+d "bii #(x), 12h" fd4d12
+d "bii (3456h), 12h" ed345612
+d "bii (x), 12h" 4d12
+d "bii a, 12h" bf12
+d "bit #(1234h)" fdaf1234
+d "bit #(x)" fd0f
+d "bit (1234h)" af1234
+d "bit (x)" 0f
+d "bvr +12h" 8d12
+d "bvr -12h" 9d12
+d "bvs +12h" 8f12
+d "bvs -12h" 9f12
+d "bzr +12h" 8912
+d "bzr -12h" 9912
+d "bzs +12h" 8b12
+d "bzs -12h" 9b12
+d "cdv" fd8e
+d "cin" f7
+d "cpa #(1234h)" fda71234
+d "cpa #(x)" fd07
+d "cpa (1234h)" a71234
+d "cpa (x)" 07
+d "cpa xh" 86
+d "cpa xl" 06
+d "cpi a, 12h" b712
+d "cpi xh, 12h" 4c12
+d "cpi xl, 12h" 4e12
+d "dca #(y)" fd9c
+d "dca (y)" 9c
+d "dcs #(x)" fd0c
+d "dcs (x)" 0c
+d "dec a" df
+d "dec u" 66
+d "dec uh" fd62
+d "dec ul" 62
+d "eai 12h" bd12
+d "eor #(1234h)" fdad1234
+d "eor #(x)" fd0d
+d "eor (1234h)" ad1234
+d "eor (x)" 0d
+d "hlt" fdb1
+d "inc a" dd
+d "inc u" 64
+d "inc uh" fd60
+d "inc ul" 60
+d "ita" fdba
+d "jmp 1234h" ba1234
+d "lda #(1234h)" fda51234
+d "lda #(x)" fd05
+d "lda (1234h)" a51234
+d "lda (x)" 05
+d "lda xh" 84
+d "lda xl" 04
+d "lde x" 47
+d "ldi a, 12h" b512
+d "ldi xh, 12h" 4812
+d "ldi xl, 12h" 4a12
+d "ldx p" fd58
+d "ldx s" fd48
+d "ldx x" fd08
+d "lin x" 45
+d "lop 30h" 8830
+d "nop" 38
+d "off" fd4c
+d "ora #(1234h)" fdab1234
+d "ora #(x)" fd0b
+d "ora (1234h)" ab1234
+d "ora (x)" 0b
+d "ori #(1234h), 56h" fdeb123456
+d "ori #(x), 12h" fd4b12
+d "ori (1234h), 56h" eb123456
+d "ori (x), 12h" 4b12
+d "ori a, 12h" bb12
+d "pop a" fd8a
+d "pop y" fd1a
+d "psh a" fdc8
+d "psh y" fd98
+d "rdp" fdc0
+d "rec" f9
+d "rie" fdbe
+d "ror" d1
+d "rpu" e3
+d "rpv" b8
+d "rti" 8a
+d "rtn" 9a
+d "sbc #(1234h)" fda11234
+d "sbc #(x)" fd01
+d "sbc (1234h)" a11234
+d "sbc (x)" 01
+d "sbc xh" 80
+d "sbc xl" 00
+d "sbi a, 12h" b112
+d "sde x" 43
+d "sdp" fdc1
+d "sec" fb
+d "shl" d9
+d "shr" d5
+d "sie" fd81
+d "sin x" 41
+d "sjp 1234h" be1234
+d "spu" e1
+d "spv" a8
+d "sta #(3456h)" fdae3456
+d "sta #(x)" fd0e
+d "sta (3456h)" ae3456
+d "sta (x)" 0e
+d "sta xh" 08
+d "sta xl" 0a
+d "stx p" fd5e
+d "stx s" fd4e
+d "stx x" fd4a
+d "tin" f5
+d "tta" fdaa
+d "vcr 12h" c112
+d "vcs 12h" c312
+d "vej c0h" c0
+d "vej c2h" c2
+d "vhr 12h" c512
+d "vhs 12h" c712
+d "vvr 12h" cd12
+d "vvs 12h" cf12
+d "vzr 12h" c912
+d "vzs 12h" cb12
+dB "drl #(x)" fdd7
+dB "drl (x)" d7
+dB "drr #(x)" fdd3
+dB "drr (x)" d3
+dB "ldi s, 1234h" aa1234
+dB "rol" d8
+dB "vmj 12h" cd12

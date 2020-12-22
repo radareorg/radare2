@@ -8,32 +8,14 @@
 
 #include "mdmp/mdmp.h"
 
-/* FIXME: This is already in r_bin.c but its static, why?! */
-static void r_bbin_mem_free(void *data) {
-	RBinMem *mem = (RBinMem *)data;
-	if (mem && mem->mirrors) {
-		mem->mirrors->free = r_bbin_mem_free;
-		r_list_free (mem->mirrors);
-		mem->mirrors = NULL;
-	}
-	free (mem);
-}
-
-static ut64 baddr(RBinFile *bf) {
-	return 0LL;
-}
-
 static Sdb *get_sdb(RBinFile *bf) {
-	if (!bf || !bf->o) {
-		return NULL;
-	}
+	r_return_val_if_fail (bf && bf->o, NULL);
 	struct r_bin_mdmp_obj *obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
 	return (obj && obj->kv) ? obj->kv: NULL;
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	r_bin_mdmp_free ((struct r_bin_mdmp_obj*)bf->o->bin_obj);
-	return true;
 }
 
 static RList* entries(RBinFile *bf) {
@@ -84,7 +66,7 @@ static RBinInfo *info(RBinFile *bf) {
 	// FIXME: Needed to fix issue with PLT resolving. Can we get away with setting this for all children bins?
 	ret->has_lit = true;
 
-	sdb_set (bf->sdb, "mdmp.flags", sdb_fmt ("0x%08x", obj->hdr->flags), 0);
+	sdb_set (bf->sdb, "mdmp.flags", sdb_fmt ("0x%08"PFMT64x, obj->hdr->flags), 0);
 	sdb_num_set (bf->sdb, "mdmp.streams", obj->hdr->number_of_streams, 0);
 
 	if (obj->streams.system_info) {
@@ -166,7 +148,7 @@ static RList* libs(RBinFile *bf) {
 			return ret;
 		}
 		for (i = 0; !libs[i].last; i++) {
-			ptr = r_str_newf ("[0x%.08x] - %s", pe32_bin->vaddr, libs[i].name);
+			ptr = r_str_newf ("[0x%.08" PFMT64x "] - %s", pe32_bin->vaddr, libs[i].name);
 			r_list_append (ret, ptr);
 		}
 		free (libs);
@@ -176,7 +158,7 @@ static RList* libs(RBinFile *bf) {
 			return ret;
 		}
 		for (i = 0; !libs[i].last; i++) {
-			ptr = r_str_newf ("[0x%.08x] - %s", pe64_bin->vaddr, libs[i].name);
+			ptr = r_str_newf ("[0x%.08"PFMT64x"] - %s", pe64_bin->vaddr, libs[i].name);
 			r_list_append (ret, ptr);
 		}
 		free (libs);
@@ -184,50 +166,15 @@ static RList* libs(RBinFile *bf) {
 	return ret;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	RBuffer *tbuf;
-	struct r_bin_mdmp_obj *res;
-
-	if (!buf || !sz || sz == UT64_MAX) {
-		return false;
-	}
-
-	tbuf = r_buf_new_with_bytes (buf, sz);
-	if (!tbuf) {
-		return false;
-	}
-
-	if ((res = r_bin_mdmp_new_buf (tbuf))) {
-		sdb_ns_set (sdb, "info", res->kv);
-	}
-	r_buf_free (tbuf);
-
-	if (res) {
-		*bin_obj = res;
-		return true;
-	} else {
-		return false;
-	}
-}
-
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	r_return_val_if_fail (buf, NULL);
-
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	r_return_val_if_fail (buf, false);
 	struct r_bin_mdmp_obj *res = r_bin_mdmp_new_buf (buf);
 	if (res) {
 		sdb_ns_set (sdb, "info", res->kv);
+		*bin_obj = res;
+		return true;
 	}
-	return res;
-}
-
-static bool load(RBinFile *bf) {
-	if (!bf || !bf->o) {
-		return false;
-	}
-
-	ut64 sz;
-	const ut8 *bytes = r_buf_buffer (bf->buf, &sz);
-	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
+	return false;
 }
 
 static RList *sections(RBinFile *bf) {
@@ -367,7 +314,7 @@ static RList *mem(RBinFile *bf) {
 	ut64 index;
 	ut64 state, type, a_protect;
 
-	if (!(ret = r_list_newf (r_bbin_mem_free))) {
+	if (!(ret = r_list_newf (r_bin_mem_free))) {
 		return NULL;
 	}
 
@@ -391,7 +338,9 @@ static RList *mem(RBinFile *bf) {
 			a_protect = mem_info->allocation_protect;
 		}
 		location = &(module->memory);
-		ptr->name = strdup (sdb_fmt ("paddr=0x%08x state=0x%08x type=0x%08x allocation_protect=0x%08x Memory_Section", location->rva, state, type, a_protect));
+		ptr->name = strdup (sdb_fmt ("paddr=0x%08"PFMT32x" state=0x%08"PFMT64x
+					" type=0x%08"PFMT64x" allocation_protect=0x%08"PFMT64x" Memory_Section",
+					location->rva, state, type, a_protect));
 
 		r_list_append (ret, ptr);
 	}
@@ -412,7 +361,9 @@ static RList *mem(RBinFile *bf) {
 			type = mem_info->type;
 			a_protect = mem_info->allocation_protect;
 		}
-		ptr->name = strdup (sdb_fmt ("paddr=0x%08x state=0x%08x type=0x%08x allocation_protect=0x%08x Memory_Section", index, state, type, a_protect));
+		ptr->name = strdup (sdb_fmt ("paddr=0x%08"PFMT64x" state=0x%08"PFMT64x
+					" type=0x%08"PFMT64x" allocation_protect=0x%08"PFMT64x" Memory_Section",
+					index, state, type, a_protect));
 
 		index += module64->data_size;
 
@@ -493,45 +444,45 @@ static RList* symbols(RBinFile *bf) {
 	obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
 
 	r_list_foreach (obj->pe32_bins, it, pe32_bin) {
-		list = Pe32_r_bin_mdmp_pe_get_symbols (pe32_bin);
+		list = Pe32_r_bin_mdmp_pe_get_symbols (bf->rbin, pe32_bin);
 		r_list_join (ret, list);
 		r_list_free (list);
 	}
 	r_list_foreach (obj->pe64_bins, it, pe64_bin) {
-		list = Pe64_r_bin_mdmp_pe_get_symbols (pe64_bin);
+		list = Pe64_r_bin_mdmp_pe_get_symbols (bf->rbin, pe64_bin);
 		r_list_join (ret, list);
 		r_list_free (list);
 	}
 	return ret;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	return buf && (length > sizeof (struct minidump_header))
-		&& (!memcmp (buf, MDMP_MAGIC, 6));
+static bool check_buffer(RBuffer *b) {
+	ut8 magic[6];
+	if (r_buf_read_at (b, 0, magic, sizeof (magic)) == 6) {
+		return !memcmp (magic, MDMP_MAGIC, 6);
+	}
+	return false;
 }
 
 RBinPlugin r_bin_plugin_mdmp = {
 	.name = "mdmp",
 	.desc = "Minidump format r_bin plugin",
 	.license = "LGPL3",
-	.baddr = &baddr,
-	.check_bytes = &check_bytes,
 	.destroy = &destroy,
 	.entries = entries,
 	.get_sdb = &get_sdb,
 	.imports = &imports,
 	.info = &info,
 	.libs = &libs,
-	.load = &load,
-	.load_bytes = &load_bytes,
 	.load_buffer = &load_buffer,
+	.check_buffer = &check_buffer,
 	.mem = &mem,
 	.relocs = &relocs,
 	.sections = &sections,
 	.symbols = &symbols,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_mdmp,

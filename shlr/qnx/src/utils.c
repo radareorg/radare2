@@ -149,7 +149,7 @@ extract_signed_integer (const ut8 *addr, int len, int be) {
 		p = startaddr;
 		/* Do the sign extension once at the start.  */
 		retval = ((LONGEST)*p ^ 0x80) - 0x80;
-		for (++p; p < endaddr; ++p)
+		for (++p; p < endaddr; p++)
 			retval = (retval << 8) | *p;
 	} else {
 		p = endaddr - 1;

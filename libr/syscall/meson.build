@@ -7,11 +7,11 @@ r_syscall = library('r_syscall', r_syscall_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
   dependencies: [
-    r_util_dep,
-    sdb_dep
+    r_util_dep
   ],
   install: true,
   implicit_include_directories: false,
+  install_rpath: rpath_lib,
   soversion: r2_libversion
 )
 
@@ -23,6 +23,7 @@ pkgconfig_mod.generate(r_syscall,
   version: r2_version,
   name: 'r_syscall',
   filebase: 'r_syscall',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util'
   ],

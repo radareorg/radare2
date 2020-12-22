@@ -144,7 +144,7 @@ SDB_API void sdb_file(Sdb* s, const char *dir) {
 	}
 }
 
-static int sdb_merge_cb(void *user, const char *k, const char *v) {
+static bool sdb_merge_cb(void *user, const char *k, const char *v) {
 	sdb_set (user, k, v, 0);
 	return true;
 }
@@ -228,9 +228,8 @@ SDB_API bool sdb_free(Sdb* s) {
 }
 
 SDB_API const char *sdb_const_get_len(Sdb* s, const char *key, int *vlen, ut32 *cas) {
-	ut32 pos, len, keylen;
+	ut32 pos, len;
 	ut64 now = 0LL;
-	SdbKv *kv;
 	bool found;
 
 	if (cas) {
@@ -243,10 +242,10 @@ SDB_API const char *sdb_const_get_len(Sdb* s, const char *key, int *vlen, ut32 *
 		return NULL;
 	}
 	// TODO: optimize, iterate once
-	keylen = strlen (key);
+	size_t keylen = strlen (key);
 
 	/* search in memory */
-	kv = (SdbKv*) sdb_ht_find_kvp (s->ht, key, &found);
+	SdbKv *kv = (SdbKv*) sdb_ht_find_kvp (s->ht, key, &found);
 	if (found) {
 		if (!sdbkv_value (kv) || !*sdbkv_value (kv)) {
 			return NULL;
@@ -369,13 +368,12 @@ SDB_API int sdb_add(Sdb* s, const char *key, const char *val, ut32 cas) {
 SDB_API bool sdb_exists(Sdb* s, const char *key) {
 	ut32 pos;
 	char ch;
-	SdbKv *kv;
 	bool found;
 	int klen = strlen (key) + 1;
 	if (!s) {
 		return false;
 	}
-	kv = (SdbKv*)sdb_ht_find_kvp (s->ht, key, &found);
+	SdbKv *kv = (SdbKv*)sdb_ht_find_kvp (s->ht, key, &found);
 	if (found && kv) {
 		char *v = sdbkv_value (kv);
 		return v && *v;
@@ -637,7 +635,7 @@ SDB_API int sdb_set(Sdb* s, const char *key, const char *val, ut32 cas) {
 	return sdb_set_internal (s, key, (char*)val, 0, cas);
 }
 
-static int sdb_foreach_list_cb(void *user, const char *k, const char *v) {
+static bool sdb_foreach_list_cb(void *user, const char *k, const char *v) {
 	SdbList *list = (SdbList *)user;
 	SdbKv *kv = R_NEW0 (SdbKv);
 	/* seems like some k/v are constructed in the stack and cant be used after returning */
@@ -666,7 +664,7 @@ struct foreach_list_filter_t {
 	SdbList *list;
 };
 
-static int sdb_foreach_list_filter_cb(void *user, const char *k, const char *v) {
+static bool sdb_foreach_list_filter_cb(void *user, const char *k, const char *v) {
 	struct foreach_list_filter_t *u = (struct foreach_list_filter_t *)user;
 	SdbList *list = u->list;
 	SdbKv *kv = NULL;
@@ -683,10 +681,10 @@ static int sdb_foreach_list_filter_cb(void *user, const char *k, const char *v) 
 		}
 		ls_append (list, kv);
 	}
-	return 1;
+	return true;
  err:
 	sdbkv_free (kv);
-	return 0;
+	return false;
 }
 
 SDB_API SdbList *sdb_foreach_list_filter(Sdb* s, SdbForeachCallback filter, bool sorted) {
@@ -711,7 +709,7 @@ typedef struct {
 	bool single;
 } _match_sdb_user;
 
-static int sdb_foreach_match_cb(void *user, const char *k, const char *v) {
+static bool sdb_foreach_match_cb(void *user, const char *k, const char *v) {
 	_match_sdb_user *o = (_match_sdb_user*)user;
 	SdbKv tkv = { .base.key = (char*)k, .base.value = (char*)v };
 	if (sdbkv_match (&tkv, o->expr)) {
@@ -720,22 +718,16 @@ static int sdb_foreach_match_cb(void *user, const char *k, const char *v) {
 		kv->base.value = strdup (v);
 		ls_append (o->list, kv);
 		if (o->single) {
-			return 0;
+			return false;
 		}
 	}
-	return 1;
+	return true;
 }
 
 SDB_API SdbList *sdb_foreach_match(Sdb* s, const char *expr, bool single) {
 	SdbList *list = ls_newf ((SdbListFree)sdbkv_free);
 	_match_sdb_user o = { expr, list, single };
 	sdb_foreach (s, sdb_foreach_match_cb, &o);
-#if 0
-	// TODO. add sorted ? wtf
-	if (sorted) {
-		ls_sort (list, __cmp_asc);
-	}
-#endif
 	return list;
 }
 
@@ -752,8 +744,7 @@ static bool sdb_foreach_end(Sdb *s, bool result) {
 	return result;
 }
 
-static bool sdb_foreach_cdb(Sdb *s, SdbForeachCallback cb,
-			     SdbForeachCallback cb2, void *user) {
+static bool sdb_foreach_cdb(Sdb *s, SdbForeachCallback cb, SdbForeachCallback cb2, void *user) {
 	char *v = NULL;
 	char k[SDB_MAX_KEY] = {0};
 	bool found;
@@ -766,8 +757,8 @@ static bool sdb_foreach_cdb(Sdb *s, SdbForeachCallback cb,
 				if (!cb (user, sdbkv_key (kv), sdbkv_value (kv))) {
 					return false;
 				}
-				if (cb2) {
-					cb2 (user, k, sdbkv_value (kv));
+				if (cb2 && !cb2 (user, k, sdbkv_value (kv))) {
+					return false;
 				}
 			}
 		} else {
@@ -782,12 +773,11 @@ static bool sdb_foreach_cdb(Sdb *s, SdbForeachCallback cb,
 }
 
 SDB_API bool sdb_foreach(Sdb* s, SdbForeachCallback cb, void *user) {
-	bool result;
 	if (!s) {
 		return false;
 	}
 	s->depth++;
-	result = sdb_foreach_cdb (s, cb, NULL, user);
+	bool result = sdb_foreach_cdb (s, cb, NULL, user);
 	if (!result) {
 		return sdb_foreach_end (s, false);
 	}
@@ -809,7 +799,7 @@ SDB_API bool sdb_foreach(Sdb* s, SdbForeachCallback cb, void *user) {
 	return sdb_foreach_end (s, true);
 }
 
-static int _insert_into_disk(void *user, const char *key, const char *value) {
+static bool _insert_into_disk(void *user, const char *key, const char *value) {
 	Sdb *s = (Sdb *)user;
 	if (s) {
 		sdb_disk_insert (s, key, value);
@@ -818,7 +808,7 @@ static int _insert_into_disk(void *user, const char *key, const char *value) {
 	return false;
 }
 
-static int _remove_afer_insert(void *user, const char *k, const char *v) {
+static bool _remove_afer_insert(void *user, const char *k, const char *v) {
 	Sdb *s = (Sdb *)user;
 	if (s) {
 		sdb_ht_delete (s->ht, k);
@@ -947,7 +937,7 @@ SDB_API bool sdb_dump_dupnext(Sdb* s, char *key, char **value, int *_vlen) {
 	}
 	if (value) {
 		*value = 0;
-		if (vlen >= SDB_MIN_VALUE && vlen < SDB_MAX_VALUE) {
+		if (vlen < SDB_MAX_VALUE) {
 			*value = malloc (vlen + 10);
 			if (!*value) {
 				return false;
@@ -1105,7 +1095,7 @@ SDB_API void sdb_config(Sdb *s, int options) {
 	}
 }
 
-SDB_API int sdb_unlink(Sdb* s) {
+SDB_API bool sdb_unlink(Sdb* s) {
 	sdb_fini (s, 1);
 	return sdb_disk_unlink (s);
 }
@@ -1119,17 +1109,32 @@ SDB_API void sdb_drain(Sdb *s, Sdb *f) {
 	}
 }
 
+static bool copy_foreach_cb(void *user, const char *k, const char *v) {
+	Sdb *dst = user;
+	sdb_set (dst, k, v, 0);
+	return true;
+}
+
+SDB_API void sdb_copy(Sdb *src, Sdb *dst) {
+	sdb_foreach (src, copy_foreach_cb, dst);
+	SdbListIter *it;
+	SdbNs *ns;
+	ls_foreach (src->ns, it, ns) {
+		sdb_copy (ns->sdb, sdb_ns (dst, ns->name, true));
+	}
+}
+
 typedef struct {
 	Sdb *sdb;
 	const char *key;
 } UnsetCallbackData;
 
-static int unset_cb(void *user, const char *k, const char *v) {
+static bool unset_cb(void *user, const char *k, const char *v) {
 	UnsetCallbackData *ucd = user;
 	if (sdb_match (k, ucd->key)) {
 		sdb_unset (ucd->sdb, k, 0);
 	}
-	return 1;
+	return true;
 }
 
 SDB_API int sdb_unset_like(Sdb *s, const char *k) {
@@ -1147,23 +1152,23 @@ typedef struct {
 	int array_size;
 } LikeCallbackData;
 
-static int like_cb(void *user, const char *k, const char *v) {
+static bool like_cb(void *user, const char *k, const char *v) {
 	LikeCallbackData *lcd = user;
 	if (!user) {
-		return 0;
+		return false;
 	}
 	if (k && lcd->key && !sdb_match (k, lcd->key)) {
-		return 1;
+		return true;
 	}
 	if (v && lcd->val && !sdb_match (v, lcd->val)) {
-		return 1;
+		return true;
 	}
 	if (lcd->array) {
 		int idx = lcd->array_index;
 		int newsize = lcd->array_size + sizeof (char*) * 2;
-		const char **newarray = (const char **)realloc (lcd->array, newsize);
+		const char **newarray = (const char **)realloc ((void*)lcd->array, newsize);
 		if (!newarray) {
-			return 0;
+			return false;
 		}
 		lcd->array = newarray;
 		lcd->array_size = newsize;
@@ -1178,7 +1183,7 @@ static int like_cb(void *user, const char *k, const char *v) {
 			lcd->cb (lcd->sdb, k, v);
 		}
 	}
-	return 1;
+	return true;
 }
 
 SDB_API char** sdb_like(Sdb *s, const char *k, const char *v, SdbForeachCallback cb) {

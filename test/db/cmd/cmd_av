@@ -1,0 +1,95 @@
+NAME=av list virtual table
+FILE=bins/elf/analysis/elf-virtualtable
+CMDS=<<EOF
+aaa
+av
+EOF
+EXPECT=<<EOF
+
+Vtable Found at 0x00400ce8
+0x00400ce8 : method.A.greet__
+0x00400cf0 : method.C.printValue__
+
+
+Vtable Found at 0x00400d08
+0x00400d08 : method.A.greet__
+0x00400d10 : method.B.printValue__
+
+
+Vtable Found at 0x00400d28
+0x00400d28 : method.A.greet__
+0x00400d30 : method.A.printValue__
+
+EOF
+RUN
+
+NAME=vtable search msvc x86 with rtti
+FILE=bins/pe/cpp-msvc-x86.exe
+CMDS=<<EOF
+aar
+av
+EOF
+EXPECT=<<EOF
+
+Vtable Found at 0x0041210c
+0x0041210c : No Name found
+
+
+Vtable Found at 0x00412164
+0x00412164 : No Name found
+0x00412168 : No Name found
+
+
+Vtable Found at 0x004121a4
+0x004121a4 : No Name found
+0x004121a8 : No Name found
+
+
+Vtable Found at 0x004121fc
+0x004121fc : No Name found
+
+
+Vtable Found at 0x00412208
+0x00412208 : No Name found
+
+EOF
+RUN
+
+NAME=vtable search msvc x86 without rtti
+FILE=bins/pe/cpp-msvc-nortti-x86.exe
+CMDS=<<EOF
+aar
+av
+EOF
+EXPECT=<<EOF
+
+Vtable Found at 0x0041210c
+0x0041210c : No Name found
+
+
+Vtable Found at 0x00412160
+0x00412160 : No Name found
+0x00412164 : No Name found
+
+
+Vtable Found at 0x0041219c
+0x0041219c : No Name found
+0x004121a0 : No Name found
+
+
+Vtable Found at 0x004121f8
+0x004121f8 : No Name found
+
+EOF
+RUN
+
+NAME=avj
+FILE=bins/elf/analysis/elf-virtualtable
+CMDS=<<EOF
+aaa
+avj
+EOF
+EXPECT=<<EOF
+[{"offset":4197608,"methods":[{"offset":4197064,"name":"method.A.greet__"},{"offset":4197368,"name":"method.C.printValue__"}]},{"offset":4197640,"methods":[{"offset":4197064,"name":"method.A.greet__"},{"offset":4197250,"name":"method.B.printValue__"}]},{"offset":4197672,"methods":[{"offset":4197064,"name":"method.A.greet__"},{"offset":4197108,"name":"method.A.printValue__"}]}]
+EOF
+RUN

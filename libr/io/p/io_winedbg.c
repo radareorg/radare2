@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017-2018 - pancake */
+/* radare - LGPL - Copyright 2017-2019 - pancake */
 
 #include "r_types_base.h"
 #include "r_io.h"
@@ -29,17 +29,20 @@ R_PACKED (struct winedbg_x86_32 {
 });
 
 // TODO: make it vargarg...
-static char *runcmd (const char *cmd) {
+static char *runcmd(const char *cmd) {
 	char buf[4096] = {0};
 	if (cmd) {
 		r_socket_printf (gs, "%s\n", cmd);
 	}
 	int timeout = 1000000;
 	char *str = NULL;
-	r_socket_block_time (gs, 1, timeout);
+	r_socket_block_time (gs, 1, timeout, 0);
 	while (true) {
 		memset (buf, 0, sizeof (buf));
-		r_socket_read (gs, (ut8*)buf, sizeof (buf) - 1); // NULL-terminate the string always
+		int rc = r_socket_read (gs, (ut8*)buf, sizeof (buf) - 1); // NULL-terminate the string always
+		if (rc == -1) {
+			break;
+		}
 		char *promptFound = strstr (buf, "Wine-dbg>");
 		if (promptFound) {
 			*promptFound = 0;
@@ -141,13 +144,14 @@ static int __close(RIODesc *fd) {
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
-	case SEEK_SET:
+	case R_IO_SEEK_SET:
 		io->off = offset;
-		return offset;
-	case SEEK_CUR:
-		return io->off + offset;
-	case SEEK_END:
-		return UT64_MAX;
+		break;
+	case R_IO_SEEK_CUR:
+		io->off += offset;
+		break;
+	case R_IO_SEEK_END:
+		io->off = ST64_MAX;
 	}
 	io->off = offset;
 	return offset;
@@ -187,7 +191,7 @@ static void printcmd (RIO *io, const char *cmd) {
 	free (res);
 }
 
-static struct winedbg_x86_32 regState() {
+static struct winedbg_x86_32 regState(void) {
 	struct winedbg_x86_32 r = {0};
 	char *res = runcmd ("info reg");
 	if (res) {
@@ -224,6 +228,9 @@ static struct winedbg_x86_32 regState() {
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
+	if (!strcmp (cmd, "")) {
+		return NULL;
+	}
 	if (!strncmp (cmd, "?", 1)) {
 		eprintf ("dr  : show registers\n");
 		eprintf ("dr* : show registers as flags\n");
@@ -287,7 +294,7 @@ const char *msg =
 "flg	rf	.1	.202	0\n"\
 "flg	vm	.1	.203	0\n";
 		return strdup (msg);
-	} else if (!strncmp (cmd, "dr*", 2)) {
+	} else if (!strncmp (cmd, "dr*", 3)) {
 		struct winedbg_x86_32 r = regState ();
 		io->cb_printf ("f eip = 0x%08x\n", r.eip);
 		io->cb_printf ("f esp = 0x%08x\n", r.esp);
@@ -308,7 +315,7 @@ const char *msg =
 	} else if (!strncmp (cmd, "dr", 2)) {
 		printcmd (io, "info reg");
 	} else if (!strncmp (cmd, "db ", 3)) {
-		free (runcmd (sdb_fmt ("break *%"PFMT64x, r_num_get (NULL, cmd + 3) || io->off)));
+		free (runcmd (sdb_fmt ("break *%x", r_num_get (NULL, cmd + 3) || io->off)));
 	} else if (!strncmp (cmd, "ds", 2)) {
 		free (runcmd ("stepi"));
 	} else if (!strncmp (cmd, "dc", 2)) {
@@ -370,7 +377,7 @@ RIOPlugin r_io_plugin_winedbg = {
 	.isdbg = true
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_winedbg,

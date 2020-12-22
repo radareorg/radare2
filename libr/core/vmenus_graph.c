@@ -96,7 +96,7 @@ static RList *__refs(RCore *core, ut64 addr) {
 	if (!fcn) {
 		return r;
 	}
-	RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+	RList *refs = r_anal_function_get_refs (fcn);
 	r_list_foreach (refs, iter, ref) {
 		if (ref->type != 'C') {
 			continue;
@@ -156,6 +156,9 @@ static int cmpaddr (const void *_a, const void *_b) {
 
 static int cmpname (const void *_a, const void *_b) {
 	const RCoreVisualViewGraphItem *a = _a, *b = _b;
+	if (!a || !b || !a->name || !b->name) {
+		return 0;
+	}
 	return (int)strcmp (a->name, b->name);
 }
 
@@ -177,8 +180,8 @@ static void __toggleSort (RCoreVisualViewGraph *status) {
 
 static void __reset_status(RCoreVisualViewGraph *status) {
 	status->addr = status->core->offset;
-	status->fcn = r_anal_get_fcn_at (status->core->anal, status->addr, 0);
-	
+	status->fcn = r_anal_get_function_at (status->core->anal, status->addr);
+
 	status->mainCol = __fcns (status->core);
 	__sort (status, status->mainCol);
 	__seek_cursor (status);
@@ -234,13 +237,17 @@ R_API int __core_visual_view_graph_update(RCore *core, RCoreVisualViewGraph *sta
 	r_cons_strcat_at (xrefsColstr, 0, 2, colw, colh);
 	r_cons_strcat_at (mainColstr, colx, 2, colw*2, colh);
 	r_cons_strcat_at (refsColstr, colx * 2, 2, colw, colh);
+
 	char *output = r_core_cmd_strf (core, "pd %d @e:asm.flags=0@ 0x%08"PFMT64x"; pds 256 @ 0x%08"PFMT64x"\n",
-		32, status->addr);
+		32, status->addr, status->addr);
 	int disy = colh + 2;
 	r_cons_strcat_at (output, 10, disy, w, h - disy);
 	free (output);
 	r_cons_flush();
 
+	free (xrefsColstr);
+	free (mainColstr);
+	free (refsColstr);
 	return 0;
 }
 
@@ -316,7 +323,7 @@ R_API int r_core_visual_view_graph(RCore *core) {
 		case '\n':
 			{
 				RCoreVisualViewGraphItem *item = r_list_get_n (status.mainCol, status.cur);
-				r_core_seek (core, item->addr, 1);
+				r_core_seek (core, item->addr, true);
 			}
 			return true;
 			break;
@@ -377,7 +384,7 @@ R_API int r_core_visual_view_graph(RCore *core) {
 				r_cons_set_raw (0);
 				cmd[0]='\0';
 				r_line_set_prompt (":> ");
-				if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) < 0) {
+				if (r_cons_fgets (cmd, sizeof (cmd), 0, NULL) < 0) {
 					cmd[0] = '\0';
 				}
 				r_config_set (core->config, "scr.highlight", cmd);
@@ -396,7 +403,7 @@ R_API int r_core_visual_view_graph(RCore *core) {
 			r_cons_set_raw (0);
 			cmd[0]='\0';
 			r_line_set_prompt (":> ");
-			if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) < 0) {
+			if (r_cons_fgets (cmd, sizeof (cmd), 0, NULL) < 0) {
 				cmd[0] = '\0';
 			}
 			r_core_cmd0 (core, cmd);

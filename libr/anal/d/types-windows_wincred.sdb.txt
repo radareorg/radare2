@@ -1,0 +1,402 @@
+### wincred.h ###
+
+CredDeleteA=func
+func.CredDeleteA.args=3
+func.CredDeleteA.arg.0=LPCSTR,TargetName
+func.CredDeleteA.arg.1=DWORD,Type
+func.CredDeleteA.arg.2=DWORD,Flags
+func.CredDeleteA.ret=BOOL
+
+CredDeleteW=func
+func.CredDeleteW.args=3
+func.CredDeleteW.arg.0=LPCWSTR,TargetName
+func.CredDeleteW.arg.1=DWORD,Type
+func.CredDeleteW.arg.2=DWORD,Flags
+func.CredDeleteW.ret=BOOL
+
+CredEnumerateA=func
+func.CredEnumerateA.args=4
+func.CredEnumerateA.arg.0=LPCSTR,Filter
+func.CredEnumerateA.arg.1=DWORD,Flags
+func.CredEnumerateA.arg.2=DWORD *,Count
+func.CredEnumerateA.arg.3=PCREDENTIALA **,Credential
+func.CredEnumerateA.ret=BOOL
+
+CredEnumerateW=func
+func.CredEnumerateW.args=4
+func.CredEnumerateW.arg.0=LPCWSTR,Filter
+func.CredEnumerateW.arg.1=DWORD,Flags
+func.CredEnumerateW.arg.2=DWORD *,Count
+func.CredEnumerateW.arg.3=PCREDENTIALW **,Credential
+func.CredEnumerateW.ret=BOOL
+
+CredFindBestCredentialA=func
+func.CredFindBestCredentialA.args=4
+func.CredFindBestCredentialA.arg.0=LPCSTR,TargetName
+func.CredFindBestCredentialA.arg.1=DWORD,Type
+func.CredFindBestCredentialA.arg.2=DWORD,Flags
+func.CredFindBestCredentialA.arg.3=PCREDENTIALA *,Credential
+func.CredFindBestCredentialA.ret=BOOL
+
+CredFindBestCredentialW=func
+func.CredFindBestCredentialW.args=4
+func.CredFindBestCredentialW.arg.0=LPCWSTR,TargetName
+func.CredFindBestCredentialW.arg.1=DWORD,Type
+func.CredFindBestCredentialW.arg.2=DWORD,Flags
+func.CredFindBestCredentialW.arg.3=PCREDENTIALW *,Credential
+func.CredFindBestCredentialW.ret=BOOL
+
+CredFree=func
+func.CredFree.args=1
+func.CredFree.arg.0=PVOID,Buffer
+func.CredFree.ret=VOID
+
+CredGetSessionTypes=func
+func.CredGetSessionTypes.args=2
+func.CredGetSessionTypes.arg.0=DWORD,MaximumPersistCount
+func.CredGetSessionTypes.arg.1=LPDWORD,MaximumPersist
+func.CredGetSessionTypes.ret=BOOL
+
+CredGetTargetInfoA=func
+func.CredGetTargetInfoA.args=3
+func.CredGetTargetInfoA.arg.0=LPCSTR,TargetName
+func.CredGetTargetInfoA.arg.1=DWORD,Flags
+func.CredGetTargetInfoA.arg.2=PCREDENTIAL_TARGET_INFORMATIONA *,TargetInfo
+func.CredGetTargetInfoA.ret=BOOL
+
+CredGetTargetInfoW=func
+func.CredGetTargetInfoW.args=3
+func.CredGetTargetInfoW.arg.0=LPCWSTR,TargetName
+func.CredGetTargetInfoW.arg.1=DWORD,Flags
+func.CredGetTargetInfoW.arg.2=PCREDENTIAL_TARGET_INFORMATIONW *,TargetInfo
+func.CredGetTargetInfoW.ret=BOOL
+
+CredIsMarshaledCredentialA=func
+func.CredIsMarshaledCredentialA.args=1
+func.CredIsMarshaledCredentialA.arg.0=LPCSTR,MarshaledCredential
+func.CredIsMarshaledCredentialA.ret=BOOL
+
+CredIsMarshaledCredentialW=func
+func.CredIsMarshaledCredentialW.args=1
+func.CredIsMarshaledCredentialW.arg.0=LPCWSTR,MarshaledCredential
+func.CredIsMarshaledCredentialW.ret=BOOL
+
+CredIsProtectedA=func
+func.CredIsProtectedA.args=2
+func.CredIsProtectedA.arg.0=LPSTR,pszProtectedCredentials
+func.CredIsProtectedA.arg.1=CRED_PROTECTION_TYPE *,pProtectionType
+func.CredIsProtectedA.ret=BOOL
+
+CredIsProtectedW=func
+func.CredIsProtectedW.args=2
+func.CredIsProtectedW.arg.0=LPWSTR,pszProtectedCredentials
+func.CredIsProtectedW.arg.1=CRED_PROTECTION_TYPE *,pProtectionType
+func.CredIsProtectedW.ret=BOOL
+
+CredMarshalCredentialA=func
+func.CredMarshalCredentialA.args=3
+func.CredMarshalCredentialA.arg.0=CRED_MARSHAL_TYPE,CredType
+func.CredMarshalCredentialA.arg.1=PVOID,Credential
+func.CredMarshalCredentialA.arg.2=LPSTR *,MarshaledCredential
+func.CredMarshalCredentialA.ret=BOOL
+
+CredMarshalCredentialW=func
+func.CredMarshalCredentialW.args=3
+func.CredMarshalCredentialW.arg.0=CRED_MARSHAL_TYPE,CredType
+func.CredMarshalCredentialW.arg.1=PVOID,Credential
+func.CredMarshalCredentialW.arg.2=LPWSTR *,MarshaledCredential
+func.CredMarshalCredentialW.ret=BOOL
+
+CredPackAuthenticationBufferA=func
+func.CredPackAuthenticationBufferA.args=5
+func.CredPackAuthenticationBufferA.arg.0=DWORD,dwFlags
+func.CredPackAuthenticationBufferA.arg.1=LPSTR,pszUserName
+func.CredPackAuthenticationBufferA.arg.2=LPSTR,pszPassword
+func.CredPackAuthenticationBufferA.arg.3=PBYTE,pPackedCredentials
+func.CredPackAuthenticationBufferA.arg.4=DWORD *,pcbPackedCredentials
+func.CredPackAuthenticationBufferA.ret=BOOL
+
+CredPackAuthenticationBufferW=func
+func.CredPackAuthenticationBufferW.args=5
+func.CredPackAuthenticationBufferW.arg.0=DWORD,dwFlags
+func.CredPackAuthenticationBufferW.arg.1=LPWSTR,pszUserName
+func.CredPackAuthenticationBufferW.arg.2=LPWSTR,pszPassword
+func.CredPackAuthenticationBufferW.arg.3=PBYTE,pPackedCredentials
+func.CredPackAuthenticationBufferW.arg.4=DWORD *,pcbPackedCredentials
+func.CredPackAuthenticationBufferW.ret=BOOL
+
+CredProtectA=func
+func.CredProtectA.args=6
+func.CredProtectA.arg.0=BOOL,fAsSelf
+func.CredProtectA.arg.1=LPSTR,pszCredentials
+func.CredProtectA.arg.2=DWORD,cchCredentials
+func.CredProtectA.arg.3=LPSTR,pszProtectedCredentials
+func.CredProtectA.arg.4=DWORD *,pcchMaxChars
+func.CredProtectA.arg.5=CRED_PROTECTION_TYPE *,ProtectionType
+func.CredProtectA.ret=BOOL
+
+CredProtectW=func
+func.CredProtectW.args=6
+func.CredProtectW.arg.0=BOOL,fAsSelf
+func.CredProtectW.arg.1=LPWSTR,pszCredentials
+func.CredProtectW.arg.2=DWORD,cchCredentials
+func.CredProtectW.arg.3=LPWSTR,pszProtectedCredentials
+func.CredProtectW.arg.4=DWORD *,pcchMaxChars
+func.CredProtectW.arg.5=CRED_PROTECTION_TYPE *,ProtectionType
+func.CredProtectW.ret=BOOL
+
+CredReadA=func
+func.CredReadA.args=4
+func.CredReadA.arg.0=LPCSTR,TargetName
+func.CredReadA.arg.1=DWORD,Type
+func.CredReadA.arg.2=DWORD,Flags
+func.CredReadA.arg.3=PCREDENTIALA *,Credential
+func.CredReadA.ret=BOOL
+
+CredReadDomainCredentialsA=func
+func.CredReadDomainCredentialsA.args=4
+func.CredReadDomainCredentialsA.arg.0=PCREDENTIAL_TARGET_INFORMATIONA,TargetInfo
+func.CredReadDomainCredentialsA.arg.1=DWORD,Flags
+func.CredReadDomainCredentialsA.arg.2=DWORD *,Count
+func.CredReadDomainCredentialsA.arg.3=PCREDENTIALA **,Credential
+func.CredReadDomainCredentialsA.ret=BOOL
+
+CredReadDomainCredentialsW=func
+func.CredReadDomainCredentialsW.args=4
+func.CredReadDomainCredentialsW.arg.0=PCREDENTIAL_TARGET_INFORMATIONW,TargetInfo
+func.CredReadDomainCredentialsW.arg.1=DWORD,Flags
+func.CredReadDomainCredentialsW.arg.2=DWORD *,Count
+func.CredReadDomainCredentialsW.arg.3=PCREDENTIALW **,Credential
+func.CredReadDomainCredentialsW.ret=BOOL
+
+CredReadW=func
+func.CredReadW.args=4
+func.CredReadW.arg.0=LPCWSTR,TargetName
+func.CredReadW.arg.1=DWORD,Type
+func.CredReadW.arg.2=DWORD,Flags
+func.CredReadW.arg.3=PCREDENTIALW *,Credential
+func.CredReadW.ret=BOOL
+
+CredRenameA=func
+func.CredRenameA.args=4
+func.CredRenameA.arg.0=LPCSTR,OldTargetName
+func.CredRenameA.arg.1=LPCSTR,NewTargetName
+func.CredRenameA.arg.2=DWORD,Type
+func.CredRenameA.arg.3=DWORD,Flags
+func.CredRenameA.ret=BOOL
+
+CredRenameW=func
+func.CredRenameW.args=4
+func.CredRenameW.arg.0=LPCWSTR,OldTargetName
+func.CredRenameW.arg.1=LPCWSTR,NewTargetName
+func.CredRenameW.arg.2=DWORD,Type
+func.CredRenameW.arg.3=DWORD,Flags
+func.CredRenameW.ret=BOOL
+
+CredUICmdLinePromptForCredentialsA=func
+func.CredUICmdLinePromptForCredentialsA.args=9
+func.CredUICmdLinePromptForCredentialsA.arg.0=PCSTR,pszTargetName
+func.CredUICmdLinePromptForCredentialsA.arg.1=PCtxtHandle,pContext
+func.CredUICmdLinePromptForCredentialsA.arg.2=DWORD,dwAuthError
+func.CredUICmdLinePromptForCredentialsA.arg.3=PSTR,UserName
+func.CredUICmdLinePromptForCredentialsA.arg.4=ULONG,ulUserBufferSize
+func.CredUICmdLinePromptForCredentialsA.arg.5=PSTR,pszPassword
+func.CredUICmdLinePromptForCredentialsA.arg.6=ULONG,ulPasswordBufferSize
+func.CredUICmdLinePromptForCredentialsA.arg.7=PBOOL,pfSave
+func.CredUICmdLinePromptForCredentialsA.arg.8=DWORD,dwFlags
+func.CredUICmdLinePromptForCredentialsA.ret=DWORD
+
+CredUICmdLinePromptForCredentialsW=func
+func.CredUICmdLinePromptForCredentialsW.args=9
+func.CredUICmdLinePromptForCredentialsW.arg.0=PCWSTR,pszTargetName
+func.CredUICmdLinePromptForCredentialsW.arg.1=PCtxtHandle,pContext
+func.CredUICmdLinePromptForCredentialsW.arg.2=DWORD,dwAuthError
+func.CredUICmdLinePromptForCredentialsW.arg.3=PWSTR,UserName
+func.CredUICmdLinePromptForCredentialsW.arg.4=ULONG,ulUserBufferSize
+func.CredUICmdLinePromptForCredentialsW.arg.5=PWSTR,pszPassword
+func.CredUICmdLinePromptForCredentialsW.arg.6=ULONG,ulPasswordBufferSize
+func.CredUICmdLinePromptForCredentialsW.arg.7=PBOOL,pfSave
+func.CredUICmdLinePromptForCredentialsW.arg.8=DWORD,dwFlags
+func.CredUICmdLinePromptForCredentialsW.ret=DWORD
+
+CredUIConfirmCredentialsA=func
+func.CredUIConfirmCredentialsA.args=2
+func.CredUIConfirmCredentialsA.arg.0=PCSTR,pszTargetName
+func.CredUIConfirmCredentialsA.arg.1=BOOL,bConfirm
+func.CredUIConfirmCredentialsA.ret=DWORD
+
+CredUIConfirmCredentialsW=func
+func.CredUIConfirmCredentialsW.args=2
+func.CredUIConfirmCredentialsW.arg.0=PCWSTR,pszTargetName
+func.CredUIConfirmCredentialsW.arg.1=BOOL,bConfirm
+func.CredUIConfirmCredentialsW.ret=DWORD
+
+CredUIParseUserNameA=func
+func.CredUIParseUserNameA.args=5
+func.CredUIParseUserNameA.arg.0=PCSTR,userName
+func.CredUIParseUserNameA.arg.1=CHAR *,user
+func.CredUIParseUserNameA.arg.2=ULONG,userBufferSize
+func.CredUIParseUserNameA.arg.3=CHAR *,domain
+func.CredUIParseUserNameA.arg.4=ULONG,domainBufferSize
+func.CredUIParseUserNameA.ret=DWORD
+
+CredUIParseUserNameW=func
+func.CredUIParseUserNameW.args=5
+func.CredUIParseUserNameW.arg.0=PCWSTR,UserName
+func.CredUIParseUserNameW.arg.1=WCHAR *,user
+func.CredUIParseUserNameW.arg.2=ULONG,userBufferSize
+func.CredUIParseUserNameW.arg.3=WCHAR *,domain
+func.CredUIParseUserNameW.arg.4=ULONG,domainBufferSize
+func.CredUIParseUserNameW.ret=DWORD
+
+CredUIPromptForCredentialsA=func
+func.CredUIPromptForCredentialsA.args=10
+func.CredUIPromptForCredentialsA.arg.0=PCREDUI_INFOA,pUiInfo
+func.CredUIPromptForCredentialsA.arg.1=PCSTR,pszTargetName
+func.CredUIPromptForCredentialsA.arg.2=PCtxtHandle,pContext
+func.CredUIPromptForCredentialsA.arg.3=DWORD,dwAuthError
+func.CredUIPromptForCredentialsA.arg.4=PSTR,pszUserName
+func.CredUIPromptForCredentialsA.arg.5=ULONG,ulUserNameBufferSize
+func.CredUIPromptForCredentialsA.arg.6=PSTR,pszPassword
+func.CredUIPromptForCredentialsA.arg.7=ULONG,ulPasswordBufferSize
+func.CredUIPromptForCredentialsA.arg.8=BOOL *,save
+func.CredUIPromptForCredentialsA.arg.9=DWORD,dwFlags
+func.CredUIPromptForCredentialsA.ret=DWORD
+
+CredUIPromptForCredentialsW=func
+func.CredUIPromptForCredentialsW.args=10
+func.CredUIPromptForCredentialsW.arg.0=PCREDUI_INFOW,pUiInfo
+func.CredUIPromptForCredentialsW.arg.1=PCWSTR,pszTargetName
+func.CredUIPromptForCredentialsW.arg.2=PCtxtHandle,pContext
+func.CredUIPromptForCredentialsW.arg.3=DWORD,dwAuthError
+func.CredUIPromptForCredentialsW.arg.4=PWSTR,pszUserName
+func.CredUIPromptForCredentialsW.arg.5=ULONG,ulUserNameBufferSize
+func.CredUIPromptForCredentialsW.arg.6=PWSTR,pszPassword
+func.CredUIPromptForCredentialsW.arg.7=ULONG,ulPasswordBufferSize
+func.CredUIPromptForCredentialsW.arg.8=BOOL *,save
+func.CredUIPromptForCredentialsW.arg.9=DWORD,dwFlags
+func.CredUIPromptForCredentialsW.ret=DWORD
+
+CredUIPromptForWindowsCredentialsA=func
+func.CredUIPromptForWindowsCredentialsA.args=9
+func.CredUIPromptForWindowsCredentialsA.arg.0=PCREDUI_INFOA,pUiInfo
+func.CredUIPromptForWindowsCredentialsA.arg.1=DWORD,dwAuthError
+func.CredUIPromptForWindowsCredentialsA.arg.2=ULONG *,pulAuthPackage
+func.CredUIPromptForWindowsCredentialsA.arg.3=LPCVOID,pvInAuthBuffer
+func.CredUIPromptForWindowsCredentialsA.arg.4=ULONG,ulInAuthBufferSize
+func.CredUIPromptForWindowsCredentialsA.arg.5=LPVOID *,ppvOutAuthBuffer
+func.CredUIPromptForWindowsCredentialsA.arg.6=ULONG *,pulOutAuthBufferSize
+func.CredUIPromptForWindowsCredentialsA.arg.7=BOOL *,pfSave
+func.CredUIPromptForWindowsCredentialsA.arg.8=DWORD,dwFlags
+func.CredUIPromptForWindowsCredentialsA.ret=DWORD
+
+CredUIPromptForWindowsCredentialsW=func
+func.CredUIPromptForWindowsCredentialsW.args=9
+func.CredUIPromptForWindowsCredentialsW.arg.0=PCREDUI_INFOW,pUiInfo
+func.CredUIPromptForWindowsCredentialsW.arg.1=DWORD,dwAuthError
+func.CredUIPromptForWindowsCredentialsW.arg.2=ULONG *,pulAuthPackage
+func.CredUIPromptForWindowsCredentialsW.arg.3=LPCVOID,pvInAuthBuffer
+func.CredUIPromptForWindowsCredentialsW.arg.4=ULONG,ulInAuthBufferSize
+func.CredUIPromptForWindowsCredentialsW.arg.5=LPVOID *,ppvOutAuthBuffer
+func.CredUIPromptForWindowsCredentialsW.arg.6=ULONG *,pulOutAuthBufferSize
+func.CredUIPromptForWindowsCredentialsW.arg.7=BOOL *,pfSave
+func.CredUIPromptForWindowsCredentialsW.arg.8=DWORD,dwFlags
+func.CredUIPromptForWindowsCredentialsW.ret=DWORD
+
+CredUIReadSSOCredW=func
+func.CredUIReadSSOCredW.args=2
+func.CredUIReadSSOCredW.arg.0=PCWSTR,pszRealm
+func.CredUIReadSSOCredW.arg.1=PWSTR *,ppszUsername
+func.CredUIReadSSOCredW.ret=DWORD
+
+CredUIStoreSSOCredW=func
+func.CredUIStoreSSOCredW.args=4
+func.CredUIStoreSSOCredW.arg.0=PCWSTR,pszRealm
+func.CredUIStoreSSOCredW.arg.1=PCWSTR,pszUsername
+func.CredUIStoreSSOCredW.arg.2=PCWSTR,pszPassword
+func.CredUIStoreSSOCredW.arg.3=BOOL,bPersist
+func.CredUIStoreSSOCredW.ret=DWORD
+
+CredUnPackAuthenticationBufferA=func
+func.CredUnPackAuthenticationBufferA.args=9
+func.CredUnPackAuthenticationBufferA.arg.0=DWORD,dwFlags
+func.CredUnPackAuthenticationBufferA.arg.1=PVOID,pAuthBuffer
+func.CredUnPackAuthenticationBufferA.arg.2=DWORD,cbAuthBuffer
+func.CredUnPackAuthenticationBufferA.arg.3=LPSTR,pszUserName
+func.CredUnPackAuthenticationBufferA.arg.4=DWORD *,pcchlMaxUserName
+func.CredUnPackAuthenticationBufferA.arg.5=LPSTR,pszDomainName
+func.CredUnPackAuthenticationBufferA.arg.6=DWORD *,pcchMaxDomainName
+func.CredUnPackAuthenticationBufferA.arg.7=LPSTR,pszPassword
+func.CredUnPackAuthenticationBufferA.arg.8=DWORD *,pcchMaxPassword
+func.CredUnPackAuthenticationBufferA.ret=BOOL
+
+CredUnPackAuthenticationBufferW=func
+func.CredUnPackAuthenticationBufferW.args=9
+func.CredUnPackAuthenticationBufferW.arg.0=DWORD,dwFlags
+func.CredUnPackAuthenticationBufferW.arg.1=PVOID,pAuthBuffer
+func.CredUnPackAuthenticationBufferW.arg.2=DWORD,cbAuthBuffer
+func.CredUnPackAuthenticationBufferW.arg.3=LPWSTR,pszUserName
+func.CredUnPackAuthenticationBufferW.arg.4=DWORD *,pcchMaxUserName
+func.CredUnPackAuthenticationBufferW.arg.5=LPWSTR,pszDomainName
+func.CredUnPackAuthenticationBufferW.arg.6=DWORD *,pcchMaxDomainName
+func.CredUnPackAuthenticationBufferW.arg.7=LPWSTR,pszPassword
+func.CredUnPackAuthenticationBufferW.arg.8=DWORD *,pcchMaxPassword
+func.CredUnPackAuthenticationBufferW.ret=BOOL
+
+CredUnmarshalCredentialA=func
+func.CredUnmarshalCredentialA.args=3
+func.CredUnmarshalCredentialA.arg.0=LPCSTR,MarshaledCredential
+func.CredUnmarshalCredentialA.arg.1=PCRED_MARSHAL_TYPE,CredType
+func.CredUnmarshalCredentialA.arg.2=PVOID *,Credential
+func.CredUnmarshalCredentialA.ret=BOOL
+
+CredUnmarshalCredentialW=func
+func.CredUnmarshalCredentialW.args=3
+func.CredUnmarshalCredentialW.arg.0=LPCWSTR,MarshaledCredential
+func.CredUnmarshalCredentialW.arg.1=PCRED_MARSHAL_TYPE,CredType
+func.CredUnmarshalCredentialW.arg.2=PVOID *,Credential
+func.CredUnmarshalCredentialW.ret=BOOL
+
+CredUnprotectA=func
+func.CredUnprotectA.args=5
+func.CredUnprotectA.arg.0=BOOL,fAsSelf
+func.CredUnprotectA.arg.1=LPSTR,pszProtectedCredentials
+func.CredUnprotectA.arg.2=DWORD,cchProtectedCredentials
+func.CredUnprotectA.arg.3=LPSTR,pszCredentials
+func.CredUnprotectA.arg.4=DWORD *,pcchMaxChars
+func.CredUnprotectA.ret=BOOL
+
+CredUnprotectW=func
+func.CredUnprotectW.args=5
+func.CredUnprotectW.arg.0=BOOL,fAsSelf
+func.CredUnprotectW.arg.1=LPWSTR,pszProtectedCredentials
+func.CredUnprotectW.arg.2=DWORD,cchProtectedCredentials
+func.CredUnprotectW.arg.3=LPWSTR,pszCredentials
+func.CredUnprotectW.arg.4=DWORD *,pcchMaxChars
+func.CredUnprotectW.ret=BOOL
+
+CredWriteA=func
+func.CredWriteA.args=2
+func.CredWriteA.arg.0=PCREDENTIALA,Credential
+func.CredWriteA.arg.1=DWORD,Flags
+func.CredWriteA.ret=BOOL
+
+CredWriteDomainCredentialsA=func
+func.CredWriteDomainCredentialsA.args=3
+func.CredWriteDomainCredentialsA.arg.0=PCREDENTIAL_TARGET_INFORMATIONA,TargetInfo
+func.CredWriteDomainCredentialsA.arg.1=PCREDENTIALA,Credential
+func.CredWriteDomainCredentialsA.arg.2=DWORD,Flags
+func.CredWriteDomainCredentialsA.ret=BOOL
+
+CredWriteDomainCredentialsW=func
+func.CredWriteDomainCredentialsW.args=3
+func.CredWriteDomainCredentialsW.arg.0=PCREDENTIAL_TARGET_INFORMATIONW,TargetInfo
+func.CredWriteDomainCredentialsW.arg.1=PCREDENTIALW,Credential
+func.CredWriteDomainCredentialsW.arg.2=DWORD,Flags
+func.CredWriteDomainCredentialsW.ret=BOOL
+
+CredWriteW=func
+func.CredWriteW.args=2
+func.CredWriteW.arg.0=PCREDENTIALW,Credential
+func.CredWriteW.arg.1=DWORD,Flags
+func.CredWriteW.ret=BOOL

@@ -1,10 +1,15 @@
 #ifndef R2_TYPES_H
 #define R2_TYPES_H
 
+#undef _FILE_OFFSET_BITS
+#define _FILE_OFFSET_BITS 64
+
 // defines like IS_DIGIT, etc'
 #include "r_util/r_str_util.h"
-#include "r_userconf.h"
+#include <r_userconf.h>
 #include <stddef.h>
+#include <stdlib.h>
+#include <assert.h>
 
 // TODO: fix this to make it crosscompile-friendly: R_SYS_OSTYPE ?
 /* operating system */
@@ -24,11 +29,13 @@
 #define R_MODE_EQUAL 0x080
 
 #define R_IN /* do not use, implicit */
-#define R_OWN /* pointer ownership is transferred */
 #define R_OUT /* parameter is written, not read */
 #define R_INOUT /* parameter is read and written */
-#define R_NONNULL /* nonnull */
+#define R_OWN /* pointer ownership is transferred */
+#define R_BORROW /* pointer ownership is not transferred, it must not be freed by the receiver */
+#define R_NONNULL /* pointer can not be null */
 #define R_NULLABLE /* pointer can be null */
+#define R_DEPRECATE /* should not be used in new code and should/will be removed in the future */
 #define R_IFNULL(x) /* default value for the pointer when null */
 #ifdef __GNUC__
 #define R_UNUSED __attribute__((__unused__))
@@ -64,6 +71,7 @@
 #define R_PERM_PRIV	16
 #define R_PERM_ACCESS	32
 #define R_PERM_CREAT	64
+
 
 // HACK to fix capstone-android-mips build
 #undef mips
@@ -104,10 +112,20 @@
 #define LIBC_HAVE_PLEDGE 0
 #endif
 
+#if __sun
+#define LIBC_HAVE_PRIV_SET 1
+#else
+#define LIBC_HAVE_PRIV_SET 0
+#endif
+
 #ifdef __GNUC__
 #  define UNUSED_FUNCTION(x) __attribute__((__unused__)) UNUSED_ ## x
 #else
 #  define UNUSED_FUNCTION(x) UNUSED_ ## x
+#endif
+
+#ifdef __EMSCRIPTEN__
+# define __UNIX__ 1
 #endif
 
 #ifdef __HAIKU__
@@ -130,7 +148,7 @@
   static inline struct tm *gmtime_r(const time_t *t, struct tm *r) { return (gmtime_s(r, t))? NULL : r; }
 #endif
 
-#if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun)
+#if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun) || defined(__HAIKU__)
   #define __BSD__ 0
   #define __UNIX__ 1
 #endif
@@ -142,7 +160,10 @@
   #ifdef _MSC_VER
   /* Must be included before windows.h */
   #include <winsock2.h>
+  #include <ws2tcpip.h>
+  #ifndef WIN32_LEAN_AND_MEAN
   #define WIN32_LEAN_AND_MEAN
+  #endif
   #endif
   typedef int socklen_t;
   #undef USE_SOCKETS
@@ -191,7 +212,13 @@
   #define FUNC_ATTR_ALWAYS_INLINE
 #endif
 
-#include <r_userconf.h>
+/* printf format check attributes */
+#if defined(__clang__) || defined(__GNUC__)
+#define R_PRINTF_CHECK(fmt, dots) __attribute__ ((format (printf, fmt, dots)))
+#else
+#define R_PRINTF_CHECK(fmt, dots)
+#endif
+
 #include <r_types_base.h>
 
 #undef _FILE_OFFSET_BITS
@@ -237,7 +264,7 @@ extern "C" {
 #define __packed __attribute__((__packed__))
 #endif
 
-typedef int (*PrintfCallback)(const char *str, ...);
+typedef int (*PrintfCallback)(const char *str, ...) R_PRINTF_CHECK(1, 2);
 
 /* compile-time introspection helpers */
 #define CTO(y,z) ((size_t) &((y*)0)->z)
@@ -276,7 +303,7 @@ typedef int (*PrintfCallback)(const char *str, ...);
 #define R_LIB_VERSION_HEADER(x) \
 R_API const char *x##_version(void)
 #define R_LIB_VERSION(x) \
-R_API const char *x##_version() { return "" R2_GITTAP; }
+R_API const char *x##_version(void) { return "" R2_GITTAP; }
 
 #define BITS2BYTES(x) (((x)/8)+(((x)%8)?1:0))
 #define ZERO_FILL(x) memset (&x, 0, sizeof (x))
@@ -342,11 +369,15 @@ static inline void *r_new_copy(int size, void *data) {
 #include <dirent.h>
 #include <unistd.h>
 #include <sys/time.h>
+#ifdef __HAIKU__
+// Original macro cast it to clockid_t
+#undef CLOCK_MONOTONIC
+#define CLOCK_MONOTONIC 0
+#endif
 #endif
 
 #ifndef HAVE_EPRINTF
 #define eprintf(...) fprintf(stderr,__VA_ARGS__)
-#define eprint(x) fprintf(stderr,"%s\n",x)
 #define HAVE_EPRINTF 1
 #endif
 
@@ -364,19 +395,6 @@ static inline void *r_new_copy(int size, void *data) {
 #endif
 #endif
 
-#define R_BETWEEN(x,y,z) (((y)>=(x)) && ((y)<=(z)))
-#define R_ROUND(x,y) ((x)%(y))?(x)+((y)-((x)%(y))):(x)
-#define R_DIM(x,y,z) (((x)<(y))?(y):((x)>(z))?(z):(x))
-#ifndef R_MAX_DEFINED
-#define R_MAX(x,y) (((x)>(y))?(x):(y))
-#define R_MAX_DEFINED
-#endif
-#ifndef R_MIN_DEFINED
-#define R_MIN(x,y) (((x)>(y))?(y):(x))
-#define R_MIN_DEFINED
-#endif
-#define R_ABS(x) (((x)<0)?-(x):(x))
-#define R_BTW(x,y,z) (((x)>=(y))&&((y)<=(z)))?y:x
 
 #define R_FREE(x) { free((void *)x); x = NULL; }
 
@@ -409,6 +427,8 @@ static inline void *r_new_copy(int size, void *data) {
 #define LDBLFMT "Lf"
 #define HHXFMT  "hhx"
 #endif
+
+#define PFMTDPTR "td"
 
 #define PFMT32x "x"
 #define PFMT32d "d"
@@ -474,6 +494,10 @@ static inline void *r_new_copy(int size, void *data) {
 #define R_SYS_ARCH "arc"
 #define R_SYS_BITS R_SYS_BITS_32
 #define R_SYS_ENDIAN 0
+#elif __s390x__
+#define R_SYS_ARCH "sysz"
+#define R_SYS_BITS R_SYS_BITS_64
+#define R_SYS_ENDIAN 1
 #elif __sparc__
 #define R_SYS_ARCH "sparc"
 #define R_SYS_BITS R_SYS_BITS_32
@@ -578,6 +602,8 @@ enum {
 #define R_SYS_OS "openbsd"
 #elif defined (__FreeBSD__) || defined (__FreeBSD_kernel__)
 #define R_SYS_OS "freebsd"
+#elif defined (__HAIKU__)
+#define R_SYS_OS "haiku"
 #else
 #define R_SYS_OS "unknown"
 #endif
@@ -643,5 +669,18 @@ static inline void r_run_call10(void *fcn, void *arg1, void *arg2, void *arg3, v
 #  define container_of(ptr, type, member) ((type *)((char *)(__typeof__(((type *)0)->member) *){ptr} - offsetof(type, member)))
 # endif
 #endif
+
+// reference counter
+typedef int RRef;
+
+#define R_REF_NAME refcount
+#define r_ref(x) x->R_REF_NAME++;
+#define r_ref_init(x) x->R_REF_NAME = 1
+#define r_unref(x,f) { assert (x->R_REF_NAME> 0); if (!--(x->R_REF_NAME)) { f(x); } }
+
+#define R_REF_TYPE RRef R_REF_NAME
+#define R_REF_FUNCTIONS(s, n) \
+static inline void n##_ref(s *x) { x->R_REF_NAME++; } \
+static inline void n##_unref(s *x) { r_unref (x, n##_free); }
 
 #endif // R2_TYPES_H

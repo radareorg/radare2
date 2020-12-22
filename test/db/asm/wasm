@@ -1,0 +1,128 @@
+d "trap" 00
+d "nop" 01
+d "block" 0240
+d "loop" 0340
+d "if" 0440
+d "else" 05
+d "end" 0b
+d "br 0" 0c00
+d "return" 0f
+d "call 3" 1003
+d "call_indirect 0 0" 110000
+d "drop" 1a
+d "select" 1b
+d "get_local 7" 2007
+d "call 1881" 10d90e
+d "get_local 0" 2000
+d "get_local 1" 2001
+d "get_local 2" 2002
+d "i64.const 32" 4220
+aB "i64.const 32" 4220
+d "v128.load o:4 a:2^1" fd000401
+d "i16x8.load8x8_s o:4 a:2^1" fd010401
+d "i16x8.load8x8_u o:4 a:2^1" fd020401
+d "i32x4.load16x4_s o:4 a:2^1" fd030401
+d "i32x4.load16x4_u o:4 a:2^1" fd040401
+d "i64x2.load32x2_s o:4 a:2^1" fd050401
+d "i64x2.load32x2_u o:4 a:2^1" fd060401
+d "v8x16.load_splat o:4 a:2^1" fd070401
+d "v16x8.load_splat o:4 a:2^1" fd080401
+d "v32x4.load_splat o:4 a:2^1" fd090401
+d "v64x2.load_splat o:4 a:2^1" fd0a0401
+d "v128.store o:4 a:2^1" fd0b0401
+d "v128.const 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01" 	fd0c01010101010101010101010101010101
+d "v8x16.swizzle" fd0e
+d "i8x16.splat" fd0f
+d "i16x8.splat" fd10
+d "i32x4.splat" fd11
+d "i64x2.splat" fd12
+d "f32x4.splat" fd13
+d "f64x2.splat" fd14
+d "i8x16.extract_lane_s 1" fd1501
+d "i8x16.extract_lane_u 1" fd1601
+d "i8x16.replace_lane 1" fd1701
+d "i16x8.extract_lane_s 1" fd1801
+d "i16x8.extract_lane_u 1" fd1901
+d "i16x8.replace_lane 1" fd1a01
+d "i32x4.extract_lane 1" fd1b01
+d "i32x4.replace_lane 1" fd1c01
+d "i64x2.extract_lane 1" fd1d01
+d "i64x2.replace_lane 1" fd1e01
+d "f32x4.extract_lane 1" fd1f01
+d "f32x4.replace_lane 1" fd2001
+d "f64x2.extract_lane 1" fd2101
+d "f64x2.replace_lane 1" fd2201
+d "i8x16.eq" fd23
+d "i8x16.ne" fd24
+d "i8x16.lt_s" fd25
+d "i8x16.lt_u" fd26
+d "i8x16.gt_s" fd27
+d "i8x16.gt_u" fd28
+d "i8x16.le_s" fd29
+d "i8x16.le_u" fd2a
+d "i8x16.ge_s" fd2b
+d "i8x16.ge_u" fd2c
+d "i16x8.eq" fd2d
+d "i16x8.ne" fd2e
+d "i16x8.lt_s" fd2f
+d "i16x8.lt_u" fd30
+d "i16x8.gt_s" fd31
+d "i16x8.gt_u" fd32
+d "i16x8.le_s" fd33
+d "i16x8.le_u" fd34
+d "i16x8.ge_s" fd35
+d "i16x8.ge_u" fd36
+d "i32x4.eq" fd37
+d "i32x4.ne" fd38
+d "i32x4.lt_s" fd39
+d "i32x4.lt_u" fd3a
+d "i32x4.gt_s" fd3b
+d "i32x4.gt_u" fd3c
+d "i32x4.le_s" fd3d
+d "i32x4.le_u" fd3e
+d "i32x4.ge_s" fd3f
+d "i32x4.ge_u" fd40
+d "f32x4.eq" fd41
+d "f32x4.ne" fd42
+d "f32x4.lt" fd43
+d "f32x4.gt" fd44
+d "f32x4.le" fd45
+d "f32x4.ge" fd46
+d "f64x2.eq" fd47
+d "f64x2.ne" fd48
+d "f64x2.lt" fd49
+d "f64x2.gt" fd4a
+d "f64x2.le" fd4b
+d "f64x2.ge" fd4c
+d "v128.not" fd4d
+d "v128.and" fd4e
+d "v128.andnot" fd4f
+d "v128.or" fd50
+d "v128.xor" fd51
+d "v128.bitselect" fd52
+d "i8x16.abs" fd60
+d "i8x16.neg" fd61
+d "i8x16.any_true" fd62
+d "i8x16.all_true" fd63
+d "i8x16.narrow_i16x8_s" fd65
+d "i8x16.narrow_i16x8_u" fd66
+d "i8x16.shl" fd6b
+d "i8x16.shr_s" fd6c
+d "i8x16.shr_u" fd6d
+d "i8x16.add" fd6e
+d "i8x16.add_saturate_s" fd6f
+d "i8x16.add_saturate_u" fd70
+d "i8x16.sub" fd71
+d "i8x16.sub_saturate_s" fd72
+d "i8x16.sub_saturate_u" fd73
+d "i8x16.min_s" fd76
+d "i8x16.min_u" fd77
+d "i8x16.max_s" fd78
+d "i8x16.max_u" fd79
+d "i8x16.avgr_u" fd7b
+d "i16x8.abs" fd8001
+d "i16x8.neg" fd8101
+d "i16x8.any_true" fd8201
+d "i16x8.all_true" fd8301
+d "i16x8.narrow_i32x4_s" fd8501
+d "i16x8.narrow_i32x4_u" fd8601

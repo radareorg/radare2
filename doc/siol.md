@@ -7,7 +7,7 @@ Top-Down-View of siol
 	+==================+
 	| Write-Mask       |
 	+==================+
-	| Buffer           | <--- maybe this could be deprectated, I see no usecase for the buffer
+	| Buffer           | <--- maybe this could be deprecated, I see no usecase for the buffer
 	+==================+
 	| Cache (V)        |
 	+==================+      +========================+

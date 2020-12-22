@@ -9,6 +9,7 @@ R_LIB_VERSION(r_lang);
 #include "p/vala.c"  // hardcoded
 #include "p/rust.c"  // hardcoded
 #include "p/zig.c"   // hardcoded
+#include "p/spp.c"  // hardcoded
 #include "p/c.c"     // hardcoded
 #include "p/lib.c"
 #if __UNIX__
@@ -23,7 +24,7 @@ R_API void r_lang_plugin_free (RLangPlugin *p) {
 	}
 }
 
-R_API RLang *r_lang_new() {
+R_API RLang *r_lang_new(void) {
 	RLang *lang = R_NEW0 (RLang);
 	if (!lang) {
 		return NULL;
@@ -42,30 +43,29 @@ R_API RLang *r_lang_new() {
 	}
 	lang->defs->free = (RListFree)r_lang_def_free;
 	lang->cb_printf = (PrintfCallback)printf;
-	r_lang_add (lang, &r_lang_plugin_c);
 #if __UNIX__
+	r_lang_add (lang, &r_lang_plugin_c);
 	r_lang_add (lang, &r_lang_plugin_cpipe);
 #endif
 	r_lang_add (lang, &r_lang_plugin_vala);
 	r_lang_add (lang, &r_lang_plugin_rust);
 	r_lang_add (lang, &r_lang_plugin_zig);
+	r_lang_add (lang, &r_lang_plugin_spp);
 	r_lang_add (lang, &r_lang_plugin_pipe);
 	r_lang_add (lang, &r_lang_plugin_lib);
 
 	return lang;
 }
 
-R_API void *r_lang_free(RLang *lang) {
-	if (!lang) {
-		return NULL;
+R_API void r_lang_free(RLang *lang) {
+	if (lang) {
+		__lang = NULL;
+		r_lang_undef (lang, NULL);
+		r_list_free (lang->langs);
+		r_list_free (lang->defs);
+		// TODO: remove langs plugins
+		free (lang);
 	}
-	__lang = NULL;
-	r_lang_undef (lang, NULL);
-	r_list_free (lang->langs);
-	r_list_free (lang->defs);
-	// TODO: remove langs plugins
-	free (lang);
-	return NULL;
 }
 
 // XXX: This is only used actually to pass 'core' structure
@@ -199,24 +199,29 @@ R_API bool r_lang_set_argv(RLang *lang, int argc, char **argv) {
 	return false;
 }
 
-R_API int r_lang_run(RLang *lang, const char *code, int len) { 
+R_API bool r_lang_run(RLang *lang, const char *code, int len) {
 	if (lang->cur && lang->cur->run) {
 		return lang->cur->run (lang, code, len);
 	}
 	return false;
 }
 
-R_API int r_lang_run_string(RLang *lang, const char *code) {
+R_API bool r_lang_run_string(RLang *lang, const char *code) {
 	return r_lang_run (lang, code, strlen (code));
 }
 
-R_API int r_lang_run_file(RLang *lang, const char *file) {
-	int len, ret = false;
+R_API bool r_lang_run_file(RLang *lang, const char *file) {
+	bool ret = false;
 	if (lang->cur) {
 		if (!lang->cur->run_file) {
 			if (lang->cur->run) {
+				size_t len;
 				char *code = r_file_slurp (file, &len);
-				ret = lang->cur->run (lang, code, len);
+				if (!code) {
+					eprintf ("Could not open '%s'.\n", file);
+					return 0;
+				}
+				ret = lang->cur->run (lang, code, (int)len);
 				free (code);
 			}
 		} else {
@@ -227,7 +232,7 @@ R_API int r_lang_run_file(RLang *lang, const char *file) {
 }
 
 /* TODO: deprecate or make it more modular .. reading from stdin in a lib?!? wtf */
-R_API int r_lang_prompt(RLang *lang) {
+R_API bool r_lang_prompt(RLang *lang) {
 	char buf[1024];
 	const char *p;
 
@@ -246,20 +251,21 @@ R_API int r_lang_prompt(RLang *lang) {
 	RLineHistory histnull = {0};
 	RLineCompletion oc = line->completion;
 	RLineCompletion ocnull = {0};
-	char *prompt = strdup (line->prompt);  
+	char *prompt = strdup (line->prompt);
 	line->completion = ocnull;
 	line->history = histnull;
 
 	/* foo */
 	for (;;) {
+		r_cons_flush ();
 		snprintf (buf, sizeof (buf)-1, "%s> ", lang->cur->name);
 		r_line_set_prompt (buf);
 #if 0
 		printf ("%s> ", lang->cur->name);
 		fflush (stdout);
-		fgets (buf, sizeof (buf)-1, stdin);
+		fgets (buf, sizeof (buf), stdin);
 		if (feof (stdin)) break;
-		if (*buf) buf[strlen (buf)-1]='\0';
+		r_str_trim_tail (buf);
 #endif
 		p = r_line_readline ();
 		if (!p) {

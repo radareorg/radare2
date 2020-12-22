@@ -1,0 +1,94 @@
+======================
+Disable html and color
+======================
+
+p8 10 |
+
+---
+
+(commands
+  (html_disable_command
+    (arged_command (cmd_identifier)
+      (args (arg (arg_identifier))))))
+
+======================
+Enable html and color
+======================
+
+p8 10 |H
+
+---
+
+(commands
+  (html_enable_command
+    (arged_command (cmd_identifier)
+      (args (arg (arg_identifier))))))
+
+======================
+Use sctr.ts
+======================
+
+p8 10 |T
+
+---
+
+(commands
+  (scr_tts_command
+    (arged_command (cmd_identifier)
+      (args (arg (arg_identifier))))))
+
+======================
+Pipe to another command
+======================
+
+p8 10 | grep 10
+
+---
+
+(commands
+  (pipe_command
+    (arged_command (cmd_identifier)
+      (args (arg (arg_identifier))))
+    (pipe_second_command)))
+
+===========
+Double pipe
+===========
+
+pd 10 | cat | grep mov
+
+---
+
+(commands
+  (pipe_command
+    (pipe_command
+      (arged_command (cmd_identifier)
+        (args (arg (arg_identifier))))
+      (pipe_second_command))
+    (pipe_second_command)))
+
+===================================
+Pipe to another command with no arg
+===================================
+
+f | grep main
+
+---
+
+(commands
+  (pipe_command
+    (arged_command (cmd_identifier))
+    (pipe_second_command)))
+
+=======================
+Pipe to interpreter "."
+=======================
+
+p8 10 |.
+
+---
+
+(commands
+  (arged_command
+    (arged_command (cmd_identifier)
+      (args (arg (arg_identifier))))))

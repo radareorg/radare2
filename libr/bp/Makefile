@@ -1,9 +1,9 @@
 include ../config.mk
 
 NAME=r_bp
-DEPS+=r_util
+R2DEPS+=r_util
 
-CFLAGS+=-DCORELIB
+CFLAGS+=-DR2_PLUGIN_INCORE
 
 .PHONY: pre
 pre: libr_bp.${EXT_SO} libr_bp.${EXT_AR}

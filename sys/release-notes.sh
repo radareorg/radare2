@@ -14,15 +14,22 @@
 #
 # The tool prints Markdown, no plans to support other formats.
 #
+# Usage: sys/release-notes.sh 4.5.1      # from HEAD to 4.5.1
+#   $ sys/release-notes.sh 4.5.1 -v      # same as above but include untagged commits
+#   $ sys/release-notes.sh 4.5.0 4.5.1   # from 4.5.0 to 4.5.1
+#
 # --pancake
 
 if [ -n "`git log -n 1 | grep Release`" ]; then
-	VERS=`git tag --sort=committerdate | tail -n 1`
-	PREV=`git tag --sort=committerdate | tail -n 2 | head -n1`
+	VERS=`git tag --sort=committerdate | grep -v conti | tail -n 1`
+	PREV=`git tag --sort=committerdate | grep -v conti | tail -n 2 | head -n1`
 else
 	VERS=HEAD
-	PREV=`git tag --sort=committerdate | tail -n 1`
+	PREV=`git tag --sort=committerdate | grep -v conti | tail -n 1`
 fi
+
+[ -n "$1" ] && PREV="$1"
+[ -n "$2" ] && VERS="$2"
 
 git log ${PREV}..${VERS} > .l
 cat .l | grep ^Author | cut -d : -f 2- | sed -e 's,radare,pancake,' | sort -u > .A
@@ -31,17 +38,20 @@ echo "Release Notes"
 echo "-------------"
 echo
 echo "Version: ${VERS}"
-echo "From: ${PREV}"
-echo "To: ${VERS}"
+echo "Previous: ${PREV}"
 printf "Commits: "
 cat .l |grep ^commit |wc -l |xargs echo
 echo "Contributors: `wc -l .A | awk '{print $1}'`"
 echo
+echo "Highlights"
+echo "----------"
+
+echo "<details><summary>More details</summary><p>"
 echo "Authors"
 echo "-------"
 echo
-cat .A | perl -ne 'print "*$_"'
-# | xargs echo '*'
+cat .A | perl -ne '/([^<]+)(.*)$/;$a=$1;$b=$2;$a=~s/^\s+|\s+$//g;$b=~s/[<>\s]//g;print "[$a](mailto:$b) "'
+echo
 echo
 
 echo "Changes"
@@ -55,9 +65,14 @@ for a in `cat .y` ; do
 	cat .x | grep "##$a" | sed -e 's/##.*//g' | perl -ne '{ s/^\s+//; print "* $_"; }'
 	echo
 done
-echo "To Review"
-echo "---------"
-cat .x | grep -v '##' | sed -e 's,^ *,,g' | grep -v "^$" | \
-	perl -ne 'if (/^\*/) { print "$_"; } else { print "* $_";}'
-echo
+
+if [ -n "`echo $@ | grep -- -v`" ]; then
+	echo "To Review"
+	echo "---------"
+	cat .x | grep -v '##' | sed -e 's,^ *,,g' | grep -v "^$" | \
+	      perl -ne 'if (/^\*/) { print "$_"; } else { print "* $_";}'
+	echo
+fi
 rm -f .x .y .l .A
+
+echo '</p></details>'

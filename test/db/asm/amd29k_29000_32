@@ -1,0 +1,68 @@
+d "add gr116 gr116 gr117" 0x14747475
+d "add gr116 lr9 0x4" 0x15748804
+d "add gr126 gr1 0x0" 0x157e0100
+d "add gr126 gr126 gr121" 0x147e7e79
+d "add gr127 gr121 0x0" 0x157f7900
+d "add gr127 lr2 0x0" 0x157f8100
+d "add gr98 gr98 0x4" 0x15626204
+d "add lr2 gr1 0x18" 0x15810118
+d "add lr2 gr1 0x24" 0x15810124
+d "add lr3 gr96 0x0" 0x15826000
+d "add lr3 lr3 0x1" 0x15828201
+d "add lr4 gr96 0x0" 0x15836000
+d "add lr5 gr96 0x0" 0x15846000
+d "add lr5 lr5 0x4" 0x15848404
+d "asgeu gr64 gr1 gr126" 0x5e40017e
+d "asneq gr69 gr1 gr1" 0x72450101
+d "calli lr1 lr1" 0xc8008080
+d "const gr117 0x148" 0x03017548
+d "const gr117 0x331c" 0x0333751c
+d "const gr121 0x1" 0x03007901
+d "const gr121 0x104" 0x03017904
+d "const gr121 0x121" 0x03017921
+d "const gr121 0x200" 0x03027900
+d "const gr98 0x3788" 0x03376288
+d "const lr1 0x11c" 0x0301801c
+d "const lr1 0x2d88" 0x032d8088
+d "const lr1 0x3794" 0x03378094
+d "const lr3 0x40" 0x03008240
+d "const lr3 0x41" 0x03008241
+d "const lr4 0xc4" 0x030083c4
+d "const lr4 0xec" 0x030083ec
+d "consth gr117 0x0" 0x02007500
+d "consth gr98 0x0" 0x02006200
+d "consth lr1 0x0" 0x02008000
+d "consth lr4 0x0" 0x02008300
+d "constn lr3 0xffff" 0x01ff82ff
+d "cpeq gr96 lr1 0x0" 0x61608000
+d "cpeq gr97 gr97 0x0" 0x61616100
+d "cpneq gr116 lr9 0x0" 0x63748800
+d "illegal" 0x00430008
+d "jmp -0x8" 0xa0ff00fe 0x00000164
+d "jmp 0x58" 0xa0000016 0x00000204
+d "jmpf gr97 0xfc" 0xa4ff61fd 0x00000108
+d "jmpi gr122" 0xc000007a
+d "jmpt gr96 0x13c" 0xac006004 0x0000012c
+d "load 0 0 gr116 gr117" 0x16007475
+d "load 0 0 gr97 lr5" 0x16006184
+d "load 0 0 lr1 lr1" 0x16008080
+d "load 0 0 lr4 gr116" 0x16008374
+d "load 0 0 lr9 gr116" 0x16008874
+d "loadm 0 0 gr0 gr127" 0x3600007f
+d "mtsr lr2 gr121" 0xce008179
+d "mtsr lr8 gr121" 0xce008779
+d "nop" 0x70400101
+d "or gr121 gr121 gr127" 0x9279797f
+d "sll lr6 gr125 0x0" 0x81857d00
+d "srl gr121 gr121 0x2" 0x83797902
+d "store 0 0 gr96 gr98" 0x1e006062
+d "store 0 0 gr97 gr98" 0x1e006162
+d "store 0 0 lr9 gr116" 0x1e008874
+d "storem 0 0 lr1 gr121" 0x3e008079
+d "sub gr1 gr1 0x18" 0x25010118
+d "sub gr116 lr6 0x4" 0x25748504
+d "sub gr121 gr121 0x1" 0x25797901
+d "sub gr121 gr126 gr1" 0x24797e01
+d "sub gr121 gr127 gr121" 0x24797f79
+d "sub gr121 lr2 gr127" 0x2479817f
+d "sub gr125 gr125 0x8" 0x257d7d08

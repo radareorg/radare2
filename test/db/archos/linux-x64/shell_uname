@@ -1,0 +1,8 @@
+NAME=uname
+FILE=-
+CMDS=!uname
+EXPECT=<<EOF
+Linux
+EOF
+RUN
+

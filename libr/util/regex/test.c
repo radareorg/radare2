@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <r_regex.h>
 
-int _main() {
+int _main(void) {
 	RRegex rx;
 	int rc = r_regex_comp (&rx, "^hi", R_REGEX_NOSUB);	
 	if (rc) {
@@ -18,7 +18,7 @@ int _main() {
 	return 0;
 }
 
-static void test_or() {
+static void test_or(void) {
 	RRegex *rx = r_regex_new ("(eax|ebx)", "e");
 	printf ("result (%s) = %d\n", "mov eax", r_regex_match("(eax|ebx)", "e", "mov eax"));
 	printf ("result (%s) = %d\n", "mov ebx", r_regex_match("(eax|ebx)", "e", "mov ebx"));

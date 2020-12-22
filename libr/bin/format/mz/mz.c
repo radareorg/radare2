@@ -268,7 +268,7 @@ static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t *bin) {
 	return true;
 }
 
-static int r_bin_mz_init(struct r_bin_mz_obj_t *bin) {
+static bool r_bin_mz_init(struct r_bin_mz_obj_t *bin) {
 	bin->dos_header = NULL;
 	bin->dos_extended_header = NULL;
 	bin->relocation_entries = NULL;
@@ -281,13 +281,15 @@ static int r_bin_mz_init(struct r_bin_mz_obj_t *bin) {
 }
 
 struct r_bin_mz_obj_t *r_bin_mz_new (const char *file) {
-	const ut8 *buf;
 	struct r_bin_mz_obj_t *bin = R_NEW0 (struct r_bin_mz_obj_t);
 	if (!bin) {
 		return NULL;
 	}
 	bin->file = file;
-	if (!(buf = (ut8 *)r_file_slurp (file, &bin->size))) {
+	size_t binsz;
+	ut8 *buf = (ut8*)r_file_slurp (file, &binsz);
+	bin->size = binsz;
+	if (!buf) {
 		return r_bin_mz_free (bin);
 	}
 	bin->b = r_buf_new ();

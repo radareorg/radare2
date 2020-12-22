@@ -1,6 +1,7 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include "r_util.h"
+
 typedef struct timeval tv;
 
 // Subtract the 'tv' values begin from end, storing result in RESULT

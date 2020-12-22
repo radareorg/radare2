@@ -1,0 +1,15 @@
+d "invalid" 20
+dB "push 1" 202020090a # https://github.com/radareorg/radare2/commit/306adb7a504c3f00eefd79195eb166bb3648e416
+dB "mark 67" 0a202020092020202009090a
+d "dup" 200a20
+d "puti" 090a2009
+dB "push 10" 202020092009200a # https://github.com/radareorg/radare2/commit/306adb7a504c3f00eefd79195eb166bb3648e416
+d "add" 09202020
+d "sub" 09202009
+d "mul" 0920200a
+d "div" 09200920
+d "mod" 09200909
+d "store" 090920
+d "load" 090909
+d "exit" 0a0a0a
+dB "jmp 67" 0a200a20092020202009090a

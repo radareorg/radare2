@@ -1,0 +1,47 @@
+NAME=dbg.fork.child.swstep
+FILE=bins/elf/analysis/x64-fork-test
+ARGS=-d
+CMDS=<<EOF
+e scr.color=0
+e dbg.swstep=true
+e dbg.forks=true
+dc
+dpc
+dc
+dc
+dp=`dp~ppid[1]`
+dc
+dc
+dc
+EOF
+EXPECT=<<EOF
+child in leaf!
+child process terminating!
+[+] signal 17 aka SIGCHLD received 0
+main exiting!
+EOF
+RUN
+
+NAME=dbg.fork.child.hwstep
+FILE=bins/elf/analysis/x64-fork-test
+ARGS=-d
+CMDS=<<EOF
+e scr.color=0
+e dbg.swstep=false
+e dbg.forks=true
+dc
+dpc
+dc
+dc
+dp=`dp~ppid[1]`
+dc
+dc
+dc
+EOF
+EXPECT=<<EOF
+child in leaf!
+child process terminating!
+[+] signal 17 aka SIGCHLD received 0
+main exiting!
+EOF
+RUN

@@ -31,25 +31,20 @@ static bool check_buffer(RBuffer *buf) {
 	return r == sizeof (tmp) && !memcmp (tmp, QNX_MAGIC, sizeof (tmp));
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	RBuffer *b = r_buf_new_with_bytes (buf, length);
-	bool res = check_buffer (b);
-	r_buf_free (b);
-	return res;
-}
-
 // Frees the bin_obj of the binary file
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	QnxObj *qo = bf->o->bin_obj;
 	r_list_free (qo->sections);
 	r_list_free (qo->fixups);
 	bf->o->bin_obj = NULL;
 	free (qo);
-	return true;
 }
 
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	QnxObj *qo = R_NEW0 (QnxObj);
+	if (!qo) {
+		return false;
+	}
 	lmf_record lrec;
 	lmf_resource lres;
 	lmf_data ldata;
@@ -65,7 +60,6 @@ static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	}
 	qo->kv = sdb_new0 ();
 	if (!qo->kv) {
-		free (qo);
 		goto beach;
 	}
 	// Read the first record
@@ -86,10 +80,10 @@ static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 			break;
 		} else if (lrec.rec_type == LMF_RESOURCE_REC) {
 			RBinSection *ptr = R_NEW0 (RBinSection);
-			if (r_buf_fread_at (bf->buf, offset, (ut8 *)&lres, "ssss", 1) < sizeof (lmf_resource)) {
+			if (!ptr) {
 				goto beach;
 			}
-			if (!ptr) {
+			if (r_buf_fread_at (bf->buf, offset, (ut8 *)&lres, "ssss", 1) < sizeof (lmf_resource)) {
 				goto beach;
 			}
 			ptr->name = strdup ("LMF_RESOURCE");
@@ -137,9 +131,13 @@ static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	sdb_ns_set (sdb, "info", qo->kv);
 	qo->sections = sections;
 	qo->fixups = fixups;
-	return qo;
+	*bin_obj = qo;
+	return true;
 beach:
-	return NULL;
+	free (qo);
+	r_list_free (fixups);
+	r_list_free (sections);
+	return false;
 }
 
 /*
@@ -185,7 +183,7 @@ static void header(RBinFile *bf) {
 	rbin->cb_printf ("stack_index : 0x%xH\n", bin->lmfh.stack_index);
 	rbin->cb_printf ("heap_index : 0x%xH\n", bin->lmfh.heap_index);
 	rbin->cb_printf ("argv_index : 0x%xH\n", bin->lmfh.argv_index);
-	rbin->cb_printf ("spare2[4] : 0x0H\n", bin->lmfh.spare2);
+	rbin->cb_printf ("spare2[4] : 0x0H\n");
 	rbin->cb_printf ("code_offset : 0x%xH\n", bin->lmfh.code_offset);
 	rbin->cb_printf ("stack_nbytes : 0x%xH\n", bin->lmfh.stack_nbytes);
 	rbin->cb_printf ("heap_nbytes : 0x%xH\n", bin->lmfh.heap_nbytes);
@@ -195,23 +193,23 @@ static void header(RBinFile *bf) {
 
 /*
  * No mention of symbols in the doc
- */ 
+ */
 static RList* symbols(RBinFile *bf) {
 	return NULL;
 }
 
-// Returns the sections 
+// Returns the sections
 static RList* sections(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o, NULL);
 	QnxObj *qo = bf->o->bin_obj;
 	return r_list_clone (qo->sections);
 }
 
-/* 
+/*
  * Returns the sdb
  * @param RBinFile
  * @return sdb of the bin_obj
- */ 
+ */
 static Sdb *get_sdb(RBinFile *bf) {
 	RBinObject *o = bf->o;
 	if (!o) {
@@ -221,21 +219,21 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return qo? qo->kv: NULL;
 }
 
-/* 
+/*
  * Returns the base address of the image from the binary header
  * @param RBinFile
  * @return image_base address
- */ 
+ */
 static ut64 baddr(RBinFile *bf) {
 	QnxObj *qo = bf->o->bin_obj;
 	return qo? qo->lmfh.image_base: 0;
 }
 
-/* 
+/*
  * Currently both physical and virtual address are set to 0
  * The memory map has different values for entry
  */
-static RList* entries(RBinFile *bf) { 
+static RList* entries(RBinFile *bf) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
 	QnxObj *qo = bf->o->bin_obj;
@@ -252,19 +250,19 @@ static RList* entries(RBinFile *bf) {
 	return ret;
 }
 
-/* 
+/*
  * @param RBinFile
  * @return signature of the binary
- */ 
+ */
 static char *signature(RBinFile *bf, bool json) {
  	char buf[64];
  	QnxObj *qo = bf->o->bin_obj;
-	return qo? r_str_dup (NULL, sdb_itoa (qo->rwend.signature, buf, 10)): NULL;	
+	return qo? r_str_dup (NULL, sdb_itoa (qo->rwend.signature, buf, 10)): NULL;
 }
 
-/* 
+/*
  * @return: returns the vaddr
- */ 
+ */
 static ut64 get_vaddr(RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	return vaddr;
 }
@@ -280,7 +278,6 @@ RBinPlugin r_bin_plugin_qnx = {
 	.baddr = &baddr,
 	.author = "deepakchethan",
 	.check_buffer = &check_buffer,
-	.check_bytes  = &check_bytes,
 	.header = &header,
 	.get_sdb = &get_sdb,
 	.entries = &entries,
@@ -291,7 +288,7 @@ RBinPlugin r_bin_plugin_qnx = {
 	.info = &info
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_qnx,

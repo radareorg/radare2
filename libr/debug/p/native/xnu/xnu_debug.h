@@ -9,7 +9,7 @@
 #define _XNU_DEBUG_H
 
 #define MACH_ERROR_STRING(ret) \
-	(mach_error_string (ret) ? r_str_get (mach_error_string (ret)) : "(unknown)")
+	(mach_error_string (ret) ? r_str_getf (mach_error_string (ret)) : "(unknown)")
 
 #if TARGET_OS_IPHONE
 // no ptrace
@@ -37,6 +37,7 @@ int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 #if !__POWERPC__
 #include <sys/proc_info.h>
 #include <libproc.h>
+#define HAS_LIBPROC
 #endif
 #endif
 #include <sys/types.h>

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2013 - pancake */
+/* radare - LGPL - Copyright 2007-2018 - pancake, ret2libc */
 
 #define LOG_CONFIGSTR_SIZE 512
 #define LOG_OUTPUTBUF_SIZE 512

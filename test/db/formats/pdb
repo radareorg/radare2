@@ -1,0 +1,247 @@
+NAME=PDB downloader check
+FILE=bins/pdb/user32.dll
+CMDS=<<EOF
+%R2_CURL=1
+!!rabin2 -PP ${R2_FILE} ~PDB
+EOF
+EXPECT=<<EOF
+PDB "user32.pdb" download success
+EOF
+RUN
+
+NAME=PDB downloader json
+FILE=-
+CMDS=<<EOF
+%R2_CURL=1
+!!rabin2 -PPj bins/pdb/user32.dll
+EOF
+EXPECT=<<EOF
+{"pdb":{"file":"user32.pdb","download":true},"pdb":false}
+EOF
+RUN
+
+NAME=idpdj
+FILE=bins/pdb/user32.dll
+CMDS=<<EOF
+%R2_CURL=1
+idpdj
+EOF
+EXPECT=<<EOF
+{"pdb":{"file":"user32.pdb","download":true}}
+EOF
+RUN
+
+NAME=idp 404
+FILE=-
+CMDS=<<EOF
+idp 404.pdb
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+Cannot open file
+EOF
+RUN
+
+NAME=idp and baddr
+FILE=-
+CMDS=<<EOF
+e bin.baddr=0
+idp bins/pdb/Project1.pdb
+f~pdb:1
+e bin.baddr=0x800000
+idp bins/pdb/Project1.pdb
+f~pdb:1
+EOF
+EXPECT=<<EOF
+0x00011000 0 pdb.__enc_textbss_end
+0x00811000 0 pdb.__enc_textbss_end
+EOF
+RUN
+
+NAME=find structure R2_TEST_STRUCT
+FILE=bins/pdb/Project1.pdb
+CMDS=!rabin2 -P ${R2_FILE} | grep -ao R2_TEST_STRUCT
+EXPECT=<<EOF
+R2_TEST_STRUCT
+EOF
+RUN
+
+NAME=find union R2_TEST_UNION
+FILE=bins/pdb/Project1.pdb
+CMDS=!rabin2 -P ${R2_FILE} | grep -ao R2_TEST_UNION
+EXPECT=<<EOF
+R2_TEST_UNION
+EOF
+RUN
+
+NAME=find enum R2_TEST_ENUM
+FILE=bins/pdb/Project1.pdb
+CMDS=!rabin2 -P ${R2_FILE} | grep -ao R2_TEST_ENUM
+EXPECT=<<EOF
+R2_TEST_ENUM
+EOF
+RUN
+
+NAME=member1 offset of structure R2_TEST_STRUCT
+FILE=bins/pdb/Project1.pdb
+CMDS=!rabin2 -P ${R2_FILE} | grep r2_struct_var_1 | grep -ao 0x0
+EXPECT=<<EOF
+0x0
+EOF
+RUN
+
+NAME=member2 offset of structure R2_TEST_STRUCT
+
+FILE=bins/pdb/Project1.pdb
+CMDS=!rabin2 -P ${R2_FILE} | grep r2_struct_var_2 | grep -ao 0x4
+EXPECT=<<EOF
+0x4
+EOF
+RUN
+
+NAME=member1 name of structure R2_TEST_STRUCT
+FILE=bins/pdb/Project1.pdb
+CMDS=!rabin2 -P ${R2_FILE} | grep -ao r2_struct_var_1
+EXPECT=<<EOF
+r2_struct_var_1
+EOF
+RUN
+
+NAME=member2 name of structure R2_TEST_STRUCT
+FILE=bins/pdb/Project1.pdb
+CMDS=!rabin2 -P ${R2_FILE} | grep -ao r2_struct_var_2
+EXPECT=<<EOF
+r2_struct_var_2
+EOF
+RUN
+
+NAME=member1 type of structure R2_TEST_STRUCT
+FILE=bins/pdb/Project1.pdb
+CMDS=!rabin2 -P ${R2_FILE} | grep r2_struct_var_1 | grep -ao int32_t
+EXPECT=<<EOF
+int32_t
+EOF
+RUN
+
+NAME=member2 type of structure R2_TEST_STRUCT
+FILE=bins/pdb/Project1.pdb
+CMDS=!rabin2 -P ${R2_FILE} | grep r2_struct_var_2 | grep -ao uint16_t
+EXPECT=<<EOF
+uint16_t
+EOF
+RUN
+
+NAME=check size of structure R2_TEST_STRUCT
+FILE=bins/pdb/Project1.pdb
+CMDS=!rabin2 -P ${R2_FILE} | grep R2_TEST_STRUCT | grep -ao 0x8
+EXPECT=<<EOF
+0x8
+EOF
+RUN
+
+NAME=member1 name of union R2_TEST_UNION
+FILE=bins/pdb/Project1.pdb
+CMDS=!rabin2 -P ${R2_FILE} | grep -ao r2_union_var_1
+EXPECT=<<EOF
+r2_union_var_1
+EOF
+RUN
+
+NAME=member2 name of union R2_TEST_UNION
+FILE=bins/pdb/Project1.pdb
+CMDS=!rabin2 -P ${R2_FILE} | grep -ao r2_union_var_2
+EXPECT=<<EOF
+r2_union_var_2
+EOF
+RUN
+
+NAME=member1 type of union R2_TEST_UNION
+FILE=bins/pdb/Project1.pdb
+CMDS=!rabin2 -P ${R2_FILE} | grep r2_union_var_1 | grep -ao int32_t
+EXPECT=<<EOF
+int32_t
+EOF
+RUN
+
+NAME=member2 type of union R2_TEST_UNION
+FILE=bins/pdb/Project1.pdb
+CMDS=!rabin2 -P ${R2_FILE} | grep r2_union_var_2 | grep -ao double
+EXPECT=<<EOF
+double
+EOF
+RUN
+
+NAME=check size of union R2_TEST_UNION
+FILE=bins/pdb/Project1.pdb
+CMDS=!rabin2 -P ${R2_FILE} | grep R2_TEST_UNION | grep -ao 0x8
+EXPECT=<<EOF
+0x8
+EOF
+RUN
+
+NAME=redirection test
+FILE=bins/pdb/Project1.pdb
+CMDS=!rabin2 -Pr ${R2_FILE} | grep -ao _unnamed_tag_ | head -n1
+EXPECT=<<EOF
+_unnamed_tag_
+EOF
+RUN
+
+NAME=struct export test
+FILE=bins/pdb/Project1.pdb
+CMDS=!rabin2 -Pr ${R2_FILE} | grep -ao R2_TEST_STRUCT
+EXPECT=<<EOF
+R2_TEST_STRUCT
+EOF
+RUN
+
+NAME=struct export command
+FILE=bins/pdb/Project1.pdb
+CMDS=!rabin2 -Pr ${R2_FILE} | grep R2_TEST_STRUCT | grep -ao pf
+EXPECT=<<EOF
+pf
+EOF
+RUN
+
+NAME=struct export types
+FILE=bins/pdb/Project1.pdb
+CMDS=!rabin2 -Pr ${R2_FILE} | grep R2_TEST_STRUCT | grep -ao n4n2
+EXPECT=<<EOF
+n4n2
+EOF
+RUN
+
+NAME=struct export name1
+FILE=bins/pdb/Project1.pdb
+CMDS=!rabin2 -Pr ${R2_FILE} | grep R2_TEST_STRUCT | grep -ao r2_struct_var_1
+EXPECT=<<EOF
+r2_struct_var_1
+EOF
+RUN
+
+NAME=struct export name2
+FILE=bins/pdb/Project1.pdb
+CMDS=!rabin2 -Pr ${R2_FILE} | grep R2_TEST_STRUCT | grep -ao r2_struct_var_2
+EXPECT=<<EOF
+r2_struct_var_2
+EOF
+RUN
+
+NAME=GUID CHECK
+FILE=bins/pdb/user32.dll
+CMDS=!rabin2 -I ${R2_FILE} | grep -ao 15F778B3671D4EFDBDCDE79905308B792
+EXPECT=<<EOF
+15F778B3671D4EFDBDCDE79905308B792
+EOF
+RUN
+
+NAME=PDB set flag realname
+FILE=-
+CMDS=<<EOF
+idp bins/pdb/Project1.pdb
+fN @ 0x00011000
+EOF
+EXPECT=<<EOF
+__enc$textbss$end
+EOF
+RUN

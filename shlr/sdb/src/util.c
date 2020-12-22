@@ -18,7 +18,7 @@ struct timezone {
 	int  tz_dsttime;     /* type of dst correction */
 };
 
-int gettimeofday (struct timeval* p, struct timezone * tz) {
+SDB_API int gettimeofday (struct timeval* p, struct timezone * tz) {
 	//ULARGE_INTEGER ul; // As specified on MSDN.
 	ut64 ul = 0;
 	static int tzflag = 0;
@@ -273,7 +273,7 @@ SDB_API const char *sdb_const_anext(const char *str) {
 	return p ? p + 1 : NULL;
 }
 
-SDB_API ut64 sdb_now () {
+SDB_API ut64 sdb_now (void) {
 #if USE_MONOTONIC_CLOCK
 	struct timespec ts;
 	if (!clock_gettime (CLOCK_MONOTONIC, &ts)) {
@@ -288,7 +288,7 @@ SDB_API ut64 sdb_now () {
 	return 0LL;
 }
 
-SDB_API ut64 sdb_unow () {
+SDB_API ut64 sdb_unow (void) {
 	ut64 x = 0LL;
 #if USE_MONOTONIC_CLOCK
 	struct timespec ts;

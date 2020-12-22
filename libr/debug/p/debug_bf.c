@@ -142,6 +142,7 @@ static char *r_debug_bf_reg_profile(RDebug *dbg) {
 	"=PC	pc\n"
 	"=SP	esp\n"
 	"=BP	ptr\n"
+	"=A0	mem\n"
 	"gpr	pc	.32	0	0\n"
 	"gpr	ptr	.32	4	0\n"
 	"gpr	esp	.32	8	0\n"
@@ -222,7 +223,7 @@ RDebugPlugin r_debug_plugin_bf = {
 	.map_get = r_debug_native_map_get,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_bf,
