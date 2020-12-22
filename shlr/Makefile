@@ -41,13 +41,13 @@ CS_TAR=
 CS_URL_BASE=github.com/aquynh/capstone
 CS_URL=$(GIT_PREFIX)$(CS_URL_BASE).git
 CS_ARCHIVE=https://$(CS_URL_BASE)/archive
-CS_UPD=20190515
+CS_UPD=20201203
 # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/meson.build
 ifeq ($(CS_NEXT),1)
-CS_TIP=d956ceddabcbe544ee8f074ba75c86c6381b34e6
+CS_TIP=3f46b83045049901585688f6a53501e5e032449e
 CS_BRA=next
 else
-CS_TIP=2edae851d9fee511a57d4da32d5acecedd95d7ed
+CS_TIP=aa74f5d1ba5348c0441fbff0c0c151d95d2fa459
 CS_BRA=v4
 endif
 ifeq ($(CS_COMMIT_ARCHIVE),1)

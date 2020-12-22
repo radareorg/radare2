@@ -538,7 +538,7 @@ EXPECT=<<EOF
 | 0x004873ab      74db           je 0x487388
 | ----------- true: 0x00487388  false: 0x004873ad
 | 0x004873ad      488b7708       mov rsi, qword [rdi + 8]
-| 0x004873b1      488d3dd03502.  lea rdi, str.closing_file__s__direct_opencount__u
+| 0x004873b1      488d3dd03502.  lea rdi, str._nclosing_file_s__direct_opencount_u_n
 | 0x004873b8      31c0           xor eax, eax
 | 0x004873ba      e9b16cffff     jmp fcn.0047e070
 | ----------- true: 0x0047e070
@@ -894,7 +894,7 @@ Current section
 
 nth paddr       size vaddr       vsize perm name
 ------------------------------------------------
-0   0x00000188  0x24 0x08048188   0x24 -r-- .note.gnu.build_id
+0   0x00000188  0x24 0x08048188   0x24 -r-- .note.gnu.build-id
 
 Current section
 
@@ -1114,7 +1114,7 @@ EXPECT=<<EOF
 |     ,===< 0x000113e0      jle 0x11424
 |     |||   0x000113e2      lea rsi, [rax - 6]
 |     |||   0x000113e6      mov ecx, 7
-|     |||   0x000113eb      lea rdi, [rip + 0x7ebb]                    ; str..libs
+|     |||   0x000113eb      lea rdi, [rip + 0x7ebb]                    ; str._.libs_
 |     |||                                                              ; 0x192ad ; "/.libs/"
 |     |||   0x000113f2      repe cmpsb byte [rsi], byte ptr [rdi]
 |    ,====< 0x000113f4      jne 0x11424
@@ -1459,7 +1459,7 @@ EXPECT=<<EOF
 |           ; var HANDLE hTemplateFile @ rsp+0x30
 |           0x14000b54c      4883ec48       sub rsp, 0x48
 |           0x14000b550      488364243000   and qword [hTemplateFile], 0 ; HANDLE hTemplateFile
-|           0x14000b556      488d0da37300.  lea rcx, str.CONOUT        ; 0x140012900 ; u"CONOUT$" ; LPCWSTR lpFileName
+|           0x14000b556      488d0da37300.  lea rcx, str.CONOUT_       ; 0x140012900 ; u"CONOUT$" ; LPCWSTR lpFileName
 |           0x14000b55d      8364242800     and dword [dwFlagsAndAttributes], 0 ; DWORD dwFlagsAndAttributes
 |           0x14000b562      41b803000000   mov r8d, 3                 ; DWORD dwShareMode
 |           0x14000b568      4533c9         xor r9d, r9d               ; LPSECURITY_ATTRIBUTES lpSecurityAttributes
@@ -1496,12 +1496,12 @@ RUN
 NAME=Settings global calling convention
 FILE=bins/pe/msvcfindmain.exe
 CMDS=<<EOF
-afc=pascal
+e anal.cc=pascal
 aaa
 afi @@@F~?pascal
 EOF
 EXPECT=<<EOF
-65
+130
 EOF
 RUN
 
@@ -1736,7 +1736,7 @@ fastcall
 |           0x0804843b      ff7508         push dword [arg_8h]
 |           0x0804843e      ff75f0         push dword [var_10h]
 |           0x08048441      ff75f4         push dword [var_ch]
-|           0x08048444      6874850408     push str.i__i__i            ; 0x8048574 ; "%i %i %i\n"
+|           0x08048444      6874850408     push str._i__i__i_n         ; 0x8048574 ; "%i %i %i\n"
 |           0x08048449      e8a2feffff     call sym.imp.printf         ; int printf(const char *format)
 |           0x0804844e      83c410         add esp, 0x10
 |           0x08048451      90             nop
@@ -1778,7 +1778,7 @@ cdecl
 |           0x08048470      ff7510         push dword [arg_10h]
 |           0x08048473      ff75f0         push dword [var_10h]
 |           0x08048476      ff75f4         push dword [var_ch]
-|           0x08048479      6874850408     push str.i__i__i            ; 0x8048574 ; "%i %i %i\n"
+|           0x08048479      6874850408     push str._i__i__i_n         ; 0x8048574 ; "%i %i %i\n"
 |           0x0804847e      e86dfeffff     call sym.imp.printf
 |           0x08048483      83c410         add esp, 0x10
 |           0x08048486      90             nop
@@ -2049,10 +2049,10 @@ e anal.arch = x86
 e scr.color=false
 e scr.wheel = false
 aa
-axt @ str.Password:
+axt @ str.Password:_
 EOF
 EXPECT=<<EOF
-main 0x804843c [DATA] mov dword [esp], str.Password:
+main 0x804843c [DATA] mov dword [esp], str.Password:_
 EOF
 RUN
 
@@ -2164,10 +2164,8 @@ s 0x804848a
 axf
 EOF
 EXPECT=<<EOF
-sym.test 0x804848a [DATA] mov dword [esp], str.Sdvvzrug_RN
-sym.test 0x804848a [DATA] mov dword [esp], str.Sdvvzrug_RN
-d 0x80485fe str.Sdvvzrug_RN
-d 0x80485fe str.Sdvvzrug_RN
+d 0x80485fe str.SdvvzrugRN____
+d 0x80485fe str.SdvvzrugRN____
 EOF
 RUN
 
@@ -2248,13 +2246,13 @@ axt 0x00001df4
 axt 0x00001e09
 EOF
 EXPECT=<<EOF
-main 0x1457 [STRING] lea eax, str.Take_the_Red_Pill
-main 0x148e [STRING] lea eax, str.use:_._exploit1_PILL
-main 0x14eb [STRING] lea eax, str.Red_Pill__0x50444552
-main 0x1502 [STRING] lea eax, str.Your_Pill_0x_08x
-main 0x1523 [STRING] lea eax, str.Red_Pill
-main 0x1557 [STRING] lea eax, str.fwhibbit
-main 0x161d [STRING] lea eax, str.Blue_Pill
+main 0x1457 [STRING] lea eax, str._Take_the_Red_Pill____n
+main 0x148e [STRING] lea eax, str._use:_._exploit1_PILL_
+main 0x14eb [STRING] lea eax, str._____Red_Pill__0x50444552
+main 0x1502 [STRING] lea eax, str._____Your_Pill_0x_08x_n
+main 0x1523 [STRING] lea eax, str._n__Red_Pill
+main 0x1557 [STRING] lea eax, str.__fwhibbit
+main 0x161d [STRING] lea eax, str._n__Blue_Pill
 EOF
 RUN
 
@@ -2298,7 +2296,7 @@ aae
 axt@0x80484e0
 EOF
 EXPECT=<<EOF
-main 0x8048432 [STRING] lea eax, str.Hello_PIC
+main 0x8048432 [STRING] lea eax, str.Hello_PIC_
 EOF
 RUN
 
@@ -2351,7 +2349,7 @@ aae
 pd 1 @ 0x08048432
 EOF
 EXPECT=<<EOF
-|           0x08048432      8d83e0e4ffff   lea eax, str.Hello_PIC      ; 0x80484e0 ; "Hello PIC!"
+|           0x08048432      8d83e0e4ffff   lea eax, str.Hello_PIC_     ; 0x80484e0 ; "Hello PIC!"
 EOF
 RUN
 
@@ -2367,7 +2365,7 @@ aae
 pd 1 @ 0x08048432
 EOF
 EXPECT=<<EOF
-[36m|[0m           [32m0x08048432[0m      [37mlea[36m eax[0m,[36m [0m[33mstr.Hello_PIC[0m[36m[0m[0m
+[36m|[0m           [32m0x08048432[0m      [37mlea[36m eax[0m,[36m [0m[33mstr.Hello_PIC_[0m[36m[0m[0m
 EOF
 RUN
 
@@ -2537,6 +2535,7 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 4
 cyclomatic-complexity: 0
+cc: amd64
 bits: 64
 type: fcn [NEW]
 num-bbs: 2
@@ -2596,6 +2595,7 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 6
 cyclomatic-complexity: 1
+cc: amd64
 bits: 64
 type: fcn [NEW]
 num-bbs: 2
@@ -2671,6 +2671,7 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 7
 cyclomatic-complexity: 0
+cc: amd64
 bits: 64
 type: fcn [NEW]
 num-bbs: 2
@@ -2754,6 +2755,7 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 7
 cyclomatic-complexity: 0
+cc: amd64
 bits: 64
 type: fcn [NEW]
 num-bbs: 3
@@ -2846,6 +2848,7 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 9
 cyclomatic-complexity: 0
+cc: amd64
 bits: 64
 type: fcn [NEW]
 num-bbs: 4
@@ -3520,7 +3523,7 @@ CMDS=<<EOF
 e asm.comments=0
 e anal.vars.stackname=true
 s 0x140001080
-afc=ms
+e anal.cc=ms
 af
 pdf
 EOF

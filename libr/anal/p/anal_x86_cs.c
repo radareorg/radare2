@@ -106,79 +106,79 @@ static void hidden_op(cs_insn *insn, cs_x86 *x, int mode) {
 	}
 }
 
-//TODO PJ
 static void opex(RStrBuf *buf, cs_insn *insn, int mode) {
 	int i;
-	r_strbuf_init (buf);
-	r_strbuf_append (buf, "{");
+	PJ *pj = pj_new ();
+	pj_o (pj);
+
 	cs_x86 *x = &insn->detail->x86;
 	if (x->op_count == 0) {
 		hidden_op (insn, x, mode);
 	}
-	r_strbuf_appendf (buf, "\"operands\":[");
+	pj_ka (pj, "operands");
 	for (i = 0; i < x->op_count; i++) {
 		cs_x86_op *op = &x->operands[i];
-		if (i > 0) {
-			r_strbuf_append (buf, ",");
-		}
-		r_strbuf_appendf (buf, "{\"size\":%d", op->size);
+		pj_o (pj);
+		pj_ki (pj, "size", op->size);
 #if CS_API_MAJOR >= 4
-		r_strbuf_appendf (buf, ",\"rw\":%d", op->access); // read , write, read|write
+		pj_ki (pj, "rw", op->access);// read , write, read|write
 #endif
 		switch (op->type) {
 		case X86_OP_REG:
-			r_strbuf_appendf (buf, ",\"type\":\"reg\"");
-			r_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->reg));
+			pj_ks (pj, "type", "reg");
+			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
 			break;
 		case X86_OP_IMM:
-			r_strbuf_appendf (buf, ",\"type\":\"imm\"");
-			r_strbuf_appendf (buf, ",\"value\":%" PFMT64d, (st64)op->imm);
+			pj_ks (pj, "type", "imm");
+			pj_kn (pj, "value", op->imm);
 			break;
 		case X86_OP_MEM:
-			r_strbuf_appendf (buf, ",\"type\":\"mem\"");
+			pj_ks (pj, "type", "mem");
 			if (op->mem.segment != X86_REG_INVALID) {
-				r_strbuf_appendf (buf, ",\"segment\":\"%s\"", cs_reg_name (handle, op->mem.segment));
+				pj_ks (pj, "segment", cs_reg_name (handle, op->mem.segment));
 			}
 			if (op->mem.base != X86_REG_INVALID) {
-				r_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
+				pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
 			}
 			if (op->mem.index != X86_REG_INVALID) {
-				r_strbuf_appendf (buf, ",\"index\":\"%s\"", cs_reg_name (handle, op->mem.index));
+				pj_ks (pj, "index", cs_reg_name (handle, op->mem.index));
 			}
-			r_strbuf_appendf (buf, ",\"scale\":%d", op->mem.scale);
-			r_strbuf_appendf (buf, ",\"disp\":%" PFMT64d, (st64)op->mem.disp);
+			pj_ki (pj, "scale", op->mem.scale);
+			pj_ki (pj, "disp", op->mem.disp);
 			break;
 		default:
-			r_strbuf_appendf (buf, ",\"type\":\"invalid\"");
+			pj_ks (pj, "type", "invalid");
 			break;
 		}
-		r_strbuf_appendf (buf, "}");
+		pj_end (pj);
 	}
-	r_strbuf_appendf (buf, "]");
+	pj_end (pj);
 	if (x->rex) {
-		r_strbuf_append (buf, ",\"rex\":true");
+		pj_kb (pj, "rex", true);
 	}
 	if (x->modrm) {
-		r_strbuf_append (buf, ",\"modrm\":true");
-	}
-	if (x->sib) {
-		r_strbuf_appendf (buf, ",\"sib\":%d", x->sib);
+		pj_kb (pj, "modrm", true);
 	}
 	if (x->disp) {
-		r_strbuf_appendf (buf, ",\"disp\":%" PFMT64d, (st64)x->disp);
+		pj_ki (pj, "disp", x->disp);
+	}
+	if (x->sib) {
+		pj_ki (pj, "sib", x->sib);
 	}
 	if (x->sib_index) {
-		r_strbuf_appendf (buf, ",\"sib_index\":\"%s\"",
-				cs_reg_name (handle, x->sib_index));
+		pj_ks (pj, "sib_index", cs_reg_name (handle, x->sib_index));
 	}
 	if (x->sib_scale) {
-		r_strbuf_appendf (buf, ",\"sib_scale\":%d", x->sib_scale);
+		pj_ks (pj, "sib_scale", cs_reg_name (handle, x->sib_scale));
 	}
 	if (x->sib_base) {
-		r_strbuf_appendf (buf, ",\"sib_base\":\"%s\"",
-				cs_reg_name (handle, x->sib_base));
+		pj_ks (pj, "sib_base", cs_reg_name (handle, x->sib_base));
 	}
-	r_strbuf_append (buf, "}");
+	pj_end (pj);
+
+	char *s = pj_drain (pj);
+	r_strbuf_append (buf, s);
+	free (s);
 }
 
 static bool is_xmm_reg(cs_x86_op op) {
@@ -509,6 +509,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		break;
 	case X86_INS_CLC:
 		esilprintf (op, "0,cf,:=");
+		break;
+	case X86_INS_CMC:
+		esilprintf (op, "cf,!,cf,=");
 		break;
 	case X86_INS_STC:
 		esilprintf (op, "1,cf,:=");
@@ -1033,7 +1036,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		{
 			dst = getarg (&gop, 0, 0, NULL, DST_AR, NULL);
 			esilprintf (op, "%s,%d,%s,-,=[%d],%d,%s,-=",
-				dst ? dst : "eax", rs, sp, rs, rs, sp);
+				r_str_get_fail (dst, "eax"), rs, sp, rs, rs, sp);
 		}
 		break;
 	case X86_INS_PUSHF:
@@ -3329,8 +3332,8 @@ static int init(void *p) {
 
 static int fini(void *p) {
 	if (handle != 0) {
-		// SEGFAULTS RANDOMLY, better leak on exit
-		// cs_close (&handle);
+		// SEGFAULTS RANDOMLY, better leak on exit.. lets try it out again
+		cs_close (&handle);
 		handle = 0;
 	}
 	return true;

@@ -1028,7 +1028,8 @@ static void adjust_class(const RAGraph *g, int is_left, RList **classes, Sdb *re
 	const RGraphNode *gn;
 	const RListIter *it;
 	const RANode *an;
-	int dist, v, is_first = true;
+	int dist = 0;
+	bool is_first = true;
 
 	graph_foreach_anode (classes[c], it, gn, an) {
 		const RGraphNode *sibling;
@@ -1042,7 +1043,7 @@ static void adjust_class(const RAGraph *g, int is_left, RList **classes, Sdb *re
 		if (sibl_anode->klass == c) {
 			continue;
 		}
-		v = adjust_class_val (g, gn, sibling, res, is_left);
+		int v = adjust_class_val (g, gn, sibling, res, is_left);
 		dist = is_first? v: R_MIN (dist, v);
 		is_first = false;
 	}
@@ -1749,15 +1750,18 @@ static int get_edge_number (const RAGraph *g, RANode *src, RANode *dst, bool out
 	return cur_nth;
 }
 
-static int count_edges (const RAGraph *g, RANode *src, RANode *dst) {
+static int count_edges(const RAGraph *g, RANode *src, RANode *dst) {
 	return get_edge_number (g, src, dst, true);
 }
 
-static void backedge_info (RAGraph *g) {
+static void backedge_info(RAGraph *g) {
 	int i, j, k;
 	int min, max;
 	int inedge = 0;
 	int outedge = 0;
+	if (g->n_layers > ST16_MAX) {
+		return;
+	}
 
 	int **arr = R_NEWS0 (int *, g->n_layers);
 	if (!arr) {
@@ -4121,6 +4125,63 @@ static void nextword(RCore *core, RAGraph *g, const char *word) {
 	nextword (core, g, word);
 }
 
+static const char *help_msg_visual_graph[] = {
+	":e cmd.gprompt=agft", "show tinygraph in one side",
+	"+/-/0",        "zoom in/out/default",
+	";",            "add comment in current basic block",
+	". (dot)",      "center graph to the current node",
+	", (comma)",    "toggle graph.few",
+	"^",            "seek to the first bb of the function",
+	"=",            "toggle graph.layout",
+	":cmd",         "run radare command",
+	"'",            "toggle graph.comments",
+	"\"",           "toggle graph.refs",
+	"#",            "toggle graph.hints",
+	"/",            "highlight text",
+	"\\",           "scroll the graph canvas to the next highlight location",
+	"|",            "set cmd.gprompt",
+	"_",            "enter hud selector",
+	">",            "show function callgraph (see graph.refs)",
+	"<",            "show program callgraph (see graph.refs)",
+	"(",            "reverse conditional branch of last instruction in bb",
+	")",            "rotate asm.emu and emu.str",
+	"Home/End",     "go to the top/bottom of the canvas",
+	"Page-UP/DOWN", "scroll canvas up/down",
+	"b",            "visual browse things",
+	"c",            "toggle graph cursor mode",
+	"C",            "toggle scr.colors",
+	"d",            "rename function",
+	"D",            "toggle the mixed graph+disasm mode",
+	"e",            "rotate graph.edges (show/hide edges)",
+	"E",            "rotate graph.linemode (square/diagonal lines)",
+	"F",            "enter flag selector",
+	"g",            "go/seek to given offset",
+	"G",            "debug trace callgraph (generated with dtc)",
+	"hjkl/HJKL",    "scroll canvas or node depending on graph cursor (uppercase for faster)",
+	"i",            "select input nodes by index",
+	"I",            "select output node by index",
+	"m/M",          "change mouse modes",
+	"n/N",          "next/previous scr.nkey (function/flag..)",
+	"o([A-Za-z]*)", "follow jmp/call identified by shortcut (like ;[oa])",
+	"O",            "toggle asm.pseudo and asm.esil",
+	"p/P",          "rotate graph modes (normal, display offsets, minigraph, summary)",
+	"q",            "back to Visual mode",
+	"r",            "toggle jmphints/leahints",
+	"R",            "randomize colors",
+	"s/S",          "step / step over",
+	"tab",          "select next node",
+	"TAB",          "select previous node",
+	"t/f",          "follow true/false edges",
+	"u/U",          "undo/redo seek",
+	"V",            "toggle basicblock / call graphs",
+	"w",            "toggle between movements speed 1 and graph.scroll",
+	"x/X",          "jump to xref/ref",
+	"Y",            "toggle tiny graph",
+	"z",            "toggle node folding",
+	"Z",            "toggle basic block folding",
+	NULL
+};
+
 R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive) {
 	if (is_interactive && !r_cons_is_interactive ()) {
 		eprintf ("Interactive graph mode requires scr.interactive=true.\n");
@@ -4413,62 +4474,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case '?':
 			r_cons_clear00 ();
-			r_cons_printf ("Visual Ascii Art graph keybindings:\n"
-				" :e cmd.gprompt = agft   - show tinygraph in one side\n"
-				" +/-/0        - zoom in/out/default\n"
-				" ;            - add comment in current basic block\n"
-				" . (dot)      - center graph to the current node\n"
-				" , (comma)    - toggle graph.few\n"
-				" ^            - seek to the first bb of the function\n"
-				" =            - toggle graph.layout\n"
-				" :cmd         - run radare command\n"
-				" '            - toggle graph.comments\n"
-				" \"            - toggle graph.refs\n"
-				" #            - toggle graph.hints\n"
-				" /            - highlight text\n"
-				" \\            - scroll the graph canvas to the next highlight location\n"
-				" |            - set cmd.gprompt\n"
-				" _            - enter hud selector\n"
-				" >            - show function callgraph (see graph.refs)\n"
-				" <            - show program callgraph (see graph.refs)\n"
-				" (            - reverse conditional branch of last instruction in bb\n"
-				" )            - rotate asm.emu and emu.str\n"
-				" Home/End     - go to the top/bottom of the canvas\n"
-				" Page-UP/DOWN - scroll canvas up/down\n"
-				" b            - visual browse things\n"
-				" c            - toggle graph cursor mode\n"
-				" C            - toggle scr.colors\n"
-				" d            - rename function\n"
-				" D            - toggle the mixed graph+disasm mode\n"
-				" e            - rotate graph.edges (show/hide edges)\n"
-				" E            - rotate graph.linemode (square/diagonal lines)\n"
-				" F            - enter flag selector\n"
-				" g            - go/seek to given offset\n"
-				" G            - debug trace callgraph (generated with dtc)\n"
-				" hjkl/HJKL    - scroll canvas or node depending on graph cursor (uppercase for faster)\n"
-				" i            - select input nodes by index\n"
-				" I            - select output node by index\n"
-				" m/M          - change mouse modes\n"
-				" n/N          - next/previous scr.nkey (function/flag..)\n"
-				" o([A-Za-z]*) - follow jmp/call identified by shortcut (like ;[oa])\n"
-				" O            - toggle asm.pseudo and asm.esil\n"
-				" p/P          - rotate graph modes (normal, display offsets, minigraph, summary)\n"
-				" q            - back to Visual mode\n"
-				" r            - toggle jmphints/leahints\n"
-				" R            - randomize colors\n"
-				" s/S          - step / step over\n"
-				" tab          - select next node\n"
-				" TAB          - select previous node\n"
-				" t/f          - follow true/false edges\n"
-				" u/U          - undo/redo seek\n"
-				" V            - toggle basicblock / call graphs\n"
-				" w            - toggle between movements speed 1 and graph.scroll\n"
-				" x/X          - jump to xref/ref\n"
-				" Y            - toggle tiny graph\n"
-				" z            - toggle node folding\n"
-				" Z            - toggle basic block folding");
-			r_cons_less ();
-			r_cons_any_key (NULL);
+			RStrBuf *rsb = r_strbuf_new ("");
+			r_core_visual_append_help (rsb, "Visual Graph Mode (VV) Help", help_msg_visual_graph);
+			ret = r_cons_less_str (r_strbuf_get (rsb), "?");
 			break;
 		case '"':
 			r_config_toggle (core->config, "graph.refs");
@@ -4939,7 +4947,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 
 /**
  * @brief Create RAGraph from generic RGraph with RGraphNodeInfo as node data
- * 
+ *
  * @param graph <RGraphNodeInfo>
  * @return RAGraph* NULL if failure
  */

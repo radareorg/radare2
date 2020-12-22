@@ -13,3 +13,10 @@ coverage:
         if_not_found: success
         if_ci_failed: success
         informational: true
+ignore:
+  - "doc"
+  - "man"
+  - "mk"
+  - "pkgcfg"
+  - "sys"
+  - "test"

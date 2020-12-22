@@ -90,7 +90,7 @@ static int format_output(RNum *num, char mode, const char *s, int force_mode, ut
 		break;
 	case 'T':
 		if (n) {
-			r_num_to_trits (strbits, n);
+			r_num_to_ternary (strbits, n);
 			printf ("%st\n", strbits);
 		} else {
 			printf ("0t\n");
@@ -520,8 +520,8 @@ dotherax:
 				printf ("double: %lf\n", d);
 
 				/* ternary */
-				r_num_to_trits (out, n);
-				printf ("trits   0t%s\n", out);
+				r_num_to_ternary (out, n);
+				printf ("ternary 0t%s\n", out);
 
 		return true;
 	} else if (flags & (1 << 19)) { // -L

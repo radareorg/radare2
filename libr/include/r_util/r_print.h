@@ -125,6 +125,7 @@ typedef struct r_print_t {
 	// represents the first not-visible offset on the screen
 	// (only when in visual disasm mode)
 	ut64 screen_bounds;
+	RCharset *charset;
 } RPrint;
 
 #ifdef R_API

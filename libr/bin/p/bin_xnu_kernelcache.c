@@ -239,6 +239,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 
 beach:
 	r_buf_free (fbuf);
+	obj->cache_buf = NULL;
 	MACH0_(mach0_free) (main_mach0);
 	return false;
 }
@@ -1499,7 +1500,7 @@ static RList *resolve_mig_subsystem(RKernelCacheObj *obj) {
 			continue;
 		}
 
-		ut64 *routines = (ut64 *) malloc (n_routines * sizeof (ut64));
+		ut64 *routines = (ut64 *) calloc (n_routines, sizeof (ut64));
 		if (!routines) {
 			goto beach;
 		}

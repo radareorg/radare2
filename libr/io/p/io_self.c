@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2016 - pancake */
+/* radare - LGPL - Copyright 2014-2020 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
@@ -106,8 +106,8 @@ static int update_self_regions(RIO *io, int pid) {
 			break;
 		}
 		path[0]='\0';
-		sscanf (line, "%s %s %*s %*s %*s %[^\n]", region+2, perms, path);
-		memcpy (region, "0x", 2);
+		strcpy (region, "0x");
+		sscanf (line, "%s %s %*s %*s %*s %[^\n]", region + 2, perms, path);
 		pos_c = strchr (region + 2, '-');
 		if (pos_c) {
 			*pos_c++ = 0;

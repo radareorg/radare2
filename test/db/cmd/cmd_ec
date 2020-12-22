@@ -172,7 +172,7 @@ EXPECT=<<EOF
  [90m##[0m  graph.box4
  [32m##[0m  graph.true
  [31m##[0m  graph.false
- [34m##[0m  graph.trufae
+ [36m##[0m  graph.trufae
  [34m##[0m  graph.current
  [33m##[0m  graph.traced
  [35m##[0m  graph.diff.unknown

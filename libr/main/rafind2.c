@@ -69,7 +69,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		if (ro->widestr) {
 			str = _str;
 			int i, j = 0;
-			for (i = delta; ro->buf[i] && i < sizeof (_str); i++) {
+			for (i = delta; ro->buf[i] && i < sizeof (_str) - 1; i++) {
 				char ch = ro->buf[i];
 				if (ch == '"' || ch == '\\') {
 					ch = '\'';
@@ -91,7 +91,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			str[j] = 0;
 		} else {
 			size_t i;
-			for (i = 0; i < sizeof (_str); i++) {
+			for (i = 0; i < sizeof (_str) - 1; i++) {
 				char ch = ro->buf[delta + i];
 				if (ch == '"' || ch == '\\') {
 					ch = '\'';
@@ -105,7 +105,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		}
 	} else {
 		size_t i;
-		for (i = 0; i < sizeof (_str); i++) {
+		for (i = 0; i < sizeof (_str) - 1; i++) {
 			char ch = ro->buf[delta + i];
 			if (ch == '"' || ch == '\\') {
 				ch = '\'';

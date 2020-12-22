@@ -1,18 +1,18 @@
-/* radare - LPGL - Copyright 2017 condret */
+/* radare - LPGL - Copyright 2017-2020 condret */
 
 #include <r_lib.h>
 #include <r_core.h>
 #include <r_lang.h>
 
-static int lang_lib_init (RLang *user) {
+static bool lang_lib_init(RLang *user) {
 	return true;
 }
 
-static int lang_lib_file_run (RLang *user, const char *file) {
+static bool lang_lib_file_run(RLang *user, const char *file) {
 	char *libpath;
 	void *lib;
 	if (!(libpath = r_str_new (file))) {
-		return -1;
+		return false;
 	}
 	if (!r_str_startswith (libpath, "/") && !r_str_startswith (libpath, "./")) {
 		libpath = r_str_prepend (libpath, "./");
@@ -24,7 +24,7 @@ static int lang_lib_file_run (RLang *user, const char *file) {
 	}
 	if (!r_file_exists (libpath)) {
 		free (libpath);
-		return -1;
+		return false;
 	}	
 	
 	lib = r_lib_dl_open (libpath);
@@ -39,7 +39,7 @@ static int lang_lib_file_run (RLang *user, const char *file) {
 		r_lib_dl_close (lib);
 	}
 	free (libpath);
-	return 0;
+	return true;
 }
 
 static RLangPlugin r_lang_plugin_lib = {

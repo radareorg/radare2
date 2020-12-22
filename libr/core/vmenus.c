@@ -1413,16 +1413,16 @@ static const char *show_anal_classes(RCore *core, char mode, int *idx, SdbList *
 
 			if (i == *idx) {
 				pointer = Color_GREEN ">>";
-				txt_clr = Color_YELLOW; 
+				txt_clr = Color_YELLOW;
 				cur_class = class_name;
-			} 
-			r_cons_printf ("%s" Color_RESET " %02d" 
+			}
+			r_cons_printf ("%s" Color_RESET " %02d"
 				" %s%s\n" Color_RESET, pointer, i, txt_clr, class_name);
 		} else {
 			r_cons_printf ("%s %02d %s\n", (i==*idx) ? ">>" : "- ", i, class_name);
 		}
 
-		i++;		
+		i++;
 	}
 
 	return cur_class;
@@ -1462,17 +1462,17 @@ R_API int r_core_visual_anal_classes(RCore *core) {
 		case 'C':
 			r_config_toggle (core->config, "scr.color");
 			break;
-		case 'J': 
+		case 'J':
 			index += 10;
 			if (index >= list->length) {
 				index = list->length -1;
 			}
 			break;
-		case 'j': 
+		case 'j':
 			if (++index >= list->length) {
 				index = 0;
 			}
-			break; 
+			break;
 		case 'k':
 			if (--index < 0) {
 				index = list->length - 1;
@@ -3030,10 +3030,10 @@ static void r_core_visual_anal_refresh_column (RCore *core, int colpos) {
 }
 
 static const char *help_fun_visual[] = {
-	"(a)", "analyze ", "(-)", "delete ", "(x)", "xrefs ", "(X)", "refs   j/k next/prev\n",
-	"(r)", "rename ",  "(c)", "calls ", "(d)", "definetab column (_) hud\n",
-	"(d)", "define ",  "(v)", "vars ", "(?)"," help ", "(:)", "shell " ,"(q)", "quit\n",
-	"(s)", "edit function signature.  \n\n",
+	"(a)", "analyze ", "(-)", "delete ", "(x)", "xrefs ", "(X)", "refs ", "(j/k)", "next/prev\n",
+	"(r)", "rename ",  "(c)", "calls ", "(d)", "define ", "(Tab)", "disasm ", "(_)", "hud\n",
+	"(d)", "define ",  "(v)", "vars ", "(?)", " help ", "(:)", "shell " ,"(q)", "quit\n",
+	"(s)", "edit function signature\n\n",
 	NULL
 };
 
@@ -3044,25 +3044,27 @@ static const char *help_var_visual[] = {
 	NULL
 };
 
-static const char *help_vv_visual[] = {
-	"j,k", "select next/prev item or scroll if tab pressed",
-	"J,K", "scroll next/prev page \"\"",
-	"h,q", "go back, quit",
-	"p,P", "switch next/prev print mode",
-	"v", "view selected function arguments and variables",
-	"x,X", "see xrefs to the selected function",
-	"tab", "toggle disasm column selection (to scroll in code)",
-	"!", "run 'afls' to sort all functions by address",
-	".", "seek to current function address",
-	":", "run r2 commands",
-	"_", "hud mode. same as: s $(afl~...)",
-	"enter", "enter function view (variables), xrefs",
+static const char *help_visual_anal_actions[] = {
+	"functions:", "Add, Modify, Delete, Xrefs Calls Vars",
+	"variables:", "Add, Modify, Delete",
 	NULL
 };
 
-static const char *help_vv_actions_visual[] = {
-	" functions:", "Add, Modify, Delete, Xrefs Calls Vars",
-	" variables:", "Add, Modify, Delete",
+static const char *help_visual_anal_keys[] = {
+	"j/k",	"select next/prev item; scroll disasm column",
+	"J/K",	"scroll next/prev by page",
+	"b/h",	"functions analysis (level 0)",
+	"v/l",	"variables analysis (level 1)",
+	"c",	"calls/xref analysis (level 2)",
+	"q/Q",	"go back one level or quit",
+	"Space/Enter",	"quit",
+	"p/P",	"switch next/prev print mode",
+	"x/X",	"see xrefs to the selected function",
+	"Tab",	"disasm column scrolling",
+	"!",	"run `afls` to sort all functions by address",
+	".",	"seek to current function address",
+	":",	"run r2 commands",
+	"_",	"hud mode, same as `s $(afl~...)`",
 	NULL
 };
 
@@ -3333,13 +3335,11 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			break;
 		case '?':
 			r_cons_clear00 ();
-			RStrBuf *buf = r_strbuf_new ("");
-			r_cons_println ("|Usage: vv");
-			r_core_visual_append_help (buf, "Actions supported", help_vv_actions_visual);
-			r_core_visual_append_help (buf, "Keys", help_vv_visual);
-			r_cons_printf ("%s", r_strbuf_drain (buf));
-			r_cons_flush ();
-			r_cons_any_key (NULL);
+			RStrBuf *rsb = r_strbuf_new ("");
+			r_core_visual_append_help (rsb, "Functions/Variables Visual Analysis Mode (Vv) Help", (const char *[]){ NULL });
+			r_core_visual_append_help (rsb, "Actions Supported", help_visual_anal_actions);
+			r_core_visual_append_help (rsb, "Keys", help_visual_anal_keys);
+			r_cons_less_str (r_strbuf_get (rsb), "?");
 			break;
 		case 9:
 			selectPanel = !selectPanel;
@@ -3578,7 +3578,6 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			level = 0;
 			r_core_seek (core, addr, SEEK_SET);
 			goto beach;
-			break;
 		case 'l':
 			level = 1;
 			_option = option;
@@ -4296,7 +4295,7 @@ R_API void r_core_visual_colors(RCore *core) {
 			"' to change foreground/background color\n");
 		r_cons_printf ("# Export colorscheme with command 'ec* > filename'\n");
 		r_cons_printf ("# Preview command: '%s' - Press 'c' to change it\n", preview_cmd);
-		r_cons_printf ("# Selected colorscheme : %s  - Use 'hl' or left/right arrow keys to change colorscheme\n", curtheme ? curtheme : "default");
+		r_cons_printf ("# Selected colorscheme : %s  - Use 'hl' or left/right arrow keys to change colorscheme\n", r_str_get_fail (curtheme, "default"));
 		r_cons_printf ("# Selected element: %s  - Use 'jk' or up/down arrow keys to change element\n", k);
 		r_cons_printf ("# ec %s %s # %d (\\x1b%.*s)",
 			k, color, atoi (cstr+7), esc ? (int)(esc - cstr - 1) : (int)strlen (cstr + 1), cstr+1);

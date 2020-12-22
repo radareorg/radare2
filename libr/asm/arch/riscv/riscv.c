@@ -38,7 +38,7 @@ static const char * const *riscv_fpr_names = riscv_fpr_names_abi;
 static int init = 0;
 
 static void arg_p (char *buf, unsigned long val, const char* const* array, size_t size) {
-	const char *s = val >= size || array[val] ? array[val] : "unknown";
+	const char *s = (val >= size || array[val]) ? array[val] : "unknown";
 	sprintf (buf+strlen (buf), "%s", s);
 }
 

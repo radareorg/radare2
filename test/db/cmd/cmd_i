@@ -20,10 +20,10 @@ vaddr      name
 0x004003a8 .init
 0x00400260 .gnu.hash
 0x00400200 .interp
-0x0040021c .note.ABI_tag
+0x0040021c .note.ABI-tag
 0x00400328 .gnu.version_r
 0x00000000 .comment
-0x0040023c .note.gnu.build_id
+0x0040023c .note.gnu.build-id
 0x006008d0 .got.plt
 0x004005d0 .eh_frame_hdr
 0x004002e0 .dynstr
@@ -157,7 +157,7 @@ RUN
 
 NAME=i (all) (malloc)
 FILE=malloc://1025
-ARGS=-a x86
+ARGS=-a x86 -b 64
 CMDS=<<EOF
 i
 ia
@@ -242,7 +242,7 @@ RUN
 
 NAME=i (all) (malloc) iI*
 FILE=malloc://1024
-ARGS=-a x86
+ARGS=-a x86 -b 64
 CMDS=<<EOF
 i
 i*
@@ -342,7 +342,6 @@ iAj
 EOF
 EXPECT=<<EOF
 0   0x00000000 266108 mips_32 mips1 o32 
-
 {"bins":[{"arch":"mips","bits":32,"offset":0,"size":266108,"isa":"mips1","features":"o32","machine":"MIPS R3000"}]}
 EOF
 RUN
@@ -355,7 +354,6 @@ iAj
 EOF
 EXPECT=<<EOF
 0   0x00000000 1039368 mips_64 mips64r2 n64 
-
 {"bins":[{"arch":"mips","bits":64,"offset":0,"size":1039368,"isa":"mips64r2","features":"n64","machine":"MIPS R3000"}]}
 EOF
 RUN
@@ -365,7 +363,6 @@ FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iA
 EXPECT=<<EOF
 0   0x00000000 4899 x86_32 
-
 EOF
 RUN
 
@@ -998,7 +995,7 @@ FILE=bins/elf/libmagic.so
 CMDS=ic*
 EXPECT=<<EOF
 fs classes
-"f class.JNIEnv = 0x6060"
+"f class._JNIEnv = 0x6060"
 "f method._JNIEnv.FindClass(char_const*) = 0x6060"
 "f method._JNIEnv.DeleteLocalRef(_jobject*) = 0x606a"
 "f method._JNIEnv.NewObject(_jclass*,__jmethodID*,_...) = 0x6074"
@@ -1039,20 +1036,20 @@ fs classes
 "f method.std::bad_exception.~bad_exception() = 0x889c"
 "f method.std::bad_exception.what()_const = 0x8904"
 "td struct std::bad_exception { char empty[0];};"
-"f class.cxxabiv1::__forced_unwind = 0x88c4"
+"f class.__cxxabiv1::__forced_unwind = 0x88c4"
 "f method.__cxxabiv1::__forced_unwind.~__forced_unwind() = 0x88c4"
 "td struct __cxxabiv1::__forced_unwind { char empty[0];};"
-"f class.cxxabiv1::__foreign_exception = 0x88dc"
+"f class.__cxxabiv1::__foreign_exception = 0x88dc"
 "f method.__cxxabiv1::__foreign_exception.~__foreign_exception() = 0x88dc"
 "td struct __cxxabiv1::__foreign_exception { char empty[0];};"
-"f class.eh_globals_init = 0x8984"
+"f class.__eh_globals_init = 0x8984"
 "f method.__eh_globals_init.~__eh_globals_init() = 0x8984"
 "td struct __eh_globals_init { char empty[0];};"
-"f class.cxxabiv1 = 0x943c"
+"f class.__cxxabiv1 = 0x943c"
 "f method.__cxxabiv1.__terminate(void_(*)()) = 0x943c"
 "f method.__cxxabiv1.__unexpected(void_(*)()) = 0x9488"
 "td struct __cxxabiv1 { char empty[0];};"
-"f class.cxxabiv1::__fundamental_type_info = 0x94e4"
+"f class.__cxxabiv1::__fundamental_type_info = 0x94e4"
 "f method.__cxxabiv1::__fundamental_type_info.~__fundamental_type_info() = 0x94e4"
 "td struct __cxxabiv1::__fundamental_type_info { char empty[0];};"
 "f class.std::type_info = 0x97bc"
@@ -1063,23 +1060,23 @@ fs classes
 "f method.std::type_info.__do_upcast(__cxxabiv1::__class_type_info_const*,_void**)_const = 0x97e4"
 "f method.std::type_info.operator==(std::type_info_const&)_const = 0x9808"
 "td struct std::type_info { char empty[0];};"
-"f class.cxxabiv1::__pointer_type_info = 0x9528"
+"f class.__cxxabiv1::__pointer_type_info = 0x9528"
 "f method.__cxxabiv1::__pointer_type_info.__is_pointer_p()_const = 0x9528"
 "f method.__cxxabiv1::__pointer_type_info.~__pointer_type_info() = 0x9530"
 "f method.__cxxabiv1::__pointer_type_info.__pointer_catch(__cxxabiv1::__pbase_type_info_const*,_void**,_unsigned_int)_const = 0x9574"
 "td struct __cxxabiv1::__pointer_type_info { char empty[0];};"
-"f class.cxxabiv1::__pbase_type_info = 0x9dd0"
+"f class.__cxxabiv1::__pbase_type_info = 0x9dd0"
 "f method.__cxxabiv1::__pbase_type_info.~__pbase_type_info() = 0x9df0"
 "f method.__cxxabiv1::__pbase_type_info.__do_catch(std::type_info_const*,_void**,_unsigned_int)_const = 0x9e34"
 "f method.__cxxabiv1::__pbase_type_info.__pointer_catch(__cxxabiv1::__pbase_type_info_const*,_void**,_unsigned_int)_const = 0x9dd0"
 "td struct __cxxabiv1::__pbase_type_info { char empty[0];};"
-"f class.cxxabiv1::__si_class_type_info = 0x95f4"
+"f class.__cxxabiv1::__si_class_type_info = 0x95f4"
 "f method.__cxxabiv1::__si_class_type_info.~__si_class_type_info() = 0x95f4"
 "f method.__cxxabiv1::__si_class_type_info.__do_find_public_src(int,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*)_const = 0x9638"
 "f method.__cxxabiv1::__si_class_type_info.__do_dyncast(int,___cxxabiv1::__class_type_info::__sub_kind,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__dyncast_result&)_const = 0x969c"
 "f method.__cxxabiv1::__si_class_type_info.__do_upcast(__cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__upcast_result&)_const = 0x977c"
 "td struct __cxxabiv1::__si_class_type_info { char empty[0];};"
-"f class.cxxabiv1::__class_type_info = 0x9868"
+"f class.__cxxabiv1::__class_type_info = 0x9868"
 "f method.__cxxabiv1::__class_type_info.~__class_type_info() = 0x98d8"
 "f method.__cxxabiv1::__class_type_info.__do_upcast(__cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__upcast_result&)_const = 0x991c"
 "f method.__cxxabiv1::__class_type_info.__do_catch(std::type_info_const*,_void**,_unsigned_int)_const = 0x9948"
@@ -1087,16 +1084,16 @@ fs classes
 "f method.__cxxabiv1::__class_type_info.__do_find_public_src(int,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*)_const = 0x98c4"
 "f method.__cxxabiv1::__class_type_info.__do_dyncast(int,___cxxabiv1::__class_type_info::__sub_kind,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__dyncast_result&)_const = 0x998c"
 "td struct __cxxabiv1::__class_type_info { char empty[0];};"
-"f class.gnu_cxx = 0x9ec4"
+"f class.__gnu_cxx = 0x9ec4"
 "f method.__gnu_cxx.__verbose_terminate_handler() = 0x9ec4"
 "f method.__gnu_cxx.__throw_concurrence_lock_error() = 0x12780"
 "f method.__gnu_cxx.__throw_concurrence_unlock_error() = 0x127c8"
 "td struct __gnu_cxx { char empty[0];};"
-"f class.gnu_cxx::__concurrence_lock_error = 0x126b0"
+"f class.__gnu_cxx::__concurrence_lock_error = 0x126b0"
 "f method.__gnu_cxx::__concurrence_lock_error.what()_const = 0x126b0"
 "f method.__gnu_cxx::__concurrence_lock_error.~__concurrence_lock_error() = 0x126f8"
 "td struct __gnu_cxx::__concurrence_lock_error { char empty[0];};"
-"f class.gnu_cxx::__concurrence_unlock_error = 0x126c0"
+"f class.__gnu_cxx::__concurrence_unlock_error = 0x126c0"
 "f method.__gnu_cxx::__concurrence_unlock_error.what()_const = 0x126c0"
 "f method.__gnu_cxx::__concurrence_unlock_error.~__concurrence_unlock_error() = 0x126d0"
 "td struct __gnu_cxx::__concurrence_unlock_error { char empty[0];};"
@@ -2672,8 +2669,8 @@ nth paddr        size vaddr       vsize perm name
 -------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ---- 
 1   0x00000134   0x13 0x08048134   0x13 -r-- .interp
-2   0x00000148   0x20 0x08048148   0x20 -r-- .note.ABI_tag
-3   0x00000168   0x24 0x08048168   0x24 -r-- .note.gnu.build_id
+2   0x00000148   0x20 0x08048148   0x20 -r-- .note.ABI-tag
+3   0x00000168   0x24 0x08048168   0x24 -r-- .note.gnu.build-id
 4   0x0000018c   0x20 0x0804818c   0x20 -r-- .gnu.hash
 5   0x000001ac   0x50 0x080481ac   0x50 -r-- .dynsym
 6   0x000001fc   0x4a 0x080481fc   0x4a -r-- .dynstr
@@ -2729,7 +2726,7 @@ NAME=iSj
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iSj
 EXPECT=<<EOF
-[{"name":"","size":0,"vsize":0,"perm":"----","paddr":0,"vaddr":0},{"name":".interp","size":19,"vsize":19,"perm":"-r--","paddr":308,"vaddr":134512948},{"name":".note.ABI_tag","size":32,"vsize":32,"perm":"-r--","paddr":328,"vaddr":134512968},{"name":".note.gnu.build_id","size":36,"vsize":36,"perm":"-r--","paddr":360,"vaddr":134513000},{"name":".gnu.hash","size":32,"vsize":32,"perm":"-r--","paddr":396,"vaddr":134513036},{"name":".dynsym","size":80,"vsize":80,"perm":"-r--","paddr":428,"vaddr":134513068},{"name":".dynstr","size":74,"vsize":74,"perm":"-r--","paddr":508,"vaddr":134513148},{"name":".gnu.version","size":10,"vsize":10,"perm":"-r--","paddr":582,"vaddr":134513222},{"name":".gnu.version_r","size":32,"vsize":32,"perm":"-r--","paddr":592,"vaddr":134513232},{"name":".rel.dyn","size":8,"vsize":8,"perm":"-r--","paddr":624,"vaddr":134513264},{"name":".rel.plt","size":24,"vsize":24,"perm":"-r--","paddr":632,"vaddr":134513272},{"name":".init","size":35,"vsize":35,"perm":"-r-x","paddr":656,"vaddr":134513296},{"name":".plt","size":64,"vsize":64,"perm":"-r-x","paddr":704,"vaddr":134513344},{"name":".text","size":404,"vsize":404,"perm":"-r-x","paddr":768,"vaddr":134513408},{"name":".fini","size":20,"vsize":20,"perm":"-r-x","paddr":1172,"vaddr":134513812},{"name":".rodata","size":21,"vsize":21,"perm":"-r--","paddr":1192,"vaddr":134513832},{"name":".eh_frame_hdr","size":44,"vsize":44,"perm":"-r--","paddr":1216,"vaddr":134513856},{"name":".eh_frame","size":176,"vsize":176,"perm":"-r--","paddr":1260,"vaddr":134513900},{"name":".init_array","size":4,"vsize":4,"perm":"-rw-","paddr":1436,"vaddr":134518172},{"name":".fini_array","size":4,"vsize":4,"perm":"-rw-","paddr":1440,"vaddr":134518176},{"name":".jcr","size":4,"vsize":4,"perm":"-rw-","paddr":1444,"vaddr":134518180},{"name":".dynamic","size":232,"vsize":232,"perm":"-rw-","paddr":1448,"vaddr":134518184},{"name":".got","size":4,"vsize":4,"perm":"-rw-","paddr":1680,"vaddr":134518416},{"name":".got.plt","size":24,"vsize":24,"perm":"-rw-","paddr":1684,"vaddr":134518420},{"name":".data","size":8,"vsize":8,"perm":"-rw-","paddr":1708,"vaddr":134518444},{"name":".bss","size":0,"vsize":4,"perm":"-rw-","paddr":1716,"vaddr":134518452},{"name":".comment","size":17,"vsize":17,"perm":"----","paddr":1716,"vaddr":0},{"name":".shstrtab","size":262,"vsize":262,"perm":"----","paddr":1733,"vaddr":0},{"name":".symtab","size":1104,"vsize":1104,"perm":"----","paddr":3196,"vaddr":0},{"name":".strtab","size":599,"vsize":599,"perm":"----","paddr":4300,"vaddr":0}]
+[{"name":"","size":0,"vsize":0,"perm":"----","paddr":0,"vaddr":0},{"name":".interp","size":19,"vsize":19,"perm":"-r--","paddr":308,"vaddr":134512948},{"name":".note.ABI-tag","size":32,"vsize":32,"perm":"-r--","paddr":328,"vaddr":134512968},{"name":".note.gnu.build-id","size":36,"vsize":36,"perm":"-r--","paddr":360,"vaddr":134513000},{"name":".gnu.hash","size":32,"vsize":32,"perm":"-r--","paddr":396,"vaddr":134513036},{"name":".dynsym","size":80,"vsize":80,"perm":"-r--","paddr":428,"vaddr":134513068},{"name":".dynstr","size":74,"vsize":74,"perm":"-r--","paddr":508,"vaddr":134513148},{"name":".gnu.version","size":10,"vsize":10,"perm":"-r--","paddr":582,"vaddr":134513222},{"name":".gnu.version_r","size":32,"vsize":32,"perm":"-r--","paddr":592,"vaddr":134513232},{"name":".rel.dyn","size":8,"vsize":8,"perm":"-r--","paddr":624,"vaddr":134513264},{"name":".rel.plt","size":24,"vsize":24,"perm":"-r--","paddr":632,"vaddr":134513272},{"name":".init","size":35,"vsize":35,"perm":"-r-x","paddr":656,"vaddr":134513296},{"name":".plt","size":64,"vsize":64,"perm":"-r-x","paddr":704,"vaddr":134513344},{"name":".text","size":404,"vsize":404,"perm":"-r-x","paddr":768,"vaddr":134513408},{"name":".fini","size":20,"vsize":20,"perm":"-r-x","paddr":1172,"vaddr":134513812},{"name":".rodata","size":21,"vsize":21,"perm":"-r--","paddr":1192,"vaddr":134513832},{"name":".eh_frame_hdr","size":44,"vsize":44,"perm":"-r--","paddr":1216,"vaddr":134513856},{"name":".eh_frame","size":176,"vsize":176,"perm":"-r--","paddr":1260,"vaddr":134513900},{"name":".init_array","size":4,"vsize":4,"perm":"-rw-","paddr":1436,"vaddr":134518172},{"name":".fini_array","size":4,"vsize":4,"perm":"-rw-","paddr":1440,"vaddr":134518176},{"name":".jcr","size":4,"vsize":4,"perm":"-rw-","paddr":1444,"vaddr":134518180},{"name":".dynamic","size":232,"vsize":232,"perm":"-rw-","paddr":1448,"vaddr":134518184},{"name":".got","size":4,"vsize":4,"perm":"-rw-","paddr":1680,"vaddr":134518416},{"name":".got.plt","size":24,"vsize":24,"perm":"-rw-","paddr":1684,"vaddr":134518420},{"name":".data","size":8,"vsize":8,"perm":"-rw-","paddr":1708,"vaddr":134518444},{"name":".bss","size":0,"vsize":4,"perm":"-rw-","paddr":1716,"vaddr":134518452},{"name":".comment","size":17,"vsize":17,"perm":"----","paddr":1716,"vaddr":0},{"name":".shstrtab","size":262,"vsize":262,"perm":"----","paddr":1733,"vaddr":0},{"name":".symtab","size":1104,"vsize":1104,"perm":"----","paddr":3196,"vaddr":0},{"name":".strtab","size":599,"vsize":599,"perm":"----","paddr":4300,"vaddr":0}]
 EOF
 RUN
 
@@ -2747,8 +2744,8 @@ CMDS=iSq
 EXPECT=<<EOF
 0x0 0x0 ---- 
 0x8048134 0x8048147 -r-- .interp
-0x8048148 0x8048168 -r-- .note.ABI_tag
-0x8048168 0x804818c -r-- .note.gnu.build_id
+0x8048148 0x8048168 -r-- .note.ABI-tag
+0x8048168 0x804818c -r-- .note.gnu.build-id
 0x804818c 0x80481ac -r-- .gnu.hash
 0x80481ac 0x80481fc -r-- .dynsym
 0x80481fc 0x8048246 -r-- .dynstr
@@ -3028,7 +3025,6 @@ FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=iA
 EXPECT=<<EOF
 0   0x00000000 6710 x86_64 
-
 EOF
 RUN
 
@@ -3119,8 +3115,8 @@ nth paddr        size vaddr       vsize perm name
 -------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ---- 
 1   0x00000200   0x1a 0x00400200   0x1a -r-- .interp
-2   0x0000021c   0x20 0x0040021c   0x20 -r-- .note.ABI_tag
-3   0x0000023c   0x24 0x0040023c   0x24 -r-- .note.gnu.build_id
+2   0x0000021c   0x20 0x0040021c   0x20 -r-- .note.ABI-tag
+3   0x0000023c   0x24 0x0040023c   0x24 -r-- .note.gnu.build-id
 4   0x00000260   0x1c 0x00400260   0x1c -r-- .gnu.hash
 5   0x00000280   0x60 0x00400280   0x60 -r-- .dynsym
 6   0x000002e0   0x3d 0x004002e0   0x3d -r-- .dynstr
@@ -3382,7 +3378,7 @@ izzz*~:0
 izzz*~:1
 EOF
 EXPECT=<<EOF
-f str.8 10 @ 0x00000034
+f str._8_b_ 10 @ 0x00000034
 Cs 10 @ 0x00000034
 EOF
 RUN
@@ -3863,7 +3859,7 @@ nth paddr        size vaddr       vsize perm entropy    name
 ------------------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ---- 0.00000000 
 1   0x00000154   0x13 0x08048154   0x13 -r-- 3.68188080 .interp
-2   0x00000168   0x20 0x08048168   0x20 -r-- 1.74868984 .note.ABI_tag
+2   0x00000168   0x20 0x08048168   0x20 -r-- 1.74868984 .note.ABI-tag
 3   0x00000188   0x38 0x08048188   0x38 -r-- 1.23442903 .hash
 4   0x000001c0   0x20 0x080481c0   0x20 -r-- 1.99254169 .gnu.hash
 5   0x000001e0   0x90 0x080481e0   0x90 -r-- 1.56755604 .dynsym
@@ -3949,7 +3945,7 @@ vaddr      paddr      type   name
 0x00000000 52 segment.ehdr
 0x00000000 16 loc.imp._ITM_deregisterTMCloneTable
 0x00000000 16 sym.imp.__cxa_finalize
-0x00000000 16 loc.imp.__gmon_start
+0x00000000 16 loc.imp.__gmon_start__
 0x00000000 16 loc.imp._Jv_RegisterClasses
 0x00000000 16 loc.imp._ITM_registerTMCloneTable
 0x00000034 288 segment.PHDR
@@ -3969,7 +3965,7 @@ vaddr      paddr      type   name
 0x00001ef8 240 segment.DYNAMIC
 0x00001fe8 4 reloc._ITM_deregisterTMCloneTable
 0x00001fec 4 reloc.__cxa_finalize
-0x00001ff0 4 reloc.__gmon_start
+0x00001ff0 4 reloc.__gmon_start__
 0x00001ff8 4 reloc._Jv_RegisterClasses
 0x00001ffc 4 reloc._ITM_registerTMCloneTable
 0x00002000 16 section..got.plt
@@ -4282,9 +4278,12 @@ RUN
 
 NAME=izzz*
 FILE=bins/mach0/fatmach0-3true
-CMDS=izzz*~str.http:__www.apple.com_appleca_codesigning.crl0
+CMDS=izzz*~appleca
 EXPECT=<<EOF
-f str.http:__www.apple.com_appleca_codesigning.crl0 48 @ 0x00002f3c
+f str._http:__www.apple.com_appleca_ro 41 @ 0x00002562
+f str.https:__www.apple.com_appleca_0 32 @ 0x00002963
+f str.http:__www.apple.com_appleca_0 31 @ 0x00002e47
+f str._http:__www.apple.com_appleca_co 48 @ 0x00002f3c
 EOF
 RUN
 

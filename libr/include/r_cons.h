@@ -108,72 +108,6 @@ typedef struct r_cons_grep_t {
 	int icase;
 } RConsGrep;
 
-#if 0
-// TODO Might be better than using r_cons_pal_get_i
-// And have smaller RConsPrintablePalette and RConsPalette
-enum {
-	R_CONS_PAL_0x00 = 0,
-	R_CONS_PAL_0x7f,
-	R_CONS_PAL_0xff,
-	R_CONS_PAL_ARGS,
-	R_CONS_PAL_BIN,
-	R_CONS_PAL_BTEXT,
-	R_CONS_PAL_CALL,
-	R_CONS_PAL_CJMP,
-	R_CONS_PAL_CMP,
-	R_CONS_PAL_COMMENT,
-	R_CONS_PAL_CREG,
-	R_CONS_PAL_FLAG,
-	R_CONS_PAL_FLINE,
-	R_CONS_PAL_FLOC,
-	R_CONS_PAL_FLOW,
-	R_CONS_PAL_FLOW2,
-	R_CONS_PAL_FNAME,
-	R_CONS_PAL_HELP,
-	R_CONS_PAL_INPUT,
-	R_CONS_PAL_INVALID,
-	R_CONS_PAL_JMP,
-	R_CONS_PAL_LABEL,
-	R_CONS_PAL_MATH,
-	R_CONS_PAL_MOV,
-	R_CONS_PAL_NOP,
-	R_CONS_PAL_NUM,
-	R_CONS_PAL_OFFSET,
-	R_CONS_PAL_OTHER,
-	R_CONS_PAL_POP,
-	R_CONS_PAL_PROMPT,
-	R_CONS_PAL_PUSH,
-	R_CONS_PAL_CRYPTO,
-	R_CONS_PAL_REG,
-	R_CONS_PAL_RESET,
-	R_CONS_PAL_RET,
-	R_CONS_PAL_SWI,
-	R_CONS_PAL_TRAP,
-	R_CONS_PAL_AI_READ,
-	R_CONS_PAL_AI_WRITE,
-	R_CONS_PAL_AI_EXEC,
-	R_CONS_PAL_AI_SEQ,
-	R_CONS_PAL_AI_ASCII,
-	R_CONS_PAL_AI_UNMAP,
-	R_CONS_PAL_GUI_CFLOW,
-	R_CONS_PAL_GUI_DATAOFFSET,
-	R_CONS_PAL_GUI_BACKGROUND,
-	R_CONS_PAL_GUI_ALT_BACKGROUND,
-	R_CONS_PAL_GUI_BORDER,
-	R_CONS_PAL_LINEHL,
-	R_CONS_PAL_GRAPH_BOX,
-	R_CONS_PAL_GRAPH_BOX2,
-	R_CONS_PAL_GRAPH_BOX3,
-	R_CONS_PAL_GRAPH_BOX4,
-	R_CONS_PAL_GRAPH_TRUE,
-	R_CONS_PAL_GRAPH_FALSE,
-	R_CONS_PAL_GRAPH_TRUFAE,
-	R_CONS_PAL_GRAPH_TRACED,
-	R_CONS_PAL_GRAPH_CURRENT,
-	R_CONS_PAL_LAST
-};
-#endif
-
 enum { ALPHA_RESET = 0x00, ALPHA_FG = 0x01, ALPHA_BG = 0x02, ALPHA_FGBG = 0x03 };
 enum { R_CONS_ATTR_BOLD = 1u << 1,
        R_CONS_ATTR_DIM = 1u << 2,
@@ -473,6 +407,11 @@ typedef struct r_cons_context_t {
 
 #define HUD_BUF_SIZE 512
 
+typedef struct {
+	int x;
+	int y;
+} RConsCursorPos;
+
 typedef struct r_cons_t {
 	RConsContext *context;
 	char *lastline;
@@ -547,18 +486,8 @@ typedef struct r_cons_t {
 	int click_y;
 	bool show_vals;		// show which section in Vv
 	// TODO: move into instance? + avoid unnecessary copies
+	RConsCursorPos cpos;
 } RCons;
-
-// XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */
-/* XXX : global variables? or a struct with a singleton? */
-//extern FILE *stdin_fd;
-//extern FILE *r_cons_stdin_fd;
-//extern int r_cons_stdout_fd;
-//extern int r_cons_stdout_file;
-//extern char *r_cons_filterline;
-//extern char *r_cons_teefile;
-// not needed anymoar
-//extern int (*r_cons_user_fgets)(char *buf, int len);
 
 #define R_CONS_KEY_F1 0xf1
 #define R_CONS_KEY_F2 0xf2
@@ -902,6 +831,7 @@ R_API void r_cons_strcat_at(const char *str, int x, char y, int w, int h);
 R_API void r_cons_println(const char* str);
 
 R_API void r_cons_strcat_justify(const char *str, int j, char c);
+R_API void r_cons_printat(const char *str, int x, char y);
 R_API int r_cons_memcat(const char *str, int len);
 R_API void r_cons_newline(void);
 R_API void r_cons_filter(void);

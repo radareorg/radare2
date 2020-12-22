@@ -1138,7 +1138,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			if (depth < 1) {
 				depth = 64;
 			}
-			char *words = strdup (addr? addr: "0");
+			char *words = strdup (r_str_get_fail (addr, "0"));
 			char *second = strchr (words, ',');
 			if (second) {
 				*second++ = 0;

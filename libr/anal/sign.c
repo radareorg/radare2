@@ -868,8 +868,8 @@ static RSignBytes *r_sign_fcn_bytes(RAnal *a, RAnalFunction *fcn) {
 	RListIter *iter;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (bb->addr >= ea) {
-			ut64 delta = bb->addr - ea;
-			ut64 rsize = bb->size;
+			size_t delta = bb->addr - ea;
+			size_t rsize = bb->size;
 
 			// bounds check
 			if (delta > size) {
@@ -883,7 +883,9 @@ static RSignBytes *r_sign_fcn_bytes(RAnal *a, RAnalFunction *fcn) {
 			if (!(tmpmask = r_anal_mask (a, rsize, sig->bytes + delta, ea))) {
 				goto bytes_failed;
 			}
-			memcpy (sig->mask + delta, tmpmask, rsize);
+			if (rsize > 0) {
+				memcpy (sig->mask + delta, tmpmask, rsize);
+			}
 			free (tmpmask);
 		}
 	}

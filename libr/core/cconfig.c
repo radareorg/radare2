@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_core.h>
+#include <r_types_base.h>
 
 #define NODECB(w,x,y) r_config_set_cb (cfg,w,x,y)
 #define NODEICB(w,x,y) r_config_set_i_cb (cfg,w,x,y)
@@ -203,7 +204,7 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 			} else {
 				r_cons_printf ("%s%s  %-9s  %-11s %-7s %s\n",
 						feat, feat2, bits, h->name,
-						h->license?h->license:"unknown", h->desc);
+						r_str_get_fail (h->license, "unknown"), h->desc);
 			}
 		}
 	}
@@ -1192,6 +1193,48 @@ static bool cb_bigendian(void *user, void *data) {
 	// Set printing endian to user's choice
 	core->print->big_endian = node->i_value;
 	return true;
+}
+
+static void list_available_plugins(const char *path) {
+	RListIter *iter;
+	const char *fn;
+	RList *files = r_sys_dir (path);
+	r_list_foreach (files, iter, fn) {
+		if (*fn && *fn != '.' && r_str_endswith (fn, ".sdb")) {
+			char *f = strdup (fn);
+			f[strlen (f) - 4] = 0;
+			r_cons_println (f);
+			free (f);
+		}
+	}
+	r_list_free (files);
+}
+
+static bool cb_cfgcharset(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	const char *cf = r_str_trim_head_ro (node->value);
+	if (!*cf) {
+		return false;
+	}
+
+	const char *cs = R2_PREFIX R_SYS_DIR R2_SDB R_SYS_DIR "charsets" R_SYS_DIR;
+	bool rc = true;
+	if (*cf == '?') {
+		list_available_plugins (cs);
+	} else {
+		char *syscs = r_str_newf ("%s%s.sdb", cs, cf);
+		if (r_file_exists (syscs)) {
+			rc = r_charset_open (core->print->charset, syscs);
+		} else {
+			rc = r_charset_open (core->print->charset, cf);
+		}
+		if (!rc) {
+			eprintf ("Warning: Cannot load charset file '%s' '%s'.\n", syscs, cf);
+		}
+		free (syscs);
+	}
+	return rc;
 }
 
 static bool cb_cfgdatefmt(void *user, void *data) {
@@ -2658,6 +2701,28 @@ static bool cb_dirpfx(RCore *core, RConfigNode *node) {
 	return true;
 }
 
+static bool cb_analsyscc(RCore *core, RConfigNode *node) {
+	if (core && core->anal) {
+		if (!strcmp (node->value, "?")) {
+			r_core_cmd0 (core, "afcl");
+			return false;
+		}
+		r_anal_set_syscc_default (core->anal, node->value);
+	}
+	return true;
+}
+
+static bool cb_analcc(RCore *core, RConfigNode *node) {
+	if (core && core->anal) {
+		if (!strcmp (node->value, "?")) {
+			r_core_cmd0 (core, "afcl");
+			return false;
+		}
+		r_anal_set_cc_default (core->anal, node->value);
+	}
+	return true;
+}
+
 static bool cb_anal_roregs(RCore *core, RConfigNode *node) {
 	if (core && core->anal && core->anal->reg) {
 		r_list_free (core->anal->reg->roregs);
@@ -2974,6 +3039,10 @@ R_API int r_core_config_init(RCore *core) {
 	/* anal */
 	SETBPREF ("anal.detectwrites", "false", "Automatically reanalyze function after a write");
 	SETPREF ("anal.fcnprefix", "fcn",  "Prefix new function names with this");
+	const char *analcc = r_anal_cc_default (core->anal);
+	SETCB ("anal.cc", analcc? analcc: "", (RConfigCallback)&cb_analcc, "Specify default calling convention");
+	const char *analsyscc = r_anal_syscc_default (core->anal);
+	SETCB ("anal.syscc", analsyscc? analsyscc: "", (RConfigCallback)&cb_analsyscc, "Specify default syscall calling convention");
 	SETCB ("anal.verbose", "false", &cb_analverbose, "Show RAnal warnings when analyzing code");
 	SETBPREF ("anal.a2f", "false",  "Use the new WIP analysis algorithm (core/p/a2f), anal.depth ignored atm");
 	SETCB ("anal.roregs", "gp,zero", (RConfigCallback)&cb_anal_roregs, "Comma separated list of register names to be readonly");
@@ -3259,6 +3328,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("bin.usextr", "true", &cb_usextr, "Use extract plugins when loading files");
 	SETCB ("bin.useldr", "true", &cb_useldr, "Use loader plugins when loading files");
 	SETCB ("bin.str.purge", "", &cb_strpurge, "Purge strings (e bin.str.purge=? provides more detail)");
+	SETPREF ("bin.str.real", "false", "Set the realname in rbin.strings for better disasm (EXPERIMENTAL)");
 	SETBPREF ("bin.b64str", "false", "Try to debase64 the strings");
 	SETCB ("bin.at", "false", &cb_binat, "RBin.cur depends on RCore.offset");
 	SETBPREF ("bin.libs", "false", "Try to load libraries after loading main binary");
@@ -3296,6 +3366,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("prj.simple", "false", "Use simple project saving style (functions, comments, options)");
 
 	/* cfg */
+	SETCB ("cfg.charset", "", &cb_cfgcharset, "Specify encoding to use in pse");
 	SETBPREF ("cfg.r2wars", "false", "Enable some tweaks for the r2wars game");
 	SETBPREF ("cfg.plugins", "true", "Load plugins at startup");
 	SETCB ("time.fmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
@@ -3305,9 +3376,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cfg.debug", "false", &cb_cfgdebug, "Debugger mode");
 	p = r_sys_getenv ("EDITOR");
 #if __WINDOWS__
-	r_config_set (cfg, "cfg.editor", p? p: "notepad");
+	r_config_set (cfg, "cfg.editor", r_str_get_fail (p, "notepad"));
 #else
-	r_config_set (cfg, "cfg.editor", p? p: "vi");
+	r_config_set (cfg, "cfg.editor", r_str_get_fail (p, "vi"));
 #endif
 	free (p);
 	r_config_desc (cfg, "cfg.editor", "Select default editor program");
@@ -3344,11 +3415,11 @@ R_API int r_core_config_init(RCore *core) {
 	free (p);
 	// R2_LOGSRCINFO / log.srcinfo
 	p = r_sys_getenv ("R2_LOGSRCINFO");
-	SETCB ("log.srcinfo", p ? p : "false", cb_log_config_srcinfo, "Should the log output contain src info (filename:lineno)");
+	SETCB ("log.srcinfo", r_str_get_fail (p, "false"), cb_log_config_srcinfo, "Should the log output contain src info (filename:lineno)");
 	free (p);
 	// R2_LOGCOLORS / log.colors
 	p = r_sys_getenv ("R2_LOGCOLORS");
-	SETCB ("log.colors", p ? p : "false", cb_log_config_colors, "Should the log output use colors (TODO)");
+	SETCB ("log.colors", r_str_get_fail (p, "false"), cb_log_config_colors, "Should the log output use colors (TODO)");
 	free (p);
 
 	SETCB ("log.events", "false", &cb_log_events, "Remote HTTP server to sync events with");
@@ -3390,7 +3461,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("dir.types", "/usr/include", "Default path to look for cparse type files");
 	SETPREF ("dir.libs", "", "Specify path to find libraries to load when bin.libs=true");
 	p = r_sys_getenv (R_SYS_HOME);
-	SETCB ("dir.home", p? p: "/", &cb_dirhome, "Path for the home directory");
+	SETCB ("dir.home", r_str_get_fail (p, "/"), &cb_dirhome, "Path for the home directory");
 	free (p);
 	p = r_sys_getenv (R_SYS_TMP);
 	SETCB ("dir.tmp", r_str_get (p), &cb_dirtmp, "Path of the tmp directory");
@@ -3567,7 +3638,7 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	SETPREF ("http.port", "9090", "HTTP server port");
 	SETPREF ("http.maxport", "9999", "Last HTTP server port");
-	SETPREF ("http.ui", "m", "Default webui (enyo, m, p, t)");
+	SETPREF ("http.ui", "m", "Default webui (m, t, f)");
 	SETBPREF ("http.sandbox", "true", "Sandbox the HTTP server");
 	SETI ("http.timeout", 3, "Disconnect clients after N seconds of inactivity");
 	SETI ("http.dietime", 0, "Kill server after N seconds with no client");
@@ -3669,6 +3740,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("scr.wheel.nkey", "false", "Use sn/sp and scr.nkey on wheel instead of scroll");
 	// RENAME TO scr.mouse
 	SETBPREF ("scr.wheel", "true", "Mouse wheel in Visual; temporaryly disable/reenable by right click/Enter)");
+	SETBPREF ("scr.cursor", "false", "Keyboard controlled cursor in visual and panels");
 	SETPREF ("scr.layout", "", "Name of the selected layout");
 	// DEPRECATED: USES hex.cols now SETI ("scr.colpos", 80, "Column position of cmd.cprompt in visual");
 	SETCB ("scr.breakword", "", &cb_scrbreakword, "Emulate console break (^C) when a word is printed (useful for pD)");
@@ -3809,7 +3881,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("zoom.maxsz", 512, "Zoom max size of block");
 	SETI ("zoom.to", 0, "Zoom end address");
 	n = NODECB ("zoom.in", "io.map", &cb_searchin);
-	SETDESC (n, "Specify  boundaries for zoom");
+	SETDESC (n, "Specify boundaries for zoom");
 	SETOPTIONS (n, "raw", "block",
 		"bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x",
 		"io.map", "io.maps", "io.maps.rwx", "io.maps.r", "io.maps.rw", "io.maps.rx", "io.maps.wx", "io.maps.x",

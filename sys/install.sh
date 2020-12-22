@@ -27,8 +27,13 @@ while : ; do
 		shift
 		continue
 		;;
+	-*)
+		# penguin face just for flags
+		ARGS="${ARGS} $1"
+		;;
 	*)
 		ARGS="${ARGS} $1"
+		PREFIX="$1"
 		;;
 	esac
 	shift
@@ -73,6 +78,10 @@ fi
 umask 0002
 
 export NOSUDO
+
+if [ -w "${PREFIX}" ]; then
+	NOSUDO=1
+fi
 if [ -n "${NOSUDO}" ]; then
 	SUDO=""
 else
@@ -92,15 +101,18 @@ if [ "${USE_SU}" = 1 ]; then
 fi
 
 if [ "${M32}" = 1 ]; then
-	./sys/build-m32.sh ${ARGS} || exit 1
+	${SHELL} ./sys/build-m32.sh ${ARGS} || exit 1
 elif [ "${HARDEN}" = 1 ]; then
 	# shellcheck disable=SC2048
 	# shellcheck disable=SC2086
-	./sys/build-harden.sh ${ARGS} || exit 1
+	${SHELL} ./sys/build-harden.sh ${ARGS} || exit 1
 else
 	# shellcheck disable=SC2048
 	# shellcheck disable=SC2086
-	./sys/build.sh ${ARGS} || exit 1
+	${SHELL} ./sys/build.sh ${ARGS} || exit 1
 fi
 
 ${SUDO} ${MAKE} ${INSTALL_TARGET} || exit 1
+if [ -z "${NOSUDO}" ]; then
+	${SHELL} ./sys/ldconfig.sh
+fi

@@ -312,6 +312,7 @@ static bool set_reg_profile(RAnal *anal) {
 			"=PC	pc\n"
 			"=SP	r1\n"
 			"=SR	srr1\n" // status register ??
+			"=SN	r0\n" // also for ret
 			"=A0	r3\n" // also for ret
 			"=A1	r4\n"
 			"=A2	r5\n"

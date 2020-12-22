@@ -28,11 +28,20 @@ command-line hexadecimal editor able to open disk files,
 but later added support for analyzing binaries, disassembling
 code, debugging programs, attaching to remote gdb servers...
 
-radare2 is portable.
+## Learn More
 
 To learn more you may read the [official radare2 book](https://book.rada.re),
 the source code, or browse the web for blog posts or presentations from
 [r2con](https://www.youtube.com/c/r2con).
+
+You may also want to meet other perople in r2land. use the following chats:
+
+* irc.freenode.net `#radare` `#radare_side`
+* [Telegram](https://t.me/radare)
+* [Discord](https://discord.gg/MgEdxrMnqx)
+* Twitter: [@radareorg](https://twitter.com/radareorg)
+
+Website: [https://www.radare.org/](https://www.radare.org/)
 
 ## Operating Systems
 
@@ -131,14 +140,3 @@ repository and run all the tests in order to verify that no changes break any fu
 
 We run those tests on every commit, and they are also executed with ASAN
 and valgrind on different platforms to catch other unwanted 'features'.
-
-
-# Community
-
-Website: [https://www.radare.org/](https://www.radare.org/)
-
-Telegram: [https://t.me/radare](https://t.me/radare)
-
-Twitter: [@radareorg](https://twitter.com/radareorg)
-
-IRC: irc.freenode.net #radare

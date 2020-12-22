@@ -206,6 +206,7 @@ static void nextpal(RCore *core, int mode) {
 	if (mode == 'j') {
 		r_cons_printf ("[");
 	}
+	// spaguetti!
 	if (home) {
 		files = r_sys_dir (home);
 		r_list_foreach (files, iter, fn) {
@@ -217,7 +218,10 @@ static void nextpal(RCore *core, int mode) {
 						r_list_free (files);
 						return;
 					}
-					eprintf ("%s %s %s\n", nfn, curtheme, fn);
+					eprintf ("%s %s %s\n",
+						r_str_get (nfn),
+						r_str_get (curtheme),
+						r_str_get (fn));
 					if (nfn && !strcmp (nfn, curtheme)) {
 						r_list_free (files);
 						files = NULL;
@@ -237,6 +241,7 @@ static void nextpal(RCore *core, int mode) {
 			}
 		}
 		r_list_free (files);
+		files = NULL;
 		R_FREE (home);
 	}
 
@@ -252,7 +257,10 @@ static void nextpal(RCore *core, int mode) {
 						r_list_free (files);
 						return;
 					}
-					eprintf ("%s %s %s\n", nfn, curtheme, fn);
+					eprintf ("%s %s %s\n",
+						r_str_get (nfn),
+						r_str_get (curtheme),
+						r_str_get (fn));
 					if (nfn && !strcmp (nfn, curtheme)) {
 						free (curtheme);
 						curtheme = strdup (fn);

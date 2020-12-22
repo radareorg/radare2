@@ -1,5 +1,5 @@
 NAME=dbg.dL
-FILE=/bin/ls
+FILE=bins/elf/ls-focal
 CMDS=dL
 EXPECT=<<EOF
 0  ---  bf       LGPL3

@@ -621,8 +621,11 @@ static void selection_widget_down(int steps) {
 	}
 }
 
-static void print_rline_task(void *core) {
-	r_cons_clear_line (0);
+static void print_rline_task(void *_core) {
+	RCore *core =(RCore *)_core;
+	if (core->cons->context->color_mode) {
+		r_cons_clear_line (0);
+	}
 	r_cons_printf ("%s%s%s", Color_RESET, I.prompt,  I.buffer.data);
 	r_cons_flush ();
 }
@@ -897,8 +900,12 @@ static void __print_prompt(void) {
                 r_cons_gotoxy (0,  cons->rows);
                 r_cons_flush ();
 	}
-	r_cons_clear_line (0);
-	printf ("\r%s%s", Color_RESET, I.prompt);
+	if (cons->context->color_mode > 0) {
+		r_cons_clear_line (0);
+		printf ("\r%s%s", Color_RESET, I.prompt);
+	} else {
+		printf ("\r%s", I.prompt);
+	}
 	fwrite (I.buffer.data, 1, R_MIN (cols, chars), stdout);
 	printf ("\r%s", I.prompt);
 	if (I.buffer.index > cols) {
@@ -912,7 +919,9 @@ static void __print_prompt(void) {
 	}
 	len = I.buffer.index - i;
 	if (len > 0 && (i + len) <= I.buffer.length) {
-		fwrite (I.buffer.data + i, 1, len, stdout);
+		if (i<I.buffer.length) {
+			fwrite (I.buffer.data + i, 1, len, stdout);
+		}
 	}
 	fflush (stdout);
 }
@@ -1325,7 +1334,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		buf[0] = ch;
 #endif
 #endif
-		if (I.echo) {
+		if (I.echo && cons->context->color_mode) {
 			r_cons_clear_line (0);
 		}
 		(void)r_cons_get_size (&rows);

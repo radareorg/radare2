@@ -165,7 +165,7 @@ static void GH(update_arena_with_tc)(GH(RHeap_MallocState_tcache) *cmain_arena, 
 }
 
 static void GH(update_arena_without_tc)(GH(RHeap_MallocState) *cmain_arena, MallocState *main_arena) {
-	int i = 0;
+	size_t i = 0;
 	main_arena->mutex = cmain_arena->mutex;
 	main_arena->flags = cmain_arena->flags;
 	for (i = 0; i < BINMAPSIZE; i++) {
@@ -194,14 +194,14 @@ static bool GH(update_main_arena)(RCore *core, GHT m_arena, MallocState *main_ar
 			return false;
 		}
 		(void)r_io_read_at (core->io, m_arena, (ut8 *)cmain_arena, sizeof (GH(RHeap_MallocState_tcache)));
-		GH(update_arena_with_tc)(cmain_arena,main_arena);
+		GH(update_arena_with_tc)(cmain_arena, main_arena);
 	} else {
 		GH(RHeap_MallocState) *cmain_arena = R_NEW0 (GH(RHeap_MallocState));
 		if (!cmain_arena) {
 			return false;
 		}
 		(void)r_io_read_at (core->io, m_arena, (ut8 *)cmain_arena, sizeof (GH(RHeap_MallocState)));
-		GH(update_arena_without_tc)(cmain_arena,main_arena);
+		GH(update_arena_without_tc)(cmain_arena, main_arena);
 	}
 	return true;
 }
@@ -934,6 +934,9 @@ static void GH (tcache_print) (RCore *core, GH (RTcache)* tcache, bool demangle)
 	for (i = 0; i < TCACHE_MAX_BINS; i++) {
 		int count = GH (tcache_get_count) (tcache, i);
 		GHT entry = GH (tcache_get_entry) (tcache, i);
+		if (entry == GHT_MAX) {
+			break;
+		}
 		if (count > 0) {
 			PRINT_GA ("bin :");
 			PRINTF_BA ("%2zu", i);
@@ -966,7 +969,7 @@ static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *ma
 	r_return_if_fail (core && core->dbg && core->dbg->maps);
 
 	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
-	if (!tcache) {
+	if (!tcache || m_arena == GHT_MAX) {
 		return;
 	}
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, initial_brk = GHT_MAX;
@@ -990,7 +993,7 @@ static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *ma
 		return;
 	}
 
-	PRINT_GA("Tcache main arena @");
+	PRINT_GA ("Tcache main arena @");
 	PRINTF_BA (" 0x%"PFMT64x"\n", (ut64)m_arena);
 	GH (tcache_print) (core, r_tcache, demangle);
 
@@ -1117,7 +1120,10 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 	top_data = r_str_new ("");
 	top_title = r_str_new ("");
 
-	(void)r_io_read_at (core->io, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
+	if (!r_io_read_at (core->io, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)))) {
+		eprintf ("Cannot read");
+		return;
+	}
 	size_tmp = (cnk->size >> 3) << 3;
 	ut64 prev_chunk_addr;
 	ut64 prev_chunk_size;

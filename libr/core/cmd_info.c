@@ -29,7 +29,7 @@ static const char *help_msg_i[] = {
 	"idpi", " [file.pdb]", "Show pdb file information",
 	"idpi*", "", "Show symbols from pdb as flags (prefix with dot to import)",
 	"idpd", "", "Download pdb file on remote server",
-	"iD", " lang sym", "demangle symbolname for given language",
+	"iD", " lang sym", "Demangle symbolname for given language",
 	"ie", "", "Entrypoint",
 	"iee", "", "Show Entry and Exit (preinit, init and fini)",
 	"iE", "", "Exports (global symbols)",
@@ -56,7 +56,7 @@ static const char *help_msg_i[] = {
 	"it", "", "File hashes",
 	"iT", "", "File signature",
 	"iV", "", "Display file version info",
-	"iw", "", "try/catch blocks",
+	"iw", "", "Show try/catch blocks",
 	"iX", "", "Display source files used (via dwarf)",
 	"iz|izj", "", "Strings in data sections (in JSON/Base64)",
 	"izz", "", "Search for Strings in the whole binary",
@@ -595,10 +595,14 @@ static int cmd_info(void *data, const char *input) {
 				if (z) { playMsg (core, n, z);}\
 				r_core_bin_info (core, x, mode, va, NULL, y);
 		case 'A': // "iA"
-			newline = false;
-			{
-				int mode = (input[1] == 'j')? 'j': 1;
-				r_bin_list_archs (core->bin, mode);
+			if (input[1] == 'j') {
+				r_cons_print ("{");
+				r_bin_list_archs (core->bin, 'j');
+				r_cons_print ("}");
+				newline = true;
+			} else {
+				r_bin_list_archs (core->bin, 1);
+				newline = false;
 			}
 			break;
 		case 'E': // "iE"
@@ -830,7 +834,7 @@ static int cmd_info(void *data, const char *input) {
 					int r = 1;
 					r_list_foreach (server_l, it, server) {
 						pdbopts.symbol_server = server;
-						r = r_bin_pdb_download (core, 0, NULL, &pdbopts);
+						r = r_bin_pdb_download (core, input[3] == 'j', NULL, &pdbopts);
 						if (!r) {
 							break;
 						}
@@ -917,6 +921,9 @@ static int cmd_info(void *data, const char *input) {
 			}
 			break;
 		case 'i': { // "ii"
+			if (input[1] == 'j') {
+				newline = true;
+			}
 			RBinObject *obj = r_bin_cur_object (core->bin);
 			RBININFO ("imports", R_CORE_BIN_ACC_IMPORTS, NULL,
 				(obj && obj->imports)? r_list_length (obj->imports): 0);
@@ -1236,8 +1243,7 @@ static int cmd_info(void *data, const char *input) {
 done:
 	if (is_array && !is_izzzj) {
 		r_cons_printf ("}\n");
-	}
-	if (newline) {
+	} else if (newline) {
 		r_cons_newline ();
 	}
 redone:

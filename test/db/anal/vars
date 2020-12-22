@@ -110,7 +110,7 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-afc=ms
+e anal.cc=ms
 wx 40534883ec20418bd8e80a00000003c34883c4205bc3cccc2bca8bc1c3
 aa
 pd 13
@@ -177,7 +177,7 @@ ARGS=-a x86 -b 64
 CMDS=<<EOF
 e asm.flags=false
 e anal.vars.stackname = true
-afc=ms
+e anal.cc=ms
 wx 488bc448895808488970104889781841574881ecb00000008364242000488d48884c8d9c24b0000000498b5b10498b7318498b7b20498be3415fc3
 af
 aaef

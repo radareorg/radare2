@@ -291,10 +291,10 @@ static const char *help_msg_uc[] = {
 static const char *help_msg_y[] = {
 	"Usage:", "y[ptxy] [len] [[@]addr]", " # See wd? for memcpy, same as 'yf'.",
 	"y!", "", "open cfg.editor to edit the clipboard",
-	"y", " 16 0x200", "copy 16 bytes into clipboard from 0x200",
 	"y", " 16 @ 0x200", "copy 16 bytes into clipboard from 0x200",
+	"y", " 16 0x200", "copy 16 bytes into clipboard from 0x200",
 	"y", " 16", "copy 16 bytes into clipboard",
-	"y", "", "show yank buffer information (srcoff len bytes)",
+	"y", "", "show yank buffer information (origin len bytes)",
 	"y*", "", "print in r2 commands what's been yanked",
 	"yf", " 64 0x200", "copy file 64 bytes from 0x200 from file",
 	"yfa", " file copy", "copy all bytes from file (opens w/ io)",
@@ -308,7 +308,9 @@ static const char *help_msg_y[] = {
 	"yw", " hello world", "yank from string",
 	"ywx", " 10203040", "yank from hexpairs (same as yfx)",
 	"yx", "", "print contents of clipboard in hexadecimal",
-	"yy", " 0x3344", "paste clipboard",
+	"yy", " @ 0x3344", "paste contents of clipboard to 0x3344",
+	"yy", " 0x3344", "paste contents of clipboard to 0x3344",
+	"yy", "", "paste contents of clipboard at current seek",
 	"yz", " [len]", "copy nul-terminated string (up to blocksize) into clipboard",
 	NULL
 };
@@ -322,6 +324,7 @@ static const char *help_msg_triple_exclamation[] = {
 	"!!!", "-foo", "remove autocompletion named 'foo'",
 	"!!!", "foo", "add 'foo' for autocompletion",
 	"!!!", "bar $flag", "add 'bar' for autocompletion with $flag as argument",
+	"Types:", "", "",
 	NULL
 };
 
@@ -1290,7 +1293,7 @@ static void load_table_csv(RCore *core, RTable *t, RList *lines) {
 	RListIter *iter;
 	char *line;
 	int row = 0;
-	
+
 	RList *cols = NULL;
 	r_list_foreach (lines, iter, line) {
 		char *word;
@@ -1816,11 +1819,13 @@ static int cmd_kuery(void *data, const char *input) {
 		break;
 
 	case ' ':
-		out = sdb_querys (s, NULL, 0, input + 1);
-		if (out) {
-			r_cons_print (out);
+		if (s) {
+			out = sdb_querys (s, NULL, 0, input + 1);
+			if (out) {
+				r_cons_print (out);
+			}
+			R_FREE (out);
 		}
-		free (out);
 		break;
 	//case 's': r_pair_save (s, input + 3); break;
 	//case 'l': r_pair_load (sdb, input + 3); break;
@@ -2184,7 +2189,12 @@ static int cmd_resize(void *data, const char *input) {
 		}
 		break;
 	case 'e':
-		write (1, Color_RESET_TERMINAL, strlen (Color_RESET_TERMINAL));
+		{
+			int rc = write (1, Color_RESET_TERMINAL, strlen (Color_RESET_TERMINAL));
+			if (rc == -1) {
+				return false;
+			}
+		}
 		return true;
 	case '?': // "r?"
 	default:
@@ -2451,6 +2461,25 @@ static int autocomplete_type(const char* strflag) {
 	return R_CORE_AUTOCMPLT_END;
 }
 
+static void cmd_autocomplete_help(RCore *core) {
+	r_core_cmd_help (core, help_msg_triple_exclamation);
+	// non-zero-cost survival without iterators 101
+	const char **help = calloc (R_CORE_AUTOCMPLT_END + 1, 3 * sizeof (char *));
+	int i;
+	size_t n;
+	for (i = 0, n = 0; i < R_CORE_AUTOCMPLT_END; i++) {
+		if (autocomplete_flags[i].desc) {
+			// highlight "$" as cmd and the rest of the name as args
+			help[n + 0] = "$";
+			help[n + 1] = autocomplete_flags[i].name + 1;
+			help[n + 2] = autocomplete_flags[i].desc;
+			n += 3;
+		}
+	}
+	r_core_cmd_help (core, help);
+	free (help);
+}
+
 static void cmd_autocomplete(RCore *core, const char *input) {
 	RCoreAutocomplete* b = core->autocomplete;
 	input = r_str_trim_head_ro (input);
@@ -2460,16 +2489,7 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 		return;
 	}
 	if (*input == '?') {
-		r_core_cmd_help (core, help_msg_triple_exclamation);
-		int i;
-		r_cons_printf ("|Types:\n");
-		for (i = 0; i < R_CORE_AUTOCMPLT_END; i++) {
-			if (autocomplete_flags[i].desc) {
-				r_cons_printf ("| %s     %s\n",
-					autocomplete_flags[i].name,
-					autocomplete_flags[i].desc);
-			}
-		}
+		cmd_autocomplete_help (core);
 		return;
 	}
 	if (*input == '-') {
@@ -2979,6 +2999,8 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 				hash++;
 				if (*hash == '#') {
 					continue;
+				} else if (!*hash) {
+					break;
 				}
 			}
 			if (*hash == '#') {
@@ -3231,7 +3253,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 					}
 					haveQuote = q != NULL;
 					oseek = core->offset;
-					r_core_seek (core, r_num_math(core->num, p + 2), true);
+					r_core_seek (core, r_num_math (core->num, p + 2), true);
 					if (q) {
 						*p = '"';
 						p = q;
@@ -3835,6 +3857,7 @@ repeat_arroba:
 						r_write_ble32 (buf, v, be);
 						len = 4;
 					}
+					tmpfd = r_io_fd_get_current(core->io);
 					r_core_block_size (core, R_ABS (len));
 					RBuffer *b = r_buf_new_with_bytes (buf, len);
 					RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
@@ -3890,7 +3913,7 @@ repeat_arroba:
 				 {
 					char *out = sdb_querys (core->sdb, NULL, 0, ptr + ((ptr[1])? 2: 1));
 					if (out) {
-						r_core_seek (core, r_num_math(core->num, out), true);
+						r_core_seek (core, r_num_math (core->num, out), true);
 						free (out);
 						usemyblock = true;
 					}
@@ -4100,16 +4123,17 @@ next_arroba:
 			r_config_set (core->config, "asm.arch", tmpasm);
 			R_FREE (tmpasm);
 		}
-		if (tmpfd != -1) {
-			// TODO: reuse tmpfd instead of
-			r_io_use_fd (core->io, tmpfd);
-		}
 		if (tmpdesc) {
 			if (pamode) {
 				r_config_set_i (core->config, "io.va", 0);
 			}
 			r_io_desc_close (tmpdesc);
 			tmpdesc = NULL;
+		}
+		if (tmpfd != -1) {
+			// TODO: reuse tmpfd instead of
+			r_io_use_fd (core->io, tmpfd);
+			tmpfd = -1;
 		}
 		if (is_bits_set) {
 			r_config_set (core->config, "asm.bits", tmpbits);
@@ -5791,7 +5815,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_kuery_command) {
 	ut64 orig_offset = state->core->offset;
 	char *out = sdb_querys (core->sdb, NULL, 0, arg_str);
 	if (out) {
-		r_core_seek (core, r_num_math(core->num, out), true);
+		r_core_seek (core, r_num_math (core->num, out), true);
 		free (out);
 	}
 	RCmdStatus res = handle_ts_command_tmpseek (state, command);

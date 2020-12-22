@@ -617,7 +617,7 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 		dbg->tid = tid;
 	}
 
-	r_io_system (dbg->iob.io, sdb_fmt ("pid %d", dbg->tid));
+	free (r_io_system (dbg->iob.io, sdb_fmt ("pid %d", dbg->tid)));
 
 	// Synchronize with the current thread's data
 	if (dbg->corebind.core) {
@@ -1467,7 +1467,7 @@ static int show_syscall(RDebug *dbg, const char *sysreg) {
 	reg = (int)r_debug_reg_get (dbg, sysreg);
 	si = r_syscall_get (dbg->anal->syscall, reg, -1);
 	if (si) {
-		sysname = si->name? si->name: "unknown";
+		sysname = r_str_get_fail (si->name, "unknown");
 		args = si->args;
 	} else {
 		sysname = "unknown";

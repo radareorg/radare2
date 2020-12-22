@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_core.h>
 #include <stdlib.h>
@@ -27,15 +27,13 @@ static void loadGP(RCore *core) {
 	}
 }
 
-
 R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbin) {
 	int isdebug = r_config_get_i (core->config, "cfg.debug");
 	char *path;
 	ut64 laddr = r_config_get_i (core->config, "bin.laddr");
 	RCoreFile *file = NULL;
 	RCoreFile *ofile = core->file;
-	RBinFile *bf = ofile ? r_bin_file_find_by_fd (core->bin, ofile->fd)
-		: NULL;
+	RBinFile *bf = ofile ? r_bin_file_find_by_fd (core->bin, ofile->fd) : NULL;
 	RIODesc *odesc = (core->io && ofile) ? r_io_desc_get (core->io, ofile->fd) : NULL;
 	char *ofilepath = NULL, *obinfilepath = (bf && bf->file)? strdup (bf->file): NULL;
 	int ret = false;
@@ -101,7 +99,6 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 
 	// r_str_trim (path);
 	file = r_core_file_open (core, path, perm, laddr);
-
 	if (isdebug) {
 		int newtid = newpid;
 		// XXX - select the right backend
@@ -199,6 +196,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	// loaded into the view
 	free (obinfilepath);
 	//free (ofilepath);
+	// causes double free . dont free file here // R_FREE (file);
 	free (path);
 	return ret;
 }
@@ -397,7 +395,7 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 	binfile = r_bin_cur (r->bin);
 	r_core_bin_set_env (r, binfile);
 	plugin = r_bin_file_cur_plugin (binfile);
-	if (plugin && !strncmp (plugin->name, "any", 5)) {
+	if (plugin && !strcmp (plugin->name, "any")) {
 		// set use of raw strings
 		// r_config_set_i (r->config, "io.va", false);
 		//\\ r_config_set (r->config, "bin.rawstr", "true");
@@ -407,7 +405,7 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 	} else if (binfile) {
 		RBinObject *obj = r_bin_cur_object (r->bin);
 		RBinInfo *info = obj? obj->info: NULL;
-		if (plugin && strcmp (plugin->name, "any") && info) {
+		if (plugin && info) {
 			r_core_bin_set_arch_bits (r, binfile->file, info->arch, info->bits);
 		}
 	}
@@ -450,6 +448,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 		if (!info) {
 			return false;
 		}
+		info->bits = r->rasm->bits;
 		// set use of raw strings
 		r_core_bin_set_arch_bits (r, binfile->file, info->arch, info->bits);
 		// r_config_set_i (r->config, "io.va", false);
@@ -463,7 +462,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 		if (!info) {
 			return false;
 		}
-		if (plugin && strcmp (plugin->name, "any") && info) {
+		if (plugin) {
 			r_core_bin_set_arch_bits (r, binfile->file,
 				info->arch, info->bits);
 		}
@@ -476,8 +475,10 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 }
 
 static bool try_loadlib(RCore *core, const char *lib, ut64 addr) {
-	if (r_core_file_open (core, lib, 0, addr) != NULL) {
+	void *p = r_core_file_open (core, lib, 0, addr);
+	if (p) {
 		r_core_bin_load (core, lib, addr);
+		R_FREE (p);
 		return true;
 	}
 	return false;
@@ -819,7 +820,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			r_list_foreach (maps, iter, mapcore) {
 				RIOMap *iomap = r_io_map_get (r->io, mapcore->addr);
 				if (iomap && (mapcore->file || stack_map == iomap)) {
-					r_io_map_set_name (iomap, mapcore->file ? mapcore->file : "[stack]");
+					r_io_map_set_name (iomap, r_str_get_fail (mapcore->file, "[stack]"));
 				}
 				map++;
 			}
@@ -914,7 +915,6 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 
 	fh = R_NEW0 (RCoreFile);
 	if (!fh) {
-		eprintf ("core/file.c: r_core_open failed to allocate RCoreFile.\n");
 		goto beach;
 	}
 	fh->alive = 1;

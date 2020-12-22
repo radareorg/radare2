@@ -274,11 +274,11 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				r_file_dump (input, file->data, file->size, 0);
 				r_fs_close (fs, file);
 			} else {
-				input -= 2; //OMFG!!!! O_O
-				memcpy (input, "./", 2);
-				if (!r_fs_dir_dump (fs, s, input)) {
+				char *f = r_str_newf ("./%s", input);
+				if (!r_fs_dir_dump (fs, s, f)) {
 					eprintf ("Cannot open file\n");
 				}
+				free (f);
 			}
 			free (s);
 		} else if (!memcmp (buf, "help", 4) || !strcmp (buf, "?")) {

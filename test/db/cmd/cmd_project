@@ -223,15 +223,15 @@ tk char **=type
 tk type.char **=**z
 tk type.char **.size=64
 "td struct Foo { int bar; int x; int y; };"
-Ps custom_types > /dev/null
+Ps costom_types > /dev/null
 t- char **
 t- Foo
 tk~?char **
 tk~?Foo
-Po custom_types > /dev/null
+Po costom_types > /dev/null
 tk~?char **
 tk~?Foo
-Pd custom_types > /dev/null
+Pd costom_types > /dev/null
 EOF
 EXPECT=<<EOF
 5

@@ -200,12 +200,19 @@ int r_bin_pdb_download(RCore *core, int isradjson, int *actions_done, SPDBOption
 
 	init_pdb_downloader (&opt, &pdb_downloader);
 	ret = pdb_downloader.download ? pdb_downloader.download (&pdb_downloader) : 0;
-	if (isradjson && actions_done) {
-		//TODO PJ
-		printf ("%s\"pdb\":{\"file\":\"%s\",\"download\":%s}",
-		        *actions_done ? "," : "", opt.dbg_file, ret ? "true" : "false");
+	if (isradjson) {
+		PJ *pj = pj_new ();
+		if (!pj) {
+			return 1;
+		}
+		pj_ko (pj, "pdb");
+		pj_ks (pj, "file", opt.dbg_file);
+		pj_kb (pj, "download", (bool) ret);
+		pj_end (pj);
+		r_cons_printf ("%s%s", actions_done && *actions_done ? "," : "", pj_string (pj));
+		pj_free (pj);
 	} else {
-		printf ("PDB \"%s\" download %s\n",
+		r_cons_printf ("PDB \"%s\" download %s\n",
 		        opt.dbg_file, ret ? "success" : "failed");
 	}
 	if (actions_done) {

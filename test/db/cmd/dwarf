@@ -45,13 +45,13 @@ EXPECT=<<EOF
 |           0x00001243      53             push rbx
 |           0x00001244      4883ec28       sub rsp, 0x28
 |           0x00001248      bf08000000     mov edi, 8
-|           0x0000124d      e81efeffff     call sym.imp.operator_new_unsigned_long
+|           0x0000124d      e81efeffff     call sym.imp.operator_new_unsigned_long_
 |           0x00001252      4889c3         mov rbx, rax
 |           0x00001255      4889df         mov rdi, rbx
-|           0x00001258      e827010000     call method Bird::Bird()    ; dbg.Bird::Bird()
+|           0x00001258      e827010000     call dbg.Bird::Bird()
 |           0x0000125d      48895de0       mov qword [b], rbx
 |           0x00001261      bf08000000     mov edi, 8
-|           0x00001266      e805feffff     call sym.imp.operator_new_unsigned_long
+|           0x00001266      e805feffff     call sym.imp.operator_new_unsigned_long_
 EOF
 RUN
 
@@ -206,12 +206,12 @@ FILE=bins/elf/dwarf_rust_bubble
 CMDS=<<EOF
 e asm.dwarf=false
 aaa
-pd 40 @  dbg.bubble_sort_i32
+pd 40 @  dbg.bubble_sort_i32_
 EOF
 EXPECT=<<EOF
             ; CALL XREF from rust::main::h523dcf5432fcfd88 @ 0x5875 ; dbg.main
             ;-- rust::bubble_sort::h0777bc845caabc60:
-            ;-- dbg.bubble_sort_i32:
+            ;-- dbg.bubble_sort_i32_:
 / 614: dbg.bubble_sort<i32> (int64_t arg1, int64_t arg2);
 |           ; var int64_t var_fh @ rsp+0xf
 |           ; var int64_t var_10h @ rsp+0x10
@@ -296,7 +296,7 @@ EOF
 EXPECT=<<EOF
             ; CALL XREF from dbg.main @ 0x10001ae8
             ;-- Grid::init():
-            ;-- method.Grid.init:
+            ;-- method.Grid.init__:
 / 64: dbg.init (Grid * const this);
 |           ; arg Grid * const this @ r3
 |           0x100012bc      39030144       addi r8, r3, 0x144          ; arg1 [0m; void init(Grid * const this);

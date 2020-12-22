@@ -1,3 +1,34 @@
+NAME=f_123
+FILE=-
+CMDS=<<EOF
+f _foo=123
+f _123=_foo
+f :123=321
+f 123=456
+f $123=456
+f $foo=456
+?v _foo
+?v _123
+?v :123
+?v 123
+?v $foo
+?v $foo
+EOF
+EXPECT=<<EOF
+0x7b
+0x7b
+0x141
+0x7b
+0xffffffffffffffff
+0xffffffffffffffff
+EOF
+EXPECT_ERR=<<EOF
+Invalid flag name '123'.
+Invalid flag name '$123'.
+Invalid flag name '$foo'.
+EOF
+RUN
+
 NAME=f?flag
 FILE=-
 CMDS=<<EOF

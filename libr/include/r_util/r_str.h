@@ -21,10 +21,34 @@ typedef enum {
 
 typedef int (*RStrRangeCallback) (void *, int);
 
+typedef struct r_charset_rune_t {
+	ut8 *ch;
+	ut8 *hx;
+	struct r_charset_rune_t *left;
+	struct r_charset_rune_t *right;
+} RCharsetRune;
+
+typedef struct r_charset_t {
+	Sdb *db;
+	RCharsetRune *custom_charset;
+	size_t remaining;
+} RCharset;
+
 #define R_STR_ISEMPTY(x) (!(x) || !*(x))
 #define R_STR_ISNOTEMPTY(x) ((x) && *(x))
 #define R_STR_DUP(x) ((x) ? strdup ((x)) : NULL)
 #define r_str_array(x,y) ((y>=0 && y<(sizeof(x)/sizeof(*x)))?x[y]:"")
+R_API RCharset *r_charset_new(void);
+R_API void r_charset_free(RCharset *charset);
+R_API RCharsetRune *r_charset_rune_new(const ut8 *ch, const ut8 *hx);
+R_API void r_charset_rune_free(RCharsetRune *rcr);
+R_API size_t r_charset_encode_str(RCharset *r_char, ut8 *out, size_t out_len, const ut8 *in, size_t len_input);
+R_API bool r_charset_open(RCharset *c, const char *cs);
+R_API RCharsetRune * add_rune(RCharsetRune *rcsr, const ut8 *ch, const ut8 *hx);
+R_API RCharsetRune *search_from_hex(RCharsetRune *rcsr, const ut8 *hx);
+R_API RCharsetRune *search_from_char(RCharsetRune *rcsr, const ut8 *ch);
+
+// str
 R_API char *r_str_repeat(const char *ch, int sz);
 R_API const char *r_str_pad(const char ch, int len);
 R_API const char *r_str_rstr(const char *base, const char *p);
@@ -104,6 +128,7 @@ R_API int r_str_word_set0_stack(char *str);
 R_API const char *r_str_word_get0(const char *str, int idx);
 R_API char *r_str_word_get_first(const char *string);
 R_API void r_str_trim(char *str);
+R_API char *r_str_wrap(const char *str, int w);
 R_API char *r_str_trim_dup(const char *str);
 R_API char *r_str_trim_lines(char *str);
 R_API void r_str_trim_head(char *str);
@@ -149,6 +174,7 @@ R_API int r_str_re_replace(const char *str, const char *reg, const char *sub);
 R_API int r_str_path_unescape(char *path);
 R_API char *r_str_path_escape(const char *path);
 R_API int r_str_unescape(char *buf);
+R_API char *r_str_sanitize_r2(const char *buf);
 R_API char *r_str_escape(const char *buf);
 R_API char *r_str_escape_sh(const char *buf);
 R_API char *r_str_escape_dot(const char *buf);

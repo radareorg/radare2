@@ -242,28 +242,29 @@ static bool run_commands(RCore *r, RList *cmds, RList *files, bool quiet, int do
 	const char *file;
 	int ret;
 	/* -i */
+	bool has_failed = false;
 	r_list_foreach (files, iter, file) {
 		if (!r_file_exists (file)) {
 			eprintf ("Script '%s' not found.\n", file);
 			goto beach;
 		}
 		ret = r_core_run_script (r, file);
+		r_cons_flush ();
 		if (ret == -2) {
 			eprintf ("[c] Cannot open '%s'\n", file);
 		}
-		if (ret < 0 || (ret == 0 && quiet)) {
-			r_cons_flush ();
-			return false;
+		if (ret < 0) {
+			has_failed = true;
+			break;
 		}
 	}
 	/* -c */
 	r_list_foreach (cmds, iter, cmdn) {
-		//r_core_cmd0 (r, cmdn);
 		r_core_cmd_lines (r, cmdn);
 		r_cons_flush ();
 	}
 beach:
-	if (quiet) {
+	if (quiet && !has_failed) {
 		if (do_analysis) {
 			return true;
 		}
@@ -404,11 +405,13 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	}
 	if (argc < 2) {
 		LISTS_FREE ();
+		free (envprofile);
 		return main_help (1);
 	}
 	r = r_core_new ();
 	if (!r) {
 		eprintf ("Cannot initialize RCore\n");
+		free (envprofile);
 		LISTS_FREE ();
 		return 1;
 	}
@@ -426,6 +429,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	if (argc == 2 && !strcmp (argv[1], "-p")) {
 		r_core_project_list (r, 0);
 		r_cons_flush ();
+		free (envprofile);
 		LISTS_FREE ();
 		return 0;
 	}
@@ -439,6 +443,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	// -H option without argument
 	if (argc == 2 && !strcmp (argv[1], "-H")) {
 		main_print_var (NULL);
+		free (envprofile);
 		LISTS_FREE ();
 		return 0;
 	}
@@ -503,8 +508,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			debugbackend = strdup (opt.arg);
 			if (!strcmp (opt.arg, "?")) {
 				r_debug_plugin_list (r->dbg, 'q');
-				r_cons_flush();
+				r_cons_flush ();
 				LISTS_FREE ();
+				free (envprofile);
 				return 0;
 			}
 			break;
@@ -582,6 +588,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			if (!strcmp (opt.arg, "?")) {
 				r_core_project_list (r, 0);
 				r_cons_flush ();
+				free (envprofile);
 				LISTS_FREE ();
 				return 0;
 			}
@@ -642,12 +649,14 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			if (quiet) {
 				printf ("%s\n", R2_VERSION);
 				LISTS_FREE ();
+				free (debugbackend);
 				free (customRarunProfile);
 				return 0;
 			} else {
 				r_main_version_verify (0);
 				LISTS_FREE ();
 				free (customRarunProfile);
+				free (debugbackend);
 				return r_main_version_print ("radare2");
 			}
 		case 'V':
@@ -681,6 +690,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		if (2 != new_stderr) {
 			if (-1 == dup2 (new_stderr, 2)) {
 				eprintf ("Failed to dup2 stderr");
+				free (envprofile);
 				LISTS_FREE ();
 				R_FREE (debugbackend);
 				return 1;
@@ -688,6 +698,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			if (-1 == close (new_stderr)) {
 				eprintf ("Failed to close %s", nul);
 				LISTS_FREE ();
+				free (envprofile);
 				R_FREE (debugbackend);
 				return 1;
 			}
@@ -741,6 +752,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		LISTS_FREE ();
 		free (pfile);
 		R_FREE (debugbackend);
+		free (envprofile);
 		return 0;
 	}
 
@@ -748,6 +760,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		LISTS_FREE ();
 		free (pfile);
 		R_FREE (debugbackend);
+		free (envprofile);
 		return main_help (help > 1? 2: 0);
 	}
 #if __WINDOWS__
@@ -762,12 +775,14 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_config_set (r->config, "dbg.profile", tfn);
 		}
 		free (tfn);
+		R_FREE (customRarunProfile);
 	}
 	if (debug == 1) {
 		if (opt.ind >= argc && !haveRarunProfile) {
 			eprintf ("Missing argument for -d\n");
 			LISTS_FREE ();
 			R_FREE (debugbackend);
+			free (envprofile);
 			return 1;
 		}
 		const char *src = haveRarunProfile? pfile: argv[opt.ind];
@@ -817,6 +832,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			eprintf ("Missing URI for -C\n");
 			LISTS_FREE ();
 			R_FREE (debugbackend);
+			free (envprofile);
 			return 1;
 		}
 		if (strstr (uri, "://")) {
@@ -875,6 +891,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			LISTS_FREE ();
 			free (pfile);
 			R_FREE (debugbackend);
+			free (envprofile);
 			return 1;
 		}
 		if (r_sys_chdir (argv[opt.ind])) {
@@ -882,6 +899,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			LISTS_FREE ();
 			free (pfile);
 			R_FREE (debugbackend);
+			free (envprofile);
 			return 1;
 		}
 	} else if (argv[opt.ind] && !strcmp (argv[opt.ind], "=")) {
@@ -898,6 +916,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 #else
 		eprintf ("Cannot reopen stdin without UNIX\n");
 		free (buf);
+		R_FREE (debugbackend);
+		free (envprofile);
 		return 1;
 #endif
 		if (buf && sz > 0) {
@@ -909,6 +929,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				eprintf ("[=] Cannot open '%s'\n", path);
 				LISTS_FREE ();
 				free (path);
+				free (envprofile);
+				R_FREE (debugbackend);
 				return 1;
 			}
 			r_io_map_new (r->io, fh->fd, 7, 0LL, mapaddr,
@@ -922,6 +944,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			eprintf ("Cannot slurp from stdin\n");
 			free (buf);
 			LISTS_FREE ();
+			free (envprofile);
 			return 1;
 		}
 	} else if (strcmp (argv[opt.ind - 1], "--") && !(r_config_get (r->config, "prj.name") && r_config_get (r->config, "prj.name")[0]) ) {
@@ -936,6 +959,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				eprintf ("No program given to -d\n");
 				LISTS_FREE ();
 				R_FREE (debugbackend);
+				free (envprofile);
 				return 1;
 			}
 			if (debug == 2) {
@@ -995,9 +1019,10 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					}
 				}
 			} else {
-				const char *f = (haveRarunProfile && pfile)? pfile: argv[opt.ind];
+				char *f = (haveRarunProfile && pfile)? strdup (pfile): strdup (argv[opt.ind]);
 				is_gdb = (!memcmp (f, "gdb://", R_MIN (f? strlen (f):0, 6)));
 				if (!is_gdb) {
+					free (pfile);
 					pfile = strdup ("dbg://");
 				}
 #if __UNIX__
@@ -1023,7 +1048,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				}
 #else
 #	if __WINDOWS__
-				f = r_acp_to_utf8 (f);
+				char *f2 = r_acp_to_utf8 (f);
+				free (f);
+				f = f2;
 #	endif // __WINDOWS__
 				if (f) {
 					char *escaped_path = r_str_arg_escape (f);
@@ -1033,6 +1060,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				}
 #endif
 				opt.ind++;
+				free (f);
 				while (opt.ind < argc) {
 					char *escaped_arg = r_str_arg_escape (argv[opt.ind]);
 					file = r_str_append (file, " ");
@@ -1496,6 +1524,8 @@ beach:
 	// and this fh may be come stale during the command
 	// execution.
 	//r_core_file_close (r, fh);
+	free (envprofile);
+	free (debugbackend);
 	r_core_free (r);
 	r_cons_set_raw (0);
 	r_cons_free ();

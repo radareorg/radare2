@@ -105,7 +105,8 @@ static const char *help_msg_root[] = {
 	"t","[?]", "types, noreturn, signatures, C parser and more",
 	"T","[?] [-] [num|msg]", "Text log utility (used to chat, sync, log, ...)",
 	"u","[?]", "uname/undo seek/write",
-	"v","", "visual mode (v! = panels, vv = fcnview, vV = fcngraph, vVV = callgraph)",
+	"v","", "panels mode",
+	"V", "", "visual mode (Vv = func/var anal, VV = graph mode, ...)",
 	"w","[?] [str]", "multiple write operations",
 	"x","[?] [len]", "alias for 'px' (print hexadecimal)",
 	"y","[?] [len] [[[@]addr", "Yank/paste bytes from/to memory",
@@ -664,17 +665,15 @@ static int cmd_help(void *data, const char *input) {
 					pj_ks (pj, "float", sdb_fmt ("%ff", f));
 					pj_ks (pj, "double", sdb_fmt ("%lf", d));
 					pj_ks (pj, "binary", sdb_fmt ("0b%s", out));
-					r_num_to_trits (out, n);
-					pj_ks (pj, "trits", sdb_fmt ("0t%s", out));
+					r_num_to_ternary (out, n);
+					pj_ks (pj, "ternary", sdb_fmt ("0t%s", out));
 				} else {
 					r_cons_printf ("fvalue: %.1lf\n", core->num->fvalue);
 					r_cons_printf ("float:  %ff\n", f);
 					r_cons_printf ("double: %lf\n", d);
 					r_cons_printf ("binary  0b%s\n", out);
-
-					/* ternary */
-					r_num_to_trits (out, n);
-					r_cons_printf ("trits   0t%s\n", out);
+					r_num_to_ternary (out, n);
+					r_cons_printf ("ternary 0t%s\n", out);
 				}
 			}
 			if (*input ==  'j') {

@@ -349,19 +349,19 @@ static const char *help_msg_pds[] = {
 };
 
 static const char *help_msg_pf[] = {
-	"pf:", PF_USAGE_STR, "",
+	"Usage:", PF_USAGE_STR, "",
 	"Commands:", "", "",
 	"pf", " fmt", "Show data using the given format-string. See 'pf\?\?' and 'pf\?\?\?'.",
-	"pf", "?", "Show this help",
-	"pf", "??", "Format characters",
-	"pf", "???", "pf usage examples",
+	"pf", "?", "Help on commands",
+	"pf", "??", "Help on format characters",
+	"pf", "???", "Show usage examples",
 	"pf* ", "fmt_name|fmt", "Show data using (named) format as r2 flag create commands",
 	"pf.", "", "List all format definitions",
 	"pf.", "fmt_name", "Show data using named format",
 	"pf.", "fmt_name.field_name", "Show specific data field using named format",
 	"pf.", "fmt_name.field_name=33", "Set new value for the specified field in named format",
 	"pf.", "fmt_name.field_name[i]", "Show element i of array field_name",
-	"pf.", "name [0|cnt]fmt", "Define a new named format",
+	"pf.", "fmt_name [0|cnt]fmt", "Define a new named format",
 	"pf?", "fmt_name", "Show the definition of a named format",
 	"pfc ", "fmt_name|fmt", "Show data using (named) format as C string",
 	"pfd.", "fmt_name", "Show data using named format as graphviz commands",
@@ -375,7 +375,7 @@ static const char *help_msg_pf[] = {
 };
 
 static const char *help_detail_pf[] = {
-	"pf:", PF_USAGE_STR, "",
+	"Usage:", PF_USAGE_STR, "",
 	"Format:", "", "",
 	" ", "b", "byte (unsigned)",
 	" ", "B", "resolve enum bitfield (see t?)",
@@ -406,7 +406,7 @@ static const char *help_detail_pf[] = {
 	" ", "z", "null terminated string",
 	" ", "Z", "null terminated wide string",
 	" ", "?", "data structure `pf ? (struct_name)example_name`",
-	" ", "*", "next char is pointer (honors asm.bits)",
+	" ", "*", "next char is a pointer (honors asm.bits)",
 	" ", "+", "toggle show flags for each offset",
 	" ", ":", "skip 4 bytes",
 	" ", ".", "skip 1 byte",
@@ -416,7 +416,7 @@ static const char *help_detail_pf[] = {
 };
 
 static const char *help_detail2_pf[] = {
-	"pf:", PF_USAGE_STR, "",
+	"Usage:", PF_USAGE_STR, "",
 	"Examples:", "", "",
 	"pf", " 3xi foo bar", "3-array of struct, each with named fields: 'foo' as hex, and 'bar' as int",
 	"pf", " B (BitFldType)arg_name`", "bitfield type",
@@ -641,6 +641,19 @@ static void __cmd_pad(RCore *core, const char *arg) {
 	}
 }
 
+static void first_flag_chars(const char *name, char *ch, char *ch2) {
+	name = r_name_filter_ro (name);
+	// name = "ab"; // r_name_filter_ro (name);
+/*
+	while (*name == '_') {
+		name++;
+	}
+*/
+	const bool two = name[0] && name[1];
+	*ch = two? name[0]: ' ';
+	*ch2 = two? name[1]: name[0]; // two? 1: 0];
+}
+
 // colordump
 static void cmd_prc(RCore *core, const ut8* block, int len) {
 	const char *chars = " .,:;!O@#";
@@ -708,13 +721,7 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 				if (show_flags) {
 					RFlagItem *fi = r_flag_get_i (core->flags, core->offset + j);
 					if (fi) {
-						if (fi->name[1]) {
-							ch = fi->name[0];
-							ch2 = fi->name[1];
-						} else {
-							ch = ' ';
-							ch2 = fi->name[0];
-						}
+						first_flag_chars (fi->name, &ch, &ch2);
 					} else {
 						ch2 = ch;
 					}
@@ -1800,7 +1807,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 					fend = addr + j + flag->size;
 				}
 				free (note[j]);
-				note[j] = r_str_prepend (strdup (flag->name), "/");
+				const char *name = r_name_filter_ro (flag->name);
+				note[j] = r_str_prepend (strdup (name), "/");
 				marks = true;
 				color_idx++;
 				color_idx %= 10;
@@ -1953,7 +1961,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			out[out_sz - 1] = 0;
 			if (hasline) {
 				r_cons_strcat (addrpad);
-				r_cons_strcat (out);
+				r_cons_strcat (out + 1);
 				r_cons_newline ();
 			}
 			marks = false;
@@ -3348,7 +3356,6 @@ cleanup:
 	r_core_anal_stats_free (as);
 	return result;
 }
-
 
 static bool checkAnalType(RAnalOp *op, int t) {
 	if (t == 'c') {
@@ -5833,6 +5840,24 @@ l = use_blocksize;
 				}
 			}
 			break;
+		case 'e': // "pse"
+			// should be done in `ps` when cfg.charset is set
+			if (len > 0) {
+				size_t out_len = len * 10;
+				ut8 *out = calloc (len, 10);
+				if (out) {
+					ut8 *data = malloc (len);
+					if (data) {
+						r_io_read_at (core->io, core->offset, data, len);
+						r_charset_encode_str (core->print->charset, out, out_len, data, len);
+						r_print_string (core->print, core->offset,
+							out, len, R_PRINT_STRING_ZEROEND);
+						free (data);
+					}
+					free (out);
+				}
+			}
+			break;
 		default:
 			if (l > 0) {
 				r_print_string (core->print, core->offset, core->block,
@@ -5952,7 +5977,9 @@ l = use_blocksize;
 			break;
 		case 'c': // "prc" // color raw dump
 			if (input[2] == '?') {
+				// TODO: change =e to colorized =mode
 				r_cons_printf ("prc=e # colorblocks of entropy\n");
+				// TODO: replace pz? help text with "See also"
 				r_core_cmd0 (core, "pz?");
 			} else if (input[2] == '=') {
 				if (input[3] == '?') {
