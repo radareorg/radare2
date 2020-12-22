@@ -284,8 +284,13 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 	int n = 0;
 	RBreakpointItem *b;
 	RListIter *iter;
+	PJ *pj;
 	if (rad == 'j') {
-		bp->cb_printf ("[");
+		pj = pj_new ();
+		if (!pj) {
+			return 0;
+		}
+		pj_a (pj);
 	}
 	//eprintf ("Breakpoint list:\n");
 	r_list_foreach (bp->bps, iter, b) {
@@ -321,30 +326,25 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 			//r_str_get (b->data));
 			break;
 		case 'j':
-			//TODO PJ
-			bp->cb_printf ("%s{\"addr\":%"PFMT64d",\"size\":%d,"
-				"\"prot\":\"%c%c%c\",\"hw\":%s,"
-				"\"trace\":%s,\"enabled\":%s,"
-				"\"valid\":%s,\"data\":\"%s\","
-				"\"cond\":\"%s\"}",
-				iter->p ? "," : "",
-				b->addr, b->size,
-				(b->perm & R_BP_PROT_READ) ? 'r' : '-',
-				(b->perm & R_BP_PROT_WRITE) ? 'w' : '-',
-				(b->perm & R_BP_PROT_EXEC) ? 'x' : '-',
-				b->hw ? "true" : "false",
-				b->trace ? "true" : "false",
-				b->enabled ? "true" : "false",
-				r_bp_is_valid (bp, b) ? "true" : "false",
-				r_str_get (b->data),
-				r_str_get (b->cond));
+			pj_o (pj);
+			pj_kS (pj, "addr", b->addr);
+			pj_ki (pj, "size", b->size);
+			pj_ks (pj, "perm", r_str_rwx_i (b->perm & 7)); /* filter out R_BP_PROT_ACCESS */
+			pj_kb (pj, "hw", b->hw);
+			pj_kb (pj, "trace", b->trace);
+			pj_kb (pj, "enabled", b->enabled);
+			pj_kb (pj, "valid", r_bp_is_valid (bp, b));
+			pj_ks (pj, "data", r_str_get (b->data));
+			pj_ks (pj, "cond", r_str_get (b->cond));
+			pj_end (pj);
 			break;
 		}
 		/* TODO: Show list of pids and trace points, conditionals */
 		n++;
 	}
 	if (rad == 'j') {
-		bp->cb_printf ("]\n");
+		pj_end (pj);
+		bp->cb_printf ("%s\n", pj_drain (pj));
 	}
 	return n;
 }
