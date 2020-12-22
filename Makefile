@@ -61,8 +61,7 @@ all: plugins.cfg libr/include/r_version.h
 	${MAKE} -C libr
 	${MAKE} -C binr
 
-#.PHONY: libr/include/r_version.h
-GIT_TAP=$(shell git tag -l --sort=refname | grep -e '^\d.\d.\d$' | tail -n1 || echo $(VERSION))
+GIT_TAP=$(shell git tag -l --sort=refname | grep -e '^\d.\d.\d$$' | tail -n1 || echo $(VERSION))
 GIT_TIP=$(shell git rev-parse HEAD 2>/dev/null || echo HEAD)
 R2_VER=$(shell ./configure -qV)
 ifdef SOURCE_DATE_EPOCH
