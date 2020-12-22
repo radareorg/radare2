@@ -38,7 +38,10 @@ You may also want to meet other perople in r2land. use the following chats:
 
 * irc.freenode.net `#radare` `#radare_side`
 * [Telegram](https://t.me/radare)
-* [Discord](https://discord.gg/W4uuvwHs)
+* [Discord](https://discord.gg/MgEdxrMnqx)
+* Twitter: [@radareorg](https://twitter.com/radareorg)
+
+Website: [https://www.radare.org/](https://www.radare.org/)
 
 ## Operating Systems
 
@@ -137,14 +140,3 @@ repository and run all the tests in order to verify that no changes break any fu
 
 We run those tests on every commit, and they are also executed with ASAN
 and valgrind on different platforms to catch other unwanted 'features'.
-
-
-# Community
-
-Website: [https://www.radare.org/](https://www.radare.org/)
-
-Telegram: [https://t.me/radare](https://t.me/radare)
-
-Twitter: [@radareorg](https://twitter.com/radareorg)
-
-IRC: irc.freenode.net #radare
