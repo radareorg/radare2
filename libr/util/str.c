@@ -3145,7 +3145,11 @@ R_API char *r_str_wrap(const char *str, int w) {
 	char *end = r + r_size;
 	int cw = 0;
 	while (*str && r + 1 < end) {
-		if (*str == '\n') {
+		if (*str == '\t') {
+			// skip
+		} else if (*str == '\r') {
+			// skip
+		} else if (*str == '\n') {
 			*r++ = *str++;
 			cw = 0;
 		} else {

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2018 - pancake */
+/* radare - LGPL - Copyright 2010-2020 - pancake */
 
 /* covardly copied from r_cmd */
 
