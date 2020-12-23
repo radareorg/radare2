@@ -5697,6 +5697,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	int stats1 = r_config_get_i (core->config, "esil.stats");
 	int noNULL = r_config_get_i (core->config, "esil.noNULL");
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
+	const bool cfg_r2wars = r_config_get_i (core->config, "cfg.r2wars");
 	esil = r_anal_esil_new (stacksize, iotrap, addrsize);
 	r_anal_esil_setup (esil, core->anal, romem, stats1, noNULL); // setup io
 #	define hasNext(x) (x&1) ? (addr<addr_end) : (ops<ops_end)
@@ -5718,7 +5719,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 					addr + ptr, buf[ptr], buf[ptr + 1]);
 				break;
 			}
-			if (r_config_get_i (core->config, "cfg.r2wars")) {
+			if (cfg_r2wars) {
 				if (aop.prefix  & R_ANAL_OP_PREFIX_REP) {
 					char * tmp = strstr (esilstr, ",ecx,?{,5,GOTO,}");
 					if (tmp) {
