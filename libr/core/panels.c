@@ -5749,7 +5749,7 @@ static void __panels_refresh(RCore *core) {
 		}
 	}
 	if (panels->mode == PANEL_MODE_MENU) {
-		r_cons_canvas_write (can, Color_BLUE);
+		r_cons_canvas_write (can, Color_YELLOW);
 		r_cons_canvas_write (can, r_strbuf_get (title));
 		r_cons_canvas_write (can, Color_RESET);
 	} else {
