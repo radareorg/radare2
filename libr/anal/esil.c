@@ -542,11 +542,8 @@ R_API int r_anal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, 
 	return ret;
 }
 
-// sign extension operator for use in idiv, imul, movsx* 
-// and other instructions involving signed values, extends n bit value to 64 bit value
-// example : >"ae 8,0x81,~" ( <src bit width>,<value>,~ )
-// output  : 0xffffffffffffff81
-static bool esil_signext(RAnalEsil *esil) {
+R_API int r_anal_esil_signext(RAnalEsil *esil, bool assign) {
+	bool ret = false;
 	ut64 src, dst;
 
 	char *p_src = r_anal_esil_pop (esil);
@@ -558,8 +555,6 @@ static bool esil_signext(RAnalEsil *esil) {
 		ERR ("esil_of: empty stack");
 		free (p_src);
 		return false;
-	} else {
-		free (p_src);
 	}
 
 	char *p_dst = r_anal_esil_pop (esil);
@@ -584,7 +579,22 @@ static bool esil_signext(RAnalEsil *esil) {
 	}
 
 	// dst = (dst & ((1U << src_bit) - 1)); // clear upper bits
-	return r_anal_esil_pushnum (esil, ((src ^ m) - m));
+	if (assign) {
+		ret = r_anal_esil_reg_write (esil, p_src, ((src ^ m) - m));
+	} else {
+		ret = r_anal_esil_pushnum (esil, ((src ^ m) - m));
+	}
+
+	free (p_src);
+	return ret;
+}
+
+// sign extension operator for use in idiv, imul, movsx*
+// and other instructions involving signed values, extends n bit value to 64 bit value
+// example : >"ae 8,0x81,~" ( <src bit width>,<value>,~ )
+// output  : 0xffffffffffffff81
+static bool esil_signext(RAnalEsil *esil) {
+	return r_anal_esil_signext(esil, false);
 }
 
 // sign extension assignement
@@ -593,47 +603,7 @@ static bool esil_signext(RAnalEsil *esil) {
 // output  : > ar a0
 //           0xffffff81
 static bool esil_signexteq(RAnalEsil *esil) {
-	ut64 src, dst;
-
-	char *p_src = r_anal_esil_pop (esil);
-	if (!p_src) {
-		return false;
-	}
-
-	if (!r_anal_esil_reg_read (esil, p_src, &src, NULL)) {
-		ERR ("esil_of: empty stack");
-		free (p_src);
-		return false;
-	}
-
-	char *p_dst = r_anal_esil_pop (esil);
-	if (!p_dst) {
-		return false;
-	}
-
-	if (!r_anal_esil_get_parm (esil, p_dst, &dst)) {
-		ERR ("esil_of: empty stack");
-		free (p_dst);
-		return false;
-	} else {
-		free (p_dst);
-	}
-	//Make sure the other bits are 0
-	src &= UT64_MAX >> (64 - dst);
-
-	ut64 m = 0;
-	if (dst < 64) {
-		m = 1ULL << (dst - 1);
-	}
-
-	esil->old = src;
-	esil->cur = ((src ^ m) - m);
-	esil->lastsz = esil_internal_sizeof_reg (esil, p_src);
-	// dst = (dst & ((1U << src_bit) - 1)); // clear upper bits
-	r_anal_esil_reg_write (esil, p_src, ((src ^ m) - m));
-	free (p_src);
-
-	return true;
+	return r_anal_esil_signext(esil, true);
 }
 
 static bool esil_zf(RAnalEsil *esil) {
