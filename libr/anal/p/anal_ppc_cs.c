@@ -162,16 +162,15 @@ static const char* getspr(struct Getarg *gop, int n) {
 
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
-	PJ *pj;
-	pj = pj_new ();
+	PJ *pj = pj_new ();
 	if (!pj) {
 		return;
 	}
-	cs_sysz *x = &insn->detail->sysz;
 	pj_o (pj);
 	pj_ka (pj, "operands");
+	cs_sysz *x = &insn->detail->sysz;
 	for (i = 0; i < x->op_count; i++) {
-		cs_sysz_op *op = &x->operands[i];
+		cs_sysz_op *op = x->operands + i;
 		pj_o (pj);
 		switch (op->type) {
 		case SYSZ_OP_REG:
@@ -180,16 +179,16 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case SYSZ_OP_IMM:
 			pj_ks (pj, "type", "imm");
-			pj_kN (pj, "value", (st64)op->imm);
+			pj_kN (pj, "value", op->imm);
 			break;
 		case SYSZ_OP_MEM:
 			pj_ks (pj, "type", "mem");
 			if (op->mem.base != SYSZ_REG_INVALID) {
 				pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
 			}
-			pj_kN (pj, "index", (st64) op->mem.index);
-			pj_kN (pj, "length", (st64) op->mem.length);
-			pj_kN (pj, "disp", (st64) op->mem.disp);
+			pj_ki (pj, "index", op->mem.index);
+			pj_kN (pj, "length", op->mem.length);
+			pj_kN (pj, "disp", op->mem.disp);
 			break;
 		default:
 			pj_ks (pj, "type", "invalid");

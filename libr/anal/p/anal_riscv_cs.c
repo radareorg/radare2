@@ -103,16 +103,15 @@
 
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
-	PJ *pj;
-	pj = pj_new ();
+	PJ *pj = pj_new ();
 	if (!pj) {
 		return:
 	}
 	pj_o (pj);
-	cs_riscv *x = &insn->detail->riscv;
 	pj_ka (pj, "operands");
+	cs_riscv *x = &insn->detail->riscv;
 	for (i = 0; i < x->op_count; i++) {
-		cs_riscv_op *op = &x->operands[i];
+		cs_riscv_op *op = x->operands + i;
 		pj_o (pj);
 		switch (op->type) {
 		case RISCV_OP_REG:
@@ -121,7 +120,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case RISCV_OP_IMM:
 			pj_ks (pj, "type", "imm");
-			r_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
+			pj_kN (pj, "value", op->imm);
 			break;
 		case RISCV_OP_MEM:
 			pj_ks (pj, "type", "mem");
@@ -139,10 +138,8 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_end (pj); /* a operands */
 	pj_end (pj);
 
-	char *s = pj_drain (pj);
 	r_strbuf_init (buf);
-	r_strbuf_append (s);
-
+	r_strbuf_append (buf, pj_string (pj));
 	pj_free (pj);
 }
 
@@ -157,27 +154,27 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 				insn->detail->riscv.operands[n].reg));
 		break;
 	case RISCV_OP_IMM:
-		{
-			st64 x = (st64)insn->detail->riscv.operands[n].imm;
-			sprintf (buf, "%"PFMT64d, x);
-		}
+	{
+		st64 x = (st64)insn->detail->riscv.operands[n].imm;
+		sprintf (buf, "%"PFMT64d, x);
 		break;
+	}
 	case RISCV_OP_MEM:
-		{
-			int disp = insn->detail->riscv.operands[n].mem.disp;
-		if (disp<0) {
-		sprintf (buf, "%"PFMT64d",%s,-",
-			(ut64)-insn->detail->riscv.operands[n].mem.disp,
-			cs_reg_name (*handle,
-				insn->detail->riscv.operands[n].mem.base));
+	{
+		st64 disp = insn->detail->riscv.operands[n].mem.disp;
+		if (disp < 0) {
+			sprintf (buf, "%"PFMT64d",%s,-",
+				(ut64)-insn->detail->riscv.operands[n].mem.disp,
+				cs_reg_name (*handle,
+					insn->detail->riscv.operands[n].mem.base));
 		} else {
-		sprintf (buf, "0x%"PFMT64x",%s,+",
-			(ut64)insn->detail->riscv.operands[n].mem.disp,
-			cs_reg_name (*handle,
-				insn->detail->riscv.operands[n].mem.base));
-		}
+			sprintf (buf, "0x%"PFMT64x",%s,+",
+				insn->detail->riscv.operands[n].mem.disp,
+				cs_reg_name (*handle,
+					insn->detail->riscv.operands[n].mem.base));
 		}
 		break;
+	}
 	}
 	return buf;
 }

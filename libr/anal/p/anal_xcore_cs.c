@@ -14,32 +14,31 @@
 
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
-	PJ *pj;
-	pj = pj_new ();
+	PJ *pj = pj_new ();
 	if (!pj) {
 		return;
 	}
 	pj_o (pj);
-	cs_xcore *x = &insn->detail->xcore;
 	pj_ka (pj, "operands");
+	cs_xcore *x = &insn->detail->xcore;
 	for (i = 0; i < x->op_count; i++) {
-		cs_xcore_op *op = &x->operands[i];
+		cs_xcore_op *op = x->operands + i;
 		pj_o (pj);
 		switch (op->type) {
 		case XCORE_OP_REG:
 			pj_ks (pj, "type", "reg");
-			r_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->reg));
+			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
 			break;
 		case XCORE_OP_IMM:
 			pj_ks (pj, "type", "imm");
-			r_strbuf_appendf (buf, ",\"value\":%"PFMT64d, (st64)op->imm);
+			pj_ki (pj, "value", op->imm);
 			break;
 		case XCORE_OP_MEM:
 			pj_ks (pj, "type", "mem");
 			if (op->mem.base != XCORE_REG_INVALID) {
 				pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
 			}
-			pj_kN (pj, "disp", (st64)op->mem.disp);
+			pj_ki (pj, "disp", op->mem.disp);
 			break;
 		default:
 			pj_ks (pj, "type", "invalid");
@@ -50,11 +49,9 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_end (pj); /* a operands */
 	pj_end (pj);
 
-	char *s = pj_drain (pj);
 	r_strbuf_init (buf);
-	r_strbuf_append (buf, s);
-
-	free (s);
+	r_strbuf_append (buf, pj_string (pj));
+	pj_free (pj);
 }
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {

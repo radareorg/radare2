@@ -224,18 +224,16 @@ static const char *cc_name(arm_cc cc) {
 }
 
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
-	PJ *pj;
 	int i;
-	pj = pj_new ();
+	PJ *pj = pj_new ();
 	if (!pj) {
 		return;
 	}
-
 	pj_o (pj);
-	cs_arm *x = &insn->detail->arm;
 	pj_ka (pj, "operands");
+	cs_arm *x = &insn->detail->arm;
 	for (i = 0; i < x->op_count; i++) {
-		cs_arm_op *op = &x->operands[i];
+		cs_arm_op *op = x->operands + i;
 		pj_o (pj);
 		switch (op->type) {
 		case ARM_OP_REG:
@@ -319,25 +317,25 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			pj_ki (pj, "vector_index", op->vector_index);
 		}
 		if (op->subtracted) {
-			pj_kb (pj, "subtracted", op->subtracted);
+			pj_kb (pj, "subtracted", true);
 		}
 		pj_end (pj); /* o operand */
 	}
 	pj_end (pj); /* a operands */
 	if (x->usermode) {
-		pj_kb (pj, "usermode", x->usermode);
+		pj_kb (pj, "usermode", true);
 	}
 	if (x->update_flags) {
-		pj_kb (pj, "update_flags", x->update_flags);
+		pj_kb (pj, "update_flags", true);
 	}
 	if (x->writeback) {
-		pj_kb (pj, "writeback", x->writeback);
+		pj_kb (pj, "writeback", true);
 	}
 	if (x->vector_size) {
 		pj_ki (pj, "vector_size", x->vector_size);
 	}
 	if (x->vector_data != ARM_VECTORDATA_INVALID) {
-		pj_ki (pj, "vector_data", x->vector_data);
+		pj_ks (pj, "vector_data", vector_data_type_name (x->vector_data));
 	}
 	if (x->cps_mode != ARM_CPSMODE_INVALID) {
 		pj_ki (pj, "cps_mode", x->cps_mode);
@@ -353,11 +351,9 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	}
 	pj_end (pj);
 
-	char *s = pj_drain (pj);
 	r_strbuf_init (buf);
-	r_strbuf_append (buf, s);
-
-	free (s);
+	r_strbuf_append (buf, pj_string (pj));
+	pj_free (pj);
 }
 
 static int arm64_reg_width(int reg) {
@@ -514,18 +510,16 @@ static const char *vess_name(arm64_vess vess) {
 #endif
 
 static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
-	PJ *pj;
 	int i;
-	pj = pj_new ();
+	PJ *pj = pj_new ();
 	if (!pj) {
 		return;
 	}
-
 	pj_o (pj);
-	cs_arm64 *x = &insn->detail->arm64;
 	pj_ka (pj, "operands");
+	cs_arm64 *x = &insn->detail->arm64;
 	for (i = 0; i < x->op_count; i++) {
-		cs_arm64_op *op = &x->operands[i];
+		cs_arm64_op *op = x->operands + i;
 		pj_o (pj);
 		switch (op->type) {
 		case ARM64_OP_REG:
@@ -542,7 +536,7 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case ARM64_OP_IMM:
 			pj_ks (pj, "type", "imm");
-			pj_kN (pj, "value", (st64)op->imm);
+			pj_kN (pj, "value", op->imm);
 			break;
 		case ARM64_OP_MEM:
 			pj_ks (pj, "type", "mem");
@@ -560,7 +554,7 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case ARM64_OP_CIMM:
 			pj_ks (pj, "type", "cimm");
-			pj_kN (pj, "value", (st64)op->imm);
+			pj_kN (pj, "value", op->imm);
 			break;
 		case ARM64_OP_PSTATE:
 			pj_ks (pj, "type", "pstate");
@@ -636,22 +630,19 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 	}
 	pj_end (pj);
 	if (x->update_flags) {
-		pj_kb (pj, "update_flags", x->update_flags);
+		pj_kb (pj, "update_flags", true);
 	}
 	if (x->writeback) {
-		pj_kb (pj, "writeback", x->writeback);
+		pj_kb (pj, "writeback", true);
 	}
 	if (x->cc != ARM64_CC_INVALID && x->cc != ARM64_CC_AL && x->cc != ARM64_CC_NV) {
-		r_strbuf_appendf (buf, ",\"cc\":\"%s\"", cc_name64 (x->cc));
 		pj_ks (pj, "cc", cc_name64 (x->cc));
 	}
 	pj_end (pj);
 
-	char *s = pj_drain (pj);
 	r_strbuf_init (buf);
-	r_strbuf_append (buf, s);
-
-	free (s);
+	r_strbuf_append (buf, pj_string (pj));
+	pj_free (pj);
 }
 
 static int decode_sign_ext(arm64_extender extender) {

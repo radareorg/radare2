@@ -24,16 +24,15 @@
 
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
-	PJ *pj;
-	pj = pj_new ();
+	PJ *pj = pj_new ();
 	if (!pj) {
 		return;
 	}
 	pj_o (pj);
-	cs_tms320c64x *x = &insn->detail->tms320c64x;
 	pj_ka (pj, "operands");
+	cs_tms320c64x *x = &insn->detail->tms320c64x;
 	for (i = 0; i < x->op_count; i++) {
-		cs_tms320c64x_op *op = &x->operands[i];
+		cs_tms320c64x_op *op = x->operands + i;
 		pj_o (pj);
 		switch (op->type) {
 		case TMS320C64X_OP_REG:
@@ -42,7 +41,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case TMS320C64X_OP_IMM:
 			pj_ks (pj, "type", "imm");
-			pj_kN (pj, "value", (st64)op->imm);
+			pj_ki (pj, "value", op->imm);
 			break;
 		case TMS320C64X_OP_MEM:
 			pj_ks (pj, "type", "mem");
@@ -60,11 +59,9 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_end (pj); /* a operands */
 	pj_end (pj);
 
-	char *s = pj_drain (pj);
 	r_strbuf_init (buf);
-	r_strbuf_append (buf, s);
-
-	free (s);
+	r_strbuf_append (buf, pj_string (pj));
+	pj_free (pj);
 }
 
 static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {

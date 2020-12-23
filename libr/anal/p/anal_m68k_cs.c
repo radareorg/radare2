@@ -60,9 +60,8 @@ static inline void handle_jump_instruction(RAnalOp *op, ut64 addr, cs_m68k *m68k
 }
 
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
-	PJ *pj;
 	int i;
-	pj = pj_new ();
+	PJ *pj = pj_new ();
 	if (!pj) {
 		return;
 	}
@@ -70,7 +69,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	cs_m68k *x = &insn->detail->m68k;
 	pj_ka (pj, "operands");
 	for (i = 0; i < x->op_count; i++) {
-		cs_m68k_op *op = &x->operands[i];
+		cs_m68k_op *op = x->operands + i;
 		pj_o (pj);
 		switch (op->type) {
 		case M68K_OP_REG:
@@ -94,12 +93,12 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			}
 			pj_kN (pj, "in_disp", op->mem.in_disp);
 			pj_kN (pj, "out_disp", op->mem.out_disp);
-			pj_kN (pj, "disp", op->mem.disp);
-			pj_kN (pj, "scale", op->mem.scale);
-			pj_kN (pj, "bitfield", op->mem.bitfield);
-			pj_kN (pj, "width", op->mem.width);
-			pj_kN (pj, "offset", op->mem.offset);
-			pj_kN (pj, "index_size", op->mem.index_size);
+			pj_ki (pj, "disp", op->mem.disp);
+			pj_ki (pj, "scale", op->mem.scale);
+			pj_ki (pj, "bitfield", op->mem.bitfield);
+			pj_ki (pj, "width", op->mem.width);
+			pj_ki (pj, "offset", op->mem.offset);
+			pj_ki (pj, "index_size", op->mem.index_size);
 			break;
 		default:
 			pj_ks (pj, "type", "invalid");
@@ -110,11 +109,9 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_end (pj); /* a operands */
 	pj_end (pj);
 
-	char *s = pj_drain (pj);
 	r_strbuf_init (buf);
-	r_strbuf_append (buf, s);
-
-	free (s);
+	r_strbuf_append (buf, pj_string (pj));
+	pj_free (pj);
 }
 
 static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {

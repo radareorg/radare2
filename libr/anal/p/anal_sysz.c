@@ -15,16 +15,15 @@
 
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
-	PJ *pj;
-	pj = pj_new ();
+	PJ *pj = pj_new ();
 	if (!pj) {
 		return;
 	}
 	pj_o (pj);
-	cs_sysz *x = &insn->detail->sysz;
 	pj_ka (pj, "operands");
+	cs_sysz *x = &insn->detail->sysz;
 	for (i = 0; i < x->op_count; i++) {
-		cs_sysz_op *op = &x->operands[i];
+		cs_sysz_op *op = x->operands + i;
 		pj_o (pj);
 		switch (op->type) {
 		case SYSZ_OP_REG:
@@ -33,29 +32,27 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case SYSZ_OP_IMM:
 			pj_ks (pj, "type", "imm");
-			pj_kN (pj, "value", (st64)op->imm);
+			pj_kN (pj, "value", op->imm);
 			break;
 		case SYSZ_OP_MEM:
 			pj_ks (pj, "type", "mem");
 			if (op->mem.base != SYSZ_REG_INVALID) {
 				pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
 			}
-			pj_kN (pj, "disp", (st64)op->mem.disp);
+			pj_kN (pj, "disp", op->mem.disp);
 			break;
 		default:
 			pj_ks (pj, "type", "invalid");
 			break;
 		}
-		pj_o (pj); /* o operand */
+		pj_end (pj); /* o operand */
 	}
 	pj_end (pj); /* a operands */
 	pj_end (pj);
 
-	char *s = pj_drain (pj);
 	r_strbuf_init (buf);
-	r_strbuf_append (buf, s);
-
-	free (s);
+	r_strbuf_append (buf, pj_string (pj));
+	pj_free (pj);
 }
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
