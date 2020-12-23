@@ -167,7 +167,7 @@ EXPECT=<<EOF
  [35m##[0m  ai.seq
  [33m##[0m  ai.ascii
  [0m##[0m  graph.box
- [34m##[0m  graph.box2
+ [33m##[0m  graph.box2
  [35m##[0m  graph.box3
  [90m##[0m  graph.box4
  [32m##[0m  graph.true
