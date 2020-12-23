@@ -33,7 +33,7 @@ wox 0xabcdef@!10
 ps 14
 EOF
 EXPECT=<<EOF
-helloworld\x00\x00\x00\x00
+helloworld
 EOF
 RUN
 
@@ -59,7 +59,7 @@ wox 0xabcdef0102@!10
 ps 14
 EOF
 EXPECT=<<EOF
-helloworld\x00\x00\x00\x00
+helloworld
 EOF
 RUN
 
@@ -72,7 +72,7 @@ wox 0xabcdef010203@!10
 ps 14
 EOF
 EXPECT=<<EOF
-helloworld\x00\x00\x00\x00
+helloworld
 EOF
 RUN
 
@@ -85,7 +85,7 @@ wox 0xabcdef01020304@!10
 ps 14
 EOF
 EXPECT=<<EOF
-helloworld\x00\x00\x00\x00
+helloworld
 EOF
 RUN
 
