@@ -2714,6 +2714,9 @@ R_API bool r_core_init(RCore *core) {
 	core->lastcmd = NULL;
 	core->cmdlog = NULL;
 	core->print->charset->db = sdb_ns (core->sdb, "charset", 1);
+	core->print->charset->db->refs++; // increase reference counter to avoid double-free
+	// ideally sdb_ns_set should be used here, but it doesnt seems to work well. must fix
+	// sdb_ns_set (DB, "charset", core->print->charset->db);
 	core->stkcmd = NULL;
 	core->cmdqueue = NULL;
 	core->cmdrepeat = true;
