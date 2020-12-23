@@ -542,11 +542,8 @@ R_API int r_anal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, 
 	return ret;
 }
 
-// sign extension operator for use in idiv, imul, movsx* 
-// and other instructions involving signed values, extends n bit value to 64 bit value
-// example : >"ae 8,0x81,~" ( <src bit width>,<value>,~ )
-// output  : 0xffffffffffffff81
-static bool esil_signext(RAnalEsil *esil) {
+R_API int r_anal_esil_signext(RAnalEsil *esil, bool assign) {
+	bool ret = false;
 	ut64 src, dst;
 
 	char *p_src = r_anal_esil_pop (esil);
@@ -558,8 +555,6 @@ static bool esil_signext(RAnalEsil *esil) {
 		ERR ("esil_of: empty stack");
 		free (p_src);
 		return false;
-	} else {
-		free (p_src);
 	}
 
 	char *p_dst = r_anal_esil_pop (esil);
@@ -584,7 +579,31 @@ static bool esil_signext(RAnalEsil *esil) {
 	}
 
 	// dst = (dst & ((1U << src_bit) - 1)); // clear upper bits
-	return r_anal_esil_pushnum (esil, ((src ^ m) - m));
+	if (assign) {
+		ret = r_anal_esil_reg_write (esil, p_src, ((src ^ m) - m));
+	} else {
+		ret = r_anal_esil_pushnum (esil, ((src ^ m) - m));
+	}
+
+	free (p_src);
+	return ret;
+}
+
+// sign extension operator for use in idiv, imul, movsx*
+// and other instructions involving signed values, extends n bit value to 64 bit value
+// example : >"ae 8,0x81,~" ( <src bit width>,<value>,~ )
+// output  : 0xffffffffffffff81
+static bool esil_signext(RAnalEsil *esil) {
+	return r_anal_esil_signext(esil, false);
+}
+
+// sign extension assignement
+// example : > "ae 0x81,a0,="
+//           > "ae 8,a0,~="   ( <src bit width>,register,~= )
+// output  : > ar a0
+//           0xffffff81
+static bool esil_signexteq(RAnalEsil *esil) {
+	return r_anal_esil_signext(esil, true);
 }
 
 static bool esil_zf(RAnalEsil *esil) {
@@ -3226,6 +3245,7 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("$r", esil_rs, 1, 0, OT_UNK);
 	OP ("$$", esil_address, 1, 0, OT_UNK);
 	OP ("~", esil_signext, 1, 2, OT_MATH);
+	OP ("~=", esil_signexteq, 0, 2, OT_MATH);
 	OP ("==", esil_cmp, 0, 2, OT_MATH);
 	OP ("<", esil_smaller, 1, 2, OT_MATH);
 	OP (">", esil_bigger, 1, 2, OT_MATH);
