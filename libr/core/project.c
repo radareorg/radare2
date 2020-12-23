@@ -21,7 +21,7 @@ static bool is_valid_project_name(const char *name) {
 		case '-':
 			continue;
 		}
-		if (IS_LOWER (name[i]) || IS_UPPER (name[i])) {
+		if (isalpha(name[i])) {
 			continue;
 		}
 		if (IS_DIGIT (name[i])) {
@@ -344,10 +344,10 @@ typedef struct {
 	RCore *core;
 	char *prj_name;
 	char *rc_path;
-} project_state;
+} projectState;
 
 static RThreadFunctionRet project_load_background(RThread *th) {
-	project_state *ps = th->user;
+	projectState *ps = th->user;
 	r_core_project_load (ps->core, ps->prj_name, ps->rc_path);
 	free (ps->prj_name);
 	free (ps->rc_path);
@@ -356,7 +356,7 @@ static RThreadFunctionRet project_load_background(RThread *th) {
 }
 
 R_API RThread *r_core_project_load_bg(RCore *core, const char *prj_name, const char *rc_path) {
-	project_state *ps = R_NEW0 (project_state);
+	projectState *ps = R_NEW0 (projectState);
 	ps->core = core;
 	ps->prj_name = strdup (prj_name);
 	ps->rc_path = strdup (rc_path);
@@ -760,7 +760,6 @@ static bool project_save_script(RCore *core, const char *file, int opts) {
 	return true;
 }
 
-// TODO: rename to r_core_project_save_script
 R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	return project_save_script (core, file, opts);
 }
@@ -774,7 +773,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	SdbListIter *it;
 	SdbNs *ns;
 	char *old_prj_name = NULL;
-	r_return_val_if_fail (false, prj_name || *prj_name);
+	r_return_val_if_fail (false, prj_name && *prj_name);
 	script_path = get_project_script_path (core, prj_name);
 	if (!script_path) {
 		eprintf ("Invalid project name '%s'\n", prj_name);
