@@ -1374,6 +1374,24 @@ static void cmd_print_gadget(RCore *core, const char *_input) {
 	}
 }
 
+static void cmd_pfo_help(RCore *core) {
+	const char *help[] = {
+		"Usage:", "pfo [format-file]", "# List all format definition files (fdf)",
+		/* literally, whitespaces to prevent help system rendering rows as headers */
+		R_JOIN_3_PATHS ("~", R2_HOME_SDB_FORMAT, ""), " ", " ",
+		"<insert sys prefix path here>", " ", " ",
+		NULL
+	};
+
+	char buf[PATH_MAX];
+	snprintf (buf, sizeof (buf), R_JOIN_3_PATHS ("%s", R2_SDB_FORMAT, ""),
+		r_sys_prefix (NULL));
+
+	help[6] = buf;
+
+	r_core_cmd_help (core, help);
+}
+
 static void cmd_print_format(RCore *core, const char *_input, const ut8* block, int len) {
 	char *input = NULL;
 	int mode = R_PRINT_MUSTSEE;
@@ -1457,10 +1475,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		return;
 	case 'o': // "pfo"
 		if (_input[2] == '?') {
-			eprintf ("|Usage: pfo [format-file]\n"
-				" " R_JOIN_3_PATHS ("~", R2_HOME_SDB_FORMAT, "") "\n"
-				" " R_JOIN_3_PATHS ("%s", R2_SDB_FORMAT, "") "\n",
-				r_sys_prefix (NULL));
+			cmd_pfo_help (core);
 		} else if (_input[2] == ' ') {
 			const char *fname = r_str_trim_head_ro (_input + 3);
 			char *tmp = r_str_newf (R_JOIN_2_PATHS (R2_HOME_SDB_FORMAT, "%s"), fname);
@@ -1516,7 +1531,6 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				free (path);
 			}
 		}
-		free (input);
 		return;
 	} // switch
 
