@@ -215,12 +215,11 @@ R_API void r_cons_println(const char* str) {
 R_API void r_cons_printat(const char *str, int x, char y) {
 	int i, o, len;
 	int h, w = r_cons_get_size (&h);
-	r_cons_gotoxy (x, y);
 	int lines = 0;
 	for (o = i = len = 0; str[i]; i++, len++) {
 		if (str[i] == '\n') {
 			r_cons_gotoxy (x, y + lines);
-			int wlen = R_MIN (len - x, w - x);
+			int wlen = R_MIN (len, w);
 			r_cons_memcat (str + o, wlen);
 			o = i + 1;
 			len = 0;
@@ -379,6 +378,17 @@ R_API bool r_cons_is_breaked(void) {
 		}
 	}
 	return I.context->breaked;
+}
+
+R_API void r_cons_line(int x, int y, int x2, int y2, int ch) {
+	char chstr[2] = {ch, 0};
+	int X, Y;
+	for (X = x; X < x2; X++) {
+		for (Y = y; Y < y2; Y++) {
+			r_cons_gotoxy (X, Y);
+			r_cons_print (chstr);
+		}
+	}
 }
 
 R_API int r_cons_get_cur_line(void) {
