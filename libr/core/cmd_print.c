@@ -5770,30 +5770,6 @@ l = use_blocksize;
 				}
 			}
 			break;
-        case ' ': // "ps"
-		{
-			const char *current_charset = r_config_get (core->config, "cfg.charset");
-			if (R_STR_ISEMPTY (current_charset)) {
-				r_print_string (core->print, core->offset, core->block, l, 0);
-			} else {
-				if (len > 0) {
-					size_t out_len = len * 10;
-					ut8 *out = calloc (len, 10);
-					if (out) {
-						ut8 *data = malloc (len);
-						if (data) {
-							r_io_read_at (core->io, core->offset, data, len);
-							r_charset_encode_str (core->print->charset, out, out_len, data, len);
-							r_print_string (core->print, core->offset,
-								out, len, 0);
-							free (data);
-						}
-						free (out);
-					}
-				}
-			}
-			break;
-		}
 		case 'u': // "psu"
 			if (l > 0) {
 				bool json = input[2] == 'j'; // "psuj"
