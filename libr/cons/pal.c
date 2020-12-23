@@ -224,7 +224,7 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.widget_sel         = (RColor) RColor_BGRED;
 
 	ctx->cpal.graph_box          = (RColor) RColor_NULL;
-	ctx->cpal.graph_box2         = (RColor) RColor_BLUE;
+	ctx->cpal.graph_box2         = (RColor) RColor_YELLOW;
 	ctx->cpal.graph_box3         = (RColor) RColor_MAGENTA;
 	ctx->cpal.graph_box4         = (RColor) RColor_GRAY;
 	ctx->cpal.graph_true         = (RColor) RColor_GREEN;
