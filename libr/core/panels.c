@@ -201,14 +201,14 @@ static const char *cache_white_list_cmds[] = {
 };
 
 static const char *help_msg_panels[] = {
-	"|",        "split current panel vertically",
-	"-",        "split current panel horizontally",
+	"|",        "split the current panel vertically",
+	"-",        "split the current panel horizontally",
 	":",        "run r2 command in prompt",
 	";",        "add/remove comment",
-	"_",        "show hud",
-	"\\",       "show user-friendly hud",
+	"_",        "start the hud input mode",
+	"\\",       "show the user-friendly hud",
 	"?",        "show this help",
-	"!",        "swap into visual mode",
+	"!",        "run r2048 game",
 	".",        "seek to PC or entrypoint",
 	"*",        "show decompiler in the current panel",
 	"\"",       "create a panel from the list and replace the current one",
@@ -218,7 +218,7 @@ static const char *help_msg_panels[] = {
 	"[1-9]",    "follow jmp/call identified by shortcut (like ;[1])",
 	"' '",      "(space) toggle graph / panels",
 	"tab",      "go to the next panel",
-	"Enter",    "maximize current panel in zoom mode",
+	"Enter",    "start Zoom mode",
 	"a",        "toggle auto update for decompiler",
 	"b",        "browse symbols, flags, configurations, classes, ...",
 	"c",        "toggle cursor",
@@ -244,7 +244,7 @@ static const char *help_msg_panels[] = {
 	"s/S",      "step in / step over",
 	"t/T",      "tab prompt / close a tab",
 	"u/U",      "undo / redo seek",
-	"w",        "shuffle panels around in window mode",
+	"w",        "start Window mode",
 	"V",        "go to the graph mode",
 	"xX",       "show xrefs/refs of current function from/to data/code",
 	"z",        "swap current panel with the first one",
@@ -259,12 +259,12 @@ static const char *help_msg_panels_window[] = {
 	"|",        "split the current panel vertically",
 	"-",        "split the current panel horizontally",
 	"tab",      "go to the next panel",
-	"Enter",    "maximize current panel in zoom mode",
+	"Enter",    "start Zoom mode",
 	"d",        "define in the current address. Same as Vd",
 	"b",        "browse symbols, flags, configurations, classes, ...",
 	"hjkl",     "move around (left-down-up-right)",
 	"HJKL",     "resize panels vertically/horizontally",
-	"Q/q/w",    "quit window mode",
+	"Q/q/w",    "quit Window mode",
 	"p/P",      "rotate panel layout",
 	"t/T",      "rotate related commands in a panel",
 	"X",        "close current panel",
@@ -287,7 +287,7 @@ static const char *help_msg_panels_zoom[] = {
 	"s/S",      "step in / step over",
 	"t/T",      "rotate related commands in a panel",
 	"xX",       "show xrefs/refs of current function from/to data/code",
-	"q/Q/Enter","quit zoom mode",
+	"q/Q/Enter","quit Zoom mode",
 	NULL
 };
 
@@ -968,31 +968,32 @@ static void __adjust_side_panels(RCore *core) {
 }
 
 static void __update_help(RCore *core, RPanels *ps) {
-	const char *help = "Help";
 	int i;
 	for (i = 0; i < ps->n_panels; i++) {
 		RPanel *p = __get_panel (ps, i);
-		if (!strncmp (p->model->cmd, help, strlen (help))) {
+		if (r_str_endswith (p->model->cmd, "Help")) {
 			RStrBuf *rsb = r_strbuf_new (NULL);
-			const char *title;
+			const char *title, *cmd;
 			const char **msg;
 			switch (ps->mode) {
 				case PANEL_MODE_WINDOW:
-					title = "Panels Window Mode";
+					title = "Panels Window mode help";
+					cmd = "Window Mode Help";
 					msg = help_msg_panels_window;
 					break;
 				case PANEL_MODE_ZOOM:
-					title = "Panels Zoom Mode";
+					title = "Panels Zoom mode help";
+					cmd = "Zoom Mode Help";
 					msg = help_msg_panels_zoom;
 					break;
 				default:
-					title = "Panels Mode";
+					title = "Visual Ascii Art Panels";
+					cmd = "Help";
 					msg = help_msg_panels;
 					break;
 			}
-			// panel's title does not change, keep it short and simple
-			p->model->title = r_str_dup (p->model->title, help);
-			p->model->cmd = r_str_dup (p->model->cmd, help);
+			p->model->title = r_str_dup (p->model->title, cmd);
+			p->model->cmd = r_str_dup (p->model->cmd, cmd);
 			r_core_visual_append_help (rsb, title, msg);
 			if (!rsb) {
 				break;

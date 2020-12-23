@@ -3881,7 +3881,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("zoom.maxsz", 512, "Zoom max size of block");
 	SETI ("zoom.to", 0, "Zoom end address");
 	n = NODECB ("zoom.in", "io.map", &cb_searchin);
-	SETDESC (n, "Specify boundaries for zoom");
+	SETDESC (n, "Specify  boundaries for zoom");
 	SETOPTIONS (n, "raw", "block",
 		"bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x",
 		"io.map", "io.maps", "io.maps.rwx", "io.maps.r", "io.maps.rw", "io.maps.rx", "io.maps.wx", "io.maps.x",

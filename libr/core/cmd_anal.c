@@ -19,7 +19,7 @@ static const char *help_msg_a[] = {
 	"ad", "[?]", "analyze data trampoline (wip)",
 	"ad", " [from] [to]", "analyze data pointers to (from-to)",
 	"ae", "[?] [expr]", "analyze opcode eval expression (see ao)",
-	"af", "[?]", "analyze functions",
+	"af", "[?]", "analyze Functions",
 	"aF", "", "same as above, but using anal.depth=1",
 	"ag", "[?] [options]", "draw graphs in various formats",
 	"ah", "[?]", "analysis hints (force opcode size, ...)",
@@ -1129,7 +1129,7 @@ static void cmd_afvx(RCore *core, RAnalFunction *fcn, bool json) {
 		list_vars (core, fcn, pj, 'R', NULL);
 		if (json) {
 			pj_k (pj, "writes");
-		} else {
+		} else {	
 			r_cons_printf ("afvW\n");
 		}
 		list_vars (core, fcn, pj, 'W', NULL);
@@ -1331,14 +1331,14 @@ static int var_cmd(RCore *core, const char *str) {
 			PJ *pj = NULL;
 			if (str[1] == 'j') {
 				pj = pj_new ();
-			}
+			} 
 			list_vars (core, fcn, pj, str[0], name);
 			if (str[1] == 'j') {
 				pj_end (pj);
 				char *j = pj_drain (pj);
 				r_cons_printf ("%s\n", j);
 				free (j);
-			}
+			} 
 			return true;
 		} else {
 			eprintf ("afv: Cannot find function in 0x%08"PFMT64x"\n", core->offset);
@@ -2312,7 +2312,7 @@ static void anal_bb_list(RCore *core, const char *input) {
 		r_table_add_column (table, s, "calls", 0);
 		r_table_add_column (table, s, "xrefs", 0);
 	}
-
+	
 	r_rbtree_foreach (core->anal->bb_tree, iter, block, RAnalBlock, _rb) {
 		RList *xrefs = get_xrefs (block);
 		RList *calls = get_calls (block);

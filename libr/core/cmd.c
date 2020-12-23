@@ -291,10 +291,10 @@ static const char *help_msg_uc[] = {
 static const char *help_msg_y[] = {
 	"Usage:", "y[ptxy] [len] [[@]addr]", " # See wd? for memcpy, same as 'yf'.",
 	"y!", "", "open cfg.editor to edit the clipboard",
-	"y", " 16 @ 0x200", "copy 16 bytes into clipboard from 0x200",
 	"y", " 16 0x200", "copy 16 bytes into clipboard from 0x200",
+	"y", " 16 @ 0x200", "copy 16 bytes into clipboard from 0x200",
 	"y", " 16", "copy 16 bytes into clipboard",
-	"y", "", "show yank buffer information (origin len bytes)",
+	"y", "", "show yank buffer information (srcoff len bytes)",
 	"y*", "", "print in r2 commands what's been yanked",
 	"yf", " 64 0x200", "copy file 64 bytes from 0x200 from file",
 	"yfa", " file copy", "copy all bytes from file (opens w/ io)",
@@ -308,9 +308,7 @@ static const char *help_msg_y[] = {
 	"yw", " hello world", "yank from string",
 	"ywx", " 10203040", "yank from hexpairs (same as yfx)",
 	"yx", "", "print contents of clipboard in hexadecimal",
-	"yy", " @ 0x3344", "paste contents of clipboard to 0x3344",
-	"yy", " 0x3344", "paste contents of clipboard to 0x3344",
-	"yy", "", "paste contents of clipboard at current seek",
+	"yy", " 0x3344", "paste clipboard",
 	"yz", " [len]", "copy nul-terminated string (up to blocksize) into clipboard",
 	NULL
 };
@@ -324,7 +322,6 @@ static const char *help_msg_triple_exclamation[] = {
 	"!!!", "-foo", "remove autocompletion named 'foo'",
 	"!!!", "foo", "add 'foo' for autocompletion",
 	"!!!", "bar $flag", "add 'bar' for autocompletion with $flag as argument",
-	"Types:", "", "",
 	NULL
 };
 
@@ -1293,7 +1290,7 @@ static void load_table_csv(RCore *core, RTable *t, RList *lines) {
 	RListIter *iter;
 	char *line;
 	int row = 0;
-
+	
 	RList *cols = NULL;
 	r_list_foreach (lines, iter, line) {
 		char *word;
@@ -2461,25 +2458,6 @@ static int autocomplete_type(const char* strflag) {
 	return R_CORE_AUTOCMPLT_END;
 }
 
-static void cmd_autocomplete_help(RCore *core) {
-	r_core_cmd_help (core, help_msg_triple_exclamation);
-	// non-zero-cost survival without iterators 101
-	const char **help = calloc (R_CORE_AUTOCMPLT_END + 1, 3 * sizeof (char *));
-	int i;
-	size_t n;
-	for (i = 0, n = 0; i < R_CORE_AUTOCMPLT_END; i++) {
-		if (autocomplete_flags[i].desc) {
-			// highlight "$" as cmd and the rest of the name as args
-			help[n + 0] = "$";
-			help[n + 1] = autocomplete_flags[i].name + 1;
-			help[n + 2] = autocomplete_flags[i].desc;
-			n += 3;
-		}
-	}
-	r_core_cmd_help (core, help);
-	free (help);
-}
-
 static void cmd_autocomplete(RCore *core, const char *input) {
 	RCoreAutocomplete* b = core->autocomplete;
 	input = r_str_trim_head_ro (input);
@@ -2489,7 +2467,16 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 		return;
 	}
 	if (*input == '?') {
-		cmd_autocomplete_help (core);
+		r_core_cmd_help (core, help_msg_triple_exclamation);
+		int i;
+		r_cons_printf ("|Types:\n");
+		for (i = 0; i < R_CORE_AUTOCMPLT_END; i++) {
+			if (autocomplete_flags[i].desc) {
+				r_cons_printf ("| %s     %s\n",
+					autocomplete_flags[i].name,
+					autocomplete_flags[i].desc);
+			}
+		}
 		return;
 	}
 	if (*input == '-') {
