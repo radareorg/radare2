@@ -21,7 +21,7 @@ static bool is_valid_project_name(const char *name) {
 		case '-':
 			continue;
 		}
-		if (IS_LOWER(name[i]) || IS_UPPER(name[i])) {
+		if (IS_LOWER (name[i]) || IS_UPPER (name[i])) {
 			continue;
 		}
 		if (IS_DIGIT (name[i])) {
@@ -148,7 +148,7 @@ static inline void remove_project_file(char * path) {
 		}
 }
 
-static inline void remove_notes_file(char *pd) {
+static inline void remove_notes_file(const char *pd) {
 		char *notes_txt = r_str_newf ("%s%s%s", pd, R_SYS_DIR, "notes.txt");
 		if (r_file_exists (notes_txt)) {
 			r_file_rm (notes_txt);
@@ -157,7 +157,7 @@ static inline void remove_notes_file(char *pd) {
 		free(notes_txt);
 }
 
-static inline void remove_rop_directory(char *prj_dir) {
+static inline void remove_rop_directory(const char *prj_dir) {
 		char *rop_d = r_str_newf ("%s%s%s", prj_dir, R_SYS_DIR, "rop.d");
 
 		if (r_file_is_directory (rop_d)) {
@@ -774,10 +774,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	SdbListIter *it;
 	SdbNs *ns;
 	char *old_prj_name = NULL;
-
-	if (!prj_name || !*prj_name) {
-		return false;
-	}
+	r_return_val_if_fail (false, !prj_name || !*prj_name);
 	script_path = get_project_script_path (core, prj_name);
 	if (!script_path) {
 		eprintf ("Invalid project name '%s'\n", prj_name);
