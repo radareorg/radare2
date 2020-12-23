@@ -1215,7 +1215,7 @@ static bool cb_cfgcharset(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	const char *cf = r_str_trim_head_ro (node->value);
 	if (!*cf) {
-		return false;
+		return true;
 	}
 
 	const char *cs = R2_PREFIX R_SYS_DIR R2_SDB R_SYS_DIR "charsets" R_SYS_DIR;
