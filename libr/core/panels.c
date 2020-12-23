@@ -6239,6 +6239,29 @@ static void __handle_tab(RCore *core) {
 	}
 }
 
+// copypasta from visual
+static void prevOpcode(RCore *core) {
+	RPrint *p = core->print;
+	ut64 addr, oaddr = core->offset + core->print->cur;
+	if (r_core_prevop_addr (core, oaddr, 1, &addr)) {
+		const int delta = oaddr - addr;
+		p->cur -= delta;
+	} else {
+		p->cur -= 4;
+	}
+}
+
+static void nextOpcode(RCore *core) {
+	RAnalOp *aop = r_core_anal_op (core, core->offset + core->print->cur, R_ANAL_OP_MASK_BASIC);
+	RPrint *p = core->print;
+	if (aop) {
+		p->cur += aop->size;
+		r_anal_op_free (aop);
+	} else {
+		p->cur += 4;
+	}
+}
+
 static void __panels_process(RCore *core, RPanels *panels) {
 	if (!panels) {
 		return;
@@ -6472,9 +6495,13 @@ virtualmouse:
 		if (r_config_get_i (core->config, "scr.cursor")) {
 			core->cons->cpos.y++;
 		} else {
-			r_cons_switchbuf (false);
-			if (cur->model->directionCb) {
-				cur->model->directionCb (core, (int)DOWN);
+			if (core->print->cur_enabled) {
+				nextOpcode (core);
+			} else {
+				r_cons_switchbuf (false);
+				if (cur->model->directionCb) {
+					cur->model->directionCb (core, (int)DOWN);
+				}
 			}
 		}
 		break;
@@ -6482,9 +6509,13 @@ virtualmouse:
 		if (r_config_get_i (core->config, "scr.cursor")) {
 			core->cons->cpos.y--;
 		} else {
-			r_cons_switchbuf (false);
-			if (cur->model->directionCb) {
-				cur->model->directionCb (core, (int)UP);
+			if (core->print->cur_enabled) {
+				prevOpcode (core);
+			} else {
+				r_cons_switchbuf (false);
+				if (cur->model->directionCb) {
+					cur->model->directionCb (core, (int)UP);
+				}
 			}
 		}
 		break;
@@ -6492,10 +6523,17 @@ virtualmouse:
 		if (r_config_get_i (core->config, "scr.cursor")) {
 			core->cons->cpos.y -= 5;
 		} else {
-			r_cons_switchbuf (false);
-			if (cur->model->directionCb) {
-				for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
-					cur->model->directionCb (core, (int)UP);
+			if (core->print->cur_enabled) {
+				size_t i;
+				for (i = 0; i < 4; i++) {
+					prevOpcode (core);
+				}
+			} else {
+				r_cons_switchbuf (false);
+				if (cur->model->directionCb) {
+					for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
+						cur->model->directionCb (core, (int)UP);
+					}
 				}
 			}
 		}
@@ -6504,10 +6542,17 @@ virtualmouse:
 		if (r_config_get_i (core->config, "scr.cursor")) {
 			core->cons->cpos.y += 5;
 		} else {
-			r_cons_switchbuf (false);
-			if (cur->model->directionCb) {
-				for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
-					cur->model->directionCb (core, (int)DOWN);
+			if (core->print->cur_enabled) {
+				size_t i;
+				for (i = 0; i < 4; i++) {
+					nextOpcode (core);
+				}
+			} else {
+				r_cons_switchbuf (false);
+				if (cur->model->directionCb) {
+					for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
+						cur->model->directionCb (core, (int)DOWN);
+					}
 				}
 			}
 		}
@@ -6627,9 +6672,13 @@ virtualmouse:
 		if (r_config_get_i (core->config, "scr.cursor")) {
 			core->cons->cpos.x--;
 		} else {
-			r_cons_switchbuf (false);
-			if (cur->model->directionCb) {
-				cur->model->directionCb (core, (int)LEFT);
+			if (core->print->cur_enabled) {
+				core->print->cur--;
+			} else {
+				r_cons_switchbuf (false);
+				if (cur->model->directionCb) {
+					cur->model->directionCb (core, (int)LEFT);
+				}
 			}
 		}
 		break;
@@ -6637,9 +6686,13 @@ virtualmouse:
 		if (r_config_get_i (core->config, "scr.cursor")) {
 			core->cons->cpos.x++;
 		} else {
-			r_cons_switchbuf (false);
-			if (cur->model->directionCb) {
-				cur->model->directionCb (core, (int)RIGHT);
+			if (core->print->cur_enabled) {
+				core->print->cur++;
+			} else {
+				r_cons_switchbuf (false);
+				if (cur->model->directionCb) {
+					cur->model->directionCb (core, (int)RIGHT);
+				}
 			}
 		}
 		break;
