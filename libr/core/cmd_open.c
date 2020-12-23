@@ -715,7 +715,13 @@ static void cmd_open_map(RCore *core, const char *input) {
 					size = r_io_fd_size (core->io, fd);
 				}
 				map = r_io_map_add (core->io, fd, rwx_arg ? rwx : desc->perm, paddr, vaddr, size);
-				r_io_map_set_name (map, name);
+				if (map) {
+					if (name) {
+						r_io_map_set_name (map, name);
+					}
+				} else {
+					eprintf ("Cannot add map.\n");
+				}
 			}
 		} else {
 			int fd = r_io_fd_get_current (core->io);
@@ -779,10 +785,12 @@ static void cmd_open_map(RCore *core, const char *input) {
 				addr = r_num_math (core->num, s);
 				map = r_io_map_get (core->io, addr);
 			}
-			if (*q) {
-				r_io_map_set_name (map, q);
-			} else {
-				r_io_map_del_name (map);
+			if (map) {
+				if (*q) {
+					r_io_map_set_name (map, q);
+				} else {
+					r_io_map_del_name (map);
+				}
 			}
 			s = p;
 		}
@@ -793,7 +801,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 			RIODesc *desc = r_io_desc_get (core->io, fd);
 			if (desc) {
 				map = r_io_map_add (core->io, fd, desc->perm, 0, 0, UT64_MAX);
-				r_io_map_set_name (map, desc->name);
+				if (map) {
+					r_io_map_set_name (map, desc->name);
+				}
 			} else {
 				eprintf ("Usage: omm [fd]\n");
 			}
@@ -806,7 +816,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 			if (desc) {
 				ut64 size = r_io_desc_size (desc);
 				map = r_io_map_add (core->io, fd, desc->perm, 0, 0, size);
-				r_io_map_set_name (map, desc->name);
+				if (map && desc->name) {
+					r_io_map_set_name (map, desc->name);
+				}
 			} else {
 				eprintf ("Usage: omm [fd]\n");
 			}
