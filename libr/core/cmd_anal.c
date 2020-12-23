@@ -5710,7 +5710,11 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	esil->cb.hook_mem_write = mymemwrite;
 	esil->cb.hook_mem_read = mymemread;
 	esil->nowrite = true;
+	r_cons_break_push (NULL, NULL);
 	for (ops = ptr = 0; ptr < buf_sz && hasNext (mode); ops++, ptr += len) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
 		len = r_anal_op (core->anal, &aop, addr + ptr, buf + ptr, buf_sz - ptr, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 		esilstr = R_STRBUF_SAFEGET (&aop.esil);
 		if (R_STR_ISNOTEMPTY (esilstr)) {
@@ -5731,7 +5735,11 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 			r_anal_esil_stack_free (esil);
 		}
 		r_anal_op_fini (&aop);
+		if (len < 1) {
+			len = 1;
+		}
 	}
+	r_cons_break_pop ();
 	esil->nowrite = false;
 	esil->cb.hook_reg_write = NULL;
 	esil->cb.hook_reg_read = NULL;
@@ -6669,7 +6677,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				cmd_aea (core, 1, r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn));
 			}
 		} else {
-			cmd_aea (core, 1, core->offset, (int)r_num_math (core->num, input+2));
+			cmd_aea (core, 1, core->offset, (int)r_num_math (core->num, input[1]?input+2:input+1));
 		}
 		break;
 	case 'a': // "aea"
