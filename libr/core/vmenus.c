@@ -3340,6 +3340,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			r_core_visual_append_help (rsb, "Actions Supported", help_visual_anal_actions);
 			r_core_visual_append_help (rsb, "Keys", help_visual_anal_keys);
 			r_cons_less_str (r_strbuf_get (rsb), "?");
+			r_strbuf_free (rsb);
 			break;
 		case 9:
 			selectPanel = !selectPanel;

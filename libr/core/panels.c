@@ -6113,11 +6113,12 @@ R_API bool r_core_panels_load(RCore *core, const char *_name) {
 		RPanel *p = __get_panel (panels, panels->n_panels);
 		__set_geometry (&p->view->pos, atoi (x), atoi (y), atoi (w),atoi (h));
 		__init_panel_param (core, p, title, cmd);
+		// TODO: fix code duplication with __update_help
 		if (r_str_endswith (cmd, "Help")) {
 			p->model->title = r_str_dup (p->model->title, "Help");
 			p->model->cmd = r_str_dup (p->model->cmd, "Help");
 			RStrBuf *rsb = r_strbuf_new (NULL);
-			r_core_visual_append_help (rsb, "Visual Ascii Art Panels", help_msg_panels);
+			r_core_visual_append_help (rsb, "Panels Mode", help_msg_panels);
 			if (!rsb) {
 				return false;
 			}
