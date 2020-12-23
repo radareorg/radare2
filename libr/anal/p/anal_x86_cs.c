@@ -109,19 +109,21 @@ static void hidden_op(cs_insn *insn, cs_x86 *x, int mode) {
 static void opex(RStrBuf *buf, cs_insn *insn, int mode) {
 	int i;
 	PJ *pj = pj_new ();
+	if (!pj) {
+		return;
+	}
 	pj_o (pj);
-
 	cs_x86 *x = &insn->detail->x86;
 	if (x->op_count == 0) {
 		hidden_op (insn, x, mode);
 	}
 	pj_ka (pj, "operands");
 	for (i = 0; i < x->op_count; i++) {
-		cs_x86_op *op = &x->operands[i];
+		cs_x86_op *op = x->operands + i;
 		pj_o (pj);
 		pj_ki (pj, "size", op->size);
 #if CS_API_MAJOR >= 4
-		pj_ki (pj, "rw", op->access);// read , write, read|write
+		pj_ki (pj, "rw", op->access); // read, write, read|write
 #endif
 		switch (op->type) {
 		case X86_OP_REG:
@@ -130,7 +132,7 @@ static void opex(RStrBuf *buf, cs_insn *insn, int mode) {
 			break;
 		case X86_OP_IMM:
 			pj_ks (pj, "type", "imm");
-			pj_kn (pj, "value", op->imm);
+			pj_kN (pj, "value", op->imm);
 			break;
 		case X86_OP_MEM:
 			pj_ks (pj, "type", "mem");
@@ -144,41 +146,39 @@ static void opex(RStrBuf *buf, cs_insn *insn, int mode) {
 				pj_ks (pj, "index", cs_reg_name (handle, op->mem.index));
 			}
 			pj_ki (pj, "scale", op->mem.scale);
-			pj_ki (pj, "disp", op->mem.disp);
+			pj_kN (pj, "disp", op->mem.disp);
 			break;
 		default:
 			pj_ks (pj, "type", "invalid");
 			break;
 		}
-		pj_end (pj);
+		pj_end (pj); /* o operand */
 	}
-	pj_end (pj);
+	pj_end (pj); /* a operands */
 	if (x->rex) {
 		pj_kb (pj, "rex", true);
 	}
 	if (x->modrm) {
 		pj_kb (pj, "modrm", true);
 	}
-	if (x->disp) {
-		pj_ki (pj, "disp", x->disp);
-	}
 	if (x->sib) {
 		pj_ki (pj, "sib", x->sib);
 	}
-	if (x->sib_index) {
+	if (x->disp) {
+		pj_kN (pj, "disp", x->disp);
+	}
+	if (x->sib_index != X86_REG_INVALID) {
+		pj_ki (pj, "sib_scale", x->sib_scale);
 		pj_ks (pj, "sib_index", cs_reg_name (handle, x->sib_index));
 	}
-	if (x->sib_scale) {
-		pj_ks (pj, "sib_scale", cs_reg_name (handle, x->sib_scale));
-	}
-	if (x->sib_base) {
+	if (x->sib_base != X86_REG_INVALID) {
 		pj_ks (pj, "sib_base", cs_reg_name (handle, x->sib_base));
 	}
 	pj_end (pj);
 
-	char *s = pj_drain (pj);
-	r_strbuf_append (buf, s);
-	free (s);
+	r_strbuf_init (buf);
+	r_strbuf_append (buf, pj_string (pj));
+	pj_free (pj);
 }
 
 static bool is_xmm_reg(cs_x86_op op) {
