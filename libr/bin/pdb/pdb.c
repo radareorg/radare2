@@ -43,8 +43,8 @@ static void free_pdb_stream(void *stream) {
 
 /**
  * @brief Create a type name from offset
- * 
- * @param offset 
+ *
+ * @param offset
  * @return char* Name or NULL if error
  */
 static char *create_type_name_from_offset(ut64 offset) {
@@ -646,7 +646,7 @@ static SimpleTypeKind get_simple_type_kind (PDB_SIMPLE_TYPES type) {
 
 /**
  * @brief Maps simple type into a format string for `pf`
- * 
+ *
  * @param simple_type
  * @param member_format pointer to assert member format to
  * @return int -1 if it's unparsable, -2 if it should be skipped, 0 if all is correct
@@ -795,7 +795,7 @@ static int simple_type_to_format (const SLF_SIMPLE_TYPE *simple_type, char **mem
 
 /**
  * @brief Creates the format string and puts it into format
- * 
+ *
  * @param type_info Information about the member type
  * @param format buffer for the formatting string
  * @param names buffer for the member names
@@ -919,7 +919,7 @@ static inline bool is_printable_type(ELeafType type) {
 
 /**
  * @brief Gets the name of the enum base type
- * 
+ *
  * @param type_info Enum TypeInfo
  * @return char* name of the base type
  */
@@ -941,7 +941,7 @@ static char *get_enum_base_type_name(STypeInfo *type_info) {
 
 /**
  * @brief Prints out structure and class leaf types
- * 
+ *
  * @param name Name of the structure/class
  * @param size Size of the structure/class
  * @param members List of members
@@ -974,7 +974,7 @@ static void print_struct(const char *name, const int size, const RList *members,
 
 /**
  * @brief Prints out union leaf type
- * 
+ *
  * @param name Name of the union
  * @param size Size of the union
  * @param members List of members
@@ -1007,7 +1007,7 @@ static void print_union(const char *name, const int size, const RList *members, 
 
 /**
  * @brief Prints out enum leaf type
- * 
+ *
  * @param name Name of the enum
  * @param type type of the enum
  * @param members List of cases
@@ -1035,7 +1035,7 @@ static void print_enum(const char *name, const char *type, const RList *members,
 
 /**
  * @brief Prints out types in a default format "idpi" command
- * 
+ *
  * @param pdb pdb structure for printing function
  * @param types List of types
  */
@@ -1092,7 +1092,7 @@ static void print_types_regular(const RPdb *pdb, const RList *types) {
 
 /**
  * @brief Prints out types in a json format - "idpij" command
- * 
+ *
  * @param pdb pdb structure for printing function
  * @param types List of types
  */
@@ -1210,7 +1210,7 @@ static void print_types_json(const RPdb *pdb, PJ *pj, const RList *types) {
 
 /**
  * @brief Creates pf commands from PDB types - "idpi*" command
- * 
+ *
  * @param pdb pdb structure for printing function
  * @param types List of types
  */
@@ -1299,7 +1299,7 @@ static void print_types_format(const RPdb *pdb, const RList *types) {
 
 /**
  * @brief Prints out all the type information in regular,json or pf format
- * 
+ *
  * @param pdb PDB information
  * @param mode printing mode
  */
