@@ -1038,7 +1038,8 @@ static void _dfg_filter_rev_dfs(RGraphNode *n, RAnalEsilDFGFilter *filter) {
 		if (previous) {
 			sdb_ptr_set (filter->results, r_strbuf_get (node->content), previous, 0);
 		}
-	} break;
+		break;
+	}
 	}
 }
 

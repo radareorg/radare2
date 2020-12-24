@@ -794,7 +794,8 @@ static void add_class_bases(RVTableContext *context, const class_type_info *cti)
 			r_anal_class_base_set (context->anal, cti->name, &base);
 			r_anal_class_base_fini (&base);
 		}
-	} break;
+		break;
+	}
 	case R_TYPEINFO_TYPE_VMI_CLASS: {
 		vmi_class_type_info *vmi_class = (void *)cti;
 		for (i = 0; i < vmi_class->vmi_base_count; i++) {
@@ -807,7 +808,8 @@ static void add_class_bases(RVTableContext *context, const class_type_info *cti)
 				r_anal_class_base_fini (&base);
 			}
 		}
-	} break;
+		break;
+	}
 	default: // other types have no parent classes
 		break;
 	}

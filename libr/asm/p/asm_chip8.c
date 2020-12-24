@@ -50,7 +50,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *b, int l) {
 		case 0x7: buf_asm = sdb_fmt ("subn v%1x, v%1x", x, y); break;
 		case 0xE: buf_asm = sdb_fmt ("shl v%1x, v%1x", x, y); break;
 		}
-	} break;
+		break;
+	}
 	case 0x9000: buf_asm = sdb_fmt ("sne v%1x, v%1x", x, y); break;
 	case 0xA000: buf_asm = sdb_fmt ("ld i, 0x%03x", nnn); break;
 	case 0xB000: buf_asm = sdb_fmt ("jp v0, 0x%03x", nnn); break;
@@ -62,7 +63,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *b, int l) {
 		} else if (kk == 0xA1) {
 			buf_asm = sdb_fmt ("sknp v%1x", x);
 		}
-	} break;
+		break;
+	}
 	case 0xF000: {
 		switch (kk) {
 		case 0x07: buf_asm = sdb_fmt ("ld v%1x, dt", x); break;
@@ -78,7 +80,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *b, int l) {
 		case 0x75: buf_asm = sdb_fmt ("ld r, v%1x", x); break;
 		case 0x85: buf_asm = sdb_fmt ("ld v%1x, r", x); break;
 		}
-	} break;
+		break;
+	}
 	}
 	r_strbuf_set (&op->buf_asm, buf_asm);
 	op->size = 2;

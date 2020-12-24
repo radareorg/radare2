@@ -571,7 +571,8 @@ static int cmd_undo(void *data, const char *input) {
 				.glob = NULL
 			};
 			r_core_undo_print (core, 1, &cond);
-			} break;
+			break;
+		}
 		case '*': // "uc*"
 			r_core_undo_print (core, 1, NULL);
 			break;

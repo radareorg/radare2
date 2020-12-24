@@ -747,7 +747,8 @@ static void free_object(pyc_object *object) {
 		free_object (cobj->name);
 		free_object (cobj->lnotab);
 		free (object->data);
-	} break;
+		break;
+	}
 	case TYPE_REF:
 		free_object (object->data);
 		break;
@@ -820,7 +821,8 @@ static pyc_object *copy_object(pyc_object *object) {
 		dst->name = copy_object (src->name);
 		dst->lnotab = copy_object (src->lnotab);
 		copy->data = dst;
-	} break;
+		break;
+	}
 	case TYPE_REF:
 		copy->data = copy_object (object->data);
 		break;

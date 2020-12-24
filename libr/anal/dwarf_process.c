@@ -993,7 +993,8 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 				/* Might happen if frame_base has a frame_base reference? I don't think it can tho */
 				return NULL;
 			}
-		} break;
+			break;
+		}
 		case DW_OP_reg0:
 		case DW_OP_reg1:
 		case DW_OP_reg2:
@@ -1030,7 +1031,8 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 			/* TODO I need to find binaries that uses this so I can test it out*/
 			reg_num = block.data[i] - DW_OP_reg0; // get the reg number
 			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind, ctx->anal->bits);
-		} break;
+			break;
+		}
 		case DW_OP_breg0:
 		case DW_OP_breg1:
 		case DW_OP_breg2:
@@ -1074,7 +1076,8 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 			/* TODO do a proper expression parsing, move by the amount of bytes sleb reads */
 			i += buffer - &block.data[0];
 			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind, ctx->anal->bits);
-		} break;
+			break;
+		}
 		case DW_OP_bregx: {
 			if (i == block.length - 1) {
 				return NULL;
@@ -1089,7 +1092,8 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 			}
 			offset = r_sleb128 (&buffer, buf_end);
 			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind, ctx->anal->bits);
-		} break;
+			break;
+		}
 		case DW_OP_addr: {
 			/* The DW_OP_addr operation has a single operand that encodes a machine address and whose
 			size is the size of an address on the target machine.  */
@@ -1117,12 +1121,14 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 				return NULL;
 			}
 			kind = LOCATION_GLOBAL; // address
-		} break;
+			break;
+		}
 		case DW_OP_call_frame_cfa: {
 			// REMOVE XXX
 			kind = LOCATION_BP;
 			offset += 16;
-		} break;
+			break;
+		}
 		default:
 			break;
 		}
@@ -1270,7 +1276,8 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RList/*<Variable*>*/ *v
 			key = r_str_newf ("fcn.%s.var.%s", sname, var->name);
 			val = r_str_newf ("%s,%" PFMT64d ",%s", "b", var->location->offset, var->type);
 			sdb_set (sdb, key, val, 0);
-		} break;
+			break;
+		}
 		case LOCATION_SP: {
 			/* value = "type, storage, additional info based on storage (offset)" */
 
@@ -1278,7 +1285,8 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RList/*<Variable*>*/ *v
 			key = r_str_newf ("fcn.%s.var.%s", sname, var->name);
 			val = r_str_newf ("%s,%" PFMT64d ",%s", "s", var->location->offset, var->type);
 			sdb_set (sdb, key, val, 0);
-		} break;
+			break;
+		}
 		case LOCATION_GLOBAL: {
 			/* value = "type, storage, additional info based on storage (address)" */
 
@@ -1286,7 +1294,8 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RList/*<Variable*>*/ *v
 			key = r_str_newf ("fcn.%s.var.%s", sname, var->name);
 			val = r_str_newf ("%s,%" PFMT64u ",%s", "g", var->location->address, var->type);
 			sdb_set (sdb, key, val, 0);
-		} break;
+			break;
+		}
 		case LOCATION_REGISTER: {
 			/* value = "type, storage, additional info based on storage (register name)" */
 
@@ -1294,7 +1303,8 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RList/*<Variable*>*/ *v
 			key = r_str_newf ("fcn.%s.var.%s", sname, var->name);
 			val = r_str_newf ("%s,%s,%s", "r", var->location->reg_name, var->type);
 			sdb_set (sdb, key, val, 0);
-		} break;
+			break;
+		}
 
 		default:
 			/* else location is unknown (optimized out), skip the var */
@@ -1359,7 +1369,8 @@ static void parse_function(Context *ctx, ut64 idx) {
 				fcn.name = get_specification_die_name (spec_die); /* I assume that if specification has a name, this DIE hasn't */
 				get_spec_die_type (ctx, spec_die, &ret_type);
 			}
-		} break;
+			break;
+		}
 		case DW_AT_type:
 			parse_type (ctx, val->reference, &ret_type, NULL);
 			break;
